@@ -1,4 +1,4 @@
 CUB
 ===
 
-**CUDA unbound**.  An indispensable library of SIMT software primitives (sort, scan, reduce, etc.) for making CUDA kernels easier to write.
+**CUDA unbound**.  An indispensable library of CUDA SIMT software primitives (BlockSort, BlockScan, BlockReduce, etc.) for making kernel programming easier.
