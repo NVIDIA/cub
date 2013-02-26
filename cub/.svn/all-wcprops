@@ -1,0 +1,65 @@
+K 25
+svn:wc:ra_dav:version-url
+V 35
+/svn/!svn/ver/1030/branches/cub/cub
+END
+macro_utils.cuh
+K 25
+svn:wc:ra_dav:version-url
+V 51
+/svn/!svn/ver/1032/branches/cub/cub/macro_utils.cuh
+END
+type_utils.cuh
+K 25
+svn:wc:ra_dav:version-url
+V 50
+/svn/!svn/ver/1032/branches/cub/cub/type_utils.cuh
+END
+device_props.cuh
+K 25
+svn:wc:ra_dav:version-url
+V 52
+/svn/!svn/ver/1032/branches/cub/cub/device_props.cuh
+END
+vector_type.cuh
+K 25
+svn:wc:ra_dav:version-url
+V 51
+/svn/!svn/ver/1032/branches/cub/cub/vector_type.cuh
+END
+debug.cuh
+K 25
+svn:wc:ra_dav:version-url
+V 45
+/svn/!svn/ver/1032/branches/cub/cub/debug.cuh
+END
+cub.cuh
+K 25
+svn:wc:ra_dav:version-url
+V 43
+/svn/!svn/ver/1032/branches/cub/cub/cub.cuh
+END
+operators.cuh
+K 25
+svn:wc:ra_dav:version-url
+V 49
+/svn/!svn/ver/1032/branches/cub/cub/operators.cuh
+END
+allocator.cuh
+K 25
+svn:wc:ra_dav:version-url
+V 49
+/svn/!svn/ver/1032/branches/cub/cub/allocator.cuh
+END
+ns_wrapper.cuh
+K 25
+svn:wc:ra_dav:version-url
+V 50
+/svn/!svn/ver/1032/branches/cub/cub/ns_wrapper.cuh
+END
+ptx_intrinsics.cuh
+K 25
+svn:wc:ra_dav:version-url
+V 54
+/svn/!svn/ver/1032/branches/cub/cub/ptx_intrinsics.cuh
+END
