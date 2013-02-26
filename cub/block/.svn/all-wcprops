@@ -1,0 +1,65 @@
+K 25
+svn:wc:ra_dav:version-url
+V 41
+/svn/!svn/ver/1029/branches/cub/cub/block
+END
+block_reduce.cuh
+K 25
+svn:wc:ra_dav:version-url
+V 58
+/svn/!svn/ver/1032/branches/cub/cub/block/block_reduce.cuh
+END
+block_store.cuh
+K 25
+svn:wc:ra_dav:version-url
+V 57
+/svn/!svn/ver/1032/branches/cub/cub/block/block_store.cuh
+END
+block_radix_sort.cuh
+K 25
+svn:wc:ra_dav:version-url
+V 62
+/svn/!svn/ver/1032/branches/cub/cub/block/block_radix_sort.cuh
+END
+block_even_share.cuh
+K 25
+svn:wc:ra_dav:version-url
+V 62
+/svn/!svn/ver/1032/branches/cub/cub/block/block_even_share.cuh
+END
+block_load.cuh
+K 25
+svn:wc:ra_dav:version-url
+V 56
+/svn/!svn/ver/1032/branches/cub/cub/block/block_load.cuh
+END
+block_raking_grid.cuh
+K 25
+svn:wc:ra_dav:version-url
+V 63
+/svn/!svn/ver/1032/branches/cub/cub/block/block_raking_grid.cuh
+END
+block_exchange.cuh
+K 25
+svn:wc:ra_dav:version-url
+V 60
+/svn/!svn/ver/1032/branches/cub/cub/block/block_exchange.cuh
+END
+block_radix_rank.cuh
+K 25
+svn:wc:ra_dav:version-url
+V 62
+/svn/!svn/ver/1032/branches/cub/cub/block/block_radix_rank.cuh
+END
+block_scan.cuh
+K 25
+svn:wc:ra_dav:version-url
+V 56
+/svn/!svn/ver/1032/branches/cub/cub/block/block_scan.cuh
+END
+block_discontinuity.cuh
+K 25
+svn:wc:ra_dav:version-url
+V 65
+/svn/!svn/ver/1032/branches/cub/cub/block/block_discontinuity.cuh
+END
