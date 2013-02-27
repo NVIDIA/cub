@@ -78,17 +78,25 @@
  *
  * \tableofcontents
  *
- * \section sec1 (1) What is CUB?
+ * \htmlonly
+ * <a href="https://github.com/NVlabs/CUB"><img src="github-icon-747d8b799a48162434b2c0595ba1317e.png" style="float:left;"/></a>
+ * &nbsp;&nbsp;
+ * <a href="https://github.com/NVlabs/CUB">Download (or clone) CUB at GitHub!</a>
+ * \endhtmlonly
+ *
+ * \section sec0 (1) What is CUB?
  *
  * \par
- * CUB is a library of SIMT primitives for CUDA kernel
- * programming. CUB enhances productivity and portability
- * by providing commonplace threadblock-wide, warp-wide, and thread-level operations that
- * are flexible and tunable to fit your kernel needs.
+ * CUB is an indispensable library of threadblock primitives and other utilities for CUDA SIMT kernel programming.
+ * CUB enhances productivity and portability providing commonplace threadblock-wide, warp-wide, and
+ * thread-level operations that flexible and tunable to fit your kernel needs.
+ *
+ * <br>
+ * \image html cub_overview.png
  *
  * \par
  * Browse our collections of:
- * - [<b>SIMT cooperative primitives</b>](annotated.html)
+ * - [<b>Cooperative primitives</b>](annotated.html)
  *   - BlockRadixSort, BlockReduce, WarpScan, etc.
  * - [<b>SIMT utilities</b>](group___simt_utils.html)
  *   - threadblock loads/stores in blocked/striped arrangements (vectorized, coalesced, etc.)
@@ -100,8 +108,7 @@
  * \section sec2 (2) A simple example
  *
  * \par
- * The following snippet illustrates the simplicity of using CUB primitives
- * to construct a CUDA kernel for computing prefix sum:
+ * The following snippet illustrates a simple CUDA kernel for computing prefix sums:
  *
  * \par
  * \code
@@ -273,6 +280,42 @@
  * within each thread).  Striped arrangements are often desirable for data movement
  * through global memory (where read/write coalescing is a important performance
  * consideration).
+ *
+ * \section sec5 (5) Open Source License
+ *
+ * \par
+ * CUB is available under the "New BSD" open-source license:
+ *
+ * \par
+ * \code
+ * Copyright (c) 2011, Duane Merrill.  All rights reserved.
+ * Copyright (c) 2011-2013, NVIDIA CORPORATION.  All rights reserved.
+ *
+ * Redistribution and use in source and binary forms, with or without
+ * modification, are permitted provided that the following conditions are met:
+ *     * Redistributions of source code must retain the above copyright
+ *       notice, this list of conditions and the following disclaimer.
+ *     * Redistributions in binary form must reproduce the above copyright
+ *       notice, this list of conditions and the following disclaimer in the
+ *       documentation and/or other materials provided with the distribution.
+ *     * Neither the name of the NVIDIA CORPORATION nor the
+ *       names of its contributors may be used to endorse or promote products
+ *       derived from this software without specific prior written permission.
+ *
+ * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS" AND
+ * ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED
+ * WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE
+ * DISCLAIMED. IN NO EVENT SHALL NVIDIA CORPORATION BE LIABLE FOR ANY
+ * DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES
+ * (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES;
+ * LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND
+ * ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
+ * (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
+ * SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+ * \endcode
+ *
+ *
+ * \image html favicon.ico
  *
  */
 
