@@ -81,7 +81,7 @@ namespace cub {
  * <br>
  * <br>
  * \image html raking.png
- * <center><b>A threadblock of 16 threads performing a conflict-free <em>blocked</em> gathering of 64 exchanged items.</b></center>
+ * <div class="centercaption">A threadblock of 16 threads performing a conflict-free <em>blocked</em> gathering of 64 exchanged items.</div>
  * <br>
  *
  */

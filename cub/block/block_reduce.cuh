@@ -93,7 +93,7 @@ namespace cub {
  * <br>
  * <br>
  * \image html block_reduce.png
- * <center><b>Data flow for a hypothetical 16-thread threadblock and 4-thread raking warp.</b></center>
+ * <div class="centercaption">Data flow for a hypothetical 16-thread threadblock and 4-thread raking warp.</div>
  * <br>
  *
  * <b>Examples</b>

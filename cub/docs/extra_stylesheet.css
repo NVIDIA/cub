@@ -102,7 +102,7 @@ div.title {
 
 .tablist li {
 		line-height: 30px;
-		background-image: url('../images/tab_b_alt.png');
+		background-image: url('tab_b_alt.png');
 }
 
 .tablist a, .navpath li.navelem a, .tablist li.current a, .tablist a:hover {
@@ -134,7 +134,7 @@ li.navelem {
 .tabs, .tabs2, .tabs3, .tabs4 {
 		border-right: 1px solid #7092BE;
 		border-left: 1px solid #7092BE;
-		background-image: url('../images/tab_b_alt.png');
+		background-image: url('tab_b_alt.png');
 }
 
 
@@ -200,6 +200,11 @@ p.startli, p.startdd, p.starttd {
 		display: none;
 }
 
+.centercaption {
+		font-weight: bold;
+		font-size: 80%;
+		text-align: center;
+}
 
 .memproto, dl.reflist dt {
 		background-image: none;
@@ -222,7 +227,7 @@ div.memdoc p {
 
 div.toc {
 		box-shadow: 5px 5px 5px rgba(0, 0, 0, 0.15);
-		margin: 10px 0px 0px 20px;
+		margin: 10px -10px 40px 20px;
 		width: 225px;
 }
 
@@ -245,6 +250,18 @@ table.memname tbody tr td.paramtype {
 table.memname tbody tr td.memname {
 		position: absolute;
 		width: 760px;
+}
+
+dl.section.user b {
+		color: #222;
+}
+
+dl.section.user a b {
+		color: #3D578C;
+}
+
+dl.section.user a:visited b {
+		color: #4665A2;
 }
 
 dl.section.user dd {

@@ -51,7 +51,7 @@ namespace cub {
  * Description of work distribution amongst threadblocks
  */
 template <typename SizeT>
-class BlockEvenShare
+class GridEvenShare
 {
 private:
 
@@ -76,7 +76,7 @@ public:
      *
      * Generally constructed in host code one time.
      */
-    __host__ __device__ __forceinline__ BlockEvenShare(
+    __host__ __device__ __forceinline__ GridEvenShare(
         SizeT   total_items,
         int     grid_size,
         int     schedule_granularity) :
