@@ -7,6 +7,8 @@ CUB is an indispensable library of SIMT primitives and other utilities for CUDA 
 CUB enhances productivity and portability providing commonplace threadblock-wide, warp-wide, and
 thread-level operations that flexible and tunable to fit your kernel needs.
 
+![SIMT abstraction layer](http://nvlabs.github.com/CUB/simt_abstraction.png)
+
 <br><hr>
 <h3>A Simple Example</h3>
 
