@@ -101,7 +101,7 @@ namespace cub {
  * size associated with the CUDA Compute Capability targeted by the compiler).
  * <br><br>
  * \image html kogge_stone_scan.png
- * <center><b>Data flow within a 16-thread Kogge-Stone scan construction.  Junctions represent binary operators.</b></center>
+ * <div class="centercaption">Data flow within a 16-thread Kogge-Stone scan construction.  Junctions represent binary operators.</div>
  * <br>
  *
  * <b>Examples</b>
