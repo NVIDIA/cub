@@ -66,7 +66,7 @@ enum BlockScanPolicy
      *     -# Downsweep sequential scan in registers (if threads contribute more than one input), seeded with the raking scan output.
      *     <br><br>
      *     \image html block_scan_raking.png
-     *     <center><b>\p BLOCK_SCAN_RAKING data flow for a hypothetical 16-thread threadblock and 4-thread raking warp.</b></center>
+     *     <div class="centercaption">\p BLOCK_SCAN_RAKING data flow for a hypothetical 16-thread threadblock and 4-thread raking warp.</div>
      */
     BLOCK_SCAN_RAKING,
 
@@ -84,7 +84,7 @@ enum BlockScanPolicy
      *     -# A propagation phase where the warp scan outputs in each warp are updated with the aggregate from each preceding warp.
      *     <br><br>
      *     \image html block_scan_warpscans.png
-     *     <center><b>\p BLOCK_SCAN_WARPSCANS data flow for a hypothetical 16-thread threadblock and 4-thread raking warp.</b></center>
+     *     <div class="centercaption">\p BLOCK_SCAN_WARPSCANS data flow for a hypothetical 16-thread threadblock and 4-thread raking warp.</div>
      */
     BLOCK_SCAN_WARPSCANS,
 };
