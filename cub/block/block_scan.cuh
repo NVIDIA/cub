@@ -95,7 +95,7 @@ enum BlockScanPolicy
  */
 
 /**
- * \brief The BlockScan type provides variants of parallel prefix scan across threads within a threadblock. ![](scan_logo.png)
+ * \brief The BlockScan type provides variants of parallel prefix scan (and prefix sum) across threads within a threadblock. ![](scan_logo.png)
  *
  * <b>Overview</b>
  * \par
@@ -119,8 +119,8 @@ enum BlockScanPolicy
  *   the threadblock, with thread<sub><em>i</em></sub> owning the
  *   <em>i</em><sup>th</sup> element (or <em>i</em><sup>th</sup> segment of
  *   consecutive elements).
- * - After any scan operation, a subsequent threadblock barrier (<tt>__syncthreads()</tt>)
- *   is required if the supplied BlockScan::SmemStorage is to be reused/repurposed
+ * - After any scan operation, a subsequent <tt>__syncthreads()</tt> barrier
+ *   is required if the supplied BlockScan::SmemStorage is to be reused or repurposed
  *   by the threadblock.
  * - Scalar inputs and outputs (e.g., \p block_prefix_op and \p aggregate) are
  *   only valid in <em>thread</em><sub>0</sub>.
@@ -135,8 +135,8 @@ enum BlockScanPolicy
  * - Operations are most efficient (i.e., lowest instruction overhead) when:
  *      - Addition is the reduction operator (viz. prefix sum variants)
  *      - The data type \p T is a built-in primitive or CUDA vector type, e.g.,
- *        \p short, \p int2, \p double, \p float2, etc.  (Otherwise the implementation
- *        may use memory fences to prevent reference reordering of non-primitive types.)
+ *        \p short, \p int2, \p double, \p float2, etc.  Otherwise the implementation
+ *        may use memory fences to prevent reordering of memory references.
  *      - \p BLOCK_THREADS is a multiple of the architecture's warp size
  *
  * <b>Algorithm</b>
@@ -147,13 +147,14 @@ enum BlockScanPolicy
  *
  * <b>Examples</b>
  * \par
- * - <b>Example 1:</b> Simple exclusive prefix sum of 32-bit integer keys (128 threads, 4 keys per thread, blocked arrangement)
+ * <em>Example 1.</em> Perform a simple exclusive prefix sum of 32-bit integer keys that
+ * are partitioned in a blocked arrangement across a 128-thread threadblock (each thread holding 4 keys).
  *      \code
  *      #include <cub.cuh>
  *
  *      __global__ void SomeKernel(...)
  *      {
- *          // Parameterize a BlockScan type for use in the current execution context
+ *          // Parameterize BlockScan for the parallel execution context
  *          typedef cub::BlockScan<int, 128> BlockScan;
  *
  *          // Declare shared memory for BlockScan
@@ -171,7 +172,7 @@ enum BlockScanPolicy
  *      \endcode
  *
  * \par
- * - <b>Example 2:</b> Use of local prefix sum and global atomic-add for performing cooperative allocation within a global data structure
+ * <em>Example 2:</em> Perform inter-threadblock allocation within a global data structure by using local prefix sum that incorporates a single global atomic-add.
  *      \code
  *      #include <cub.cuh>
  *
@@ -184,17 +185,19 @@ enum BlockScanPolicy
  *          BlockPrefix(int *d_global_counter) : d_global_counter(d_global_counter) {}
  *
  *          /// Functor operator.  Produces a value for seeding the threadblock-wide scan given
- *          /// the local aggregate (called only by thread-0).
+ *          /// the local aggregate (only used by thread-0).
  *          int operator(int block_aggregate)
  *          {
- *              return atomicAdd(d_global_counter, block_aggregate);
+ *              return (threadIdx.x == 0) ?
+ *                  atomicAdd(d_global_counter, block_aggregate) :      // thread0
+ *                  0;                                                  // anybody else
  *          }
  *      }
  *
  *      template <int BLOCK_THREADS, int ITEMS_PER_THREAD>
  *      __global__ void SomeKernel(int *d_global_counter, ...)
  *      {
- *          // Parameterize a BlockScan type for use in the current execution context
+ *          // Parameterize BlockScan for the parallel execution context
  *          typedef cub::BlockScan<int, BLOCK_THREADS> BlockScan;
  *
  *          // Declare shared memory for BlockScan

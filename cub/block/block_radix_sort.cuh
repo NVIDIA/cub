@@ -28,7 +28,7 @@
 
 /**
  * \file
- * The cub::BlockRadixSort type provides variants of parallel radix sorting of unsigned numeric types across threads within a threadblock.
+ * The cub::BlockRadixSort type provides variants of parallel radix sorting across threads within a threadblock.
  */
 
 
@@ -51,7 +51,7 @@ namespace cub {
  */
 
 /**
- * \brief The BlockRadixSort type provides variants of parallel radix sorting of unsigned numeric types across threads within a threadblock.  ![](sorting_logo.png)
+ * \brief The BlockRadixSort type provides variants of parallel radix sorting across threads within a threadblock.  ![](sorting_logo.png)
  *
  * <b>Overview</b>
  * \par
@@ -63,44 +63,64 @@ namespace cub {
  * ordering of those keys.
  *
  * \par
+ * BlockRadixSort can sort all of the built-in C++ numeric primitive types, e.g.:
+ * <tt>unsigned char</tt>, \p int, \p double, etc.  The implementation treats fixed-length
+ * bit-sequences of \p RADIX_BITS as radix digit places.  Although the direct radix sorting
+ * method can only be applied to unsigned integral types, BlockRadixSort
+ * is able to sort signed and floating-point types via simple bit-wise transformations
+ * that ensure lexicographic key ordering.
+ *
+ * \par
  * BlockRadixSort accommodates the following arrangements of data items among threads:
- * -# <b><em>blocked</em> arrangement</b>.  The aggregate tile of items is partitioned
+ * -#  [<b><em>Blocked arrangement</em></b>](index.html#sec3sec3).  The aggregate tile of items is partitioned
  *   evenly across threads in "blocked" fashion with thread<sub><em>i</em></sub>
  *   owning the <em>i</em><sup>th</sup> segment of consecutive elements.
- * -# <b><em>striped</em> arrangement</b>.  The aggregate tile of items is partitioned across
+ * -#  [<b><em>Striped arrangement</em></b>](index.html#sec3sec3).  The aggregate tile of items is partitioned across
  *   threads in "striped" fashion, i.e., the \p ITEMS_PER_THREAD items owned by
  *   each thread have logical stride \p BLOCK_THREADS between them.
  *
  * \tparam KeyType              Key type
- * \tparam BLOCK_THREADS          The threadblock size in threads
+ * \tparam BLOCK_THREADS        The threadblock size in threads
  * \tparam ITEMS_PER_THREAD     The number of items per thread
  * \tparam ValueType            <b>[optional]</b> Value type (default: cub::NullType)
  * \tparam RADIX_BITS           <b>[optional]</b> The number of radix bits per digit place (default: 5 bits)
  * \tparam SMEM_CONFIG          <b>[optional]</b> Shared memory bank mode (default: \p cudaSharedMemBankSizeFourByte)
  *
- * <b>Performance Features and Considerations</b>
+ * <b>Usage Considerations</b>
  * \par
- * - After any BlockRadixSort operation, a subsequent threadblock barrier (<tt>__syncthreads()</tt>) is
- *   required if the supplied BlockRadixSort::SmemStorage is to be reused/repurposed by the threadblock.
- * - Keys must be in a form suitable for radix ranking (i.e., unsigned integer types).
+ * - After any sorting operation, a subsequent <tt>__syncthreads()</tt> barrier
+ *   is required if the supplied BlockRadixSort::SmemStorage is to be reused or repurposed
+ *   by the threadblock.
+ * - BlockRadixSort can only accommodate one associated tile of values. To "truck along"
+ *   more than one tile of values, simply perform a key-value sort of the keys paired
+ *   with a temporary value array that enumerates the key indices.  The reordered indices
+ *   can then be used as a gather-vector for exchanging other value tiles through
+ *   shared memory.
+ *
+ * <b>Performance Considerations</b>
+ * \par
  * - The operations are most efficient (lowest instruction overhead) when:
  *      - \p BLOCK_THREADS is a multiple of the architecture's warp size
+ *      - \p KeyType is an unsigned integral type
  *
  * <b>Algorithm</b>
  * \par
- * These parallel radix sorting variants have <em>O</em>(<em>n</em>) work complexity and are implemented in XXX phases:
- * -# blah
- * -# blah
+ * The implementation of BlockRadixSort is based on the method presented by
+ * Merrill et al. \cite merrill_high_2011.  It has <em>O</em>(<em>n</em>) work complexity
+ * and iterates over digit places using rounds constructed of
+ *    - cub::BlockRadixRank (itself constructed from cub::BlockScan)
+ *    - cub::BlockExchange
  *
  * <b>Examples</b>
  * \par
- * - <b>Example 1:</b> Simple radix sort of 32-bit integer keys (128 threads, 4 keys per thread, blocked arrangement)
+ * <em>Example 1.</em> Perform a radix sort over a tile of 32-bit integer keys that
+ * are partitioned in a blocked arrangement across a 128-thread threadblock (each thread holding 4 keys).
  *      \code
  *      #include <cub.cuh>
  *
  *      __global__ void SomeKernel(...)
  *      {
- *          // Parameterize a BlockRadixSort type for use in the current execution context
+ *          // Parameterize BlockRadixSort for the parallel execution context
  *          typedef cub::BlockRadixSort<unsigned int, 128, 4> BlockRadixSort;
  *
  *          // Declare shared memory for BlockRadixSort
@@ -118,14 +138,15 @@ namespace cub {
  *      \endcode
  *
  * \par
- * - <b>Example 2:</b> Lower 20-bit key-value radix sort of 32-bit integer keys and fp values (striped arrangement)
+ * <em>Example 2.</em> Perform a key-value radix sort over the lower 20-bits of a tile of 32-bit integer
+ * keys paired with floating-point values.  The data are partitioned in a striped arrangement across the threadblock.
  *      \code
  *      #include <cub.cuh>
  *
  *      template <int BLOCK_THREADS, int ITEMS_PER_THREAD>
  *      __global__ void SomeKernel(...)
  *      {
- *          // Parameterize a BlockRadixSort type for use in the current execution context
+ *          // Parameterize BlockRadixSort for the parallel execution context
  *          typedef cub::BlockRadixSort<unsigned int, BLOCK_THREADS, ITEMS_PER_THREAD, float> BlockRadixSort;
  *
  *          // Declare shared memory for BlockRadixSort
@@ -159,14 +180,18 @@ class BlockRadixSort
 
 private:
 
+    // Key traits and unsigned bits type
+    typedef NumericTraits<KeyType>                                          KeyTraits;
+    typedef typename KeyTraits::UnsignedBits                                UnsignedBits;
+
     /// BlockRadixRank utility type
-    typedef BlockRadixRank<BLOCK_THREADS, RADIX_BITS, SMEM_CONFIG>      BlockRadixRank;
+    typedef BlockRadixRank<BLOCK_THREADS, RADIX_BITS, SMEM_CONFIG>          BlockRadixRank;
 
     /// BlockExchange utility type for keys
-    typedef BlockExchange<KeyType, BLOCK_THREADS, ITEMS_PER_THREAD>     KeyBlockExchange;
+    typedef BlockExchange<KeyType, BLOCK_THREADS, ITEMS_PER_THREAD>         KeyBlockExchange;
 
     /// BlockExchange utility type for values
-    typedef BlockExchange<ValueType, BLOCK_THREADS, ITEMS_PER_THREAD>   ValueBlockExchange;
+    typedef BlockExchange<ValueType, BLOCK_THREADS, ITEMS_PER_THREAD>       ValueBlockExchange;
 
     /// Shared memory storage layout type
     struct SmemStorage
@@ -195,7 +220,7 @@ public:
     //@{
 
     /**
-     * \brief Performs a threadblock-wide radix sort over a <em>blocked</em> arrangement of keys.
+     * \brief Performs a threadblock-wide radix sort over a [<em>blocked arrangement</em>](index.html#sec3sec3) of keys.
      *
      * \smemreuse
      */
@@ -205,12 +230,22 @@ public:
         unsigned int        begin_bit = 0,                      ///< [in] <b>[optional]</b> The beginning (least-significant) bit index needed for key comparison
         const unsigned int  &end_bit = sizeof(KeyType) * 8)     ///< [in] <b>[optional]</b> The past-the-end (most-significant) bit index needed for key comparison
     {
+        UnsignedBits (&unsigned_keys)[ITEMS_PER_THREAD] =
+            reinterpret_cast<UnsignedBits (&)[ITEMS_PER_THREAD]>(keys);
+
+        // Twiddle bits if necessary
+        #pragma unroll
+        for (int KEY = 0; KEY < ITEMS_PER_THREAD; KEY++)
+        {
+            unsigned_keys[KEY] = KeyTraits::TwiddleIn(unsigned_keys[KEY]);
+        }
+
         // Radix sorting passes
         while (true)
         {
             // Rank the blocked keys
             unsigned int ranks[ITEMS_PER_THREAD];
-            BlockRadixRank::RankKeys(smem_storage.ranking_storage, keys, ranks, begin_bit);
+            BlockRadixRank::RankKeys(smem_storage.ranking_storage, unsigned_keys, ranks, begin_bit);
             begin_bit += RADIX_BITS;
 
             __syncthreads();
@@ -223,11 +258,18 @@ public:
 
             __syncthreads();
         }
+
+        // Untwiddle bits if necessary
+        #pragma unroll
+        for (int KEY = 0; KEY < ITEMS_PER_THREAD; KEY++)
+        {
+            unsigned_keys[KEY] = KeyTraits::TwiddleOut(unsigned_keys[KEY]);
+        }
     }
 
 
     /**
-     * \brief Performs a radix sort across a <em>blocked</em> arrangement of keys, leaving them in a <em>striped</em> arrangement.
+     * \brief Performs a radix sort across a [<em>blocked arrangement</em>](index.html#sec3sec3) of keys, leaving them in a [<em>striped arrangement</em>](index.html#sec3sec3).
      *
      * \smemreuse
      */
@@ -237,12 +279,22 @@ public:
         unsigned int        begin_bit = 0,                      ///< [in] <b>[optional]</b> The beginning (least-significant) bit index needed for key comparison
         const unsigned int  &end_bit = sizeof(KeyType) * 8)     ///< [in] <b>[optional]</b> The past-the-end (most-significant) bit index needed for key comparison
     {
+        UnsignedBits (&unsigned_keys)[ITEMS_PER_THREAD] =
+            reinterpret_cast<UnsignedBits (&)[ITEMS_PER_THREAD]>(keys);
+
+        // Twiddle bits if necessary
+        #pragma unroll
+        for (int KEY = 0; KEY < ITEMS_PER_THREAD; KEY++)
+        {
+            unsigned_keys[KEY] = KeyTraits::TwiddleIn(unsigned_keys[KEY]);
+        }
+
         // Radix sorting passes
         while (true)
         {
             // Rank the blocked keys
             unsigned int ranks[ITEMS_PER_THREAD];
-            BlockRadixRank::RankKeys(smem_storage.ranking_storage, keys, ranks, begin_bit);
+            BlockRadixRank::RankKeys(smem_storage.ranking_storage, unsigned_keys, ranks, begin_bit);
             begin_bit += RADIX_BITS;
 
             __syncthreads();
@@ -265,11 +317,18 @@ public:
 
             __syncthreads();
         }
+
+        // Untwiddle bits if necessary
+        #pragma unroll
+        for (int KEY = 0; KEY < ITEMS_PER_THREAD; KEY++)
+        {
+            unsigned_keys[KEY] = KeyTraits::TwiddleOut(unsigned_keys[KEY]);
+        }
     }
 
 
     /**
-     * \brief Performs a radix sort across a <em>striped</em> arrangement of keys.
+     * \brief Performs a radix sort across a [<em>striped arrangement</em>](index.html#sec3sec3) of keys.
      *
      * \smemreuse
      */
@@ -295,7 +354,7 @@ public:
     //@{
 
     /**
-     * \brief Performs a radix sort across a <em>blocked</em> arrangement of keys and values.
+     * \brief Performs a radix sort across a [<em>blocked arrangement</em>](index.html#sec3sec3) of keys and values.
      *
      * \smemreuse
      */
@@ -306,12 +365,22 @@ public:
         unsigned int        begin_bit = 0,                      ///< [in] <b>[optional]</b> The beginning (least-significant) bit index needed for key comparison
         const unsigned int  &end_bit = sizeof(KeyType) * 8)     ///< [in] <b>[optional]</b> The past-the-end (most-significant) bit index needed for key comparison
     {
+        UnsignedBits (&unsigned_keys)[ITEMS_PER_THREAD] =
+            reinterpret_cast<UnsignedBits (&)[ITEMS_PER_THREAD]>(keys);
+
+        // Twiddle bits if necessary
+        #pragma unroll
+        for (int KEY = 0; KEY < ITEMS_PER_THREAD; KEY++)
+        {
+            unsigned_keys[KEY] = KeyTraits::TwiddleIn(unsigned_keys[KEY]);
+        }
+
         // Radix sorting passes
         while (true)
         {
             // Rank the blocked keys
             unsigned int ranks[ITEMS_PER_THREAD];
-            BlockRadixRank::RankKeys(smem_storage.ranking_storage, keys, ranks, begin_bit);
+            BlockRadixRank::RankKeys(smem_storage.ranking_storage, unsigned_keys, ranks, begin_bit);
             begin_bit += RADIX_BITS;
 
             __syncthreads();
@@ -329,11 +398,18 @@ public:
 
             __syncthreads();
         }
+
+        // Untwiddle bits if necessary
+        #pragma unroll
+        for (int KEY = 0; KEY < ITEMS_PER_THREAD; KEY++)
+        {
+            unsigned_keys[KEY] = KeyTraits::TwiddleOut(unsigned_keys[KEY]);
+        }
     }
 
 
     /**
-     * \brief Performs a radix sort across a <em>blocked</em> arrangement of keys and values, leaving them in a <em>striped</em> arrangement.
+     * \brief Performs a radix sort across a [<em>blocked arrangement</em>](index.html#sec3sec3) of keys and values, leaving them in a [<em>striped arrangement</em>](index.html#sec3sec3).
      *
      * \smemreuse
      */
@@ -344,12 +420,22 @@ public:
         unsigned int        begin_bit = 0,                      ///< [in] <b>[optional]</b> The beginning (least-significant) bit index needed for key comparison
         const unsigned int  &end_bit = sizeof(KeyType) * 8)     ///< [in] <b>[optional]</b> The past-the-end (most-significant) bit index needed for key comparison
     {
+        UnsignedBits (&unsigned_keys)[ITEMS_PER_THREAD] =
+            reinterpret_cast<UnsignedBits (&)[ITEMS_PER_THREAD]>(keys);
+
+        // Twiddle bits if necessary
+        #pragma unroll
+        for (int KEY = 0; KEY < ITEMS_PER_THREAD; KEY++)
+        {
+            unsigned_keys[KEY] = KeyTraits::TwiddleIn(unsigned_keys[KEY]);
+        }
+
         // Radix sorting passes
         while (true)
         {
             // Rank the blocked keys
             unsigned int ranks[ITEMS_PER_THREAD];
-            BlockRadixRank::RankKeys(smem_storage.ranking_storage, keys, ranks, begin_bit);
+            BlockRadixRank::RankKeys(smem_storage.ranking_storage, unsigned_keys, ranks, begin_bit);
             begin_bit += RADIX_BITS;
 
             __syncthreads();
@@ -379,11 +465,18 @@ public:
 
             __syncthreads();
         }
+
+        // Untwiddle bits if necessary
+        #pragma unroll
+        for (int KEY = 0; KEY < ITEMS_PER_THREAD; KEY++)
+        {
+            unsigned_keys[KEY] = KeyTraits::TwiddleOut(unsigned_keys[KEY]);
+        }
     }
 
 
     /**
-     * \brief Performs a radix sort across a <em>striped</em> arrangement of keys and values.
+     * \brief Performs a radix sort across a [<em>striped arrangement</em>](index.html#sec3sec3) of keys and values.
      *
      * \smemreuse
      */

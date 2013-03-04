@@ -82,12 +82,11 @@ namespace cub {
  * - Support for concurrent scans within multiple warps.
  * - Zero bank conflicts for most types.
  * - After any operation, a subsequent threadblock barrier (<tt>__syncthreads</tt>) is
- *   required if the supplied WarpScan::SmemStorage is to be reused/repurposed by the threadblock.
+ *   required if the supplied WarpScan::SmemStorage is to be reused or repurposed by the threadblock.
  * - The operations are most efficient (lowest instruction overhead) when:
  *      - The data type \p T is a built-in primitive or CUDA vector type (e.g.,
  *        \p short, \p int2, \p double, \p float2, etc.)  Otherwise the implementation
- *        may use memory fences to prevent reference reordering of
- *        non-primitive types.
+ *        may use memory fences to prevent reordering of memory references.
  *      - Performing exclusive scans. The implementation may use guarded
  *        shared memory accesses for inclusive scans (other than prefix sum)
  *        because no identity element is provided.

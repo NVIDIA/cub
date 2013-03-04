@@ -195,7 +195,7 @@ TAB_SIZE               = 4
 # will result in a user-defined paragraph with heading "Side Effects:".
 # You can put \n's in the value part of an alias to insert newlines.
 
-ALIASES                = "smemreuse=A subsequent <tt>__syncthreads()</tt> threadblock barrier should be invoked after calling this method if the supplied \p smem_storage is to be reused/repurposed by the threadblock."
+ALIASES                = "smemreuse=A subsequent <tt>__syncthreads()</tt> threadblock barrier should be invoked after calling this method if the supplied \p smem_storage is to be reused or repurposed by the threadblock."
 
 # This tag can be used to specify a number of word-keyword mappings (TCL only).
 # A mapping has the form "name=value". For example adding
@@ -599,7 +599,7 @@ LAYOUT_FILE            =
 # of the bibliography can be controlled using LATEX_BIB_STYLE. To use this
 # feature you need bibtex and perl available in the search path.
 
-CITE_BIB_FILES         =
+CITE_BIB_FILES         = references.bib
 
 #---------------------------------------------------------------------------
 # configuration options related to warning and progress messages
