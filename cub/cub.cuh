@@ -87,7 +87,7 @@
  * \section sec0 (1) What is CUB?
  *
  * \par
- * CUB is an indispensable library of threadblock primitives and other utilities for CUDA kernel programming.
+ * CUB is a powerful library of cooperative threadblock primitives and other utilities for CUDA kernel programming.
  * CUB enhances productivity and portability by providing an abstraction layer of complex and high-performance
  * threadblock, warp, and thread-level operations.
  *
@@ -101,13 +101,13 @@
  * \par
  * Browse our collections of:
  * - [<b>Cooperative primitives</b>](annotated.html):
- *   - Threadblock operations (e.g., cub::BlockRadixSort, cub::BlockScan, cub::BlockReduce, etc.)
- *   - Warp operations (e.g., cub::WarpScan, etc.)
+ *   - Threadblock operations (e.g., BlockRadixSort, BlockScan, BlockReduce, etc.)
+ *   - Warp operations (e.g., WarpScan, etc.)
  *   - etc.
  * - [<b>SIMT utilities</b>](group___simt_utils.html):
- *   - Tile-based I/O for vectorized/coalesced/etc. loads and stores of blocked/striped tile arrangements
- *   - Low-level thread-I/O using cache-modifiers (e.g., cub::ThreadLoad & cub::ThreadStore intrinsics)
- *   - Abstractions for threadblock work distribution (cub::GridQueue, cub::GridEvenShare, etc.)
+ *   - Tile-based I/O utilities for performing vectorized|coalesced data movement of blocked|striped data tiles
+ *   - Low-level thread-I/O using cache-modifiers (e.g., ThreadLoad & ThreadStore intrinsics)
+ *   - Abstractions for threadblock work distribution (GridQueue, GridEvenShare, etc.)
  *   - etc.
  * - [<b>Host utilities</b>](group___host_util.html):
  *   - Caching allocator for quick management of device temporaries
@@ -127,13 +127,13 @@
  * template <
  *      int         BLOCK_THREADS,              // Threads per threadblock
  *      int         ITEMS_PER_THREAD,           // Items per thread
- *      typename    T>                          // Unsigned integer data type
+ *      typename    T>                          // Numeric data type
  * __global__ void TileSortKernel(T *d_in, T *d_out)
  * {
  *      using namespace cub;
  *      const int TILE_SIZE = BLOCK_THREADS * ITEMS_PER_THREAD;
  *
- *      // Parameterize a cub::BlockRadixSort type for our execution context
+ *      // Parameterize cub::BlockRadixSort for the parallel execution context
  *      typedef BlockRadixSort<T, BLOCK_THREADS> BlockRadixSort;
  *
  *      // Declare the shared memory needed by BlockRadixSort
@@ -156,9 +156,13 @@
  * \par
  * The cub::BlockRadixSort type performs a cooperative radix sort across the
  * threadblock's data items.  Its implementation is parameterized by the number of threadblock threads and the aggregate
- * data type \p T, and is specialized for the underlying architecture.  Once
- * instantiated, cub::BlockRadixSort exposes the opaque cub::BlockRadixSort::SmemStorage
- * type which allows us to allocate the shared memory needed by the primitive.
+ * data type \p T, and is specialized for the underlying architecture.
+ *
+ * \par
+ * Once instantiated, the cub::BlockRadixSort type exposes an opaque cub::BlockRadixSort::SmemStorage
+ * member type.  The threadblock uses this storage type to allocate the shared memory needed by the
+ * primitive.  This storage type can be aliased or <tt>union</tt>'d with other types so that the
+ * shared memory can be reused for other purposes.
  *
  * \par
  * Furthermore, the kernel uses CUB's primitives for vectorizing global
@@ -247,7 +251,7 @@
  *
  * \par
  * As a SIMT library, CUB must be flexible enough to accommodate a wide spectrum
- * of <em>execution contexts</em>,
+ * of <em>parallel execution contexts</em>,
  * i.e., specific:
  *    - Data types
  *    - Widths of parallelism (threadblock threads)
@@ -267,7 +271,7 @@
  * \par
  * Cooperation requires shared memory for communicating between threads.
  * However, the specific size and layout of the memory needed by a given
- * primitive will be specific to the details of its execution context (e.g., how
+ * primitive will be specific to the details of its parallel execution context (e.g., how
  * many threads are calling into it, how many items per thread, etc.).  Furthermore,
  * this shared memory must be allocated externally to the component if it is to be
  * reused elsewhere by the threadblock.
