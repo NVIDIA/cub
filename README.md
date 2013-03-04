@@ -3,7 +3,7 @@
 
 We recommend the [CUB Project Website](http://nvlabs.github.com/CUB) for further information and examples.
 
-CUB is an powerful library of cooperative SIMT primitives and other utilities for CUDA kernel programming. 
+CUB is a powerful library of cooperative SIMT primitives and other utilities for CUDA kernel programming. 
 CUB enhances productivity and portability providing commonplace threadblock-wide, warp-wide, and
 thread-level operations that flexible and tunable to fit your kernel needs.
 
