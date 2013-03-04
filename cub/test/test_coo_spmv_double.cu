@@ -580,7 +580,7 @@ struct SpmvBlock
     // Dot product partial sum type
     typedef PartialSum<VertexId, Value> PartialSum;
 
-    // Parameterized CUB types for use in the current execution context
+    // Parameterized CUB types for the parallel execution context
     typedef BlockScan<PartialSum, BLOCK_THREADS>                        BlockScan;
     typedef BlockExchange<VertexId, BLOCK_THREADS, ITEMS_PER_THREAD>    BlockExchangeRows;
     typedef BlockExchange<Value, BLOCK_THREADS, ITEMS_PER_THREAD>       BlockExchangeValues;
@@ -896,7 +896,7 @@ struct FinalizeSpmvBlock
     // Dot product partial sum type
     typedef PartialSum<VertexId, Value> PartialSum;
 
-    // Parameterized CUB types for use in the current execution context
+    // Parameterized CUB types for the parallel execution context
     typedef BlockScan<PartialSum, BLOCK_THREADS>                        BlockScan;
     typedef BlockDiscontinuity<HeadFlag, BLOCK_THREADS>                 BlockDiscontinuity;
 

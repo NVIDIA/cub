@@ -62,8 +62,8 @@ namespace cub {
  *
  * <b>Performance Features and Considerations</b>
  * \par
- * - After any operation, a subsequent threadblock barrier (<tt>__syncthreads()</tt>) is
- *   required if the supplied BlockDiscontinuity::SmemStorage is to be reused/repurposed by the threadblock.
+ * - After any operation, a subsequent <tt>__syncthreads()</tt> barrier is
+ *   required if the supplied BlockDiscontinuity::SmemStorage is to be reused or repurposed by the threadblock.
  * - Zero bank conflicts for most types.
  *
  */

@@ -467,8 +467,8 @@ enum BlockStorePolicy
  *
  * <b>Performance Features and Considerations</b>
  * \par
- * - After any operation, a subsequent threadblock barrier (<tt>__syncthreads()</tt>) is
- *   required if the supplied BlockStore::SmemStorage is to be reused/repurposed by the threadblock.
+ * - After any operation, a subsequent <tt>__syncthreads()</tt> barrier is
+ *   required if the supplied BlockStore::SmemStorage is to be reused or repurposed by the threadblock.
  * - The following conditions will prevent vectorization and storing will fall back to cub::BLOCK_STORE_DIRECT:
  *   - \p ITEMS_PER_THREAD is odd
  *   - The \p OutputIterator is not a simple pointer type

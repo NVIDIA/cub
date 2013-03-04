@@ -268,33 +268,26 @@ struct Valid
         for (unsigned int keys_only = 0; keys_only <= 1; keys_only++)
         {
             // Iterate entropy_reduction
-            for (unsigned int entropy_reduction = 0; entropy_reduction <= 8; entropy_reduction += 2)
+            for (unsigned int entropy_reduction = 0; entropy_reduction <= 9; entropy_reduction += 3)
             {
                 // Iterate begin_bit
                 for (unsigned int begin_bit = 0; begin_bit <= 1; begin_bit++)
                 {
-                    // Iterate passes
-                    for (unsigned int passes = 1; passes <= (sizeof(KeyType) * 8) / RADIX_BITS; passes++)
+                    // Iterate end bit
+                    for (unsigned int end_bit = begin_bit + 1; end_bit <= sizeof(KeyType) * 8; end_bit = end_bit * 2 + begin_bit)
                     {
-                        // Iterate relative_end
-                        for (int relative_end = -1; relative_end <= 1; relative_end++)
-                        {
-                            int end_bit = begin_bit + (passes * RADIX_BITS) + relative_end;
-                            if ((end_bit > begin_bit) && (end_bit <= sizeof(KeyType) * 8))
-                            {
-                                TestDriver<BLOCK_THREADS, ITEMS_PER_THREAD, RADIX_BITS, SMEM_CONFIG, KeyType, ValueType>(
-                                    (bool) keys_only,
-                                    entropy_reduction,
-                                    begin_bit,
-                                    end_bit);
-                            }
-                        }
+                        TestDriver<BLOCK_THREADS, ITEMS_PER_THREAD, RADIX_BITS, SMEM_CONFIG, KeyType, ValueType>(
+                            (bool) keys_only,
+                            entropy_reduction,
+                            begin_bit,
+                            end_bit);
                     }
                 }
             }
         }
     }
 };
+
 
 /**
  * Test driver (invalid tile size)
@@ -345,6 +338,12 @@ void Test()
     Test<BLOCK_THREADS, ITEMS_PER_THREAD, RADIX_BITS, SMEM_CONFIG, unsigned short>();
     Test<BLOCK_THREADS, ITEMS_PER_THREAD, RADIX_BITS, SMEM_CONFIG, unsigned int>();
     Test<BLOCK_THREADS, ITEMS_PER_THREAD, RADIX_BITS, SMEM_CONFIG, unsigned long long>();
+
+    Test<BLOCK_THREADS, ITEMS_PER_THREAD, RADIX_BITS, SMEM_CONFIG, char>();
+    Test<BLOCK_THREADS, ITEMS_PER_THREAD, RADIX_BITS, SMEM_CONFIG, short>();
+    Test<BLOCK_THREADS, ITEMS_PER_THREAD, RADIX_BITS, SMEM_CONFIG, int>();
+    Test<BLOCK_THREADS, ITEMS_PER_THREAD, RADIX_BITS, SMEM_CONFIG, float>();
+    Test<BLOCK_THREADS, ITEMS_PER_THREAD, RADIX_BITS, SMEM_CONFIG, double>();
 }
 
 
@@ -386,19 +385,8 @@ void Test()
     Test<BLOCK_THREADS, 1>();
     Test<BLOCK_THREADS, 8>();
     Test<BLOCK_THREADS, 15>();
-    Test<BLOCK_THREADS, 19>();
 }
 
-/**
- * Test threads
- */
-void Test()
-{
-    Test<32>();
-    Test<64>();
-    Test<128>();
-    Test<256>();
-}
 
 
 /**
@@ -432,7 +420,11 @@ int main(int argc, char** argv)
     }
     else
     {
-        Test();
+        // Test threads
+        Test<32>();
+        Test<64>();
+        Test<128>();
+        Test<256>();
     }
 
     return 0;

@@ -598,8 +598,8 @@ enum BlockLoadPolicy
  *
  * <b>Performance Features and Considerations</b>
  * \par
- * - After any operation, a subsequent threadblock barrier (<tt>__syncthreads()</tt>) is
- *   required if the supplied BlockLoad::SmemStorage is to be reused/repurposed by the threadblock.
+ * - After any operation, a subsequent <tt>__syncthreads()</tt> barrier is
+ *   required if the supplied BlockLoad::SmemStorage is to be reused or repurposed by the threadblock.
  * - The following conditions will prevent vectorization and loading will fall back to cub::BLOCK_LOAD_DIRECT:
  *   - \p ITEMS_PER_THREAD is odd
  *   - The \p InputIterator is not a simple pointer type
@@ -614,7 +614,7 @@ enum BlockLoadPolicy
  *
  *      __global__ void SomeKernel(int *d_in, ...)
  *      {
- *          // Parameterize a BlockLoad type for use in the current execution context
+ *          // Parameterize a BlockLoad type for the parallel execution context
  *          typedef cub::BlockLoad<int, 128, 4> BlockLoad;
  *
  *          // Declare shared memory for BlockLoad
@@ -636,7 +636,7 @@ enum BlockLoadPolicy
  *      template <int BLOCK_THREADS, int ITEMS_PER_THREAD>
  *      __global__ void SomeKernel(int *d_in, ...)
  *      {
- *          // Parameterize a BlockLoad type for use in the current execution context
+ *          // Parameterize a BlockLoad type for the parallel execution context
  *          typedef cub::BlockLoad<int, BLOCK_THREADS, ITEMS_PER_THREAD, BLOCK_LOAD_VECTORIZE, PTX_LOAD_CG> BlockLoad;
  *
  *          // Declare shared memory for BlockLoad
