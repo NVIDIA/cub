@@ -28,7 +28,7 @@
 
 /**
  * \file
- * The cub::BlockReduce type provides variants of parallel reduction across threads within a threadblock
+ * cub::BlockReduce provides variants of parallel reduction across threads within a threadblock
  */
 
 #pragma once
@@ -53,7 +53,7 @@ namespace cub {
  */
 
 /**
- * \brief The BlockReduce type provides variants of parallel reduction across threads within a threadblock. ![](reduce_logo.png)
+ * \brief BlockReduce provides variants of parallel reduction across threads within a threadblock. ![](reduce_logo.png)
  *
  * <b>Overview</b>
  * \par
@@ -184,7 +184,7 @@ private:
     };
 
     /// Shared memory storage layout type
-    struct SmemStorage
+    struct _SmemStorage
     {
         T                                       warp_buffer[RAKING_THREADS];    ///< Buffer for warp-synchronous reduction
         typename BlockRakingGrid::SmemStorage     raking_grid;                    ///< Padded threadblock raking grid
@@ -192,12 +192,8 @@ private:
 
 public:
 
-    /// The operations exposed by BlockReduce require shared memory of this
-    /// type.  This opaque storage can be allocated directly using the
-    /// <tt>__shared__</tt> keyword.  Alternatively, it can be aliased to
-    /// externally allocated shared memory or <tt>union</tt>'d with other types
-    /// to facilitate shared memory reuse.
-    typedef SmemStorage SmemStorage;
+    /// \smemstorage{BlockReduce}
+    typedef _SmemStorage SmemStorage;
 
 private:
 

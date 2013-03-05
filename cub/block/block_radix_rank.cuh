@@ -28,7 +28,7 @@
 
 /**
  * \file
- * The cub::BlockRadixRank type provides operations for raking unsigned integer types across threads within a threadblock
+ * cub::BlockRadixRank provides operations for raking unsigned integer types across threads within a threadblock
  */
 
 #pragma once
@@ -52,7 +52,7 @@ namespace cub {
  */
 
 /**
- * \brief The cub::BlockRadixRank type provides operations for raking unsigned integer types across threads within a threadblock.
+ * \brief BlockRadixRank provides operations for raking unsigned integer types across threads within a threadblock.
  *
  * <B>Overview</b>
  * \par
@@ -130,11 +130,7 @@ private:
         SMEM_BANKS                    = 1 << LOG_SMEM_BANKS,
     };
 
-public:
-
-    /**
-     * Shared memory storage layout
-     */
+    /// Shared memory storage layout type for BlockRadixRank
     struct SmemStorage
     {
         // Storage for scanning local ranks
@@ -146,6 +142,11 @@ public:
             PackedCounter            raking_grid[BLOCK_THREADS][RAKING_SEGMENT];
         };
     };
+
+public:
+
+    /// \smemstorage{BlockRadixRank}
+    typedef _SmemStorage SmemStorage;
 
 private :
 

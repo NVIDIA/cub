@@ -28,7 +28,7 @@
 
 /**
  * \file
- * The cub::BlockRadixSort type provides variants of parallel radix sorting across threads within a threadblock.
+ * cub::BlockRadixSort provides variants of parallel radix sorting across threads within a threadblock.
  */
 
 
@@ -51,11 +51,11 @@ namespace cub {
  */
 
 /**
- * \brief The BlockRadixSort type provides variants of parallel radix sorting across threads within a threadblock.  ![](sorting_logo.png)
+ * \brief BlockRadixSort provides variants of parallel radix sorting across threads within a threadblock.  ![](sorting_logo.png)
  *
  * <b>Overview</b>
  * \par
- * The <em>radix sorting method</em> relies upon a positional representation for
+ * The [<em>radix sorting method</em>](http://en.wikipedia.org/wiki/Radix_sort) relies upon a positional representation for
  * keys, i.e., each key is comprised of an ordered sequence of symbols (e.g., digits,
  * characters, etc.) specified from least-significant to most-significant.  For a
  * given input sequence of keys and a set of rules specifying a total ordering
@@ -194,7 +194,7 @@ private:
     typedef BlockExchange<ValueType, BLOCK_THREADS, ITEMS_PER_THREAD>       ValueBlockExchange;
 
     /// Shared memory storage layout type
-    struct SmemStorage
+    struct _SmemStorage
     {
         union
         {
@@ -206,12 +206,8 @@ private:
 
 public:
 
-    /// The operations exposed by BlockRadixSort require shared memory of this
-    /// type.  This opaque storage can be allocated directly using the
-    /// <tt>__shared__</tt> keyword.  Alternatively, it can be aliased to
-    /// externally allocated shared memory or <tt>union</tt>'d with other types
-    /// to facilitate shared memory reuse.
-    typedef SmemStorage SmemStorage;
+    /// \smemstorage{BlockRadixSort}
+    typedef _SmemStorage SmemStorage;
 
 
     /******************************************************************//**

@@ -28,7 +28,7 @@
 
 /**
  * \file
- * The cub::BlockStore type provides store operations for writing global tiles of data from the threadblock (in blocked arrangement across threads).
+ * Store operations for writing global tiles of data from the threadblock (in blocked arrangement across threads).
  */
 
 #pragma once
@@ -435,7 +435,7 @@ enum BlockStorePolicy
 
 
 /**
- * \brief The BlockStore type provides store operations for writing global tiles of data from the threadblock (in blocked arrangement across threads). ![](block_store_logo.png)
+ * \brief BlockStore provides store operations for writing global tiles of data from the threadblock (in blocked arrangement across threads). ![](block_store_logo.png)
  *
  * <b>Overview</b>
  * \par
@@ -664,16 +664,12 @@ private:
     };
 
     /// Shared memory storage layout type
-    typedef typename StoreInternal<POLICY>::SmemStorage SmemLayout;
+    typedef typename StoreInternal<POLICY>::SmemStorage _SmemStorage;
 
 public:
 
-    /// The operations exposed by BlockStore require shared memory of this
-    /// type.  This opaque storage can be allocated directly using the
-    /// <tt>__shared__</tt> keyword.  Alternatively, it can be aliased to
-    /// externally allocated shared memory or <tt>union</tt>'d with other types
-    /// to facilitate shared memory reuse.
-    typedef SmemLayout SmemStorage;
+    /// \smemstorage{BlockStore}
+    typedef _SmemStorage SmemStorage;
 
 
 

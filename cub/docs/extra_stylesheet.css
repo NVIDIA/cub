@@ -58,7 +58,7 @@ div.header {
 
 #MSearchBox {
         margin-top: 6px;
-        margin-left: 250px;
+        margin-left: 350px;
 		right: auto;
 }
 
@@ -281,7 +281,7 @@ dl.section.user dd {
 }
 
 td.entry {
-	padding-top: 3px;
+		padding-top: 3px;
 }
 
 
@@ -290,7 +290,8 @@ td.entry {
  *****************************************************************************/
 
 div.line {
-	line-height: normal;
+		line-height: normal;
+		font-size: 11px;
 }
 
 span.comment {
@@ -362,6 +363,10 @@ div.memitem {
 
 td.memTemplItemRight, td.memItemRight {
 		font-family: "courier new",courier,monospace;
+}
+
+td.memItemRight a.el:first-of-type {
+		color: darkGoldenrod;
 }
 
 td.memTemplItemLeft, td.memItemLeft {
