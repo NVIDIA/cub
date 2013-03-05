@@ -28,11 +28,12 @@
 
 /**
  * \file
- * The cub::BlockDiscontinuity type provides operations for flagging discontinuities within a list of data items partitioned across a threadblock.
+ * cub::BlockDiscontinuity provides operations for flagging discontinuities within a list of data items partitioned across a threadblock.
  */
 
 #pragma once
 
+#include <cuda_runtime.h>
 #include "../device_props.cuh"
 #include "../type_utils.cuh"
 #include "../operators.cuh"
@@ -50,7 +51,7 @@ namespace cub {
 
 
 /**
- * \brief The BlockDiscontinuity type provides operations for flagging discontinuities within a list of data items partitioned across a threadblock. ![](discont_logo.png)
+ * \brief BlockDiscontinuity provides operations for flagging discontinuities within a list of data items partitioned across a threadblock. ![](discont_logo.png)
  *
  * <b>Overview</b>
  * \par
@@ -58,12 +59,14 @@ namespace cub {
  * are different from their predecessor (as specified by a binary boolean operator).
  *
  * \tparam T                    The data type to be exchanged.
- * \tparam BLOCK_THREADS          The threadblock size in threads.
+ * \tparam BLOCK_THREADS        The threadblock size in threads.
  *
- * <b>Performance Features and Considerations</b>
+ * <b>Usage Considerations</b>
  * \par
- * - After any operation, a subsequent <tt>__syncthreads()</tt> barrier is
- *   required if the supplied BlockDiscontinuity::SmemStorage is to be reused or repurposed by the threadblock.
+ * - \smemreuse{BlockDiscontinuity::SmemStorage}
+ *
+ * <b>Performance Considerations</b>
+ * \par
  * - Zero bank conflicts for most types.
  *
  */
@@ -79,19 +82,15 @@ private:
     //---------------------------------------------------------------------
 
     /// Shared memory storage layout type
-    struct SmemLayout
+    struct _SmemStorage
     {
         T last_items[BLOCK_THREADS];      ///< Last element from each thread's input
     };
 
 public:
 
-    /// The operations exposed by BlockDiscontinuity require shared memory of this
-    /// type.  This opaque storage can be allocated directly using the
-    /// <tt>__shared__</tt> keyword.  Alternatively, it can be aliased to
-    /// externally allocated shared memory or <tt>union</tt>'d with other types
-    /// to facilitate shared memory reuse.
-    typedef SmemLayout SmemStorage;
+    /// \smemstorage{BlockDiscontinuity}
+    typedef _SmemStorage SmemStorage;
 
 
     /**
@@ -110,7 +109,7 @@ public:
      * \smemreuse
      *
      * \tparam ITEMS_PER_THREAD     <b>[inferred]</b> The number of consecutive items partitioned onto each thread.
-     * \tparam FlagT                 <b>[inferred]</b> The flag type (must be an integer type)
+     * \tparam FlagT                <b>[inferred]</b> The flag type (must be an integer type)
      * \tparam FlagOp               <b>[inferred]</b> Binary boolean functor type, having input parameters <tt>(const T &a, const T &b)</tt> and returning \p true if a discontinuity exists between \p a and \p b, otherwise \p false.
      */
     template <
@@ -166,7 +165,7 @@ public:
      * \smemreuse
      *
      * \tparam ITEMS_PER_THREAD     <b>[inferred]</b> The number of consecutive items partitioned onto each thread.
-     * \tparam FlagT                 <b>[inferred]</b> The flag type (must be an integer type)
+     * \tparam FlagT                <b>[inferred]</b> The flag type (must be an integer type)
      * \tparam FlagOp               <b>[inferred]</b> Binary boolean functor type, having input parameters <tt>(const T &a, const T &b)</tt> and returning \p true if a discontinuity exists between \p a and \p b, otherwise \p false.
      */
     template <
@@ -201,7 +200,7 @@ public:
      * \smemreuse
      *
      * \tparam ITEMS_PER_THREAD     <b>[inferred]</b> The number of consecutive items partitioned onto each thread.
-     * \tparam FlagT                 <b>[inferred]</b> The flag type (must be an integer type)
+     * \tparam FlagT                <b>[inferred]</b> The flag type (must be an integer type)
      * \tparam FlagOp               <b>[inferred]</b> Binary boolean functor type, having input parameters <tt>(const T &a, const T &b)</tt> and returning \p true if a discontinuity exists between \p a and \p b, otherwise \p false.
      */
     template <
@@ -260,7 +259,7 @@ public:
      * \smemreuse
      *
      * \tparam ITEMS_PER_THREAD     <b>[inferred]</b> The number of consecutive items partitioned onto each thread.
-     * \tparam FlagT                 <b>[inferred]</b> The flag type (must be an integer type)
+     * \tparam FlagT                <b>[inferred]</b> The flag type (must be an integer type)
      * \tparam FlagOp               <b>[inferred]</b> Binary boolean functor type, having input parameters <tt>(const T &a, const T &b)</tt> and returning \p true if a discontinuity exists between \p a and \p b, otherwise \p false.
      */
     template <

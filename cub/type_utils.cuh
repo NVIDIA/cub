@@ -26,8 +26,14 @@
  *
  ******************************************************************************/
 
+/**
+ * \file
+ * Common type manipulation (metaprogramming) utilities
+ */
+
+
 /******************************************************************************
- * Common CUB type manipulation (metaprogramming) utilities
+ * Common type manipulation (metaprogramming) utilities
  ******************************************************************************/
 
 #pragma once
@@ -37,19 +43,33 @@
 #include "ns_wrapper.cuh"
 
 CUB_NS_PREFIX
+
+/// CUB namespace
 namespace cub {
 
 
+
+/******************************************************************************
+ * Marker types
+ ******************************************************************************/
+
 /**
- * Null type
+ * \brief A simple "NULL" marker type
  */
 struct NullType {};
 
+/** \cond SPECIALIZE */
 std::ostream& operator<< (std::ostream& stream, const NullType& val) { return stream; }
+/** \endcond */     // SPECIALIZE
 
+
+
+/******************************************************************************
+ * Static math
+ ******************************************************************************/
 
 /**
- * Statically determine log2(N), rounded up.
+ * \brief Statically determine log2(N), rounded up.
  *
  * For example:
  *     Log2<8>::VALUE   // 3
@@ -58,40 +78,53 @@ std::ostream& operator<< (std::ostream& stream, const NullType& val) { return st
 template <int N, int CURRENT_VAL = N, int COUNT = 0>
 struct Log2
 {
-    // Inductive case
-    static const int VALUE = Log2<N, (CURRENT_VAL >> 1), COUNT + 1>::VALUE;
+    /// Static logarithm value
+    static const int VALUE = Log2<N, (CURRENT_VAL >> 1), COUNT + 1>::VALUE;         // Inductive case
 };
 
+/** \cond SPECIALIZE **/
 template <int N, int COUNT>
 struct Log2<N, 0, COUNT>
 {
-    // Base case
-    static const int VALUE = (1 << (COUNT - 1) < N) ?
+    static const int VALUE = (1 << (COUNT - 1) < N) ?                               // Base case
         COUNT :
         COUNT - 1;
 };
+/** \endcond */     // SPECIALIZE
 
+
+
+
+/******************************************************************************
+ * Type equality
+ ******************************************************************************/
 
 /**
- * If ? Then : Else
+ * \brief Type selection (<tt>IF ? ThenType : ElseType</tt>)
  */
 template <bool IF, typename ThenType, typename ElseType>
 struct If
 {
-    // true
-    typedef ThenType Type;
+    /// Conditional type result
+    typedef ThenType Type;      // true
 };
 
+/** \cond SPECIALIZE **/
 template <typename ThenType, typename ElseType>
 struct If<false, ThenType, ElseType>
 {
-    // false
-    typedef ElseType Type;
+    typedef ElseType Type;      // false
 };
+/** \endcond */     // SPECIALIZE
+
+
+/******************************************************************************
+ * Conditional types
+ ******************************************************************************/
 
 
 /**
- * Equals 
+ * \brief Type equality test
  */
 template <typename A, typename B>
 struct Equals
@@ -102,6 +135,7 @@ struct Equals
     };
 };
 
+/** \cond SPECIALIZE **/
 template <typename A>
 struct Equals <A, A>
 {
@@ -110,35 +144,52 @@ struct Equals <A, A>
         NEGATE = 0
     };
 };
+/** \endcond */     // SPECIALIZE
+
+
+
+/******************************************************************************
+ * Qualifier detection
+ ******************************************************************************/
 
 
 /**
- * Is volatile
+ * \brief Volatile modifier test
  */
 template <typename Tp>
 struct IsVolatile
 {
     enum { VALUE = 0 };
 };
+
+/** \cond SPECIALIZE **/
 template <typename Tp>
 struct IsVolatile<Tp volatile>
 {
     enum { VALUE = 1 };
 };
+/** \endcond */     // SPECIALIZE
 
+
+
+/******************************************************************************
+ * Qualifier removal
+ ******************************************************************************/
 
 /**
- * Removes const and volatile qualifiers from type Tp.
+ * \brief Removes \p const and \p volatile qualifiers from type \p Tp.
  *
  * For example:
- *     typename RemoveQualifiers<volatile int>::Type         // int;
+ *     <tt>typename RemoveQualifiers<volatile int>::Type         // int;</tt>
  */
 template <typename Tp, typename Up = Tp>
 struct RemoveQualifiers
 {
+    /// Type without \p const and \p volatile qualifiers
     typedef Up Type;
 };
 
+/** \cond SPECIALIZE **/
 template <typename Tp, typename Up>
 struct RemoveQualifiers<Tp, volatile Up>
 {
@@ -156,6 +207,13 @@ struct RemoveQualifiers<Tp, const volatile Up>
 {
     typedef Up Type;
 };
+/** \endcond */     // SPECIALIZE
+
+
+
+/******************************************************************************
+ * Typedef-detection
+ ******************************************************************************/
 
 
 /**
@@ -163,19 +221,24 @@ struct RemoveQualifiers<Tp, const volatile Up>
  * of the specified type name within other classes
  */
 #define CUB_HAS_NESTED_TYPE(detect_struct, nested_type_name)            \
-    template <typename T>                                                \
+    template <typename T>                                               \
     struct detect_struct                                                \
-    {                                                                    \
-        template <typename C>                                            \
-        static char& test(typename C::nested_type_name*);                \
-        template <typename>                                                \
-        static int& test(...);                                            \
+    {                                                                   \
+        template <typename C>                                           \
+        static char& test(typename C::nested_type_name*);               \
+        template <typename>                                             \
+        static int& test(...);                                          \
         enum                                                            \
-        {                                                                \
+        {                                                               \
             VALUE = sizeof(test<T>(0)) < sizeof(int)                    \
-        };                                                                \
+        };                                                              \
     };
 
+
+
+/******************************************************************************
+ * Simple enable-if (similar to Boost)
+ ******************************************************************************/
 
 /**
  * Simple enable-if (similar to Boost)
@@ -183,11 +246,16 @@ struct RemoveQualifiers<Tp, const volatile Up>
 template <bool Condition, class T = void>
 struct EnableIf
 {
+    /// Enable-if type for SFINAE dummy variables
     typedef T Type;
 };
 
+/** \cond SPECIALIZE **/
 template <class T>
 struct EnableIf<false, T> {};
+/** \endcond */     // SPECIALIZE
+
+
 
 
 /******************************************************************************
@@ -202,7 +270,7 @@ struct EnableIf<false, T> {};
  ******************************************************************************/
 
 /**
- * Basic type categories
+ * \brief Basic type traits categories
  */
 enum Category
 {
@@ -214,11 +282,12 @@ enum Category
 
 
 /**
- * Basic type traits
+ * \brief Basic type traits
  */
 template <Category _CATEGORY, bool _PRIMITIVE, bool _NULL_TYPE, typename _UnsignedBits>
 struct BaseTraits
 {
+    /// Category
     static const Category CATEGORY      = _CATEGORY;
     enum
     {
@@ -227,6 +296,7 @@ struct BaseTraits
     };
 };
 
+/** \cond SPECIALIZE */
 
 /**
  * Basic type traits (unsigned primitive specialization)
@@ -322,14 +392,15 @@ struct BaseTraits<FLOATING_POINT, true, false, _UnsignedBits>
         NULL_TYPE = false
     };
 };
-
-
+/** \endcond */     // SPECIALIZE
 
 
 /**
- * Numeric traits
+ * \brief Numeric type traits
  */
 template <typename T> struct NumericTraits :            BaseTraits<NOT_A_NUMBER, false, false, T> {};
+
+/** \cond SPECIALIZE */
 template <> struct NumericTraits<NullType> :            BaseTraits<NOT_A_NUMBER, false, true, NullType> {};
 
 template <> struct NumericTraits<char> :                BaseTraits<SIGNED_INTEGER, true, false, unsigned char> {};
@@ -347,10 +418,11 @@ template <> struct NumericTraits<unsigned long long> :  BaseTraits<UNSIGNED_INTE
 
 template <> struct NumericTraits<float> :               BaseTraits<FLOATING_POINT, true, false, unsigned int> {};
 template <> struct NumericTraits<double> :              BaseTraits<FLOATING_POINT, true, false, unsigned long long> {};
+/** \endcond */     // SPECIALIZE
 
 
 /**
- * Type traits
+ * \brief Type traits
  */
 template <typename T>
 struct Traits : NumericTraits<typename RemoveQualifiers<T>::Type> {};
@@ -390,11 +462,12 @@ struct Traits : NumericTraits<typename RemoveQualifiers<T>::Type> {};
  ******************************************************************************/
 
 /**
- * Array traits
+ * \brief Array traits
  */
 template <typename ArrayType, int LENGTH = -1>
 struct ArrayTraits;
 
+/** \cond SPECIALIZE */
 
 /**
  * Specialization for non array type
@@ -440,6 +513,7 @@ struct ArrayTraits<DimType[LENGTH], -1>
     };
 };
 
+/** \endcond */     // SPECIALIZE
 
 } // namespace cub
 CUB_NS_POSTFIX

@@ -767,7 +767,7 @@ template <
     typename        Value>
 __launch_bounds__ (BLOCK_THREADS, BLOCK_OCCUPANCY)
 __global__ void CooKernel(
-    BlockEvenShare<int>               block_progress,
+    GridEvenShare<int>               block_progress,
     PartialSum<VertexId, Value>     *d_block_partials,
     VertexId                        *d_rows,
     VertexId                        *d_columns,
@@ -1241,7 +1241,7 @@ void TestDevice(
     TexVector<Value>::BindTexture(d_vector, coo_graph.col_dim);
 
     // Construct an even-share work distribution
-    BlockEvenShare<int> block_progress(num_edges, coo_grid_size, COO_TILE_SIZE);
+    GridEvenShare<int> block_progress(num_edges, coo_grid_size, COO_TILE_SIZE);
 
     // Print debug info
     printf("CooKernel<%d, %d><<<%d, %d>>>(...), Max SM occupancy: %d\n",

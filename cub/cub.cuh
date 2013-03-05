@@ -33,8 +33,6 @@
 
 #pragma once
 
-#include <cuda_runtime.h>
-
 // Grid
 #include "grid/grid_barrier.cuh"
 #include "grid/grid_queue.cuh"
@@ -102,7 +100,7 @@
  *
  * \par
  * Browse our collections of:
- * - [<b>Cooperative primitives</b>](annotated.html):
+ * - [<b>Cooperative primitives</b>](group___simt_coop.html):
  *   - Threadblock operations (e.g., BlockRadixSort, BlockScan, BlockReduce, etc.)
  *   - Warp operations (e.g., WarpScan, etc.)
  *   - etc.

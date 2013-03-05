@@ -28,7 +28,7 @@
 
 /**
  * \file
- * The cub::BlockExchange type provides operations for reorganizing the partitioning of ordered data across a threadblock.
+ * cub::BlockExchange provides operations for reorganizing the partitioning of ordered data across a threadblock.
  */
 
 #pragma once
@@ -49,7 +49,7 @@ namespace cub {
  */
 
 /**
- * \brief The BlockExchange type provides operations for reorganizing the partitioning of ordered data across a threadblock. ![](transpose_logo.png)
+ * \brief BlockExchange provides operations for reorganizing the partitioning of ordered data across a threadblock. ![](transpose_logo.png)
  *
  * <b>Overview</b>
  * \par
@@ -117,11 +117,7 @@ private:
 
 public:
 
-    /// The operations exposed by BlockExchange require shared memory of this
-    /// type.  This opaque storage can be allocated directly using the
-    /// <tt>__shared__</tt> keyword.  Alternatively, it can be aliased to
-    /// externally allocated shared memory or <tt>union</tt>'d with other types
-    /// to facilitate shared memory reuse.
+    /// \smemstorage{BlockExchange}
     typedef SmemStorage SmemStorage;
 
 

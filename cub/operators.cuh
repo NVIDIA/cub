@@ -52,7 +52,7 @@ namespace cub {
  */
 
 /**
- * Default equality functor
+ * \brief Default equality functor
  */
 template <typename T>
 struct Equality
@@ -66,7 +66,7 @@ struct Equality
 
 
 /**
- * Default sum functor
+ * \brief Default sum functor
  */
 template <typename T>
 struct Sum
@@ -80,7 +80,7 @@ struct Sum
 
 
 /**
- * Default max functor
+ * \brief Default max functor
  */
 template <typename T>
 struct Max
