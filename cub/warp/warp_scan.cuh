@@ -28,7 +28,7 @@
 
 /**
  * \file
- * The cub::WarpScan type provides variants of parallel prefix scan across threads within a CUDA warp.
+ * cub::WarpScan provides variants of parallel prefix scan across threads within a CUDA warp.
  */
 
 #pragma once
@@ -51,11 +51,11 @@ namespace cub {
  */
 
 /**
- * \brief The WarpScan type provides variants of parallel prefix scan across threads within a CUDA warp.  ![](warp_scan_logo.png)
+ * \brief WarpScan provides variants of parallel prefix scan across threads within a CUDA warp.  ![](warp_scan_logo.png)
  *
  * <b>Overview</b>
  * \par
- * Given a list of input elements and a binary reduction operator, <em>prefix scan</em>
+ * Given a list of input elements and a binary reduction operator, [<em>prefix scan</em>](http://en.wikipedia.org/wiki/Prefix_sum)
  * produces an output list where each element is computed to be the reduction
  * of the elements occurring earlier in the input list.  <em>Prefix sum</em>
  * connotes a prefix scan with the addition operator. The term \em inclusive means
@@ -71,8 +71,8 @@ namespace cub {
  * product of orthogonal functionality:
  *
  * \par
- * - Specialization by operator (generic scan versus prefix sum for numeric types)
- * - Specialization by output ordering (inclusive versus exclusive)
+ * - Specialization by operator (generic scan vs. prefix sum for numeric types)
+ * - Specialization by output ordering (inclusive vs. exclusive)
  * - Specialization by additional warp-wide scalar parameters
  *     - computes scan elements only
  *     - computes scan elements and the total aggregate,
@@ -87,10 +87,9 @@ namespace cub {
  * - Supports non-commutative scan operators
  * - Supports "logical" warps smaller than the physical warp size (e.g., a logical warp of 8 threads)
  * - Warp scans are concurrent if more than one warp is participating
- * - After any operation, a subsequent <tt>__syncthreads()</tt> barrier is required if the supplied
- *   WarpScan::SmemStorage is to be reused or repurposed by the threadblock
  * - Warp-wide scalar inputs and outputs (e.g., \p warp_prefix_op and \p warp_aggregate) are
  *   only considered valid in <em>lane</em><sub>0</sub>
+ * - \smemreuse{WarpScan::SmemStorage}
 
  * <b>Performance Features and Considerations</b>
  * \par
@@ -98,8 +97,8 @@ namespace cub {
  * - Uses synchronization-free communication between warp lanes when applicable
  * - Zero bank conflicts for most types.
  * - Computation is slightly more efficient (i.e., having lower instruction overhead) for:
- *     - Prefix sum variants (versus generic scan)
- *     - Exclusive variants (versus inclusive)
+ *     - Prefix sum variants (vs. generic scan)
+ *     - Exclusive variants (vs. inclusive)
  *     - Basic scan variants that don't require scalar inputs and outputs (e.g., \p warp_prefix_op and \p warp_aggregate)
  *     - Scan parameterizations where \p T is a built-in C++ primitive or CUDA vector type (e.g.,
  *       \p short, \p int2, \p double, \p float2, etc.)
@@ -244,18 +243,14 @@ private:
     };
 
 
-    /**
-     * Specialized WarpScan implementations
-     */
-    template <int POLICY, int DUMMY = 0>
-    struct WarpScanInternal;
+    /** \cond INTERNAL */
 
 
     /**
      * Warpscan specialized for SHFL_SCAN variant
      */
-    template <int DUMMY>
-    struct WarpScanInternal<SHFL_SCAN, DUMMY>
+    template <int DUMMY, int DUMMY = 0>
+    struct WarpScanInternal
     {
         /// Constants
         enum
@@ -785,17 +780,16 @@ private:
     };
 
 
+    /** \endcond */     // INTERNAL
+
+
     /// Shared memory storage layout type for WarpScan
     typedef typename WarpScanInternal<POLICY>::SmemStorage _SmemStorage;
 
 
 public:
 
-    /// The operations exposed by WarpScan require shared memory of this
-    /// type.  This opaque storage can be allocated directly using the
-    /// <tt>__shared__</tt> keyword.  Alternatively, it can be aliased to
-    /// externally allocated shared memory or <tt>union</tt>'d with other types
-    /// to facilitate shared memory reuse.
+    /// \smemstorage{WarpScan}
     typedef _SmemStorage SmemStorage;
 
 

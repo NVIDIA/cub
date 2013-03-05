@@ -3,12 +3,7 @@
   <!-- Navigation index tabs for HTML output -->
   <navindex>
     <tab type="mainpage" visible="yes" title=""/>
-    <tab type="pages" visible="yes" title="" intro=""/>
     <tab type="modules" visible="yes" title="" intro=""/>
-    <tab type="namespaces" visible="yes" title="">
-      <tab type="namespacelist" visible="yes" title="" intro=""/>
-      <tab type="namespacemembers" visible="yes" title="" intro=""/>
-    </tab>
     <tab type="classes" visible="yes" title="">
       <tab type="classlist" visible="yes" title="" intro=""/>
       <tab type="classindex" visible="$ALPHABETICAL_INDEX" title=""/> 
@@ -154,7 +149,6 @@
       <friends title=""/>
       <membergroups visible="yes"/>
     </memberdecl>
-    <detaileddescription title=""/>
     <memberdef>
       <pagedocs/>
       <inlineclasses title=""/>

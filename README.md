@@ -3,9 +3,9 @@
 
 We recommend the [CUB Project Website](http://nvlabs.github.com/CUB) for further information and examples.
 
-CUB is a powerful library of cooperative threadblock primitives and other utilities for CUDA kernel programming. 
-CUB enhances productivity and portability providing commonplace threadblock-wide, warp-wide, and
-thread-level operations that flexible and tunable to fit your kernel needs.
+CUB is a flexible library of cooperative threadblock primitives and other utilities for CUDA kernel programming. 
+CUB enhances productivity and portability by providing an abstraction layer over complex
+threadblock, warp, and thread-level operations.
 
 ![SIMT abstraction layer](http://nvlabs.github.com/CUB/simt_abstraction.png)
 
@@ -24,10 +24,10 @@ __global__ void PrefixSumKernel(T *d_in, T *d_out)
 {
     using namespace cub;
  
-    // Parameterize a BlockScan type for use in the current execution context
+    // Parameterize BlockScan for the current execution context
     typedef BlockScan<T, BLOCK_THREADS> BlockScan;
  
-    // The shared memory needed by the cooperative BlockScan
+    // The shared memory needed by BlockScan
     __shared__ typename BlockScan::SmemStorage smem_storage;
  
     // A segment of data items per thread

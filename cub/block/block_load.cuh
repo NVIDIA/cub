@@ -28,7 +28,7 @@
 
 /**
  * \file
- * The cub::BlockLoad type provides operations for reading global tiles of data into the threadblock (in blocked arrangement across threads).
+ * Operations for reading global tiles of data into the threadblock (in blocked arrangement across threads).
  */
 
 #pragma once
@@ -566,7 +566,7 @@ enum BlockLoadPolicy
 
 
 /**
- * \brief The BlockLoad type provides operations for reading global tiles of data into the threadblock (in blocked arrangement across threads). ![](block_load_logo.png)
+ * \brief BlockLoad provides operations for reading global tiles of data into the threadblock (in blocked arrangement across threads). ![](block_load_logo.png)
  *
  * <b>Overview</b>
  * \par
@@ -789,17 +789,13 @@ private:
     };
 
     /// Shared memory storage layout type
-    typedef typename LoadInternal<POLICY>::SmemStorage SmemLayout;
+    typedef typename LoadInternal<POLICY>::SmemStorage _SmemStorage;
 
 public:
 
 
-    /// The operations exposed by BlockLoad require shared memory of this
-    /// type.  This opaque storage can be allocated directly using the
-    /// <tt>__shared__</tt> keyword.  Alternatively, it can be aliased to
-    /// externally allocated shared memory or <tt>union</tt>'d with other types
-    /// to facilitate shared memory reuse.
-    typedef SmemLayout SmemStorage;
+    /// \smemstorage{BlockLoad}
+    typedef _SmemStorage SmemStorage;
 
 
     //---------------------------------------------------------------------

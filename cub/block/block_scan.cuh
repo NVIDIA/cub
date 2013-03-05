@@ -28,7 +28,7 @@
 
 /**
  * \file
- * The cub::BlockScan type provides variants of parallel prefix scan across threads within a threadblock.
+ * cub::BlockScan provides variants of parallel prefix scan across threads within a threadblock.
  */
 
 #pragma once
@@ -58,15 +58,16 @@ enum BlockScanPolicy
      * across the GPU when suitably occupied.
      *
      * It execution is comprised of five phases:
-     *   <br><br>
-     *     -# Upsweep sequential reduction in registers (if threads contribute more than one input each).  Each thread then places the partial reduction of its item(s) into shared memory.
-     *     -# Upsweep sequential reduction in shared memory.  Threads within a single warp rake across segments of shared partial reductions.
-     *     -# A warp-synchronous Kogge-Stone style exclusive scan within the raking warp.
-     *     -# Downsweep sequential exclusive scan in shared memory.  Threads within a single warp rake across segments of shared partial reductions, seeded with the warp-scan output.
-     *     -# Downsweep sequential scan in registers (if threads contribute more than one input), seeded with the raking scan output.
-     *     <br><br>
-     *     \image html block_scan_raking.png
-     *     <div class="centercaption">\p BLOCK_SCAN_RAKING data flow for a hypothetical 16-thread threadblock and 4-thread raking warp.</div>
+     *
+     * \par
+     * -# Upsweep sequential reduction in registers (if threads contribute more than one input each).  Each thread then places the partial reduction of its item(s) into shared memory.
+     * -# Upsweep sequential reduction in shared memory.  Threads within a single warp rake across segments of shared partial reductions.
+     * -# A warp-synchronous Kogge-Stone style exclusive scan within the raking warp.
+     * -# Downsweep sequential exclusive scan in shared memory.  Threads within a single warp rake across segments of shared partial reductions, seeded with the warp-scan output.
+     * -# Downsweep sequential scan in registers (if threads contribute more than one input), seeded with the raking scan output.
+     *
+     * \image html block_scan_raking.png
+     * <div class="centercaption">\p BLOCK_SCAN_RAKING data flow for a hypothetical 16-thread threadblock and 4-thread raking warp.</div>
      */
     BLOCK_SCAN_RAKING,
 
@@ -78,13 +79,16 @@ enum BlockScanPolicy
      * GPU because due to a heavy reliance on inefficient warpscans, it can
      * often provide lower turnaround latencies when the GPU is under-occupied.
      *
-     * It execution is comprised of two phases:
-     *   <br><br>
-     *     -# Compute a shallow, but inefficient warp-synchronous Kogge-Stone style scan within each warp.
-     *     -# A propagation phase where the warp scan outputs in each warp are updated with the aggregate from each preceding warp.
-     *     <br><br>
-     *     \image html block_scan_warpscans.png
-     *     <div class="centercaption">\p BLOCK_SCAN_WARPSCANS data flow for a hypothetical 16-thread threadblock and 4-thread raking warp.</div>
+     * It execution is comprised of four phases:
+     *
+     * \par
+     * -# Upsweep sequential reduction in registers (if threads contribute more than one input each).  Each thread then places the partial reduction of its item(s) into shared memory.
+     * -# Compute a shallow, but inefficient warp-synchronous Kogge-Stone style scan within each warp.
+     * -# A propagation phase where the warp scan outputs in each warp are updated with the aggregate from each preceding warp.
+     * -# Downsweep sequential scan in registers (if threads contribute more than one input), seeded with the raking scan output.
+     *
+     * \image html block_scan_warpscans.png
+     * <div class="centercaption">\p BLOCK_SCAN_WARPSCANS data flow for a hypothetical 16-thread threadblock and 4-thread raking warp.</div>
      */
     BLOCK_SCAN_WARPSCANS,
 };
@@ -95,11 +99,11 @@ enum BlockScanPolicy
  */
 
 /**
- * \brief The BlockScan type provides variants of parallel prefix scan (and prefix sum) across threads within a threadblock. ![](scan_logo.png)
+ * \brief BlockScan provides variants of parallel prefix scan (and prefix sum) across threads within a threadblock. ![](scan_logo.png)
  *
  * <b>Overview</b>
  * \par
- * Given a list of input elements and a binary reduction operator, <em>prefix scan</em>
+ * Given a list of input elements and a binary reduction operator, [<em>prefix scan</em>](http://en.wikipedia.org/wiki/Prefix_sum)
  * produces an output list where each element is computed to be the reduction
  * of the elements occurring earlier in the input list.  <em>Prefix sum</em>
  * connotes a prefix scan with the addition operator. The term \em inclusive means
@@ -115,9 +119,9 @@ enum BlockScanPolicy
  * product of orthogonal functionality:
  *
  * \par
- * - Specialization by operator (generic scan versus prefix sum for numeric types)
- * - Specialization by granularity (single versus multiple items per thread)
- * - Specialization by output ordering (inclusive versus exclusive)
+ * - Specialization by operator (generic scan vs. prefix sum for numeric types)
+ * - Specialization by granularity (single vs. multiple items per thread)
+ * - Specialization by output ordering (inclusive vs. exclusive)
  * - Specialization by additional threadblock-wide scalar parameters
  *     - computes scan elements only
  *     - computes scan elements and the total aggregate,
@@ -135,10 +139,9 @@ enum BlockScanPolicy
  *   the threadblock, with thread<sub><em>i</em></sub> owning the
  *   <em>i</em><sup>th</sup> element (or <em>i</em><sup>th</sup> segment of
  *   consecutive elements)
- * - After any operation, a subsequent <tt>__syncthreads()</tt> barrier is required if the supplied
- *   BlockScan::SmemStorage is to be reused or repurposed by the threadblock
  * - Threadblock-wide scalar inputs and outputs (e.g., \p block_prefix_op and \p block_aggregate) are
  *   only considered valid in <em>thread</em><sub>0</sub>
+ * - \smemreuse{BlockScan::SmemStorage}
 
  * <b>Performance Considerations</b>
  * \par
@@ -148,8 +151,8 @@ enum BlockScanPolicy
  *   algorithm selection)
  * - Zero bank conflicts for most types
  * - Computation is slightly more efficient (i.e., having lower instruction overhead) for:
- *     - Prefix sum variants (versus generic scan)
- *     - Exclusive variants (versus inclusive)
+ *     - Prefix sum variants (vs. generic scan)
+ *     - Exclusive variants (vs. inclusive)
  *     - Basic scan variants that don't require scalar inputs and outputs (e.g., \p block_prefix_op and \p block_aggregate)
  *     - Scan parameterizations where \p T is a built-in C++ primitive or CUDA vector type (e.g.,
  *       \p short, \p int2, \p double, \p float2, etc.)
@@ -243,22 +246,17 @@ private:
         SAFE_POLICY =
             ((POLICY == BLOCK_SCAN_WARPSCANS) && (BLOCK_THREADS % DeviceProps::WARP_THREADS != 0)) ?    // BLOCK_SCAN_WARPSCANS policy cannot be used with threadblock sizes not a multiple of the architectural warp size
                 BLOCK_SCAN_RAKING :
-        POLICY
+                POLICY
     };
 
 
-    /**
-     * Specialized BlockScan implementations
-     */
-    template <int POLICY, int DUMMY = 0>
-    struct BlockScanInternal;
-
+    /** \cond INTERNAL */
 
     /**
      * Warpscan specialized for BLOCK_SCAN_RAKING variant
      */
-    template <int DUMMY>
-    struct BlockScanInternal<BLOCK_SCAN_RAKING, DUMMY>
+    template <int POLICY, int DUMMY = 0>
+    struct BlockScanInternal
     {
         /// Layout type for padded threadblock raking grid
         typedef BlockRakingGrid<BLOCK_THREADS, T> BlockRakingGrid;
@@ -1278,17 +1276,15 @@ private:
     };
 
 
+    /** \endcond */     // INTERNAL
+
 
     /// Shared memory storage layout type for BlockScan
     typedef typename BlockScanInternal<SAFE_POLICY>::SmemStorage _SmemStorage;
 
 public:
 
-    /// The operations exposed by BlockScan require shared memory of this
-    /// type.  This opaque storage can be allocated directly using the
-    /// <tt>__shared__</tt> keyword.  Alternatively, it can be aliased to
-    /// externally allocated shared memory or <tt>union</tt>'d with other types
-    /// to facilitate shared memory reuse.
+    /// \smemstorage{BlockScan}
     typedef _SmemStorage SmemStorage;
 
 
