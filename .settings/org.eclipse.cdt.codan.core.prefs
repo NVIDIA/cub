@@ -63,6 +63,6 @@ org.eclipse.cdt.codan.internal.checkers.UnusedStaticFunctionProblem=Warning
 org.eclipse.cdt.codan.internal.checkers.UnusedStaticFunctionProblem.params={launchModes\=>{RUN_ON_FULL_BUILD\=>true,RUN_ON_INC_BUILD\=>true,RUN_ON_FILE_OPEN\=>false,RUN_ON_FILE_SAVE\=>false,RUN_AS_YOU_TYPE\=>true,RUN_ON_DEMAND\=>true},macro\=>true}
 org.eclipse.cdt.codan.internal.checkers.UnusedVariableDeclarationProblem=Warning
 org.eclipse.cdt.codan.internal.checkers.UnusedVariableDeclarationProblem.params={launchModes\=>{RUN_ON_FULL_BUILD\=>true,RUN_ON_INC_BUILD\=>true,RUN_ON_FILE_OPEN\=>false,RUN_ON_FILE_SAVE\=>false,RUN_AS_YOU_TYPE\=>true,RUN_ON_DEMAND\=>true},macro\=>true,exceptions\=>("@(\#)","$Id")}
-org.eclipse.cdt.codan.internal.checkers.VariableResolutionProblem=-Error
+org.eclipse.cdt.codan.internal.checkers.VariableResolutionProblem=Error
 org.eclipse.cdt.codan.internal.checkers.VariableResolutionProblem.params={launchModes\=>{RUN_ON_FULL_BUILD\=>true,RUN_ON_INC_BUILD\=>true,RUN_ON_FILE_OPEN\=>false,RUN_ON_FILE_SAVE\=>false,RUN_AS_YOU_TYPE\=>true,RUN_ON_DEMAND\=>true}}
 useParentScope=false

@@ -107,48 +107,64 @@ enum BlockScanPolicy
  * The term \em exclusive means that each result does not include the corresponding
  * input operand in the partial reduction.
  *
+ * \par
+ * Prefix scan is an indispensable primitive with many applications that often
+ * require slightly different behavior and/or features.  BlockScan exposes a
+ * number of scan variants, each with a slightly different operational interface
+ * and performance considerations.  More specifically, BlockScan supports the cross
+ * product of orthogonal functionality:
+ *
+ * \par
+ * - Specialization by operator (generic scan versus prefix sum for numeric types)
+ * - Specialization by granularity (single versus multiple items per thread)
+ * - Specialization by output ordering (inclusive versus exclusive)
+ * - Specialization by additional threadblock-wide scalar parameters
+ *     - computes scan elements only
+ *     - computes scan elements and the total aggregate,
+ *     - computes scan elements, the total aggregate, and uses a call-back functor for seeding the scan with a specific block-wide prefix
+ *
  * \tparam T                The reduction input/output element type
  * \tparam BLOCK_THREADS    The threadblock size in threads
  * \tparam POLICY           <b>[optional]</b> cub::BlockScanPolicy tuning policy enumeration.  Default = cub::BLOCK_SCAN_RAKING.
  *
  * <b>Usage Considerations</b>
  * \par
- * - Supports non-commutative scan operators.
+ * - Supports non-commutative scan operators
  * - The scan operations assume a [<b><em>blocked arrangement</em></b>](index.html#sec3sec3) of elements across
  *   threads, i.e., <em>n</em>-element lists that are partitioned evenly across
  *   the threadblock, with thread<sub><em>i</em></sub> owning the
  *   <em>i</em><sup>th</sup> element (or <em>i</em><sup>th</sup> segment of
- *   consecutive elements).
- * - After any scan operation, a subsequent <tt>__syncthreads()</tt> barrier
- *   is required if the supplied BlockScan::SmemStorage is to be reused or repurposed
- *   by the threadblock.
- * - Scalar inputs and outputs (e.g., \p block_prefix_op and \p aggregate) are
- *   only valid in <em>thread</em><sub>0</sub>.
+ *   consecutive elements)
+ * - After any operation, a subsequent <tt>__syncthreads()</tt> barrier is required if the supplied
+ *   BlockScan::SmemStorage is to be reused or repurposed by the threadblock
+ * - Threadblock-wide scalar inputs and outputs (e.g., \p block_prefix_op and \p block_aggregate) are
+ *   only considered valid in <em>thread</em><sub>0</sub>
 
  * <b>Performance Considerations</b>
  * \par
- * - Uses special instructions (e.g., warp \p SHFL) when applicable
+ * - Uses special instructions when applicable (e.g., warp \p SHFL)
  * - Uses synchronization-free communication between warp lanes when applicable
- * - Only one or two threadblock-wide synchronization barriers, depending on
- *   algorithm selection.
- * - Zero bank conflicts for most types.
- * - Operations are most efficient (i.e., lowest instruction overhead) when:
- *      - Addition is the reduction operator (viz. prefix sum variants)
- *      - The data type \p T is a built-in primitive or CUDA vector type, e.g.,
- *        \p short, \p int2, \p double, \p float2, etc.  Otherwise the implementation
- *        may use memory fences to prevent reordering of memory references.
- *      - \p BLOCK_THREADS is a multiple of the architecture's warp size
+ * - Uses only one or two threadblock-wide synchronization barriers (depending on
+ *   algorithm selection)
+ * - Zero bank conflicts for most types
+ * - Computation is slightly more efficient (i.e., having lower instruction overhead) for:
+ *     - Prefix sum variants (versus generic scan)
+ *     - Exclusive variants (versus inclusive)
+ *     - Basic scan variants that don't require scalar inputs and outputs (e.g., \p block_prefix_op and \p block_aggregate)
+ *     - Scan parameterizations where \p T is a built-in C++ primitive or CUDA vector type (e.g.,
+ *       \p short, \p int2, \p double, \p float2, etc.)
+ *     - Scan parameterizations where \p BLOCK_THREADS is a multiple of the architecture's warp size
  *
  * <b>Algorithm</b>
  * \par
- * The BlockScan type can be configured to use one of two alternative algorithms:
+ * The BlockScan type can be optionally configured to use one of two alternative algorithms:
  *   -# <b>cub::BLOCK_SCAN_RAKING</b>.  An efficient "raking reduce-then-scan" prefix scan algorithm.
  *   -# <b>cub::BLOCK_SCAN_WARPSCANS</b>.  A quick "tiled warpscans" prefix scan algorithm.
  *
  * <b>Examples</b>
  * \par
- * <em>Example 1.</em> Perform a simple exclusive prefix sum of 32-bit integer keys that
- * are partitioned in a blocked arrangement across a 128-thread threadblock (each thread holding 4 keys).
+ * <em>Example 1.</em> Perform a simple exclusive prefix sum of 512 integer keys that
+ * are partitioned in a blocked arrangement across a 128-thread threadblock (where each thread holds 4 keys).
  *      \code
  *      #include <cub.cuh>
  *
@@ -176,17 +192,17 @@ enum BlockScanPolicy
  *      \code
  *      #include <cub.cuh>
  *
- *      /// Simple functor for producing a value for which to seed the entire local scan.
+ *      /// Simple functor for producing a value for which to seed the entire block scan.
  *      struct BlockPrefixOp
  *      {
  *          int *d_global_counter;
  *
  *          /// Functor constructor
- *          BlockPrefix(int *d_global_counter) : d_global_counter(d_global_counter) {}
+ *          __device__ BlockPrefixOp(int *d_global_counter) : d_global_counter(d_global_counter) {}
  *
  *          /// Functor operator.  Produces a value for seeding the threadblock-wide scan given
- *          /// the local aggregate (only used by thread-0).
- *          int operator(int block_aggregate)
+ *          /// the local aggregate (only valid in thread-0).
+ *          __device__ int operator(int block_aggregate)
  *          {
  *              return (threadIdx.x == 0) ?
  *                  atomicAdd(d_global_counter, block_aggregate) :      // thread0
@@ -270,10 +286,10 @@ private:
         struct SmemStorage
         {
             typename WarpScan::SmemStorage          warp_scan;      ///< Buffer for warp-synchronous scan
-            typename BlockRakingGrid::SmemStorage     raking_grid;    ///< Padded threadblock raking grid
+            typename BlockRakingGrid::SmemStorage   raking_grid;    ///< Padded threadblock raking grid
         };
 
-        /// Computes an exclusive threadblock-wide prefix scan using the specified binary \p scan_op functor.  Each thread contributes one input element.  The inclusive threadblock-wide \p aggregate of all inputs is computed for <em>thread</em><sub>0</sub>.
+        /// Computes an exclusive threadblock-wide prefix scan using the specified binary \p scan_op functor.  Each thread contributes one input element.  The inclusive threadblock-wide \p block_aggregate of all inputs is computed for <em>thread</em><sub>0</sub>.
         template <typename ScanOp>
         static __device__ __forceinline__ void ExclusiveScan(
             SmemStorage     &smem_storage,      ///< [in] Shared reference to opaque SmemStorage layout
@@ -340,7 +356,7 @@ private:
         }
 
 
-        /// Computes an exclusive threadblock-wide prefix scan using the specified binary \p scan_op functor.  Each thread contributes one input element.  Instead of using \p identity as the threadblock-wide prefix, the call-back functor \p block_prefix_op is invoked by <em>thread</em><sub>0</sub> to provide the "seed" value that logically prefixes the threadblock's scan inputs.  The inclusive threadblock-wide \p aggregate of all inputs is computed for <em>thread</em><sub>0</sub>.
+        /// Computes an exclusive threadblock-wide prefix scan using the specified binary \p scan_op functor.  Each thread contributes one input element.  Instead of using \p identity as the threadblock-wide prefix, the call-back functor \p block_prefix_op is invoked to provide the "seed" value that logically prefixes the threadblock's scan inputs.  The inclusive threadblock-wide \p block_aggregate of all inputs is computed for <em>thread</em><sub>0</sub>.
         template <
         typename ScanOp,
         typename BlockPrefixOp>
@@ -350,8 +366,8 @@ private:
             T               &output,                        ///< [out] Calling thread's output item (may be aliased to \p input)
             T               identity,                       ///< [in] Identity value
             ScanOp          scan_op,                        ///< [in] Binary scan operator having member <tt>T operator()(const T &a, const T &b)</tt>
-            T               &block_aggregate,               ///< [out] <b>[<em>thread</em><sub>0</sub> only]</b> threadblock-wide aggregate reduction of input items, exclusive of the \p block_prefix_op value
-            BlockPrefixOp   &block_prefix_op)               ///< [in-out] <b>[<em>thread</em><sub>0</sub> only]</b> Call-back functor having member <tt>T operator()(T block_aggregate)</tt> for specifying the appropriate external prefix (rather than \p identity), to be invoked internally by <em>thread</em><sub>0</sub>.  When provided the threadblock-wide aggregate of input items (also returned above), this functor is expected to return the logical threadblock-wide prefix to be applied during the scan operation.  Can be stateful.
+            T               &block_aggregate,               ///< [out] <b>[<em>thread</em><sub>0</sub> only]</b> Threadblock-wide aggregate reduction of input items (exclusive of the \p block_prefix_op value)
+            BlockPrefixOp   &block_prefix_op)               ///< [in-out] <b>[<em>thread</em><sub>0</sub> only]</b> Call-back functor for specifying a threadblock-wide prefix to be applied to all inputs.
         {
             if (WARP_SYNCHRONOUS)
             {
@@ -411,7 +427,7 @@ private:
         }
 
 
-        /// Computes an exclusive threadblock-wide prefix scan using the specified binary \p scan_op functor.  Each thread contributes one input element.  The inclusive threadblock-wide \p aggregate of all inputs is computed for <em>thread</em><sub>0</sub>.  With no identity value, the output computed for <em>thread</em><sub>0</sub> is invalid.
+        /// Computes an exclusive threadblock-wide prefix scan using the specified binary \p scan_op functor.  Each thread contributes one input element.  The inclusive threadblock-wide \p block_aggregate of all inputs is computed for <em>thread</em><sub>0</sub>.  With no identity value, the output computed for <em>thread</em><sub>0</sub> is invalid.
         template <typename ScanOp>
         static __device__ __forceinline__ void ExclusiveScan(
             SmemStorage     &smem_storage,                  ///< [in] Shared reference to opaque SmemStorage layout
@@ -474,7 +490,7 @@ private:
         }
 
 
-        /// Computes an exclusive threadblock-wide prefix scan using the specified binary \p scan_op functor.  Each thread contributes one input element.  Instead of using \p identity as the threadblock-wide prefix, the call-back functor \p block_prefix_op is invoked by <em>thread</em><sub>0</sub> to provide the "seed" value that logically prefixes the threadblock's scan inputs.  The inclusive threadblock-wide \p aggregate of all inputs is computed for <em>thread</em><sub>0</sub>.
+        /// Computes an exclusive threadblock-wide prefix scan using the specified binary \p scan_op functor.  Each thread contributes one input element.  Instead of using \p identity as the threadblock-wide prefix, the call-back functor \p block_prefix_op is invoked to provide the "seed" value that logically prefixes the threadblock's scan inputs.  The inclusive threadblock-wide \p block_aggregate of all inputs is computed for <em>thread</em><sub>0</sub>.
         template <
         typename ScanOp,
         typename BlockPrefixOp>
@@ -483,8 +499,8 @@ private:
             T               input,                          ///< [in] Calling thread's input item
             T               &output,                        ///< [out] Calling thread's output item (may be aliased to \p input)
             ScanOp          scan_op,                        ///< [in] Binary scan operator having member <tt>T operator()(const T &a, const T &b)</tt>
-            T               &block_aggregate,               ///< [out] <b>[<em>thread</em><sub>0</sub> only]</b> threadblock-wide aggregate reduction of input items, exclusive of the \p block_prefix_op value
-            BlockPrefixOp   &block_prefix_op)                   ///< [in-out] <b>[<em>thread</em><sub>0</sub> only]</b> Call-back functor having member <tt>T operator()(T block_aggregate)</tt> for specifying the appropriate external prefix (rather than \p identity), to be invoked internally by <em>thread</em><sub>0</sub>.  When provided the threadblock-wide aggregate of input items (also returned above), this functor is expected to return the logical threadblock-wide prefix to be applied during the scan operation.  Can be stateful.
+            T               &block_aggregate,               ///< [out] <b>[<em>thread</em><sub>0</sub> only]</b> Threadblock-wide aggregate reduction of input items (exclusive of the \p block_prefix_op value)
+            BlockPrefixOp   &block_prefix_op)               ///< [in-out] <b>[<em>thread</em><sub>0</sub> only]</b> Call-back functor for specifying a threadblock-wide prefix to be applied to all inputs.
         {
             if (WARP_SYNCHRONOUS)
             {
@@ -542,7 +558,7 @@ private:
         }
 
 
-        /// Computes an exclusive threadblock-wide prefix scan using addition (+) as the scan operator.  Each thread contributes one input element.  The inclusive threadblock-wide \p aggregate of all inputs is computed for <em>thread</em><sub>0</sub>.
+        /// Computes an exclusive threadblock-wide prefix scan using addition (+) as the scan operator.  Each thread contributes one input element.  The inclusive threadblock-wide \p block_aggregate of all inputs is computed for <em>thread</em><sub>0</sub>.
         static __device__ __forceinline__ void ExclusiveSum(
             SmemStorage     &smem_storage,                  ///< [in] Shared reference to opaque SmemStorage layout
             T               input,                          ///< [in] Calling thread's input item
@@ -604,13 +620,13 @@ private:
         }
 
 
-        /// Computes an exclusive threadblock-wide prefix scan using addition (+) as the scan operator.  Each thread contributes one input element.  Instead of using \p identity as the threadblock-wide prefix, the call-back functor \p block_prefix_op is invoked by <em>thread</em><sub>0</sub> to provide the "seed" value that logically prefixes the threadblock's scan inputs.  The inclusive threadblock-wide \p aggregate of all inputs is computed for <em>thread</em><sub>0</sub>.
+        /// Computes an exclusive threadblock-wide prefix scan using addition (+) as the scan operator.  Each thread contributes one input element.  Instead of using 0 as the threadblock-wide prefix, the call-back functor \p block_prefix_op is invoked to provide the "seed" value that logically prefixes the threadblock's scan inputs.  The inclusive threadblock-wide \p block_aggregate of all inputs is computed for <em>thread</em><sub>0</sub>.
         template <typename BlockPrefixOp>
         static __device__ __forceinline__ void ExclusiveSum(
             SmemStorage     &smem_storage,                  ///< [in] Shared reference to opaque SmemStorage layout
             T               input,                          ///< [in] Calling thread's input item
             T               &output,                        ///< [out] Calling thread's output item (may be aliased to \p input)
-            T               &block_aggregate,               ///< [out] <b>[<em>thread</em><sub>0</sub> only]</b> threadblock-wide aggregate reduction of input items, exclusive of the \p block_prefix_op value
+            T               &block_aggregate,               ///< [out] <b>[<em>thread</em><sub>0</sub> only]</b> Threadblock-wide aggregate reduction of input items (exclusive of the \p block_prefix_op value)
             BlockPrefixOp   &block_prefix_op)               ///< [in-out] <b>[<em>thread</em><sub>0</sub> only]</b> Call-back functor of the model <em>T block_prefix_op(T block_aggregate)</em> to be run <em>thread</em><sub>0</sub> for providing the operation with a threadblock-wide prefix value to seed the scan with.  Can be stateful.
         {
             if (WARP_SYNCHRONOUS)
@@ -670,7 +686,7 @@ private:
         }
 
 
-        /// Computes an inclusive threadblock-wide prefix scan using the specified binary \p scan_op functor.  Each thread contributes one input element.  The inclusive threadblock-wide \p aggregate of all inputs is computed for <em>thread</em><sub>0</sub>.
+        /// Computes an inclusive threadblock-wide prefix scan using the specified binary \p scan_op functor.  Each thread contributes one input element.  The inclusive threadblock-wide \p block_aggregate of all inputs is computed for <em>thread</em><sub>0</sub>.
         template <typename ScanOp>
         static __device__ __forceinline__ void InclusiveScan(
             SmemStorage     &smem_storage,                  ///< [in] Shared reference to opaque SmemStorage layout
@@ -733,7 +749,7 @@ private:
         }
 
 
-        /// Computes an inclusive threadblock-wide prefix scan using the specified binary \p scan_op functor.  Each thread contributes one input element.  Instead of using \p identity as the threadblock-wide prefix, the call-back functor \p block_prefix_op is invoked by <em>thread</em><sub>0</sub> to provide the "seed" value that logically prefixes the threadblock's scan inputs.  The inclusive threadblock-wide \p aggregate of all inputs is computed for <em>thread</em><sub>0</sub>.
+        /// Computes an inclusive threadblock-wide prefix scan using the specified binary \p scan_op functor.  Each thread contributes one input element.  Instead of using \p identity as the threadblock-wide prefix, the call-back functor \p block_prefix_op is invoked to provide the "seed" value that logically prefixes the threadblock's scan inputs.  The inclusive threadblock-wide \p block_aggregate of all inputs is computed for <em>thread</em><sub>0</sub>.
         template <
         typename ScanOp,
         typename BlockPrefixOp>
@@ -742,8 +758,8 @@ private:
             T               input,                          ///< [in] Calling thread's input item
             T               &output,                        ///< [out] Calling thread's output item (may be aliased to \p input)
             ScanOp          scan_op,                        ///< [in] Binary scan operator having member <tt>T operator()(const T &a, const T &b)</tt>
-            T               &block_aggregate,               ///< [out] <b>[<em>thread</em><sub>0</sub> only]</b> threadblock-wide aggregate reduction of input items, exclusive of the \p block_prefix_op value
-            BlockPrefixOp   &block_prefix_op)               ///< [in-out] <b>[<em>thread</em><sub>0</sub> only]</b> Call-back functor having member <tt>T operator()(T block_aggregate)</tt> for specifying the appropriate external prefix (rather than \p identity), to be invoked internally by <em>thread</em><sub>0</sub>.  When provided the threadblock-wide aggregate of input items (also returned above), this functor is expected to return the logical threadblock-wide prefix to be applied during the scan operation.  Can be stateful.
+            T               &block_aggregate,               ///< [out] <b>[<em>thread</em><sub>0</sub> only]</b> Threadblock-wide aggregate reduction of input items (exclusive of the \p block_prefix_op value)
+            BlockPrefixOp   &block_prefix_op)               ///< [in-out] <b>[<em>thread</em><sub>0</sub> only]</b> Call-back functor for specifying a threadblock-wide prefix to be applied to all inputs.
         {
             if (WARP_SYNCHRONOUS)
             {
@@ -801,7 +817,7 @@ private:
         }
 
 
-        /// Computes an inclusive threadblock-wide prefix scan using the specified binary \p scan_op functor.  Each thread contributes one input element.  The inclusive threadblock-wide \p aggregate of all inputs is computed for <em>thread</em><sub>0</sub>.
+        /// Computes an inclusive threadblock-wide prefix scan using the specified binary \p scan_op functor.  Each thread contributes one input element.  The inclusive threadblock-wide \p block_aggregate of all inputs is computed for <em>thread</em><sub>0</sub>.
         static __device__ __forceinline__ void InclusiveSum(
             SmemStorage     &smem_storage,                  ///< [in] Shared reference to opaque SmemStorage layout
             T               input,                          ///< [in] Calling thread's input item
@@ -863,14 +879,14 @@ private:
         }
 
 
-        /// Computes an inclusive threadblock-wide prefix scan using the specified binary \p scan_op functor.  Each thread contributes one input element.  Instead of using \p identity as the threadblock-wide prefix, the call-back functor \p block_prefix_op is invoked by <em>thread</em><sub>0</sub> to provide the "seed" value that logically prefixes the threadblock's scan inputs.  The inclusive threadblock-wide \p aggregate of all inputs is computed for <em>thread</em><sub>0</sub>.
+        /// Computes an inclusive threadblock-wide prefix scan using the specified binary \p scan_op functor.  Each thread contributes one input element.  Instead of using 0 as the threadblock-wide prefix, the call-back functor \p block_prefix_op is invoked to provide the "seed" value that logically prefixes the threadblock's scan inputs.  The inclusive threadblock-wide \p block_aggregate of all inputs is computed for <em>thread</em><sub>0</sub>.
         template <typename BlockPrefixOp>
         static __device__ __forceinline__ void InclusiveSum(
             SmemStorage     &smem_storage,                  ///< [in] Shared reference to opaque SmemStorage layout
             T               input,                          ///< [in] Calling thread's input item
             T               &output,                        ///< [out] Calling thread's output item (may be aliased to \p input)
-            T               &block_aggregate,               ///< [out] <b>[<em>thread</em><sub>0</sub> only]</b> threadblock-wide aggregate reduction of input items, exclusive of the \p block_prefix_op value
-            BlockPrefixOp   &block_prefix_op)                   ///< [in-out] <b>[<em>thread</em><sub>0</sub> only]</b> Call-back functor having member <tt>T operator()(T block_aggregate)</tt> for specifying the appropriate external prefix (rather than \p identity), to be invoked internally by <em>thread</em><sub>0</sub>.  When provided the threadblock-wide aggregate of input items (also returned above), this functor is expected to return the logical threadblock-wide prefix to be applied during the scan operation.  Can be stateful.
+            T               &block_aggregate,               ///< [out] <b>[<em>thread</em><sub>0</sub> only]</b> Threadblock-wide aggregate reduction of input items (exclusive of the \p block_prefix_op value)
+            BlockPrefixOp   &block_prefix_op)                   ///< [in-out] <b>[<em>thread</em><sub>0</sub> only]</b> Call-back functor for specifying a threadblock-wide prefix to be applied to all inputs.
         {
             if (WARP_SYNCHRONOUS)
             {
@@ -1002,7 +1018,7 @@ private:
         }
 
 
-        /// Computes an exclusive threadblock-wide prefix scan using the specified binary \p scan_op functor.  Each thread contributes one input element.  The inclusive threadblock-wide \p aggregate of all inputs is computed for <em>thread</em><sub>0</sub>.
+        /// Computes an exclusive threadblock-wide prefix scan using the specified binary \p scan_op functor.  Each thread contributes one input element.  The inclusive threadblock-wide \p block_aggregate of all inputs is computed for <em>thread</em><sub>0</sub>.
         template <typename ScanOp>
         static __device__ __forceinline__ void ExclusiveScan(
             SmemStorage     &smem_storage,      ///< [in] Shared reference to opaque SmemStorage layout
@@ -1020,7 +1036,7 @@ private:
         }
 
 
-        /// Computes an exclusive threadblock-wide prefix scan using the specified binary \p scan_op functor.  Each thread contributes one input element.  Instead of using \p identity as the threadblock-wide prefix, the call-back functor \p block_prefix_op is invoked by <em>thread</em><sub>0</sub> to provide the "seed" value that logically prefixes the threadblock's scan inputs.  The inclusive threadblock-wide \p aggregate of all inputs is computed for <em>thread</em><sub>0</sub>.
+        /// Computes an exclusive threadblock-wide prefix scan using the specified binary \p scan_op functor.  Each thread contributes one input element.  Instead of using \p identity as the threadblock-wide prefix, the call-back functor \p block_prefix_op is invoked to provide the "seed" value that logically prefixes the threadblock's scan inputs.  The inclusive threadblock-wide \p block_aggregate of all inputs is computed for <em>thread</em><sub>0</sub>.
         template <
         typename ScanOp,
         typename BlockPrefixOp>
@@ -1030,8 +1046,8 @@ private:
             T               &output,                        ///< [out] Calling thread's output item (may be aliased to \p input)
             T               identity,                       ///< [in] Identity value
             ScanOp          scan_op,                        ///< [in] Binary scan operator having member <tt>T operator()(const T &a, const T &b)</tt>
-            T               &block_aggregate,               ///< [out] <b>[<em>thread</em><sub>0</sub> only]</b> threadblock-wide aggregate reduction of input items, exclusive of the \p block_prefix_op value
-            BlockPrefixOp   &block_prefix_op)               ///< [in-out] <b>[<em>thread</em><sub>0</sub> only]</b> Call-back functor having member <tt>T operator()(T block_aggregate)</tt> for specifying the appropriate external prefix (rather than \p identity), to be invoked internally by <em>thread</em><sub>0</sub>.  When provided the threadblock-wide aggregate of input items (also returned above), this functor is expected to return the logical threadblock-wide prefix to be applied during the scan operation.  Can be stateful.
+            T               &block_aggregate,               ///< [out] <b>[<em>thread</em><sub>0</sub> only]</b> Threadblock-wide aggregate reduction of input items (exclusive of the \p block_prefix_op value)
+            BlockPrefixOp   &block_prefix_op)               ///< [in-out] <b>[<em>thread</em><sub>0</sub> only]</b> Call-back functor for specifying a threadblock-wide prefix to be applied to all inputs.
         {
             ExclusiveScan(smem_storage, input, output, identity, scan_op, block_aggregate);
 
@@ -1048,7 +1064,7 @@ private:
         }
 
 
-        /// Computes an exclusive threadblock-wide prefix scan using the specified binary \p scan_op functor.  Each thread contributes one input element.  The inclusive threadblock-wide \p aggregate of all inputs is computed for <em>thread</em><sub>0</sub>.  With no identity value, the output computed for <em>thread</em><sub>0</sub> is invalid.
+        /// Computes an exclusive threadblock-wide prefix scan using the specified binary \p scan_op functor.  Each thread contributes one input element.  The inclusive threadblock-wide \p block_aggregate of all inputs is computed for <em>thread</em><sub>0</sub>.  With no identity value, the output computed for <em>thread</em><sub>0</sub> is invalid.
         template <typename ScanOp>
         static __device__ __forceinline__ void ExclusiveScan(
             SmemStorage     &smem_storage,                  ///< [in] Shared reference to opaque SmemStorage layout
@@ -1106,7 +1122,7 @@ private:
         }
 
 
-        /// Computes an exclusive threadblock-wide prefix scan using the specified binary \p scan_op functor.  Each thread contributes one input element.  Instead of using \p identity as the threadblock-wide prefix, the call-back functor \p block_prefix_op is invoked by <em>thread</em><sub>0</sub> to provide the "seed" value that logically prefixes the threadblock's scan inputs.  The inclusive threadblock-wide \p aggregate of all inputs is computed for <em>thread</em><sub>0</sub>.
+        /// Computes an exclusive threadblock-wide prefix scan using the specified binary \p scan_op functor.  Each thread contributes one input element.  Instead of using \p identity as the threadblock-wide prefix, the call-back functor \p block_prefix_op is invoked to provide the "seed" value that logically prefixes the threadblock's scan inputs.  The inclusive threadblock-wide \p block_aggregate of all inputs is computed for <em>thread</em><sub>0</sub>.
         template <
         typename ScanOp,
         typename BlockPrefixOp>
@@ -1115,8 +1131,8 @@ private:
             T               input,                          ///< [in] Calling thread's input item
             T               &output,                        ///< [out] Calling thread's output item (may be aliased to \p input)
             ScanOp          scan_op,                        ///< [in] Binary scan operator having member <tt>T operator()(const T &a, const T &b)</tt>
-            T               &block_aggregate,               ///< [out] <b>[<em>thread</em><sub>0</sub> only]</b> threadblock-wide aggregate reduction of input items, exclusive of the \p block_prefix_op value
-            BlockPrefixOp   &block_prefix_op)               ///< [in-out] <b>[<em>thread</em><sub>0</sub> only]</b> Call-back functor having member <tt>T operator()(T block_aggregate)</tt> for specifying the appropriate external prefix (rather than \p identity), to be invoked internally by <em>thread</em><sub>0</sub>.  When provided the threadblock-wide aggregate of input items (also returned above), this functor is expected to return the logical threadblock-wide prefix to be applied during the scan operation.  Can be stateful.
+            T               &block_aggregate,               ///< [out] <b>[<em>thread</em><sub>0</sub> only]</b> Threadblock-wide aggregate reduction of input items (exclusive of the \p block_prefix_op value)
+            BlockPrefixOp   &block_prefix_op)               ///< [in-out] <b>[<em>thread</em><sub>0</sub> only]</b> Call-back functor for specifying a threadblock-wide prefix to be applied to all inputs.
         {
             ExclusiveScan(smem_storage, input, output, scan_op, block_aggregate);
 
@@ -1135,7 +1151,7 @@ private:
         }
 
 
-        /// Computes an exclusive threadblock-wide prefix scan using addition (+) as the scan operator.  Each thread contributes one input element.  The inclusive threadblock-wide \p aggregate of all inputs is computed for <em>thread</em><sub>0</sub>.
+        /// Computes an exclusive threadblock-wide prefix scan using addition (+) as the scan operator.  Each thread contributes one input element.  The inclusive threadblock-wide \p block_aggregate of all inputs is computed for <em>thread</em><sub>0</sub>.
         static __device__ __forceinline__ void ExclusiveSum(
             SmemStorage     &smem_storage,                  ///< [in] Shared reference to opaque SmemStorage layout
             T               input,                          ///< [in] Calling thread's input item
@@ -1150,13 +1166,13 @@ private:
         }
 
 
-        /// Computes an exclusive threadblock-wide prefix scan using addition (+) as the scan operator.  Each thread contributes one input element.  Instead of using \p identity as the threadblock-wide prefix, the call-back functor \p block_prefix_op is invoked by <em>thread</em><sub>0</sub> to provide the "seed" value that logically prefixes the threadblock's scan inputs.  The inclusive threadblock-wide \p aggregate of all inputs is computed for <em>thread</em><sub>0</sub>.
+        /// Computes an exclusive threadblock-wide prefix scan using addition (+) as the scan operator.  Each thread contributes one input element.  Instead of using 0 as the threadblock-wide prefix, the call-back functor \p block_prefix_op is invoked to provide the "seed" value that logically prefixes the threadblock's scan inputs.  The inclusive threadblock-wide \p block_aggregate of all inputs is computed for <em>thread</em><sub>0</sub>.
         template <typename BlockPrefixOp>
         static __device__ __forceinline__ void ExclusiveSum(
             SmemStorage     &smem_storage,                  ///< [in] Shared reference to opaque SmemStorage layout
             T               input,                          ///< [in] Calling thread's input item
             T               &output,                        ///< [out] Calling thread's output item (may be aliased to \p input)
-            T               &block_aggregate,               ///< [out] <b>[<em>thread</em><sub>0</sub> only]</b> threadblock-wide aggregate reduction of input items, exclusive of the \p block_prefix_op value
+            T               &block_aggregate,               ///< [out] <b>[<em>thread</em><sub>0</sub> only]</b> Threadblock-wide aggregate reduction of input items (exclusive of the \p block_prefix_op value)
             BlockPrefixOp   &block_prefix_op)               ///< [in-out] <b>[<em>thread</em><sub>0</sub> only]</b> Call-back functor of the model <em>T block_prefix_op(T block_aggregate)</em> to be run <em>thread</em><sub>0</sub> for providing the operation with a threadblock-wide prefix value to seed the scan with.  Can be stateful.
         {
             ExclusiveSum(smem_storage, input, output, block_aggregate);
@@ -1175,7 +1191,7 @@ private:
         }
 
 
-        /// Computes an inclusive threadblock-wide prefix scan using the specified binary \p scan_op functor.  Each thread contributes one input element.  The inclusive threadblock-wide \p aggregate of all inputs is computed for <em>thread</em><sub>0</sub>.
+        /// Computes an inclusive threadblock-wide prefix scan using the specified binary \p scan_op functor.  Each thread contributes one input element.  The inclusive threadblock-wide \p block_aggregate of all inputs is computed for <em>thread</em><sub>0</sub>.
         template <typename ScanOp>
         static __device__ __forceinline__ void InclusiveScan(
             SmemStorage     &smem_storage,                  ///< [in] Shared reference to opaque SmemStorage layout
@@ -1193,7 +1209,7 @@ private:
         }
 
 
-        /// Computes an inclusive threadblock-wide prefix scan using the specified binary \p scan_op functor.  Each thread contributes one input element.  Instead of using \p identity as the threadblock-wide prefix, the call-back functor \p block_prefix_op is invoked by <em>thread</em><sub>0</sub> to provide the "seed" value that logically prefixes the threadblock's scan inputs.  The inclusive threadblock-wide \p aggregate of all inputs is computed for <em>thread</em><sub>0</sub>.
+        /// Computes an inclusive threadblock-wide prefix scan using the specified binary \p scan_op functor.  Each thread contributes one input element.  Instead of using \p identity as the threadblock-wide prefix, the call-back functor \p block_prefix_op is invoked to provide the "seed" value that logically prefixes the threadblock's scan inputs.  The inclusive threadblock-wide \p block_aggregate of all inputs is computed for <em>thread</em><sub>0</sub>.
         template <
         typename ScanOp,
         typename BlockPrefixOp>
@@ -1202,8 +1218,8 @@ private:
             T               input,                          ///< [in] Calling thread's input item
             T               &output,                        ///< [out] Calling thread's output item (may be aliased to \p input)
             ScanOp          scan_op,                        ///< [in] Binary scan operator having member <tt>T operator()(const T &a, const T &b)</tt>
-            T               &block_aggregate,               ///< [out] <b>[<em>thread</em><sub>0</sub> only]</b> threadblock-wide aggregate reduction of input items, exclusive of the \p block_prefix_op value
-            BlockPrefixOp   &block_prefix_op)               ///< [in-out] <b>[<em>thread</em><sub>0</sub> only]</b> Call-back functor having member <tt>T operator()(T block_aggregate)</tt> for specifying the appropriate external prefix (rather than \p identity), to be invoked internally by <em>thread</em><sub>0</sub>.  When provided the threadblock-wide aggregate of input items (also returned above), this functor is expected to return the logical threadblock-wide prefix to be applied during the scan operation.  Can be stateful.
+            T               &block_aggregate,               ///< [out] <b>[<em>thread</em><sub>0</sub> only]</b> Threadblock-wide aggregate reduction of input items (exclusive of the \p block_prefix_op value)
+            BlockPrefixOp   &block_prefix_op)               ///< [in-out] <b>[<em>thread</em><sub>0</sub> only]</b> Call-back functor for specifying a threadblock-wide prefix to be applied to all inputs.
         {
             InclusiveScan(smem_storage, input, output, scan_op, block_aggregate);
 
@@ -1220,7 +1236,7 @@ private:
         }
 
 
-        /// Computes an inclusive threadblock-wide prefix scan using the specified binary \p scan_op functor.  Each thread contributes one input element.  The inclusive threadblock-wide \p aggregate of all inputs is computed for <em>thread</em><sub>0</sub>.
+        /// Computes an inclusive threadblock-wide prefix scan using the specified binary \p scan_op functor.  Each thread contributes one input element.  The inclusive threadblock-wide \p block_aggregate of all inputs is computed for <em>thread</em><sub>0</sub>.
         static __device__ __forceinline__ void InclusiveSum(
             SmemStorage     &smem_storage,                  ///< [in] Shared reference to opaque SmemStorage layout
             T               input,                          ///< [in] Calling thread's input item
@@ -1235,14 +1251,14 @@ private:
         }
 
 
-        /// Computes an inclusive threadblock-wide prefix scan using the specified binary \p scan_op functor.  Each thread contributes one input element.  Instead of using \p identity as the threadblock-wide prefix, the call-back functor \p block_prefix_op is invoked by <em>thread</em><sub>0</sub> to provide the "seed" value that logically prefixes the threadblock's scan inputs.  The inclusive threadblock-wide \p aggregate of all inputs is computed for <em>thread</em><sub>0</sub>.
+        /// Computes an inclusive threadblock-wide prefix scan using the specified binary \p scan_op functor.  Each thread contributes one input element.  Instead of using 0 as the threadblock-wide prefix, the call-back functor \p block_prefix_op is invoked to provide the "seed" value that logically prefixes the threadblock's scan inputs.  The inclusive threadblock-wide \p block_aggregate of all inputs is computed for <em>thread</em><sub>0</sub>.
         template <typename BlockPrefixOp>
         static __device__ __forceinline__ void InclusiveSum(
             SmemStorage     &smem_storage,                  ///< [in] Shared reference to opaque SmemStorage layout
             T               input,                          ///< [in] Calling thread's input item
             T               &output,                        ///< [out] Calling thread's output item (may be aliased to \p input)
-            T               &block_aggregate,               ///< [out] <b>[<em>thread</em><sub>0</sub> only]</b> threadblock-wide aggregate reduction of input items, exclusive of the \p block_prefix_op value
-            BlockPrefixOp   &block_prefix_op)               ///< [in-out] <b>[<em>thread</em><sub>0</sub> only]</b> Call-back functor having member <tt>T operator()(T block_aggregate)</tt> for specifying the appropriate external prefix (rather than \p identity), to be invoked internally by <em>thread</em><sub>0</sub>.  When provided the threadblock-wide aggregate of input items (also returned above), this functor is expected to return the logical threadblock-wide prefix to be applied during the scan operation.  Can be stateful.
+            T               &block_aggregate,               ///< [out] <b>[<em>thread</em><sub>0</sub> only]</b> Threadblock-wide aggregate reduction of input items (exclusive of the \p block_prefix_op value)
+            BlockPrefixOp   &block_prefix_op)               ///< [in-out] <b>[<em>thread</em><sub>0</sub> only]</b> Call-back functor for specifying a threadblock-wide prefix to be applied to all inputs.
         {
             InclusiveSum(smem_storage, input, output, block_aggregate);
 
@@ -1284,9 +1300,9 @@ public:
 
 
     /**
-     * \brief Computes an exclusive threadblock-wide prefix scan using the specified binary \p scan_op functor.  Each thread contributes one input element.  The inclusive threadblock-wide \p aggregate of all inputs is computed for <em>thread</em><sub>0</sub>.
+     * \brief Computes an exclusive threadblock-wide prefix scan using the specified binary \p scan_op functor.  Each thread contributes one input element.  The inclusive threadblock-wide \p block_aggregate of all inputs is computed for <em>thread</em><sub>0</sub>.
      *
-     * The \p aggregate is undefined in threads other than <em>thread</em><sub>0</sub>.
+     * The scalar \p block_aggregate is undefined in threads other than <em>thread</em><sub>0</sub>.
      *
      * \smemreuse
      *
@@ -1306,9 +1322,9 @@ public:
 
 
     /**
-     * \brief Computes an exclusive threadblock-wide prefix scan using the specified binary \p scan_op functor.  Each thread contributes an array of consecutive input elements.  The inclusive threadblock-wide \p aggregate of all inputs is computed for <em>thread</em><sub>0</sub>.
+     * \brief Computes an exclusive threadblock-wide prefix scan using the specified binary \p scan_op functor.  Each thread contributes an array of consecutive input elements.  The inclusive threadblock-wide \p block_aggregate of all inputs is computed for <em>thread</em><sub>0</sub>.
      *
-     * The \p aggregate is undefined in threads other than <em>thread</em><sub>0</sub>.
+     * The scalar \p block_aggregate is undefined in threads other than <em>thread</em><sub>0</sub>.
      *
      * \smemreuse
      *
@@ -1338,9 +1354,15 @@ public:
 
 
     /**
-     * \brief Computes an exclusive threadblock-wide prefix scan using the specified binary \p scan_op functor.  Each thread contributes one input element.  Instead of using \p identity as the threadblock-wide prefix, the call-back functor \p block_prefix_op is invoked by <em>thread</em><sub>0</sub> to provide the "seed" value that logically prefixes the threadblock's scan inputs.  The inclusive threadblock-wide \p aggregate of all inputs is computed for <em>thread</em><sub>0</sub>.
+     * \brief Computes an exclusive threadblock-wide prefix scan using the specified binary \p scan_op functor.  Each thread contributes one input element.  Instead of using \p identity as the threadblock-wide prefix, the call-back functor \p block_prefix_op is invoked to provide the "seed" value that logically prefixes the threadblock's scan inputs.  The inclusive threadblock-wide \p block_aggregate of all inputs is computed for <em>thread</em><sub>0</sub>.
      *
-     * The \p aggregate and \p block_prefix_op are undefined in threads other than <em>thread</em><sub>0</sub>.
+     * The scalar \p block_aggregate is undefined in threads other than <em>thread</em><sub>0</sub>.
+
+     * The \p block_prefix_op functor must implement a member function <tt>T operator()(T block_aggregate)</tt>.
+     * The functor's input parameter \p block_aggregate is the same value also returned by the scan operation.
+     * This functor is expected to return a threadblock-wide prefix to be applied to all inputs.  The functor
+     * will be invoked by the entire first warp of threads, however the input and output are undefined in threads other
+     * than <em>thread</em><sub>0</sub>.  Can be stateful.
      *
      * \smemreuse
      *
@@ -1356,17 +1378,23 @@ public:
         T               &output,                        ///< [out] Calling thread's output item (may be aliased to \p input)
         T               identity,                       ///< [in] Identity value
         ScanOp          scan_op,                        ///< [in] Binary scan operator having member <tt>T operator()(const T &a, const T &b)</tt>
-        T               &block_aggregate,               ///< [out] <b>[<em>thread</em><sub>0</sub> only]</b> threadblock-wide aggregate reduction of input items, exclusive of the \p block_prefix_op value
-        BlockPrefixOp   &block_prefix_op)               ///< [in-out] <b>[<em>thread</em><sub>0</sub> only]</b> Call-back functor having member <tt>T operator()(T block_aggregate)</tt> for specifying the appropriate external prefix (rather than \p identity), to be invoked internally by <em>thread</em><sub>0</sub>.  When provided the threadblock-wide aggregate of input items (also returned above), this functor is expected to return the logical threadblock-wide prefix to be applied during the scan operation.  Can be stateful.
+        T               &block_aggregate,               ///< [out] <b>[<em>thread</em><sub>0</sub> only]</b> Threadblock-wide aggregate reduction of input items (exclusive of the \p block_prefix_op value)
+        BlockPrefixOp   &block_prefix_op)               ///< [in-out] <b>[<em>thread</em><sub>0</sub> only]</b> Call-back functor for specifying a threadblock-wide prefix to be applied to all inputs.
     {
         BlockScanInternal<SAFE_POLICY>::ExclusiveScan(smem_storage, input, output, identity, scan_op, block_aggregate, block_prefix_op);
     }
 
 
     /**
-     * \brief Computes an exclusive threadblock-wide prefix scan using the specified binary \p scan_op functor.  Each thread contributes an array of consecutive input elements.  Instead of using \p identity as the threadblock-wide prefix, the call-back functor \p block_prefix_op is invoked by <em>thread</em><sub>0</sub> to provide the "seed" value that logically prefixes the threadblock's scan inputs.  The inclusive threadblock-wide \p aggregate of all inputs is computed for <em>thread</em><sub>0</sub>.
+     * \brief Computes an exclusive threadblock-wide prefix scan using the specified binary \p scan_op functor.  Each thread contributes an array of consecutive input elements.  Instead of using \p identity as the threadblock-wide prefix, the call-back functor \p block_prefix_op is invoked to provide the "seed" value that logically prefixes the threadblock's scan inputs.  The inclusive threadblock-wide \p block_aggregate of all inputs is computed for <em>thread</em><sub>0</sub>.
      *
-     * The \p aggregate and \p block_prefix_op are undefined in threads other than <em>thread</em><sub>0</sub>.
+     * The scalar \p block_aggregate is undefined in threads other than <em>thread</em><sub>0</sub>.
+
+     * The \p block_prefix_op functor must implement a member function <tt>T operator()(T block_aggregate)</tt>.
+     * The functor's input parameter \p block_aggregate is the same value also returned by the scan operation.
+     * This functor is expected to return a threadblock-wide prefix to be applied to all inputs.  The functor
+     * will be invoked by the entire first warp of threads, however the input and output are undefined in threads other
+     * than <em>thread</em><sub>0</sub>.  Can be stateful.
      *
      * \smemreuse
      *
@@ -1384,8 +1412,8 @@ public:
         T               (&output)[ITEMS_PER_THREAD],    ///< [out] Calling thread's output items (may be aliased to \p input)
         T               identity,                       ///< [in] Identity value
         ScanOp          scan_op,                        ///< [in] Binary scan operator having member <tt>T operator()(const T &a, const T &b)</tt>
-        T               &block_aggregate,               ///< [out] <b>[<em>thread</em><sub>0</sub> only]</b> threadblock-wide aggregate reduction of input items, exclusive of the \p block_prefix_op value
-        BlockPrefixOp   &block_prefix_op)               ///< [in-out] <b>[<em>thread</em><sub>0</sub> only]</b> Call-back functor having member <tt>T operator()(T block_aggregate)</tt> for specifying the appropriate external prefix (rather than \p identity), to be invoked internally by <em>thread</em><sub>0</sub>.  When provided the threadblock-wide aggregate of input items (also returned above), this functor is expected to return the logical threadblock-wide prefix to be applied during the scan operation.  Can be stateful.
+        T               &block_aggregate,               ///< [out] <b>[<em>thread</em><sub>0</sub> only]</b> Threadblock-wide aggregate reduction of input items (exclusive of the \p block_prefix_op value)
+        BlockPrefixOp   &block_prefix_op)               ///< [in-out] <b>[<em>thread</em><sub>0</sub> only]</b> Call-back functor for specifying a threadblock-wide prefix to be applied to all inputs.
     {
         // Reduce consecutive thread items in registers
         T thread_partial = ThreadReduce(input, scan_op);
@@ -1456,9 +1484,9 @@ public:
 
 
     /**
-     * \brief Computes an exclusive threadblock-wide prefix scan using the specified binary \p scan_op functor.  Each thread contributes one input element.  The inclusive threadblock-wide \p aggregate of all inputs is computed for <em>thread</em><sub>0</sub>.  With no identity value, the output computed for <em>thread</em><sub>0</sub> is invalid.
+     * \brief Computes an exclusive threadblock-wide prefix scan using the specified binary \p scan_op functor.  Each thread contributes one input element.  The inclusive threadblock-wide \p block_aggregate of all inputs is computed for <em>thread</em><sub>0</sub>.  With no identity value, the output computed for <em>thread</em><sub>0</sub> is invalid.
      *
-     * The \p aggregate is undefined in threads other than <em>thread</em><sub>0</sub>.
+     * The scalar \p block_aggregate is undefined in threads other than <em>thread</em><sub>0</sub>.
      *
      * \smemreuse
      *
@@ -1477,9 +1505,9 @@ public:
 
 
     /**
-     * \brief Computes an exclusive threadblock-wide prefix scan using the specified binary \p scan_op functor.  Each thread contributes an array of consecutive input elements.  The inclusive threadblock-wide \p aggregate of all inputs is computed for <em>thread</em><sub>0</sub>.  With no identity value, the output computed for <em>thread</em><sub>0</sub> is invalid.
+     * \brief Computes an exclusive threadblock-wide prefix scan using the specified binary \p scan_op functor.  Each thread contributes an array of consecutive input elements.  The inclusive threadblock-wide \p block_aggregate of all inputs is computed for <em>thread</em><sub>0</sub>.  With no identity value, the output computed for <em>thread</em><sub>0</sub> is invalid.
      *
-     * The \p aggregate is undefined in threads other than <em>thread</em><sub>0</sub>.
+     * The scalar \p block_aggregate is undefined in threads other than <em>thread</em><sub>0</sub>.
      *
      * \smemreuse
      *
@@ -1508,9 +1536,15 @@ public:
 
 
     /**
-     * \brief Computes an exclusive threadblock-wide prefix scan using the specified binary \p scan_op functor.  Each thread contributes one input element.  Instead of using \p identity as the threadblock-wide prefix, the call-back functor \p block_prefix_op is invoked by <em>thread</em><sub>0</sub> to provide the "seed" value that logically prefixes the threadblock's scan inputs.  The inclusive threadblock-wide \p aggregate of all inputs is computed for <em>thread</em><sub>0</sub>.
+     * \brief Computes an exclusive threadblock-wide prefix scan using the specified binary \p scan_op functor.  Each thread contributes one input element.  Instead of using \p identity as the threadblock-wide prefix, the call-back functor \p block_prefix_op is invoked to provide the "seed" value that logically prefixes the threadblock's scan inputs.  The inclusive threadblock-wide \p block_aggregate of all inputs is computed for <em>thread</em><sub>0</sub>.
      *
-     * The \p aggregate and \p block_prefix_op are undefined in threads other than <em>thread</em><sub>0</sub>.
+     * The scalar \p block_aggregate is undefined in threads other than <em>thread</em><sub>0</sub>.
+
+     * The \p block_prefix_op functor must implement a member function <tt>T operator()(T block_aggregate)</tt>.
+     * The functor's input parameter \p block_aggregate is the same value also returned by the scan operation.
+     * This functor is expected to return a threadblock-wide prefix to be applied to all inputs.  The functor
+     * will be invoked by the entire first warp of threads, however the input and output are undefined in threads other
+     * than <em>thread</em><sub>0</sub>.  Can be stateful.
      *
      * \smemreuse
      *
@@ -1525,17 +1559,23 @@ public:
         T               input,                          ///< [in] Calling thread's input item
         T               &output,                        ///< [out] Calling thread's output item (may be aliased to \p input)
         ScanOp          scan_op,                        ///< [in] Binary scan operator having member <tt>T operator()(const T &a, const T &b)</tt>
-        T               &block_aggregate,               ///< [out] <b>[<em>thread</em><sub>0</sub> only]</b> threadblock-wide aggregate reduction of input items, exclusive of the \p block_prefix_op value
-        BlockPrefixOp   &block_prefix_op)               ///< [in-out] <b>[<em>thread</em><sub>0</sub> only]</b> Call-back functor having member <tt>T operator()(T block_aggregate)</tt> for specifying the appropriate external prefix (rather than \p identity), to be invoked internally by <em>thread</em><sub>0</sub>.  When provided the threadblock-wide aggregate of input items (also returned above), this functor is expected to return the logical threadblock-wide prefix to be applied during the scan operation.  Can be stateful.
+        T               &block_aggregate,               ///< [out] <b>[<em>thread</em><sub>0</sub> only]</b> Threadblock-wide aggregate reduction of input items (exclusive of the \p block_prefix_op value)
+        BlockPrefixOp   &block_prefix_op)               ///< [in-out] <b>[<em>thread</em><sub>0</sub> only]</b> Call-back functor for specifying a threadblock-wide prefix to be applied to all inputs.
     {
         BlockScanInternal<SAFE_POLICY>::ExclusiveScan(smem_storage, input, output, scan_op, block_aggregate, block_prefix_op);
     }
 
 
     /**
-     * \brief Computes an exclusive threadblock-wide prefix scan using the specified binary \p scan_op functor.  Each thread contributes an array of consecutive input elements.  Instead of using \p identity as the threadblock-wide prefix, the call-back functor \p block_prefix_op is invoked by <em>thread</em><sub>0</sub> to provide the "seed" value that logically prefixes the threadblock's scan inputs.  The inclusive threadblock-wide \p aggregate of all inputs is computed for <em>thread</em><sub>0</sub>.
+     * \brief Computes an exclusive threadblock-wide prefix scan using the specified binary \p scan_op functor.  Each thread contributes an array of consecutive input elements.  Instead of using \p identity as the threadblock-wide prefix, the call-back functor \p block_prefix_op is invoked to provide the "seed" value that logically prefixes the threadblock's scan inputs.  The inclusive threadblock-wide \p block_aggregate of all inputs is computed for <em>thread</em><sub>0</sub>.
      *
-     * The \p aggregate and \p block_prefix_op are undefined in threads other than <em>thread</em><sub>0</sub>.
+     * The scalar \p block_aggregate is undefined in threads other than <em>thread</em><sub>0</sub>.
+
+     * The \p block_prefix_op functor must implement a member function <tt>T operator()(T block_aggregate)</tt>.
+     * The functor's input parameter \p block_aggregate is the same value also returned by the scan operation.
+     * This functor is expected to return a threadblock-wide prefix to be applied to all inputs.  The functor
+     * will be invoked by the entire first warp of threads, however the input and output are undefined in threads other
+     * than <em>thread</em><sub>0</sub>.  Can be stateful.
      *
      * \smemreuse
      *
@@ -1552,8 +1592,8 @@ public:
         T               (&input)[ITEMS_PER_THREAD],   ///< [in] Calling thread's input items
         T               (&output)[ITEMS_PER_THREAD],  ///< [out] Calling thread's output items (may be aliased to \p input)
         ScanOp          scan_op,                      ///< [in] Binary scan operator having member <tt>T operator()(const T &a, const T &b)</tt>
-        T               &block_aggregate,             ///< [out] <b>[<em>thread</em><sub>0</sub> only]</b> threadblock-wide aggregate reduction of input items, exclusive of the \p block_prefix_op value
-        BlockPrefixOp   &block_prefix_op)             ///< [in-out] <b>[<em>thread</em><sub>0</sub> only]</b> Call-back functor having member <tt>T operator()(T block_aggregate)</tt> for specifying the appropriate external prefix (rather than \p identity), to be invoked internally by <em>thread</em><sub>0</sub>.  When provided the threadblock-wide aggregate of input items (also returned above), this functor is expected to return the logical threadblock-wide prefix to be applied during the scan operation.  Can be stateful.
+        T               &block_aggregate,             ///< [out] <b>[<em>thread</em><sub>0</sub> only]</b> Threadblock-wide aggregate reduction of input items (exclusive of the \p block_prefix_op value)
+        BlockPrefixOp   &block_prefix_op)             ///< [in-out] <b>[<em>thread</em><sub>0</sub> only]</b> Call-back functor for specifying a threadblock-wide prefix to be applied to all inputs.
     {
         // Reduce consecutive thread items in registers
         T thread_partial = ThreadReduce(input, scan_op);
@@ -1621,9 +1661,9 @@ public:
 
 
     /**
-     * \brief Computes an exclusive threadblock-wide prefix scan using addition (+) as the scan operator.  Each thread contributes one input element.  The inclusive threadblock-wide \p aggregate of all inputs is computed for <em>thread</em><sub>0</sub>.
+     * \brief Computes an exclusive threadblock-wide prefix scan using addition (+) as the scan operator.  Each thread contributes one input element.  The inclusive threadblock-wide \p block_aggregate of all inputs is computed for <em>thread</em><sub>0</sub>.
      *
-     * The \p aggregate is undefined in threads other than <em>thread</em><sub>0</sub>.
+     * The scalar \p block_aggregate is undefined in threads other than <em>thread</em><sub>0</sub>.
      *
      * \smemreuse
      */
@@ -1638,9 +1678,9 @@ public:
 
 
     /**
-     * \brief Computes an exclusive threadblock-wide prefix scan using addition (+) as the scan operator.  Each thread contributes an array of consecutive input elements.  The inclusive threadblock-wide \p aggregate of all inputs is computed for <em>thread</em><sub>0</sub>.
+     * \brief Computes an exclusive threadblock-wide prefix scan using addition (+) as the scan operator.  Each thread contributes an array of consecutive input elements.  The inclusive threadblock-wide \p block_aggregate of all inputs is computed for <em>thread</em><sub>0</sub>.
      *
-     * The \p aggregate is undefined in threads other than <em>thread</em><sub>0</sub>.
+     * The scalar \p block_aggregate is undefined in threads other than <em>thread</em><sub>0</sub>.
      *
      * \smemreuse
      *
@@ -1666,9 +1706,15 @@ public:
 
 
     /**
-     * \brief Computes an exclusive threadblock-wide prefix scan using addition (+) as the scan operator.  Each thread contributes one input element.  Instead of using \p identity as the threadblock-wide prefix, the call-back functor \p block_prefix_op is invoked by <em>thread</em><sub>0</sub> to provide the "seed" value that logically prefixes the threadblock's scan inputs.  The inclusive threadblock-wide \p aggregate of all inputs is computed for <em>thread</em><sub>0</sub>.
+     * \brief Computes an exclusive threadblock-wide prefix scan using addition (+) as the scan operator.  Each thread contributes one input element.  Instead of using 0 as the threadblock-wide prefix, the call-back functor \p block_prefix_op is invoked to provide the "seed" value that logically prefixes the threadblock's scan inputs.  The inclusive threadblock-wide \p block_aggregate of all inputs is computed for <em>thread</em><sub>0</sub>.
      *
-     * The \p aggregate and \p block_prefix_op are undefined in threads other than <em>thread</em><sub>0</sub>.
+     * The scalar \p block_aggregate is undefined in threads other than <em>thread</em><sub>0</sub>.
+
+     * The \p block_prefix_op functor must implement a member function <tt>T operator()(T block_aggregate)</tt>.
+     * The functor's input parameter \p block_aggregate is the same value also returned by the scan operation.
+     * This functor is expected to return a threadblock-wide prefix to be applied to all inputs.  The functor
+     * will be invoked by the entire first warp of threads, however the input and output are undefined in threads other
+     * than <em>thread</em><sub>0</sub>.  Can be stateful.
      *
      * \smemreuse
      *
@@ -1679,7 +1725,7 @@ public:
         SmemStorage     &smem_storage,                  ///< [in] Shared reference to opaque SmemStorage layout
         T               input,                          ///< [in] Calling thread's input item
         T               &output,                        ///< [out] Calling thread's output item (may be aliased to \p input)
-        T               &block_aggregate,               ///< [out] <b>[<em>thread</em><sub>0</sub> only]</b> threadblock-wide aggregate reduction of input items, exclusive of the \p block_prefix_op value
+        T               &block_aggregate,               ///< [out] <b>[<em>thread</em><sub>0</sub> only]</b> Threadblock-wide aggregate reduction of input items (exclusive of the \p block_prefix_op value)
         BlockPrefixOp   &block_prefix_op)               ///< [in-out] <b>[<em>thread</em><sub>0</sub> only]</b> Call-back functor of the model <em>T block_prefix_op(T block_aggregate)</em> to be run <em>thread</em><sub>0</sub> for providing the operation with a threadblock-wide prefix value to seed the scan with.  Can be stateful.
     {
         BlockScanInternal<SAFE_POLICY>::ExclusiveSum(smem_storage, input, output, block_aggregate, block_prefix_op);
@@ -1687,9 +1733,15 @@ public:
 
 
     /**
-     * \brief Computes an exclusive threadblock-wide prefix scan using addition (+) as the scan operator.  Each thread contributes an array of consecutive input elements.  Instead of using \p identity as the threadblock-wide prefix, the call-back functor \p block_prefix_op is invoked by <em>thread</em><sub>0</sub> to provide the "seed" value that logically prefixes the threadblock's scan inputs.  The inclusive threadblock-wide \p aggregate of all inputs is computed for <em>thread</em><sub>0</sub>.
+     * \brief Computes an exclusive threadblock-wide prefix scan using addition (+) as the scan operator.  Each thread contributes an array of consecutive input elements.  Instead of using 0 as the threadblock-wide prefix, the call-back functor \p block_prefix_op is invoked to provide the "seed" value that logically prefixes the threadblock's scan inputs.  The inclusive threadblock-wide \p block_aggregate of all inputs is computed for <em>thread</em><sub>0</sub>.
      *
-     * The \p aggregate and \p block_prefix_op are undefined in threads other than <em>thread</em><sub>0</sub>.
+     * The scalar \p block_aggregate is undefined in threads other than <em>thread</em><sub>0</sub>.
+
+     * The \p block_prefix_op functor must implement a member function <tt>T operator()(T block_aggregate)</tt>.
+     * The functor's input parameter \p block_aggregate is the same value also returned by the scan operation.
+     * This functor is expected to return a threadblock-wide prefix to be applied to all inputs.  The functor
+     * will be invoked by the entire first warp of threads, however the input and output are undefined in threads other
+     * than <em>thread</em><sub>0</sub>.  Can be stateful.
      *
      * \smemreuse
      *
@@ -1703,8 +1755,8 @@ public:
         SmemStorage       &smem_storage,                ///< [in] Shared reference to opaque SmemStorage layout
         T                 (&input)[ITEMS_PER_THREAD],   ///< [in] Calling thread's input items
         T                 (&output)[ITEMS_PER_THREAD],  ///< [out] Calling thread's output items (may be aliased to \p input)
-        T                 &block_aggregate,             ///< [out] <b>[<em>thread</em><sub>0</sub> only]</b> threadblock-wide aggregate reduction of input items, exclusive of the \p block_prefix_op value
-        BlockPrefixOp       &block_prefix_op)           ///< [in-out] <b>[<em>thread</em><sub>0</sub> only]</b> Call-back functor having member <tt>T operator()(T block_aggregate)</tt> for specifying the appropriate external prefix (rather than \p identity), to be invoked internally by <em>thread</em><sub>0</sub>.  When provided the threadblock-wide aggregate of input items (also returned above), this functor is expected to return the logical threadblock-wide prefix to be applied during the scan operation.  Can be stateful.
+        T                 &block_aggregate,             ///< [out] <b>[<em>thread</em><sub>0</sub> only]</b> Threadblock-wide aggregate reduction of input items (exclusive of the \p block_prefix_op value)
+        BlockPrefixOp     &block_prefix_op)             ///< [in-out] <b>[<em>thread</em><sub>0</sub> only]</b> Call-back functor for specifying a threadblock-wide prefix to be applied to all inputs.
     {
         // Reduce consecutive thread items in registers
         Sum<T> scan_op;
@@ -1766,9 +1818,9 @@ public:
 
 
     /**
-     * \brief Computes an inclusive threadblock-wide prefix scan using the specified binary \p scan_op functor.  Each thread contributes one input element.  The inclusive threadblock-wide \p aggregate of all inputs is computed for <em>thread</em><sub>0</sub>.
+     * \brief Computes an inclusive threadblock-wide prefix scan using the specified binary \p scan_op functor.  Each thread contributes one input element.  The inclusive threadblock-wide \p block_aggregate of all inputs is computed for <em>thread</em><sub>0</sub>.
      *
-     * The \p aggregate is undefined in threads other than <em>thread</em><sub>0</sub>.
+     * The scalar \p block_aggregate is undefined in threads other than <em>thread</em><sub>0</sub>.
      *
      * \smemreuse
      *
@@ -1787,9 +1839,9 @@ public:
 
 
     /**
-     * \brief Computes an inclusive threadblock-wide prefix scan using the specified binary \p scan_op functor.  Each thread contributes an array of consecutive input elements.  The inclusive threadblock-wide \p aggregate of all inputs is computed for <em>thread</em><sub>0</sub>.
+     * \brief Computes an inclusive threadblock-wide prefix scan using the specified binary \p scan_op functor.  Each thread contributes an array of consecutive input elements.  The inclusive threadblock-wide \p block_aggregate of all inputs is computed for <em>thread</em><sub>0</sub>.
      *
-     * The \p aggregate is undefined in threads other than <em>thread</em><sub>0</sub>.
+     * The scalar \p block_aggregate is undefined in threads other than <em>thread</em><sub>0</sub>.
      *
      * \smemreuse
      *
@@ -1818,9 +1870,15 @@ public:
 
 
     /**
-     * \brief Computes an inclusive threadblock-wide prefix scan using the specified binary \p scan_op functor.  Each thread contributes one input element.  Instead of using \p identity as the threadblock-wide prefix, the call-back functor \p block_prefix_op is invoked by <em>thread</em><sub>0</sub> to provide the "seed" value that logically prefixes the threadblock's scan inputs.  The inclusive threadblock-wide \p aggregate of all inputs is computed for <em>thread</em><sub>0</sub>.
+     * \brief Computes an inclusive threadblock-wide prefix scan using the specified binary \p scan_op functor.  Each thread contributes one input element.  Instead of using \p identity as the threadblock-wide prefix, the call-back functor \p block_prefix_op is invoked to provide the "seed" value that logically prefixes the threadblock's scan inputs.  The inclusive threadblock-wide \p block_aggregate of all inputs is computed for <em>thread</em><sub>0</sub>.
      *
-     * The \p aggregate and \p block_prefix_op are undefined in threads other than <em>thread</em><sub>0</sub>.
+     * The scalar \p block_aggregate is undefined in threads other than <em>thread</em><sub>0</sub>.
+
+     * The \p block_prefix_op functor must implement a member function <tt>T operator()(T block_aggregate)</tt>.
+     * The functor's input parameter \p block_aggregate is the same value also returned by the scan operation.
+     * This functor is expected to return a threadblock-wide prefix to be applied to all inputs.  The functor
+     * will be invoked by the entire first warp of threads, however the input and output are undefined in threads other
+     * than <em>thread</em><sub>0</sub>.  Can be stateful.
      *
      * \smemreuse
      *
@@ -1835,17 +1893,23 @@ public:
         T               input,                          ///< [in] Calling thread's input item
         T               &output,                        ///< [out] Calling thread's output item (may be aliased to \p input)
         ScanOp          scan_op,                        ///< [in] Binary scan operator having member <tt>T operator()(const T &a, const T &b)</tt>
-        T               &block_aggregate,               ///< [out] <b>[<em>thread</em><sub>0</sub> only]</b> threadblock-wide aggregate reduction of input items, exclusive of the \p block_prefix_op value
-        BlockPrefixOp   &block_prefix_op)               ///< [in-out] <b>[<em>thread</em><sub>0</sub> only]</b> Call-back functor having member <tt>T operator()(T block_aggregate)</tt> for specifying the appropriate external prefix (rather than \p identity), to be invoked internally by <em>thread</em><sub>0</sub>.  When provided the threadblock-wide aggregate of input items (also returned above), this functor is expected to return the logical threadblock-wide prefix to be applied during the scan operation.  Can be stateful.
+        T               &block_aggregate,               ///< [out] <b>[<em>thread</em><sub>0</sub> only]</b> Threadblock-wide aggregate reduction of input items (exclusive of the \p block_prefix_op value)
+        BlockPrefixOp   &block_prefix_op)               ///< [in-out] <b>[<em>thread</em><sub>0</sub> only]</b> Call-back functor for specifying a threadblock-wide prefix to be applied to all inputs.
     {
         BlockScanInternal<SAFE_POLICY>::InclusiveScan(smem_storage, input, output, scan_op, block_aggregate, block_prefix_op);
     }
 
 
     /**
-     * \brief Computes an inclusive threadblock-wide prefix scan using the specified binary \p scan_op functor.  Each thread contributes an array of consecutive input elements.  Instead of using \p identity as the threadblock-wide prefix, the call-back functor \p block_prefix_op is invoked by <em>thread</em><sub>0</sub> to provide the "seed" value that logically prefixes the threadblock's scan inputs.  The inclusive threadblock-wide \p aggregate of all inputs is computed for <em>thread</em><sub>0</sub>.
+     * \brief Computes an inclusive threadblock-wide prefix scan using the specified binary \p scan_op functor.  Each thread contributes an array of consecutive input elements.  Instead of using \p identity as the threadblock-wide prefix, the call-back functor \p block_prefix_op is invoked to provide the "seed" value that logically prefixes the threadblock's scan inputs.  The inclusive threadblock-wide \p block_aggregate of all inputs is computed for <em>thread</em><sub>0</sub>.
      *
-     * The \p aggregate and \p block_prefix_op are undefined in threads other than <em>thread</em><sub>0</sub>.
+     * The scalar \p block_aggregate is undefined in threads other than <em>thread</em><sub>0</sub>.
+
+     * The \p block_prefix_op functor must implement a member function <tt>T operator()(T block_aggregate)</tt>.
+     * The functor's input parameter \p block_aggregate is the same value also returned by the scan operation.
+     * This functor is expected to return a threadblock-wide prefix to be applied to all inputs.  The functor
+     * will be invoked by the entire first warp of threads, however the input and output are undefined in threads other
+     * than <em>thread</em><sub>0</sub>.  Can be stateful.
      *
      * \smemreuse
      *
@@ -1862,8 +1926,8 @@ public:
         T               (&input)[ITEMS_PER_THREAD],     ///< [in] Calling thread's input items
         T               (&output)[ITEMS_PER_THREAD],    ///< [out] Calling thread's output items (may be aliased to \p input)
         ScanOp          scan_op,                        ///< [in] Binary scan operator having member <tt>T operator()(const T &a, const T &b)</tt>
-        T               &block_aggregate,               ///< [out] <b>[<em>thread</em><sub>0</sub> only]</b> threadblock-wide aggregate reduction of input items, exclusive of the \p block_prefix_op value
-        BlockPrefixOp   &block_prefix_op)               ///< [in-out] <b>[<em>thread</em><sub>0</sub> only]</b> Call-back functor having member <tt>T operator()(T block_aggregate)</tt> for specifying the appropriate external prefix (rather than \p identity), to be invoked internally by <em>thread</em><sub>0</sub>.  When provided the threadblock-wide aggregate of input items (also returned above), this functor is expected to return the logical threadblock-wide prefix to be applied during the scan operation.  Can be stateful.
+        T               &block_aggregate,               ///< [out] <b>[<em>thread</em><sub>0</sub> only]</b> Threadblock-wide aggregate reduction of input items (exclusive of the \p block_prefix_op value)
+        BlockPrefixOp   &block_prefix_op)               ///< [in-out] <b>[<em>thread</em><sub>0</sub> only]</b> Call-back functor for specifying a threadblock-wide prefix to be applied to all inputs.
     {
         // Reduce consecutive thread items in registers
         T thread_partial = ThreadReduce(input, scan_op);
@@ -1931,9 +1995,9 @@ public:
 
 
     /**
-     * \brief Computes an inclusive threadblock-wide prefix scan using addition (+) as the scan operator.  Each thread contributes one input element.  The inclusive threadblock-wide \p aggregate of all inputs is computed for <em>thread</em><sub>0</sub>.
+     * \brief Computes an inclusive threadblock-wide prefix scan using addition (+) as the scan operator.  Each thread contributes one input element.  The inclusive threadblock-wide \p block_aggregate of all inputs is computed for <em>thread</em><sub>0</sub>.
      *
-     * The \p aggregate is undefined in threads other than <em>thread</em><sub>0</sub>.
+     * The scalar \p block_aggregate is undefined in threads other than <em>thread</em><sub>0</sub>.
      *
      * \smemreuse
      */
@@ -1948,9 +2012,9 @@ public:
 
 
     /**
-     * \brief Computes an inclusive threadblock-wide prefix scan using addition (+) as the scan operator.  Each thread contributes an array of consecutive input elements.  The inclusive threadblock-wide \p aggregate of all inputs is computed for <em>thread</em><sub>0</sub>.
+     * \brief Computes an inclusive threadblock-wide prefix scan using addition (+) as the scan operator.  Each thread contributes an array of consecutive input elements.  The inclusive threadblock-wide \p block_aggregate of all inputs is computed for <em>thread</em><sub>0</sub>.
      *
-     * The \p aggregate is undefined in threads other than <em>thread</em><sub>0</sub>.
+     * The scalar \p block_aggregate is undefined in threads other than <em>thread</em><sub>0</sub>.
      *
      * \smemreuse
      *
@@ -1977,9 +2041,15 @@ public:
 
 
     /**
-     * \brief Computes an inclusive threadblock-wide prefix scan using addition (+) as the scan operator.  Each thread contributes one input element.  Instead of using \p identity as the threadblock-wide prefix, the call-back functor \p block_prefix_op is invoked by <em>thread</em><sub>0</sub> to provide the "seed" value that logically prefixes the threadblock's scan inputs.  The inclusive threadblock-wide \p aggregate of all inputs is computed for <em>thread</em><sub>0</sub>.
+     * \brief Computes an inclusive threadblock-wide prefix scan using addition (+) as the scan operator.  Each thread contributes one input element.  Instead of using 0 as the threadblock-wide prefix, the call-back functor \p block_prefix_op is invoked to provide the "seed" value that logically prefixes the threadblock's scan inputs.  The inclusive threadblock-wide \p block_aggregate of all inputs is computed for <em>thread</em><sub>0</sub>.
      *
-     * The \p aggregate and \p block_prefix_op are undefined in threads other than <em>thread</em><sub>0</sub>.
+     * The scalar \p block_aggregate is undefined in threads other than <em>thread</em><sub>0</sub>.
+
+     * The \p block_prefix_op functor must implement a member function <tt>T operator()(T block_aggregate)</tt>.
+     * The functor's input parameter \p block_aggregate is the same value also returned by the scan operation.
+     * This functor is expected to return a threadblock-wide prefix to be applied to all inputs.  The functor
+     * will be invoked by the entire first warp of threads, however the input and output are undefined in threads other
+     * than <em>thread</em><sub>0</sub>.  Can be stateful.
      *
      * \smemreuse
      *
@@ -1990,17 +2060,23 @@ public:
         SmemStorage     &smem_storage,                  ///< [in] Shared reference to opaque SmemStorage layout
         T               input,                          ///< [in] Calling thread's input item
         T               &output,                        ///< [out] Calling thread's output item (may be aliased to \p input)
-        T               &block_aggregate,               ///< [out] <b>[<em>thread</em><sub>0</sub> only]</b> threadblock-wide aggregate reduction of input items, exclusive of the \p block_prefix_op value
-        BlockPrefixOp   &block_prefix_op)               ///< [in-out] <b>[<em>thread</em><sub>0</sub> only]</b> Call-back functor having member <tt>T operator()(T block_aggregate)</tt> for specifying the appropriate external prefix (rather than \p identity), to be invoked internally by <em>thread</em><sub>0</sub>.  When provided the threadblock-wide aggregate of input items (also returned above), this functor is expected to return the logical threadblock-wide prefix to be applied during the scan operation.  Can be stateful.
+        T               &block_aggregate,               ///< [out] <b>[<em>thread</em><sub>0</sub> only]</b> Threadblock-wide aggregate reduction of input items (exclusive of the \p block_prefix_op value)
+        BlockPrefixOp   &block_prefix_op)               ///< [in-out] <b>[<em>thread</em><sub>0</sub> only]</b> Call-back functor for specifying a threadblock-wide prefix to be applied to all inputs.
     {
         BlockScanInternal<SAFE_POLICY>::InclusiveSum(smem_storage, input, output, block_aggregate, block_prefix_op);
     }
 
 
     /**
-     * \brief Computes an inclusive threadblock-wide prefix scan using addition (+) as the scan operator.  Each thread contributes an array of consecutive input elements.  Instead of using \p identity as the threadblock-wide prefix, the call-back functor \p block_prefix_op is invoked by <em>thread</em><sub>0</sub> to provide the "seed" value that logically prefixes the threadblock's scan inputs.  The inclusive threadblock-wide \p aggregate of all inputs is computed for <em>thread</em><sub>0</sub>.
+     * \brief Computes an inclusive threadblock-wide prefix scan using addition (+) as the scan operator.  Each thread contributes an array of consecutive input elements.  Instead of using 0 as the threadblock-wide prefix, the call-back functor \p block_prefix_op is invoked to provide the "seed" value that logically prefixes the threadblock's scan inputs.  The inclusive threadblock-wide \p block_aggregate of all inputs is computed for <em>thread</em><sub>0</sub>.
      *
-     * The \p aggregate and \p block_prefix_op are undefined in threads other than <em>thread</em><sub>0</sub>.
+     * The scalar \p block_aggregate is undefined in threads other than <em>thread</em><sub>0</sub>.
+
+     * The \p block_prefix_op functor must implement a member function <tt>T operator()(T block_aggregate)</tt>.
+     * The functor's input parameter \p block_aggregate is the same value also returned by the scan operation.
+     * This functor is expected to return a threadblock-wide prefix to be applied to all inputs.  The functor
+     * will be invoked by the entire first warp of threads, however the input and output are undefined in threads other
+     * than <em>thread</em><sub>0</sub>.  Can be stateful.
      *
      * \smemreuse
      *
@@ -2014,8 +2090,8 @@ public:
         SmemStorage     &smem_storage,                  ///< [in] Shared reference to opaque SmemStorage layout
         T               (&input)[ITEMS_PER_THREAD],     ///< [in] Calling thread's input items
         T               (&output)[ITEMS_PER_THREAD],    ///< [out] Calling thread's output items (may be aliased to \p input)
-        T               &block_aggregate,               ///< [out] <b>[<em>thread</em><sub>0</sub> only]</b> threadblock-wide aggregate reduction of input items, exclusive of the \p block_prefix_op value
-        BlockPrefixOp   &block_prefix_op)               ///< [in-out] <b>[<em>thread</em><sub>0</sub> only]</b> Call-back functor having member <tt>T operator()(T block_aggregate)</tt> for specifying the appropriate external prefix (rather than \p identity), to be invoked internally by <em>thread</em><sub>0</sub>.  When provided the threadblock-wide aggregate of input items (also returned above), this functor is expected to return the logical threadblock-wide prefix to be applied during the scan operation.  Can be stateful.
+        T               &block_aggregate,               ///< [out] <b>[<em>thread</em><sub>0</sub> only]</b> Threadblock-wide aggregate reduction of input items (exclusive of the \p block_prefix_op value)
+        BlockPrefixOp   &block_prefix_op)               ///< [in-out] <b>[<em>thread</em><sub>0</sub> only]</b> Call-back functor for specifying a threadblock-wide prefix to be applied to all inputs.
     {
         // Reduce consecutive thread items in registers
         Sum<T> scan_op;

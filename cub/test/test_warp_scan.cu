@@ -97,12 +97,12 @@ template <
     typename     ScanOp,
     typename     IdentityT>
 __global__ void WarpScanKernel(
-    T             *d_in,
-    T             *d_out,
-    ScanOp         scan_op,
-    IdentityT     identity,
-    T            prefix,
-    clock_t        *d_elapsed)
+    T           *d_in,
+    T           *d_out,
+    ScanOp      scan_op,
+    IdentityT   identity,
+    T           prefix,
+    clock_t     *d_elapsed)
 {
     // Cooperative warp-scan utility type (1 warp)
     typedef WarpScan<T, 1, LOGICAL_WARP_THREADS> WarpScan;
@@ -156,16 +156,16 @@ __global__ void WarpScanKernel(
 template <
     int         LOGICAL_WARP_THREADS,
     TestMode    TEST_MODE,
-    typename     T,
-    typename     IdentityT>
+    typename    T,
+    typename    IdentityT>
 __global__ void WarpScanKernel(
-    T                                                 *d_in,
-    T                                                 *d_out,
+    T           *d_in,
+    T           *d_out,
     Sum<T>,
     IdentityT,
-    T                                                prefix,
-    clock_t                                            *d_elapsed,
-    typename EnableIf<Traits<T>::PRIMITIVE>::Type     *dummy = NULL)
+    T           prefix,
+    clock_t     *d_elapsed,
+    typename EnableIf<Traits<T>::PRIMITIVE>::Type *dummy = NULL)
 {
     // Cooperative warp-scan utility type (1 warp)
     typedef WarpScan<T, 1, LOGICAL_WARP_THREADS> WarpScan;
@@ -222,12 +222,12 @@ template <
     typename     T,
     typename     ScanOp>
 __global__ void WarpScanKernel(
-    T             *d_in,
-    T             *d_out,
-    ScanOp         scan_op,
+    T            *d_in,
+    T            *d_out,
+    ScanOp       scan_op,
     NullType,
     T            prefix,
-    clock_t        *d_elapsed)
+    clock_t      *d_elapsed)
 {
     // Cooperative warp-scan utility type (1 warp)
     typedef WarpScan<T, 1, LOGICAL_WARP_THREADS> WarpScan;
@@ -282,13 +282,13 @@ template <
     TestMode    TEST_MODE,
     typename     T>
 __global__ void WarpScanKernel(
-    T                                                 *d_in,
-    T                                                 *d_out,
+    T           *d_in,
+    T           *d_out,
     Sum<T>,
     NullType,
-    T                                                prefix,
-    clock_t                                            *d_elapsed,
-    typename EnableIf<Traits<T>::PRIMITIVE>::Type     *dummy = NULL)
+    T           prefix,
+    clock_t     *d_elapsed,
+    typename EnableIf<Traits<T>::PRIMITIVE>::Type *dummy = NULL)
 
 {
     // Cooperative warp-scan utility type (1 warp)
@@ -344,17 +344,17 @@ __global__ void WarpScanKernel(
  * Initialize exclusive-scan problem (and solution)
  */
 template <
-    typename     T,
-    typename     ScanOp,
-    typename     IdentityT>
+    typename    T,
+    typename    ScanOp,
+    typename    IdentityT>
 T Initialize(
-    int             gen_mode,
-    T             *h_in,
-    T             *h_reference,
+    int         gen_mode,
+    T           *h_in,
+    T           *h_reference,
     int         num_elements,
-    ScanOp         scan_op,
-    IdentityT     identity,
-    T            *prefix)
+    ScanOp      scan_op,
+    IdentityT   identity,
+    T           *prefix)
 {
     T inclusive = (prefix != NULL) ? *prefix : identity;
     T aggregate = identity;
@@ -375,16 +375,16 @@ T Initialize(
  * Initialize inclusive-scan problem (and solution)
  */
 template <
-    typename     T,
-    typename     ScanOp>
+    typename    T,
+    typename    ScanOp>
 T Initialize(
-    int             gen_mode,
-    T             *h_in,
-    T             *h_reference,
+    int         gen_mode,
+    T           *h_in,
+    T           *h_reference,
     int         num_elements,
-    ScanOp         scan_op,
+    ScanOp      scan_op,
     NullType,
-    T            *prefix)
+    T           *prefix)
 {
     T inclusive;
     T aggregate;
@@ -415,15 +415,15 @@ T Initialize(
  */
 template <
     int         LOGICAL_WARP_THREADS,
-    TestMode     TEST_MODE,
-    typename     ScanOp,
-    typename     IdentityT,        // NullType implies inclusive-scan, otherwise inclusive scan
-    typename     T>
+    TestMode    TEST_MODE,
+    typename    ScanOp,
+    typename    IdentityT,        // NullType implies inclusive-scan, otherwise inclusive scan
+    typename    T>
 void Test(
     int         gen_mode,
-    ScanOp         scan_op,
-    IdentityT     identity,
-    T            prefix,
+    ScanOp      scan_op,
+    IdentityT   identity,
+    T           prefix,
     char        *type_string)
 {
     // Allocate host arrays
@@ -501,14 +501,14 @@ void Test(
  */
 template <
     int         LOGICAL_WARP_THREADS,
-    typename     ScanOp,
-    typename     T>
+    typename    ScanOp,
+    typename    T>
 void Test(
     int         gen_mode,
-    ScanOp         scan_op,
-    T             identity,
-    T            prefix,
-    char *        type_string)
+    ScanOp      scan_op,
+    T           identity,
+    T           prefix,
+    char *      type_string)
 {
     // Exclusive
     Test<LOGICAL_WARP_THREADS, BASIC>(gen_mode, scan_op, identity, prefix, type_string);

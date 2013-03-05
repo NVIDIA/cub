@@ -55,16 +55,16 @@ namespace cub {
  *
  * <b>Overview</b>
  * \par
- * The <em>radix sort</em> method relies upon a positional representation for
- * keys, i.e., each key is comprised of an ordered sequence of numeral symbols
- * (i.e., digits) specified from least-significant to most-significant.  For a
+ * The <em>radix sorting method</em> relies upon a positional representation for
+ * keys, i.e., each key is comprised of an ordered sequence of symbols (e.g., digits,
+ * characters, etc.) specified from least-significant to most-significant.  For a
  * given input sequence of keys and a set of rules specifying a total ordering
  * of the symbolic alphabet, the radix sorting method produces a lexicographic
  * ordering of those keys.
  *
  * \par
  * BlockRadixSort can sort all of the built-in C++ numeric primitive types, e.g.:
- * <tt>unsigned char</tt>, \p int, \p double, etc.  The implementation treats fixed-length
+ * <tt>unsigned char</tt>, \p int, \p double, etc.  Within each key, the implementation treats fixed-length
  * bit-sequences of \p RADIX_BITS as radix digit places.  Although the direct radix sorting
  * method can only be applied to unsigned integral types, BlockRadixSort
  * is able to sort signed and floating-point types via simple bit-wise transformations
@@ -113,8 +113,8 @@ namespace cub {
  *
  * <b>Examples</b>
  * \par
- * <em>Example 1.</em> Perform a radix sort over a tile of 32-bit integer keys that
- * are partitioned in a blocked arrangement across a 128-thread threadblock (each thread holding 4 keys).
+ * <em>Example 1.</em> Perform a radix sort over a tile of 512 integer keys that
+ * are partitioned in a blocked arrangement across a 128-thread threadblock (where each thread holds 4 keys).
  *      \code
  *      #include <cub.cuh>
  *
