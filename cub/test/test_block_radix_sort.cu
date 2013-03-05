@@ -230,7 +230,7 @@ void TestDriver(
         {
             if (h_keys[h_values[i]] != h_reference_keys[i])
             {
-                std::cout << "Incorrect: [" << i << "]: " << h_keys[h_values[i]] << " != " << h_reference_keys[i] << std::endl << std::endl;
+                std::cout << "Incorrect: [" << i << "]: " << h_keys[h_values[i]] << " != " << h_reference_keys[i] << "\n\n";
                 correct = false;
                 break;
             }

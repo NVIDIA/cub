@@ -33,6 +33,8 @@
 
 #pragma once
 
+#include <cuda_runtime.h>
+
 // Grid
 #include "grid/grid_barrier.cuh"
 #include "grid/grid_queue.cuh"
@@ -87,14 +89,14 @@
  * \section sec0 (1) What is CUB?
  *
  * \par
- * CUB is a powerful library of cooperative threadblock primitives and other utilities for CUDA kernel programming.
- * CUB enhances productivity and portability by providing an abstraction layer of complex and high-performance
+ * CUB is a flexible library of cooperative threadblock primitives and other utilities for CUDA kernel programming.
+ * CUB enhances productivity and portability by providing an abstraction layer over complex
  * threadblock, warp, and thread-level operations.
  *
  * \par
  * CUB's primitives are not bound to any particular width-of-parallelism or data type.  This allows them
  * to be flexible and tunable to fit your kernel needs.
- * Thus CUB is [<b>C</b>uda <b>U</b>n<b>B</b>ound](index.html).
+ * Thus CUB is [<b>C</b>uda <b>U</b>n<b>b</b>ound](index.html).
  *
  * \image html simt_abstraction.png
  *
@@ -183,8 +185,8 @@
  * reusable kernel primitives. In the CUDA ecosystem, CUB is unique in this regard.
  * As a SIMT library and software abstraction layer, CUB gives you:
  * -# <b>The ease of sequential programming.</b>  Parallel primitives within
- * kernels can be simply sequenced together (similar to
- * [Thrust](http://http://thrust.github.com/) programming in the host program).
+ * kernels can be simply sequenced together (similar to programming with
+ * [<b>Thrust</b>](http://http://thrust.github.com/) in the host program).
  * -# <b>The benefits of transparent performance-portability.</b> Kernels can
  * be simply recompiled against new CUB releases (instead of hand-rewritten)
  * to leverage new algorithmic developments, hardware instructions, etc.
@@ -192,13 +194,13 @@
  * \section sec4 (4) Where is CUB positioned in the CUDA ecosystem?
  *
  * \par
- * CUDA's programming model exposes three levels of execution that naturally serve
- * as abstraction layers:
+ * CUDA's programming model exposes three different levels of execution and their corresponding
+ * abstraction layers (i.e., the "black boxes" shown in the software stacks below):
  *
  * <table border="0px" cellpadding="10px" cellspacing="0px"><tr>
  * <td width="50%">
  * - <b>Grid kernel (scalar)</b>.  A single thread invokes a CUDA grid to perform some
- *    data parallel function.  This is the highest and most commonly targeted level of CUDA software
+ *    data parallel function.  This is the highest and most common level of CUDA software
  *    abstraction.  Programmers do not have to reason about parallel CUDA
  *    threads.  Libraries targeting this level include:
  *    - [<b>CUBLAS</b>](https://developer.nvidia.com/cublas)
@@ -214,7 +216,7 @@
  * </tr><tr>
  * <td>
  * - <b>Threadblock / warp (SIMT)</b>.  A threadblock or warp of threads collectively invokes some
- *    cooperative function.  This is the least commonly targeted level of CUDA software reuse.
+ *    cooperative function.  This is the least common level of CUDA software reuse.
  *    Libraries targeting this level include:
  *    - [<b>CUB</b>](index.html)
  * </td>
@@ -227,7 +229,7 @@
  * <td>
  * - <b>Device thread (scalar)</b>.  A single CUDA thread invokes some scalar function.
  *    This is the lowest level of CUDA software abstraction.  Programmers do not have to reason about
- *    the interaction of parallel CUDA threads.  Libaries targeting this level include:
+ *    the interaction of parallel CUDA threads.  Libraries targeting this level include:
  *    - <b>CUDA API</b> (e.g., \p text1D(), \p atomicAdd(), \p popc(), etc.)
  *    - [<b>CUB</b>](index.html)
  * </td>
