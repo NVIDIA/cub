@@ -159,9 +159,9 @@ hr.footer {
 h2 {
 		margin-top: 30px;
 		margin-bottom: 0px;
-		margin-left: 15px;
+		margin-left: 40px;
         font-weight: bold;
-		font-size: 115%;
+		font-size: 110%;
 		color: #2B4068;
 }
 
@@ -172,7 +172,7 @@ h1, h2.groupheader, tr.heading h2 {
 		padding-left: 8px;
 		padding-top: 6px;
 		padding-bottom: 4px;
-		font: bold 115% "courier new",courier,monospace;
+		font: bold 110% "courier new",courier,monospace;
 		color: white;
 		background-image: url('tab_a.png');
 		background-color: white;
