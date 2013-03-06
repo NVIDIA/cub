@@ -1,7 +1,7 @@
 <hr>
 <h3>About CUB</h3>
 
-We recommend the [CUB Project Website](http://nvlabs.github.com/CUB) for further information and examples.
+We recommend the [CUB Project Website](http://nvlabs.github.com/CUB) and the [cub-users discussion forum](http://groups.google.com/group/cub-users) for further information and examples.
 
 CUB is a flexible library of cooperative threadblock primitives and other utilities for CUDA kernel programming. 
 CUB enhances productivity and portability by providing an abstraction layer over complex

@@ -82,6 +82,10 @@
  * <a href="https://github.com/NVlabs/CUB"><img src="github-icon-747d8b799a48162434b2c0595ba1317e.png" style="position:relative; bottom:-10px;"/></a>
  * &nbsp;&nbsp;
  * <a href="https://github.com/NVlabs/CUB">Download (or fork) CUB at GitHub!</a>
+ * <br>
+ * <a href="http://groups.google.com/group/cub-users"><img src="groups-icon.png" style="position:relative; bottom:-10px;"/></a>
+ * &nbsp;&nbsp;
+ * <a href="http://groups.google.com/group/cub-users">Join the cub-users discussion forum!</a>
  * \endhtmlonly
  *
  * \section sec0 (1) What is CUB?
@@ -114,7 +118,14 @@
  *   - Device reflection
  *   - etc.
  *
- * \section sec2 (2) A simple example
+ * \section sec2 (2) Recent news
+ *
+ * \par
+ * - CUB v0.9 "preview" release (3/6/2013).  CUB is the first durable, high-performance
+ *   library of cooperative threadblock, warp, and thread primitives for CUDA kernel
+ *   programming.  More primitives and examples coming soon!
+ *
+ * \section sec3 (3) A simple example
  *
  * \par
  * The following code snippet illustrates a simple CUDA kernel for sorting a threadblock's data:
@@ -169,7 +180,7 @@
  * loads and stores.  For example, <tt>ld.global.v4.s32</tt> PTX instructions
  * will be generated when \p T = \p int and \p ITEMS_PER_THREAD is a multiple of 4.
  *
- * \section sec3 (3) Why do you need CUB?
+ * \section sec4 (4) Why do you need CUB?
  *
  * \par
  * Kernel development is perhaps the most challenging, time-consuming,
@@ -182,14 +193,18 @@
  * However, with the exception of CUB, there are few (if any) software libraries of
  * reusable kernel primitives. In the CUDA ecosystem, CUB is unique in this regard.
  * As a SIMT library and software abstraction layer, CUB gives you:
- * -# <b>The ease of sequential programming.</b>  Parallel primitives within
- * kernels can be simply sequenced together (similar to programming with
- * [<b>Thrust</b>](http://http://thrust.github.com/) in the host program).
- * -# <b>The benefits of transparent performance-portability.</b> Kernels can
- * be simply recompiled against new CUB releases (instead of hand-rewritten)
- * to leverage new algorithmic developments, hardware instructions, etc.
+ * -# <b>The ease of sequencing.</b>  Parallel primitives within
+ *    kernels can be simply sequenced together (similar to programming with
+ *    [<b>Thrust</b>](http://http://thrust.github.com/) in the host program).
+ * -# <b>Performance-portability.</b> CUB primitives are specialized to match
+ *    the target hardware.  Furthermore, CUDA kernels can be made future-proof by
+ *    simply recompiling against new CUB releases (instead of hand-rewritten).
+ *    to leverage new algorithmic developments, hardware instructions, etc.
+ * -# <b>Robustness and durability.</b> CUB primitives are designed to function properly for
+ *    arbitrary data types and widths-of-parallelism (not just for the built-in C++ types
+ *    and power-of-two threadblocks).
  *
- * \section sec4 (4) Where is CUB positioned in the CUDA ecosystem?
+ * \section sec5 (5) Where is CUB positioned in the CUDA ecosystem?
  *
  * \par
  * CUDA's programming model exposes three different levels of execution and their corresponding
@@ -239,7 +254,7 @@
  * </tr></table>
  *
  *
- * \section sec5 (5) How does CUB work?
+ * \section sec6 (6) How does CUB work?
  *
  * \par
  * CUB leverages the following programming idioms:
@@ -346,7 +361,13 @@
  * through global memory (where read/write coalescing is a important performance
  * consideration).
  *
- * \section sec6 (6) Open Source License
+ * \section sec7 (7) Contributors
+ *
+ * \par
+ * CUB is developed as an open-source project by [NVIDIA Research](http://research.nvidia.com).
+ * The primary contributor is [Duane Merrill](http://github.com/dumerrill).
+ *
+ * \section sec8 (8) Open Source License
  *
  * \par
  * CUB is available under the "New BSD" open-source license:
