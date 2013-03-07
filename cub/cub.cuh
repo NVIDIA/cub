@@ -200,10 +200,15 @@
  * -# <b>The ease of sequencing.</b>  Parallel primitives within
  *    kernels can be simply sequenced together (similar to programming with
  *    [<b>Thrust</b>](http://http://thrust.github.com/) in the host program).
+ * -# <b>Simple performance tuning.</b>  CUB primitives provide consistent functional
+ *    abstractions whose performance behavior can be statically tuned.  For example,
+ *    most CUB primitives support alternative algorithmic strategies and variable grain
+ *    sizes (i.e., threads per threadblock, items per thread, etc.).
  * -# <b>Performance-portability.</b> CUB primitives are specialized to match
  *    the target hardware.  Furthermore, CUDA kernels can be made future-proof by
- *    simply recompiling against new CUB releases (instead of hand-rewritten).
- *    to leverage new algorithmic developments, hardware instructions, etc.
+ *    simply recompiling against new CUB releases to leverage new algorithmic
+ *    developments, hardware instructions, etc.  (Currently, kernels are often hand-rewritten
+ *    for every new architecture.)
  * -# <b>Robustness and durability.</b> CUB primitives are designed to function properly for
  *    arbitrary data types and widths-of-parallelism (not just for the built-in C++ types
  *    and power-of-two threadblocks).
