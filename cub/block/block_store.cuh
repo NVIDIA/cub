@@ -583,7 +583,7 @@ private:
 
 
     /// Store helper
-    template <BlockStorePolicy POLICY, int DUMMY = 0>
+    template <BlockStorePolicy _POLICY, int DUMMY = 0>
     struct StoreInternal;
 
 
@@ -638,12 +638,10 @@ private:
         }
 
         /// Store a tile of items across a threadblock, specialized for opaque input iterators (skips vectorization)
-        template <
-            typename T,
-            typename OutputIterator>
+        template <typename _OutputIterator>
         static __device__ __forceinline__ void Store(
             SmemStorage     &smem_storage,              ///< [in] Shared reference to opaque SmemStorage layout
-            OutputIterator  block_itr,                    ///< [in] The threadblock's base output iterator for storing to
+            _OutputIterator block_itr,                  ///< [in] The threadblock's base output iterator for storing to
             T               (&items)[ITEMS_PER_THREAD]) ///< [in] Data to store
         {
             BlockStoreDirect<MODIFIER>(block_itr, items);
