@@ -28,7 +28,7 @@
 
 /**
  * \file
- * cub::WarpScan provides variants of parallel prefix scan across threads within a CUDA warp.
+ * cub::WarpScan provides variants of parallel prefix scan across a CUDA warp.
  */
 
 #pragma once
@@ -51,48 +51,37 @@ namespace cub {
  */
 
 /**
- * \brief WarpScan provides variants of parallel prefix scan across threads within a CUDA warp.  ![](warp_scan_logo.png)
+ * \brief WarpScan provides variants of parallel prefix scan across a CUDA warp.  ![](warp_scan_logo.png)
  *
- * <b>Overview</b>
- * \par
- * Given a list of input elements and a binary reduction operator, [<em>prefix scan</em>](http://en.wikipedia.org/wiki/Prefix_sum)
+ * \par Overview
+ * Given a list of input elements and a binary reduction operator, a [<em>prefix scan</em>](http://en.wikipedia.org/wiki/Prefix_sum)
  * produces an output list where each element is computed to be the reduction
  * of the elements occurring earlier in the input list.  <em>Prefix sum</em>
- * connotes a prefix scan with the addition operator. The term \em inclusive means
- * that each result includes the corresponding input operand in the partial sum.
- * The term \em exclusive means that each result does not include the corresponding
- * input operand in the partial reduction.
+ * connotes a prefix scan with the addition operator. The term \em inclusive indicates
+ * that the <em>i</em><sup>th</sup> output reduction includes the <em>i</em><sup>th</sup> input.
+ * The term \em exclusive indicates the <em>i</em><sup>th</sup> input is not computed into
+ * the <em>i</em><sup>th</sup> output reduction.
  *
  * \par
- * Prefix scan is an indispensable primitive with many applications that often
- * require slightly different behavior and/or features.  WarpScan exposes a
- * number of scan variants, each with a slightly different operational interface
- * and performance considerations.  More specifically, WarpScan supports the cross
- * product of orthogonal functionality:
+ * For convenience, WarpScan exposes a spectrum of entrypoints that differ by:
+ * - Operator (generic scan <em>vs.</em> prefix sum for numeric types)
+ * - Output ordering (inclusive <em>vs.</em> exclusive)
+ * - Warp-wide prefix (identity <em>vs.</em> call-back functor)
+ * - Output (scanned elements only <em>vs.</em> scanned elements and the total aggregate)
  *
- * \par
- * - Specialization by operator (generic scan vs. prefix sum for numeric types)
- * - Specialization by output ordering (inclusive vs. exclusive)
- * - Specialization by additional warp-wide scalar parameters
- *     - computes scan elements only
- *     - computes scan elements and the total aggregate,
- *     - computes scan elements, the total aggregate, and uses a call-back functor for seeding the scan with a specific warp-wide prefix
-
  * \tparam T                        The scan input/output element type
  * \tparam WARPS                    The number of "logical" warps performing concurrent warp scans
  * \tparam LOGICAL_WARP_THREADS     <b>[optional]</b> The number of threads per "logical" warp (may be less than the number of hardware warp threads).  Default is the warp size associated with the CUDA Compute Capability targeted by the compiler (e.g., 32 warps for SM20).
  *
- * <b>Usage Considerations</b>
- * \par
+ * \par Usage Considerations
  * - Supports non-commutative scan operators
  * - Supports "logical" warps smaller than the physical warp size (e.g., a logical warp of 8 threads)
  * - Warp scans are concurrent if more than one warp is participating
- * - Warp-wide scalar inputs and outputs (e.g., \p warp_prefix_op and \p warp_aggregate) are
+ * - Any warp-wide scalar inputs and outputs (e.g., \p warp_prefix_op and \p warp_aggregate) are
  *   only considered valid in <em>lane</em><sub>0</sub>
  * - \smemreuse{WarpScan::SmemStorage}
 
- * <b>Performance Features and Considerations</b>
- * \par
+ * \par Performance Considerations
  * - Uses special instructions when applicable (e.g., warp \p SHFL)
  * - Uses synchronization-free communication between warp lanes when applicable
  * - Zero bank conflicts for most types.
@@ -104,8 +93,7 @@ namespace cub {
  *       \p short, \p int2, \p double, \p float2, etc.)
  *     - Scan parameterizations where \p LOGICAL_WARP_THREADS is a multiple of the architecture's warp size
  *
- * <b>Algorithm</b>
- * \par
+ * \par Algorithm
  * These parallel prefix scan variants implement a warp-synchronous
  * Kogge-Stone algorithm having <em>O</em>(log<em>n</em>)
  * steps and <em>O</em>(<em>n</em>log<em>n</em>) work complexity,
@@ -116,9 +104,7 @@ namespace cub {
  * <div class="centercaption">Data flow within a 16-thread Kogge-Stone scan construction.  Junctions represent binary operators.</div>
  * <br>
  *
- * <b>Examples</b>
- *
- * \par
+ * \par Examples
  * <em>Example 1.</em> Perform a simple exclusive prefix sum for one warp
  * \code
  * #include <cub.cuh>
@@ -164,7 +150,7 @@ namespace cub {
  *
  *          /// Functor constructor
  *          __device__ WarpPrefixOp(int warp_prefix) : warp_prefix(warp_prefix) {}
-
+ *
  *          /// Functor operator.  Produces a value for seeding the warp-wide scan given
  *          /// the local aggregate (only used by lane-0).
  *          __device__ int operator(int warp_aggregate)
@@ -249,7 +235,7 @@ private:
     /**
      * Warpscan specialized for SHFL_SCAN variant
      */
-    template <int DUMMY, int DUMMY = 0>
+    template <int POLICY, int DUMMY = 0>
     struct WarpScanInternal
     {
         /// Constants
@@ -985,7 +971,7 @@ public:
 
 
     /**
-     * \brief Computes an inclusive prefix sum using the specified binary scan functor in each logical warp.  Instead of using \p identity as the warp-wide prefix, the call-back functor \p warp_prefix_op is invoked to provide the "seed" value that logically prefixes the warp's scan inputs.  Also computes the warp-wide \p warp_aggregate of all inputs for thread-lane<sub>0</sub>.  The \p warp_prefix_op is further updated by the value of \p warp_aggregate.
+     * \brief Computes an inclusive prefix sum using the specified binary scan functor in each logical warp.  The call-back functor \p warp_prefix_op is invoked to provide the "seed" value that logically prefixes the warp's scan inputs.  Also computes the warp-wide \p warp_aggregate of all inputs for thread-lane<sub>0</sub>.  The \p warp_prefix_op is further updated by the value of \p warp_aggregate.
      *
      * The \p warp_aggregate is undefined in threads other than thread-lane<sub>0</sub>.
      *
@@ -1072,7 +1058,7 @@ public:
 
 
     /**
-     * \brief Computes an exclusive prefix scan using the specified binary scan functor in each logical warp.  Instead of using \p identity as the warp-wide prefix, the call-back functor \p warp_prefix_op is invoked to provide the "seed" value that logically prefixes the warp's scan inputs.  Also computes the warp-wide \p warp_aggregate of all inputs for thread-lane<sub>0</sub>.  The \p warp_prefix_op is further updated by the value of \p warp_aggregate.
+     * \brief Computes an exclusive prefix scan using the specified binary scan functor in each logical warp.  The call-back functor \p warp_prefix_op is invoked to provide the "seed" value that logically prefixes the warp's scan inputs.  Also computes the warp-wide \p warp_aggregate of all inputs for thread-lane<sub>0</sub>.  The \p warp_prefix_op is further updated by the value of \p warp_aggregate.
      *
      * The \p warp_aggregate is undefined in threads other than thread-lane<sub>0</sub>.
      *

@@ -26,43 +26,10 @@
  *
  ******************************************************************************/
 
-/******************************************************************************
- * Thread utilities for writing memory (optionally using cache modifiers).
- * Cache modifiers will only be effected for built-in types (i.e., C++
- * primitives and CUDA vector-types).
- *
- * For example:
- *
- *     // 32-bit store using cache-global modifier:
- *
- *             int *d_out;
- *             int val;
- *             ThreadStore<PTX_STORE_CG>(d_out + threadIdx.x, val);
- *
- *
- *     // 16-bit store using default modifier
- *
- *             short *d_out;
- *             short val;
- *             ThreadStore<PTX_STORE_NONE>(d_out + threadIdx.x, val);
- *
- *
- *     // 256-bit store using write-through modifier
- *
- *             double4 *d_out;
- *             double4 val;
- *             ThreadStore<PTX_STORE_WT>(d_out + threadIdx.x, val);
- *
- *
- *     // 96-bit store using default cache modifier (ignoring PTX_STORE_CS)
- *
- *             struct TestFoo { bool a; short b; };
- *             TestFoo *d_struct;
- *             TestFoo val;
- *             ThreadStore<PTX_STORE_CS>(d_out + threadIdx.x, val);
- *
- *
- ******************************************************************************/
+/**
+ * \file
+ * Thread utilities for writing memory using PTX cache modifiers.
+ */
 
 #pragma once
 
@@ -73,6 +40,8 @@
 #include "../ns_wrapper.cuh"
 
 CUB_NS_PREFIX
+
+/// CUB namespace
 namespace cub {
 
 
@@ -81,21 +50,23 @@ namespace cub {
 //-----------------------------------------------------------------------------
 
 /**
- * Enumeration of store modifiers.
+ * \brief Enumeration of PTX cache-modifiers for memory store operations.
  */
 enum PtxStoreModifier
 {
     // Global store modifiers
-    PTX_STORE_NONE,                 // Default (no modifier)
-    PTX_STORE_WB,                   // Cache write-back all coherent levels
-    PTX_STORE_CG,                   // Cache at global level
-    PTX_STORE_CS,                   // Cache streaming (likely to be accessed once)
-    PTX_STORE_WT,                   // Cache write-through (to system memory)
+    PTX_STORE_NONE,                 ///< Default (no modifier)
+    PTX_STORE_WB,                   ///< Cache write-back all coherent levels
+    PTX_STORE_CG,                   ///< Cache at global level
+    PTX_STORE_CS,                   ///< Cache streaming (likely to be accessed once)
+    PTX_STORE_WT,                   ///< Cache write-through (to system memory)
 
     // Shared store modifiers
-    PTX_STORE_VS,                   // Volatile shared
+    PTX_STORE_VS,                   ///< Volatile shared
 };
 
+
+/** \cond INTERNAL */
 
 //-----------------------------------------------------------------------------
 // Generic ThreadStore() operation
@@ -121,13 +92,6 @@ struct ThreadStoreDispatch;
 template <PtxStoreModifier MODIFIER>
 struct ThreadStoreDispatch<MODIFIER, true>
 {
-    // Pointer
-    template <typename T>
-    static __device__ __forceinline__ void ThreadStore(T *ptr, const T& val)
-    {
-        val.ThreadStore<MODIFIER>(ptr);
-    }
-
     // Iterator
     template <typename OutputIterator, typename T>
     static __device__ __forceinline__ void ThreadStore(OutputIterator itr, const T& val)
@@ -143,14 +107,6 @@ struct ThreadStoreDispatch<MODIFIER, true>
 template <>
 struct ThreadStoreDispatch<PTX_STORE_NONE, false>
 {
-    // Pointer
-    template <typename T>
-    static __device__ __forceinline__ void ThreadStore(T *ptr, const T& val)
-    {
-        // Straightforward dereference
-        *ptr = val;
-    }
-
     // Iterator
     template <
         typename OutputIterator,
@@ -169,16 +125,18 @@ struct ThreadStoreDispatch<PTX_STORE_NONE, false>
 template <>
 struct ThreadStoreDispatch<PTX_STORE_VS, false>
 {
-    // Pointer
-    template <typename T>
-    static __device__ __forceinline__ void ThreadStore(T *ptr, const T& val)
+    // Iterator
+    template <
+        typename OutputIterator,
+        typename T>
+    static __device__ __forceinline__ void ThreadStore(OutputIterator itr, const T& val)
     {
         const bool USE_VOLATILE = NumericTraits<T>::PRIMITIVE;
 
         typedef typename If<USE_VOLATILE, volatile T, T>::Type PtrT;
 
         // Straightforward dereference of pointer
-        *reinterpret_cast<PtrT*>(ptr) = val;
+        *reinterpret_cast<PtrT*>(&*itr) = val;
 
         // Prevent compiler from reordering or omitting memory accesses between rounds
         if (!USE_VOLATILE) __threadfence_block();
@@ -186,8 +144,42 @@ struct ThreadStoreDispatch<PTX_STORE_VS, false>
 };
 
 
+/** \endcond */     // INTERNAL
+
+
 /**
- * Generic ThreadStore() operation for output iterators
+ * \brief Thread utility for writing memory using cub::PtxStoreModifier cache modifiers.
+ *
+ * Cache modifiers will only be effected for built-in types (i.e., C++
+ * primitives and CUDA vector-types).
+ *
+ * For example:
+ * \par
+ * \code
+ * #include <cub.cuh>
+ *
+ * // 32-bit store using cache-global modifier:
+ * int *d_out;
+ * int val;
+ * cub::ThreadStore<cub::PTX_STORE_CG>(d_out + threadIdx.x, val);
+ *
+ * // 16-bit store using default modifier
+ * short *d_out;
+ * short val;
+ * cub::ThreadStore<cub::PTX_STORE_NONE>(d_out + threadIdx.x, val);
+ *
+ * // 256-bit store using write-through modifier
+ * double4 *d_out;
+ * double4 val;
+ * cub::ThreadStore<cub::PTX_STORE_WT>(d_out + threadIdx.x, val);
+ *
+ * // 96-bit store using default cache modifier (ignoring PTX_STORE_CS)
+ * struct TestFoo { bool a; short b; };
+ * TestFoo *d_struct;
+ * TestFoo val;
+ * cub::ThreadStore<cub::PTX_STORE_CS>(d_out + threadIdx.x, val);
+ * \endcode
+ *
  */
 template <
     PtxStoreModifier MODIFIER,
@@ -199,17 +191,8 @@ __device__ __forceinline__ void ThreadStore(OutputIterator itr, const T& val)
 }
 
 
-/**
- * Generic ThreadStore() operation.  Further specialized below.
- */
-template <
-    PtxStoreModifier MODIFIER,
-    typename T>
-__device__ __forceinline__ void ThreadStore(T *ptr, const T& val)
-{
-    ThreadStoreDispatch<MODIFIER, HasThreadLoad<T>::VALUE>::ThreadStore(ptr, val);
-}
-
+// Do not document specializations
+#ifndef DOXYGEN_SHOULD_SKIP_THIS
 
 //-----------------------------------------------------------------------------
 // ThreadStore() specializations by modifier and data type (i.e., primitives
@@ -222,7 +205,7 @@ __device__ __forceinline__ void ThreadStore(T *ptr, const T& val)
  */
 #define CUB_G_STORE_0(type, asm_type, ptx_type, reg_mod, cub_modifier, ptx_modifier)    \
     template<>                                                                            \
-    void ThreadStore<cub_modifier, type>(type* ptr, const type& val)                    \
+    void ThreadStore<cub_modifier, type*>(type* ptr, const type& val)                    \
     {                                                                                    \
         const asm_type raw = reinterpret_cast<const asm_type&>(val);                    \
         asm volatile ("st.global."#ptx_modifier"."#ptx_type" [%0], %1;" : :                        \
@@ -235,7 +218,7 @@ __device__ __forceinline__ void ThreadStore(T *ptr, const T& val)
  */
 #define CUB_G_STORE_1(type, component_type, asm_type, ptx_type, reg_mod, cub_modifier, ptx_modifier)    \
     template<>                                                                            \
-    void ThreadStore<cub_modifier, type>(type* ptr, const type& val)                    \
+    void ThreadStore<cub_modifier, type*>(type* ptr, const type& val)                    \
     {                                                                                    \
         const asm_type raw_x = reinterpret_cast<const asm_type&>(val.x);                \
         asm volatile ("st.global."#ptx_modifier"."#ptx_type" [%0], %1;" : :                        \
@@ -248,7 +231,7 @@ __device__ __forceinline__ void ThreadStore(T *ptr, const T& val)
  */
 #define CUB_VS_STORE_1(type, component_type, asm_type, ptx_type, reg_mod)                \
     template<>                                                                            \
-    void ThreadStore<PTX_STORE_VS, type>(type* ptr, const type& val)                        \
+    void ThreadStore<PTX_STORE_VS, type*>(type* ptr, const type& val)                        \
     {                                                                                    \
         ThreadStore<PTX_STORE_VS>(                                                            \
             (asm_type*) ptr,                                                            \
@@ -260,7 +243,7 @@ __device__ __forceinline__ void ThreadStore(T *ptr, const T& val)
  */
 #define CUB_G_STORE_2(type, component_type, asm_type, ptx_type, reg_mod, cub_modifier, ptx_modifier)    \
     template<>                                                                            \
-    void ThreadStore<cub_modifier, type>(type* ptr, const type& val)                    \
+    void ThreadStore<cub_modifier, type*>(type* ptr, const type& val)                    \
     {                                                                                    \
         const asm_type raw_x = reinterpret_cast<const asm_type&>(val.x);                \
         const asm_type raw_y = reinterpret_cast<const asm_type&>(val.y);                \
@@ -277,7 +260,7 @@ __device__ __forceinline__ void ThreadStore(T *ptr, const T& val)
  */
 #define CUB_VS_STORE_2(type, component_type, asm_type, ptx_type, reg_mod)                \
     template<>                                                                            \
-    void ThreadStore<PTX_STORE_VS, type>(type* ptr, const type& val)                        \
+    void ThreadStore<PTX_STORE_VS, type*>(type* ptr, const type& val)                        \
     {                                                                                    \
         if ((sizeof(component_type) == 1) || (CUDA_VERSION < 4100))                                                \
         {                                                                                \
@@ -305,7 +288,7 @@ __device__ __forceinline__ void ThreadStore(T *ptr, const T& val)
  */
 #define CUB_G_STORE_4(type, component_type, asm_type, ptx_type, reg_mod, cub_modifier, ptx_modifier)    \
     template<>                                                                            \
-    void ThreadStore<cub_modifier, type>(type* ptr, const type& val)                    \
+    void ThreadStore<cub_modifier, type*>(type* ptr, const type& val)                    \
     {                                                                                    \
         const asm_type raw_x = reinterpret_cast<const asm_type&>(val.x);                \
         const asm_type raw_y = reinterpret_cast<const asm_type&>(val.y);                \
@@ -326,7 +309,7 @@ __device__ __forceinline__ void ThreadStore(T *ptr, const T& val)
  */
 #define CUB_VS_STORE_4(type, component_type, asm_type, ptx_type, reg_mod)                \
     template<>                                                                            \
-    void ThreadStore<PTX_STORE_VS, type>(type* ptr, const type& val)                        \
+    void ThreadStore<PTX_STORE_VS, type*>(type* ptr, const type& val)                        \
     {                                                                                    \
         if ((sizeof(component_type) == 1) || (CUDA_VERSION < 4100))                                                \
         {                                                                                \
@@ -361,7 +344,7 @@ __device__ __forceinline__ void ThreadStore(T *ptr, const T& val)
  */
 #define CUB_STORE_4L(type, half_type, cub_modifier)                                        \
     template<>                                                                            \
-    void ThreadStore<cub_modifier, type>(type* ptr, const type& val)                    \
+    void ThreadStore<cub_modifier, type*>(type* ptr, const type& val)                    \
     {                                                                                    \
         const half_type* half_val = reinterpret_cast<const half_type*>(&val);            \
         half_type* half_ptr = reinterpret_cast<half_type*>(ptr);                        \
@@ -490,6 +473,8 @@ CUB_STORES_4L(double4, double2);
 #undef CUB_STORES_4L
 #undef CUB_STORES_012
 #undef CUB_STORES_0124
+
+#endif // DOXYGEN_SHOULD_SKIP_THIS
 
 
 } // namespace cub

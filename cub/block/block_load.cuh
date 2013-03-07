@@ -61,14 +61,14 @@ namespace cub {
 /**
  * \brief Load a tile of items across a threadblock directly using the specified cache modifier.
  *
- * \tparam MODIFIER             cub::PtxLoadModifier cache modifier.
- * \tparam T                    <b>[inferred]</b> The data type to load.
- * \tparam ITEMS_PER_THREAD     <b>[inferred]</b> The number of consecutive items partitioned onto each thread.
- * \tparam InputIterator        <b>[inferred]</b> The input iterator type (may be a simple pointer).
- *
  * The aggregate tile of items is assumed to be partitioned evenly across
  * threads in "blocked" fashion with thread<sub><em>i</em></sub> owning
  * the <em>i</em><sup>th</sup> segment of consecutive elements.
+ *
+ * \tparam MODIFIER             cub::PtxLoadModifier cache modifier.
+ * \tparam T                    <b>[inferred]</b> The data type to load.
+ * \tparam ITEMS_PER_THREAD     <b>[inferred]</b> The number of consecutive items partitioned onto each thread.
+ * \tparam InputIterator        <b>[inferred]</b> The input iterator type (may be a simple pointer type).
  */
 template <
     PtxLoadModifier MODIFIER,
@@ -92,13 +92,13 @@ __device__ __forceinline__ void BlockLoadDirect(
 /**
  * \brief Load a tile of items across a threadblock directly.
  *
- * \tparam T                    <b>[inferred]</b> The data type to load.
- * \tparam ITEMS_PER_THREAD     <b>[inferred]</b> The number of consecutive items partitioned onto each thread.
- * \tparam InputIterator        <b>[inferred]</b> The input iterator type (may be a simple pointer).
- *
  * The aggregate tile of items is assumed to be partitioned evenly across
  * threads in "blocked" fashion with thread<sub><em>i</em></sub> owning
  * the <em>i</em><sup>th</sup> segment of consecutive elements.
+ *
+ * \tparam T                    <b>[inferred]</b> The data type to load.
+ * \tparam ITEMS_PER_THREAD     <b>[inferred]</b> The number of consecutive items partitioned onto each thread.
+ * \tparam InputIterator        <b>[inferred]</b> The input iterator type (may be a simple pointer type).
  */
 template <
     typename        T,
@@ -116,15 +116,15 @@ __device__ __forceinline__ void BlockLoadDirect(
 /**
  * \brief Load a tile of items across a threadblock directly using the specified cache modifier, guarded by range
  *
- * \tparam MODIFIER             cub::PtxLoadModifier cache modifier.
- * \tparam T                    <b>[inferred]</b> The data type to load.
- * \tparam ITEMS_PER_THREAD     <b>[inferred]</b> The number of consecutive items partitioned onto each thread.
- * \tparam InputIterator        <b>[inferred]</b> The input iterator type (may be a simple pointer).
- * \tparam SizeT                <b>[inferred]</b> Integer type for offsets
- *
  * The aggregate tile of items is assumed to be partitioned evenly across
  * threads in "blocked" fashion with thread<sub><em>i</em></sub> owning
  * the <em>i</em><sup>th</sup> segment of consecutive elements.
+ *
+ * \tparam MODIFIER             cub::PtxLoadModifier cache modifier.
+ * \tparam T                    <b>[inferred]</b> The data type to load.
+ * \tparam ITEMS_PER_THREAD     <b>[inferred]</b> The number of consecutive items partitioned onto each thread.
+ * \tparam InputIterator        <b>[inferred]</b> The input iterator type (may be a simple pointer type).
+ * \tparam SizeT                <b>[inferred]</b> Integer type for offsets
  */
 template <
     PtxLoadModifier MODIFIER,
@@ -153,14 +153,14 @@ __device__ __forceinline__ void BlockLoadDirect(
 /**
  * \brief Load a tile of items across a threadblock directly, guarded by range
  *
- * \tparam T                    <b>[inferred]</b> The data type to load.
- * \tparam ITEMS_PER_THREAD     <b>[inferred]</b> The number of consecutive items partitioned onto each thread.
- * \tparam InputIterator        <b>[inferred]</b> The input iterator type (may be a simple pointer).
- * \tparam SizeT                <b>[inferred]</b> Integer type for offsets
- *
  * The aggregate tile of items is assumed to be partitioned evenly across
  * threads in "blocked" fashion with thread<sub><em>i</em></sub> owning
  * the <em>i</em><sup>th</sup> segment of consecutive elements.
+ *
+ * \tparam T                    <b>[inferred]</b> The data type to load.
+ * \tparam ITEMS_PER_THREAD     <b>[inferred]</b> The number of consecutive items partitioned onto each thread.
+ * \tparam InputIterator        <b>[inferred]</b> The input iterator type (may be a simple pointer type).
+ * \tparam SizeT                <b>[inferred]</b> Integer type for offsets
  */
 template <
     typename        T,
@@ -179,15 +179,15 @@ __device__ __forceinline__ void BlockLoadDirect(
 /**
  * \brief Load a tile of items across a threadblock directly using the specified cache modifier, guarded by range, with assignment for out-of-bound elements
  *
- * \tparam MODIFIER             cub::PtxLoadModifier cache modifier.
- * \tparam T                    <b>[inferred]</b> The data type to load.
- * \tparam ITEMS_PER_THREAD     <b>[inferred]</b> The number of consecutive items partitioned onto each thread.
- * \tparam InputIterator        <b>[inferred]</b> The input iterator type (may be a simple pointer).
- * \tparam SizeT                <b>[inferred]</b> Integer type for offsets
- *
  * The aggregate tile of items is assumed to be partitioned evenly across
  * threads in "blocked" fashion with thread<sub><em>i</em></sub> owning
  * the <em>i</em><sup>th</sup> segment of consecutive elements.
+ *
+ * \tparam MODIFIER             cub::PtxLoadModifier cache modifier.
+ * \tparam T                    <b>[inferred]</b> The data type to load.
+ * \tparam ITEMS_PER_THREAD     <b>[inferred]</b> The number of consecutive items partitioned onto each thread.
+ * \tparam InputIterator        <b>[inferred]</b> The input iterator type (may be a simple pointer type).
+ * \tparam SizeT                <b>[inferred]</b> Integer type for offsets
  */
 template <
     PtxLoadModifier MODIFIER,
@@ -216,14 +216,14 @@ __device__ __forceinline__ void BlockLoadDirect(
 /**
  * \brief Load a tile of items across a threadblock directly, guarded by range, with assignment for out-of-bound elements
  *
- * \tparam T                    <b>[inferred]</b> The data type to load.
- * \tparam ITEMS_PER_THREAD     <b>[inferred]</b> The number of consecutive items partitioned onto each thread.
- * \tparam InputIterator        <b>[inferred]</b> The input iterator type (may be a simple pointer).
- * \tparam SizeT                <b>[inferred]</b> Integer type for offsets
- *
  * The aggregate tile of items is assumed to be partitioned evenly across
  * threads in "blocked" fashion with thread<sub><em>i</em></sub> owning
  * the <em>i</em><sup>th</sup> segment of consecutive elements.
+ *
+ * \tparam T                    <b>[inferred]</b> The data type to load.
+ * \tparam ITEMS_PER_THREAD     <b>[inferred]</b> The number of consecutive items partitioned onto each thread.
+ * \tparam InputIterator        <b>[inferred]</b> The input iterator type (may be a simple pointer type).
+ * \tparam SizeT                <b>[inferred]</b> Integer type for offsets
  */
 template <
     typename        T,
@@ -250,14 +250,14 @@ __device__ __forceinline__ void BlockLoadDirect(
 /**
  * \brief Load striped tile directly using the specified cache modifier.
  *
- * \tparam MODIFIER             cub::PtxLoadModifier cache modifier.
- * \tparam T                    <b>[inferred]</b> The data type to load.
- * \tparam ITEMS_PER_THREAD     <b>[inferred]</b> The number of consecutive items partitioned onto each thread.
- * \tparam InputIterator        <b>[inferred]</b> The input iterator type (may be a simple pointer).
- *
  * The aggregate tile of items is assumed to be partitioned across
  * threads in "striped" fashion, i.e., the \p ITEMS_PER_THREAD
  * items owned by each thread have logical stride \p BLOCK_THREADS between them.
+ *
+ * \tparam MODIFIER             cub::PtxLoadModifier cache modifier.
+ * \tparam T                    <b>[inferred]</b> The data type to load.
+ * \tparam ITEMS_PER_THREAD     <b>[inferred]</b> The number of consecutive items partitioned onto each thread.
+ * \tparam InputIterator        <b>[inferred]</b> The input iterator type (may be a simple pointer type).
  */
 template <
     PtxLoadModifier MODIFIER,
@@ -282,14 +282,14 @@ __device__ __forceinline__ void BlockLoadDirectStriped(
 /**
  * \brief Load striped tile directly.
  *
- * \tparam MODIFIER             cub::PtxLoadModifier cache modifier.
- * \tparam T                    <b>[inferred]</b> The data type to load.
- * \tparam ITEMS_PER_THREAD     <b>[inferred]</b> The number of consecutive items partitioned onto each thread.
- * \tparam InputIterator        <b>[inferred]</b> The input iterator type (may be a simple pointer).
- *
  * The aggregate tile of items is assumed to be partitioned across
  * threads in "striped" fashion, i.e., the \p ITEMS_PER_THREAD
  * items owned by each thread have logical stride \p BLOCK_THREADS between them.
+ *
+ * \tparam MODIFIER             cub::PtxLoadModifier cache modifier.
+ * \tparam T                    <b>[inferred]</b> The data type to load.
+ * \tparam ITEMS_PER_THREAD     <b>[inferred]</b> The number of consecutive items partitioned onto each thread.
+ * \tparam InputIterator        <b>[inferred]</b> The input iterator type (may be a simple pointer type).
  */
 template <
     typename        T,
@@ -306,16 +306,16 @@ __device__ __forceinline__ void BlockLoadDirectStriped(
 /**
  * \brief Load striped directly tile using the specified cache modifier, guarded by range
  *
+ * The aggregate tile of items is assumed to be partitioned across
+ * threads in "striped" fashion, i.e., the \p ITEMS_PER_THREAD
+ * items owned by each thread have logical stride \p BLOCK_THREADS between them.
+ *
  * \tparam BLOCK_THREADS          The threadblock size in threads
  * \tparam MODIFIER             cub::PtxLoadModifier cache modifier.
  * \tparam T                    <b>[inferred]</b> The data type to load.
  * \tparam ITEMS_PER_THREAD     <b>[inferred]</b> The number of consecutive items partitioned onto each thread.
- * \tparam InputIterator        <b>[inferred]</b> The input iterator type (may be a simple pointer).
+ * \tparam InputIterator        <b>[inferred]</b> The input iterator type (may be a simple pointer type).
  * \tparam SizeT                <b>[inferred]</b> Integer type for offsets
- *
- * The aggregate tile of items is assumed to be partitioned across
- * threads in "striped" fashion, i.e., the \p ITEMS_PER_THREAD
- * items owned by each thread have logical stride \p BLOCK_THREADS between them.
  */
 template <
     PtxLoadModifier MODIFIER,
@@ -345,14 +345,14 @@ __device__ __forceinline__ void BlockLoadDirectStriped(
 /**
  * \brief Load striped tile directly, guarded by range
  *
- * \tparam T                    <b>[inferred]</b> The data type to load.
- * \tparam ITEMS_PER_THREAD     <b>[inferred]</b> The number of consecutive items partitioned onto each thread.
- * \tparam InputIterator        <b>[inferred]</b> The input iterator type (may be a simple pointer).
- * \tparam SizeT                <b>[inferred]</b> Integer type for offsets
- *
  * The aggregate tile of items is assumed to be partitioned across
  * threads in "striped" fashion, i.e., the \p ITEMS_PER_THREAD
  * items owned by each thread have logical stride \p BLOCK_THREADS between them.
+ *
+ * \tparam T                    <b>[inferred]</b> The data type to load.
+ * \tparam ITEMS_PER_THREAD     <b>[inferred]</b> The number of consecutive items partitioned onto each thread.
+ * \tparam InputIterator        <b>[inferred]</b> The input iterator type (may be a simple pointer type).
+ * \tparam SizeT                <b>[inferred]</b> Integer type for offsets
  */
 template <
     typename        T,
@@ -372,15 +372,15 @@ __device__ __forceinline__ void BlockLoadDirectStriped(
 /**
  * \brief Load striped directly tile using the specified cache modifier, guarded by range, with assignment for out-of-bound elements
  *
- * \tparam MODIFIER             cub::PtxLoadModifier cache modifier.
- * \tparam T                    <b>[inferred]</b> The data type to load.
- * \tparam ITEMS_PER_THREAD     <b>[inferred]</b> The number of consecutive items partitioned onto each thread.
- * \tparam InputIterator        <b>[inferred]</b> The input iterator type (may be a simple pointer).
- * \tparam SizeT                <b>[inferred]</b> Integer type for offsets
- *
  * The aggregate tile of items is assumed to be partitioned across
  * threads in "striped" fashion, i.e., the \p ITEMS_PER_THREAD
  * items owned by each thread have logical stride \p BLOCK_THREADS between them.
+ *
+ * \tparam MODIFIER             cub::PtxLoadModifier cache modifier.
+ * \tparam T                    <b>[inferred]</b> The data type to load.
+ * \tparam ITEMS_PER_THREAD     <b>[inferred]</b> The number of consecutive items partitioned onto each thread.
+ * \tparam InputIterator        <b>[inferred]</b> The input iterator type (may be a simple pointer type).
+ * \tparam SizeT                <b>[inferred]</b> Integer type for offsets
  */
 template <
     PtxLoadModifier MODIFIER,
@@ -410,14 +410,14 @@ __device__ __forceinline__ void BlockLoadDirectStriped(
 /**
  * \brief Load striped tile directly, guarded by range, with assignment for out-of-bound elements
  *
- * \tparam T                    <b>[inferred]</b> The data type to load.
- * \tparam ITEMS_PER_THREAD     <b>[inferred]</b> The number of consecutive items partitioned onto each thread.
- * \tparam InputIterator        <b>[inferred]</b> The input iterator type (may be a simple pointer).
- * \tparam SizeT                <b>[inferred]</b> Integer type for offsets
- *
  * The aggregate tile of items is assumed to be partitioned across
  * threads in "striped" fashion, i.e., the \p ITEMS_PER_THREAD
  * items owned by each thread have logical stride \p BLOCK_THREADS between them.
+ *
+ * \tparam T                    <b>[inferred]</b> The data type to load.
+ * \tparam ITEMS_PER_THREAD     <b>[inferred]</b> The number of consecutive items partitioned onto each thread.
+ * \tparam InputIterator        <b>[inferred]</b> The input iterator type (may be a simple pointer type).
+ * \tparam SizeT                <b>[inferred]</b> Integer type for offsets
  */
 template <
     typename        T,
@@ -443,11 +443,6 @@ __device__ __forceinline__ void BlockLoadDirectStriped(
 /**
  * \brief Load a tile of items across a threadblock directly using the specified cache modifier.
  *
- * \tparam MODIFIER             cub::PtxLoadModifier cache modifier.
- * \tparam T                    <b>[inferred]</b> The data type to load.
- * \tparam ITEMS_PER_THREAD     <b>[inferred]</b> The number of consecutive items partitioned onto each thread.
- * \tparam SizeT                <b>[inferred]</b> Integer type for offsets
- *
  * The aggregate tile of items is assumed to be partitioned evenly across
  * threads in "blocked" fashion with thread<sub><em>i</em></sub> owning
  * the <em>i</em><sup>th</sup> segment of consecutive elements.
@@ -458,6 +453,11 @@ __device__ __forceinline__ void BlockLoadDirectStriped(
  *   - The \p InputIterator is not a simple pointer type
  *   - The input offset (\p block_ptr + \p block_offset) is not quad-aligned
  *   - The data type \p T is not a built-in primitive or CUDA vector type (e.g., \p short, \p int2, \p double, \p float2, etc.)
+ *
+ * \tparam MODIFIER             cub::PtxLoadModifier cache modifier.
+ * \tparam T                    <b>[inferred]</b> The data type to load.
+ * \tparam ITEMS_PER_THREAD     <b>[inferred]</b> The number of consecutive items partitioned onto each thread.
+ * \tparam SizeT                <b>[inferred]</b> Integer type for offsets
  */
 template <
     PtxLoadModifier MODIFIER,
@@ -516,9 +516,6 @@ __device__ __forceinline__ void BlockLoadVectorized(
 /**
  * \brief Load a tile of items across a threadblock directly.
  *
- * \tparam T                    <b>[inferred]</b> The data type to load.
- * \tparam ITEMS_PER_THREAD     <b>[inferred]</b> The number of consecutive items partitioned onto each thread.
- *
  * The aggregate tile of items is assumed to be partitioned evenly across
  * threads in "blocked" fashion with thread<sub><em>i</em></sub> owning
  * the <em>i</em><sup>th</sup> segment of consecutive elements.
@@ -529,6 +526,9 @@ __device__ __forceinline__ void BlockLoadVectorized(
  *   - The \p InputIterator is not a simple pointer type
  *   - The input offset (\p block_ptr + \p block_offset) is not quad-aligned
  *   - The data type \p T is not a built-in primitive or CUDA vector type (e.g., \p short, \p int2, \p double, \p float2, etc.)
+ *
+ * \tparam T                    <b>[inferred]</b> The data type to load.
+ * \tparam ITEMS_PER_THREAD     <b>[inferred]</b> The number of consecutive items partitioned onto each thread.
  */
 template <
     typename        T,
@@ -553,9 +553,57 @@ __device__ __forceinline__ void BlockLoadVectorized(
 /// Tuning policy for cub::BlockLoad
 enum BlockLoadPolicy
 {
-    BLOCK_LOAD_DIRECT,        ///< Loads consecutive thread-items directly from the input
-    BLOCK_LOAD_VECTORIZE,     ///< Attempts to use CUDA's built-in vectorized items as a coalescing optimization
-    BLOCK_LOAD_TRANSPOSE,     ///< Loads striped inputs as a coalescing optimization and then transposes them through shared memory into the desired blocks of thread-consecutive items
+    /**
+     * \par Overview
+     *
+     * A [<em>blocked arrangement</em>](index.html#sec3sec3) of data is read
+     * directly from memory.  The threadblock reads items in a parallel "raking" fashion: thread<sub><em>i</em></sub>
+     * reads the <em>i</em><sup>th</sup> segment of consecutive elements.
+     *
+     * \par Performance Considerations
+     * - The utilization of memory transactions (coalescing) decreases as the
+     *   access stride between threads increases (i.e., the number items per thread).
+     */
+    BLOCK_LOAD_DIRECT,
+
+    /**
+     * \par Overview
+     *
+     * A [<em>blocked arrangement</em>](index.html#sec3sec3) of data is read directly
+     * from memory using CUDA's built-in vectorized loads as a coalescing optimization.
+     * The threadblock reads items in a parallel "raking" fashion: thread<sub><em>i</em></sub> uses vector loads to
+     * read the <em>i</em><sup>th</sup> segment of consecutive elements.
+     *
+     * For example, <tt>ld.global.v4.s32</tt> instructions will be generated when \p T = \p int and \p ITEMS_PER_THREAD > 4.
+     *
+     * \par Performance Considerations
+     * - The utilization of memory transactions (coalescing) remains high until the the
+     *   access stride between threads (i.e., the number items per thread) exceeds the
+     *   maximum vector load width (typically 4 items or 64B, whichever is lower).
+     * - The following conditions will prevent vectorization and loading will fall back to cub::BLOCK_LOAD_DIRECT:
+     *   - \p ITEMS_PER_THREAD is odd
+     *   - The \p InputIterator is not a simple pointer type
+     *   - The block input offset is not quadword-aligned
+     *   - The data type \p T is not a built-in primitive or CUDA vector type (e.g., \p short, \p int2, \p double, \p float2, etc.)
+     */
+    BLOCK_LOAD_VECTORIZE,
+
+    /**
+     * \par Overview
+     *
+     * A [<em>striped arrangement</em>](index.html#sec3sec3) of data is read directly from memory
+     * and then is locally transposed into a [<em>blocked arrangement</em>](index.html#sec3sec3).
+     * The threadblock reads items in a parallel "strip-mining" fashion: thread<sub><em>i</em></sub> reads items
+     * having stride \p BLOCK_THREADS between them. cub::BlockExchange is then used to
+     * locally reorder the items into a [<em>blocked arrangement</em>](index.html#sec3sec3).
+     *
+     * \par Performance Considerations
+     * - The utilization of memory transactions (coalescing) remains high regardless
+     *   of items loaded per thread.
+     * - The local reordering incurs slightly longer latencies and throughput than the
+     *   direct cub::BLOCK_LOAD_DIRECT and cub::BLOCK_LOAD_VECTORIZE alternatives.
+     */
+    BLOCK_LOAD_TRANSPOSE,
 };
 
 
@@ -566,89 +614,83 @@ enum BlockLoadPolicy
 
 
 /**
- * \brief BlockLoad provides operations for reading global tiles of data into the threadblock (in blocked arrangement across threads). ![](block_load_logo.png)
+ * \brief BlockLoad provides data movement operations for reading [<em>block-arranged</em>](index.html#sec3sec3) data from global memory. ![](block_load_logo.png)
  *
- * <b>Overview</b>
- * \par
- * BlockLoad can be configured to use one of three alternative algorithms:
- *   -# <b>cub::BLOCK_LOAD_DIRECT</b>.  Loads consecutive thread-items
- *      directly from the input.
- *   <br><br>
- *   -# <b>cub::BLOCK_LOAD_VECTORIZE</b>.  Attempts to use CUDA's
- *      built-in vectorized items as a coalescing optimization.  For
- *      example, <tt>ld.global.v4.s32</tt> will be generated when
- *      \p T = \p int and \p ITEMS_PER_THREAD > 4.
- *   <br><br>
- *   -# <b>cub::BLOCK_LOAD_TRANSPOSE</b>.  Loads striped inputs as
- *      a coalescing optimization and then transposes them through
- *      shared memory into the desired blocks of thread-consecutive items
+ * BlockLoad provides a single tile-loading abstraction whose performance behavior can be tuned externally.  In particular,
+ * BlockLoad implements alternative cub::BlockLoadPolicy strategies catering to different granularity sizes (i.e.,
+ * number of items per thread).
  *
- * \par
- * The data movement operations exposed by this type assume a blocked
- * arrangement of data amongst threads, i.e., an <em>n</em>-element list (or
- * <em>tile</em>) that is partitioned evenly among \p BLOCK_THREADS threads,
- * with thread<sub><em>i</em></sub> owning the <em>i</em><sup>th</sup> segment of
- * consecutive elements.
- *
- * \tparam InputIterator        The input iterator type (may be a simple pointer).
- * \tparam BLOCK_THREADS          The threadblock size in threads.
+ * \tparam InputIterator        The input iterator type (may be a simple pointer type).
+ * \tparam BLOCK_THREADS        The threadblock size in threads.
  * \tparam ITEMS_PER_THREAD     The number of consecutive items partitioned onto each thread.
- * \tparam POLICY               <b>[optional]</b> cub::BlockLoadPolicy tuning policy enumeration.  Default = cub::BLOCK_LOAD_DIRECT.
+ * \tparam POLICY               <b>[optional]</b> cub::BlockLoadPolicy tuning policy.  Default = cub::BLOCK_LOAD_DIRECT.
  * \tparam MODIFIER             <b>[optional]</b> cub::PtxLoadModifier cache modifier.  Default = cub::PTX_LOAD_NONE.
  *
- * <b>Performance Features and Considerations</b>
+ * \par Algorithm
+ * BlockLoad can be (optionally) configured to use one of three alternative methods:
+ *   -# <b>cub::BLOCK_LOAD_DIRECT</b>.  A [<em>blocked arrangement</em>](index.html#sec3sec3)
+ *      of data is read directly from memory.  [More...](\ref cub::BlockLoadPolicy)
+ *   -# <b>cub::BLOCK_LOAD_VECTORIZE</b>.  A [<em>blocked arrangement</em>](index.html#sec3sec3)
+ *      of data is read directly from memory using CUDA's built-in vectorized loads as a
+ *      coalescing optimization.    [More...](\ref cub::BlockLoadPolicy)
+ *   -# <b>cub::BLOCK_LOAD_TRANSPOSE</b>.  A [<em>striped arrangement</em>](index.html#sec3sec3)
+ *      of data is read directly from memory and is then locally transposed into a
+ *      [<em>blocked arrangement</em>](index.html#sec3sec3).  [More...](\ref cub::BlockLoadPolicy)
+ *
+ * \par Usage Considerations
+ * - \smemreuse{BlockLoad::SmemStorage}
+ *
+ * \par Performance Considerations
+ *  - See cub::BlockLoadPolicy for more performance details regarding algorithmic alternatives
+ *
+ *
+ * \par Examples
+ * <em>Example 1.</em> Have a 128-thread threadblock directly load a blocked arrangement of four consecutive integers per thread.
+ * \code
+ * #include <cub.cuh>
+ *
+ * __global__ void SomeKernel(int *d_in, ...)
+ * {
+ *     // Parameterize BlockLoad for the parallel execution context
+ *     typedef cub::BlockLoad<int*, 128, 4> BlockLoad;
+ *
+ *     // Declare shared memory for BlockLoad
+ *     __shared__ typename BlockLoad::SmemStorage smem_storage;
+ *
+ *     // A segment of consecutive items per thread
+ *     int data[4];
+ *
+ *     // Load a tile of data at this block's offset
+ *     BlockLoad::Load(smem_storage, d_in + blockIdx.x * 128 * 4, data);
+ *
+ *     ...
+ * \endcode
+ *
  * \par
- * - After any operation, a subsequent <tt>__syncthreads()</tt> barrier is
- *   required if the supplied BlockLoad::SmemStorage is to be reused or repurposed by the threadblock.
- * - The following conditions will prevent vectorization and loading will fall back to cub::BLOCK_LOAD_DIRECT:
- *   - \p ITEMS_PER_THREAD is odd
- *   - The \p InputIterator is not a simple pointer type
- *   - The input offset (\p block_ptr + \p block_offset) is not quad-aligned
- *   - The data type \p T is not a built-in primitive or CUDA vector type (e.g., \p short, \p int2, \p double, \p float2, etc.)
+ * <em>Example 2.</em> Have a threadblock load a blocked arrangement of \p ITEMS_PER_THREAD consecutive
+ * integers per thread using vectorized loads and global-only caching:
+ * \code
+ * #include <cub.cuh>
  *
- * <b>Examples</b>
- * \par
- * - <b>Example 1:</b> Have a 128-thread threadblock load four consecutive integers per thread (blocked arrangement):
- *      \code
- *      #include <cub.cuh>
+ * template <
+ *     int BLOCK_THREADS,
+ *     int ITEMS_PER_THREAD>
+ * __global__ void SomeKernel(int *d_in, ...)
+ * {
+ *     // Parameterize BlockLoad for the parallel execution context
+ *     typedef cub::BlockLoad<int*, BLOCK_THREADS, ITEMS_PER_THREAD, BLOCK_LOAD_VECTORIZE, PTX_LOAD_CG> BlockLoad;
  *
- *      __global__ void SomeKernel(int *d_in, ...)
- *      {
- *          // Parameterize a BlockLoad type for the parallel execution context
- *          typedef cub::BlockLoad<int, 128, 4> BlockLoad;
+ *     // Declare shared memory for BlockLoad
+ *     __shared__ typename BlockLoad::SmemStorage smem_storage;
  *
- *          // Declare shared memory for BlockLoad
- *          __shared__ typename BlockLoad::SmemStorage smem_storage;
+ *     // A segment of consecutive items per thread
+ *     int data[ITEMS_PER_THREAD];
  *
- *          // A segment of consecutive input items per thread
- *          int data[4];
+ *     // Load a tile of data at this block's offset
+ *     BlockLoad::Load(smem_storage, d_in + blockIdx.x * BLOCK_THREADS * ITEMS_PER_THREAD, data);
  *
- *          // Load a tile of data at this block's offset
- *          BlockLoad::Load(data, d_in, blockIdx.x * 128 * 4);
- *
- *      \endcode
- *
- * \par
- * - <b>Example 2:</b> Have a threadblock load consecutive integers per thread (blocked arrangement) using vectorized loads and global-only caching:
- *      \code
- *      #include <cub.cuh>
- *
- *      template <int BLOCK_THREADS, int ITEMS_PER_THREAD>
- *      __global__ void SomeKernel(int *d_in, ...)
- *      {
- *          // Parameterize a BlockLoad type for the parallel execution context
- *          typedef cub::BlockLoad<int, BLOCK_THREADS, ITEMS_PER_THREAD, BLOCK_LOAD_VECTORIZE, PTX_LOAD_CG> BlockLoad;
- *
- *          // Declare shared memory for BlockLoad
- *          __shared__ typename BlockLoad::SmemStorage smem_storage;
- *
- *          // A segment of consecutive input items per thread
- *          int data[ITEMS_PER_THREAD];
- *
- *          // Load a tile of data at this block's offset
- *          BlockLoad::Load(data, d_in, blockIdx.x * BLOCK_THREADS * ITEMS_PER_THREAD);
- *
- *      \endcode
+ *     ...
+ * \endcode
  * <br>
  */
 template <

@@ -28,7 +28,7 @@
 
 /**
  * \file
- * cub::BlockReduce provides variants of parallel reduction across threads within a threadblock
+ * cub::BlockReduce provides variants of parallel reduction across a CUDA threadblock
  */
 
 #pragma once
@@ -53,76 +53,73 @@ namespace cub {
  */
 
 /**
- * \brief BlockReduce provides variants of parallel reduction across threads within a threadblock. ![](reduce_logo.png)
+ * \brief BlockReduce provides variants of parallel reduction across a CUDA threadblock. ![](reduce_logo.png)
  *
- * <b>Overview</b>
+ * \par Overview
+ * A <a href="http://en.wikipedia.org/wiki/Reduce_(higher-order_function)"><em>reduction</em> (or <em>fold</em>)</a>
+ * uses a binary combining operator to compute a single aggregate from a list of input elements.
+ *
  * \par
- * A <em>reduction</em> (or <em>fold</em>) uses a binary combining operator to
- * compute a single aggregate from a list of input elements.  The parallel
- * operations exposed by this type assume <em>n</em>-element
- * lists that are partitioned evenly across \p BLOCK_THREADS threads,
- * with thread<sub><em>i</em></sub> owning the <em>i</em><sup>th</sup>
- * element (or <em>i</em><sup>th</sup> segment of consecutive elements).
- * To minimize synchronization overhead, these operations only produce a
- * valid cumulative aggregate for thread<sub>0</sub>.
+ * For convenience, BlockReduce exposes a spectrum of entrypoints that differ by:
+ * - Granularity (single <em>vs.</em> multiple items per thread)
+ * - Input (full tile <em>vs.</em> partial-tile having some undefined elements)
  *
  * \tparam T                        The reduction input/output element type
- * \tparam BLOCK_THREADS              The threadblock size in threads
+ * \tparam BLOCK_THREADS            The threadblock size in threads
  *
- * <b>Performance Features and Considerations</b>
- * \par
- * - Supports non-commutative reduction operators.
- * - Supports partially-full threadblocks (i.e., high-order threads having undefined values).
- * - Very efficient (only one synchronization barrier).
- * - Zero bank conflicts for most types.
- * - After any operation, a subsequent <tt>__syncthreads()</tt> barrier is
- *   required if the supplied BlockReduce::SmemStorage is to be reused or repurposed by the threadblock.
- * - The operations are most efficient (lowest instruction overhead) when:
- *      - The data type \p T is a built-in primitive or CUDA vector type (e.g.,
- *        \p short, \p int2, \p double, \p float2, etc.)  Otherwise the implementation may use memory
- *        fences to prevent reordering of memory references.
- *      - \p BLOCK_THREADS is a multiple of the architecture's warp size
- *      - Every thread has a valid input (i.e., unguarded reduction)
- *
- * <b>Algorithm</b>
- * \par
- * These parallel reduction variants have <em>O</em>(<em>n</em>) work complexity and are implemented in three phases:
+ * \par Algorithm
+ * BlockReduce entrypoints have <em>O</em>(<em>n</em>) work complexity and are implemented in three phases:
  * -# Sequential reduction in registers (if threads contribute more than one input each).  Each thread then places the partial reduction of its item(s) into shared memory.
  * -# A single-warp performs a raking upsweep across partial reductions shared each thread in the threadblock.
  * -# A warp-synchronous Kogge-Stone style reduction within the raking warp to produce the total aggregate.
- * <br>
- * <br>
  * \image html block_reduce.png
  * <div class="centercaption">Data flow for a hypothetical 16-thread threadblock and 4-thread raking warp.</div>
- * <br>
  *
- * <b>Examples</b>
+ * \par Usage Considerations
+ * - Supports non-commutative reduction operators
+ * - Supports partially-full threadblocks (i.e., the most-significant thread ranks having undefined values).
+ * - Assumes a [<em>blocked arrangement</em>](index.html#sec3sec3) of elements across threads
+ * - The threadblock-wide scalar reduction output is only considered valid in <em>thread</em><sub>0</sub>
+ * - \smemreuse{BlockReduce::SmemStorage}
+ *
+ * \par Performance Considerations
+ * - Very efficient (only one synchronization barrier).
+ * - Zero bank conflicts for most types.
+ * - Computation is slightly more efficient (i.e., having lower instruction overhead) for:
+ *   - \p T is a built-in C++ primitive or CUDA vector type (e.g., \p short, \p int2, \p double, \p float2, etc.)
+ *   - \p BLOCK_THREADS is a multiple of the architecture's warp size
+ *   - Every thread has a valid input (i.e., full <em>vs.</em> partial-tiles)
+ *
+ * \par Examples
  * \par
- * - <b>Example 1:</b> Simple reduction
+ * <em>Example 1.</em> Perform a simple reduction of 512 integer keys that
+ * are partitioned in a blocked arrangement across a 128-thread threadblock (where each thread holds 4 keys).
  * \code
  * #include <cub.cuh>
  *
- * template <int BLOCK_THREADS>
  * __global__ void SomeKernel(...)
  * {
- *      // Parameterize BlockReduce for use with BLOCK_THREADS threads on type int
- *      typedef cub::BlockReduce<int, BLOCK_THREADS> BlockReduce;
+ *      // Parameterize BlockReduce for the parallel execution context
+ *      typedef cub::BlockReduce<int, 128> BlockReduce;
  *
  *      // Declare shared memory for BlockReduce
  *      __shared__ typename BlockReduce::SmemStorage smem_storage;
  *
- *      // A segment of four input items per thread
+ *      // A segment of consecutive input items per thread
  *      int data[4];
+ *
+ *      // Obtain items in blocked order
  *      ...
+ *
  *      // Compute the threadblock-wide sum for thread0
  *      int aggregate = BlockReduce::Reduce(smem_storage, data);
+ *
  *      ...
- * }
  * \endcode
- * <br>
  *
  * \par
- * - <b>Example 2:</b> Guarded reduction
+ * <em>Example 2:</em> Perform a guarded reduction of only \p num_elements keys that
+ * are partitioned in a partially-full blocked arrangement across \p BLOCK_THREADS threads.
  * \code
  * #include <cub.cuh>
  *
@@ -141,8 +138,10 @@ namespace cub {
  *
  *      // Compute the threadblock-wide sum of valid elements in thread0
  *      int aggregate = BlockReduce::Reduce(smem_storage, data, num_elements);
+ *
  *      ...
  * \endcode
+ *
  */
 template <
     typename     T,
@@ -187,7 +186,7 @@ private:
     struct _SmemStorage
     {
         T                                       warp_buffer[RAKING_THREADS];    ///< Buffer for warp-synchronous reduction
-        typename BlockRakingGrid::SmemStorage     raking_grid;                    ///< Padded threadblock raking grid
+        typename BlockRakingGrid::SmemStorage   raking_grid;                    ///< Padded threadblock raking grid
     };
 
 public:
@@ -349,7 +348,7 @@ public:
         const unsigned int  &valid_threads)         ///< [in] Number of threads containing valid elements (may be less than BLOCK_THREADS)
     {
         Sum<T> reduction_op;
-        Reduce(smem_storage, input, valid_threads);
+        return Reduce(smem_storage, input, valid_threads);
     }
 
 

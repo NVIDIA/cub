@@ -28,7 +28,7 @@
 
 /**
  * \file
- * cub::BlockDiscontinuity provides operations for flagging discontinuities within a list of data items partitioned across a threadblock.
+ * cub::BlockDiscontinuity provides operations for flagging discontinuities within a list of data items partitioned across a CUDA threadblock.
  */
 
 #pragma once
@@ -51,24 +51,83 @@ namespace cub {
 
 
 /**
- * \brief BlockDiscontinuity provides operations for flagging discontinuities within a list of data items partitioned across a threadblock. ![](discont_logo.png)
+ * \brief BlockDiscontinuity provides operations for flagging discontinuities within a list of data items partitioned across a CUDA threadblock. ![](discont_logo.png)
  *
- * <b>Overview</b>
- * \par
+ * \par Overview
  * The operations exposed by BlockDiscontinuity allow threadblocks to set "head flags" for data elements that
- * are different from their predecessor (as specified by a binary boolean operator).
+ * are different from their predecessor (as specified by a binary boolean operator).  Head flags are often useful for
+ * orchestrating segmented scans and reductions.
+ *
+ * \par
+ * For convenience, BlockDiscontinuity exposes a spectrum of entrypoints that differ by:
+ * - How the first item is handled (always-flagged <em>vs.</em> compared to a specific block-wide predecessor)
+ * - Output (discontinuity flags only <em>vs.</em> discontinuity flags and a copy of the last tile item for thread<sub><em>0</em></sub>)
  *
  * \tparam T                    The data type to be exchanged.
  * \tparam BLOCK_THREADS        The threadblock size in threads.
  *
- * <b>Usage Considerations</b>
- * \par
+ * \par Usage Considerations
+ * - Assumes a [<em>blocked arrangement</em>](index.html#sec3sec3) of elements across threads
+ * - Any threadblock-wide scalar inputs and outputs (e.g., \p tile_predecessor and \p last_tile_item) are
+ *   only considered valid in <em>thread</em><sub>0</sub>
  * - \smemreuse{BlockDiscontinuity::SmemStorage}
  *
- * <b>Performance Considerations</b>
- * \par
+ * \par Performance Considerations
  * - Zero bank conflicts for most types.
  *
+ * \par Examples
+ * <em>Example 1.</em> Given a tile of 512 non-zero matrix coordinates (ordered by row) in
+ * a blocked arrangement across a 128-thread threadblock, flag the first coordinate
+ * element of each row.
+ * \code
+ * #include <cub.cuh>
+ *
+ * /// Non-zero matrix coordinates
+ * struct NonZero
+ * {
+ *     int row;
+ *     int col;
+ *     float val;
+ * };
+ *
+ * /// Functor for detecting row discontinuities.
+ * struct NewRowOp
+ * {
+ *     /// Returns true if row_b is the start of a new row
+ *     __device__ __forceinline__ bool operator()(
+ *         const NonZero& a,
+ *         const NonZero& b)
+ *     {
+ *         return (a.row != b.row);
+ *     }
+ * };
+ *
+ * __global__ void SomeKernel(...)
+ * {
+ *     // Parameterize BlockDiscontinuity for the parallel execution context
+ *     typedef cub::BlockDiscontinuity<NonZero, 128> BlockDiscontinuity;
+ *
+ *     // Declare shared memory for BlockDiscontinuity
+ *     __shared__ typename BlockDiscontinuity::SmemStorage smem_storage;
+ *
+ *     // A segment of consecutive non-zeroes per thread
+ *     NonZero coordinates[4];
+ *
+ *     // Obtain items in blocked order
+ *     ...
+ *
+ *     // Obtain the last item of the previous tile
+ *     NonZero block_predecessor;
+ *     if (threadIdx.x == 0)
+ *     {
+ *         block_predecessor = ...
+ *     }
+ *
+ *     // Set head flags
+ *     int head_flags[4];
+ *     BlockDiscontinuity::Flag(smem_storage, coordinates, block_predecessor, NewRowOp(), head_flags);
+ *
+ * \endcode
  */
 template <
     typename    T,
@@ -193,9 +252,9 @@ public:
      * is \p true (where <em>previous-item</em> is either <tt>input<sub><em>i-1</em></sub></tt>,
      * or <tt>input<sub><em>ITEMS_PER_THREAD</em>-1</sub></tt> in the previous thread).  For
      * <em>thread</em><sub>0</sub>, item <tt>input<sub>0</sub></tt> is compared
-     * against /p tile_prefix.
+     * against /p tile_predecessor.
      *
-     * The \p tile_prefix and \p last_tile_item are undefined in threads other than <em>thread</em><sub>0</sub>.
+     * The \p tile_predecessor and \p last_tile_item are undefined in threads other than <em>thread</em><sub>0</sub>.
      *
      * \smemreuse
      *
@@ -210,7 +269,7 @@ public:
     static __device__ __forceinline__ void Flag(
         SmemStorage     &smem_storage,                  ///< [in] Shared reference to opaque SmemStorage layout
         T               (&input)[ITEMS_PER_THREAD],     ///< [in] Input items
-        T               tile_prefix,                    ///< [in] <b>[<em>thread</em><sub>0</sub> only]</b> Item with which to compare the first tile item (<tt>input<sub>0</sub></tt>from <em>thread</em><sub>0</sub>).
+        T               tile_predecessor,               ///< [in] <b>[<em>thread</em><sub>0</sub> only]</b> Item with which to compare the first tile item (<tt>input<sub>0</sub></tt>from <em>thread</em><sub>0</sub>).
         FlagOp          flag_op,                        ///< [in] Binary boolean flag predicate
         FlagT           (&flags)[ITEMS_PER_THREAD],     ///< [out] Discontinuity flags
         T               &last_tile_item)                ///< [out] <b>[<em>thread</em><sub>0</sub> only]</b> The last tile item (<tt>input<sub><em>ITEMS_PER_THREAD</em>-1</sub></tt> from <em>thread</em><sub><tt><em>BLOCK_THREADS</em></tt>-1</sub>)
@@ -224,7 +283,7 @@ public:
         int prefix;
         if (threadIdx.x == 0)
         {
-            prefix = tile_prefix;
+            prefix = tile_predecessor;
             last_tile_item = smem_storage.last_items[BLOCK_THREADS - 1];
         }
         else
@@ -252,9 +311,9 @@ public:
      * is \p true (where <em>previous-item</em> is either <tt>input<sub><em>i-1</em></sub></tt>,
      * or <tt>input<sub><em>ITEMS_PER_THREAD</em>-1</sub></tt> in the previous thread).  For
      * <em>thread</em><sub>0</sub>, item <tt>input<sub>0</sub></tt> is compared
-     * against /p tile_prefix.
+     * against /p tile_predecessor.
      *
-     * The \p tile_prefix and \p last_tile_item are undefined in threads other than <em>thread</em><sub>0</sub>.
+     * The \p tile_predecessor and \p last_tile_item are undefined in threads other than <em>thread</em><sub>0</sub>.
      *
      * \smemreuse
      *
@@ -269,12 +328,12 @@ public:
     static __device__ __forceinline__ void Flag(
         SmemStorage     &smem_storage,                  ///< [in] Shared reference to opaque SmemStorage layout
         T               (&input)[ITEMS_PER_THREAD],     ///< [in] Input items
-        T               tile_prefix,                    ///< [in] <b>[<em>thread</em><sub>0</sub> only]</b> Item with which to compare the first tile item (<tt>input<sub>0</sub></tt>from <em>thread</em><sub>0</sub>).
+        T               tile_predecessor,               ///< [in] <b>[<em>thread</em><sub>0</sub> only]</b> Item with which to compare the first tile item (<tt>input<sub>0</sub></tt>from <em>thread</em><sub>0</sub>).
         FlagOp          flag_op,                        ///< [in] Binary boolean flag predicate
         FlagT           (&flags)[ITEMS_PER_THREAD])     ///< [out] Discontinuity flags
     {
         T last_tile_item;   // discard
-        Flag(smem_storage, input, tile_prefix, flag_op, flags, last_tile_item);
+        Flag(smem_storage, input, tile_predecessor, flag_op, flags, last_tile_item);
     }
 
 };

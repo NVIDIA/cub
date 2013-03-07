@@ -58,7 +58,7 @@ div.header {
 
 #MSearchBox {
         margin-top: 6px;
-        margin-left: 350px;
+        margin-left: 420px;
 		right: auto;
 }
 
@@ -265,7 +265,6 @@ dl.section.user a:visited b {
 }
 
 dl.section.user dd {
-		text-align: justify;
 		margin-right: 40px;
 		color: #666;
 }
@@ -351,7 +350,6 @@ div.memitem {
 
 .memTemplParams, td.memTemplItemLeft, td.memItemLeft {
 		padding-left: 20px;
-		text-align: justify;
 		font-family: "courier new",courier,monospace;
 		font-size: 85%;
 }
@@ -365,7 +363,7 @@ td.memTemplItemRight, td.memItemRight {
 		font-family: "courier new",courier,monospace;
 }
 
-td.memItemRight a.el:first-of-type {
+td.memItemRight a.el:first-of-type, td.memTemplItemRight a.el:first-of-type {
 		color: darkGoldenrod;
 }
 
