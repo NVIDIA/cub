@@ -927,7 +927,7 @@ HTML_EXTRA_STYLESHEET  = extra_stylesheet.css
 # files. In the HTML_STYLESHEET file, use the file name only. Also note that
 # the files will be copied as-is; there are no commands or markers available.
 
-HTML_EXTRA_FILES       = images/groups-icon.png images/github-icon-747d8b799a48162434b2c0595ba1317e.png images/favicon.ico images/favicon.png images/tab_b_alt.png images/simt_abstraction.png images/kernel_abstraction.png images/devfun_abstraction.png
+HTML_EXTRA_FILES       = images/download-icon.png images/groups-icon.png images/github-icon-747d8b799a48162434b2c0595ba1317e.png images/favicon.ico images/favicon.png images/tab_b_alt.png images/simt_abstraction.png images/kernel_abstraction.png images/devfun_abstraction.png
 
 # The HTML_COLORSTYLE_HUE tag controls the color of the HTML output.
 # Doxygen will adjust the colors in the style sheet and background images
