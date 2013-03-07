@@ -194,7 +194,8 @@ var searchBox = new SearchBox("searchBox", "search",false,'Search');
 <dl class="section user"><dt></dt><dd>Kernel development is perhaps the most challenging, time-consuming, and costly aspect of CUDA programming. It is where the complexity of parallelism is expressed. Kernel code is often the most performance-sensitive and difficult-to-maintain layer in the CUDA software stack. This is particularly true for complex parallel algorithms having intricate dependences between threads.</dd></dl>
 <dl class="section user"><dt></dt><dd>However, with the exception of CUB, there are few (if any) software libraries of reusable kernel primitives. In the CUDA ecosystem, CUB is unique in this regard. As a SIMT library and software abstraction layer, CUB gives you:<ol type="1">
 <li><b>The ease of sequencing.</b> Parallel primitives within kernels can be simply sequenced together (similar to programming with <a href="http://http://thrust.github.com/"><b>Thrust</b></a> in the host program).</li>
-<li><b>Performance-portability.</b> CUB primitives are specialized to match the target hardware. Furthermore, CUDA kernels can be made future-proof by simply recompiling against new CUB releases (instead of hand-rewritten). to leverage new algorithmic developments, hardware instructions, etc.</li>
+<li><b>Simple performance tuning.</b> CUB primitives provide consistent functional abstractions whose performance behavior can be statically tuned. For example, most CUB primitives support alternative algorithmic strategies and variable grain sizes (i.e., threads per threadblock, items per thread, etc.).</li>
+<li><b>Performance-portability.</b> CUB primitives are specialized to match the target hardware. Furthermore, CUDA kernels can be made future-proof by simply recompiling against new CUB releases to leverage new algorithmic developments, hardware instructions, etc. (Currently, kernels are often hand-rewritten for every new architecture.)</li>
 <li><b>Robustness and durability.</b> CUB primitives are designed to function properly for arbitrary data types and widths-of-parallelism (not just for the built-in C++ types and power-of-two threadblocks).</li>
 </ol>
 </dd></dl>
@@ -332,7 +333,7 @@ var searchBox = new SearchBox("searchBox", "search",false,'Search');
 <!-- HTML footer for doxygen 1.8.3.1-->
 <!-- start footer part -->
 <hr class="footer"/><address class="footer"><small>
-Generated on Thu Mar 7 2013 02:27:47 for CUB by &#160;<a href="http://www.doxygen.org/index.html">
+Generated on Thu Mar 7 2013 10:43:25 for CUB by &#160;<a href="http://www.doxygen.org/index.html">
 <img class="footer" src="doxygen.png" alt="doxygen"/>
 </a> 1.8.3.1
 <br>

@@ -116,14 +116,14 @@ class cub::BlockLoad&lt; InputIterator, BLOCK_THREADS, ITEMS_PER_THREAD, POLICY,
 <img src="block_load_logo.png" alt="block_load_logo.png"/>
 <div class="caption">
 .</div></div>
- <p><a class="el" href="classcub_1_1_block_load.html" title="BlockLoad provides data movement operations for reading block-arranged data from global memory...">BlockLoad</a> provides a single tile-loading abstraction whose performance behavior can be tuned externally. In particular, <a class="el" href="classcub_1_1_block_load.html" title="BlockLoad provides data movement operations for reading block-arranged data from global memory...">BlockLoad</a> implements alternative <a class="el" href="namespacecub.html#a70f1d3c7536d858d49b896e937d25290" title="Tuning policy for cub::BlockLoad.">cub::BlockLoadPolicy</a> strategies catering to different granularity sizes (i.e., number of items per thread).</p>
+ <p><a class="el" href="classcub_1_1_block_load.html" title="BlockLoad provides data movement operations for reading block-arranged data from global memory...">BlockLoad</a> provides a single tile-loading abstraction whose performance behavior can be statically tuned. In particular, <a class="el" href="classcub_1_1_block_load.html" title="BlockLoad provides data movement operations for reading block-arranged data from global memory...">BlockLoad</a> implements alternative <a class="el" href="namespacecub.html#a70f1d3c7536d858d49b896e937d25290" title="Tuning policy for cub::BlockLoad.">cub::BlockLoadPolicy</a> strategies catering to different granularity sizes (i.e., number of items per thread).</p>
 <dl class="tparams"><dt>Template Parameters</dt><dd>
   <table class="tparams">
     <tr><td class="paramname">InputIterator</td><td>The input iterator type (may be a simple pointer type). </td></tr>
     <tr><td class="paramname">BLOCK_THREADS</td><td>The threadblock size in threads. </td></tr>
     <tr><td class="paramname">ITEMS_PER_THREAD</td><td>The number of consecutive items partitioned onto each thread. </td></tr>
     <tr><td class="paramname">POLICY</td><td><b>[optional]</b> <a class="el" href="namespacecub.html#a70f1d3c7536d858d49b896e937d25290" title="Tuning policy for cub::BlockLoad.">cub::BlockLoadPolicy</a> tuning policy. Default = <a class="el" href="namespacecub.html#a70f1d3c7536d858d49b896e937d25290a2d4d8900d7e697e9dac4062e97d3d835">cub::BLOCK_LOAD_DIRECT</a>. </td></tr>
-    <tr><td class="paramname">MODIFIER</td><td><b>[optional]</b> <a class="el" href="namespacecub.html#a023420f30fec7d4b187fc98f4fd2a55d" title="Enumeration of PTX cache-modifiers for memory load operations.">cub::PtxLoadModifier</a> cache modifier. Default = <a class="el" href="namespacecub.html#a023420f30fec7d4b187fc98f4fd2a55da017db24b99abd332be14151d35fa3cf5" title="Default (currently cub::PTX_LOAD_CA for global loads, nothing for smem loads)">cub::PTX_LOAD_NONE</a>.</td></tr>
+    <tr><td class="paramname">MODIFIER</td><td><b>[optional]</b> <a class="el" href="group___simt_utils.html#ga023420f30fec7d4b187fc98f4fd2a55d" title="Enumeration of PTX cache-modifiers for memory load operations.">cub::PtxLoadModifier</a> cache modifier. Default = <a class="el" href="group___simt_utils.html#gga023420f30fec7d4b187fc98f4fd2a55da017db24b99abd332be14151d35fa3cf5" title="Default (currently cub::PTX_LOAD_CA for global loads, nothing for smem loads)">cub::PTX_LOAD_NONE</a>.</td></tr>
   </table>
   </dd>
 </dl>
@@ -328,7 +328,7 @@ template&lt;typename SizeT &gt; </div>
 <!-- HTML footer for doxygen 1.8.3.1-->
 <!-- start footer part -->
 <hr class="footer"/><address class="footer"><small>
-Generated on Thu Mar 7 2013 02:27:47 for CUB by &#160;<a href="http://www.doxygen.org/index.html">
+Generated on Thu Mar 7 2013 10:43:25 for CUB by &#160;<a href="http://www.doxygen.org/index.html">
 <img class="footer" src="doxygen.png" alt="doxygen"/>
 </a> 1.8.3.1
 <br>
