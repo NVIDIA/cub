@@ -95,9 +95,9 @@
  * \section sec0 (1) What is CUB?
  *
  * \par
- * CUB is a flexible library of cooperative threadblock primitives and other utilities for CUDA kernel programming.
- * CUB enhances productivity and portability by providing an abstraction layer over complex
- * threadblock, warp, and thread-level operations.
+ * CUB is a library of high performance threadblock primitives and other utilities for CUDA
+ * kernel programming.  CUB enhances productivity, performance, and portability by
+ * providing an abstraction layer over complex threadblock, warp, and thread-level operations.
  *
  * \par
  * CUB's primitives are not bound to any particular width-of-parallelism or data type.  This allows them
@@ -196,19 +196,21 @@
  * \par
  * However, with the exception of CUB, there are few (if any) software libraries of
  * reusable kernel primitives. In the CUDA ecosystem, CUB is unique in this regard.
- * As a SIMT library and software abstraction layer, CUB gives you:
- * -# <b>The ease of sequencing.</b>  Parallel primitives within
- *    kernels can be simply sequenced together (similar to programming with
- *    [<b>Thrust</b>](http://http://thrust.github.com/) in the host program).
- * -# <b>Simple performance tuning.</b>  CUB primitives provide consistent functional
- *    abstractions whose performance behavior can be statically tuned.  For example,
- *    most CUB primitives support alternative algorithmic strategies and variable grain
- *    sizes (i.e., threads per threadblock, items per thread, etc.).
+ * As a SIMT library and software abstraction layer, CUB provides:
+ * -# <b>Simplicity of composition.</b>  Parallel CUB primitives can be simply sequenced
+ *    together in kernel code.  (This convenience is analogous to programming with
+ *    [<b>Thrust</b>](http://http://thrust.github.com/) primitives in the host program.)
+ * -# <b>High performance.</b> CUB simplifies high performance kernel development by
+ *    taking care to implement the fastest available algorithms, strategies, and
+ *    techniques.  (So you don't have to.)
  * -# <b>Performance-portability.</b> CUB primitives are specialized to match
- *    the target hardware.  Furthermore, CUDA kernels can be made future-proof by
- *    simply recompiling against new CUB releases to leverage new algorithmic
- *    developments, hardware instructions, etc.  (Currently, kernels are often hand-rewritten
- *    for every new architecture.)
+ *    the target hardware.  Furthermore, CUB continually evolves to accommodate new
+ *    algorithmic developments, hardware instructions, etc.  Instead of re-writing
+ *    code by hand, CUDA kernels can be made future-proof by simply targeting CUB primitives.
+ * -# <b>Simplicity of performance tuning.</b>  CUB primitives provide parallel abstractions
+ *    whose performance behavior can be statically tuned.  For example, most CUB primitives
+ *    support alternative algorithmic strategies and variable grain sizes (i.e.,
+ *    threads per threadblock, items per thread, etc.).
  * -# <b>Robustness and durability.</b> CUB primitives are designed to function properly for
  *    arbitrary data types and widths-of-parallelism (not just for the built-in C++ types
  *    and power-of-two threadblocks).
@@ -271,7 +273,7 @@
  * -# [<b>Reflective type structure</b>](index.html#sec3sec2)
  * -# [<b>Flexible data mapping</b>](index.html#sec3sec3)
  *
- * \subsection sec3sec1 4.1 &nbsp;&nbsp; C++ templates
+ * \subsection sec3sec1 6.1 &nbsp;&nbsp; C++ templates
  *
  * \par
  * As a SIMT library, CUB must be flexible enough to accommodate a wide spectrum
@@ -290,7 +292,7 @@
  * <tt>cub.cuh</tt> header file into your <tt>.cu</tt> or <tt>.cpp</tt> sources
  * and compile with CUDA's <tt>nvcc</tt> compiler.
  *
- * \subsection sec3sec2 4.2 &nbsp;&nbsp; Reflective type structure
+ * \subsection sec3sec2 6.2 &nbsp;&nbsp; Reflective type structure
  *
  * \par
  * Cooperation requires shared memory for communicating between threads.
@@ -327,7 +329,7 @@
  * interfaces that expose both (1) procedural methods as well as (2) the opaque
  * shared memory types needed for their operation.
  *
- * \subsection sec3sec3 4.3 &nbsp;&nbsp; Flexible data mapping
+ * \subsection sec3sec3 6.3 &nbsp;&nbsp; Flexible data mapping
  *
  * \par
  * We often design kernels such that each threadblock is assigned a "tile" of data
