@@ -106,42 +106,39 @@ var searchBox = new SearchBox("searchBox", "search",false,'Search');
 </ul>
 </div>
 <div class="textblock"> 
-<a href="https://github.com/NVlabs/cub/archive/0.9.zip"><img src="download-icon.png" style="position:relative; bottom:-10px;"/></a>
+<a href="https://github.com/NVlabs/cub/archive/0.9.zip"><img src="download-icon.png" style="position:relative; bottom:-10px; border:0px;"/></a>
 &nbsp;&nbsp;
 <a href="https://github.com/NVlabs/cub/archive/0.9.zip">Download CUB!</a>
 <br>
-<a href="https://github.com/NVlabs/cub"><img src="github-icon-747d8b799a48162434b2c0595ba1317e.png" style="position:relative; bottom:-10px;"/></a>
+<a href="https://github.com/NVlabs/cub"><img src="github-icon-747d8b799a48162434b2c0595ba1317e.png" style="position:relative; bottom:-10px; border:0px;"/></a>
 &nbsp;&nbsp;
 <a href="https://github.com/NVlabs/cub">Fork CUB at GitHub!</a>
 <br>
-<a href="http://groups.google.com/group/cub-users"><img src="groups-icon.png" style="position:relative; bottom:-10px;"/></a>
+<a href="http://groups.google.com/group/cub-users"><img src="groups-icon.png" style="position:relative; bottom:-10px; border:0px;"/></a>
 &nbsp;&nbsp;
 <a href="http://groups.google.com/group/cub-users">Join the cub-users discussion forum!</a>
 <h1><a class="anchor" id="sec0"></a>
 (1) What is CUB?</h1>
-<dl class="section user"><dt></dt><dd>CUB is a library of high performance threadblock primitives and other utilities for CUDA kernel programming. CUB enhances productivity, performance, and portability by providing an abstraction layer over complex threadblock, warp, and thread-level operations.</dd></dl>
-<dl class="section user"><dt></dt><dd>CUB's primitives are not bound to any particular width-of-parallelism or data type. This allows them to be flexible and tunable to fit your kernel needs. Thus CUB is <a href="index.html"><b>C</b>uda <b>U</b>n<b>b</b>ound</a>.</dd></dl>
+<dl class="section user"><dt></dt><dd>CUB is a library of high-performance parallel primitives and other utilities for building CUDA kernel software. CUB enhances productivity, performance, and portability by providing an abstraction layer over complex <a href="http://docs.nvidia.com/cuda/cuda-c-programming-guide/index.html#programming-model">block-level</a>, <a href="http://docs.nvidia.com/cuda/cuda-c-programming-guide/index.html#hardware-implementation">warp-level</a>, and <a href="http://docs.nvidia.com/cuda/cuda-c-programming-guide/index.html#programming-model">thread-level</a> operations.</dd></dl>
+<dl class="section user"><dt></dt><dd>CUB's primitives are not bound to any particular width of parallelism or to any particular data type. This allows them to be flexible and tunable to fit your kernels' needs. Thus CUB is <a href="index.html"><b>C</b>UDA <b>U</b>n<b>b</b>ound</a>.</dd></dl>
 <div class="image">
-<img src="simt_abstraction.png" alt="simt_abstraction.png"/>
+<img src="cub_overview.png" alt="cub_overview.png"/>
 </div>
 <dl class="section user"><dt></dt><dd>Browse our collections of:<ul>
-<li><a href="group___simt_coop.html"><b>Cooperative primitives</b></a>:<ul>
-<li>Threadblock operations (e.g., BlockRadixSort, BlockScan, BlockReduce, etc.)</li>
-<li>Warp operations (e.g., WarpScan, etc.)</li>
-<li>etc.</li>
+<li><a href="group___simt_coop.html"><b>Cooperative primitives</b></a>, including:<ul>
+<li>Thread block operations (e.g., radix sort, prefix scan, reduction, etc.)</li>
+<li>Warp operations (e.g., prefix scan)</li>
 </ul>
 </li>
-<li><a href="group___simt_utils.html"><b>SIMT utilities</b></a>:<ul>
-<li>Tile-based I/O utilities for performing vectorized|coalesced data movement of blocked|striped data tiles</li>
-<li>Low-level thread-I/O using cache-modifiers (e.g., ThreadLoad &amp; ThreadStore intrinsics)</li>
-<li>Abstractions for threadblock work distribution (GridQueue, GridEvenShare, etc.)</li>
-<li>etc.</li>
+<li><a href="group___simt_utils.html"><b>SIMT utilities</b></a>, including:<ul>
+<li>Tile-based I/O utilities (e.g., for performing {vectorized, coalesced} data movement of {blocked, striped} data tiles)</li>
+<li>Low-level thread I/O using cache-modifiers</li>
+<li>Abstractions for thread block work distribution (e.g., work-stealing, even-share, etc.)</li>
 </ul>
 </li>
-<li><a href="group___host_util.html"><b>Host utilities</b></a>:<ul>
+<li><a href="group___host_util.html"><b>Host utilities</b></a>, including:<ul>
 <li>Caching allocator for quick management of device temporaries</li>
 <li>Device reflection</li>
-<li>etc.</li>
 </ul>
 </li>
 </ul>
@@ -149,17 +146,17 @@ var searchBox = new SearchBox("searchBox", "search",false,'Search');
 <h1><a class="anchor" id="sec2"></a>
 (2) Recent news</h1>
 <dl class="section user"><dt></dt><dd><ul>
-<li><a href="https://github.com/NVlabs/cub/archive/0.9.zip"><b><em>CUB v0.9 "preview" release</em></b></a> (3/6/2013). CUB is the first durable, high-performance library of cooperative threadblock, warp, and thread primitives for CUDA kernel programming. More primitives and examples coming soon!</li>
+<li><a href="https://github.com/NVlabs/cub/archive/0.9.zip"><b><em>CUB v0.9 "preview" release</em></b></a> (3/7/2013). CUB is the first durable, high-performance library of cooperative block-level, warp-level, and thread-level primitives for CUDA kernel programming. More primitives and examples coming soon!</li>
 </ul>
 </dd></dl>
 <h1><a class="anchor" id="sec3"></a>
 (3) A simple example</h1>
-<dl class="section user"><dt></dt><dd>The following code snippet illustrates a simple CUDA kernel for sorting a threadblock's data:</dd></dl>
+<dl class="section user"><dt></dt><dd>The following code snippet illustrates a simple CUDA kernel for sorting a thread block's data:</dd></dl>
 <dl class="section user"><dt></dt><dd><div class="fragment"><div class="line"><span class="preprocessor">#include &lt;<a class="code" href="cub_8cuh.html">cub.cuh</a>&gt;</span></div>
 <div class="line"></div>
 <div class="line"><span class="comment">// An tile-sorting CUDA kernel</span></div>
 <div class="line"><span class="keyword">template</span> &lt;</div>
-<div class="line">     <span class="keywordtype">int</span>         BLOCK_THREADS,              <span class="comment">// Threads per threadblock</span></div>
+<div class="line">     <span class="keywordtype">int</span>         BLOCK_THREADS,              <span class="comment">// Threads per block</span></div>
 <div class="line">     <span class="keywordtype">int</span>         ITEMS_PER_THREAD,           <span class="comment">// Items per thread</span></div>
 <div class="line">     <span class="keyword">typename</span>    T&gt;                          <span class="comment">// Numeric data type</span></div>
 <div class="line">__global__ <span class="keywordtype">void</span> TileSortKernel(T *d_in, T *d_out)</div>
@@ -186,58 +183,53 @@ var searchBox = new SearchBox("searchBox", "search",false,'Search');
 <div class="line">     <a class="code" href="group___simt_utils.html#ga013c3ab8214854f45e8d678958e7dde9" title="Store a tile of items across a threadblock directly using the specified cache modifier.">BlockStoreVectorized</a>(data, d_out + (blockIdx.x * TILE_SIZE));</div>
 <div class="line">}</div>
 </div><!-- fragment --></dd></dl>
-<dl class="section user"><dt></dt><dd>The <a class="el" href="classcub_1_1_block_radix_sort.html" title="BlockRadixSort provides variants of parallel radix sorting across a CUDA threadblock. .">cub::BlockRadixSort</a> type performs a cooperative radix sort across the threadblock's data items. Its implementation is parameterized by the number of threadblock threads and the aggregate data type <code>T</code>, and is specialized for the underlying architecture.</dd></dl>
-<dl class="section user"><dt></dt><dd>Once instantiated, the <a class="el" href="classcub_1_1_block_radix_sort.html" title="BlockRadixSort provides variants of parallel radix sorting across a CUDA threadblock. .">cub::BlockRadixSort</a> type exposes an opaque <a class="el" href="classcub_1_1_block_radix_sort.html#a495e63ab526ce35e6dfce9fb5206746c" title="The operations exposed by BlockRadixSort require shared memory of this type. This opaque storage can ...">cub::BlockRadixSort::SmemStorage</a> member type. The threadblock uses this storage type to allocate the shared memory needed by the primitive. This storage type can be aliased or <code>union</code>'d with other types so that the shared memory can be reused for other purposes.</dd></dl>
-<dl class="section user"><dt></dt><dd>Furthermore, the kernel uses CUB's primitives for vectorizing global loads and stores. For example, <code>ld.global.v4.s32</code> PTX instructions will be generated when <code>T</code> = <code>int</code> and <code>ITEMS_PER_THREAD</code> is a multiple of 4.</dd></dl>
+<dl class="section user"><dt></dt><dd>The <a class="el" href="classcub_1_1_block_radix_sort.html" title="BlockRadixSort provides variants of parallel radix sorting across a CUDA threadblock. .">cub::BlockRadixSort</a> type performs a cooperative radix sort across the thread block's data items. Its implementation is parameterized by the number of threads per block and the aggregate data type <code>T</code> and is specialized for the underlying architecture.</dd></dl>
+<dl class="section user"><dt></dt><dd>Once instantiated, the <a class="el" href="classcub_1_1_block_radix_sort.html" title="BlockRadixSort provides variants of parallel radix sorting across a CUDA threadblock. .">cub::BlockRadixSort</a> type exposes an opaque <a class="el" href="classcub_1_1_block_radix_sort.html#a495e63ab526ce35e6dfce9fb5206746c" title="The operations exposed by BlockRadixSort require shared memory of this type. This opaque storage can ...">cub::BlockRadixSort::SmemStorage</a> member type. The thread block uses this storage type to allocate the shared memory needed by the primitive. This storage type can be aliased or <code>union</code>'d with other types so that the shared memory can be reused for other purposes.</dd></dl>
+<dl class="section user"><dt></dt><dd>Furthermore, the kernel uses CUB's primitives for vectorizing global loads and stores. For example, lower-level <code>ld.global.v4.s32</code> <a href="http://docs.nvidia.com/cuda/parallel-thread-execution">PTX instructions</a> will be generated when <code>T</code> = <code>int</code> and <code>ITEMS_PER_THREAD</code> is a multiple of 4.</dd></dl>
 <h1><a class="anchor" id="sec4"></a>
 (4) Why do you need CUB?</h1>
-<dl class="section user"><dt></dt><dd>Kernel development is perhaps the most challenging, time-consuming, and costly aspect of CUDA programming. It is where the complexity of parallelism is expressed. Kernel code is often the most performance-sensitive and difficult-to-maintain layer in the CUDA software stack. This is particularly true for complex parallel algorithms having intricate dependences between threads.</dd></dl>
-<dl class="section user"><dt></dt><dd>However, with the exception of CUB, there are few (if any) software libraries of reusable kernel primitives. In the CUDA ecosystem, CUB is unique in this regard. As a SIMT library and software abstraction layer, CUB provides:<ol type="1">
+<dl class="section user"><dt></dt><dd>CUDA kernel software is where the complexity of parallelism is expressed. Programmers must reason about deadlock, livelock, synchronization, race conditions, shared memory layout, plurality of state, granularity, throughput, latency, memory bottlenecks, etc. Constructing and fine-tuning kernel code is perhaps the most challenging, time-consuming aspect of CUDA programming.</dd></dl>
+<dl class="section user"><dt></dt><dd>However, with the exception of CUB, there are few (if any) software libraries of reusable kernel primitives. In the CUDA ecosystem, CUB is unique in this regard. As a <a href="http://docs.nvidia.com/cuda/cuda-c-programming-guide/index.html#hardware-implementation">SIMT</a> library and software abstraction layer, CUB provides:<ol type="1">
 <li><b>Simplicity of composition.</b> Parallel CUB primitives can be simply sequenced together in kernel code. (This convenience is analogous to programming with <a href="http://thrust.github.com/"><b>Thrust</b></a> primitives in the host program.)</li>
-<li><b>High performance.</b> CUB simplifies high performance kernel development by taking care to implement the fastest available algorithms, strategies, and techniques. (So you don't have to.)</li>
-<li><b>Performance-portability.</b> CUB primitives are specialized to match the target hardware. Furthermore, CUB continually evolves to accommodate new algorithmic developments, hardware instructions, etc. Instead of re-writing code by hand, CUDA kernels can be made future-proof by simply targeting CUB primitives.</li>
-<li><b>Simplicity of performance tuning.</b> CUB primitives provide parallel abstractions whose performance behavior can be statically tuned. For example, most CUB primitives support alternative algorithmic strategies and variable grain sizes (i.e., threads per threadblock, items per thread, etc.).</li>
-<li><b>Robustness and durability.</b> CUB primitives are designed to function properly for arbitrary data types and widths-of-parallelism (not just for the built-in C++ types and power-of-two threadblocks).</li>
+<li><b>High performance.</b> CUB simplifies high performance kernel development by taking care to implement and make available the fastest available algorithms, strategies, and techniques.</li>
+<li><b>Performance portability.</b> CUB primitives are specialized to match the target hardware. Furthermore, the CUB library continually evolves to accommodate new algorithmic developments, hardware instructions, etc.</li>
+<li><b>Simplicity of performance tuning.</b> CUB primitives provide parallel abstractions whose performance behavior can be statically tuned. For example, most CUB primitives support alternative algorithmic strategies and variable grain sizes (threads per block, items per thread, etc.).</li>
+<li><b>Robustness and durability.</b> CUB primitives are designed to function properly for arbitrary data types and widths of parallelism (not just for the built-in C++ types or for powers-of-two threads per block).</li>
 </ol>
 </dd></dl>
 <h1><a class="anchor" id="sec5"></a>
 (5) Where is CUB positioned in the CUDA ecosystem?</h1>
-<dl class="section user"><dt></dt><dd>CUDA's programming model exposes three different levels of execution and their corresponding abstraction layers (i.e., the "black boxes" shown in the software stacks below):</dd></dl>
-<table  border="0px" cellpadding="10px" cellspacing="0px">
+<dl class="section user"><dt></dt><dd>CUDA's programming model embodies three different levels of program execution, each engendering its own abstraction layer in the CUDA software stack (i.e., the "black boxes" below):</dd></dl>
+<table  border="0px" style="padding:0px; border:0px; margin:0px;">
 <tr>
-<td width="50%"><ul>
-<li><b>Grid kernel (scalar)</b>. A single thread invokes a CUDA grid to perform some data parallel function. This is the highest and most common level of CUDA software abstraction. Programmers do not have to reason about parallel CUDA threads. Libraries targeting this level include:<ul>
-<li><a href="https://developer.nvidia.com/cublas"><b>CUBLAS</b></a></li>
-<li><a href="https://developer.nvidia.com/cufft"><b>CUFFT</b></a></li>
-<li><a href="https://developer.nvidia.com/cusparse"><b>CUSPARSE</b></a></li>
+<td width="50%"><dl class="section user"><dt></dt><dd><b>CUDA kernel</b>. A CPU program invokes a CUDA kernel to perform some data-parallel function. Reuse of entire kernels (by incorporating them into libraries) is the most common form of code reuse for CUDA. Libraries of CUDA kernels include the following:<ul>
+<li><a href="https://developer.nvidia.com/cublas"><b>cuBLAS</b></a></li>
+<li><a href="https://developer.nvidia.com/cufft"><b>cuFFT</b></a></li>
+<li><a href="https://developer.nvidia.com/cusparse"><b>cuSPARSE</b></a></li>
 <li><a href="http://thrust.github.com/"><b>Thrust</b></a>  </li>
 </ul>
-</li>
-</ul>
+</dd></dl>
 </td><td width="50%"> 
-   <a href="kernel_abstraction.png"><center><img src="kernel_abstraction.png" width="100%"/></center></a>
-     </td></tr>
+<a href="kernel_abstraction.png"><center><img src="kernel_abstraction.png" width="100%"/></center></a>
+  </td></tr>
 <tr>
-<td><ul>
-<li><b>Threadblock / warp (SIMT)</b>. A threadblock or warp of threads collectively invokes some cooperative function. This is the least common level of CUDA software reuse. Libraries targeting this level include:<ul>
+<td><dl class="section user"><dt></dt><dd><b>Thread blocks (SIMT)</b>. Each kernel invocation comprises some number of parallel threads. Threads are grouped into blocks, and the threads within a block can communicate and synchronize with each other to perform some cooperative function. There has historically been very little reuse of cooperative SIMT software within CUDA kernel. Libraries of thread-block primitives include the following:<ul>
 <li><a href="index.html"><b>CUB</b></a>  </li>
 </ul>
-</li>
-</ul>
+</dd></dl>
 </td><td> 
-   <a href="simt_abstraction.png"><center><img src="simt_abstraction.png" width="100%"/></center></a>
-     </td></tr>
+<a href="simt_abstraction.png"><center><img src="simt_abstraction.png" width="100%"/></center></a>
+  </td></tr>
 <tr>
-<td><ul>
-<li><b>Device thread (scalar)</b>. A single CUDA thread invokes some scalar function. This is the lowest level of CUDA software abstraction. Programmers do not have to reason about the interaction of parallel CUDA threads. Libraries targeting this level include:<ul>
-<li><b>CUDA API</b> (e.g., <code>text1D()</code>, <code>atomicAdd()</code>, <code>popc()</code>, etc.)</li>
+<td><dl class="section user"><dt></dt><dd><b>CUDA thread (scalar)</b>. A single CUDA thread invokes some scalar function. This is the lowest level of CUDA software abstraction, and is useful when there is no need to reason about the interaction of parallel threads. CUDA libraries of purely data-parallel functions include the following:<ul>
+<li><a href="https://developer.nvidia.com/cuda-math-library"><b>CUDA Math Library</b></a> (e.g., <code>text1D()</code>, <code>atomicAdd()</code>, <code>popc()</code>, etc.)</li>
+<li><a href="https://developer.nvidia.com/curand"><b>cuRAND</b></a>'s device-code interface</li>
 <li><a href="index.html"><b>CUB</b></a>  </li>
 </ul>
-</li>
-</ul>
+</dd></dl>
 </td><td> 
-   <a href="devfun_abstraction.png"><center><img src="devfun_abstraction.png" width="100%"/></center></a>
-     </td></tr>
+<a href="devfun_abstraction.png"><center><img src="devfun_abstraction.png" width="100%"/></center></a>
+  </td></tr>
 </table>
 <h1><a class="anchor" id="sec6"></a>
 (6) How does CUB work?</h1>
@@ -251,16 +243,16 @@ var searchBox = new SearchBox("searchBox", "search",false,'Search');
 6.1    C++ templates</h2>
 <dl class="section user"><dt></dt><dd>As a SIMT library, CUB must be flexible enough to accommodate a wide spectrum of <em>parallel execution contexts</em>, i.e., specific:<ul>
 <li>Data types</li>
-<li>Widths of parallelism (threadblock threads)</li>
+<li>Widths of parallelism (threads per block)</li>
 <li>Grain sizes (data items per thread)</li>
-<li>Underlying architectures (special instructions, warp width, rules for bank conflicts, etc.)</li>
+<li>Underlying architectures (special instructions, warp size, rules for bank conflicts, etc.)</li>
 <li>Tuning requirements (e.g., latency vs. throughput)</li>
 </ul>
 </dd></dl>
-<dl class="section user"><dt></dt><dd>To provide this flexibility, CUB is implemented as a C++ template library. C++ templates are a way to write generic algorithms and data structures. There is no need to build CUB separately. You simply #<code>include</code> the <code><a class="el" href="cub_8cuh.html">cub.cuh</a></code> header file into your <code>.cu</code> or <code>.cpp</code> sources and compile with CUDA's <code>nvcc</code> compiler.</dd></dl>
+<dl class="section user"><dt></dt><dd>To provide this flexibility, CUB is implemented as a C++ template library. C++ templates are a way to write generic algorithms and data structures. There is no need to build CUB separately. You simply <code>#include</code> the <code><a class="el" href="cub_8cuh.html">cub.cuh</a></code> header file into your <code>.cu</code> CUDA C++ sources and compile with NVIDIA's <code>nvcc</code> compiler.</dd></dl>
 <h2><a class="anchor" id="sec3sec2"></a>
 6.2    Reflective type structure</h2>
-<dl class="section user"><dt></dt><dd>Cooperation requires shared memory for communicating between threads. However, the specific size and layout of the memory needed by a given primitive will be specific to the details of its parallel execution context (e.g., how many threads are calling into it, how many items per thread, etc.). Furthermore, this shared memory must be allocated externally to the component if it is to be reused elsewhere by the threadblock.</dd></dl>
+<dl class="section user"><dt></dt><dd>Cooperation within a thread block requires shared memory for communicating between threads. However, the specific size and layout of the memory needed by a given primitive will be specific to the details of its parallel execution context (e.g., how many threads are calling into it, how many items are processed per thread, etc.). Furthermore, this shared memory must be allocated outside of the component itself if it is to be reused elsewhere by the thread block.</dd></dl>
 <dl class="section user"><dt></dt><dd><div class="fragment"><div class="line"><span class="comment">// Parameterize a BlockScan type for use with 128 threads</span></div>
 <div class="line"><span class="comment">// and 4 items per thread</span></div>
 <div class="line"><span class="keyword">typedef</span> <a class="code" href="classcub_1_1_block_scan.html" title="BlockScan provides variants of parallel prefix scan (and prefix sum) across a CUDA threadblock...">cub::BlockScan&lt;unsigned int, 128, 4&gt;</a> BlockScan;</div>
@@ -280,7 +272,7 @@ var searchBox = new SearchBox("searchBox", "search",false,'Search');
 <dl class="section user"><dt></dt><dd>To address this issue, we encapsulate cooperative procedures within <em>reflective type structure</em> (C++ classes). As illustrated in the <a class="el" href="classcub_1_1_block_scan.html" title="BlockScan provides variants of parallel prefix scan (and prefix sum) across a CUDA threadblock...">cub::BlockScan</a> example above, these primitives are C++ classes with interfaces that expose both (1) procedural methods as well as (2) the opaque shared memory types needed for their operation.</dd></dl>
 <h2><a class="anchor" id="sec3sec3"></a>
 6.3    Flexible data mapping</h2>
-<dl class="section user"><dt></dt><dd>We often design kernels such that each threadblock is assigned a "tile" of data items for processing. When the tile size equals the threadblock size, the mapping of data onto threads is straightforward (1:1 items to threadblock threads). Alternatively, it is often desirable to processes more than one datum per thread. When doing so, we must decide how to partition this "tile" of items across the threadblock.</dd></dl>
+<dl class="section user"><dt></dt><dd>We often design kernels such that each thread block is assigned a "tile" of data items for processing. When the tile size equals the thread block size, the mapping of data onto threads is straightforward (one datum per thread). However, it is often desirable for performance reasons to process more than one datum per thread. When doing so, we must decide how to partition this "tile" of items across the thread block.</dd></dl>
 <dl class="section user"><dt></dt><dd>CUB primitives support the following data arrangements:<ul>
 <li><b><em>Blocked arrangement</em></b>. The aggregate tile of items is partitioned evenly across threads in "blocked" fashion with thread<sub><em>i</em></sub> owning the <em>i</em><sup>th</sup> segment of consecutive elements.</li>
 <li><b><em>Striped arrangement</em></b>. The aggregate tile of items is partitioned across threads in "striped" fashion, i.e., the <code>ITEMS_PER_THREAD</code> items owned by each thread have logical stride <code>BLOCK_THREADS</code> between them. <br/>
@@ -293,12 +285,12 @@ var searchBox = new SearchBox("searchBox", "search",false,'Search');
 </ul>
 </dd></dl>
 <dl class="section user"><dt></dt><dd>The benefits of processing multiple items per thread (a.k.a., <em>register blocking</em>, <em>granularity coarsening</em>, etc.) include:<ul>
-<li><b>Algorithmic efficiency</b>. Sequential work over multiple items in thread-private registers is cheaper than synchronized, cooperative work through shared memory spaces</li>
-<li><b>Data occupancy</b>. The number of items that can be resident on-chip in thread-private register storage is often greater than the number of schedulable threads</li>
-<li><b>Instruction-level parallelism</b>. Multiple items per thread also facilitates greater ILP for improved throughput and utilization</li>
+<li><b>Algorithmic efficiency</b>. Sequential work over multiple items in thread-private registers is cheaper than synchronized, cooperative work through shared memory spaces.</li>
+<li><b>Data occupancy</b>. The number of items that can be resident on-chip in thread-private register storage is often greater than the number of schedulable threads.</li>
+<li><b>Instruction-level parallelism</b>. Multiple items per thread also facilitates greater ILP for improved throughput and utilization.</li>
 </ul>
 </dd></dl>
-<dl class="section user"><dt></dt><dd>The <a class="el" href="classcub_1_1_block_exchange.html" title="BlockExchange provides operations for reorganizing the partitioning of ordered data across a CUDA thr...">cub::BlockExchange</a> primitive provides operations for converting between blocked and striped arrangements. Blocked arrangements are often desirable for algorithmic benefits (where long sequences of items can be processed sequentially within each thread). Striped arrangements are often desirable for data movement through global memory (where read/write coalescing is a important performance consideration).</dd></dl>
+<dl class="section user"><dt></dt><dd>The <a class="el" href="classcub_1_1_block_exchange.html" title="BlockExchange provides operations for reorganizing the partitioning of ordered data across a CUDA thr...">cub::BlockExchange</a> primitive provides operations for converting between blocked and striped arrangements. Blocked arrangements are often desirable for algorithmic benefits (where long sequences of items can be processed sequentially within each thread). Striped arrangements are often desirable for data movement through global memory (where <a href="http://docs.nvidia.com/cuda/cuda-c-best-practices-guide/#coalesced-access-global-memory">read/write coalescing</a> is an important performance consideration).</dd></dl>
 <h1><a class="anchor" id="sec7"></a>
 (7) Contributors</h1>
 <dl class="section user"><dt></dt><dd>CUB is developed as an open-source project by <a href="http://research.nvidia.com">NVIDIA Research</a>. The primary contributor is <a href="http://github.com/dumerrill">Duane Merrill</a>.</dd></dl>
@@ -334,7 +326,7 @@ var searchBox = new SearchBox("searchBox", "search",false,'Search');
 <!-- HTML footer for doxygen 1.8.3.1-->
 <!-- start footer part -->
 <hr class="footer"/><address class="footer"><small>
-Generated on Thu Mar 7 2013 13:29:47 for CUB by &#160;<a href="http://www.doxygen.org/index.html">
+Generated on Thu Mar 7 2013 18:18:32 for CUB by &#160;<a href="http://www.doxygen.org/index.html">
 <img class="footer" src="doxygen.png" alt="doxygen"/>
 </a> 1.8.3.1
 <br>
