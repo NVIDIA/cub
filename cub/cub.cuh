@@ -79,13 +79,13 @@
  * \tableofcontents
  *
  * \htmlonly
- * <a href="https://github.com/NVlabs/CUB/archive/0.9.zip"><img src="download-icon.png" style="position:relative; bottom:-10px;"/></a>
+ * <a href="https://github.com/NVlabs/cub/archive/0.9.zip"><img src="download-icon.png" style="position:relative; bottom:-10px;"/></a>
  * &nbsp;&nbsp;
- * <a href="https://github.com/NVlabs/CUB/archive/0.9.zip">Download CUB!</a>
+ * <a href="https://github.com/NVlabs/cub/archive/0.9.zip">Download CUB!</a>
  * <br>
- * <a href="https://github.com/NVlabs/CUB"><img src="github-icon-747d8b799a48162434b2c0595ba1317e.png" style="position:relative; bottom:-10px;"/></a>
+ * <a href="https://github.com/NVlabs/cub"><img src="github-icon-747d8b799a48162434b2c0595ba1317e.png" style="position:relative; bottom:-10px;"/></a>
  * &nbsp;&nbsp;
- * <a href="https://github.com/NVlabs/CUB">Fork CUB at GitHub!</a>
+ * <a href="https://github.com/NVlabs/cub">Fork CUB at GitHub!</a>
  * <br>
  * <a href="http://groups.google.com/group/cub-users"><img src="groups-icon.png" style="position:relative; bottom:-10px;"/></a>
  * &nbsp;&nbsp;
@@ -125,7 +125,7 @@
  * \section sec2 (2) Recent news
  *
  * \par
- * - [<b><em>CUB v0.9 "preview" release</em></b>](https://github.com/NVlabs/CUB/archive/0.9.zip) (3/6/2013).  CUB is the first durable, high-performance
+ * - [<b><em>CUB v0.9 "preview" release</em></b>](https://github.com/NVlabs/cub/archive/0.9.zip) (3/6/2013).  CUB is the first durable, high-performance
  *   library of cooperative threadblock, warp, and thread primitives for CUDA kernel
  *   programming.  More primitives and examples coming soon!
  *
@@ -199,7 +199,7 @@
  * As a SIMT library and software abstraction layer, CUB provides:
  * -# <b>Simplicity of composition.</b>  Parallel CUB primitives can be simply sequenced
  *    together in kernel code.  (This convenience is analogous to programming with
- *    [<b>Thrust</b>](http://http://thrust.github.com/) primitives in the host program.)
+ *    [<b>Thrust</b>](http://thrust.github.com/) primitives in the host program.)
  * -# <b>High performance.</b> CUB simplifies high performance kernel development by
  *    taking care to implement the fastest available algorithms, strategies, and
  *    techniques.  (So you don't have to.)
