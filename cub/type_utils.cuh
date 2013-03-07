@@ -241,7 +241,7 @@ struct RemoveQualifiers<Tp, const volatile Up>
  ******************************************************************************/
 
 /**
- * Simple enable-if (similar to Boost)
+ * \brief Simple enable-if (similar to Boost)
  */
 template <bool Condition, class T = void>
 struct EnableIf

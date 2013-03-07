@@ -38,8 +38,10 @@
 #include <string>
 #include <algorithm>
 #include <stdio.h>
-#include <test_util.h>
 
+#include <cuda_runtime.h>
+
+#include "test_util.h"
 #include "../cub.cuh"
 
 using namespace cub;
