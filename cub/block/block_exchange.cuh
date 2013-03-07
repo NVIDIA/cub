@@ -28,7 +28,7 @@
 
 /**
  * \file
- * cub::BlockExchange provides operations for reorganizing the partitioning of ordered data across a threadblock.
+ * cub::BlockExchange provides operations for reorganizing the partitioning of ordered data across a CUDA threadblock.
  */
 
 #pragma once
@@ -49,40 +49,31 @@ namespace cub {
  */
 
 /**
- * \brief BlockExchange provides operations for reorganizing the partitioning of ordered data across a threadblock. ![](transpose_logo.png)
+ * \brief BlockExchange provides operations for reorganizing the partitioning of ordered data across a CUDA threadblock. ![](transpose_logo.png)
  *
- * <b>Overview</b>
- * \par
- * The operations exposed by BlockExchange allow threadblocks to reorganize data items between
- * threads, converting between (or scattering to) the following partitioning arrangements:
- * -<b><em>blocked</em> arrangement</b>.  The aggregate tile of items is partitioned
- *   evenly across threads in "blocked" fashion with thread<sub><em>i</em></sub>
- *   owning the <em>i</em><sup>th</sup> segment of consecutive elements.
- * -<b><em>striped</em> arrangement</b>.  The aggregate tile of items is partitioned across
- *   threads in "striped" fashion, i.e., the \p ITEMS_PER_THREAD items owned by
- *   each thread have logical stride \p BLOCK_THREADS between them.
+ * \par Overview
+ * BlockExchange allows threadblocks to reorganize data items between
+ * threads. More specifically, BlockExchange supports the following types of data
+ * exchanges:
+ * - Transposing between [<em>blocked</em>](index.html#sec3sec3) and [<em>striped</em>](index.html#sec3sec3) arrangements
+ * - Scattering to a [<em>blocked arrangement</em>](index.html#sec3sec3)
+ * - Scattering to a [<em>striped arrangement</em>](index.html#sec3sec3)
  *
  * \tparam T                    The data type to be exchanged.
- * \tparam BLOCK_THREADS          The threadblock size in threads.
+ * \tparam BLOCK_THREADS        The threadblock size in threads.
  * \tparam ITEMS_PER_THREAD     The number of items partitioned onto each thread.
  *
- * <b>Performance Features and Considerations</b>
- * \par
- * - After any operation, a subsequent <tt>__syncthreads()</tt> barrier is
- *   required if the supplied BlockExchange::SmemStorage is to be reused or repurposed by the threadblock.
- * - Zero bank conflicts for most types.
- *
- * <b>Algorithm</b>
- * \par
- * Regardless of the initial blocked/striped arrangement, threadblock threads scatter
- * items into shared memory in <em>blocked</em>, taking care to include
- * one item of padding for every shared memory bank's worth of items.  After a
- * barrier, items are gathered in the desired blocked/striped arrangement.
- * <br>
- * <br>
+ * \par Algorithm
+ * Threads scatter items by item-order into shared memory, allowing one item of padding
+ * for every memory bank's worth of items.  After a barrier, items are gathered in the desired arrangement.
  * \image html raking.png
- * <div class="centercaption">A threadblock of 16 threads performing a conflict-free <em>blocked</em> gathering of 64 exchanged items.</div>
- * <br>
+ * <div class="centercaption">A threadblock of 16 threads reading a blocked arrangement of 64 items in a parallel "raking" fashion.</div>
+ *
+ * \par Usage Considerations
+ * - \smemreuse{BlockExchange::SmemStorage}
+ *
+ * \par Performance Considerations
+ * - Proper device-specific padding ensures zero bank conflicts for most types.
  *
  */
 template <

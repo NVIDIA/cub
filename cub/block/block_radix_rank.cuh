@@ -28,7 +28,7 @@
 
 /**
  * \file
- * cub::BlockRadixRank provides operations for raking unsigned integer types across threads within a threadblock
+ * cub::BlockRadixRank provides operations for ranking unsigned integer types within a CUDA threadblock
  */
 
 #pragma once
@@ -52,30 +52,28 @@ namespace cub {
  */
 
 /**
- * \brief BlockRadixRank provides operations for raking unsigned integer types across threads within a threadblock.
+ * \brief BlockRadixRank provides operations for ranking unsigned integer types within a CUDA threadblock.
  *
- * <B>Overview</b>
- * \par
+ * \par Overview
  * Blah...
  *
- * \tparam BLOCK_THREADS          The threadblock size in threads
+ * \tparam BLOCK_THREADS        The threadblock size in threads
  * \tparam RADIX_BITS           <b>[optional]</b> The number of radix bits per digit place (default: 5 bits)
  * \tparam SMEM_CONFIG          <b>[optional]</b> Shared memory bank mode (default: \p cudaSharedMemBankSizeFourByte)
  *
- * <b>Performance Features and Considerations</b>
- * \par
+ * \par Usage Considerations
  * - Keys must be in a form suitable for radix ranking (i.e., unsigned bits).
- * - After any operation, a subsequent <tt>__syncthreads()</tt> barrier is
- *   required if the supplied BlockRadixRank::SmemStorage is to be reused or repurposed by the threadblock.
- * - Blah...
+ * - Assumes a [<em>blocked arrangement</em>](index.html#sec3sec3) of elements across threads
+ * - \smemreuse{BlockRadixRank::SmemStorage}
  *
- * <b>Algorithm</b>
- * \par
+ * \par Performance Considerations
+ *
+ * \par Algorithm
  * These parallel radix ranking variants have <em>O</em>(<em>n</em>) work complexity and are implemented in XXX phases:
  * -# blah
  * -# blah
  *
- * <b>Examples</b>
+ * \par Examples
  * \par
  * - <b>Example 1:</b> Simple radix rank of 32-bit integer keys
  *      \code
@@ -131,7 +129,7 @@ private:
     };
 
     /// Shared memory storage layout type for BlockRadixRank
-    struct SmemStorage
+    struct _SmemStorage
     {
         // Storage for scanning local ranks
         volatile PackedCounter        warpscan[WARPS][WARP_THREADS * 3 / 2];
@@ -139,7 +137,7 @@ private:
         union
         {
             DigitCounter            digit_counters[COUNTER_LANES + 1][BLOCK_THREADS][PACKING_RATIO];
-            PackedCounter            raking_grid[BLOCK_THREADS][RAKING_SEGMENT];
+            PackedCounter           raking_grid[BLOCK_THREADS][RAKING_SEGMENT];
         };
     };
 

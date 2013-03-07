@@ -28,7 +28,7 @@
 
 /**
  * \file
- * Store operations for writing global tiles of data from the threadblock (in blocked arrangement across threads).
+ * Operations for writing global tiles of data from the threadblock (in blocked arrangement across threads).
  */
 
 #pragma once
@@ -61,14 +61,14 @@ namespace cub {
 /**
  * \brief Store a tile of items across a threadblock directly using the specified cache modifier.
  *
- * \tparam MODIFIER             cub::PtxStoreModifier cache modifier.
- * \tparam T                    <b>[inferred]</b> The data type to store.
- * \tparam ITEMS_PER_THREAD     <b>[inferred]</b> The number of consecutive items partitioned onto each thread.
- * \tparam OutputIterator       <b>[inferred]</b> The output iterator type (may be a simple pointer).
- *
  * The aggregate tile of items is assumed to be partitioned evenly across
  * threads in <em>blocked</em> arrangement with thread<sub><em>i</em></sub> owning
  * the <em>i</em><sup>th</sup> segment of consecutive elements.
+ *
+ * \tparam MODIFIER             cub::PtxStoreModifier cache modifier.
+ * \tparam T                    <b>[inferred]</b> The data type to store.
+ * \tparam ITEMS_PER_THREAD     <b>[inferred]</b> The number of consecutive items partitioned onto each thread.
+ * \tparam OutputIterator       <b>[inferred]</b> The output iterator type (may be a simple pointer type).
  */
 template <
     PtxStoreModifier MODIFIER,
@@ -92,13 +92,13 @@ __device__ __forceinline__ void BlockStoreDirect(
 /**
  * \brief Store a tile of items across a threadblock directly.
  *
- * \tparam T                    <b>[inferred]</b> The data type to store.
- * \tparam ITEMS_PER_THREAD     <b>[inferred]</b> The number of consecutive items partitioned onto each thread.
- * \tparam OutputIterator       <b>[inferred]</b> The output iterator type (may be a simple pointer).
- *
  * The aggregate tile of items is assumed to be partitioned evenly across
  * threads in <em>blocked</em> arrangement with thread<sub><em>i</em></sub> owning
  * the <em>i</em><sup>th</sup> segment of consecutive elements.
+ *
+ * \tparam T                    <b>[inferred]</b> The data type to store.
+ * \tparam ITEMS_PER_THREAD     <b>[inferred]</b> The number of consecutive items partitioned onto each thread.
+ * \tparam OutputIterator       <b>[inferred]</b> The output iterator type (may be a simple pointer type).
  */
 template <
     typename        T,
@@ -115,15 +115,15 @@ __device__ __forceinline__ void BlockStoreDirect(
 /**
  * \brief Store a tile of items across a threadblock directly using the specified cache modifier, guarded by range
  *
- * \tparam MODIFIER             cub::PtxStoreModifier cache modifier.
- * \tparam T                    <b>[inferred]</b> The data type to store.
- * \tparam ITEMS_PER_THREAD     <b>[inferred]</b> The number of consecutive items partitioned onto each thread.
- * \tparam OutputIterator       <b>[inferred]</b> The output iterator type (may be a simple pointer).
- * \tparam SizeT                <b>[inferred]</b> Integer type for offsets
- *
  * The aggregate tile of items is assumed to be partitioned evenly across
  * threads in <em>blocked</em> arrangement with thread<sub><em>i</em></sub> owning
  * the <em>i</em><sup>th</sup> segment of consecutive elements.
+ *
+ * \tparam MODIFIER             cub::PtxStoreModifier cache modifier.
+ * \tparam T                    <b>[inferred]</b> The data type to store.
+ * \tparam ITEMS_PER_THREAD     <b>[inferred]</b> The number of consecutive items partitioned onto each thread.
+ * \tparam OutputIterator       <b>[inferred]</b> The output iterator type (may be a simple pointer type).
+ * \tparam SizeT                <b>[inferred]</b> Integer type for offsets
  */
 template <
     PtxStoreModifier MODIFIER,
@@ -152,14 +152,14 @@ __device__ __forceinline__ void BlockStoreDirect(
 /**
  * \brief Store a tile of items across a threadblock directly, guarded by range
  *
- * \tparam T                    <b>[inferred]</b> The data type to store.
- * \tparam ITEMS_PER_THREAD     <b>[inferred]</b> The number of consecutive items partitioned onto each thread.
- * \tparam OutputIterator       <b>[inferred]</b> The output iterator type (may be a simple pointer).
- * \tparam SizeT                <b>[inferred]</b> Integer type for offsets
- *
  * The aggregate tile of items is assumed to be partitioned evenly across
  * threads in <em>blocked</em> arrangement with thread<sub><em>i</em></sub> owning
  * the <em>i</em><sup>th</sup> segment of consecutive elements.
+ *
+ * \tparam T                    <b>[inferred]</b> The data type to store.
+ * \tparam ITEMS_PER_THREAD     <b>[inferred]</b> The number of consecutive items partitioned onto each thread.
+ * \tparam OutputIterator       <b>[inferred]</b> The output iterator type (may be a simple pointer type).
+ * \tparam SizeT                <b>[inferred]</b> Integer type for offsets
  */
 template <
     typename        T,
@@ -186,14 +186,14 @@ __device__ __forceinline__ void BlockStoreDirect(
 /**
  * \brief Store striped tile directly using the specified cache modifier.
  *
- * \tparam MODIFIER             cub::PtxStoreModifier cache modifier.
- * \tparam T                    <b>[inferred]</b> The data type to store.
- * \tparam ITEMS_PER_THREAD     <b>[inferred]</b> The number of consecutive items partitioned onto each thread.
- * \tparam OutputIterator       <b>[inferred]</b> The output iterator type (may be a simple pointer).
- *
  * The aggregate tile of items is assumed to be partitioned across
  * threads in "striped" arrangement, i.e., the \p ITEMS_PER_THREAD
  * items owned by each thread have logical stride \p BLOCK_THREADS between them.
+ *
+ * \tparam MODIFIER             cub::PtxStoreModifier cache modifier.
+ * \tparam T                    <b>[inferred]</b> The data type to store.
+ * \tparam ITEMS_PER_THREAD     <b>[inferred]</b> The number of consecutive items partitioned onto each thread.
+ * \tparam OutputIterator       <b>[inferred]</b> The output iterator type (may be a simple pointer type).
  */
 template <
     PtxStoreModifier MODIFIER,
@@ -218,14 +218,14 @@ __device__ __forceinline__ void BlockStoreDirectStriped(
 /**
  * \brief Store striped tile directly.
  *
- * \tparam MODIFIER             cub::PtxStoreModifier cache modifier.
- * \tparam T                    <b>[inferred]</b> The data type to store.
- * \tparam ITEMS_PER_THREAD     <b>[inferred]</b> The number of consecutive items partitioned onto each thread.
- * \tparam OutputIterator       <b>[inferred]</b> The output iterator type (may be a simple pointer).
- *
  * The aggregate tile of items is assumed to be partitioned across
  * threads in <em>striped</em> arrangement, i.e., the \p ITEMS_PER_THREAD
  * items owned by each thread have logical stride \p BLOCK_THREADS between them.
+ *
+ * \tparam MODIFIER             cub::PtxStoreModifier cache modifier.
+ * \tparam T                    <b>[inferred]</b> The data type to store.
+ * \tparam ITEMS_PER_THREAD     <b>[inferred]</b> The number of consecutive items partitioned onto each thread.
+ * \tparam OutputIterator       <b>[inferred]</b> The output iterator type (may be a simple pointer type).
  */
 template <
     typename        T,
@@ -243,15 +243,15 @@ __device__ __forceinline__ void BlockStoreDirectStriped(
 /**
  * Store striped directly tile using the specified cache modifier, guarded by range
  *
- * \tparam MODIFIER             cub::PtxStoreModifier cache modifier.
- * \tparam T                    <b>[inferred]</b> The data type to store.
- * \tparam ITEMS_PER_THREAD     <b>[inferred]</b> The number of consecutive items partitioned onto each thread.
- * \tparam OutputIterator       <b>[inferred]</b> The output iterator type (may be a simple pointer).
- * \tparam SizeT                <b>[inferred]</b> Integer type for offsets
- *
  * The aggregate tile of items is assumed to be partitioned across
  * threads in <em>striped</em> arrangement, i.e., the \p ITEMS_PER_THREAD
  * items owned by each thread have logical stride \p BLOCK_THREADS between them.
+ *
+ * \tparam MODIFIER             cub::PtxStoreModifier cache modifier.
+ * \tparam T                    <b>[inferred]</b> The data type to store.
+ * \tparam ITEMS_PER_THREAD     <b>[inferred]</b> The number of consecutive items partitioned onto each thread.
+ * \tparam OutputIterator       <b>[inferred]</b> The output iterator type (may be a simple pointer type).
+ * \tparam SizeT                <b>[inferred]</b> Integer type for offsets
  */
 template <
     PtxStoreModifier MODIFIER,
@@ -281,14 +281,14 @@ __device__ __forceinline__ void BlockStoreDirectStriped(
 /**
  * \brief Store striped tile directly, guarded by range
  *
- * \tparam T                    <b>[inferred]</b> The data type to store.
- * \tparam ITEMS_PER_THREAD     <b>[inferred]</b> The number of consecutive items partitioned onto each thread.
- * \tparam OutputIterator       <b>[inferred]</b> The output iterator type (may be a simple pointer).
- * \tparam SizeT                <b>[inferred]</b> Integer type for offsets
- *
  * The aggregate tile of items is assumed to be partitioned across
  * threads in <em>striped</em> arrangement, i.e., the \p ITEMS_PER_THREAD
  * items owned by each thread have logical stride \p BLOCK_THREADS between them.
+ *
+ * \tparam T                    <b>[inferred]</b> The data type to store.
+ * \tparam ITEMS_PER_THREAD     <b>[inferred]</b> The number of consecutive items partitioned onto each thread.
+ * \tparam OutputIterator       <b>[inferred]</b> The output iterator type (may be a simple pointer type).
+ * \tparam SizeT                <b>[inferred]</b> Integer type for offsets
  */
 template <
     typename        T,
@@ -314,10 +314,6 @@ __device__ __forceinline__ void BlockStoreDirectStriped(
 /**
  * \brief Store a tile of items across a threadblock directly using the specified cache modifier.
  *
- * \tparam MODIFIER             cub::PtxStoreModifier cache modifier.
- * \tparam T                    <b>[inferred]</b> The data type to store.
- * \tparam ITEMS_PER_THREAD     <b>[inferred]</b> The number of consecutive items partitioned onto each thread.
- *
  * The aggregate tile of items is assumed to be partitioned evenly across
  * threads in <em>blocked</em> arrangement with thread<sub><em>i</em></sub> owning
  * the <em>i</em><sup>th</sup> segment of consecutive elements.
@@ -328,6 +324,11 @@ __device__ __forceinline__ void BlockStoreDirectStriped(
  *   - The \p OutputIterator is not a simple pointer type
  *   - The input offset (\p block_ptr + \p block_offset) is not quad-aligned
  *   - The data type \p T is not a built-in primitive or CUDA vector type (e.g., \p short, \p int2, \p double, \p float2, etc.)
+ *
+ * \tparam MODIFIER             cub::PtxStoreModifier cache modifier.
+ * \tparam T                    <b>[inferred]</b> The data type to store.
+ * \tparam ITEMS_PER_THREAD     <b>[inferred]</b> The number of consecutive items partitioned onto each thread.
+ *
  */
 template <
     PtxStoreModifier MODIFIER,
@@ -384,9 +385,6 @@ __device__ __forceinline__ void BlockStoreVectorized(
 /**
  * \brief Store a tile of items across a threadblock directly.
  *
- * \tparam T                    <b>[inferred]</b> The data type to store.
- * \tparam ITEMS_PER_THREAD     <b>[inferred]</b> The number of consecutive items partitioned onto each thread.
- *
  * The aggregate tile of items is assumed to be partitioned evenly across
  * threads in <em>blocked</em> arrangement with thread<sub><em>i</em></sub> owning
  * the <em>i</em><sup>th</sup> segment of consecutive elements.
@@ -397,6 +395,9 @@ __device__ __forceinline__ void BlockStoreVectorized(
  *   - The \p OutputIterator is not a simple pointer type
  *   - The input offset (\p block_ptr + \p block_offset) is not quad-aligned
  *   - The data type \p T is not a built-in primitive or CUDA vector type (e.g., \p short, \p int2, \p double, \p float2, etc.)
+ *
+ * \tparam T                    <b>[inferred]</b> The data type to store.
+ * \tparam ITEMS_PER_THREAD     <b>[inferred]</b> The number of consecutive items partitioned onto each thread.
  */
 template <
     typename        T,
@@ -421,9 +422,57 @@ __device__ __forceinline__ void BlockStoreVectorized(
 /// Tuning policy for cub::BlockStore
 enum BlockStorePolicy
 {
-    BLOCK_STORE_DIRECT,        ///< Stores consecutive thread-items directly from the input
-    BLOCK_STORE_VECTORIZE,     ///< Attempts to use CUDA's built-in vectorized items as a coalescing optimization
-    BLOCK_STORE_TRANSPOSE,     ///< Stores striped inputs as a coalescing optimization and then transposes them through shared memory into the desired blocks of thread-consecutive items
+    /**
+     * \par Overview
+     *
+     * A [<em>blocked arrangement</em>](index.html#sec3sec3) of data is written
+     * directly to memory.  The threadblock writes items in a parallel "raking" fashion:
+     * thread<sub><em>i</em></sub> writes the <em>i</em><sup>th</sup> segment of consecutive elements.
+     *
+     * \par Performance Considerations
+     * - The utilization of memory transactions (coalescing) decreases as the
+     *   access stride between threads increases (i.e., the number items per thread).
+     */
+    BLOCK_STORE_DIRECT,
+
+    /**
+     * \par Overview
+     *
+     * A [<em>blocked arrangement</em>](index.html#sec3sec3) of data is written directly
+     * to memory using CUDA's built-in vectorized stores as a coalescing optimization.
+     * The threadblock writes items in a parallel "raking" fashion: thread<sub><em>i</em></sub> uses vector stores to
+     * write the <em>i</em><sup>th</sup> segment of consecutive elements.
+     *
+     * For example, <tt>st.global.v4.s32</tt> instructions will be generated when \p T = \p int and \p ITEMS_PER_THREAD > 4.
+     *
+     * \par Performance Considerations
+     * - The utilization of memory transactions (coalescing) remains high until the the
+     *   access stride between threads (i.e., the number items per thread) exceeds the
+     *   maximum vector load width (typically 4 items or 64B, whichever is lower).
+     * - The following conditions will prevent vectorization and loading will fall back to cub::BLOCK_STORE_DIRECT:
+     *   - \p ITEMS_PER_THREAD is odd
+     *   - The \p OutputIterator is not a simple pointer type
+     *   - The block output offset is not quadword-aligned
+     *   - The data type \p T is not a built-in primitive or CUDA vector type (e.g., \p short, \p int2, \p double, \p float2, etc.)
+     */
+    BLOCK_STORE_VECTORIZE,
+
+    /**
+     * \par Overview
+     * A [<em>blocked arrangement</em>](index.html#sec3sec3) is locally transposed into
+     * a [<em>striped arrangement</em>](index.html#sec3sec3) which is then written to
+     * memory.  More specifically, cub::BlockExchange used to locally reorder the items into a
+     * [<em>striped arrangement</em>](index.html#sec3sec3), after which the threadblock
+     * writes items in a parallel "strip-mining" fashion: consecutive items owned by thread<sub><em>i</em></sub>
+     * are written to memory with stride \p BLOCK_THREADS between them.
+     *
+     * \par Performance Considerations
+     * - The utilization of memory transactions (coalescing) remains high regardless
+     *   of items written per thread.
+     * - The local reordering incurs slightly longer latencies and throughput than the
+     *   direct cub::BLOCK_STORE_DIRECT and cub::BLOCK_STORE_VECTORIZE alternatives.
+     */
+    BLOCK_STORE_TRANSPOSE,
 };
 
 
@@ -435,90 +484,80 @@ enum BlockStorePolicy
 
 
 /**
- * \brief BlockStore provides store operations for writing global tiles of data from the threadblock (in blocked arrangement across threads). ![](block_store_logo.png)
+ * \brief BlockStore provides data movement operations for writing [<em>blocked-arranged</em>](index.html#sec3sec3) data to global memory.  ![](block_store_logo.png)
  *
- * <b>Overview</b>
- * \par
- * BlockStore can be configured to use one of three alternative algorithms:
- *   -# <b>cub::BLOCK_STORE_DIRECT</b>.  Stores consecutive thread-items
- *      directly from the input.
- *   <br><br>
- *   -# <b>cub::BLOCK_STORE_VECTORIZE</b>.  Attempts to use CUDA's
- *      built-in vectorized items as a coalescing optimization.  For
- *      example, <tt>st.global.v4.s32</tt> will be generated when
- *      \p T = \p int and \p ITEMS_PER_THREAD > 4.
- *   <br><br>
- *   -# <b>cub::BLOCK_STORE_TRANSPOSE</b>.  Stores striped inputs as
- *      a coalescing optimization and then transposes them through
- *      shared memory into the desired blocks of thread-consecutive items
+ * BlockStore provides a single tile-storing abstraction whose performance behavior can be tuned externally.  In particular,
+ * BlockStore implements several alternative cub::BlockStorePolicy strategies catering to different granularity sizes (i.e.,
+ * number of items per thread).
  *
- * \par
- * The data movement operations exposed by this type assume a blocked
- * arrangement of data amongst threads, i.e., an <em>n</em>-element list (or
- * <em>tile</em>) that is partitioned evenly among \p BLOCK_THREADS threads,
- * with thread<sub><em>i</em></sub> owning the <em>i</em><sup>th</sup> segment of
- * consecutive elements.
- *
- * \tparam OutputIterator        The input iterator type (may be a simple pointer).
- * \tparam BLOCK_THREADS          The threadblock size in threads.
+ * \tparam OutputIterator       The input iterator type (may be a simple pointer type).
+ * \tparam BLOCK_THREADS        The threadblock size in threads.
  * \tparam ITEMS_PER_THREAD     The number of consecutive items partitioned onto each thread.
  * \tparam POLICY               <b>[optional]</b> cub::BlockStorePolicy tuning policy enumeration.  Default = cub::BLOCK_STORE_DIRECT.
  * \tparam MODIFIER             <b>[optional]</b> cub::PtxStoreModifier cache modifier.  Default = cub::PTX_STORE_NONE.
  *
- * <b>Performance Features and Considerations</b>
- * \par
- * - After any operation, a subsequent <tt>__syncthreads()</tt> barrier is
- *   required if the supplied BlockStore::SmemStorage is to be reused or repurposed by the threadblock.
- * - The following conditions will prevent vectorization and storing will fall back to cub::BLOCK_STORE_DIRECT:
- *   - \p ITEMS_PER_THREAD is odd
- *   - The \p OutputIterator is not a simple pointer type
- *   - The input offset (\p block_ptr + \p block_offset) is not quad-aligned
- *   - The data type \p T is not a built-in primitive or CUDA vector type (e.g., \p short, \p int2, \p double, \p float2, etc.) *
+ * \par Algorithm
+ * BlockStore can be (optionally) configured to use one of three alternative methods:
+ *   -# <b>cub::BLOCK_STORE_DIRECT</b>.  A [<em>blocked arrangement</em>](index.html#sec3sec3) of data is written
+        directly to memory. [More...](\ref cub::BlockStorePolicy)
+ *   -# <b>cub::BLOCK_STORE_VECTORIZE</b>.  A [<em>blocked arrangement</em>](index.html#sec3sec3)
+ *      of data is written directly to memory using CUDA's built-in vectorized stores as a
+ *      coalescing optimization.  [More...](\ref cub::BlockStorePolicy)
+ *   -# <b>cub::BLOCK_STORE_TRANSPOSE</b>.  A [<em>blocked arrangement</em>](index.html#sec3sec3)
+ *      is locally transposed into a [<em>striped arrangement</em>](index.html#sec3sec3) which is
+ *      then written to memory.  [More...](\ref cub::BlockStorePolicy)
  *
- * <b>Examples</b>
- * \par
- * - <b>Example 1:</b> Store four consecutive integers per thread:
+ * \par Usage Considerations
+ * - \smemreuse{BlockStore::SmemStorage}
+ *
+ * \par Performance Considerations
+ *  - See cub::BlockStorePolicy for more performance details regarding algorithmic alternatives
+ *
+ * \par Examples
+ * <em>Example 1.</em> Have a 128-thread threadblock directly store a blocked arrangement of four consecutive integers per thread.
  * \code
  * #include <cub.cuh>
  *
  * template <int BLOCK_THREADS>
- * __global__ void SomeKernel(int *d_in, ...)
+ * __global__ void SomeKernel(int *d_out, ...)
  * {
- *      // Declare a parameterized BlockStore type for the kernel configuration
- *      typedef cub::BlockStore<int, BLOCK_THREADS, 4> BlockStore;
+ *      // Parameterize BlockStore for the parallel execution context
+ *      typedef cub::BlockStore<int*, 128, 4> BlockStore;
  *
  *      // Declare shared memory for BlockStore
  *      __shared__ typename BlockStore::SmemStorage smem_storage;
  *
- *      // A segment of four input items per thread
+ *     // A segment of consecutive items per thread
  *      int data[4];
  *
  *      // Store a tile of data
- *      BlockStore::Store(data, d_in, blockIdx.x * BLOCK_THREADS * 4);
+ *      BlockStore::Store(smem_storage, d_out + blockIdx.x * 128 * 4, data);
  *
  *      ...
  * }
  * \endcode
- * - <b>Example 2:</b> Store four consecutive integers per thread using vectorized stores and global-only caching:
+ *
+ * <em>Example 2.</em> Have a threadblock store a blocked arrangement of \p ITEMS_PER_THREAD consecutive
+ * integers per thread using vectorized stores and global-only caching:
  * \code
  * #include <cub.cuh>
  *
  * template <int BLOCK_THREADS>
- * __global__ void SomeKernel(int *d_in, ...)
+ * __global__ void SomeKernel(int *d_out, ...)
  * {
  *      const int ITEMS_PER_THREAD = 4;
  *
- *      // Declare a parameterized BlockStore type for the kernel configuration
+ *      // Parameterize BlockStore for the parallel execution context
  *      typedef cub::BlockStore<int, BLOCK_THREADS, 4, BLOCK_STORE_VECTORIZE, PTX_STORE_CG> BlockStore;
  *
  *      // Declare shared memory for BlockStore
  *      __shared__ typename BlockStore::SmemStorage smem_storage;
  *
- *      // A segment of four input items per thread
+ *     // A segment of consecutive items per thread
  *      int data[4];
  *
  *      // Store a tile of data using vector-store instructions if possible
- *      BlockStore::Store(data, d_in, blockIdx.x * BLOCK_THREADS * 4);
+ *      BlockStore::Store(smem_storage, d_out + blockIdx.x * BLOCK_THREADS * 4, data);
  *
  *      ...
  * }
@@ -529,7 +568,7 @@ template <
     typename            OutputIterator,
     int                 BLOCK_THREADS,
     int                 ITEMS_PER_THREAD,
-    BlockStorePolicy      POLICY = BLOCK_STORE_DIRECT,
+    BlockStorePolicy    POLICY = BLOCK_STORE_DIRECT,
     PtxStoreModifier    MODIFIER = PTX_STORE_NONE>
 class BlockStore
 {

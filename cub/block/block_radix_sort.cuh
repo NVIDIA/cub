@@ -28,7 +28,7 @@
 
 /**
  * \file
- * cub::BlockRadixSort provides variants of parallel radix sorting across threads within a threadblock.
+ * cub::BlockRadixSort provides variants of parallel radix sorting across a CUDA threadblock.
  */
 
 
@@ -51,10 +51,9 @@ namespace cub {
  */
 
 /**
- * \brief BlockRadixSort provides variants of parallel radix sorting across threads within a threadblock.  ![](sorting_logo.png)
+ * \brief BlockRadixSort provides variants of parallel radix sorting across a CUDA threadblock.  ![](sorting_logo.png)
  *
- * <b>Overview</b>
- * \par
+ * \par Overview
  * The [<em>radix sorting method</em>](http://en.wikipedia.org/wiki/Radix_sort) relies upon a positional representation for
  * keys, i.e., each key is comprised of an ordered sequence of symbols (e.g., digits,
  * characters, etc.) specified from least-significant to most-significant.  For a
@@ -71,13 +70,9 @@ namespace cub {
  * that ensure lexicographic key ordering.
  *
  * \par
- * BlockRadixSort accommodates the following arrangements of data items among threads:
- * -#  [<b><em>Blocked arrangement</em></b>](index.html#sec3sec3).  The aggregate tile of items is partitioned
- *   evenly across threads in "blocked" fashion with thread<sub><em>i</em></sub>
- *   owning the <em>i</em><sup>th</sup> segment of consecutive elements.
- * -#  [<b><em>Striped arrangement</em></b>](index.html#sec3sec3).  The aggregate tile of items is partitioned across
- *   threads in "striped" fashion, i.e., the \p ITEMS_PER_THREAD items owned by
- *   each thread have logical stride \p BLOCK_THREADS between them.
+ * For convenience, BlockRadixSort exposes a spectrum of entrypoints that differ by:
+ * - Value association (keys-only <em>vs.</em> key-value-pairs)
+ * - Input/output data arrangements (combinations of [<em>blocked</em>](index.html#sec3sec3) and [<em>striped</em>](index.html#sec3sec3) arrangements)
  *
  * \tparam KeyType              Key type
  * \tparam BLOCK_THREADS        The threadblock size in threads
@@ -86,33 +81,30 @@ namespace cub {
  * \tparam RADIX_BITS           <b>[optional]</b> The number of radix bits per digit place (default: 5 bits)
  * \tparam SMEM_CONFIG          <b>[optional]</b> Shared memory bank mode (default: \p cudaSharedMemBankSizeFourByte)
  *
- * <b>Usage Considerations</b>
- * \par
+ * \par Usage Considerations
  * - After any sorting operation, a subsequent <tt>__syncthreads()</tt> barrier
  *   is required if the supplied BlockRadixSort::SmemStorage is to be reused or repurposed
  *   by the threadblock.
  * - BlockRadixSort can only accommodate one associated tile of values. To "truck along"
  *   more than one tile of values, simply perform a key-value sort of the keys paired
  *   with a temporary value array that enumerates the key indices.  The reordered indices
- *   can then be used as a gather-vector for exchanging other value tiles through
+ *   can then be used as a gather-vector for exchanging other associated tile data through
  *   shared memory.
  *
- * <b>Performance Considerations</b>
- * \par
+ * \par Performance Considerations
  * - The operations are most efficient (lowest instruction overhead) when:
  *      - \p BLOCK_THREADS is a multiple of the architecture's warp size
  *      - \p KeyType is an unsigned integral type
+ *      - Keys are partitioned across the threadblock in a [<em>blocked arrangement</em>](index.html#sec3sec3)
  *
- * <b>Algorithm</b>
- * \par
- * The implementation of BlockRadixSort is based on the method presented by
- * Merrill et al. \cite merrill_high_2011.  It has <em>O</em>(<em>n</em>) work complexity
- * and iterates over digit places using rounds constructed of
+ * \par Algorithm
+ * BlockRadixSort is based on the method presented by Merrill et al. \cite merrill_high_2011.
+ * The implementation has <em>O</em>(<em>n</em>) work complexity and iterates over digit places
+ * using rounds constructed of
  *    - cub::BlockRadixRank (itself constructed from cub::BlockScan)
  *    - cub::BlockExchange
  *
- * <b>Examples</b>
- * \par
+ * \par Examples
  * <em>Example 1.</em> Perform a radix sort over a tile of 512 integer keys that
  * are partitioned in a blocked arrangement across a 128-thread threadblock (where each thread holds 4 keys).
  *      \code
