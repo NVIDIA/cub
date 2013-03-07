@@ -10,6 +10,11 @@ threadblock, warp, and thread-level operations.
 ![SIMT abstraction layer](http://nvlabs.github.com/CUB/simt_abstraction.png)
 
 <br><hr>
+<h3>Recent news</h3>
+
+- CUB v0.9 "preview" release (3/6/2013). CUB is the first durable, high-performance library of cooperative threadblock, warp, and thread primitives for CUDA kernel programming. More primitives and examples coming soon!
+
+<br><hr>
 <h3>A Simple Example</h3>
 
 ```C++
