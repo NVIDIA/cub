@@ -1,1 +1,0 @@
-CUB version 0.900
