@@ -616,7 +616,7 @@ enum BlockLoadPolicy
 /**
  * \brief BlockLoad provides data movement operations for reading [<em>block-arranged</em>](index.html#sec3sec3) data from global memory. ![](block_load_logo.png)
  *
- * BlockLoad provides a single tile-loading abstraction whose performance behavior can be tuned externally.  In particular,
+ * BlockLoad provides a single tile-loading abstraction whose performance behavior can be statically tuned.  In particular,
  * BlockLoad implements alternative cub::BlockLoadPolicy strategies catering to different granularity sizes (i.e.,
  * number of items per thread).
  *
