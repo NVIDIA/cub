@@ -87,15 +87,183 @@ struct WarpPrefixOp
     }
 };
 
+
 /**
- * Exclusive WarpScan test kernel.
+ * Exclusive scan
+ */
+template <
+    typename    T,
+    typename    ScanOp,
+    typename    IdentityT,
+    bool        PRIMITIVE = Traits<T>::PRIMITIVE>
+struct DeviceTest
+{
+    static __device__ __forceinline__ void Test() {}
+
+    template <
+        TestMode TEST_MODE,
+        typename WarpScan,
+        typename PrefixOp>
+    static __device__ __forceinline__ void Test(
+        typename WarpScan::SmemStorage  &smem_storage,
+        T                               &data,
+        IdentityT                       &identity,
+        ScanOp                          &scan_op,
+        T                               &aggregate,
+        PrefixOp                        &prefix_op)
+    {
+        if (TEST_MODE == BASIC)
+        {
+            // Test basic warp scan
+            WarpScan::ExclusiveScan(smem_storage, data, data, identity, scan_op);
+        }
+        else if (TEST_MODE == AGGREGATE)
+        {
+            // Test with cumulative aggregate
+            WarpScan::ExclusiveScan(smem_storage, data, data, identity, scan_op, aggregate);
+        }
+        else if (TEST_MODE == PREFIX_AGGREGATE)
+        {
+            // Test with warp-prefix and cumulative aggregate
+            WarpScan::ExclusiveScan(smem_storage, data, data, identity, scan_op, aggregate, prefix_op);
+        }
+    }
+};
+
+
+/**
+ * Exclusive sum
+ */
+template <
+    typename T,
+    typename IdentityT>
+struct DeviceTest<T, Sum<T>, IdentityT, true>
+{
+    static __device__ __forceinline__ void Test() {}
+
+    template <
+        TestMode TEST_MODE,
+        typename WarpScan,
+        typename PrefixOp>
+    static __device__ __forceinline__ void Test(
+        typename WarpScan::SmemStorage  &smem_storage,
+        T                               &data,
+        T                               &identity,
+        Sum<T>                          &scan_op,
+        T                               &aggregate,
+        PrefixOp                        &prefix_op)
+    {
+        if (TEST_MODE == BASIC)
+        {
+            // Test basic warp scan
+            WarpScan::ExclusiveSum(smem_storage, data, data);
+        }
+        else if (TEST_MODE == AGGREGATE)
+        {
+            // Test with cumulative aggregate
+            WarpScan::ExclusiveSum(smem_storage, data, data, aggregate);
+        }
+        else if (TEST_MODE == PREFIX_AGGREGATE)
+        {
+            // Test with warp-prefix and cumulative aggregate
+            WarpScan::ExclusiveSum(smem_storage, data, data, aggregate, prefix_op);
+        }
+    }
+};
+
+
+/**
+ * Inclusive scan
+ */
+template <
+    typename    T,
+    typename    ScanOp,
+    bool        PRIMITIVE>
+struct DeviceTest<T, ScanOp, NullType, PRIMITIVE>
+{
+
+    static __device__ __forceinline__ void Test() {}
+
+    template <
+        TestMode TEST_MODE,
+        typename WarpScan,
+        typename PrefixOp>
+    static __device__ __forceinline__ void Test(
+        typename WarpScan::SmemStorage  &smem_storage,
+        T                               &data,
+        NullType                        &identity,
+        ScanOp                          &scan_op,
+        T                               &aggregate,
+        PrefixOp                        &prefix_op)
+    {
+        if (TEST_MODE == BASIC)
+        {
+            // Test basic warp scan
+            WarpScan::InclusiveScan(smem_storage, data, data, scan_op);
+        }
+        else if (TEST_MODE == AGGREGATE)
+        {
+            // Test with cumulative aggregate
+            WarpScan::InclusiveScan(smem_storage, data, data, scan_op, aggregate);
+        }
+        else if (TEST_MODE == PREFIX_AGGREGATE)
+        {
+            // Test with warp-prefix and cumulative aggregate
+            WarpScan::InclusiveScan(smem_storage, data, data, scan_op, aggregate, prefix_op);
+        }
+    }
+};
+
+
+/**
+ * Inclusive sum
+ */
+template <typename T>
+struct DeviceTest<T, Sum<T>, NullType, true>
+{
+    static __device__ __forceinline__ void Test() {}
+
+    template <
+        TestMode TEST_MODE,
+        typename WarpScan,
+        typename PrefixOp>
+    static __device__ __forceinline__ void Test(
+        typename WarpScan::SmemStorage  &smem_storage,
+        T                               &data,
+        NullType                        &identity,
+        Sum<T>                          &scan_op,
+        T                               &aggregate,
+        PrefixOp                        &prefix_op)
+    {
+        if (TEST_MODE == BASIC)
+        {
+            // Test basic warp scan
+            WarpScan::InclusiveSum(smem_storage, data, data);
+        }
+        else if (TEST_MODE == AGGREGATE)
+        {
+            // Test with cumulative aggregate
+            WarpScan::InclusiveSum(smem_storage, data, data, aggregate);
+        }
+        else if (TEST_MODE == PREFIX_AGGREGATE)
+        {
+            // Test with warp-prefix and cumulative aggregate
+            WarpScan::InclusiveSum(smem_storage, data, data, aggregate, prefix_op);
+        }
+    }
+};
+
+
+
+/**
+ * WarpScan test kernel
  */
 template <
     int         LOGICAL_WARP_THREADS,
     TestMode    TEST_MODE,
-    typename     T,
-    typename     ScanOp,
-    typename     IdentityT>
+    typename    T,
+    typename    ScanOp,
+    typename    IdentityT>
 __global__ void WarpScanKernel(
     T           *d_in,
     T           *d_out,
@@ -119,207 +287,8 @@ __global__ void WarpScanKernel(
     // Test scan
     T aggregate;
     WarpPrefixOp<T, ScanOp> prefix_op(prefix, scan_op);
-    if (TEST_MODE == BASIC)
-    {
-        // Test basic warp scan
-        WarpScan::ExclusiveScan(smem_storage, data, data, identity, scan_op);
-    }
-    else if (TEST_MODE == AGGREGATE)
-    {
-        // Test with cumulative aggregate
-        WarpScan::ExclusiveScan(smem_storage, data, data, identity, scan_op, aggregate);
-    }
-    else if (TEST_MODE == PREFIX_AGGREGATE)
-    {
-        // Test with warp-prefix and cumulative aggregate
-        WarpScan::ExclusiveScan(smem_storage, data, data, identity, scan_op, aggregate, prefix_op);
-    }
-
-    // Record elapsed clocks
-    *d_elapsed = clock() - start;
-
-    // Store data
-    d_out[threadIdx.x] = data;
-
-    // Store aggregate and prefix
-    if (threadIdx.x == 0)
-    {
-        d_out[LOGICAL_WARP_THREADS] = aggregate;
-        d_out[LOGICAL_WARP_THREADS + 1] = prefix_op.prefix;
-    }
-}
-
-
-/**
- * Exclusive WarpScan test kernel (specialized for prefix sum)
- */
-template <
-    int         LOGICAL_WARP_THREADS,
-    TestMode    TEST_MODE,
-    typename    T,
-    typename    IdentityT>
-__global__ void WarpScanKernel(
-    T           *d_in,
-    T           *d_out,
-    Sum<T>,
-    IdentityT,
-    T           prefix,
-    clock_t     *d_elapsed,
-    typename EnableIf<Traits<T>::PRIMITIVE>::Type *dummy = NULL)
-{
-    // Cooperative warp-scan utility type (1 warp)
-    typedef WarpScan<T, 1, LOGICAL_WARP_THREADS> WarpScan;
-
-    // Shared memory
-    __shared__ typename WarpScan::SmemStorage smem_storage;
-
-    // Per-thread tile data
-    T data = d_in[threadIdx.x];
-
-    // Record elapsed clocks
-    clock_t start = clock();
-
-    // Test scan
-    T aggregate;
-    WarpPrefixOp<T, Sum<T> > prefix_op(prefix, Sum<T>());
-    if (TEST_MODE == BASIC)
-    {
-        // Test basic warp scan
-        WarpScan::ExclusiveSum(smem_storage, data, data);
-    }
-    else if (TEST_MODE == AGGREGATE)
-    {
-        // Test with cumulative aggregate
-        WarpScan::ExclusiveSum(smem_storage, data, data, aggregate);
-    }
-    else if (TEST_MODE == PREFIX_AGGREGATE)
-    {
-        // Test with warp-prefix and cumulative aggregate
-        WarpScan::ExclusiveSum(smem_storage, data, data, aggregate, prefix_op);
-    }
-
-    // Record elapsed clocks
-    *d_elapsed = clock() - start;
-
-    // Store data
-    d_out[threadIdx.x] = data;
-
-    // Store aggregate and prefix
-    if (threadIdx.x == 0)
-    {
-        d_out[LOGICAL_WARP_THREADS] = aggregate;
-        d_out[LOGICAL_WARP_THREADS + 1] = prefix_op.prefix;
-    }
-}
-
-
-/**
- * Inclusive WarpScan test kernel.
- */
-template <
-    int         LOGICAL_WARP_THREADS,
-    TestMode    TEST_MODE,
-    typename     T,
-    typename     ScanOp>
-__global__ void WarpScanKernel(
-    T            *d_in,
-    T            *d_out,
-    ScanOp       scan_op,
-    NullType,
-    T            prefix,
-    clock_t      *d_elapsed)
-{
-    // Cooperative warp-scan utility type (1 warp)
-    typedef WarpScan<T, 1, LOGICAL_WARP_THREADS> WarpScan;
-
-    // Shared memory
-    __shared__ typename WarpScan::SmemStorage smem_storage;
-
-    // Per-thread tile data
-    T data = d_in[threadIdx.x];
-
-    // Record elapsed clocks
-    clock_t start = clock();
-
-    T aggregate;
-    WarpPrefixOp<T, ScanOp> prefix_op(prefix, scan_op);
-    if (TEST_MODE == BASIC)
-    {
-        // Test basic warp scan
-        WarpScan::InclusiveScan(smem_storage, data, data, scan_op);
-    }
-    else if (TEST_MODE == AGGREGATE)
-    {
-        // Test with cumulative aggregate
-        WarpScan::InclusiveScan(smem_storage, data, data, scan_op, aggregate);
-    }
-    else if (TEST_MODE == PREFIX_AGGREGATE)
-    {
-        // Test with warp-prefix and cumulative aggregate
-        WarpScan::InclusiveScan(smem_storage, data, data, scan_op, aggregate, prefix_op);
-    }
-
-    // Record elapsed clocks
-    *d_elapsed = clock() - start;
-
-    // Store data
-    d_out[threadIdx.x] = data;
-
-    // Store aggregate and prefix
-    if (threadIdx.x == 0)
-    {
-        d_out[LOGICAL_WARP_THREADS] = aggregate;
-        d_out[LOGICAL_WARP_THREADS + 1] = prefix_op.prefix;
-    }
-}
-
-
-/**
- * Inclusive WarpScan test kernel (specialized for prefix sum).
- */
-template <
-    int         LOGICAL_WARP_THREADS,
-    TestMode    TEST_MODE,
-    typename     T>
-__global__ void WarpScanKernel(
-    T           *d_in,
-    T           *d_out,
-    Sum<T>,
-    NullType,
-    T           prefix,
-    clock_t     *d_elapsed,
-    typename EnableIf<Traits<T>::PRIMITIVE>::Type *dummy = NULL)
-
-{
-    // Cooperative warp-scan utility type (1 warp)
-    typedef WarpScan<T, 1, LOGICAL_WARP_THREADS> WarpScan;
-
-    // Shared memory
-    __shared__ typename WarpScan::SmemStorage smem_storage;
-
-    // Per-thread tile data
-    T data = d_in[threadIdx.x];
-
-    // Record elapsed clocks
-    clock_t start = clock();
-
-    T aggregate;
-    WarpPrefixOp<T, Sum<T> > prefix_op(prefix, Sum<T>() );
-    if (TEST_MODE == BASIC)
-    {
-        // Test basic warp scan
-        WarpScan::InclusiveSum(smem_storage, data, data);
-    }
-    else if (TEST_MODE == AGGREGATE)
-    {
-        // Test with cumulative aggregate
-        WarpScan::InclusiveSum(smem_storage, data, data, aggregate);
-    }
-    else if (TEST_MODE == PREFIX_AGGREGATE)
-    {
-        // Test with warp-prefix and cumulative aggregate
-        WarpScan::InclusiveSum(smem_storage, data, data, aggregate, prefix_op);
-    }
+    DeviceTest<T, ScanOp, IdentityT>::template Test<TEST_MODE, WarpScan>(
+        smem_storage, data, identity, scan_op, aggregate, prefix_op);
 
     // Record elapsed clocks
     *d_elapsed = clock() - start;
@@ -424,7 +393,7 @@ void Test(
     ScanOp      scan_op,
     IdentityT   identity,
     T           prefix,
-    char        *type_string)
+    const char  *type_string)
 {
     // Allocate host arrays
     T *h_in = new T[LOGICAL_WARP_THREADS];
@@ -490,7 +459,7 @@ void Test(
 
     // Cleanup
     if (h_in) delete[] h_in;
-    if (h_reference) delete[] h_in;
+    if (h_reference) delete[] h_reference;
     if (d_in) CubDebugExit(cudaFree(d_in));
     if (d_out) CubDebugExit(cudaFree(d_out));
 }
@@ -508,7 +477,7 @@ void Test(
     ScanOp      scan_op,
     T           identity,
     T           prefix,
-    char *      type_string)
+    const char* type_string)
 {
     // Exclusive
     Test<LOGICAL_WARP_THREADS, BASIC>(gen_mode, scan_op, identity, prefix, type_string);
@@ -610,6 +579,7 @@ int main(int argc, char** argv)
 
     return 0;
 }
+
 
 
 
