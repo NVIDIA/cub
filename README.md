@@ -3,9 +3,9 @@
 
 We recommend the [CUB Project Website](http://nvlabs.github.com/CUB) and the [cub-users discussion forum](http://groups.google.com/group/cub-users) for further information and examples.
 
-CUB is a flexible library of cooperative threadblock primitives and other utilities for CUDA kernel programming. 
-CUB enhances productivity and portability by providing an abstraction layer over complex
-threadblock, warp, and thread-level operations.
+CUB is a library of cooperative threadblock primitives and other high performance
+utilities for CUDA kernel programming.  CUB enhances productivity, performance, and portability by
+providing an abstraction layer over complex threadblock, warp, and thread-level operations.
 
 ![SIMT abstraction layer](http://nvlabs.github.com/CUB/simt_abstraction.png)
 
