@@ -44,6 +44,11 @@ CUB_NS_PREFIX
 /// CUB namespace
 namespace cub {
 
+/**
+ * \addtogroup SimtUtils
+ * @{
+ */
+
 
 //-----------------------------------------------------------------------------
 // Tags and constants
@@ -64,6 +69,12 @@ enum PtxStoreModifier
     // Shared store modifiers
     PTX_STORE_VS,                   ///< Volatile shared
 };
+
+
+/**
+ * \name Thread utilities for memory I/O using PTX cache modifiers
+ * @{
+ */
 
 
 /** \cond INTERNAL */
@@ -475,6 +486,11 @@ CUB_STORES_4L(double4, double2);
 #undef CUB_STORES_0124
 
 #endif // DOXYGEN_SHOULD_SKIP_THIS
+
+
+//@}
+
+/** @} */       // end of SimtUtils group
 
 
 } // namespace cub
