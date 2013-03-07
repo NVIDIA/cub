@@ -89,23 +89,188 @@ struct BlockPrefixOp
 
 
 /**
- * Exclusive BlockScan test kernel.
+ * Exclusive scan
+ */
+template <
+    typename    T,
+    typename    ScanOp,
+    typename    IdentityT,
+    bool        PRIMITIVE = Traits<T>::PRIMITIVE>
+struct DeviceTest
+{
+    template <
+        TestMode    TEST_MODE,
+        typename    BlockScan,
+        typename    PrefixOp,
+        int         ITEMS_PER_THREAD>
+    static __device__ __forceinline__ void Test(
+        typename BlockScan::SmemStorage &smem_storage,
+        T                               (&data)[ITEMS_PER_THREAD],
+        IdentityT                       &identity,
+        ScanOp                          &scan_op,
+        T                               &aggregate,
+        PrefixOp                        &prefix_op)
+    {
+        if (TEST_MODE == BASIC)
+        {
+            // Test basic warp scan
+            BlockScan::ExclusiveScan(smem_storage, data, data, identity, scan_op);
+        }
+        else if (TEST_MODE == AGGREGATE)
+        {
+            // Test with cumulative aggregate
+            BlockScan::ExclusiveScan(smem_storage, data, data, identity, scan_op, aggregate);
+        }
+        else if (TEST_MODE == PREFIX_AGGREGATE)
+        {
+            // Test with warp-prefix and cumulative aggregate
+            BlockScan::ExclusiveScan(smem_storage, data, data, identity, scan_op, aggregate, prefix_op);
+        }
+    }
+};
+
+
+/**
+ * Exclusive sum
+ */
+template <
+    typename T,
+    typename IdentityT>
+struct DeviceTest<T, Sum<T>, IdentityT, true>
+{
+    template <
+        TestMode    TEST_MODE,
+        typename    BlockScan,
+        typename    PrefixOp,
+        int         ITEMS_PER_THREAD>
+    static __device__ __forceinline__ void Test(
+        typename BlockScan::SmemStorage &smem_storage,
+        T                               (&data)[ITEMS_PER_THREAD],
+        T                               &identity,
+        Sum<T>                          &scan_op,
+        T                               &aggregate,
+        PrefixOp                        &prefix_op)
+    {
+        if (TEST_MODE == BASIC)
+        {
+            // Test basic warp scan
+            BlockScan::ExclusiveSum(smem_storage, data, data);
+        }
+        else if (TEST_MODE == AGGREGATE)
+        {
+            // Test with cumulative aggregate
+            BlockScan::ExclusiveSum(smem_storage, data, data, aggregate);
+        }
+        else if (TEST_MODE == PREFIX_AGGREGATE)
+        {
+            // Test with warp-prefix and cumulative aggregate
+            BlockScan::ExclusiveSum(smem_storage, data, data, aggregate, prefix_op);
+        }
+    }
+};
+
+
+/**
+ * Inclusive scan
+ */
+template <
+    typename    T,
+    typename    ScanOp,
+    bool        PRIMITIVE>
+struct DeviceTest<T, ScanOp, NullType, PRIMITIVE>
+{
+    template <
+        TestMode    TEST_MODE,
+        typename    BlockScan,
+        typename    PrefixOp,
+        int         ITEMS_PER_THREAD>
+    static __device__ __forceinline__ void Test(
+        typename BlockScan::SmemStorage &smem_storage,
+        T                               (&data)[ITEMS_PER_THREAD],
+        NullType                        &identity,
+        ScanOp                          &scan_op,
+        T                               &aggregate,
+        PrefixOp                        &prefix_op)
+    {
+        if (TEST_MODE == BASIC)
+        {
+            // Test basic warp scan
+            BlockScan::InclusiveScan(smem_storage, data, data, scan_op);
+        }
+        else if (TEST_MODE == AGGREGATE)
+        {
+            // Test with cumulative aggregate
+            BlockScan::InclusiveScan(smem_storage, data, data, scan_op, aggregate);
+        }
+        else if (TEST_MODE == PREFIX_AGGREGATE)
+        {
+            // Test with warp-prefix and cumulative aggregate
+            BlockScan::InclusiveScan(smem_storage, data, data, scan_op, aggregate, prefix_op);
+        }
+    }
+};
+
+
+/**
+ * Inclusive sum
+ */
+template <typename T>
+struct DeviceTest<T, Sum<T>, NullType, true>
+{
+    template <
+        TestMode    TEST_MODE,
+        typename    BlockScan,
+        typename    PrefixOp,
+        int         ITEMS_PER_THREAD>
+    static __device__ __forceinline__ void Test(
+        typename BlockScan::SmemStorage &smem_storage,
+        T                               (&data)[ITEMS_PER_THREAD],
+        NullType                        &identity,
+        Sum<T>                          &scan_op,
+        T                               &aggregate,
+        PrefixOp                        &prefix_op)
+    {
+        if (TEST_MODE == BASIC)
+        {
+            // Test basic warp scan
+            BlockScan::InclusiveSum(smem_storage, data, data);
+        }
+        else if (TEST_MODE == AGGREGATE)
+        {
+            // Test with cumulative aggregate
+            BlockScan::InclusiveSum(smem_storage, data, data, aggregate);
+        }
+        else if (TEST_MODE == PREFIX_AGGREGATE)
+        {
+            // Test with warp-prefix and cumulative aggregate
+            BlockScan::InclusiveSum(smem_storage, data, data, aggregate, prefix_op);
+        }
+    }
+};
+
+
+
+
+
+
+/**
+ * BlockScan test kernel.
  */
 template <
     int             BLOCK_THREADS,
     int             ITEMS_PER_THREAD,
     TestMode        TEST_MODE,
-    BlockScanPolicy   POLICY,
-    typename         T,
-    typename         ScanOp,
-    typename         IdentityT>
+    BlockScanPolicy POLICY,
+    typename        T,
+    typename        ScanOp,
+    typename        IdentityT>
 __global__ void BlockScanKernel(
-    T             *d_in,
-    T             *d_out,
-    ScanOp         scan_op,
-    IdentityT     identity,
-    T            prefix,
-    clock_t        *d_elapsed)
+    T               *d_in,
+    T               *d_out,
+    ScanOp          scan_op,
+    IdentityT       identity,
+    T               prefix,
+    clock_t         *d_elapsed)
 {
     const int TILE_SIZE = BLOCK_THREADS * ITEMS_PER_THREAD;
 
@@ -125,217 +290,8 @@ __global__ void BlockScanKernel(
     // Test scan
     T aggregate;
     BlockPrefixOp<T, ScanOp> prefix_op(prefix, scan_op);
-    if (TEST_MODE == BASIC)
-    {
-        // Test basic warp scan
-        BlockScan::ExclusiveScan(smem_storage, data, data, identity, scan_op);
-    }
-    else if (TEST_MODE == AGGREGATE)
-    {
-        // Test with cumulative aggregate
-        BlockScan::ExclusiveScan(smem_storage, data, data, identity, scan_op, aggregate);
-    }
-    else if (TEST_MODE == PREFIX_AGGREGATE)
-    {
-        // Test with warp-prefix and cumulative aggregate
-        BlockScan::ExclusiveScan(smem_storage, data, data, identity, scan_op, aggregate, prefix_op);
-    }
-
-    // Record elapsed clocks
-    *d_elapsed = clock() - start;
-
-    // Store output
-    BlockStoreDirect(d_out, data);
-
-    // Store aggregate
-    if (threadIdx.x == 0)
-    {
-        d_out[TILE_SIZE] = aggregate;
-    }
-}
-
-
-/**
- * Inclusive BlockScan test kernel.
- */
-template <
-    int             BLOCK_THREADS,
-    int             ITEMS_PER_THREAD,
-    TestMode        TEST_MODE,
-    BlockScanPolicy   POLICY,
-    typename         T,
-    typename         ScanOp>
-__global__ void BlockScanKernel(
-    T             *d_in,
-    T             *d_out,
-    ScanOp         scan_op,
-    NullType,
-    T            prefix,
-    clock_t        *d_elapsed)
-{
-    const int TILE_SIZE = BLOCK_THREADS * ITEMS_PER_THREAD;
-
-    // Cooperative warp-scan utility type (1 warp)
-    typedef BlockScan<T, BLOCK_THREADS, POLICY> BlockScan;
-
-    // Shared memory
-    __shared__ typename BlockScan::SmemStorage smem_storage;
-
-    // Per-thread tile data
-    T data[ITEMS_PER_THREAD];
-    BlockLoadDirect(d_in, data);
-
-    // Record elapsed clocks
-    clock_t start = clock();
-
-    T aggregate;
-    BlockPrefixOp<T, ScanOp> prefix_op(prefix, scan_op);
-    if (TEST_MODE == BASIC)
-    {
-        // Test basic warp scan
-        BlockScan::InclusiveScan(smem_storage, data, data, scan_op);
-    }
-    else if (TEST_MODE == AGGREGATE)
-    {
-        // Test with cumulative aggregate
-        BlockScan::InclusiveScan(smem_storage, data, data, scan_op, aggregate);
-    }
-    else if (TEST_MODE == PREFIX_AGGREGATE)
-    {
-        // Test with warp-prefix and cumulative aggregate
-        BlockScan::InclusiveScan(smem_storage, data, data, scan_op, aggregate, prefix_op);
-    }
-
-    // Record elapsed clocks
-    *d_elapsed = clock() - start;
-
-    // Store output
-    BlockStoreDirect(d_out, data);
-
-    // Store aggregate
-    if (threadIdx.x == 0)
-    {
-        d_out[TILE_SIZE] = aggregate;
-    }
-}
-
-
-/**
- * Exclusive BlockScan test kernel (sum)
- */
-template <
-    int             BLOCK_THREADS,
-    int             ITEMS_PER_THREAD,
-    TestMode        TEST_MODE,
-    BlockScanPolicy   POLICY,
-    typename        T>
-__global__ void BlockScanKernel(
-    T                                               *d_in,
-    T                                               *d_out,
-    Sum<T>,
-    T,
-    T                                               prefix,
-    clock_t                                         *d_elapsed,
-    typename EnableIf<Traits<T>::PRIMITIVE>::Type   *dummy = NULL)
-{
-    const int TILE_SIZE = BLOCK_THREADS * ITEMS_PER_THREAD;
-
-    // Cooperative warp-scan utility type (1 warp)
-    typedef BlockScan<T, BLOCK_THREADS, POLICY> BlockScan;
-
-    // Shared memory
-    __shared__ typename BlockScan::SmemStorage smem_storage;
-
-    // Per-thread tile data
-    T data[ITEMS_PER_THREAD];
-    BlockLoadDirect(d_in, data);
-
-    // Record elapsed clocks
-    clock_t start = clock();
-
-    // Test scan
-    T aggregate;
-    BlockPrefixOp<T, Sum<T> > prefix_op(prefix, Sum<T>());
-    if (TEST_MODE == BASIC)
-    {
-        // Test basic warp scan
-        BlockScan::ExclusiveSum(smem_storage, data, data);
-    }
-    else if (TEST_MODE == AGGREGATE)
-    {
-        // Test with cumulative aggregate
-        BlockScan::ExclusiveSum(smem_storage, data, data, aggregate);
-    }
-    else if (TEST_MODE == PREFIX_AGGREGATE)
-    {
-        // Test with warp-prefix and cumulative aggregate
-        BlockScan::ExclusiveSum(smem_storage, data, data, aggregate, prefix_op);
-    }
-
-    // Record elapsed clocks
-    *d_elapsed = clock() - start;
-
-    // Store output
-    BlockStoreDirect(d_out, data);
-
-    // Store aggregate
-    if (threadIdx.x == 0)
-    {
-        d_out[TILE_SIZE] = aggregate;
-    }
-}
-
-
-/**
- * Inclusive BlockScan test kernel (sum)
- */
-template <
-    int             BLOCK_THREADS,
-    int             ITEMS_PER_THREAD,
-    TestMode        TEST_MODE,
-    BlockScanPolicy   POLICY,
-    typename        T>
-__global__ void BlockScanKernel(
-    T                                               *d_in,
-    T                                               *d_out,
-    Sum<T>,
-    NullType,
-    T                                               prefix,
-    clock_t                                         *d_elapsed,
-    typename EnableIf<Traits<T>::PRIMITIVE>::Type   *dummy = NULL)
-{
-    const int TILE_SIZE = BLOCK_THREADS * ITEMS_PER_THREAD;
-
-    // Cooperative warp-scan utility type (1 warp)
-    typedef BlockScan<T, BLOCK_THREADS, POLICY> BlockScan;
-
-    // Shared memory
-    __shared__ typename BlockScan::SmemStorage smem_storage;
-
-    // Per-thread tile data
-    T data[ITEMS_PER_THREAD];
-    BlockLoadDirect(d_in, data);
-
-    // Record elapsed clocks
-    clock_t start = clock();
-
-    T aggregate;
-    BlockPrefixOp<T, Sum<T> > prefix_op(prefix, Sum<T>());
-    if (TEST_MODE == BASIC)
-    {
-        // Test basic warp scan
-        BlockScan::InclusiveSum(smem_storage, data, data);
-    }
-    else if (TEST_MODE == AGGREGATE)
-    {
-        // Test with cumulative aggregate
-        BlockScan::InclusiveSum(smem_storage, data, data, aggregate);
-    }
-    else if (TEST_MODE == PREFIX_AGGREGATE)
-    {
-        // Test with warp-prefix and cumulative aggregate
-        BlockScan::InclusiveSum(smem_storage, data, data, aggregate, prefix_op);
-    }
+    DeviceTest<T, ScanOp, IdentityT>::template Test<TEST_MODE, BlockScan>(
+        smem_storage, data, identity, scan_op, aggregate, prefix_op);
 
     // Record elapsed clocks
     *d_elapsed = clock() - start;
@@ -364,12 +320,12 @@ template <
     typename     ScanOp,
     typename     IdentityT>
 T Initialize(
-    int             gen_mode,
-    T             *h_in,
-    T             *h_reference,
-    int         num_elements,
-    ScanOp         scan_op,
-    IdentityT     identity,
+    int          gen_mode,
+    T            *h_in,
+    T            *h_reference,
+    int          num_elements,
+    ScanOp       scan_op,
+    IdentityT    identity,
     T            *prefix)
 {
     T inclusive = (prefix != NULL) ? *prefix : identity;
@@ -394,11 +350,11 @@ template <
     typename     T,
     typename     ScanOp>
 T Initialize(
-    int             gen_mode,
-    T             *h_in,
-    T             *h_reference,
-    int         num_elements,
-    ScanOp         scan_op,
+    int          gen_mode,
+    T            *h_in,
+    T            *h_reference,
+    int          num_elements,
+    ScanOp       scan_op,
     NullType,
     T            *prefix)
 {
@@ -432,17 +388,17 @@ T Initialize(
 template <
     int             BLOCK_THREADS,
     int             ITEMS_PER_THREAD,
-    TestMode         TEST_MODE,
-    BlockScanPolicy   POLICY,
-    typename         ScanOp,
+    TestMode        TEST_MODE,
+    BlockScanPolicy POLICY,
+    typename        ScanOp,
     typename        IdentityT,        // NullType implies inclusive-scan, otherwise inclusive scan
-    typename         T>
+    typename        T>
 void Test(
-    int         gen_mode,
-    ScanOp         scan_op,
-    IdentityT     identity,
-    T            prefix,
-    char        *type_string)
+    int             gen_mode,
+    ScanOp          scan_op,
+    IdentityT       identity,
+    T               prefix,
+    const char      *type_string)
 {
     const int TILE_SIZE = BLOCK_THREADS * ITEMS_PER_THREAD;
 
@@ -525,7 +481,7 @@ void Test(
 
     // Cleanup
     if (h_in) delete[] h_in;
-    if (h_reference) delete[] h_in;
+    if (h_reference) delete[] h_reference;
     if (d_in) CubDebugExit(cudaFree(d_in));
     if (d_out) CubDebugExit(cudaFree(d_out));
 }
@@ -546,7 +502,7 @@ void Test(
     ScanOp      scan_op,
     IdentityT   identity,
     T           prefix,
-    char *      type_string)
+    const char  *type_string)
 {
     Test<BLOCK_THREADS, ITEMS_PER_THREAD, TEST_MODE, BLOCK_SCAN_RAKING>(gen_mode, scan_op, identity, prefix, type_string);
     Test<BLOCK_THREADS, ITEMS_PER_THREAD, TEST_MODE, BLOCK_SCAN_WARPSCANS>(gen_mode, scan_op, identity, prefix, type_string);
@@ -559,14 +515,14 @@ void Test(
 template <
     int         BLOCK_THREADS,
     int         ITEMS_PER_THREAD,
-    typename     ScanOp,
-    typename     T>
+    typename    ScanOp,
+    typename    T>
 void Test(
     int         gen_mode,
-    ScanOp         scan_op,
-    T             identity,
-    T            prefix,
-    char *        type_string)
+    ScanOp      scan_op,
+    T           identity,
+    T           prefix,
+    const char  *type_string)
 {
     // Exclusive
     Test<BLOCK_THREADS, ITEMS_PER_THREAD, BASIC>(gen_mode, scan_op, identity, prefix, type_string);
@@ -691,6 +647,7 @@ int main(int argc, char** argv)
 
     return 0;
 }
+
 
 
 
