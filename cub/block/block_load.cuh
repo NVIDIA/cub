@@ -616,7 +616,7 @@ enum BlockLoadPolicy
 /**
  * \brief BlockLoad provides data movement operations for reading [<em>block-arranged</em>](index.html#sec3sec3) data from global memory. ![](block_load_logo.png)
  *
- * BlockLoad provides a single tile-loading abstraction whose performance behavior can be tuned externally.  In particular,
+ * BlockLoad provides a single tile-loading abstraction whose performance behavior can be statically tuned.  In particular,
  * BlockLoad implements alternative cub::BlockLoadPolicy strategies catering to different granularity sizes (i.e.,
  * number of items per thread).
  *
@@ -712,7 +712,7 @@ private:
 
 
     /// Load helper
-    template <BlockLoadPolicy POLICY, int DUMMY = 0>
+    template <BlockLoadPolicy _POLICY, int DUMMY = 0>
     struct LoadInternal;
 
 
@@ -728,7 +728,7 @@ private:
         /// Load a tile of items across a threadblock
         static __device__ __forceinline__ void Load(
             SmemStorage     &smem_storage,                  ///< [in] Shared reference to opaque SmemStorage layout
-            InputIterator   block_itr,                        ///< [in] The threadblock's base input iterator for loading from
+            InputIterator   block_itr,                      ///< [in] The threadblock's base input iterator for loading from
             T               (&items)[ITEMS_PER_THREAD])     ///< [out] Data to load
         {
             BlockLoadDirect<MODIFIER>(block_itr, items);
@@ -738,7 +738,7 @@ private:
         template <typename SizeT>
         static __device__ __forceinline__ void Load(
             SmemStorage     &smem_storage,                  ///< [in] Shared reference to opaque SmemStorage layout
-            InputIterator   block_itr,                        ///< [in] The threadblock's base input iterator for loading from
+            InputIterator   block_itr,                      ///< [in] The threadblock's base input iterator for loading from
             const SizeT     &guarded_items,                 ///< [in] Number of valid items in the tile
             T               (&items)[ITEMS_PER_THREAD])     ///< [out] Data to load
         {
@@ -759,7 +759,7 @@ private:
         /// Load a tile of items across a threadblock, specialized for native pointer types (attempts vectorization)
         static __device__ __forceinline__ void Load(
             SmemStorage     &smem_storage,                  ///< [in] Shared reference to opaque SmemStorage layout
-            T               *block_ptr,                       ///< [in] The threadblock's base input iterator for loading from
+            T               *block_ptr,                     ///< [in] The threadblock's base input iterator for loading from
             T               (&items)[ITEMS_PER_THREAD])     ///< [out] Data to load
         {
             BlockLoadVectorized<MODIFIER>(block_ptr, items);
@@ -768,10 +768,10 @@ private:
         /// Load a tile of items across a threadblock, specialized for opaque input iterators (skips vectorization)
         template <
             typename T,
-            typename InputIterator>
+            typename _InputIterator>
         static __device__ __forceinline__ void Load(
             SmemStorage     &smem_storage,                  ///< [in] Shared reference to opaque SmemStorage layout
-            InputIterator   block_itr,                        ///< [in] The threadblock's base input iterator for loading from
+            _InputIterator  block_itr,                      ///< [in] The threadblock's base input iterator for loading from
             T               (&items)[ITEMS_PER_THREAD])     ///< [out] Data to load
         {
             BlockLoadDirect<MODIFIER>(block_itr, items);
@@ -781,7 +781,7 @@ private:
         template <typename SizeT>
         static __device__ __forceinline__ void Load(
             SmemStorage     &smem_storage,                  ///< [in] Shared reference to opaque SmemStorage layout
-            InputIterator   block_itr,                        ///< [in] The threadblock's base input iterator for loading from
+            InputIterator   block_itr,                      ///< [in] The threadblock's base input iterator for loading from
             const SizeT     &guarded_items,                 ///< [in] Number of valid items in the tile
             T               (&items)[ITEMS_PER_THREAD])     ///< [out] Data to load{
         {
@@ -805,7 +805,7 @@ private:
         /// Load a tile of items across a threadblock
         static __device__ __forceinline__ void Load(
             SmemStorage     &smem_storage,                  ///< [in] Shared reference to opaque SmemStorage layout
-            InputIterator   block_itr,                        ///< [in] The threadblock's base input iterator for loading from
+            InputIterator   block_itr,                      ///< [in] The threadblock's base input iterator for loading from
             T               (&items)[ITEMS_PER_THREAD])     ///< [out] Data to load{
         {
             BlockLoadDirectStriped<MODIFIER>(block_itr, items, BLOCK_THREADS);
@@ -818,7 +818,7 @@ private:
         template <typename SizeT>
         static __device__ __forceinline__ void Load(
             SmemStorage     &smem_storage,                  ///< [in] Shared reference to opaque SmemStorage layout
-            InputIterator   block_itr,                        ///< [in] The threadblock's base input iterator for loading from
+            InputIterator   block_itr,                      ///< [in] The threadblock's base input iterator for loading from
             const SizeT     &guarded_items,                 ///< [in] Number of valid items in the tile
             T               (&items)[ITEMS_PER_THREAD])     ///< [out] Data to load{
         {
@@ -849,7 +849,7 @@ public:
      */
     static __device__ __forceinline__ void Load(
         SmemStorage     &smem_storage,                  ///< [in] Shared reference to opaque SmemStorage layout
-        InputIterator   block_itr,                        ///< [in] The threadblock's base input iterator for loading from
+        InputIterator   block_itr,                      ///< [in] The threadblock's base input iterator for loading from
         T               (&items)[ITEMS_PER_THREAD])     ///< [out] Data to load
     {
         LoadInternal<POLICY>::Load(smem_storage, block_itr, items);
@@ -863,7 +863,7 @@ public:
     template <typename SizeT>
     static __device__ __forceinline__ void Load(
         SmemStorage     &smem_storage,                  ///< [in] Shared reference to opaque SmemStorage layout
-        InputIterator   block_itr,                        ///< [in] The threadblock's base input iterator for loading from
+        InputIterator   block_itr,                      ///< [in] The threadblock's base input iterator for loading from
         const SizeT     &guarded_items,                 ///< [in] Number of valid items in the tile
         T               (&items)[ITEMS_PER_THREAD])     ///< [out] Data to load
     {

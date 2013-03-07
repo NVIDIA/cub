@@ -486,7 +486,7 @@ enum BlockStorePolicy
 /**
  * \brief BlockStore provides data movement operations for writing [<em>blocked-arranged</em>](index.html#sec3sec3) data to global memory.  ![](block_store_logo.png)
  *
- * BlockStore provides a single tile-storing abstraction whose performance behavior can be tuned externally.  In particular,
+ * BlockStore provides a single tile-storing abstraction whose performance behavior can be statically tuned.  In particular,
  * BlockStore implements several alternative cub::BlockStorePolicy strategies catering to different granularity sizes (i.e.,
  * number of items per thread).
  *
@@ -583,7 +583,7 @@ private:
 
 
     /// Store helper
-    template <BlockStorePolicy POLICY, int DUMMY = 0>
+    template <BlockStorePolicy _POLICY, int DUMMY = 0>
     struct StoreInternal;
 
 
@@ -638,12 +638,10 @@ private:
         }
 
         /// Store a tile of items across a threadblock, specialized for opaque input iterators (skips vectorization)
-        template <
-            typename T,
-            typename OutputIterator>
+        template <typename _OutputIterator>
         static __device__ __forceinline__ void Store(
             SmemStorage     &smem_storage,              ///< [in] Shared reference to opaque SmemStorage layout
-            OutputIterator  block_itr,                    ///< [in] The threadblock's base output iterator for storing to
+            _OutputIterator block_itr,                  ///< [in] The threadblock's base output iterator for storing to
             T               (&items)[ITEMS_PER_THREAD]) ///< [in] Data to store
         {
             BlockStoreDirect<MODIFIER>(block_itr, items);

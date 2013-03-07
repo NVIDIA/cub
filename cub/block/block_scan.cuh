@@ -242,7 +242,7 @@ private:
     /**
      * Warpscan specialized for BLOCK_SCAN_RAKING variant
      */
-    template <int POLICY, int DUMMY = 0>
+    template <int _POLICY, int DUMMY = 0>
     struct BlockScanInternal
     {
         /// Layout type for padded threadblock raking grid

@@ -253,7 +253,6 @@ private:
 
 
         /// Broadcast
-        template <typename T>
         static __device__ __forceinline__ T Broadcast(
             SmemStorage     &smem_storage,      ///< [in] Shared reference to opaque SmemStorage layout
             T               input,              ///< [in] The value to broadcast
@@ -329,12 +328,12 @@ private:
         }
 
         /// Inclusive prefix sum with aggregate
-        template <typename T>
+        template <typename _T>
         static __device__ __forceinline__ void InclusiveSum(
             SmemStorage     &smem_storage,      ///< [in] Shared reference to opaque SmemStorage layout
-            T               input,              ///< [in] Calling thread's input item.
-            T               &output,            ///< [out] Calling thread's output item.  May be aliased with \p input.
-            T               &warp_aggregate)    ///< [out] <b>[<em>warp-lane</em><sub>0</sub> only]</b> Warp-wide aggregate reduction of input items.
+            _T               input,             ///< [in] Calling thread's input item.
+            _T               &output,           ///< [out] Calling thread's output item.  May be aliased with \p input.
+            _T               &warp_aggregate)   ///< [out] <b>[<em>warp-lane</em><sub>0</sub> only]</b> Warp-wide aggregate reduction of input items.
         {
             // Cast as unsigned int
             unsigned int    &uinput             = reinterpret_cast<unsigned int&>(input);
