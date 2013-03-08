@@ -366,6 +366,8 @@
  * - <b><em>Blocked arrangement</em></b>.  The aggregate tile of items is partitioned
  *   evenly across threads in "blocked" fashion with thread<sub><em>i</em></sub>
  *   owning the <em>i</em><sup>th</sup> segment of consecutive elements.
+ *   Blocked arrangements are often desirable for algorithmic benefits (where
+ *   long sequences of items can be processed sequentially within each thread).
  * </td>
  * <td>
  * \par
@@ -377,7 +379,10 @@
  * \par
  * - <b><em>Striped arrangement</em></b>.  The aggregate tile of items is partitioned across
  *   threads in "striped" fashion, i.e., the \p ITEMS_PER_THREAD items owned by
- *   each thread have logical stride \p BLOCK_THREADS between them.
+ *   each thread have logical stride \p BLOCK_THREADS between them. Striped arrangements
+ *   are often desirable for data movement through global memory (where
+ *   [read/write coalescing](http://docs.nvidia.com/cuda/cuda-c-best-practices-guide/#coalesced-access-global-memory)</a>
+ *   is an important performance consideration).
  * </td>
  * <td>
  * \par
@@ -398,13 +403,8 @@
  *   facilitates greater ILP for improved throughput and utilization.
  *
  * \par
- * Furthermore, cub::BlockExchange provides operations for converting between blocked
- * and striped arrangements. Blocked arrangements are often desirable for
- * algorithmic benefits (where long sequences of items can be processed sequentially
- * within each thread).  Striped arrangements are often desirable for data movement
- * through global memory (where
- * [read/write coalescing](http://docs.nvidia.com/cuda/cuda-c-best-practices-guide/#coalesced-access-global-memory)</a>
- * is an important performance consideration).
+ * Finally, cub::BlockExchange provides operations for converting between blocked
+ * and striped arrangements.
  *
  * \section sec7 (7) Contributors
  *
