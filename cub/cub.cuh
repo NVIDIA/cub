@@ -81,15 +81,15 @@
  * \htmlonly
  * <a href="https://github.com/NVlabs/cub/archive/0.9.zip"><img src="download-icon.png" style="position:relative; bottom:-10px; border:0px;"/></a>
  * &nbsp;&nbsp;
- * <a href="https://github.com/NVlabs/cub/archive/0.9.zip">Download CUB!</a>
+ * <a href="https://github.com/NVlabs/cub/archive/0.9.zip"><em>Download CUB!</em></a>
  * <br>
  * <a href="https://github.com/NVlabs/cub"><img src="github-icon-747d8b799a48162434b2c0595ba1317e.png" style="position:relative; bottom:-10px; border:0px;"/></a>
  * &nbsp;&nbsp;
- * <a href="https://github.com/NVlabs/cub">Browse or fork CUB at GitHub!</a>
+ * <a href="https://github.com/NVlabs/cub"><em>Browse or fork CUB at GitHub!</em></a>
  * <br>
  * <a href="http://groups.google.com/group/cub-users"><img src="groups-icon.png" style="position:relative; bottom:-10px; border:0px;"/></a>
  * &nbsp;&nbsp;
- * <a href="http://groups.google.com/group/cub-users">Join the cub-users discussion forum!</a>
+ * <a href="http://groups.google.com/group/cub-users"><em>Join the cub-users discussion forum!</em></a>
  * \endhtmlonly
  *
  * \section sec0 (1) What is CUB?
