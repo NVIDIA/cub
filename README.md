@@ -12,7 +12,7 @@ providing an abstraction layer over complex threadblock, warp, and thread-level 
 <br><hr>
 <h3>Recent news</h3>
 
-- CUB v0.9 "preview" release (3/6/2013). CUB is the first durable, high-performance library of cooperative threadblock, warp, and thread primitives for CUDA kernel programming. More primitives and examples coming soon!
+- [CUB v0.9 "preview" release](https://github.com/NVlabs/cub/archive/0.9.zip) (3/6/2013). CUB is the first durable, high-performance library of cooperative threadblock, warp, and thread primitives for CUDA kernel programming. More primitives and examples coming soon!
 
 <br><hr>
 <h3>A Simple Example</h3>
