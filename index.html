@@ -285,7 +285,7 @@ var searchBox = new SearchBox("searchBox", "search",false,'Search');
 <table  border="0px" cellpadding="0px" cellspacing="0px">
 <tr>
 <td><dl class="section user"><dt></dt><dd><ul>
-<li><b><em>Blocked arrangement</em></b>. The aggregate tile of items is partitioned evenly across threads in "blocked" fashion with thread<sub><em>i</em></sub> owning the <em>i</em><sup>th</sup> segment of consecutive elements.  </li>
+<li><b><em>Blocked arrangement</em></b>. The aggregate tile of items is partitioned evenly across threads in "blocked" fashion with thread<sub><em>i</em></sub> owning the <em>i</em><sup>th</sup> segment of consecutive elements. Blocked arrangements are often desirable for algorithmic benefits (where long sequences of items can be processed sequentially within each thread).  </li>
 </ul>
 </dd></dl>
 </td><td><dl class="section user"><dt></dt><dd><div class="image">
@@ -296,7 +296,7 @@ var searchBox = new SearchBox("searchBox", "search",false,'Search');
 </td></tr>
 <tr>
 <td><dl class="section user"><dt></dt><dd><ul>
-<li><b><em>Striped arrangement</em></b>. The aggregate tile of items is partitioned across threads in "striped" fashion, i.e., the <code>ITEMS_PER_THREAD</code> items owned by each thread have logical stride <code>BLOCK_THREADS</code> between them.  </li>
+<li><b><em>Striped arrangement</em></b>. The aggregate tile of items is partitioned across threads in "striped" fashion, i.e., the <code>ITEMS_PER_THREAD</code> items owned by each thread have logical stride <code>BLOCK_THREADS</code> between them. Striped arrangements are often desirable for data movement through global memory (where <a href="http://docs.nvidia.com/cuda/cuda-c-best-practices-guide/#coalesced-access-global-memory">read/write coalescing</a> is an important performance consideration).  </li>
 </ul>
 </dd></dl>
 </td><td><dl class="section user"><dt></dt><dd><div class="image">
@@ -312,7 +312,7 @@ var searchBox = new SearchBox("searchBox", "search",false,'Search');
 <li>Instruction-level parallelism. Multiple items per thread also facilitates greater ILP for improved throughput and utilization.</li>
 </ul>
 </dd></dl>
-<dl class="section user"><dt></dt><dd>Furthermore, <a class="el" href="classcub_1_1_block_exchange.html" title="BlockExchange provides operations for reorganizing the partitioning of ordered data across a CUDA thr...">cub::BlockExchange</a> provides operations for converting between blocked and striped arrangements. Blocked arrangements are often desirable for algorithmic benefits (where long sequences of items can be processed sequentially within each thread). Striped arrangements are often desirable for data movement through global memory (where <a href="http://docs.nvidia.com/cuda/cuda-c-best-practices-guide/#coalesced-access-global-memory">read/write coalescing</a> is an important performance consideration).</dd></dl>
+<dl class="section user"><dt></dt><dd>Finally, <a class="el" href="classcub_1_1_block_exchange.html" title="BlockExchange provides operations for reorganizing the partitioning of ordered data across a CUDA thr...">cub::BlockExchange</a> provides operations for converting between blocked and striped arrangements.</dd></dl>
 <h1><a class="anchor" id="sec7"></a>
 (7) Contributors</h1>
 <dl class="section user"><dt></dt><dd>CUB is developed as an open-source project by <a href="http://research.nvidia.com">NVIDIA Research</a>. The primary contributor is <a href="http://github.com/dumerrill">Duane Merrill</a>.</dd></dl>
@@ -348,7 +348,7 @@ var searchBox = new SearchBox("searchBox", "search",false,'Search');
 <!-- HTML footer for doxygen 1.8.3.1-->
 <!-- start footer part -->
 <hr class="footer"/><address class="footer"><small>
-Generated on Fri Mar 8 2013 01:19:58 for CUB by &#160;<a href="http://www.doxygen.org/index.html">
+Generated on Fri Mar 8 2013 01:28:52 for CUB by &#160;<a href="http://www.doxygen.org/index.html">
 <img class="footer" src="doxygen.png" alt="doxygen"/>
 </a> 1.8.3.1
 <br>
