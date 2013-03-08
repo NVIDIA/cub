@@ -154,7 +154,13 @@ hr.footer {
  *  Text content
  *****************************************************************************/
 
+.contents a {
+		color: #5675B2;
+}
 
+.contents a:visited {
+		color: #5675B2;
+}
 
 h2 {
 		margin-top: 30px;
@@ -257,11 +263,11 @@ dl.section.user b {
 }
 
 dl.section.user a b {
-		color: #3D578C;
+		color: #5675B2;
 }
 
 dl.section.user a:visited b {
-		color: #4665A2;
+		color: #5675B2;
 }
 
 dl.section.user dd {
