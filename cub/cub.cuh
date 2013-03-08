@@ -85,7 +85,7 @@
  * <br>
  * <a href="https://github.com/NVlabs/cub"><img src="github-icon-747d8b799a48162434b2c0595ba1317e.png" style="position:relative; bottom:-10px; border:0px;"/></a>
  * &nbsp;&nbsp;
- * <a href="https://github.com/NVlabs/cub">Fork CUB at GitHub!</a>
+ * <a href="https://github.com/NVlabs/cub">Browse or fork CUB at GitHub!</a>
  * <br>
  * <a href="http://groups.google.com/group/cub-users"><img src="groups-icon.png" style="position:relative; bottom:-10px; border:0px;"/></a>
  * &nbsp;&nbsp;
@@ -96,7 +96,7 @@
  *
  * \par
  * CUB is a library of high-performance parallel primitives and other utilities for
- * building CUDA kernel software. CUB enhances productivity, performance, and portability
+ * constructing CUDA kernel software. CUB enhances productivity, performance, and portability
  * by providing an abstraction layer over complex
  * [block-level] (http://docs.nvidia.com/cuda/cuda-c-programming-guide/index.html#programming-model),
  * [warp-level] (http://docs.nvidia.com/cuda/cuda-c-programming-guide/index.html#hardware-implementation), and
@@ -105,7 +105,7 @@
  * \par
  * CUB's primitives are not bound to any particular width of parallelism or to any particular
  * data type.  This allows them to be flexible and tunable to fit your kernels' needs.
- * Thus CUB is [<b>C</b>UDA <b>U</b>n<b>b</b>ound](index.html).
+ * Thus CUB is [<em>CUDA Unbound</em>](index.html).
  *
  * \image html cub_overview.png
  *
@@ -201,7 +201,7 @@
  * library and software abstraction layer, CUB provides:
  * -# <b>Simplicity of composition.</b>  Parallel CUB primitives can be simply sequenced
  *    together in kernel code.  (This convenience is analogous to programming with
- *    [<b>Thrust</b>](http://thrust.github.com/) primitives in the host program.)
+ *    [<b><em>Thrust</em></b>](http://thrust.github.com/) primitives in the host program.)
  * -# <b>High performance.</b> CUB simplifies high performance kernel development by
  *    taking care to implement and make available the fastest available algorithms,
  *    strategies, and techniques.
@@ -223,51 +223,54 @@
  * engendering its own abstraction layer in the CUDA software stack (i.e., the "black boxes"
  * below):
  *
- * <table border="0px" style="padding:0px; border:0px; margin:0px;"><tr>
+ * <table border="0px" cellpadding="0px" cellspacing="0px"><tr>
  * <td width="50%">
  * \par
- * <b>CUDA kernel</b>.  A CPU program invokes a CUDA kernel to perform
- * some data-parallel function.  Reuse of entire kernels (by incorporating them into
- * libraries) is the most common form of code reuse for CUDA.  Libraries of CUDA kernels include
- * the following:
- * - [<b>cuBLAS</b>](https://developer.nvidia.com/cublas)
- * - [<b>cuFFT</b>](https://developer.nvidia.com/cufft)
- * - [<b>cuSPARSE</b>](https://developer.nvidia.com/cusparse)
- * - [<b>Thrust</b>](http://thrust.github.com/)
+ * <b>CUDA kernel</b>.  A single CPU thread invokes a CUDA kernel to perform
+ * some data-parallel function.  The incorporation of entire kernels (and their
+ * corresponding invocation stubs) into libraries is the most common form of code reuse for
+ * CUDA.  Libraries of CUDA kernels include the following:
+ * - [<b><em>cuBLAS</em></b>](https://developer.nvidia.com/cublas)
+ * - [<b><em>cuFF</em>T</b>](https://developer.nvidia.com/cufft)
+ * - [<b><em>cuSPARSE</em></b>](https://developer.nvidia.com/cusparse)
+ * - [<b><em>Thrust</em></b>](http://thrust.github.com/)
  * </td>
  * <td width="50%">
  * \htmlonly
- * <a href="kernel_abstraction.png"><center><img src="kernel_abstraction.png" width="100%"/></center></a>
+ * <a href="kernel_abstraction.png"><img src="kernel_abstraction.png" width="100%"/></a>
  * \endhtmlonly
  * </td>
  * </tr><tr>
  * <td>
  * \par
- * <b>Thread blocks (SIMT)</b>.  Each kernel invocation comprises some number of parallel threads.  Threads
- * are grouped into blocks, and the threads within a block can communicate and synchronize with each other
- * to perform some cooperative function.  There has historically been very little reuse of cooperative SIMT
- * software within CUDA kernel.  Libraries of thread-block primitives include the following:
- * - [<b>CUB</b>](index.html)
+ * <b>Thread blocks (SIMT)</b>.  Each kernel invocation comprises some number of parallel
+ * threads.  Threads are grouped into blocks, and the entire block of threads invokes some cooperative
+ * function  in which they communicate and synchronize with each other.  There has historically been very
+ * little reuse of cooperative SIMT software within CUDA kernel.  Libraries of thread-block primitives
+ * include the following:
+ * - [<b><em>CUB</em></b>](index.html)
  * </td>
  * <td>
  * \htmlonly
- * <a href="simt_abstraction.png"><center><img src="simt_abstraction.png" width="100%"/></center></a>
+ * <a href="simt_abstraction.png"><img src="simt_abstraction.png" width="100%"/></a>
  * \endhtmlonly
  * </td>
  * </tr><tr>
  * <td>
  * \par
- * <b>CUDA thread (scalar)</b>.  A single CUDA thread invokes some scalar function.
- * This is the lowest level of CUDA software abstraction, and is useful when there is no
- * need to reason about the interaction of parallel threads.  CUDA libraries of
+ * <b>CUDA thread</b>.  A single CUDA thread invokes some sequential function.
+ * This is the finest-grained level of CUDA software abstraction and requires
+ * no consideration for the scheduling or synchronization of parallel threads.  CUDA libraries of
  * purely data-parallel functions include the following:
- * - [<b>CUDA Math Library</b>](https://developer.nvidia.com/cuda-math-library) (e.g., \p text1D(), \p atomicAdd(), \p popc(), etc.)
- * - [<b>cuRAND</b>](https://developer.nvidia.com/curand)'s device-code interface
- * - [<b>CUB</b>](index.html)
+ * - [<b><em> CUDA Math</em></b>](http://docs.nvidia.com/cuda/cuda-math-api/index.html),
+ *   [<b><em>Texture</em></b>](http://docs.nvidia.com/cuda/cuda-c-programming-guide/index.html#texture-functions), and
+ *   [<b><em>Atomic</em></b>](http://docs.nvidia.com/cuda/cuda-c-programming-guide/index.html#atomic-functions) APIs
+ * - [<b><em>cuRAND</em></b>](https://developer.nvidia.com/curand)'s device-code interface
+ * - [<b><em>CUB</em></b>](index.html)
  * </td>
  * <td>
  * \htmlonly
- * <a href="devfun_abstraction.png"><center><img src="devfun_abstraction.png" width="100%"/></center></a>
+ * <a href="devfun_abstraction.png"><img src="devfun_abstraction.png" width="100%"/></a>
  * \endhtmlonly
  * </td>
  * </tr></table>
@@ -334,46 +337,68 @@
  * To address this issue, we encapsulate cooperative procedures within
  * <em>reflective type structure</em> (C++ classes).  As illustrated in the
  * cub::BlockScan example above, these primitives are C++ classes with
- * interfaces that expose both (1) procedural methods as well as (2) the opaque
- * shared memory types needed for their operation.
+ * interfaces that expose both:
+ * - Procedural entrypoints for a block of threads to invoke
+ * - An opaque shared memory type needed for the operation of those methods
  *
  * \subsection sec3sec3 6.3 &nbsp;&nbsp; Flexible data mapping
  *
  * \par
  * We often design kernels such that each thread block is assigned a "tile" of data
- * items for processing.  When the tile size equals the thread block size, the
- * mapping of data onto threads is straightforward (one datum per thread).
- * However, it is often desirable for performance reasons to process more
- * than one datum per thread.  When doing so, we must decide how
- * to partition this "tile" of items across the thread block.
+ * items for processing.
  *
  * \par
- * CUB primitives support the following data arrangements:
+ * \image html tile.png
+ * <div class="centercaption">Tile of eight ordered data items</div>
+
+ * \par
+ * When the tile size equals the thread block size, the
+ * mapping of data onto threads is straightforward (one datum per thread).
+ * However, there are often performance advantages for processing more
+ * than one datum per thread.  For these scenarios, CUB primitives
+ * support the following alternatives for partitioning data items across
+ * the block of threads:
+ *
+ *
+ * <table border="0px" cellpadding="0px" cellspacing="0px"><tr>
+ * <td>
+ * \par
  * - <b><em>Blocked arrangement</em></b>.  The aggregate tile of items is partitioned
  *   evenly across threads in "blocked" fashion with thread<sub><em>i</em></sub>
  *   owning the <em>i</em><sup>th</sup> segment of consecutive elements.
+ * </td>
+ * <td>
+ * \par
+ * \image html blocked.png
+ * <div class="centercaption"><em>Blocked</em> arrangement across four threads <br>(emphasis on items owned by <em>thread</em><sub>0</sub>)</div>
+ * </td>
+ * </tr><tr>
+ * <td>
+ * \par
  * - <b><em>Striped arrangement</em></b>.  The aggregate tile of items is partitioned across
  *   threads in "striped" fashion, i.e., the \p ITEMS_PER_THREAD items owned by
  *   each thread have logical stride \p BLOCK_THREADS between them.
- * <br><br>
- * \image html thread_data_1.png
- * <div class="centercaption">Blocked vs. striped arrangements with \p BLOCK_THREADS = 4 and
- * \p ITEMS_PER_THREAD = 2, emphasis on items owned by <em>thread</em><sub>0</sub></div>
- * <br>
+ * </td>
+ * <td>
+ * \par
+ * \image html striped.png
+ * <div class="centercaption"><em>Striped</em> arrangement across four threads <br>(emphasis on items owned by <em>thread</em><sub>0</sub>)</div>
+ * </td>
+ * </tr></table>
  *
  * \par
  * The benefits of processing multiple items per thread (a.k.a., <em>register blocking</em>, <em>granularity coarsening</em>, etc.) include:
- * - <b>Algorithmic efficiency</b>.  Sequential work over multiple items in
+ * - Algorithmic efficiency.  Sequential work over multiple items in
  *   thread-private registers is cheaper than synchronized, cooperative
  *   work through shared memory spaces.
- * - <b>Data occupancy</b>.  The number of items that can be resident on-chip in
+ * - Data occupancy.  The number of items that can be resident on-chip in
  *   thread-private register storage is often greater than the number of
  *   schedulable threads.
- * - <b>Instruction-level parallelism</b>.  Multiple items per thread also
+ * - Instruction-level parallelism.  Multiple items per thread also
  *   facilitates greater ILP for improved throughput and utilization.
  *
  * \par
- * The cub::BlockExchange primitive provides operations for converting between blocked
+ * Furthermore, cub::BlockExchange provides operations for converting between blocked
  * and striped arrangements. Blocked arrangements are often desirable for
  * algorithmic benefits (where long sequences of items can be processed sequentially
  * within each thread).  Striped arrangements are often desirable for data movement
