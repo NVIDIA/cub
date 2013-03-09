@@ -664,7 +664,20 @@ WARN_LOGFILE           =
 # directories like "/usr/src/myproject". Separate the files or directories
 # with spaces.
 
-INPUT                  = ../cub.cuh ../debug.cuh ../warp/warp_scan.cuh ../block/block_reduce.cuh ../block/block_scan.cuh ../block/block_radix_sort.cuh ../block/block_load.cuh ../block/block_store.cuh ../block/block_exchange.cuh ../block/block_discontinuity.cuh ../operators.cuh ../type_utils.cuh ../thread/thread_load.cuh  ../thread/thread_store.cuh  
+INPUT                  = mainpage.dox 
+INPUT                  += ../cub/operators.cuh 
+INPUT                  += ../cub/type_utils.cuh 
+INPUT                  += ../cub/debug.cuh 
+INPUT                  += ../cub/warp/warp_scan.cuh 
+INPUT                  += ../cub/block/block_reduce.cuh 
+INPUT                  += ../cub/block/block_scan.cuh 
+INPUT                  += ../cub/block/block_radix_sort.cuh 
+INPUT                  += ../cub/block/block_load.cuh 
+INPUT                  += ../cub/block/block_store.cuh 
+INPUT                  += ../cub/block/block_exchange.cuh 
+INPUT                  += ../cub/block/block_discontinuity.cuh 
+INPUT                  += ../cub/thread/thread_load.cuh  
+INPUT                  += ../cub/thread/thread_store.cuh  
 
 # This tag can be used to specify the character encoding of the source files
 # that doxygen parses. Internally doxygen uses the UTF-8 encoding, which is
@@ -927,7 +940,16 @@ HTML_EXTRA_STYLESHEET  = extra_stylesheet.css
 # files. In the HTML_STYLESHEET file, use the file name only. Also note that
 # the files will be copied as-is; there are no commands or markers available.
 
-HTML_EXTRA_FILES       = images/download-icon.png images/groups-icon.png images/github-icon-747d8b799a48162434b2c0595ba1317e.png images/favicon.ico images/favicon.png images/tab_b_alt.png images/simt_abstraction.png images/kernel_abstraction.png images/devfun_abstraction.png
+HTML_EXTRA_FILES       = download_cub.html 
+HTML_EXTRA_FILES       += images/download-icon.png 
+HTML_EXTRA_FILES       += images/groups-icon.png 
+HTML_EXTRA_FILES       += images/github-icon-747d8b799a48162434b2c0595ba1317e.png 
+HTML_EXTRA_FILES       += images/favicon.ico 
+HTML_EXTRA_FILES       += images/favicon.png 
+HTML_EXTRA_FILES       += images/tab_b_alt.png 
+HTML_EXTRA_FILES       += images/simt_abstraction.png 
+HTML_EXTRA_FILES       += images/kernel_abstraction.png 
+HTML_EXTRA_FILES       += images/devfun_abstraction.png
 
 # The HTML_COLORSTYLE_HUE tag controls the color of the HTML output.
 # Doxygen will adjust the colors in the style sheet and background images

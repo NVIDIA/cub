@@ -51,21 +51,83 @@ bool g_verbose = false;
 // Test kernels
 //---------------------------------------------------------------------
 
+
+/**
+ * Generic reduction
+ */
+template <
+    typename    T,
+    typename    ReductionOp,
+    bool        PRIMITIVE = Traits<T>::PRIMITIVE>
+struct DeviceTest
+{
+    template <
+        typename    BlockReduce,
+        int         ITEMS_PER_THREAD>
+    static __device__ __forceinline__ T Test(
+        typename BlockReduce::SmemStorage   &smem_storage,
+        T                                   (&data)[ITEMS_PER_THREAD],
+        ReductionOp                         &reduction_op)
+    {
+        return BlockReduce::Reduce(smem_storage, data, reduction_op);
+    }
+
+    template < typename BlockReduce>
+    static __device__ __forceinline__ T Test(
+        typename BlockReduce::SmemStorage   &smem_storage,
+        T                                   &data,
+        ReductionOp                         &reduction_op,
+        int                                 valid_threads)
+    {
+        return BlockReduce::Reduce(smem_storage, data, reduction_op, valid_threads);
+    }
+};
+
+
+/**
+ * Sum reduction (only compile for primitive, built-ins only)
+ */
+template <typename T>
+struct DeviceTest<T, Sum<T>, true>
+{
+    template <
+        typename    BlockReduce,
+        int         ITEMS_PER_THREAD>
+    static __device__ __forceinline__ T Test(
+        typename BlockReduce::SmemStorage   &smem_storage,
+        T                                   (&data)[ITEMS_PER_THREAD],
+        Sum<T>                              &reduction_op)
+    {
+        return BlockReduce::Sum(smem_storage, data);
+    }
+
+    template <typename BlockReduce>
+    static __device__ __forceinline__ T Test(
+        typename BlockReduce::SmemStorage   &smem_storage,
+        T                                   &data,
+        Sum<T>                              &reduction_op,
+        int                                 valid_threads)
+    {
+        return BlockReduce::Sum(smem_storage, data, valid_threads);
+    }
+};
+
+
 /**
  * Test full-tile reduction kernel (where num_elements is an even
  * multiple of BLOCK_THREADS)
  */
 template <
-    int         BLOCK_THREADS,
-    int         ITEMS_PER_THREAD,
-    typename     T,
-    typename     ReductionOp>
+    int             BLOCK_THREADS,
+    int             ITEMS_PER_THREAD,
+    typename        T,
+    typename        ReductionOp>
 __launch_bounds__ (BLOCK_THREADS, 1)
 __global__ void FullTileReduceKernel(
-    T                 *d_in,
-    T                 *d_out,
+    T               *d_in,
+    T               *d_out,
     ReductionOp     reduction_op,
-    int                tiles)
+    int             tiles)
 {
     const int TILE_SIZE = BLOCK_THREADS * ITEMS_PER_THREAD;
 
@@ -97,7 +159,7 @@ __global__ void FullTileReduceKernel(
         block_offset += TILE_SIZE;
 
         // Cooperatively reduce the tile's aggregate
-        T tile_aggregate = BlockReduce::Reduce(smem_storage, data, reduction_op);
+        T tile_aggregate = DeviceTest<T, ReductionOp>::template Test<BlockReduce>(smem_storage, data, reduction_op);
 
         // Reduce threadblock aggregate
         block_aggregate = reduction_op(block_aggregate, tile_aggregate);
@@ -116,13 +178,13 @@ __global__ void FullTileReduceKernel(
  * Test partial-tile reduction kernel (where num_elements < BLOCK_THREADS)
  */
 template <
-    int         BLOCK_THREADS,
-    typename     T,
-    typename     ReductionOp>
+    int             BLOCK_THREADS,
+    typename        T,
+    typename        ReductionOp>
 __launch_bounds__ (BLOCK_THREADS, 1)
 __global__ void PartialTileReduceKernel(
-    T                 *d_in,
-    T                 *d_out,
+    T               *d_in,
+    T               *d_out,
     int             num_elements,
     ReductionOp     reduction_op)
 {
@@ -142,11 +204,7 @@ __global__ void PartialTileReduceKernel(
     }
 
     // Cooperatively reduce the tile's aggregate
-    T tile_aggregate = BlockReduce::Reduce(
-        smem_storage,
-        partial,
-        reduction_op,
-        num_elements);
+    T tile_aggregate = DeviceTest<T, ReductionOp>::template Test<BlockReduce>(smem_storage, partial, reduction_op, num_elements);
 
     // Store data
     if (threadIdx.x == 0)
@@ -192,14 +250,14 @@ void Initialize(
  */
 template <
     int         BLOCK_THREADS,
-    int            ITEMS_PER_THREAD,
-    typename     T,
-    typename     ReductionOp>
+    int         ITEMS_PER_THREAD,
+    typename    T,
+    typename    ReductionOp>
 void TestFullTile(
-    int             gen_mode,
-    int             tiles,
-    ReductionOp     reduction_op,
-    char            *type_string)
+    int         gen_mode,
+    int         tiles,
+    ReductionOp reduction_op,
+    char        *type_string)
 {
     const int TILE_SIZE = BLOCK_THREADS * ITEMS_PER_THREAD;
 

@@ -1,1 +1,17 @@
-CUB version 0.900
+
+0.9.1	03/09/2013
+
+		- Fix for ambiguity in BlockScan::Reduce() between generic reduction and 
+		  summation.  Summation entrypoints are now called ::Sum(), similar
+		  to the convention in BlockScan.
+		    
+		- Small edits to mainpage documentation and download tracking
+		
+//-----------------------------------------------------------------------------
+
+0.9.0	03/07/2013	
+
+		- Intial "preview" release.	CUB is the first durable, high-performance library 
+		  of cooperative block-level, warp-level, and thread-level primitives for CUDA 
+		  kernel programming.  More primitives and examples coming soon!
+	
