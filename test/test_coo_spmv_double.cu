@@ -40,7 +40,7 @@
 #include <stdio.h>
 #include <test_util.h>
 
-#include "../cub.cuh"
+#include "cub.cuh"
 
 using namespace cub;
 using namespace std;
