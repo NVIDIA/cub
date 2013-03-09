@@ -46,7 +46,7 @@
 #include <sstream>
 #include <iostream>
 
-#include "../cub.cuh"
+#include "cub.cuh"
 
 /******************************************************************************
  * Assertion macros
