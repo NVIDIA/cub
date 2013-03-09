@@ -159,7 +159,7 @@ class cub::WarpScan&lt; T, WARPS, LOGICAL_WARP_THREADS &gt;</h3>
 </div>
  <div class="centercaption">Data flow within a 16-thread Kogge-Stone scan construction. Junctions represent binary operators.</div> <br/>
 </dd></dl>
-<dl class="section user"><dt>Examples</dt><dd><em>Example 1.</em> Perform a simple exclusive prefix sum for one warp <div class="fragment"><div class="line"><span class="preprocessor">#include &lt;<a class="code" href="cub_8cuh.html">cub.cuh</a>&gt;</span></div>
+<dl class="section user"><dt>Examples</dt><dd><em>Example 1.</em> Perform a simple exclusive prefix sum for one warp <div class="fragment"><div class="line"><span class="preprocessor">#include &lt;cub.cuh&gt;</span></div>
 <div class="line"></div>
 <div class="line">__global__ <span class="keywordtype">void</span> SomeKernel(...)</div>
 <div class="line">{</div>
@@ -186,7 +186,7 @@ class cub::WarpScan&lt; T, WARPS, LOGICAL_WARP_THREADS &gt;</h3>
 <div class="line">...</div>
 <div class="line">tid(31) output(465)</div>
 </div><!-- fragment --></dd></dl>
-<dl class="section user"><dt></dt><dd><em>Example 2.</em> Perform an exclusive prefix sum for one warp seeded with a warp-wide prefix <div class="fragment"><div class="line"><span class="preprocessor">#include &lt;<a class="code" href="cub_8cuh.html">cub.cuh</a>&gt;</span></div>
+<dl class="section user"><dt></dt><dd><em>Example 2.</em> Perform an exclusive prefix sum for one warp seeded with a warp-wide prefix <div class="fragment"><div class="line"><span class="preprocessor">#include &lt;cub.cuh&gt;</span></div>
 <div class="line"></div>
 <div class="line"><span class="keyword">struct </span>WarpPrefixOp</div>
 <div class="line">{</div>
@@ -1420,7 +1420,7 @@ template&lt;typename ScanOp , typename WarpPrefixOp &gt; </div>
 <!-- HTML footer for doxygen 1.8.3.1-->
 <!-- start footer part -->
 <hr class="footer"/><address class="footer"><small>
-Generated on Fri Mar 8 2013 01:16:03 for CUB by &#160;<a href="http://www.doxygen.org/index.html">
+Generated on Sat Mar 9 2013 04:59:40 for CUB by &#160;<a href="http://www.doxygen.org/index.html">
 <img class="footer" src="doxygen.png" alt="doxygen"/>
 </a> 1.8.3.1
 <br>

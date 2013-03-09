@@ -152,7 +152,7 @@ class cub::BlockRadixSort&lt; KeyType, BLOCK_THREADS, ITEMS_PER_THREAD, ValueTyp
 <li><a class="el" href="classcub_1_1_block_exchange.html" title="BlockExchange provides operations for reorganizing the partitioning of ordered data across a CUDA thr...">cub::BlockExchange</a></li>
 </ul>
 </dd></dl>
-<dl class="section user"><dt>Examples</dt><dd><em>Example 1.</em> Perform a radix sort over a tile of 512 integer keys that are partitioned in a blocked arrangement across a 128-thread threadblock (where each thread holds 4 keys). <div class="fragment"><div class="line"><span class="preprocessor">#include &lt;<a class="code" href="cub_8cuh.html">cub.cuh</a>&gt;</span></div>
+<dl class="section user"><dt>Examples</dt><dd><em>Example 1.</em> Perform a radix sort over a tile of 512 integer keys that are partitioned in a blocked arrangement across a 128-thread threadblock (where each thread holds 4 keys). <div class="fragment"><div class="line"><span class="preprocessor">#include &lt;cub.cuh&gt;</span></div>
 <div class="line"></div>
 <div class="line">__global__ <span class="keywordtype">void</span> SomeKernel(...)</div>
 <div class="line">{</div>
@@ -171,7 +171,7 @@ class cub::BlockRadixSort&lt; KeyType, BLOCK_THREADS, ITEMS_PER_THREAD, ValueTyp
 <div class="line">    <span class="comment">// Sort keys in ascending order</span></div>
 <div class="line">    <a class="code" href="classcub_1_1_block_radix_sort.html#abdbfda59c129946222ab10d2e2e6f6f5" title="Performs a threadblock-wide radix sort over a blocked arrangement of keys.">BlockRadixSort::SortBlocked</a>(smem_storage, keys);</div>
 </div><!-- fragment --></dd></dl>
-<dl class="section user"><dt></dt><dd><em>Example 2.</em> Perform a key-value radix sort over the lower 20-bits of a tile of 32-bit integer keys paired with floating-point values. The data are partitioned in a striped arrangement across the threadblock. <div class="fragment"><div class="line"><span class="preprocessor">#include &lt;<a class="code" href="cub_8cuh.html">cub.cuh</a>&gt;</span></div>
+<dl class="section user"><dt></dt><dd><em>Example 2.</em> Perform a key-value radix sort over the lower 20-bits of a tile of 32-bit integer keys paired with floating-point values. The data are partitioned in a striped arrangement across the threadblock. <div class="fragment"><div class="line"><span class="preprocessor">#include &lt;cub.cuh&gt;</span></div>
 <div class="line"></div>
 <div class="line"><span class="keyword">template</span> &lt;<span class="keywordtype">int</span> BLOCK_THREADS, <span class="keywordtype">int</span> ITEMS_PER_THREAD&gt;</div>
 <div class="line">__global__ <span class="keywordtype">void</span> SomeKernel(...)</div>
@@ -619,7 +619,7 @@ template&lt;typename KeyType , int BLOCK_THREADS, int ITEMS_PER_THREAD, typename
 <!-- HTML footer for doxygen 1.8.3.1-->
 <!-- start footer part -->
 <hr class="footer"/><address class="footer"><small>
-Generated on Fri Mar 8 2013 01:16:03 for CUB by &#160;<a href="http://www.doxygen.org/index.html">
+Generated on Sat Mar 9 2013 04:59:40 for CUB by &#160;<a href="http://www.doxygen.org/index.html">
 <img class="footer" src="doxygen.png" alt="doxygen"/>
 </a> 1.8.3.1
 <br>

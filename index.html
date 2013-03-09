@@ -106,9 +106,9 @@ var searchBox = new SearchBox("searchBox", "search",false,'Search');
 </ul>
 </div>
 <div class="textblock"> 
-<a href="https://github.com/NVlabs/cub/archive/0.9.zip"><img src="download-icon.png" style="position:relative; bottom:-10px; border:0px;"/></a>
+<a href="download_cub.html"><img src="download-icon.png" style="position:relative; bottom:-10px; border:0px;"/></a>
 &nbsp;&nbsp;
-<a href="https://github.com/NVlabs/cub/archive/0.9.zip"><em>Download CUB!</em></a>
+<a href="download_cub.html"><em>Download CUB!</em></a>
 <br>
 <a href="https://github.com/NVlabs/cub"><img src="github-icon-747d8b799a48162434b2c0595ba1317e.png" style="position:relative; bottom:-10px; border:0px;"/></a>
 &nbsp;&nbsp;
@@ -146,13 +146,13 @@ var searchBox = new SearchBox("searchBox", "search",false,'Search');
 <h1><a class="anchor" id="sec2"></a>
 (2) Recent news</h1>
 <dl class="section user"><dt></dt><dd><ul>
-<li><a href="https://github.com/NVlabs/cub/archive/0.9.zip"><b><em>CUB v0.9 "preview" release</em></b></a> (3/7/2013). CUB is the first durable, high-performance library of cooperative block-level, warp-level, and thread-level primitives for CUDA kernel programming. More primitives and examples coming soon!</li>
+<li><a href="download_cub.html"><b>CUB v0.9.1</b></a> (03/09/2013). Intial "preview" release. CUB is the first durable, high-performance library of cooperative block-level, warp-level, and thread-level primitives for CUDA kernel programming. More primitives and examples coming soon!</li>
 </ul>
 </dd></dl>
 <h1><a class="anchor" id="sec3"></a>
 (3) A simple example</h1>
 <dl class="section user"><dt></dt><dd>The following code snippet illustrates a simple CUDA kernel for sorting a thread block's data:</dd></dl>
-<dl class="section user"><dt></dt><dd><div class="fragment"><div class="line"><span class="preprocessor">#include &lt;<a class="code" href="cub_8cuh.html">cub.cuh</a>&gt;</span></div>
+<dl class="section user"><dt></dt><dd><div class="fragment"><div class="line"><span class="preprocessor">#include &lt;cub.cuh&gt;</span></div>
 <div class="line"></div>
 <div class="line"><span class="comment">// An tile-sorting CUDA kernel</span></div>
 <div class="line"><span class="keyword">template</span> &lt;</div>
@@ -210,7 +210,7 @@ var searchBox = new SearchBox("searchBox", "search",false,'Search');
 </ul>
 </dd></dl>
 </td><td width="50%"> 
-<a href="kernel_abstraction.png"><img src="kernel_abstraction.png" width="100%"/></a>
+<a href="kernel_abstraction.png"><img src="kernel_abstraction.png" width="100%" border="0px"/></a>
   </td></tr>
 <tr>
 <td><dl class="section user"><dt></dt><dd><b>Thread blocks (SIMT)</b>. Each kernel invocation comprises some number of parallel threads. Threads are grouped into blocks, and the entire block of threads invokes some cooperative function in which they communicate and synchronize with each other. There has historically been very little reuse of cooperative SIMT software within CUDA kernel. Libraries of thread-block primitives include the following:<ul>
@@ -218,7 +218,7 @@ var searchBox = new SearchBox("searchBox", "search",false,'Search');
 </ul>
 </dd></dl>
 </td><td> 
-<a href="simt_abstraction.png"><img src="simt_abstraction.png" width="100%"/></a>
+<a href="simt_abstraction.png"><img src="simt_abstraction.png" width="100%" border="0px"/></a>
   </td></tr>
 <tr>
 <td><dl class="section user"><dt></dt><dd><b>CUDA thread</b>. A single CUDA thread invokes some sequential function. This is the finest-grained level of CUDA software abstraction and requires no consideration for the scheduling or synchronization of parallel threads. CUDA libraries of purely data-parallel functions include the following:<ul>
@@ -228,7 +228,7 @@ var searchBox = new SearchBox("searchBox", "search",false,'Search');
 </ul>
 </dd></dl>
 </td><td> 
-<a href="devfun_abstraction.png"><img src="devfun_abstraction.png" width="100%"/></a>
+<a href="devfun_abstraction.png"><img src="devfun_abstraction.png" width="100%" border="0px"/></a>
   </td></tr>
 </table>
 <h1><a class="anchor" id="sec6"></a>
@@ -249,7 +249,7 @@ var searchBox = new SearchBox("searchBox", "search",false,'Search');
 <li>Tuning requirements (e.g., latency vs. throughput)</li>
 </ul>
 </dd></dl>
-<dl class="section user"><dt></dt><dd>To provide this flexibility, CUB is implemented as a C++ template library. C++ templates are a way to write generic algorithms and data structures. There is no need to build CUB separately. You simply <code>#include</code> the <code><a class="el" href="cub_8cuh.html">cub.cuh</a></code> header file into your <code>.cu</code> CUDA C++ sources and compile with NVIDIA's <code>nvcc</code> compiler.</dd></dl>
+<dl class="section user"><dt></dt><dd>To provide this flexibility, CUB is implemented as a C++ template library. C++ templates are a way to write generic algorithms and data structures. There is no need to build CUB separately. You simply <code>#include</code> the <code>cub.cuh</code> header file into your <code>.cu</code> CUDA C++ sources and compile with NVIDIA's <code>nvcc</code> compiler.</dd></dl>
 <h2><a class="anchor" id="sec3sec2"></a>
 6.2    Reflective type structure</h2>
 <dl class="section user"><dt></dt><dd>Cooperation within a thread block requires shared memory for communicating between threads. However, the specific size and layout of the memory needed by a given primitive will be specific to the details of its parallel execution context (e.g., how many threads are calling into it, how many items are processed per thread, etc.). Furthermore, this shared memory must be allocated outside of the component itself if it is to be reused elsewhere by the thread block.</dd></dl>
@@ -348,7 +348,7 @@ var searchBox = new SearchBox("searchBox", "search",false,'Search');
 <!-- HTML footer for doxygen 1.8.3.1-->
 <!-- start footer part -->
 <hr class="footer"/><address class="footer"><small>
-Generated on Fri Mar 8 2013 01:28:52 for CUB by &#160;<a href="http://www.doxygen.org/index.html">
+Generated on Sat Mar 9 2013 04:59:40 for CUB by &#160;<a href="http://www.doxygen.org/index.html">
 <img class="footer" src="doxygen.png" alt="doxygen"/>
 </a> 1.8.3.1
 <br>

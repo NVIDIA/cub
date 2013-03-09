@@ -141,7 +141,7 @@ class cub::BlockLoad&lt; InputIterator, BLOCK_THREADS, ITEMS_PER_THREAD, POLICY,
 <li>See <a class="el" href="namespacecub.html#a70f1d3c7536d858d49b896e937d25290" title="Tuning policy for cub::BlockLoad.">cub::BlockLoadPolicy</a> for more performance details regarding algorithmic alternatives</li>
 </ul>
 </dd></dl>
-<dl class="section user"><dt>Examples</dt><dd><em>Example 1.</em> Have a 128-thread threadblock directly load a blocked arrangement of four consecutive integers per thread. <div class="fragment"><div class="line"><span class="preprocessor">#include &lt;<a class="code" href="cub_8cuh.html">cub.cuh</a>&gt;</span></div>
+<dl class="section user"><dt>Examples</dt><dd><em>Example 1.</em> Have a 128-thread threadblock directly load a blocked arrangement of four consecutive integers per thread. <div class="fragment"><div class="line"><span class="preprocessor">#include &lt;cub.cuh&gt;</span></div>
 <div class="line"></div>
 <div class="line">__global__ <span class="keywordtype">void</span> SomeKernel(<span class="keywordtype">int</span> *d_in, ...)</div>
 <div class="line">{</div>
@@ -159,7 +159,7 @@ class cub::BlockLoad&lt; InputIterator, BLOCK_THREADS, ITEMS_PER_THREAD, POLICY,
 <div class="line"></div>
 <div class="line">    ...</div>
 </div><!-- fragment --></dd></dl>
-<dl class="section user"><dt></dt><dd><em>Example 2.</em> Have a threadblock load a blocked arrangement of <code>ITEMS_PER_THREAD</code> consecutive integers per thread using vectorized loads and global-only caching: <div class="fragment"><div class="line"><span class="preprocessor">#include &lt;<a class="code" href="cub_8cuh.html">cub.cuh</a>&gt;</span></div>
+<dl class="section user"><dt></dt><dd><em>Example 2.</em> Have a threadblock load a blocked arrangement of <code>ITEMS_PER_THREAD</code> consecutive integers per thread using vectorized loads and global-only caching: <div class="fragment"><div class="line"><span class="preprocessor">#include &lt;cub.cuh&gt;</span></div>
 <div class="line"></div>
 <div class="line"><span class="keyword">template</span> &lt;</div>
 <div class="line">    <span class="keywordtype">int</span> BLOCK_THREADS,</div>
@@ -328,7 +328,7 @@ template&lt;typename SizeT &gt; </div>
 <!-- HTML footer for doxygen 1.8.3.1-->
 <!-- start footer part -->
 <hr class="footer"/><address class="footer"><small>
-Generated on Fri Mar 8 2013 01:16:03 for CUB by &#160;<a href="http://www.doxygen.org/index.html">
+Generated on Sat Mar 9 2013 04:59:40 for CUB by &#160;<a href="http://www.doxygen.org/index.html">
 <img class="footer" src="doxygen.png" alt="doxygen"/>
 </a> 1.8.3.1
 <br>

@@ -157,7 +157,7 @@ class cub::BlockReduce&lt; T, BLOCK_THREADS &gt;</h3>
 </ul>
 </dd></dl>
 <dl class="section user"><dt>Examples</dt><dd></dd></dl>
-<dl class="section user"><dt></dt><dd><em>Example 1.</em> Perform a simple reduction of 512 integer keys that are partitioned in a blocked arrangement across a 128-thread threadblock (where each thread holds 4 keys). <div class="fragment"><div class="line"><span class="preprocessor">#include &lt;<a class="code" href="cub_8cuh.html">cub.cuh</a>&gt;</span></div>
+<dl class="section user"><dt></dt><dd><em>Example 1.</em> Perform a simple reduction of 512 integer keys that are partitioned in a blocked arrangement across a 128-thread threadblock (where each thread holds 4 keys). <div class="fragment"><div class="line"><span class="preprocessor">#include &lt;cub.cuh&gt;</span></div>
 <div class="line"></div>
 <div class="line">__global__ <span class="keywordtype">void</span> SomeKernel(...)</div>
 <div class="line">{</div>
@@ -174,11 +174,11 @@ class cub::BlockReduce&lt; T, BLOCK_THREADS &gt;</h3>
 <div class="line">     ...</div>
 <div class="line"></div>
 <div class="line">     <span class="comment">// Compute the threadblock-wide sum for thread0</span></div>
-<div class="line">     <span class="keywordtype">int</span> aggregate = <a class="code" href="classcub_1_1_block_reduce.html#a5a4a4c051cfb24361aed7ca3489133a9" title="Computes a threadblock-wide reduction for thread0 using addition (+) as the reduction operator...">BlockReduce::Reduce</a>(smem_storage, data);</div>
+<div class="line">     <span class="keywordtype">int</span> aggregate = <a class="code" href="classcub_1_1_block_reduce.html#a136060887c434257984b8bf3f5c62323" title="Computes a threadblock-wide reduction for thread0 using addition (+) as the reduction operator...">BlockReduce::Sum</a>(smem_storage, data);</div>
 <div class="line"></div>
 <div class="line">     ...</div>
 </div><!-- fragment --></dd></dl>
-<dl class="section user"><dt></dt><dd><em>Example 2:</em> Perform a guarded reduction of only <code>num_elements</code> keys that are partitioned in a partially-full blocked arrangement across <code>BLOCK_THREADS</code> threads. <div class="fragment"><div class="line"><span class="preprocessor">#include &lt;<a class="code" href="cub_8cuh.html">cub.cuh</a>&gt;</span></div>
+<dl class="section user"><dt></dt><dd><em>Example 2:</em> Perform a guarded reduction of only <code>num_elements</code> keys that are partitioned in a partially-full blocked arrangement across <code>BLOCK_THREADS</code> threads. <div class="fragment"><div class="line"><span class="preprocessor">#include &lt;cub.cuh&gt;</span></div>
 <div class="line"></div>
 <div class="line"><span class="keyword">template</span> &lt;<span class="keywordtype">int</span> BLOCK_THREADS&gt;</div>
 <div class="line">__global__ <span class="keywordtype">void</span> SomeKernel(..., <span class="keywordtype">int</span> num_elements)</div>
@@ -194,7 +194,7 @@ class cub::BlockReduce&lt; T, BLOCK_THREADS &gt;</h3>
 <div class="line">     <span class="keywordflow">if</span> (threadIdx.x &lt; num_elements) data = ...;</div>
 <div class="line"></div>
 <div class="line">     <span class="comment">// Compute the threadblock-wide sum of valid elements in thread0</span></div>
-<div class="line">     <span class="keywordtype">int</span> aggregate = <a class="code" href="classcub_1_1_block_reduce.html#a5a4a4c051cfb24361aed7ca3489133a9" title="Computes a threadblock-wide reduction for thread0 using addition (+) as the reduction operator...">BlockReduce::Reduce</a>(smem_storage, data, num_elements);</div>
+<div class="line">     <span class="keywordtype">int</span> aggregate = <a class="code" href="classcub_1_1_block_reduce.html#a136060887c434257984b8bf3f5c62323" title="Computes a threadblock-wide reduction for thread0 using addition (+) as the reduction operator...">BlockReduce::Sum</a>(smem_storage, data, num_elements);</div>
 <div class="line"></div>
 <div class="line">     ...</div>
 </div><!-- fragment --> </dd></dl>
@@ -208,17 +208,6 @@ typedef _SmemStorage&#160;</td><td class="memItemRight" valign="bottom"><a class
 </table><table class="memberdecls">
 <tr class="heading"><td colspan="2"><h2 class="groupheader"><a name="pub-static-methods"></a>
 Static Public Methods</h2></td></tr>
-<tr><td colspan="2"><div class="groupHeader">Summation reductions</div></td></tr>
-<tr class="memitem:a5a4a4c051cfb24361aed7ca3489133a9"><td class="memItemLeft" align="right" valign="top">static __device__ __forceinline__ T&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classcub_1_1_block_reduce.html#a5a4a4c051cfb24361aed7ca3489133a9">Reduce</a> (<a class="el" href="classcub_1_1_block_reduce.html#aea61e2e067e0e2d3fba2b0c8e0f73d8d">SmemStorage</a> &amp;smem_storage, T input)</td></tr>
-<tr class="memdesc:a5a4a4c051cfb24361aed7ca3489133a9"><td class="mdescLeft">&#160;</td><td class="mdescRight">Computes a threadblock-wide reduction for thread<sub>0</sub> using addition (+) as the reduction operator. Each thread contributes one input element.  <a href="#a5a4a4c051cfb24361aed7ca3489133a9">More...</a><br/></td></tr>
-<tr class="separator:a5a4a4c051cfb24361aed7ca3489133a9"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:a5218e5a7cd878ea54a96b138ea249715"><td class="memTemplParams" colspan="2">template&lt;int ITEMS_PER_THREAD&gt; </td></tr>
-<tr class="memitem:a5218e5a7cd878ea54a96b138ea249715"><td class="memTemplItemLeft" align="right" valign="top">static __device__ __forceinline__ T&#160;</td><td class="memTemplItemRight" valign="bottom"><a class="el" href="classcub_1_1_block_reduce.html#a5218e5a7cd878ea54a96b138ea249715">Reduce</a> (<a class="el" href="classcub_1_1_block_reduce.html#aea61e2e067e0e2d3fba2b0c8e0f73d8d">SmemStorage</a> &amp;smem_storage, T(&amp;inputs)[ITEMS_PER_THREAD])</td></tr>
-<tr class="memdesc:a5218e5a7cd878ea54a96b138ea249715"><td class="mdescLeft">&#160;</td><td class="mdescRight">Computes a threadblock-wide reduction for thread<sub>0</sub> using addition (+) as the reduction operator. Each thread contributes an array of consecutive input elements.  <a href="#a5218e5a7cd878ea54a96b138ea249715">More...</a><br/></td></tr>
-<tr class="separator:a5218e5a7cd878ea54a96b138ea249715"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:a2aebade2d62b19a5b5e0f9afad3fc5c3"><td class="memItemLeft" align="right" valign="top">static __device__ __forceinline__ T&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classcub_1_1_block_reduce.html#a2aebade2d62b19a5b5e0f9afad3fc5c3">Reduce</a> (<a class="el" href="classcub_1_1_block_reduce.html#aea61e2e067e0e2d3fba2b0c8e0f73d8d">SmemStorage</a> &amp;smem_storage, T input, const unsigned int &amp;valid_threads)</td></tr>
-<tr class="memdesc:a2aebade2d62b19a5b5e0f9afad3fc5c3"><td class="mdescLeft">&#160;</td><td class="mdescRight">Computes a threadblock-wide reduction for thread<sub>0</sub> using addition (+) as the reduction operator. The first <code>valid_threads</code> threads each contribute one input element.  <a href="#a2aebade2d62b19a5b5e0f9afad3fc5c3">More...</a><br/></td></tr>
-<tr class="separator:a2aebade2d62b19a5b5e0f9afad3fc5c3"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr><td colspan="2"><div class="groupHeader">Generic reductions</div></td></tr>
 <tr class="memitem:aee16d11eea520e487f387b7d9f2755d2"><td class="memTemplParams" colspan="2">template&lt;typename ReductionOp &gt; </td></tr>
 <tr class="memitem:aee16d11eea520e487f387b7d9f2755d2"><td class="memTemplItemLeft" align="right" valign="top">static __device__ __forceinline__ T&#160;</td><td class="memTemplItemRight" valign="bottom"><a class="el" href="classcub_1_1_block_reduce.html#aee16d11eea520e487f387b7d9f2755d2">Reduce</a> (<a class="el" href="classcub_1_1_block_reduce.html#aea61e2e067e0e2d3fba2b0c8e0f73d8d">SmemStorage</a> &amp;smem_storage, T input, ReductionOp reduction_op)</td></tr>
@@ -232,164 +221,19 @@ Static Public Methods</h2></td></tr>
 <tr class="memitem:aeddda91425d07c74b819d34ac5b7a0a6"><td class="memTemplItemLeft" align="right" valign="top">static __device__ __forceinline__ T&#160;</td><td class="memTemplItemRight" valign="bottom"><a class="el" href="classcub_1_1_block_reduce.html#aeddda91425d07c74b819d34ac5b7a0a6">Reduce</a> (<a class="el" href="classcub_1_1_block_reduce.html#aea61e2e067e0e2d3fba2b0c8e0f73d8d">SmemStorage</a> &amp;smem_storage, T input, ReductionOp reduction_op, const unsigned int &amp;valid_threads)</td></tr>
 <tr class="memdesc:aeddda91425d07c74b819d34ac5b7a0a6"><td class="mdescLeft">&#160;</td><td class="mdescRight">Computes a threadblock-wide reduction for thread<sub>0</sub> using the specified binary reduction functor. The first <code>valid_threads</code> threads each contribute one input element.  <a href="#aeddda91425d07c74b819d34ac5b7a0a6">More...</a><br/></td></tr>
 <tr class="separator:aeddda91425d07c74b819d34ac5b7a0a6"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr><td colspan="2"><div class="groupHeader">Summation reductions</div></td></tr>
+<tr class="memitem:a136060887c434257984b8bf3f5c62323"><td class="memItemLeft" align="right" valign="top">static __device__ __forceinline__ T&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classcub_1_1_block_reduce.html#a136060887c434257984b8bf3f5c62323">Sum</a> (<a class="el" href="classcub_1_1_block_reduce.html#aea61e2e067e0e2d3fba2b0c8e0f73d8d">SmemStorage</a> &amp;smem_storage, T input)</td></tr>
+<tr class="memdesc:a136060887c434257984b8bf3f5c62323"><td class="mdescLeft">&#160;</td><td class="mdescRight">Computes a threadblock-wide reduction for thread<sub>0</sub> using addition (+) as the reduction operator. Each thread contributes one input element.  <a href="#a136060887c434257984b8bf3f5c62323">More...</a><br/></td></tr>
+<tr class="separator:a136060887c434257984b8bf3f5c62323"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:abe33a10ae2e316943e95d23f1d4d702a"><td class="memTemplParams" colspan="2">template&lt;int ITEMS_PER_THREAD&gt; </td></tr>
+<tr class="memitem:abe33a10ae2e316943e95d23f1d4d702a"><td class="memTemplItemLeft" align="right" valign="top">static __device__ __forceinline__ T&#160;</td><td class="memTemplItemRight" valign="bottom"><a class="el" href="classcub_1_1_block_reduce.html#abe33a10ae2e316943e95d23f1d4d702a">Sum</a> (<a class="el" href="classcub_1_1_block_reduce.html#aea61e2e067e0e2d3fba2b0c8e0f73d8d">SmemStorage</a> &amp;smem_storage, T(&amp;inputs)[ITEMS_PER_THREAD])</td></tr>
+<tr class="memdesc:abe33a10ae2e316943e95d23f1d4d702a"><td class="mdescLeft">&#160;</td><td class="mdescRight">Computes a threadblock-wide reduction for thread<sub>0</sub> using addition (+) as the reduction operator. Each thread contributes an array of consecutive input elements.  <a href="#abe33a10ae2e316943e95d23f1d4d702a">More...</a><br/></td></tr>
+<tr class="separator:abe33a10ae2e316943e95d23f1d4d702a"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:aad43736f8ea38a2c9052059b1d80c7fc"><td class="memItemLeft" align="right" valign="top">static __device__ __forceinline__ T&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classcub_1_1_block_reduce.html#aad43736f8ea38a2c9052059b1d80c7fc">Sum</a> (<a class="el" href="classcub_1_1_block_reduce.html#aea61e2e067e0e2d3fba2b0c8e0f73d8d">SmemStorage</a> &amp;smem_storage, T input, const unsigned int &amp;valid_threads)</td></tr>
+<tr class="memdesc:aad43736f8ea38a2c9052059b1d80c7fc"><td class="mdescLeft">&#160;</td><td class="mdescRight">Computes a threadblock-wide reduction for thread<sub>0</sub> using addition (+) as the reduction operator. The first <code>valid_threads</code> threads each contribute one input element.  <a href="#aad43736f8ea38a2c9052059b1d80c7fc">More...</a><br/></td></tr>
+<tr class="separator:aad43736f8ea38a2c9052059b1d80c7fc"><td class="memSeparator" colspan="2">&#160;</td></tr>
 </table>
 <h2 class="groupheader">Member Function Documentation</h2>
-<a class="anchor" id="a5a4a4c051cfb24361aed7ca3489133a9"></a>
-<div class="memitem">
-<div class="memproto">
-<div class="memtemplate">
-template&lt;typename T , int BLOCK_THREADS&gt; </div>
-<table class="mlabels">
-  <tr>
-  <td class="mlabels-left">
-      <table class="memname">
-        <tr>
-          <td class="memname">static __device__ __forceinline__ T <a class="el" href="classcub_1_1_block_reduce.html">cub::BlockReduce</a>&lt; T, BLOCK_THREADS &gt;::Reduce </td>
-          <td>(</td>
-          <td class="paramtype"><a class="el" href="classcub_1_1_block_reduce.html#aea61e2e067e0e2d3fba2b0c8e0f73d8d">SmemStorage</a> &amp;&#160;</td>
-          <td class="paramname"><em>smem_storage</em>, </td>
-        </tr>
-        <tr>
-          <td class="paramkey"></td>
-          <td></td>
-          <td class="paramtype">T&#160;</td>
-          <td class="paramname"><em>input</em>&#160;</td>
-        </tr>
-        <tr>
-          <td></td>
-          <td>)</td>
-          <td></td><td></td>
-        </tr>
-      </table>
-  </td>
-  <td class="mlabels-right">
-<span class="mlabels"><span class="mlabel">inline</span><span class="mlabel">static</span></span>  </td>
-  </tr>
-</table>
-</div><div class="memdoc">
-
-<p>Computes a threadblock-wide reduction for thread<sub>0</sub> using addition (+) as the reduction operator. Each thread contributes one input element. </p>
-<p>The return value is undefined in threads other than thread<sub>0</sub>.</p>
-<p>A subsequent <code>__syncthreads()</code> threadblock barrier should be invoked after calling this method if the supplied <code>smem_storage</code> is to be reused or repurposed by the threadblock. </p>
-<dl class="params"><dt>Parameters</dt><dd>
-  <table class="params">
-    <tr><td class="paramdir">[in]</td><td class="paramname">smem_storage</td><td>Shared reference to opaque SmemStorage layout </td></tr>
-    <tr><td class="paramdir">[in]</td><td class="paramname">input</td><td>Calling thread's input </td></tr>
-  </table>
-  </dd>
-</dl>
-
-</div>
-</div>
-<a class="anchor" id="a5218e5a7cd878ea54a96b138ea249715"></a>
-<div class="memitem">
-<div class="memproto">
-<div class="memtemplate">
-template&lt;typename T , int BLOCK_THREADS&gt; </div>
-<div class="memtemplate">
-template&lt;int ITEMS_PER_THREAD&gt; </div>
-<table class="mlabels">
-  <tr>
-  <td class="mlabels-left">
-      <table class="memname">
-        <tr>
-          <td class="memname">static __device__ __forceinline__ T <a class="el" href="classcub_1_1_block_reduce.html">cub::BlockReduce</a>&lt; T, BLOCK_THREADS &gt;::Reduce </td>
-          <td>(</td>
-          <td class="paramtype"><a class="el" href="classcub_1_1_block_reduce.html#aea61e2e067e0e2d3fba2b0c8e0f73d8d">SmemStorage</a> &amp;&#160;</td>
-          <td class="paramname"><em>smem_storage</em>, </td>
-        </tr>
-        <tr>
-          <td class="paramkey"></td>
-          <td></td>
-          <td class="paramtype">T(&amp;)&#160;</td>
-          <td class="paramname"><em>inputs</em>[ITEMS_PER_THREAD]&#160;</td>
-        </tr>
-        <tr>
-          <td></td>
-          <td>)</td>
-          <td></td><td></td>
-        </tr>
-      </table>
-  </td>
-  <td class="mlabels-right">
-<span class="mlabels"><span class="mlabel">inline</span><span class="mlabel">static</span></span>  </td>
-  </tr>
-</table>
-</div><div class="memdoc">
-
-<p>Computes a threadblock-wide reduction for thread<sub>0</sub> using addition (+) as the reduction operator. Each thread contributes an array of consecutive input elements. </p>
-<p>The return value is undefined in threads other than thread<sub>0</sub>.</p>
-<p>A subsequent <code>__syncthreads()</code> threadblock barrier should be invoked after calling this method if the supplied <code>smem_storage</code> is to be reused or repurposed by the threadblock.</p>
-<dl class="tparams"><dt>Template Parameters</dt><dd>
-  <table class="tparams">
-    <tr><td class="paramname">ITEMS_PER_THREAD</td><td><b>[inferred]</b> The number of consecutive items partitioned onto each thread. </td></tr>
-  </table>
-  </dd>
-</dl>
-<dl class="params"><dt>Parameters</dt><dd>
-  <table class="params">
-    <tr><td class="paramdir">[in]</td><td class="paramname">smem_storage</td><td>Shared reference to opaque SmemStorage layout </td></tr>
-    <tr><td class="paramdir">[in]</td><td class="paramname">inputs</td><td>Calling thread's input segment </td></tr>
-  </table>
-  </dd>
-</dl>
-
-</div>
-</div>
-<a class="anchor" id="a2aebade2d62b19a5b5e0f9afad3fc5c3"></a>
-<div class="memitem">
-<div class="memproto">
-<div class="memtemplate">
-template&lt;typename T , int BLOCK_THREADS&gt; </div>
-<table class="mlabels">
-  <tr>
-  <td class="mlabels-left">
-      <table class="memname">
-        <tr>
-          <td class="memname">static __device__ __forceinline__ T <a class="el" href="classcub_1_1_block_reduce.html">cub::BlockReduce</a>&lt; T, BLOCK_THREADS &gt;::Reduce </td>
-          <td>(</td>
-          <td class="paramtype"><a class="el" href="classcub_1_1_block_reduce.html#aea61e2e067e0e2d3fba2b0c8e0f73d8d">SmemStorage</a> &amp;&#160;</td>
-          <td class="paramname"><em>smem_storage</em>, </td>
-        </tr>
-        <tr>
-          <td class="paramkey"></td>
-          <td></td>
-          <td class="paramtype">T&#160;</td>
-          <td class="paramname"><em>input</em>, </td>
-        </tr>
-        <tr>
-          <td class="paramkey"></td>
-          <td></td>
-          <td class="paramtype">const unsigned int &amp;&#160;</td>
-          <td class="paramname"><em>valid_threads</em>&#160;</td>
-        </tr>
-        <tr>
-          <td></td>
-          <td>)</td>
-          <td></td><td></td>
-        </tr>
-      </table>
-  </td>
-  <td class="mlabels-right">
-<span class="mlabels"><span class="mlabel">inline</span><span class="mlabel">static</span></span>  </td>
-  </tr>
-</table>
-</div><div class="memdoc">
-
-<p>Computes a threadblock-wide reduction for thread<sub>0</sub> using addition (+) as the reduction operator. The first <code>valid_threads</code> threads each contribute one input element. </p>
-<p>A subsequent <code>__syncthreads()</code> threadblock barrier should be invoked after calling this method if the supplied <code>smem_storage</code> is to be reused or repurposed by the threadblock.</p>
-<p>The return value is undefined in threads other than thread<sub>0</sub>. </p>
-<dl class="params"><dt>Parameters</dt><dd>
-  <table class="params">
-    <tr><td class="paramdir">[in]</td><td class="paramname">smem_storage</td><td>Shared reference to opaque SmemStorage layout </td></tr>
-    <tr><td class="paramdir">[in]</td><td class="paramname">input</td><td>Calling thread's input </td></tr>
-    <tr><td class="paramdir">[in]</td><td class="paramname">valid_threads</td><td>Number of threads containing valid elements (may be less than BLOCK_THREADS) </td></tr>
-  </table>
-  </dd>
-</dl>
-
-</div>
-</div>
 <a class="anchor" id="aee16d11eea520e487f387b7d9f2755d2"></a>
 <div class="memitem">
 <div class="memproto">
@@ -584,6 +428,162 @@ template&lt;typename ReductionOp &gt; </div>
 
 </div>
 </div>
+<a class="anchor" id="a136060887c434257984b8bf3f5c62323"></a>
+<div class="memitem">
+<div class="memproto">
+<div class="memtemplate">
+template&lt;typename T , int BLOCK_THREADS&gt; </div>
+<table class="mlabels">
+  <tr>
+  <td class="mlabels-left">
+      <table class="memname">
+        <tr>
+          <td class="memname">static __device__ __forceinline__ T <a class="el" href="classcub_1_1_block_reduce.html">cub::BlockReduce</a>&lt; T, BLOCK_THREADS &gt;::<a class="el" href="structcub_1_1_sum.html">Sum</a> </td>
+          <td>(</td>
+          <td class="paramtype"><a class="el" href="classcub_1_1_block_reduce.html#aea61e2e067e0e2d3fba2b0c8e0f73d8d">SmemStorage</a> &amp;&#160;</td>
+          <td class="paramname"><em>smem_storage</em>, </td>
+        </tr>
+        <tr>
+          <td class="paramkey"></td>
+          <td></td>
+          <td class="paramtype">T&#160;</td>
+          <td class="paramname"><em>input</em>&#160;</td>
+        </tr>
+        <tr>
+          <td></td>
+          <td>)</td>
+          <td></td><td></td>
+        </tr>
+      </table>
+  </td>
+  <td class="mlabels-right">
+<span class="mlabels"><span class="mlabel">inline</span><span class="mlabel">static</span></span>  </td>
+  </tr>
+</table>
+</div><div class="memdoc">
+
+<p>Computes a threadblock-wide reduction for thread<sub>0</sub> using addition (+) as the reduction operator. Each thread contributes one input element. </p>
+<p>The return value is undefined in threads other than thread<sub>0</sub>.</p>
+<p>A subsequent <code>__syncthreads()</code> threadblock barrier should be invoked after calling this method if the supplied <code>smem_storage</code> is to be reused or repurposed by the threadblock. </p>
+<dl class="params"><dt>Parameters</dt><dd>
+  <table class="params">
+    <tr><td class="paramdir">[in]</td><td class="paramname">smem_storage</td><td>Shared reference to opaque SmemStorage layout </td></tr>
+    <tr><td class="paramdir">[in]</td><td class="paramname">input</td><td>Calling thread's input </td></tr>
+  </table>
+  </dd>
+</dl>
+
+</div>
+</div>
+<a class="anchor" id="abe33a10ae2e316943e95d23f1d4d702a"></a>
+<div class="memitem">
+<div class="memproto">
+<div class="memtemplate">
+template&lt;typename T , int BLOCK_THREADS&gt; </div>
+<div class="memtemplate">
+template&lt;int ITEMS_PER_THREAD&gt; </div>
+<table class="mlabels">
+  <tr>
+  <td class="mlabels-left">
+      <table class="memname">
+        <tr>
+          <td class="memname">static __device__ __forceinline__ T <a class="el" href="classcub_1_1_block_reduce.html">cub::BlockReduce</a>&lt; T, BLOCK_THREADS &gt;::<a class="el" href="structcub_1_1_sum.html">Sum</a> </td>
+          <td>(</td>
+          <td class="paramtype"><a class="el" href="classcub_1_1_block_reduce.html#aea61e2e067e0e2d3fba2b0c8e0f73d8d">SmemStorage</a> &amp;&#160;</td>
+          <td class="paramname"><em>smem_storage</em>, </td>
+        </tr>
+        <tr>
+          <td class="paramkey"></td>
+          <td></td>
+          <td class="paramtype">T(&amp;)&#160;</td>
+          <td class="paramname"><em>inputs</em>[ITEMS_PER_THREAD]&#160;</td>
+        </tr>
+        <tr>
+          <td></td>
+          <td>)</td>
+          <td></td><td></td>
+        </tr>
+      </table>
+  </td>
+  <td class="mlabels-right">
+<span class="mlabels"><span class="mlabel">inline</span><span class="mlabel">static</span></span>  </td>
+  </tr>
+</table>
+</div><div class="memdoc">
+
+<p>Computes a threadblock-wide reduction for thread<sub>0</sub> using addition (+) as the reduction operator. Each thread contributes an array of consecutive input elements. </p>
+<p>The return value is undefined in threads other than thread<sub>0</sub>.</p>
+<p>A subsequent <code>__syncthreads()</code> threadblock barrier should be invoked after calling this method if the supplied <code>smem_storage</code> is to be reused or repurposed by the threadblock.</p>
+<dl class="tparams"><dt>Template Parameters</dt><dd>
+  <table class="tparams">
+    <tr><td class="paramname">ITEMS_PER_THREAD</td><td><b>[inferred]</b> The number of consecutive items partitioned onto each thread. </td></tr>
+  </table>
+  </dd>
+</dl>
+<dl class="params"><dt>Parameters</dt><dd>
+  <table class="params">
+    <tr><td class="paramdir">[in]</td><td class="paramname">smem_storage</td><td>Shared reference to opaque SmemStorage layout </td></tr>
+    <tr><td class="paramdir">[in]</td><td class="paramname">inputs</td><td>Calling thread's input segment </td></tr>
+  </table>
+  </dd>
+</dl>
+
+</div>
+</div>
+<a class="anchor" id="aad43736f8ea38a2c9052059b1d80c7fc"></a>
+<div class="memitem">
+<div class="memproto">
+<div class="memtemplate">
+template&lt;typename T , int BLOCK_THREADS&gt; </div>
+<table class="mlabels">
+  <tr>
+  <td class="mlabels-left">
+      <table class="memname">
+        <tr>
+          <td class="memname">static __device__ __forceinline__ T <a class="el" href="classcub_1_1_block_reduce.html">cub::BlockReduce</a>&lt; T, BLOCK_THREADS &gt;::<a class="el" href="structcub_1_1_sum.html">Sum</a> </td>
+          <td>(</td>
+          <td class="paramtype"><a class="el" href="classcub_1_1_block_reduce.html#aea61e2e067e0e2d3fba2b0c8e0f73d8d">SmemStorage</a> &amp;&#160;</td>
+          <td class="paramname"><em>smem_storage</em>, </td>
+        </tr>
+        <tr>
+          <td class="paramkey"></td>
+          <td></td>
+          <td class="paramtype">T&#160;</td>
+          <td class="paramname"><em>input</em>, </td>
+        </tr>
+        <tr>
+          <td class="paramkey"></td>
+          <td></td>
+          <td class="paramtype">const unsigned int &amp;&#160;</td>
+          <td class="paramname"><em>valid_threads</em>&#160;</td>
+        </tr>
+        <tr>
+          <td></td>
+          <td>)</td>
+          <td></td><td></td>
+        </tr>
+      </table>
+  </td>
+  <td class="mlabels-right">
+<span class="mlabels"><span class="mlabel">inline</span><span class="mlabel">static</span></span>  </td>
+  </tr>
+</table>
+</div><div class="memdoc">
+
+<p>Computes a threadblock-wide reduction for thread<sub>0</sub> using addition (+) as the reduction operator. The first <code>valid_threads</code> threads each contribute one input element. </p>
+<p>A subsequent <code>__syncthreads()</code> threadblock barrier should be invoked after calling this method if the supplied <code>smem_storage</code> is to be reused or repurposed by the threadblock.</p>
+<p>The return value is undefined in threads other than thread<sub>0</sub>. </p>
+<dl class="params"><dt>Parameters</dt><dd>
+  <table class="params">
+    <tr><td class="paramdir">[in]</td><td class="paramname">smem_storage</td><td>Shared reference to opaque SmemStorage layout </td></tr>
+    <tr><td class="paramdir">[in]</td><td class="paramname">input</td><td>Calling thread's input </td></tr>
+    <tr><td class="paramdir">[in]</td><td class="paramname">valid_threads</td><td>Number of threads containing valid elements (may be less than BLOCK_THREADS) </td></tr>
+  </table>
+  </dd>
+</dl>
+
+</div>
+</div>
 <hr/>The documentation for this class was generated from the following file:<ul>
 <li><a class="el" href="block__reduce_8cuh.html">block_reduce.cuh</a></li>
 </ul>
@@ -591,7 +591,7 @@ template&lt;typename ReductionOp &gt; </div>
 <!-- HTML footer for doxygen 1.8.3.1-->
 <!-- start footer part -->
 <hr class="footer"/><address class="footer"><small>
-Generated on Fri Mar 8 2013 01:16:03 for CUB by &#160;<a href="http://www.doxygen.org/index.html">
+Generated on Sat Mar 9 2013 04:59:40 for CUB by &#160;<a href="http://www.doxygen.org/index.html">
 <img class="footer" src="doxygen.png" alt="doxygen"/>
 </a> 1.8.3.1
 <br>
