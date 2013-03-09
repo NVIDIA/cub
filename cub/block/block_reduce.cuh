@@ -112,7 +112,7 @@ namespace cub {
  *      ...
  *
  *      // Compute the threadblock-wide sum for thread0
- *      int aggregate = BlockReduce::Reduce(smem_storage, data);
+ *      int aggregate = BlockReduce::Sum(smem_storage, data);
  *
  *      ...
  * \endcode
@@ -137,7 +137,7 @@ namespace cub {
  *      if (threadIdx.x < num_elements) data = ...;
  *
  *      // Compute the threadblock-wide sum of valid elements in thread0
- *      int aggregate = BlockReduce::Reduce(smem_storage, data, num_elements);
+ *      int aggregate = BlockReduce::Sum(smem_storage, data, num_elements);
  *
  *      ...
  * \endcode
@@ -296,63 +296,7 @@ private:
 
 public:
 
-    /******************************************************************//**
-     * \name Summation reductions
-     *********************************************************************/
-    //@{
 
-    /**
-     * \brief Computes a threadblock-wide reduction for thread<sub>0</sub> using addition (+) as the reduction operator.  Each thread contributes one input element.
-     *
-     * The return value is undefined in threads other than thread<sub>0</sub>.
-     *
-     * \smemreuse
-     */
-    static __device__ __forceinline__ T Reduce(
-        SmemStorage     &smem_storage,              ///< [in] Shared reference to opaque SmemStorage layout
-        T               input)                      ///< [in] Calling thread's input
-    {
-        Sum<T> reduction_op;
-        return Reduce(smem_storage, input, reduction_op);
-    }
-
-    /**
-     * \brief Computes a threadblock-wide reduction for thread<sub>0</sub> using addition (+) as the reduction operator.  Each thread contributes an array of consecutive input elements.
-     *
-     * The return value is undefined in threads other than thread<sub>0</sub>.
-     *
-     * \smemreuse
-     *
-     * \tparam ITEMS_PER_THREAD     <b>[inferred]</b> The number of consecutive items partitioned onto each thread.
-     */
-    template <int ITEMS_PER_THREAD>
-    static __device__ __forceinline__ T Reduce(
-        SmemStorage     &smem_storage,                  ///< [in] Shared reference to opaque SmemStorage layout
-        T               (&inputs)[ITEMS_PER_THREAD])    ///< [in] Calling thread's input segment
-    {
-        Sum<T> reduction_op;
-        return Reduce(smem_storage, inputs, reduction_op);
-    }
-
-
-    /**
-     * \brief Computes a threadblock-wide reduction for thread<sub>0</sub> using addition (+) as the reduction operator.  The first \p valid_threads threads each contribute one input element.
-     *
-     * \smemreuse
-     *
-     * The return value is undefined in threads other than thread<sub>0</sub>.
-     */
-    static __device__ __forceinline__ T Reduce(
-        SmemStorage         &smem_storage,          ///< [in] Shared reference to opaque SmemStorage layout
-        T                   input,                   ///< [in] Calling thread's input
-        const unsigned int  &valid_threads)         ///< [in] Number of threads containing valid elements (may be less than BLOCK_THREADS)
-    {
-        Sum<T> reduction_op;
-        return Reduce(smem_storage, input, valid_threads);
-    }
-
-
-    //@}
     /******************************************************************//**
      * \name Generic reductions
      *********************************************************************/
@@ -430,7 +374,63 @@ public:
     }
 
     //@}
+    /******************************************************************//**
+     * \name Summation reductions
+     *********************************************************************/
+    //@{
 
+    /**
+     * \brief Computes a threadblock-wide reduction for thread<sub>0</sub> using addition (+) as the reduction operator.  Each thread contributes one input element.
+     *
+     * The return value is undefined in threads other than thread<sub>0</sub>.
+     *
+     * \smemreuse
+     */
+    static __device__ __forceinline__ T Sum(
+        SmemStorage     &smem_storage,              ///< [in] Shared reference to opaque SmemStorage layout
+        T               input)                      ///< [in] Calling thread's input
+    {
+        cub::Sum<T> reduction_op;
+        return Reduce(smem_storage, input, reduction_op);
+    }
+
+    /**
+     * \brief Computes a threadblock-wide reduction for thread<sub>0</sub> using addition (+) as the reduction operator.  Each thread contributes an array of consecutive input elements.
+     *
+     * The return value is undefined in threads other than thread<sub>0</sub>.
+     *
+     * \smemreuse
+     *
+     * \tparam ITEMS_PER_THREAD     <b>[inferred]</b> The number of consecutive items partitioned onto each thread.
+     */
+    template <int ITEMS_PER_THREAD>
+    static __device__ __forceinline__ T Sum(
+        SmemStorage     &smem_storage,                  ///< [in] Shared reference to opaque SmemStorage layout
+        T               (&inputs)[ITEMS_PER_THREAD])    ///< [in] Calling thread's input segment
+    {
+        cub::Sum<T> reduction_op;
+        return Reduce(smem_storage, inputs, reduction_op);
+    }
+
+
+    /**
+     * \brief Computes a threadblock-wide reduction for thread<sub>0</sub> using addition (+) as the reduction operator.  The first \p valid_threads threads each contribute one input element.
+     *
+     * \smemreuse
+     *
+     * The return value is undefined in threads other than thread<sub>0</sub>.
+     */
+    static __device__ __forceinline__ T Sum(
+        SmemStorage         &smem_storage,          ///< [in] Shared reference to opaque SmemStorage layout
+        T                   input,                   ///< [in] Calling thread's input
+        const unsigned int  &valid_threads)         ///< [in] Number of threads containing valid elements (may be less than BLOCK_THREADS)
+    {
+        cub::Sum<T> reduction_op;
+        return Reduce(smem_storage, input, reduction_op, valid_threads);
+    }
+
+
+    //@}
 };
 
 /** @} */       // end of SimtCoop group
