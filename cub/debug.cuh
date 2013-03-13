@@ -61,7 +61,7 @@ __host__ __device__ __forceinline__ cudaError_t Debug(
     const char *filename,
     int line)
 {
-    #if (defined(CUB_STDERR) && (PTX_ARCH == 0))
+    #if (defined(CUB_STDERR) && (CUB_PTX_ARCH == 0))
     if (error) {
         fprintf(stderr, "[%s, %d] %s (CUDA error %d: %s)\n", filename, line, message, error, cudaGetErrorString(error));
         fflush(stderr);
@@ -82,7 +82,7 @@ __host__ __device__ __forceinline__ cudaError_t Debug(
     const char *filename,
     int line)
 {
-    #if (defined(CUB_STDERR) && (PTX_ARCH == 0))
+    #if (defined(CUB_STDERR) && (CUB_PTX_ARCH == 0))
     if (error) {
         fprintf(stderr, "[%s, %d] (CUDA error %d: %s)\n", filename, line, error, cudaGetErrorString(error));
         fflush(stderr);

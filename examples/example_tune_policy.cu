@@ -2,7 +2,7 @@
 
 #include <stdio.h>
 
-
+#include "cub.cuh"
 
 /******************************************************************************
  * FooKernel
@@ -71,13 +71,6 @@ __global__ void BarKernel(T *d_in, T *d_out)
  * DeviceBaz
  *****************************************************************************/
 
-#ifdef __CUDA_ARCH__
-#define CUB_PTX_ARCH __CUDA_ARCH__
-#else
-#define CUB_PTX_ARCH 0
-#endif
-
-#define CNP_ENABLED ((CUB_PTX_ARCH == 0) || (CUB_PTX_ARCH >= 350))
 
 
 /**
@@ -198,17 +191,19 @@ struct DeviceBaz
             {
 
             #if CUB_PTX_ARCH > 0
+
                 // We're on the device, so we know we can simply use the policy compiled in the current PTX bundle
                 if ((retval = foo_kernel_context.template Init<PtxFooKernelPolicy, PtxFooKernelPolicy>())) break;
                 if ((retval = bar_kernel_context.template Init<PtxBarKernelPolicy, PtxBarKernelPolicy>())) break;
+
             #else
                 // We're on the host, so determine which tuned variant to initialize
                 int device_ordinal;
-                cudaGetDevice(&device_ordinal);
+                if (CubDebug(retval = cudaGetDevice(&device_ordinal))) break;
 
                 int major, minor;
-                cudaDeviceGetAttribute(&major, cudaDevAttrComputeCapabilityMajor, device_ordinal);
-                cudaDeviceGetAttribute(&minor, cudaDevAttrComputeCapabilityMinor, device_ordinal);
+                if (CubDebug(retval = cudaDeviceGetAttribute(&major, cudaDevAttrComputeCapabilityMajor, device_ordinal))) break;
+                if (CubDebug(retval = cudaDeviceGetAttribute(&minor, cudaDevAttrComputeCapabilityMinor, device_ordinal))) break;
                 int device_arch = major * 100 + minor * 10;
 
                 // Initialize kernel contexts
@@ -302,10 +297,10 @@ __global__ void WrapperKernel(T *d_in, T *d_out)
     }
 
     int device_ordinal;
-    cudaGetDevice(&device_ordinal);
+    CubDebug(cudaGetDevice(&device_ordinal));
 
     int sm_count;
-    cudaDeviceGetAttribute (&sm_count, cudaDevAttrMultiProcessorCount, device_ordinal);
+    CubDebug(cudaDeviceGetAttribute (&sm_count, cudaDevAttrMultiProcessorCount, device_ordinal));
     printf("Sm count: %d\n", sm_count);
 
 #endif
@@ -324,7 +319,7 @@ int main()
 
     WrapperKernel<<<1,1>>>(d_in, d_out);
 
-    cudaDeviceSynchronize();
+    CubDebug(cudaDeviceSynchronize());
 
     return 0;
 }
