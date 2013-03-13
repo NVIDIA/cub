@@ -669,6 +669,7 @@ INPUT                  += ../cub/operators.cuh
 INPUT                  += ../cub/type_utils.cuh 
 INPUT                  += ../cub/debug.cuh 
 INPUT                  += ../cub/warp/warp_scan.cuh 
+INPUT                  += ../cub/warp/warp_reduce.cuh 
 INPUT                  += ../cub/block/block_reduce.cuh 
 INPUT                  += ../cub/block/block_scan.cuh 
 INPUT                  += ../cub/block/block_radix_sort.cuh 

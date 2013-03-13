@@ -61,8 +61,9 @@ namespace cub {
  *
  * \par
  * For convenience, BlockReduce exposes a spectrum of entrypoints that differ by:
+ * - Operator (generic reduction <em>vs.</em> summation for numeric types)
  * - Granularity (single <em>vs.</em> multiple items per thread)
- * - Input (full tile <em>vs.</em> partial-tile having some undefined elements)
+ * - Input (full data tile <em>vs.</em> partially-full data tile having some undefined elements)
  *
  * \tparam T                        The reduction input/output element type
  * \tparam BLOCK_THREADS            The threadblock size in threads
@@ -211,7 +212,7 @@ private:
         SmemStorage         &smem_storage,      ///< [in] Shared reference to opaque SmemStorage layout
         T                   partial,            ///< [in] Calling thread's input partial reduction
         const unsigned int  &valid_threads,     ///< [in] Number valid threads (may be less than BLOCK_THREADS)
-        ReductionOp         reduction_op)       ///< [in] Reduction operator
+        ReductionOp         reduction_op)       ///< [in] Binary reduction operator
     {
         for (int STEP = 0; STEP < WARP_SYNCH_STEPS; STEP++)
         {
@@ -247,7 +248,7 @@ private:
         SmemStorage         &smem_storage,      ///< [in] Shared reference to opaque SmemStorage layout
         T                   partial,            ///< [in] Calling thread's input partial reductions
         const unsigned int  &valid_threads,     ///< [in] Number of valid elements (may be less than BLOCK_THREADS)
-        ReductionOp         reduction_op)       ///< [in] Reduction operator
+        ReductionOp         reduction_op)       ///< [in] Binary reduction operator
     {
         if (WARP_SYNCHRONOUS)
         {
@@ -310,13 +311,13 @@ public:
      *
      * \smemreuse
      *
-     * \tparam ReductionOp          <b>[inferred]</b> Binary reduction functor type (a model of <a href="http://www.sgi.com/tech/stl/BinaryFunction.html">Binary Function</a>).
+     * \tparam ReductionOp          <b>[inferred]</b> Binary reduction operator type having member <tt>T operator()(const T &a, const T &b)</tt>
      */
     template <typename ReductionOp>
     static __device__ __forceinline__ T Reduce(
         SmemStorage     &smem_storage,              ///< [in] Shared reference to opaque SmemStorage layout
         T               input,                      ///< [in] Calling thread's input
-        ReductionOp     reduction_op)               ///< [in] Binary associative reduction functor
+        ReductionOp     reduction_op)               ///< [in] Binary reduction operator
     {
         return Reduce(smem_storage, input, reduction_op, BLOCK_THREADS);
     }
@@ -330,7 +331,7 @@ public:
      * \smemreuse
      *
      * \tparam ITEMS_PER_THREAD     <b>[inferred]</b> The number of consecutive items partitioned onto each thread.
-     * \tparam ReductionOp          <b>[inferred]</b> Binary reduction functor type (a model of <a href="http://www.sgi.com/tech/stl/BinaryFunction.html">Binary Function</a>).
+     * \tparam ReductionOp          <b>[inferred]</b> Binary reduction operator type having member <tt>T operator()(const T &a, const T &b)</tt>
      */
     template <
         int ITEMS_PER_THREAD,
@@ -338,7 +339,7 @@ public:
     static __device__ __forceinline__ T Reduce(
         SmemStorage     &smem_storage,                  ///< [in] Shared reference to opaque SmemStorage layout
         T               (&inputs)[ITEMS_PER_THREAD],    ///< [in] Calling thread's input segment
-        ReductionOp     reduction_op)                   ///< [in] Binary associative reduction functor
+        ReductionOp     reduction_op)                   ///< [in] Binary reduction operator
     {
         // Reduce partials
         T partial = ThreadReduce(inputs, reduction_op);
@@ -353,13 +354,13 @@ public:
      *
      * \smemreuse
      *
-     * \tparam ReductionOp          <b>[inferred]</b> Binary reduction functor type (a model of <a href="http://www.sgi.com/tech/stl/BinaryFunction.html">Binary Function</a>).
+     * \tparam ReductionOp          <b>[inferred]</b> Binary reduction operator type having member <tt>T operator()(const T &a, const T &b)</tt>
      */
     template <typename ReductionOp>
     static __device__ __forceinline__ T Reduce(
         SmemStorage         &smem_storage,          ///< [in] Shared reference to opaque SmemStorage layout
         T                   input,                  ///< [in] Calling thread's input
-        ReductionOp         reduction_op,           ///< [in] Binary associative reduction functor
+        ReductionOp         reduction_op,           ///< [in] Binary reduction operator
         const unsigned int  &valid_threads)         ///< [in] Number of threads containing valid elements (may be less than BLOCK_THREADS)
     {
         // Determine if we don't need bounds checking
@@ -422,7 +423,7 @@ public:
      */
     static __device__ __forceinline__ T Sum(
         SmemStorage         &smem_storage,          ///< [in] Shared reference to opaque SmemStorage layout
-        T                   input,                   ///< [in] Calling thread's input
+        T                   input,                  ///< [in] Calling thread's input
         const unsigned int  &valid_threads)         ///< [in] Number of threads containing valid elements (may be less than BLOCK_THREADS)
     {
         cub::Sum<T> reduction_op;
