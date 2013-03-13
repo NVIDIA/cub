@@ -48,6 +48,7 @@
 #include "block/block_discontinuity.cuh"
 
 // Warp
+#include "warp/warp_reduce.cuh"
 #include "warp/warp_scan.cuh"
 
 // Thread

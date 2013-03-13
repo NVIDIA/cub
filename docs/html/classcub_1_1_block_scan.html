@@ -454,7 +454,7 @@ template&lt;typename ScanOp &gt; </div>
     <tr><td class="paramdir">[in]</td><td class="paramname">input</td><td>Calling thread's input items </td></tr>
     <tr><td class="paramdir">[out]</td><td class="paramname">output</td><td>Calling thread's output items (may be aliased to <code>input</code>) </td></tr>
     <tr><td class="paramdir">[in]</td><td class="paramname">identity</td><td>Identity value </td></tr>
-    <tr><td class="paramdir">[in]</td><td class="paramname">scan_op</td><td>Binary scan operator having member <code>T operator()(const T &amp;a, const T &amp;b)</code> </td></tr>
+    <tr><td class="paramdir">[in]</td><td class="paramname">scan_op</td><td>Binary scan operator </td></tr>
     <tr><td class="paramdir">[out]</td><td class="paramname">block_aggregate</td><td><b>[<em>thread</em><sub>0</sub> only]</b> threadblock-wide aggregate reduction of input items </td></tr>
   </table>
   </dd>
@@ -538,7 +538,7 @@ template&lt;int ITEMS_PER_THREAD, typename ScanOp &gt; </div>
     <tr><td class="paramdir">[in]</td><td class="paramname">input</td><td>Calling thread's input items </td></tr>
     <tr><td class="paramdir">[out]</td><td class="paramname">output</td><td>Calling thread's output items (may be aliased to <code>input</code>) </td></tr>
     <tr><td class="paramdir">[in]</td><td class="paramname">identity</td><td>Identity value </td></tr>
-    <tr><td class="paramdir">[in]</td><td class="paramname">scan_op</td><td>Binary scan operator having member <code>T operator()(const T &amp;a, const T &amp;b)</code> </td></tr>
+    <tr><td class="paramdir">[in]</td><td class="paramname">scan_op</td><td>Binary scan operator </td></tr>
     <tr><td class="paramdir">[out]</td><td class="paramname">block_aggregate</td><td><b>[<em>thread</em><sub>0</sub> only]</b> threadblock-wide aggregate reduction of input items </td></tr>
   </table>
   </dd>
@@ -629,7 +629,7 @@ template&lt;typename ScanOp , typename BlockPrefixOp &gt; </div>
     <tr><td class="paramdir">[in]</td><td class="paramname">input</td><td>Calling thread's input item </td></tr>
     <tr><td class="paramdir">[out]</td><td class="paramname">output</td><td>Calling thread's output item (may be aliased to <code>input</code>) </td></tr>
     <tr><td class="paramdir">[in]</td><td class="paramname">identity</td><td>Identity value </td></tr>
-    <tr><td class="paramdir">[in]</td><td class="paramname">scan_op</td><td>Binary scan operator having member <code>T operator()(const T &amp;a, const T &amp;b)</code> </td></tr>
+    <tr><td class="paramdir">[in]</td><td class="paramname">scan_op</td><td>Binary scan operator </td></tr>
     <tr><td class="paramdir">[out]</td><td class="paramname">block_aggregate</td><td><b>[<em>thread</em><sub>0</sub> only]</b> Threadblock-wide aggregate reduction of input items (exclusive of the <code>block_prefix_op</code> value) </td></tr>
     <tr><td class="paramdir">[in,out]</td><td class="paramname">block_prefix_op</td><td><b>[<em>thread</em><sub>0</sub> only]</b> Call-back functor for specifying a threadblock-wide prefix to be applied to all inputs. </td></tr>
   </table>
@@ -722,7 +722,7 @@ template&lt;int ITEMS_PER_THREAD, typename ScanOp , typename BlockPrefixOp &gt; 
     <tr><td class="paramdir">[in]</td><td class="paramname">input</td><td>Calling thread's input items </td></tr>
     <tr><td class="paramdir">[out]</td><td class="paramname">output</td><td>Calling thread's output items (may be aliased to <code>input</code>) </td></tr>
     <tr><td class="paramdir">[in]</td><td class="paramname">identity</td><td>Identity value </td></tr>
-    <tr><td class="paramdir">[in]</td><td class="paramname">scan_op</td><td>Binary scan operator having member <code>T operator()(const T &amp;a, const T &amp;b)</code> </td></tr>
+    <tr><td class="paramdir">[in]</td><td class="paramname">scan_op</td><td>Binary scan operator </td></tr>
     <tr><td class="paramdir">[out]</td><td class="paramname">block_aggregate</td><td><b>[<em>thread</em><sub>0</sub> only]</b> Threadblock-wide aggregate reduction of input items (exclusive of the <code>block_prefix_op</code> value) </td></tr>
     <tr><td class="paramdir">[in,out]</td><td class="paramname">block_prefix_op</td><td><b>[<em>thread</em><sub>0</sub> only]</b> Call-back functor for specifying a threadblock-wide prefix to be applied to all inputs. </td></tr>
   </table>
@@ -799,7 +799,7 @@ template&lt;typename ScanOp &gt; </div>
     <tr><td class="paramdir">[in]</td><td class="paramname">input</td><td>Calling thread's input item </td></tr>
     <tr><td class="paramdir">[out]</td><td class="paramname">output</td><td>Calling thread's output item (may be aliased to <code>input</code>) </td></tr>
     <tr><td class="paramdir">[in]</td><td class="paramname">identity</td><td>Identity value </td></tr>
-    <tr><td class="paramdir">[in]</td><td class="paramname">scan_op</td><td>Binary scan operator having member <code>T operator()(const T &amp;a, const T &amp;b)</code> </td></tr>
+    <tr><td class="paramdir">[in]</td><td class="paramname">scan_op</td><td>Binary scan operator </td></tr>
   </table>
   </dd>
 </dl>
@@ -875,7 +875,7 @@ template&lt;int ITEMS_PER_THREAD, typename ScanOp &gt; </div>
     <tr><td class="paramdir">[in]</td><td class="paramname">input</td><td>Calling thread's input items </td></tr>
     <tr><td class="paramdir">[out]</td><td class="paramname">output</td><td>Calling thread's output items (may be aliased to <code>input</code>) </td></tr>
     <tr><td class="paramdir">[in]</td><td class="paramname">identity</td><td>Identity value </td></tr>
-    <tr><td class="paramdir">[in]</td><td class="paramname">scan_op</td><td>Binary scan operator having member <code>T operator()(const T &amp;a, const T &amp;b)</code> </td></tr>
+    <tr><td class="paramdir">[in]</td><td class="paramname">scan_op</td><td>Binary scan operator </td></tr>
   </table>
   </dd>
 </dl>
@@ -950,7 +950,7 @@ template&lt;typename ScanOp &gt; </div>
     <tr><td class="paramdir">[in]</td><td class="paramname">smem_storage</td><td>Shared reference to opaque SmemStorage layout </td></tr>
     <tr><td class="paramdir">[in]</td><td class="paramname">input</td><td>Calling thread's input item </td></tr>
     <tr><td class="paramdir">[out]</td><td class="paramname">output</td><td>Calling thread's output item (may be aliased to <code>input</code>) </td></tr>
-    <tr><td class="paramdir">[in]</td><td class="paramname">scan_op</td><td>Binary scan operator having member <code>T operator()(const T &amp;a, const T &amp;b)</code> </td></tr>
+    <tr><td class="paramdir">[in]</td><td class="paramname">scan_op</td><td>Binary scan operator </td></tr>
     <tr><td class="paramdir">[out]</td><td class="paramname">block_aggregate</td><td><b>[<em>thread</em><sub>0</sub> only]</b> threadblock-wide aggregate reduction of input items </td></tr>
   </table>
   </dd>
@@ -1027,7 +1027,7 @@ template&lt;int ITEMS_PER_THREAD, typename ScanOp &gt; </div>
     <tr><td class="paramdir">[in]</td><td class="paramname">smem_storage</td><td>Shared reference to opaque SmemStorage layout </td></tr>
     <tr><td class="paramdir">[in]</td><td class="paramname">input</td><td>Calling thread's input items </td></tr>
     <tr><td class="paramdir">[out]</td><td class="paramname">output</td><td>Calling thread's output items (may be aliased to <code>input</code>) </td></tr>
-    <tr><td class="paramdir">[in]</td><td class="paramname">scan_op</td><td>Binary scan operator having member <code>T operator()(const T &amp;a, const T &amp;b)</code> </td></tr>
+    <tr><td class="paramdir">[in]</td><td class="paramname">scan_op</td><td>Binary scan operator </td></tr>
     <tr><td class="paramdir">[out]</td><td class="paramname">block_aggregate</td><td><b>[<em>thread</em><sub>0</sub> only]</b> threadblock-wide aggregate reduction of input items </td></tr>
   </table>
   </dd>
@@ -1111,7 +1111,7 @@ template&lt;typename ScanOp , typename BlockPrefixOp &gt; </div>
     <tr><td class="paramdir">[in]</td><td class="paramname">smem_storage</td><td>Shared reference to opaque SmemStorage layout </td></tr>
     <tr><td class="paramdir">[in]</td><td class="paramname">input</td><td>Calling thread's input item </td></tr>
     <tr><td class="paramdir">[out]</td><td class="paramname">output</td><td>Calling thread's output item (may be aliased to <code>input</code>) </td></tr>
-    <tr><td class="paramdir">[in]</td><td class="paramname">scan_op</td><td>Binary scan operator having member <code>T operator()(const T &amp;a, const T &amp;b)</code> </td></tr>
+    <tr><td class="paramdir">[in]</td><td class="paramname">scan_op</td><td>Binary scan operator </td></tr>
     <tr><td class="paramdir">[out]</td><td class="paramname">block_aggregate</td><td><b>[<em>thread</em><sub>0</sub> only]</b> Threadblock-wide aggregate reduction of input items (exclusive of the <code>block_prefix_op</code> value) </td></tr>
     <tr><td class="paramdir">[in,out]</td><td class="paramname">block_prefix_op</td><td><b>[<em>thread</em><sub>0</sub> only]</b> Call-back functor for specifying a threadblock-wide prefix to be applied to all inputs. </td></tr>
   </table>
@@ -1197,7 +1197,7 @@ template&lt;int ITEMS_PER_THREAD, typename ScanOp , typename BlockPrefixOp &gt; 
     <tr><td class="paramdir">[in]</td><td class="paramname">smem_storage</td><td>Shared reference to opaque SmemStorage layout </td></tr>
     <tr><td class="paramdir">[in]</td><td class="paramname">input</td><td>Calling thread's input items </td></tr>
     <tr><td class="paramdir">[out]</td><td class="paramname">output</td><td>Calling thread's output items (may be aliased to <code>input</code>) </td></tr>
-    <tr><td class="paramdir">[in]</td><td class="paramname">scan_op</td><td>Binary scan operator having member <code>T operator()(const T &amp;a, const T &amp;b)</code> </td></tr>
+    <tr><td class="paramdir">[in]</td><td class="paramname">scan_op</td><td>Binary scan operator </td></tr>
     <tr><td class="paramdir">[out]</td><td class="paramname">block_aggregate</td><td><b>[<em>thread</em><sub>0</sub> only]</b> Threadblock-wide aggregate reduction of input items (exclusive of the <code>block_prefix_op</code> value) </td></tr>
     <tr><td class="paramdir">[in,out]</td><td class="paramname">block_prefix_op</td><td><b>[<em>thread</em><sub>0</sub> only]</b> Call-back functor for specifying a threadblock-wide prefix to be applied to all inputs. </td></tr>
   </table>
@@ -1267,7 +1267,7 @@ template&lt;typename ScanOp &gt; </div>
     <tr><td class="paramdir">[in]</td><td class="paramname">smem_storage</td><td>Shared reference to opaque SmemStorage layout </td></tr>
     <tr><td class="paramdir">[in]</td><td class="paramname">input</td><td>Calling thread's input item </td></tr>
     <tr><td class="paramdir">[out]</td><td class="paramname">output</td><td>Calling thread's output item (may be aliased to <code>input</code>) </td></tr>
-    <tr><td class="paramdir">[in]</td><td class="paramname">scan_op</td><td>Binary scan operator having member <code>T operator()(const T &amp;a, const T &amp;b)</code> </td></tr>
+    <tr><td class="paramdir">[in]</td><td class="paramname">scan_op</td><td>Binary scan operator </td></tr>
   </table>
   </dd>
 </dl>
@@ -1336,7 +1336,7 @@ template&lt;int ITEMS_PER_THREAD, typename ScanOp &gt; </div>
     <tr><td class="paramdir">[in]</td><td class="paramname">smem_storage</td><td>Shared reference to opaque SmemStorage layout </td></tr>
     <tr><td class="paramdir">[in]</td><td class="paramname">input</td><td>Calling thread's input items </td></tr>
     <tr><td class="paramdir">[out]</td><td class="paramname">output</td><td>Calling thread's output items (may be aliased to <code>input</code>) </td></tr>
-    <tr><td class="paramdir">[in]</td><td class="paramname">scan_op</td><td>Binary scan operator having member <code>T operator()(const T &amp;a, const T &amp;b)</code> </td></tr>
+    <tr><td class="paramdir">[in]</td><td class="paramname">scan_op</td><td>Binary scan operator </td></tr>
   </table>
   </dd>
 </dl>
@@ -1810,7 +1810,7 @@ template&lt;typename ScanOp &gt; </div>
     <tr><td class="paramdir">[in]</td><td class="paramname">smem_storage</td><td>Shared reference to opaque SmemStorage layout </td></tr>
     <tr><td class="paramdir">[in]</td><td class="paramname">input</td><td>Calling thread's input item </td></tr>
     <tr><td class="paramdir">[out]</td><td class="paramname">output</td><td>Calling thread's output item (may be aliased to <code>input</code>) </td></tr>
-    <tr><td class="paramdir">[in]</td><td class="paramname">scan_op</td><td>Binary scan operator having member <code>T operator()(const T &amp;a, const T &amp;b)</code> </td></tr>
+    <tr><td class="paramdir">[in]</td><td class="paramname">scan_op</td><td>Binary scan operator </td></tr>
     <tr><td class="paramdir">[out]</td><td class="paramname">block_aggregate</td><td><b>[<em>thread</em><sub>0</sub> only]</b> threadblock-wide aggregate reduction of input items </td></tr>
   </table>
   </dd>
@@ -1887,7 +1887,7 @@ template&lt;int ITEMS_PER_THREAD, typename ScanOp &gt; </div>
     <tr><td class="paramdir">[in]</td><td class="paramname">smem_storage</td><td>Shared reference to opaque SmemStorage layout </td></tr>
     <tr><td class="paramdir">[in]</td><td class="paramname">input</td><td>Calling thread's input items </td></tr>
     <tr><td class="paramdir">[out]</td><td class="paramname">output</td><td>Calling thread's output items (may be aliased to <code>input</code>) </td></tr>
-    <tr><td class="paramdir">[in]</td><td class="paramname">scan_op</td><td>Binary scan operator having member <code>T operator()(const T &amp;a, const T &amp;b)</code> </td></tr>
+    <tr><td class="paramdir">[in]</td><td class="paramname">scan_op</td><td>Binary scan operator </td></tr>
     <tr><td class="paramdir">[out]</td><td class="paramname">block_aggregate</td><td><b>[<em>thread</em><sub>0</sub> only]</b> threadblock-wide aggregate reduction of input items </td></tr>
   </table>
   </dd>
@@ -1971,7 +1971,7 @@ template&lt;typename ScanOp , typename BlockPrefixOp &gt; </div>
     <tr><td class="paramdir">[in]</td><td class="paramname">smem_storage</td><td>Shared reference to opaque SmemStorage layout </td></tr>
     <tr><td class="paramdir">[in]</td><td class="paramname">input</td><td>Calling thread's input item </td></tr>
     <tr><td class="paramdir">[out]</td><td class="paramname">output</td><td>Calling thread's output item (may be aliased to <code>input</code>) </td></tr>
-    <tr><td class="paramdir">[in]</td><td class="paramname">scan_op</td><td>Binary scan operator having member <code>T operator()(const T &amp;a, const T &amp;b)</code> </td></tr>
+    <tr><td class="paramdir">[in]</td><td class="paramname">scan_op</td><td>Binary scan operator </td></tr>
     <tr><td class="paramdir">[out]</td><td class="paramname">block_aggregate</td><td><b>[<em>thread</em><sub>0</sub> only]</b> Threadblock-wide aggregate reduction of input items (exclusive of the <code>block_prefix_op</code> value) </td></tr>
     <tr><td class="paramdir">[in,out]</td><td class="paramname">block_prefix_op</td><td><b>[<em>thread</em><sub>0</sub> only]</b> Call-back functor for specifying a threadblock-wide prefix to be applied to all inputs. </td></tr>
   </table>
@@ -2057,7 +2057,7 @@ template&lt;int ITEMS_PER_THREAD, typename ScanOp , typename BlockPrefixOp &gt; 
     <tr><td class="paramdir">[in]</td><td class="paramname">smem_storage</td><td>Shared reference to opaque SmemStorage layout </td></tr>
     <tr><td class="paramdir">[in]</td><td class="paramname">input</td><td>Calling thread's input items </td></tr>
     <tr><td class="paramdir">[out]</td><td class="paramname">output</td><td>Calling thread's output items (may be aliased to <code>input</code>) </td></tr>
-    <tr><td class="paramdir">[in]</td><td class="paramname">scan_op</td><td>Binary scan operator having member <code>T operator()(const T &amp;a, const T &amp;b)</code> </td></tr>
+    <tr><td class="paramdir">[in]</td><td class="paramname">scan_op</td><td>Binary scan operator </td></tr>
     <tr><td class="paramdir">[out]</td><td class="paramname">block_aggregate</td><td><b>[<em>thread</em><sub>0</sub> only]</b> Threadblock-wide aggregate reduction of input items (exclusive of the <code>block_prefix_op</code> value) </td></tr>
     <tr><td class="paramdir">[in,out]</td><td class="paramname">block_prefix_op</td><td><b>[<em>thread</em><sub>0</sub> only]</b> Call-back functor for specifying a threadblock-wide prefix to be applied to all inputs. </td></tr>
   </table>
@@ -2127,7 +2127,7 @@ template&lt;typename ScanOp &gt; </div>
     <tr><td class="paramdir">[in]</td><td class="paramname">smem_storage</td><td>Shared reference to opaque SmemStorage layout </td></tr>
     <tr><td class="paramdir">[in]</td><td class="paramname">input</td><td>Calling thread's input item </td></tr>
     <tr><td class="paramdir">[out]</td><td class="paramname">output</td><td>Calling thread's output item (may be aliased to <code>input</code>) </td></tr>
-    <tr><td class="paramdir">[in]</td><td class="paramname">scan_op</td><td>Binary scan operator having member <code>T operator()(const T &amp;a, const T &amp;b)</code> </td></tr>
+    <tr><td class="paramdir">[in]</td><td class="paramname">scan_op</td><td>Binary scan operator </td></tr>
   </table>
   </dd>
 </dl>
@@ -2196,7 +2196,7 @@ template&lt;int ITEMS_PER_THREAD, typename ScanOp &gt; </div>
     <tr><td class="paramdir">[in]</td><td class="paramname">smem_storage</td><td>Shared reference to opaque SmemStorage layout </td></tr>
     <tr><td class="paramdir">[in]</td><td class="paramname">input</td><td>Calling thread's input items </td></tr>
     <tr><td class="paramdir">[out]</td><td class="paramname">output</td><td>Calling thread's output items (may be aliased to <code>input</code>) </td></tr>
-    <tr><td class="paramdir">[in]</td><td class="paramname">scan_op</td><td>Binary scan operator having member <code>T operator()(const T &amp;a, const T &amp;b)</code> </td></tr>
+    <tr><td class="paramdir">[in]</td><td class="paramname">scan_op</td><td>Binary scan operator </td></tr>
   </table>
   </dd>
 </dl>
@@ -2610,7 +2610,7 @@ template&lt;int ITEMS_PER_THREAD&gt; </div>
 <!-- HTML footer for doxygen 1.8.3.1-->
 <!-- start footer part -->
 <hr class="footer"/><address class="footer"><small>
-Generated on Sat Mar 9 2013 04:59:40 for CUB by &#160;<a href="http://www.doxygen.org/index.html">
+Generated on Wed Mar 13 2013 17:39:05 for CUB by &#160;<a href="http://www.doxygen.org/index.html">
 <img class="footer" src="doxygen.png" alt="doxygen"/>
 </a> 1.8.3.1
 <br>
