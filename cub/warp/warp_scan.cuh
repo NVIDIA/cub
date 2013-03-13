@@ -28,7 +28,7 @@
 
 /**
  * \file
- * cub::WarpScan provides variants of parallel prefix scan across a CUDA warp.
+ * cub::WarpScan provides variants of parallel prefix scan across CUDA warps.
  */
 
 #pragma once
@@ -51,7 +51,7 @@ namespace cub {
  */
 
 /**
- * \brief WarpScan provides variants of parallel prefix scan across a CUDA warp.  ![](warp_scan_logo.png)
+ * \brief WarpScan provides variants of parallel prefix scan across CUDA warps.  ![](warp_scan_logo.png)
  *
  * \par Overview
  * Given a list of input elements and a binary reduction operator, a [<em>prefix scan</em>](http://en.wikipedia.org/wiki/Prefix_sum)
@@ -71,14 +71,14 @@ namespace cub {
  *
  * \tparam T                        The scan input/output element type
  * \tparam WARPS                    The number of "logical" warps performing concurrent warp scans
- * \tparam LOGICAL_WARP_THREADS     <b>[optional]</b> The number of threads per "logical" warp (may be less than the number of hardware warp threads).  Default is the warp size associated with the CUDA Compute Capability targeted by the compiler (e.g., 32 warps for SM20).
+ * \tparam LOGICAL_WARP_THREADS     <b>[optional]</b> The number of threads per "logical" warp (may be less than the number of hardware warp threads).  Default is the warp size associated with the CUDA Compute Capability targeted by the compiler (e.g., 32 threads for SM20).
  *
  * \par Usage Considerations
  * - Supports non-commutative scan operators
  * - Supports "logical" warps smaller than the physical warp size (e.g., a logical warp of 8 threads)
  * - Warp scans are concurrent if more than one warp is participating
  * - Any warp-wide scalar inputs and outputs (e.g., \p warp_prefix_op and \p warp_aggregate) are
- *   only considered valid in <em>lane</em><sub>0</sub>
+ *   only considered valid in <em>warp-lane</em><sub>0</sub>
  * - \smemreuse{WarpScan::SmemStorage}
 
  * \par Performance Considerations
@@ -152,7 +152,7 @@ namespace cub {
  *          __device__ WarpPrefixOp(int warp_prefix) : warp_prefix(warp_prefix) {}
  *
  *          /// Functor operator.  Produces a value for seeding the warp-wide scan given
- *          /// the local aggregate (only used by lane-0).
+ *          /// the local aggregate (only used by warp-lane0).
  *          __device__ int operator(int warp_aggregate)
  *          {
  *              int old_prefix = warp_prefix;
@@ -222,7 +222,7 @@ private:
     {
         POW_OF_TWO = ((LOGICAL_WARP_THREADS & (LOGICAL_WARP_THREADS - 1)) == 0),
 
-        /// Use SHFL-scan if (architecture is >= SM30) and (T is a primitive) and (T is 4-bytes or smaller) and (LOGICAL_WARP_THREADS is a power-of-two)
+        /// Use SHFL_SCAN if (architecture is >= SM30) and (T is a primitive) and (T is 4-bytes or smaller) and (LOGICAL_WARP_THREADS is a power-of-two)
         POLICY = ((PTX_ARCH >= 300) && Traits<T>::PRIMITIVE && (sizeof(T) <= 4) && POW_OF_TWO) ?
             SHFL_SCAN :
             SMEM_SCAN,
@@ -360,7 +360,7 @@ private:
             SmemStorage     &smem_storage,      ///< [in] Shared reference to opaque SmemStorage layout
             T               input,              ///< [in] Calling thread's input item.
             T               &output,            ///< [out] Calling thread's output item.  May be aliased with \p input.
-            ScanOp          scan_op,            ///< [in] Binary scan operator having member <tt>T operator()(const T &a, const T &b)</tt>
+            ScanOp          scan_op,            ///< [in] Binary scan operator
             T               &warp_aggregate)    ///< [out] <b>[<em>warp-lane</em><sub>0</sub> only]</b> Warp-wide aggregate reduction of input items.
         {
             T               temp;
@@ -399,7 +399,7 @@ private:
             SmemStorage     &smem_storage,      ///< [in] Shared reference to opaque SmemStorage layout
             T               input,              ///< [in] Calling thread's input item.
             T               &output,            ///< [out] Calling thread's output item.  May be aliased with \p input.
-            ScanOp          scan_op)            ///< [in] Binary scan operator having member <tt>T operator()(const T &a, const T &b)</tt>
+            ScanOp          scan_op)            ///< [in] Binary scan operator
         {
             T warp_aggregate;
             InclusiveScan(smem_storage, input, output, scan_op, warp_aggregate);
@@ -412,7 +412,7 @@ private:
             T               input,              ///< [in] Calling thread's input item.
             T               &output,            ///< [out] Calling thread's output item.  May be aliased with \p input.
             const T         &identity,          ///< [in] Identity value
-            ScanOp          scan_op,            ///< [in] Binary scan operator having member <tt>T operator()(const T &a, const T &b)</tt>
+            ScanOp          scan_op,            ///< [in] Binary scan operator
             T               &warp_aggregate)    ///< [out] <b>[<em>warp-lane</em><sub>0</sub> only]</b> Warp-wide aggregate reduction of input items.
         {
             // Compute inclusive scan
@@ -441,7 +441,7 @@ private:
             T               input,              ///< [in] Calling thread's input item.
             T               &output,            ///< [out] Calling thread's output item.  May be aliased with \p input.
             const T         &identity,          ///< [in] Identity value
-            ScanOp          scan_op)            ///< [in] Binary scan operator having member <tt>T operator()(const T &a, const T &b)</tt>
+            ScanOp          scan_op)            ///< [in] Binary scan operator
         {
             T warp_aggregate;
             ExclusiveScan(smem_storage, input, output, identity, scan_op, warp_aggregate);
@@ -454,7 +454,7 @@ private:
             SmemStorage     &smem_storage,      ///< [in] Shared reference to opaque SmemStorage layout
             T               input,              ///< [in] Calling thread's input item.
             T               &output,            ///< [out] Calling thread's output item.  May be aliased with \p input.
-            ScanOp          scan_op,            ///< [in] Binary scan operator having member <tt>T operator()(const T &a, const T &b)</tt>
+            ScanOp          scan_op,            ///< [in] Binary scan operator
             T               &warp_aggregate)    ///< [out] <b>[<em>warp-lane</em><sub>0</sub> only]</b> Warp-wide aggregate reduction of input items.
         {
             // Compute inclusive scan
@@ -476,7 +476,7 @@ private:
             SmemStorage     &smem_storage,      ///< [in] Shared reference to opaque SmemStorage layout
             T               input,              ///< [in] Calling thread's input item.
             T               &output,            ///< [out] Calling thread's output item.  May be aliased with \p input.
-            ScanOp          scan_op)            ///< [in] Binary scan operator having member <tt>T operator()(const T &a, const T &b)</tt>
+            ScanOp          scan_op)            ///< [in] Binary scan operator
         {
             T warp_aggregate;
             ExclusiveScan(smem_storage, input, output, scan_op, warp_aggregate);
@@ -616,7 +616,7 @@ private:
                 input,
                 Sum<T>());
 
-            // Retrieve aggregate in thread-lane<sub>0</sub>
+            // Retrieve aggregate in <em>warp-lane</em><sub>0</sub>
             warp_aggregate = ThreadLoad<PTX_LOAD_VS>(&smem_storage.warp_scan[warp_id][WARP_SMEM_ELEMENTS - 1]);
         }
 
@@ -627,7 +627,7 @@ private:
             SmemStorage     &smem_storage,      ///< [in] Shared reference to opaque SmemStorage layout
             T               input,              ///< [in] Calling thread's input item.
             T               &output,            ///< [out] Calling thread's output item.  May be aliased with \p input.
-            ScanOp          scan_op)            ///< [in] Binary scan operator having member <tt>T operator()(const T &a, const T &b)</tt>
+            ScanOp          scan_op)            ///< [in] Binary scan operator
         {
             // Warp, thread-lane-IDs
             unsigned int warp_id = (WARPS == 1) ? 0 : (threadIdx.x / LOGICAL_WARP_THREADS);
@@ -649,7 +649,7 @@ private:
             SmemStorage     &smem_storage,      ///< [in] Shared reference to opaque SmemStorage layout
             T               input,              ///< [in] Calling thread's input item.
             T               &output,            ///< [out] Calling thread's output item.  May be aliased with \p input.
-            ScanOp          scan_op,            ///< [in] Binary scan operator having member <tt>T operator()(const T &a, const T &b)</tt>
+            ScanOp          scan_op,            ///< [in] Binary scan operator
             T               &warp_aggregate)    ///< [out] <b>[<em>warp-lane</em><sub>0</sub> only]</b> Warp-wide aggregate reduction of input items.
         {
             // Warp, thread-lane-IDs
@@ -675,7 +675,7 @@ private:
             T               input,              ///< [in] Calling thread's input item.
             T               &output,            ///< [out] Calling thread's output item.  May be aliased with \p input.
             const T         &identity,          ///< [in] Identity value
-            ScanOp          scan_op)            ///< [in] Binary scan operator having member <tt>T operator()(const T &a, const T &b)</tt>
+            ScanOp          scan_op)            ///< [in] Binary scan operator
         {
             // Warp, thread-lane-IDs
             unsigned int warp_id = (WARPS == 1) ? 0 : (threadIdx.x / LOGICAL_WARP_THREADS);
@@ -704,7 +704,7 @@ private:
             T               input,              ///< [in] Calling thread's input item.
             T               &output,            ///< [out] Calling thread's output item.  May be aliased with \p input.
             const T         &identity,          ///< [in] Identity value
-            ScanOp          scan_op,            ///< [in] Binary scan operator having member <tt>T operator()(const T &a, const T &b)</tt>
+            ScanOp          scan_op,            ///< [in] Binary scan operator
             T               &warp_aggregate)    ///< [out] <b>[<em>warp-lane</em><sub>0</sub> only]</b> Warp-wide aggregate reduction of input items.
         {
             // Warp id
@@ -724,7 +724,7 @@ private:
             SmemStorage     &smem_storage,      ///< [in] Shared reference to opaque SmemStorage layout
             T               input,              ///< [in] Calling thread's input item.
             T               &output,            ///< [out] Calling thread's output item.  May be aliased with \p input.
-            ScanOp          scan_op)            ///< [in] Binary scan operator having member <tt>T operator()(const T &a, const T &b)</tt>
+            ScanOp          scan_op)            ///< [in] Binary scan operator
         {
             // Warp, thread-lane-IDs
             unsigned int warp_id = (WARPS == 1) ? 0 : (threadIdx.x / LOGICAL_WARP_THREADS);
@@ -749,7 +749,7 @@ private:
             SmemStorage     &smem_storage,      ///< [in] Shared reference to opaque SmemStorage layout
             T               input,              ///< [in] Calling thread's input item.
             T               &output,            ///< [out] Calling thread's output item.  May be aliased with \p input.
-            ScanOp          scan_op,            ///< [in] Binary scan operator having member <tt>T operator()(const T &a, const T &b)</tt>
+            ScanOp          scan_op,            ///< [in] Binary scan operator
             T               &warp_aggregate)    ///< [out] <b>[<em>warp-lane</em><sub>0</sub> only]</b> Warp-wide aggregate reduction of input items.
         {
             // Warp id
@@ -798,9 +798,9 @@ public:
 
 
     /**
-     * \brief Computes an inclusive prefix sum in each logical warp.  Also computes the warp-wide \p warp_aggregate of all inputs for thread-lane<sub>0</sub>.
+     * \brief Computes an inclusive prefix sum in each logical warp.  Also computes the warp-wide \p warp_aggregate of all inputs for <em>warp-lane</em><sub>0</sub>.
      *
-     * The \p warp_aggregate is undefined in threads other than thread-lane<sub>0</sub>.
+     * The \p warp_aggregate is undefined in threads other than <em>warp-lane</em><sub>0</sub>.
      *
      * \smemreuse
      */
@@ -815,9 +815,9 @@ public:
 
 
     /**
-     * \brief Computes an inclusive prefix sum in each logical warp.  Instead of using 0 as the warp-wide prefix, the call-back functor \p warp_prefix_op is invoked to provide the "seed" value that logically prefixes the warp's scan inputs.  Also computes the warp-wide \p warp_aggregate of all inputs for thread-lane<sub>0</sub>.  The \p warp_prefix_op is further updated by the value of \p warp_aggregate.
+     * \brief Computes an inclusive prefix sum in each logical warp.  Instead of using 0 as the warp-wide prefix, the call-back functor \p warp_prefix_op is invoked to provide the "seed" value that logically prefixes the warp's scan inputs.  Also computes the warp-wide \p warp_aggregate of all inputs for <em>warp-lane</em><sub>0</sub>.  The \p warp_prefix_op is further updated by the value of \p warp_aggregate.
      *
-     * The \p warp_aggregate is undefined in threads other than thread-lane<sub>0</sub>.
+     * The \p warp_aggregate is undefined in threads other than <em>warp-lane</em><sub>0</sub>.
      *
      * The \p warp_prefix_op functor must implement a member function <tt>T operator()(T warp_aggregate)</tt>.
      * The functor's input parameter \p warp_aggregate is the same value also returned by the scan operation.
@@ -875,9 +875,9 @@ public:
 
 
     /**
-     * \brief Computes an exclusive prefix sum in each logical warp.  Also computes the warp-wide \p warp_aggregate of all inputs for thread-lane<sub>0</sub>.
+     * \brief Computes an exclusive prefix sum in each logical warp.  Also computes the warp-wide \p warp_aggregate of all inputs for <em>warp-lane</em><sub>0</sub>.
      *
-     * The \p warp_aggregate is undefined in threads other than thread-lane<sub>0</sub>.
+     * The \p warp_aggregate is undefined in threads other than <em>warp-lane</em><sub>0</sub>.
      *
      * \smemreuse
      */
@@ -895,9 +895,9 @@ public:
 
 
     /**
-     * \brief Computes an exclusive prefix sum in each logical warp.  Instead of using 0 as the warp-wide prefix, the call-back functor \p warp_prefix_op is invoked to provide the "seed" value that logically prefixes the warp's scan inputs.  Also computes the warp-wide \p warp_aggregate of all inputs for thread-lane<sub>0</sub>.  The \p warp_prefix_op is further updated by the value of \p warp_aggregate.
+     * \brief Computes an exclusive prefix sum in each logical warp.  Instead of using 0 as the warp-wide prefix, the call-back functor \p warp_prefix_op is invoked to provide the "seed" value that logically prefixes the warp's scan inputs.  Also computes the warp-wide \p warp_aggregate of all inputs for <em>warp-lane</em><sub>0</sub>.  The \p warp_prefix_op is further updated by the value of \p warp_aggregate.
      *
-     * The \p warp_aggregate is undefined in threads other than thread-lane<sub>0</sub>.
+     * The \p warp_aggregate is undefined in threads other than <em>warp-lane</em><sub>0</sub>.
      *
      * The \p warp_prefix_op functor must implement a member function <tt>T operator()(T warp_aggregate)</tt>.
      * The functor's input parameter \p warp_aggregate is the same value also returned by the scan operation.
@@ -942,16 +942,16 @@ public:
         SmemStorage     &smem_storage,      ///< [in] Shared reference to opaque SmemStorage layout
         T               input,              ///< [in] Calling thread's input item.
         T               &output,            ///< [out] Calling thread's output item.  May be aliased with \p input.
-        ScanOp          scan_op)            ///< [in] Binary scan operator having member <tt>T operator()(const T &a, const T &b)</tt>
+        ScanOp          scan_op)            ///< [in] Binary scan operator
     {
         WarpScanInternal<POLICY>::InclusiveScan(smem_storage, input, output, scan_op);
     }
 
 
     /**
-     * \brief Computes an inclusive prefix sum using the specified binary scan functor in each logical warp.  Also computes the warp-wide \p warp_aggregate of all inputs for thread-lane<sub>0</sub>.
+     * \brief Computes an inclusive prefix sum using the specified binary scan functor in each logical warp.  Also computes the warp-wide \p warp_aggregate of all inputs for <em>warp-lane</em><sub>0</sub>.
      *
-     * The \p warp_aggregate is undefined in threads other than thread-lane<sub>0</sub>.
+     * The \p warp_aggregate is undefined in threads other than <em>warp-lane</em><sub>0</sub>.
      *
      * \smemreuse
      *
@@ -962,7 +962,7 @@ public:
         SmemStorage     &smem_storage,      ///< [in] Shared reference to opaque SmemStorage layout
         T               input,              ///< [in] Calling thread's input item.
         T               &output,            ///< [out] Calling thread's output item.  May be aliased with \p input.
-        ScanOp          scan_op,            ///< [in] Binary scan operator having member <tt>T operator()(const T &a, const T &b)</tt>
+        ScanOp          scan_op,            ///< [in] Binary scan operator
         T               &warp_aggregate)    ///< [out] <b>[<em>warp-lane</em><sub>0</sub> only]</b> Warp-wide aggregate reduction of input items.
     {
         WarpScanInternal<POLICY>::InclusiveScan(smem_storage, input, output, scan_op, warp_aggregate);
@@ -970,9 +970,9 @@ public:
 
 
     /**
-     * \brief Computes an inclusive prefix sum using the specified binary scan functor in each logical warp.  The call-back functor \p warp_prefix_op is invoked to provide the "seed" value that logically prefixes the warp's scan inputs.  Also computes the warp-wide \p warp_aggregate of all inputs for thread-lane<sub>0</sub>.  The \p warp_prefix_op is further updated by the value of \p warp_aggregate.
+     * \brief Computes an inclusive prefix sum using the specified binary scan functor in each logical warp.  The call-back functor \p warp_prefix_op is invoked to provide the "seed" value that logically prefixes the warp's scan inputs.  Also computes the warp-wide \p warp_aggregate of all inputs for <em>warp-lane</em><sub>0</sub>.  The \p warp_prefix_op is further updated by the value of \p warp_aggregate.
      *
-     * The \p warp_aggregate is undefined in threads other than thread-lane<sub>0</sub>.
+     * The \p warp_aggregate is undefined in threads other than <em>warp-lane</em><sub>0</sub>.
      *
      * The \p warp_prefix_op functor must implement a member function <tt>T operator()(T warp_aggregate)</tt>.
      * The functor's input parameter \p warp_aggregate is the same value also returned by the scan operation.
@@ -992,7 +992,7 @@ public:
         SmemStorage     &smem_storage,      ///< [in] Shared reference to opaque SmemStorage layout
         T               input,              ///< [in] Calling thread's input item.
         T               &output,            ///< [out] Calling thread's output item.  May be aliased with \p input.
-        ScanOp          scan_op,            ///< [in] Binary scan operator having member <tt>T operator()(const T &a, const T &b)</tt>
+        ScanOp          scan_op,            ///< [in] Binary scan operator
         T               &warp_aggregate,    ///< [out] <b>[<em>warp-lane</em><sub>0</sub> only]</b> Warp-wide aggregate reduction of input items (exclusive of the \p warp_prefix_op value).
         WarpPrefixOp    &warp_prefix_op)    ///< [in-out] <b>[<em>warp-lane</em><sub>0</sub> only]</b> Call-back functor for specifying a warp-wide prefix to be applied to all inputs.
     {
@@ -1028,16 +1028,16 @@ public:
         T               input,              ///< [in] Calling thread's input item.
         T               &output,            ///< [out] Calling thread's output item.  May be aliased with \p input.
         const T         &identity,          ///< [in] Identity value
-        ScanOp          scan_op)            ///< [in] Binary scan operator having member <tt>T operator()(const T &a, const T &b)</tt>
+        ScanOp          scan_op)            ///< [in] Binary scan operator
     {
         WarpScanInternal<POLICY>::ExclusiveScan(smem_storage, input, output, identity, scan_op);
     }
 
 
     /**
-     * \brief Computes an exclusive prefix scan using the specified binary scan functor in each logical warp.  Also computes the warp-wide \p warp_aggregate of all inputs for thread-lane<sub>0</sub>.
+     * \brief Computes an exclusive prefix scan using the specified binary scan functor in each logical warp.  Also computes the warp-wide \p warp_aggregate of all inputs for <em>warp-lane</em><sub>0</sub>.
      *
-     * The \p warp_aggregate is undefined in threads other than thread-lane<sub>0</sub>.
+     * The \p warp_aggregate is undefined in threads other than <em>warp-lane</em><sub>0</sub>.
      *
      * \smemreuse
      *
@@ -1049,7 +1049,7 @@ public:
         T               input,              ///< [in] Calling thread's input item.
         T               &output,            ///< [out] Calling thread's output item.  May be aliased with \p input.
         const T         &identity,          ///< [in] Identity value
-        ScanOp          scan_op,            ///< [in] Binary scan operator having member <tt>T operator()(const T &a, const T &b)</tt>
+        ScanOp          scan_op,            ///< [in] Binary scan operator
         T               &warp_aggregate)    ///< [out] <b>[<em>warp-lane</em><sub>0</sub> only]</b> Warp-wide aggregate reduction of input items.
     {
         WarpScanInternal<POLICY>::ExclusiveScan(smem_storage, input, output, identity, scan_op, warp_aggregate);
@@ -1057,9 +1057,9 @@ public:
 
 
     /**
-     * \brief Computes an exclusive prefix scan using the specified binary scan functor in each logical warp.  The call-back functor \p warp_prefix_op is invoked to provide the "seed" value that logically prefixes the warp's scan inputs.  Also computes the warp-wide \p warp_aggregate of all inputs for thread-lane<sub>0</sub>.  The \p warp_prefix_op is further updated by the value of \p warp_aggregate.
+     * \brief Computes an exclusive prefix scan using the specified binary scan functor in each logical warp.  The call-back functor \p warp_prefix_op is invoked to provide the "seed" value that logically prefixes the warp's scan inputs.  Also computes the warp-wide \p warp_aggregate of all inputs for <em>warp-lane</em><sub>0</sub>.  The \p warp_prefix_op is further updated by the value of \p warp_aggregate.
      *
-     * The \p warp_aggregate is undefined in threads other than thread-lane<sub>0</sub>.
+     * The \p warp_aggregate is undefined in threads other than <em>warp-lane</em><sub>0</sub>.
      *
      * The \p warp_prefix_op functor must implement a member function <tt>T operator()(T warp_aggregate)</tt>.
      * The functor's input parameter \p warp_aggregate is the same value also returned by the scan operation.
@@ -1080,7 +1080,7 @@ public:
         T               input,              ///< [in] Calling thread's input item.
         T               &output,            ///< [out] Calling thread's output item.  May be aliased with \p input.
         const T         &identity,          ///< [in] Identity value
-        ScanOp          scan_op,            ///< [in] Binary scan operator having member <tt>T operator()(const T &a, const T &b)</tt>
+        ScanOp          scan_op,            ///< [in] Binary scan operator
         T               &warp_aggregate,    ///< [out] <b>[<em>warp-lane</em><sub>0</sub> only]</b> Warp-wide aggregate reduction of input items (exclusive of the \p warp_prefix_op value).
         WarpPrefixOp    &warp_prefix_op)    ///< [in-out] <b>[<em>warp-lane</em><sub>0</sub> only]</b> Call-back functor for specifying a warp-wide prefix to be applied to all inputs.
     {
@@ -1108,7 +1108,7 @@ public:
 
 
     /**
-     * \brief Computes an exclusive prefix scan using the specified binary scan functor in each logical warp.  Because no identity value is supplied, the \p output computed for thread-lane<sub>0</sub> is invalid.
+     * \brief Computes an exclusive prefix scan using the specified binary scan functor in each logical warp.  Because no identity value is supplied, the \p output computed for <em>warp-lane</em><sub>0</sub> is invalid.
      *
      * \smemreuse
      *
@@ -1119,16 +1119,16 @@ public:
         SmemStorage     &smem_storage,      ///< [in] Shared reference to opaque SmemStorage layout
         T               input,              ///< [in] Calling thread's input item.
         T               &output,            ///< [out] Calling thread's output item.  May be aliased with \p input.
-        ScanOp          scan_op)            ///< [in] Binary scan operator having member <tt>T operator()(const T &a, const T &b)</tt>
+        ScanOp          scan_op)            ///< [in] Binary scan operator
     {
         WarpScanInternal<POLICY>::ExclusiveScan(smem_storage, input, output, scan_op);
     }
 
 
     /**
-     * \brief Computes an exclusive prefix scan using the specified binary scan functor in each logical warp.  Because no identity value is supplied, the \p output computed for thread-lane<sub>0</sub> is invalid.  Also computes the warp-wide \p warp_aggregate of all inputs for thread-lane<sub>0</sub>.
+     * \brief Computes an exclusive prefix scan using the specified binary scan functor in each logical warp.  Because no identity value is supplied, the \p output computed for <em>warp-lane</em><sub>0</sub> is invalid.  Also computes the warp-wide \p warp_aggregate of all inputs for <em>warp-lane</em><sub>0</sub>.
      *
-     * The \p warp_aggregate is undefined in threads other than thread-lane<sub>0</sub>.
+     * The \p warp_aggregate is undefined in threads other than <em>warp-lane</em><sub>0</sub>.
      *
      * \smemreuse
      *
@@ -1139,7 +1139,7 @@ public:
         SmemStorage     &smem_storage,      ///< [in] Shared reference to opaque SmemStorage layout
         T               input,              ///< [in] Calling thread's input item.
         T               &output,            ///< [out] Calling thread's output item.  May be aliased with \p input.
-        ScanOp          scan_op,            ///< [in] Binary scan operator having member <tt>T operator()(const T &a, const T &b)</tt>
+        ScanOp          scan_op,            ///< [in] Binary scan operator
         T               &warp_aggregate)    ///< [out] <b>[<em>warp-lane</em><sub>0</sub> only]</b> Warp-wide aggregate reduction of input items.
     {
         WarpScanInternal<POLICY>::ExclusiveScan(smem_storage, input, output, scan_op, warp_aggregate);
@@ -1149,7 +1149,7 @@ public:
     /**
      * \brief Computes an exclusive prefix scan using the specified binary scan functor in each logical warp.  The \p warp_prefix_op value from thread-thread-lane<sub>0</sub> is applied to all scan outputs.  Also computes the warp-wide \p warp_aggregate of all inputs for thread-thread-lane<sub>0</sub>.  The \p warp_prefix_op is further updated by the value of \p warp_aggregate.
      *
-     * The \p warp_aggregate is undefined in threads other than thread-lane<sub>0</sub>.
+     * The \p warp_aggregate is undefined in threads other than <em>warp-lane</em><sub>0</sub>.
      *
      * The \p warp_prefix_op functor must implement a member function <tt>T operator()(T warp_aggregate)</tt>.
      * The functor's input parameter \p warp_aggregate is the same value also returned by the scan operation.
@@ -1169,7 +1169,7 @@ public:
         SmemStorage     &smem_storage,      ///< [in] Shared reference to opaque SmemStorage layout
         T               input,              ///< [in] Calling thread's input item.
         T               &output,            ///< [out] Calling thread's output item.  May be aliased with \p input.
-        ScanOp          scan_op,            ///< [in] Binary scan operator having member <tt>T operator()(const T &a, const T &b)</tt>
+        ScanOp          scan_op,            ///< [in] Binary scan operator
         T               &warp_aggregate,    ///< [out] <b>[<em>warp-lane</em><sub>0</sub> only]</b> Warp-wide aggregate reduction of input items (exclusive of the \p warp_prefix_op value).
         WarpPrefixOp    &warp_prefix_op)    ///< [in-out] <b>[<em>warp-lane</em><sub>0</sub> only]</b> Call-back functor for specifying a warp-wide prefix to be applied to all inputs.
     {

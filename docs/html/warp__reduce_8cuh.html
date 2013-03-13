@@ -5,7 +5,7 @@
 <meta http-equiv="Content-Type" content="text/xhtml;charset=UTF-8"/>
 <meta http-equiv="X-UA-Compatible" content="IE=9"/>
 <meta name="generator" content="Doxygen 1.8.3.1"/>
-<title>CUB: cub::If&lt; IF, ThenType, ElseType &gt; Struct Template Reference</title>
+<title>CUB: warp_reduce.cuh File Reference</title>
 <link href="tabs.css" rel="stylesheet" type="text/css"/>
 <script type="text/javascript" src="jquery.js"></script>
 <script type="text/javascript" src="dynsections.js"></script>
@@ -51,7 +51,7 @@ var searchBox = new SearchBox("searchBox", "search",false,'Search');
     <ul class="tablist">
       <li><a href="index.html"><span>Main&#160;Page</span></a></li>
       <li><a href="modules.html"><span>Modules</span></a></li>
-      <li class="current"><a href="annotated.html"><span>Classes</span></a></li>
+      <li><a href="annotated.html"><span>Classes</span></a></li>
       <li>
         <div id="MSearchBox" class="MSearchBoxInactive">
         <span class="left">
@@ -70,14 +70,6 @@ var searchBox = new SearchBox("searchBox", "search",false,'Search');
       </li>
     </ul>
   </div>
-  <div id="navrow2" class="tabs2">
-    <ul class="tablist">
-      <li><a href="annotated.html"><span>Class&#160;List</span></a></li>
-      <li><a href="classes.html"><span>Class&#160;Index</span></a></li>
-      <li><a href="hierarchy.html"><span>Class&#160;Hierarchy</span></a></li>
-      <li><a href="functions.html"><span>Class&#160;Members</span></a></li>
-    </ul>
-  </div>
 <!-- window showing the filter options -->
 <div id="MSearchSelectWindow"
      onmouseover="return searchBox.OnSearchSelectShow()"
@@ -94,38 +86,48 @@ var searchBox = new SearchBox("searchBox", "search",false,'Search');
 
 <div id="nav-path" class="navpath">
   <ul>
-<li class="navelem"><a class="el" href="namespacecub.html">cub</a></li><li class="navelem"><a class="el" href="structcub_1_1_if.html">If</a></li>  </ul>
+<li class="navelem"><a class="el" href="dir_d583f216f1aafe19404e836b0c097ad2.html">cub</a></li><li class="navelem"><a class="el" href="dir_cb3a671affffe7eeb3fdf5ae58e42cc8.html">warp</a></li>  </ul>
 </div>
 </div><!-- top -->
 <div class="header">
   <div class="summary">
-<a href="#pub-types">Public Types</a> &#124;
-<a href="structcub_1_1_if-members.html">List of all members</a>  </div>
+<a href="#nested-classes">Classes</a> &#124;
+<a href="#namespaces">Namespaces</a>  </div>
   <div class="headertitle">
-<div class="title">cub::If&lt; IF, ThenType, ElseType &gt; Struct Template Reference</div>  </div>
+<div class="title">warp_reduce.cuh File Reference</div>  </div>
 </div><!--header-->
 <div class="contents">
-<a name="details" id="details"></a><h2 class="groupheader">Detailed description</h2>
-<div class="textblock"><h3>template&lt;bool IF, typename ThenType, typename ElseType&gt;<br/>
-struct cub::If&lt; IF, ThenType, ElseType &gt;</h3>
-
-<p>Type selection (<code>IF ? ThenType : ElseType</code>) </p>
+<div class="textblock"><code>#include &quot;<a class="el" href="thread__load_8cuh.html">../thread/thread_load.cuh</a>&quot;</code><br/>
+<code>#include &quot;<a class="el" href="thread__store_8cuh.html">../thread/thread_store.cuh</a>&quot;</code><br/>
+<code>#include &quot;../device_props.cuh&quot;</code><br/>
+<code>#include &quot;<a class="el" href="type__utils_8cuh.html">../type_utils.cuh</a>&quot;</code><br/>
+<code>#include &quot;<a class="el" href="operators_8cuh.html">../operators.cuh</a>&quot;</code><br/>
+<code>#include &quot;../ns_wrapper.cuh&quot;</code><br/>
 </div><table class="memberdecls">
-<tr class="heading"><td colspan="2"><h2 class="groupheader"><a name="pub-types"></a>
-Public Types</h2></td></tr>
-<tr class="memitem:af689e9527f56372e66413b65581ded8e"><td class="memItemLeft" align="right" valign="top"><a class="anchor" id="af689e9527f56372e66413b65581ded8e"></a>
-typedef ThenType&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="structcub_1_1_if.html#af689e9527f56372e66413b65581ded8e">Type</a></td></tr>
-<tr class="memdesc:af689e9527f56372e66413b65581ded8e"><td class="mdescLeft">&#160;</td><td class="mdescRight">Conditional type result. <br/></td></tr>
-<tr class="separator:af689e9527f56372e66413b65581ded8e"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="heading"><td colspan="2"><h2 class="groupheader"><a name="nested-classes"></a>
+Classes</h2></td></tr>
+<tr class="memitem:"><td class="memItemLeft" align="right" valign="top">class &#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classcub_1_1_warp_reduce.html">cub::WarpReduce&lt; T, WARPS, LOGICAL_WARP_THREADS &gt;</a></td></tr>
+<tr class="memdesc:"><td class="mdescLeft">&#160;</td><td class="mdescRight"><a class="el" href="classcub_1_1_warp_reduce.html" title="WarpReduce provides variants of parallel reduction across CUDA warps. .">WarpReduce</a> provides variants of parallel reduction across CUDA warps. </p>
+<div class="image">
+<img src="warp_reduce_logo.png" alt="warp_reduce_logo.png"/>
+<div class="caption">
+.</div></div>
+  <a href="classcub_1_1_warp_reduce.html#details">More...</a><br/></td></tr>
+<tr class="separator:"><td class="memSeparator" colspan="2">&#160;</td></tr>
+</table><table class="memberdecls">
+<tr class="heading"><td colspan="2"><h2 class="groupheader"><a name="namespaces"></a>
+Namespaces</h2></td></tr>
+<tr class="memitem:namespacecub"><td class="memItemLeft" align="right" valign="top">namespace &#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="namespacecub.html">cub</a></td></tr>
+<tr class="memdesc:namespacecub"><td class="mdescLeft">&#160;</td><td class="mdescRight">CUB namespace. <br/></td></tr>
+<tr class="separator:"><td class="memSeparator" colspan="2">&#160;</td></tr>
 </table>
-<hr/>The documentation for this struct was generated from the following file:<ul>
-<li><a class="el" href="type__utils_8cuh.html">type_utils.cuh</a></li>
-</ul>
-</div><!-- contents -->
+<a name="details" id="details"></a><h2 class="groupheader">Detailed Description</h2>
+<div class="textblock"><p><a class="el" href="classcub_1_1_warp_reduce.html" title="WarpReduce provides variants of parallel reduction across CUDA warps. .">cub::WarpReduce</a> provides variants of parallel reduction across CUDA warps. </p>
+</div></div><!-- contents -->
 <!-- HTML footer for doxygen 1.8.3.1-->
 <!-- start footer part -->
 <hr class="footer"/><address class="footer"><small>
-Generated on Wed Mar 13 2013 17:39:05 for CUB by &#160;<a href="http://www.doxygen.org/index.html">
+Generated on Wed Mar 13 2013 17:39:04 for CUB by &#160;<a href="http://www.doxygen.org/index.html">
 <img class="footer" src="doxygen.png" alt="doxygen"/>
 </a> 1.8.3.1
 <br>

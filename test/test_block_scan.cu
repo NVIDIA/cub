@@ -484,6 +484,7 @@ void Test(
     if (h_reference) delete[] h_reference;
     if (d_in) CubDebugExit(cudaFree(d_in));
     if (d_out) CubDebugExit(cudaFree(d_out));
+    if (d_elapsed) CubDebugExit(cudaFree(d_elapsed));
 }
 
 

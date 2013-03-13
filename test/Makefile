@@ -47,7 +47,7 @@ GEN_SM13 = -gencode=arch=compute_13,code=\"sm_13,compute_13\"
 GEN_SM11 = -gencode=arch=compute_11,code=\"sm_11,compute_11\" 
 GEN_SM10 = -gencode=arch=compute_10,code=\"sm_10,compute_10\" 
 #SM_TARGETS = $(GEN_SM20) $(GEN_SM13) $(GEN_SM10)
-SM_TARGETS = $(GEN_SM20)
+SM_TARGETS = $(GEN_SM20) 
 
 #-------------------------------------------------------------------------------
 # Libs
@@ -115,7 +115,7 @@ rwildcard=$(foreach d,$(wildcard $1*),$(call rwildcard,$d/,$2) $(filter $(subst 
 
 DEPS =	 ./Makefile \
 		./test_util.h \
-		$(call rwildcard,../../cub/,*.cuh)
+		$(call rwildcard,../cub/,*.cuh)
 
 
 #-------------------------------------------------------------------------------
@@ -169,6 +169,17 @@ test_warp_scan: bin/test_warp_scan_$(SUFFIX)
 bin/test_warp_scan_$(SUFFIX) : test_warp_scan.cu $(DEPS)
 	mkdir -p bin
 	$(NVCC) $(DEFINES) $(SM_TARGETS) -o bin/test_warp_scan_$(SUFFIX) test_warp_scan.cu $(NVCCFLAGS) $(ARCH) $(INC) -O3  
+
+
+#-------------------------------------------------------------------------------
+# make test_warp_reduce 
+#-------------------------------------------------------------------------------
+
+test_warp_reduce: bin/test_warp_reduce_$(SUFFIX)
+
+bin/test_warp_reduce_$(SUFFIX) : test_warp_reduce.cu $(DEPS)
+	mkdir -p bin
+	$(NVCC) $(DEFINES) $(SM_TARGETS) -o bin/test_warp_reduce_$(SUFFIX) test_warp_reduce.cu $(NVCCFLAGS) $(ARCH) $(INC) -O3  
 
 
 #-------------------------------------------------------------------------------
