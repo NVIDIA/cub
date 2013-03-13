@@ -58,7 +58,7 @@ SM_TARGETS = $(GEN_SM20)
 # Includes
 #-------------------------------------------------------------------------------
 
-INC = -I. -I../cub 
+INC = -I. -I../cub -I../test
 
 #-------------------------------------------------------------------------------
 # Defines
@@ -81,12 +81,12 @@ endif
 
 NVCCFLAGS = -Xptxas -v -Xcudafe -\#
 
-ifeq ($(abi), 1)
-	ABI_SUFFIX = abi
-else 
+ifeq ($(abi), 0)
 	# Disable the ABI by default
 	NVCCFLAGS += -Xptxas -abi=no
 	ABI_SUFFIX = noabi
+else 
+	ABI_SUFFIX = abi
 endif
 
 ifeq ($(open64), 1)
@@ -119,7 +119,7 @@ SUFFIX = $(PTX_SUFFIX)_$(NVCC_VERSION)_$(ABI_SUFFIX)_$(ARCH_SUFFIX)
 rwildcard=$(foreach d,$(wildcard $1*),$(call rwildcard,$d/,$2) $(filter $(subst *,%,$2),$d))
 
 DEPS =	 ./Makefile \
-		./test_util.h \
+		../test/test_util.h \
 		$(call rwildcard,../../cub/,*.cuh)
 
 
@@ -132,111 +132,15 @@ clean :
 	rm -f *.i* *.cubin *.cu.c *.cudafe* *.fatbin.c *.ptx *.hash *.cu.cpp *.o
 
 
+
+
 #-------------------------------------------------------------------------------
-# make test_allocator 
+# make example_tune_policy
 #-------------------------------------------------------------------------------
 
-test_allocator: bin/test_allocator_$(SUFFIX)
+example_tune_policy: bin/example_tune_policy_$(SUFFIX)
 
-bin/test_allocator_$(SUFFIX) : test_allocator.cu $(DEPS)
+bin/example_tune_policy_$(SUFFIX) : example_tune_policy.cu $(DEPS)
 	mkdir -p bin
-	$(NVCC) $(DEFINES) $(SM_TARGETS) -o bin/test_allocator_$(SUFFIX) test_allocator.cu $(NVCCFLAGS) $(ARCH) $(INC) -O3
-	
-	
-#-------------------------------------------------------------------------------
-# make test_grid_barrier 
-#-------------------------------------------------------------------------------
-
-test_grid_barrier: bin/test_grid_barrier_$(SUFFIX)
-
-bin/test_grid_barrier_$(SUFFIX) : test_grid_barrier.cu $(DEPS)
-	mkdir -p bin
-	$(NVCC) $(DEFINES) $(SM_TARGETS) -o bin/test_grid_barrier_$(SUFFIX) test_grid_barrier.cu $(NVCCFLAGS) $(ARCH) $(INC) -O3  
-	
-
-#-------------------------------------------------------------------------------
-# make test_block_reduce 
-#-------------------------------------------------------------------------------
-
-test_block_reduce: bin/test_block_reduce_$(SUFFIX)
-
-bin/test_block_reduce_$(SUFFIX) : test_block_reduce.cu $(DEPS)
-	mkdir -p bin
-	$(NVCC) $(DEFINES) $(SM_TARGETS) -o bin/test_block_reduce_$(SUFFIX) test_block_reduce.cu $(NVCCFLAGS) $(ARCH) $(INC) -O3  
-
-
-#-------------------------------------------------------------------------------
-# make test_warp_scan 
-#-------------------------------------------------------------------------------
-
-test_warp_scan: bin/test_warp_scan_$(SUFFIX)
-
-bin/test_warp_scan_$(SUFFIX) : test_warp_scan.cu $(DEPS)
-	mkdir -p bin
-	$(NVCC) $(DEFINES) $(SM_TARGETS) -o bin/test_warp_scan_$(SUFFIX) test_warp_scan.cu $(NVCCFLAGS) $(ARCH) $(INC) -O3  
-
-
-#-------------------------------------------------------------------------------
-# make test_block_scan 
-#-------------------------------------------------------------------------------
-
-test_block_scan: bin/test_block_scan_$(SUFFIX)
-
-bin/test_block_scan_$(SUFFIX) : test_block_scan.cu $(DEPS)
-	mkdir -p bin
-	$(NVCC) $(DEFINES) $(SM_TARGETS) -o bin/test_block_scan_$(SUFFIX) test_block_scan.cu $(NVCCFLAGS) $(ARCH) $(INC) -O3  
-
-
-#-------------------------------------------------------------------------------
-# make test_block_load_store 
-#-------------------------------------------------------------------------------
-
-test_block_load_store: bin/test_block_load_store_$(SUFFIX)
-
-bin/test_block_load_store_$(SUFFIX) : test_block_load_store.cu $(DEPS)
-	mkdir -p bin
-	$(NVCC) $(DEFINES) $(SM_TARGETS) -o bin/test_block_load_store_$(SUFFIX) test_block_load_store.cu $(NVCCFLAGS) $(ARCH) $(INC) -O3
-	
-	
-#-------------------------------------------------------------------------------
-# make test_block_radix_sort 
-#-------------------------------------------------------------------------------
-
-test_block_radix_sort: bin/test_block_radix_sort_$(SUFFIX)
-
-bin/test_block_radix_sort_$(SUFFIX) : test_block_radix_sort.cu $(DEPS)
-	mkdir -p bin
-	$(NVCC) $(DEFINES) $(SM_TARGETS) -o bin/test_block_radix_sort_$(SUFFIX) test_block_radix_sort.cu $(NVCCFLAGS) $(ARCH) $(INC) -O3
-
-
-
-#-------------------------------------------------------------------------------
-# make test_coo_spmv_double
-#-------------------------------------------------------------------------------
-
-test_coo_spmv_double: bin/test_coo_spmv_double_$(SUFFIX)
-
-bin/test_coo_spmv_double_$(SUFFIX) : test_coo_spmv_double.cu $(DEPS)
-	mkdir -p bin
-	$(NVCC) $(DEFINES) $(SM_TARGETS) -o bin/test_coo_spmv_double_$(SUFFIX) test_coo_spmv_double.cu $(NVCCFLAGS) $(ARCH) $(INC) -O3
-
-#-------------------------------------------------------------------------------
-# make test_coo_spmv
-#-------------------------------------------------------------------------------
-
-test_coo_spmv: bin/test_coo_spmv_$(SUFFIX)
-
-bin/test_coo_spmv_$(SUFFIX) : test_coo_spmv.cu $(DEPS)
-	mkdir -p bin
-	$(NVCC) $(DEFINES) $(SM_TARGETS) -o bin/test_coo_spmv_$(SUFFIX) test_coo_spmv.cu $(NVCCFLAGS) $(ARCH) $(INC) -O3
-
-#-------------------------------------------------------------------------------
-# make test_block_serialize
-#-------------------------------------------------------------------------------
-
-test_block_serialize: bin/test_block_serialize_$(SUFFIX)
-
-bin/test_block_serialize_$(SUFFIX) : test_block_serialize.cu $(DEPS)
-	mkdir -p bin
-	$(NVCC) $(DEFINES) $(SM_TARGETS) -o bin/test_block_serialize_$(SUFFIX) test_block_serialize.cu $(NVCCFLAGS) $(ARCH) $(INC) -O3
+	$(NVCC) $(DEFINES) $(SM_TARGETS) -o bin/example_tune_policy_$(SUFFIX) example_tune_policy.cu $(NVCCFLAGS) $(ARCH) $(INC) -O3
 

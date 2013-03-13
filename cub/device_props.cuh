@@ -29,7 +29,7 @@
 /******************************************************************************
  * Static CUDA device properties by SM architectural version.
  *
- * "PTX_ARCH" reflects the PTX arch-id targeted by the active compiler pass
+ * "CUB_PTX_ARCH" reflects the PTX arch-id targeted by the active compiler pass
  * (or zero during the host pass).
  *
  * "DeviceProps" reflects the PTX architecture targeted by the active compiler
@@ -54,21 +54,23 @@ namespace cub {
  */
 #ifndef __CUDA_ARCH__
     // Host path
-    #define PTX_ARCH 0
+    #define CUB_PTX_ARCH 0
 #else
     // Device path
-    #define PTX_ARCH __CUDA_ARCH__
+    #define CUB_PTX_ARCH __CUDA_ARCH__
 #endif
+
+#define CNP_ENABLED ((CUB_PTX_ARCH == 0) || (CUB_PTX_ARCH >= 350))
 
 
 /**
  * Type for representing GPU device ordinals
  */
-typedef int GpuOrdinal;
+typedef int DeviceOrdinal;
 
 enum
 {
-    INVALID_GPU_ORDINAL = -1,
+    INVALID_DEVICE_ORDINAL = -1,
 };
 
 
@@ -90,24 +92,24 @@ struct StaticDeviceProps<300>
         LOG_WARP_THREADS    = 5,                        // 32 threads per warp
         WARP_THREADS        = 1 << LOG_WARP_THREADS,
 
-        LOG_SMEM_BANKS      = 5,                         // 32 banks
+        LOG_SMEM_BANKS      = 5,                        // 32 banks
         SMEM_BANKS          = 1 << LOG_SMEM_BANKS,
 
         SMEM_BANK_BYTES     = 4,                        // 4 byte bank words
         SMEM_BYTES          = 48 * 1024,                // 48KB shared memory
-        SMEM_ALLOC_UNIT     = 256,                        // 256B smem allocation segment size
+        SMEM_ALLOC_UNIT     = 256,                      // 256B smem allocation segment size
         REGS_BY_BLOCK       = false,                    // Allocates registers by warp
-        REG_ALLOC_UNIT      = 256,                        // 256 registers allocated at a time per warp
+        REG_ALLOC_UNIT      = 256,                      // 256 registers allocated at a time per warp
         WARP_ALLOC_UNIT     = 4,                        // Registers are allocated at a granularity of every 4 warps per threadblock
-        MAX_SM_THREADS      = 2048,                        // 2K max threads per SM
-        MAX_SM_threadblockS         = 16,                        // 16 max threadblocks per SM
-        MAX_BLOCK_THREADS   = 1024,                        // 1024 max threads per threadblock
+        MAX_SM_THREADS      = 2048,                     // 2K max threads per SM
+        MAX_SM_THREADBLOCKS = 16,                       // 16 max threadblocks per SM
+        MAX_BLOCK_THREADS   = 1024,                     // 1024 max threads per threadblock
         MAX_SM_REGISTERS    = 64 * 1024,                // 64K max registers per SM
     };
 
     // Callback utility
     template <typename T>
-    static void Callback(T &target, int sm_version)
+    static __host__ __device__ __forceinline__ void Callback(T &target, int sm_version)
     {
         target.template Callback<StaticDeviceProps>();
     }
@@ -124,24 +126,24 @@ struct StaticDeviceProps<200>
         LOG_WARP_THREADS    = 5,                        // 32 threads per warp
         WARP_THREADS        = 1 << LOG_WARP_THREADS,
 
-        LOG_SMEM_BANKS      = 5,                         // 32 banks
+        LOG_SMEM_BANKS      = 5,                        // 32 banks
         SMEM_BANKS          = 1 << LOG_SMEM_BANKS,
 
         SMEM_BANK_BYTES     = 4,                        // 4 byte bank words
         SMEM_BYTES          = 48 * 1024,                // 48KB shared memory
-        SMEM_ALLOC_UNIT     = 128,                        // 128B smem allocation segment size
+        SMEM_ALLOC_UNIT     = 128,                      // 128B smem allocation segment size
         REGS_BY_BLOCK       = false,                    // Allocates registers by warp
-        REG_ALLOC_UNIT      = 64,                        // 64 registers allocated at a time per warp
+        REG_ALLOC_UNIT      = 64,                       // 64 registers allocated at a time per warp
         WARP_ALLOC_UNIT     = 2,                        // Registers are allocated at a granularity of every 2 warps per threadblock
-        MAX_SM_THREADS      = 1536,                        // 1536 max threads per SM
-        MAX_SM_threadblockS         = 8,                        // 8 max threadblocks per SM
-        MAX_BLOCK_THREADS   = 1024,                        // 1024 max threads per threadblock
+        MAX_SM_THREADS      = 1536,                     // 1536 max threads per SM
+        MAX_SM_THREADBLOCKS = 8,                        // 8 max threadblocks per SM
+        MAX_BLOCK_THREADS   = 1024,                     // 1024 max threads per threadblock
         MAX_SM_REGISTERS    = 32 * 1024,                // 32K max registers per SM
     };
 
     // Callback utility
     template <typename T>
-    static void Callback(T &target, int sm_version)
+    static __host__ __device__ __forceinline__ void Callback(T &target, int sm_version)
     {
         if (sm_version > 200) {
             StaticDeviceProps<300>::Callback(target, sm_version);
@@ -162,24 +164,24 @@ struct StaticDeviceProps<120>
         LOG_WARP_THREADS    = 5,                        // 32 threads per warp
         WARP_THREADS        = 1 << LOG_WARP_THREADS,
 
-        LOG_SMEM_BANKS      = 4,                         // 16 banks
+        LOG_SMEM_BANKS      = 4,                        // 16 banks
         SMEM_BANKS          = 1 << LOG_SMEM_BANKS,
 
         SMEM_BANK_BYTES     = 4,                        // 4 byte bank words
         SMEM_BYTES          = 16 * 1024,                // 16KB shared memory
-        SMEM_ALLOC_UNIT     = 512,                        // 512B smem allocation segment size
-        REGS_BY_BLOCK       = true,                        // Allocates registers by threadblock
-        REG_ALLOC_UNIT      = 512,                        // 512 registers allocated at time per threadblock
+        SMEM_ALLOC_UNIT     = 512,                      // 512B smem allocation segment size
+        REGS_BY_BLOCK       = true,                     // Allocates registers by threadblock
+        REG_ALLOC_UNIT      = 512,                      // 512 registers allocated at time per threadblock
         WARP_ALLOC_UNIT     = 2,                        // Registers are allocated at a granularity of every 2 warps per threadblock
-        MAX_SM_THREADS      = 1024,                        // 1024 max threads per SM
-        MAX_SM_threadblockS         = 8,                        // 8 max threadblocks per SM
-        MAX_BLOCK_THREADS   = 512,                        // 512 max threads per threadblock
+        MAX_SM_THREADS      = 1024,                     // 1024 max threads per SM
+        MAX_SM_THREADBLOCKS = 8,                        // 8 max threadblocks per SM
+        MAX_BLOCK_THREADS   = 512,                      // 512 max threads per threadblock
         MAX_SM_REGISTERS    = 16 * 1024,                // 16K max registers per SM
     };
 
     // Callback utility
     template <typename T>
-    static void Callback(T &target, int sm_version)
+    static __host__ __device__ __forceinline__ void Callback(T &target, int sm_version)
     {
         if (sm_version > 120) {
             StaticDeviceProps<200>::Callback(target, sm_version);
@@ -200,24 +202,24 @@ struct StaticDeviceProps<100>
         LOG_WARP_THREADS    = 5,                        // 32 threads per warp
         WARP_THREADS        = 1 << LOG_WARP_THREADS,
 
-        LOG_SMEM_BANKS      = 4,                         // 16 banks
+        LOG_SMEM_BANKS      = 4,                        // 16 banks
         SMEM_BANKS          = 1 << LOG_SMEM_BANKS,
 
         SMEM_BANK_BYTES     = 4,                        // 4 byte bank words
         SMEM_BYTES          = 16 * 1024,                // 16KB shared memory
-        SMEM_ALLOC_UNIT     = 512,                        // 512B smem allocation segment size
-        REGS_BY_BLOCK       = true,                        // Allocates registers by threadblock
-        REG_ALLOC_UNIT      = 256,                        // 256 registers allocated at time per threadblock
+        SMEM_ALLOC_UNIT     = 512,                      // 512B smem allocation segment size
+        REGS_BY_BLOCK       = true,                     // Allocates registers by threadblock
+        REG_ALLOC_UNIT      = 256,                      // 256 registers allocated at time per threadblock
         WARP_ALLOC_UNIT     = 2,                        // Registers are allocated at a granularity of every 2 warps per threadblock
-        MAX_SM_THREADS      = 768,                        // 768 max threads per SM
-        MAX_SM_threadblockS         = 8,                        // 8 max threadblocks per SM
-        MAX_BLOCK_THREADS   = 512,                        // 512 max threads per threadblock
-        MAX_SM_REGISTERS    = 8 * 1024,                    // 8K max registers per SM
+        MAX_SM_THREADS      = 768,                      // 768 max threads per SM
+        MAX_SM_THREADBLOCKS = 8,                        // 8 max threadblocks per SM
+        MAX_BLOCK_THREADS   = 512,                      // 512 max threads per threadblock
+        MAX_SM_REGISTERS    = 8 * 1024,                 // 8K max registers per SM
     };
 
     // Callback utility
     template <typename T>
-    static void Callback(T &target, int sm_version)
+    static __host__ __device__ __forceinline__ void Callback(T &target, int sm_version)
     {
         if (sm_version > 100) {
             StaticDeviceProps<120>::Callback(target, sm_version);
@@ -227,6 +229,12 @@ struct StaticDeviceProps<100>
     }
 };
 
+
+/**
+ * Device properties for SM35
+ */
+template <>
+struct StaticDeviceProps<350> : StaticDeviceProps<300> {};        // Derives from SM30
 
 /**
  * Device properties for SM21
@@ -250,14 +258,14 @@ struct StaticDeviceProps<110> : StaticDeviceProps<100> {};        // Derives fro
  * Unknown device properties
  */
 template <int SM_ARCH>
-struct StaticDeviceProps : StaticDeviceProps<100> {};            // Derives from SM10
+struct StaticDeviceProps : StaticDeviceProps<100> {};             // Derives from SM10
 
 
 
 /**
  * Device properties for the arch-id targeted by the active compiler pass.
  */
-struct DeviceProps : StaticDeviceProps<PTX_ARCH> {};
+struct DeviceProps : StaticDeviceProps<CUB_PTX_ARCH> {};
 
 
 
