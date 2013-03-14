@@ -48,6 +48,7 @@
 #include "block/block_discontinuity.cuh"
 
 // Warp
+#include "warp/warp_reduce.cuh"
 #include "warp/warp_scan.cuh"
 
 // Thread
@@ -57,18 +58,17 @@
 #include "thread/thread_store.cuh"
 
 // Host
-#include "host/device_props.cuh"
-#include "host/kernel_props.cuh"
-#include "host/multi_buffer.cuh"
 #include "host/spinlock.cuh"
 
 // General
+#include "allocator.cuh"
+#include "arch_props.cuh"
 #include "debug.cuh"
+#include "device_props.cuh"
 #include "macro_utils.cuh"
-#include "arch_device_props.cuh"
+#include "multi_buffer.cuh"
 #include "operators.cuh"
 #include "ptx_intrinsics.cuh"
 #include "type_utils.cuh"
 #include "vector_type.cuh"
-#include "allocator.cuh"
 

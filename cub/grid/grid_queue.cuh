@@ -35,7 +35,7 @@
 #include "../ns_wrapper.cuh"
 #include "../macro_utils.cuh"
 #include "../debug.cuh"
-#include "../arch_device_props.cuh"
+#include "../arch_props.cuh"
 #include "../allocator.cuh"
 
 CUB_NS_PREFIX

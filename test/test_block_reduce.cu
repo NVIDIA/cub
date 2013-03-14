@@ -427,7 +427,7 @@ void TestPartialTile(
  *  Run battery of partial-tile tests for different numbers of effective threads
  */
 template <
-    int         BLOCK_THREADS,
+    int          BLOCK_THREADS,
     typename     T,
     typename     ReductionOp>
 void TestPartialTile(
@@ -446,7 +446,7 @@ void TestPartialTile(
 
 
 /**
- * Run battery of full-tile tests for different block sizes
+ * Run battery of partial-tile tests for different block sizes
  */
 template <
     typename     T,

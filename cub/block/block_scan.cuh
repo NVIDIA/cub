@@ -33,7 +33,7 @@
 
 #pragma once
 
-#include "../arch_device_props.cuh"
+#include "../arch_props.cuh"
 #include "../type_utils.cuh"
 #include "../operators.cuh"
 #include "../warp/warp_scan.cuh"
@@ -231,7 +231,7 @@ private:
     enum
     {
         SAFE_POLICY =
-            ((POLICY == BLOCK_SCAN_WARPSCANS) && (BLOCK_THREADS % PtxDeviceProps::WARP_THREADS != 0)) ?    // BLOCK_SCAN_WARPSCANS policy cannot be used with threadblock sizes not a multiple of the architectural warp size
+            ((POLICY == BLOCK_SCAN_WARPSCANS) && (BLOCK_THREADS % PtxArchProps::WARP_THREADS != 0)) ?    // BLOCK_SCAN_WARPSCANS policy cannot be used with threadblock sizes not a multiple of the architectural warp size
                 BLOCK_SCAN_RAKING :
                 POLICY
     };
@@ -252,7 +252,7 @@ private:
         enum
         {
             /// Number of active warps
-            WARPS = (BLOCK_THREADS + PtxDeviceProps::WARP_THREADS - 1) / PtxDeviceProps::WARP_THREADS,
+            WARPS = (BLOCK_THREADS + PtxArchProps::WARP_THREADS - 1) / PtxArchProps::WARP_THREADS,
 
             /// Number of raking threads
             RAKING_THREADS = BlockRakingGrid::RAKING_THREADS,
@@ -281,7 +281,7 @@ private:
             T               input,              ///< [in] Calling thread's input items
             T               &output,            ///< [out] Calling thread's output items (may be aliased to \p input)
             const T         &identity,          ///< [in] Identity value
-            ScanOp          scan_op,            ///< [in] Binary scan operator having member <tt>T operator()(const T &a, const T &b)</tt>
+            ScanOp          scan_op,            ///< [in] Binary scan operator
             T               &block_aggregate)   ///< [out] <b>[<em>thread</em><sub>0</sub> only]</b> threadblock-wide aggregate reduction of input items
         {
             if (WARP_SYNCHRONOUS)
@@ -350,7 +350,7 @@ private:
             T               input,                          ///< [in] Calling thread's input item
             T               &output,                        ///< [out] Calling thread's output item (may be aliased to \p input)
             T               identity,                       ///< [in] Identity value
-            ScanOp          scan_op,                        ///< [in] Binary scan operator having member <tt>T operator()(const T &a, const T &b)</tt>
+            ScanOp          scan_op,                        ///< [in] Binary scan operator
             T               &block_aggregate,               ///< [out] <b>[<em>thread</em><sub>0</sub> only]</b> Threadblock-wide aggregate reduction of input items (exclusive of the \p block_prefix_op value)
             BlockPrefixOp   &block_prefix_op)               ///< [in-out] <b>[<em>thread</em><sub>0</sub> only]</b> Call-back functor for specifying a threadblock-wide prefix to be applied to all inputs.
         {
@@ -418,7 +418,7 @@ private:
             SmemStorage     &smem_storage,                  ///< [in] Shared reference to opaque SmemStorage layout
             T               input,                          ///< [in] Calling thread's input item
             T               &output,                        ///< [out] Calling thread's output item (may be aliased to \p input)
-            ScanOp          scan_op,                        ///< [in] Binary scan operator having member <tt>T operator()(const T &a, const T &b)</tt>
+            ScanOp          scan_op,                        ///< [in] Binary scan operator
             T               &block_aggregate)               ///< [out] <b>[<em>thread</em><sub>0</sub> only]</b> threadblock-wide aggregate reduction of input items
         {
             if (WARP_SYNCHRONOUS)
@@ -483,7 +483,7 @@ private:
             SmemStorage     &smem_storage,                  ///< [in] Shared reference to opaque SmemStorage layout
             T               input,                          ///< [in] Calling thread's input item
             T               &output,                        ///< [out] Calling thread's output item (may be aliased to \p input)
-            ScanOp          scan_op,                        ///< [in] Binary scan operator having member <tt>T operator()(const T &a, const T &b)</tt>
+            ScanOp          scan_op,                        ///< [in] Binary scan operator
             T               &block_aggregate,               ///< [out] <b>[<em>thread</em><sub>0</sub> only]</b> Threadblock-wide aggregate reduction of input items (exclusive of the \p block_prefix_op value)
             BlockPrefixOp   &block_prefix_op)               ///< [in-out] <b>[<em>thread</em><sub>0</sub> only]</b> Call-back functor for specifying a threadblock-wide prefix to be applied to all inputs.
         {
@@ -677,7 +677,7 @@ private:
             SmemStorage     &smem_storage,                  ///< [in] Shared reference to opaque SmemStorage layout
             T               input,                          ///< [in] Calling thread's input item
             T               &output,                        ///< [out] Calling thread's output item (may be aliased to \p input)
-            ScanOp          scan_op,                        ///< [in] Binary scan operator having member <tt>T operator()(const T &a, const T &b)</tt>
+            ScanOp          scan_op,                        ///< [in] Binary scan operator
             T               &block_aggregate)               ///< [out] <b>[<em>thread</em><sub>0</sub> only]</b> threadblock-wide aggregate reduction of input items
         {
             if (WARP_SYNCHRONOUS)
@@ -742,7 +742,7 @@ private:
             SmemStorage     &smem_storage,                  ///< [in] Shared reference to opaque SmemStorage layout
             T               input,                          ///< [in] Calling thread's input item
             T               &output,                        ///< [out] Calling thread's output item (may be aliased to \p input)
-            ScanOp          scan_op,                        ///< [in] Binary scan operator having member <tt>T operator()(const T &a, const T &b)</tt>
+            ScanOp          scan_op,                        ///< [in] Binary scan operator
             T               &block_aggregate,               ///< [out] <b>[<em>thread</em><sub>0</sub> only]</b> Threadblock-wide aggregate reduction of input items (exclusive of the \p block_prefix_op value)
             BlockPrefixOp   &block_prefix_op)               ///< [in-out] <b>[<em>thread</em><sub>0</sub> only]</b> Call-back functor for specifying a threadblock-wide prefix to be applied to all inputs.
         {
@@ -945,11 +945,11 @@ private:
         enum
         {
             /// Number of active warps
-            WARPS = (BLOCK_THREADS + PtxDeviceProps::WARP_THREADS - 1) / PtxDeviceProps::WARP_THREADS,
+            WARPS = (BLOCK_THREADS + PtxArchProps::WARP_THREADS - 1) / PtxArchProps::WARP_THREADS,
         };
 
         ///  Raking warp-scan utility type
-        typedef WarpScan<T, WARPS, PtxDeviceProps::WARP_THREADS> WarpScan;
+        typedef WarpScan<T, WARPS, PtxArchProps::WARP_THREADS> WarpScan;
 
         /// Shared memory storage layout type
         struct SmemStorage
@@ -965,12 +965,12 @@ private:
         static __device__ __forceinline__ void PrefixUpdate(
             SmemStorage     &smem_storage,      ///< [in] Shared reference to opaque SmemStorage layout
             T               &output,            ///< [out] Calling thread's output items
-            ScanOp          scan_op,            ///< [in] Binary scan operator having member <tt>T operator()(const T &a, const T &b)</tt>
+            ScanOp          scan_op,            ///< [in] Binary scan operator
             T               warp_aggregate,     ///< [in] <b>[<em>lane</em><sub>0</sub>s only]</b> Warp-wide aggregate reduction of input items
             T               &block_aggregate)   ///< [out] <b>[<em>thread</em><sub>0</sub> only]</b> threadblock-wide aggregate reduction of input items
         {
-            unsigned int warp_id = threadIdx.x / PtxDeviceProps::WARP_THREADS;
-            unsigned int lane_id = threadIdx.x & (PtxDeviceProps::WARP_THREADS - 1);
+            unsigned int warp_id = threadIdx.x / PtxArchProps::WARP_THREADS;
+            unsigned int lane_id = threadIdx.x & (PtxArchProps::WARP_THREADS - 1);
 
             // Share lane aggregates
             if (lane_id == 0)
@@ -1010,7 +1010,7 @@ private:
             T               input,              ///< [in] Calling thread's input items
             T               &output,            ///< [out] Calling thread's output items (may be aliased to \p input)
             const T         &identity,          ///< [in] Identity value
-            ScanOp          scan_op,            ///< [in] Binary scan operator having member <tt>T operator()(const T &a, const T &b)</tt>
+            ScanOp          scan_op,            ///< [in] Binary scan operator
             T               &block_aggregate)   ///< [out] <b>[<em>thread</em><sub>0</sub> only]</b> threadblock-wide aggregate reduction of input items
         {
             T warp_aggregate;       // Valid in lane-0s
@@ -1030,7 +1030,7 @@ private:
             T               input,                          ///< [in] Calling thread's input item
             T               &output,                        ///< [out] Calling thread's output item (may be aliased to \p input)
             T               identity,                       ///< [in] Identity value
-            ScanOp          scan_op,                        ///< [in] Binary scan operator having member <tt>T operator()(const T &a, const T &b)</tt>
+            ScanOp          scan_op,                        ///< [in] Binary scan operator
             T               &block_aggregate,               ///< [out] <b>[<em>thread</em><sub>0</sub> only]</b> Threadblock-wide aggregate reduction of input items (exclusive of the \p block_prefix_op value)
             BlockPrefixOp   &block_prefix_op)               ///< [in-out] <b>[<em>thread</em><sub>0</sub> only]</b> Call-back functor for specifying a threadblock-wide prefix to be applied to all inputs.
         {
@@ -1055,14 +1055,14 @@ private:
             SmemStorage     &smem_storage,                  ///< [in] Shared reference to opaque SmemStorage layout
             T               input,                          ///< [in] Calling thread's input item
             T               &output,                        ///< [out] Calling thread's output item (may be aliased to \p input)
-            ScanOp          scan_op,                        ///< [in] Binary scan operator having member <tt>T operator()(const T &a, const T &b)</tt>
+            ScanOp          scan_op,                        ///< [in] Binary scan operator
             T               &block_aggregate)               ///< [out] <b>[<em>thread</em><sub>0</sub> only]</b> threadblock-wide aggregate reduction of input items
         {
             T warp_aggregate;       // Valid in lane-0s
             WarpScan::ExclusiveScan(smem_storage.warp_scan, input, output, scan_op, warp_aggregate);
 
-            unsigned int warp_id = threadIdx.x / PtxDeviceProps::WARP_THREADS;
-            unsigned int lane_id = threadIdx.x & (PtxDeviceProps::WARP_THREADS - 1);
+            unsigned int warp_id = threadIdx.x / PtxArchProps::WARP_THREADS;
+            unsigned int lane_id = threadIdx.x & (PtxArchProps::WARP_THREADS - 1);
 
             // Share lane aggregates
             if (lane_id == 0)
@@ -1115,7 +1115,7 @@ private:
             SmemStorage     &smem_storage,                  ///< [in] Shared reference to opaque SmemStorage layout
             T               input,                          ///< [in] Calling thread's input item
             T               &output,                        ///< [out] Calling thread's output item (may be aliased to \p input)
-            ScanOp          scan_op,                        ///< [in] Binary scan operator having member <tt>T operator()(const T &a, const T &b)</tt>
+            ScanOp          scan_op,                        ///< [in] Binary scan operator
             T               &block_aggregate,               ///< [out] <b>[<em>thread</em><sub>0</sub> only]</b> Threadblock-wide aggregate reduction of input items (exclusive of the \p block_prefix_op value)
             BlockPrefixOp   &block_prefix_op)               ///< [in-out] <b>[<em>thread</em><sub>0</sub> only]</b> Call-back functor for specifying a threadblock-wide prefix to be applied to all inputs.
         {
@@ -1182,7 +1182,7 @@ private:
             SmemStorage     &smem_storage,                  ///< [in] Shared reference to opaque SmemStorage layout
             T               input,                          ///< [in] Calling thread's input item
             T               &output,                        ///< [out] Calling thread's output item (may be aliased to \p input)
-            ScanOp          scan_op,                        ///< [in] Binary scan operator having member <tt>T operator()(const T &a, const T &b)</tt>
+            ScanOp          scan_op,                        ///< [in] Binary scan operator
             T               &block_aggregate)               ///< [out] <b>[<em>thread</em><sub>0</sub> only]</b> threadblock-wide aggregate reduction of input items
         {
             T warp_aggregate;       // Valid in lane-0s
@@ -1202,7 +1202,7 @@ private:
             SmemStorage     &smem_storage,                  ///< [in] Shared reference to opaque SmemStorage layout
             T               input,                          ///< [in] Calling thread's input item
             T               &output,                        ///< [out] Calling thread's output item (may be aliased to \p input)
-            ScanOp          scan_op,                        ///< [in] Binary scan operator having member <tt>T operator()(const T &a, const T &b)</tt>
+            ScanOp          scan_op,                        ///< [in] Binary scan operator
             T               &block_aggregate,               ///< [out] <b>[<em>thread</em><sub>0</sub> only]</b> Threadblock-wide aggregate reduction of input items (exclusive of the \p block_prefix_op value)
             BlockPrefixOp   &block_prefix_op)               ///< [in-out] <b>[<em>thread</em><sub>0</sub> only]</b> Call-back functor for specifying a threadblock-wide prefix to be applied to all inputs.
         {
@@ -1297,7 +1297,7 @@ public:
         T               input,              ///< [in] Calling thread's input items
         T               &output,            ///< [out] Calling thread's output items (may be aliased to \p input)
         const T         &identity,          ///< [in] Identity value
-        ScanOp          scan_op,            ///< [in] Binary scan operator having member <tt>T operator()(const T &a, const T &b)</tt>
+        ScanOp          scan_op,            ///< [in] Binary scan operator
         T               &block_aggregate)   ///< [out] <b>[<em>thread</em><sub>0</sub> only]</b> threadblock-wide aggregate reduction of input items
     {
         BlockScanInternal<SAFE_POLICY>::ExclusiveScan(smem_storage, input, output, identity, scan_op, block_aggregate);
@@ -1322,7 +1322,7 @@ public:
         T                 (&input)[ITEMS_PER_THREAD],   ///< [in] Calling thread's input items
         T                 (&output)[ITEMS_PER_THREAD],  ///< [out] Calling thread's output items (may be aliased to \p input)
         const T           &identity,                    ///< [in] Identity value
-        ScanOp            scan_op,                      ///< [in] Binary scan operator having member <tt>T operator()(const T &a, const T &b)</tt>
+        ScanOp            scan_op,                      ///< [in] Binary scan operator
         T                 &block_aggregate)             ///< [out] <b>[<em>thread</em><sub>0</sub> only]</b> threadblock-wide aggregate reduction of input items
     {
         // Reduce consecutive thread items in registers
@@ -1360,7 +1360,7 @@ public:
         T               input,                          ///< [in] Calling thread's input item
         T               &output,                        ///< [out] Calling thread's output item (may be aliased to \p input)
         T               identity,                       ///< [in] Identity value
-        ScanOp          scan_op,                        ///< [in] Binary scan operator having member <tt>T operator()(const T &a, const T &b)</tt>
+        ScanOp          scan_op,                        ///< [in] Binary scan operator
         T               &block_aggregate,               ///< [out] <b>[<em>thread</em><sub>0</sub> only]</b> Threadblock-wide aggregate reduction of input items (exclusive of the \p block_prefix_op value)
         BlockPrefixOp   &block_prefix_op)               ///< [in-out] <b>[<em>thread</em><sub>0</sub> only]</b> Call-back functor for specifying a threadblock-wide prefix to be applied to all inputs.
     {
@@ -1394,7 +1394,7 @@ public:
         T               (&input)[ITEMS_PER_THREAD],     ///< [in] Calling thread's input items
         T               (&output)[ITEMS_PER_THREAD],    ///< [out] Calling thread's output items (may be aliased to \p input)
         T               identity,                       ///< [in] Identity value
-        ScanOp          scan_op,                        ///< [in] Binary scan operator having member <tt>T operator()(const T &a, const T &b)</tt>
+        ScanOp          scan_op,                        ///< [in] Binary scan operator
         T               &block_aggregate,               ///< [out] <b>[<em>thread</em><sub>0</sub> only]</b> Threadblock-wide aggregate reduction of input items (exclusive of the \p block_prefix_op value)
         BlockPrefixOp   &block_prefix_op)               ///< [in-out] <b>[<em>thread</em><sub>0</sub> only]</b> Call-back functor for specifying a threadblock-wide prefix to be applied to all inputs.
     {
@@ -1422,7 +1422,7 @@ public:
         T               input,                          ///< [in] Calling thread's input item
         T               &output,                        ///< [out] Calling thread's output item (may be aliased to \p input)
         T               identity,                       ///< [in] Identity value
-        ScanOp          scan_op)                        ///< [in] Binary scan operator having member <tt>T operator()(const T &a, const T &b)</tt>
+        ScanOp          scan_op)                        ///< [in] Binary scan operator
     {
         T block_aggregate;
         BlockScanInternal<SAFE_POLICY>::ExclusiveScan(smem_storage, input, output, identity, scan_op, block_aggregate);
@@ -1446,7 +1446,7 @@ public:
         T                 (&input)[ITEMS_PER_THREAD],   ///< [in] Calling thread's input items
         T                 (&output)[ITEMS_PER_THREAD],  ///< [out] Calling thread's output items (may be aliased to \p input)
         const T           &identity,                    ///< [in] Identity value
-        ScanOp            scan_op)                      ///< [in] Binary scan operator having member <tt>T operator()(const T &a, const T &b)</tt>
+        ScanOp            scan_op)                      ///< [in] Binary scan operator
     {
         // Reduce consecutive thread items in registers
         T thread_partial = ThreadReduce(input, scan_op);
@@ -1480,7 +1480,7 @@ public:
         SmemStorage     &smem_storage,                  ///< [in] Shared reference to opaque SmemStorage layout
         T               input,                          ///< [in] Calling thread's input item
         T               &output,                        ///< [out] Calling thread's output item (may be aliased to \p input)
-        ScanOp          scan_op,                        ///< [in] Binary scan operator having member <tt>T operator()(const T &a, const T &b)</tt>
+        ScanOp          scan_op,                        ///< [in] Binary scan operator
         T               &block_aggregate)               ///< [out] <b>[<em>thread</em><sub>0</sub> only]</b> threadblock-wide aggregate reduction of input items
     {
         BlockScanInternal<SAFE_POLICY>::ExclusiveScan(smem_storage, input, output, scan_op, block_aggregate);
@@ -1504,7 +1504,7 @@ public:
         SmemStorage     &smem_storage,                  ///< [in] Shared reference to opaque SmemStorage layout
         T               (&input)[ITEMS_PER_THREAD],     ///< [in] Calling thread's input items
         T               (&output)[ITEMS_PER_THREAD],    ///< [out] Calling thread's output items (may be aliased to \p input)
-        ScanOp          scan_op,                        ///< [in] Binary scan operator having member <tt>T operator()(const T &a, const T &b)</tt>
+        ScanOp          scan_op,                        ///< [in] Binary scan operator
         T               &block_aggregate)               ///< [out] <b>[<em>thread</em><sub>0</sub> only]</b> threadblock-wide aggregate reduction of input items
     {
         // Reduce consecutive thread items in registers
@@ -1541,7 +1541,7 @@ public:
         SmemStorage     &smem_storage,                  ///< [in] Shared reference to opaque SmemStorage layout
         T               input,                          ///< [in] Calling thread's input item
         T               &output,                        ///< [out] Calling thread's output item (may be aliased to \p input)
-        ScanOp          scan_op,                        ///< [in] Binary scan operator having member <tt>T operator()(const T &a, const T &b)</tt>
+        ScanOp          scan_op,                        ///< [in] Binary scan operator
         T               &block_aggregate,               ///< [out] <b>[<em>thread</em><sub>0</sub> only]</b> Threadblock-wide aggregate reduction of input items (exclusive of the \p block_prefix_op value)
         BlockPrefixOp   &block_prefix_op)               ///< [in-out] <b>[<em>thread</em><sub>0</sub> only]</b> Call-back functor for specifying a threadblock-wide prefix to be applied to all inputs.
     {
@@ -1574,7 +1574,7 @@ public:
         SmemStorage      &smem_storage,               ///< [in] Shared reference to opaque SmemStorage layout
         T               (&input)[ITEMS_PER_THREAD],   ///< [in] Calling thread's input items
         T               (&output)[ITEMS_PER_THREAD],  ///< [out] Calling thread's output items (may be aliased to \p input)
-        ScanOp          scan_op,                      ///< [in] Binary scan operator having member <tt>T operator()(const T &a, const T &b)</tt>
+        ScanOp          scan_op,                      ///< [in] Binary scan operator
         T               &block_aggregate,             ///< [out] <b>[<em>thread</em><sub>0</sub> only]</b> Threadblock-wide aggregate reduction of input items (exclusive of the \p block_prefix_op value)
         BlockPrefixOp   &block_prefix_op)             ///< [in-out] <b>[<em>thread</em><sub>0</sub> only]</b> Call-back functor for specifying a threadblock-wide prefix to be applied to all inputs.
     {
@@ -1601,7 +1601,7 @@ public:
         SmemStorage     &smem_storage,                  ///< [in] Shared reference to opaque SmemStorage layout
         T               input,                          ///< [in] Calling thread's input item
         T               &output,                        ///< [out] Calling thread's output item (may be aliased to \p input)
-        ScanOp          scan_op)                        ///< [in] Binary scan operator having member <tt>T operator()(const T &a, const T &b)</tt>
+        ScanOp          scan_op)                        ///< [in] Binary scan operator
     {
         T block_aggregate;
         BlockScanInternal<SAFE_POLICY>::ExclusiveScan(smem_storage, input, output, scan_op, block_aggregate);
@@ -1623,7 +1623,7 @@ public:
         SmemStorage        &smem_storage,               ///< [in] Shared reference to opaque SmemStorage layout
         T                 (&input)[ITEMS_PER_THREAD],   ///< [in] Calling thread's input items
         T                 (&output)[ITEMS_PER_THREAD],  ///< [out] Calling thread's output items (may be aliased to \p input)
-        ScanOp            scan_op)                      ///< [in] Binary scan operator having member <tt>T operator()(const T &a, const T &b)</tt>
+        ScanOp            scan_op)                      ///< [in] Binary scan operator
     {
         // Reduce consecutive thread items in registers
         T thread_partial = ThreadReduce(input, scan_op);
@@ -1814,7 +1814,7 @@ public:
         SmemStorage     &smem_storage,                  ///< [in] Shared reference to opaque SmemStorage layout
         T               input,                          ///< [in] Calling thread's input item
         T               &output,                        ///< [out] Calling thread's output item (may be aliased to \p input)
-        ScanOp          scan_op,                        ///< [in] Binary scan operator having member <tt>T operator()(const T &a, const T &b)</tt>
+        ScanOp          scan_op,                        ///< [in] Binary scan operator
         T               &block_aggregate)               ///< [out] <b>[<em>thread</em><sub>0</sub> only]</b> threadblock-wide aggregate reduction of input items
     {
         BlockScanInternal<SAFE_POLICY>::InclusiveScan(smem_storage, input, output, scan_op, block_aggregate);
@@ -1838,7 +1838,7 @@ public:
         SmemStorage     &smem_storage,                  ///< [in] Shared reference to opaque SmemStorage layout
         T               (&input)[ITEMS_PER_THREAD],     ///< [in] Calling thread's input items
         T               (&output)[ITEMS_PER_THREAD],    ///< [out] Calling thread's output items (may be aliased to \p input)
-        ScanOp          scan_op,                        ///< [in] Binary scan operator having member <tt>T operator()(const T &a, const T &b)</tt>
+        ScanOp          scan_op,                        ///< [in] Binary scan operator
         T               &block_aggregate)               ///< [out] <b>[<em>thread</em><sub>0</sub> only]</b> threadblock-wide aggregate reduction of input items
     {
         // Reduce consecutive thread items in registers
@@ -1875,7 +1875,7 @@ public:
         SmemStorage     &smem_storage,                  ///< [in] Shared reference to opaque SmemStorage layout
         T               input,                          ///< [in] Calling thread's input item
         T               &output,                        ///< [out] Calling thread's output item (may be aliased to \p input)
-        ScanOp          scan_op,                        ///< [in] Binary scan operator having member <tt>T operator()(const T &a, const T &b)</tt>
+        ScanOp          scan_op,                        ///< [in] Binary scan operator
         T               &block_aggregate,               ///< [out] <b>[<em>thread</em><sub>0</sub> only]</b> Threadblock-wide aggregate reduction of input items (exclusive of the \p block_prefix_op value)
         BlockPrefixOp   &block_prefix_op)               ///< [in-out] <b>[<em>thread</em><sub>0</sub> only]</b> Call-back functor for specifying a threadblock-wide prefix to be applied to all inputs.
     {
@@ -1908,7 +1908,7 @@ public:
         SmemStorage     &smem_storage,                  ///< [in] Shared reference to opaque SmemStorage layout
         T               (&input)[ITEMS_PER_THREAD],     ///< [in] Calling thread's input items
         T               (&output)[ITEMS_PER_THREAD],    ///< [out] Calling thread's output items (may be aliased to \p input)
-        ScanOp          scan_op,                        ///< [in] Binary scan operator having member <tt>T operator()(const T &a, const T &b)</tt>
+        ScanOp          scan_op,                        ///< [in] Binary scan operator
         T               &block_aggregate,               ///< [out] <b>[<em>thread</em><sub>0</sub> only]</b> Threadblock-wide aggregate reduction of input items (exclusive of the \p block_prefix_op value)
         BlockPrefixOp   &block_prefix_op)               ///< [in-out] <b>[<em>thread</em><sub>0</sub> only]</b> Call-back functor for specifying a threadblock-wide prefix to be applied to all inputs.
     {
@@ -1935,7 +1935,7 @@ public:
         SmemStorage     &smem_storage,                  ///< [in] Shared reference to opaque SmemStorage layout
         T               input,                          ///< [in] Calling thread's input item
         T               &output,                        ///< [out] Calling thread's output item (may be aliased to \p input)
-        ScanOp          scan_op)                        ///< [in] Binary scan operator having member <tt>T operator()(const T &a, const T &b)</tt>
+        ScanOp          scan_op)                        ///< [in] Binary scan operator
     {
         T block_aggregate;
         InclusiveScan(smem_storage, input, output, scan_op, block_aggregate);
@@ -1957,7 +1957,7 @@ public:
         SmemStorage     &smem_storage,                  ///< [in] Shared reference to opaque SmemStorage layout
         T               (&input)[ITEMS_PER_THREAD],     ///< [in] Calling thread's input items
         T               (&output)[ITEMS_PER_THREAD],    ///< [out] Calling thread's output items (may be aliased to \p input)
-        ScanOp          scan_op)                        ///< [in] Binary scan operator having member <tt>T operator()(const T &a, const T &b)</tt>
+        ScanOp          scan_op)                        ///< [in] Binary scan operator
     {
         // Reduce consecutive thread items in registers
         T thread_partial = ThreadReduce(input, scan_op);
