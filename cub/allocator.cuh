@@ -38,7 +38,7 @@
 #include <map>
 
 #include "ns_wrapper.cuh"
-#include "arch_device_props.cuh"
+#include "arch_props.cuh"
 #include "debug.cuh"
 
 #include "host/spinlock.cuh"

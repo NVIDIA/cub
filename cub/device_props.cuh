@@ -32,9 +32,10 @@
 
 #pragma once
 
-#include "../arch_device_props.cuh"
-#include "../debug.cuh"
-#include "../ns_wrapper.cuh"
+#include "arch_props.cuh"
+#include "debug.cuh"
+#include "ns_wrapper.cuh"
+#include "macro_utils.cuh"
 
 CUB_NS_PREFIX
 namespace cub {
@@ -73,28 +74,39 @@ public:
     int     max_block_threads;      // Maximum number of threads per threadblock
     int     max_sm_registers;       // Maximum number of registers per SM
     int     max_sm_warps;           // Maximum number of warps per SM
-
+    int     oversubscription;       // Heuristic for over-subscribing the device with longer-running CTAs
 
     /**
      * Callback for initializing device properties
      */
-    template <typename StaticDeviceProps>
+    template <typename ArchProps>
     __host__ __device__ __forceinline__ void Callback()
     {
-        warp_threads         = StaticDeviceProps::WARP_THREADS;
-        smem_bank_bytes      = StaticDeviceProps::SMEM_BANK_BYTES;
-        smem_banks           = StaticDeviceProps::SMEM_BANKS;
-        smem_bytes           = StaticDeviceProps::SMEM_BYTES;
-        smem_alloc_unit      = StaticDeviceProps::SMEM_ALLOC_UNIT;
-        regs_by_block        = StaticDeviceProps::REGS_BY_BLOCK;
-        reg_alloc_unit       = StaticDeviceProps::REG_ALLOC_UNIT;
-        warp_alloc_unit      = StaticDeviceProps::WARP_ALLOC_UNIT;
-        max_sm_threads       = StaticDeviceProps::MAX_SM_THREADS;
-        max_sm_blocks        = StaticDeviceProps::MAX_SM_THREADBLOCKS;
-        max_block_threads    = StaticDeviceProps::MAX_BLOCK_THREADS;
-        max_sm_registers     = StaticDeviceProps::MAX_SM_REGISTERS;
-        max_sm_warps         = max_sm_threads / warp_threads;
+        warp_threads        = ArchProps::WARP_THREADS;
+        smem_bank_bytes     = ArchProps::SMEM_BANK_BYTES;
+        smem_banks          = ArchProps::SMEM_BANKS;
+        smem_bytes          = ArchProps::SMEM_BYTES;
+        smem_alloc_unit     = ArchProps::SMEM_ALLOC_UNIT;
+        regs_by_block       = ArchProps::REGS_BY_BLOCK;
+        reg_alloc_unit      = ArchProps::REG_ALLOC_UNIT;
+        warp_alloc_unit     = ArchProps::WARP_ALLOC_UNIT;
+        max_sm_threads      = ArchProps::MAX_SM_THREADS;
+        max_sm_blocks       = ArchProps::MAX_SM_THREADBLOCKS;
+        max_block_threads   = ArchProps::MAX_BLOCK_THREADS;
+        max_sm_registers    = ArchProps::MAX_SM_REGISTERS;
+        oversubscription    = ArchProps::OVERSUBSCRIPTION;
+        max_sm_warps        = max_sm_threads / warp_threads;
     }
+
+    typedef void (*EmptyKernelPtr)();
+
+    // Force EmptyKernel<void> to be generated if this class is used
+    __host__ __device__ __forceinline__
+    EmptyKernelPtr Empty()
+    {
+        return EmptyKernel<void>;
+    }
+
 
 public:
 
@@ -104,6 +116,13 @@ public:
     __host__ __device__ __forceinline__
     cudaError_t Init(int device_ordinal)
     {
+    #if !CUB_CNP_ENABLED
+
+        // CUDA API calls not supported from this device
+        return cudaErrorInvalidConfiguration;
+
+    #else
+
         cudaError_t error = cudaSuccess;
         do
         {
@@ -115,28 +134,26 @@ public:
 
             // Fill in static SM properties
             // Initialize our device properties via callback from static device properties
-            ArchDeviceProps<100>::Callback(*this, sm_version);
+            ArchProps<100>::Callback(*this, sm_version);
 
             // Fill in SM count
             if (CubDebug(error = cudaDeviceGetAttribute (&sm_count, cudaDevAttrMultiProcessorCount, device_ordinal))) break;
 
             // Fill in PTX version
         #if CUB_PTX_ARCH > 0
-
             ptx_version = CUB_PTX_ARCH;
-
         #else
-
             cudaFuncAttributes flush_kernel_attrs;
-            if ((error = CubDebug(cudaFuncGetAttributes(&flush_kernel_attrs, EmptyKernel<void>)))) break;
+            if ((error = CubDebug(cudaFuncGetAttributes(&flush_kernel_attrs, Empty())))) break;
             ptx_version = flush_kernel_attrs.ptxVersion * 10;
-
         #endif
 
         }
         while (0);
 
         return error;
+
+    #endif
     }
 
     /**
@@ -145,6 +162,13 @@ public:
     __host__ __device__ __forceinline__
     cudaError_t Init()
     {
+    #if !CUB_CNP_ENABLED
+
+        // CUDA API calls not supported from this device
+        return cudaErrorInvalidConfiguration;
+
+    #else
+
         cudaError_t error = cudaSuccess;
         do
         {
@@ -153,6 +177,60 @@ public:
             if ((error = Init(device_ordinal))) break;
         }
         while (0);
+        return error;
+
+    #endif
+    }
+
+    /**
+     * Computes maximum SM occupancy in thread blocks for the given kernel
+     */
+    template <typename KernelPtr>
+    __host__ __device__ __forceinline__
+    cudaError_t MaxSmOccupancy(
+        int                 &max_sm_occupancy,          ///< [out] maximum number of thread blocks that can reside on a single SM
+        KernelPtr           kernel_ptr,
+        int                 block_threads)              ///< Number of threads per thread block
+    {
+        cudaError_t error = cudaSuccess;
+
+        do {
+            // Get kernel attributes
+            cudaFuncAttributes kernel_attrs;
+            if (CubDebug(error = cudaFuncGetAttributes(&kernel_attrs, kernel_ptr))) break;
+
+            int block_warps = CUB_ROUND_UP_NEAREST(block_threads / warp_threads, 1);
+
+            int block_allocated_warps = CUB_ROUND_UP_NEAREST(block_warps, warp_alloc_unit);
+
+            int block_allocated_regs = (regs_by_block) ?
+                CUB_ROUND_UP_NEAREST(
+                    block_allocated_warps * kernel_attrs.numRegs * warp_threads,
+                    reg_alloc_unit) :
+                block_allocated_warps * CUB_ROUND_UP_NEAREST(
+                    kernel_attrs.numRegs * warp_threads,
+                    reg_alloc_unit);
+
+            int block_allocated_smem = CUB_ROUND_UP_NEAREST(
+                kernel_attrs.sharedSizeBytes,
+                smem_alloc_unit);
+
+            int max_sm_occupancy = max_sm_blocks;
+
+            int max_warp_occupancy = max_sm_warps / block_warps;
+
+            int max_smem_occupancy = (block_allocated_smem > 0) ?
+                    (smem_bytes / block_allocated_smem) :
+                    max_sm_occupancy;
+
+            int max_reg_occupancy = max_sm_registers / block_allocated_regs;
+
+            max_sm_occupancy = CUB_MIN(
+                CUB_MIN(max_sm_occupancy, max_warp_occupancy),
+                CUB_MIN(max_smem_occupancy, max_reg_occupancy));
+
+        } while (0);
+
         return error;
     }
 
