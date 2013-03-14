@@ -37,7 +37,7 @@
 
 #pragma once
 
-#include "../device_props.cuh"
+#include "../arch_device_props.cuh"
 #include "../type_utils.cuh"
 #include "../ns_wrapper.cuh"
 
@@ -69,7 +69,7 @@ struct BlockRakingGrid
         SHARED_ELEMENTS = BLOCK_THREADS * BLOCK_STRIPS,
 
         // Maximum number of warp-synchronous raking threads
-        MAX_RAKING_THREADS = CUB_MIN(BLOCK_THREADS, DeviceProps::WARP_THREADS),
+        MAX_RAKING_THREADS = CUB_MIN(BLOCK_THREADS, PtxDeviceProps::WARP_THREADS),
 
         // Number of raking elements per warp-synchronous raking thread (rounded up)
         RAKING_LENGTH = (SHARED_ELEMENTS + MAX_RAKING_THREADS - 1) / MAX_RAKING_THREADS,
@@ -81,7 +81,7 @@ struct BlockRakingGrid
         RAKING_ELEMENTS = RAKING_THREADS * RAKING_LENGTH,
 
         // Number of bytes per shared memory segment
-        SEGMENT_BYTES = DeviceProps::SMEM_BANKS * DeviceProps::SMEM_BANK_BYTES,
+        SEGMENT_BYTES = PtxDeviceProps::SMEM_BANKS * PtxDeviceProps::SMEM_BANK_BYTES,
 
         // Number of elements per shared memory segment (rounded up)
         SEGMENT_LENGTH = (SEGMENT_BYTES + sizeof(T) - 1) / sizeof(T),
@@ -90,14 +90,14 @@ struct BlockRakingGrid
         PADDING_STRIDE = CUB_ROUND_UP_NEAREST(SEGMENT_LENGTH, RAKING_LENGTH),
 
         // Number of elements per padding block
-        PADDING_ELEMENTS = (DeviceProps::SMEM_BANK_BYTES + sizeof(T) - 1) / sizeof(T),
+        PADDING_ELEMENTS = (PtxDeviceProps::SMEM_BANK_BYTES + sizeof(T) - 1) / sizeof(T),
 
         // Total number of elements in the raking grid
         GRID_ELEMENTS = RAKING_ELEMENTS + (RAKING_ELEMENTS / PADDING_STRIDE),
 
         // Whether or not we need bounds checking during raking (the number of
         // reduction elements is not a multiple of the warp size)
-        UNGUARDED = (SHARED_ELEMENTS % DeviceProps::WARP_THREADS == 0),
+        UNGUARDED = (SHARED_ELEMENTS % PtxDeviceProps::WARP_THREADS == 0),
     };
 
 

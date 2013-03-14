@@ -100,7 +100,7 @@ int main(int argc, char** argv)
     CubDebugExit(args.DeviceInit());
 
     // Initialize CUDA device properties
-    CudaProps cuda_props;
+    DeviceProps cuda_props;
     CubDebugExit(cuda_props.Init());
 
     // Compute grid size and occupancy

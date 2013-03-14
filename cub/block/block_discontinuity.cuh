@@ -34,7 +34,7 @@
 #pragma once
 
 #include <cuda_runtime.h>
-#include "../device_props.cuh"
+#include "../arch_device_props.cuh"
 #include "../type_utils.cuh"
 #include "../operators.cuh"
 #include "../ns_wrapper.cuh"

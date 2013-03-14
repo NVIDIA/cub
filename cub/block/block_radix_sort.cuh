@@ -35,7 +35,7 @@
 #pragma once
 
 #include "../ns_wrapper.cuh"
-#include "../device_props.cuh"
+#include "../arch_device_props.cuh"
 #include "../type_utils.cuh"
 #include "block_exchange.cuh"
 #include "block_radix_rank.cuh"
