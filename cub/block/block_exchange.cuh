@@ -34,7 +34,7 @@
 #pragma once
 
 #include "../ns_wrapper.cuh"
-#include "../arch_device_props.cuh"
+#include "../arch_props.cuh"
 #include "../ptx_intrinsics.cuh"
 #include "../type_utils.cuh"
 
@@ -92,7 +92,7 @@ private:
     {
         TILE_ITEMS          = BLOCK_THREADS * ITEMS_PER_THREAD,
 
-        LOG_SMEM_BANKS      = PtxDeviceProps::LOG_SMEM_BANKS,
+        LOG_SMEM_BANKS      = PtxArchProps::LOG_SMEM_BANKS,
         SMEM_BANKS          = 1 << LOG_SMEM_BANKS,
 
         // Insert padding if the number of items per thread is a power of two

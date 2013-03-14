@@ -27,7 +27,7 @@
  ******************************************************************************/
 
 /******************************************************************************
- * Static CUDA device properties by SM architectural version.
+ * Static architectural properties by SM version.
  *
  * "CUB_PTX_ARCH" reflects the PTX arch-id targeted by the active compiler pass
  * (or zero during the host pass).
@@ -60,7 +60,7 @@ namespace cub {
     #define CUB_PTX_ARCH __CUDA_ARCH__
 #endif
 
-#define CNP_ENABLED ((CUB_PTX_ARCH == 0) || (CUB_PTX_ARCH >= 350))
+#define CUB_CNP_ENABLED ((CUB_PTX_ARCH == 0) || ((CUB_PTX_ARCH >= 350) && defined(__BUILDING_CNPRT__)))
 
 
 /**
@@ -79,14 +79,14 @@ enum
  * architecture.
  */
 template <int SM_ARCH>
-struct ArchDeviceProps;
+struct ArchProps;
 
 
 /**
- * Device properties for SM30
+ * Architecture properties for SM30
  */
 template <>
-struct ArchDeviceProps<300>
+struct ArchProps<300>
 {
     enum {
         LOG_WARP_THREADS    = 5,                        // 32 threads per warp
@@ -105,22 +105,24 @@ struct ArchDeviceProps<300>
         MAX_SM_THREADBLOCKS = 16,                       // 16 max threadblocks per SM
         MAX_BLOCK_THREADS   = 1024,                     // 1024 max threads per threadblock
         MAX_SM_REGISTERS    = 64 * 1024,                // 64K max registers per SM
+
+        OVERSUBSCRIPTION    = 4,                        // Heuristic for over-subscribing the device with longer-running CTAs
     };
 
     // Callback utility
     template <typename T>
     static __host__ __device__ __forceinline__ void Callback(T &target, int sm_version)
     {
-        target.template Callback<ArchDeviceProps>();
+        target.template Callback<ArchProps>();
     }
 };
 
 
 /**
- * Device properties for SM20
+ * Architecture properties for SM20
  */
 template <>
-struct ArchDeviceProps<200>
+struct ArchProps<200>
 {
     enum {
         LOG_WARP_THREADS    = 5,                        // 32 threads per warp
@@ -139,6 +141,8 @@ struct ArchDeviceProps<200>
         MAX_SM_THREADBLOCKS = 8,                        // 8 max threadblocks per SM
         MAX_BLOCK_THREADS   = 1024,                     // 1024 max threads per threadblock
         MAX_SM_REGISTERS    = 32 * 1024,                // 32K max registers per SM
+
+        OVERSUBSCRIPTION    = 4,                        // Heuristic for over-subscribing the device with longer-running CTAs
     };
 
     // Callback utility
@@ -146,19 +150,19 @@ struct ArchDeviceProps<200>
     static __host__ __device__ __forceinline__ void Callback(T &target, int sm_version)
     {
         if (sm_version > 200) {
-            ArchDeviceProps<300>::Callback(target, sm_version);
+            ArchProps<300>::Callback(target, sm_version);
         } else {
-            target.template Callback<ArchDeviceProps>();
+            target.template Callback<ArchProps>();
         }
     }
 };
 
 
 /**
- * Device properties for SM12
+ * Architecture properties for SM12
  */
 template <>
-struct ArchDeviceProps<120>
+struct ArchProps<120>
 {
     enum {
         LOG_WARP_THREADS    = 5,                        // 32 threads per warp
@@ -177,6 +181,8 @@ struct ArchDeviceProps<120>
         MAX_SM_THREADBLOCKS = 8,                        // 8 max threadblocks per SM
         MAX_BLOCK_THREADS   = 512,                      // 512 max threads per threadblock
         MAX_SM_REGISTERS    = 16 * 1024,                // 16K max registers per SM
+
+        OVERSUBSCRIPTION    = 1,                        // Heuristic for over-subscribing the device with longer-running CTAs
     };
 
     // Callback utility
@@ -184,19 +190,19 @@ struct ArchDeviceProps<120>
     static __host__ __device__ __forceinline__ void Callback(T &target, int sm_version)
     {
         if (sm_version > 120) {
-            ArchDeviceProps<200>::Callback(target, sm_version);
+            ArchProps<200>::Callback(target, sm_version);
         } else {
-            target.template Callback<ArchDeviceProps>();
+            target.template Callback<ArchProps>();
         }
     }
 };
 
 
 /**
- * Device properties for SM10
+ * Architecture properties for SM10
  */
 template <>
-struct ArchDeviceProps<100>
+struct ArchProps<100>
 {
     enum {
         LOG_WARP_THREADS    = 5,                        // 32 threads per warp
@@ -215,6 +221,8 @@ struct ArchDeviceProps<100>
         MAX_SM_THREADBLOCKS = 8,                        // 8 max threadblocks per SM
         MAX_BLOCK_THREADS   = 512,                      // 512 max threads per threadblock
         MAX_SM_REGISTERS    = 8 * 1024,                 // 8K max registers per SM
+
+        OVERSUBSCRIPTION    = 2,                        // Heuristic for over-subscribing the device with longer-running CTAs
     };
 
     // Callback utility
@@ -222,50 +230,50 @@ struct ArchDeviceProps<100>
     static __host__ __device__ __forceinline__ void Callback(T &target, int sm_version)
     {
         if (sm_version > 100) {
-            ArchDeviceProps<120>::Callback(target, sm_version);
+            ArchProps<120>::Callback(target, sm_version);
         } else {
-            target.template Callback<ArchDeviceProps>();
+            target.template Callback<ArchProps>();
         }
     }
 };
 
 
 /**
- * Device properties for SM35
+ * Architecture properties for SM35
  */
 template <>
-struct ArchDeviceProps<350> : ArchDeviceProps<300> {};        // Derives from SM30
+struct ArchProps<350> : ArchProps<300> {};        // Derives from SM30
 
 /**
- * Device properties for SM21
+ * Architecture properties for SM21
  */
 template <>
-struct ArchDeviceProps<210> : ArchDeviceProps<200> {};        // Derives from SM20
+struct ArchProps<210> : ArchProps<200> {};        // Derives from SM20
 
 /**
- * Device properties for SM13
+ * Architecture properties for SM13
  */
 template <>
-struct ArchDeviceProps<130> : ArchDeviceProps<120> {};        // Derives from SM12
+struct ArchProps<130> : ArchProps<120> {};        // Derives from SM12
 
 /**
- * Device properties for SM11
+ * Architecture properties for SM11
  */
 template <>
-struct ArchDeviceProps<110> : ArchDeviceProps<100> {};        // Derives from SM10
+struct ArchProps<110> : ArchProps<100> {};        // Derives from SM10
 
 /**
  * Unknown device properties
  */
 template <int SM_ARCH>
-struct ArchDeviceProps : ArchDeviceProps<100> {};             // Derives from SM10
+struct ArchProps : ArchProps<100> {};             // Derives from SM10
 
 
 
 /**
- * Device properties for the arch-id targeted by the active compiler pass.
+ * Architectural properties for the arch-id targeted by the active compiler pass.
  */
-struct PtxDeviceProps : ArchDeviceProps<CUB_PTX_ARCH> {};
+struct PtxArchProps : ArchProps<CUB_PTX_ARCH> {};
 
 
 

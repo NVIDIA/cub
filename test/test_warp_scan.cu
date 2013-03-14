@@ -98,8 +98,6 @@ template <
     bool        PRIMITIVE = Traits<T>::PRIMITIVE>
 struct DeviceTest
 {
-    static __device__ __forceinline__ void Test() {}
-
     template <
         TestMode TEST_MODE,
         typename WarpScan,
@@ -139,8 +137,6 @@ template <
     typename IdentityT>
 struct DeviceTest<T, Sum<T>, IdentityT, true>
 {
-    static __device__ __forceinline__ void Test() {}
-
     template <
         TestMode TEST_MODE,
         typename WarpScan,
@@ -181,9 +177,6 @@ template <
     bool        PRIMITIVE>
 struct DeviceTest<T, ScanOp, NullType, PRIMITIVE>
 {
-
-    static __device__ __forceinline__ void Test() {}
-
     template <
         TestMode TEST_MODE,
         typename WarpScan,
@@ -221,8 +214,6 @@ struct DeviceTest<T, ScanOp, NullType, PRIMITIVE>
 template <typename T>
 struct DeviceTest<T, Sum<T>, NullType, true>
 {
-    static __device__ __forceinline__ void Test() {}
-
     template <
         TestMode TEST_MODE,
         typename WarpScan,
@@ -462,6 +453,7 @@ void Test(
     if (h_reference) delete[] h_reference;
     if (d_in) CubDebugExit(cudaFree(d_in));
     if (d_out) CubDebugExit(cudaFree(d_out));
+    if (d_elapsed) CubDebugExit(cudaFree(d_elapsed));
 }
 
 
