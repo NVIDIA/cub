@@ -57,7 +57,7 @@
 #include "thread/thread_store.cuh"
 
 // Host
-#include "host/cuda_props.cuh"
+#include "host/device_props.cuh"
 #include "host/kernel_props.cuh"
 #include "host/multi_buffer.cuh"
 #include "host/spinlock.cuh"
@@ -65,7 +65,7 @@
 // General
 #include "debug.cuh"
 #include "macro_utils.cuh"
-#include "device_props.cuh"
+#include "arch_device_props.cuh"
 #include "operators.cuh"
 #include "ptx_intrinsics.cuh"
 #include "type_utils.cuh"

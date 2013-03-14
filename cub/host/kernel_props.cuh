@@ -34,6 +34,7 @@
 
 #include "../ns_wrapper.cuh"
 #include "../macro_utils.cuh"
+#include "../debug.cuh"
 
 CUB_NS_PREFIX
 namespace cub {
@@ -41,7 +42,7 @@ namespace cub {
 /**
  * Encapsulation of kernel properties for a combination of {device, threadblock size}
  */
-struct KernelProps
+struct KernelContext
 {
     //---------------------------------------------------------------------
     // Fields
@@ -65,59 +66,54 @@ struct KernelProps
     //---------------------------------------------------------------------
 
     /**
-     * Constructor
-     */
-    KernelProps() {}
-
-    /**
      * Initializer
      */
     template <typename KernelPtr>
     cudaError_t Init(
-        KernelPtr kernel_ptr,
-        int block_threads,                      // Number of threads per threadblock
-        const CudaProps &cuda_props)            // CUDA properties for a specific device
+        KernelPtr           kernel_ptr,
+        int                 block_threads,                      // Number of threads per threadblock
+        const DeviceProps   &device_props)            // CUDA properties for a specific device
     {
         cudaError_t error = cudaSuccess;
 
         do {
             this->block_threads     = block_threads;
-            this->sm_count          = cuda_props.sm_count;
-            this->sm_version        = cuda_props.sm_version;
-            this->smem_alloc_unit   = cuda_props.smem_alloc_unit;
-            this->smem_bytes        = cuda_props.smem_bytes;
+            this->sm_count          = device_props.sm_count;
+            this->sm_version        = device_props.sm_version;
+            this->smem_alloc_unit   = device_props.smem_alloc_unit;
+            this->smem_bytes        = device_props.smem_bytes;
 
             // Get kernel attributes
             cudaFuncAttributes kernel_attrs;
-            if (error = CubDebug(cudaFuncGetAttributes(&kernel_attrs, kernel_ptr))) break;
+            if (CubDebug(error = cudaFuncGetAttributes(&kernel_attrs, kernel_ptr))) break;
 
-            this->block_warps = CUB_ROUND_UP_NEAREST(block_threads / cuda_props.warp_threads, 1);
+            this->block_warps = CUB_ROUND_UP_NEAREST(block_threads / device_props.warp_threads, 1);
 
             int block_allocated_warps = CUB_ROUND_UP_NEAREST(
                 block_warps,
-                cuda_props.warp_alloc_unit);
+                device_props.warp_alloc_unit);
 
-            this->block_allocated_regs = (cuda_props.regs_by_block) ?
+            this->block_allocated_regs = (device_props.regs_by_block) ?
                 CUB_ROUND_UP_NEAREST(
-                    block_allocated_warps * kernel_attrs.numRegs * cuda_props.warp_threads,
-                    cuda_props.reg_alloc_unit) :
+                    block_allocated_warps * kernel_attrs.numRegs * device_props.warp_threads,
+                    device_props.reg_alloc_unit) :
                 block_allocated_warps * CUB_ROUND_UP_NEAREST(
-                    kernel_attrs.numRegs * cuda_props.warp_threads,
-                    cuda_props.reg_alloc_unit);
+                    kernel_attrs.numRegs * device_props.warp_threads,
+                    device_props.reg_alloc_unit);
 
             this->block_allocated_smem = CUB_ROUND_UP_NEAREST(
                 kernel_attrs.sharedSizeBytes,
-                cuda_props.smem_alloc_unit);
+                device_props.smem_alloc_unit);
 
-            int max_block_occupancy = cuda_props.max_sm_blocks;
+            int max_block_occupancy = device_props.max_sm_blocks;
 
-            int max_warp_occupancy = cuda_props.max_sm_warps / block_warps;
+            int max_warp_occupancy = device_props.max_sm_warps / block_warps;
 
             int max_smem_occupancy = (block_allocated_smem > 0) ?
-                    (cuda_props.smem_bytes / block_allocated_smem) :
+                    (device_props.smem_bytes / block_allocated_smem) :
                     max_block_occupancy;
 
-            int max_reg_occupancy = cuda_props.max_sm_registers / block_allocated_regs;
+            int max_reg_occupancy = device_props.max_sm_registers / block_allocated_regs;
 
             this->max_block_occupancy = CUB_MIN(
                 CUB_MIN(max_block_occupancy, max_warp_occupancy),

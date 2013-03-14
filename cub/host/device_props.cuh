@@ -32,7 +32,7 @@
 
 #pragma once
 
-#include "../device_props.cuh"
+#include "../arch_device_props.cuh"
 #include "../debug.cuh"
 #include "../ns_wrapper.cuh"
 
@@ -50,7 +50,7 @@ __global__ void EmptyKernel(void) { }
 /**
  * Encapsulation of device properties for a specific device
  */
-class CudaProps
+class DeviceProps
 {
 public:
 
@@ -101,29 +101,40 @@ public:
     /**
      * Initializer.  Properties are retrieved for the specified GPU ordinal.
      */
-    cudaError_t Init(int gpu_ordinal)
+    __host__ __device__ __forceinline__
+    cudaError_t Init(int device_ordinal)
     {
         cudaError_t error = cudaSuccess;
         do
         {
-            // Obtain SM version and count
-            cudaDeviceProp device_props;
+            // Fill in SM version
+            int major, minor;
+            if (CubDebug(error = cudaDeviceGetAttribute(&major, cudaDevAttrComputeCapabilityMajor, device_ordinal))) break;
+            if (CubDebug(error = cudaDeviceGetAttribute(&minor, cudaDevAttrComputeCapabilityMinor, device_ordinal))) break;
+            sm_version = major * 100 + minor * 10;
 
-            if ((error = CubDebug(cudaGetDeviceProperties(&device_props, gpu_ordinal)))) break;
+            // Fill in static SM properties
+            // Initialize our device properties via callback from static device properties
+            ArchDeviceProps<100>::Callback(*this, sm_version);
 
-            sm_version = device_props.major * 100 + device_props.minor * 10;
-            sm_count = device_props.multiProcessorCount;
+            // Fill in SM count
+            if (CubDebug(error = cudaDeviceGetAttribute (&sm_count, cudaDevAttrMultiProcessorCount, device_ordinal))) break;
 
-            // Obtain PTX version of the bundled kernel assemblies compiled for
-            // the current device
+            // Fill in PTX version
+        #if CUB_PTX_ARCH > 0
+
+            ptx_version = CUB_PTX_ARCH;
+
+        #else
+
             cudaFuncAttributes flush_kernel_attrs;
             if ((error = CubDebug(cudaFuncGetAttributes(&flush_kernel_attrs, EmptyKernel<void>)))) break;
             ptx_version = flush_kernel_attrs.ptxVersion * 10;
 
-            // Initialize our device properties via callback from static device properties
-            StaticDeviceProps<100>::Callback(*this, sm_version);
+        #endif
 
-        } while (0);
+        }
+        while (0);
 
         return error;
     }
@@ -131,16 +142,17 @@ public:
     /**
      * Initializer.  Properties are retrieved for the current GPU ordinal.
      */
+    __host__ __device__ __forceinline__
     cudaError_t Init()
     {
         cudaError_t error = cudaSuccess;
         do
         {
-            int gpu_ordinal;
-            if ((error = CubDebug(cudaGetDevice(&gpu_ordinal)))) break;
-
-            if ((error = Init(gpu_ordinal))) break;
-        } while (0);
+            int device_ordinal;
+            if ((error = CubDebug(cudaGetDevice(&device_ordinal)))) break;
+            if ((error = Init(device_ordinal))) break;
+        }
+        while (0);
         return error;
     }
 

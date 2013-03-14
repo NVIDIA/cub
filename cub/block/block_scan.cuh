@@ -33,7 +33,7 @@
 
 #pragma once
 
-#include "../device_props.cuh"
+#include "../arch_device_props.cuh"
 #include "../type_utils.cuh"
 #include "../operators.cuh"
 #include "../warp/warp_scan.cuh"
@@ -231,7 +231,7 @@ private:
     enum
     {
         SAFE_POLICY =
-            ((POLICY == BLOCK_SCAN_WARPSCANS) && (BLOCK_THREADS % DeviceProps::WARP_THREADS != 0)) ?    // BLOCK_SCAN_WARPSCANS policy cannot be used with threadblock sizes not a multiple of the architectural warp size
+            ((POLICY == BLOCK_SCAN_WARPSCANS) && (BLOCK_THREADS % PtxDeviceProps::WARP_THREADS != 0)) ?    // BLOCK_SCAN_WARPSCANS policy cannot be used with threadblock sizes not a multiple of the architectural warp size
                 BLOCK_SCAN_RAKING :
                 POLICY
     };
@@ -252,7 +252,7 @@ private:
         enum
         {
             /// Number of active warps
-            WARPS = (BLOCK_THREADS + DeviceProps::WARP_THREADS - 1) / DeviceProps::WARP_THREADS,
+            WARPS = (BLOCK_THREADS + PtxDeviceProps::WARP_THREADS - 1) / PtxDeviceProps::WARP_THREADS,
 
             /// Number of raking threads
             RAKING_THREADS = BlockRakingGrid::RAKING_THREADS,
@@ -945,11 +945,11 @@ private:
         enum
         {
             /// Number of active warps
-            WARPS = (BLOCK_THREADS + DeviceProps::WARP_THREADS - 1) / DeviceProps::WARP_THREADS,
+            WARPS = (BLOCK_THREADS + PtxDeviceProps::WARP_THREADS - 1) / PtxDeviceProps::WARP_THREADS,
         };
 
         ///  Raking warp-scan utility type
-        typedef WarpScan<T, WARPS, DeviceProps::WARP_THREADS> WarpScan;
+        typedef WarpScan<T, WARPS, PtxDeviceProps::WARP_THREADS> WarpScan;
 
         /// Shared memory storage layout type
         struct SmemStorage
@@ -969,8 +969,8 @@ private:
             T               warp_aggregate,     ///< [in] <b>[<em>lane</em><sub>0</sub>s only]</b> Warp-wide aggregate reduction of input items
             T               &block_aggregate)   ///< [out] <b>[<em>thread</em><sub>0</sub> only]</b> threadblock-wide aggregate reduction of input items
         {
-            unsigned int warp_id = threadIdx.x / DeviceProps::WARP_THREADS;
-            unsigned int lane_id = threadIdx.x & (DeviceProps::WARP_THREADS - 1);
+            unsigned int warp_id = threadIdx.x / PtxDeviceProps::WARP_THREADS;
+            unsigned int lane_id = threadIdx.x & (PtxDeviceProps::WARP_THREADS - 1);
 
             // Share lane aggregates
             if (lane_id == 0)
@@ -1061,8 +1061,8 @@ private:
             T warp_aggregate;       // Valid in lane-0s
             WarpScan::ExclusiveScan(smem_storage.warp_scan, input, output, scan_op, warp_aggregate);
 
-            unsigned int warp_id = threadIdx.x / DeviceProps::WARP_THREADS;
-            unsigned int lane_id = threadIdx.x & (DeviceProps::WARP_THREADS - 1);
+            unsigned int warp_id = threadIdx.x / PtxDeviceProps::WARP_THREADS;
+            unsigned int lane_id = threadIdx.x & (PtxDeviceProps::WARP_THREADS - 1);
 
             // Share lane aggregates
             if (lane_id == 0)

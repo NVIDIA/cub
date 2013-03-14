@@ -141,8 +141,8 @@ struct DeviceBaz
 
             // Initializer
             template <typename KernelPolicy, typename OpaqueKernelPolicy>
-            __host__ __device__ __forceinline__ cudaError_t
-            Init()
+            __host__ __device__ __forceinline__
+            cudaError_t Init()
             {
                 kernel_ptr      = BarKernel<OpaqueKernelPolicy>;
                 block_threads   = KernelPolicy::BLOCK_THREADS;
@@ -290,18 +290,12 @@ __global__ void WrapperKernel(T *d_in, T *d_out)
     if (threadIdx.x == 0) printf("WrapperKernel\n");
 
 #if CNP_ENABLED
+
     if ((blockIdx.x == 0) && (threadIdx.x == 0))
     {
         // Cuda nested kernel invocation
         DeviceBaz::Baz(d_in, d_out);
     }
-
-    int device_ordinal;
-    CubDebug(cudaGetDevice(&device_ordinal));
-
-    int sm_count;
-    CubDebug(cudaDeviceGetAttribute (&sm_count, cudaDevAttrMultiProcessorCount, device_ordinal));
-    printf("Sm count: %d\n", sm_count);
 
 #endif
 }
