@@ -130,6 +130,10 @@ template <
     int         LOGICAL_WARP_THREADS = DeviceProps::WARP_THREADS>
 class WarpReduce
 {
+    /// BlockReduce is a friend class that has access to the WarpReduceInternal classes
+    template <typename T, int BLOCK_THERADS>
+    friend class BlockReduce;
+
     //---------------------------------------------------------------------
     // Constants and typedefs
     //---------------------------------------------------------------------
@@ -184,11 +188,13 @@ private:
         typedef NullType SmemStorage;
 
         /// Reduction (specialized for unsigned int)
-        template <bool FULL_TILE>
+        template <
+            bool    FULL_TILE,
+            int     VALID_PER_LANE>
         static __device__ __forceinline__ unsigned int Sum(
             SmemStorage         &smem_storage,      ///< [in] Shared reference to opaque SmemStorage layout
             unsigned int        input,              ///< [in] Calling thread's input
-            const unsigned int  &valid_lanes)       ///< [in] Number of valid lanes in the calling thread's logical warp (may be less than \p LOGICAL_WARP_THREADS)
+            const unsigned int  &valid)             ///< [in] Number of valid lanes in the calling thread's logical warp (may be less than \p LOGICAL_WARP_THREADS)
         {
             unsigned int lane_id = (WARPS == 1) ? threadIdx.x : (threadIdx.x & (LOGICAL_WARP_THREADS - 1));
 
@@ -209,7 +215,7 @@ private:
                         "  mov.u32 %0, %1;"
                         "  @p add.u32 %0, %0, r0;"
                         "}"
-                        : "=r"(input) : "r"(input), "r"(OFFSET), "r"(SHFL_C), "r"(input), "r"(lane_id + OFFSET), "r"(valid_lanes));
+                        : "=r"(input) : "r"(input), "r"(OFFSET), "r"(SHFL_C), "r"(input), "r"((lane_id + OFFSET) * VALID_PER_LANE), "r"(valid));
                 }
                 else
                 {
@@ -230,11 +236,13 @@ private:
 
 
         /// Reduction (specialized for float)
-        template <bool FULL_TILE>
+        template <
+            bool    FULL_TILE,
+            int     VALID_PER_LANE>
         static __device__ __forceinline__ float Sum(
             SmemStorage         &smem_storage,      ///< [in] Shared reference to opaque SmemStorage layout
             float               input,              ///< [in] Calling thread's input
-            const unsigned int  &valid_lanes)       ///< [in] Number of valid lanes in the calling thread's logical warp (may be less than \p LOGICAL_WARP_THREADS)
+            const unsigned int  &valid)             ///< [in] Number of valid lanes in the calling thread's logical warp (may be less than \p LOGICAL_WARP_THREADS)
         {
             unsigned int lane_id = (WARPS == 1) ? threadIdx.x : (threadIdx.x & (LOGICAL_WARP_THREADS - 1));
 
@@ -255,7 +263,7 @@ private:
                         "  mov.f32 %0, %1;"
                         "  @p add.f32 %0, %0, r0;"
                         "}"
-                        : "=f"(input) : "f"(input), "r"(OFFSET), "r"(SHFL_C), "f"(input), "r"(lane_id + OFFSET), "r"(valid_lanes));
+                        : "=f"(input) : "f"(input), "r"(OFFSET), "r"(SHFL_C), "f"(input), "r"((lane_id + OFFSET) * VALID_PER_LANE), "r"(valid));
                 }
                 else
                 {
@@ -277,29 +285,31 @@ private:
         /// Summation
         template <
             bool        FULL_TILE,
+            int         VALID_PER_LANE,
             typename    _T>
         static __device__ __forceinline__ _T Sum(
             SmemStorage         &smem_storage,      ///< [in] Shared reference to opaque SmemStorage layout
             _T                  input,              ///< [in] Calling thread's input
-            const unsigned int  &valid_lanes)       ///< [in] Number of valid lanes in the calling thread's logical warp (may be less than \p LOGICAL_WARP_THREADS)
+            const unsigned int  &valid)             ///< [in] Number of valid lanes in the calling thread's logical warp (may be less than \p LOGICAL_WARP_THREADS)
         {
             // Cast as unsigned int
             _T output;
             unsigned int    &uinput             = reinterpret_cast<unsigned int&>(input);
             unsigned int    &uoutput            = reinterpret_cast<unsigned int&>(output);
 
-            uoutput = Sum<FULL_TILE>(smem_storage, uinput, valid_lanes);
+            uoutput = Sum<FULL_TILE, VALID_PER_LANE>(smem_storage, uinput, valid);
             return output;
         }
 
         /// Reduction
         template <
             bool            FULL_TILE,
+            int             VALID_PER_LANE,
             typename        ReductionOp>
         static __device__ __forceinline__ T Reduce(
             SmemStorage         &smem_storage,      ///< [in] Shared reference to opaque SmemStorage layout
             T                   input,              ///< [in] Calling thread's input
-            const unsigned int  &valid_lanes,       ///< [in] Number of valid lanes in the calling thread's logical warp (may be less than \p LOGICAL_WARP_THREADS)
+            const unsigned int  &valid,             ///< [in] Number of valid lanes in the calling thread's logical warp (may be less than \p LOGICAL_WARP_THREADS)
             ReductionOp         reduction_op)       ///< [in] Binary reduction operator
         {
             unsigned int lane_id = (WARPS == 1) ? threadIdx.x : (threadIdx.x & (LOGICAL_WARP_THREADS - 1));
@@ -316,13 +326,14 @@ private:
 
                 if (!FULL_TILE)
                 {
+                    // Grab addend from peer and set predicate if it's in valid-item range
                     const int OFFSET = 1 << STEP;
                     asm(
                         "{"
                         "  .reg .pred p;"
                         "  shfl.down.b32 %0|p, %1, %2, %3;"
                         "  setp.lt.and.u32 p, %4, %5, p;"
-                        : "=r"(utemp) : "r"(uinput), "r"(OFFSET), "r"(SHFL_C), "r"(lane_id + OFFSET), "r"(valid_lanes));
+                        : "=r"(utemp) : "r"(uinput), "r"(OFFSET), "r"(SHFL_C), "r"((lane_id + OFFSET) * VALID_PER_LANE), "r"(valid));
 
                     // Reduce
                     temp = reduction_op(input, temp);
@@ -391,11 +402,12 @@ private:
          */
         template <
             bool                FULL_TILE,
+            int                 VALID_PER_LANE,
             typename            ReductionOp>
         static __device__ __forceinline__ T Reduce(
             SmemStorage         &smem_storage,      ///< [in] Shared reference to opaque SmemStorage layout
             T                   input,              ///< [in] Calling thread's input
-            const unsigned int  &valid_lanes,       ///< [in] Number of valid lanes in the calling thread's logical warp (may be less than \p LOGICAL_WARP_THREADS)
+            const unsigned int  &valid,             ///< [in] Number of valid lanes in the calling thread's logical warp (may be less than \p LOGICAL_WARP_THREADS)
             ReductionOp         reduction_op)       ///< [in] Reduction operator
         {
             // Warp, thread-lane-IDs
@@ -410,7 +422,7 @@ private:
                 ThreadStore<PTX_STORE_VS>(&smem_storage.warp_buffer[warp_id][lane_id], input);
 
                 // Update input if addend is in range
-                if ((FULL_TILE && WARP_SYNCHRONOUS_UNGUARDED) || ((lane_id + OFFSET) < valid_lanes)   )
+                if ((FULL_TILE && WARP_SYNCHRONOUS_UNGUARDED) || ((lane_id + OFFSET) * VALID_PER_LANE < valid))
                 {
                     T addend = ThreadLoad<PTX_LOAD_VS>(&smem_storage.warp_buffer[warp_id][lane_id + OFFSET]);
                     input = reduction_op(input, addend);
@@ -424,13 +436,15 @@ private:
         /**
          * Summation
          */
-        template <bool FULL_TILE>
+        template <
+            bool    FULL_TILE,
+            int     VALID_PER_LANE>
         static __device__ __forceinline__ T Sum(
             SmemStorage         &smem_storage,      ///< [in] Shared reference to opaque SmemStorage layout
             T                   input,              ///< [in] Calling thread's input
-            const unsigned int  &valid_lanes)       ///< [in] Number of valid lanes in the calling thread's logical warp (may be less than \p LOGICAL_WARP_THREADS)
+            const unsigned int  &valid)             ///< [in] Number of valid lanes in the calling thread's logical warp (may be less than \p LOGICAL_WARP_THREADS)
         {
-            return Reduce<FULL_TILE>(smem_storage, input, valid_lanes, cub::Sum<T>());
+            return Reduce<FULL_TILE, VALID_PER_LANE>(smem_storage, input, valid, cub::Sum<T>());
         }
 
 
@@ -439,9 +453,10 @@ private:
 
     /** \endcond */     // INTERNAL
 
+    typedef typename WarpReduceInternal<POLICY> Internal;
 
     /// Shared memory storage layout type for WarpReduce
-    typedef typename WarpReduceInternal<POLICY>::SmemStorage _SmemStorage;
+    typedef typename Internal::SmemStorage _SmemStorage;
 
 
 public:
@@ -466,7 +481,7 @@ public:
         SmemStorage         &smem_storage,      ///< [in] Shared reference to opaque SmemStorage layout
         T                   input)              ///< [in] Calling thread's input
     {
-        return WarpReduceInternal<POLICY>::template Sum<true>(smem_storage, input, LOGICAL_WARP_THREADS);
+        return Internal::Sum<true, 1>(smem_storage, input, LOGICAL_WARP_THREADS);
     }
 
     /**
@@ -486,11 +501,11 @@ public:
         // Determine if we don't need bounds checking
         if (valid_lanes == LOGICAL_WARP_THREADS)
         {
-            return WarpReduceInternal<POLICY>::template Sum<true>(smem_storage, input, valid_lanes);
+            return Internal::Sum<true, 1>(smem_storage, input, valid_lanes);
         }
         else
         {
-            return WarpReduceInternal<POLICY>::template Sum<false>(smem_storage, input, valid_lanes);
+            return Internal::Sum<false, 1>(smem_storage, input, valid_lanes);
         }
     }
 
@@ -516,7 +531,7 @@ public:
         T                   input,              ///< [in] Calling thread's input
         ReductionOp         reduction_op)       ///< [in] Binary reduction operator
     {
-        return WarpReduceInternal<POLICY>::template Reduce<true>(smem_storage, input, LOGICAL_WARP_THREADS, reduction_op);
+        return Internal::Reduce<true, 1>(smem_storage, input, LOGICAL_WARP_THREADS, reduction_op);
     }
 
     /**
@@ -540,11 +555,11 @@ public:
         // Determine if we don't need bounds checking
         if (valid_lanes == LOGICAL_WARP_THREADS)
         {
-            return WarpReduceInternal<POLICY>::template Reduce<true>(smem_storage, input, valid_lanes, reduction_op);
+            return Internal::Reduce<true, 1>(smem_storage, input, valid_lanes, reduction_op);
         }
         else
         {
-            return WarpReduceInternal<POLICY>::template Reduce<false>(smem_storage, input, valid_lanes, reduction_op);
+            return Internal::Reduce<false, 1>(smem_storage, input, valid_lanes, reduction_op);
         }
     }
 
