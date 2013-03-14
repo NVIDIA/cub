@@ -33,7 +33,7 @@
 
 #pragma once
 
-#include "../device_props.cuh"
+#include "../arch_device_props.cuh"
 #include "../type_utils.cuh"
 #include "../ptx_intrinsics.cuh"
 #include "../thread/thread_reduce.cuh"
@@ -108,7 +108,7 @@ private:
     enum {
         RADIX_DIGITS                 = 1 << RADIX_BITS,
 
-        LOG_WARP_THREADS             = DeviceProps::LOG_WARP_THREADS,
+        LOG_WARP_THREADS             = PtxDeviceProps::LOG_WARP_THREADS,
         WARP_THREADS                = 1 << LOG_WARP_THREADS,
         WARPS                        = (BLOCK_THREADS + WARP_THREADS - 1) / WARP_THREADS,
 
@@ -124,7 +124,7 @@ private:
         // The number of packed counters per thread (plus one for padding)
         RAKING_SEGMENT                = COUNTER_LANES + 1,
 
-        LOG_SMEM_BANKS                = DeviceProps::LOG_SMEM_BANKS,
+        LOG_SMEM_BANKS                = PtxDeviceProps::LOG_SMEM_BANKS,
         SMEM_BANKS                    = 1 << LOG_SMEM_BANKS,
     };
 

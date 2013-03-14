@@ -79,14 +79,14 @@ enum
  * architecture.
  */
 template <int SM_ARCH>
-struct StaticDeviceProps;
+struct ArchDeviceProps;
 
 
 /**
  * Device properties for SM30
  */
 template <>
-struct StaticDeviceProps<300>
+struct ArchDeviceProps<300>
 {
     enum {
         LOG_WARP_THREADS    = 5,                        // 32 threads per warp
@@ -111,7 +111,7 @@ struct StaticDeviceProps<300>
     template <typename T>
     static __host__ __device__ __forceinline__ void Callback(T &target, int sm_version)
     {
-        target.template Callback<StaticDeviceProps>();
+        target.template Callback<ArchDeviceProps>();
     }
 };
 
@@ -120,7 +120,7 @@ struct StaticDeviceProps<300>
  * Device properties for SM20
  */
 template <>
-struct StaticDeviceProps<200>
+struct ArchDeviceProps<200>
 {
     enum {
         LOG_WARP_THREADS    = 5,                        // 32 threads per warp
@@ -146,9 +146,9 @@ struct StaticDeviceProps<200>
     static __host__ __device__ __forceinline__ void Callback(T &target, int sm_version)
     {
         if (sm_version > 200) {
-            StaticDeviceProps<300>::Callback(target, sm_version);
+            ArchDeviceProps<300>::Callback(target, sm_version);
         } else {
-            target.template Callback<StaticDeviceProps>();
+            target.template Callback<ArchDeviceProps>();
         }
     }
 };
@@ -158,7 +158,7 @@ struct StaticDeviceProps<200>
  * Device properties for SM12
  */
 template <>
-struct StaticDeviceProps<120>
+struct ArchDeviceProps<120>
 {
     enum {
         LOG_WARP_THREADS    = 5,                        // 32 threads per warp
@@ -184,9 +184,9 @@ struct StaticDeviceProps<120>
     static __host__ __device__ __forceinline__ void Callback(T &target, int sm_version)
     {
         if (sm_version > 120) {
-            StaticDeviceProps<200>::Callback(target, sm_version);
+            ArchDeviceProps<200>::Callback(target, sm_version);
         } else {
-            target.template Callback<StaticDeviceProps>();
+            target.template Callback<ArchDeviceProps>();
         }
     }
 };
@@ -196,7 +196,7 @@ struct StaticDeviceProps<120>
  * Device properties for SM10
  */
 template <>
-struct StaticDeviceProps<100>
+struct ArchDeviceProps<100>
 {
     enum {
         LOG_WARP_THREADS    = 5,                        // 32 threads per warp
@@ -222,9 +222,9 @@ struct StaticDeviceProps<100>
     static __host__ __device__ __forceinline__ void Callback(T &target, int sm_version)
     {
         if (sm_version > 100) {
-            StaticDeviceProps<120>::Callback(target, sm_version);
+            ArchDeviceProps<120>::Callback(target, sm_version);
         } else {
-            target.template Callback<StaticDeviceProps>();
+            target.template Callback<ArchDeviceProps>();
         }
     }
 };
@@ -234,38 +234,38 @@ struct StaticDeviceProps<100>
  * Device properties for SM35
  */
 template <>
-struct StaticDeviceProps<350> : StaticDeviceProps<300> {};        // Derives from SM30
+struct ArchDeviceProps<350> : ArchDeviceProps<300> {};        // Derives from SM30
 
 /**
  * Device properties for SM21
  */
 template <>
-struct StaticDeviceProps<210> : StaticDeviceProps<200> {};        // Derives from SM20
+struct ArchDeviceProps<210> : ArchDeviceProps<200> {};        // Derives from SM20
 
 /**
  * Device properties for SM13
  */
 template <>
-struct StaticDeviceProps<130> : StaticDeviceProps<120> {};        // Derives from SM12
+struct ArchDeviceProps<130> : ArchDeviceProps<120> {};        // Derives from SM12
 
 /**
  * Device properties for SM11
  */
 template <>
-struct StaticDeviceProps<110> : StaticDeviceProps<100> {};        // Derives from SM10
+struct ArchDeviceProps<110> : ArchDeviceProps<100> {};        // Derives from SM10
 
 /**
  * Unknown device properties
  */
 template <int SM_ARCH>
-struct StaticDeviceProps : StaticDeviceProps<100> {};             // Derives from SM10
+struct ArchDeviceProps : ArchDeviceProps<100> {};             // Derives from SM10
 
 
 
 /**
  * Device properties for the arch-id targeted by the active compiler pass.
  */
-struct DeviceProps : StaticDeviceProps<CUB_PTX_ARCH> {};
+struct PtxDeviceProps : ArchDeviceProps<CUB_PTX_ARCH> {};
 
 
 

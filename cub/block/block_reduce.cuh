@@ -34,7 +34,7 @@
 #pragma once
 
 #include "../block/block_raking_grid.cuh"
-#include "../device_props.cuh"
+#include "../arch_device_props.cuh"
 #include "../type_utils.cuh"
 #include "../operators.cuh"
 #include "../thread/thread_reduce.cuh"

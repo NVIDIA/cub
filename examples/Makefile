@@ -47,7 +47,7 @@ GEN_SM13 = -gencode=arch=compute_13,code=\"sm_13,compute_13\"
 GEN_SM11 = -gencode=arch=compute_11,code=\"sm_11,compute_11\" 
 GEN_SM10 = -gencode=arch=compute_10,code=\"sm_10,compute_10\" 
 #SM_TARGETS = $(GEN_SM20) $(GEN_SM13) $(GEN_SM10)
-SM_TARGETS = $(GEN_SM20)
+SM_TARGETS = $(GEN_SM35)
 
 #-------------------------------------------------------------------------------
 # Libs
@@ -120,7 +120,7 @@ rwildcard=$(foreach d,$(wildcard $1*),$(call rwildcard,$d/,$2) $(filter $(subst 
 
 DEPS =	 ./Makefile \
 		../test/test_util.h \
-		$(call rwildcard,../../cub/,*.cuh)
+		$(call rwildcard,../cub/,*.cuh)
 
 
 #-------------------------------------------------------------------------------

@@ -35,7 +35,7 @@
 
 #include <stdio.h>
 #include "ns_wrapper.cuh"
-#include "device_props.cuh"
+#include "arch_device_props.cuh"
 
 CUB_NS_PREFIX
 

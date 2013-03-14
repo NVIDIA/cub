@@ -35,7 +35,7 @@
 
 #include "../thread/thread_load.cuh"
 #include "../thread/thread_store.cuh"
-#include "../device_props.cuh"
+#include "../arch_device_props.cuh"
 #include "../type_utils.cuh"
 #include "../operators.cuh"
 #include "../ns_wrapper.cuh"
@@ -201,7 +201,7 @@ namespace cub {
 template <
     typename    T,
     int         WARPS,
-    int         LOGICAL_WARP_THREADS = DeviceProps::WARP_THREADS>
+    int         LOGICAL_WARP_THREADS = PtxDeviceProps::WARP_THREADS>
 class WarpScan
 {
     //---------------------------------------------------------------------
