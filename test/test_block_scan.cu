@@ -274,7 +274,7 @@ __global__ void BlockScanKernel(
 {
     const int TILE_SIZE = BLOCK_THREADS * ITEMS_PER_THREAD;
 
-    // Cooperative warp-scan utility type (1 warp)
+    // Parameterize BlockScan type for our thread block
     typedef BlockScan<T, BLOCK_THREADS, POLICY> BlockScan;
 
     // Shared memory
@@ -284,7 +284,7 @@ __global__ void BlockScanKernel(
     T data[ITEMS_PER_THREAD];
     BlockLoadDirect(d_in, data);
 
-    // Record elapsed clocks
+    // Start cycle timer
     clock_t start = clock();
 
     // Test scan
@@ -293,8 +293,8 @@ __global__ void BlockScanKernel(
     DeviceTest<T, ScanOp, IdentityT>::template Test<TEST_MODE, BlockScan>(
         smem_storage, data, identity, scan_op, aggregate, prefix_op);
 
-    // Record elapsed clocks
-    *d_elapsed = clock() - start;
+    // Stop cycle timer
+    clock_t stop = clock();
 
     // Store output
     BlockStoreDirect(d_out, data);
@@ -302,6 +302,7 @@ __global__ void BlockScanKernel(
     // Store aggregate
     if (threadIdx.x == 0)
     {
+        *d_elapsed = (start > stop) ? start - stop : stop - start;
         d_out[TILE_SIZE] = aggregate;
     }
 }
