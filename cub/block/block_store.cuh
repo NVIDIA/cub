@@ -318,11 +318,12 @@ __device__ __forceinline__ void BlockStoreDirectStriped(
  * threads in <em>blocked</em> arrangement with thread<sub><em>i</em></sub> owning
  * the <em>i</em><sup>th</sup> segment of consecutive elements.
  *
+ * The output offset (\p block_ptr + \p block_offset) must be quad-item aligned,
+ * which is the default starting offset returned by \p cudaMalloc()
+ *
  * \par
  * The following conditions will prevent vectorization and storing will fall back to cub::BLOCK_STORE_DIRECT:
  *   - \p ITEMS_PER_THREAD is odd
- *   - The \p OutputIterator is not a simple pointer type
- *   - The input offset (\p block_ptr + \p block_offset) is not quad-aligned
  *   - The data type \p T is not a built-in primitive or CUDA vector type (e.g., \p short, \p int2, \p double, \p float2, etc.)
  *
  * \tparam MODIFIER             cub::PtxStoreModifier cache modifier.
@@ -357,28 +358,19 @@ __device__ __forceinline__ void BlockStoreVectorized(
     // Alias global pointer
     Vector *block_ptr_vectors = reinterpret_cast<Vector *>(block_ptr);
 
-    // Vectorize if aligned
-    if ((size_t(block_ptr_vectors) & (VEC_SIZE - 1)) == 0)
-    {
-        // Alias pointers (use "raw" array here which should get optimized away to prevent conservative PTXAS lmem spilling)
-        Vector raw_vector[VECTORS_PER_THREAD];
-        T *raw_items = reinterpret_cast<T*>(raw_vector);
+    // Alias pointers (use "raw" array here which should get optimized away to prevent conservative PTXAS lmem spilling)
+    Vector raw_vector[VECTORS_PER_THREAD];
+    T *raw_items = reinterpret_cast<T*>(raw_vector);
 
-        // Copy
-        #pragma unroll
-        for (int ITEM = 0; ITEM < ITEMS_PER_THREAD; ITEM++)
-        {
-            raw_items[ITEM] = items[ITEM];
-        }
-
-        // Direct-store using vector types
-        BlockStoreDirect<MODIFIER>(block_ptr_vectors, raw_vector);
-    }
-    else
+    // Copy
+    #pragma unroll
+    for (int ITEM = 0; ITEM < ITEMS_PER_THREAD; ITEM++)
     {
-        // Unaligned: direct-store of individual items
-        BlockStoreDirect<MODIFIER>(block_ptr, items);
+        raw_items[ITEM] = items[ITEM];
     }
+
+    // Direct-store using vector types
+    BlockStoreDirect<MODIFIER>(block_ptr_vectors, raw_vector);
 }
 
 
@@ -389,11 +381,13 @@ __device__ __forceinline__ void BlockStoreVectorized(
  * threads in <em>blocked</em> arrangement with thread<sub><em>i</em></sub> owning
  * the <em>i</em><sup>th</sup> segment of consecutive elements.
  *
+ * The output offset (\p block_ptr + \p block_offset) must be quad-item aligned,
+ * which is the default starting offset returned by \p cudaMalloc().
+ *
+ *
  * \par
  * The following conditions will prevent vectorization and storing will fall back to cub::BLOCK_STORE_DIRECT:
  *   - \p ITEMS_PER_THREAD is odd
- *   - The \p OutputIterator is not a simple pointer type
- *   - The input offset (\p block_ptr + \p block_offset) is not quad-aligned
  *   - The data type \p T is not a built-in primitive or CUDA vector type (e.g., \p short, \p int2, \p double, \p float2, etc.)
  *
  * \tparam T                    <b>[inferred]</b> The data type to store.

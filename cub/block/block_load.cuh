@@ -447,11 +447,10 @@ __device__ __forceinline__ void BlockLoadDirectStriped(
  * threads in "blocked" fashion with thread<sub><em>i</em></sub> owning
  * the <em>i</em><sup>th</sup> segment of consecutive elements.
  *
- * \par
+ * The input offset (\p block_ptr + \p block_offset) must be quad-item aligned
+ *
  * The following conditions will prevent vectorization and loading will fall back to cub::BLOCK_LOAD_DIRECT:
  *   - \p ITEMS_PER_THREAD is odd
- *   - The \p InputIterator is not a simple pointer type
- *   - The input offset (\p block_ptr + \p block_offset) is not quad-aligned
  *   - The data type \p T is not a built-in primitive or CUDA vector type (e.g., \p short, \p int2, \p double, \p float2, etc.)
  *
  * \tparam MODIFIER             cub::PtxLoadModifier cache modifier.
@@ -483,31 +482,19 @@ __device__ __forceinline__ void BlockLoadVectorized(
     // Vector type
     typedef typename VectorType<T, VEC_SIZE>::Type Vector;
 
-    // Alias global pointer
-    Vector *block_ptr_vectors = reinterpret_cast<Vector *>(block_ptr);
+    // Alias local data (use raw_items array here which should get optimized away to prevent conservative PTXAS lmem spilling)
+    T raw_items[ITEMS_PER_THREAD];
 
-    // Vectorize if aligned
-    if ((size_t(block_ptr_vectors) & (VEC_SIZE - 1)) == 0)
+    // Direct-load using vector types
+    BlockLoadDirect<MODIFIER>(
+        reinterpret_cast<Vector *>(block_ptr),
+        reinterpret_cast<Vector (&)[VECTORS_PER_THREAD]>(raw_items));
+
+    // Copy
+    #pragma unroll
+    for (int ITEM = 0; ITEM < ITEMS_PER_THREAD; ITEM++)
     {
-        // Alias local data (use raw_items array here which should get optimized away to prevent conservative PTXAS lmem spilling)
-        T raw_items[ITEMS_PER_THREAD];
-
-        // Direct-load using vector types
-        BlockLoadDirect<MODIFIER>(
-            block_ptr_vectors,
-            reinterpret_cast<Vector (&)[VECTORS_PER_THREAD]>(raw_items));
-
-        // Copy
-        #pragma unroll
-        for (int ITEM = 0; ITEM < ITEMS_PER_THREAD; ITEM++)
-        {
-            items[ITEM] = raw_items[ITEM];
-        }
-    }
-    else
-    {
-        // Unaligned: direct-load of individual items
-        BlockLoadDirect<MODIFIER>(block_ptr, items);
+        items[ITEM] = raw_items[ITEM];
     }
 }
 
@@ -520,11 +507,10 @@ __device__ __forceinline__ void BlockLoadVectorized(
  * threads in "blocked" fashion with thread<sub><em>i</em></sub> owning
  * the <em>i</em><sup>th</sup> segment of consecutive elements.
  *
- * \par
+ * The input offset (\p block_ptr + \p block_offset) must be quad-item aligned
+ *
  * The following conditions will prevent vectorization and loading will fall back to cub::BLOCK_LOAD_DIRECT:
  *   - \p ITEMS_PER_THREAD is odd
- *   - The \p InputIterator is not a simple pointer type
- *   - The input offset (\p block_ptr + \p block_offset) is not quad-aligned
  *   - The data type \p T is not a built-in primitive or CUDA vector type (e.g., \p short, \p int2, \p double, \p float2, etc.)
  *
  * \tparam T                    <b>[inferred]</b> The data type to load.
