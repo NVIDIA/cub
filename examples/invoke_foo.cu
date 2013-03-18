@@ -61,38 +61,29 @@ __global__ void FooKernel(T *d_in, T *d_out, int num_elements)
 struct Foo
 {
 
+private:
+
     /**
      * Invoke foo operation with custom policy
      */
-    template <typename FooKernelPolicyT, typename T>
+    template <
+        typename FooKernelPolicyT,
+        typename FooKernelPtr,
+        typename T>
     __host__ __device__ __forceinline__
-    static cudaError_t Invoke(
-        T *d_in,
-        T *d_out,
-        int num_elements,
-        void (*foo_kernel_ptr)(T*, T*, int) = FooKernel<FooKernelPolicyT, T>)
+    static cudaError_t InvokeInternal(
+        FooKernelPtr    foo_kernel_ptr,
+        T               *d_in,
+        T               *d_out,
+        int             num_elements)
     {
-        // Preconfigured tuning policies
-        typedef FooKernelPolicy<64,     1>      FooKernelPolicy300;
-        typedef FooKernelPolicy<128,    1>      FooKernelPolicy200;
-        typedef FooKernelPolicy<256,    1>      FooKernelPolicy100;
-
-        // PTX-specific default policy
-    #if PTX_ARCH >= 300
-        struct PtxFooKernelPolicy : FooKernelPolicy300 {};
-    #elif PTX_ARCH >= 200
-        struct PtxFooKernelPolicy : FooKernelPolicy200 {};
-    #else
-        struct PtxFooKernelPolicy : FooKernelPolicy100 {};
-    #endif
-
-
-        if (foo_kernel_ptr == NULL) foo_kernel_ptr = FooKernel<PtxFooKernelPolicy, T>;
-
     #if !CNP_ENABLED
+
         // CUDA API calls and kernel launch not supported from this device
         return cudaErrorInvalidConfiguration;
+
     #else
+
         // Determine grid size
         const int TILE_SIZE = FooKernelPolicyT::BLOCK_THREADS * FooKernelPolicyT::ITEMS_PER_THREAD;
         int grid_size = (num_elements + TILE_SIZE - 1) / TILE_SIZE;
@@ -101,8 +92,37 @@ struct Foo
         foo_kernel_ptr<<<grid_size, FooKernelPolicyT::BLOCK_THREADS>>>(d_in, d_out, num_elements);
 
         return cudaSuccess;
+
     #endif
     }
+
+public:
+
+
+    /**
+     * Invoke foo operation with custom policy
+     */
+    template <typename FooKernelPolicyT, typename T>
+    __host__ __device__ __forceinline__
+    static cudaError_t Invoke(T *d_in, T *d_out, int num_elements)
+    {
+        return InvokeInternal<FooKernelPolicyT>(FooKernel<FooKernelPolicyT, T>, d_in, d_out, num_elements);
+    }
+
+
+    // Preconfigured tuning policies
+    typedef FooKernelPolicy<64,     1>      FooKernelPolicy300;
+    typedef FooKernelPolicy<128,    1>      FooKernelPolicy200;
+    typedef FooKernelPolicy<256,    1>      FooKernelPolicy100;
+
+    // PTX-specific default policy
+#if PTX_ARCH >= 300
+    struct PtxFooKernelPolicy : FooKernelPolicy300 {};
+#elif PTX_ARCH >= 200
+    struct PtxFooKernelPolicy : FooKernelPolicy200 {};
+#else
+    struct PtxFooKernelPolicy : FooKernelPolicy100 {};
+#endif
 
 
     /**
@@ -112,28 +132,17 @@ struct Foo
     __host__ __device__ __forceinline__
     static cudaError_t Invoke(T *d_in, T *d_out, int num_elements)
     {
-        // Preconfigured tuning policies
-        typedef FooKernelPolicy<64,     1>      FooKernelPolicy300;
-        typedef FooKernelPolicy<128,    1>      FooKernelPolicy200;
-        typedef FooKernelPolicy<256,    1>      FooKernelPolicy100;
+        // Our PTX-specific foo kernel function pointer
+        void (*foo_kernel_ptr)(T*, T*, int) = FooKernel<PtxFooKernelPolicy, T>;
 
-        // PTX-specific default policy
-    #if PTX_ARCH >= 300
-        struct PtxFooKernelPolicy : FooKernelPolicy300 {};
-    #elif PTX_ARCH >= 200
-        struct PtxFooKernelPolicy : FooKernelPolicy200 {};
-    #else
-        struct PtxFooKernelPolicy : FooKernelPolicy100 {};
-    #endif
+    #if (PTX_ARCH != 0)
 
-    #if !CNP_ENABLED
-
-        // CUDA API calls and kernel launch not supported from this device
-        return cudaErrorInvalidConfiguration;
+        // We're on the device, so dispatch using policy for the current PTX arch
+        return InvokeInternal<PtxFooKernelPolicy>(foo_kernel_ptr, d_in, d_out, num_elements);
 
     #else
 
-        // We're on the host, so determine which tuned variant to initialize
+        // We're on the host, so determine which tuned variant to dispatch
         int device_ordinal;
         cudaGetDevice(&device_ordinal);
 
@@ -142,16 +151,13 @@ struct Foo
         cudaDeviceGetAttribute(&minor, cudaDevAttrComputeCapabilityMinor, device_ordinal);
         int device_arch = major * 100 + minor * 10;
 
-        // Our PTX-specific foo kernel function pointer
-        void (*foo_kernel_ptr)(T*, T*, int) = FooKernel<PtxFooKernelPolicy, T>;
-
         // Dispatch with explicit policy
         if (device_arch >= 300)
-            return Invoke<FooKernelPolicy300>(d_in, d_out, num_elements, foo_kernel_ptr);
+            return InvokeInternal<FooKernelPolicy300>(foo_kernel_ptr, d_in, d_out, num_elements);
         else if (device_arch >= 200)
-            return Invoke<FooKernelPolicy200>(d_in, d_out, num_elements, foo_kernel_ptr);
+            return InvokeInternal<FooKernelPolicy200>(foo_kernel_ptr, d_in, d_out, num_elements);
         else
-            return Invoke<FooKernelPolicy100>(d_in, d_out, num_elements, foo_kernel_ptr);
+            return InvokeInternal<FooKernelPolicy100>(foo_kernel_ptr, d_in, d_out, num_elements);
 
     #endif
     }
