@@ -28,6 +28,7 @@ var searchData=
   ['blockloadvectorized',['BlockLoadVectorized',['../group___simt_utils.html#gaea8200ef976bb588c569e039ea79005c',1,'cub::BlockLoadVectorized(T *block_ptr, T(&amp;items)[ITEMS_PER_THREAD])'],['../group___simt_utils.html#gab1a8ffc7fe70a636a3d09403344cfced',1,'cub::BlockLoadVectorized(T *block_ptr, T(&amp;items)[ITEMS_PER_THREAD])']]],
   ['blockradixsort',['BlockRadixSort',['../classcub_1_1_block_radix_sort.html',1,'cub']]],
   ['blockreduce',['BlockReduce',['../classcub_1_1_block_reduce.html',1,'cub']]],
+  ['blockreduce',['BlockReduce',['../classcub_1_1_warp_reduce.html#a48bdd86ea499bbd83386c10d1ff4839e',1,'cub::WarpReduce']]],
   ['blockscan',['BlockScan',['../classcub_1_1_block_scan.html',1,'cub']]],
   ['blockscanpolicy',['BlockScanPolicy',['../namespacecub.html#aa7484021273cbfd89229a6b5c205b9f1',1,'cub']]],
   ['blockstore',['BlockStore',['../classcub_1_1_block_store.html',1,'cub']]],
