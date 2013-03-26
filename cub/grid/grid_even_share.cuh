@@ -64,7 +64,7 @@ private:
 
 public:
 
-    SizeT   total_items;
+    SizeT   num_items;
     int     grid_size;
 
     // Threadblock-specific fields
@@ -78,16 +78,16 @@ public:
      * Generally constructed in host code one time.
      */
     __host__ __device__ __forceinline__ GridEvenShare(
-        SizeT   total_items,
+        SizeT   num_items,
         int     max_grid_size,
         int     schedule_granularity) :
 
             // initializers
-            total_items(total_items),
+            num_items(num_items),
             block_offset(0),
             block_oob(0)
     {
-        int total_grains        = (total_items + schedule_granularity - 1) / schedule_granularity;
+        int total_grains        = (num_items + schedule_granularity - 1) / schedule_granularity;
         grid_size               = CUB_MAX(total_grains, max_grid_size);
 
         SizeT grains_per_block  = total_grains / grid_size;
@@ -121,7 +121,7 @@ public:
         // Last threadblock
         if (blockIdx.x == grid_size - 1)
         {
-            block_oob = total_items;
+            block_oob = num_items;
         }
     }
 
@@ -137,7 +137,7 @@ public:
             "block_offset(%lu) "
             "block_oob(%lu) "
 #endif
-            "total_items(%lu)  "
+            "num_items(%lu)  "
             "big_blocks(%lu)  "
             "big_share(%lu)  "
             "normal_share(%lu)\n",
@@ -146,7 +146,7 @@ public:
                 (unsigned long) block_offset,
                 (unsigned long) block_oob,
 #endif
-                (unsigned long) total_items,
+                (unsigned long) num_items,
                 (unsigned long) big_blocks,
                 (unsigned long) big_share,
                 (unsigned long) normal_share);
