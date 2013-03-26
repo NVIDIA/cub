@@ -109,8 +109,7 @@ public:
     }
 
 
-    /// Prepares the queue for draining in the next kernel instance using
-    /// the current fill counter as the amount to drain.
+    /// Prepares the queue for draining in the next kernel instance
     __host__ __device__ __forceinline__ cudaError_t PrepareDrain()
     {
 #ifdef __CUDA_ARCH__
