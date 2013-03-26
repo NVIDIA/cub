@@ -2,6 +2,8 @@
 
 #include <stdio.h>
 
+#include <iterator>
+
 #define CUB_STDERR
 
 #include <cub.cuh>
@@ -149,19 +151,210 @@ enum DeviceReducePolicy
 
 // ReduceKernel tuning policy
 template <
-    int _BLOCK_THREADS,
-    int _ITEMS_PER_THREAD>
+    int                     _BLOCK_THREADS,
+    int                     _ITEMS_PER_THREAD,
+    bool                    _EVEN_SHARE,
+    BlockLoadPolicy         _LOAD_POLICY,
+    PtxLoadModifier         _LOAD_MODIFIER>
 struct ReduceKernelPolicy
 {
     enum
     {
-        BLOCK_THREADS      = _BLOCK_THREADS,
-        ITEMS_PER_THREAD   = _ITEMS_PER_THREAD,
+        BLOCK_THREADS       = _BLOCK_THREADS,
+        ITEMS_PER_THREAD    = _ITEMS_PER_THREAD,
+        EVEN_SHARE          = _EVEN_SHARE,
     };
+
+    static const BlockLoadPolicy LOAD_POLICY        = _LOAD_POLICY;
+    static const PtxLoadModifier LOAD_MODIFIER      = _LOAD_MODIFIER;
 };
 
 
-//
+template <
+    typename ReduceKernelPolicy,
+    typename InputIterator,
+    typename SizeT>
+struct BlockReduceTiles
+{
+    //---------------------------------------------------------------------
+    // Types and constants
+    //---------------------------------------------------------------------
+
+    // Data type of input iterator
+    typedef typename std::iterator_traits<InputIterator>::value_type T;
+
+    // Constants
+    enum
+    {
+        BLOCK_THREADS       = ReduceKernelPolicy::BLOCK_THREADS,
+        ITEMS_PER_THREAD    = ReduceKernelPolicy::ITEMS_PER_THREAD,
+        TILE_ITEMS          = BLOCK_THREADS * ITEMS_PER_THREAD,
+    };
+
+    static const BlockLoadPolicy LOAD_POLICY        = ReduceKernelPolicy::LOAD_POLICY;
+    static const PtxLoadModifier LOAD_MODIFIER      = ReduceKernelPolicy::LOAD_MODIFIER;
+
+    // Parameterized BlockLoad primitive
+    typedef BlockLoad<InputIterator, BLOCK_THREADS, ITEMS_PER_THREAD, LOAD_POLICY, LOAD_MODIFIER> BlockLoadT;
+
+    // Parameterized BlockReduce primitive
+    typedef BlockReduce<T, BLOCK_THREADS> BlockReduceT;
+
+    // Shared memory type for this threadblock
+    struct SmemStorage
+    {
+        SizeT block_offset;                                 // Location where to dequeue input for dynamic operation
+        union
+        {
+            typename BlockLoadT::SmemStorage    load;       // Smem needed for cooperative loading
+            typename BlockReduceT::SmemStorage  reduce;     // Smem needed for cooperative reduction
+        };
+    };
+
+
+    //---------------------------------------------------------------------
+    // Operations
+    //---------------------------------------------------------------------
+
+    /**
+     * Process tiles using even-share
+     */
+    template <
+        typename OutputIterator,
+        typename SizeT,
+        typename ReductionOp>
+    static __device__ __forceinline__ void ProcessTiles(
+        SmemStorage             &smem_storage,
+        InputIterator           d_in,
+        OutputIterator          d_out,
+        GridEvenShare<SizeT>    &even_share,
+        ReductionOp             &reduction_op)
+    {
+        SizeT block_offset      = even_share.block_offset;
+        SizeT block_elements    = even_share.block_oob - block_offset;
+
+        if (block_elements < BLOCK_THREADS)
+        {
+            // Some threads are out-of-bounds
+            T thread_partial;
+            if (threadIdx.x < block_elements)
+            {
+                thread_partial = ThreadLoad<LOAD_MODIFIER>(d_in + block_offset + threadIdx.x);
+            }
+
+            // Compute and output the block-wide reduction
+            T block_aggregate = BlockReduceT::Reduce(smem_storage, thread_partial, reduction_op, block_elements);
+            if (threadIdx.x == 0)
+            {
+                d_out[0] = block_aggregate;
+            }
+        }
+        else
+        {
+            // Every thread will have a partial to contribute
+            T thread_partial;
+
+            if (block_offset + TILE_ITEMS <= even_share.block_oob)
+            {
+                // Consume at least one full tile
+                T items[ITEMS_PER_THREAD];
+
+                BlockLoadT::Load(smem_storage.load, d_in + block_offset, items);
+                thread_partial = ThreadReduce(items, reduction_op);
+                block_offset += TILE_ITEMS;
+
+                __syncthreads();
+
+                // Consume other full tiles
+                while (block_offset + TILE_ITEMS <= even_share.block_oob)
+                {
+                    BlockLoadT::Load(smem_storage.load, d_in + block_offset, items);
+                    thread_partial = ThreadReduce(items, reduction_op, thread_partial);
+                    block_offset += TILE_ITEMS;
+
+                    __syncthreads();
+                }
+
+            }
+            else
+            {
+                // Consume at lease one BLOCK_THREADS chunk
+                thread_partial = ThreadLoad<LOAD_MODIFIER>(d_in + block_offset + threadIdx.x);
+                block_offset += BLOCK_THREADS;
+            }
+
+            // Consume remaining chunks of BLOCK_THREADS
+            while (block_offset + BLOCK_THREADS <= even_share.block_oob)
+            {
+                T item = ThreadLoad<LOAD_MODIFIER>(d_in + block_offset + threadIdx.x);
+                thread_partial = reduction_op(thread_partial, item);
+                block_offset += BLOCK_THREADS;
+            }
+
+            // Compute and output the block-wide reduction
+            T block_aggregate = BlockReduceT::Reduce(smem_storage, reduction_op);
+            if (threadIdx.x == 0)
+            {
+                d_out[0] = block_aggregate;
+            }
+        }
+    }
+
+
+    /**
+     * Process tiles using dynamic dequeuing
+     */
+    template <
+        typename OutputIterator,
+        typename SizeT,
+        typename ReductionOp>
+    static __device__ __forceinline__ void ProcessTiles(
+        SmemStorage             &smem_storage,
+        InputIterator           d_in,
+        OutputIterator          d_out,
+        SizeT                   num_items,
+        GridQueue<SizeT>        &grid_queue,
+        ReductionOp             &reduction_op)
+    {
+        // Attempt to grab a full tile
+        if (threadIdx.x == 0)
+        {
+            smem_storage.block_offset = grid_queue.Drain(TILE_ITEMS);
+        }
+
+        __syncthreads();
+
+        // Process first tile
+        if (smem_storage.block_offset < num_items)
+        {
+
+
+
+            __syncthreads();
+
+            // Process remaining tiles
+            while (smem_storage.block_offset < num_items)
+            {
+
+
+
+            }
+        }
+
+
+
+    }
+
+
+
+
+};
+
+
+
+
+
+
 /**
  * \brief Reduction kernel entry point.
  *
@@ -169,9 +362,14 @@ struct ReduceKernelPolicy
  */
 template <
     typename ReduceKernelPolicy,
-    typename T,
+    typename InputIterator,
+    typename OutputIterator,
     typename SizeT>
-__global__ void ReduceKernel(T *d_in, T *d_out, SizeT num_elements)
+__global__ void ReduceKernel(
+    InputIterator           d_in,
+    OutputIterator          d_out,
+    GridEvenShare<SizeT>    even_share,
+    GridQueue<SizeT>        grid_queue)
 {
     if ((blockIdx.x == 0) && (threadIdx.x == 0)) printf("ReduceKernel BLOCK_THREADS(%d) ITEMS_PER_THREAD(%d)\n",
         ReduceKernelPolicy::BLOCK_THREADS,
