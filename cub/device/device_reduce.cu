@@ -330,11 +330,20 @@ struct BlockReduceTiles
 
 
 
-            __syncthreads();
-
             // Process remaining tiles
-            while (smem_storage.block_offset < num_items)
+            while (true)
             {
+                __syncthreads();
+
+                if (threadIdx.x == 0)
+                {
+                    smem_storage.block_offset = grid_queue.Drain(TILE_ITEMS);
+                }
+
+                __syncthreads();
+
+                // Quit if queue is empty
+                if (smem_storage.block_offset >= num_items) break;
 
 
 
