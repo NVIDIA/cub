@@ -52,6 +52,7 @@ var searchBox = new SearchBox("searchBox", "search",false,'Search');
       <li class="current"><a href="index.html"><span>Main&#160;Page</span></a></li>
       <li><a href="modules.html"><span>Modules</span></a></li>
       <li><a href="annotated.html"><span>Classes</span></a></li>
+      <li><a href="files.html"><span>Files</span></a></li>
       <li>
         <div id="MSearchBox" class="MSearchBoxInactive">
         <span class="left">
@@ -174,7 +175,7 @@ var searchBox = new SearchBox("searchBox", "search",false,'Search');
 <div class="line">     T data[ITEMS_PER_THREAD];</div>
 <div class="line"></div>
 <div class="line">     <span class="comment">// Load a tile of data using vector-load instructions</span></div>
-<div class="line">     <a class="code" href="group___thread_module.html#gaea8200ef976bb588c569e039ea79005c" title="Load a tile of items across a threadblock directly using the specified cache modifier.">BlockLoadVectorized</a>(data, d_in + (blockIdx.x * TILE_SIZE));</div>
+<div class="line">     <a class="code" href="group___block_module.html#gaea8200ef976bb588c569e039ea79005c" title="Load a tile of items across a threadblock directly using the specified cache modifier.">BlockLoadVectorized</a>(data, d_in + (blockIdx.x * TILE_SIZE));</div>
 <div class="line"></div>
 <div class="line">     <span class="comment">// Sort data in ascending order</span></div>
 <div class="line">     <a class="code" href="classcub_1_1_block_radix_sort.html#abdbfda59c129946222ab10d2e2e6f6f5" title="Performs a threadblock-wide radix sort over a blocked arrangement of keys.">BlockRadixSort::SortBlocked</a>(smem_storage, data);</div>
@@ -348,7 +349,7 @@ var searchBox = new SearchBox("searchBox", "search",false,'Search');
 <!-- HTML footer for doxygen 1.8.3.1-->
 <!-- start footer part -->
 <hr class="footer"/><address class="footer"><small>
-Generated on Wed Mar 27 2013 16:29:48 for CUB by &#160;<a href="http://www.doxygen.org/index.html">
+Generated on Wed Mar 27 2013 16:40:18 for CUB by &#160;<a href="http://www.doxygen.org/index.html">
 <img class="footer" src="doxygen.png" alt="doxygen"/>
 </a> 1.8.3.1
 <br>

@@ -28,7 +28,7 @@
 
 /**
  * \file
- * Thread utilities for sequential reduction over statically-sized array types.
+ * Thread utilities for sequential reduction over statically-sized array types
  */
 
 #pragma once
@@ -49,7 +49,7 @@ namespace cub {
  */
 
 /**
- * \name Sequential reduction over statically-sized array types.
+ * \name Sequential reduction over statically-sized array types
  * @{
  */
 
