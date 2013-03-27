@@ -26,55 +26,77 @@
  *
  ******************************************************************************/
 
-/******************************************************************************
- * CUDA properties of the bundled "fatbin" assembly and attached devices
- ******************************************************************************/
+/**
+ * \file
+ * Properties of a given CUDA device and the corresponding PTX bundle
+ */
 
 #pragma once
 
-#include "arch_props.cuh"
-#include "debug.cuh"
-#include "ns_wrapper.cuh"
-#include "macro_utils.cuh"
+#include "util_arch.cuh"
+#include "util_debug.cuh"
+#include "util_namespace.cuh"
+#include "util_macro.cuh"
 
+/// Optional outer namespace(s)
 CUB_NS_PREFIX
+
+/// CUB namespace
 namespace cub {
 
 
 /**
- * Empty Kernel
+ *  \addtogroup UtilModule
+ * @{
+ */
+
+
+/**
+ * \brief Empty kernel for querying PTX manifest metadata (e.g., version) for the current device
  */
 template <typename T>
 __global__ void EmptyKernel(void) { }
 
 
 /**
- * Encapsulation of device properties for a specific device
+ * \brief Type for representing GPU device ordinals
  */
-class DeviceProps
+typedef int DeviceOrdinal;
+
+enum
+{
+    /// Invalid device ordinal
+    INVALID_DEVICE_ORDINAL = -1,
+};
+
+
+/**
+ * \brief Properties of a given CUDA device and the corresponding PTX bundle
+ */
+class Device
 {
 public:
 
     // Version information
-    int     sm_version;             // SM version of target device (SM version X.YZ in XYZ integer form)
-    int     ptx_version;            // Bundled PTX version for target device (PTX version X.YZ in XYZ integer form)
+    int     sm_version;             ///< SM version of target device (SM version X.YZ in XYZ integer form)
+    int     ptx_version;            ///< Bundled PTX version for target device (PTX version X.YZ in XYZ integer form)
 
     // Target device properties
-    int     sm_count;               // Number of SMs
-    int     warp_threads;           // Number of threads per warp
-    int     smem_bank_bytes;        // Number of bytes per SM bank
-    int     smem_banks;             // Number of smem banks
-    int     smem_bytes;             // Smem bytes per SM
-    int     smem_alloc_unit;        // Smem segment size
-    bool    regs_by_block;          // Whether registers are allocated by threadblock (or by warp)
-    int     reg_alloc_unit;         // Granularity of register allocation within the SM
-    int     warp_alloc_unit;        // Granularity of warp allocation within the SM
-    int     max_sm_threads;         // Maximum number of threads per SM
-    int     max_sm_blocks;          // Maximum number of threadblocks per SM
-    int     max_block_threads;      // Maximum number of threads per threadblock
-    int     max_sm_registers;       // Maximum number of registers per SM
-    int     max_sm_warps;           // Maximum number of warps per SM
-    int     oversubscription;       // Heuristic for over-subscribing the device with longer-running CTAs
+    int     sm_count;               ///< Number of SMs
+    int     warp_threads;           ///< Number of threads per warp
+    int     smem_bank_bytes;        ///< Number of bytes per SM bank
+    int     smem_banks;             ///< Number of smem banks
+    int     smem_bytes;             ///< Smem bytes per SM
+    int     smem_alloc_unit;        ///< Smem segment size
+    bool    regs_by_block;          ///< Whether registers are allocated by threadblock (or by warp)
+    int     reg_alloc_unit;         ///< Granularity of register allocation within the SM
+    int     warp_alloc_unit;        ///< Granularity of warp allocation within the SM
+    int     max_sm_threads;         ///< Maximum number of threads per SM
+    int     max_sm_blocks;          ///< Maximum number of threadblocks per SM
+    int     max_block_threads;      ///< Maximum number of threads per threadblock
+    int     max_sm_registers;       ///< Maximum number of registers per SM
+    int     max_sm_warps;           ///< Maximum number of warps per SM
+    int     oversubscription;       ///< Heuristic for over-subscribing the device with longer-running CTAs
 
     /**
      * Callback for initializing device properties
@@ -98,9 +120,10 @@ public:
         max_sm_warps        = max_sm_threads / warp_threads;
     }
 
+    /// Type definition of the EmptyKernel kernel entry point
     typedef void (*EmptyKernelPtr)();
 
-    // Force EmptyKernel<void> to be generated if this class is used
+    /// Force EmptyKernel<void> to be generated if this class is used
     __host__ __device__ __forceinline__
     EmptyKernelPtr Empty()
     {
@@ -189,12 +212,13 @@ public:
     __host__ __device__ __forceinline__
     cudaError_t MaxSmOccupancy(
         int                 &max_sm_occupancy,          ///< [out] maximum number of thread blocks that can reside on a single SM
-        KernelPtr           kernel_ptr,
-        int                 block_threads)              ///< Number of threads per thread block
+        KernelPtr           kernel_ptr,                 ///< [in] Kernel pointer for which to compute SM occupancy
+        int                 block_threads)              ///< [in] Number of threads per thread block
     {
         cudaError_t error = cudaSuccess;
 
-        do {
+        do
+        {
             // Get kernel attributes
             cudaFuncAttributes kernel_attrs;
             if (CubDebug(error = cudaFuncGetAttributes(&kernel_attrs, kernel_ptr))) break;
@@ -237,8 +261,7 @@ public:
 };
 
 
+/** @} */       // end group UtilModule
 
-
-
-} // namespace cub
-CUB_NS_POSTFIX
+}               // CUB namespace
+CUB_NS_POSTFIX  // Optional outer namespace(s)

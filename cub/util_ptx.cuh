@@ -26,20 +26,31 @@
  *
  ******************************************************************************/
 
-/******************************************************************************
- * Inlined PTX intrinsics
- ******************************************************************************/
+/**
+ * \file
+ * PTX intrinsics
+ */
+
 
 #pragma once
 
-#include "ns_wrapper.cuh"
+#include "util_namespace.cuh"
 
+/// Optional outer namespace(s)
 CUB_NS_PREFIX
+
+/// CUB namespace
 namespace cub {
 
 
+/**
+ *  \addtogroup UtilModule
+ * @{
+ */
+
+
 /******************************************************************************
- * Inlined PTX helper macros
+ * PTX helper macros
  ******************************************************************************/
 
 /**
@@ -228,6 +239,7 @@ __device__ __forceinline__ unsigned int LaneId()
 }
 
 
+/** @} */       // end group UtilModule
 
-} // namespace cub
-CUB_NS_POSTFIX
+}               // CUB namespace
+CUB_NS_POSTFIX  // Optional outer namespace(s)

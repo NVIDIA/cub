@@ -33,11 +33,20 @@
 
 #pragma once
 
-#include "type_utils.cuh"
-#include "ns_wrapper.cuh"
+#include "util_type.cuh"
+#include "util_namespace.cuh"
 
+/// Optional outer namespace(s)
 CUB_NS_PREFIX
+
+/// CUB namespace
 namespace cub {
+
+
+/**
+ *  \addtogroup GridModule
+ * @{
+ */
 
 
 /**
@@ -136,6 +145,8 @@ struct TripleBuffer : MultiBuffer<3, KeyType, ValueType>
 };
 
 
+/** @} */       // end group GridModule
 
-} // namespace cub
-CUB_NS_POSTFIX
+}               // CUB namespace
+CUB_NS_POSTFIX  // Optional outer namespace(s)
+

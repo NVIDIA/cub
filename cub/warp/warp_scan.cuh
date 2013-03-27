@@ -35,18 +35,19 @@
 
 #include "../thread/thread_load.cuh"
 #include "../thread/thread_store.cuh"
-#include "../arch_props.cuh"
-#include "../type_utils.cuh"
-#include "../operators.cuh"
-#include "../ns_wrapper.cuh"
+#include "../util_arch.cuh"
+#include "../util_type.cuh"
+#include "../thread/thread_operators.cuh"
+#include "../util_namespace.cuh"
 
+/// Optional outer namespace(s)
 CUB_NS_PREFIX
 
 /// CUB namespace
 namespace cub {
 
 /**
- * \addtogroup SimtCoop
+ * \addtogroup WarpModule
  * @{
  */
 
@@ -850,7 +851,7 @@ public:
     }
 
 
-    //@}
+    //@}  end member group
 
     /******************************************************************//**
      * \name Exclusive prefix sums
@@ -924,7 +925,7 @@ public:
     }
 
 
-    //@}
+    //@}  end member group
     /******************************************************************//**
      * \name Inclusive prefix scans
      *********************************************************************/
@@ -1009,7 +1010,7 @@ public:
     }
 
 
-    //@}
+    //@}  end member group
     /******************************************************************//**
      * \name Exclusive prefix scans
      *********************************************************************/
@@ -1100,7 +1101,7 @@ public:
     }
 
 
-    //@}
+    //@}  end member group
     /******************************************************************//**
      * \name Exclusive prefix scans (without supplied identity)
      *********************************************************************/
@@ -1188,10 +1189,10 @@ public:
             scan_op(prefix, output);
     }
 
-    //@}
+    //@}  end member group
 };
 
-/** @} */       // end of SimtCoop group
+/** @} */       // end group WarpModule
 
-} // namespace cub
-CUB_NS_POSTFIX
+}               // CUB namespace
+CUB_NS_POSTFIX  // Optional outer namespace(s)

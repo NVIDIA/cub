@@ -26,38 +26,50 @@
  *
  ******************************************************************************/
 
-/******************************************************************************
- * Threadblock raking grid abstraction.
- *
- * Threadblock threads place elements into shared "grid" and then reduce
- * parallelism to one "raking" warp whose threads can perform sequential
- * aggregation operations on consecutive sequences of shared items.  Padding
- * is provided to eliminate bank conflicts (for most data types).
- ******************************************************************************/
+/**
+ * \file
+ * cub::BlockRakingLayout provides a conflict-free shared memory layout abstraction for warp-raking across thread block data.
+ */
+
 
 #pragma once
 
-#include "../arch_props.cuh"
-#include "../type_utils.cuh"
-#include "../ns_wrapper.cuh"
+#include "../util_macro.cuh"
+#include "../util_arch.cuh"
+#include "../util_type.cuh"
+#include "../util_namespace.cuh"
 
+/// Optional outer namespace(s)
 CUB_NS_PREFIX
+
+/// CUB namespace
 namespace cub {
 
 
 /**
- * Threadblock raking grid abstraction.
+ * \addtogroup BlockModule
+ * @{
+ */
+
+
+/**
+ * \brief BlockRakingLayout provides a conflict-free shared memory layout abstraction for raking across thread block data.
  *
- * Threadblock threads place elements into shared "grid" and then reduce
- * parallelism to one "raking" warp whose threads can perform sequential
- * aggregation operations on consecutive sequences of shared items.  Padding
- * is provided to eliminate bank conflicts (for most data types).
+ * \par Overview
+ * This type facilitates a shared memory usage pattern where a block of CUDA
+ * threads places elements into shared memory and then reduces the active
+ * parallelism to one "raking" warp of threads for serially aggregating consecutive
+ * sequences of shared items.  Padding is inserted to eliminate bank conflicts
+ * (for most data types).
+ *
+ * \tparam T                    The data type to be exchanged.
+ * \tparam BLOCK_THREADS        The threadblock size in threads.
  */
 template <
     int         BLOCK_THREADS,        // The threadblock size in threads
-    typename     T,                    // The reduction type
-    int         BLOCK_STRIPS = 1>        // When strip-mining, the number of threadblock-strips per tile
-struct BlockRakingGrid
+    typename    T,                    // The reduction type
+    int         BLOCK_STRIPS = 1>     // When strip-mining, the number of threadblock-strips per tile
+struct BlockRakingLayout
 {
     //---------------------------------------------------------------------
     // Constants and typedefs
@@ -104,7 +116,7 @@ struct BlockRakingGrid
     /**
      * Shared memory storage type
      */
-    typedef T SmemStorage[BlockRakingGrid::GRID_ELEMENTS];
+    typedef T SmemStorage[BlockRakingLayout::GRID_ELEMENTS];
 
 
     /**
@@ -140,7 +152,8 @@ struct BlockRakingGrid
     }
 };
 
+/** @} */       // end group BlockModule
 
+}               // CUB namespace
+CUB_NS_POSTFIX  // Optional outer namespace(s)
 
-} // namespace cub
-CUB_NS_POSTFIX

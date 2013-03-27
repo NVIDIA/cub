@@ -1,7 +1,7 @@
 /******************************************************************************
  * Copyright (c) 2011, Duane Merrill.  All rights reserved.
  * Copyright (c) 2011-2013, NVIDIA CORPORATION.  All rights reserved.
- * 
+ *
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions are met:
  *     * Redistributions of source code must retain the above copyright
@@ -12,7 +12,7 @@
  *     * Neither the name of the NVIDIA CORPORATION nor the
  *       names of its contributors may be used to endorse or promote products
  *       derived from this software without specific prior written permission.
- * 
+ *
  * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS" AND
  * ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED
  * WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE
@@ -28,74 +28,67 @@
 
 /**
  * \file
- * Simple binary operator functor types
+ * cub::GridMappingStrategy enumerates alternative strategies for mapping
+ * constant-sized tiles of device-wide data onto a grid of CUDA thread
+ * blocks.
  */
-
-/******************************************************************************
- * Simple functor operators
- ******************************************************************************/
 
 #pragma once
 
-#include "type_utils.cuh"
-#include "ns_wrapper.cuh"
+#include "../../util_namespace.cuh"
 
-
+/// Optional outer namespace(s)
 CUB_NS_PREFIX
 
 /// CUB namespace
 namespace cub {
 
+
 /**
- *  \addtogroup SimtUtils
+ *  \addtogroup GridModule
  * @{
  */
 
+
 /**
- * \brief Default equality functor
+ * GridMappingStrategy enumerates alternative strategies for mapping
+ * constant-sized tiles of device-wide data onto a grid of CUDA thread
+ * blocks.
  */
-template <typename T>
-struct Equality
+enum GridMappingStrategy
 {
-    /// Boolean equality operator, returns <tt>(a == b)</tt>
-    __host__ __device__ __forceinline__ bool operator()(const T &a, const T &b)
-    {
-        return a == b;
-    }
+    /**
+     * \brief An "even-share" strategy.
+     *
+     * \par Overview
+     * The input is evenly partitioned into \p p segments, where \p p is
+     * constant and corresponds loosely to the number of thread blocks that may
+     * actively reside on the target device. Each segment is comprised of
+     * consecutive tiles, where a tile is a small, constant-sized unit of input
+     * to be processed to completion before the thread block terminates or
+     * obtains more work.  The kernel invokes \p p thread blocks, each
+     * of which iteratively consumes a segment of <em>n</em>/<em>p</em> elements
+     * in tile-size increments.
+     */
+    GRID_MAPPING_EVEN_SHARE,
+
+    /**
+     * \brief A dynamic "queue-based" strategy for commutative reduction operators.
+     *
+     * \par Overview
+     * The input is treated as a queue to be dynamically consumed by a grid of
+     * thread blocks.  Work is atomically dequeued in tiles, where a tile is a
+     * unit of input to be processed to completion before the thread block
+     * terminates or obtains more work.  The grid size \p p is constant,
+     * loosely corresponding to the number of thread blocks that may actively
+     * reside on the target device.
+     */
+    GRID_MAPPING_DYNAMIC,
 };
 
 
-/**
- * \brief Default sum functor
- */
-template <typename T>
-struct Sum
-{
-    /// Boolean sum operator, returns <tt>a + b</tt>
-    __host__ __device__ __forceinline__ T operator()(const T &a, const T &b)
-    {
-        return a + b;
-    }
-};
+/** @} */       // end group GridModule
 
+}               // CUB namespace
+CUB_NS_POSTFIX  // Optional outer namespace(s)
 
-/**
- * \brief Default max functor
- */
-template <typename T>
-struct Max
-{
-    /// Boolean max operator, returns <tt>(a > b) ? a : b</tt>
-    __host__ __device__ __forceinline__ T operator()(const T &a, const T &b)
-    {
-        return CUB_MAX(a, b);
-    }
-};
-
-
-
-/** @} */       // end of SimtUtils group
-
-
-} // namespace cub
-CUB_NS_POSTFIX

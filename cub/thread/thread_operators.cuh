@@ -26,56 +26,77 @@
  *
  ******************************************************************************/
 
+/**
+ * \file
+ * Simple binary operator functor types
+ */
+
 /******************************************************************************
- * Common C/C++ macro utilities
+ * Simple functor operators
  ******************************************************************************/
 
 #pragma once
 
-#include "ns_wrapper.cuh"
+#include "util_type.cuh"
+#include "util_namespace.cuh"
 
+/// Optional outer namespace(s)
 CUB_NS_PREFIX
+
+/// CUB namespace
 namespace cub {
 
 
 /**
- * Select maximum(a, b)
+ *  \addtogroup ThreadModule
+ * @{
  */
-#define CUB_MAX(a, b) (((a) > (b)) ? (a) : (b))
+
+/**
+ * \brief Default equality functor
+ */
+template <typename T>
+struct Equality
+{
+    /// Boolean equality operator, returns <tt>(a == b)</tt>
+    __host__ __device__ __forceinline__ bool operator()(const T &a, const T &b)
+    {
+        return a == b;
+    }
+};
 
 
 /**
- * Select minimum(a, b)
+ * \brief Default sum functor
  */
-#define CUB_MIN(a, b) (((a) < (b)) ? (a) : (b))
-
-/**
- * Quotient of x/y rounded down to nearest integer
- */
-#define CUB_QUOTIENT_FLOOR(x, y) ((x) / (y))
-
-/**
- * Quotient of x/y rounded up to nearest integer
- */
-#define CUB_QUOTIENT_CEILING(x, y) (((x) + (y) - 1) / (y))
-
-/**
- * x rounded up to the nearest multiple of y
- */
-#define CUB_ROUND_UP_NEAREST(x, y) ((((x) + (y) - 1) / (y)) * y)
+template <typename T>
+struct Sum
+{
+    /// Boolean sum operator, returns <tt>a + b</tt>
+    __host__ __device__ __forceinline__ T operator()(const T &a, const T &b)
+    {
+        return a + b;
+    }
+};
 
 
 /**
- * x rounded down to the nearest multiple of y
+ * \brief Default max functor
  */
-#define CUB_ROUND_DOWN_NEAREST(x, y) (((x) / (y)) * y)
+template <typename T>
+struct Max
+{
+    /// Boolean max operator, returns <tt>(a > b) ? a : b</tt>
+    __host__ __device__ __forceinline__ T operator()(const T &a, const T &b)
+    {
+        return CUB_MAX(a, b);
+    }
+};
 
-/**
- * Return character string for given type
- */
-#define CUB_TYPE_STRING(type) ""#type
 
 
+/** @} */       // end group ThreadModule
 
-} // namespace cub
-CUB_NS_POSTFIX
+
+}               // CUB namespace
+CUB_NS_POSTFIX  // Optional outer namespace(s)

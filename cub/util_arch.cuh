@@ -26,31 +26,44 @@
  *
  ******************************************************************************/
 
+/**
+ * \file
+ * Static architectural properties by SM version.
+ */
+
+
 /******************************************************************************
  * Static architectural properties by SM version.
  *
- * "CUB_PTX_ARCH" reflects the PTX arch-id targeted by the active compiler pass
- * (or zero during the host pass).
- *
- * "DeviceProps" reflects the PTX architecture targeted by the active compiler
+ * "Device" reflects the PTX architecture targeted by the active compiler
  * pass.  It provides useful compile-time statics within device code.  E.g.,:
  *
- *     __shared__ int[DeviceProps::WARP_THREADS];
+ *     __shared__ int[Device::WARP_THREADS];
  *
- *     int padded_offset = threadIdx.x + (threadIdx.x >> DeviceProps::LOG_SMEM_BANKS);
+ *     int padded_offset = threadIdx.x + (threadIdx.x >> Device::LOG_SMEM_BANKS);
  *
  ******************************************************************************/
 
 #pragma once
 
-#include "ns_wrapper.cuh"
+#include "util_namespace.cuh"
 
+/// Optional outer namespace(s)
 CUB_NS_PREFIX
+
+/// CUB namespace
 namespace cub {
 
 
 /**
- * CUDA architecture-id targeted by the active compiler pass
+ *  \addtogroup UtilModule
+ * @{
+ */
+
+
+/**
+ * \p CUB_PTX_ARCH reflects the PTX version targeted by the active compiler pass
+ * (or zero during the host pass).
  */
 #ifndef __CUDA_ARCH__
     // Host path
@@ -60,27 +73,21 @@ namespace cub {
     #define CUB_PTX_ARCH __CUDA_ARCH__
 #endif
 
+/**
+ * Whether or not the source targeted by the active compiler pass is allowed to
+ * invoke device kernels or methods from the CUDA runtime API.
+ */
 #define CUB_CNP_ENABLED ((CUB_PTX_ARCH == 0) || ((CUB_PTX_ARCH >= 350) && defined(__BUILDING_CNPRT__)))
 
 
-/**
- * Type for representing GPU device ordinals
- */
-typedef int DeviceOrdinal;
-
-enum
-{
-    INVALID_DEVICE_ORDINAL = -1,
-};
-
 
 /**
- * Structure for statically reporting CUDA device properties, parameterized by SM
- * architecture.
+ * \brief Structure for statically reporting CUDA device properties, parameterized by SM architecture.
  */
 template <int SM_ARCH>
 struct ArchProps;
 
+/** \cond SPECIALIZE */
 
 /**
  * Architecture properties for SM30
@@ -268,14 +275,16 @@ struct ArchProps<110> : ArchProps<100> {};        // Derives from SM10
 template <int SM_ARCH>
 struct ArchProps : ArchProps<100> {};             // Derives from SM10
 
+/** \endcond */     // SPECIALIZE
 
 
 /**
- * Architectural properties for the arch-id targeted by the active compiler pass.
+ * \brief The architectural properties for the PTX version targeted by the active compiler pass.
  */
 struct PtxArchProps : ArchProps<CUB_PTX_ARCH> {};
 
 
+/** @} */       // end group UtilModule
 
-} // namespace cub
-CUB_NS_POSTFIX
+}               // CUB namespace
+CUB_NS_POSTFIX  // Optional outer namespace(s)

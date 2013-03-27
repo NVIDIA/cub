@@ -38,13 +38,21 @@
 
 #pragma once
 
-#include "../ns_wrapper.cuh"
-#include "../macro_utils.cuh"
-#include "../allocator.cuh"
+#include "../util_namespace.cuh"
+#include "../util_macro.cuh"
+#include "../util_allocator.cuh"
 
+/// Optional outer namespace(s)
 CUB_NS_PREFIX
+
+/// CUB namespace
 namespace cub {
 
+
+/**
+ *  \addtogroup GridModule
+ * @{
+ */
 
 
 /**
@@ -155,7 +163,7 @@ public:
 
 
 
+/** @} */       // end group GridModule
 
-} // namespace cub
-CUB_NS_POSTFIX
-
+}               // CUB namespace
+CUB_NS_POSTFIX  // Optional outer namespace(s)

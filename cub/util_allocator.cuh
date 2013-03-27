@@ -37,15 +37,25 @@
 #include <set>
 #include <map>
 
-#include "ns_wrapper.cuh"
-#include "arch_props.cuh"
-#include "debug.cuh"
+#include "util_namespace.cuh"
+#include "util_arch.cuh"
+#include "util_debug.cuh"
 
 #include "host/spinlock.cuh"
 
+/// Optional outer namespace(s)
 CUB_NS_PREFIX
+
+/// CUB namespace
 namespace cub {
-namespace {         // Anonymous namespace to prevent multiple symbol definition errors
+
+/// Anonymous namespace to prevent multiple symbol definition errors
+namespace {
+
+/**
+ *  \addtogroup UtilModule
+ * @{
+ */
 
 
 /******************************************************************************
@@ -98,6 +108,11 @@ public:
      * Frees all cached device allocations on all GPUs
      */
     virtual cudaError_t FreeAllCached() = 0;
+
+    /**
+     * Destructor
+     */
+    virtual ~DeviceAllocator() = 0;
 };
 
 
@@ -187,10 +202,10 @@ struct CachingDeviceAllocator : public DeviceAllocator
      */
     struct BlockDescriptor
     {
-        DeviceOrdinal            gpu;        // GPU ordinal
-        void*                 d_ptr;        // Device pointer
-        size_t                bytes;        // Size of allocation in bytes
-        unsigned int        bin;        // Bin enumeration
+        DeviceOrdinal   gpu;        // GPU ordinal
+        void*           d_ptr;      // Device pointer
+        size_t          bytes;      // Size of allocation in bytes
+        unsigned int    bin;        // Bin enumeration
 
         // Constructor
         BlockDescriptor(void *d_ptr, DeviceOrdinal gpu) :
@@ -397,11 +412,11 @@ struct CachingDeviceAllocator : public DeviceAllocator
                 }
 
                 // Set to specified GPU
-                if (error = CubDebug(cudaGetDevice(&entrypoint_gpu))) break;
-                if (error = CubDebug(cudaSetDevice(gpu))) break;
+                if (CubDebug(error = cudaGetDevice(&entrypoint_gpu))) break;
+                if (CubDebug(error = cudaSetDevice(gpu))) break;
 
                 // Allocate
-                if (error = CubDebug(cudaMalloc(&search_key.d_ptr, search_key.bytes))) break;
+                if (CubDebug(error = cudaMalloc(&search_key.d_ptr, search_key.bytes))) break;
 
                 // Lock
                 if (!locked) {
@@ -429,7 +444,7 @@ struct CachingDeviceAllocator : public DeviceAllocator
         // Attempt to revert back to previous GPU if necessary
         if (entrypoint_gpu != INVALID_DEVICE_ORDINAL)
         {
-            if (error = CubDebug(cudaSetDevice(entrypoint_gpu))) return error;
+            if (CubDebug(error = cudaSetDevice(entrypoint_gpu))) return error;
         }
 
         return error;
@@ -445,8 +460,8 @@ struct CachingDeviceAllocator : public DeviceAllocator
         cudaError_t error = cudaSuccess;
         do {
             DeviceOrdinal current_gpu;
-            if (error = CubDebug(cudaGetDevice(&current_gpu))) break;
-            if (error = DeviceAllocate(d_ptr, bytes, current_gpu)) break;
+            if (CubDebug(error = cudaGetDevice(&current_gpu))) break;
+            if (CubDebug(error = DeviceAllocate(d_ptr, bytes, current_gpu))) break;
         } while(0);
 
         return error;
@@ -477,7 +492,7 @@ struct CachingDeviceAllocator : public DeviceAllocator
             if (block_itr == live_blocks.end())
             {
                 // Cannot find pointer
-                if (error = CubDebug(cudaErrorUnknown)) break;
+                if (CubDebug(error = cudaErrorUnknown)) break;
             }
             else
             {
@@ -504,11 +519,11 @@ struct CachingDeviceAllocator : public DeviceAllocator
                     }
 
                     // Set to specified GPU
-                    if (error = CubDebug(cudaGetDevice(&entrypoint_gpu))) break;
-                    if (error = CubDebug(cudaSetDevice(gpu))) break;
+                    if (CubDebug(error = cudaGetDevice(&entrypoint_gpu))) break;
+                    if (CubDebug(error = cudaSetDevice(gpu))) break;
 
                     // Free device memory
-                    if (error = CubDebug(cudaFree(d_ptr))) break;
+                    if (CubDebug(error = cudaFree(d_ptr))) break;
 
                     if (debug) printf("\tGPU %d freed %d bytes.  %d available blocks cached (%d bytes), %d live blocks outstanding.\n",
                         gpu, search_key.bytes, cached_blocks.size(), cached_bytes[gpu], live_blocks.size());
@@ -525,7 +540,7 @@ struct CachingDeviceAllocator : public DeviceAllocator
         // Attempt to revert back to entry-point GPU if necessary
         if (entrypoint_gpu != INVALID_DEVICE_ORDINAL)
         {
-            if (error = CubDebug(cudaSetDevice(entrypoint_gpu))) return error;
+            if (CubDebug(error = cudaSetDevice(entrypoint_gpu))) return error;
         }
 
         return error;
@@ -542,8 +557,8 @@ struct CachingDeviceAllocator : public DeviceAllocator
         cudaError_t error = cudaSuccess;
 
         do {
-            if (error = CubDebug(cudaGetDevice(&current_gpu))) break;
-            if (error = DeviceFree(d_ptr, current_gpu)) break;
+            if (CubDebug(error = cudaGetDevice(&current_gpu))) break;
+            if (CubDebug(error = DeviceFree(d_ptr, current_gpu))) break;
         } while(0);
 
         return error;
@@ -574,18 +589,18 @@ struct CachingDeviceAllocator : public DeviceAllocator
             // Get entry-point GPU ordinal if necessary
             if (entrypoint_gpu == INVALID_DEVICE_ORDINAL)
             {
-                if (error = CubDebug(cudaGetDevice(&entrypoint_gpu))) break;
+                if (CubDebug(error = cudaGetDevice(&entrypoint_gpu))) break;
             }
 
             // Set current GPU ordinal if necessary
             if (begin->gpu != current_gpu)
             {
-                if (error = CubDebug(cudaSetDevice(begin->gpu))) break;
+                if (CubDebug(error = cudaSetDevice(begin->gpu))) break;
                 current_gpu = begin->gpu;
             }
 
             // Free device memory
-            if (error = CubDebug(cudaFree(begin->d_ptr))) break;
+            if (CubDebug(error = cudaFree(begin->d_ptr))) break;
 
             // Reduce balance and erase entry
             cached_bytes[current_gpu] -= begin->bytes;
@@ -604,7 +619,7 @@ struct CachingDeviceAllocator : public DeviceAllocator
         // Attempt to revert back to entry-point GPU if necessary
         if (entrypoint_gpu != INVALID_DEVICE_ORDINAL)
         {
-            if (error = CubDebug(cudaSetDevice(entrypoint_gpu))) return error;
+            if (CubDebug(error = cudaSetDevice(entrypoint_gpu))) return error;
         }
 
         return error;
@@ -701,18 +716,18 @@ __host__ __device__ __forceinline__ cudaError_t DeviceAllocate(void** d_ptr, siz
         do
         {
             // Set to specified GPU
-            if (error = CubDebug(cudaGetDevice(&entrypoint_gpu))) break;
-            if (error = CubDebug(cudaSetDevice(gpu))) break;
+            if (CubDebug(error = cudaGetDevice(&entrypoint_gpu))) break;
+            if (CubDebug(error = cudaSetDevice(gpu))) break;
 
             // Allocate device memory
-            if (error = CubDebug(cudaMalloc(&d_ptr, bytes))) break;
+            if (CubDebug(error = cudaMalloc(&d_ptr, bytes))) break;
 
         } while (0);
 
         // Attempt to revert back to entry-point GPU if necessary
         if (entrypoint_gpu != INVALID_DEVICE_ORDINAL)
         {
-            error = CubDebug(cudaSetDevice(entrypoint_gpu));
+            CubDebug(error = cudaSetDevice(entrypoint_gpu));
         }
 
         return error;
@@ -763,18 +778,18 @@ __host__ __device__ __forceinline__ cudaError_t DeviceFree(void* d_ptr, DeviceOr
         do
         {
             // Set to specified GPU
-            if (error = CubDebug(cudaGetDevice(&entrypoint_gpu))) break;
-            if (error = CubDebug(cudaSetDevice(gpu))) break;
+            if (CubDebug(error = cudaGetDevice(&entrypoint_gpu))) break;
+            if (CubDebug(error = cudaSetDevice(gpu))) break;
 
             // Free device memory
-            if (error = CubDebug(cudaFree(d_ptr))) break;
+            if (CubDebug(error = cudaFree(d_ptr))) break;
 
         } while (0);
 
         // Attempt to revert back to entry-point GPU if necessary
         if (entrypoint_gpu != INVALID_DEVICE_ORDINAL)
         {
-            error = CubDebug(cudaSetDevice(entrypoint_gpu));
+            CubDebug(error = cudaSetDevice(entrypoint_gpu));
         }
 
         return error;
@@ -810,6 +825,8 @@ __host__ __device__ __forceinline__ cudaError_t DeviceFree(void* d_ptr)
 }
 
 
-} // anonymous namespace
-} // namespace cub
-CUB_NS_POSTFIX
+/** @} */       // end group UtilModule
+
+}               // anonymous namespace
+}               // CUB namespace
+CUB_NS_POSTFIX  // Optional outer namespace(s)

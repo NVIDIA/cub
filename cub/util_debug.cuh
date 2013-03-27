@@ -34,13 +34,20 @@
 #pragma once
 
 #include <stdio.h>
-#include "ns_wrapper.cuh"
-#include "arch_props.cuh"
+#include "util_namespace.cuh"
+#include "util_arch.cuh"
 
+/// Optional outer namespace(s)
 CUB_NS_PREFIX
 
 /// CUB namespace
 namespace cub {
+
+
+/**
+ *  \addtogroup UtilModule
+ * @{
+ */
 
 
 // CUB debugging macro (prints error messages to stderr)
@@ -51,7 +58,7 @@ namespace cub {
 
 /**
  * \brief %If \p CUB_STDERR is defined and \p error is not \p cudaSuccess, \p message is printed to \p stderr along with the supplied source context.
- * \ingroup HostUtil
+ * \ingroup HostModule
  *
  * \return The CUDA error.
  */
@@ -73,7 +80,7 @@ __host__ __device__ __forceinline__ cudaError_t Debug(
 
 /**
  * \brief %If \p CUB_STDERR is defined and \p error is not \p cudaSuccess, the corresponding error message is printed to \p stderr along with the supplied source context.
- * \ingroup HostUtil
+ * \ingroup HostModule
  *
  * \return The CUDA error.
  */
@@ -104,5 +111,7 @@ __host__ __device__ __forceinline__ cudaError_t Debug(
 #define CubDebugExit(f) if (cub::Debug(f, __FILE__, __LINE__)) exit(1)
 
 
-} // namespace cub
-CUB_NS_POSTFIX
+/** @} */       // end group UtilModule
+
+}               // CUB namespace
+CUB_NS_POSTFIX  // Optional outer namespace(s)
