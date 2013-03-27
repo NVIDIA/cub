@@ -16,7 +16,7 @@ using namespace cub;
  * ReduceKernel
  *****************************************************************************/
 
-enum DeviceReducePolicy
+enum DeviceReduceDistribution
 {
     /**
      * \brief An "even-share" strategy for commutative reduction operators.
@@ -85,40 +85,6 @@ enum DeviceReducePolicy
 
 
     /**
-     * \brief An "even-share" strategy for non-commutative reduction operators.
-     *
-     * \par Overview
-     * The input is evenly partitioned into \p p segments, where \p p is
-     * constant and corresponds loosely to the number of thread blocks that may
-     * actively reside on the target device. Each segment is comprised of
-     * consecutive tiles, where a tile is a small, constant-sized unit of input
-     * to be processed to completion before the thread block terminates or
-     * obtains more work.  The first kernel invokes \p p thread blocks, each
-     * of which iteratively reduces a segment of <em>n</em>/<em>p</em> elements
-     * in tile-size increments.  The per-thread partials are cooperatively
-     * reduced for each tile, thus ensuring the reduction operator is only
-     * applied to adjacent inputs (or to adjacent partial reductions).  A
-     * running block-wide aggregate is curried between tiles as they are
-     * consumed.   When the segment is finished, the per-block aggregate is
-     * written out for further reduction. A second reduction kernel consisting
-     * of a single block of threads is dispatched to reduce the per-block
-     * partials, producing the final result aggregate.
-     *
-     * \par Usage Considerations
-     * - Requires a constant <em>O</em>(<em>p</em>) temporary storage
-     * - May suffer from numerical instability for floating point data
-     *   because partial sums are accumulated sequentially by thread blocks
-     *   that process multiple tiles
-     *
-     * \par Performance Considerations
-     * - Performs <em>O</em>(<em>n</em>) work and thus runs in <em>O</em>(<em>n</em>) time
-     * - May underperform DEVICE_REDUCE_EVEN_SHARE or DEVICE_REDUCE_DEQUEUE due to
-     *   the overhead of cooperatively reducing every tile
-     */
-    DEVICE_REDUCE_NON_COMMUTATIVE,
-
-
-    /**
      * \brief A recursive strategy emphasizing numerical stability for non-commutative reduction operators.
      *
      * \par Overview
@@ -141,37 +107,41 @@ enum DeviceReducePolicy
      *
      * \par Performance Considerations
      * - Performs <em>O</em>(<em>n</em>) work and thus runs in <em>O</em>(<em>n</em>) time
-     * - May underperform DEVICE_REDUCE_NON_COMMUTATIVE from repeated kernel
+     * - May underperform DEVICE_REDUCE_EVEN_SHARE or DEVICE_REDUCE_DYNAMIC from repeated kernel
      *   invocations that are not large enough to saturate the device.
      */
     DEVICE_REDUCE_STABLE,
 };
 
 
-
-// ReduceKernel tuning policy
+/**
+ * Tuning policy for BlockReduceTiles
+ */
 template <
-    int                     _BLOCK_THREADS,
-    int                     _ITEMS_PER_THREAD,
-    bool                    _EVEN_SHARE,
-    BlockLoadPolicy         _LOAD_POLICY,
-    PtxLoadModifier         _LOAD_MODIFIER>
-struct ReduceKernelPolicy
+    int                         _BLOCK_THREADS,
+    int                         _ITEMS_PER_THREAD,
+    DeviceReduceDistribution    _DISTRIBUTION,
+    BlockLoadPolicy             _LOAD_POLICY,
+    PtxLoadModifier             _LOAD_MODIFIER>
+struct BlockReduceTilesPolicy
 {
     enum
     {
         BLOCK_THREADS       = _BLOCK_THREADS,
         ITEMS_PER_THREAD    = _ITEMS_PER_THREAD,
-        EVEN_SHARE          = _EVEN_SHARE,
     };
 
-    static const BlockLoadPolicy LOAD_POLICY        = _LOAD_POLICY;
-    static const PtxLoadModifier LOAD_MODIFIER      = _LOAD_MODIFIER;
+    static const DeviceReduceDistribution   DISTRIBUTION       = _DISTRIBUTION;
+    static const BlockLoadPolicy            LOAD_POLICY        = _LOAD_POLICY;
+    static const PtxLoadModifier            LOAD_MODIFIER      = _LOAD_MODIFIER;
 };
 
 
+/**
+ * BlockReduceTiles threadblock abstraction
+ */
 template <
-    typename ReduceKernelPolicy,
+    typename BlockReduceTilesPolicy,
     typename InputIterator,
     typename SizeT>
 struct BlockReduceTiles
@@ -186,13 +156,13 @@ struct BlockReduceTiles
     // Constants
     enum
     {
-        BLOCK_THREADS       = ReduceKernelPolicy::BLOCK_THREADS,
-        ITEMS_PER_THREAD    = ReduceKernelPolicy::ITEMS_PER_THREAD,
+        BLOCK_THREADS       = BlockReduceTilesPolicy::BLOCK_THREADS,
+        ITEMS_PER_THREAD    = BlockReduceTilesPolicy::ITEMS_PER_THREAD,
         TILE_ITEMS          = BLOCK_THREADS * ITEMS_PER_THREAD,
     };
 
-    static const BlockLoadPolicy LOAD_POLICY        = ReduceKernelPolicy::LOAD_POLICY;
-    static const PtxLoadModifier LOAD_MODIFIER      = ReduceKernelPolicy::LOAD_MODIFIER;
+    static const BlockLoadPolicy LOAD_POLICY        = BlockReduceTilesPolicy::LOAD_POLICY;
+    static const PtxLoadModifier LOAD_MODIFIER      = BlockReduceTilesPolicy::LOAD_MODIFIER;
 
     // Parameterized BlockLoad primitive
     typedef BlockLoad<InputIterator, BLOCK_THREADS, ITEMS_PER_THREAD, LOAD_POLICY, LOAD_MODIFIER> BlockLoadT;
@@ -217,6 +187,67 @@ struct BlockReduceTiles
     //---------------------------------------------------------------------
 
     /**
+     * Process a single, full tile
+     *
+     * Each thread reduces only the values it loads.
+     */
+    template <
+        bool FIRST_TILE,
+        typename SizeT,
+        typename ReductionOp>
+    static __device__ __forceinline__ void ConsumeFullTile(
+        SmemStorage             &smem_storage,
+        InputIterator           d_in,
+        SizeT                   block_offset,
+        ReductionOp             &reduction_op,
+        T                       &thread_aggregate)      ///< [in, out]
+    {
+        T items[ITEMS_PER_THREAD];
+
+        BlockLoadT::Load(smem_storage.load, d_in + block_offset, items);
+        T partial = ThreadReduce(items, reduction_op);
+
+        thread_aggregate = (FIRST_TILE) ?
+            partial :
+            reduction_op(thread_aggregate, partial);
+    }
+
+    /**
+     * Process a single, partial tile
+     *
+     * Each thread reduces only the strided values it loads.
+     */
+    template <
+        bool FIRST_TILE,
+        typename SizeT,
+        typename ReductionOp>
+    static __device__ __forceinline__ void ConsumePartialTile(
+        SmemStorage             &smem_storage,
+        InputIterator           d_in,
+        SizeT                   block_offset,
+        SizeT                   block_oob,
+        ReductionOp             &reduction_op,
+        T                       &thread_aggregate)      ///< [in, out]
+    {
+        // Process loads singly
+        SizeT thread_offset = block_offset + threadIdx.x;
+
+        if ((FIRST_TILE) && (thread_offset < block_oob))
+        {
+            thread_aggregate = ThreadLoad<LOAD_MODIFIER>(d_in + thread_offset);
+            thread_offset += BLOCK_THREADS;
+        }
+
+        while (thread_offset < block_oob)
+        {
+            T item = ThreadLoad<LOAD_MODIFIER>(d_in + thread_offset);
+            thread_aggregate = reduction_op(thread_aggregate, item);
+            thread_offset += BLOCK_THREADS;
+        }
+    }
+
+
+    /**
      * Process tiles using even-share
      */
     template <
@@ -227,75 +258,55 @@ struct BlockReduceTiles
         SmemStorage             &smem_storage,
         InputIterator           d_in,
         OutputIterator          d_out,
-        GridEvenShare<SizeT>    &even_share,
+        SizeT                   block_offset,
+        const SizeT             &block_oob,
         ReductionOp             &reduction_op)
     {
-        SizeT block_offset      = even_share.block_offset;
-        SizeT block_elements    = even_share.block_oob - block_offset;
-
-        if (block_elements < BLOCK_THREADS)
+        if (block_offset + TILE_ITEMS <= block_oob)
         {
-            // Some threads are out-of-bounds
-            T thread_partial;
-            if (threadIdx.x < block_elements)
-            {
-                thread_partial = ThreadLoad<LOAD_MODIFIER>(d_in + block_offset + threadIdx.x);
-            }
+            // We have at least one full tile to consume
+            T thread_aggregate;
+            ConsumeFullTile<true>(smem_storage, d_in, block_offset, reduction_op, thread_aggregate);
+            block_offset += TILE_ITEMS;
 
-            // Compute and output the block-wide reduction
-            T block_aggregate = BlockReduceT::Reduce(smem_storage, thread_partial, reduction_op, block_elements);
-            if (threadIdx.x == 0)
-            {
-                d_out[0] = block_aggregate;
-            }
-        }
-        else
-        {
-            // Every thread will have a partial to contribute
-            T thread_partial;
+            __syncthreads();
 
-            if (block_offset + TILE_ITEMS <= even_share.block_oob)
+            // Consume any other full tiles
+            while (block_offset + TILE_ITEMS <= block_oob)
             {
-                // Consume at least one full tile
-                T items[ITEMS_PER_THREAD];
-
-                BlockLoadT::Load(smem_storage.load, d_in + block_offset, items);
-                thread_partial = ThreadReduce(items, reduction_op);
+                ConsumeFullTile<false>(smem_storage, d_in, block_offset, reduction_op, thread_aggregate);
                 block_offset += TILE_ITEMS;
 
                 __syncthreads();
-
-                // Consume other full tiles
-                while (block_offset + TILE_ITEMS <= even_share.block_oob)
-                {
-                    BlockLoadT::Load(smem_storage.load, d_in + block_offset, items);
-                    thread_partial = ThreadReduce(items, reduction_op, thread_partial);
-                    block_offset += TILE_ITEMS;
-
-                    __syncthreads();
-                }
-
-            }
-            else
-            {
-                // Consume at lease one BLOCK_THREADS chunk
-                thread_partial = ThreadLoad<LOAD_MODIFIER>(d_in + block_offset + threadIdx.x);
-                block_offset += BLOCK_THREADS;
             }
 
-            // Consume remaining chunks of BLOCK_THREADS
-            while (block_offset + BLOCK_THREADS <= even_share.block_oob)
-            {
-                T item = ThreadLoad<LOAD_MODIFIER>(d_in + block_offset + threadIdx.x);
-                thread_partial = reduction_op(thread_partial, item);
-                block_offset += BLOCK_THREADS;
-            }
+            // Consume any remaining input
+            ConsumePartialTile<false>(smem_storage, d_in, block_offset, block_oob, reduction_op, thread_aggregate);
 
-            // Compute and output the block-wide reduction
-            T block_aggregate = BlockReduceT::Reduce(smem_storage, reduction_op);
+            __syncthreads();
+
+            // Compute and output the block-wide reduction (every thread has a valid input)
+            T block_aggregate = BlockReduceT::Reduce(smem_storage, thread_aggregate, reduction_op);
             if (threadIdx.x == 0)
             {
-                d_out[0] = block_aggregate;
+                d_out[blockIdx.x] = block_aggregate;
+            }
+
+        }
+        else
+        {
+            // We have less than a full tile to consume
+            T thread_aggregate;
+            ConsumePartialTile<true>(smem_storage, d_in, block_offset, block_oob, reduction_op, thread_aggregate);
+
+            __syncthreads();
+
+            // Compute and output the block-wide reduction  (up to block_items threads have valid inputs)
+            SizeT block_items = block_oob - block_offset;
+            T block_aggregate = BlockReduceT::Reduce(smem_storage, thread_aggregate, reduction_op, block_items);
+            if (threadIdx.x == 0)
+            {
+                d_out[blockIdx.x] = block_aggregate;
             }
         }
     }
@@ -313,108 +324,156 @@ struct BlockReduceTiles
         InputIterator           d_in,
         OutputIterator          d_out,
         SizeT                   num_items,
-        GridQueue<SizeT>        &grid_queue,
+        GridQueue<SizeT>        &queue,
         ReductionOp             &reduction_op)
     {
-        // Attempt to grab a full tile
-        if (threadIdx.x == 0)
+        // Each thread block is statically assigned at least one (potentially
+        // partial) tile of input, otherwise its block_aggregate will be undefined.
+        SizeT block_offset = SizeT(blockIdx.x) * TILE_ITEMS;
+        SizeT block_oob = num_items;
+
+        if (block_offset + TILE_ITEMS <= block_oob)
         {
-            smem_storage.block_offset = grid_queue.Drain(TILE_ITEMS);
-        }
+            // We have a full tile to consume
+            T thread_aggregate;
+            ConsumeFullTile<true>(smem_storage, d_in, block_offset, reduction_op, thread_aggregate);
+            block_offset += TILE_ITEMS;
 
-        __syncthreads();
+            __syncthreads();
 
-        // Process first tile
-        if (smem_storage.block_offset < num_items)
-        {
-
-
-
-            // Process remaining tiles
+            // Dynamically consume other tiles
             while (true)
             {
-                __syncthreads();
-
+                // Dequeue up to TILE_ITEMS
                 if (threadIdx.x == 0)
                 {
-                    smem_storage.block_offset = grid_queue.Drain(TILE_ITEMS);
+                    smem_storage.block_offset = queue.Drain(TILE_ITEMS);
                 }
 
                 __syncthreads();
 
-                // Quit if queue is empty
-                if (smem_storage.block_offset >= num_items) break;
+                block_offset = smem_storage.block_offset;
+                if (block_offset + TILE_ITEMS <= block_oob)
+                {
+                    // We have a full tile to consume
+                    ConsumeFullTile<false>(smem_storage, d_in, block_offset, reduction_op, thread_aggregate);
+                }
+                else
+                {
+                    // We have less than a full tile to consume
+                    ConsumePartialTile<false>(smem_storage, d_in, block_offset, block_oob, reduction_op, thread_aggregate);
+                }
 
+                __syncthreads();
+            }
 
-
+            // Compute and output the block-wide reduction (every thread has a valid input)
+            T block_aggregate = BlockReduceT::Reduce(smem_storage, thread_aggregate, reduction_op);
+            if (threadIdx.x == 0)
+            {
+                d_out[blockIdx.x] = block_aggregate;
             }
         }
+        else
+        {
+            // We have less than a full tile to consume
+            T thread_aggregate;
+            SizeT block_items = block_oob - block_offset;
+            ConsumePartialTile<true>(smem_storage, d_in, block_offset, block_oob, reduction_op, thread_aggregate);
 
+            __syncthreads();
 
-
+            // Compute and output the block-wide reduction  (up to block_items threads have valid inputs)
+            T block_aggregate = BlockReduceT::Reduce(smem_storage, thread_aggregate, reduction_op, block_items);
+            if (threadIdx.x == 0)
+            {
+                d_out[blockIdx.x] = block_aggregate;
+            }
+        }
     }
 
 
-
+    /**
+     * Process tiles
+     */
+    template <
+        typename OutputIterator,
+        typename SizeT,
+        typename ReductionOp>
+    static __device__ __forceinline__ void ProcessTiles(
+        SmemStorage             &smem_storage,
+        InputIterator           d_in,
+        OutputIterator          d_out,
+        SizeT                   num_items,
+        GridEvenShare<SizeT>    &even_share,
+        GridQueue<SizeT>        &queue,
+        ReductionOp             &reduction_op)
+    {
+        if (BlockReduceTilesPolicy::DISTRIBUTION == DEVICE_REDUCE_EVEN_SHARE)
+        {
+            // Even share
+            even_share.BlockInit();
+            ProcessTiles(smem_storage, d_in, d_out, even_share.block_offset, even_share.block_oob, reduction_op);
+        }
+        else
+        {
+            // Dynamically dequeue
+            ProcessTiles(smem_storage, d_in, d_out, num_items, queue, reduction_op);
+        }
+    }
 
 };
-
-
-
-
-
-
-/**
- * \brief Reduction kernel entry point.
- *
- * Each thread block produces (at least) one partial reduction.
- */
-template <
-    typename ReduceKernelPolicy,
-    typename InputIterator,
-    typename OutputIterator,
-    typename SizeT>
-__global__ void ReduceKernel(
-    InputIterator           d_in,
-    OutputIterator          d_out,
-    GridEvenShare<SizeT>    even_share,
-    GridQueue<SizeT>        grid_queue)
-{
-    if ((blockIdx.x == 0) && (threadIdx.x == 0)) printf("ReduceKernel BLOCK_THREADS(%d) ITEMS_PER_THREAD(%d)\n",
-        ReduceKernelPolicy::BLOCK_THREADS,
-        ReduceKernelPolicy::ITEMS_PER_THREAD);
-}
 
 
 /******************************************************************************
- * ReduceSingleKernel
+ * Kernels
  *****************************************************************************/
 
-
-// ReduceSingleKernel tuning policy
+/**
+ * \brief Reduction kernel entry point.
+ */
 template <
-    int _BLOCK_THREADS,
-    int _ITEMS_PER_THREAD>
-struct ReduceSingleKernelPolicy
+    typename BlockReduceTilesPolicy,
+    typename InputIterator,
+    typename OutputIterator,
+    typename SizeT,
+    typename ReductionOp>
+__global__ void ReduceKernel(
+    InputIterator           d_in,
+    OutputIterator          d_out,
+    SizeT                   num_items,
+    GridEvenShare<SizeT>    even_share,
+    GridQueue<SizeT>        queue,
+    ReductionOp             reduction_op)
 {
-    enum
-    {
-        BLOCK_THREADS      = _BLOCK_THREADS,
-        ITEMS_PER_THREAD   = _ITEMS_PER_THREAD,
-    };
-};
+    typedef BlockReduceTiles <BlockReduceTilesPolicy, InputIterator, SizeT> BlockReduceTilesT;
+
+    __shared__ typename BlockReduceTilesT::SmemStorage smem_storage;
+
+    BlockReduceTilesT::ProcessTiles(smem_storage, d_in, d_out, num_items, even_share);
+}
 
 
-// ReduceSingleKernel entry point
+/**
+ * \brief Single-block reduction kernel entry point.
+ */
 template <
-    typename ReduceSingleKernelPolicy,
-    typename T,
-    typename SizeT>
-__global__ void ReduceSingleKernel(T *d_in, T *d_out, SizeT num_elements)
+    typename BlockReduceTilesPolicy,
+    typename InputIterator,
+    typename OutputIterator,
+    typename SizeT,
+    typename ReductionOp>
+__global__ void SingleReduceKernel(
+    InputIterator           d_in,
+    OutputIterator          d_out,
+    SizeT                   num_items,
+    ReductionOp             reduction_op)
 {
-    if ((blockIdx.x == 0) && (threadIdx.x == 0)) printf("ReduceSingleKernel BLOCK_THREADS(%d) ITEMS_PER_THREAD(%d)\n",
-        ReduceSingleKernelPolicy::BLOCK_THREADS,
-        ReduceSingleKernelPolicy::ITEMS_PER_THREAD);
+    typedef BlockReduceTiles <BlockReduceTilesPolicy, InputIterator, SizeT> BlockReduceTilesT;
+
+    __shared__ typename BlockReduceTilesT::SmemStorage smem_storage;
+
+    BlockReduceTilesT::ProcessTiles(smem_storage, d_in, d_out, 0, num_items, reduction_op);
 }
 
 
@@ -435,12 +494,12 @@ struct DeviceFoo
         int downsweep_block_threads;
         int downsweep_items_per_thread;
 
-        template <typename ReduceKernelPolicy, typename ReduceSingleKernelPolicy>
+        template <typename BlockReduceTilesPolicy, typename ReduceSingleKernelPolicy>
         __host__ __device__ __forceinline__
         void Init()
         {
-            reduce_block_threads       = ReduceKernelPolicy::BLOCK_THREADS;
-            reduce_items_per_thread    = ReduceKernelPolicy::ITEMS_PER_THREAD;
+            reduce_block_threads       = BlockReduceTilesPolicy::BLOCK_THREADS;
+            reduce_items_per_thread    = BlockReduceTilesPolicy::ITEMS_PER_THREAD;
             downsweep_block_threads     = ReduceSingleKernelPolicy::BLOCK_THREADS;
             downsweep_items_per_thread  = ReduceSingleKernelPolicy::ITEMS_PER_THREAD;
         }
@@ -454,23 +513,23 @@ struct DeviceFoo
     struct DefaultPolicy
     {
 
-        typedef ReduceKernelPolicy<     64,     1>      ReduceKernelPolicy300;
+        typedef BlockReduceTilesPolicy<     64,     1>      BlockReduceTilesPolicy300;
         typedef ReduceSingleKernelPolicy<   64,     1>      ReduceSingleKernelPolicy300;
 
-        typedef ReduceKernelPolicy<     128,    1>      ReduceKernelPolicy200;
+        typedef BlockReduceTilesPolicy<     128,    1>      BlockReduceTilesPolicy200;
         typedef ReduceSingleKernelPolicy<   128,    1>      ReduceSingleKernelPolicy200;
 
-        typedef ReduceKernelPolicy<     256,    1>      ReduceKernelPolicy100;
+        typedef BlockReduceTilesPolicy<     256,    1>      BlockReduceTilesPolicy100;
         typedef ReduceSingleKernelPolicy<   256,    1>      ReduceSingleKernelPolicy100;
 
     #if CUB_PTX_ARCH >= 300
-        struct PtxReduceKernelPolicy :      ReduceKernelPolicy300 {};
+        struct PtxBlockReduceTilesPolicy :      BlockReduceTilesPolicy300 {};
         struct PtxReduceSingleKernelPolicy :    ReduceSingleKernelPolicy300 {};
     #elif CUB_PTX_ARCH >= 200
-        struct PtxReduceKernelPolicy :      ReduceKernelPolicy200 {};
+        struct PtxBlockReduceTilesPolicy :      BlockReduceTilesPolicy200 {};
         struct PtxReduceSingleKernelPolicy :    ReduceSingleKernelPolicy200 {};
     #else
-        struct PtxReduceKernelPolicy :      ReduceKernelPolicy100 {};
+        struct PtxBlockReduceTilesPolicy :      BlockReduceTilesPolicy100 {};
         struct PtxReduceSingleKernelPolicy :    ReduceSingleKernelPolicy100 {};
     #endif
 
@@ -480,11 +539,11 @@ struct DeviceFoo
         static void InitDispatchPolicy(int device_arch, DispatchPolicy &dispatch_policy)
         {
             if (device_arch >= 300)
-                dispatch_policy.Init<ReduceKernelPolicy300, ReduceSingleKernelPolicy300>();
+                dispatch_policy.Init<BlockReduceTilesPolicy300, ReduceSingleKernelPolicy300>();
             else if (device_arch >= 200)
-                dispatch_policy.Init<ReduceKernelPolicy200, ReduceSingleKernelPolicy200>();
+                dispatch_policy.Init<BlockReduceTilesPolicy200, ReduceSingleKernelPolicy200>();
             else
-                dispatch_policy.Init<ReduceKernelPolicy100, ReduceSingleKernelPolicy100>();
+                dispatch_policy.Init<BlockReduceTilesPolicy100, ReduceSingleKernelPolicy100>();
         }
     };
 
@@ -588,7 +647,7 @@ struct DeviceFoo
      * Invoke Foo operation with custom policies
      */
     template <
-        typename ReduceKernelPolicy,
+        typename BlockReduceTilesPolicy,
         typename ReduceSingleKernelPolicy,
         typename T,
         typename SizeT>
@@ -599,10 +658,10 @@ struct DeviceFoo
         SizeT   num_elements)
     {
         DispatchPolicy dispatch_policy;
-        dispatch_policy.Init<ReduceKernelPolicy, ReduceSingleKernelPolicy>();
+        dispatch_policy.Init<BlockReduceTilesPolicy, ReduceSingleKernelPolicy>();
 
         return Foo(
-            ReduceKernel<ReduceKernelPolicy, T, SizeT>,
+            ReduceKernel<BlockReduceTilesPolicy, T, SizeT>,
             ReduceSingleKernel<ReduceSingleKernelPolicy, T, SizeT>,
             dispatch_policy,
             d_in,
@@ -626,7 +685,7 @@ struct DeviceFoo
         cudaError error = cudaSuccess;
         do
         {
-            typedef typename DefaultPolicy<T, SizeT>::PtxReduceKernelPolicy PtxReduceKernelPolicy;
+            typedef typename DefaultPolicy<T, SizeT>::PtxBlockReduceTilesPolicy PtxBlockReduceTilesPolicy;
             typedef typename DefaultPolicy<T, SizeT>::PtxReduceSingleKernelPolicy PtxReduceSingleKernelPolicy;
 
             // Initialize dispatch policy
@@ -635,7 +694,7 @@ struct DeviceFoo
         #if CUB_PTX_ARCH > 0
 
             // We're on the device, so initialize the tuned dispatch policy based upon PTX arch
-            dispatch_policy.Init<PtxReduceKernelPolicy, PtxReduceSingleKernelPolicy>();
+            dispatch_policy.Init<PtxBlockReduceTilesPolicy, PtxReduceSingleKernelPolicy>();
 
         #else
 
@@ -654,7 +713,7 @@ struct DeviceFoo
 
             // Dispatch
             if (CubDebug(error = Foo(
-                ReduceKernel<PtxReduceKernelPolicy, T, SizeT>,
+                ReduceKernel<PtxBlockReduceTilesPolicy, T, SizeT>,
                 ReduceSingleKernel<PtxReduceSingleKernelPolicy, T, SizeT>,
                 dispatch_policy,
                 d_in,

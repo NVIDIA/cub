@@ -590,6 +590,20 @@ enum BlockLoadPolicy
      *   direct cub::BLOCK_LOAD_DIRECT and cub::BLOCK_LOAD_VECTORIZE alternatives.
      */
     BLOCK_LOAD_TRANSPOSE,
+
+
+    /**
+     * \par Overview
+     *
+     * A [<em>striped arrangement</em>](index.html#sec3sec3) of data is read directly from memory.
+     * The threadblock reads items in a parallel "strip-mining" fashion: thread<sub><em>i</em></sub> reads items
+     * having stride \p BLOCK_THREADS between them.
+     *
+     * \par Performance Considerations
+     * - The utilization of memory transactions (coalescing) remains high regardless
+     *   of items loaded per thread.
+     */
+    BLOCK_LOAD_STRIPED,
 };
 
 
@@ -622,6 +636,8 @@ enum BlockLoadPolicy
  *   -# <b>cub::BLOCK_LOAD_TRANSPOSE</b>.  A [<em>striped arrangement</em>](index.html#sec3sec3)
  *      of data is read directly from memory and is then locally transposed into a
  *      [<em>blocked arrangement</em>](index.html#sec3sec3).  [More...](\ref cub::BlockLoadPolicy)
+ *   -# <b>cub::BLOCK_LOAD_STRIPED</b>.  A [<em>striped arrangement</em>](index.html#sec3sec3)
+ *      of data is read directly from memory.  [More...](\ref cub::BlockLoadPolicy)
  *
  * \par Usage Considerations
  * - \smemreuse{BlockLoad::SmemStorage}
@@ -812,6 +828,38 @@ private:
 
             // Transpose to blocked order
             BlockExchange::StripedToBlocked(smem_storage, items);
+        }
+
+    };
+
+
+    /**
+     * BLOCK_LOAD_STRIPED specialization of load helper
+     */
+    template <int DUMMY>
+    struct LoadInternal<BLOCK_LOAD_STRIPED, DUMMY>
+    {
+        /// Shared memory storage layout type
+        typedef NullType SmemStorage;
+
+        /// Load a tile of items across a threadblock
+        static __device__ __forceinline__ void Load(
+            SmemStorage     &smem_storage,                  ///< [in] Shared reference to opaque SmemStorage layout
+            InputIterator   block_itr,                      ///< [in] The threadblock's base input iterator for loading from
+            T               (&items)[ITEMS_PER_THREAD])     ///< [out] Data to load{
+        {
+            BlockLoadDirectStriped<MODIFIER>(block_itr, items, BLOCK_THREADS);
+        }
+
+        /// Load a tile of items across a threadblock, guarded by range
+        template <typename SizeT>
+        static __device__ __forceinline__ void Load(
+            SmemStorage     &smem_storage,                  ///< [in] Shared reference to opaque SmemStorage layout
+            InputIterator   block_itr,                      ///< [in] The threadblock's base input iterator for loading from
+            const SizeT     &guarded_items,                 ///< [in] Number of valid items in the tile
+            T               (&items)[ITEMS_PER_THREAD])     ///< [out] Data to load{
+        {
+            BlockLoadDirectStriped<MODIFIER>(block_itr, guarded_items, items, BLOCK_THREADS);
         }
 
     };
