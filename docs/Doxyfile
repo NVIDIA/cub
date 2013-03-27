@@ -665,20 +665,27 @@ WARN_LOGFILE           =
 # with spaces.
 
 INPUT                  = mainpage.dox 
-INPUT                  += ../cub/operators.cuh 
-INPUT                  += ../cub/type_utils.cuh 
-INPUT                  += ../cub/debug.cuh 
-INPUT                  += ../cub/warp/warp_scan.cuh 
-INPUT                  += ../cub/warp/warp_reduce.cuh 
+INPUT                  += ../cub/cub.cuh 
+INPUT                  += ../cub/util_arch.cuh 
+INPUT                  += ../cub/util_debug.cuh 
+INPUT                  += ../cub/util_device.cuh 
+INPUT                  += ../cub/util_type.cuh 
+INPUT                  += ../cub/block/block_discontinuity.cuh 
+INPUT                  += ../cub/block/block_exchange.cuh 
+INPUT                  += ../cub/block/block_load.cuh 
+INPUT                  += ../cub/block/block_raking_layout.cuh 
+INPUT                  += ../cub/block/block_radix_sort.cuh 
 INPUT                  += ../cub/block/block_reduce.cuh 
 INPUT                  += ../cub/block/block_scan.cuh 
-INPUT                  += ../cub/block/block_radix_sort.cuh 
-INPUT                  += ../cub/block/block_load.cuh 
 INPUT                  += ../cub/block/block_store.cuh 
-INPUT                  += ../cub/block/block_exchange.cuh 
-INPUT                  += ../cub/block/block_discontinuity.cuh 
+INPUT                  += ../cub/device/device_reduce.cuh 
 INPUT                  += ../cub/thread/thread_load.cuh  
+INPUT                  += ../cub/thread/thread_operators.cuh 
+INPUT                  += ../cub/thread/thread_reduce.cuh  
+INPUT                  += ../cub/thread/thread_scan.cuh  
 INPUT                  += ../cub/thread/thread_store.cuh  
+INPUT                  += ../cub/warp/warp_scan.cuh 
+INPUT                  += ../cub/warp/warp_reduce.cuh 
 
 # This tag can be used to specify the character encoding of the source files
 # that doxygen parses. Internally doxygen uses the UTF-8 encoding, which is

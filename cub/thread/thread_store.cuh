@@ -35,17 +35,18 @@
 
 #include <cuda.h>
 
-#include "../ptx_intrinsics.cuh"
-#include "../type_utils.cuh"
-#include "../ns_wrapper.cuh"
+#include "../util_ptx.cuh"
+#include "../util_type.cuh"
+#include "../util_namespace.cuh"
 
+/// Optional outer namespace(s)
 CUB_NS_PREFIX
 
 /// CUB namespace
 namespace cub {
 
 /**
- * \addtogroup SimtUtils
+ * \addtogroup ThreadModule
  * @{
  */
 
@@ -488,10 +489,10 @@ CUB_STORES_4L(double4, double2);
 #endif // DOXYGEN_SHOULD_SKIP_THIS
 
 
-//@}
+//@}  end member group
 
-/** @} */       // end of SimtUtils group
+/** @} */       // end group ThreadModule
 
 
-} // namespace cub
-CUB_NS_POSTFIX
+}               // CUB namespace
+CUB_NS_POSTFIX  // Optional outer namespace(s)

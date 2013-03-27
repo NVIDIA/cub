@@ -186,7 +186,7 @@ struct DeviceFoo
         #if (CUB_PTX_ARCH == 0)
 
             // We're on the host, so come up with a more accurate estimate of SM occupancies from actual device properties
-            DeviceProps device_props;
+            Device device_props;
             if (CubDebug(error = device_props.Init(device_ordinal))) break;
             oversubscription = device_props.oversubscription;
 

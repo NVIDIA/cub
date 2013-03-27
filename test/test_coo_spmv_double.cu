@@ -1208,7 +1208,7 @@ void TestDevice(
     }
 
     // Get CUDA properties
-    DeviceProps cuda_props;
+    Device cuda_props;
     CubDebugExit(cuda_props.Init());
 
     // Get kernel properties

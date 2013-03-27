@@ -35,20 +35,20 @@
 
 #include <iterator>
 
-#include "../ns_wrapper.cuh"
-#include "../macro_utils.cuh"
+#include "../util_namespace.cuh"
+#include "../util_macro.cuh"
 #include "../thread/thread_load.cuh"
-#include "../type_utils.cuh"
-#include "../vector_type.cuh"
+#include "../util_type.cuh"
 #include "block_exchange.cuh"
 
+/// Optional outer namespace(s)
 CUB_NS_PREFIX
 
 /// CUB namespace
 namespace cub {
 
 /**
- *  \addtogroup SimtUtils
+ *  \addtogroup ThreadModule
  * @{
  */
 
@@ -240,7 +240,7 @@ __device__ __forceinline__ void BlockLoadDirect(
 }
 
 
-//@}
+//@}  end member group
 /******************************************************************//**
  * \name Direct threadblock loads (striped arrangement)
  *********************************************************************/
@@ -434,7 +434,7 @@ __device__ __forceinline__ void BlockLoadDirectStriped(
     BlockLoadDirectStriped<PTX_LOAD_NONE>(block_itr, guarded_items, oob_default, items, stride);
 }
 
-//@}
+//@}  end member group
 /******************************************************************//**
  * \name Threadblock vectorized loads (blocked arrangement)
  *********************************************************************/
@@ -526,9 +526,9 @@ __device__ __forceinline__ void BlockLoadVectorized(
     BlockLoadVectorized<PTX_LOAD_NONE>(block_ptr, items);
 }
 
-//@}
+//@}  end member group
 
-/** @} */       // end of SimtUtils group
+/** @} */       // end group ThreadModule
 
 
 
@@ -608,7 +608,7 @@ enum BlockLoadPolicy
 
 
 /**
- * \addtogroup SimtCoop
+ * \addtogroup BlockModule
  * @{
  */
 
@@ -905,7 +905,8 @@ public:
     }
 };
 
-/** @} */       // end of SimtCoop group
+/** @} */       // end group BlockModule
 
-} // namespace cub
-CUB_NS_POSTFIX
+}               // CUB namespace
+CUB_NS_POSTFIX  // Optional outer namespace(s)
+

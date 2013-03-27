@@ -33,21 +33,25 @@
 
 #pragma once
 
-#include "../arch_props.cuh"
-#include "../type_utils.cuh"
-#include "../operators.cuh"
+#include "../util_arch.cuh"
+#include "../util_type.cuh"
+#include "../thread/thread_operators.cuh"
 #include "../warp/warp_scan.cuh"
 #include "../thread/thread_reduce.cuh"
 #include "../thread/thread_scan.cuh"
-#include "../ns_wrapper.cuh"
+#include "../util_namespace.cuh"
 
+/// Optional outer namespace(s)
 CUB_NS_PREFIX
 
 /// CUB namespace
 namespace cub {
 
-/// Tuning policy for cub::BlockScan
-enum BlockScanPolicy
+/**
+ * BlockScanAlgorithm enumerates alternative algorithms for parallel prefix
+ * scan across a CUDA threadblock.
+ */
+enum BlockScanAlgorithm
 {
 
     /**
@@ -92,7 +96,7 @@ enum BlockScanPolicy
 };
 
 /**
- * \addtogroup SimtCoop
+ * \addtogroup BlockModule
  * @{
  */
 
@@ -118,17 +122,17 @@ enum BlockScanPolicy
  *
  * \par
  * Furthermore, BlockScan provides a single prefix scan abstraction whose performance behavior can be tuned
- * externally.  In particular, BlockScan implements alternative cub::BlockScanPolicy strategies
+ * externally.  In particular, BlockScan implements alternative cub::BlockScanAlgorithm strategies
  * catering to different latency/throughput needs.
  *
  * \tparam T                The reduction input/output element type
  * \tparam BLOCK_THREADS    The threadblock size in threads
- * \tparam POLICY           <b>[optional]</b> cub::BlockScanPolicy tuning policy.  Default = cub::BLOCK_SCAN_RAKING.
+ * \tparam ALGORITHM           <b>[optional]</b> cub::BlockScanAlgorithm tuning policy.  Default = cub::BLOCK_SCAN_RAKING.
  *
  * \par Algorithm
  * BlockScan can be (optionally) configured to use different algorithms:
- *   -# <b>cub::BLOCK_SCAN_RAKING</b>.  An efficient "raking reduce-then-scan" prefix scan algorithm. [More...](\ref cub::BlockScanPolicy)
- *   -# <b>cub::BLOCK_SCAN_WARPSCANS</b>.  A quick "tiled warpscans" prefix scan algorithm. [More...](\ref cub::BlockScanPolicy)
+ *   -# <b>cub::BLOCK_SCAN_RAKING</b>.  An efficient "raking reduce-then-scan" prefix scan algorithm. [More...](\ref cub::BlockScanAlgorithm)
+ *   -# <b>cub::BLOCK_SCAN_WARPSCANS</b>.  A quick "tiled warpscans" prefix scan algorithm. [More...](\ref cub::BlockScanAlgorithm)
  *
  * \par Usage Considerations
  * - Supports non-commutative scan operators
@@ -149,7 +153,7 @@ enum BlockScanPolicy
  *   - Basic scan variants that don't require scalar inputs and outputs (e.g., \p block_prefix_op and \p block_aggregate)
  *   - \p T is a built-in C++ primitive or CUDA vector type (e.g., \p short, \p int2, \p double, \p float2, etc.)
  *   - \p BLOCK_THREADS is a multiple of the architecture's warp size
- * - See cub::BlockScanPolicy for more performance details regarding algorithmic alternatives
+ * - See cub::BlockScanAlgorithm for more performance details regarding algorithmic alternatives
  *
  * \par Examples
  * <em>Example 1.</em> Perform a simple exclusive prefix sum of 512 integer keys that
@@ -221,19 +225,20 @@ enum BlockScanPolicy
  * \endcode
  */
 template <
-typename            T,
-int                 BLOCK_THREADS,
-BlockScanPolicy     POLICY = BLOCK_SCAN_RAKING>
+    typename            T,
+    int                 BLOCK_THREADS,
+    BlockScanAlgorithm  ALGORITHM = BLOCK_SCAN_RAKING>
 class BlockScan
 {
 private:
 
     enum
     {
-        SAFE_POLICY =
-            ((POLICY == BLOCK_SCAN_WARPSCANS) && (BLOCK_THREADS % PtxArchProps::WARP_THREADS != 0)) ?    // BLOCK_SCAN_WARPSCANS policy cannot be used with threadblock sizes not a multiple of the architectural warp size
+        /// Ensure the parameterization meets the requirements of the specified algorithm
+        SAFE_ALGORITHM =
+            ((ALGORITHM == BLOCK_SCAN_WARPSCANS) && (BLOCK_THREADS % PtxArchProps::WARP_THREADS != 0)) ?    // BLOCK_SCAN_WARPSCANS policy cannot be used with threadblock sizes not a multiple of the architectural warp size
                 BLOCK_SCAN_RAKING :
-                POLICY
+                ALGORITHM
     };
 
 
@@ -242,11 +247,11 @@ private:
     /**
      * Warpscan specialized for BLOCK_SCAN_RAKING variant
      */
-    template <int _POLICY, int DUMMY = 0>
+    template <int _ALGORITHM, int DUMMY = 0>
     struct BlockScanInternal
     {
         /// Layout type for padded threadblock raking grid
-        typedef BlockRakingGrid<BLOCK_THREADS, T> BlockRakingGrid;
+        typedef BlockRakingLayout<T, BLOCK_THREADS> BlockRakingLayout;
 
         /// Constants
         enum
@@ -255,10 +260,10 @@ private:
             WARPS = (BLOCK_THREADS + PtxArchProps::WARP_THREADS - 1) / PtxArchProps::WARP_THREADS,
 
             /// Number of raking threads
-            RAKING_THREADS = BlockRakingGrid::RAKING_THREADS,
+            RAKING_THREADS = BlockRakingLayout::RAKING_THREADS,
 
             /// Number of raking elements per warp synchronous raking thread
-            RAKING_LENGTH = BlockRakingGrid::RAKING_LENGTH,
+            RAKING_LENGTH = BlockRakingLayout::RAKING_LENGTH,
 
             /// Cooperative work can be entirely warp synchronous
             WARP_SYNCHRONOUS = (BLOCK_THREADS == RAKING_THREADS),
@@ -271,7 +276,7 @@ private:
         struct SmemStorage
         {
             typename WarpScan::SmemStorage          warp_scan;      ///< Buffer for warp-synchronous scan
-            typename BlockRakingGrid::SmemStorage   raking_grid;    ///< Padded threadblock raking grid
+            typename BlockRakingLayout::SmemStorage   raking_grid;    ///< Padded threadblock raking grid
         };
 
         /// Computes an exclusive threadblock-wide prefix scan using the specified binary \p scan_op functor.  Each thread contributes one input element.  The inclusive threadblock-wide \p block_aggregate of all inputs is computed for <em>thread</em><sub>0</sub>.
@@ -298,7 +303,7 @@ private:
             else
             {
                 // Place thread partial into shared memory raking grid
-                T *placement_ptr = BlockRakingGrid::PlacementPtr(smem_storage.raking_grid);
+                T *placement_ptr = BlockRakingLayout::PlacementPtr(smem_storage.raking_grid);
                 *placement_ptr = input;
 
                 __syncthreads();
@@ -307,13 +312,13 @@ private:
                 if (threadIdx.x < RAKING_THREADS)
                 {
                     // Raking upsweep reduction in grid
-                    T *raking_ptr = BlockRakingGrid::RakingPtr(smem_storage.raking_grid);
+                    T *raking_ptr = BlockRakingLayout::RakingPtr(smem_storage.raking_grid);
                     T raking_partial = raking_ptr[0];
 
                     #pragma unroll
                     for (int i = 1; i < RAKING_LENGTH; i++)
                     {
-                        if ((BlockRakingGrid::UNGUARDED) || (((threadIdx.x * RAKING_LENGTH) + i) < BLOCK_THREADS))
+                        if ((BlockRakingLayout::UNGUARDED) || (((threadIdx.x * RAKING_LENGTH) + i) < BLOCK_THREADS))
                         {
                             raking_partial = scan_op(raking_partial, raking_ptr[i]);
                         }
@@ -369,7 +374,7 @@ private:
             else
             {
                 // Place thread partial into shared memory raking grid
-                T *placement_ptr = BlockRakingGrid::PlacementPtr(smem_storage.raking_grid);
+                T *placement_ptr = BlockRakingLayout::PlacementPtr(smem_storage.raking_grid);
                 *placement_ptr = input;
 
                 __syncthreads();
@@ -378,13 +383,13 @@ private:
                 if (threadIdx.x < RAKING_THREADS)
                 {
                     // Raking upsweep reduction in grid
-                    T *raking_ptr = BlockRakingGrid::RakingPtr(smem_storage.raking_grid);
+                    T *raking_ptr = BlockRakingLayout::RakingPtr(smem_storage.raking_grid);
                     T raking_partial = raking_ptr[0];
 
                     #pragma unroll
                     for (int i = 1; i < RAKING_LENGTH; i++)
                     {
-                        if ((BlockRakingGrid::UNGUARDED) || (((threadIdx.x * RAKING_LENGTH) + i) < BLOCK_THREADS))
+                        if ((BlockRakingLayout::UNGUARDED) || (((threadIdx.x * RAKING_LENGTH) + i) < BLOCK_THREADS))
                         {
                             raking_partial = scan_op(raking_partial, raking_ptr[i]);
                         }
@@ -434,7 +439,7 @@ private:
             else
             {
                 // Place thread partial into shared memory raking grid
-                T *placement_ptr = BlockRakingGrid::PlacementPtr(smem_storage.raking_grid);
+                T *placement_ptr = BlockRakingLayout::PlacementPtr(smem_storage.raking_grid);
                 *placement_ptr = input;
 
                 __syncthreads();
@@ -443,13 +448,13 @@ private:
                 if (threadIdx.x < RAKING_THREADS)
                 {
                     // Raking upsweep reduction in grid
-                    T *raking_ptr = BlockRakingGrid::RakingPtr(smem_storage.raking_grid);
+                    T *raking_ptr = BlockRakingLayout::RakingPtr(smem_storage.raking_grid);
                     T raking_partial = raking_ptr[0];
 
                     #pragma unroll
                     for (int i = 1; i < RAKING_LENGTH; i++)
                     {
-                        if ((BlockRakingGrid::UNGUARDED) || (((threadIdx.x * RAKING_LENGTH) + i) < BLOCK_THREADS))
+                        if ((BlockRakingLayout::UNGUARDED) || (((threadIdx.x * RAKING_LENGTH) + i) < BLOCK_THREADS))
                         {
                             raking_partial = scan_op(raking_partial, raking_ptr[i]);
                         }
@@ -501,7 +506,7 @@ private:
             else
             {
                 // Place thread partial into shared memory raking grid
-                T *placement_ptr = BlockRakingGrid::PlacementPtr(smem_storage.raking_grid);
+                T *placement_ptr = BlockRakingLayout::PlacementPtr(smem_storage.raking_grid);
                 *placement_ptr = input;
 
                 __syncthreads();
@@ -510,13 +515,13 @@ private:
                 if (threadIdx.x < RAKING_THREADS)
                 {
                     // Raking upsweep reduction in grid
-                    T *raking_ptr = BlockRakingGrid::RakingPtr(smem_storage.raking_grid);
+                    T *raking_ptr = BlockRakingLayout::RakingPtr(smem_storage.raking_grid);
                     T raking_partial = raking_ptr[0];
 
                     #pragma unroll
                     for (int i = 1; i < RAKING_LENGTH; i++)
                     {
-                        if ((BlockRakingGrid::UNGUARDED) || (((threadIdx.x * RAKING_LENGTH) + i) < BLOCK_THREADS))
+                        if ((BlockRakingLayout::UNGUARDED) || (((threadIdx.x * RAKING_LENGTH) + i) < BLOCK_THREADS))
                         {
                             raking_partial = scan_op(raking_partial, raking_ptr[i]);
                         }
@@ -565,7 +570,7 @@ private:
                 Sum<T> scan_op;
 
                 // Place thread partial into shared memory raking grid
-                T *placement_ptr = BlockRakingGrid::PlacementPtr(smem_storage.raking_grid);
+                T *placement_ptr = BlockRakingLayout::PlacementPtr(smem_storage.raking_grid);
                 *placement_ptr = input;
 
                 __syncthreads();
@@ -574,13 +579,13 @@ private:
                 if (threadIdx.x < RAKING_THREADS)
                 {
                     // Raking upsweep reduction in grid
-                    T *raking_ptr = BlockRakingGrid::RakingPtr(smem_storage.raking_grid);
+                    T *raking_ptr = BlockRakingLayout::RakingPtr(smem_storage.raking_grid);
                     T raking_partial = raking_ptr[0];
 
                     #pragma unroll
                     for (int i = 1; i < RAKING_LENGTH; i++)
                     {
-                        if ((BlockRakingGrid::UNGUARDED) || (((threadIdx.x * RAKING_LENGTH) + i) < BLOCK_THREADS))
+                        if ((BlockRakingLayout::UNGUARDED) || (((threadIdx.x * RAKING_LENGTH) + i) < BLOCK_THREADS))
                         {
                             raking_partial = scan_op(raking_partial, raking_ptr[i]);
                         }
@@ -630,7 +635,7 @@ private:
                 Sum<T> scan_op;
 
                 // Place thread partial into shared memory raking grid
-                T *placement_ptr = BlockRakingGrid::PlacementPtr(smem_storage.raking_grid);
+                T *placement_ptr = BlockRakingLayout::PlacementPtr(smem_storage.raking_grid);
                 *placement_ptr = input;
 
                 __syncthreads();
@@ -639,13 +644,13 @@ private:
                 if (threadIdx.x < RAKING_THREADS)
                 {
                     // Raking upsweep reduction in grid
-                    T *raking_ptr = BlockRakingGrid::RakingPtr(smem_storage.raking_grid);
+                    T *raking_ptr = BlockRakingLayout::RakingPtr(smem_storage.raking_grid);
                     T raking_partial = raking_ptr[0];
 
                     #pragma unroll
                     for (int i = 1; i < RAKING_LENGTH; i++)
                     {
-                        if ((BlockRakingGrid::UNGUARDED) || (((threadIdx.x * RAKING_LENGTH) + i) < BLOCK_THREADS))
+                        if ((BlockRakingLayout::UNGUARDED) || (((threadIdx.x * RAKING_LENGTH) + i) < BLOCK_THREADS))
                         {
                             raking_partial = scan_op(raking_partial, raking_ptr[i]);
                         }
@@ -693,7 +698,7 @@ private:
             else
             {
                 // Place thread partial into shared memory raking grid
-                T *placement_ptr = BlockRakingGrid::PlacementPtr(smem_storage.raking_grid);
+                T *placement_ptr = BlockRakingLayout::PlacementPtr(smem_storage.raking_grid);
                 *placement_ptr = input;
 
                 __syncthreads();
@@ -702,13 +707,13 @@ private:
                 if (threadIdx.x < RAKING_THREADS)
                 {
                     // Raking upsweep reduction in grid
-                    T *raking_ptr = BlockRakingGrid::RakingPtr(smem_storage.raking_grid);
+                    T *raking_ptr = BlockRakingLayout::RakingPtr(smem_storage.raking_grid);
                     T raking_partial = raking_ptr[0];
 
                     #pragma unroll
                     for (int i = 1; i < RAKING_LENGTH; i++)
                     {
-                        if ((BlockRakingGrid::UNGUARDED) || (((threadIdx.x * RAKING_LENGTH) + i) < BLOCK_THREADS))
+                        if ((BlockRakingLayout::UNGUARDED) || (((threadIdx.x * RAKING_LENGTH) + i) < BLOCK_THREADS))
                         {
                             raking_partial = scan_op(raking_partial, raking_ptr[i]);
                         }
@@ -760,7 +765,7 @@ private:
             else
             {
                 // Place thread partial into shared memory raking grid
-                T *placement_ptr = BlockRakingGrid::PlacementPtr(smem_storage.raking_grid);
+                T *placement_ptr = BlockRakingLayout::PlacementPtr(smem_storage.raking_grid);
                 *placement_ptr = input;
 
                 __syncthreads();
@@ -769,13 +774,13 @@ private:
                 if (threadIdx.x < RAKING_THREADS)
                 {
                     // Raking upsweep reduction in grid
-                    T *raking_ptr = BlockRakingGrid::RakingPtr(smem_storage.raking_grid);
+                    T *raking_ptr = BlockRakingLayout::RakingPtr(smem_storage.raking_grid);
                     T raking_partial = raking_ptr[0];
 
                     #pragma unroll
                     for (int i = 1; i < RAKING_LENGTH; i++)
                     {
-                        if ((BlockRakingGrid::UNGUARDED) || (((threadIdx.x * RAKING_LENGTH) + i) < BLOCK_THREADS))
+                        if ((BlockRakingLayout::UNGUARDED) || (((threadIdx.x * RAKING_LENGTH) + i) < BLOCK_THREADS))
                         {
                             raking_partial = scan_op(raking_partial, raking_ptr[i]);
                         }
@@ -824,7 +829,7 @@ private:
                 Sum<T> scan_op;
 
                 // Place thread partial into shared memory raking grid
-                T *placement_ptr = BlockRakingGrid::PlacementPtr(smem_storage.raking_grid);
+                T *placement_ptr = BlockRakingLayout::PlacementPtr(smem_storage.raking_grid);
                 *placement_ptr = input;
 
                 __syncthreads();
@@ -833,13 +838,13 @@ private:
                 if (threadIdx.x < RAKING_THREADS)
                 {
                     // Raking upsweep reduction in grid
-                    T *raking_ptr = BlockRakingGrid::RakingPtr(smem_storage.raking_grid);
+                    T *raking_ptr = BlockRakingLayout::RakingPtr(smem_storage.raking_grid);
                     T raking_partial = raking_ptr[0];
 
                     #pragma unroll
                     for (int i = 1; i < RAKING_LENGTH; i++)
                     {
-                        if ((BlockRakingGrid::UNGUARDED) || (((threadIdx.x * RAKING_LENGTH) + i) < BLOCK_THREADS))
+                        if ((BlockRakingLayout::UNGUARDED) || (((threadIdx.x * RAKING_LENGTH) + i) < BLOCK_THREADS))
                         {
                             raking_partial = scan_op(raking_partial, raking_ptr[i]);
                         }
@@ -889,7 +894,7 @@ private:
                 Sum<T> scan_op;
 
                 // Place thread partial into shared memory raking grid
-                T *placement_ptr = BlockRakingGrid::PlacementPtr(smem_storage.raking_grid);
+                T *placement_ptr = BlockRakingLayout::PlacementPtr(smem_storage.raking_grid);
                 *placement_ptr = input;
 
                 __syncthreads();
@@ -898,13 +903,13 @@ private:
                 if (threadIdx.x < RAKING_THREADS)
                 {
                     // Raking upsweep reduction in grid
-                    T *raking_ptr = BlockRakingGrid::RakingPtr(smem_storage.raking_grid);
+                    T *raking_ptr = BlockRakingLayout::RakingPtr(smem_storage.raking_grid);
                     T raking_partial = raking_ptr[0];
 
                     #pragma unroll
                     for (int i = 1; i < RAKING_LENGTH; i++)
                     {
-                        if ((BlockRakingGrid::UNGUARDED) || (((threadIdx.x * RAKING_LENGTH) + i) < BLOCK_THREADS))
+                        if ((BlockRakingLayout::UNGUARDED) || (((threadIdx.x * RAKING_LENGTH) + i) < BLOCK_THREADS))
                         {
                             raking_partial = scan_op(raking_partial, raking_ptr[i]);
                         }
@@ -1267,7 +1272,7 @@ private:
 
 
     /// Shared memory storage layout type for BlockScan
-    typedef typename BlockScanInternal<SAFE_POLICY>::SmemStorage _SmemStorage;
+    typedef typename BlockScanInternal<SAFE_ALGORITHM>::SmemStorage _SmemStorage;
 
 public:
 
@@ -1300,7 +1305,7 @@ public:
         ScanOp          scan_op,            ///< [in] Binary scan operator
         T               &block_aggregate)   ///< [out] <b>[<em>thread</em><sub>0</sub> only]</b> threadblock-wide aggregate reduction of input items
     {
-        BlockScanInternal<SAFE_POLICY>::ExclusiveScan(smem_storage, input, output, identity, scan_op, block_aggregate);
+        BlockScanInternal<SAFE_ALGORITHM>::ExclusiveScan(smem_storage, input, output, identity, scan_op, block_aggregate);
     }
 
 
@@ -1364,7 +1369,7 @@ public:
         T               &block_aggregate,               ///< [out] <b>[<em>thread</em><sub>0</sub> only]</b> Threadblock-wide aggregate reduction of input items (exclusive of the \p block_prefix_op value)
         BlockPrefixOp   &block_prefix_op)               ///< [in-out] <b>[<em>thread</em><sub>0</sub> only]</b> Call-back functor for specifying a threadblock-wide prefix to be applied to all inputs.
     {
-        BlockScanInternal<SAFE_POLICY>::ExclusiveScan(smem_storage, input, output, identity, scan_op, block_aggregate, block_prefix_op);
+        BlockScanInternal<SAFE_ALGORITHM>::ExclusiveScan(smem_storage, input, output, identity, scan_op, block_aggregate, block_prefix_op);
     }
 
 
@@ -1425,7 +1430,7 @@ public:
         ScanOp          scan_op)                        ///< [in] Binary scan operator
     {
         T block_aggregate;
-        BlockScanInternal<SAFE_POLICY>::ExclusiveScan(smem_storage, input, output, identity, scan_op, block_aggregate);
+        BlockScanInternal<SAFE_ALGORITHM>::ExclusiveScan(smem_storage, input, output, identity, scan_op, block_aggregate);
     }
 
 
@@ -1459,7 +1464,7 @@ public:
     }
 
 
-    //@}
+    //@}  end member group
     /******************************************************************//**
      * \name Exclusive prefix scans (without supplied identity)
      *********************************************************************/
@@ -1483,7 +1488,7 @@ public:
         ScanOp          scan_op,                        ///< [in] Binary scan operator
         T               &block_aggregate)               ///< [out] <b>[<em>thread</em><sub>0</sub> only]</b> threadblock-wide aggregate reduction of input items
     {
-        BlockScanInternal<SAFE_POLICY>::ExclusiveScan(smem_storage, input, output, scan_op, block_aggregate);
+        BlockScanInternal<SAFE_ALGORITHM>::ExclusiveScan(smem_storage, input, output, scan_op, block_aggregate);
     }
 
 
@@ -1545,7 +1550,7 @@ public:
         T               &block_aggregate,               ///< [out] <b>[<em>thread</em><sub>0</sub> only]</b> Threadblock-wide aggregate reduction of input items (exclusive of the \p block_prefix_op value)
         BlockPrefixOp   &block_prefix_op)               ///< [in-out] <b>[<em>thread</em><sub>0</sub> only]</b> Call-back functor for specifying a threadblock-wide prefix to be applied to all inputs.
     {
-        BlockScanInternal<SAFE_POLICY>::ExclusiveScan(smem_storage, input, output, scan_op, block_aggregate, block_prefix_op);
+        BlockScanInternal<SAFE_ALGORITHM>::ExclusiveScan(smem_storage, input, output, scan_op, block_aggregate, block_prefix_op);
     }
 
 
@@ -1604,7 +1609,7 @@ public:
         ScanOp          scan_op)                        ///< [in] Binary scan operator
     {
         T block_aggregate;
-        BlockScanInternal<SAFE_POLICY>::ExclusiveScan(smem_storage, input, output, scan_op, block_aggregate);
+        BlockScanInternal<SAFE_ALGORITHM>::ExclusiveScan(smem_storage, input, output, scan_op, block_aggregate);
     }
 
 
@@ -1636,7 +1641,7 @@ public:
     }
 
 
-    //@}
+    //@}  end member group
     /******************************************************************//**
      * \name Exclusive prefix sums
      *********************************************************************/
@@ -1656,7 +1661,7 @@ public:
         T               &output,                        ///< [out] Calling thread's output item (may be aliased to \p input)
         T               &block_aggregate)               ///< [out] <b>[<em>thread</em><sub>0</sub> only]</b> threadblock-wide aggregate reduction of input items
     {
-        BlockScanInternal<SAFE_POLICY>::ExclusiveSum(smem_storage, input, output, block_aggregate);
+        BlockScanInternal<SAFE_ALGORITHM>::ExclusiveSum(smem_storage, input, output, block_aggregate);
     }
 
 
@@ -1711,7 +1716,7 @@ public:
         T               &block_aggregate,               ///< [out] <b>[<em>thread</em><sub>0</sub> only]</b> Threadblock-wide aggregate reduction of input items (exclusive of the \p block_prefix_op value)
         BlockPrefixOp   &block_prefix_op)               ///< [in-out] <b>[<em>thread</em><sub>0</sub> only]</b> Call-back functor of the model <em>T block_prefix_op(T block_aggregate)</em> to be run <em>thread</em><sub>0</sub> for providing the operation with a threadblock-wide prefix value to seed the scan with.  Can be stateful.
     {
-        BlockScanInternal<SAFE_POLICY>::ExclusiveSum(smem_storage, input, output, block_aggregate, block_prefix_op);
+        BlockScanInternal<SAFE_ALGORITHM>::ExclusiveSum(smem_storage, input, output, block_aggregate, block_prefix_op);
     }
 
 
@@ -1764,7 +1769,7 @@ public:
         T               &output)                        ///< [out] Calling thread's output item (may be aliased to \p input)
     {
         T block_aggregate;
-        BlockScanInternal<SAFE_POLICY>::ExclusiveSum(smem_storage, input, output, block_aggregate);
+        BlockScanInternal<SAFE_ALGORITHM>::ExclusiveSum(smem_storage, input, output, block_aggregate);
     }
 
 
@@ -1793,7 +1798,7 @@ public:
     }
 
 
-    //@}
+    //@}  end member group
     /******************************************************************//**
      * \name Inclusive prefix scans
      *********************************************************************/
@@ -1817,7 +1822,7 @@ public:
         ScanOp          scan_op,                        ///< [in] Binary scan operator
         T               &block_aggregate)               ///< [out] <b>[<em>thread</em><sub>0</sub> only]</b> threadblock-wide aggregate reduction of input items
     {
-        BlockScanInternal<SAFE_POLICY>::InclusiveScan(smem_storage, input, output, scan_op, block_aggregate);
+        BlockScanInternal<SAFE_ALGORITHM>::InclusiveScan(smem_storage, input, output, scan_op, block_aggregate);
     }
 
 
@@ -1879,7 +1884,7 @@ public:
         T               &block_aggregate,               ///< [out] <b>[<em>thread</em><sub>0</sub> only]</b> Threadblock-wide aggregate reduction of input items (exclusive of the \p block_prefix_op value)
         BlockPrefixOp   &block_prefix_op)               ///< [in-out] <b>[<em>thread</em><sub>0</sub> only]</b> Call-back functor for specifying a threadblock-wide prefix to be applied to all inputs.
     {
-        BlockScanInternal<SAFE_POLICY>::InclusiveScan(smem_storage, input, output, scan_op, block_aggregate, block_prefix_op);
+        BlockScanInternal<SAFE_ALGORITHM>::InclusiveScan(smem_storage, input, output, scan_op, block_aggregate, block_prefix_op);
     }
 
 
@@ -1970,7 +1975,7 @@ public:
     }
 
 
-    //@}
+    //@}  end member group
     /******************************************************************//**
      * \name Inclusive prefix sums
      *********************************************************************/
@@ -1990,7 +1995,7 @@ public:
         T               &output,                        ///< [out] Calling thread's output item (may be aliased to \p input)
         T               &block_aggregate)               ///< [out] <b>[<em>thread</em><sub>0</sub> only]</b> threadblock-wide aggregate reduction of input items
     {
-        BlockScanInternal<SAFE_POLICY>::InclusiveSum(smem_storage, input, output, block_aggregate);
+        BlockScanInternal<SAFE_ALGORITHM>::InclusiveSum(smem_storage, input, output, block_aggregate);
     }
 
 
@@ -2046,7 +2051,7 @@ public:
         T               &block_aggregate,               ///< [out] <b>[<em>thread</em><sub>0</sub> only]</b> Threadblock-wide aggregate reduction of input items (exclusive of the \p block_prefix_op value)
         BlockPrefixOp   &block_prefix_op)               ///< [in-out] <b>[<em>thread</em><sub>0</sub> only]</b> Call-back functor for specifying a threadblock-wide prefix to be applied to all inputs.
     {
-        BlockScanInternal<SAFE_POLICY>::InclusiveSum(smem_storage, input, output, block_aggregate, block_prefix_op);
+        BlockScanInternal<SAFE_ALGORITHM>::InclusiveSum(smem_storage, input, output, block_aggregate, block_prefix_op);
     }
 
 
@@ -2099,7 +2104,7 @@ public:
         T               &output)                        ///< [out] Calling thread's output item (may be aliased to \p input)
     {
         T block_aggregate;
-        BlockScanInternal<SAFE_POLICY>::InclusiveSum(smem_storage, input, output, block_aggregate);
+        BlockScanInternal<SAFE_ALGORITHM>::InclusiveSum(smem_storage, input, output, block_aggregate);
     }
 
 
@@ -2127,11 +2132,12 @@ public:
         ThreadScanInclusive(input, output, scan_op, thread_partial, (threadIdx.x != 0));
     }
 
-    //@}        // Inclusive prefix sums
+    //@}  end member group        // Inclusive prefix sums
 
 };
 
-/** @} */       // SimtCoop
+/** @} */       // BlockModule
 
-} // namespace cub
-CUB_NS_POSTFIX
+}               // CUB namespace
+CUB_NS_POSTFIX  // Optional outer namespace(s)
+

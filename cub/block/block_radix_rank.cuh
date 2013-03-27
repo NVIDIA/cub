@@ -33,21 +33,22 @@
 
 #pragma once
 
-#include "../arch_props.cuh"
-#include "../type_utils.cuh"
-#include "../ptx_intrinsics.cuh"
+#include "../util_arch.cuh"
+#include "../util_type.cuh"
+#include "../util_ptx.cuh"
 #include "../thread/thread_reduce.cuh"
 #include "../thread/thread_scan.cuh"
-#include "../ns_wrapper.cuh"
+#include "../util_namespace.cuh"
 
 
+/// Optional outer namespace(s)
 CUB_NS_PREFIX
 
 /// CUB namespace
 namespace cub {
 
 /**
- * \addtogroup SimtCoop
+ * \addtogroup BlockModule
  * @{
  */
 
@@ -389,8 +390,9 @@ public:
     }
 };
 
-/** @} */       // SimtCoop
+/** @} */       // BlockModule
 
-} // namespace cub
-CUB_NS_POSTFIX
+}               // CUB namespace
+CUB_NS_POSTFIX  // Optional outer namespace(s)
+
 

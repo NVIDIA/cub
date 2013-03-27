@@ -5,7 +5,7 @@
 <meta http-equiv="Content-Type" content="text/xhtml;charset=UTF-8"/>
 <meta http-equiv="X-UA-Compatible" content="IE=9"/>
 <meta name="generator" content="Doxygen 1.8.3.1"/>
-<title>CUB: debug.cuh File Reference</title>
+<title>CUB: util_debug.cuh File Reference</title>
 <link href="tabs.css" rel="stylesheet" type="text/css"/>
 <script type="text/javascript" src="jquery.js"></script>
 <script type="text/javascript" src="dynsections.js"></script>
@@ -75,7 +75,7 @@ var searchBox = new SearchBox("searchBox", "search",false,'Search');
      onmouseover="return searchBox.OnSearchSelectShow()"
      onmouseout="return searchBox.OnSearchSelectHide()"
      onkeydown="return searchBox.OnSearchSelectKey(event)">
-<a class="SelectItem" href="javascript:void(0)" onclick="searchBox.OnSelectItem(0)"><span class="SelectionMark">&#160;</span>All</a><a class="SelectItem" href="javascript:void(0)" onclick="searchBox.OnSelectItem(1)"><span class="SelectionMark">&#160;</span>Classes</a><a class="SelectItem" href="javascript:void(0)" onclick="searchBox.OnSelectItem(2)"><span class="SelectionMark">&#160;</span>Namespaces</a><a class="SelectItem" href="javascript:void(0)" onclick="searchBox.OnSelectItem(3)"><span class="SelectionMark">&#160;</span>Files</a><a class="SelectItem" href="javascript:void(0)" onclick="searchBox.OnSelectItem(4)"><span class="SelectionMark">&#160;</span>Functions</a><a class="SelectItem" href="javascript:void(0)" onclick="searchBox.OnSelectItem(5)"><span class="SelectionMark">&#160;</span>Variables</a><a class="SelectItem" href="javascript:void(0)" onclick="searchBox.OnSelectItem(6)"><span class="SelectionMark">&#160;</span>Typedefs</a><a class="SelectItem" href="javascript:void(0)" onclick="searchBox.OnSelectItem(7)"><span class="SelectionMark">&#160;</span>Enumerations</a><a class="SelectItem" href="javascript:void(0)" onclick="searchBox.OnSelectItem(8)"><span class="SelectionMark">&#160;</span>Enumerator</a><a class="SelectItem" href="javascript:void(0)" onclick="searchBox.OnSelectItem(9)"><span class="SelectionMark">&#160;</span>Macros</a><a class="SelectItem" href="javascript:void(0)" onclick="searchBox.OnSelectItem(10)"><span class="SelectionMark">&#160;</span>Groups</a><a class="SelectItem" href="javascript:void(0)" onclick="searchBox.OnSelectItem(11)"><span class="SelectionMark">&#160;</span>Pages</a></div>
+<a class="SelectItem" href="javascript:void(0)" onclick="searchBox.OnSelectItem(0)"><span class="SelectionMark">&#160;</span>All</a><a class="SelectItem" href="javascript:void(0)" onclick="searchBox.OnSelectItem(1)"><span class="SelectionMark">&#160;</span>Classes</a><a class="SelectItem" href="javascript:void(0)" onclick="searchBox.OnSelectItem(2)"><span class="SelectionMark">&#160;</span>Namespaces</a><a class="SelectItem" href="javascript:void(0)" onclick="searchBox.OnSelectItem(3)"><span class="SelectionMark">&#160;</span>Files</a><a class="SelectItem" href="javascript:void(0)" onclick="searchBox.OnSelectItem(4)"><span class="SelectionMark">&#160;</span>Functions</a><a class="SelectItem" href="javascript:void(0)" onclick="searchBox.OnSelectItem(5)"><span class="SelectionMark">&#160;</span>Variables</a><a class="SelectItem" href="javascript:void(0)" onclick="searchBox.OnSelectItem(6)"><span class="SelectionMark">&#160;</span>Typedefs</a><a class="SelectItem" href="javascript:void(0)" onclick="searchBox.OnSelectItem(7)"><span class="SelectionMark">&#160;</span>Enumerations</a><a class="SelectItem" href="javascript:void(0)" onclick="searchBox.OnSelectItem(8)"><span class="SelectionMark">&#160;</span>Enumerator</a><a class="SelectItem" href="javascript:void(0)" onclick="searchBox.OnSelectItem(9)"><span class="SelectionMark">&#160;</span>Friends</a><a class="SelectItem" href="javascript:void(0)" onclick="searchBox.OnSelectItem(10)"><span class="SelectionMark">&#160;</span>Macros</a><a class="SelectItem" href="javascript:void(0)" onclick="searchBox.OnSelectItem(11)"><span class="SelectionMark">&#160;</span>Groups</a><a class="SelectItem" href="javascript:void(0)" onclick="searchBox.OnSelectItem(12)"><span class="SelectionMark">&#160;</span>Pages</a></div>
 
 <!-- iframe showing the search results (closed by default) -->
 <div id="MSearchResultsWindow">
@@ -95,35 +95,35 @@ var searchBox = new SearchBox("searchBox", "search",false,'Search');
 <a href="#define-members">Macros</a> &#124;
 <a href="#func-members">Functions</a>  </div>
   <div class="headertitle">
-<div class="title">debug.cuh File Reference</div>  </div>
+<div class="title">util_debug.cuh File Reference</div>  </div>
 </div><!--header-->
 <div class="contents">
 <div class="textblock"><code>#include &lt;stdio.h&gt;</code><br/>
-<code>#include &quot;ns_wrapper.cuh&quot;</code><br/>
-<code>#include &quot;device_props.cuh&quot;</code><br/>
+<code>#include &quot;util_namespace.cuh&quot;</code><br/>
+<code>#include &quot;util_arch.cuh&quot;</code><br/>
 </div><table class="memberdecls">
 <tr class="heading"><td colspan="2"><h2 class="groupheader"><a name="namespaces"></a>
 Namespaces</h2></td></tr>
 <tr class="memitem:namespacecub"><td class="memItemLeft" align="right" valign="top">namespace &#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="namespacecub.html">cub</a></td></tr>
-<tr class="memdesc:namespacecub"><td class="mdescLeft">&#160;</td><td class="mdescRight">CUB namespace. <br/></td></tr>
+<tr class="memdesc:namespacecub"><td class="mdescLeft">&#160;</td><td class="mdescRight">Optional outer namespace(s) <br/></td></tr>
 <tr class="separator:"><td class="memSeparator" colspan="2">&#160;</td></tr>
 </table><table class="memberdecls">
 <tr class="heading"><td colspan="2"><h2 class="groupheader"><a name="define-members"></a>
 Macros</h2></td></tr>
-<tr class="memitem:a04236bb0db0efe7a19c9ecba0aedc1e5"><td class="memItemLeft" align="right" valign="top">#define&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="debug_8cuh.html#a04236bb0db0efe7a19c9ecba0aedc1e5">CubDebug</a>(f)&#160;&#160;&#160;<a class="el" href="group___host_util.html#ga0ac6d9c9d88ac0da0d644c88a3b36aa3">cub::Debug</a>(f, __FILE__, __LINE__)</td></tr>
+<tr class="memitem:a04236bb0db0efe7a19c9ecba0aedc1e5"><td class="memItemLeft" align="right" valign="top">#define&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="debug_8cuh.html#a04236bb0db0efe7a19c9ecba0aedc1e5">CubDebug</a>(f)&#160;&#160;&#160;<a class="el" href="group___host_module.html#ga0ac6d9c9d88ac0da0d644c88a3b36aa3">cub::Debug</a>(f, __FILE__, __LINE__)</td></tr>
 <tr class="separator:a04236bb0db0efe7a19c9ecba0aedc1e5"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:a2e5de1db78fd84552bda8254efa409a3"><td class="memItemLeft" align="right" valign="top">#define&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="debug_8cuh.html#a2e5de1db78fd84552bda8254efa409a3">CubDebugExit</a>(f)&#160;&#160;&#160;if (<a class="el" href="group___host_util.html#ga0ac6d9c9d88ac0da0d644c88a3b36aa3">cub::Debug</a>(f, __FILE__, __LINE__)) exit(1)</td></tr>
+<tr class="memitem:a2e5de1db78fd84552bda8254efa409a3"><td class="memItemLeft" align="right" valign="top">#define&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="debug_8cuh.html#a2e5de1db78fd84552bda8254efa409a3">CubDebugExit</a>(f)&#160;&#160;&#160;if (<a class="el" href="group___host_module.html#ga0ac6d9c9d88ac0da0d644c88a3b36aa3">cub::Debug</a>(f, __FILE__, __LINE__)) exit(1)</td></tr>
 <tr class="separator:a2e5de1db78fd84552bda8254efa409a3"><td class="memSeparator" colspan="2">&#160;</td></tr>
 </table><table class="memberdecls">
 <tr class="heading"><td colspan="2"><h2 class="groupheader"><a name="func-members"></a>
 Functions</h2></td></tr>
 <tr class="memitem:ga0ac6d9c9d88ac0da0d644c88a3b36aa3"><td class="memItemLeft" align="right" valign="top">__host__ __device__ <br class="typebreak"/>
-__forceinline__ cudaError_t&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="group___host_util.html#ga0ac6d9c9d88ac0da0d644c88a3b36aa3">cub::Debug</a> (cudaError_t error, const char *message, const char *filename, int line)</td></tr>
-<tr class="memdesc:ga0ac6d9c9d88ac0da0d644c88a3b36aa3"><td class="mdescLeft">&#160;</td><td class="mdescRight">If <code>CUB_STDERR</code> is defined and <code>error</code> is not <code>cudaSuccess</code>, <code>message</code> is printed to <code>stderr</code> along with the supplied source context.  <a href="group___host_util.html#ga0ac6d9c9d88ac0da0d644c88a3b36aa3">More...</a><br/></td></tr>
+__forceinline__ cudaError_t&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="group___host_module.html#ga0ac6d9c9d88ac0da0d644c88a3b36aa3">cub::Debug</a> (cudaError_t error, const char *message, const char *filename, int line)</td></tr>
+<tr class="memdesc:ga0ac6d9c9d88ac0da0d644c88a3b36aa3"><td class="mdescLeft">&#160;</td><td class="mdescRight">If <code>CUB_STDERR</code> is defined and <code>error</code> is not <code>cudaSuccess</code>, <code>message</code> is printed to <code>stderr</code> along with the supplied source context.  <a href="group___host_module.html#ga0ac6d9c9d88ac0da0d644c88a3b36aa3">More...</a><br/></td></tr>
 <tr class="separator:ga0ac6d9c9d88ac0da0d644c88a3b36aa3"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:ga5a175d2a88f63f7f1ab30e8b4f2cfa95"><td class="memItemLeft" align="right" valign="top">__host__ __device__ <br class="typebreak"/>
-__forceinline__ cudaError_t&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="group___host_util.html#ga5a175d2a88f63f7f1ab30e8b4f2cfa95">cub::Debug</a> (cudaError_t error, const char *filename, int line)</td></tr>
-<tr class="memdesc:ga5a175d2a88f63f7f1ab30e8b4f2cfa95"><td class="mdescLeft">&#160;</td><td class="mdescRight">If <code>CUB_STDERR</code> is defined and <code>error</code> is not <code>cudaSuccess</code>, the corresponding error message is printed to <code>stderr</code> along with the supplied source context.  <a href="group___host_util.html#ga5a175d2a88f63f7f1ab30e8b4f2cfa95">More...</a><br/></td></tr>
+__forceinline__ cudaError_t&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="group___host_module.html#ga5a175d2a88f63f7f1ab30e8b4f2cfa95">cub::Debug</a> (cudaError_t error, const char *filename, int line)</td></tr>
+<tr class="memdesc:ga5a175d2a88f63f7f1ab30e8b4f2cfa95"><td class="mdescLeft">&#160;</td><td class="mdescRight">If <code>CUB_STDERR</code> is defined and <code>error</code> is not <code>cudaSuccess</code>, the corresponding error message is printed to <code>stderr</code> along with the supplied source context.  <a href="group___host_module.html#ga5a175d2a88f63f7f1ab30e8b4f2cfa95">More...</a><br/></td></tr>
 <tr class="separator:ga5a175d2a88f63f7f1ab30e8b4f2cfa95"><td class="memSeparator" colspan="2">&#160;</td></tr>
 </table>
 <a name="details" id="details"></a><h2 class="groupheader">Detailed Description</h2>
@@ -138,7 +138,7 @@ __forceinline__ cudaError_t&#160;</td><td class="memItemRight" valign="bottom"><
           <td>(</td>
           <td class="paramtype">&#160;</td>
           <td class="paramname">f</td><td>)</td>
-          <td>&#160;&#160;&#160;<a class="el" href="group___host_util.html#ga0ac6d9c9d88ac0da0d644c88a3b36aa3">cub::Debug</a>(f, __FILE__, __LINE__)</td>
+          <td>&#160;&#160;&#160;<a class="el" href="group___host_module.html#ga0ac6d9c9d88ac0da0d644c88a3b36aa3">cub::Debug</a>(f, __FILE__, __LINE__)</td>
         </tr>
       </table>
 </div><div class="memdoc">
@@ -155,7 +155,7 @@ __forceinline__ cudaError_t&#160;</td><td class="memItemRight" valign="bottom"><
           <td>(</td>
           <td class="paramtype">&#160;</td>
           <td class="paramname">f</td><td>)</td>
-          <td>&#160;&#160;&#160;if (<a class="el" href="group___host_util.html#ga0ac6d9c9d88ac0da0d644c88a3b36aa3">cub::Debug</a>(f, __FILE__, __LINE__)) exit(1)</td>
+          <td>&#160;&#160;&#160;if (<a class="el" href="group___host_module.html#ga0ac6d9c9d88ac0da0d644c88a3b36aa3">cub::Debug</a>(f, __FILE__, __LINE__)) exit(1)</td>
         </tr>
       </table>
 </div><div class="memdoc">
@@ -167,7 +167,7 @@ __forceinline__ cudaError_t&#160;</td><td class="memItemRight" valign="bottom"><
 <!-- HTML footer for doxygen 1.8.3.1-->
 <!-- start footer part -->
 <hr class="footer"/><address class="footer"><small>
-Generated on Wed Mar 13 2013 17:39:04 for CUB by &#160;<a href="http://www.doxygen.org/index.html">
+Generated on Wed Mar 27 2013 15:27:02 for CUB by &#160;<a href="http://www.doxygen.org/index.html">
 <img class="footer" src="doxygen.png" alt="doxygen"/>
 </a> 1.8.3.1
 <br>

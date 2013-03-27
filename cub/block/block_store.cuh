@@ -35,20 +35,20 @@
 
 #include <iterator>
 
-#include "../ns_wrapper.cuh"
-#include "../macro_utils.cuh"
+#include "../util_namespace.cuh"
+#include "../util_macro.cuh"
 #include "../thread/thread_store.cuh"
-#include "../type_utils.cuh"
-#include "../vector_type.cuh"
+#include "../util_type.cuh"
 #include "block_exchange.cuh"
 
+/// Optional outer namespace(s)
 CUB_NS_PREFIX
 
 /// CUB namespace
 namespace cub {
 
 /**
- *  \addtogroup SimtUtils
+ *  \addtogroup BlockModule
  * @{
  */
 
@@ -175,7 +175,7 @@ __device__ __forceinline__ void BlockStoreDirect(
 }
 
 
-//@}
+//@}  end member group
 /******************************************************************//**
  * \name Direct threadblock stores (striped arrangement)
  *********************************************************************/
@@ -305,7 +305,7 @@ __device__ __forceinline__ void BlockStoreDirectStriped(
 }
 
 
-//@}
+//@}  end member group
 /******************************************************************//**
  * \name Threadblock vectorized stores (blocked arrangement)
  *********************************************************************/
@@ -403,10 +403,10 @@ __device__ __forceinline__ void BlockStoreVectorized(
     BlockStoreVectorized<PTX_STORE_NONE>(block_ptr, items);
 }
 
-//@}
+//@}  end member group
 
 
-/** @} */       // end of SimtUtils group
+/** @} */       // end group BlockModule
 
 
 //-----------------------------------------------------------------------------
@@ -472,7 +472,7 @@ enum BlockStorePolicy
 
 
 /**
- * \addtogroup SimtCoop
+ * \addtogroup BlockModule
  * @{
  */
 
@@ -735,7 +735,8 @@ public:
     }
 };
 
-/** @} */       // end of SimtCoop group
+/** @} */       // end group BlockModule
 
-} // namespace cub
-CUB_NS_POSTFIX
+}               // CUB namespace
+CUB_NS_POSTFIX  // Optional outer namespace(s)
+
