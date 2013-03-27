@@ -329,7 +329,7 @@ public:
         const unsigned int  &num_valid)             ///< [in] Number of threads containing valid elements (may be less than BLOCK_THREADS)
     {
         // Determine if we don't need bounds checking
-        if (num_valid == BLOCK_THREADS)
+        if (num_valid >= BLOCK_THREADS)
         {
             return ReduceInternal<true>(smem_storage, input, num_valid, reduction_op);
         }

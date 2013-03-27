@@ -88,7 +88,7 @@ public:
             block_oob(0)
     {
         int total_grains        = (num_items + schedule_granularity - 1) / schedule_granularity;
-        grid_size               = CUB_MAX(total_grains, max_grid_size);
+        grid_size               = CUB_MIN(total_grains, max_grid_size);
 
         SizeT grains_per_block  = total_grains / grid_size;
         big_blocks              = total_grains - (grains_per_block * grid_size);        // leftover grains go to big blocks
@@ -103,7 +103,7 @@ public:
      *
      * Generally initialized by each threadblock after construction on the host.
      */
-    __device__ __forceinline__ void Init()
+    __device__ __forceinline__ void BlockInit()
     {
         if (blockIdx.x < big_blocks)
         {
