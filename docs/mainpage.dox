@@ -405,15 +405,15 @@
 
 
 /**
- * \defgroup DeviceModule Device
+ * \defgroup DeviceModule Device-wide
  */
 
 /**
- * \defgroup BlockModule Block
+ * \defgroup BlockModule Block-wide
  */
 
 /**
- * \defgroup WarpModule Warp
+ * \defgroup WarpModule Warp-wide
  */
 
 /**

@@ -48,7 +48,7 @@ CUB_NS_PREFIX
 namespace cub {
 
 /**
- *  \addtogroup ThreadModule
+ *  \addtogroup BlockModule
  * @{
  */
 
@@ -528,7 +528,7 @@ __device__ __forceinline__ void BlockLoadVectorized(
 
 //@}  end member group
 
-/** @} */       // end group ThreadModule
+/** @} */       // end group BlockModule
 
 
 

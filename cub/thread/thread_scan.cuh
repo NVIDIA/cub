@@ -28,7 +28,7 @@
 
 /**
  * \file
- * Thread utilities for sequential prefix scan over statically-sized array types.
+ * Thread utilities for sequential prefix scan over statically-sized array types
  */
 
 #pragma once
@@ -50,7 +50,7 @@ namespace cub {
  */
 
 /**
- * \name Sequential prefix scan over statically-sized array types.
+ * \name Sequential prefix scan over statically-sized array types
  * @{
  */
 

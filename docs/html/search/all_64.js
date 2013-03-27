@@ -5,7 +5,7 @@ var searchData=
   ['device',['Device',['../classcub_1_1_device.html',1,'cub']]],
   ['device_5freduce_2ecuh',['device_reduce.cuh',['../device__reduce_8cuh.html',1,'']]],
   ['devicefoo',['DeviceFoo',['../structcub_1_1_device_foo.html',1,'cub']]],
-  ['device',['Device',['../group___device_module.html',1,'']]],
+  ['device_2dwide',['Device-wide',['../group___device_module.html',1,'']]],
   ['deviceordinal',['DeviceOrdinal',['../group___util_module.html#ga0888aca216483e15abb12b4d80da31a9',1,'cub']]],
   ['dispatchpolicy',['DispatchPolicy',['../structcub_1_1_device_foo_1_1_dispatch_policy.html',1,'cub::DeviceFoo']]]
 ];
