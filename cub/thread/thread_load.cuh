@@ -62,7 +62,7 @@ namespace cub {
 enum PtxLoadModifier
 {
     // Global load modifiers
-    PTX_LOAD_NONE,          ///< Default (currently cub::PTX_LOAD_CA for global loads, nothing for smem loads)
+    PTX_LOAD_NONE,          ///< Default (no modifier)
     PTX_LOAD_CA,            ///< Cache at all levels
     PTX_LOAD_CG,            ///< Cache at global level
     PTX_LOAD_CS,            ///< Cache streaming (likely to be accessed once)

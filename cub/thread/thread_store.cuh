@@ -73,7 +73,7 @@ enum PtxStoreModifier
 
 
 /**
- * \name Thread utilities for memory I/O using PTX cache modifiers
+ * \name I/O using PTX cache modifiers
  * @{
  */
 

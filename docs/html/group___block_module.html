@@ -5,7 +5,7 @@
 <meta http-equiv="Content-Type" content="text/xhtml;charset=UTF-8"/>
 <meta http-equiv="X-UA-Compatible" content="IE=9"/>
 <meta name="generator" content="Doxygen 1.8.3.1"/>
-<title>CUB: Block</title>
+<title>CUB: Block-wide</title>
 <link href="tabs.css" rel="stylesheet" type="text/css"/>
 <script type="text/javascript" src="jquery.js"></script>
 <script type="text/javascript" src="dynsections.js"></script>
@@ -52,6 +52,7 @@ var searchBox = new SearchBox("searchBox", "search",false,'Search');
       <li><a href="index.html"><span>Main&#160;Page</span></a></li>
       <li><a href="modules.html"><span>Modules</span></a></li>
       <li><a href="annotated.html"><span>Classes</span></a></li>
+      <li><a href="files.html"><span>Files</span></a></li>
       <li>
         <div id="MSearchBox" class="MSearchBoxInactive">
         <span class="left">
@@ -89,7 +90,7 @@ var searchBox = new SearchBox("searchBox", "search",false,'Search');
   <div class="summary">
 <a href="#nested-classes">Classes</a>  </div>
   <div class="headertitle">
-<div class="title">Block</div>  </div>
+<div class="title">Block-wide</div>  </div>
 </div><!--header-->
 <div class="contents">
 <table class="memberdecls">
@@ -156,6 +157,71 @@ Classes</h2></td></tr>
 <tr class="separator:"><td class="memSeparator" colspan="2">&#160;</td></tr>
 </table><table class="memberdecls">
 <tr class="heading"><td colspan="2"><h2 class="groupheader"><a name="member-group"></a>
+Direct threadblock loads (blocked arrangement)</h2></td></tr>
+<tr class="memitem:ga2ece00cc00c1d3269ee79ddf60d15457"><td class="memTemplParams" colspan="2">template&lt;PtxLoadModifier MODIFIER, typename T , int ITEMS_PER_THREAD, typename InputIterator &gt; </td></tr>
+<tr class="memitem:ga2ece00cc00c1d3269ee79ddf60d15457"><td class="memTemplItemLeft" align="right" valign="top">__device__ __forceinline__ void&#160;</td><td class="memTemplItemRight" valign="bottom"><a class="el" href="group___block_module.html#ga2ece00cc00c1d3269ee79ddf60d15457">cub::BlockLoadDirect</a> (InputIterator block_itr, T(&amp;items)[ITEMS_PER_THREAD])</td></tr>
+<tr class="memdesc:ga2ece00cc00c1d3269ee79ddf60d15457"><td class="mdescLeft">&#160;</td><td class="mdescRight">Load a tile of items across a threadblock directly using the specified cache modifier.  <a href="#ga2ece00cc00c1d3269ee79ddf60d15457">More...</a><br/></td></tr>
+<tr class="separator:ga2ece00cc00c1d3269ee79ddf60d15457"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:ga51495fa39938ecf57056d4ca6f0260de"><td class="memTemplParams" colspan="2">template&lt;typename T , int ITEMS_PER_THREAD, typename InputIterator &gt; </td></tr>
+<tr class="memitem:ga51495fa39938ecf57056d4ca6f0260de"><td class="memTemplItemLeft" align="right" valign="top">__device__ __forceinline__ void&#160;</td><td class="memTemplItemRight" valign="bottom"><a class="el" href="group___block_module.html#ga51495fa39938ecf57056d4ca6f0260de">cub::BlockLoadDirect</a> (InputIterator block_itr, T(&amp;items)[ITEMS_PER_THREAD])</td></tr>
+<tr class="memdesc:ga51495fa39938ecf57056d4ca6f0260de"><td class="mdescLeft">&#160;</td><td class="mdescRight">Load a tile of items across a threadblock directly.  <a href="#ga51495fa39938ecf57056d4ca6f0260de">More...</a><br/></td></tr>
+<tr class="separator:ga51495fa39938ecf57056d4ca6f0260de"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:ga01e0a2d42d5b20aab660815c5cf258a0"><td class="memTemplParams" colspan="2">template&lt;PtxLoadModifier MODIFIER, typename T , int ITEMS_PER_THREAD, typename InputIterator , typename SizeT &gt; </td></tr>
+<tr class="memitem:ga01e0a2d42d5b20aab660815c5cf258a0"><td class="memTemplItemLeft" align="right" valign="top">__device__ __forceinline__ void&#160;</td><td class="memTemplItemRight" valign="bottom"><a class="el" href="group___block_module.html#ga01e0a2d42d5b20aab660815c5cf258a0">cub::BlockLoadDirect</a> (InputIterator block_itr, const SizeT &amp;guarded_items, T(&amp;items)[ITEMS_PER_THREAD])</td></tr>
+<tr class="memdesc:ga01e0a2d42d5b20aab660815c5cf258a0"><td class="mdescLeft">&#160;</td><td class="mdescRight">Load a tile of items across a threadblock directly using the specified cache modifier, guarded by range.  <a href="#ga01e0a2d42d5b20aab660815c5cf258a0">More...</a><br/></td></tr>
+<tr class="separator:ga01e0a2d42d5b20aab660815c5cf258a0"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:gaac537b6a8c9caaae1e6e77e9717e9541"><td class="memTemplParams" colspan="2">template&lt;typename T , int ITEMS_PER_THREAD, typename InputIterator , typename SizeT &gt; </td></tr>
+<tr class="memitem:gaac537b6a8c9caaae1e6e77e9717e9541"><td class="memTemplItemLeft" align="right" valign="top">__device__ __forceinline__ void&#160;</td><td class="memTemplItemRight" valign="bottom"><a class="el" href="group___block_module.html#gaac537b6a8c9caaae1e6e77e9717e9541">cub::BlockLoadDirect</a> (InputIterator block_itr, const SizeT &amp;guarded_items, T(&amp;items)[ITEMS_PER_THREAD])</td></tr>
+<tr class="memdesc:gaac537b6a8c9caaae1e6e77e9717e9541"><td class="mdescLeft">&#160;</td><td class="mdescRight">Load a tile of items across a threadblock directly, guarded by range.  <a href="#gaac537b6a8c9caaae1e6e77e9717e9541">More...</a><br/></td></tr>
+<tr class="separator:gaac537b6a8c9caaae1e6e77e9717e9541"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:gae910789e82acd344d6f5a4cc50beef03"><td class="memTemplParams" colspan="2">template&lt;PtxLoadModifier MODIFIER, typename T , int ITEMS_PER_THREAD, typename InputIterator , typename SizeT &gt; </td></tr>
+<tr class="memitem:gae910789e82acd344d6f5a4cc50beef03"><td class="memTemplItemLeft" align="right" valign="top">__device__ __forceinline__ void&#160;</td><td class="memTemplItemRight" valign="bottom"><a class="el" href="group___block_module.html#gae910789e82acd344d6f5a4cc50beef03">cub::BlockLoadDirect</a> (InputIterator block_itr, const SizeT &amp;guarded_items, T oob_default, T(&amp;items)[ITEMS_PER_THREAD])</td></tr>
+<tr class="memdesc:gae910789e82acd344d6f5a4cc50beef03"><td class="mdescLeft">&#160;</td><td class="mdescRight">Load a tile of items across a threadblock directly using the specified cache modifier, guarded by range, with assignment for out-of-bound elements.  <a href="#gae910789e82acd344d6f5a4cc50beef03">More...</a><br/></td></tr>
+<tr class="separator:gae910789e82acd344d6f5a4cc50beef03"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:gac20fbd7aaa120e661575fe6e8028a015"><td class="memTemplParams" colspan="2">template&lt;typename T , int ITEMS_PER_THREAD, typename InputIterator , typename SizeT &gt; </td></tr>
+<tr class="memitem:gac20fbd7aaa120e661575fe6e8028a015"><td class="memTemplItemLeft" align="right" valign="top">__device__ __forceinline__ void&#160;</td><td class="memTemplItemRight" valign="bottom"><a class="el" href="group___block_module.html#gac20fbd7aaa120e661575fe6e8028a015">cub::BlockLoadDirect</a> (InputIterator block_itr, const SizeT &amp;guarded_items, T oob_default, T(&amp;items)[ITEMS_PER_THREAD])</td></tr>
+<tr class="memdesc:gac20fbd7aaa120e661575fe6e8028a015"><td class="mdescLeft">&#160;</td><td class="mdescRight">Load a tile of items across a threadblock directly, guarded by range, with assignment for out-of-bound elements.  <a href="#gac20fbd7aaa120e661575fe6e8028a015">More...</a><br/></td></tr>
+<tr class="separator:gac20fbd7aaa120e661575fe6e8028a015"><td class="memSeparator" colspan="2">&#160;</td></tr>
+</table><table class="memberdecls">
+<tr class="heading"><td colspan="2"><h2 class="groupheader"><a name="member-group"></a>
+Direct threadblock loads (striped arrangement)</h2></td></tr>
+<tr class="memitem:ga10442f4a83e49fb4a414ce6ce9234b79"><td class="memTemplParams" colspan="2">template&lt;PtxLoadModifier MODIFIER, typename T , int ITEMS_PER_THREAD, typename InputIterator &gt; </td></tr>
+<tr class="memitem:ga10442f4a83e49fb4a414ce6ce9234b79"><td class="memTemplItemLeft" align="right" valign="top">__device__ __forceinline__ void&#160;</td><td class="memTemplItemRight" valign="bottom"><a class="el" href="group___block_module.html#ga10442f4a83e49fb4a414ce6ce9234b79">cub::BlockLoadDirectStriped</a> (InputIterator block_itr, T(&amp;items)[ITEMS_PER_THREAD], int stride=blockDim.x)</td></tr>
+<tr class="memdesc:ga10442f4a83e49fb4a414ce6ce9234b79"><td class="mdescLeft">&#160;</td><td class="mdescRight">Load striped tile directly using the specified cache modifier.  <a href="#ga10442f4a83e49fb4a414ce6ce9234b79">More...</a><br/></td></tr>
+<tr class="separator:ga10442f4a83e49fb4a414ce6ce9234b79"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:ga74f3768367f80c79037b3e77c13bf4bc"><td class="memTemplParams" colspan="2">template&lt;typename T , int ITEMS_PER_THREAD, typename InputIterator &gt; </td></tr>
+<tr class="memitem:ga74f3768367f80c79037b3e77c13bf4bc"><td class="memTemplItemLeft" align="right" valign="top">__device__ __forceinline__ void&#160;</td><td class="memTemplItemRight" valign="bottom"><a class="el" href="group___block_module.html#ga74f3768367f80c79037b3e77c13bf4bc">cub::BlockLoadDirectStriped</a> (InputIterator block_itr, T(&amp;items)[ITEMS_PER_THREAD], int stride=blockDim.x)</td></tr>
+<tr class="memdesc:ga74f3768367f80c79037b3e77c13bf4bc"><td class="mdescLeft">&#160;</td><td class="mdescRight">Load striped tile directly.  <a href="#ga74f3768367f80c79037b3e77c13bf4bc">More...</a><br/></td></tr>
+<tr class="separator:ga74f3768367f80c79037b3e77c13bf4bc"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:ga405e4ed36717a6d2c0584578ab94923a"><td class="memTemplParams" colspan="2">template&lt;PtxLoadModifier MODIFIER, typename T , int ITEMS_PER_THREAD, typename InputIterator , typename SizeT &gt; </td></tr>
+<tr class="memitem:ga405e4ed36717a6d2c0584578ab94923a"><td class="memTemplItemLeft" align="right" valign="top">__device__ __forceinline__ void&#160;</td><td class="memTemplItemRight" valign="bottom"><a class="el" href="group___block_module.html#ga405e4ed36717a6d2c0584578ab94923a">cub::BlockLoadDirectStriped</a> (InputIterator block_itr, const SizeT &amp;guarded_items, T(&amp;items)[ITEMS_PER_THREAD], int stride=blockDim.x)</td></tr>
+<tr class="memdesc:ga405e4ed36717a6d2c0584578ab94923a"><td class="mdescLeft">&#160;</td><td class="mdescRight">Load striped directly tile using the specified cache modifier, guarded by range.  <a href="#ga405e4ed36717a6d2c0584578ab94923a">More...</a><br/></td></tr>
+<tr class="separator:ga405e4ed36717a6d2c0584578ab94923a"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:ga7ba15be704f5aa7c7db809a66af43160"><td class="memTemplParams" colspan="2">template&lt;typename T , int ITEMS_PER_THREAD, typename InputIterator , typename SizeT &gt; </td></tr>
+<tr class="memitem:ga7ba15be704f5aa7c7db809a66af43160"><td class="memTemplItemLeft" align="right" valign="top">__device__ __forceinline__ void&#160;</td><td class="memTemplItemRight" valign="bottom"><a class="el" href="group___block_module.html#ga7ba15be704f5aa7c7db809a66af43160">cub::BlockLoadDirectStriped</a> (InputIterator block_itr, const SizeT &amp;guarded_items, T(&amp;items)[ITEMS_PER_THREAD], int stride=blockDim.x)</td></tr>
+<tr class="memdesc:ga7ba15be704f5aa7c7db809a66af43160"><td class="mdescLeft">&#160;</td><td class="mdescRight">Load striped tile directly, guarded by range.  <a href="#ga7ba15be704f5aa7c7db809a66af43160">More...</a><br/></td></tr>
+<tr class="separator:ga7ba15be704f5aa7c7db809a66af43160"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:gabf20f04ee43adc4661429a7902f71911"><td class="memTemplParams" colspan="2">template&lt;PtxLoadModifier MODIFIER, typename T , int ITEMS_PER_THREAD, typename InputIterator , typename SizeT &gt; </td></tr>
+<tr class="memitem:gabf20f04ee43adc4661429a7902f71911"><td class="memTemplItemLeft" align="right" valign="top">__device__ __forceinline__ void&#160;</td><td class="memTemplItemRight" valign="bottom"><a class="el" href="group___block_module.html#gabf20f04ee43adc4661429a7902f71911">cub::BlockLoadDirectStriped</a> (InputIterator block_itr, const SizeT &amp;guarded_items, T oob_default, T(&amp;items)[ITEMS_PER_THREAD], int stride=blockDim.x)</td></tr>
+<tr class="memdesc:gabf20f04ee43adc4661429a7902f71911"><td class="mdescLeft">&#160;</td><td class="mdescRight">Load striped directly tile using the specified cache modifier, guarded by range, with assignment for out-of-bound elements.  <a href="#gabf20f04ee43adc4661429a7902f71911">More...</a><br/></td></tr>
+<tr class="separator:gabf20f04ee43adc4661429a7902f71911"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:gaf826ded39a7e107a5f15416d4b147be0"><td class="memTemplParams" colspan="2">template&lt;typename T , int ITEMS_PER_THREAD, typename InputIterator , typename SizeT &gt; </td></tr>
+<tr class="memitem:gaf826ded39a7e107a5f15416d4b147be0"><td class="memTemplItemLeft" align="right" valign="top">__device__ __forceinline__ void&#160;</td><td class="memTemplItemRight" valign="bottom"><a class="el" href="group___block_module.html#gaf826ded39a7e107a5f15416d4b147be0">cub::BlockLoadDirectStriped</a> (InputIterator block_itr, const SizeT &amp;guarded_items, T oob_default, T(&amp;items)[ITEMS_PER_THREAD], int stride=blockDim.x)</td></tr>
+<tr class="memdesc:gaf826ded39a7e107a5f15416d4b147be0"><td class="mdescLeft">&#160;</td><td class="mdescRight">Load striped tile directly, guarded by range, with assignment for out-of-bound elements.  <a href="#gaf826ded39a7e107a5f15416d4b147be0">More...</a><br/></td></tr>
+<tr class="separator:gaf826ded39a7e107a5f15416d4b147be0"><td class="memSeparator" colspan="2">&#160;</td></tr>
+</table><table class="memberdecls">
+<tr class="heading"><td colspan="2"><h2 class="groupheader"><a name="member-group"></a>
+Threadblock vectorized loads (blocked arrangement)</h2></td></tr>
+<tr class="memitem:gaea8200ef976bb588c569e039ea79005c"><td class="memTemplParams" colspan="2">template&lt;PtxLoadModifier MODIFIER, typename T , int ITEMS_PER_THREAD&gt; </td></tr>
+<tr class="memitem:gaea8200ef976bb588c569e039ea79005c"><td class="memTemplItemLeft" align="right" valign="top">__device__ __forceinline__ void&#160;</td><td class="memTemplItemRight" valign="bottom"><a class="el" href="group___block_module.html#gaea8200ef976bb588c569e039ea79005c">cub::BlockLoadVectorized</a> (T *block_ptr, T(&amp;items)[ITEMS_PER_THREAD])</td></tr>
+<tr class="memdesc:gaea8200ef976bb588c569e039ea79005c"><td class="mdescLeft">&#160;</td><td class="mdescRight">Load a tile of items across a threadblock directly using the specified cache modifier.  <a href="#gaea8200ef976bb588c569e039ea79005c">More...</a><br/></td></tr>
+<tr class="separator:gaea8200ef976bb588c569e039ea79005c"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:gab1a8ffc7fe70a636a3d09403344cfced"><td class="memTemplParams" colspan="2">template&lt;typename T , int ITEMS_PER_THREAD&gt; </td></tr>
+<tr class="memitem:gab1a8ffc7fe70a636a3d09403344cfced"><td class="memTemplItemLeft" align="right" valign="top">__device__ __forceinline__ void&#160;</td><td class="memTemplItemRight" valign="bottom"><a class="el" href="group___block_module.html#gab1a8ffc7fe70a636a3d09403344cfced">cub::BlockLoadVectorized</a> (T *block_ptr, T(&amp;items)[ITEMS_PER_THREAD])</td></tr>
+<tr class="memdesc:gab1a8ffc7fe70a636a3d09403344cfced"><td class="mdescLeft">&#160;</td><td class="mdescRight">Load a tile of items across a threadblock directly.  <a href="#gab1a8ffc7fe70a636a3d09403344cfced">More...</a><br/></td></tr>
+<tr class="separator:gab1a8ffc7fe70a636a3d09403344cfced"><td class="memSeparator" colspan="2">&#160;</td></tr>
+</table><table class="memberdecls">
+<tr class="heading"><td colspan="2"><h2 class="groupheader"><a name="member-group"></a>
 Direct threadblock stores (blocked arrangement)</h2></td></tr>
 <tr class="memitem:gaa8f12f02c082f8d689100b8ac88f8f61"><td class="memTemplParams" colspan="2">template&lt;PtxStoreModifier MODIFIER, typename T , int ITEMS_PER_THREAD, typename OutputIterator &gt; </td></tr>
 <tr class="memitem:gaa8f12f02c082f8d689100b8ac88f8f61"><td class="memTemplItemLeft" align="right" valign="top">__device__ __forceinline__ void&#160;</td><td class="memTemplItemRight" valign="bottom"><a class="el" href="group___block_module.html#gaa8f12f02c082f8d689100b8ac88f8f61">cub::BlockStoreDirect</a> (OutputIterator block_itr, T(&amp;items)[ITEMS_PER_THREAD])</td></tr>
@@ -204,6 +270,804 @@ Threadblock vectorized stores (blocked arrangement)</h2></td></tr>
 <tr class="separator:ga5db0cef20c11ea62aef484c587c4e064"><td class="memSeparator" colspan="2">&#160;</td></tr>
 </table>
 <h2 class="groupheader">Function Documentation</h2>
+<a class="anchor" id="ga2ece00cc00c1d3269ee79ddf60d15457"></a>
+<div class="memitem">
+<div class="memproto">
+<div class="memtemplate">
+template&lt;PtxLoadModifier MODIFIER, typename T , int ITEMS_PER_THREAD, typename InputIterator &gt; </div>
+      <table class="memname">
+        <tr>
+          <td class="memname">__device__ __forceinline__ void cub::BlockLoadDirect </td>
+          <td>(</td>
+          <td class="paramtype">InputIterator&#160;</td>
+          <td class="paramname"><em>block_itr</em>, </td>
+        </tr>
+        <tr>
+          <td class="paramkey"></td>
+          <td></td>
+          <td class="paramtype">T(&amp;)&#160;</td>
+          <td class="paramname"><em>items</em>[ITEMS_PER_THREAD]&#160;</td>
+        </tr>
+        <tr>
+          <td></td>
+          <td>)</td>
+          <td></td><td></td>
+        </tr>
+      </table>
+</div><div class="memdoc">
+
+<p>Load a tile of items across a threadblock directly using the specified cache modifier. </p>
+<p>The aggregate tile of items is assumed to be partitioned evenly across threads in "blocked" fashion with thread<sub><em>i</em></sub> owning the <em>i</em><sup>th</sup> segment of consecutive elements.</p>
+<dl class="tparams"><dt>Template Parameters</dt><dd>
+  <table class="tparams">
+    <tr><td class="paramname">MODIFIER</td><td><a class="el" href="group___thread_module.html#ga023420f30fec7d4b187fc98f4fd2a55d" title="Enumeration of PTX cache-modifiers for memory load operations.">cub::PtxLoadModifier</a> cache modifier. </td></tr>
+    <tr><td class="paramname">T</td><td><b>[inferred]</b> The data type to load. </td></tr>
+    <tr><td class="paramname">ITEMS_PER_THREAD</td><td><b>[inferred]</b> The number of consecutive items partitioned onto each thread. </td></tr>
+    <tr><td class="paramname">InputIterator</td><td><b>[inferred]</b> The input iterator type (may be a simple pointer type). </td></tr>
+  </table>
+  </dd>
+</dl>
+<dl class="params"><dt>Parameters</dt><dd>
+  <table class="params">
+    <tr><td class="paramdir">[in]</td><td class="paramname">block_itr</td><td>The threadblock's base input iterator for loading from </td></tr>
+    <tr><td class="paramdir">[out]</td><td class="paramname">items</td><td>Data to load </td></tr>
+  </table>
+  </dd>
+</dl>
+
+</div>
+</div>
+<a class="anchor" id="ga51495fa39938ecf57056d4ca6f0260de"></a>
+<div class="memitem">
+<div class="memproto">
+<div class="memtemplate">
+template&lt;typename T , int ITEMS_PER_THREAD, typename InputIterator &gt; </div>
+      <table class="memname">
+        <tr>
+          <td class="memname">__device__ __forceinline__ void cub::BlockLoadDirect </td>
+          <td>(</td>
+          <td class="paramtype">InputIterator&#160;</td>
+          <td class="paramname"><em>block_itr</em>, </td>
+        </tr>
+        <tr>
+          <td class="paramkey"></td>
+          <td></td>
+          <td class="paramtype">T(&amp;)&#160;</td>
+          <td class="paramname"><em>items</em>[ITEMS_PER_THREAD]&#160;</td>
+        </tr>
+        <tr>
+          <td></td>
+          <td>)</td>
+          <td></td><td></td>
+        </tr>
+      </table>
+</div><div class="memdoc">
+
+<p>Load a tile of items across a threadblock directly. </p>
+<p>The aggregate tile of items is assumed to be partitioned evenly across threads in "blocked" fashion with thread<sub><em>i</em></sub> owning the <em>i</em><sup>th</sup> segment of consecutive elements.</p>
+<dl class="tparams"><dt>Template Parameters</dt><dd>
+  <table class="tparams">
+    <tr><td class="paramname">T</td><td><b>[inferred]</b> The data type to load. </td></tr>
+    <tr><td class="paramname">ITEMS_PER_THREAD</td><td><b>[inferred]</b> The number of consecutive items partitioned onto each thread. </td></tr>
+    <tr><td class="paramname">InputIterator</td><td><b>[inferred]</b> The input iterator type (may be a simple pointer type). </td></tr>
+  </table>
+  </dd>
+</dl>
+<dl class="params"><dt>Parameters</dt><dd>
+  <table class="params">
+    <tr><td class="paramdir">[in]</td><td class="paramname">block_itr</td><td>The threadblock's base input iterator for loading from </td></tr>
+    <tr><td class="paramdir">[out]</td><td class="paramname">items</td><td>Data to load </td></tr>
+  </table>
+  </dd>
+</dl>
+
+</div>
+</div>
+<a class="anchor" id="ga01e0a2d42d5b20aab660815c5cf258a0"></a>
+<div class="memitem">
+<div class="memproto">
+<div class="memtemplate">
+template&lt;PtxLoadModifier MODIFIER, typename T , int ITEMS_PER_THREAD, typename InputIterator , typename SizeT &gt; </div>
+      <table class="memname">
+        <tr>
+          <td class="memname">__device__ __forceinline__ void cub::BlockLoadDirect </td>
+          <td>(</td>
+          <td class="paramtype">InputIterator&#160;</td>
+          <td class="paramname"><em>block_itr</em>, </td>
+        </tr>
+        <tr>
+          <td class="paramkey"></td>
+          <td></td>
+          <td class="paramtype">const SizeT &amp;&#160;</td>
+          <td class="paramname"><em>guarded_items</em>, </td>
+        </tr>
+        <tr>
+          <td class="paramkey"></td>
+          <td></td>
+          <td class="paramtype">T(&amp;)&#160;</td>
+          <td class="paramname"><em>items</em>[ITEMS_PER_THREAD]&#160;</td>
+        </tr>
+        <tr>
+          <td></td>
+          <td>)</td>
+          <td></td><td></td>
+        </tr>
+      </table>
+</div><div class="memdoc">
+
+<p>Load a tile of items across a threadblock directly using the specified cache modifier, guarded by range. </p>
+<p>The aggregate tile of items is assumed to be partitioned evenly across threads in "blocked" fashion with thread<sub><em>i</em></sub> owning the <em>i</em><sup>th</sup> segment of consecutive elements.</p>
+<dl class="tparams"><dt>Template Parameters</dt><dd>
+  <table class="tparams">
+    <tr><td class="paramname">MODIFIER</td><td><a class="el" href="group___thread_module.html#ga023420f30fec7d4b187fc98f4fd2a55d" title="Enumeration of PTX cache-modifiers for memory load operations.">cub::PtxLoadModifier</a> cache modifier. </td></tr>
+    <tr><td class="paramname">T</td><td><b>[inferred]</b> The data type to load. </td></tr>
+    <tr><td class="paramname">ITEMS_PER_THREAD</td><td><b>[inferred]</b> The number of consecutive items partitioned onto each thread. </td></tr>
+    <tr><td class="paramname">InputIterator</td><td><b>[inferred]</b> The input iterator type (may be a simple pointer type). </td></tr>
+    <tr><td class="paramname">SizeT</td><td><b>[inferred]</b> Integer type for offsets </td></tr>
+  </table>
+  </dd>
+</dl>
+<dl class="params"><dt>Parameters</dt><dd>
+  <table class="params">
+    <tr><td class="paramdir">[in]</td><td class="paramname">block_itr</td><td>The threadblock's base input iterator for loading from </td></tr>
+    <tr><td class="paramdir">[in]</td><td class="paramname">guarded_items</td><td>Number of valid items in the tile </td></tr>
+    <tr><td class="paramdir">[out]</td><td class="paramname">items</td><td>Data to load </td></tr>
+  </table>
+  </dd>
+</dl>
+
+</div>
+</div>
+<a class="anchor" id="gaac537b6a8c9caaae1e6e77e9717e9541"></a>
+<div class="memitem">
+<div class="memproto">
+<div class="memtemplate">
+template&lt;typename T , int ITEMS_PER_THREAD, typename InputIterator , typename SizeT &gt; </div>
+      <table class="memname">
+        <tr>
+          <td class="memname">__device__ __forceinline__ void cub::BlockLoadDirect </td>
+          <td>(</td>
+          <td class="paramtype">InputIterator&#160;</td>
+          <td class="paramname"><em>block_itr</em>, </td>
+        </tr>
+        <tr>
+          <td class="paramkey"></td>
+          <td></td>
+          <td class="paramtype">const SizeT &amp;&#160;</td>
+          <td class="paramname"><em>guarded_items</em>, </td>
+        </tr>
+        <tr>
+          <td class="paramkey"></td>
+          <td></td>
+          <td class="paramtype">T(&amp;)&#160;</td>
+          <td class="paramname"><em>items</em>[ITEMS_PER_THREAD]&#160;</td>
+        </tr>
+        <tr>
+          <td></td>
+          <td>)</td>
+          <td></td><td></td>
+        </tr>
+      </table>
+</div><div class="memdoc">
+
+<p>Load a tile of items across a threadblock directly, guarded by range. </p>
+<p>The aggregate tile of items is assumed to be partitioned evenly across threads in "blocked" fashion with thread<sub><em>i</em></sub> owning the <em>i</em><sup>th</sup> segment of consecutive elements.</p>
+<dl class="tparams"><dt>Template Parameters</dt><dd>
+  <table class="tparams">
+    <tr><td class="paramname">T</td><td><b>[inferred]</b> The data type to load. </td></tr>
+    <tr><td class="paramname">ITEMS_PER_THREAD</td><td><b>[inferred]</b> The number of consecutive items partitioned onto each thread. </td></tr>
+    <tr><td class="paramname">InputIterator</td><td><b>[inferred]</b> The input iterator type (may be a simple pointer type). </td></tr>
+    <tr><td class="paramname">SizeT</td><td><b>[inferred]</b> Integer type for offsets </td></tr>
+  </table>
+  </dd>
+</dl>
+<dl class="params"><dt>Parameters</dt><dd>
+  <table class="params">
+    <tr><td class="paramdir">[in]</td><td class="paramname">block_itr</td><td>The threadblock's base input iterator for loading from </td></tr>
+    <tr><td class="paramdir">[in]</td><td class="paramname">guarded_items</td><td>Number of valid items in the tile </td></tr>
+    <tr><td class="paramdir">[out]</td><td class="paramname">items</td><td>Data to load </td></tr>
+  </table>
+  </dd>
+</dl>
+
+</div>
+</div>
+<a class="anchor" id="gae910789e82acd344d6f5a4cc50beef03"></a>
+<div class="memitem">
+<div class="memproto">
+<div class="memtemplate">
+template&lt;PtxLoadModifier MODIFIER, typename T , int ITEMS_PER_THREAD, typename InputIterator , typename SizeT &gt; </div>
+      <table class="memname">
+        <tr>
+          <td class="memname">__device__ __forceinline__ void cub::BlockLoadDirect </td>
+          <td>(</td>
+          <td class="paramtype">InputIterator&#160;</td>
+          <td class="paramname"><em>block_itr</em>, </td>
+        </tr>
+        <tr>
+          <td class="paramkey"></td>
+          <td></td>
+          <td class="paramtype">const SizeT &amp;&#160;</td>
+          <td class="paramname"><em>guarded_items</em>, </td>
+        </tr>
+        <tr>
+          <td class="paramkey"></td>
+          <td></td>
+          <td class="paramtype">T&#160;</td>
+          <td class="paramname"><em>oob_default</em>, </td>
+        </tr>
+        <tr>
+          <td class="paramkey"></td>
+          <td></td>
+          <td class="paramtype">T(&amp;)&#160;</td>
+          <td class="paramname"><em>items</em>[ITEMS_PER_THREAD]&#160;</td>
+        </tr>
+        <tr>
+          <td></td>
+          <td>)</td>
+          <td></td><td></td>
+        </tr>
+      </table>
+</div><div class="memdoc">
+
+<p>Load a tile of items across a threadblock directly using the specified cache modifier, guarded by range, with assignment for out-of-bound elements. </p>
+<p>The aggregate tile of items is assumed to be partitioned evenly across threads in "blocked" fashion with thread<sub><em>i</em></sub> owning the <em>i</em><sup>th</sup> segment of consecutive elements.</p>
+<dl class="tparams"><dt>Template Parameters</dt><dd>
+  <table class="tparams">
+    <tr><td class="paramname">MODIFIER</td><td><a class="el" href="group___thread_module.html#ga023420f30fec7d4b187fc98f4fd2a55d" title="Enumeration of PTX cache-modifiers for memory load operations.">cub::PtxLoadModifier</a> cache modifier. </td></tr>
+    <tr><td class="paramname">T</td><td><b>[inferred]</b> The data type to load. </td></tr>
+    <tr><td class="paramname">ITEMS_PER_THREAD</td><td><b>[inferred]</b> The number of consecutive items partitioned onto each thread. </td></tr>
+    <tr><td class="paramname">InputIterator</td><td><b>[inferred]</b> The input iterator type (may be a simple pointer type). </td></tr>
+    <tr><td class="paramname">SizeT</td><td><b>[inferred]</b> Integer type for offsets </td></tr>
+  </table>
+  </dd>
+</dl>
+<dl class="params"><dt>Parameters</dt><dd>
+  <table class="params">
+    <tr><td class="paramdir">[in]</td><td class="paramname">block_itr</td><td>The threadblock's base input iterator for loading from </td></tr>
+    <tr><td class="paramdir">[in]</td><td class="paramname">guarded_items</td><td>Number of valid items in the tile </td></tr>
+    <tr><td class="paramdir">[in]</td><td class="paramname">oob_default</td><td>Default value to assign out-of-bound items </td></tr>
+    <tr><td class="paramdir">[out]</td><td class="paramname">items</td><td>Data to load </td></tr>
+  </table>
+  </dd>
+</dl>
+
+</div>
+</div>
+<a class="anchor" id="gac20fbd7aaa120e661575fe6e8028a015"></a>
+<div class="memitem">
+<div class="memproto">
+<div class="memtemplate">
+template&lt;typename T , int ITEMS_PER_THREAD, typename InputIterator , typename SizeT &gt; </div>
+      <table class="memname">
+        <tr>
+          <td class="memname">__device__ __forceinline__ void cub::BlockLoadDirect </td>
+          <td>(</td>
+          <td class="paramtype">InputIterator&#160;</td>
+          <td class="paramname"><em>block_itr</em>, </td>
+        </tr>
+        <tr>
+          <td class="paramkey"></td>
+          <td></td>
+          <td class="paramtype">const SizeT &amp;&#160;</td>
+          <td class="paramname"><em>guarded_items</em>, </td>
+        </tr>
+        <tr>
+          <td class="paramkey"></td>
+          <td></td>
+          <td class="paramtype">T&#160;</td>
+          <td class="paramname"><em>oob_default</em>, </td>
+        </tr>
+        <tr>
+          <td class="paramkey"></td>
+          <td></td>
+          <td class="paramtype">T(&amp;)&#160;</td>
+          <td class="paramname"><em>items</em>[ITEMS_PER_THREAD]&#160;</td>
+        </tr>
+        <tr>
+          <td></td>
+          <td>)</td>
+          <td></td><td></td>
+        </tr>
+      </table>
+</div><div class="memdoc">
+
+<p>Load a tile of items across a threadblock directly, guarded by range, with assignment for out-of-bound elements. </p>
+<p>The aggregate tile of items is assumed to be partitioned evenly across threads in "blocked" fashion with thread<sub><em>i</em></sub> owning the <em>i</em><sup>th</sup> segment of consecutive elements.</p>
+<dl class="tparams"><dt>Template Parameters</dt><dd>
+  <table class="tparams">
+    <tr><td class="paramname">T</td><td><b>[inferred]</b> The data type to load. </td></tr>
+    <tr><td class="paramname">ITEMS_PER_THREAD</td><td><b>[inferred]</b> The number of consecutive items partitioned onto each thread. </td></tr>
+    <tr><td class="paramname">InputIterator</td><td><b>[inferred]</b> The input iterator type (may be a simple pointer type). </td></tr>
+    <tr><td class="paramname">SizeT</td><td><b>[inferred]</b> Integer type for offsets </td></tr>
+  </table>
+  </dd>
+</dl>
+<dl class="params"><dt>Parameters</dt><dd>
+  <table class="params">
+    <tr><td class="paramdir">[in]</td><td class="paramname">block_itr</td><td>The threadblock's base input iterator for loading from </td></tr>
+    <tr><td class="paramdir">[in]</td><td class="paramname">guarded_items</td><td>Number of valid items in the tile </td></tr>
+    <tr><td class="paramdir">[in]</td><td class="paramname">oob_default</td><td>Default value to assign out-of-bound items </td></tr>
+    <tr><td class="paramdir">[out]</td><td class="paramname">items</td><td>Data to load </td></tr>
+  </table>
+  </dd>
+</dl>
+
+</div>
+</div>
+<a class="anchor" id="ga10442f4a83e49fb4a414ce6ce9234b79"></a>
+<div class="memitem">
+<div class="memproto">
+<div class="memtemplate">
+template&lt;PtxLoadModifier MODIFIER, typename T , int ITEMS_PER_THREAD, typename InputIterator &gt; </div>
+      <table class="memname">
+        <tr>
+          <td class="memname">__device__ __forceinline__ void cub::BlockLoadDirectStriped </td>
+          <td>(</td>
+          <td class="paramtype">InputIterator&#160;</td>
+          <td class="paramname"><em>block_itr</em>, </td>
+        </tr>
+        <tr>
+          <td class="paramkey"></td>
+          <td></td>
+          <td class="paramtype">T(&amp;)&#160;</td>
+          <td class="paramname"><em>items</em>[ITEMS_PER_THREAD], </td>
+        </tr>
+        <tr>
+          <td class="paramkey"></td>
+          <td></td>
+          <td class="paramtype">int&#160;</td>
+          <td class="paramname"><em>stride</em> = <code>blockDim.x</code>&#160;</td>
+        </tr>
+        <tr>
+          <td></td>
+          <td>)</td>
+          <td></td><td></td>
+        </tr>
+      </table>
+</div><div class="memdoc">
+
+<p>Load striped tile directly using the specified cache modifier. </p>
+<p>The aggregate tile of items is assumed to be partitioned across threads in "striped" fashion, i.e., the <code>ITEMS_PER_THREAD</code> items owned by each thread have logical stride <code>BLOCK_THREADS</code> between them.</p>
+<dl class="tparams"><dt>Template Parameters</dt><dd>
+  <table class="tparams">
+    <tr><td class="paramname">MODIFIER</td><td><a class="el" href="group___thread_module.html#ga023420f30fec7d4b187fc98f4fd2a55d" title="Enumeration of PTX cache-modifiers for memory load operations.">cub::PtxLoadModifier</a> cache modifier. </td></tr>
+    <tr><td class="paramname">T</td><td><b>[inferred]</b> The data type to load. </td></tr>
+    <tr><td class="paramname">ITEMS_PER_THREAD</td><td><b>[inferred]</b> The number of consecutive items partitioned onto each thread. </td></tr>
+    <tr><td class="paramname">InputIterator</td><td><b>[inferred]</b> The input iterator type (may be a simple pointer type). </td></tr>
+  </table>
+  </dd>
+</dl>
+<dl class="params"><dt>Parameters</dt><dd>
+  <table class="params">
+    <tr><td class="paramdir">[in]</td><td class="paramname">block_itr</td><td>The threadblock's base input iterator for loading from </td></tr>
+    <tr><td class="paramdir">[out]</td><td class="paramname">items</td><td>Data to load </td></tr>
+    <tr><td class="paramdir">[in]</td><td class="paramname">stride</td><td><b>[optional]</b> Stripe stride. Default is the width of the threadblock. More efficient code can be generated if a compile-time-constant (e.g., BLOCK_THREADS) is supplied. </td></tr>
+  </table>
+  </dd>
+</dl>
+
+</div>
+</div>
+<a class="anchor" id="ga74f3768367f80c79037b3e77c13bf4bc"></a>
+<div class="memitem">
+<div class="memproto">
+<div class="memtemplate">
+template&lt;typename T , int ITEMS_PER_THREAD, typename InputIterator &gt; </div>
+      <table class="memname">
+        <tr>
+          <td class="memname">__device__ __forceinline__ void cub::BlockLoadDirectStriped </td>
+          <td>(</td>
+          <td class="paramtype">InputIterator&#160;</td>
+          <td class="paramname"><em>block_itr</em>, </td>
+        </tr>
+        <tr>
+          <td class="paramkey"></td>
+          <td></td>
+          <td class="paramtype">T(&amp;)&#160;</td>
+          <td class="paramname"><em>items</em>[ITEMS_PER_THREAD], </td>
+        </tr>
+        <tr>
+          <td class="paramkey"></td>
+          <td></td>
+          <td class="paramtype">int&#160;</td>
+          <td class="paramname"><em>stride</em> = <code>blockDim.x</code>&#160;</td>
+        </tr>
+        <tr>
+          <td></td>
+          <td>)</td>
+          <td></td><td></td>
+        </tr>
+      </table>
+</div><div class="memdoc">
+
+<p>Load striped tile directly. </p>
+<p>The aggregate tile of items is assumed to be partitioned across threads in "striped" fashion, i.e., the <code>ITEMS_PER_THREAD</code> items owned by each thread have logical stride <code>BLOCK_THREADS</code> between them.</p>
+<dl class="tparams"><dt>Template Parameters</dt><dd>
+  <table class="tparams">
+    <tr><td class="paramname">MODIFIER</td><td><a class="el" href="group___thread_module.html#ga023420f30fec7d4b187fc98f4fd2a55d" title="Enumeration of PTX cache-modifiers for memory load operations.">cub::PtxLoadModifier</a> cache modifier. </td></tr>
+    <tr><td class="paramname">T</td><td><b>[inferred]</b> The data type to load. </td></tr>
+    <tr><td class="paramname">ITEMS_PER_THREAD</td><td><b>[inferred]</b> The number of consecutive items partitioned onto each thread. </td></tr>
+    <tr><td class="paramname">InputIterator</td><td><b>[inferred]</b> The input iterator type (may be a simple pointer type). </td></tr>
+  </table>
+  </dd>
+</dl>
+<dl class="params"><dt>Parameters</dt><dd>
+  <table class="params">
+    <tr><td class="paramdir">[in]</td><td class="paramname">block_itr</td><td>The threadblock's base input iterator for loading from </td></tr>
+    <tr><td class="paramdir">[out]</td><td class="paramname">items</td><td>Data to load </td></tr>
+    <tr><td class="paramdir">[in]</td><td class="paramname">stride</td><td><b>[optional]</b> Stripe stride. Default is the width of the threadblock. More efficient code can be generated if a compile-time-constant (e.g., BLOCK_THREADS) is supplied. </td></tr>
+  </table>
+  </dd>
+</dl>
+
+</div>
+</div>
+<a class="anchor" id="ga405e4ed36717a6d2c0584578ab94923a"></a>
+<div class="memitem">
+<div class="memproto">
+<div class="memtemplate">
+template&lt;PtxLoadModifier MODIFIER, typename T , int ITEMS_PER_THREAD, typename InputIterator , typename SizeT &gt; </div>
+      <table class="memname">
+        <tr>
+          <td class="memname">__device__ __forceinline__ void cub::BlockLoadDirectStriped </td>
+          <td>(</td>
+          <td class="paramtype">InputIterator&#160;</td>
+          <td class="paramname"><em>block_itr</em>, </td>
+        </tr>
+        <tr>
+          <td class="paramkey"></td>
+          <td></td>
+          <td class="paramtype">const SizeT &amp;&#160;</td>
+          <td class="paramname"><em>guarded_items</em>, </td>
+        </tr>
+        <tr>
+          <td class="paramkey"></td>
+          <td></td>
+          <td class="paramtype">T(&amp;)&#160;</td>
+          <td class="paramname"><em>items</em>[ITEMS_PER_THREAD], </td>
+        </tr>
+        <tr>
+          <td class="paramkey"></td>
+          <td></td>
+          <td class="paramtype">int&#160;</td>
+          <td class="paramname"><em>stride</em> = <code>blockDim.x</code>&#160;</td>
+        </tr>
+        <tr>
+          <td></td>
+          <td>)</td>
+          <td></td><td></td>
+        </tr>
+      </table>
+</div><div class="memdoc">
+
+<p>Load striped directly tile using the specified cache modifier, guarded by range. </p>
+<p>The aggregate tile of items is assumed to be partitioned across threads in "striped" fashion, i.e., the <code>ITEMS_PER_THREAD</code> items owned by each thread have logical stride <code>BLOCK_THREADS</code> between them.</p>
+<dl class="tparams"><dt>Template Parameters</dt><dd>
+  <table class="tparams">
+    <tr><td class="paramname">BLOCK_THREADS</td><td>The threadblock size in threads </td></tr>
+    <tr><td class="paramname">MODIFIER</td><td><a class="el" href="group___thread_module.html#ga023420f30fec7d4b187fc98f4fd2a55d" title="Enumeration of PTX cache-modifiers for memory load operations.">cub::PtxLoadModifier</a> cache modifier. </td></tr>
+    <tr><td class="paramname">T</td><td><b>[inferred]</b> The data type to load. </td></tr>
+    <tr><td class="paramname">ITEMS_PER_THREAD</td><td><b>[inferred]</b> The number of consecutive items partitioned onto each thread. </td></tr>
+    <tr><td class="paramname">InputIterator</td><td><b>[inferred]</b> The input iterator type (may be a simple pointer type). </td></tr>
+    <tr><td class="paramname">SizeT</td><td><b>[inferred]</b> Integer type for offsets </td></tr>
+  </table>
+  </dd>
+</dl>
+<dl class="params"><dt>Parameters</dt><dd>
+  <table class="params">
+    <tr><td class="paramdir">[in]</td><td class="paramname">block_itr</td><td>The threadblock's base input iterator for loading from </td></tr>
+    <tr><td class="paramdir">[in]</td><td class="paramname">guarded_items</td><td>Number of valid items in the tile </td></tr>
+    <tr><td class="paramdir">[out]</td><td class="paramname">items</td><td>Data to load </td></tr>
+    <tr><td class="paramdir">[in]</td><td class="paramname">stride</td><td><b>[optional]</b> Stripe stride. Default is the width of the threadblock. More efficient code can be generated if a compile-time-constant (e.g., BLOCK_THREADS) is supplied. </td></tr>
+  </table>
+  </dd>
+</dl>
+
+</div>
+</div>
+<a class="anchor" id="ga7ba15be704f5aa7c7db809a66af43160"></a>
+<div class="memitem">
+<div class="memproto">
+<div class="memtemplate">
+template&lt;typename T , int ITEMS_PER_THREAD, typename InputIterator , typename SizeT &gt; </div>
+      <table class="memname">
+        <tr>
+          <td class="memname">__device__ __forceinline__ void cub::BlockLoadDirectStriped </td>
+          <td>(</td>
+          <td class="paramtype">InputIterator&#160;</td>
+          <td class="paramname"><em>block_itr</em>, </td>
+        </tr>
+        <tr>
+          <td class="paramkey"></td>
+          <td></td>
+          <td class="paramtype">const SizeT &amp;&#160;</td>
+          <td class="paramname"><em>guarded_items</em>, </td>
+        </tr>
+        <tr>
+          <td class="paramkey"></td>
+          <td></td>
+          <td class="paramtype">T(&amp;)&#160;</td>
+          <td class="paramname"><em>items</em>[ITEMS_PER_THREAD], </td>
+        </tr>
+        <tr>
+          <td class="paramkey"></td>
+          <td></td>
+          <td class="paramtype">int&#160;</td>
+          <td class="paramname"><em>stride</em> = <code>blockDim.x</code>&#160;</td>
+        </tr>
+        <tr>
+          <td></td>
+          <td>)</td>
+          <td></td><td></td>
+        </tr>
+      </table>
+</div><div class="memdoc">
+
+<p>Load striped tile directly, guarded by range. </p>
+<p>The aggregate tile of items is assumed to be partitioned across threads in "striped" fashion, i.e., the <code>ITEMS_PER_THREAD</code> items owned by each thread have logical stride <code>BLOCK_THREADS</code> between them.</p>
+<dl class="tparams"><dt>Template Parameters</dt><dd>
+  <table class="tparams">
+    <tr><td class="paramname">T</td><td><b>[inferred]</b> The data type to load. </td></tr>
+    <tr><td class="paramname">ITEMS_PER_THREAD</td><td><b>[inferred]</b> The number of consecutive items partitioned onto each thread. </td></tr>
+    <tr><td class="paramname">InputIterator</td><td><b>[inferred]</b> The input iterator type (may be a simple pointer type). </td></tr>
+    <tr><td class="paramname">SizeT</td><td><b>[inferred]</b> Integer type for offsets </td></tr>
+  </table>
+  </dd>
+</dl>
+<dl class="params"><dt>Parameters</dt><dd>
+  <table class="params">
+    <tr><td class="paramdir">[in]</td><td class="paramname">block_itr</td><td>The threadblock's base input iterator for loading from </td></tr>
+    <tr><td class="paramdir">[in]</td><td class="paramname">guarded_items</td><td>Number of valid items in the tile </td></tr>
+    <tr><td class="paramdir">[out]</td><td class="paramname">items</td><td>Data to load </td></tr>
+    <tr><td class="paramdir">[in]</td><td class="paramname">stride</td><td><b>[optional]</b> Stripe stride. Default is the width of the threadblock. More efficient code can be generated if a compile-time-constant (e.g., BLOCK_THREADS) is supplied. </td></tr>
+  </table>
+  </dd>
+</dl>
+
+</div>
+</div>
+<a class="anchor" id="gabf20f04ee43adc4661429a7902f71911"></a>
+<div class="memitem">
+<div class="memproto">
+<div class="memtemplate">
+template&lt;PtxLoadModifier MODIFIER, typename T , int ITEMS_PER_THREAD, typename InputIterator , typename SizeT &gt; </div>
+      <table class="memname">
+        <tr>
+          <td class="memname">__device__ __forceinline__ void cub::BlockLoadDirectStriped </td>
+          <td>(</td>
+          <td class="paramtype">InputIterator&#160;</td>
+          <td class="paramname"><em>block_itr</em>, </td>
+        </tr>
+        <tr>
+          <td class="paramkey"></td>
+          <td></td>
+          <td class="paramtype">const SizeT &amp;&#160;</td>
+          <td class="paramname"><em>guarded_items</em>, </td>
+        </tr>
+        <tr>
+          <td class="paramkey"></td>
+          <td></td>
+          <td class="paramtype">T&#160;</td>
+          <td class="paramname"><em>oob_default</em>, </td>
+        </tr>
+        <tr>
+          <td class="paramkey"></td>
+          <td></td>
+          <td class="paramtype">T(&amp;)&#160;</td>
+          <td class="paramname"><em>items</em>[ITEMS_PER_THREAD], </td>
+        </tr>
+        <tr>
+          <td class="paramkey"></td>
+          <td></td>
+          <td class="paramtype">int&#160;</td>
+          <td class="paramname"><em>stride</em> = <code>blockDim.x</code>&#160;</td>
+        </tr>
+        <tr>
+          <td></td>
+          <td>)</td>
+          <td></td><td></td>
+        </tr>
+      </table>
+</div><div class="memdoc">
+
+<p>Load striped directly tile using the specified cache modifier, guarded by range, with assignment for out-of-bound elements. </p>
+<p>The aggregate tile of items is assumed to be partitioned across threads in "striped" fashion, i.e., the <code>ITEMS_PER_THREAD</code> items owned by each thread have logical stride <code>BLOCK_THREADS</code> between them.</p>
+<dl class="tparams"><dt>Template Parameters</dt><dd>
+  <table class="tparams">
+    <tr><td class="paramname">MODIFIER</td><td><a class="el" href="group___thread_module.html#ga023420f30fec7d4b187fc98f4fd2a55d" title="Enumeration of PTX cache-modifiers for memory load operations.">cub::PtxLoadModifier</a> cache modifier. </td></tr>
+    <tr><td class="paramname">T</td><td><b>[inferred]</b> The data type to load. </td></tr>
+    <tr><td class="paramname">ITEMS_PER_THREAD</td><td><b>[inferred]</b> The number of consecutive items partitioned onto each thread. </td></tr>
+    <tr><td class="paramname">InputIterator</td><td><b>[inferred]</b> The input iterator type (may be a simple pointer type). </td></tr>
+    <tr><td class="paramname">SizeT</td><td><b>[inferred]</b> Integer type for offsets </td></tr>
+  </table>
+  </dd>
+</dl>
+<dl class="params"><dt>Parameters</dt><dd>
+  <table class="params">
+    <tr><td class="paramdir">[in]</td><td class="paramname">block_itr</td><td>The threadblock's base input iterator for loading from </td></tr>
+    <tr><td class="paramdir">[in]</td><td class="paramname">guarded_items</td><td>Number of valid items in the tile </td></tr>
+    <tr><td class="paramdir">[in]</td><td class="paramname">oob_default</td><td>Default value to assign out-of-bound items </td></tr>
+    <tr><td class="paramdir">[out]</td><td class="paramname">items</td><td>Data to load </td></tr>
+    <tr><td class="paramdir">[in]</td><td class="paramname">stride</td><td><b>[optional]</b> Stripe stride. Default is the width of the threadblock. More efficient code can be generated if a compile-time-constant (e.g., BLOCK_THREADS) is supplied. </td></tr>
+  </table>
+  </dd>
+</dl>
+
+</div>
+</div>
+<a class="anchor" id="gaf826ded39a7e107a5f15416d4b147be0"></a>
+<div class="memitem">
+<div class="memproto">
+<div class="memtemplate">
+template&lt;typename T , int ITEMS_PER_THREAD, typename InputIterator , typename SizeT &gt; </div>
+      <table class="memname">
+        <tr>
+          <td class="memname">__device__ __forceinline__ void cub::BlockLoadDirectStriped </td>
+          <td>(</td>
+          <td class="paramtype">InputIterator&#160;</td>
+          <td class="paramname"><em>block_itr</em>, </td>
+        </tr>
+        <tr>
+          <td class="paramkey"></td>
+          <td></td>
+          <td class="paramtype">const SizeT &amp;&#160;</td>
+          <td class="paramname"><em>guarded_items</em>, </td>
+        </tr>
+        <tr>
+          <td class="paramkey"></td>
+          <td></td>
+          <td class="paramtype">T&#160;</td>
+          <td class="paramname"><em>oob_default</em>, </td>
+        </tr>
+        <tr>
+          <td class="paramkey"></td>
+          <td></td>
+          <td class="paramtype">T(&amp;)&#160;</td>
+          <td class="paramname"><em>items</em>[ITEMS_PER_THREAD], </td>
+        </tr>
+        <tr>
+          <td class="paramkey"></td>
+          <td></td>
+          <td class="paramtype">int&#160;</td>
+          <td class="paramname"><em>stride</em> = <code>blockDim.x</code>&#160;</td>
+        </tr>
+        <tr>
+          <td></td>
+          <td>)</td>
+          <td></td><td></td>
+        </tr>
+      </table>
+</div><div class="memdoc">
+
+<p>Load striped tile directly, guarded by range, with assignment for out-of-bound elements. </p>
+<p>The aggregate tile of items is assumed to be partitioned across threads in "striped" fashion, i.e., the <code>ITEMS_PER_THREAD</code> items owned by each thread have logical stride <code>BLOCK_THREADS</code> between them.</p>
+<dl class="tparams"><dt>Template Parameters</dt><dd>
+  <table class="tparams">
+    <tr><td class="paramname">T</td><td><b>[inferred]</b> The data type to load. </td></tr>
+    <tr><td class="paramname">ITEMS_PER_THREAD</td><td><b>[inferred]</b> The number of consecutive items partitioned onto each thread. </td></tr>
+    <tr><td class="paramname">InputIterator</td><td><b>[inferred]</b> The input iterator type (may be a simple pointer type). </td></tr>
+    <tr><td class="paramname">SizeT</td><td><b>[inferred]</b> Integer type for offsets </td></tr>
+  </table>
+  </dd>
+</dl>
+<dl class="params"><dt>Parameters</dt><dd>
+  <table class="params">
+    <tr><td class="paramdir">[in]</td><td class="paramname">block_itr</td><td>The threadblock's base input iterator for loading from </td></tr>
+    <tr><td class="paramdir">[in]</td><td class="paramname">guarded_items</td><td>Number of valid items in the tile </td></tr>
+    <tr><td class="paramdir">[in]</td><td class="paramname">oob_default</td><td>Default value to assign out-of-bound items </td></tr>
+    <tr><td class="paramdir">[out]</td><td class="paramname">items</td><td>Data to load </td></tr>
+    <tr><td class="paramdir">[in]</td><td class="paramname">stride</td><td><b>[optional]</b> Stripe stride. Default is the width of the threadblock. More efficient code can be generated if a compile-time-constant (e.g., BLOCK_THREADS) is supplied. </td></tr>
+  </table>
+  </dd>
+</dl>
+
+</div>
+</div>
+<a class="anchor" id="gaea8200ef976bb588c569e039ea79005c"></a>
+<div class="memitem">
+<div class="memproto">
+<div class="memtemplate">
+template&lt;PtxLoadModifier MODIFIER, typename T , int ITEMS_PER_THREAD&gt; </div>
+      <table class="memname">
+        <tr>
+          <td class="memname">__device__ __forceinline__ void cub::BlockLoadVectorized </td>
+          <td>(</td>
+          <td class="paramtype">T *&#160;</td>
+          <td class="paramname"><em>block_ptr</em>, </td>
+        </tr>
+        <tr>
+          <td class="paramkey"></td>
+          <td></td>
+          <td class="paramtype">T(&amp;)&#160;</td>
+          <td class="paramname"><em>items</em>[ITEMS_PER_THREAD]&#160;</td>
+        </tr>
+        <tr>
+          <td></td>
+          <td>)</td>
+          <td></td><td></td>
+        </tr>
+      </table>
+</div><div class="memdoc">
+
+<p>Load a tile of items across a threadblock directly using the specified cache modifier. </p>
+<p>The aggregate tile of items is assumed to be partitioned evenly across threads in "blocked" fashion with thread<sub><em>i</em></sub> owning the <em>i</em><sup>th</sup> segment of consecutive elements.</p>
+<p>The input offset (<code>block_ptr</code> + <code>block_offset</code>) must be quad-item aligned</p>
+<p>The following conditions will prevent vectorization and loading will fall back to <a class="el" href="namespacecub.html#a70f1d3c7536d858d49b896e937d25290a2d4d8900d7e697e9dac4062e97d3d835">cub::BLOCK_LOAD_DIRECT</a>:</p>
+<ul>
+<li><code>ITEMS_PER_THREAD</code> is odd</li>
+<li>The data type <code>T</code> is not a built-in primitive or CUDA vector type (e.g., <code>short</code>, <code>int2</code>, <code>double</code>, <code>float2</code>, etc.)</li>
+</ul>
+<dl class="tparams"><dt>Template Parameters</dt><dd>
+  <table class="tparams">
+    <tr><td class="paramname">MODIFIER</td><td><a class="el" href="group___thread_module.html#ga023420f30fec7d4b187fc98f4fd2a55d" title="Enumeration of PTX cache-modifiers for memory load operations.">cub::PtxLoadModifier</a> cache modifier. </td></tr>
+    <tr><td class="paramname">T</td><td><b>[inferred]</b> The data type to load. </td></tr>
+    <tr><td class="paramname">ITEMS_PER_THREAD</td><td><b>[inferred]</b> The number of consecutive items partitioned onto each thread. </td></tr>
+    <tr><td class="paramname">SizeT</td><td><b>[inferred]</b> Integer type for offsets </td></tr>
+  </table>
+  </dd>
+</dl>
+<dl class="params"><dt>Parameters</dt><dd>
+  <table class="params">
+    <tr><td class="paramdir">[in]</td><td class="paramname">block_ptr</td><td>Input pointer for loading from </td></tr>
+    <tr><td class="paramdir">[out]</td><td class="paramname">items</td><td>Data to load </td></tr>
+  </table>
+  </dd>
+</dl>
+
+</div>
+</div>
+<a class="anchor" id="gab1a8ffc7fe70a636a3d09403344cfced"></a>
+<div class="memitem">
+<div class="memproto">
+<div class="memtemplate">
+template&lt;typename T , int ITEMS_PER_THREAD&gt; </div>
+      <table class="memname">
+        <tr>
+          <td class="memname">__device__ __forceinline__ void cub::BlockLoadVectorized </td>
+          <td>(</td>
+          <td class="paramtype">T *&#160;</td>
+          <td class="paramname"><em>block_ptr</em>, </td>
+        </tr>
+        <tr>
+          <td class="paramkey"></td>
+          <td></td>
+          <td class="paramtype">T(&amp;)&#160;</td>
+          <td class="paramname"><em>items</em>[ITEMS_PER_THREAD]&#160;</td>
+        </tr>
+        <tr>
+          <td></td>
+          <td>)</td>
+          <td></td><td></td>
+        </tr>
+      </table>
+</div><div class="memdoc">
+
+<p>Load a tile of items across a threadblock directly. </p>
+<p>The aggregate tile of items is assumed to be partitioned evenly across threads in "blocked" fashion with thread<sub><em>i</em></sub> owning the <em>i</em><sup>th</sup> segment of consecutive elements.</p>
+<p>The input offset (<code>block_ptr</code> + <code>block_offset</code>) must be quad-item aligned</p>
+<p>The following conditions will prevent vectorization and loading will fall back to <a class="el" href="namespacecub.html#a70f1d3c7536d858d49b896e937d25290a2d4d8900d7e697e9dac4062e97d3d835">cub::BLOCK_LOAD_DIRECT</a>:</p>
+<ul>
+<li><code>ITEMS_PER_THREAD</code> is odd</li>
+<li>The data type <code>T</code> is not a built-in primitive or CUDA vector type (e.g., <code>short</code>, <code>int2</code>, <code>double</code>, <code>float2</code>, etc.)</li>
+</ul>
+<dl class="tparams"><dt>Template Parameters</dt><dd>
+  <table class="tparams">
+    <tr><td class="paramname">T</td><td><b>[inferred]</b> The data type to load. </td></tr>
+    <tr><td class="paramname">ITEMS_PER_THREAD</td><td><b>[inferred]</b> The number of consecutive items partitioned onto each thread. </td></tr>
+  </table>
+  </dd>
+</dl>
+<dl class="params"><dt>Parameters</dt><dd>
+  <table class="params">
+    <tr><td class="paramdir">[in]</td><td class="paramname">block_ptr</td><td>Input pointer for loading from </td></tr>
+    <tr><td class="paramdir">[out]</td><td class="paramname">items</td><td>Data to load </td></tr>
+  </table>
+  </dd>
+</dl>
+
+</div>
+</div>
 <a class="anchor" id="gaa8f12f02c082f8d689100b8ac88f8f61"></a>
 <div class="memitem">
 <div class="memproto">
@@ -743,7 +1607,7 @@ template&lt;typename T , int ITEMS_PER_THREAD&gt; </div>
 <!-- HTML footer for doxygen 1.8.3.1-->
 <!-- start footer part -->
 <hr class="footer"/><address class="footer"><small>
-Generated on Wed Mar 27 2013 16:29:47 for CUB by &#160;<a href="http://www.doxygen.org/index.html">
+Generated on Wed Mar 27 2013 16:40:17 for CUB by &#160;<a href="http://www.doxygen.org/index.html">
 <img class="footer" src="doxygen.png" alt="doxygen"/>
 </a> 1.8.3.1
 <br>

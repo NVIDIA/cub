@@ -52,6 +52,7 @@ var searchBox = new SearchBox("searchBox", "search",false,'Search');
       <li><a href="index.html"><span>Main&#160;Page</span></a></li>
       <li><a href="modules.html"><span>Modules</span></a></li>
       <li><a href="annotated.html"><span>Classes</span></a></li>
+      <li class="current"><a href="files.html"><span>Files</span></a></li>
       <li>
         <div id="MSearchBox" class="MSearchBoxInactive">
         <span class="left">
@@ -68,6 +69,12 @@ var searchBox = new SearchBox("searchBox", "search",false,'Search');
           </span>
         </div>
       </li>
+    </ul>
+  </div>
+  <div id="navrow2" class="tabs2">
+    <ul class="tablist">
+      <li><a href="files.html"><span>File&#160;List</span></a></li>
+      <li><a href="globals.html"><span>File&#160;Members</span></a></li>
     </ul>
   </div>
 <!-- window showing the filter options -->
@@ -109,7 +116,7 @@ Namespaces</h2></td></tr>
 </table><table class="memberdecls">
 <tr class="heading"><td colspan="2"><h2 class="groupheader"><a name="func-members"></a>
 Functions</h2></td></tr>
-<tr><td colspan="2"><div class="groupHeader">Sequential prefix scan over statically-sized array types.</div></td></tr>
+<tr><td colspan="2"><div class="groupHeader">Sequential prefix scan over statically-sized array types</div></td></tr>
 <tr class="memitem:ga37fa2b0ca9bb32096517480e98894545"><td class="memTemplParams" colspan="2">template&lt;int LENGTH, typename T , typename ScanOp &gt; </td></tr>
 <tr class="memitem:ga37fa2b0ca9bb32096517480e98894545"><td class="memTemplItemLeft" align="right" valign="top">__device__ __forceinline__ T&#160;</td><td class="memTemplItemRight" valign="bottom"><a class="el" href="group___thread_module.html#ga37fa2b0ca9bb32096517480e98894545">cub::ThreadScanExclusive</a> (T *input, T *output, ScanOp scan_op, T prefix, bool apply_prefix=true)</td></tr>
 <tr class="memdesc:ga37fa2b0ca9bb32096517480e98894545"><td class="mdescLeft">&#160;</td><td class="mdescRight">Perform a sequential exclusive prefix scan over <code>LENGTH</code> elements of the <code>input</code> array, seeded with the specified <code>prefix</code>. The aggregate is returned.  <a href="group___thread_module.html#ga37fa2b0ca9bb32096517480e98894545">More...</a><br/></td></tr>
@@ -136,12 +143,12 @@ Functions</h2></td></tr>
 <tr class="separator:gadb4aed8a804827b6fb97eca790572099"><td class="memSeparator" colspan="2">&#160;</td></tr>
 </table>
 <a name="details" id="details"></a><h2 class="groupheader">Detailed Description</h2>
-<div class="textblock"><p>Thread utilities for sequential prefix scan over statically-sized array types. </p>
+<div class="textblock"><p>Thread utilities for sequential prefix scan over statically-sized array types </p>
 </div></div><!-- contents -->
 <!-- HTML footer for doxygen 1.8.3.1-->
 <!-- start footer part -->
 <hr class="footer"/><address class="footer"><small>
-Generated on Wed Mar 27 2013 16:29:47 for CUB by &#160;<a href="http://www.doxygen.org/index.html">
+Generated on Wed Mar 27 2013 16:40:17 for CUB by &#160;<a href="http://www.doxygen.org/index.html">
 <img class="footer" src="doxygen.png" alt="doxygen"/>
 </a> 1.8.3.1
 <br>
