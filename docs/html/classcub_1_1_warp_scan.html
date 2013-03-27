@@ -83,7 +83,7 @@ var searchBox = new SearchBox("searchBox", "search",false,'Search');
      onmouseover="return searchBox.OnSearchSelectShow()"
      onmouseout="return searchBox.OnSearchSelectHide()"
      onkeydown="return searchBox.OnSearchSelectKey(event)">
-<a class="SelectItem" href="javascript:void(0)" onclick="searchBox.OnSelectItem(0)"><span class="SelectionMark">&#160;</span>All</a><a class="SelectItem" href="javascript:void(0)" onclick="searchBox.OnSelectItem(1)"><span class="SelectionMark">&#160;</span>Classes</a><a class="SelectItem" href="javascript:void(0)" onclick="searchBox.OnSelectItem(2)"><span class="SelectionMark">&#160;</span>Namespaces</a><a class="SelectItem" href="javascript:void(0)" onclick="searchBox.OnSelectItem(3)"><span class="SelectionMark">&#160;</span>Files</a><a class="SelectItem" href="javascript:void(0)" onclick="searchBox.OnSelectItem(4)"><span class="SelectionMark">&#160;</span>Functions</a><a class="SelectItem" href="javascript:void(0)" onclick="searchBox.OnSelectItem(5)"><span class="SelectionMark">&#160;</span>Variables</a><a class="SelectItem" href="javascript:void(0)" onclick="searchBox.OnSelectItem(6)"><span class="SelectionMark">&#160;</span>Typedefs</a><a class="SelectItem" href="javascript:void(0)" onclick="searchBox.OnSelectItem(7)"><span class="SelectionMark">&#160;</span>Enumerations</a><a class="SelectItem" href="javascript:void(0)" onclick="searchBox.OnSelectItem(8)"><span class="SelectionMark">&#160;</span>Enumerator</a><a class="SelectItem" href="javascript:void(0)" onclick="searchBox.OnSelectItem(9)"><span class="SelectionMark">&#160;</span>Macros</a><a class="SelectItem" href="javascript:void(0)" onclick="searchBox.OnSelectItem(10)"><span class="SelectionMark">&#160;</span>Groups</a><a class="SelectItem" href="javascript:void(0)" onclick="searchBox.OnSelectItem(11)"><span class="SelectionMark">&#160;</span>Pages</a></div>
+<a class="SelectItem" href="javascript:void(0)" onclick="searchBox.OnSelectItem(0)"><span class="SelectionMark">&#160;</span>All</a><a class="SelectItem" href="javascript:void(0)" onclick="searchBox.OnSelectItem(1)"><span class="SelectionMark">&#160;</span>Classes</a><a class="SelectItem" href="javascript:void(0)" onclick="searchBox.OnSelectItem(2)"><span class="SelectionMark">&#160;</span>Namespaces</a><a class="SelectItem" href="javascript:void(0)" onclick="searchBox.OnSelectItem(3)"><span class="SelectionMark">&#160;</span>Files</a><a class="SelectItem" href="javascript:void(0)" onclick="searchBox.OnSelectItem(4)"><span class="SelectionMark">&#160;</span>Functions</a><a class="SelectItem" href="javascript:void(0)" onclick="searchBox.OnSelectItem(5)"><span class="SelectionMark">&#160;</span>Variables</a><a class="SelectItem" href="javascript:void(0)" onclick="searchBox.OnSelectItem(6)"><span class="SelectionMark">&#160;</span>Typedefs</a><a class="SelectItem" href="javascript:void(0)" onclick="searchBox.OnSelectItem(7)"><span class="SelectionMark">&#160;</span>Enumerations</a><a class="SelectItem" href="javascript:void(0)" onclick="searchBox.OnSelectItem(8)"><span class="SelectionMark">&#160;</span>Enumerator</a><a class="SelectItem" href="javascript:void(0)" onclick="searchBox.OnSelectItem(9)"><span class="SelectionMark">&#160;</span>Friends</a><a class="SelectItem" href="javascript:void(0)" onclick="searchBox.OnSelectItem(10)"><span class="SelectionMark">&#160;</span>Groups</a><a class="SelectItem" href="javascript:void(0)" onclick="searchBox.OnSelectItem(11)"><span class="SelectionMark">&#160;</span>Pages</a></div>
 
 <!-- iframe showing the search results (closed by default) -->
 <div id="MSearchResultsWindow">
@@ -102,11 +102,11 @@ var searchBox = new SearchBox("searchBox", "search",false,'Search');
 <a href="#pub-types">Public Types</a> &#124;
 <a href="classcub_1_1_warp_scan-members.html">List of all members</a>  </div>
   <div class="headertitle">
-<div class="title">cub::WarpScan&lt; T, WARPS, LOGICAL_WARP_THREADS &gt; Class Template Reference<div class="ingroups"><a class="el" href="group___simt_coop.html">Cooperative SIMT Operations</a></div></div>  </div>
+<div class="title">cub::WarpScan&lt; T, WARPS, LOGICAL_WARP_THREADS &gt; Class Template Reference<div class="ingroups"><a class="el" href="group___warp_module.html">Warp</a></div></div>  </div>
 </div><!--header-->
 <div class="contents">
 <a name="details" id="details"></a><h2 class="groupheader">Detailed description</h2>
-<div class="textblock"><h3>template&lt;typename T, int WARPS, int LOGICAL_WARP_THREADS = DeviceProps::WARP_THREADS&gt;<br/>
+<div class="textblock"><h3>template&lt;typename T, int WARPS, int LOGICAL_WARP_THREADS = PtxArchProps::WARP_THREADS&gt;<br/>
 class cub::WarpScan&lt; T, WARPS, LOGICAL_WARP_THREADS &gt;</h3>
 
 <p><a class="el" href="classcub_1_1_warp_scan.html" title="WarpScan provides variants of parallel prefix scan across CUDA warps. .">WarpScan</a> provides variants of parallel prefix scan across CUDA warps. </p>
@@ -159,7 +159,7 @@ class cub::WarpScan&lt; T, WARPS, LOGICAL_WARP_THREADS &gt;</h3>
 </div>
  <div class="centercaption">Data flow within a 16-thread Kogge-Stone scan construction. Junctions represent binary operators.</div> <br/>
 </dd></dl>
-<dl class="section user"><dt>Examples</dt><dd><em>Example 1.</em> Perform a simple exclusive prefix sum for one warp <div class="fragment"><div class="line"><span class="preprocessor">#include &lt;cub.cuh&gt;</span></div>
+<dl class="section user"><dt>Examples</dt><dd><em>Example 1.</em> Perform a simple exclusive prefix sum for one warp <div class="fragment"><div class="line"><span class="preprocessor">#include &lt;<a class="code" href="cub_8cuh.html">cub.cuh</a>&gt;</span></div>
 <div class="line"></div>
 <div class="line">__global__ <span class="keywordtype">void</span> SomeKernel(...)</div>
 <div class="line">{</div>
@@ -186,7 +186,7 @@ class cub::WarpScan&lt; T, WARPS, LOGICAL_WARP_THREADS &gt;</h3>
 <div class="line">...</div>
 <div class="line">tid(31) output(465)</div>
 </div><!-- fragment --></dd></dl>
-<dl class="section user"><dt></dt><dd><em>Example 2.</em> Perform an exclusive prefix sum for one warp seeded with a warp-wide prefix <div class="fragment"><div class="line"><span class="preprocessor">#include &lt;cub.cuh&gt;</span></div>
+<dl class="section user"><dt></dt><dd><em>Example 2.</em> Perform an exclusive prefix sum for one warp seeded with a warp-wide prefix <div class="fragment"><div class="line"><span class="preprocessor">#include &lt;<a class="code" href="cub_8cuh.html">cub.cuh</a>&gt;</span></div>
 <div class="line"></div>
 <div class="line"><span class="keyword">struct </span>WarpPrefixOp</div>
 <div class="line">{</div>
@@ -327,7 +327,7 @@ __forceinline__ void&#160;</td><td class="memTemplItemRight" valign="bottom"><a 
 <div class="memitem">
 <div class="memproto">
 <div class="memtemplate">
-template&lt;typename T , int WARPS, int LOGICAL_WARP_THREADS = DeviceProps::WARP_THREADS&gt; </div>
+template&lt;typename T , int WARPS, int LOGICAL_WARP_THREADS = PtxArchProps::WARP_THREADS&gt; </div>
 <table class="mlabels">
   <tr>
   <td class="mlabels-left">
@@ -380,7 +380,7 @@ template&lt;typename T , int WARPS, int LOGICAL_WARP_THREADS = DeviceProps::WARP
 <div class="memitem">
 <div class="memproto">
 <div class="memtemplate">
-template&lt;typename T , int WARPS, int LOGICAL_WARP_THREADS = DeviceProps::WARP_THREADS&gt; </div>
+template&lt;typename T , int WARPS, int LOGICAL_WARP_THREADS = PtxArchProps::WARP_THREADS&gt; </div>
 <table class="mlabels">
   <tr>
   <td class="mlabels-left">
@@ -441,7 +441,7 @@ template&lt;typename T , int WARPS, int LOGICAL_WARP_THREADS = DeviceProps::WARP
 <div class="memitem">
 <div class="memproto">
 <div class="memtemplate">
-template&lt;typename T , int WARPS, int LOGICAL_WARP_THREADS = DeviceProps::WARP_THREADS&gt; </div>
+template&lt;typename T , int WARPS, int LOGICAL_WARP_THREADS = PtxArchProps::WARP_THREADS&gt; </div>
 <div class="memtemplate">
 template&lt;typename WarpPrefixOp &gt; </div>
 <table class="mlabels">
@@ -518,7 +518,7 @@ template&lt;typename WarpPrefixOp &gt; </div>
 <div class="memitem">
 <div class="memproto">
 <div class="memtemplate">
-template&lt;typename T , int WARPS, int LOGICAL_WARP_THREADS = DeviceProps::WARP_THREADS&gt; </div>
+template&lt;typename T , int WARPS, int LOGICAL_WARP_THREADS = PtxArchProps::WARP_THREADS&gt; </div>
 <table class="mlabels">
   <tr>
   <td class="mlabels-left">
@@ -571,7 +571,7 @@ template&lt;typename T , int WARPS, int LOGICAL_WARP_THREADS = DeviceProps::WARP
 <div class="memitem">
 <div class="memproto">
 <div class="memtemplate">
-template&lt;typename T , int WARPS, int LOGICAL_WARP_THREADS = DeviceProps::WARP_THREADS&gt; </div>
+template&lt;typename T , int WARPS, int LOGICAL_WARP_THREADS = PtxArchProps::WARP_THREADS&gt; </div>
 <table class="mlabels">
   <tr>
   <td class="mlabels-left">
@@ -632,7 +632,7 @@ template&lt;typename T , int WARPS, int LOGICAL_WARP_THREADS = DeviceProps::WARP
 <div class="memitem">
 <div class="memproto">
 <div class="memtemplate">
-template&lt;typename T , int WARPS, int LOGICAL_WARP_THREADS = DeviceProps::WARP_THREADS&gt; </div>
+template&lt;typename T , int WARPS, int LOGICAL_WARP_THREADS = PtxArchProps::WARP_THREADS&gt; </div>
 <div class="memtemplate">
 template&lt;typename WarpPrefixOp &gt; </div>
 <table class="mlabels">
@@ -709,7 +709,7 @@ template&lt;typename WarpPrefixOp &gt; </div>
 <div class="memitem">
 <div class="memproto">
 <div class="memtemplate">
-template&lt;typename T , int WARPS, int LOGICAL_WARP_THREADS = DeviceProps::WARP_THREADS&gt; </div>
+template&lt;typename T , int WARPS, int LOGICAL_WARP_THREADS = PtxArchProps::WARP_THREADS&gt; </div>
 <div class="memtemplate">
 template&lt;typename ScanOp &gt; </div>
 <table class="mlabels">
@@ -777,7 +777,7 @@ template&lt;typename ScanOp &gt; </div>
 <div class="memitem">
 <div class="memproto">
 <div class="memtemplate">
-template&lt;typename T , int WARPS, int LOGICAL_WARP_THREADS = DeviceProps::WARP_THREADS&gt; </div>
+template&lt;typename T , int WARPS, int LOGICAL_WARP_THREADS = PtxArchProps::WARP_THREADS&gt; </div>
 <div class="memtemplate">
 template&lt;typename ScanOp &gt; </div>
 <table class="mlabels">
@@ -853,7 +853,7 @@ template&lt;typename ScanOp &gt; </div>
 <div class="memitem">
 <div class="memproto">
 <div class="memtemplate">
-template&lt;typename T , int WARPS, int LOGICAL_WARP_THREADS = DeviceProps::WARP_THREADS&gt; </div>
+template&lt;typename T , int WARPS, int LOGICAL_WARP_THREADS = PtxArchProps::WARP_THREADS&gt; </div>
 <div class="memtemplate">
 template&lt;typename ScanOp , typename WarpPrefixOp &gt; </div>
 <table class="mlabels">
@@ -938,7 +938,7 @@ template&lt;typename ScanOp , typename WarpPrefixOp &gt; </div>
 <div class="memitem">
 <div class="memproto">
 <div class="memtemplate">
-template&lt;typename T , int WARPS, int LOGICAL_WARP_THREADS = DeviceProps::WARP_THREADS&gt; </div>
+template&lt;typename T , int WARPS, int LOGICAL_WARP_THREADS = PtxArchProps::WARP_THREADS&gt; </div>
 <div class="memtemplate">
 template&lt;typename ScanOp &gt; </div>
 <table class="mlabels">
@@ -1013,7 +1013,7 @@ template&lt;typename ScanOp &gt; </div>
 <div class="memitem">
 <div class="memproto">
 <div class="memtemplate">
-template&lt;typename T , int WARPS, int LOGICAL_WARP_THREADS = DeviceProps::WARP_THREADS&gt; </div>
+template&lt;typename T , int WARPS, int LOGICAL_WARP_THREADS = PtxArchProps::WARP_THREADS&gt; </div>
 <div class="memtemplate">
 template&lt;typename ScanOp &gt; </div>
 <table class="mlabels">
@@ -1096,7 +1096,7 @@ template&lt;typename ScanOp &gt; </div>
 <div class="memitem">
 <div class="memproto">
 <div class="memtemplate">
-template&lt;typename T , int WARPS, int LOGICAL_WARP_THREADS = DeviceProps::WARP_THREADS&gt; </div>
+template&lt;typename T , int WARPS, int LOGICAL_WARP_THREADS = PtxArchProps::WARP_THREADS&gt; </div>
 <div class="memtemplate">
 template&lt;typename ScanOp , typename WarpPrefixOp &gt; </div>
 <table class="mlabels">
@@ -1188,7 +1188,7 @@ template&lt;typename ScanOp , typename WarpPrefixOp &gt; </div>
 <div class="memitem">
 <div class="memproto">
 <div class="memtemplate">
-template&lt;typename T , int WARPS, int LOGICAL_WARP_THREADS = DeviceProps::WARP_THREADS&gt; </div>
+template&lt;typename T , int WARPS, int LOGICAL_WARP_THREADS = PtxArchProps::WARP_THREADS&gt; </div>
 <div class="memtemplate">
 template&lt;typename ScanOp &gt; </div>
 <table class="mlabels">
@@ -1256,7 +1256,7 @@ template&lt;typename ScanOp &gt; </div>
 <div class="memitem">
 <div class="memproto">
 <div class="memtemplate">
-template&lt;typename T , int WARPS, int LOGICAL_WARP_THREADS = DeviceProps::WARP_THREADS&gt; </div>
+template&lt;typename T , int WARPS, int LOGICAL_WARP_THREADS = PtxArchProps::WARP_THREADS&gt; </div>
 <div class="memtemplate">
 template&lt;typename ScanOp &gt; </div>
 <table class="mlabels">
@@ -1332,7 +1332,7 @@ template&lt;typename ScanOp &gt; </div>
 <div class="memitem">
 <div class="memproto">
 <div class="memtemplate">
-template&lt;typename T , int WARPS, int LOGICAL_WARP_THREADS = DeviceProps::WARP_THREADS&gt; </div>
+template&lt;typename T , int WARPS, int LOGICAL_WARP_THREADS = PtxArchProps::WARP_THREADS&gt; </div>
 <div class="memtemplate">
 template&lt;typename ScanOp , typename WarpPrefixOp &gt; </div>
 <table class="mlabels">
@@ -1420,7 +1420,7 @@ template&lt;typename ScanOp , typename WarpPrefixOp &gt; </div>
 <!-- HTML footer for doxygen 1.8.3.1-->
 <!-- start footer part -->
 <hr class="footer"/><address class="footer"><small>
-Generated on Wed Mar 13 2013 17:39:05 for CUB by &#160;<a href="http://www.doxygen.org/index.html">
+Generated on Wed Mar 27 2013 16:29:48 for CUB by &#160;<a href="http://www.doxygen.org/index.html">
 <img class="footer" src="doxygen.png" alt="doxygen"/>
 </a> 1.8.3.1
 <br>

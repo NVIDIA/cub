@@ -76,7 +76,7 @@ var searchBox = new SearchBox("searchBox", "search",false,'Search');
      onmouseover="return searchBox.OnSearchSelectShow()"
      onmouseout="return searchBox.OnSearchSelectHide()"
      onkeydown="return searchBox.OnSearchSelectKey(event)">
-<a class="SelectItem" href="javascript:void(0)" onclick="searchBox.OnSelectItem(0)"><span class="SelectionMark">&#160;</span>All</a><a class="SelectItem" href="javascript:void(0)" onclick="searchBox.OnSelectItem(1)"><span class="SelectionMark">&#160;</span>Classes</a><a class="SelectItem" href="javascript:void(0)" onclick="searchBox.OnSelectItem(2)"><span class="SelectionMark">&#160;</span>Namespaces</a><a class="SelectItem" href="javascript:void(0)" onclick="searchBox.OnSelectItem(3)"><span class="SelectionMark">&#160;</span>Files</a><a class="SelectItem" href="javascript:void(0)" onclick="searchBox.OnSelectItem(4)"><span class="SelectionMark">&#160;</span>Functions</a><a class="SelectItem" href="javascript:void(0)" onclick="searchBox.OnSelectItem(5)"><span class="SelectionMark">&#160;</span>Variables</a><a class="SelectItem" href="javascript:void(0)" onclick="searchBox.OnSelectItem(6)"><span class="SelectionMark">&#160;</span>Typedefs</a><a class="SelectItem" href="javascript:void(0)" onclick="searchBox.OnSelectItem(7)"><span class="SelectionMark">&#160;</span>Enumerations</a><a class="SelectItem" href="javascript:void(0)" onclick="searchBox.OnSelectItem(8)"><span class="SelectionMark">&#160;</span>Enumerator</a><a class="SelectItem" href="javascript:void(0)" onclick="searchBox.OnSelectItem(9)"><span class="SelectionMark">&#160;</span>Macros</a><a class="SelectItem" href="javascript:void(0)" onclick="searchBox.OnSelectItem(10)"><span class="SelectionMark">&#160;</span>Groups</a><a class="SelectItem" href="javascript:void(0)" onclick="searchBox.OnSelectItem(11)"><span class="SelectionMark">&#160;</span>Pages</a></div>
+<a class="SelectItem" href="javascript:void(0)" onclick="searchBox.OnSelectItem(0)"><span class="SelectionMark">&#160;</span>All</a><a class="SelectItem" href="javascript:void(0)" onclick="searchBox.OnSelectItem(1)"><span class="SelectionMark">&#160;</span>Classes</a><a class="SelectItem" href="javascript:void(0)" onclick="searchBox.OnSelectItem(2)"><span class="SelectionMark">&#160;</span>Namespaces</a><a class="SelectItem" href="javascript:void(0)" onclick="searchBox.OnSelectItem(3)"><span class="SelectionMark">&#160;</span>Files</a><a class="SelectItem" href="javascript:void(0)" onclick="searchBox.OnSelectItem(4)"><span class="SelectionMark">&#160;</span>Functions</a><a class="SelectItem" href="javascript:void(0)" onclick="searchBox.OnSelectItem(5)"><span class="SelectionMark">&#160;</span>Variables</a><a class="SelectItem" href="javascript:void(0)" onclick="searchBox.OnSelectItem(6)"><span class="SelectionMark">&#160;</span>Typedefs</a><a class="SelectItem" href="javascript:void(0)" onclick="searchBox.OnSelectItem(7)"><span class="SelectionMark">&#160;</span>Enumerations</a><a class="SelectItem" href="javascript:void(0)" onclick="searchBox.OnSelectItem(8)"><span class="SelectionMark">&#160;</span>Enumerator</a><a class="SelectItem" href="javascript:void(0)" onclick="searchBox.OnSelectItem(9)"><span class="SelectionMark">&#160;</span>Friends</a><a class="SelectItem" href="javascript:void(0)" onclick="searchBox.OnSelectItem(10)"><span class="SelectionMark">&#160;</span>Groups</a><a class="SelectItem" href="javascript:void(0)" onclick="searchBox.OnSelectItem(11)"><span class="SelectionMark">&#160;</span>Pages</a></div>
 
 <!-- iframe showing the search results (closed by default) -->
 <div id="MSearchResultsWindow">
@@ -152,7 +152,7 @@ var searchBox = new SearchBox("searchBox", "search",false,'Search');
 <h1><a class="anchor" id="sec3"></a>
 (3) A simple example</h1>
 <dl class="section user"><dt></dt><dd>The following code snippet illustrates a simple CUDA kernel for sorting a thread block's data:</dd></dl>
-<dl class="section user"><dt></dt><dd><div class="fragment"><div class="line"><span class="preprocessor">#include &lt;cub.cuh&gt;</span></div>
+<dl class="section user"><dt></dt><dd><div class="fragment"><div class="line"><span class="preprocessor">#include &lt;<a class="code" href="cub_8cuh.html">cub.cuh</a>&gt;</span></div>
 <div class="line"></div>
 <div class="line"><span class="comment">// An tile-sorting CUDA kernel</span></div>
 <div class="line"><span class="keyword">template</span> &lt;</div>
@@ -174,13 +174,13 @@ var searchBox = new SearchBox("searchBox", "search",false,'Search');
 <div class="line">     T data[ITEMS_PER_THREAD];</div>
 <div class="line"></div>
 <div class="line">     <span class="comment">// Load a tile of data using vector-load instructions</span></div>
-<div class="line">     <a class="code" href="group___simt_utils.html#gaea8200ef976bb588c569e039ea79005c" title="Load a tile of items across a threadblock directly using the specified cache modifier.">BlockLoadVectorized</a>(data, d_in + (blockIdx.x * TILE_SIZE));</div>
+<div class="line">     <a class="code" href="group___thread_module.html#gaea8200ef976bb588c569e039ea79005c" title="Load a tile of items across a threadblock directly using the specified cache modifier.">BlockLoadVectorized</a>(data, d_in + (blockIdx.x * TILE_SIZE));</div>
 <div class="line"></div>
 <div class="line">     <span class="comment">// Sort data in ascending order</span></div>
 <div class="line">     <a class="code" href="classcub_1_1_block_radix_sort.html#abdbfda59c129946222ab10d2e2e6f6f5" title="Performs a threadblock-wide radix sort over a blocked arrangement of keys.">BlockRadixSort::SortBlocked</a>(smem_storage, data);</div>
 <div class="line"></div>
 <div class="line">     <span class="comment">// Store the sorted tile using vector-store instructions</span></div>
-<div class="line">     <a class="code" href="group___simt_utils.html#ga013c3ab8214854f45e8d678958e7dde9" title="Store a tile of items across a threadblock directly using the specified cache modifier.">BlockStoreVectorized</a>(data, d_out + (blockIdx.x * TILE_SIZE));</div>
+<div class="line">     <a class="code" href="group___block_module.html#ga013c3ab8214854f45e8d678958e7dde9" title="Store a tile of items across a threadblock directly using the specified cache modifier.">BlockStoreVectorized</a>(data, d_out + (blockIdx.x * TILE_SIZE));</div>
 <div class="line">}</div>
 </div><!-- fragment --></dd></dl>
 <dl class="section user"><dt></dt><dd>The <a class="el" href="classcub_1_1_block_radix_sort.html" title="BlockRadixSort provides variants of parallel radix sorting across a CUDA threadblock. .">cub::BlockRadixSort</a> type performs a cooperative radix sort across the thread block's data items. Its implementation is parameterized by the number of threads per block and the aggregate data type <code>T</code> and is specialized for the underlying architecture.</dd></dl>
@@ -249,7 +249,7 @@ var searchBox = new SearchBox("searchBox", "search",false,'Search');
 <li>Tuning requirements (e.g., latency vs. throughput)</li>
 </ul>
 </dd></dl>
-<dl class="section user"><dt></dt><dd>To provide this flexibility, CUB is implemented as a C++ template library. C++ templates are a way to write generic algorithms and data structures. There is no need to build CUB separately. You simply <code>#include</code> the <code>cub.cuh</code> header file into your <code>.cu</code> CUDA C++ sources and compile with NVIDIA's <code>nvcc</code> compiler.</dd></dl>
+<dl class="section user"><dt></dt><dd>To provide this flexibility, CUB is implemented as a C++ template library. C++ templates are a way to write generic algorithms and data structures. There is no need to build CUB separately. You simply <code>#include</code> the <code><a class="el" href="cub_8cuh.html">cub.cuh</a></code> header file into your <code>.cu</code> CUDA C++ sources and compile with NVIDIA's <code>nvcc</code> compiler.</dd></dl>
 <h2><a class="anchor" id="sec3sec2"></a>
 6.2    Reflective type structure</h2>
 <dl class="section user"><dt></dt><dd>Cooperation within a thread block requires shared memory for communicating between threads. However, the specific size and layout of the memory needed by a given primitive will be specific to the details of its parallel execution context (e.g., how many threads are calling into it, how many items are processed per thread, etc.). Furthermore, this shared memory must be allocated outside of the component itself if it is to be reused elsewhere by the thread block.</dd></dl>
@@ -348,7 +348,7 @@ var searchBox = new SearchBox("searchBox", "search",false,'Search');
 <!-- HTML footer for doxygen 1.8.3.1-->
 <!-- start footer part -->
 <hr class="footer"/><address class="footer"><small>
-Generated on Wed Mar 13 2013 17:39:05 for CUB by &#160;<a href="http://www.doxygen.org/index.html">
+Generated on Wed Mar 27 2013 16:29:48 for CUB by &#160;<a href="http://www.doxygen.org/index.html">
 <img class="footer" src="doxygen.png" alt="doxygen"/>
 </a> 1.8.3.1
 <br>

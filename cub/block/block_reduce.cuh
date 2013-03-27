@@ -33,23 +33,24 @@
 
 #pragma once
 
-#include "../block/block_raking_grid.cuh"
+#include "../block/block_raking_layout.cuh"
 #include "../warp/warp_reduce.cuh"
-#include "../arch_props.cuh"
-#include "../type_utils.cuh"
-#include "../operators.cuh"
+#include "../util_arch.cuh"
+#include "../util_type.cuh"
+#include "../thread/thread_operators.cuh"
 #include "../thread/thread_reduce.cuh"
 #include "../thread/thread_load.cuh"
 #include "../thread/thread_store.cuh"
-#include "../ns_wrapper.cuh"
+#include "../util_namespace.cuh"
 
+/// Optional outer namespace(s)
 CUB_NS_PREFIX
 
 /// CUB namespace
 namespace cub {
 
 /**
- * \addtogroup SimtCoop
+ * \addtogroup BlockModule
  * @{
  */
 
@@ -146,7 +147,7 @@ namespace cub {
  *
  */
 template <
-    typename     T,
+    typename    T,
     int         BLOCK_THREADS>
 class BlockReduce
 {
@@ -157,18 +158,18 @@ private:
     //---------------------------------------------------------------------
 
     /// Layout type for padded threadblock raking grid
-    typedef BlockRakingGrid<BLOCK_THREADS, T, 1> BlockRakingGrid;
+    typedef BlockRakingLayout<T, BLOCK_THREADS, 1> BlockRakingLayout;
 
     /// Warp reduction type
-    typedef typename WarpReduce<T, 1, BlockRakingGrid::RAKING_THREADS>::Internal WarpReduce;
+    typedef typename WarpReduce<T, 1, BlockRakingLayout::RAKING_THREADS>::Internal WarpReduce;
 
     enum
     {
         /// Number of raking threads
-        RAKING_THREADS = BlockRakingGrid::RAKING_THREADS,
+        RAKING_THREADS = BlockRakingLayout::RAKING_THREADS,
 
         /// Number of raking elements per warp synchronous raking thread
-        RAKING_LENGTH = BlockRakingGrid::RAKING_LENGTH,
+        RAKING_LENGTH = BlockRakingLayout::RAKING_LENGTH,
 
         /// Cooperative work can be entirely warp synchronous
         WARP_SYNCHRONOUS = (RAKING_THREADS == BLOCK_THREADS),
@@ -177,7 +178,7 @@ private:
         WARP_SYNCHRONOUS_UNGUARDED = ((RAKING_THREADS & (RAKING_THREADS - 1)) == 0),
 
         /// Whether or not accesses into smem are unguarded
-        RAKING_UNGUARDED = BlockRakingGrid::UNGUARDED,
+        RAKING_UNGUARDED = BlockRakingLayout::UNGUARDED,
 
     };
 
@@ -185,7 +186,7 @@ private:
     struct _SmemStorage
     {
         typename WarpReduce::SmemStorage        warp_storage;        ///< Storage for warp-synchronous reduction
-        typename BlockRakingGrid::SmemStorage   raking_grid;         ///< Padded threadblock raking grid
+        typename BlockRakingLayout::SmemStorage   raking_grid;         ///< Padded threadblock raking grid
     };
 
 public:
@@ -228,7 +229,7 @@ private:
         else
         {
             // Place partial into shared memory grid.
-            *BlockRakingGrid::PlacementPtr(smem_storage.raking_grid) = partial;
+            *BlockRakingLayout::PlacementPtr(smem_storage.raking_grid) = partial;
 
             __syncthreads();
 
@@ -236,7 +237,7 @@ private:
             if (threadIdx.x < RAKING_THREADS)
             {
                 // Raking reduction in grid
-                T *raking_segment = BlockRakingGrid::RakingPtr(smem_storage.raking_grid);
+                T *raking_segment = BlockRakingLayout::RakingPtr(smem_storage.raking_grid);
                 partial = raking_segment[0];
 
                 #pragma unroll
@@ -339,7 +340,7 @@ public:
         }
     }
 
-    //@}
+    //@}  end member group
     /******************************************************************//**
      * \name Summation reductions
      *********************************************************************/
@@ -396,10 +397,11 @@ public:
     }
 
 
-    //@}
+    //@}  end member group
 };
 
-/** @} */       // end of SimtCoop group
+/** @} */       // end group BlockModule
 
-} // namespace cub
-CUB_NS_POSTFIX
+}               // CUB namespace
+CUB_NS_POSTFIX  // Optional outer namespace(s)
+

@@ -33,18 +33,19 @@
 
 #pragma once
 
-#include "../ns_wrapper.cuh"
-#include "../arch_props.cuh"
-#include "../ptx_intrinsics.cuh"
-#include "../type_utils.cuh"
+#include "../util_namespace.cuh"
+#include "../util_arch.cuh"
+#include "../util_ptx.cuh"
+#include "../util_type.cuh"
 
+/// Optional outer namespace(s)
 CUB_NS_PREFIX
 
 /// CUB namespace
 namespace cub {
 
 /**
- * \addtogroup SimtCoop
+ * \addtogroup BlockModule
  * @{
  */
 
@@ -230,7 +231,7 @@ public:
         GatherBlocked(items, smem_storage.exchange);
     }
 
-    //@}
+    //@}  end member group
     /******************************************************************//**
      * \name Scatter exchanges
      *********************************************************************/
@@ -275,12 +276,13 @@ public:
         GatherStriped(items, smem_storage.exchange);
     }
 
-    //@}
+    //@}  end member group
 
 
 };
 
-/** @} */       // end of SimtCoop group
+/** @} */       // end group BlockModule
 
-} // namespace cub
-CUB_NS_POSTFIX
+}               // CUB namespace
+CUB_NS_POSTFIX  // Optional outer namespace(s)
+

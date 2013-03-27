@@ -34,19 +34,20 @@
 
 #pragma once
 
-#include "../ns_wrapper.cuh"
-#include "../arch_props.cuh"
-#include "../type_utils.cuh"
+#include "../util_namespace.cuh"
+#include "../util_arch.cuh"
+#include "../util_type.cuh"
 #include "block_exchange.cuh"
 #include "block_radix_rank.cuh"
 
+/// Optional outer namespace(s)
 CUB_NS_PREFIX
 
 /// CUB namespace
 namespace cub {
 
 /**
- * \addtogroup SimtCoop
+ * \addtogroup BlockModule
  * @{
  */
 
@@ -335,7 +336,7 @@ public:
         SortBlockedToStriped(smem_storage, keys, begin_bit, end_bit);
     }
 
-    //@}
+    //@}  end member group
     /******************************************************************//**
      * \name Key-value pair sorting
      *********************************************************************/
@@ -494,7 +495,8 @@ public:
 
 };
 
-/** @} */       // SimtCoop
+/** @} */       // BlockModule
 
-} // namespace cub
-CUB_NS_POSTFIX
+}               // CUB namespace
+CUB_NS_POSTFIX  // Optional outer namespace(s)
+

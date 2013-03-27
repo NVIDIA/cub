@@ -84,6 +84,7 @@ var searchBox = new SearchBox("searchBox", "search",false,'Search');
       <li><a href="functions_func.html"><span>Functions</span></a></li>
       <li><a href="functions_vars.html"><span>Variables</span></a></li>
       <li class="current"><a href="functions_type.html"><span>Typedefs</span></a></li>
+      <li><a href="functions_rela.html"><span>Related&#160;Functions</span></a></li>
     </ul>
   </div>
 </div><!-- top -->
@@ -92,7 +93,7 @@ var searchBox = new SearchBox("searchBox", "search",false,'Search');
      onmouseover="return searchBox.OnSearchSelectShow()"
      onmouseout="return searchBox.OnSearchSelectHide()"
      onkeydown="return searchBox.OnSearchSelectKey(event)">
-<a class="SelectItem" href="javascript:void(0)" onclick="searchBox.OnSelectItem(0)"><span class="SelectionMark">&#160;</span>All</a><a class="SelectItem" href="javascript:void(0)" onclick="searchBox.OnSelectItem(1)"><span class="SelectionMark">&#160;</span>Classes</a><a class="SelectItem" href="javascript:void(0)" onclick="searchBox.OnSelectItem(2)"><span class="SelectionMark">&#160;</span>Namespaces</a><a class="SelectItem" href="javascript:void(0)" onclick="searchBox.OnSelectItem(3)"><span class="SelectionMark">&#160;</span>Files</a><a class="SelectItem" href="javascript:void(0)" onclick="searchBox.OnSelectItem(4)"><span class="SelectionMark">&#160;</span>Functions</a><a class="SelectItem" href="javascript:void(0)" onclick="searchBox.OnSelectItem(5)"><span class="SelectionMark">&#160;</span>Variables</a><a class="SelectItem" href="javascript:void(0)" onclick="searchBox.OnSelectItem(6)"><span class="SelectionMark">&#160;</span>Typedefs</a><a class="SelectItem" href="javascript:void(0)" onclick="searchBox.OnSelectItem(7)"><span class="SelectionMark">&#160;</span>Enumerations</a><a class="SelectItem" href="javascript:void(0)" onclick="searchBox.OnSelectItem(8)"><span class="SelectionMark">&#160;</span>Enumerator</a><a class="SelectItem" href="javascript:void(0)" onclick="searchBox.OnSelectItem(9)"><span class="SelectionMark">&#160;</span>Macros</a><a class="SelectItem" href="javascript:void(0)" onclick="searchBox.OnSelectItem(10)"><span class="SelectionMark">&#160;</span>Groups</a><a class="SelectItem" href="javascript:void(0)" onclick="searchBox.OnSelectItem(11)"><span class="SelectionMark">&#160;</span>Pages</a></div>
+<a class="SelectItem" href="javascript:void(0)" onclick="searchBox.OnSelectItem(0)"><span class="SelectionMark">&#160;</span>All</a><a class="SelectItem" href="javascript:void(0)" onclick="searchBox.OnSelectItem(1)"><span class="SelectionMark">&#160;</span>Classes</a><a class="SelectItem" href="javascript:void(0)" onclick="searchBox.OnSelectItem(2)"><span class="SelectionMark">&#160;</span>Namespaces</a><a class="SelectItem" href="javascript:void(0)" onclick="searchBox.OnSelectItem(3)"><span class="SelectionMark">&#160;</span>Files</a><a class="SelectItem" href="javascript:void(0)" onclick="searchBox.OnSelectItem(4)"><span class="SelectionMark">&#160;</span>Functions</a><a class="SelectItem" href="javascript:void(0)" onclick="searchBox.OnSelectItem(5)"><span class="SelectionMark">&#160;</span>Variables</a><a class="SelectItem" href="javascript:void(0)" onclick="searchBox.OnSelectItem(6)"><span class="SelectionMark">&#160;</span>Typedefs</a><a class="SelectItem" href="javascript:void(0)" onclick="searchBox.OnSelectItem(7)"><span class="SelectionMark">&#160;</span>Enumerations</a><a class="SelectItem" href="javascript:void(0)" onclick="searchBox.OnSelectItem(8)"><span class="SelectionMark">&#160;</span>Enumerator</a><a class="SelectItem" href="javascript:void(0)" onclick="searchBox.OnSelectItem(9)"><span class="SelectionMark">&#160;</span>Friends</a><a class="SelectItem" href="javascript:void(0)" onclick="searchBox.OnSelectItem(10)"><span class="SelectionMark">&#160;</span>Groups</a><a class="SelectItem" href="javascript:void(0)" onclick="searchBox.OnSelectItem(11)"><span class="SelectionMark">&#160;</span>Pages</a></div>
 
 <!-- iframe showing the search results (closed by default) -->
 <div id="MSearchResultsWindow">
@@ -103,16 +104,20 @@ var searchBox = new SearchBox("searchBox", "search",false,'Search');
 
 <div class="contents">
 &#160;<ul>
+<li>EmptyKernelPtr
+: <a class="el" href="classcub_1_1_device.html#af4e37d636ce0c7ec8e9b06f13fa1da29">cub::Device</a>
+</li>
 <li>SmemStorage
-: <a class="el" href="classcub_1_1_warp_scan.html#a2bfa864e963cb4965139ac1b6c66d1b7">cub::WarpScan&lt; T, WARPS, LOGICAL_WARP_THREADS &gt;</a>
-, <a class="el" href="classcub_1_1_block_discontinuity.html#a855c92f9c3869909913860fa11e755a4">cub::BlockDiscontinuity&lt; T, BLOCK_THREADS &gt;</a>
-, <a class="el" href="classcub_1_1_block_exchange.html#ad91573946e4abe5ae5e34277ded1c215">cub::BlockExchange&lt; T, BLOCK_THREADS, ITEMS_PER_THREAD &gt;</a>
-, <a class="el" href="classcub_1_1_block_store.html#aa80c1691bc7aa80bc38c2797b3a99c24">cub::BlockStore&lt; OutputIterator, BLOCK_THREADS, ITEMS_PER_THREAD, POLICY, MODIFIER &gt;</a>
-, <a class="el" href="classcub_1_1_block_load.html#a09296fd690f1452df9cae24a037e906a">cub::BlockLoad&lt; InputIterator, BLOCK_THREADS, ITEMS_PER_THREAD, POLICY, MODIFIER &gt;</a>
-, <a class="el" href="classcub_1_1_block_radix_sort.html#a495e63ab526ce35e6dfce9fb5206746c">cub::BlockRadixSort&lt; KeyType, BLOCK_THREADS, ITEMS_PER_THREAD, ValueType, RADIX_BITS, SMEM_CONFIG &gt;</a>
-, <a class="el" href="classcub_1_1_block_scan.html#abda6008896e2e17b50c7deb0ab320e64">cub::BlockScan&lt; T, BLOCK_THREADS, POLICY &gt;</a>
-, <a class="el" href="classcub_1_1_block_reduce.html#aea61e2e067e0e2d3fba2b0c8e0f73d8d">cub::BlockReduce&lt; T, BLOCK_THREADS &gt;</a>
+: <a class="el" href="classcub_1_1_block_discontinuity.html#a855c92f9c3869909913860fa11e755a4">cub::BlockDiscontinuity&lt; T, BLOCK_THREADS &gt;</a>
 , <a class="el" href="classcub_1_1_warp_reduce.html#a4807b030bca03efb7fff2f6e9ea8b3d2">cub::WarpReduce&lt; T, WARPS, LOGICAL_WARP_THREADS &gt;</a>
+, <a class="el" href="classcub_1_1_warp_scan.html#a2bfa864e963cb4965139ac1b6c66d1b7">cub::WarpScan&lt; T, WARPS, LOGICAL_WARP_THREADS &gt;</a>
+, <a class="el" href="classcub_1_1_block_store.html#aa80c1691bc7aa80bc38c2797b3a99c24">cub::BlockStore&lt; OutputIterator, BLOCK_THREADS, ITEMS_PER_THREAD, POLICY, MODIFIER &gt;</a>
+, <a class="el" href="classcub_1_1_block_scan.html#ae85612707bea2533173ee665183f9c82">cub::BlockScan&lt; T, BLOCK_THREADS, ALGORITHM &gt;</a>
+, <a class="el" href="classcub_1_1_block_reduce.html#aea61e2e067e0e2d3fba2b0c8e0f73d8d">cub::BlockReduce&lt; T, BLOCK_THREADS &gt;</a>
+, <a class="el" href="classcub_1_1_block_radix_sort.html#a495e63ab526ce35e6dfce9fb5206746c">cub::BlockRadixSort&lt; KeyType, BLOCK_THREADS, ITEMS_PER_THREAD, ValueType, RADIX_BITS, SMEM_CONFIG &gt;</a>
+, <a class="el" href="structcub_1_1_block_raking_layout.html#a7128753c6531bc0332acbc5223040f4d">cub::BlockRakingLayout&lt; BLOCK_THREADS, T, BLOCK_STRIPS &gt;</a>
+, <a class="el" href="classcub_1_1_block_load.html#a09296fd690f1452df9cae24a037e906a">cub::BlockLoad&lt; InputIterator, BLOCK_THREADS, ITEMS_PER_THREAD, POLICY, MODIFIER &gt;</a>
+, <a class="el" href="classcub_1_1_block_exchange.html#ad91573946e4abe5ae5e34277ded1c215">cub::BlockExchange&lt; T, BLOCK_THREADS, ITEMS_PER_THREAD &gt;</a>
 </li>
 <li>Type
 : <a class="el" href="structcub_1_1_if.html#af689e9527f56372e66413b65581ded8e">cub::If&lt; IF, ThenType, ElseType &gt;</a>
@@ -124,7 +129,7 @@ var searchBox = new SearchBox("searchBox", "search",false,'Search');
 <!-- HTML footer for doxygen 1.8.3.1-->
 <!-- start footer part -->
 <hr class="footer"/><address class="footer"><small>
-Generated on Wed Mar 13 2013 17:39:05 for CUB by &#160;<a href="http://www.doxygen.org/index.html">
+Generated on Wed Mar 27 2013 16:29:48 for CUB by &#160;<a href="http://www.doxygen.org/index.html">
 <img class="footer" src="doxygen.png" alt="doxygen"/>
 </a> 1.8.3.1
 <br>

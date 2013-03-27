@@ -83,7 +83,7 @@ var searchBox = new SearchBox("searchBox", "search",false,'Search');
      onmouseover="return searchBox.OnSearchSelectShow()"
      onmouseout="return searchBox.OnSearchSelectHide()"
      onkeydown="return searchBox.OnSearchSelectKey(event)">
-<a class="SelectItem" href="javascript:void(0)" onclick="searchBox.OnSelectItem(0)"><span class="SelectionMark">&#160;</span>All</a><a class="SelectItem" href="javascript:void(0)" onclick="searchBox.OnSelectItem(1)"><span class="SelectionMark">&#160;</span>Classes</a><a class="SelectItem" href="javascript:void(0)" onclick="searchBox.OnSelectItem(2)"><span class="SelectionMark">&#160;</span>Namespaces</a><a class="SelectItem" href="javascript:void(0)" onclick="searchBox.OnSelectItem(3)"><span class="SelectionMark">&#160;</span>Files</a><a class="SelectItem" href="javascript:void(0)" onclick="searchBox.OnSelectItem(4)"><span class="SelectionMark">&#160;</span>Functions</a><a class="SelectItem" href="javascript:void(0)" onclick="searchBox.OnSelectItem(5)"><span class="SelectionMark">&#160;</span>Variables</a><a class="SelectItem" href="javascript:void(0)" onclick="searchBox.OnSelectItem(6)"><span class="SelectionMark">&#160;</span>Typedefs</a><a class="SelectItem" href="javascript:void(0)" onclick="searchBox.OnSelectItem(7)"><span class="SelectionMark">&#160;</span>Enumerations</a><a class="SelectItem" href="javascript:void(0)" onclick="searchBox.OnSelectItem(8)"><span class="SelectionMark">&#160;</span>Enumerator</a><a class="SelectItem" href="javascript:void(0)" onclick="searchBox.OnSelectItem(9)"><span class="SelectionMark">&#160;</span>Macros</a><a class="SelectItem" href="javascript:void(0)" onclick="searchBox.OnSelectItem(10)"><span class="SelectionMark">&#160;</span>Groups</a><a class="SelectItem" href="javascript:void(0)" onclick="searchBox.OnSelectItem(11)"><span class="SelectionMark">&#160;</span>Pages</a></div>
+<a class="SelectItem" href="javascript:void(0)" onclick="searchBox.OnSelectItem(0)"><span class="SelectionMark">&#160;</span>All</a><a class="SelectItem" href="javascript:void(0)" onclick="searchBox.OnSelectItem(1)"><span class="SelectionMark">&#160;</span>Classes</a><a class="SelectItem" href="javascript:void(0)" onclick="searchBox.OnSelectItem(2)"><span class="SelectionMark">&#160;</span>Namespaces</a><a class="SelectItem" href="javascript:void(0)" onclick="searchBox.OnSelectItem(3)"><span class="SelectionMark">&#160;</span>Files</a><a class="SelectItem" href="javascript:void(0)" onclick="searchBox.OnSelectItem(4)"><span class="SelectionMark">&#160;</span>Functions</a><a class="SelectItem" href="javascript:void(0)" onclick="searchBox.OnSelectItem(5)"><span class="SelectionMark">&#160;</span>Variables</a><a class="SelectItem" href="javascript:void(0)" onclick="searchBox.OnSelectItem(6)"><span class="SelectionMark">&#160;</span>Typedefs</a><a class="SelectItem" href="javascript:void(0)" onclick="searchBox.OnSelectItem(7)"><span class="SelectionMark">&#160;</span>Enumerations</a><a class="SelectItem" href="javascript:void(0)" onclick="searchBox.OnSelectItem(8)"><span class="SelectionMark">&#160;</span>Enumerator</a><a class="SelectItem" href="javascript:void(0)" onclick="searchBox.OnSelectItem(9)"><span class="SelectionMark">&#160;</span>Friends</a><a class="SelectItem" href="javascript:void(0)" onclick="searchBox.OnSelectItem(10)"><span class="SelectionMark">&#160;</span>Groups</a><a class="SelectItem" href="javascript:void(0)" onclick="searchBox.OnSelectItem(11)"><span class="SelectionMark">&#160;</span>Pages</a></div>
 
 <!-- iframe showing the search results (closed by default) -->
 <div id="MSearchResultsWindow">
@@ -103,7 +103,7 @@ var searchBox = new SearchBox("searchBox", "search",false,'Search');
 <a href="#pub-types">Public Types</a> &#124;
 <a href="classcub_1_1_block_reduce-members.html">List of all members</a>  </div>
   <div class="headertitle">
-<div class="title">cub::BlockReduce&lt; T, BLOCK_THREADS &gt; Class Template Reference<div class="ingroups"><a class="el" href="group___simt_coop.html">Cooperative SIMT Operations</a></div></div>  </div>
+<div class="title">cub::BlockReduce&lt; T, BLOCK_THREADS &gt; Class Template Reference<div class="ingroups"><a class="el" href="group___block_module.html">Block</a></div></div>  </div>
 </div><!--header-->
 <div class="contents">
 <a name="details" id="details"></a><h2 class="groupheader">Detailed description</h2>
@@ -158,7 +158,7 @@ class cub::BlockReduce&lt; T, BLOCK_THREADS &gt;</h3>
 </ul>
 </dd></dl>
 <dl class="section user"><dt>Examples</dt><dd></dd></dl>
-<dl class="section user"><dt></dt><dd><em>Example 1.</em> Perform a simple reduction of 512 integer keys that are partitioned in a blocked arrangement across a 128-thread threadblock (where each thread holds 4 keys). <div class="fragment"><div class="line"><span class="preprocessor">#include &lt;cub.cuh&gt;</span></div>
+<dl class="section user"><dt></dt><dd><em>Example 1.</em> Perform a simple reduction of 512 integer keys that are partitioned in a blocked arrangement across a 128-thread threadblock (where each thread holds 4 keys). <div class="fragment"><div class="line"><span class="preprocessor">#include &lt;<a class="code" href="cub_8cuh.html">cub.cuh</a>&gt;</span></div>
 <div class="line"></div>
 <div class="line">__global__ <span class="keywordtype">void</span> SomeKernel(...)</div>
 <div class="line">{</div>
@@ -179,7 +179,7 @@ class cub::BlockReduce&lt; T, BLOCK_THREADS &gt;</h3>
 <div class="line"></div>
 <div class="line">     ...</div>
 </div><!-- fragment --></dd></dl>
-<dl class="section user"><dt></dt><dd><em>Example 2:</em> Perform a guarded reduction of only <code>num_elements</code> keys that are partitioned in a partially-full blocked arrangement across <code>BLOCK_THREADS</code> threads. <div class="fragment"><div class="line"><span class="preprocessor">#include &lt;cub.cuh&gt;</span></div>
+<dl class="section user"><dt></dt><dd><em>Example 2:</em> Perform a guarded reduction of only <code>num_elements</code> keys that are partitioned in a partially-full blocked arrangement across <code>BLOCK_THREADS</code> threads. <div class="fragment"><div class="line"><span class="preprocessor">#include &lt;<a class="code" href="cub_8cuh.html">cub.cuh</a>&gt;</span></div>
 <div class="line"></div>
 <div class="line"><span class="keyword">template</span> &lt;<span class="keywordtype">int</span> BLOCK_THREADS&gt;</div>
 <div class="line">__global__ <span class="keywordtype">void</span> SomeKernel(..., <span class="keywordtype">int</span> num_elements)</div>
@@ -218,10 +218,10 @@ Static Public Methods</h2></td></tr>
 <tr class="memitem:acc9a5597731b4985fac1e8a90153d979"><td class="memTemplItemLeft" align="right" valign="top">static __device__ __forceinline__ T&#160;</td><td class="memTemplItemRight" valign="bottom"><a class="el" href="classcub_1_1_block_reduce.html#acc9a5597731b4985fac1e8a90153d979">Reduce</a> (<a class="el" href="classcub_1_1_block_reduce.html#aea61e2e067e0e2d3fba2b0c8e0f73d8d">SmemStorage</a> &amp;smem_storage, T(&amp;inputs)[ITEMS_PER_THREAD], ReductionOp reduction_op)</td></tr>
 <tr class="memdesc:acc9a5597731b4985fac1e8a90153d979"><td class="mdescLeft">&#160;</td><td class="mdescRight">Computes a threadblock-wide reduction for thread<sub>0</sub> using the specified binary reduction functor. Each thread contributes an array of consecutive input elements.  <a href="#acc9a5597731b4985fac1e8a90153d979">More...</a><br/></td></tr>
 <tr class="separator:acc9a5597731b4985fac1e8a90153d979"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:aeddda91425d07c74b819d34ac5b7a0a6"><td class="memTemplParams" colspan="2">template&lt;typename ReductionOp &gt; </td></tr>
-<tr class="memitem:aeddda91425d07c74b819d34ac5b7a0a6"><td class="memTemplItemLeft" align="right" valign="top">static __device__ __forceinline__ T&#160;</td><td class="memTemplItemRight" valign="bottom"><a class="el" href="classcub_1_1_block_reduce.html#aeddda91425d07c74b819d34ac5b7a0a6">Reduce</a> (<a class="el" href="classcub_1_1_block_reduce.html#aea61e2e067e0e2d3fba2b0c8e0f73d8d">SmemStorage</a> &amp;smem_storage, T input, ReductionOp reduction_op, const unsigned int &amp;valid_threads)</td></tr>
-<tr class="memdesc:aeddda91425d07c74b819d34ac5b7a0a6"><td class="mdescLeft">&#160;</td><td class="mdescRight">Computes a threadblock-wide reduction for thread<sub>0</sub> using the specified binary reduction functor. The first <code>valid_threads</code> threads each contribute one input element.  <a href="#aeddda91425d07c74b819d34ac5b7a0a6">More...</a><br/></td></tr>
-<tr class="separator:aeddda91425d07c74b819d34ac5b7a0a6"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a00d36472519d893f35d261574294e90c"><td class="memTemplParams" colspan="2">template&lt;typename ReductionOp &gt; </td></tr>
+<tr class="memitem:a00d36472519d893f35d261574294e90c"><td class="memTemplItemLeft" align="right" valign="top">static __device__ __forceinline__ T&#160;</td><td class="memTemplItemRight" valign="bottom"><a class="el" href="classcub_1_1_block_reduce.html#a00d36472519d893f35d261574294e90c">Reduce</a> (<a class="el" href="classcub_1_1_block_reduce.html#aea61e2e067e0e2d3fba2b0c8e0f73d8d">SmemStorage</a> &amp;smem_storage, T input, ReductionOp reduction_op, const unsigned int &amp;num_valid)</td></tr>
+<tr class="memdesc:a00d36472519d893f35d261574294e90c"><td class="mdescLeft">&#160;</td><td class="mdescRight">Computes a threadblock-wide reduction for thread<sub>0</sub> using the specified binary reduction functor. The first <code>num_valid</code> threads each contribute one input element.  <a href="#a00d36472519d893f35d261574294e90c">More...</a><br/></td></tr>
+<tr class="separator:a00d36472519d893f35d261574294e90c"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr><td colspan="2"><div class="groupHeader">Summation reductions</div></td></tr>
 <tr class="memitem:a136060887c434257984b8bf3f5c62323"><td class="memItemLeft" align="right" valign="top">static __device__ __forceinline__ T&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classcub_1_1_block_reduce.html#a136060887c434257984b8bf3f5c62323">Sum</a> (<a class="el" href="classcub_1_1_block_reduce.html#aea61e2e067e0e2d3fba2b0c8e0f73d8d">SmemStorage</a> &amp;smem_storage, T input)</td></tr>
 <tr class="memdesc:a136060887c434257984b8bf3f5c62323"><td class="mdescLeft">&#160;</td><td class="mdescRight">Computes a threadblock-wide reduction for thread<sub>0</sub> using addition (+) as the reduction operator. Each thread contributes one input element.  <a href="#a136060887c434257984b8bf3f5c62323">More...</a><br/></td></tr>
@@ -230,9 +230,9 @@ Static Public Methods</h2></td></tr>
 <tr class="memitem:abe33a10ae2e316943e95d23f1d4d702a"><td class="memTemplItemLeft" align="right" valign="top">static __device__ __forceinline__ T&#160;</td><td class="memTemplItemRight" valign="bottom"><a class="el" href="classcub_1_1_block_reduce.html#abe33a10ae2e316943e95d23f1d4d702a">Sum</a> (<a class="el" href="classcub_1_1_block_reduce.html#aea61e2e067e0e2d3fba2b0c8e0f73d8d">SmemStorage</a> &amp;smem_storage, T(&amp;inputs)[ITEMS_PER_THREAD])</td></tr>
 <tr class="memdesc:abe33a10ae2e316943e95d23f1d4d702a"><td class="mdescLeft">&#160;</td><td class="mdescRight">Computes a threadblock-wide reduction for thread<sub>0</sub> using addition (+) as the reduction operator. Each thread contributes an array of consecutive input elements.  <a href="#abe33a10ae2e316943e95d23f1d4d702a">More...</a><br/></td></tr>
 <tr class="separator:abe33a10ae2e316943e95d23f1d4d702a"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:aad43736f8ea38a2c9052059b1d80c7fc"><td class="memItemLeft" align="right" valign="top">static __device__ __forceinline__ T&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classcub_1_1_block_reduce.html#aad43736f8ea38a2c9052059b1d80c7fc">Sum</a> (<a class="el" href="classcub_1_1_block_reduce.html#aea61e2e067e0e2d3fba2b0c8e0f73d8d">SmemStorage</a> &amp;smem_storage, T input, const unsigned int &amp;valid_threads)</td></tr>
-<tr class="memdesc:aad43736f8ea38a2c9052059b1d80c7fc"><td class="mdescLeft">&#160;</td><td class="mdescRight">Computes a threadblock-wide reduction for thread<sub>0</sub> using addition (+) as the reduction operator. The first <code>valid_threads</code> threads each contribute one input element.  <a href="#aad43736f8ea38a2c9052059b1d80c7fc">More...</a><br/></td></tr>
-<tr class="separator:aad43736f8ea38a2c9052059b1d80c7fc"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a183934477190bae4949b62a88707d126"><td class="memItemLeft" align="right" valign="top">static __device__ __forceinline__ T&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classcub_1_1_block_reduce.html#a183934477190bae4949b62a88707d126">Sum</a> (<a class="el" href="classcub_1_1_block_reduce.html#aea61e2e067e0e2d3fba2b0c8e0f73d8d">SmemStorage</a> &amp;smem_storage, T input, const unsigned int &amp;num_valid)</td></tr>
+<tr class="memdesc:a183934477190bae4949b62a88707d126"><td class="mdescLeft">&#160;</td><td class="mdescRight">Computes a threadblock-wide reduction for thread<sub>0</sub> using addition (+) as the reduction operator. The first <code>num_valid</code> threads each contribute one input element.  <a href="#a183934477190bae4949b62a88707d126">More...</a><br/></td></tr>
+<tr class="separator:a183934477190bae4949b62a88707d126"><td class="memSeparator" colspan="2">&#160;</td></tr>
 </table>
 <h2 class="groupheader">Member Function Documentation</h2>
 <a class="anchor" id="aee16d11eea520e487f387b7d9f2755d2"></a>
@@ -360,7 +360,7 @@ template&lt;int ITEMS_PER_THREAD, typename ReductionOp &gt; </div>
 
 </div>
 </div>
-<a class="anchor" id="aeddda91425d07c74b819d34ac5b7a0a6"></a>
+<a class="anchor" id="a00d36472519d893f35d261574294e90c"></a>
 <div class="memitem">
 <div class="memproto">
 <div class="memtemplate">
@@ -393,7 +393,7 @@ template&lt;typename ReductionOp &gt; </div>
           <td class="paramkey"></td>
           <td></td>
           <td class="paramtype">const unsigned int &amp;&#160;</td>
-          <td class="paramname"><em>valid_threads</em>&#160;</td>
+          <td class="paramname"><em>num_valid</em>&#160;</td>
         </tr>
         <tr>
           <td></td>
@@ -408,7 +408,7 @@ template&lt;typename ReductionOp &gt; </div>
 </table>
 </div><div class="memdoc">
 
-<p>Computes a threadblock-wide reduction for thread<sub>0</sub> using the specified binary reduction functor. The first <code>valid_threads</code> threads each contribute one input element. </p>
+<p>Computes a threadblock-wide reduction for thread<sub>0</sub> using the specified binary reduction functor. The first <code>num_valid</code> threads each contribute one input element. </p>
 <p>The return value is undefined in threads other than thread<sub>0</sub>.</p>
 <p>A subsequent <code>__syncthreads()</code> threadblock barrier should be invoked after calling this method if the supplied <code>smem_storage</code> is to be reused or repurposed by the threadblock.</p>
 <dl class="tparams"><dt>Template Parameters</dt><dd>
@@ -422,7 +422,7 @@ template&lt;typename ReductionOp &gt; </div>
     <tr><td class="paramdir">[in]</td><td class="paramname">smem_storage</td><td>Shared reference to opaque SmemStorage layout </td></tr>
     <tr><td class="paramdir">[in]</td><td class="paramname">input</td><td>Calling thread's input </td></tr>
     <tr><td class="paramdir">[in]</td><td class="paramname">reduction_op</td><td>Binary reduction operator </td></tr>
-    <tr><td class="paramdir">[in]</td><td class="paramname">valid_threads</td><td>Number of threads containing valid elements (may be less than BLOCK_THREADS) </td></tr>
+    <tr><td class="paramdir">[in]</td><td class="paramname">num_valid</td><td>Number of threads containing valid elements (may be less than BLOCK_THREADS) </td></tr>
   </table>
   </dd>
 </dl>
@@ -531,7 +531,7 @@ template&lt;int ITEMS_PER_THREAD&gt; </div>
 
 </div>
 </div>
-<a class="anchor" id="aad43736f8ea38a2c9052059b1d80c7fc"></a>
+<a class="anchor" id="a183934477190bae4949b62a88707d126"></a>
 <div class="memitem">
 <div class="memproto">
 <div class="memtemplate">
@@ -556,7 +556,7 @@ template&lt;typename T , int BLOCK_THREADS&gt; </div>
           <td class="paramkey"></td>
           <td></td>
           <td class="paramtype">const unsigned int &amp;&#160;</td>
-          <td class="paramname"><em>valid_threads</em>&#160;</td>
+          <td class="paramname"><em>num_valid</em>&#160;</td>
         </tr>
         <tr>
           <td></td>
@@ -571,14 +571,14 @@ template&lt;typename T , int BLOCK_THREADS&gt; </div>
 </table>
 </div><div class="memdoc">
 
-<p>Computes a threadblock-wide reduction for thread<sub>0</sub> using addition (+) as the reduction operator. The first <code>valid_threads</code> threads each contribute one input element. </p>
+<p>Computes a threadblock-wide reduction for thread<sub>0</sub> using addition (+) as the reduction operator. The first <code>num_valid</code> threads each contribute one input element. </p>
 <p>A subsequent <code>__syncthreads()</code> threadblock barrier should be invoked after calling this method if the supplied <code>smem_storage</code> is to be reused or repurposed by the threadblock.</p>
 <p>The return value is undefined in threads other than thread<sub>0</sub>. </p>
 <dl class="params"><dt>Parameters</dt><dd>
   <table class="params">
     <tr><td class="paramdir">[in]</td><td class="paramname">smem_storage</td><td>Shared reference to opaque SmemStorage layout </td></tr>
     <tr><td class="paramdir">[in]</td><td class="paramname">input</td><td>Calling thread's input </td></tr>
-    <tr><td class="paramdir">[in]</td><td class="paramname">valid_threads</td><td>Number of threads containing valid elements (may be less than BLOCK_THREADS) </td></tr>
+    <tr><td class="paramdir">[in]</td><td class="paramname">num_valid</td><td>Number of threads containing valid elements (may be less than BLOCK_THREADS) </td></tr>
   </table>
   </dd>
 </dl>
@@ -592,7 +592,7 @@ template&lt;typename T , int BLOCK_THREADS&gt; </div>
 <!-- HTML footer for doxygen 1.8.3.1-->
 <!-- start footer part -->
 <hr class="footer"/><address class="footer"><small>
-Generated on Wed Mar 13 2013 17:39:05 for CUB by &#160;<a href="http://www.doxygen.org/index.html">
+Generated on Wed Mar 27 2013 16:29:48 for CUB by &#160;<a href="http://www.doxygen.org/index.html">
 <img class="footer" src="doxygen.png" alt="doxygen"/>
 </a> 1.8.3.1
 <br>

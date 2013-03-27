@@ -405,19 +405,25 @@
 
 
 /**
- * \defgroup Simt SIMT Primitives
+ * \defgroup DeviceModule Device
  */
 
 /**
- * \defgroup SimtCoop Cooperative SIMT Operations
- * \ingroup Simt
+ * \defgroup BlockModule Block
  */
 
 /**
- * \defgroup SimtUtils SIMT Utilities
- * \ingroup Simt
+ * \defgroup WarpModule Warp
  */
 
 /**
- * \defgroup HostUtil Host Utilities
+ * \defgroup ThreadModule Thread
+ */
+
+/**
+ * \defgroup GridModule Grid utilities
+ */
+
+/**
+ * \defgroup UtilModule Generic CUB utilities
  */

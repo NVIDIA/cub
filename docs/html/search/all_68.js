@@ -1,4 +1,4 @@
 var searchData=
 [
-  ['host_20utilities',['Host Utilities',['../group___host_util.html',1,'']]]
+  ['host_20utilities',['Host utilities',['../group___host_module.html',1,'']]]
 ];
