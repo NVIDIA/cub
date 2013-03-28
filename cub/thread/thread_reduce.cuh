@@ -134,7 +134,7 @@ __device__ __forceinline__ T ThreadReduce(
     T           (&input)[LENGTH],       ///< [in] Input array
     ReductionOp reduction_op)           ///< [in] Binary reduction operator
 {
-    return ThreadReduce<LENGTH>(input, reduction_op);
+    return ThreadReduce<LENGTH>((T*) input, reduction_op);
 }
 
 

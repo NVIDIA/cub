@@ -161,15 +161,15 @@ struct GpuTimer
 void Initialize(
     int *h_in,
     int *h_reference,
-    int num_elements)
+    int num_items)
 {
-    for (int i = 0; i < num_elements; ++i)
+    for (int i = 0; i < num_items; ++i)
     {
         h_in[i] = (int) rand();
         h_reference[i] = h_in[i];
     }
 
-    std::sort(h_reference, h_reference + num_elements);
+    std::sort(h_reference, h_reference + num_items);
 }
 
 

@@ -251,3 +251,15 @@ bin/test_block_serialize_$(SUFFIX) : test_block_serialize.cu $(DEPS)
 	mkdir -p bin
 	$(NVCC) $(DEFINES) $(SM_TARGETS) -o bin/test_block_serialize_$(SUFFIX) test_block_serialize.cu $(NVCCFLAGS) $(ARCH) $(INC) -O3
 
+
+#-------------------------------------------------------------------------------
+# make test_device_reduce
+#-------------------------------------------------------------------------------
+
+test_device_reduce: bin/test_device_reduce_$(SUFFIX)
+
+bin/test_device_reduce_$(SUFFIX) : test_device_reduce.cu $(DEPS)
+	mkdir -p bin
+	$(NVCC) $(DEFINES) $(SM_TARGETS) -o bin/test_device_reduce_$(SUFFIX) test_device_reduce.cu $(NVCCFLAGS) $(ARCH) $(INC) -O3
+
+

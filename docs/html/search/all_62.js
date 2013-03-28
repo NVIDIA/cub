@@ -1,6 +1,5 @@
 var searchData=
 [
-  ['bar',['Bar',['../classcub_1_1_block_load.html#a75afc89fa6477e105e87f16a7a7c0000',1,'cub::BlockLoad']]],
   ['basetraits',['BaseTraits',['../structcub_1_1_base_traits.html',1,'cub']]],
   ['basetraits_3c_20not_5fa_5fnumber_2c_20false_2c_20false_2c_20removequalifiers_3c_20t_20_3e_3a_3atype_20_3e',['BaseTraits&lt; NOT_A_NUMBER, false, false, RemoveQualifiers&lt; T &gt;::Type &gt;',['../structcub_1_1_base_traits.html',1,'cub']]],
   ['basetraits_3c_20not_5fa_5fnumber_2c_20false_2c_20false_2c_20t_20_3e',['BaseTraits&lt; NOT_A_NUMBER, false, false, T &gt;',['../structcub_1_1_base_traits.html',1,'cub']]],

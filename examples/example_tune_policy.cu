@@ -34,7 +34,7 @@ template <
     typename FooUpsweepKernelPolicy,
     typename T,
     typename SizeT>
-__global__ void FooUpsweepKernel(T *d_in, T *d_out, SizeT num_elements)
+__global__ void FooUpsweepKernel(T *d_in, T *d_out, SizeT num_items)
 {
     if ((blockIdx.x == 0) && (threadIdx.x == 0)) printf("FooUpsweepKernel BLOCK_THREADS(%d) ITEMS_PER_THREAD(%d)\n",
         FooUpsweepKernelPolicy::BLOCK_THREADS,
@@ -66,7 +66,7 @@ template <
     typename FooDownsweepKernelPolicy,
     typename T,
     typename SizeT>
-__global__ void FooDownsweepKernel(T *d_in, T *d_out, SizeT num_elements)
+__global__ void FooDownsweepKernel(T *d_in, T *d_out, SizeT num_items)
 {
     if ((blockIdx.x == 0) && (threadIdx.x == 0)) printf("FooDownsweepKernel BLOCK_THREADS(%d) ITEMS_PER_THREAD(%d)\n",
         FooDownsweepKernelPolicy::BLOCK_THREADS,
@@ -158,7 +158,7 @@ struct DeviceFoo
         DispatchPolicy          &dispatch_policy,
         T                       *d_in,
         T                       *d_out,
-        SizeT                   num_elements)
+        SizeT                   num_items)
     {
     #if !CUB_CNP_ENABLED
 
@@ -203,12 +203,12 @@ struct DeviceFoo
 
             // Construct work distributions
             GridEvenShare<SizeT> upsweep_distrib(
-                num_elements,
+                num_items,
                 upsweep_sm_occupancy * sm_count * oversubscription,
                 dispatch_policy.upsweep_block_threads * dispatch_policy.upsweep_items_per_thread);
 
             GridEvenShare<SizeT> downsweep_distrib(
-                num_elements,
+                num_items,
                 downsweep_sm_occupancy * sm_count * oversubscription,
                 dispatch_policy.downsweep_block_threads * dispatch_policy.downsweep_items_per_thread);
 
@@ -218,7 +218,7 @@ struct DeviceFoo
 
             // Invoke FooUpsweep
             upsweep_kernel_ptr<<<upsweep_distrib.grid_size, dispatch_policy.upsweep_block_threads>>>(
-                d_in, d_out, num_elements);
+                d_in, d_out, num_items);
 
             printf("Invoking FooDownsweep<<<%d, %d>>>()\n",
                 downsweep_distrib.grid_size,
@@ -226,7 +226,7 @@ struct DeviceFoo
 
             // Invoke FooDownsweep
             downsweep_kernel_ptr<<<downsweep_distrib.grid_size, dispatch_policy.downsweep_block_threads>>>(
-                d_in, d_out, num_elements);
+                d_in, d_out, num_items);
         }
         while (0);
         return error;
@@ -252,7 +252,7 @@ struct DeviceFoo
     static cudaError_t Foo(
         T       *d_in,
         T       *d_out,
-        SizeT   num_elements)
+        SizeT   num_items)
     {
         DispatchPolicy dispatch_policy;
         dispatch_policy.Init<FooUpsweepKernelPolicy, FooDownsweepKernelPolicy>();
@@ -263,7 +263,7 @@ struct DeviceFoo
             dispatch_policy,
             d_in,
             d_out,
-            num_elements);
+            num_items);
     }
 
 
@@ -277,7 +277,7 @@ struct DeviceFoo
     static cudaError_t Foo(
         T       *d_in,
         T       *d_out,
-        SizeT   num_elements)
+        SizeT   num_items)
     {
         cudaError error = cudaSuccess;
         do
@@ -315,7 +315,7 @@ struct DeviceFoo
                 dispatch_policy,
                 d_in,
                 d_out,
-                num_elements))) break;
+                num_items))) break;
         }
         while (0);
 
@@ -333,9 +333,9 @@ struct DeviceFoo
  * User kernel for testing nested invocation of DeviceFoo::Foo
  */
 template <typename T, typename SizeT>
-__global__ void UserKernel(T *d_in, T *d_out, SizeT num_elements)
+__global__ void UserKernel(T *d_in, T *d_out, SizeT num_items)
 {
-    DeviceFoo::Foo(d_in, d_out, num_elements);
+    DeviceFoo::Foo(d_in, d_out, num_items);
 }
 
 
@@ -359,13 +359,13 @@ int main(int argc, char** argv)
 
     T *d_in             = NULL;
     T *d_out            = NULL;
-    SizeT num_elements  = 1024 * 1024;
+    SizeT num_items  = 1024 * 1024;
 
     // Invoke Foo from host
-    DeviceFoo::Foo(d_in, d_out, num_elements);
+    DeviceFoo::Foo(d_in, d_out, num_items);
 
     // Invoke Foo from device
-    UserKernel<<<1,1>>>(d_in, d_out, num_elements);
+    UserKernel<<<1,1>>>(d_in, d_out, num_items);
 
     CubDebug(cudaDeviceSynchronize());
 

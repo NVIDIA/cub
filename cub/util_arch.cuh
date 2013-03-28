@@ -227,7 +227,7 @@ struct ArchProps<120>
 
 
 /**
- * Architecture properties for SM10.  Inherit from the default specialization.
+ * Architecture properties for SM10.  Derives from the default ArchProps specialization.
  */
 template <>
 struct ArchProps<100> : ArchProps<0>
@@ -269,11 +269,6 @@ struct ArchProps<130> : ArchProps<120> {};        // Derives from SM12
 template <>
 struct ArchProps<110> : ArchProps<100> {};        // Derives from SM10
 
-/**
- * Unknown device properties
- */
-template <int SM_ARCH>
-struct ArchProps : ArchProps<100> {};             // Derives from SM10
 
 #endif // DOXYGEN_SHOULD_SKIP_THIS
 

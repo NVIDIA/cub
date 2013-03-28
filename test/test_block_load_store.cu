@@ -72,7 +72,7 @@ __global__ void Kernel(
     InputIterator       d_in,
     OutputIterator      d_out_unguarded,
     OutputIterator      d_out_guarded_range,
-    int                 num_elements)
+    int                 num_items)
 {
     enum
     {
@@ -98,7 +98,7 @@ __global__ void Kernel(
 
     // Threadblock work bounds
     int block_offset = blockIdx.x * TILE_SIZE;
-    int guarded_elements = num_elements - block_offset;
+    int guarded_elements = num_items - block_offset;
 
     // Test unguarded
     {

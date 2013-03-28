@@ -112,7 +112,7 @@ public:
     /**
      * Destructor
      */
-    virtual ~DeviceAllocator() = 0;
+    virtual ~DeviceAllocator() {};
 };
 
 
@@ -357,8 +357,8 @@ struct CachingDeviceAllocator : public DeviceAllocator
     cudaError_t DeviceAllocate(void** d_ptr, size_t bytes, DeviceOrdinal gpu)
     {
         bool locked                     = false;
-        DeviceOrdinal entrypoint_gpu         = INVALID_DEVICE_ORDINAL;
-        cudaError_t error                 = cudaSuccess;
+        DeviceOrdinal entrypoint_gpu    = INVALID_DEVICE_ORDINAL;
+        cudaError_t error               = cudaSuccess;
 
         // Round up to nearest bin size
         unsigned int bin;
