@@ -88,7 +88,7 @@ enum PtxStoreModifier
  * Define HasThreadStore structure for testing the presence of nested
  * ThreadStoreTag type names within data types
  */
-CUB_HAS_NESTED_TYPE(HasThreadStore, ThreadStoreTag)
+CUB_DEFINE_DETECT_NESTED_TYPE(HasThreadStore, ThreadStoreTag)
 
 
 /**
