@@ -1,8 +1,6 @@
 var searchData=
 [
-  ['empty',['Empty',['../classcub_1_1_device.html#a564713c02b9f17ab88cb82720e4aee0c',1,'cub::Device']]],
   ['emptykernel',['EmptyKernel',['../group___util_module.html#ga5185b7021113b817ab77569a51cec1df',1,'cub']]],
-  ['emptykernelptr',['EmptyKernelPtr',['../classcub_1_1_device.html#af4e37d636ce0c7ec8e9b06f13fa1da29',1,'cub::Device']]],
   ['enableif',['EnableIf',['../structcub_1_1_enable_if.html',1,'cub']]],
   ['equality',['Equality',['../structcub_1_1_equality.html',1,'cub']]],
   ['equals',['Equals',['../structcub_1_1_equals.html',1,'cub']]],
