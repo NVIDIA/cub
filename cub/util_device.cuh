@@ -75,6 +75,18 @@ enum
  */
 class Device
 {
+private:
+
+    /// Type definition of the EmptyKernel kernel entry point
+    typedef void (*EmptyKernelPtr)();
+
+    /// Force EmptyKernel<void> to be generated if this class is used
+    __host__ __device__ __forceinline__
+    EmptyKernelPtr Empty()
+    {
+        return EmptyKernel<void>;
+    }
+
 public:
 
     // Version information
@@ -118,16 +130,6 @@ public:
         max_sm_registers    = ArchProps::MAX_SM_REGISTERS;
         oversubscription    = ArchProps::OVERSUBSCRIPTION;
         max_sm_warps        = max_sm_threads / warp_threads;
-    }
-
-    /// Type definition of the EmptyKernel kernel entry point
-    typedef void (*EmptyKernelPtr)();
-
-    /// Force EmptyKernel<void> to be generated if this class is used
-    __host__ __device__ __forceinline__
-    EmptyKernelPtr Empty()
-    {
-        return EmptyKernel<void>;
     }
 
 

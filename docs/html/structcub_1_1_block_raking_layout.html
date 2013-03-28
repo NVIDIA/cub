@@ -122,7 +122,7 @@ struct cub::BlockRakingLayout&lt; BLOCK_THREADS, T, BLOCK_STRIPS &gt;</h3>
 </div><table class="memberdecls">
 <tr class="heading"><td colspan="2"><h2 class="groupheader"><a name="pub-types"></a>
 Public Types</h2></td></tr>
-<tr class="memitem:ae2281e7c769b4b8f66331a2f08979f4f"><td class="memItemLeft" align="right" valign="top">enum &#160;</td><td class="memItemRight" valign="bottom">{ <br/>
+<tr class="memitem:a2b6138580e8d348c8ee903d05eee2083"><td class="memItemLeft" align="right" valign="top">enum &#160;</td><td class="memItemRight" valign="bottom">{ <br/>
 &#160;&#160;<b>SHARED_ELEMENTS</b> = BLOCK_THREADS * BLOCK_STRIPS, 
 <b>MAX_RAKING_THREADS</b> = CUB_MIN(BLOCK_THREADS, PtxArchProps::WARP_THREADS), 
 <b>RAKING_LENGTH</b> = (SHARED_ELEMENTS + MAX_RAKING_THREADS - 1) / MAX_RAKING_THREADS, 
@@ -138,7 +138,7 @@ Public Types</h2></td></tr>
 <b>UNGUARDED</b> = (SHARED_ELEMENTS % PtxArchProps::WARP_THREADS == 0)
 <br/>
  }</td></tr>
-<tr class="separator:ae2281e7c769b4b8f66331a2f08979f4f"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="separator:a2b6138580e8d348c8ee903d05eee2083"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:a7128753c6531bc0332acbc5223040f4d"><td class="memItemLeft" align="right" valign="top">typedef T&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="structcub_1_1_block_raking_layout.html#a7128753c6531bc0332acbc5223040f4d">SmemStorage</a> [BlockRakingLayout::GRID_ELEMENTS]</td></tr>
 <tr class="separator:a7128753c6531bc0332acbc5223040f4d"><td class="memSeparator" colspan="2">&#160;</td></tr>
 </table><table class="memberdecls">
@@ -255,7 +255,7 @@ template&lt;int BLOCK_THREADS, typename T , int BLOCK_STRIPS = 1&gt; </div>
 <!-- HTML footer for doxygen 1.8.3.1-->
 <!-- start footer part -->
 <hr class="footer"/><address class="footer"><small>
-Generated on Thu Mar 28 2013 07:10:49 for CUB by &#160;<a href="http://www.doxygen.org/index.html">
+Generated on Thu Mar 28 2013 08:00:47 for CUB by &#160;<a href="http://www.doxygen.org/index.html">
 <img class="footer" src="doxygen.png" alt="doxygen"/>
 </a> 1.8.3.1
 <br>
