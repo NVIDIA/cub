@@ -361,7 +361,7 @@ div.memitem {
 }
 
 .memTemplParams {
-		color: darkGoldenrod;
+		color: cadetblue;
 		white-space: normal;
 }
 
@@ -374,7 +374,7 @@ td.memItemRight a.el:first-of-type, td.memTemplItemRight a.el:first-of-type {
 }
 
 td.memTemplItemLeft, td.memItemLeft {
-		color: darkCyan;
+		color: cadetblue;
 }
 
 div.groupHeader {
@@ -400,7 +400,7 @@ td.memname, td.paramtype, div.memtemplate {
 
 .memtemplate {
 		font-size: 85%;
-		color: darkGoldenrod;
+		color: cadetblue;
 }
 
 td.paramname {

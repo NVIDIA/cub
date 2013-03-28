@@ -52,7 +52,6 @@ var searchBox = new SearchBox("searchBox", "search",false,'Search');
       <li><a href="index.html"><span>Main&#160;Page</span></a></li>
       <li><a href="modules.html"><span>Modules</span></a></li>
       <li class="current"><a href="annotated.html"><span>Classes</span></a></li>
-      <li><a href="files.html"><span>Files</span></a></li>
       <li>
         <div id="MSearchBox" class="MSearchBoxInactive">
         <span class="left">
@@ -147,7 +146,7 @@ class cub::BlockLoad&lt; InputIterator, BLOCK_THREADS, ITEMS_PER_THREAD, POLICY,
 <div class="line"></div>
 <div class="line">__global__ <span class="keywordtype">void</span> SomeKernel(<span class="keywordtype">int</span> *d_in, ...)</div>
 <div class="line">{</div>
-<div class="line">    <span class="comment">// Parameterize BlockLoad for the parallel execution context</span></div>
+<div class="line">    <span class="comment">// Parameterize BlockLoad for 128 threads (4 items each) on type int</span></div>
 <div class="line">    <span class="keyword">typedef</span> <a class="code" href="classcub_1_1_block_load.html" title="BlockLoad provides data movement operations for reading block-arranged data from global memory...">cub::BlockLoad&lt;int*, 128, 4&gt;</a> BlockLoad;</div>
 <div class="line"></div>
 <div class="line">    <span class="comment">// Declare shared memory for BlockLoad</span></div>
@@ -168,7 +167,7 @@ class cub::BlockLoad&lt; InputIterator, BLOCK_THREADS, ITEMS_PER_THREAD, POLICY,
 <div class="line">    <span class="keywordtype">int</span> ITEMS_PER_THREAD&gt;</div>
 <div class="line">__global__ <span class="keywordtype">void</span> SomeKernel(<span class="keywordtype">int</span> *d_in, ...)</div>
 <div class="line">{</div>
-<div class="line">    <span class="comment">// Parameterize BlockLoad for the parallel execution context</span></div>
+<div class="line">    <span class="comment">// Parameterize BlockLoad on type int</span></div>
 <div class="line">    <span class="keyword">typedef</span> <a class="code" href="classcub_1_1_block_load.html" title="BlockLoad provides data movement operations for reading block-arranged data from global memory...">cub::BlockLoad&lt;int*, BLOCK_THREADS, ITEMS_PER_THREAD, BLOCK_LOAD_VECTORIZE, PTX_LOAD_CG&gt;</a> BlockLoad;</div>
 <div class="line"></div>
 <div class="line">    <span class="comment">// Declare shared memory for BlockLoad</span></div>
@@ -330,7 +329,7 @@ template&lt;typename SizeT &gt; </div>
 <!-- HTML footer for doxygen 1.8.3.1-->
 <!-- start footer part -->
 <hr class="footer"/><address class="footer"><small>
-Generated on Wed Mar 27 2013 16:40:17 for CUB by &#160;<a href="http://www.doxygen.org/index.html">
+Generated on Thu Mar 28 2013 06:53:28 for CUB by &#160;<a href="http://www.doxygen.org/index.html">
 <img class="footer" src="doxygen.png" alt="doxygen"/>
 </a> 1.8.3.1
 <br>

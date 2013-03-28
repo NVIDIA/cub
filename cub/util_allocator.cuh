@@ -53,7 +53,7 @@ namespace cub {
 namespace {
 
 /**
- *  \addtogroup UtilModule
+ * \addtogroup UtilModule
  * @{
  */
 

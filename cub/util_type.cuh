@@ -31,11 +31,6 @@
  * Common type manipulation (metaprogramming) utilities
  */
 
-
-/******************************************************************************
- * Common type manipulation (metaprogramming) utilities
- ******************************************************************************/
-
 #pragma once
 
 #include <iostream>
@@ -50,7 +45,7 @@ namespace cub {
 
 
 /**
- *  \addtogroup UtilModule
+ * \addtogroup UtilModule
  * @{
  */
 
@@ -64,9 +59,11 @@ namespace cub {
  */
 struct NullType {};
 
-/** \cond SPECIALIZE */
+#ifndef DOXYGEN_SHOULD_SKIP_THIS    // Do not document
+
 std::ostream& operator<< (std::ostream& stream, const NullType& val) { return stream; }
-/** \endcond */     // SPECIALIZE
+
+#endif // DOXYGEN_SHOULD_SKIP_THIS
 
 
 
@@ -88,7 +85,7 @@ struct Log2
     static const int VALUE = Log2<N, (CURRENT_VAL >> 1), COUNT + 1>::VALUE;         // Inductive case
 };
 
-/** \cond SPECIALIZE **/
+#ifndef DOXYGEN_SHOULD_SKIP_THIS    // Do not document
 template <int N, int COUNT>
 struct Log2<N, 0, COUNT>
 {
@@ -96,7 +93,7 @@ struct Log2<N, 0, COUNT>
         COUNT :
         COUNT - 1;
 };
-/** \endcond */     // SPECIALIZE
+#endif // DOXYGEN_SHOULD_SKIP_THIS
 
 
 
@@ -115,13 +112,15 @@ struct If
     typedef ThenType Type;      // true
 };
 
-/** \cond SPECIALIZE **/
+#ifndef DOXYGEN_SHOULD_SKIP_THIS    // Do not document
+
 template <typename ThenType, typename ElseType>
 struct If<false, ThenType, ElseType>
 {
     typedef ElseType Type;      // false
 };
-/** \endcond */     // SPECIALIZE
+
+#endif // DOXYGEN_SHOULD_SKIP_THIS
 
 
 /******************************************************************************
@@ -141,7 +140,8 @@ struct Equals
     };
 };
 
-/** \cond SPECIALIZE **/
+#ifndef DOXYGEN_SHOULD_SKIP_THIS    // Do not document
+
 template <typename A>
 struct Equals <A, A>
 {
@@ -150,7 +150,8 @@ struct Equals <A, A>
         NEGATE = 0
     };
 };
-/** \endcond */     // SPECIALIZE
+
+#endif // DOXYGEN_SHOULD_SKIP_THIS
 
 
 
@@ -168,13 +169,15 @@ struct IsVolatile
     enum { VALUE = 0 };
 };
 
-/** \cond SPECIALIZE **/
+#ifndef DOXYGEN_SHOULD_SKIP_THIS    // Do not document
+
 template <typename Tp>
 struct IsVolatile<Tp volatile>
 {
     enum { VALUE = 1 };
 };
-/** \endcond */     // SPECIALIZE
+
+#endif // DOXYGEN_SHOULD_SKIP_THIS
 
 
 
@@ -195,7 +198,8 @@ struct RemoveQualifiers
     typedef Up Type;
 };
 
-/** \cond SPECIALIZE **/
+#ifndef DOXYGEN_SHOULD_SKIP_THIS    // Do not document
+
 template <typename Tp, typename Up>
 struct RemoveQualifiers<Tp, volatile Up>
 {
@@ -213,7 +217,8 @@ struct RemoveQualifiers<Tp, const volatile Up>
 {
     typedef Up Type;
 };
-/** \endcond */     // SPECIALIZE
+
+#endif // DOXYGEN_SHOULD_SKIP_THIS
 
 
 
@@ -256,10 +261,12 @@ struct EnableIf
     typedef T Type;
 };
 
-/** \cond SPECIALIZE **/
+#ifndef DOXYGEN_SHOULD_SKIP_THIS    // Do not document
+
 template <class T>
 struct EnableIf<false, T> {};
-/** \endcond */     // SPECIALIZE
+
+#endif // DOXYGEN_SHOULD_SKIP_THIS
 
 
 
@@ -302,7 +309,7 @@ struct BaseTraits
     };
 };
 
-/** \cond SPECIALIZE */
+#ifndef DOXYGEN_SHOULD_SKIP_THIS    // Do not document
 
 /**
  * Basic type traits (unsigned primitive specialization)
@@ -398,7 +405,8 @@ struct BaseTraits<FLOATING_POINT, true, false, _UnsignedBits>
         NULL_TYPE = false
     };
 };
-/** \endcond */     // SPECIALIZE
+
+#endif // DOXYGEN_SHOULD_SKIP_THIS
 
 
 /**
@@ -406,7 +414,8 @@ struct BaseTraits<FLOATING_POINT, true, false, _UnsignedBits>
  */
 template <typename T> struct NumericTraits :            BaseTraits<NOT_A_NUMBER, false, false, T> {};
 
-/** \cond SPECIALIZE */
+#ifndef DOXYGEN_SHOULD_SKIP_THIS    // Do not document
+
 template <> struct NumericTraits<NullType> :            BaseTraits<NOT_A_NUMBER, false, true, NullType> {};
 
 template <> struct NumericTraits<char> :                BaseTraits<SIGNED_INTEGER, true, false, unsigned char> {};
@@ -424,7 +433,8 @@ template <> struct NumericTraits<unsigned long long> :  BaseTraits<UNSIGNED_INTE
 
 template <> struct NumericTraits<float> :               BaseTraits<FLOATING_POINT, true, false, unsigned int> {};
 template <> struct NumericTraits<double> :              BaseTraits<FLOATING_POINT, true, false, unsigned long long> {};
-/** \endcond */     // SPECIALIZE
+
+#endif // DOXYGEN_SHOULD_SKIP_THIS
 
 
 /**
@@ -473,7 +483,7 @@ struct Traits : NumericTraits<typename RemoveQualifiers<T>::Type> {};
 template <typename ArrayType, int LENGTH = -1>
 struct ArrayTraits;
 
-/** \cond SPECIALIZE */
+#ifndef DOXYGEN_SHOULD_SKIP_THIS    // Do not document
 
 /**
  * Specialization for non array type
@@ -519,7 +529,7 @@ struct ArrayTraits<DimType[LENGTH], -1>
     };
 };
 
-/** \endcond */     // SPECIALIZE
+#endif // DOXYGEN_SHOULD_SKIP_THIS
 
 
 
@@ -537,8 +547,7 @@ struct ArrayTraits<DimType[LENGTH], -1>
  */
 template <typename T, int vec_elements> struct VectorType;
 
-// Do not document specializations
-#ifndef DOXYGEN_SHOULD_SKIP_THIS
+#ifndef DOXYGEN_SHOULD_SKIP_THIS    // Do not document
 
 enum
 {

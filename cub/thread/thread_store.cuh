@@ -78,7 +78,7 @@ enum PtxStoreModifier
  */
 
 
-/** \cond INTERNAL */
+#ifndef DOXYGEN_SHOULD_SKIP_THIS    // Do not document
 
 //-----------------------------------------------------------------------------
 // Generic ThreadStore() operation
@@ -156,7 +156,7 @@ struct ThreadStoreDispatch<PTX_STORE_VS, false>
 };
 
 
-/** \endcond */     // INTERNAL
+#endif // DOXYGEN_SHOULD_SKIP_THIS
 
 
 /**
@@ -203,8 +203,7 @@ __device__ __forceinline__ void ThreadStore(OutputIterator itr, const T& val)
 }
 
 
-// Do not document specializations
-#ifndef DOXYGEN_SHOULD_SKIP_THIS
+#ifndef DOXYGEN_SHOULD_SKIP_THIS    // Do not document
 
 //-----------------------------------------------------------------------------
 // ThreadStore() specializations by modifier and data type (i.e., primitives

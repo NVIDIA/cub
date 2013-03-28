@@ -50,7 +50,7 @@ namespace cub {
 
 
 /**
- *  \addtogroup GridModule
+ * \addtogroup GridModule
  * @{
  */
 
@@ -81,35 +81,28 @@ public:
 
 
     /**
-     * Constructor.
-     *
-     * Generally constructed in host code one time.
+     * Initializes the grid-specific details (e.g., prior to kernel launch)
      */
-    __host__ __device__ __forceinline__ GridEvenShare(
+    __host__ __device__ __forceinline__ void GridInit(
         SizeT   num_items,
         int     max_grid_size,
-        int     schedule_granularity) :
-
-            // initializers
-            num_items(num_items),
-            block_offset(0),
-            block_oob(0)
+        int     schedule_granularity)
     {
-        int total_grains        = (num_items + schedule_granularity - 1) / schedule_granularity;
-        grid_size               = CUB_MIN(total_grains, max_grid_size);
-
-        SizeT grains_per_block  = total_grains / grid_size;
-        big_blocks              = total_grains - (grains_per_block * grid_size);        // leftover grains go to big blocks
-        normal_share            = grains_per_block * schedule_granularity;
-        normal_base_offset      = big_blocks * schedule_granularity;
-        big_share               = normal_share + schedule_granularity;
+        this->num_items             = num_items;
+        this->block_offset          = 0;
+        this->block_oob             = 0;
+        int total_grains            = (num_items + schedule_granularity - 1) / schedule_granularity;
+        this->grid_size             = CUB_MIN(total_grains, max_grid_size);
+        SizeT grains_per_block      = total_grains / grid_size;
+        this->big_blocks            = total_grains - (grains_per_block * grid_size);        // leftover grains go to big blocks
+        this->normal_share          = grains_per_block * schedule_granularity;
+        this->normal_base_offset    = big_blocks * schedule_granularity;
+        this->big_share             = normal_share + schedule_granularity;
     }
 
 
     /**
-     * Initializer.
-     *
-     * Generally initialized by each threadblock after construction on the host.
+     * Initializes the threadblock-specific details.
      */
     __device__ __forceinline__ void BlockInit()
     {

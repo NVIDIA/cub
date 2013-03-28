@@ -101,7 +101,7 @@ namespace cub {
  *
  * __global__ void SomeKernel(...)
  * {
- *     // A parameterized int-based WarpReduce type for use with one warp.
+ *     // Parameterize WarpReduce for 1 warp on type int
  *     typedef cub::WarpReduce<int, 1> WarpReduce;
  *
  *     // Opaque shared memory for WarpReduce
@@ -160,7 +160,7 @@ private:
     };
 
 
-    /** \cond INTERNAL */
+    #ifndef DOXYGEN_SHOULD_SKIP_THIS    // Do not document
 
 
     /**
@@ -452,7 +452,7 @@ private:
     };
 
 
-    /** \endcond */     // INTERNAL
+    #endif // DOXYGEN_SHOULD_SKIP_THIS
 
     typedef typename WarpReduceInternal<POLICY> Internal;
 

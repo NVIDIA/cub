@@ -52,7 +52,6 @@ var searchBox = new SearchBox("searchBox", "search",false,'Search');
       <li><a href="index.html"><span>Main&#160;Page</span></a></li>
       <li><a href="modules.html"><span>Modules</span></a></li>
       <li class="current"><a href="annotated.html"><span>Classes</span></a></li>
-      <li><a href="files.html"><span>Files</span></a></li>
       <li>
         <div id="MSearchBox" class="MSearchBoxInactive">
         <span class="left">
@@ -157,7 +156,7 @@ class cub::BlockRadixSort&lt; KeyType, BLOCK_THREADS, ITEMS_PER_THREAD, ValueTyp
 <div class="line"></div>
 <div class="line">__global__ <span class="keywordtype">void</span> SomeKernel(...)</div>
 <div class="line">{</div>
-<div class="line">    <span class="comment">// Parameterize BlockRadixSort for the parallel execution context</span></div>
+<div class="line">    <span class="comment">// Parameterize BlockRadixSort for 128 threads (4 items each) on type unsigned int</span></div>
 <div class="line">    <span class="keyword">typedef</span> <a class="code" href="classcub_1_1_block_radix_sort.html" title="BlockRadixSort provides variants of parallel radix sorting across a CUDA threadblock. .">cub::BlockRadixSort&lt;unsigned int, 128, 4&gt;</a> BlockRadixSort;</div>
 <div class="line"></div>
 <div class="line">    <span class="comment">// Declare shared memory for BlockRadixSort</span></div>
@@ -177,7 +176,7 @@ class cub::BlockRadixSort&lt; KeyType, BLOCK_THREADS, ITEMS_PER_THREAD, ValueTyp
 <div class="line"><span class="keyword">template</span> &lt;<span class="keywordtype">int</span> BLOCK_THREADS, <span class="keywordtype">int</span> ITEMS_PER_THREAD&gt;</div>
 <div class="line">__global__ <span class="keywordtype">void</span> SomeKernel(...)</div>
 <div class="line">{</div>
-<div class="line">    <span class="comment">// Parameterize BlockRadixSort for the parallel execution context</span></div>
+<div class="line">    <span class="comment">// Parameterize BlockRadixSort on key-value pairs of type unsigned int, float</span></div>
 <div class="line">    <span class="keyword">typedef</span> <a class="code" href="classcub_1_1_block_radix_sort.html" title="BlockRadixSort provides variants of parallel radix sorting across a CUDA threadblock. .">cub::BlockRadixSort&lt;unsigned int, BLOCK_THREADS, ITEMS_PER_THREAD, float&gt;</a> BlockRadixSort;</div>
 <div class="line"></div>
 <div class="line">    <span class="comment">// Declare shared memory for BlockRadixSort</span></div>
@@ -620,7 +619,7 @@ template&lt;typename KeyType , int BLOCK_THREADS, int ITEMS_PER_THREAD, typename
 <!-- HTML footer for doxygen 1.8.3.1-->
 <!-- start footer part -->
 <hr class="footer"/><address class="footer"><small>
-Generated on Wed Mar 27 2013 16:40:17 for CUB by &#160;<a href="http://www.doxygen.org/index.html">
+Generated on Thu Mar 28 2013 06:53:28 for CUB by &#160;<a href="http://www.doxygen.org/index.html">
 <img class="footer" src="doxygen.png" alt="doxygen"/>
 </a> 1.8.3.1
 <br>

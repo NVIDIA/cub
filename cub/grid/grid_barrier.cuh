@@ -45,7 +45,7 @@ namespace cub {
 
 
 /**
- *  \addtogroup GridModule
+ * \addtogroup GridModule
  * @{
  */
 

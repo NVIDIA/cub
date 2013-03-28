@@ -56,7 +56,7 @@ namespace cub {
 
 
 /**
- *  \addtogroup UtilModule
+ * \addtogroup UtilModule
  * @{
  */
 
@@ -87,7 +87,7 @@ namespace cub {
 template <int SM_ARCH>
 struct ArchProps;
 
-/** \cond SPECIALIZE */
+#ifndef DOXYGEN_SHOULD_SKIP_THIS    // Do not document
 
 /**
  * Architecture properties for SM30
@@ -275,7 +275,7 @@ struct ArchProps<110> : ArchProps<100> {};        // Derives from SM10
 template <int SM_ARCH>
 struct ArchProps : ArchProps<100> {};             // Derives from SM10
 
-/** \endcond */     // SPECIALIZE
+#endif // DOXYGEN_SHOULD_SKIP_THIS
 
 
 /**

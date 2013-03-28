@@ -18,6 +18,7 @@ var searchData=
   ['block_5fscan_5fwarpscans',['BLOCK_SCAN_WARPSCANS',['../namespacecub.html#abec44bba36037c547e7e84906d0d23aba08bbb9b8f17a4b9e568c1333aeda6324',1,'cub']]],
   ['block_5fstore_2ecuh',['block_store.cuh',['../block__store_8cuh.html',1,'']]],
   ['block_5fstore_5fdirect',['BLOCK_STORE_DIRECT',['../namespacecub.html#aaaa9ee8c8a57c6607909c110affd189ea9b8dcc7b6b06bcfc24af4f499523b880',1,'cub']]],
+  ['block_5fstore_5fstriped',['BLOCK_STORE_STRIPED',['../namespacecub.html#aaaa9ee8c8a57c6607909c110affd189ea78ff04d6671448a3a5bfe3b6a758a8c1',1,'cub']]],
   ['block_5fstore_5ftranspose',['BLOCK_STORE_TRANSPOSE',['../namespacecub.html#aaaa9ee8c8a57c6607909c110affd189eab0bbe20613466c3cedfcfea33a97d69c',1,'cub']]],
   ['block_5fstore_5fvectorize',['BLOCK_STORE_VECTORIZE',['../namespacecub.html#aaaa9ee8c8a57c6607909c110affd189ea0ccd625a7f2f3649155cbd5a27adfb41',1,'cub']]],
   ['blockdiscontinuity',['BlockDiscontinuity',['../classcub_1_1_block_discontinuity.html',1,'cub']]],

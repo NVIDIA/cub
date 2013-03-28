@@ -105,7 +105,7 @@ namespace cub {
  *
  * __global__ void SomeKernel(...)
  * {
- *     // Parameterize BlockDiscontinuity for the parallel execution context
+ *     // Parameterize BlockDiscontinuity for 128 threads on type NonZero
  *     typedef cub::BlockDiscontinuity<NonZero, 128> BlockDiscontinuity;
  *
  *     // Declare shared memory for BlockDiscontinuity
