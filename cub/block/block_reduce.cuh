@@ -121,13 +121,13 @@ namespace cub {
  * \endcode
  *
  * \par
- * <em>Example 2:</em> Perform a guarded reduction of only \p num_elements keys that
+ * <em>Example 2:</em> Perform a guarded reduction of only \p num_items keys that
  * are partitioned in a partially-full blocked arrangement across \p BLOCK_THREADS threads.
  * \code
  * #include <cub.cuh>
  *
  * template <int BLOCK_THREADS>
- * __global__ void SomeKernel(..., int num_elements)
+ * __global__ void SomeKernel(..., int num_items)
  * {
  *      // Parameterize BlockReduce on type int
  *      typedef cub::BlockReduce<int, BLOCK_THREADS> BlockReduce;
@@ -137,10 +137,10 @@ namespace cub {
  *
  *      // Guarded load
  *      int data;
- *      if (threadIdx.x < num_elements) data = ...;
+ *      if (threadIdx.x < num_items) data = ...;
  *
  *      // Compute the threadblock-wide sum of valid elements in thread0
- *      int aggregate = BlockReduce::Sum(smem_storage, data, num_elements);
+ *      int aggregate = BlockReduce::Sum(smem_storage, data, num_items);
  *
  *      ...
  * \endcode

@@ -77,8 +77,10 @@ __host__ __device__ __forceinline__ cudaError_t Debug(
     #if (CUB_PTX_ARCH == 0)
         fprintf(stderr, "[%s, %d] %s (CUDA error %d: %s)\n", filename, line, message, error, cudaGetErrorString(error));
         fflush(stderr);
-    #elif (CUB_PTX_ARCH >= 200)
+    #elif (CUB_CNP_ENABLED)
         printf("[block %d, thread %d, %s, %d] %s (CUDA error %d: %s)\n", blockIdx.x, threadIdx.x, filename, line, message, error, cudaGetErrorString(error));
+    #elif (CUB_PTX_ARCH >= 200)
+        printf("[block %d, thread %d, %s, %d] %s (CUDA error %d)\n", blockIdx.x, threadIdx.x, filename, line, message, error);
     #endif
     }
 #endif
@@ -102,8 +104,10 @@ __host__ __device__ __forceinline__ cudaError_t Debug(
     #if (CUB_PTX_ARCH == 0)
         fprintf(stderr, "[%s, %d] (CUDA error %d: %s)\n", filename, line, error, cudaGetErrorString(error));
         fflush(stderr);
-    #elif (CUB_PTX_ARCH >= 200)
+    #elif (CUB_CNP_ENABLED)
         printf("[block %d, thread %d, %s, %d] (CUDA error %d: %s)\n", blockIdx.x, threadIdx.x, filename, line, error, cudaGetErrorString(error));
+    #elif (CUB_PTX_ARCH >= 200)
+        printf("[block %d, thread %d, %s, %d] (CUDA error %d)\n", blockIdx.x, threadIdx.x, filename, line, error);
     #endif
     }
 #endif
@@ -114,14 +118,16 @@ __host__ __device__ __forceinline__ cudaError_t Debug(
 /**
  * \brief Debug macro
  */
-#define CubDebug(e) \\
+#define CubDebug(e) \
+    \
     cub::Debug(e, __FILE__, __LINE__)
 
 
 /**
  * \brief Debug macro with exit
  */
-#define CubDebugExit(e) \\
+#define CubDebugExit(e) \
+    \
     if (cub::Debug(e, __FILE__, __LINE__)) exit(1)
 
 

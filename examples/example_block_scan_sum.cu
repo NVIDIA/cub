@@ -112,11 +112,11 @@ __global__ void BlockPrefixSumKernel(
 int Initialize(
     int *h_in,
     int *h_reference,
-    int num_elements)
+    int num_items)
 {
     int inclusive = 0;
 
-    for (int i = 0; i < num_elements; ++i)
+    for (int i = 0; i < num_items; ++i)
     {
         h_in[i] = i % 17;
 

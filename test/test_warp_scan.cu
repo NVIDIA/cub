@@ -311,7 +311,7 @@ T Initialize(
     int         gen_mode,
     T           *h_in,
     T           *h_reference,
-    int         num_elements,
+    int         num_items,
     ScanOp      scan_op,
     IdentityT   identity,
     T           *prefix)
@@ -319,7 +319,7 @@ T Initialize(
     T inclusive = (prefix != NULL) ? *prefix : identity;
     T aggregate = identity;
 
-    for (int i = 0; i < num_elements; ++i)
+    for (int i = 0; i < num_items; ++i)
     {
         InitValue(gen_mode, h_in[i], i);
         h_reference[i] = inclusive;
@@ -341,14 +341,14 @@ T Initialize(
     int         gen_mode,
     T           *h_in,
     T           *h_reference,
-    int         num_elements,
+    int         num_items,
     ScanOp      scan_op,
     NullType,
     T           *prefix)
 {
     T inclusive;
     T aggregate;
-    for (int i = 0; i < num_elements; ++i)
+    for (int i = 0; i < num_items; ++i)
     {
         InitValue(gen_mode, h_in[i], i);
         if (i == 0)
