@@ -48,13 +48,13 @@ CUB_NS_PREFIX
 namespace cub {
 
 /**
- *  \addtogroup BlockModule
+ * \addtogroup BlockModule
  * @{
  */
 
 
 /******************************************************************//**
- * \name Direct threadblock stores (blocked arrangement)
+ * \name Direct threadblock I/O (blocked arrangement)
  *********************************************************************/
 //@{
 
@@ -177,7 +177,7 @@ __device__ __forceinline__ void BlockStoreDirect(
 
 //@}  end member group
 /******************************************************************//**
- * \name Direct threadblock stores (striped arrangement)
+ * \name Direct threadblock I/O (striped arrangement)
  *********************************************************************/
 //@{
 
@@ -307,7 +307,7 @@ __device__ __forceinline__ void BlockStoreDirectStriped(
 
 //@}  end member group
 /******************************************************************//**
- * \name Threadblock vectorized stores (blocked arrangement)
+ * \name Threadblock vectorized I/O (blocked arrangement)
  *********************************************************************/
 //@{
 
@@ -467,6 +467,19 @@ enum BlockStorePolicy
      *   direct cub::BLOCK_STORE_DIRECT and cub::BLOCK_STORE_VECTORIZE alternatives.
      */
     BLOCK_STORE_TRANSPOSE,
+
+    /**
+     * \par Overview
+     * A [<em>striped arrangement</em>](index.html#sec3sec3) of data is written
+     * directly to memory.   The threadblock writes items in a parallel
+     * "strip-mining" fashion: consecutive items owned by thread<sub><em>i</em></sub>
+     * are written to memory with stride \p BLOCK_THREADS between them.
+     *
+     * \par Performance Considerations
+     * - The utilization of memory transactions (coalescing) remains high regardless
+     *   of items written per thread.
+     */
+    BLOCK_STORE_STRIPED,
 };
 
 
@@ -515,7 +528,7 @@ enum BlockStorePolicy
  * template <int BLOCK_THREADS>
  * __global__ void SomeKernel(int *d_out, ...)
  * {
- *      // Parameterize BlockStore for the parallel execution context
+ *      // Parameterize BlockStore for 128 threads (4 items each) on type int
  *      typedef cub::BlockStore<int*, 128, 4> BlockStore;
  *
  *      // Declare shared memory for BlockStore
@@ -541,7 +554,7 @@ enum BlockStorePolicy
  * {
  *      const int ITEMS_PER_THREAD = 4;
  *
- *      // Parameterize BlockStore for the parallel execution context
+ *      // Parameterize BlockStore on type int
  *      typedef cub::BlockStore<int, BLOCK_THREADS, 4, BLOCK_STORE_VECTORIZE, PTX_STORE_CG> BlockStore;
  *
  *      // Declare shared memory for BlockStore
@@ -593,7 +606,7 @@ private:
         /// Store a tile of items across a threadblock
         static __device__ __forceinline__ void Store(
             SmemStorage     &smem_storage,              ///< [in] Shared reference to opaque SmemStorage layout
-            OutputIterator  block_itr,                    ///< [in] The threadblock's base output iterator for storing to
+            OutputIterator  block_itr,                  ///< [in] The threadblock's base output iterator for storing to
             T               (&items)[ITEMS_PER_THREAD]) ///< [in] Data to store
         {
             BlockStoreDirect<MODIFIER>(block_itr, items);
@@ -603,7 +616,7 @@ private:
         template <typename SizeT>
         static __device__ __forceinline__ void Store(
             SmemStorage     &smem_storage,              ///< [in] Shared reference to opaque SmemStorage layout
-            OutputIterator  block_itr,                    ///< [in] The threadblock's base output iterator for storing to
+            OutputIterator  block_itr,                  ///< [in] The threadblock's base output iterator for storing to
             const SizeT     &guarded_items,             ///< [in] Number of valid items in the tile
             T               (&items)[ITEMS_PER_THREAD]) ///< [in] Data to store
         {
@@ -625,7 +638,7 @@ private:
         template <typename SizeT>
         static __device__ __forceinline__ void Store(
             SmemStorage     &smem_storage,              ///< [in] Shared reference to opaque SmemStorage layout
-            T               *block_ptr,                   ///< [in] The threadblock's base output iterator for storing to
+            T               *block_ptr,                 ///< [in] The threadblock's base output iterator for storing to
             T               (&items)[ITEMS_PER_THREAD]) ///< [in] Data to store
         {
             BlockStoreVectorized<MODIFIER>(block_ptr, items);
@@ -645,7 +658,7 @@ private:
         template <typename SizeT>
         static __device__ __forceinline__ void Store(
             SmemStorage     &smem_storage,              ///< [in] Shared reference to opaque SmemStorage layout
-            OutputIterator  block_itr,                    ///< [in] The threadblock's base output iterator for storing to
+            OutputIterator  block_itr,                  ///< [in] The threadblock's base output iterator for storing to
             const SizeT     &guarded_items,             ///< [in] Number of valid items in the tile
             T               (&items)[ITEMS_PER_THREAD]) ///< [in] Data to store
         {
@@ -669,7 +682,7 @@ private:
         /// Store a tile of items across a threadblock
         static __device__ __forceinline__ void Store(
             SmemStorage     &smem_storage,              ///< [in] Shared reference to opaque SmemStorage layout
-            OutputIterator  block_itr,                    ///< [in] The threadblock's base output iterator for storing to
+            OutputIterator  block_itr,                  ///< [in] The threadblock's base output iterator for storing to
             T               (&items)[ITEMS_PER_THREAD]) ///< [in] Data to store
         {
             // Transpose to striped order
@@ -682,7 +695,7 @@ private:
         template <typename SizeT>
         static __device__ __forceinline__ void Store(
             SmemStorage     &smem_storage,              ///< [in] Shared reference to opaque SmemStorage layout
-            OutputIterator  block_itr,                    ///< [in] The threadblock's base output iterator for storing to
+            OutputIterator  block_itr,                  ///< [in] The threadblock's base output iterator for storing to
             const SizeT     &guarded_items,             ///< [in] Number of valid items in the tile
             T               (&items)[ITEMS_PER_THREAD]) ///< [in] Data to store
         {
@@ -691,7 +704,37 @@ private:
 
             BlockStoreDirectStriped<PTX_STORE_NONE>(block_itr, guarded_items, items, BLOCK_THREADS);
         }
+    };
 
+
+    /**
+     * BLOCK_STORE_STRIPED specialization of store helper
+     */
+    template <int DUMMY>
+    struct StoreInternal<BLOCK_STORE_STRIPED, DUMMY>
+    {
+        /// Shared memory storage layout type
+        typedef NullType SmemStorage;
+
+        /// Store a tile of items across a threadblock
+        static __device__ __forceinline__ void Store(
+            SmemStorage     &smem_storage,              ///< [in] Shared reference to opaque SmemStorage layout
+            OutputIterator  block_itr,                  ///< [in] The threadblock's base output iterator for storing to
+            T               (&items)[ITEMS_PER_THREAD]) ///< [in] Data to store
+        {
+            BlockStoreDirectStriped<MODIFIER>(block_itr, items);
+        }
+
+        /// Store a tile of items across a threadblock, guarded by range
+        template <typename SizeT>
+        static __device__ __forceinline__ void Store(
+            SmemStorage     &smem_storage,              ///< [in] Shared reference to opaque SmemStorage layout
+            OutputIterator  block_itr,                  ///< [in] The threadblock's base output iterator for storing to
+            const SizeT     &guarded_items,             ///< [in] Number of valid items in the tile
+            T               (&items)[ITEMS_PER_THREAD]) ///< [in] Data to store
+        {
+            BlockStoreDirectStriped<PTX_STORE_NONE>(block_itr, guarded_items, items);
+        }
     };
 
     /// Shared memory storage layout type

@@ -102,7 +102,7 @@ namespace cub {
  *
  * __global__ void SomeKernel(...)
  * {
- *      // Parameterize BlockReduce for the parallel execution context
+ *      // Parameterize BlockReduce for 128 threads on type int
  *      typedef cub::BlockReduce<int, 128> BlockReduce;
  *
  *      // Declare shared memory for BlockReduce
@@ -129,7 +129,7 @@ namespace cub {
  * template <int BLOCK_THREADS>
  * __global__ void SomeKernel(..., int num_elements)
  * {
- *      // Parameterize BlockReduce for use with BLOCK_THREADS threads on type int
+ *      // Parameterize BlockReduce on type int
  *      typedef cub::BlockReduce<int, BLOCK_THREADS> BlockReduce;
  *
  *      // Declare shared memory for BlockReduce

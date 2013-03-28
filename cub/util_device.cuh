@@ -46,7 +46,7 @@ namespace cub {
 
 
 /**
- *  \addtogroup UtilModule
+ * \addtogroup UtilModule
  * @{
  */
 

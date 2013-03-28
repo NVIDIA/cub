@@ -112,7 +112,7 @@ namespace cub {
  *
  * __global__ void SomeKernel(...)
  * {
- *     // A parameterized int-based WarpScan type for use with one warp.
+ *     // Parameterize WarpScan for 1 warp on type int
  *     typedef cub::WarpScan<int, 1> WarpScan;
  *
  *     // Opaque shared memory for WarpScan
@@ -164,7 +164,7 @@ namespace cub {
  *
  *      __global__ void SomeKernel(...)
  *      {
- *          // A parameterized int-based WarpScan type for use with one warp.
+ *          // Parameterize WarpScan for 1 warp on type int
  *          typedef cub::WarpScan<int, 1> WarpScan;
  *
  *          // Opaque shared memory for WarpScan
@@ -230,7 +230,7 @@ private:
     };
 
 
-    /** \cond INTERNAL */
+    #ifndef DOXYGEN_SHOULD_SKIP_THIS    // Do not document
 
 
     /**
@@ -766,7 +766,7 @@ private:
     };
 
 
-    /** \endcond */     // INTERNAL
+    #endif // DOXYGEN_SHOULD_SKIP_THIS
 
 
     /// Shared memory storage layout type for WarpScan

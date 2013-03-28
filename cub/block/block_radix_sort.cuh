@@ -113,7 +113,7 @@ namespace cub {
  *
  *      __global__ void SomeKernel(...)
  *      {
- *          // Parameterize BlockRadixSort for the parallel execution context
+ *          // Parameterize BlockRadixSort for 128 threads (4 items each) on type unsigned int
  *          typedef cub::BlockRadixSort<unsigned int, 128, 4> BlockRadixSort;
  *
  *          // Declare shared memory for BlockRadixSort
@@ -139,7 +139,7 @@ namespace cub {
  *      template <int BLOCK_THREADS, int ITEMS_PER_THREAD>
  *      __global__ void SomeKernel(...)
  *      {
- *          // Parameterize BlockRadixSort for the parallel execution context
+ *          // Parameterize BlockRadixSort on key-value pairs of type unsigned int, float
  *          typedef cub::BlockRadixSort<unsigned int, BLOCK_THREADS, ITEMS_PER_THREAD, float> BlockRadixSort;
  *
  *          // Declare shared memory for BlockRadixSort
