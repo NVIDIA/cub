@@ -228,12 +228,11 @@ struct RemoveQualifiers<Tp, const volatile Up>
 
 
 /**
- * Allows the definition of structures that will detect the presence
- * of the specified type name within other classes
+ * \brief Defines a structure \p detector_name that is templated on type \p T.  The \p detector_name struct exposes a constant member \p VALUE indicating whether or not parameter \p T exposes a nested type \p nested_type_name
  */
-#define CUB_HAS_NESTED_TYPE(detect_struct, nested_type_name)            \
+#define CUB_DEFINE_DETECT_NESTED_TYPE(detector_name, nested_type_name)  \
     template <typename T>                                               \
-    struct detect_struct                                                \
+    struct detector_name                                                \
     {                                                                   \
         template <typename C>                                           \
         static char& test(typename C::nested_type_name*);               \

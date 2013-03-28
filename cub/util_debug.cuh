@@ -112,19 +112,21 @@ __host__ __device__ __forceinline__ cudaError_t Debug(
 
 
 /**
- * Debug macro
+ * \brief Debug macro
  */
-#define CubDebug(e) cub::Debug(e, __FILE__, __LINE__)
+#define CubDebug(e) \\
+    cub::Debug(e, __FILE__, __LINE__)
 
 
 /**
- * Debug macro with exit
+ * \brief Debug macro with exit
  */
-#define CubDebugExit(e) if (cub::Debug(e, __FILE__, __LINE__)) exit(1)
+#define CubDebugExit(e) \\
+    if (cub::Debug(e, __FILE__, __LINE__)) exit(1)
 
 
 /**
- * Log macro for printf statements.
+ * \brief Log macro for printf statements.
  */
 #ifdef CUB_LOG
     #if (CUB_PTX_ARCH == 0)
