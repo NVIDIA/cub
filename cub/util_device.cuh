@@ -63,9 +63,9 @@ __global__ void EmptyKernel(void) { }
  */
 typedef int DeviceOrdinal;
 
+/// Invalid device ordinal
 enum
 {
-    /// Invalid device ordinal
     INVALID_DEVICE_ORDINAL = -1,
 };
 

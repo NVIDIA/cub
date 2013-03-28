@@ -91,7 +91,7 @@ enum PtxLoadModifier
  * Define HasThreadLoad structure for testing the presence of nested
  * ThreadLoadTag type names within data types
  */
-CUB_HAS_NESTED_TYPE(HasThreadLoad, ThreadLoadTag)
+CUB_DEFINE_DETECT_NESTED_TYPE(HasThreadLoad, ThreadLoadTag)
 
 
 /**

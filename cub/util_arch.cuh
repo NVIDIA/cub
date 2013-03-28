@@ -61,23 +61,19 @@ namespace cub {
  */
 
 
-/**
- * \p CUB_PTX_ARCH reflects the PTX version targeted by the active compiler pass
- * (or zero during the host pass).
- */
+/// CUB_PTX_ARCH reflects the PTX version targeted by the active compiler pass (or zero during the host pass).
 #ifndef __CUDA_ARCH__
-    // Host path
-    #define CUB_PTX_ARCH 0
+    #define CUB_PTX_ARCH \
+    \
+    0
 #else
-    // Device path
     #define CUB_PTX_ARCH __CUDA_ARCH__
 #endif
 
-/**
- * Whether or not the source targeted by the active compiler pass is allowed to
- * invoke device kernels or methods from the CUDA runtime API.
- */
-#define CUB_CNP_ENABLED ((CUB_PTX_ARCH == 0) || ((CUB_PTX_ARCH >= 350) && defined(__BUILDING_CNPRT__)))
+/// Whether or not the source targeted by the active compiler pass is allowed to  invoke device kernels or methods from the CUDA runtime API.
+#define CUB_CNP_ENABLED \
+    \
+    ((CUB_PTX_ARCH == 0) || ((CUB_PTX_ARCH >= 350) && defined(__BUILDING_CNPRT__)))
 
 
 
