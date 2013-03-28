@@ -163,7 +163,7 @@ enum BlockScanAlgorithm
  *
  * __global__ void SomeKernel(...)
  * {
- *     // Parameterize BlockScan for the parallel execution context
+ *     // Parameterize BlockScan for 128 threads on type int
  *     typedef cub::BlockScan<int, 128> BlockScan;
  *
  *     // Declare shared memory for BlockScan
@@ -207,7 +207,7 @@ enum BlockScanAlgorithm
  * template <int BLOCK_THREADS, int ITEMS_PER_THREAD>
  * __global__ void SomeKernel(int *d_global_counter, ...)
  * {
- *     // Parameterize BlockScan for the parallel execution context
+ *     // Parameterize BlockScan on type int
  *     typedef cub::BlockScan<int, BLOCK_THREADS> BlockScan;
  *
  *     // Declare shared memory for BlockScan
@@ -242,7 +242,7 @@ private:
     };
 
 
-    /** \cond INTERNAL */
+    #ifndef DOXYGEN_SHOULD_SKIP_THIS    // Do not document
 
     /**
      * Warpscan specialized for BLOCK_SCAN_RAKING variant
@@ -1268,7 +1268,7 @@ private:
     };
 
 
-    /** \endcond */     // INTERNAL
+    #endif // DOXYGEN_SHOULD_SKIP_THIS
 
 
     /// Shared memory storage layout type for BlockScan

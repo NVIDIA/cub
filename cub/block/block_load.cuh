@@ -48,13 +48,13 @@ CUB_NS_PREFIX
 namespace cub {
 
 /**
- *  \addtogroup BlockModule
+ * \addtogroup BlockModule
  * @{
  */
 
 
 /******************************************************************//**
- * \name Direct threadblock loads (blocked arrangement)
+ * \name Direct threadblock I/O (blocked arrangement)
  *********************************************************************/
 //@{
 
@@ -242,7 +242,7 @@ __device__ __forceinline__ void BlockLoadDirect(
 
 //@}  end member group
 /******************************************************************//**
- * \name Direct threadblock loads (striped arrangement)
+ * \name Direct threadblock I/O (striped arrangement)
  *********************************************************************/
 //@{
 
@@ -436,7 +436,7 @@ __device__ __forceinline__ void BlockLoadDirectStriped(
 
 //@}  end member group
 /******************************************************************//**
- * \name Threadblock vectorized loads (blocked arrangement)
+ * \name Threadblock vectorized I/O (blocked arrangement)
  *********************************************************************/
 //@{
 
@@ -653,7 +653,7 @@ enum BlockLoadPolicy
  *
  * __global__ void SomeKernel(int *d_in, ...)
  * {
- *     // Parameterize BlockLoad for the parallel execution context
+ *     // Parameterize BlockLoad for 128 threads (4 items each) on type int
  *     typedef cub::BlockLoad<int*, 128, 4> BlockLoad;
  *
  *     // Declare shared memory for BlockLoad
@@ -679,7 +679,7 @@ enum BlockLoadPolicy
  *     int ITEMS_PER_THREAD>
  * __global__ void SomeKernel(int *d_in, ...)
  * {
- *     // Parameterize BlockLoad for the parallel execution context
+ *     // Parameterize BlockLoad on type int
  *     typedef cub::BlockLoad<int*, BLOCK_THREADS, ITEMS_PER_THREAD, BLOCK_LOAD_VECTORIZE, PTX_LOAD_CG> BlockLoad;
  *
  *     // Declare shared memory for BlockLoad

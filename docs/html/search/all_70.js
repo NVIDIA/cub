@@ -16,8 +16,6 @@ var searchData=
   ['ptx_5fstore_5fwt',['PTX_STORE_WT',['../group___thread_module.html#ggae9c7d6a6af7104f528509182ac9c9da2a8d07fc5099d72afdc46b817d566d3df8',1,'cub']]],
   ['ptx_5fversion',['ptx_version',['../classcub_1_1_device.html#a416909debdeaa9116d7087ed55ed870f',1,'cub::Device']]],
   ['ptxarchprops',['PtxArchProps',['../structcub_1_1_ptx_arch_props.html',1,'cub']]],
-  ['ptxblockreducetilespolicy',['PtxBlockReduceTilesPolicy',['../structcub_1_1_device_foo_1_1_default_policy_1_1_ptx_block_reduce_tiles_policy.html',1,'cub::DeviceFoo::DefaultPolicy']]],
   ['ptxloadmodifier',['PtxLoadModifier',['../group___thread_module.html#ga023420f30fec7d4b187fc98f4fd2a55d',1,'cub']]],
-  ['ptxreducesinglekernelpolicy',['PtxReduceSingleKernelPolicy',['../structcub_1_1_device_foo_1_1_default_policy_1_1_ptx_reduce_single_kernel_policy.html',1,'cub::DeviceFoo::DefaultPolicy']]],
   ['ptxstoremodifier',['PtxStoreModifier',['../group___thread_module.html#gae9c7d6a6af7104f528509182ac9c9da2',1,'cub']]]
 ];

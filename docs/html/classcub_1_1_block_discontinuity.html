@@ -52,7 +52,6 @@ var searchBox = new SearchBox("searchBox", "search",false,'Search');
       <li><a href="index.html"><span>Main&#160;Page</span></a></li>
       <li><a href="modules.html"><span>Modules</span></a></li>
       <li class="current"><a href="annotated.html"><span>Classes</span></a></li>
-      <li><a href="files.html"><span>Files</span></a></li>
       <li>
         <div id="MSearchBox" class="MSearchBoxInactive">
         <span class="left">
@@ -161,7 +160,7 @@ class cub::BlockDiscontinuity&lt; T, BLOCK_THREADS &gt;</h3>
 <div class="line"></div>
 <div class="line">__global__ <span class="keywordtype">void</span> SomeKernel(...)</div>
 <div class="line">{</div>
-<div class="line">    <span class="comment">// Parameterize BlockDiscontinuity for the parallel execution context</span></div>
+<div class="line">    <span class="comment">// Parameterize BlockDiscontinuity for 128 threads on type NonZero</span></div>
 <div class="line">    <span class="keyword">typedef</span> <a class="code" href="classcub_1_1_block_discontinuity.html" title="BlockDiscontinuity provides operations for flagging discontinuities within a list of data items parti...">cub::BlockDiscontinuity&lt;NonZero, 128&gt;</a> BlockDiscontinuity;</div>
 <div class="line"></div>
 <div class="line">    <span class="comment">// Declare shared memory for BlockDiscontinuity</span></div>
@@ -539,7 +538,7 @@ template&lt;int ITEMS_PER_THREAD, typename FlagT , typename FlagOp &gt; </div>
 <!-- HTML footer for doxygen 1.8.3.1-->
 <!-- start footer part -->
 <hr class="footer"/><address class="footer"><small>
-Generated on Wed Mar 27 2013 16:40:17 for CUB by &#160;<a href="http://www.doxygen.org/index.html">
+Generated on Thu Mar 28 2013 06:53:28 for CUB by &#160;<a href="http://www.doxygen.org/index.html">
 <img class="footer" src="doxygen.png" alt="doxygen"/>
 </a> 1.8.3.1
 <br>

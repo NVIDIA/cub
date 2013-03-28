@@ -260,7 +260,7 @@ template <
     int             BLOCK_THREADS,
     int             ITEMS_PER_THREAD,
     TestMode        TEST_MODE,
-    BlockScanPolicy POLICY,
+    BlockScanAlgorithm POLICY,
     typename        T,
     typename        ScanOp,
     typename        IdentityT>
@@ -390,7 +390,7 @@ template <
     int             BLOCK_THREADS,
     int             ITEMS_PER_THREAD,
     TestMode        TEST_MODE,
-    BlockScanPolicy POLICY,
+    BlockScanAlgorithm POLICY,
     typename        ScanOp,
     typename        IdentityT,        // NullType implies inclusive-scan, otherwise inclusive scan
     typename        T>

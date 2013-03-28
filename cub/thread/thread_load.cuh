@@ -48,7 +48,7 @@ CUB_NS_PREFIX
 namespace cub {
 
 /**
- *  \addtogroup ThreadModule
+ * \addtogroup ThreadModule
  * @{
  */
 
@@ -81,7 +81,7 @@ enum PtxLoadModifier
  */
 
 
-/** \cond INTERNAL */
+#ifndef DOXYGEN_SHOULD_SKIP_THIS    // Do not document
 
 //-----------------------------------------------------------------------------
 // Generic ThreadLoad() operation
@@ -161,7 +161,7 @@ struct ThreadLoadDispatch<PTX_LOAD_VS, false>
 };
 
 
-/** \endcond */     // INTERNAL
+#endif // DOXYGEN_SHOULD_SKIP_THIS
 
 /**
  * \brief Thread utility for reading memory using cub::PtxLoadModifier cache modifiers.
@@ -203,8 +203,8 @@ __device__ __forceinline__ typename std::iterator_traits<InputIterator>::value_t
 }
 
 
-// Do not document specializations
-#ifndef DOXYGEN_SHOULD_SKIP_THIS
+
+#ifndef DOXYGEN_SHOULD_SKIP_THIS    // Do not document
 
 //-----------------------------------------------------------------------------
 // ThreadLoad() specializations by modifier and data type (i.e., primitives

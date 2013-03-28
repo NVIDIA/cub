@@ -52,7 +52,6 @@ var searchBox = new SearchBox("searchBox", "search",false,'Search');
       <li><a href="index.html"><span>Main&#160;Page</span></a></li>
       <li><a href="modules.html"><span>Modules</span></a></li>
       <li><a href="annotated.html"><span>Classes</span></a></li>
-      <li class="current"><a href="files.html"><span>Files</span></a></li>
       <li>
         <div id="MSearchBox" class="MSearchBoxInactive">
         <span class="left">
@@ -69,12 +68,6 @@ var searchBox = new SearchBox("searchBox", "search",false,'Search');
           </span>
         </div>
       </li>
-    </ul>
-  </div>
-  <div id="navrow2" class="tabs2">
-    <ul class="tablist">
-      <li><a href="files.html"><span>File&#160;List</span></a></li>
-      <li><a href="globals.html"><span>File&#160;Members</span></a></li>
     </ul>
   </div>
 <!-- window showing the filter options -->
@@ -117,29 +110,36 @@ Namespaces</h2></td></tr>
 </table><table class="memberdecls">
 <tr class="heading"><td colspan="2"><h2 class="groupheader"><a name="define-members"></a>
 Macros</h2></td></tr>
-<tr class="memitem:ga04236bb0db0efe7a19c9ecba0aedc1e5"><td class="memItemLeft" align="right" valign="top">#define&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="group___util_module.html#ga04236bb0db0efe7a19c9ecba0aedc1e5">CubDebug</a>(f)&#160;&#160;&#160;<a class="el" href="group___util_module.html#ga0ac6d9c9d88ac0da0d644c88a3b36aa3">cub::Debug</a>(f, __FILE__, __LINE__)</td></tr>
-<tr class="separator:ga04236bb0db0efe7a19c9ecba0aedc1e5"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:ga2e5de1db78fd84552bda8254efa409a3"><td class="memItemLeft" align="right" valign="top">#define&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="group___util_module.html#ga2e5de1db78fd84552bda8254efa409a3">CubDebugExit</a>(f)&#160;&#160;&#160;if (<a class="el" href="group___util_module.html#ga0ac6d9c9d88ac0da0d644c88a3b36aa3">cub::Debug</a>(f, __FILE__, __LINE__)) exit(1)</td></tr>
-<tr class="separator:ga2e5de1db78fd84552bda8254efa409a3"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:ga84c3a4c178bf6593e0fad2b763606236"><td class="memItemLeft" align="right" valign="top">#define&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="group___util_module.html#ga84c3a4c178bf6593e0fad2b763606236">CubDebug</a>(e)&#160;&#160;&#160;<a class="el" href="group___util_module.html#ga0ac6d9c9d88ac0da0d644c88a3b36aa3">cub::Debug</a>(e, __FILE__, __LINE__)</td></tr>
+<tr class="separator:ga84c3a4c178bf6593e0fad2b763606236"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:ga26211db894893b3cec946e4e537536f8"><td class="memItemLeft" align="right" valign="top">#define&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="group___util_module.html#ga26211db894893b3cec946e4e537536f8">CubDebugExit</a>(e)&#160;&#160;&#160;if (<a class="el" href="group___util_module.html#ga0ac6d9c9d88ac0da0d644c88a3b36aa3">cub::Debug</a>(e, __FILE__, __LINE__)) exit(1)</td></tr>
+<tr class="separator:ga26211db894893b3cec946e4e537536f8"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:ga55e25af53c24d598b48d6218fa88736d"><td class="memItemLeft" align="right" valign="top">#define&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="group___util_module.html#ga55e25af53c24d598b48d6218fa88736d">CubLog</a>(p)</td></tr>
+<tr class="separator:ga55e25af53c24d598b48d6218fa88736d"><td class="memSeparator" colspan="2">&#160;</td></tr>
 </table><table class="memberdecls">
 <tr class="heading"><td colspan="2"><h2 class="groupheader"><a name="func-members"></a>
 Functions</h2></td></tr>
 <tr class="memitem:ga0ac6d9c9d88ac0da0d644c88a3b36aa3"><td class="memItemLeft" align="right" valign="top">__host__ __device__ <br class="typebreak"/>
 __forceinline__ cudaError_t&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="group___util_module.html#ga0ac6d9c9d88ac0da0d644c88a3b36aa3">cub::Debug</a> (cudaError_t error, const char *message, const char *filename, int line)</td></tr>
-<tr class="memdesc:ga0ac6d9c9d88ac0da0d644c88a3b36aa3"><td class="mdescLeft">&#160;</td><td class="mdescRight">If <code>CUB_STDERR</code> is defined and <code>error</code> is not <code>cudaSuccess</code>, <code>message</code> is printed to <code>stderr</code> along with the supplied source context.  <a href="group___util_module.html#ga0ac6d9c9d88ac0da0d644c88a3b36aa3">More...</a><br/></td></tr>
+<tr class="memdesc:ga0ac6d9c9d88ac0da0d644c88a3b36aa3"><td class="mdescLeft">&#160;</td><td class="mdescRight">CUB error reporting macro (prints error messages to stderr)  <a href="group___util_module.html#ga0ac6d9c9d88ac0da0d644c88a3b36aa3">More...</a><br/></td></tr>
 <tr class="separator:ga0ac6d9c9d88ac0da0d644c88a3b36aa3"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:ga5a175d2a88f63f7f1ab30e8b4f2cfa95"><td class="memItemLeft" align="right" valign="top">__host__ __device__ <br class="typebreak"/>
 __forceinline__ cudaError_t&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="group___util_module.html#ga5a175d2a88f63f7f1ab30e8b4f2cfa95">cub::Debug</a> (cudaError_t error, const char *filename, int line)</td></tr>
-<tr class="memdesc:ga5a175d2a88f63f7f1ab30e8b4f2cfa95"><td class="mdescLeft">&#160;</td><td class="mdescRight">If <code>CUB_STDERR</code> is defined and <code>error</code> is not <code>cudaSuccess</code>, the corresponding error message is printed to <code>stderr</code> along with the supplied source context.  <a href="group___util_module.html#ga5a175d2a88f63f7f1ab30e8b4f2cfa95">More...</a><br/></td></tr>
+<tr class="memdesc:ga5a175d2a88f63f7f1ab30e8b4f2cfa95"><td class="mdescLeft">&#160;</td><td class="mdescRight">If <code>CUB_STDERR</code> is defined and <code>error</code> is not <code>cudaSuccess</code>, the corresponding error message is printed to <code>stderr</code> (or <code>stdout</code> in device code) along with the supplied source context.  <a href="group___util_module.html#ga5a175d2a88f63f7f1ab30e8b4f2cfa95">More...</a><br/></td></tr>
 <tr class="separator:ga5a175d2a88f63f7f1ab30e8b4f2cfa95"><td class="memSeparator" colspan="2">&#160;</td></tr>
 </table>
 <a name="details" id="details"></a><h2 class="groupheader">Detailed Description</h2>
-<div class="textblock"><p>Debug error display routines </p>
+<div class="textblock"><p>Error and event logging routines.</p>
+<p>The following macros definitions are supported:</p>
+<ul>
+<li><code>CUB_LOG</code>. Simple event messages are printed to <code>stdout</code>.</li>
+<li><code>CUB_STDERR</code>. Error messages are printed to <code>stderr</code> (or <code>stdout</code> in device code). </li>
+</ul>
 </div></div><!-- contents -->
 <!-- HTML footer for doxygen 1.8.3.1-->
 <!-- start footer part -->
 <hr class="footer"/><address class="footer"><small>
-Generated on Wed Mar 27 2013 16:40:17 for CUB by &#160;<a href="http://www.doxygen.org/index.html">
+Generated on Thu Mar 28 2013 06:53:28 for CUB by &#160;<a href="http://www.doxygen.org/index.html">
 <img class="footer" src="doxygen.png" alt="doxygen"/>
 </a> 1.8.3.1
 <br>

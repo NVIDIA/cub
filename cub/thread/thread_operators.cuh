@@ -48,7 +48,7 @@ namespace cub {
 
 
 /**
- *  \addtogroup ThreadModule
+ * \addtogroup ThreadModule
  * @{
  */
 

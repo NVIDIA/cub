@@ -52,7 +52,6 @@ var searchBox = new SearchBox("searchBox", "search",false,'Search');
       <li><a href="index.html"><span>Main&#160;Page</span></a></li>
       <li><a href="modules.html"><span>Modules</span></a></li>
       <li><a href="annotated.html"><span>Classes</span></a></li>
-      <li class="current"><a href="files.html"><span>Files</span></a></li>
       <li>
         <div id="MSearchBox" class="MSearchBoxInactive">
         <span class="left">
@@ -69,12 +68,6 @@ var searchBox = new SearchBox("searchBox", "search",false,'Search');
           </span>
         </div>
       </li>
-    </ul>
-  </div>
-  <div id="navrow2" class="tabs2">
-    <ul class="tablist">
-      <li><a href="files.html"><span>File&#160;List</span></a></li>
-      <li><a href="globals.html"><span>File&#160;Members</span></a></li>
     </ul>
   </div>
 <!-- window showing the filter options -->
@@ -141,7 +134,7 @@ Enumerations</h2></td></tr>
 </table><table class="memberdecls">
 <tr class="heading"><td colspan="2"><h2 class="groupheader"><a name="func-members"></a>
 Functions</h2></td></tr>
-<tr><td colspan="2"><div class="groupHeader">Direct threadblock loads (blocked arrangement)</div></td></tr>
+<tr><td colspan="2"><div class="groupHeader">Direct threadblock I/O (blocked arrangement)</div></td></tr>
 <tr class="memitem:ga2ece00cc00c1d3269ee79ddf60d15457"><td class="memTemplParams" colspan="2">template&lt;PtxLoadModifier MODIFIER, typename T , int ITEMS_PER_THREAD, typename InputIterator &gt; </td></tr>
 <tr class="memitem:ga2ece00cc00c1d3269ee79ddf60d15457"><td class="memTemplItemLeft" align="right" valign="top">__device__ __forceinline__ void&#160;</td><td class="memTemplItemRight" valign="bottom"><a class="el" href="group___block_module.html#ga2ece00cc00c1d3269ee79ddf60d15457">cub::BlockLoadDirect</a> (InputIterator block_itr, T(&amp;items)[ITEMS_PER_THREAD])</td></tr>
 <tr class="memdesc:ga2ece00cc00c1d3269ee79ddf60d15457"><td class="mdescLeft">&#160;</td><td class="mdescRight">Load a tile of items across a threadblock directly using the specified cache modifier.  <a href="group___block_module.html#ga2ece00cc00c1d3269ee79ddf60d15457">More...</a><br/></td></tr>
@@ -166,7 +159,7 @@ Functions</h2></td></tr>
 <tr class="memitem:gac20fbd7aaa120e661575fe6e8028a015"><td class="memTemplItemLeft" align="right" valign="top">__device__ __forceinline__ void&#160;</td><td class="memTemplItemRight" valign="bottom"><a class="el" href="group___block_module.html#gac20fbd7aaa120e661575fe6e8028a015">cub::BlockLoadDirect</a> (InputIterator block_itr, const SizeT &amp;guarded_items, T oob_default, T(&amp;items)[ITEMS_PER_THREAD])</td></tr>
 <tr class="memdesc:gac20fbd7aaa120e661575fe6e8028a015"><td class="mdescLeft">&#160;</td><td class="mdescRight">Load a tile of items across a threadblock directly, guarded by range, with assignment for out-of-bound elements.  <a href="group___block_module.html#gac20fbd7aaa120e661575fe6e8028a015">More...</a><br/></td></tr>
 <tr class="separator:gac20fbd7aaa120e661575fe6e8028a015"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr><td colspan="2"><div class="groupHeader">Direct threadblock loads (striped arrangement)</div></td></tr>
+<tr><td colspan="2"><div class="groupHeader">Direct threadblock I/O (striped arrangement)</div></td></tr>
 <tr class="memitem:ga10442f4a83e49fb4a414ce6ce9234b79"><td class="memTemplParams" colspan="2">template&lt;PtxLoadModifier MODIFIER, typename T , int ITEMS_PER_THREAD, typename InputIterator &gt; </td></tr>
 <tr class="memitem:ga10442f4a83e49fb4a414ce6ce9234b79"><td class="memTemplItemLeft" align="right" valign="top">__device__ __forceinline__ void&#160;</td><td class="memTemplItemRight" valign="bottom"><a class="el" href="group___block_module.html#ga10442f4a83e49fb4a414ce6ce9234b79">cub::BlockLoadDirectStriped</a> (InputIterator block_itr, T(&amp;items)[ITEMS_PER_THREAD], int stride=blockDim.x)</td></tr>
 <tr class="memdesc:ga10442f4a83e49fb4a414ce6ce9234b79"><td class="mdescLeft">&#160;</td><td class="mdescRight">Load striped tile directly using the specified cache modifier.  <a href="group___block_module.html#ga10442f4a83e49fb4a414ce6ce9234b79">More...</a><br/></td></tr>
@@ -191,7 +184,7 @@ Functions</h2></td></tr>
 <tr class="memitem:gaf826ded39a7e107a5f15416d4b147be0"><td class="memTemplItemLeft" align="right" valign="top">__device__ __forceinline__ void&#160;</td><td class="memTemplItemRight" valign="bottom"><a class="el" href="group___block_module.html#gaf826ded39a7e107a5f15416d4b147be0">cub::BlockLoadDirectStriped</a> (InputIterator block_itr, const SizeT &amp;guarded_items, T oob_default, T(&amp;items)[ITEMS_PER_THREAD], int stride=blockDim.x)</td></tr>
 <tr class="memdesc:gaf826ded39a7e107a5f15416d4b147be0"><td class="mdescLeft">&#160;</td><td class="mdescRight">Load striped tile directly, guarded by range, with assignment for out-of-bound elements.  <a href="group___block_module.html#gaf826ded39a7e107a5f15416d4b147be0">More...</a><br/></td></tr>
 <tr class="separator:gaf826ded39a7e107a5f15416d4b147be0"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr><td colspan="2"><div class="groupHeader">Threadblock vectorized loads (blocked arrangement)</div></td></tr>
+<tr><td colspan="2"><div class="groupHeader">Threadblock vectorized I/O (blocked arrangement)</div></td></tr>
 <tr class="memitem:gaea8200ef976bb588c569e039ea79005c"><td class="memTemplParams" colspan="2">template&lt;PtxLoadModifier MODIFIER, typename T , int ITEMS_PER_THREAD&gt; </td></tr>
 <tr class="memitem:gaea8200ef976bb588c569e039ea79005c"><td class="memTemplItemLeft" align="right" valign="top">__device__ __forceinline__ void&#160;</td><td class="memTemplItemRight" valign="bottom"><a class="el" href="group___block_module.html#gaea8200ef976bb588c569e039ea79005c">cub::BlockLoadVectorized</a> (T *block_ptr, T(&amp;items)[ITEMS_PER_THREAD])</td></tr>
 <tr class="memdesc:gaea8200ef976bb588c569e039ea79005c"><td class="mdescLeft">&#160;</td><td class="mdescRight">Load a tile of items across a threadblock directly using the specified cache modifier.  <a href="group___block_module.html#gaea8200ef976bb588c569e039ea79005c">More...</a><br/></td></tr>
@@ -207,7 +200,7 @@ Functions</h2></td></tr>
 <!-- HTML footer for doxygen 1.8.3.1-->
 <!-- start footer part -->
 <hr class="footer"/><address class="footer"><small>
-Generated on Wed Mar 27 2013 16:40:17 for CUB by &#160;<a href="http://www.doxygen.org/index.html">
+Generated on Thu Mar 28 2013 06:53:28 for CUB by &#160;<a href="http://www.doxygen.org/index.html">
 <img class="footer" src="doxygen.png" alt="doxygen"/>
 </a> 1.8.3.1
 <br>

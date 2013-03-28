@@ -52,7 +52,6 @@ var searchBox = new SearchBox("searchBox", "search",false,'Search');
       <li><a href="index.html"><span>Main&#160;Page</span></a></li>
       <li><a href="modules.html"><span>Modules</span></a></li>
       <li class="current"><a href="annotated.html"><span>Classes</span></a></li>
-      <li><a href="files.html"><span>Files</span></a></li>
       <li>
         <div id="MSearchBox" class="MSearchBoxInactive">
         <span class="left">
@@ -165,7 +164,7 @@ class cub::BlockScan&lt; T, BLOCK_THREADS, ALGORITHM &gt;</h3>
 <div class="line"></div>
 <div class="line">__global__ <span class="keywordtype">void</span> SomeKernel(...)</div>
 <div class="line">{</div>
-<div class="line">    <span class="comment">// Parameterize BlockScan for the parallel execution context</span></div>
+<div class="line">    <span class="comment">// Parameterize BlockScan for 128 threads on type int</span></div>
 <div class="line">    <span class="keyword">typedef</span> <a class="code" href="classcub_1_1_block_scan.html" title="BlockScan provides variants of parallel prefix scan (and prefix sum) across a CUDA threadblock...">cub::BlockScan&lt;int, 128&gt;</a> BlockScan;</div>
 <div class="line"></div>
 <div class="line">    <span class="comment">// Declare shared memory for BlockScan</span></div>
@@ -201,7 +200,7 @@ class cub::BlockScan&lt; T, BLOCK_THREADS, ALGORITHM &gt;</h3>
 <div class="line"><span class="keyword">template</span> &lt;<span class="keywordtype">int</span> BLOCK_THREADS, <span class="keywordtype">int</span> ITEMS_PER_THREAD&gt;</div>
 <div class="line">__global__ <span class="keywordtype">void</span> SomeKernel(<span class="keywordtype">int</span> *d_global_counter, ...)</div>
 <div class="line">{</div>
-<div class="line">    <span class="comment">// Parameterize BlockScan for the parallel execution context</span></div>
+<div class="line">    <span class="comment">// Parameterize BlockScan on type int</span></div>
 <div class="line">    <span class="keyword">typedef</span> <a class="code" href="classcub_1_1_block_scan.html" title="BlockScan provides variants of parallel prefix scan (and prefix sum) across a CUDA threadblock...">cub::BlockScan&lt;int, BLOCK_THREADS&gt;</a> BlockScan;</div>
 <div class="line"></div>
 <div class="line">    <span class="comment">// Declare shared memory for BlockScan</span></div>
@@ -2611,7 +2610,7 @@ template&lt;int ITEMS_PER_THREAD&gt; </div>
 <!-- HTML footer for doxygen 1.8.3.1-->
 <!-- start footer part -->
 <hr class="footer"/><address class="footer"><small>
-Generated on Wed Mar 27 2013 16:40:17 for CUB by &#160;<a href="http://www.doxygen.org/index.html">
+Generated on Thu Mar 28 2013 06:53:28 for CUB by &#160;<a href="http://www.doxygen.org/index.html">
 <img class="footer" src="doxygen.png" alt="doxygen"/>
 </a> 1.8.3.1
 <br>

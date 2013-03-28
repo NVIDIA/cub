@@ -44,7 +44,7 @@ CUB_NS_PREFIX
 namespace cub {
 
 /**
- *  \addtogroup ThreadModule
+ * \addtogroup ThreadModule
  * @{
  */
 

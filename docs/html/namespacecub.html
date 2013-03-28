@@ -52,7 +52,6 @@ var searchBox = new SearchBox("searchBox", "search",false,'Search');
       <li><a href="index.html"><span>Main&#160;Page</span></a></li>
       <li><a href="modules.html"><span>Modules</span></a></li>
       <li><a href="annotated.html"><span>Classes</span></a></li>
-      <li><a href="files.html"><span>Files</span></a></li>
       <li>
         <div id="MSearchBox" class="MSearchBoxInactive">
         <span class="left">
@@ -173,7 +172,8 @@ Classes</h2></td></tr>
 <tr class="memitem:"><td class="memItemLeft" align="right" valign="top">class &#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classcub_1_1_device.html">Device</a></td></tr>
 <tr class="memdesc:"><td class="mdescLeft">&#160;</td><td class="mdescRight">Properties of a given CUDA device and the corresponding PTX bundle.  <a href="classcub_1_1_device.html#details">More...</a><br/></td></tr>
 <tr class="separator:"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:"><td class="memItemLeft" align="right" valign="top">struct &#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="structcub_1_1_device_foo.html">DeviceFoo</a></td></tr>
+<tr class="memitem:"><td class="memItemLeft" align="right" valign="top">struct &#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="structcub_1_1_device_reduce.html">DeviceReduce</a></td></tr>
+<tr class="memdesc:"><td class="mdescLeft">&#160;</td><td class="mdescRight"><a class="el" href="structcub_1_1_device_reduce.html" title="DeviceReduce provides variants of parallel reduction across a CUDA device.">DeviceReduce</a> provides variants of parallel reduction across a CUDA device.  <a href="structcub_1_1_device_reduce.html#details">More...</a><br/></td></tr>
 <tr class="separator:"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:"><td class="memItemLeft" align="right" valign="top">struct &#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="structcub_1_1_enable_if.html">EnableIf</a></td></tr>
 <tr class="memdesc:"><td class="mdescLeft">&#160;</td><td class="mdescRight">Simple enable-if (similar to Boost)  <a href="structcub_1_1_enable_if.html#details">More...</a><br/></td></tr>
@@ -259,7 +259,8 @@ Enumerations</h2></td></tr>
 <tr class="separator:abec44bba36037c547e7e84906d0d23ab"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:aaaa9ee8c8a57c6607909c110affd189e"><td class="memItemLeft" align="right" valign="top">enum &#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="namespacecub.html#aaaa9ee8c8a57c6607909c110affd189e">BlockStorePolicy</a> { <a class="el" href="namespacecub.html#aaaa9ee8c8a57c6607909c110affd189ea9b8dcc7b6b06bcfc24af4f499523b880">BLOCK_STORE_DIRECT</a>, 
 <a class="el" href="namespacecub.html#aaaa9ee8c8a57c6607909c110affd189ea0ccd625a7f2f3649155cbd5a27adfb41">BLOCK_STORE_VECTORIZE</a>, 
-<a class="el" href="namespacecub.html#aaaa9ee8c8a57c6607909c110affd189eab0bbe20613466c3cedfcfea33a97d69c">BLOCK_STORE_TRANSPOSE</a>
+<a class="el" href="namespacecub.html#aaaa9ee8c8a57c6607909c110affd189eab0bbe20613466c3cedfcfea33a97d69c">BLOCK_STORE_TRANSPOSE</a>, 
+<a class="el" href="namespacecub.html#aaaa9ee8c8a57c6607909c110affd189ea78ff04d6671448a3a5bfe3b6a758a8c1">BLOCK_STORE_STRIPED</a>
  }</td></tr>
 <tr class="memdesc:aaaa9ee8c8a57c6607909c110affd189e"><td class="mdescLeft">&#160;</td><td class="mdescRight">Tuning policy for <a class="el" href="classcub_1_1_block_store.html" title="BlockStore provides data movement operations for writing blocked-arranged data to global memory...">cub::BlockStore</a>.  <a href="namespacecub.html#aaaa9ee8c8a57c6607909c110affd189e">More...</a><br/></td></tr>
 <tr class="separator:aaaa9ee8c8a57c6607909c110affd189e"><td class="memSeparator" colspan="2">&#160;</td></tr>
@@ -300,18 +301,18 @@ Enumerations</h2></td></tr>
 Functions</h2></td></tr>
 <tr class="memitem:ga0ac6d9c9d88ac0da0d644c88a3b36aa3"><td class="memItemLeft" align="right" valign="top">__host__ __device__ <br class="typebreak"/>
 __forceinline__ cudaError_t&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="group___util_module.html#ga0ac6d9c9d88ac0da0d644c88a3b36aa3">Debug</a> (cudaError_t error, const char *message, const char *filename, int line)</td></tr>
-<tr class="memdesc:ga0ac6d9c9d88ac0da0d644c88a3b36aa3"><td class="mdescLeft">&#160;</td><td class="mdescRight">If <code>CUB_STDERR</code> is defined and <code>error</code> is not <code>cudaSuccess</code>, <code>message</code> is printed to <code>stderr</code> along with the supplied source context.  <a href="group___util_module.html#ga0ac6d9c9d88ac0da0d644c88a3b36aa3">More...</a><br/></td></tr>
+<tr class="memdesc:ga0ac6d9c9d88ac0da0d644c88a3b36aa3"><td class="mdescLeft">&#160;</td><td class="mdescRight">CUB error reporting macro (prints error messages to stderr)  <a href="group___util_module.html#ga0ac6d9c9d88ac0da0d644c88a3b36aa3">More...</a><br/></td></tr>
 <tr class="separator:ga0ac6d9c9d88ac0da0d644c88a3b36aa3"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:ga5a175d2a88f63f7f1ab30e8b4f2cfa95"><td class="memItemLeft" align="right" valign="top">__host__ __device__ <br class="typebreak"/>
 __forceinline__ cudaError_t&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="group___util_module.html#ga5a175d2a88f63f7f1ab30e8b4f2cfa95">Debug</a> (cudaError_t error, const char *filename, int line)</td></tr>
-<tr class="memdesc:ga5a175d2a88f63f7f1ab30e8b4f2cfa95"><td class="mdescLeft">&#160;</td><td class="mdescRight">If <code>CUB_STDERR</code> is defined and <code>error</code> is not <code>cudaSuccess</code>, the corresponding error message is printed to <code>stderr</code> along with the supplied source context.  <a href="group___util_module.html#ga5a175d2a88f63f7f1ab30e8b4f2cfa95">More...</a><br/></td></tr>
+<tr class="memdesc:ga5a175d2a88f63f7f1ab30e8b4f2cfa95"><td class="mdescLeft">&#160;</td><td class="mdescRight">If <code>CUB_STDERR</code> is defined and <code>error</code> is not <code>cudaSuccess</code>, the corresponding error message is printed to <code>stderr</code> (or <code>stdout</code> in device code) along with the supplied source context.  <a href="group___util_module.html#ga5a175d2a88f63f7f1ab30e8b4f2cfa95">More...</a><br/></td></tr>
 <tr class="separator:ga5a175d2a88f63f7f1ab30e8b4f2cfa95"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:ga5185b7021113b817ab77569a51cec1df"><td class="memTemplParams" colspan="2"><a class="anchor" id="ga5185b7021113b817ab77569a51cec1df"></a>
 template&lt;typename T &gt; </td></tr>
 <tr class="memitem:ga5185b7021113b817ab77569a51cec1df"><td class="memTemplItemLeft" align="right" valign="top">__global__ void&#160;</td><td class="memTemplItemRight" valign="bottom"><a class="el" href="group___util_module.html#ga5185b7021113b817ab77569a51cec1df">EmptyKernel</a> (void)</td></tr>
 <tr class="memdesc:ga5185b7021113b817ab77569a51cec1df"><td class="mdescLeft">&#160;</td><td class="mdescRight">Empty kernel for querying PTX manifest metadata (e.g., version) for the current device. <br/></td></tr>
 <tr class="separator:ga5185b7021113b817ab77569a51cec1df"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr><td colspan="2"><div class="groupHeader">Direct threadblock loads (blocked arrangement)</div></td></tr>
+<tr><td colspan="2"><div class="groupHeader">Direct threadblock I/O (blocked arrangement)</div></td></tr>
 <tr class="memitem:ga2ece00cc00c1d3269ee79ddf60d15457"><td class="memTemplParams" colspan="2">template&lt;PtxLoadModifier MODIFIER, typename T , int ITEMS_PER_THREAD, typename InputIterator &gt; </td></tr>
 <tr class="memitem:ga2ece00cc00c1d3269ee79ddf60d15457"><td class="memTemplItemLeft" align="right" valign="top">__device__ __forceinline__ void&#160;</td><td class="memTemplItemRight" valign="bottom"><a class="el" href="group___block_module.html#ga2ece00cc00c1d3269ee79ddf60d15457">BlockLoadDirect</a> (InputIterator block_itr, T(&amp;items)[ITEMS_PER_THREAD])</td></tr>
 <tr class="memdesc:ga2ece00cc00c1d3269ee79ddf60d15457"><td class="mdescLeft">&#160;</td><td class="mdescRight">Load a tile of items across a threadblock directly using the specified cache modifier.  <a href="group___block_module.html#ga2ece00cc00c1d3269ee79ddf60d15457">More...</a><br/></td></tr>
@@ -336,7 +337,23 @@ template&lt;typename T &gt; </td></tr>
 <tr class="memitem:gac20fbd7aaa120e661575fe6e8028a015"><td class="memTemplItemLeft" align="right" valign="top">__device__ __forceinline__ void&#160;</td><td class="memTemplItemRight" valign="bottom"><a class="el" href="group___block_module.html#gac20fbd7aaa120e661575fe6e8028a015">BlockLoadDirect</a> (InputIterator block_itr, const SizeT &amp;guarded_items, T oob_default, T(&amp;items)[ITEMS_PER_THREAD])</td></tr>
 <tr class="memdesc:gac20fbd7aaa120e661575fe6e8028a015"><td class="mdescLeft">&#160;</td><td class="mdescRight">Load a tile of items across a threadblock directly, guarded by range, with assignment for out-of-bound elements.  <a href="group___block_module.html#gac20fbd7aaa120e661575fe6e8028a015">More...</a><br/></td></tr>
 <tr class="separator:gac20fbd7aaa120e661575fe6e8028a015"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr><td colspan="2"><div class="groupHeader">Direct threadblock loads (striped arrangement)</div></td></tr>
+<tr class="memitem:gaa8f12f02c082f8d689100b8ac88f8f61"><td class="memTemplParams" colspan="2">template&lt;PtxStoreModifier MODIFIER, typename T , int ITEMS_PER_THREAD, typename OutputIterator &gt; </td></tr>
+<tr class="memitem:gaa8f12f02c082f8d689100b8ac88f8f61"><td class="memTemplItemLeft" align="right" valign="top">__device__ __forceinline__ void&#160;</td><td class="memTemplItemRight" valign="bottom"><a class="el" href="group___block_module.html#gaa8f12f02c082f8d689100b8ac88f8f61">BlockStoreDirect</a> (OutputIterator block_itr, T(&amp;items)[ITEMS_PER_THREAD])</td></tr>
+<tr class="memdesc:gaa8f12f02c082f8d689100b8ac88f8f61"><td class="mdescLeft">&#160;</td><td class="mdescRight">Store a tile of items across a threadblock directly using the specified cache modifier.  <a href="group___block_module.html#gaa8f12f02c082f8d689100b8ac88f8f61">More...</a><br/></td></tr>
+<tr class="separator:gaa8f12f02c082f8d689100b8ac88f8f61"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:ga2d52e8ce92c8bc044898cc289a7e96b4"><td class="memTemplParams" colspan="2">template&lt;typename T , int ITEMS_PER_THREAD, typename OutputIterator &gt; </td></tr>
+<tr class="memitem:ga2d52e8ce92c8bc044898cc289a7e96b4"><td class="memTemplItemLeft" align="right" valign="top">__device__ __forceinline__ void&#160;</td><td class="memTemplItemRight" valign="bottom"><a class="el" href="group___block_module.html#ga2d52e8ce92c8bc044898cc289a7e96b4">BlockStoreDirect</a> (OutputIterator block_itr, T(&amp;items)[ITEMS_PER_THREAD])</td></tr>
+<tr class="memdesc:ga2d52e8ce92c8bc044898cc289a7e96b4"><td class="mdescLeft">&#160;</td><td class="mdescRight">Store a tile of items across a threadblock directly.  <a href="group___block_module.html#ga2d52e8ce92c8bc044898cc289a7e96b4">More...</a><br/></td></tr>
+<tr class="separator:ga2d52e8ce92c8bc044898cc289a7e96b4"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:ga8b5f82ad8487072b6cc80b312db1962d"><td class="memTemplParams" colspan="2">template&lt;PtxStoreModifier MODIFIER, typename T , int ITEMS_PER_THREAD, typename OutputIterator , typename SizeT &gt; </td></tr>
+<tr class="memitem:ga8b5f82ad8487072b6cc80b312db1962d"><td class="memTemplItemLeft" align="right" valign="top">__device__ __forceinline__ void&#160;</td><td class="memTemplItemRight" valign="bottom"><a class="el" href="group___block_module.html#ga8b5f82ad8487072b6cc80b312db1962d">BlockStoreDirect</a> (OutputIterator block_itr, const SizeT &amp;guarded_items, T(&amp;items)[ITEMS_PER_THREAD])</td></tr>
+<tr class="memdesc:ga8b5f82ad8487072b6cc80b312db1962d"><td class="mdescLeft">&#160;</td><td class="mdescRight">Store a tile of items across a threadblock directly using the specified cache modifier, guarded by range.  <a href="group___block_module.html#ga8b5f82ad8487072b6cc80b312db1962d">More...</a><br/></td></tr>
+<tr class="separator:ga8b5f82ad8487072b6cc80b312db1962d"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:ga34a623c83894408f4f05ceb788d5ac92"><td class="memTemplParams" colspan="2">template&lt;typename T , int ITEMS_PER_THREAD, typename OutputIterator , typename SizeT &gt; </td></tr>
+<tr class="memitem:ga34a623c83894408f4f05ceb788d5ac92"><td class="memTemplItemLeft" align="right" valign="top">__device__ __forceinline__ void&#160;</td><td class="memTemplItemRight" valign="bottom"><a class="el" href="group___block_module.html#ga34a623c83894408f4f05ceb788d5ac92">BlockStoreDirect</a> (OutputIterator block_itr, const SizeT &amp;guarded_items, T(&amp;items)[ITEMS_PER_THREAD])</td></tr>
+<tr class="memdesc:ga34a623c83894408f4f05ceb788d5ac92"><td class="mdescLeft">&#160;</td><td class="mdescRight">Store a tile of items across a threadblock directly, guarded by range.  <a href="group___block_module.html#ga34a623c83894408f4f05ceb788d5ac92">More...</a><br/></td></tr>
+<tr class="separator:ga34a623c83894408f4f05ceb788d5ac92"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr><td colspan="2"><div class="groupHeader">Direct threadblock I/O (striped arrangement)</div></td></tr>
 <tr class="memitem:ga10442f4a83e49fb4a414ce6ce9234b79"><td class="memTemplParams" colspan="2">template&lt;PtxLoadModifier MODIFIER, typename T , int ITEMS_PER_THREAD, typename InputIterator &gt; </td></tr>
 <tr class="memitem:ga10442f4a83e49fb4a414ce6ce9234b79"><td class="memTemplItemLeft" align="right" valign="top">__device__ __forceinline__ void&#160;</td><td class="memTemplItemRight" valign="bottom"><a class="el" href="group___block_module.html#ga10442f4a83e49fb4a414ce6ce9234b79">BlockLoadDirectStriped</a> (InputIterator block_itr, T(&amp;items)[ITEMS_PER_THREAD], int stride=blockDim.x)</td></tr>
 <tr class="memdesc:ga10442f4a83e49fb4a414ce6ce9234b79"><td class="mdescLeft">&#160;</td><td class="mdescRight">Load striped tile directly using the specified cache modifier.  <a href="group___block_module.html#ga10442f4a83e49fb4a414ce6ce9234b79">More...</a><br/></td></tr>
@@ -361,33 +378,6 @@ template&lt;typename T &gt; </td></tr>
 <tr class="memitem:gaf826ded39a7e107a5f15416d4b147be0"><td class="memTemplItemLeft" align="right" valign="top">__device__ __forceinline__ void&#160;</td><td class="memTemplItemRight" valign="bottom"><a class="el" href="group___block_module.html#gaf826ded39a7e107a5f15416d4b147be0">BlockLoadDirectStriped</a> (InputIterator block_itr, const SizeT &amp;guarded_items, T oob_default, T(&amp;items)[ITEMS_PER_THREAD], int stride=blockDim.x)</td></tr>
 <tr class="memdesc:gaf826ded39a7e107a5f15416d4b147be0"><td class="mdescLeft">&#160;</td><td class="mdescRight">Load striped tile directly, guarded by range, with assignment for out-of-bound elements.  <a href="group___block_module.html#gaf826ded39a7e107a5f15416d4b147be0">More...</a><br/></td></tr>
 <tr class="separator:gaf826ded39a7e107a5f15416d4b147be0"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr><td colspan="2"><div class="groupHeader">Threadblock vectorized loads (blocked arrangement)</div></td></tr>
-<tr class="memitem:gaea8200ef976bb588c569e039ea79005c"><td class="memTemplParams" colspan="2">template&lt;PtxLoadModifier MODIFIER, typename T , int ITEMS_PER_THREAD&gt; </td></tr>
-<tr class="memitem:gaea8200ef976bb588c569e039ea79005c"><td class="memTemplItemLeft" align="right" valign="top">__device__ __forceinline__ void&#160;</td><td class="memTemplItemRight" valign="bottom"><a class="el" href="group___block_module.html#gaea8200ef976bb588c569e039ea79005c">BlockLoadVectorized</a> (T *block_ptr, T(&amp;items)[ITEMS_PER_THREAD])</td></tr>
-<tr class="memdesc:gaea8200ef976bb588c569e039ea79005c"><td class="mdescLeft">&#160;</td><td class="mdescRight">Load a tile of items across a threadblock directly using the specified cache modifier.  <a href="group___block_module.html#gaea8200ef976bb588c569e039ea79005c">More...</a><br/></td></tr>
-<tr class="separator:gaea8200ef976bb588c569e039ea79005c"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:gab1a8ffc7fe70a636a3d09403344cfced"><td class="memTemplParams" colspan="2">template&lt;typename T , int ITEMS_PER_THREAD&gt; </td></tr>
-<tr class="memitem:gab1a8ffc7fe70a636a3d09403344cfced"><td class="memTemplItemLeft" align="right" valign="top">__device__ __forceinline__ void&#160;</td><td class="memTemplItemRight" valign="bottom"><a class="el" href="group___block_module.html#gab1a8ffc7fe70a636a3d09403344cfced">BlockLoadVectorized</a> (T *block_ptr, T(&amp;items)[ITEMS_PER_THREAD])</td></tr>
-<tr class="memdesc:gab1a8ffc7fe70a636a3d09403344cfced"><td class="mdescLeft">&#160;</td><td class="mdescRight">Load a tile of items across a threadblock directly.  <a href="group___block_module.html#gab1a8ffc7fe70a636a3d09403344cfced">More...</a><br/></td></tr>
-<tr class="separator:gab1a8ffc7fe70a636a3d09403344cfced"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr><td colspan="2"><div class="groupHeader">Direct threadblock stores (blocked arrangement)</div></td></tr>
-<tr class="memitem:gaa8f12f02c082f8d689100b8ac88f8f61"><td class="memTemplParams" colspan="2">template&lt;PtxStoreModifier MODIFIER, typename T , int ITEMS_PER_THREAD, typename OutputIterator &gt; </td></tr>
-<tr class="memitem:gaa8f12f02c082f8d689100b8ac88f8f61"><td class="memTemplItemLeft" align="right" valign="top">__device__ __forceinline__ void&#160;</td><td class="memTemplItemRight" valign="bottom"><a class="el" href="group___block_module.html#gaa8f12f02c082f8d689100b8ac88f8f61">BlockStoreDirect</a> (OutputIterator block_itr, T(&amp;items)[ITEMS_PER_THREAD])</td></tr>
-<tr class="memdesc:gaa8f12f02c082f8d689100b8ac88f8f61"><td class="mdescLeft">&#160;</td><td class="mdescRight">Store a tile of items across a threadblock directly using the specified cache modifier.  <a href="group___block_module.html#gaa8f12f02c082f8d689100b8ac88f8f61">More...</a><br/></td></tr>
-<tr class="separator:gaa8f12f02c082f8d689100b8ac88f8f61"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:ga2d52e8ce92c8bc044898cc289a7e96b4"><td class="memTemplParams" colspan="2">template&lt;typename T , int ITEMS_PER_THREAD, typename OutputIterator &gt; </td></tr>
-<tr class="memitem:ga2d52e8ce92c8bc044898cc289a7e96b4"><td class="memTemplItemLeft" align="right" valign="top">__device__ __forceinline__ void&#160;</td><td class="memTemplItemRight" valign="bottom"><a class="el" href="group___block_module.html#ga2d52e8ce92c8bc044898cc289a7e96b4">BlockStoreDirect</a> (OutputIterator block_itr, T(&amp;items)[ITEMS_PER_THREAD])</td></tr>
-<tr class="memdesc:ga2d52e8ce92c8bc044898cc289a7e96b4"><td class="mdescLeft">&#160;</td><td class="mdescRight">Store a tile of items across a threadblock directly.  <a href="group___block_module.html#ga2d52e8ce92c8bc044898cc289a7e96b4">More...</a><br/></td></tr>
-<tr class="separator:ga2d52e8ce92c8bc044898cc289a7e96b4"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:ga8b5f82ad8487072b6cc80b312db1962d"><td class="memTemplParams" colspan="2">template&lt;PtxStoreModifier MODIFIER, typename T , int ITEMS_PER_THREAD, typename OutputIterator , typename SizeT &gt; </td></tr>
-<tr class="memitem:ga8b5f82ad8487072b6cc80b312db1962d"><td class="memTemplItemLeft" align="right" valign="top">__device__ __forceinline__ void&#160;</td><td class="memTemplItemRight" valign="bottom"><a class="el" href="group___block_module.html#ga8b5f82ad8487072b6cc80b312db1962d">BlockStoreDirect</a> (OutputIterator block_itr, const SizeT &amp;guarded_items, T(&amp;items)[ITEMS_PER_THREAD])</td></tr>
-<tr class="memdesc:ga8b5f82ad8487072b6cc80b312db1962d"><td class="mdescLeft">&#160;</td><td class="mdescRight">Store a tile of items across a threadblock directly using the specified cache modifier, guarded by range.  <a href="group___block_module.html#ga8b5f82ad8487072b6cc80b312db1962d">More...</a><br/></td></tr>
-<tr class="separator:ga8b5f82ad8487072b6cc80b312db1962d"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:ga34a623c83894408f4f05ceb788d5ac92"><td class="memTemplParams" colspan="2">template&lt;typename T , int ITEMS_PER_THREAD, typename OutputIterator , typename SizeT &gt; </td></tr>
-<tr class="memitem:ga34a623c83894408f4f05ceb788d5ac92"><td class="memTemplItemLeft" align="right" valign="top">__device__ __forceinline__ void&#160;</td><td class="memTemplItemRight" valign="bottom"><a class="el" href="group___block_module.html#ga34a623c83894408f4f05ceb788d5ac92">BlockStoreDirect</a> (OutputIterator block_itr, const SizeT &amp;guarded_items, T(&amp;items)[ITEMS_PER_THREAD])</td></tr>
-<tr class="memdesc:ga34a623c83894408f4f05ceb788d5ac92"><td class="mdescLeft">&#160;</td><td class="mdescRight">Store a tile of items across a threadblock directly, guarded by range.  <a href="group___block_module.html#ga34a623c83894408f4f05ceb788d5ac92">More...</a><br/></td></tr>
-<tr class="separator:ga34a623c83894408f4f05ceb788d5ac92"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr><td colspan="2"><div class="groupHeader">Direct threadblock stores (striped arrangement)</div></td></tr>
 <tr class="memitem:gaa18341f23a5d00c1b148e0013a9cc637"><td class="memTemplParams" colspan="2">template&lt;PtxStoreModifier MODIFIER, typename T , int ITEMS_PER_THREAD, typename OutputIterator &gt; </td></tr>
 <tr class="memitem:gaa18341f23a5d00c1b148e0013a9cc637"><td class="memTemplItemLeft" align="right" valign="top">__device__ __forceinline__ void&#160;</td><td class="memTemplItemRight" valign="bottom"><a class="el" href="group___block_module.html#gaa18341f23a5d00c1b148e0013a9cc637">BlockStoreDirectStriped</a> (OutputIterator block_itr, T(&amp;items)[ITEMS_PER_THREAD], int stride=blockDim.x)</td></tr>
 <tr class="memdesc:gaa18341f23a5d00c1b148e0013a9cc637"><td class="mdescLeft">&#160;</td><td class="mdescRight">Store striped tile directly using the specified cache modifier.  <a href="group___block_module.html#gaa18341f23a5d00c1b148e0013a9cc637">More...</a><br/></td></tr>
@@ -403,7 +393,15 @@ template&lt;typename T &gt; </td></tr>
 <tr class="memitem:ga75150e5519f86c1054d7a7584e1a4f23"><td class="memTemplItemLeft" align="right" valign="top">__device__ __forceinline__ void&#160;</td><td class="memTemplItemRight" valign="bottom"><a class="el" href="group___block_module.html#ga75150e5519f86c1054d7a7584e1a4f23">BlockStoreDirectStriped</a> (OutputIterator block_itr, const SizeT &amp;guarded_items, T(&amp;items)[ITEMS_PER_THREAD], int stride=blockDim.x)</td></tr>
 <tr class="memdesc:ga75150e5519f86c1054d7a7584e1a4f23"><td class="mdescLeft">&#160;</td><td class="mdescRight">Store striped tile directly, guarded by range.  <a href="group___block_module.html#ga75150e5519f86c1054d7a7584e1a4f23">More...</a><br/></td></tr>
 <tr class="separator:ga75150e5519f86c1054d7a7584e1a4f23"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr><td colspan="2"><div class="groupHeader">Threadblock vectorized stores (blocked arrangement)</div></td></tr>
+<tr><td colspan="2"><div class="groupHeader">Threadblock vectorized I/O (blocked arrangement)</div></td></tr>
+<tr class="memitem:gaea8200ef976bb588c569e039ea79005c"><td class="memTemplParams" colspan="2">template&lt;PtxLoadModifier MODIFIER, typename T , int ITEMS_PER_THREAD&gt; </td></tr>
+<tr class="memitem:gaea8200ef976bb588c569e039ea79005c"><td class="memTemplItemLeft" align="right" valign="top">__device__ __forceinline__ void&#160;</td><td class="memTemplItemRight" valign="bottom"><a class="el" href="group___block_module.html#gaea8200ef976bb588c569e039ea79005c">BlockLoadVectorized</a> (T *block_ptr, T(&amp;items)[ITEMS_PER_THREAD])</td></tr>
+<tr class="memdesc:gaea8200ef976bb588c569e039ea79005c"><td class="mdescLeft">&#160;</td><td class="mdescRight">Load a tile of items across a threadblock directly using the specified cache modifier.  <a href="group___block_module.html#gaea8200ef976bb588c569e039ea79005c">More...</a><br/></td></tr>
+<tr class="separator:gaea8200ef976bb588c569e039ea79005c"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:gab1a8ffc7fe70a636a3d09403344cfced"><td class="memTemplParams" colspan="2">template&lt;typename T , int ITEMS_PER_THREAD&gt; </td></tr>
+<tr class="memitem:gab1a8ffc7fe70a636a3d09403344cfced"><td class="memTemplItemLeft" align="right" valign="top">__device__ __forceinline__ void&#160;</td><td class="memTemplItemRight" valign="bottom"><a class="el" href="group___block_module.html#gab1a8ffc7fe70a636a3d09403344cfced">BlockLoadVectorized</a> (T *block_ptr, T(&amp;items)[ITEMS_PER_THREAD])</td></tr>
+<tr class="memdesc:gab1a8ffc7fe70a636a3d09403344cfced"><td class="mdescLeft">&#160;</td><td class="mdescRight">Load a tile of items across a threadblock directly.  <a href="group___block_module.html#gab1a8ffc7fe70a636a3d09403344cfced">More...</a><br/></td></tr>
+<tr class="separator:gab1a8ffc7fe70a636a3d09403344cfced"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:ga013c3ab8214854f45e8d678958e7dde9"><td class="memTemplParams" colspan="2">template&lt;PtxStoreModifier MODIFIER, typename T , int ITEMS_PER_THREAD&gt; </td></tr>
 <tr class="memitem:ga013c3ab8214854f45e8d678958e7dde9"><td class="memTemplItemLeft" align="right" valign="top">__device__ __forceinline__ void&#160;</td><td class="memTemplItemRight" valign="bottom"><a class="el" href="group___block_module.html#ga013c3ab8214854f45e8d678958e7dde9">BlockStoreVectorized</a> (T *block_ptr, T(&amp;items)[ITEMS_PER_THREAD])</td></tr>
 <tr class="memdesc:ga013c3ab8214854f45e8d678958e7dde9"><td class="mdescLeft">&#160;</td><td class="mdescRight">Store a tile of items across a threadblock directly using the specified cache modifier.  <a href="group___block_module.html#ga013c3ab8214854f45e8d678958e7dde9">More...</a><br/></td></tr>
@@ -621,6 +619,13 @@ std::iterator_traits<br class="typebreak"/>
 </ul>
 </dd></dl>
 </td></tr>
+<tr><td class="fieldname"><em><a class="anchor" id="aaaa9ee8c8a57c6607909c110affd189ea78ff04d6671448a3a5bfe3b6a758a8c1"></a>BLOCK_STORE_STRIPED</em>&nbsp;</td><td class="fielddoc">
+<dl class="section user"><dt>Overview</dt><dd>A <a href="index.html#sec3sec3"><em>striped arrangement</em></a> of data is written directly to memory. The threadblock writes items in a parallel "strip-mining" fashion: consecutive items owned by thread<sub><em>i</em></sub> are written to memory with stride <code>BLOCK_THREADS</code> between them.</dd></dl>
+<dl class="section user"><dt>Performance Considerations</dt><dd><ul>
+<li>The utilization of memory transactions (coalescing) remains high regardless of items written per thread. </li>
+</ul>
+</dd></dl>
+</td></tr>
 </table>
 
 </div>
@@ -629,7 +634,7 @@ std::iterator_traits<br class="typebreak"/>
 <!-- HTML footer for doxygen 1.8.3.1-->
 <!-- start footer part -->
 <hr class="footer"/><address class="footer"><small>
-Generated on Wed Mar 27 2013 16:40:17 for CUB by &#160;<a href="http://www.doxygen.org/index.html">
+Generated on Thu Mar 28 2013 06:53:28 for CUB by &#160;<a href="http://www.doxygen.org/index.html">
 <img class="footer" src="doxygen.png" alt="doxygen"/>
 </a> 1.8.3.1
 <br>
