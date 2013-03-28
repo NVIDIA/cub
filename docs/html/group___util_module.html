@@ -156,16 +156,10 @@ Macros</h2></td></tr>
 <tr class="memitem:ga76769ce380739b38e0bd00f57e0dbe4f"><td class="memItemLeft" align="right" valign="top">#define&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="group___util_module.html#ga76769ce380739b38e0bd00f57e0dbe4f">CUB_PTX_ARCH</a></td></tr>
 <tr class="memdesc:ga76769ce380739b38e0bd00f57e0dbe4f"><td class="mdescLeft">&#160;</td><td class="mdescRight">CUB_PTX_ARCH reflects the PTX version targeted by the active compiler pass (or zero during the host pass).  <a href="#ga76769ce380739b38e0bd00f57e0dbe4f">More...</a><br/></td></tr>
 <tr class="separator:ga76769ce380739b38e0bd00f57e0dbe4f"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:ga84c3a4c178bf6593e0fad2b763606236"><td class="memItemLeft" align="right" valign="top">#define&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="group___util_module.html#ga84c3a4c178bf6593e0fad2b763606236">CubDebug</a>(e)</td></tr>
-<tr class="memdesc:ga84c3a4c178bf6593e0fad2b763606236"><td class="mdescLeft">&#160;</td><td class="mdescRight">Debug macro.  <a href="#ga84c3a4c178bf6593e0fad2b763606236">More...</a><br/></td></tr>
+<tr class="memitem:ga84c3a4c178bf6593e0fad2b763606236"><td class="memItemLeft" align="right" valign="top"><a class="anchor" id="ga84c3a4c178bf6593e0fad2b763606236"></a>
+#define&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="group___util_module.html#ga84c3a4c178bf6593e0fad2b763606236">CubDebug</a>(e)</td></tr>
+<tr class="memdesc:ga84c3a4c178bf6593e0fad2b763606236"><td class="mdescLeft">&#160;</td><td class="mdescRight">Debug macro. <br/></td></tr>
 <tr class="separator:ga84c3a4c178bf6593e0fad2b763606236"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:ga26211db894893b3cec946e4e537536f8"><td class="memItemLeft" align="right" valign="top">#define&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="group___util_module.html#ga26211db894893b3cec946e4e537536f8">CubDebugExit</a>(e)</td></tr>
-<tr class="memdesc:ga26211db894893b3cec946e4e537536f8"><td class="mdescLeft">&#160;</td><td class="mdescRight">Debug macro with exit.  <a href="#ga26211db894893b3cec946e4e537536f8">More...</a><br/></td></tr>
-<tr class="separator:ga26211db894893b3cec946e4e537536f8"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:ga55e25af53c24d598b48d6218fa88736d"><td class="memItemLeft" align="right" valign="top"><a class="anchor" id="ga55e25af53c24d598b48d6218fa88736d"></a>
-#define&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="group___util_module.html#ga55e25af53c24d598b48d6218fa88736d">CubLog</a>(p)</td></tr>
-<tr class="memdesc:ga55e25af53c24d598b48d6218fa88736d"><td class="mdescLeft">&#160;</td><td class="mdescRight">Log macro for printf statements. <br/></td></tr>
-<tr class="separator:ga55e25af53c24d598b48d6218fa88736d"><td class="memSeparator" colspan="2">&#160;</td></tr>
 </table><table class="memberdecls">
 <tr class="heading"><td colspan="2"><h2 class="groupheader"><a name="typedef-members"></a>
 Typedefs</h2></td></tr>
@@ -234,46 +228,6 @@ template&lt;typename T &gt; </td></tr>
 <div class="line">    ((<a class="code" href="group___util_module.html#ga76769ce380739b38e0bd00f57e0dbe4f" title="CUB_PTX_ARCH reflects the PTX version targeted by the active compiler pass (or zero during the host p...">CUB_PTX_ARCH</a> == 0) || ((<a class="code" href="group___util_module.html#ga76769ce380739b38e0bd00f57e0dbe4f" title="CUB_PTX_ARCH reflects the PTX version targeted by the active compiler pass (or zero during the host p...">CUB_PTX_ARCH</a> &gt;= 350) &amp;&amp; defined(__BUILDING_CNPRT__)))</div>
 </div><!-- fragment -->
 <p>Whether or not the source targeted by the active compiler pass is allowed to invoke device kernels or methods from the CUDA runtime API. </p>
-
-</div>
-</div>
-<a class="anchor" id="ga84c3a4c178bf6593e0fad2b763606236"></a>
-<div class="memitem">
-<div class="memproto">
-      <table class="memname">
-        <tr>
-          <td class="memname">#define CubDebug</td>
-          <td>(</td>
-          <td class="paramtype">&#160;</td>
-          <td class="paramname">e</td><td>)</td>
-          <td></td>
-        </tr>
-      </table>
-</div><div class="memdoc">
-<b>Value:</b><div class="fragment"><div class="line"><a class="code" href="group___util_module.html#ga0ac6d9c9d88ac0da0d644c88a3b36aa3" title="CUB error reporting macro (prints error messages to stderr)">\\</a></div>
-<div class="line"><a class="code" href="group___util_module.html#ga0ac6d9c9d88ac0da0d644c88a3b36aa3" title="CUB error reporting macro (prints error messages to stderr)">    cub::Debug</a>(e, __FILE__, __LINE__)</div>
-</div><!-- fragment -->
-<p>Debug macro. </p>
-
-</div>
-</div>
-<a class="anchor" id="ga26211db894893b3cec946e4e537536f8"></a>
-<div class="memitem">
-<div class="memproto">
-      <table class="memname">
-        <tr>
-          <td class="memname">#define CubDebugExit</td>
-          <td>(</td>
-          <td class="paramtype">&#160;</td>
-          <td class="paramname">e</td><td>)</td>
-          <td></td>
-        </tr>
-      </table>
-</div><div class="memdoc">
-<b>Value:</b><div class="fragment"><div class="line">\\</div>
-<div class="line">    if (<a class="code" href="group___util_module.html#ga0ac6d9c9d88ac0da0d644c88a3b36aa3" title="CUB error reporting macro (prints error messages to stderr)">cub::Debug</a>(e, __FILE__, __LINE__)) exit(1)</div>
-</div><!-- fragment -->
-<p>Debug macro with exit. </p>
 
 </div>
 </div>
@@ -399,7 +353,7 @@ template&lt;typename T &gt; </td></tr>
 <!-- HTML footer for doxygen 1.8.3.1-->
 <!-- start footer part -->
 <hr class="footer"/><address class="footer"><small>
-Generated on Thu Mar 28 2013 08:00:46 for CUB by &#160;<a href="http://www.doxygen.org/index.html">
+Generated on Thu Mar 28 2013 09:49:07 for CUB by &#160;<a href="http://www.doxygen.org/index.html">
 <img class="footer" src="doxygen.png" alt="doxygen"/>
 </a> 1.8.3.1
 <br>

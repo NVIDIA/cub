@@ -343,6 +343,7 @@ void InitValue(int gen_mode, T &value, int index = 0)
     case RANDOM:
     default:
         RandomBits(value);
+        break;
     }
 }
 
@@ -701,26 +702,26 @@ template <typename S, typename T>
 int CompareDeviceResults(
     S *h_reference,
     T *d_data,
-    size_t num_elements,
+    size_t num_items,
     bool verbose = true,
     bool display_data = false)
 {
     // Allocate array on host
-    T *h_data = (T*) malloc(num_elements * sizeof(T));
+    T *h_data = (T*) malloc(num_items * sizeof(T));
 
     // Copy data back
-    cudaMemcpy(h_data, d_data, sizeof(T) * num_elements, cudaMemcpyDeviceToHost);
+    cudaMemcpy(h_data, d_data, sizeof(T) * num_items, cudaMemcpyDeviceToHost);
 
     // Display data
     if (display_data)
     {
         printf("Reference:\n");
-        for (int i = 0; i < num_elements; i++)
+        for (int i = 0; i < num_items; i++)
         {
             std::cout << CoutCast(h_reference[i]) << ", ";
         }
         printf("\n\nData:\n");
-        for (int i = 0; i < num_elements; i++)
+        for (int i = 0; i < num_items; i++)
         {
             std::cout << CoutCast(h_data[i]) << ", ";
         }
@@ -728,7 +729,7 @@ int CompareDeviceResults(
     }
 
     // Check
-    int retval = CompareResults(h_data, h_reference, num_elements);
+    int retval = CompareResults(h_data, h_reference, num_items);
 
     // Cleanup
     if (h_data) free(h_data);
@@ -745,27 +746,27 @@ template <typename T>
 int CompareDeviceDeviceResults(
     T *d_reference,
     T *d_data,
-    size_t num_elements,
+    size_t num_items,
     bool verbose = true,
     bool display_data = false)
 {
     // Allocate array on host
-    T *h_reference = (T*) malloc(num_elements * sizeof(T));
-    T *h_data = (T*) malloc(num_elements * sizeof(T));
+    T *h_reference = (T*) malloc(num_items * sizeof(T));
+    T *h_data = (T*) malloc(num_items * sizeof(T));
 
     // Copy data back
-    cudaMemcpy(h_reference, d_reference, sizeof(T) * num_elements, cudaMemcpyDeviceToHost);
-    cudaMemcpy(h_data, d_data, sizeof(T) * num_elements, cudaMemcpyDeviceToHost);
+    cudaMemcpy(h_reference, d_reference, sizeof(T) * num_items, cudaMemcpyDeviceToHost);
+    cudaMemcpy(h_data, d_data, sizeof(T) * num_items, cudaMemcpyDeviceToHost);
 
     // Display data
     if (display_data) {
         printf("Reference:\n");
-        for (int i = 0; i < num_elements; i++)
+        for (int i = 0; i < num_items; i++)
         {
             std::cout << CoutCast(h_reference[i]) << ", ";
         }
         printf("\n\nData:\n");
-        for (int i = 0; i < num_elements; i++)
+        for (int i = 0; i < num_items; i++)
         {
             std::cout << CoutCast(h_data[i]) << ", ";
         }
@@ -773,7 +774,7 @@ int CompareDeviceDeviceResults(
     }
 
     // Check
-    int retval = CompareResults(h_data, h_reference, num_elements);
+    int retval = CompareResults(h_data, h_reference, num_items);
 
     // Cleanup
     if (h_reference) free(h_reference);
@@ -790,10 +791,10 @@ int CompareDeviceDeviceResults(
 template <typename T>
 void DisplayResults(
     T *h_data,
-    size_t num_elements)
+    size_t num_items)
 {
     // Display data
-    for (int i = 0; i < num_elements; i++)
+    for (int i = 0; i < num_items; i++)
     {
         std::cout << CoutCast(h_data[i]) << ", ";
     }
@@ -808,15 +809,15 @@ void DisplayResults(
 template <typename T>
 void DisplayDeviceResults(
     T *d_data,
-    size_t num_elements)
+    size_t num_items)
 {
     // Allocate array on host
-    T *h_data = (T*) malloc(num_elements * sizeof(T));
+    T *h_data = (T*) malloc(num_items * sizeof(T));
 
     // Copy data back
-    cudaMemcpy(h_data, d_data, sizeof(T) * num_elements, cudaMemcpyDeviceToHost);
+    cudaMemcpy(h_data, d_data, sizeof(T) * num_items, cudaMemcpyDeviceToHost);
 
-    DisplayResults(h_data, num_elements);
+    DisplayResults(h_data, num_items);
 
     // Cleanup
     if (h_data) free(h_data);

@@ -37,8 +37,9 @@
 
 #include "../util_namespace.cuh"
 #include "../util_macro.cuh"
-#include "../thread/thread_store.cuh"
 #include "../util_type.cuh"
+#include "../util_vector.cuh"
+#include "../thread/thread_store.cuh"
 #include "block_exchange.cuh"
 
 /// Optional outer namespace(s)

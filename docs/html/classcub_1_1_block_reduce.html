@@ -179,10 +179,10 @@ class cub::BlockReduce&lt; T, BLOCK_THREADS &gt;</h3>
 <div class="line"></div>
 <div class="line">     ...</div>
 </div><!-- fragment --></dd></dl>
-<dl class="section user"><dt></dt><dd><em>Example 2:</em> Perform a guarded reduction of only <code>num_elements</code> keys that are partitioned in a partially-full blocked arrangement across <code>BLOCK_THREADS</code> threads. <div class="fragment"><div class="line"><span class="preprocessor">#include &lt;<a class="code" href="cub_8cuh.html">cub.cuh</a>&gt;</span></div>
+<dl class="section user"><dt></dt><dd><em>Example 2:</em> Perform a guarded reduction of only <code>num_items</code> keys that are partitioned in a partially-full blocked arrangement across <code>BLOCK_THREADS</code> threads. <div class="fragment"><div class="line"><span class="preprocessor">#include &lt;<a class="code" href="cub_8cuh.html">cub.cuh</a>&gt;</span></div>
 <div class="line"></div>
 <div class="line"><span class="keyword">template</span> &lt;<span class="keywordtype">int</span> BLOCK_THREADS&gt;</div>
-<div class="line">__global__ <span class="keywordtype">void</span> SomeKernel(..., <span class="keywordtype">int</span> num_elements)</div>
+<div class="line">__global__ <span class="keywordtype">void</span> SomeKernel(..., <span class="keywordtype">int</span> num_items)</div>
 <div class="line">{</div>
 <div class="line">     <span class="comment">// Parameterize BlockReduce on type int</span></div>
 <div class="line">     <span class="keyword">typedef</span> <a class="code" href="classcub_1_1_block_reduce.html" title="BlockReduce provides variants of parallel reduction across a CUDA threadblock. .">cub::BlockReduce&lt;int, BLOCK_THREADS&gt;</a> BlockReduce;</div>
@@ -192,10 +192,10 @@ class cub::BlockReduce&lt; T, BLOCK_THREADS &gt;</h3>
 <div class="line"></div>
 <div class="line">     <span class="comment">// Guarded load</span></div>
 <div class="line">     <span class="keywordtype">int</span> data;</div>
-<div class="line">     <span class="keywordflow">if</span> (threadIdx.x &lt; num_elements) data = ...;</div>
+<div class="line">     <span class="keywordflow">if</span> (threadIdx.x &lt; num_items) data = ...;</div>
 <div class="line"></div>
 <div class="line">     <span class="comment">// Compute the threadblock-wide sum of valid elements in thread0</span></div>
-<div class="line">     <span class="keywordtype">int</span> aggregate = <a class="code" href="classcub_1_1_block_reduce.html#a136060887c434257984b8bf3f5c62323" title="Computes a threadblock-wide reduction for thread0 using addition (+) as the reduction operator...">BlockReduce::Sum</a>(smem_storage, data, num_elements);</div>
+<div class="line">     <span class="keywordtype">int</span> aggregate = <a class="code" href="classcub_1_1_block_reduce.html#a136060887c434257984b8bf3f5c62323" title="Computes a threadblock-wide reduction for thread0 using addition (+) as the reduction operator...">BlockReduce::Sum</a>(smem_storage, data, num_items);</div>
 <div class="line"></div>
 <div class="line">     ...</div>
 </div><!-- fragment --> </dd></dl>
@@ -592,7 +592,7 @@ template&lt;typename T , int BLOCK_THREADS&gt; </div>
 <!-- HTML footer for doxygen 1.8.3.1-->
 <!-- start footer part -->
 <hr class="footer"/><address class="footer"><small>
-Generated on Thu Mar 28 2013 08:00:47 for CUB by &#160;<a href="http://www.doxygen.org/index.html">
+Generated on Thu Mar 28 2013 09:49:07 for CUB by &#160;<a href="http://www.doxygen.org/index.html">
 <img class="footer" src="doxygen.png" alt="doxygen"/>
 </a> 1.8.3.1
 <br>

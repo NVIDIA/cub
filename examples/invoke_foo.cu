@@ -42,7 +42,7 @@ struct FooKernelPolicy
  */
 template <typename FooKernelPolicy, typename T>
 __launch_bounds__ (FooKernelPolicy::BLOCK_THREADS, 1)
-__global__ void FooKernel(T *d_in, T *d_out, int num_elements)
+__global__ void FooKernel(T *d_in, T *d_out, int num_items)
 {
     if ((blockIdx.x == 0) && (threadIdx.x == 0)) printf("FooKernel<<<%d, %d>>>, ITEMS_PER_THREAD(%d)\n",
         gridDim.x,
@@ -75,7 +75,7 @@ private:
         FooKernelPtr    foo_kernel_ptr,
         T               *d_in,
         T               *d_out,
-        int             num_elements)
+        int             num_items)
     {
     #if !CNP_ENABLED
 
@@ -86,10 +86,10 @@ private:
 
         // Determine grid size
         const int TILE_SIZE = FooKernelPolicyT::BLOCK_THREADS * FooKernelPolicyT::ITEMS_PER_THREAD;
-        int grid_size = (num_elements + TILE_SIZE - 1) / TILE_SIZE;
+        int grid_size = (num_items + TILE_SIZE - 1) / TILE_SIZE;
 
         // Invoke kernel
-        foo_kernel_ptr<<<grid_size, FooKernelPolicyT::BLOCK_THREADS>>>(d_in, d_out, num_elements);
+        foo_kernel_ptr<<<grid_size, FooKernelPolicyT::BLOCK_THREADS>>>(d_in, d_out, num_items);
 
         return cudaSuccess;
 
@@ -104,9 +104,9 @@ public:
      */
     template <typename FooKernelPolicyT, typename T>
     __host__ __device__ __forceinline__
-    static cudaError_t Invoke(T *d_in, T *d_out, int num_elements)
+    static cudaError_t Invoke(T *d_in, T *d_out, int num_items)
     {
-        return InvokeInternal<FooKernelPolicyT>(FooKernel<FooKernelPolicyT, T>, d_in, d_out, num_elements);
+        return InvokeInternal<FooKernelPolicyT>(FooKernel<FooKernelPolicyT, T>, d_in, d_out, num_items);
     }
 
 
@@ -130,7 +130,7 @@ public:
      */
     template <typename T>
     __host__ __device__ __forceinline__
-    static cudaError_t Invoke(T *d_in, T *d_out, int num_elements)
+    static cudaError_t Invoke(T *d_in, T *d_out, int num_items)
     {
         // Our PTX-specific foo kernel function pointer
         void (*foo_kernel_ptr)(T*, T*, int) = FooKernel<PtxFooKernelPolicy, T>;
@@ -138,7 +138,7 @@ public:
     #if (PTX_ARCH != 0)
 
         // We're on the device, so dispatch using policy for the current PTX arch
-        return InvokeInternal<PtxFooKernelPolicy>(foo_kernel_ptr, d_in, d_out, num_elements);
+        return InvokeInternal<PtxFooKernelPolicy>(foo_kernel_ptr, d_in, d_out, num_items);
 
     #else
 
@@ -153,11 +153,11 @@ public:
 
         // Dispatch with explicit policy
         if (device_arch >= 300)
-            return InvokeInternal<FooKernelPolicy300>(foo_kernel_ptr, d_in, d_out, num_elements);
+            return InvokeInternal<FooKernelPolicy300>(foo_kernel_ptr, d_in, d_out, num_items);
         else if (device_arch >= 200)
-            return InvokeInternal<FooKernelPolicy200>(foo_kernel_ptr, d_in, d_out, num_elements);
+            return InvokeInternal<FooKernelPolicy200>(foo_kernel_ptr, d_in, d_out, num_items);
         else
-            return InvokeInternal<FooKernelPolicy100>(foo_kernel_ptr, d_in, d_out, num_elements);
+            return InvokeInternal<FooKernelPolicy100>(foo_kernel_ptr, d_in, d_out, num_items);
 
     #endif
     }
@@ -173,10 +173,10 @@ public:
  * User kernel for nested invocation of foo
  */
 template <typename T>
-__global__ void UserKernel(T *d_in, T *d_out, int num_elements)
+__global__ void UserKernel(T *d_in, T *d_out, int num_items)
 {
     // Invoke Foo
-    Foo::Invoke(d_in, d_out, num_elements);
+    Foo::Invoke(d_in, d_out, num_items);
 }
 
 
@@ -193,7 +193,7 @@ int main(int argc, char **argv)
 
     T *d_in = NULL;
     T *d_out = NULL;
-    int num_elements = 1024 * 1024;
+    int num_items = 1024 * 1024;
 
     int dev = 0;
     if (argc > 1)
@@ -207,13 +207,13 @@ int main(int argc, char **argv)
     fflush(stdout);
 
     // Test1: Dispatch Foo from host
-    Foo::Invoke(d_in, d_out, num_elements);
+    Foo::Invoke(d_in, d_out, num_items);
 
     // Test2: Dispatch Foo with custom policy
-    Foo::Invoke<FooKernelPolicy<96, 17> >(d_in, d_out, num_elements);
+    Foo::Invoke<FooKernelPolicy<96, 17> >(d_in, d_out, num_items);
 
     // Test3: Dispatch user kernel that dispatches Foo from device
-    UserKernel<<<1,1>>>(d_in, d_out, num_elements);
+    UserKernel<<<1,1>>>(d_in, d_out, num_items);
 
     cudaDeviceSynchronize();
 

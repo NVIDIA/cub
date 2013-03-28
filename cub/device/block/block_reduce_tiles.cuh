@@ -213,7 +213,7 @@ public:
         const SizeT             &block_oob,
         ReductionOp             &reduction_op)
     {
-        if (block_offset + TILE_ITEMS <= block_oob)
+//        if (block_offset + TILE_ITEMS <= block_oob)
         {
             // We have at least one full tile to consume
             T thread_aggregate;
@@ -232,14 +232,14 @@ public:
             }
 
             // Consume any remaining input
-            ConsumePartialTile<false>(smem_storage, d_in, block_offset, block_oob, reduction_op, thread_aggregate);
+//            ConsumePartialTile<false>(smem_storage, d_in, block_offset, block_oob, reduction_op, thread_aggregate);
 
-            __syncthreads();
+//            __syncthreads();
 
             // Compute the block-wide reduction (every thread has a valid input)
-            return BlockReduceT::Reduce(smem_storage, thread_aggregate, reduction_op);
+            return BlockReduceT::Reduce(smem_storage.reduce, thread_aggregate, reduction_op);
         }
-        else
+/*        else
         {
             // We have less than a full tile to consume
             T thread_aggregate;
@@ -249,8 +249,9 @@ public:
 
             // Compute the block-wide reduction  (up to block_items threads have valid inputs)
             SizeT block_items = block_oob - block_offset;
-            return BlockReduceT::Reduce(smem_storage, thread_aggregate, reduction_op, block_items);
+            return BlockReduceT::Reduce(smem_storage.reduce, thread_aggregate, reduction_op, block_items);
         }
+*/
     }
 
 
@@ -270,9 +271,8 @@ public:
         // Each thread block is statically assigned at some input, otherwise its
         // block_aggregate will be undefined.
         SizeT block_offset = blockIdx.x * TILE_ITEMS;
-        SizeT block_oob = num_items;
 
-        if (block_offset + TILE_ITEMS <= block_oob)
+        if (block_offset + TILE_ITEMS <= num_items)
         {
             // We have a full tile to consume
             T thread_aggregate;
@@ -292,8 +292,11 @@ public:
 
                 __syncthreads();
 
+                // Quit if we've consumed the input
                 block_offset = smem_storage.block_offset;
-                if (block_offset + TILE_ITEMS <= block_oob)
+                if (block_offset >= num_items) break;
+
+                if (block_offset + TILE_ITEMS <= num_items)
                 {
                     // We have a full tile to consume
                     ConsumeFullTile<false>(smem_storage, d_in, block_offset, reduction_op, thread_aggregate);
@@ -301,26 +304,26 @@ public:
                 else
                 {
                     // We have less than a full tile to consume
-                    ConsumePartialTile<false>(smem_storage, d_in, block_offset, block_oob, reduction_op, thread_aggregate);
+                    ConsumePartialTile<false>(smem_storage, d_in, block_offset, num_items, reduction_op, thread_aggregate);
                 }
 
                 __syncthreads();
             }
 
             // Compute the block-wide reduction (every thread has a valid input)
-            return BlockReduceT::Reduce(smem_storage, thread_aggregate, reduction_op);
+            return BlockReduceT::Reduce(smem_storage.reduce, thread_aggregate, reduction_op);
         }
         else
         {
             // We have less than a full tile to consume
             T thread_aggregate;
-            SizeT block_items = block_oob - block_offset;
-            ConsumePartialTile<true>(smem_storage, d_in, block_offset, block_oob, reduction_op, thread_aggregate);
+            SizeT block_items = num_items - block_offset;
+            ConsumePartialTile<true>(smem_storage, d_in, block_offset, num_items, reduction_op, thread_aggregate);
 
             __syncthreads();
 
             // Compute the block-wide reduction  (up to block_items threads have valid inputs)
-            return BlockReduceT::Reduce(smem_storage, thread_aggregate, reduction_op, block_items);
+            return BlockReduceT::Reduce(smem_storage.reduce, thread_aggregate, reduction_op, block_items);
         }
     }
 
@@ -339,7 +342,7 @@ public:
         GridQueue<SizeT>        &queue,
         ReductionOp             &reduction_op)
     {
-        if (BlockReduceTilesPolicy::GRID_MAPPING == GRID_MAPPING_EVEN_SHARE)
+//        if (BlockReduceTilesPolicy::GRID_MAPPING == GRID_MAPPING_EVEN_SHARE)
         {
             // Even share
             even_share.BlockInit();
@@ -351,7 +354,7 @@ public:
                 even_share.block_oob,
                 reduction_op);
         }
-        else if (BlockReduceTilesPolicy::GRID_MAPPING == GRID_MAPPING_DYNAMIC)
+/*        else
         {
             // Dynamically dequeue
             return ProcessTilesDynamic(
@@ -361,6 +364,7 @@ public:
                 queue,
                 reduction_op);
         }
+*/
     }
 
 };

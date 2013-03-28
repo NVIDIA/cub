@@ -64,11 +64,12 @@ namespace cub {
  *
  * \tparam T                    The data type to be exchanged.
  * \tparam BLOCK_THREADS        The threadblock size in threads.
+ * \tparam BLOCK_STRIPS         When strip-mining, the number of threadblock-strips per tile
  */
 template <
-    int         BLOCK_THREADS,        // The threadblock size in threads
-    typename    T,                    // The reduction type
-    int         BLOCK_STRIPS = 1>     // When strip-mining, the number of threadblock-strips per tile
+    typename    T,
+    int         BLOCK_THREADS,
+    int         BLOCK_STRIPS = 1>
 struct BlockRakingLayout
 {
     //---------------------------------------------------------------------

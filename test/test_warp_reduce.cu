@@ -205,13 +205,13 @@ template <
 T Initialize(
     int             gen_mode,
     T               *h_in,
-    int             num_elements,
+    int             num_items,
     ReductionOp     reduction_op)
 {
     InitValue(gen_mode, h_in[0], 0);
     T aggregate = h_in[0];
 
-    for (int i = 1; i < num_elements; ++i)
+    for (int i = 1; i < num_items; ++i)
     {
         InitValue(gen_mode, h_in[i], i);
         aggregate = reduction_op(aggregate, h_in[i]);
