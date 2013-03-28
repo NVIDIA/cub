@@ -79,9 +79,34 @@ namespace cub {
 
 /**
  * \brief Structure for statically reporting CUDA device properties, parameterized by SM architecture.
+ *
+ * The default specialization is for SM10.
  */
 template <int SM_ARCH>
-struct ArchProps;
+struct ArchProps
+{
+    enum
+    {
+        LOG_WARP_THREADS    = 5,                        /// Log of the number of threads per warp
+        WARP_THREADS        = 1 << LOG_WARP_THREADS,    /// Number of threads per warp
+        LOG_SMEM_BANKS      = 4,                        /// Log of the number of smem banks
+        SMEM_BANKS          = 1 << LOG_SMEM_BANKS,      /// The number of smem banks
+        SMEM_BANK_BYTES     = 4,                        /// Size of smem bank words
+        SMEM_BYTES          = 16 * 1024,                /// Maximum SM shared memory
+        SMEM_ALLOC_UNIT     = 512,                      /// Smem allocation size in bytes
+        REGS_BY_BLOCK       = true,                     /// Whether or not the architecture allocates registers by block (or by warp)
+        REG_ALLOC_UNIT      = 256,                      /// Number of registers allocated at a time per block (or by warp)
+        WARP_ALLOC_UNIT     = 2,                        /// Granularity of warps for which registers are allocated
+        MAX_SM_THREADS      = 768,                      /// Maximum number of threads per SM
+        MAX_SM_THREADBLOCKS = 8,                        /// Maximum number of thread blocks per SM
+        MAX_BLOCK_THREADS   = 512,                      /// Maximum number of thread per thread block
+        MAX_SM_REGISTERS    = 8 * 1024,                 /// Maximum number of registers per SM
+        OVERSUBSCRIPTION    = 2,                        /// Heuristic for over-subscribing the device by a constant factor
+    };
+};
+
+
+
 
 #ifndef DOXYGEN_SHOULD_SKIP_THIS    // Do not document
 
@@ -109,7 +134,7 @@ struct ArchProps<300>
         MAX_BLOCK_THREADS   = 1024,                     // 1024 max threads per threadblock
         MAX_SM_REGISTERS    = 64 * 1024,                // 64K max registers per SM
 
-        OVERSUBSCRIPTION    = 4,                        // Heuristic for over-subscribing the device with longer-running CTAs
+        OVERSUBSCRIPTION    = 4,                        // Heuristic for over-subscribing the device by a constant factor
     };
 
     // Callback utility
@@ -145,7 +170,7 @@ struct ArchProps<200>
         MAX_BLOCK_THREADS   = 1024,                     // 1024 max threads per threadblock
         MAX_SM_REGISTERS    = 32 * 1024,                // 32K max registers per SM
 
-        OVERSUBSCRIPTION    = 4,                        // Heuristic for over-subscribing the device with longer-running CTAs
+        OVERSUBSCRIPTION    = 4,                        // Heuristic for over-subscribing the device by a constant factor
     };
 
     // Callback utility
@@ -185,7 +210,7 @@ struct ArchProps<120>
         MAX_BLOCK_THREADS   = 512,                      // 512 max threads per threadblock
         MAX_SM_REGISTERS    = 16 * 1024,                // 16K max registers per SM
 
-        OVERSUBSCRIPTION    = 1,                        // Heuristic for over-subscribing the device with longer-running CTAs
+        OVERSUBSCRIPTION    = 1,                        // Heuristic for over-subscribing the device by a constant factor
     };
 
     // Callback utility
@@ -202,32 +227,11 @@ struct ArchProps<120>
 
 
 /**
- * Architecture properties for SM10
+ * Architecture properties for SM10.  Inherit from the default specialization.
  */
 template <>
-struct ArchProps<100>
+struct ArchProps<100> : ArchProps<0>
 {
-    enum {
-        LOG_WARP_THREADS    = 5,                        // 32 threads per warp
-        WARP_THREADS        = 1 << LOG_WARP_THREADS,
-
-        LOG_SMEM_BANKS      = 4,                        // 16 banks
-        SMEM_BANKS          = 1 << LOG_SMEM_BANKS,
-
-        SMEM_BANK_BYTES     = 4,                        // 4 byte bank words
-        SMEM_BYTES          = 16 * 1024,                // 16KB shared memory
-        SMEM_ALLOC_UNIT     = 512,                      // 512B smem allocation segment size
-        REGS_BY_BLOCK       = true,                     // Allocates registers by threadblock
-        REG_ALLOC_UNIT      = 256,                      // 256 registers allocated at time per threadblock
-        WARP_ALLOC_UNIT     = 2,                        // Registers are allocated at a granularity of every 2 warps per threadblock
-        MAX_SM_THREADS      = 768,                      // 768 max threads per SM
-        MAX_SM_THREADBLOCKS = 8,                        // 8 max threadblocks per SM
-        MAX_BLOCK_THREADS   = 512,                      // 512 max threads per threadblock
-        MAX_SM_REGISTERS    = 8 * 1024,                 // 8K max registers per SM
-
-        OVERSUBSCRIPTION    = 2,                        // Heuristic for over-subscribing the device with longer-running CTAs
-    };
-
     // Callback utility
     template <typename T>
     static __host__ __device__ __forceinline__ void Callback(T &target, int sm_version)
