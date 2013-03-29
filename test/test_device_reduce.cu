@@ -32,7 +32,6 @@
 
 // Ensure printing of CUDA runtime errors to console
 #define CUB_STDERR
-//#define CUB_LOG
 
 #include <stdio.h>
 #include <cub.cuh>
@@ -117,11 +116,11 @@ void Test(
     fflush(stdout);
 
     // Run warmup/correctness iteration
-    DeviceReduce::Reduce(d_in, d_out, num_items, reduction_op);
+    DeviceReduce::Reduce(d_in, d_out, num_items, reduction_op, 0, true);
     CubDebugExit(cudaDeviceSynchronize());
 
     // Copy out and display results
-    printf("\tReduction results: ");
+    printf("\nReduction results: ");
     int compare = CompareDeviceResults(h_reference, d_out, 1, g_verbose, g_verbose);
     printf("\n");
 
@@ -142,7 +141,7 @@ void Test(
         float avg_millis = elapsed_millis / g_iterations;
         float grate = float(num_items) / avg_millis / 1000.0 / 1000.0;
         float gbandwidth = grate * sizeof(T);
-        printf("Performance: %.3f avg ms, %.3f billion items/s, %.3f GB/s\n", avg_millis, grate, gbandwidth);
+        printf("\nPerformance: %.3f avg ms, %.3f billion items/s, %.3f GB/s\n", avg_millis, grate, gbandwidth);
     }
 
     // Cleanup
@@ -207,7 +206,7 @@ int main(int argc, char** argv)
     {
         // Quick test
         typedef int T;
-        Test<T>(num_items, RANDOM, 1, Sum<T>(), CUB_TYPE_STRING(T));
+        Test<T>(num_items, UNIFORM, 1, Sum<T>(), CUB_TYPE_STRING(T));
     }
     else
     {

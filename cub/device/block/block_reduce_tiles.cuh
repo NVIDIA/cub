@@ -58,13 +58,15 @@ template <
     int                         _ITEMS_PER_THREAD,
     GridMappingStrategy         _GRID_MAPPING,
     BlockLoadPolicy             _LOAD_POLICY,
-    PtxLoadModifier             _LOAD_MODIFIER>
+    PtxLoadModifier             _LOAD_MODIFIER,
+    int                         _OVERSUBSCRIPTION>
 struct BlockReduceTilesPolicy
 {
     enum
     {
         BLOCK_THREADS       = _BLOCK_THREADS,
         ITEMS_PER_THREAD    = _ITEMS_PER_THREAD,
+        OVERSUBSCRIPTION    = _OVERSUBSCRIPTION,
     };
 
     static const GridMappingStrategy   GRID_MAPPING       = _GRID_MAPPING;
@@ -213,7 +215,7 @@ public:
         const SizeT             &block_oob,
         ReductionOp             &reduction_op)
     {
-//        if (block_offset + TILE_ITEMS <= block_oob)
+        if (block_offset + TILE_ITEMS <= block_oob)
         {
             // We have at least one full tile to consume
             T thread_aggregate;
@@ -232,14 +234,14 @@ public:
             }
 
             // Consume any remaining input
-//            ConsumePartialTile<false>(smem_storage, d_in, block_offset, block_oob, reduction_op, thread_aggregate);
+            ConsumePartialTile<false>(smem_storage, d_in, block_offset, block_oob, reduction_op, thread_aggregate);
 
-//            __syncthreads();
+            __syncthreads();
 
             // Compute the block-wide reduction (every thread has a valid input)
             return BlockReduceT::Reduce(smem_storage.reduce, thread_aggregate, reduction_op);
         }
-/*        else
+        else
         {
             // We have less than a full tile to consume
             T thread_aggregate;
@@ -251,7 +253,6 @@ public:
             SizeT block_items = block_oob - block_offset;
             return BlockReduceT::Reduce(smem_storage.reduce, thread_aggregate, reduction_op, block_items);
         }
-*/
     }
 
 
@@ -277,38 +278,47 @@ public:
             // We have a full tile to consume
             T thread_aggregate;
             ConsumeFullTile<true>(smem_storage, d_in, block_offset, reduction_op, thread_aggregate);
-            block_offset += TILE_ITEMS;
-
-            __syncthreads();
 
             // Dynamically consume other tiles
-            while (true)
+            SizeT even_share_base = gridDim.x * TILE_ITEMS;
+
+            if (even_share_base < num_items)
             {
-                // Dequeue up to TILE_ITEMS
-                if (threadIdx.x == 0)
+                // There are tiles left to consume
+                while (true)
                 {
-                    smem_storage.block_offset = queue.Drain(TILE_ITEMS);
+                    // Dequeue up to TILE_ITEMS
+                    if (threadIdx.x == 0)
+                    {
+                        smem_storage.block_offset = queue.Drain(TILE_ITEMS) + even_share_base;
+                    }
+
+                    __syncthreads();
+
+                    block_offset = smem_storage.block_offset;
+
+                    __syncthreads();
+
+                    if (block_offset + TILE_ITEMS <= num_items)
+                    {
+                        // We have a full tile to consume
+                        ConsumeFullTile<false>(smem_storage, d_in, block_offset, reduction_op, thread_aggregate);
+                    }
+                    else if (block_offset < num_items)
+                    {
+                        // We have less than a full tile to consume
+                        ConsumePartialTile<false>(smem_storage, d_in, block_offset, num_items, reduction_op, thread_aggregate);
+                    }
+                    else
+                    {
+                        // No more work to do
+                        break;
+                    }
+
                 }
-
-                __syncthreads();
-
-                // Quit if we've consumed the input
-                block_offset = smem_storage.block_offset;
-                if (block_offset >= num_items) break;
-
-                if (block_offset + TILE_ITEMS <= num_items)
-                {
-                    // We have a full tile to consume
-                    ConsumeFullTile<false>(smem_storage, d_in, block_offset, reduction_op, thread_aggregate);
-                }
-                else
-                {
-                    // We have less than a full tile to consume
-                    ConsumePartialTile<false>(smem_storage, d_in, block_offset, num_items, reduction_op, thread_aggregate);
-                }
-
-                __syncthreads();
             }
+
+            __syncthreads();
 
             // Compute the block-wide reduction (every thread has a valid input)
             return BlockReduceT::Reduce(smem_storage.reduce, thread_aggregate, reduction_op);
@@ -342,7 +352,7 @@ public:
         GridQueue<SizeT>        &queue,
         ReductionOp             &reduction_op)
     {
-//        if (BlockReduceTilesPolicy::GRID_MAPPING == GRID_MAPPING_EVEN_SHARE)
+        if (BlockReduceTilesPolicy::GRID_MAPPING == GRID_MAPPING_EVEN_SHARE)
         {
             // Even share
             even_share.BlockInit();
@@ -354,7 +364,7 @@ public:
                 even_share.block_oob,
                 reduction_op);
         }
-/*        else
+        else
         {
             // Dynamically dequeue
             return ProcessTilesDynamic(
@@ -364,7 +374,6 @@ public:
                 queue,
                 reduction_op);
         }
-*/
     }
 
 };

@@ -32,7 +32,6 @@
  *
  * The following macros definitions are supported:
  * - \p CUB_LOG.  Simple event messages are printed to \p stdout.
- * - \p CUB_STDERR.  Error messages are printed to \p stderr (or \p stdout in device code).
  */
 
 #pragma once
@@ -60,33 +59,6 @@ namespace cub {
 #endif
 
 
-/**
- * \brief %If \p CUB_STDERR is defined and \p error is not \p cudaSuccess, \p message is printed to \p stderr (or \p stdout in device code) along with the supplied source context.
- *
- * \return The CUDA error.
- */
-__host__ __device__ __forceinline__ cudaError_t Debug(
-    cudaError_t     error,
-    const char*     message,
-    const char*     filename,
-    int             line)
-{
-#ifdef CUB_STDERR
-    if (error)
-    {
-    #if (CUB_PTX_ARCH == 0)
-        fprintf(stderr, "[%s, %d] %s (CUDA error %d: %s)\n", filename, line, message, error, cudaGetErrorString(error));
-        fflush(stderr);
-    #elif (CUB_CNP_ENABLED)
-        printf("[block %d, thread %d, %s, %d] %s (CUDA error %d: %s)\n", blockIdx.x, threadIdx.x, filename, line, message, error, cudaGetErrorString(error));
-    #elif (CUB_PTX_ARCH >= 200)
-        printf("[block %d, thread %d, %s, %d] %s (CUDA error %d)\n", blockIdx.x, threadIdx.x, filename, line, message, error);
-    #endif
-    }
-#endif
-    return error;
-}
-
 
 /**
  * \brief %If \p CUB_STDERR is defined and \p error is not \p cudaSuccess, the corresponding error message is printed to \p stderr (or \p stdout in device code) along with the supplied source context.
@@ -102,12 +74,12 @@ __host__ __device__ __forceinline__ cudaError_t Debug(
     if (error)
     {
     #if (CUB_PTX_ARCH == 0)
-        fprintf(stderr, "[%s, %d] (CUDA error %d: %s)\n", filename, line, error, cudaGetErrorString(error));
+        printf("CUDA error %d [%s, %d]: %s\n", error, filename, line, cudaGetErrorString(error));
         fflush(stderr);
     #elif (CUB_CNP_ENABLED)
-        printf("[block %d, thread %d, %s, %d] (CUDA error %d: %s)\n", blockIdx.x, threadIdx.x, filename, line, error, cudaGetErrorString(error));
+        printf("CUDA error %d [block %d, thread %d, %s, %d]: %s)\n", error, blockIdx.x, threadIdx.x, filename, line, cudaGetErrorString(error));
     #elif (CUB_PTX_ARCH >= 200)
-        printf("[block %d, thread %d, %s, %d] (CUDA error %d)\n", blockIdx.x, threadIdx.x, filename, line, error);
+        printf("CUDA error %d [block %d, thread %d, %s, %d]\n", error, blockIdx.x, threadIdx.x, filename, line);
     #endif
     }
 #endif
@@ -128,21 +100,18 @@ __host__ __device__ __forceinline__ cudaError_t Debug(
  */
 #define CubDebugExit(e) \
     \
-    if (cub::Debug(e, __FILE__, __LINE__)) exit(1)
+    if (cub::Debug(e, __FILE__, __LINE__)) { exit(1); }
 
 
 /**
  * \brief Log macro for printf statements.
  */
-#ifdef CUB_LOG
-    #if (CUB_PTX_ARCH == 0)
-        #define CubLog(p) p; fflush(stdout);
-    #elif (CUB_PTX_ARCH >= 200)
-        #define CubLog(p) p;
-    #endif
-#else
-    #define CubLog(p)
+#if (CUB_PTX_ARCH == 0)
+    #define CubLog(format, ...) printf(format,__VA_ARGS__);
+#elif (CUB_PTX_ARCH >= 200)
+    #define CubLog(format, ...) printf("[block %d, thread %d]: " format, blockIdx.x, threadIdx.x, __VA_ARGS__);
 #endif
+
 
 
 

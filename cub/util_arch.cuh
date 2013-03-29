@@ -101,7 +101,6 @@ struct ArchProps
         MAX_SM_THREADBLOCKS = 8,                        /// Maximum number of thread blocks per SM
         MAX_BLOCK_THREADS   = 512,                      /// Maximum number of thread per thread block
         MAX_SM_REGISTERS    = 8 * 1024,                 /// Maximum number of registers per SM
-        OVERSUBSCRIPTION    = 2,                        /// Heuristic for over-subscribing the device by a constant factor
     };
 };
 
@@ -116,13 +115,12 @@ struct ArchProps
 template <>
 struct ArchProps<300>
 {
-    enum {
+    enum
+    {
         LOG_WARP_THREADS    = 5,                        // 32 threads per warp
         WARP_THREADS        = 1 << LOG_WARP_THREADS,
-
         LOG_SMEM_BANKS      = 5,                        // 32 banks
         SMEM_BANKS          = 1 << LOG_SMEM_BANKS,
-
         SMEM_BANK_BYTES     = 4,                        // 4 byte bank words
         SMEM_BYTES          = 48 * 1024,                // 48KB shared memory
         SMEM_ALLOC_UNIT     = 256,                      // 256B smem allocation segment size
@@ -133,8 +131,6 @@ struct ArchProps<300>
         MAX_SM_THREADBLOCKS = 16,                       // 16 max threadblocks per SM
         MAX_BLOCK_THREADS   = 1024,                     // 1024 max threads per threadblock
         MAX_SM_REGISTERS    = 64 * 1024,                // 64K max registers per SM
-
-        OVERSUBSCRIPTION    = 4,                        // Heuristic for over-subscribing the device by a constant factor
     };
 
     // Callback utility
@@ -152,13 +148,12 @@ struct ArchProps<300>
 template <>
 struct ArchProps<200>
 {
-    enum {
+    enum
+    {
         LOG_WARP_THREADS    = 5,                        // 32 threads per warp
         WARP_THREADS        = 1 << LOG_WARP_THREADS,
-
         LOG_SMEM_BANKS      = 5,                        // 32 banks
         SMEM_BANKS          = 1 << LOG_SMEM_BANKS,
-
         SMEM_BANK_BYTES     = 4,                        // 4 byte bank words
         SMEM_BYTES          = 48 * 1024,                // 48KB shared memory
         SMEM_ALLOC_UNIT     = 128,                      // 128B smem allocation segment size
@@ -169,8 +164,6 @@ struct ArchProps<200>
         MAX_SM_THREADBLOCKS = 8,                        // 8 max threadblocks per SM
         MAX_BLOCK_THREADS   = 1024,                     // 1024 max threads per threadblock
         MAX_SM_REGISTERS    = 32 * 1024,                // 32K max registers per SM
-
-        OVERSUBSCRIPTION    = 4,                        // Heuristic for over-subscribing the device by a constant factor
     };
 
     // Callback utility
@@ -192,13 +185,12 @@ struct ArchProps<200>
 template <>
 struct ArchProps<120>
 {
-    enum {
+    enum
+    {
         LOG_WARP_THREADS    = 5,                        // 32 threads per warp
         WARP_THREADS        = 1 << LOG_WARP_THREADS,
-
         LOG_SMEM_BANKS      = 4,                        // 16 banks
         SMEM_BANKS          = 1 << LOG_SMEM_BANKS,
-
         SMEM_BANK_BYTES     = 4,                        // 4 byte bank words
         SMEM_BYTES          = 16 * 1024,                // 16KB shared memory
         SMEM_ALLOC_UNIT     = 512,                      // 512B smem allocation segment size
@@ -209,8 +201,6 @@ struct ArchProps<120>
         MAX_SM_THREADBLOCKS = 8,                        // 8 max threadblocks per SM
         MAX_BLOCK_THREADS   = 512,                      // 512 max threads per threadblock
         MAX_SM_REGISTERS    = 16 * 1024,                // 16K max registers per SM
-
-        OVERSUBSCRIPTION    = 1,                        // Heuristic for over-subscribing the device by a constant factor
     };
 
     // Callback utility
