@@ -101,9 +101,10 @@ public:
     }
 
 
-    /// Prepares the queue for draining in the next kernel instance using
-    /// \p fill_size as amount to drain.
-    __host__ __device__ __forceinline__ cudaError_t PrepareDrain(SizeT fill_size)
+    /// Prepares the queue for draining in the next kernel instance
+    __host__ __device__ __forceinline__ cudaError_t PrepareDrain(
+        SizeT fill_size,
+        cudaStream_t stream = 0)
     {
 #ifdef __CUDA_ARCH__
         d_counters[FILL] = fill_size;
@@ -113,19 +114,19 @@ public:
         SizeT counters[2];
         counters[FILL] = fill_size;
         counters[DRAIN] = 0;
-        return CubDebug(cudaMemcpy(d_counters, counters, sizeof(SizeT) * 2, cudaMemcpyHostToDevice));
+        return CubDebug(cudaMemcpyAsync(d_counters, counters, sizeof(SizeT) * 2, cudaMemcpyHostToDevice, stream));
 #endif
     }
 
 
     /// Prepares the queue for draining in the next kernel instance
-    __host__ __device__ __forceinline__ cudaError_t PrepareDrain()
+    __host__ __device__ __forceinline__ cudaError_t PrepareDrainAfterFill(cudaStream_t stream = 0)
     {
 #ifdef __CUDA_ARCH__
         d_counters[DRAIN] = 0;
         return cudaSuccess;
 #else
-        return PrepareDrain(0);
+        return PrepareDrain(0, stream);
 #endif
     }
 
@@ -143,12 +144,14 @@ public:
 
 
     /// Returns number of items filled in the previous kernel.
-    __host__ __device__ __forceinline__ cudaError_t FillSize(SizeT &fill_size)
+    __host__ __device__ __forceinline__ cudaError_t FillSize(
+        SizeT &fill_size,
+        cudaStream_t stream = 0)
     {
 #ifdef __CUDA_ARCH__
         fill_size = d_counters[FILL];
 #else
-        return CubDebug(cudaMemcpy(&fill_size, d_counters + FILL, sizeof(SizeT), cudaMemcpyDeviceToHost));
+        return CubDebug(cudaMemcpyAsync(&fill_size, d_counters + FILL, sizeof(SizeT), cudaMemcpyDeviceToHost, stream));
 #endif
     }
 
@@ -167,6 +170,24 @@ public:
     }
 };
 
+
+#ifndef DOXYGEN_SHOULD_SKIP_THIS    // Do not document
+
+
+/**
+ * Reset grid queue (call with 1 block of 1 thread)
+ */
+template <typename SizeT>
+__global__ void PrepareDrainKernel(
+    GridQueue<SizeT>    grid_queue,
+    SizeT               num_items)
+{
+    grid_queue.PrepareDrain(num_items);
+}
+
+
+
+#endif // DOXYGEN_SHOULD_SKIP_THIS
 
 
 /** @} */       // end group GridModule

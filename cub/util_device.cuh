@@ -108,7 +108,6 @@ public:
     int     max_block_threads;      ///< Maximum number of threads per threadblock
     int     max_sm_registers;       ///< Maximum number of registers per SM
     int     max_sm_warps;           ///< Maximum number of warps per SM
-    int     oversubscription;       ///< Heuristic for over-subscribing the device with longer-running CTAs
 
     /**
      * Callback for initializing device properties
@@ -128,7 +127,6 @@ public:
         max_sm_blocks       = ArchProps::MAX_SM_THREADBLOCKS;
         max_block_threads   = ArchProps::MAX_BLOCK_THREADS;
         max_sm_registers    = ArchProps::MAX_SM_REGISTERS;
-        oversubscription    = ArchProps::OVERSUBSCRIPTION;
         max_sm_warps        = max_sm_threads / warp_threads;
     }
 
