@@ -41,6 +41,7 @@
 #include "../grid/grid_queue.cuh"
 #include "../../block/block_load.cuh"
 #include "../../block/block_reduce.cuh"
+#include "../../util_vector.cuh"
 #include "../../util_namespace.cuh"
 
 /// Optional outer namespace(s)
@@ -57,7 +58,7 @@ template <
     int                         _BLOCK_THREADS,
     int                         _ITEMS_PER_THREAD,
     GridMappingStrategy         _GRID_MAPPING,
-    BlockLoadPolicy             _LOAD_POLICY,
+    int                         _VECTOR_LOAD_LENGTH,
     PtxLoadModifier             _LOAD_MODIFIER,
     int                         _OVERSUBSCRIPTION>
 struct BlockReduceTilesPolicy
@@ -66,11 +67,11 @@ struct BlockReduceTilesPolicy
     {
         BLOCK_THREADS       = _BLOCK_THREADS,
         ITEMS_PER_THREAD    = _ITEMS_PER_THREAD,
+        VECTOR_LOAD_LENGTH  = _VECTOR_LOAD_LENGTH,
         OVERSUBSCRIPTION    = _OVERSUBSCRIPTION,
     };
 
     static const GridMappingStrategy   GRID_MAPPING       = _GRID_MAPPING;
-    static const BlockLoadPolicy       LOAD_POLICY        = _LOAD_POLICY;
     static const PtxLoadModifier       LOAD_MODIFIER      = _LOAD_MODIFIER;
 };
 
@@ -100,13 +101,15 @@ private:
         BLOCK_THREADS       = BlockReduceTilesPolicy::BLOCK_THREADS,
         ITEMS_PER_THREAD    = BlockReduceTilesPolicy::ITEMS_PER_THREAD,
         TILE_ITEMS          = BLOCK_THREADS * ITEMS_PER_THREAD,
+
+        // Actual vector load length must evenly divide ITEMS_PER_THREAD
+        VECTOR_LOAD_LENGTH  = (ITEMS_PER_THREAD % BlockReduceTilesPolicy::VECTOR_LOAD_LENGTH == 0) ?
+                                BlockReduceTilesPolicy::VECTOR_LOAD_LENGTH :
+                                1,
+
     };
 
-    static const BlockLoadPolicy LOAD_POLICY        = BlockReduceTilesPolicy::LOAD_POLICY;
     static const PtxLoadModifier LOAD_MODIFIER      = BlockReduceTilesPolicy::LOAD_MODIFIER;
-
-    // Parameterized BlockLoad primitive
-    typedef BlockLoad<InputIterator, BLOCK_THREADS, ITEMS_PER_THREAD, LOAD_POLICY, LOAD_MODIFIER> BlockLoadT;
 
     // Parameterized BlockReduce primitive
     typedef BlockReduce<T, BLOCK_THREADS> BlockReduceT;
@@ -115,11 +118,7 @@ private:
     struct _SmemStorage
     {
         SizeT block_offset;                                 // Location where to dequeue input for dynamic operation
-        union
-        {
-            typename BlockLoadT::SmemStorage    load;       // Smem needed for cooperative loading
-            typename BlockReduceT::SmemStorage  reduce;     // Smem needed for cooperative reduction
-        };
+        typename BlockReduceT::SmemStorage  reduce;         // Smem needed for cooperative reduction
     };
 
 public:
@@ -134,7 +133,7 @@ private:
     //---------------------------------------------------------------------
 
     /**
-     * Process a single, full tile.
+     * Process a single, full tile.  Specialized for d_in is an iterator (not a native pointer)
      *
      * Each thread reduces only the values it loads.  If \p FIRST_TILE,
      * this partial reduction is stored into \p thread_aggregate.  Otherwise
@@ -142,6 +141,7 @@ private:
      */
     template <
         bool FIRST_TILE,
+        typename InputIterator,
         typename SizeT,
         typename ReductionOp>
     static __device__ __forceinline__ void ConsumeFullTile(
@@ -153,13 +153,70 @@ private:
     {
         T items[ITEMS_PER_THREAD];
 
-        BlockLoadT::Load(smem_storage.load, d_in + block_offset, items);
+        BlockLoadDirectStriped(
+            d_in + block_offset,
+            items);
+
         T partial = ThreadReduce(items, reduction_op);
 
         thread_aggregate = (FIRST_TILE) ?
             partial :
             reduction_op(thread_aggregate, partial);
     }
+
+
+    /**
+     * Process a single, full tile.  Specialized for native pointers
+     *
+     * Each thread reduces only the values it loads.  If \p FIRST_TILE,
+     * this partial reduction is stored into \p thread_aggregate.  Otherwise
+     * it is accumulated into \p thread_aggregate.
+     */
+    template <
+        bool FIRST_TILE,
+        typename SizeT,
+        typename ReductionOp>
+    static __device__ __forceinline__ void ConsumeFullTile(
+        SmemStorage             &smem_storage,
+        T                       *d_in,
+        SizeT                   block_offset,
+        ReductionOp             &reduction_op,
+        T                       &thread_aggregate)
+    {
+        if ((size_t(d_in) & (VECTOR_LOAD_LENGTH - 1)) == 0)
+        {
+            T items[ITEMS_PER_THREAD];
+
+            typedef typename VectorType<T, VECTOR_LOAD_LENGTH>::Type VectorT;
+
+            // Alias items as an array of VectorT and load it in striped fashion
+            BlockLoadDirectStriped(
+                reinterpret_cast<VectorT*>(d_in + block_offset),
+                reinterpret_cast<VectorT (&)[ITEMS_PER_THREAD / VECTOR_LOAD_LENGTH]>(items));
+
+            T partial = ThreadReduce(items, reduction_op);
+
+            thread_aggregate = (FIRST_TILE) ?
+                partial :
+                reduction_op(thread_aggregate, partial);
+        }
+        else
+        {
+            T items[ITEMS_PER_THREAD];
+
+            BlockLoadDirectStriped(
+                d_in + block_offset,
+                items);
+
+            T partial = ThreadReduce(items, reduction_op);
+
+            thread_aggregate = (FIRST_TILE) ?
+                partial :
+                reduction_op(thread_aggregate, partial);
+        }
+
+    }
+
 
     /**
      * Process a single, partial tile.
@@ -222,21 +279,15 @@ public:
             ConsumeFullTile<true>(smem_storage, d_in, block_offset, reduction_op, thread_aggregate);
             block_offset += TILE_ITEMS;
 
-            __syncthreads();
-
             // Consume any other full tiles
             while (block_offset + TILE_ITEMS <= block_oob)
             {
                 ConsumeFullTile<false>(smem_storage, d_in, block_offset, reduction_op, thread_aggregate);
                 block_offset += TILE_ITEMS;
-
-                __syncthreads();
             }
 
             // Consume any remaining input
             ConsumePartialTile<false>(smem_storage, d_in, block_offset, block_oob, reduction_op, thread_aggregate);
-
-            __syncthreads();
 
             // Compute the block-wide reduction (every thread has a valid input)
             return BlockReduceT::Reduce(smem_storage.reduce, thread_aggregate, reduction_op);
@@ -246,8 +297,6 @@ public:
             // We have less than a full tile to consume
             T thread_aggregate;
             ConsumePartialTile<true>(smem_storage, d_in, block_offset, block_oob, reduction_op, thread_aggregate);
-
-            __syncthreads();
 
             // Compute the block-wide reduction  (up to block_items threads have valid inputs)
             SizeT block_items = block_oob - block_offset;
@@ -318,8 +367,6 @@ public:
                 }
             }
 
-            __syncthreads();
-
             // Compute the block-wide reduction (every thread has a valid input)
             return BlockReduceT::Reduce(smem_storage.reduce, thread_aggregate, reduction_op);
         }
@@ -329,8 +376,6 @@ public:
             T thread_aggregate;
             SizeT block_items = num_items - block_offset;
             ConsumePartialTile<true>(smem_storage, d_in, block_offset, num_items, reduction_op, thread_aggregate);
-
-            __syncthreads();
 
             // Compute the block-wide reduction  (up to block_items threads have valid inputs)
             return BlockReduceT::Reduce(smem_storage.reduce, thread_aggregate, reduction_op, block_items);

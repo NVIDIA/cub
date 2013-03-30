@@ -199,32 +199,32 @@ struct DeviceReduce
     template <typename T, typename SizeT>
     struct DefaultPolicy<T, SizeT, 300>
     {
-        typedef BlockReduceTilesPolicy<128,     8, GRID_MAPPING_DYNAMIC,     BLOCK_LOAD_STRIPED,    PTX_LOAD_NONE, 1>      UpsweepTilesPolicy;
-        typedef BlockReduceTilesPolicy<32,      4, GRID_MAPPING_EVEN_SHARE,  BLOCK_LOAD_VECTORIZE,  PTX_LOAD_NONE, 1>      SingleTilesPolicy;
+        typedef BlockReduceTilesPolicy<128,     8, GRID_MAPPING_DYNAMIC,     2,  PTX_LOAD_NONE, 1>      UpsweepTilesPolicy;
+        typedef BlockReduceTilesPolicy<32,      4, GRID_MAPPING_EVEN_SHARE,  4,  PTX_LOAD_NONE, 1>      SingleTilesPolicy;
     };
 
     /// SM20 tune
     template <typename T, typename SizeT>
     struct DefaultPolicy<T, SizeT, 200>
     {
-        typedef BlockReduceTilesPolicy<128,     8, GRID_MAPPING_DYNAMIC,     BLOCK_LOAD_STRIPED,    PTX_LOAD_NONE, 1>      UpsweepTilesPolicy;
-        typedef BlockReduceTilesPolicy<32,      4, GRID_MAPPING_EVEN_SHARE,  BLOCK_LOAD_VECTORIZE,  PTX_LOAD_NONE, 1>      SingleTilesPolicy;
+        typedef BlockReduceTilesPolicy<128,     8, GRID_MAPPING_DYNAMIC,     2,  PTX_LOAD_NONE, 1>      UpsweepTilesPolicy;
+        typedef BlockReduceTilesPolicy<32,      4, GRID_MAPPING_EVEN_SHARE,  4,  PTX_LOAD_NONE, 1>      SingleTilesPolicy;
     };
 
     /// SM13 tune
     template <typename T, typename SizeT>
     struct DefaultPolicy<T, SizeT, 130>
     {
-        typedef BlockReduceTilesPolicy<128,     8, GRID_MAPPING_EVEN_SHARE,  BLOCK_LOAD_STRIPED,    PTX_LOAD_NONE, 1>      UpsweepTilesPolicy;
-        typedef BlockReduceTilesPolicy<32,      4, GRID_MAPPING_EVEN_SHARE,  BLOCK_LOAD_VECTORIZE,  PTX_LOAD_NONE, 1>      SingleTilesPolicy;
+        typedef BlockReduceTilesPolicy<128,     8, GRID_MAPPING_EVEN_SHARE,  1,  PTX_LOAD_NONE, 1>      UpsweepTilesPolicy;
+        typedef BlockReduceTilesPolicy<32,      4, GRID_MAPPING_EVEN_SHARE,  1,  PTX_LOAD_NONE, 1>      SingleTilesPolicy;
     };
 
     /// SM10 tune
     template <typename T, typename SizeT>
     struct DefaultPolicy<T, SizeT, 100>
     {
-        typedef BlockReduceTilesPolicy<128,     8, GRID_MAPPING_EVEN_SHARE,  BLOCK_LOAD_STRIPED,    PTX_LOAD_NONE, 1>      UpsweepTilesPolicy;
-        typedef BlockReduceTilesPolicy<32,      4, GRID_MAPPING_EVEN_SHARE,  BLOCK_LOAD_VECTORIZE,  PTX_LOAD_NONE, 1>      SingleTilesPolicy;
+        typedef BlockReduceTilesPolicy<128,     8, GRID_MAPPING_EVEN_SHARE,  1,  PTX_LOAD_NONE, 1>      UpsweepTilesPolicy;
+        typedef BlockReduceTilesPolicy<32,      4, GRID_MAPPING_EVEN_SHARE,  1,  PTX_LOAD_NONE, 1>      SingleTilesPolicy;
     };
 
 
@@ -539,6 +539,7 @@ struct DeviceReduce
 
     #endif // DOXYGEN_SHOULD_SKIP_THIS
 
+public:
 
     //---------------------------------------------------------------------
     // Public interface
@@ -566,11 +567,13 @@ struct DeviceReduce
     static cudaError_t Reduce(
         InputIterator   d_in,
         OutputIterator  d_out,
-        SizeT           num_items,
+        int             num_items,
         ReductionOp     reduction_op,
         cudaStream_t    stream = 0,
         bool            stream_synchronous = false)
     {
+        typedef int SizeT;
+
         // Data type of input iterator
         typedef typename std::iterator_traits<InputIterator>::value_type T;
 
@@ -602,17 +605,18 @@ struct DeviceReduce
     template <
         typename InputIterator,
         typename OutputIterator,
-        typename SizeT,
         typename ReductionOp>
     __host__ __device__ __forceinline__
     static cudaError_t Reduce(
         InputIterator   d_in,
         OutputIterator  d_out,
-        SizeT           num_items,
+        int             num_items,
         ReductionOp     reduction_op,
         cudaStream_t    stream = 0,
         bool            stream_synchronous = false)
     {
+        typedef int SizeT;
+
         // Data type of input iterator
         typedef typename std::iterator_traits<InputIterator>::value_type T;
 
