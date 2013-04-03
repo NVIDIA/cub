@@ -110,7 +110,7 @@ namespace cub {
  *     if (threadIdx.x < 32)
  *     {
  *         int input = threadIdx.x;
- *         int output = WarpReduce::Sum(smem_storage, input, output);
+ *         int output = WarpReduce::Sum(smem_storage, input);
  *
  *         if (threadIdx.x == 0)
  *             printf("tid(%d) output(%d)\n\n", threadIdx.x, output);
