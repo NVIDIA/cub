@@ -131,7 +131,7 @@ template <
 class WarpReduce
 {
     /// BlockReduce is a friend class that has access to the WarpReduceInternal classes
-    template <typename T, int BLOCK_THERADS>
+    template <typename _T, int BLOCK_THERADS>
     friend class BlockReduce;
 
     //---------------------------------------------------------------------
@@ -453,7 +453,7 @@ private:
 
     /** \endcond */     // INTERNAL
 
-    typedef typename WarpReduceInternal<POLICY> Internal;
+    typedef WarpReduceInternal<POLICY> Internal;
 
     /// Shared memory storage layout type for WarpReduce
     typedef typename Internal::SmemStorage _SmemStorage;
