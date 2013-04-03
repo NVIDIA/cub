@@ -106,7 +106,7 @@ namespace cub {
  *     // Opaque shared memory for WarpReduce
  *     __shared__ typename WarpReduce::SmemStorage smem_storage;
  *
- *     // Perform prefix sum of threadIds in first warp
+ *     // Perform a reduction of thread ranks in first warp
  *     if (threadIdx.x < 32)
  *     {
  *         int input = threadIdx.x;
