@@ -80,10 +80,10 @@
  * \section sec2 (2) Recent news
  *
  * \par
- * - [<b>CUB v0.9.1</b>](download_cub.html) (03/09/2013).  Intial "preview" release.	
- *   CUB is the first durable, high-performance library 
- *   of cooperative block-level, warp-level, and thread-level primitives for CUDA 
- *   kernel programming.  More primitives and examples coming soon!
+ * <table>
+ * <tr> <td>04/04/2013</td> <td style="white-space: nowrap">[CUB v0.9.2 Update Release](https://github.com/NVlabs/cub/archive/0.9.2.zip)</td> 	<td>Minor cosmetic, feature, and compilation updates.  See the [change-log](https://github.com/NVlabs/cub/blob/master/CHANGE_LOG.TXT) for further details.</td> </tr>
+ * <tr> <td>03/07/2013</td> <td style="white-space: nowrap">[CUB v0.9 Preview Release](https://github.com/NVlabs/cub/archive/0.9.zip)</td> 		<td>CUB is the first durable, high-performance library of cooperative threadblock, warp, and thread primitives for CUDA kernel programming. More primitives and examples coming soon!</td> </tr>
+ * </table> 
  *
  * \section sec3 (3) A simple example
  *
