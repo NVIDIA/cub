@@ -5,7 +5,7 @@
 <meta http-equiv="Content-Type" content="text/xhtml;charset=UTF-8"/>
 <meta http-equiv="X-UA-Compatible" content="IE=9"/>
 <meta name="generator" content="Doxygen 1.8.3.1"/>
-<title>CUB: cub::BlockRakingLayout&lt; BLOCK_THREADS, T, BLOCK_STRIPS &gt; Struct Template Reference</title>
+<title>CUB: cub::BlockRakingLayout&lt; T, BLOCK_THREADS, BLOCK_STRIPS &gt; Struct Template Reference</title>
 <link href="tabs.css" rel="stylesheet" type="text/css"/>
 <script type="text/javascript" src="jquery.js"></script>
 <script type="text/javascript" src="dynsections.js"></script>
@@ -103,12 +103,12 @@ var searchBox = new SearchBox("searchBox", "search",false,'Search');
 <a href="#pub-static-methods">Static Public Methods</a> &#124;
 <a href="structcub_1_1_block_raking_layout-members.html">List of all members</a>  </div>
   <div class="headertitle">
-<div class="title">cub::BlockRakingLayout&lt; BLOCK_THREADS, T, BLOCK_STRIPS &gt; Struct Template Reference<div class="ingroups"><a class="el" href="group___block_module.html">Block-wide</a></div></div>  </div>
+<div class="title">cub::BlockRakingLayout&lt; T, BLOCK_THREADS, BLOCK_STRIPS &gt; Struct Template Reference<div class="ingroups"><a class="el" href="group___block_module.html">Block-wide</a></div></div>  </div>
 </div><!--header-->
 <div class="contents">
 <a name="details" id="details"></a><h2 class="groupheader">Detailed description</h2>
-<div class="textblock"><h3>template&lt;int BLOCK_THREADS, typename T, int BLOCK_STRIPS = 1&gt;<br/>
-struct cub::BlockRakingLayout&lt; BLOCK_THREADS, T, BLOCK_STRIPS &gt;</h3>
+<div class="textblock"><h3>template&lt;typename T, int BLOCK_THREADS, int BLOCK_STRIPS = 1&gt;<br/>
+struct cub::BlockRakingLayout&lt; T, BLOCK_THREADS, BLOCK_STRIPS &gt;</h3>
 
 <p><a class="el" href="structcub_1_1_block_raking_layout.html" title="BlockRakingLayout provides a conflict-free shared memory layout abstraction for raking across thread ...">BlockRakingLayout</a> provides a conflict-free shared memory layout abstraction for raking across thread block data. </p>
 <dl class="section user"><dt>Overview</dt><dd>This type facilitates a shared memory usage pattern where a block of CUDA threads places elements into shared memory and then reduces the active parallelism to one "raking" warp of threads for serially aggregating consecutive sequences of shared items. Padding is inserted to eliminate bank conflicts (for most data types).</dd></dl>
@@ -116,6 +116,7 @@ struct cub::BlockRakingLayout&lt; BLOCK_THREADS, T, BLOCK_STRIPS &gt;</h3>
   <table class="tparams">
     <tr><td class="paramname">T</td><td>The data type to be exchanged. </td></tr>
     <tr><td class="paramname">BLOCK_THREADS</td><td>The threadblock size in threads. </td></tr>
+    <tr><td class="paramname">BLOCK_STRIPS</td><td>When strip-mining, the number of threadblock-strips per tile </td></tr>
   </table>
   </dd>
 </dl>
@@ -139,27 +140,27 @@ Public Types</h2></td></tr>
 <br/>
  }</td></tr>
 <tr class="separator:a2b6138580e8d348c8ee903d05eee2083"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:a7128753c6531bc0332acbc5223040f4d"><td class="memItemLeft" align="right" valign="top">typedef T&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="structcub_1_1_block_raking_layout.html#a7128753c6531bc0332acbc5223040f4d">SmemStorage</a> [BlockRakingLayout::GRID_ELEMENTS]</td></tr>
-<tr class="separator:a7128753c6531bc0332acbc5223040f4d"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a9455ea5b5ba52b8fcf26cfded59f70c9"><td class="memItemLeft" align="right" valign="top">typedef T&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="structcub_1_1_block_raking_layout.html#a9455ea5b5ba52b8fcf26cfded59f70c9">SmemStorage</a> [BlockRakingLayout::GRID_ELEMENTS]</td></tr>
+<tr class="separator:a9455ea5b5ba52b8fcf26cfded59f70c9"><td class="memSeparator" colspan="2">&#160;</td></tr>
 </table><table class="memberdecls">
 <tr class="heading"><td colspan="2"><h2 class="groupheader"><a name="pub-static-methods"></a>
 Static Public Methods</h2></td></tr>
-<tr class="memitem:a99a81183ac0e350bd9222dce0ca91416"><td class="memItemLeft" align="right" valign="top">static __device__ <br class="typebreak"/>
-__forceinline__ T *&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="structcub_1_1_block_raking_layout.html#a99a81183ac0e350bd9222dce0ca91416">PlacementPtr</a> (<a class="el" href="structcub_1_1_block_raking_layout.html#a7128753c6531bc0332acbc5223040f4d">SmemStorage</a> &amp;smem_storage, int block_strip=0, int tid=threadIdx.x)</td></tr>
-<tr class="separator:a99a81183ac0e350bd9222dce0ca91416"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:ab877ab04c3eca0e0a1dec208985f0181"><td class="memItemLeft" align="right" valign="top">static __device__ <br class="typebreak"/>
-__forceinline__ T *&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="structcub_1_1_block_raking_layout.html#ab877ab04c3eca0e0a1dec208985f0181">RakingPtr</a> (<a class="el" href="structcub_1_1_block_raking_layout.html#a7128753c6531bc0332acbc5223040f4d">SmemStorage</a> &amp;smem_storage, int tid=threadIdx.x)</td></tr>
-<tr class="separator:ab877ab04c3eca0e0a1dec208985f0181"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:aecee2831bac3e7ead02bfeb403768ff5"><td class="memItemLeft" align="right" valign="top">static __device__ <br class="typebreak"/>
+__forceinline__ T *&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="structcub_1_1_block_raking_layout.html#aecee2831bac3e7ead02bfeb403768ff5">PlacementPtr</a> (<a class="el" href="structcub_1_1_block_raking_layout.html#a9455ea5b5ba52b8fcf26cfded59f70c9">SmemStorage</a> &amp;smem_storage, int block_strip=0, int tid=threadIdx.x)</td></tr>
+<tr class="separator:aecee2831bac3e7ead02bfeb403768ff5"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a2c62149ec2e962e98bde8ba30f14dfbf"><td class="memItemLeft" align="right" valign="top">static __device__ <br class="typebreak"/>
+__forceinline__ T *&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="structcub_1_1_block_raking_layout.html#a2c62149ec2e962e98bde8ba30f14dfbf">RakingPtr</a> (<a class="el" href="structcub_1_1_block_raking_layout.html#a9455ea5b5ba52b8fcf26cfded59f70c9">SmemStorage</a> &amp;smem_storage, int tid=threadIdx.x)</td></tr>
+<tr class="separator:a2c62149ec2e962e98bde8ba30f14dfbf"><td class="memSeparator" colspan="2">&#160;</td></tr>
 </table>
 <h2 class="groupheader">Member Typedef Documentation</h2>
-<a class="anchor" id="a7128753c6531bc0332acbc5223040f4d"></a>
+<a class="anchor" id="a9455ea5b5ba52b8fcf26cfded59f70c9"></a>
 <div class="memitem">
 <div class="memproto">
 <div class="memtemplate">
-template&lt;int BLOCK_THREADS, typename T , int BLOCK_STRIPS = 1&gt; </div>
+template&lt;typename T , int BLOCK_THREADS, int BLOCK_STRIPS = 1&gt; </div>
       <table class="memname">
         <tr>
-          <td class="memname">typedef T <a class="el" href="structcub_1_1_block_raking_layout.html">cub::BlockRakingLayout</a>&lt; BLOCK_THREADS, T, BLOCK_STRIPS &gt;::SmemStorage[BlockRakingLayout::GRID_ELEMENTS]</td>
+          <td class="memname">typedef T <a class="el" href="structcub_1_1_block_raking_layout.html">cub::BlockRakingLayout</a>&lt; T, BLOCK_THREADS, BLOCK_STRIPS &gt;::SmemStorage[BlockRakingLayout::GRID_ELEMENTS]</td>
         </tr>
       </table>
 </div><div class="memdoc">
@@ -168,19 +169,19 @@ template&lt;int BLOCK_THREADS, typename T , int BLOCK_STRIPS = 1&gt; </div>
 </div>
 </div>
 <h2 class="groupheader">Member Function Documentation</h2>
-<a class="anchor" id="a99a81183ac0e350bd9222dce0ca91416"></a>
+<a class="anchor" id="aecee2831bac3e7ead02bfeb403768ff5"></a>
 <div class="memitem">
 <div class="memproto">
 <div class="memtemplate">
-template&lt;int BLOCK_THREADS, typename T , int BLOCK_STRIPS = 1&gt; </div>
+template&lt;typename T , int BLOCK_THREADS, int BLOCK_STRIPS = 1&gt; </div>
 <table class="mlabels">
   <tr>
   <td class="mlabels-left">
       <table class="memname">
         <tr>
-          <td class="memname">static __device__ __forceinline__ T* <a class="el" href="structcub_1_1_block_raking_layout.html">cub::BlockRakingLayout</a>&lt; BLOCK_THREADS, T, BLOCK_STRIPS &gt;::PlacementPtr </td>
+          <td class="memname">static __device__ __forceinline__ T* <a class="el" href="structcub_1_1_block_raking_layout.html">cub::BlockRakingLayout</a>&lt; T, BLOCK_THREADS, BLOCK_STRIPS &gt;::PlacementPtr </td>
           <td>(</td>
-          <td class="paramtype"><a class="el" href="structcub_1_1_block_raking_layout.html#a7128753c6531bc0332acbc5223040f4d">SmemStorage</a> &amp;&#160;</td>
+          <td class="paramtype"><a class="el" href="structcub_1_1_block_raking_layout.html#a9455ea5b5ba52b8fcf26cfded59f70c9">SmemStorage</a> &amp;&#160;</td>
           <td class="paramname"><em>smem_storage</em>, </td>
         </tr>
         <tr>
@@ -211,19 +212,19 @@ template&lt;int BLOCK_THREADS, typename T , int BLOCK_STRIPS = 1&gt; </div>
 
 </div>
 </div>
-<a class="anchor" id="ab877ab04c3eca0e0a1dec208985f0181"></a>
+<a class="anchor" id="a2c62149ec2e962e98bde8ba30f14dfbf"></a>
 <div class="memitem">
 <div class="memproto">
 <div class="memtemplate">
-template&lt;int BLOCK_THREADS, typename T , int BLOCK_STRIPS = 1&gt; </div>
+template&lt;typename T , int BLOCK_THREADS, int BLOCK_STRIPS = 1&gt; </div>
 <table class="mlabels">
   <tr>
   <td class="mlabels-left">
       <table class="memname">
         <tr>
-          <td class="memname">static __device__ __forceinline__ T* <a class="el" href="structcub_1_1_block_raking_layout.html">cub::BlockRakingLayout</a>&lt; BLOCK_THREADS, T, BLOCK_STRIPS &gt;::RakingPtr </td>
+          <td class="memname">static __device__ __forceinline__ T* <a class="el" href="structcub_1_1_block_raking_layout.html">cub::BlockRakingLayout</a>&lt; T, BLOCK_THREADS, BLOCK_STRIPS &gt;::RakingPtr </td>
           <td>(</td>
-          <td class="paramtype"><a class="el" href="structcub_1_1_block_raking_layout.html#a7128753c6531bc0332acbc5223040f4d">SmemStorage</a> &amp;&#160;</td>
+          <td class="paramtype"><a class="el" href="structcub_1_1_block_raking_layout.html#a9455ea5b5ba52b8fcf26cfded59f70c9">SmemStorage</a> &amp;&#160;</td>
           <td class="paramname"><em>smem_storage</em>, </td>
         </tr>
         <tr>
@@ -255,7 +256,7 @@ template&lt;int BLOCK_THREADS, typename T , int BLOCK_STRIPS = 1&gt; </div>
 <!-- HTML footer for doxygen 1.8.3.1-->
 <!-- start footer part -->
 <hr class="footer"/><address class="footer"><small>
-Generated on Thu Mar 28 2013 09:49:07 for CUB by &#160;<a href="http://www.doxygen.org/index.html">
+Generated on Wed Apr 3 2013 23:04:53 for CUB by &#160;<a href="http://www.doxygen.org/index.html">
 <img class="footer" src="doxygen.png" alt="doxygen"/>
 </a> 1.8.3.1
 <br>
