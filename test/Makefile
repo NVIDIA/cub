@@ -70,6 +70,8 @@ DEFINES =
 # Compiler Flags
 #-------------------------------------------------------------------------------
 
+NVCCFLAGS = -Xptxas -v -Xcudafe -\#
+
 ifneq ($(force64), 1)
 	# Compile with 32-bit device pointers by default
 	ARCH = -m32
@@ -79,12 +81,10 @@ else
 	ARCH_SUFFIX = x86_64
 endif
 
-NVCCFLAGS = -Xptxas -v -Xcudafe -\#
-
-ifeq ($(abi), 1)
+ifneq ($(abi), 0)
+	# Enable the ABI by default
 	ABI_SUFFIX = abi
 else 
-	# Disable the ABI by default
 	NVCCFLAGS += -Xptxas -abi=no
 	ABI_SUFFIX = noabi
 endif
@@ -93,8 +93,6 @@ ifeq ($(open64), 1)
 	# Use open64 compiler instead of nvvm
 	NVCCFLAGS += -open64
 	PTX_SUFFIX = open64
-else 
-	PTX_SUFFIX = nvvm
 endif
 
 ifeq ($(verbose), 1)
@@ -219,27 +217,6 @@ bin/test_block_radix_sort_$(SUFFIX) : test_block_radix_sort.cu $(DEPS)
 	mkdir -p bin
 	$(NVCC) $(DEFINES) $(SM_TARGETS) -o bin/test_block_radix_sort_$(SUFFIX) test_block_radix_sort.cu $(NVCCFLAGS) $(ARCH) $(INC) -O3
 
-
-
-#-------------------------------------------------------------------------------
-# make test_coo_spmv_double
-#-------------------------------------------------------------------------------
-
-test_coo_spmv_double: bin/test_coo_spmv_double_$(SUFFIX)
-
-bin/test_coo_spmv_double_$(SUFFIX) : test_coo_spmv_double.cu $(DEPS)
-	mkdir -p bin
-	$(NVCC) $(DEFINES) $(SM_TARGETS) -o bin/test_coo_spmv_double_$(SUFFIX) test_coo_spmv_double.cu $(NVCCFLAGS) $(ARCH) $(INC) -O3
-
-#-------------------------------------------------------------------------------
-# make test_coo_spmv
-#-------------------------------------------------------------------------------
-
-test_coo_spmv: bin/test_coo_spmv_$(SUFFIX)
-
-bin/test_coo_spmv_$(SUFFIX) : test_coo_spmv.cu $(DEPS)
-	mkdir -p bin
-	$(NVCC) $(DEFINES) $(SM_TARGETS) -o bin/test_coo_spmv_$(SUFFIX) test_coo_spmv.cu $(NVCCFLAGS) $(ARCH) $(INC) -O3
 
 #-------------------------------------------------------------------------------
 # make test_block_serialize
