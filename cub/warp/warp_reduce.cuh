@@ -107,11 +107,11 @@ namespace cub {
  *     // Opaque shared memory for WarpReduce
  *     __shared__ typename WarpReduce::SmemStorage smem_storage;
  *
- *     // Perform prefix sum of threadIds in first warp
+ *     // Perform a reduction of thread ranks in first warp
  *     if (threadIdx.x < 32)
  *     {
  *         int input = threadIdx.x;
- *         int output = WarpReduce::Sum(smem_storage, input, output);
+ *         int output = WarpReduce::Sum(smem_storage, input);
  *
  *         if (threadIdx.x == 0)
  *             printf("tid(%d) output(%d)\n\n", threadIdx.x, output);
@@ -132,7 +132,7 @@ template <
 class WarpReduce
 {
     /// BlockReduce is a friend class that has access to the WarpReduceInternal classes
-    template <typename T, int BLOCK_THERADS>
+    template <typename _T, int BLOCK_THERADS>
     friend class BlockReduce;
 
     //---------------------------------------------------------------------
@@ -454,7 +454,7 @@ private:
 
     #endif // DOXYGEN_SHOULD_SKIP_THIS
 
-    typedef typename WarpReduceInternal<POLICY> Internal;
+    typedef WarpReduceInternal<POLICY> Internal;
 
     /// Shared memory storage layout type for WarpReduce
     typedef typename Internal::SmemStorage _SmemStorage;
