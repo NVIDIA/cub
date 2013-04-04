@@ -165,11 +165,11 @@ class cub::WarpReduce&lt; T, WARPS, LOGICAL_WARP_THREADS &gt;</h3>
 <div class="line">    <span class="comment">// Opaque shared memory for WarpReduce</span></div>
 <div class="line">    __shared__ <span class="keyword">typename</span> <a class="code" href="classcub_1_1_warp_reduce.html#a4807b030bca03efb7fff2f6e9ea8b3d2" title="The operations exposed by WarpReduce require shared memory of this type. This opaque storage can be a...">WarpReduce::SmemStorage</a> smem_storage;</div>
 <div class="line"></div>
-<div class="line">    <span class="comment">// Perform prefix sum of threadIds in first warp</span></div>
+<div class="line">    <span class="comment">// Perform a reduction of thread ranks in first warp</span></div>
 <div class="line">    <span class="keywordflow">if</span> (threadIdx.x &lt; 32)</div>
 <div class="line">    {</div>
 <div class="line">        <span class="keywordtype">int</span> input = threadIdx.x;</div>
-<div class="line">        <span class="keywordtype">int</span> output = <a class="code" href="classcub_1_1_warp_reduce.html#a50e4be93dbd298b7c2b5080d1449cf8c" title="Computes a warp-wide sum for warp-lane0 in each active warp.">WarpReduce::Sum</a>(smem_storage, input, output);</div>
+<div class="line">        <span class="keywordtype">int</span> output = <a class="code" href="classcub_1_1_warp_reduce.html#a50e4be93dbd298b7c2b5080d1449cf8c" title="Computes a warp-wide sum for warp-lane0 in each active warp.">WarpReduce::Sum</a>(smem_storage, input);</div>
 <div class="line"></div>
 <div class="line">        <span class="keywordflow">if</span> (threadIdx.x == 0)</div>
 <div class="line">            printf(<span class="stringliteral">&quot;tid(%d) output(%d)\n\n&quot;</span>, threadIdx.x, output);</div>
@@ -208,7 +208,7 @@ Static Public Methods</h2></td></tr>
 <tr class="heading"><td colspan="2"><h2 class="groupheader"><a name="friends"></a>
 Friends</h2></td></tr>
 <tr class="memitem:a48bdd86ea499bbd83386c10d1ff4839e"><td class="memTemplParams" colspan="2"><a class="anchor" id="a48bdd86ea499bbd83386c10d1ff4839e"></a>
-template&lt;typename T , int BLOCK_THERADS&gt; </td></tr>
+template&lt;typename _T , int BLOCK_THERADS&gt; </td></tr>
 <tr class="memitem:a48bdd86ea499bbd83386c10d1ff4839e"><td class="memTemplItemLeft" align="right" valign="top">class&#160;</td><td class="memTemplItemRight" valign="bottom"><a class="el" href="classcub_1_1_warp_reduce.html#a48bdd86ea499bbd83386c10d1ff4839e">BlockReduce</a></td></tr>
 <tr class="memdesc:a48bdd86ea499bbd83386c10d1ff4839e"><td class="mdescLeft">&#160;</td><td class="mdescRight"><a class="el" href="classcub_1_1_block_reduce.html" title="BlockReduce provides variants of parallel reduction across a CUDA threadblock. .">BlockReduce</a> is a friend class that has access to the WarpReduceInternal classes. <br/></td></tr>
 <tr class="separator:a48bdd86ea499bbd83386c10d1ff4839e"><td class="memSeparator" colspan="2">&#160;</td></tr>
@@ -455,7 +455,7 @@ template&lt;typename ReductionOp &gt; </div>
 <!-- HTML footer for doxygen 1.8.3.1-->
 <!-- start footer part -->
 <hr class="footer"/><address class="footer"><small>
-Generated on Sat Mar 23 2013 08:00:38 for CUB by &#160;<a href="http://www.doxygen.org/index.html">
+Generated on Thu Apr 4 2013 11:10:44 for CUB by &#160;<a href="http://www.doxygen.org/index.html">
 <img class="footer" src="doxygen.png" alt="doxygen"/>
 </a> 1.8.3.1
 <br>
