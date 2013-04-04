@@ -326,7 +326,7 @@ struct CachingDeviceAllocator : public DeviceAllocator
 
         this->max_cached_bytes = max_cached_bytes;
 
-        if (debug) printf("New max_cached_bytes(%d)\n", max_cached_bytes);
+        if (debug) printf("New max_cached_bytes(%lld)\n", (long long) max_cached_bytes);
 
         // Unlock
         Unlock(&spin_lock);
@@ -385,8 +385,8 @@ struct CachingDeviceAllocator : public DeviceAllocator
                 cached_blocks.erase(block_itr);
                 cached_bytes[gpu] -= search_key.bytes;
 
-                if (debug) printf("\tGPU %d reused cached block (%d bytes). %d available blocks cached (%d bytes), %d live blocks outstanding.\n",
-                    gpu, search_key.bytes, cached_blocks.size(), cached_bytes[gpu], live_blocks.size());
+                if (debug) printf("\tGPU %d reused cached block (%lld bytes). %lld available blocks cached (%lld bytes), %lld live blocks outstanding.\n",
+                    gpu, (long long) search_key.bytes, (long long) cached_blocks.size(), (long long) cached_bytes[gpu], (long long) live_blocks.size());
             }
             else
             {
@@ -412,8 +412,8 @@ struct CachingDeviceAllocator : public DeviceAllocator
                 // Insert into live blocks
                 live_blocks.insert(search_key);
 
-                if (debug) printf("\tGPU %d allocating new device block %d bytes. %d available blocks cached (%d bytes), %d live blocks outstanding.\n",
-                    gpu, search_key.bytes, cached_blocks.size(), cached_bytes[gpu], live_blocks.size());
+                if (debug) printf("\tGPU %d allocating new device block %lld bytes. %lld available blocks cached (%lld bytes), %lld live blocks outstanding.\n",
+                    gpu, (long long) search_key.bytes, (long long) cached_blocks.size(), (long long) cached_bytes[gpu], (long long) live_blocks.size());
             }
         } while(0);
 
@@ -492,8 +492,8 @@ struct CachingDeviceAllocator : public DeviceAllocator
                     cached_blocks.insert(search_key);
                     cached_bytes[gpu] += search_key.bytes;
 
-                    if (debug) printf("\tGPU %d returned %d bytes. %d available blocks cached (%d bytes), %d live blocks outstanding.\n",
-                        gpu, search_key.bytes, cached_blocks.size(), cached_bytes[gpu], live_blocks.size());
+                    if (debug) printf("\tGPU %d returned %lld bytes. %lld available blocks cached (%lld bytes), %lld live blocks outstanding.\n",
+                        gpu, (long long) search_key.bytes, (long long) cached_blocks.size(), (long long) cached_bytes[gpu], (long long) live_blocks.size());
                 }
                 else
                 {
@@ -510,8 +510,8 @@ struct CachingDeviceAllocator : public DeviceAllocator
                     // Free device memory
                     if (error = CubDebug(cudaFree(d_ptr))) break;
 
-                    if (debug) printf("\tGPU %d freed %d bytes.  %d available blocks cached (%d bytes), %d live blocks outstanding.\n",
-                        gpu, search_key.bytes, cached_blocks.size(), cached_bytes[gpu], live_blocks.size());
+                    if (debug) printf("\tGPU %d freed %lld bytes.  %lld available blocks cached (%lld bytes), %lld live blocks outstanding.\n",
+                        gpu, (long long) search_key.bytes, (long long) cached_blocks.size(), (long long) cached_bytes[gpu], (long long) live_blocks.size());
                 }
             }
         } while (0);
@@ -591,8 +591,8 @@ struct CachingDeviceAllocator : public DeviceAllocator
             cached_bytes[current_gpu] -= begin->bytes;
             cached_blocks.erase(begin);
 
-            if (debug) printf("\tGPU %d freed %d bytes.  %d available blocks cached (%d bytes), %d live blocks outstanding.\n",
-                current_gpu, begin->bytes, cached_blocks.size(), cached_bytes[current_gpu], live_blocks.size());
+            if (debug) printf("\tGPU %d freed %lld bytes.  %lld available blocks cached (%lld bytes), %lld live blocks outstanding.\n",
+                current_gpu, (long long) begin->bytes, (long long) cached_blocks.size(), (long long) cached_bytes[current_gpu], (long long) live_blocks.size());
         }
 
         // Unlock
