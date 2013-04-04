@@ -1,6 +1,6 @@
 var searchData=
 [
-  ['placementptr',['PlacementPtr',['../structcub_1_1_block_raking_layout.html#a99a81183ac0e350bd9222dce0ca91416',1,'cub::BlockRakingLayout']]],
+  ['placementptr',['PlacementPtr',['../structcub_1_1_block_raking_layout.html#aecee2831bac3e7ead02bfeb403768ff5',1,'cub::BlockRakingLayout']]],
   ['ptx_5fload_5fca',['PTX_LOAD_CA',['../group___thread_module.html#gga023420f30fec7d4b187fc98f4fd2a55dad802bce71c7380a911ab0cee5b366fd3',1,'cub']]],
   ['ptx_5fload_5fcg',['PTX_LOAD_CG',['../group___thread_module.html#gga023420f30fec7d4b187fc98f4fd2a55da0e18a5a910be460d738772631eafadd0',1,'cub']]],
   ['ptx_5fload_5fcs',['PTX_LOAD_CS',['../group___thread_module.html#gga023420f30fec7d4b187fc98f4fd2a55da0b263e2237593103d5e9004e935c66af',1,'cub']]],
