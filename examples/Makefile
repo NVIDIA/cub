@@ -93,7 +93,9 @@ ifeq ($(open64), 1)
 	# Use open64 compiler instead of nvvm
 	NVCCFLAGS += -open64
 	PTX_SUFFIX = open64
-endif
+else 
+	PTX_SUFFIX = nvvm
+
 
 ifeq ($(verbose), 1)
 	NVCCFLAGS += -v

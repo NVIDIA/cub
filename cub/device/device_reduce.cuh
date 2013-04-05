@@ -58,7 +58,7 @@ namespace cub {
 
 
 /**
- * Reduction kernel entry point.
+ * Multi-block reduction kernel entry point.
  */
 template <
     typename BlockReduceTilesPolicy,
@@ -67,7 +67,7 @@ template <
     typename SizeT,
     typename ReductionOp>
 __launch_bounds__ (BlockReduceTilesPolicy::BLOCK_THREADS, 1)
-__global__ void ReduceKernel(
+__global__ void MultiReduceKernel(
     InputIterator           d_in,
     OutputIterator          d_out,
     SizeT                   num_items,
@@ -158,32 +158,28 @@ __global__ void SingleReduceKernel(
  */
 struct DeviceReduce
 {
-    #ifndef DOXYGEN_SHOULD_SKIP_THIS    // Do not document
+#ifndef DOXYGEN_SHOULD_SKIP_THIS    // Do not document
 
-    /// Generic structure for encapsulating dispatch properties
-    struct DispatchPolicy
+    /// Generic structure for encapsulating dispatch properties.  Mirrors the constants within BlockReduceTilesPolicy.
+    struct KernelDispachParams
     {
-        // Upsweep kernel policy details
-        int                     upsweep_block_threads;
-        int                     upsweep_items_per_thread;
-        GridMappingStrategy     upsweep_mapping;
-        int                     upsweep_oversubscription;
+        int                     block_threads;
+        int                     items_per_thread;
+        int                     vector_load_length;
+        int                     oversubscription;
+        GridMappingStrategy     grid_mapping;
+        PtxLoadModifier         load_modifier;
 
-        // Single kernel policy details
-        int                     single_block_threads;
-        int                     single_items_per_thread;
-
-        template <typename DefaultPolicy>
+        template <typename BlockReduceTilesPolicy>
         __host__ __device__ __forceinline__
         void Init()
         {
-            upsweep_block_threads           = DefaultPolicy::UpsweepTilesPolicy::BLOCK_THREADS;
-            upsweep_items_per_thread        = DefaultPolicy::UpsweepTilesPolicy::ITEMS_PER_THREAD;
-            upsweep_mapping                 = DefaultPolicy::UpsweepTilesPolicy::GRID_MAPPING;
-            upsweep_oversubscription        = DefaultPolicy::UpsweepTilesPolicy::OVERSUBSCRIPTION;
-
-            single_block_threads            = DefaultPolicy::SingleTilesPolicy::BLOCK_THREADS;
-            single_items_per_thread         = DefaultPolicy::SingleTilesPolicy::ITEMS_PER_THREAD;
+            block_threads       = BlockReduceTilesPolicy::BLOCK_THREADS;
+            items_per_thread    = BlockReduceTilesPolicy::ITEMS_PER_THREAD;
+            vector_load_length  = BlockReduceTilesPolicy::VECTOR_LOAD_LENGTH;
+            oversubscription    = BlockReduceTilesPolicy::OVERSUBSCRIPTION;
+            grid_mapping        = BlockReduceTilesPolicy::GRID_MAPPING;
+            load_modifier       = BlockReduceTilesPolicy::LOAD_MODIFIER;
         }
     };
 
@@ -193,46 +189,44 @@ struct DeviceReduce
         typename    T,
         typename    SizeT,
         int         ARCH = CUB_PTX_ARCH>
-    struct DefaultPolicy;
+    struct TunedPolicies;
 
     /// SM30 tune
     template <typename T, typename SizeT>
-    struct DefaultPolicy<T, SizeT, 300>
+    struct TunedPolicies<T, SizeT, 300>
     {
-        typedef BlockReduceTilesPolicy<128,     8, GRID_MAPPING_DYNAMIC,     2,  PTX_LOAD_NONE, 1>      UpsweepTilesPolicy;
-        typedef BlockReduceTilesPolicy<32,      4, GRID_MAPPING_EVEN_SHARE,  4,  PTX_LOAD_NONE, 1>      SingleTilesPolicy;
+        typedef BlockReduceTilesPolicy<128,     8, GRID_MAPPING_DYNAMIC,     2,  PTX_LOAD_NONE, 1>      MultiPolicy;
+        typedef BlockReduceTilesPolicy<32,      4, GRID_MAPPING_EVEN_SHARE,  4,  PTX_LOAD_NONE, 1>      SinglePolicy;
     };
 
     /// SM20 tune
     template <typename T, typename SizeT>
-    struct DefaultPolicy<T, SizeT, 200>
+    struct TunedPolicies<T, SizeT, 200>
     {
-        typedef BlockReduceTilesPolicy<128,     8, GRID_MAPPING_DYNAMIC,     2,  PTX_LOAD_NONE, 1>      UpsweepTilesPolicy;
-        typedef BlockReduceTilesPolicy<32,      4, GRID_MAPPING_EVEN_SHARE,  4,  PTX_LOAD_NONE, 1>      SingleTilesPolicy;
+        typedef BlockReduceTilesPolicy<128,     8, GRID_MAPPING_DYNAMIC,     2,  PTX_LOAD_NONE, 1>      MultiPolicy;
+        typedef BlockReduceTilesPolicy<32,      4, GRID_MAPPING_EVEN_SHARE,  4,  PTX_LOAD_NONE, 1>      SinglePolicy;
     };
 
     /// SM13 tune
     template <typename T, typename SizeT>
-    struct DefaultPolicy<T, SizeT, 130>
+    struct TunedPolicies<T, SizeT, 130>
     {
-        typedef BlockReduceTilesPolicy<128,     8, GRID_MAPPING_EVEN_SHARE,  1,  PTX_LOAD_NONE, 1>      UpsweepTilesPolicy;
-        typedef BlockReduceTilesPolicy<32,      4, GRID_MAPPING_EVEN_SHARE,  1,  PTX_LOAD_NONE, 1>      SingleTilesPolicy;
+        typedef BlockReduceTilesPolicy<128,     8, GRID_MAPPING_EVEN_SHARE,  1,  PTX_LOAD_NONE, 1>      MultiPolicy;
+        typedef BlockReduceTilesPolicy<32,      4, GRID_MAPPING_EVEN_SHARE,  1,  PTX_LOAD_NONE, 1>      SinglePolicy;
     };
 
     /// SM10 tune
     template <typename T, typename SizeT>
-    struct DefaultPolicy<T, SizeT, 100>
+    struct TunedPolicies<T, SizeT, 100>
     {
-        typedef BlockReduceTilesPolicy<128,     8, GRID_MAPPING_EVEN_SHARE,  1,  PTX_LOAD_NONE, 1>      UpsweepTilesPolicy;
-        typedef BlockReduceTilesPolicy<32,      4, GRID_MAPPING_EVEN_SHARE,  1,  PTX_LOAD_NONE, 1>      SingleTilesPolicy;
+        typedef BlockReduceTilesPolicy<128,     8, GRID_MAPPING_EVEN_SHARE,  1,  PTX_LOAD_NONE, 1>      MultiPolicy;
+        typedef BlockReduceTilesPolicy<32,      4, GRID_MAPPING_EVEN_SHARE,  1,  PTX_LOAD_NONE, 1>      SinglePolicy;
     };
 
 
-    /// Selects the appropriate tuned policy types for the targeted problem setting (and the ability to initialize a corresponding DispatchPolicy)
-    template <
-        typename    T,
-        typename    SizeT>
-    struct PtxDefaultPolicy
+    /// Selects the appropriate tuned policy types for the targeted problem setting (and the ability to initialize a corresponding DispachParams)
+    template <typename T, typename SizeT>
+    struct PtxDefaultPolicies
     {
         enum
         {
@@ -245,29 +239,36 @@ struct DeviceReduce
                                             100
         };
 
-        struct UpsweepTilesPolicy : DefaultPolicy<T, SizeT, PTX_TUNE_ARCH>::UpsweepTilesPolicy {};
-        struct SingleTilesPolicy : DefaultPolicy<T, SizeT, PTX_TUNE_ARCH>::SingleTilesPolicy {};
+        struct MultiPolicy : TunedPolicies<T, SizeT, PTX_TUNE_ARCH>::MultiPolicy {};
+        struct SinglePolicy : TunedPolicies<T, SizeT, PTX_TUNE_ARCH>::SinglePolicy {};
 
         /**
          * Initialize dispatch policy
          */
-        static void InitDispatchPolicy(int device_arch, DispatchPolicy &dispatch_policy)
+        static void InitDispatchParams(
+            int                     device_arch,
+            KernelDispachParams    &multi_dispatch_params,
+            KernelDispachParams    &single_dispatch_params)
         {
             if (device_arch >= 300)
             {
-                dispatch_policy.Init<DefaultPolicy<T, SizeT, 300> >();
+                multi_dispatch_params.Init<TunedPolicies<T, SizeT, 300>::MultiPolicy >();
+                single_dispatch_params.Init<TunedPolicies<T, SizeT, 300>::SinglePolicy >();
             }
             else if (device_arch >= 200)
             {
-                dispatch_policy.Init<DefaultPolicy<T, SizeT, 200> >();
+                multi_dispatch_params.Init<TunedPolicies<T, SizeT, 200>::MultiPolicy >();
+                single_dispatch_params.Init<TunedPolicies<T, SizeT, 200>::SinglePolicy >();
             }
             else if (device_arch >= 130)
             {
-                dispatch_policy.Init<DefaultPolicy<T, SizeT, 130> >();
+                multi_dispatch_params.Init<TunedPolicies<T, SizeT, 130>::MultiPolicy >();
+                single_dispatch_params.Init<TunedPolicies<T, SizeT, 130>::SinglePolicy >();
             }
             else
             {
-                dispatch_policy.Init<DefaultPolicy<T, SizeT, 100> >();
+                multi_dispatch_params.Init<TunedPolicies<T, SizeT, 100>::MultiPolicy >();
+                single_dispatch_params.Init<TunedPolicies<T, SizeT, 100>::SinglePolicy >();
             }
         }
     };
@@ -285,62 +286,7 @@ struct DeviceReduce
     __host__ __device__ __forceinline__
     static cudaError_t DispatchSingle(
         ReduceSingleKernelPtr   single_reduce_kernel_ptr,
-        DispatchPolicy          &dispatch_policy,
-        InputIterator           d_in,
-        OutputIterator          d_out,
-        SizeT                   num_items,
-        ReductionOp             reduction_op,
-        cudaStream_t            stream = 0,
-        bool                    stream_synchronous = false)
-    {
-#if !CUB_CNP_ENABLED
-
-    // Kernel launch not supported from this device
-    return cudaErrorInvalidConfiguration;
-
-#else
-
-    cudaError error = cudaSuccess;
-    do
-    {
-        if (stream_synchronous) CubLog("\tInvoking ReduceSingle<<<1, %d, 0, %d>>>(), %d items per thread\n",
-            dispatch_policy.single_block_threads,
-            dispatch_policy.single_items_per_thread,
-            stream);
-
-        // Invoke ReduceSingle
-        single_reduce_kernel_ptr<<<1, dispatch_policy.single_block_threads>>>(
-            d_in,
-            d_out,
-            num_items,
-            reduction_op);
-
-        if (stream_synchronous && CubDebug(error = cudaStreamSynchronize(stream))) break;
-    }
-    while (0);
-    return error;
-
-#endif
-    }
-
-
-    /**
-     * Dispatch two kernels (an upsweep multi-block kernel followed by a single-block kernel) to perform the device reduction
-     */
-    template <
-        typename ReduceKernelPtr,
-        typename ReduceSingleKernelPtr,
-        typename PrepareDrainKernelPtr,
-        typename InputIterator,
-        typename OutputIterator,
-        typename SizeT,
-        typename ReductionOp>
-    __host__ __device__ __forceinline__
-    static cudaError_t DispatchIterative(
-        ReduceKernelPtr         reduce_kernel_ptr,
-        ReduceSingleKernelPtr   single_reduce_kernel_ptr,
-        PrepareDrainKernelPtr   prepare_drain_kernel_ptr,
-        DispatchPolicy          &dispatch_policy,
+        KernelDispachParams     &single_dispatch_params,
         InputIterator           d_in,
         OutputIterator          d_out,
         SizeT                   num_items,
@@ -355,12 +301,70 @@ struct DeviceReduce
 
     #else
 
+        cudaError error = cudaSuccess;
+        do
+        {
+            if (stream_synchronous) CubLog("\tInvoking ReduceSingle<<<1, %d, 0, %d>>>(), %d items per thread\n",
+                single_dispatch_params.block_threads,
+                single_dispatch_params.items_per_thread,
+                stream);
+
+            // Invoke ReduceSingle
+            single_reduce_kernel_ptr<<<1, single_dispatch_params.block_threads>>>(
+                d_in,
+                d_out,
+                num_items,
+                reduction_op);
+
+            if (stream_synchronous && CubDebug(error = cudaStreamSynchronize(stream))) break;
+        }
+        while (0);
+        return error;
+
+    #endif
+    }
+
+
+    /**
+     * Dispatch two kernels (an multi-block kernel followed by a single-block kernel) to perform the device reduction
+     */
+    template <
+        typename ReduceKernelPtr,
+        typename ReduceSingleKernelPtr,
+        typename PrepareDrainKernelPtr,
+        typename InputIterator,
+        typename OutputIterator,
+        typename SizeT,
+        typename ReductionOp>
+    __host__ __device__ __forceinline__
+    static cudaError_t DispatchIterative(
+        ReduceKernelPtr         multi_reduce_kernel_ptr,
+        ReduceSingleKernelPtr   single_reduce_kernel_ptr,
+        PrepareDrainKernelPtr   prepare_drain_kernel_ptr,
+        KernelDispachParams     &multi_dispatch_params,
+        KernelDispachParams     &single_dispatch_params,
+        InputIterator           d_in,
+        OutputIterator          d_out,
+        SizeT                   num_items,
+        ReductionOp             reduction_op,
+        cudaStream_t            stream = 0,
+        bool                    stream_synchronous = false,
+        DeviceAllocator         *device_allocator = DefaultDeviceAllocator())
+    {
+    #if !CUB_CNP_ENABLED
+
+        // Kernel launch not supported from this device
+        return cudaErrorInvalidConfiguration;
+
+    #else
+
         // Data type of input iterator
         typedef typename std::iterator_traits<InputIterator>::value_type T;
 
-        T*                      d_block_partials = NULL;
-        GridEvenShare<SizeT>    upsweep_even_share;
-        GridQueue<SizeT>        upsweep_queue;
+
+        T*                      d_block_partials = NULL;    // Temporary storage
+        GridEvenShare<SizeT>    even_share;                 // Even-share work distribution
+        GridQueue<SizeT>        queue;                      // Dynamic, queue-based work distribution
 
         cudaError error = cudaSuccess;
         do
@@ -376,7 +380,7 @@ struct DeviceReduce
             // Rough estimate of SM occupancies based upon the maximum SM occupancy of the targeted PTX architecture
             int reduce_sm_occupancy = ArchProps<CUB_PTX_ARCH>::MAX_SM_THREADBLOCKS;
 
-        #if (CUB_PTX_ARCH == 0)
+        #ifndef __CUDA_ARCH__
 
             // We're on the host, so come up with a more accurate estimate of SM occupancies from actual device properties
             Device device_props;
@@ -384,48 +388,48 @@ struct DeviceReduce
 
             if (CubDebug(error = device_props.MaxSmOccupancy(
                 reduce_sm_occupancy,
-                reduce_kernel_ptr,
-                dispatch_policy.upsweep_block_threads))) break;
+                multi_reduce_kernel_ptr,
+                multi_dispatch_params.block_threads))) break;
 
         #endif
 
+            // Determine grid size for the multi-block kernel
+            int reduce_occupancy = reduce_sm_occupancy * sm_count;
+            int multi_tile_size = multi_dispatch_params.block_threads * multi_dispatch_params.items_per_thread;
+            int multi_grid_size;
 
-            int reduce_occupancy    = reduce_sm_occupancy * sm_count;
-            int upsweep_tile_size   = dispatch_policy.upsweep_block_threads * dispatch_policy.upsweep_items_per_thread;
-            int upsweep_grid_size;
-
-            switch (dispatch_policy.upsweep_mapping)
+            switch (multi_dispatch_params.grid_mapping)
             {
             case GRID_MAPPING_EVEN_SHARE:
 
-                // Even share
-                upsweep_even_share.GridInit(
+                // Work is distributed evenly
+                even_share.GridInit(
                     num_items,
-                    reduce_occupancy * dispatch_policy.upsweep_oversubscription,
-                    upsweep_tile_size);
+                    reduce_occupancy * multi_dispatch_params.oversubscription,
+                    multi_tile_size);
 
-                upsweep_grid_size = upsweep_even_share.grid_size;
+                multi_grid_size = even_share.grid_size;
                 break;
 
             case GRID_MAPPING_DYNAMIC:
 
-                // Dynamic queue
-                upsweep_queue.Allocate();
-                int num_tiles = (num_items + upsweep_tile_size - 1) / upsweep_tile_size;
+                // Work is distributed dynamically
+                queue.Allocate(device_allocator);
+                int num_tiles = (num_items + multi_tile_size - 1) / multi_tile_size;
                 if (num_tiles < reduce_occupancy)
                 {
                     // Every thread block gets one input tile each and nothing is queued
-                    upsweep_grid_size = num_tiles;
+                    multi_grid_size = num_tiles;
                 }
                 else
                 {
                     // Thread blocks get one input tile each and the rest are queued.
-                    upsweep_grid_size = reduce_occupancy;
+                    multi_grid_size = reduce_occupancy;
 
                     // Prepare queue on device (because its faster than if we prepare it here)
                     if (stream_synchronous) CubLog("\tInvoking prepare_drain_kernel_ptr<<<1, 1, 0, %d>>>()\n", stream);
 
-                    prepare_drain_kernel_ptr<<<1, 1, 0, stream>>>(upsweep_queue, num_items);
+                    prepare_drain_kernel_ptr<<<1, 1, 0, stream>>>(queue, num_items);
 
                     if (stream_synchronous && CubDebug(error = cudaStreamSynchronize(stream))) break;
                 }
@@ -433,22 +437,22 @@ struct DeviceReduce
             };
 
             // Allocate temporary storage for thread block partial reductions
-            if (CubDebug(error = DeviceAllocate((void**) &d_block_partials, upsweep_grid_size * sizeof(T)))) break;
+            if (CubDebug(error = device_allocator->DeviceAllocate((void**) &d_block_partials, multi_grid_size * sizeof(T)))) break;
 
             // Invoke Reduce
-            if (stream_synchronous) CubLog("\tInvoking reduce_kernel_ptr<<<%d, %d, 0, %d>>>(), %d items per thread, %d SM occupancy\n",
-                upsweep_grid_size,
-                dispatch_policy.upsweep_block_threads,
+            if (stream_synchronous) CubLog("\tInvoking multi_reduce_kernel_ptr<<<%d, %d, 0, %d>>>(), %d items per thread, %d SM occupancy\n",
+                multi_grid_size,
+                multi_dispatch_params.block_threads,
                 stream,
-                dispatch_policy.upsweep_items_per_thread,
+                multi_dispatch_params.items_per_thread,
                 reduce_sm_occupancy);
 
-            reduce_kernel_ptr<<<upsweep_grid_size, dispatch_policy.upsweep_block_threads, 0, stream>>>(
+            multi_reduce_kernel_ptr<<<multi_grid_size, multi_dispatch_params.block_threads, 0, stream>>>(
                 d_in,
                 d_block_partials,
                 num_items,
-                upsweep_even_share,
-                upsweep_queue,
+                even_share,
+                queue,
                 reduction_op);
 
             if (stream_synchronous && CubDebug(error = cudaStreamSynchronize(stream))) break;
@@ -456,14 +460,14 @@ struct DeviceReduce
             // Invoke ReduceSingle
             if (stream_synchronous) CubLog("\tInvoking single_reduce_kernel_ptr<<<%d, %d, 0, %d>>>(), %d items per thread\n",
                 1,
-                dispatch_policy.single_block_threads,
+                single_dispatch_params.block_threads,
                 stream,
-                dispatch_policy.single_items_per_thread);
+                single_dispatch_params.items_per_thread);
 
-            single_reduce_kernel_ptr<<<1, dispatch_policy.single_block_threads, 0, stream>>>(
+            single_reduce_kernel_ptr<<<1, single_dispatch_params.block_threads, 0, stream>>>(
                 d_block_partials,
                 d_out,
-                upsweep_grid_size,
+                multi_grid_size,
                 reduction_op);
 
             if (stream_synchronous && CubDebug(error = cudaStreamSynchronize(stream))) break;
@@ -471,12 +475,12 @@ struct DeviceReduce
         while (0);
 
         // Free temporary storage allocation
-        CubDebug(DeviceFree(d_block_partials));
+        CubDebug(device_allocator->DeviceFree(d_block_partials));
 
         // Free queue allocation
-        if (dispatch_policy.upsweep_mapping == GRID_MAPPING_DYNAMIC)
+        if (multi_dispatch_params.grid_mapping == GRID_MAPPING_DYNAMIC)
         {
-            CubDebug(upsweep_queue.Free());
+            CubDebug(queue.Free(device_allocator));
         }
 
         return error;
@@ -497,37 +501,41 @@ struct DeviceReduce
         typename ReductionOp>
     __host__ __device__ __forceinline__
     static cudaError_t Dispatch(
-        ReduceKernelPtr         reduce_kernel_ptr,
+        ReduceKernelPtr         multi_reduce_kernel_ptr,
         ReduceSingleKernelPtr   single_reduce_kernel_ptr,
-        DispatchPolicy          &dispatch_policy,
+        KernelDispachParams     &multi_dispatch_params,
+        KernelDispachParams     &single_dispatch_params,
         InputIterator           d_in,
         OutputIterator          d_out,
         SizeT                   num_items,
         ReductionOp             reduction_op,
         cudaStream_t            stream = 0,
-        bool                    stream_synchronous = false)
+        bool                    stream_synchronous = false,
+        DeviceAllocator         *device_allocator = DefaultDeviceAllocator())
     {
-        if (num_items > (dispatch_policy.single_block_threads * dispatch_policy.single_items_per_thread))
+        if (num_items > (single_dispatch_params.block_threads * single_dispatch_params.items_per_thread))
         {
             // Dispatch multiple kernels
             return DispatchIterative(
-                reduce_kernel_ptr,
+                multi_reduce_kernel_ptr,
                 single_reduce_kernel_ptr,
                 PrepareDrainKernel<SizeT>,
-                dispatch_policy,
+                multi_dispatch_params,
+                single_dispatch_params,
                 d_in,
                 d_out,
                 num_items,
                 reduction_op,
                 stream,
-                stream_synchronous);
+                stream_synchronous,
+                device_allocator);
         }
         else
         {
             // Dispatch a single thread block
             return DispatchSingle(
                 single_reduce_kernel_ptr,
-                dispatch_policy,
+                single_dispatch_params,
                 d_in,
                 d_out,
                 num_items,
@@ -549,16 +557,16 @@ public:
     /**
      * \brief Computes a device-wide reduction using the specified binary \p reduction_op functor.  The implementation is parameterized by the specified tuning policies.
      *
-     * \tparam UpsweepTilesPolicy   A parameterization of BlockReduceTilesPolicy for the upsweep reduction kernel
-     * \tparam SingleTilesPolicy    A parameterization of BlockReduceTilesPolicy for the single-block reduction kernel
+     * \tparam MultiPolicy          A parameterization of BlockReduceTilesPolicy for the upsweep reduction kernel
+     * \tparam SinglePolicy         A parameterization of BlockReduceTilesPolicy for the single-block reduction kernel
      * \tparam InputIterator        <b>[inferred]</b> The input iterator type (may be a simple pointer type).
      * \tparam OutputIterator       <b>[inferred]</b> The output iterator type (may be a simple pointer type).
      * \tparam SizeT                <b>[inferred]</b> Integer type for offsets
      * \tparam ReductionOp          <b>[inferred]</b> Binary reduction operator type having member <tt>T operator()(const T &a, const T &b)</tt>
      */
     template <
-        typename UpsweepTilesPolicy,
-        typename SingleTilesPolicy,
+        typename MultiPolicy,
+        typename SinglePolicy,
         typename InputIterator,
         typename OutputIterator,
         typename SizeT,
@@ -570,27 +578,31 @@ public:
         int             num_items,
         ReductionOp     reduction_op,
         cudaStream_t    stream = 0,
-        bool            stream_synchronous = false)
+        bool            stream_synchronous = false,
+        DeviceAllocator *device_allocator = DefaultDeviceAllocator())
     {
+        // Type used for array indexing
         typedef int SizeT;
 
         // Data type of input iterator
         typedef typename std::iterator_traits<InputIterator>::value_type T;
 
-        DispatchPolicy dispatch_policy;
-        dispatch_policy.Init<UpsweepTilesPolicy, SingleTilesPolicy>();
+        // Declare and initialize dispatch parameters
+        KernelDispachParams dispatch_params;
+        dispatch_params.Init<MultiPolicy, SinglePolicy>();
 
         // Dispatch
         return CubDebug(Dispatch(
-            ReduceKernel<UpsweepTilesPolicy, InputIterator, T*, SizeT, ReductionOp>,
-            SingleReduceKernel<SingleTilesPolicy, T*, OutputIterator, SizeT, ReductionOp>,
-            dispatch_policy,
+            MultiReduceKernel<MultiPolicy, InputIterator, T*, SizeT, ReductionOp>,
+            SingleReduceKernel<SinglePolicy, T*, OutputIterator, SizeT, ReductionOp>,
+            dispatch_params,
             d_in,
             d_out,
             num_items,
             reduction_op,
             stream,
-            stream_synchronous));
+            stream_synchronous,
+            device_allocator));
     }
 
 
@@ -613,30 +625,36 @@ public:
         int             num_items,
         ReductionOp     reduction_op,
         cudaStream_t    stream = 0,
-        bool            stream_synchronous = false)
+        bool            stream_synchronous = false,
+        DeviceAllocator *device_allocator = DefaultDeviceAllocator())
     {
+        // Type used for array indexing
         typedef int SizeT;
 
         // Data type of input iterator
         typedef typename std::iterator_traits<InputIterator>::value_type T;
 
+        // Tuning polices for the PTX architecture of the current compiler pass
+        typedef PtxDefaultPolicies<T, SizeT> PtxDefaultPolicies;
+        typedef typename PtxDefaultPolicies::MultiPolicy MultiPolicy;
+        typedef typename PtxDefaultPolicies::SinglePolicy SinglePolicy;
+
         cudaError error = cudaSuccess;
         do
         {
-            // Declare and initialize a dispatch policy instance with the tuning policy for the target device
-            DispatchPolicy dispatch_policy;
+            // Declare dispatch parameters
+            KernelDispachParams multi_dispatch_params;
+            KernelDispachParams single_dispatch_params;
 
-            // Define tuning polices for the PTX architecture of the current compiler pass
-            typedef PtxDefaultPolicy<T, SizeT> TunedPolicy;
+        #ifdef __CUDA_ARCH__
 
-        #if CUB_PTX_ARCH > 0
-
-            // We're on the device, so initialize the tuned dispatch policy based upon PTX arch
-            dispatch_policy.Init<TunedPolicy>();
+            // We're on the device, so initialize the dispatch parameters based upon PTX arch
+            multi_dispatch_params.Init<MultiPolicy>();
+            single_dispatch_params.Init<SinglePolicy>();
 
         #else
 
-            // We're on the host, so initialize the tuned dispatch policy based upon the device's SM arch
+            // We're on the host, so initialize the dispatch parameters based upon the device's SM arch
             int device_ordinal;
             if (CubDebug(error = cudaGetDevice(&device_ordinal))) break;
 
@@ -645,21 +663,23 @@ public:
             if (CubDebug(error = cudaDeviceGetAttribute(&minor, cudaDevAttrComputeCapabilityMinor, device_ordinal))) break;
             int device_arch = major * 100 + minor * 10;
 
-            TunedPolicy::InitDispatchPolicy(device_arch, dispatch_policy);
+            PtxDefaultPolicies::InitDispatchParams(device_arch, multi_dispatch_params, single_dispatch_params);
 
         #endif
 
             // Dispatch
             if (CubDebug(error = Dispatch(
-                ReduceKernel<typename TunedPolicy::UpsweepTilesPolicy, InputIterator, T*, SizeT, ReductionOp>,
-                SingleReduceKernel<typename TunedPolicy::SingleTilesPolicy, T*, OutputIterator, SizeT, ReductionOp>,
-                dispatch_policy,
+                MultiReduceKernel<MultiPolicy, InputIterator, T*, SizeT, ReductionOp>,
+                SingleReduceKernel<SinglePolicy, T*, OutputIterator, SizeT, ReductionOp>,
+                multi_dispatch_params,
+                single_dispatch_params,
                 d_in,
                 d_out,
                 num_items,
                 reduction_op,
                 stream,
-                stream_synchronous))) break;
+                stream_synchronous,
+                device_allocator))) break;
         }
         while (0);
 

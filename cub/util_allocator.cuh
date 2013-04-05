@@ -28,7 +28,7 @@
 
 /******************************************************************************
  * Simple caching allocator for device memory allocations. The allocator is
- * thread-safe and capable of managing device allocations on multiple GPUs.
+ * thread-safe and capable of managing device allocations on multiple devices.
  ******************************************************************************/
 
 #pragma once
@@ -70,61 +70,47 @@ class DeviceAllocator
 public:
 
     /**
-     * Sets the limit on the number bytes this allocator is allowed to
-     * cache per GPU.
+     * Provides a suitable allocation of device memory for the given size
+     * on the specified device
      */
-    virtual cudaError_t SetMaxCachedBytes(size_t max_cached_bytes) = 0;
+    __host__ __device__ virtual cudaError_t DeviceAllocate(void** d_ptr, size_t bytes, DeviceOrdinal device) = 0;
 
 
     /**
      * Provides a suitable allocation of device memory for the given size
-     * on the specified GPU
+     * on the current device
      */
-    virtual cudaError_t DeviceAllocate(void** d_ptr, size_t bytes, DeviceOrdinal gpu) = 0;
+    __host__ __device__ virtual cudaError_t DeviceAllocate(void** d_ptr, size_t bytes) = 0;
 
 
     /**
-     * Provides a suitable allocation of device memory for the given size
-     * on the current GPU
-     */
-    virtual cudaError_t DeviceAllocate(void** d_ptr, size_t bytes) = 0;
-
-
-    /**
-     * Frees a live allocation of GPU memory on the specified GPU, returning it to
+     * Frees a live allocation of device memory on the specified device, returning it to
      * the allocator
      */
-    virtual cudaError_t DeviceFree(void* d_ptr, DeviceOrdinal gpu) = 0;
+    __host__ __device__ virtual cudaError_t DeviceFree(void* d_ptr, DeviceOrdinal device) = 0;
 
 
     /**
-     * Frees a live allocation of GPU memory on the current GPU, returning it to the
+     * Frees a live allocation of device memory on the current device, returning it to the
      * allocator
      */
-    virtual cudaError_t DeviceFree(void* d_ptr) = 0;
-
-
-    /**
-     * Frees all cached device allocations on all GPUs
-     */
-    virtual cudaError_t FreeAllCached() = 0;
+    __host__ __device__ virtual cudaError_t DeviceFree(void* d_ptr) = 0;
 
     /**
      * Destructor
      */
-    virtual ~DeviceAllocator() {};
+    __host__ __device__ virtual ~DeviceAllocator() {};
 };
 
 
 
 /******************************************************************************
- * CachingDeviceAllocator
+ * CachingDeviceAllocator (host use)
  ******************************************************************************/
-
 
 /**
  * Simple caching allocator for device memory allocations. The allocator is
- * thread-safe and is capable of managing cached device allocations on multiple GPUs.
+ * thread-safe and is capable of managing cached device allocations on multiple devices.
  *
  * Allocations are rounded up to and categorized by bin size.  Bin sizes progress
  * geometrically in accordance with the growth factor "bin_growth" provided during
@@ -138,8 +124,8 @@ public:
  * bin and are simply freed when they are deallocated instead of being returned
  * to a bin-cache.
  *
- * If the total storage of cached allocations on a given GPU will exceed
- * (max_cached_bytes), allocations for that GPU are simply freed when they are
+ * If the total storage of cached allocations on a given device will exceed
+ * (max_cached_bytes), allocations for that device are simply freed when they are
  * deallocated instead of being returned to their bin-cache.
  *
  * For example, the default-constructed CachingDeviceAllocator is configured with:
@@ -149,10 +135,10 @@ public:
  *         max_cached_bytes = (bin_growth ^ max_bin) * 3) - 1 = 6,291,455 bytes
  *
  * which delineates five bin-sizes: 512B, 4KB, 32KB, 256KB, and 2MB
- * and sets a maximum of 6,291,455 cached bytes per GPU
+ * and sets a maximum of 6,291,455 cached bytes per device
  *
  */
-struct CachingDeviceAllocator : public DeviceAllocator
+struct CachingDeviceAllocator : DeviceAllocator
 {
     //---------------------------------------------------------------------
     // Type definitions and constants
@@ -202,31 +188,31 @@ struct CachingDeviceAllocator : public DeviceAllocator
      */
     struct BlockDescriptor
     {
-        DeviceOrdinal   gpu;        // GPU ordinal
+        DeviceOrdinal   device;        // device ordinal
         void*           d_ptr;      // Device pointer
         size_t          bytes;      // Size of allocation in bytes
         unsigned int    bin;        // Bin enumeration
 
         // Constructor
-        BlockDescriptor(void *d_ptr, DeviceOrdinal gpu) :
+        BlockDescriptor(void *d_ptr, DeviceOrdinal device) :
             d_ptr(d_ptr),
             bytes(0),
             bin(0),
-            gpu(gpu) {}
+            device(device) {}
 
         // Constructor
-        BlockDescriptor(size_t bytes, unsigned int bin, DeviceOrdinal gpu) :
+        BlockDescriptor(size_t bytes, unsigned int bin, DeviceOrdinal device) :
             d_ptr(NULL),
             bytes(bytes),
             bin(bin),
-            gpu(gpu) {}
+            device(device) {}
 
         // Comparison functor for comparing device pointers
         static bool PtrCompare(const BlockDescriptor &a, const BlockDescriptor &b)
         {
-            if (a.gpu < b.gpu) {
+            if (a.device < b.device) {
                 return true;
-            } else if (a.gpu > b.gpu) {
+            } else if (a.device > b.device) {
                 return false;
             } else {
                 return (a.d_ptr < b.d_ptr);
@@ -236,9 +222,9 @@ struct CachingDeviceAllocator : public DeviceAllocator
         // Comparison functor for comparing allocation sizes
         static bool SizeCompare(const BlockDescriptor &a, const BlockDescriptor &b)
         {
-            if (a.gpu < b.gpu) {
+            if (a.device < b.device) {
                 return true;
-            } else if (a.gpu > b.gpu) {
+            } else if (a.device > b.device) {
                 return false;
             } else {
                 return (a.bytes < b.bytes);
@@ -246,16 +232,16 @@ struct CachingDeviceAllocator : public DeviceAllocator
         }
     };
 
-    // BlockDescriptor comparator function interface
+    /// BlockDescriptor comparator function interface
     typedef bool (*Compare)(const BlockDescriptor &, const BlockDescriptor &);
 
-    // Set type for cached blocks (ordered by size)
+    /// Set type for cached blocks (ordered by size)
     typedef std::multiset<BlockDescriptor, Compare> CachedBlocks;
 
-    // Set type for live blocks (ordered by ptr)
+    /// Set type for live blocks (ordered by ptr)
     typedef std::multiset<BlockDescriptor, Compare> BusyBlocks;
 
-    // Map type of gpu ordinals to the number of cached bytes cached by each GPU
+    /// Map type of device ordinals to the number of cached bytes cached by each device
     typedef std::map<DeviceOrdinal, size_t> GpuCachedBytes;
 
 
@@ -263,23 +249,26 @@ struct CachingDeviceAllocator : public DeviceAllocator
     // Fields
     //---------------------------------------------------------------------
 
-    Spinlock        spin_lock;            // Spinlock for thread-safety
+#ifndef __CUDA_ARCH__
 
-    CachedBlocks    cached_blocks;        // Set of cached device allocations available for reuse
-    BusyBlocks      live_blocks;        // Set of live device allocations currently in use
+    Spinlock        spin_lock;          /// Spinlock for thread-safety
 
-    unsigned int    bin_growth;            // Geometric growth factor for bin-sizes
-    unsigned int    min_bin;            // Minimum bin enumeration
-    unsigned int    max_bin;            // Maximum bin enumeration
+    CachedBlocks    cached_blocks;      /// Set of cached device allocations available for reuse
+    BusyBlocks      live_blocks;        /// Set of live device allocations currently in use
 
-    size_t          min_bin_bytes;        // Minimum bin size
-    size_t          max_bin_bytes;        // Maximum bin size
-    size_t          max_cached_bytes;    // Maximum aggregate cached bytes per GPU
+    unsigned int    bin_growth;         /// Geometric growth factor for bin-sizes
+    unsigned int    min_bin;            /// Minimum bin enumeration
+    unsigned int    max_bin;            /// Maximum bin enumeration
 
-    GpuCachedBytes  cached_bytes;        // Map of GPU ordinal to aggregate cached bytes on that GPU
+    size_t          min_bin_bytes;      /// Minimum bin size
+    size_t          max_bin_bytes;      /// Maximum bin size
+    size_t          max_cached_bytes;   /// Maximum aggregate cached bytes per device
 
-    bool            debug;
+    GpuCachedBytes  cached_bytes;       /// Map of device ordinal to aggregate cached bytes on that device
 
+    bool            debug;              /// Whether or not to print (de)allocation events to stdout
+
+#endif
 
     //---------------------------------------------------------------------
     // Methods
@@ -288,11 +277,13 @@ struct CachingDeviceAllocator : public DeviceAllocator
     /**
      * Constructor.
      */
-    CachingDeviceAllocator(
-        unsigned int bin_growth,        // Geometric growth factor for bin-sizes
-        unsigned int min_bin,            // Minimum bin
-        unsigned int max_bin,            // Maximum bin
-        size_t max_cached_bytes) :        // Maximum aggregate cached bytes per GPU
+    __host__ __device__ __forceinline__ CachingDeviceAllocator(
+        unsigned int bin_growth,    ///< Geometric growth factor for bin-sizes
+        unsigned int min_bin,       ///< Minimum bin
+        unsigned int max_bin,       ///< Maximum bin
+        size_t max_cached_bytes)    ///< Maximum aggregate cached bytes per device
+    #ifndef __CUDA_ARCH__
+    :
             debug(false),
             spin_lock(0),
             cached_blocks(BlockDescriptor::SizeCompare),
@@ -303,6 +294,7 @@ struct CachingDeviceAllocator : public DeviceAllocator
             min_bin_bytes(IntPow(bin_growth, min_bin)),
             max_bin_bytes(IntPow(bin_growth, max_bin)),
             max_cached_bytes(max_cached_bytes)
+    #endif
     {}
 
 
@@ -314,9 +306,11 @@ struct CachingDeviceAllocator : public DeviceAllocator
      *         max_cached_bytes = (bin_growth ^ max_bin) * 3) - 1 = 6,291,455 bytes
      *
      *     which delineates five bin-sizes: 512B, 4KB, 32KB, 256KB, and 2MB
-     *     and sets a maximum of 6,291,455 cached bytes per GPU
+     *     and sets a maximum of 6,291,455 cached bytes per device
      */
-    CachingDeviceAllocator() :
+    __host__ __device__ __forceinline__ CachingDeviceAllocator()
+    #ifndef __CUDA_ARCH__
+    :
         debug(false),
         spin_lock(0),
         cached_blocks(BlockDescriptor::SizeCompare),
@@ -327,15 +321,22 @@ struct CachingDeviceAllocator : public DeviceAllocator
         min_bin_bytes(IntPow(bin_growth, min_bin)),
         max_bin_bytes(IntPow(bin_growth, max_bin)),
         max_cached_bytes((max_bin_bytes * 3) - 1)
+    #endif
     {}
 
 
     /**
      * Sets the limit on the number bytes this allocator is allowed to
-     * cache per GPU.
+     * cache per device.
      */
-    cudaError_t SetMaxCachedBytes(size_t max_cached_bytes)
+    __host__ __device__ __forceinline__ cudaError_t SetMaxCachedBytes(
+        size_t max_cached_bytes)
     {
+    #ifdef __CUDA_ARCH__
+        // Caching functionality only defined on host
+        return cudaErrorInvalidConfiguration;
+    #else
+
         // Lock
         Lock(&spin_lock);
 
@@ -347,17 +348,27 @@ struct CachingDeviceAllocator : public DeviceAllocator
         Unlock(&spin_lock);
 
         return cudaSuccess;
+
+    #endif  // __CUDA_ARCH__
     }
 
 
     /**
      * Provides a suitable allocation of device memory for the given size
-     * on the specified GPU
+     * on the specified device
      */
-    cudaError_t DeviceAllocate(void** d_ptr, size_t bytes, DeviceOrdinal gpu)
+    __host__ __device__ __forceinline__ cudaError_t DeviceAllocate(
+        void** d_ptr,
+        size_t bytes,
+        DeviceOrdinal device)
     {
+    #ifdef __CUDA_ARCH__
+        // Caching functionality only defined on host
+        return cudaErrorInvalidConfiguration;
+    #else
+
         bool locked                     = false;
-        DeviceOrdinal entrypoint_gpu    = INVALID_DEVICE_ORDINAL;
+        DeviceOrdinal entrypoint_device = INVALID_DEVICE_ORDINAL;
         cudaError_t error               = cudaSuccess;
 
         // Round up to nearest bin size
@@ -377,7 +388,7 @@ struct CachingDeviceAllocator : public DeviceAllocator
             bin_bytes = bytes;
         }
 
-        BlockDescriptor search_key(bin_bytes, bin, gpu);
+        BlockDescriptor search_key(bin_bytes, bin, device);
 
         // Lock
         if (!locked) {
@@ -386,10 +397,10 @@ struct CachingDeviceAllocator : public DeviceAllocator
         }
 
         do {
-            // Find a free block big enough within the same bin on the same GPU
+            // Find a free block big enough within the same bin on the same device
             CachedBlocks::iterator block_itr = cached_blocks.lower_bound(search_key);
             if ((block_itr != cached_blocks.end()) &&
-                (block_itr->gpu == gpu) &&
+                (block_itr->device == device) &&
                 (block_itr->bin == search_key.bin))
             {
                 // Reuse existing cache block.  Insert into live blocks.
@@ -398,10 +409,10 @@ struct CachingDeviceAllocator : public DeviceAllocator
 
                 // Remove from free blocks
                 cached_blocks.erase(block_itr);
-                cached_bytes[gpu] -= search_key.bytes;
+                cached_bytes[device] -= search_key.bytes;
 
-                if (debug) printf("\tGPU %d reused cached block (%lld bytes). %lld available blocks cached (%lld bytes), %lld live blocks outstanding.\n",
-                    gpu, (long long) search_key.bytes, (long long) cached_blocks.size(), (long long) cached_bytes[gpu], (long long) live_blocks.size());
+                if (debug) printf("\tdevice %d reused cached block (%lld bytes). %lld available blocks cached (%lld bytes), %lld live blocks outstanding.\n",
+                    device, (long long) search_key.bytes, (long long) cached_blocks.size(), (long long) cached_bytes[device], (long long) live_blocks.size());
             }
             else
             {
@@ -411,9 +422,9 @@ struct CachingDeviceAllocator : public DeviceAllocator
                     locked = false;
                 }
 
-                // Set to specified GPU
-                if (CubDebug(error = cudaGetDevice(&entrypoint_gpu))) break;
-                if (CubDebug(error = cudaSetDevice(gpu))) break;
+                // Set to specified device
+                if (CubDebug(error = cudaGetDevice(&entrypoint_device))) break;
+                if (CubDebug(error = cudaSetDevice(device))) break;
 
                 // Allocate
                 if (CubDebug(error = cudaMalloc(&search_key.d_ptr, search_key.bytes))) break;
@@ -427,8 +438,8 @@ struct CachingDeviceAllocator : public DeviceAllocator
                 // Insert into live blocks
                 live_blocks.insert(search_key);
 
-                if (debug) printf("\tGPU %d allocating new device block %lld bytes. %lld available blocks cached (%lld bytes), %lld live blocks outstanding.\n",
-                    gpu, (long long) search_key.bytes, (long long) cached_blocks.size(), (long long) cached_bytes[gpu], (long long) live_blocks.size());
+                if (debug) printf("\tdevice %d allocating new device block %lld bytes. %lld available blocks cached (%lld bytes), %lld live blocks outstanding.\n",
+                    device, (long long) search_key.bytes, (long long) cached_blocks.size(), (long long) cached_bytes[device], (long long) live_blocks.size());
             }
         } while(0);
 
@@ -441,44 +452,61 @@ struct CachingDeviceAllocator : public DeviceAllocator
         // Copy device pointer to output parameter (NULL on error)
         *d_ptr = search_key.d_ptr;
 
-        // Attempt to revert back to previous GPU if necessary
-        if (entrypoint_gpu != INVALID_DEVICE_ORDINAL)
+        // Attempt to revert back to previous device if necessary
+        if (entrypoint_device != INVALID_DEVICE_ORDINAL)
         {
-            if (CubDebug(error = cudaSetDevice(entrypoint_gpu))) return error;
+            if (CubDebug(error = cudaSetDevice(entrypoint_device))) return error;
         }
 
         return error;
+
+    #endif  // __CUDA_ARCH__
     }
 
 
     /**
      * Provides a suitable allocation of device memory for the given size
-     * on the current GPU
+     * on the current device
      */
-    cudaError_t DeviceAllocate(void** d_ptr, size_t bytes)
+    __host__ __device__ __forceinline__ cudaError_t DeviceAllocate(
+        void** d_ptr,
+        size_t bytes)
     {
+    #ifdef __CUDA_ARCH__
+        // Caching functionality only defined on host
+        return cudaErrorInvalidConfiguration;
+    #else
         cudaError_t error = cudaSuccess;
         do {
-            DeviceOrdinal current_gpu;
-            if (CubDebug(error = cudaGetDevice(&current_gpu))) break;
-            if (CubDebug(error = DeviceAllocate(d_ptr, bytes, current_gpu))) break;
+            DeviceOrdinal current_device;
+            if (CubDebug(error = cudaGetDevice(&current_device))) break;
+            if (CubDebug(error = DeviceAllocate(d_ptr, bytes, current_device))) break;
         } while(0);
 
         return error;
+
+    #endif  // __CUDA_ARCH__
     }
 
 
     /**
-     * Frees a live allocation of GPU memory on the specified GPU, returning it to
+     * Frees a live allocation of device memory on the specified device, returning it to
      * the allocator
      */
-    cudaError_t DeviceFree(void* d_ptr, DeviceOrdinal gpu)
+    __host__ __device__ __forceinline__ cudaError_t DeviceFree(
+        void* d_ptr,
+        DeviceOrdinal device)
     {
-        bool locked                     = false;
-        DeviceOrdinal entrypoint_gpu         = INVALID_DEVICE_ORDINAL;
-        cudaError_t error                 = cudaSuccess;
+    #ifdef __CUDA_ARCH__
+        // Caching functionality only defined on host
+        return cudaErrorInvalidConfiguration;
+    #else
 
-        BlockDescriptor search_key(d_ptr, gpu);
+        bool locked                     = false;
+        DeviceOrdinal entrypoint_device = INVALID_DEVICE_ORDINAL;
+        cudaError_t error               = cudaSuccess;
+
+        BlockDescriptor search_key(d_ptr, device);
 
         // Lock
         if (!locked) {
@@ -501,14 +529,14 @@ struct CachingDeviceAllocator : public DeviceAllocator
                 live_blocks.erase(block_itr);
 
                 // Check if we should keep the returned allocation
-                if (cached_bytes[gpu] + search_key.bytes <= max_cached_bytes)
+                if (cached_bytes[device] + search_key.bytes <= max_cached_bytes)
                 {
                     // Insert returned allocation into free blocks
                     cached_blocks.insert(search_key);
-                    cached_bytes[gpu] += search_key.bytes;
+                    cached_bytes[device] += search_key.bytes;
 
-                    if (debug) printf("\tGPU %d returned %lld bytes. %lld available blocks cached (%lld bytes), %lld live blocks outstanding.\n",
-                        gpu, (long long) search_key.bytes, (long long) cached_blocks.size(), (long long) cached_bytes[gpu], (long long) live_blocks.size());
+                    if (debug) printf("\tdevice %d returned %lld bytes. %lld available blocks cached (%lld bytes), %lld live blocks outstanding.\n",
+                        device, (long long) search_key.bytes, (long long) cached_blocks.size(), (long long) cached_bytes[device], (long long) live_blocks.size());
                 }
                 else
                 {
@@ -518,15 +546,15 @@ struct CachingDeviceAllocator : public DeviceAllocator
                         locked = false;
                     }
 
-                    // Set to specified GPU
-                    if (CubDebug(error = cudaGetDevice(&entrypoint_gpu))) break;
-                    if (CubDebug(error = cudaSetDevice(gpu))) break;
+                    // Set to specified device
+                    if (CubDebug(error = cudaGetDevice(&entrypoint_device))) break;
+                    if (CubDebug(error = cudaSetDevice(device))) break;
 
                     // Free device memory
                     if (CubDebug(error = cudaFree(d_ptr))) break;
 
-                    if (debug) printf("\tGPU %d freed %lld bytes.  %lld available blocks cached (%lld bytes), %lld live blocks outstanding.\n",
-                        gpu, (long long) search_key.bytes, (long long) cached_blocks.size(), (long long) cached_bytes[gpu], (long long) live_blocks.size());
+                    if (debug) printf("\tdevice %d freed %lld bytes.  %lld available blocks cached (%lld bytes), %lld live blocks outstanding.\n",
+                        device, (long long) search_key.bytes, (long long) cached_blocks.size(), (long long) cached_bytes[device], (long long) live_blocks.size());
                 }
             }
         } while (0);
@@ -537,43 +565,58 @@ struct CachingDeviceAllocator : public DeviceAllocator
             locked = false;
         }
 
-        // Attempt to revert back to entry-point GPU if necessary
-        if (entrypoint_gpu != INVALID_DEVICE_ORDINAL)
+        // Attempt to revert back to entry-point device if necessary
+        if (entrypoint_device != INVALID_DEVICE_ORDINAL)
         {
-            if (CubDebug(error = cudaSetDevice(entrypoint_gpu))) return error;
+            if (CubDebug(error = cudaSetDevice(entrypoint_device))) return error;
         }
 
         return error;
+
+    #endif  // __CUDA_ARCH__
     }
 
 
     /**
-     * Frees a live allocation of GPU memory on the current GPU, returning it to the
+     * Frees a live allocation of device memory on the current device, returning it to the
      * allocator
      */
-    cudaError_t DeviceFree(void* d_ptr)
+    __host__ __device__ __forceinline__ cudaError_t DeviceFree(
+        void* d_ptr)
     {
-        DeviceOrdinal current_gpu;
+    #ifdef __CUDA_ARCH__
+        // Caching functionality only defined on host
+        return cudaErrorInvalidConfiguration;
+    #else
+
+        DeviceOrdinal current_device;
         cudaError_t error = cudaSuccess;
 
         do {
-            if (CubDebug(error = cudaGetDevice(&current_gpu))) break;
-            if (CubDebug(error = DeviceFree(d_ptr, current_gpu))) break;
+            if (CubDebug(error = cudaGetDevice(&current_device))) break;
+            if (CubDebug(error = DeviceFree(d_ptr, current_device))) break;
         } while(0);
 
         return error;
+
+    #endif  // __CUDA_ARCH__
     }
 
 
     /**
-     * Frees all cached device allocations on all GPUs
+     * Frees all cached device allocations on all devices
      */
-    cudaError_t FreeAllCached()
+    __host__ __device__ __forceinline__ cudaError_t FreeAllCached()
     {
-        cudaError_t error                 = cudaSuccess;
-        bool locked                     = false;
-        DeviceOrdinal entrypoint_gpu         = INVALID_DEVICE_ORDINAL;
-        DeviceOrdinal current_gpu            = INVALID_DEVICE_ORDINAL;
+    #ifdef __CUDA_ARCH__
+        // Caching functionality only defined on host
+        return cudaErrorInvalidConfiguration;
+    #else
+
+        cudaError_t error                   = cudaSuccess;
+        bool locked                         = false;
+        DeviceOrdinal entrypoint_device     = INVALID_DEVICE_ORDINAL;
+        DeviceOrdinal current_device        = INVALID_DEVICE_ORDINAL;
 
         // Lock
         if (!locked) {
@@ -586,28 +629,28 @@ struct CachingDeviceAllocator : public DeviceAllocator
             // Get first block
             CachedBlocks::iterator begin = cached_blocks.begin();
 
-            // Get entry-point GPU ordinal if necessary
-            if (entrypoint_gpu == INVALID_DEVICE_ORDINAL)
+            // Get entry-point device ordinal if necessary
+            if (entrypoint_device == INVALID_DEVICE_ORDINAL)
             {
-                if (CubDebug(error = cudaGetDevice(&entrypoint_gpu))) break;
+                if (CubDebug(error = cudaGetDevice(&entrypoint_device))) break;
             }
 
-            // Set current GPU ordinal if necessary
-            if (begin->gpu != current_gpu)
+            // Set current device ordinal if necessary
+            if (begin->device != current_device)
             {
-                if (CubDebug(error = cudaSetDevice(begin->gpu))) break;
-                current_gpu = begin->gpu;
+                if (CubDebug(error = cudaSetDevice(begin->device))) break;
+                current_device = begin->device;
             }
 
             // Free device memory
             if (CubDebug(error = cudaFree(begin->d_ptr))) break;
 
             // Reduce balance and erase entry
-            cached_bytes[current_gpu] -= begin->bytes;
+            cached_bytes[current_device] -= begin->bytes;
             cached_blocks.erase(begin);
 
-            if (debug) printf("\tGPU %d freed %lld bytes.  %lld available blocks cached (%lld bytes), %lld live blocks outstanding.\n",
-                current_gpu, (long long) begin->bytes, (long long) cached_blocks.size(), (long long) cached_bytes[current_gpu], (long long) live_blocks.size());
+            if (debug) printf("\tdevice %d freed %lld bytes.  %lld available blocks cached (%lld bytes), %lld live blocks outstanding.\n",
+                current_device, (long long) begin->bytes, (long long) cached_blocks.size(), (long long) cached_bytes[current_device], (long long) live_blocks.size());
         }
 
         // Unlock
@@ -616,100 +659,64 @@ struct CachingDeviceAllocator : public DeviceAllocator
             locked = false;
         }
 
-        // Attempt to revert back to entry-point GPU if necessary
-        if (entrypoint_gpu != INVALID_DEVICE_ORDINAL)
+        // Attempt to revert back to entry-point device if necessary
+        if (entrypoint_device != INVALID_DEVICE_ORDINAL)
         {
-            if (CubDebug(error = cudaSetDevice(entrypoint_gpu))) return error;
+            if (CubDebug(error = cudaSetDevice(entrypoint_device))) return error;
         }
 
         return error;
+
+    #endif  // __CUDA_ARCH__
     }
 
-} default_allocator;        /// Default caching allocator instance
+
+    /**
+     * Destructor
+     */
+    __host__ __device__ __forceinline__ virtual ~CachingDeviceAllocator()
+    {
+        FreeAllCached();
+    }
+
+};
+
 
 
 
 /******************************************************************************
- * CUB allocation operations
+ * PassThruDeviceAllocator (host and device use)
  ******************************************************************************/
 
-// Pointer to device allocator
-DeviceAllocator *allocator = &default_allocator;
-
-
 /**
- * Sets the default CUB device allocator to the specified instance
+ * A simple allocator that serves as a pass-through to cudaMalloc/cudaFree
  */
-cudaError_t SetDeviceAllocator(DeviceAllocator *new_allocator)
+struct PassThruDeviceAllocator : DeviceAllocator
 {
-#ifndef __CUDA_ARCH__
-    allocator = new_allocator;
-    return cudaSuccess;
-#else
-    // Custom allocators not available on device code
-    return cudaErrorInvalidResourceHandle;
-#endif
-}
+    /**
+     * Return a pointer to this object
+     */
+    __host__ __device__ __forceinline__ PassThruDeviceAllocator* Me() { return this; }
 
 
-/**
- * Returns a pointer to the default CUB device allocator
- */
-cudaError_t GetDeviceAllocator(DeviceAllocator** current_allocator)
-{
-#ifndef __CUDA_ARCH__
-    *current_allocator = allocator;
-    return cudaSuccess;
-#else
-    // Custom allocators not available on device code
-    return cudaErrorInvalidResourceHandle;
-#endif
-}
+    /**
+     * Destructor
+     */
+    __host__ __device__ __forceinline__ virtual ~PassThruDeviceAllocator() {}
 
 
-/**
- *
- * Sets the limit on the number bytes this allocator is allowed to
- * cache per GPU.
- */
-cudaError_t SetMaxCachedBytes(size_t max_cached_bytes)
-{
-#ifndef __CUDA_ARCH__
-    if (allocator == NULL) return cudaErrorInvalidResourceHandle;
-    return allocator->SetMaxCachedBytes(max_cached_bytes);
-#else
-    // Custom allocators not available on device code
-    return cudaErrorInvalidResourceHandle;
-#endif
-}
-
-
-/**
- * Frees all cached device allocations on all GPUs
- */
-cudaError_t FreeAllCached()
-{
-#ifndef __CUDA_ARCH__
-    if (allocator == NULL) return cudaErrorInvalidResourceHandle;
-    return allocator->FreeAllCached();
-#else
-    // Custom allocators not available on device code
-    return cudaErrorInvalidResourceHandle;
-#endif
-}
-
-
-/**
- * Provides a suitable allocation of device memory for the given size
- * on the specified GPU
- */
-__host__ __device__ __forceinline__ cudaError_t DeviceAllocate(void** d_ptr, size_t bytes, DeviceOrdinal gpu)
-{
-#ifndef __CUDA_ARCH__
-
-    // Use CUDA if no default allocator present
-    if (allocator == NULL)
+    /**
+     * Provides a suitable allocation of device memory for the given size
+     * on the specified GPU
+     */
+    __host__ __device__ __forceinline__ cudaError_t DeviceAllocate(
+        void**          d_ptr,
+        size_t          bytes,
+        DeviceOrdinal   gpu)
     {
+    #ifndef __CUDA_ARCH__
+
+        // Host
         cudaError_t error = cudaSuccess;
         DeviceOrdinal entrypoint_gpu = INVALID_DEVICE_ORDINAL;
 
@@ -731,47 +738,71 @@ __host__ __device__ __forceinline__ cudaError_t DeviceAllocate(void** d_ptr, siz
         }
 
         return error;
+
+    #elif CUB_CNP_ENABLED
+
+        // Nested parallelism
+        cudaError_t error = cudaSuccess;
+        DeviceOrdinal entrypoint_device = INVALID_DEVICE_ORDINAL;
+
+        do
+        {
+            // We can only allocate on the device we're currently executing on
+            if (CubDebug(error = cudaGetDevice(&entrypoint_device))) break;
+            if (entrypoint_device != device)
+            {
+                error = cudaErrorInvalidDevice;
+                break;
+            }
+
+            // Allocate device memory
+            if (CubDebug(error = cudaMalloc(&d_ptr, bytes))) break;
+
+        } while (0);
+
+        return error;
+
+    #else
+
+        // CUDA API is not supported on this device
+        return cudaErrorInvalidConfiguration;
+
+    #endif
     }
 
-    return allocator->DeviceAllocate(d_ptr, bytes, gpu);
-#else
-    // Cannot allocate on GPUs from within device code
-    return cudaErrorInvalidDevice;
-#endif
-}
 
-
-/**
- * Provides a suitable allocation of device memory for the given size
- * on the current GPU
- */
-__host__ __device__ __forceinline__ cudaError_t DeviceAllocate(void** d_ptr, size_t bytes)
-{
-#ifndef __CUDA_ARCH__
-    // Use CUDA if no default allocator present
-    if (allocator == NULL) return CubDebug(cudaMalloc(&d_ptr, bytes));
-    return allocator->DeviceAllocate(d_ptr, bytes);
-#elif __CUDA_ARCH >= 350
-    // Use CUDA (custom allocators are unavailable from within device code)
-    return CubDebug(cudaMalloc(&d_ptr, bytes));
-#else
-    // Cannot allocate on GPUs from within device code
-    return cudaErrorInvalidDevice;
-#endif
-}
-
-
-/**
- * Frees a live allocation of GPU memory on the specified GPU, returning it to
- * the allocator
- */
-__host__ __device__ __forceinline__ cudaError_t DeviceFree(void* d_ptr, DeviceOrdinal gpu)
-{
-#ifndef __CUDA_ARCH__
-
-    // Use CUDA if no default allocator present
-    if (allocator == NULL)
+    /**
+     * Provides a suitable allocation of device memory for the given size
+     * on the current GPU
+     */
+    __host__ __device__ __forceinline__ cudaError_t DeviceAllocate(
+        void** d_ptr,
+        size_t bytes)
     {
+    #if CUB_CNP_ENABLED
+
+        return CubDebug(cudaMalloc(&d_ptr, bytes));
+
+    #else
+
+        // CUDA API is not supported on this device
+        return cudaErrorInvalidConfiguration;
+
+    #endif
+    }
+
+
+    /**
+     * Frees a live allocation of GPU memory on the specified GPU, returning it to
+     * the allocator
+     */
+    __host__ __device__ __forceinline__ cudaError_t DeviceFree(
+        void* d_ptr,
+        DeviceOrdinal gpu)
+    {
+    #ifndef __CUDA_ARCH__
+
+        // Use CUDA if no default allocator present
         cudaError_t error = cudaSuccess;
         DeviceOrdinal entrypoint_gpu = INVALID_DEVICE_ORDINAL;
 
@@ -793,36 +824,138 @@ __host__ __device__ __forceinline__ cudaError_t DeviceFree(void* d_ptr, DeviceOr
         }
 
         return error;
+
+    #elif CUB_CNP_ENABLED
+
+        // Nested parallelism
+        cudaError_t error = cudaSuccess;
+        DeviceOrdinal entrypoint_device = INVALID_DEVICE_ORDINAL;
+
+        do
+        {
+            // We can only allocate on the device we're currently executing on
+            if (CubDebug(error = cudaGetDevice(&entrypoint_device))) break;
+            if (entrypoint_device != device)
+            {
+                error = cudaErrorInvalidDevice;
+                break;
+            }
+
+            // Allocate device memory
+            if (CubDebug(error = cudaFree(&d_ptr))) break;
+
+        } while (0);
+
+        return error;
+
+    #else
+
+        // CUDA API is not supported on this device
+        return cudaErrorInvalidConfiguration;
+
+    #endif
     }
 
-    // Use default allocator
-    return allocator->DeviceFree(d_ptr, gpu);
+
+    /**
+     * Frees a live allocation of GPU memory on the current GPU, returning it to the
+     * allocator
+     */
+    __host__ __device__ __forceinline__ cudaError_t DeviceFree(
+        void* d_ptr)
+    {
+    #if !CUB_CNP_ENABLED
+
+        // CUDA API is not supported on this device
+        return cudaErrorInvalidConfiguration;
+
+    #else
+
+        return CubDebug(cudaFree(&d_ptr));
+
+    #endif
+    }
+};
+
+
+
+
+/******************************************************************************
+ * DefaultDeviceAllocator (generic use)
+ ******************************************************************************/
+
+#ifndef __CUDA_ARCH__
+
+    /// Singleton, thread-safe caching allocator (one per compilation unit)
+    CachingDeviceAllocator host_allocator_singleton;
+
+    /**
+     * \brief The default allocator for host and device usage.
+     *
+     * When compiled for the device, it inherits all functionality from
+     * PassThruDeviceAllocator.  When compiled for the host, it delegates
+     * to a single CachingDeviceAllocator instance.
+     *
+     * NOTE: Because CUB is implemented exclusively in header files, there will
+     * be one CachingDeviceAllocator per compilation unit.
+     */
+    #define DefaultDeviceAllocator() (&host_allocator_singleton)
 
 #else
-    // Cannot allocate on GPUs from within device code
-    return cudaErrorInvalidDevice;
+
+    #define DefaultDeviceAllocator() PassThruDeviceAllocator().Me()
+
 #endif
+
+
+
+/******************************************************************************
+ * Default CUB allocation operations (shorthand for DefaultDeviceAllocator()->...)
+ ******************************************************************************/
+
+#ifndef DOXYGEN_SHOULD_SKIP_THIS    // Do not document
+
+/**
+ * Provides a suitable allocation of device memory for the given size
+ * on the specified device
+ */
+__host__ __device__ __forceinline__ cudaError_t DeviceAllocate(void** d_ptr, size_t bytes, DeviceOrdinal device)
+{
+    return DefaultDeviceAllocator()->DeviceAllocate(d_ptr, bytes, device);
 }
 
 
 /**
- * Frees a live allocation of GPU memory on the current GPU, returning it to the
+ * Provides a suitable allocation of device memory for the given size
+ * on the current device
+ */
+__host__ __device__ __forceinline__ cudaError_t DeviceAllocate(void** d_ptr, size_t bytes)
+{
+    return DefaultDeviceAllocator()->DeviceAllocate(d_ptr, bytes);
+}
+
+
+/**
+ * Frees a live allocation of device memory on the specified device, returning it to
+ * the allocator
+ */
+__host__ __device__ __forceinline__ cudaError_t DeviceFree(void* d_ptr, DeviceOrdinal device)
+{
+    return DefaultDeviceAllocator()->DeviceFree(d_ptr, device);
+}
+
+
+/**
+ * Frees a live allocation of device memory on the current device, returning it to the
  * allocator
  */
 __host__ __device__ __forceinline__ cudaError_t DeviceFree(void* d_ptr)
 {
-#ifndef __CUDA_ARCH__
-    // Use CUDA if no default allocator present
-    if (allocator == NULL) return CubDebug(cudaFree(d_ptr));
-    return allocator->DeviceFree(d_ptr);
-#elif __CUDA_ARCH >= 350
-    // Use CUDA (custom allocators are unavailable from within device code)
-    return CubDebug(cudaFree(d_ptr));
-#else
-    // Cannot allocate on GPUs from within device code
-    return cudaErrorInvalidDevice;
-#endif
+    return DefaultDeviceAllocator()->DeviceFree(d_ptr);
 }
+
+#endif // DOXYGEN_SHOULD_SKIP_THIS
+
 
 
 /** @} */       // end group UtilModule
