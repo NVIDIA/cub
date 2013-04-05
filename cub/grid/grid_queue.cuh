@@ -84,18 +84,20 @@ public:
 
 
     /// Allocate the resources necessary for this GridQueue.
-    __host__ __device__ __forceinline__ cudaError_t Allocate()
+    __host__ __device__ __forceinline__ cudaError_t Allocate(
+        DeviceAllocator *device_allocator = DefaultDeviceAllocator())
     {
         if (d_counters) return cudaErrorInvalidValue;
-        return CubDebug(DeviceAllocate((void**)&d_counters, sizeof(SizeT) * 2));
+        return CubDebug(device_allocator->DeviceAllocate((void**)&d_counters, sizeof(SizeT) * 2));
     }
 
 
     /// DeviceFree the resources used by this GridQueue.
-    __host__ __device__ __forceinline__ cudaError_t Free()
+    __host__ __device__ __forceinline__ cudaError_t Free(
+        DeviceAllocator *device_allocator = DefaultDeviceAllocator())
     {
         if (!d_counters) return cudaErrorInvalidValue;
-        cudaError_t error = CubDebug(DeviceFree(d_counters));
+        cudaError_t error = CubDebug(device_allocator->DeviceFree(d_counters));
         d_counters = NULL;
         return error;
     }

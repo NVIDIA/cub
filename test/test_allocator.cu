@@ -63,6 +63,8 @@ int main(int argc, char** argv)
         exit(0);
     }
 
+#ifndef __CUDA_ARCH__
+
     // Initialize device
     CubDebugExit(args.DeviceInit());
 
@@ -242,6 +244,8 @@ int main(int argc, char** argv)
         // Check that that still we have 0 live block across all GPUs
         AssertEquals(allocator.live_blocks.size(), 0);
     }
+
+#endif
 
     printf("Success\n");
     return 0;
