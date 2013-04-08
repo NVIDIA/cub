@@ -171,6 +171,8 @@ private:
      * Each thread reduces only the values it loads.  If \p FIRST_TILE,
      * this partial reduction is stored into \p thread_aggregate.  Otherwise
      * it is accumulated into \p thread_aggregate.
+     *
+     * Performs a block-wide barrier synchronization
      */
     template <
         bool FIRST_TILE,
@@ -194,6 +196,9 @@ private:
                 reinterpret_cast<VectorT*>(d_in + block_offset),
                 reinterpret_cast<VectorT (&)[ITEMS_PER_THREAD / VECTOR_LOAD_LENGTH]>(items));
 
+            // Prevent hoisting
+            __syncthreads();
+
             T partial = ThreadReduce(items, reduction_op);
 
             thread_aggregate = (FIRST_TILE) ?
@@ -207,6 +212,9 @@ private:
             BlockLoadDirectStriped(
                 d_in + block_offset,
                 items);
+
+            // Prevent hoisting
+            __syncthreads();
 
             T partial = ThreadReduce(items, reduction_op);
 
@@ -346,24 +354,20 @@ public:
 
                     block_offset = smem_storage.block_offset;
 
-                    __syncthreads();
+                    if (block_offset + TILE_ITEMS > num_items)
+                    {
+                        if (block_offset < num_items)
+                        {
+                            // We have less than a full tile to consume
+                            ConsumePartialTile<false>(smem_storage, d_in, block_offset, num_items, reduction_op, thread_aggregate);
+                        }
 
-                    if (block_offset + TILE_ITEMS <= num_items)
-                    {
-                        // We have a full tile to consume
-                        ConsumeFullTile<false>(smem_storage, d_in, block_offset, reduction_op, thread_aggregate);
-                    }
-                    else if (block_offset < num_items)
-                    {
-                        // We have less than a full tile to consume
-                        ConsumePartialTile<false>(smem_storage, d_in, block_offset, num_items, reduction_op, thread_aggregate);
-                    }
-                    else
-                    {
                         // No more work to do
                         break;
                     }
 
+                    // We have a full tile to consume (which performs a barrier to protect smem_storage.block_offset WARs)
+                    ConsumeFullTile<false>(smem_storage, d_in, block_offset, reduction_op, thread_aggregate);
                 }
             }
 
