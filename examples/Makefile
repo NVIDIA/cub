@@ -154,3 +154,14 @@ bin/example_coo_spmv_$(SUFFIX) : example_coo_spmv.cu $(DEPS)
 	mkdir -p bin
 	$(NVCC) $(DEFINES) $(SM_TARGETS) -o bin/example_coo_spmv_$(SUFFIX) example_coo_spmv.cu $(NVCCFLAGS) $(ARCH) $(INC) -O3
 
+
+#-------------------------------------------------------------------------------
+# make example_matrix_transpose
+#-------------------------------------------------------------------------------
+
+example_matrix_transpose: bin/example_matrix_transpose_$(SUFFIX)
+
+bin/example_matrix_transpose_$(SUFFIX) : example_matrix_transpose.cu $(DEPS)
+	mkdir -p bin
+	$(NVCC) $(DEFINES) $(SM_TARGETS) -o bin/example_matrix_transpose_$(SUFFIX) example_matrix_transpose.cu $(NVCCFLAGS) $(ARCH) $(INC) -O3
+
