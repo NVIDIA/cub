@@ -191,6 +191,14 @@ struct DeviceReduce
         int         ARCH = CUB_PTX_ARCH>
     struct TunedPolicies;
 
+    /// SM35 tune
+    template <typename T, typename SizeT>
+    struct TunedPolicies<T, SizeT, 350>
+    {
+        typedef BlockReduceTilesPolicy<128,     8, GRID_MAPPING_DYNAMIC,     2,  PTX_LOAD_NONE, 1>      MultiPolicy;
+        typedef BlockReduceTilesPolicy<32,      4, GRID_MAPPING_EVEN_SHARE,  4,  PTX_LOAD_NONE, 1>      SinglePolicy;
+    };
+
     /// SM30 tune
     template <typename T, typename SizeT>
     struct TunedPolicies<T, SizeT, 300>
@@ -230,13 +238,15 @@ struct DeviceReduce
     {
         enum
         {
-            PTX_TUNE_ARCH =     (CUB_PTX_ARCH >= 300) ?
-                                    300 :
-                                    (CUB_PTX_ARCH >= 200) ?
-                                        200 :
-                                        (CUB_PTX_ARCH >= 130) ?
-                                            130 :
-                                            100
+            PTX_TUNE_ARCH =     (CUB_PTX_ARCH >= 350) ?
+                                    350 :
+                                    (CUB_PTX_ARCH >= 300) ?
+                                        300 :
+                                        (CUB_PTX_ARCH >= 200) ?
+                                            200 :
+                                            (CUB_PTX_ARCH >= 130) ?
+                                                130 :
+                                                100
         };
 
         struct MultiPolicy : TunedPolicies<T, SizeT, PTX_TUNE_ARCH>::MultiPolicy {};
@@ -246,11 +256,16 @@ struct DeviceReduce
          * Initialize dispatch policy
          */
         static void InitDispatchParams(
-            int                     device_arch,
+            int                    device_arch,
             KernelDispachParams    &multi_dispatch_params,
             KernelDispachParams    &single_dispatch_params)
         {
-            if (device_arch >= 300)
+            if (device_arch >= 350)
+            {
+                multi_dispatch_params.Init<TunedPolicies<T, SizeT, 350>::MultiPolicy >();
+                single_dispatch_params.Init<TunedPolicies<T, SizeT, 350>::SinglePolicy >();
+            }
+            else if (device_arch >= 300)
             {
                 multi_dispatch_params.Init<TunedPolicies<T, SizeT, 300>::MultiPolicy >();
                 single_dispatch_params.Init<TunedPolicies<T, SizeT, 300>::SinglePolicy >();
@@ -329,7 +344,7 @@ struct DeviceReduce
      * Dispatch two kernels (an multi-block kernel followed by a single-block kernel) to perform the device reduction
      */
     template <
-        typename ReduceKernelPtr,
+        typename MultiReduceKernelPtr,
         typename ReduceSingleKernelPtr,
         typename PrepareDrainKernelPtr,
         typename InputIterator,
@@ -338,7 +353,7 @@ struct DeviceReduce
         typename ReductionOp>
     __host__ __device__ __forceinline__
     static cudaError_t DispatchIterative(
-        ReduceKernelPtr         multi_reduce_kernel_ptr,
+        MultiReduceKernelPtr         multi_reduce_kernel_ptr,
         ReduceSingleKernelPtr   single_reduce_kernel_ptr,
         PrepareDrainKernelPtr   prepare_drain_kernel_ptr,
         KernelDispachParams     &multi_dispatch_params,
@@ -493,7 +508,7 @@ struct DeviceReduce
      * Internal device reduction dispatch
      */
     template <
-        typename ReduceKernelPtr,
+        typename MultiReduceKernelPtr,
         typename ReduceSingleKernelPtr,
         typename InputIterator,
         typename OutputIterator,
@@ -501,7 +516,7 @@ struct DeviceReduce
         typename ReductionOp>
     __host__ __device__ __forceinline__
     static cudaError_t Dispatch(
-        ReduceKernelPtr         multi_reduce_kernel_ptr,
+        MultiReduceKernelPtr    multi_reduce_kernel_ptr,
         ReduceSingleKernelPtr   single_reduce_kernel_ptr,
         KernelDispachParams     &multi_dispatch_params,
         KernelDispachParams     &single_dispatch_params,
@@ -587,15 +602,18 @@ public:
         // Data type of input iterator
         typedef typename std::iterator_traits<InputIterator>::value_type T;
 
-        // Declare and initialize dispatch parameters
-        KernelDispachParams dispatch_params;
-        dispatch_params.Init<MultiPolicy, SinglePolicy>();
+        // Declare and init dispatch parameters
+        KernelDispachParams multi_dispatch_params;
+        KernelDispachParams single_dispatch_params;
+        multi_dispatch_params.Init<MultiPolicy>();
+        single_dispatch_params.Init<SinglePolicy>();
 
         // Dispatch
         return CubDebug(Dispatch(
             MultiReduceKernel<MultiPolicy, InputIterator, T*, SizeT, ReductionOp>,
             SingleReduceKernel<SinglePolicy, T*, OutputIterator, SizeT, ReductionOp>,
-            dispatch_params,
+            multi_dispatch_params,
+            single_dispatch_params,
             d_in,
             d_out,
             num_items,
