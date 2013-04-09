@@ -35,7 +35,7 @@
 
 #include <iterator>
 #include <stdio.h>
-#include <test_util.h>
+#include "test_util.h"
 
 #include <thrust/iterator/counting_iterator.h>
 

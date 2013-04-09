@@ -72,7 +72,7 @@ __global__ void TransposeKernel(
 
     typedef cub::BlockExchange<T, BLOCK_THREADS, ITEMS_PER_THREAD> BlockExchangeT;
 
-    __shared__ BlockExchangeT::SmemStorage smem_storage;
+    __shared__ typename BlockExchangeT::SmemStorage smem_storage;
 
     // Items per thread
     T items[ITEMS_PER_THREAD];
@@ -80,6 +80,8 @@ __global__ void TransposeKernel(
     // Load
     int block_offset = (blockIdx.y * gridDim.x * TILE_SIZE) + (blockIdx.x * TILE_XDIM);
     cub::BlockLoadDirectStriped<LOAD_MODIFIER>(d_in + block_offset, items, xdim);
+
+    T data = __ldg(d_in);
 
     BlockExchangeT::StripedToBlocked(smem_storage, items);
 
@@ -148,7 +150,7 @@ void TestTranspose(
     T *h_reference = new T[num_items];
 
     // Initialize problem
-    Initialize(h_in, h_reference, xdim, ydim);
+    Initialize(h_in, h_reference, ydim, xdim);
 
     // Initialize device arrays
     T *d_in = NULL;
@@ -157,20 +159,34 @@ void TestTranspose(
     CubDebugExit(DeviceAllocate((void**)&d_out, sizeof(T) * num_items));
     CubDebugExit(cudaMemcpy(d_in, h_in, sizeof(T) * num_items, cudaMemcpyHostToDevice));
 
-    printf("DeviceTranspose ydim(%d), xdim(%d), %d elements (%d bytes each):\n",
-        ydim,
-        xdim,
-        num_items,
-        (int) sizeof(T));
+    dim3 grid_dims;
+    grid_dims.y = ydim / TILE_YDIM;
+    grid_dims.x = xdim / TILE_XDIM;
+    grid_dims.z = 1;
+
+    typedef void (*TransposeKernelPtr)(T*, T*, int, int);
+    TransposeKernelPtr kernel_ptr = TransposeKernel<BLOCK_THREADS, ITEMS_PER_THREAD, LOAD_MODIFIER>;
+
+    Device device;
+    device.Init();
+
+    int sm_occupancy;
+    device.MaxSmOccupancy(sm_occupancy, kernel_ptr, BLOCK_THREADS);
+    printf("sm_occupancy(%d)\n", sm_occupancy);
+
+    printf("TransposeKernel<%d, %d, %d><<<{y(%d), x{%d}, %d>>>(ydim(%d), xdim(%d)) (%d elements, %d bytes each, TILE_YDIM(%d), TILE_XDIM(%d), TILE_SIZE(%d), sm_occupancy(%d)):\n",
+        BLOCK_THREADS, ITEMS_PER_THREAD, LOAD_MODIFIER,
+        grid_dims.y, grid_dims.x, BLOCK_THREADS,
+        ydim, xdim, num_items, (int) sizeof(T),
+        TILE_YDIM, TILE_XDIM, TILE_SIZE, sm_occupancy);
     fflush(stdout);
 
     // Run warmup/correctness iteration
-    uint2 grid_dims;
-    grid_dims.y = ydim / TILE_YDIM;
-    grid_dims.x = xdim / TILE_XDIM;
-
     TransposeKernel<BLOCK_THREADS, ITEMS_PER_THREAD, LOAD_MODIFIER><<<grid_dims, BLOCK_THREADS>>>(
-        d_in, d_out, y_dim, x_dim);
+        d_in, d_out, ydim, xdim);
+
+    CubDebugExit(cudaDeviceSynchronize());
+    fflush(stdout);
 
     // Copy out and display results
     printf("\nTranspose results: ");
@@ -185,7 +201,7 @@ void TestTranspose(
         gpu_timer.Start();
 
         TransposeKernel<BLOCK_THREADS, ITEMS_PER_THREAD, LOAD_MODIFIER><<<grid_dims, BLOCK_THREADS>>>(
-            d_in, d_out, y_dim, x_dim);
+            d_in, d_out, ydim, xdim);
 
         gpu_timer.Stop();
         elapsed_millis += gpu_timer.ElapsedMillis();
@@ -219,7 +235,7 @@ void TestTranspose(
  */
 int main(int argc, char** argv)
 {
-    typedef float T;
+    typedef int T;
 
     int ydim = 1024;
     int xdim = 1024;
@@ -248,7 +264,7 @@ int main(int argc, char** argv)
     // Initialize device
     CubDebugExit(args.DeviceInit());
 
-    TestTranspose<64, 16, PTX_LOAD_NONE, T>(y_dim, x_dim);
+    TestTranspose<32, 32, PTX_LOAD_NONE, T>(ydim, xdim);
 
     return 0;
 }

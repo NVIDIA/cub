@@ -35,7 +35,7 @@
 
 #include <stdio.h>
 #include <cub.cuh>
-#include <test_util.h>
+#include "test_util.h"
 
 using namespace cub;
 
@@ -57,11 +57,13 @@ int     g_iterations = 100;
 /**
  * Initialize problem (and solution)
  */
-template <typename T, typename ReductionOp>
+template <
+    typename        T,
+    typename        ReductionOp>
 void Initialize(
-    int                 gen_mode,
-    T                 *h_in,
-    T                 h_reference[1],
+    int             gen_mode,
+    T               *h_in,
+    T               h_reference[1],
     ReductionOp     reduction_op,
     int             num_items)
 {
@@ -85,8 +87,8 @@ void Initialize(
  * Test full-tile reduction
  */
 template <
-    typename    T,
-    typename    ReductionOp>
+    typename        T,
+    typename        ReductionOp>
 void Test(
     int             num_items,
     int             gen_mode,
@@ -162,7 +164,9 @@ void Test(
 /**
  * Run battery of full-tile tests for different gen modes
  */
-template <typename T, typename ReductionOp>
+template <
+    typename        T,
+    typename        ReductionOp>
 void Test(
     int             num_items,
     ReductionOp     reduction_op,

@@ -130,7 +130,7 @@ __global__ void SingleReduceKernel(
     T block_aggregate = BlockReduceTilesT::ProcessTilesEvenShare(
         smem_storage,
         d_in,
-        0,
+        SizeT(0),
         num_items,
         reduction_op);
 
@@ -165,10 +165,10 @@ struct DeviceReduce
     {
         int                     block_threads;
         int                     items_per_thread;
-        int                     vector_load_length;
-        int                     oversubscription;
         GridMappingStrategy     grid_mapping;
+        int                     vector_load_length;
         PtxLoadModifier         load_modifier;
+        int                     oversubscription;
 
         template <typename BlockReduceTilesPolicy>
         __host__ __device__ __forceinline__
@@ -177,10 +177,23 @@ struct DeviceReduce
             block_threads       = BlockReduceTilesPolicy::BLOCK_THREADS;
             items_per_thread    = BlockReduceTilesPolicy::ITEMS_PER_THREAD;
             vector_load_length  = BlockReduceTilesPolicy::VECTOR_LOAD_LENGTH;
-            oversubscription    = BlockReduceTilesPolicy::OVERSUBSCRIPTION;
-            grid_mapping        = BlockReduceTilesPolicy::GRID_MAPPING;
             load_modifier       = BlockReduceTilesPolicy::LOAD_MODIFIER;
+            grid_mapping        = BlockReduceTilesPolicy::GRID_MAPPING;
+            oversubscription    = BlockReduceTilesPolicy::OVERSUBSCRIPTION;
         }
+
+        __host__ __device__ __forceinline__
+        void Print()
+        {
+            printf("%d, %d, %d, %d, %d, %d",
+                block_threads,
+                items_per_thread,
+                vector_load_length,
+                load_modifier,
+                grid_mapping,
+                oversubscription);
+        }
+
     };
 
 
@@ -195,40 +208,40 @@ struct DeviceReduce
     template <typename T, typename SizeT>
     struct TunedPolicies<T, SizeT, 350>
     {
-        typedef BlockReduceTilesPolicy<128,     8, GRID_MAPPING_DYNAMIC,     2,  PTX_LOAD_NONE, 1>      MultiPolicy;
-        typedef BlockReduceTilesPolicy<32,      4, GRID_MAPPING_EVEN_SHARE,  4,  PTX_LOAD_NONE, 1>      SinglePolicy;
+        typedef BlockReduceTilesPolicy<128, 8,  2,  PTX_LOAD_NONE, GRID_MAPPING_DYNAMIC,    1>      MultiPolicy;
+        typedef BlockReduceTilesPolicy<32,  4,  4,  PTX_LOAD_NONE, GRID_MAPPING_EVEN_SHARE, 4>      SinglePolicy;
     };
 
     /// SM30 tune
     template <typename T, typename SizeT>
     struct TunedPolicies<T, SizeT, 300>
     {
-        typedef BlockReduceTilesPolicy<128,     8, GRID_MAPPING_DYNAMIC,     2,  PTX_LOAD_NONE, 1>      MultiPolicy;
-        typedef BlockReduceTilesPolicy<32,      4, GRID_MAPPING_EVEN_SHARE,  4,  PTX_LOAD_NONE, 1>      SinglePolicy;
+        typedef BlockReduceTilesPolicy<128, 8,  2,  PTX_LOAD_NONE, GRID_MAPPING_DYNAMIC,    1>      MultiPolicy;
+        typedef BlockReduceTilesPolicy<32,  4,  4,  PTX_LOAD_NONE, GRID_MAPPING_EVEN_SHARE, 4>      SinglePolicy;
     };
 
     /// SM20 tune
     template <typename T, typename SizeT>
     struct TunedPolicies<T, SizeT, 200>
     {
-        typedef BlockReduceTilesPolicy<128,     8, GRID_MAPPING_DYNAMIC,     2,  PTX_LOAD_NONE, 1>      MultiPolicy;
-        typedef BlockReduceTilesPolicy<32,      4, GRID_MAPPING_EVEN_SHARE,  4,  PTX_LOAD_NONE, 1>      SinglePolicy;
+        typedef BlockReduceTilesPolicy<128, 8,  2,  PTX_LOAD_NONE, GRID_MAPPING_DYNAMIC,    1>      MultiPolicy;
+        typedef BlockReduceTilesPolicy<32,  4,  4,  PTX_LOAD_NONE, GRID_MAPPING_EVEN_SHARE, 4>      SinglePolicy;
     };
 
     /// SM13 tune
     template <typename T, typename SizeT>
     struct TunedPolicies<T, SizeT, 130>
     {
-        typedef BlockReduceTilesPolicy<128,     8, GRID_MAPPING_EVEN_SHARE,  1,  PTX_LOAD_NONE, 1>      MultiPolicy;
-        typedef BlockReduceTilesPolicy<32,      4, GRID_MAPPING_EVEN_SHARE,  1,  PTX_LOAD_NONE, 1>      SinglePolicy;
+        typedef BlockReduceTilesPolicy<128, 8,  2,  PTX_LOAD_NONE, GRID_MAPPING_EVEN_SHARE, 1>      MultiPolicy;
+        typedef BlockReduceTilesPolicy<32,  4,  4,  PTX_LOAD_NONE, GRID_MAPPING_EVEN_SHARE, 4>      SinglePolicy;
     };
 
     /// SM10 tune
     template <typename T, typename SizeT>
     struct TunedPolicies<T, SizeT, 100>
     {
-        typedef BlockReduceTilesPolicy<128,     8, GRID_MAPPING_EVEN_SHARE,  1,  PTX_LOAD_NONE, 1>      MultiPolicy;
-        typedef BlockReduceTilesPolicy<32,      4, GRID_MAPPING_EVEN_SHARE,  1,  PTX_LOAD_NONE, 1>      SinglePolicy;
+        typedef BlockReduceTilesPolicy<128, 8,  2,  PTX_LOAD_NONE, GRID_MAPPING_EVEN_SHARE, 1>      MultiPolicy;
+        typedef BlockReduceTilesPolicy<32,  4,  4,  PTX_LOAD_NONE, GRID_MAPPING_EVEN_SHARE, 4>      SinglePolicy;
     };
 
 
@@ -353,7 +366,7 @@ struct DeviceReduce
         typename ReductionOp>
     __host__ __device__ __forceinline__
     static cudaError_t DispatchIterative(
-        MultiReduceKernelPtr         multi_reduce_kernel_ptr,
+        MultiReduceKernelPtr    multi_reduce_kernel_ptr,
         ReduceSingleKernelPtr   single_reduce_kernel_ptr,
         PrepareDrainKernelPtr   prepare_drain_kernel_ptr,
         KernelDispachParams     &multi_dispatch_params,
