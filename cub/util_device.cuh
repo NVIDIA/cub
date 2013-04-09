@@ -215,15 +215,21 @@ public:
         KernelPtr           kernel_ptr,                 ///< [in] Kernel pointer for which to compute SM occupancy
         int                 block_threads)              ///< [in] Number of threads per thread block
     {
-        cudaError_t error = cudaSuccess;
+    #if !CUB_CNP_ENABLED
 
+        // CUDA API calls not supported from this device
+        return cudaErrorInvalidConfiguration;
+
+    #else
+
+        cudaError_t error = cudaSuccess;
         do
         {
             // Get kernel attributes
             cudaFuncAttributes kernel_attrs;
             if (CubDebug(error = cudaFuncGetAttributes(&kernel_attrs, kernel_ptr))) break;
 
-            int block_warps = CUB_ROUND_UP_NEAREST(block_threads / warp_threads, 1);
+            int block_warps = (block_threads +  warp_threads - 1) / warp_threads;
 
             int block_allocated_warps = CUB_ROUND_UP_NEAREST(block_warps, warp_alloc_unit);
 
@@ -239,23 +245,23 @@ public:
                 kernel_attrs.sharedSizeBytes,
                 smem_alloc_unit);
 
-            int max_sm_occupancy = max_sm_blocks;
-
             int max_warp_occupancy = max_sm_warps / block_warps;
 
             int max_smem_occupancy = (block_allocated_smem > 0) ?
                     (smem_bytes / block_allocated_smem) :
-                    max_sm_occupancy;
+                    max_sm_blocks;
 
             int max_reg_occupancy = max_sm_registers / block_allocated_regs;
 
             max_sm_occupancy = CUB_MIN(
-                CUB_MIN(max_sm_occupancy, max_warp_occupancy),
+                CUB_MIN(max_sm_blocks, max_warp_occupancy),
                 CUB_MIN(max_smem_occupancy, max_reg_occupancy));
 
         } while (0);
 
         return error;
+
+    #endif
     }
 
 };

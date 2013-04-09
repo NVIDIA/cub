@@ -57,9 +57,9 @@ namespace cub {
 template <
     int                         _BLOCK_THREADS,
     int                         _ITEMS_PER_THREAD,
-    GridMappingStrategy         _GRID_MAPPING,
     int                         _VECTOR_LOAD_LENGTH,
     PtxLoadModifier             _LOAD_MODIFIER,
+    GridMappingStrategy         _GRID_MAPPING,
     int                         _OVERSUBSCRIPTION>
 struct BlockReduceTilesPolicy
 {
