@@ -323,7 +323,7 @@ enum GenMode
 {
     UNIFORM,            // All 2s
     SEQ_INC,            // Sequentially incrementing
-    RANDOM,                // Random
+    RANDOM,             // Random
 };
 
 /**
@@ -676,20 +676,20 @@ void InitValue(int gen_mode, TestBar &value, int index = 0)
  * Compares the equivalence of two arrays
  */
 template <typename S, typename T, typename SizeT>
-int CompareResults(T* computed, S* reference, SizeT len)
+int CompareResults(T* computed, S* reference, SizeT len, bool verbose = true)
 {
     for (SizeT i = 0; i < len; i++)
     {
         if (computed[i] != reference[i])
         {
-            std::cout << "INCORRECT: [" << i << "]: "
+            if (verbose) std::cout << "INCORRECT: [" << i << "]: "
                 << CoutCast(computed[i]) << " != "
                 << CoutCast(reference[i]);
             return 1;
         }
     }
 
-    printf("CORRECT");
+    if (verbose) printf("CORRECT");
     return 0;
 }
 
@@ -729,7 +729,7 @@ int CompareDeviceResults(
     }
 
     // Check
-    int retval = CompareResults(h_data, h_reference, num_items);
+    int retval = CompareResults(h_data, h_reference, num_items, verbose);
 
     // Cleanup
     if (h_data) free(h_data);
@@ -774,7 +774,7 @@ int CompareDeviceDeviceResults(
     }
 
     // Check
-    int retval = CompareResults(h_data, h_reference, num_items);
+    int retval = CompareResults(h_data, h_reference, num_items, verbose);
 
     // Cleanup
     if (h_reference) free(h_reference);
