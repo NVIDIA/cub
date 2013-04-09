@@ -688,8 +688,6 @@ int CompareResults(T* computed, S* reference, SizeT len, bool verbose = true)
             return 1;
         }
     }
-
-    if (verbose) printf("CORRECT");
     return 0;
 }
 
