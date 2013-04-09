@@ -36,7 +36,7 @@
 
 #include <iterator>
 
-#include "../grid/GRID_MAPPING.cuh"
+#include "../grid/grid_mapping.cuh"
 #include "../grid/grid_even_share.cuh"
 #include "../grid/grid_queue.cuh"
 #include "../../block/block_load.cuh"

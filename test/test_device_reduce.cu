@@ -124,7 +124,7 @@ void Test(
     // Copy out and display results
     printf("\nReduction results: ");
     int compare = CompareDeviceResults(h_reference, d_out, 1, g_verbose, g_verbose);
-    printf("\n");
+    printf("%s\n", compare ? "FAIL" : "PASS");
 
     // Performance
     GpuTimer gpu_timer;

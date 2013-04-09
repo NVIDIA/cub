@@ -208,24 +208,27 @@ struct DeviceReduce
     template <typename T, typename SizeT>
     struct TunedPolicies<T, SizeT, 350>
     {
-        typedef BlockReduceTilesPolicy<128, 8,  2,  PTX_LOAD_NONE, GRID_MAPPING_DYNAMIC,    1>      MultiPolicy;
-        typedef BlockReduceTilesPolicy<32,  4,  4,  PTX_LOAD_NONE, GRID_MAPPING_EVEN_SHARE, 4>      SinglePolicy;
+        // K20C: 182.1 @ 48M 32-bit T
+        typedef BlockReduceTilesPolicy<512, 8,  1,  PTX_LOAD_NONE, GRID_MAPPING_DYNAMIC,    1>      MultiPolicy;
+        typedef BlockReduceTilesPolicy<32,  4,  4,  PTX_LOAD_NONE, GRID_MAPPING_EVEN_SHARE, 1>      SinglePolicy;
     };
 
     /// SM30 tune
     template <typename T, typename SizeT>
     struct TunedPolicies<T, SizeT, 300>
     {
-        typedef BlockReduceTilesPolicy<128, 8,  2,  PTX_LOAD_NONE, GRID_MAPPING_DYNAMIC,    1>      MultiPolicy;
-        typedef BlockReduceTilesPolicy<32,  4,  4,  PTX_LOAD_NONE, GRID_MAPPING_EVEN_SHARE, 4>      SinglePolicy;
+        // GTX690: 151.9 @ 48M 32-bit T
+        typedef BlockReduceTilesPolicy<512, 8,  1,  PTX_LOAD_NONE, GRID_MAPPING_EVEN_SHARE, 4>      MultiPolicy;
+        typedef BlockReduceTilesPolicy<32,  4,  4,  PTX_LOAD_NONE, GRID_MAPPING_EVEN_SHARE, 1>      SinglePolicy;
     };
 
     /// SM20 tune
     template <typename T, typename SizeT>
     struct TunedPolicies<T, SizeT, 200>
     {
+        // GTX 480: 162.3 @ 48M 32-bit T
         typedef BlockReduceTilesPolicy<128, 8,  2,  PTX_LOAD_NONE, GRID_MAPPING_DYNAMIC,    1>      MultiPolicy;
-        typedef BlockReduceTilesPolicy<32,  4,  4,  PTX_LOAD_NONE, GRID_MAPPING_EVEN_SHARE, 4>      SinglePolicy;
+        typedef BlockReduceTilesPolicy<32,  4,  4,  PTX_LOAD_NONE, GRID_MAPPING_EVEN_SHARE, 1>      SinglePolicy;
     };
 
     /// SM13 tune
@@ -233,7 +236,7 @@ struct DeviceReduce
     struct TunedPolicies<T, SizeT, 130>
     {
         typedef BlockReduceTilesPolicy<128, 8,  2,  PTX_LOAD_NONE, GRID_MAPPING_EVEN_SHARE, 1>      MultiPolicy;
-        typedef BlockReduceTilesPolicy<32,  4,  4,  PTX_LOAD_NONE, GRID_MAPPING_EVEN_SHARE, 4>      SinglePolicy;
+        typedef BlockReduceTilesPolicy<32,  4,  4,  PTX_LOAD_NONE, GRID_MAPPING_EVEN_SHARE, 1>      SinglePolicy;
     };
 
     /// SM10 tune
@@ -241,7 +244,7 @@ struct DeviceReduce
     struct TunedPolicies<T, SizeT, 100>
     {
         typedef BlockReduceTilesPolicy<128, 8,  2,  PTX_LOAD_NONE, GRID_MAPPING_EVEN_SHARE, 1>      MultiPolicy;
-        typedef BlockReduceTilesPolicy<32,  4,  4,  PTX_LOAD_NONE, GRID_MAPPING_EVEN_SHARE, 4>      SinglePolicy;
+        typedef BlockReduceTilesPolicy<32,  4,  4,  PTX_LOAD_NONE, GRID_MAPPING_EVEN_SHARE, 1>      SinglePolicy;
     };
 
 
