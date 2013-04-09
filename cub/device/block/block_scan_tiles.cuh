@@ -28,8 +28,8 @@
 
 /**
  * \file
- * cub::BlockReduceTiles implements an abstraction of CUDA thread blocks for
- * participating in device-wide reduction.
+ * cub::BlockScanTiles implements an abstraction of CUDA thread blocks for
+ * participating in device-wide prefix scan.
  */
 
 #pragma once

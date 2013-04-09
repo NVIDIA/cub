@@ -128,7 +128,7 @@ ifeq ($(cnp), 1)
 endif
 
 
-SUFFIX = $(PTX_SUFFIX)_$(NVCC_VERSION)_$(ABI_SUFFIX)_$(ARCH_SUFFIX)
+SUFFIX = SM$(TUNE_ARCH)_$(PTX_SUFFIX)_$(NVCC_VERSION)_$(ABI_SUFFIX)_$(ARCH_SUFFIX)
 
 #-------------------------------------------------------------------------------
 # Dependency Lists
