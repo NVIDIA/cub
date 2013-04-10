@@ -49,6 +49,53 @@ CUB_NS_PREFIX
 /// CUB namespace
 namespace cub {
 
+
+/**
+ * BlockReduceAlgorithm enumerates alternative algorithms for parallel
+ * reduction across a CUDA threadblock.
+ */
+enum BlockReductionAlgorithm
+{
+
+    /**
+     * \par Overview
+     * An efficient "raking" reduction algorithm.  Execution is comprised of three phases:
+     * -# Upsweep sequential reduction in registers (if threads contribute more than one input each).  Each thread then places the partial reduction of its item(s) into shared memory.
+     * -# Upsweep sequential reduction in shared memory.  Threads within a single warp rake across segments of shared partial reductions.
+     * -# A warp-synchronous Kogge-Stone style reduction within the raking warp.
+     *
+     * \par
+     * \image html block_scan_raking.png
+     * <div class="centercaption">\p BLOCK_SCAN_RAKING data flow for a hypothetical 16-thread threadblock and 4-thread raking warp.</div>
+     *
+     * \par Performance Considerations
+     * - Although this variant may suffer longer turnaround latencies when the
+     *   GPU is under-occupied, it can often provide higher overall throughput
+     *   across the GPU when suitably occupied.
+     */
+    BLOCK_REDUCE_RAKING,
+
+
+    /**
+     * \par Overview
+     * A quick "tiled warp-reductions" reduction algorithm.  Execution is comprised of four phases:
+     * -# Upsweep sequential reduction in registers (if threads contribute more than one input each).  Each thread then places the partial reduction of its item(s) into shared memory.
+     * -# Compute a shallow, but inefficient warp-synchronous Kogge-Stone style reduction within each warp.
+     * -# A propagation phase where the warp reduction outputs in each warp are updated with the aggregate from each preceding warp.
+     *
+     * \par
+     * \image html block_scan_warpscans.png
+     * <div class="centercaption">\p BLOCK_SCAN_WARPSCANS data flow for a hypothetical 16-thread threadblock and 4-thread raking warp.</div>
+     *
+     * \par Performance Considerations
+     * - Although this variant may suffer lower overall throughput across the
+     *   GPU because due to a heavy reliance on inefficient warp-reductions, it can
+     *   often provide lower turnaround latencies when the GPU is under-occupied.
+     */
+    BLOCK_REDUCE_WARPSCANS,
+};
+
+
 /**
  * \addtogroup BlockModule
  * @{

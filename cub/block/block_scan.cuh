@@ -47,6 +47,7 @@ CUB_NS_PREFIX
 /// CUB namespace
 namespace cub {
 
+
 /**
  * BlockScanAlgorithm enumerates alternative algorithms for parallel prefix
  * scan across a CUDA threadblock.
@@ -56,7 +57,7 @@ enum BlockScanAlgorithm
 
     /**
      * \par Overview
-     * An efficient "raking reduce-then-scan" prefix scan algorithm.  Scan execution is comprised of five phases:
+     * An efficient "raking reduce-then-scan" prefix scan algorithm.  Execution is comprised of five phases:
      * -# Upsweep sequential reduction in registers (if threads contribute more than one input each).  Each thread then places the partial reduction of its item(s) into shared memory.
      * -# Upsweep sequential reduction in shared memory.  Threads within a single warp rake across segments of shared partial reductions.
      * -# A warp-synchronous Kogge-Stone style exclusive scan within the raking warp.
@@ -77,7 +78,7 @@ enum BlockScanAlgorithm
 
     /**
      * \par Overview
-     * A quick "tiled warpscans" prefix scan algorithm.  Scan execution is comprised of four phases:
+     * A quick "tiled warpscans" prefix scan algorithm.  Execution is comprised of four phases:
      * -# Upsweep sequential reduction in registers (if threads contribute more than one input each).  Each thread then places the partial reduction of its item(s) into shared memory.
      * -# Compute a shallow, but inefficient warp-synchronous Kogge-Stone style scan within each warp.
      * -# A propagation phase where the warp scan outputs in each warp are updated with the aggregate from each preceding warp.
@@ -94,6 +95,7 @@ enum BlockScanAlgorithm
      */
     BLOCK_SCAN_WARPSCANS,
 };
+
 
 /**
  * \addtogroup BlockModule
