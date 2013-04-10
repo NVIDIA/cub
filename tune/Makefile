@@ -54,32 +54,39 @@ INC = -I. -I../cub -I../test
 DEFINES = 
 
 #-------------------------------------------------------------------------------
-# Tune arch
+# SM Arch
 #-------------------------------------------------------------------------------
 
-ifdef tunearch
-	TUNE_ARCH = $(tunearch)
+ifdef sm
+	SM_ARCH = $(sm)
 else 
-    TUNE_ARCH = 200
+    SM_ARCH = 200
 endif
 
-ifeq ($(TUNE_ARCH), 350) 
-    TUNE_SM_TARGET = -gencode=arch=compute_35,code=\"sm_35,compute_35\"
+# Only one arch per tuning binary
+ifeq (350, $(findstring 350, $(SM_ARCH)))
+    SM_TARGETS = -gencode=arch=compute_35,code=\"sm_35,compute_35\"
+    SM_ARCH = 350
 endif
-ifeq ($(TUNE_ARCH), 300) 
-    TUNE_SM_TARGET = -gencode=arch=compute_30,code=\"sm_30,compute_30\"
+ifeq (300, $(findstring 300, $(SM_ARCH)))
+    SM_TARGETS = -gencode=arch=compute_30,code=\"sm_30,compute_30\"
+    SM_ARCH = 300
 endif
-ifeq ($(TUNE_ARCH), 200) 
-    TUNE_SM_TARGET = -gencode=arch=compute_20,code=\"sm_20,compute_20\"
+ifeq (200, $(findstring 200, $(SM_ARCH)))
+    SM_TARGETS = -gencode=arch=compute_20,code=\"sm_20,compute_20\"
+    SM_ARCH = 200
 endif
-ifeq ($(TUNE_ARCH), 130) 
-    TUNE_SM_TARGET = -gencode=arch=compute_13,code=\"sm_13,compute_13\" 
+ifeq (130, $(findstring 130, $(SM_ARCH)))
+    SM_TARGETS = -gencode=arch=compute_13,code=\"sm_13,compute_13\" 
+    SM_ARCH = 130
 endif
-ifeq ($(TUNE_ARCH), 110) 
-    TUNE_SM_TARGET = -gencode=arch=compute_11,code=\"sm_11,compute_11\" 
+ifeq (110, $(findstring 110, $(SM_ARCH)))
+    SM_TARGETS = -gencode=arch=compute_11,code=\"sm_11,compute_11\" 
+    SM_ARCH = 110
 endif
-ifeq ($(TUNE_ARCH), 100) 
-    TUNE_SM_TARGET = -gencode=arch=compute_10,code=\"sm_10,compute_10\" 
+ifeq (100, $(findstring 100, $(SM_ARCH)))
+    SM_TARGETS = -gencode=arch=compute_10,code=\"sm_10,compute_10\" 
+    SM_ARCH = 100
 endif
 
 
@@ -91,11 +98,11 @@ NVCCFLAGS = -Xptxas -v -Xcudafe -\#
 
 ifneq ($(force64), 1)
 	# Compile with 32-bit device pointers by default
-	ARCH = -m32
-	ARCH_SUFFIX = i386
+	CPU_ARCH = -m32
+	CPU_ARCH_SUFFIX = i386
 else
-	ARCH = -m64
-	ARCH_SUFFIX = x86_64
+	CPU_ARCH = -m64
+	CPU_ARCH_SUFFIX = x86_64
 endif
 
 ifneq ($(abi), 0)
@@ -128,7 +135,7 @@ ifeq ($(cnp), 1)
 endif
 
 
-SUFFIX = SM$(TUNE_ARCH)_$(PTX_SUFFIX)_$(NVCC_VERSION)_$(ABI_SUFFIX)_$(ARCH_SUFFIX)
+SUFFIX = sm$(SM_ARCH)_$(PTX_SUFFIX)_$(NVCC_VERSION)_$(ABI_SUFFIX)_$(CPU_ARCH_SUFFIX)
 
 #-------------------------------------------------------------------------------
 # Dependency Lists
@@ -142,11 +149,18 @@ DEPS =	 ./Makefile \
 
 
 #-------------------------------------------------------------------------------
+# make default
+#-------------------------------------------------------------------------------
+
+default:
+
+
+#-------------------------------------------------------------------------------
 # make clean
 #-------------------------------------------------------------------------------
 
 clean :
-	rm -f bin/*$(ARCH_SUFFIX)* 
+	rm -f bin/*$(CPU_ARCH_SUFFIX)* 
 	rm -f *.i* *.cubin *.cu.c *.cudafe* *.fatbin.c *.ptx *.hash *.cu.cpp *.o
 
 
@@ -159,5 +173,5 @@ tune_device_reduce: bin/tune_device_reduce_$(SUFFIX)
 
 bin/tune_device_reduce_$(SUFFIX) : tune_device_reduce.cu $(DEPS)
 	mkdir -p bin
-	$(NVCC) $(DEFINES) $(TUNE_SM_TARGET) -o bin/tune_device_reduce_$(SUFFIX) tune_device_reduce.cu $(NVCCFLAGS) $(ARCH) $(INC) -O3 -DTUNE_ARCH=$(TUNE_ARCH)
+	$(NVCC) $(DEFINES) $(SM_TARGETS) -o bin/tune_device_reduce_$(SUFFIX) tune_device_reduce.cu $(NVCCFLAGS) $(CPU_ARCH) $(INC) -O3 -DTUNE_ARCH=$(SM_ARCH)
 

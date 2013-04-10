@@ -37,17 +37,33 @@ NVCC_VERSION = $(strip $(shell nvcc --version | grep release | sed 's/.*release 
 OSUPPER = $(shell uname -s 2>/dev/null | tr [:lower:] [:upper:])
 
 #-------------------------------------------------------------------------------
-# Gen targets
+# SM Arch
 #-------------------------------------------------------------------------------
 
-GEN_SM35 = -gencode=arch=compute_35,code=\"sm_35,compute_35\"
-GEN_SM30 = -gencode=arch=compute_30,code=\"sm_30,compute_30\"
-GEN_SM20 = -gencode=arch=compute_20,code=\"sm_20,compute_20\"
-GEN_SM13 = -gencode=arch=compute_13,code=\"sm_13,compute_13\" 
-GEN_SM11 = -gencode=arch=compute_11,code=\"sm_11,compute_11\" 
-GEN_SM10 = -gencode=arch=compute_10,code=\"sm_10,compute_10\" 
-#SM_TARGETS = $(GEN_SM20) $(GEN_SM13) $(GEN_SM10)
-SM_TARGETS = $(GEN_SM20) 
+ifdef sm
+	SM_ARCH = $(sm)
+else 
+    SM_ARCH = 200
+endif
+
+ifeq (350, $(findstring 350, $(SM_ARCH)))
+    SM_TARGETS += -gencode=arch=compute_35,code=\"sm_35,compute_35\"
+endif
+ifeq (300, $(findstring 300, $(SM_ARCH)))
+    SM_TARGETS += -gencode=arch=compute_30,code=\"sm_30,compute_30\"
+endif
+ifeq (200, $(findstring 200, $(SM_ARCH)))
+    SM_TARGETS += -gencode=arch=compute_20,code=\"sm_20,compute_20\"
+endif
+ifeq (130, $(findstring 130, $(SM_ARCH)))
+    SM_TARGETS += -gencode=arch=compute_13,code=\"sm_13,compute_13\" 
+endif
+ifeq (110, $(findstring 110, $(SM_ARCH)))
+    SM_TARGETS += -gencode=arch=compute_11,code=\"sm_11,compute_11\" 
+endif
+ifeq (100, $(findstring 100, $(SM_ARCH)))
+    SM_TARGETS += -gencode=arch=compute_10,code=\"sm_10,compute_10\" 
+endif
 
 #-------------------------------------------------------------------------------
 # Libs
@@ -74,11 +90,11 @@ NVCCFLAGS = -Xptxas -v -Xcudafe -\#
 
 ifneq ($(force64), 1)
 	# Compile with 32-bit device pointers by default
-	ARCH = -m32
-	ARCH_SUFFIX = i386
+	CPU_ARCH = -m32
+	CPU_ARCH_SUFFIX = i386
 else
-	ARCH = -m64
-	ARCH_SUFFIX = x86_64
+	CPU_ARCH = -m64
+	CPU_ARCH_SUFFIX = x86_64
 endif
 
 ifneq ($(abi), 0)
@@ -110,7 +126,7 @@ ifeq ($(cnp), 1)
 endif
 
 
-SUFFIX = $(PTX_SUFFIX)_$(NVCC_VERSION)_$(ABI_SUFFIX)_$(ARCH_SUFFIX)
+SUFFIX = sm$(SM_ARCH)_$(PTX_SUFFIX)_$(NVCC_VERSION)_$(ABI_SUFFIX)_$(CPU_ARCH_SUFFIX)
 
 #-------------------------------------------------------------------------------
 # Dependency Lists
@@ -122,13 +138,18 @@ DEPS =	 ./Makefile \
 		./test_util.h \
 		$(call rwildcard,../cub/,*.cuh)
 
+#-------------------------------------------------------------------------------
+# make default
+#-------------------------------------------------------------------------------
+
+default:
 
 #-------------------------------------------------------------------------------
 # make clean
 #-------------------------------------------------------------------------------
 
 clean :
-	rm -f bin/*$(ARCH_SUFFIX)* 
+	rm -f bin/*$(CPU_ARCH_SUFFIX)* 
 	rm -f *.i* *.cubin *.cu.c *.cudafe* *.fatbin.c *.ptx *.hash *.cu.cpp *.o
 
 
@@ -140,7 +161,7 @@ test_allocator: bin/test_allocator_$(SUFFIX)
 
 bin/test_allocator_$(SUFFIX) : test_allocator.cu $(DEPS)
 	mkdir -p bin
-	$(NVCC) $(DEFINES) $(SM_TARGETS) -o bin/test_allocator_$(SUFFIX) test_allocator.cu $(NVCCFLAGS) $(ARCH) $(INC) -O3
+	$(NVCC) $(DEFINES) $(SM_TARGETS) -o bin/test_allocator_$(SUFFIX) test_allocator.cu $(NVCCFLAGS) $(CPU_ARCH) $(INC) -O3
 	
 	
 #-------------------------------------------------------------------------------
@@ -151,7 +172,7 @@ test_grid_barrier: bin/test_grid_barrier_$(SUFFIX)
 
 bin/test_grid_barrier_$(SUFFIX) : test_grid_barrier.cu $(DEPS)
 	mkdir -p bin
-	$(NVCC) $(DEFINES) $(SM_TARGETS) -o bin/test_grid_barrier_$(SUFFIX) test_grid_barrier.cu $(NVCCFLAGS) $(ARCH) $(INC) -O3  
+	$(NVCC) $(DEFINES) $(SM_TARGETS) -o bin/test_grid_barrier_$(SUFFIX) test_grid_barrier.cu $(NVCCFLAGS) $(CPU_ARCH) $(INC) -O3  
 	
 
 #-------------------------------------------------------------------------------
@@ -162,7 +183,7 @@ test_block_reduce: bin/test_block_reduce_$(SUFFIX)
 
 bin/test_block_reduce_$(SUFFIX) : test_block_reduce.cu $(DEPS)
 	mkdir -p bin
-	$(NVCC) $(DEFINES) $(SM_TARGETS) -o bin/test_block_reduce_$(SUFFIX) test_block_reduce.cu $(NVCCFLAGS) $(ARCH) $(INC) -O3  
+	$(NVCC) $(DEFINES) $(SM_TARGETS) -o bin/test_block_reduce_$(SUFFIX) test_block_reduce.cu $(NVCCFLAGS) $(CPU_ARCH) $(INC) -O3  
 
 
 #-------------------------------------------------------------------------------
@@ -173,7 +194,7 @@ test_warp_scan: bin/test_warp_scan_$(SUFFIX)
 
 bin/test_warp_scan_$(SUFFIX) : test_warp_scan.cu $(DEPS)
 	mkdir -p bin
-	$(NVCC) $(DEFINES) $(SM_TARGETS) -o bin/test_warp_scan_$(SUFFIX) test_warp_scan.cu $(NVCCFLAGS) $(ARCH) $(INC) -O3  
+	$(NVCC) $(DEFINES) $(SM_TARGETS) -o bin/test_warp_scan_$(SUFFIX) test_warp_scan.cu $(NVCCFLAGS) $(CPU_ARCH) $(INC) -O3  
 
 
 #-------------------------------------------------------------------------------
@@ -184,7 +205,7 @@ test_warp_reduce: bin/test_warp_reduce_$(SUFFIX)
 
 bin/test_warp_reduce_$(SUFFIX) : test_warp_reduce.cu $(DEPS)
 	mkdir -p bin
-	$(NVCC) $(DEFINES) $(SM_TARGETS) -o bin/test_warp_reduce_$(SUFFIX) test_warp_reduce.cu $(NVCCFLAGS) $(ARCH) $(INC) -O3  
+	$(NVCC) $(DEFINES) $(SM_TARGETS) -o bin/test_warp_reduce_$(SUFFIX) test_warp_reduce.cu $(NVCCFLAGS) $(CPU_ARCH) $(INC) -O3  
 
 
 #-------------------------------------------------------------------------------
@@ -195,7 +216,7 @@ test_block_scan: bin/test_block_scan_$(SUFFIX)
 
 bin/test_block_scan_$(SUFFIX) : test_block_scan.cu $(DEPS)
 	mkdir -p bin
-	$(NVCC) $(DEFINES) $(SM_TARGETS) -o bin/test_block_scan_$(SUFFIX) test_block_scan.cu $(NVCCFLAGS) $(ARCH) $(INC) -O3  
+	$(NVCC) $(DEFINES) $(SM_TARGETS) -o bin/test_block_scan_$(SUFFIX) test_block_scan.cu $(NVCCFLAGS) $(CPU_ARCH) $(INC) -O3  
 
 
 #-------------------------------------------------------------------------------
@@ -206,7 +227,7 @@ test_block_load_store: bin/test_block_load_store_$(SUFFIX)
 
 bin/test_block_load_store_$(SUFFIX) : test_block_load_store.cu $(DEPS)
 	mkdir -p bin
-	$(NVCC) $(DEFINES) $(SM_TARGETS) -o bin/test_block_load_store_$(SUFFIX) test_block_load_store.cu $(NVCCFLAGS) $(ARCH) $(INC) -O3
+	$(NVCC) $(DEFINES) $(SM_TARGETS) -o bin/test_block_load_store_$(SUFFIX) test_block_load_store.cu $(NVCCFLAGS) $(CPU_ARCH) $(INC) -O3
 	
 	
 #-------------------------------------------------------------------------------
@@ -217,7 +238,7 @@ test_block_radix_sort: bin/test_block_radix_sort_$(SUFFIX)
 
 bin/test_block_radix_sort_$(SUFFIX) : test_block_radix_sort.cu $(DEPS)
 	mkdir -p bin
-	$(NVCC) $(DEFINES) $(SM_TARGETS) -o bin/test_block_radix_sort_$(SUFFIX) test_block_radix_sort.cu $(NVCCFLAGS) $(ARCH) $(INC) -O3
+	$(NVCC) $(DEFINES) $(SM_TARGETS) -o bin/test_block_radix_sort_$(SUFFIX) test_block_radix_sort.cu $(NVCCFLAGS) $(CPU_ARCH) $(INC) -O3
 
 
 #-------------------------------------------------------------------------------
@@ -228,7 +249,7 @@ test_block_serialize: bin/test_block_serialize_$(SUFFIX)
 
 bin/test_block_serialize_$(SUFFIX) : test_block_serialize.cu $(DEPS)
 	mkdir -p bin
-	$(NVCC) $(DEFINES) $(SM_TARGETS) -o bin/test_block_serialize_$(SUFFIX) test_block_serialize.cu $(NVCCFLAGS) $(ARCH) $(INC) -O3
+	$(NVCC) $(DEFINES) $(SM_TARGETS) -o bin/test_block_serialize_$(SUFFIX) test_block_serialize.cu $(NVCCFLAGS) $(CPU_ARCH) $(INC) -O3
 
 
 #-------------------------------------------------------------------------------
@@ -239,6 +260,6 @@ test_device_reduce: bin/test_device_reduce_$(SUFFIX)
 
 bin/test_device_reduce_$(SUFFIX) : test_device_reduce.cu $(DEPS)
 	mkdir -p bin
-	$(NVCC) $(DEFINES) $(SM_TARGETS) -o bin/test_device_reduce_$(SUFFIX) test_device_reduce.cu $(NVCCFLAGS) $(ARCH) $(INC) -O3
+	$(NVCC) $(DEFINES) $(SM_TARGETS) -o bin/test_device_reduce_$(SUFFIX) test_device_reduce.cu $(NVCCFLAGS) $(CPU_ARCH) $(INC) -O3
 
 

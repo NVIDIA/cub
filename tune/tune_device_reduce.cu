@@ -51,11 +51,12 @@ using namespace std;
 #define TUNE_ARCH 100
 #endif
 
-int     g_max_items     = 48 * 1024 * 1024;
-int     g_samples       = 100;
-int     g_iterations    = 2;
-int     g_min_exponent  = 14;       // min sampled problem size is 2^14 (16384)
-bool    g_verbose       = false;
+int     g_max_items         = 48 * 1024 * 1024;
+int     g_samples           = 100;
+int     g_iterations        = 2;
+int     g_min_exponent      = 14;       // min sampled problem size is 2^14 (16384)
+bool    g_verbose           = false;
+bool    g_single            = false;
 
 
 //---------------------------------------------------------------------
@@ -166,82 +167,6 @@ struct Schmoo
     //---------------------------------------------------------------------
 
     /**
-     * Test reduction
-     */
-    void Test(
-        MultiDispatchTuple      &multi_dispatch,
-        SingleDispatchTuple     &single_dispatch,
-        T*                      d_in,
-        T*                      d_out,
-        T*                      h_reference,
-        SizeT                   num_items,
-        ReductionOp             reduction_op)
-    {
-        // Clear output
-        CubDebugExit(cudaMemset(d_out, 0, sizeof(T)));
-
-        // Warmup/correctness iteration
-        DeviceReduce::Dispatch(
-            multi_dispatch.kernel_ptr,
-            single_dispatch.kernel_ptr,
-            multi_dispatch.params,
-            single_dispatch.params,
-            d_in,
-            d_out,
-            num_items,
-            reduction_op);
-
-        CubDebugExit(cudaDeviceSynchronize());
-
-        // Copy out and display results
-        int correct = CompareDeviceResults(h_reference, d_out, 1, true, false);
-
-        // Performance
-        GpuTimer gpu_timer;
-        float elapsed_millis = 0.0;
-        for (int i = 0; i < g_iterations; i++)
-        {
-            gpu_timer.Start();
-
-            DeviceReduce::Dispatch(
-                multi_dispatch.kernel_ptr,
-                single_dispatch.kernel_ptr,
-                multi_dispatch.params,
-                single_dispatch.params,
-                d_in,
-                d_out,
-                num_items,
-                reduction_op);
-
-            gpu_timer.Stop();
-            elapsed_millis += gpu_timer.ElapsedMillis();
-        }
-
-        float avg_elapsed = elapsed_millis / g_iterations;
-        float avg_throughput = float(num_items) / avg_elapsed / 1000.0 / 1000.0;
-        float avg_bandwidth = avg_throughput * sizeof(T);
-
-        multi_dispatch.avg_throughput = CUB_MAX(avg_throughput, multi_dispatch.avg_throughput);
-        multi_dispatch.max_throughput = CUB_MAX(avg_throughput, multi_dispatch.max_throughput);
-
-        single_dispatch.avg_throughput = CUB_MAX(avg_throughput, single_dispatch.avg_throughput);
-        single_dispatch.max_throughput = CUB_MAX(avg_throughput, single_dispatch.max_throughput);
-
-        if (g_verbose)
-        {
-            printf("\t%.2f GB/s, multi_dispatch( ", avg_bandwidth);
-            multi_dispatch.params.Print();
-            printf("), single_dispatch( ");
-            single_dispatch.params.Print();
-            printf(" )\n");
-            fflush(stdout);
-        }
-
-        AssertEquals(0, correct);
-    }
-
-
-    /**
      * Specialization that allows kernel generation with the specified BlockReduceTilesPolicy
      */
     template <
@@ -251,10 +176,12 @@ struct Schmoo
     {
         /// Enumerate multi-block kernel and add to the list
         template <typename KernelsVector>
-        static void GenerateMulti(KernelsVector &multi_kernels)
+        static void GenerateMulti(
+            KernelsVector &multi_kernels,
+            int subscription_factor)
         {
             MultiDispatchTuple tuple;
-            tuple.params.template Init<BlockReduceTilesPolicy>();
+            tuple.params.template Init<BlockReduceTilesPolicy>(subscription_factor);
             tuple.kernel_ptr = MultiReduceKernel<BlockReduceTilesPolicy, T*, T*, SizeT, ReductionOp>;
             multi_kernels.push_back(tuple);
         }
@@ -293,15 +220,17 @@ struct Schmoo
         PtxLoadModifier LOAD_MODIFIER>
     void Enumerate()
     {
-//      Ok<BlockReduceTilesPolicy<BLOCK_THREADS, ITEMS_PER_THREAD, VECTOR_LOAD_LENGTH, LOAD_MODIFIER, GRID_MAPPING_EVEN_SHARE, 1> >::GenerateMulti(multi_kernels);
-//      Ok<BlockReduceTilesPolicy<BLOCK_THREADS, ITEMS_PER_THREAD, VECTOR_LOAD_LENGTH, LOAD_MODIFIER, GRID_MAPPING_EVEN_SHARE, 2> >::GenerateMulti(multi_kernels);
-        Ok<BlockReduceTilesPolicy<BLOCK_THREADS, ITEMS_PER_THREAD, VECTOR_LOAD_LENGTH, LOAD_MODIFIER, GRID_MAPPING_EVEN_SHARE, 4> >::GenerateMulti(multi_kernels);
-//      Ok<BlockReduceTilesPolicy<BLOCK_THREADS, ITEMS_PER_THREAD, VECTOR_LOAD_LENGTH, LOAD_MODIFIER, GRID_MAPPING_EVEN_SHARE, 8> >::GenerateMulti(multi_kernels);
-#if TUNE_ARCH >= 130
-        Ok<BlockReduceTilesPolicy<BLOCK_THREADS, ITEMS_PER_THREAD, VECTOR_LOAD_LENGTH, LOAD_MODIFIER, GRID_MAPPING_DYNAMIC, 1> >::GenerateMulti(multi_kernels);
+        // Multi-block kernels
+        Ok<BlockReduceTilesPolicy<BLOCK_THREADS, ITEMS_PER_THREAD, VECTOR_LOAD_LENGTH, LOAD_MODIFIER, GRID_MAPPING_EVEN_SHARE> >::GenerateMulti(multi_kernels, 1);
+        Ok<BlockReduceTilesPolicy<BLOCK_THREADS, ITEMS_PER_THREAD, VECTOR_LOAD_LENGTH, LOAD_MODIFIER, GRID_MAPPING_EVEN_SHARE> >::GenerateMulti(multi_kernels, 2);
+        Ok<BlockReduceTilesPolicy<BLOCK_THREADS, ITEMS_PER_THREAD, VECTOR_LOAD_LENGTH, LOAD_MODIFIER, GRID_MAPPING_EVEN_SHARE> >::GenerateMulti(multi_kernels, 4);
+        Ok<BlockReduceTilesPolicy<BLOCK_THREADS, ITEMS_PER_THREAD, VECTOR_LOAD_LENGTH, LOAD_MODIFIER, GRID_MAPPING_EVEN_SHARE> >::GenerateMulti(multi_kernels, 8);
+#if TUNE_ARCH >= 200
+        Ok<BlockReduceTilesPolicy<BLOCK_THREADS, ITEMS_PER_THREAD, VECTOR_LOAD_LENGTH, LOAD_MODIFIER, GRID_MAPPING_DYNAMIC> >::GenerateMulti(multi_kernels, 1);
 #endif
 
-//      Ok<BlockReduceTilesPolicy<BLOCK_THREADS, ITEMS_PER_THREAD, VECTOR_LOAD_LENGTH, LOAD_MODIFIER, GRID_MAPPING_EVEN_SHARE, 1> >::GenerateSingle(single_kernels);
+        // Single-block kernels
+        Ok<BlockReduceTilesPolicy<BLOCK_THREADS, ITEMS_PER_THREAD, VECTOR_LOAD_LENGTH, LOAD_MODIFIER, GRID_MAPPING_EVEN_SHARE> >::GenerateSingle(single_kernels);
     }
 
 
@@ -366,17 +295,341 @@ struct Schmoo
 
 
     /**
-     * Enumerate and run tests
+     * Test multi reduction
      */
-    void Test(ReductionOp reduction_op)
+    void Test(
+        MultiDispatchTuple      &multi_dispatch,
+        SingleDispatchTuple     &single_dispatch,
+        T*                      d_in,
+        T*                      d_out,
+        T*                      h_reference,
+        SizeT                   num_items,
+        ReductionOp             reduction_op)
     {
+        // Clear output
+        CubDebugExit(cudaMemset(d_out, 0, sizeof(T)));
 
+        // Warmup/correctness iteration
+        DeviceReduce::Dispatch(
+            multi_dispatch.kernel_ptr,
+            single_dispatch.kernel_ptr,
+            multi_dispatch.params,
+            single_dispatch.params,
+            d_in,
+            d_out,
+            num_items,
+            reduction_op);
+
+        CubDebugExit(cudaDeviceSynchronize());
+
+        // Copy out and display results
+        int correct = CompareDeviceResults(h_reference, d_out, 1, true, false);
+
+        // Performance
+        GpuTimer gpu_timer;
+        float elapsed_millis = 0.0;
+        for (int i = 0; i < g_iterations; i++)
+        {
+            gpu_timer.Start();
+
+            DeviceReduce::Dispatch(
+                multi_dispatch.kernel_ptr,
+                single_dispatch.kernel_ptr,
+                multi_dispatch.params,
+                single_dispatch.params,
+                d_in,
+                d_out,
+                num_items,
+                reduction_op);
+
+            gpu_timer.Stop();
+            elapsed_millis += gpu_timer.ElapsedMillis();
+        }
+
+        float avg_elapsed = elapsed_millis / g_iterations;
+        float avg_throughput = float(num_items) / avg_elapsed / 1000.0 / 1000.0;
+        float avg_bandwidth = avg_throughput * sizeof(T);
+
+        multi_dispatch.avg_throughput = CUB_MAX(avg_throughput, multi_dispatch.avg_throughput);
+        multi_dispatch.max_throughput = CUB_MAX(avg_throughput, multi_dispatch.max_throughput);
+
+        single_dispatch.avg_throughput = CUB_MAX(avg_throughput, single_dispatch.avg_throughput);
+        single_dispatch.max_throughput = CUB_MAX(avg_throughput, single_dispatch.max_throughput);
+
+        if (g_verbose)
+        {
+            printf("\t%.2f GB/s, multi_dispatch( ", avg_bandwidth);
+            multi_dispatch.params.Print();
+            printf(" ), single_dispatch( ");
+            single_dispatch.params.Print();
+            printf(" )\n");
+            fflush(stdout);
+        }
+
+        AssertEquals(0, correct);
+    }
+
+
+    /**
+     * Test single reduction
+     */
+    void Test(
+        SingleDispatchTuple     &single_dispatch,
+        T*                      d_in,
+        T*                      d_out,
+        T*                      h_reference,
+        SizeT                   num_items,
+        ReductionOp             reduction_op)
+    {
+        // Clear output
+        CubDebugExit(cudaMemset(d_out, 0, sizeof(T)));
+
+        // Warmup/correctness iteration
+        DeviceReduce::DispatchSingle(
+            single_dispatch.kernel_ptr,
+            single_dispatch.params,
+            d_in,
+            d_out,
+            num_items,
+            reduction_op);
+
+        CubDebugExit(cudaDeviceSynchronize());
+
+        // Copy out and display results
+        int correct = CompareDeviceResults(h_reference, d_out, 1, true, false);
+
+        // Performance
+        GpuTimer gpu_timer;
+        float elapsed_millis = 0.0;
+        for (int i = 0; i < g_iterations; i++)
+        {
+            gpu_timer.Start();
+
+            DeviceReduce::DispatchSingle(
+                single_dispatch.kernel_ptr,
+                single_dispatch.params,
+                d_in,
+                d_out,
+                num_items,
+                reduction_op);
+
+            gpu_timer.Stop();
+            elapsed_millis += gpu_timer.ElapsedMillis();
+        }
+
+        float avg_elapsed = elapsed_millis / g_iterations;
+        float avg_throughput = float(num_items) / avg_elapsed / 1000.0 / 1000.0;
+        float avg_bandwidth = avg_throughput * sizeof(T);
+
+        single_dispatch.avg_throughput = CUB_MAX(avg_throughput, single_dispatch.avg_throughput);
+        single_dispatch.max_throughput = CUB_MAX(avg_throughput, single_dispatch.max_throughput);
+
+        if (g_verbose)
+        {
+            printf("\t%.2f GB/s, single_dispatch( ", avg_bandwidth);
+            single_dispatch.params.Print();
+            printf(" )\n");
+            fflush(stdout);
+        }
+
+        AssertEquals(0, correct);
+    }
+
+
+    /**
+     * Evaluate multi-block configurations
+     */
+    void TestMulti(
+        T*                      h_in,
+        T*                      d_in,
+        T*                      d_out,
+        ReductionOp             reduction_op)
+    {
         // Simple single kernel tuple for use with multi kernel sweep
-        typedef BlockReduceTilesPolicy<32, 4, 4, PTX_LOAD_NONE, GRID_MAPPING_EVEN_SHARE, 1> SimpleSinglePolicy;
+        typedef typename DeviceReduce::TunedPolicies<T, SizeT, TUNE_ARCH>::SinglePolicy SimpleSinglePolicy;
         SingleDispatchTuple simple_single_tuple;
         simple_single_tuple.params.template Init<SimpleSinglePolicy>();
         simple_single_tuple.kernel_ptr = SingleReduceKernel<SimpleSinglePolicy, T*, T*, SizeT, ReductionOp>;
 
+        double max_exponent      = log2(double(g_max_items));
+        unsigned int max_int     = (unsigned int) -1;
+
+        for (int sample = 0; sample < g_samples; ++sample)
+        {
+            printf("\nMulti-block sample %d,", sample);
+
+            int num_items;
+            if (sample == 0)
+            {
+                // First sample: use max items
+                num_items = g_max_items;
+                printf("num_items: %d", num_items); fflush(stdout);
+            }
+            else
+            {
+                // Sample a problem size from [2^g_min_exponent, g_max_items].  First 2/3 of the samples are log-distributed, the other 1/3 are uniformly-distributed.
+                unsigned int bits;
+                RandomBits(bits);
+                double scale = double(bits) / max_int;
+
+                if (sample < (2 * g_samples) / 3)
+                {
+                    // log bias
+                    double exponent = ((max_exponent - g_min_exponent) * scale) + g_min_exponent;
+                    num_items = pow(2.0, exponent);
+                    printf("num_items: %d (2^%.2f)", num_items, exponent); fflush(stdout);
+                }
+                else
+                {
+                    // uniform bias
+                    num_items = CUB_MAX(pow(2.0, g_min_exponent), scale * g_max_items);
+                    printf("num_items: %d (%.2f * %d)", num_items, scale, g_max_items); fflush(stdout);
+                }
+            }
+            if (g_verbose)
+                printf("\n");
+            else
+                printf(", ");
+
+            // Compute reference
+            T h_reference = Reduce(h_in, reduction_op, num_items);
+
+            // Run test on each multi-kernel configuration
+            for (int j = 0; j < multi_kernels.size(); ++j)
+            {
+                multi_kernels[j].avg_throughput = 0.0;
+                Test(multi_kernels[j], simple_single_tuple, d_in, d_out, &h_reference, num_items, reduction_op);
+            }
+
+            // Sort by throughput
+            sort(multi_kernels.begin(), multi_kernels.end(), MinThroughput<MultiDispatchTuple>);
+
+            // Print best throughput for this problem size
+            float best_throughput = (multi_kernels.size() > 0) ? multi_kernels.back().avg_throughput : 0;
+            printf("Best: %.2fe9 items/s (%.2f GB/s)\n", best_throughput, best_throughput * sizeof(T));
+
+            // Update cumulative rank
+            for (int j = 0; j < multi_kernels.size(); ++j)
+                multi_kernels[j].cumulative_rank += j;
+        }
+
+        // Sort by cumulative rank
+        sort(multi_kernels.begin(), multi_kernels.end(), MinRank<MultiDispatchTuple>);
+
+        // Find max overall throughput
+        float overall_max_throughput = 0.0;
+        for (int j = 0; j < multi_kernels.size(); ++j)
+            overall_max_throughput = CUB_MAX(overall_max_throughput, multi_kernels[j].max_throughput);
+
+        // Print ranked multi configurations
+        printf("\nRanked multi_kernels:\n");
+        for (int j = 0; j < multi_kernels.size(); ++j)
+        {
+            printf("\t (%d) params( ", multi_kernels.size() - j);
+            multi_kernels[j].params.Print();
+            printf(" ) avg rank: %.2f, max throughput %.2f (%.2f GB/s, %.2f%%)\n",
+                float(multi_kernels[j].cumulative_rank) / (g_samples * multi_kernels.size()),
+                multi_kernels[j].max_throughput,
+                multi_kernels[j].max_throughput * sizeof(T),
+                multi_kernels[j].max_throughput / overall_max_throughput);
+        }
+
+        printf("\nMax multi-block throughput %.2f (%.2f GB/s)\n", overall_max_throughput, overall_max_throughput * sizeof(T));
+    }
+
+
+
+    /**
+     * Evaluate single-block configurations
+     */
+    void TestSingle(
+        T*                      h_in,
+        T*                      d_in,
+        T*                      d_out,
+        ReductionOp             reduction_op)
+     {
+        double max_exponent     = log2(double(g_max_items));
+        unsigned int max_int    = (unsigned int) -1;
+
+        for (int sample = 0; sample < g_samples; ++sample)
+        {
+            printf("\nSingle-block sample %d,", sample);
+
+            int num_items;
+            if (sample == 0)
+            {
+                // First sample: use max items
+                num_items = g_max_items;
+                printf("num_items: %d", num_items); fflush(stdout);
+            }
+            else
+            {
+                // Sample a problem size from [2, g_max_items], log-distributed
+                unsigned int bits;
+                RandomBits(bits);
+                double scale = double(bits) / max_int;
+                double exponent = ((max_exponent - 1) * scale) + 1;
+                num_items = pow(2.0, exponent);
+                printf("num_items: %d (2^%.2f)", num_items, exponent); fflush(stdout);
+            }
+
+            if (g_verbose)
+                printf("\n");
+            else
+                printf(", ");
+
+            // Compute reference
+            T h_reference = Reduce(h_in, reduction_op, num_items);
+
+            // Run test on each single-kernel configuration
+            for (int j = 0; j < single_kernels.size(); ++j)
+            {
+                single_kernels[j].avg_throughput = 0.0;
+                Test(single_kernels[j], d_in, d_out, &h_reference, num_items, reduction_op);
+            }
+
+            // Sort by throughput
+            sort(single_kernels.begin(), single_kernels.end(), MinThroughput<SingleDispatchTuple>);
+
+            // Print best throughput for this problem size
+            float best_throughput = (single_kernels.size() > 0) ? single_kernels.back().avg_throughput : 0;
+            printf("Best: %.2fe9 items/s (%.2f GB/s)\n", best_throughput, best_throughput * sizeof(T));
+
+            // Update cumulative rank
+            for (int j = 0; j < single_kernels.size(); ++j)
+                single_kernels[j].cumulative_rank += j;
+        }
+
+        // Sort by cumulative rank
+        sort(single_kernels.begin(), single_kernels.end(), MinRank<SingleDispatchTuple>);
+
+        // Find max overall throughput
+        float overall_max_throughput = 0.0;
+        for (int j = 0; j < single_kernels.size(); ++j)
+            overall_max_throughput = CUB_MAX(overall_max_throughput, single_kernels[j].max_throughput);
+
+        // Print ranked single configurations
+        printf("\nRanked single_kernels:\n");
+        for (int j = 0; j < single_kernels.size(); ++j)
+        {
+            printf("\t (%d) params( ", single_kernels.size() - j);
+            single_kernels[j].params.Print();
+            printf(" ) avg rank: %.2f, max throughput %.2f (%.2f GB/s, %.2f%%)\n",
+                float(single_kernels[j].cumulative_rank) / (g_samples * single_kernels.size()),
+                single_kernels[j].max_throughput,
+                single_kernels[j].max_throughput * sizeof(T),
+                single_kernels[j].max_throughput / overall_max_throughput);
+        }
+
+        printf("\nMax single-block throughput %.2f (%.2f GB/s)\n", overall_max_throughput, overall_max_throughput * sizeof(T));
+    }
+
+
+    /**
+     * Enumerate and run tests
+     */
+    void Test(ReductionOp reduction_op)
+    {
         // Allocate host arrays
         T *h_in = new T[g_max_items];
 
@@ -390,116 +643,10 @@ struct Schmoo
         CubDebugExit(DeviceAllocate((void**)&d_out, sizeof(T) * 1));
         CubDebugExit(cudaMemcpy(d_in, h_in, sizeof(T) * g_max_items, cudaMemcpyHostToDevice));
 
-        double max_exponent         = log2(double(g_max_items));
-        unsigned int max_int        = (unsigned int) -1;
-
-        for (int sample = 0; sample < g_samples; ++sample)
-        {
-            int num_items;
-            if (sample == 0)
-            {
-                // First sample: use max items
-                num_items = g_max_items;
-                printf("\nSample %d, num_items: %d", sample, num_items); fflush(stdout);
-            }
-            else
-            {
-                // Sample a problem size from [2^g_min_exponent, g_max_items].  First 2/3 of the samples are log-distributed, the other 1/3 are uniformly-distributed.
-                unsigned int bits;
-                RandomBits(bits);
-                double scale = double(bits) / max_int;
-                double exponent = ((max_exponent - g_min_exponent) * scale) + g_min_exponent;
-
-                if (sample < (2 * g_samples) / 3)
-                {
-                    // log bias
-                    num_items = pow(2.0, exponent);
-                    printf("\nSample %d, num_items: %d (2^%.2f)", sample, num_items, exponent); fflush(stdout);
-                }
-                else
-                {
-                    // uniform bias
-                    num_items = CUB_MAX(pow(2.0, g_min_exponent), scale * g_max_items);
-                    printf("\nSample %d, num_items: %d (%.2f * %d)", sample, num_items, scale, g_max_items); fflush(stdout);
-                }
-            }
-            if (g_verbose)
-                printf("\n");
-            else
-                printf(", ");
-
-
-            // Compute reference
-            T h_reference = Reduce(h_in, reduction_op, num_items);
-
-            // Reset avg throughputs for this problem size
-            for (int j = 0; j < multi_kernels.size(); ++j)
-                multi_kernels[j].avg_throughput = 0.0;
-            for (int j = 0; j < single_kernels.size(); ++j)
-                single_kernels[j].avg_throughput = 0.0;
-
-            // Run test on each multi-kernel configuration
-            for (int j = 0; j < multi_kernels.size(); ++j)
-            {
-                Test(multi_kernels[j], simple_single_tuple, d_in, d_out, &h_reference, num_items, reduction_op);
-            }
-
-            // Sort by throughput
-            sort(multi_kernels.begin(), multi_kernels.end(), MinThroughput<MultiDispatchTuple>);
-            sort(single_kernels.begin(), single_kernels.end(), MinThroughput<SingleDispatchTuple>);
-
-            // Print best throughput for this problem size
-            float best_throughput = CUB_MAX(
-                (multi_kernels.size() > 0) ? multi_kernels.back().avg_throughput : 0,
-                (single_kernels.size() > 0) ? single_kernels.back().avg_throughput : 0);
-            printf("Best: %.2fe9 items/s (%.2f GB/s)\n", best_throughput, best_throughput * sizeof(T));
-
-            // Update cumulative rank
-            for (int j = 0; j < multi_kernels.size(); ++j)
-                multi_kernels[j].cumulative_rank += j;
-
-            for (int j = 0; j < single_kernels.size(); ++j)
-                single_kernels[j].cumulative_rank += j;
-        }
-
-        // Sort by cumulative rank
-        sort(multi_kernels.begin(), multi_kernels.end(), MinRank<MultiDispatchTuple>);
-        sort(single_kernels.begin(), single_kernels.end(), MinRank<SingleDispatchTuple>);
-
-        // Find max overall throughput
-        float overall_max_throughput = 0.0;
-        for (int j = 0; j < multi_kernels.size(); ++j)
-            overall_max_throughput = CUB_MAX(overall_max_throughput, multi_kernels[j].max_throughput);
-        for (int j = 0; j < single_kernels.size(); ++j)
-            overall_max_throughput = CUB_MAX(overall_max_throughput, single_kernels[j].max_throughput);
-
-        // Print ranked multi configurations
-        printf("\nRanked multi_kernels:\n");
-        for (int j = 0; j < multi_kernels.size(); ++j)
-        {
-            printf("\t params( ");
-            multi_kernels[j].params.Print();
-            printf(" ) avg rank: %.2f, max throughput %.2f (%.2f GB/s, %.2f%%)\n",
-                float(multi_kernels[j].cumulative_rank) / (g_samples * multi_kernels.size()),
-                multi_kernels[j].max_throughput,
-                multi_kernels[j].max_throughput * sizeof(T),
-                multi_kernels[j].max_throughput / overall_max_throughput);
-        }
-
-        // Print ranked single configurations
-        printf("\nRanked single_kernels:\n");
-        for (int j = 0; j < single_kernels.size(); ++j)
-        {
-            printf("\t params( ");
-            single_kernels[j].params.Print();
-            printf(" ) avg rank: %.2f, max throughput %.2f (%.2f GB/s, %.2f%%)\n",
-                float(single_kernels[j].cumulative_rank) / (g_samples * single_kernels.size()),
-                single_kernels[j].max_throughput,
-                single_kernels[j].max_throughput * sizeof(T),
-                single_kernels[j].max_throughput / overall_max_throughput);
-        }
-
-        printf("\nMax throughput %.2f (%.2f GB/s)\n", overall_max_throughput, overall_max_throughput * sizeof(T));
+        if (g_single)
+            TestSingle(h_in, d_in, d_out, reduction_op);
+        else
+            TestMulti(h_in, d_in, d_out, reduction_op);
 
         // Cleanup
         if (h_in) delete[] h_in;
@@ -525,8 +672,8 @@ int main(int argc, char** argv)
     args.GetCmdLineArgument("n", g_max_items);
     args.GetCmdLineArgument("s", g_samples);
     args.GetCmdLineArgument("i", g_iterations);
-    bool quick = args.CheckCmdLineFlag("quick");
     g_verbose = args.CheckCmdLineFlag("v");
+    g_single = args.CheckCmdLineFlag("single");
 
     // Print usage
     if (args.CheckCmdLineFlag("help"))
@@ -536,6 +683,8 @@ int main(int argc, char** argv)
             "[--n=<max items>]"
             "[--s=<samples>]"
             "[--i=<timing iterations>]"
+            "[--v]"
+            "[--single]"
             "\n", argv[0]);
         exit(0);
     }

@@ -71,6 +71,33 @@ enum
 
 
 /**
+ * \brief Retrieves the PTX version (major * 100 + minor * 10)
+ */
+__host__ __device__ __forceinline__ cudaError_t PtxVersion(int &ptx_version)
+{
+#if !CUB_CNP_ENABLED
+
+    // CUDA API calls not supported from this device
+    return cudaErrorInvalidConfiguration;
+
+#else
+
+    cudaError_t error = cudaSuccess;
+    do
+    {
+        cudaFuncAttributes empty_kernel_attrs;
+        if (CubDebug(error = cudaFuncGetAttributes(&empty_kernel_attrs, EmptyKernel<void>))) break;
+        ptx_version = empty_kernel_attrs.ptxVersion * 10;
+    }
+    while (0);
+
+    return error;
+
+#endif
+}
+
+
+/**
  * \brief Properties of a given CUDA device and the corresponding PTX bundle
  */
 class Device
@@ -166,9 +193,7 @@ public:
         #if CUB_PTX_ARCH > 0
             ptx_version = CUB_PTX_ARCH;
         #else
-            cudaFuncAttributes flush_kernel_attrs;
-            if ((error = CubDebug(cudaFuncGetAttributes(&flush_kernel_attrs, Empty())))) break;
-            ptx_version = flush_kernel_attrs.ptxVersion * 10;
+            if (CubDebug(error = PtxVersion(ptx_version))) break;
         #endif
 
         }

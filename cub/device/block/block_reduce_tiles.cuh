@@ -55,12 +55,11 @@ namespace cub {
  * Tuning policy for BlockReduceTiles
  */
 template <
-    int                         _BLOCK_THREADS,
-    int                         _ITEMS_PER_THREAD,
-    int                         _VECTOR_LOAD_LENGTH,
-    PtxLoadModifier             _LOAD_MODIFIER,
-    GridMappingStrategy         _GRID_MAPPING,
-    int                         _OVERSUBSCRIPTION>
+    int                     _BLOCK_THREADS,
+    int                     _ITEMS_PER_THREAD,
+    int                     _VECTOR_LOAD_LENGTH,
+    PtxLoadModifier         _LOAD_MODIFIER,
+    GridMappingStrategy     _GRID_MAPPING>
 struct BlockReduceTilesPolicy
 {
     enum
@@ -68,7 +67,6 @@ struct BlockReduceTilesPolicy
         BLOCK_THREADS       = _BLOCK_THREADS,
         ITEMS_PER_THREAD    = _ITEMS_PER_THREAD,
         VECTOR_LOAD_LENGTH  = _VECTOR_LOAD_LENGTH,
-        OVERSUBSCRIPTION    = _OVERSUBSCRIPTION,
     };
 
     static const GridMappingStrategy   GRID_MAPPING       = _GRID_MAPPING;

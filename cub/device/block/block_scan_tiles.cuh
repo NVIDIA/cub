@@ -61,7 +61,7 @@ template <
     PtxLoadModifier             _LOAD_MODIFIER,
     GridMappingStrategy         _GRID_MAPPING,
     int                         _OVERSUBSCRIPTION>
-struct BlockReduceTilesPolicy
+struct BlockScanTilesPolicy
 {
     enum
     {
@@ -81,7 +81,7 @@ struct BlockReduceTilesPolicy
  * participating in device-wide reduction.
  */
 template <
-    typename BlockReduceTilesPolicy,
+    typename BlockScanTilesPolicy,
     typename InputIterator,
     typename SizeT>
 class BlockReduceTiles
@@ -98,18 +98,18 @@ private:
     // Constants
     enum
     {
-        BLOCK_THREADS       = BlockReduceTilesPolicy::BLOCK_THREADS,
-        ITEMS_PER_THREAD    = BlockReduceTilesPolicy::ITEMS_PER_THREAD,
+        BLOCK_THREADS       = BlockScanTilesPolicy::BLOCK_THREADS,
+        ITEMS_PER_THREAD    = BlockScanTilesPolicy::ITEMS_PER_THREAD,
         TILE_ITEMS          = BLOCK_THREADS * ITEMS_PER_THREAD,
 
         // Actual vector load length must evenly divide ITEMS_PER_THREAD
-        VECTOR_LOAD_LENGTH  = (ITEMS_PER_THREAD % BlockReduceTilesPolicy::VECTOR_LOAD_LENGTH == 0) ?
-                                BlockReduceTilesPolicy::VECTOR_LOAD_LENGTH :
+        VECTOR_LOAD_LENGTH  = (ITEMS_PER_THREAD % BlockScanTilesPolicy::VECTOR_LOAD_LENGTH == 0) ?
+                                BlockScanTilesPolicy::VECTOR_LOAD_LENGTH :
                                 1,
 
     };
 
-    static const PtxLoadModifier LOAD_MODIFIER      = BlockReduceTilesPolicy::LOAD_MODIFIER;
+    static const PtxLoadModifier LOAD_MODIFIER      = BlockScanTilesPolicy::LOAD_MODIFIER;
 
     // Parameterized BlockReduce primitive
     typedef BlockReduce<T, BLOCK_THREADS> BlockReduceT;
@@ -388,7 +388,7 @@ public:
 
 
     /**
-     * \brief Consumes input tiles according to <tt>BlockReduceTilesPolicy::GRID_MAPPING</tt>, computing a threadblock-wide reduction for thread<sub>0</sub> using the specified binary reduction functor.
+     * \brief Consumes input tiles according to <tt>BlockScanTilesPolicy::GRID_MAPPING</tt>, computing a threadblock-wide reduction for thread<sub>0</sub> using the specified binary reduction functor.
      *
      * The return value is undefined in threads other than thread<sub>0</sub>.
      */
@@ -401,7 +401,7 @@ public:
         GridQueue<SizeT>        &queue,
         ReductionOp             &reduction_op)
     {
-        if (BlockReduceTilesPolicy::GRID_MAPPING == GRID_MAPPING_EVEN_SHARE)
+        if (BlockScanTilesPolicy::GRID_MAPPING == GRID_MAPPING_EVEN_SHARE)
         {
             // Even share
             even_share.BlockInit();

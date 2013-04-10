@@ -37,17 +37,33 @@ NVCC_VERSION = $(strip $(shell nvcc --version | grep release | sed 's/.*release 
 OSUPPER = $(shell uname -s 2>/dev/null | tr [:lower:] [:upper:])
 
 #-------------------------------------------------------------------------------
-# Gen targets
+# SM Arch
 #-------------------------------------------------------------------------------
 
-GEN_SM35 = -gencode=arch=compute_35,code=\"sm_35,compute_35\"
-GEN_SM30 = -gencode=arch=compute_30,code=\"sm_30,compute_30\"
-GEN_SM20 = -gencode=arch=compute_20,code=\"sm_20,compute_20\"
-GEN_SM13 = -gencode=arch=compute_13,code=\"sm_13,compute_13\" 
-GEN_SM11 = -gencode=arch=compute_11,code=\"sm_11,compute_11\" 
-GEN_SM10 = -gencode=arch=compute_10,code=\"sm_10,compute_10\" 
-#SM_TARGETS = $(GEN_SM20) $(GEN_SM13) $(GEN_SM10)
-SM_TARGETS = $(GEN_SM35) 
+ifdef sm
+	SM_ARCH = $(sm)
+else 
+    SM_ARCH = 200
+endif
+
+ifeq (350, $(findstring 350, $(SM_ARCH)))
+    SM_TARGETS += -gencode=arch=compute_35,code=\"sm_35,compute_35\"
+endif
+ifeq (300, $(findstring 300, $(SM_ARCH)))
+    SM_TARGETS += -gencode=arch=compute_30,code=\"sm_30,compute_30\"
+endif
+ifeq (200, $(findstring 200, $(SM_ARCH)))
+    SM_TARGETS += -gencode=arch=compute_20,code=\"sm_20,compute_20\"
+endif
+ifeq (130, $(findstring 130, $(SM_ARCH)))
+    SM_TARGETS += -gencode=arch=compute_13,code=\"sm_13,compute_13\" 
+endif
+ifeq (110, $(findstring 110, $(SM_ARCH)))
+    SM_TARGETS += -gencode=arch=compute_11,code=\"sm_11,compute_11\" 
+endif
+ifeq (100, $(findstring 100, $(SM_ARCH)))
+    SM_TARGETS += -gencode=arch=compute_10,code=\"sm_10,compute_10\" 
+endif
 
 #-------------------------------------------------------------------------------
 # Libs
@@ -74,11 +90,11 @@ NVCCFLAGS = -Xptxas -v -Xcudafe -\#
 
 ifneq ($(force64), 1)
 	# Compile with 32-bit device pointers by default
-	ARCH = -m32
-	ARCH_SUFFIX = i386
+	CPU_ARCH = -m32
+	CPU_ARCH_SUFFIX = i386
 else
-	ARCH = -m64
-	ARCH_SUFFIX = x86_64
+	CPU_ARCH = -m64
+	CPU_ARCH_SUFFIX = x86_64
 endif
 
 ifneq ($(abi), 0)
@@ -111,7 +127,7 @@ ifeq ($(cnp), 1)
 endif
 
 
-SUFFIX = $(PTX_SUFFIX)_$(NVCC_VERSION)_$(ABI_SUFFIX)_$(ARCH_SUFFIX)
+SUFFIX = sm$(SM_ARCH)_$(PTX_SUFFIX)_$(NVCC_VERSION)_$(ABI_SUFFIX)_$(CPU_ARCH_SUFFIX)
 
 #-------------------------------------------------------------------------------
 # Dependency Lists
@@ -125,11 +141,18 @@ DEPS =	 ./Makefile \
 
 
 #-------------------------------------------------------------------------------
+# make default
+#-------------------------------------------------------------------------------
+
+default:
+
+
+#-------------------------------------------------------------------------------
 # make clean
 #-------------------------------------------------------------------------------
 
 clean :
-	rm -f bin/*$(ARCH_SUFFIX)* 
+	rm -f bin/*$(CPU_ARCH_SUFFIX)* 
 	rm -f *.i* *.cubin *.cu.c *.cudafe* *.fatbin.c *.ptx *.hash *.cu.cpp *.o
 
 
@@ -142,7 +165,7 @@ example_tune_policy: bin/example_tune_policy_$(SUFFIX)
 
 bin/example_tune_policy_$(SUFFIX) : example_tune_policy.cu $(DEPS)
 	mkdir -p bin
-	$(NVCC) $(DEFINES) $(SM_TARGETS) -o bin/example_tune_policy_$(SUFFIX) example_tune_policy.cu $(NVCCFLAGS) $(ARCH) $(INC) -O3
+	$(NVCC) $(DEFINES) $(SM_TARGETS) -o bin/example_tune_policy_$(SUFFIX) example_tune_policy.cu $(NVCCFLAGS) $(CPU_ARCH) $(INC) -O3
 
 
 #-------------------------------------------------------------------------------
@@ -153,7 +176,7 @@ example_coo_spmv: bin/example_coo_spmv_$(SUFFIX)
 
 bin/example_coo_spmv_$(SUFFIX) : example_coo_spmv.cu $(DEPS)
 	mkdir -p bin
-	$(NVCC) $(DEFINES) $(SM_TARGETS) -o bin/example_coo_spmv_$(SUFFIX) example_coo_spmv.cu $(NVCCFLAGS) $(ARCH) $(INC) -O3
+	$(NVCC) $(DEFINES) $(SM_TARGETS) -o bin/example_coo_spmv_$(SUFFIX) example_coo_spmv.cu $(NVCCFLAGS) $(CPU_ARCH) $(INC) -O3
 
 
 #-------------------------------------------------------------------------------
@@ -164,5 +187,5 @@ example_matrix_transpose: bin/example_matrix_transpose_$(SUFFIX)
 
 bin/example_matrix_transpose_$(SUFFIX) : example_matrix_transpose.cu $(DEPS)
 	mkdir -p bin
-	$(NVCC) $(DEFINES) $(SM_TARGETS) -o bin/example_matrix_transpose_$(SUFFIX) example_matrix_transpose.cu $(NVCCFLAGS) $(ARCH) $(INC) -O3
+	$(NVCC) $(DEFINES) $(SM_TARGETS) -o bin/example_matrix_transpose_$(SUFFIX) example_matrix_transpose.cu $(NVCCFLAGS) $(CPU_ARCH) $(INC) -O3
 
