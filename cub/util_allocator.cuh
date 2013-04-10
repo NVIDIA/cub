@@ -52,6 +52,7 @@ namespace cub {
 /// Anonymous namespace to prevent multiple symbol definition errors
 namespace {
 
+
 /**
  * \addtogroup UtilModule
  * @{
@@ -99,7 +100,8 @@ public:
     /**
      * Destructor
      */
-    __host__ __device__ virtual ~DeviceAllocator() {};
+    CUB_DESTRUCTOR virtual ~DeviceAllocator() {};
+
 };
 
 
@@ -674,7 +676,7 @@ struct CachingDeviceAllocator : DeviceAllocator
     /**
      * Destructor
      */
-    __host__ __device__ __forceinline__ virtual ~CachingDeviceAllocator()
+    CUB_DESTRUCTOR __forceinline__ virtual ~CachingDeviceAllocator()
     {
         FreeAllCached();
     }
@@ -697,12 +699,6 @@ struct PassThruDeviceAllocator : DeviceAllocator
      * Return a pointer to this object
      */
     __host__ __device__ __forceinline__ PassThruDeviceAllocator* Me() { return this; }
-
-
-    /**
-     * Destructor
-     */
-    __host__ __device__ __forceinline__ virtual ~PassThruDeviceAllocator() {}
 
 
     /**

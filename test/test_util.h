@@ -216,7 +216,13 @@ public:
                 exit(1);
             }
             if (!CheckCmdLineFlag("quiet")) {
-                printf("Using device %d: %s\n", dev, deviceProp.name);
+                printf("Using device %d: %s (SM%d, %d SMs, %d MB physmem, ECC %s)\n",
+                    dev,
+                    deviceProp.name,
+                    deviceProp.major * 100 + deviceProp.minor * 10,
+                    deviceProp.multiProcessorCount,
+                    deviceProp.totalGlobalMem / 1024 / 1024,
+                    (deviceProp.ECCEnabled) ? "on" : "off");
                 fflush(stdout);
             }
 
