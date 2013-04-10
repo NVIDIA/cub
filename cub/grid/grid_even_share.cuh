@@ -91,7 +91,7 @@ public:
         this->num_items             = num_items;
         this->block_offset          = 0;
         this->block_oob             = 0;
-        int total_grains            = (num_items + schedule_granularity - 1) / schedule_granularity;
+        this->total_grains          = (num_items + schedule_granularity - 1) / schedule_granularity;
         this->grid_size             = CUB_MIN(total_grains, max_grid_size);
         SizeT grains_per_block      = total_grains / grid_size;
         this->big_blocks            = total_grains - (grains_per_block * grid_size);        // leftover grains go to big blocks
@@ -139,6 +139,7 @@ public:
             "block_oob(%lu) "
 #endif
             "num_items(%lu)  "
+            "total_grains(%lu)  "
             "big_blocks(%lu)  "
             "big_share(%lu)  "
             "normal_share(%lu)\n",
@@ -148,6 +149,7 @@ public:
                 (unsigned long) block_oob,
 #endif
                 (unsigned long) num_items,
+                (unsigned long) total_grains,
                 (unsigned long) big_blocks,
                 (unsigned long) big_share,
                 (unsigned long) normal_share);
