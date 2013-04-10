@@ -155,6 +155,7 @@ struct Schmoo
     typedef void (*SingleReduceKernelPtr)(T*, T*, SizeT, ReductionOp);
     typedef DispatchTuple<SingleReduceKernelPtr> SingleDispatchTuple;
 
+
     //---------------------------------------------------------------------
     // Fields
     //---------------------------------------------------------------------
@@ -162,8 +163,9 @@ struct Schmoo
     vector<MultiDispatchTuple> multi_kernels;       // List of generated multi-block kernels
     vector<SingleDispatchTuple> single_kernels;     // List of generated single-block kernels
 
+
     //---------------------------------------------------------------------
-    // Methods
+    // Kernel enumeration methods
     //---------------------------------------------------------------------
 
     /**
@@ -294,6 +296,10 @@ struct Schmoo
     }
 
 
+    //---------------------------------------------------------------------
+    // Multi-block test methods
+    //---------------------------------------------------------------------
+
     /**
      * Test multi reduction
      */
@@ -361,72 +367,6 @@ struct Schmoo
             printf("\t%.2f GB/s, multi_dispatch( ", avg_bandwidth);
             multi_dispatch.params.Print();
             printf(" ), single_dispatch( ");
-            single_dispatch.params.Print();
-            printf(" )\n");
-            fflush(stdout);
-        }
-
-        AssertEquals(0, correct);
-    }
-
-
-    /**
-     * Test single reduction
-     */
-    void Test(
-        SingleDispatchTuple     &single_dispatch,
-        T*                      d_in,
-        T*                      d_out,
-        T*                      h_reference,
-        SizeT                   num_items,
-        ReductionOp             reduction_op)
-    {
-        // Clear output
-        CubDebugExit(cudaMemset(d_out, 0, sizeof(T)));
-
-        // Warmup/correctness iteration
-        DeviceReduce::DispatchSingle(
-            single_dispatch.kernel_ptr,
-            single_dispatch.params,
-            d_in,
-            d_out,
-            num_items,
-            reduction_op);
-
-        CubDebugExit(cudaDeviceSynchronize());
-
-        // Copy out and display results
-        int correct = CompareDeviceResults(h_reference, d_out, 1, true, false);
-
-        // Performance
-        GpuTimer gpu_timer;
-        float elapsed_millis = 0.0;
-        for (int i = 0; i < g_iterations; i++)
-        {
-            gpu_timer.Start();
-
-            DeviceReduce::DispatchSingle(
-                single_dispatch.kernel_ptr,
-                single_dispatch.params,
-                d_in,
-                d_out,
-                num_items,
-                reduction_op);
-
-            gpu_timer.Stop();
-            elapsed_millis += gpu_timer.ElapsedMillis();
-        }
-
-        float avg_elapsed = elapsed_millis / g_iterations;
-        float avg_throughput = float(num_items) / avg_elapsed / 1000.0 / 1000.0;
-        float avg_bandwidth = avg_throughput * sizeof(T);
-
-        single_dispatch.avg_throughput = CUB_MAX(avg_throughput, single_dispatch.avg_throughput);
-        single_dispatch.max_throughput = CUB_MAX(avg_throughput, single_dispatch.max_throughput);
-
-        if (g_verbose)
-        {
-            printf("\t%.2f GB/s, single_dispatch( ", avg_bandwidth);
             single_dispatch.params.Print();
             printf(" )\n");
             fflush(stdout);
@@ -538,6 +478,75 @@ struct Schmoo
     }
 
 
+    //---------------------------------------------------------------------
+    // Single-block test methods
+    //---------------------------------------------------------------------
+
+    /**
+     * Test single reduction
+     */
+    void Test(
+        SingleDispatchTuple     &single_dispatch,
+        T*                      d_in,
+        T*                      d_out,
+        T*                      h_reference,
+        SizeT                   num_items,
+        ReductionOp             reduction_op)
+    {
+        // Clear output
+        CubDebugExit(cudaMemset(d_out, 0, sizeof(T)));
+
+        // Warmup/correctness iteration
+        DeviceReduce::DispatchSingle(
+            single_dispatch.kernel_ptr,
+            single_dispatch.params,
+            d_in,
+            d_out,
+            num_items,
+            reduction_op);
+
+        CubDebugExit(cudaDeviceSynchronize());
+
+        // Copy out and display results
+        int correct = CompareDeviceResults(h_reference, d_out, 1, true, false);
+
+        // Performance
+        GpuTimer gpu_timer;
+        float elapsed_millis = 0.0;
+        for (int i = 0; i < g_iterations; i++)
+        {
+            gpu_timer.Start();
+
+            DeviceReduce::DispatchSingle(
+                single_dispatch.kernel_ptr,
+                single_dispatch.params,
+                d_in,
+                d_out,
+                num_items,
+                reduction_op);
+
+            gpu_timer.Stop();
+            elapsed_millis += gpu_timer.ElapsedMillis();
+        }
+
+        float avg_elapsed = elapsed_millis / g_iterations;
+        float avg_throughput = float(num_items) / avg_elapsed / 1000.0 / 1000.0;
+        float avg_bandwidth = avg_throughput * sizeof(T);
+
+        single_dispatch.avg_throughput = CUB_MAX(avg_throughput, single_dispatch.avg_throughput);
+        single_dispatch.max_throughput = CUB_MAX(avg_throughput, single_dispatch.max_throughput);
+
+        if (g_verbose)
+        {
+            printf("\t%.2f GB/s, single_dispatch( ", avg_bandwidth);
+            single_dispatch.params.Print();
+            printf(" )\n");
+            fflush(stdout);
+        }
+
+        AssertEquals(0, correct);
+    }
+
 
     /**
      * Evaluate single-block configurations
@@ -624,36 +633,6 @@ struct Schmoo
         printf("\nMax single-block throughput %.2f (%.2f GB/s)\n", overall_max_throughput, overall_max_throughput * sizeof(T));
     }
 
-
-    /**
-     * Enumerate and run tests
-     */
-    void Test(ReductionOp reduction_op)
-    {
-        // Allocate host arrays
-        T *h_in = new T[g_max_items];
-
-        // Initialize problem
-        Initialize(UNIFORM, h_in, g_max_items);
-
-        // Initialize device arrays
-        T *d_in = NULL;
-        T *d_out = NULL;
-        CubDebugExit(DeviceAllocate((void**)&d_in, sizeof(T) * g_max_items));
-        CubDebugExit(DeviceAllocate((void**)&d_out, sizeof(T) * 1));
-        CubDebugExit(cudaMemcpy(d_in, h_in, sizeof(T) * g_max_items, cudaMemcpyHostToDevice));
-
-        if (g_single)
-            TestSingle(h_in, d_in, d_out, reduction_op);
-        else
-            TestMulti(h_in, d_in, d_out, reduction_op);
-
-        // Cleanup
-        if (h_in) delete[] h_in;
-        if (d_in) CubDebugExit(DeviceFree(d_in));
-        if (d_out) CubDebugExit(DeviceFree(d_out));
-    }
-
 };
 
 
@@ -696,10 +675,33 @@ int main(int argc, char** argv)
     typedef unsigned int T;
     Sum<T> reduction_op;
 
+    // Enumerate kernels
     Schmoo<T, SizeT, Sum<T> > schmoo;
     schmoo.Enumerate();
 
-    schmoo.Test(reduction_op);
+    // Allocate host arrays
+    T *h_in = new T[g_max_items];
+
+    // Initialize problem
+    Initialize(UNIFORM, h_in, g_max_items);
+
+    // Initialize device arrays
+    T *d_in = NULL;
+    T *d_out = NULL;
+    CubDebugExit(DeviceAllocate((void**)&d_in, sizeof(T) * g_max_items));
+    CubDebugExit(DeviceAllocate((void**)&d_out, sizeof(T) * 1));
+    CubDebugExit(cudaMemcpy(d_in, h_in, sizeof(T) * g_max_items, cudaMemcpyHostToDevice));
+
+    // Test kernels
+    if (g_single)
+        schmoo.TestSingle(h_in, d_in, d_out, reduction_op);
+    else
+        schmoo.TestMulti(h_in, d_in, d_out, reduction_op);
+
+    // Cleanup
+    if (h_in) delete[] h_in;
+    if (d_in) CubDebugExit(DeviceFree(d_in));
+    if (d_out) CubDebugExit(DeviceFree(d_out));
 
     return 0;
 }
