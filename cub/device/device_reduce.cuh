@@ -168,18 +168,18 @@ struct DeviceReduce
         GridMappingStrategy     grid_mapping;
         int                     vector_load_length;
         PtxLoadModifier         load_modifier;
-        int                     oversubscription;
+        int                     subscription_factor;
 
         template <typename BlockReduceTilesPolicy>
         __host__ __device__ __forceinline__
-        void Init()
+        void Init(int subscription_factor = 1)
         {
-            block_threads       = BlockReduceTilesPolicy::BLOCK_THREADS;
-            items_per_thread    = BlockReduceTilesPolicy::ITEMS_PER_THREAD;
-            vector_load_length  = BlockReduceTilesPolicy::VECTOR_LOAD_LENGTH;
-            load_modifier       = BlockReduceTilesPolicy::LOAD_MODIFIER;
-            grid_mapping        = BlockReduceTilesPolicy::GRID_MAPPING;
-            oversubscription    = BlockReduceTilesPolicy::OVERSUBSCRIPTION;
+            block_threads               = BlockReduceTilesPolicy::BLOCK_THREADS;
+            items_per_thread            = BlockReduceTilesPolicy::ITEMS_PER_THREAD;
+            vector_load_length          = BlockReduceTilesPolicy::VECTOR_LOAD_LENGTH;
+            load_modifier               = BlockReduceTilesPolicy::LOAD_MODIFIER;
+            grid_mapping                = BlockReduceTilesPolicy::GRID_MAPPING;
+            this->subscription_factor  = subscription_factor;
         }
 
         __host__ __device__ __forceinline__
@@ -191,7 +191,7 @@ struct DeviceReduce
                 vector_load_length,
                 load_modifier,
                 grid_mapping,
-                oversubscription);
+                subscription_factor);
         }
 
     };
@@ -209,8 +209,9 @@ struct DeviceReduce
     struct TunedPolicies<T, SizeT, 350>
     {
         // K20C: 182.1 @ 48M 32-bit T
-        typedef BlockReduceTilesPolicy<512, 8,  1,  PTX_LOAD_NONE, GRID_MAPPING_DYNAMIC,    1>      MultiPolicy;
-        typedef BlockReduceTilesPolicy<32,  4,  4,  PTX_LOAD_NONE, GRID_MAPPING_EVEN_SHARE, 1>      SinglePolicy;
+        typedef BlockReduceTilesPolicy<512, 8,  1,  PTX_LOAD_NONE, GRID_MAPPING_DYNAMIC>        MultiPolicy;
+        typedef BlockReduceTilesPolicy<32,  4,  4,  PTX_LOAD_NONE, GRID_MAPPING_EVEN_SHARE>     SinglePolicy;
+        enum { SUBSCRIPTION_FACTOR = 1 };
     };
 
     /// SM30 tune
@@ -218,33 +219,39 @@ struct DeviceReduce
     struct TunedPolicies<T, SizeT, 300>
     {
         // GTX690: 151.9 @ 48M 32-bit T
-        typedef BlockReduceTilesPolicy<512, 8,  1,  PTX_LOAD_NONE, GRID_MAPPING_EVEN_SHARE, 4>      MultiPolicy;
-        typedef BlockReduceTilesPolicy<32,  4,  4,  PTX_LOAD_NONE, GRID_MAPPING_EVEN_SHARE, 1>      SinglePolicy;
+        // GTX670: 153.5 @ 48M 32-bit T
+        typedef BlockReduceTilesPolicy<512, 8,  1,  PTX_LOAD_NONE, GRID_MAPPING_EVEN_SHARE>     MultiPolicy;
+        typedef BlockReduceTilesPolicy<32,  4,  4,  PTX_LOAD_NONE, GRID_MAPPING_EVEN_SHARE>     SinglePolicy;
+        enum { SUBSCRIPTION_FACTOR = 4 };
     };
 
     /// SM20 tune
     template <typename T, typename SizeT>
     struct TunedPolicies<T, SizeT, 200>
     {
+        // GTX 580: 178.9 @ 48M 32-bit T
         // GTX 480: 162.3 @ 48M 32-bit T
-        typedef BlockReduceTilesPolicy<128, 8,  2,  PTX_LOAD_NONE, GRID_MAPPING_DYNAMIC,    1>      MultiPolicy;
-        typedef BlockReduceTilesPolicy<32,  4,  4,  PTX_LOAD_NONE, GRID_MAPPING_EVEN_SHARE, 1>      SinglePolicy;
+        typedef BlockReduceTilesPolicy<128, 8,  2,  PTX_LOAD_NONE, GRID_MAPPING_DYNAMIC>        MultiPolicy;
+        typedef BlockReduceTilesPolicy<128, 16,  4, PTX_LOAD_NONE, GRID_MAPPING_EVEN_SHARE>     SinglePolicy;
+        enum { SUBSCRIPTION_FACTOR = 1 };
     };
 
     /// SM13 tune
     template <typename T, typename SizeT>
     struct TunedPolicies<T, SizeT, 130>
     {
-        typedef BlockReduceTilesPolicy<128, 8,  2,  PTX_LOAD_NONE, GRID_MAPPING_EVEN_SHARE, 1>      MultiPolicy;
-        typedef BlockReduceTilesPolicy<32,  4,  4,  PTX_LOAD_NONE, GRID_MAPPING_EVEN_SHARE, 1>      SinglePolicy;
+        typedef BlockReduceTilesPolicy<128, 8,  2,  PTX_LOAD_NONE, GRID_MAPPING_EVEN_SHARE>     MultiPolicy;
+        typedef BlockReduceTilesPolicy<32,  4,  4,  PTX_LOAD_NONE, GRID_MAPPING_EVEN_SHARE>     SinglePolicy;
+        enum { SUBSCRIPTION_FACTOR = 1 };
     };
 
     /// SM10 tune
     template <typename T, typename SizeT>
     struct TunedPolicies<T, SizeT, 100>
     {
-        typedef BlockReduceTilesPolicy<128, 8,  2,  PTX_LOAD_NONE, GRID_MAPPING_EVEN_SHARE, 1>      MultiPolicy;
-        typedef BlockReduceTilesPolicy<32,  4,  4,  PTX_LOAD_NONE, GRID_MAPPING_EVEN_SHARE, 1>      SinglePolicy;
+        typedef BlockReduceTilesPolicy<128, 8,  2,  PTX_LOAD_NONE, GRID_MAPPING_EVEN_SHARE>     MultiPolicy;
+        typedef BlockReduceTilesPolicy<32,  4,  4,  PTX_LOAD_NONE, GRID_MAPPING_EVEN_SHARE>     SinglePolicy;
+        enum { SUBSCRIPTION_FACTOR = 1 };
     };
 
 
@@ -262,7 +269,9 @@ struct DeviceReduce
                                             200 :
                                             (CUB_PTX_ARCH >= 130) ?
                                                 130 :
-                                                100
+                                                100,
+
+            SUBSCRIPTION_FACTOR = TunedPolicies<T, SizeT, PTX_TUNE_ARCH>::SUBSCRIPTION_FACTOR,
         };
 
         struct MultiPolicy : TunedPolicies<T, SizeT, PTX_TUNE_ARCH>::MultiPolicy {};
@@ -272,34 +281,39 @@ struct DeviceReduce
          * Initialize dispatch policy
          */
         static void InitDispatchParams(
-            int                    device_arch,
+            int                    ptx_version,
             KernelDispachParams    &multi_dispatch_params,
             KernelDispachParams    &single_dispatch_params)
         {
-            if (device_arch >= 350)
+            if (ptx_version >= 350)
             {
-                multi_dispatch_params.Init<TunedPolicies<T, SizeT, 350>::MultiPolicy >();
-                single_dispatch_params.Init<TunedPolicies<T, SizeT, 350>::SinglePolicy >();
+                typedef TunedPolicies<T, SizeT, 350> TunedPolicies;
+                multi_dispatch_params.Init<TunedPolicies::MultiPolicy>(TunedPolicies::SUBSCRIPTION_FACTOR);
+                single_dispatch_params.Init<TunedPolicies::SinglePolicy >();
             }
-            else if (device_arch >= 300)
+            else if (ptx_version >= 300)
             {
-                multi_dispatch_params.Init<TunedPolicies<T, SizeT, 300>::MultiPolicy >();
-                single_dispatch_params.Init<TunedPolicies<T, SizeT, 300>::SinglePolicy >();
+                typedef TunedPolicies<T, SizeT, 300> TunedPolicies;
+                multi_dispatch_params.Init<TunedPolicies::MultiPolicy>(TunedPolicies::SUBSCRIPTION_FACTOR);
+                single_dispatch_params.Init<TunedPolicies::SinglePolicy >();
             }
-            else if (device_arch >= 200)
+            else if (ptx_version >= 200)
             {
-                multi_dispatch_params.Init<TunedPolicies<T, SizeT, 200>::MultiPolicy >();
-                single_dispatch_params.Init<TunedPolicies<T, SizeT, 200>::SinglePolicy >();
+                typedef TunedPolicies<T, SizeT, 200> TunedPolicies;
+                multi_dispatch_params.Init<TunedPolicies::MultiPolicy>(TunedPolicies::SUBSCRIPTION_FACTOR);
+                single_dispatch_params.Init<TunedPolicies::SinglePolicy >();
             }
-            else if (device_arch >= 130)
+            else if (ptx_version >= 130)
             {
-                multi_dispatch_params.Init<TunedPolicies<T, SizeT, 130>::MultiPolicy >();
-                single_dispatch_params.Init<TunedPolicies<T, SizeT, 130>::SinglePolicy >();
+                typedef TunedPolicies<T, SizeT, 130> TunedPolicies;
+                multi_dispatch_params.Init<TunedPolicies::MultiPolicy>(TunedPolicies::SUBSCRIPTION_FACTOR);
+                single_dispatch_params.Init<TunedPolicies::SinglePolicy >();
             }
             else
             {
-                multi_dispatch_params.Init<TunedPolicies<T, SizeT, 100>::MultiPolicy >();
-                single_dispatch_params.Init<TunedPolicies<T, SizeT, 100>::SinglePolicy >();
+                typedef TunedPolicies<T, SizeT, 100> TunedPolicies;
+                multi_dispatch_params.Init<TunedPolicies::MultiPolicy>(TunedPolicies::SUBSCRIPTION_FACTOR);
+                single_dispatch_params.Init<TunedPolicies::SinglePolicy >();
             }
         }
     };
@@ -436,7 +450,7 @@ struct DeviceReduce
                 // Work is distributed evenly
                 even_share.GridInit(
                     num_items,
-                    reduce_occupancy * multi_dispatch_params.oversubscription,
+                    reduce_occupancy * multi_dispatch_params.subscription_factor,
                     multi_tile_size);
 
                 multi_grid_size = even_share.grid_size;
@@ -608,9 +622,10 @@ public:
         OutputIterator  d_out,
         int             num_items,
         ReductionOp     reduction_op,
-        cudaStream_t    stream = 0,
-        bool            stream_synchronous = false,
-        DeviceAllocator *device_allocator = DefaultDeviceAllocator())
+        cudaStream_t    stream              = 0,
+        bool            stream_synchronous  = false,
+        DeviceAllocator *device_allocator   = DefaultDeviceAllocator(),
+        int             subscription_factor = 1)
     {
         // Type used for array indexing
         typedef int SizeT;
@@ -621,7 +636,7 @@ public:
         // Declare and init dispatch parameters
         KernelDispachParams multi_dispatch_params;
         KernelDispachParams single_dispatch_params;
-        multi_dispatch_params.Init<MultiPolicy>();
+        multi_dispatch_params.Init<MultiPolicy>(subscription_factor);
         single_dispatch_params.Init<SinglePolicy>();
 
         // Dispatch
@@ -683,21 +698,15 @@ public:
         #ifdef __CUDA_ARCH__
 
             // We're on the device, so initialize the dispatch parameters based upon PTX arch
-            multi_dispatch_params.Init<MultiPolicy>();
+            multi_dispatch_params.Init<MultiPolicy>(PtxDefaultPolicies::SUBSCRIPTION_FACTOR);
             single_dispatch_params.Init<SinglePolicy>();
 
         #else
 
-            // We're on the host, so initialize the dispatch parameters based upon the device's SM arch
-            int device_ordinal;
-            if (CubDebug(error = cudaGetDevice(&device_ordinal))) break;
-
-            int major, minor;
-            if (CubDebug(error = cudaDeviceGetAttribute(&major, cudaDevAttrComputeCapabilityMajor, device_ordinal))) break;
-            if (CubDebug(error = cudaDeviceGetAttribute(&minor, cudaDevAttrComputeCapabilityMinor, device_ordinal))) break;
-            int device_arch = major * 100 + minor * 10;
-
-            PtxDefaultPolicies::InitDispatchParams(device_arch, multi_dispatch_params, single_dispatch_params);
+            // We're on the host, so initialize the dispatch parameters based upon the PTX version that matches the current device
+            int ptx_version;
+            if (CubDebug(error = PtxVersion(ptx_version))) break;
+            PtxDefaultPolicies::InitDispatchParams(ptx_version, multi_dispatch_params, single_dispatch_params);
 
         #endif
 
