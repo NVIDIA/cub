@@ -54,7 +54,7 @@ namespace cub {
  * BlockReduceAlgorithm enumerates alternative algorithms for parallel
  * reduction across a CUDA threadblock.
  */
-enum BlockReductionAlgorithm
+enum BlockReduceAlgorithm
 {
 
     /**
@@ -65,8 +65,8 @@ enum BlockReductionAlgorithm
      * -# A warp-synchronous Kogge-Stone style reduction within the raking warp.
      *
      * \par
-     * \image html block_scan_raking.png
-     * <div class="centercaption">\p BLOCK_SCAN_RAKING data flow for a hypothetical 16-thread threadblock and 4-thread raking warp.</div>
+     * \image html block_reduce.png
+     * <div class="centercaption">\p BLOCK_REDUCE_RAKING data flow for a hypothetical 16-thread threadblock and 4-thread raking warp.</div>
      *
      * \par Performance Considerations
      * - Although this variant may suffer longer turnaround latencies when the
@@ -85,14 +85,14 @@ enum BlockReductionAlgorithm
      *
      * \par
      * \image html block_scan_warpscans.png
-     * <div class="centercaption">\p BLOCK_SCAN_WARPSCANS data flow for a hypothetical 16-thread threadblock and 4-thread raking warp.</div>
+     * <div class="centercaption">\p BLOCK_REDUCE_WARP_REDUCTIONS data flow for a hypothetical 16-thread threadblock and 4-thread raking warp.</div>
      *
      * \par Performance Considerations
      * - Although this variant may suffer lower overall throughput across the
      *   GPU because due to a heavy reliance on inefficient warp-reductions, it can
      *   often provide lower turnaround latencies when the GPU is under-occupied.
      */
-    BLOCK_REDUCE_WARPSCANS,
+    BLOCK_REDUCE_WARP_REDUCTIONS,
 };
 
 
@@ -118,12 +118,9 @@ enum BlockReductionAlgorithm
  * \tparam BLOCK_THREADS            The threadblock size in threads
  *
  * \par Algorithm
- * BlockReduce entrypoints have <em>O</em>(<em>n</em>) work complexity and are implemented in three phases:
- * -# Sequential reduction in registers (if threads contribute more than one input each).  Each thread then places the partial reduction of its item(s) into shared memory.
- * -# A single-warp performs a raking upsweep across partial reductions shared each thread in the threadblock.
- * -# A warp-synchronous Kogge-Stone style reduction within the raking warp to produce the total aggregate.
- * \image html block_reduce.png
- * <div class="centercaption">Data flow for a hypothetical 16-thread threadblock and 4-thread raking warp.</div>
+ * BlockScan can be (optionally) configured to use different algorithms:
+ *   -# <b>cub::BLOCK_REDUCE_RAKING</b>.  An efficient "raking" reduction algorithm. [More...](\ref cub::BlockReduceAlgorithm)
+ *   -# <b>cub::BLOCK_REDUCE_WARP_REDUCTIONS</b>.  A quick "tiled warp-reductions" reduction algorithm. [More...](\ref cub::BlockScanAlgorithm)
  *
  * \par Usage Considerations
  * - Supports non-commutative reduction operators
@@ -139,6 +136,7 @@ enum BlockReductionAlgorithm
  *   - \p T is a built-in C++ primitive or CUDA vector type (e.g., \p short, \p int2, \p double, \p float2, etc.)
  *   - \p BLOCK_THREADS is a multiple of the architecture's warp size
  *   - Every thread has a valid input (i.e., full <em>vs.</em> partial-tiles)
+ * - See cub::BlockScanAlgorithm for performance details regarding algorithmic alternatives
  *
  * \par Examples
  * \par
@@ -194,121 +192,323 @@ enum BlockReductionAlgorithm
  *
  */
 template <
-    typename    T,
-    int         BLOCK_THREADS>
+    typename                T,
+    int                     BLOCK_THREADS,
+    BlockReduceAlgorithm    ALGORITHM = BLOCK_REDUCE_RAKING>
 class BlockReduce
 {
 private:
 
-    //---------------------------------------------------------------------
-    // Constants and typedefs
-    //---------------------------------------------------------------------
+    /******************************************************************************
+     * Constants
+     ******************************************************************************/
 
-    /// Layout type for padded threadblock raking grid
-    typedef BlockRakingLayout<T, BLOCK_THREADS, 1> BlockRakingLayout;
+    /**
+     * Ensure the template parameterization meets the requirements of the
+     * specified algorithm. Currently, the BLOCK_SCAN_WARP_SCANS policy
+     * cannot be used with threadblock sizes not a multiple of the
+     * architectural warp size.
+     */
+    static const BlockReduceAlgorithm SAFE_ALGORITHM =
+        ((ALGORITHM == BLOCK_REDUCE_WARP_REDUCTIONS) && (BLOCK_THREADS % PtxArchProps::WARP_THREADS != 0)) ?
+            BLOCK_REDUCE_RAKING :
+            ALGORITHM;
 
-    /// Warp reduction type
-    typedef typename WarpReduce<T, 1, BlockRakingLayout::RAKING_THREADS>::Internal WarpReduce;
 
-    enum
-    {
-        /// Number of raking threads
-        RAKING_THREADS = BlockRakingLayout::RAKING_THREADS,
+    #ifndef DOXYGEN_SHOULD_SKIP_THIS    // Do not document
 
-        /// Number of raking elements per warp synchronous raking thread
-        RAKING_LENGTH = BlockRakingLayout::RAKING_LENGTH,
 
-        /// Cooperative work can be entirely warp synchronous
-        WARP_SYNCHRONOUS = (RAKING_THREADS == BLOCK_THREADS),
+    /******************************************************************************
+     * Algorithmic variants
+     ******************************************************************************/
 
-        /// Whether or not warp-synchronous reduction should be unguarded (i.e., the warp-reduction elements is a power of two
-        WARP_SYNCHRONOUS_UNGUARDED = ((RAKING_THREADS & (RAKING_THREADS - 1)) == 0),
-
-        /// Whether or not accesses into smem are unguarded
-        RAKING_UNGUARDED = BlockRakingLayout::UNGUARDED,
-
-    };
-
-    /// Shared memory storage layout type
-    struct _SmemStorage
-    {
-        typename WarpReduce::SmemStorage        warp_storage;        ///< Storage for warp-synchronous reduction
-        typename BlockRakingLayout::SmemStorage   raking_grid;         ///< Padded threadblock raking grid
-    };
-
-public:
-
-    /// \smemstorage{BlockReduce}
-    typedef _SmemStorage SmemStorage;
-
-private:
-
-    //---------------------------------------------------------------------
-    // Utility methods
-    //---------------------------------------------------------------------
+    /// Prototypical algorithmic variant
+    template <BlockReduceAlgorithm _ALGORITHM, int DUMMY = 0>
+    struct BlockReduceInternal;
 
 
     /**
-     * Perform a cooperative, threadblock-wide reduction. The first num_valid
-     * threads each contribute one reduction partial.
-     *
-     * The return value is only valid for thread<sub>0</sub> (and is undefined for
-     * other threads).
+     * BLOCK_REDUCE_RAKING algorithmic variant
      */
-    template <
-        bool                FULL_TILE,
-        typename            ReductionOp>
-    static __device__ __forceinline__ T ReduceInternal(
-        SmemStorage         &smem_storage,      ///< [in] Shared reference to opaque SmemStorage layout
-        T                   partial,            ///< [in] Calling thread's input partial reductions
-        const unsigned int  &num_valid,         ///< [in] Number of valid elements (may be less than BLOCK_THREADS)
-        ReductionOp         reduction_op)       ///< [in] Binary reduction operator
+    template <int DUMMY>
+    struct BlockReduceInternal<BLOCK_REDUCE_RAKING, DUMMY>
     {
-        if (WARP_SYNCHRONOUS)
-        {
-            // Short-circuit directly to warp synchronous reduction (unguarded if active threads is a power-of-two)
-            partial = WarpReduce::Reduce<FULL_TILE, RAKING_LENGTH>(
-                smem_storage.warp_storage,
-                partial,
-                num_valid,
-                reduction_op);
-        }
-        else
-        {
-            // Place partial into shared memory grid.
-            *BlockRakingLayout::PlacementPtr(smem_storage.raking_grid) = partial;
+        /// Layout type for padded threadblock raking grid
+        typedef BlockRakingLayout<T, BLOCK_THREADS, 1> BlockRakingLayout;
 
-            __syncthreads();
+        ///  WarpReduce utility type
+        typedef typename WarpReduce<T, 1, BlockRakingLayout::RAKING_THREADS>::Internal WarpReduce;
 
-            // Reduce parallelism to one warp
-            if (threadIdx.x < RAKING_THREADS)
+        /// Constants
+        enum
+        {
+            /// Number of raking threads
+            RAKING_THREADS = BlockRakingLayout::RAKING_THREADS,
+
+            /// Number of raking elements per warp synchronous raking thread
+            RAKING_LENGTH = BlockRakingLayout::RAKING_LENGTH,
+
+            /// Cooperative work can be entirely warp synchronous
+            WARP_SYNCHRONOUS = (RAKING_THREADS == BLOCK_THREADS),
+
+            /// Whether or not warp-synchronous reduction should be unguarded (i.e., the warp-reduction elements is a power of two
+            WARP_SYNCHRONOUS_UNGUARDED = ((RAKING_THREADS & (RAKING_THREADS - 1)) == 0),
+
+            /// Whether or not accesses into smem are unguarded
+            RAKING_UNGUARDED = BlockRakingLayout::UNGUARDED,
+
+        };
+
+
+        /// Shared memory storage layout type
+        struct SmemStorage
+        {
+            typename WarpReduce::SmemStorage            warp_storage;        ///< Storage for warp-synchronous reduction
+            typename BlockRakingLayout::SmemStorage     raking_grid;         ///< Padded threadblock raking grid
+        };
+
+
+        /// Computes a threadblock-wide reduction using addition (+) as the reduction operator. The first num_valid threads each contribute one reduction partial.  The return value is only valid for thread<sub>0</sub>.
+        template <bool FULL_TILE>
+        static __device__ __forceinline__ T Sum(
+            SmemStorage         &smem_storage,      ///< [in] Shared reference to opaque SmemStorage layout
+            T                   partial,            ///< [in] Calling thread's input partial reductions
+            const unsigned int  &num_valid)         ///< [in] Number of valid elements (may be less than BLOCK_THREADS)
+        {
+            cub::Sum<T> reduction_op;
+
+            if (WARP_SYNCHRONOUS)
             {
-                // Raking reduction in grid
-                T *raking_segment = BlockRakingLayout::RakingPtr(smem_storage.raking_grid);
-                partial = raking_segment[0];
+                // Short-circuit directly to warp synchronous reduction (unguarded if active threads is a power-of-two)
+                partial = WarpReduce::Sum<FULL_TILE, RAKING_LENGTH>(
+                    smem_storage.warp_storage,
+                    partial,
+                    num_valid);
+            }
+            else
+            {
+                // Place partial into shared memory grid.
+                *BlockRakingLayout::PlacementPtr(smem_storage.raking_grid) = partial;
 
-                #pragma unroll
-                for (int ITEM = 1; ITEM < RAKING_LENGTH; ITEM++)
+                __syncthreads();
+
+                // Reduce parallelism to one warp
+                if (threadIdx.x < RAKING_THREADS)
                 {
-                    // Update partial if addend is in range
-                    if ((FULL_TILE && RAKING_UNGUARDED) || ((threadIdx.x * RAKING_LENGTH) + ITEM < num_valid))
-                    {
-                        partial = reduction_op(partial, raking_segment[ITEM]);
-                    }
-                }
+                    // Raking reduction in grid
+                    T *raking_segment = BlockRakingLayout::RakingPtr(smem_storage.raking_grid);
+                    partial = raking_segment[0];
 
-                partial = WarpReduce::Reduce<FULL_TILE && RAKING_UNGUARDED, RAKING_LENGTH>(
+                    #pragma unroll
+                    for (int ITEM = 1; ITEM < RAKING_LENGTH; ITEM++)
+                    {
+                        // Update partial if addend is in range
+                        if ((FULL_TILE && RAKING_UNGUARDED) || ((threadIdx.x * RAKING_LENGTH) + ITEM < num_valid))
+                        {
+                            partial = reduction_op(partial, raking_segment[ITEM]);
+                        }
+                    }
+
+                    partial = WarpReduce::Sum<FULL_TILE && RAKING_UNGUARDED, RAKING_LENGTH>(
+                        smem_storage.warp_storage,
+                        partial,
+                        num_valid);
+                }
+            }
+
+            return partial;
+        }
+
+
+        /// Computes a threadblock-wide reduction using the specified reduction operator. The first num_valid threads each contribute one reduction partial.  The return value is only valid for thread<sub>0</sub>.
+        template <
+            bool                FULL_TILE,
+            typename            ReductionOp>
+        static __device__ __forceinline__ T Reduce(
+            SmemStorage         &smem_storage,      ///< [in] Shared reference to opaque SmemStorage layout
+            T                   partial,            ///< [in] Calling thread's input partial reductions
+            const unsigned int  &num_valid,         ///< [in] Number of valid elements (may be less than BLOCK_THREADS)
+            ReductionOp         reduction_op)       ///< [in] Binary reduction operator
+        {
+            if (WARP_SYNCHRONOUS)
+            {
+                // Short-circuit directly to warp synchronous reduction (unguarded if active threads is a power-of-two)
+                partial = WarpReduce::Reduce<FULL_TILE, RAKING_LENGTH>(
                     smem_storage.warp_storage,
                     partial,
                     num_valid,
                     reduction_op);
             }
+            else
+            {
+                // Place partial into shared memory grid.
+                *BlockRakingLayout::PlacementPtr(smem_storage.raking_grid) = partial;
+
+                __syncthreads();
+
+                // Reduce parallelism to one warp
+                if (threadIdx.x < RAKING_THREADS)
+                {
+                    // Raking reduction in grid
+                    T *raking_segment = BlockRakingLayout::RakingPtr(smem_storage.raking_grid);
+                    partial = raking_segment[0];
+
+                    #pragma unroll
+                    for (int ITEM = 1; ITEM < RAKING_LENGTH; ITEM++)
+                    {
+                        // Update partial if addend is in range
+                        if ((FULL_TILE && RAKING_UNGUARDED) || ((threadIdx.x * RAKING_LENGTH) + ITEM < num_valid))
+                        {
+                            partial = reduction_op(partial, raking_segment[ITEM]);
+                        }
+                    }
+
+                    partial = WarpReduce::Reduce<FULL_TILE && RAKING_UNGUARDED, RAKING_LENGTH>(
+                        smem_storage.warp_storage,
+                        partial,
+                        num_valid,
+                        reduction_op);
+                }
+            }
+
+            return partial;
         }
 
-        return partial;
-    }
+    };
+
+
+    /**
+     * BLOCK_REDUCE_WARP_REDUCTIONS algorithmic variant
+     *
+     * Can only be used when BLOCK_THREADS is a multiple of the architecture's warp size
+     */
+    template <int DUMMY>
+    struct BlockReduceInternal<BLOCK_REDUCE_WARP_REDUCTIONS, DUMMY>
+    {
+        /// Constants
+        enum
+        {
+            /// Number of active warps
+            WARPS = (BLOCK_THREADS + PtxArchProps::WARP_THREADS - 1) / PtxArchProps::WARP_THREADS,
+        };
+
+
+        ///  WarpReduce utility type
+        typedef typename WarpReduce<T, WARPS>::Internal WarpReduce;
+
+
+        /// Shared memory storage layout type
+        struct SmemStorage
+        {
+            typename WarpReduce::SmemStorage    warp_reduce;                ///< Buffer for warp-synchronous scan
+            T                                   warp_aggregates[WARPS];     ///< Shared totals from each warp-synchronous scan
+            T                                   block_prefix;               ///< Shared prefix for the entire threadblock
+        };
+
+
+        /// Returns block-wide aggregate in <em>thread</em><sub>0</sub>.
+        template <typename ReductionOp>
+        static __device__ __forceinline__ T PrefixUpdate(
+            SmemStorage     &smem_storage,      ///< [in] Shared reference to opaque SmemStorage layout
+            ReductionOp     reduction_op,       ///< [in] Binary scan operator
+            T               warp_aggregate)     ///< [in] <b>[<em>lane</em><sub>0</sub>s only]</b> Warp-wide aggregate reduction of input items
+        {
+            // Warp, thread-lane-IDs
+            unsigned int warp_id = (WARPS == 1) ? 0 : (threadIdx.x / PtxArchProps::WARP_THREADS);
+            unsigned int lane_id = (WARPS == 1) ? threadIdx.x : (threadIdx.x & (PtxArchProps::WARP_THREADS - 1));
+
+            // Share lane aggregates
+            if (lane_id == 0)
+            {
+                smem_storage.warp_aggregates[warp_id] = warp_aggregate;
+            }
+
+            __syncthreads();
+
+            // Update total aggregate in warp 0, lane 0
+            if (threadIdx.x == 0)
+            {
+                #pragma unroll
+                for (int SUCCESSOR_WARP = 1; SUCCESSOR_WARP < WARPS; SUCCESSOR_WARP++)
+                {
+                    warp_aggregate = reduction_op(warp_aggregate, smem_storage.warp_aggregates[SUCCESSOR_WARP]);
+                }
+            }
+
+            return warp_aggregate;
+        }
+
+
+        /// Computes a threadblock-wide reduction using addition (+) as the reduction operator. The first num_valid threads each contribute one reduction partial.  The return value is only valid for thread<sub>0</sub>.
+        template <int FULL_TILE>
+        static __device__ __forceinline__ T Sum(
+            SmemStorage         &smem_storage,  ///< [in] Shared reference to opaque SmemStorage layout
+            T                   input,          ///< [in] Calling thread's input partial reductions
+            const unsigned int  &num_valid)     ///< [in] Number of valid elements (may be less than BLOCK_THREADS)
+        {
+            cub::Sum<T>     reduction_op;
+            unsigned int    warp_id = (WARPS == 1) ? 0 : (threadIdx.x / PtxArchProps::WARP_THREADS);
+            unsigned int    warp_offset = warp_id * PtxArchProps::WARP_THREADS;
+            unsigned int    warp_num_valid = (FULL_TILE) ?
+                                PtxArchProps::WARP_THREADS :
+                                (warp_offset < num_valid) ?
+                                    num_valid - warp_offset :
+                                    0;
+
+            // Warp reduction in every warp
+            T warp_aggregate = WarpReduce::template Sum<FULL_TILE, 1>(
+                smem_storage.warp_reduce,
+                input,
+                warp_num_valid);
+
+            // Update outputs and block_aggregate with warp-wide aggregates from lane-0s
+            return PrefixUpdate(smem_storage, reduction_op, warp_aggregate);
+        }
+
+
+        /// Computes a threadblock-wide reduction using the specified reduction operator. The first num_valid threads each contribute one reduction partial.  The return value is only valid for thread<sub>0</sub>.
+        template <
+            int                 FULL_TILE,
+            typename            ReductionOp>
+        static __device__ __forceinline__ T Reduce(
+            SmemStorage         &smem_storage,      ///< [in] Shared reference to opaque SmemStorage layout
+            T                   input,            ///< [in] Calling thread's input partial reductions
+            const unsigned int  &num_valid,         ///< [in] Number of valid elements (may be less than BLOCK_THREADS)
+            ReductionOp         reduction_op)       ///< [in] Binary reduction operator
+        {
+            unsigned int    warp_id = (WARPS == 1) ? 0 : (threadIdx.x / PtxArchProps::WARP_THREADS);
+            unsigned int    warp_offset = warp_id * PtxArchProps::WARP_THREADS;
+            unsigned int    warp_num_valid = (FULL_TILE) ?
+                                PtxArchProps::WARP_THREADS :
+                                (warp_offset < num_valid) ?
+                                    num_valid - warp_offset :
+                                    0;
+
+            // Warp reduction in every warp
+            T warp_aggregate = WarpReduce::template Reduce<FULL_TILE, 1>(
+                smem_storage.warp_reduce,
+                input,
+                warp_num_valid,
+                reduction_op);
+
+            // Update outputs and block_aggregate with warp-wide aggregates from lane-0s
+            return PrefixUpdate(smem_storage, reduction_op, warp_aggregate);
+        }
+
+    };
+
+
+    #endif // DOXYGEN_SHOULD_SKIP_THIS
+
+
+    /// Shared memory storage layout type for BlockReduce
+    typedef typename BlockReduceInternal<SAFE_ALGORITHM>::SmemStorage _SmemStorage;
+
 
 public:
+
+    /// \smemstorage{BlockReduce}
+    typedef _SmemStorage SmemStorage;
 
 
     /******************************************************************//**
@@ -332,7 +532,7 @@ public:
         T               input,                      ///< [in] Calling thread's input
         ReductionOp     reduction_op)               ///< [in] Binary reduction operator
     {
-        return Reduce(smem_storage, input, reduction_op, BLOCK_THREADS);
+        return BlockReduceInternal<SAFE_ALGORITHM>::template Reduce<true>(smem_storage, input, BLOCK_THREADS, reduction_op);
     }
 
 
@@ -379,19 +579,21 @@ public:
         // Determine if we don't need bounds checking
         if (num_valid >= BLOCK_THREADS)
         {
-            return ReduceInternal<true>(smem_storage, input, num_valid, reduction_op);
+            return BlockReduceInternal<SAFE_ALGORITHM>::template Reduce<true>(smem_storage, input, num_valid, reduction_op);
         }
         else
         {
-            return ReduceInternal<false>(smem_storage, input, num_valid, reduction_op);
+            return BlockReduceInternal<SAFE_ALGORITHM>::template Reduce<false>(smem_storage, input, num_valid, reduction_op);
         }
     }
+
 
     //@}  end member group
     /******************************************************************//**
      * \name Summation reductions
      *********************************************************************/
     //@{
+
 
     /**
      * \brief Computes a threadblock-wide reduction for thread<sub>0</sub> using addition (+) as the reduction operator.  Each thread contributes one input element.
@@ -404,8 +606,7 @@ public:
         SmemStorage     &smem_storage,              ///< [in] Shared reference to opaque SmemStorage layout
         T               input)                      ///< [in] Calling thread's input
     {
-        cub::Sum<T> reduction_op;
-        return Reduce(smem_storage, input, reduction_op);
+        return BlockReduceInternal<SAFE_ALGORITHM>::template Sum<true>(smem_storage, input, BLOCK_THREADS);
     }
 
     /**
@@ -422,8 +623,9 @@ public:
         SmemStorage     &smem_storage,                  ///< [in] Shared reference to opaque SmemStorage layout
         T               (&inputs)[ITEMS_PER_THREAD])    ///< [in] Calling thread's input segment
     {
-        cub::Sum<T> reduction_op;
-        return Reduce(smem_storage, inputs, reduction_op);
+        // Reduce partials
+        T partial = ThreadReduce(inputs, cub::Sum<T>());
+        return Sum(smem_storage, partial);
     }
 
 
@@ -439,8 +641,15 @@ public:
         T                   input,                  ///< [in] Calling thread's input
         const unsigned int  &num_valid)             ///< [in] Number of threads containing valid elements (may be less than BLOCK_THREADS)
     {
-        cub::Sum<T> reduction_op;
-        return Reduce(smem_storage, input, reduction_op, num_valid);
+        // Determine if we don't need bounds checking
+        if (num_valid >= BLOCK_THREADS)
+        {
+            return BlockReduceInternal<SAFE_ALGORITHM>::template Sum<true>(smem_storage, input, num_valid);
+        }
+        else
+        {
+            return BlockReduceInternal<SAFE_ALGORITHM>::template Sum<false>(smem_storage, input, num_valid);
+        }
     }
 
 

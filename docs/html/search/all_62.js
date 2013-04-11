@@ -15,7 +15,7 @@ var searchData=
   ['block_5freduce_2ecuh',['block_reduce.cuh',['../block__reduce_8cuh.html',1,'']]],
   ['block_5fscan_2ecuh',['block_scan.cuh',['../block__scan_8cuh.html',1,'']]],
   ['block_5fscan_5fraking',['BLOCK_SCAN_RAKING',['../namespacecub.html#abec44bba36037c547e7e84906d0d23aba0fa6cac57b7df2f475a67af053b9371c',1,'cub']]],
-  ['block_5fscan_5fwarpscans',['BLOCK_SCAN_WARPSCANS',['../namespacecub.html#abec44bba36037c547e7e84906d0d23aba08bbb9b8f17a4b9e568c1333aeda6324',1,'cub']]],
+  ['block_5fscan_5fwarpscans',['BLOCK_SCAN_WARP_SCANS',['../namespacecub.html#abec44bba36037c547e7e84906d0d23aba08bbb9b8f17a4b9e568c1333aeda6324',1,'cub']]],
   ['block_5fstore_2ecuh',['block_store.cuh',['../block__store_8cuh.html',1,'']]],
   ['block_5fstore_5fdirect',['BLOCK_STORE_DIRECT',['../namespacecub.html#aaaa9ee8c8a57c6607909c110affd189ea9b8dcc7b6b06bcfc24af4f499523b880',1,'cub']]],
   ['block_5fstore_5fstriped',['BLOCK_STORE_STRIPED',['../namespacecub.html#aaaa9ee8c8a57c6607909c110affd189ea78ff04d6671448a3a5bfe3b6a758a8c1',1,'cub']]],

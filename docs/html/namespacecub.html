@@ -249,7 +249,7 @@ Enumerations</h2></td></tr>
 <tr class="memdesc:a70f1d3c7536d858d49b896e937d25290"><td class="mdescLeft">&#160;</td><td class="mdescRight">Tuning policy for <a class="el" href="classcub_1_1_block_load.html" title="BlockLoad provides data movement operations for reading block-arranged data from global memory...">cub::BlockLoad</a>.  <a href="namespacecub.html#a70f1d3c7536d858d49b896e937d25290">More...</a><br/></td></tr>
 <tr class="separator:a70f1d3c7536d858d49b896e937d25290"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:abec44bba36037c547e7e84906d0d23ab"><td class="memItemLeft" align="right" valign="top">enum &#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="namespacecub.html#abec44bba36037c547e7e84906d0d23ab">BlockScanAlgorithm</a> { <a class="el" href="namespacecub.html#abec44bba36037c547e7e84906d0d23aba0fa6cac57b7df2f475a67af053b9371c">BLOCK_SCAN_RAKING</a>, 
-<a class="el" href="namespacecub.html#abec44bba36037c547e7e84906d0d23aba08bbb9b8f17a4b9e568c1333aeda6324">BLOCK_SCAN_WARPSCANS</a>
+<a class="el" href="namespacecub.html#abec44bba36037c547e7e84906d0d23aba08bbb9b8f17a4b9e568c1333aeda6324">BLOCK_SCAN_WARP_SCANS</a>
  }</td></tr>
 <tr class="separator:abec44bba36037c547e7e84906d0d23ab"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:aaaa9ee8c8a57c6607909c110affd189e"><td class="memItemLeft" align="right" valign="top">enum &#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="namespacecub.html#aaaa9ee8c8a57c6607909c110affd189e">BlockStorePolicy</a> { <a class="el" href="namespacecub.html#aaaa9ee8c8a57c6607909c110affd189ea9b8dcc7b6b06bcfc24af4f499523b880">BLOCK_STORE_DIRECT</a>, 
@@ -545,7 +545,7 @@ std::iterator_traits<br class="typebreak"/>
 </ul>
 </dd></dl>
 </td></tr>
-<tr><td class="fieldname"><em><a class="anchor" id="abec44bba36037c547e7e84906d0d23aba08bbb9b8f17a4b9e568c1333aeda6324"></a>BLOCK_SCAN_WARPSCANS</em>&nbsp;</td><td class="fielddoc">
+<tr><td class="fieldname"><em><a class="anchor" id="abec44bba36037c547e7e84906d0d23aba08bbb9b8f17a4b9e568c1333aeda6324"></a>BLOCK_SCAN_WARP_SCANS</em>&nbsp;</td><td class="fielddoc">
 <dl class="section user"><dt>Overview</dt><dd>A quick "tiled warpscans" prefix scan algorithm. Scan execution is comprised of four phases:<ol type="1">
 <li>Upsweep sequential reduction in registers (if threads contribute more than one input each). Each thread then places the partial reduction of its item(s) into shared memory.</li>
 <li>Compute a shallow, but inefficient warp-synchronous Kogge-Stone style scan within each warp.</li>
@@ -556,7 +556,7 @@ std::iterator_traits<br class="typebreak"/>
 <dl class="section user"><dt></dt><dd><div class="image">
 <img src="block_scan_warpscans.png" alt="block_scan_warpscans.png"/>
 </div>
- <div class="centercaption"><code>BLOCK_SCAN_WARPSCANS</code> data flow for a hypothetical 16-thread threadblock and 4-thread raking warp.</div></dd></dl>
+ <div class="centercaption"><code>BLOCK_SCAN_WARP_SCANS</code> data flow for a hypothetical 16-thread threadblock and 4-thread raking warp.</div></dd></dl>
 <dl class="section user"><dt>Performance Considerations</dt><dd><ul>
 <li>Although this variant may suffer lower overall throughput across the GPU because due to a heavy reliance on inefficient warpscans, it can often provide lower turnaround latencies when the GPU is under-occupied. </li>
 </ul>

@@ -46,6 +46,8 @@ CUB_NS_PREFIX
 /// CUB namespace
 namespace cub {
 
+
+
 /**
  * \addtogroup WarpModule
  * @{
@@ -131,15 +133,11 @@ template <
     int         LOGICAL_WARP_THREADS = PtxArchProps::WARP_THREADS>
 class WarpReduce
 {
-    /// BlockReduce is a friend class that has access to the WarpReduceInternal classes
-    template <typename _T, int BLOCK_THERADS>
-    friend class BlockReduce;
-
-    //---------------------------------------------------------------------
-    // Constants and typedefs
-    //---------------------------------------------------------------------
-
 private:
+
+    /******************************************************************************
+     * Constants and typedefs
+     ******************************************************************************/
 
     /// WarpReduce algorithmic variants
     enum WarpReducePolicy
@@ -152,22 +150,31 @@ private:
     enum
     {
         POW_OF_TWO = ((LOGICAL_WARP_THREADS & (LOGICAL_WARP_THREADS - 1)) == 0),
-
-        /// Use SHFL_REDUCE if (architecture is >= SM30) and (T is a primitive) and (T is 4-bytes or smaller) and (LOGICAL_WARP_THREADS is a power-of-two)
-        POLICY = ((CUB_PTX_ARCH >= 300) && Traits<T>::PRIMITIVE && (sizeof(T) <= 4) && POW_OF_TWO) ?
-            SHFL_REDUCE :
-            SMEM_REDUCE,
     };
+
+    /// Use SHFL_REDUCE if (architecture is >= SM30) and (T is a primitive) and (T is 4-bytes or smaller) and (LOGICAL_WARP_THREADS is a power-of-two)
+    static const WarpReducePolicy POLICY = ((CUB_PTX_ARCH >= 300) && Traits<T>::PRIMITIVE && (sizeof(T) <= 4) && POW_OF_TWO) ?
+                                            SHFL_REDUCE :
+                                            SMEM_REDUCE;
 
 
     #ifndef DOXYGEN_SHOULD_SKIP_THIS    // Do not document
 
 
+    /******************************************************************************
+     * Algorithmic variants
+     ******************************************************************************/
+
+    /// Prototypical algorithmic variant
+    template <int _ALGORITHM, int DUMMY = 0>
+    struct WarpReduceInternal;
+
+
     /**
-     * WarpReduce specialized for SHFL_REDUCE variant
+     * SHFL_REDUCE algorithmic variant
      */
-    template <int POLICY, int DUMMY = 0>
-    struct WarpReduceInternal
+    template <int DUMMY>
+    struct WarpReduceInternal<SHFL_REDUCE, DUMMY>
     {
         /// Constants
         enum
@@ -188,7 +195,7 @@ private:
         /// Shared memory storage layout type
         typedef NullType SmemStorage;
 
-        /// Reduction (specialized for unsigned int)
+        /// Summation (specialized for unsigned int)
         template <
             bool    FULL_TILE,
             int     VALID_PER_LANE>
@@ -236,7 +243,7 @@ private:
         }
 
 
-        /// Reduction (specialized for float)
+        /// Summation (specialized for float)
         template <
             bool    FULL_TILE,
             int     VALID_PER_LANE>
@@ -283,7 +290,7 @@ private:
             return input;
         }
 
-        /// Summation
+        /// Summation (generic)
         template <
             bool        FULL_TILE,
             int         VALID_PER_LANE,
@@ -302,7 +309,7 @@ private:
             return output;
         }
 
-        /// Reduction
+        /// Reduction (generic)
         template <
             bool            FULL_TILE,
             int             VALID_PER_LANE,
@@ -369,7 +376,7 @@ private:
 
 
     /**
-     * WarpReduce specialized for SMEM_REDUCE
+     * SMEM_REDUCE algorithmic variant
      */
     template <int DUMMY>
     struct WarpReduceInternal<SMEM_REDUCE, DUMMY>
@@ -452,18 +459,14 @@ private:
     };
 
 
-    #endif // DOXYGEN_SHOULD_SKIP_THIS
+public:
 
     typedef WarpReduceInternal<POLICY> Internal;
 
-    /// Shared memory storage layout type for WarpReduce
-    typedef typename Internal::SmemStorage _SmemStorage;
-
-
-public:
+#endif // DOXYGEN_SHOULD_SKIP_THIS
 
     /// \smemstorage{WarpReduce}
-    typedef _SmemStorage SmemStorage;
+    typedef typename Internal::SmemStorage SmemStorage;
 
 
     /******************************************************************//**

@@ -469,15 +469,17 @@ void Test(
 
     // Copy out and display results
     printf("\tScan results: ");
-    AssertEquals(0, CompareDeviceResults(h_reference, d_out, TILE_SIZE, g_verbose, g_verbose));
-    printf("\n");
+    int compare = CompareDeviceResults(h_reference, d_out, TILE_SIZE, g_verbose, g_verbose);
+    printf("%s\n", compare ? "FAIL" : "PASS");
+    AssertEquals(0, compare);
 
     // Copy out and display aggregate
     if ((TEST_MODE == AGGREGATE) || (TEST_MODE == PREFIX_AGGREGATE))
     {
         printf("\tScan aggregate: ");
-        AssertEquals(0, CompareDeviceResults(&aggregate, d_out + TILE_SIZE, 1, g_verbose, g_verbose));
-        printf("\n");
+        compare = CompareDeviceResults(&aggregate, d_out + TILE_SIZE, 1, g_verbose, g_verbose);
+        printf("%s\n", compare ? "FAIL" : "PASS");
+        AssertEquals(0, compare);
     }
 
     // Cleanup
@@ -507,7 +509,7 @@ void Test(
     const char  *type_string)
 {
     Test<BLOCK_THREADS, ITEMS_PER_THREAD, TEST_MODE, BLOCK_SCAN_RAKING>(gen_mode, scan_op, identity, prefix, type_string);
-    Test<BLOCK_THREADS, ITEMS_PER_THREAD, TEST_MODE, BLOCK_SCAN_WARPSCANS>(gen_mode, scan_op, identity, prefix, type_string);
+    Test<BLOCK_THREADS, ITEMS_PER_THREAD, TEST_MODE, BLOCK_SCAN_WARP_SCANS>(gen_mode, scan_op, identity, prefix, type_string);
 }
 
 
@@ -630,7 +632,7 @@ int main(int argc, char** argv)
     {
         // A few tests (for visually verifying basic codegen during SASS-dump when commenting the battery the battery tests below)
 
-        Test<128, 4, BASIC, BLOCK_SCAN_WARPSCANS>(UNIFORM, Sum<int>(), int(0), int(10), CUB_TYPE_STRING(Sum<int));
+        Test<128, 4, BASIC, BLOCK_SCAN_WARP_SCANS>(UNIFORM, Sum<int>(), int(0), int(10), CUB_TYPE_STRING(Sum<int));
         Test<128, 4, BASIC, BLOCK_SCAN_RAKING>(UNIFORM, Sum<int>(), int(0), int(10), CUB_TYPE_STRING(Sum<int));
 
         TestFoo prefix = TestFoo::MakeTestFoo(17, 21, 32, 85);
