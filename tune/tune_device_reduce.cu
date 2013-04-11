@@ -329,7 +329,7 @@ struct Schmoo
         CubDebugExit(cudaDeviceSynchronize());
 
         // Copy out and display results
-        int correct = CompareDeviceResults(h_reference, d_out, 1, true, false);
+        int compare = CompareDeviceResults(h_reference, d_out, 1, true, false);
 
         // Performance
         GpuTimer gpu_timer;
@@ -372,7 +372,7 @@ struct Schmoo
             fflush(stdout);
         }
 
-        AssertEquals(0, correct);
+        AssertEquals(0, compare);
     }
 
 
@@ -508,7 +508,7 @@ struct Schmoo
         CubDebugExit(cudaDeviceSynchronize());
 
         // Copy out and display results
-        int correct = CompareDeviceResults(h_reference, d_out, 1, true, false);
+        int compare = CompareDeviceResults(h_reference, d_out, 1, true, false);
 
         // Performance
         GpuTimer gpu_timer;
@@ -544,7 +544,7 @@ struct Schmoo
             fflush(stdout);
         }
 
-        AssertEquals(0, correct);
+        AssertEquals(0, compare);
     }
 
 
