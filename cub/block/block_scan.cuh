@@ -86,14 +86,14 @@ enum BlockScanAlgorithm
      *
      * \par
      * \image html block_scan_warpscans.png
-     * <div class="centercaption">\p BLOCK_SCAN_WARPSCANS data flow for a hypothetical 16-thread threadblock and 4-thread raking warp.</div>
+     * <div class="centercaption">\p BLOCK_SCAN_WARP_SCANS data flow for a hypothetical 16-thread threadblock and 4-thread raking warp.</div>
      *
      * \par Performance Considerations
      * - Although this variant may suffer lower overall throughput across the
      *   GPU because due to a heavy reliance on inefficient warpscans, it can
      *   often provide lower turnaround latencies when the GPU is under-occupied.
      */
-    BLOCK_SCAN_WARPSCANS,
+    BLOCK_SCAN_WARP_SCANS,
 };
 
 
@@ -134,7 +134,7 @@ enum BlockScanAlgorithm
  * \par Algorithm
  * BlockScan can be (optionally) configured to use different algorithms:
  *   -# <b>cub::BLOCK_SCAN_RAKING</b>.  An efficient "raking reduce-then-scan" prefix scan algorithm. [More...](\ref cub::BlockScanAlgorithm)
- *   -# <b>cub::BLOCK_SCAN_WARPSCANS</b>.  A quick "tiled warpscans" prefix scan algorithm. [More...](\ref cub::BlockScanAlgorithm)
+ *   -# <b>cub::BLOCK_SCAN_WARP_SCANS</b>.  A quick "tiled warpscans" prefix scan algorithm. [More...](\ref cub::BlockScanAlgorithm)
  *
  * \par Usage Considerations
  * - Supports non-commutative scan operators
@@ -155,7 +155,7 @@ enum BlockScanAlgorithm
  *   - Basic scan variants that don't require scalar inputs and outputs (e.g., \p block_prefix_op and \p block_aggregate)
  *   - \p T is a built-in C++ primitive or CUDA vector type (e.g., \p short, \p int2, \p double, \p float2, etc.)
  *   - \p BLOCK_THREADS is a multiple of the architecture's warp size
- * - See cub::BlockScanAlgorithm for more performance details regarding algorithmic alternatives
+ * - See cub::BlockScanAlgorithm for performance details regarding algorithmic alternatives
  *
  * \par Examples
  * <em>Example 1.</em> Perform a simple exclusive prefix sum of 512 integer keys that
@@ -234,23 +234,39 @@ class BlockScan
 {
 private:
 
-    enum
-    {
-        /// Ensure the parameterization meets the requirements of the specified algorithm
-        SAFE_ALGORITHM =
-            ((ALGORITHM == BLOCK_SCAN_WARPSCANS) && (BLOCK_THREADS % PtxArchProps::WARP_THREADS != 0)) ?    // BLOCK_SCAN_WARPSCANS policy cannot be used with threadblock sizes not a multiple of the architectural warp size
-                BLOCK_SCAN_RAKING :
-                ALGORITHM
-    };
+    /******************************************************************************
+     * Constants
+     ******************************************************************************/
+
+    /**
+     * Ensure the template parameterization meets the requirements of the
+     * specified algorithm. Currently, the BLOCK_SCAN_WARP_SCANS policy
+     * cannot be used with threadblock sizes not a multiple of the
+     * architectural warp size.
+     */
+    static const BlockScanAlgorithm SAFE_ALGORITHM =
+        ((ALGORITHM == BLOCK_SCAN_WARP_SCANS) && (BLOCK_THREADS % PtxArchProps::WARP_THREADS != 0)) ?
+            BLOCK_SCAN_RAKING :
+            ALGORITHM;
 
 
     #ifndef DOXYGEN_SHOULD_SKIP_THIS    // Do not document
 
+
+    /******************************************************************************
+     * Algorithmic variants
+     ******************************************************************************/
+
+    /// Prototypical algorithmic variant
+    template <BlockScanAlgorithm _ALGORITHM, int DUMMY = 0>
+    struct BlockScanInternal;
+
+
     /**
-     * Warpscan specialized for BLOCK_SCAN_RAKING variant
+     * BLOCK_SCAN_RAKING algorithmic variant
      */
-    template <int _ALGORITHM, int DUMMY = 0>
-    struct BlockScanInternal
+    template <int DUMMY>
+    struct BlockScanInternal<BLOCK_SCAN_RAKING, DUMMY>
     {
         /// Layout type for padded threadblock raking grid
         typedef BlockRakingLayout<T, BLOCK_THREADS> BlockRakingLayout;
@@ -271,7 +287,7 @@ private:
             WARP_SYNCHRONOUS = (BLOCK_THREADS == RAKING_THREADS),
         };
 
-        ///  Raking warp-scan utility type
+        ///  WarpScan utility type
         typedef WarpScan<T, 1, RAKING_THREADS> WarpScan;
 
         /// Shared memory storage layout type
@@ -350,8 +366,8 @@ private:
 
         /// Computes an exclusive threadblock-wide prefix scan using the specified binary \p scan_op functor.  Each thread contributes one input element.  The call-back functor \p block_prefix_op is invoked to provide the "seed" value that logically prefixes the threadblock's scan inputs.  The inclusive threadblock-wide \p block_aggregate of all inputs is computed for <em>thread</em><sub>0</sub>.
         template <
-        typename ScanOp,
-        typename BlockPrefixOp>
+            typename        ScanOp,
+            typename        BlockPrefixOp>
         static __device__ __forceinline__ void ExclusiveScan(
             SmemStorage     &smem_storage,                  ///< [in] Shared reference to opaque SmemStorage layout
             T               input,                          ///< [in] Calling thread's input item
@@ -941,12 +957,12 @@ private:
 
 
     /**
-     * Warpscan specialized for BLOCK_SCAN_WARPSCANS variant
+     * BLOCK_SCAN_WARP_SCANS algorithmic variant
      *
      * Can only be used when BLOCK_THREADS is a multiple of the architecture's warp size
      */
     template <int DUMMY>
-    struct BlockScanInternal<BLOCK_SCAN_WARPSCANS, DUMMY>
+    struct BlockScanInternal<BLOCK_SCAN_WARP_SCANS, DUMMY>
     {
         /// Constants
         enum
@@ -955,7 +971,7 @@ private:
             WARPS = (BLOCK_THREADS + PtxArchProps::WARP_THREADS - 1) / PtxArchProps::WARP_THREADS,
         };
 
-        ///  Raking warp-scan utility type
+        ///  WarpScan utility type
         typedef WarpScan<T, WARPS, PtxArchProps::WARP_THREADS> WarpScan;
 
         /// Shared memory storage layout type
@@ -963,15 +979,15 @@ private:
         {
             typename WarpScan::SmemStorage      warp_scan;                  ///< Buffer for warp-synchronous scan
             T                                   warp_aggregates[WARPS];     ///< Shared totals from each warp-synchronous scan
-            T                                   block_prefix;                 ///< Shared prefix for the entire threadblock
+            T                                   block_prefix;               ///< Shared prefix for the entire threadblock
         };
 
 
-        /// Update outputs and block_aggregate with warp-wide aggregates from lane-0s
+        /// Update the calling thread's partial reduction with the warp-wide aggregates from preceeding warps.  Also returns block-wide aggregate in <em>thread</em><sub>0</sub>.
         template <typename ScanOp>
         static __device__ __forceinline__ void PrefixUpdate(
             SmemStorage     &smem_storage,      ///< [in] Shared reference to opaque SmemStorage layout
-            T               &output,            ///< [out] Calling thread's output items
+            T               &partial,           ///< [out] The calling thread's partial reduction
             ScanOp          scan_op,            ///< [in] Binary scan operator
             T               warp_aggregate,     ///< [in] <b>[<em>lane</em><sub>0</sub>s only]</b> Warp-wide aggregate reduction of input items
             T               &block_aggregate)   ///< [out] <b>[<em>thread</em><sub>0</sub> only]</b> threadblock-wide aggregate reduction of input items
@@ -993,7 +1009,7 @@ private:
             {
                 if (warp_id > PREFIX_WARP)
                 {
-                    output = scan_op(smem_storage.warp_aggregates[PREFIX_WARP], output);
+                    partial = scan_op(smem_storage.warp_aggregates[PREFIX_WARP], partial);
                 }
             }
 

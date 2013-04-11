@@ -205,11 +205,11 @@ template <
     int         LOGICAL_WARP_THREADS = PtxArchProps::WARP_THREADS>
 class WarpScan
 {
-    //---------------------------------------------------------------------
-    // Constants and typedefs
-    //---------------------------------------------------------------------
-
 private:
+
+     /******************************************************************************
+      * Constants and typedefs
+      ******************************************************************************/
 
     /// WarpScan algorithmic variants
     enum WarpScanPolicy
@@ -222,22 +222,33 @@ private:
     enum
     {
         POW_OF_TWO = ((LOGICAL_WARP_THREADS & (LOGICAL_WARP_THREADS - 1)) == 0),
-
-        /// Use SHFL_SCAN if (architecture is >= SM30) and (T is a primitive) and (T is 4-bytes or smaller) and (LOGICAL_WARP_THREADS is a power-of-two)
-        POLICY = ((CUB_PTX_ARCH >= 300) && Traits<T>::PRIMITIVE && (sizeof(T) <= 4) && POW_OF_TWO) ?
-            SHFL_SCAN :
-            SMEM_SCAN,
     };
+
+
+    /// Use SHFL_SCAN if (architecture is >= SM30) and (T is a primitive) and (T is 4-bytes or smaller) and (LOGICAL_WARP_THREADS is a power-of-two)
+    static const WarpScanPolicy POLICY = ((CUB_PTX_ARCH >= 300) && Traits<T>::PRIMITIVE && (sizeof(T) <= 4) && POW_OF_TWO) ?
+                                            SHFL_SCAN :
+                                            SMEM_SCAN;
+
 
 
     #ifndef DOXYGEN_SHOULD_SKIP_THIS    // Do not document
 
 
+    /******************************************************************************
+     * Algorithmic variants
+     ******************************************************************************/
+
+    /// Prototypical algorithmic variant
+    template <int _ALGORITHM, int DUMMY = 0>
+    struct WarpScanInternal;
+
+
     /**
-     * Warpscan specialized for SHFL_SCAN variant
+     * SHFL_SCAN algorithmic variant
      */
-    template <int POLICY, int DUMMY = 0>
-    struct WarpScanInternal
+    template <int DUMMY>
+    struct WarpScanInternal<SHFL_SCAN, DUMMY>
     {
         /// Constants
         enum
@@ -486,7 +497,7 @@ private:
 
 
     /**
-     * Warpscan specialized for SMEM_SCAN
+     * SMEM_SCAN algorithmic variant
      */
     template <int DUMMY>
     struct WarpScanInternal<SMEM_SCAN, DUMMY>
