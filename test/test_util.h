@@ -45,6 +45,7 @@
 #include <vector>
 #include <sstream>
 #include <iostream>
+#include <limits>
 
 #include "cub.cuh"
 
@@ -690,6 +691,48 @@ int CompareResults(T* computed, S* reference, SizeT len)
 
     printf("CORRECT");
     return 0;
+}
+
+/**
+ * Compares the equivalence of two arrays
+ */
+template <typename SizeT>
+int CompareResults(float* computed, float* reference, SizeT len)
+{
+    int retval = 0;
+    for (SizeT i = 0; i < len; i++)
+    {
+	float difference = std::abs(computed[i]-reference[i]);
+        if(difference > std::numeric_limits<float>::epsilon())
+        {
+            printf("INCORRECT ([%lu,%e]: %f != %f) \n", i, difference, computed[i], reference[i]);
+            return 1;
+        }
+    }
+
+    if (!retval) printf("CORRECT\n");
+    return retval;
+}
+
+/**
+ * Compares the equivalence of two arrays
+ */
+template <typename SizeT>
+int CompareResults(double* computed, double* reference, SizeT len)
+{
+    int retval = 0;
+    for (SizeT i = 0; i < len; i++)
+    {
+	double difference = std::abs(computed[i]-reference[i]);
+        if(difference > std::numeric_limits<double>::epsilon())
+        {
+            printf("INCORRECT ([%lu,%le]: %lf != %lf) \n", i, difference, computed[i], reference[i]);
+            return 1;
+        }
+    }
+
+    if (!retval) printf("CORRECT\n");
+    return retval;
 }
 
 
