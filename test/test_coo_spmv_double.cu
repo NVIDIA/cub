@@ -1093,77 +1093,6 @@ __global__ void CooFinalizeKernel(
 
 
 
-//---------------------------------------------------------------------
-// Host subroutines
-//---------------------------------------------------------------------
-
-/**
- * Compares the equivalence of two arrays
- */
-template <typename SizeT>
-int CompareResults(float* computed, float* reference, SizeT len)
-{
-    int retval = 0;
-    for (SizeT i = 0; i < len; i++)
-    {
-        if (computed[i] > 0.0)
-        {
-            if ((computed[i] * 1.001 < reference[i]) ||
-                (computed[i] * 0.999 > reference[i]))
-            {
-                printf("INCORRECT ([%d]: %f != %f) ", i, computed[i], reference[i]);
-                return 1;
-            }
-        }
-        else
-        {
-            if ((computed[i] * 1.001 > reference[i]) ||
-                (computed[i] * 0.999 < reference[i]))
-            {
-                printf("INCORRECT ([%d]: %f != %f) ", i, computed[i], reference[i]);
-                return 1;
-            }
-        }
-    }
-
-    if (!retval) printf("CORRECT");
-    return retval;
-}
-
-/**
- * Compares the equivalence of two arrays
- */
-template <typename SizeT>
-int CompareResults(double* computed, double* reference, SizeT len)
-{
-    int retval = 0;
-    for (SizeT i = 0; i < len; i++)
-    {
-        if (computed[i] > 0.0)
-        {
-            if ((computed[i] * 1.001 < reference[i]) ||
-                (computed[i] * 0.999 > reference[i]))
-            {
-                printf("INCORRECT ([%d]: %f != %f) ", i, computed[i], reference[i]);
-                return 1;
-            }
-        }
-        else
-        {
-            if ((computed[i] * 1.001 > reference[i]) ||
-                (computed[i] * 0.999 < reference[i]))
-            {
-                printf("INCORRECT ([%d]: %f != %f) ", i, computed[i], reference[i]);
-                return 1;
-            }
-        }
-    }
-
-    if (!retval) printf("CORRECT");
-    return retval;
-}
-
-
 /**
  * Simple test of device
  */
@@ -1430,7 +1359,7 @@ int main(int argc, char** argv)
         exit(1);
     }
     timer.Stop();
-    printf("Done (%.3fs). %d non-zeros, %d rows, %d columns\n",
+    printf("Done (%.3fs). %lu non-zeros, %d rows, %d columns\n",
         timer.ElapsedMillis() / 1000.0,
         coo_graph.coo_tuples.size(),
         coo_graph.row_dim,
