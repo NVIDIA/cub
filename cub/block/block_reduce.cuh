@@ -222,16 +222,11 @@ private:
      * Algorithmic variants
      ******************************************************************************/
 
-    /// Prototypical algorithmic variant
-    template <BlockReduceAlgorithm _ALGORITHM, int DUMMY = 0>
-    struct BlockReduceInternal;
-
-
     /**
      * BLOCK_REDUCE_RAKING algorithmic variant
      */
-    template <int DUMMY>
-    struct BlockReduceInternal<BLOCK_REDUCE_RAKING, DUMMY>
+    template <BlockReduceAlgorithm _ALGORITHM, int DUMMY = 0>
+    struct BlockReduceInternal
     {
         /// Layout type for padded threadblock raking grid
         typedef BlockRakingLayout<T, BLOCK_THREADS, 1> BlockRakingLayout;
@@ -407,11 +402,14 @@ private:
 
 
         /// Returns block-wide aggregate in <em>thread</em><sub>0</sub>.
-        template <typename ReductionOp>
-        static __device__ __forceinline__ T PrefixUpdate(
-            SmemStorage     &smem_storage,      ///< [in] Shared reference to opaque SmemStorage layout
-            ReductionOp     reduction_op,       ///< [in] Binary scan operator
-            T               warp_aggregate)     ///< [in] <b>[<em>lane</em><sub>0</sub>s only]</b> Warp-wide aggregate reduction of input items
+        template <
+            int FULL_TILE,
+            typename ReductionOp>
+        static __device__ __forceinline__ T ApplyWarpAggregates(
+            SmemStorage         &smem_storage,      ///< [in] Shared reference to opaque SmemStorage layout
+            ReductionOp         reduction_op,       ///< [in] Binary scan operator
+            T                   warp_aggregate,     ///< [in] <b>[<em>lane</em><sub>0</sub>s only]</b> Warp-wide aggregate reduction of input items
+            const unsigned int  &num_valid)         ///< [in] Number of valid elements (may be less than BLOCK_THREADS)
         {
             // Warp, thread-lane-IDs
             unsigned int warp_id = (WARPS == 1) ? 0 : (threadIdx.x / PtxArchProps::WARP_THREADS);
@@ -431,7 +429,10 @@ private:
                 #pragma unroll
                 for (int SUCCESSOR_WARP = 1; SUCCESSOR_WARP < WARPS; SUCCESSOR_WARP++)
                 {
-                    warp_aggregate = reduction_op(warp_aggregate, smem_storage.warp_aggregates[SUCCESSOR_WARP]);
+                    if (FULL_TILE || (SUCCESSOR_WARP * PtxArchProps::WARP_THREADS < num_valid))
+                    {
+                        warp_aggregate = reduction_op(warp_aggregate, smem_storage.warp_aggregates[SUCCESSOR_WARP]);
+                    }
                 }
             }
 
@@ -462,7 +463,7 @@ private:
                 warp_num_valid);
 
             // Update outputs and block_aggregate with warp-wide aggregates from lane-0s
-            return PrefixUpdate(smem_storage, reduction_op, warp_aggregate);
+            return ApplyWarpAggregates<FULL_TILE>(smem_storage, reduction_op, warp_aggregate, num_valid);
         }
 
 
@@ -472,7 +473,7 @@ private:
             typename            ReductionOp>
         static __device__ __forceinline__ T Reduce(
             SmemStorage         &smem_storage,      ///< [in] Shared reference to opaque SmemStorage layout
-            T                   input,            ///< [in] Calling thread's input partial reductions
+            T                   input,              ///< [in] Calling thread's input partial reductions
             const unsigned int  &num_valid,         ///< [in] Number of valid elements (may be less than BLOCK_THREADS)
             ReductionOp         reduction_op)       ///< [in] Binary reduction operator
         {
@@ -492,7 +493,7 @@ private:
                 reduction_op);
 
             // Update outputs and block_aggregate with warp-wide aggregates from lane-0s
-            return PrefixUpdate(smem_storage, reduction_op, warp_aggregate);
+            return ApplyWarpAggregates<FULL_TILE>(smem_storage, reduction_op, warp_aggregate, num_valid);
         }
 
     };

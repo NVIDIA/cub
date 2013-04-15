@@ -165,16 +165,11 @@ private:
      * Algorithmic variants
      ******************************************************************************/
 
-    /// Prototypical algorithmic variant
-    template <int _ALGORITHM, int DUMMY = 0>
-    struct WarpReduceInternal;
-
-
     /**
      * SHFL_REDUCE algorithmic variant
      */
-    template <int DUMMY>
-    struct WarpReduceInternal<SHFL_REDUCE, DUMMY>
+    template <int _ALGORITHM, int DUMMY = 0>
+    struct WarpReduceInternal
     {
         /// Constants
         enum

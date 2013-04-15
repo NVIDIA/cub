@@ -257,16 +257,11 @@ private:
      * Algorithmic variants
      ******************************************************************************/
 
-    /// Prototypical algorithmic variant
-    template <BlockScanAlgorithm _ALGORITHM, int DUMMY = 0>
-    struct BlockScanInternal;
-
-
     /**
      * BLOCK_SCAN_RAKING algorithmic variant
      */
-    template <int DUMMY>
-    struct BlockScanInternal<BLOCK_SCAN_RAKING, DUMMY>
+    template <BlockScanAlgorithm _ALGORITHM, int DUMMY = 0>
+    struct BlockScanInternal
     {
         /// Layout type for padded threadblock raking grid
         typedef BlockRakingLayout<T, BLOCK_THREADS> BlockRakingLayout;
@@ -985,7 +980,7 @@ private:
 
         /// Update the calling thread's partial reduction with the warp-wide aggregates from preceeding warps.  Also returns block-wide aggregate in <em>thread</em><sub>0</sub>.
         template <typename ScanOp>
-        static __device__ __forceinline__ void PrefixUpdate(
+        static __device__ __forceinline__ void ApplyWarpAggregates(
             SmemStorage     &smem_storage,      ///< [in] Shared reference to opaque SmemStorage layout
             T               &partial,           ///< [out] The calling thread's partial reduction
             ScanOp          scan_op,            ///< [in] Binary scan operator
@@ -1040,7 +1035,7 @@ private:
             WarpScan::ExclusiveScan(smem_storage.warp_scan, input, output, identity, scan_op, warp_aggregate);
 
             // Update outputs and block_aggregate with warp-wide aggregates from lane-0s
-            PrefixUpdate(smem_storage, output, scan_op, warp_aggregate, block_aggregate);
+            ApplyWarpAggregates(smem_storage, output, scan_op, warp_aggregate, block_aggregate);
         }
 
 
@@ -1170,7 +1165,7 @@ private:
             WarpScan::ExclusiveSum(smem_storage.warp_scan, input, output, warp_aggregate);
 
             // Update outputs and block_aggregate with warp-wide aggregates from lane-0s
-            PrefixUpdate(smem_storage, output, Sum<T>(), warp_aggregate, block_aggregate);
+            ApplyWarpAggregates(smem_storage, output, Sum<T>(), warp_aggregate, block_aggregate);
         }
 
 
@@ -1212,7 +1207,7 @@ private:
             WarpScan::InclusiveScan(smem_storage.warp_scan, input, output, scan_op, warp_aggregate);
 
             // Update outputs and block_aggregate with warp-wide aggregates from lane-0s
-            PrefixUpdate(smem_storage, output, scan_op, warp_aggregate, block_aggregate);
+            ApplyWarpAggregates(smem_storage, output, scan_op, warp_aggregate, block_aggregate);
 
         }
 
@@ -1255,7 +1250,7 @@ private:
             WarpScan::InclusiveSum(smem_storage.warp_scan, input, output, warp_aggregate);
 
             // Update outputs and block_aggregate with warp-wide aggregates from lane-0s
-            PrefixUpdate(smem_storage, output, Sum<T>(), warp_aggregate, block_aggregate);
+            ApplyWarpAggregates(smem_storage, output, Sum<T>(), warp_aggregate, block_aggregate);
         }
 
 
