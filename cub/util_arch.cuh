@@ -72,9 +72,11 @@ namespace cub {
 
 
 /// Whether or not the source targeted by the active compiler pass is allowed to  invoke device kernels or methods from the CUDA runtime API.
-#define CUB_CNP_ENABLED \
-    \
-    ((CUB_PTX_ARCH == 0) || ((CUB_PTX_ARCH >= 350) && defined(__BUILDING_CNPRT__)))
+#if (!defined(__CUDA_ARCH__) || (__CUDA_ARCH__ >= 350))
+#define CUB_CNP_ENABLED 1
+#else
+#define CUB_CNP_ENABLED 0
+#endif
 
 
 /// Execution space for destructors

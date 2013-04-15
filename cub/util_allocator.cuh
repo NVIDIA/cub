@@ -72,23 +72,9 @@ public:
 
     /**
      * Provides a suitable allocation of device memory for the given size
-     * on the specified device
-     */
-    __host__ __device__ virtual cudaError_t DeviceAllocate(void** d_ptr, size_t bytes, DeviceOrdinal device) = 0;
-
-
-    /**
-     * Provides a suitable allocation of device memory for the given size
      * on the current device
      */
     __host__ __device__ virtual cudaError_t DeviceAllocate(void** d_ptr, size_t bytes) = 0;
-
-
-    /**
-     * Frees a live allocation of device memory on the specified device, returning it to
-     * the allocator
-     */
-    __host__ __device__ virtual cudaError_t DeviceFree(void* d_ptr, DeviceOrdinal device) = 0;
 
 
     /**
@@ -336,7 +322,7 @@ struct CachingDeviceAllocator : DeviceAllocator
     {
     #ifdef __CUDA_ARCH__
         // Caching functionality only defined on host
-        return cudaErrorInvalidConfiguration;
+        return CubDebug(cudaErrorInvalidConfiguration);
     #else
 
         // Lock
@@ -366,7 +352,7 @@ struct CachingDeviceAllocator : DeviceAllocator
     {
     #ifdef __CUDA_ARCH__
         // Caching functionality only defined on host
-        return cudaErrorInvalidConfiguration;
+        return CubDebug(cudaErrorInvalidConfiguration);
     #else
 
         bool locked                     = false;
@@ -476,7 +462,7 @@ struct CachingDeviceAllocator : DeviceAllocator
     {
     #ifdef __CUDA_ARCH__
         // Caching functionality only defined on host
-        return cudaErrorInvalidConfiguration;
+        return CubDebug(cudaErrorInvalidConfiguration);
     #else
         cudaError_t error = cudaSuccess;
         do {
@@ -501,7 +487,7 @@ struct CachingDeviceAllocator : DeviceAllocator
     {
     #ifdef __CUDA_ARCH__
         // Caching functionality only defined on host
-        return cudaErrorInvalidConfiguration;
+        return CubDebug(cudaErrorInvalidConfiguration);
     #else
 
         bool locked                     = false;
@@ -588,7 +574,7 @@ struct CachingDeviceAllocator : DeviceAllocator
     {
     #ifdef __CUDA_ARCH__
         // Caching functionality only defined on host
-        return cudaErrorInvalidConfiguration;
+        return CubDebug(cudaErrorInvalidConfiguration);
     #else
 
         DeviceOrdinal current_device;
@@ -612,7 +598,7 @@ struct CachingDeviceAllocator : DeviceAllocator
     {
     #ifdef __CUDA_ARCH__
         // Caching functionality only defined on host
-        return cudaErrorInvalidConfiguration;
+        return CubDebug(cudaErrorInvalidConfiguration);
     #else
 
         cudaError_t error                   = cudaSuccess;
@@ -703,72 +689,6 @@ struct PassThruDeviceAllocator : DeviceAllocator
 
     /**
      * Provides a suitable allocation of device memory for the given size
-     * on the specified GPU
-     */
-    __host__ __device__ __forceinline__ cudaError_t DeviceAllocate(
-        void**          d_ptr,
-        size_t          bytes,
-        DeviceOrdinal   gpu)
-    {
-    #ifndef __CUDA_ARCH__
-
-        // Host
-        cudaError_t error = cudaSuccess;
-        DeviceOrdinal entrypoint_gpu = INVALID_DEVICE_ORDINAL;
-
-        do
-        {
-            // Set to specified GPU
-            if (CubDebug(error = cudaGetDevice(&entrypoint_gpu))) break;
-            if (CubDebug(error = cudaSetDevice(gpu))) break;
-
-            // Allocate device memory
-            if (CubDebug(error = cudaMalloc(&d_ptr, bytes))) break;
-
-        } while (0);
-
-        // Attempt to revert back to entry-point GPU if necessary
-        if (entrypoint_gpu != INVALID_DEVICE_ORDINAL)
-        {
-            CubDebug(error = cudaSetDevice(entrypoint_gpu));
-        }
-
-        return error;
-
-    #elif CUB_CNP_ENABLED
-
-        // Nested parallelism
-        cudaError_t error = cudaSuccess;
-        DeviceOrdinal entrypoint_device = INVALID_DEVICE_ORDINAL;
-
-        do
-        {
-            // We can only allocate on the device we're currently executing on
-            if (CubDebug(error = cudaGetDevice(&entrypoint_device))) break;
-            if (entrypoint_device != device)
-            {
-                error = cudaErrorInvalidDevice;
-                break;
-            }
-
-            // Allocate device memory
-            if (CubDebug(error = cudaMalloc(&d_ptr, bytes))) break;
-
-        } while (0);
-
-        return error;
-
-    #else
-
-        // CUDA API is not supported on this device
-        return cudaErrorInvalidConfiguration;
-
-    #endif
-    }
-
-
-    /**
-     * Provides a suitable allocation of device memory for the given size
      * on the current GPU
      */
     __host__ __device__ __forceinline__ cudaError_t DeviceAllocate(
@@ -776,78 +696,10 @@ struct PassThruDeviceAllocator : DeviceAllocator
         size_t bytes)
     {
     #if CUB_CNP_ENABLED
-
-        return CubDebug(cudaMalloc(&d_ptr, bytes));
-
+        return CubDebug(cudaMalloc(d_ptr, bytes));
     #else
-
         // CUDA API is not supported on this device
-        return cudaErrorInvalidConfiguration;
-
-    #endif
-    }
-
-
-    /**
-     * Frees a live allocation of GPU memory on the specified GPU, returning it to
-     * the allocator
-     */
-    __host__ __device__ __forceinline__ cudaError_t DeviceFree(
-        void* d_ptr,
-        DeviceOrdinal gpu)
-    {
-    #ifndef __CUDA_ARCH__
-
-        // Use CUDA if no default allocator present
-        cudaError_t error = cudaSuccess;
-        DeviceOrdinal entrypoint_gpu = INVALID_DEVICE_ORDINAL;
-
-        do
-        {
-            // Set to specified GPU
-            if (CubDebug(error = cudaGetDevice(&entrypoint_gpu))) break;
-            if (CubDebug(error = cudaSetDevice(gpu))) break;
-
-            // Free device memory
-            if (CubDebug(error = cudaFree(d_ptr))) break;
-
-        } while (0);
-
-        // Attempt to revert back to entry-point GPU if necessary
-        if (entrypoint_gpu != INVALID_DEVICE_ORDINAL)
-        {
-            CubDebug(error = cudaSetDevice(entrypoint_gpu));
-        }
-
-        return error;
-
-    #elif CUB_CNP_ENABLED
-
-        // Nested parallelism
-        cudaError_t error = cudaSuccess;
-        DeviceOrdinal entrypoint_device = INVALID_DEVICE_ORDINAL;
-
-        do
-        {
-            // We can only allocate on the device we're currently executing on
-            if (CubDebug(error = cudaGetDevice(&entrypoint_device))) break;
-            if (entrypoint_device != device)
-            {
-                error = cudaErrorInvalidDevice;
-                break;
-            }
-
-            // Allocate device memory
-            if (CubDebug(error = cudaFree(&d_ptr))) break;
-
-        } while (0);
-
-        return error;
-
-    #else
-
-        // CUDA API is not supported on this device
-        return cudaErrorInvalidConfiguration;
+        return CubDebug(cudaErrorInvalidConfiguration);
 
     #endif
     }
@@ -861,14 +713,10 @@ struct PassThruDeviceAllocator : DeviceAllocator
         void* d_ptr)
     {
     #if !CUB_CNP_ENABLED
-
         // CUDA API is not supported on this device
-        return cudaErrorInvalidConfiguration;
-
+        return CubDebug(cudaErrorInvalidConfiguration);
     #else
-
         return CubDebug(cudaFree(&d_ptr));
-
     #endif
     }
 };
@@ -906,19 +754,12 @@ struct PassThruDeviceAllocator : DeviceAllocator
 
 
 /******************************************************************************
- * Default CUB allocation operations (shorthand for DefaultDeviceAllocator()->...)
+ * Default CUB allocation operations.
+ *
+ * These are simply shorthand for DefaultDeviceAllocator()->...
  ******************************************************************************/
 
 #ifndef DOXYGEN_SHOULD_SKIP_THIS    // Do not document
-
-/**
- * Provides a suitable allocation of device memory for the given size
- * on the specified device
- */
-__host__ __device__ __forceinline__ cudaError_t DeviceAllocate(void** d_ptr, size_t bytes, DeviceOrdinal device)
-{
-    return DefaultDeviceAllocator()->DeviceAllocate(d_ptr, bytes, device);
-}
 
 
 /**
@@ -928,16 +769,6 @@ __host__ __device__ __forceinline__ cudaError_t DeviceAllocate(void** d_ptr, siz
 __host__ __device__ __forceinline__ cudaError_t DeviceAllocate(void** d_ptr, size_t bytes)
 {
     return DefaultDeviceAllocator()->DeviceAllocate(d_ptr, bytes);
-}
-
-
-/**
- * Frees a live allocation of device memory on the specified device, returning it to
- * the allocator
- */
-__host__ __device__ __forceinline__ cudaError_t DeviceFree(void* d_ptr, DeviceOrdinal device)
-{
-    return DefaultDeviceAllocator()->DeviceFree(d_ptr, device);
 }
 
 

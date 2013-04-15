@@ -523,14 +523,13 @@ int main(int argc, char** argv)
     // Initialize device
     CubDebugExit(args.DeviceInit());
 
-//    if (quick)
+    if (quick)
     {
         // Quick test
         typedef int T;
-//        TestFullTile<BLOCK_REDUCE_RAKING, 128, 4, T>(UNIFORM, 1, Sum<T>(), CUB_TYPE_STRING(T));
-        TestFullTile<BLOCK_REDUCE_WARP_REDUCTIONS, 128, 4, T>(UNIFORM, 1, Sum<T>(), CUB_TYPE_STRING(T));
+        TestFullTile<BLOCK_REDUCE_RAKING, 128, 4, T>(UNIFORM, 1, Sum<T>(), CUB_TYPE_STRING(T));
     }
-/*    else
+    else
     {
         // primitives
         Test<char>(Sum<char>(), CUB_TYPE_STRING(char));
@@ -553,7 +552,7 @@ int main(int argc, char** argv)
         Test<TestFoo>(Sum<TestFoo>(), CUB_TYPE_STRING(TestFoo));
         Test<TestBar>(Sum<TestBar>(), CUB_TYPE_STRING(TestBar));
     }
-*/
+
     return 0;
 }
 
