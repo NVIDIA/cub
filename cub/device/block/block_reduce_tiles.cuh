@@ -58,6 +58,7 @@ template <
     int                     _BLOCK_THREADS,
     int                     _ITEMS_PER_THREAD,
     int                     _VECTOR_LOAD_LENGTH,
+    BlockReduceAlgorithm    _BLOCK_ALGORITHM,
     PtxLoadModifier         _LOAD_MODIFIER,
     GridMappingStrategy     _GRID_MAPPING>
 struct BlockReduceTilesPolicy
@@ -69,8 +70,9 @@ struct BlockReduceTilesPolicy
         VECTOR_LOAD_LENGTH  = _VECTOR_LOAD_LENGTH,
     };
 
-    static const GridMappingStrategy   GRID_MAPPING       = _GRID_MAPPING;
-    static const PtxLoadModifier       LOAD_MODIFIER      = _LOAD_MODIFIER;
+    static const BlockReduceAlgorithm  BLOCK_ALGORITHM      = _BLOCK_ALGORITHM;
+    static const GridMappingStrategy   GRID_MAPPING         = _GRID_MAPPING;
+    static const PtxLoadModifier       LOAD_MODIFIER        = _LOAD_MODIFIER;
 };
 
 
@@ -96,21 +98,17 @@ private:
     // Constants
     enum
     {
-        BLOCK_THREADS       = BlockReduceTilesPolicy::BLOCK_THREADS,
-        ITEMS_PER_THREAD    = BlockReduceTilesPolicy::ITEMS_PER_THREAD,
-        TILE_ITEMS          = BLOCK_THREADS * ITEMS_PER_THREAD,
+        // Number of items to be be processed to completion before the thread block terminates or obtains more work
+        TILE_ITEMS = BlockReduceTilesPolicy::BLOCK_THREADS * BlockReduceTilesPolicy::ITEMS_PER_THREAD,
 
         // Actual vector load length must evenly divide ITEMS_PER_THREAD
-        VECTOR_LOAD_LENGTH  = (ITEMS_PER_THREAD % BlockReduceTilesPolicy::VECTOR_LOAD_LENGTH == 0) ?
+        VECTOR_LOAD_LENGTH = (BlockReduceTilesPolicy::ITEMS_PER_THREAD % BlockReduceTilesPolicy::VECTOR_LOAD_LENGTH == 0) ?
                                 BlockReduceTilesPolicy::VECTOR_LOAD_LENGTH :
                                 1,
-
     };
 
-    static const PtxLoadModifier LOAD_MODIFIER      = BlockReduceTilesPolicy::LOAD_MODIFIER;
-
     // Parameterized BlockReduce primitive
-    typedef BlockReduce<T, BLOCK_THREADS> BlockReduceT;
+    typedef BlockReduce<T, BlockReduceTilesPolicy::BLOCK_THREADS, BlockReduceTilesPolicy::BLOCK_ALGORITHM> BlockReduceT;
 
     // Shared memory type for this threadblock
     struct _SmemStorage
@@ -149,14 +147,17 @@ private:
         ReductionOp             &reduction_op,
         T                       &thread_aggregate)
     {
-        T items[ITEMS_PER_THREAD];
+        T items[BlockReduceTilesPolicy::ITEMS_PER_THREAD];
 
+        // Load items in striped fashion
         BlockLoadDirectStriped(
             d_in + block_offset,
             items);
 
+        // Reduce items within each thread
         T partial = ThreadReduce(items, reduction_op);
 
+        // Update|assign the thread's running aggregate
         thread_aggregate = (FIRST_TILE) ?
             partial :
             reduction_op(thread_aggregate, partial);
@@ -183,30 +184,33 @@ private:
         ReductionOp             &reduction_op,
         T                       &thread_aggregate)
     {
-        if ((size_t(d_in) & (VECTOR_LOAD_LENGTH - 1)) == 0)
+        if ((VECTOR_LOAD_LENGTH > 1) && ((size_t(d_in) & (VECTOR_LOAD_LENGTH - 1)) == 0))
         {
-            T items[ITEMS_PER_THREAD];
+            T items[BlockReduceTilesPolicy::ITEMS_PER_THREAD];
 
             typedef typename VectorType<T, VECTOR_LOAD_LENGTH>::Type VectorT;
 
             // Alias items as an array of VectorT and load it in striped fashion
             BlockLoadDirectStriped(
                 reinterpret_cast<VectorT*>(d_in + block_offset),
-                reinterpret_cast<VectorT (&)[ITEMS_PER_THREAD / VECTOR_LOAD_LENGTH]>(items));
+                reinterpret_cast<VectorT (&)[BlockReduceTilesPolicy::ITEMS_PER_THREAD / VECTOR_LOAD_LENGTH]>(items));
 
             // Prevent hoisting
             __syncthreads();
 
+            // Reduce items within each thread
             T partial = ThreadReduce(items, reduction_op);
 
+            // Update|assign the thread's running aggregate
             thread_aggregate = (FIRST_TILE) ?
                 partial :
                 reduction_op(thread_aggregate, partial);
         }
         else
         {
-            T items[ITEMS_PER_THREAD];
+            T items[BlockReduceTilesPolicy::ITEMS_PER_THREAD];
 
+            // Load items in striped fashion
             BlockLoadDirectStriped(
                 d_in + block_offset,
                 items);
@@ -214,8 +218,10 @@ private:
             // Prevent hoisting
             __syncthreads();
 
+            // Reduce items within each thread
             T partial = ThreadReduce(items, reduction_op);
 
+            // Update|assign the thread's running aggregate
             thread_aggregate = (FIRST_TILE) ?
                 partial :
                 reduction_op(thread_aggregate, partial);
@@ -247,15 +253,15 @@ private:
 
         if ((FIRST_TILE) && (thread_offset < block_oob))
         {
-            thread_aggregate = ThreadLoad<LOAD_MODIFIER>(d_in + thread_offset);
-            thread_offset += BLOCK_THREADS;
+            thread_aggregate = ThreadLoad<BlockReduceTilesPolicy::LOAD_MODIFIER>(d_in + thread_offset);
+            thread_offset += BlockReduceTilesPolicy::BLOCK_THREADS;
         }
 
         while (thread_offset < block_oob)
         {
-            T item = ThreadLoad<LOAD_MODIFIER>(d_in + thread_offset);
+            T item = ThreadLoad<BlockReduceTilesPolicy::LOAD_MODIFIER>(d_in + thread_offset);
             thread_aggregate = reduction_op(thread_aggregate, item);
-            thread_offset += BLOCK_THREADS;
+            thread_offset += BlockReduceTilesPolicy::BLOCK_THREADS;
         }
     }
 

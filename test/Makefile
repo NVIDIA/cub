@@ -47,7 +47,8 @@ else
 endif
 
 ifeq (350, $(findstring 350, $(SM_ARCH)))
-    SM_TARGETS += -gencode=arch=compute_35,code=\"sm_35,compute_35\"
+    SM_TARGETS += -gencode=arch=compute_35,code=\"sm_35,compute_35\" 
+#    SM_TARGETS += -rdc=true -lcudadevrt
 endif
 ifeq (300, $(findstring 300, $(SM_ARCH)))
     SM_TARGETS += -gencode=arch=compute_30,code=\"sm_30,compute_30\"
@@ -119,10 +120,6 @@ endif
 
 ifeq ($(keep), 1)
 	NVCCFLAGS += -keep
-endif
-
-ifeq ($(cnp), 1)
-	NVCCFLAGS += -rdc=true -lcudadevrt
 endif
 
 

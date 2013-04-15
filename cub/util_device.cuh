@@ -169,7 +169,7 @@ public:
     #if !CUB_CNP_ENABLED
 
         // CUDA API calls not supported from this device
-        return cudaErrorInvalidConfiguration;
+        return CubDebug(cudaErrorInvalidConfiguration);
 
     #else
 
@@ -213,7 +213,7 @@ public:
     #if !CUB_CNP_ENABLED
 
         // CUDA API calls not supported from this device
-        return cudaErrorInvalidConfiguration;
+        return CubDebug(cudaErrorInvalidConfiguration);
 
     #else
 
@@ -243,7 +243,7 @@ public:
     #if !CUB_CNP_ENABLED
 
         // CUDA API calls not supported from this device
-        return cudaErrorInvalidConfiguration;
+        return CubDebug(cudaErrorInvalidConfiguration);
 
     #else
 
