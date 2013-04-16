@@ -406,8 +406,7 @@ struct DeviceReduce
         ReductionOp             reduction_op,
         cudaStream_t            stream = 0,
         bool                    stream_synchronous = false,
-        DeviceAllocator *device_allocator = NULL)
-//        DeviceAllocator         *device_allocator = DefaultDeviceAllocator())
+        DeviceAllocator         *device_allocator = DefaultDeviceAllocator())
     {
     #if !CUB_CNP_ENABLED
 
@@ -435,7 +434,9 @@ struct DeviceReduce
             if (CubDebug(error = cudaDeviceGetAttribute (&sm_count, cudaDevAttrMultiProcessorCount, device_ordinal))) break;
 
             // Rough estimate of SM occupancies based upon the maximum SM occupancy of the targeted PTX architecture
-            int reduce_sm_occupancy = ArchProps<CUB_PTX_ARCH>::MAX_SM_THREADBLOCKS;
+            int multi_sm_occupancy = CUB_MIN(
+                ArchProps<CUB_PTX_ARCH>::MAX_SM_THREADBLOCKS,
+                ArchProps<CUB_PTX_ARCH>::MAX_SM_THREADS / multi_dispatch_params.block_threads);
 
         #ifndef __CUDA_ARCH__
 
@@ -444,14 +445,14 @@ struct DeviceReduce
             if (CubDebug(error = device_props.Init(device_ordinal))) break;
 
             if (CubDebug(error = device_props.MaxSmOccupancy(
-                reduce_sm_occupancy,
+                multi_sm_occupancy,
                 multi_reduce_kernel_ptr,
                 multi_dispatch_params.block_threads))) break;
 
         #endif
 
             // Determine grid size for the multi-block kernel
-            int reduce_occupancy = reduce_sm_occupancy * sm_count;
+            int multi_occupancy = multi_sm_occupancy * sm_count;
             int multi_tile_size = multi_dispatch_params.block_threads * multi_dispatch_params.items_per_thread;
             int multi_grid_size;
 
@@ -462,7 +463,7 @@ struct DeviceReduce
                 // Work is distributed evenly
                 even_share.GridInit(
                     num_items,
-                    reduce_occupancy * multi_dispatch_params.subscription_factor,
+                    multi_occupancy * multi_dispatch_params.subscription_factor,
                     multi_tile_size);
 
                 multi_grid_size = even_share.grid_size;
@@ -473,7 +474,7 @@ struct DeviceReduce
                 // Work is distributed dynamically
                 queue.Allocate(device_allocator);
                 int num_tiles = (num_items + multi_tile_size - 1) / multi_tile_size;
-                if (num_tiles < reduce_occupancy)
+                if (num_tiles < multi_occupancy)
                 {
                     // Every thread block gets one input tile each and nothing is queued
                     multi_grid_size = num_tiles;
@@ -481,7 +482,7 @@ struct DeviceReduce
                 else
                 {
                     // Thread blocks get one input tile each and the rest are queued.
-                    multi_grid_size = reduce_occupancy;
+                    multi_grid_size = multi_occupancy;
 
                     // Prepare queue on device (because its faster than if we prepare it here)
                     if (stream_synchronous) CubLog("Invoking prepare_drain_kernel_ptr<<<1, 1, 0, %d>>>()\n", stream);
@@ -500,11 +501,11 @@ struct DeviceReduce
             };
 
             // Allocate temporary storage for thread block partial reductions
-            if (CubDebug(error = device_allocator->DeviceAllocate((void**) &d_block_partials, multi_grid_size * sizeof(T)))) break;
+            if (CubDebug(error = DeviceAllocate((void**) &d_block_partials, multi_grid_size * sizeof(T), device_allocator))) break;
 
             // Invoke Reduce
             if (stream_synchronous) CubLog("Invoking multi_reduce_kernel_ptr<<<%d, %d, 0, %d>>>(), %d items per thread, %d SM occupancy\n",
-                multi_grid_size, multi_dispatch_params.block_threads, stream, multi_dispatch_params.items_per_thread, reduce_sm_occupancy);
+                multi_grid_size, multi_dispatch_params.block_threads, stream, multi_dispatch_params.items_per_thread, multi_sm_occupancy);
 
             multi_reduce_kernel_ptr<<<multi_grid_size, multi_dispatch_params.block_threads, 0, stream>>>(
                 d_in,
@@ -543,7 +544,7 @@ struct DeviceReduce
         while (0);
 
         // Free temporary storage allocation
-        CubDebug(device_allocator->DeviceFree(d_block_partials));
+        CubDebug(DeviceFree(d_block_partials, device_allocator));
 
         // Free queue allocation
         if (multi_dispatch_params.grid_mapping == GRID_MAPPING_DYNAMIC)
@@ -579,8 +580,7 @@ struct DeviceReduce
         ReductionOp             reduction_op,
         cudaStream_t            stream = 0,
         bool                    stream_synchronous = false,
-//        DeviceAllocator         *device_allocator = DefaultDeviceAllocator())
-    DeviceAllocator *device_allocator = NULL)
+        DeviceAllocator         *device_allocator = DefaultDeviceAllocator())
     {
         if (num_items > (single_dispatch_params.block_threads * single_dispatch_params.items_per_thread))
         {
@@ -646,11 +646,10 @@ public:
         OutputIterator  d_out,
         int             num_items,
         ReductionOp     reduction_op,
+        int             subscription_factor = 1,
         cudaStream_t    stream              = 0,
         bool            stream_synchronous  = false,
-        DeviceAllocator *device_allocator = NULL,
-//        DeviceAllocator *device_allocator   = DefaultDeviceAllocator(),
-        int             subscription_factor = 1)
+        DeviceAllocator *device_allocator   = DefaultDeviceAllocator())
     {
         // Type used for array indexing
         typedef int SizeT;
@@ -698,10 +697,9 @@ public:
         OutputIterator  d_out,
         int             num_items,
         ReductionOp     reduction_op,
-        cudaStream_t    stream = 0,
-        bool            stream_synchronous = false,
-//        DeviceAllocator *device_allocator = NULL)
-        DeviceAllocator *device_allocator = DefaultDeviceAllocator())
+        cudaStream_t    stream              = 0,
+        bool            stream_synchronous  = false,
+        DeviceAllocator *device_allocator   = DefaultDeviceAllocator())
     {
         // Type used for array indexing
         typedef int SizeT;

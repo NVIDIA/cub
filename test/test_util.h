@@ -207,6 +207,13 @@ public:
                 dev = 0;
             }
 
+            size_t free_physmem, total_physmem;
+            CubDebugExit(cudaMemGetInfo(&free_physmem, &total_physmem));
+
+            int ptx_version;
+            error = CubDebug(cub::PtxVersion(ptx_version));
+            if (error) break;
+
             cudaDeviceProp deviceProp;
             error = CubDebug(cudaGetDeviceProperties(&deviceProp, dev));
             if (error) break;
@@ -216,12 +223,14 @@ public:
                 exit(1);
             }
             if (!CheckCmdLineFlag("quiet")) {
-                printf("Using device %d: %s (SM%d, %d SMs, %d MB physmem, ECC %s)\n",
+                printf("Using device %d: %s (PTX version %d, SM%d, %d SMs, %lld free / %lld total MB physmem, ECC %s)\n",
                     dev,
                     deviceProp.name,
+                    ptx_version,
                     deviceProp.major * 100 + deviceProp.minor * 10,
                     deviceProp.multiProcessorCount,
-                    deviceProp.totalGlobalMem / 1024 / 1024,
+                    (unsigned long long) free_physmem / 1024 / 1024,
+                    (unsigned long long) total_physmem / 1024 / 1024,
                     (deviceProp.ECCEnabled) ? "on" : "off");
                 fflush(stdout);
             }

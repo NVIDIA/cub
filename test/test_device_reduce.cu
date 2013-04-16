@@ -68,18 +68,18 @@ __global__ void CnpReduce(
     int             iterations,
     cudaError_t*    d_cnp_error)
 {
-    cudaError_t retval = cudaSuccess;
-/*
+    cudaError_t error = cudaSuccess;
+
 #if CUB_CNP_ENABLED
     for (int i = 0; i < iterations; ++i)
     {
-        retval = DeviceReduce::Reduce(d_in, d_out, num_items, reduction_op, 0, STREAM_SYNCHRONOUS);
+        error = DeviceReduce::Reduce(d_in, d_out, num_items, reduction_op, 0, STREAM_SYNCHRONOUS);
     }
 #else
-    retval = cudaErrorInvalidConfiguration;
+    error = cudaErrorInvalidConfiguration;
 #endif
-*/
-    *d_cnp_error = retval;
+
+    *d_cnp_error = error;
 }
 
 
@@ -123,24 +123,25 @@ template <
     typename        T,
     typename        ReductionOp>
 void Test(
-    bool            test_cnp,
     int             num_items,
     int             gen_mode,
     int             tiles,
     ReductionOp     reduction_op,
     char*           type_string)
 {
-    printf("DeviceReduce gen-mode %d, num_items(%d), %s (%d bytes) elements:\n",
-        gen_mode,
+    int compare = 0;
+    int cnp_compare = 0;
+
+    printf("cub::DeviceReduce %d items, %s %d-byte elements, gen-mode %d\n\n",
         num_items,
         type_string,
-        (int) sizeof(T));
+        (int) sizeof(T),
+        gen_mode);
     fflush(stdout);
 
     // Allocate host arrays
     T*              h_in = new T[num_items];
     T               h_reference[1];
-    cudaError_t     h_cnp_error;
 
     // Initialize problem
     Initialize(gen_mode, h_in, h_reference, reduction_op, num_items);
@@ -157,17 +158,13 @@ void Test(
     CubDebugExit(cudaMemcpy(d_in, h_in, sizeof(T) * num_items, cudaMemcpyHostToDevice));
     CubDebugExit(cudaMemset(d_out, 0, sizeof(T) * 1));
 
-    int compare = 0;
-    int cnp_compare = 0;
-
     // Run warmup/correctness iteration
-    printf("\n"); fflush(stdout);
+    printf("Host dispatch:\n"); fflush(stdout);
     CubDebugExit(DeviceReduce::Reduce(d_in, d_out, num_items, reduction_op, 0, true));
 
     // Check for correctness (and display results, if specified)
-    printf("\nReduction results: ");
     compare = CompareDeviceResults(h_reference, d_out, 1, g_verbose, g_verbose);
-    printf("%s\n", compare ? "FAIL" : "PASS");
+    printf("\n%s", compare ? "FAIL" : "PASS");
 
     // Flush any stdout/stderr
     fflush(stdout);
@@ -190,54 +187,64 @@ void Test(
         float avg_millis = elapsed_millis / g_iterations;
         float grate = float(num_items) / avg_millis / 1000.0 / 1000.0;
         float gbandwidth = grate * sizeof(T);
-        printf("Performance: %.3f avg ms, %.3f billion items/s, %.3f GB/s\n", avg_millis, grate, gbandwidth);
+        printf(", %.3f avg ms, %.3f billion items/s, %.3f GB/s\n", avg_millis, grate, gbandwidth);
+    }
+    else
+    {
+        printf("\n");
     }
 
 
     // Evaluate using CUDA nested parallelism
-    if (test_cnp)
+#if (TEST_CNP == 1)
+
+    CubDebugExit(cudaMemset(d_out, 0, sizeof(T) * 1));
+
+    // Run warmup/correctness iteration
+    printf("\nDevice dispatch:\n"); fflush(stdout);
+    CnpReduce<true><<<1,1>>>(d_in, d_out, num_items, reduction_op, 1, d_cnp_error);
+
+    // Flush any stdout/stderr
+    fflush(stdout);
+    fflush(stderr);
+
+    // Check if we were compiled and linked for CNP
+    cudaError_t h_cnp_error;
+    CubDebugExit(cudaMemcpy(&h_cnp_error, d_cnp_error, sizeof(cudaError_t) * 1, cudaMemcpyDeviceToHost));
+    if (h_cnp_error == cudaErrorInvalidConfiguration)
     {
-        // Run warmup/correctness iteration
-        printf("\n"); fflush(stdout);
-        CnpReduce<true><<<1,1>>>(d_in, d_out, num_items, reduction_op, 1, d_cnp_error);
+        printf("CNP reduction not supported");
+    }
+    else
+    {
+        CubDebugExit(h_cnp_error);
 
-        // Flush any stdout/stderr
-        fflush(stdout);
-        fflush(stderr);
+        // Check for correctness (and display results, if specified)
+        cnp_compare = CompareDeviceResults(h_reference, d_out, 1, g_verbose, g_verbose);
+        printf("\n%s", cnp_compare ? "FAIL" : "PASS");
 
-        // Check if we were compiled and linked for CNP
-        CubDebugExit(cudaMemcpy(&h_cnp_error, d_cnp_error, sizeof(cudaError_t) * 1, cudaMemcpyDeviceToHost));
-        if (h_cnp_error == cudaErrorInvalidConfiguration)
+        // Performance
+        gpu_timer.Start();
+
+        CnpReduce<false><<<1,1>>>(d_in, d_out, num_items, reduction_op, g_iterations, d_cnp_error);
+
+        gpu_timer.Stop();
+        elapsed_millis = gpu_timer.ElapsedMillis();
+
+        if (g_iterations > 0)
         {
-            printf("CNP reduction not supported");
-            test_cnp = false;
+            float avg_millis = elapsed_millis / g_iterations;
+            float grate = float(num_items) / avg_millis / 1000.0 / 1000.0;
+            float gbandwidth = grate * sizeof(T);
+            printf(", %.3f avg ms, %.3f billion items/s, %.3f GB/s\n", avg_millis, grate, gbandwidth);
         }
         else
         {
-            CubDebugExit(h_cnp_error);
-
-            // Check for correctness (and display results, if specified)
-            printf("\nCNP reduction results: ");
-            int compare = CompareDeviceResults(h_reference, d_out, 1, g_verbose, g_verbose);
-            printf("%s\n", compare ? "FAIL" : "PASS");
-
-            // Performance
-            gpu_timer.Start();
-
-            CnpReduce<false><<<1,1>>>(d_in, d_out, num_items, reduction_op, g_iterations, d_cnp_error);
-
-            gpu_timer.Stop();
-            elapsed_millis = gpu_timer.ElapsedMillis();
-
-            if (g_iterations > 0)
-            {
-                float avg_millis = elapsed_millis / g_iterations;
-                float grate = float(num_items) / avg_millis / 1000.0 / 1000.0;
-                float gbandwidth = grate * sizeof(T);
-                printf("CNP performance: %.3f avg ms, %.3f billion items/s, %.3f GB/s\n", avg_millis, grate, gbandwidth);
-            }
+            printf("\n");
         }
     }
+
+#endif
 
     // Cleanup
     if (h_in) delete[] h_in;
@@ -287,7 +294,6 @@ int main(int argc, char** argv)
     args.GetCmdLineArgument("i", g_iterations);
     g_verbose = args.CheckCmdLineFlag("v");
     bool quick = args.CheckCmdLineFlag("quick");
-    bool test_cnp = args.CheckCmdLineFlag("cnp");
 
     // Print usage
     if (args.CheckCmdLineFlag("help"))
@@ -304,15 +310,11 @@ int main(int argc, char** argv)
     // Initialize device
     CubDebugExit(args.DeviceInit());
 
-    int ptx_version;
-    PtxVersion(ptx_version);
-    printf("ptx version: %d\n", ptx_version);
-
 //    if (quick)
     {
         // Quick test
         typedef int T;
-        Test<T>(test_cnp, num_items, UNIFORM, 1, Sum<T>(), CUB_TYPE_STRING(T));
+        Test<T>(num_items, UNIFORM, 1, Sum<T>(), CUB_TYPE_STRING(T));
     }
 /*    else
     {
