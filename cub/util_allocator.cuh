@@ -135,7 +135,7 @@ struct CachingDeviceAllocator : DeviceAllocator
     /**
      * Integer pow function for unsigned base and exponent
      */
-    static __forceinline__ unsigned int IntPow(
+    static __host__ __device__ __forceinline__ unsigned int IntPow(
         unsigned int base,
         unsigned int exp)
     {
@@ -155,7 +155,7 @@ struct CachingDeviceAllocator : DeviceAllocator
     /**
      * Round up to the nearest power-of
      */
-    static __forceinline__ void NearestPowerOf(
+    static __host__ __device__ __forceinline__ void NearestPowerOf(
         unsigned int &power,
         size_t &rounded_bytes,
         unsigned int base,
@@ -237,12 +237,7 @@ struct CachingDeviceAllocator : DeviceAllocator
     // Fields
     //---------------------------------------------------------------------
 
-#ifndef __CUDA_ARCH__
-
     Spinlock        spin_lock;          /// Spinlock for thread-safety
-
-    CachedBlocks    cached_blocks;      /// Set of cached device allocations available for reuse
-    BusyBlocks      live_blocks;        /// Set of live device allocations currently in use
 
     unsigned int    bin_growth;         /// Geometric growth factor for bin-sizes
     unsigned int    min_bin;            /// Minimum bin enumeration
@@ -252,9 +247,13 @@ struct CachingDeviceAllocator : DeviceAllocator
     size_t          max_bin_bytes;      /// Maximum bin size
     size_t          max_cached_bytes;   /// Maximum aggregate cached bytes per device
 
-    GpuCachedBytes  cached_bytes;       /// Map of device ordinal to aggregate cached bytes on that device
-
     bool            debug;              /// Whether or not to print (de)allocation events to stdout
+
+#ifndef __CUDA_ARCH__   // Only define STL container members in host code
+
+    GpuCachedBytes  cached_bytes;       /// Map of device ordinal to aggregate cached bytes on that device
+    CachedBlocks    cached_blocks;      /// Set of cached device allocations available for reuse
+    BusyBlocks      live_blocks;        /// Set of live device allocations currently in use
 
 #endif
 
@@ -270,19 +269,19 @@ struct CachingDeviceAllocator : DeviceAllocator
         unsigned int min_bin,       ///< Minimum bin
         unsigned int max_bin,       ///< Maximum bin
         size_t max_cached_bytes)    ///< Maximum aggregate cached bytes per device
-    #ifndef __CUDA_ARCH__
     :
-            debug(false),
-            spin_lock(0),
+    #ifndef __CUDA_ARCH__   // Only define STL container members in host code
             cached_blocks(BlockDescriptor::SizeCompare),
             live_blocks(BlockDescriptor::PtrCompare),
+    #endif
+            debug(false),
+            spin_lock(0),
             bin_growth(bin_growth),
             min_bin(min_bin),
             max_bin(max_bin),
             min_bin_bytes(IntPow(bin_growth, min_bin)),
             max_bin_bytes(IntPow(bin_growth, max_bin)),
             max_cached_bytes(max_cached_bytes)
-    #endif
     {}
 
 
@@ -297,19 +296,19 @@ struct CachingDeviceAllocator : DeviceAllocator
      *     and sets a maximum of 6,291,455 cached bytes per device
      */
     __host__ __device__ __forceinline__ CachingDeviceAllocator()
-    #ifndef __CUDA_ARCH__
     :
-        debug(false),
-        spin_lock(0),
+    #ifndef __CUDA_ARCH__   // Only define STL container members in host code
         cached_blocks(BlockDescriptor::SizeCompare),
         live_blocks(BlockDescriptor::PtrCompare),
+    #endif
+        debug(false),
+        spin_lock(0),
         bin_growth(8),
         min_bin(3),
         max_bin(7),
         min_bin_bytes(IntPow(bin_growth, min_bin)),
         max_bin_bytes(IntPow(bin_growth, max_bin)),
         max_cached_bytes((max_bin_bytes * 3) - 1)
-    #endif
     {}
 
 
@@ -670,60 +669,6 @@ struct CachingDeviceAllocator : DeviceAllocator
 };
 
 
-
-
-/******************************************************************************
- * PassThruDeviceAllocator (host and device use)
- ******************************************************************************/
-
-/**
- * A simple allocator that serves as a pass-through to cudaMalloc/cudaFree
- */
-struct PassThruDeviceAllocator : DeviceAllocator
-{
-    /**
-     * Return a pointer to this object
-     */
-    __host__ __device__ __forceinline__ PassThruDeviceAllocator* Me() { return this; }
-
-
-    /**
-     * Provides a suitable allocation of device memory for the given size
-     * on the current GPU
-     */
-    __host__ __device__ __forceinline__ cudaError_t DeviceAllocate(
-        void** d_ptr,
-        size_t bytes)
-    {
-    #if CUB_CNP_ENABLED
-        return CubDebug(cudaMalloc(d_ptr, bytes));
-    #else
-        // CUDA API is not supported on this device
-        return CubDebug(cudaErrorInvalidConfiguration);
-
-    #endif
-    }
-
-
-    /**
-     * Frees a live allocation of GPU memory on the current GPU, returning it to the
-     * allocator
-     */
-    __host__ __device__ __forceinline__ cudaError_t DeviceFree(
-        void* d_ptr)
-    {
-    #if !CUB_CNP_ENABLED
-        // CUDA API is not supported on this device
-        return CubDebug(cudaErrorInvalidConfiguration);
-    #else
-        return CubDebug(cudaFree(&d_ptr));
-    #endif
-    }
-};
-
-
-
-
 /******************************************************************************
  * DefaultDeviceAllocator (generic use)
  ******************************************************************************/
@@ -736,9 +681,9 @@ struct PassThruDeviceAllocator : DeviceAllocator
     /**
      * \brief The default allocator for host and device usage.
      *
-     * When compiled for the device, it inherits all functionality from
-     * PassThruDeviceAllocator.  When compiled for the host, it delegates
-     * to a single CachingDeviceAllocator instance.
+     * When compiled for the host, it delegates to a single
+     * CachingDeviceAllocator instance.  Returns NULL When compiled for the
+     * device.
      *
      * NOTE: Because CUB is implemented exclusively in header files, there will
      * be one CachingDeviceAllocator per compilation unit.
@@ -747,16 +692,14 @@ struct PassThruDeviceAllocator : DeviceAllocator
 
 #else
 
-    #define DefaultDeviceAllocator() PassThruDeviceAllocator().Me()
+    #define DefaultDeviceAllocator() NULL
 
 #endif
 
 
 
 /******************************************************************************
- * Default CUB allocation operations.
- *
- * These are simply shorthand for DefaultDeviceAllocator()->...
+ * Shorthand CUB allocation operations
  ******************************************************************************/
 
 #ifndef DOXYGEN_SHOULD_SKIP_THIS    // Do not document
@@ -766,9 +709,21 @@ struct PassThruDeviceAllocator : DeviceAllocator
  * Provides a suitable allocation of device memory for the given size
  * on the current device
  */
-__host__ __device__ __forceinline__ cudaError_t DeviceAllocate(void** d_ptr, size_t bytes)
+__host__ __device__ __forceinline__ cudaError_t DeviceAllocate(
+    void** d_ptr,
+    size_t bytes,
+    DeviceAllocator *device_allocator = DefaultDeviceAllocator())
 {
-    return DefaultDeviceAllocator()->DeviceAllocate(d_ptr, bytes);
+    if (device_allocator == NULL)
+    {
+    #if !CUB_CNP_ENABLED
+        // CUDA API not supported from this device
+        return CubDebug(cudaErrorInvalidConfiguration);
+    #else
+        return cudaMalloc(d_ptr, bytes);
+    #endif
+    }
+    return device_allocator->DeviceAllocate(d_ptr, bytes);
 }
 
 
@@ -776,9 +731,20 @@ __host__ __device__ __forceinline__ cudaError_t DeviceAllocate(void** d_ptr, siz
  * Frees a live allocation of device memory on the current device, returning it to the
  * allocator
  */
-__host__ __device__ __forceinline__ cudaError_t DeviceFree(void* d_ptr)
+__host__ __device__ __forceinline__ cudaError_t DeviceFree(
+    void* d_ptr,
+    DeviceAllocator *device_allocator = DefaultDeviceAllocator())
 {
-    return DefaultDeviceAllocator()->DeviceFree(d_ptr);
+    if (device_allocator == NULL)
+    {
+    #if !CUB_CNP_ENABLED
+        // CUDA API not supported from this device
+        return CubDebug(cudaErrorInvalidConfiguration);
+    #else
+        return cudaFree(d_ptr);
+    #endif
+    }
+    return device_allocator->DeviceFree(d_ptr);
 }
 
 #endif // DOXYGEN_SHOULD_SKIP_THIS
