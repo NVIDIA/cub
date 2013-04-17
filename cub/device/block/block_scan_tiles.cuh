@@ -52,14 +52,13 @@ namespace cub {
 
 
 /**
- * Tuning policy for BlockReduceTiles
+ * Tuning policy for BlockScanTiles
  */
 template <
     int                         _BLOCK_THREADS,
     int                         _ITEMS_PER_THREAD,
-    int                         _VECTOR_LOAD_LENGTH,
-    PtxLoadModifier             _LOAD_MODIFIER,
-    GridMappingStrategy         _GRID_MAPPING,
+    BlockLoadPolicy             _LOAD_POLICY,
+    BlockStorePolicy            _STORE_POLICY,
     int                         _OVERSUBSCRIPTION>
 struct BlockScanTilesPolicy
 {
@@ -67,24 +66,24 @@ struct BlockScanTilesPolicy
     {
         BLOCK_THREADS       = _BLOCK_THREADS,
         ITEMS_PER_THREAD    = _ITEMS_PER_THREAD,
-        VECTOR_LOAD_LENGTH  = _VECTOR_LOAD_LENGTH,
         OVERSUBSCRIPTION    = _OVERSUBSCRIPTION,
     };
 
-    static const GridMappingStrategy   GRID_MAPPING       = _GRID_MAPPING;
-    static const PtxLoadModifier       LOAD_MODIFIER      = _LOAD_MODIFIER;
+    static const BlockLoadPolicy        LOAD_POLICY      = _LOAD_POLICY;
+    static const BlockStorePolicy       STORE_POLICY     = _STORE_POLICY;
 };
 
 
 /**
- * \brief BlockReduceTiles implements an abstraction of CUDA thread blocks for
+ * \brief BlockScanTiles implements an abstraction of CUDA thread blocks for
  * participating in device-wide reduction.
  */
 template <
     typename BlockScanTilesPolicy,
     typename InputIterator,
+    typename OutputIterator,
     typename SizeT>
-class BlockReduceTiles
+class BlockScanTiles
 {
 private:
 
@@ -101,18 +100,13 @@ private:
         BLOCK_THREADS       = BlockScanTilesPolicy::BLOCK_THREADS,
         ITEMS_PER_THREAD    = BlockScanTilesPolicy::ITEMS_PER_THREAD,
         TILE_ITEMS          = BLOCK_THREADS * ITEMS_PER_THREAD,
-
-        // Actual vector load length must evenly divide ITEMS_PER_THREAD
-        VECTOR_LOAD_LENGTH  = (ITEMS_PER_THREAD % BlockScanTilesPolicy::VECTOR_LOAD_LENGTH == 0) ?
-                                BlockScanTilesPolicy::VECTOR_LOAD_LENGTH :
-                                1,
-
     };
 
-    static const PtxLoadModifier LOAD_MODIFIER      = BlockScanTilesPolicy::LOAD_MODIFIER;
+    static const BlockLoadPolicy LOAD_POLICY = BlockScanTilesPolicy::LOAD_POLICY;
+    static const BlockStorePolicy STORE_POLICY = BlockScanTilesPolicy::STORE_POLICY;
 
-    // Parameterized BlockReduce primitive
-    typedef BlockReduce<T, BLOCK_THREADS> BlockReduceT;
+    // Parameterized block-wide primitives
+    typedef BlockLoad<InputIterator, BLOCK_THREADS> BlockLoadT;
 
     // Shared memory type for this threadblock
     struct _SmemStorage
@@ -123,7 +117,7 @@ private:
 
 public:
 
-    /// \smemstorage{BlockReduceTiles}
+    /// \smemstorage{BlockScanTiles}
     typedef _SmemStorage SmemStorage;
 
 private:
