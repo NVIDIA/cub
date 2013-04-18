@@ -481,7 +481,7 @@ __device__ __forceinline__ void BlockLoadVectorized(
     };
 
     // Vector type
-    typedef typename VectorType<T, VEC_SIZE>::Type Vector;
+    typedef typename VectorHelper<T, VEC_SIZE>::Type Vector;
 
     // Alias local data (use raw_items array here which should get optimized away to prevent conservative PTXAS lmem spilling)
     T raw_items[ITEMS_PER_THREAD];
@@ -704,11 +704,12 @@ template <
     PtxLoadModifier     MODIFIER = PTX_LOAD_NONE>
 class BlockLoad
 {
+
+private:
+
     //---------------------------------------------------------------------
     // Type definitions and constants
     //---------------------------------------------------------------------
-
-private:
 
     // Data type of input iterator
     typedef typename std::iterator_traits<InputIterator>::value_type T;
@@ -745,7 +746,7 @@ private:
             const SizeT     &guarded_items,                 ///< [in] Number of valid items in the tile
             T               (&items)[ITEMS_PER_THREAD])     ///< [out] Data to load
         {
-            BlockLoadDirect<PTX_LOAD_NONE>(block_itr, guarded_items, items);
+            BlockLoadDirect<MODIFIER>(block_itr, guarded_items, items);
         }
     };
 
@@ -788,7 +789,7 @@ private:
             const SizeT     &guarded_items,                 ///< [in] Number of valid items in the tile
             T               (&items)[ITEMS_PER_THREAD])     ///< [out] Data to load{
         {
-            BlockLoadDirect<PTX_LOAD_NONE>(block_itr, guarded_items, items);
+            BlockLoadDirect<MODIFIER>(block_itr, guarded_items, items);
         }
     };
 

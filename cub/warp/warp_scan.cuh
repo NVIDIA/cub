@@ -71,7 +71,7 @@ namespace cub {
  * - Output (scanned elements only <em>vs.</em> scanned elements and the total aggregate)
  *
  * \tparam T                        The scan input/output element type
- * \tparam WARPS                    The number of "logical" warps performing concurrent warp scans
+ * \tparam WARPS                    <b>[optional]</b> The number of "logical" warps performing concurrent warp scans. Default is 1.
  * \tparam LOGICAL_WARP_THREADS     <b>[optional]</b> The number of threads per "logical" warp (may be less than the number of hardware warp threads).  Default is the warp size associated with the CUDA Compute Capability targeted by the compiler (e.g., 32 threads for SM20).
  *
  * \par Usage Considerations
@@ -201,8 +201,8 @@ namespace cub {
  */
 template <
     typename    T,
-    int         WARPS,
-    int         LOGICAL_WARP_THREADS = PtxArchProps::WARP_THREADS>
+    int         WARPS                   = 1,
+    int         LOGICAL_WARP_THREADS    = PtxArchProps::WARP_THREADS>
 class WarpScan
 {
 private:
