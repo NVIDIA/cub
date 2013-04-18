@@ -749,8 +749,20 @@ int main(int argc, char** argv)
     // Initialize device
     CubDebugExit(args.DeviceInit());
 
-    typedef unsigned int SizeT;
+#if (TUNE_SIZE == 1)
+    typedef unsigned char T;
+#elif (TUNE_SIZE == 2)
+    typedef unsigned short T;
+#elif (TUNE_SIZE == 4)
     typedef unsigned int T;
+#elif (TUNE_SIZE == 8)
+    typedef unsigned long long T;
+#else
+    // Default
+    typedef unsigned int T;
+#endif
+
+    typedef unsigned int SizeT;
     Sum<T> reduction_op;
 
     // Enumerate kernels

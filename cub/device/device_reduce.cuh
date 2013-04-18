@@ -79,12 +79,13 @@ __global__ void MultiReduceKernel(
 
     // Parameterize BlockReduceTiles for the parallel execution context
     typedef BlockReduceTiles <BlockReduceTilesPolicy, InputIterator, SizeT> BlockReduceTilesT;
+    typedef typename BlockReduceTilesT::template Mapping<BlockReduceTilesPolicy::GRID_MAPPING> Mapping;
 
     // Declare shared memory for BlockReduceTiles
     __shared__ typename BlockReduceTilesT::SmemStorage smem_storage;
 
     // Reduce tiles
-    T block_aggregate = BlockReduceTilesT::ProcessTiles(
+    T block_aggregate = Mapping::ProcessTiles(
         smem_storage,
         d_in,
         num_items,

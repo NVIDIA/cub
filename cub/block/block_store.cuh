@@ -354,7 +354,7 @@ __device__ __forceinline__ void BlockStoreVectorized(
     };
 
     // Vector type
-    typedef typename VectorType<T, VEC_SIZE>::Type Vector;
+    typedef typename VectorHelper<T, VEC_SIZE>::Type Vector;
 
     // Alias global pointer
     Vector *block_ptr_vectors = reinterpret_cast<Vector *>(block_ptr);
@@ -621,7 +621,7 @@ private:
             const SizeT     &guarded_items,             ///< [in] Number of valid items in the tile
             T               (&items)[ITEMS_PER_THREAD]) ///< [in] Data to store
         {
-            BlockStoreDirect<PTX_STORE_NONE>(block_itr, guarded_items, items);
+            BlockStoreDirect<MODIFIER>(block_itr, guarded_items, items);
         }
     };
 
@@ -663,7 +663,7 @@ private:
             const SizeT     &guarded_items,             ///< [in] Number of valid items in the tile
             T               (&items)[ITEMS_PER_THREAD]) ///< [in] Data to store
         {
-            BlockStoreDirect<PTX_STORE_NONE>(block_itr, guarded_items, items);
+            BlockStoreDirect<MODIFIER>(block_itr, guarded_items, items);
         }
     };
 
@@ -703,7 +703,7 @@ private:
             // Transpose to striped order
             BlockExchange::BlockedToStriped(smem_storage, items);
 
-            BlockStoreDirectStriped<PTX_STORE_NONE>(block_itr, guarded_items, items, BLOCK_THREADS);
+            BlockStoreDirectStriped<MODIFIER>(block_itr, guarded_items, items, BLOCK_THREADS);
         }
     };
 
@@ -734,7 +734,7 @@ private:
             const SizeT     &guarded_items,             ///< [in] Number of valid items in the tile
             T               (&items)[ITEMS_PER_THREAD]) ///< [in] Data to store
         {
-            BlockStoreDirectStriped<PTX_STORE_NONE>(block_itr, guarded_items, items);
+            BlockStoreDirectStriped<MODIFIER>(block_itr, guarded_items, items);
         }
     };
 
