@@ -314,6 +314,7 @@ int main(int argc, char** argv)
     {
         // Quick test
         typedef int T;
+//        typedef unsigned short T;
         Test<T>(num_items, UNIFORM, 1, Sum<T>(), CUB_TYPE_STRING(T));
     }
 /*    else

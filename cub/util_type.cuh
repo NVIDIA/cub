@@ -154,11 +154,35 @@ struct Equals <A, A>
 #endif // DOXYGEN_SHOULD_SKIP_THIS
 
 
-
 /******************************************************************************
  * Qualifier detection
  ******************************************************************************/
 
+
+/**
+ * \brief Pointer vs. iterator
+ */
+template <typename Tp>
+struct IsPointer
+{
+    enum { VALUE = 0 };
+};
+
+#ifndef DOXYGEN_SHOULD_SKIP_THIS    // Do not document
+
+template <typename Tp>
+struct IsPointer<Tp*>
+{
+    enum { VALUE = 1 };
+};
+
+#endif // DOXYGEN_SHOULD_SKIP_THIS
+
+
+
+/******************************************************************************
+ * Qualifier detection
+ ******************************************************************************/
 
 /**
  * \brief Volatile modifier test
@@ -178,7 +202,6 @@ struct IsVolatile<Tp volatile>
 };
 
 #endif // DOXYGEN_SHOULD_SKIP_THIS
-
 
 
 /******************************************************************************

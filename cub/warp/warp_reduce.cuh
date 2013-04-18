@@ -66,7 +66,7 @@ namespace cub {
  * - Input (full warps <em>vs.</em> partially-full warps having some undefined elements)
  *
  * \tparam T                        The reduction input/output element type
- * \tparam WARPS                    The number of "logical" warps performing concurrent warp reductions
+ * \tparam WARPS                    <b>[optional]</b> The number of "logical" warps performing concurrent warp reductions.  Default is 1.
  * \tparam LOGICAL_WARP_THREADS     <b>[optional]</b> The number of threads per "logical" warp (may be less than the number of hardware warp threads).  Default is the warp size associated with the CUDA Compute Capability targeted by the compiler (e.g., 32 threads for SM20).
  *
  * \par Usage Considerations
@@ -129,8 +129,8 @@ namespace cub {
  */
 template <
     typename    T,
-    int         WARPS,
-    int         LOGICAL_WARP_THREADS = PtxArchProps::WARP_THREADS>
+    int         WARPS                   = 1,
+    int         LOGICAL_WARP_THREADS    = PtxArchProps::WARP_THREADS>
 class WarpReduce
 {
 private:
@@ -498,7 +498,7 @@ public:
         const unsigned int  &valid_lanes)           ///< [in] Number of valid lanes in the calling thread's logical warp (may be less than \p LOGICAL_WARP_THREADS)
     {
         // Determine if we don't need bounds checking
-        if (valid_lanes == LOGICAL_WARP_THREADS)
+        if (valid_lanes >= LOGICAL_WARP_THREADS)
         {
             return Internal::Sum<true, 1>(smem_storage, input, valid_lanes);
         }
@@ -552,7 +552,7 @@ public:
         const unsigned int  &valid_lanes)       ///< [in] Number of valid lanes in the calling thread's logical warp (may be less than \p LOGICAL_WARP_THREADS)
     {
         // Determine if we don't need bounds checking
-        if (valid_lanes == LOGICAL_WARP_THREADS)
+        if (valid_lanes >= LOGICAL_WARP_THREADS)
         {
             return Internal::Reduce<true, 1>(smem_storage, input, valid_lanes, reduction_op);
         }

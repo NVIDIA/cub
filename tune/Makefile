@@ -130,8 +130,14 @@ ifeq ($(keep), 1)
 	NVCCFLAGS += -keep
 endif
 
+ifdef tunesize
+    TUNE_SIZE = $(tunesize)
+else 
+	TUNE_SIZE = 4
+endif
 
-SUFFIX = sm$(SM_ARCH)_$(PTX_SUFFIX)_$(NVCC_VERSION)_$(ABI_SUFFIX)_$(CPU_ARCH_SUFFIX)
+
+SUFFIX = $(TUNE_SIZE)B_sm$(SM_ARCH)_$(PTX_SUFFIX)_$(NVCC_VERSION)_$(ABI_SUFFIX)_$(CPU_ARCH_SUFFIX)
 
 #-------------------------------------------------------------------------------
 # Dependency Lists
@@ -169,5 +175,5 @@ tune_device_reduce: bin/tune_device_reduce_$(SUFFIX)
 
 bin/tune_device_reduce_$(SUFFIX) : tune_device_reduce.cu $(DEPS)
 	mkdir -p bin
-	$(NVCC) $(DEFINES) $(SM_TARGETS) -o bin/tune_device_reduce_$(SUFFIX) tune_device_reduce.cu $(NVCCFLAGS) $(CPU_ARCH) $(INC) -O3 -DTUNE_ARCH=$(SM_ARCH)
+	$(NVCC) $(DEFINES) $(SM_TARGETS) -o bin/tune_device_reduce_$(SUFFIX) tune_device_reduce.cu $(NVCCFLAGS) $(CPU_ARCH) $(INC) -O3 -DTUNE_ARCH=$(SM_ARCH) -DTUNE_SIZE=$(TUNE_SIZE)
 

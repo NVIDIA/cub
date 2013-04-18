@@ -55,14 +55,14 @@ namespace cub {
 /******************************************************************************
  * Vector type inference utilities.  For example:
  *
- *     typename VectorType<unsigned int, 2>::Type    // Aliases uint2
+ *     typename VectorHelper<unsigned int, 2>::Type    // Aliases uint2
  *
  ******************************************************************************/
 
 /**
- * \brief Exposes a member typedef \p Type that names the corresponding CUDA vector type if one exists.  Otherwise \p Type refers to the VectorType structure itself, which will wrap the corresponding \p x, \p y, etc. vector fields.
+ * \brief Exposes a member typedef \p Type that names the corresponding CUDA vector type if one exists.  Otherwise \p Type refers to the VectorHelper structure itself, which will wrap the corresponding \p x, \p y, etc. vector fields.
  */
-template <typename T, int vec_elements> struct VectorType;
+template <typename T, int vec_elements> struct VectorHelper;
 
 #ifndef DOXYGEN_SHOULD_SKIP_THIS    // Do not document
 
@@ -77,24 +77,26 @@ enum
  * Generic vector-1 type
  */
 template <typename T>
-struct VectorType<T, 1>
+struct VectorHelper<T, 1>
 {
+    enum { BUILT_IN = false };
+
     T x;
 
-    typedef VectorType<T, 1> Type;
+    typedef VectorHelper<T, 1> Type;
     typedef void ThreadLoadTag;
     typedef void ThreadStoreTag;
 
     // ThreadLoad
     template <PtxLoadModifier MODIFIER>
-    __device__ __forceinline__     void ThreadLoad(VectorType *ptr)
+    __device__ __forceinline__     void ThreadLoad(VectorHelper *ptr)
     {
         x = cub::ThreadLoad<MODIFIER>(&(ptr->x));
     }
 
      // ThreadStore
     template <PtxStoreModifier MODIFIER>
-    __device__ __forceinline__ void ThreadStore(VectorType *ptr) const
+    __device__ __forceinline__ void ThreadStore(VectorHelper *ptr) const
     {
         cub::ThreadStore<MODIFIER>(&(ptr->x), x);
     }
@@ -104,18 +106,20 @@ struct VectorType<T, 1>
  * Generic vector-2 type
  */
 template <typename T>
-struct VectorType<T, 2>
+struct VectorHelper<T, 2>
 {
+    enum { BUILT_IN = false };
+
     T x;
     T y;
 
-    typedef VectorType<T, 2> Type;
+    typedef VectorHelper<T, 2> Type;
     typedef void ThreadLoadTag;
     typedef void ThreadStoreTag;
 
     // ThreadLoad
     template <PtxLoadModifier MODIFIER>
-    __device__ __forceinline__ void ThreadLoad(VectorType *ptr)
+    __device__ __forceinline__ void ThreadLoad(VectorHelper *ptr)
     {
         x = cub::ThreadLoad<MODIFIER>(&(ptr->x));
         y = cub::ThreadLoad<MODIFIER>(&(ptr->y));
@@ -123,7 +127,7 @@ struct VectorType<T, 2>
 
      // ThreadStore
     template <PtxStoreModifier MODIFIER>
-    __device__ __forceinline__ void ThreadStore(VectorType *ptr) const
+    __device__ __forceinline__ void ThreadStore(VectorHelper *ptr) const
     {
         cub::ThreadStore<MODIFIER>(&(ptr->x), x);
         cub::ThreadStore<MODIFIER>(&(ptr->y), y);
@@ -134,19 +138,21 @@ struct VectorType<T, 2>
  * Generic vector-3 type
  */
 template <typename T>
-struct VectorType<T, 3>
+struct VectorHelper<T, 3>
 {
+    enum { BUILT_IN = false };
+
     T x;
     T y;
     T z;
 
-    typedef VectorType<T, 3> Type;
+    typedef VectorHelper<T, 3> Type;
     typedef void ThreadLoadTag;
     typedef void ThreadStoreTag;
 
     // ThreadLoad
     template <PtxLoadModifier MODIFIER>
-    __device__ __forceinline__ void ThreadLoad(VectorType *ptr)
+    __device__ __forceinline__ void ThreadLoad(VectorHelper *ptr)
     {
         x = cub::ThreadLoad<MODIFIER>(&(ptr->x));
         y = cub::ThreadLoad<MODIFIER>(&(ptr->y));
@@ -155,7 +161,7 @@ struct VectorType<T, 3>
 
      // ThreadStore
     template <PtxStoreModifier MODIFIER>
-    __device__ __forceinline__ void ThreadStore(VectorType *ptr) const
+    __device__ __forceinline__ void ThreadStore(VectorHelper *ptr) const
     {
         cub::ThreadStore<MODIFIER>(&(ptr->x), x);
         cub::ThreadStore<MODIFIER>(&(ptr->y), y);
@@ -168,20 +174,22 @@ struct VectorType<T, 3>
  * Generic vector-4 type
  */
 template <typename T>
-struct VectorType<T, 4>
+struct VectorHelper<T, 4>
 {
+    enum { BUILT_IN = false };
+
     T x;
     T y;
     T z;
     T w;
 
-    typedef VectorType<T, 4> Type;
+    typedef VectorHelper<T, 4> Type;
     typedef void ThreadLoadTag;
     typedef void ThreadStoreTag;
 
     // ThreadLoad
     template <PtxLoadModifier MODIFIER>
-    __device__ __forceinline__ void ThreadLoad(VectorType *ptr)
+    __device__ __forceinline__ void ThreadLoad(VectorHelper *ptr)
     {
         x = cub::ThreadLoad<MODIFIER>(&(ptr->x));
         y = cub::ThreadLoad<MODIFIER>(&(ptr->y));
@@ -191,7 +199,7 @@ struct VectorType<T, 4>
 
      // ThreadStore
     template <PtxStoreModifier MODIFIER>
-    __device__ __forceinline__ void ThreadStore(VectorType *ptr) const
+    __device__ __forceinline__ void ThreadStore(VectorHelper *ptr) const
     {
         cub::ThreadStore<MODIFIER>(&(ptr->x), x);
         cub::ThreadStore<MODIFIER>(&(ptr->y), y);
@@ -203,11 +211,11 @@ struct VectorType<T, 4>
 /**
  * Macro for expanding partially-specialized built-in vector types
  */
-#define CUB_DEFINE_VECTOR_TYPE(base_type,short_type)                                  \
-  template<> struct VectorType<base_type, 1> { typedef short_type##1 Type; };        \
-  template<> struct VectorType<base_type, 2> { typedef short_type##2 Type; };        \
-  template<> struct VectorType<base_type, 3> { typedef short_type##3 Type; };        \
-  template<> struct VectorType<base_type, 4> { typedef short_type##4 Type; };
+#define CUB_DEFINE_VECTOR_TYPE(base_type,short_type)                                                            \
+  template<> struct VectorHelper<base_type, 1> { typedef short_type##1 Type; enum { BUILT_IN = true }; };         \
+  template<> struct VectorHelper<base_type, 2> { typedef short_type##2 Type; enum { BUILT_IN = true }; };         \
+  template<> struct VectorHelper<base_type, 3> { typedef short_type##3 Type; enum { BUILT_IN = true }; };         \
+  template<> struct VectorHelper<base_type, 4> { typedef short_type##4 Type; enum { BUILT_IN = true }; };
 
 // Expand CUDA vector types for built-in primitives
 CUB_DEFINE_VECTOR_TYPE(char,               char)
