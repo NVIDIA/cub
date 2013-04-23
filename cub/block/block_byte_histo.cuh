@@ -28,19 +28,13 @@
 
 /**
  * \file
- * cub::BlockReduce provides variants of parallel reduction across a CUDA threadblock
+ * cub::BlockByteHisto constructs 256-valued histograms from 8b data partitioned across threads within a CUDA thread block.
  */
 
 #pragma once
 
-#include "../block/block_raking_layout.cuh"
-#include "../warp/warp_reduce.cuh"
 #include "../util_arch.cuh"
-#include "../util_type.cuh"
-#include "../thread/thread_operators.cuh"
-#include "../thread/thread_reduce.cuh"
-#include "../thread/thread_load.cuh"
-#include "../thread/thread_store.cuh"
+#include "../block/block_radix_sort.cuh"
 #include "../util_namespace.cuh"
 
 /// Optional outer namespace(s)
@@ -51,48 +45,29 @@ namespace cub {
 
 
 /**
- * BlockReduceAlgorithm enumerates alternative algorithms for parallel
- * reduction across a CUDA threadblock.
+ * BlockByteHistoAlgorithm enumerates alternative algorithms for the parallel
+ * construction of 8b histograms.
  */
-enum BlockReduceAlgorithm
+enum BlockByteHistoAlgorithm
 {
 
     /**
      * \par Overview
-     * An efficient "raking" reduction algorithm.  Execution is comprised of three phases:
-     * -# Upsweep sequential reduction in registers (if threads contribute more than one input each).  Each thread then places the partial reduction of its item(s) into shared memory.
-     * -# Upsweep sequential reduction in shared memory.  Threads within a single warp rake across segments of shared partial reductions.
-     * -# A warp-synchronous Kogge-Stone style reduction within the raking warp.
-     *
-     * \par
-     * \image html block_reduce.png
-     * <div class="centercaption">\p BLOCK_REDUCE_RAKING data flow for a hypothetical 16-thread threadblock and 4-thread raking warp.</div>
-     *
-     * \par Performance Considerations
-     * - Although this variant may suffer longer turnaround latencies when the
-     *   GPU is under-occupied, it can often provide higher overall throughput
-     *   across the GPU when suitably occupied.
+     * Sorting followed by differentiation.  Execution is comprised of two phases:
+     * -# Sort the data using efficient radix sort
+     * -# Look for "runs" of same-valued 8b keys by detecting discontinuities; the run-lengths are histogram bin counts.
      */
-    BLOCK_REDUCE_RAKING,
+    BLOCK_BYTE_HISTO_SORT,
 
 
     /**
      * \par Overview
-     * A quick "tiled warp-reductions" reduction algorithm.  Execution is comprised of four phases:
-     * -# Upsweep sequential reduction in registers (if threads contribute more than one input each).  Each thread then places the partial reduction of its item(s) into shared memory.
-     * -# Compute a shallow, but inefficient warp-synchronous Kogge-Stone style reduction within each warp.
-     * -# A propagation phase where the warp reduction outputs in each warp are updated with the aggregate from each preceding warp.
+     * Use atomic addition to update byte counts directly
      *
-     * \par
-     * \image html block_scan_warpscans.png
-     * <div class="centercaption">\p BLOCK_REDUCE_WARP_REDUCTIONS data flow for a hypothetical 16-thread threadblock and 4-thread raking warp.</div>
-     *
-     * \par Performance Considerations
-     * - Although this variant may suffer lower overall throughput across the
-     *   GPU because due to a heavy reliance on inefficient warp-reductions, it can
-     *   often provide lower turnaround latencies when the GPU is under-occupied.
+     * \par Usage Considerations
+     * BLOCK_BYTE_HISTO_ATOMIC can only be used on version SM120 or later. Otherwise BLOCK_BYTE_HISTO_SORT is used regardless.
      */
-    BLOCK_REDUCE_WARP_REDUCTIONS,
+    BLOCK_BYTE_HISTO_ATOMIC,
 };
 
 
@@ -102,116 +77,128 @@ enum BlockReduceAlgorithm
  */
 
 /**
- * \brief BlockReduce provides variants of parallel reduction across a CUDA threadblock. ![](reduce_logo.png)
+ * \brief BlockByteHisto constructs 256-valued histograms from 8b data partitioned across threads within a CUDA thread block.
  *
  * \par Overview
  * A <a href="http://en.wikipedia.org/wiki/Reduce_(higher-order_function)"><em>reduction</em> (or <em>fold</em>)</a>
  * uses a binary combining operator to compute a single aggregate from a list of input elements.
  *
  * \par
- * For convenience, BlockReduce exposes a spectrum of entrypoints that differ by:
- * - Operator (generic reduction <em>vs.</em> summation for numeric types)
+ * For convenience, BlockByteHisto exposes a spectrum of entrypoints that differ by:
  * - Granularity (single <em>vs.</em> multiple data items per thread)
- * - Input (full data tile <em>vs.</em> partially-full data tile having some undefined elements)
+ * - Complete/incremental composition (compute a new histogram vs. update existing histogram data)
  *
- * \tparam T                The reduction input/output element type
  * \tparam BLOCK_THREADS    The threadblock size in threads
- * \tparam ALGORITHM        <b>[optional]</b> cub::BlockReduceAlgorithm tuning policy.  Default = cub::BLOCK_REDUCE_RAKING.
+ * \tparam ALGORITHM        <b>[optional]</b> cub::BlockByteHistoAlgorithm tuning policy.  Default = cub::BLOCK_BYTE_HISTO_SORT.
  *
  * \par Algorithm
- * BlockReduce can be (optionally) configured to use different algorithms:
- *   -# <b>cub::BLOCK_REDUCE_RAKING</b>.  An efficient "raking" reduction algorithm. [More...](\ref cub::BlockReduceAlgorithm)
- *   -# <b>cub::BLOCK_REDUCE_WARP_REDUCTIONS</b>.  A quick "tiled warp-reductions" reduction algorithm. [More...](\ref cub::BlockReduceAlgorithm)
+ * BlockByteHisto can be (optionally) configured to use different algorithms:
+ *   -# <b>cub::BLOCK_BYTE_HISTO_SORT</b>.  An efficient An efficient "raking" reduction algorithm. [More...](\ref cub::BlockByteHistoAlgorithm)
+ *   -# <b>cub::BLOCK_BYTE_HISTO_ATOMIC</b>.  A quick "tiled warp-reductions" reduction algorithm. [More...](\ref cub::BlockByteHistoAlgorithm)
  *
  * \par Usage Considerations
- * - Supports non-commutative reduction operators
+ * - The histogram output can be constructed in shared or global memory
  * - Supports partially-full threadblocks (i.e., the most-significant thread ranks having undefined values).
- * - Assumes a [<em>blocked arrangement</em>](index.html#sec3sec3) of elements across threads
- * - The threadblock-wide scalar reduction output is only considered valid in <em>thread</em><sub>0</sub>
- * - \smemreuse{BlockReduce::SmemStorage}
+ * - \smemreuse{BlockByteHisto::SmemStorage}
  *
  * \par Performance Considerations
- * - Very efficient (only one synchronization barrier).
- * - Zero bank conflicts for most types.
  * - Computation is slightly more efficient (i.e., having lower instruction overhead) for:
- *   - \p T is a built-in C++ primitive or CUDA vector type (e.g., \p short, \p int2, \p double, \p float2, etc.)
  *   - \p BLOCK_THREADS is a multiple of the architecture's warp size
  *   - Every thread has a valid input (i.e., full <em>vs.</em> partial-tiles)
- * - See cub::BlockReduceAlgorithm for performance details regarding algorithmic alternatives
+ * - See cub::BlockByteHistoAlgorithm for performance details regarding algorithmic alternatives
  *
  * \par Examples
  * \par
- * <em>Example 1.</em> Perform a simple reduction of 512 integer keys that
- * are partitioned in a blocked arrangement across a 128-thread threadblock (where each thread holds 4 keys).
+ * <em>Example 1.</em> Compute a simple 8b histogram in shared memory from 512 byte values that
+ * are partitioned across a 128-thread threadblock (where each thread holds 4 values).
  * \code
  * #include <cub.cuh>
  *
  * __global__ void SomeKernel(...)
  * {
- *      // Parameterize BlockReduce for 128 threads on type int
- *      typedef cub::BlockReduce<int, 128> BlockReduce;
+ *      // Parameterize BlockByteHisto for 128 threads
+ *      typedef cub::BlockByteHisto<128> BlockByteHisto;
  *
- *      // Declare shared memory for BlockReduce
- *      __shared__ typename BlockReduce::SmemStorage smem_storage;
+ *      // Declare shared memory for BlockByteHisto
+ *      __shared__ typename BlockByteHisto::SmemStorage smem_storage;
  *
- *      // A segment of consecutive input items per thread
- *      int data[4];
+ *      // Declare shared memory for histogram
+ *      __shared__ unsigned char smem_histo[256];
  *
- *      // Obtain items in blocked order
+ *      // Input items per thread
+ *      unsigned char data[4];
+ *
+ *      // Obtain items
  *      ...
  *
- *      // Compute the threadblock-wide sum for thread0
- *      int aggregate = BlockReduce::Sum(smem_storage, data);
+ *      // Compute the threadblock-wide histogram
+ *      BlockByteHisto::Sum(smem_storage, smem_histo, data);
  *
  *      ...
  * \endcode
  *
  * \par
- * <em>Example 2:</em> Perform a guarded reduction of only the first
- * \p num_items keys that are partitioned in a blocked arrangement
- * across \p BLOCK_THREADS threads.
+ * <em>Example 2:</em> Composite an incremental round of 8b histogram data onto
+ * an existing histogram in global memory.  The composition is guarded: not all
+ * threads have valid inputs.
  * \code
  * #include <cub.cuh>
  *
  * template <int BLOCK_THREADS>
- * __global__ void SomeKernel(..., int num_items)
+ * __global__ void SomeKernel(..., int *d_histogram, int num_items)
  * {
- *      // Parameterize BlockReduce on type int
- *      typedef cub::BlockReduce<int, BLOCK_THREADS> BlockReduce;
+ *      // Parameterize BlockByteHisto
+ *      typedef cub::BlockByteHisto<BLOCK_THREADS> BlockByteHisto;
  *
- *      // Declare shared memory for BlockReduce
- *      __shared__ typename BlockReduce::SmemStorage smem_storage;
+ *      // Declare shared memory for BlockByteHisto
+ *      __shared__ typename BlockByteHisto::SmemStorage smem_storage;
  *
  *      // Guarded load of input item
  *      int data;
  *      if (threadIdx.x < num_items) data = ...;
  *
  *      // Compute the threadblock-wide sum of valid elements in thread0
- *      int aggregate = BlockReduce::Sum(smem_storage, data, num_items);
+ *      BlockByteHisto::Sum(smem_storage, d_histogram, data, num_items);
  *
  *      ...
  * \endcode
  *
  */
 template <
-    typename                T,
-    int                     BLOCK_THREADS,
-    BlockReduceAlgorithm    ALGORITHM = BLOCK_REDUCE_RAKING>
-class BlockReduce
+    typename                    T,
+    int                         BLOCK_THREADS,
+    BlockByteHistoAlgorithm     ALGORITHM = BLOCK_BYTE_HISTO_SORT>
+class BlockByteHisto
 {
 private:
 
+    /******************************************************************************
+     * Constants
+     ******************************************************************************/
+
+    /**
+     * Ensure the template parameterization meets the requirements of the
+     * targeted device architecture.  BLOCK_BYTE_HISTO_ATOMIC can only be used
+     * on version SM120 or later.  Otherwise BLOCK_BYTE_HISTO_SORT is used
+     * regardless.
+     */
+    static const BlockReduceAlgorithm SAFE_ALGORITHM =
+        ((ALGORITHM == BLOCK_BYTE_HISTO_ATOMIC) && (CUB_PTX_ARCH < 120)) ?
+            BLOCK_BYTE_HISTO_SORT :
+            ALGORITHM;
+
     #ifndef DOXYGEN_SHOULD_SKIP_THIS    // Do not document
+
 
     /******************************************************************************
      * Algorithmic variants
      ******************************************************************************/
 
     /**
-     * BLOCK_REDUCE_RAKING algorithmic variant
+     * BLOCK_BYTE_HISTO_SORT algorithmic variant
      */
-    template <BlockReduceAlgorithm _ALGORITHM, int DUMMY = 0>
-    struct BlockReduceInternal
+    template <BlockByteHistoAlgorithm _ALGORITHM, int DUMMY = 0>
+    struct BlockByteHistoInternal
     {
         /// Layout type for padded threadblock raking grid
         typedef BlockRakingLayout<T, BLOCK_THREADS, 1> BlockRakingLayout;
@@ -358,53 +345,28 @@ private:
 
 
     /**
-     * BLOCK_REDUCE_WARP_REDUCTIONS algorithmic variant
-     *
-     * Can only be used when BLOCK_THREADS is a multiple of the architecture's warp size
+     * BLOCK_BYTE_HISTO_ATOMIC algorithmic variant
      */
     template <int DUMMY>
-    struct BlockReduceInternal<BLOCK_REDUCE_WARP_REDUCTIONS, DUMMY>
+    struct BlockByteHistoInternal<BLOCK_BYTE_HISTO_ATOMIC, DUMMY>
     {
-        /// Constants
-        enum
-        {
-            /// Number of active warps
-            WARPS = (BLOCK_THREADS + PtxArchProps::WARP_THREADS - 1) / PtxArchProps::WARP_THREADS,
-
-            /// The logical warp size for warp reductions
-            LOGICAL_WARP_SIZE = CUB_MIN(BLOCK_THREADS, PtxArchProps::WARP_THREADS),
-
-            /// Whether or not the logical warp size evenly divides the threadblock size
-            EVEN_WARP_MULTIPLE = (BLOCK_THREADS % LOGICAL_WARP_SIZE == 0)
-        };
-
-
-        ///  WarpReduce utility type
-        typedef typename WarpReduce<T, WARPS, LOGICAL_WARP_SIZE>::Internal WarpReduce;
-
-
         /// Shared memory storage layout type
-        struct SmemStorage
-        {
-            typename WarpReduce::SmemStorage    warp_reduce;                ///< Buffer for warp-synchronous scan
-            T                                   warp_aggregates[WARPS];     ///< Shared totals from each warp-synchronous scan
-            T                                   block_prefix;               ///< Shared prefix for the entire threadblock
-        };
-
+        struct SmemStorage {};
 
         /// Returns block-wide aggregate in <em>thread</em><sub>0</sub>.
-        template <
-            bool                FULL_TILE,
-            typename            ReductionOp>
-        static __device__ __forceinline__ T ApplyWarpAggregates(
+        template <int SizeT>
+        static __device__ __forceinline__ void Composite(
             SmemStorage         &smem_storage,      ///< [in] Shared reference to opaque SmemStorage layout
-            ReductionOp         reduction_op,       ///< [in] Binary scan operator
-            T                   warp_aggregate,     ///< [in] <b>[<em>lane</em><sub>0</sub>s only]</b> Warp-wide aggregate reduction of input items
-            const unsigned int  &num_valid)         ///< [in] Number of valid elements (may be less than BLOCK_THREADS)
+            SizeT               *histogram,
+            unsigned char       data)
         {
+            atomicInc(historgram[data])
+
+
+
             // Warp, thread-lane-IDs
-            unsigned int warp_id = (WARPS == 1) ? 0 : (threadIdx.x / LOGICAL_WARP_SIZE);
-            unsigned int lane_id = (WARPS == 1) ? threadIdx.x : (threadIdx.x & (LOGICAL_WARP_SIZE - 1));
+            unsigned int warp_id = (WARPS == 1) ? 0 : (threadIdx.x / PtxArchProps::WARP_THREADS);
+            unsigned int lane_id = (WARPS == 1) ? threadIdx.x : (threadIdx.x & (PtxArchProps::WARP_THREADS - 1));
 
             // Share lane aggregates
             if (lane_id == 0)
@@ -420,7 +382,7 @@ private:
                 #pragma unroll
                 for (int SUCCESSOR_WARP = 1; SUCCESSOR_WARP < WARPS; SUCCESSOR_WARP++)
                 {
-                    if (FULL_TILE || (SUCCESSOR_WARP * LOGICAL_WARP_SIZE < num_valid))
+                    if (FULL_TILE || (SUCCESSOR_WARP * PtxArchProps::WARP_THREADS < num_valid))
                     {
                         warp_aggregate = reduction_op(warp_aggregate, smem_storage.warp_aggregates[SUCCESSOR_WARP]);
                     }
@@ -432,23 +394,23 @@ private:
 
 
         /// Computes a threadblock-wide reduction using addition (+) as the reduction operator. The first num_valid threads each contribute one reduction partial.  The return value is only valid for thread<sub>0</sub>.
-        template <bool FULL_TILE>
+        template <int FULL_TILE>
         static __device__ __forceinline__ T Sum(
             SmemStorage         &smem_storage,  ///< [in] Shared reference to opaque SmemStorage layout
             T                   input,          ///< [in] Calling thread's input partial reductions
             const unsigned int  &num_valid)     ///< [in] Number of valid elements (may be less than BLOCK_THREADS)
         {
             cub::Sum<T>     reduction_op;
-            unsigned int    warp_id = (WARPS == 1) ? 0 : (threadIdx.x / LOGICAL_WARP_SIZE);
-            unsigned int    warp_offset = warp_id * LOGICAL_WARP_SIZE;
-            unsigned int    warp_num_valid = (FULL_TILE && EVEN_WARP_MULTIPLE) ?
-                                LOGICAL_WARP_SIZE :
+            unsigned int    warp_id = (WARPS == 1) ? 0 : (threadIdx.x / PtxArchProps::WARP_THREADS);
+            unsigned int    warp_offset = warp_id * PtxArchProps::WARP_THREADS;
+            unsigned int    warp_num_valid = (FULL_TILE) ?
+                                PtxArchProps::WARP_THREADS :
                                 (warp_offset < num_valid) ?
                                     num_valid - warp_offset :
                                     0;
 
             // Warp reduction in every warp
-            T warp_aggregate = WarpReduce::template Sum<(FULL_TILE && EVEN_WARP_MULTIPLE), 1>(
+            T warp_aggregate = WarpReduce::template Sum<FULL_TILE, 1>(
                 smem_storage.warp_reduce,
                 input,
                 warp_num_valid);
@@ -460,7 +422,7 @@ private:
 
         /// Computes a threadblock-wide reduction using the specified reduction operator. The first num_valid threads each contribute one reduction partial.  The return value is only valid for thread<sub>0</sub>.
         template <
-            bool                FULL_TILE,
+            int                 FULL_TILE,
             typename            ReductionOp>
         static __device__ __forceinline__ T Reduce(
             SmemStorage         &smem_storage,      ///< [in] Shared reference to opaque SmemStorage layout
@@ -468,16 +430,16 @@ private:
             const unsigned int  &num_valid,         ///< [in] Number of valid elements (may be less than BLOCK_THREADS)
             ReductionOp         reduction_op)       ///< [in] Binary reduction operator
         {
-            unsigned int    warp_id = (WARPS == 1) ? 0 : (threadIdx.x / LOGICAL_WARP_SIZE);
-            unsigned int    warp_offset = warp_id * LOGICAL_WARP_SIZE;
-            unsigned int    warp_num_valid = (FULL_TILE && EVEN_WARP_MULTIPLE) ?
-                                LOGICAL_WARP_SIZE :
+            unsigned int    warp_id = (WARPS == 1) ? 0 : (threadIdx.x / PtxArchProps::WARP_THREADS);
+            unsigned int    warp_offset = warp_id * PtxArchProps::WARP_THREADS;
+            unsigned int    warp_num_valid = (FULL_TILE) ?
+                                PtxArchProps::WARP_THREADS :
                                 (warp_offset < num_valid) ?
                                     num_valid - warp_offset :
                                     0;
 
             // Warp reduction in every warp
-            T warp_aggregate = WarpReduce::template Reduce<(FULL_TILE && EVEN_WARP_MULTIPLE), 1>(
+            T warp_aggregate = WarpReduce::template Reduce<FULL_TILE, 1>(
                 smem_storage.warp_reduce,
                 input,
                 warp_num_valid,
@@ -493,13 +455,13 @@ private:
     #endif // DOXYGEN_SHOULD_SKIP_THIS
 
 
-    /// Shared memory storage layout type for BlockReduce
-    typedef typename BlockReduceInternal<ALGORITHM>::SmemStorage _SmemStorage;
+    /// Shared memory storage layout type for BlockByteHisto
+    typedef typename BlockByteHistoInternal<SAFE_ALGORITHM>::SmemStorage _SmemStorage;
 
 
 public:
 
-    /// \smemstorage{BlockReduce}
+    /// \smemstorage{BlockByteHisto}
     typedef _SmemStorage SmemStorage;
 
 
@@ -524,7 +486,7 @@ public:
         T               input,                      ///< [in] Calling thread's input
         ReductionOp     reduction_op)               ///< [in] Binary reduction operator
     {
-        return BlockReduceInternal<ALGORITHM>::template Reduce<true>(smem_storage, input, BLOCK_THREADS, reduction_op);
+        return BlockByteHistoInternal<SAFE_ALGORITHM>::template Reduce<true>(smem_storage, input, BLOCK_THREADS, reduction_op);
     }
 
 
@@ -568,14 +530,14 @@ public:
         ReductionOp         reduction_op,           ///< [in] Binary reduction operator
         const unsigned int  &num_valid)             ///< [in] Number of threads containing valid elements (may be less than BLOCK_THREADS)
     {
-        // Determine if we scan skip bounds checking
+        // Determine if we don't need bounds checking
         if (num_valid >= BLOCK_THREADS)
         {
-            return BlockReduceInternal<ALGORITHM>::template Reduce<true>(smem_storage, input, num_valid, reduction_op);
+            return BlockByteHistoInternal<SAFE_ALGORITHM>::template Reduce<true>(smem_storage, input, num_valid, reduction_op);
         }
         else
         {
-            return BlockReduceInternal<ALGORITHM>::template Reduce<false>(smem_storage, input, num_valid, reduction_op);
+            return BlockByteHistoInternal<SAFE_ALGORITHM>::template Reduce<false>(smem_storage, input, num_valid, reduction_op);
         }
     }
 
@@ -598,7 +560,7 @@ public:
         SmemStorage     &smem_storage,              ///< [in] Shared reference to opaque SmemStorage layout
         T               input)                      ///< [in] Calling thread's input
     {
-        return BlockReduceInternal<ALGORITHM>::template Sum<true>(smem_storage, input, BLOCK_THREADS);
+        return BlockByteHistoInternal<SAFE_ALGORITHM>::template Sum<true>(smem_storage, input, BLOCK_THREADS);
     }
 
     /**
@@ -633,14 +595,14 @@ public:
         T                   input,                  ///< [in] Calling thread's input
         const unsigned int  &num_valid)             ///< [in] Number of threads containing valid elements (may be less than BLOCK_THREADS)
     {
-        // Determine if we scan skip bounds checking
+        // Determine if we don't need bounds checking
         if (num_valid >= BLOCK_THREADS)
         {
-            return BlockReduceInternal<ALGORITHM>::template Sum<true>(smem_storage, input, num_valid);
+            return BlockByteHistoInternal<SAFE_ALGORITHM>::template Sum<true>(smem_storage, input, num_valid);
         }
         else
         {
-            return BlockReduceInternal<ALGORITHM>::template Sum<false>(smem_storage, input, num_valid);
+            return BlockByteHistoInternal<SAFE_ALGORITHM>::template Sum<false>(smem_storage, input, num_valid);
         }
     }
 

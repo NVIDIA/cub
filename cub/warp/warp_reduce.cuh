@@ -67,11 +67,12 @@ namespace cub {
  *
  * \tparam T                        The reduction input/output element type
  * \tparam WARPS                    <b>[optional]</b> The number of "logical" warps performing concurrent warp reductions.  Default is 1.
- * \tparam LOGICAL_WARP_THREADS     <b>[optional]</b> The number of threads per "logical" warp (may be less than the number of hardware warp threads).  Default is the warp size associated with the CUDA Compute Capability targeted by the compiler (e.g., 32 threads for SM20).
+ * \tparam LOGICAL_WARP_THREADS     <b>[optional]</b> The number of threads per "logical" warp (may be less than the number of hardware warp threads).  Default is the warp size of the targeted CUDA compute-capability (e.g., 32 threads for SM20).
  *
  * \par Usage Considerations
  * - Supports non-commutative reduction operators
  * - Supports "logical" warps smaller than the physical warp size (e.g., a logical warp of 8 threads)
+ * - The number of entrant threads must be an even multiple of /p LOGICAL_WARP_THREADS (default is the warp size of the targeted CUDA compute-capability)
  * - Warp reductions are concurrent if more than one warp is participating
  * - The warp-wide scalar reduction output is only considered valid in <em>warp-lane</em><sub>0</sub>
  * - \smemreuse{WarpReduce::SmemStorage}
@@ -387,9 +388,6 @@ private:
 
             /// The number of shared memory elements per warp
             WARP_SMEM_ELEMENTS =  LOGICAL_WARP_THREADS + HALF_WARP_THREADS,
-
-            /// Whether or not warp-synchronous reduction should be unguarded (i.e., the warp-reduction elements is a power of two
-            WARP_SYNCHRONOUS_UNGUARDED = ((LOGICAL_WARP_THREADS & (LOGICAL_WARP_THREADS - 1)) == 0),
         };
 
 
@@ -425,7 +423,7 @@ private:
                 ThreadStore<PTX_STORE_VS>(&smem_storage.warp_buffer[warp_id][lane_id], input);
 
                 // Update input if addend is in range
-                if ((FULL_TILE && WARP_SYNCHRONOUS_UNGUARDED) || ((lane_id + OFFSET) * VALID_PER_LANE < valid))
+                if ((FULL_TILE && POW_OF_TWO) || ((lane_id + OFFSET) * VALID_PER_LANE < valid))
                 {
                     T addend = ThreadLoad<PTX_LOAD_VS>(&smem_storage.warp_buffer[warp_id][lane_id + OFFSET]);
                     input = reduction_op(input, addend);
@@ -474,6 +472,8 @@ public:
      *
      * The return value is undefined in threads other than thread<sub>0</sub>.
      *
+     * The number of entrant threads must be an even multiple of /p LOGICAL_WARP_THREADS (default is the warp size of the targeted CUDA compute-capability)
+     *
      * \smemreuse
      */
     static __device__ __forceinline__ T Sum(
@@ -489,6 +489,8 @@ public:
      * All threads in each logical warp must agree on the same value for \p valid_lanes.  Otherwise the result is undefined.
      *
      * The return value is undefined in threads other than <em>warp-lane</em><sub>0</sub>.
+     *
+     * The number of entrant threads must be an even multiple of /p LOGICAL_WARP_THREADS (default is the warp size of the targeted CUDA compute-capability)
      *
      * \smemreuse
      */
@@ -520,6 +522,8 @@ public:
      *
      * The return value is undefined in threads other than <em>warp-lane</em><sub>0</sub>.
      *
+     * The number of entrant threads must be an even multiple of /p LOGICAL_WARP_THREADS (default is the warp size of the targeted CUDA compute-capability)
+     *
      * \smemreuse
      *
      * \tparam ReductionOp     <b>[inferred]</b> Binary scan operator type having member <tt>T operator()(const T &a, const T &b)</tt>
@@ -539,6 +543,8 @@ public:
      * All threads in each logical warp must agree on the same value for \p valid_lanes.  Otherwise the result is undefined.
      *
      * The return value is undefined in threads other than <em>warp-lane</em><sub>0</sub>.
+     *
+     * The number of entrant threads must be an even multiple of /p LOGICAL_WARP_THREADS (default is the warp size of the targeted CUDA compute-capability)
      *
      * \smemreuse
      *
