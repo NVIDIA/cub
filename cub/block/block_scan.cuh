@@ -222,7 +222,7 @@ enum BlockScanAlgorithm
  *     ...
  *
  *     // Compute the threadblock-wide exclusive prefix sum, seeded with a threadblock-wide prefix
- *     int aggregate;
+ *     int block_aggregate;
  *     BlockScan::ExclusiveSum(smem_storage, data, data, block_aggregate, BlockPrefix(d_global_counter));
  * \endcode
  */
