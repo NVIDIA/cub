@@ -391,6 +391,13 @@ void InitValue(int gen_mode, T &value, int index = 0)
     {                                                        \
         InitValue(gen_mode, value.x, index);                \
     }                                                        \
+    /* Max */                                            \
+    __host__ __device__ __forceinline__ bool operator>(        \
+        const T &a,                                         \
+        const T &b)                                            \
+    {                                                        \
+        return (a.x > b.x);                                  \
+    }                                                           \
     /* Summation */                                            \
     __host__ __device__ __forceinline__ T operator+(        \
         const T &a,                                         \
@@ -428,6 +435,13 @@ void InitValue(int gen_mode, T &value, int index = 0)
         InitValue(gen_mode, value.x, index);                \
         InitValue(gen_mode, value.y, index);                \
     }                                                        \
+    /* Max */                                            \
+    __host__ __device__ __forceinline__ bool operator>(        \
+        const T &a,                                         \
+        const T &b)                                            \
+    {                                                        \
+        return (a.x > b.x);                                  \
+    }                                                           \
     /* Summation */                                            \
     __host__ __device__ __forceinline__ T operator+(        \
         const T &a,                                         \
@@ -471,6 +485,13 @@ void InitValue(int gen_mode, T &value, int index = 0)
         InitValue(gen_mode, value.y, index);                \
         InitValue(gen_mode, value.z, index);                \
     }                                                        \
+    /* Max */                                            \
+    __host__ __device__ __forceinline__ bool operator>(        \
+        const T &a,                                         \
+        const T &b)                                            \
+    {                                                        \
+        return (a.x > b.x);                                  \
+    }                                                           \
     /* Summation */                                            \
     __host__ __device__ __forceinline__ T operator+(        \
         const T &a,                                         \
@@ -517,6 +538,13 @@ void InitValue(int gen_mode, T &value, int index = 0)
         InitValue(gen_mode, value.z, index);                \
         InitValue(gen_mode, value.w, index);                \
     }                                                        \
+    /* Max */                                            \
+    __host__ __device__ __forceinline__ bool operator>(        \
+        const T &a,                                         \
+        const T &b)                                            \
+    {                                                        \
+    	return (a.x > b.x);                                  \
+    }                                                           \
     /* Summation */                                            \
     __host__ __device__ __forceinline__ T operator+(        \
         const T &a,                                         \
@@ -565,10 +593,10 @@ CUB_VEC_OVERLOAD(double)
  */
 struct TestFoo
 {
-    long long     x;
+    long long   x;
     int         y;
-    short         z;
-    char         w;
+    short       z;
+    char        w;
 
     // Factory
     static __host__ __device__ __forceinline__ TestFoo MakeTestFoo(long long x, int y, short z, char w)
@@ -589,6 +617,16 @@ struct TestFoo
         return (x != b.x) || (y != b.y) || (z != b.z) || (w != b.w);
     }
 };
+
+
+/**
+ * TestBar ostream operator
+ */
+bool __host__ __device__ __forceinline__ operator>(const TestFoo& first, const TestFoo& second)
+{
+    return (first.x > second.x);
+}
+
 
 /**
  * TestFoo ostream operator
@@ -662,6 +700,14 @@ struct TestBar
         cub::ThreadStore<MODIFIER>(&(ptr->y), y);
     }
 };
+
+/**
+ * TestBar ostream operator
+ */
+bool __host__ __device__ __forceinline__ operator>(const TestBar& first, const TestBar& second)
+{
+    return (first.x > second.x);
+}
 
 /**
  * TestBar ostream operator

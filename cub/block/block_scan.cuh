@@ -117,7 +117,7 @@ enum BlockScanAlgorithm
  * \par
  * For convenience, BlockScan exposes a spectrum of entrypoints that differ by:
  * - Operator (generic scan <em>vs.</em> prefix sum for numeric types)
- * - Granularity (single <em>vs.</em> multiple items per thread)
+ * - Granularity (single <em>vs.</em> multiple data items per thread)
  * - Output ordering (inclusive <em>vs.</em> exclusive)
  * - Block-wide prefix (identity <em>vs.</em> call-back functor)
  * - Output (scanned elements only <em>vs.</em> scanned elements and the total aggregate)
@@ -129,7 +129,7 @@ enum BlockScanAlgorithm
  *
  * \tparam T                The reduction input/output element type
  * \tparam BLOCK_THREADS    The threadblock size in threads
- * \tparam ALGORITHM           <b>[optional]</b> cub::BlockScanAlgorithm tuning policy.  Default = cub::BLOCK_SCAN_RAKING.
+ * \tparam ALGORITHM        <b>[optional]</b> cub::BlockScanAlgorithm tuning policy.  Default = cub::BLOCK_SCAN_RAKING.
  *
  * \par Algorithm
  * BlockScan can be (optionally) configured to use different algorithms:
@@ -198,7 +198,7 @@ enum BlockScanAlgorithm
  *
  *     /// Functor operator.  Produces a value for seeding the threadblock-wide scan given
  *     /// the local aggregate (only valid in thread-0).
- *     __device__ int operator(int block_aggregate)
+ *     __device__ int operator()(int block_aggregate)
  *     {
  *         return (threadIdx.x == 0) ?
  *             atomicAdd(d_global_counter, block_aggregate) :      // thread0
