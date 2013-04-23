@@ -147,7 +147,7 @@ __global__ void FullTileReduceKernel(
     block_offset += TILE_SIZE;
 
     // Cooperative reduce first tile
-    T block_aggregate = BlockReduce::Reduce(smem_storage, data, reduction_op);
+    T block_aggregate = DeviceTest<T, ReductionOp>::template Test<BlockReduce>(smem_storage, data, reduction_op);
 
     // Loop over input tiles
     while (block_offset < TILE_SIZE * tiles)
@@ -281,13 +281,15 @@ void TestFullTile(
     CubDebugExit(cudaMalloc((void**)&d_in, sizeof(T) * num_elements));
     CubDebugExit(cudaMalloc((void**)&d_out, sizeof(T) * 1));
     CubDebugExit(cudaMemcpy(d_in, h_in, sizeof(T) * num_elements, cudaMemcpyHostToDevice));
+    CubDebugExit(cudaMemset(d_out, 0, sizeof(T) * 1));
 
     // Test multi-tile (unguarded)
-    printf("TestFullTile, gen-mode %d, num_elements(%d), BLOCK_THREADS(%d), ITEMS_PER_THREAD(%d), %s (%d bytes) elements:\n",
+    printf("TestFullTile, gen-mode %d, num_elements(%d), BLOCK_THREADS(%d), ITEMS_PER_THREAD(%d), tiles(%d), %s (%d bytes) elements:\n",
         gen_mode,
         num_elements,
         BLOCK_THREADS,
         ITEMS_PER_THREAD,
+        tiles,
         type_string,
         (int) sizeof(T));
     fflush(stdout);
@@ -384,6 +386,7 @@ void TestPartialTile(
     CubDebugExit(cudaMalloc((void**)&d_in, sizeof(T) * TILE_SIZE));
     CubDebugExit(cudaMalloc((void**)&d_out, sizeof(T) * 1));
     CubDebugExit(cudaMemcpy(d_in, h_in, sizeof(T) * num_elements, cudaMemcpyHostToDevice));
+    CubDebugExit(cudaMemset(d_out, 0, sizeof(T) * 1));
 
     printf("TestPartialTile, gen-mode %d, num_elements(%d), BLOCK_THREADS(%d), %s (%d bytes) elements:\n",
         gen_mode,
@@ -500,6 +503,17 @@ void Test(
 
 
 /**
+ * Run battery of tests for different block sizes
+ */
+template <typename T>
+void Test(char* type_string)
+{
+    Test<T>(Sum<T>(), type_string);
+    Test<T>(Max<T>(), type_string);
+}
+
+
+/**
  * Main
  */
 int main(int argc, char** argv)
@@ -532,25 +546,25 @@ int main(int argc, char** argv)
     else
     {
         // primitives
-        Test<char>(Sum<char>(), CUB_TYPE_STRING(char));
-        Test<short>(Sum<short>(), CUB_TYPE_STRING(short));
-        Test<int>(Sum<int>(), CUB_TYPE_STRING(int));
-        Test<long long>(Sum<long long>(), CUB_TYPE_STRING(long long));
+        Test<char>(CUB_TYPE_STRING(char));
+        Test<short>(CUB_TYPE_STRING(short));
+        Test<int>(CUB_TYPE_STRING(int));
+        Test<long long>(CUB_TYPE_STRING(long long));
 
         // vector types
-        Test<char2>(Sum<char2>(), CUB_TYPE_STRING(char2));
-        Test<short2>(Sum<short2>(), CUB_TYPE_STRING(short2));
-        Test<int2>(Sum<int2>(), CUB_TYPE_STRING(int2));
-        Test<longlong2>(Sum<longlong2>(), CUB_TYPE_STRING(longlong2));
+        Test<char2>(CUB_TYPE_STRING(char2));
+        Test<short2>(CUB_TYPE_STRING(short2));
+        Test<int2>(CUB_TYPE_STRING(int2));
+        Test<longlong2>(CUB_TYPE_STRING(longlong2));
 
-        Test<char4>(Sum<char4>(), CUB_TYPE_STRING(char4));
-        Test<short4>(Sum<short4>(), CUB_TYPE_STRING(short4));
-        Test<int4>(Sum<int4>(), CUB_TYPE_STRING(int4));
-        Test<longlong4>(Sum<longlong4>(), CUB_TYPE_STRING(longlong4));
+        Test<char4>(CUB_TYPE_STRING(char4));
+        Test<short4>(CUB_TYPE_STRING(short4));
+        Test<int4>(CUB_TYPE_STRING(int4));
+        Test<longlong4>(CUB_TYPE_STRING(longlong4));
 
         // Complex types
-        Test<TestFoo>(Sum<TestFoo>(), CUB_TYPE_STRING(TestFoo));
-        Test<TestBar>(Sum<TestBar>(), CUB_TYPE_STRING(TestBar));
+        Test<TestFoo>(CUB_TYPE_STRING(TestFoo));
+        Test<TestBar>(CUB_TYPE_STRING(TestBar));
     }
 
     return 0;
