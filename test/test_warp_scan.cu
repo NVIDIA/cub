@@ -36,7 +36,7 @@
 #include <stdio.h>
 #include <iostream>
 #include "test_util.h"
-#include "cub.cuh"
+#include <cub/cub.cuh>
 
 using namespace cub;
 
@@ -258,6 +258,7 @@ template <
 __global__ void WarpScanKernel(
     T           *d_in,
     T           *d_out,
+    T           *d_aggregate,
     ScanOp      scan_op,
     IdentityT   identity,
     T           prefix,
@@ -272,7 +273,7 @@ __global__ void WarpScanKernel(
     // Per-thread tile data
     T data = d_in[threadIdx.x];
 
-    // Record elapsed clocks
+    // Start cycle timer
     clock_t start = clock();
 
     // Test scan
@@ -281,17 +282,20 @@ __global__ void WarpScanKernel(
     DeviceTest<T, ScanOp, IdentityT>::template Test<TEST_MODE, WarpScan>(
         smem_storage, data, identity, scan_op, aggregate, prefix_op);
 
-    // Record elapsed clocks
-    *d_elapsed = clock() - start;
+    // Stop cycle timer
+    clock_t stop = clock();
 
     // Store data
     d_out[threadIdx.x] = data;
 
-    // Store aggregate and prefix
+    // Store aggregate
+    d_aggregate[threadIdx.x] = aggregate;
+
+    // Store prefix and time
     if (threadIdx.x == 0)
     {
-        d_out[LOGICAL_WARP_THREADS] = aggregate;
-        d_out[LOGICAL_WARP_THREADS + 1] = prefix_op.prefix;
+        d_out[LOGICAL_WARP_THREADS] = prefix_op.prefix;
+        *d_elapsed = (start > stop) ? start - stop : stop - start;
     }
 }
 
@@ -389,17 +393,25 @@ void Test(
     // Allocate host arrays
     T *h_in = new T[LOGICAL_WARP_THREADS];
     T *h_reference = new T[LOGICAL_WARP_THREADS];
+    T *h_aggregate = new T[LOGICAL_WARP_THREADS];
 
     // Initialize problem
     T *p_prefix = (TEST_MODE == PREFIX_AGGREGATE) ? &prefix : NULL;
     T aggregate = Initialize(gen_mode, h_in, h_reference, LOGICAL_WARP_THREADS, scan_op, identity, p_prefix);
 
+    for (int i = 0; i < LOGICAL_WARP_THREADS; ++i)
+    {
+        h_aggregate[i] = aggregate;
+    }
+
     // Initialize device arrays
     T *d_in = NULL;
     T *d_out = NULL;
+    T *d_aggregate = NULL;
     clock_t *d_elapsed = NULL;
     CubDebugExit(cudaMalloc((void**)&d_in, sizeof(T) * LOGICAL_WARP_THREADS));
-    CubDebugExit(cudaMalloc((void**)&d_out, sizeof(T) * (LOGICAL_WARP_THREADS + 2)));
+    CubDebugExit(cudaMalloc((void**)&d_out, sizeof(T) * (LOGICAL_WARP_THREADS + 1)));
+    CubDebugExit(cudaMalloc((void**)&d_aggregate, sizeof(T) * LOGICAL_WARP_THREADS));
     CubDebugExit(cudaMalloc((void**)&d_elapsed, sizeof(clock_t)));
     CubDebugExit(cudaMemcpy(d_in, h_in, sizeof(T) * LOGICAL_WARP_THREADS, cudaMemcpyHostToDevice));
 
@@ -417,6 +429,7 @@ void Test(
     WarpScanKernel<LOGICAL_WARP_THREADS, TEST_MODE><<<1, LOGICAL_WARP_THREADS>>>(
         d_in,
         d_out,
+        d_aggregate,
         scan_op,
         identity,
         prefix,
@@ -429,30 +442,36 @@ void Test(
 
     // Copy out and display results
     printf("\tScan results: ");
-    AssertEquals(0, CompareDeviceResults(h_reference, d_out, LOGICAL_WARP_THREADS, g_verbose, g_verbose));
-    printf("\n");
+    int compare = CompareDeviceResults(h_reference, d_out, LOGICAL_WARP_THREADS, g_verbose, g_verbose);
+    printf("%s\n", compare ? "FAIL" : "PASS");
+    AssertEquals(0, compare);
 
     // Copy out and display aggregate
     if ((TEST_MODE == AGGREGATE) || (TEST_MODE == PREFIX_AGGREGATE))
     {
         printf("\tScan aggregate: ");
-        AssertEquals(0, CompareDeviceResults(&aggregate, d_out + LOGICAL_WARP_THREADS, 1, g_verbose, g_verbose));
-        printf("\n");
+        compare = CompareDeviceResults(h_aggregate, d_aggregate, LOGICAL_WARP_THREADS, g_verbose, g_verbose);
+        printf("%s\n", compare ? "FAIL" : "PASS");
+        AssertEquals(0, compare);
 
         if (TEST_MODE == PREFIX_AGGREGATE)
         {
             printf("\tScan prefix: ");
-            T new_prefix = scan_op(prefix, aggregate);
-            AssertEquals(0, CompareDeviceResults(&new_prefix, d_out + LOGICAL_WARP_THREADS + 1, 1, g_verbose, g_verbose));
-            printf("\n");
+            T updated_prefix = scan_op(prefix, aggregate);
+            compare = CompareDeviceResults(&updated_prefix, d_out + LOGICAL_WARP_THREADS, 1, g_verbose, g_verbose);
+            printf("%s\n", compare ? "FAIL" : "PASS");
+            AssertEquals(0, compare);
+
         }
     }
 
     // Cleanup
     if (h_in) delete[] h_in;
     if (h_reference) delete[] h_reference;
+    if (h_aggregate) delete[] h_aggregate;
     if (d_in) CubDebugExit(cudaFree(d_in));
     if (d_out) CubDebugExit(cudaFree(d_out));
+    if (d_aggregate) CubDebugExit(cudaFree(d_aggregate));
     if (d_elapsed) CubDebugExit(cudaFree(d_elapsed));
 }
 

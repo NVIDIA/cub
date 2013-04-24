@@ -100,7 +100,7 @@ namespace cub {
  * \par Examples
  * <em>Example 1.</em> Perform a simple sum reduction for one warp
  * \code
- * #include <cub.cuh>
+ * #include <cub/cub.cuh>
  *
  * __global__ void SomeKernel(...)
  * {

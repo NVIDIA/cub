@@ -524,7 +524,7 @@ enum BlockStorePolicy
  * \par Examples
  * <em>Example 1.</em> Have a 128-thread threadblock directly store a blocked arrangement of four consecutive integers per thread.
  * \code
- * #include <cub.cuh>
+ * #include <cub/cub.cuh>
  *
  * template <int BLOCK_THREADS>
  * __global__ void SomeKernel(int *d_out, ...)
@@ -548,7 +548,7 @@ enum BlockStorePolicy
  * <em>Example 2.</em> Have a threadblock store a blocked arrangement of \p ITEMS_PER_THREAD consecutive
  * integers per thread using vectorized stores and global-only caching:
  * \code
- * #include <cub.cuh>
+ * #include <cub/cub.cuh>
  *
  * template <int BLOCK_THREADS>
  * __global__ void SomeKernel(int *d_out, ...)

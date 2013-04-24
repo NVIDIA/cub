@@ -112,7 +112,7 @@ enum BlockByteHistoAlgorithm
  * <em>Example 1.</em> Compute a simple 8b histogram in shared memory from 512 byte values that
  * are partitioned across a 128-thread threadblock (where each thread holds 4 values).
  * \code
- * #include <cub.cuh>
+ * #include <cub/cub.cuh>
  *
  * __global__ void SomeKernel(...)
  * {
@@ -142,7 +142,7 @@ enum BlockByteHistoAlgorithm
  * an existing histogram in global memory.  The composition is guarded: not all
  * threads have valid inputs.
  * \code
- * #include <cub.cuh>
+ * #include <cub/cub.cuh>
  *
  * template <int BLOCK_THREADS>
  * __global__ void SomeKernel(..., int *d_histogram, int num_items)

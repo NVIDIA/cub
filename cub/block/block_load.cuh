@@ -650,7 +650,7 @@ enum BlockLoadPolicy
  * \par Examples
  * <em>Example 1.</em> Have a 128-thread threadblock directly load a blocked arrangement of four consecutive integers per thread.
  * \code
- * #include <cub.cuh>
+ * #include <cub/cub.cuh>
  *
  * __global__ void SomeKernel(int *d_in, ...)
  * {
@@ -673,7 +673,7 @@ enum BlockLoadPolicy
  * <em>Example 2.</em> Have a threadblock load a blocked arrangement of \p ITEMS_PER_THREAD consecutive
  * integers per thread using vectorized loads and global-only caching:
  * \code
- * #include <cub.cuh>
+ * #include <cub/cub.cuh>
  *
  * template <
  *     int BLOCK_THREADS,

@@ -34,7 +34,7 @@
 #define CUB_STDERR
 
 #include <stdio.h>
-#include "cub.cuh"
+#include <cub/cub.cuh>
 #include "test_util.h"
 
 using namespace cub;
@@ -278,8 +278,8 @@ void TestFullTile(
     // Initialize device arrays
     T *d_in = NULL;
     T *d_out = NULL;
-    CubDebugExit(cudaMalloc((void**)&d_in, sizeof(T) * num_elements));
-    CubDebugExit(cudaMalloc((void**)&d_out, sizeof(T) * 1));
+    CubDebugExit(DeviceAllocate((void**)&d_in, sizeof(T) * num_elements));
+    CubDebugExit(DeviceAllocate((void**)&d_out, sizeof(T) * 1));
     CubDebugExit(cudaMemcpy(d_in, h_in, sizeof(T) * num_elements, cudaMemcpyHostToDevice));
     CubDebugExit(cudaMemset(d_out, 0, sizeof(T) * 1));
 
@@ -310,8 +310,8 @@ void TestFullTile(
 
     // Cleanup
     if (h_in) delete[] h_in;
-    if (d_in) CubDebugExit(cudaFree(d_in));
-    if (d_out) CubDebugExit(cudaFree(d_out));
+    if (d_in) CubDebugExit(DeviceFree(d_in));
+    if (d_out) CubDebugExit(DeviceFree(d_out));
 }
 
 /**
@@ -383,8 +383,8 @@ void TestPartialTile(
     // Initialize device arrays
     T *d_in = NULL;
     T *d_out = NULL;
-    CubDebugExit(cudaMalloc((void**)&d_in, sizeof(T) * TILE_SIZE));
-    CubDebugExit(cudaMalloc((void**)&d_out, sizeof(T) * 1));
+    CubDebugExit(DeviceAllocate((void**)&d_in, sizeof(T) * TILE_SIZE));
+    CubDebugExit(DeviceAllocate((void**)&d_out, sizeof(T) * 1));
     CubDebugExit(cudaMemcpy(d_in, h_in, sizeof(T) * num_elements, cudaMemcpyHostToDevice));
     CubDebugExit(cudaMemset(d_out, 0, sizeof(T) * 1));
 
@@ -412,8 +412,8 @@ void TestPartialTile(
 
     // Cleanup
     if (h_in) delete[] h_in;
-    if (d_in) CubDebugExit(cudaFree(d_in));
-    if (d_out) CubDebugExit(cudaFree(d_out));
+    if (d_in) CubDebugExit(DeviceFree(d_in));
+    if (d_out) CubDebugExit(DeviceFree(d_out));
 }
 
 

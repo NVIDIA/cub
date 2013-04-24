@@ -27,7 +27,7 @@
  ******************************************************************************/
 
 /******************************************************************************
- * Simple demonstration of cub::BlockScan
+ * Simple demonstration of cub::BlockSort
  *
  * Example compilation string:
  *
@@ -49,7 +49,9 @@
 #include <iostream>
 #include <algorithm>
 
-#include <cub.cuh>
+#include <cub/cub.cuh>
+
+#include "../test/test_util.h"
 
 using namespace cub;
 
@@ -62,6 +64,9 @@ bool g_verbose = false;
 
 /// Timing iterations
 int g_iterations = 100;
+
+/// Default grid size
+int g_grid_size = 1;
 
 
 //---------------------------------------------------------------------
@@ -116,47 +121,7 @@ __global__ void BlockSortKernel(
 
 
 /**
- * Event-based GPU kernel timer
- */
-struct GpuTimer
-{
-    cudaEvent_t start;
-    cudaEvent_t stop;
-
-    GpuTimer()
-    {
-        cudaEventCreate(&start);
-        cudaEventCreate(&stop);
-    }
-
-    ~GpuTimer()
-    {
-        cudaEventDestroy(start);
-        cudaEventDestroy(stop);
-    }
-
-    void Start()
-    {
-        cudaEventRecord(start, 0);
-    }
-
-    void Stop()
-    {
-        cudaEventRecord(stop, 0);
-    }
-
-    float ElapsedMillis()
-    {
-        float elapsed;
-        cudaEventSynchronize(stop);
-        cudaEventElapsedTime(&elapsed, start, stop);
-        return elapsed;
-    }
-};
-
-
-/**
- * Initialize exclusive sorting problem (and solution).
+ * Initialize sorting problem (and solution).
  */
 void Initialize(
     int *h_in,
@@ -174,7 +139,7 @@ void Initialize(
 
 
 /**
- * Test thread block scan
+ * Test BlockScan
  */
 template <
     int BLOCK_THREADS,
@@ -211,21 +176,38 @@ void Test()
     // Copy problem to device
     CubDebugExit(cudaMemcpy(d_in, h_in, sizeof(int) * TILE_SIZE, cudaMemcpyHostToDevice));
 
-    printf("BlockScan, %d threadblock threads, %d items per thread:\n", BLOCK_THREADS, ITEMS_PER_THREAD);
-    fflush(stdout);
+    printf("BlockRadixSort %d items (%d timing iterations, %d blocks, %d threads, %d items per thread): ",
+        TILE_SIZE * g_grid_size, g_iterations, g_grid_size, BLOCK_THREADS, ITEMS_PER_THREAD);
 
-    // Run kernel iterations
+    // Run kernel once to prime caches and check result
+    BlockSortKernel<BLOCK_THREADS, ITEMS_PER_THREAD><<<g_grid_size, BLOCK_THREADS>>>(
+        d_in,
+        d_out,
+        d_elapsed);
+
+    // Check for kernel errors and STDIO from the kernel, if any
+    CubDebugExit(cudaDeviceSynchronize());
+
+    // Check results
+    printf("\tOutput items: ");
+    int compare = CompareDeviceResults(h_reference, d_out, TILE_SIZE, g_verbose, g_verbose);
+    printf("%s\n", compare ? "FAIL" : "PASS");
+    AssertEquals(0, compare);
+
+    // Run this several times and average the performance results
     GpuTimer    timer;
     float       elapsed_millis          = 0.0;
-    clock_t     elapsed_scan_clocks     = 0;
-    bool        correct                 = true;
+    clock_t     elapsed_clocks          = 0;
 
     for (int i = 0; i < g_iterations; ++i)
     {
+        // Copy problem to device
+        CubDebugExit(cudaMemcpy(d_in, h_in, sizeof(int) * TILE_SIZE, cudaMemcpyHostToDevice));
+
         timer.Start();
 
         // Run kernel
-        BlockSortKernel<BLOCK_THREADS, ITEMS_PER_THREAD><<<1, BLOCK_THREADS>>>(
+        BlockSortKernel<BLOCK_THREADS, ITEMS_PER_THREAD><<<g_grid_size, BLOCK_THREADS>>>(
             d_in,
             d_out,
             d_elapsed);
@@ -233,49 +215,25 @@ void Test()
         timer.Stop();
         elapsed_millis += timer.ElapsedMillis();
 
-        // Copy results from device
-        clock_t scan_clocks;
-        CubDebugExit(cudaMemcpy(h_gpu, d_out,               sizeof(int) * (TILE_SIZE), cudaMemcpyDeviceToHost));
-        CubDebugExit(cudaMemcpy(&scan_clocks, d_elapsed,    sizeof(clock_t), cudaMemcpyDeviceToHost));
-        elapsed_scan_clocks += scan_clocks;
-/*
-        // Check data
-        for (int i = 0; i < TILE_SIZE; i++)
-        {
-            if (h_gpu[i] != h_reference[i])
-            {
-                printf("Incorrect result @ offset %d (%d != %d)\n", i, h_gpu[i], h_reference[i]);
-                correct = false;
-                break;
-            }
-        }
-        if (!correct) break;
-*/
+        // Copy clocks from device
+        clock_t clocks;
+        CubDebugExit(cudaMemcpy(&clocks, d_elapsed, sizeof(clock_t), cudaMemcpyDeviceToHost));
+        elapsed_clocks += clocks;
     }
-    if (correct) printf("Correct!\n");
 
     // Check for kernel errors and STDIO from the kernel, if any
     CubDebugExit(cudaDeviceSynchronize());
 
-    // Display results problem data
-    if (g_verbose)
-    {
-        printf("GPU output (reference output): ");
-        for (int i = 0; i < TILE_SIZE; i++)
-            printf("%d (%d), ", h_gpu[i], h_reference[i]);
-        printf("\n");
-    }
-
     // Display timing results
     float avg_millis            = elapsed_millis / g_iterations;
-    float avg_words_per_sec     = float(TILE_SIZE) / (elapsed_millis / 1000.0);
-    float avg_clocks            = float(elapsed_scan_clocks) / g_iterations;
-    float avg_clocks_per_word   = avg_clocks / TILE_SIZE;
+    float avg_items_per_sec     = float(TILE_SIZE * g_grid_size) / avg_millis / 1000.0;
+    float avg_clocks            = float(elapsed_clocks) / g_iterations;
+    float avg_clocks_per_item   = avg_clocks / TILE_SIZE;
 
     printf("\tAverage kernel millis: %.4f\n", avg_millis);
-    printf("\tAverage words sorted / sec: %.4f\n", avg_words_per_sec);
+    printf("\tAverage million items / sec: %.4f\n", avg_items_per_sec);
     printf("\tAverage BlockRadixSort::SortBlocked clocks: %.3f\n", avg_clocks);
-    printf("\tAverage BlockRadixSort::SortBlocked clocks per word scanned: %.3f\n", avg_clocks_per_word);
+    printf("\tAverage BlockRadixSort::SortBlocked clocks per item: %.3f\n", avg_clocks_per_item);
 
     // Cleanup
     if (h_in) delete[] h_in;
@@ -292,36 +250,29 @@ void Test()
  */
 int main(int argc, char** argv)
 {
-    if (argc > 1)
+    // Initialize command line
+    CommandLineArgs args(argc, argv);
+    g_verbose = args.CheckCmdLineFlag("v");
+    args.GetCmdLineArgument("i", g_iterations);
+    args.GetCmdLineArgument("grid-size", g_grid_size);
+
+    // Print usage
+    if (args.CheckCmdLineFlag("help"))
     {
-        g_verbose = true;
+        printf("%s "
+            "[--device=<device-id>] "
+            "[--i=<timing iterations (default:%d)>]"
+            "[--grid-size=<grid size (default:%d)>]"
+            "[--v] "
+            "\n", argv[0], g_iterations, g_grid_size);
+        exit(0);
     }
 
-    // Make sure there are GPUs
-    int deviceCount;
-    CubDebugExit(cudaGetDeviceCount(&deviceCount));
-    if (deviceCount == 0)
-    {
-        fprintf(stderr, "No devices supporting CUDA.\n");
-        exit(1);
-    }
+    // Initialize device
+    CubDebugExit(args.DeviceInit());
 
-    // Iterate over installed GPUs
-    for (int i = 0; i < deviceCount; i++)
-    {
-        printf("------------------------------------------\n");
-        // Display GPU name
-        cudaDeviceProp props;
-        CubDebugExit(cudaGetDeviceProperties(&props, i));
-        printf("Using device %d: %s\n", i, props.name);
-        fflush(stdout);
-
-        // Set GPU
-        CubDebugExit(cudaSetDevice(i));
-
-        // Run tests
-        Test<128, 4>();
-    }
+    // Run tests
+    Test<128, 16>();
 
     return 0;
 }

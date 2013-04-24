@@ -144,7 +144,7 @@ enum BlockReduceAlgorithm
  * <em>Example 1.</em> Perform a simple reduction of 512 integer keys that
  * are partitioned in a blocked arrangement across a 128-thread threadblock (where each thread holds 4 keys).
  * \code
- * #include <cub.cuh>
+ * #include <cub/cub.cuh>
  *
  * __global__ void SomeKernel(...)
  * {
@@ -171,7 +171,7 @@ enum BlockReduceAlgorithm
  * \p num_items keys that are partitioned in a blocked arrangement
  * across \p BLOCK_THREADS threads.
  * \code
- * #include <cub.cuh>
+ * #include <cub/cub.cuh>
  *
  * template <int BLOCK_THREADS>
  * __global__ void SomeKernel(..., int num_items)
