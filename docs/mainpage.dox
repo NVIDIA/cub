@@ -92,7 +92,7 @@
  *
  * \par
  * \code
- * #include <cub.cuh>
+ * #include <cub/cub.cuh>
  *
  * // An tile-sorting CUDA kernel
  * template <

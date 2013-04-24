@@ -42,7 +42,7 @@
 #include <cuda_runtime.h>
 
 #include "test_util.h"
-#include "cub.cuh"
+#include <cub/cub.cuh>
 
 using namespace cub;
 using namespace std;

@@ -172,7 +172,7 @@ struct ThreadLoadDispatch<PTX_LOAD_VS, false>
  * For example:
  * \par
  * \code
- * #include <cub.cuh>
+ * #include <cub/cub.cuh>
  *
  * // 32-bit load using cache-global modifier:
  * int *d_in;

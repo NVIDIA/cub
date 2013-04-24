@@ -47,7 +47,7 @@
 #include <vector>
 #include <algorithm>
 #include <stdio.h>
-#include <cub.cuh>
+#include <cub/cub.cuh>
 #include "../test/test_util.h"
 
 using namespace cub;

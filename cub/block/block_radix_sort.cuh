@@ -80,6 +80,7 @@ namespace cub {
  * \tparam ITEMS_PER_THREAD     The number of items per thread
  * \tparam ValueType            <b>[optional]</b> Value type (default: cub::NullType)
  * \tparam RADIX_BITS           <b>[optional]</b> The number of radix bits per digit place (default: 5 bits)
+ * \tparam SCAN_ALGORITHM       <b>[optional]</b> The cub::BlockScanAlgorithm algorithm to use (default: cub::BLOCK_SCAN_WARP_SCANS)
  * \tparam SMEM_CONFIG          <b>[optional]</b> Shared memory bank mode (default: \p cudaSharedMemBankSizeFourByte)
  *
  * \par Usage Considerations
@@ -109,7 +110,7 @@ namespace cub {
  * <em>Example 1.</em> Perform a radix sort over a tile of 512 integer keys that
  * are partitioned in a blocked arrangement across a 128-thread threadblock (where each thread holds 4 keys).
  *      \code
- *      #include <cub.cuh>
+ *      #include <cub/cub.cuh>
  *
  *      __global__ void SomeKernel(...)
  *      {
@@ -134,7 +135,7 @@ namespace cub {
  * <em>Example 2.</em> Perform a key-value radix sort over the lower 20-bits of a tile of 32-bit integer
  * keys paired with floating-point values.  The data are partitioned in a striped arrangement across the threadblock.
  *      \code
- *      #include <cub.cuh>
+ *      #include <cub/cub.cuh>
  *
  *      template <int BLOCK_THREADS, int ITEMS_PER_THREAD>
  *      __global__ void SomeKernel(...)
@@ -164,6 +165,7 @@ template <
     int                     ITEMS_PER_THREAD,
     typename                ValueType = NullType,
     int                     RADIX_BITS = 5,
+    BlockScanAlgorithm      SCAN_ALGORITHM = BLOCK_SCAN_WARP_SCANS,
     cudaSharedMemConfig     SMEM_CONFIG = cudaSharedMemBankSizeFourByte>
 class BlockRadixSort
 {
@@ -174,17 +176,17 @@ class BlockRadixSort
 private:
 
     // Key traits and unsigned bits type
-    typedef NumericTraits<KeyType>                                          KeyTraits;
-    typedef typename KeyTraits::UnsignedBits                                UnsignedBits;
+    typedef NumericTraits<KeyType>              KeyTraits;
+    typedef typename KeyTraits::UnsignedBits    UnsignedBits;
 
     /// BlockRadixRank utility type
-    typedef BlockRadixRank<BLOCK_THREADS, RADIX_BITS, SMEM_CONFIG>          BlockRadixRank;
+    typedef BlockRadixRank<BLOCK_THREADS, RADIX_BITS, SCAN_ALGORITHM, SMEM_CONFIG> BlockRadixRank;
 
     /// BlockExchange utility type for keys
-    typedef BlockExchange<KeyType, BLOCK_THREADS, ITEMS_PER_THREAD>         KeyBlockExchange;
+    typedef BlockExchange<KeyType, BLOCK_THREADS, ITEMS_PER_THREAD> KeyBlockExchange;
 
     /// BlockExchange utility type for values
-    typedef BlockExchange<ValueType, BLOCK_THREADS, ITEMS_PER_THREAD>       ValueBlockExchange;
+    typedef BlockExchange<ValueType, BLOCK_THREADS, ITEMS_PER_THREAD> ValueBlockExchange;
 
     /// Shared memory storage layout type
     struct _SmemStorage

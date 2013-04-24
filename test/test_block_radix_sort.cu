@@ -38,7 +38,7 @@
 #include <iostream>
 
 #include "test_util.h"
-#include "cub.cuh"
+#include <cub/cub.cuh>
 
 using namespace cub;
 
@@ -61,6 +61,7 @@ template <
     int                     BLOCK_THREADS,
     int                     ITEMS_PER_THREAD,
     int                     RADIX_BITS,
+    BlockScanAlgorithm      SCAN_ALGORITHM,
     cudaSharedMemConfig     SMEM_CONFIG,
     typename                KeyType,
     typename                ValueType>
@@ -84,6 +85,7 @@ __global__ void Kernel(
         ITEMS_PER_THREAD,
         ValueType,
         RADIX_BITS,
+        SCAN_ALGORITHM,
         SMEM_CONFIG> BlockRadixSort;
 
     // Shared memory
@@ -128,11 +130,11 @@ template <
     int                     BLOCK_THREADS,
     int                     ITEMS_PER_THREAD,
     int                     RADIX_BITS,
+    BlockScanAlgorithm      SCAN_ALGORITHM,
     cudaSharedMemConfig     SMEM_CONFIG,
     typename                KeyType,
     typename                ValueType>
 void TestDriver(
-    bool                    keys_only,
     unsigned int            entropy_reduction,
     unsigned int            begin_bit,
     unsigned int            end_bit)
@@ -140,6 +142,7 @@ void TestDriver(
     enum
     {
         TILE_SIZE = BLOCK_THREADS * ITEMS_PER_THREAD,
+        KEYS_ONLY = Equals<ValueType, NullType>::VALUE,
     };
 
     // Allocate host arrays
@@ -167,16 +170,18 @@ void TestDriver(
         "BLOCK_THREADS(%d) "
         "ITEMS_PER_THREAD(%d) "
         "RADIX_BITS(%d) "
+        "SCAN_ALGORITHM(%d) "
         "SMEM_CONFIG(%d) "
         "sizeof(KeyType)(%d) "
         "sizeof(ValueType)(%d) "
         "entropy_reduction(%d) "
         "begin_bit(%d) "
         "end_bit(%d)\n",
-            ((keys_only) ? "keys-only" : "key-value"),
+            ((KEYS_ONLY) ? "Keys-only" : "Key-value"),
             BLOCK_THREADS,
             ITEMS_PER_THREAD,
             RADIX_BITS,
+            SCAN_ALGORITHM,
             SMEM_CONFIG,
             (int) sizeof(KeyType),
             (int) sizeof(ValueType),
@@ -192,29 +197,20 @@ void TestDriver(
     cudaDeviceSetSharedMemConfig(SMEM_CONFIG);
 
     // Run kernel
-    if (keys_only)
-    {
-        // Keys-only
-        Kernel<BLOCK_THREADS, ITEMS_PER_THREAD, RADIX_BITS, SMEM_CONFIG><<<1, BLOCK_THREADS>>>(
-            d_keys, (NullType*) d_values, begin_bit, end_bit);
-    }
-    else
-    {
-        // Key-value pairs
-        Kernel<BLOCK_THREADS, ITEMS_PER_THREAD, RADIX_BITS, SMEM_CONFIG><<<1, BLOCK_THREADS>>>(
-            d_keys, d_values, begin_bit, end_bit);
-    }
+    Kernel<BLOCK_THREADS, ITEMS_PER_THREAD, RADIX_BITS, SCAN_ALGORITHM, SMEM_CONFIG><<<1, BLOCK_THREADS>>>(
+        d_keys, d_values, begin_bit, end_bit);
 
     // Flush kernel output / errors
     CubDebugExit(cudaDeviceSynchronize());
 
     // Check keys results
     printf("\tKeys: ");
-    AssertEquals(0, CompareDeviceResults(h_reference_keys, d_keys, TILE_SIZE, g_verbose, g_verbose));
-    printf("\n");
+    int compare = CompareDeviceResults(h_reference_keys, d_keys, TILE_SIZE, g_verbose, g_verbose);
+    printf("%s\n", compare ? "FAIL" : "PASS");
+    AssertEquals(0, compare);
 
     // Check value results (which aren't valid for 8-bit values and tile size >= 256 because they can't fully index into the starting array)
-    if (!keys_only && ((sizeof(ValueType) > 1) || (TILE_SIZE < 256)))
+    if (!KEYS_ONLY && ((sizeof(ValueType) > 1) || (TILE_SIZE < 256)))
     {
         CubDebugExit(cudaMemcpy(h_values, d_values, sizeof(ValueType) * TILE_SIZE, cudaMemcpyDeviceToHost));
 
@@ -225,18 +221,18 @@ void TestDriver(
             printf("\n");
         }
 
-        bool correct = true;
         for (int i = 0; i < TILE_SIZE; ++i)
         {
-            if (h_keys[h_values[i]] != h_reference_keys[i])
+            int value = reinterpret_cast<int&>(h_values[i]);
+            if (h_keys[value] != h_reference_keys[i])
             {
-                std::cout << "Incorrect: [" << i << "]: " << h_keys[h_values[i]] << " != " << h_reference_keys[i] << "\n\n";
-                correct = false;
+                std::cout << "Incorrect: [" << i << "]: " << h_keys[value] << " != " << h_reference_keys[i] << "\n\n";
+                compare = 1;
                 break;
             }
         }
-        if (correct) printf("Correct\n");
-        AssertEquals(true, correct);
+        printf("%s\n", compare ? "FAIL" : "PASS");
+        AssertEquals(0, compare);
     }
     printf("\n");
 
@@ -256,6 +252,7 @@ template <
     int                     BLOCK_THREADS,
     int                     ITEMS_PER_THREAD,
     int                     RADIX_BITS,
+    BlockScanAlgorithm      SCAN_ALGORITHM,
     cudaSharedMemConfig     SMEM_CONFIG,
     typename                KeyType,
     typename                ValueType,
@@ -264,24 +261,19 @@ struct Valid
 {
     static void Test()
     {
-        // Iterate keys vs. key-value pairs
-        for (unsigned int keys_only = 0; keys_only <= 1; keys_only++)
+        // Iterate entropy_reduction
+        for (unsigned int entropy_reduction = 0; entropy_reduction <= 9; entropy_reduction += 3)
         {
-            // Iterate entropy_reduction
-            for (unsigned int entropy_reduction = 0; entropy_reduction <= 9; entropy_reduction += 3)
+            // Iterate begin_bit
+            for (unsigned int begin_bit = 0; begin_bit <= 1; begin_bit++)
             {
-                // Iterate begin_bit
-                for (unsigned int begin_bit = 0; begin_bit <= 1; begin_bit++)
+                // Iterate end bit
+                for (unsigned int end_bit = begin_bit + 1; end_bit <= sizeof(KeyType) * 8; end_bit = end_bit * 2 + begin_bit)
                 {
-                    // Iterate end bit
-                    for (unsigned int end_bit = begin_bit + 1; end_bit <= sizeof(KeyType) * 8; end_bit = end_bit * 2 + begin_bit)
-                    {
-                        TestDriver<BLOCK_THREADS, ITEMS_PER_THREAD, RADIX_BITS, SMEM_CONFIG, KeyType, ValueType>(
-                            (bool) keys_only,
-                            entropy_reduction,
-                            begin_bit,
-                            end_bit);
-                    }
+                    TestDriver<BLOCK_THREADS, ITEMS_PER_THREAD, RADIX_BITS, SCAN_ALGORITHM, SMEM_CONFIG, KeyType, ValueType>(
+                        entropy_reduction,
+                        begin_bit,
+                        end_bit);
                 }
             }
         }
@@ -296,10 +288,11 @@ template <
     int                     BLOCK_THREADS,
     int                     ITEMS_PER_THREAD,
     int                     RADIX_BITS,
+    BlockScanAlgorithm      SCAN_ALGORITHM,
     cudaSharedMemConfig     SMEM_CONFIG,
     typename                KeyType,
     typename                ValueType>
-struct Valid<BLOCK_THREADS, ITEMS_PER_THREAD, RADIX_BITS, SMEM_CONFIG, KeyType, ValueType, false>
+struct Valid<BLOCK_THREADS, ITEMS_PER_THREAD, RADIX_BITS, SCAN_ALGORITHM, SMEM_CONFIG, KeyType, ValueType, false>
 {
     // Do nothing
     static void Test() {}
@@ -310,17 +303,19 @@ struct Valid<BLOCK_THREADS, ITEMS_PER_THREAD, RADIX_BITS, SMEM_CONFIG, KeyType, 
  * Test value type
  */
 template <
-    int BLOCK_THREADS,
-    int ITEMS_PER_THREAD,
-    int RADIX_BITS,
-    cudaSharedMemConfig SMEM_CONFIG,
-    typename KeyType>
+    int                     BLOCK_THREADS,
+    int                     ITEMS_PER_THREAD,
+    int                     RADIX_BITS,
+    BlockScanAlgorithm      SCAN_ALGORITHM,
+    cudaSharedMemConfig     SMEM_CONFIG,
+    typename                KeyType>
 void Test()
 {
-    Valid<BLOCK_THREADS, ITEMS_PER_THREAD, RADIX_BITS, SMEM_CONFIG, KeyType, unsigned char>::Test();
-    Valid<BLOCK_THREADS, ITEMS_PER_THREAD, RADIX_BITS, SMEM_CONFIG, KeyType, unsigned short>::Test();
-    Valid<BLOCK_THREADS, ITEMS_PER_THREAD, RADIX_BITS, SMEM_CONFIG, KeyType, unsigned int>::Test();
-    Valid<BLOCK_THREADS, ITEMS_PER_THREAD, RADIX_BITS, SMEM_CONFIG, KeyType, unsigned long long>::Test();
+    Valid<BLOCK_THREADS, ITEMS_PER_THREAD, RADIX_BITS, SCAN_ALGORITHM, SMEM_CONFIG, KeyType, NullType>::Test();         // Keys-only
+    Valid<BLOCK_THREADS, ITEMS_PER_THREAD, RADIX_BITS, SCAN_ALGORITHM, SMEM_CONFIG, KeyType, unsigned char>::Test();
+    Valid<BLOCK_THREADS, ITEMS_PER_THREAD, RADIX_BITS, SCAN_ALGORITHM, SMEM_CONFIG, KeyType, unsigned short>::Test();
+    Valid<BLOCK_THREADS, ITEMS_PER_THREAD, RADIX_BITS, SCAN_ALGORITHM, SMEM_CONFIG, KeyType, unsigned int>::Test();
+    Valid<BLOCK_THREADS, ITEMS_PER_THREAD, RADIX_BITS, SCAN_ALGORITHM, SMEM_CONFIG, KeyType, unsigned long long>::Test();
 }
 
 
@@ -328,22 +323,23 @@ void Test()
  * Test key type
  */
 template <
-    int BLOCK_THREADS,
-    int ITEMS_PER_THREAD,
-    int RADIX_BITS,
-    cudaSharedMemConfig SMEM_CONFIG>
+    int                     BLOCK_THREADS,
+    int                     ITEMS_PER_THREAD,
+    int                     RADIX_BITS,
+    BlockScanAlgorithm      SCAN_ALGORITHM,
+    cudaSharedMemConfig     SMEM_CONFIG>
 void Test()
 {
-    Test<BLOCK_THREADS, ITEMS_PER_THREAD, RADIX_BITS, SMEM_CONFIG, unsigned char>();
-    Test<BLOCK_THREADS, ITEMS_PER_THREAD, RADIX_BITS, SMEM_CONFIG, unsigned short>();
-    Test<BLOCK_THREADS, ITEMS_PER_THREAD, RADIX_BITS, SMEM_CONFIG, unsigned int>();
-    Test<BLOCK_THREADS, ITEMS_PER_THREAD, RADIX_BITS, SMEM_CONFIG, unsigned long long>();
+    Test<BLOCK_THREADS, ITEMS_PER_THREAD, RADIX_BITS, SCAN_ALGORITHM, SMEM_CONFIG, unsigned char>();
+    Test<BLOCK_THREADS, ITEMS_PER_THREAD, RADIX_BITS, SCAN_ALGORITHM, SMEM_CONFIG, unsigned short>();
+    Test<BLOCK_THREADS, ITEMS_PER_THREAD, RADIX_BITS, SCAN_ALGORITHM, SMEM_CONFIG, unsigned int>();
+    Test<BLOCK_THREADS, ITEMS_PER_THREAD, RADIX_BITS, SCAN_ALGORITHM, SMEM_CONFIG, unsigned long long>();
 
-    Test<BLOCK_THREADS, ITEMS_PER_THREAD, RADIX_BITS, SMEM_CONFIG, char>();
-    Test<BLOCK_THREADS, ITEMS_PER_THREAD, RADIX_BITS, SMEM_CONFIG, short>();
-    Test<BLOCK_THREADS, ITEMS_PER_THREAD, RADIX_BITS, SMEM_CONFIG, int>();
-    Test<BLOCK_THREADS, ITEMS_PER_THREAD, RADIX_BITS, SMEM_CONFIG, float>();
-    Test<BLOCK_THREADS, ITEMS_PER_THREAD, RADIX_BITS, SMEM_CONFIG, double>();
+    Test<BLOCK_THREADS, ITEMS_PER_THREAD, RADIX_BITS, SCAN_ALGORITHM, SMEM_CONFIG, char>();
+    Test<BLOCK_THREADS, ITEMS_PER_THREAD, RADIX_BITS, SCAN_ALGORITHM, SMEM_CONFIG, short>();
+    Test<BLOCK_THREADS, ITEMS_PER_THREAD, RADIX_BITS, SCAN_ALGORITHM, SMEM_CONFIG, int>();
+    Test<BLOCK_THREADS, ITEMS_PER_THREAD, RADIX_BITS, SCAN_ALGORITHM, SMEM_CONFIG, float>();
+    Test<BLOCK_THREADS, ITEMS_PER_THREAD, RADIX_BITS, SCAN_ALGORITHM, SMEM_CONFIG, double>();
 }
 
 
@@ -351,13 +347,28 @@ void Test()
  * Test smem config
  */
 template <
-    int BLOCK_THREADS,
-    int ITEMS_PER_THREAD,
-    int RADIX_BITS>
+    int                     BLOCK_THREADS,
+    int                     ITEMS_PER_THREAD,
+    int                     RADIX_BITS,
+    BlockScanAlgorithm      SCAN_ALGORITHM>
 void Test()
 {
-    Test<BLOCK_THREADS, ITEMS_PER_THREAD, RADIX_BITS, cudaSharedMemBankSizeFourByte>();
-    Test<BLOCK_THREADS, ITEMS_PER_THREAD, RADIX_BITS, cudaSharedMemBankSizeEightByte>();
+    Test<BLOCK_THREADS, ITEMS_PER_THREAD, RADIX_BITS, SCAN_ALGORITHM, cudaSharedMemBankSizeFourByte>();
+    Test<BLOCK_THREADS, ITEMS_PER_THREAD, RADIX_BITS, SCAN_ALGORITHM, cudaSharedMemBankSizeEightByte>();
+}
+
+
+/**
+ * Test scan algorithm
+ */
+template <
+    int                     BLOCK_THREADS,
+    int                     ITEMS_PER_THREAD,
+    int                     RADIX_BITS>
+void Test()
+{
+    Test<BLOCK_THREADS, ITEMS_PER_THREAD, RADIX_BITS, BLOCK_SCAN_RAKING>();
+    Test<BLOCK_THREADS, ITEMS_PER_THREAD, RADIX_BITS, BLOCK_SCAN_WARP_SCANS>();
 }
 
 
@@ -412,19 +423,22 @@ int main(int argc, char** argv)
     if (quick)
     {
         // Quick test
-        TestDriver<64, 2, 5, cudaSharedMemBankSizeFourByte, unsigned int, unsigned int>(
-            true,
+        typedef unsigned int T;
+
+        TestDriver<64, 2, 5, BLOCK_SCAN_WARP_SCANS, cudaSharedMemBankSizeFourByte, T, NullType>(
             0,
             0,
-            sizeof(unsigned int) * 8);
+            sizeof(T) * 8);
     }
     else
     {
+/*
         // Test threads
         Test<32>();
         Test<64>();
         Test<128>();
         Test<256>();
+*/
     }
 
     return 0;

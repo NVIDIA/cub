@@ -36,7 +36,7 @@
 #include <stdio.h>
 #include <iostream>
 #include "test_util.h"
-#include "cub.cuh"
+#include <cub/cub.cuh>
 
 using namespace cub;
 

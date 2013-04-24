@@ -35,10 +35,11 @@
 
 #include "../util_arch.cuh"
 #include "../util_type.cuh"
+#include "../block/block_raking_layout.cuh"
 #include "../thread/thread_operators.cuh"
-#include "../warp/warp_scan.cuh"
 #include "../thread/thread_reduce.cuh"
 #include "../thread/thread_scan.cuh"
+#include "../warp/warp_scan.cuh"
 #include "../util_namespace.cuh"
 
 /// Optional outer namespace(s)
@@ -129,7 +130,7 @@ enum BlockScanAlgorithm
  *
  * \tparam T                The reduction input/output element type
  * \tparam BLOCK_THREADS    The threadblock size in threads
- * \tparam ALGORITHM        <b>[optional]</b> cub::BlockScanAlgorithm tuning policy.  Default = cub::BLOCK_SCAN_RAKING.
+ * \tparam ALGORITHM        <b>[optional]</b> cub::BlockScanAlgorithm tuning policy (default = cub::BLOCK_SCAN_RAKING)
  *
  * \par Algorithm
  * BlockScan can be (optionally) configured to use different algorithms:
@@ -161,7 +162,7 @@ enum BlockScanAlgorithm
  * <em>Example 1.</em> Perform a simple exclusive prefix sum of 512 integer keys that
  * are partitioned in a blocked arrangement across a 128-thread threadblock (where each thread holds 4 keys).
  * \code
- * #include <cub.cuh>
+ * #include <cub/cub.cuh>
  *
  * __global__ void SomeKernel(...)
  * {
@@ -177,7 +178,7 @@ enum BlockScanAlgorithm
  *     // Obtain items in blocked order
  *     ...
  *
- *     // Compute the threadblock-wide exclusve prefix sum
+ *     // Compute the threadblock-wide exclusive prefix sum
  *     BlockScan::ExclusiveSum(smem_storage, data, data);
  *
  *     ...
@@ -186,7 +187,7 @@ enum BlockScanAlgorithm
  * \par
  * <em>Example 2:</em> Perform inter-threadblock allocation within a global data structure by using local prefix sum that incorporates a single global atomic-add.
  * \code
- * #include <cub.cuh>
+ * #include <cub/cub.cuh>
  *
  * /// Simple functor for producing a value for which to seed the entire block scan.
  * struct BlockPrefixOp
@@ -288,8 +289,9 @@ private:
         /// Shared memory storage layout type
         struct SmemStorage
         {
-            typename WarpScan::SmemStorage          warp_scan;      ///< Buffer for warp-synchronous scan
-            typename BlockRakingLayout::SmemStorage   raking_grid;    ///< Padded threadblock raking grid
+            typename WarpScan::SmemStorage              warp_scan;          ///< Buffer for warp-synchronous scan
+            typename BlockRakingLayout::SmemStorage     raking_grid;        ///< Padded threadblock raking grid
+            T                                           block_aggregate;    ///< Block aggregate
         };
 
         /// Computes an exclusive threadblock-wide prefix scan using the specified binary \p scan_op functor.  Each thread contributes one input element.  The inclusive threadblock-wide \p block_aggregate of all inputs is computed for <em>thread</em><sub>0</sub>.
@@ -344,7 +346,7 @@ private:
                         raking_partial,
                         identity,
                         scan_op,
-                        block_aggregate);
+                        smem_storage.block_aggregate);
 
                     // Exclusive raking downsweep scan
                     ThreadScanExclusive<RAKING_LENGTH>(raking_ptr, raking_ptr, scan_op, raking_partial);
@@ -355,6 +357,8 @@ private:
                 // Grab thread prefix from shared memory
                 output = *placement_ptr;
 
+                // Retrieve block aggregate
+                block_aggregate = smem_storage.block_aggregate;
             }
         }
 
@@ -415,7 +419,7 @@ private:
                         raking_partial,
                         identity,
                         scan_op,
-                        block_aggregate,
+                        smem_storage.block_aggregate,
                         block_prefix_op);
 
                     // Exclusive raking downsweep scan
@@ -426,6 +430,9 @@ private:
 
                 // Grab thread prefix from shared memory
                 output = *placement_ptr;
+
+                // Retrieve block aggregate
+                block_aggregate = smem_storage.block_aggregate;
             }
         }
 
@@ -479,7 +486,7 @@ private:
                         raking_partial,
                         raking_partial,
                         scan_op,
-                        block_aggregate);
+                        smem_storage.block_aggregate);
 
                     // Exclusive raking downsweep scan
                     ThreadScanExclusive<RAKING_LENGTH>(raking_ptr, raking_ptr, scan_op, raking_partial, (threadIdx.x != 0));
@@ -489,6 +496,9 @@ private:
 
                 // Grab thread prefix from shared memory
                 output = *placement_ptr;
+
+                // Retrieve block aggregate
+                block_aggregate = smem_storage.block_aggregate;
             }
         }
 
@@ -546,7 +556,7 @@ private:
                         raking_partial,
                         raking_partial,
                         scan_op,
-                        block_aggregate,
+                        smem_storage.block_aggregate,
                         block_prefix_op);
 
                     // Exclusive raking downsweep scan
@@ -557,6 +567,9 @@ private:
 
                 // Grab thread prefix from shared memory
                 output = *placement_ptr;
+
+                // Retrieve block aggregate
+                block_aggregate = smem_storage.block_aggregate;
             }
         }
 
@@ -604,12 +617,23 @@ private:
                         }
                     }
 
+                    T aggregate;
+
+                    if (threadIdx.x == 0) CubLog("GRID_ELEMENTS(%d), RAKING_THREADS(%d), RAKING_LENGTH(%d), PADDING_ELEMENTS(%d), PADDING_STRIDE(%d)\n",
+                        BlockRakingLayout::GRID_ELEMENTS,
+                        BlockRakingLayout::RAKING_THREADS,
+                        BlockRakingLayout::RAKING_LENGTH,
+                        BlockRakingLayout::PADDING_ELEMENTS,
+                        BlockRakingLayout::PADDING_STRIDE);
+
                     // Exclusive warp synchronous scan
                     WarpScan::ExclusiveSum(
                         smem_storage.warp_scan,
                         raking_partial,
                         raking_partial,
-                        block_aggregate);
+                        aggregate);
+
+                    smem_storage.block_aggregate = aggregate;
 
                     // Exclusive raking downsweep scan
                     ThreadScanExclusive<RAKING_LENGTH>(raking_ptr, raking_ptr, scan_op, raking_partial);
@@ -619,6 +643,11 @@ private:
 
                 // Grab thread prefix from shared memory
                 output = *placement_ptr;
+
+                // Retrieve block aggregate
+                block_aggregate = smem_storage.block_aggregate;
+
+                CubLog("block_aggregate(%d)\n", block_aggregate);
             }
         }
 
@@ -674,7 +703,7 @@ private:
                         smem_storage.warp_scan,
                         raking_partial,
                         raking_partial,
-                        block_aggregate,
+                        smem_storage.block_aggregate,
                         block_prefix_op);
 
                     // Exclusive raking downsweep scan
@@ -685,6 +714,9 @@ private:
 
                 // Grab thread prefix from shared memory
                 output = *placement_ptr;
+
+                // Retrieve block aggregate
+                block_aggregate = smem_storage.block_aggregate;
             }
         }
 
@@ -738,16 +770,19 @@ private:
                         raking_partial,
                         raking_partial,
                         scan_op,
-                        block_aggregate);
+                        smem_storage.block_aggregate);
 
                     // Exclusive raking downsweep scan
-                    ThreadScanExclusive<RAKING_LENGTH>(raking_ptr, raking_ptr, scan_op, raking_partial, (threadIdx.x != 0));
+                    ThreadScanInclusive<RAKING_LENGTH>(raking_ptr, raking_ptr, scan_op, raking_partial, (threadIdx.x != 0));
                 }
 
                 __syncthreads();
 
                 // Grab thread prefix from shared memory
                 output = *placement_ptr;
+
+                // Retrieve block aggregate
+                block_aggregate = smem_storage.block_aggregate;
             }
         }
 
@@ -805,17 +840,20 @@ private:
                         raking_partial,
                         raking_partial,
                         scan_op,
-                        block_aggregate,
+                        smem_storage.block_aggregate,
                         block_prefix_op);
 
                     // Exclusive raking downsweep scan
-                    ThreadScanExclusive<RAKING_LENGTH>(raking_ptr, raking_ptr, scan_op, raking_partial);
+                    ThreadScanInclusive<RAKING_LENGTH>(raking_ptr, raking_ptr, scan_op, raking_partial);
                 }
 
                 __syncthreads();
 
                 // Grab thread prefix from shared memory
                 output = *placement_ptr;
+
+                // Retrieve block aggregate
+                block_aggregate = smem_storage.block_aggregate;
             }
         }
 
@@ -868,16 +906,19 @@ private:
                         smem_storage.warp_scan,
                         raking_partial,
                         raking_partial,
-                        block_aggregate);
+                        smem_storage.block_aggregate);
 
                     // Exclusive raking downsweep scan
-                    ThreadScanExclusive<RAKING_LENGTH>(raking_ptr, raking_ptr, scan_op, raking_partial, (threadIdx.x != 0));
+                    ThreadScanInclusive<RAKING_LENGTH>(raking_ptr, raking_ptr, scan_op, raking_partial, (threadIdx.x != 0));
                 }
 
                 __syncthreads();
 
                 // Grab thread prefix from shared memory
                 output = *placement_ptr;
+
+                // Retrieve block aggregate
+                block_aggregate = smem_storage.block_aggregate;
             }
         }
 
@@ -933,17 +974,20 @@ private:
                         smem_storage.warp_scan,
                         raking_partial,
                         raking_partial,
-                        block_aggregate,
+                        smem_storage.block_aggregate,
                         block_prefix_op);
 
                     // Exclusive raking downsweep scan
-                    ThreadScanExclusive<RAKING_LENGTH>(raking_ptr, raking_ptr, scan_op, raking_partial);
+                    ThreadScanInclusive<RAKING_LENGTH>(raking_ptr, raking_ptr, scan_op, raking_partial);
                 }
 
                 __syncthreads();
 
                 // Grab thread prefix from shared memory
                 output = *placement_ptr;
+
+                // Retrieve block aggregate
+                block_aggregate = smem_storage.block_aggregate;
             }
         }
 
@@ -988,35 +1032,23 @@ private:
             T               &block_aggregate)   ///< [out] <b>[<em>thread</em><sub>0</sub> only]</b> threadblock-wide aggregate reduction of input items
         {
             unsigned int warp_id = threadIdx.x / PtxArchProps::WARP_THREADS;
-            unsigned int lane_id = threadIdx.x & (PtxArchProps::WARP_THREADS - 1);
 
             // Share lane aggregates
-            if (lane_id == 0)
-            {
-                smem_storage.warp_aggregates[warp_id] = warp_aggregate;
-            }
+            smem_storage.warp_aggregates[warp_id] = warp_aggregate;
 
             __syncthreads();
 
-            // Incorporate aggregates from preceding warps into outputs
-            #pragma unroll
-            for (int PREFIX_WARP = 0; PREFIX_WARP < WARPS - 1; PREFIX_WARP++)
-            {
-                if (warp_id > PREFIX_WARP)
-                {
-                    partial = scan_op(smem_storage.warp_aggregates[PREFIX_WARP], partial);
-                }
-            }
+            block_aggregate = smem_storage.warp_aggregates[0];
 
-            // Update total aggregate in warp 0, lane 0
-            block_aggregate = warp_aggregate;
-            if (threadIdx.x == 0)
+            #pragma unroll
+            for (int WARP = 1; WARP < WARPS; WARP++)
             {
-                #pragma unroll
-                for (int SUCCESSOR_WARP = 1; SUCCESSOR_WARP < WARPS; SUCCESSOR_WARP++)
+                if (warp_id == WARP)
                 {
-                    block_aggregate = scan_op(block_aggregate, smem_storage.warp_aggregates[SUCCESSOR_WARP]);
+                    partial = scan_op(block_aggregate, partial);
                 }
+
+                block_aggregate = scan_op(block_aggregate, smem_storage.warp_aggregates[WARP]);
             }
         }
 
@@ -1031,10 +1063,10 @@ private:
             ScanOp          scan_op,            ///< [in] Binary scan operator
             T               &block_aggregate)   ///< [out] <b>[<em>thread</em><sub>0</sub> only]</b> threadblock-wide aggregate reduction of input items
         {
-            T warp_aggregate;       // Valid in lane-0s
+            T warp_aggregate;
             WarpScan::ExclusiveScan(smem_storage.warp_scan, input, output, identity, scan_op, warp_aggregate);
 
-            // Update outputs and block_aggregate with warp-wide aggregates from lane-0s
+            // Update outputs and block_aggregate with warp-wide aggregates
             ApplyWarpAggregates(smem_storage, output, scan_op, warp_aggregate, block_aggregate);
         }
 
@@ -1076,17 +1108,17 @@ private:
             ScanOp          scan_op,                        ///< [in] Binary scan operator
             T               &block_aggregate)               ///< [out] <b>[<em>thread</em><sub>0</sub> only]</b> threadblock-wide aggregate reduction of input items
         {
-            T warp_aggregate;       // Valid in lane-0s
+            T warp_aggregate;
             WarpScan::ExclusiveScan(smem_storage.warp_scan, input, output, scan_op, warp_aggregate);
 
+            // Update outputs and block_aggregate with warp-wide aggregates
+            ApplyWarpAggregates(smem_storage, output, scan_op, warp_aggregate, block_aggregate);
+/*
             unsigned int warp_id = threadIdx.x / PtxArchProps::WARP_THREADS;
             unsigned int lane_id = threadIdx.x & (PtxArchProps::WARP_THREADS - 1);
 
             // Share lane aggregates
-            if (lane_id == 0)
-            {
-                smem_storage.warp_aggregates[warp_id] = warp_aggregate;
-            }
+            smem_storage.warp_aggregates[warp_id] = warp_aggregate;
 
             __syncthreads();
 
@@ -1122,6 +1154,7 @@ private:
                     block_aggregate = scan_op(block_aggregate, smem_storage.warp_aggregates[SUCESSOR]);
                 }
             }
+*/
         }
 
 
@@ -1859,14 +1892,21 @@ public:
         ScanOp          scan_op,                        ///< [in] Binary scan operator
         T               &block_aggregate)               ///< [out] <b>[<em>thread</em><sub>0</sub> only]</b> threadblock-wide aggregate reduction of input items
     {
-        // Reduce consecutive thread items in registers
-        T thread_partial = ThreadReduce(input, scan_op);
+        if (ITEMS_PER_THREAD == 1)
+        {
+            InclusiveScan(smem_storage, input[0], output[0], scan_op, block_aggregate);
+        }
+        else
+        {
+            // Reduce consecutive thread items in registers
+            T thread_partial = ThreadReduce(input, scan_op);
 
-        // Exclusive threadblock-scan
-        ExclusiveScan(smem_storage, thread_partial, thread_partial, scan_op, block_aggregate);
+            // Exclusive threadblock-scan
+            ExclusiveScan(smem_storage, thread_partial, thread_partial, scan_op, block_aggregate);
 
-        // Inclusive scan in registers with prefix
-        ThreadScanInclusive(input, output, scan_op, thread_partial, (threadIdx.x != 0));
+            // Inclusive scan in registers with prefix
+            ThreadScanInclusive(input, output, scan_op, thread_partial, (threadIdx.x != 0));
+        }
     }
 
 
@@ -1930,14 +1970,21 @@ public:
         T               &block_aggregate,               ///< [out] <b>[<em>thread</em><sub>0</sub> only]</b> Threadblock-wide aggregate reduction of input items (exclusive of the \p block_prefix_op value)
         BlockPrefixOp   &block_prefix_op)               ///< [in-out] <b>[<em>thread</em><sub>0</sub> only]</b> Call-back functor for specifying a threadblock-wide prefix to be applied to all inputs.
     {
-        // Reduce consecutive thread items in registers
-        T thread_partial = ThreadReduce(input, scan_op);
+        if (ITEMS_PER_THREAD == 1)
+        {
+            InclusiveScan(smem_storage, input[0], output[0], scan_op, block_aggregate, block_prefix_op);
+        }
+        else
+        {
+            // Reduce consecutive thread items in registers
+            T thread_partial = ThreadReduce(input, scan_op);
 
-        // Exclusive threadblock-scan
-        ExclusiveScan(smem_storage, thread_partial, thread_partial, scan_op, block_aggregate, block_prefix_op);
+            // Exclusive threadblock-scan
+            ExclusiveScan(smem_storage, thread_partial, thread_partial, scan_op, block_aggregate, block_prefix_op);
 
-        // Inclusive scan in registers with prefix
-        ThreadScanInclusive(input, output, scan_op, thread_partial);
+            // Inclusive scan in registers with prefix
+            ThreadScanInclusive(input, output, scan_op, thread_partial);
+        }
     }
 
 
@@ -1977,14 +2024,21 @@ public:
         T               (&output)[ITEMS_PER_THREAD],    ///< [out] Calling thread's output items (may be aliased to \p input)
         ScanOp          scan_op)                        ///< [in] Binary scan operator
     {
-        // Reduce consecutive thread items in registers
-        T thread_partial = ThreadReduce(input, scan_op);
+        if (ITEMS_PER_THREAD == 1)
+        {
+            InclusiveScan(smem_storage, input[0], output[0], scan_op);
+        }
+        else
+        {
+            // Reduce consecutive thread items in registers
+            T thread_partial = ThreadReduce(input, scan_op);
 
-        // Exclusive threadblock-scan
-        ExclusiveScan(smem_storage, thread_partial, thread_partial, scan_op);
+            // Exclusive threadblock-scan
+            ExclusiveScan(smem_storage, thread_partial, thread_partial, scan_op);
 
-        // Inclusive scan in registers with prefix
-        ThreadScanInclusive(input, output, scan_op, thread_partial, (threadIdx.x != 0));
+            // Inclusive scan in registers with prefix
+            ThreadScanInclusive(input, output, scan_op, thread_partial, (threadIdx.x != 0));
+        }
     }
 
 
@@ -2029,15 +2083,22 @@ public:
         T               (&output)[ITEMS_PER_THREAD],    ///< [out] Calling thread's output items (may be aliased to \p input)
         T               &block_aggregate)               ///< [out] <b>[<em>thread</em><sub>0</sub> only]</b> threadblock-wide aggregate reduction of input items
     {
-        // Reduce consecutive thread items in registers
-        Sum<T> scan_op;
-        T thread_partial = ThreadReduce(input, scan_op);
+        if (ITEMS_PER_THREAD == 1)
+        {
+            InclusiveSum(smem_storage, input[0], output[0], block_aggregate);
+        }
+        else
+        {
+            // Reduce consecutive thread items in registers
+            Sum<T> scan_op;
+            T thread_partial = ThreadReduce(input, scan_op);
 
-        // Exclusive threadblock-scan
-        ExclusiveSum(smem_storage, thread_partial, thread_partial, block_aggregate);
+            // Exclusive threadblock-scan
+            ExclusiveSum(smem_storage, thread_partial, thread_partial, block_aggregate);
 
-        // Inclusive scan in registers with prefix
-        ThreadScanInclusive(input, output, scan_op, thread_partial, (threadIdx.x != 0));
+            // Inclusive scan in registers with prefix
+            ThreadScanInclusive(input, output, scan_op, thread_partial, (threadIdx.x != 0));
+        }
     }
 
 
@@ -2094,15 +2155,22 @@ public:
         T               &block_aggregate,               ///< [out] <b>[<em>thread</em><sub>0</sub> only]</b> Threadblock-wide aggregate reduction of input items (exclusive of the \p block_prefix_op value)
         BlockPrefixOp   &block_prefix_op)               ///< [in-out] <b>[<em>thread</em><sub>0</sub> only]</b> Call-back functor for specifying a threadblock-wide prefix to be applied to all inputs.
     {
-        // Reduce consecutive thread items in registers
-        Sum<T> scan_op;
-        T thread_partial = ThreadReduce(input, scan_op);
+        if (ITEMS_PER_THREAD == 1)
+        {
+            InclusiveSum(smem_storage, input[0], output[0], block_aggregate, block_prefix_op);
+        }
+        else
+        {
+            // Reduce consecutive thread items in registers
+            Sum<T> scan_op;
+            T thread_partial = ThreadReduce(input, scan_op);
 
-        // Exclusive threadblock-scan
-        ExclusiveSum(smem_storage, thread_partial, thread_partial, block_aggregate, block_prefix_op);
+            // Exclusive threadblock-scan
+            ExclusiveSum(smem_storage, thread_partial, thread_partial, block_aggregate, block_prefix_op);
 
-        // Inclusive scan in registers with prefix
-        ThreadScanInclusive(input, output, scan_op, thread_partial);
+            // Inclusive scan in registers with prefix
+            ThreadScanInclusive(input, output, scan_op, thread_partial);
+        }
     }
 
 
@@ -2134,15 +2202,22 @@ public:
         T               (&input)[ITEMS_PER_THREAD],     ///< [in] Calling thread's input items
         T               (&output)[ITEMS_PER_THREAD])    ///< [out] Calling thread's output items (may be aliased to \p input)
     {
-        // Reduce consecutive thread items in registers
-        Sum<T> scan_op;
-        T thread_partial = ThreadReduce(input, scan_op);
+        if (ITEMS_PER_THREAD == 1)
+        {
+            InclusiveSum(smem_storage, input[0], output[0]);
+        }
+        else
+        {
+            // Reduce consecutive thread items in registers
+            Sum<T> scan_op;
+            T thread_partial = ThreadReduce(input, scan_op);
 
-        // Exclusive threadblock-scan
-        ExclusiveSum(smem_storage, thread_partial, thread_partial);
+            // Exclusive threadblock-scan
+            ExclusiveSum(smem_storage, thread_partial, thread_partial);
 
-        // Inclusive scan in registers with prefix
-        ThreadScanInclusive(input, output, scan_op, thread_partial, (threadIdx.x != 0));
+            // Inclusive scan in registers with prefix
+            ThreadScanInclusive(input, output, scan_op, thread_partial, (threadIdx.x != 0));
+        }
     }
 
     //@}  end member group        // Inclusive prefix sums
