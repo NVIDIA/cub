@@ -209,6 +209,8 @@ void TestNative(
     CubDebugExit(cudaMalloc((void**)&d_in, sizeof(T) * unguarded_elements));
     CubDebugExit(cudaMalloc((void**)&d_out_unguarded, sizeof(T) * unguarded_elements));
     CubDebugExit(cudaMalloc((void**)&d_out_guarded_range, sizeof(T) * guarded_elements));
+    CubDebugExit(cudaMemset(d_out_unguarded, 0, sizeof(T) * unguarded_elements));
+    CubDebugExit(cudaMemset(d_out_guarded_range, 0, sizeof(T) * guarded_elements));
 
     // Initialize problem on host and device
     for (int i = 0; i < unguarded_elements; ++i)
@@ -272,6 +274,8 @@ void TestIterator(
     T *d_out_guarded_range = NULL;
     CubDebugExit(cudaMalloc((void**)&d_out_unguarded, sizeof(T) * unguarded_elements));
     CubDebugExit(cudaMalloc((void**)&d_out_guarded_range, sizeof(T) * guarded_elements));
+    CubDebugExit(cudaMemset(d_out_unguarded, 0, sizeof(T) * unguarded_elements));
+    CubDebugExit(cudaMemset(d_out_guarded_range, 0, sizeof(T) * guarded_elements));
 
     // Initialize problem on host and device
     Iterator counting_itr(0);

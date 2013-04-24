@@ -83,7 +83,7 @@ var searchBox = new SearchBox("searchBox", "search",false,'Search');
      onmouseover="return searchBox.OnSearchSelectShow()"
      onmouseout="return searchBox.OnSearchSelectHide()"
      onkeydown="return searchBox.OnSearchSelectKey(event)">
-<a class="SelectItem" href="javascript:void(0)" onclick="searchBox.OnSelectItem(0)"><span class="SelectionMark">&#160;</span>All</a><a class="SelectItem" href="javascript:void(0)" onclick="searchBox.OnSelectItem(1)"><span class="SelectionMark">&#160;</span>Classes</a><a class="SelectItem" href="javascript:void(0)" onclick="searchBox.OnSelectItem(2)"><span class="SelectionMark">&#160;</span>Namespaces</a><a class="SelectItem" href="javascript:void(0)" onclick="searchBox.OnSelectItem(3)"><span class="SelectionMark">&#160;</span>Files</a><a class="SelectItem" href="javascript:void(0)" onclick="searchBox.OnSelectItem(4)"><span class="SelectionMark">&#160;</span>Functions</a><a class="SelectItem" href="javascript:void(0)" onclick="searchBox.OnSelectItem(5)"><span class="SelectionMark">&#160;</span>Variables</a><a class="SelectItem" href="javascript:void(0)" onclick="searchBox.OnSelectItem(6)"><span class="SelectionMark">&#160;</span>Typedefs</a><a class="SelectItem" href="javascript:void(0)" onclick="searchBox.OnSelectItem(7)"><span class="SelectionMark">&#160;</span>Enumerations</a><a class="SelectItem" href="javascript:void(0)" onclick="searchBox.OnSelectItem(8)"><span class="SelectionMark">&#160;</span>Enumerator</a><a class="SelectItem" href="javascript:void(0)" onclick="searchBox.OnSelectItem(9)"><span class="SelectionMark">&#160;</span>Friends</a><a class="SelectItem" href="javascript:void(0)" onclick="searchBox.OnSelectItem(10)"><span class="SelectionMark">&#160;</span>Groups</a><a class="SelectItem" href="javascript:void(0)" onclick="searchBox.OnSelectItem(11)"><span class="SelectionMark">&#160;</span>Pages</a></div>
+<a class="SelectItem" href="javascript:void(0)" onclick="searchBox.OnSelectItem(0)"><span class="SelectionMark">&#160;</span>All</a><a class="SelectItem" href="javascript:void(0)" onclick="searchBox.OnSelectItem(1)"><span class="SelectionMark">&#160;</span>Classes</a><a class="SelectItem" href="javascript:void(0)" onclick="searchBox.OnSelectItem(2)"><span class="SelectionMark">&#160;</span>Namespaces</a><a class="SelectItem" href="javascript:void(0)" onclick="searchBox.OnSelectItem(3)"><span class="SelectionMark">&#160;</span>Files</a><a class="SelectItem" href="javascript:void(0)" onclick="searchBox.OnSelectItem(4)"><span class="SelectionMark">&#160;</span>Functions</a><a class="SelectItem" href="javascript:void(0)" onclick="searchBox.OnSelectItem(5)"><span class="SelectionMark">&#160;</span>Variables</a><a class="SelectItem" href="javascript:void(0)" onclick="searchBox.OnSelectItem(6)"><span class="SelectionMark">&#160;</span>Typedefs</a><a class="SelectItem" href="javascript:void(0)" onclick="searchBox.OnSelectItem(7)"><span class="SelectionMark">&#160;</span>Enumerations</a><a class="SelectItem" href="javascript:void(0)" onclick="searchBox.OnSelectItem(8)"><span class="SelectionMark">&#160;</span>Enumerator</a><a class="SelectItem" href="javascript:void(0)" onclick="searchBox.OnSelectItem(9)"><span class="SelectionMark">&#160;</span>Groups</a><a class="SelectItem" href="javascript:void(0)" onclick="searchBox.OnSelectItem(10)"><span class="SelectionMark">&#160;</span>Pages</a></div>
 
 <!-- iframe showing the search results (closed by default) -->
 <div id="MSearchResultsWindow">
@@ -141,7 +141,7 @@ class cub::BlockStore&lt; OutputIterator, BLOCK_THREADS, ITEMS_PER_THREAD, POLIC
 <li>See <a class="el" href="namespacecub.html#aaaa9ee8c8a57c6607909c110affd189e" title="Tuning policy for cub::BlockStore.">cub::BlockStorePolicy</a> for more performance details regarding algorithmic alternatives</li>
 </ul>
 </dd></dl>
-<dl class="section user"><dt>Examples</dt><dd><em>Example 1.</em> Have a 128-thread threadblock directly store a blocked arrangement of four consecutive integers per thread. <div class="fragment"><div class="line"><span class="preprocessor">#include &lt;<a class="code" href="cub_8cuh.html">cub.cuh</a>&gt;</span></div>
+<dl class="section user"><dt>Examples</dt><dd><em>Example 1.</em> Have a 128-thread threadblock directly store a blocked arrangement of four consecutive integers per thread. <div class="fragment"><div class="line"><span class="preprocessor">#include &lt;<a class="code" href="cub_8cuh.html">cub/cub.cuh</a>&gt;</span></div>
 <div class="line"></div>
 <div class="line"><span class="keyword">template</span> &lt;<span class="keywordtype">int</span> BLOCK_THREADS&gt;</div>
 <div class="line">__global__ <span class="keywordtype">void</span> SomeKernel(<span class="keywordtype">int</span> *d_out, ...)</div>
@@ -152,7 +152,7 @@ class cub::BlockStore&lt; OutputIterator, BLOCK_THREADS, ITEMS_PER_THREAD, POLIC
 <div class="line">     <span class="comment">// Declare shared memory for BlockStore</span></div>
 <div class="line">     __shared__ <span class="keyword">typename</span> <a class="code" href="classcub_1_1_block_store.html#aa80c1691bc7aa80bc38c2797b3a99c24" title="The operations exposed by BlockStore require shared memory of this type. This opaque storage can be a...">BlockStore::SmemStorage</a> smem_storage;</div>
 <div class="line"></div>
-<div class="line">    <span class="comment">// A segment of consecutive items per thread</span></div>
+<div class="line">     <span class="comment">// A segment of consecutive items per thread</span></div>
 <div class="line">     <span class="keywordtype">int</span> data[4];</div>
 <div class="line"></div>
 <div class="line">     <span class="comment">// Store a tile of data</span></div>
@@ -162,7 +162,7 @@ class cub::BlockStore&lt; OutputIterator, BLOCK_THREADS, ITEMS_PER_THREAD, POLIC
 <div class="line">}</div>
 </div><!-- fragment --></dd></dl>
 <p><em>Example 2.</em> Have a threadblock store a blocked arrangement of <code>ITEMS_PER_THREAD</code> consecutive integers per thread using vectorized stores and global-only caching: </p>
-<div class="fragment"><div class="line"><span class="preprocessor">#include &lt;<a class="code" href="cub_8cuh.html">cub.cuh</a>&gt;</span></div>
+<div class="fragment"><div class="line"><span class="preprocessor">#include &lt;<a class="code" href="cub_8cuh.html">cub/cub.cuh</a>&gt;</span></div>
 <div class="line"></div>
 <div class="line"><span class="keyword">template</span> &lt;<span class="keywordtype">int</span> BLOCK_THREADS&gt;</div>
 <div class="line">__global__ <span class="keywordtype">void</span> SomeKernel(<span class="keywordtype">int</span> *d_out, ...)</div>
@@ -175,7 +175,7 @@ class cub::BlockStore&lt; OutputIterator, BLOCK_THREADS, ITEMS_PER_THREAD, POLIC
 <div class="line">     <span class="comment">// Declare shared memory for BlockStore</span></div>
 <div class="line">     __shared__ <span class="keyword">typename</span> <a class="code" href="classcub_1_1_block_store.html#aa80c1691bc7aa80bc38c2797b3a99c24" title="The operations exposed by BlockStore require shared memory of this type. This opaque storage can be a...">BlockStore::SmemStorage</a> smem_storage;</div>
 <div class="line"></div>
-<div class="line">    <span class="comment">// A segment of consecutive items per thread</span></div>
+<div class="line">     <span class="comment">// A segment of consecutive items per thread</span></div>
 <div class="line">     <span class="keywordtype">int</span> data[4];</div>
 <div class="line"></div>
 <div class="line">     <span class="comment">// Store a tile of data using vector-store instructions if possible</span></div>
@@ -332,7 +332,7 @@ template&lt;typename SizeT &gt; </div>
 <!-- HTML footer for doxygen 1.8.3.1-->
 <!-- start footer part -->
 <hr class="footer"/><address class="footer"><small>
-Generated on Thu Apr 4 2013 15:14:49 for CUB by &#160;<a href="http://www.doxygen.org/index.html">
+Generated on Wed Apr 24 2013 13:24:10 for CUB by &#160;<a href="http://www.doxygen.org/index.html">
 <img class="footer" src="doxygen.png" alt="doxygen"/>
 </a> 1.8.3.1
 <br>

@@ -291,6 +291,7 @@ __global__ void BlockScanKernel(
     // Test scan
     T aggregate;
     BlockPrefixOp<T, ScanOp> prefix_op(prefix, scan_op);
+
     DeviceTest<T, ScanOp, IdentityT>::template Test<TEST_MODE, BlockScan>(
         smem_storage, data, identity, scan_op, aggregate, prefix_op);
 
@@ -428,6 +429,19 @@ void Test(
         h_aggregate[i] = aggregate;
     }
 
+    // Run kernel
+    printf("Test-mode %d, gen-mode %d, policy %d, %s BlockScan, %d threadblock threads, %d items per thread, %d tile size, %s (%d bytes) elements:\n",
+        TEST_MODE,
+        gen_mode,
+        POLICY,
+        (Equals<IdentityT, NullType>::VALUE) ? "Inclusive" : "Exclusive",
+        BLOCK_THREADS,
+        ITEMS_PER_THREAD,
+        TILE_SIZE,
+        type_string,
+        (int) sizeof(T));
+    fflush(stdout);
+
     // Initialize device arrays
     T *d_in = NULL;
     T *d_out = NULL;
@@ -439,19 +453,7 @@ void Test(
     CubDebugExit(DeviceAllocate((void**)&d_elapsed, sizeof(clock_t)));
     CubDebugExit(cudaMemcpy(d_in, h_in, sizeof(T) * TILE_SIZE, cudaMemcpyHostToDevice));
     CubDebugExit(cudaMemset(d_out, 0, sizeof(T) * (TILE_SIZE + 1)));
-    CubDebugExit(cudaMemset(d_aggregate, 0, sizeof(T) * TILE_SIZE));
-
-    // Run kernel
-    printf("Test-mode %d, gen-mode %d, policy %d, %s BlockScan, %d threadblock threads, %d items per thread, %s (%d bytes) elements:\n",
-        TEST_MODE,
-        gen_mode,
-        POLICY,
-        (Equals<IdentityT, NullType>::VALUE) ? "Inclusive" : "Exclusive",
-        BLOCK_THREADS,
-        ITEMS_PER_THREAD,
-        type_string,
-        (int) sizeof(T));
-    fflush(stdout);
+    CubDebugExit(cudaMemset(d_aggregate, 0, sizeof(T) * BLOCK_THREADS));
 
     // Display input problem data
     if (g_verbose)
@@ -537,7 +539,8 @@ void Test(
     const char  *type_string)
 {
     Test<BLOCK_THREADS, ITEMS_PER_THREAD, TEST_MODE, BLOCK_SCAN_RAKING>(gen_mode, scan_op, identity, prefix, type_string);
-//    Test<BLOCK_THREADS, ITEMS_PER_THREAD, TEST_MODE, BLOCK_SCAN_WARP_SCANS>(gen_mode, scan_op, identity, prefix, type_string);
+    Test<BLOCK_THREADS, ITEMS_PER_THREAD, TEST_MODE, BLOCK_SCAN_RAKING_MEMOIZE>(gen_mode, scan_op, identity, prefix, type_string);
+    Test<BLOCK_THREADS, ITEMS_PER_THREAD, TEST_MODE, BLOCK_SCAN_WARP_SCANS>(gen_mode, scan_op, identity, prefix, type_string);
 }
 
 
@@ -557,15 +560,14 @@ void Test(
     const char  *type_string)
 {
     // Exclusive
-//    Test<BLOCK_THREADS, ITEMS_PER_THREAD, BASIC>(gen_mode, scan_op, identity, prefix, type_string);
+    Test<BLOCK_THREADS, ITEMS_PER_THREAD, BASIC>(gen_mode, scan_op, identity, prefix, type_string);
     Test<BLOCK_THREADS, ITEMS_PER_THREAD, AGGREGATE>(gen_mode, scan_op, identity, prefix, type_string);
-//    Test<BLOCK_THREADS, ITEMS_PER_THREAD, PREFIX_AGGREGATE>(gen_mode, scan_op, identity, prefix, type_string);
-/*
+    Test<BLOCK_THREADS, ITEMS_PER_THREAD, PREFIX_AGGREGATE>(gen_mode, scan_op, identity, prefix, type_string);
+
     // Inclusive
     Test<BLOCK_THREADS, ITEMS_PER_THREAD, BASIC>(gen_mode, scan_op, NullType(), prefix, type_string);
     Test<BLOCK_THREADS, ITEMS_PER_THREAD, AGGREGATE>(gen_mode, scan_op, NullType(), prefix, type_string);
     Test<BLOCK_THREADS, ITEMS_PER_THREAD, PREFIX_AGGREGATE>(gen_mode, scan_op, NullType(), prefix, type_string);
-*/
 }
 
 
@@ -578,10 +580,8 @@ template <
 void Test(int gen_mode)
 {
     // primitive
-//    Test<BLOCK_THREADS, ITEMS_PER_THREAD>(gen_mode, Sum<unsigned char>(), (unsigned char) 0, (unsigned char) 99, CUB_TYPE_STRING(Sum<unsigned char>));
-
+    Test<BLOCK_THREADS, ITEMS_PER_THREAD>(gen_mode, Sum<unsigned char>(), (unsigned char) 0, (unsigned char) 99, CUB_TYPE_STRING(Sum<unsigned char>));
     Test<BLOCK_THREADS, ITEMS_PER_THREAD>(gen_mode, Sum<unsigned short>(), (unsigned short) 0, (unsigned short) 99, CUB_TYPE_STRING(Sum<unsigned short>));
-/*
     Test<BLOCK_THREADS, ITEMS_PER_THREAD>(gen_mode, Sum<unsigned int>(), (unsigned int) 0, (unsigned int) 99, CUB_TYPE_STRING(Sum<unsigned int>));
     Test<BLOCK_THREADS, ITEMS_PER_THREAD>(gen_mode, Sum<unsigned long long>(), (unsigned long long) 0, (unsigned long long) 99, CUB_TYPE_STRING(Sum<unsigned long long>));
 
@@ -606,7 +606,6 @@ void Test(int gen_mode)
     // complex
     Test<BLOCK_THREADS, ITEMS_PER_THREAD>(gen_mode, Sum<TestFoo>(), TestFoo::MakeTestFoo(0, 0, 0, 0), TestFoo::MakeTestFoo(17, 21, 32, 85), CUB_TYPE_STRING(Sum<TestFoo>));
     Test<BLOCK_THREADS, ITEMS_PER_THREAD>(gen_mode, Sum<TestBar>(), TestBar::MakeTestBar(0, 0), TestBar::MakeTestBar(17, 21), CUB_TYPE_STRING(Sum<TestBar>));
-*/
 }
 
 
@@ -617,8 +616,8 @@ template <int BLOCK_THREADS, int ITEMS_PER_THREAD>
 void Test()
 {
     Test<BLOCK_THREADS, ITEMS_PER_THREAD>(UNIFORM);
-//    Test<BLOCK_THREADS, ITEMS_PER_THREAD>(SEQ_INC);
-//    Test<BLOCK_THREADS, ITEMS_PER_THREAD>(RANDOM);
+    Test<BLOCK_THREADS, ITEMS_PER_THREAD>(SEQ_INC);
+    Test<BLOCK_THREADS, ITEMS_PER_THREAD>(RANDOM);
 }
 
 
@@ -629,9 +628,9 @@ template <int BLOCK_THREADS>
 void Test()
 {
     Test<BLOCK_THREADS, 1>();
-//    Test<BLOCK_THREADS, 2>();
-//    Test<BLOCK_THREADS, 3>();
-//    Test<BLOCK_THREADS, 8>();
+    Test<BLOCK_THREADS, 2>();
+    Test<BLOCK_THREADS, 3>();
+    Test<BLOCK_THREADS, 8>();
 }
 
 
@@ -659,11 +658,11 @@ int main(int argc, char** argv)
 
     // Initialize device
     CubDebugExit(args.DeviceInit());
-/*
+
     if (quick)
     {
-        Test<128, 4, AGGREGATE, BLOCK_SCAN_WARP_SCANS>(UNIFORM, Sum<int>(), int(0), int(10), CUB_TYPE_STRING(Sum<int));
-        Test<128, 4, AGGREGATE, BLOCK_SCAN_RAKING>(UNIFORM, Sum<int>(), int(0), int(10), CUB_TYPE_STRING(Sum<int));
+        Test<128, 4, AGGREGATE, BLOCK_SCAN_WARP_SCANS>(UNIFORM, Sum<int>(), int(0), int(10), CUB_TYPE_STRING(Sum<int>));
+        Test<128, 4, AGGREGATE, BLOCK_SCAN_RAKING>(UNIFORM, Sum<int>(), int(0), int(10), CUB_TYPE_STRING(Sum<int>));
 
         TestFoo prefix = TestFoo::MakeTestFoo(17, 21, 32, 85);
         Test<128, 2, PREFIX_AGGREGATE, BLOCK_SCAN_RAKING>(SEQ_INC, Sum<TestFoo>(), NullType(), prefix, CUB_TYPE_STRING(Sum<TestFoo>));
@@ -675,10 +674,9 @@ int main(int argc, char** argv)
         Test<32>();
         Test<62>();
         Test<65>();
-*/
         Test<96>();
-//        Test<128>();
-//    }
+        Test<128>();
+    }
 
     return 0;
 }

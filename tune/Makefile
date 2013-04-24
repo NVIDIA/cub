@@ -96,8 +96,14 @@ endif
 
 NVCCFLAGS = -Xptxas -v -Xcudafe -\#
 
+# Help the compiler/linker work with huge numbers of kernels on Windows
+ifeq (WIN_NT, $(findstring WIN_NT, $(OSUPPER)))
+	NVCCFLAGS += -Xcompiler /bigobj -Xcompiler /Zm500
+endif
+
+# 32/64-bit (32-bit device pointers by default) 
 ifneq ($(force64), 1)
-	# Compile with 32-bit device pointers by default
+	# 
 	CPU_ARCH = -m32
 	CPU_ARCH_SUFFIX = i386
 else
@@ -105,31 +111,33 @@ else
 	CPU_ARCH_SUFFIX = x86_64
 endif
 
+# CUDA ABI enable/disable (enabled by default) 
 ifneq ($(abi), 0)
-	# Enable the ABI by default
 	ABI_SUFFIX = abi
 else 
 	NVCCFLAGS += -Xptxas -abi=no
 	ABI_SUFFIX = noabi
 endif
 
+# NVVM/Open64 middle-end compiler (nvvm by default)
 ifeq ($(open64), 1)
-	# Use open64 compiler instead of nvvm
 	NVCCFLAGS += -open64
 	PTX_SUFFIX = open64
 else 
 	PTX_SUFFIX = nvvm
 endif
 
-
+# Verbose toolchain output from nvcc
 ifeq ($(verbose), 1)
 	NVCCFLAGS += -v
 endif
 
+# Keep intermediate compilation artifacts
 ifeq ($(keep), 1)
 	NVCCFLAGS += -keep
 endif
 
+# Data type size to compile a schmoo binary for
 ifdef tunesize
     TUNE_SIZE = $(tunesize)
 else 

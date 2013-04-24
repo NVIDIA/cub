@@ -83,7 +83,7 @@ var searchBox = new SearchBox("searchBox", "search",false,'Search');
      onmouseover="return searchBox.OnSearchSelectShow()"
      onmouseout="return searchBox.OnSearchSelectHide()"
      onkeydown="return searchBox.OnSearchSelectKey(event)">
-<a class="SelectItem" href="javascript:void(0)" onclick="searchBox.OnSelectItem(0)"><span class="SelectionMark">&#160;</span>All</a><a class="SelectItem" href="javascript:void(0)" onclick="searchBox.OnSelectItem(1)"><span class="SelectionMark">&#160;</span>Classes</a><a class="SelectItem" href="javascript:void(0)" onclick="searchBox.OnSelectItem(2)"><span class="SelectionMark">&#160;</span>Namespaces</a><a class="SelectItem" href="javascript:void(0)" onclick="searchBox.OnSelectItem(3)"><span class="SelectionMark">&#160;</span>Files</a><a class="SelectItem" href="javascript:void(0)" onclick="searchBox.OnSelectItem(4)"><span class="SelectionMark">&#160;</span>Functions</a><a class="SelectItem" href="javascript:void(0)" onclick="searchBox.OnSelectItem(5)"><span class="SelectionMark">&#160;</span>Variables</a><a class="SelectItem" href="javascript:void(0)" onclick="searchBox.OnSelectItem(6)"><span class="SelectionMark">&#160;</span>Typedefs</a><a class="SelectItem" href="javascript:void(0)" onclick="searchBox.OnSelectItem(7)"><span class="SelectionMark">&#160;</span>Enumerations</a><a class="SelectItem" href="javascript:void(0)" onclick="searchBox.OnSelectItem(8)"><span class="SelectionMark">&#160;</span>Enumerator</a><a class="SelectItem" href="javascript:void(0)" onclick="searchBox.OnSelectItem(9)"><span class="SelectionMark">&#160;</span>Friends</a><a class="SelectItem" href="javascript:void(0)" onclick="searchBox.OnSelectItem(10)"><span class="SelectionMark">&#160;</span>Groups</a><a class="SelectItem" href="javascript:void(0)" onclick="searchBox.OnSelectItem(11)"><span class="SelectionMark">&#160;</span>Pages</a></div>
+<a class="SelectItem" href="javascript:void(0)" onclick="searchBox.OnSelectItem(0)"><span class="SelectionMark">&#160;</span>All</a><a class="SelectItem" href="javascript:void(0)" onclick="searchBox.OnSelectItem(1)"><span class="SelectionMark">&#160;</span>Classes</a><a class="SelectItem" href="javascript:void(0)" onclick="searchBox.OnSelectItem(2)"><span class="SelectionMark">&#160;</span>Namespaces</a><a class="SelectItem" href="javascript:void(0)" onclick="searchBox.OnSelectItem(3)"><span class="SelectionMark">&#160;</span>Files</a><a class="SelectItem" href="javascript:void(0)" onclick="searchBox.OnSelectItem(4)"><span class="SelectionMark">&#160;</span>Functions</a><a class="SelectItem" href="javascript:void(0)" onclick="searchBox.OnSelectItem(5)"><span class="SelectionMark">&#160;</span>Variables</a><a class="SelectItem" href="javascript:void(0)" onclick="searchBox.OnSelectItem(6)"><span class="SelectionMark">&#160;</span>Typedefs</a><a class="SelectItem" href="javascript:void(0)" onclick="searchBox.OnSelectItem(7)"><span class="SelectionMark">&#160;</span>Enumerations</a><a class="SelectItem" href="javascript:void(0)" onclick="searchBox.OnSelectItem(8)"><span class="SelectionMark">&#160;</span>Enumerator</a><a class="SelectItem" href="javascript:void(0)" onclick="searchBox.OnSelectItem(9)"><span class="SelectionMark">&#160;</span>Groups</a><a class="SelectItem" href="javascript:void(0)" onclick="searchBox.OnSelectItem(10)"><span class="SelectionMark">&#160;</span>Pages</a></div>
 
 <!-- iframe showing the search results (closed by default) -->
 <div id="MSearchResultsWindow">
@@ -123,129 +123,71 @@ struct cub::BlockRakingLayout&lt; T, BLOCK_THREADS, BLOCK_STRIPS &gt;</h3>
 </div><table class="memberdecls">
 <tr class="heading"><td colspan="2"><h2 class="groupheader"><a name="pub-types"></a>
 Public Types</h2></td></tr>
-<tr class="memitem:a2b6138580e8d348c8ee903d05eee2083"><td class="memItemLeft" align="right" valign="top">enum &#160;</td><td class="memItemRight" valign="bottom">{ <br/>
-&#160;&#160;<b>SHARED_ELEMENTS</b> = BLOCK_THREADS * BLOCK_STRIPS, 
-<b>MAX_RAKING_THREADS</b> = CUB_MIN(BLOCK_THREADS, PtxArchProps::WARP_THREADS), 
-<b>RAKING_LENGTH</b> = (SHARED_ELEMENTS + MAX_RAKING_THREADS - 1) / MAX_RAKING_THREADS, 
-<b>RAKING_THREADS</b> = (SHARED_ELEMENTS + RAKING_LENGTH - 1) / RAKING_LENGTH, 
+<tr class="memitem:a7c4ebdd2f727dbefd220e601c167480d"><td class="memItemLeft" align="right" valign="top">enum &#160;</td><td class="memItemRight" valign="bottom">{ <br/>
+&#160;&#160;<a class="el" href="structcub_1_1_block_raking_layout.html#a7c4ebdd2f727dbefd220e601c167480da88563e2b0f7a4e3362d912f6493ccdb4">SHARED_ELEMENTS</a> = BLOCK_THREADS * BLOCK_STRIPS, 
+<a class="el" href="structcub_1_1_block_raking_layout.html#a7c4ebdd2f727dbefd220e601c167480da8fbf670c35bffa1c27febb4514d5a129">MAX_RAKING_THREADS</a> = CUB_MIN(BLOCK_THREADS, PtxArchProps::WARP_THREADS), 
+<a class="el" href="structcub_1_1_block_raking_layout.html#a7c4ebdd2f727dbefd220e601c167480dac61b5f8034e4b1b98800951216c90267">SEGMENT_LENGTH</a> = (SHARED_ELEMENTS + MAX_RAKING_THREADS - 1) / MAX_RAKING_THREADS, 
+<a class="el" href="structcub_1_1_block_raking_layout.html#a7c4ebdd2f727dbefd220e601c167480daa606719edb60c34806b20f3fa8a6535b">RAKING_THREADS</a> = (SHARED_ELEMENTS + SEGMENT_LENGTH - 1) / SEGMENT_LENGTH, 
 <br/>
-&#160;&#160;<b>RAKING_ELEMENTS</b> = RAKING_THREADS * RAKING_LENGTH, 
-<b>SEGMENT_BYTES</b> = PtxArchProps::SMEM_BANKS * PtxArchProps::SMEM_BANK_BYTES, 
-<b>SEGMENT_LENGTH</b> = (SEGMENT_BYTES + sizeof(T) - 1) / sizeof(T), 
-<b>PADDING_STRIDE</b> = CUB_ROUND_UP_NEAREST(SEGMENT_LENGTH, RAKING_LENGTH), 
-<br/>
-&#160;&#160;<b>PADDING_ELEMENTS</b> = (PtxArchProps::SMEM_BANK_BYTES + sizeof(T) - 1) / sizeof(T), 
-<b>GRID_ELEMENTS</b> = RAKING_ELEMENTS + (RAKING_ELEMENTS / PADDING_STRIDE), 
-<b>UNGUARDED</b> = (SHARED_ELEMENTS % PtxArchProps::WARP_THREADS == 0)
+&#160;&#160;<a class="el" href="structcub_1_1_block_raking_layout.html#a7c4ebdd2f727dbefd220e601c167480daf36afaf5e3e52ced91f2cb62dff0ed44">SEGMENT_PADDING</a> = (PtxArchProps::SMEM_BANKS % SEGMENT_LENGTH == 0) ? 1 : 0, 
+<a class="el" href="structcub_1_1_block_raking_layout.html#a7c4ebdd2f727dbefd220e601c167480dafc43f61dacf0b1c963d0e5ff62f8c9d9">GRID_ELEMENTS</a> = RAKING_THREADS * (SEGMENT_LENGTH + SEGMENT_PADDING), 
+<a class="el" href="structcub_1_1_block_raking_layout.html#a7c4ebdd2f727dbefd220e601c167480da26085e779253b376e60b904389eca382">UNGUARDED</a> = (SHARED_ELEMENTS % RAKING_THREADS == 0)
 <br/>
  }</td></tr>
-<tr class="separator:a2b6138580e8d348c8ee903d05eee2083"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:a9455ea5b5ba52b8fcf26cfded59f70c9"><td class="memItemLeft" align="right" valign="top">typedef T&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="structcub_1_1_block_raking_layout.html#a9455ea5b5ba52b8fcf26cfded59f70c9">SmemStorage</a> [BlockRakingLayout::GRID_ELEMENTS]</td></tr>
+<tr class="separator:a7c4ebdd2f727dbefd220e601c167480d"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a9455ea5b5ba52b8fcf26cfded59f70c9"><td class="memItemLeft" align="right" valign="top"><a class="anchor" id="a9455ea5b5ba52b8fcf26cfded59f70c9"></a>
+typedef T&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="structcub_1_1_block_raking_layout.html#a9455ea5b5ba52b8fcf26cfded59f70c9">SmemStorage</a> [<a class="el" href="structcub_1_1_block_raking_layout.html#a7c4ebdd2f727dbefd220e601c167480dafc43f61dacf0b1c963d0e5ff62f8c9d9">BlockRakingLayout::GRID_ELEMENTS</a>]</td></tr>
+<tr class="memdesc:a9455ea5b5ba52b8fcf26cfded59f70c9"><td class="mdescLeft">&#160;</td><td class="mdescRight">Shared memory storage type. <br/></td></tr>
 <tr class="separator:a9455ea5b5ba52b8fcf26cfded59f70c9"><td class="memSeparator" colspan="2">&#160;</td></tr>
 </table><table class="memberdecls">
 <tr class="heading"><td colspan="2"><h2 class="groupheader"><a name="pub-static-methods"></a>
 Static Public Methods</h2></td></tr>
-<tr class="memitem:aecee2831bac3e7ead02bfeb403768ff5"><td class="memItemLeft" align="right" valign="top">static __device__ <br class="typebreak"/>
+<tr class="memitem:aecee2831bac3e7ead02bfeb403768ff5"><td class="memItemLeft" align="right" valign="top"><a class="anchor" id="aecee2831bac3e7ead02bfeb403768ff5"></a>
+static __device__ <br class="typebreak"/>
 __forceinline__ T *&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="structcub_1_1_block_raking_layout.html#aecee2831bac3e7ead02bfeb403768ff5">PlacementPtr</a> (<a class="el" href="structcub_1_1_block_raking_layout.html#a9455ea5b5ba52b8fcf26cfded59f70c9">SmemStorage</a> &amp;smem_storage, int block_strip=0, int tid=threadIdx.x)</td></tr>
+<tr class="memdesc:aecee2831bac3e7ead02bfeb403768ff5"><td class="mdescLeft">&#160;</td><td class="mdescRight">Returns the location for the calling thread to place data into the grid. <br/></td></tr>
 <tr class="separator:aecee2831bac3e7ead02bfeb403768ff5"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:a2c62149ec2e962e98bde8ba30f14dfbf"><td class="memItemLeft" align="right" valign="top">static __device__ <br class="typebreak"/>
+<tr class="memitem:a2c62149ec2e962e98bde8ba30f14dfbf"><td class="memItemLeft" align="right" valign="top"><a class="anchor" id="a2c62149ec2e962e98bde8ba30f14dfbf"></a>
+static __device__ <br class="typebreak"/>
 __forceinline__ T *&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="structcub_1_1_block_raking_layout.html#a2c62149ec2e962e98bde8ba30f14dfbf">RakingPtr</a> (<a class="el" href="structcub_1_1_block_raking_layout.html#a9455ea5b5ba52b8fcf26cfded59f70c9">SmemStorage</a> &amp;smem_storage, int tid=threadIdx.x)</td></tr>
+<tr class="memdesc:a2c62149ec2e962e98bde8ba30f14dfbf"><td class="mdescLeft">&#160;</td><td class="mdescRight">Returns the location for the calling thread to begin sequential raking. <br/></td></tr>
 <tr class="separator:a2c62149ec2e962e98bde8ba30f14dfbf"><td class="memSeparator" colspan="2">&#160;</td></tr>
 </table>
-<h2 class="groupheader">Member Typedef Documentation</h2>
-<a class="anchor" id="a9455ea5b5ba52b8fcf26cfded59f70c9"></a>
+<h2 class="groupheader">Member Enumeration Documentation</h2>
+<a class="anchor" id="a7c4ebdd2f727dbefd220e601c167480d"></a>
 <div class="memitem">
 <div class="memproto">
 <div class="memtemplate">
 template&lt;typename T , int BLOCK_THREADS, int BLOCK_STRIPS = 1&gt; </div>
       <table class="memname">
         <tr>
-          <td class="memname">typedef T <a class="el" href="structcub_1_1_block_raking_layout.html">cub::BlockRakingLayout</a>&lt; T, BLOCK_THREADS, BLOCK_STRIPS &gt;::SmemStorage[BlockRakingLayout::GRID_ELEMENTS]</td>
+          <td class="memname">anonymous enum</td>
         </tr>
       </table>
 </div><div class="memdoc">
-<p>Shared memory storage type </p>
-
-</div>
-</div>
-<h2 class="groupheader">Member Function Documentation</h2>
-<a class="anchor" id="aecee2831bac3e7ead02bfeb403768ff5"></a>
-<div class="memitem">
-<div class="memproto">
-<div class="memtemplate">
-template&lt;typename T , int BLOCK_THREADS, int BLOCK_STRIPS = 1&gt; </div>
-<table class="mlabels">
-  <tr>
-  <td class="mlabels-left">
-      <table class="memname">
-        <tr>
-          <td class="memname">static __device__ __forceinline__ T* <a class="el" href="structcub_1_1_block_raking_layout.html">cub::BlockRakingLayout</a>&lt; T, BLOCK_THREADS, BLOCK_STRIPS &gt;::PlacementPtr </td>
-          <td>(</td>
-          <td class="paramtype"><a class="el" href="structcub_1_1_block_raking_layout.html#a9455ea5b5ba52b8fcf26cfded59f70c9">SmemStorage</a> &amp;&#160;</td>
-          <td class="paramname"><em>smem_storage</em>, </td>
-        </tr>
-        <tr>
-          <td class="paramkey"></td>
-          <td></td>
-          <td class="paramtype">int&#160;</td>
-          <td class="paramname"><em>block_strip</em> = <code>0</code>, </td>
-        </tr>
-        <tr>
-          <td class="paramkey"></td>
-          <td></td>
-          <td class="paramtype">int&#160;</td>
-          <td class="paramname"><em>tid</em> = <code>threadIdx.x</code>&#160;</td>
-        </tr>
-        <tr>
-          <td></td>
-          <td>)</td>
-          <td></td><td></td>
-        </tr>
-      </table>
-  </td>
-  <td class="mlabels-right">
-<span class="mlabels"><span class="mlabel">inline</span><span class="mlabel">static</span></span>  </td>
-  </tr>
+<table class="fieldtable">
+<tr><th colspan="2">Enumerator</th></tr><tr><td class="fieldname"><em><a class="anchor" id="a7c4ebdd2f727dbefd220e601c167480da88563e2b0f7a4e3362d912f6493ccdb4"></a>SHARED_ELEMENTS</em>&nbsp;</td><td class="fielddoc">
+<p>The total number of elements that need to be cooperatively reduced. </p>
+</td></tr>
+<tr><td class="fieldname"><em><a class="anchor" id="a7c4ebdd2f727dbefd220e601c167480da8fbf670c35bffa1c27febb4514d5a129"></a>MAX_RAKING_THREADS</em>&nbsp;</td><td class="fielddoc">
+<p>Maximum number of warp-synchronous raking threads. </p>
+</td></tr>
+<tr><td class="fieldname"><em><a class="anchor" id="a7c4ebdd2f727dbefd220e601c167480dac61b5f8034e4b1b98800951216c90267"></a>SEGMENT_LENGTH</em>&nbsp;</td><td class="fielddoc">
+<p>Number of raking elements per warp-synchronous raking thread (rounded up) </p>
+</td></tr>
+<tr><td class="fieldname"><em><a class="anchor" id="a7c4ebdd2f727dbefd220e601c167480daa606719edb60c34806b20f3fa8a6535b"></a>RAKING_THREADS</em>&nbsp;</td><td class="fielddoc">
+<p>Never use a raking thread that will have no valid data (e.g., when BLOCK_THREADS is 62 and SEGMENT_LENGTH is 2, we should only use 31 raking threads) </p>
+</td></tr>
+<tr><td class="fieldname"><em><a class="anchor" id="a7c4ebdd2f727dbefd220e601c167480daf36afaf5e3e52ced91f2cb62dff0ed44"></a>SEGMENT_PADDING</em>&nbsp;</td><td class="fielddoc">
+<p>Pad each segment length with one element if it evenly divides the number of banks. </p>
+</td></tr>
+<tr><td class="fieldname"><em><a class="anchor" id="a7c4ebdd2f727dbefd220e601c167480dafc43f61dacf0b1c963d0e5ff62f8c9d9"></a>GRID_ELEMENTS</em>&nbsp;</td><td class="fielddoc">
+<p>Total number of elements in the raking grid. </p>
+</td></tr>
+<tr><td class="fieldname"><em><a class="anchor" id="a7c4ebdd2f727dbefd220e601c167480da26085e779253b376e60b904389eca382"></a>UNGUARDED</em>&nbsp;</td><td class="fielddoc">
+<p>Whether or not we need bounds checking during raking (the number of reduction elements is not a multiple of the warp size) </p>
+</td></tr>
 </table>
-</div><div class="memdoc">
-<p>Pointer for placement into raking grid (with padding) </p>
-
-</div>
-</div>
-<a class="anchor" id="a2c62149ec2e962e98bde8ba30f14dfbf"></a>
-<div class="memitem">
-<div class="memproto">
-<div class="memtemplate">
-template&lt;typename T , int BLOCK_THREADS, int BLOCK_STRIPS = 1&gt; </div>
-<table class="mlabels">
-  <tr>
-  <td class="mlabels-left">
-      <table class="memname">
-        <tr>
-          <td class="memname">static __device__ __forceinline__ T* <a class="el" href="structcub_1_1_block_raking_layout.html">cub::BlockRakingLayout</a>&lt; T, BLOCK_THREADS, BLOCK_STRIPS &gt;::RakingPtr </td>
-          <td>(</td>
-          <td class="paramtype"><a class="el" href="structcub_1_1_block_raking_layout.html#a9455ea5b5ba52b8fcf26cfded59f70c9">SmemStorage</a> &amp;&#160;</td>
-          <td class="paramname"><em>smem_storage</em>, </td>
-        </tr>
-        <tr>
-          <td class="paramkey"></td>
-          <td></td>
-          <td class="paramtype">int&#160;</td>
-          <td class="paramname"><em>tid</em> = <code>threadIdx.x</code>&#160;</td>
-        </tr>
-        <tr>
-          <td></td>
-          <td>)</td>
-          <td></td><td></td>
-        </tr>
-      </table>
-  </td>
-  <td class="mlabels-right">
-<span class="mlabels"><span class="mlabel">inline</span><span class="mlabel">static</span></span>  </td>
-  </tr>
-</table>
-</div><div class="memdoc">
-<p>Pointer for sequential warp-synchronous raking within grid (with padding) </p>
 
 </div>
 </div>
@@ -256,7 +198,7 @@ template&lt;typename T , int BLOCK_THREADS, int BLOCK_STRIPS = 1&gt; </div>
 <!-- HTML footer for doxygen 1.8.3.1-->
 <!-- start footer part -->
 <hr class="footer"/><address class="footer"><small>
-Generated on Thu Apr 4 2013 15:14:49 for CUB by &#160;<a href="http://www.doxygen.org/index.html">
+Generated on Wed Apr 24 2013 13:24:10 for CUB by &#160;<a href="http://www.doxygen.org/index.html">
 <img class="footer" src="doxygen.png" alt="doxygen"/>
 </a> 1.8.3.1
 <br>

@@ -59,8 +59,8 @@ namespace cub {
  * produces an output list where each element is computed to be the reduction
  * of the elements occurring earlier in the input list.  <em>Prefix sum</em>
  * connotes a prefix scan with the addition operator. The term \em inclusive indicates
- * that the <em>i</em><sup>th</sup> output reduction includes the <em>i</em><sup>th</sup> input.
- * The term \em exclusive indicates the <em>i</em><sup>th</sup> input is not computed into
+ * that the <em>i</em><sup>th</sup> output reduction incorporates the <em>i</em><sup>th</sup> input.
+ * The term \em exclusive indicates the <em>i</em><sup>th</sup> input is not incorporated into
  * the <em>i</em><sup>th</sup> output reduction.
  *
  * \par
@@ -68,7 +68,7 @@ namespace cub {
  * - Operator (generic scan <em>vs.</em> prefix sum for numeric types)
  * - Output ordering (inclusive <em>vs.</em> exclusive)
  * - Warp-wide prefix (identity <em>vs.</em> call-back functor)
- * - Output (scanned elements only <em>vs.</em> scanned elements and the total aggregate)
+ * - What is computed (scanned elements only <em>vs.</em> scanned elements and the total aggregate)
  *
  * \tparam T                        The scan input/output element type
  * \tparam WARPS                    <b>[optional]</b> The number of "logical" warps performing concurrent warp scans. Default is 1.
@@ -111,7 +111,7 @@ namespace cub {
  * __global__ void SomeKernel(...)
  * {
  *     // Parameterize WarpScan for 1 warp on type int
- *     typedef cub::WarpScan<int, 1> WarpScan;
+ *     typedef cub::WarpScan<int> WarpScan;
  *
  *     // Opaque shared memory for WarpScan
  *     __shared__ typename WarpScan::SmemStorage smem_storage;
@@ -138,63 +138,59 @@ namespace cub {
  * \endcode
  *
  * \par
- * <em>Example 2.</em> Perform an exclusive prefix sum for one warp seeded with a warp-wide prefix
+ * <em>Example 2.</em> Use a single warp to iteratively compute an exclusive prefix sum over a larger input using a prefix functor to maintain a running total between scans.
  *      \code
  *      #include <cub/cub.cuh>
  *
- *      /// Stateful functor for producing a value for which to seed the entire warp scan.
+ *      // Stateful functor that maintains a running prefix that can be applied to
+ *      // consecutive scan operations.
  *      struct WarpPrefixOp
  *      {
- *          int warp_prefix;
+ *          // Running prefix
+ *          int running_total;
  *
- *          /// Functor constructor
- *          __device__ WarpPrefixOp(int warp_prefix) : warp_prefix(warp_prefix) {}
+ *          // Functor constructor
+ *          __device__ WarpPrefixOp(int running_total) : running_total(running_total) {}
  *
- *          /// Functor operator.  Produces a value for seeding the warp-wide scan given
- *          /// the local aggregate (only used by warp-lane0).
- *          __device__ int operator(int warp_aggregate)
+ *          // Functor operator.  Lane-0 produces a value for seeding the warp-wide scan given
+ *          // the local aggregate.
+ *          __device__ int operator()(int warp_aggregate)
  *          {
- *              int old_prefix = warp_prefix;
- *              warp_prefix += warp_aggregate;
+ *              int old_prefix = running_total;
+ *              running_total += warp_aggregate;
  *              return old_prefix;
  *          }
  *      }
  *
- *      __global__ void SomeKernel(...)
+ *      __global__ void SomeKernel(int *d_data, int num_elements)
  *      {
  *          // Parameterize WarpScan for 1 warp on type int
- *          typedef cub::WarpScan<int, 1> WarpScan;
+ *          typedef cub::WarpScan<int> WarpScan;
  *
  *          // Opaque shared memory for WarpScan
  *          __shared__ typename WarpScan::SmemStorage smem_storage;
  *
- *          // Perform prefix sum of 2s, all seeded with a warp prefix value of 10
+ *          // The first warp iteratively computes a prefix sum over d_data
  *          if (threadIdx.x < 32)
  *          {
- *              int input = 2;
- *              int output;
- *              int warp_aggregate;
- *              WarpPrefixOp warp_prefix_op(10);
- *              WarpScan::ExclusiveSum(smem_storage, input, output,
- *                  warp_aggregate, warp_prefix_op);
+ *              // Running total
+ *              WarpPrefixOp prefix_op(0);
  *
- *              printf("tid(%d) output(%d)\n\n", threadIdx.x, output);
- *              if (threadIdx.x == 0)
- *                  printf("updated aggregate(%d) and warp_prefix(%d)\n",
- *                      aggregate, warp_prefix_op.warp_prefix);
+ *              // Iterate in strips of 32 items
+ *              for (int warp_offset = 0; warp_offset < num_elements; warp_offset += 32)
+ *              {
+ *                  // Read item
+ *                  int datum = d_data[warp_offset + threadIdx.x];
+ *
+ *                  // Scan the tile of items
+ *                  int tile_aggregate;
+ *                  WarpScan::ExclusiveSum(smem_storage, datum, datum,
+ *                      tile_aggregate, prefix_op);
+ *
+ *                  // Write item
+ *                  d_data[warp_offset + threadIdx.x] = datum;
+ *              }
  *          }
- *          \endcode
- *      Printed output:
- *      \code
- *      tid(0) output(10)
- *      tid(1) output(12)
- *      tid(2) output(14)
- *      tid(3) output(16)
- *      tid(4) output(18)
- *      ...
- *      tid(31) output(72)
- *
- *      updated aggregate(74) and warp_prefix(84)
  *      \endcode
  */
 template <
@@ -340,12 +336,14 @@ private:
             _T               &output,           ///< [out] Calling thread's output item.  May be aliased with \p input.
             _T               &warp_aggregate)   ///< [out] Warp-wide aggregate reduction of input items.
         {
-            // Cast as unsigned int
-            unsigned int    &uinput             = reinterpret_cast<unsigned int&>(input);
-            unsigned int    &uoutput            = reinterpret_cast<unsigned int&>(output);
-            unsigned int    &uwarp_aggregate   = reinterpret_cast<unsigned int&>(warp_aggregate);
+            unsigned int uinput = (unsigned int) input;
+            unsigned int uoutput;
+            unsigned int uwarp_aggregate;
 
             InclusiveSum(smem_storage, uinput, uoutput, uwarp_aggregate);
+
+            warp_aggregate = (T) uwarp_aggregate;
+            output = (T) uoutput;
         }
 
         /// Inclusive prefix sum
@@ -464,7 +462,7 @@ private:
         {
             // Compute inclusive scan
             T inclusive;
-            InclusiveScan(smem_storage, input, inclusive, scan_op);
+            InclusiveScan(smem_storage, input, inclusive, scan_op, warp_aggregate);
 
             unsigned int    &uinclusive     = reinterpret_cast<unsigned int&>(inclusive);
             unsigned int    &uoutput        = reinterpret_cast<unsigned int&>(output);

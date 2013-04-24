@@ -424,21 +424,15 @@ int main(int argc, char** argv)
     {
         // Quick test
         typedef unsigned int T;
-
-        TestDriver<64, 2, 5, BLOCK_SCAN_WARP_SCANS, cudaSharedMemBankSizeFourByte, T, NullType>(
-            0,
-            0,
-            sizeof(T) * 8);
+        TestDriver<64, 2, 5, BLOCK_SCAN_WARP_SCANS, cudaSharedMemBankSizeFourByte, T, NullType>(0, 0, sizeof(T) * 8);
     }
     else
     {
-/*
         // Test threads
         Test<32>();
         Test<64>();
         Test<128>();
         Test<256>();
-*/
     }
 
     return 0;

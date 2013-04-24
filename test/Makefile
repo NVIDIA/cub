@@ -67,6 +67,11 @@ endif
 # Default flags: verbose kernel properties (regs, smem, cmem, etc.); runtimes for compilation phases 
 NVCCFLAGS += -Xptxas -v -Xcudafe -\#
 
+# Help the compiler/linker work with huge numbers of kernels on Windows
+ifeq (WIN_NT, $(findstring WIN_NT, $(OSUPPER)))
+	NVCCFLAGS += -Xcompiler /bigobj -Xcompiler /Zm500
+endif
+
 # 32/64-bit (32-bit device pointers by default) 
 ifneq ($(force64), 1)
 	# 

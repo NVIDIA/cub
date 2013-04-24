@@ -535,7 +535,7 @@ enum BlockStorePolicy
  *      // Declare shared memory for BlockStore
  *      __shared__ typename BlockStore::SmemStorage smem_storage;
  *
- *     // A segment of consecutive items per thread
+ *      // A segment of consecutive items per thread
  *      int data[4];
  *
  *      // Store a tile of data
@@ -561,7 +561,7 @@ enum BlockStorePolicy
  *      // Declare shared memory for BlockStore
  *      __shared__ typename BlockStore::SmemStorage smem_storage;
  *
- *     // A segment of consecutive items per thread
+ *      // A segment of consecutive items per thread
  *      int data[4];
  *
  *      // Store a tile of data using vector-store instructions if possible
