@@ -119,7 +119,9 @@ enum BlockReduceAlgorithm
  * \tparam ALGORITHM        <b>[optional]</b> cub::BlockReduceAlgorithm tuning policy.  Default = cub::BLOCK_REDUCE_RAKING.
  *
  * \par Algorithm
- * BlockReduce can be (optionally) configured to use different algorithms:
+ * BlockReduce provides a single prefix scan abstraction whose performance behavior can be tuned
+ * for different usage scenarios.  BlockReduce can be (optionally) configured to use different algorithms that cater
+ * to different latency/throughput needs:
  *   -# <b>cub::BLOCK_REDUCE_RAKING</b>.  An efficient "raking" reduction algorithm. [More...](\ref cub::BlockReduceAlgorithm)
  *   -# <b>cub::BLOCK_REDUCE_WARP_REDUCTIONS</b>.  A quick "tiled warp-reductions" reduction algorithm. [More...](\ref cub::BlockReduceAlgorithm)
  *
@@ -226,7 +228,7 @@ private:
             RAKING_THREADS = BlockRakingLayout::RAKING_THREADS,
 
             /// Number of raking elements per warp synchronous raking thread
-            RAKING_LENGTH = BlockRakingLayout::RAKING_LENGTH,
+            SEGMENT_LENGTH = BlockRakingLayout::SEGMENT_LENGTH,
 
             /// Cooperative work can be entirely warp synchronous
             WARP_SYNCHRONOUS = (RAKING_THREADS == BLOCK_THREADS),
@@ -260,7 +262,7 @@ private:
             if (WARP_SYNCHRONOUS)
             {
                 // Short-circuit directly to warp synchronous reduction (unguarded if active threads is a power-of-two)
-                partial = WarpReduce::Sum<FULL_TILE, RAKING_LENGTH>(
+                partial = WarpReduce::Sum<FULL_TILE, SEGMENT_LENGTH>(
                     smem_storage.warp_storage,
                     partial,
                     num_valid);
@@ -280,16 +282,16 @@ private:
                     partial = raking_segment[0];
 
                     #pragma unroll
-                    for (int ITEM = 1; ITEM < RAKING_LENGTH; ITEM++)
+                    for (int ITEM = 1; ITEM < SEGMENT_LENGTH; ITEM++)
                     {
                         // Update partial if addend is in range
-                        if ((FULL_TILE && RAKING_UNGUARDED) || ((threadIdx.x * RAKING_LENGTH) + ITEM < num_valid))
+                        if ((FULL_TILE && RAKING_UNGUARDED) || ((threadIdx.x * SEGMENT_LENGTH) + ITEM < num_valid))
                         {
                             partial = reduction_op(partial, raking_segment[ITEM]);
                         }
                     }
 
-                    partial = WarpReduce::Sum<FULL_TILE && RAKING_UNGUARDED, RAKING_LENGTH>(
+                    partial = WarpReduce::Sum<FULL_TILE && RAKING_UNGUARDED, SEGMENT_LENGTH>(
                         smem_storage.warp_storage,
                         partial,
                         num_valid);
@@ -313,7 +315,7 @@ private:
             if (WARP_SYNCHRONOUS)
             {
                 // Short-circuit directly to warp synchronous reduction (unguarded if active threads is a power-of-two)
-                partial = WarpReduce::Reduce<FULL_TILE, RAKING_LENGTH>(
+                partial = WarpReduce::Reduce<FULL_TILE, SEGMENT_LENGTH>(
                     smem_storage.warp_storage,
                     partial,
                     num_valid,
@@ -334,16 +336,16 @@ private:
                     partial = raking_segment[0];
 
                     #pragma unroll
-                    for (int ITEM = 1; ITEM < RAKING_LENGTH; ITEM++)
+                    for (int ITEM = 1; ITEM < SEGMENT_LENGTH; ITEM++)
                     {
                         // Update partial if addend is in range
-                        if ((FULL_TILE && RAKING_UNGUARDED) || ((threadIdx.x * RAKING_LENGTH) + ITEM < num_valid))
+                        if ((FULL_TILE && RAKING_UNGUARDED) || ((threadIdx.x * SEGMENT_LENGTH) + ITEM < num_valid))
                         {
                             partial = reduction_op(partial, raking_segment[ITEM]);
                         }
                     }
 
-                    partial = WarpReduce::Reduce<FULL_TILE && RAKING_UNGUARDED, RAKING_LENGTH>(
+                    partial = WarpReduce::Reduce<FULL_TILE && RAKING_UNGUARDED, SEGMENT_LENGTH>(
                         smem_storage.warp_storage,
                         partial,
                         num_valid,

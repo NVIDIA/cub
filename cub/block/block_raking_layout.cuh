@@ -78,50 +78,37 @@ struct BlockRakingLayout
 
     enum
     {
-        // The total number of elements that need to be cooperatively reduced
+        /// The total number of elements that need to be cooperatively reduced
         SHARED_ELEMENTS = BLOCK_THREADS * BLOCK_STRIPS,
 
-        // Maximum number of warp-synchronous raking threads
+        /// Maximum number of warp-synchronous raking threads
         MAX_RAKING_THREADS = CUB_MIN(BLOCK_THREADS, PtxArchProps::WARP_THREADS),
 
-        // Number of raking elements per warp-synchronous raking thread (rounded up)
-        RAKING_LENGTH = (SHARED_ELEMENTS + MAX_RAKING_THREADS - 1) / MAX_RAKING_THREADS,
+        /// Number of raking elements per warp-synchronous raking thread (rounded up)
+        SEGMENT_LENGTH = (SHARED_ELEMENTS + MAX_RAKING_THREADS - 1) / MAX_RAKING_THREADS,
 
-        // Number of warp-synchronous raking threads
-        RAKING_THREADS = (SHARED_ELEMENTS + RAKING_LENGTH - 1) / RAKING_LENGTH,
+        /// Never use a raking thread that will have no valid data (e.g., when BLOCK_THREADS is 62 and SEGMENT_LENGTH is 2, we should only use 31 raking threads)
+        RAKING_THREADS = (SHARED_ELEMENTS + SEGMENT_LENGTH - 1) / SEGMENT_LENGTH,
 
-        // Total number of raking elements in the grid
-        RAKING_ELEMENTS = RAKING_THREADS * RAKING_LENGTH,
+        /// Pad each segment length with one element if it evenly divides the number of banks
+        SEGMENT_PADDING = (PtxArchProps::SMEM_BANKS % SEGMENT_LENGTH == 0) ? 1 : 0,
 
-        // Number of bytes per shared memory segment
-        SEGMENT_BYTES = PtxArchProps::SMEM_BANKS * PtxArchProps::SMEM_BANK_BYTES,
+        /// Total number of elements in the raking grid
+        GRID_ELEMENTS = RAKING_THREADS * (SEGMENT_LENGTH + SEGMENT_PADDING),
 
-        // Number of elements per shared memory segment (rounded up)
-        SEGMENT_LENGTH = (SEGMENT_BYTES + sizeof(T) - 1) / sizeof(T),
-
-        // Stride in elements between padding blocks (insert a padding block after each), must be a multiple of raking elements
-        PADDING_STRIDE = CUB_ROUND_UP_NEAREST(SEGMENT_LENGTH, RAKING_LENGTH),
-
-        // Number of elements per padding block
-        PADDING_ELEMENTS = (PtxArchProps::SMEM_BANK_BYTES + sizeof(T) - 1) / sizeof(T),
-
-        // Total number of elements in the raking grid
-        GRID_ELEMENTS = RAKING_ELEMENTS + ((RAKING_ELEMENTS / PADDING_STRIDE) * PADDING_ELEMENTS),
-
-        // Whether or not we need bounds checking during raking (the number of
-        // reduction elements is not a multiple of the warp size)
-        UNGUARDED = (SHARED_ELEMENTS % PtxArchProps::WARP_THREADS == 0),
+        /// Whether or not we need bounds checking during raking (the number of reduction elements is not a multiple of the warp size)
+        UNGUARDED = (SHARED_ELEMENTS % RAKING_THREADS == 0),
     };
 
 
     /**
-     * Shared memory storage type
+     * \brief Shared memory storage type
      */
     typedef T SmemStorage[BlockRakingLayout::GRID_ELEMENTS];
 
 
     /**
-     * Pointer for placement into raking grid (with padding)
+     * \brief Returns the location for the calling thread to place data into the grid
      */
     static __device__ __forceinline__ T* PlacementPtr(
         SmemStorage &smem_storage,
@@ -131,25 +118,25 @@ struct BlockRakingLayout
         // Offset for partial
         unsigned int offset = (block_strip * BLOCK_THREADS) + tid;
 
+        // Add in one padding element for every segment
+        if (SEGMENT_PADDING > 0)
+        {
+            offset += offset / SEGMENT_LENGTH;
+        }
+
         // Incorporating a block of padding partials every shared memory segment
-        return smem_storage + offset + (offset / PADDING_STRIDE) * PADDING_ELEMENTS;
+        return smem_storage + offset;
     }
 
 
     /**
-     * Pointer for sequential warp-synchronous raking within grid (with padding)
+     * \brief Returns the location for the calling thread to begin sequential raking
      */
     static __device__ __forceinline__ T* RakingPtr(
         SmemStorage &smem_storage,
         int tid = threadIdx.x)
     {
-        unsigned int raking_begin_bytes     = tid * RAKING_LENGTH * sizeof(T);
-        unsigned int padding_bytes          = (raking_begin_bytes / (PADDING_STRIDE * sizeof(T))) * PADDING_ELEMENTS * sizeof(T);
-
-        return reinterpret_cast<T*>(
-            reinterpret_cast<char*>(smem_storage) +
-            raking_begin_bytes +
-            padding_bytes);
+        return smem_storage + (tid * (SEGMENT_LENGTH + SEGMENT_PADDING));
     }
 };
 

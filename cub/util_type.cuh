@@ -59,9 +59,10 @@ namespace cub {
  */
 struct NullType
 {
+#ifndef DOXYGEN_SHOULD_SKIP_THIS    // Do not document
     template <typename T>
-    __host__ __device__ __forceinline__
-    NullType& operator =(const T& b) { return *this; }
+    __host__ __device__ __forceinline__ NullType& operator =(const T& b) { return *this; }
+#endif // DOXYGEN_SHOULD_SKIP_THIS
 };
 
 #ifndef DOXYGEN_SHOULD_SKIP_THIS    // Do not document

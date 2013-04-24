@@ -62,7 +62,7 @@ namespace cub {
  * \par
  * For convenience, BlockDiscontinuity exposes a spectrum of entrypoints that differ by:
  * - How the first item is handled (always-flagged <em>vs.</em> compared to a specific block-wide predecessor)
- * - Output (discontinuity flags only <em>vs.</em> discontinuity flags and a copy of the last tile item for thread<sub><em>0</em></sub>)
+ * - What is computed (discontinuity flags only <em>vs.</em> discontinuity flags and a copy of the last tile item for thread<sub><em>0</em></sub>)
  *
  * \tparam T                    The data type to be exchanged.
  * \tparam BLOCK_THREADS        The threadblock size in threads.
@@ -83,7 +83,7 @@ namespace cub {
  * \code
  * #include <cub/cub.cuh>
  *
- * /// Non-zero matrix coordinates
+ * // Non-zero matrix coordinates
  * struct NonZero
  * {
  *     int row;
@@ -91,10 +91,10 @@ namespace cub {
  *     float val;
  * };
  *
- * /// Functor for detecting row discontinuities.
+ * // Functor for detecting row discontinuities.
  * struct NewRowOp
  * {
- *     /// Returns true if row_b is the start of a new row
+ *     // Returns true if row_b is the start of a new row
  *     __device__ __forceinline__ bool operator()(
  *         const NonZero& a,
  *         const NonZero& b)
