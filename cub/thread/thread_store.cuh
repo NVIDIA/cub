@@ -168,7 +168,7 @@ struct ThreadStoreDispatch<PTX_STORE_VS, false>
  * For example:
  * \par
  * \code
- * #include <cub.cuh>
+ * #include <cub/cub.cuh>
  *
  * // 32-bit store using cache-global modifier:
  * int *d_out;

@@ -81,7 +81,7 @@ namespace cub {
  * a blocked arrangement across a 128-thread threadblock, flag the first coordinate
  * element of each row.
  * \code
- * #include <cub.cuh>
+ * #include <cub/cub.cuh>
  *
  * /// Non-zero matrix coordinates
  * struct NonZero

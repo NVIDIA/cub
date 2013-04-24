@@ -39,7 +39,7 @@
 
 #include <thrust/iterator/counting_iterator.h>
 
-#include "cub.cuh"
+#include <cub/cub.cuh>
 
 using namespace cub;
 

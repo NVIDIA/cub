@@ -36,8 +36,10 @@
 #include "../util_arch.cuh"
 #include "../util_type.cuh"
 #include "../util_ptx.cuh"
+#include "../util_debug.cuh"
 #include "../thread/thread_reduce.cuh"
 #include "../thread/thread_scan.cuh"
+#include "../block/block_scan.cuh"
 #include "../util_namespace.cuh"
 
 
@@ -60,6 +62,7 @@ namespace cub {
  *
  * \tparam BLOCK_THREADS        The threadblock size in threads
  * \tparam RADIX_BITS           <b>[optional]</b> The number of radix bits per digit place (default: 5 bits)
+ * \tparam SCAN_ALGORITHM       <b>[optional]</b> The cub::BlockScanAlgorithm algorithm to use (default: cub::BLOCK_SCAN_WARP_SCANS)
  * \tparam SMEM_CONFIG          <b>[optional]</b> Shared memory bank mode (default: \p cudaSharedMemBankSizeFourByte)
  *
  * \par Usage Considerations
@@ -78,7 +81,7 @@ namespace cub {
  * \par
  * - <b>Example 1:</b> Simple radix rank of 32-bit integer keys
  *      \code
- *      #include <cub.cuh>
+ *      #include <cub/cub.cuh>
  *
  *      template <int BLOCK_THREADS>
  *      __global__ void SomeKernel(...)
@@ -89,7 +92,8 @@ namespace cub {
 template <
     int                     BLOCK_THREADS,
     int                     RADIX_BITS,
-    cudaSharedMemConfig     SMEM_CONFIG = cudaSharedMemBankSizeFourByte>    // Shared memory bank size
+    BlockScanAlgorithm      SCAN_ALGORITHM = BLOCK_SCAN_WARP_SCANS,
+    cudaSharedMemConfig     SMEM_CONFIG = cudaSharedMemBankSizeFourByte>
 class BlockRadixRank
 {
 private:
@@ -110,7 +114,7 @@ private:
         RADIX_DIGITS                 = 1 << RADIX_BITS,
 
         LOG_WARP_THREADS             = PtxArchProps::LOG_WARP_THREADS,
-        WARP_THREADS                = 1 << LOG_WARP_THREADS,
+        WARP_THREADS                    = 1 << LOG_WARP_THREADS,
         WARPS                        = (BLOCK_THREADS + WARP_THREADS - 1) / WARP_THREADS,
 
         BYTES_PER_COUNTER            = sizeof(DigitCounter),
@@ -129,11 +133,14 @@ private:
         SMEM_BANKS                    = 1 << LOG_SMEM_BANKS,
     };
 
+    /// BlockScan type
+    typedef BlockScan<PackedCounter, BLOCK_THREADS, SCAN_ALGORITHM> BlockScan;
+
     /// Shared memory storage layout type for BlockRadixRank
     struct _SmemStorage
     {
         // Storage for scanning local ranks
-        volatile PackedCounter        warpscan[WARPS][WARP_THREADS * 3 / 2];
+        typename BlockScan::SmemStorage block_scan;
 
         union
         {
@@ -260,63 +267,48 @@ private :
      */
     static __device__ __forceinline__ void ScanCounters(SmemStorage &smem_storage)
     {
-        PackedCounter *raking_segment = smem_storage.raking_grid[threadIdx.x];
+// mooch
+//        PackedCounter *raking_segment = smem_storage.raking_grid[threadIdx.x];
+
+        PackedCounter segment[RAKING_SEGMENT];
+
+        // Load segment
+        #pragma unroll
+        for (int i = 0; i < RAKING_SEGMENT; ++i)
+        {
+            segment[i] = smem_storage.raking_grid[threadIdx.x][i];
+        }
 
         // Upsweep reduce
-        PackedCounter raking_partial         = ThreadReduce<RAKING_SEGMENT>(raking_segment, Sum<PackedCounter>());
+        PackedCounter raking_partial = ThreadReduce(segment, Sum<PackedCounter>());
 
-        int warp_id                         = threadIdx.x >> LOG_WARP_THREADS;
-        int tid                             = threadIdx.x & (WARP_THREADS - 1);
-        volatile PackedCounter *warpscan     = &smem_storage.warpscan[warp_id][(WARP_THREADS / 2) + tid];
+        // Compute inclusive sum
+        PackedCounter inclusive_partial;
+        PackedCounter packed_aggregate;
+        BlockScan::InclusiveSum(smem_storage.block_scan, raking_partial, inclusive_partial, packed_aggregate);
 
-        // Initialize warpscan identity regions
-        warpscan[0 - (WARP_THREADS / 2)] = 0;
-
-        // Warpscan
-        PackedCounter partial = raking_partial;
-        warpscan[0] = partial;
-
-        #pragma unroll
-        for (int STEP = 0; STEP < LOG_WARP_THREADS; STEP++)
-        {
-            partial += warpscan[0 - (1 << STEP)];
-            warpscan[0] = partial;
-        }
-
-        // TestBarrier
-        __syncthreads();
-
-        // Scan across warpscan totals
-        PackedCounter warpscan_totals = 0;
-
-        #pragma unroll
-        for (int WARP = 0; WARP < WARPS; WARP++)
-        {
-            // Add totals from all previous warpscans into our partial
-            PackedCounter warpscan_total = smem_storage.warpscan[WARP][(WARP_THREADS * 3 / 2) - 1];
-            if (warp_id == WARP) {
-                partial += warpscan_totals;
-            }
-
-            // Increment warpscan totals
-            warpscan_totals += warpscan_total;
-        }
-
-        // Add lower totals from all warpscans into partial's upper
+        // Propagate totals in packed fields
         #pragma unroll
         for (int PACKED = 1; PACKED < PACKING_RATIO; PACKED++)
         {
-            partial += warpscan_totals << (sizeof(DigitCounter) * 8 * PACKED);
+            inclusive_partial += packed_aggregate << (sizeof(DigitCounter) * 8 * PACKED);
         }
 
         // Downsweep scan with exclusive partial
-        PackedCounter exclusive_partial = partial - raking_partial;
+        PackedCounter exclusive_partial = inclusive_partial - raking_partial;
 
-        exclusive_partial = ThreadScanExclusive<RAKING_SEGMENT>(
-            raking_segment,
-            raking_segment,
+        exclusive_partial = ThreadScanExclusive(
+            segment,
+            segment,
             Sum<PackedCounter>(),
             exclusive_partial);
+
+        // Store segment
+        #pragma unroll
+        for (int i = 0; i < RAKING_SEGMENT; ++i)
+        {
+            smem_storage.raking_grid[threadIdx.x][i] = segment[i];
+        }
     }
 
 public:

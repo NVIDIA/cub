@@ -34,7 +34,7 @@
 #define CUB_STDERR
 
 #include <stdio.h>
-#include <cub.cuh>
+#include <cub/cub.cuh>
 #include <test_util.h>
 
 using namespace cub;

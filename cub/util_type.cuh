@@ -57,7 +57,12 @@ namespace cub {
 /**
  * \brief A simple "NULL" marker type
  */
-struct NullType {};
+struct NullType
+{
+    template <typename T>
+    __host__ __device__ __forceinline__
+    NullType& operator =(const T& b) { return *this; }
+};
 
 #ifndef DOXYGEN_SHOULD_SKIP_THIS    // Do not document
 

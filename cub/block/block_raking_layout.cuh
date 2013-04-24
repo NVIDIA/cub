@@ -106,7 +106,7 @@ struct BlockRakingLayout
         PADDING_ELEMENTS = (PtxArchProps::SMEM_BANK_BYTES + sizeof(T) - 1) / sizeof(T),
 
         // Total number of elements in the raking grid
-        GRID_ELEMENTS = RAKING_ELEMENTS + (RAKING_ELEMENTS / PADDING_STRIDE),
+        GRID_ELEMENTS = RAKING_ELEMENTS + ((RAKING_ELEMENTS / PADDING_STRIDE) * PADDING_ELEMENTS),
 
         // Whether or not we need bounds checking during raking (the number of
         // reduction elements is not a multiple of the warp size)
@@ -144,7 +144,7 @@ struct BlockRakingLayout
         int tid = threadIdx.x)
     {
         unsigned int raking_begin_bytes     = tid * RAKING_LENGTH * sizeof(T);
-        unsigned int padding_bytes             = (raking_begin_bytes / (PADDING_STRIDE * sizeof(T))) * PADDING_ELEMENTS * sizeof(T);
+        unsigned int padding_bytes          = (raking_begin_bytes / (PADDING_STRIDE * sizeof(T))) * PADDING_ELEMENTS * sizeof(T);
 
         return reinterpret_cast<T*>(
             reinterpret_cast<char*>(smem_storage) +
