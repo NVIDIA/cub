@@ -189,7 +189,8 @@ public:
     {
         cudaError_t error = cudaSuccess;
 
-        do {
+        do
+        {
             int deviceCount;
             error = CubDebug(cudaGetDeviceCount(&deviceCount));
             if (error) break;
@@ -206,6 +207,9 @@ public:
             {
                 dev = 0;
             }
+
+            error = CubDebug(cudaSetDevice(dev));
+            if (error) break;
 
             size_t free_physmem, total_physmem;
             CubDebugExit(cudaMemGetInfo(&free_physmem, &total_physmem));
@@ -234,9 +238,6 @@ public:
                     (deviceProp.ECCEnabled) ? "on" : "off");
                 fflush(stdout);
             }
-
-            error = CubDebug(cudaSetDevice(dev));
-            if (error) break;
 
         } while (0);
 

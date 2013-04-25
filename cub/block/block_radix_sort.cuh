@@ -80,7 +80,8 @@ namespace cub {
  * \tparam ITEMS_PER_THREAD     The number of items per thread
  * \tparam ValueType            <b>[optional]</b> Value type (default: cub::NullType)
  * \tparam RADIX_BITS           <b>[optional]</b> The number of radix bits per digit place (default: 5 bits)
- * \tparam SCAN_ALGORITHM       <b>[optional]</b> The cub::BlockScanAlgorithm algorithm to use (default: cub::BLOCK_SCAN_WARP_SCANS)
+ * \tparam MEMOIZE_OUTER_SCAN   <b>[optional]</b> Whether or not to buffer outer raking scan partials to incur fewer shared memory reads at the expense of higher register pressure (default: true for architectures SM35 and newer, false otherwise).  See BlockScanAlgorithm::BLOCK_SCAN_RAKING_MEMOIZE for more details.
+ * \tparam INNER_SCAN_ALGORITHM <b>[optional]</b> The cub::BlockScanAlgorithm algorithm to use (default: cub::BLOCK_SCAN_WARP_SCANS)
  * \tparam SMEM_CONFIG          <b>[optional]</b> Shared memory bank mode (default: \p cudaSharedMemBankSizeFourByte)
  *
  * \par Usage Considerations
@@ -163,10 +164,11 @@ template <
     typename                KeyType,
     int                     BLOCK_THREADS,
     int                     ITEMS_PER_THREAD,
-    typename                ValueType = NullType,
-    int                     RADIX_BITS = 5,
-    BlockScanAlgorithm      SCAN_ALGORITHM = BLOCK_SCAN_WARP_SCANS,
-    cudaSharedMemConfig     SMEM_CONFIG = cudaSharedMemBankSizeFourByte>
+    typename                ValueType               = NullType,
+    int                     RADIX_BITS              = 4, //(sizeof(KeyType) < 8) ? 4 : 5,
+    bool                    MEMOIZE_OUTER_SCAN      = (CUB_PTX_ARCH >= 350) ? true : false,
+    BlockScanAlgorithm      INNER_SCAN_ALGORITHM    = BLOCK_SCAN_WARP_SCANS,
+    cudaSharedMemConfig     SMEM_CONFIG             = cudaSharedMemBankSizeFourByte>
 class BlockRadixSort
 {
     //---------------------------------------------------------------------
@@ -180,7 +182,7 @@ private:
     typedef typename KeyTraits::UnsignedBits    UnsignedBits;
 
     /// BlockRadixRank utility type
-    typedef BlockRadixRank<BLOCK_THREADS, RADIX_BITS, SCAN_ALGORITHM, SMEM_CONFIG> BlockRadixRank;
+    typedef BlockRadixRank<BLOCK_THREADS, RADIX_BITS, MEMOIZE_OUTER_SCAN, INNER_SCAN_ALGORITHM, SMEM_CONFIG> BlockRadixRank;
 
     /// BlockExchange utility type for keys
     typedef BlockExchange<KeyType, BLOCK_THREADS, ITEMS_PER_THREAD> KeyBlockExchange;

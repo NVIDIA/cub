@@ -172,11 +172,17 @@ void Test()
         printf("\n\n");
     }
 
+    // CUDA device props
+    Device device;
+    int max_sm_occupancy;
+    CubDebugExit(device.Init());
+    CubDebugExit(device.MaxSmOccupancy(max_sm_occupancy, BlockPrefixSumKernel<BLOCK_THREADS, ITEMS_PER_THREAD>, BLOCK_THREADS));
+
     // Copy problem to device
     cudaMemcpy(d_in, h_in, sizeof(int) * TILE_SIZE, cudaMemcpyHostToDevice);
 
-    printf("BlockScan %d items (%d timing iterations, %d blocks, %d threads, %d items per thread): ",
-        TILE_SIZE, g_iterations, g_grid_size, BLOCK_THREADS, ITEMS_PER_THREAD);
+    printf("BlockScan %d items (%d timing iterations, %d blocks, %d threads, %d items per thread, %d SM occupancy):\n",
+        TILE_SIZE, g_iterations, g_grid_size, BLOCK_THREADS, ITEMS_PER_THREAD, max_sm_occupancy);
 
     // Run aggregate/prefix kernel
     BlockPrefixSumKernel<BLOCK_THREADS, ITEMS_PER_THREAD><<<g_grid_size, BLOCK_THREADS>>>(
@@ -233,10 +239,10 @@ void Test()
     float avg_clocks            = float(elapsed_clocks) / g_iterations;
     float avg_clocks_per_item   = avg_clocks / TILE_SIZE;
 
-    printf("\tAverage kernel millis: %.4f\n", avg_millis);
-    printf("\tAverage million items / sec: %.4f\n", avg_items_per_sec);
     printf("\tAverage BlockRadixSort::SortBlocked clocks: %.3f\n", avg_clocks);
     printf("\tAverage BlockRadixSort::SortBlocked clocks per item: %.3f\n", avg_clocks_per_item);
+    printf("\tAverage kernel millis: %.4f\n", avg_millis);
+    printf("\tAverage million items / sec: %.4f\n", avg_items_per_sec);
 
     // Cleanup
     if (h_in) delete[] h_in;
