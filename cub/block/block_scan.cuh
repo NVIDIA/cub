@@ -367,8 +367,8 @@ private:
                 SmemStorage&    smem_storage,
                 ScanOp          scan_op)
             {
-                // Raking upsweep reduction in grid
                 T *smem_raking_ptr = BlockRakingLayout::RakingPtr(smem_storage.raking_grid);
+                T *raking_ptr;
 
                 if (_ALGORITHM == BLOCK_SCAN_RAKING_MEMOIZE)
                 {
@@ -378,13 +378,13 @@ private:
                     {
                         cached_segment[i] = smem_raking_ptr[i];
                     }
+                    raking_ptr = cached_segment;
+                }
+                else
+                {
+                    raking_ptr = smem_raking_ptr;
                 }
 
-                T *raking_ptr = (_ALGORITHM == BLOCK_SCAN_RAKING_MEMOIZE) ?
-                    cached_segment :
-                    smem_raking_ptr;
-
-                // Upsweep
                 T raking_partial = raking_ptr[0];
 
                 #pragma unroll
@@ -408,14 +408,12 @@ private:
                 T               raking_partial,
                 bool            apply_prefix = true)
             {
-                // Raking upsweep reduction in grid
                 T *smem_raking_ptr = BlockRakingLayout::RakingPtr(smem_storage.raking_grid);
 
                 T *raking_ptr = (_ALGORITHM == BLOCK_SCAN_RAKING_MEMOIZE) ?
                     cached_segment :
                     smem_raking_ptr;
 
-                // Exclusive raking downsweep scan
                 ThreadScanExclusive<SEGMENT_LENGTH>(raking_ptr, raking_ptr, scan_op, raking_partial, apply_prefix);
 
                 if (_ALGORITHM == BLOCK_SCAN_RAKING_MEMOIZE)
@@ -438,14 +436,12 @@ private:
                 T               raking_partial,
                 bool            apply_prefix = true)
             {
-                // Raking upsweep reduction in grid
                 T *smem_raking_ptr = BlockRakingLayout::RakingPtr(smem_storage.raking_grid);
 
                 T *raking_ptr = (_ALGORITHM == BLOCK_SCAN_RAKING_MEMOIZE) ?
                     cached_segment :
                     smem_raking_ptr;
 
-                // Exclusive raking downsweep scan
                 ThreadScanInclusive<SEGMENT_LENGTH>(raking_ptr, raking_ptr, scan_op, raking_partial, apply_prefix);
 
                 if (_ALGORITHM == BLOCK_SCAN_RAKING_MEMOIZE)

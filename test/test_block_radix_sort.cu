@@ -55,13 +55,14 @@ bool g_verbose = false;
 
 
 /**
- * BlockRadixSort kernel
+ * BlockRadixSort key-value pair kernel
  */
 template <
     int                     BLOCK_THREADS,
     int                     ITEMS_PER_THREAD,
     int                     RADIX_BITS,
-    BlockScanAlgorithm      SCAN_ALGORITHM,
+    bool                    MEMOIZE_OUTER_SCAN,
+    BlockScanAlgorithm      INNER_SCAN_ALGORITHM,
     cudaSharedMemConfig     SMEM_CONFIG,
     typename                KeyType,
     typename                ValueType>
@@ -75,7 +76,6 @@ __global__ void Kernel(
     enum
     {
         TILE_SIZE = BLOCK_THREADS * ITEMS_PER_THREAD,
-        KEYS_ONLY = Equals<ValueType, NullType>::VALUE,
     };
 
     // Threadblock load/store abstraction types
@@ -85,7 +85,60 @@ __global__ void Kernel(
         ITEMS_PER_THREAD,
         ValueType,
         RADIX_BITS,
-        SCAN_ALGORITHM,
+        MEMOIZE_OUTER_SCAN,
+        INNER_SCAN_ALGORITHM,
+        SMEM_CONFIG> BlockRadixSort;
+
+    // Shared memory
+    __shared__ typename BlockRadixSort::SmemStorage smem_storage;
+
+    // Keys per thread
+    KeyType keys[ITEMS_PER_THREAD];
+    ValueType values[ITEMS_PER_THREAD];
+
+    BlockLoadDirectStriped(d_keys, keys, BLOCK_THREADS);
+    BlockLoadDirectStriped(d_values, values, BLOCK_THREADS);
+
+    // Test keys-value sorting (in striped arrangement)
+    BlockRadixSort::SortStriped(smem_storage, keys, values, begin_bit, end_bit);
+
+    BlockStoreDirectStriped(d_keys, keys, BLOCK_THREADS);
+    BlockStoreDirectStriped(d_values, values, BLOCK_THREADS);
+}
+
+
+/**
+ * BlockRadixSort keys-only kernel
+ */
+template <
+    int                     BLOCK_THREADS,
+    int                     ITEMS_PER_THREAD,
+    int                     RADIX_BITS,
+    bool                    MEMOIZE_OUTER_SCAN,
+    BlockScanAlgorithm      INNER_SCAN_ALGORITHM,
+    cudaSharedMemConfig     SMEM_CONFIG,
+    typename                KeyType>
+__launch_bounds__ (BLOCK_THREADS, 1)
+__global__ void Kernel(
+    KeyType             *d_keys,
+    NullType            *d_values,
+    unsigned int        begin_bit,
+    unsigned int        end_bit)
+{
+    enum
+    {
+        TILE_SIZE = BLOCK_THREADS * ITEMS_PER_THREAD,
+    };
+
+    // Threadblock load/store abstraction types
+    typedef BlockRadixSort<
+        KeyType,
+        BLOCK_THREADS,
+        ITEMS_PER_THREAD,
+        NullType,
+        RADIX_BITS,
+        MEMOIZE_OUTER_SCAN,
+        INNER_SCAN_ALGORITHM,
         SMEM_CONFIG> BlockRadixSort;
 
     // Shared memory
@@ -94,28 +147,12 @@ __global__ void Kernel(
     // Keys per thread
     KeyType keys[ITEMS_PER_THREAD];
 
-    if (KEYS_ONLY)
-    {
-        // Test keys-only sorting (in striped arrangement)
-        BlockLoadDirectStriped(d_keys, keys, BLOCK_THREADS);
+    BlockLoadDirectStriped(d_keys, keys, BLOCK_THREADS);
 
-        BlockRadixSort::SortStriped(smem_storage, keys, begin_bit, end_bit);
+    // Test keys-only sorting (in striped arrangement)
+    BlockRadixSort::SortStriped(smem_storage, keys, begin_bit, end_bit);
 
-        BlockStoreDirectStriped(d_keys, keys, BLOCK_THREADS);
-    }
-    else
-    {
-        // Test keys-value sorting (in striped arrangement)
-        ValueType values[ITEMS_PER_THREAD];
-
-        BlockLoadDirectStriped(d_keys, keys, BLOCK_THREADS);
-        BlockLoadDirectStriped(d_values, values, BLOCK_THREADS);
-
-        BlockRadixSort::SortStriped(smem_storage, keys, values, begin_bit, end_bit);
-
-        BlockStoreDirectStriped(d_keys, keys, BLOCK_THREADS);
-        BlockStoreDirectStriped(d_values, values, BLOCK_THREADS);
-    }
+    BlockStoreDirectStriped(d_keys, keys, BLOCK_THREADS);
 }
 
 
@@ -130,7 +167,8 @@ template <
     int                     BLOCK_THREADS,
     int                     ITEMS_PER_THREAD,
     int                     RADIX_BITS,
-    BlockScanAlgorithm      SCAN_ALGORITHM,
+    bool                    MEMOIZE_OUTER_SCAN,
+    BlockScanAlgorithm      INNER_SCAN_ALGORITHM,
     cudaSharedMemConfig     SMEM_CONFIG,
     typename                KeyType,
     typename                ValueType>
@@ -170,7 +208,7 @@ void TestDriver(
         "BLOCK_THREADS(%d) "
         "ITEMS_PER_THREAD(%d) "
         "RADIX_BITS(%d) "
-        "SCAN_ALGORITHM(%d) "
+        "INNER_SCAN_ALGORITHM(%d) "
         "SMEM_CONFIG(%d) "
         "sizeof(KeyType)(%d) "
         "sizeof(ValueType)(%d) "
@@ -181,7 +219,8 @@ void TestDriver(
             BLOCK_THREADS,
             ITEMS_PER_THREAD,
             RADIX_BITS,
-            SCAN_ALGORITHM,
+            MEMOIZE_OUTER_SCAN,
+            INNER_SCAN_ALGORITHM,
             SMEM_CONFIG,
             (int) sizeof(KeyType),
             (int) sizeof(ValueType),
@@ -197,7 +236,7 @@ void TestDriver(
     cudaDeviceSetSharedMemConfig(SMEM_CONFIG);
 
     // Run kernel
-    Kernel<BLOCK_THREADS, ITEMS_PER_THREAD, RADIX_BITS, SCAN_ALGORITHM, SMEM_CONFIG><<<1, BLOCK_THREADS>>>(
+    Kernel<BLOCK_THREADS, ITEMS_PER_THREAD, RADIX_BITS, MEMOIZE_OUTER_SCAN, INNER_SCAN_ALGORITHM, SMEM_CONFIG><<<1, BLOCK_THREADS>>>(
         d_keys, d_values, begin_bit, end_bit);
 
     // Flush kernel output / errors
@@ -252,11 +291,13 @@ template <
     int                     BLOCK_THREADS,
     int                     ITEMS_PER_THREAD,
     int                     RADIX_BITS,
-    BlockScanAlgorithm      SCAN_ALGORITHM,
+    bool                    MEMOIZE_OUTER_SCAN,
+    BlockScanAlgorithm      INNER_SCAN_ALGORITHM,
     cudaSharedMemConfig     SMEM_CONFIG,
     typename                KeyType,
     typename                ValueType,
-    bool                    VALID = (CUB_MAX(sizeof(KeyType), sizeof(ValueType)) * BLOCK_THREADS * ITEMS_PER_THREAD < (1024 * 48))>
+    typename                BlockRadixSortT = BlockRadixSort<KeyType, BLOCK_THREADS, ITEMS_PER_THREAD, ValueType, RADIX_BITS, MEMOIZE_OUTER_SCAN, INNER_SCAN_ALGORITHM, SMEM_CONFIG>,
+    bool                    VALID = (sizeof(typename BlockRadixSortT::SmemStorage) <= (1024 * 48))>
 struct Valid
 {
     static void Test()
@@ -270,7 +311,7 @@ struct Valid
                 // Iterate end bit
                 for (unsigned int end_bit = begin_bit + 1; end_bit <= sizeof(KeyType) * 8; end_bit = end_bit * 2 + begin_bit)
                 {
-                    TestDriver<BLOCK_THREADS, ITEMS_PER_THREAD, RADIX_BITS, SCAN_ALGORITHM, SMEM_CONFIG, KeyType, ValueType>(
+                    TestDriver<BLOCK_THREADS, ITEMS_PER_THREAD, RADIX_BITS, MEMOIZE_OUTER_SCAN, INNER_SCAN_ALGORITHM, SMEM_CONFIG, KeyType, ValueType>(
                         entropy_reduction,
                         begin_bit,
                         end_bit);
@@ -288,11 +329,13 @@ template <
     int                     BLOCK_THREADS,
     int                     ITEMS_PER_THREAD,
     int                     RADIX_BITS,
-    BlockScanAlgorithm      SCAN_ALGORITHM,
+    bool                    MEMOIZE_OUTER_SCAN,
+    BlockScanAlgorithm      INNER_SCAN_ALGORITHM,
     cudaSharedMemConfig     SMEM_CONFIG,
     typename                KeyType,
-    typename                ValueType>
-struct Valid<BLOCK_THREADS, ITEMS_PER_THREAD, RADIX_BITS, SCAN_ALGORITHM, SMEM_CONFIG, KeyType, ValueType, false>
+    typename                ValueType,
+    typename                BlockRadixSortT>
+struct Valid<BLOCK_THREADS, ITEMS_PER_THREAD, RADIX_BITS, MEMOIZE_OUTER_SCAN, INNER_SCAN_ALGORITHM, SMEM_CONFIG, KeyType, ValueType, BlockRadixSortT, false>
 {
     // Do nothing
     static void Test() {}
@@ -306,16 +349,18 @@ template <
     int                     BLOCK_THREADS,
     int                     ITEMS_PER_THREAD,
     int                     RADIX_BITS,
-    BlockScanAlgorithm      SCAN_ALGORITHM,
+    bool                    MEMOIZE_OUTER_SCAN,
+    BlockScanAlgorithm      INNER_SCAN_ALGORITHM,
     cudaSharedMemConfig     SMEM_CONFIG,
     typename                KeyType>
 void Test()
 {
-    Valid<BLOCK_THREADS, ITEMS_PER_THREAD, RADIX_BITS, SCAN_ALGORITHM, SMEM_CONFIG, KeyType, NullType>::Test();         // Keys-only
-    Valid<BLOCK_THREADS, ITEMS_PER_THREAD, RADIX_BITS, SCAN_ALGORITHM, SMEM_CONFIG, KeyType, unsigned char>::Test();
-    Valid<BLOCK_THREADS, ITEMS_PER_THREAD, RADIX_BITS, SCAN_ALGORITHM, SMEM_CONFIG, KeyType, unsigned short>::Test();
-    Valid<BLOCK_THREADS, ITEMS_PER_THREAD, RADIX_BITS, SCAN_ALGORITHM, SMEM_CONFIG, KeyType, unsigned int>::Test();
-    Valid<BLOCK_THREADS, ITEMS_PER_THREAD, RADIX_BITS, SCAN_ALGORITHM, SMEM_CONFIG, KeyType, unsigned long long>::Test();
+    Valid<BLOCK_THREADS, ITEMS_PER_THREAD, RADIX_BITS, MEMOIZE_OUTER_SCAN, INNER_SCAN_ALGORITHM, SMEM_CONFIG, KeyType, NullType>::Test();         // Keys-only
+
+    Valid<BLOCK_THREADS, ITEMS_PER_THREAD, RADIX_BITS, MEMOIZE_OUTER_SCAN, INNER_SCAN_ALGORITHM, SMEM_CONFIG, KeyType, unsigned char>::Test();
+    Valid<BLOCK_THREADS, ITEMS_PER_THREAD, RADIX_BITS, MEMOIZE_OUTER_SCAN, INNER_SCAN_ALGORITHM, SMEM_CONFIG, KeyType, unsigned short>::Test();
+    Valid<BLOCK_THREADS, ITEMS_PER_THREAD, RADIX_BITS, MEMOIZE_OUTER_SCAN, INNER_SCAN_ALGORITHM, SMEM_CONFIG, KeyType, unsigned int>::Test();
+    Valid<BLOCK_THREADS, ITEMS_PER_THREAD, RADIX_BITS, MEMOIZE_OUTER_SCAN, INNER_SCAN_ALGORITHM, SMEM_CONFIG, KeyType, unsigned long long>::Test();
 }
 
 
@@ -326,20 +371,21 @@ template <
     int                     BLOCK_THREADS,
     int                     ITEMS_PER_THREAD,
     int                     RADIX_BITS,
-    BlockScanAlgorithm      SCAN_ALGORITHM,
+    bool                    MEMOIZE_OUTER_SCAN,
+    BlockScanAlgorithm      INNER_SCAN_ALGORITHM,
     cudaSharedMemConfig     SMEM_CONFIG>
 void Test()
 {
-    Test<BLOCK_THREADS, ITEMS_PER_THREAD, RADIX_BITS, SCAN_ALGORITHM, SMEM_CONFIG, unsigned char>();
-    Test<BLOCK_THREADS, ITEMS_PER_THREAD, RADIX_BITS, SCAN_ALGORITHM, SMEM_CONFIG, unsigned short>();
-    Test<BLOCK_THREADS, ITEMS_PER_THREAD, RADIX_BITS, SCAN_ALGORITHM, SMEM_CONFIG, unsigned int>();
-    Test<BLOCK_THREADS, ITEMS_PER_THREAD, RADIX_BITS, SCAN_ALGORITHM, SMEM_CONFIG, unsigned long long>();
+    Test<BLOCK_THREADS, ITEMS_PER_THREAD, RADIX_BITS, MEMOIZE_OUTER_SCAN, INNER_SCAN_ALGORITHM, SMEM_CONFIG, unsigned char>();
+    Test<BLOCK_THREADS, ITEMS_PER_THREAD, RADIX_BITS, MEMOIZE_OUTER_SCAN, INNER_SCAN_ALGORITHM, SMEM_CONFIG, unsigned short>();
+    Test<BLOCK_THREADS, ITEMS_PER_THREAD, RADIX_BITS, MEMOIZE_OUTER_SCAN, INNER_SCAN_ALGORITHM, SMEM_CONFIG, unsigned int>();
+    Test<BLOCK_THREADS, ITEMS_PER_THREAD, RADIX_BITS, MEMOIZE_OUTER_SCAN, INNER_SCAN_ALGORITHM, SMEM_CONFIG, unsigned long long>();
 
-    Test<BLOCK_THREADS, ITEMS_PER_THREAD, RADIX_BITS, SCAN_ALGORITHM, SMEM_CONFIG, char>();
-    Test<BLOCK_THREADS, ITEMS_PER_THREAD, RADIX_BITS, SCAN_ALGORITHM, SMEM_CONFIG, short>();
-    Test<BLOCK_THREADS, ITEMS_PER_THREAD, RADIX_BITS, SCAN_ALGORITHM, SMEM_CONFIG, int>();
-    Test<BLOCK_THREADS, ITEMS_PER_THREAD, RADIX_BITS, SCAN_ALGORITHM, SMEM_CONFIG, float>();
-    Test<BLOCK_THREADS, ITEMS_PER_THREAD, RADIX_BITS, SCAN_ALGORITHM, SMEM_CONFIG, double>();
+    Test<BLOCK_THREADS, ITEMS_PER_THREAD, RADIX_BITS, MEMOIZE_OUTER_SCAN, INNER_SCAN_ALGORITHM, SMEM_CONFIG, char>();
+    Test<BLOCK_THREADS, ITEMS_PER_THREAD, RADIX_BITS, MEMOIZE_OUTER_SCAN, INNER_SCAN_ALGORITHM, SMEM_CONFIG, short>();
+    Test<BLOCK_THREADS, ITEMS_PER_THREAD, RADIX_BITS, MEMOIZE_OUTER_SCAN, INNER_SCAN_ALGORITHM, SMEM_CONFIG, int>();
+    Test<BLOCK_THREADS, ITEMS_PER_THREAD, RADIX_BITS, MEMOIZE_OUTER_SCAN, INNER_SCAN_ALGORITHM, SMEM_CONFIG, float>();
+    Test<BLOCK_THREADS, ITEMS_PER_THREAD, RADIX_BITS, MEMOIZE_OUTER_SCAN, INNER_SCAN_ALGORITHM, SMEM_CONFIG, double>();
 }
 
 
@@ -350,16 +396,32 @@ template <
     int                     BLOCK_THREADS,
     int                     ITEMS_PER_THREAD,
     int                     RADIX_BITS,
-    BlockScanAlgorithm      SCAN_ALGORITHM>
+    bool                    MEMOIZE_OUTER_SCAN,
+    BlockScanAlgorithm      INNER_SCAN_ALGORITHM>
 void Test()
 {
-    Test<BLOCK_THREADS, ITEMS_PER_THREAD, RADIX_BITS, SCAN_ALGORITHM, cudaSharedMemBankSizeFourByte>();
-    Test<BLOCK_THREADS, ITEMS_PER_THREAD, RADIX_BITS, SCAN_ALGORITHM, cudaSharedMemBankSizeEightByte>();
+    Test<BLOCK_THREADS, ITEMS_PER_THREAD, RADIX_BITS, MEMOIZE_OUTER_SCAN, INNER_SCAN_ALGORITHM, cudaSharedMemBankSizeFourByte>();
+    Test<BLOCK_THREADS, ITEMS_PER_THREAD, RADIX_BITS, MEMOIZE_OUTER_SCAN, INNER_SCAN_ALGORITHM, cudaSharedMemBankSizeEightByte>();
 }
 
 
 /**
- * Test scan algorithm
+ * Test inner scan algorithm
+ */
+template <
+    int                     BLOCK_THREADS,
+    int                     ITEMS_PER_THREAD,
+    int                     RADIX_BITS,
+    bool                    MEMOIZE_OUTER_SCAN>
+void Test()
+{
+    Test<BLOCK_THREADS, ITEMS_PER_THREAD, RADIX_BITS, MEMOIZE_OUTER_SCAN, BLOCK_SCAN_RAKING>();
+    Test<BLOCK_THREADS, ITEMS_PER_THREAD, RADIX_BITS, MEMOIZE_OUTER_SCAN, BLOCK_SCAN_WARP_SCANS>();
+}
+
+
+/**
+ * Test outer scan algorithm
  */
 template <
     int                     BLOCK_THREADS,
@@ -367,8 +429,8 @@ template <
     int                     RADIX_BITS>
 void Test()
 {
-    Test<BLOCK_THREADS, ITEMS_PER_THREAD, RADIX_BITS, BLOCK_SCAN_RAKING>();
-    Test<BLOCK_THREADS, ITEMS_PER_THREAD, RADIX_BITS, BLOCK_SCAN_WARP_SCANS>();
+    Test<BLOCK_THREADS, ITEMS_PER_THREAD, RADIX_BITS, true>();
+    Test<BLOCK_THREADS, ITEMS_PER_THREAD, RADIX_BITS, false>();
 }
 
 
@@ -424,15 +486,17 @@ int main(int argc, char** argv)
     {
         // Quick test
         typedef unsigned int T;
-        TestDriver<64, 2, 5, BLOCK_SCAN_WARP_SCANS, cudaSharedMemBankSizeFourByte, T, NullType>(0, 0, sizeof(T) * 8);
+        TestDriver<64, 2, 5, true, BLOCK_SCAN_WARP_SCANS, cudaSharedMemBankSizeFourByte, T, NullType>(0, 0, sizeof(T) * 8);
     }
     else
     {
+/*
         // Test threads
         Test<32>();
         Test<64>();
         Test<128>();
         Test<256>();
+*/
     }
 
     return 0;
