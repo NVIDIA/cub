@@ -36,9 +36,9 @@
 
 #include <iterator>
 
-#include "../grid/grid_mapping.cuh"
-#include "../grid/grid_even_share.cuh"
-#include "../grid/grid_queue.cuh"
+#include "../../grid/grid_mapping.cuh"
+#include "../../grid/grid_even_share.cuh"
+#include "../../grid/grid_queue.cuh"
 #include "../../block/block_load.cuh"
 #include "../../block/block_reduce.cuh"
 #include "../../util_vector.cuh"
@@ -135,7 +135,6 @@ private:
     template <
         bool            VECTORIZE_INPUT,
         bool            FIRST_TILE,
-        typename        SizeT,
         typename        ReductionOp>
     static __device__ __forceinline__ void ConsumeFullTile(
         SmemStorage     &smem_storage,
@@ -186,7 +185,6 @@ private:
      */
     template <
         bool            FIRST_TILE,
-        typename        SizeT,
         typename        ReductionOp>
     static __device__ __forceinline__ void ConsumePartialTile(
         SmemStorage     &smem_storage,
@@ -220,7 +218,6 @@ private:
      */
     template <
         bool            VECTORIZE_INPUT,
-        typename        SizeT,
         typename        ReductionOp>
     static __device__ __forceinline__ T ProcessTilesEvenShare(
         SmemStorage     &smem_storage,
@@ -269,7 +266,6 @@ private:
      */
     template <
         bool                VECTORIZE_INPUT,
-        typename            SizeT,
         typename            ReductionOp>
     static __device__ __forceinline__ T ProcessTilesDynamic(
         SmemStorage         &smem_storage,
@@ -352,9 +348,7 @@ public:
      *
      * The return value is undefined in threads other than thread<sub>0</sub>.
      */
-    template <
-        typename        SizeT,
-        typename        ReductionOp>
+    template <typename ReductionOp>
     static __device__ __forceinline__ T ProcessTilesEvenShare(
         SmemStorage     &smem_storage,
         InputIterator   d_in,
@@ -384,9 +378,7 @@ public:
      *
      * The return value is undefined in threads other than thread<sub>0</sub>.
      */
-    template <
-        typename            SizeT,
-        typename            ReductionOp>
+    template <typename ReductionOp>
     static __device__ __forceinline__ T ProcessTilesDynamic(
         SmemStorage         &smem_storage,
         InputIterator       d_in,
@@ -417,7 +409,7 @@ public:
     template <GridMappingStrategy GRID_MAPPING, int DUMMY = 0>
     struct Mapping
     {
-        template <typename SizeT, typename ReductionOp>
+        template <typename ReductionOp>
         static __device__ __forceinline__ T ProcessTiles(
             SmemStorage             &smem_storage,
             InputIterator           d_in,
@@ -441,7 +433,7 @@ public:
     template <int DUMMY>
     struct Mapping<GRID_MAPPING_DYNAMIC, DUMMY>
     {
-        template <typename SizeT, typename ReductionOp>
+        template <typename ReductionOp>
         static __device__ __forceinline__ T ProcessTiles(
             SmemStorage             &smem_storage,
             InputIterator           d_in,

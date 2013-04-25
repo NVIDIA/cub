@@ -639,7 +639,6 @@ public:
         typename SinglePolicy,
         typename InputIterator,
         typename OutputIterator,
-        typename SizeT,
         typename ReductionOp>
     __host__ __device__ __forceinline__
     static cudaError_t Reduce(
