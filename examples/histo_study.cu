@@ -71,6 +71,9 @@ int g_grid_size = 1;
 /// Uniform key samples
 bool g_uniform_keys;
 
+/// Mooch
+bool g_mooch;
+
 
 //---------------------------------------------------------------------
 // Kernels
@@ -83,7 +86,6 @@ template <
     typename    KeyType,
     int         BLOCK_THREADS,
     int         ITEMS_PER_THREAD>
-__launch_bounds__ (BLOCK_THREADS)
 __global__ void BlockSortKernel(
     KeyType     *d_in,          // Tile of input
     KeyType     *d_out,         // Tile of output
@@ -100,15 +102,29 @@ __global__ void BlockSortKernel(
     // Per-thread tile items
     KeyType items[ITEMS_PER_THREAD];
 
-    // Load items in striped fashion
+    // Load items
     int block_offset = blockIdx.x * TILE_SIZE;
-    BlockLoadDirectStriped(d_in + block_offset, items);
+    if (ITEMS_PER_THREAD % 4 == 0)
+    {
+        // Vectorize
+        typedef VectorHelper<KeyType, 4> VecHelper;
+        typedef typename VecHelper::Type VectorT;
+
+        // Alias items as an array of VectorT and load it in striped fashion
+        BlockLoadDirectStriped(
+            reinterpret_cast<VectorT*>(d_in + block_offset),
+            reinterpret_cast<VectorT (&)[ITEMS_PER_THREAD / 4]>(items));
+    }
+    else
+    {
+        BlockLoadDirectStriped(d_in + block_offset, items);
+    }
 
     // Start cycle timer
     clock_t start = clock();
 
     // Sort keys
-    BlockRadixSortT::SortStriped(smem_storage, items);
+    BlockRadixSortT::SortBlockedToStriped(smem_storage, items);
 
     // Stop cycle timer
     clock_t stop = clock();
@@ -119,7 +135,86 @@ __global__ void BlockSortKernel(
     // Store elapsed clocks
     if (threadIdx.x == 0)
     {
-        d_elapsed[blockIdx.x] = (start > stop) ? start - stop : stop - start;
+        *d_elapsed = (start > stop) ? start - stop : stop - start;
+    }
+
+}
+
+/**
+ * Simple kernel for performing a block-wide sorting over integers
+ */
+template <
+    typename    KeyType,
+    int         BLOCK_THREADS,
+    int         ITEMS_PER_THREAD>
+__global__ void BlockSortKernel2(
+    KeyType     *d_in,          // Tile of input
+    KeyType     *d_out,         // Tile of output
+    clock_t     *d_elapsed)     // Elapsed cycle count of block scan
+{
+    enum { TILE_SIZE = BLOCK_THREADS * ITEMS_PER_THREAD };
+
+    __shared__ unsigned int histogram[256];
+    __shared__ volatile unsigned int name[256];
+
+    // Initialize histo
+    if (threadIdx.x < 32)
+    {
+        for (int base = 0; base < 256; base += 32)
+        {
+            histogram[base + threadIdx.x] = 0;
+        }
+    }
+
+    __syncthreads();
+
+    // Per-thread tile items
+    KeyType items[ITEMS_PER_THREAD];
+
+    // Load items
+    int block_offset = blockIdx.x * TILE_SIZE;
+    if (ITEMS_PER_THREAD % 4 == 0)
+    {
+        // Vectorize
+        typedef VectorHelper<KeyType, 4> VecHelper;
+        typedef typename VecHelper::Type VectorT;
+
+        // Alias items as an array of VectorT and load it in striped fashion
+        BlockLoadDirectStriped(
+            reinterpret_cast<VectorT*>(d_in + block_offset),
+            reinterpret_cast<VectorT (&)[ITEMS_PER_THREAD / 4]>(items));
+    }
+    else
+    {
+        BlockLoadDirectStriped(d_in + block_offset, items);
+    }
+
+    // Start cycle timer
+    clock_t start = clock();
+
+    // Update histogram
+    #pragma unroll
+    for (int i = 0; i < ITEMS_PER_THREAD; ++i)
+    {
+          atomicAdd(histogram + items[i], 1);
+    }
+
+    // Stop cycle timer
+    clock_t stop = clock();
+
+    // Store output
+    if (threadIdx.x < 32)
+    {
+        for (int base = 0; base < 256; base += 32)
+        {
+            d_out[block_offset + base + threadIdx.x] = histogram[base + threadIdx.x];
+        }
+    }
+
+    // Store elapsed clocks
+    if (threadIdx.x == 0)
+    {
+        *d_elapsed = (start > stop) ? start - stop : stop - start;
     }
 }
 
@@ -137,8 +232,7 @@ template <typename KeyType>
 void Initialize(
     KeyType *h_in,
     KeyType *h_reference,
-    int num_items,
-    int tile_size)
+    int num_items)
 {
     for (int i = 0; i < num_items; ++i)
     {
@@ -153,8 +247,7 @@ void Initialize(
         h_reference[i] = h_in[i];
     }
 
-    // Only sort the first tile
-    std::sort(h_reference, h_reference + tile_size);
+    std::sort(h_reference, h_reference + num_items);
 }
 
 
@@ -172,10 +265,10 @@ void Test()
     // Allocate host arrays
     KeyType *h_in           = new KeyType[TILE_SIZE * g_grid_size];
     KeyType *h_reference    = new KeyType[TILE_SIZE * g_grid_size];
-    clock_t *h_elapsed      = new clock_t[g_grid_size];
+    KeyType *h_gpu          = new KeyType[TILE_SIZE];
 
     // Initialize problem and reference output on host
-    Initialize(h_in, h_reference, TILE_SIZE * g_grid_size, TILE_SIZE);
+    Initialize(h_in, h_reference, TILE_SIZE * g_grid_size);
 
     // Initialize device arrays
     KeyType *d_in       = NULL;
@@ -183,7 +276,7 @@ void Test()
     clock_t *d_elapsed  = NULL;
     CubDebugExit(cudaMalloc((void**)&d_in,          sizeof(KeyType) * TILE_SIZE * g_grid_size));
     CubDebugExit(cudaMalloc((void**)&d_out,         sizeof(KeyType) * TILE_SIZE * g_grid_size));
-    CubDebugExit(cudaMalloc((void**)&d_elapsed,     sizeof(clock_t) * g_grid_size));
+    CubDebugExit(cudaMalloc((void**)&d_elapsed,     sizeof(clock_t)));
 
     // Display input problem data
     if (g_verbose)
@@ -208,43 +301,63 @@ void Test()
     fflush(stdout);
 
     // Run kernel once to prime caches and check result
-    BlockSortKernel<KeyType, BLOCK_THREADS, ITEMS_PER_THREAD><<<g_grid_size, BLOCK_THREADS>>>(
-        d_in,
-        d_out,
-        d_elapsed);
+    if (g_mooch)
+    {
+        BlockSortKernel2<KeyType, BLOCK_THREADS, ITEMS_PER_THREAD><<<g_grid_size, BLOCK_THREADS>>>(
+            d_in,
+            d_out,
+            d_elapsed);
+    }
+    else
+    {
+        BlockSortKernel<KeyType, BLOCK_THREADS, ITEMS_PER_THREAD><<<g_grid_size, BLOCK_THREADS>>>(
+            d_in,
+            d_out,
+            d_elapsed);
+    }
 
     // Check for kernel errors and STDIO from the kernel, if any
     CubDebugExit(cudaDeviceSynchronize());
-
+/*
     // Check results
     printf("\tOutput items: ");
     int compare = CompareDeviceResults(h_reference, d_out, TILE_SIZE, g_verbose, g_verbose);
     printf("%s\n", compare ? "FAIL" : "PASS");
     AssertEquals(0, compare);
     fflush(stdout);
-
+*/
     // Run this several times and average the performance results
-    GpuTimer            timer;
-    float               elapsed_millis          = 0.0;
-    unsigned long long  elapsed_clocks          = 0;
+    GpuTimer    timer;
+    float       elapsed_millis          = 0.0;
+    clock_t     elapsed_clocks          = 0;
 
     for (int i = 0; i < g_iterations; ++i)
     {
         timer.Start();
 
         // Run kernel
-        BlockSortKernel<KeyType, BLOCK_THREADS, ITEMS_PER_THREAD><<<g_grid_size, BLOCK_THREADS>>>(
-            d_in,
-            d_out,
-            d_elapsed);
+        if (g_mooch)
+        {
+            BlockSortKernel2<KeyType, BLOCK_THREADS, ITEMS_PER_THREAD><<<g_grid_size, BLOCK_THREADS>>>(
+                d_in,
+                d_out,
+                d_elapsed);
+        }
+        else
+        {
+            BlockSortKernel<KeyType, BLOCK_THREADS, ITEMS_PER_THREAD><<<g_grid_size, BLOCK_THREADS>>>(
+                d_in,
+                d_out,
+                d_elapsed);
+        }
 
         timer.Stop();
         elapsed_millis += timer.ElapsedMillis();
 
         // Copy clocks from device
-        CubDebugExit(cudaMemcpy(h_elapsed, d_elapsed, sizeof(clock_t) * g_grid_size, cudaMemcpyDeviceToHost));
-        for (int i = 0; i < g_grid_size; i++)
-            elapsed_clocks += h_elapsed[i];
+        clock_t clocks;
+        CubDebugExit(cudaMemcpy(&clocks, d_elapsed, sizeof(clock_t), cudaMemcpyDeviceToHost));
+        elapsed_clocks += clocks;
     }
 
     // Check for kernel errors and STDIO from the kernel, if any
@@ -253,11 +366,13 @@ void Test()
     // Display timing results
     float avg_millis            = elapsed_millis / g_iterations;
     float avg_items_per_sec     = float(TILE_SIZE * g_grid_size) / avg_millis / 1000.0;
-    double avg_clocks           = double(elapsed_clocks) / g_iterations / g_grid_size;
-    double avg_clocks_per_item  = avg_clocks / TILE_SIZE;
+/*
+    float avg_clocks            = float(elapsed_clocks) / g_iterations;
+    float avg_clocks_per_item   = avg_clocks / TILE_SIZE;
 
     printf("\tAverage BlockRadixSort::SortBlocked clocks: %.3f\n", avg_clocks);
     printf("\tAverage BlockRadixSort::SortBlocked clocks per item: %.3f\n", avg_clocks_per_item);
+*/
     printf("\tAverage kernel millis: %.4f\n", avg_millis);
     printf("\tAverage million items / sec: %.4f\n", avg_items_per_sec);
     fflush(stdout);
@@ -265,7 +380,7 @@ void Test()
     // Cleanup
     if (h_in) delete[] h_in;
     if (h_reference) delete[] h_reference;
-    if (h_elapsed) delete[] h_elapsed;
+    if (h_gpu) delete[] h_gpu;
     if (d_in) CubDebugExit(cudaFree(d_in));
     if (d_out) CubDebugExit(cudaFree(d_out));
     if (d_elapsed) CubDebugExit(cudaFree(d_elapsed));
@@ -281,6 +396,7 @@ int main(int argc, char** argv)
     CommandLineArgs args(argc, argv);
     g_verbose = args.CheckCmdLineFlag("v");
     g_uniform_keys = args.CheckCmdLineFlag("uniform");
+    g_mooch = args.CheckCmdLineFlag("histo");
     args.GetCmdLineArgument("i", g_iterations);
     args.GetCmdLineArgument("grid-size", g_grid_size);
 
@@ -301,17 +417,62 @@ int main(int argc, char** argv)
     fflush(stdout);
 
     // Run tests
+/*
     printf("\nuint32:\n"); fflush(stdout);
-    Test<unsigned int, 128, 17>();
-    printf("\n"); fflush(stdout);
-
-    printf("\nfp32:\n"); fflush(stdout);
-    Test<float, 128, 17>();
+    Test<unsigned int, 128, 16>();
     printf("\n"); fflush(stdout);
 
     printf("\nuint8:\n"); fflush(stdout);
+    Test<unsigned char, 128, 16>();
+    printf("\n"); fflush(stdout);
+
+    printf("\nfp32:\n"); fflush(stdout);
+    Test<float, 128, 16>();
+    printf("\n"); fflush(stdout);
+*/
+
+    Test<unsigned char, 256, 20>();
+    printf("\n"); fflush(stdout);
+    Test<unsigned char, 256, 17>();
+    printf("\n"); fflush(stdout);
+    Test<unsigned char, 256, 16>();
+    printf("\n"); fflush(stdout);
+    Test<unsigned char, 256, 8>();
+    printf("\n"); fflush(stdout);
+
+    printf("\n"); fflush(stdout);
+
+    Test<unsigned char, 128, 20>();
+    printf("\n"); fflush(stdout);
     Test<unsigned char, 128, 17>();
     printf("\n"); fflush(stdout);
+    Test<unsigned char, 128, 16>();
+    printf("\n"); fflush(stdout);
+    Test<unsigned char, 128, 8>();
+    printf("\n"); fflush(stdout);
+
+    printf("\n"); fflush(stdout);
+
+    Test<unsigned char, 96, 20>();
+    printf("\n"); fflush(stdout);
+    Test<unsigned char, 96, 17>();
+    printf("\n"); fflush(stdout);
+    Test<unsigned char, 96, 16>();
+    printf("\n"); fflush(stdout);
+    Test<unsigned char, 96, 8>();
+    printf("\n"); fflush(stdout);
+
+    printf("\n"); fflush(stdout);
+
+    Test<unsigned char, 64, 20>();
+    printf("\n"); fflush(stdout);
+    Test<unsigned char, 64, 17>();
+    printf("\n"); fflush(stdout);
+    Test<unsigned char, 64, 16>();
+    printf("\n"); fflush(stdout);
+    Test<unsigned char, 64, 8>();
+    printf("\n"); fflush(stdout);
+
 
     return 0;
 }
