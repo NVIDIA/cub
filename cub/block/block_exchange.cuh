@@ -136,7 +136,8 @@ private:
         for (int ITEM = 0; ITEM < ITEMS_PER_THREAD; ITEM++)
         {
             int item_offset = (ITEM * BLOCK_THREADS) + threadIdx.x;
-            if (PADDING) item_offset = SHR_ADD(item_offset, LOG_SMEM_BANKS, item_offset);
+//            if (PADDING) item_offset = SHR_ADD(item_offset, LOG_SMEM_BANKS, item_offset);
+            if (PADDING) item_offset += item_offset >> LOG_SMEM_BANKS;
             buffer[item_offset] = items[ITEM];
         }
     }
@@ -149,7 +150,8 @@ private:
         for (int ITEM = 0; ITEM < ITEMS_PER_THREAD; ITEM++)
         {
             int item_offset = (threadIdx.x * ITEMS_PER_THREAD) + ITEM;
-            if (PADDING) item_offset = SHR_ADD(item_offset, LOG_SMEM_BANKS, item_offset);
+//            if (PADDING) item_offset = SHR_ADD(item_offset, LOG_SMEM_BANKS, item_offset);
+            if (PADDING) item_offset += item_offset >> LOG_SMEM_BANKS;
             items[ITEM] = buffer[item_offset];
         }
     }
@@ -169,7 +171,7 @@ private:
 
     static __device__ __forceinline__ void ScatterRanked(
         T                 items[ITEMS_PER_THREAD],
-        unsigned int     ranks[ITEMS_PER_THREAD],
+        unsigned int      ranks[ITEMS_PER_THREAD],
         T                 *buffer)
     {
         #pragma unroll
