@@ -431,6 +431,8 @@ int main(int argc, char** argv)
     printf("\n"); fflush(stdout);
 */
 
+    Test<unsigned char, 256, 21>();
+    printf("\n"); fflush(stdout);
     Test<unsigned char, 256, 20>();
     printf("\n"); fflush(stdout);
     Test<unsigned char, 256, 17>();
@@ -442,6 +444,8 @@ int main(int argc, char** argv)
 
     printf("\n"); fflush(stdout);
 
+    Test<unsigned char, 128, 21>();
+    printf("\n"); fflush(stdout);
     Test<unsigned char, 128, 20>();
     printf("\n"); fflush(stdout);
     Test<unsigned char, 128, 17>();
@@ -453,6 +457,8 @@ int main(int argc, char** argv)
 
     printf("\n"); fflush(stdout);
 
+    Test<unsigned char, 96, 21>();
+    printf("\n"); fflush(stdout);
     Test<unsigned char, 96, 20>();
     printf("\n"); fflush(stdout);
     Test<unsigned char, 96, 17>();
@@ -464,6 +470,8 @@ int main(int argc, char** argv)
 
     printf("\n"); fflush(stdout);
 
+    Test<unsigned char, 64, 21>();
+    printf("\n"); fflush(stdout);
     Test<unsigned char, 64, 20>();
     printf("\n"); fflush(stdout);
     Test<unsigned char, 64, 17>();
