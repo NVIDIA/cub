@@ -195,6 +195,17 @@ example_block_radix_sort: bin/example_block_radix_sort_$(SUFFIX)
 bin/example_block_radix_sort_$(SUFFIX) : example_block_radix_sort.cu $(DEPS)
 	mkdir -p bin
 	$(NVCC) $(DEFINES) $(SM_TARGETS) -o bin/example_block_radix_sort_$(SUFFIX) example_block_radix_sort.cu $(NVCCFLAGS) $(CPU_ARCH) $(INC) -O3
+	
+	
+#-------------------------------------------------------------------------------
+# make histo_study
+#-------------------------------------------------------------------------------
+
+histo_study: bin/histo_study_$(SUFFIX)
+
+bin/histo_study_$(SUFFIX) : histo_study.cu $(DEPS)
+	mkdir -p bin
+	$(NVCC) $(DEFINES) $(SM_TARGETS) -o bin/histo_study_$(SUFFIX) histo_study.cu $(NVCCFLAGS) $(CPU_ARCH) $(INC) -O3	
 
 
 #-------------------------------------------------------------------------------
