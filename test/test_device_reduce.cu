@@ -57,12 +57,12 @@ int     g_iterations = 100;
  */
 template <
     bool        STREAM_SYNCHRONOUS,
-    typename    InputIterator,
-    typename    OutputIterator,
+    typename    InputIteratorRA,
+    typename    OutputIteratorRA,
     typename    ReductionOp>
 __global__ void CnpReduce(
-    InputIterator   d_in,
-    OutputIterator  d_out,
+    InputIteratorRA   d_in,
+    OutputIteratorRA  d_out,
     int             num_items,
     ReductionOp     reduction_op,
     int             iterations,

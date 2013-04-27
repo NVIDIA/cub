@@ -90,7 +90,7 @@ __host__ __device__ __forceinline__ cudaError_t Debug(
  */
 #define CubDebug(e) \
     \
-    cub::Debug(e, __FILE__, __LINE__)
+    cub::Debug((e), __FILE__, __LINE__)
 
 
 /**
@@ -98,7 +98,7 @@ __host__ __device__ __forceinline__ cudaError_t Debug(
  */
 #define CubDebugExit(e) \
     \
-    if (cub::Debug(e, __FILE__, __LINE__)) { exit(1); }
+    if (cub::Debug((e), __FILE__, __LINE__)) { exit(1); }
 
 
 /**

@@ -65,13 +65,13 @@ template <
     BlockStorePolicy      STORE_POLICY,
     PtxLoadModifier     LOAD_MODIFIER,
     PtxStoreModifier    STORE_MODIFIER,
-    typename            InputIterator,
-    typename            OutputIterator>
+    typename            InputIteratorRA,
+    typename            OutputIteratorRA>
 __launch_bounds__ (BLOCK_THREADS, 1)
 __global__ void Kernel(
-    InputIterator       d_in,
-    OutputIterator      d_out_unguarded,
-    OutputIterator      d_out_guarded_range,
+    InputIteratorRA       d_in,
+    OutputIteratorRA      d_out_unguarded,
+    OutputIteratorRA      d_out_guarded_range,
     int                 num_items)
 {
     enum
@@ -80,11 +80,11 @@ __global__ void Kernel(
     };
 
     // Data type of input/output iterators
-    typedef typename std::iterator_traits<InputIterator>::value_type T;
+    typedef typename std::iterator_traits<InputIteratorRA>::value_type T;
 
     // Threadblock load/store abstraction types
-    typedef BlockLoad<InputIterator, BLOCK_THREADS, ITEMS_PER_THREAD, LOAD_POLICY, LOAD_MODIFIER> BlockLoad;
-    typedef BlockStore<OutputIterator, BLOCK_THREADS, ITEMS_PER_THREAD, STORE_POLICY, STORE_MODIFIER> BlockStore;
+    typedef BlockLoad<InputIteratorRA, BLOCK_THREADS, ITEMS_PER_THREAD, LOAD_POLICY, LOAD_MODIFIER> BlockLoad;
+    typedef BlockStore<OutputIteratorRA, BLOCK_THREADS, ITEMS_PER_THREAD, STORE_POLICY, STORE_MODIFIER> BlockStore;
 
     // Shared memory type for this threadblock
     union SmemStorage
@@ -148,13 +148,13 @@ template <
     BlockStorePolicy      STORE_POLICY,
     PtxLoadModifier     LOAD_MODIFIER,
     PtxStoreModifier    STORE_MODIFIER,
-    typename            InputIterator,
-    typename            OutputIterator>
+    typename            InputIteratorRA,
+    typename            OutputIteratorRA>
 void TestKernel(
     T                   *h_in,
-    InputIterator       d_in,
-    OutputIterator      d_out_unguarded,
-    OutputIterator      d_out_guarded_range,
+    InputIteratorRA       d_in,
+    OutputIteratorRA      d_out_unguarded,
+    OutputIteratorRA      d_out_guarded_range,
     int                 grid_size,
     int                 guarded_elements)
 {

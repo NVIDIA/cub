@@ -28,8 +28,9 @@
 
 /**
  * \file
- * cub::BlockReduceTiles implements an abstraction of CUDA thread blocks for
- * participating in device-wide reduction.
+ * cub::TilesReduce implements an abstraction of CUDA thread blocks for
+ * reducing multiple tiles as part of device-wide reduction.
+
  */
 
 #pragma once
@@ -52,7 +53,7 @@ namespace cub {
 
 
 /**
- * Tuning policy for BlockReduceTiles
+ * Tuning policy for TilesReduce
  */
 template <
     int                     _BLOCK_THREADS,
@@ -61,7 +62,7 @@ template <
     BlockReduceAlgorithm    _BLOCK_ALGORITHM,
     PtxLoadModifier         _LOAD_MODIFIER,
     GridMappingStrategy     _GRID_MAPPING>
-struct BlockReduceTilesPolicy
+struct TilesReducePolicy
 {
     enum
     {
@@ -77,14 +78,14 @@ struct BlockReduceTilesPolicy
 
 
 /**
- * \brief BlockReduceTiles implements an abstraction of CUDA thread blocks for
+ * \brief TilesReduce implements an abstraction of CUDA thread blocks for
  * participating in device-wide reduction.
  */
 template <
-    typename BlockReduceTilesPolicy,
-    typename InputIterator,
+    typename TilesReducePolicy,
+    typename InputIteratorRA,
     typename SizeT>
-class BlockReduceTiles
+class TilesReduce
 {
 private:
 
@@ -93,17 +94,17 @@ private:
     //---------------------------------------------------------------------
 
     // Data type of input iterator
-    typedef typename std::iterator_traits<InputIterator>::value_type T;
+    typedef typename std::iterator_traits<InputIteratorRA>::value_type T;
 
     // Constants
     enum
     {
         // Number of items to be be processed to completion before the thread block terminates or obtains more work
-        TILE_ITEMS = BlockReduceTilesPolicy::BLOCK_THREADS * BlockReduceTilesPolicy::ITEMS_PER_THREAD,
+        TILE_ITEMS = TilesReducePolicy::BLOCK_THREADS * TilesReducePolicy::ITEMS_PER_THREAD,
     };
 
     // Parameterized BlockReduce primitive
-    typedef BlockReduce<T, BlockReduceTilesPolicy::BLOCK_THREADS, BlockReduceTilesPolicy::BLOCK_ALGORITHM> BlockReduceT;
+    typedef BlockReduce<T, TilesReducePolicy::BLOCK_THREADS, TilesReducePolicy::BLOCK_ALGORITHM> BlockReduceT;
 
     // Shared memory type for this threadblock
     struct _SmemStorage
@@ -114,7 +115,7 @@ private:
 
 public:
 
-    /// \smemstorage{BlockReduceTiles}
+    /// \smemstorage{TilesReduce}
     typedef _SmemStorage SmemStorage;
 
 private:
@@ -138,22 +139,22 @@ private:
         typename        ReductionOp>
     static __device__ __forceinline__ void ConsumeFullTile(
         SmemStorage     &smem_storage,
-        InputIterator   d_in,
+        InputIteratorRA   d_in,
         SizeT           block_offset,
         ReductionOp     &reduction_op,
         T               &thread_aggregate)
     {
-        T items[BlockReduceTilesPolicy::ITEMS_PER_THREAD];
+        T items[TilesReducePolicy::ITEMS_PER_THREAD];
 
         if (VECTORIZE_INPUT)
         {
-            typedef VectorHelper<T, BlockReduceTilesPolicy::VECTOR_LOAD_LENGTH> VecHelper;
+            typedef VectorHelper<T, TilesReducePolicy::VECTOR_LOAD_LENGTH> VecHelper;
             typedef typename VecHelper::Type VectorT;
 
             // Alias items as an array of VectorT and load it in striped fashion
             BlockLoadDirectStriped(
                 reinterpret_cast<VectorT*>(d_in + block_offset),
-                reinterpret_cast<VectorT (&)[BlockReduceTilesPolicy::ITEMS_PER_THREAD / BlockReduceTilesPolicy::VECTOR_LOAD_LENGTH]>(items));
+                reinterpret_cast<VectorT (&)[TilesReducePolicy::ITEMS_PER_THREAD / TilesReducePolicy::VECTOR_LOAD_LENGTH]>(items));
         }
         else
         {
@@ -188,7 +189,7 @@ private:
         typename        ReductionOp>
     static __device__ __forceinline__ void ConsumePartialTile(
         SmemStorage     &smem_storage,
-        InputIterator   d_in,
+        InputIteratorRA   d_in,
         SizeT           block_offset,
         const SizeT     &block_oob,
         ReductionOp     &reduction_op,
@@ -198,15 +199,15 @@ private:
 
         if ((FIRST_TILE) && (thread_offset < block_oob))
         {
-            thread_aggregate = ThreadLoad<BlockReduceTilesPolicy::LOAD_MODIFIER>(d_in + thread_offset);
-            thread_offset += BlockReduceTilesPolicy::BLOCK_THREADS;
+            thread_aggregate = ThreadLoad<TilesReducePolicy::LOAD_MODIFIER>(d_in + thread_offset);
+            thread_offset += TilesReducePolicy::BLOCK_THREADS;
         }
 
         while (thread_offset < block_oob)
         {
-            T item = ThreadLoad<BlockReduceTilesPolicy::LOAD_MODIFIER>(d_in + thread_offset);
+            T item = ThreadLoad<TilesReducePolicy::LOAD_MODIFIER>(d_in + thread_offset);
             thread_aggregate = reduction_op(thread_aggregate, item);
-            thread_offset += BlockReduceTilesPolicy::BLOCK_THREADS;
+            thread_offset += TilesReducePolicy::BLOCK_THREADS;
         }
     }
 
@@ -221,7 +222,7 @@ private:
         typename        ReductionOp>
     static __device__ __forceinline__ T ProcessTilesEvenShare(
         SmemStorage     &smem_storage,
-        InputIterator   d_in,
+        InputIteratorRA   d_in,
         SizeT           block_offset,
         const SizeT     &block_oob,
         ReductionOp     &reduction_op)
@@ -269,7 +270,7 @@ private:
         typename            ReductionOp>
     static __device__ __forceinline__ T ProcessTilesDynamic(
         SmemStorage         &smem_storage,
-        InputIterator       d_in,
+        InputIteratorRA       d_in,
         SizeT               num_items,
         GridQueue<SizeT>    &queue,
         ReductionOp         &reduction_op)
@@ -351,16 +352,16 @@ public:
     template <typename ReductionOp>
     static __device__ __forceinline__ T ProcessTilesEvenShare(
         SmemStorage     &smem_storage,
-        InputIterator   d_in,
+        InputIteratorRA   d_in,
         SizeT           block_offset,
         const SizeT     &block_oob,
         ReductionOp     &reduction_op)
     {
-        typedef VectorHelper<T, BlockReduceTilesPolicy::VECTOR_LOAD_LENGTH> VecHelper;
+        typedef VectorHelper<T, TilesReducePolicy::VECTOR_LOAD_LENGTH> VecHelper;
         typedef typename VecHelper::Type VectorT;
 
-        if ((IsPointer<InputIterator>::VALUE) &&
-            (BlockReduceTilesPolicy::VECTOR_LOAD_LENGTH > 1) &&
+        if ((IsPointer<InputIteratorRA>::VALUE) &&
+            (TilesReducePolicy::VECTOR_LOAD_LENGTH > 1) &&
             (VecHelper::BUILT_IN) &&
             ((size_t(d_in) & (sizeof(VectorT) - 1)) == 0))
         {
@@ -381,16 +382,16 @@ public:
     template <typename ReductionOp>
     static __device__ __forceinline__ T ProcessTilesDynamic(
         SmemStorage         &smem_storage,
-        InputIterator       d_in,
+        InputIteratorRA       d_in,
         SizeT               num_items,
         GridQueue<SizeT>    &queue,
         ReductionOp         &reduction_op)
     {
-        typedef VectorHelper<T, BlockReduceTilesPolicy::VECTOR_LOAD_LENGTH> VecHelper;
+        typedef VectorHelper<T, TilesReducePolicy::VECTOR_LOAD_LENGTH> VecHelper;
         typedef typename VecHelper::Type VectorT;
 
-        if ((IsPointer<InputIterator>::VALUE) &&
-            (BlockReduceTilesPolicy::VECTOR_LOAD_LENGTH > 1) &&
+        if ((IsPointer<InputIteratorRA>::VALUE) &&
+            (TilesReducePolicy::VECTOR_LOAD_LENGTH > 1) &&
             (VecHelper::BUILT_IN) &&
             ((size_t(d_in) & (sizeof(VectorT) - 1)) == 0))
         {
@@ -412,7 +413,7 @@ public:
         template <typename ReductionOp>
         static __device__ __forceinline__ T ProcessTiles(
             SmemStorage             &smem_storage,
-            InputIterator           d_in,
+            InputIteratorRA           d_in,
             SizeT                   num_items,
             GridEvenShare<SizeT>    &even_share,
             GridQueue<SizeT>        &queue,
@@ -436,7 +437,7 @@ public:
         template <typename ReductionOp>
         static __device__ __forceinline__ T ProcessTiles(
             SmemStorage             &smem_storage,
-            InputIterator           d_in,
+            InputIteratorRA           d_in,
             SizeT                   num_items,
             GridEvenShare<SizeT>    &even_share,
             GridQueue<SizeT>        &queue,
