@@ -72,12 +72,12 @@ int g_grid_size = 1;
 bool g_uniform_keys;
 
 /// Mooch
-bool g_mooch;
-
+bool g_histo;
 
 //---------------------------------------------------------------------
 // Kernels
 //---------------------------------------------------------------------
+
 
 /**
  * Simple kernel for performing a block-wide sorting over integers
@@ -104,21 +104,7 @@ __global__ void BlockSortKernel(
 
     // Load items
     int block_offset = blockIdx.x * TILE_SIZE;
-    if (ITEMS_PER_THREAD % 4 == 0)
-    {
-        // Vectorize
-        typedef VectorHelper<KeyType, 4> VecHelper;
-        typedef typename VecHelper::Type VectorT;
-
-        // Alias items as an array of VectorT and load it in striped fashion
-        BlockLoadDirectStriped(
-            reinterpret_cast<VectorT*>(d_in + block_offset),
-            reinterpret_cast<VectorT (&)[ITEMS_PER_THREAD / 4]>(items));
-    }
-    else
-    {
-        BlockLoadDirectStriped(d_in + block_offset, items);
-    }
+    BlockLoadDirectStriped(d_in + block_offset, items);
 
     // Start cycle timer
     clock_t start = clock();
@@ -301,7 +287,7 @@ void Test()
     fflush(stdout);
 
     // Run kernel once to prime caches and check result
-    if (g_mooch)
+    if (g_histo)
     {
         BlockSortKernel2<KeyType, BLOCK_THREADS, ITEMS_PER_THREAD><<<g_grid_size, BLOCK_THREADS>>>(
             d_in,
@@ -336,7 +322,7 @@ void Test()
         timer.Start();
 
         // Run kernel
-        if (g_mooch)
+        if (g_histo)
         {
             BlockSortKernel2<KeyType, BLOCK_THREADS, ITEMS_PER_THREAD><<<g_grid_size, BLOCK_THREADS>>>(
                 d_in,
@@ -396,7 +382,7 @@ int main(int argc, char** argv)
     CommandLineArgs args(argc, argv);
     g_verbose = args.CheckCmdLineFlag("v");
     g_uniform_keys = args.CheckCmdLineFlag("uniform");
-    g_mooch = args.CheckCmdLineFlag("histo");
+    g_histo = args.CheckCmdLineFlag("histo");
     args.GetCmdLineArgument("i", g_iterations);
     args.GetCmdLineArgument("grid-size", g_grid_size);
 

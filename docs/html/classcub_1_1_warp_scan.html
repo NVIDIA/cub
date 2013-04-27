@@ -369,7 +369,7 @@ template&lt;typename T , int WARPS = 1, int LOGICAL_WARP_THREADS = PtxArchProps:
 <p>A subsequent <code>__syncthreads()</code> threadblock barrier should be invoked after calling this method if the supplied <code>smem_storage</code> is to be reused or repurposed by the threadblock. </p>
 <dl class="params"><dt>Parameters</dt><dd>
   <table class="params">
-    <tr><td class="paramdir">[in]</td><td class="paramname">smem_storage</td><td>Shared reference to opaque SmemStorage layout </td></tr>
+    <tr><td class="paramdir">[in]</td><td class="paramname">smem_storage</td><td>Reference to shared memory allocation having layout type SmemStorage </td></tr>
     <tr><td class="paramdir">[in]</td><td class="paramname">input</td><td>Calling thread's input item. </td></tr>
     <tr><td class="paramdir">[out]</td><td class="paramname">output</td><td>Calling thread's output item. May be aliased with <code>input</code>. </td></tr>
   </table>
@@ -429,7 +429,7 @@ template&lt;typename T , int WARPS = 1, int LOGICAL_WARP_THREADS = PtxArchProps:
 <p>A subsequent <code>__syncthreads()</code> threadblock barrier should be invoked after calling this method if the supplied <code>smem_storage</code> is to be reused or repurposed by the threadblock. </p>
 <dl class="params"><dt>Parameters</dt><dd>
   <table class="params">
-    <tr><td class="paramdir">[in]</td><td class="paramname">smem_storage</td><td>Shared reference to opaque SmemStorage layout </td></tr>
+    <tr><td class="paramdir">[in]</td><td class="paramname">smem_storage</td><td>Reference to shared memory allocation having layout type SmemStorage </td></tr>
     <tr><td class="paramdir">[in]</td><td class="paramname">input</td><td>Calling thread's input item. </td></tr>
     <tr><td class="paramdir">[out]</td><td class="paramname">output</td><td>Calling thread's output item. May be aliased with <code>input</code>. </td></tr>
     <tr><td class="paramdir">[out]</td><td class="paramname">warp_aggregate</td><td>Warp-wide aggregate reduction of input items. </td></tr>
@@ -505,7 +505,7 @@ template&lt;typename WarpPrefixOp &gt; </div>
 </dl>
 <dl class="params"><dt>Parameters</dt><dd>
   <table class="params">
-    <tr><td class="paramdir">[in]</td><td class="paramname">smem_storage</td><td>Shared reference to opaque SmemStorage layout </td></tr>
+    <tr><td class="paramdir">[in]</td><td class="paramname">smem_storage</td><td>Reference to shared memory allocation having layout type SmemStorage </td></tr>
     <tr><td class="paramdir">[in]</td><td class="paramname">input</td><td>Calling thread's input item. </td></tr>
     <tr><td class="paramdir">[out]</td><td class="paramname">output</td><td>Calling thread's output item. May be aliased with <code>input</code>. </td></tr>
     <tr><td class="paramdir">[out]</td><td class="paramname">warp_aggregate</td><td><b>[<em>warp-lane</em><sub>0</sub> only]</b> Warp-wide aggregate reduction of input items, exclusive of the <code>warp_prefix_op</code> value </td></tr>
@@ -560,7 +560,7 @@ template&lt;typename T , int WARPS = 1, int LOGICAL_WARP_THREADS = PtxArchProps:
 <p>A subsequent <code>__syncthreads()</code> threadblock barrier should be invoked after calling this method if the supplied <code>smem_storage</code> is to be reused or repurposed by the threadblock. </p>
 <dl class="params"><dt>Parameters</dt><dd>
   <table class="params">
-    <tr><td class="paramdir">[in]</td><td class="paramname">smem_storage</td><td>Shared reference to opaque SmemStorage layout </td></tr>
+    <tr><td class="paramdir">[in]</td><td class="paramname">smem_storage</td><td>Reference to shared memory allocation having layout type SmemStorage </td></tr>
     <tr><td class="paramdir">[in]</td><td class="paramname">input</td><td>Calling thread's input item. </td></tr>
     <tr><td class="paramdir">[out]</td><td class="paramname">output</td><td>Calling thread's output item. May be aliased with <code>input</code>. </td></tr>
   </table>
@@ -620,7 +620,7 @@ template&lt;typename T , int WARPS = 1, int LOGICAL_WARP_THREADS = PtxArchProps:
 <p>A subsequent <code>__syncthreads()</code> threadblock barrier should be invoked after calling this method if the supplied <code>smem_storage</code> is to be reused or repurposed by the threadblock. </p>
 <dl class="params"><dt>Parameters</dt><dd>
   <table class="params">
-    <tr><td class="paramdir">[in]</td><td class="paramname">smem_storage</td><td>Shared reference to opaque SmemStorage layout </td></tr>
+    <tr><td class="paramdir">[in]</td><td class="paramname">smem_storage</td><td>Reference to shared memory allocation having layout type SmemStorage </td></tr>
     <tr><td class="paramdir">[in]</td><td class="paramname">input</td><td>Calling thread's input item. </td></tr>
     <tr><td class="paramdir">[out]</td><td class="paramname">output</td><td>Calling thread's output item. May be aliased with <code>input</code>. </td></tr>
     <tr><td class="paramdir">[out]</td><td class="paramname">warp_aggregate</td><td>Warp-wide aggregate reduction of input items. </td></tr>
@@ -696,7 +696,7 @@ template&lt;typename WarpPrefixOp &gt; </div>
 </dl>
 <dl class="params"><dt>Parameters</dt><dd>
   <table class="params">
-    <tr><td class="paramdir">[in]</td><td class="paramname">smem_storage</td><td>Shared reference to opaque SmemStorage layout </td></tr>
+    <tr><td class="paramdir">[in]</td><td class="paramname">smem_storage</td><td>Reference to shared memory allocation having layout type SmemStorage </td></tr>
     <tr><td class="paramdir">[in]</td><td class="paramname">input</td><td>Calling thread's input item. </td></tr>
     <tr><td class="paramdir">[out]</td><td class="paramname">output</td><td>Calling thread's output item. May be aliased with <code>input</code>. </td></tr>
     <tr><td class="paramdir">[out]</td><td class="paramname">warp_aggregate</td><td><b>[<em>warp-lane</em><sub>0</sub> only]</b> Warp-wide aggregate reduction of input items (exclusive of the <code>warp_prefix_op</code> value). </td></tr>
@@ -765,7 +765,7 @@ template&lt;typename ScanOp &gt; </div>
 </dl>
 <dl class="params"><dt>Parameters</dt><dd>
   <table class="params">
-    <tr><td class="paramdir">[in]</td><td class="paramname">smem_storage</td><td>Shared reference to opaque SmemStorage layout </td></tr>
+    <tr><td class="paramdir">[in]</td><td class="paramname">smem_storage</td><td>Reference to shared memory allocation having layout type SmemStorage </td></tr>
     <tr><td class="paramdir">[in]</td><td class="paramname">input</td><td>Calling thread's input item. </td></tr>
     <tr><td class="paramdir">[out]</td><td class="paramname">output</td><td>Calling thread's output item. May be aliased with <code>input</code>. </td></tr>
     <tr><td class="paramdir">[in]</td><td class="paramname">scan_op</td><td>Binary scan operator </td></tr>
@@ -840,7 +840,7 @@ template&lt;typename ScanOp &gt; </div>
 </dl>
 <dl class="params"><dt>Parameters</dt><dd>
   <table class="params">
-    <tr><td class="paramdir">[in]</td><td class="paramname">smem_storage</td><td>Shared reference to opaque SmemStorage layout </td></tr>
+    <tr><td class="paramdir">[in]</td><td class="paramname">smem_storage</td><td>Reference to shared memory allocation having layout type SmemStorage </td></tr>
     <tr><td class="paramdir">[in]</td><td class="paramname">input</td><td>Calling thread's input item. </td></tr>
     <tr><td class="paramdir">[out]</td><td class="paramname">output</td><td>Calling thread's output item. May be aliased with <code>input</code>. </td></tr>
     <tr><td class="paramdir">[in]</td><td class="paramname">scan_op</td><td>Binary scan operator </td></tr>
@@ -924,7 +924,7 @@ template&lt;typename ScanOp , typename WarpPrefixOp &gt; </div>
 </dl>
 <dl class="params"><dt>Parameters</dt><dd>
   <table class="params">
-    <tr><td class="paramdir">[in]</td><td class="paramname">smem_storage</td><td>Shared reference to opaque SmemStorage layout </td></tr>
+    <tr><td class="paramdir">[in]</td><td class="paramname">smem_storage</td><td>Reference to shared memory allocation having layout type SmemStorage </td></tr>
     <tr><td class="paramdir">[in]</td><td class="paramname">input</td><td>Calling thread's input item. </td></tr>
     <tr><td class="paramdir">[out]</td><td class="paramname">output</td><td>Calling thread's output item. May be aliased with <code>input</code>. </td></tr>
     <tr><td class="paramdir">[in]</td><td class="paramname">scan_op</td><td>Binary scan operator </td></tr>
@@ -1000,7 +1000,7 @@ template&lt;typename ScanOp &gt; </div>
 </dl>
 <dl class="params"><dt>Parameters</dt><dd>
   <table class="params">
-    <tr><td class="paramdir">[in]</td><td class="paramname">smem_storage</td><td>Shared reference to opaque SmemStorage layout </td></tr>
+    <tr><td class="paramdir">[in]</td><td class="paramname">smem_storage</td><td>Reference to shared memory allocation having layout type SmemStorage </td></tr>
     <tr><td class="paramdir">[in]</td><td class="paramname">input</td><td>Calling thread's input item. </td></tr>
     <tr><td class="paramdir">[out]</td><td class="paramname">output</td><td>Calling thread's output item. May be aliased with <code>input</code>. </td></tr>
     <tr><td class="paramdir">[in]</td><td class="paramname">identity</td><td>Identity value </td></tr>
@@ -1082,7 +1082,7 @@ template&lt;typename ScanOp &gt; </div>
 </dl>
 <dl class="params"><dt>Parameters</dt><dd>
   <table class="params">
-    <tr><td class="paramdir">[in]</td><td class="paramname">smem_storage</td><td>Shared reference to opaque SmemStorage layout </td></tr>
+    <tr><td class="paramdir">[in]</td><td class="paramname">smem_storage</td><td>Reference to shared memory allocation having layout type SmemStorage </td></tr>
     <tr><td class="paramdir">[in]</td><td class="paramname">input</td><td>Calling thread's input item. </td></tr>
     <tr><td class="paramdir">[out]</td><td class="paramname">output</td><td>Calling thread's output item. May be aliased with <code>input</code>. </td></tr>
     <tr><td class="paramdir">[in]</td><td class="paramname">identity</td><td>Identity value </td></tr>
@@ -1173,7 +1173,7 @@ template&lt;typename ScanOp , typename WarpPrefixOp &gt; </div>
 </dl>
 <dl class="params"><dt>Parameters</dt><dd>
   <table class="params">
-    <tr><td class="paramdir">[in]</td><td class="paramname">smem_storage</td><td>Shared reference to opaque SmemStorage layout </td></tr>
+    <tr><td class="paramdir">[in]</td><td class="paramname">smem_storage</td><td>Reference to shared memory allocation having layout type SmemStorage </td></tr>
     <tr><td class="paramdir">[in]</td><td class="paramname">input</td><td>Calling thread's input item. </td></tr>
     <tr><td class="paramdir">[out]</td><td class="paramname">output</td><td>Calling thread's output item. May be aliased with <code>input</code>. </td></tr>
     <tr><td class="paramdir">[in]</td><td class="paramname">identity</td><td>Identity value </td></tr>
@@ -1244,7 +1244,7 @@ template&lt;typename ScanOp &gt; </div>
 </dl>
 <dl class="params"><dt>Parameters</dt><dd>
   <table class="params">
-    <tr><td class="paramdir">[in]</td><td class="paramname">smem_storage</td><td>Shared reference to opaque SmemStorage layout </td></tr>
+    <tr><td class="paramdir">[in]</td><td class="paramname">smem_storage</td><td>Reference to shared memory allocation having layout type SmemStorage </td></tr>
     <tr><td class="paramdir">[in]</td><td class="paramname">input</td><td>Calling thread's input item. </td></tr>
     <tr><td class="paramdir">[out]</td><td class="paramname">output</td><td>Calling thread's output item. May be aliased with <code>input</code>. </td></tr>
     <tr><td class="paramdir">[in]</td><td class="paramname">scan_op</td><td>Binary scan operator </td></tr>
@@ -1319,7 +1319,7 @@ template&lt;typename ScanOp &gt; </div>
 </dl>
 <dl class="params"><dt>Parameters</dt><dd>
   <table class="params">
-    <tr><td class="paramdir">[in]</td><td class="paramname">smem_storage</td><td>Shared reference to opaque SmemStorage layout </td></tr>
+    <tr><td class="paramdir">[in]</td><td class="paramname">smem_storage</td><td>Reference to shared memory allocation having layout type SmemStorage </td></tr>
     <tr><td class="paramdir">[in]</td><td class="paramname">input</td><td>Calling thread's input item. </td></tr>
     <tr><td class="paramdir">[out]</td><td class="paramname">output</td><td>Calling thread's output item. May be aliased with <code>input</code>. </td></tr>
     <tr><td class="paramdir">[in]</td><td class="paramname">scan_op</td><td>Binary scan operator </td></tr>
@@ -1403,7 +1403,7 @@ template&lt;typename ScanOp , typename WarpPrefixOp &gt; </div>
 </dl>
 <dl class="params"><dt>Parameters</dt><dd>
   <table class="params">
-    <tr><td class="paramdir">[in]</td><td class="paramname">smem_storage</td><td>Shared reference to opaque SmemStorage layout </td></tr>
+    <tr><td class="paramdir">[in]</td><td class="paramname">smem_storage</td><td>Reference to shared memory allocation having layout type SmemStorage </td></tr>
     <tr><td class="paramdir">[in]</td><td class="paramname">input</td><td>Calling thread's input item. </td></tr>
     <tr><td class="paramdir">[out]</td><td class="paramname">output</td><td>Calling thread's output item. May be aliased with <code>input</code>. </td></tr>
     <tr><td class="paramdir">[in]</td><td class="paramname">scan_op</td><td>Binary scan operator </td></tr>

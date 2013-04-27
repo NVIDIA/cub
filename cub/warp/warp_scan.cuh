@@ -64,7 +64,7 @@ namespace cub {
  * the <em>i</em><sup>th</sup> output reduction.
  *
  * \par
- * For convenience, WarpScan exposes a spectrum of entrypoints that differ by:
+ * For convenience, WarpScan provides alternative entrypoints that differ by:
  * - Operator (generic scan <em>vs.</em> prefix sum for numeric types)
  * - Output ordering (inclusive <em>vs.</em> exclusive)
  * - Warp-wide prefix (identity <em>vs.</em> call-back functor)
@@ -255,7 +255,7 @@ private:
 
         /// Broadcast
         static __device__ __forceinline__ T Broadcast(
-            SmemStorage     &smem_storage,      ///< [in] Shared reference to opaque SmemStorage layout
+            SmemStorage     &smem_storage,      ///< [in] Reference to shared memory allocation having layout type SmemStorage
             T               input,              ///< [in] The value to broadcast
             unsigned int    src_lane)           ///< [in] Which warp lane is to do the broacasting
         {
@@ -271,7 +271,7 @@ private:
 
         /// Inclusive prefix sum with aggregate (specialized for unsigned int)
         static __device__ __forceinline__ void InclusiveSum(
-            SmemStorage     &smem_storage,      ///< [in] Shared reference to opaque SmemStorage layout
+            SmemStorage     &smem_storage,      ///< [in] Reference to shared memory allocation having layout type SmemStorage
             unsigned int    input,              ///< [in] Calling thread's input item.
             unsigned int    &output,            ///< [out] Calling thread's output item.  May be aliased with \p input.
             unsigned int    &warp_aggregate)    ///< [out] Warp-wide aggregate reduction of input items.
@@ -301,7 +301,7 @@ private:
 
         /// Inclusive prefix sum with aggregate (specialized for float)
         static __device__ __forceinline__ void InclusiveSum(
-            SmemStorage     &smem_storage,      ///< [in] Shared reference to opaque SmemStorage layout
+            SmemStorage     &smem_storage,      ///< [in] Reference to shared memory allocation having layout type SmemStorage
             float           input,              ///< [in] Calling thread's input item.
             float           &output,            ///< [out] Calling thread's output item.  May be aliased with \p input.
             float           &warp_aggregate)    ///< [out] Warp-wide aggregate reduction of input items.
@@ -331,7 +331,7 @@ private:
         /// Inclusive prefix sum with aggregate
         template <typename _T>
         static __device__ __forceinline__ void InclusiveSum(
-            SmemStorage     &smem_storage,      ///< [in] Shared reference to opaque SmemStorage layout
+            SmemStorage     &smem_storage,      ///< [in] Reference to shared memory allocation having layout type SmemStorage
             _T               input,             ///< [in] Calling thread's input item.
             _T               &output,           ///< [out] Calling thread's output item.  May be aliased with \p input.
             _T               &warp_aggregate)   ///< [out] Warp-wide aggregate reduction of input items.
@@ -348,7 +348,7 @@ private:
 
         /// Inclusive prefix sum
         static __device__ __forceinline__ void InclusiveSum(
-            SmemStorage     &smem_storage,      ///< [in] Shared reference to opaque SmemStorage layout
+            SmemStorage     &smem_storage,      ///< [in] Reference to shared memory allocation having layout type SmemStorage
             T               input,              ///< [in] Calling thread's input item.
             T               &output)            ///< [out] Calling thread's output item.  May be aliased with \p input.
         {
@@ -360,7 +360,7 @@ private:
         /// Inclusive scan with aggregate
         template <typename ScanOp>
         static __device__ __forceinline__ void InclusiveScan(
-            SmemStorage     &smem_storage,      ///< [in] Shared reference to opaque SmemStorage layout
+            SmemStorage     &smem_storage,      ///< [in] Reference to shared memory allocation having layout type SmemStorage
             T               input,              ///< [in] Calling thread's input item.
             T               &output,            ///< [out] Calling thread's output item.  May be aliased with \p input.
             ScanOp          scan_op,            ///< [in] Binary scan operator
@@ -399,7 +399,7 @@ private:
         /// Inclusive scan
         template <typename ScanOp>
         static __device__ __forceinline__ void InclusiveScan(
-            SmemStorage     &smem_storage,      ///< [in] Shared reference to opaque SmemStorage layout
+            SmemStorage     &smem_storage,      ///< [in] Reference to shared memory allocation having layout type SmemStorage
             T               input,              ///< [in] Calling thread's input item.
             T               &output,            ///< [out] Calling thread's output item.  May be aliased with \p input.
             ScanOp          scan_op)            ///< [in] Binary scan operator
@@ -411,7 +411,7 @@ private:
         /// Exclusive scan with aggregate
         template <typename ScanOp>
         static __device__ __forceinline__ void ExclusiveScan(
-            SmemStorage     &smem_storage,      ///< [in] Shared reference to opaque SmemStorage layout
+            SmemStorage     &smem_storage,      ///< [in] Reference to shared memory allocation having layout type SmemStorage
             T               input,              ///< [in] Calling thread's input item.
             T               &output,            ///< [out] Calling thread's output item.  May be aliased with \p input.
             const T         &identity,          ///< [in] Identity value
@@ -440,7 +440,7 @@ private:
         /// Exclusive scan
         template <typename ScanOp>
         static __device__ __forceinline__ void ExclusiveScan(
-            SmemStorage     &smem_storage,      ///< [in] Shared reference to opaque SmemStorage layout
+            SmemStorage     &smem_storage,      ///< [in] Reference to shared memory allocation having layout type SmemStorage
             T               input,              ///< [in] Calling thread's input item.
             T               &output,            ///< [out] Calling thread's output item.  May be aliased with \p input.
             const T         &identity,          ///< [in] Identity value
@@ -454,7 +454,7 @@ private:
         /// Exclusive scan with aggregate, without identity
         template <typename ScanOp>
         static __device__ __forceinline__ void ExclusiveScan(
-            SmemStorage     &smem_storage,      ///< [in] Shared reference to opaque SmemStorage layout
+            SmemStorage     &smem_storage,      ///< [in] Reference to shared memory allocation having layout type SmemStorage
             T               input,              ///< [in] Calling thread's input item.
             T               &output,            ///< [out] Calling thread's output item.  May be aliased with \p input.
             ScanOp          scan_op,            ///< [in] Binary scan operator
@@ -476,7 +476,7 @@ private:
         /// Exclusive scan without identity
         template <typename ScanOp>
         static __device__ __forceinline__ void ExclusiveScan(
-            SmemStorage     &smem_storage,      ///< [in] Shared reference to opaque SmemStorage layout
+            SmemStorage     &smem_storage,      ///< [in] Reference to shared memory allocation having layout type SmemStorage
             T               input,              ///< [in] Calling thread's input item.
             T               &output,            ///< [out] Calling thread's output item.  May be aliased with \p input.
             ScanOp          scan_op)            ///< [in] Binary scan operator
@@ -520,7 +520,7 @@ private:
 
         /// Broadcast
         static __device__ __forceinline__ T Broadcast(
-            SmemStorage     &smem_storage,      ///< [in] Shared reference to opaque SmemStorage layout
+            SmemStorage     &smem_storage,      ///< [in] Reference to shared memory allocation having layout type SmemStorage
             T               input,              ///< [in] The value to broadcast
             unsigned int    src_lane)           ///< [in] Which warp lane is to do the broacasting
         {
@@ -540,7 +540,7 @@ private:
             bool SHARE_FINAL,
             typename ScanOp>
         static __device__ __forceinline__ T BasicScan(
-            SmemStorage     &smem_storage,      ///< Shared reference to opaque SmemStorage layout
+            SmemStorage     &smem_storage,      ///< Reference to shared memory allocation having layout type SmemStorage
             unsigned int    warp_id,            ///< Warp id
             unsigned int    lane_id,            ///< thread-lane id
             T               partial,            ///< Calling thread's input partial reduction
@@ -576,7 +576,7 @@ private:
 
         /// Inclusive prefix sum
         static __device__ __forceinline__ void InclusiveSum(
-            SmemStorage     &smem_storage,      ///< [in] Shared reference to opaque SmemStorage layout
+            SmemStorage     &smem_storage,      ///< [in] Reference to shared memory allocation having layout type SmemStorage
             T               input,              ///< [in] Calling thread's input item.
             T               &output)            ///< [out] Calling thread's output item.  May be aliased with \p input.
         {
@@ -599,7 +599,7 @@ private:
 
         /// Inclusive prefix sum with aggregate
         static __device__ __forceinline__ void InclusiveSum(
-            SmemStorage     &smem_storage,      ///< [in] Shared reference to opaque SmemStorage layout
+            SmemStorage     &smem_storage,      ///< [in] Reference to shared memory allocation having layout type SmemStorage
             T               input,              ///< [in] Calling thread's input item.
             T               &output,            ///< [out] Calling thread's output item.  May be aliased with \p input.
             T               &warp_aggregate)    ///< [out] Warp-wide aggregate reduction of input items.
@@ -627,7 +627,7 @@ private:
         /// Inclusive scan
         template <typename ScanOp>
         static __device__ __forceinline__ void InclusiveScan(
-            SmemStorage     &smem_storage,      ///< [in] Shared reference to opaque SmemStorage layout
+            SmemStorage     &smem_storage,      ///< [in] Reference to shared memory allocation having layout type SmemStorage
             T               input,              ///< [in] Calling thread's input item.
             T               &output,            ///< [out] Calling thread's output item.  May be aliased with \p input.
             ScanOp          scan_op)            ///< [in] Binary scan operator
@@ -649,7 +649,7 @@ private:
         /// Inclusive scan with aggregate
         template <typename ScanOp>
         static __device__ __forceinline__ void InclusiveScan(
-            SmemStorage     &smem_storage,      ///< [in] Shared reference to opaque SmemStorage layout
+            SmemStorage     &smem_storage,      ///< [in] Reference to shared memory allocation having layout type SmemStorage
             T               input,              ///< [in] Calling thread's input item.
             T               &output,            ///< [out] Calling thread's output item.  May be aliased with \p input.
             ScanOp          scan_op,            ///< [in] Binary scan operator
@@ -674,7 +674,7 @@ private:
         /// Exclusive scan
         template <typename ScanOp>
         static __device__ __forceinline__ void ExclusiveScan(
-            SmemStorage     &smem_storage,      ///< [in] Shared reference to opaque SmemStorage layout
+            SmemStorage     &smem_storage,      ///< [in] Reference to shared memory allocation having layout type SmemStorage
             T               input,              ///< [in] Calling thread's input item.
             T               &output,            ///< [out] Calling thread's output item.  May be aliased with \p input.
             const T         &identity,          ///< [in] Identity value
@@ -703,7 +703,7 @@ private:
         /// Exclusive scan with aggregate
         template <typename ScanOp>
         static __device__ __forceinline__ void ExclusiveScan(
-            SmemStorage     &smem_storage,      ///< [in] Shared reference to opaque SmemStorage layout
+            SmemStorage     &smem_storage,      ///< [in] Reference to shared memory allocation having layout type SmemStorage
             T               input,              ///< [in] Calling thread's input item.
             T               &output,            ///< [out] Calling thread's output item.  May be aliased with \p input.
             const T         &identity,          ///< [in] Identity value
@@ -724,7 +724,7 @@ private:
         /// Exclusive scan without identity
         template <typename ScanOp>
         static __device__ __forceinline__ void ExclusiveScan(
-            SmemStorage     &smem_storage,      ///< [in] Shared reference to opaque SmemStorage layout
+            SmemStorage     &smem_storage,      ///< [in] Reference to shared memory allocation having layout type SmemStorage
             T               input,              ///< [in] Calling thread's input item.
             T               &output,            ///< [out] Calling thread's output item.  May be aliased with \p input.
             ScanOp          scan_op)            ///< [in] Binary scan operator
@@ -749,7 +749,7 @@ private:
         /// Exclusive scan with aggregate, without identity
         template <typename ScanOp>
         static __device__ __forceinline__ void ExclusiveScan(
-            SmemStorage     &smem_storage,      ///< [in] Shared reference to opaque SmemStorage layout
+            SmemStorage     &smem_storage,      ///< [in] Reference to shared memory allocation having layout type SmemStorage
             T               input,              ///< [in] Calling thread's input item.
             T               &output,            ///< [out] Calling thread's output item.  May be aliased with \p input.
             ScanOp          scan_op,            ///< [in] Binary scan operator
@@ -792,7 +792,7 @@ public:
      * \smemreuse
      */
     static __device__ __forceinline__ void InclusiveSum(
-        SmemStorage     &smem_storage,      ///< [in] Shared reference to opaque SmemStorage layout
+        SmemStorage     &smem_storage,      ///< [in] Reference to shared memory allocation having layout type SmemStorage
         T               input,              ///< [in] Calling thread's input item.
         T               &output)            ///< [out] Calling thread's output item.  May be aliased with \p input.
     {
@@ -808,7 +808,7 @@ public:
      * \smemreuse
      */
     static __device__ __forceinline__ void InclusiveSum(
-        SmemStorage     &smem_storage,      ///< [in] Shared reference to opaque SmemStorage layout
+        SmemStorage     &smem_storage,      ///< [in] Reference to shared memory allocation having layout type SmemStorage
         T               input,              ///< [in] Calling thread's input item.
         T               &output,            ///< [out] Calling thread's output item.  May be aliased with \p input.
         T               &warp_aggregate)    ///< [out] Warp-wide aggregate reduction of input items.
@@ -834,7 +834,7 @@ public:
      */
     template <typename WarpPrefixOp>
     static __device__ __forceinline__ void InclusiveSum(
-        SmemStorage     &smem_storage,      ///< [in] Shared reference to opaque SmemStorage layout
+        SmemStorage     &smem_storage,      ///< [in] Reference to shared memory allocation having layout type SmemStorage
         T               input,              ///< [in] Calling thread's input item.
         T               &output,            ///< [out] Calling thread's output item.  May be aliased with \p input.
         T               &warp_aggregate,    ///< [out] <b>[<em>warp-lane</em><sub>0</sub> only]</b> Warp-wide aggregate reduction of input items, exclusive of the \p warp_prefix_op value
@@ -866,7 +866,7 @@ public:
      * \smemreuse
      */
     static __device__ __forceinline__ void ExclusiveSum(
-        SmemStorage     &smem_storage,      ///< [in] Shared reference to opaque SmemStorage layout
+        SmemStorage     &smem_storage,      ///< [in] Reference to shared memory allocation having layout type SmemStorage
         T               input,              ///< [in] Calling thread's input item.
         T               &output)            ///< [out] Calling thread's output item.  May be aliased with \p input.
     {
@@ -885,7 +885,7 @@ public:
      * \smemreuse
      */
     static __device__ __forceinline__ void ExclusiveSum(
-        SmemStorage     &smem_storage,      ///< [in] Shared reference to opaque SmemStorage layout
+        SmemStorage     &smem_storage,      ///< [in] Reference to shared memory allocation having layout type SmemStorage
         T               input,              ///< [in] Calling thread's input item.
         T               &output,            ///< [out] Calling thread's output item.  May be aliased with \p input.
         T               &warp_aggregate)    ///< [out] Warp-wide aggregate reduction of input items.
@@ -914,7 +914,7 @@ public:
      */
     template <typename WarpPrefixOp>
     static __device__ __forceinline__ void ExclusiveSum(
-        SmemStorage     &smem_storage,      ///< [in] Shared reference to opaque SmemStorage layout
+        SmemStorage     &smem_storage,      ///< [in] Reference to shared memory allocation having layout type SmemStorage
         T               input,              ///< [in] Calling thread's input item.
         T               &output,            ///< [out] Calling thread's output item.  May be aliased with \p input.
         T               &warp_aggregate,    ///< [out] <b>[<em>warp-lane</em><sub>0</sub> only]</b> Warp-wide aggregate reduction of input items (exclusive of the \p warp_prefix_op value).
@@ -942,7 +942,7 @@ public:
      */
     template <typename ScanOp>
     static __device__ __forceinline__ void InclusiveScan(
-        SmemStorage     &smem_storage,      ///< [in] Shared reference to opaque SmemStorage layout
+        SmemStorage     &smem_storage,      ///< [in] Reference to shared memory allocation having layout type SmemStorage
         T               input,              ///< [in] Calling thread's input item.
         T               &output,            ///< [out] Calling thread's output item.  May be aliased with \p input.
         ScanOp          scan_op)            ///< [in] Binary scan operator
@@ -962,7 +962,7 @@ public:
      */
     template <typename ScanOp>
     static __device__ __forceinline__ void InclusiveScan(
-        SmemStorage     &smem_storage,      ///< [in] Shared reference to opaque SmemStorage layout
+        SmemStorage     &smem_storage,      ///< [in] Reference to shared memory allocation having layout type SmemStorage
         T               input,              ///< [in] Calling thread's input item.
         T               &output,            ///< [out] Calling thread's output item.  May be aliased with \p input.
         ScanOp          scan_op,            ///< [in] Binary scan operator
@@ -992,7 +992,7 @@ public:
         typename ScanOp,
         typename WarpPrefixOp>
     static __device__ __forceinline__ void InclusiveScan(
-        SmemStorage     &smem_storage,      ///< [in] Shared reference to opaque SmemStorage layout
+        SmemStorage     &smem_storage,      ///< [in] Reference to shared memory allocation having layout type SmemStorage
         T               input,              ///< [in] Calling thread's input item.
         T               &output,            ///< [out] Calling thread's output item.  May be aliased with \p input.
         ScanOp          scan_op,            ///< [in] Binary scan operator
@@ -1027,7 +1027,7 @@ public:
      */
     template <typename ScanOp>
     static __device__ __forceinline__ void ExclusiveScan(
-        SmemStorage     &smem_storage,      ///< [in] Shared reference to opaque SmemStorage layout
+        SmemStorage     &smem_storage,      ///< [in] Reference to shared memory allocation having layout type SmemStorage
         T               input,              ///< [in] Calling thread's input item.
         T               &output,            ///< [out] Calling thread's output item.  May be aliased with \p input.
         const T         &identity,          ///< [in] Identity value
@@ -1048,7 +1048,7 @@ public:
      */
     template <typename ScanOp>
     static __device__ __forceinline__ void ExclusiveScan(
-        SmemStorage     &smem_storage,      ///< [in] Shared reference to opaque SmemStorage layout
+        SmemStorage     &smem_storage,      ///< [in] Reference to shared memory allocation having layout type SmemStorage
         T               input,              ///< [in] Calling thread's input item.
         T               &output,            ///< [out] Calling thread's output item.  May be aliased with \p input.
         const T         &identity,          ///< [in] Identity value
@@ -1079,7 +1079,7 @@ public:
         typename ScanOp,
         typename WarpPrefixOp>
     static __device__ __forceinline__ void ExclusiveScan(
-        SmemStorage     &smem_storage,      ///< [in] Shared reference to opaque SmemStorage layout
+        SmemStorage     &smem_storage,      ///< [in] Reference to shared memory allocation having layout type SmemStorage
         T               input,              ///< [in] Calling thread's input item.
         T               &output,            ///< [out] Calling thread's output item.  May be aliased with \p input.
         const T         &identity,          ///< [in] Identity value
@@ -1119,7 +1119,7 @@ public:
      */
     template <typename ScanOp>
     static __device__ __forceinline__ void ExclusiveScan(
-        SmemStorage     &smem_storage,      ///< [in] Shared reference to opaque SmemStorage layout
+        SmemStorage     &smem_storage,      ///< [in] Reference to shared memory allocation having layout type SmemStorage
         T               input,              ///< [in] Calling thread's input item.
         T               &output,            ///< [out] Calling thread's output item.  May be aliased with \p input.
         ScanOp          scan_op)            ///< [in] Binary scan operator
@@ -1139,7 +1139,7 @@ public:
      */
     template <typename ScanOp>
     static __device__ __forceinline__ void ExclusiveScan(
-        SmemStorage     &smem_storage,      ///< [in] Shared reference to opaque SmemStorage layout
+        SmemStorage     &smem_storage,      ///< [in] Reference to shared memory allocation having layout type SmemStorage
         T               input,              ///< [in] Calling thread's input item.
         T               &output,            ///< [out] Calling thread's output item.  May be aliased with \p input.
         ScanOp          scan_op,            ///< [in] Binary scan operator
@@ -1169,7 +1169,7 @@ public:
         typename ScanOp,
         typename WarpPrefixOp>
     static __device__ __forceinline__ void ExclusiveScan(
-        SmemStorage     &smem_storage,      ///< [in] Shared reference to opaque SmemStorage layout
+        SmemStorage     &smem_storage,      ///< [in] Reference to shared memory allocation having layout type SmemStorage
         T               input,              ///< [in] Calling thread's input item.
         T               &output,            ///< [out] Calling thread's output item.  May be aliased with \p input.
         ScanOp          scan_op,            ///< [in] Binary scan operator

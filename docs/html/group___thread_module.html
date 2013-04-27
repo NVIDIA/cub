@@ -136,14 +136,14 @@ Enumerations</h2></td></tr>
 </table><table class="memberdecls">
 <tr class="heading"><td colspan="2"><h2 class="groupheader"><a name="member-group"></a>
 I/O using PTX cache modifiers</h2></td></tr>
-<tr class="memitem:ga1e390b9fee4c8012a021d49d9b76b1e8"><td class="memTemplParams" colspan="2">template&lt;PtxLoadModifier MODIFIER, typename InputIterator &gt; </td></tr>
+<tr class="memitem:ga1e390b9fee4c8012a021d49d9b76b1e8"><td class="memTemplParams" colspan="2">template&lt;PtxLoadModifier MODIFIER, typename InputIteratorRA &gt; </td></tr>
 <tr class="memitem:ga1e390b9fee4c8012a021d49d9b76b1e8"><td class="memTemplItemLeft" align="right" valign="top">__device__ __forceinline__ <br class="typebreak"/>
 std::iterator_traits<br class="typebreak"/>
-&lt; InputIterator &gt;::value_type&#160;</td><td class="memTemplItemRight" valign="bottom"><a class="el" href="group___thread_module.html#ga1e390b9fee4c8012a021d49d9b76b1e8">cub::ThreadLoad</a> (InputIterator itr)</td></tr>
+&lt; InputIteratorRA &gt;::value_type&#160;</td><td class="memTemplItemRight" valign="bottom"><a class="el" href="group___thread_module.html#ga1e390b9fee4c8012a021d49d9b76b1e8">cub::ThreadLoad</a> (InputIteratorRA itr)</td></tr>
 <tr class="memdesc:ga1e390b9fee4c8012a021d49d9b76b1e8"><td class="mdescLeft">&#160;</td><td class="mdescRight">Thread utility for reading memory using <a class="el" href="group___thread_module.html#ga023420f30fec7d4b187fc98f4fd2a55d" title="Enumeration of PTX cache-modifiers for memory load operations.">cub::PtxLoadModifier</a> cache modifiers.  <a href="#ga1e390b9fee4c8012a021d49d9b76b1e8">More...</a><br/></td></tr>
 <tr class="separator:ga1e390b9fee4c8012a021d49d9b76b1e8"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:gad117ecb99b9230a032971b0ac08ca6dc"><td class="memTemplParams" colspan="2">template&lt;PtxStoreModifier MODIFIER, typename OutputIterator , typename T &gt; </td></tr>
-<tr class="memitem:gad117ecb99b9230a032971b0ac08ca6dc"><td class="memTemplItemLeft" align="right" valign="top">__device__ __forceinline__ void&#160;</td><td class="memTemplItemRight" valign="bottom"><a class="el" href="group___thread_module.html#gad117ecb99b9230a032971b0ac08ca6dc">cub::ThreadStore</a> (OutputIterator itr, const T &amp;val)</td></tr>
+<tr class="memitem:gad117ecb99b9230a032971b0ac08ca6dc"><td class="memTemplParams" colspan="2">template&lt;PtxStoreModifier MODIFIER, typename OutputIteratorRA , typename T &gt; </td></tr>
+<tr class="memitem:gad117ecb99b9230a032971b0ac08ca6dc"><td class="memTemplItemLeft" align="right" valign="top">__device__ __forceinline__ void&#160;</td><td class="memTemplItemRight" valign="bottom"><a class="el" href="group___thread_module.html#gad117ecb99b9230a032971b0ac08ca6dc">cub::ThreadStore</a> (OutputIteratorRA itr, const T &amp;val)</td></tr>
 <tr class="memdesc:gad117ecb99b9230a032971b0ac08ca6dc"><td class="mdescLeft">&#160;</td><td class="mdescRight">Thread utility for writing memory using <a class="el" href="group___thread_module.html#gae9c7d6a6af7104f528509182ac9c9da2" title="Enumeration of PTX cache-modifiers for memory store operations.">cub::PtxStoreModifier</a> cache modifiers.  <a href="#gad117ecb99b9230a032971b0ac08ca6dc">More...</a><br/></td></tr>
 <tr class="separator:gad117ecb99b9230a032971b0ac08ca6dc"><td class="memSeparator" colspan="2">&#160;</td></tr>
 </table><table class="memberdecls">
@@ -270,12 +270,12 @@ Sequential prefix scan over statically-sized array types</h2></td></tr>
 <div class="memitem">
 <div class="memproto">
 <div class="memtemplate">
-template&lt;PtxLoadModifier MODIFIER, typename InputIterator &gt; </div>
+template&lt;PtxLoadModifier MODIFIER, typename InputIteratorRA &gt; </div>
       <table class="memname">
         <tr>
-          <td class="memname">__device__ __forceinline__ std::iterator_traits&lt;InputIterator&gt;::value_type cub::ThreadLoad </td>
+          <td class="memname">__device__ __forceinline__ std::iterator_traits&lt;InputIteratorRA&gt;::value_type cub::ThreadLoad </td>
           <td>(</td>
-          <td class="paramtype">InputIterator&#160;</td>
+          <td class="paramtype">InputIteratorRA&#160;</td>
           <td class="paramname"><em>itr</em></td><td>)</td>
           <td></td>
         </tr>
@@ -873,12 +873,12 @@ template&lt;int LENGTH, typename T , typename ScanOp &gt; </div>
 <div class="memitem">
 <div class="memproto">
 <div class="memtemplate">
-template&lt;PtxStoreModifier MODIFIER, typename OutputIterator , typename T &gt; </div>
+template&lt;PtxStoreModifier MODIFIER, typename OutputIteratorRA , typename T &gt; </div>
       <table class="memname">
         <tr>
           <td class="memname">__device__ __forceinline__ void cub::ThreadStore </td>
           <td>(</td>
-          <td class="paramtype">OutputIterator&#160;</td>
+          <td class="paramtype">OutputIteratorRA&#160;</td>
           <td class="paramname"><em>itr</em>, </td>
         </tr>
         <tr>

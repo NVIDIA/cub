@@ -108,10 +108,10 @@ template <PtxLoadModifier MODIFIER>
 struct ThreadLoadDispatch<MODIFIER, true>
 {
     // Iterator
-    template <typename InputIterator>
-    static __device__ __forceinline__ typename std::iterator_traits<InputIterator>::value_type ThreadLoad(InputIterator itr)
+    template <typename InputIteratorRA>
+    static __device__ __forceinline__ typename std::iterator_traits<InputIteratorRA>::value_type ThreadLoad(InputIteratorRA itr)
     {
-        typename std::iterator_traits<InputIterator>::value_type val;
+        typename std::iterator_traits<InputIteratorRA>::value_type val;
         val.ThreadLoad<MODIFIER>(itr);
         return val;
     }
@@ -125,8 +125,8 @@ template <>
 struct ThreadLoadDispatch<PTX_LOAD_NONE, false>
 {
     // Iterator
-    template <typename InputIterator>
-    static __device__ __forceinline__ typename std::iterator_traits<InputIterator>::value_type ThreadLoad(InputIterator itr)
+    template <typename InputIteratorRA>
+    static __device__ __forceinline__ typename std::iterator_traits<InputIteratorRA>::value_type ThreadLoad(InputIteratorRA itr)
     {
         // Straightforward dereference
         return *itr;
@@ -141,10 +141,10 @@ template <>
 struct ThreadLoadDispatch<PTX_LOAD_VS, false>
 {
     // Iterator
-    template <typename InputIterator>
-    static __device__ __forceinline__ typename std::iterator_traits<InputIterator>::value_type ThreadLoad(InputIterator itr)
+    template <typename InputIteratorRA>
+    static __device__ __forceinline__ typename std::iterator_traits<InputIteratorRA>::value_type ThreadLoad(InputIteratorRA itr)
     {
-        typedef typename std::iterator_traits<InputIterator>::value_type T;
+        typedef typename std::iterator_traits<InputIteratorRA>::value_type T;
 
         const bool USE_VOLATILE = NumericTraits<T>::PRIMITIVE;
 
@@ -195,10 +195,10 @@ struct ThreadLoadDispatch<PTX_LOAD_VS, false>
  */
 template <
     PtxLoadModifier MODIFIER,
-    typename InputIterator>
-__device__ __forceinline__ typename std::iterator_traits<InputIterator>::value_type ThreadLoad(InputIterator itr)
+    typename InputIteratorRA>
+__device__ __forceinline__ typename std::iterator_traits<InputIteratorRA>::value_type ThreadLoad(InputIteratorRA itr)
 {
-    typedef typename std::iterator_traits<InputIterator>::value_type T;
+    typedef typename std::iterator_traits<InputIteratorRA>::value_type T;
     return ThreadLoadDispatch<MODIFIER, HasThreadLoad<T>::VALUE>::ThreadLoad(itr);
 }
 

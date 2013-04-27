@@ -28,7 +28,7 @@
 
 /**
  * \file
- * cub::BlockScanTiles implements an abstraction of CUDA thread blocks for
+ * cub::TilesScan implements an abstraction of CUDA thread blocks for
  * participating in device-wide prefix scan.
  */
 
@@ -61,7 +61,7 @@ enum
 
 
 /**
- * Tuning policy for BlockScanTiles
+ * Tuning policy for TilesScan
  */
 template <
     int                         _BLOCK_THREADS,
@@ -69,7 +69,7 @@ template <
     BlockLoadPolicy             _LOAD_POLICY,
     BlockStorePolicy            _STORE_POLICY,
     BlockScanAlgorithm          _SCAN_ALGORITHM>
-struct BlockScanTilesPolicy
+struct TilesScanPolicy
 {
     enum
     {
@@ -87,15 +87,15 @@ struct BlockScanTilesPolicy
 
 
 /**
- * \brief BlockScanTiles implements an abstraction of CUDA thread blocks for
+ * \brief TilesScan implements an abstraction of CUDA thread blocks for
  * participating in device-wide reduction.
  */
 template <
-    typename BlockScanTilesPolicy,
-    typename InputIterator,
-    typename OutputIterator,
+    typename TilesScanPolicy,
+    typename InputIteratorRA,
+    typename OutputIteratorRA,
     typename SizeT>
-class BlockScanTiles
+class TilesScan
 {
 public:
 
@@ -104,15 +104,15 @@ public:
     //---------------------------------------------------------------------
 
     // Data type of input iterator
-    typedef typename std::iterator_traits<InputIterator>::value_type T;
+    typedef typename std::iterator_traits<InputIteratorRA>::value_type T;
 
     // Data type of block-signaling flag
-    typedef typename BlockScanTilesPolicy::BlockFlag BlockFlag;
+    typedef typename TilesScanPolicy::BlockFlag BlockFlag;
 
     // Constants
     enum
     {
-        TILE_ITEMS = BlockScanTilesPolicy::BLOCK_THREADS * BlockScanTilesPolicy::ITEMS_PER_THREAD,
+        TILE_ITEMS = TilesScanPolicy::BLOCK_THREADS * TilesScanPolicy::ITEMS_PER_THREAD,
     };
 
     struct Signal
@@ -145,23 +145,23 @@ public:
 
     // Parameterized block load
     typedef BlockLoad<
-        InputIterator,
-        BlockScanTilesPolicy::BLOCK_THREADS,
-        BlockScanTilesPolicy::ITEMS_PER_THREAD,
-        BlockScanTilesPolicy::LOAD_POLICY>          BlockLoadT;
+        InputIteratorRA,
+        TilesScanPolicy::BLOCK_THREADS,
+        TilesScanPolicy::ITEMS_PER_THREAD,
+        TilesScanPolicy::LOAD_POLICY>          BlockLoadT;
 
     // Parameterized block store
     typedef BlockStore<
-        OutputIterator,
-        BlockScanTilesPolicy::BLOCK_THREADS,
-        BlockScanTilesPolicy::ITEMS_PER_THREAD,
-        BlockScanTilesPolicy::STORE_POLICY>         BlockStoreT;
+        OutputIteratorRA,
+        TilesScanPolicy::BLOCK_THREADS,
+        TilesScanPolicy::ITEMS_PER_THREAD,
+        TilesScanPolicy::STORE_POLICY>         BlockStoreT;
 
     // Parameterized block scan
     typedef BlockScan<
         T,
-        BlockScanTilesPolicy::BLOCK_THREADS,
-        BlockScanTilesPolicy::SCAN_ALGORITHM>       BlockScanT;
+        TilesScanPolicy::BLOCK_THREADS,
+        TilesScanPolicy::SCAN_ALGORITHM>       BlockScanT;
 
     // Parameterized warp reduce
     typedef WarpReduce<Signal>                      WarpReduceT;
@@ -264,13 +264,13 @@ public:
         typename    ScanOp>
     static __device__ __forceinline__ void ConsumeFullTile(
         SmemStorage             &smem_storage,
-        InputIterator           d_in,
-        OutputIterator          d_out,
+        InputIteratorRA           d_in,
+        OutputIteratorRA          d_out,
         SizeT                   block_offset,
         ScanOp                  &scan_op,
         T                       &thread_aggregate)
     {
-        T items[BlockScanTilesPolicy::ITEMS_PER_THREAD];
+        T items[TilesScanPolicy::ITEMS_PER_THREAD];
 
         BlockLoadT::Load(smem_storage.load, d_in + block_offset, items);
 
@@ -358,7 +358,7 @@ public:
         typename ScanOp>
     static __device__ __forceinline__ void ConsumePartialTile(
         SmemStorage             &smem_storage,
-        InputIterator           d_in,
+        InputIteratorRA           d_in,
         SizeT                   block_offset,
         const SizeT             &block_oob,
         ScanOp             &scan_op,
@@ -394,7 +394,7 @@ public:
     template <typename SizeT, typename ScanOp>
     static __device__ __forceinline__ T ProcessTilesEvenShare(
         SmemStorage             &smem_storage,
-        InputIterator           d_in,
+        InputIteratorRA           d_in,
         SizeT                   block_offset,
         const SizeT             &block_oob,
         ScanOp             &scan_op)
@@ -440,7 +440,7 @@ public:
     template <typename SizeT, typename ScanOp>
     static __device__ __forceinline__ T ProcessTilesDynamic(
         SmemStorage             &smem_storage,
-        InputIterator           d_in,
+        InputIteratorRA           d_in,
         SizeT                   num_items,
         GridQueue<SizeT>        &queue,
         ScanOp             &scan_op)
@@ -507,20 +507,20 @@ public:
 
 
     /**
-     * \brief Consumes input tiles according to <tt>BlockScanTilesPolicy::GRID_MAPPING</tt>, computing a threadblock-wide reduction for thread<sub>0</sub> using the specified binary reduction functor.
+     * \brief Consumes input tiles according to <tt>TilesScanPolicy::GRID_MAPPING</tt>, computing a threadblock-wide reduction for thread<sub>0</sub> using the specified binary reduction functor.
      *
      * The return value is undefined in threads other than thread<sub>0</sub>.
      */
     template <typename SizeT, typename ScanOp>
     static __device__ __forceinline__ T ProcessTiles(
         SmemStorage             &smem_storage,
-        InputIterator           d_in,
+        InputIteratorRA           d_in,
         SizeT                   num_items,
         GridEvenShare<SizeT>    &even_share,
         GridQueue<SizeT>        &queue,
         ScanOp             &scan_op)
     {
-        if (BlockScanTilesPolicy::GRID_MAPPING == GRID_MAPPING_EVEN_SHARE)
+        if (TilesScanPolicy::GRID_MAPPING == GRID_MAPPING_EVEN_SHARE)
         {
             // Even share
             even_share.BlockInit();

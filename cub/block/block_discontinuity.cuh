@@ -60,7 +60,7 @@ namespace cub {
  * orchestrating segmented scans and reductions.
  *
  * \par
- * For convenience, BlockDiscontinuity exposes a spectrum of entrypoints that differ by:
+ * For convenience, BlockDiscontinuity provides alternative entrypoints that differ by:
  * - How the first item is handled (always-flagged <em>vs.</em> compared to a specific block-wide predecessor)
  * - What is computed (discontinuity flags only <em>vs.</em> discontinuity flags and a copy of the last tile item for thread<sub><em>0</em></sub>)
  *
@@ -147,6 +147,47 @@ private:
         T last_items[BLOCK_THREADS];      ///< Last element from each thread's input
     };
 
+    /// Some metaprogramming to determine whether or not FlagOp functor's operator () has a third index param
+    template <typename FlagOp>
+    struct FlagOpHasIdxParam
+    {
+        template<typename FlagOpT, bool (FlagOpT::*)(const T &a, const T &b, unsigned int idx) const>   struct SFINAE1 {};
+        template <typename FlagOpT, bool (FlagOpT::*)(const T &a, const T &b, unsigned int idx)>        struct SFINAE2 {};
+        template <typename FlagOpT, bool (FlagOpT::*)(T a, T b, unsigned int idx) const>                struct SFINAE3 {};
+        template <typename FlagOpT, bool (FlagOpT::*)(T a, T b, unsigned int idx)>                      struct SFINAE4 {};
+
+        template <typename FlagOpT> static char Test(SFINAE1<FlagOpT, &FlagOpT::operator()> *);
+        template <typename FlagOpT> static char Test(SFINAE2<FlagOpT, &FlagOpT::operator()> *);
+        template <typename FlagOpT> static char Test(SFINAE3<FlagOpT, &FlagOpT::operator()> *);
+        template <typename FlagOpT> static char Test(SFINAE4<FlagOpT, &FlagOpT::operator()> *);
+        template <typename FlagOpT> static int Test(...);
+
+        static const bool HAS_PARAM = sizeof(Test<FlagOp>(NULL)) == sizeof(char);
+    };
+
+    // Specialization for when FlagOp has third index param
+    template <typename FlagOp, bool HAS_PARAM = FlagOpHasIdxParam<FlagOp>::HAS_PARAM>
+    struct ApplyOp
+    {
+        // Apply flag operator
+        static __device__ __forceinline__ bool Flag(FlagOp flag_op, const T &a, const T &b, unsigned int idx)
+        {
+            return flag_op(a, b, idx);
+        }
+    };
+
+    // Specialization for when FlagOp does not have a third index param
+    template <typename FlagOp>
+    struct ApplyOp<FlagOp, false>
+    {
+        // Apply flag operator
+        static __device__ __forceinline__ bool Flag(FlagOp flag_op, const T &a, const T &b, unsigned int idx)
+        {
+            return flag_op(a, b);
+        }
+    };
+
+
 public:
 
     /// \smemstorage{BlockDiscontinuity}
@@ -170,17 +211,17 @@ public:
      *
      * \tparam ITEMS_PER_THREAD     <b>[inferred]</b> The number of consecutive items partitioned onto each thread.
      * \tparam FlagT                <b>[inferred]</b> The flag type (must be an integer type)
-     * \tparam FlagOp               <b>[inferred]</b> Binary boolean functor type, having input parameters <tt>(const T &a, const T &b)</tt> and returning \p true if a discontinuity exists between \p a and \p b, otherwise \p false.
+     * \tparam FlagOp               <b>[inferred]</b> Binary predicate functor type having member <tt>T operator()(const T &a, const T &b)</tt> or member <tt>T operator()(const T &a, const T &b, unsigned int b_index)</tt>, and returning \p true if a discontinuity exists between \p a and \p b, otherwise \p false.  \p b_index is the rank of b in the aggregate tile of data.
      */
     template <
         int             ITEMS_PER_THREAD,
         typename        FlagT,
         typename        FlagOp>
     static __device__ __forceinline__ void Flag(
-        SmemStorage     &smem_storage,                  ///< [in] Shared reference to opaque SmemStorage layout
-        T               (&input)[ITEMS_PER_THREAD],     ///< [in] Input items
+        SmemStorage     &smem_storage,                  ///< [in] Reference to shared memory allocation having layout type SmemStorage
+        T               (&input)[ITEMS_PER_THREAD],     ///< [in] Calling thread's input items
         FlagOp          flag_op,                        ///< [in] Binary boolean flag predicate
-        FlagT           (&flags)[ITEMS_PER_THREAD],     ///< [out] Discontinuity flags
+        FlagT           (&flags)[ITEMS_PER_THREAD],     ///< [out] Calling thread's discontinuity flags
         T               &last_tile_item)                ///< [out] <b>[<em>thread</em><sub>0</sub> only]</b> The last tile item (<tt>input<sub><em>ITEMS_PER_THREAD</em>-1</sub></tt> from thread<sub><tt><em>BLOCK_THREADS</em></tt>-1</sub>)
     {
         // Share last item
@@ -196,15 +237,22 @@ public:
         }
         else
         {
-            flags[0] = flag_op(smem_storage.last_items[threadIdx.x - 1], input[0]);
+            flags[0] = ApplyOp<FlagOp>::Flag(
+                flag_op,
+                smem_storage.last_items[threadIdx.x - 1],
+                input[0],
+                0);
         }
-
 
         // Set flags for remaining items
         #pragma unroll
         for (int ITEM = 1; ITEM < ITEMS_PER_THREAD; ITEM++)
         {
-            flags[ITEM] = flag_op(input[ITEM - 1], input[ITEM]);
+            flags[ITEM] = ApplyOp<FlagOp>::Flag(
+                flag_op,
+                input[ITEM - 1],
+                input[ITEM],
+                (threadIdx.x * ITEMS_PER_THREAD) + ITEM);
         }
     }
 
@@ -226,17 +274,17 @@ public:
      *
      * \tparam ITEMS_PER_THREAD     <b>[inferred]</b> The number of consecutive items partitioned onto each thread.
      * \tparam FlagT                <b>[inferred]</b> The flag type (must be an integer type)
-     * \tparam FlagOp               <b>[inferred]</b> Binary boolean functor type, having input parameters <tt>(const T &a, const T &b)</tt> and returning \p true if a discontinuity exists between \p a and \p b, otherwise \p false.
+     * \tparam FlagOp               <b>[inferred]</b> Binary predicate functor type having member <tt>T operator()(const T &a, const T &b)</tt> or member <tt>T operator()(const T &a, const T &b, unsigned int b_index)</tt>, and returning \p true if a discontinuity exists between \p a and \p b, otherwise \p false.  \p b_index is the rank of b in the aggregate tile of data.
      */
     template <
         int             ITEMS_PER_THREAD,
         typename        FlagT,
         typename        FlagOp>
     static __device__ __forceinline__ void Flag(
-        SmemStorage     &smem_storage,                  ///< [in] Shared reference to opaque SmemStorage layout
-        T               (&input)[ITEMS_PER_THREAD],     ///< [in] Input items
+        SmemStorage     &smem_storage,                  ///< [in] Reference to shared memory allocation having layout type SmemStorage
+        T               (&input)[ITEMS_PER_THREAD],     ///< [in] Calling thread's input items
         FlagOp          flag_op,                        ///< [in] Binary boolean flag predicate
-        FlagT           (&flags)[ITEMS_PER_THREAD])     ///< [out] Discontinuity flags
+        FlagT           (&flags)[ITEMS_PER_THREAD])     ///< [out] Calling thread's discontinuity flags
     {
         T last_tile_item;   // discard
         Flag(smem_storage, input, flag_op, flags, last_tile_item);
@@ -261,18 +309,18 @@ public:
      *
      * \tparam ITEMS_PER_THREAD     <b>[inferred]</b> The number of consecutive items partitioned onto each thread.
      * \tparam FlagT                <b>[inferred]</b> The flag type (must be an integer type)
-     * \tparam FlagOp               <b>[inferred]</b> Binary boolean functor type, having input parameters <tt>(const T &a, const T &b)</tt> and returning \p true if a discontinuity exists between \p a and \p b, otherwise \p false.
+     * \tparam FlagOp               <b>[inferred]</b> Binary predicate functor type having member <tt>T operator()(const T &a, const T &b)</tt> or member <tt>T operator()(const T &a, const T &b, unsigned int b_index)</tt>, and returning \p true if a discontinuity exists between \p a and \p b, otherwise \p false.  \p b_index is the rank of b in the aggregate tile of data.
      */
     template <
         int             ITEMS_PER_THREAD,
         typename        FlagT,
         typename        FlagOp>
     static __device__ __forceinline__ void Flag(
-        SmemStorage     &smem_storage,                  ///< [in] Shared reference to opaque SmemStorage layout
-        T               (&input)[ITEMS_PER_THREAD],     ///< [in] Input items
+        SmemStorage     &smem_storage,                  ///< [in] Reference to shared memory allocation having layout type SmemStorage
+        T               (&input)[ITEMS_PER_THREAD],     ///< [in] Calling thread's input items
         T               tile_predecessor,               ///< [in] <b>[<em>thread</em><sub>0</sub> only]</b> Item with which to compare the first tile item (<tt>input<sub>0</sub></tt>from <em>thread</em><sub>0</sub>).
         FlagOp          flag_op,                        ///< [in] Binary boolean flag predicate
-        FlagT           (&flags)[ITEMS_PER_THREAD],     ///< [out] Discontinuity flags
+        FlagT           (&flags)[ITEMS_PER_THREAD],     ///< [out] Calling thread's discontinuity flags
         T               &last_tile_item)                ///< [out] <b>[<em>thread</em><sub>0</sub> only]</b> The last tile item (<tt>input<sub><em>ITEMS_PER_THREAD</em>-1</sub></tt> from <em>thread</em><sub><tt><em>BLOCK_THREADS</em></tt>-1</sub>)
     {
         // Share last item
@@ -291,14 +339,21 @@ public:
         {
             prefix = smem_storage.last_items[threadIdx.x - 1];
         }
-        flags[0] = flag_op(prefix, input[0]);
-
+        flags[0] = ApplyOp<FlagOp>::Flag(
+            flag_op,
+            prefix,
+            input[0],
+            0);
 
         // Set flags for remaining items
         #pragma unroll
         for (int ITEM = 1; ITEM < ITEMS_PER_THREAD; ITEM++)
         {
-            flags[ITEM] = flag_op(input[ITEM - 1], input[ITEM]);
+            flags[ITEM] = ApplyOp<FlagOp>::Flag(
+                flag_op,
+                input[ITEM - 1],
+                input[ITEM],
+                (threadIdx.x * ITEMS_PER_THREAD) + ITEM);
         }
     }
 
@@ -320,18 +375,18 @@ public:
      *
      * \tparam ITEMS_PER_THREAD     <b>[inferred]</b> The number of consecutive items partitioned onto each thread.
      * \tparam FlagT                <b>[inferred]</b> The flag type (must be an integer type)
-     * \tparam FlagOp               <b>[inferred]</b> Binary boolean functor type, having input parameters <tt>(const T &a, const T &b)</tt> and returning \p true if a discontinuity exists between \p a and \p b, otherwise \p false.
+     * \tparam FlagOp               <b>[inferred]</b> Binary predicate functor type having member <tt>T operator()(const T &a, const T &b)</tt> or member <tt>T operator()(const T &a, const T &b, unsigned int b_index)</tt>, and returning \p true if a discontinuity exists between \p a and \p b, otherwise \p false.  \p b_index is the rank of b in the aggregate tile of data.
      */
     template <
         int             ITEMS_PER_THREAD,
         typename        FlagT,
         typename        FlagOp>
     static __device__ __forceinline__ void Flag(
-        SmemStorage     &smem_storage,                  ///< [in] Shared reference to opaque SmemStorage layout
-        T               (&input)[ITEMS_PER_THREAD],     ///< [in] Input items
+        SmemStorage     &smem_storage,                  ///< [in] Reference to shared memory allocation having layout type SmemStorage
+        T               (&input)[ITEMS_PER_THREAD],     ///< [in] Calling thread's input items
         T               tile_predecessor,               ///< [in] <b>[<em>thread</em><sub>0</sub> only]</b> Item with which to compare the first tile item (<tt>input<sub>0</sub></tt>from <em>thread</em><sub>0</sub>).
         FlagOp          flag_op,                        ///< [in] Binary boolean flag predicate
-        FlagT           (&flags)[ITEMS_PER_THREAD])     ///< [out] Discontinuity flags
+        FlagT           (&flags)[ITEMS_PER_THREAD])     ///< [out] Calling thread's discontinuity flags
     {
         T last_tile_item;   // discard
         Flag(smem_storage, input, tile_predecessor, flag_op, flags, last_tile_item);

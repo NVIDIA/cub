@@ -202,7 +202,7 @@ public:
      * \smemreuse
      */
     static __device__ __forceinline__ void BlockedToStriped(
-        SmemStorage     &smem_storage,              ///< [in] Shared reference to opaque SmemStorage layout
+        SmemStorage     &smem_storage,              ///< [in] Reference to shared memory allocation having layout type SmemStorage
         T               items[ITEMS_PER_THREAD])    ///< [in-out] Items to exchange, converting between <em>blocked</em> and <em>striped</em> arrangements.
     {
         // Scatter items to shared memory
@@ -221,7 +221,7 @@ public:
      * \smemreuse
      */
     static __device__ __forceinline__ void StripedToBlocked(
-        SmemStorage      &smem_storage,             ///< [in] Shared reference to opaque SmemStorage layout
+        SmemStorage      &smem_storage,             ///< [in] Reference to shared memory allocation having layout type SmemStorage
         T                items[ITEMS_PER_THREAD])   ///< [in-out] Items to exchange, converting between <em>striped</em> and <em>blocked</em> arrangements.
     {
         // Scatter items to shared memory
@@ -245,7 +245,7 @@ public:
      * \smemreuse
      */
     static __device__ __forceinline__ void ScatterToBlocked(
-        SmemStorage     &smem_storage,              ///< [in] Shared reference to opaque SmemStorage layout
+        SmemStorage     &smem_storage,              ///< [in] Reference to shared memory allocation having layout type SmemStorage
         T               items[ITEMS_PER_THREAD],    ///< [in-out] Items to exchange
         unsigned int    ranks[ITEMS_PER_THREAD])    ///< [in] Corresponding scatter ranks
     {
@@ -265,7 +265,7 @@ public:
      * \smemreuse
      */
     static __device__ __forceinline__ void ScatterToStriped(
-        SmemStorage     &smem_storage,              ///< [in] Shared reference to opaque SmemStorage layout
+        SmemStorage     &smem_storage,              ///< [in] Reference to shared memory allocation having layout type SmemStorage
         T               items[ITEMS_PER_THREAD],    ///< [in-out] Items to exchange
         unsigned int    ranks[ITEMS_PER_THREAD])    ///< [in] Corresponding scatter ranks
     {

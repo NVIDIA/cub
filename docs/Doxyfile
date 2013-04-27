@@ -679,6 +679,7 @@ INPUT                  += ../cub/block/block_reduce.cuh
 INPUT                  += ../cub/block/block_scan.cuh 
 INPUT                  += ../cub/block/block_store.cuh 
 INPUT                  += ../cub/device/device_reduce.cuh 
+INPUT                  += ../cub/device/device_histo_256.cuh 
 INPUT                  += ../cub/thread/thread_load.cuh  
 INPUT                  += ../cub/thread/thread_operators.cuh 
 INPUT                  += ../cub/thread/thread_reduce.cuh  

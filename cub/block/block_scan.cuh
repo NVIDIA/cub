@@ -126,7 +126,7 @@ enum BlockScanAlgorithm
  * the <em>i</em><sup>th</sup> output reduction.
  *
  * \par
- * For convenience, BlockScan exposes a spectrum of entrypoints that differ by:
+ * For convenience, BlockScan provides alternative entrypoints that differ by:
  * - Operator (generic scan <em>vs.</em> prefix sum for numeric types)
  * - Granularity (single <em>vs.</em> multiple data items per thread)
  * - Output ordering (inclusive <em>vs.</em> exclusive)
@@ -459,7 +459,7 @@ private:
         /// Computes an exclusive threadblock-wide prefix scan using the specified binary \p scan_op functor.  Each thread contributes one input element.  Also provides every thread with the block-wide \p block_aggregate of all inputs.
         template <typename ScanOp>
         static __device__ __forceinline__ void ExclusiveScan(
-            SmemStorage     &smem_storage,      ///< [in] Shared reference to opaque SmemStorage layout
+            SmemStorage     &smem_storage,      ///< [in] Reference to shared memory allocation having layout type SmemStorage
             T               input,              ///< [in] Calling thread's input items
             T               &output,            ///< [out] Calling thread's output items (may be aliased to \p input)
             const T         &identity,          ///< [in] Identity value
@@ -521,7 +521,7 @@ private:
             typename        ScanOp,
             typename        BlockPrefixOp>
         static __device__ __forceinline__ void ExclusiveScan(
-            SmemStorage     &smem_storage,                  ///< [in] Shared reference to opaque SmemStorage layout
+            SmemStorage     &smem_storage,                  ///< [in] Reference to shared memory allocation having layout type SmemStorage
             T               input,                          ///< [in] Calling thread's input item
             T               &output,                        ///< [out] Calling thread's output item (may be aliased to \p input)
             T               identity,                       ///< [in] Identity value
@@ -584,7 +584,7 @@ private:
         /// Computes an exclusive threadblock-wide prefix scan using the specified binary \p scan_op functor.  Each thread contributes one input element.  Also provides every thread with the block-wide \p block_aggregate of all inputs.  With no identity value, the output computed for <em>thread</em><sub>0</sub> is invalid.
         template <typename ScanOp>
         static __device__ __forceinline__ void ExclusiveScan(
-            SmemStorage     &smem_storage,                  ///< [in] Shared reference to opaque SmemStorage layout
+            SmemStorage     &smem_storage,                  ///< [in] Reference to shared memory allocation having layout type SmemStorage
             T               input,                          ///< [in] Calling thread's input item
             T               &output,                        ///< [out] Calling thread's output item (may be aliased to \p input)
             ScanOp          scan_op,                        ///< [in] Binary scan operator
@@ -643,7 +643,7 @@ private:
         typename ScanOp,
         typename BlockPrefixOp>
         static __device__ __forceinline__ void ExclusiveScan(
-            SmemStorage     &smem_storage,                  ///< [in] Shared reference to opaque SmemStorage layout
+            SmemStorage     &smem_storage,                  ///< [in] Reference to shared memory allocation having layout type SmemStorage
             T               input,                          ///< [in] Calling thread's input item
             T               &output,                        ///< [out] Calling thread's output item (may be aliased to \p input)
             ScanOp          scan_op,                        ///< [in] Binary scan operator
@@ -702,7 +702,7 @@ private:
 
         /// Computes an exclusive threadblock-wide prefix scan using addition (+) as the scan operator.  Each thread contributes one input element.  Also provides every thread with the block-wide \p block_aggregate of all inputs.
         static __device__ __forceinline__ void ExclusiveSum(
-            SmemStorage     &smem_storage,                  ///< [in] Shared reference to opaque SmemStorage layout
+            SmemStorage     &smem_storage,                  ///< [in] Reference to shared memory allocation having layout type SmemStorage
             T               input,                          ///< [in] Calling thread's input item
             T               &output,                        ///< [out] Calling thread's output item (may be aliased to \p input)
             T               &block_aggregate)               ///< [out] Threadblock-wide aggregate reduction of input items
@@ -759,7 +759,7 @@ private:
         /// Computes an exclusive threadblock-wide prefix scan using addition (+) as the scan operator.  Each thread contributes one input element.  Instead of using 0 as the threadblock-wide prefix, the call-back functor \p block_prefix_op is invoked by the first warp in the block, and the value returned by <em>lane</em><sub>0</sub> in that warp is used as the "seed" value that logically prefixes the threadblock's scan inputs.  Also provides every thread with the block-wide \p block_aggregate of all inputs.
         template <typename BlockPrefixOp>
         static __device__ __forceinline__ void ExclusiveSum(
-            SmemStorage     &smem_storage,                  ///< [in] Shared reference to opaque SmemStorage layout
+            SmemStorage     &smem_storage,                  ///< [in] Reference to shared memory allocation having layout type SmemStorage
             T               input,                          ///< [in] Calling thread's input item
             T               &output,                        ///< [out] Calling thread's output item (may be aliased to \p input)
             T               &block_aggregate,               ///< [out] Threadblock-wide aggregate reduction of input items (exclusive of the \p block_prefix_op value)
@@ -819,7 +819,7 @@ private:
         /// Computes an inclusive threadblock-wide prefix scan using the specified binary \p scan_op functor.  Each thread contributes one input element.  Also provides every thread with the block-wide \p block_aggregate of all inputs.
         template <typename ScanOp>
         static __device__ __forceinline__ void InclusiveScan(
-            SmemStorage     &smem_storage,                  ///< [in] Shared reference to opaque SmemStorage layout
+            SmemStorage     &smem_storage,                  ///< [in] Reference to shared memory allocation having layout type SmemStorage
             T               input,                          ///< [in] Calling thread's input item
             T               &output,                        ///< [out] Calling thread's output item (may be aliased to \p input)
             ScanOp          scan_op,                        ///< [in] Binary scan operator
@@ -878,7 +878,7 @@ private:
         typename ScanOp,
         typename BlockPrefixOp>
         static __device__ __forceinline__ void InclusiveScan(
-            SmemStorage     &smem_storage,                  ///< [in] Shared reference to opaque SmemStorage layout
+            SmemStorage     &smem_storage,                  ///< [in] Reference to shared memory allocation having layout type SmemStorage
             T               input,                          ///< [in] Calling thread's input item
             T               &output,                        ///< [out] Calling thread's output item (may be aliased to \p input)
             ScanOp          scan_op,                        ///< [in] Binary scan operator
@@ -937,7 +937,7 @@ private:
 
         /// Computes an inclusive threadblock-wide prefix scan using the specified binary \p scan_op functor.  Each thread contributes one input element.  Also provides every thread with the block-wide \p block_aggregate of all inputs.
         static __device__ __forceinline__ void InclusiveSum(
-            SmemStorage     &smem_storage,                  ///< [in] Shared reference to opaque SmemStorage layout
+            SmemStorage     &smem_storage,                  ///< [in] Reference to shared memory allocation having layout type SmemStorage
             T               input,                          ///< [in] Calling thread's input item
             T               &output,                        ///< [out] Calling thread's output item (may be aliased to \p input)
             T               &block_aggregate)               ///< [out] Threadblock-wide aggregate reduction of input items
@@ -994,7 +994,7 @@ private:
         /// Computes an inclusive threadblock-wide prefix scan using the specified binary \p scan_op functor.  Each thread contributes one input element.  Instead of using 0 as the threadblock-wide prefix, the call-back functor \p block_prefix_op is invoked by the first warp in the block, and the value returned by <em>lane</em><sub>0</sub> in that warp is used as the "seed" value that logically prefixes the threadblock's scan inputs.  Also provides every thread with the block-wide \p block_aggregate of all inputs.
         template <typename BlockPrefixOp>
         static __device__ __forceinline__ void InclusiveSum(
-            SmemStorage     &smem_storage,                  ///< [in] Shared reference to opaque SmemStorage layout
+            SmemStorage     &smem_storage,                  ///< [in] Reference to shared memory allocation having layout type SmemStorage
             T               input,                          ///< [in] Calling thread's input item
             T               &output,                        ///< [out] Calling thread's output item (may be aliased to \p input)
             T               &block_aggregate,               ///< [out] Threadblock-wide aggregate reduction of input items (exclusive of the \p block_prefix_op value)
@@ -1084,7 +1084,7 @@ private:
         /// Update the calling thread's partial reduction with the warp-wide aggregates from preceeding warps.  Also returns block-wide aggregate in <em>thread</em><sub>0</sub>.
         template <typename ScanOp>
         static __device__ __forceinline__ void ApplyWarpAggregates(
-            SmemStorage     &smem_storage,      ///< [in] Shared reference to opaque SmemStorage layout
+            SmemStorage     &smem_storage,      ///< [in] Reference to shared memory allocation having layout type SmemStorage
             T               &partial,           ///< [out] The calling thread's partial reduction
             ScanOp          scan_op,            ///< [in] Binary scan operator
             T               warp_aggregate,     ///< [in] <b>[<em>lane</em><sub>0</sub>s only]</b> Warp-wide aggregate reduction of input items
@@ -1118,7 +1118,7 @@ private:
         /// Computes an exclusive threadblock-wide prefix scan using the specified binary \p scan_op functor.  Each thread contributes one input element.  Also provides every thread with the block-wide \p block_aggregate of all inputs.
         template <typename ScanOp>
         static __device__ __forceinline__ void ExclusiveScan(
-            SmemStorage     &smem_storage,      ///< [in] Shared reference to opaque SmemStorage layout
+            SmemStorage     &smem_storage,      ///< [in] Reference to shared memory allocation having layout type SmemStorage
             T               input,              ///< [in] Calling thread's input items
             T               &output,            ///< [out] Calling thread's output items (may be aliased to \p input)
             const T         &identity,          ///< [in] Identity value
@@ -1138,7 +1138,7 @@ private:
         typename ScanOp,
         typename BlockPrefixOp>
         static __device__ __forceinline__ void ExclusiveScan(
-            SmemStorage     &smem_storage,                  ///< [in] Shared reference to opaque SmemStorage layout
+            SmemStorage     &smem_storage,                  ///< [in] Reference to shared memory allocation having layout type SmemStorage
             T               input,                          ///< [in] Calling thread's input item
             T               &output,                        ///< [out] Calling thread's output item (may be aliased to \p input)
             T               identity,                       ///< [in] Identity value
@@ -1164,7 +1164,7 @@ private:
         /// Computes an exclusive threadblock-wide prefix scan using the specified binary \p scan_op functor.  Each thread contributes one input element.  Also provides every thread with the block-wide \p block_aggregate of all inputs.  With no identity value, the output computed for <em>thread</em><sub>0</sub> is invalid.
         template <typename ScanOp>
         static __device__ __forceinline__ void ExclusiveScan(
-            SmemStorage     &smem_storage,                  ///< [in] Shared reference to opaque SmemStorage layout
+            SmemStorage     &smem_storage,                  ///< [in] Reference to shared memory allocation having layout type SmemStorage
             T               input,                          ///< [in] Calling thread's input item
             T               &output,                        ///< [out] Calling thread's output item (may be aliased to \p input)
             ScanOp          scan_op,                        ///< [in] Binary scan operator
@@ -1184,7 +1184,7 @@ private:
         typename ScanOp,
         typename BlockPrefixOp>
         static __device__ __forceinline__ void ExclusiveScan(
-            SmemStorage     &smem_storage,                  ///< [in] Shared reference to opaque SmemStorage layout
+            SmemStorage     &smem_storage,                  ///< [in] Reference to shared memory allocation having layout type SmemStorage
             T               input,                          ///< [in] Calling thread's input item
             T               &output,                        ///< [out] Calling thread's output item (may be aliased to \p input)
             ScanOp          scan_op,                        ///< [in] Binary scan operator
@@ -1211,7 +1211,7 @@ private:
 
         /// Computes an exclusive threadblock-wide prefix scan using addition (+) as the scan operator.  Each thread contributes one input element.  Also provides every thread with the block-wide \p block_aggregate of all inputs.
         static __device__ __forceinline__ void ExclusiveSum(
-            SmemStorage     &smem_storage,                  ///< [in] Shared reference to opaque SmemStorage layout
+            SmemStorage     &smem_storage,                  ///< [in] Reference to shared memory allocation having layout type SmemStorage
             T               input,                          ///< [in] Calling thread's input item
             T               &output,                        ///< [out] Calling thread's output item (may be aliased to \p input)
             T               &block_aggregate)               ///< [out] Threadblock-wide aggregate reduction of input items
@@ -1227,7 +1227,7 @@ private:
         /// Computes an exclusive threadblock-wide prefix scan using addition (+) as the scan operator.  Each thread contributes one input element.  Instead of using 0 as the threadblock-wide prefix, the call-back functor \p block_prefix_op is invoked by the first warp in the block, and the value returned by <em>lane</em><sub>0</sub> in that warp is used as the "seed" value that logically prefixes the threadblock's scan inputs.  Also provides every thread with the block-wide \p block_aggregate of all inputs.
         template <typename BlockPrefixOp>
         static __device__ __forceinline__ void ExclusiveSum(
-            SmemStorage     &smem_storage,                  ///< [in] Shared reference to opaque SmemStorage layout
+            SmemStorage     &smem_storage,                  ///< [in] Reference to shared memory allocation having layout type SmemStorage
             T               input,                          ///< [in] Calling thread's input item
             T               &output,                        ///< [out] Calling thread's output item (may be aliased to \p input)
             T               &block_aggregate,               ///< [out] Threadblock-wide aggregate reduction of input items (exclusive of the \p block_prefix_op value)
@@ -1253,7 +1253,7 @@ private:
         /// Computes an inclusive threadblock-wide prefix scan using the specified binary \p scan_op functor.  Each thread contributes one input element.  Also provides every thread with the block-wide \p block_aggregate of all inputs.
         template <typename ScanOp>
         static __device__ __forceinline__ void InclusiveScan(
-            SmemStorage     &smem_storage,                  ///< [in] Shared reference to opaque SmemStorage layout
+            SmemStorage     &smem_storage,                  ///< [in] Reference to shared memory allocation having layout type SmemStorage
             T               input,                          ///< [in] Calling thread's input item
             T               &output,                        ///< [out] Calling thread's output item (may be aliased to \p input)
             ScanOp          scan_op,                        ///< [in] Binary scan operator
@@ -1273,7 +1273,7 @@ private:
         typename ScanOp,
         typename BlockPrefixOp>
         static __device__ __forceinline__ void InclusiveScan(
-            SmemStorage     &smem_storage,                  ///< [in] Shared reference to opaque SmemStorage layout
+            SmemStorage     &smem_storage,                  ///< [in] Reference to shared memory allocation having layout type SmemStorage
             T               input,                          ///< [in] Calling thread's input item
             T               &output,                        ///< [out] Calling thread's output item (may be aliased to \p input)
             ScanOp          scan_op,                        ///< [in] Binary scan operator
@@ -1298,7 +1298,7 @@ private:
 
         /// Computes an inclusive threadblock-wide prefix scan using the specified binary \p scan_op functor.  Each thread contributes one input element.  Also provides every thread with the block-wide \p block_aggregate of all inputs.
         static __device__ __forceinline__ void InclusiveSum(
-            SmemStorage     &smem_storage,                  ///< [in] Shared reference to opaque SmemStorage layout
+            SmemStorage     &smem_storage,                  ///< [in] Reference to shared memory allocation having layout type SmemStorage
             T               input,                          ///< [in] Calling thread's input item
             T               &output,                        ///< [out] Calling thread's output item (may be aliased to \p input)
             T               &block_aggregate)               ///< [out] Threadblock-wide aggregate reduction of input items
@@ -1314,7 +1314,7 @@ private:
         /// Computes an inclusive threadblock-wide prefix scan using the specified binary \p scan_op functor.  Each thread contributes one input element.  Instead of using 0 as the threadblock-wide prefix, the call-back functor \p block_prefix_op is invoked by the first warp in the block, and the value returned by <em>lane</em><sub>0</sub> in that warp is used as the "seed" value that logically prefixes the threadblock's scan inputs.  Also provides every thread with the block-wide \p block_aggregate of all inputs.
         template <typename BlockPrefixOp>
         static __device__ __forceinline__ void InclusiveSum(
-            SmemStorage     &smem_storage,                  ///< [in] Shared reference to opaque SmemStorage layout
+            SmemStorage     &smem_storage,                  ///< [in] Reference to shared memory allocation having layout type SmemStorage
             T               input,                          ///< [in] Calling thread's input item
             T               &output,                        ///< [out] Calling thread's output item (may be aliased to \p input)
             T               &block_aggregate,               ///< [out] Threadblock-wide aggregate reduction of input items (exclusive of the \p block_prefix_op value)
@@ -1363,7 +1363,7 @@ public:
      * \smemreuse
      */
     static __device__ __forceinline__ void ExclusiveSum(
-        SmemStorage     &smem_storage,                  ///< [in] Shared reference to opaque SmemStorage layout
+        SmemStorage     &smem_storage,                  ///< [in] Reference to shared memory allocation having layout type SmemStorage
         T               input,                          ///< [in] Calling thread's input item
         T               &output)                        ///< [out] Calling thread's output item (may be aliased to \p input)
     {
@@ -1381,7 +1381,7 @@ public:
      */
     template <int ITEMS_PER_THREAD>
     static __device__ __forceinline__ void ExclusiveSum(
-        SmemStorage        &smem_storage,               ///< [in] Shared reference to opaque SmemStorage layout
+        SmemStorage        &smem_storage,               ///< [in] Reference to shared memory allocation having layout type SmemStorage
         T                 (&input)[ITEMS_PER_THREAD],   ///< [in] Calling thread's input items
         T                 (&output)[ITEMS_PER_THREAD])  ///< [out] Calling thread's output items (may be aliased to \p input)
     {
@@ -1403,7 +1403,7 @@ public:
      * \smemreuse
      */
     static __device__ __forceinline__ void ExclusiveSum(
-        SmemStorage     &smem_storage,                  ///< [in] Shared reference to opaque SmemStorage layout
+        SmemStorage     &smem_storage,                  ///< [in] Reference to shared memory allocation having layout type SmemStorage
         T               input,                          ///< [in] Calling thread's input item
         T               &output,                        ///< [out] Calling thread's output item (may be aliased to \p input)
         T               &block_aggregate)               ///< [out] Threadblock-wide aggregate reduction of input items
@@ -1421,7 +1421,7 @@ public:
      */
     template <int ITEMS_PER_THREAD>
     static __device__ __forceinline__ void ExclusiveSum(
-        SmemStorage        &smem_storage,                   ///< [in] Shared reference to opaque SmemStorage layout
+        SmemStorage        &smem_storage,                   ///< [in] Reference to shared memory allocation having layout type SmemStorage
         T                 (&input)[ITEMS_PER_THREAD],       ///< [in] Calling thread's input items
         T                 (&output)[ITEMS_PER_THREAD],      ///< [out] Calling thread's output items (may be aliased to \p input)
         T                 &block_aggregate)                 ///< [out] Threadblock-wide aggregate reduction of input items
@@ -1452,7 +1452,7 @@ public:
      */
     template <typename BlockPrefixOp>
     static __device__ __forceinline__ void ExclusiveSum(
-        SmemStorage     &smem_storage,                  ///< [in] Shared reference to opaque SmemStorage layout
+        SmemStorage     &smem_storage,                  ///< [in] Reference to shared memory allocation having layout type SmemStorage
         T               input,                          ///< [in] Calling thread's input item
         T               &output,                        ///< [out] Calling thread's output item (may be aliased to \p input)
         T               &block_aggregate,               ///< [out] Threadblock-wide aggregate reduction of input items (exclusive of the \p block_prefix_op value)
@@ -1479,7 +1479,7 @@ public:
     int ITEMS_PER_THREAD,
     typename BlockPrefixOp>
     static __device__ __forceinline__ void ExclusiveSum(
-        SmemStorage       &smem_storage,                ///< [in] Shared reference to opaque SmemStorage layout
+        SmemStorage       &smem_storage,                ///< [in] Reference to shared memory allocation having layout type SmemStorage
         T                 (&input)[ITEMS_PER_THREAD],   ///< [in] Calling thread's input items
         T                 (&output)[ITEMS_PER_THREAD],  ///< [out] Calling thread's output items (may be aliased to \p input)
         T                 &block_aggregate,             ///< [out] Threadblock-wide aggregate reduction of input items (exclusive of the \p block_prefix_op value)
@@ -1510,7 +1510,7 @@ public:
      * \smemreuse
      */
     static __device__ __forceinline__ void InclusiveSum(
-        SmemStorage     &smem_storage,                  ///< [in] Shared reference to opaque SmemStorage layout
+        SmemStorage     &smem_storage,                  ///< [in] Reference to shared memory allocation having layout type SmemStorage
         T               input,                          ///< [in] Calling thread's input item
         T               &output)                        ///< [out] Calling thread's output item (may be aliased to \p input)
     {
@@ -1528,7 +1528,7 @@ public:
      */
     template <int ITEMS_PER_THREAD>
     static __device__ __forceinline__ void InclusiveSum(
-        SmemStorage     &smem_storage,                  ///< [in] Shared reference to opaque SmemStorage layout
+        SmemStorage     &smem_storage,                  ///< [in] Reference to shared memory allocation having layout type SmemStorage
         T               (&input)[ITEMS_PER_THREAD],     ///< [in] Calling thread's input items
         T               (&output)[ITEMS_PER_THREAD])    ///< [out] Calling thread's output items (may be aliased to \p input)
     {
@@ -1557,7 +1557,7 @@ public:
      * \smemreuse
      */
     static __device__ __forceinline__ void InclusiveSum(
-        SmemStorage     &smem_storage,                  ///< [in] Shared reference to opaque SmemStorage layout
+        SmemStorage     &smem_storage,                  ///< [in] Reference to shared memory allocation having layout type SmemStorage
         T               input,                          ///< [in] Calling thread's input item
         T               &output,                        ///< [out] Calling thread's output item (may be aliased to \p input)
         T               &block_aggregate)               ///< [out] Threadblock-wide aggregate reduction of input items
@@ -1576,7 +1576,7 @@ public:
      */
     template <int ITEMS_PER_THREAD>
     static __device__ __forceinline__ void InclusiveSum(
-        SmemStorage     &smem_storage,                  ///< [in] Shared reference to opaque SmemStorage layout
+        SmemStorage     &smem_storage,                  ///< [in] Reference to shared memory allocation having layout type SmemStorage
         T               (&input)[ITEMS_PER_THREAD],     ///< [in] Calling thread's input items
         T               (&output)[ITEMS_PER_THREAD],    ///< [out] Calling thread's output items (may be aliased to \p input)
         T               &block_aggregate)               ///< [out] Threadblock-wide aggregate reduction of input items
@@ -1614,7 +1614,7 @@ public:
      */
     template <typename BlockPrefixOp>
     static __device__ __forceinline__ void InclusiveSum(
-        SmemStorage     &smem_storage,                  ///< [in] Shared reference to opaque SmemStorage layout
+        SmemStorage     &smem_storage,                  ///< [in] Reference to shared memory allocation having layout type SmemStorage
         T               input,                          ///< [in] Calling thread's input item
         T               &output,                        ///< [out] Calling thread's output item (may be aliased to \p input)
         T               &block_aggregate,               ///< [out] Threadblock-wide aggregate reduction of input items (exclusive of the \p block_prefix_op value)
@@ -1641,7 +1641,7 @@ public:
     int ITEMS_PER_THREAD,
     typename BlockPrefixOp>
     static __device__ __forceinline__ void InclusiveSum(
-        SmemStorage     &smem_storage,                  ///< [in] Shared reference to opaque SmemStorage layout
+        SmemStorage     &smem_storage,                  ///< [in] Reference to shared memory allocation having layout type SmemStorage
         T               (&input)[ITEMS_PER_THREAD],     ///< [in] Calling thread's input items
         T               (&output)[ITEMS_PER_THREAD],    ///< [out] Calling thread's output items (may be aliased to \p input)
         T               &block_aggregate,               ///< [out] Threadblock-wide aggregate reduction of input items (exclusive of the \p block_prefix_op value)
@@ -1682,7 +1682,7 @@ public:
      */
     template <typename ScanOp>
     static __device__ __forceinline__ void ExclusiveScan(
-        SmemStorage     &smem_storage,                  ///< [in] Shared reference to opaque SmemStorage layout
+        SmemStorage     &smem_storage,                  ///< [in] Reference to shared memory allocation having layout type SmemStorage
         T               input,                          ///< [in] Calling thread's input item
         T               &output,                        ///< [out] Calling thread's output item (may be aliased to \p input)
         T               identity,                       ///< [in] Identity value
@@ -1706,7 +1706,7 @@ public:
     int             ITEMS_PER_THREAD,
     typename         ScanOp>
     static __device__ __forceinline__ void ExclusiveScan(
-        SmemStorage       &smem_storage,                ///< [in] Shared reference to opaque SmemStorage layout
+        SmemStorage       &smem_storage,                ///< [in] Reference to shared memory allocation having layout type SmemStorage
         T                 (&input)[ITEMS_PER_THREAD],   ///< [in] Calling thread's input items
         T                 (&output)[ITEMS_PER_THREAD],  ///< [out] Calling thread's output items (may be aliased to \p input)
         const T           &identity,                    ///< [in] Identity value
@@ -1732,7 +1732,7 @@ public:
      */
     template <typename ScanOp>
     static __device__ __forceinline__ void ExclusiveScan(
-        SmemStorage     &smem_storage,      ///< [in] Shared reference to opaque SmemStorage layout
+        SmemStorage     &smem_storage,      ///< [in] Reference to shared memory allocation having layout type SmemStorage
         T               input,              ///< [in] Calling thread's input items
         T               &output,            ///< [out] Calling thread's output items (may be aliased to \p input)
         const T         &identity,          ///< [in] Identity value
@@ -1755,7 +1755,7 @@ public:
     int             ITEMS_PER_THREAD,
     typename        ScanOp>
     static __device__ __forceinline__ void ExclusiveScan(
-        SmemStorage       &smem_storage,                ///< [in] Shared reference to opaque SmemStorage layout
+        SmemStorage       &smem_storage,                ///< [in] Reference to shared memory allocation having layout type SmemStorage
         T                 (&input)[ITEMS_PER_THREAD],   ///< [in] Calling thread's input items
         T                 (&output)[ITEMS_PER_THREAD],  ///< [out] Calling thread's output items (may be aliased to \p input)
         const T           &identity,                    ///< [in] Identity value
@@ -1790,7 +1790,7 @@ public:
     typename ScanOp,
     typename BlockPrefixOp>
     static __device__ __forceinline__ void ExclusiveScan(
-        SmemStorage     &smem_storage,                  ///< [in] Shared reference to opaque SmemStorage layout
+        SmemStorage     &smem_storage,                  ///< [in] Reference to shared memory allocation having layout type SmemStorage
         T               input,                          ///< [in] Calling thread's input item
         T               &output,                        ///< [out] Calling thread's output item (may be aliased to \p input)
         T               identity,                       ///< [in] Identity value
@@ -1821,7 +1821,7 @@ public:
     typename        ScanOp,
     typename        BlockPrefixOp>
     static __device__ __forceinline__ void ExclusiveScan(
-        SmemStorage     &smem_storage,                  ///< [in] Shared reference to opaque SmemStorage layout
+        SmemStorage     &smem_storage,                  ///< [in] Reference to shared memory allocation having layout type SmemStorage
         T               (&input)[ITEMS_PER_THREAD],     ///< [in] Calling thread's input items
         T               (&output)[ITEMS_PER_THREAD],    ///< [out] Calling thread's output items (may be aliased to \p input)
         T               identity,                       ///< [in] Identity value
@@ -1856,7 +1856,7 @@ public:
      */
     template <typename ScanOp>
     static __device__ __forceinline__ void ExclusiveScan(
-        SmemStorage     &smem_storage,                  ///< [in] Shared reference to opaque SmemStorage layout
+        SmemStorage     &smem_storage,                  ///< [in] Reference to shared memory allocation having layout type SmemStorage
         T               input,                          ///< [in] Calling thread's input item
         T               &output,                        ///< [out] Calling thread's output item (may be aliased to \p input)
         ScanOp          scan_op)                        ///< [in] Binary scan operator
@@ -1878,7 +1878,7 @@ public:
     int             ITEMS_PER_THREAD,
     typename         ScanOp>
     static __device__ __forceinline__ void ExclusiveScan(
-        SmemStorage        &smem_storage,               ///< [in] Shared reference to opaque SmemStorage layout
+        SmemStorage        &smem_storage,               ///< [in] Reference to shared memory allocation having layout type SmemStorage
         T                 (&input)[ITEMS_PER_THREAD],   ///< [in] Calling thread's input items
         T                 (&output)[ITEMS_PER_THREAD],  ///< [out] Calling thread's output items (may be aliased to \p input)
         ScanOp            scan_op)                      ///< [in] Binary scan operator
@@ -1902,7 +1902,7 @@ public:
      */
     template <typename ScanOp>
     static __device__ __forceinline__ void ExclusiveScan(
-        SmemStorage     &smem_storage,                  ///< [in] Shared reference to opaque SmemStorage layout
+        SmemStorage     &smem_storage,                  ///< [in] Reference to shared memory allocation having layout type SmemStorage
         T               input,                          ///< [in] Calling thread's input item
         T               &output,                        ///< [out] Calling thread's output item (may be aliased to \p input)
         ScanOp          scan_op,                        ///< [in] Binary scan operator
@@ -1926,7 +1926,7 @@ public:
     int             ITEMS_PER_THREAD,
     typename         ScanOp>
     static __device__ __forceinline__ void ExclusiveScan(
-        SmemStorage     &smem_storage,                  ///< [in] Shared reference to opaque SmemStorage layout
+        SmemStorage     &smem_storage,                  ///< [in] Reference to shared memory allocation having layout type SmemStorage
         T               (&input)[ITEMS_PER_THREAD],     ///< [in] Calling thread's input items
         T               (&output)[ITEMS_PER_THREAD],    ///< [out] Calling thread's output items (may be aliased to \p input)
         ScanOp          scan_op,                        ///< [in] Binary scan operator
@@ -1960,7 +1960,7 @@ public:
     typename ScanOp,
     typename BlockPrefixOp>
     static __device__ __forceinline__ void ExclusiveScan(
-        SmemStorage     &smem_storage,                  ///< [in] Shared reference to opaque SmemStorage layout
+        SmemStorage     &smem_storage,                  ///< [in] Reference to shared memory allocation having layout type SmemStorage
         T               input,                          ///< [in] Calling thread's input item
         T               &output,                        ///< [out] Calling thread's output item (may be aliased to \p input)
         ScanOp          scan_op,                        ///< [in] Binary scan operator
@@ -1990,7 +1990,7 @@ public:
     typename        ScanOp,
     typename        BlockPrefixOp>
     static __device__ __forceinline__ void ExclusiveScan(
-        SmemStorage      &smem_storage,               ///< [in] Shared reference to opaque SmemStorage layout
+        SmemStorage      &smem_storage,               ///< [in] Reference to shared memory allocation having layout type SmemStorage
         T               (&input)[ITEMS_PER_THREAD],   ///< [in] Calling thread's input items
         T               (&output)[ITEMS_PER_THREAD],  ///< [out] Calling thread's output items (may be aliased to \p input)
         ScanOp          scan_op,                      ///< [in] Binary scan operator
@@ -2024,7 +2024,7 @@ public:
      */
     template <typename ScanOp>
     static __device__ __forceinline__ void InclusiveScan(
-        SmemStorage     &smem_storage,                  ///< [in] Shared reference to opaque SmemStorage layout
+        SmemStorage     &smem_storage,                  ///< [in] Reference to shared memory allocation having layout type SmemStorage
         T               input,                          ///< [in] Calling thread's input item
         T               &output,                        ///< [out] Calling thread's output item (may be aliased to \p input)
         ScanOp          scan_op)                        ///< [in] Binary scan operator
@@ -2046,7 +2046,7 @@ public:
     int             ITEMS_PER_THREAD,
     typename        ScanOp>
     static __device__ __forceinline__ void InclusiveScan(
-        SmemStorage     &smem_storage,                  ///< [in] Shared reference to opaque SmemStorage layout
+        SmemStorage     &smem_storage,                  ///< [in] Reference to shared memory allocation having layout type SmemStorage
         T               (&input)[ITEMS_PER_THREAD],     ///< [in] Calling thread's input items
         T               (&output)[ITEMS_PER_THREAD],    ///< [out] Calling thread's output items (may be aliased to \p input)
         ScanOp          scan_op)                        ///< [in] Binary scan operator
@@ -2078,7 +2078,7 @@ public:
      */
     template <typename ScanOp>
     static __device__ __forceinline__ void InclusiveScan(
-        SmemStorage     &smem_storage,                  ///< [in] Shared reference to opaque SmemStorage layout
+        SmemStorage     &smem_storage,                  ///< [in] Reference to shared memory allocation having layout type SmemStorage
         T               input,                          ///< [in] Calling thread's input item
         T               &output,                        ///< [out] Calling thread's output item (may be aliased to \p input)
         ScanOp          scan_op,                        ///< [in] Binary scan operator
@@ -2100,7 +2100,7 @@ public:
     int             ITEMS_PER_THREAD,
     typename         ScanOp>
     static __device__ __forceinline__ void InclusiveScan(
-        SmemStorage     &smem_storage,                  ///< [in] Shared reference to opaque SmemStorage layout
+        SmemStorage     &smem_storage,                  ///< [in] Reference to shared memory allocation having layout type SmemStorage
         T               (&input)[ITEMS_PER_THREAD],     ///< [in] Calling thread's input items
         T               (&output)[ITEMS_PER_THREAD],    ///< [out] Calling thread's output items (may be aliased to \p input)
         ScanOp          scan_op,                        ///< [in] Binary scan operator
@@ -2141,7 +2141,7 @@ public:
     typename ScanOp,
     typename BlockPrefixOp>
     static __device__ __forceinline__ void InclusiveScan(
-        SmemStorage     &smem_storage,                  ///< [in] Shared reference to opaque SmemStorage layout
+        SmemStorage     &smem_storage,                  ///< [in] Reference to shared memory allocation having layout type SmemStorage
         T               input,                          ///< [in] Calling thread's input item
         T               &output,                        ///< [out] Calling thread's output item (may be aliased to \p input)
         ScanOp          scan_op,                        ///< [in] Binary scan operator
@@ -2171,7 +2171,7 @@ public:
     typename        ScanOp,
     typename        BlockPrefixOp>
     static __device__ __forceinline__ void InclusiveScan(
-        SmemStorage     &smem_storage,                  ///< [in] Shared reference to opaque SmemStorage layout
+        SmemStorage     &smem_storage,                  ///< [in] Reference to shared memory allocation having layout type SmemStorage
         T               (&input)[ITEMS_PER_THREAD],     ///< [in] Calling thread's input items
         T               (&output)[ITEMS_PER_THREAD],    ///< [out] Calling thread's output items (may be aliased to \p input)
         ScanOp          scan_op,                        ///< [in] Binary scan operator

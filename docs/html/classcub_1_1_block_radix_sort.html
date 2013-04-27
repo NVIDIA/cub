@@ -282,7 +282,7 @@ template&lt;typename KeyType , int BLOCK_THREADS, int ITEMS_PER_THREAD, typename
 <p>A subsequent <code>__syncthreads()</code> threadblock barrier should be invoked after calling this method if the supplied <code>smem_storage</code> is to be reused or repurposed by the threadblock. </p>
 <dl class="params"><dt>Parameters</dt><dd>
   <table class="params">
-    <tr><td class="paramdir">[in]</td><td class="paramname">smem_storage</td><td>Shared reference to opaque SmemStorage layout </td></tr>
+    <tr><td class="paramdir">[in]</td><td class="paramname">smem_storage</td><td>Reference to shared memory allocation having layout type SmemStorage </td></tr>
     <tr><td class="paramdir">[in,out]</td><td class="paramname">keys</td><td>Keys to sort </td></tr>
     <tr><td class="paramdir">[in]</td><td class="paramname">begin_bit</td><td><b>[optional]</b> The beginning (least-significant) bit index needed for key comparison </td></tr>
     <tr><td class="paramdir">[in]</td><td class="paramname">end_bit</td><td><b>[optional]</b> The past-the-end (most-significant) bit index needed for key comparison </td></tr>
@@ -342,7 +342,7 @@ template&lt;typename KeyType , int BLOCK_THREADS, int ITEMS_PER_THREAD, typename
 <p>A subsequent <code>__syncthreads()</code> threadblock barrier should be invoked after calling this method if the supplied <code>smem_storage</code> is to be reused or repurposed by the threadblock. </p>
 <dl class="params"><dt>Parameters</dt><dd>
   <table class="params">
-    <tr><td class="paramdir">[in]</td><td class="paramname">smem_storage</td><td>Shared reference to opaque SmemStorage layout </td></tr>
+    <tr><td class="paramdir">[in]</td><td class="paramname">smem_storage</td><td>Reference to shared memory allocation having layout type SmemStorage </td></tr>
     <tr><td class="paramdir">[in,out]</td><td class="paramname">keys</td><td>Keys to sort </td></tr>
     <tr><td class="paramdir">[in]</td><td class="paramname">begin_bit</td><td><b>[optional]</b> The beginning (least-significant) bit index needed for key comparison </td></tr>
     <tr><td class="paramdir">[in]</td><td class="paramname">end_bit</td><td><b>[optional]</b> The past-the-end (most-significant) bit index needed for key comparison </td></tr>
@@ -402,7 +402,7 @@ template&lt;typename KeyType , int BLOCK_THREADS, int ITEMS_PER_THREAD, typename
 <p>A subsequent <code>__syncthreads()</code> threadblock barrier should be invoked after calling this method if the supplied <code>smem_storage</code> is to be reused or repurposed by the threadblock. </p>
 <dl class="params"><dt>Parameters</dt><dd>
   <table class="params">
-    <tr><td class="paramdir">[in]</td><td class="paramname">smem_storage</td><td>Shared reference to opaque SmemStorage layout </td></tr>
+    <tr><td class="paramdir">[in]</td><td class="paramname">smem_storage</td><td>Reference to shared memory allocation having layout type SmemStorage </td></tr>
     <tr><td class="paramdir">[in,out]</td><td class="paramname">keys</td><td>Keys to sort </td></tr>
     <tr><td class="paramdir">[in]</td><td class="paramname">begin_bit</td><td><b>[optional]</b> The beginning (least-significant) bit index needed for key comparison </td></tr>
     <tr><td class="paramdir">[in]</td><td class="paramname">end_bit</td><td><b>[optional]</b> The past-the-end (most-significant) bit index needed for key comparison </td></tr>
@@ -468,7 +468,7 @@ template&lt;typename KeyType , int BLOCK_THREADS, int ITEMS_PER_THREAD, typename
 <p>A subsequent <code>__syncthreads()</code> threadblock barrier should be invoked after calling this method if the supplied <code>smem_storage</code> is to be reused or repurposed by the threadblock. </p>
 <dl class="params"><dt>Parameters</dt><dd>
   <table class="params">
-    <tr><td class="paramdir">[in]</td><td class="paramname">smem_storage</td><td>Shared reference to opaque SmemStorage layout </td></tr>
+    <tr><td class="paramdir">[in]</td><td class="paramname">smem_storage</td><td>Reference to shared memory allocation having layout type SmemStorage </td></tr>
     <tr><td class="paramdir">[in,out]</td><td class="paramname">keys</td><td>Keys to sort </td></tr>
     <tr><td class="paramdir">[in,out]</td><td class="paramname">values</td><td>Values to sort </td></tr>
     <tr><td class="paramdir">[in]</td><td class="paramname">begin_bit</td><td><b>[optional]</b> The beginning (least-significant) bit index needed for key comparison </td></tr>
@@ -535,7 +535,7 @@ template&lt;typename KeyType , int BLOCK_THREADS, int ITEMS_PER_THREAD, typename
 <p>A subsequent <code>__syncthreads()</code> threadblock barrier should be invoked after calling this method if the supplied <code>smem_storage</code> is to be reused or repurposed by the threadblock. </p>
 <dl class="params"><dt>Parameters</dt><dd>
   <table class="params">
-    <tr><td class="paramdir">[in]</td><td class="paramname">smem_storage</td><td>Shared reference to opaque SmemStorage layout </td></tr>
+    <tr><td class="paramdir">[in]</td><td class="paramname">smem_storage</td><td>Reference to shared memory allocation having layout type SmemStorage </td></tr>
     <tr><td class="paramdir">[in,out]</td><td class="paramname">keys</td><td>Keys to sort </td></tr>
     <tr><td class="paramdir">[in,out]</td><td class="paramname">values</td><td>Values to sort </td></tr>
     <tr><td class="paramdir">[in]</td><td class="paramname">begin_bit</td><td><b>[optional]</b> The beginning (least-significant) bit index needed for key comparison </td></tr>
@@ -602,7 +602,7 @@ template&lt;typename KeyType , int BLOCK_THREADS, int ITEMS_PER_THREAD, typename
 <p>A subsequent <code>__syncthreads()</code> threadblock barrier should be invoked after calling this method if the supplied <code>smem_storage</code> is to be reused or repurposed by the threadblock. </p>
 <dl class="params"><dt>Parameters</dt><dd>
   <table class="params">
-    <tr><td class="paramdir">[in]</td><td class="paramname">smem_storage</td><td>Shared reference to opaque SmemStorage layout </td></tr>
+    <tr><td class="paramdir">[in]</td><td class="paramname">smem_storage</td><td>Reference to shared memory allocation having layout type SmemStorage </td></tr>
     <tr><td class="paramdir">[in,out]</td><td class="paramname">keys</td><td>Keys to sort </td></tr>
     <tr><td class="paramdir">[in,out]</td><td class="paramname">values</td><td>Values to sort </td></tr>
     <tr><td class="paramdir">[in]</td><td class="paramname">begin_bit</td><td><b>[optional]</b> The beginning (least-significant) bit index needed for key comparison </td></tr>

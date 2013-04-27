@@ -35,6 +35,7 @@
 
 
 // Block
+#include "block/block_histo_256.cuh"
 #include "block/block_discontinuity.cuh"
 #include "block/block_exchange.cuh"
 #include "block/block_load.cuh"
@@ -46,6 +47,7 @@
 
 // Device
 #include "device/device_reduce.cuh"
+#include "device/device_histo_256.cuh"
 
 // Grid
 #include "grid/grid_barrier.cuh"
