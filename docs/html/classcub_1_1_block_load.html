@@ -5,7 +5,7 @@
 <meta http-equiv="Content-Type" content="text/xhtml;charset=UTF-8"/>
 <meta http-equiv="X-UA-Compatible" content="IE=9"/>
 <meta name="generator" content="Doxygen 1.8.3.1"/>
-<title>CUB: cub::BlockLoad&lt; InputIterator, BLOCK_THREADS, ITEMS_PER_THREAD, POLICY, MODIFIER &gt; Class Template Reference</title>
+<title>CUB: cub::BlockLoad&lt; InputIteratorRA, BLOCK_THREADS, ITEMS_PER_THREAD, POLICY, MODIFIER &gt; Class Template Reference</title>
 <link href="tabs.css" rel="stylesheet" type="text/css"/>
 <script type="text/javascript" src="jquery.js"></script>
 <script type="text/javascript" src="dynsections.js"></script>
@@ -104,12 +104,12 @@ var searchBox = new SearchBox("searchBox", "search",false,'Search');
 <a href="#pub-static-methods">Static Public Methods</a> &#124;
 <a href="classcub_1_1_block_load-members.html">List of all members</a>  </div>
   <div class="headertitle">
-<div class="title">cub::BlockLoad&lt; InputIterator, BLOCK_THREADS, ITEMS_PER_THREAD, POLICY, MODIFIER &gt; Class Template Reference<div class="ingroups"><a class="el" href="group___block_module.html">Block-wide</a></div></div>  </div>
+<div class="title">cub::BlockLoad&lt; InputIteratorRA, BLOCK_THREADS, ITEMS_PER_THREAD, POLICY, MODIFIER &gt; Class Template Reference<div class="ingroups"><a class="el" href="group___block_module.html">Block-wide</a></div></div>  </div>
 </div><!--header-->
 <div class="contents">
 <a name="details" id="details"></a><h2 class="groupheader">Detailed description</h2>
-<div class="textblock"><h3>template&lt;typename InputIterator, int BLOCK_THREADS, int ITEMS_PER_THREAD, BlockLoadPolicy POLICY = BLOCK_LOAD_DIRECT, PtxLoadModifier MODIFIER = PTX_LOAD_NONE&gt;<br/>
-class cub::BlockLoad&lt; InputIterator, BLOCK_THREADS, ITEMS_PER_THREAD, POLICY, MODIFIER &gt;</h3>
+<div class="textblock"><h3>template&lt;typename InputIteratorRA, int BLOCK_THREADS, int ITEMS_PER_THREAD, BlockLoadPolicy POLICY = BLOCK_LOAD_DIRECT, PtxLoadModifier MODIFIER = PTX_LOAD_NONE&gt;<br/>
+class cub::BlockLoad&lt; InputIteratorRA, BLOCK_THREADS, ITEMS_PER_THREAD, POLICY, MODIFIER &gt;</h3>
 
 <p><a class="el" href="classcub_1_1_block_load.html" title="BlockLoad provides data movement operations for reading block-arranged data from global memory...">BlockLoad</a> provides data movement operations for reading <a href="index.html#sec3sec3"><em>block-arranged</em></a> data from global memory. </p>
 <div class="image">
@@ -119,7 +119,7 @@ class cub::BlockLoad&lt; InputIterator, BLOCK_THREADS, ITEMS_PER_THREAD, POLICY,
  <p><a class="el" href="classcub_1_1_block_load.html" title="BlockLoad provides data movement operations for reading block-arranged data from global memory...">BlockLoad</a> provides a single tile-loading abstraction whose performance behavior can be statically tuned. In particular, <a class="el" href="classcub_1_1_block_load.html" title="BlockLoad provides data movement operations for reading block-arranged data from global memory...">BlockLoad</a> implements alternative <a class="el" href="namespacecub.html#a70f1d3c7536d858d49b896e937d25290" title="Tuning policy for cub::BlockLoad.">cub::BlockLoadPolicy</a> strategies catering to different granularity sizes (i.e., number of items per thread).</p>
 <dl class="tparams"><dt>Template Parameters</dt><dd>
   <table class="tparams">
-    <tr><td class="paramname">InputIterator</td><td>The input iterator type (may be a simple pointer type). </td></tr>
+    <tr><td class="paramname">InputIteratorRA</td><td>The input iterator type (may be a simple pointer type). </td></tr>
     <tr><td class="paramname">BLOCK_THREADS</td><td>The threadblock size in threads. </td></tr>
     <tr><td class="paramname">ITEMS_PER_THREAD</td><td>The number of consecutive items partitioned onto each thread. </td></tr>
     <tr><td class="paramname">POLICY</td><td><b>[optional]</b> <a class="el" href="namespacecub.html#a70f1d3c7536d858d49b896e937d25290" title="Tuning policy for cub::BlockLoad.">cub::BlockLoadPolicy</a> tuning policy. Default = <a class="el" href="namespacecub.html#a70f1d3c7536d858d49b896e937d25290a2d4d8900d7e697e9dac4062e97d3d835">cub::BLOCK_LOAD_DIRECT</a>. </td></tr>
@@ -193,12 +193,12 @@ typedef _SmemStorage&#160;</td><td class="memItemRight" valign="bottom"><a class
 <tr class="heading"><td colspan="2"><h2 class="groupheader"><a name="pub-static-methods"></a>
 Static Public Methods</h2></td></tr>
 <tr class="memitem:ac671e9f033037fc01384a9296684200c"><td class="memItemLeft" align="right" valign="top">static __device__ <br class="typebreak"/>
-__forceinline__ void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classcub_1_1_block_load.html#ac671e9f033037fc01384a9296684200c">Load</a> (<a class="el" href="classcub_1_1_block_load.html#a09296fd690f1452df9cae24a037e906a">SmemStorage</a> &amp;smem_storage, InputIterator block_itr, T(&amp;items)[ITEMS_PER_THREAD])</td></tr>
+__forceinline__ void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classcub_1_1_block_load.html#ac671e9f033037fc01384a9296684200c">Load</a> (<a class="el" href="classcub_1_1_block_load.html#a09296fd690f1452df9cae24a037e906a">SmemStorage</a> &amp;smem_storage, InputIteratorRA block_itr, T(&amp;items)[ITEMS_PER_THREAD])</td></tr>
 <tr class="memdesc:ac671e9f033037fc01384a9296684200c"><td class="mdescLeft">&#160;</td><td class="mdescRight">Load a tile of items across a threadblock.  <a href="#ac671e9f033037fc01384a9296684200c">More...</a><br/></td></tr>
 <tr class="separator:ac671e9f033037fc01384a9296684200c"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:ae7025d183926de0430146d41b5771032"><td class="memTemplParams" colspan="2">template&lt;typename SizeT &gt; </td></tr>
 <tr class="memitem:ae7025d183926de0430146d41b5771032"><td class="memTemplItemLeft" align="right" valign="top">static __device__ <br class="typebreak"/>
-__forceinline__ void&#160;</td><td class="memTemplItemRight" valign="bottom"><a class="el" href="classcub_1_1_block_load.html#ae7025d183926de0430146d41b5771032">Load</a> (<a class="el" href="classcub_1_1_block_load.html#a09296fd690f1452df9cae24a037e906a">SmemStorage</a> &amp;smem_storage, InputIterator block_itr, const SizeT &amp;guarded_items, T(&amp;items)[ITEMS_PER_THREAD])</td></tr>
+__forceinline__ void&#160;</td><td class="memTemplItemRight" valign="bottom"><a class="el" href="classcub_1_1_block_load.html#ae7025d183926de0430146d41b5771032">Load</a> (<a class="el" href="classcub_1_1_block_load.html#a09296fd690f1452df9cae24a037e906a">SmemStorage</a> &amp;smem_storage, InputIteratorRA block_itr, const SizeT &amp;guarded_items, T(&amp;items)[ITEMS_PER_THREAD])</td></tr>
 <tr class="memdesc:ae7025d183926de0430146d41b5771032"><td class="mdescLeft">&#160;</td><td class="mdescRight">Load a tile of items across a threadblock, guarded by range.  <a href="#ae7025d183926de0430146d41b5771032">More...</a><br/></td></tr>
 <tr class="separator:ae7025d183926de0430146d41b5771032"><td class="memSeparator" colspan="2">&#160;</td></tr>
 </table>
@@ -207,13 +207,13 @@ __forceinline__ void&#160;</td><td class="memTemplItemRight" valign="bottom"><a 
 <div class="memitem">
 <div class="memproto">
 <div class="memtemplate">
-template&lt;typename InputIterator , int BLOCK_THREADS, int ITEMS_PER_THREAD, BlockLoadPolicy POLICY = BLOCK_LOAD_DIRECT, PtxLoadModifier MODIFIER = PTX_LOAD_NONE&gt; </div>
+template&lt;typename InputIteratorRA , int BLOCK_THREADS, int ITEMS_PER_THREAD, BlockLoadPolicy POLICY = BLOCK_LOAD_DIRECT, PtxLoadModifier MODIFIER = PTX_LOAD_NONE&gt; </div>
 <table class="mlabels">
   <tr>
   <td class="mlabels-left">
       <table class="memname">
         <tr>
-          <td class="memname">static __device__ __forceinline__ void <a class="el" href="classcub_1_1_block_load.html">cub::BlockLoad</a>&lt; InputIterator, BLOCK_THREADS, ITEMS_PER_THREAD, POLICY, MODIFIER &gt;::Load </td>
+          <td class="memname">static __device__ __forceinline__ void <a class="el" href="classcub_1_1_block_load.html">cub::BlockLoad</a>&lt; InputIteratorRA, BLOCK_THREADS, ITEMS_PER_THREAD, POLICY, MODIFIER &gt;::Load </td>
           <td>(</td>
           <td class="paramtype"><a class="el" href="classcub_1_1_block_load.html#a09296fd690f1452df9cae24a037e906a">SmemStorage</a> &amp;&#160;</td>
           <td class="paramname"><em>smem_storage</em>, </td>
@@ -221,7 +221,7 @@ template&lt;typename InputIterator , int BLOCK_THREADS, int ITEMS_PER_THREAD, Bl
         <tr>
           <td class="paramkey"></td>
           <td></td>
-          <td class="paramtype">InputIterator&#160;</td>
+          <td class="paramtype">InputIteratorRA&#160;</td>
           <td class="paramname"><em>block_itr</em>, </td>
         </tr>
         <tr>
@@ -246,7 +246,7 @@ template&lt;typename InputIterator , int BLOCK_THREADS, int ITEMS_PER_THREAD, Bl
 <p>Load a tile of items across a threadblock. </p>
 <dl class="params"><dt>Parameters</dt><dd>
   <table class="params">
-    <tr><td class="paramdir">[in]</td><td class="paramname">smem_storage</td><td>Shared reference to opaque SmemStorage layout </td></tr>
+    <tr><td class="paramdir">[in]</td><td class="paramname">smem_storage</td><td>Reference to shared memory allocation having layout type SmemStorage </td></tr>
     <tr><td class="paramdir">[in]</td><td class="paramname">block_itr</td><td>The threadblock's base input iterator for loading from </td></tr>
     <tr><td class="paramdir">[out]</td><td class="paramname">items</td><td>Data to load </td></tr>
   </table>
@@ -259,7 +259,7 @@ template&lt;typename InputIterator , int BLOCK_THREADS, int ITEMS_PER_THREAD, Bl
 <div class="memitem">
 <div class="memproto">
 <div class="memtemplate">
-template&lt;typename InputIterator , int BLOCK_THREADS, int ITEMS_PER_THREAD, BlockLoadPolicy POLICY = BLOCK_LOAD_DIRECT, PtxLoadModifier MODIFIER = PTX_LOAD_NONE&gt; </div>
+template&lt;typename InputIteratorRA , int BLOCK_THREADS, int ITEMS_PER_THREAD, BlockLoadPolicy POLICY = BLOCK_LOAD_DIRECT, PtxLoadModifier MODIFIER = PTX_LOAD_NONE&gt; </div>
 <div class="memtemplate">
 template&lt;typename SizeT &gt; </div>
 <table class="mlabels">
@@ -267,7 +267,7 @@ template&lt;typename SizeT &gt; </div>
   <td class="mlabels-left">
       <table class="memname">
         <tr>
-          <td class="memname">static __device__ __forceinline__ void <a class="el" href="classcub_1_1_block_load.html">cub::BlockLoad</a>&lt; InputIterator, BLOCK_THREADS, ITEMS_PER_THREAD, POLICY, MODIFIER &gt;::Load </td>
+          <td class="memname">static __device__ __forceinline__ void <a class="el" href="classcub_1_1_block_load.html">cub::BlockLoad</a>&lt; InputIteratorRA, BLOCK_THREADS, ITEMS_PER_THREAD, POLICY, MODIFIER &gt;::Load </td>
           <td>(</td>
           <td class="paramtype"><a class="el" href="classcub_1_1_block_load.html#a09296fd690f1452df9cae24a037e906a">SmemStorage</a> &amp;&#160;</td>
           <td class="paramname"><em>smem_storage</em>, </td>
@@ -275,7 +275,7 @@ template&lt;typename SizeT &gt; </div>
         <tr>
           <td class="paramkey"></td>
           <td></td>
-          <td class="paramtype">InputIterator&#160;</td>
+          <td class="paramtype">InputIteratorRA&#160;</td>
           <td class="paramname"><em>block_itr</em>, </td>
         </tr>
         <tr>
@@ -312,7 +312,7 @@ template&lt;typename SizeT &gt; </div>
 </dl>
 <dl class="params"><dt>Parameters</dt><dd>
   <table class="params">
-    <tr><td class="paramdir">[in]</td><td class="paramname">smem_storage</td><td>Shared reference to opaque SmemStorage layout </td></tr>
+    <tr><td class="paramdir">[in]</td><td class="paramname">smem_storage</td><td>Reference to shared memory allocation having layout type SmemStorage </td></tr>
     <tr><td class="paramdir">[in]</td><td class="paramname">block_itr</td><td>The threadblock's base input iterator for loading from </td></tr>
     <tr><td class="paramdir">[in]</td><td class="paramname">guarded_items</td><td>Number of valid items in the tile </td></tr>
     <tr><td class="paramdir">[out]</td><td class="paramname">items</td><td>Data to load </td></tr>

@@ -209,7 +209,7 @@ template&lt;typename T , int BLOCK_THREADS, int ITEMS_PER_THREAD&gt; </div>
 <p>A subsequent <code>__syncthreads()</code> threadblock barrier should be invoked after calling this method if the supplied <code>smem_storage</code> is to be reused or repurposed by the threadblock. </p>
 <dl class="params"><dt>Parameters</dt><dd>
   <table class="params">
-    <tr><td class="paramdir">[in]</td><td class="paramname">smem_storage</td><td>Shared reference to opaque SmemStorage layout </td></tr>
+    <tr><td class="paramdir">[in]</td><td class="paramname">smem_storage</td><td>Reference to shared memory allocation having layout type SmemStorage </td></tr>
     <tr><td class="paramdir">[in,out]</td><td class="paramname">items</td><td>Items to exchange, converting between <em>blocked</em> and <em>striped</em> arrangements. </td></tr>
   </table>
   </dd>
@@ -255,7 +255,7 @@ template&lt;typename T , int BLOCK_THREADS, int ITEMS_PER_THREAD&gt; </div>
 <p>A subsequent <code>__syncthreads()</code> threadblock barrier should be invoked after calling this method if the supplied <code>smem_storage</code> is to be reused or repurposed by the threadblock. </p>
 <dl class="params"><dt>Parameters</dt><dd>
   <table class="params">
-    <tr><td class="paramdir">[in]</td><td class="paramname">smem_storage</td><td>Shared reference to opaque SmemStorage layout </td></tr>
+    <tr><td class="paramdir">[in]</td><td class="paramname">smem_storage</td><td>Reference to shared memory allocation having layout type SmemStorage </td></tr>
     <tr><td class="paramdir">[in,out]</td><td class="paramname">items</td><td>Items to exchange, converting between <em>striped</em> and <em>blocked</em> arrangements. </td></tr>
   </table>
   </dd>
@@ -307,7 +307,7 @@ template&lt;typename T , int BLOCK_THREADS, int ITEMS_PER_THREAD&gt; </div>
 <p>A subsequent <code>__syncthreads()</code> threadblock barrier should be invoked after calling this method if the supplied <code>smem_storage</code> is to be reused or repurposed by the threadblock. </p>
 <dl class="params"><dt>Parameters</dt><dd>
   <table class="params">
-    <tr><td class="paramdir">[in]</td><td class="paramname">smem_storage</td><td>Shared reference to opaque SmemStorage layout </td></tr>
+    <tr><td class="paramdir">[in]</td><td class="paramname">smem_storage</td><td>Reference to shared memory allocation having layout type SmemStorage </td></tr>
     <tr><td class="paramdir">[in,out]</td><td class="paramname">items</td><td>Items to exchange </td></tr>
     <tr><td class="paramdir">[in]</td><td class="paramname">ranks</td><td>Corresponding scatter ranks </td></tr>
   </table>
@@ -360,7 +360,7 @@ template&lt;typename T , int BLOCK_THREADS, int ITEMS_PER_THREAD&gt; </div>
 <p>A subsequent <code>__syncthreads()</code> threadblock barrier should be invoked after calling this method if the supplied <code>smem_storage</code> is to be reused or repurposed by the threadblock. </p>
 <dl class="params"><dt>Parameters</dt><dd>
   <table class="params">
-    <tr><td class="paramdir">[in]</td><td class="paramname">smem_storage</td><td>Shared reference to opaque SmemStorage layout </td></tr>
+    <tr><td class="paramdir">[in]</td><td class="paramname">smem_storage</td><td>Reference to shared memory allocation having layout type SmemStorage </td></tr>
     <tr><td class="paramdir">[in,out]</td><td class="paramname">items</td><td>Items to exchange </td></tr>
     <tr><td class="paramdir">[in]</td><td class="paramname">ranks</td><td>Corresponding scatter ranks </td></tr>
   </table>

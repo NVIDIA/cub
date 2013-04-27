@@ -41,7 +41,7 @@
 
 #include <cuda_runtime.h>
 
-#include "test_util.h"
+#include "../test/test_util.h"
 #include <cub/cub.cuh>
 
 using namespace cub;
@@ -272,17 +272,19 @@ struct CooGraph
 
 
     /**
-     * Builds a square 3D grid COO sparse graph.  Interior nodes have degree 7 (including
-     * a self-loop).  Values are unintialized, coo_tuples are sorted.
+     * Builds a square 3D grid COO sparse graph.  Interior nodes have degree 7 when including
+     * a self-loop.  Values are unintialized, coo_tuples are sorted.
      */
-    int InitGrid3d(VertexId width)
+    int InitGrid3d(VertexId width, bool self_loop)
     {
         VertexId interior_nodes        = (width - 2) * (width - 2) * (width - 2);
         VertexId face_nodes            = (width - 2) * (width - 2) * 6;
         VertexId edge_nodes            = (width - 2) * 12;
         VertexId corner_nodes          = 8;
         VertexId nodes                 = width * width * width;
-        VertexId edges                 = (interior_nodes * 6) + (face_nodes * 5) + (edge_nodes * 4) + (corner_nodes * 3) + nodes;
+        VertexId edges                 = (interior_nodes * 6) + (face_nodes * 5) + (edge_nodes * 4) + (corner_nodes * 3);
+
+        if (self_loop) edges += nodes;
 
         coo_tuples.clear();
         coo_tuples.reserve(edges);
@@ -323,8 +325,11 @@ struct CooGraph
                         coo_tuples.push_back(CooTuple(me, neighbor));
                     }
 
-                    neighbor = me;
-                    coo_tuples.push_back(CooTuple(me, neighbor));
+                    if (self_loop)
+                    {
+                        neighbor = me;
+                        coo_tuples.push_back(CooTuple(me, neighbor));
+                    }
                 }
             }
         }
@@ -344,19 +349,20 @@ struct CooGraph
 
 
     /**
-     * Builds a square 2D grid CSR graph.  Interior nodes have degree 5 (including
-     * a self-loop)
+     * Builds a square 2D grid CSR graph.  Interior nodes have degree 5 when including
+     * a self-loop.
      *
      * Returns 0 on success, 1 on failure.
      */
-    int InitGrid2d(VertexId width, bool self)
+    int InitGrid2d(VertexId width, bool self_loop)
     {
-        VertexId interior_nodes        = (width - 2) * (width - 2);
-        VertexId edge_nodes            = (width - 2) * 4;
-        VertexId corner_nodes          = 4;
-        VertexId edges                 = (interior_nodes * 4) + (edge_nodes * 3) + (corner_nodes * 2);
+        VertexId interior_nodes         = (width - 2) * (width - 2);
+        VertexId edge_nodes             = (width - 2) * 4;
+        VertexId corner_nodes           = 4;
+        VertexId nodes                  = width * width;
+        VertexId edges                  = (interior_nodes * 4) + (edge_nodes * 3) + (corner_nodes * 2);
 
-        if (self) edges += edges;
+        if (self_loop) edges += nodes;
 
         coo_tuples.clear();
         coo_tuples.reserve(edges);
@@ -386,7 +392,7 @@ struct CooGraph
                     coo_tuples.push_back(CooTuple(me, neighbor));
                 }
 
-                if (self)
+                if (self_loop)
                 {
                     neighbor = me;
                     coo_tuples.push_back(CooTuple(me, neighbor));
@@ -519,23 +525,23 @@ struct MinRowOp
 };
 
 
-// Callback functor for waiting on the previous threadblock to compute its partial sum (the prefix for this threadblock)
+// Scan prefix functor for BlockScan.
 template <typename PartialSum>
 struct BlockPrefixOp
 {
-    PartialSum prefix;
+    // Running block-wide prefix
+    PartialSum running_prefix;
 
     /**
-     * Threadblock-wide prefix callback functor called by thread-0 in BlockScan::ExclusiveScan().
-     * Returns the threadblock-wide prefix to apply to all scan inputs.
+     * Returns the block-wide running_prefix in thread-0
      */
     __device__ __forceinline__ PartialSum operator()(
         const PartialSum &block_aggregate)              ///< The aggregate sum of the local prefix sum inputs
     {
         ReduceByKeyOp scan_op;
 
-        PartialSum retval = prefix;
-        prefix = scan_op(prefix, block_aggregate);
+        PartialSum retval = running_prefix;
+        running_prefix = scan_op(running_prefix, block_aggregate);
         return retval;
     }
 };
@@ -764,12 +770,11 @@ struct SpmvBlock
 template <
     int             BLOCK_THREADS,
     int             ITEMS_PER_THREAD,
-    int             BLOCK_OCCUPANCY,
     typename        VertexId,
     typename        Value>
-__launch_bounds__ (BLOCK_THREADS, BLOCK_OCCUPANCY)
+__launch_bounds__ (BLOCK_THREADS)
 __global__ void CooKernel(
-    GridEvenShare<int>               block_progress,
+    GridEvenShare<int>              even_share,
     PartialSum<VertexId, Value>     *d_block_partials,
     VertexId                        *d_rows,
     VertexId                        *d_columns,
@@ -790,7 +795,7 @@ __global__ void CooKernel(
     __shared__ typename SpmvBlock::SmemStorage smem_storage;
 
     // Initialize threadblock even-share to tell us where to start and stop our tile-processing
-    block_progress.Init();
+    even_share.BlockInit();
 
     // Stateful prefix carryover from one tile to the next
     BlockPrefixOp<PartialSum<VertexId, Value> > carry;
@@ -798,24 +803,24 @@ __global__ void CooKernel(
     // Initialize scalar shared memory values
     if (threadIdx.x == 0)
     {
-        VertexId first_block_row              = d_rows[block_progress.block_offset];
-        VertexId last_block_row               = d_rows[block_progress.block_oob - 1];
+        VertexId first_block_row            = d_rows[even_share.block_offset];
+        VertexId last_block_row             = d_rows[even_share.block_oob - 1];
 
         // Initialize carry to identity
-        carry.prefix.row                    = first_block_row;
-        carry.prefix.partial                = Value(0);
-        smem_storage.identity               = carry.prefix;
+        carry.running_prefix.row            = first_block_row;
+        carry.running_prefix.partial        = Value(0);
+        smem_storage.identity               = carry.running_prefix;
 
         smem_storage.first_scatter.row      = last_block_row;
         smem_storage.first_scatter.partial  = Value(0);
-        smem_storage.last_block_row           = last_block_row;
+        smem_storage.last_block_row         = last_block_row;
         smem_storage.prev_tile_row          = (blockIdx.x == 0) ?
                                                 first_block_row :
-                                                d_rows[block_progress.block_offset - 1];
+                                                d_rows[even_share.block_offset - 1];
     }
 
     // Process full tiles
-    while (block_progress.block_offset <= block_progress.block_oob - TILE_SIZE)
+    while (even_share.block_offset <= even_share.block_oob - TILE_SIZE)
     {
         SpmvBlock::ProcessTile(
             smem_storage,
@@ -825,13 +830,13 @@ __global__ void CooKernel(
             d_values,
             d_vector,
             d_result,
-            block_progress.block_offset);
+            even_share.block_offset);
 
-        block_progress.block_offset += TILE_SIZE;
+        even_share.block_offset += TILE_SIZE;
     }
 
     // Process final partial tile (if present)
-    int guarded_items = block_progress.block_oob - block_progress.block_offset;
+    int guarded_items = even_share.block_oob - even_share.block_offset;
     if (guarded_items)
     {
         SpmvBlock::ProcessTile(
@@ -842,7 +847,7 @@ __global__ void CooKernel(
             d_values,
             d_vector,
             d_result,
-            block_progress.block_offset,
+            even_share.block_offset,
             guarded_items);
     }
 
@@ -851,7 +856,7 @@ __global__ void CooKernel(
         if (gridDim.x == 1)
         {
             // Scatter the final aggregate (this kernel contains only 1 threadblock)
-            d_result[carry.prefix.row] = carry.prefix.partial;
+            d_result[carry.running_prefix.row] = carry.running_prefix.partial;
         }
         else
         {
@@ -859,10 +864,10 @@ __global__ void CooKernel(
 
             // Unweight the first-output if it's the same row as the carry aggregate
             PartialSum<VertexId, Value> first_scatter = smem_storage.first_scatter;
-            if (first_scatter.row == carry.prefix.row) first_scatter.partial = Value(0);
+            if (first_scatter.row == carry.running_prefix.row) first_scatter.partial = Value(0);
 
             d_block_partials[blockIdx.x * 2]          = first_scatter;
-            d_block_partials[(blockIdx.x * 2) + 1]    = carry.prefix;
+            d_block_partials[(blockIdx.x * 2) + 1]    = carry.running_prefix;
         }
     }
 }
@@ -1034,15 +1039,15 @@ __global__ void CooFinalizeKernel(
     // Initialize scalar shared memory values
     if (threadIdx.x == 0)
     {
-        VertexId first_block_row              = d_block_partials[0].row;
-        VertexId last_block_row               = d_block_partials[finalize_partials - 1].row;
+        VertexId first_block_row            = d_block_partials[0].row;
+        VertexId last_block_row             = d_block_partials[finalize_partials - 1].row;
 
         // Initialize carry to identity
-        carry.prefix.row                    = first_block_row;
-        carry.prefix.partial                = Value(0);
-        smem_storage.identity               = carry.prefix;
+        carry.running_prefix.row            = first_block_row;
+        carry.running_prefix.partial        = Value(0);
+        smem_storage.identity               = carry.running_prefix;
 
-        smem_storage.last_block_row           = last_block_row;
+        smem_storage.last_block_row         = last_block_row;
         smem_storage.prev_tile_row          = first_block_row;
     }
 
@@ -1082,7 +1087,7 @@ __global__ void CooFinalizeKernel(
     // Scatter the final aggregate (this kernel contains only 1 threadblock)
     if (threadIdx.x == 0)
     {
-        d_result[carry.prefix.row] = carry.prefix.partial;
+        d_result[carry.running_prefix.row] = carry.running_prefix.partial;
     }
 }
 
@@ -1168,7 +1173,7 @@ int CompareResults(double* computed, double* reference, SizeT len)
 template <
     int                         COO_BLOCK_THREADS,
     int                         COO_ITEMS_PER_THREAD,
-    int                         COO_BLOCK_OCCUPANCY,
+    int                         COO_SUBSCRIPTION_FACTOR,
     int                         FINALIZE_BLOCK_THREADS,
     int                         FINALIZE_ITEMS_PER_THREAD,
     typename                    VertexId,
@@ -1206,23 +1211,21 @@ void TestDevice(
     }
 
     // Get CUDA properties
-    Device cuda_props;
-    CubDebugExit(cuda_props.Init());
-
-    // Get kernel properties
-    KernelProps coo_kernel_props;
-    KernelProps finalize_kernel_props;
-    CubDebugExit(coo_kernel_props.Init(
-        CooKernel<COO_BLOCK_THREADS, COO_ITEMS_PER_THREAD, COO_BLOCK_OCCUPANCY, VertexId, Value>,
-        COO_BLOCK_THREADS,
-        cuda_props));
-    CubDebugExit(finalize_kernel_props.Init(
-        CooFinalizeKernel<FINALIZE_BLOCK_THREADS, FINALIZE_ITEMS_PER_THREAD, VertexId, Value>,
-        FINALIZE_BLOCK_THREADS,
-        cuda_props));
+    Device device_props;
+    CubDebugExit(device_props.Init());
 
     // Determine launch configuration from kernel properties
-    int coo_grid_size       = coo_kernel_props.OversubscribedGridSize(COO_TILE_SIZE, num_edges);
+    int coo_sm_occupancy;
+    CubDebugExit(device_props.MaxSmOccupancy(
+        coo_sm_occupancy,
+        CooKernel<COO_BLOCK_THREADS, COO_ITEMS_PER_THREAD, VertexId, Value>,
+        COO_BLOCK_THREADS));
+    int max_coo_grid_size   = device_props.sm_count * coo_sm_occupancy * COO_SUBSCRIPTION_FACTOR;
+
+    // Construct an even-share work distribution
+    GridEvenShare<int> even_share;
+    even_share.GridInit(num_edges, max_coo_grid_size, COO_TILE_SIZE);
+    int coo_grid_size       = even_share.grid_size;
     int finalize_partials   = coo_grid_size * 2;
 
     // Allocate COO device arrays
@@ -1231,7 +1234,7 @@ void TestDevice(
     CubDebugExit(DeviceAllocate((void**)&d_values,          sizeof(Value) * num_edges));
     CubDebugExit(DeviceAllocate((void**)&d_vector,          sizeof(Value) * coo_graph.col_dim));
     CubDebugExit(DeviceAllocate((void**)&d_result,          sizeof(Value) * coo_graph.row_dim));
-    CubDebugExit(DeviceAllocate((void**)&d_block_partials,    sizeof(PartialSum) * finalize_partials));
+    CubDebugExit(DeviceAllocate((void**)&d_block_partials,  sizeof(PartialSum) * finalize_partials));
 
     // Copy host arrays to device
     CubDebugExit(cudaMemcpy(d_rows,     h_rows,     sizeof(VertexId) * num_edges, cudaMemcpyHostToDevice));
@@ -1242,16 +1245,13 @@ void TestDevice(
     // Bind textures
     TexVector<Value>::BindTexture(d_vector, coo_graph.col_dim);
 
-    // Construct an even-share work distribution
-    GridEvenShare<int> block_progress(num_edges, coo_grid_size, COO_TILE_SIZE);
 
     // Print debug info
     printf("CooKernel<%d, %d><<<%d, %d>>>(...), Max SM occupancy: %d\n",
-        COO_BLOCK_THREADS, COO_ITEMS_PER_THREAD, coo_grid_size, COO_BLOCK_THREADS, coo_kernel_props.max_block_occupancy);
+        COO_BLOCK_THREADS, COO_ITEMS_PER_THREAD, coo_grid_size, COO_BLOCK_THREADS, coo_sm_occupancy);
     if (coo_grid_size > 1)
     {
-        printf("CooFinalizeKernel<<<1, %d>>>(...), Max SM occupancy: %d\n",
-            FINALIZE_BLOCK_THREADS, finalize_kernel_props.max_block_occupancy);
+        printf("CooFinalizeKernel<<<1, %d>>>(...)\n", FINALIZE_BLOCK_THREADS);
     }
     fflush(stdout);
 
@@ -1266,8 +1266,8 @@ void TestDevice(
         CubDebugExit(cudaMemset(d_result, 0, coo_graph.row_dim * sizeof(Value)));
 
         // Run the COO kernel
-        CooKernel<COO_BLOCK_THREADS, COO_ITEMS_PER_THREAD, COO_BLOCK_OCCUPANCY><<<coo_grid_size, COO_BLOCK_THREADS>>>(
-            block_progress,
+        CooKernel<COO_BLOCK_THREADS, COO_ITEMS_PER_THREAD><<<coo_grid_size, COO_BLOCK_THREADS>>>(
+            even_share,
             d_block_partials,
             d_rows,
             d_columns,
@@ -1302,7 +1302,9 @@ void TestDevice(
         num_edges * 2 / avg_elapsed / 1000.0 / 1000.0);
 
     // Check results
-    AssertEquals(0, CompareDeviceResults(h_reference, d_result, coo_graph.row_dim, g_verbose, g_verbose));
+    int compare = CompareDeviceResults(h_reference, d_result, coo_graph.row_dim, g_verbose, g_verbose);
+    printf("%s\n", compare ? "FAIL" : "PASS");
+    AssertEquals(0, compare);
 
     // Cleanup
     TexVector<Value>::UnbindTexture();
@@ -1373,8 +1375,8 @@ int main(int argc, char** argv)
     {
         printf("%s\n [--device=<device-id>] [--v] [--iterations=<test iterations>] [--grid-size=<grid-size>]\n"
             "\t--type=wheel --spokes=<spokes>\n"
-            "\t--type=grid2d --width=<width> [--7pt]\n"
-            "\t--type=grid3d --width=<width>\n"
+            "\t--type=grid2d --width=<width> [--no-self-loops]\n"
+            "\t--type=grid3d --width=<width> [--no-self-loops]\n"
             "\t--type=market --file=<file>\n"
             "\n", argv[0]);
         exit(0);
@@ -1396,15 +1398,16 @@ int main(int argc, char** argv)
     {
         VertexId width;
         args.GetCmdLineArgument("width", width);
-        bool self = args.CheckCmdLineFlag("7pt");
-        printf("Generating %s grid2d width(%d)... ", (self) ? "7-pt" : "6-pt", width); fflush(stdout);
-        if (coo_graph.InitGrid2d(width, self)) exit(1);
+        bool self_loops = !args.CheckCmdLineFlag("no-self-loops");
+        printf("Generating %s grid2d width(%d)... ", (self_loops) ? "5-pt" : "4-pt", width); fflush(stdout);
+        if (coo_graph.InitGrid2d(width, self_loops)) exit(1);
     } else if (type == string("grid3d"))
     {
         VertexId width;
         args.GetCmdLineArgument("width", width);
-        printf("Generating grid3d width(%d)... ", width); fflush(stdout);
-        if (coo_graph.InitGrid3d(width)) exit(1);
+        bool self_loops = !args.CheckCmdLineFlag("no-self-loops");
+        printf("Generating %s grid3d width(%d)... ", (self_loops) ? "7-pt" : "6-pt", width); fflush(stdout);
+        if (coo_graph.InitGrid3d(width, self_loops)) exit(1);
     }
     else if (type == string("wheel"))
     {
@@ -1458,13 +1461,22 @@ int main(int argc, char** argv)
         printf("\n\n");
     }
 
+    enum
+    {
+        COO_BLOCK_THREADS           = 128,
+        COO_ITEMS_PER_THREAD        = 10,
+        COO_SUBSCRIPTION_FACTOR     = 4,
+        FINALIZE_BLOCK_THREADS      = 256,
+        FINALIZE_ITEMS_PER_THREAD   = 4,
+    };
+
     // Run GPU version
     TestDevice<
-        128,
-        10,
-        6,
-        256,
-        4>(coo_graph, h_vector, h_reference);
+        COO_BLOCK_THREADS,
+        COO_ITEMS_PER_THREAD,
+        COO_SUBSCRIPTION_FACTOR,
+        FINALIZE_BLOCK_THREADS,
+        FINALIZE_ITEMS_PER_THREAD>(coo_graph, h_vector, h_reference);
 
     // Cleanup
     delete[] h_vector;

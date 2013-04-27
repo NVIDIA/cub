@@ -61,7 +61,7 @@ namespace cub {
  * uses a binary combining operator to compute a single aggregate from a list of input elements.
  *
  * \par
- * For convenience, WarpReduce exposes a spectrum of entrypoints that differ by:
+ * For convenience, WarpReduce provides alternative entrypoints that differ by:
  * - Operator (generic reduction <em>vs.</em> summation for numeric types)
  * - Input (full warps <em>vs.</em> partially-full warps having some undefined elements)
  *
@@ -196,7 +196,7 @@ private:
             bool    FULL_TILE,
             int     VALID_PER_LANE>
         static __device__ __forceinline__ unsigned int Sum(
-            SmemStorage         &smem_storage,      ///< [in] Shared reference to opaque SmemStorage layout
+            SmemStorage         &smem_storage,      ///< [in] Reference to shared memory allocation having layout type SmemStorage
             unsigned int        input,              ///< [in] Calling thread's input
             const unsigned int  &valid)             ///< [in] Number of valid lanes in the calling thread's logical warp (may be less than \p LOGICAL_WARP_THREADS)
         {
@@ -244,7 +244,7 @@ private:
             bool    FULL_TILE,
             int     VALID_PER_LANE>
         static __device__ __forceinline__ float Sum(
-            SmemStorage         &smem_storage,      ///< [in] Shared reference to opaque SmemStorage layout
+            SmemStorage         &smem_storage,      ///< [in] Reference to shared memory allocation having layout type SmemStorage
             float               input,              ///< [in] Calling thread's input
             const unsigned int  &valid)             ///< [in] Number of valid lanes in the calling thread's logical warp (may be less than \p LOGICAL_WARP_THREADS)
         {
@@ -292,7 +292,7 @@ private:
             int         VALID_PER_LANE,
             typename    _T>
         static __device__ __forceinline__ _T Sum(
-            SmemStorage         &smem_storage,      ///< [in] Shared reference to opaque SmemStorage layout
+            SmemStorage         &smem_storage,      ///< [in] Reference to shared memory allocation having layout type SmemStorage
             _T                  input,              ///< [in] Calling thread's input
             const unsigned int  &valid)             ///< [in] Number of valid lanes in the calling thread's logical warp (may be less than \p LOGICAL_WARP_THREADS)
         {
@@ -311,7 +311,7 @@ private:
             int             VALID_PER_LANE,
             typename        ReductionOp>
         static __device__ __forceinline__ T Reduce(
-            SmemStorage         &smem_storage,      ///< [in] Shared reference to opaque SmemStorage layout
+            SmemStorage         &smem_storage,      ///< [in] Reference to shared memory allocation having layout type SmemStorage
             T                   input,              ///< [in] Calling thread's input
             const unsigned int  &valid,             ///< [in] Number of valid lanes in the calling thread's logical warp (may be less than \p LOGICAL_WARP_THREADS)
             ReductionOp         reduction_op)       ///< [in] Binary reduction operator
@@ -406,7 +406,7 @@ private:
             int                 VALID_PER_LANE,
             typename            ReductionOp>
         static __device__ __forceinline__ T Reduce(
-            SmemStorage         &smem_storage,      ///< [in] Shared reference to opaque SmemStorage layout
+            SmemStorage         &smem_storage,      ///< [in] Reference to shared memory allocation having layout type SmemStorage
             T                   input,              ///< [in] Calling thread's input
             const unsigned int  &valid,             ///< [in] Number of valid lanes in the calling thread's logical warp (may be less than \p LOGICAL_WARP_THREADS)
             ReductionOp         reduction_op)       ///< [in] Reduction operator
@@ -441,7 +441,7 @@ private:
             bool    FULL_TILE,
             int     VALID_PER_LANE>
         static __device__ __forceinline__ T Sum(
-            SmemStorage         &smem_storage,      ///< [in] Shared reference to opaque SmemStorage layout
+            SmemStorage         &smem_storage,      ///< [in] Reference to shared memory allocation having layout type SmemStorage
             T                   input,              ///< [in] Calling thread's input
             const unsigned int  &valid)             ///< [in] Number of valid lanes in the calling thread's logical warp (may be less than \p LOGICAL_WARP_THREADS)
         {
@@ -477,7 +477,7 @@ public:
      * \smemreuse
      */
     static __device__ __forceinline__ T Sum(
-        SmemStorage         &smem_storage,      ///< [in] Shared reference to opaque SmemStorage layout
+        SmemStorage         &smem_storage,      ///< [in] Reference to shared memory allocation having layout type SmemStorage
         T                   input)              ///< [in] Calling thread's input
     {
         return Internal::Sum<true, 1>(smem_storage, input, LOGICAL_WARP_THREADS);
@@ -495,7 +495,7 @@ public:
      * \smemreuse
      */
     static __device__ __forceinline__ T Sum(
-        SmemStorage         &smem_storage,          ///< [in] Shared reference to opaque SmemStorage layout
+        SmemStorage         &smem_storage,          ///< [in] Reference to shared memory allocation having layout type SmemStorage
         T                   input,                  ///< [in] Calling thread's input
         const unsigned int  &valid_lanes)           ///< [in] Number of valid lanes in the calling thread's logical warp (may be less than \p LOGICAL_WARP_THREADS)
     {
@@ -530,7 +530,7 @@ public:
      */
     template <typename ReductionOp>
     static __device__ __forceinline__ T Reduce(
-        SmemStorage         &smem_storage,      ///< [in] Shared reference to opaque SmemStorage layout
+        SmemStorage         &smem_storage,      ///< [in] Reference to shared memory allocation having layout type SmemStorage
         T                   input,              ///< [in] Calling thread's input
         ReductionOp         reduction_op)       ///< [in] Binary reduction operator
     {
@@ -552,7 +552,7 @@ public:
      */
     template <typename ReductionOp>
     static __device__ __forceinline__ T Reduce(
-        SmemStorage         &smem_storage,      ///< [in] Shared reference to opaque SmemStorage layout
+        SmemStorage         &smem_storage,      ///< [in] Reference to shared memory allocation having layout type SmemStorage
         T                   input,              ///< [in] Calling thread's input
         ReductionOp         reduction_op,       ///< [in] Binary reduction operator
         const unsigned int  &valid_lanes)       ///< [in] Number of valid lanes in the calling thread's logical warp (may be less than \p LOGICAL_WARP_THREADS)

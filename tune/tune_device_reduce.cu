@@ -162,12 +162,12 @@ struct Schmoo
 
 
     /// Multi-block reduction kernel type and dispatch tuple type
-    typedef void (*MultiReduceKernelPtr)(T*, T*, SizeT, GridEvenShare<SizeT>, GridQueue<SizeT>, ReductionOp);
-    typedef DispatchTuple<MultiReduceKernelPtr> MultiDispatchTuple;
+    typedef void (*MultiBlockDeviceReduceKernelPtr)(T*, T*, SizeT, GridEvenShare<SizeT>, GridQueue<SizeT>, ReductionOp);
+    typedef DispatchTuple<MultiBlockDeviceReduceKernelPtr> MultiDispatchTuple;
 
     /// Single-block reduction kernel type and dispatch tuple type
-    typedef void (*SingleReduceKernelPtr)(T*, T*, SizeT, ReductionOp);
-    typedef DispatchTuple<SingleReduceKernelPtr> SingleDispatchTuple;
+    typedef void (*SingleBlockDeviceReduceKernelPtr)(T*, T*, SizeT, ReductionOp);
+    typedef DispatchTuple<SingleBlockDeviceReduceKernelPtr> SingleDispatchTuple;
 
 
     //---------------------------------------------------------------------
@@ -214,7 +214,7 @@ struct Schmoo
         {
             MultiDispatchTuple tuple;
             tuple.params.template Init<BlockReduceTilesPolicy>(subscription_factor);
-            tuple.kernel_ptr = MultiReduceKernel<BlockReduceTilesPolicy, T*, T*, SizeT, ReductionOp>;
+            tuple.kernel_ptr = MultiBlockDeviceReduceKernel<BlockReduceTilesPolicy, T*, T*, SizeT, ReductionOp>;
             multi_kernels.push_back(tuple);
         }
 
@@ -225,7 +225,7 @@ struct Schmoo
         {
             SingleDispatchTuple tuple;
             tuple.params.template Init<BlockReduceTilesPolicy>();
-            tuple.kernel_ptr = SingleReduceKernel<BlockReduceTilesPolicy, T*, T*, SizeT, ReductionOp>;
+            tuple.kernel_ptr = SingleBlockDeviceReduceKernel<BlockReduceTilesPolicy, T*, T*, SizeT, ReductionOp>;
             single_kernels.push_back(tuple);
         }
     };
@@ -450,7 +450,7 @@ struct Schmoo
         typedef typename DeviceReduce::TunedPolicies<T, SizeT, TUNE_ARCH>::SinglePolicy SimpleSinglePolicy;
         SingleDispatchTuple simple_single_tuple;
         simple_single_tuple.params.template Init<SimpleSinglePolicy>();
-        simple_single_tuple.kernel_ptr = SingleReduceKernel<SimpleSinglePolicy, T*, T*, SizeT, ReductionOp>;
+        simple_single_tuple.kernel_ptr = SingleBlockDeviceReduceKernel<SimpleSinglePolicy, T*, T*, SizeT, ReductionOp>;
 
         double max_exponent      = log2(double(g_max_items));
         double min_exponent      = log2(double(simple_single_tuple.params.tile_size));

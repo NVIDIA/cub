@@ -105,8 +105,8 @@ template <PtxStoreModifier MODIFIER>
 struct ThreadStoreDispatch<MODIFIER, true>
 {
     // Iterator
-    template <typename OutputIterator, typename T>
-    static __device__ __forceinline__ void ThreadStore(OutputIterator itr, const T& val)
+    template <typename OutputIteratorRA, typename T>
+    static __device__ __forceinline__ void ThreadStore(OutputIteratorRA itr, const T& val)
     {
         val.ThreadStore<MODIFIER>(itr);
     }
@@ -121,9 +121,9 @@ struct ThreadStoreDispatch<PTX_STORE_NONE, false>
 {
     // Iterator
     template <
-        typename OutputIterator,
+        typename OutputIteratorRA,
         typename T>
-    static __device__ __forceinline__ void ThreadStore(OutputIterator itr, const T& val)
+    static __device__ __forceinline__ void ThreadStore(OutputIteratorRA itr, const T& val)
     {
         // Straightforward dereference
         *itr = val;
@@ -139,9 +139,9 @@ struct ThreadStoreDispatch<PTX_STORE_VS, false>
 {
     // Iterator
     template <
-        typename OutputIterator,
+        typename OutputIteratorRA,
         typename T>
-    static __device__ __forceinline__ void ThreadStore(OutputIterator itr, const T& val)
+    static __device__ __forceinline__ void ThreadStore(OutputIteratorRA itr, const T& val)
     {
         const bool USE_VOLATILE = NumericTraits<T>::PRIMITIVE;
 
@@ -195,9 +195,9 @@ struct ThreadStoreDispatch<PTX_STORE_VS, false>
  */
 template <
     PtxStoreModifier MODIFIER,
-    typename OutputIterator,
+    typename OutputIteratorRA,
     typename T>
-__device__ __forceinline__ void ThreadStore(OutputIterator itr, const T& val)
+__device__ __forceinline__ void ThreadStore(OutputIteratorRA itr, const T& val)
 {
     ThreadStoreDispatch<MODIFIER, HasThreadLoad<T>::VALUE>::ThreadStore(itr, val);
 }

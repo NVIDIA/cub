@@ -109,10 +109,10 @@ enum BlockReduceAlgorithm
  * uses a binary combining operator to compute a single aggregate from a list of input elements.
  *
  * \par
- * For convenience, BlockReduce exposes a spectrum of entrypoints that differ by:
+ * For convenience, BlockReduce provides alternative entrypoints that differ by:
  * - Operator (generic reduction <em>vs.</em> summation for numeric types)
  * - Granularity (single <em>vs.</em> multiple data items per thread)
- * - Input (full data tile <em>vs.</em> partially-full data tile having some undefined elements)
+ * - Input validity (full data tile <em>vs.</em> partially-full data tile having some undefined elements)
  *
  * \tparam T                The reduction input/output element type
  * \tparam BLOCK_THREADS    The threadblock size in threads
@@ -253,7 +253,7 @@ private:
         /// Computes a threadblock-wide reduction using addition (+) as the reduction operator. The first num_valid threads each contribute one reduction partial.  The return value is only valid for thread<sub>0</sub>.
         template <bool FULL_TILE>
         static __device__ __forceinline__ T Sum(
-            SmemStorage         &smem_storage,      ///< [in] Shared reference to opaque SmemStorage layout
+            SmemStorage         &smem_storage,      ///< [in] Reference to shared memory allocation having layout type SmemStorage
             T                   partial,            ///< [in] Calling thread's input partial reductions
             const unsigned int  &num_valid)         ///< [in] Number of valid elements (may be less than BLOCK_THREADS)
         {
@@ -307,7 +307,7 @@ private:
             bool                FULL_TILE,
             typename            ReductionOp>
         static __device__ __forceinline__ T Reduce(
-            SmemStorage         &smem_storage,      ///< [in] Shared reference to opaque SmemStorage layout
+            SmemStorage         &smem_storage,      ///< [in] Reference to shared memory allocation having layout type SmemStorage
             T                   partial,            ///< [in] Calling thread's input partial reductions
             const unsigned int  &num_valid,         ///< [in] Number of valid elements (may be less than BLOCK_THREADS)
             ReductionOp         reduction_op)       ///< [in] Binary reduction operator
@@ -399,7 +399,7 @@ private:
             bool                FULL_TILE,
             typename            ReductionOp>
         static __device__ __forceinline__ T ApplyWarpAggregates(
-            SmemStorage         &smem_storage,      ///< [in] Shared reference to opaque SmemStorage layout
+            SmemStorage         &smem_storage,      ///< [in] Reference to shared memory allocation having layout type SmemStorage
             ReductionOp         reduction_op,       ///< [in] Binary scan operator
             T                   warp_aggregate,     ///< [in] <b>[<em>lane</em><sub>0</sub>s only]</b> Warp-wide aggregate reduction of input items
             const unsigned int  &num_valid)         ///< [in] Number of valid elements (may be less than BLOCK_THREADS)
@@ -436,7 +436,7 @@ private:
         /// Computes a threadblock-wide reduction using addition (+) as the reduction operator. The first num_valid threads each contribute one reduction partial.  The return value is only valid for thread<sub>0</sub>.
         template <bool FULL_TILE>
         static __device__ __forceinline__ T Sum(
-            SmemStorage         &smem_storage,  ///< [in] Shared reference to opaque SmemStorage layout
+            SmemStorage         &smem_storage,  ///< [in] Reference to shared memory allocation having layout type SmemStorage
             T                   input,          ///< [in] Calling thread's input partial reductions
             const unsigned int  &num_valid)     ///< [in] Number of valid elements (may be less than BLOCK_THREADS)
         {
@@ -465,7 +465,7 @@ private:
             bool                FULL_TILE,
             typename            ReductionOp>
         static __device__ __forceinline__ T Reduce(
-            SmemStorage         &smem_storage,      ///< [in] Shared reference to opaque SmemStorage layout
+            SmemStorage         &smem_storage,      ///< [in] Reference to shared memory allocation having layout type SmemStorage
             T                   input,              ///< [in] Calling thread's input partial reductions
             const unsigned int  &num_valid,         ///< [in] Number of valid elements (may be less than BLOCK_THREADS)
             ReductionOp         reduction_op)       ///< [in] Binary reduction operator
@@ -522,7 +522,7 @@ public:
      */
     template <typename ReductionOp>
     static __device__ __forceinline__ T Reduce(
-        SmemStorage     &smem_storage,              ///< [in] Shared reference to opaque SmemStorage layout
+        SmemStorage     &smem_storage,              ///< [in] Reference to shared memory allocation having layout type SmemStorage
         T               input,                      ///< [in] Calling thread's input
         ReductionOp     reduction_op)               ///< [in] Binary reduction operator
     {
@@ -544,7 +544,7 @@ public:
         int ITEMS_PER_THREAD,
         typename ReductionOp>
     static __device__ __forceinline__ T Reduce(
-        SmemStorage     &smem_storage,                  ///< [in] Shared reference to opaque SmemStorage layout
+        SmemStorage     &smem_storage,                  ///< [in] Reference to shared memory allocation having layout type SmemStorage
         T               (&inputs)[ITEMS_PER_THREAD],    ///< [in] Calling thread's input segment
         ReductionOp     reduction_op)                   ///< [in] Binary reduction operator
     {
@@ -565,7 +565,7 @@ public:
      */
     template <typename ReductionOp>
     static __device__ __forceinline__ T Reduce(
-        SmemStorage         &smem_storage,          ///< [in] Shared reference to opaque SmemStorage layout
+        SmemStorage         &smem_storage,          ///< [in] Reference to shared memory allocation having layout type SmemStorage
         T                   input,                  ///< [in] Calling thread's input
         ReductionOp         reduction_op,           ///< [in] Binary reduction operator
         const unsigned int  &num_valid)             ///< [in] Number of threads containing valid elements (may be less than BLOCK_THREADS)
@@ -597,7 +597,7 @@ public:
      * \smemreuse
      */
     static __device__ __forceinline__ T Sum(
-        SmemStorage     &smem_storage,              ///< [in] Shared reference to opaque SmemStorage layout
+        SmemStorage     &smem_storage,              ///< [in] Reference to shared memory allocation having layout type SmemStorage
         T               input)                      ///< [in] Calling thread's input
     {
         return BlockReduceInternal<ALGORITHM>::template Sum<true>(smem_storage, input, BLOCK_THREADS);
@@ -614,7 +614,7 @@ public:
      */
     template <int ITEMS_PER_THREAD>
     static __device__ __forceinline__ T Sum(
-        SmemStorage     &smem_storage,                  ///< [in] Shared reference to opaque SmemStorage layout
+        SmemStorage     &smem_storage,                  ///< [in] Reference to shared memory allocation having layout type SmemStorage
         T               (&inputs)[ITEMS_PER_THREAD])    ///< [in] Calling thread's input segment
     {
         // Reduce partials
@@ -631,7 +631,7 @@ public:
      * The return value is undefined in threads other than thread<sub>0</sub>.
      */
     static __device__ __forceinline__ T Sum(
-        SmemStorage         &smem_storage,          ///< [in] Shared reference to opaque SmemStorage layout
+        SmemStorage         &smem_storage,          ///< [in] Reference to shared memory allocation having layout type SmemStorage
         T                   input,                  ///< [in] Calling thread's input
         const unsigned int  &num_valid)             ///< [in] Number of threads containing valid elements (may be less than BLOCK_THREADS)
     {

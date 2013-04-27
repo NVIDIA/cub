@@ -69,15 +69,15 @@ namespace cub {
  * \tparam MODIFIER             cub::PtxStoreModifier cache modifier.
  * \tparam T                    <b>[inferred]</b> The data type to store.
  * \tparam ITEMS_PER_THREAD     <b>[inferred]</b> The number of consecutive items partitioned onto each thread.
- * \tparam OutputIterator       <b>[inferred]</b> The output iterator type (may be a simple pointer type).
+ * \tparam OutputIteratorRA     <b>[inferred]</b> The random-access iterator type for output (may be a simple pointer type).
  */
 template <
     PtxStoreModifier MODIFIER,
     typename        T,
     int             ITEMS_PER_THREAD,
-    typename        OutputIterator>
+    typename        OutputIteratorRA>
 __device__ __forceinline__ void BlockStoreDirect(
-    OutputIterator  block_itr,                        ///< [in] The threadblock's base output iterator for storing to
+    OutputIteratorRA  block_itr,                        ///< [in] The threadblock's base output iterator for storing to
     T               (&items)[ITEMS_PER_THREAD])     ///< [in] Data to store
 {
     // Store directly in thread-blocked order
@@ -99,14 +99,14 @@ __device__ __forceinline__ void BlockStoreDirect(
  *
  * \tparam T                    <b>[inferred]</b> The data type to store.
  * \tparam ITEMS_PER_THREAD     <b>[inferred]</b> The number of consecutive items partitioned onto each thread.
- * \tparam OutputIterator       <b>[inferred]</b> The output iterator type (may be a simple pointer type).
+ * \tparam OutputIteratorRA     <b>[inferred]</b> The random-access iterator type for output (may be a simple pointer type).
  */
 template <
     typename        T,
     int             ITEMS_PER_THREAD,
-    typename        OutputIterator>
+    typename        OutputIteratorRA>
 __device__ __forceinline__ void BlockStoreDirect(
-    OutputIterator  block_itr,                        ///< [in] The threadblock's base output iterator for storing to
+    OutputIteratorRA  block_itr,                        ///< [in] The threadblock's base output iterator for storing to
     T               (&items)[ITEMS_PER_THREAD])     ///< [in] Data to store
 {
     BlockStoreDirect<PTX_STORE_NONE>(block_itr, items);
@@ -123,17 +123,17 @@ __device__ __forceinline__ void BlockStoreDirect(
  * \tparam MODIFIER             cub::PtxStoreModifier cache modifier.
  * \tparam T                    <b>[inferred]</b> The data type to store.
  * \tparam ITEMS_PER_THREAD     <b>[inferred]</b> The number of consecutive items partitioned onto each thread.
- * \tparam OutputIterator       <b>[inferred]</b> The output iterator type (may be a simple pointer type).
+ * \tparam OutputIteratorRA     <b>[inferred]</b> The random-access iterator type for output (may be a simple pointer type).
  * \tparam SizeT                <b>[inferred]</b> Integer type for offsets
  */
 template <
     PtxStoreModifier MODIFIER,
     typename        T,
     int             ITEMS_PER_THREAD,
-    typename        OutputIterator,
+    typename        OutputIteratorRA,
     typename        SizeT>
 __device__ __forceinline__ void BlockStoreDirect(
-    OutputIterator  block_itr,                        ///< [in] The threadblock's base output iterator for storing to
+    OutputIteratorRA  block_itr,                        ///< [in] The threadblock's base output iterator for storing to
     const SizeT     &guarded_items,                 ///< [in] Number of valid items in the tile
     T               (&items)[ITEMS_PER_THREAD])     ///< [in] Data to store
 {
@@ -159,16 +159,16 @@ __device__ __forceinline__ void BlockStoreDirect(
  *
  * \tparam T                    <b>[inferred]</b> The data type to store.
  * \tparam ITEMS_PER_THREAD     <b>[inferred]</b> The number of consecutive items partitioned onto each thread.
- * \tparam OutputIterator       <b>[inferred]</b> The output iterator type (may be a simple pointer type).
+ * \tparam OutputIteratorRA     <b>[inferred]</b> The random-access iterator type for output (may be a simple pointer type).
  * \tparam SizeT                <b>[inferred]</b> Integer type for offsets
  */
 template <
     typename        T,
     int             ITEMS_PER_THREAD,
-    typename        OutputIterator,
+    typename        OutputIteratorRA,
     typename        SizeT>
 __device__ __forceinline__ void BlockStoreDirect(
-    OutputIterator  block_itr,                        ///< [in] The threadblock's base output iterator for storing to
+    OutputIteratorRA  block_itr,                        ///< [in] The threadblock's base output iterator for storing to
     const SizeT     &guarded_items,                 ///< [in] Number of valid items in the tile
     T               (&items)[ITEMS_PER_THREAD])     ///< [in] Data to store
 {
@@ -194,15 +194,15 @@ __device__ __forceinline__ void BlockStoreDirect(
  * \tparam MODIFIER             cub::PtxStoreModifier cache modifier.
  * \tparam T                    <b>[inferred]</b> The data type to store.
  * \tparam ITEMS_PER_THREAD     <b>[inferred]</b> The number of consecutive items partitioned onto each thread.
- * \tparam OutputIterator       <b>[inferred]</b> The output iterator type (may be a simple pointer type).
+ * \tparam OutputIteratorRA     <b>[inferred]</b> The random-access iterator type for output (may be a simple pointer type).
  */
 template <
     PtxStoreModifier MODIFIER,
     typename        T,
     int             ITEMS_PER_THREAD,
-    typename        OutputIterator>
+    typename        OutputIteratorRA>
 __device__ __forceinline__ void BlockStoreDirectStriped(
-    OutputIterator  block_itr,                        ///< [in] The threadblock's base output iterator for storing to
+    OutputIteratorRA  block_itr,                        ///< [in] The threadblock's base output iterator for storing to
     T               (&items)[ITEMS_PER_THREAD],     ///< [in] Data to store
     int             stride = blockDim.x)            ///< [in] <b>[optional]</b> Stripe stride.  Default is the width of the threadblock.  More efficient code can be generated if a compile-time-constant (e.g., BLOCK_THREADS) is supplied.
 {
@@ -226,14 +226,14 @@ __device__ __forceinline__ void BlockStoreDirectStriped(
  * \tparam MODIFIER             cub::PtxStoreModifier cache modifier.
  * \tparam T                    <b>[inferred]</b> The data type to store.
  * \tparam ITEMS_PER_THREAD     <b>[inferred]</b> The number of consecutive items partitioned onto each thread.
- * \tparam OutputIterator       <b>[inferred]</b> The output iterator type (may be a simple pointer type).
+ * \tparam OutputIteratorRA     <b>[inferred]</b> The random-access iterator type for output (may be a simple pointer type).
  */
 template <
     typename        T,
     int             ITEMS_PER_THREAD,
-    typename        OutputIterator>
+    typename        OutputIteratorRA>
 __device__ __forceinline__ void BlockStoreDirectStriped(
-    OutputIterator  block_itr,                        ///< [in] The threadblock's base output iterator for storing to
+    OutputIteratorRA  block_itr,                        ///< [in] The threadblock's base output iterator for storing to
     T               (&items)[ITEMS_PER_THREAD],     ///< [in] Data to store
     int             stride = blockDim.x)            ///< [in] <b>[optional]</b> Stripe stride.  Default is the width of the threadblock.  More efficient code can be generated if a compile-time-constant (e.g., BLOCK_THREADS) is supplied.
 {
@@ -251,17 +251,17 @@ __device__ __forceinline__ void BlockStoreDirectStriped(
  * \tparam MODIFIER             cub::PtxStoreModifier cache modifier.
  * \tparam T                    <b>[inferred]</b> The data type to store.
  * \tparam ITEMS_PER_THREAD     <b>[inferred]</b> The number of consecutive items partitioned onto each thread.
- * \tparam OutputIterator       <b>[inferred]</b> The output iterator type (may be a simple pointer type).
+ * \tparam OutputIteratorRA     <b>[inferred]</b> The random-access iterator type for output (may be a simple pointer type).
  * \tparam SizeT                <b>[inferred]</b> Integer type for offsets
  */
 template <
     PtxStoreModifier MODIFIER,
     typename        T,
     int             ITEMS_PER_THREAD,
-    typename        OutputIterator,
+    typename        OutputIteratorRA,
     typename        SizeT>
 __device__ __forceinline__ void BlockStoreDirectStriped(
-    OutputIterator  block_itr,                        ///< [in] The threadblock's base output iterator for storing to
+    OutputIteratorRA  block_itr,                        ///< [in] The threadblock's base output iterator for storing to
     const SizeT     &guarded_items,                 ///< [in] Number of valid items in the tile
     T               (&items)[ITEMS_PER_THREAD],     ///< [in] Data to store
     int             stride = blockDim.x)            ///< [in] <b>[optional]</b> Stripe stride.  Default is the width of the threadblock.  More efficient code can be generated if a compile-time-constant (e.g., BLOCK_THREADS) is supplied.
@@ -288,16 +288,16 @@ __device__ __forceinline__ void BlockStoreDirectStriped(
  *
  * \tparam T                    <b>[inferred]</b> The data type to store.
  * \tparam ITEMS_PER_THREAD     <b>[inferred]</b> The number of consecutive items partitioned onto each thread.
- * \tparam OutputIterator       <b>[inferred]</b> The output iterator type (may be a simple pointer type).
+ * \tparam OutputIteratorRA     <b>[inferred]</b> The random-access iterator type for output (may be a simple pointer type).
  * \tparam SizeT                <b>[inferred]</b> Integer type for offsets
  */
 template <
     typename        T,
     int             ITEMS_PER_THREAD,
-    typename        OutputIterator,
+    typename        OutputIteratorRA,
     typename        SizeT>
 __device__ __forceinline__ void BlockStoreDirectStriped(
-    OutputIterator  block_itr,                        ///< [in] The threadblock's base output iterator for storing to
+    OutputIteratorRA  block_itr,                        ///< [in] The threadblock's base output iterator for storing to
     const SizeT     &guarded_items,                 ///< [in] Number of valid items in the tile
     T               (&items)[ITEMS_PER_THREAD],     ///< [in] Data to store
     int             stride = blockDim.x)            ///< [in] <b>[optional]</b> Stripe stride.  Default is the width of the threadblock.  More efficient code can be generated if a compile-time-constant (e.g., BLOCK_THREADS) is supplied.
@@ -446,7 +446,7 @@ enum BlockStorePolicy
      *   maximum vector load width (typically 4 items or 64B, whichever is lower).
      * - The following conditions will prevent vectorization and loading will fall back to cub::BLOCK_STORE_DIRECT:
      *   - \p ITEMS_PER_THREAD is odd
-     *   - The \p OutputIterator is not a simple pointer type
+     *   - The \p OutputIteratorRA is not a simple pointer type
      *   - The block output offset is not quadword-aligned
      *   - The data type \p T is not a built-in primitive or CUDA vector type (e.g., \p short, \p int2, \p double, \p float2, etc.)
      */
@@ -498,7 +498,7 @@ enum BlockStorePolicy
  * BlockStore implements several alternative cub::BlockStorePolicy strategies catering to different granularity sizes (i.e.,
  * number of items per thread).
  *
- * \tparam OutputIterator       The input iterator type (may be a simple pointer type).
+ * \tparam OutputIteratorRA       The input iterator type (may be a simple pointer type).
  * \tparam BLOCK_THREADS        The threadblock size in threads.
  * \tparam ITEMS_PER_THREAD     The number of consecutive items partitioned onto each thread.
  * \tparam POLICY               <b>[optional]</b> cub::BlockStorePolicy tuning policy enumeration.  Default = cub::BLOCK_STORE_DIRECT.
@@ -573,7 +573,7 @@ enum BlockStorePolicy
  * <br>
  */
 template <
-    typename            OutputIterator,
+    typename            OutputIteratorRA,
     int                 BLOCK_THREADS,
     int                 ITEMS_PER_THREAD,
     BlockStorePolicy    POLICY = BLOCK_STORE_DIRECT,
@@ -587,7 +587,7 @@ class BlockStore
 private:
 
     // Data type of input iterator
-    typedef typename std::iterator_traits<OutputIterator>::value_type T;
+    typedef typename std::iterator_traits<OutputIteratorRA>::value_type T;
 
 
     /// Store helper
@@ -606,8 +606,8 @@ private:
 
         /// Store a tile of items across a threadblock
         static __device__ __forceinline__ void Store(
-            SmemStorage     &smem_storage,              ///< [in] Shared reference to opaque SmemStorage layout
-            OutputIterator  block_itr,                  ///< [in] The threadblock's base output iterator for storing to
+            SmemStorage     &smem_storage,              ///< [in] Reference to shared memory allocation having layout type SmemStorage
+            OutputIteratorRA  block_itr,                  ///< [in] The threadblock's base output iterator for storing to
             T               (&items)[ITEMS_PER_THREAD]) ///< [in] Data to store
         {
             BlockStoreDirect<MODIFIER>(block_itr, items);
@@ -616,8 +616,8 @@ private:
         /// Store a tile of items across a threadblock, guarded by range
         template <typename SizeT>
         static __device__ __forceinline__ void Store(
-            SmemStorage     &smem_storage,              ///< [in] Shared reference to opaque SmemStorage layout
-            OutputIterator  block_itr,                  ///< [in] The threadblock's base output iterator for storing to
+            SmemStorage     &smem_storage,              ///< [in] Reference to shared memory allocation having layout type SmemStorage
+            OutputIteratorRA  block_itr,                  ///< [in] The threadblock's base output iterator for storing to
             const SizeT     &guarded_items,             ///< [in] Number of valid items in the tile
             T               (&items)[ITEMS_PER_THREAD]) ///< [in] Data to store
         {
@@ -638,7 +638,7 @@ private:
         /// Store a tile of items across a threadblock, specialized for native pointer types (attempts vectorization)
         template <typename SizeT>
         static __device__ __forceinline__ void Store(
-            SmemStorage     &smem_storage,              ///< [in] Shared reference to opaque SmemStorage layout
+            SmemStorage     &smem_storage,              ///< [in] Reference to shared memory allocation having layout type SmemStorage
             T               *block_ptr,                 ///< [in] The threadblock's base output iterator for storing to
             T               (&items)[ITEMS_PER_THREAD]) ///< [in] Data to store
         {
@@ -646,10 +646,10 @@ private:
         }
 
         /// Store a tile of items across a threadblock, specialized for opaque input iterators (skips vectorization)
-        template <typename _OutputIterator>
+        template <typename _OutputIteratorRA>
         static __device__ __forceinline__ void Store(
-            SmemStorage     &smem_storage,              ///< [in] Shared reference to opaque SmemStorage layout
-            _OutputIterator block_itr,                  ///< [in] The threadblock's base output iterator for storing to
+            SmemStorage     &smem_storage,              ///< [in] Reference to shared memory allocation having layout type SmemStorage
+            _OutputIteratorRA block_itr,                  ///< [in] The threadblock's base output iterator for storing to
             T               (&items)[ITEMS_PER_THREAD]) ///< [in] Data to store
         {
             BlockStoreDirect<MODIFIER>(block_itr, items);
@@ -658,8 +658,8 @@ private:
         /// Store a tile of items across a threadblock, guarded by range
         template <typename SizeT>
         static __device__ __forceinline__ void Store(
-            SmemStorage     &smem_storage,              ///< [in] Shared reference to opaque SmemStorage layout
-            OutputIterator  block_itr,                  ///< [in] The threadblock's base output iterator for storing to
+            SmemStorage     &smem_storage,              ///< [in] Reference to shared memory allocation having layout type SmemStorage
+            OutputIteratorRA  block_itr,                  ///< [in] The threadblock's base output iterator for storing to
             const SizeT     &guarded_items,             ///< [in] Number of valid items in the tile
             T               (&items)[ITEMS_PER_THREAD]) ///< [in] Data to store
         {
@@ -682,8 +682,8 @@ private:
 
         /// Store a tile of items across a threadblock
         static __device__ __forceinline__ void Store(
-            SmemStorage     &smem_storage,              ///< [in] Shared reference to opaque SmemStorage layout
-            OutputIterator  block_itr,                  ///< [in] The threadblock's base output iterator for storing to
+            SmemStorage     &smem_storage,              ///< [in] Reference to shared memory allocation having layout type SmemStorage
+            OutputIteratorRA  block_itr,                  ///< [in] The threadblock's base output iterator for storing to
             T               (&items)[ITEMS_PER_THREAD]) ///< [in] Data to store
         {
             // Transpose to striped order
@@ -695,8 +695,8 @@ private:
         /// Store a tile of items across a threadblock, guarded by range
         template <typename SizeT>
         static __device__ __forceinline__ void Store(
-            SmemStorage     &smem_storage,              ///< [in] Shared reference to opaque SmemStorage layout
-            OutputIterator  block_itr,                  ///< [in] The threadblock's base output iterator for storing to
+            SmemStorage     &smem_storage,              ///< [in] Reference to shared memory allocation having layout type SmemStorage
+            OutputIteratorRA  block_itr,                  ///< [in] The threadblock's base output iterator for storing to
             const SizeT     &guarded_items,             ///< [in] Number of valid items in the tile
             T               (&items)[ITEMS_PER_THREAD]) ///< [in] Data to store
         {
@@ -719,8 +719,8 @@ private:
 
         /// Store a tile of items across a threadblock
         static __device__ __forceinline__ void Store(
-            SmemStorage     &smem_storage,              ///< [in] Shared reference to opaque SmemStorage layout
-            OutputIterator  block_itr,                  ///< [in] The threadblock's base output iterator for storing to
+            SmemStorage     &smem_storage,              ///< [in] Reference to shared memory allocation having layout type SmemStorage
+            OutputIteratorRA  block_itr,                  ///< [in] The threadblock's base output iterator for storing to
             T               (&items)[ITEMS_PER_THREAD]) ///< [in] Data to store
         {
             BlockStoreDirectStriped<MODIFIER>(block_itr, items);
@@ -729,8 +729,8 @@ private:
         /// Store a tile of items across a threadblock, guarded by range
         template <typename SizeT>
         static __device__ __forceinline__ void Store(
-            SmemStorage     &smem_storage,              ///< [in] Shared reference to opaque SmemStorage layout
-            OutputIterator  block_itr,                  ///< [in] The threadblock's base output iterator for storing to
+            SmemStorage     &smem_storage,              ///< [in] Reference to shared memory allocation having layout type SmemStorage
+            OutputIteratorRA  block_itr,                  ///< [in] The threadblock's base output iterator for storing to
             const SizeT     &guarded_items,             ///< [in] Number of valid items in the tile
             T               (&items)[ITEMS_PER_THREAD]) ///< [in] Data to store
         {
@@ -756,8 +756,8 @@ public:
      * \brief Store a tile of items across a threadblock.
      */
     static __device__ __forceinline__ void Store(
-        SmemStorage     &smem_storage,              ///< [in] Shared reference to opaque SmemStorage layout
-        OutputIterator  block_itr,                    ///< [in] The threadblock's base output iterator for storing to
+        SmemStorage     &smem_storage,              ///< [in] Reference to shared memory allocation having layout type SmemStorage
+        OutputIteratorRA  block_itr,                    ///< [in] The threadblock's base output iterator for storing to
         T               (&items)[ITEMS_PER_THREAD]) ///< [in] Data to store
     {
         StoreInternal<POLICY>::Store(smem_storage, block_itr, items);
@@ -770,8 +770,8 @@ public:
      */
     template <typename SizeT>
     static __device__ __forceinline__ void Store(
-        SmemStorage     &smem_storage,              ///< [in] Shared reference to opaque SmemStorage layout
-        OutputIterator  block_itr,                    ///< [in] The threadblock's base output iterator for storing to
+        SmemStorage     &smem_storage,              ///< [in] Reference to shared memory allocation having layout type SmemStorage
+        OutputIteratorRA  block_itr,                    ///< [in] The threadblock's base output iterator for storing to
         const SizeT     &guarded_items,             ///< [in] Number of valid items in the tile
         T               (&items)[ITEMS_PER_THREAD]) ///< [in] Data to store
     {

@@ -71,7 +71,7 @@ namespace cub {
  * that ensure lexicographic key ordering.
  *
  * \par
- * For convenience, BlockRadixSort exposes a spectrum of entrypoints that differ by:
+ * For convenience, BlockRadixSort provides alternative entrypoints that differ by:
  * - Value association (keys-only <em>vs.</em> key-value-pairs)
  * - Input/output data arrangements (combinations of [<em>blocked</em>](index.html#sec3sec3) and [<em>striped</em>](index.html#sec3sec3) arrangements)
  *
@@ -218,7 +218,7 @@ public:
      * \smemreuse
      */
     static __device__ __forceinline__ void SortBlocked(
-        SmemStorage         &smem_storage,                      ///< [in] Shared reference to opaque SmemStorage layout
+        SmemStorage         &smem_storage,                      ///< [in] Reference to shared memory allocation having layout type SmemStorage
         KeyType             (&keys)[ITEMS_PER_THREAD],          ///< [in-out] Keys to sort
         unsigned int        begin_bit = 0,                      ///< [in] <b>[optional]</b> The beginning (least-significant) bit index needed for key comparison
         const unsigned int  &end_bit = sizeof(KeyType) * 8)     ///< [in] <b>[optional]</b> The past-the-end (most-significant) bit index needed for key comparison
@@ -267,7 +267,7 @@ public:
      * \smemreuse
      */
     static __device__ __forceinline__ void SortBlockedToStriped(
-        SmemStorage         &smem_storage,                      ///< [in] Shared reference to opaque SmemStorage layout
+        SmemStorage         &smem_storage,                      ///< [in] Reference to shared memory allocation having layout type SmemStorage
         KeyType             (&keys)[ITEMS_PER_THREAD],          ///< [in-out] Keys to sort
         unsigned int        begin_bit = 0,                      ///< [in] <b>[optional]</b> The beginning (least-significant) bit index needed for key comparison
         const unsigned int  &end_bit = sizeof(KeyType) * 8)     ///< [in] <b>[optional]</b> The past-the-end (most-significant) bit index needed for key comparison
@@ -326,7 +326,7 @@ public:
      * \smemreuse
      */
     static __device__ __forceinline__ void SortStriped(
-        SmemStorage         &smem_storage,                      ///< [in] Shared reference to opaque SmemStorage layout
+        SmemStorage         &smem_storage,                      ///< [in] Reference to shared memory allocation having layout type SmemStorage
         KeyType             (&keys)[ITEMS_PER_THREAD],          ///< [in-out] Keys to sort
         unsigned int        begin_bit = 0,                      ///< [in] <b>[optional]</b> The beginning (least-significant) bit index needed for key comparison
         const unsigned int  &end_bit = sizeof(KeyType) * 8)     ///< [in] <b>[optional]</b> The past-the-end (most-significant) bit index needed for key comparison
@@ -352,7 +352,7 @@ public:
      * \smemreuse
      */
     static __device__ __forceinline__ void SortBlocked(
-        SmemStorage         &smem_storage,                      ///< [in] Shared reference to opaque SmemStorage layout
+        SmemStorage         &smem_storage,                      ///< [in] Reference to shared memory allocation having layout type SmemStorage
         KeyType             (&keys)[ITEMS_PER_THREAD],          ///< [in-out] Keys to sort
         ValueType           (&values)[ITEMS_PER_THREAD],        ///< [in-out] Values to sort
         unsigned int        begin_bit = 0,                      ///< [in] <b>[optional]</b> The beginning (least-significant) bit index needed for key comparison
@@ -407,7 +407,7 @@ public:
      * \smemreuse
      */
     static __device__ __forceinline__ void SortBlockedToStriped(
-        SmemStorage         &smem_storage,                      ///< [in] Shared reference to opaque SmemStorage layout
+        SmemStorage         &smem_storage,                      ///< [in] Reference to shared memory allocation having layout type SmemStorage
         KeyType             (&keys)[ITEMS_PER_THREAD],          ///< [in-out] Keys to sort
         ValueType           (&values)[ITEMS_PER_THREAD],        ///< [in-out] Values to sort
         unsigned int        begin_bit = 0,                      ///< [in] <b>[optional]</b> The beginning (least-significant) bit index needed for key comparison
@@ -474,7 +474,7 @@ public:
      * \smemreuse
      */
     static __device__ __forceinline__ void SortStriped(
-        SmemStorage         &smem_storage,                      ///< [in] Shared reference to opaque SmemStorage layout
+        SmemStorage         &smem_storage,                      ///< [in] Reference to shared memory allocation having layout type SmemStorage
         KeyType             (&keys)[ITEMS_PER_THREAD],          ///< [in-out] Keys to sort
         ValueType           (&values)[ITEMS_PER_THREAD],        ///< [in-out] Values to sort
         unsigned int        begin_bit = 0,                      ///< [in] <b>[optional]</b> The beginning (least-significant) bit index needed for key comparison

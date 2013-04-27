@@ -286,7 +286,7 @@ template&lt;int ITEMS_PER_THREAD, typename FlagT , typename FlagOp &gt; </div>
 </dl>
 <dl class="params"><dt>Parameters</dt><dd>
   <table class="params">
-    <tr><td class="paramdir">[in]</td><td class="paramname">smem_storage</td><td>Shared reference to opaque SmemStorage layout </td></tr>
+    <tr><td class="paramdir">[in]</td><td class="paramname">smem_storage</td><td>Reference to shared memory allocation having layout type SmemStorage </td></tr>
     <tr><td class="paramdir">[in]</td><td class="paramname">input</td><td>Input items </td></tr>
     <tr><td class="paramdir">[in]</td><td class="paramname">flag_op</td><td>Binary boolean flag predicate </td></tr>
     <tr><td class="paramdir">[out]</td><td class="paramname">flags</td><td>Discontinuity flags </td></tr>
@@ -359,7 +359,7 @@ template&lt;int ITEMS_PER_THREAD, typename FlagT , typename FlagOp &gt; </div>
 </dl>
 <dl class="params"><dt>Parameters</dt><dd>
   <table class="params">
-    <tr><td class="paramdir">[in]</td><td class="paramname">smem_storage</td><td>Shared reference to opaque SmemStorage layout </td></tr>
+    <tr><td class="paramdir">[in]</td><td class="paramname">smem_storage</td><td>Reference to shared memory allocation having layout type SmemStorage </td></tr>
     <tr><td class="paramdir">[in]</td><td class="paramname">input</td><td>Input items </td></tr>
     <tr><td class="paramdir">[in]</td><td class="paramname">flag_op</td><td>Binary boolean flag predicate </td></tr>
     <tr><td class="paramdir">[out]</td><td class="paramname">flags</td><td>Discontinuity flags </td></tr>
@@ -443,7 +443,7 @@ template&lt;int ITEMS_PER_THREAD, typename FlagT , typename FlagOp &gt; </div>
 </dl>
 <dl class="params"><dt>Parameters</dt><dd>
   <table class="params">
-    <tr><td class="paramdir">[in]</td><td class="paramname">smem_storage</td><td>Shared reference to opaque SmemStorage layout </td></tr>
+    <tr><td class="paramdir">[in]</td><td class="paramname">smem_storage</td><td>Reference to shared memory allocation having layout type SmemStorage </td></tr>
     <tr><td class="paramdir">[in]</td><td class="paramname">input</td><td>Input items </td></tr>
     <tr><td class="paramdir">[in]</td><td class="paramname">tile_predecessor</td><td><b>[<em>thread</em><sub>0</sub> only]</b> Item with which to compare the first tile item (<code>input<sub>0</sub></code>from <em>thread</em><sub>0</sub>). </td></tr>
     <tr><td class="paramdir">[in]</td><td class="paramname">flag_op</td><td>Binary boolean flag predicate </td></tr>
@@ -523,7 +523,7 @@ template&lt;int ITEMS_PER_THREAD, typename FlagT , typename FlagOp &gt; </div>
 </dl>
 <dl class="params"><dt>Parameters</dt><dd>
   <table class="params">
-    <tr><td class="paramdir">[in]</td><td class="paramname">smem_storage</td><td>Shared reference to opaque SmemStorage layout </td></tr>
+    <tr><td class="paramdir">[in]</td><td class="paramname">smem_storage</td><td>Reference to shared memory allocation having layout type SmemStorage </td></tr>
     <tr><td class="paramdir">[in]</td><td class="paramname">input</td><td>Input items </td></tr>
     <tr><td class="paramdir">[in]</td><td class="paramname">tile_predecessor</td><td><b>[<em>thread</em><sub>0</sub> only]</b> Item with which to compare the first tile item (<code>input<sub>0</sub></code>from <em>thread</em><sub>0</sub>). </td></tr>
     <tr><td class="paramdir">[in]</td><td class="paramname">flag_op</td><td>Binary boolean flag predicate </td></tr>
