@@ -127,7 +127,7 @@ enum BlockScanAlgorithm
  *
  * \par
  * For convenience, BlockScan provides alternative entrypoints that differ by:
- * - Operator (generic scan <em>vs.</em> prefix sum for numeric types)
+ * - Operator (generic scan <em>vs.</em> prefix sum of numeric types)
  * - Granularity (single <em>vs.</em> multiple data items per thread)
  * - Output ordering (inclusive <em>vs.</em> exclusive)
  * - Block-wide prefix (identity <em>vs.</em> call-back functor)
@@ -135,7 +135,7 @@ enum BlockScanAlgorithm
  *
  * \tparam T                The reduction input/output element type
  * \tparam BLOCK_THREADS    The threadblock size in threads
- * \tparam ALGORITHM        <b>[optional]</b> cub::BlockScanAlgorithm tuning policy (default = cub::BLOCK_SCAN_RAKING)
+ * \tparam ALGORITHM        <b>[optional]</b> cub::BlockScanAlgorithm enumerator specifying the underlying algorithm to use (default = cub::BLOCK_SCAN_RAKING)
  *
  * \par Algorithm
  * BlockScan provides a single prefix scan abstraction whose performance behavior can be tuned
@@ -581,7 +581,7 @@ private:
         }
 
 
-        /// Computes an exclusive threadblock-wide prefix scan using the specified binary \p scan_op functor.  Each thread contributes one input element.  Also provides every thread with the block-wide \p block_aggregate of all inputs.  With no identity value, the output computed for <em>thread</em><sub>0</sub> is invalid.
+        /// Computes an exclusive threadblock-wide prefix scan using the specified binary \p scan_op functor.  Each thread contributes one input element.  Also provides every thread with the block-wide \p block_aggregate of all inputs.  With no identity value, the output computed for <em>thread</em><sub>0</sub> is undefined.
         template <typename ScanOp>
         static __device__ __forceinline__ void ExclusiveScan(
             SmemStorage     &smem_storage,                  ///< [in] Reference to shared memory allocation having layout type SmemStorage
@@ -1161,7 +1161,7 @@ private:
         }
 
 
-        /// Computes an exclusive threadblock-wide prefix scan using the specified binary \p scan_op functor.  Each thread contributes one input element.  Also provides every thread with the block-wide \p block_aggregate of all inputs.  With no identity value, the output computed for <em>thread</em><sub>0</sub> is invalid.
+        /// Computes an exclusive threadblock-wide prefix scan using the specified binary \p scan_op functor.  Each thread contributes one input element.  Also provides every thread with the block-wide \p block_aggregate of all inputs.  With no identity value, the output computed for <em>thread</em><sub>0</sub> is undefined.
         template <typename ScanOp>
         static __device__ __forceinline__ void ExclusiveScan(
             SmemStorage     &smem_storage,                  ///< [in] Reference to shared memory allocation having layout type SmemStorage
@@ -1848,7 +1848,7 @@ public:
 
 
     /**
-     * \brief Computes an exclusive threadblock-wide prefix scan using the specified binary \p scan_op functor.  Each thread contributes one input element.  With no identity value, the output computed for <em>thread</em><sub>0</sub> is invalid.
+     * \brief Computes an exclusive threadblock-wide prefix scan using the specified binary \p scan_op functor.  Each thread contributes one input element.  With no identity value, the output computed for <em>thread</em><sub>0</sub> is undefined.
      *
      * \smemreuse
      *
@@ -1867,7 +1867,7 @@ public:
 
 
     /**
-     * \brief Computes an exclusive threadblock-wide prefix scan using the specified binary \p scan_op functor.  Each thread contributes an array of consecutive input elements.  With no identity value, the output computed for <em>thread</em><sub>0</sub> is invalid.
+     * \brief Computes an exclusive threadblock-wide prefix scan using the specified binary \p scan_op functor.  Each thread contributes an array of consecutive input elements.  With no identity value, the output computed for <em>thread</em><sub>0</sub> is undefined.
      *
      * \smemreuse
      *
@@ -1894,7 +1894,7 @@ public:
     }
 
     /**
-     * \brief Computes an exclusive threadblock-wide prefix scan using the specified binary \p scan_op functor.  Each thread contributes one input element.  Also provides every thread with the block-wide \p block_aggregate of all inputs.  With no identity value, the output computed for <em>thread</em><sub>0</sub> is invalid.
+     * \brief Computes an exclusive threadblock-wide prefix scan using the specified binary \p scan_op functor.  Each thread contributes one input element.  Also provides every thread with the block-wide \p block_aggregate of all inputs.  With no identity value, the output computed for <em>thread</em><sub>0</sub> is undefined.
      *
      * \smemreuse
      *
@@ -1913,7 +1913,7 @@ public:
 
 
     /**
-     * \brief Computes an exclusive threadblock-wide prefix scan using the specified binary \p scan_op functor.  Each thread contributes an array of consecutive input elements.  Also provides every thread with the block-wide \p block_aggregate of all inputs.  With no identity value, the output computed for <em>thread</em><sub>0</sub> is invalid.
+     * \brief Computes an exclusive threadblock-wide prefix scan using the specified binary \p scan_op functor.  Each thread contributes an array of consecutive input elements.  Also provides every thread with the block-wide \p block_aggregate of all inputs.  With no identity value, the output computed for <em>thread</em><sub>0</sub> is undefined.
      *
      * The scalar \p block_aggregate is undefined in threads other than <em>thread</em><sub>0</sub>.
      *

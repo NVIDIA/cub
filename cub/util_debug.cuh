@@ -88,17 +88,13 @@ __host__ __device__ __forceinline__ cudaError_t Debug(
 /**
  * \brief Debug macro
  */
-#define CubDebug(e) \
-    \
-    cub::Debug((e), __FILE__, __LINE__)
+#define CubDebug(e) cub::Debug((e), __FILE__, __LINE__)
 
 
 /**
  * \brief Debug macro with exit
  */
-#define CubDebugExit(e) \
-    \
-    if (cub::Debug((e), __FILE__, __LINE__)) { exit(1); }
+#define CubDebugExit(e) if (cub::Debug((e), __FILE__, __LINE__)) { exit(1); }
 
 
 /**

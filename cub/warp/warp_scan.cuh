@@ -65,7 +65,7 @@ namespace cub {
  *
  * \par
  * For convenience, WarpScan provides alternative entrypoints that differ by:
- * - Operator (generic scan <em>vs.</em> prefix sum for numeric types)
+ * - Operator (generic scan <em>vs.</em> prefix sum of numeric types)
  * - Output ordering (inclusive <em>vs.</em> exclusive)
  * - Warp-wide prefix (identity <em>vs.</em> call-back functor)
  * - What is computed (scanned elements only <em>vs.</em> scanned elements and the total aggregate)
@@ -786,6 +786,61 @@ public:
      *********************************************************************/
     //@{
 
+private:
+
+    /// Computes an exclusive prefix sum in each logical warp.
+    static __device__ __forceinline__ void InclusiveSum(SmemStorage &smem_storage, T input, T &output, Int2Type<true> is_primitive)
+    {
+        WarpScanInternal<POLICY>::InclusiveSum(smem_storage, input, output);
+    }
+
+    /// Computes an exclusive prefix sum in each logical warp.  Specialized for non-primitive types.
+    static __device__ __forceinline__ void InclusiveSum(SmemStorage &smem_storage, T input, T &output, Int2Type<false> is_primitive)
+    {
+        // Delegate to regular scan for non-primitive types (because we won't be able to use subtraction or 0 as identity)
+        InclusiveScan(smem_storage, input, output, Sum<T>());
+    }
+
+    /// Computes an exclusive prefix sum in each logical warp.  Also provides every thread with the warp-wide \p warp_aggregate of all inputs.
+    static __device__ __forceinline__ void InclusiveSum(SmemStorage &smem_storage, T input, T &output, T &warp_aggregate, Int2Type<true> is_primitive)
+    {
+        WarpScanInternal<POLICY>::InclusiveSum(smem_storage, input, output, warp_aggregate);
+    }
+
+    /// Computes an exclusive prefix sum in each logical warp.  Also provides every thread with the warp-wide \p warp_aggregate of all inputs.  Specialized for non-primitive types.
+    static __device__ __forceinline__ void InclusiveSum(SmemStorage &smem_storage, T input, T &output, T &warp_aggregate, Int2Type<false> is_primitive)
+    {
+        // Delegate to regular scan for non-primitive types (because we won't be able to use subtraction or 0 as identity)
+        InclusiveScan(smem_storage, input, output, Sum<T>(), warp_aggregate);
+    }
+
+    /// Computes an exclusive prefix sum in each logical warp.  Instead of using 0 as the warp-wide prefix, the call-back functor \p warp_prefix_op is invoked to provide the "seed" value that logically prefixes the warp's scan inputs.  Also provides every thread with the warp-wide \p warp_aggregate of all inputs.
+    template <typename WarpPrefixOp>
+    static __device__ __forceinline__ void InclusiveSum(SmemStorage &smem_storage, T input, T &output, T &warp_aggregate, WarpPrefixOp &warp_prefix_op, Int2Type<true> is_primitive)
+    {
+        // Compute inclusive warp scan
+        InclusiveSum(smem_storage, input, output, warp_aggregate);
+
+        // Compute warp-wide prefix from aggregate, then broadcast to other lanes
+        T prefix;
+        prefix = warp_prefix_op(warp_aggregate);
+        prefix = WarpScanInternal<POLICY>::Broadcast(smem_storage, prefix, 0);
+
+        // Update output
+        output = prefix + output;
+    }
+
+    /// Computes an exclusive prefix sum in each logical warp.  Instead of using 0 as the warp-wide prefix, the call-back functor \p warp_prefix_op is invoked to provide the "seed" value that logically prefixes the warp's scan inputs.  Also provides every thread with the warp-wide \p warp_aggregate of all inputs.  Specialized for non-primitive types.
+    template <typename WarpPrefixOp>
+    static __device__ __forceinline__ void InclusiveSum(SmemStorage &smem_storage, T input, T &output, T &warp_aggregate, WarpPrefixOp &warp_prefix_op, Int2Type<false> is_primitive)
+    {
+        // Delegate to regular scan for non-primitive types (because we won't be able to use subtraction or 0 as identity)
+        InclusiveScan(smem_storage, input, output, Sum<T>(), warp_aggregate, warp_prefix_op);
+    }
+
+public:
+
+
     /**
      * \brief Computes an inclusive prefix sum in each logical warp.
      *
@@ -796,7 +851,7 @@ public:
         T               input,              ///< [in] Calling thread's input item.
         T               &output)            ///< [out] Calling thread's output item.  May be aliased with \p input.
     {
-        WarpScanInternal<POLICY>::InclusiveSum(smem_storage, input, output);
+        InclusiveSum(smem_storage, input, output, Int2Type<Traits<T>::PRIMITIVE>());
     }
 
 
@@ -813,7 +868,7 @@ public:
         T               &output,            ///< [out] Calling thread's output item.  May be aliased with \p input.
         T               &warp_aggregate)    ///< [out] Warp-wide aggregate reduction of input items.
     {
-        WarpScanInternal<POLICY>::InclusiveSum(smem_storage, input, output, warp_aggregate);
+        InclusiveSum(smem_storage, input, output, warp_aggregate, Int2Type<Traits<T>::PRIMITIVE>());
     }
 
 
@@ -824,9 +879,8 @@ public:
      *
      * The \p warp_prefix_op functor must implement a member function <tt>T operator()(T warp_aggregate)</tt>.
      * The functor's input parameter \p warp_aggregate is the same value also returned by the scan operation.
-     * This functor is expected to return a warp-wide prefix to be applied to all inputs.  The functor
-     * will be invoked by the entire warp of threads, however the input and output are undefined in threads other
-     * than <em>warp-lane</em><sub>0</sub>.  Can be stateful.
+     * The functor will be invoked by the entire warp of threads, however only the return value from
+     * <em>lane</em><sub>0</sub> is applied as the threadblock-wide prefix.  Can be stateful.
      *
      * \smemreuse
      *
@@ -840,16 +894,7 @@ public:
         T               &warp_aggregate,    ///< [out] <b>[<em>warp-lane</em><sub>0</sub> only]</b> Warp-wide aggregate reduction of input items, exclusive of the \p warp_prefix_op value
         WarpPrefixOp    &warp_prefix_op)    ///< [in-out] <b>[<em>warp-lane</em><sub>0</sub> only]</b> Call-back functor for specifying a warp-wide prefix to be applied to all inputs.
     {
-        // Compute inclusive warp scan
-        InclusiveSum(smem_storage, input, output, warp_aggregate);
-
-        // Compute warp-wide prefix from aggregate, then broadcast to other lanes
-        T prefix;
-        prefix = warp_prefix_op(warp_aggregate);
-        prefix = WarpScanInternal<POLICY>::Broadcast(smem_storage, prefix, 0);
-
-        // Update output
-        output = prefix + output;
+        InclusiveSum(smem_storage, input, output, warp_aggregate, warp_prefix_op, Int2Type<Traits<T>::PRIMITIVE>());
     }
 
 
@@ -860,8 +905,72 @@ public:
      *********************************************************************/
     //@{
 
+
+private:
+
+    /// Computes an exclusive prefix sum in each logical warp.
+    static __device__ __forceinline__ void ExclusiveSum(SmemStorage &smem_storage, T input, T &output, Int2Type<true> is_primitive)
+    {
+        // Compute exclusive warp scan from inclusive warp scan
+        T inclusive;
+        InclusiveSum(smem_storage, input, inclusive);
+        output = inclusive - input;
+    }
+
+    /// Computes an exclusive prefix sum in each logical warp.  Specialized for non-primitive types.
+    static __device__ __forceinline__ void ExclusiveSum(SmemStorage &smem_storage, T input, T &output, Int2Type<false> is_primitive)
+    {
+        // Delegate to regular scan for non-primitive types (because we won't be able to use subtraction or 0 as identity)
+        T identity = T();
+        ExclusiveScan(smem_storage, input, output, identity, Sum<T>());
+    }
+
+    /// Computes an exclusive prefix sum in each logical warp.  Also provides every thread with the warp-wide \p warp_aggregate of all inputs.
+    static __device__ __forceinline__ void ExclusiveSum(SmemStorage &smem_storage, T input, T &output, T &warp_aggregate, Int2Type<true> is_primitive)
+    {
+        // Compute exclusive warp scan from inclusive warp scan
+        T inclusive;
+        InclusiveSum(smem_storage, input, inclusive, warp_aggregate);
+        output = inclusive - input;
+    }
+
+    /// Computes an exclusive prefix sum in each logical warp.  Also provides every thread with the warp-wide \p warp_aggregate of all inputs.  Specialized for non-primitive types.
+    static __device__ __forceinline__ void ExclusiveSum(SmemStorage &smem_storage, T input, T &output, T &warp_aggregate, Int2Type<false> is_primitive)
+    {
+        // Delegate to regular scan for non-primitive types (because we won't be able to use subtraction or 0 as identity)
+        T identity = T();
+        ExclusiveScan(smem_storage, input, output, identity, Sum<T>(), warp_aggregate);
+    }
+
+    /// Computes an exclusive prefix sum in each logical warp.  Instead of using 0 as the warp-wide prefix, the call-back functor \p warp_prefix_op is invoked to provide the "seed" value that logically prefixes the warp's scan inputs.  Also provides every thread with the warp-wide \p warp_aggregate of all inputs.
+    template <typename WarpPrefixOp>
+    static __device__ __forceinline__ void ExclusiveSum(SmemStorage &smem_storage, T input, T &output, T &warp_aggregate, WarpPrefixOp &warp_prefix_op, Int2Type<true> is_primitive)
+    {
+        // Compute exclusive warp scan from inclusive warp scan
+        T inclusive;
+        InclusiveSum(smem_storage, input, inclusive, warp_aggregate, warp_prefix_op);
+        output = inclusive - input;
+    }
+
+    /// Computes an exclusive prefix sum in each logical warp.  Instead of using 0 as the warp-wide prefix, the call-back functor \p warp_prefix_op is invoked to provide the "seed" value that logically prefixes the warp's scan inputs.  Also provides every thread with the warp-wide \p warp_aggregate of all inputs.  Specialized for non-primitive types.
+    template <typename WarpPrefixOp>
+    static __device__ __forceinline__ void ExclusiveSum(SmemStorage &smem_storage, T input, T &output, T &warp_aggregate, WarpPrefixOp &warp_prefix_op, Int2Type<false> is_primitive)
+    {
+        // Delegate to regular scan for non-primitive types (because we won't be able to use subtraction or 0 as identity)
+        T identity = T();
+        ExclusiveScan(smem_storage, input, output, identity, Sum<T>(), warp_aggregate, warp_prefix_op);
+    }
+
+public:
+
+
     /**
      * \brief Computes an exclusive prefix sum in each logical warp.
+     *
+     * This operation assumes the value of obtained by the <tt>T</tt>'s default
+     * constructor (or by zero-initialization if no user-defined default
+     * constructor exists) is suitable as the identity value "zero" for
+     * addition.
      *
      * \smemreuse
      */
@@ -870,17 +979,17 @@ public:
         T               input,              ///< [in] Calling thread's input item.
         T               &output)            ///< [out] Calling thread's output item.  May be aliased with \p input.
     {
-        // Compute exclusive warp scan from inclusive warp scan
-        T inclusive;
-        InclusiveSum(smem_storage, input, inclusive);
-        output = inclusive - input;
+        ExclusiveSum(smem_storage, input, output, Int2Type<Traits<T>::PRIMITIVE>());
     }
 
 
     /**
      * \brief Computes an exclusive prefix sum in each logical warp.  Also provides every thread with the warp-wide \p warp_aggregate of all inputs.
      *
-     * The \p warp_aggregate is undefined in threads other than <em>warp-lane</em><sub>0</sub>.
+     * This operation assumes the value of obtained by the <tt>T</tt>'s default
+     * constructor (or by zero-initialization if no user-defined default
+     * constructor exists) is suitable as the identity value "zero" for
+     * addition.
      *
      * \smemreuse
      */
@@ -890,23 +999,22 @@ public:
         T               &output,            ///< [out] Calling thread's output item.  May be aliased with \p input.
         T               &warp_aggregate)    ///< [out] Warp-wide aggregate reduction of input items.
     {
-        // Compute exclusive warp scan from inclusive warp scan
-        T inclusive;
-        InclusiveSum(smem_storage, input, inclusive, warp_aggregate);
-        output = inclusive - input;
+        ExclusiveSum(smem_storage, input, output, warp_aggregate, Int2Type<Traits<T>::PRIMITIVE>());
     }
 
 
     /**
      * \brief Computes an exclusive prefix sum in each logical warp.  Instead of using 0 as the warp-wide prefix, the call-back functor \p warp_prefix_op is invoked to provide the "seed" value that logically prefixes the warp's scan inputs.  Also provides every thread with the warp-wide \p warp_aggregate of all inputs.
      *
-     * The \p warp_aggregate is undefined in threads other than <em>warp-lane</em><sub>0</sub>.
+     * This operation assumes the value of obtained by the <tt>T</tt>'s default
+     * constructor (or by zero-initialization if no user-defined default
+     * constructor exists) is suitable as the identity value "zero" for
+     * addition.
      *
      * The \p warp_prefix_op functor must implement a member function <tt>T operator()(T warp_aggregate)</tt>.
      * The functor's input parameter \p warp_aggregate is the same value also returned by the scan operation.
-     * This functor is expected to return a warp-wide prefix to be applied to all inputs.  The functor
-     * will be invoked by the entire warp of threads, however the input and output are undefined in threads other
-     * than <em>warp-lane</em><sub>0</sub>.  Can be stateful.
+     * The functor will be invoked by the entire warp of threads, however only the return value from
+     * <em>lane</em><sub>0</sub> is applied as the threadblock-wide prefix.  Can be stateful.
      *
      * \smemreuse
      *
@@ -920,10 +1028,7 @@ public:
         T               &warp_aggregate,    ///< [out] <b>[<em>warp-lane</em><sub>0</sub> only]</b> Warp-wide aggregate reduction of input items (exclusive of the \p warp_prefix_op value).
         WarpPrefixOp    &warp_prefix_op)    ///< [in-out] <b>[<em>warp-lane</em><sub>0</sub> only]</b> Call-back functor for specifying a warp-wide prefix to be applied to all inputs.
     {
-        // Compute exclusive warp scan from inclusive warp scan
-        T inclusive;
-        InclusiveSum(smem_storage, input, inclusive, warp_aggregate, warp_prefix_op);
-        output = inclusive - input;
+        ExclusiveSum(smem_storage, input, output, warp_aggregate, warp_prefix_op, Int2Type<Traits<T>::PRIMITIVE>());
     }
 
 
@@ -979,9 +1084,8 @@ public:
      *
      * The \p warp_prefix_op functor must implement a member function <tt>T operator()(T warp_aggregate)</tt>.
      * The functor's input parameter \p warp_aggregate is the same value also returned by the scan operation.
-     * This functor is expected to return a warp-wide prefix to be applied to all inputs.  The functor
-     * will be invoked by the entire warp of threads, however the input and output are undefined in threads other
-     * than <em>warp-lane</em><sub>0</sub>.  Can be stateful.
+     * The functor will be invoked by the entire warp of threads, however only the return value from
+     * <em>lane</em><sub>0</sub> is applied as the threadblock-wide prefix.  Can be stateful.
      *
      * \smemreuse
      *
@@ -1066,9 +1170,8 @@ public:
      *
      * The \p warp_prefix_op functor must implement a member function <tt>T operator()(T warp_aggregate)</tt>.
      * The functor's input parameter \p warp_aggregate is the same value also returned by the scan operation.
-     * This functor is expected to return a warp-wide prefix to be applied to all inputs.  The functor
-     * will be invoked by the entire warp of threads, however the input and output are undefined in threads other
-     * than <em>warp-lane</em><sub>0</sub>.  Can be stateful.
+     * The functor will be invoked by the entire warp of threads, however only the return value from
+     * <em>lane</em><sub>0</sub> is applied as the threadblock-wide prefix.  Can be stateful.
      *
      * \smemreuse
      *
@@ -1111,7 +1214,7 @@ public:
 
 
     /**
-     * \brief Computes an exclusive prefix scan using the specified binary scan functor in each logical warp.  Because no identity value is supplied, the \p output computed for <em>warp-lane</em><sub>0</sub> is invalid.
+     * \brief Computes an exclusive prefix scan using the specified binary scan functor in each logical warp.  Because no identity value is supplied, the \p output computed for <em>warp-lane</em><sub>0</sub> is undefined.
      *
      * \smemreuse
      *
@@ -1129,7 +1232,7 @@ public:
 
 
     /**
-     * \brief Computes an exclusive prefix scan using the specified binary scan functor in each logical warp.  Because no identity value is supplied, the \p output computed for <em>warp-lane</em><sub>0</sub> is invalid.  Also provides every thread with the warp-wide \p warp_aggregate of all inputs.
+     * \brief Computes an exclusive prefix scan using the specified binary scan functor in each logical warp.  Because no identity value is supplied, the \p output computed for <em>warp-lane</em><sub>0</sub> is undefined.  Also provides every thread with the warp-wide \p warp_aggregate of all inputs.
      *
      * The \p warp_aggregate is undefined in threads other than <em>warp-lane</em><sub>0</sub>.
      *
@@ -1156,9 +1259,8 @@ public:
      *
      * The \p warp_prefix_op functor must implement a member function <tt>T operator()(T warp_aggregate)</tt>.
      * The functor's input parameter \p warp_aggregate is the same value also returned by the scan operation.
-     * This functor is expected to return a warp-wide prefix to be applied to all inputs.  The functor
-     * will be invoked by the entire warp of threads, however the input and output are undefined in threads other
-     * than <em>warp-lane</em><sub>0</sub>.  Can be stateful.
+     * The functor will be invoked by the entire warp of threads, however only the return value from
+     * <em>lane</em><sub>0</sub> is applied as the threadblock-wide prefix.  Can be stateful.
      *
      * \smemreuse
      *

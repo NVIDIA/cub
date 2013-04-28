@@ -49,9 +49,6 @@ CUB_NS_PREFIX
 /// CUB namespace
 namespace cub {
 
-/// Anonymous namespace to prevent multiple symbol definition errors
-namespace {
-
 
 /**
  * \addtogroup UtilModule
@@ -64,7 +61,7 @@ namespace {
  ******************************************************************************/
 
 /**
- * Abstract base allocator class for device memory allocations.
+ * \brief Abstract base allocator class for device memory allocations.
  */
 class DeviceAllocator
 {
@@ -97,37 +94,44 @@ public:
  ******************************************************************************/
 
 /**
- * Simple caching allocator for device memory allocations. The allocator is
- * thread-safe and is capable of managing cached device allocations on multiple devices.
+ * \brief A simple caching allocator for device memory allocations.
  *
- * Allocations are rounded up to and categorized by bin size.  Bin sizes progress
- * geometrically in accordance with the growth factor "bin_growth" provided during
- * construction.  Unused device allocations within a larger bin cache are not
- * reused for allocation requests that categorize to smaller bin sizes.
+ * \par Overview
+ * The allocator is thread-safe and is capable of managing cached device allocations
+ * on multiple devices.  It behaves as follows:
  *
- * Allocation requests below (bin_growth ^ min_bin) are rounded up to
- * (bin_growth ^ min_bin).
+ * \par
+ * - Allocations categorized by bin size.
+ * - Bin sizes progress geometrically in accordance with the growth factor
+ *   \p bin_growth provided during construction.  Unused device allocations within
+ *   a larger bin cache are not reused for allocation requests that categorize to
+ *   smaller bin sizes.
+ * - Allocation requests below (\p bin_growth ^ \p min_bin) are rounded up to
+ *   (\p bin_growth ^ \p min_bin).
+ * - Allocations above (\p bin_growth ^ \p max_bin) are not rounded up to the nearest
+ *   bin and are simply freed when they are deallocated instead of being returned
+ *   to a bin-cache.
+ * - %If the total storage of cached allocations on a given device will exceed
+ *   \p max_cached_bytes, allocations for that device are simply freed when they are
+ *   deallocated instead of being returned to their bin-cache.
  *
- * Allocations above (bin_growth ^ max_bin) are not rounded up to the nearest
- * bin and are simply freed when they are deallocated instead of being returned
- * to a bin-cache.
- *
- * If the total storage of cached allocations on a given device will exceed
- * (max_cached_bytes), allocations for that device are simply freed when they are
- * deallocated instead of being returned to their bin-cache.
- *
+ * \par
  * For example, the default-constructed CachingDeviceAllocator is configured with:
- *         bin_growth = 8
- *         min_bin = 3
- *         max_bin = 7
- *         max_cached_bytes = (bin_growth ^ max_bin) * 3) - 1 = 6,291,455 bytes
+ * - \p bin_growth = 8
+ * - \p min_bin = 3
+ * - \p max_bin = 7
+ * - \p max_cached_bytes = 6MB - 1B
  *
+ * \par
  * which delineates five bin-sizes: 512B, 4KB, 32KB, 256KB, and 2MB
  * and sets a maximum of 6,291,455 cached bytes per device
  *
  */
 struct CachingDeviceAllocator : DeviceAllocator
 {
+#ifndef DOXYGEN_SHOULD_SKIP_THIS    // Do not document
+
+
     //---------------------------------------------------------------------
     // Type definitions and constants
     //---------------------------------------------------------------------
@@ -255,14 +259,16 @@ struct CachingDeviceAllocator : DeviceAllocator
     CachedBlocks    cached_blocks;      /// Set of cached device allocations available for reuse
     BusyBlocks      live_blocks;        /// Set of live device allocations currently in use
 
-#endif
+#endif // __CUDA_ARCH__
+
+#endif // DOXYGEN_SHOULD_SKIP_THIS
 
     //---------------------------------------------------------------------
     // Methods
     //---------------------------------------------------------------------
 
     /**
-     * Constructor.
+     * \brief Constructor.
      */
     __host__ __device__ __forceinline__ CachingDeviceAllocator(
         unsigned int bin_growth,    ///< Geometric growth factor for bin-sizes
@@ -286,14 +292,17 @@ struct CachingDeviceAllocator : DeviceAllocator
 
 
     /**
-     * Constructor.  Configured with:
-     *         bin_growth = 8
-     *         min_bin = 3
-     *         max_bin = 7
-     *         max_cached_bytes = (bin_growth ^ max_bin) * 3) - 1 = 6,291,455 bytes
+     * \brief Default constructor.
      *
-     *     which delineates five bin-sizes: 512B, 4KB, 32KB, 256KB, and 2MB
-     *     and sets a maximum of 6,291,455 cached bytes per device
+     * Configured with:
+     * \par
+     * - \p bin_growth = 8
+     * - \p min_bin = 3
+     * - \p max_bin = 7
+     * - \p max_cached_bytes = (\p bin_growth ^ \p max_bin) * 3) - 1 = 6,291,455 bytes
+     *
+     * which delineates five bin-sizes: 512B, 4KB, 32KB, 256KB, and 2MB and
+     * sets a maximum of 6,291,455 cached bytes per device
      */
     __host__ __device__ __forceinline__ CachingDeviceAllocator()
     :
@@ -313,8 +322,7 @@ struct CachingDeviceAllocator : DeviceAllocator
 
 
     /**
-     * Sets the limit on the number bytes this allocator is allowed to
-     * cache per device.
+     * \brief Sets the limit on the number bytes this allocator is allowed to cache per device.
      */
     __host__ __device__ __forceinline__ cudaError_t SetMaxCachedBytes(
         size_t max_cached_bytes)
@@ -341,8 +349,7 @@ struct CachingDeviceAllocator : DeviceAllocator
 
 
     /**
-     * Provides a suitable allocation of device memory for the given size
-     * on the specified device
+     * \brief Provides a suitable allocation of device memory for the given size on the specified device
      */
     __host__ __device__ __forceinline__ cudaError_t DeviceAllocate(
         void** d_ptr,
@@ -452,8 +459,7 @@ struct CachingDeviceAllocator : DeviceAllocator
 
 
     /**
-     * Provides a suitable allocation of device memory for the given size
-     * on the current device
+     * \brief Provides a suitable allocation of device memory for the given size on the current device
      */
     __host__ __device__ __forceinline__ cudaError_t DeviceAllocate(
         void** d_ptr,
@@ -477,8 +483,7 @@ struct CachingDeviceAllocator : DeviceAllocator
 
 
     /**
-     * Frees a live allocation of device memory on the specified device, returning it to
-     * the allocator
+     * \brief Frees a live allocation of device memory on the specified device, returning it to the allocator
      */
     __host__ __device__ __forceinline__ cudaError_t DeviceFree(
         void* d_ptr,
@@ -565,8 +570,7 @@ struct CachingDeviceAllocator : DeviceAllocator
 
 
     /**
-     * Frees a live allocation of device memory on the current device, returning it to the
-     * allocator
+     * \brief Frees a live allocation of device memory on the current device, returning it to the allocator
      */
     __host__ __device__ __forceinline__ cudaError_t DeviceFree(
         void* d_ptr)
@@ -591,7 +595,7 @@ struct CachingDeviceAllocator : DeviceAllocator
 
 
     /**
-     * Frees all cached device allocations on all devices
+     * \brief Frees all cached device allocations on all devices
      */
     __host__ __device__ __forceinline__ cudaError_t FreeAllCached()
     {
@@ -659,7 +663,7 @@ struct CachingDeviceAllocator : DeviceAllocator
 
 
     /**
-     * Destructor
+     * \brief Destructor
      */
     CUB_DESTRUCTOR __forceinline__ virtual ~CachingDeviceAllocator()
     {
@@ -675,8 +679,13 @@ struct CachingDeviceAllocator : DeviceAllocator
 
 #ifndef __CUDA_ARCH__
 
+/// Anonymous namespace to prevent multiple symbol definition errors
+namespace {
+
     /// Singleton, thread-safe caching allocator (one per compilation unit)
     CachingDeviceAllocator host_allocator_singleton;
+
+}               // anonymous namespace
 
     /**
      * \brief The default allocator for host and device usage.
@@ -753,6 +762,5 @@ __host__ __device__ __forceinline__ cudaError_t DeviceFree(
 
 /** @} */       // end group UtilModule
 
-}               // anonymous namespace
 }               // CUB namespace
 CUB_NS_POSTFIX  // Optional outer namespace(s)

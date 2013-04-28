@@ -74,7 +74,6 @@ var searchBox = new SearchBox("searchBox", "search",false,'Search');
     <ul class="tablist">
       <li><a href="annotated.html"><span>Class&#160;List</span></a></li>
       <li><a href="classes.html"><span>Class&#160;Index</span></a></li>
-      <li><a href="hierarchy.html"><span>Class&#160;Hierarchy</span></a></li>
       <li><a href="functions.html"><span>Class&#160;Members</span></a></li>
     </ul>
   </div>
@@ -115,8 +114,8 @@ class cub::BlockScan&lt; T, BLOCK_THREADS, ALGORITHM &gt;</h3>
 <div class="caption">
 .</div></div>
  <dl class="section user"><dt>Overview</dt><dd>Given a list of input elements and a binary reduction operator, a <a href="http://en.wikipedia.org/wiki/Prefix_sum"><em>prefix scan</em></a> produces an output list where each element is computed to be the reduction of the elements occurring earlier in the input list. <em>Prefix sum</em> connotes a prefix scan with the addition operator. The term <em>inclusive</em> indicates that the <em>i</em><sup>th</sup> output reduction incorporates the <em>i</em><sup>th</sup> input. The term <em>exclusive</em> indicates the <em>i</em><sup>th</sup> input is not incorporated into the <em>i</em><sup>th</sup> output reduction.</dd></dl>
-<dl class="section user"><dt></dt><dd>For convenience, <a class="el" href="classcub_1_1_block_scan.html" title="BlockScan provides variants of parallel prefix scan (and prefix sum) across a CUDA threadblock...">BlockScan</a> exposes a spectrum of entrypoints that differ by:<ul>
-<li>Operator (generic scan <em>vs.</em> prefix sum for numeric types)</li>
+<dl class="section user"><dt></dt><dd>For convenience, <a class="el" href="classcub_1_1_block_scan.html" title="BlockScan provides variants of parallel prefix scan (and prefix sum) across a CUDA threadblock...">BlockScan</a> provides alternative entrypoints that differ by:<ul>
+<li>Operator (generic scan <em>vs.</em> prefix sum of numeric types)</li>
 <li>Granularity (single <em>vs.</em> multiple data items per thread)</li>
 <li>Output ordering (inclusive <em>vs.</em> exclusive)</li>
 <li>Block-wide prefix (identity <em>vs.</em> call-back functor)</li>
@@ -127,11 +126,11 @@ class cub::BlockScan&lt; T, BLOCK_THREADS, ALGORITHM &gt;</h3>
   <table class="tparams">
     <tr><td class="paramname">T</td><td>The reduction input/output element type </td></tr>
     <tr><td class="paramname">BLOCK_THREADS</td><td>The threadblock size in threads </td></tr>
-    <tr><td class="paramname">ALGORITHM</td><td><b>[optional]</b> <a class="el" href="namespacecub.html#abec44bba36037c547e7e84906d0d23ab">cub::BlockScanAlgorithm</a> tuning policy (default = <a class="el" href="namespacecub.html#abec44bba36037c547e7e84906d0d23aba0fa6cac57b7df2f475a67af053b9371c">cub::BLOCK_SCAN_RAKING</a>)</td></tr>
+    <tr><td class="paramname">ALGORITHM</td><td><b>[optional]</b> <a class="el" href="namespacecub.html#abec44bba36037c547e7e84906d0d23ab">cub::BlockScanAlgorithm</a> enumerator specifying the underlying algorithm to use (default = <a class="el" href="namespacecub.html#abec44bba36037c547e7e84906d0d23aba0fa6cac57b7df2f475a67af053b9371c">cub::BLOCK_SCAN_RAKING</a>)</td></tr>
   </table>
   </dd>
 </dl>
-<dl class="section user"><dt>Algorithm</dt><dd><a class="el" href="classcub_1_1_block_scan.html" title="BlockScan provides variants of parallel prefix scan (and prefix sum) across a CUDA threadblock...">BlockScan</a> provides a single prefix scan abstraction whose performance behavior can be tuned externally. <a class="el" href="classcub_1_1_block_scan.html" title="BlockScan provides variants of parallel prefix scan (and prefix sum) across a CUDA threadblock...">BlockScan</a> can be (optionally) configured to use different algorithms that cater to different latency/throughput needs:<ol type="1">
+<dl class="section user"><dt>Algorithm</dt><dd><a class="el" href="classcub_1_1_block_scan.html" title="BlockScan provides variants of parallel prefix scan (and prefix sum) across a CUDA threadblock...">BlockScan</a> provides a single prefix scan abstraction whose performance behavior can be tuned for different usage scenarios. <a class="el" href="classcub_1_1_block_scan.html" title="BlockScan provides variants of parallel prefix scan (and prefix sum) across a CUDA threadblock...">BlockScan</a> can be (optionally) configured to use different algorithms that cater to different latency/throughput needs:<ol type="1">
 <li><b><a class="el" href="namespacecub.html#abec44bba36037c547e7e84906d0d23aba0fa6cac57b7df2f475a67af053b9371c">cub::BLOCK_SCAN_RAKING</a></b>. An efficient "raking reduce-then-scan" prefix scan algorithm. <a class="el" href="namespacecub.html#abec44bba36037c547e7e84906d0d23ab">More...</a></li>
 <li><b><a class="el" href="namespacecub.html#abec44bba36037c547e7e84906d0d23aba7f51e58246eb53f1a97bd1bc8c0f400f">cub::BLOCK_SCAN_WARP_SCANS</a></b>. A quick "tiled warpscans" prefix scan algorithm. <a class="el" href="namespacecub.html#abec44bba36037c547e7e84906d0d23ab">More...</a></li>
 </ol>
@@ -369,22 +368,22 @@ __forceinline__ void&#160;</td><td class="memTemplItemRight" valign="bottom"><a 
 <tr class="memitem:a7e101c9465c1db86670cf99782b8cbc5"><td class="memTemplParams" colspan="2">template&lt;typename ScanOp &gt; </td></tr>
 <tr class="memitem:a7e101c9465c1db86670cf99782b8cbc5"><td class="memTemplItemLeft" align="right" valign="top">static __device__ <br class="typebreak"/>
 __forceinline__ void&#160;</td><td class="memTemplItemRight" valign="bottom"><a class="el" href="classcub_1_1_block_scan.html#a7e101c9465c1db86670cf99782b8cbc5">ExclusiveScan</a> (<a class="el" href="classcub_1_1_block_scan.html#ae85612707bea2533173ee665183f9c82">SmemStorage</a> &amp;smem_storage, T input, T &amp;output, ScanOp scan_op)</td></tr>
-<tr class="memdesc:a7e101c9465c1db86670cf99782b8cbc5"><td class="mdescLeft">&#160;</td><td class="mdescRight">Computes an exclusive threadblock-wide prefix scan using the specified binary <code>scan_op</code> functor. Each thread contributes one input element. With no identity value, the output computed for <em>thread</em><sub>0</sub> is invalid.  <a href="#a7e101c9465c1db86670cf99782b8cbc5">More...</a><br/></td></tr>
+<tr class="memdesc:a7e101c9465c1db86670cf99782b8cbc5"><td class="mdescLeft">&#160;</td><td class="mdescRight">Computes an exclusive threadblock-wide prefix scan using the specified binary <code>scan_op</code> functor. Each thread contributes one input element. With no identity value, the output computed for <em>thread</em><sub>0</sub> is undefined.  <a href="#a7e101c9465c1db86670cf99782b8cbc5">More...</a><br/></td></tr>
 <tr class="separator:a7e101c9465c1db86670cf99782b8cbc5"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:a9b408c1956392f433af3d8650956d570"><td class="memTemplParams" colspan="2">template&lt;int ITEMS_PER_THREAD, typename ScanOp &gt; </td></tr>
 <tr class="memitem:a9b408c1956392f433af3d8650956d570"><td class="memTemplItemLeft" align="right" valign="top">static __device__ <br class="typebreak"/>
 __forceinline__ void&#160;</td><td class="memTemplItemRight" valign="bottom"><a class="el" href="classcub_1_1_block_scan.html#a9b408c1956392f433af3d8650956d570">ExclusiveScan</a> (<a class="el" href="classcub_1_1_block_scan.html#ae85612707bea2533173ee665183f9c82">SmemStorage</a> &amp;smem_storage, T(&amp;input)[ITEMS_PER_THREAD], T(&amp;output)[ITEMS_PER_THREAD], ScanOp scan_op)</td></tr>
-<tr class="memdesc:a9b408c1956392f433af3d8650956d570"><td class="mdescLeft">&#160;</td><td class="mdescRight">Computes an exclusive threadblock-wide prefix scan using the specified binary <code>scan_op</code> functor. Each thread contributes an array of consecutive input elements. With no identity value, the output computed for <em>thread</em><sub>0</sub> is invalid.  <a href="#a9b408c1956392f433af3d8650956d570">More...</a><br/></td></tr>
+<tr class="memdesc:a9b408c1956392f433af3d8650956d570"><td class="mdescLeft">&#160;</td><td class="mdescRight">Computes an exclusive threadblock-wide prefix scan using the specified binary <code>scan_op</code> functor. Each thread contributes an array of consecutive input elements. With no identity value, the output computed for <em>thread</em><sub>0</sub> is undefined.  <a href="#a9b408c1956392f433af3d8650956d570">More...</a><br/></td></tr>
 <tr class="separator:a9b408c1956392f433af3d8650956d570"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:a5eb97c9b4ef8c4b070ea8823fb634974"><td class="memTemplParams" colspan="2">template&lt;typename ScanOp &gt; </td></tr>
 <tr class="memitem:a5eb97c9b4ef8c4b070ea8823fb634974"><td class="memTemplItemLeft" align="right" valign="top">static __device__ <br class="typebreak"/>
 __forceinline__ void&#160;</td><td class="memTemplItemRight" valign="bottom"><a class="el" href="classcub_1_1_block_scan.html#a5eb97c9b4ef8c4b070ea8823fb634974">ExclusiveScan</a> (<a class="el" href="classcub_1_1_block_scan.html#ae85612707bea2533173ee665183f9c82">SmemStorage</a> &amp;smem_storage, T input, T &amp;output, ScanOp scan_op, T &amp;block_aggregate)</td></tr>
-<tr class="memdesc:a5eb97c9b4ef8c4b070ea8823fb634974"><td class="mdescLeft">&#160;</td><td class="mdescRight">Computes an exclusive threadblock-wide prefix scan using the specified binary <code>scan_op</code> functor. Each thread contributes one input element. Also provides every thread with the block-wide <code>block_aggregate</code> of all inputs. With no identity value, the output computed for <em>thread</em><sub>0</sub> is invalid.  <a href="#a5eb97c9b4ef8c4b070ea8823fb634974">More...</a><br/></td></tr>
+<tr class="memdesc:a5eb97c9b4ef8c4b070ea8823fb634974"><td class="mdescLeft">&#160;</td><td class="mdescRight">Computes an exclusive threadblock-wide prefix scan using the specified binary <code>scan_op</code> functor. Each thread contributes one input element. Also provides every thread with the block-wide <code>block_aggregate</code> of all inputs. With no identity value, the output computed for <em>thread</em><sub>0</sub> is undefined.  <a href="#a5eb97c9b4ef8c4b070ea8823fb634974">More...</a><br/></td></tr>
 <tr class="separator:a5eb97c9b4ef8c4b070ea8823fb634974"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:a6a1d23761445bb38035c831d7b2463a2"><td class="memTemplParams" colspan="2">template&lt;int ITEMS_PER_THREAD, typename ScanOp &gt; </td></tr>
 <tr class="memitem:a6a1d23761445bb38035c831d7b2463a2"><td class="memTemplItemLeft" align="right" valign="top">static __device__ <br class="typebreak"/>
 __forceinline__ void&#160;</td><td class="memTemplItemRight" valign="bottom"><a class="el" href="classcub_1_1_block_scan.html#a6a1d23761445bb38035c831d7b2463a2">ExclusiveScan</a> (<a class="el" href="classcub_1_1_block_scan.html#ae85612707bea2533173ee665183f9c82">SmemStorage</a> &amp;smem_storage, T(&amp;input)[ITEMS_PER_THREAD], T(&amp;output)[ITEMS_PER_THREAD], ScanOp scan_op, T &amp;block_aggregate)</td></tr>
-<tr class="memdesc:a6a1d23761445bb38035c831d7b2463a2"><td class="mdescLeft">&#160;</td><td class="mdescRight">Computes an exclusive threadblock-wide prefix scan using the specified binary <code>scan_op</code> functor. Each thread contributes an array of consecutive input elements. Also provides every thread with the block-wide <code>block_aggregate</code> of all inputs. With no identity value, the output computed for <em>thread</em><sub>0</sub> is invalid.  <a href="#a6a1d23761445bb38035c831d7b2463a2">More...</a><br/></td></tr>
+<tr class="memdesc:a6a1d23761445bb38035c831d7b2463a2"><td class="mdescLeft">&#160;</td><td class="mdescRight">Computes an exclusive threadblock-wide prefix scan using the specified binary <code>scan_op</code> functor. Each thread contributes an array of consecutive input elements. Also provides every thread with the block-wide <code>block_aggregate</code> of all inputs. With no identity value, the output computed for <em>thread</em><sub>0</sub> is undefined.  <a href="#a6a1d23761445bb38035c831d7b2463a2">More...</a><br/></td></tr>
 <tr class="separator:a6a1d23761445bb38035c831d7b2463a2"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:a826709f6951b831fd031482762400e30"><td class="memTemplParams" colspan="2">template&lt;typename ScanOp , typename BlockPrefixOp &gt; </td></tr>
 <tr class="memitem:a826709f6951b831fd031482762400e30"><td class="memTemplItemLeft" align="right" valign="top">static __device__ <br class="typebreak"/>
@@ -1767,7 +1766,7 @@ template&lt;typename ScanOp &gt; </div>
 </table>
 </div><div class="memdoc">
 
-<p>Computes an exclusive threadblock-wide prefix scan using the specified binary <code>scan_op</code> functor. Each thread contributes one input element. With no identity value, the output computed for <em>thread</em><sub>0</sub> is invalid. </p>
+<p>Computes an exclusive threadblock-wide prefix scan using the specified binary <code>scan_op</code> functor. Each thread contributes one input element. With no identity value, the output computed for <em>thread</em><sub>0</sub> is undefined. </p>
 <p>A subsequent <code>__syncthreads()</code> threadblock barrier should be invoked after calling this method if the supplied <code>smem_storage</code> is to be reused or repurposed by the threadblock.</p>
 <dl class="tparams"><dt>Template Parameters</dt><dd>
   <table class="tparams">
@@ -1835,7 +1834,7 @@ template&lt;int ITEMS_PER_THREAD, typename ScanOp &gt; </div>
 </table>
 </div><div class="memdoc">
 
-<p>Computes an exclusive threadblock-wide prefix scan using the specified binary <code>scan_op</code> functor. Each thread contributes an array of consecutive input elements. With no identity value, the output computed for <em>thread</em><sub>0</sub> is invalid. </p>
+<p>Computes an exclusive threadblock-wide prefix scan using the specified binary <code>scan_op</code> functor. Each thread contributes an array of consecutive input elements. With no identity value, the output computed for <em>thread</em><sub>0</sub> is undefined. </p>
 <p>A subsequent <code>__syncthreads()</code> threadblock barrier should be invoked after calling this method if the supplied <code>smem_storage</code> is to be reused or repurposed by the threadblock.</p>
 <dl class="tparams"><dt>Template Parameters</dt><dd>
   <table class="tparams">
@@ -1910,7 +1909,7 @@ template&lt;typename ScanOp &gt; </div>
 </table>
 </div><div class="memdoc">
 
-<p>Computes an exclusive threadblock-wide prefix scan using the specified binary <code>scan_op</code> functor. Each thread contributes one input element. Also provides every thread with the block-wide <code>block_aggregate</code> of all inputs. With no identity value, the output computed for <em>thread</em><sub>0</sub> is invalid. </p>
+<p>Computes an exclusive threadblock-wide prefix scan using the specified binary <code>scan_op</code> functor. Each thread contributes one input element. Also provides every thread with the block-wide <code>block_aggregate</code> of all inputs. With no identity value, the output computed for <em>thread</em><sub>0</sub> is undefined. </p>
 <p>A subsequent <code>__syncthreads()</code> threadblock barrier should be invoked after calling this method if the supplied <code>smem_storage</code> is to be reused or repurposed by the threadblock.</p>
 <dl class="tparams"><dt>Template Parameters</dt><dd>
   <table class="tparams">
@@ -1985,7 +1984,7 @@ template&lt;int ITEMS_PER_THREAD, typename ScanOp &gt; </div>
 </table>
 </div><div class="memdoc">
 
-<p>Computes an exclusive threadblock-wide prefix scan using the specified binary <code>scan_op</code> functor. Each thread contributes an array of consecutive input elements. Also provides every thread with the block-wide <code>block_aggregate</code> of all inputs. With no identity value, the output computed for <em>thread</em><sub>0</sub> is invalid. </p>
+<p>Computes an exclusive threadblock-wide prefix scan using the specified binary <code>scan_op</code> functor. Each thread contributes an array of consecutive input elements. Also provides every thread with the block-wide <code>block_aggregate</code> of all inputs. With no identity value, the output computed for <em>thread</em><sub>0</sub> is undefined. </p>
 <p>The scalar <code>block_aggregate</code> is undefined in threads other than <em>thread</em><sub>0</sub>.</p>
 <p>A subsequent <code>__syncthreads()</code> threadblock barrier should be invoked after calling this method if the supplied <code>smem_storage</code> is to be reused or repurposed by the threadblock.</p>
 <dl class="tparams"><dt>Template Parameters</dt><dd>
@@ -2641,7 +2640,7 @@ template&lt;int ITEMS_PER_THREAD, typename ScanOp , typename BlockPrefixOp &gt; 
 <!-- HTML footer for doxygen 1.8.3.1-->
 <!-- start footer part -->
 <hr class="footer"/><address class="footer"><small>
-Generated on Wed Apr 24 2013 13:24:10 for CUB by &#160;<a href="http://www.doxygen.org/index.html">
+Generated on Sat Apr 27 2013 22:27:16 for CUB by &#160;<a href="http://www.doxygen.org/index.html">
 <img class="footer" src="doxygen.png" alt="doxygen"/>
 </a> 1.8.3.1
 <br>

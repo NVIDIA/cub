@@ -72,6 +72,15 @@ std::ostream& operator<< (std::ostream& stream, const NullType& val) { return st
 #endif // DOXYGEN_SHOULD_SKIP_THIS
 
 
+/**
+ * \brief Allows for the treatment of an integral constant as a type at compile-time (e.g., to achieve static call dispatch based on constant integral values)
+ */
+template <int A>
+struct Int2Type
+{
+   enum {VALUE = A};
+};
+
 
 /******************************************************************************
  * Static math
@@ -88,16 +97,16 @@ template <int N, int CURRENT_VAL = N, int COUNT = 0>
 struct Log2
 {
     /// Static logarithm value
-    static const int VALUE = Log2<N, (CURRENT_VAL >> 1), COUNT + 1>::VALUE;         // Inductive case
+    enum { VALUE = Log2<N, (CURRENT_VAL >> 1), COUNT + 1>::VALUE };         // Inductive case
 };
 
 #ifndef DOXYGEN_SHOULD_SKIP_THIS    // Do not document
 template <int N, int COUNT>
 struct Log2<N, 0, COUNT>
 {
-    static const int VALUE = (1 << (COUNT - 1) < N) ?                               // Base case
+    enum {VALUE = (1 << (COUNT - 1) < N) ?                                  // Base case
         COUNT :
-        COUNT - 1;
+        COUNT - 1 };
 };
 #endif // DOXYGEN_SHOULD_SKIP_THIS
 
@@ -161,7 +170,7 @@ struct Equals <A, A>
 
 
 /******************************************************************************
- * Qualifier detection
+ * Pointer vs. iterator detection
  ******************************************************************************/
 
 
@@ -296,6 +305,34 @@ struct EnableIf<false, T> {};
 
 #endif // DOXYGEN_SHOULD_SKIP_THIS
 
+
+/******************************************************************************
+ * Typedef-detection
+ ******************************************************************************/
+
+/**
+ * \brief Determine whether or not BinaryOp's functor is of the form <tt>bool operator()(const T& a, const T&b)</tt> or <tt>bool operator()(const T& a, const T&b, unsigned int idx)</tt>
+ */
+template <typename T, typename BinaryOp>
+struct BinaryOpHasIdxParam
+{
+private:
+    template <typename BinaryOpT, bool (BinaryOpT::*)(const T &a, const T &b, unsigned int idx) const>  struct SFINAE1 {};
+    template <typename BinaryOpT, bool (BinaryOpT::*)(const T &a, const T &b, unsigned int idx)>        struct SFINAE2 {};
+    template <typename BinaryOpT, bool (BinaryOpT::*)(T a, T b, unsigned int idx) const>                struct SFINAE3 {};
+    template <typename BinaryOpT, bool (BinaryOpT::*)(T a, T b, unsigned int idx)>                      struct SFINAE4 {};
+
+    template <typename BinaryOpT> static char Test(SFINAE1<BinaryOpT, &BinaryOpT::operator()> *);
+    template <typename BinaryOpT> static char Test(SFINAE2<BinaryOpT, &BinaryOpT::operator()> *);
+    template <typename BinaryOpT> static char Test(SFINAE3<BinaryOpT, &BinaryOpT::operator()> *);
+    template <typename BinaryOpT> static char Test(SFINAE4<BinaryOpT, &BinaryOpT::operator()> *);
+    template <typename BinaryOpT> static int Test(...);
+
+public:
+
+    /// Whether the functor BinaryOp has a third <tt>unsigned int</tt> index param
+    static const bool HAS_PARAM = sizeof(Test<BinaryOp>(NULL)) == sizeof(char);
+};
 
 
 

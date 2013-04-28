@@ -165,7 +165,7 @@ template <
     int                     BLOCK_THREADS,
     int                     ITEMS_PER_THREAD,
     typename                ValueType               = NullType,
-    int                     RADIX_BITS              = 4, //(sizeof(KeyType) < 8) ? 4 : 5,
+    int                     RADIX_BITS              = 4,
     bool                    MEMOIZE_OUTER_SCAN      = (CUB_PTX_ARCH >= 350) ? true : false,
     BlockScanAlgorithm      INNER_SCAN_ALGORITHM    = BLOCK_SCAN_WARP_SCANS,
     cudaSharedMemConfig     SMEM_CONFIG             = cudaSharedMemBankSizeFourByte>

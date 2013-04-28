@@ -74,7 +74,6 @@ var searchBox = new SearchBox("searchBox", "search",false,'Search');
     <ul class="tablist">
       <li><a href="annotated.html"><span>Class&#160;List</span></a></li>
       <li><a href="classes.html"><span>Class&#160;Index</span></a></li>
-      <li><a href="hierarchy.html"><span>Class&#160;Hierarchy</span></a></li>
       <li><a href="functions.html"><span>Class&#160;Members</span></a></li>
     </ul>
   </div>
@@ -114,22 +113,22 @@ class cub::BlockReduce&lt; T, BLOCK_THREADS, ALGORITHM &gt;</h3>
 <img src="reduce_logo.png" alt="reduce_logo.png"/>
 <div class="caption">
 .</div></div>
- <dl class="section user"><dt>Overview</dt><dd>A <a href="http://en.wikipedia.org/wiki/Reduce_(higher-order_function)"><em>reduction</em> (or <em>fold</em>)</a> uses a binary combining operator to compute a single aggregate from a list of input elements.</dd></dl>
-<dl class="section user"><dt></dt><dd>For convenience, <a class="el" href="classcub_1_1_block_reduce.html" title="BlockReduce provides variants of parallel reduction across a CUDA threadblock. .">BlockReduce</a> exposes a spectrum of entrypoints that differ by:<ul>
-<li>Operator (generic reduction <em>vs.</em> summation for numeric types)</li>
+ <dl class="section user"><dt>Overview</dt><dd>A <a href="http://en.wikipedia.org/wiki/Reduce_(higher-order_function)"><em>reduction</em></a> (or <em>fold</em>) uses a binary combining operator to compute a single aggregate from a list of input elements.</dd></dl>
+<dl class="section user"><dt></dt><dd>For convenience, <a class="el" href="classcub_1_1_block_reduce.html" title="BlockReduce provides variants of parallel reduction across a CUDA threadblock. .">BlockReduce</a> provides alternative entrypoints that differ by:<ul>
+<li>Operator (generic reduction <em>vs.</em> summation of numeric types)</li>
 <li>Granularity (single <em>vs.</em> multiple data items per thread)</li>
-<li>Input (full data tile <em>vs.</em> partially-full data tile having some undefined elements)</li>
+<li>Input validity (full data tile <em>vs.</em> partially-full data tile having some undefined elements)</li>
 </ul>
 </dd></dl>
 <dl class="tparams"><dt>Template Parameters</dt><dd>
   <table class="tparams">
     <tr><td class="paramname">T</td><td>The reduction input/output element type </td></tr>
     <tr><td class="paramname">BLOCK_THREADS</td><td>The threadblock size in threads </td></tr>
-    <tr><td class="paramname">ALGORITHM</td><td><b>[optional]</b> <a class="el" href="namespacecub.html#add0251c713859b8974806079e498d10a">cub::BlockReduceAlgorithm</a> tuning policy. Default = <a class="el" href="namespacecub.html#add0251c713859b8974806079e498d10aab32651e17a8a42207e74b7ed8d1aa4d2">cub::BLOCK_REDUCE_RAKING</a>.</td></tr>
+    <tr><td class="paramname">ALGORITHM</td><td><b>[optional]</b> <a class="el" href="namespacecub.html#add0251c713859b8974806079e498d10a">cub::BlockReduceAlgorithm</a> enumerator specifying the underlying algorithm to use (default = <a class="el" href="namespacecub.html#add0251c713859b8974806079e498d10aab32651e17a8a42207e74b7ed8d1aa4d2">cub::BLOCK_REDUCE_RAKING</a>)</td></tr>
   </table>
   </dd>
 </dl>
-<dl class="section user"><dt>Algorithm</dt><dd><a class="el" href="classcub_1_1_block_reduce.html" title="BlockReduce provides variants of parallel reduction across a CUDA threadblock. .">BlockReduce</a> can be (optionally) configured to use different algorithms:<ol type="1">
+<dl class="section user"><dt>Algorithm</dt><dd><a class="el" href="classcub_1_1_block_reduce.html" title="BlockReduce provides variants of parallel reduction across a CUDA threadblock. .">BlockReduce</a> provides a single prefix scan abstraction whose performance behavior can be tuned for different usage scenarios. <a class="el" href="classcub_1_1_block_reduce.html" title="BlockReduce provides variants of parallel reduction across a CUDA threadblock. .">BlockReduce</a> can be (optionally) configured to use different algorithms that cater to different latency/throughput needs:<ol type="1">
 <li><b><a class="el" href="namespacecub.html#add0251c713859b8974806079e498d10aab32651e17a8a42207e74b7ed8d1aa4d2">cub::BLOCK_REDUCE_RAKING</a></b>. An efficient "raking" reduction algorithm. <a class="el" href="namespacecub.html#add0251c713859b8974806079e498d10a">More...</a></li>
 <li><b><a class="el" href="namespacecub.html#add0251c713859b8974806079e498d10aa993903176f938273fa1ff5d4daa808e5">cub::BLOCK_REDUCE_WARP_REDUCTIONS</a></b>. A quick "tiled warp-reductions" reduction algorithm. <a class="el" href="namespacecub.html#add0251c713859b8974806079e498d10a">More...</a></li>
 </ol>
@@ -589,7 +588,7 @@ template&lt;typename T , int BLOCK_THREADS, BlockReduceAlgorithm ALGORITHM = BLO
 <!-- HTML footer for doxygen 1.8.3.1-->
 <!-- start footer part -->
 <hr class="footer"/><address class="footer"><small>
-Generated on Wed Apr 24 2013 13:24:10 for CUB by &#160;<a href="http://www.doxygen.org/index.html">
+Generated on Sat Apr 27 2013 22:27:16 for CUB by &#160;<a href="http://www.doxygen.org/index.html">
 <img class="footer" src="doxygen.png" alt="doxygen"/>
 </a> 1.8.3.1
 <br>

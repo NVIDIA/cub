@@ -58,7 +58,7 @@
  * [thread-level](http://docs.nvidia.com/cuda/cuda-c-programming-guide/index.html#programming-model) operations.
  *
  * \par
- * CUB's primitives are not bound to any particular width of parallelism or to any particular
+ * CUB primitives are not bound to any particular width of parallelism or to any particular
  * data type.  This allows them to be flexible and tunable to fit your kernels' needs.
  * Thus CUB is [<em>CUDA Unbound</em>](index.html).
  *
@@ -297,7 +297,7 @@
  * - Procedural entrypoints for a block of threads to invoke
  * - An opaque shared memory type needed for the operation of those methods
  *
- * \subsection sec3sec3 6.3 &nbsp;&nbsp; Flexible data mapping
+ * \subsection sec3sec3 6.3 &nbsp;&nbsp; Flexible mapping of data onto threads
  *
  * \par
  * We often design kernels such that each thread block is assigned a "tile" of data
@@ -312,9 +312,8 @@
  * mapping of data onto threads is straightforward (one datum per thread).
  * However, there are often performance advantages for processing more
  * than one datum per thread.  For these scenarios, CUB primitives
- * support the following alternatives for partitioning data items across
- * the block of threads:
- *
+ * will specify which of the following paritioning alternatives they 
+ * accomodate:
  *
  * <table border="0px" cellpadding="0px" cellspacing="0px"><tr>
  * <td>

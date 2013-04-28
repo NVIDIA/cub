@@ -371,201 +371,201 @@ void InitValue(int gen_mode, T &value, int index = 0)
 /**
  * Vector1 overloads
  */
-#define CUB_VEC_OVERLOAD_1(T)                                \
+#define CUB_VEC_OVERLOAD_1(T)                               \
     /* Ostream output */                                    \
-    std::ostream& operator<<(                                \
-        std::ostream& os,                                    \
-        const T& val)                                        \
-    {                                                        \
-        os << '(' << CoutCast(val.x) << ')';                 \
-        return os;                                            \
-    }                                                        \
+    std::ostream& operator<<(                               \
+        std::ostream& os,                                   \
+        const T& val)                                       \
+    {                                                       \
+        os << '(' << CoutCast(val.x) << ')';                \
+        return os;                                          \
+    }                                                       \
     /* Inequality */                                        \
     __host__ __device__ __forceinline__ bool operator!=(    \
         const T &a,                                         \
-        const T &b)                                            \
-    {                                                        \
+        const T &b)                                         \
+    {                                                       \
         return (a.x != b.x);                                \
-    }                                                        \
-    /* Test initialization */                                \
-    void InitValue(int gen_mode, T &value, int index = 0)    \
-    {                                                        \
+    }                                                       \
+    /* Test initialization */                               \
+    void InitValue(int gen_mode, T &value, int index = 0)   \
+    {                                                       \
         InitValue(gen_mode, value.x, index);                \
-    }                                                        \
-    /* Max */                                            \
-    __host__ __device__ __forceinline__ bool operator>(        \
+    }                                                       \
+    /* Max */                                               \
+    __host__ __device__ __forceinline__ bool operator>(     \
         const T &a,                                         \
-        const T &b)                                            \
-    {                                                        \
-        return (a.x > b.x);                                  \
-    }                                                           \
-    /* Summation */                                            \
+        const T &b)                                         \
+    {                                                       \
+        return (a.x > b.x);                                 \
+    }                                                       \
+    /* Summation */                                         \
     __host__ __device__ __forceinline__ T operator+(        \
         const T &a,                                         \
-        const T &b)                                            \
-    {                                                        \
-        T retval = {a.x + b.x};                                \
-        return retval;                                        \
+        const T &b)                                         \
+    {                                                       \
+        T retval = {a.x + b.x};                             \
+        return retval;                                      \
     }
 
 /**
  * Vector2 overloads
  */
-#define CUB_VEC_OVERLOAD_2(T)                                \
+#define CUB_VEC_OVERLOAD_2(T)                               \
     /* Ostream output */                                    \
-    std::ostream& operator<<(                                \
-        std::ostream& os,                                    \
-        const T& val)                                        \
-    {                                                        \
-        os << '('                                            \
-            << CoutCast(val.x) << ','                        \
-            << CoutCast(val.y) << ')';                         \
-        return os;                                            \
-    }                                                        \
+    std::ostream& operator<<(                               \
+        std::ostream& os,                                   \
+        const T& val)                                       \
+    {                                                       \
+        os << '('                                           \
+            << CoutCast(val.x) << ','                       \
+            << CoutCast(val.y) << ')';                      \
+        return os;                                          \
+    }                                                       \
     /* Inequality */                                        \
     __host__ __device__ __forceinline__ bool operator!=(    \
         const T &a,                                         \
-        const T &b)                                            \
-    {                                                        \
-        return (a.x != b.x) &&                                 \
-            (a.y != b.y);                                    \
-    }                                                        \
-    /* Test initialization */                                \
-    void InitValue(int gen_mode, T &value, int index = 0)    \
-    {                                                        \
+        const T &b)                                         \
+    {                                                       \
+        return (a.x != b.x) &&                              \
+            (a.y != b.y);                                   \
+    }                                                       \
+    /* Test initialization */                               \
+    void InitValue(int gen_mode, T &value, int index = 0)   \
+    {                                                       \
         InitValue(gen_mode, value.x, index);                \
         InitValue(gen_mode, value.y, index);                \
-    }                                                        \
-    /* Max */                                            \
-    __host__ __device__ __forceinline__ bool operator>(        \
+    }                                                       \
+    /* Max */                                               \
+    __host__ __device__ __forceinline__ bool operator>(     \
         const T &a,                                         \
-        const T &b)                                            \
-    {                                                        \
-        return (a.x > b.x);                                  \
-    }                                                           \
-    /* Summation */                                            \
+        const T &b)                                         \
+    {                                                       \
+        return (a.x > b.x);                                 \
+    }                                                       \
+    /* Summation */                                         \
     __host__ __device__ __forceinline__ T operator+(        \
         const T &a,                                         \
-        const T &b)                                            \
-    {                                                        \
+        const T &b)                                         \
+    {                                                       \
         T retval = {                                        \
-            a.x + b.x,                                         \
-            a.y + b.y};                                        \
-        return retval;                                        \
+            a.x + b.x,                                      \
+            a.y + b.y};                                     \
+        return retval;                                      \
     }
 
 
 /**
  * Vector3 overloads
  */
-#define CUB_VEC_OVERLOAD_3(T)                                \
+#define CUB_VEC_OVERLOAD_3(T)                               \
     /* Ostream output */                                    \
-    std::ostream& operator<<(                                \
-        std::ostream& os,                                    \
-        const T& val)                                        \
-    {                                                        \
-        os << '('                                             \
-            << CoutCast(val.x) << ','                        \
-            << CoutCast(val.y) << ','                         \
-            << CoutCast(val.z) << ')';                        \
-        return os;                                            \
-    }                                                        \
+    std::ostream& operator<<(                               \
+        std::ostream& os,                                   \
+        const T& val)                                       \
+    {                                                       \
+        os << '('                                           \
+            << CoutCast(val.x) << ','                       \
+            << CoutCast(val.y) << ','                       \
+            << CoutCast(val.z) << ')';                      \
+        return os;                                          \
+    }                                                       \
     /* Inequality */                                        \
     __host__ __device__ __forceinline__ bool operator!=(    \
         const T &a,                                         \
-        const T &b)                                            \
-    {                                                        \
-        return (a.x != b.x) &&                                 \
+        const T &b)                                         \
+    {                                                       \
+        return (a.x != b.x) &&                              \
             (a.y != b.y) &&                                 \
-            (a.z != b.z);                                    \
-    }                                                        \
-    /* Test initialization */                                \
-    void InitValue(int gen_mode, T &value, int index = 0)    \
-    {                                                        \
+            (a.z != b.z);                                   \
+    }                                                       \
+    /* Test initialization */                               \
+    void InitValue(int gen_mode, T &value, int index = 0)   \
+    {                                                       \
         InitValue(gen_mode, value.x, index);                \
         InitValue(gen_mode, value.y, index);                \
         InitValue(gen_mode, value.z, index);                \
-    }                                                        \
-    /* Max */                                            \
-    __host__ __device__ __forceinline__ bool operator>(        \
+    }                                                       \
+    /* Max */                                               \
+    __host__ __device__ __forceinline__ bool operator>(     \
         const T &a,                                         \
-        const T &b)                                            \
-    {                                                        \
-        return (a.x > b.x);                                  \
-    }                                                           \
-    /* Summation */                                            \
+        const T &b)                                         \
+    {                                                       \
+        return (a.x > b.x);                                 \
+    }                                                       \
+    /* Summation */                                         \
     __host__ __device__ __forceinline__ T operator+(        \
         const T &a,                                         \
-        const T &b)                                            \
-    {                                                        \
+        const T &b)                                         \
+    {                                                       \
         T retval = {                                        \
-            a.x + b.x,                                         \
-            a.y + b.y,                                        \
-            a.z + b.z};                                        \
-        return retval;                                        \
+            a.x + b.x,                                      \
+            a.y + b.y,                                      \
+            a.z + b.z};                                     \
+        return retval;                                      \
     }
 
 /**
  * Vector4 overloads
  */
-#define CUB_VEC_OVERLOAD_4(T)                                \
+#define CUB_VEC_OVERLOAD_4(T)                               \
     /* Ostream output */                                    \
-    std::ostream& operator<<(                                \
-        std::ostream& os,                                    \
-        const T& val)                                        \
-    {                                                        \
-        os << '('                                             \
-            << CoutCast(val.x) << ','                        \
-            << CoutCast(val.y) << ','                         \
-            << CoutCast(val.z) << ','                         \
-            << CoutCast(val.w) << ')';                        \
-        return os;                                            \
-    }                                                        \
+    std::ostream& operator<<(                               \
+        std::ostream& os,                                   \
+        const T& val)                                       \
+    {                                                       \
+        os << '('                                           \
+            << CoutCast(val.x) << ','                       \
+            << CoutCast(val.y) << ','                       \
+            << CoutCast(val.z) << ','                       \
+            << CoutCast(val.w) << ')';                      \
+        return os;                                          \
+    }                                                       \
     /* Inequality */                                        \
     __host__ __device__ __forceinline__ bool operator!=(    \
         const T &a,                                         \
-        const T &b)                                            \
-    {                                                        \
-        return (a.x != b.x) &&                                 \
+        const T &b)                                         \
+    {                                                       \
+        return (a.x != b.x) &&                              \
             (a.y != b.y) &&                                 \
             (a.z != b.z) &&                                 \
-            (a.w != b.w);                                    \
-    }                                                        \
-    /* Test initialization */                                \
-    void InitValue(int gen_mode, T &value, int index = 0)    \
-    {                                                        \
+            (a.w != b.w);                                   \
+    }                                                       \
+    /* Test initialization */                               \
+    void InitValue(int gen_mode, T &value, int index = 0)   \
+    {                                                       \
         InitValue(gen_mode, value.x, index);                \
         InitValue(gen_mode, value.y, index);                \
         InitValue(gen_mode, value.z, index);                \
         InitValue(gen_mode, value.w, index);                \
-    }                                                        \
-    /* Max */                                            \
-    __host__ __device__ __forceinline__ bool operator>(        \
+    }                                                       \
+    /* Max */                                               \
+    __host__ __device__ __forceinline__ bool operator>(     \
         const T &a,                                         \
-        const T &b)                                            \
-    {                                                        \
-    	return (a.x > b.x);                                  \
-    }                                                           \
-    /* Summation */                                            \
+        const T &b)                                         \
+    {                                                       \
+    	return (a.x > b.x);                                 \
+    }                                                       \
+    /* Summation */                                         \
     __host__ __device__ __forceinline__ T operator+(        \
         const T &a,                                         \
-        const T &b)                                            \
-    {                                                        \
+        const T &b)                                         \
+    {                                                       \
         T retval = {                                        \
-            a.x + b.x,                                         \
-            a.y + b.y,                                        \
-            a.z + b.z,                                        \
-            a.w + b.w};                                        \
-        return retval;                                        \
+            a.x + b.x,                                      \
+            a.y + b.y,                                      \
+            a.z + b.z,                                      \
+            a.w + b.w};                                     \
+        return retval;                                      \
     }
 
 /**
  * All vector overloads
  */
 #define CUB_VEC_OVERLOAD(BASE_T)                            \
-    CUB_VEC_OVERLOAD_1(BASE_T##1)                            \
-    CUB_VEC_OVERLOAD_2(BASE_T##2)                            \
-    CUB_VEC_OVERLOAD_3(BASE_T##3)                            \
+    CUB_VEC_OVERLOAD_1(BASE_T##1)                           \
+    CUB_VEC_OVERLOAD_2(BASE_T##2)                           \
+    CUB_VEC_OVERLOAD_3(BASE_T##3)                           \
     CUB_VEC_OVERLOAD_4(BASE_T##4)
 
 /**
@@ -606,6 +606,16 @@ struct TestFoo
         return retval;
     }
 
+    // Assignment from int operator
+    __host__ __device__ __forceinline__ TestFoo operator =(int b)
+    {
+        x = b;
+        y = b;
+        z = b;
+        w = b;
+        return *this;
+    }
+
     // Summation operator
     __host__ __device__ __forceinline__ TestFoo operator+(const TestFoo &b) const
     {
@@ -621,7 +631,7 @@ struct TestFoo
 
 
 /**
- * TestBar ostream operator
+ * TestFoo ostream operator
  */
 bool __host__ __device__ __forceinline__ operator>(const TestFoo& first, const TestFoo& second)
 {
@@ -662,14 +672,22 @@ struct TestBar
     typedef void ThreadLoadTag;
     typedef void ThreadStoreTag;
 
-    long long     x;
-    int         y;
+    long long       x;
+    int             y;
 
     // Factory
     static __host__ __device__ __forceinline__ TestBar MakeTestBar(long long x, int y)
     {
         TestBar retval = {x, y};
         return retval;
+    }
+
+    // Assignment from int operator
+    __host__ __device__ __forceinline__ TestBar operator =(int b)
+    {
+        x = b;
+        y = b;
+        return *this;
     }
 
     // Summation operator
