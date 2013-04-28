@@ -105,18 +105,18 @@ enum BlockReduceAlgorithm
  * \brief BlockReduce provides variants of parallel reduction across a CUDA threadblock. ![](reduce_logo.png)
  *
  * \par Overview
- * A <a href="http://en.wikipedia.org/wiki/Reduce_(higher-order_function)"><em>reduction</em> (or <em>fold</em>)</a>
+ * A <a href="http://en.wikipedia.org/wiki/Reduce_(higher-order_function)"><em>reduction</em></a> (or <em>fold</em>)
  * uses a binary combining operator to compute a single aggregate from a list of input elements.
  *
  * \par
  * For convenience, BlockReduce provides alternative entrypoints that differ by:
- * - Operator (generic reduction <em>vs.</em> summation for numeric types)
+ * - Operator (generic reduction <em>vs.</em> summation of numeric types)
  * - Granularity (single <em>vs.</em> multiple data items per thread)
  * - Input validity (full data tile <em>vs.</em> partially-full data tile having some undefined elements)
  *
  * \tparam T                The reduction input/output element type
  * \tparam BLOCK_THREADS    The threadblock size in threads
- * \tparam ALGORITHM        <b>[optional]</b> cub::BlockReduceAlgorithm tuning policy.  Default = cub::BLOCK_REDUCE_RAKING.
+ * \tparam ALGORITHM        <b>[optional]</b> cub::BlockReduceAlgorithm enumerator specifying the underlying algorithm to use (default = cub::BLOCK_REDUCE_RAKING)
  *
  * \par Algorithm
  * BlockReduce provides a single prefix scan abstraction whose performance behavior can be tuned

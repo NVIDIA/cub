@@ -29,8 +29,7 @@
 
 /**
  * \file
- * cub::DeviceHisto256 provides variants of parallel histogram over data residing
- * within a CUDA device's global memory.
+ * cub::DeviceHisto256 provides variants of device-wide parallel histogram over data residing within global memory.
  */
 
 #pragma once
@@ -172,7 +171,7 @@ __global__ void FinalizeHisto256Kernel(
  */
 
 /**
- * \brief DeviceHisto256 provides variants of parallel histogram over data residing within a CUDA device's global memory.
+ * \brief DeviceHisto256 provides variants of device-wide parallel histogram over data residing within global memory.
  */
 struct DeviceHisto256
 {
@@ -510,8 +509,8 @@ struct DeviceHisto256
         typename        InputIteratorRA,
         typename        HistoCounter>
     __host__ __device__ __forceinline__
-    static cudaError_t Reduce(
-        InputIteratorRA   d_in,                                             ///< [in] Input samples to histogram
+    static cudaError_t SingleChannel(
+        InputIteratorRA d_in,                                               ///< [in] Input samples to histogram
         HistoCounter    *d_histogram,                                       ///< [out] Array of 256 counters of integral type \p HistoCounter.
         int             num_items,                                          ///< [in] Number of samples to process
         cudaStream_t    stream              = 0,                            ///< [in] <b>[optional]</b> CUDA stream to launch kernels within.  Default is stream-0.

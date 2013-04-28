@@ -70,6 +70,12 @@ var searchBox = new SearchBox("searchBox", "search",false,'Search');
       </li>
     </ul>
   </div>
+  <div id="navrow2" class="tabs2">
+    <ul class="tablist">
+      <li><a href="files.html"><span>File&#160;List</span></a></li>
+      <li><a href="globals.html"><span>File&#160;Members</span></a></li>
+    </ul>
+  </div>
 <!-- window showing the filter options -->
 <div id="MSearchSelectWindow"
      onmouseover="return searchBox.OnSearchSelectShow()"
@@ -110,11 +116,13 @@ Namespaces</h2></td></tr>
 </table><table class="memberdecls">
 <tr class="heading"><td colspan="2"><h2 class="groupheader"><a name="define-members"></a>
 Macros</h2></td></tr>
-<tr class="memitem:ga84c3a4c178bf6593e0fad2b763606236"><td class="memItemLeft" align="right" valign="top">#define&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="group___util_module.html#ga84c3a4c178bf6593e0fad2b763606236">CubDebug</a>(e)</td></tr>
-<tr class="memdesc:ga84c3a4c178bf6593e0fad2b763606236"><td class="mdescLeft">&#160;</td><td class="mdescRight">Debug macro.  <a href="group___util_module.html#ga84c3a4c178bf6593e0fad2b763606236">More...</a><br/></td></tr>
+<tr class="memitem:ga84c3a4c178bf6593e0fad2b763606236"><td class="memItemLeft" align="right" valign="top"><a class="anchor" id="ga84c3a4c178bf6593e0fad2b763606236"></a>
+#define&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="group___util_module.html#ga84c3a4c178bf6593e0fad2b763606236">CubDebug</a>(e)&#160;&#160;&#160;<a class="el" href="group___util_module.html#ga5a175d2a88f63f7f1ab30e8b4f2cfa95">cub::Debug</a>((e), __FILE__, __LINE__)</td></tr>
+<tr class="memdesc:ga84c3a4c178bf6593e0fad2b763606236"><td class="mdescLeft">&#160;</td><td class="mdescRight">Debug macro. <br/></td></tr>
 <tr class="separator:ga84c3a4c178bf6593e0fad2b763606236"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:ga26211db894893b3cec946e4e537536f8"><td class="memItemLeft" align="right" valign="top">#define&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="group___util_module.html#ga26211db894893b3cec946e4e537536f8">CubDebugExit</a>(e)</td></tr>
-<tr class="memdesc:ga26211db894893b3cec946e4e537536f8"><td class="mdescLeft">&#160;</td><td class="mdescRight">Debug macro with exit.  <a href="group___util_module.html#ga26211db894893b3cec946e4e537536f8">More...</a><br/></td></tr>
+<tr class="memitem:ga26211db894893b3cec946e4e537536f8"><td class="memItemLeft" align="right" valign="top"><a class="anchor" id="ga26211db894893b3cec946e4e537536f8"></a>
+#define&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="group___util_module.html#ga26211db894893b3cec946e4e537536f8">CubDebugExit</a>(e)&#160;&#160;&#160;if (<a class="el" href="group___util_module.html#ga5a175d2a88f63f7f1ab30e8b4f2cfa95">cub::Debug</a>((e), __FILE__, __LINE__)) { exit(1); }</td></tr>
+<tr class="memdesc:ga26211db894893b3cec946e4e537536f8"><td class="mdescLeft">&#160;</td><td class="mdescRight">Debug macro with exit. <br/></td></tr>
 <tr class="separator:ga26211db894893b3cec946e4e537536f8"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:ga6788287a780dc10c443aa1ab5ae9f0db"><td class="memItemLeft" align="right" valign="top"><a class="anchor" id="ga6788287a780dc10c443aa1ab5ae9f0db"></a>
 #define&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="group___util_module.html#ga6788287a780dc10c443aa1ab5ae9f0db">CubLog</a>(format,...)&#160;&#160;&#160;printf(format,__VA_ARGS__);</td></tr>
@@ -138,7 +146,7 @@ __forceinline__ cudaError_t&#160;</td><td class="memItemRight" valign="bottom"><
 <!-- HTML footer for doxygen 1.8.3.1-->
 <!-- start footer part -->
 <hr class="footer"/><address class="footer"><small>
-Generated on Wed Apr 24 2013 13:24:10 for CUB by &#160;<a href="http://www.doxygen.org/index.html">
+Generated on Sat Apr 27 2013 22:27:16 for CUB by &#160;<a href="http://www.doxygen.org/index.html">
 <img class="footer" src="doxygen.png" alt="doxygen"/>
 </a> 1.8.3.1
 <br>

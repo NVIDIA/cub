@@ -74,7 +74,6 @@ var searchBox = new SearchBox("searchBox", "search",false,'Search');
     <ul class="tablist">
       <li><a href="annotated.html"><span>Class&#160;List</span></a></li>
       <li><a href="classes.html"><span>Class&#160;Index</span></a></li>
-      <li><a href="hierarchy.html"><span>Class&#160;Hierarchy</span></a></li>
       <li><a href="functions.html"><span>Class&#160;Members</span></a></li>
     </ul>
   </div>
@@ -135,7 +134,7 @@ class cub::BlockLoad&lt; InputIteratorRA, BLOCK_THREADS, ITEMS_PER_THREAD, POLIC
 </ol>
 </dd></dl>
 <dl class="section user"><dt>Usage Considerations</dt><dd><ul>
-<li>After any operation, a subsequent <code>__syncthreads()</code> barrier is required if the supplied <a class="el" href="classcub_1_1_block_load.html#a09296fd690f1452df9cae24a037e906a" title="The operations exposed by BlockLoad require shared memory of this type. This opaque storage can be al...">BlockLoad::SmemStorage</a> is to be reused or repurposed by the threadblock</li>
+<li>After any operation, a subsequent <code>__syncthreads()</code> barrier is required if the supplied <a class="el" href="classcub_1_1_block_load.html#a0d2c3c7656dfe1eb398217ef8bd58960" title="The operations exposed by BlockLoad require shared memory of this type. This opaque storage can be al...">BlockLoad::SmemStorage</a> is to be reused or repurposed by the threadblock</li>
 </ul>
 </dd></dl>
 <dl class="section user"><dt>Performance Considerations</dt><dd><ul>
@@ -150,13 +149,13 @@ class cub::BlockLoad&lt; InputIteratorRA, BLOCK_THREADS, ITEMS_PER_THREAD, POLIC
 <div class="line">    <span class="keyword">typedef</span> <a class="code" href="classcub_1_1_block_load.html" title="BlockLoad provides data movement operations for reading block-arranged data from global memory...">cub::BlockLoad&lt;int*, 128, 4&gt;</a> BlockLoad;</div>
 <div class="line"></div>
 <div class="line">    <span class="comment">// Declare shared memory for BlockLoad</span></div>
-<div class="line">    __shared__ <span class="keyword">typename</span> <a class="code" href="classcub_1_1_block_load.html#a09296fd690f1452df9cae24a037e906a" title="The operations exposed by BlockLoad require shared memory of this type. This opaque storage can be al...">BlockLoad::SmemStorage</a> smem_storage;</div>
+<div class="line">    __shared__ <span class="keyword">typename</span> <a class="code" href="classcub_1_1_block_load.html#a0d2c3c7656dfe1eb398217ef8bd58960" title="The operations exposed by BlockLoad require shared memory of this type. This opaque storage can be al...">BlockLoad::SmemStorage</a> smem_storage;</div>
 <div class="line"></div>
 <div class="line">    <span class="comment">// A segment of consecutive items per thread</span></div>
 <div class="line">    <span class="keywordtype">int</span> data[4];</div>
 <div class="line"></div>
 <div class="line">    <span class="comment">// Load a tile of data at this block&#39;s offset</span></div>
-<div class="line">    <a class="code" href="classcub_1_1_block_load.html#ac671e9f033037fc01384a9296684200c" title="Load a tile of items across a threadblock.">BlockLoad::Load</a>(smem_storage, d_in + blockIdx.x * 128 * 4, data);</div>
+<div class="line">    <a class="code" href="classcub_1_1_block_load.html#a4c379a2f7f8aa08aa2d6b134c9a2955f" title="Load a tile of items across a threadblock.">BlockLoad::Load</a>(smem_storage, d_in + blockIdx.x * 128 * 4, data);</div>
 <div class="line"></div>
 <div class="line">    ...</div>
 </div><!-- fragment --></dd></dl>
@@ -171,13 +170,13 @@ class cub::BlockLoad&lt; InputIteratorRA, BLOCK_THREADS, ITEMS_PER_THREAD, POLIC
 <div class="line">    <span class="keyword">typedef</span> <a class="code" href="classcub_1_1_block_load.html" title="BlockLoad provides data movement operations for reading block-arranged data from global memory...">cub::BlockLoad&lt;int*, BLOCK_THREADS, ITEMS_PER_THREAD, BLOCK_LOAD_VECTORIZE, PTX_LOAD_CG&gt;</a> BlockLoad;</div>
 <div class="line"></div>
 <div class="line">    <span class="comment">// Declare shared memory for BlockLoad</span></div>
-<div class="line">    __shared__ <span class="keyword">typename</span> <a class="code" href="classcub_1_1_block_load.html#a09296fd690f1452df9cae24a037e906a" title="The operations exposed by BlockLoad require shared memory of this type. This opaque storage can be al...">BlockLoad::SmemStorage</a> smem_storage;</div>
+<div class="line">    __shared__ <span class="keyword">typename</span> <a class="code" href="classcub_1_1_block_load.html#a0d2c3c7656dfe1eb398217ef8bd58960" title="The operations exposed by BlockLoad require shared memory of this type. This opaque storage can be al...">BlockLoad::SmemStorage</a> smem_storage;</div>
 <div class="line"></div>
 <div class="line">    <span class="comment">// A segment of consecutive items per thread</span></div>
 <div class="line">    <span class="keywordtype">int</span> data[ITEMS_PER_THREAD];</div>
 <div class="line"></div>
 <div class="line">    <span class="comment">// Load a tile of data at this block&#39;s offset</span></div>
-<div class="line">    <a class="code" href="classcub_1_1_block_load.html#ac671e9f033037fc01384a9296684200c" title="Load a tile of items across a threadblock.">BlockLoad::Load</a>(smem_storage, d_in + blockIdx.x * BLOCK_THREADS * ITEMS_PER_THREAD, data);</div>
+<div class="line">    <a class="code" href="classcub_1_1_block_load.html#a4c379a2f7f8aa08aa2d6b134c9a2955f" title="Load a tile of items across a threadblock.">BlockLoad::Load</a>(smem_storage, d_in + blockIdx.x * BLOCK_THREADS * ITEMS_PER_THREAD, data);</div>
 <div class="line"></div>
 <div class="line">    ...</div>
 </div><!-- fragment --> <br/>
@@ -185,25 +184,25 @@ class cub::BlockLoad&lt; InputIteratorRA, BLOCK_THREADS, ITEMS_PER_THREAD, POLIC
 </div><table class="memberdecls">
 <tr class="heading"><td colspan="2"><h2 class="groupheader"><a name="pub-types"></a>
 Public Types</h2></td></tr>
-<tr class="memitem:a09296fd690f1452df9cae24a037e906a"><td class="memItemLeft" align="right" valign="top"><a class="anchor" id="a09296fd690f1452df9cae24a037e906a"></a>
-typedef _SmemStorage&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classcub_1_1_block_load.html#a09296fd690f1452df9cae24a037e906a">SmemStorage</a></td></tr>
-<tr class="memdesc:a09296fd690f1452df9cae24a037e906a"><td class="mdescLeft">&#160;</td><td class="mdescRight">The operations exposed by <a class="el" href="classcub_1_1_block_load.html" title="BlockLoad provides data movement operations for reading block-arranged data from global memory...">BlockLoad</a> require shared memory of this type. This opaque storage can be allocated directly using the <code>__shared__</code> keyword. Alternatively, it can be aliased to externally allocated shared memory or <code>union</code>'d with other types to facilitate shared memory reuse. <br/></td></tr>
-<tr class="separator:a09296fd690f1452df9cae24a037e906a"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a0d2c3c7656dfe1eb398217ef8bd58960"><td class="memItemLeft" align="right" valign="top"><a class="anchor" id="a0d2c3c7656dfe1eb398217ef8bd58960"></a>
+typedef _SmemStorage&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classcub_1_1_block_load.html#a0d2c3c7656dfe1eb398217ef8bd58960">SmemStorage</a></td></tr>
+<tr class="memdesc:a0d2c3c7656dfe1eb398217ef8bd58960"><td class="mdescLeft">&#160;</td><td class="mdescRight">The operations exposed by <a class="el" href="classcub_1_1_block_load.html" title="BlockLoad provides data movement operations for reading block-arranged data from global memory...">BlockLoad</a> require shared memory of this type. This opaque storage can be allocated directly using the <code>__shared__</code> keyword. Alternatively, it can be aliased to externally allocated shared memory or <code>union</code>'d with other types to facilitate shared memory reuse. <br/></td></tr>
+<tr class="separator:a0d2c3c7656dfe1eb398217ef8bd58960"><td class="memSeparator" colspan="2">&#160;</td></tr>
 </table><table class="memberdecls">
 <tr class="heading"><td colspan="2"><h2 class="groupheader"><a name="pub-static-methods"></a>
 Static Public Methods</h2></td></tr>
-<tr class="memitem:ac671e9f033037fc01384a9296684200c"><td class="memItemLeft" align="right" valign="top">static __device__ <br class="typebreak"/>
-__forceinline__ void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classcub_1_1_block_load.html#ac671e9f033037fc01384a9296684200c">Load</a> (<a class="el" href="classcub_1_1_block_load.html#a09296fd690f1452df9cae24a037e906a">SmemStorage</a> &amp;smem_storage, InputIteratorRA block_itr, T(&amp;items)[ITEMS_PER_THREAD])</td></tr>
-<tr class="memdesc:ac671e9f033037fc01384a9296684200c"><td class="mdescLeft">&#160;</td><td class="mdescRight">Load a tile of items across a threadblock.  <a href="#ac671e9f033037fc01384a9296684200c">More...</a><br/></td></tr>
-<tr class="separator:ac671e9f033037fc01384a9296684200c"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:ae7025d183926de0430146d41b5771032"><td class="memTemplParams" colspan="2">template&lt;typename SizeT &gt; </td></tr>
-<tr class="memitem:ae7025d183926de0430146d41b5771032"><td class="memTemplItemLeft" align="right" valign="top">static __device__ <br class="typebreak"/>
-__forceinline__ void&#160;</td><td class="memTemplItemRight" valign="bottom"><a class="el" href="classcub_1_1_block_load.html#ae7025d183926de0430146d41b5771032">Load</a> (<a class="el" href="classcub_1_1_block_load.html#a09296fd690f1452df9cae24a037e906a">SmemStorage</a> &amp;smem_storage, InputIteratorRA block_itr, const SizeT &amp;guarded_items, T(&amp;items)[ITEMS_PER_THREAD])</td></tr>
-<tr class="memdesc:ae7025d183926de0430146d41b5771032"><td class="mdescLeft">&#160;</td><td class="mdescRight">Load a tile of items across a threadblock, guarded by range.  <a href="#ae7025d183926de0430146d41b5771032">More...</a><br/></td></tr>
-<tr class="separator:ae7025d183926de0430146d41b5771032"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a4c379a2f7f8aa08aa2d6b134c9a2955f"><td class="memItemLeft" align="right" valign="top">static __device__ <br class="typebreak"/>
+__forceinline__ void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classcub_1_1_block_load.html#a4c379a2f7f8aa08aa2d6b134c9a2955f">Load</a> (<a class="el" href="classcub_1_1_block_load.html#a0d2c3c7656dfe1eb398217ef8bd58960">SmemStorage</a> &amp;smem_storage, InputIteratorRA block_itr, T(&amp;items)[ITEMS_PER_THREAD])</td></tr>
+<tr class="memdesc:a4c379a2f7f8aa08aa2d6b134c9a2955f"><td class="mdescLeft">&#160;</td><td class="mdescRight">Load a tile of items across a threadblock.  <a href="#a4c379a2f7f8aa08aa2d6b134c9a2955f">More...</a><br/></td></tr>
+<tr class="separator:a4c379a2f7f8aa08aa2d6b134c9a2955f"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a29b387398b2f2118445f4b1e8a40481f"><td class="memTemplParams" colspan="2">template&lt;typename SizeT &gt; </td></tr>
+<tr class="memitem:a29b387398b2f2118445f4b1e8a40481f"><td class="memTemplItemLeft" align="right" valign="top">static __device__ <br class="typebreak"/>
+__forceinline__ void&#160;</td><td class="memTemplItemRight" valign="bottom"><a class="el" href="classcub_1_1_block_load.html#a29b387398b2f2118445f4b1e8a40481f">Load</a> (<a class="el" href="classcub_1_1_block_load.html#a0d2c3c7656dfe1eb398217ef8bd58960">SmemStorage</a> &amp;smem_storage, InputIteratorRA block_itr, const SizeT &amp;guarded_items, T(&amp;items)[ITEMS_PER_THREAD])</td></tr>
+<tr class="memdesc:a29b387398b2f2118445f4b1e8a40481f"><td class="mdescLeft">&#160;</td><td class="mdescRight">Load a tile of items across a threadblock, guarded by range.  <a href="#a29b387398b2f2118445f4b1e8a40481f">More...</a><br/></td></tr>
+<tr class="separator:a29b387398b2f2118445f4b1e8a40481f"><td class="memSeparator" colspan="2">&#160;</td></tr>
 </table>
 <h2 class="groupheader">Member Function Documentation</h2>
-<a class="anchor" id="ac671e9f033037fc01384a9296684200c"></a>
+<a class="anchor" id="a4c379a2f7f8aa08aa2d6b134c9a2955f"></a>
 <div class="memitem">
 <div class="memproto">
 <div class="memtemplate">
@@ -215,7 +214,7 @@ template&lt;typename InputIteratorRA , int BLOCK_THREADS, int ITEMS_PER_THREAD, 
         <tr>
           <td class="memname">static __device__ __forceinline__ void <a class="el" href="classcub_1_1_block_load.html">cub::BlockLoad</a>&lt; InputIteratorRA, BLOCK_THREADS, ITEMS_PER_THREAD, POLICY, MODIFIER &gt;::Load </td>
           <td>(</td>
-          <td class="paramtype"><a class="el" href="classcub_1_1_block_load.html#a09296fd690f1452df9cae24a037e906a">SmemStorage</a> &amp;&#160;</td>
+          <td class="paramtype"><a class="el" href="classcub_1_1_block_load.html#a0d2c3c7656dfe1eb398217ef8bd58960">SmemStorage</a> &amp;&#160;</td>
           <td class="paramname"><em>smem_storage</em>, </td>
         </tr>
         <tr>
@@ -255,7 +254,7 @@ template&lt;typename InputIteratorRA , int BLOCK_THREADS, int ITEMS_PER_THREAD, 
 
 </div>
 </div>
-<a class="anchor" id="ae7025d183926de0430146d41b5771032"></a>
+<a class="anchor" id="a29b387398b2f2118445f4b1e8a40481f"></a>
 <div class="memitem">
 <div class="memproto">
 <div class="memtemplate">
@@ -269,7 +268,7 @@ template&lt;typename SizeT &gt; </div>
         <tr>
           <td class="memname">static __device__ __forceinline__ void <a class="el" href="classcub_1_1_block_load.html">cub::BlockLoad</a>&lt; InputIteratorRA, BLOCK_THREADS, ITEMS_PER_THREAD, POLICY, MODIFIER &gt;::Load </td>
           <td>(</td>
-          <td class="paramtype"><a class="el" href="classcub_1_1_block_load.html#a09296fd690f1452df9cae24a037e906a">SmemStorage</a> &amp;&#160;</td>
+          <td class="paramtype"><a class="el" href="classcub_1_1_block_load.html#a0d2c3c7656dfe1eb398217ef8bd58960">SmemStorage</a> &amp;&#160;</td>
           <td class="paramname"><em>smem_storage</em>, </td>
         </tr>
         <tr>
@@ -329,7 +328,7 @@ template&lt;typename SizeT &gt; </div>
 <!-- HTML footer for doxygen 1.8.3.1-->
 <!-- start footer part -->
 <hr class="footer"/><address class="footer"><small>
-Generated on Wed Apr 24 2013 13:24:10 for CUB by &#160;<a href="http://www.doxygen.org/index.html">
+Generated on Sat Apr 27 2013 22:27:16 for CUB by &#160;<a href="http://www.doxygen.org/index.html">
 <img class="footer" src="doxygen.png" alt="doxygen"/>
 </a> 1.8.3.1
 <br>

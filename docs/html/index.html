@@ -98,7 +98,7 @@ var searchBox = new SearchBox("searchBox", "search",false,'Search');
 <li class="level1"><a href="#sec5">(5) Where is CUB positioned in the CUDA ecosystem?</a></li>
 <li class="level1"><a href="#sec6">(6) How does CUB work?</a><ul><li class="level2"><a href="#sec3sec1">6.1 &nbsp;&nbsp; C++ templates</a></li>
 <li class="level2"><a href="#sec3sec2">6.2 &nbsp;&nbsp; Reflective type structure</a></li>
-<li class="level2"><a href="#sec3sec3">6.3 &nbsp;&nbsp; Flexible data mapping</a></li>
+<li class="level2"><a href="#sec3sec3">6.3 &nbsp;&nbsp; Flexible mapping of data onto threads</a></li>
 </ul>
 </li>
 <li class="level1"><a href="#sec7">(7) Contributors</a></li>
@@ -120,7 +120,7 @@ var searchBox = new SearchBox("searchBox", "search",false,'Search');
 <h1><a class="anchor" id="sec0"></a>
 (1) What is CUB?</h1>
 <dl class="section user"><dt></dt><dd>CUB is a library of high-performance parallel primitives and other utilities for constructing CUDA kernel software. CUB enhances productivity, performance, and portability by providing an abstraction layer over complex <a href="http://docs.nvidia.com/cuda/cuda-c-programming-guide/index.html#programming-model">block-level</a>, <a href="http://docs.nvidia.com/cuda/cuda-c-programming-guide/index.html#hardware-implementation">warp-level</a>, and <a href="http://docs.nvidia.com/cuda/cuda-c-programming-guide/index.html#programming-model">thread-level</a> operations.</dd></dl>
-<dl class="section user"><dt></dt><dd>CUB's primitives are not bound to any particular width of parallelism or to any particular data type. This allows them to be flexible and tunable to fit your kernels' needs. Thus CUB is <a href="index.html"><em>CUDA Unbound</em></a>.</dd></dl>
+<dl class="section user"><dt></dt><dd>CUB primitives are not bound to any particular width of parallelism or to any particular data type. This allows them to be flexible and tunable to fit your kernels' needs. Thus CUB is <a href="index.html"><em>CUDA Unbound</em></a>.</dd></dl>
 <div class="image">
 <img src="cub_overview.png" alt="cub_overview.png"/>
 </div>
@@ -171,7 +171,7 @@ var searchBox = new SearchBox("searchBox", "search",false,'Search');
 <div class="line">     <span class="keyword">typedef</span> <a class="code" href="classcub_1_1_block_radix_sort.html" title="BlockRadixSort provides variants of parallel radix sorting across a CUDA threadblock. .">BlockRadixSort&lt;T, BLOCK_THREADS&gt;</a> BlockRadixSort;</div>
 <div class="line"></div>
 <div class="line">     <span class="comment">// Declare the shared memory needed by BlockRadixSort</span></div>
-<div class="line">     __shared__ <span class="keyword">typename</span> <a class="code" href="classcub_1_1_block_radix_sort.html#a9867f58f5cf435b4d86f69728dcf80b6" title="The operations exposed by BlockRadixSort require shared memory of this type. This opaque storage can ...">BlockRadixSort::SmemStorage</a> smem_storage;</div>
+<div class="line">     __shared__ <span class="keyword">typename</span> <a class="code" href="classcub_1_1_block_radix_sort.html#ab42b81b7a6587ecaca18f232104b3f3c" title="The operations exposed by BlockRadixSort require shared memory of this type. This opaque storage can ...">BlockRadixSort::SmemStorage</a> smem_storage;</div>
 <div class="line"></div>
 <div class="line">     <span class="comment">// A segment of data items per thread</span></div>
 <div class="line">     T data[ITEMS_PER_THREAD];</div>
@@ -180,14 +180,14 @@ var searchBox = new SearchBox("searchBox", "search",false,'Search');
 <div class="line">     <a class="code" href="group___block_module.html#gaea8200ef976bb588c569e039ea79005c" title="Load a tile of items across a threadblock directly using the specified cache modifier.">BlockLoadVectorized</a>(data, d_in + (blockIdx.x * TILE_SIZE));</div>
 <div class="line"></div>
 <div class="line">     <span class="comment">// Sort data in ascending order</span></div>
-<div class="line">     <a class="code" href="classcub_1_1_block_radix_sort.html#adf89eb3de76922d76064c92b1001cbec" title="Performs a threadblock-wide radix sort over a blocked arrangement of keys.">BlockRadixSort::SortBlocked</a>(smem_storage, data);</div>
+<div class="line">     <a class="code" href="classcub_1_1_block_radix_sort.html#a779bfcd00c57f6b97cbbb8a0aafb616a" title="Performs a threadblock-wide radix sort over a blocked arrangement of keys.">BlockRadixSort::SortBlocked</a>(smem_storage, data);</div>
 <div class="line"></div>
 <div class="line">     <span class="comment">// Store the sorted tile using vector-store instructions</span></div>
 <div class="line">     <a class="code" href="group___block_module.html#ga013c3ab8214854f45e8d678958e7dde9" title="Store a tile of items across a threadblock directly using the specified cache modifier.">BlockStoreVectorized</a>(data, d_out + (blockIdx.x * TILE_SIZE));</div>
 <div class="line">}</div>
 </div><!-- fragment --></dd></dl>
 <dl class="section user"><dt></dt><dd>The <a class="el" href="classcub_1_1_block_radix_sort.html" title="BlockRadixSort provides variants of parallel radix sorting across a CUDA threadblock. .">cub::BlockRadixSort</a> type performs a cooperative radix sort across the thread block's data items. Its implementation is parameterized by the number of threads per block and the aggregate data type <code>T</code> and is specialized for the underlying architecture.</dd></dl>
-<dl class="section user"><dt></dt><dd>Once instantiated, the <a class="el" href="classcub_1_1_block_radix_sort.html" title="BlockRadixSort provides variants of parallel radix sorting across a CUDA threadblock. .">cub::BlockRadixSort</a> type exposes an opaque <a class="el" href="classcub_1_1_block_radix_sort.html#a9867f58f5cf435b4d86f69728dcf80b6" title="The operations exposed by BlockRadixSort require shared memory of this type. This opaque storage can ...">cub::BlockRadixSort::SmemStorage</a> member type. The thread block uses this storage type to allocate the shared memory needed by the primitive. This storage type can be aliased or <code>union</code>'d with other types so that the shared memory can be reused for other purposes.</dd></dl>
+<dl class="section user"><dt></dt><dd>Once instantiated, the <a class="el" href="classcub_1_1_block_radix_sort.html" title="BlockRadixSort provides variants of parallel radix sorting across a CUDA threadblock. .">cub::BlockRadixSort</a> type exposes an opaque <a class="el" href="classcub_1_1_block_radix_sort.html#ab42b81b7a6587ecaca18f232104b3f3c" title="The operations exposed by BlockRadixSort require shared memory of this type. This opaque storage can ...">cub::BlockRadixSort::SmemStorage</a> member type. The thread block uses this storage type to allocate the shared memory needed by the primitive. This storage type can be aliased or <code>union</code>'d with other types so that the shared memory can be reused for other purposes.</dd></dl>
 <dl class="section user"><dt></dt><dd>Furthermore, the kernel uses CUB's primitives for vectorizing global loads and stores. For example, lower-level <code>ld.global.v4.s32</code> <a href="http://docs.nvidia.com/cuda/parallel-thread-execution">PTX instructions</a> will be generated when <code>T</code> = <code>int</code> and <code>ITEMS_PER_THREAD</code> is a multiple of 4.</dd></dl>
 <h1><a class="anchor" id="sec4"></a>
 (4) Why do you need CUB?</h1>
@@ -278,13 +278,13 @@ var searchBox = new SearchBox("searchBox", "search",false,'Search');
 </ul>
 </dd></dl>
 <h2><a class="anchor" id="sec3sec3"></a>
-6.3    Flexible data mapping</h2>
+6.3    Flexible mapping of data onto threads</h2>
 <dl class="section user"><dt></dt><dd>We often design kernels such that each thread block is assigned a "tile" of data items for processing.</dd></dl>
 <dl class="section user"><dt></dt><dd><div class="image">
 <img src="tile.png" alt="tile.png"/>
 </div>
  <div class="centercaption">Tile of eight ordered data items</div></dd></dl>
-<dl class="section user"><dt></dt><dd>When the tile size equals the thread block size, the mapping of data onto threads is straightforward (one datum per thread). However, there are often performance advantages for processing more than one datum per thread. For these scenarios, CUB primitives support the following alternatives for partitioning data items across the block of threads:</dd></dl>
+<dl class="section user"><dt></dt><dd>When the tile size equals the thread block size, the mapping of data onto threads is straightforward (one datum per thread). However, there are often performance advantages for processing more than one datum per thread. For these scenarios, CUB primitives will specify which of the following paritioning alternatives they accomodate:</dd></dl>
 <table  border="0px" cellpadding="0px" cellspacing="0px">
 <tr>
 <td><dl class="section user"><dt></dt><dd><ul>
@@ -351,7 +351,7 @@ var searchBox = new SearchBox("searchBox", "search",false,'Search');
 <!-- HTML footer for doxygen 1.8.3.1-->
 <!-- start footer part -->
 <hr class="footer"/><address class="footer"><small>
-Generated on Wed Apr 24 2013 13:24:11 for CUB by &#160;<a href="http://www.doxygen.org/index.html">
+Generated on Sat Apr 27 2013 22:27:16 for CUB by &#160;<a href="http://www.doxygen.org/index.html">
 <img class="footer" src="doxygen.png" alt="doxygen"/>
 </a> 1.8.3.1
 <br>

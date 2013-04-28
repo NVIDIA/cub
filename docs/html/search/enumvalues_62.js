@@ -7,6 +7,7 @@ var searchData=
   ['block_5freduce_5fraking',['BLOCK_REDUCE_RAKING',['../namespacecub.html#add0251c713859b8974806079e498d10aab32651e17a8a42207e74b7ed8d1aa4d2',1,'cub']]],
   ['block_5freduce_5fwarp_5freductions',['BLOCK_REDUCE_WARP_REDUCTIONS',['../namespacecub.html#add0251c713859b8974806079e498d10aa993903176f938273fa1ff5d4daa808e5',1,'cub']]],
   ['block_5fscan_5fraking',['BLOCK_SCAN_RAKING',['../namespacecub.html#abec44bba36037c547e7e84906d0d23aba0fa6cac57b7df2f475a67af053b9371c',1,'cub']]],
+  ['block_5fscan_5fraking_5fmemoize',['BLOCK_SCAN_RAKING_MEMOIZE',['../namespacecub.html#abec44bba36037c547e7e84906d0d23abadc8dfe7760ac97ddde467ecf1070674f',1,'cub']]],
   ['block_5fscan_5fwarp_5fscans',['BLOCK_SCAN_WARP_SCANS',['../namespacecub.html#abec44bba36037c547e7e84906d0d23aba7f51e58246eb53f1a97bd1bc8c0f400f',1,'cub']]],
   ['block_5fstore_5fdirect',['BLOCK_STORE_DIRECT',['../namespacecub.html#aaaa9ee8c8a57c6607909c110affd189ea9b8dcc7b6b06bcfc24af4f499523b880',1,'cub']]],
   ['block_5fstore_5fstriped',['BLOCK_STORE_STRIPED',['../namespacecub.html#aaaa9ee8c8a57c6607909c110affd189ea78ff04d6671448a3a5bfe3b6a758a8c1',1,'cub']]],

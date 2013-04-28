@@ -74,7 +74,6 @@ var searchBox = new SearchBox("searchBox", "search",false,'Search');
     <ul class="tablist">
       <li><a href="annotated.html"><span>Class&#160;List</span></a></li>
       <li><a href="classes.html"><span>Class&#160;Index</span></a></li>
-      <li><a href="hierarchy.html"><span>Class&#160;Hierarchy</span></a></li>
       <li class="current"><a href="functions.html"><span>Class&#160;Members</span></a></li>
     </ul>
   </div>
@@ -91,6 +90,7 @@ var searchBox = new SearchBox("searchBox", "search",false,'Search');
     <ul class="tablist">
       <li><a href="#index_b"><span>b</span></a></li>
       <li><a href="#index_c"><span>c</span></a></li>
+      <li><a href="#index_d"><span>d</span></a></li>
       <li><a href="#index_e"><span>e</span></a></li>
       <li><a href="#index_f"><span>f</span></a></li>
       <li><a href="#index_i"><span>i</span></a></li>
@@ -100,6 +100,7 @@ var searchBox = new SearchBox("searchBox", "search",false,'Search');
       <li><a href="#index_p"><span>p</span></a></li>
       <li><a href="#index_r"><span>r</span></a></li>
       <li><a href="#index_s"><span>s</span></a></li>
+      <li><a href="#index_0x7e"><span>~</span></a></li>
     </ul>
   </div>
 </div><!-- top -->
@@ -128,8 +129,23 @@ var searchBox = new SearchBox("searchBox", "search",false,'Search');
 
 
 <h3><a class="anchor" id="index_c"></a>- c -</h3><ul>
+<li>CachingDeviceAllocator()
+: <a class="el" href="structcub_1_1_caching_device_allocator.html#a603ab42b997facc30d9337fe6f56144b">cub::CachingDeviceAllocator</a>
+</li>
 <li>Callback()
 : <a class="el" href="classcub_1_1_device.html#a3c986a6aa2d3b69fe8a7ab14c85a6477">cub::Device</a>
+</li>
+</ul>
+
+
+<h3><a class="anchor" id="index_d"></a>- d -</h3><ul>
+<li>DeviceAllocate()
+: <a class="el" href="classcub_1_1_device_allocator.html#af3c1742fec6b37f2737d951917358099">cub::DeviceAllocator</a>
+, <a class="el" href="structcub_1_1_caching_device_allocator.html#a80902287c5d123f3541cf0002604a8fe">cub::CachingDeviceAllocator</a>
+</li>
+<li>DeviceFree()
+: <a class="el" href="classcub_1_1_device_allocator.html#a527d9c0c93c177359f5ad823c7d808e2">cub::DeviceAllocator</a>
+, <a class="el" href="structcub_1_1_caching_device_allocator.html#a35cf35b2610d3c1bb2f7a6ae5d814385">cub::CachingDeviceAllocator</a>
 </li>
 </ul>
 
@@ -158,6 +174,9 @@ var searchBox = new SearchBox("searchBox", "search",false,'Search');
 <li>Flag()
 : <a class="el" href="classcub_1_1_block_discontinuity.html#ab6390151f109ac253810504ddc5a7c04">cub::BlockDiscontinuity&lt; T, BLOCK_THREADS &gt;</a>
 </li>
+<li>FreeAllCached()
+: <a class="el" href="structcub_1_1_caching_device_allocator.html#af25daf8ac1dbce0d8504a6a53c2277ad">cub::CachingDeviceAllocator</a>
+</li>
 </ul>
 
 
@@ -181,7 +200,7 @@ var searchBox = new SearchBox("searchBox", "search",false,'Search');
 
 <h3><a class="anchor" id="index_l"></a>- l -</h3><ul>
 <li>Load()
-: <a class="el" href="classcub_1_1_block_load.html#ac671e9f033037fc01384a9296684200c">cub::BlockLoad&lt; InputIteratorRA, BLOCK_THREADS, ITEMS_PER_THREAD, POLICY, MODIFIER &gt;</a>
+: <a class="el" href="classcub_1_1_block_load.html#a4c379a2f7f8aa08aa2d6b134c9a2955f">cub::BlockLoad&lt; InputIteratorRA, BLOCK_THREADS, ITEMS_PER_THREAD, POLICY, MODIFIER &gt;</a>
 </li>
 </ul>
 
@@ -214,7 +233,8 @@ var searchBox = new SearchBox("searchBox", "search",false,'Search');
 : <a class="el" href="structcub_1_1_block_raking_layout.html#a2c62149ec2e962e98bde8ba30f14dfbf">cub::BlockRakingLayout&lt; T, BLOCK_THREADS, BLOCK_STRIPS &gt;</a>
 </li>
 <li>Reduce()
-: <a class="el" href="structcub_1_1_device_reduce.html#af7f66be165d5861e50857379aa335ae0">cub::DeviceReduce</a>
+: <a class="el" href="classcub_1_1_warp_reduce.html#a4f893685caf95690550964c45a34f19b">cub::WarpReduce&lt; T, WARPS, LOGICAL_WARP_THREADS &gt;</a>
+, <a class="el" href="structcub_1_1_device_reduce.html#abe1d9947fb592ca9ff59466842943c0b">cub::DeviceReduce</a>
 , <a class="el" href="classcub_1_1_block_reduce.html#a0f192355a57bf3f62aa0658c220f15fb">cub::BlockReduce&lt; T, BLOCK_THREADS, ALGORITHM &gt;</a>
 </li>
 </ul>
@@ -227,30 +247,49 @@ var searchBox = new SearchBox("searchBox", "search",false,'Search');
 <li>ScatterToStriped()
 : <a class="el" href="classcub_1_1_block_exchange.html#a8b8997367d0d42ee7eb600b981f7b72d">cub::BlockExchange&lt; T, BLOCK_THREADS, ITEMS_PER_THREAD &gt;</a>
 </li>
+<li>SetMaxCachedBytes()
+: <a class="el" href="structcub_1_1_caching_device_allocator.html#a5ddac0917fce3445aa660d747e67a8d9">cub::CachingDeviceAllocator</a>
+</li>
+<li>SingleChannel()
+: <a class="el" href="structcub_1_1_device_histo256.html#a61db493dc2177b3160469c35d3876c8c">cub::DeviceHisto256</a>
+</li>
 <li>SortBlocked()
-: <a class="el" href="classcub_1_1_block_radix_sort.html#a709f8353d4167c2026bca49fb70e2909">cub::BlockRadixSort&lt; KeyType, BLOCK_THREADS, ITEMS_PER_THREAD, ValueType, RADIX_BITS, SCAN_ALGORITHM, SMEM_CONFIG &gt;</a>
+: <a class="el" href="classcub_1_1_block_radix_sort.html#a779bfcd00c57f6b97cbbb8a0aafb616a">cub::BlockRadixSort&lt; KeyType, BLOCK_THREADS, ITEMS_PER_THREAD, ValueType, RADIX_BITS, MEMOIZE_OUTER_SCAN, INNER_SCAN_ALGORITHM, SMEM_CONFIG &gt;</a>
 </li>
 <li>SortBlockedToStriped()
-: <a class="el" href="classcub_1_1_block_radix_sort.html#a4fbf59ff02cee069cd637a58226dcb81">cub::BlockRadixSort&lt; KeyType, BLOCK_THREADS, ITEMS_PER_THREAD, ValueType, RADIX_BITS, SCAN_ALGORITHM, SMEM_CONFIG &gt;</a>
+: <a class="el" href="classcub_1_1_block_radix_sort.html#a1171341e12f14cb19aef0e65ae3842ae">cub::BlockRadixSort&lt; KeyType, BLOCK_THREADS, ITEMS_PER_THREAD, ValueType, RADIX_BITS, MEMOIZE_OUTER_SCAN, INNER_SCAN_ALGORITHM, SMEM_CONFIG &gt;</a>
 </li>
 <li>SortStriped()
-: <a class="el" href="classcub_1_1_block_radix_sort.html#ab66e12d530e6350aadc33ef8406d4b4e">cub::BlockRadixSort&lt; KeyType, BLOCK_THREADS, ITEMS_PER_THREAD, ValueType, RADIX_BITS, SCAN_ALGORITHM, SMEM_CONFIG &gt;</a>
+: <a class="el" href="classcub_1_1_block_radix_sort.html#aea1b6f367da1b17ed80f65d511aec15e">cub::BlockRadixSort&lt; KeyType, BLOCK_THREADS, ITEMS_PER_THREAD, ValueType, RADIX_BITS, MEMOIZE_OUTER_SCAN, INNER_SCAN_ALGORITHM, SMEM_CONFIG &gt;</a>
 </li>
 <li>Store()
-: <a class="el" href="classcub_1_1_block_store.html#a1fc63a32e80b1275145a469e719f8530">cub::BlockStore&lt; OutputIteratorRA, BLOCK_THREADS, ITEMS_PER_THREAD, POLICY, MODIFIER &gt;</a>
+: <a class="el" href="classcub_1_1_block_store.html#a4d7858f738321f7130bc0be7d6fa46a5">cub::BlockStore&lt; OutputIteratorRA, BLOCK_THREADS, ITEMS_PER_THREAD, POLICY, MODIFIER &gt;</a>
 </li>
 <li>StripedToBlocked()
 : <a class="el" href="classcub_1_1_block_exchange.html#ad8000bf73c3ce935018f32451985ae37">cub::BlockExchange&lt; T, BLOCK_THREADS, ITEMS_PER_THREAD &gt;</a>
 </li>
 <li>Sum()
-: <a class="el" href="classcub_1_1_block_reduce.html#a8cc68b77f25c80b972bdedced6878214">cub::BlockReduce&lt; T, BLOCK_THREADS, ALGORITHM &gt;</a>
+: <a class="el" href="classcub_1_1_warp_reduce.html#a50e4be93dbd298b7c2b5080d1449cf8c">cub::WarpReduce&lt; T, WARPS, LOGICAL_WARP_THREADS &gt;</a>
+, <a class="el" href="classcub_1_1_block_reduce.html#adfc657d856d583321d2604589c52b43a">cub::BlockReduce&lt; T, BLOCK_THREADS, ALGORITHM &gt;</a>
+, <a class="el" href="classcub_1_1_warp_reduce.html#a0c1ad8bee00bc64f14f3b0d762b84363">cub::WarpReduce&lt; T, WARPS, LOGICAL_WARP_THREADS &gt;</a>
+, <a class="el" href="classcub_1_1_block_reduce.html#a8cc68b77f25c80b972bdedced6878214">cub::BlockReduce&lt; T, BLOCK_THREADS, ALGORITHM &gt;</a>
+</li>
+</ul>
+
+
+<h3><a class="anchor" id="index_0x7e"></a>- ~ -</h3><ul>
+<li>~CachingDeviceAllocator()
+: <a class="el" href="structcub_1_1_caching_device_allocator.html#a8b5be1674adff948f45a4256839ad9e2">cub::CachingDeviceAllocator</a>
+</li>
+<li>~DeviceAllocator()
+: <a class="el" href="classcub_1_1_device_allocator.html#aa05f6eb52661fd42347e3a85c6164965">cub::DeviceAllocator</a>
 </li>
 </ul>
 </div><!-- contents -->
 <!-- HTML footer for doxygen 1.8.3.1-->
 <!-- start footer part -->
 <hr class="footer"/><address class="footer"><small>
-Generated on Wed Apr 24 2013 13:24:11 for CUB by &#160;<a href="http://www.doxygen.org/index.html">
+Generated on Sat Apr 27 2013 22:27:16 for CUB by &#160;<a href="http://www.doxygen.org/index.html">
 <img class="footer" src="doxygen.png" alt="doxygen"/>
 </a> 1.8.3.1
 <br>

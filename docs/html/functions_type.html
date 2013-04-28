@@ -74,7 +74,6 @@ var searchBox = new SearchBox("searchBox", "search",false,'Search');
     <ul class="tablist">
       <li><a href="annotated.html"><span>Class&#160;List</span></a></li>
       <li><a href="classes.html"><span>Class&#160;Index</span></a></li>
-      <li><a href="hierarchy.html"><span>Class&#160;Hierarchy</span></a></li>
       <li class="current"><a href="functions.html"><span>Class&#160;Members</span></a></li>
     </ul>
   </div>
@@ -106,13 +105,14 @@ var searchBox = new SearchBox("searchBox", "search",false,'Search');
 &#160;<ul>
 <li>SmemStorage
 : <a class="el" href="classcub_1_1_block_discontinuity.html#a855c92f9c3869909913860fa11e755a4">cub::BlockDiscontinuity&lt; T, BLOCK_THREADS &gt;</a>
+, <a class="el" href="classcub_1_1_warp_reduce.html#a71f87b76f0deeaa5ba3a708374d19c8c">cub::WarpReduce&lt; T, WARPS, LOGICAL_WARP_THREADS &gt;</a>
 , <a class="el" href="classcub_1_1_warp_scan.html#a2bfa864e963cb4965139ac1b6c66d1b7">cub::WarpScan&lt; T, WARPS, LOGICAL_WARP_THREADS &gt;</a>
-, <a class="el" href="classcub_1_1_block_store.html#aa80c1691bc7aa80bc38c2797b3a99c24">cub::BlockStore&lt; OutputIteratorRA, BLOCK_THREADS, ITEMS_PER_THREAD, POLICY, MODIFIER &gt;</a>
+, <a class="el" href="classcub_1_1_block_store.html#a44f8ee5a77fc8cc348a68a6d233ae68d">cub::BlockStore&lt; OutputIteratorRA, BLOCK_THREADS, ITEMS_PER_THREAD, POLICY, MODIFIER &gt;</a>
 , <a class="el" href="classcub_1_1_block_scan.html#ae85612707bea2533173ee665183f9c82">cub::BlockScan&lt; T, BLOCK_THREADS, ALGORITHM &gt;</a>
 , <a class="el" href="classcub_1_1_block_reduce.html#a0f83f9d65de0d6d33e311bcd9e8d41b7">cub::BlockReduce&lt; T, BLOCK_THREADS, ALGORITHM &gt;</a>
-, <a class="el" href="classcub_1_1_block_radix_sort.html#a9867f58f5cf435b4d86f69728dcf80b6">cub::BlockRadixSort&lt; KeyType, BLOCK_THREADS, ITEMS_PER_THREAD, ValueType, RADIX_BITS, SCAN_ALGORITHM, SMEM_CONFIG &gt;</a>
+, <a class="el" href="classcub_1_1_block_radix_sort.html#ab42b81b7a6587ecaca18f232104b3f3c">cub::BlockRadixSort&lt; KeyType, BLOCK_THREADS, ITEMS_PER_THREAD, ValueType, RADIX_BITS, MEMOIZE_OUTER_SCAN, INNER_SCAN_ALGORITHM, SMEM_CONFIG &gt;</a>
 , <a class="el" href="structcub_1_1_block_raking_layout.html#a9455ea5b5ba52b8fcf26cfded59f70c9">cub::BlockRakingLayout&lt; T, BLOCK_THREADS, BLOCK_STRIPS &gt;</a>
-, <a class="el" href="classcub_1_1_block_load.html#a09296fd690f1452df9cae24a037e906a">cub::BlockLoad&lt; InputIteratorRA, BLOCK_THREADS, ITEMS_PER_THREAD, POLICY, MODIFIER &gt;</a>
+, <a class="el" href="classcub_1_1_block_load.html#a0d2c3c7656dfe1eb398217ef8bd58960">cub::BlockLoad&lt; InputIteratorRA, BLOCK_THREADS, ITEMS_PER_THREAD, POLICY, MODIFIER &gt;</a>
 , <a class="el" href="classcub_1_1_block_exchange.html#ad91573946e4abe5ae5e34277ded1c215">cub::BlockExchange&lt; T, BLOCK_THREADS, ITEMS_PER_THREAD &gt;</a>
 </li>
 <li>Type
@@ -125,7 +125,7 @@ var searchBox = new SearchBox("searchBox", "search",false,'Search');
 <!-- HTML footer for doxygen 1.8.3.1-->
 <!-- start footer part -->
 <hr class="footer"/><address class="footer"><small>
-Generated on Wed Apr 24 2013 13:24:11 for CUB by &#160;<a href="http://www.doxygen.org/index.html">
+Generated on Sat Apr 27 2013 22:27:16 for CUB by &#160;<a href="http://www.doxygen.org/index.html">
 <img class="footer" src="doxygen.png" alt="doxygen"/>
 </a> 1.8.3.1
 <br>
