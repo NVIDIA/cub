@@ -89,7 +89,7 @@ enum BlockHisto256Algorithm
  * - Complete/incremental composition (compute a new histogram vs. update existing histogram data)
  *
  * \tparam BLOCK_THREADS    The threadblock size in threads
- * \tparam ALGORITHM        <b>[optional]</b> cub::BlockHisto256Algorithm tuning policy.  Default = cub::BLOCK_BYTE_HISTO_SORT.
+ * \tparam ALGORITHM        <b>[optional]</b> cub::BlockHisto256Algorithm enumerator specifying the underlying algorithm to use (default = cub::BLOCK_BYTE_HISTO_SORT)
  *
  * \par Algorithm
  * BlockHisto256 can be (optionally) configured to use different algorithms:

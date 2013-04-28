@@ -147,26 +147,8 @@ private:
         T last_items[BLOCK_THREADS];      ///< Last element from each thread's input
     };
 
-    /// Some metaprogramming to determine whether or not FlagOp functor's operator () has a third index param
-    template <typename FlagOp>
-    struct FlagOpHasIdxParam
-    {
-        template<typename FlagOpT, bool (FlagOpT::*)(const T &a, const T &b, unsigned int idx) const>   struct SFINAE1 {};
-        template <typename FlagOpT, bool (FlagOpT::*)(const T &a, const T &b, unsigned int idx)>        struct SFINAE2 {};
-        template <typename FlagOpT, bool (FlagOpT::*)(T a, T b, unsigned int idx) const>                struct SFINAE3 {};
-        template <typename FlagOpT, bool (FlagOpT::*)(T a, T b, unsigned int idx)>                      struct SFINAE4 {};
-
-        template <typename FlagOpT> static char Test(SFINAE1<FlagOpT, &FlagOpT::operator()> *);
-        template <typename FlagOpT> static char Test(SFINAE2<FlagOpT, &FlagOpT::operator()> *);
-        template <typename FlagOpT> static char Test(SFINAE3<FlagOpT, &FlagOpT::operator()> *);
-        template <typename FlagOpT> static char Test(SFINAE4<FlagOpT, &FlagOpT::operator()> *);
-        template <typename FlagOpT> static int Test(...);
-
-        static const bool HAS_PARAM = sizeof(Test<FlagOp>(NULL)) == sizeof(char);
-    };
-
     // Specialization for when FlagOp has third index param
-    template <typename FlagOp, bool HAS_PARAM = FlagOpHasIdxParam<FlagOp>::HAS_PARAM>
+    template <typename FlagOp, bool HAS_PARAM = BinaryOpHasIdxParam<T, FlagOp>::HAS_PARAM>
     struct ApplyOp
     {
         // Apply flag operator

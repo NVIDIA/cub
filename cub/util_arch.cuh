@@ -63,9 +63,7 @@ namespace cub {
 
 /// CUB_PTX_ARCH reflects the PTX version targeted by the active compiler pass (or zero during the host pass).
 #ifndef __CUDA_ARCH__
-    #define CUB_PTX_ARCH \
-    \
-    0
+    #define CUB_PTX_ARCH 0
 #else
     #define CUB_PTX_ARCH __CUDA_ARCH__
 #endif
@@ -97,20 +95,34 @@ struct ArchProps
 {
     enum
     {
-        LOG_WARP_THREADS    = 5,                        /// Log of the number of threads per warp
-        WARP_THREADS        = 1 << LOG_WARP_THREADS,    /// Number of threads per warp
-        LOG_SMEM_BANKS      = 4,                        /// Log of the number of smem banks
-        SMEM_BANKS          = 1 << LOG_SMEM_BANKS,      /// The number of smem banks
-        SMEM_BANK_BYTES     = 4,                        /// Size of smem bank words
-        SMEM_BYTES          = 16 * 1024,                /// Maximum SM shared memory
-        SMEM_ALLOC_UNIT     = 512,                      /// Smem allocation size in bytes
-        REGS_BY_BLOCK       = true,                     /// Whether or not the architecture allocates registers by block (or by warp)
-        REG_ALLOC_UNIT      = 256,                      /// Number of registers allocated at a time per block (or by warp)
-        WARP_ALLOC_UNIT     = 2,                        /// Granularity of warps for which registers are allocated
-        MAX_SM_THREADS      = 768,                      /// Maximum number of threads per SM
-        MAX_SM_THREADBLOCKS = 8,                        /// Maximum number of thread blocks per SM
-        MAX_BLOCK_THREADS   = 512,                      /// Maximum number of thread per thread block
-        MAX_SM_REGISTERS    = 8 * 1024,                 /// Maximum number of registers per SM
+        LOG_WARP_THREADS    =
+                                        5,                        /// Log of the number of threads per warp
+        WARP_THREADS        =
+                                        1 << LOG_WARP_THREADS,    /// Number of threads per warp
+        LOG_SMEM_BANKS      =
+                                        4,                        /// Log of the number of smem banks
+        SMEM_BANKS          =
+                                        1 << LOG_SMEM_BANKS,      /// The number of smem banks
+        SMEM_BANK_BYTES     =
+                                        4,                        /// Size of smem bank words
+        SMEM_BYTES          =
+                                        16 * 1024,                /// Maximum SM shared memory
+        SMEM_ALLOC_UNIT     =
+                                        512,                      /// Smem allocation size in bytes
+        REGS_BY_BLOCK       =
+                                        true,                     /// Whether or not the architecture allocates registers by block (or by warp)
+        REG_ALLOC_UNIT      =
+                                        256,                      /// Number of registers allocated at a time per block (or by warp)
+        WARP_ALLOC_UNIT     =
+                                        2,                        /// Granularity of warps for which registers are allocated
+        MAX_SM_THREADS      =
+                                        768,                      /// Maximum number of threads per SM
+        MAX_SM_THREADBLOCKS =
+                                        8,                        /// Maximum number of thread blocks per SM
+        MAX_BLOCK_THREADS   =
+                                        512,                      /// Maximum number of thread per thread block
+        MAX_SM_REGISTERS    =
+                                        8 * 1024,                 /// Maximum number of registers per SM
     };
 };
 

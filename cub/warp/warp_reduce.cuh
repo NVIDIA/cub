@@ -57,13 +57,13 @@ namespace cub {
  * \brief WarpReduce provides variants of parallel reduction across CUDA warps.  ![](warp_reduce_logo.png)
  *
  * \par Overview
- * A <a href="http://en.wikipedia.org/wiki/Reduce_(higher-order_function)"><em>reduction</em> (or <em>fold</em>)</a>
+ * A <a href="http://en.wikipedia.org/wiki/Reduce_(higher-order_function)"><em>reduction</em></a> (or <em>fold</em>)
  * uses a binary combining operator to compute a single aggregate from a list of input elements.
  *
  * \par
  * For convenience, WarpReduce provides alternative entrypoints that differ by:
- * - Operator (generic reduction <em>vs.</em> summation for numeric types)
- * - Input (full warps <em>vs.</em> partially-full warps having some undefined elements)
+ * - Operator (generic reduction <em>vs.</em> summation of numeric types)
+ * - Input validity (full warps <em>vs.</em> partially-full warps having some undefined elements)
  *
  * \tparam T                        The reduction input/output element type
  * \tparam WARPS                    <b>[optional]</b> The number of "logical" warps performing concurrent warp reductions.  Default is 1.
@@ -72,7 +72,7 @@ namespace cub {
  * \par Usage Considerations
  * - Supports non-commutative reduction operators
  * - Supports "logical" warps smaller than the physical warp size (e.g., a logical warp of 8 threads)
- * - The number of entrant threads must be an even multiple of /p LOGICAL_WARP_THREADS (default is the warp size of the targeted CUDA compute-capability)
+ * - The number of entrant threads must be an even multiple of \p LOGICAL_WARP_THREADS (default is the warp size of the targeted CUDA compute-capability)
  * - Warp reductions are concurrent if more than one warp is participating
  * - The warp-wide scalar reduction output is only considered valid in <em>warp-lane</em><sub>0</sub>
  * - \smemreuse{WarpReduce::SmemStorage}
@@ -458,6 +458,8 @@ public:
 
 #endif // DOXYGEN_SHOULD_SKIP_THIS
 
+public:
+
     /// \smemstorage{WarpReduce}
     typedef typename Internal::SmemStorage SmemStorage;
 
@@ -472,7 +474,7 @@ public:
      *
      * The return value is undefined in threads other than thread<sub>0</sub>.
      *
-     * The number of entrant threads must be an even multiple of /p LOGICAL_WARP_THREADS (default is the warp size of the targeted CUDA compute-capability)
+     * The number of entrant threads must be an even multiple of \p LOGICAL_WARP_THREADS (default is the warp size of the targeted CUDA compute-capability)
      *
      * \smemreuse
      */
@@ -490,7 +492,7 @@ public:
      *
      * The return value is undefined in threads other than <em>warp-lane</em><sub>0</sub>.
      *
-     * The number of entrant threads must be an even multiple of /p LOGICAL_WARP_THREADS (default is the warp size of the targeted CUDA compute-capability)
+     * The number of entrant threads must be an even multiple of \p LOGICAL_WARP_THREADS (default is the warp size of the targeted CUDA compute-capability)
      *
      * \smemreuse
      */
@@ -522,7 +524,7 @@ public:
      *
      * The return value is undefined in threads other than <em>warp-lane</em><sub>0</sub>.
      *
-     * The number of entrant threads must be an even multiple of /p LOGICAL_WARP_THREADS (default is the warp size of the targeted CUDA compute-capability)
+     * The number of entrant threads must be an even multiple of \p LOGICAL_WARP_THREADS (default is the warp size of the targeted CUDA compute-capability)
      *
      * \smemreuse
      *
@@ -544,7 +546,7 @@ public:
      *
      * The return value is undefined in threads other than <em>warp-lane</em><sub>0</sub>.
      *
-     * The number of entrant threads must be an even multiple of /p LOGICAL_WARP_THREADS (default is the warp size of the targeted CUDA compute-capability)
+     * The number of entrant threads must be an even multiple of \p LOGICAL_WARP_THREADS (default is the warp size of the targeted CUDA compute-capability)
      *
      * \smemreuse
      *

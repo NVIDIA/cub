@@ -666,6 +666,7 @@ WARN_LOGFILE           =
 
 INPUT                  = mainpage.dox 
 INPUT                  += ../cub/cub.cuh 
+INPUT                  += ../cub/util_allocator.cuh 
 INPUT                  += ../cub/util_arch.cuh 
 INPUT                  += ../cub/util_debug.cuh 
 INPUT                  += ../cub/util_device.cuh 

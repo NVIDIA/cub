@@ -94,8 +94,7 @@ struct BlockPrefixOp
 template <
     typename    T,
     typename    ScanOp,
-    typename    IdentityT,
-    bool        PRIMITIVE = Traits<T>::PRIMITIVE>
+    typename    IdentityT>
 struct DeviceTest
 {
     template <
@@ -136,7 +135,7 @@ struct DeviceTest
 template <
     typename T,
     typename IdentityT>
-struct DeviceTest<T, Sum<T>, IdentityT, true>
+struct DeviceTest<T, Sum<T>, IdentityT>
 {
     template <
         TestMode    TEST_MODE,
@@ -175,9 +174,8 @@ struct DeviceTest<T, Sum<T>, IdentityT, true>
  */
 template <
     typename    T,
-    typename    ScanOp,
-    bool        PRIMITIVE>
-struct DeviceTest<T, ScanOp, NullType, PRIMITIVE>
+    typename    ScanOp>
+struct DeviceTest<T, ScanOp, NullType>
 {
     template <
         TestMode    TEST_MODE,
@@ -215,7 +213,7 @@ struct DeviceTest<T, ScanOp, NullType, PRIMITIVE>
  * Inclusive sum
  */
 template <typename T>
-struct DeviceTest<T, Sum<T>, NullType, true>
+struct DeviceTest<T, Sum<T>, NullType>
 {
     template <
         TestMode    TEST_MODE,
