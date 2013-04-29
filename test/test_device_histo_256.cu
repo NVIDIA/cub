@@ -34,6 +34,8 @@
 #define CUB_STDERR
 
 #include <stdio.h>
+#include <limits>
+
 #include <cub/cub.cuh>
 #include "test_util.h"
 
@@ -47,6 +49,19 @@ using namespace cub;
 bool    g_verbose       = false;
 int     g_iterations    = 100;
 bool    g_atomic        = false;
+
+
+/**
+ * Scaling operator for binning f32 types
+ */
+struct FloatScaleOp
+{
+    __host__ __device__ __forceinline__ unsigned char operator()(float datum)
+    {
+        return (unsigned char)(datum * 256.0);
+    }
+};
+
 
 
 //---------------------------------------------------------------------
@@ -90,6 +105,27 @@ __global__ void CnpHisto(
 //---------------------------------------------------------------------
 
 /**
+ * Normalize sample if necessary
+ */
+template <typename T>
+void Sample(int gen_mode, T &datum, int i)
+{
+    InitValue(gen_mode, datum, i);
+}
+
+/**
+ * Specialization for float
+ */
+void Sample(int gen_mode, float &datum, int i)
+{
+    unsigned int bits;
+    unsigned int max = (unsigned int) -1;
+
+    InitValue(gen_mode, bits, i);
+    datum = float(bits) / max;
+}
+
+/**
  * Initialize problem (and solution)
  */
 template <
@@ -116,7 +152,7 @@ void Initialize(
     // Initialize interleaved channel samples and histogram them correspondingly
     for (int i = 0; i < num_samples; ++i)
     {
-        InitValue(gen_mode, h_samples[i], i);
+        Sample(gen_mode, h_samples[i], i);
 
         unsigned char bin = bin_op(h_samples[i]);
         int channel = i % CHANNELS;
@@ -125,9 +161,9 @@ void Initialize(
         {
             if (channel == 0) printf("<");
             if (channel == CHANNELS - 1)
-                printf("%d>, ", (int) h_samples[i]);
+                std::cout << h_samples[i] << ">, ";
             else
-                printf("%d, ", (int) h_samples[i]);
+                std::cout << h_samples[i] << ", ";
         }
 
         if (channel < ACTIVE_CHANNELS)
@@ -199,15 +235,19 @@ void Test(
         d_histograms[CHANNEL] = d_histograms_linear + (CHANNEL * 256);
     }
 
+    // Create iterator wrapper for SampleType -> unsigned char conversion
+    typedef typename DeviceHisto256::BinningIteratorRA<SampleType, BinOp> BinningIterator;
+    BinningIterator d_sample_itr(d_samples, bin_op);
+
     // Run warmup/correctness iteration
     printf("Host dispatch:\n"); fflush(stdout);
     if (g_atomic)
     {
-        CubDebugExit(DeviceHisto256::MultiChannelAtomic<CHANNELS>(d_samples, d_histograms, num_samples, 0, true));
+        CubDebugExit(DeviceHisto256::MultiChannelAtomic<CHANNELS>(d_sample_itr, d_histograms, num_samples, 0, true));
     }
     else
     {
-        CubDebugExit(DeviceHisto256::MultiChannel<CHANNELS>(d_samples, d_histograms, num_samples, 0, true));
+        CubDebugExit(DeviceHisto256::MultiChannel<CHANNELS>(d_sample_itr, d_histograms, num_samples, 0, true));
     }
 
     // Check for correctness (and display results, if specified)
@@ -227,11 +267,11 @@ void Test(
 
         if (g_atomic)
         {
-            CubDebugExit(DeviceHisto256::MultiChannelAtomic<CHANNELS>(d_samples, d_histograms, num_samples));
+            CubDebugExit(DeviceHisto256::MultiChannelAtomic<CHANNELS>(d_sample_itr, d_histograms, num_samples));
         }
         else
         {
-            CubDebugExit(DeviceHisto256::MultiChannel<CHANNELS>(d_samples, d_histograms, num_samples));
+            CubDebugExit(DeviceHisto256::MultiChannel<CHANNELS>(d_sample_itr, d_histograms, num_samples));
         }
 
         gpu_timer.Stop();
@@ -338,7 +378,6 @@ int main(int argc, char** argv)
     args.GetCmdLineArgument("i", g_iterations);         // Timing iterations
     g_verbose = args.CheckCmdLineFlag("v");             // Display input/output data
     g_atomic = args.CheckCmdLineFlag("atomic");         // Use atomic or regular (sorting) algorithm
-    bool rgba = args.CheckCmdLineFlag("rgba");          // Single channel vs. 4-channel (3 histograms)
     bool uniform = args.CheckCmdLineFlag("uniform");    // Random data vs. uniform (homogeneous)
 
     // Print usage
@@ -348,7 +387,6 @@ int main(int argc, char** argv)
             "[--device=<device-id>] "
             "[--v] "
             "[--cnp]"
-            "[--rgba]"
             "[--uniform]"
             "[--n=<total number of samples across all channels>]"
             "[--i=<timing iterations>]"
@@ -359,24 +397,72 @@ int main(int argc, char** argv)
     // Initialize device
     CubDebugExit(args.DeviceInit());
 
-    if (rgba)
-    {
-        // Quad samples, first three channels active
-        Test<4, 3, unsigned char, int>(
-            (uniform) ? UNIFORM : RANDOM,
-            Cast<unsigned char>(),
-            num_samples,
-            CUB_TYPE_STRING(unsigned char));
-    }
-    else
-    {
-        // Single stream of byte sample data
-        Test<1, 1, unsigned char, int>(
-            (uniform) ? UNIFORM : RANDOM,
-            Cast<unsigned char>(),
-            num_samples,
-            CUB_TYPE_STRING(unsigned char));
-    }
+    // Binning operators
+    Cast<unsigned char>     cast_op;        // Convert any numeric value to unsigned char via cast
+    FloatScaleOp            scale_op;       // Convert [0 .. 1.0] fp32 value to unsigned char by scaling by 256
+
+    // unsigned char
+    printf("\n------- Single-channel uchar ------- \n"); fflush(stdout);
+    Test<1, 1, unsigned char, int>(
+        (uniform) ? UNIFORM : RANDOM,
+        cast_op,
+        num_samples,
+        CUB_TYPE_STRING(unsigned char));
+
+    printf("\n------- Quad-channel uchar (RGB channels only) ------- \n"); fflush(stdout);
+    Test<4, 3, unsigned char, int>(
+        (uniform) ? UNIFORM : RANDOM,
+        cast_op,
+        num_samples,
+        CUB_TYPE_STRING(unsigned char));
+
+    // unsigned short
+
+    printf("\n------- Single-channel ushort ------- \n"); fflush(stdout);
+    Test<1, 1, unsigned short, int>(
+        (uniform) ? UNIFORM : RANDOM,
+        cast_op,
+        num_samples,
+        CUB_TYPE_STRING(unsigned short));
+
+    printf("\n------- Quad-channel ushort (RGB channels only) ------- \n"); fflush(stdout);
+    Test<4, 3, unsigned short, int>(
+        (uniform) ? UNIFORM : RANDOM,
+        cast_op,
+        num_samples,
+        CUB_TYPE_STRING(unsigned short));
+
+    // unsigned int
+
+    printf("\n------- Single-channel uint ------- \n"); fflush(stdout);
+    Test<1, 1, unsigned int, int>(
+        (uniform) ? UNIFORM : RANDOM,
+        cast_op,
+        num_samples,
+        CUB_TYPE_STRING(unsigned int));
+
+    printf("\n------- Quad-channel uint (RGB channels only) ------- \n"); fflush(stdout);
+    Test<4, 3, unsigned int, int>(
+        (uniform) ? UNIFORM : RANDOM,
+        cast_op,
+        num_samples,
+        CUB_TYPE_STRING(unsigned int));
+
+    // float
+
+    printf("\n------- Single-channel fp32 ------- \n"); fflush(stdout);
+    Test<1, 1, float, int>(
+        (uniform) ? UNIFORM : RANDOM,
+        scale_op,
+        num_samples,
+        CUB_TYPE_STRING(float));
+
+    printf("\n------- Quad-channel fp32 (RGB channels only) ------- \n"); fflush(stdout);
+    Test<4, 3, float, int>(
+        (uniform) ? UNIFORM : RANDOM,
+        scale_op,
+        num_samples,
+        CUB_TYPE_STRING(float));
 
     return 0;
 }

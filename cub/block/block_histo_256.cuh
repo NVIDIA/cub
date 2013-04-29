@@ -360,6 +360,29 @@ public:
     /// \smemstorage{BlockHisto256}
     typedef _SmemStorage SmemStorage;
 
+
+    /**
+     * Initialize shared histogram
+     */
+    template <typename HistoCounter>
+    static __device__ __forceinline__ void InitHistogram(HistoCounter histogram[256])
+    {
+        // Initialize histogram bin counts to zeros
+        int histo_offset = 0;
+
+        #pragma unroll
+        for(; histo_offset + BLOCK_THREADS <= 256; histo_offset += BLOCK_THREADS)
+        {
+            histogram[histo_offset + threadIdx.x] = 0;
+        }
+        // Finish up with guarded initialization if necessary
+        if ((histo_offset < BLOCK_THREADS) && (histo_offset + threadIdx.x < 256))
+        {
+            histogram[histo_offset + threadIdx.x] = 0;
+        }
+    }
+
+
     /**
      * \brief Constructs a threadblock-wide histogram in shared/global memory.  Each thread contributes an array of 8b input elements.
      *
@@ -377,22 +400,12 @@ public:
         HistoCounter        histogram[256])                 ///< [out] Reference to shared/global memory 256-bin histogram
     {
         // Initialize histogram bin counts to zeros
-        int histo_offset = 0;
-
-        #pragma unroll
-        for(; histo_offset + BLOCK_THREADS <= 256; histo_offset += BLOCK_THREADS)
-        {
-            histogram[histo_offset + threadIdx.x] = 0;
-        }
-        // Finish up with guarded initialization if necessary
-        if ((histo_offset < BLOCK_THREADS) && (histo_offset + threadIdx.x < 256))
-        {
-            histogram[histo_offset + threadIdx.x] = 0;
-        }
+        InitHistogram(histogram);
 
         // Composite the histogram
         BlockHisto256Internal<SAFE_ALGORITHM>::Composite(smem_storage, items, histogram);
     }
+
 
 
     /**
@@ -413,8 +426,6 @@ public:
     {
         BlockHisto256Internal<SAFE_ALGORITHM>::Composite(smem_storage, items, histogram);
     }
-
-
 
 };
 

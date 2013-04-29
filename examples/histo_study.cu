@@ -104,7 +104,7 @@ __global__ void BlockSortKernel(
 
     // Load items
     int block_offset = blockIdx.x * TILE_SIZE;
-    BlockLoadDirectStriped(d_in + block_offset, items);
+    BlockLoadDirectStriped(d_in + block_offset, items, BLOCK_THREADS);
 
     __threadfence_block();
 
@@ -160,7 +160,7 @@ __global__ void BlockHistoKernel(
 
     // Load items
     int block_offset = blockIdx.x * TILE_SIZE;
-    BlockLoadDirectStriped(d_in + block_offset, items);
+    BlockLoadDirectStriped(d_in + block_offset, items, BLOCK_THREADS);
 
     __threadfence_block();
 
