@@ -215,7 +215,7 @@ struct DeviceReduce
     template <
         typename    T,
         typename    SizeT,
-        int         ARCH = CUB_PTX_ARCH>
+        int         ARCH>
     struct TunedPolicies;
 
     /// SM35 tune
@@ -587,7 +587,7 @@ struct DeviceReduce
         KernelDispachParams         &single_block_dispatch_params,                      ///< [in] Dispatch parameters that match the policy that \p single_block_kernel was compiled for
         InputIteratorRA             d_in,                                               ///< [in] Input data to reduce
         OutputIteratorRA            d_out,                                              ///< [out] Output location for result
-        int                         num_items,                                          ///< [in] Number of items to reduce
+        SizeT                         num_items,                                          ///< [in] Number of items to reduce
         ReductionOp                 reduction_op,                                       ///< [in] Binary reduction operator
         cudaStream_t                stream              = 0,                            ///< [in] <b>[optional]</b> CUDA stream to launch kernels within.  Default is stream-0.
         bool                        stream_synchronous  = false,                        ///< [in] <b>[optional]</b> Whether or not to synchronize the stream after every kernel launch to check for errors.  Default is \p false.

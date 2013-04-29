@@ -223,7 +223,7 @@ public:
                 flag_op,
                 smem_storage.last_items[threadIdx.x - 1],
                 input[0],
-                0);
+                threadIdx.x * ITEMS_PER_THREAD);
         }
 
         // Set flags for remaining items
@@ -325,7 +325,7 @@ public:
             flag_op,
             prefix,
             input[0],
-            0);
+            threadIdx.x * ITEMS_PER_THREAD);
 
         // Set flags for remaining items
         #pragma unroll

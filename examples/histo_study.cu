@@ -106,6 +106,8 @@ __global__ void BlockSortKernel(
     int block_offset = blockIdx.x * TILE_SIZE;
     BlockLoadDirectStriped(d_in + block_offset, items);
 
+    __threadfence_block();
+
     // Start cycle timer
     clock_t start = clock();
 
@@ -133,7 +135,7 @@ template <
     typename    KeyType,
     int         BLOCK_THREADS,
     int         ITEMS_PER_THREAD>
-__global__ void BlockSortKernel2(
+__global__ void BlockHistoKernel(
     KeyType     *d_in,          // Tile of input
     KeyType     *d_out,         // Tile of output
     clock_t     *d_elapsed)     // Elapsed cycle count of block scan
@@ -141,7 +143,6 @@ __global__ void BlockSortKernel2(
     enum { TILE_SIZE = BLOCK_THREADS * ITEMS_PER_THREAD };
 
     __shared__ unsigned int histogram[256];
-    __shared__ volatile unsigned int name[256];
 
     // Initialize histo
     if (threadIdx.x < 32)
@@ -159,21 +160,9 @@ __global__ void BlockSortKernel2(
 
     // Load items
     int block_offset = blockIdx.x * TILE_SIZE;
-    if (ITEMS_PER_THREAD % 4 == 0)
-    {
-        // Vectorize
-        typedef VectorHelper<KeyType, 4> VecHelper;
-        typedef typename VecHelper::Type VectorT;
+    BlockLoadDirectStriped(d_in + block_offset, items);
 
-        // Alias items as an array of VectorT and load it in striped fashion
-        BlockLoadDirectStriped(
-            reinterpret_cast<VectorT*>(d_in + block_offset),
-            reinterpret_cast<VectorT (&)[ITEMS_PER_THREAD / 4]>(items));
-    }
-    else
-    {
-        BlockLoadDirectStriped(d_in + block_offset, items);
-    }
+    __threadfence_block();
 
     // Start cycle timer
     clock_t start = clock();
@@ -275,27 +264,37 @@ void Test()
 
     // CUDA device props
     Device device;
-    int max_sm_occupancy;
-    CubDebugExit(device.Init());
-    CubDebugExit(device.MaxSmOccupancy(max_sm_occupancy, BlockSortKernel<KeyType, BLOCK_THREADS, ITEMS_PER_THREAD>, BLOCK_THREADS));
 
     // Copy problem to device
     CubDebugExit(cudaMemcpy(d_in, h_in, sizeof(KeyType) * TILE_SIZE * g_grid_size, cudaMemcpyHostToDevice));
 
-    printf("BlockRadixSort %d items (%d timing iterations, %d blocks, %d threads, %d items per thread, %d SM occupancy):\n",
-        TILE_SIZE * g_grid_size, g_iterations, g_grid_size, BLOCK_THREADS, ITEMS_PER_THREAD, max_sm_occupancy);
-    fflush(stdout);
 
     // Run kernel once to prime caches and check result
     if (g_histo)
     {
-        BlockSortKernel2<KeyType, BLOCK_THREADS, ITEMS_PER_THREAD><<<g_grid_size, BLOCK_THREADS>>>(
+        int max_sm_occupancy;
+        CubDebugExit(device.Init());
+        CubDebugExit(device.MaxSmOccupancy(max_sm_occupancy, BlockHistoKernel<KeyType, BLOCK_THREADS, ITEMS_PER_THREAD>, BLOCK_THREADS));
+
+        printf("BlockHisto %d items (%d timing iterations, %d blocks, %d threads, %d items per thread, %d SM occupancy):\n",
+            TILE_SIZE * g_grid_size, g_iterations, g_grid_size, BLOCK_THREADS, ITEMS_PER_THREAD, max_sm_occupancy);
+        fflush(stdout);
+
+        BlockHistoKernel<KeyType, BLOCK_THREADS, ITEMS_PER_THREAD><<<g_grid_size, BLOCK_THREADS>>>(
             d_in,
             d_out,
             d_elapsed);
     }
     else
     {
+        int max_sm_occupancy;
+        CubDebugExit(device.Init());
+        CubDebugExit(device.MaxSmOccupancy(max_sm_occupancy, BlockSortKernel<KeyType, BLOCK_THREADS, ITEMS_PER_THREAD>, BLOCK_THREADS));
+
+        printf("BlockRadixSort %d items (%d timing iterations, %d blocks, %d threads, %d items per thread, %d SM occupancy):\n",
+            TILE_SIZE * g_grid_size, g_iterations, g_grid_size, BLOCK_THREADS, ITEMS_PER_THREAD, max_sm_occupancy);
+        fflush(stdout);
+
         BlockSortKernel<KeyType, BLOCK_THREADS, ITEMS_PER_THREAD><<<g_grid_size, BLOCK_THREADS>>>(
             d_in,
             d_out,
@@ -324,7 +323,7 @@ void Test()
         // Run kernel
         if (g_histo)
         {
-            BlockSortKernel2<KeyType, BLOCK_THREADS, ITEMS_PER_THREAD><<<g_grid_size, BLOCK_THREADS>>>(
+            BlockHistoKernel<KeyType, BLOCK_THREADS, ITEMS_PER_THREAD><<<g_grid_size, BLOCK_THREADS>>>(
                 d_in,
                 d_out,
                 d_elapsed);
@@ -416,7 +415,7 @@ int main(int argc, char** argv)
     Test<float, 128, 16>();
     printf("\n"); fflush(stdout);
 */
-
+/*
     Test<unsigned char, 256, 21>();
     printf("\n"); fflush(stdout);
     Test<unsigned char, 256, 20>();
@@ -429,11 +428,12 @@ int main(int argc, char** argv)
     printf("\n"); fflush(stdout);
 
     printf("\n"); fflush(stdout);
-
     Test<unsigned char, 128, 21>();
     printf("\n"); fflush(stdout);
+*/
     Test<unsigned char, 128, 20>();
     printf("\n"); fflush(stdout);
+/*
     Test<unsigned char, 128, 17>();
     printf("\n"); fflush(stdout);
     Test<unsigned char, 128, 16>();
@@ -466,7 +466,7 @@ int main(int argc, char** argv)
     printf("\n"); fflush(stdout);
     Test<unsigned char, 64, 8>();
     printf("\n"); fflush(stdout);
-
+*/
 
     return 0;
 }
