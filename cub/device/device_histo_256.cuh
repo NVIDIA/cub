@@ -372,6 +372,9 @@ struct DeviceHisto256
                 multi_block_kernel_ptr,
                 multi_block_dispatch_params.block_threads))) break;
 
+            // Texture bind
+            if (CubDebug(error = BindTexture(d_samples, num_samples))) break;
+
         #endif
 
             // Determine grid size for the multi-block kernel
@@ -500,6 +503,10 @@ struct DeviceHisto256
 
         // Free queue allocation
         if (multi_block_dispatch_params.grid_mapping == GRID_MAPPING_DYNAMIC) error = CubDebug(queue.Free(device_allocator));
+
+        // Texture unbind
+        error = UnbindTexture();
+
 
         return error;
 

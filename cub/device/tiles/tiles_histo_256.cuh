@@ -75,6 +75,38 @@ struct TilesHisto256Policy
 };
 
 
+/******************************************************************************
+ * Texture
+ ******************************************************************************/
+
+// Texture reference type
+texture<unsigned char, cudaTextureType1D, cudaReadModeElementType> TilesHisto256Texref1B;
+
+/**
+ * Bind textures
+ */
+cudaError_t BindTexture(void *d_in, int elements)
+{
+    cudaChannelFormatDesc tex_desc = cudaCreateChannelDesc<unsigned char>();
+    if (d_in)
+    {
+        size_t offset;
+        size_t bytes = sizeof(unsigned char) * elements;
+        return CubDebug(cudaBindTexture(&offset, TilesHisto256Texref1B, d_in, tex_desc, bytes));
+    }
+    return cudaSuccess;
+}
+
+/**
+ * Unbind textures
+ */
+cudaError_t UnbindTexture()
+{
+    return CubDebug(cudaUnbindTexture(TilesHisto256Texref1B));
+}
+
+
+
 
 
 /******************************************************************************
@@ -176,7 +208,8 @@ private:
             for (int ITEM = 0; ITEM < ITEMS_PER_THREAD; ITEM++)
             {
                 items[ITEM] = ((ITEM * BLOCK_THREADS * CHANNELS) < bounds) ?
-                     ThreadLoad<PTX_LOAD_NONE>(d_in + channel + block_offset + (((ITEM * BLOCK_THREADS) + threadIdx.x) * CHANNELS)) :
+//                     ThreadLoad<PTX_LOAD_NONE>(d_in + channel + block_offset + (ITEM * BLOCK_THREADS * CHANNELS) + (threadIdx.x * CHANNELS)) :
+                    tex1Dfetch(TilesHisto256Texref1B, channel + block_offset + (ITEM * BLOCK_THREADS * CHANNELS) + (threadIdx.x * CHANNELS)) :
                      255;
             }
         }
@@ -186,7 +219,8 @@ private:
             #pragma unroll
             for (int ITEM = 0; ITEM < ITEMS_PER_THREAD; ITEM++)
             {
-                items[ITEM] = ThreadLoad<PTX_LOAD_NONE>(d_in + channel + block_offset + (((ITEM * BLOCK_THREADS) + threadIdx.x) * CHANNELS));
+//                items[ITEM] = ThreadLoad<PTX_LOAD_NONE>(d_in + channel + block_offset + (ITEM * BLOCK_THREADS * CHANNELS) + (threadIdx.x * CHANNELS));
+                items[ITEM] = tex1Dfetch(TilesHisto256Texref1B, channel + block_offset + (ITEM * BLOCK_THREADS * CHANNELS) + (threadIdx.x * CHANNELS));
             }
         }
 
