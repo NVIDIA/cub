@@ -95,6 +95,21 @@ struct Max
 };
 
 
+/**
+ * \brief Default cast functor
+ */
+template <typename B>
+struct Cast
+{
+    /// Boolean max operator, returns <tt>(a > b) ? a : b</tt>
+    template <typename A>
+    __host__ __device__ __forceinline__ B operator()(const A &a)
+    {
+        return (B) a;
+    }
+};
+
+
 
 /** @} */       // end group ThreadModule
 

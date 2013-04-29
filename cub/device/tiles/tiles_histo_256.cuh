@@ -153,16 +153,16 @@ private:
      * Process one channel within a tile.
      */
     template <
-        int             CHANNEL,
         typename        InputIteratorRA,
         typename        HistoCounter,
         int             ACTIVE_CHANNELS>
     static __device__ __forceinline__ void ConsumeTileChannel(
         SmemStorage     &smem_storage,
-        InputIteratorRA   d_in,
+        int             channel,
+        InputIteratorRA d_in,
         SizeT           block_offset,
         HistoCounter    (&histograms)[ACTIVE_CHANNELS][256],
-        const SizeT     &guarded_items = TILE_ITEMS)
+        const int       &guarded_items = TILE_ITEMS)
     {
         unsigned char items[ITEMS_PER_THREAD];
 
@@ -170,19 +170,31 @@ private:
         if (guarded_items < TILE_ITEMS)
         {
             // Guarded load with 255 as out-of-bounds default
-            BlockLoadDirectStriped(d_in + CHANNEL + block_offset, guarded_items, 255, items, BLOCK_THREADS * CHANNELS);
+            int bounds = (guarded_items - (threadIdx.x * CHANNELS));
+
+            #pragma unroll
+            for (int ITEM = 0; ITEM < ITEMS_PER_THREAD; ITEM++)
+            {
+                items[ITEM] = ((ITEM * BLOCK_THREADS * CHANNELS) < bounds) ?
+                     ThreadLoad<PTX_LOAD_NONE>(d_in + channel + block_offset + (((ITEM * BLOCK_THREADS) + threadIdx.x) * CHANNELS)) :
+                     255;
+            }
         }
         else
         {
             // Unguarded loads
-            BlockLoadDirectStriped(d_in + CHANNEL + block_offset, items, BLOCK_THREADS * CHANNELS);
+            #pragma unroll
+            for (int ITEM = 0; ITEM < ITEMS_PER_THREAD; ITEM++)
+            {
+                items[ITEM] = ThreadLoad<PTX_LOAD_NONE>(d_in + channel + block_offset + (((ITEM * BLOCK_THREADS) + threadIdx.x) * CHANNELS));
+            }
         }
 
         // Prevent hoisting
         __threadfence_block();
 
         // Composite our histogram data
-        BlockHisto256T::Composite(smem_storage.block_histo, items, histograms[CHANNEL]);
+        BlockHisto256T::Composite(smem_storage.block_histo, items, histograms[channel]);
 
         // Correct any over-counting in the last bin if tile was partially-full
         if (guarded_items < TILE_ITEMS)
@@ -191,8 +203,8 @@ private:
 
             if (threadIdx.x == 0)
             {
-                HistoCounter extra = TILE_ITEMS - guarded_items;
-                histograms[CHANNEL] -= extra;
+                HistoCounter extra = (TILE_ITEMS - guarded_items) / CHANNELS;
+                histograms[channel][255] -= extra;
             }
         }
     }
@@ -207,20 +219,21 @@ private:
         int             ACTIVE_CHANNELS>
     static __device__ __forceinline__ void ConsumeTile(
         SmemStorage     &smem_storage,
-        InputIteratorRA   d_in,
+        InputIteratorRA d_in,
         SizeT           block_offset,
         HistoCounter    (&histograms)[ACTIVE_CHANNELS][256],
-        const SizeT     &guarded_items = TILE_ITEMS)
+        const int       &guarded_items = TILE_ITEMS)
     {
         // First channel
-        ConsumeTileChannel<0>(smem_storage, d_in, block_offset, guarded_items);
+        ConsumeTileChannel(smem_storage, 0, d_in, block_offset, histograms, guarded_items);
 
         // Iterate through remaining channels
         #pragma unroll
         for (int CHANNEL = 1; CHANNEL < ACTIVE_CHANNELS; ++CHANNEL)
         {
             __syncthreads();
-            ConsumeTileChannel<CHANNEL>(smem_storage, d_in, block_offset, histograms, guarded_items);
+
+            ConsumeTileChannel(smem_storage, CHANNEL, d_in, block_offset, histograms, guarded_items);
         }
     }
 
@@ -241,7 +254,7 @@ public:
         int             ACTIVE_CHANNELS>
     static __device__ __forceinline__ void ProcessTilesEvenShare(
         SmemStorage     &smem_storage,
-        InputIteratorRA   d_in,
+        InputIteratorRA d_in,
         SizeT           block_offset,
         const SizeT     &block_oob,
         HistoCounter    (&histograms)[ACTIVE_CHANNELS][256])
@@ -261,13 +274,17 @@ public:
             ConsumeTile(smem_storage, d_in, block_offset, histograms);
             block_offset += TILE_ITEMS;
 
-            __syncthreads();
+            // Skip synchro for atomic version since we know it doesn't use any smem
+            if (BLOCK_ALGORITHM !=  BLOCK_BYTE_HISTO_ATOMIC)
+            {
+                __syncthreads();
+            }
         }
 
         // Consume any remaining partial-tile
         if (block_offset < block_oob)
         {
-            ConsumeTile(smem_storage, d_in, block_offset, block_oob - block_offset);
+            ConsumeTile(smem_storage, d_in, block_offset, histograms, block_oob - block_offset);
         }
     }
 
@@ -281,11 +298,12 @@ public:
         int                 ACTIVE_CHANNELS>
     static __device__ __forceinline__ void ProcessTilesDynamic(
         SmemStorage         &smem_storage,
-        InputIteratorRA       d_in,
+        InputIteratorRA     d_in,
         SizeT               num_items,
         GridQueue<SizeT>    &queue,
         HistoCounter        (&histograms)[ACTIVE_CHANNELS][256])
     {
+
         // Initialize histograms
         #pragma unroll
         for (int CHANNEL = 0; CHANNEL < ACTIVE_CHANNELS; ++CHANNEL)
@@ -338,7 +356,7 @@ public:
             int                     ACTIVE_CHANNELS>
         static __device__ __forceinline__ void ProcessTiles(
             SmemStorage             &smem_storage,
-            InputIteratorRA           d_in,
+            InputIteratorRA         d_in,
             SizeT                   num_items,
             GridEvenShare<SizeT>    &even_share,
             GridQueue<SizeT>        &queue,
@@ -363,7 +381,7 @@ public:
             int                     ACTIVE_CHANNELS>
         static __device__ __forceinline__ void ProcessTiles(
             SmemStorage             &smem_storage,
-            InputIteratorRA           d_in,
+            InputIteratorRA         d_in,
             SizeT                   num_items,
             GridEvenShare<SizeT>    &even_share,
             GridQueue<SizeT>        &queue,

@@ -27,7 +27,7 @@
  ******************************************************************************/
 
 /******************************************************************************
- * Test of DeviceReduce utilities
+ * Test of DeviceHisto256 utilities
  ******************************************************************************/
 
 // Ensure printing of CUDA runtime errors to console
@@ -44,8 +44,9 @@ using namespace cub;
 // Globals, constants and typedefs
 //---------------------------------------------------------------------
 
-bool    g_verbose = false;
-int     g_iterations = 100;
+bool    g_verbose       = false;
+int     g_iterations    = 100;
+bool    g_atomic        = false;
 
 
 //---------------------------------------------------------------------
@@ -53,17 +54,18 @@ int     g_iterations = 100;
 //---------------------------------------------------------------------
 
 /**
- * Simple wrapper kernel to invoke DeviceReduce
+ * Simple wrapper kernel to invoke DeviceHisto256
  */
+/*
 template <
     bool                STREAM_SYNCHRONOUS,
     typename            InputIteratorRA,
     typename            OutputIteratorRA,
     typename            ReductionOp>
-__global__ void CnpReduce(
-    InputIteratorRA     d_in,
+__global__ void CnpHisto(
+    InputIteratorRA     d_samples,
     OutputIteratorRA    d_out,
-    int                 num_items,
+    int                 num_samples,
     ReductionOp         reduction_op,
     int                 iterations,
     cudaError_t*        d_cnp_error)
@@ -73,7 +75,7 @@ __global__ void CnpReduce(
 #if CUB_CNP_ENABLED
     for (int i = 0; i < iterations; ++i)
     {
-        error = DeviceReduce::Reduce(d_in, d_out, num_items, reduction_op, 0, STREAM_SYNCHRONOUS);
+        error = DeviceHisto256::SingleChannel(d_samples, d_out, num_samples, reduction_op, 0, STREAM_SYNCHRONOUS);
     }
 #else
     error = cudaErrorInvalidConfiguration;
@@ -81,7 +83,7 @@ __global__ void CnpReduce(
 
     *d_cnp_error = error;
 }
-
+*/
 
 //---------------------------------------------------------------------
 // Host utility subroutines
@@ -91,23 +93,50 @@ __global__ void CnpReduce(
  * Initialize problem (and solution)
  */
 template <
-    typename        T,
-    typename        ReductionOp>
+    int             CHANNELS,
+    int             ACTIVE_CHANNELS,
+    typename        SampleType,
+    typename        BinOp,
+    typename        HistoCounter>
 void Initialize(
     int             gen_mode,
-    T               *h_in,
-    T               h_reference[1],
-    ReductionOp     reduction_op,
-    int             num_items)
+    SampleType      *h_samples,
+    BinOp           bin_op,
+    HistoCounter    *h_histograms_linear,
+    int             num_samples)
 {
-    for (int i = 0; i < num_items; ++i)
+    // Init bins
+    for (int bin = 0; bin < ACTIVE_CHANNELS * 256; ++bin)
     {
-        InitValue(gen_mode, h_in[i], i);
-        if (i == 0)
-            h_reference[0] = h_in[0];
-        else
-            h_reference[0] = reduction_op(h_reference[0], h_in[i]);
+        h_histograms_linear[bin] = 0;
     }
+
+    if (g_verbose) printf("Samples: \n");
+
+    // Initialize interleaved channel samples and histogram them correspondingly
+    for (int i = 0; i < num_samples; ++i)
+    {
+        InitValue(gen_mode, h_samples[i], i);
+
+        unsigned char bin = bin_op(h_samples[i]);
+        int channel = i % CHANNELS;
+
+        if (g_verbose)
+        {
+            if (channel == 0) printf("<");
+            if (channel == CHANNELS - 1)
+                printf("%d>, ", (int) h_samples[i]);
+            else
+                printf("%d, ", (int) h_samples[i]);
+        }
+
+        if (channel < ACTIVE_CHANNELS)
+        {
+            h_histograms_linear[(channel * 256) + bin]++;
+        }
+    }
+
+    if (g_verbose) printf("\n\n");
 }
 
 
@@ -117,52 +146,72 @@ void Initialize(
 
 
 /**
- * Test DeviceReduce
+ * Test DeviceHisto256
  */
 template <
-    typename        T,
-    typename        ReductionOp>
+    int             CHANNELS,
+    int             ACTIVE_CHANNELS,
+    typename        SampleType,
+    typename        HistoCounter,
+    typename        BinOp>
 void Test(
-    int             num_items,
     int             gen_mode,
-    ReductionOp     reduction_op,
+    BinOp           bin_op,
+    int             num_samples,
     char*           type_string)
 {
-    int compare = 0;
-    int cnp_compare = 0;
+    int compare         = 0;
+    int cnp_compare     = 0;
+    int total_bins      = ACTIVE_CHANNELS * 256;
 
-    printf("cub::DeviceReduce %d items, %s %d-byte elements, gen-mode %d\n\n",
-        num_items,
+    printf("cub::DeviceHisto256 %d %s samples (%dB), %d channels, %d active channels, gen-mode %d\n\n",
+        num_samples,
         type_string,
-        (int) sizeof(T),
+        (int) sizeof(SampleType),
+        CHANNELS,
+        ACTIVE_CHANNELS,
         gen_mode);
     fflush(stdout);
 
     // Allocate host arrays
-    T*              h_in = new T[num_items];
-    T               h_reference[1];
+    SampleType      *h_samples = new SampleType[num_samples];
+    HistoCounter    *h_reference_linear = new HistoCounter[total_bins];
 
     // Initialize problem
-    Initialize(gen_mode, h_in, h_reference, reduction_op, num_items);
+    Initialize<CHANNELS, ACTIVE_CHANNELS>(gen_mode, h_samples, bin_op, h_reference_linear, num_samples);
 
     // Allocate device arrays
-    T*              d_in = NULL;
-    T*              d_out = NULL;
+    SampleType*     d_samples = NULL;
+    HistoCounter*   d_histograms_linear = NULL;
     cudaError_t*    d_cnp_error = NULL;
-    CubDebugExit(DeviceAllocate((void**)&d_in,          sizeof(T) * num_items));
-    CubDebugExit(DeviceAllocate((void**)&d_out,         sizeof(T) * 1));
-    CubDebugExit(DeviceAllocate((void**)&d_cnp_error,   sizeof(cudaError_t) * 1));
+    CubDebugExit(DeviceAllocate((void**)&d_samples,             sizeof(SampleType) * num_samples));
+    CubDebugExit(DeviceAllocate((void**)&d_histograms_linear,   sizeof(HistoCounter) * total_bins));
+    CubDebugExit(DeviceAllocate((void**)&d_cnp_error,           sizeof(cudaError_t) * 1));
 
     // Initialize device arrays
-    CubDebugExit(cudaMemcpy(d_in, h_in, sizeof(T) * num_items, cudaMemcpyHostToDevice));
-    CubDebugExit(cudaMemset(d_out, 0, sizeof(T) * 1));
+    CubDebugExit(cudaMemcpy(d_samples, h_samples, sizeof(SampleType) * num_samples, cudaMemcpyHostToDevice));
+    CubDebugExit(cudaMemset(d_histograms_linear, 0, sizeof(HistoCounter) * total_bins));
+
+    // Structure of channel histograms
+    HistoCounter *d_histograms[ACTIVE_CHANNELS];
+    for (int CHANNEL = 0; CHANNEL < ACTIVE_CHANNELS; ++CHANNEL)
+    {
+        d_histograms[CHANNEL] = d_histograms_linear + (CHANNEL * 256);
+    }
 
     // Run warmup/correctness iteration
     printf("Host dispatch:\n"); fflush(stdout);
-    CubDebugExit(DeviceReduce::Reduce(d_in, d_out, num_items, reduction_op, 0, true));
+    if (g_atomic)
+    {
+        CubDebugExit(DeviceHisto256::MultiChannelAtomic<CHANNELS>(d_samples, d_histograms, num_samples, 0, true));
+    }
+    else
+    {
+        CubDebugExit(DeviceHisto256::MultiChannel<CHANNELS>(d_samples, d_histograms, num_samples, 0, true));
+    }
 
     // Check for correctness (and display results, if specified)
-    compare = CompareDeviceResults(h_reference, d_out, 1, g_verbose, g_verbose);
+    compare = CompareDeviceResults((HistoCounter*) h_reference_linear, d_histograms_linear, total_bins, g_verbose, g_verbose);
     printf("\n%s", compare ? "FAIL" : "PASS");
 
     // Flush any stdout/stderr
@@ -176,7 +225,14 @@ void Test(
     {
         gpu_timer.Start();
 
-        CubDebugExit(DeviceReduce::Reduce(d_in, d_out, num_items, reduction_op));
+        if (g_atomic)
+        {
+            CubDebugExit(DeviceHisto256::MultiChannelAtomic<CHANNELS>(d_samples, d_histograms, num_samples));
+        }
+        else
+        {
+            CubDebugExit(DeviceHisto256::MultiChannel<CHANNELS>(d_samples, d_histograms, num_samples));
+        }
 
         gpu_timer.Stop();
         elapsed_millis += gpu_timer.ElapsedMillis();
@@ -184,9 +240,14 @@ void Test(
     if (g_iterations > 0)
     {
         float avg_millis = elapsed_millis / g_iterations;
-        float grate = float(num_items) / avg_millis / 1000.0 / 1000.0;
-        float gbandwidth = grate * sizeof(T);
-        printf(", %.3f avg ms, %.3f billion items/s, %.3f GB/s\n", avg_millis, grate, gbandwidth);
+        float grate = float(num_samples) / avg_millis / 1000.0 / 1000.0;
+        float gbandwidth = grate * sizeof(SampleType);
+        printf(", %.3f avg ms, %.3f billion samples/s, %.3f billion bins/s, %.3f billion pixels/s, %.3f GB/s\n",
+            avg_millis,
+            grate,
+            grate * ACTIVE_CHANNELS / CHANNELS,
+            grate / CHANNELS,
+            gbandwidth);
     }
     else
     {
@@ -197,11 +258,11 @@ void Test(
     // Evaluate using CUDA nested parallelism
 #if (TEST_CNP == 1)
 
-    CubDebugExit(cudaMemset(d_out, 0, sizeof(T) * 1));
+    CubDebugExit(cudaMemset(d_out, 0, sizeof(SampleType) * 1));
 
     // Run warmup/correctness iteration
     printf("\nDevice dispatch:\n"); fflush(stdout);
-    CnpReduce<true><<<1,1>>>(d_in, d_out, num_items, reduction_op, 1, d_cnp_error);
+    CnpHisto<true><<<1,1>>>(d_samples, d_out, num_samples, reduction_op, 1, d_cnp_error);
 
     // Flush any stdout/stderr
     fflush(stdout);
@@ -219,13 +280,13 @@ void Test(
         CubDebugExit(h_cnp_error);
 
         // Check for correctness (and display results, if specified)
-        cnp_compare = CompareDeviceResults(h_reference, d_out, 1, g_verbose, g_verbose);
+        cnp_compare = CompareDeviceResults(h_reference_linear, d_out, 1, g_verbose, g_verbose);
         printf("\n%s", cnp_compare ? "FAIL" : "PASS");
 
         // Performance
         gpu_timer.Start();
 
-        CnpReduce<false><<<1,1>>>(d_in, d_out, num_items, reduction_op, g_iterations, d_cnp_error);
+        CnpHisto<false><<<1,1>>>(d_samples, d_out, num_samples, reduction_op, g_iterations, d_cnp_error);
 
         gpu_timer.Stop();
         elapsed_millis = gpu_timer.ElapsedMillis();
@@ -233,8 +294,8 @@ void Test(
         if (g_iterations > 0)
         {
             float avg_millis = elapsed_millis / g_iterations;
-            float grate = float(num_items) / avg_millis / 1000.0 / 1000.0;
-            float gbandwidth = grate * sizeof(T);
+            float grate = float(num_samples) / avg_millis / 1000.0 / 1000.0;
+            float gbandwidth = grate * sizeof(SampleType);
             printf(", %.3f avg ms, %.3f billion items/s, %.3f GB/s\n", avg_millis, grate, gbandwidth);
         }
         else
@@ -246,9 +307,10 @@ void Test(
 #endif
 
     // Cleanup
-    if (h_in) delete[] h_in;
-    if (d_in) CubDebugExit(DeviceFree(d_in));
-    if (d_out) CubDebugExit(DeviceFree(d_out));
+    if (h_samples) delete[] h_samples;
+    if (h_reference_linear) delete[] h_reference_linear;
+    if (d_samples) CubDebugExit(DeviceFree(d_samples));
+    if (d_histograms_linear) CubDebugExit(DeviceFree(d_histograms_linear));
     if (d_cnp_error) CubDebugExit(DeviceFree(d_cnp_error));
 
     // Correctness asserts
@@ -264,35 +326,20 @@ void Test(
 //---------------------------------------------------------------------
 
 /**
- * Run battery of full-tile tests for different gen modes
- */
-template <
-    typename        T,
-    typename        ReductionOp>
-void Test(
-    int             num_items,
-    ReductionOp     reduction_op,
-    char*           type_string)
-{
-    Test<T>(num_items, UNIFORM, reduction_op, type_string);
-    Test<T>(num_items, SEQ_INC, reduction_op, type_string);
-    Test<T>(num_items, RANDOM, reduction_op, type_string);
-}
-
-
-/**
  * Main
  */
 int main(int argc, char** argv)
 {
-    int num_items = 1 * 1024 * 1024;
+    int num_samples = 1 * 1024 * 1024;
 
     // Initialize command line
     CommandLineArgs args(argc, argv);
-    args.GetCmdLineArgument("n", num_items);
+    args.GetCmdLineArgument("n", num_samples);
     args.GetCmdLineArgument("i", g_iterations);
-    g_verbose = args.CheckCmdLineFlag("v");
-    bool quick = args.CheckCmdLineFlag("quick");
+    g_verbose = args.CheckCmdLineFlag("v");             // Display input/output data
+    g_atomic = args.CheckCmdLineFlag("atomic");         // Use atomic or regular (sorting) algorithm
+    bool rgba = args.CheckCmdLineFlag("rgba");          // Single channel vs. 4-channel (3 histograms)
+    bool uniform = args.CheckCmdLineFlag("uniform");    // Random data vs. uniform (homogeneous)
 
     // Print usage
     if (args.CheckCmdLineFlag("help"))
@@ -300,8 +347,9 @@ int main(int argc, char** argv)
         printf("%s "
             "[--device=<device-id>] "
             "[--v] "
-            "[--quick]"
             "[--cnp]"
+            "[--rgba]"
+            "[--uniform]"
             "\n", argv[0]);
         exit(0);
     }
@@ -309,37 +357,25 @@ int main(int argc, char** argv)
     // Initialize device
     CubDebugExit(args.DeviceInit());
 
-//    if (quick)
+    if (rgba)
     {
-        // Quick test
-        typedef int T;
-//        typedef unsigned short T;
-        Test<T>(num_items, UNIFORM, Sum<T>(), CUB_TYPE_STRING(T));
+        // Quad samples, first three channels active
+        Test<4, 3, unsigned char, int>(
+            (uniform) ? UNIFORM : RANDOM,
+            Cast<unsigned char>(),
+            num_samples,
+            CUB_TYPE_STRING(unsigned char));
     }
-/*    else
+    else
     {
-        // primitives
-        Test<char>(Sum<char>(), CUB_TYPE_STRING(char));
-        Test<short>(Sum<short>(), CUB_TYPE_STRING(short));
-        Test<int>(Sum<int>(), CUB_TYPE_STRING(int));
-        Test<long long>(Sum<long long>(), CUB_TYPE_STRING(long long));
-
-        // vector types
-        Test<char2>(Sum<char2>(), CUB_TYPE_STRING(char2));
-        Test<short2>(Sum<short2>(), CUB_TYPE_STRING(short2));
-        Test<int2>(Sum<int2>(), CUB_TYPE_STRING(int2));
-        Test<longlong2>(Sum<longlong2>(), CUB_TYPE_STRING(longlong2));
-
-        Test<char4>(Sum<char4>(), CUB_TYPE_STRING(char4));
-        Test<short4>(Sum<short4>(), CUB_TYPE_STRING(short4));
-        Test<int4>(Sum<int4>(), CUB_TYPE_STRING(int4));
-        Test<longlong4>(Sum<longlong4>(), CUB_TYPE_STRING(longlong4));
-
-        // Complex types
-        Test<TestFoo>(Sum<TestFoo>(), CUB_TYPE_STRING(TestFoo));
-        Test<TestBar>(Sum<TestBar>(), CUB_TYPE_STRING(TestBar));
+        // Single stream of byte sample data
+        Test<1, 1, unsigned char, int>(
+            (uniform) ? UNIFORM : RANDOM,
+            Cast<unsigned char>(),
+            num_samples,
+            CUB_TYPE_STRING(unsigned char));
     }
-*/
+
     return 0;
 }
 
