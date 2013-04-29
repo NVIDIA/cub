@@ -167,7 +167,7 @@ enum BlockHisto256Algorithm
 template <
     int                         BLOCK_THREADS,
     int                         ITEMS_PER_THREAD,
-    BlockHisto256Algorithm     ALGORITHM = BLOCK_BYTE_HISTO_SORT>
+    BlockHisto256Algorithm      ALGORITHM = BLOCK_BYTE_HISTO_SORT>
 class BlockHisto256
 {
 private:
@@ -215,11 +215,11 @@ private:
             struct
             {
                 // Storage for detecting discontinuities in the tile of sorted bin values
-                BlockDiscontinuityT discont_storage;
+                typename BlockDiscontinuityT::SmemStorage discont_storage;
 
                 // Storage for noting begin/end offsets of bin runs in the tile of sorted bin values
-                unsigned short run_begin[256];
-                unsigned short run_end[256];
+                unsigned int run_begin[256];
+                unsigned int run_end[256];
             };
         };
 
@@ -231,16 +231,17 @@ private:
             SmemStorage &smem_storage;
 
             // Constructor
-            DiscontinuityOp(SmemStorage smem_storage) : smem_storage(smem_storage) {}
+            __device__ __forceinline__ DiscontinuityOp(SmemStorage &smem_storage) : smem_storage(smem_storage) {}
 
             // Discontinuity predicate
-            bool operator()(const unsigned char &a, const unsigned char &b, unsigned int b_index)
+            __device__ __forceinline__ bool operator()(const unsigned char &a, const unsigned char &b, unsigned int b_index)
             {
                 if (a != b)
                 {
                     // Note the begin/end offsets in shared storage
                     smem_storage.run_begin[b] = b_index;
-                    smem_storage.run_end[a] = b_index - 1;
+                    smem_storage.run_end[a] = b_index;
+
                     return true;
                 }
                 else
@@ -288,27 +289,30 @@ private:
             int flags[ITEMS_PER_THREAD];    // unused
 
             // Note the begin/end run offsets of bin runs in the sorted tile
-            BlockDiscontinuityT::Flag(smem_storage.discont_storage, items, DiscontinuityOp(smem_storage), flags);
+            DiscontinuityOp flag_op(smem_storage);
+            BlockDiscontinuityT::Flag(smem_storage.discont_storage, items, flag_op, flags);
 
-            // Update begin and end for first item
+            // Update begin for first item
             if (threadIdx.x == 0) smem_storage.run_begin[items[0]] = 0;
 
             __syncthreads();
 
-            // Update histogram
+            // Composite into histogram
             histo_offset = 0;
 
             #pragma unroll
             for(; histo_offset + BLOCK_THREADS <= 256; histo_offset += BLOCK_THREADS)
             {
                 int thread_offset = histo_offset + threadIdx.x;
-                histogram[thread_offset] += smem_storage.run_end[thread_offset] - smem_storage.run_begin[thread_offset];
+                HistoCounter count = smem_storage.run_end[thread_offset] - smem_storage.run_begin[thread_offset];
+                histogram[thread_offset] += count;
             }
             // Finish up with guarded composition if necessary
             if ((histo_offset < BLOCK_THREADS) && (histo_offset + threadIdx.x < 256))
             {
                 int thread_offset = histo_offset + threadIdx.x;
-                histogram[thread_offset] += smem_storage.run_end[thread_offset] - smem_storage.run_begin[thread_offset];
+                HistoCounter count = smem_storage.run_end[thread_offset] - smem_storage.run_begin[thread_offset];
+                histogram[thread_offset] += count;
             }
         }
 
