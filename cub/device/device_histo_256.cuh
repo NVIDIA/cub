@@ -66,7 +66,7 @@ template <
     typename                InputIteratorRA,                    ///< The input iterator type (may be a simple pointer type).  Must have a value type that is assignable to <tt>unsigned char</tt>
     typename                HistoCounter,                       ///< Integral type for counting sample occurrences per histogram bin
     typename                SizeT>                              ///< Integral type used for global array indexing
-__launch_bounds__ (TilesHisto256Policy::BLOCK_THREADS, 1)
+__launch_bounds__ (TilesHisto256Policy::BLOCK_THREADS)
 __global__ void MultiBlockHisto256Kernel(
     InputIteratorRA                                 d_samples,          ///< [in] Array of sample data. (Channels, if any, are interleaved in "AOS" format)
     ArrayWrapper<HistoCounter*, ACTIVE_CHANNELS>    d_out_histograms,   ///< [out] Histogram counter data having logical dimensions <tt>HistoCounter[ACTIVE_CHANNELS][gridDim.x][256]</tt>
@@ -75,7 +75,11 @@ __global__ void MultiBlockHisto256Kernel(
     GridQueue<SizeT>                                queue)              ///< [in] Descriptor for performing dynamic mapping of tile data to thread blocks
 {
     // Constants
-    enum { BLOCK_THREADS = TilesHisto256Policy::BLOCK_THREADS };
+    enum {
+        BLOCK_THREADS       = TilesHisto256Policy::BLOCK_THREADS,
+        ITEMS_PER_THREAD    = TilesHisto256Policy::ITEMS_PER_THREAD,
+        TILE_SIZE           = BLOCK_THREADS * ITEMS_PER_THREAD,
+    };
 
     // Parameterize TilesHisto256 for the parallel execution context
     typedef TilesHisto256 <TilesHisto256Policy, CHANNELS, SizeT> TilesHisto256T;
@@ -118,6 +122,7 @@ __global__ void MultiBlockHisto256Kernel(
             d_out_histograms.array[CHANNEL][channel_offset + histo_offset + threadIdx.x] = histograms[CHANNEL][histo_offset + threadIdx.x];
         }
     }
+
 }
 
 
@@ -129,30 +134,73 @@ template <
     typename        HistoCounter>               ///< Integral type for counting sample occurrences per histogram bin
 __launch_bounds__ (256, 1)
 __global__ void FinalizeHisto256Kernel(
-    ArrayWrapper<HistoCounter*, ACTIVE_CHANNELS>    d_block_histograms,     ///< [in] Histogram counter data having logical dimensions <tt>HistoCounter[ACTIVE_CHANNELS][num_threadblocks][256]</tt>
-    ArrayWrapper<HistoCounter*, ACTIVE_CHANNELS>    d_out_histograms,       ///< [out] Histogram counter data having logical dimensions <tt>HistoCounter[ACTIVE_CHANNELS][256]</tt>
-    int                                             num_threadblocks)       ///< [in] Number of threadblock histograms per channel in \p d_block_histograms
+    HistoCounter*                                   d_block_histograms_linear,  ///< [in] Histogram counter data having logical dimensions <tt>HistoCounter[ACTIVE_CHANNELS][num_threadblocks][256]</tt>
+    ArrayWrapper<HistoCounter*, ACTIVE_CHANNELS>    d_out_histograms,           ///< [out] Histogram counter data having logical dimensions <tt>HistoCounter[ACTIVE_CHANNELS][256]</tt>
+    int                                             num_threadblocks)           ///< [in] Number of threadblock histograms per channel in \p d_block_histograms
 {
-    // Output a histogram for each channel
-    #pragma unroll
-    for (int CHANNEL = 0; CHANNEL < ACTIVE_CHANNELS; ++CHANNEL)
+    // Accumulate threadblock-histograms from the channel
+    HistoCounter bin_aggregate = 0;
+
+    HistoCounter *d_block_channel_histograms = d_block_histograms_linear + (blockIdx.x * num_threadblocks * 256);
+
+    #pragma unroll 32
+    for (int block = 0; block < num_threadblocks; ++block)
     {
-        // Accumulate threadblock-histograms from the channel
-        HistoCounter bin_aggregate = 0;
-
-        #pragma unroll
-        for (int block = 0; block < num_threadblocks; ++block)
-        {
-            int block_offset = block * 256;
-            bin_aggregate += d_block_histograms.array[CHANNEL][block_offset + threadIdx.x];
-        }
-
-        // Output
-        d_out_histograms.array[CHANNEL][threadIdx.x] = bin_aggregate;
+        bin_aggregate += d_block_channel_histograms[(block * 256) + threadIdx.x];
     }
+
+    // Output
+    d_out_histograms.array[blockIdx.x][threadIdx.x] = bin_aggregate;
 }
 
+
+/******************************************************************************
+ * Texture references
+ *****************************************************************************/
+
+// Anonymous namespace
+namespace {
+
+/// Templated Texture reference type for multiplicand vector
+template <typename T>
+struct TexDeviceHisto256
+{
+    // Texture reference type
+    typedef texture<T, cudaTextureType1D, cudaReadModeElementType> TexRef;
+
+    static TexRef ref;
+
+    /**
+     * Bind texture
+     */
+    static cudaError_t BindTexture(void *d_in, size_t &offset)
+    {
+        cudaChannelFormatDesc tex_desc = cudaCreateChannelDesc<T>();
+        if (d_in)
+        {
+            return (CubDebug(cudaBindTexture(&offset, ref, d_in, tex_desc)));
+        }
+        return cudaSuccess;
+    }
+
+    /**
+     * Unbind textures
+     */
+    static cudaError_t UnbindTexture()
+    {
+        return CubDebug(cudaUnbindTexture(ref));
+    }
+};
+
+// Texture reference definitions
+template <typename Value>
+typename TexDeviceHisto256<Value>::TexRef TexDeviceHisto256<Value>::ref = 0;
+
+
+} // Anonymous namespace
+
 #endif // DOXYGEN_SHOULD_SKIP_THIS
+
 
 
 /******************************************************************************
@@ -224,7 +272,7 @@ struct DeviceHisto256
     struct TunedPolicies<CHANNELS, ACTIVE_CHANNELS, BLOCK_ALGORITHM, 350>
     {
         typedef TilesHisto256Policy<128, 16,  BLOCK_ALGORITHM, GRID_MAPPING_EVEN_SHARE> MultiBlockPolicy;
-        enum { SUBSCRIPTION_FACTOR = 1 };
+        enum { SUBSCRIPTION_FACTOR = 4 };
     };
 
     /// SM30 tune
@@ -233,10 +281,10 @@ struct DeviceHisto256
     {
         typedef TilesHisto256Policy<
             128,
-            (BLOCK_ALGORITHM == BLOCK_BYTE_HISTO_SORT) ? 17 : 20,
+            (BLOCK_ALGORITHM == BLOCK_BYTE_HISTO_SORT) ? 17 : 16,
             BLOCK_ALGORITHM,
             (BLOCK_ALGORITHM == BLOCK_BYTE_HISTO_SORT) ? GRID_MAPPING_DYNAMIC : GRID_MAPPING_EVEN_SHARE> MultiBlockPolicy;
-        enum { SUBSCRIPTION_FACTOR = 1 };
+        enum { SUBSCRIPTION_FACTOR = 4 };
     };
 
     /// SM20 tune
@@ -245,10 +293,10 @@ struct DeviceHisto256
     {
         typedef TilesHisto256Policy<
             128,
-            (BLOCK_ALGORITHM == BLOCK_BYTE_HISTO_SORT) ? 17 : 20,
+            (BLOCK_ALGORITHM == BLOCK_BYTE_HISTO_SORT) ? 17 : 16,
             BLOCK_ALGORITHM,
             (BLOCK_ALGORITHM == BLOCK_BYTE_HISTO_SORT) ? GRID_MAPPING_DYNAMIC : GRID_MAPPING_EVEN_SHARE> MultiBlockPolicy;
-        enum { SUBSCRIPTION_FACTOR = 1 };
+        enum { SUBSCRIPTION_FACTOR = 2 };
     };
 
     /// SM10 tune
@@ -376,9 +424,6 @@ struct DeviceHisto256
                 multi_block_kernel_ptr,
                 multi_block_dispatch_params.block_threads))) break;
 
-            // Texture bind
-            if (CubDebug(error = BindTexture(d_samples, num_samples))) break;
-
         #endif
 
             // Determine grid size for the multi-block kernel
@@ -437,6 +482,9 @@ struct DeviceHisto256
                 d_histo_wrapper.array[CHANNEL] = d_histograms[CHANNEL];
             }
 
+            // Bind texture
+            if (CubDebug(error = d_samples.BindTexture())) break;
+
             // Invoke MultiBlockHisto256
             if (stream_synchronous) CubLog("Invoking multi_block_kernel_ptr<<<%d, %d, 0, %d>>>(), %d items per thread, %d SM occupancy\n",
                 multi_grid_size, multi_block_dispatch_params.block_threads, stream, multi_block_dispatch_params.items_per_thread, multi_sm_occupancy);
@@ -484,10 +532,10 @@ struct DeviceHisto256
                 #endif
 
                 if (stream_synchronous) CubLog("Invoking finalize_kernel_ptr<<<%d, %d, 0, %d>>>()\n",
-                    1, 256, stream);
+                    ACTIVE_CHANNELS, 256, stream);
 
-                finalize_kernel_ptr<<<1, 256, 0, stream>>>(
-                    d_temp_histo_wrapper,
+                finalize_kernel_ptr<<<ACTIVE_CHANNELS, 256, 0, stream>>>(
+                    d_block_histograms_linear,
                     d_histo_wrapper,
                     multi_grid_size);
             }
@@ -508,9 +556,8 @@ struct DeviceHisto256
         // Free queue allocation
         if (multi_block_dispatch_params.grid_mapping == GRID_MAPPING_DYNAMIC) error = CubDebug(queue.Free(device_allocator));
 
-        // Texture unbind
-        error = UnbindTexture();
-
+        // Unbind texture
+        error = CubDebug(d_samples.UnbindTexture());
 
         return error;
 
@@ -595,6 +642,101 @@ struct DeviceHisto256
     //---------------------------------------------------------------------
     // Public interface
     //---------------------------------------------------------------------
+
+    /**
+     * \brief A simple iterator wrapper for converting non-8b sample data into 8b bins.  Loads through texture when possible.
+     *
+     * \tparam T            The type of sample data to wrap.
+     * \tparam BinOp        Unary functor type for mapping objects of type /p T into 8b bins.  Must have member <tt>unsigned char operator()(const T &datum)</tt>.
+     */
+    template <typename T, typename BinOp>
+    class BinningIteratorRA
+    {
+    public:
+        typedef BinningIteratorRA                   self_type;
+        typedef unsigned char                       value_type;
+        typedef unsigned char                       reference;
+        typedef unsigned char*                      pointer;
+        typedef std::random_access_iterator_tag     iterator_category;
+        typedef int                                 difference_type;
+
+        __host__ __device__ __forceinline__ BinningIteratorRA(T* ptr, BinOp bin_op) :
+            bin_op(bin_op),
+            ptr(ptr) /* , offset(0) */ {}
+
+        __host__ __forceinline__ cudaError_t BindTexture()
+        {
+//            return TexDeviceHisto256<T>::BindTexture(ptr, offset);
+            return cudaSuccess;
+        }
+
+        __host__ __forceinline__ cudaError_t UnbindTexture()
+        {
+            return cudaSuccess;
+//            return TexDeviceHisto256<T>::UnbindTexture();
+        }
+
+        __host__ __device__ __forceinline__ self_type operator++()
+        {
+            self_type i = *this;
+            ptr++;
+//            offset++;
+            return i;
+        }
+
+        __host__ __device__ __forceinline__ self_type operator++(int junk)
+        {
+            ptr++;
+//            offset++;
+            return *this;
+        }
+
+        __host__ __device__ __forceinline__ reference operator*()
+        {
+//#ifndef __CUDA_ARCH__
+            return bin_op(*ptr);
+//#else
+//            return bin_op(tex1Dfetch(TexDeviceHisto256<T>::ref, offset));
+//#endif
+        }
+
+        template <typename SizeT> __host__ __device__ __forceinline__ reference operator[](SizeT n)
+        {
+//#ifndef __CUDA_ARCH__
+            return bin_op(*(ptr + n));
+//#else
+//            return bin_op(tex1Dfetch(TexDeviceHisto256<T>::ref, offset + n));
+//#endif
+        }
+
+        __host__ __device__ __forceinline__ pointer operator->()
+        {
+//#ifndef __CUDA_ARCH__
+            return &(bin_op(*ptr));
+//#else
+//            return &(bin_op(tex1Dfetch(TexDeviceHisto256<T>::ref, offset)));
+//#endif
+        }
+
+        __host__ __device__ __forceinline__ bool operator==(const self_type& rhs)
+        {
+//            return ((ptr == rhs.ptr) && (offset == offset));
+            return (ptr == rhs.ptr);
+        }
+
+        __host__ __device__ __forceinline__ bool operator!=(const self_type& rhs)
+        {
+//            return ((ptr != rhs.ptr) && (offset == offset));
+            return (ptr != rhs.ptr);
+        }
+
+    private:
+
+        BinOp   bin_op;
+        T*      ptr;
+//        size_t  offset;
+    };
+
 
     /**
      * \brief Computes a 256-bin device-wide histogram
