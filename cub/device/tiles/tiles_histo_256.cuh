@@ -75,39 +75,6 @@ struct TilesHisto256Policy
 };
 
 
-/******************************************************************************
- * Texture
- ******************************************************************************/
-
-// Texture reference type
-texture<unsigned char, cudaTextureType1D, cudaReadModeElementType> TilesHisto256Texref1B;
-
-/**
- * Bind textures
- */
-cudaError_t BindTexture(void *d_in, int elements)
-{
-    cudaChannelFormatDesc tex_desc = cudaCreateChannelDesc<unsigned char>();
-    if (d_in)
-    {
-        size_t offset;
-        size_t bytes = sizeof(unsigned char) * elements;
-        return CubDebug(cudaBindTexture(&offset, TilesHisto256Texref1B, d_in, tex_desc, bytes));
-    }
-    return cudaSuccess;
-}
-
-/**
- * Unbind textures
- */
-cudaError_t UnbindTexture()
-{
-    return CubDebug(cudaUnbindTexture(TilesHisto256Texref1B));
-}
-
-
-
-
 
 /******************************************************************************
  * TilesHisto256
@@ -160,26 +127,7 @@ private:
     // Utility operations
     //---------------------------------------------------------------------
 
-    /**
-     * Initialize shared histogram
-     */
-    template <typename HistoCounter>
-    static __device__ __forceinline__ void InitHistogram(HistoCounter histogram[256])
-    {
-        // Initialize histogram bin counts to zeros
-        int histo_offset = 0;
 
-        #pragma unroll
-        for(; histo_offset + BLOCK_THREADS <= 256; histo_offset += BLOCK_THREADS)
-        {
-            histogram[histo_offset + threadIdx.x] = 0;
-        }
-        // Finish up with guarded initialization if necessary
-        if ((histo_offset < BLOCK_THREADS) && (histo_offset + threadIdx.x < 256))
-        {
-            histogram[histo_offset + threadIdx.x] = 0;
-        }
-    }
 
     /**
      * Process one channel within a tile.
@@ -196,50 +144,57 @@ private:
         HistoCounter    (&histograms)[ACTIVE_CHANNELS][256],
         const int       &guarded_items = TILE_ITEMS)
     {
-        unsigned char items[ITEMS_PER_THREAD];
 
         // Load items in striped fashion
         if (guarded_items < TILE_ITEMS)
         {
-            // Guarded load with 255 as out-of-bounds default
+            unsigned char items[ITEMS_PER_THREAD];
+
+            // Assign our tid as the bin for out-of-bounds items (to give an even distribution), and keep track of how oob items to subtract out later
             int bounds = (guarded_items - (threadIdx.x * CHANNELS));
+            int invalid = 0;
 
             #pragma unroll
             for (int ITEM = 0; ITEM < ITEMS_PER_THREAD; ITEM++)
             {
-                items[ITEM] = ((ITEM * BLOCK_THREADS * CHANNELS) < bounds) ?
-                     ThreadLoad<PTX_LOAD_NONE>(d_in + channel + block_offset + (ITEM * BLOCK_THREADS * CHANNELS) + (threadIdx.x * CHANNELS)) :
-//                    tex1Dfetch(TilesHisto256Texref1B, channel + block_offset + (ITEM * BLOCK_THREADS * CHANNELS) + (threadIdx.x * CHANNELS)) :
-                     255;
+                if ((ITEM * BLOCK_THREADS * CHANNELS) < bounds)
+                {
+                    items[ITEM] = d_in[channel + block_offset + (ITEM * BLOCK_THREADS * CHANNELS) + (threadIdx.x * CHANNELS)];
+                }
+                else
+                {
+                    items[ITEM] = (BLOCK_THREADS > 256) ?
+                        threadIdx.x & 255 :
+                        threadIdx.x;
+
+                    invalid++;
+                }
             }
+
+            // Composite our histogram data
+            BlockHisto256T::Composite(smem_storage.block_histo, items, histograms[channel]);
+
+            __syncthreads();
+
+            histograms[channel][threadIdx.x] -= invalid;
         }
         else
         {
+            unsigned char items[ITEMS_PER_THREAD];
+
             // Unguarded loads
             #pragma unroll
             for (int ITEM = 0; ITEM < ITEMS_PER_THREAD; ITEM++)
             {
-                items[ITEM] = ThreadLoad<PTX_LOAD_NONE>(d_in + channel + block_offset + (ITEM * BLOCK_THREADS * CHANNELS) + (threadIdx.x * CHANNELS));
-//                items[ITEM] = tex1Dfetch(TilesHisto256Texref1B, channel + block_offset + (ITEM * BLOCK_THREADS * CHANNELS) + (threadIdx.x * CHANNELS));
+                items[ITEM] = d_in[channel + block_offset + (ITEM * BLOCK_THREADS * CHANNELS) + (threadIdx.x * CHANNELS)];
             }
-        }
 
-        // Prevent hoisting
-//        __threadfence_block();
+            // Prevent hoisting
+            __threadfence_block();
 
-        // Composite our histogram data
-        BlockHisto256T::Composite(smem_storage.block_histo, items, histograms[channel]);
+            // Composite our histogram data
+            BlockHisto256T::Composite(smem_storage.block_histo, items, histograms[channel]);
 
-        // Correct any over-counting in the last bin if tile was partially-full
-        if (guarded_items < TILE_ITEMS)
-        {
-            __syncthreads();
-
-            if (threadIdx.x == 0)
-            {
-                HistoCounter extra = (TILE_ITEMS - guarded_items) / CHANNELS;
-                histograms[channel][255] -= extra;
-            }
         }
     }
 
@@ -265,7 +220,11 @@ private:
         #pragma unroll
         for (int CHANNEL = 1; CHANNEL < ACTIVE_CHANNELS; ++CHANNEL)
         {
-            __syncthreads();
+            // Skip synchro for atomic version since we know it doesn't use any smem
+            if (BLOCK_ALGORITHM !=  BLOCK_BYTE_HISTO_ATOMIC)
+            {
+                __syncthreads();
+            }
 
             ConsumeTileChannel(smem_storage, CHANNEL, d_in, block_offset, histograms, guarded_items);
         }
@@ -297,7 +256,7 @@ public:
         #pragma unroll
         for (int CHANNEL = 0; CHANNEL < ACTIVE_CHANNELS; ++CHANNEL)
         {
-            InitHistogram(histograms[CHANNEL]);
+            BlockHisto256T::InitHistogram(histograms[CHANNEL]);
         }
 
         __syncthreads();
@@ -342,7 +301,7 @@ public:
         #pragma unroll
         for (int CHANNEL = 0; CHANNEL < ACTIVE_CHANNELS; ++CHANNEL)
         {
-            InitHistogram(histograms[CHANNEL]);
+            BlockHisto256T::InitHistogram(histograms[CHANNEL]);
         }
 
         // Dynamically consume tiles
