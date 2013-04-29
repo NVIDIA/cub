@@ -212,7 +212,7 @@ void Test(
     CubDebugExit(cudaMemcpy(&h_cnp_error, d_cnp_error, sizeof(cudaError_t) * 1, cudaMemcpyDeviceToHost));
     if (h_cnp_error == cudaErrorInvalidConfiguration)
     {
-        printf("CNP reduction not supported");
+        printf("CNP not supported");
     }
     else
     {
@@ -300,7 +300,6 @@ int main(int argc, char** argv)
         printf("%s "
             "[--device=<device-id>] "
             "[--v] "
-            "[--quick]"
             "[--cnp]"
             "\n", argv[0]);
         exit(0);
@@ -309,36 +308,32 @@ int main(int argc, char** argv)
     // Initialize device
     CubDebugExit(args.DeviceInit());
 
-//    if (quick)
-    {
-        // Quick test
-        typedef int T;
-//        typedef unsigned short T;
-        Test<T>(num_items, UNIFORM, Sum<T>(), CUB_TYPE_STRING(T));
-    }
-/*    else
-    {
-        // primitives
-        Test<char>(Sum<char>(), CUB_TYPE_STRING(char));
-        Test<short>(Sum<short>(), CUB_TYPE_STRING(short));
-        Test<int>(Sum<int>(), CUB_TYPE_STRING(int));
-        Test<long long>(Sum<long long>(), CUB_TYPE_STRING(long long));
+    // Quick test
+    typedef int T;
+//    typedef unsigned short T;
+    Test<T>(num_items, UNIFORM, Sum<T>(), CUB_TYPE_STRING(T));
 
-        // vector types
-        Test<char2>(Sum<char2>(), CUB_TYPE_STRING(char2));
-        Test<short2>(Sum<short2>(), CUB_TYPE_STRING(short2));
-        Test<int2>(Sum<int2>(), CUB_TYPE_STRING(int2));
-        Test<longlong2>(Sum<longlong2>(), CUB_TYPE_STRING(longlong2));
+/*
+    // primitives
+    Test<char>(Sum<char>(), CUB_TYPE_STRING(char));
+    Test<short>(Sum<short>(), CUB_TYPE_STRING(short));
+    Test<int>(Sum<int>(), CUB_TYPE_STRING(int));
+    Test<long long>(Sum<long long>(), CUB_TYPE_STRING(long long));
 
-        Test<char4>(Sum<char4>(), CUB_TYPE_STRING(char4));
-        Test<short4>(Sum<short4>(), CUB_TYPE_STRING(short4));
-        Test<int4>(Sum<int4>(), CUB_TYPE_STRING(int4));
-        Test<longlong4>(Sum<longlong4>(), CUB_TYPE_STRING(longlong4));
+    // vector types
+    Test<char2>(Sum<char2>(), CUB_TYPE_STRING(char2));
+    Test<short2>(Sum<short2>(), CUB_TYPE_STRING(short2));
+    Test<int2>(Sum<int2>(), CUB_TYPE_STRING(int2));
+    Test<longlong2>(Sum<longlong2>(), CUB_TYPE_STRING(longlong2));
 
-        // Complex types
-        Test<TestFoo>(Sum<TestFoo>(), CUB_TYPE_STRING(TestFoo));
-        Test<TestBar>(Sum<TestBar>(), CUB_TYPE_STRING(TestBar));
-    }
+    Test<char4>(Sum<char4>(), CUB_TYPE_STRING(char4));
+    Test<short4>(Sum<short4>(), CUB_TYPE_STRING(short4));
+    Test<int4>(Sum<int4>(), CUB_TYPE_STRING(int4));
+    Test<longlong4>(Sum<longlong4>(), CUB_TYPE_STRING(longlong4));
+
+    // Complex types
+    Test<TestFoo>(Sum<TestFoo>(), CUB_TYPE_STRING(TestFoo));
+    Test<TestBar>(Sum<TestBar>(), CUB_TYPE_STRING(TestBar));
 */
     return 0;
 }

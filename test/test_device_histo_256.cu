@@ -273,7 +273,7 @@ void Test(
     CubDebugExit(cudaMemcpy(&h_cnp_error, d_cnp_error, sizeof(cudaError_t) * 1, cudaMemcpyDeviceToHost));
     if (h_cnp_error == cudaErrorInvalidConfiguration)
     {
-        printf("CNP reduction not supported");
+        printf("CNP not supported");
     }
     else
     {
@@ -334,8 +334,8 @@ int main(int argc, char** argv)
 
     // Initialize command line
     CommandLineArgs args(argc, argv);
-    args.GetCmdLineArgument("n", num_samples);
-    args.GetCmdLineArgument("i", g_iterations);
+    args.GetCmdLineArgument("n", num_samples);          // Total number of samples across all channels
+    args.GetCmdLineArgument("i", g_iterations);         // Timing iterations
     g_verbose = args.CheckCmdLineFlag("v");             // Display input/output data
     g_atomic = args.CheckCmdLineFlag("atomic");         // Use atomic or regular (sorting) algorithm
     bool rgba = args.CheckCmdLineFlag("rgba");          // Single channel vs. 4-channel (3 histograms)
@@ -350,6 +350,8 @@ int main(int argc, char** argv)
             "[--cnp]"
             "[--rgba]"
             "[--uniform]"
+            "[--n=<total number of samples across all channels>]"
+            "[--i=<timing iterations>]"
             "\n", argv[0]);
         exit(0);
     }
