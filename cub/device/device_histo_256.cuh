@@ -231,7 +231,11 @@ struct DeviceHisto256
     template <int CHANNELS, int ACTIVE_CHANNELS, BlockHisto256Algorithm BLOCK_ALGORITHM>
     struct TunedPolicies<CHANNELS, ACTIVE_CHANNELS, BLOCK_ALGORITHM, 300>
     {
-        typedef TilesHisto256Policy<128, 16,  BLOCK_ALGORITHM, GRID_MAPPING_EVEN_SHARE> MultiBlockPolicy;
+        typedef TilesHisto256Policy<
+            128,
+            (BLOCK_ALGORITHM == BLOCK_BYTE_HISTO_SORT) ? 17 : 20,
+            BLOCK_ALGORITHM,
+            (BLOCK_ALGORITHM == BLOCK_BYTE_HISTO_SORT) ? GRID_MAPPING_DYNAMIC : GRID_MAPPING_EVEN_SHARE> MultiBlockPolicy;
         enum { SUBSCRIPTION_FACTOR = 1 };
     };
 
