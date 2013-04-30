@@ -34,9 +34,9 @@
  * \tableofcontents
  *
  * \htmlonly
- * <a href="download_cub.html"><img src="download-icon.png" style="position:relative; bottom:-10px; border:0px;"/></a>
+ * <a href="http://research.nvidia.com"><img src="nvresearch.png" style="position:relative; bottom:-10px; border:0px;"/></a>
  * &nbsp;&nbsp;
- * <a href="download_cub.html"><em>Download CUB!</em></a>
+ * <a href="http://research.nvidia.com"><em>NVIDIA Research</em></a>
  * <br>
  * <a href="https://github.com/NVlabs/cub"><img src="github-icon-747d8b799a48162434b2c0595ba1317e.png" style="position:relative; bottom:-10px; border:0px;"/></a>
  * &nbsp;&nbsp;
@@ -45,59 +45,63 @@
  * <a href="http://groups.google.com/group/cub-users"><img src="groups-icon.png" style="position:relative; bottom:-10px; border:0px;"/></a>
  * &nbsp;&nbsp;
  * <a href="http://groups.google.com/group/cub-users"><em>Join the cub-users discussion forum!</em></a>
+ * <br>
+ * <a href="download_cub.html"><img src="download-icon.png" style="position:relative; bottom:-10px; border:0px;"/></a>
+ * &nbsp;&nbsp;
+ * <a href="download_cub.html"><em>Download CUB!</em></a>
  * \endhtmlonly
  *
  * \section sec0 (1) What is CUB?
  *
  * \par
- * CUB is a library of high-performance parallel primitives and other utilities for
- * constructing CUDA software. CUB enhances productivity, performance, and portability
- * by providing reusable software abstractions at every layer of execution within the 
- * CUDA programming model:
- * - [Device-level primitives] (group___device_module.html): histogram, reduction, etc.
- * - [Block-level primitives] (group___block_module.html): radix sort, prefix scan, histogram, reduction, etc.
- * - [Warp-level primitives] (group___warp_module.html): prefix scan, reduction, etc.
- * - [Thread-level primitives] (group___thread_module.html): vectorized I/O, 
+ * <b><em>Overview</em></b>. CUB is an open-source library of high performance 
+ * primitives and utilities for constructing CUDA software. CUB provides reusable 
+ * software components for every layer of execution within the CUDA programming 
+ * model:
+ * - [<b><em>Device-wide primitives</em></b>] (group___device_module.html) 
+ *   - Global histogram, reduction, etc.  
+ *   - Compatible with CUDA dynamic/nested parallelism
+ * - [<b><em>Block-wide primitives</em></b>] (group___block_module.html)
+ *   - Local radix sort, prefix scan, histogram, reduction, I/O, etc.
+ *   - Compatible with arbitrary thread block sizes 
+ * - [<b><em>Warp-wide primitives</em></b>] (group___warp_module.html)
+ *   - Local prefix scan, reduction, etc.
+ * - [<b><em>Thread</em></b>](group___thread_module.html), [<b><em>grid dispatch</em></b>](group___grid_module.html), and [<b><em>resource utilities</em></b>] (group___thread_module.html)
+ *   - PTX intrinsics, device reflection, work distribution, caching memory allocators, etc. 
  *
+ * \par 
+ * <b><em>Motivation</em></b>. CUB is inspired by the following goals:
+ * - <em>Absolute performance</em>.  CUB primitives are specialized and tuned to 
+ *   best match the features and capabilities of every CUDA architecture.
+ * - <em>Enhanced programmer productivity</em>.  CUB primitives allow developers to quickly 
+ *   string together sequences of complex parallel operations at all levels of execution.       
+ * - <em>Reduced maintenance burden</em>.  CUB provides layers of abstraction over
+ *   the complexities of diverse CUDA hardware.  With CUB, applications can 
+ * 	 enjoy performance-portability without the intensive rewriting or porting efforts 
+ *   typically needed to accommodate new device instructions or behavior.  
+ * 
  * \par
- * In particular, CUB is unique in that it provides cooperative block-level and 
+ * <b><em>Collective primitives</em></b>. CUB is unique in that it provides cooperative block-level and 
  * warp-level parallel primitives.  Unlike traditional library software 
  * components, these operations are <em>collective</em>, i.e., they are called 
  * by a group of parallel SIMT threads rather than by a single sequential 
  * thread.  These collective primitives are not bound to any particular width 
  * of parallelism or to any particular data type.  This allows them to be 
- * flexible and tunable to fit the needs of the enclosing kernel computation. 
+ * flexible and tunable to fit the needs of the enclosing kernel computation.
+ * \par
  * Thus CUB is [<em>CUDA Unbound</em>](index.html).
  *
- * \image html cub_overview.png
- 
- 
- * - [Device-level] (http://docs.nvidia.com/cuda/cuda-c-programming-guide/index.html#programming-model),
- * - [Block-level] (http://docs.nvidia.com/cuda/cuda-c-programming-guide/index.html#programming-model),
- * - [Warp-level] (http://docs.nvidia.com/cuda/cuda-c-programming-guide/index.html#hardware-implementation), and
- * - [Thread-level](http://docs.nvidia.com/cuda/cuda-c-programming-guide/index.html#programming-model) operations.
- 
- 
- *
  * \par
- * Browse our collections of:
- * - [<b>Cooperative primitives</b>](group___simt_coop.html), including:
- *   - Thread block operations (e.g., radix sort, prefix scan, reduction, etc.)
- *   - Warp operations (e.g., prefix scan)
- * - [<b>SIMT utilities</b>](group___simt_utils.html), including:
- *   - Tile-based I/O utilities (e.g., for performing {vectorized, coalesced} data movement of {blocked, striped} data tiles)
- *   - Low-level thread I/O using cache-modifiers
- *   - Abstractions for thread block work distribution (e.g., work-stealing, even-share, etc.)
- * - [<b>Host utilities</b>](group___host_util.html), including:
- *   - Caching allocator for quick management of device temporaries
- *   - Device reflection
- *
+ * \image html cub_overview.png
+ * <div class="centercaption">Orientation of <em>collective</em> CUB thread block primitives within the CUDA software stack</div>
+ * 
  * \section sec2 (2) Recent news
  *
  * \par
  * <table>
- * <tr> <td>04/04/2013</td> <td style="white-space: nowrap">[CUB v0.9.2 Update Release](https://github.com/NVlabs/cub/archive/0.9.2.zip)</td> 	<td>Minor cosmetic, feature, and compilation updates.  See the [change-log](https://github.com/NVlabs/cub/blob/master/CHANGE_LOG.TXT) for further details.</td> </tr>
- * <tr> <td>03/07/2013</td> <td style="white-space: nowrap">[CUB v0.9 Preview Release](https://github.com/NVlabs/cub/archive/0.9.zip)</td> 		<td>CUB is the first durable, high-performance library of cooperative threadblock, warp, and thread primitives for CUDA kernel programming. More primitives and examples coming soon!</td> </tr>
+ * <tr> <td>04/30/2013</td> <td style="white-space: nowrap">[CUB v0.9.3 (update release)](https://github.com/NVlabs/cub/archive/0.9.3.zip)</td> 	<td>Introduced several new device-wide and block-wide primitives, including 256-bin histogram.  Misc. cosmetic and bug fixes.  See the [change-log](https://github.com/NVlabs/cub/blob/master/CHANGE_LOG.TXT) for further details.</td> </tr>
+ * <tr> <td>04/04/2013</td> <td style="white-space: nowrap">[CUB v0.9.2 (update release)](https://github.com/NVlabs/cub/archive/0.9.2.zip)</td> 	<td>Minor cosmetic, feature, and compilation updates.  See the [change-log](https://github.com/NVlabs/cub/blob/master/CHANGE_LOG.TXT) for further details.</td> </tr>
+ * <tr> <td>03/07/2013</td> <td style="white-space: nowrap">[CUB v0.9 ("preview" release)](https://github.com/NVlabs/cub/archive/0.9.zip)</td> 		<td>CUB is the first durable, high-performance library of cooperative threadblock, warp, and thread primitives for CUDA kernel programming. More primitives and examples coming soon!</td> </tr>
  * </table> 
  *
  * \section sec3 (3) A simple example
@@ -190,11 +194,26 @@
  * \section sec5 (5) Where is CUB positioned in the CUDA ecosystem?
  *
  * \par
- * CUDA's programming model embodies three different levels of program execution, each
- * engendering its own abstraction layer in the CUDA software stack (i.e., the "black boxes"
- * below):
+ * The CUDA ecosystem engenders four different layers of software abstraction:
  *
  * <table border="0px" cellpadding="0px" cellspacing="0px"><tr>
+ * <td width="50%">
+ * \par
+ * <b>Runtime-agnostic</b>.  A single thread calls through a library interface to 
+ * perform some data-parallel function.  The use of any particular parallel 
+ * or sequential computing backend (e.g., CUDA, TBB, OpenMP, etc.) is opaque to the caller.  
+ * The interfaces provided by such libraries are not CUDA-specific.  These libraries
+ * can use CUB device-wide primitives as  Examples include:
+ * - [<b><em>Thrust</em></b>](http://thrust.github.com/)
+ * - [<b><em>Hemi</em></b>](https://github.com/harrism/hemi)
+ * - [<b><em>ArrayFire</em></b>](http://www.accelereyes.com/products/arrayfire)
+ * </td>
+ * <td width="50%">
+ * \htmlonly
+ * <a href="generic_abstraction.png"><img src="generic_abstraction.png" width="100%" border="0px"/></a>
+ * \endhtmlonly
+ * </td>
+ * </tr><tr>
  * <td width="50%">
  * \par
  * <b>CUDA kernel</b>.  A single CPU thread invokes a CUDA kernel to perform
@@ -204,7 +223,7 @@
  * - [<b><em>cuBLAS</em></b>](https://developer.nvidia.com/cublas)
  * - [<b><em>cuFF</em>T</b>](https://developer.nvidia.com/cufft)
  * - [<b><em>cuSPARSE</em></b>](https://developer.nvidia.com/cusparse)
- * - [<b><em>Thrust</em></b>](http://thrust.github.com/)
+ * - [<b><em>CUB</em></b>](index.html)
  * </td>
  * <td width="50%">
  * \htmlonly
@@ -321,14 +340,14 @@
  * \par
  * \image html tile.png
  * <div class="centercaption">Tile of eight ordered data items</div>
-
+ *
  * \par
  * When the tile size equals the thread block size, the
  * mapping of data onto threads is straightforward (one datum per thread).
  * However, there are often performance advantages for processing more
  * than one datum per thread.  For these scenarios, CUB primitives
- * will specify which of the following paritioning alternatives they 
- * accomodate:
+ * will specify which of the following partitioning alternatives they 
+ * accommodate:
  *
  * <table border="0px" cellpadding="0px" cellspacing="0px"><tr>
  * <td>

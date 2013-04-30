@@ -108,13 +108,13 @@ var searchBox = new SearchBox("searchBox", "search",false,'Search');
 <div class="textblock"><h3>template&lt;int BLOCK_THREADS, int ITEMS_PER_THREAD, BlockHisto256Algorithm ALGORITHM = BLOCK_BYTE_HISTO_SORT&gt;<br/>
 class cub::BlockHisto256&lt; BLOCK_THREADS, ITEMS_PER_THREAD, ALGORITHM &gt;</h3>
 
-<p><a class="el" href="classcub_1_1_block_histo256.html" title="BlockHisto256 provides methods for constructing (and compositing into) 256-valued histograms from 8b ...">BlockHisto256</a> provides methods for constructing (and compositing into) 256-valued histograms from 8b data partitioned across threads within a CUDA thread block. </p>
+<p><a class="el" href="classcub_1_1_block_histo256.html" title="BlockHisto256 provides methods for constructing (and compositing into) 256-bin histograms from 8b dat...">BlockHisto256</a> provides methods for constructing (and compositing into) 256-bin histograms from 8b data partitioned across threads within a CUDA thread block. </p>
 <div class="image">
 <img src="histogram_logo.png" alt="histogram_logo.png"/>
 <div class="caption">
 .</div></div>
  <dl class="section user"><dt>Overview</dt><dd>A <a href="http://en.wikipedia.org/wiki/Histogram"><em>histogram</em></a> counts the number of observations that fall into each of the disjoint categories (known as <em>bins</em>).</dd></dl>
-<dl class="section user"><dt></dt><dd>For convenience, <a class="el" href="classcub_1_1_block_histo256.html" title="BlockHisto256 provides methods for constructing (and compositing into) 256-valued histograms from 8b ...">BlockHisto256</a> provides alternative entrypoints that differ by:<ul>
+<dl class="section user"><dt></dt><dd>For convenience, <a class="el" href="classcub_1_1_block_histo256.html" title="BlockHisto256 provides methods for constructing (and compositing into) 256-bin histograms from 8b dat...">BlockHisto256</a> provides alternative entrypoints that differ by:<ul>
 <li>Complete/incremental composition (compute a new histogram vs. update existing histogram data)</li>
 </ul>
 </dd></dl>
@@ -126,7 +126,7 @@ class cub::BlockHisto256&lt; BLOCK_THREADS, ITEMS_PER_THREAD, ALGORITHM &gt;</h3
   </table>
   </dd>
 </dl>
-<dl class="section user"><dt>Algorithm</dt><dd><a class="el" href="classcub_1_1_block_histo256.html" title="BlockHisto256 provides methods for constructing (and compositing into) 256-valued histograms from 8b ...">BlockHisto256</a> can be (optionally) configured to use different algorithms:<ol type="1">
+<dl class="section user"><dt>Algorithm</dt><dd><a class="el" href="classcub_1_1_block_histo256.html" title="BlockHisto256 provides methods for constructing (and compositing into) 256-bin histograms from 8b dat...">BlockHisto256</a> can be (optionally) configured to use different algorithms:<ol type="1">
 <li><b><a class="el" href="namespacecub.html#a0f61554b5c901fcc01adb8af3d9aaccaa5ca4cd67fcb7cc2a2e5fad154828f48d">cub::BLOCK_BYTE_HISTO_SORT</a></b>. Sorting followed by differentiation. <a class="el" href="namespacecub.html#a0f61554b5c901fcc01adb8af3d9aacca">More...</a></li>
 <li><b><a class="el" href="namespacecub.html#a0f61554b5c901fcc01adb8af3d9aaccaa0c3b7f30e0f0738bf508fdbdbe650f46">cub::BLOCK_BYTE_HISTO_ATOMIC</a></b>. Use atomic addition to update byte counts directly. <a class="el" href="namespacecub.html#a0f61554b5c901fcc01adb8af3d9aacca">More...</a></li>
 </ol>
@@ -152,7 +152,7 @@ class cub::BlockHisto256&lt; BLOCK_THREADS, ITEMS_PER_THREAD, ALGORITHM &gt;</h3
 <div class="line">__global__ <span class="keywordtype">void</span> SomeKernel(...)</div>
 <div class="line">{</div>
 <div class="line">     <span class="comment">// Parameterize BlockHisto256 for 128 threads</span></div>
-<div class="line">     <span class="keyword">typedef</span> <a class="code" href="classcub_1_1_block_histo256.html" title="BlockHisto256 provides methods for constructing (and compositing into) 256-valued histograms from 8b ...">cub::BlockHisto256&lt;128&gt;</a> BlockHisto256;</div>
+<div class="line">     <span class="keyword">typedef</span> <a class="code" href="classcub_1_1_block_histo256.html" title="BlockHisto256 provides methods for constructing (and compositing into) 256-bin histograms from 8b dat...">cub::BlockHisto256&lt;128&gt;</a> BlockHisto256;</div>
 <div class="line"></div>
 <div class="line">     <span class="comment">// Declare shared memory for BlockHisto256</span></div>
 <div class="line">     __shared__ <span class="keyword">typename</span> <a class="code" href="classcub_1_1_block_histo256.html#a620661d7ec6ab2fc9d0d843329c901ff" title="The operations exposed by BlockHisto256 require shared memory of this type. This opaque storage can b...">BlockHisto256::SmemStorage</a> smem_storage;</div>
@@ -177,7 +177,7 @@ class cub::BlockHisto256&lt; BLOCK_THREADS, ITEMS_PER_THREAD, ALGORITHM &gt;</h3
 <div class="line">__global__ <span class="keywordtype">void</span> SomeKernel(..., <span class="keywordtype">int</span> *d_histogram)</div>
 <div class="line">{</div>
 <div class="line">     <span class="comment">// Parameterize BlockHisto256</span></div>
-<div class="line">     <span class="keyword">typedef</span> <a class="code" href="classcub_1_1_block_histo256.html" title="BlockHisto256 provides methods for constructing (and compositing into) 256-valued histograms from 8b ...">cub::BlockHisto256&lt;BLOCK_THREADS&gt;</a> BlockHisto256;</div>
+<div class="line">     <span class="keyword">typedef</span> <a class="code" href="classcub_1_1_block_histo256.html" title="BlockHisto256 provides methods for constructing (and compositing into) 256-bin histograms from 8b dat...">cub::BlockHisto256&lt;BLOCK_THREADS&gt;</a> BlockHisto256;</div>
 <div class="line"></div>
 <div class="line">     <span class="comment">// Declare shared memory for BlockHisto256</span></div>
 <div class="line">     __shared__ <span class="keyword">typename</span> <a class="code" href="classcub_1_1_block_histo256.html#a620661d7ec6ab2fc9d0d843329c901ff" title="The operations exposed by BlockHisto256 require shared memory of this type. This opaque storage can b...">BlockHisto256::SmemStorage</a> smem_storage;</div>
@@ -196,7 +196,7 @@ class cub::BlockHisto256&lt; BLOCK_THREADS, ITEMS_PER_THREAD, ALGORITHM &gt;</h3
 Public Types</h2></td></tr>
 <tr class="memitem:a620661d7ec6ab2fc9d0d843329c901ff"><td class="memItemLeft" align="right" valign="top"><a class="anchor" id="a620661d7ec6ab2fc9d0d843329c901ff"></a>
 typedef _SmemStorage&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classcub_1_1_block_histo256.html#a620661d7ec6ab2fc9d0d843329c901ff">SmemStorage</a></td></tr>
-<tr class="memdesc:a620661d7ec6ab2fc9d0d843329c901ff"><td class="mdescLeft">&#160;</td><td class="mdescRight">The operations exposed by <a class="el" href="classcub_1_1_block_histo256.html" title="BlockHisto256 provides methods for constructing (and compositing into) 256-valued histograms from 8b ...">BlockHisto256</a> require shared memory of this type. This opaque storage can be allocated directly using the <code>__shared__</code> keyword. Alternatively, it can be aliased to externally allocated shared memory or <code>union</code>'d with other types to facilitate shared memory reuse. <br/></td></tr>
+<tr class="memdesc:a620661d7ec6ab2fc9d0d843329c901ff"><td class="mdescLeft">&#160;</td><td class="mdescRight">The operations exposed by <a class="el" href="classcub_1_1_block_histo256.html" title="BlockHisto256 provides methods for constructing (and compositing into) 256-bin histograms from 8b dat...">BlockHisto256</a> require shared memory of this type. This opaque storage can be allocated directly using the <code>__shared__</code> keyword. Alternatively, it can be aliased to externally allocated shared memory or <code>union</code>'d with other types to facilitate shared memory reuse. <br/></td></tr>
 <tr class="separator:a620661d7ec6ab2fc9d0d843329c901ff"><td class="memSeparator" colspan="2">&#160;</td></tr>
 </table><table class="memberdecls">
 <tr class="heading"><td colspan="2"><h2 class="groupheader"><a name="pub-static-methods"></a>
@@ -377,7 +377,7 @@ template&lt;int ITEMS_PER_THREAD, typename HistoCounter &gt; </div>
 <!-- HTML footer for doxygen 1.8.3.1-->
 <!-- start footer part -->
 <hr class="footer"/><address class="footer"><small>
-Generated on Tue Apr 30 2013 01:43:33 for CUB by &#160;<a href="http://www.doxygen.org/index.html">
+Generated on Tue Apr 30 2013 15:22:27 for CUB by &#160;<a href="http://www.doxygen.org/index.html">
 <img class="footer" src="doxygen.png" alt="doxygen"/>
 </a> 1.8.3.1
 <br>

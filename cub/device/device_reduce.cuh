@@ -29,8 +29,7 @@
 
 /**
  * \file
- * cub::DeviceReduce provides variants of parallel reduction data residing
- * within a CUDA device's global memory.
+ * cub::DeviceReduce provides device-wide parallel operations for reducing data items residing within a CUDA device's global memory.
  */
 
 #pragma once
@@ -158,7 +157,7 @@ __global__ void SingleBlockReduceKernel(
  */
 
 /**
- * \brief DeviceReduce provides variants of parallel reduction data residing within a CUDA device's global memory. ![](reduce_logo.png)
+ * \brief DeviceReduce provides device-wide parallel operations for reducing data items residing within a CUDA device's global memory. ![](reduce_logo.png)
  */
 struct DeviceReduce
 {

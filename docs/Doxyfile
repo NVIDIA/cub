@@ -956,12 +956,14 @@ HTML_EXTRA_STYLESHEET  = extra_stylesheet.css
 # the files will be copied as-is; there are no commands or markers available.
 
 HTML_EXTRA_FILES       = download_cub.html 
+HTML_EXTRA_FILES       += images/nvresearch.png 
 HTML_EXTRA_FILES       += images/download-icon.png 
 HTML_EXTRA_FILES       += images/groups-icon.png 
 HTML_EXTRA_FILES       += images/github-icon-747d8b799a48162434b2c0595ba1317e.png 
 HTML_EXTRA_FILES       += images/favicon.ico 
 HTML_EXTRA_FILES       += images/favicon.png 
 HTML_EXTRA_FILES       += images/tab_b_alt.png 
+HTML_EXTRA_FILES       += images/generic_abstraction.png 
 HTML_EXTRA_FILES       += images/simt_abstraction.png 
 HTML_EXTRA_FILES       += images/kernel_abstraction.png 
 HTML_EXTRA_FILES       += images/devfun_abstraction.png

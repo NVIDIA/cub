@@ -106,9 +106,9 @@ var searchBox = new SearchBox("searchBox", "search",false,'Search');
 </ul>
 </div>
 <div class="textblock"> 
-<a href="download_cub.html"><img src="download-icon.png" style="position:relative; bottom:-10px; border:0px;"/></a>
+<a href="http://research.nvidia.com"><img src="nvresearch.png" style="position:relative; bottom:-10px; border:0px;"/></a>
 &nbsp;&nbsp;
-<a href="download_cub.html"><em>Download CUB!</em></a>
+<a href="http://research.nvidia.com"><em>NVIDIA Research</em></a>
 <br>
 <a href="https://github.com/NVlabs/cub"><img src="github-icon-747d8b799a48162434b2c0595ba1317e.png" style="position:relative; bottom:-10px; border:0px;"/></a>
 &nbsp;&nbsp;
@@ -117,39 +117,54 @@ var searchBox = new SearchBox("searchBox", "search",false,'Search');
 <a href="http://groups.google.com/group/cub-users"><img src="groups-icon.png" style="position:relative; bottom:-10px; border:0px;"/></a>
 &nbsp;&nbsp;
 <a href="http://groups.google.com/group/cub-users"><em>Join the cub-users discussion forum!</em></a>
+<br>
+<a href="download_cub.html"><img src="download-icon.png" style="position:relative; bottom:-10px; border:0px;"/></a>
+&nbsp;&nbsp;
+<a href="download_cub.html"><em>Download CUB!</em></a>
 <h1><a class="anchor" id="sec0"></a>
 (1) What is CUB?</h1>
-<dl class="section user"><dt></dt><dd>CUB is a library of high-performance parallel primitives and other utilities for constructing CUDA kernel software. CUB enhances productivity, performance, and portability by providing an abstraction layer over complex <a href="http://docs.nvidia.com/cuda/cuda-c-programming-guide/index.html#programming-model">block-level</a>, <a href="http://docs.nvidia.com/cuda/cuda-c-programming-guide/index.html#hardware-implementation">warp-level</a>, and <a href="http://docs.nvidia.com/cuda/cuda-c-programming-guide/index.html#programming-model">thread-level</a> operations.</dd></dl>
-<dl class="section user"><dt></dt><dd>CUB primitives are not bound to any particular width of parallelism or to any particular data type. This allows them to be flexible and tunable to fit your kernels' needs. Thus CUB is <a href="index.html"><em>CUDA Unbound</em></a>.</dd></dl>
-<div class="image">
-<img src="cub_overview.png" alt="cub_overview.png"/>
-</div>
-<dl class="section user"><dt></dt><dd>Browse our collections of:<ul>
-<li><a href="group___simt_coop.html"><b>Cooperative primitives</b></a>, including:<ul>
-<li>Thread block operations (e.g., radix sort, prefix scan, reduction, etc.)</li>
-<li>Warp operations (e.g., prefix scan)</li>
+<dl class="section user"><dt></dt><dd><b><em>Overview</em></b>. CUB is an open-source library of high performance primitives and utilities for constructing CUDA software. CUB provides reusable software components for every layer of execution within the CUDA programming model:<ul>
+<li><a href="group___device_module.html"><b><em>Device-wide primitives</em></b></a><ul>
+<li>Global histogram, reduction, etc.</li>
+<li>Compatible with CUDA dynamic/nested parallelism</li>
 </ul>
 </li>
-<li><a href="group___simt_utils.html"><b>SIMT utilities</b></a>, including:<ul>
-<li>Tile-based I/O utilities (e.g., for performing {vectorized, coalesced} data movement of {blocked, striped} data tiles)</li>
-<li>Low-level thread I/O using cache-modifiers</li>
-<li>Abstractions for thread block work distribution (e.g., work-stealing, even-share, etc.)</li>
+<li><a href="group___block_module.html"><b><em>Block-wide primitives</em></b></a><ul>
+<li>Local radix sort, prefix scan, histogram, reduction, I/O, etc.</li>
+<li>Compatible with arbitrary thread block sizes</li>
 </ul>
 </li>
-<li><a href="group___host_util.html"><b>Host utilities</b></a>, including:<ul>
-<li>Caching allocator for quick management of device temporaries</li>
-<li>Device reflection</li>
+<li><a href="group___warp_module.html"><b><em>Warp-wide primitives</em></b></a><ul>
+<li>Local prefix scan, reduction, etc.</li>
+</ul>
+</li>
+<li><a href="group___thread_module.html"><b><em>Thread</em></b></a>, <a href="group___grid_module.html"><b><em>grid dispatch</em></b></a>, and <a href="group___thread_module.html"><b><em>resource utilities</em></b></a><ul>
+<li>PTX intrinsics, device reflection, work distribution, caching memory allocators, etc.</li>
 </ul>
 </li>
 </ul>
 </dd></dl>
+<dl class="section user"><dt></dt><dd><b><em>Motivation</em></b>. CUB is inspired by the following goals:<ul>
+<li><em>Absolute performance</em>. CUB primitives are specialized and tuned to best match the features and capabilities of every CUDA architecture.</li>
+<li><em>Enhanced programmer productivity</em>. CUB primitives allow developers to quickly string together sequences of complex parallel operations at all levels of execution.</li>
+<li><em>Reduced maintenance burden</em>. CUB provides layers of abstraction over the complexities of diverse CUDA hardware. With CUB, applications can enjoy performance-portability without the intensive rewriting or porting efforts typically needed to accommodate new device instructions or behavior.</li>
+</ul>
+</dd></dl>
+<dl class="section user"><dt></dt><dd><b><em>Collective primitives</em></b>. CUB is unique in that it provides cooperative block-level and warp-level parallel primitives. Unlike traditional library software components, these operations are <em>collective</em>, i.e., they are called by a group of parallel SIMT threads rather than by a single sequential thread. These collective primitives are not bound to any particular width of parallelism or to any particular data type. This allows them to be flexible and tunable to fit the needs of the enclosing kernel computation. </dd></dl>
+<dl class="section user"><dt></dt><dd>Thus CUB is <a href="index.html"><em>CUDA Unbound</em></a>.</dd></dl>
+<dl class="section user"><dt></dt><dd><div class="image">
+<img src="cub_overview.png" alt="cub_overview.png"/>
+</div>
+ <div class="centercaption">Orientation of <em>collective</em> CUB thread block primitives within the CUDA software stack</div></dd></dl>
 <h1><a class="anchor" id="sec2"></a>
 (2) Recent news</h1>
 <dl class="section user"><dt></dt><dd><table class="doxtable">
 <tr>
-<td>04/04/2013 </td><td style="white-space: nowrap"><a href="https://github.com/NVlabs/cub/archive/0.9.2.zip">CUB v0.9.2 Update Release</a> </td><td>Minor cosmetic, feature, and compilation updates. See the <a href="https://github.com/NVlabs/cub/blob/master/CHANGE_LOG.TXT">change-log</a> for further details.  </td></tr>
+<td>04/30/2013 </td><td style="white-space: nowrap"><a href="https://github.com/NVlabs/cub/archive/0.9.3.zip">CUB v0.9.3 (update release)</a> </td><td>Introduced several new device-wide and block-wide primitives, including 256-bin histogram. Misc. cosmetic and bug fixes. See the <a href="https://github.com/NVlabs/cub/blob/master/CHANGE_LOG.TXT">change-log</a> for further details.  </td></tr>
 <tr>
-<td>03/07/2013 </td><td style="white-space: nowrap"><a href="https://github.com/NVlabs/cub/archive/0.9.zip">CUB v0.9 Preview Release</a> </td><td>CUB is the first durable, high-performance library of cooperative threadblock, warp, and thread primitives for CUDA kernel programming. More primitives and examples coming soon!  </td></tr>
+<td>04/04/2013 </td><td style="white-space: nowrap"><a href="https://github.com/NVlabs/cub/archive/0.9.2.zip">CUB v0.9.2 (update release)</a> </td><td>Minor cosmetic, feature, and compilation updates. See the <a href="https://github.com/NVlabs/cub/blob/master/CHANGE_LOG.TXT">change-log</a> for further details.  </td></tr>
+<tr>
+<td>03/07/2013 </td><td style="white-space: nowrap"><a href="https://github.com/NVlabs/cub/archive/0.9.zip">CUB v0.9 ("preview" release)</a> </td><td>CUB is the first durable, high-performance library of cooperative threadblock, warp, and thread primitives for CUDA kernel programming. More primitives and examples coming soon!  </td></tr>
 </table>
 </dd></dl>
 <h1><a class="anchor" id="sec3"></a>
@@ -202,14 +217,24 @@ var searchBox = new SearchBox("searchBox", "search",false,'Search');
 </dd></dl>
 <h1><a class="anchor" id="sec5"></a>
 (5) Where is CUB positioned in the CUDA ecosystem?</h1>
-<dl class="section user"><dt></dt><dd>CUDA's programming model embodies three different levels of program execution, each engendering its own abstraction layer in the CUDA software stack (i.e., the "black boxes" below):</dd></dl>
+<dl class="section user"><dt></dt><dd>The CUDA ecosystem engenders four different layers of software abstraction:</dd></dl>
 <table  border="0px" cellpadding="0px" cellspacing="0px">
+<tr>
+<td width="50%"><dl class="section user"><dt></dt><dd><b>Runtime-agnostic</b>. A single thread calls through a library interface to perform some data-parallel function. The use of any particular parallel or sequential computing backend (e.g., CUDA, TBB, OpenMP, etc.) is opaque to the caller. The interfaces provided by such libraries are not CUDA-specific. These libraries can use CUB device-wide primitives as Examples include:<ul>
+<li><a href="http://thrust.github.com/"><b><em>Thrust</em></b></a></li>
+<li><a href="https://github.com/harrism/hemi"><b><em>Hemi</em></b></a></li>
+<li><a href="http://www.accelereyes.com/products/arrayfire"><b><em>ArrayFire</em></b></a>  </li>
+</ul>
+</dd></dl>
+</td><td width="50%"> 
+<a href="generic_abstraction.png"><img src="generic_abstraction.png" width="100%" border="0px"/></a>
+  </td></tr>
 <tr>
 <td width="50%"><dl class="section user"><dt></dt><dd><b>CUDA kernel</b>. A single CPU thread invokes a CUDA kernel to perform some data-parallel function. The incorporation of entire kernels (and their corresponding invocation stubs) into libraries is the most common form of code reuse for CUDA. Libraries of CUDA kernels include the following:<ul>
 <li><a href="https://developer.nvidia.com/cublas"><b><em>cuBLAS</em></b></a></li>
 <li><a href="https://developer.nvidia.com/cufft"><b><em>cuFF</em>T</b></a></li>
 <li><a href="https://developer.nvidia.com/cusparse"><b><em>cuSPARSE</em></b></a></li>
-<li><a href="http://thrust.github.com/"><b><em>Thrust</em></b></a>  </li>
+<li><a href="index.html"><b><em>CUB</em></b></a>  </li>
 </ul>
 </dd></dl>
 </td><td width="50%"> 
@@ -284,7 +309,7 @@ var searchBox = new SearchBox("searchBox", "search",false,'Search');
 <img src="tile.png" alt="tile.png"/>
 </div>
  <div class="centercaption">Tile of eight ordered data items</div></dd></dl>
-<dl class="section user"><dt></dt><dd>When the tile size equals the thread block size, the mapping of data onto threads is straightforward (one datum per thread). However, there are often performance advantages for processing more than one datum per thread. For these scenarios, CUB primitives will specify which of the following paritioning alternatives they accomodate:</dd></dl>
+<dl class="section user"><dt></dt><dd>When the tile size equals the thread block size, the mapping of data onto threads is straightforward (one datum per thread). However, there are often performance advantages for processing more than one datum per thread. For these scenarios, CUB primitives will specify which of the following partitioning alternatives they accommodate:</dd></dl>
 <table  border="0px" cellpadding="0px" cellspacing="0px">
 <tr>
 <td><dl class="section user"><dt></dt><dd><ul>
@@ -351,7 +376,7 @@ var searchBox = new SearchBox("searchBox", "search",false,'Search');
 <!-- HTML footer for doxygen 1.8.3.1-->
 <!-- start footer part -->
 <hr class="footer"/><address class="footer"><small>
-Generated on Tue Apr 30 2013 01:43:33 for CUB by &#160;<a href="http://www.doxygen.org/index.html">
+Generated on Tue Apr 30 2013 15:22:27 for CUB by &#160;<a href="http://www.doxygen.org/index.html">
 <img class="footer" src="doxygen.png" alt="doxygen"/>
 </a> 1.8.3.1
 <br>
