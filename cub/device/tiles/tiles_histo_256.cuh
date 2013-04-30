@@ -127,108 +127,178 @@ private:
     // Utility operations
     //---------------------------------------------------------------------
 
-
-
     /**
-     * Process one channel within a tile.
+     * Channel-oriented (one channel at a time)
      */
     template <
-        typename        InputIteratorRA,
-        typename        HistoCounter,
-        int             ACTIVE_CHANNELS>
-    static __device__ __forceinline__ void ConsumeTileChannel(
-        SmemStorage     &smem_storage,
-        int             channel,
-        InputIteratorRA d_in,
-        SizeT           block_offset,
-        HistoCounter    (&histograms)[ACTIVE_CHANNELS][256],
-        const int       &guarded_items = TILE_ITEMS)
+        BlockHisto256Algorithm _BLOCK_ALGORITHM,
+        bool CHANNEL_ORIENTED = ((_BLOCK_ALGORITHM == BLOCK_BYTE_HISTO_SORT) || (BLOCK_THREADS % CHANNELS != 0)) >
+    struct TilesHisto256Internal
     {
-
-        // Load items in striped fashion
-        if (guarded_items < TILE_ITEMS)
+        /**
+         * Process one channel within a tile.
+         */
+        template <
+            typename        InputIteratorRA,
+            typename        HistoCounter,
+            int             ACTIVE_CHANNELS>
+        static __device__ __forceinline__ void ConsumeTileChannel(
+            SmemStorage     &smem_storage,
+            int             channel,
+            InputIteratorRA d_in,
+            SizeT           block_offset,
+            HistoCounter    (&histograms)[ACTIVE_CHANNELS][256],
+            const int       &guarded_items = TILE_ITEMS)
         {
-            unsigned char items[ITEMS_PER_THREAD];
-
-            // Assign our tid as the bin for out-of-bounds items (to give an even distribution), and keep track of how oob items to subtract out later
-            int bounds = (guarded_items - (threadIdx.x * CHANNELS));
-            int invalid = 0;
-
-            #pragma unroll
-            for (int ITEM = 0; ITEM < ITEMS_PER_THREAD; ITEM++)
+            // Load items in striped fashion
+            if (guarded_items < TILE_ITEMS)
             {
-                if ((ITEM * BLOCK_THREADS * CHANNELS) < bounds)
+                unsigned char items[ITEMS_PER_THREAD];
+
+                // Assign our tid as the bin for out-of-bounds items (to give an even distribution), and keep track of how oob items to subtract out later
+                int bounds = (guarded_items - (threadIdx.x * CHANNELS));
+
+                #pragma unroll
+                for (int ITEM = 0; ITEM < ITEMS_PER_THREAD; ITEM++)
+                {
+                    items[ITEM] = ((ITEM * BLOCK_THREADS * CHANNELS) < bounds) ?
+                        d_in[channel + block_offset + (ITEM * BLOCK_THREADS * CHANNELS) + (threadIdx.x * CHANNELS)] :
+                        0;
+                }
+
+                // Composite our histogram data
+                BlockHisto256T::Composite(smem_storage.block_histo, items, histograms[channel]);
+
+                __syncthreads();
+
+                if (threadIdx.x == 0)
+                {
+                    int extra = (TILE_ITEMS - guarded_items) / CHANNELS;
+                    histograms[channel][0] -= extra;
+                }
+            }
+            else
+            {
+                unsigned char items[ITEMS_PER_THREAD];
+
+                // Unguarded loads
+                #pragma unroll
+                for (int ITEM = 0; ITEM < ITEMS_PER_THREAD; ITEM++)
                 {
                     items[ITEM] = d_in[channel + block_offset + (ITEM * BLOCK_THREADS * CHANNELS) + (threadIdx.x * CHANNELS)];
                 }
-                else
-                {
-                    items[ITEM] = (BLOCK_THREADS > 256) ?
-                        threadIdx.x & 255 :
-                        threadIdx.x;
 
-                    invalid++;
-                }
+                // Composite our histogram data
+                BlockHisto256T::Composite(smem_storage.block_histo, items, histograms[channel]);
             }
-
-            // Composite our histogram data
-            BlockHisto256T::Composite(smem_storage.block_histo, items, histograms[channel]);
-
-            __syncthreads();
-
-            histograms[channel][threadIdx.x] -= invalid;
         }
-        else
+
+
+        /**
+         * Process one tile.
+         */
+        template <
+            typename        InputIteratorRA,
+            typename        HistoCounter,
+            int             ACTIVE_CHANNELS>
+        static __device__ __forceinline__ void ConsumeTile(
+            SmemStorage     &smem_storage,
+            InputIteratorRA d_in,
+            SizeT           block_offset,
+            HistoCounter    (&histograms)[ACTIVE_CHANNELS][256],
+            const int       &guarded_items = TILE_ITEMS)
         {
-            unsigned char items[ITEMS_PER_THREAD];
+            // First channel
+            ConsumeTileChannel(smem_storage, 0, d_in, block_offset, histograms, guarded_items);
 
-            // Unguarded loads
+            // Iterate through remaining channels
             #pragma unroll
-            for (int ITEM = 0; ITEM < ITEMS_PER_THREAD; ITEM++)
+            for (int CHANNEL = 1; CHANNEL < ACTIVE_CHANNELS; ++CHANNEL)
             {
-                items[ITEM] = d_in[channel + block_offset + (ITEM * BLOCK_THREADS * CHANNELS) + (threadIdx.x * CHANNELS)];
+                __syncthreads();
+
+                ConsumeTileChannel(smem_storage, CHANNEL, d_in, block_offset, histograms, guarded_items);
             }
-
-            // Prevent hoisting
-            __threadfence_block();
-
-            // Composite our histogram data
-            BlockHisto256T::Composite(smem_storage.block_histo, items, histograms[channel]);
-
         }
-    }
+    };
+
 
 
     /**
-     * Process one tile.
+     * BLOCK_BYTE_HISTO_ATOMIC algorithmic variant
      */
-    template <
-        typename        InputIteratorRA,
-        typename        HistoCounter,
-        int             ACTIVE_CHANNELS>
-    static __device__ __forceinline__ void ConsumeTile(
-        SmemStorage     &smem_storage,
-        InputIteratorRA d_in,
-        SizeT           block_offset,
-        HistoCounter    (&histograms)[ACTIVE_CHANNELS][256],
-        const int       &guarded_items = TILE_ITEMS)
+    template <BlockHisto256Algorithm _BLOCK_ALGORITHM>
+    struct TilesHisto256Internal<_BLOCK_ALGORITHM, false>
     {
-        // First channel
-        ConsumeTileChannel(smem_storage, 0, d_in, block_offset, histograms, guarded_items);
-
-        // Iterate through remaining channels
-        #pragma unroll
-        for (int CHANNEL = 1; CHANNEL < ACTIVE_CHANNELS; ++CHANNEL)
+        /**
+         * Process one tile.
+         */
+        template <
+            typename        InputIteratorRA,
+            typename        HistoCounter,
+            int             ACTIVE_CHANNELS>
+        static __device__ __forceinline__ void ConsumeTile(
+            SmemStorage     &smem_storage,
+            InputIteratorRA d_in,
+            SizeT           block_offset,
+            HistoCounter    (&histograms)[ACTIVE_CHANNELS][256],
+            const int       &guarded_items = TILE_ITEMS)
         {
-            // Skip synchro for atomic version since we know it doesn't use any smem
-            if (BLOCK_ALGORITHM !=  BLOCK_BYTE_HISTO_ATOMIC)
+            int my_channel = threadIdx.x % CHANNELS;
+            if (guarded_items < TILE_ITEMS)
             {
-                __syncthreads();
-            }
+                #pragma unroll
+                for (int CHANNEL = 0; CHANNEL < CHANNELS; ++CHANNEL)
+                {
+                    int tile_offset     = (CHANNEL * TILE_CHANNEL_ITEMS);
+                    int bounds          = guarded_items - threadIdx.x;
 
-            ConsumeTileChannel(smem_storage, CHANNEL, d_in, block_offset, histograms, guarded_items);
+                    #pragma unroll
+                    for (int ITEM = 0; ITEM < ITEMS_PER_THREAD; ITEM++)
+                    {
+                        if (((ACTIVE_CHANNELS == 1) || (my_channel < ACTIVE_CHANNELS)) && (tile_offset + (ITEM * BLOCK_THREADS) < bounds))
+                        {
+                            unsigned char item = d_in[block_offset + tile_offset + (ITEM * BLOCK_THREADS) + threadIdx.x];
+                            atomicAdd(histograms[my_channel] + item, 1);
+                        }
+                    }
+                }
+            }
+            else
+            {
+                #pragma unroll
+                for (int CHANNEL = 0; CHANNEL < CHANNELS; ++CHANNEL)
+                {
+                    unsigned char items[ITEMS_PER_THREAD];
+
+                    int tile_offset = (CHANNEL * TILE_CHANNEL_ITEMS);
+
+                    #pragma unroll
+                    for (int ITEM = 0; ITEM < ITEMS_PER_THREAD; ITEM++)
+                    {
+                        if ((ACTIVE_CHANNELS == 1) || (my_channel < ACTIVE_CHANNELS))
+                        {
+                            items[ITEM] = d_in[block_offset + tile_offset + (ITEM * BLOCK_THREADS) + threadIdx.x];
+                        }
+                    }
+
+                    __threadfence_block();
+
+                    // Update histogram
+
+                    #pragma unroll
+                    for (int ITEM = 0; ITEM < ITEMS_PER_THREAD; ITEM++)
+                    {
+                        if ((ACTIVE_CHANNELS == 1) || (my_channel < ACTIVE_CHANNELS))
+                            atomicAdd(histograms[my_channel] + items[ITEM], 1);
+                    }
+                }
+            }
         }
-    }
+    };
+
+
+
 
 
 
@@ -264,7 +334,7 @@ public:
         // Consume full tiles
         while (block_offset + TILE_ITEMS <= block_oob)
         {
-            ConsumeTile(smem_storage, d_in, block_offset, histograms);
+            TilesHisto256Internal<BLOCK_ALGORITHM>::ConsumeTile(smem_storage, d_in, block_offset, histograms);
             block_offset += TILE_ITEMS;
 
             // Skip synchro for atomic version since we know it doesn't use any smem
@@ -277,7 +347,7 @@ public:
         // Consume any remaining partial-tile
         if (block_offset < block_oob)
         {
-            ConsumeTile(smem_storage, d_in, block_offset, histograms, block_oob - block_offset);
+            TilesHisto256Internal<BLOCK_ALGORITHM>::ConsumeTile(smem_storage, d_in, block_offset, histograms, block_oob - block_offset);
         }
     }
 
@@ -324,7 +394,7 @@ public:
                 if (block_offset < num_items)
                 {
                     // We have less than a full tile to consume
-                    ConsumeTile(smem_storage, d_in, block_offset, histograms, num_items - block_offset);
+                    TilesHisto256Internal<BLOCK_ALGORITHM>::ConsumeTile(smem_storage, d_in, block_offset, histograms, num_items - block_offset);
                 }
 
                 // No more work to do
@@ -332,7 +402,7 @@ public:
             }
 
             // We have a full tile to consume
-            ConsumeTile(smem_storage, d_in, block_offset, histograms);
+            TilesHisto256Internal<BLOCK_ALGORITHM>::ConsumeTile(smem_storage, d_in, block_offset, histograms);
         }
     }
 

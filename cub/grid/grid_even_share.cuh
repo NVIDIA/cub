@@ -56,7 +56,21 @@ namespace cub {
 
 
 /**
- * Description of work distribution amongst threadblocks
+ * \brief A descriptor utility for distributing input among CUDA threadblocks in an "even-share" fashion.  Each threadblock gets roughly the same number of fixed-size work units (grains).
+ *
+ * \par Overview
+ * GridEvenShare indicates which sections of input are to be mapped onto which threadblocks.
+ * Threadblocks may receive one of three different amounts of work: "big", "normal",
+ * and "last".  The "big" workloads are one scheduling grain larger than "normal".  The "last" work unit
+ * for the last threadblock may be partially-full if the input is not an even multiple of
+ * the scheduling grain size.
+ *
+ * \par
+ * Before invoking a child grid, a parent thread will typically construct and initialize an instance of
+ * GridEvenShare using \p GridInit().  The instance can be passed to child threadblocks which can
+ * initialize their per-threadblock offsets using \p BlockInit().
+ *
+ * \tparam SizeT Integer type for array indexing
  */
 template <typename SizeT>
 class GridEvenShare
@@ -72,21 +86,26 @@ private:
 
 public:
 
-    SizeT   num_items;
-    int     grid_size;
+    /// Total number of input items
+    SizeT  num_items;
 
-    // Threadblock-specific fields
-    SizeT   block_offset;
+    /// Grid size in threadblocks
+    int grid_size;
+
+    /// Offset into input marking the beginning of the owning thread block's segment of input tiles
+    SizeT block_offset;
+
+    /// Offset into input of marking the end (one-past) of the owning thread block's segment of input tiles
     SizeT   block_oob;
 
 
     /**
-     * Initializes the grid-specific details (e.g., prior to kernel launch)
+     * \brief Initializes the grid-specific members \p num_items and \p grid_size. To be called prior prior to kernel launch)
      */
     __host__ __device__ __forceinline__ void GridInit(
-        SizeT   num_items,
-        int     max_grid_size,
-        int     schedule_granularity)
+        SizeT   num_items,                  ///< Total number of input items
+        int     max_grid_size,              ///< Maximum grid size allowable (actual grid size may be less if not warranted by the the number of input items)
+        int     schedule_granularity)       ///< Granularity by which the input can be parcelled into and distributed among threablocks.  Usually the thread block's native tile size (or a multiple thereof.
     {
         this->num_items             = num_items;
         this->block_offset          = 0;
@@ -102,7 +121,7 @@ public:
 
 
     /**
-     * Initializes the threadblock-specific details.
+     * \brief Initializes the threadblock-specific details (e.g., to be called by each threadblock after startup)
      */
     __device__ __forceinline__ void BlockInit()
     {

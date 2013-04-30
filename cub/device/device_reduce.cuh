@@ -158,8 +158,7 @@ __global__ void SingleBlockReduceKernel(
  */
 
 /**
- * \brief DeviceReduce provides variants of parallel reduction data residing
- * within a CUDA device's global memory.
+ * \brief DeviceReduce provides variants of parallel reduction data residing within a CUDA device's global memory. ![](reduce_logo.png)
  */
 struct DeviceReduce
 {
@@ -398,7 +397,7 @@ struct DeviceReduce
     template <
         typename                    MultiBlockReduceKernelPtr,                          ///< Function type of cub::MultiBlockReduceKernel
         typename                    ReduceSingleKernelPtr,                              ///< Function type of cub::SingleBlockReduceKernel
-        typename                    PrepareDrainKernelPtr,                              ///< Function type of cub::PrepareDrainKernel
+        typename                    ResetDrainKernelPtr,                              ///< Function type of cub::ResetDrainKernel
         typename                    InputIteratorRA,                                    ///< The random-access iterator type for input (may be a simple pointer type).
         typename                    OutputIteratorRA,                                   ///< The random-access iterator type for output (may be a simple pointer type).
         typename                    SizeT,                                              ///< Integral type used for global array indexing
@@ -407,7 +406,7 @@ struct DeviceReduce
     static cudaError_t DispatchIterative(
         MultiBlockReduceKernelPtr   multi_block_kernel,                                 ///< [in] Kernel function pointer to parameterization of cub::MultiBlockReduceKernel
         ReduceSingleKernelPtr       single_block_kernel,                                ///< [in] Kernel function pointer to parameterization of cub::SingleBlockReduceKernel
-        PrepareDrainKernelPtr       prepare_drain_kernel,                               ///< [in] Kernel function pointer to parameterization of cub::PrepareDrainKernel
+        ResetDrainKernelPtr       prepare_drain_kernel,                               ///< [in] Kernel function pointer to parameterization of cub::ResetDrainKernel
         KernelDispachParams         &multi_block_dispatch_params,                       ///< [in] Dispatch parameters that match the policy that \p multi_block_kernel_ptr was compiled for
         KernelDispachParams         &single_block_dispatch_params,                      ///< [in] Dispatch parameters that match the policy that \p single_block_kernel was compiled for
         InputIteratorRA             d_in,                                               ///< [in] Input data to reduce
@@ -507,7 +506,7 @@ struct DeviceReduce
                 #else
 
                     // Prepare the queue here
-                    grid_queue.PrepareDrain(num_items);
+                    grid_queue.ResetDrain(num_items);
 
                 #endif
                 }
@@ -599,7 +598,7 @@ struct DeviceReduce
             return CubDebug(DispatchIterative(
                 multi_block_kernel,
                 single_block_kernel,
-                PrepareDrainKernel<SizeT>,
+                ResetDrainKernel<SizeT>,
                 multi_block_dispatch_params,
                 single_block_dispatch_params,
                 d_in,

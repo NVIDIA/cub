@@ -74,7 +74,6 @@ var searchBox = new SearchBox("searchBox", "search",false,'Search');
     <ul class="tablist">
       <li><a href="annotated.html"><span>Class&#160;List</span></a></li>
       <li><a href="classes.html"><span>Class&#160;Index</span></a></li>
-      <li><a href="functions.html"><span>Class&#160;Members</span></a></li>
     </ul>
   </div>
 <!-- window showing the filter options -->
@@ -195,11 +194,10 @@ Static Public Methods</h2></td></tr>
 __forceinline__ void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classcub_1_1_block_load.html#a4c379a2f7f8aa08aa2d6b134c9a2955f">Load</a> (<a class="el" href="classcub_1_1_block_load.html#a0d2c3c7656dfe1eb398217ef8bd58960">SmemStorage</a> &amp;smem_storage, InputIteratorRA block_itr, T(&amp;items)[ITEMS_PER_THREAD])</td></tr>
 <tr class="memdesc:a4c379a2f7f8aa08aa2d6b134c9a2955f"><td class="mdescLeft">&#160;</td><td class="mdescRight">Load a tile of items across a threadblock.  <a href="#a4c379a2f7f8aa08aa2d6b134c9a2955f">More...</a><br/></td></tr>
 <tr class="separator:a4c379a2f7f8aa08aa2d6b134c9a2955f"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:a29b387398b2f2118445f4b1e8a40481f"><td class="memTemplParams" colspan="2">template&lt;typename SizeT &gt; </td></tr>
-<tr class="memitem:a29b387398b2f2118445f4b1e8a40481f"><td class="memTemplItemLeft" align="right" valign="top">static __device__ <br class="typebreak"/>
-__forceinline__ void&#160;</td><td class="memTemplItemRight" valign="bottom"><a class="el" href="classcub_1_1_block_load.html#a29b387398b2f2118445f4b1e8a40481f">Load</a> (<a class="el" href="classcub_1_1_block_load.html#a0d2c3c7656dfe1eb398217ef8bd58960">SmemStorage</a> &amp;smem_storage, InputIteratorRA block_itr, const SizeT &amp;guarded_items, T(&amp;items)[ITEMS_PER_THREAD])</td></tr>
-<tr class="memdesc:a29b387398b2f2118445f4b1e8a40481f"><td class="mdescLeft">&#160;</td><td class="mdescRight">Load a tile of items across a threadblock, guarded by range.  <a href="#a29b387398b2f2118445f4b1e8a40481f">More...</a><br/></td></tr>
-<tr class="separator:a29b387398b2f2118445f4b1e8a40481f"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:ab582e71b4e35a3f663ceaf8bbefde829"><td class="memItemLeft" align="right" valign="top">static __device__ <br class="typebreak"/>
+__forceinline__ void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classcub_1_1_block_load.html#ab582e71b4e35a3f663ceaf8bbefde829">Load</a> (<a class="el" href="classcub_1_1_block_load.html#a0d2c3c7656dfe1eb398217ef8bd58960">SmemStorage</a> &amp;smem_storage, InputIteratorRA block_itr, const int &amp;guarded_items, T(&amp;items)[ITEMS_PER_THREAD])</td></tr>
+<tr class="memdesc:ab582e71b4e35a3f663ceaf8bbefde829"><td class="mdescLeft">&#160;</td><td class="mdescRight">Load a tile of items across a threadblock, guarded by range.  <a href="#ab582e71b4e35a3f663ceaf8bbefde829">More...</a><br/></td></tr>
+<tr class="separator:ab582e71b4e35a3f663ceaf8bbefde829"><td class="memSeparator" colspan="2">&#160;</td></tr>
 </table>
 <h2 class="groupheader">Member Function Documentation</h2>
 <a class="anchor" id="a4c379a2f7f8aa08aa2d6b134c9a2955f"></a>
@@ -254,13 +252,11 @@ template&lt;typename InputIteratorRA , int BLOCK_THREADS, int ITEMS_PER_THREAD, 
 
 </div>
 </div>
-<a class="anchor" id="a29b387398b2f2118445f4b1e8a40481f"></a>
+<a class="anchor" id="ab582e71b4e35a3f663ceaf8bbefde829"></a>
 <div class="memitem">
 <div class="memproto">
 <div class="memtemplate">
 template&lt;typename InputIteratorRA , int BLOCK_THREADS, int ITEMS_PER_THREAD, BlockLoadPolicy POLICY = BLOCK_LOAD_DIRECT, PtxLoadModifier MODIFIER = PTX_LOAD_NONE&gt; </div>
-<div class="memtemplate">
-template&lt;typename SizeT &gt; </div>
 <table class="mlabels">
   <tr>
   <td class="mlabels-left">
@@ -280,7 +276,7 @@ template&lt;typename SizeT &gt; </div>
         <tr>
           <td class="paramkey"></td>
           <td></td>
-          <td class="paramtype">const SizeT &amp;&#160;</td>
+          <td class="paramtype">const int &amp;&#160;</td>
           <td class="paramname"><em>guarded_items</em>, </td>
         </tr>
         <tr>
@@ -303,12 +299,6 @@ template&lt;typename SizeT &gt; </div>
 </div><div class="memdoc">
 
 <p>Load a tile of items across a threadblock, guarded by range. </p>
-<dl class="tparams"><dt>Template Parameters</dt><dd>
-  <table class="tparams">
-    <tr><td class="paramname">SizeT</td><td><b>[inferred]</b> Integer type for offsets </td></tr>
-  </table>
-  </dd>
-</dl>
 <dl class="params"><dt>Parameters</dt><dd>
   <table class="params">
     <tr><td class="paramdir">[in]</td><td class="paramname">smem_storage</td><td>Reference to shared memory allocation having layout type SmemStorage </td></tr>
@@ -328,7 +318,7 @@ template&lt;typename SizeT &gt; </div>
 <!-- HTML footer for doxygen 1.8.3.1-->
 <!-- start footer part -->
 <hr class="footer"/><address class="footer"><small>
-Generated on Sat Apr 27 2013 22:27:16 for CUB by &#160;<a href="http://www.doxygen.org/index.html">
+Generated on Tue Apr 30 2013 01:43:33 for CUB by &#160;<a href="http://www.doxygen.org/index.html">
 <img class="footer" src="doxygen.png" alt="doxygen"/>
 </a> 1.8.3.1
 <br>
