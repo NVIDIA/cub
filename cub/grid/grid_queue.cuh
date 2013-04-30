@@ -52,15 +52,32 @@ namespace cub {
 
 
 /**
- * Abstraction for grid-wide queue management.  Provides calling
- * threads with unique filling/draining offsets which can be used to
- * write/read from globally-shared vectors.
+ * \brief Abstraction for grid-wide queue management.
  *
- * Filling works by atomically-incrementing a zero-initialized counter, giving the
- * offset for writing items.
+ * \par Overview
+ * GridQueue descriptors provides abstractions for "filling" or
+ * "draining" globally-shared vectors.
  *
- * Draining works by atomically-incrementing a different zero-initialized counter until
- * the previous fill-size is exceeded.
+ * \par
+ * A "filling" GridQueue works by atomically-adding to a zero-initialized counter,
+ * returning a unique offset for the calling thread to write its items.
+ * The GridQueue maintains the total "fill-size".  The fill counter must be reset
+ * using GridQueue::ResetFill by the host or kernel instance prior to the kernel instance that
+ * will be filling.
+ *
+ * \par
+ * Similarly a "draining" GridQueue works by works by atomically-incrementing a
+ * zero-initialized counter, returning a unique offset for the calling thread to
+ * read its items. Threads can safely drain until the array's logical fill-size is
+ * exceeded.  The drain counter must be reset using GridQueue::ResetDrain or
+ * GridQueue::ResetDrainAfterFill by the host or kernel instance prior to the kernel instance that
+ * will be filling.  (For dynamic work distribution of existing data, the corresponding fill-size
+ * is simply the number of elements in the array.)
+ *
+ * \par
+ * Iterative work management can be implemented simply with a pair of flip-flopping
+ * work buffers, each with an associated set of fill and drain GridQueue descriptors.
+
  */
 template <typename SizeT>
 class GridQueue
@@ -74,16 +91,17 @@ private:
         DRAIN   = 1,
     };
 
-    SizeT *d_counters;  /// Pair of counters
+    /// Pair of counters
+    SizeT *d_counters;
 
 public:
 
 
-    /// Constructor
+    /// Constructs an invalid GridQueue descriptor.  Does not allocate any queue resources.
     __host__ __device__ __forceinline__ GridQueue() : d_counters(NULL) {}
 
 
-    /// Allocate the resources necessary for this GridQueue.
+    /// Allocates the global resources necessary for this GridQueue.
     __host__ __device__ __forceinline__ cudaError_t Allocate(
         DeviceAllocator *device_allocator = DefaultDeviceAllocator())
     {
@@ -92,7 +110,7 @@ public:
     }
 
 
-    /// DeviceFree the resources used by this GridQueue.
+    /// Frees the global resources used by this GridQueue.
     __host__ __device__ __forceinline__ cudaError_t Free(
         DeviceAllocator *device_allocator = DefaultDeviceAllocator())
     {
@@ -103,8 +121,19 @@ public:
     }
 
 
-    /// Prepares the queue for draining in the next kernel instance
-    __host__ __device__ __forceinline__ cudaError_t PrepareDrain(
+    /// This operation resets the drain so that it may advance to meet the existing fill-size.  To be called by the host or by a kernel prior to that which will be draining.
+    __host__ __device__ __forceinline__ cudaError_t ResetDrainAfterFill(cudaStream_t stream = 0)
+    {
+#ifdef __CUDA_ARCH__
+        d_counters[DRAIN] = 0;
+        return cudaSuccess;
+#else
+        return ResetDrain(0, stream);
+#endif
+    }
+
+    /// This operation sets the fill-size and resets the drain counter, preparing the GridQueue for draining in the next kernel instance.  To be called by the host or by a kernel prior to that which will be draining.
+    __host__ __device__ __forceinline__ cudaError_t ResetDrain(
         SizeT fill_size,
         cudaStream_t stream = 0)
     {
@@ -121,20 +150,8 @@ public:
     }
 
 
-    /// Prepares the queue for draining in the next kernel instance
-    __host__ __device__ __forceinline__ cudaError_t PrepareDrainAfterFill(cudaStream_t stream = 0)
-    {
-#ifdef __CUDA_ARCH__
-        d_counters[DRAIN] = 0;
-        return cudaSuccess;
-#else
-        return PrepareDrain(0, stream);
-#endif
-    }
-
-
-    /// Prepares the queue for filling in the next kernel instance
-    __host__ __device__ __forceinline__ cudaError_t PrepareFill()
+    /// This operation resets the fill counter.  To be called by the host or by a kernel prior to that which will be filling.
+    __host__ __device__ __forceinline__ cudaError_t ResetFill()
     {
 #ifdef __CUDA_ARCH__
         d_counters[FILL] = 0;
@@ -145,7 +162,7 @@ public:
     }
 
 
-    /// Returns number of items filled in the previous kernel.
+    /// Returns the fill-size established by the parent or by the previous kernel.
     __host__ __device__ __forceinline__ cudaError_t FillSize(
         SizeT &fill_size,
         cudaStream_t stream = 0)
@@ -180,11 +197,11 @@ public:
  * Reset grid queue (call with 1 block of 1 thread)
  */
 template <typename SizeT>
-__global__ void PrepareDrainKernel(
+__global__ void ResetDrainKernel(
     GridQueue<SizeT>    grid_queue,
     SizeT               num_items)
 {
-    grid_queue.PrepareDrain(num_items);
+    grid_queue.ResetDrain(num_items);
 }
 
 

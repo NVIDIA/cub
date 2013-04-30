@@ -74,7 +74,6 @@ var searchBox = new SearchBox("searchBox", "search",false,'Search');
     <ul class="tablist">
       <li><a href="annotated.html"><span>Class&#160;List</span></a></li>
       <li><a href="classes.html"><span>Class&#160;Index</span></a></li>
-      <li><a href="functions.html"><span>Class&#160;Members</span></a></li>
     </ul>
   </div>
 <!-- window showing the filter options -->
@@ -106,17 +105,36 @@ var searchBox = new SearchBox("searchBox", "search",false,'Search');
 <div class="contents">
 <a name="details" id="details"></a><h2 class="groupheader">Detailed description</h2>
 <div class="textblock"><p><a class="el" href="structcub_1_1_device_histo256.html" title="DeviceHisto256 provides variants of device-wide parallel histogram over data residing within global m...">DeviceHisto256</a> provides variants of device-wide parallel histogram over data residing within global memory. </p>
-</div><table class="memberdecls">
+<div class="image">
+<img src="histogram_logo.png" alt="histogram_logo.png"/>
+<div class="caption">
+.</div></div>
+ </div><table class="memberdecls">
 <tr class="heading"><td colspan="2"><h2 class="groupheader"><a name="pub-static-methods"></a>
 Static Public Methods</h2></td></tr>
-<tr class="memitem:a61db493dc2177b3160469c35d3876c8c"><td class="memTemplParams" colspan="2">template&lt;typename InputIteratorRA , typename HistoCounter &gt; </td></tr>
-<tr class="memitem:a61db493dc2177b3160469c35d3876c8c"><td class="memTemplItemLeft" align="right" valign="top">__host__ __device__ static <br class="typebreak"/>
-__forceinline__ cudaError_t&#160;</td><td class="memTemplItemRight" valign="bottom"><a class="el" href="structcub_1_1_device_histo256.html#a61db493dc2177b3160469c35d3876c8c">SingleChannel</a> (InputIteratorRA d_in, HistoCounter *d_histogram, int num_items, cudaStream_t stream=0, bool stream_synchronous=false, <a class="el" href="classcub_1_1_device_allocator.html">DeviceAllocator</a> *device_allocator=<a class="el" href="group___util_module.html#ga289830648914c5fec58f34af96247fe0">DefaultDeviceAllocator</a>())</td></tr>
-<tr class="memdesc:a61db493dc2177b3160469c35d3876c8c"><td class="mdescLeft">&#160;</td><td class="mdescRight">Computes a 256-bin device-wide histogram.  <a href="#a61db493dc2177b3160469c35d3876c8c">More...</a><br/></td></tr>
-<tr class="separator:a61db493dc2177b3160469c35d3876c8c"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:aadf3db4f5e49852070aea37a21645e36"><td class="memTemplParams" colspan="2">template&lt;int CHANNELS, int ACTIVE_CHANNELS, typename InputIteratorRA , typename HistoCounter &gt; </td></tr>
+<tr class="memitem:aadf3db4f5e49852070aea37a21645e36"><td class="memTemplItemLeft" align="right" valign="top">__host__ __device__ static <br class="typebreak"/>
+__forceinline__ cudaError_t&#160;</td><td class="memTemplItemRight" valign="bottom"><a class="el" href="structcub_1_1_device_histo256.html#aadf3db4f5e49852070aea37a21645e36">MultiChannel</a> (InputIteratorRA d_samples, HistoCounter *(&amp;d_histograms)[ACTIVE_CHANNELS], int num_samples, cudaStream_t stream=0, bool stream_synchronous=false, <a class="el" href="classcub_1_1_device_allocator.html">DeviceAllocator</a> *device_allocator=<a class="el" href="group___util_module.html#ga289830648914c5fec58f34af96247fe0">DefaultDeviceAllocator</a>())</td></tr>
+<tr class="memdesc:aadf3db4f5e49852070aea37a21645e36"><td class="mdescLeft">&#160;</td><td class="mdescRight">Computes a 256-bin device-wide histogram from multi-channel data.  <a href="#aadf3db4f5e49852070aea37a21645e36">More...</a><br/></td></tr>
+<tr class="separator:aadf3db4f5e49852070aea37a21645e36"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a0aa6ea591b18ea122328c6b17d92c14a"><td class="memTemplParams" colspan="2">template&lt;int CHANNELS, int ACTIVE_CHANNELS, typename InputIteratorRA , typename HistoCounter &gt; </td></tr>
+<tr class="memitem:a0aa6ea591b18ea122328c6b17d92c14a"><td class="memTemplItemLeft" align="right" valign="top">__host__ __device__ static <br class="typebreak"/>
+__forceinline__ cudaError_t&#160;</td><td class="memTemplItemRight" valign="bottom"><a class="el" href="structcub_1_1_device_histo256.html#a0aa6ea591b18ea122328c6b17d92c14a">MultiChannelAtomic</a> (InputIteratorRA d_samples, HistoCounter *(&amp;d_histograms)[ACTIVE_CHANNELS], int num_samples, cudaStream_t stream=0, bool stream_synchronous=false, <a class="el" href="classcub_1_1_device_allocator.html">DeviceAllocator</a> *device_allocator=<a class="el" href="group___util_module.html#ga289830648914c5fec58f34af96247fe0">DefaultDeviceAllocator</a>())</td></tr>
+<tr class="memdesc:a0aa6ea591b18ea122328c6b17d92c14a"><td class="mdescLeft">&#160;</td><td class="mdescRight">Computes a 256-bin device-wide histogram from multi-channel data. Uses atomic read-modify-write operations to compute the histogram.  <a href="#a0aa6ea591b18ea122328c6b17d92c14a">More...</a><br/></td></tr>
+<tr class="separator:a0aa6ea591b18ea122328c6b17d92c14a"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a21cfc3f4d496365051f59d4e87099d01"><td class="memTemplParams" colspan="2">template&lt;typename InputIteratorRA , typename HistoCounter &gt; </td></tr>
+<tr class="memitem:a21cfc3f4d496365051f59d4e87099d01"><td class="memTemplItemLeft" align="right" valign="top">__host__ __device__ static <br class="typebreak"/>
+__forceinline__ cudaError_t&#160;</td><td class="memTemplItemRight" valign="bottom"><a class="el" href="structcub_1_1_device_histo256.html#a21cfc3f4d496365051f59d4e87099d01">SingleChannel</a> (InputIteratorRA d_samples, HistoCounter *d_histogram, int num_samples, cudaStream_t stream=0, bool stream_synchronous=false, <a class="el" href="classcub_1_1_device_allocator.html">DeviceAllocator</a> *device_allocator=<a class="el" href="group___util_module.html#ga289830648914c5fec58f34af96247fe0">DefaultDeviceAllocator</a>())</td></tr>
+<tr class="memdesc:a21cfc3f4d496365051f59d4e87099d01"><td class="mdescLeft">&#160;</td><td class="mdescRight">Computes a 256-bin device-wide histogram.  <a href="#a21cfc3f4d496365051f59d4e87099d01">More...</a><br/></td></tr>
+<tr class="separator:a21cfc3f4d496365051f59d4e87099d01"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a792cb350cb09da5299f76806462d84db"><td class="memTemplParams" colspan="2">template&lt;typename InputIteratorRA , typename HistoCounter &gt; </td></tr>
+<tr class="memitem:a792cb350cb09da5299f76806462d84db"><td class="memTemplItemLeft" align="right" valign="top">__host__ __device__ static <br class="typebreak"/>
+__forceinline__ cudaError_t&#160;</td><td class="memTemplItemRight" valign="bottom"><a class="el" href="structcub_1_1_device_histo256.html#a792cb350cb09da5299f76806462d84db">SingleChannelAtomic</a> (InputIteratorRA d_samples, HistoCounter *d_histogram, int num_samples, cudaStream_t stream=0, bool stream_synchronous=false, <a class="el" href="classcub_1_1_device_allocator.html">DeviceAllocator</a> *device_allocator=<a class="el" href="group___util_module.html#ga289830648914c5fec58f34af96247fe0">DefaultDeviceAllocator</a>())</td></tr>
+<tr class="memdesc:a792cb350cb09da5299f76806462d84db"><td class="mdescLeft">&#160;</td><td class="mdescRight">Computes a 256-bin device-wide histogram. Uses atomic read-modify-write operations to compute the histogram.  <a href="#a792cb350cb09da5299f76806462d84db">More...</a><br/></td></tr>
+<tr class="separator:a792cb350cb09da5299f76806462d84db"><td class="memSeparator" colspan="2">&#160;</td></tr>
 </table>
 <h2 class="groupheader">Member Function Documentation</h2>
-<a class="anchor" id="a61db493dc2177b3160469c35d3876c8c"></a>
+<a class="anchor" id="a21cfc3f4d496365051f59d4e87099d01"></a>
 <div class="memitem">
 <div class="memproto">
 <div class="memtemplate">
@@ -129,7 +147,7 @@ template&lt;typename InputIteratorRA , typename HistoCounter &gt; </div>
           <td class="memname">__host__ __device__ static __forceinline__ cudaError_t cub::DeviceHisto256::SingleChannel </td>
           <td>(</td>
           <td class="paramtype">InputIteratorRA&#160;</td>
-          <td class="paramname"><em>d_in</em>, </td>
+          <td class="paramname"><em>d_samples</em>, </td>
         </tr>
         <tr>
           <td class="paramkey"></td>
@@ -141,7 +159,7 @@ template&lt;typename InputIteratorRA , typename HistoCounter &gt; </div>
           <td class="paramkey"></td>
           <td></td>
           <td class="paramtype">int&#160;</td>
-          <td class="paramname"><em>num_items</em>, </td>
+          <td class="paramname"><em>num_samples</em>, </td>
         </tr>
         <tr>
           <td class="paramkey"></td>
@@ -184,9 +202,255 @@ template&lt;typename InputIteratorRA , typename HistoCounter &gt; </div>
 </dl>
 <dl class="params"><dt>Parameters</dt><dd>
   <table class="params">
-    <tr><td class="paramdir">[in]</td><td class="paramname">d_in</td><td>Input samples to histogram </td></tr>
+    <tr><td class="paramdir">[in]</td><td class="paramname">d_samples</td><td>Input samples </td></tr>
     <tr><td class="paramdir">[out]</td><td class="paramname">d_histogram</td><td>Array of 256 counters of integral type <code>HistoCounter</code>. </td></tr>
-    <tr><td class="paramdir">[in]</td><td class="paramname">num_items</td><td>Number of samples to process </td></tr>
+    <tr><td class="paramdir">[in]</td><td class="paramname">num_samples</td><td>Number of samples to process </td></tr>
+    <tr><td class="paramdir">[in]</td><td class="paramname">stream</td><td><b>[optional]</b> CUDA stream to launch kernels within. Default is stream-0. </td></tr>
+    <tr><td class="paramdir">[in]</td><td class="paramname">stream_synchronous</td><td><b>[optional]</b> Whether or not to synchronize the stream after every kernel launch to check for errors. Default is <code>false</code>. </td></tr>
+    <tr><td class="paramdir">[in]</td><td class="paramname">device_allocator</td><td><b>[optional]</b> Allocator for allocating and freeing device memory. Default is provided by DefaultDeviceAllocator. </td></tr>
+  </table>
+  </dd>
+</dl>
+
+</div>
+</div>
+<a class="anchor" id="a792cb350cb09da5299f76806462d84db"></a>
+<div class="memitem">
+<div class="memproto">
+<div class="memtemplate">
+template&lt;typename InputIteratorRA , typename HistoCounter &gt; </div>
+<table class="mlabels">
+  <tr>
+  <td class="mlabels-left">
+      <table class="memname">
+        <tr>
+          <td class="memname">__host__ __device__ static __forceinline__ cudaError_t cub::DeviceHisto256::SingleChannelAtomic </td>
+          <td>(</td>
+          <td class="paramtype">InputIteratorRA&#160;</td>
+          <td class="paramname"><em>d_samples</em>, </td>
+        </tr>
+        <tr>
+          <td class="paramkey"></td>
+          <td></td>
+          <td class="paramtype">HistoCounter *&#160;</td>
+          <td class="paramname"><em>d_histogram</em>, </td>
+        </tr>
+        <tr>
+          <td class="paramkey"></td>
+          <td></td>
+          <td class="paramtype">int&#160;</td>
+          <td class="paramname"><em>num_samples</em>, </td>
+        </tr>
+        <tr>
+          <td class="paramkey"></td>
+          <td></td>
+          <td class="paramtype">cudaStream_t&#160;</td>
+          <td class="paramname"><em>stream</em> = <code>0</code>, </td>
+        </tr>
+        <tr>
+          <td class="paramkey"></td>
+          <td></td>
+          <td class="paramtype">bool&#160;</td>
+          <td class="paramname"><em>stream_synchronous</em> = <code>false</code>, </td>
+        </tr>
+        <tr>
+          <td class="paramkey"></td>
+          <td></td>
+          <td class="paramtype"><a class="el" href="classcub_1_1_device_allocator.html">DeviceAllocator</a> *&#160;</td>
+          <td class="paramname"><em>device_allocator</em> = <code><a class="el" href="group___util_module.html#ga289830648914c5fec58f34af96247fe0">DefaultDeviceAllocator</a>()</code>&#160;</td>
+        </tr>
+        <tr>
+          <td></td>
+          <td>)</td>
+          <td></td><td></td>
+        </tr>
+      </table>
+  </td>
+  <td class="mlabels-right">
+<span class="mlabels"><span class="mlabel">inline</span><span class="mlabel">static</span></span>  </td>
+  </tr>
+</table>
+</div><div class="memdoc">
+
+<p>Computes a 256-bin device-wide histogram. Uses atomic read-modify-write operations to compute the histogram. </p>
+<p>Sample input having lower diversity cause performance to be degraded.</p>
+<dl class="tparams"><dt>Template Parameters</dt><dd>
+  <table class="tparams">
+    <tr><td class="paramname">InputIteratorRA</td><td><b>[inferred]</b> The random-access iterator type for input (may be a simple pointer type). Must have a value type that is assignable to <code>unsigned char</code> </td></tr>
+    <tr><td class="paramname">HistoCounter</td><td><b>[inferred]</b> Integral type for counting sample occurrences per histogram bin </td></tr>
+  </table>
+  </dd>
+</dl>
+<dl class="params"><dt>Parameters</dt><dd>
+  <table class="params">
+    <tr><td class="paramdir">[in]</td><td class="paramname">d_samples</td><td>Input samples </td></tr>
+    <tr><td class="paramdir">[out]</td><td class="paramname">d_histogram</td><td>Array of 256 counters of integral type <code>HistoCounter</code>. </td></tr>
+    <tr><td class="paramdir">[in]</td><td class="paramname">num_samples</td><td>Number of samples to process </td></tr>
+    <tr><td class="paramdir">[in]</td><td class="paramname">stream</td><td><b>[optional]</b> CUDA stream to launch kernels within. Default is stream-0. </td></tr>
+    <tr><td class="paramdir">[in]</td><td class="paramname">stream_synchronous</td><td><b>[optional]</b> Whether or not to synchronize the stream after every kernel launch to check for errors. Default is <code>false</code>. </td></tr>
+    <tr><td class="paramdir">[in]</td><td class="paramname">device_allocator</td><td><b>[optional]</b> Allocator for allocating and freeing device memory. Default is provided by DefaultDeviceAllocator. </td></tr>
+  </table>
+  </dd>
+</dl>
+
+</div>
+</div>
+<a class="anchor" id="aadf3db4f5e49852070aea37a21645e36"></a>
+<div class="memitem">
+<div class="memproto">
+<div class="memtemplate">
+template&lt;int CHANNELS, int ACTIVE_CHANNELS, typename InputIteratorRA , typename HistoCounter &gt; </div>
+<table class="mlabels">
+  <tr>
+  <td class="mlabels-left">
+      <table class="memname">
+        <tr>
+          <td class="memname">__host__ __device__ static __forceinline__ cudaError_t cub::DeviceHisto256::MultiChannel </td>
+          <td>(</td>
+          <td class="paramtype">InputIteratorRA&#160;</td>
+          <td class="paramname"><em>d_samples</em>, </td>
+        </tr>
+        <tr>
+          <td class="paramkey"></td>
+          <td></td>
+          <td class="paramtype">HistoCounter *(&amp;)&#160;</td>
+          <td class="paramname"><em>d_histograms</em>[ACTIVE_CHANNELS], </td>
+        </tr>
+        <tr>
+          <td class="paramkey"></td>
+          <td></td>
+          <td class="paramtype">int&#160;</td>
+          <td class="paramname"><em>num_samples</em>, </td>
+        </tr>
+        <tr>
+          <td class="paramkey"></td>
+          <td></td>
+          <td class="paramtype">cudaStream_t&#160;</td>
+          <td class="paramname"><em>stream</em> = <code>0</code>, </td>
+        </tr>
+        <tr>
+          <td class="paramkey"></td>
+          <td></td>
+          <td class="paramtype">bool&#160;</td>
+          <td class="paramname"><em>stream_synchronous</em> = <code>false</code>, </td>
+        </tr>
+        <tr>
+          <td class="paramkey"></td>
+          <td></td>
+          <td class="paramtype"><a class="el" href="classcub_1_1_device_allocator.html">DeviceAllocator</a> *&#160;</td>
+          <td class="paramname"><em>device_allocator</em> = <code><a class="el" href="group___util_module.html#ga289830648914c5fec58f34af96247fe0">DefaultDeviceAllocator</a>()</code>&#160;</td>
+        </tr>
+        <tr>
+          <td></td>
+          <td>)</td>
+          <td></td><td></td>
+        </tr>
+      </table>
+  </td>
+  <td class="mlabels-right">
+<span class="mlabels"><span class="mlabel">inline</span><span class="mlabel">static</span></span>  </td>
+  </tr>
+</table>
+</div><div class="memdoc">
+
+<p>Computes a 256-bin device-wide histogram from multi-channel data. </p>
+<dl class="tparams"><dt>Template Parameters</dt><dd>
+  <table class="tparams">
+    <tr><td class="paramname">CHANNELS</td><td>Number of channels interleaved in the input data (may be greater than the number of channels being actively histogrammed) </td></tr>
+    <tr><td class="paramname">ACTIVE_CHANNELS</td><td><b>[inferred]</b> Number of channels actively being histogrammed </td></tr>
+    <tr><td class="paramname">InputIteratorRA</td><td><b>[inferred]</b> The random-access iterator type for input (may be a simple pointer type). Must have a value type that is assignable to <code>unsigned char</code> </td></tr>
+    <tr><td class="paramname">HistoCounter</td><td><b>[inferred]</b> Integral type for counting sample occurrences per histogram bin </td></tr>
+  </table>
+  </dd>
+</dl>
+<dl class="params"><dt>Parameters</dt><dd>
+  <table class="params">
+    <tr><td class="paramdir">[in]</td><td class="paramname">d_samples</td><td>Input samples. (Channels, if any, are interleaved in "AOS" format) </td></tr>
+    <tr><td class="paramdir">[out]</td><td class="paramname">d_histograms</td><td>Array of channel histograms, each having 256 counters of integral type <code>HistoCounter</code>. </td></tr>
+    <tr><td class="paramdir">[in]</td><td class="paramname">num_samples</td><td>Number of samples to process </td></tr>
+    <tr><td class="paramdir">[in]</td><td class="paramname">stream</td><td><b>[optional]</b> CUDA stream to launch kernels within. Default is stream-0. </td></tr>
+    <tr><td class="paramdir">[in]</td><td class="paramname">stream_synchronous</td><td><b>[optional]</b> Whether or not to synchronize the stream after every kernel launch to check for errors. Default is <code>false</code>. </td></tr>
+    <tr><td class="paramdir">[in]</td><td class="paramname">device_allocator</td><td><b>[optional]</b> Allocator for allocating and freeing device memory. Default is provided by DefaultDeviceAllocator. </td></tr>
+  </table>
+  </dd>
+</dl>
+
+</div>
+</div>
+<a class="anchor" id="a0aa6ea591b18ea122328c6b17d92c14a"></a>
+<div class="memitem">
+<div class="memproto">
+<div class="memtemplate">
+template&lt;int CHANNELS, int ACTIVE_CHANNELS, typename InputIteratorRA , typename HistoCounter &gt; </div>
+<table class="mlabels">
+  <tr>
+  <td class="mlabels-left">
+      <table class="memname">
+        <tr>
+          <td class="memname">__host__ __device__ static __forceinline__ cudaError_t cub::DeviceHisto256::MultiChannelAtomic </td>
+          <td>(</td>
+          <td class="paramtype">InputIteratorRA&#160;</td>
+          <td class="paramname"><em>d_samples</em>, </td>
+        </tr>
+        <tr>
+          <td class="paramkey"></td>
+          <td></td>
+          <td class="paramtype">HistoCounter *(&amp;)&#160;</td>
+          <td class="paramname"><em>d_histograms</em>[ACTIVE_CHANNELS], </td>
+        </tr>
+        <tr>
+          <td class="paramkey"></td>
+          <td></td>
+          <td class="paramtype">int&#160;</td>
+          <td class="paramname"><em>num_samples</em>, </td>
+        </tr>
+        <tr>
+          <td class="paramkey"></td>
+          <td></td>
+          <td class="paramtype">cudaStream_t&#160;</td>
+          <td class="paramname"><em>stream</em> = <code>0</code>, </td>
+        </tr>
+        <tr>
+          <td class="paramkey"></td>
+          <td></td>
+          <td class="paramtype">bool&#160;</td>
+          <td class="paramname"><em>stream_synchronous</em> = <code>false</code>, </td>
+        </tr>
+        <tr>
+          <td class="paramkey"></td>
+          <td></td>
+          <td class="paramtype"><a class="el" href="classcub_1_1_device_allocator.html">DeviceAllocator</a> *&#160;</td>
+          <td class="paramname"><em>device_allocator</em> = <code><a class="el" href="group___util_module.html#ga289830648914c5fec58f34af96247fe0">DefaultDeviceAllocator</a>()</code>&#160;</td>
+        </tr>
+        <tr>
+          <td></td>
+          <td>)</td>
+          <td></td><td></td>
+        </tr>
+      </table>
+  </td>
+  <td class="mlabels-right">
+<span class="mlabels"><span class="mlabel">inline</span><span class="mlabel">static</span></span>  </td>
+  </tr>
+</table>
+</div><div class="memdoc">
+
+<p>Computes a 256-bin device-wide histogram from multi-channel data. Uses atomic read-modify-write operations to compute the histogram. </p>
+<p>Sample input having lower diversity cause performance to be degraded.</p>
+<dl class="tparams"><dt>Template Parameters</dt><dd>
+  <table class="tparams">
+    <tr><td class="paramname">CHANNELS</td><td>Number of channels interleaved in the input data (may be greater than the number of channels being actively histogrammed) </td></tr>
+    <tr><td class="paramname">ACTIVE_CHANNELS</td><td><b>[inferred]</b> Number of channels actively being histogrammed </td></tr>
+    <tr><td class="paramname">InputIteratorRA</td><td><b>[inferred]</b> The random-access iterator type for input (may be a simple pointer type). Must have a value type that is assignable to <code>unsigned char</code> </td></tr>
+    <tr><td class="paramname">HistoCounter</td><td><b>[inferred]</b> Integral type for counting sample occurrences per histogram bin </td></tr>
+  </table>
+  </dd>
+</dl>
+<dl class="params"><dt>Parameters</dt><dd>
+  <table class="params">
+    <tr><td class="paramdir">[in]</td><td class="paramname">d_samples</td><td>Input samples. (Channels, if any, are interleaved in "AOS" format) </td></tr>
+    <tr><td class="paramdir">[out]</td><td class="paramname">d_histograms</td><td>Array of channel histograms, each having 256 counters of integral type <code>HistoCounter</code>. </td></tr>
+    <tr><td class="paramdir">[in]</td><td class="paramname">num_samples</td><td>Number of samples to process </td></tr>
     <tr><td class="paramdir">[in]</td><td class="paramname">stream</td><td><b>[optional]</b> CUDA stream to launch kernels within. Default is stream-0. </td></tr>
     <tr><td class="paramdir">[in]</td><td class="paramname">stream_synchronous</td><td><b>[optional]</b> Whether or not to synchronize the stream after every kernel launch to check for errors. Default is <code>false</code>. </td></tr>
     <tr><td class="paramdir">[in]</td><td class="paramname">device_allocator</td><td><b>[optional]</b> Allocator for allocating and freeing device memory. Default is provided by DefaultDeviceAllocator. </td></tr>
@@ -203,7 +467,7 @@ template&lt;typename InputIteratorRA , typename HistoCounter &gt; </div>
 <!-- HTML footer for doxygen 1.8.3.1-->
 <!-- start footer part -->
 <hr class="footer"/><address class="footer"><small>
-Generated on Sat Apr 27 2013 22:27:16 for CUB by &#160;<a href="http://www.doxygen.org/index.html">
+Generated on Tue Apr 30 2013 01:43:33 for CUB by &#160;<a href="http://www.doxygen.org/index.html">
 <img class="footer" src="doxygen.png" alt="doxygen"/>
 </a> 1.8.3.1
 <br>

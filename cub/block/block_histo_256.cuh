@@ -78,7 +78,7 @@ enum BlockHisto256Algorithm
  */
 
 /**
- * \brief BlockHisto256 provides methods for constructing (and compositing into) 256-valued histograms from 8b data partitioned across threads within a CUDA thread block.
+ * \brief BlockHisto256 provides methods for constructing (and compositing into) 256-valued histograms from 8b data partitioned across threads within a CUDA thread block. ![](histogram_logo.png)
  *
  * \par Overview
  * A <a href="http://en.wikipedia.org/wiki/Histogram"><em>histogram</em></a>
@@ -88,13 +88,14 @@ enum BlockHisto256Algorithm
  * For convenience, BlockHisto256 provides alternative entrypoints that differ by:
  * - Complete/incremental composition (compute a new histogram vs. update existing histogram data)
  *
- * \tparam BLOCK_THREADS    The threadblock size in threads
- * \tparam ALGORITHM        <b>[optional]</b> cub::BlockHisto256Algorithm enumerator specifying the underlying algorithm to use (default = cub::BLOCK_BYTE_HISTO_SORT)
+ * \tparam BLOCK_THREADS        The threadblock size in threads
+ * \tparam ITEMS_PER_THREAD     The number of items per thread
+ * \tparam ALGORITHM            <b>[optional]</b> cub::BlockHisto256Algorithm enumerator specifying the underlying algorithm to use (default = cub::BLOCK_BYTE_HISTO_SORT)
  *
  * \par Algorithm
  * BlockHisto256 can be (optionally) configured to use different algorithms:
- *   -# <b>cub::BLOCK_BYTE_HISTO_SORT</b>.  An efficient An efficient "raking" reduction algorithm. [More...](\ref cub::BlockHisto256Algorithm)
- *   -# <b>cub::BLOCK_BYTE_HISTO_ATOMIC</b>.  A quick "tiled warp-reductions" reduction algorithm. [More...](\ref cub::BlockHisto256Algorithm)
+ *   -# <b>cub::BLOCK_BYTE_HISTO_SORT</b>.  Sorting followed by differentiation. [More...](\ref cub::BlockHisto256Algorithm)
+ *   -# <b>cub::BLOCK_BYTE_HISTO_ATOMIC</b>.  Use atomic addition to update byte counts directly. [More...](\ref cub::BlockHisto256Algorithm)
  *
  * \par Usage Considerations
  * - The histogram output can be constructed in shared or global memory
@@ -122,8 +123,8 @@ enum BlockHisto256Algorithm
  *      // Declare shared memory for BlockHisto256
  *      __shared__ typename BlockHisto256::SmemStorage smem_storage;
  *
- *      // Declare shared memory for histogram
- *      __shared__ unsigned char smem_histo[256];
+ *      // Declare shared memory for histogram bins
+ *      __shared__ unsigned int smem_histogram[256];
  *
  *      // Input items per thread
  *      unsigned char data[4];
@@ -132,20 +133,19 @@ enum BlockHisto256Algorithm
  *      ...
  *
  *      // Compute the threadblock-wide histogram
- *      BlockHisto256::Sum(smem_storage, smem_histo, data);
+ *      BlockHisto256::Histogram(smem_storage, smem_histogram, data);
  *
  *      ...
  * \endcode
  *
  * \par
  * <em>Example 2:</em> Composite an incremental round of 8b histogram data onto
- * an existing histogram in global memory.  The composition is guarded: not all
- * threads have valid inputs.
+ * an existing histogram in global memory.
  * \code
  * #include <cub/cub.cuh>
  *
  * template <int BLOCK_THREADS>
- * __global__ void SomeKernel(..., int *d_histogram, int num_items)
+ * __global__ void SomeKernel(..., int *d_histogram)
  * {
  *      // Parameterize BlockHisto256
  *      typedef cub::BlockHisto256<BLOCK_THREADS> BlockHisto256;
@@ -158,7 +158,7 @@ enum BlockHisto256Algorithm
  *      if (threadIdx.x < num_items) data = ...;
  *
  *      // Compute the threadblock-wide sum of valid elements in thread0
- *      BlockHisto256::Sum(smem_storage, d_histogram, data, num_items);
+ *      BlockHisto256::Composite(smem_storage, d_histogram, data);
  *
  *      ...
  * \endcode
