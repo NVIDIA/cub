@@ -51,18 +51,33 @@
  *
  * \par
  * CUB is a library of high-performance parallel primitives and other utilities for
- * constructing CUDA kernel software. CUB enhances productivity, performance, and portability
- * by providing an abstraction layer over complex
- * [block-level] (http://docs.nvidia.com/cuda/cuda-c-programming-guide/index.html#programming-model),
- * [warp-level] (http://docs.nvidia.com/cuda/cuda-c-programming-guide/index.html#hardware-implementation), and
- * [thread-level](http://docs.nvidia.com/cuda/cuda-c-programming-guide/index.html#programming-model) operations.
+ * constructing CUDA software. CUB enhances productivity, performance, and portability
+ * by providing reusable software abstractions at every layer of execution within the 
+ * CUDA programming model:
+ * - [Device-level primitives] (group___device_module.html): histogram, reduction, etc.
+ * - [Block-level primitives] (group___block_module.html): radix sort, prefix scan, histogram, reduction, etc.
+ * - [Warp-level primitives] (group___warp_module.html): prefix scan, reduction, etc.
+ * - [Thread-level primitives] (group___thread_module.html): vectorized I/O, 
  *
  * \par
- * CUB primitives are not bound to any particular width of parallelism or to any particular
- * data type.  This allows them to be flexible and tunable to fit your kernels' needs.
+ * In particular, CUB is unique in that it provides cooperative block-level and 
+ * warp-level parallel primitives.  Unlike traditional library software 
+ * components, these operations are <em>collective</em>, i.e., they are called 
+ * by a group of parallel SIMT threads rather than by a single sequential 
+ * thread.  These collective primitives are not bound to any particular width 
+ * of parallelism or to any particular data type.  This allows them to be 
+ * flexible and tunable to fit the needs of the enclosing kernel computation. 
  * Thus CUB is [<em>CUDA Unbound</em>](index.html).
  *
  * \image html cub_overview.png
+ 
+ 
+ * - [Device-level] (http://docs.nvidia.com/cuda/cuda-c-programming-guide/index.html#programming-model),
+ * - [Block-level] (http://docs.nvidia.com/cuda/cuda-c-programming-guide/index.html#programming-model),
+ * - [Warp-level] (http://docs.nvidia.com/cuda/cuda-c-programming-guide/index.html#hardware-implementation), and
+ * - [Thread-level](http://docs.nvidia.com/cuda/cuda-c-programming-guide/index.html#programming-model) operations.
+ 
+ 
  *
  * \par
  * Browse our collections of:
