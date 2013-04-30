@@ -41,6 +41,8 @@
 #include "../util_allocator.cuh"
 #include "../grid/grid_even_share.cuh"
 #include "../grid/grid_queue.cuh"
+#include "../util_debug.cuh"
+#include "../util_iterator.cuh"
 
 /// Optional outer namespace(s)
 CUB_NS_PREFIX
@@ -153,52 +155,6 @@ __global__ void FinalizeHisto256Kernel(
     d_out_histograms.array[blockIdx.x][threadIdx.x] = bin_aggregate;
 }
 
-
-/******************************************************************************
- * Texture references
- *****************************************************************************/
-
-// Anonymous namespace
-namespace {
-
-/// Templated Texture reference type for multiplicand vector
-template <typename T>
-struct TexDeviceHisto256
-{
-    // Texture reference type
-    typedef texture<T, cudaTextureType1D, cudaReadModeElementType> TexRef;
-
-    static TexRef ref;
-
-    /**
-     * Bind texture
-     */
-    static cudaError_t BindTexture(void *d_in, size_t &offset)
-    {
-        cudaChannelFormatDesc tex_desc = cudaCreateChannelDesc<T>();
-        if (d_in)
-        {
-            return (CubDebug(cudaBindTexture(&offset, ref, d_in, tex_desc)));
-        }
-        return cudaSuccess;
-    }
-
-    /**
-     * Unbind textures
-     */
-    static cudaError_t UnbindTexture()
-    {
-        return CubDebug(cudaUnbindTexture(ref));
-    }
-};
-
-// Texture reference definitions
-template <typename Value>
-typename TexDeviceHisto256<Value>::TexRef TexDeviceHisto256<Value>::ref = 0;
-
-
-} // Anonymous namespace
-
 #endif // DOXYGEN_SHOULD_SKIP_THIS
 
 
@@ -213,7 +169,7 @@ typename TexDeviceHisto256<Value>::TexRef TexDeviceHisto256<Value>::ref = 0;
  */
 
 /**
- * \brief DeviceHisto256 provides variants of device-wide parallel histogram over data residing within global memory.
+ * \brief DeviceHisto256 provides variants of device-wide parallel histogram over data residing within global memory. ![](histogram_logo.png)
  */
 struct DeviceHisto256
 {
@@ -271,18 +227,8 @@ struct DeviceHisto256
     template <int CHANNELS, int ACTIVE_CHANNELS, BlockHisto256Algorithm BLOCK_ALGORITHM>
     struct TunedPolicies<CHANNELS, ACTIVE_CHANNELS, BLOCK_ALGORITHM, 350>
     {
-        typedef TilesHisto256Policy<128, 16,  BLOCK_ALGORITHM, GRID_MAPPING_EVEN_SHARE> MultiBlockPolicy;
-        enum { SUBSCRIPTION_FACTOR = 4 };
-    };
-
-    /// SM30 tune
-    template <int CHANNELS, int ACTIVE_CHANNELS, BlockHisto256Algorithm BLOCK_ALGORITHM>
-    struct TunedPolicies<CHANNELS, ACTIVE_CHANNELS, BLOCK_ALGORITHM, 300>
-    {
         typedef TilesHisto256Policy<
-            128,
-            (BLOCK_ALGORITHM == BLOCK_BYTE_HISTO_SORT) ? 17 : 16,
-            BLOCK_ALGORITHM,
+            128, 25, BLOCK_ALGORITHM,
             (BLOCK_ALGORITHM == BLOCK_BYTE_HISTO_SORT) ? GRID_MAPPING_DYNAMIC : GRID_MAPPING_EVEN_SHARE> MultiBlockPolicy;
         enum { SUBSCRIPTION_FACTOR = 4 };
     };
@@ -292,19 +238,19 @@ struct DeviceHisto256
     struct TunedPolicies<CHANNELS, ACTIVE_CHANNELS, BLOCK_ALGORITHM, 200>
     {
         typedef TilesHisto256Policy<
-            128,
-            (BLOCK_ALGORITHM == BLOCK_BYTE_HISTO_SORT) ? 17 : 16,
-            BLOCK_ALGORITHM,
+            128, 17, BLOCK_ALGORITHM,
             (BLOCK_ALGORITHM == BLOCK_BYTE_HISTO_SORT) ? GRID_MAPPING_DYNAMIC : GRID_MAPPING_EVEN_SHARE> MultiBlockPolicy;
-        enum { SUBSCRIPTION_FACTOR = 2 };
+        enum { SUBSCRIPTION_FACTOR = 3 };
     };
 
     /// SM10 tune
     template <int CHANNELS, int ACTIVE_CHANNELS, BlockHisto256Algorithm BLOCK_ALGORITHM>
     struct TunedPolicies<CHANNELS, ACTIVE_CHANNELS, BLOCK_ALGORITHM, 100>
     {
-        typedef TilesHisto256Policy<128, 16,  BLOCK_ALGORITHM, GRID_MAPPING_EVEN_SHARE> MultiBlockPolicy;
-        enum { SUBSCRIPTION_FACTOR = 1 };
+        typedef TilesHisto256Policy<
+            128, 7, BLOCK_ALGORITHM,
+            (BLOCK_ALGORITHM == BLOCK_BYTE_HISTO_SORT) ? GRID_MAPPING_DYNAMIC : GRID_MAPPING_EVEN_SHARE> MultiBlockPolicy;
+        enum { SUBSCRIPTION_FACTOR = 2 };
     };
 
 
@@ -317,11 +263,9 @@ struct DeviceHisto256
     {
         static const int PTX_TUNE_ARCH =   (CUB_PTX_ARCH >= 350) ?
                                                 350 :
-                                                (CUB_PTX_ARCH >= 300) ?
-                                                    300 :
-                                                    (CUB_PTX_ARCH >= 200) ?
-                                                        200 :
-                                                        100;
+                                                (CUB_PTX_ARCH >= 200) ?
+                                                    200 :
+                                                    100;
 
         // Tuned policy set for the current PTX compiler pass
         typedef TunedPolicies<CHANNELS, ACTIVE_CHANNELS, BLOCK_ALGORITHM, PTX_TUNE_ARCH> PtxPassTunedPolicies;
@@ -342,11 +286,6 @@ struct DeviceHisto256
                 typedef TunedPolicies<CHANNELS, ACTIVE_CHANNELS, BLOCK_ALGORITHM, 350> TunedPolicies;
                 multi_block_dispatch_params.Init<TunedPolicies::MultiBlockPolicy>(TunedPolicies::SUBSCRIPTION_FACTOR);
             }
-            else if (ptx_version >= 300)
-            {
-                typedef TunedPolicies<CHANNELS, ACTIVE_CHANNELS, BLOCK_ALGORITHM, 300> TunedPolicies;
-                multi_block_dispatch_params.Init<TunedPolicies::MultiBlockPolicy>(TunedPolicies::SUBSCRIPTION_FACTOR);
-            }
             else if (ptx_version >= 200)
             {
                 typedef TunedPolicies<CHANNELS, ACTIVE_CHANNELS, BLOCK_ALGORITHM, 200> TunedPolicies;
@@ -361,6 +300,9 @@ struct DeviceHisto256
     };
 
 
+
+
+
     /**
      * Internal dispatch routine for invoking device-wide, multi-channel, 256-bin histogram
      */
@@ -369,7 +311,7 @@ struct DeviceHisto256
         int                             ACTIVE_CHANNELS,                                    ///< Number of channels actively being histogrammed
         typename                        MultiBlockHisto256KernelPtr,                        ///< Function type of cub::MultiBlockHisto256Kernel
         typename                        FinalizeHisto256KernelPtr,                          ///< Function type of cub::FinalizeHisto256Kernel
-        typename                        PrepareDrainKernelPtr,                              ///< Function type of cub::PrepareDrainKernel
+        typename                        ResetDrainKernelPtr,                              ///< Function type of cub::ResetDrainKernel
         typename                        InputIteratorRA,                                    ///< The input iterator type (may be a simple pointer type).  Must have a value type that is assignable to <tt>unsigned char</tt>
         typename                        HistoCounter,                                       ///< Integral type for counting sample occurrences per histogram bin
         typename                        SizeT>                                              ///< Integral type used for global array indexing
@@ -377,7 +319,7 @@ struct DeviceHisto256
     static cudaError_t Dispatch(
         MultiBlockHisto256KernelPtr     multi_block_kernel_ptr,                             ///< [in] Kernel function pointer to parameterization of cub::MultiBlockHisto256Kernel
         FinalizeHisto256KernelPtr       finalize_kernel_ptr,                                ///< [in] Kernel function pointer to parameterization of cub::FinalizeHisto256Kernel
-        PrepareDrainKernelPtr           prepare_drain_kernel_ptr,                           ///< [in] Kernel function pointer to parameterization of cub::PrepareDrainKernel
+        ResetDrainKernelPtr           prepare_drain_kernel_ptr,                           ///< [in] Kernel function pointer to parameterization of cub::ResetDrainKernel
         KernelDispachParams             &multi_block_dispatch_params,                       ///< [in] Dispatch parameters that match the policy that \p multi_block_kernel_ptr was compiled for
         InputIteratorRA                 d_samples,                                          ///< [in] Input samples to histogram
         HistoCounter                    *(&d_histograms)[ACTIVE_CHANNELS],                  ///< [out] Array of channel histograms, each having 256 counters of integral type \p HistoCounter.
@@ -463,7 +405,7 @@ struct DeviceHisto256
             #else
 
                 // Prepare the queue here
-                grid_queue.PrepareDrain(num_samples);
+                grid_queue.ResetDrain(num_samples);
 
             #endif
 
@@ -483,7 +425,7 @@ struct DeviceHisto256
             }
 
             // Bind texture
-            if (CubDebug(error = d_samples.BindTexture())) break;
+            if (CubDebug(error = BindIteratorTexture(d_samples))) break;
 
             // Invoke MultiBlockHisto256
             if (stream_synchronous) CubLog("Invoking multi_block_kernel_ptr<<<%d, %d, 0, %d>>>(), %d items per thread, %d SM occupancy\n",
@@ -557,7 +499,7 @@ struct DeviceHisto256
         if (multi_block_dispatch_params.grid_mapping == GRID_MAPPING_DYNAMIC) error = CubDebug(queue.Free(device_allocator));
 
         // Unbind texture
-        error = CubDebug(d_samples.UnbindTexture());
+        error = CubDebug(UnbindIteratorTexture(d_samples));
 
         return error;
 
@@ -619,7 +561,7 @@ struct DeviceHisto256
             Dispatch<CHANNELS, ACTIVE_CHANNELS>(
                 MultiBlockHisto256Kernel<MultiBlockPolicy, CHANNELS, ACTIVE_CHANNELS, InputIteratorRA, HistoCounter, SizeT>,
                 FinalizeHisto256Kernel<ACTIVE_CHANNELS, HistoCounter>,
-                PrepareDrainKernel<SizeT>,
+                ResetDrainKernel<SizeT>,
                 multi_block_dispatch_params,
                 d_samples,
                 d_histograms,
@@ -635,108 +577,12 @@ struct DeviceHisto256
         return error;
     }
 
-
-
     #endif // DOXYGEN_SHOULD_SKIP_THIS
+
 
     //---------------------------------------------------------------------
     // Public interface
     //---------------------------------------------------------------------
-
-    /**
-     * \brief A simple iterator wrapper for converting non-8b sample data into 8b bins.  Loads through texture when possible.
-     *
-     * \tparam T            The type of sample data to wrap.
-     * \tparam BinOp        Unary functor type for mapping objects of type /p T into 8b bins.  Must have member <tt>unsigned char operator()(const T &datum)</tt>.
-     */
-    template <typename T, typename BinOp>
-    class BinningIteratorRA
-    {
-    public:
-        typedef BinningIteratorRA                   self_type;
-        typedef unsigned char                       value_type;
-        typedef unsigned char                       reference;
-        typedef unsigned char*                      pointer;
-        typedef std::random_access_iterator_tag     iterator_category;
-        typedef int                                 difference_type;
-
-        __host__ __device__ __forceinline__ BinningIteratorRA(T* ptr, BinOp bin_op) :
-            bin_op(bin_op),
-            ptr(ptr) /* , offset(0) */ {}
-
-        __host__ __forceinline__ cudaError_t BindTexture()
-        {
-//            return TexDeviceHisto256<T>::BindTexture(ptr, offset);
-            return cudaSuccess;
-        }
-
-        __host__ __forceinline__ cudaError_t UnbindTexture()
-        {
-            return cudaSuccess;
-//            return TexDeviceHisto256<T>::UnbindTexture();
-        }
-
-        __host__ __device__ __forceinline__ self_type operator++()
-        {
-            self_type i = *this;
-            ptr++;
-//            offset++;
-            return i;
-        }
-
-        __host__ __device__ __forceinline__ self_type operator++(int junk)
-        {
-            ptr++;
-//            offset++;
-            return *this;
-        }
-
-        __host__ __device__ __forceinline__ reference operator*()
-        {
-//#ifndef __CUDA_ARCH__
-            return bin_op(*ptr);
-//#else
-//            return bin_op(tex1Dfetch(TexDeviceHisto256<T>::ref, offset));
-//#endif
-        }
-
-        template <typename SizeT> __host__ __device__ __forceinline__ reference operator[](SizeT n)
-        {
-//#ifndef __CUDA_ARCH__
-            return bin_op(*(ptr + n));
-//#else
-//            return bin_op(tex1Dfetch(TexDeviceHisto256<T>::ref, offset + n));
-//#endif
-        }
-
-        __host__ __device__ __forceinline__ pointer operator->()
-        {
-//#ifndef __CUDA_ARCH__
-            return &(bin_op(*ptr));
-//#else
-//            return &(bin_op(tex1Dfetch(TexDeviceHisto256<T>::ref, offset)));
-//#endif
-        }
-
-        __host__ __device__ __forceinline__ bool operator==(const self_type& rhs)
-        {
-//            return ((ptr == rhs.ptr) && (offset == offset));
-            return (ptr == rhs.ptr);
-        }
-
-        __host__ __device__ __forceinline__ bool operator!=(const self_type& rhs)
-        {
-//            return ((ptr != rhs.ptr) && (offset == offset));
-            return (ptr != rhs.ptr);
-        }
-
-    private:
-
-        BinOp   bin_op;
-        T*      ptr;
-//        size_t  offset;
-    };
-
 
     /**
      * \brief Computes a 256-bin device-wide histogram

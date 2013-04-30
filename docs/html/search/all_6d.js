@@ -8,5 +8,7 @@ var searchData=
   ['max_5fsm_5fthreadblocks',['MAX_SM_THREADBLOCKS',['../structcub_1_1_arch_props.html#a378def3dee75e77eb135efcf6f0ca063abdc229ee36991bb6055f3bd42fc59387',1,'cub::ArchProps']]],
   ['max_5fsm_5fthreads',['MAX_SM_THREADS',['../structcub_1_1_arch_props.html#a378def3dee75e77eb135efcf6f0ca063a3aa3c3db5dc28ef11961f6867fee7101',1,'cub::ArchProps::MAX_SM_THREADS()'],['../classcub_1_1_device.html#a963c497e442ac283b2655faa578614d3',1,'cub::Device::max_sm_threads()']]],
   ['max_5fsm_5fwarps',['max_sm_warps',['../classcub_1_1_device.html#a5ee84e74af9939896bb81b48d4843d17',1,'cub::Device']]],
-  ['maxsmoccupancy',['MaxSmOccupancy',['../classcub_1_1_device.html#a618bbf36a5737a9b1533ff65834e88e8',1,'cub::Device']]]
+  ['maxsmoccupancy',['MaxSmOccupancy',['../classcub_1_1_device.html#a618bbf36a5737a9b1533ff65834e88e8',1,'cub::Device']]],
+  ['multichannel',['MultiChannel',['../structcub_1_1_device_histo256.html#aadf3db4f5e49852070aea37a21645e36',1,'cub::DeviceHisto256']]],
+  ['multichannelatomic',['MultiChannelAtomic',['../structcub_1_1_device_histo256.html#a0aa6ea591b18ea122328c6b17d92c14a',1,'cub::DeviceHisto256']]]
 ];

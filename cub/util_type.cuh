@@ -92,6 +92,7 @@ struct Int2Type
 template <typename T, int COUNT>
 struct ArrayWrapper
 {
+    /// Static array of type \p T
     T array[COUNT];
 };
 

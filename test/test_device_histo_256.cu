@@ -236,7 +236,7 @@ void Test(
     }
 
     // Create iterator wrapper for SampleType -> unsigned char conversion
-    typedef typename DeviceHisto256::BinningIteratorRA<SampleType, BinOp> BinningIterator;
+    typedef TransformIteratorRA<unsigned char, BinOp, SampleType> BinningIterator;
     BinningIterator d_sample_itr(d_samples, bin_op);
 
     // Run warmup/correctness iteration
@@ -386,7 +386,7 @@ int main(int argc, char** argv)
         printf("%s "
             "[--device=<device-id>] "
             "[--v] "
-            "[--cnp]"
+            "[--atomic] "
             "[--uniform]"
             "[--n=<total number of samples across all channels>]"
             "[--i=<timing iterations>]"
@@ -401,15 +401,18 @@ int main(int argc, char** argv)
     Cast<unsigned char>     cast_op;        // Convert any numeric value to unsigned char via cast
     FloatScaleOp            scale_op;       // Convert [0 .. 1.0] fp32 value to unsigned char by scaling by 256
 
+
     // unsigned char
-    printf("\n------- Single-channel uchar ------- \n"); fflush(stdout);
+    printf("\n\n-- UINT8 -------------- \n"); fflush(stdout);
+
+    printf("\nSingle-channel\n"); fflush(stdout);
     Test<1, 1, unsigned char, int>(
         (uniform) ? UNIFORM : RANDOM,
         cast_op,
         num_samples,
         CUB_TYPE_STRING(unsigned char));
 
-    printf("\n------- Quad-channel uchar (RGB channels only) ------- \n"); fflush(stdout);
+    printf("\nQuad-channel (RGB channels only)\n"); fflush(stdout);
     Test<4, 3, unsigned char, int>(
         (uniform) ? UNIFORM : RANDOM,
         cast_op,
@@ -417,47 +420,52 @@ int main(int argc, char** argv)
         CUB_TYPE_STRING(unsigned char));
 
     // unsigned short
+    printf("\n\n-- UINT16 -------------- \n"); fflush(stdout);
 
-    printf("\n------- Single-channel ushort ------- \n"); fflush(stdout);
+    printf("\nSingle-channel\n"); fflush(stdout);
     Test<1, 1, unsigned short, int>(
         (uniform) ? UNIFORM : RANDOM,
         cast_op,
         num_samples,
         CUB_TYPE_STRING(unsigned short));
 
-    printf("\n------- Quad-channel ushort (RGB channels only) ------- \n"); fflush(stdout);
+    printf("\nQuad-channel (RGB channels only)\n"); fflush(stdout);
     Test<4, 3, unsigned short, int>(
         (uniform) ? UNIFORM : RANDOM,
         cast_op,
         num_samples,
         CUB_TYPE_STRING(unsigned short));
 
-    // unsigned int
 
-    printf("\n------- Single-channel uint ------- \n"); fflush(stdout);
+    // unsigned int
+    printf("\n\n-- UINT32 -------------- \n"); fflush(stdout);
+
+    printf("\nSingle-channel\n"); fflush(stdout);
     Test<1, 1, unsigned int, int>(
         (uniform) ? UNIFORM : RANDOM,
         cast_op,
         num_samples,
         CUB_TYPE_STRING(unsigned int));
 
-    printf("\n------- Quad-channel uint (RGB channels only) ------- \n"); fflush(stdout);
+    printf("\nQuad-channel (RGB channels only)\n"); fflush(stdout);
     Test<4, 3, unsigned int, int>(
         (uniform) ? UNIFORM : RANDOM,
         cast_op,
         num_samples,
         CUB_TYPE_STRING(unsigned int));
 
-    // float
 
-    printf("\n------- Single-channel fp32 ------- \n"); fflush(stdout);
+    // float
+    printf("\n\n-- FP32 -------------- \n"); fflush(stdout);
+
+    printf("\nSingle-channel\n"); fflush(stdout);
     Test<1, 1, float, int>(
         (uniform) ? UNIFORM : RANDOM,
         scale_op,
         num_samples,
         CUB_TYPE_STRING(float));
 
-    printf("\n------- Quad-channel fp32 (RGB channels only) ------- \n"); fflush(stdout);
+    printf("\nQuad-channel (RGB channels only)\n"); fflush(stdout);
     Test<4, 3, float, int>(
         (uniform) ? UNIFORM : RANDOM,
         scale_op,
