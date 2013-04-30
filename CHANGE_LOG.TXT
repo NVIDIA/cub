@@ -1,29 +1,47 @@
 //-----------------------------------------------------------------------------
 
+0.9.3	04/30/2013
+
+    - Added new BlockScan algorithm variant BLOCK_SCAN_RAKING_MEMOIZE, which 
+      trades more register consumption for less shared memory I/O)
+    - Added block-wide histogram (BlockHisto256)
+    - Updates to BlockRadixRank to use BlockScan (which improves performance
+      on Kepler due to SHFL instruction)
+    - Added device-wide histogram (DeviceHisto256)
+    - Fixed compilation errors for some WarpScan entrypoints on SM30+
+    - Allow types other than C++ primitives to be used in WarpScan::*Sum methods 
+      if they only have operator + overloaded.  (Previously they also required 
+      to support assignment from int(0).) 
+    - Update BlockReduce's BLOCK_REDUCE_WARP_REDUCTIONS algorithm to work even 
+      when block size is not an even multiple of warp size
+    - Added work management utility descriptors (GridQueue, GridEvenShare)
+    - Refactoring of DeviceAllocator interface and CachingDeviceAllocator 
+      implementation 
+    - Misc. documentation updates and corrections. 
+     
+//-----------------------------------------------------------------------------
+
 0.9.2	04/04/2013
 
-		- Added WarpReduce.  WarpReduce uses the SHFL instruction when applicable.
-		  BlockReduce now uses this WarpReduce instead of implementing its own.
-		    
-		- Misc. fixes for 64-bit Linux compilation warnings and errors.
-		
-		- Misc. documentation updates and corrections. 
+    - Added WarpReduce.  WarpReduce uses the SHFL instruction when applicable. 
+      BlockReduce now uses this WarpReduce instead of implementing its own.
+    - Misc. fixes for 64-bit Linux compilation warnings and errors.
+    - Misc. documentation updates and corrections. 
 
 //-----------------------------------------------------------------------------
 
 0.9.1	03/09/2013
 
-		- Fix for ambiguity in BlockScan::Reduce() between generic reduction and 
-		  summation.  Summation entrypoints are now called ::Sum(), similar
-		  to the convention in BlockScan.
-		    
-		- Small edits to mainpage documentation and download tracking
-		
+    - Fix for ambiguity in BlockScan::Reduce() between generic reduction and 
+      summation.  Summation entrypoints are now called ::Sum(), similar to the 
+      convention in BlockScan.
+    - Small edits to mainpage documentation and download tracking
+    
 //-----------------------------------------------------------------------------
 
 0.9.0	03/07/2013	
 
-		- Intial "preview" release.	CUB is the first durable, high-performance library 
-		  of cooperative block-level, warp-level, and thread-level primitives for CUDA 
-		  kernel programming.  More primitives and examples coming soon!
+    - Intial "preview" release.	CUB is the first durable, high-performance library 
+      of cooperative block-level, warp-level, and thread-level primitives for CUDA 
+      kernel programming.  More primitives and examples coming soon!
 	

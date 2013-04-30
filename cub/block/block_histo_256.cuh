@@ -28,7 +28,7 @@
 
 /**
  * \file
- * cub::BlockHisto256 provides methods for constructing (and compositing into) 256-valued histograms from 8b data partitioned across threads within a CUDA thread block.
+ * cub::BlockHisto256 provides methods for constructing (and compositing into) 256-bin histograms from 8b data partitioned across threads within a CUDA thread block.
  */
 
 #pragma once
@@ -78,7 +78,7 @@ enum BlockHisto256Algorithm
  */
 
 /**
- * \brief BlockHisto256 provides methods for constructing (and compositing into) 256-valued histograms from 8b data partitioned across threads within a CUDA thread block. ![](histogram_logo.png)
+ * \brief BlockHisto256 provides methods for constructing (and compositing into) 256-bin histograms from 8b data partitioned across threads within a CUDA thread block. ![](histogram_logo.png)
  *
  * \par Overview
  * A <a href="http://en.wikipedia.org/wiki/Histogram"><em>histogram</em></a>
