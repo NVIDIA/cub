@@ -29,7 +29,7 @@
 
 /**
  * \file
- * cub::DeviceHisto256 provides variants of device-wide parallel histogram over data residing within global memory.
+ * cub::DeviceHisto256 provides device-wide parallel operations for constructing 256-bin histogram(s) over data samples residing within global memory.
  */
 
 #pragma once
@@ -169,7 +169,7 @@ __global__ void FinalizeHisto256Kernel(
  */
 
 /**
- * \brief DeviceHisto256 provides variants of device-wide parallel histogram over data residing within global memory. ![](histogram_logo.png)
+ * \brief DeviceHisto256 provides device-wide parallel operations for constructing 256-bin histogram(s) over samples data residing within global memory. ![](histogram_logo.png)
  */
 struct DeviceHisto256
 {
