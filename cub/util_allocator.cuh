@@ -678,8 +678,6 @@ struct CachingDeviceAllocator : DeviceAllocator
  * DefaultDeviceAllocator (generic use)
  ******************************************************************************/
 
-#ifndef __CUDA_ARCH__
-
 /// Anonymous namespace to prevent multiple symbol definition errors
 namespace {
 
@@ -688,6 +686,7 @@ namespace {
 
 }               // anonymous namespace
 
+#ifndef __CUDA_ARCH__
     /**
      * \brief The default allocator for host and device usage.
      *
@@ -699,11 +698,8 @@ namespace {
      * be one CachingDeviceAllocator per compilation unit.
      */
     #define DefaultDeviceAllocator() (&host_allocator_singleton)
-
 #else
-
     #define DefaultDeviceAllocator() NULL
-
 #endif
 
 
