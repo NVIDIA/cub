@@ -35,18 +35,21 @@
 
 #include "../thread/thread_load.cuh"
 #include "../thread/thread_store.cuh"
-#include "../device_props.cuh"
-#include "../type_utils.cuh"
-#include "../operators.cuh"
-#include "../ns_wrapper.cuh"
+#include "../util_device.cuh"
+#include "../util_type.cuh"
+#include "../thread/thread_operators.cuh"
+#include "../util_namespace.cuh"
 
+/// Optional outer namespace(s)
 CUB_NS_PREFIX
 
 /// CUB namespace
 namespace cub {
 
+
+
 /**
- * \addtogroup SimtCoop
+ * \addtogroup WarpModule
  * @{
  */
 
@@ -54,21 +57,22 @@ namespace cub {
  * \brief WarpReduce provides variants of parallel reduction across CUDA warps.  ![](warp_reduce_logo.png)
  *
  * \par Overview
- * A <a href="http://en.wikipedia.org/wiki/Reduce_(higher-order_function)"><em>reduction</em> (or <em>fold</em>)</a>
+ * A <a href="http://en.wikipedia.org/wiki/Reduce_(higher-order_function)"><em>reduction</em></a> (or <em>fold</em>)
  * uses a binary combining operator to compute a single aggregate from a list of input elements.
  *
  * \par
- * For convenience, WarpReduce exposes a spectrum of entrypoints that differ by:
- * - Operator (generic reduction <em>vs.</em> summation for numeric types)
- * - Input (full warps <em>vs.</em> partially-full warps having some undefined elements)
+ * For convenience, WarpReduce provides alternative entrypoints that differ by:
+ * - Operator (generic reduction <em>vs.</em> summation of numeric types)
+ * - Input validity (full warps <em>vs.</em> partially-full warps having some undefined elements)
  *
  * \tparam T                        The reduction input/output element type
- * \tparam WARPS                    The number of "logical" warps performing concurrent warp reductions
- * \tparam LOGICAL_WARP_THREADS     <b>[optional]</b> The number of threads per "logical" warp (may be less than the number of hardware warp threads).  Default is the warp size associated with the CUDA Compute Capability targeted by the compiler (e.g., 32 threads for SM20).
+ * \tparam WARPS                    <b>[optional]</b> The number of "logical" warps performing concurrent warp reductions.  Default is 1.
+ * \tparam LOGICAL_WARP_THREADS     <b>[optional]</b> The number of threads per "logical" warp (may be less than the number of hardware warp threads).  Default is the warp size of the targeted CUDA compute-capability (e.g., 32 threads for SM20).
  *
  * \par Usage Considerations
  * - Supports non-commutative reduction operators
  * - Supports "logical" warps smaller than the physical warp size (e.g., a logical warp of 8 threads)
+ * - The number of entrant threads must be an even multiple of \p LOGICAL_WARP_THREADS (default is the warp size of the targeted CUDA compute-capability)
  * - Warp reductions are concurrent if more than one warp is participating
  * - The warp-wide scalar reduction output is only considered valid in <em>warp-lane</em><sub>0</sub>
  * - \smemreuse{WarpReduce::SmemStorage}
@@ -96,11 +100,11 @@ namespace cub {
  * \par Examples
  * <em>Example 1.</em> Perform a simple sum reduction for one warp
  * \code
- * #include <cub.cuh>
+ * #include <cub/cub.cuh>
  *
  * __global__ void SomeKernel(...)
  * {
- *     // A parameterized int-based WarpReduce type for use with one warp.
+ *     // Parameterize WarpReduce for 1 warp on type int
  *     typedef cub::WarpReduce<int, 1> WarpReduce;
  *
  *     // Opaque shared memory for WarpReduce
@@ -126,19 +130,15 @@ namespace cub {
  */
 template <
     typename    T,
-    int         WARPS,
-    int         LOGICAL_WARP_THREADS = DeviceProps::WARP_THREADS>
+    int         WARPS                   = 1,
+    int         LOGICAL_WARP_THREADS    = PtxArchProps::WARP_THREADS>
 class WarpReduce
 {
-    /// BlockReduce is a friend class that has access to the WarpReduceInternal classes
-    template <typename _T, int BLOCK_THERADS>
-    friend class BlockReduce;
-
-    //---------------------------------------------------------------------
-    // Constants and typedefs
-    //---------------------------------------------------------------------
-
 private:
+
+    /******************************************************************************
+     * Constants and typedefs
+     ******************************************************************************/
 
     /// WarpReduce algorithmic variants
     enum WarpReducePolicy
@@ -151,21 +151,25 @@ private:
     enum
     {
         POW_OF_TWO = ((LOGICAL_WARP_THREADS & (LOGICAL_WARP_THREADS - 1)) == 0),
-
-        /// Use SHFL_REDUCE if (architecture is >= SM30) and (T is a primitive) and (T is 4-bytes or smaller) and (LOGICAL_WARP_THREADS is a power-of-two)
-        POLICY = ((PTX_ARCH >= 300) && Traits<T>::PRIMITIVE && (sizeof(T) <= 4) && POW_OF_TWO) ?
-            SHFL_REDUCE :
-            SMEM_REDUCE,
     };
 
+    /// Use SHFL_REDUCE if (architecture is >= SM30) and (T is a primitive) and (T is 4-bytes or smaller) and (LOGICAL_WARP_THREADS is a power-of-two)
+    static const WarpReducePolicy POLICY = ((CUB_PTX_ARCH >= 300) && Traits<T>::PRIMITIVE && (sizeof(T) <= 4) && POW_OF_TWO) ?
+                                            SHFL_REDUCE :
+                                            SMEM_REDUCE;
 
-    /** \cond INTERNAL */
 
+    #ifndef DOXYGEN_SHOULD_SKIP_THIS    // Do not document
+
+
+    /******************************************************************************
+     * Algorithmic variants
+     ******************************************************************************/
 
     /**
-     * WarpReduce specialized for SHFL_REDUCE variant
+     * SHFL_REDUCE algorithmic variant
      */
-    template <int POLICY, int DUMMY = 0>
+    template <int _ALGORITHM, int DUMMY = 0>
     struct WarpReduceInternal
     {
         /// Constants
@@ -187,12 +191,12 @@ private:
         /// Shared memory storage layout type
         typedef NullType SmemStorage;
 
-        /// Reduction (specialized for unsigned int)
+        /// Summation (specialized for unsigned int)
         template <
             bool    FULL_TILE,
             int     VALID_PER_LANE>
         static __device__ __forceinline__ unsigned int Sum(
-            SmemStorage         &smem_storage,      ///< [in] Shared reference to opaque SmemStorage layout
+            SmemStorage         &smem_storage,      ///< [in] Reference to shared memory allocation having layout type SmemStorage
             unsigned int        input,              ///< [in] Calling thread's input
             const unsigned int  &valid)             ///< [in] Number of valid lanes in the calling thread's logical warp (may be less than \p LOGICAL_WARP_THREADS)
         {
@@ -235,12 +239,12 @@ private:
         }
 
 
-        /// Reduction (specialized for float)
+        /// Summation (specialized for float)
         template <
             bool    FULL_TILE,
             int     VALID_PER_LANE>
         static __device__ __forceinline__ float Sum(
-            SmemStorage         &smem_storage,      ///< [in] Shared reference to opaque SmemStorage layout
+            SmemStorage         &smem_storage,      ///< [in] Reference to shared memory allocation having layout type SmemStorage
             float               input,              ///< [in] Calling thread's input
             const unsigned int  &valid)             ///< [in] Number of valid lanes in the calling thread's logical warp (may be less than \p LOGICAL_WARP_THREADS)
         {
@@ -282,13 +286,13 @@ private:
             return input;
         }
 
-        /// Summation
+        /// Summation (generic)
         template <
             bool        FULL_TILE,
             int         VALID_PER_LANE,
             typename    _T>
         static __device__ __forceinline__ _T Sum(
-            SmemStorage         &smem_storage,      ///< [in] Shared reference to opaque SmemStorage layout
+            SmemStorage         &smem_storage,      ///< [in] Reference to shared memory allocation having layout type SmemStorage
             _T                  input,              ///< [in] Calling thread's input
             const unsigned int  &valid)             ///< [in] Number of valid lanes in the calling thread's logical warp (may be less than \p LOGICAL_WARP_THREADS)
         {
@@ -301,13 +305,13 @@ private:
             return output;
         }
 
-        /// Reduction
+        /// Reduction (generic)
         template <
             bool            FULL_TILE,
             int             VALID_PER_LANE,
             typename        ReductionOp>
         static __device__ __forceinline__ T Reduce(
-            SmemStorage         &smem_storage,      ///< [in] Shared reference to opaque SmemStorage layout
+            SmemStorage         &smem_storage,      ///< [in] Reference to shared memory allocation having layout type SmemStorage
             T                   input,              ///< [in] Calling thread's input
             const unsigned int  &valid,             ///< [in] Number of valid lanes in the calling thread's logical warp (may be less than \p LOGICAL_WARP_THREADS)
             ReductionOp         reduction_op)       ///< [in] Binary reduction operator
@@ -368,7 +372,7 @@ private:
 
 
     /**
-     * WarpReduce specialized for SMEM_REDUCE
+     * SMEM_REDUCE algorithmic variant
      */
     template <int DUMMY>
     struct WarpReduceInternal<SMEM_REDUCE, DUMMY>
@@ -384,9 +388,6 @@ private:
 
             /// The number of shared memory elements per warp
             WARP_SMEM_ELEMENTS =  LOGICAL_WARP_THREADS + HALF_WARP_THREADS,
-
-            /// Whether or not warp-synchronous reduction should be unguarded (i.e., the warp-reduction elements is a power of two
-            WARP_SYNCHRONOUS_UNGUARDED = ((LOGICAL_WARP_THREADS & (LOGICAL_WARP_THREADS - 1)) == 0),
         };
 
 
@@ -405,7 +406,7 @@ private:
             int                 VALID_PER_LANE,
             typename            ReductionOp>
         static __device__ __forceinline__ T Reduce(
-            SmemStorage         &smem_storage,      ///< [in] Shared reference to opaque SmemStorage layout
+            SmemStorage         &smem_storage,      ///< [in] Reference to shared memory allocation having layout type SmemStorage
             T                   input,              ///< [in] Calling thread's input
             const unsigned int  &valid,             ///< [in] Number of valid lanes in the calling thread's logical warp (may be less than \p LOGICAL_WARP_THREADS)
             ReductionOp         reduction_op)       ///< [in] Reduction operator
@@ -422,7 +423,7 @@ private:
                 ThreadStore<PTX_STORE_VS>(&smem_storage.warp_buffer[warp_id][lane_id], input);
 
                 // Update input if addend is in range
-                if ((FULL_TILE && WARP_SYNCHRONOUS_UNGUARDED) || ((lane_id + OFFSET) * VALID_PER_LANE < valid))
+                if ((FULL_TILE && POW_OF_TWO) || ((lane_id + OFFSET) * VALID_PER_LANE < valid))
                 {
                     T addend = ThreadLoad<PTX_LOAD_VS>(&smem_storage.warp_buffer[warp_id][lane_id + OFFSET]);
                     input = reduction_op(input, addend);
@@ -440,7 +441,7 @@ private:
             bool    FULL_TILE,
             int     VALID_PER_LANE>
         static __device__ __forceinline__ T Sum(
-            SmemStorage         &smem_storage,      ///< [in] Shared reference to opaque SmemStorage layout
+            SmemStorage         &smem_storage,      ///< [in] Reference to shared memory allocation having layout type SmemStorage
             T                   input,              ///< [in] Calling thread's input
             const unsigned int  &valid)             ///< [in] Number of valid lanes in the calling thread's logical warp (may be less than \p LOGICAL_WARP_THREADS)
         {
@@ -451,18 +452,16 @@ private:
     };
 
 
-    /** \endcond */     // INTERNAL
+public:
 
     typedef WarpReduceInternal<POLICY> Internal;
 
-    /// Shared memory storage layout type for WarpReduce
-    typedef typename Internal::SmemStorage _SmemStorage;
-
+#endif // DOXYGEN_SHOULD_SKIP_THIS
 
 public:
 
     /// \smemstorage{WarpReduce}
-    typedef _SmemStorage SmemStorage;
+    typedef typename Internal::SmemStorage SmemStorage;
 
 
     /******************************************************************//**
@@ -475,10 +474,12 @@ public:
      *
      * The return value is undefined in threads other than thread<sub>0</sub>.
      *
+     * The number of entrant threads must be an even multiple of \p LOGICAL_WARP_THREADS (default is the warp size of the targeted CUDA compute-capability)
+     *
      * \smemreuse
      */
     static __device__ __forceinline__ T Sum(
-        SmemStorage         &smem_storage,      ///< [in] Shared reference to opaque SmemStorage layout
+        SmemStorage         &smem_storage,      ///< [in] Reference to shared memory allocation having layout type SmemStorage
         T                   input)              ///< [in] Calling thread's input
     {
         return Internal::Sum<true, 1>(smem_storage, input, LOGICAL_WARP_THREADS);
@@ -491,15 +492,17 @@ public:
      *
      * The return value is undefined in threads other than <em>warp-lane</em><sub>0</sub>.
      *
+     * The number of entrant threads must be an even multiple of \p LOGICAL_WARP_THREADS (default is the warp size of the targeted CUDA compute-capability)
+     *
      * \smemreuse
      */
     static __device__ __forceinline__ T Sum(
-        SmemStorage         &smem_storage,          ///< [in] Shared reference to opaque SmemStorage layout
+        SmemStorage         &smem_storage,          ///< [in] Reference to shared memory allocation having layout type SmemStorage
         T                   input,                  ///< [in] Calling thread's input
         const unsigned int  &valid_lanes)           ///< [in] Number of valid lanes in the calling thread's logical warp (may be less than \p LOGICAL_WARP_THREADS)
     {
         // Determine if we don't need bounds checking
-        if (valid_lanes == LOGICAL_WARP_THREADS)
+        if (valid_lanes >= LOGICAL_WARP_THREADS)
         {
             return Internal::Sum<true, 1>(smem_storage, input, valid_lanes);
         }
@@ -510,7 +513,7 @@ public:
     }
 
 
-    //@}
+    //@}  end member group
     /******************************************************************//**
      * \name Generic reductions
      *********************************************************************/
@@ -521,13 +524,15 @@ public:
      *
      * The return value is undefined in threads other than <em>warp-lane</em><sub>0</sub>.
      *
+     * The number of entrant threads must be an even multiple of \p LOGICAL_WARP_THREADS (default is the warp size of the targeted CUDA compute-capability)
+     *
      * \smemreuse
      *
      * \tparam ReductionOp     <b>[inferred]</b> Binary scan operator type having member <tt>T operator()(const T &a, const T &b)</tt>
      */
     template <typename ReductionOp>
     static __device__ __forceinline__ T Reduce(
-        SmemStorage         &smem_storage,      ///< [in] Shared reference to opaque SmemStorage layout
+        SmemStorage         &smem_storage,      ///< [in] Reference to shared memory allocation having layout type SmemStorage
         T                   input,              ///< [in] Calling thread's input
         ReductionOp         reduction_op)       ///< [in] Binary reduction operator
     {
@@ -541,19 +546,21 @@ public:
      *
      * The return value is undefined in threads other than <em>warp-lane</em><sub>0</sub>.
      *
+     * The number of entrant threads must be an even multiple of \p LOGICAL_WARP_THREADS (default is the warp size of the targeted CUDA compute-capability)
+     *
      * \smemreuse
      *
      * \tparam ReductionOp     <b>[inferred]</b> Binary scan operator type having member <tt>T operator()(const T &a, const T &b)</tt>
      */
     template <typename ReductionOp>
     static __device__ __forceinline__ T Reduce(
-        SmemStorage         &smem_storage,      ///< [in] Shared reference to opaque SmemStorage layout
+        SmemStorage         &smem_storage,      ///< [in] Reference to shared memory allocation having layout type SmemStorage
         T                   input,              ///< [in] Calling thread's input
         ReductionOp         reduction_op,       ///< [in] Binary reduction operator
         const unsigned int  &valid_lanes)       ///< [in] Number of valid lanes in the calling thread's logical warp (may be less than \p LOGICAL_WARP_THREADS)
     {
         // Determine if we don't need bounds checking
-        if (valid_lanes == LOGICAL_WARP_THREADS)
+        if (valid_lanes >= LOGICAL_WARP_THREADS)
         {
             return Internal::Reduce<true, 1>(smem_storage, input, valid_lanes, reduction_op);
         }
@@ -567,10 +574,10 @@ public:
 
 
 
-    //@}
+    //@}  end member group
 };
 
-/** @} */       // end of SimtCoop group
+/** @} */       // end group WarpModule
 
-} // namespace cub
-CUB_NS_POSTFIX
+}               // CUB namespace
+CUB_NS_POSTFIX  // Optional outer namespace(s)

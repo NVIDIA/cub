@@ -33,21 +33,24 @@
 
 #pragma once
 
-#include "../device_props.cuh"
-#include "../type_utils.cuh"
-#include "../ptx_intrinsics.cuh"
+#include "../util_arch.cuh"
+#include "../util_type.cuh"
+#include "../util_ptx.cuh"
+#include "../util_debug.cuh"
 #include "../thread/thread_reduce.cuh"
 #include "../thread/thread_scan.cuh"
-#include "../ns_wrapper.cuh"
+#include "../block/block_scan.cuh"
+#include "../util_namespace.cuh"
 
 
+/// Optional outer namespace(s)
 CUB_NS_PREFIX
 
 /// CUB namespace
 namespace cub {
 
 /**
- * \addtogroup SimtCoop
+ * \addtogroup BlockModule
  * @{
  */
 
@@ -59,6 +62,8 @@ namespace cub {
  *
  * \tparam BLOCK_THREADS        The threadblock size in threads
  * \tparam RADIX_BITS           <b>[optional]</b> The number of radix bits per digit place (default: 5 bits)
+ * \tparam MEMOIZE_OUTER_SCAN   <b>[optional]</b> Whether or not to buffer outer raking scan partials to incur fewer shared memory reads at the expense of higher register pressure (default: true for architectures SM35 and newer, false otherwise).  See BlockScanAlgorithm::BLOCK_SCAN_RAKING_MEMOIZE for more details.
+ * \tparam INNER_SCAN_ALGORITHM <b>[optional]</b> The cub::BlockScanAlgorithm algorithm to use (default: cub::BLOCK_SCAN_WARP_SCANS)
  * \tparam SMEM_CONFIG          <b>[optional]</b> Shared memory bank mode (default: \p cudaSharedMemBankSizeFourByte)
  *
  * \par Usage Considerations
@@ -77,7 +82,7 @@ namespace cub {
  * \par
  * - <b>Example 1:</b> Simple radix rank of 32-bit integer keys
  *      \code
- *      #include <cub.cuh>
+ *      #include <cub/cub.cuh>
  *
  *      template <int BLOCK_THREADS>
  *      __global__ void SomeKernel(...)
@@ -88,7 +93,9 @@ namespace cub {
 template <
     int                     BLOCK_THREADS,
     int                     RADIX_BITS,
-    cudaSharedMemConfig     SMEM_CONFIG = cudaSharedMemBankSizeFourByte>    // Shared memory bank size
+    bool                    MEMOIZE_OUTER_SCAN      = (CUB_PTX_ARCH >= 350) ? true : false,
+    BlockScanAlgorithm      INNER_SCAN_ALGORITHM    = BLOCK_SCAN_WARP_SCANS,
+    cudaSharedMemConfig     SMEM_CONFIG             = cudaSharedMemBankSizeFourByte>
 class BlockRadixRank
 {
 private:
@@ -108,8 +115,8 @@ private:
     enum {
         RADIX_DIGITS                 = 1 << RADIX_BITS,
 
-        LOG_WARP_THREADS             = DeviceProps::LOG_WARP_THREADS,
-        WARP_THREADS                = 1 << LOG_WARP_THREADS,
+        LOG_WARP_THREADS             = PtxArchProps::LOG_WARP_THREADS,
+        WARP_THREADS                 = 1 << LOG_WARP_THREADS,
         WARPS                        = (BLOCK_THREADS + WARP_THREADS - 1) / WARP_THREADS,
 
         BYTES_PER_COUNTER            = sizeof(DigitCounter),
@@ -122,17 +129,20 @@ private:
         COUNTER_LANES                = 1 << LOG_COUNTER_LANES,
 
         // The number of packed counters per thread (plus one for padding)
-        RAKING_SEGMENT                = COUNTER_LANES + 1,
+        RAKING_SEGMENT               = COUNTER_LANES + 1,
 
-        LOG_SMEM_BANKS                = DeviceProps::LOG_SMEM_BANKS,
-        SMEM_BANKS                    = 1 << LOG_SMEM_BANKS,
+        LOG_SMEM_BANKS               = PtxArchProps::LOG_SMEM_BANKS,
+        SMEM_BANKS                   = 1 << LOG_SMEM_BANKS,
     };
+
+    /// BlockScan type
+    typedef BlockScan<PackedCounter, BLOCK_THREADS, INNER_SCAN_ALGORITHM> BlockScan;
 
     /// Shared memory storage layout type for BlockRadixRank
     struct _SmemStorage
     {
         // Storage for scanning local ranks
-        volatile PackedCounter        warpscan[WARPS][WARP_THREADS * 3 / 2];
+        typename BlockScan::SmemStorage block_scan;
 
         union
         {
@@ -169,11 +179,11 @@ private :
          */
         template <typename UnsignedBits, int KEYS_PER_THREAD>
         static __device__ __forceinline__ void DecodeKeys(
-            SmemStorage        &smem_storage,                       // Shared memory storage
-            UnsignedBits     (&keys)[KEYS_PER_THREAD],              // Key to decode
-            DigitCounter     (&thread_prefixes)[KEYS_PER_THREAD],   // Prefix counter value (out parameter)
-            DigitCounter*     (&digit_counters)[KEYS_PER_THREAD],   // Counter smem offset (out parameter)
-            unsigned int     current_bit)                           // The least-significant bit position of the current digit to extract
+            SmemStorage     &smem_storage,                       // Shared memory storage
+            UnsignedBits    (&keys)[KEYS_PER_THREAD],              // Key to decode
+            DigitCounter    (&thread_prefixes)[KEYS_PER_THREAD],   // Prefix counter value (out parameter)
+            DigitCounter*   (&digit_counters)[KEYS_PER_THREAD],   // Counter smem offset (out parameter)
+            unsigned int    current_bit)                           // The least-significant bit position of the current digit to extract
         {
             // Add in sub-counter offset
             UnsignedBits sub_counter = BFE(keys[COUNT], current_bit + LOG_COUNTER_LANES, LOG_PACKING_RATIO);
@@ -198,10 +208,10 @@ private :
         // Termination
         template <int KEYS_PER_THREAD>
         static __device__ __forceinline__ void UpdateRanks(
-            SmemStorage        &smem_storage,                       // Shared memory storage
-            unsigned int     (&ranks)[KEYS_PER_THREAD],             // Local ranks (out parameter)
-            DigitCounter     (&thread_prefixes)[KEYS_PER_THREAD],   // Prefix counter value
-            DigitCounter*     (&digit_counters)[KEYS_PER_THREAD])   // Counter smem offset
+            SmemStorage     &smem_storage,                       // Shared memory storage
+            unsigned int    (&ranks)[KEYS_PER_THREAD],             // Local ranks (out parameter)
+            DigitCounter    (&thread_prefixes)[KEYS_PER_THREAD],   // Prefix counter value
+            DigitCounter*   (&digit_counters)[KEYS_PER_THREAD])   // Counter smem offset
         {
             // Add in threadblock exclusive prefix
             ranks[COUNT] = thread_prefixes[COUNT] + *digit_counters[COUNT];
@@ -219,26 +229,85 @@ private :
         // DecodeKeys
         template <typename UnsignedBits, int KEYS_PER_THREAD>
         static __device__ __forceinline__ void DecodeKeys(
-            SmemStorage        &smem_storage,
-            UnsignedBits     (&keys)[KEYS_PER_THREAD],
-            DigitCounter     (&thread_prefixes)[KEYS_PER_THREAD],
-            DigitCounter*    (&digit_counters)[KEYS_PER_THREAD],
-            unsigned int     current_bit) {}
+            SmemStorage     &smem_storage,
+            UnsignedBits    (&keys)[KEYS_PER_THREAD],
+            DigitCounter    (&thread_prefixes)[KEYS_PER_THREAD],
+            DigitCounter*   (&digit_counters)[KEYS_PER_THREAD],
+            unsigned int    current_bit) {}
 
 
         // UpdateRanks
         template <int KEYS_PER_THREAD>
         static __device__ __forceinline__ void UpdateRanks(
-            SmemStorage        &smem_storage,
-            unsigned int     (&ranks)[KEYS_PER_THREAD],
-            DigitCounter     (&thread_prefixes)[KEYS_PER_THREAD],
-            DigitCounter*    (&digit_counters)[KEYS_PER_THREAD]) {}
+            SmemStorage     &smem_storage,
+            unsigned int    (&ranks)[KEYS_PER_THREAD],
+            DigitCounter    (&thread_prefixes)[KEYS_PER_THREAD],
+            DigitCounter    *(&digit_counters)[KEYS_PER_THREAD]) {}
     };
 
 
     //---------------------------------------------------------------------
     // Utility methods
     //---------------------------------------------------------------------
+
+
+    /// Raking helper structure
+    struct RakingHelper
+    {
+        /// Copy of raking segment, promoted to registers
+        PackedCounter cached_segment[RAKING_SEGMENT];
+
+        // Performs upsweep raking reduction, returning the aggregate
+        __device__ __forceinline__ PackedCounter Upsweep(SmemStorage &smem_storage)
+        {
+            PackedCounter *smem_raking_ptr = smem_storage.raking_grid[threadIdx.x];
+            PackedCounter *raking_ptr;
+
+            if (MEMOIZE_OUTER_SCAN)
+            {
+                // Copy data into registers
+                #pragma unroll
+                for (int i = 0; i < RAKING_SEGMENT; i++)
+                {
+                    cached_segment[i] = smem_raking_ptr[i];
+                }
+                raking_ptr = cached_segment;
+            }
+            else
+            {
+                raking_ptr = smem_raking_ptr;
+            }
+
+            return ThreadReduce<RAKING_SEGMENT>(raking_ptr, Sum<PackedCounter>());
+        }
+
+
+        /// Performs exclusive downsweep raking scan
+        __device__ __forceinline__ void ExclusiveDownsweep(
+            SmemStorage&    smem_storage,
+            PackedCounter   raking_partial)
+        {
+            PackedCounter *smem_raking_ptr = smem_storage.raking_grid[threadIdx.x];
+
+            PackedCounter *raking_ptr = (MEMOIZE_OUTER_SCAN) ?
+                cached_segment :
+                smem_raking_ptr;
+
+            // Exclusive raking downsweep scan
+            ThreadScanExclusive<RAKING_SEGMENT>(raking_ptr, raking_ptr, Sum<PackedCounter>(), raking_partial);
+
+            if (MEMOIZE_OUTER_SCAN)
+            {
+                // Copy data back to smem
+                #pragma unroll
+                for (int i = 0; i < RAKING_SEGMENT; i++)
+                {
+                    smem_raking_ptr[i] = cached_segment[i];
+                }
+            }
+        }
+    };
+
 
     /**
      * Reset shared memory digit counters
@@ -259,63 +328,25 @@ private :
      */
     static __device__ __forceinline__ void ScanCounters(SmemStorage &smem_storage)
     {
-        PackedCounter *raking_segment = smem_storage.raking_grid[threadIdx.x];
+        // Upsweep scan
+        RakingHelper helper;
+        PackedCounter raking_partial = helper.Upsweep(smem_storage);
 
-        // Upsweep reduce
-        PackedCounter raking_partial         = ThreadReduce<RAKING_SEGMENT>(raking_segment, Sum<PackedCounter>());
+        // Compute inclusive sum
+        PackedCounter inclusive_partial;
+        PackedCounter packed_aggregate;
+        BlockScan::InclusiveSum(smem_storage.block_scan, raking_partial, inclusive_partial, packed_aggregate);
 
-        int warp_id                         = threadIdx.x >> LOG_WARP_THREADS;
-        int tid                             = threadIdx.x & (WARP_THREADS - 1);
-        volatile PackedCounter *warpscan     = &smem_storage.warpscan[warp_id][(WARP_THREADS / 2) + tid];
-
-        // Initialize warpscan identity regions
-        warpscan[0 - (WARP_THREADS / 2)] = 0;
-
-        // Warpscan
-        PackedCounter partial = raking_partial;
-        warpscan[0] = partial;
-
-        #pragma unroll
-        for (int STEP = 0; STEP < LOG_WARP_THREADS; STEP++)
-        {
-            partial += warpscan[0 - (1 << STEP)];
-            warpscan[0] = partial;
-        }
-
-        // TestBarrier
-        __syncthreads();
-
-        // Scan across warpscan totals
-        PackedCounter warpscan_totals = 0;
-
-        #pragma unroll
-        for (int WARP = 0; WARP < WARPS; WARP++)
-        {
-            // Add totals from all previous warpscans into our partial
-            PackedCounter warpscan_total = smem_storage.warpscan[WARP][(WARP_THREADS * 3 / 2) - 1];
-            if (warp_id == WARP) {
-                partial += warpscan_totals;
-            }
-
-            // Increment warpscan totals
-            warpscan_totals += warpscan_total;
-        }
-
-        // Add lower totals from all warpscans into partial's upper
+        // Propagate totals in packed fields
         #pragma unroll
         for (int PACKED = 1; PACKED < PACKING_RATIO; PACKED++)
         {
-            partial += warpscan_totals << (sizeof(DigitCounter) * 8 * PACKED);
+            inclusive_partial += packed_aggregate << (sizeof(DigitCounter) * 8 * PACKED);
         }
 
         // Downsweep scan with exclusive partial
-        PackedCounter exclusive_partial = partial - raking_partial;
-
-        exclusive_partial = ThreadScanExclusive<RAKING_SEGMENT>(
-            raking_segment,
-            raking_segment,
-            Sum<PackedCounter>(),
-            exclusive_partial);
+        PackedCounter exclusive_partial = inclusive_partial - raking_partial;
+        helper.ExclusiveDownsweep(smem_storage, exclusive_partial);
     }
 
 public:
@@ -389,8 +420,9 @@ public:
     }
 };
 
-/** @} */       // SimtCoop
+/** @} */       // BlockModule
 
-} // namespace cub
-CUB_NS_POSTFIX
+}               // CUB namespace
+CUB_NS_POSTFIX  // Optional outer namespace(s)
+
 

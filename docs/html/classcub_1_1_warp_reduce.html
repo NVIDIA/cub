@@ -74,8 +74,6 @@ var searchBox = new SearchBox("searchBox", "search",false,'Search');
     <ul class="tablist">
       <li><a href="annotated.html"><span>Class&#160;List</span></a></li>
       <li><a href="classes.html"><span>Class&#160;Index</span></a></li>
-      <li><a href="hierarchy.html"><span>Class&#160;Hierarchy</span></a></li>
-      <li><a href="functions.html"><span>Class&#160;Members</span></a></li>
     </ul>
   </div>
 <!-- window showing the filter options -->
@@ -83,7 +81,7 @@ var searchBox = new SearchBox("searchBox", "search",false,'Search');
      onmouseover="return searchBox.OnSearchSelectShow()"
      onmouseout="return searchBox.OnSearchSelectHide()"
      onkeydown="return searchBox.OnSearchSelectKey(event)">
-<a class="SelectItem" href="javascript:void(0)" onclick="searchBox.OnSelectItem(0)"><span class="SelectionMark">&#160;</span>All</a><a class="SelectItem" href="javascript:void(0)" onclick="searchBox.OnSelectItem(1)"><span class="SelectionMark">&#160;</span>Classes</a><a class="SelectItem" href="javascript:void(0)" onclick="searchBox.OnSelectItem(2)"><span class="SelectionMark">&#160;</span>Namespaces</a><a class="SelectItem" href="javascript:void(0)" onclick="searchBox.OnSelectItem(3)"><span class="SelectionMark">&#160;</span>Files</a><a class="SelectItem" href="javascript:void(0)" onclick="searchBox.OnSelectItem(4)"><span class="SelectionMark">&#160;</span>Functions</a><a class="SelectItem" href="javascript:void(0)" onclick="searchBox.OnSelectItem(5)"><span class="SelectionMark">&#160;</span>Variables</a><a class="SelectItem" href="javascript:void(0)" onclick="searchBox.OnSelectItem(6)"><span class="SelectionMark">&#160;</span>Typedefs</a><a class="SelectItem" href="javascript:void(0)" onclick="searchBox.OnSelectItem(7)"><span class="SelectionMark">&#160;</span>Enumerations</a><a class="SelectItem" href="javascript:void(0)" onclick="searchBox.OnSelectItem(8)"><span class="SelectionMark">&#160;</span>Enumerator</a><a class="SelectItem" href="javascript:void(0)" onclick="searchBox.OnSelectItem(9)"><span class="SelectionMark">&#160;</span>Friends</a><a class="SelectItem" href="javascript:void(0)" onclick="searchBox.OnSelectItem(10)"><span class="SelectionMark">&#160;</span>Macros</a><a class="SelectItem" href="javascript:void(0)" onclick="searchBox.OnSelectItem(11)"><span class="SelectionMark">&#160;</span>Groups</a><a class="SelectItem" href="javascript:void(0)" onclick="searchBox.OnSelectItem(12)"><span class="SelectionMark">&#160;</span>Pages</a></div>
+<a class="SelectItem" href="javascript:void(0)" onclick="searchBox.OnSelectItem(0)"><span class="SelectionMark">&#160;</span>All</a><a class="SelectItem" href="javascript:void(0)" onclick="searchBox.OnSelectItem(1)"><span class="SelectionMark">&#160;</span>Classes</a><a class="SelectItem" href="javascript:void(0)" onclick="searchBox.OnSelectItem(2)"><span class="SelectionMark">&#160;</span>Namespaces</a><a class="SelectItem" href="javascript:void(0)" onclick="searchBox.OnSelectItem(3)"><span class="SelectionMark">&#160;</span>Files</a><a class="SelectItem" href="javascript:void(0)" onclick="searchBox.OnSelectItem(4)"><span class="SelectionMark">&#160;</span>Functions</a><a class="SelectItem" href="javascript:void(0)" onclick="searchBox.OnSelectItem(5)"><span class="SelectionMark">&#160;</span>Variables</a><a class="SelectItem" href="javascript:void(0)" onclick="searchBox.OnSelectItem(6)"><span class="SelectionMark">&#160;</span>Typedefs</a><a class="SelectItem" href="javascript:void(0)" onclick="searchBox.OnSelectItem(7)"><span class="SelectionMark">&#160;</span>Enumerations</a><a class="SelectItem" href="javascript:void(0)" onclick="searchBox.OnSelectItem(8)"><span class="SelectionMark">&#160;</span>Enumerator</a><a class="SelectItem" href="javascript:void(0)" onclick="searchBox.OnSelectItem(9)"><span class="SelectionMark">&#160;</span>Groups</a><a class="SelectItem" href="javascript:void(0)" onclick="searchBox.OnSelectItem(10)"><span class="SelectionMark">&#160;</span>Pages</a></div>
 
 <!-- iframe showing the search results (closed by default) -->
 <div id="MSearchResultsWindow">
@@ -100,14 +98,13 @@ var searchBox = new SearchBox("searchBox", "search",false,'Search');
 <div class="header">
   <div class="summary">
 <a href="#pub-types">Public Types</a> &#124;
-<a href="#friends">Friends</a> &#124;
 <a href="classcub_1_1_warp_reduce-members.html">List of all members</a>  </div>
   <div class="headertitle">
-<div class="title">cub::WarpReduce&lt; T, WARPS, LOGICAL_WARP_THREADS &gt; Class Template Reference<div class="ingroups"><a class="el" href="group___simt_coop.html">Cooperative SIMT Operations</a></div></div>  </div>
+<div class="title">cub::WarpReduce&lt; T, WARPS, LOGICAL_WARP_THREADS &gt; Class Template Reference<div class="ingroups"><a class="el" href="group___warp_module.html">Warp-wide</a></div></div>  </div>
 </div><!--header-->
 <div class="contents">
 <a name="details" id="details"></a><h2 class="groupheader">Detailed description</h2>
-<div class="textblock"><h3>template&lt;typename T, int WARPS, int LOGICAL_WARP_THREADS = DeviceProps::WARP_THREADS&gt;<br/>
+<div class="textblock"><h3>template&lt;typename T, int WARPS = 1, int LOGICAL_WARP_THREADS = PtxArchProps::WARP_THREADS&gt;<br/>
 class cub::WarpReduce&lt; T, WARPS, LOGICAL_WARP_THREADS &gt;</h3>
 
 <p><a class="el" href="classcub_1_1_warp_reduce.html" title="WarpReduce provides variants of parallel reduction across CUDA warps. .">WarpReduce</a> provides variants of parallel reduction across CUDA warps. </p>
@@ -115,26 +112,27 @@ class cub::WarpReduce&lt; T, WARPS, LOGICAL_WARP_THREADS &gt;</h3>
 <img src="warp_reduce_logo.png" alt="warp_reduce_logo.png"/>
 <div class="caption">
 .</div></div>
- <dl class="section user"><dt>Overview</dt><dd>A <a href="http://en.wikipedia.org/wiki/Reduce_(higher-order_function)"><em>reduction</em> (or <em>fold</em>)</a> uses a binary combining operator to compute a single aggregate from a list of input elements.</dd></dl>
-<dl class="section user"><dt></dt><dd>For convenience, <a class="el" href="classcub_1_1_warp_reduce.html" title="WarpReduce provides variants of parallel reduction across CUDA warps. .">WarpReduce</a> exposes a spectrum of entrypoints that differ by:<ul>
-<li>Operator (generic reduction <em>vs.</em> summation for numeric types)</li>
-<li>Input (full warps <em>vs.</em> partially-full warps having some undefined elements)</li>
+ <dl class="section user"><dt>Overview</dt><dd>A <a href="http://en.wikipedia.org/wiki/Reduce_(higher-order_function)"><em>reduction</em></a> (or <em>fold</em>) uses a binary combining operator to compute a single aggregate from a list of input elements.</dd></dl>
+<dl class="section user"><dt></dt><dd>For convenience, <a class="el" href="classcub_1_1_warp_reduce.html" title="WarpReduce provides variants of parallel reduction across CUDA warps. .">WarpReduce</a> provides alternative entrypoints that differ by:<ul>
+<li>Operator (generic reduction <em>vs.</em> summation of numeric types)</li>
+<li>Input validity (full warps <em>vs.</em> partially-full warps having some undefined elements)</li>
 </ul>
 </dd></dl>
 <dl class="tparams"><dt>Template Parameters</dt><dd>
   <table class="tparams">
     <tr><td class="paramname">T</td><td>The reduction input/output element type </td></tr>
-    <tr><td class="paramname">WARPS</td><td>The number of "logical" warps performing concurrent warp reductions </td></tr>
-    <tr><td class="paramname">LOGICAL_WARP_THREADS</td><td><b>[optional]</b> The number of threads per "logical" warp (may be less than the number of hardware warp threads). Default is the warp size associated with the CUDA Compute Capability targeted by the compiler (e.g., 32 threads for SM20).</td></tr>
+    <tr><td class="paramname">WARPS</td><td><b>[optional]</b> The number of "logical" warps performing concurrent warp reductions. Default is 1. </td></tr>
+    <tr><td class="paramname">LOGICAL_WARP_THREADS</td><td><b>[optional]</b> The number of threads per "logical" warp (may be less than the number of hardware warp threads). Default is the warp size of the targeted CUDA compute-capability (e.g., 32 threads for SM20).</td></tr>
   </table>
   </dd>
 </dl>
 <dl class="section user"><dt>Usage Considerations</dt><dd><ul>
 <li>Supports non-commutative reduction operators</li>
 <li>Supports "logical" warps smaller than the physical warp size (e.g., a logical warp of 8 threads)</li>
+<li>The number of entrant threads must be an even multiple of <code>LOGICAL_WARP_THREADS</code> (default is the warp size of the targeted CUDA compute-capability)</li>
 <li>Warp reductions are concurrent if more than one warp is participating</li>
 <li>The warp-wide scalar reduction output is only considered valid in <em>warp-lane</em><sub>0</sub></li>
-<li>After any operation, a subsequent <code>__syncthreads()</code> barrier is required if the supplied <a class="el" href="classcub_1_1_warp_reduce.html#a4807b030bca03efb7fff2f6e9ea8b3d2" title="The operations exposed by WarpReduce require shared memory of this type. This opaque storage can be a...">WarpReduce::SmemStorage</a> is to be reused or repurposed by the threadblock</li>
+<li>After any operation, a subsequent <code>__syncthreads()</code> barrier is required if the supplied <a class="el" href="classcub_1_1_warp_reduce.html#a71f87b76f0deeaa5ba3a708374d19c8c" title="The operations exposed by WarpReduce require shared memory of this type. This opaque storage can be a...">WarpReduce::SmemStorage</a> is to be reused or repurposed by the threadblock</li>
 </ul>
 </dd></dl>
 <dl class="section user"><dt>Performance Considerations</dt><dd><ul>
@@ -155,15 +153,15 @@ class cub::WarpReduce&lt; T, WARPS, LOGICAL_WARP_THREADS &gt;</h3>
 </div>
  <div class="centercaption">Data flow within a 16-thread Kogge-Stone reduction construction. Junctions represent binary operators.</div> <br/>
 </dd></dl>
-<dl class="section user"><dt>Examples</dt><dd><em>Example 1.</em> Perform a simple sum reduction for one warp <div class="fragment"><div class="line"><span class="preprocessor">#include &lt;cub.cuh&gt;</span></div>
+<dl class="section user"><dt>Examples</dt><dd><em>Example 1.</em> Perform a simple sum reduction for one warp <div class="fragment"><div class="line"><span class="preprocessor">#include &lt;<a class="code" href="cub_8cuh.html">cub/cub.cuh</a>&gt;</span></div>
 <div class="line"></div>
 <div class="line">__global__ <span class="keywordtype">void</span> SomeKernel(...)</div>
 <div class="line">{</div>
-<div class="line">    <span class="comment">// A parameterized int-based WarpReduce type for use with one warp.</span></div>
+<div class="line">    <span class="comment">// Parameterize WarpReduce for 1 warp on type int</span></div>
 <div class="line">    <span class="keyword">typedef</span> <a class="code" href="classcub_1_1_warp_reduce.html" title="WarpReduce provides variants of parallel reduction across CUDA warps. .">cub::WarpReduce&lt;int, 1&gt;</a> WarpReduce;</div>
 <div class="line"></div>
 <div class="line">    <span class="comment">// Opaque shared memory for WarpReduce</span></div>
-<div class="line">    __shared__ <span class="keyword">typename</span> <a class="code" href="classcub_1_1_warp_reduce.html#a4807b030bca03efb7fff2f6e9ea8b3d2" title="The operations exposed by WarpReduce require shared memory of this type. This opaque storage can be a...">WarpReduce::SmemStorage</a> smem_storage;</div>
+<div class="line">    __shared__ <span class="keyword">typename</span> <a class="code" href="classcub_1_1_warp_reduce.html#a71f87b76f0deeaa5ba3a708374d19c8c" title="The operations exposed by WarpReduce require shared memory of this type. This opaque storage can be a...">WarpReduce::SmemStorage</a> smem_storage;</div>
 <div class="line"></div>
 <div class="line">    <span class="comment">// Perform a reduction of thread ranks in first warp</span></div>
 <div class="line">    <span class="keywordflow">if</span> (threadIdx.x &lt; 32)</div>
@@ -181,44 +179,36 @@ class cub::WarpReduce&lt; T, WARPS, LOGICAL_WARP_THREADS &gt;</h3>
 </div><table class="memberdecls">
 <tr class="heading"><td colspan="2"><h2 class="groupheader"><a name="pub-types"></a>
 Public Types</h2></td></tr>
-<tr class="memitem:a4807b030bca03efb7fff2f6e9ea8b3d2"><td class="memItemLeft" align="right" valign="top"><a class="anchor" id="a4807b030bca03efb7fff2f6e9ea8b3d2"></a>
-typedef _SmemStorage&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classcub_1_1_warp_reduce.html#a4807b030bca03efb7fff2f6e9ea8b3d2">SmemStorage</a></td></tr>
-<tr class="memdesc:a4807b030bca03efb7fff2f6e9ea8b3d2"><td class="mdescLeft">&#160;</td><td class="mdescRight">The operations exposed by <a class="el" href="classcub_1_1_warp_reduce.html" title="WarpReduce provides variants of parallel reduction across CUDA warps. .">WarpReduce</a> require shared memory of this type. This opaque storage can be allocated directly using the <code>__shared__</code> keyword. Alternatively, it can be aliased to externally allocated shared memory or <code>union</code>'d with other types to facilitate shared memory reuse. <br/></td></tr>
-<tr class="separator:a4807b030bca03efb7fff2f6e9ea8b3d2"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a71f87b76f0deeaa5ba3a708374d19c8c"><td class="memItemLeft" align="right" valign="top"><a class="anchor" id="a71f87b76f0deeaa5ba3a708374d19c8c"></a>
+typedef Internal::SmemStorage&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classcub_1_1_warp_reduce.html#a71f87b76f0deeaa5ba3a708374d19c8c">SmemStorage</a></td></tr>
+<tr class="memdesc:a71f87b76f0deeaa5ba3a708374d19c8c"><td class="mdescLeft">&#160;</td><td class="mdescRight">The operations exposed by <a class="el" href="classcub_1_1_warp_reduce.html" title="WarpReduce provides variants of parallel reduction across CUDA warps. .">WarpReduce</a> require shared memory of this type. This opaque storage can be allocated directly using the <code>__shared__</code> keyword. Alternatively, it can be aliased to externally allocated shared memory or <code>union</code>'d with other types to facilitate shared memory reuse. <br/></td></tr>
+<tr class="separator:a71f87b76f0deeaa5ba3a708374d19c8c"><td class="memSeparator" colspan="2">&#160;</td></tr>
 </table><table class="memberdecls">
 <tr class="heading"><td colspan="2"><h2 class="groupheader"><a name="pub-static-methods"></a>
 Static Public Methods</h2></td></tr>
 <tr><td colspan="2"><div class="groupHeader">Summation reductions</div></td></tr>
-<tr class="memitem:a50e4be93dbd298b7c2b5080d1449cf8c"><td class="memItemLeft" align="right" valign="top">static __device__ __forceinline__ T&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classcub_1_1_warp_reduce.html#a50e4be93dbd298b7c2b5080d1449cf8c">Sum</a> (<a class="el" href="classcub_1_1_warp_reduce.html#a4807b030bca03efb7fff2f6e9ea8b3d2">SmemStorage</a> &amp;smem_storage, T input)</td></tr>
+<tr class="memitem:a50e4be93dbd298b7c2b5080d1449cf8c"><td class="memItemLeft" align="right" valign="top">static __device__ __forceinline__ T&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classcub_1_1_warp_reduce.html#a50e4be93dbd298b7c2b5080d1449cf8c">Sum</a> (<a class="el" href="classcub_1_1_warp_reduce.html#a71f87b76f0deeaa5ba3a708374d19c8c">SmemStorage</a> &amp;smem_storage, T input)</td></tr>
 <tr class="memdesc:a50e4be93dbd298b7c2b5080d1449cf8c"><td class="mdescLeft">&#160;</td><td class="mdescRight">Computes a warp-wide sum for <em>warp-lane</em><sub>0</sub> in each active warp.  <a href="#a50e4be93dbd298b7c2b5080d1449cf8c">More...</a><br/></td></tr>
 <tr class="separator:a50e4be93dbd298b7c2b5080d1449cf8c"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:a0c1ad8bee00bc64f14f3b0d762b84363"><td class="memItemLeft" align="right" valign="top">static __device__ __forceinline__ T&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classcub_1_1_warp_reduce.html#a0c1ad8bee00bc64f14f3b0d762b84363">Sum</a> (<a class="el" href="classcub_1_1_warp_reduce.html#a4807b030bca03efb7fff2f6e9ea8b3d2">SmemStorage</a> &amp;smem_storage, T input, const unsigned int &amp;valid_lanes)</td></tr>
+<tr class="memitem:a0c1ad8bee00bc64f14f3b0d762b84363"><td class="memItemLeft" align="right" valign="top">static __device__ __forceinline__ T&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classcub_1_1_warp_reduce.html#a0c1ad8bee00bc64f14f3b0d762b84363">Sum</a> (<a class="el" href="classcub_1_1_warp_reduce.html#a71f87b76f0deeaa5ba3a708374d19c8c">SmemStorage</a> &amp;smem_storage, T input, const unsigned int &amp;valid_lanes)</td></tr>
 <tr class="memdesc:a0c1ad8bee00bc64f14f3b0d762b84363"><td class="mdescLeft">&#160;</td><td class="mdescRight">Computes a warp-wide sum for <em>warp-lane</em><sub>0</sub> in each active warp.  <a href="#a0c1ad8bee00bc64f14f3b0d762b84363">More...</a><br/></td></tr>
 <tr class="separator:a0c1ad8bee00bc64f14f3b0d762b84363"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr><td colspan="2"><div class="groupHeader">Generic reductions</div></td></tr>
 <tr class="memitem:ae738f8236bead17ca279b34419892ef9"><td class="memTemplParams" colspan="2">template&lt;typename ReductionOp &gt; </td></tr>
-<tr class="memitem:ae738f8236bead17ca279b34419892ef9"><td class="memTemplItemLeft" align="right" valign="top">static __device__ __forceinline__ T&#160;</td><td class="memTemplItemRight" valign="bottom"><a class="el" href="classcub_1_1_warp_reduce.html#ae738f8236bead17ca279b34419892ef9">Reduce</a> (<a class="el" href="classcub_1_1_warp_reduce.html#a4807b030bca03efb7fff2f6e9ea8b3d2">SmemStorage</a> &amp;smem_storage, T input, ReductionOp reduction_op)</td></tr>
+<tr class="memitem:ae738f8236bead17ca279b34419892ef9"><td class="memTemplItemLeft" align="right" valign="top">static __device__ __forceinline__ T&#160;</td><td class="memTemplItemRight" valign="bottom"><a class="el" href="classcub_1_1_warp_reduce.html#ae738f8236bead17ca279b34419892ef9">Reduce</a> (<a class="el" href="classcub_1_1_warp_reduce.html#a71f87b76f0deeaa5ba3a708374d19c8c">SmemStorage</a> &amp;smem_storage, T input, ReductionOp reduction_op)</td></tr>
 <tr class="memdesc:ae738f8236bead17ca279b34419892ef9"><td class="mdescLeft">&#160;</td><td class="mdescRight">Computes a warp-wide reduction for <em>warp-lane</em><sub>0</sub> in each active warp using the specified binary reduction functor.  <a href="#ae738f8236bead17ca279b34419892ef9">More...</a><br/></td></tr>
 <tr class="separator:ae738f8236bead17ca279b34419892ef9"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:a4f893685caf95690550964c45a34f19b"><td class="memTemplParams" colspan="2">template&lt;typename ReductionOp &gt; </td></tr>
-<tr class="memitem:a4f893685caf95690550964c45a34f19b"><td class="memTemplItemLeft" align="right" valign="top">static __device__ __forceinline__ T&#160;</td><td class="memTemplItemRight" valign="bottom"><a class="el" href="classcub_1_1_warp_reduce.html#a4f893685caf95690550964c45a34f19b">Reduce</a> (<a class="el" href="classcub_1_1_warp_reduce.html#a4807b030bca03efb7fff2f6e9ea8b3d2">SmemStorage</a> &amp;smem_storage, T input, ReductionOp reduction_op, const unsigned int &amp;valid_lanes)</td></tr>
+<tr class="memitem:a4f893685caf95690550964c45a34f19b"><td class="memTemplItemLeft" align="right" valign="top">static __device__ __forceinline__ T&#160;</td><td class="memTemplItemRight" valign="bottom"><a class="el" href="classcub_1_1_warp_reduce.html#a4f893685caf95690550964c45a34f19b">Reduce</a> (<a class="el" href="classcub_1_1_warp_reduce.html#a71f87b76f0deeaa5ba3a708374d19c8c">SmemStorage</a> &amp;smem_storage, T input, ReductionOp reduction_op, const unsigned int &amp;valid_lanes)</td></tr>
 <tr class="memdesc:a4f893685caf95690550964c45a34f19b"><td class="mdescLeft">&#160;</td><td class="mdescRight">Computes a warp-wide reduction for <em>warp-lane</em><sub>0</sub> in each active warp using the specified binary reduction functor.  <a href="#a4f893685caf95690550964c45a34f19b">More...</a><br/></td></tr>
 <tr class="separator:a4f893685caf95690550964c45a34f19b"><td class="memSeparator" colspan="2">&#160;</td></tr>
-</table><table class="memberdecls">
-<tr class="heading"><td colspan="2"><h2 class="groupheader"><a name="friends"></a>
-Friends</h2></td></tr>
-<tr class="memitem:a48bdd86ea499bbd83386c10d1ff4839e"><td class="memTemplParams" colspan="2"><a class="anchor" id="a48bdd86ea499bbd83386c10d1ff4839e"></a>
-template&lt;typename _T , int BLOCK_THERADS&gt; </td></tr>
-<tr class="memitem:a48bdd86ea499bbd83386c10d1ff4839e"><td class="memTemplItemLeft" align="right" valign="top">class&#160;</td><td class="memTemplItemRight" valign="bottom"><a class="el" href="classcub_1_1_warp_reduce.html#a48bdd86ea499bbd83386c10d1ff4839e">BlockReduce</a></td></tr>
-<tr class="memdesc:a48bdd86ea499bbd83386c10d1ff4839e"><td class="mdescLeft">&#160;</td><td class="mdescRight"><a class="el" href="classcub_1_1_block_reduce.html" title="BlockReduce provides variants of parallel reduction across a CUDA threadblock. .">BlockReduce</a> is a friend class that has access to the WarpReduceInternal classes. <br/></td></tr>
-<tr class="separator:a48bdd86ea499bbd83386c10d1ff4839e"><td class="memSeparator" colspan="2">&#160;</td></tr>
 </table>
 <h2 class="groupheader">Member Function Documentation</h2>
 <a class="anchor" id="a50e4be93dbd298b7c2b5080d1449cf8c"></a>
 <div class="memitem">
 <div class="memproto">
 <div class="memtemplate">
-template&lt;typename T , int WARPS, int LOGICAL_WARP_THREADS = DeviceProps::WARP_THREADS&gt; </div>
+template&lt;typename T , int WARPS = 1, int LOGICAL_WARP_THREADS = PtxArchProps::WARP_THREADS&gt; </div>
 <table class="mlabels">
   <tr>
   <td class="mlabels-left">
@@ -226,7 +216,7 @@ template&lt;typename T , int WARPS, int LOGICAL_WARP_THREADS = DeviceProps::WARP
         <tr>
           <td class="memname">static __device__ __forceinline__ T <a class="el" href="classcub_1_1_warp_reduce.html">cub::WarpReduce</a>&lt; T, WARPS, LOGICAL_WARP_THREADS &gt;::<a class="el" href="structcub_1_1_sum.html">Sum</a> </td>
           <td>(</td>
-          <td class="paramtype"><a class="el" href="classcub_1_1_warp_reduce.html#a4807b030bca03efb7fff2f6e9ea8b3d2">SmemStorage</a> &amp;&#160;</td>
+          <td class="paramtype"><a class="el" href="classcub_1_1_warp_reduce.html#a71f87b76f0deeaa5ba3a708374d19c8c">SmemStorage</a> &amp;&#160;</td>
           <td class="paramname"><em>smem_storage</em>, </td>
         </tr>
         <tr>
@@ -250,10 +240,11 @@ template&lt;typename T , int WARPS, int LOGICAL_WARP_THREADS = DeviceProps::WARP
 
 <p>Computes a warp-wide sum for <em>warp-lane</em><sub>0</sub> in each active warp. </p>
 <p>The return value is undefined in threads other than thread<sub>0</sub>.</p>
+<p>The number of entrant threads must be an even multiple of <code>LOGICAL_WARP_THREADS</code> (default is the warp size of the targeted CUDA compute-capability)</p>
 <p>A subsequent <code>__syncthreads()</code> threadblock barrier should be invoked after calling this method if the supplied <code>smem_storage</code> is to be reused or repurposed by the threadblock. </p>
 <dl class="params"><dt>Parameters</dt><dd>
   <table class="params">
-    <tr><td class="paramdir">[in]</td><td class="paramname">smem_storage</td><td>Shared reference to opaque SmemStorage layout </td></tr>
+    <tr><td class="paramdir">[in]</td><td class="paramname">smem_storage</td><td>Reference to shared memory allocation having layout type SmemStorage </td></tr>
     <tr><td class="paramdir">[in]</td><td class="paramname">input</td><td>Calling thread's input </td></tr>
   </table>
   </dd>
@@ -265,7 +256,7 @@ template&lt;typename T , int WARPS, int LOGICAL_WARP_THREADS = DeviceProps::WARP
 <div class="memitem">
 <div class="memproto">
 <div class="memtemplate">
-template&lt;typename T , int WARPS, int LOGICAL_WARP_THREADS = DeviceProps::WARP_THREADS&gt; </div>
+template&lt;typename T , int WARPS = 1, int LOGICAL_WARP_THREADS = PtxArchProps::WARP_THREADS&gt; </div>
 <table class="mlabels">
   <tr>
   <td class="mlabels-left">
@@ -273,7 +264,7 @@ template&lt;typename T , int WARPS, int LOGICAL_WARP_THREADS = DeviceProps::WARP
         <tr>
           <td class="memname">static __device__ __forceinline__ T <a class="el" href="classcub_1_1_warp_reduce.html">cub::WarpReduce</a>&lt; T, WARPS, LOGICAL_WARP_THREADS &gt;::<a class="el" href="structcub_1_1_sum.html">Sum</a> </td>
           <td>(</td>
-          <td class="paramtype"><a class="el" href="classcub_1_1_warp_reduce.html#a4807b030bca03efb7fff2f6e9ea8b3d2">SmemStorage</a> &amp;&#160;</td>
+          <td class="paramtype"><a class="el" href="classcub_1_1_warp_reduce.html#a71f87b76f0deeaa5ba3a708374d19c8c">SmemStorage</a> &amp;&#160;</td>
           <td class="paramname"><em>smem_storage</em>, </td>
         </tr>
         <tr>
@@ -304,10 +295,11 @@ template&lt;typename T , int WARPS, int LOGICAL_WARP_THREADS = DeviceProps::WARP
 <p>Computes a warp-wide sum for <em>warp-lane</em><sub>0</sub> in each active warp. </p>
 <p>All threads in each logical warp must agree on the same value for <code>valid_lanes</code>. Otherwise the result is undefined.</p>
 <p>The return value is undefined in threads other than <em>warp-lane</em><sub>0</sub>.</p>
+<p>The number of entrant threads must be an even multiple of <code>LOGICAL_WARP_THREADS</code> (default is the warp size of the targeted CUDA compute-capability)</p>
 <p>A subsequent <code>__syncthreads()</code> threadblock barrier should be invoked after calling this method if the supplied <code>smem_storage</code> is to be reused or repurposed by the threadblock. </p>
 <dl class="params"><dt>Parameters</dt><dd>
   <table class="params">
-    <tr><td class="paramdir">[in]</td><td class="paramname">smem_storage</td><td>Shared reference to opaque SmemStorage layout </td></tr>
+    <tr><td class="paramdir">[in]</td><td class="paramname">smem_storage</td><td>Reference to shared memory allocation having layout type SmemStorage </td></tr>
     <tr><td class="paramdir">[in]</td><td class="paramname">input</td><td>Calling thread's input </td></tr>
     <tr><td class="paramdir">[in]</td><td class="paramname">valid_lanes</td><td>Number of valid lanes in the calling thread's logical warp (may be less than <code>LOGICAL_WARP_THREADS</code>) </td></tr>
   </table>
@@ -320,7 +312,7 @@ template&lt;typename T , int WARPS, int LOGICAL_WARP_THREADS = DeviceProps::WARP
 <div class="memitem">
 <div class="memproto">
 <div class="memtemplate">
-template&lt;typename T , int WARPS, int LOGICAL_WARP_THREADS = DeviceProps::WARP_THREADS&gt; </div>
+template&lt;typename T , int WARPS = 1, int LOGICAL_WARP_THREADS = PtxArchProps::WARP_THREADS&gt; </div>
 <div class="memtemplate">
 template&lt;typename ReductionOp &gt; </div>
 <table class="mlabels">
@@ -330,7 +322,7 @@ template&lt;typename ReductionOp &gt; </div>
         <tr>
           <td class="memname">static __device__ __forceinline__ T <a class="el" href="classcub_1_1_warp_reduce.html">cub::WarpReduce</a>&lt; T, WARPS, LOGICAL_WARP_THREADS &gt;::Reduce </td>
           <td>(</td>
-          <td class="paramtype"><a class="el" href="classcub_1_1_warp_reduce.html#a4807b030bca03efb7fff2f6e9ea8b3d2">SmemStorage</a> &amp;&#160;</td>
+          <td class="paramtype"><a class="el" href="classcub_1_1_warp_reduce.html#a71f87b76f0deeaa5ba3a708374d19c8c">SmemStorage</a> &amp;&#160;</td>
           <td class="paramname"><em>smem_storage</em>, </td>
         </tr>
         <tr>
@@ -360,6 +352,7 @@ template&lt;typename ReductionOp &gt; </div>
 
 <p>Computes a warp-wide reduction for <em>warp-lane</em><sub>0</sub> in each active warp using the specified binary reduction functor. </p>
 <p>The return value is undefined in threads other than <em>warp-lane</em><sub>0</sub>.</p>
+<p>The number of entrant threads must be an even multiple of <code>LOGICAL_WARP_THREADS</code> (default is the warp size of the targeted CUDA compute-capability)</p>
 <p>A subsequent <code>__syncthreads()</code> threadblock barrier should be invoked after calling this method if the supplied <code>smem_storage</code> is to be reused or repurposed by the threadblock.</p>
 <dl class="tparams"><dt>Template Parameters</dt><dd>
   <table class="tparams">
@@ -369,7 +362,7 @@ template&lt;typename ReductionOp &gt; </div>
 </dl>
 <dl class="params"><dt>Parameters</dt><dd>
   <table class="params">
-    <tr><td class="paramdir">[in]</td><td class="paramname">smem_storage</td><td>Shared reference to opaque SmemStorage layout </td></tr>
+    <tr><td class="paramdir">[in]</td><td class="paramname">smem_storage</td><td>Reference to shared memory allocation having layout type SmemStorage </td></tr>
     <tr><td class="paramdir">[in]</td><td class="paramname">input</td><td>Calling thread's input </td></tr>
     <tr><td class="paramdir">[in]</td><td class="paramname">reduction_op</td><td>Binary reduction operator </td></tr>
   </table>
@@ -382,7 +375,7 @@ template&lt;typename ReductionOp &gt; </div>
 <div class="memitem">
 <div class="memproto">
 <div class="memtemplate">
-template&lt;typename T , int WARPS, int LOGICAL_WARP_THREADS = DeviceProps::WARP_THREADS&gt; </div>
+template&lt;typename T , int WARPS = 1, int LOGICAL_WARP_THREADS = PtxArchProps::WARP_THREADS&gt; </div>
 <div class="memtemplate">
 template&lt;typename ReductionOp &gt; </div>
 <table class="mlabels">
@@ -392,7 +385,7 @@ template&lt;typename ReductionOp &gt; </div>
         <tr>
           <td class="memname">static __device__ __forceinline__ T <a class="el" href="classcub_1_1_warp_reduce.html">cub::WarpReduce</a>&lt; T, WARPS, LOGICAL_WARP_THREADS &gt;::Reduce </td>
           <td>(</td>
-          <td class="paramtype"><a class="el" href="classcub_1_1_warp_reduce.html#a4807b030bca03efb7fff2f6e9ea8b3d2">SmemStorage</a> &amp;&#160;</td>
+          <td class="paramtype"><a class="el" href="classcub_1_1_warp_reduce.html#a71f87b76f0deeaa5ba3a708374d19c8c">SmemStorage</a> &amp;&#160;</td>
           <td class="paramname"><em>smem_storage</em>, </td>
         </tr>
         <tr>
@@ -429,6 +422,7 @@ template&lt;typename ReductionOp &gt; </div>
 <p>Computes a warp-wide reduction for <em>warp-lane</em><sub>0</sub> in each active warp using the specified binary reduction functor. </p>
 <p>All threads in each logical warp must agree on the same value for <code>valid_lanes</code>. Otherwise the result is undefined.</p>
 <p>The return value is undefined in threads other than <em>warp-lane</em><sub>0</sub>.</p>
+<p>The number of entrant threads must be an even multiple of <code>LOGICAL_WARP_THREADS</code> (default is the warp size of the targeted CUDA compute-capability)</p>
 <p>A subsequent <code>__syncthreads()</code> threadblock barrier should be invoked after calling this method if the supplied <code>smem_storage</code> is to be reused or repurposed by the threadblock.</p>
 <dl class="tparams"><dt>Template Parameters</dt><dd>
   <table class="tparams">
@@ -438,7 +432,7 @@ template&lt;typename ReductionOp &gt; </div>
 </dl>
 <dl class="params"><dt>Parameters</dt><dd>
   <table class="params">
-    <tr><td class="paramdir">[in]</td><td class="paramname">smem_storage</td><td>Shared reference to opaque SmemStorage layout </td></tr>
+    <tr><td class="paramdir">[in]</td><td class="paramname">smem_storage</td><td>Reference to shared memory allocation having layout type SmemStorage </td></tr>
     <tr><td class="paramdir">[in]</td><td class="paramname">input</td><td>Calling thread's input </td></tr>
     <tr><td class="paramdir">[in]</td><td class="paramname">reduction_op</td><td>Binary reduction operator </td></tr>
     <tr><td class="paramdir">[in]</td><td class="paramname">valid_lanes</td><td>Number of valid lanes in the calling thread's logical warp (may be less than <code>LOGICAL_WARP_THREADS</code>) </td></tr>
@@ -455,7 +449,7 @@ template&lt;typename ReductionOp &gt; </div>
 <!-- HTML footer for doxygen 1.8.3.1-->
 <!-- start footer part -->
 <hr class="footer"/><address class="footer"><small>
-Generated on Thu Apr 4 2013 11:10:44 for CUB by &#160;<a href="http://www.doxygen.org/index.html">
+Generated on Wed May 1 2013 05:38:35 for CUB by &#160;<a href="http://www.doxygen.org/index.html">
 <img class="footer" src="doxygen.png" alt="doxygen"/>
 </a> 1.8.3.1
 <br>
