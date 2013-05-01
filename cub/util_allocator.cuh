@@ -252,6 +252,7 @@ struct CachingDeviceAllocator : DeviceAllocator
     size_t          max_cached_bytes;   /// Maximum aggregate cached bytes per device
 
     bool            debug;              /// Whether or not to print (de)allocation events to stdout
+    bool            silent_cleanup;     /// Whether or not to report errors when destructor is called.  (The CUDA runtime may have already shut down for statically declared allocators)
 
 #ifndef __CUDA_ARCH__   // Only define STL container members in host code
 
@@ -304,12 +305,12 @@ struct CachingDeviceAllocator : DeviceAllocator
      * which delineates five bin-sizes: 512B, 4KB, 32KB, 256KB, and 2MB and
      * sets a maximum of 6,291,455 cached bytes per device
      */
-    __host__ __device__ __forceinline__ CachingDeviceAllocator()
-    :
+    __host__ __device__ __forceinline__ CachingDeviceAllocator(bool silent_cleanup = false) :
     #ifndef __CUDA_ARCH__   // Only define STL container members in host code
         cached_blocks(BlockDescriptor::SizeCompare),
         live_blocks(BlockDescriptor::PtrCompare),
     #endif
+        silent_cleanup(silent_cleanup),
         debug(false),
         spin_lock(0),
         bin_growth(8),
@@ -597,11 +598,11 @@ struct CachingDeviceAllocator : DeviceAllocator
     /**
      * \brief Frees all cached device allocations on all devices
      */
-    __host__ __device__ __forceinline__ cudaError_t FreeAllCached()
+    __host__ __device__ __forceinline__ cudaError_t FreeAllCached(bool silent = false)
     {
     #ifdef __CUDA_ARCH__
         // Caching functionality only defined on host
-        return CubDebug(cudaErrorInvalidConfiguration);
+        return CubDebug2(cudaErrorInvalidConfiguration, silent);
     #else
 
         cudaError_t error                   = cudaSuccess;
@@ -623,18 +624,18 @@ struct CachingDeviceAllocator : DeviceAllocator
             // Get entry-point device ordinal if necessary
             if (entrypoint_device == INVALID_DEVICE_ORDINAL)
             {
-                if (CubDebug(error = cudaGetDevice(&entrypoint_device))) break;
+                if (CubDebug2(error = cudaGetDevice(&entrypoint_device), silent)) break;
             }
 
             // Set current device ordinal if necessary
             if (begin->device != current_device)
             {
-                if (CubDebug(error = cudaSetDevice(begin->device))) break;
+                if (CubDebug2(error = cudaSetDevice(begin->device), silent)) break;
                 current_device = begin->device;
             }
 
             // Free device memory
-            if (CubDebug(error = cudaFree(begin->d_ptr))) break;
+            if (CubDebug2(error = cudaFree(begin->d_ptr), silent)) break;
 
             // Reduce balance and erase entry
             cached_bytes[current_device] -= begin->bytes;
@@ -653,7 +654,7 @@ struct CachingDeviceAllocator : DeviceAllocator
         // Attempt to revert back to entry-point device if necessary
         if (entrypoint_device != INVALID_DEVICE_ORDINAL)
         {
-            if (CubDebug(error = cudaSetDevice(entrypoint_device))) return error;
+            if (CubDebug2(error = cudaSetDevice(entrypoint_device), silent)) return error;
         }
 
         return error;
@@ -667,7 +668,7 @@ struct CachingDeviceAllocator : DeviceAllocator
      */
     CUB_DESTRUCTOR __forceinline__ virtual ~CachingDeviceAllocator()
     {
-        FreeAllCached();
+        FreeAllCached(silent_cleanup);
     }
 
 };
@@ -683,7 +684,7 @@ struct CachingDeviceAllocator : DeviceAllocator
 namespace {
 
     /// Singleton, thread-safe caching allocator (one per compilation unit)
-    CachingDeviceAllocator host_allocator_singleton;
+    CachingDeviceAllocator host_allocator_singleton(true);
 
 }               // anonymous namespace
 

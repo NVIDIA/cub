@@ -254,7 +254,6 @@ private:
 
         // Composite data onto an existing histogram
         template <
-            int                 ITEMS_PER_THREAD,
             typename            HistoCounter>
         static __device__ __forceinline__ void Composite(
             SmemStorage         &smem_storage,                  ///< [in] Reference to shared memory allocation having layout type SmemStorage
@@ -330,7 +329,6 @@ private:
 
         /// Composite data onto an existing histogram
         template <
-            int                 ITEMS_PER_THREAD,
             typename            HistoCounter>
         static __device__ __forceinline__ void Composite(
             SmemStorage         &smem_storage,                  ///< [in] Reference to shared memory allocation having layout type SmemStorage
@@ -392,7 +390,6 @@ public:
      * \tparam HistoCounter         <b>[inferred]</b> Histogram counter type
      */
     template <
-        int                 ITEMS_PER_THREAD,
         typename            HistoCounter>
     static __device__ __forceinline__ void Histogram(
         SmemStorage         &smem_storage,                  ///< [in] Reference to shared memory allocation having layout type SmemStorage
@@ -413,11 +410,9 @@ public:
      *
      * \smemreuse
      *
-     * \tparam ITEMS_PER_THREAD     <b>[inferred]</b> The number of 8b values per thread
      * \tparam HistoCounter         <b>[inferred]</b> Histogram counter type
      */
     template <
-        int                 ITEMS_PER_THREAD,
         typename            HistoCounter>
     static __device__ __forceinline__ void Composite(
         SmemStorage         &smem_storage,                  ///< [in] Reference to shared memory allocation having layout type SmemStorage

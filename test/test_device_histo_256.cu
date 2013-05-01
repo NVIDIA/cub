@@ -49,7 +49,8 @@ using namespace cub;
 bool    g_verbose       = false;
 int     g_iterations    = 100;
 bool    g_atomic        = false;
-
+bool    g_verbose_input = false;
+    
 
 /**
  * Scaling operator for binning f32 types
@@ -58,7 +59,8 @@ struct FloatScaleOp
 {
     __host__ __device__ __forceinline__ unsigned char operator()(float datum)
     {
-        return (unsigned char)(datum * 256.0);
+        float datum_scale = datum * 255.9f;
+        return (unsigned char) datum_scale;
     }
 };
 
@@ -157,7 +159,7 @@ void Initialize(
         unsigned char bin = bin_op(h_samples[i]);
         int channel = i % CHANNELS;
 
-        if (g_verbose)
+        if (g_verbose_input)
         {
             if (channel == 0) printf("<");
             if (channel == CHANNELS - 1)
@@ -172,7 +174,7 @@ void Initialize(
         }
     }
 
-    if (g_verbose) printf("\n\n");
+    if (g_verbose_input) printf("\n\n");
 }
 
 
@@ -401,7 +403,6 @@ int main(int argc, char** argv)
     Cast<unsigned char>     cast_op;        // Convert any numeric value to unsigned char via cast
     FloatScaleOp            scale_op;       // Convert [0 .. 1.0] fp32 value to unsigned char by scaling by 256
 
-
     // unsigned char
     printf("\n\n-- UINT8 -------------- \n"); fflush(stdout);
 
@@ -453,7 +454,6 @@ int main(int argc, char** argv)
         cast_op,
         num_samples,
         CUB_TYPE_STRING(unsigned int));
-
 
     // float
     printf("\n\n-- FP32 -------------- \n"); fflush(stdout);

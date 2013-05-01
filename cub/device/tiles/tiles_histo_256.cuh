@@ -208,6 +208,8 @@ private:
             HistoCounter    (&histograms)[ACTIVE_CHANNELS][256],
             const int       &guarded_items = TILE_ITEMS)
         {
+            // We take several passes through the tile in this variant, extracting the samples for one channel at a time
+
             // First channel
             ConsumeTileChannel(smem_storage, 0, d_in, block_offset, histograms, guarded_items);
 
@@ -244,7 +246,9 @@ private:
             HistoCounter    (&histograms)[ACTIVE_CHANNELS][256],
             const int       &guarded_items = TILE_ITEMS)
         {
+            // We strip-mine consecutive samples in this variant, so the samples in consecutive threads are destined for different channels
             int my_channel = threadIdx.x % CHANNELS;
+
             if (guarded_items < TILE_ITEMS)
             {
                 #pragma unroll
@@ -335,6 +339,7 @@ public:
         while (block_offset + TILE_ITEMS <= block_oob)
         {
             TilesHisto256Internal<BLOCK_ALGORITHM>::ConsumeTile(smem_storage, d_in, block_offset, histograms);
+
             block_offset += TILE_ITEMS;
 
             // Skip synchro for atomic version since we know it doesn't use any smem
