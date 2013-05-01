@@ -3,7 +3,7 @@
  *****************************************************************************/
 
 body, table, div, p, dl {
-		font: 400 13px/22px arial,sans-serif;
+		font: 13px/22px arial,sans-serif;
 }
 
 body {
@@ -87,8 +87,9 @@ div.title {
 		color: #2B4068;
 		padding-top: 16px;
 		padding-bottom: 16px;
-		font: bold 140% "courier new",courier,monospace;
-		margin: auto;
+		font: bold 120% "courier new",courier,monospace;
+		padding-left: 40px;
+		text-indent: -40px;
 }
 
 #navrow1 {
@@ -237,11 +238,16 @@ div.toc {
 		width: 225px;
 }
 
+/** Detailed class name and template params */
 div.textblock h3 {
-		display: none;
+		font: 11px/16px "courier new",courier,monospace;		
+		color: cadetblue;
+		padding-left: 40px;
+		text-indent: -40px;
+		white-space: pre-wrap
 }
 
-table.memname tbody tr:first-child td.paramtype {
+table.memname tbody tr:first-child td:nth-child(2) {
 		padding-top: 50px;
 }
 
@@ -361,11 +367,12 @@ div.memitem {
 }
 
 .memTemplParams {
-		color: darkGoldenrod;
+		color: cadetblue;
 		white-space: normal;
 }
 
 td.memTemplItemRight, td.memItemRight {
+		vertical-align: top;
 		font-family: "courier new",courier,monospace;
 }
 
@@ -374,7 +381,7 @@ td.memItemRight a.el:first-of-type, td.memTemplItemRight a.el:first-of-type {
 }
 
 td.memTemplItemLeft, td.memItemLeft {
-		color: darkCyan;
+		color: cadetblue;
 }
 
 div.groupHeader {
@@ -400,7 +407,7 @@ td.memname, td.paramtype, div.memtemplate {
 
 .memtemplate {
 		font-size: 85%;
-		color: darkGoldenrod;
+		color: cadetblue;
 }
 
 td.paramname {

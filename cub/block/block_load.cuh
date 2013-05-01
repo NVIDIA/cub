@@ -35,26 +35,27 @@
 
 #include <iterator>
 
-#include "../ns_wrapper.cuh"
-#include "../macro_utils.cuh"
+#include "../util_namespace.cuh"
+#include "../util_macro.cuh"
+#include "../util_type.cuh"
+#include "../util_vector.cuh"
 #include "../thread/thread_load.cuh"
-#include "../type_utils.cuh"
-#include "../vector_type.cuh"
 #include "block_exchange.cuh"
 
+/// Optional outer namespace(s)
 CUB_NS_PREFIX
 
 /// CUB namespace
 namespace cub {
 
 /**
- *  \addtogroup SimtUtils
+ * \addtogroup BlockModule
  * @{
  */
 
 
 /******************************************************************//**
- * \name Direct threadblock loads (blocked arrangement)
+ * \name Direct threadblock I/O (blocked arrangement)
  *********************************************************************/
 //@{
 
@@ -68,15 +69,15 @@ namespace cub {
  * \tparam MODIFIER             cub::PtxLoadModifier cache modifier.
  * \tparam T                    <b>[inferred]</b> The data type to load.
  * \tparam ITEMS_PER_THREAD     <b>[inferred]</b> The number of consecutive items partitioned onto each thread.
- * \tparam InputIterator        <b>[inferred]</b> The input iterator type (may be a simple pointer type).
+ * \tparam InputIteratorRA      <b>[inferred]</b> The random-access iterator type for input (may be a simple pointer type).
  */
 template <
     PtxLoadModifier MODIFIER,
     typename        T,
     int             ITEMS_PER_THREAD,
-    typename        InputIterator>
+    typename        InputIteratorRA>
 __device__ __forceinline__ void BlockLoadDirect(
-    InputIterator   block_itr,                        ///< [in] The threadblock's base input iterator for loading from
+    InputIteratorRA   block_itr,                        ///< [in] The threadblock's base input iterator for loading from
     T               (&items)[ITEMS_PER_THREAD])     ///< [out] Data to load
 {
     // Load directly in thread-blocked order
@@ -98,14 +99,14 @@ __device__ __forceinline__ void BlockLoadDirect(
  *
  * \tparam T                    <b>[inferred]</b> The data type to load.
  * \tparam ITEMS_PER_THREAD     <b>[inferred]</b> The number of consecutive items partitioned onto each thread.
- * \tparam InputIterator        <b>[inferred]</b> The input iterator type (may be a simple pointer type).
+ * \tparam InputIteratorRA      <b>[inferred]</b> The random-access iterator type for input (may be a simple pointer type).
  */
 template <
     typename        T,
     int             ITEMS_PER_THREAD,
-    typename        InputIterator>
+    typename        InputIteratorRA>
 __device__ __forceinline__ void BlockLoadDirect(
-    InputIterator   block_itr,                        ///< [in] The threadblock's base input iterator for loading from
+    InputIteratorRA block_itr,                        ///< [in] The threadblock's base input iterator for loading from
     T               (&items)[ITEMS_PER_THREAD])     ///< [out] Data to load
 {
     BlockLoadDirect<PTX_LOAD_NONE>(block_itr, items);
@@ -123,28 +124,26 @@ __device__ __forceinline__ void BlockLoadDirect(
  * \tparam MODIFIER             cub::PtxLoadModifier cache modifier.
  * \tparam T                    <b>[inferred]</b> The data type to load.
  * \tparam ITEMS_PER_THREAD     <b>[inferred]</b> The number of consecutive items partitioned onto each thread.
- * \tparam InputIterator        <b>[inferred]</b> The input iterator type (may be a simple pointer type).
- * \tparam SizeT                <b>[inferred]</b> Integer type for offsets
+ * \tparam InputIteratorRA      <b>[inferred]</b> The random-access iterator type for input (may be a simple pointer type).
  */
 template <
     PtxLoadModifier MODIFIER,
     typename        T,
     int             ITEMS_PER_THREAD,
-    typename        InputIterator,
-    typename        SizeT>
+    typename        InputIteratorRA>
 __device__ __forceinline__ void BlockLoadDirect(
-    InputIterator   block_itr,                        ///< [in] The threadblock's base input iterator for loading from
-    const SizeT     &guarded_items,                 ///< [in] Number of valid items in the tile
+    InputIteratorRA block_itr,                        ///< [in] The threadblock's base input iterator for loading from
+    const int       &guarded_items,                 ///< [in] Number of valid items in the tile
     T               (&items)[ITEMS_PER_THREAD])     ///< [out] Data to load
 {
-    // Load directly in thread-blocked order
+    int bounds = guarded_items - (threadIdx.x * ITEMS_PER_THREAD);
+
     #pragma unroll
     for (int ITEM = 0; ITEM < ITEMS_PER_THREAD; ITEM++)
     {
-        int item_offset = (threadIdx.x * ITEMS_PER_THREAD) + ITEM;
-        if (item_offset < guarded_items)
+        if (ITEM < bounds)
         {
-            items[ITEM] = ThreadLoad<MODIFIER>(block_itr + item_offset);
+            items[ITEM] = ThreadLoad<MODIFIER>(block_itr + (threadIdx.x * ITEMS_PER_THREAD) + ITEM);
         }
     }
 }
@@ -159,17 +158,15 @@ __device__ __forceinline__ void BlockLoadDirect(
  *
  * \tparam T                    <b>[inferred]</b> The data type to load.
  * \tparam ITEMS_PER_THREAD     <b>[inferred]</b> The number of consecutive items partitioned onto each thread.
- * \tparam InputIterator        <b>[inferred]</b> The input iterator type (may be a simple pointer type).
- * \tparam SizeT                <b>[inferred]</b> Integer type for offsets
+ * \tparam InputIteratorRA      <b>[inferred]</b> The random-access iterator type for input (may be a simple pointer type).
  */
 template <
     typename        T,
     int             ITEMS_PER_THREAD,
-    typename        InputIterator,
-    typename        SizeT>
+    typename        InputIteratorRA>
 __device__ __forceinline__ void BlockLoadDirect(
-    InputIterator   block_itr,                        ///< [in] The threadblock's base input iterator for loading from
-    const SizeT     &guarded_items,                 ///< [in] Number of valid items in the tile
+    InputIteratorRA block_itr,                        ///< [in] The threadblock's base input iterator for loading from
+    const int       &guarded_items,                 ///< [in] Number of valid items in the tile
     T               (&items)[ITEMS_PER_THREAD])     ///< [out] Data to load
 {
     BlockLoadDirect<PTX_LOAD_NONE>(block_itr, guarded_items, items);
@@ -186,28 +183,26 @@ __device__ __forceinline__ void BlockLoadDirect(
  * \tparam MODIFIER             cub::PtxLoadModifier cache modifier.
  * \tparam T                    <b>[inferred]</b> The data type to load.
  * \tparam ITEMS_PER_THREAD     <b>[inferred]</b> The number of consecutive items partitioned onto each thread.
- * \tparam InputIterator        <b>[inferred]</b> The input iterator type (may be a simple pointer type).
- * \tparam SizeT                <b>[inferred]</b> Integer type for offsets
+ * \tparam InputIteratorRA      <b>[inferred]</b> The random-access iterator type for input (may be a simple pointer type).
  */
 template <
     PtxLoadModifier MODIFIER,
     typename        T,
     int             ITEMS_PER_THREAD,
-    typename        InputIterator,
-    typename        SizeT>
+    typename        InputIteratorRA>
 __device__ __forceinline__ void BlockLoadDirect(
-    InputIterator   block_itr,                        ///< [in] The threadblock's base input iterator for loading from
-    const SizeT     &guarded_items,                 ///< [in] Number of valid items in the tile
+    InputIteratorRA block_itr,                        ///< [in] The threadblock's base input iterator for loading from
+    const int       &guarded_items,                 ///< [in] Number of valid items in the tile
     T               oob_default,                    ///< [in] Default value to assign out-of-bound items
     T               (&items)[ITEMS_PER_THREAD])     ///< [out] Data to load
 {
-    // Load directly in thread-blocked order
+    int bounds = guarded_items - (threadIdx.x * ITEMS_PER_THREAD);
+
     #pragma unroll
     for (int ITEM = 0; ITEM < ITEMS_PER_THREAD; ITEM++)
     {
-        int item_offset = (threadIdx.x * ITEMS_PER_THREAD) + ITEM;
-        items[ITEM] =  (item_offset < guarded_items) ?
-            ThreadLoad<MODIFIER>(block_itr + item_offset) :
+        items[ITEM] = (ITEM < bounds) ?
+            ThreadLoad<MODIFIER>(block_itr + (threadIdx.x * ITEMS_PER_THREAD) + ITEM) :
             oob_default;
     }
 }
@@ -222,17 +217,15 @@ __device__ __forceinline__ void BlockLoadDirect(
  *
  * \tparam T                    <b>[inferred]</b> The data type to load.
  * \tparam ITEMS_PER_THREAD     <b>[inferred]</b> The number of consecutive items partitioned onto each thread.
- * \tparam InputIterator        <b>[inferred]</b> The input iterator type (may be a simple pointer type).
- * \tparam SizeT                <b>[inferred]</b> Integer type for offsets
+ * \tparam InputIteratorRA      <b>[inferred]</b> The random-access iterator type for input (may be a simple pointer type).
  */
 template <
     typename        T,
     int             ITEMS_PER_THREAD,
-    typename        InputIterator,
-    typename        SizeT>
+    typename        InputIteratorRA>
 __device__ __forceinline__ void BlockLoadDirect(
-    InputIterator   block_itr,                        ///< [in] The threadblock's base input iterator for loading from
-    const SizeT     &guarded_items,                 ///< [in] Number of valid items in the tile
+    InputIteratorRA block_itr,                        ///< [in] The threadblock's base input iterator for loading from
+    const int       &guarded_items,                 ///< [in] Number of valid items in the tile
     T               oob_default,                    ///< [in] Default value to assign out-of-bound items
     T               (&items)[ITEMS_PER_THREAD])     ///< [out] Data to load
 {
@@ -240,9 +233,9 @@ __device__ __forceinline__ void BlockLoadDirect(
 }
 
 
-//@}
+//@}  end member group
 /******************************************************************//**
- * \name Direct threadblock loads (striped arrangement)
+ * \name Direct threadblock I/O (striped arrangement)
  *********************************************************************/
 //@{
 
@@ -257,19 +250,18 @@ __device__ __forceinline__ void BlockLoadDirect(
  * \tparam MODIFIER             cub::PtxLoadModifier cache modifier.
  * \tparam T                    <b>[inferred]</b> The data type to load.
  * \tparam ITEMS_PER_THREAD     <b>[inferred]</b> The number of consecutive items partitioned onto each thread.
- * \tparam InputIterator        <b>[inferred]</b> The input iterator type (may be a simple pointer type).
+ * \tparam InputIteratorRA      <b>[inferred]</b> The random-access iterator type for input (may be a simple pointer type).
  */
 template <
     PtxLoadModifier MODIFIER,
     typename        T,
     int             ITEMS_PER_THREAD,
-    typename        InputIterator>
+    typename        InputIteratorRA>
 __device__ __forceinline__ void BlockLoadDirectStriped(
-    InputIterator   block_itr,                        ///< [in] The threadblock's base input iterator for loading from
-    T               (&items)[ITEMS_PER_THREAD],     ///< [out] Data to load
-    int             stride = blockDim.x)            ///< [in] <b>[optional]</b> Stripe stride.  Default is the width of the threadblock.  More efficient code can be generated if a compile-time-constant (e.g., BLOCK_THREADS) is supplied.
+    InputIteratorRA block_itr,                          ///< [in] The threadblock's base input iterator for loading from
+    T               (&items)[ITEMS_PER_THREAD],         ///< [out] Data to load
+    int             stride = blockDim.x)                ///< [in] <b>[optional]</b> Stripe stride.  Default is the width of the threadblock.  More efficient code can be generated if a compile-time-constant (e.g., BLOCK_THREADS) is supplied.
 {
-    // Load directly in striped order
     #pragma unroll
     for (int ITEM = 0; ITEM < ITEMS_PER_THREAD; ITEM++)
     {
@@ -289,16 +281,16 @@ __device__ __forceinline__ void BlockLoadDirectStriped(
  * \tparam MODIFIER             cub::PtxLoadModifier cache modifier.
  * \tparam T                    <b>[inferred]</b> The data type to load.
  * \tparam ITEMS_PER_THREAD     <b>[inferred]</b> The number of consecutive items partitioned onto each thread.
- * \tparam InputIterator        <b>[inferred]</b> The input iterator type (may be a simple pointer type).
+ * \tparam InputIteratorRA      <b>[inferred]</b> The random-access iterator type for input (may be a simple pointer type).
  */
 template <
     typename        T,
     int             ITEMS_PER_THREAD,
-    typename        InputIterator>
+    typename        InputIteratorRA>
 __device__ __forceinline__ void BlockLoadDirectStriped(
-    InputIterator   block_itr,                        ///< [in] The threadblock's base input iterator for loading from
-    T               (&items)[ITEMS_PER_THREAD],     ///< [out] Data to load
-    int             stride = blockDim.x)            ///< [in] <b>[optional]</b> Stripe stride.  Default is the width of the threadblock.  More efficient code can be generated if a compile-time-constant (e.g., BLOCK_THREADS) is supplied.
+    InputIteratorRA block_itr,                          ///< [in] The threadblock's base input iterator for loading from
+    T               (&items)[ITEMS_PER_THREAD],         ///< [out] Data to load
+    int             stride = blockDim.x)                ///< [in] <b>[optional]</b> Stripe stride.  Default is the width of the threadblock.  More efficient code can be generated if a compile-time-constant (e.g., BLOCK_THREADS) is supplied.
 {
     BlockLoadDirectStriped<PTX_LOAD_NONE>(block_itr, items, stride);
 }
@@ -310,33 +302,31 @@ __device__ __forceinline__ void BlockLoadDirectStriped(
  * threads in "striped" fashion, i.e., the \p ITEMS_PER_THREAD
  * items owned by each thread have logical stride \p BLOCK_THREADS between them.
  *
- * \tparam BLOCK_THREADS          The threadblock size in threads
+ * \tparam BLOCK_THREADS        The threadblock size in threads
  * \tparam MODIFIER             cub::PtxLoadModifier cache modifier.
  * \tparam T                    <b>[inferred]</b> The data type to load.
  * \tparam ITEMS_PER_THREAD     <b>[inferred]</b> The number of consecutive items partitioned onto each thread.
- * \tparam InputIterator        <b>[inferred]</b> The input iterator type (may be a simple pointer type).
- * \tparam SizeT                <b>[inferred]</b> Integer type for offsets
+ * \tparam InputIteratorRA      <b>[inferred]</b> The random-access iterator type for input (may be a simple pointer type).
  */
 template <
     PtxLoadModifier MODIFIER,
     typename        T,
     int             ITEMS_PER_THREAD,
-    typename        InputIterator,
-    typename        SizeT>
+    typename        InputIteratorRA>
 __device__ __forceinline__ void BlockLoadDirectStriped(
-    InputIterator   block_itr,                        ///< [in] The threadblock's base input iterator for loading from
-    const SizeT     &guarded_items,                 ///< [in] Number of valid items in the tile
+    InputIteratorRA block_itr,                      ///< [in] The threadblock's base input iterator for loading from
+    const int       &guarded_items,                 ///< [in] Number of valid items in the tile
     T               (&items)[ITEMS_PER_THREAD],     ///< [out] Data to load
     int             stride = blockDim.x)            ///< [in] <b>[optional]</b> Stripe stride.  Default is the width of the threadblock.  More efficient code can be generated if a compile-time-constant (e.g., BLOCK_THREADS) is supplied.
 {
-    // Load directly in striped order
+    int bounds = guarded_items - threadIdx.x;
+
     #pragma unroll
     for (int ITEM = 0; ITEM < ITEMS_PER_THREAD; ITEM++)
     {
-        int item_offset = (ITEM * stride) + threadIdx.x;
-        if (item_offset < guarded_items)
+        if (ITEM * stride < bounds)
         {
-            items[ITEM] = ThreadLoad<MODIFIER>(block_itr + item_offset);
+            items[ITEM] = ThreadLoad<MODIFIER>(block_itr + (ITEM * stride) + threadIdx.x);
         }
     }
 }
@@ -351,17 +341,15 @@ __device__ __forceinline__ void BlockLoadDirectStriped(
  *
  * \tparam T                    <b>[inferred]</b> The data type to load.
  * \tparam ITEMS_PER_THREAD     <b>[inferred]</b> The number of consecutive items partitioned onto each thread.
- * \tparam InputIterator        <b>[inferred]</b> The input iterator type (may be a simple pointer type).
- * \tparam SizeT                <b>[inferred]</b> Integer type for offsets
+ * \tparam InputIteratorRA      <b>[inferred]</b> The random-access iterator type for input (may be a simple pointer type).
  */
 template <
     typename        T,
     int             ITEMS_PER_THREAD,
-    typename        InputIterator,
-    typename        SizeT>
+    typename        InputIteratorRA>
 __device__ __forceinline__ void BlockLoadDirectStriped(
-    InputIterator   block_itr,                        ///< [in] The threadblock's base input iterator for loading from
-    const SizeT     &guarded_items,                 ///< [in] Number of valid items in the tile
+    InputIteratorRA block_itr,                        ///< [in] The threadblock's base input iterator for loading from
+    const int       &guarded_items,                 ///< [in] Number of valid items in the tile
     T               (&items)[ITEMS_PER_THREAD],     ///< [out] Data to load
     int             stride = blockDim.x)            ///< [in] <b>[optional]</b> Stripe stride.  Default is the width of the threadblock.  More efficient code can be generated if a compile-time-constant (e.g., BLOCK_THREADS) is supplied.
 {
@@ -379,29 +367,27 @@ __device__ __forceinline__ void BlockLoadDirectStriped(
  * \tparam MODIFIER             cub::PtxLoadModifier cache modifier.
  * \tparam T                    <b>[inferred]</b> The data type to load.
  * \tparam ITEMS_PER_THREAD     <b>[inferred]</b> The number of consecutive items partitioned onto each thread.
- * \tparam InputIterator        <b>[inferred]</b> The input iterator type (may be a simple pointer type).
- * \tparam SizeT                <b>[inferred]</b> Integer type for offsets
+ * \tparam InputIteratorRA      <b>[inferred]</b> The random-access iterator type for input (may be a simple pointer type).
  */
 template <
     PtxLoadModifier MODIFIER,
     typename        T,
     int             ITEMS_PER_THREAD,
-    typename        InputIterator,
-    typename        SizeT>
+    typename        InputIteratorRA>
 __device__ __forceinline__ void BlockLoadDirectStriped(
-    InputIterator   block_itr,                        ///< [in] The threadblock's base input iterator for loading from
-    const SizeT     &guarded_items,                 ///< [in] Number of valid items in the tile
+    InputIteratorRA block_itr,                      ///< [in] The threadblock's base input iterator for loading from
+    const int       &guarded_items,                 ///< [in] Number of valid items in the tile
     T               oob_default,                    ///< [in] Default value to assign out-of-bound items
     T               (&items)[ITEMS_PER_THREAD],     ///< [out] Data to load
     int             stride = blockDim.x)            ///< [in] <b>[optional]</b> Stripe stride.  Default is the width of the threadblock.  More efficient code can be generated if a compile-time-constant (e.g., BLOCK_THREADS) is supplied.
 {
-    // Load directly in striped order
+    int bounds = guarded_items - threadIdx.x;
+
     #pragma unroll
     for (int ITEM = 0; ITEM < ITEMS_PER_THREAD; ITEM++)
     {
-        int item_offset = (ITEM * stride) + threadIdx.x;
-        items[ITEM] = (item_offset < guarded_items) ?
-             ThreadLoad<MODIFIER>(block_itr + item_offset) :
+        items[ITEM] = (ITEM * stride < bounds) ?
+             ThreadLoad<MODIFIER>(block_itr + (ITEM * stride) + threadIdx.x) :
              oob_default;
     }
 }
@@ -416,17 +402,15 @@ __device__ __forceinline__ void BlockLoadDirectStriped(
  *
  * \tparam T                    <b>[inferred]</b> The data type to load.
  * \tparam ITEMS_PER_THREAD     <b>[inferred]</b> The number of consecutive items partitioned onto each thread.
- * \tparam InputIterator        <b>[inferred]</b> The input iterator type (may be a simple pointer type).
- * \tparam SizeT                <b>[inferred]</b> Integer type for offsets
+ * \tparam InputIteratorRA      <b>[inferred]</b> The random-access iterator type for input (may be a simple pointer type).
  */
 template <
     typename        T,
     int             ITEMS_PER_THREAD,
-    typename        InputIterator,
-    typename        SizeT>
+    typename        InputIteratorRA>
 __device__ __forceinline__ void BlockLoadDirectStriped(
-    InputIterator   block_itr,                        ///< [in] The threadblock's base input iterator for loading from
-    const SizeT     &guarded_items,                 ///< [in] Number of valid items in the tile
+    InputIteratorRA block_itr,                        ///< [in] The threadblock's base input iterator for loading from
+    const int       &guarded_items,                 ///< [in] Number of valid items in the tile
     T               oob_default,                    ///< [in] Default value to assign out-of-bound items
     T               (&items)[ITEMS_PER_THREAD],     ///< [out] Data to load
     int             stride = blockDim.x)            ///< [in] <b>[optional]</b> Stripe stride.  Default is the width of the threadblock.  More efficient code can be generated if a compile-time-constant (e.g., BLOCK_THREADS) is supplied.
@@ -434,9 +418,9 @@ __device__ __forceinline__ void BlockLoadDirectStriped(
     BlockLoadDirectStriped<PTX_LOAD_NONE>(block_itr, guarded_items, oob_default, items, stride);
 }
 
-//@}
+//@}  end member group
 /******************************************************************//**
- * \name Threadblock vectorized loads (blocked arrangement)
+ * \name Threadblock vectorized I/O (blocked arrangement)
  *********************************************************************/
 //@{
 
@@ -447,17 +431,15 @@ __device__ __forceinline__ void BlockLoadDirectStriped(
  * threads in "blocked" fashion with thread<sub><em>i</em></sub> owning
  * the <em>i</em><sup>th</sup> segment of consecutive elements.
  *
- * \par
+ * The input offset (\p block_ptr + \p block_offset) must be quad-item aligned
+ *
  * The following conditions will prevent vectorization and loading will fall back to cub::BLOCK_LOAD_DIRECT:
  *   - \p ITEMS_PER_THREAD is odd
- *   - The \p InputIterator is not a simple pointer type
- *   - The input offset (\p block_ptr + \p block_offset) is not quad-aligned
  *   - The data type \p T is not a built-in primitive or CUDA vector type (e.g., \p short, \p int2, \p double, \p float2, etc.)
  *
  * \tparam MODIFIER             cub::PtxLoadModifier cache modifier.
  * \tparam T                    <b>[inferred]</b> The data type to load.
  * \tparam ITEMS_PER_THREAD     <b>[inferred]</b> The number of consecutive items partitioned onto each thread.
- * \tparam SizeT                <b>[inferred]</b> Integer type for offsets
  */
 template <
     PtxLoadModifier MODIFIER,
@@ -481,33 +463,21 @@ __device__ __forceinline__ void BlockLoadVectorized(
     };
 
     // Vector type
-    typedef typename VectorType<T, VEC_SIZE>::Type Vector;
+    typedef typename VectorHelper<T, VEC_SIZE>::Type Vector;
 
-    // Alias global pointer
-    Vector *block_ptr_vectors = reinterpret_cast<Vector *>(block_ptr);
+    // Alias local data (use raw_items array here which should get optimized away to prevent conservative PTXAS lmem spilling)
+    T raw_items[ITEMS_PER_THREAD];
 
-    // Vectorize if aligned
-    if ((size_t(block_ptr_vectors) & (VEC_SIZE - 1)) == 0)
+    // Direct-load using vector types
+    BlockLoadDirect<MODIFIER>(
+        reinterpret_cast<Vector *>(block_ptr),
+        reinterpret_cast<Vector (&)[VECTORS_PER_THREAD]>(raw_items));
+
+    // Copy
+    #pragma unroll
+    for (int ITEM = 0; ITEM < ITEMS_PER_THREAD; ITEM++)
     {
-        // Alias local data (use raw_items array here which should get optimized away to prevent conservative PTXAS lmem spilling)
-        T raw_items[ITEMS_PER_THREAD];
-
-        // Direct-load using vector types
-        BlockLoadDirect<MODIFIER>(
-            block_ptr_vectors,
-            reinterpret_cast<Vector (&)[VECTORS_PER_THREAD]>(raw_items));
-
-        // Copy
-        #pragma unroll
-        for (int ITEM = 0; ITEM < ITEMS_PER_THREAD; ITEM++)
-        {
-            items[ITEM] = raw_items[ITEM];
-        }
-    }
-    else
-    {
-        // Unaligned: direct-load of individual items
-        BlockLoadDirect<MODIFIER>(block_ptr, items);
+        items[ITEM] = raw_items[ITEM];
     }
 }
 
@@ -520,11 +490,10 @@ __device__ __forceinline__ void BlockLoadVectorized(
  * threads in "blocked" fashion with thread<sub><em>i</em></sub> owning
  * the <em>i</em><sup>th</sup> segment of consecutive elements.
  *
- * \par
+ * The input offset (\p block_ptr + \p block_offset) must be quad-item aligned
+ *
  * The following conditions will prevent vectorization and loading will fall back to cub::BLOCK_LOAD_DIRECT:
  *   - \p ITEMS_PER_THREAD is odd
- *   - The \p InputIterator is not a simple pointer type
- *   - The input offset (\p block_ptr + \p block_offset) is not quad-aligned
  *   - The data type \p T is not a built-in primitive or CUDA vector type (e.g., \p short, \p int2, \p double, \p float2, etc.)
  *
  * \tparam T                    <b>[inferred]</b> The data type to load.
@@ -540,9 +509,9 @@ __device__ __forceinline__ void BlockLoadVectorized(
     BlockLoadVectorized<PTX_LOAD_NONE>(block_ptr, items);
 }
 
-//@}
+//@}  end member group
 
-/** @} */       // end of SimtUtils group
+/** @} */       // end group BlockModule
 
 
 
@@ -582,7 +551,7 @@ enum BlockLoadPolicy
      *   maximum vector load width (typically 4 items or 64B, whichever is lower).
      * - The following conditions will prevent vectorization and loading will fall back to cub::BLOCK_LOAD_DIRECT:
      *   - \p ITEMS_PER_THREAD is odd
-     *   - The \p InputIterator is not a simple pointer type
+     *   - The \p InputIteratorRA is not a simple pointer type
      *   - The block input offset is not quadword-aligned
      *   - The data type \p T is not a built-in primitive or CUDA vector type (e.g., \p short, \p int2, \p double, \p float2, etc.)
      */
@@ -604,11 +573,25 @@ enum BlockLoadPolicy
      *   direct cub::BLOCK_LOAD_DIRECT and cub::BLOCK_LOAD_VECTORIZE alternatives.
      */
     BLOCK_LOAD_TRANSPOSE,
+
+
+    /**
+     * \par Overview
+     *
+     * A [<em>striped arrangement</em>](index.html#sec3sec3) of data is read directly from memory.
+     * The threadblock reads items in a parallel "strip-mining" fashion: thread<sub><em>i</em></sub> reads items
+     * having stride \p BLOCK_THREADS between them.
+     *
+     * \par Performance Considerations
+     * - The utilization of memory transactions (coalescing) remains high regardless
+     *   of items loaded per thread.
+     */
+    BLOCK_LOAD_STRIPED,
 };
 
 
 /**
- * \addtogroup SimtCoop
+ * \addtogroup BlockModule
  * @{
  */
 
@@ -620,7 +603,7 @@ enum BlockLoadPolicy
  * BlockLoad implements alternative cub::BlockLoadPolicy strategies catering to different granularity sizes (i.e.,
  * number of items per thread).
  *
- * \tparam InputIterator        The input iterator type (may be a simple pointer type).
+ * \tparam InputIteratorRA        The input iterator type (may be a simple pointer type).
  * \tparam BLOCK_THREADS        The threadblock size in threads.
  * \tparam ITEMS_PER_THREAD     The number of consecutive items partitioned onto each thread.
  * \tparam POLICY               <b>[optional]</b> cub::BlockLoadPolicy tuning policy.  Default = cub::BLOCK_LOAD_DIRECT.
@@ -636,6 +619,8 @@ enum BlockLoadPolicy
  *   -# <b>cub::BLOCK_LOAD_TRANSPOSE</b>.  A [<em>striped arrangement</em>](index.html#sec3sec3)
  *      of data is read directly from memory and is then locally transposed into a
  *      [<em>blocked arrangement</em>](index.html#sec3sec3).  [More...](\ref cub::BlockLoadPolicy)
+ *   -# <b>cub::BLOCK_LOAD_STRIPED</b>.  A [<em>striped arrangement</em>](index.html#sec3sec3)
+ *      of data is read directly from memory.  [More...](\ref cub::BlockLoadPolicy)
  *
  * \par Usage Considerations
  * - \smemreuse{BlockLoad::SmemStorage}
@@ -647,11 +632,11 @@ enum BlockLoadPolicy
  * \par Examples
  * <em>Example 1.</em> Have a 128-thread threadblock directly load a blocked arrangement of four consecutive integers per thread.
  * \code
- * #include <cub.cuh>
+ * #include <cub/cub.cuh>
  *
  * __global__ void SomeKernel(int *d_in, ...)
  * {
- *     // Parameterize BlockLoad for the parallel execution context
+ *     // Parameterize BlockLoad for 128 threads (4 items each) on type int
  *     typedef cub::BlockLoad<int*, 128, 4> BlockLoad;
  *
  *     // Declare shared memory for BlockLoad
@@ -670,14 +655,14 @@ enum BlockLoadPolicy
  * <em>Example 2.</em> Have a threadblock load a blocked arrangement of \p ITEMS_PER_THREAD consecutive
  * integers per thread using vectorized loads and global-only caching:
  * \code
- * #include <cub.cuh>
+ * #include <cub/cub.cuh>
  *
  * template <
  *     int BLOCK_THREADS,
  *     int ITEMS_PER_THREAD>
  * __global__ void SomeKernel(int *d_in, ...)
  * {
- *     // Parameterize BlockLoad for the parallel execution context
+ *     // Parameterize BlockLoad on type int
  *     typedef cub::BlockLoad<int*, BLOCK_THREADS, ITEMS_PER_THREAD, BLOCK_LOAD_VECTORIZE, PTX_LOAD_CG> BlockLoad;
  *
  *     // Declare shared memory for BlockLoad
@@ -694,21 +679,22 @@ enum BlockLoadPolicy
  * <br>
  */
 template <
-    typename            InputIterator,
+    typename            InputIteratorRA,
     int                 BLOCK_THREADS,
     int                 ITEMS_PER_THREAD,
     BlockLoadPolicy     POLICY = BLOCK_LOAD_DIRECT,
     PtxLoadModifier     MODIFIER = PTX_LOAD_NONE>
 class BlockLoad
 {
+
+private:
+
     //---------------------------------------------------------------------
     // Type definitions and constants
     //---------------------------------------------------------------------
 
-private:
-
     // Data type of input iterator
-    typedef typename std::iterator_traits<InputIterator>::value_type T;
+    typedef typename std::iterator_traits<InputIteratorRA>::value_type T;
 
 
     /// Load helper
@@ -727,22 +713,21 @@ private:
 
         /// Load a tile of items across a threadblock
         static __device__ __forceinline__ void Load(
-            SmemStorage     &smem_storage,                  ///< [in] Shared reference to opaque SmemStorage layout
-            InputIterator   block_itr,                      ///< [in] The threadblock's base input iterator for loading from
+            SmemStorage     &smem_storage,                  ///< [in] Reference to shared memory allocation having layout type SmemStorage
+            InputIteratorRA block_itr,                      ///< [in] The threadblock's base input iterator for loading from
             T               (&items)[ITEMS_PER_THREAD])     ///< [out] Data to load
         {
             BlockLoadDirect<MODIFIER>(block_itr, items);
         }
 
         /// Load a tile of items across a threadblock, guarded by range
-        template <typename SizeT>
         static __device__ __forceinline__ void Load(
-            SmemStorage     &smem_storage,                  ///< [in] Shared reference to opaque SmemStorage layout
-            InputIterator   block_itr,                      ///< [in] The threadblock's base input iterator for loading from
-            const SizeT     &guarded_items,                 ///< [in] Number of valid items in the tile
+            SmemStorage     &smem_storage,                  ///< [in] Reference to shared memory allocation having layout type SmemStorage
+            InputIteratorRA block_itr,                      ///< [in] The threadblock's base input iterator for loading from
+            const int       &guarded_items,                 ///< [in] Number of valid items in the tile
             T               (&items)[ITEMS_PER_THREAD])     ///< [out] Data to load
         {
-            BlockLoadDirect<PTX_LOAD_NONE>(block_itr, guarded_items, items);
+            BlockLoadDirect<MODIFIER>(block_itr, guarded_items, items);
         }
     };
 
@@ -758,9 +743,9 @@ private:
 
         /// Load a tile of items across a threadblock, specialized for native pointer types (attempts vectorization)
         static __device__ __forceinline__ void Load(
-            SmemStorage     &smem_storage,                  ///< [in] Shared reference to opaque SmemStorage layout
-            T               *block_ptr,                     ///< [in] The threadblock's base input iterator for loading from
-            T               (&items)[ITEMS_PER_THREAD])     ///< [out] Data to load
+            SmemStorage         &smem_storage,                  ///< [in] Reference to shared memory allocation having layout type SmemStorage
+            T                   *block_ptr,                     ///< [in] The threadblock's base input iterator for loading from
+            T                   (&items)[ITEMS_PER_THREAD])     ///< [out] Data to load
         {
             BlockLoadVectorized<MODIFIER>(block_ptr, items);
         }
@@ -768,24 +753,23 @@ private:
         /// Load a tile of items across a threadblock, specialized for opaque input iterators (skips vectorization)
         template <
             typename T,
-            typename _InputIterator>
+            typename _InputIteratorRA>
         static __device__ __forceinline__ void Load(
-            SmemStorage     &smem_storage,                  ///< [in] Shared reference to opaque SmemStorage layout
-            _InputIterator  block_itr,                      ///< [in] The threadblock's base input iterator for loading from
-            T               (&items)[ITEMS_PER_THREAD])     ///< [out] Data to load
+            SmemStorage         &smem_storage,                  ///< [in] Reference to shared memory allocation having layout type SmemStorage
+            _InputIteratorRA    block_itr,                      ///< [in] The threadblock's base input iterator for loading from
+            T                   (&items)[ITEMS_PER_THREAD])     ///< [out] Data to load
         {
             BlockLoadDirect<MODIFIER>(block_itr, items);
         }
 
         /// Load a tile of items across a threadblock, guarded by range
-        template <typename SizeT>
         static __device__ __forceinline__ void Load(
-            SmemStorage     &smem_storage,                  ///< [in] Shared reference to opaque SmemStorage layout
-            InputIterator   block_itr,                      ///< [in] The threadblock's base input iterator for loading from
-            const SizeT     &guarded_items,                 ///< [in] Number of valid items in the tile
-            T               (&items)[ITEMS_PER_THREAD])     ///< [out] Data to load{
+            SmemStorage         &smem_storage,                  ///< [in] Reference to shared memory allocation having layout type SmemStorage
+            InputIteratorRA     block_itr,                      ///< [in] The threadblock's base input iterator for loading from
+            const int           &guarded_items,                 ///< [in] Number of valid items in the tile
+            T                   (&items)[ITEMS_PER_THREAD])     ///< [out] Data to load{
         {
-            BlockLoadDirect<PTX_LOAD_NONE>(block_itr, guarded_items, items);
+            BlockLoadDirect<MODIFIER>(block_itr, guarded_items, items);
         }
     };
 
@@ -804,9 +788,9 @@ private:
 
         /// Load a tile of items across a threadblock
         static __device__ __forceinline__ void Load(
-            SmemStorage     &smem_storage,                  ///< [in] Shared reference to opaque SmemStorage layout
-            InputIterator   block_itr,                      ///< [in] The threadblock's base input iterator for loading from
-            T               (&items)[ITEMS_PER_THREAD])     ///< [out] Data to load{
+            SmemStorage         &smem_storage,                  ///< [in] Reference to shared memory allocation having layout type SmemStorage
+            InputIteratorRA     block_itr,                      ///< [in] The threadblock's base input iterator for loading from
+            T                   (&items)[ITEMS_PER_THREAD])     ///< [out] Data to load{
         {
             BlockLoadDirectStriped<MODIFIER>(block_itr, items, BLOCK_THREADS);
 
@@ -815,17 +799,47 @@ private:
         }
 
         /// Load a tile of items across a threadblock, guarded by range
-        template <typename SizeT>
         static __device__ __forceinline__ void Load(
-            SmemStorage     &smem_storage,                  ///< [in] Shared reference to opaque SmemStorage layout
-            InputIterator   block_itr,                      ///< [in] The threadblock's base input iterator for loading from
-            const SizeT     &guarded_items,                 ///< [in] Number of valid items in the tile
-            T               (&items)[ITEMS_PER_THREAD])     ///< [out] Data to load{
+            SmemStorage         &smem_storage,                  ///< [in] Reference to shared memory allocation having layout type SmemStorage
+            InputIteratorRA     block_itr,                      ///< [in] The threadblock's base input iterator for loading from
+            const int           &guarded_items,                 ///< [in] Number of valid items in the tile
+            T                   (&items)[ITEMS_PER_THREAD])     ///< [out] Data to load{
         {
             BlockLoadDirectStriped<MODIFIER>(block_itr, guarded_items, items, BLOCK_THREADS);
 
             // Transpose to blocked order
             BlockExchange::StripedToBlocked(smem_storage, items);
+        }
+
+    };
+
+
+    /**
+     * BLOCK_LOAD_STRIPED specialization of load helper
+     */
+    template <int DUMMY>
+    struct LoadInternal<BLOCK_LOAD_STRIPED, DUMMY>
+    {
+        /// Shared memory storage layout type
+        typedef NullType SmemStorage;
+
+        /// Load a tile of items across a threadblock
+        static __device__ __forceinline__ void Load(
+            SmemStorage         &smem_storage,                  ///< [in] Reference to shared memory allocation having layout type SmemStorage
+            InputIteratorRA     block_itr,                      ///< [in] The threadblock's base input iterator for loading from
+            T                   (&items)[ITEMS_PER_THREAD])     ///< [out] Data to load{
+        {
+            BlockLoadDirectStriped<MODIFIER>(block_itr, items, BLOCK_THREADS);
+        }
+
+        /// Load a tile of items across a threadblock, guarded by range
+        static __device__ __forceinline__ void Load(
+            SmemStorage         &smem_storage,                  ///< [in] Reference to shared memory allocation having layout type SmemStorage
+            InputIteratorRA     block_itr,                      ///< [in] The threadblock's base input iterator for loading from
+            const int           &guarded_items,                 ///< [in] Number of valid items in the tile
+            T                   (&items)[ITEMS_PER_THREAD])     ///< [out] Data to load{
+        {
+            BlockLoadDirectStriped<MODIFIER>(block_itr, guarded_items, items, BLOCK_THREADS);
         }
 
     };
@@ -848,30 +862,28 @@ public:
      * \brief Load a tile of items across a threadblock.
      */
     static __device__ __forceinline__ void Load(
-        SmemStorage     &smem_storage,                  ///< [in] Shared reference to opaque SmemStorage layout
-        InputIterator   block_itr,                      ///< [in] The threadblock's base input iterator for loading from
-        T               (&items)[ITEMS_PER_THREAD])     ///< [out] Data to load
+        SmemStorage         &smem_storage,                  ///< [in] Reference to shared memory allocation having layout type SmemStorage
+        InputIteratorRA     block_itr,                      ///< [in] The threadblock's base input iterator for loading from
+        T                   (&items)[ITEMS_PER_THREAD])     ///< [out] Data to load
     {
         LoadInternal<POLICY>::Load(smem_storage, block_itr, items);
     }
 
     /**
      * \brief Load a tile of items across a threadblock, guarded by range.
-     *
-     * \tparam SizeT                <b>[inferred]</b> Integer type for offsets
      */
-    template <typename SizeT>
     static __device__ __forceinline__ void Load(
-        SmemStorage     &smem_storage,                  ///< [in] Shared reference to opaque SmemStorage layout
-        InputIterator   block_itr,                      ///< [in] The threadblock's base input iterator for loading from
-        const SizeT     &guarded_items,                 ///< [in] Number of valid items in the tile
-        T               (&items)[ITEMS_PER_THREAD])     ///< [out] Data to load
+        SmemStorage         &smem_storage,                  ///< [in] Reference to shared memory allocation having layout type SmemStorage
+        InputIteratorRA     block_itr,                      ///< [in] The threadblock's base input iterator for loading from
+        const int           &guarded_items,                 ///< [in] Number of valid items in the tile
+        T                   (&items)[ITEMS_PER_THREAD])     ///< [out] Data to load
     {
         LoadInternal<POLICY>::Load(smem_storage, block_itr, guarded_items, items);
     }
 };
 
-/** @} */       // end of SimtCoop group
+/** @} */       // end group BlockModule
 
-} // namespace cub
-CUB_NS_POSTFIX
+}               // CUB namespace
+CUB_NS_POSTFIX  // Optional outer namespace(s)
+

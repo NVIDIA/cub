@@ -26,9 +26,11 @@
  *
  ******************************************************************************/
 
-/******************************************************************************
- * Simple x86/x64 atomic spinlock
- ******************************************************************************/
+/**
+ * \file
+ * Simple x86/x64 atomic spinlock, portable across MS Windows (cl.exe) & Linux (g++)
+ */
+
 
 #pragma once
 
@@ -44,9 +46,12 @@
 
 #endif
 
-#include "../ns_wrapper.cuh"
+#include "../util_namespace.cuh"
 
+/// Optional outer namespace(s)
 CUB_NS_PREFIX
+
+/// CUB namespace
 namespace cub {
 
 
@@ -112,5 +117,6 @@ __forceinline__ void Unlock(volatile Spinlock *lock)
 }
 
 
-} // namespace cub
-CUB_NS_POSTFIX
+}               // CUB namespace
+CUB_NS_POSTFIX  // Optional outer namespace(s)
+

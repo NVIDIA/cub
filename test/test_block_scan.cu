@@ -35,8 +35,8 @@
 
 #include <stdio.h>
 #include <iostream>
-#include <test_util.h>
-#include "cub.cuh"
+#include "test_util.h"
+#include <cub/cub.cuh>
 
 using namespace cub;
 
@@ -94,8 +94,7 @@ struct BlockPrefixOp
 template <
     typename    T,
     typename    ScanOp,
-    typename    IdentityT,
-    bool        PRIMITIVE = Traits<T>::PRIMITIVE>
+    typename    IdentityT>
 struct DeviceTest
 {
     template <
@@ -136,7 +135,7 @@ struct DeviceTest
 template <
     typename T,
     typename IdentityT>
-struct DeviceTest<T, Sum<T>, IdentityT, true>
+struct DeviceTest<T, Sum<T>, IdentityT>
 {
     template <
         TestMode    TEST_MODE,
@@ -175,9 +174,8 @@ struct DeviceTest<T, Sum<T>, IdentityT, true>
  */
 template <
     typename    T,
-    typename    ScanOp,
-    bool        PRIMITIVE>
-struct DeviceTest<T, ScanOp, NullType, PRIMITIVE>
+    typename    ScanOp>
+struct DeviceTest<T, ScanOp, NullType>
 {
     template <
         TestMode    TEST_MODE,
@@ -215,7 +213,7 @@ struct DeviceTest<T, ScanOp, NullType, PRIMITIVE>
  * Inclusive sum
  */
 template <typename T>
-struct DeviceTest<T, Sum<T>, NullType, true>
+struct DeviceTest<T, Sum<T>, NullType>
 {
     template <
         TestMode    TEST_MODE,
@@ -260,13 +258,14 @@ template <
     int             BLOCK_THREADS,
     int             ITEMS_PER_THREAD,
     TestMode        TEST_MODE,
-    BlockScanPolicy POLICY,
+    BlockScanAlgorithm POLICY,
     typename        T,
     typename        ScanOp,
     typename        IdentityT>
 __global__ void BlockScanKernel(
     T               *d_in,
     T               *d_out,
+    T               *d_aggregate,
     ScanOp          scan_op,
     IdentityT       identity,
     T               prefix,
@@ -274,7 +273,7 @@ __global__ void BlockScanKernel(
 {
     const int TILE_SIZE = BLOCK_THREADS * ITEMS_PER_THREAD;
 
-    // Cooperative warp-scan utility type (1 warp)
+    // Parameterize BlockScan type for our thread block
     typedef BlockScan<T, BLOCK_THREADS, POLICY> BlockScan;
 
     // Shared memory
@@ -284,25 +283,30 @@ __global__ void BlockScanKernel(
     T data[ITEMS_PER_THREAD];
     BlockLoadDirect(d_in, data);
 
-    // Record elapsed clocks
+    // Start cycle timer
     clock_t start = clock();
 
     // Test scan
     T aggregate;
     BlockPrefixOp<T, ScanOp> prefix_op(prefix, scan_op);
+
     DeviceTest<T, ScanOp, IdentityT>::template Test<TEST_MODE, BlockScan>(
         smem_storage, data, identity, scan_op, aggregate, prefix_op);
 
-    // Record elapsed clocks
-    *d_elapsed = clock() - start;
+    // Stop cycle timer
+    clock_t stop = clock();
 
     // Store output
     BlockStoreDirect(d_out, data);
 
     // Store aggregate
+    d_aggregate[threadIdx.x] = aggregate;
+
+    // Store prefix and time
     if (threadIdx.x == 0)
     {
-        d_out[TILE_SIZE] = aggregate;
+        d_out[TILE_SIZE] = prefix_op.prefix;
+        *d_elapsed = (start > stop) ? start - stop : stop - start;
     }
 }
 
@@ -323,7 +327,7 @@ T Initialize(
     int          gen_mode,
     T            *h_in,
     T            *h_reference,
-    int          num_elements,
+    int          num_items,
     ScanOp       scan_op,
     IdentityT    identity,
     T            *prefix)
@@ -331,7 +335,7 @@ T Initialize(
     T inclusive = (prefix != NULL) ? *prefix : identity;
     T aggregate = identity;
 
-    for (int i = 0; i < num_elements; ++i)
+    for (int i = 0; i < num_items; ++i)
     {
         InitValue(gen_mode, h_in[i], i);
         h_reference[i] = inclusive;
@@ -353,14 +357,14 @@ T Initialize(
     int          gen_mode,
     T            *h_in,
     T            *h_reference,
-    int          num_elements,
+    int          num_items,
     ScanOp       scan_op,
     NullType,
     T            *prefix)
 {
     T inclusive;
     T aggregate;
-    for (int i = 0; i < num_elements; ++i)
+    for (int i = 0; i < num_items; ++i)
     {
         InitValue(gen_mode, h_in[i], i);
         if (i == 0)
@@ -386,13 +390,13 @@ T Initialize(
  * Test threadblock scan
  */
 template <
-    int             BLOCK_THREADS,
-    int             ITEMS_PER_THREAD,
-    TestMode        TEST_MODE,
-    BlockScanPolicy POLICY,
-    typename        ScanOp,
-    typename        IdentityT,        // NullType implies inclusive-scan, otherwise inclusive scan
-    typename        T>
+    int                 BLOCK_THREADS,
+    int                 ITEMS_PER_THREAD,
+    TestMode            TEST_MODE,
+    BlockScanAlgorithm  POLICY,
+    typename            ScanOp,
+    typename            IdentityT,        // NullType implies inclusive-scan, otherwise inclusive scan
+    typename            T>
 void Test(
     int             gen_mode,
     ScanOp          scan_op,
@@ -405,6 +409,7 @@ void Test(
     // Allocate host arrays
     T *h_in = new T[TILE_SIZE];
     T *h_reference = new T[TILE_SIZE];
+    T *h_aggregate = new T[BLOCK_THREADS];
 
     // Initialize problem
     T *p_prefix = (TEST_MODE == PREFIX_AGGREGATE) ? &prefix : NULL;
@@ -417,26 +422,36 @@ void Test(
         identity,
         p_prefix);
 
-    // Initialize device arrays
-    T *d_in = NULL;
-    T *d_out = NULL;
-    clock_t *d_elapsed = NULL;
-    CubDebugExit(cudaMalloc((void**)&d_in, sizeof(T) * TILE_SIZE));
-    CubDebugExit(cudaMalloc((void**)&d_out, sizeof(T) * (TILE_SIZE + 1)));
-    CubDebugExit(cudaMalloc((void**)&d_elapsed, sizeof(clock_t)));
-    CubDebugExit(cudaMemcpy(d_in, h_in, sizeof(T) * TILE_SIZE, cudaMemcpyHostToDevice));
+    for (int i = 0; i < BLOCK_THREADS; ++i)
+    {
+        h_aggregate[i] = aggregate;
+    }
 
     // Run kernel
-    printf("Test-mode %d, gen-mode %d, policy %d, %s BlockScan, %d threadblock threads, %d items per thread, %s (%d bytes) elements:\n",
+    printf("Test-mode %d, gen-mode %d, policy %d, %s BlockScan, %d threadblock threads, %d items per thread, %d tile size, %s (%d bytes) elements:\n",
         TEST_MODE,
         gen_mode,
         POLICY,
         (Equals<IdentityT, NullType>::VALUE) ? "Inclusive" : "Exclusive",
         BLOCK_THREADS,
         ITEMS_PER_THREAD,
+        TILE_SIZE,
         type_string,
         (int) sizeof(T));
     fflush(stdout);
+
+    // Initialize device arrays
+    T *d_in = NULL;
+    T *d_out = NULL;
+    T *d_aggregate = NULL;
+    clock_t *d_elapsed = NULL;
+    CubDebugExit(DeviceAllocate((void**)&d_in, sizeof(T) * TILE_SIZE));
+    CubDebugExit(DeviceAllocate((void**)&d_out, sizeof(T) * (TILE_SIZE + 1)));
+    CubDebugExit(DeviceAllocate((void**)&d_aggregate, sizeof(T) * BLOCK_THREADS));
+    CubDebugExit(DeviceAllocate((void**)&d_elapsed, sizeof(clock_t)));
+    CubDebugExit(cudaMemcpy(d_in, h_in, sizeof(T) * TILE_SIZE, cudaMemcpyHostToDevice));
+    CubDebugExit(cudaMemset(d_out, 0, sizeof(T) * (TILE_SIZE + 1)));
+    CubDebugExit(cudaMemset(d_aggregate, 0, sizeof(T) * BLOCK_THREADS));
 
     // Display input problem data
     if (g_verbose)
@@ -453,6 +468,7 @@ void Test(
     BlockScanKernel<BLOCK_THREADS, ITEMS_PER_THREAD, TEST_MODE, POLICY><<<1, BLOCK_THREADS>>>(
         d_in,
         d_out,
+        d_aggregate,
         scan_op,
         identity,
         prefix,
@@ -468,23 +484,38 @@ void Test(
 
     // Copy out and display results
     printf("\tScan results: ");
-    AssertEquals(0, CompareDeviceResults(h_reference, d_out, TILE_SIZE, g_verbose, g_verbose));
-    printf("\n");
+    int compare = CompareDeviceResults(h_reference, d_out, TILE_SIZE, g_verbose, g_verbose);
+    printf("%s\n", compare ? "FAIL" : "PASS");
+    AssertEquals(0, compare);
 
     // Copy out and display aggregate
     if ((TEST_MODE == AGGREGATE) || (TEST_MODE == PREFIX_AGGREGATE))
     {
         printf("\tScan aggregate: ");
-        AssertEquals(0, CompareDeviceResults(&aggregate, d_out + TILE_SIZE, 1, g_verbose, g_verbose));
-        printf("\n");
+        compare = CompareDeviceResults(h_aggregate, d_aggregate, BLOCK_THREADS, g_verbose, g_verbose);
+        printf("%s\n", compare ? "FAIL" : "PASS");
+        AssertEquals(0, compare);
+
+        // Copy out and display updated prefix
+        if (TEST_MODE == PREFIX_AGGREGATE)
+        {
+            printf("\tScan prefix: ");
+            T updated_prefix = scan_op(prefix, aggregate);
+            compare = CompareDeviceResults(&updated_prefix, d_out + TILE_SIZE, 1, g_verbose, g_verbose);
+            printf("%s\n", compare ? "FAIL" : "PASS");
+            AssertEquals(0, compare);
+        }
     }
+
 
     // Cleanup
     if (h_in) delete[] h_in;
     if (h_reference) delete[] h_reference;
-    if (d_in) CubDebugExit(cudaFree(d_in));
-    if (d_out) CubDebugExit(cudaFree(d_out));
-    if (d_elapsed) CubDebugExit(cudaFree(d_elapsed));
+    if (h_aggregate) delete[] h_aggregate;
+    if (d_in) CubDebugExit(DeviceFree(d_in));
+    if (d_out) CubDebugExit(DeviceFree(d_out));
+    if (d_aggregate) CubDebugExit(DeviceFree(d_aggregate));
+    if (d_elapsed) CubDebugExit(DeviceFree(d_elapsed));
 }
 
 
@@ -506,7 +537,8 @@ void Test(
     const char  *type_string)
 {
     Test<BLOCK_THREADS, ITEMS_PER_THREAD, TEST_MODE, BLOCK_SCAN_RAKING>(gen_mode, scan_op, identity, prefix, type_string);
-    Test<BLOCK_THREADS, ITEMS_PER_THREAD, TEST_MODE, BLOCK_SCAN_WARPSCANS>(gen_mode, scan_op, identity, prefix, type_string);
+    Test<BLOCK_THREADS, ITEMS_PER_THREAD, TEST_MODE, BLOCK_SCAN_RAKING_MEMOIZE>(gen_mode, scan_op, identity, prefix, type_string);
+    Test<BLOCK_THREADS, ITEMS_PER_THREAD, TEST_MODE, BLOCK_SCAN_WARP_SCANS>(gen_mode, scan_op, identity, prefix, type_string);
 }
 
 
@@ -627,10 +659,8 @@ int main(int argc, char** argv)
 
     if (quick)
     {
-        // A few tests (for visually verifying basic codegen during SASS-dump when commenting the battery the battery tests below)
-
-        Test<128, 4, BASIC, BLOCK_SCAN_WARPSCANS>(UNIFORM, Sum<int>(), int(0), int(10), CUB_TYPE_STRING(Sum<int));
-        Test<128, 4, BASIC, BLOCK_SCAN_RAKING>(UNIFORM, Sum<int>(), int(0), int(10), CUB_TYPE_STRING(Sum<int));
+        Test<128, 4, AGGREGATE, BLOCK_SCAN_WARP_SCANS>(UNIFORM, Sum<int>(), int(0), int(10), CUB_TYPE_STRING(Sum<int>));
+        Test<128, 4, AGGREGATE, BLOCK_SCAN_RAKING>(UNIFORM, Sum<int>(), int(0), int(10), CUB_TYPE_STRING(Sum<int>));
 
         TestFoo prefix = TestFoo::MakeTestFoo(17, 21, 32, 85);
         Test<128, 2, PREFIX_AGGREGATE, BLOCK_SCAN_RAKING>(SEQ_INC, Sum<TestFoo>(), NullType(), prefix, CUB_TYPE_STRING(Sum<TestFoo>));
