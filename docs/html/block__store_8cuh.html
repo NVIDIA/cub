@@ -70,12 +70,18 @@ var searchBox = new SearchBox("searchBox", "search",false,'Search');
       </li>
     </ul>
   </div>
+  <div id="navrow2" class="tabs2">
+    <ul class="tablist">
+      <li><a href="files.html"><span>File&#160;List</span></a></li>
+      <li><a href="globals.html"><span>File&#160;Members</span></a></li>
+    </ul>
+  </div>
 <!-- window showing the filter options -->
 <div id="MSearchSelectWindow"
      onmouseover="return searchBox.OnSearchSelectShow()"
      onmouseout="return searchBox.OnSearchSelectHide()"
      onkeydown="return searchBox.OnSearchSelectKey(event)">
-<a class="SelectItem" href="javascript:void(0)" onclick="searchBox.OnSelectItem(0)"><span class="SelectionMark">&#160;</span>All</a><a class="SelectItem" href="javascript:void(0)" onclick="searchBox.OnSelectItem(1)"><span class="SelectionMark">&#160;</span>Classes</a><a class="SelectItem" href="javascript:void(0)" onclick="searchBox.OnSelectItem(2)"><span class="SelectionMark">&#160;</span>Namespaces</a><a class="SelectItem" href="javascript:void(0)" onclick="searchBox.OnSelectItem(3)"><span class="SelectionMark">&#160;</span>Files</a><a class="SelectItem" href="javascript:void(0)" onclick="searchBox.OnSelectItem(4)"><span class="SelectionMark">&#160;</span>Functions</a><a class="SelectItem" href="javascript:void(0)" onclick="searchBox.OnSelectItem(5)"><span class="SelectionMark">&#160;</span>Variables</a><a class="SelectItem" href="javascript:void(0)" onclick="searchBox.OnSelectItem(6)"><span class="SelectionMark">&#160;</span>Typedefs</a><a class="SelectItem" href="javascript:void(0)" onclick="searchBox.OnSelectItem(7)"><span class="SelectionMark">&#160;</span>Enumerations</a><a class="SelectItem" href="javascript:void(0)" onclick="searchBox.OnSelectItem(8)"><span class="SelectionMark">&#160;</span>Enumerator</a><a class="SelectItem" href="javascript:void(0)" onclick="searchBox.OnSelectItem(9)"><span class="SelectionMark">&#160;</span>Friends</a><a class="SelectItem" href="javascript:void(0)" onclick="searchBox.OnSelectItem(10)"><span class="SelectionMark">&#160;</span>Macros</a><a class="SelectItem" href="javascript:void(0)" onclick="searchBox.OnSelectItem(11)"><span class="SelectionMark">&#160;</span>Groups</a><a class="SelectItem" href="javascript:void(0)" onclick="searchBox.OnSelectItem(12)"><span class="SelectionMark">&#160;</span>Pages</a></div>
+<a class="SelectItem" href="javascript:void(0)" onclick="searchBox.OnSelectItem(0)"><span class="SelectionMark">&#160;</span>All</a><a class="SelectItem" href="javascript:void(0)" onclick="searchBox.OnSelectItem(1)"><span class="SelectionMark">&#160;</span>Classes</a><a class="SelectItem" href="javascript:void(0)" onclick="searchBox.OnSelectItem(2)"><span class="SelectionMark">&#160;</span>Namespaces</a><a class="SelectItem" href="javascript:void(0)" onclick="searchBox.OnSelectItem(3)"><span class="SelectionMark">&#160;</span>Files</a><a class="SelectItem" href="javascript:void(0)" onclick="searchBox.OnSelectItem(4)"><span class="SelectionMark">&#160;</span>Functions</a><a class="SelectItem" href="javascript:void(0)" onclick="searchBox.OnSelectItem(5)"><span class="SelectionMark">&#160;</span>Variables</a><a class="SelectItem" href="javascript:void(0)" onclick="searchBox.OnSelectItem(6)"><span class="SelectionMark">&#160;</span>Typedefs</a><a class="SelectItem" href="javascript:void(0)" onclick="searchBox.OnSelectItem(7)"><span class="SelectionMark">&#160;</span>Enumerations</a><a class="SelectItem" href="javascript:void(0)" onclick="searchBox.OnSelectItem(8)"><span class="SelectionMark">&#160;</span>Enumerator</a><a class="SelectItem" href="javascript:void(0)" onclick="searchBox.OnSelectItem(9)"><span class="SelectionMark">&#160;</span>Groups</a><a class="SelectItem" href="javascript:void(0)" onclick="searchBox.OnSelectItem(10)"><span class="SelectionMark">&#160;</span>Pages</a></div>
 
 <!-- iframe showing the search results (closed by default) -->
 <div id="MSearchResultsWindow">
@@ -99,16 +105,16 @@ var searchBox = new SearchBox("searchBox", "search",false,'Search');
 </div><!--header-->
 <div class="contents">
 <div class="textblock"><code>#include &lt;iterator&gt;</code><br/>
-<code>#include &quot;../ns_wrapper.cuh&quot;</code><br/>
-<code>#include &quot;../macro_utils.cuh&quot;</code><br/>
+<code>#include &quot;../util_namespace.cuh&quot;</code><br/>
+<code>#include &quot;../util_macro.cuh&quot;</code><br/>
+<code>#include &quot;<a class="el" href="util__type_8cuh.html">../util_type.cuh</a>&quot;</code><br/>
+<code>#include &quot;../util_vector.cuh&quot;</code><br/>
 <code>#include &quot;<a class="el" href="thread__store_8cuh.html">../thread/thread_store.cuh</a>&quot;</code><br/>
-<code>#include &quot;<a class="el" href="type__utils_8cuh.html">../type_utils.cuh</a>&quot;</code><br/>
-<code>#include &quot;../vector_type.cuh&quot;</code><br/>
 <code>#include &quot;<a class="el" href="block__exchange_8cuh.html">block_exchange.cuh</a>&quot;</code><br/>
 </div><table class="memberdecls">
 <tr class="heading"><td colspan="2"><h2 class="groupheader"><a name="nested-classes"></a>
 Classes</h2></td></tr>
-<tr class="memitem:"><td class="memItemLeft" align="right" valign="top">class &#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classcub_1_1_block_store.html">cub::BlockStore&lt; OutputIterator, BLOCK_THREADS, ITEMS_PER_THREAD, POLICY, MODIFIER &gt;</a></td></tr>
+<tr class="memitem:"><td class="memItemLeft" align="right" valign="top">class &#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classcub_1_1_block_store.html">cub::BlockStore&lt; OutputIteratorRA, BLOCK_THREADS, ITEMS_PER_THREAD, POLICY, MODIFIER &gt;</a></td></tr>
 <tr class="memdesc:"><td class="mdescLeft">&#160;</td><td class="mdescRight"><a class="el" href="classcub_1_1_block_store.html" title="BlockStore provides data movement operations for writing blocked-arranged data to global memory...">BlockStore</a> provides data movement operations for writing <a href="index.html#sec3sec3"><em>blocked-arranged</em></a> data to global memory. </p>
 <div class="image">
 <img src="block_store_logo.png" alt="block_store_logo.png"/>
@@ -120,61 +126,62 @@ Classes</h2></td></tr>
 <tr class="heading"><td colspan="2"><h2 class="groupheader"><a name="namespaces"></a>
 Namespaces</h2></td></tr>
 <tr class="memitem:namespacecub"><td class="memItemLeft" align="right" valign="top">namespace &#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="namespacecub.html">cub</a></td></tr>
-<tr class="memdesc:namespacecub"><td class="mdescLeft">&#160;</td><td class="mdescRight">CUB namespace. <br/></td></tr>
+<tr class="memdesc:namespacecub"><td class="mdescLeft">&#160;</td><td class="mdescRight">Optional outer namespace(s) <br/></td></tr>
 <tr class="separator:"><td class="memSeparator" colspan="2">&#160;</td></tr>
 </table><table class="memberdecls">
 <tr class="heading"><td colspan="2"><h2 class="groupheader"><a name="enum-members"></a>
 Enumerations</h2></td></tr>
 <tr class="memitem:aaaa9ee8c8a57c6607909c110affd189e"><td class="memItemLeft" align="right" valign="top">enum &#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="namespacecub.html#aaaa9ee8c8a57c6607909c110affd189e">cub::BlockStorePolicy</a> { <a class="el" href="namespacecub.html#aaaa9ee8c8a57c6607909c110affd189ea9b8dcc7b6b06bcfc24af4f499523b880">cub::BLOCK_STORE_DIRECT</a>, 
 <a class="el" href="namespacecub.html#aaaa9ee8c8a57c6607909c110affd189ea0ccd625a7f2f3649155cbd5a27adfb41">cub::BLOCK_STORE_VECTORIZE</a>, 
-<a class="el" href="namespacecub.html#aaaa9ee8c8a57c6607909c110affd189eab0bbe20613466c3cedfcfea33a97d69c">cub::BLOCK_STORE_TRANSPOSE</a>
+<a class="el" href="namespacecub.html#aaaa9ee8c8a57c6607909c110affd189eab0bbe20613466c3cedfcfea33a97d69c">cub::BLOCK_STORE_TRANSPOSE</a>, 
+<a class="el" href="namespacecub.html#aaaa9ee8c8a57c6607909c110affd189ea78ff04d6671448a3a5bfe3b6a758a8c1">cub::BLOCK_STORE_STRIPED</a>
  }</td></tr>
 <tr class="memdesc:aaaa9ee8c8a57c6607909c110affd189e"><td class="mdescLeft">&#160;</td><td class="mdescRight">Tuning policy for <a class="el" href="classcub_1_1_block_store.html" title="BlockStore provides data movement operations for writing blocked-arranged data to global memory...">cub::BlockStore</a>.  <a href="namespacecub.html#aaaa9ee8c8a57c6607909c110affd189e">More...</a><br/></td></tr>
 <tr class="separator:aaaa9ee8c8a57c6607909c110affd189e"><td class="memSeparator" colspan="2">&#160;</td></tr>
 </table><table class="memberdecls">
 <tr class="heading"><td colspan="2"><h2 class="groupheader"><a name="func-members"></a>
 Functions</h2></td></tr>
-<tr><td colspan="2"><div class="groupHeader">Direct threadblock stores (blocked arrangement)</div></td></tr>
-<tr class="memitem:gaa8f12f02c082f8d689100b8ac88f8f61"><td class="memTemplParams" colspan="2">template&lt;PtxStoreModifier MODIFIER, typename T , int ITEMS_PER_THREAD, typename OutputIterator &gt; </td></tr>
-<tr class="memitem:gaa8f12f02c082f8d689100b8ac88f8f61"><td class="memTemplItemLeft" align="right" valign="top">__device__ __forceinline__ void&#160;</td><td class="memTemplItemRight" valign="bottom"><a class="el" href="group___simt_utils.html#gaa8f12f02c082f8d689100b8ac88f8f61">cub::BlockStoreDirect</a> (OutputIterator block_itr, T(&amp;items)[ITEMS_PER_THREAD])</td></tr>
-<tr class="memdesc:gaa8f12f02c082f8d689100b8ac88f8f61"><td class="mdescLeft">&#160;</td><td class="mdescRight">Store a tile of items across a threadblock directly using the specified cache modifier.  <a href="group___simt_utils.html#gaa8f12f02c082f8d689100b8ac88f8f61">More...</a><br/></td></tr>
-<tr class="separator:gaa8f12f02c082f8d689100b8ac88f8f61"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:ga2d52e8ce92c8bc044898cc289a7e96b4"><td class="memTemplParams" colspan="2">template&lt;typename T , int ITEMS_PER_THREAD, typename OutputIterator &gt; </td></tr>
-<tr class="memitem:ga2d52e8ce92c8bc044898cc289a7e96b4"><td class="memTemplItemLeft" align="right" valign="top">__device__ __forceinline__ void&#160;</td><td class="memTemplItemRight" valign="bottom"><a class="el" href="group___simt_utils.html#ga2d52e8ce92c8bc044898cc289a7e96b4">cub::BlockStoreDirect</a> (OutputIterator block_itr, T(&amp;items)[ITEMS_PER_THREAD])</td></tr>
-<tr class="memdesc:ga2d52e8ce92c8bc044898cc289a7e96b4"><td class="mdescLeft">&#160;</td><td class="mdescRight">Store a tile of items across a threadblock directly.  <a href="group___simt_utils.html#ga2d52e8ce92c8bc044898cc289a7e96b4">More...</a><br/></td></tr>
-<tr class="separator:ga2d52e8ce92c8bc044898cc289a7e96b4"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:ga8b5f82ad8487072b6cc80b312db1962d"><td class="memTemplParams" colspan="2">template&lt;PtxStoreModifier MODIFIER, typename T , int ITEMS_PER_THREAD, typename OutputIterator , typename SizeT &gt; </td></tr>
-<tr class="memitem:ga8b5f82ad8487072b6cc80b312db1962d"><td class="memTemplItemLeft" align="right" valign="top">__device__ __forceinline__ void&#160;</td><td class="memTemplItemRight" valign="bottom"><a class="el" href="group___simt_utils.html#ga8b5f82ad8487072b6cc80b312db1962d">cub::BlockStoreDirect</a> (OutputIterator block_itr, const SizeT &amp;guarded_items, T(&amp;items)[ITEMS_PER_THREAD])</td></tr>
-<tr class="memdesc:ga8b5f82ad8487072b6cc80b312db1962d"><td class="mdescLeft">&#160;</td><td class="mdescRight">Store a tile of items across a threadblock directly using the specified cache modifier, guarded by range.  <a href="group___simt_utils.html#ga8b5f82ad8487072b6cc80b312db1962d">More...</a><br/></td></tr>
-<tr class="separator:ga8b5f82ad8487072b6cc80b312db1962d"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:ga34a623c83894408f4f05ceb788d5ac92"><td class="memTemplParams" colspan="2">template&lt;typename T , int ITEMS_PER_THREAD, typename OutputIterator , typename SizeT &gt; </td></tr>
-<tr class="memitem:ga34a623c83894408f4f05ceb788d5ac92"><td class="memTemplItemLeft" align="right" valign="top">__device__ __forceinline__ void&#160;</td><td class="memTemplItemRight" valign="bottom"><a class="el" href="group___simt_utils.html#ga34a623c83894408f4f05ceb788d5ac92">cub::BlockStoreDirect</a> (OutputIterator block_itr, const SizeT &amp;guarded_items, T(&amp;items)[ITEMS_PER_THREAD])</td></tr>
-<tr class="memdesc:ga34a623c83894408f4f05ceb788d5ac92"><td class="mdescLeft">&#160;</td><td class="mdescRight">Store a tile of items across a threadblock directly, guarded by range.  <a href="group___simt_utils.html#ga34a623c83894408f4f05ceb788d5ac92">More...</a><br/></td></tr>
-<tr class="separator:ga34a623c83894408f4f05ceb788d5ac92"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr><td colspan="2"><div class="groupHeader">Direct threadblock stores (striped arrangement)</div></td></tr>
-<tr class="memitem:gaa18341f23a5d00c1b148e0013a9cc637"><td class="memTemplParams" colspan="2">template&lt;PtxStoreModifier MODIFIER, typename T , int ITEMS_PER_THREAD, typename OutputIterator &gt; </td></tr>
-<tr class="memitem:gaa18341f23a5d00c1b148e0013a9cc637"><td class="memTemplItemLeft" align="right" valign="top">__device__ __forceinline__ void&#160;</td><td class="memTemplItemRight" valign="bottom"><a class="el" href="group___simt_utils.html#gaa18341f23a5d00c1b148e0013a9cc637">cub::BlockStoreDirectStriped</a> (OutputIterator block_itr, T(&amp;items)[ITEMS_PER_THREAD], int stride=blockDim.x)</td></tr>
-<tr class="memdesc:gaa18341f23a5d00c1b148e0013a9cc637"><td class="mdescLeft">&#160;</td><td class="mdescRight">Store striped tile directly using the specified cache modifier.  <a href="group___simt_utils.html#gaa18341f23a5d00c1b148e0013a9cc637">More...</a><br/></td></tr>
-<tr class="separator:gaa18341f23a5d00c1b148e0013a9cc637"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:gaed26402e843c84978ce85da24819ebeb"><td class="memTemplParams" colspan="2">template&lt;typename T , int ITEMS_PER_THREAD, typename OutputIterator &gt; </td></tr>
-<tr class="memitem:gaed26402e843c84978ce85da24819ebeb"><td class="memTemplItemLeft" align="right" valign="top">__device__ __forceinline__ void&#160;</td><td class="memTemplItemRight" valign="bottom"><a class="el" href="group___simt_utils.html#gaed26402e843c84978ce85da24819ebeb">cub::BlockStoreDirectStriped</a> (OutputIterator block_itr, T(&amp;items)[ITEMS_PER_THREAD], int stride=blockDim.x)</td></tr>
-<tr class="memdesc:gaed26402e843c84978ce85da24819ebeb"><td class="mdescLeft">&#160;</td><td class="mdescRight">Store striped tile directly.  <a href="group___simt_utils.html#gaed26402e843c84978ce85da24819ebeb">More...</a><br/></td></tr>
-<tr class="separator:gaed26402e843c84978ce85da24819ebeb"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:gadcef89bcc6b3c66e1fa1267c15b08a78"><td class="memTemplParams" colspan="2">template&lt;PtxStoreModifier MODIFIER, typename T , int ITEMS_PER_THREAD, typename OutputIterator , typename SizeT &gt; </td></tr>
-<tr class="memitem:gadcef89bcc6b3c66e1fa1267c15b08a78"><td class="memTemplItemLeft" align="right" valign="top">__device__ __forceinline__ void&#160;</td><td class="memTemplItemRight" valign="bottom"><a class="el" href="group___simt_utils.html#gadcef89bcc6b3c66e1fa1267c15b08a78">cub::BlockStoreDirectStriped</a> (OutputIterator block_itr, const SizeT &amp;guarded_items, T(&amp;items)[ITEMS_PER_THREAD], int stride=blockDim.x)</td></tr>
-<tr class="separator:gadcef89bcc6b3c66e1fa1267c15b08a78"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:ga75150e5519f86c1054d7a7584e1a4f23"><td class="memTemplParams" colspan="2">template&lt;typename T , int ITEMS_PER_THREAD, typename OutputIterator , typename SizeT &gt; </td></tr>
-<tr class="memitem:ga75150e5519f86c1054d7a7584e1a4f23"><td class="memTemplItemLeft" align="right" valign="top">__device__ __forceinline__ void&#160;</td><td class="memTemplItemRight" valign="bottom"><a class="el" href="group___simt_utils.html#ga75150e5519f86c1054d7a7584e1a4f23">cub::BlockStoreDirectStriped</a> (OutputIterator block_itr, const SizeT &amp;guarded_items, T(&amp;items)[ITEMS_PER_THREAD], int stride=blockDim.x)</td></tr>
-<tr class="memdesc:ga75150e5519f86c1054d7a7584e1a4f23"><td class="mdescLeft">&#160;</td><td class="mdescRight">Store striped tile directly, guarded by range.  <a href="group___simt_utils.html#ga75150e5519f86c1054d7a7584e1a4f23">More...</a><br/></td></tr>
-<tr class="separator:ga75150e5519f86c1054d7a7584e1a4f23"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr><td colspan="2"><div class="groupHeader">Threadblock vectorized stores (blocked arrangement)</div></td></tr>
+<tr><td colspan="2"><div class="groupHeader">Direct threadblock I/O (blocked arrangement)</div></td></tr>
+<tr class="memitem:gade556bdfdfee03872a67580e0ec3b3f0"><td class="memTemplParams" colspan="2">template&lt;PtxStoreModifier MODIFIER, typename T , int ITEMS_PER_THREAD, typename OutputIteratorRA &gt; </td></tr>
+<tr class="memitem:gade556bdfdfee03872a67580e0ec3b3f0"><td class="memTemplItemLeft" align="right" valign="top">__device__ __forceinline__ void&#160;</td><td class="memTemplItemRight" valign="bottom"><a class="el" href="group___block_module.html#gade556bdfdfee03872a67580e0ec3b3f0">cub::BlockStoreDirect</a> (OutputIteratorRA block_itr, T(&amp;items)[ITEMS_PER_THREAD])</td></tr>
+<tr class="memdesc:gade556bdfdfee03872a67580e0ec3b3f0"><td class="mdescLeft">&#160;</td><td class="mdescRight">Store a tile of items across a threadblock directly using the specified cache modifier.  <a href="group___block_module.html#gade556bdfdfee03872a67580e0ec3b3f0">More...</a><br/></td></tr>
+<tr class="separator:gade556bdfdfee03872a67580e0ec3b3f0"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:ga44dddae56b59b69c3786d65bd0a5b111"><td class="memTemplParams" colspan="2">template&lt;typename T , int ITEMS_PER_THREAD, typename OutputIteratorRA &gt; </td></tr>
+<tr class="memitem:ga44dddae56b59b69c3786d65bd0a5b111"><td class="memTemplItemLeft" align="right" valign="top">__device__ __forceinline__ void&#160;</td><td class="memTemplItemRight" valign="bottom"><a class="el" href="group___block_module.html#ga44dddae56b59b69c3786d65bd0a5b111">cub::BlockStoreDirect</a> (OutputIteratorRA block_itr, T(&amp;items)[ITEMS_PER_THREAD])</td></tr>
+<tr class="memdesc:ga44dddae56b59b69c3786d65bd0a5b111"><td class="mdescLeft">&#160;</td><td class="mdescRight">Store a tile of items across a threadblock directly.  <a href="group___block_module.html#ga44dddae56b59b69c3786d65bd0a5b111">More...</a><br/></td></tr>
+<tr class="separator:ga44dddae56b59b69c3786d65bd0a5b111"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:gac0bc7f0eae136804a5ec53c65d404c64"><td class="memTemplParams" colspan="2">template&lt;PtxStoreModifier MODIFIER, typename T , int ITEMS_PER_THREAD, typename OutputIteratorRA , typename SizeT &gt; </td></tr>
+<tr class="memitem:gac0bc7f0eae136804a5ec53c65d404c64"><td class="memTemplItemLeft" align="right" valign="top">__device__ __forceinline__ void&#160;</td><td class="memTemplItemRight" valign="bottom"><a class="el" href="group___block_module.html#gac0bc7f0eae136804a5ec53c65d404c64">cub::BlockStoreDirect</a> (OutputIteratorRA block_itr, const SizeT &amp;guarded_items, T(&amp;items)[ITEMS_PER_THREAD])</td></tr>
+<tr class="memdesc:gac0bc7f0eae136804a5ec53c65d404c64"><td class="mdescLeft">&#160;</td><td class="mdescRight">Store a tile of items across a threadblock directly using the specified cache modifier, guarded by range.  <a href="group___block_module.html#gac0bc7f0eae136804a5ec53c65d404c64">More...</a><br/></td></tr>
+<tr class="separator:gac0bc7f0eae136804a5ec53c65d404c64"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:ga6c1e557324be533a3adc4e2a9a57f555"><td class="memTemplParams" colspan="2">template&lt;typename T , int ITEMS_PER_THREAD, typename OutputIteratorRA , typename SizeT &gt; </td></tr>
+<tr class="memitem:ga6c1e557324be533a3adc4e2a9a57f555"><td class="memTemplItemLeft" align="right" valign="top">__device__ __forceinline__ void&#160;</td><td class="memTemplItemRight" valign="bottom"><a class="el" href="group___block_module.html#ga6c1e557324be533a3adc4e2a9a57f555">cub::BlockStoreDirect</a> (OutputIteratorRA block_itr, const SizeT &amp;guarded_items, T(&amp;items)[ITEMS_PER_THREAD])</td></tr>
+<tr class="memdesc:ga6c1e557324be533a3adc4e2a9a57f555"><td class="mdescLeft">&#160;</td><td class="mdescRight">Store a tile of items across a threadblock directly, guarded by range.  <a href="group___block_module.html#ga6c1e557324be533a3adc4e2a9a57f555">More...</a><br/></td></tr>
+<tr class="separator:ga6c1e557324be533a3adc4e2a9a57f555"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr><td colspan="2"><div class="groupHeader">Direct threadblock I/O (striped arrangement)</div></td></tr>
+<tr class="memitem:gac9496dc1855119887042c1f3879b8c2f"><td class="memTemplParams" colspan="2">template&lt;PtxStoreModifier MODIFIER, typename T , int ITEMS_PER_THREAD, typename OutputIteratorRA &gt; </td></tr>
+<tr class="memitem:gac9496dc1855119887042c1f3879b8c2f"><td class="memTemplItemLeft" align="right" valign="top">__device__ __forceinline__ void&#160;</td><td class="memTemplItemRight" valign="bottom"><a class="el" href="group___block_module.html#gac9496dc1855119887042c1f3879b8c2f">cub::BlockStoreDirectStriped</a> (OutputIteratorRA block_itr, T(&amp;items)[ITEMS_PER_THREAD], int stride=blockDim.x)</td></tr>
+<tr class="memdesc:gac9496dc1855119887042c1f3879b8c2f"><td class="mdescLeft">&#160;</td><td class="mdescRight">Store striped tile directly using the specified cache modifier.  <a href="group___block_module.html#gac9496dc1855119887042c1f3879b8c2f">More...</a><br/></td></tr>
+<tr class="separator:gac9496dc1855119887042c1f3879b8c2f"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:ga23b34fe2b784fb75221a9d5e944cec26"><td class="memTemplParams" colspan="2">template&lt;typename T , int ITEMS_PER_THREAD, typename OutputIteratorRA &gt; </td></tr>
+<tr class="memitem:ga23b34fe2b784fb75221a9d5e944cec26"><td class="memTemplItemLeft" align="right" valign="top">__device__ __forceinline__ void&#160;</td><td class="memTemplItemRight" valign="bottom"><a class="el" href="group___block_module.html#ga23b34fe2b784fb75221a9d5e944cec26">cub::BlockStoreDirectStriped</a> (OutputIteratorRA block_itr, T(&amp;items)[ITEMS_PER_THREAD], int stride=blockDim.x)</td></tr>
+<tr class="memdesc:ga23b34fe2b784fb75221a9d5e944cec26"><td class="mdescLeft">&#160;</td><td class="mdescRight">Store striped tile directly.  <a href="group___block_module.html#ga23b34fe2b784fb75221a9d5e944cec26">More...</a><br/></td></tr>
+<tr class="separator:ga23b34fe2b784fb75221a9d5e944cec26"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:gadaae2b044498e68d6d09264a32368806"><td class="memTemplParams" colspan="2">template&lt;PtxStoreModifier MODIFIER, typename T , int ITEMS_PER_THREAD, typename OutputIteratorRA , typename SizeT &gt; </td></tr>
+<tr class="memitem:gadaae2b044498e68d6d09264a32368806"><td class="memTemplItemLeft" align="right" valign="top">__device__ __forceinline__ void&#160;</td><td class="memTemplItemRight" valign="bottom"><a class="el" href="group___block_module.html#gadaae2b044498e68d6d09264a32368806">cub::BlockStoreDirectStriped</a> (OutputIteratorRA block_itr, const SizeT &amp;guarded_items, T(&amp;items)[ITEMS_PER_THREAD], int stride=blockDim.x)</td></tr>
+<tr class="separator:gadaae2b044498e68d6d09264a32368806"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:gacb7646081377a6dbfe8476ecad623554"><td class="memTemplParams" colspan="2">template&lt;typename T , int ITEMS_PER_THREAD, typename OutputIteratorRA , typename SizeT &gt; </td></tr>
+<tr class="memitem:gacb7646081377a6dbfe8476ecad623554"><td class="memTemplItemLeft" align="right" valign="top">__device__ __forceinline__ void&#160;</td><td class="memTemplItemRight" valign="bottom"><a class="el" href="group___block_module.html#gacb7646081377a6dbfe8476ecad623554">cub::BlockStoreDirectStriped</a> (OutputIteratorRA block_itr, const SizeT &amp;guarded_items, T(&amp;items)[ITEMS_PER_THREAD], int stride=blockDim.x)</td></tr>
+<tr class="memdesc:gacb7646081377a6dbfe8476ecad623554"><td class="mdescLeft">&#160;</td><td class="mdescRight">Store striped tile directly, guarded by range.  <a href="group___block_module.html#gacb7646081377a6dbfe8476ecad623554">More...</a><br/></td></tr>
+<tr class="separator:gacb7646081377a6dbfe8476ecad623554"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr><td colspan="2"><div class="groupHeader">Threadblock vectorized I/O (blocked arrangement)</div></td></tr>
 <tr class="memitem:ga013c3ab8214854f45e8d678958e7dde9"><td class="memTemplParams" colspan="2">template&lt;PtxStoreModifier MODIFIER, typename T , int ITEMS_PER_THREAD&gt; </td></tr>
-<tr class="memitem:ga013c3ab8214854f45e8d678958e7dde9"><td class="memTemplItemLeft" align="right" valign="top">__device__ __forceinline__ void&#160;</td><td class="memTemplItemRight" valign="bottom"><a class="el" href="group___simt_utils.html#ga013c3ab8214854f45e8d678958e7dde9">cub::BlockStoreVectorized</a> (T *block_ptr, T(&amp;items)[ITEMS_PER_THREAD])</td></tr>
-<tr class="memdesc:ga013c3ab8214854f45e8d678958e7dde9"><td class="mdescLeft">&#160;</td><td class="mdescRight">Store a tile of items across a threadblock directly using the specified cache modifier.  <a href="group___simt_utils.html#ga013c3ab8214854f45e8d678958e7dde9">More...</a><br/></td></tr>
+<tr class="memitem:ga013c3ab8214854f45e8d678958e7dde9"><td class="memTemplItemLeft" align="right" valign="top">__device__ __forceinline__ void&#160;</td><td class="memTemplItemRight" valign="bottom"><a class="el" href="group___block_module.html#ga013c3ab8214854f45e8d678958e7dde9">cub::BlockStoreVectorized</a> (T *block_ptr, T(&amp;items)[ITEMS_PER_THREAD])</td></tr>
+<tr class="memdesc:ga013c3ab8214854f45e8d678958e7dde9"><td class="mdescLeft">&#160;</td><td class="mdescRight">Store a tile of items across a threadblock directly using the specified cache modifier.  <a href="group___block_module.html#ga013c3ab8214854f45e8d678958e7dde9">More...</a><br/></td></tr>
 <tr class="separator:ga013c3ab8214854f45e8d678958e7dde9"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:ga5db0cef20c11ea62aef484c587c4e064"><td class="memTemplParams" colspan="2">template&lt;typename T , int ITEMS_PER_THREAD&gt; </td></tr>
-<tr class="memitem:ga5db0cef20c11ea62aef484c587c4e064"><td class="memTemplItemLeft" align="right" valign="top">__device__ __forceinline__ void&#160;</td><td class="memTemplItemRight" valign="bottom"><a class="el" href="group___simt_utils.html#ga5db0cef20c11ea62aef484c587c4e064">cub::BlockStoreVectorized</a> (T *block_ptr, T(&amp;items)[ITEMS_PER_THREAD])</td></tr>
-<tr class="memdesc:ga5db0cef20c11ea62aef484c587c4e064"><td class="mdescLeft">&#160;</td><td class="mdescRight">Store a tile of items across a threadblock directly.  <a href="group___simt_utils.html#ga5db0cef20c11ea62aef484c587c4e064">More...</a><br/></td></tr>
+<tr class="memitem:ga5db0cef20c11ea62aef484c587c4e064"><td class="memTemplItemLeft" align="right" valign="top">__device__ __forceinline__ void&#160;</td><td class="memTemplItemRight" valign="bottom"><a class="el" href="group___block_module.html#ga5db0cef20c11ea62aef484c587c4e064">cub::BlockStoreVectorized</a> (T *block_ptr, T(&amp;items)[ITEMS_PER_THREAD])</td></tr>
+<tr class="memdesc:ga5db0cef20c11ea62aef484c587c4e064"><td class="mdescLeft">&#160;</td><td class="mdescRight">Store a tile of items across a threadblock directly.  <a href="group___block_module.html#ga5db0cef20c11ea62aef484c587c4e064">More...</a><br/></td></tr>
 <tr class="separator:ga5db0cef20c11ea62aef484c587c4e064"><td class="memSeparator" colspan="2">&#160;</td></tr>
 </table>
 <a name="details" id="details"></a><h2 class="groupheader">Detailed Description</h2>
@@ -183,7 +190,7 @@ Functions</h2></td></tr>
 <!-- HTML footer for doxygen 1.8.3.1-->
 <!-- start footer part -->
 <hr class="footer"/><address class="footer"><small>
-Generated on Thu Apr 4 2013 11:10:43 for CUB by &#160;<a href="http://www.doxygen.org/index.html">
+Generated on Wed May 1 2013 05:38:34 for CUB by &#160;<a href="http://www.doxygen.org/index.html">
 <img class="footer" src="doxygen.png" alt="doxygen"/>
 </a> 1.8.3.1
 <br>

@@ -34,19 +34,20 @@
 
 #pragma once
 
-#include "../ns_wrapper.cuh"
-#include "../device_props.cuh"
-#include "../type_utils.cuh"
+#include "../util_namespace.cuh"
+#include "../util_arch.cuh"
+#include "../util_type.cuh"
 #include "block_exchange.cuh"
 #include "block_radix_rank.cuh"
 
+/// Optional outer namespace(s)
 CUB_NS_PREFIX
 
 /// CUB namespace
 namespace cub {
 
 /**
- * \addtogroup SimtCoop
+ * \addtogroup BlockModule
  * @{
  */
 
@@ -70,7 +71,7 @@ namespace cub {
  * that ensure lexicographic key ordering.
  *
  * \par
- * For convenience, BlockRadixSort exposes a spectrum of entrypoints that differ by:
+ * For convenience, BlockRadixSort provides alternative entrypoints that differ by:
  * - Value association (keys-only <em>vs.</em> key-value-pairs)
  * - Input/output data arrangements (combinations of [<em>blocked</em>](index.html#sec3sec3) and [<em>striped</em>](index.html#sec3sec3) arrangements)
  *
@@ -78,7 +79,9 @@ namespace cub {
  * \tparam BLOCK_THREADS        The threadblock size in threads
  * \tparam ITEMS_PER_THREAD     The number of items per thread
  * \tparam ValueType            <b>[optional]</b> Value type (default: cub::NullType)
- * \tparam RADIX_BITS           <b>[optional]</b> The number of radix bits per digit place (default: 5 bits)
+ * \tparam RADIX_BITS           <b>[optional]</b> The number of radix bits per digit place (default: 4 bits)
+ * \tparam MEMOIZE_OUTER_SCAN   <b>[optional]</b> Whether or not to buffer outer raking scan partials to incur fewer shared memory reads at the expense of higher register pressure (default: true for architectures SM35 and newer, false otherwise).  See BlockScanAlgorithm::BLOCK_SCAN_RAKING_MEMOIZE for more details.
+ * \tparam INNER_SCAN_ALGORITHM <b>[optional]</b> The cub::BlockScanAlgorithm algorithm to use (default: cub::BLOCK_SCAN_WARP_SCANS)
  * \tparam SMEM_CONFIG          <b>[optional]</b> Shared memory bank mode (default: \p cudaSharedMemBankSizeFourByte)
  *
  * \par Usage Considerations
@@ -108,11 +111,11 @@ namespace cub {
  * <em>Example 1.</em> Perform a radix sort over a tile of 512 integer keys that
  * are partitioned in a blocked arrangement across a 128-thread threadblock (where each thread holds 4 keys).
  *      \code
- *      #include <cub.cuh>
+ *      #include <cub/cub.cuh>
  *
  *      __global__ void SomeKernel(...)
  *      {
- *          // Parameterize BlockRadixSort for the parallel execution context
+ *          // Parameterize BlockRadixSort for 128 threads (4 items each) on type unsigned int
  *          typedef cub::BlockRadixSort<unsigned int, 128, 4> BlockRadixSort;
  *
  *          // Declare shared memory for BlockRadixSort
@@ -133,12 +136,12 @@ namespace cub {
  * <em>Example 2.</em> Perform a key-value radix sort over the lower 20-bits of a tile of 32-bit integer
  * keys paired with floating-point values.  The data are partitioned in a striped arrangement across the threadblock.
  *      \code
- *      #include <cub.cuh>
+ *      #include <cub/cub.cuh>
  *
  *      template <int BLOCK_THREADS, int ITEMS_PER_THREAD>
  *      __global__ void SomeKernel(...)
  *      {
- *          // Parameterize BlockRadixSort for the parallel execution context
+ *          // Parameterize BlockRadixSort on key-value pairs of type unsigned int, float
  *          typedef cub::BlockRadixSort<unsigned int, BLOCK_THREADS, ITEMS_PER_THREAD, float> BlockRadixSort;
  *
  *          // Declare shared memory for BlockRadixSort
@@ -161,9 +164,11 @@ template <
     typename                KeyType,
     int                     BLOCK_THREADS,
     int                     ITEMS_PER_THREAD,
-    typename                ValueType = NullType,
-    int                     RADIX_BITS = 5,
-    cudaSharedMemConfig     SMEM_CONFIG = cudaSharedMemBankSizeFourByte>
+    typename                ValueType               = NullType,
+    int                     RADIX_BITS              = 4,
+    bool                    MEMOIZE_OUTER_SCAN      = (CUB_PTX_ARCH >= 350) ? true : false,
+    BlockScanAlgorithm      INNER_SCAN_ALGORITHM    = BLOCK_SCAN_WARP_SCANS,
+    cudaSharedMemConfig     SMEM_CONFIG             = cudaSharedMemBankSizeFourByte>
 class BlockRadixSort
 {
     //---------------------------------------------------------------------
@@ -173,17 +178,17 @@ class BlockRadixSort
 private:
 
     // Key traits and unsigned bits type
-    typedef NumericTraits<KeyType>                                          KeyTraits;
-    typedef typename KeyTraits::UnsignedBits                                UnsignedBits;
+    typedef NumericTraits<KeyType>              KeyTraits;
+    typedef typename KeyTraits::UnsignedBits    UnsignedBits;
 
     /// BlockRadixRank utility type
-    typedef BlockRadixRank<BLOCK_THREADS, RADIX_BITS, SMEM_CONFIG>          BlockRadixRank;
+    typedef BlockRadixRank<BLOCK_THREADS, RADIX_BITS, MEMOIZE_OUTER_SCAN, INNER_SCAN_ALGORITHM, SMEM_CONFIG> BlockRadixRank;
 
     /// BlockExchange utility type for keys
-    typedef BlockExchange<KeyType, BLOCK_THREADS, ITEMS_PER_THREAD>         KeyBlockExchange;
+    typedef BlockExchange<KeyType, BLOCK_THREADS, ITEMS_PER_THREAD> KeyBlockExchange;
 
     /// BlockExchange utility type for values
-    typedef BlockExchange<ValueType, BLOCK_THREADS, ITEMS_PER_THREAD>       ValueBlockExchange;
+    typedef BlockExchange<ValueType, BLOCK_THREADS, ITEMS_PER_THREAD> ValueBlockExchange;
 
     /// Shared memory storage layout type
     struct _SmemStorage
@@ -213,7 +218,7 @@ public:
      * \smemreuse
      */
     static __device__ __forceinline__ void SortBlocked(
-        SmemStorage         &smem_storage,                      ///< [in] Shared reference to opaque SmemStorage layout
+        SmemStorage         &smem_storage,                      ///< [in] Reference to shared memory allocation having layout type SmemStorage
         KeyType             (&keys)[ITEMS_PER_THREAD],          ///< [in-out] Keys to sort
         unsigned int        begin_bit = 0,                      ///< [in] <b>[optional]</b> The beginning (least-significant) bit index needed for key comparison
         const unsigned int  &end_bit = sizeof(KeyType) * 8)     ///< [in] <b>[optional]</b> The past-the-end (most-significant) bit index needed for key comparison
@@ -262,7 +267,7 @@ public:
      * \smemreuse
      */
     static __device__ __forceinline__ void SortBlockedToStriped(
-        SmemStorage         &smem_storage,                      ///< [in] Shared reference to opaque SmemStorage layout
+        SmemStorage         &smem_storage,                      ///< [in] Reference to shared memory allocation having layout type SmemStorage
         KeyType             (&keys)[ITEMS_PER_THREAD],          ///< [in-out] Keys to sort
         unsigned int        begin_bit = 0,                      ///< [in] <b>[optional]</b> The beginning (least-significant) bit index needed for key comparison
         const unsigned int  &end_bit = sizeof(KeyType) * 8)     ///< [in] <b>[optional]</b> The past-the-end (most-significant) bit index needed for key comparison
@@ -321,7 +326,7 @@ public:
      * \smemreuse
      */
     static __device__ __forceinline__ void SortStriped(
-        SmemStorage         &smem_storage,                      ///< [in] Shared reference to opaque SmemStorage layout
+        SmemStorage         &smem_storage,                      ///< [in] Reference to shared memory allocation having layout type SmemStorage
         KeyType             (&keys)[ITEMS_PER_THREAD],          ///< [in-out] Keys to sort
         unsigned int        begin_bit = 0,                      ///< [in] <b>[optional]</b> The beginning (least-significant) bit index needed for key comparison
         const unsigned int  &end_bit = sizeof(KeyType) * 8)     ///< [in] <b>[optional]</b> The past-the-end (most-significant) bit index needed for key comparison
@@ -335,7 +340,7 @@ public:
         SortBlockedToStriped(smem_storage, keys, begin_bit, end_bit);
     }
 
-    //@}
+    //@}  end member group
     /******************************************************************//**
      * \name Key-value pair sorting
      *********************************************************************/
@@ -347,7 +352,7 @@ public:
      * \smemreuse
      */
     static __device__ __forceinline__ void SortBlocked(
-        SmemStorage         &smem_storage,                      ///< [in] Shared reference to opaque SmemStorage layout
+        SmemStorage         &smem_storage,                      ///< [in] Reference to shared memory allocation having layout type SmemStorage
         KeyType             (&keys)[ITEMS_PER_THREAD],          ///< [in-out] Keys to sort
         ValueType           (&values)[ITEMS_PER_THREAD],        ///< [in-out] Values to sort
         unsigned int        begin_bit = 0,                      ///< [in] <b>[optional]</b> The beginning (least-significant) bit index needed for key comparison
@@ -402,7 +407,7 @@ public:
      * \smemreuse
      */
     static __device__ __forceinline__ void SortBlockedToStriped(
-        SmemStorage         &smem_storage,                      ///< [in] Shared reference to opaque SmemStorage layout
+        SmemStorage         &smem_storage,                      ///< [in] Reference to shared memory allocation having layout type SmemStorage
         KeyType             (&keys)[ITEMS_PER_THREAD],          ///< [in-out] Keys to sort
         ValueType           (&values)[ITEMS_PER_THREAD],        ///< [in-out] Values to sort
         unsigned int        begin_bit = 0,                      ///< [in] <b>[optional]</b> The beginning (least-significant) bit index needed for key comparison
@@ -469,7 +474,7 @@ public:
      * \smemreuse
      */
     static __device__ __forceinline__ void SortStriped(
-        SmemStorage         &smem_storage,                      ///< [in] Shared reference to opaque SmemStorage layout
+        SmemStorage         &smem_storage,                      ///< [in] Reference to shared memory allocation having layout type SmemStorage
         KeyType             (&keys)[ITEMS_PER_THREAD],          ///< [in-out] Keys to sort
         ValueType           (&values)[ITEMS_PER_THREAD],        ///< [in-out] Values to sort
         unsigned int        begin_bit = 0,                      ///< [in] <b>[optional]</b> The beginning (least-significant) bit index needed for key comparison
@@ -494,7 +499,8 @@ public:
 
 };
 
-/** @} */       // SimtCoop
+/** @} */       // BlockModule
 
-} // namespace cub
-CUB_NS_POSTFIX
+}               // CUB namespace
+CUB_NS_POSTFIX  // Optional outer namespace(s)
+

@@ -35,11 +35,11 @@
 
 #include <iterator>
 #include <stdio.h>
-#include <test_util.h>
+#include "test_util.h"
 
 #include <thrust/iterator/counting_iterator.h>
 
-#include "cub.cuh"
+#include <cub/cub.cuh>
 
 using namespace cub;
 
@@ -65,14 +65,14 @@ template <
     BlockStorePolicy      STORE_POLICY,
     PtxLoadModifier     LOAD_MODIFIER,
     PtxStoreModifier    STORE_MODIFIER,
-    typename            InputIterator,
-    typename            OutputIterator>
+    typename            InputIteratorRA,
+    typename            OutputIteratorRA>
 __launch_bounds__ (BLOCK_THREADS, 1)
 __global__ void Kernel(
-    InputIterator       d_in,
-    OutputIterator      d_out_unguarded,
-    OutputIterator      d_out_guarded_range,
-    int                 num_elements)
+    InputIteratorRA       d_in,
+    OutputIteratorRA      d_out_unguarded,
+    OutputIteratorRA      d_out_guarded_range,
+    int                 num_items)
 {
     enum
     {
@@ -80,11 +80,11 @@ __global__ void Kernel(
     };
 
     // Data type of input/output iterators
-    typedef typename std::iterator_traits<InputIterator>::value_type T;
+    typedef typename std::iterator_traits<InputIteratorRA>::value_type T;
 
     // Threadblock load/store abstraction types
-    typedef BlockLoad<InputIterator, BLOCK_THREADS, ITEMS_PER_THREAD, LOAD_POLICY, LOAD_MODIFIER> BlockLoad;
-    typedef BlockStore<OutputIterator, BLOCK_THREADS, ITEMS_PER_THREAD, STORE_POLICY, STORE_MODIFIER> BlockStore;
+    typedef BlockLoad<InputIteratorRA, BLOCK_THREADS, ITEMS_PER_THREAD, LOAD_POLICY, LOAD_MODIFIER> BlockLoad;
+    typedef BlockStore<OutputIteratorRA, BLOCK_THREADS, ITEMS_PER_THREAD, STORE_POLICY, STORE_MODIFIER> BlockStore;
 
     // Shared memory type for this threadblock
     union SmemStorage
@@ -98,7 +98,7 @@ __global__ void Kernel(
 
     // Threadblock work bounds
     int block_offset = blockIdx.x * TILE_SIZE;
-    int guarded_elements = num_elements - block_offset;
+    int guarded_elements = num_items - block_offset;
 
     // Test unguarded
     {
@@ -148,13 +148,13 @@ template <
     BlockStorePolicy      STORE_POLICY,
     PtxLoadModifier     LOAD_MODIFIER,
     PtxStoreModifier    STORE_MODIFIER,
-    typename            InputIterator,
-    typename            OutputIterator>
+    typename            InputIteratorRA,
+    typename            OutputIteratorRA>
 void TestKernel(
     T                   *h_in,
-    InputIterator       d_in,
-    OutputIterator      d_out_unguarded,
-    OutputIterator      d_out_guarded_range,
+    InputIteratorRA       d_in,
+    OutputIteratorRA      d_out_unguarded,
+    OutputIteratorRA      d_out_guarded_range,
     int                 grid_size,
     int                 guarded_elements)
 {
@@ -171,13 +171,13 @@ void TestKernel(
     CubDebugExit(cudaDeviceSynchronize());
 
     // Check results
-    printf("\tUnguarded: ");
-    AssertEquals(0, CompareDeviceResults(h_in, d_out_unguarded, unguarded_elements, g_verbose, g_verbose));
-    printf("\n");
+    int compare = CompareDeviceResults(h_in, d_out_unguarded, unguarded_elements, g_verbose, g_verbose);
+    printf("\tUnguarded: %s\n", (compare) ? "FAIL" : "PASS");
+    AssertEquals(0, compare);
 
-    printf("\tGuarded range: ");
-    AssertEquals(0, CompareDeviceResults(h_in, d_out_guarded_range, guarded_elements, g_verbose, g_verbose));
-    printf("\n");
+    compare = CompareDeviceResults(h_in, d_out_guarded_range, guarded_elements, g_verbose, g_verbose);
+    printf("\tGuarded: %s\n", (compare) ? "FAIL" : "PASS");
+    AssertEquals(0, compare);
 }
 
 
@@ -209,6 +209,8 @@ void TestNative(
     CubDebugExit(cudaMalloc((void**)&d_in, sizeof(T) * unguarded_elements));
     CubDebugExit(cudaMalloc((void**)&d_out_unguarded, sizeof(T) * unguarded_elements));
     CubDebugExit(cudaMalloc((void**)&d_out_guarded_range, sizeof(T) * guarded_elements));
+    CubDebugExit(cudaMemset(d_out_unguarded, 0, sizeof(T) * unguarded_elements));
+    CubDebugExit(cudaMemset(d_out_guarded_range, 0, sizeof(T) * guarded_elements));
 
     // Initialize problem on host and device
     for (int i = 0; i < unguarded_elements; ++i)
@@ -217,7 +219,7 @@ void TestNative(
     }
     CubDebugExit(cudaMemcpy(d_in, h_in, sizeof(T) * unguarded_elements, cudaMemcpyHostToDevice));
 
-    printf("TestNative "
+    printf("TestNative(%d) "
         "grid_size(%d) "
         "guarded_elements(%d) "
         "unguarded_elements(%d) "
@@ -228,7 +230,7 @@ void TestNative(
         "LOAD_MODIFIER(%d) "
         "STORE_MODIFIER(%d) "
         "sizeof(T)(%d)\n",
-            grid_size, guarded_elements, unguarded_elements, BLOCK_THREADS, ITEMS_PER_THREAD, LOAD_POLICY, STORE_POLICY, LOAD_MODIFIER, STORE_MODIFIER, (int) sizeof(T));
+            IsPointer<T*>::VALUE, grid_size, guarded_elements, unguarded_elements, BLOCK_THREADS, ITEMS_PER_THREAD, LOAD_POLICY, STORE_POLICY, LOAD_MODIFIER, STORE_MODIFIER, (int) sizeof(T));
 
     TestKernel<T, BLOCK_THREADS, ITEMS_PER_THREAD, LOAD_POLICY, STORE_POLICY, LOAD_MODIFIER, STORE_MODIFIER>(
         h_in,
@@ -250,15 +252,17 @@ void TestNative(
  * Test iterator
  */
 template <
-    typename        T,
-    int             BLOCK_THREADS,
-    int             ITEMS_PER_THREAD,
-    BlockLoadPolicy   LOAD_POLICY,
-    BlockStorePolicy  STORE_POLICY>
+    typename            T,
+    int                 BLOCK_THREADS,
+    int                 ITEMS_PER_THREAD,
+    BlockLoadPolicy     LOAD_POLICY,
+    BlockStorePolicy    STORE_POLICY>
 void TestIterator(
-    int             grid_size,
-    float           fraction_valid)
+    int                 grid_size,
+    float               fraction_valid)
 {
+    typedef thrust::counting_iterator<T> Iterator;
+
     int unguarded_elements = grid_size * BLOCK_THREADS * ITEMS_PER_THREAD;
     int guarded_elements = int(fraction_valid * float(unguarded_elements));
 
@@ -270,15 +274,17 @@ void TestIterator(
     T *d_out_guarded_range = NULL;
     CubDebugExit(cudaMalloc((void**)&d_out_unguarded, sizeof(T) * unguarded_elements));
     CubDebugExit(cudaMalloc((void**)&d_out_guarded_range, sizeof(T) * guarded_elements));
+    CubDebugExit(cudaMemset(d_out_unguarded, 0, sizeof(T) * unguarded_elements));
+    CubDebugExit(cudaMemset(d_out_guarded_range, 0, sizeof(T) * guarded_elements));
 
     // Initialize problem on host and device
-    thrust::counting_iterator<T> counting_itr(0);
+    Iterator counting_itr(0);
     for (int i = 0; i < unguarded_elements; ++i)
     {
         h_in[i] = counting_itr[i];
     }
 
-    printf("TestIterator "
+    printf("TestIterator(%d) "
         "grid_size(%d) "
         "guarded_elements(%d) "
         "unguarded_elements(%d) "
@@ -287,7 +293,7 @@ void TestIterator(
         "LOAD_POLICY(%d) "
         "STORE_POLICY(%d) "
         "sizeof(T)(%d)\n",
-            grid_size, guarded_elements, unguarded_elements, BLOCK_THREADS, ITEMS_PER_THREAD, LOAD_POLICY, STORE_POLICY, (int) sizeof(T));
+            !IsPointer<Iterator>::VALUE, grid_size, guarded_elements, unguarded_elements, BLOCK_THREADS, ITEMS_PER_THREAD, LOAD_POLICY, STORE_POLICY, (int) sizeof(T));
 
     TestKernel<T, BLOCK_THREADS, ITEMS_PER_THREAD, LOAD_POLICY, STORE_POLICY, PTX_LOAD_NONE, PTX_STORE_NONE>(
         h_in,

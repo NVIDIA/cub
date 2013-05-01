@@ -33,18 +33,19 @@
 
 #pragma once
 
-#include "../ns_wrapper.cuh"
-#include "../device_props.cuh"
-#include "../ptx_intrinsics.cuh"
-#include "../type_utils.cuh"
+#include "../util_namespace.cuh"
+#include "../util_arch.cuh"
+#include "../util_ptx.cuh"
+#include "../util_type.cuh"
 
+/// Optional outer namespace(s)
 CUB_NS_PREFIX
 
 /// CUB namespace
 namespace cub {
 
 /**
- * \addtogroup SimtCoop
+ * \addtogroup BlockModule
  * @{
  */
 
@@ -92,7 +93,7 @@ private:
     {
         TILE_ITEMS          = BLOCK_THREADS * ITEMS_PER_THREAD,
 
-        LOG_SMEM_BANKS      = DeviceProps::LOG_SMEM_BANKS,
+        LOG_SMEM_BANKS      = PtxArchProps::LOG_SMEM_BANKS,
         SMEM_BANKS          = 1 << LOG_SMEM_BANKS,
 
         // Insert padding if the number of items per thread is a power of two
@@ -135,7 +136,8 @@ private:
         for (int ITEM = 0; ITEM < ITEMS_PER_THREAD; ITEM++)
         {
             int item_offset = (ITEM * BLOCK_THREADS) + threadIdx.x;
-            if (PADDING) item_offset = SHR_ADD(item_offset, LOG_SMEM_BANKS, item_offset);
+//            if (PADDING) item_offset = SHR_ADD(item_offset, LOG_SMEM_BANKS, item_offset);
+            if (PADDING) item_offset += item_offset >> LOG_SMEM_BANKS;
             buffer[item_offset] = items[ITEM];
         }
     }
@@ -148,7 +150,8 @@ private:
         for (int ITEM = 0; ITEM < ITEMS_PER_THREAD; ITEM++)
         {
             int item_offset = (threadIdx.x * ITEMS_PER_THREAD) + ITEM;
-            if (PADDING) item_offset = SHR_ADD(item_offset, LOG_SMEM_BANKS, item_offset);
+//            if (PADDING) item_offset = SHR_ADD(item_offset, LOG_SMEM_BANKS, item_offset);
+            if (PADDING) item_offset += item_offset >> LOG_SMEM_BANKS;
             items[ITEM] = buffer[item_offset];
         }
     }
@@ -168,7 +171,7 @@ private:
 
     static __device__ __forceinline__ void ScatterRanked(
         T                 items[ITEMS_PER_THREAD],
-        unsigned int     ranks[ITEMS_PER_THREAD],
+        unsigned int      ranks[ITEMS_PER_THREAD],
         T                 *buffer)
     {
         #pragma unroll
@@ -199,7 +202,7 @@ public:
      * \smemreuse
      */
     static __device__ __forceinline__ void BlockedToStriped(
-        SmemStorage     &smem_storage,              ///< [in] Shared reference to opaque SmemStorage layout
+        SmemStorage     &smem_storage,              ///< [in] Reference to shared memory allocation having layout type SmemStorage
         T               items[ITEMS_PER_THREAD])    ///< [in-out] Items to exchange, converting between <em>blocked</em> and <em>striped</em> arrangements.
     {
         // Scatter items to shared memory
@@ -218,7 +221,7 @@ public:
      * \smemreuse
      */
     static __device__ __forceinline__ void StripedToBlocked(
-        SmemStorage      &smem_storage,             ///< [in] Shared reference to opaque SmemStorage layout
+        SmemStorage      &smem_storage,             ///< [in] Reference to shared memory allocation having layout type SmemStorage
         T                items[ITEMS_PER_THREAD])   ///< [in-out] Items to exchange, converting between <em>striped</em> and <em>blocked</em> arrangements.
     {
         // Scatter items to shared memory
@@ -230,7 +233,7 @@ public:
         GatherBlocked(items, smem_storage.exchange);
     }
 
-    //@}
+    //@}  end member group
     /******************************************************************//**
      * \name Scatter exchanges
      *********************************************************************/
@@ -242,7 +245,7 @@ public:
      * \smemreuse
      */
     static __device__ __forceinline__ void ScatterToBlocked(
-        SmemStorage     &smem_storage,              ///< [in] Shared reference to opaque SmemStorage layout
+        SmemStorage     &smem_storage,              ///< [in] Reference to shared memory allocation having layout type SmemStorage
         T               items[ITEMS_PER_THREAD],    ///< [in-out] Items to exchange
         unsigned int    ranks[ITEMS_PER_THREAD])    ///< [in] Corresponding scatter ranks
     {
@@ -262,7 +265,7 @@ public:
      * \smemreuse
      */
     static __device__ __forceinline__ void ScatterToStriped(
-        SmemStorage     &smem_storage,              ///< [in] Shared reference to opaque SmemStorage layout
+        SmemStorage     &smem_storage,              ///< [in] Reference to shared memory allocation having layout type SmemStorage
         T               items[ITEMS_PER_THREAD],    ///< [in-out] Items to exchange
         unsigned int    ranks[ITEMS_PER_THREAD])    ///< [in] Corresponding scatter ranks
     {
@@ -275,12 +278,13 @@ public:
         GatherStriped(items, smem_storage.exchange);
     }
 
-    //@}
+    //@}  end member group
 
 
 };
 
-/** @} */       // end of SimtCoop group
+/** @} */       // end group BlockModule
 
-} // namespace cub
-CUB_NS_POSTFIX
+}               // CUB namespace
+CUB_NS_POSTFIX  // Optional outer namespace(s)
+

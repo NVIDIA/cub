@@ -36,8 +36,8 @@
 #include <stdio.h>
 
 #include <stdio.h>
-#include "cub.cuh"
-#include <test_util.h>
+#include <cub/cub.cuh>
+#include "test_util.h"
 
 using namespace cub;
 
@@ -100,7 +100,7 @@ int main(int argc, char** argv)
     CubDebugExit(args.DeviceInit());
 
     // Initialize CUDA device properties
-    CudaProps cuda_props;
+    Device cuda_props;
     CubDebugExit(cuda_props.Init());
 
     // Compute grid size and occupancy

@@ -33,43 +33,50 @@
 
 #pragma once
 
-// Grid
-#include "grid/grid_barrier.cuh"
-#include "grid/grid_queue.cuh"
-#include "grid/grid_even_share.cuh"
 
-// Thread block
+// Block
+#include "block/block_histo_256.cuh"
+#include "block/block_discontinuity.cuh"
+#include "block/block_exchange.cuh"
 #include "block/block_load.cuh"
 #include "block/block_radix_rank.cuh"
 #include "block/block_radix_sort.cuh"
 #include "block/block_reduce.cuh"
 #include "block/block_scan.cuh"
 #include "block/block_store.cuh"
-#include "block/block_discontinuity.cuh"
+
+// Device
+#include "device/device_reduce.cuh"
+#include "device/device_histo_256.cuh"
+
+// Grid
+#include "grid/grid_barrier.cuh"
+#include "grid/grid_even_share.cuh"
+#include "grid/grid_multi_buffer.cuh"
+#include "grid/grid_queue.cuh"
+
+// Host
+#include "host/spinlock.cuh"
+
+// Thread
+#include "thread/thread_load.cuh"
+#include "thread/thread_operators.cuh"
+#include "thread/thread_reduce.cuh"
+#include "thread/thread_scan.cuh"
+#include "thread/thread_store.cuh"
 
 // Warp
 #include "warp/warp_reduce.cuh"
 #include "warp/warp_scan.cuh"
 
-// Thread
-#include "thread/thread_load.cuh"
-#include "thread/thread_reduce.cuh"
-#include "thread/thread_scan.cuh"
-#include "thread/thread_store.cuh"
-
-// Host
-#include "host/cuda_props.cuh"
-#include "host/kernel_props.cuh"
-#include "host/multi_buffer.cuh"
-#include "host/spinlock.cuh"
-
-// General
-#include "debug.cuh"
-#include "macro_utils.cuh"
-#include "device_props.cuh"
-#include "operators.cuh"
-#include "ptx_intrinsics.cuh"
-#include "type_utils.cuh"
-#include "vector_type.cuh"
-#include "allocator.cuh"
+// Util
+#include "util_allocator.cuh"
+#include "util_arch.cuh"
+#include "util_debug.cuh"
+#include "util_device.cuh"
+#include "util_macro.cuh"
+#include "util_ptx.cuh"
+#include "util_type.cuh"
+#include "util_iterator.cuh"
+#include "util_vector.cuh"
 

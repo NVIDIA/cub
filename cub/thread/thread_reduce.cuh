@@ -26,108 +26,121 @@
  *
  ******************************************************************************/
 
-/******************************************************************************
- * Reduction over thread-local array types.
- *
- * For example:
- *
- *    Sum<T> op;
- *
- *     int a[4] = {1, 2, 3, 4};
- *     ThreadReduce(a, op));                        // 10
- *
- *  int b[2][2] = {{1, 2}, {3, 4}};
- *     ThreadReduce(b, op));                        // 10
- *
- *     int *c = &a[1];
- *     ThreadReduce(c, op));                        // 2
- *     ThreadReduce<2>(c, op));                    // 5
- *
- *     int (*d)[2] = &b[1];
- *     ThreadReduce(d, op));                        // 7
- *
- ******************************************************************************/
+/**
+ * \file
+ * Thread utilities for sequential reduction over statically-sized array types
+ */
 
 #pragma once
 
-#include "../operators.cuh"
-#include "../type_utils.cuh"
-#include "../ns_wrapper.cuh"
+#include "../thread/thread_operators.cuh"
+#include "../util_type.cuh"
+#include "../util_namespace.cuh"
 
+/// Optional outer namespace(s)
 CUB_NS_PREFIX
+
+/// CUB namespace
 namespace cub {
 
 /**
- * Serial reduction with the specified operator and seed
+ * \addtogroup ThreadModule
+ * @{
+ */
+
+/**
+ * \name Sequential reduction over statically-sized array types
+ * @{
+ */
+
+/**
+ * \brief Perform a sequential reduction over \p LENGTH elements of the \p input array, seeded with the specified \p prefix.  The aggregate is returned.
+ *
+ * \tparam LENGTH     Length of input array
+ * \tparam T          <b>[inferred]</b> The data type to be reduced.
+ * \tparam ScanOp     <b>[inferred]</b> Binary reduction operator type having member <tt>T operator()(const T &a, const T &b)</tt>
  */
 template <
-    int LENGTH,
-    typename T,
-    typename ReductionOp>
+    int         LENGTH,
+    typename    T,
+    typename    ReductionOp>
 __device__ __forceinline__ T ThreadReduce(
-    T* data,
-    ReductionOp reduction_op,
-    T seed)
+    T*          input,                  ///< [in] Input array
+    ReductionOp reduction_op,           ///< [in] Binary reduction operator
+    T           prefix)                 ///< [in] Prefix to seed reduction with
 {
     #pragma unroll
     for (int i = 0; i < LENGTH; ++i)
     {
-        seed = reduction_op(seed, data[i]);
+        prefix = reduction_op(prefix, input[i]);
     }
 
-    return seed;
+    return prefix;
 }
 
 
 /**
- * Serial reduction with the specified operator
+ * \brief Perform a sequential reduction over \p LENGTH elements of the \p input array.  The aggregate is returned.
+ *
+ * \tparam LENGTH     Length of input array
+ * \tparam T          <b>[inferred]</b> The data type to be reduced.
+ * \tparam ScanOp     <b>[inferred]</b> Binary reduction operator type having member <tt>T operator()(const T &a, const T &b)</tt>
  */
 template <
-    int LENGTH,
-    typename T,
-    typename ReductionOp>
+    int         LENGTH,
+    typename    T,
+    typename    ReductionOp>
 __device__ __forceinline__ T ThreadReduce(
-    T* data,
-    ReductionOp reduction_op)
+    T*          input,                  ///< [in] Input array
+    ReductionOp reduction_op)           ///< [in] Binary reduction operator
 {
-    T seed = data[0];
-    return ThreadReduce<LENGTH - 1>(data + 1, reduction_op, seed);
+    T prefix = input[0];
+    return ThreadReduce<LENGTH - 1>(input + 1, reduction_op, prefix);
 }
 
 
 /**
- * Serial reduction with the specified operator and seed
+ * \brief Perform a sequential reduction over the statically-sized \p input array, seeded with the specified \p prefix.  The aggregate is returned.
+ *
+ * \tparam LENGTH     <b>[inferred]</b> Length of \p input array
+ * \tparam T          <b>[inferred]</b> The data type to be reduced.
+ * \tparam ScanOp     <b>[inferred]</b> Binary reduction operator type having member <tt>T operator()(const T &a, const T &b)</tt>
  */
 template <
-    typename ArrayType,
-    typename ReductionOp>
-__device__ __forceinline__ typename ArrayTraits<ArrayType>::Type ThreadReduce(
-    ArrayType &data,
-    ReductionOp reduction_op,
-    typename ArrayTraits<ArrayType>::Type seed)
+    int         LENGTH,
+    typename    T,
+    typename    ReductionOp>
+__device__ __forceinline__ T ThreadReduce(
+    T           (&input)[LENGTH],       ///< [in] Input array
+    ReductionOp reduction_op,           ///< [in] Binary reduction operator
+    T           prefix)                 ///< [in] Prefix to seed reduction with
 {
-    typedef typename ArrayTraits<ArrayType>::Type T;
-    T* linear_array = reinterpret_cast<T*>(data);
-    return ThreadReduce<ArrayTraits<ArrayType>::ELEMENTS>(linear_array, reduction_op, seed);
+    return ThreadReduce<LENGTH>(input, reduction_op, prefix);
 }
 
 
 /**
- * Serial reduction with the specified operator
+ * \brief Serial reduction with the specified operator
+ *
+ * \tparam LENGTH     <b>[inferred]</b> Length of \p input array
+ * \tparam T          <b>[inferred]</b> The data type to be reduced.
+ * \tparam ScanOp     <b>[inferred]</b> Binary reduction operator type having member <tt>T operator()(const T &a, const T &b)</tt>
  */
 template <
-    typename ArrayType,
-    typename ReductionOp>
-__device__ __forceinline__ typename ArrayTraits<ArrayType>::Type ThreadReduce(
-    ArrayType &data,
-    ReductionOp reduction_op)
+    int         LENGTH,
+    typename    T,
+    typename    ReductionOp>
+__device__ __forceinline__ T ThreadReduce(
+    T           (&input)[LENGTH],       ///< [in] Input array
+    ReductionOp reduction_op)           ///< [in] Binary reduction operator
 {
-    typedef typename ArrayTraits<ArrayType>::Type T;
-    T* linear_array = reinterpret_cast<T*>(data);
-    return ThreadReduce<ArrayTraits<ArrayType>::ELEMENTS>(linear_array, reduction_op);
+    return ThreadReduce<LENGTH>((T*) input, reduction_op);
 }
 
 
-} // namespace cub
-CUB_NS_POSTFIX
+//@}  end member group
 
+/** @} */       // end group ThreadModule
+
+}               // CUB namespace
+CUB_NS_POSTFIX  // Optional outer namespace(s)

@@ -36,8 +36,8 @@
 #include <stdio.h>
 
 #include <stdio.h>
-#include "cub.cuh"
-#include <test_util.h>
+#include <cub/cub.cuh>
+#include "test_util.h"
 
 using namespace cub;
 
@@ -62,6 +62,8 @@ int main(int argc, char** argv)
             "\n", argv[0]);
         exit(0);
     }
+
+#ifndef __CUDA_ARCH__
 
     // Initialize device
     CubDebugExit(args.DeviceInit());
@@ -242,6 +244,8 @@ int main(int argc, char** argv)
         // Check that that still we have 0 live block across all GPUs
         AssertEquals(allocator.live_blocks.size(), 0);
     }
+
+#endif
 
     printf("Success\n");
     return 0;

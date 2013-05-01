@@ -26,23 +26,32 @@
  *
  ******************************************************************************/
 
-/******************************************************************************
- * Software global barrier for threadblocks
- ******************************************************************************/
+/**
+ * \file
+ * cub::GridBarrier implements a software global barrier among thread blocks within a CUDA grid
+ */
 
 #pragma once
 
-#include "../debug.cuh"
-#include "../ns_wrapper.cuh"
+#include "../util_debug.cuh"
+#include "../util_namespace.cuh"
 #include "../thread/thread_load.cuh"
 
+/// Optional outer namespace(s)
 CUB_NS_PREFIX
+
+/// CUB namespace
 namespace cub {
 
 
 /**
- * Manages device storage needed for implementing a global software barrier
- * between threadblocks in a single grid
+ * \addtogroup GridModule
+ * @{
+ */
+
+
+/**
+ * \brief GridBarrier implements a software global barrier among thread blocks within a CUDA grid
  */
 class GridBarrier
 {
@@ -121,10 +130,10 @@ public:
 
 
 /**
- * Version of global barrier with storage lifetime management.
+ * \brief GridBarrierLifetime extends GridBarrier to provide lifetime management of the temporary device storage needed for cooperation.
  *
  * Uses RAII for lifetime, i.e., device resources are reclaimed when
- * the destructor is called (e.g., when the logical scope ends).
+ * the destructor is called.
  */
 class GridBarrierLifetime : public GridBarrier
 {
@@ -149,7 +158,7 @@ public:
         cudaError_t retval = cudaSuccess;
         if (d_sync)
         {
-            retval = CubDebug(cudaFree(d_sync));
+            CubDebug(retval = cudaFree(d_sync));
             d_sync = NULL;
         }
         sync_bytes = 0;
@@ -179,14 +188,14 @@ public:
             {
                 if (d_sync)
                 {
-                    if (retval = CubDebug(cudaFree(d_sync))) break;
+                    if (CubDebug(retval = cudaFree(d_sync))) break;
                 }
 
                 sync_bytes = new_sync_bytes;
 
                 // Allocate and initialize to zero
-                if (retval = CubDebug(cudaMalloc((void**) &d_sync, sync_bytes))) break;
-                if (retval = CubDebug(cudaMemset(d_sync, 0, new_sync_bytes))) break;
+                if (CubDebug(retval = cudaMalloc((void**) &d_sync, sync_bytes))) break;
+                if (CubDebug(retval = cudaMemset(d_sync, 0, new_sync_bytes))) break;
             }
         } while (0);
 
@@ -195,5 +204,8 @@ public:
 };
 
 
-} // namespace cub
-CUB_NS_POSTFIX
+/** @} */       // end group GridModule
+
+}               // CUB namespace
+CUB_NS_POSTFIX  // Optional outer namespace(s)
+
