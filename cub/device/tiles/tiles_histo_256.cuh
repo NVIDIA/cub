@@ -40,6 +40,7 @@
 #include "../../grid/grid_queue.cuh"
 #include "../../block/block_load.cuh"
 #include "../../block/block_histo_256.cuh"
+#include "../../util_vector.cuh"
 #include "../../util_namespace.cuh"
 
 /// Optional outer namespace(s)
@@ -132,7 +133,7 @@ private:
      */
     template <
         BlockHisto256Algorithm _BLOCK_ALGORITHM,
-        bool CHANNEL_ORIENTED = ((_BLOCK_ALGORITHM == BLOCK_BYTE_HISTO_SORT) || (BLOCK_THREADS % CHANNELS != 0)) >
+        bool CHANNEL_ORIENTED = (_BLOCK_ALGORITHM == BLOCK_BYTE_HISTO_SORT) >
     struct TilesHisto256Internal
     {
         /**
@@ -246,57 +247,87 @@ private:
             HistoCounter    (&histograms)[ACTIVE_CHANNELS][256],
             const int       &guarded_items = TILE_ITEMS)
         {
-            // We strip-mine consecutive samples in this variant, so the samples in consecutive threads are destined for different channels
-            int my_channel = threadIdx.x % CHANNELS;
 
             if (guarded_items < TILE_ITEMS)
             {
-                #pragma unroll
-                for (int CHANNEL = 0; CHANNEL < CHANNELS; ++CHANNEL)
-                {
-                    int tile_offset     = (CHANNEL * TILE_CHANNEL_ITEMS);
-                    int bounds          = guarded_items - threadIdx.x;
+                int bounds = guarded_items - (threadIdx.x * CHANNELS);
 
+                #pragma unroll
+                for (int ITEM = 0; ITEM < ITEMS_PER_THREAD; ++ITEM)
+                {
                     #pragma unroll
-                    for (int ITEM = 0; ITEM < ITEMS_PER_THREAD; ITEM++)
+                    for (int CHANNEL = 0; CHANNEL < CHANNELS; ++CHANNEL)
                     {
-                        if (((ACTIVE_CHANNELS == 1) || (my_channel < ACTIVE_CHANNELS)) && (tile_offset + (ITEM * BLOCK_THREADS) < bounds))
+                        if (((ACTIVE_CHANNELS == CHANNELS) || (CHANNEL < ACTIVE_CHANNELS)) && ((ITEM * BLOCK_THREADS * CHANNELS) + CHANNEL < bounds))
                         {
-                            unsigned char item = d_in[block_offset + tile_offset + (ITEM * BLOCK_THREADS) + threadIdx.x];
-                            atomicAdd(histograms[my_channel] + item, 1);
+                            unsigned char item  = d_in[block_offset + (ITEM * BLOCK_THREADS * CHANNELS) + (threadIdx.x * CHANNELS) + CHANNEL];
+                            atomicAdd(histograms[CHANNEL] + item, 1);
                         }
                     }
                 }
+
             }
             else
             {
+                unsigned char items[ITEMS_PER_THREAD][CHANNELS];
+
+                #pragma unroll
+                for (int ITEM = 0; ITEM < ITEMS_PER_THREAD; ITEM++)
+                {
+                    #pragma unroll
+                    for (int CHANNEL = 0; CHANNEL < CHANNELS; ++CHANNEL)
+                    {
+                        if (CHANNEL < ACTIVE_CHANNELS)
+                        {
+                            items[ITEM][CHANNEL] = d_in[block_offset + (ITEM * BLOCK_THREADS * CHANNELS) + (threadIdx.x * CHANNELS) + CHANNEL];
+                        }
+                    }
+                }
+
+                __threadfence_block();
+
+                #pragma unroll
+                for (int ITEM = 0; ITEM < ITEMS_PER_THREAD; ITEM++)
+                {
+                    #pragma unroll
+                    for (int CHANNEL = 0; CHANNEL < CHANNELS; ++CHANNEL)
+                    {
+                        if (CHANNEL < ACTIVE_CHANNELS)
+                        {
+                            atomicAdd(histograms[CHANNEL] + items[ITEM][CHANNEL], 1);
+                        }
+                    }
+                }
+
+
+/*
                 #pragma unroll
                 for (int CHANNEL = 0; CHANNEL < CHANNELS; ++CHANNEL)
                 {
-                    unsigned char items[ITEMS_PER_THREAD];
+                    unsigned char items[ITEMS_PER_THREAD][CHANNELS];
 
                     int tile_offset = (CHANNEL * TILE_CHANNEL_ITEMS);
 
                     #pragma unroll
                     for (int ITEM = 0; ITEM < ITEMS_PER_THREAD; ITEM++)
                     {
-                        if ((ACTIVE_CHANNELS == 1) || (my_channel < ACTIVE_CHANNELS))
-                        {
-                            items[ITEM] = d_in[block_offset + tile_offset + (ITEM * BLOCK_THREADS) + threadIdx.x];
-                        }
+                        items[ITEM] = d_in[block_offset + tile_offset + (ITEM * BLOCK_THREADS) + threadIdx.x];
                     }
 
                     __threadfence_block();
 
                     // Update histogram
 
-                    #pragma unroll
-                    for (int ITEM = 0; ITEM < ITEMS_PER_THREAD; ITEM++)
+                    if ((ACTIVE_CHANNELS == CHANNELS) || (my_channel < ACTIVE_CHANNELS))
                     {
-                        if ((ACTIVE_CHANNELS == 1) || (my_channel < ACTIVE_CHANNELS))
+                        #pragma unroll
+                        for (int ITEM = 0; ITEM < ITEMS_PER_THREAD; ITEM++)
+                        {
                             atomicAdd(histograms[my_channel] + items[ITEM], 1);
+                        }
                     }
                 }
+*/
             }
         }
     };
