@@ -167,7 +167,7 @@ class cub::BlockHisto256&lt; BLOCK_THREADS, ITEMS_PER_THREAD, ALGORITHM &gt;</h3
 <div class="line">     ...</div>
 <div class="line"></div>
 <div class="line">     <span class="comment">// Compute the threadblock-wide histogram</span></div>
-<div class="line">     <a class="code" href="classcub_1_1_block_histo256.html#a8ed73296dcac29fd0993b638904c52ea" title="Constructs a threadblock-wide histogram in shared/global memory. Each thread contributes an array of ...">BlockHisto256::Histogram</a>(smem_storage, smem_histogram, data);</div>
+<div class="line">     <a class="code" href="classcub_1_1_block_histo256.html#a6496bd253fd4611a5722d6c6e7af4b4d" title="Constructs a threadblock-wide histogram in shared/global memory. Each thread contributes an array of ...">BlockHisto256::Histogram</a>(smem_storage, smem_histogram, data);</div>
 <div class="line"></div>
 <div class="line">     ...</div>
 </div><!-- fragment --></dd></dl>
@@ -187,7 +187,7 @@ class cub::BlockHisto256&lt; BLOCK_THREADS, ITEMS_PER_THREAD, ALGORITHM &gt;</h3
 <div class="line">     <span class="keywordflow">if</span> (threadIdx.x &lt; num_items) data = ...;</div>
 <div class="line"></div>
 <div class="line">     <span class="comment">// Compute the threadblock-wide sum of valid elements in thread0</span></div>
-<div class="line">     <a class="code" href="classcub_1_1_block_histo256.html#a82eb5ed83d7428e24c818154bb692fb9" title="Updates an existing threadblock-wide histogram in shared/global memory. Each thread composites an arr...">BlockHisto256::Composite</a>(smem_storage, d_histogram, data);</div>
+<div class="line">     <a class="code" href="classcub_1_1_block_histo256.html#a73ead0815070a889b36b13171abcca2e" title="Updates an existing threadblock-wide histogram in shared/global memory. Each thread composites an arr...">BlockHisto256::Composite</a>(smem_storage, d_histogram, data);</div>
 <div class="line"></div>
 <div class="line">     ...</div>
 </div><!-- fragment --> </dd></dl>
@@ -201,16 +201,16 @@ typedef _SmemStorage&#160;</td><td class="memItemRight" valign="bottom"><a class
 </table><table class="memberdecls">
 <tr class="heading"><td colspan="2"><h2 class="groupheader"><a name="pub-static-methods"></a>
 Static Public Methods</h2></td></tr>
-<tr class="memitem:a82eb5ed83d7428e24c818154bb692fb9"><td class="memTemplParams" colspan="2">template&lt;int ITEMS_PER_THREAD, typename HistoCounter &gt; </td></tr>
-<tr class="memitem:a82eb5ed83d7428e24c818154bb692fb9"><td class="memTemplItemLeft" align="right" valign="top">static __device__ <br class="typebreak"/>
-__forceinline__ void&#160;</td><td class="memTemplItemRight" valign="bottom"><a class="el" href="classcub_1_1_block_histo256.html#a82eb5ed83d7428e24c818154bb692fb9">Composite</a> (<a class="el" href="classcub_1_1_block_histo256.html#a620661d7ec6ab2fc9d0d843329c901ff">SmemStorage</a> &amp;smem_storage, unsigned char(&amp;items)[ITEMS_PER_THREAD], HistoCounter histogram[256])</td></tr>
-<tr class="memdesc:a82eb5ed83d7428e24c818154bb692fb9"><td class="mdescLeft">&#160;</td><td class="mdescRight">Updates an existing threadblock-wide histogram in shared/global memory. Each thread composites an array of 8b input elements.  <a href="#a82eb5ed83d7428e24c818154bb692fb9">More...</a><br/></td></tr>
-<tr class="separator:a82eb5ed83d7428e24c818154bb692fb9"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:a8ed73296dcac29fd0993b638904c52ea"><td class="memTemplParams" colspan="2">template&lt;int ITEMS_PER_THREAD, typename HistoCounter &gt; </td></tr>
-<tr class="memitem:a8ed73296dcac29fd0993b638904c52ea"><td class="memTemplItemLeft" align="right" valign="top">static __device__ <br class="typebreak"/>
-__forceinline__ void&#160;</td><td class="memTemplItemRight" valign="bottom"><a class="el" href="classcub_1_1_block_histo256.html#a8ed73296dcac29fd0993b638904c52ea">Histogram</a> (<a class="el" href="classcub_1_1_block_histo256.html#a620661d7ec6ab2fc9d0d843329c901ff">SmemStorage</a> &amp;smem_storage, unsigned char(&amp;items)[ITEMS_PER_THREAD], HistoCounter histogram[256])</td></tr>
-<tr class="memdesc:a8ed73296dcac29fd0993b638904c52ea"><td class="mdescLeft">&#160;</td><td class="mdescRight">Constructs a threadblock-wide histogram in shared/global memory. Each thread contributes an array of 8b input elements.  <a href="#a8ed73296dcac29fd0993b638904c52ea">More...</a><br/></td></tr>
-<tr class="separator:a8ed73296dcac29fd0993b638904c52ea"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a73ead0815070a889b36b13171abcca2e"><td class="memTemplParams" colspan="2">template&lt;typename HistoCounter &gt; </td></tr>
+<tr class="memitem:a73ead0815070a889b36b13171abcca2e"><td class="memTemplItemLeft" align="right" valign="top">static __device__ <br class="typebreak"/>
+__forceinline__ void&#160;</td><td class="memTemplItemRight" valign="bottom"><a class="el" href="classcub_1_1_block_histo256.html#a73ead0815070a889b36b13171abcca2e">Composite</a> (<a class="el" href="classcub_1_1_block_histo256.html#a620661d7ec6ab2fc9d0d843329c901ff">SmemStorage</a> &amp;smem_storage, unsigned char(&amp;items)[ITEMS_PER_THREAD], HistoCounter histogram[256])</td></tr>
+<tr class="memdesc:a73ead0815070a889b36b13171abcca2e"><td class="mdescLeft">&#160;</td><td class="mdescRight">Updates an existing threadblock-wide histogram in shared/global memory. Each thread composites an array of 8b input elements.  <a href="#a73ead0815070a889b36b13171abcca2e">More...</a><br/></td></tr>
+<tr class="separator:a73ead0815070a889b36b13171abcca2e"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a6496bd253fd4611a5722d6c6e7af4b4d"><td class="memTemplParams" colspan="2">template&lt;typename HistoCounter &gt; </td></tr>
+<tr class="memitem:a6496bd253fd4611a5722d6c6e7af4b4d"><td class="memTemplItemLeft" align="right" valign="top">static __device__ <br class="typebreak"/>
+__forceinline__ void&#160;</td><td class="memTemplItemRight" valign="bottom"><a class="el" href="classcub_1_1_block_histo256.html#a6496bd253fd4611a5722d6c6e7af4b4d">Histogram</a> (<a class="el" href="classcub_1_1_block_histo256.html#a620661d7ec6ab2fc9d0d843329c901ff">SmemStorage</a> &amp;smem_storage, unsigned char(&amp;items)[ITEMS_PER_THREAD], HistoCounter histogram[256])</td></tr>
+<tr class="memdesc:a6496bd253fd4611a5722d6c6e7af4b4d"><td class="mdescLeft">&#160;</td><td class="mdescRight">Constructs a threadblock-wide histogram in shared/global memory. Each thread contributes an array of 8b input elements.  <a href="#a6496bd253fd4611a5722d6c6e7af4b4d">More...</a><br/></td></tr>
+<tr class="separator:a6496bd253fd4611a5722d6c6e7af4b4d"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:a279a4918f3ba86e0d65c609a9d50cbb6"><td class="memTemplParams" colspan="2">template&lt;typename HistoCounter &gt; </td></tr>
 <tr class="memitem:a279a4918f3ba86e0d65c609a9d50cbb6"><td class="memTemplItemLeft" align="right" valign="top">static __device__ <br class="typebreak"/>
 __forceinline__ void&#160;</td><td class="memTemplItemRight" valign="bottom"><a class="el" href="classcub_1_1_block_histo256.html#a279a4918f3ba86e0d65c609a9d50cbb6">InitHistogram</a> (HistoCounter histogram[256])</td></tr>
@@ -246,13 +246,13 @@ template&lt;typename HistoCounter &gt; </div>
 
 </div>
 </div>
-<a class="anchor" id="a8ed73296dcac29fd0993b638904c52ea"></a>
+<a class="anchor" id="a6496bd253fd4611a5722d6c6e7af4b4d"></a>
 <div class="memitem">
 <div class="memproto">
 <div class="memtemplate">
 template&lt;int BLOCK_THREADS, int ITEMS_PER_THREAD, BlockHisto256Algorithm ALGORITHM = BLOCK_BYTE_HISTO_SORT&gt; </div>
 <div class="memtemplate">
-template&lt;int ITEMS_PER_THREAD, typename HistoCounter &gt; </div>
+template&lt;typename HistoCounter &gt; </div>
 <table class="mlabels">
   <tr>
   <td class="mlabels-left">
@@ -308,13 +308,13 @@ template&lt;int ITEMS_PER_THREAD, typename HistoCounter &gt; </div>
 
 </div>
 </div>
-<a class="anchor" id="a82eb5ed83d7428e24c818154bb692fb9"></a>
+<a class="anchor" id="a73ead0815070a889b36b13171abcca2e"></a>
 <div class="memitem">
 <div class="memproto">
 <div class="memtemplate">
 template&lt;int BLOCK_THREADS, int ITEMS_PER_THREAD, BlockHisto256Algorithm ALGORITHM = BLOCK_BYTE_HISTO_SORT&gt; </div>
 <div class="memtemplate">
-template&lt;int ITEMS_PER_THREAD, typename HistoCounter &gt; </div>
+template&lt;typename HistoCounter &gt; </div>
 <table class="mlabels">
   <tr>
   <td class="mlabels-left">
@@ -354,7 +354,6 @@ template&lt;int ITEMS_PER_THREAD, typename HistoCounter &gt; </div>
 <p>A subsequent <code>__syncthreads()</code> threadblock barrier should be invoked after calling this method if the supplied <code>smem_storage</code> is to be reused or repurposed by the threadblock.</p>
 <dl class="tparams"><dt>Template Parameters</dt><dd>
   <table class="tparams">
-    <tr><td class="paramname">ITEMS_PER_THREAD</td><td><b>[inferred]</b> The number of 8b values per thread </td></tr>
     <tr><td class="paramname">HistoCounter</td><td><b>[inferred]</b> Histogram counter type </td></tr>
   </table>
   </dd>
@@ -377,7 +376,7 @@ template&lt;int ITEMS_PER_THREAD, typename HistoCounter &gt; </div>
 <!-- HTML footer for doxygen 1.8.3.1-->
 <!-- start footer part -->
 <hr class="footer"/><address class="footer"><small>
-Generated on Tue Apr 30 2013 15:22:27 for CUB by &#160;<a href="http://www.doxygen.org/index.html">
+Generated on Wed May 1 2013 05:31:54 for CUB by &#160;<a href="http://www.doxygen.org/index.html">
 <img class="footer" src="doxygen.png" alt="doxygen"/>
 </a> 1.8.3.1
 <br>

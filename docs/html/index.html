@@ -220,7 +220,7 @@ var searchBox = new SearchBox("searchBox", "search",false,'Search');
 <dl class="section user"><dt></dt><dd>The CUDA ecosystem engenders four different layers of software abstraction:</dd></dl>
 <table  border="0px" cellpadding="0px" cellspacing="0px">
 <tr>
-<td width="50%"><dl class="section user"><dt></dt><dd><b>Runtime-agnostic</b>. A single thread calls through a library interface to perform some data-parallel function. The use of any particular parallel or sequential computing backend (e.g., CUDA, TBB, OpenMP, etc.) is opaque to the caller. The interfaces provided by such libraries are not CUDA-specific. These libraries can use CUB device-wide primitives as Examples include:<ul>
+<td width="50%"><dl class="section user"><dt></dt><dd><b>Runtime-agnostic</b>. A single thread calls through a library interface to perform some data-parallel function. The use of any particular parallel or sequential computing backend (e.g., CUDA, TBB, OpenMP, etc.) is opaque to the caller. Although these libraries are not CUDA-specific, primitives such as those provided by CUB can be used to implement them. Examples include:<ul>
 <li><a href="http://thrust.github.com/"><b><em>Thrust</em></b></a></li>
 <li><a href="https://github.com/harrism/hemi"><b><em>Hemi</em></b></a></li>
 <li><a href="http://www.accelereyes.com/products/arrayfire"><b><em>ArrayFire</em></b></a>  </li>
@@ -376,7 +376,7 @@ var searchBox = new SearchBox("searchBox", "search",false,'Search');
 <!-- HTML footer for doxygen 1.8.3.1-->
 <!-- start footer part -->
 <hr class="footer"/><address class="footer"><small>
-Generated on Tue Apr 30 2013 15:22:27 for CUB by &#160;<a href="http://www.doxygen.org/index.html">
+Generated on Wed May 1 2013 05:31:55 for CUB by &#160;<a href="http://www.doxygen.org/index.html">
 <img class="footer" src="doxygen.png" alt="doxygen"/>
 </a> 1.8.3.1
 <br>

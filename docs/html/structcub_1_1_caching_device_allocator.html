@@ -137,9 +137,9 @@ Public Methods</h2></td></tr>
 <tr class="memitem:a603ab42b997facc30d9337fe6f56144b"><td class="memItemLeft" align="right" valign="top">__host__ __device__ __forceinline__&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="structcub_1_1_caching_device_allocator.html#a603ab42b997facc30d9337fe6f56144b">CachingDeviceAllocator</a> (unsigned int bin_growth, unsigned int min_bin, unsigned int max_bin, size_t max_cached_bytes)</td></tr>
 <tr class="memdesc:a603ab42b997facc30d9337fe6f56144b"><td class="mdescLeft">&#160;</td><td class="mdescRight">Constructor.  <a href="#a603ab42b997facc30d9337fe6f56144b">More...</a><br/></td></tr>
 <tr class="separator:a603ab42b997facc30d9337fe6f56144b"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:a46b26e44e196746698ddd6c2cef2509c"><td class="memItemLeft" align="right" valign="top">__host__ __device__ __forceinline__&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="structcub_1_1_caching_device_allocator.html#a46b26e44e196746698ddd6c2cef2509c">CachingDeviceAllocator</a> ()</td></tr>
-<tr class="memdesc:a46b26e44e196746698ddd6c2cef2509c"><td class="mdescLeft">&#160;</td><td class="mdescRight">Default constructor.  <a href="#a46b26e44e196746698ddd6c2cef2509c">More...</a><br/></td></tr>
-<tr class="separator:a46b26e44e196746698ddd6c2cef2509c"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a12f2ea29bf0a27eedf85d43604469780"><td class="memItemLeft" align="right" valign="top">__host__ __device__ __forceinline__&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="structcub_1_1_caching_device_allocator.html#a12f2ea29bf0a27eedf85d43604469780">CachingDeviceAllocator</a> (bool silent_cleanup=false)</td></tr>
+<tr class="memdesc:a12f2ea29bf0a27eedf85d43604469780"><td class="mdescLeft">&#160;</td><td class="mdescRight">Default constructor.  <a href="#a12f2ea29bf0a27eedf85d43604469780">More...</a><br/></td></tr>
+<tr class="separator:a12f2ea29bf0a27eedf85d43604469780"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:a8b5be1674adff948f45a4256839ad9e2"><td class="memItemLeft" align="right" valign="top"><a class="anchor" id="a8b5be1674adff948f45a4256839ad9e2"></a>
 <a class="el" href="group___util_module.html#ga756ebe2b0566abfdfcd3c13fe7d1e9c6">CUB_DESTRUCTOR</a> virtual <br class="typebreak"/>
 __forceinline__&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="structcub_1_1_caching_device_allocator.html#a8b5be1674adff948f45a4256839ad9e2">~CachingDeviceAllocator</a> ()</td></tr>
@@ -165,11 +165,11 @@ __host__ __device__ <br class="typebreak"/>
 __forceinline__ cudaError_t&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="structcub_1_1_caching_device_allocator.html#a61b620dde7d4057fd05fb8a3fa0ae11b">DeviceFree</a> (void *d_ptr)</td></tr>
 <tr class="memdesc:a61b620dde7d4057fd05fb8a3fa0ae11b"><td class="mdescLeft">&#160;</td><td class="mdescRight">Frees a live allocation of device memory on the current device, returning it to the allocator. <br/></td></tr>
 <tr class="separator:a61b620dde7d4057fd05fb8a3fa0ae11b"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:af25daf8ac1dbce0d8504a6a53c2277ad"><td class="memItemLeft" align="right" valign="top"><a class="anchor" id="af25daf8ac1dbce0d8504a6a53c2277ad"></a>
+<tr class="memitem:af55929d787fe0b785da1ae4ceeffea5b"><td class="memItemLeft" align="right" valign="top"><a class="anchor" id="af55929d787fe0b785da1ae4ceeffea5b"></a>
 __host__ __device__ <br class="typebreak"/>
-__forceinline__ cudaError_t&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="structcub_1_1_caching_device_allocator.html#af25daf8ac1dbce0d8504a6a53c2277ad">FreeAllCached</a> ()</td></tr>
-<tr class="memdesc:af25daf8ac1dbce0d8504a6a53c2277ad"><td class="mdescLeft">&#160;</td><td class="mdescRight">Frees all cached device allocations on all devices. <br/></td></tr>
-<tr class="separator:af25daf8ac1dbce0d8504a6a53c2277ad"><td class="memSeparator" colspan="2">&#160;</td></tr>
+__forceinline__ cudaError_t&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="structcub_1_1_caching_device_allocator.html#af55929d787fe0b785da1ae4ceeffea5b">FreeAllCached</a> (bool silent=false)</td></tr>
+<tr class="memdesc:af55929d787fe0b785da1ae4ceeffea5b"><td class="mdescLeft">&#160;</td><td class="mdescRight">Frees all cached device allocations on all devices. <br/></td></tr>
+<tr class="separator:af55929d787fe0b785da1ae4ceeffea5b"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:a5ddac0917fce3445aa660d747e67a8d9"><td class="memItemLeft" align="right" valign="top"><a class="anchor" id="a5ddac0917fce3445aa660d747e67a8d9"></a>
 __host__ __device__ <br class="typebreak"/>
 __forceinline__ cudaError_t&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="structcub_1_1_caching_device_allocator.html#a5ddac0917fce3445aa660d747e67a8d9">SetMaxCachedBytes</a> (size_t max_cached_bytes)</td></tr>
@@ -237,7 +237,7 @@ __forceinline__ cudaError_t&#160;</td><td class="memItemRight" valign="bottom"><
 
 </div>
 </div>
-<a class="anchor" id="a46b26e44e196746698ddd6c2cef2509c"></a>
+<a class="anchor" id="a12f2ea29bf0a27eedf85d43604469780"></a>
 <div class="memitem">
 <div class="memproto">
 <table class="mlabels">
@@ -247,7 +247,8 @@ __forceinline__ cudaError_t&#160;</td><td class="memItemRight" valign="bottom"><
         <tr>
           <td class="memname">__host__ __device__ __forceinline__ cub::CachingDeviceAllocator::CachingDeviceAllocator </td>
           <td>(</td>
-          <td class="paramname"></td><td>)</td>
+          <td class="paramtype">bool&#160;</td>
+          <td class="paramname"><em>silent_cleanup</em> = <code>false</code></td><td>)</td>
           <td></td>
         </tr>
       </table>
@@ -278,7 +279,7 @@ __forceinline__ cudaError_t&#160;</td><td class="memItemRight" valign="bottom"><
 <!-- HTML footer for doxygen 1.8.3.1-->
 <!-- start footer part -->
 <hr class="footer"/><address class="footer"><small>
-Generated on Tue Apr 30 2013 15:22:27 for CUB by &#160;<a href="http://www.doxygen.org/index.html">
+Generated on Wed May 1 2013 05:31:54 for CUB by &#160;<a href="http://www.doxygen.org/index.html">
 <img class="footer" src="doxygen.png" alt="doxygen"/>
 </a> 1.8.3.1
 <br>

@@ -202,8 +202,8 @@
  * <b>Runtime-agnostic</b>.  A single thread calls through a library interface to 
  * perform some data-parallel function.  The use of any particular parallel 
  * or sequential computing backend (e.g., CUDA, TBB, OpenMP, etc.) is opaque to the caller.  
- * The interfaces provided by such libraries are not CUDA-specific.  These libraries
- * can use CUB device-wide primitives as  Examples include:
+ * Although these libraries are not CUDA-specific, primitives such as those 
+ * provided by CUB can be used to implement them.  Examples include:
  * - [<b><em>Thrust</em></b>](http://thrust.github.com/)
  * - [<b><em>Hemi</em></b>](https://github.com/harrism/hemi)
  * - [<b><em>ArrayFire</em></b>](http://www.accelereyes.com/products/arrayfire)

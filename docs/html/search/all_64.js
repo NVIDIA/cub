@@ -1,6 +1,6 @@
 var searchData=
 [
-  ['debug',['Debug',['../group___util_module.html#ga5a175d2a88f63f7f1ab30e8b4f2cfa95',1,'cub']]],
+  ['debug',['Debug',['../group___util_module.html#ga991477281cbf1b003b39a4af29824a1e',1,'cub']]],
   ['defaultdeviceallocator',['DefaultDeviceAllocator',['../group___util_module.html#ga289830648914c5fec58f34af96247fe0',1,'util_allocator.cuh']]],
   ['device',['Device',['../classcub_1_1_device.html',1,'cub']]],
   ['device_5fhisto_5f256_2ecuh',['device_histo_256.cuh',['../device__histo__256_8cuh.html',1,'']]],
