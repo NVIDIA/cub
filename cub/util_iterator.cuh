@@ -33,9 +33,9 @@
 
 #pragma once
 
-#include "util_namespace.cuh"
 #include "thread/thread_load.cuh"
-#include "../util_debug.cuh"
+#include "util_debug.cuh"
+#include "util_namespace.cuh"
 
 /// Optional outer namespace(s)
 CUB_NS_PREFIX
@@ -236,7 +236,6 @@ struct TexIteratorBinder<InputIteratorRA, false>
         return cudaSuccess;
     }
 
-    template <typename InputIteratorRA>
     static __host__ __device__ __forceinline__ cudaError_t Unbind(InputIteratorRA d_itr)
     {
         return cudaSuccess;

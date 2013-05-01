@@ -135,6 +135,7 @@ template <
     typename    KeyType,
     int         BLOCK_THREADS,
     int         ITEMS_PER_THREAD>
+__launch_bounds__ (BLOCK_THREADS)
 __global__ void BlockHistoKernel(
     KeyType     *d_in,          // Tile of input
     KeyType     *d_out,         // Tile of output
