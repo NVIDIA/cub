@@ -238,7 +238,8 @@ void Test(
     }
 
     // Create iterator wrapper for SampleType -> unsigned char conversion
-    typedef TransformIteratorRA<unsigned char, BinOp, SampleType> BinningIterator;
+//    typedef TransformIteratorRA<unsigned char, BinOp, SampleType> BinningIterator;
+    typedef TexTransformIteratorRA<unsigned char, BinOp, SampleType> BinningIterator;
     BinningIterator d_sample_itr(d_samples, bin_op);
 
     // Run warmup/correctness iteration
@@ -398,6 +399,9 @@ int main(int argc, char** argv)
 
     // Initialize device
     CubDebugExit(args.DeviceInit());
+
+    // Set new ceiling on caching allocator because we will be using it for everything
+    CubDebugExit(host_allocator_singleton.SetMaxCachedBytes(1024 * 1024 * 512 - 1));
 
     // Binning operators
     Cast<unsigned char>     cast_op;        // Convert any numeric value to unsigned char via cast
