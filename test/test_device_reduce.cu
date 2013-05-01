@@ -308,9 +308,6 @@ int main(int argc, char** argv)
     // Initialize device
     CubDebugExit(args.DeviceInit());
 
-    // Set new ceiling on caching allocator because we will be using it for everything
-    CubDebugExit(host_allocator_singleton.SetMaxCachedBytes(1024 * 1024 * 512 - 1));
-
     // Quick test
     typedef int T;
 //    typedef unsigned short T;
