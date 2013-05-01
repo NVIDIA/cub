@@ -400,9 +400,6 @@ int main(int argc, char** argv)
     // Initialize device
     CubDebugExit(args.DeviceInit());
 
-    // Set new ceiling on caching allocator because we will be using it for everything
-    CubDebugExit(host_allocator_singleton.SetMaxCachedBytes(1024 * 1024 * 512 - 1));
-
     // Binning operators
     Cast<unsigned char>     cast_op;        // Convert any numeric value to unsigned char via cast
     FloatScaleOp            scale_op;       // Convert [0 .. 1.0] fp32 value to unsigned char by scaling by 256
