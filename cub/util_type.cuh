@@ -34,6 +34,7 @@
 #pragma once
 
 #include <iostream>
+#include <limits>
 
 #include "util_namespace.cuh"
 
@@ -499,7 +500,7 @@ template <typename T> struct NumericTraits :            BaseTraits<NOT_A_NUMBER,
 
 template <> struct NumericTraits<NullType> :            BaseTraits<NOT_A_NUMBER, false, true, NullType> {};
 
-template <> struct NumericTraits<char> :                BaseTraits<SIGNED_INTEGER, true, false, unsigned char> {};
+template <> struct NumericTraits<char> :                BaseTraits<(std::numeric_limits<char>::is_signed) ? SIGNED_INTEGER : UNSIGNED_INTEGER, true, false, unsigned char> {};
 template <> struct NumericTraits<signed char> :         BaseTraits<SIGNED_INTEGER, true, false, unsigned char> {};
 template <> struct NumericTraits<short> :               BaseTraits<SIGNED_INTEGER, true, false, unsigned short> {};
 template <> struct NumericTraits<int> :                 BaseTraits<SIGNED_INTEGER, true, false, unsigned int> {};
