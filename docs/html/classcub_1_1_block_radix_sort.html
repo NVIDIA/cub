@@ -126,7 +126,7 @@ class cub::BlockRadixSort&lt; KeyType, BLOCK_THREADS, ITEMS_PER_THREAD, ValueTyp
     <tr><td class="paramname">BLOCK_THREADS</td><td>The threadblock size in threads </td></tr>
     <tr><td class="paramname">ITEMS_PER_THREAD</td><td>The number of items per thread </td></tr>
     <tr><td class="paramname">ValueType</td><td><b>[optional]</b> Value type (default: <a class="el" href="structcub_1_1_null_type.html" title="A simple &quot;NULL&quot; marker type.">cub::NullType</a>) </td></tr>
-    <tr><td class="paramname">RADIX_BITS</td><td><b>[optional]</b> The number of radix bits per digit place (default: 5 bits) </td></tr>
+    <tr><td class="paramname">RADIX_BITS</td><td><b>[optional]</b> The number of radix bits per digit place (default: 4 bits) </td></tr>
     <tr><td class="paramname">MEMOIZE_OUTER_SCAN</td><td><b>[optional]</b> Whether or not to buffer outer raking scan partials to incur fewer shared memory reads at the expense of higher register pressure (default: true for architectures SM35 and newer, false otherwise). See BlockScanAlgorithm::BLOCK_SCAN_RAKING_MEMOIZE for more details. </td></tr>
     <tr><td class="paramname">INNER_SCAN_ALGORITHM</td><td><b>[optional]</b> The <a class="el" href="namespacecub.html#abec44bba36037c547e7e84906d0d23ab">cub::BlockScanAlgorithm</a> algorithm to use (default: <a class="el" href="namespacecub.html#abec44bba36037c547e7e84906d0d23aba7f51e58246eb53f1a97bd1bc8c0f400f">cub::BLOCK_SCAN_WARP_SCANS</a>) </td></tr>
     <tr><td class="paramname">SMEM_CONFIG</td><td><b>[optional]</b> Shared memory bank mode (default: <code>cudaSharedMemBankSizeFourByte</code>)</td></tr>
@@ -619,7 +619,7 @@ template&lt;typename KeyType , int BLOCK_THREADS, int ITEMS_PER_THREAD, typename
 <!-- HTML footer for doxygen 1.8.3.1-->
 <!-- start footer part -->
 <hr class="footer"/><address class="footer"><small>
-Generated on Tue Apr 30 2013 15:22:27 for CUB by &#160;<a href="http://www.doxygen.org/index.html">
+Generated on Wed May 1 2013 05:31:54 for CUB by &#160;<a href="http://www.doxygen.org/index.html">
 <img class="footer" src="doxygen.png" alt="doxygen"/>
 </a> 1.8.3.1
 <br>
