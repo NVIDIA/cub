@@ -161,7 +161,7 @@ public:
 #ifndef DOXYGEN_SHOULD_SKIP_THIS    // Do not document
 
 // Anonymous namespace
-//namespace {
+namespace {
 
 /// Templated Texture reference type for multiplicand vector
 template <typename T>
@@ -198,8 +198,7 @@ struct TexIteratorRef
 template <typename Value>
 typename TexIteratorRef<Value>::TexRef TexIteratorRef<Value>::ref = 0;
 
-
-//} // Anonymous namespace
+} // Anonymous namespace
 
 
 
