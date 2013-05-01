@@ -74,8 +74,6 @@ var searchBox = new SearchBox("searchBox", "search",false,'Search');
     <ul class="tablist">
       <li><a href="annotated.html"><span>Class&#160;List</span></a></li>
       <li><a href="classes.html"><span>Class&#160;Index</span></a></li>
-      <li><a href="hierarchy.html"><span>Class&#160;Hierarchy</span></a></li>
-      <li class="current"><a href="functions.html"><span>Class&#160;Members</span></a></li>
     </ul>
   </div>
   <div id="navrow3" class="tabs2">
@@ -84,22 +82,31 @@ var searchBox = new SearchBox("searchBox", "search",false,'Search');
       <li><a href="functions_func.html"><span>Functions</span></a></li>
       <li><a href="functions_vars.html"><span>Variables</span></a></li>
       <li><a href="functions_type.html"><span>Typedefs</span></a></li>
-      <li><a href="functions_rela.html"><span>Related&#160;Functions</span></a></li>
+      <li><a href="functions_eval.html"><span>Enumerator</span></a></li>
     </ul>
   </div>
   <div id="navrow4" class="tabs3">
     <ul class="tablist">
+      <li><a href="#index_a"><span>a</span></a></li>
       <li><a href="#index_b"><span>b</span></a></li>
       <li><a href="#index_c"><span>c</span></a></li>
+      <li><a href="#index_d"><span>d</span></a></li>
       <li><a href="#index_e"><span>e</span></a></li>
       <li><a href="#index_f"><span>f</span></a></li>
+      <li><a href="#index_g"><span>g</span></a></li>
+      <li><a href="#index_h"><span>h</span></a></li>
       <li><a href="#index_i"><span>i</span></a></li>
       <li><a href="#index_l"><span>l</span></a></li>
+      <li><a href="#index_m"><span>m</span></a></li>
+      <li><a href="#index_n"><span>n</span></a></li>
       <li><a href="#index_o"><span>o</span></a></li>
+      <li><a href="#index_p"><span>p</span></a></li>
       <li><a href="#index_r"><span>r</span></a></li>
       <li><a href="#index_s"><span>s</span></a></li>
       <li><a href="#index_t"><span>t</span></a></li>
-      <li><a href="#index_v"><span>v</span></a></li>
+      <li><a href="#index_u"><span>u</span></a></li>
+      <li><a href="#index_w"><span>w</span></a></li>
+      <li><a href="#index_0x7e"><span>~</span></a></li>
     </ul>
   </div>
 </div><!-- top -->
@@ -108,7 +115,7 @@ var searchBox = new SearchBox("searchBox", "search",false,'Search');
      onmouseover="return searchBox.OnSearchSelectShow()"
      onmouseout="return searchBox.OnSearchSelectHide()"
      onkeydown="return searchBox.OnSearchSelectKey(event)">
-<a class="SelectItem" href="javascript:void(0)" onclick="searchBox.OnSelectItem(0)"><span class="SelectionMark">&#160;</span>All</a><a class="SelectItem" href="javascript:void(0)" onclick="searchBox.OnSelectItem(1)"><span class="SelectionMark">&#160;</span>Classes</a><a class="SelectItem" href="javascript:void(0)" onclick="searchBox.OnSelectItem(2)"><span class="SelectionMark">&#160;</span>Namespaces</a><a class="SelectItem" href="javascript:void(0)" onclick="searchBox.OnSelectItem(3)"><span class="SelectionMark">&#160;</span>Files</a><a class="SelectItem" href="javascript:void(0)" onclick="searchBox.OnSelectItem(4)"><span class="SelectionMark">&#160;</span>Functions</a><a class="SelectItem" href="javascript:void(0)" onclick="searchBox.OnSelectItem(5)"><span class="SelectionMark">&#160;</span>Variables</a><a class="SelectItem" href="javascript:void(0)" onclick="searchBox.OnSelectItem(6)"><span class="SelectionMark">&#160;</span>Typedefs</a><a class="SelectItem" href="javascript:void(0)" onclick="searchBox.OnSelectItem(7)"><span class="SelectionMark">&#160;</span>Enumerations</a><a class="SelectItem" href="javascript:void(0)" onclick="searchBox.OnSelectItem(8)"><span class="SelectionMark">&#160;</span>Enumerator</a><a class="SelectItem" href="javascript:void(0)" onclick="searchBox.OnSelectItem(9)"><span class="SelectionMark">&#160;</span>Friends</a><a class="SelectItem" href="javascript:void(0)" onclick="searchBox.OnSelectItem(10)"><span class="SelectionMark">&#160;</span>Macros</a><a class="SelectItem" href="javascript:void(0)" onclick="searchBox.OnSelectItem(11)"><span class="SelectionMark">&#160;</span>Groups</a><a class="SelectItem" href="javascript:void(0)" onclick="searchBox.OnSelectItem(12)"><span class="SelectionMark">&#160;</span>Pages</a></div>
+<a class="SelectItem" href="javascript:void(0)" onclick="searchBox.OnSelectItem(0)"><span class="SelectionMark">&#160;</span>All</a><a class="SelectItem" href="javascript:void(0)" onclick="searchBox.OnSelectItem(1)"><span class="SelectionMark">&#160;</span>Classes</a><a class="SelectItem" href="javascript:void(0)" onclick="searchBox.OnSelectItem(2)"><span class="SelectionMark">&#160;</span>Namespaces</a><a class="SelectItem" href="javascript:void(0)" onclick="searchBox.OnSelectItem(3)"><span class="SelectionMark">&#160;</span>Files</a><a class="SelectItem" href="javascript:void(0)" onclick="searchBox.OnSelectItem(4)"><span class="SelectionMark">&#160;</span>Functions</a><a class="SelectItem" href="javascript:void(0)" onclick="searchBox.OnSelectItem(5)"><span class="SelectionMark">&#160;</span>Variables</a><a class="SelectItem" href="javascript:void(0)" onclick="searchBox.OnSelectItem(6)"><span class="SelectionMark">&#160;</span>Typedefs</a><a class="SelectItem" href="javascript:void(0)" onclick="searchBox.OnSelectItem(7)"><span class="SelectionMark">&#160;</span>Enumerations</a><a class="SelectItem" href="javascript:void(0)" onclick="searchBox.OnSelectItem(8)"><span class="SelectionMark">&#160;</span>Enumerator</a><a class="SelectItem" href="javascript:void(0)" onclick="searchBox.OnSelectItem(9)"><span class="SelectionMark">&#160;</span>Groups</a><a class="SelectItem" href="javascript:void(0)" onclick="searchBox.OnSelectItem(10)"><span class="SelectionMark">&#160;</span>Pages</a></div>
 
 <!-- iframe showing the search results (closed by default) -->
 <div id="MSearchResultsWindow">
@@ -120,71 +127,212 @@ var searchBox = new SearchBox("searchBox", "search",false,'Search');
 <div class="contents">
 <div class="textblock">Here is a list of all documented class members with links to the class documentation for each member:</div>
 
+<h3><a class="anchor" id="index_a"></a>- a -</h3><ul>
+<li>Allocate()
+: <a class="el" href="classcub_1_1_grid_queue.html#a8e3b217f201534c3056b564e0961aa2f">cub::GridQueue&lt; SizeT &gt;</a>
+</li>
+<li>array
+: <a class="el" href="structcub_1_1_array_wrapper.html#ae665a1b28a83513db861072328de9551">cub::ArrayWrapper&lt; T, COUNT &gt;</a>
+</li>
+</ul>
+
+
 <h3><a class="anchor" id="index_b"></a>- b -</h3><ul>
+<li>BindTexture()
+: <a class="el" href="classcub_1_1_tex_iterator_r_a.html#a40805822c8f8966dd07221ccf9c5231b">cub::TexIteratorRA&lt; T &gt;</a>
+, <a class="el" href="classcub_1_1_tex_transform_iterator_r_a.html#a9ff64f31b9d4ac34a04de1905f64f898">cub::TexTransformIteratorRA&lt; OutputType, ConversionOp, InputType &gt;</a>
+</li>
+<li>block_offset
+: <a class="el" href="classcub_1_1_grid_even_share.html#a505eab67be1e46bf91855488294e8289">cub::GridEvenShare&lt; SizeT &gt;</a>
+</li>
+<li>block_oob
+: <a class="el" href="classcub_1_1_grid_even_share.html#af5daeadacd071a19611f342053b1978b">cub::GridEvenShare&lt; SizeT &gt;</a>
+</li>
 <li>BlockedToStriped()
 : <a class="el" href="classcub_1_1_block_exchange.html#a068f68d3f9d5c53920eeae82594d6935">cub::BlockExchange&lt; T, BLOCK_THREADS, ITEMS_PER_THREAD &gt;</a>
 </li>
-<li>BlockReduce
-: <a class="el" href="classcub_1_1_warp_reduce.html#a48bdd86ea499bbd83386c10d1ff4839e">cub::WarpReduce&lt; T, WARPS, LOGICAL_WARP_THREADS &gt;</a>
+<li>BlockInit()
+: <a class="el" href="classcub_1_1_grid_even_share.html#a214c0fc54f5ade75049ade09a08becf5">cub::GridEvenShare&lt; SizeT &gt;</a>
 </li>
 </ul>
 
 
 <h3><a class="anchor" id="index_c"></a>- c -</h3><ul>
+<li>CachingDeviceAllocator()
+: <a class="el" href="structcub_1_1_caching_device_allocator.html#a603ab42b997facc30d9337fe6f56144b">cub::CachingDeviceAllocator</a>
+</li>
+<li>Callback()
+: <a class="el" href="classcub_1_1_device.html#a3c986a6aa2d3b69fe8a7ab14c85a6477">cub::Device</a>
+</li>
 <li>CATEGORY
 : <a class="el" href="structcub_1_1_base_traits.html#a25ff6477c84dc3bd5f4b5e70cd600f09">cub::BaseTraits&lt; _CATEGORY, _PRIMITIVE, _NULL_TYPE, _UnsignedBits &gt;</a>
+</li>
+<li>Composite()
+: <a class="el" href="classcub_1_1_block_histo256.html#a73ead0815070a889b36b13171abcca2e">cub::BlockHisto256&lt; BLOCK_THREADS, ITEMS_PER_THREAD, ALGORITHM &gt;</a>
+</li>
+</ul>
+
+
+<h3><a class="anchor" id="index_d"></a>- d -</h3><ul>
+<li>DeviceAllocate()
+: <a class="el" href="classcub_1_1_device_allocator.html#af3c1742fec6b37f2737d951917358099">cub::DeviceAllocator</a>
+, <a class="el" href="structcub_1_1_caching_device_allocator.html#a80902287c5d123f3541cf0002604a8fe">cub::CachingDeviceAllocator</a>
+</li>
+<li>DeviceFree()
+: <a class="el" href="structcub_1_1_caching_device_allocator.html#a35cf35b2610d3c1bb2f7a6ae5d814385">cub::CachingDeviceAllocator</a>
+, <a class="el" href="classcub_1_1_device_allocator.html#a527d9c0c93c177359f5ad823c7d808e2">cub::DeviceAllocator</a>
+, <a class="el" href="structcub_1_1_caching_device_allocator.html#a61b620dde7d4057fd05fb8a3fa0ae11b">cub::CachingDeviceAllocator</a>
+</li>
+<li>Drain()
+: <a class="el" href="classcub_1_1_grid_queue.html#af6c8e3ff3fdb6f3e1ce7713d417cdf62">cub::GridQueue&lt; SizeT &gt;</a>
 </li>
 </ul>
 
 
 <h3><a class="anchor" id="index_e"></a>- e -</h3><ul>
 <li>ExclusiveScan()
-: <a class="el" href="classcub_1_1_warp_scan.html#ab034c0bd94f866b7044d085f0d354e2d">cub::WarpScan&lt; T, WARPS, LOGICAL_WARP_THREADS &gt;</a>
-, <a class="el" href="classcub_1_1_block_scan.html#a64fbe22df260c4731536e1bbcec70cf6">cub::BlockScan&lt; T, BLOCK_THREADS, POLICY &gt;</a>
-, <a class="el" href="classcub_1_1_warp_scan.html#acb0ad5c2aaa0866aa7bcc9a597098daa">cub::WarpScan&lt; T, WARPS, LOGICAL_WARP_THREADS &gt;</a>
-, <a class="el" href="classcub_1_1_block_scan.html#a2a7bf6b9e06e0ed3a71931f1694359f5">cub::BlockScan&lt; T, BLOCK_THREADS, POLICY &gt;</a>
+: <a class="el" href="classcub_1_1_block_scan.html#af335f71a8337003a7d120273d3c1b848">cub::BlockScan&lt; T, BLOCK_THREADS, ALGORITHM &gt;</a>
+, <a class="el" href="classcub_1_1_warp_scan.html#ae84a95431640ff2d450c4b0a98dd826e">cub::WarpScan&lt; T, WARPS, LOGICAL_WARP_THREADS &gt;</a>
+, <a class="el" href="classcub_1_1_block_scan.html#a5eb97c9b4ef8c4b070ea8823fb634974">cub::BlockScan&lt; T, BLOCK_THREADS, ALGORITHM &gt;</a>
+, <a class="el" href="classcub_1_1_warp_scan.html#a182cf61f1437c0ac0e3567a9737fcbfe">cub::WarpScan&lt; T, WARPS, LOGICAL_WARP_THREADS &gt;</a>
+, <a class="el" href="classcub_1_1_block_scan.html#a6a8d20322a07c1dd87308780b5e0ab8e">cub::BlockScan&lt; T, BLOCK_THREADS, ALGORITHM &gt;</a>
 , <a class="el" href="classcub_1_1_warp_scan.html#af0e55650ffbbb6ad5245c11110fc9343">cub::WarpScan&lt; T, WARPS, LOGICAL_WARP_THREADS &gt;</a>
-, <a class="el" href="classcub_1_1_block_scan.html#aaea795b16f8a66dbbef62952b5f73643">cub::BlockScan&lt; T, BLOCK_THREADS, POLICY &gt;</a>
+, <a class="el" href="classcub_1_1_block_scan.html#acf1976e3b8b02458a0cc7084af5e4953">cub::BlockScan&lt; T, BLOCK_THREADS, ALGORITHM &gt;</a>
+, <a class="el" href="classcub_1_1_warp_scan.html#ab034c0bd94f866b7044d085f0d354e2d">cub::WarpScan&lt; T, WARPS, LOGICAL_WARP_THREADS &gt;</a>
+, <a class="el" href="classcub_1_1_block_scan.html#a7e101c9465c1db86670cf99782b8cbc5">cub::BlockScan&lt; T, BLOCK_THREADS, ALGORITHM &gt;</a>
 </li>
 <li>ExclusiveSum()
-: <a class="el" href="classcub_1_1_warp_scan.html#a8b9720f46d2b9cb920c4eb8a6543fc2c">cub::WarpScan&lt; T, WARPS, LOGICAL_WARP_THREADS &gt;</a>
-, <a class="el" href="classcub_1_1_block_scan.html#aa4b6abbc17343b897a7b93d581620164">cub::BlockScan&lt; T, BLOCK_THREADS, POLICY &gt;</a>
+: <a class="el" href="classcub_1_1_block_scan.html#a448db7b773d59be47b06adc5fd4be93e">cub::BlockScan&lt; T, BLOCK_THREADS, ALGORITHM &gt;</a>
 , <a class="el" href="classcub_1_1_warp_scan.html#a2695420235a1ace8817a595a6f930d61">cub::WarpScan&lt; T, WARPS, LOGICAL_WARP_THREADS &gt;</a>
-, <a class="el" href="classcub_1_1_block_scan.html#a01676b552903e7b5d240bbde7968d55e">cub::BlockScan&lt; T, BLOCK_THREADS, POLICY &gt;</a>
-, <a class="el" href="classcub_1_1_warp_scan.html#a2a7c0b9abd940adf1b76e1d5931fcfd7">cub::WarpScan&lt; T, WARPS, LOGICAL_WARP_THREADS &gt;</a>
-, <a class="el" href="classcub_1_1_block_scan.html#af0fb65e2f9663daaee32390dee4c786b">cub::BlockScan&lt; T, BLOCK_THREADS, POLICY &gt;</a>
+, <a class="el" href="classcub_1_1_block_scan.html#aa23d50e7974169b8efe0a7a87c0ee0dd">cub::BlockScan&lt; T, BLOCK_THREADS, ALGORITHM &gt;</a>
 </li>
 </ul>
 
 
 <h3><a class="anchor" id="index_f"></a>- f -</h3><ul>
+<li>Fill()
+: <a class="el" href="classcub_1_1_grid_queue.html#ab141faef2001d1b3da94ec24c69d02a4">cub::GridQueue&lt; SizeT &gt;</a>
+</li>
+<li>FillSize()
+: <a class="el" href="classcub_1_1_grid_queue.html#a1b66918c1c7bdf77b221e15a283b396a">cub::GridQueue&lt; SizeT &gt;</a>
+</li>
 <li>Flag()
-: <a class="el" href="classcub_1_1_block_discontinuity.html#ab6390151f109ac253810504ddc5a7c04">cub::BlockDiscontinuity&lt; T, BLOCK_THREADS &gt;</a>
+: <a class="el" href="classcub_1_1_block_discontinuity.html#a3bdf3b7ad8ace5249f84e103f25ff3bb">cub::BlockDiscontinuity&lt; T, BLOCK_THREADS &gt;</a>
+</li>
+<li>Free()
+: <a class="el" href="classcub_1_1_grid_queue.html#aff77aa7ee352b3bf62725f0e6f41502a">cub::GridQueue&lt; SizeT &gt;</a>
+</li>
+<li>FreeAllCached()
+: <a class="el" href="structcub_1_1_caching_device_allocator.html#af55929d787fe0b785da1ae4ceeffea5b">cub::CachingDeviceAllocator</a>
+</li>
+</ul>
+
+
+<h3><a class="anchor" id="index_g"></a>- g -</h3><ul>
+<li>GRID_ELEMENTS
+: <a class="el" href="structcub_1_1_block_raking_layout.html#a2aacb46e7388e201bf1aacc4267fcba4afc43f61dacf0b1c963d0e5ff62f8c9d9">cub::BlockRakingLayout&lt; T, BLOCK_THREADS, BLOCK_STRIPS &gt;</a>
+</li>
+<li>grid_size
+: <a class="el" href="classcub_1_1_grid_even_share.html#a0f0c30d111858d38fc39dd223e8ca676">cub::GridEvenShare&lt; SizeT &gt;</a>
+</li>
+<li>GridInit()
+: <a class="el" href="classcub_1_1_grid_even_share.html#a239f96ab615df22e26c53cde6000e39f">cub::GridEvenShare&lt; SizeT &gt;</a>
+</li>
+<li>GridQueue()
+: <a class="el" href="classcub_1_1_grid_queue.html#a94f344fcd45b02cd2d6e9b04d8f2665a">cub::GridQueue&lt; SizeT &gt;</a>
+</li>
+</ul>
+
+
+<h3><a class="anchor" id="index_h"></a>- h -</h3><ul>
+<li>HAS_PARAM
+: <a class="el" href="structcub_1_1_binary_op_has_idx_param.html#a8eb893aad920fb1153670ff4a5b75f7a">cub::BinaryOpHasIdxParam&lt; T, BinaryOp &gt;</a>
+</li>
+<li>Histogram()
+: <a class="el" href="classcub_1_1_block_histo256.html#a6496bd253fd4611a5722d6c6e7af4b4d">cub::BlockHisto256&lt; BLOCK_THREADS, ITEMS_PER_THREAD, ALGORITHM &gt;</a>
 </li>
 </ul>
 
 
 <h3><a class="anchor" id="index_i"></a>- i -</h3><ul>
 <li>InclusiveScan()
-: <a class="el" href="classcub_1_1_warp_scan.html#a9f0397ded5ce89a8750dc8fe10078f3e">cub::WarpScan&lt; T, WARPS, LOGICAL_WARP_THREADS &gt;</a>
-, <a class="el" href="classcub_1_1_block_scan.html#a981f9bae42f6f9c5fe6950698b97d8d4">cub::BlockScan&lt; T, BLOCK_THREADS, POLICY &gt;</a>
-, <a class="el" href="classcub_1_1_warp_scan.html#ae5e4f735a2bda14ad6a94a68a0528bd1">cub::WarpScan&lt; T, WARPS, LOGICAL_WARP_THREADS &gt;</a>
-, <a class="el" href="classcub_1_1_block_scan.html#a4b987cb649f4aced568b77bd9ac18db6">cub::BlockScan&lt; T, BLOCK_THREADS, POLICY &gt;</a>
+: <a class="el" href="classcub_1_1_block_scan.html#ad9771f75dea830b2c6434cc1597e20d4">cub::BlockScan&lt; T, BLOCK_THREADS, ALGORITHM &gt;</a>
+, <a class="el" href="classcub_1_1_warp_scan.html#a4df11b322777066e9237fc2ef3d257e5">cub::WarpScan&lt; T, WARPS, LOGICAL_WARP_THREADS &gt;</a>
+, <a class="el" href="classcub_1_1_block_scan.html#a26658c5722147c9647b9d253f75f72d0">cub::BlockScan&lt; T, BLOCK_THREADS, ALGORITHM &gt;</a>
+, <a class="el" href="classcub_1_1_warp_scan.html#a9f0397ded5ce89a8750dc8fe10078f3e">cub::WarpScan&lt; T, WARPS, LOGICAL_WARP_THREADS &gt;</a>
 </li>
 <li>InclusiveSum()
-: <a class="el" href="classcub_1_1_warp_scan.html#adec85c76d951c326e592e364aa63c728">cub::WarpScan&lt; T, WARPS, LOGICAL_WARP_THREADS &gt;</a>
-, <a class="el" href="classcub_1_1_block_scan.html#af4bfc827149cbcfd741e578cfaeee5c7">cub::BlockScan&lt; T, BLOCK_THREADS, POLICY &gt;</a>
-, <a class="el" href="classcub_1_1_warp_scan.html#a032ce184b653241719effbd0b5b2dbcd">cub::WarpScan&lt; T, WARPS, LOGICAL_WARP_THREADS &gt;</a>
-, <a class="el" href="classcub_1_1_block_scan.html#a738fa570c0a0e391397c342eaab388cb">cub::BlockScan&lt; T, BLOCK_THREADS, POLICY &gt;</a>
+: <a class="el" href="classcub_1_1_block_scan.html#a14ed8b483486707749b8614d782abc80">cub::BlockScan&lt; T, BLOCK_THREADS, ALGORITHM &gt;</a>
+, <a class="el" href="classcub_1_1_warp_scan.html#adec85c76d951c326e592e364aa63c728">cub::WarpScan&lt; T, WARPS, LOGICAL_WARP_THREADS &gt;</a>
+, <a class="el" href="classcub_1_1_block_scan.html#ac1678e0527b82db50aea21460fa0cbd0">cub::BlockScan&lt; T, BLOCK_THREADS, ALGORITHM &gt;</a>
 , <a class="el" href="classcub_1_1_warp_scan.html#a78bf6035a0bccc58913dc0ec570c487d">cub::WarpScan&lt; T, WARPS, LOGICAL_WARP_THREADS &gt;</a>
-, <a class="el" href="classcub_1_1_block_scan.html#a88a16a5a98fadb09fa216b2d234f0b86">cub::BlockScan&lt; T, BLOCK_THREADS, POLICY &gt;</a>
+, <a class="el" href="classcub_1_1_block_scan.html#a93778632dab401f97c1da6c55d4342c9">cub::BlockScan&lt; T, BLOCK_THREADS, ALGORITHM &gt;</a>
+</li>
+<li>Init()
+: <a class="el" href="classcub_1_1_device.html#af5217a10a5c9d26ce226e257665a45ce">cub::Device</a>
+</li>
+<li>InitHistogram()
+: <a class="el" href="classcub_1_1_block_histo256.html#a279a4918f3ba86e0d65c609a9d50cbb6">cub::BlockHisto256&lt; BLOCK_THREADS, ITEMS_PER_THREAD, ALGORITHM &gt;</a>
 </li>
 </ul>
 
 
 <h3><a class="anchor" id="index_l"></a>- l -</h3><ul>
 <li>Load()
-: <a class="el" href="classcub_1_1_block_load.html#ac671e9f033037fc01384a9296684200c">cub::BlockLoad&lt; InputIterator, BLOCK_THREADS, ITEMS_PER_THREAD, POLICY, MODIFIER &gt;</a>
+: <a class="el" href="classcub_1_1_block_load.html#a4c379a2f7f8aa08aa2d6b134c9a2955f">cub::BlockLoad&lt; InputIteratorRA, BLOCK_THREADS, ITEMS_PER_THREAD, POLICY, MODIFIER &gt;</a>
+</li>
+<li>LOG_SMEM_BANKS
+: <a class="el" href="structcub_1_1_arch_props.html#a378def3dee75e77eb135efcf6f0ca063a9596af8e6d63db07ffae0c5c35f513d5">cub::ArchProps&lt; SM_ARCH &gt;</a>
+</li>
+</ul>
+
+
+<h3><a class="anchor" id="index_m"></a>- m -</h3><ul>
+<li>MAX_BLOCK_THREADS
+: <a class="el" href="structcub_1_1_arch_props.html#a378def3dee75e77eb135efcf6f0ca063a9079f42fbfb80e59ef7affc574bf6001">cub::ArchProps&lt; SM_ARCH &gt;</a>
+</li>
+<li>max_block_threads
+: <a class="el" href="classcub_1_1_device.html#ab55f58e3252d369ee50d34b190df2277">cub::Device</a>
+</li>
+<li>MAX_RAKING_THREADS
+: <a class="el" href="structcub_1_1_block_raking_layout.html#a2aacb46e7388e201bf1aacc4267fcba4a8fbf670c35bffa1c27febb4514d5a129">cub::BlockRakingLayout&lt; T, BLOCK_THREADS, BLOCK_STRIPS &gt;</a>
+</li>
+<li>max_sm_blocks
+: <a class="el" href="classcub_1_1_device.html#ac614bed852b56bf8c616803aa8601caf">cub::Device</a>
+</li>
+<li>MAX_SM_REGISTERS
+: <a class="el" href="structcub_1_1_arch_props.html#a378def3dee75e77eb135efcf6f0ca063a90062d88d6a9abcfdfd4c29111a5ac3e">cub::ArchProps&lt; SM_ARCH &gt;</a>
+</li>
+<li>max_sm_registers
+: <a class="el" href="classcub_1_1_device.html#af321be8fe9aecd0942d04739f7520c61">cub::Device</a>
+</li>
+<li>MAX_SM_THREADBLOCKS
+: <a class="el" href="structcub_1_1_arch_props.html#a378def3dee75e77eb135efcf6f0ca063abdc229ee36991bb6055f3bd42fc59387">cub::ArchProps&lt; SM_ARCH &gt;</a>
+</li>
+<li>MAX_SM_THREADS
+: <a class="el" href="structcub_1_1_arch_props.html#a378def3dee75e77eb135efcf6f0ca063a3aa3c3db5dc28ef11961f6867fee7101">cub::ArchProps&lt; SM_ARCH &gt;</a>
+</li>
+<li>max_sm_threads
+: <a class="el" href="classcub_1_1_device.html#a963c497e442ac283b2655faa578614d3">cub::Device</a>
+</li>
+<li>max_sm_warps
+: <a class="el" href="classcub_1_1_device.html#a5ee84e74af9939896bb81b48d4843d17">cub::Device</a>
+</li>
+<li>MaxSmOccupancy()
+: <a class="el" href="classcub_1_1_device.html#a618bbf36a5737a9b1533ff65834e88e8">cub::Device</a>
+</li>
+<li>MultiChannel()
+: <a class="el" href="structcub_1_1_device_histo256.html#aadf3db4f5e49852070aea37a21645e36">cub::DeviceHisto256</a>
+</li>
+<li>MultiChannelAtomic()
+: <a class="el" href="structcub_1_1_device_histo256.html#a0aa6ea591b18ea122328c6b17d92c14a">cub::DeviceHisto256</a>
+</li>
+</ul>
+
+
+<h3><a class="anchor" id="index_n"></a>- n -</h3><ul>
+<li>num_items
+: <a class="el" href="classcub_1_1_grid_even_share.html#a80a9d9d0c146b1aa7b26137553941c83">cub::GridEvenShare&lt; SizeT &gt;</a>
 </li>
 </ul>
 
@@ -192,17 +340,60 @@ var searchBox = new SearchBox("searchBox", "search",false,'Search');
 <h3><a class="anchor" id="index_o"></a>- o -</h3><ul>
 <li>operator()()
 : <a class="el" href="structcub_1_1_equality.html#a89f91d9fabb6b8237f97307ce04f1bab">cub::Equality&lt; T &gt;</a>
+, <a class="el" href="structcub_1_1_cast.html#a7dbee2a0bbb0725ee68c7ef29c81d158">cub::Cast&lt; B &gt;</a>
 , <a class="el" href="structcub_1_1_max.html#a880bd2cf50b320c1771eafe31ebf9ea1">cub::Max&lt; T &gt;</a>
 , <a class="el" href="structcub_1_1_sum.html#a05a1ac22d3e5c852dec8c39724297fe3">cub::Sum&lt; T &gt;</a>
 </li>
 </ul>
 
 
+<h3><a class="anchor" id="index_p"></a>- p -</h3><ul>
+<li>PlacementPtr()
+: <a class="el" href="structcub_1_1_block_raking_layout.html#aecee2831bac3e7ead02bfeb403768ff5">cub::BlockRakingLayout&lt; T, BLOCK_THREADS, BLOCK_STRIPS &gt;</a>
+</li>
+<li>Print()
+: <a class="el" href="classcub_1_1_grid_even_share.html#a19880a9aa9fc18046d0a4d20fb1126d5">cub::GridEvenShare&lt; SizeT &gt;</a>
+</li>
+<li>ptx_version
+: <a class="el" href="classcub_1_1_device.html#a416909debdeaa9116d7087ed55ed870f">cub::Device</a>
+</li>
+</ul>
+
+
 <h3><a class="anchor" id="index_r"></a>- r -</h3><ul>
+<li>RAKING_THREADS
+: <a class="el" href="structcub_1_1_block_raking_layout.html#a2aacb46e7388e201bf1aacc4267fcba4aa606719edb60c34806b20f3fa8a6535b">cub::BlockRakingLayout&lt; T, BLOCK_THREADS, BLOCK_STRIPS &gt;</a>
+</li>
+<li>RakingPtr()
+: <a class="el" href="structcub_1_1_block_raking_layout.html#a2c62149ec2e962e98bde8ba30f14dfbf">cub::BlockRakingLayout&lt; T, BLOCK_THREADS, BLOCK_STRIPS &gt;</a>
+</li>
 <li>Reduce()
-: <a class="el" href="classcub_1_1_warp_reduce.html#ae738f8236bead17ca279b34419892ef9">cub::WarpReduce&lt; T, WARPS, LOGICAL_WARP_THREADS &gt;</a>
-, <a class="el" href="classcub_1_1_block_reduce.html#a00d36472519d893f35d261574294e90c">cub::BlockReduce&lt; T, BLOCK_THREADS &gt;</a>
+: <a class="el" href="classcub_1_1_block_reduce.html#a3a6ceefb36fe651af9c4ac556c8a2b74">cub::BlockReduce&lt; T, BLOCK_THREADS, ALGORITHM &gt;</a>
 , <a class="el" href="classcub_1_1_warp_reduce.html#a4f893685caf95690550964c45a34f19b">cub::WarpReduce&lt; T, WARPS, LOGICAL_WARP_THREADS &gt;</a>
+, <a class="el" href="classcub_1_1_block_reduce.html#a0f192355a57bf3f62aa0658c220f15fb">cub::BlockReduce&lt; T, BLOCK_THREADS, ALGORITHM &gt;</a>
+, <a class="el" href="structcub_1_1_device_reduce.html#abe1d9947fb592ca9ff59466842943c0b">cub::DeviceReduce</a>
+, <a class="el" href="classcub_1_1_warp_reduce.html#ae738f8236bead17ca279b34419892ef9">cub::WarpReduce&lt; T, WARPS, LOGICAL_WARP_THREADS &gt;</a>
+</li>
+<li>REG_ALLOC_UNIT
+: <a class="el" href="structcub_1_1_arch_props.html#a378def3dee75e77eb135efcf6f0ca063a5f6934930aa379cd70b7c8e19bcff4bc">cub::ArchProps&lt; SM_ARCH &gt;</a>
+</li>
+<li>reg_alloc_unit
+: <a class="el" href="classcub_1_1_device.html#aa432ab8fdb1d1117b29811422c83a187">cub::Device</a>
+</li>
+<li>regs_by_block
+: <a class="el" href="classcub_1_1_device.html#a721a479d183aaa1846c69de998f84ffc">cub::Device</a>
+</li>
+<li>REGS_BY_BLOCK
+: <a class="el" href="structcub_1_1_arch_props.html#a378def3dee75e77eb135efcf6f0ca063addc3e62803e3ed6d8ec351faa7a2c45d">cub::ArchProps&lt; SM_ARCH &gt;</a>
+</li>
+<li>ResetDrain()
+: <a class="el" href="classcub_1_1_grid_queue.html#aaf7645e10ebf16253cc45013d159bf91">cub::GridQueue&lt; SizeT &gt;</a>
+</li>
+<li>ResetDrainAfterFill()
+: <a class="el" href="classcub_1_1_grid_queue.html#aa4a0cb5753c50994e639d483c8db1320">cub::GridQueue&lt; SizeT &gt;</a>
+</li>
+<li>ResetFill()
+: <a class="el" href="classcub_1_1_grid_queue.html#a80a28b09434c0cf7555b6b4e8744d78f">cub::GridQueue&lt; SizeT &gt;</a>
 </li>
 </ul>
 
@@ -214,59 +405,152 @@ var searchBox = new SearchBox("searchBox", "search",false,'Search');
 <li>ScatterToStriped()
 : <a class="el" href="classcub_1_1_block_exchange.html#a8b8997367d0d42ee7eb600b981f7b72d">cub::BlockExchange&lt; T, BLOCK_THREADS, ITEMS_PER_THREAD &gt;</a>
 </li>
+<li>SEGMENT_LENGTH
+: <a class="el" href="structcub_1_1_block_raking_layout.html#a2aacb46e7388e201bf1aacc4267fcba4ac61b5f8034e4b1b98800951216c90267">cub::BlockRakingLayout&lt; T, BLOCK_THREADS, BLOCK_STRIPS &gt;</a>
+</li>
+<li>SEGMENT_PADDING
+: <a class="el" href="structcub_1_1_block_raking_layout.html#a2aacb46e7388e201bf1aacc4267fcba4af36afaf5e3e52ced91f2cb62dff0ed44">cub::BlockRakingLayout&lt; T, BLOCK_THREADS, BLOCK_STRIPS &gt;</a>
+</li>
+<li>SetMaxCachedBytes()
+: <a class="el" href="structcub_1_1_caching_device_allocator.html#a5ddac0917fce3445aa660d747e67a8d9">cub::CachingDeviceAllocator</a>
+</li>
+<li>SHARED_ELEMENTS
+: <a class="el" href="structcub_1_1_block_raking_layout.html#a2aacb46e7388e201bf1aacc4267fcba4a88563e2b0f7a4e3362d912f6493ccdb4">cub::BlockRakingLayout&lt; T, BLOCK_THREADS, BLOCK_STRIPS &gt;</a>
+</li>
+<li>SingleChannel()
+: <a class="el" href="structcub_1_1_device_histo256.html#a21cfc3f4d496365051f59d4e87099d01">cub::DeviceHisto256</a>
+</li>
+<li>SingleChannelAtomic()
+: <a class="el" href="structcub_1_1_device_histo256.html#a792cb350cb09da5299f76806462d84db">cub::DeviceHisto256</a>
+</li>
+<li>sm_count
+: <a class="el" href="classcub_1_1_device.html#a68885a90ea0badcffc2a3511b0b4fd5c">cub::Device</a>
+</li>
+<li>sm_version
+: <a class="el" href="classcub_1_1_device.html#ac9b36b3b0edb207aeee60110fbee6406">cub::Device</a>
+</li>
+<li>smem_alloc_unit
+: <a class="el" href="classcub_1_1_device.html#aca17efd166d916008f0fc378adc00b1f">cub::Device</a>
+</li>
+<li>SMEM_ALLOC_UNIT
+: <a class="el" href="structcub_1_1_arch_props.html#a378def3dee75e77eb135efcf6f0ca063af554a252a393bce18200236640959bab">cub::ArchProps&lt; SM_ARCH &gt;</a>
+</li>
+<li>SMEM_BANK_BYTES
+: <a class="el" href="structcub_1_1_arch_props.html#a378def3dee75e77eb135efcf6f0ca063ab56aa4deb8408a51e7cc139c2c1e14f5">cub::ArchProps&lt; SM_ARCH &gt;</a>
+</li>
+<li>smem_bank_bytes
+: <a class="el" href="classcub_1_1_device.html#a909d34dd31bdb6f754a603e8eb2b10ab">cub::Device</a>
+</li>
+<li>SMEM_BANKS
+: <a class="el" href="structcub_1_1_arch_props.html#a378def3dee75e77eb135efcf6f0ca063a55ab5a77ae95f67255bbec10cd3993e1">cub::ArchProps&lt; SM_ARCH &gt;</a>
+</li>
+<li>smem_banks
+: <a class="el" href="classcub_1_1_device.html#a2e835add85abdf0eb640c551abec2a0b">cub::Device</a>
+</li>
+<li>SMEM_BYTES
+: <a class="el" href="structcub_1_1_arch_props.html#a378def3dee75e77eb135efcf6f0ca063a993d6ee811a054da1a8579132c6301a1">cub::ArchProps&lt; SM_ARCH &gt;</a>
+</li>
+<li>smem_bytes
+: <a class="el" href="classcub_1_1_device.html#a838c9a2e207c38ef24e79a40bccdd1ac">cub::Device</a>
+</li>
 <li>SmemStorage
-: <a class="el" href="classcub_1_1_warp_reduce.html#a4807b030bca03efb7fff2f6e9ea8b3d2">cub::WarpReduce&lt; T, WARPS, LOGICAL_WARP_THREADS &gt;</a>
-, <a class="el" href="classcub_1_1_block_load.html#a09296fd690f1452df9cae24a037e906a">cub::BlockLoad&lt; InputIterator, BLOCK_THREADS, ITEMS_PER_THREAD, POLICY, MODIFIER &gt;</a>
-, <a class="el" href="classcub_1_1_block_store.html#aa80c1691bc7aa80bc38c2797b3a99c24">cub::BlockStore&lt; OutputIterator, BLOCK_THREADS, ITEMS_PER_THREAD, POLICY, MODIFIER &gt;</a>
-, <a class="el" href="classcub_1_1_block_reduce.html#aea61e2e067e0e2d3fba2b0c8e0f73d8d">cub::BlockReduce&lt; T, BLOCK_THREADS &gt;</a>
-, <a class="el" href="classcub_1_1_block_exchange.html#ad91573946e4abe5ae5e34277ded1c215">cub::BlockExchange&lt; T, BLOCK_THREADS, ITEMS_PER_THREAD &gt;</a>
+: <a class="el" href="classcub_1_1_block_store.html#a44f8ee5a77fc8cc348a68a6d233ae68d">cub::BlockStore&lt; OutputIteratorRA, BLOCK_THREADS, ITEMS_PER_THREAD, POLICY, MODIFIER &gt;</a>
 , <a class="el" href="classcub_1_1_block_discontinuity.html#a855c92f9c3869909913860fa11e755a4">cub::BlockDiscontinuity&lt; T, BLOCK_THREADS &gt;</a>
+, <a class="el" href="classcub_1_1_block_exchange.html#ad91573946e4abe5ae5e34277ded1c215">cub::BlockExchange&lt; T, BLOCK_THREADS, ITEMS_PER_THREAD &gt;</a>
+, <a class="el" href="classcub_1_1_block_histo256.html#a620661d7ec6ab2fc9d0d843329c901ff">cub::BlockHisto256&lt; BLOCK_THREADS, ITEMS_PER_THREAD, ALGORITHM &gt;</a>
+, <a class="el" href="classcub_1_1_block_load.html#a0d2c3c7656dfe1eb398217ef8bd58960">cub::BlockLoad&lt; InputIteratorRA, BLOCK_THREADS, ITEMS_PER_THREAD, POLICY, MODIFIER &gt;</a>
+, <a class="el" href="structcub_1_1_block_raking_layout.html#a9455ea5b5ba52b8fcf26cfded59f70c9">cub::BlockRakingLayout&lt; T, BLOCK_THREADS, BLOCK_STRIPS &gt;</a>
+, <a class="el" href="classcub_1_1_block_radix_sort.html#ab42b81b7a6587ecaca18f232104b3f3c">cub::BlockRadixSort&lt; KeyType, BLOCK_THREADS, ITEMS_PER_THREAD, ValueType, RADIX_BITS, MEMOIZE_OUTER_SCAN, INNER_SCAN_ALGORITHM, SMEM_CONFIG &gt;</a>
+, <a class="el" href="classcub_1_1_block_reduce.html#a0f83f9d65de0d6d33e311bcd9e8d41b7">cub::BlockReduce&lt; T, BLOCK_THREADS, ALGORITHM &gt;</a>
+, <a class="el" href="classcub_1_1_block_scan.html#ae85612707bea2533173ee665183f9c82">cub::BlockScan&lt; T, BLOCK_THREADS, ALGORITHM &gt;</a>
 , <a class="el" href="classcub_1_1_warp_scan.html#a2bfa864e963cb4965139ac1b6c66d1b7">cub::WarpScan&lt; T, WARPS, LOGICAL_WARP_THREADS &gt;</a>
-, <a class="el" href="classcub_1_1_block_scan.html#abda6008896e2e17b50c7deb0ab320e64">cub::BlockScan&lt; T, BLOCK_THREADS, POLICY &gt;</a>
-, <a class="el" href="classcub_1_1_block_radix_sort.html#a495e63ab526ce35e6dfce9fb5206746c">cub::BlockRadixSort&lt; KeyType, BLOCK_THREADS, ITEMS_PER_THREAD, ValueType, RADIX_BITS, SMEM_CONFIG &gt;</a>
+, <a class="el" href="classcub_1_1_warp_reduce.html#a71f87b76f0deeaa5ba3a708374d19c8c">cub::WarpReduce&lt; T, WARPS, LOGICAL_WARP_THREADS &gt;</a>
 </li>
 <li>SortBlocked()
-: <a class="el" href="classcub_1_1_block_radix_sort.html#abdbfda59c129946222ab10d2e2e6f6f5">cub::BlockRadixSort&lt; KeyType, BLOCK_THREADS, ITEMS_PER_THREAD, ValueType, RADIX_BITS, SMEM_CONFIG &gt;</a>
+: <a class="el" href="classcub_1_1_block_radix_sort.html#acd0282613cbd6ad6c52ab1bb05b82def">cub::BlockRadixSort&lt; KeyType, BLOCK_THREADS, ITEMS_PER_THREAD, ValueType, RADIX_BITS, MEMOIZE_OUTER_SCAN, INNER_SCAN_ALGORITHM, SMEM_CONFIG &gt;</a>
 </li>
 <li>SortBlockedToStriped()
-: <a class="el" href="classcub_1_1_block_radix_sort.html#ab1a7c9c9e536f13741b4c4f6c369ce80">cub::BlockRadixSort&lt; KeyType, BLOCK_THREADS, ITEMS_PER_THREAD, ValueType, RADIX_BITS, SMEM_CONFIG &gt;</a>
+: <a class="el" href="classcub_1_1_block_radix_sort.html#ad6cc88c2ae0d36c4c98b901748645e10">cub::BlockRadixSort&lt; KeyType, BLOCK_THREADS, ITEMS_PER_THREAD, ValueType, RADIX_BITS, MEMOIZE_OUTER_SCAN, INNER_SCAN_ALGORITHM, SMEM_CONFIG &gt;</a>
 </li>
 <li>SortStriped()
-: <a class="el" href="classcub_1_1_block_radix_sort.html#a81e081320239182670da329c2b036166">cub::BlockRadixSort&lt; KeyType, BLOCK_THREADS, ITEMS_PER_THREAD, ValueType, RADIX_BITS, SMEM_CONFIG &gt;</a>
+: <a class="el" href="classcub_1_1_block_radix_sort.html#aea1b6f367da1b17ed80f65d511aec15e">cub::BlockRadixSort&lt; KeyType, BLOCK_THREADS, ITEMS_PER_THREAD, ValueType, RADIX_BITS, MEMOIZE_OUTER_SCAN, INNER_SCAN_ALGORITHM, SMEM_CONFIG &gt;</a>
 </li>
 <li>Store()
-: <a class="el" href="classcub_1_1_block_store.html#a3c1f7f37767338869f44e410a90f2255">cub::BlockStore&lt; OutputIterator, BLOCK_THREADS, ITEMS_PER_THREAD, POLICY, MODIFIER &gt;</a>
+: <a class="el" href="classcub_1_1_block_store.html#a4d7858f738321f7130bc0be7d6fa46a5">cub::BlockStore&lt; OutputIteratorRA, BLOCK_THREADS, ITEMS_PER_THREAD, POLICY, MODIFIER &gt;</a>
 </li>
 <li>StripedToBlocked()
 : <a class="el" href="classcub_1_1_block_exchange.html#ad8000bf73c3ce935018f32451985ae37">cub::BlockExchange&lt; T, BLOCK_THREADS, ITEMS_PER_THREAD &gt;</a>
 </li>
 <li>Sum()
-: <a class="el" href="classcub_1_1_block_reduce.html#a136060887c434257984b8bf3f5c62323">cub::BlockReduce&lt; T, BLOCK_THREADS &gt;</a>
-, <a class="el" href="classcub_1_1_warp_reduce.html#a50e4be93dbd298b7c2b5080d1449cf8c">cub::WarpReduce&lt; T, WARPS, LOGICAL_WARP_THREADS &gt;</a>
-, <a class="el" href="classcub_1_1_block_reduce.html#abe33a10ae2e316943e95d23f1d4d702a">cub::BlockReduce&lt; T, BLOCK_THREADS &gt;</a>
+: <a class="el" href="classcub_1_1_block_reduce.html#a8cc68b77f25c80b972bdedced6878214">cub::BlockReduce&lt; T, BLOCK_THREADS, ALGORITHM &gt;</a>
+, <a class="el" href="classcub_1_1_warp_reduce.html#a0c1ad8bee00bc64f14f3b0d762b84363">cub::WarpReduce&lt; T, WARPS, LOGICAL_WARP_THREADS &gt;</a>
+, <a class="el" href="classcub_1_1_block_reduce.html#af81b914f22d1c1608d46d12e1c1d888e">cub::BlockReduce&lt; T, BLOCK_THREADS, ALGORITHM &gt;</a>
 </li>
 </ul>
 
 
 <h3><a class="anchor" id="index_t"></a>- t -</h3><ul>
+<li>TexBindingTag
+: <a class="el" href="classcub_1_1_tex_iterator_r_a.html#a5e210ab4fc1c16ef4fadffb56eba1319">cub::TexIteratorRA&lt; T &gt;</a>
+, <a class="el" href="classcub_1_1_tex_transform_iterator_r_a.html#ad3c3a602ae30d4badc2710dfa9148d27">cub::TexTransformIteratorRA&lt; OutputType, ConversionOp, InputType &gt;</a>
+</li>
+<li>TexIteratorRA()
+: <a class="el" href="classcub_1_1_tex_iterator_r_a.html#a3f7b0ec2266c97661379c72265e75c25">cub::TexIteratorRA&lt; T &gt;</a>
+</li>
+<li>TexTransformIteratorRA()
+: <a class="el" href="classcub_1_1_tex_transform_iterator_r_a.html#a5521ef0385c88805c7ec4f75283d119d">cub::TexTransformIteratorRA&lt; OutputType, ConversionOp, InputType &gt;</a>
+</li>
+<li>TransformIteratorRA()
+: <a class="el" href="classcub_1_1_transform_iterator_r_a.html#abac05c9208f609ac1b2f1b94241cdcec">cub::TransformIteratorRA&lt; OutputType, ConversionOp, InputType &gt;</a>
+</li>
 <li>Type
-: <a class="el" href="structcub_1_1_if.html#af689e9527f56372e66413b65581ded8e">cub::If&lt; IF, ThenType, ElseType &gt;</a>
-, <a class="el" href="structcub_1_1_enable_if.html#aafd9405b5887d2a6d3553eee0202798a">cub::EnableIf&lt; Condition, T &gt;</a>
+: <a class="el" href="structcub_1_1_enable_if.html#aafd9405b5887d2a6d3553eee0202798a">cub::EnableIf&lt; Condition, T &gt;</a>
 , <a class="el" href="structcub_1_1_remove_qualifiers.html#a9143e196ef5e6a0176b953f677e94671">cub::RemoveQualifiers&lt; Tp, Up &gt;</a>
+, <a class="el" href="structcub_1_1_if.html#af689e9527f56372e66413b65581ded8e">cub::If&lt; IF, ThenType, ElseType &gt;</a>
 </li>
 </ul>
 
 
-<h3><a class="anchor" id="index_v"></a>- v -</h3><ul>
-<li>VALUE
-: <a class="el" href="structcub_1_1_log2.html#ad1923657cb57427a8621f53022590cd2">cub::Log2&lt; N, CURRENT_VAL, COUNT &gt;</a>
+<h3><a class="anchor" id="index_u"></a>- u -</h3><ul>
+<li>UnbindTexture()
+: <a class="el" href="classcub_1_1_tex_iterator_r_a.html#ab33bd552a21c85dea863b75b09aa6e87">cub::TexIteratorRA&lt; T &gt;</a>
+, <a class="el" href="classcub_1_1_tex_transform_iterator_r_a.html#a30fbb31a0a53d87f47174ee1889a6435">cub::TexTransformIteratorRA&lt; OutputType, ConversionOp, InputType &gt;</a>
+</li>
+<li>UNGUARDED
+: <a class="el" href="structcub_1_1_block_raking_layout.html#a2aacb46e7388e201bf1aacc4267fcba4a26085e779253b376e60b904389eca382">cub::BlockRakingLayout&lt; T, BLOCK_THREADS, BLOCK_STRIPS &gt;</a>
+</li>
+</ul>
+
+
+<h3><a class="anchor" id="index_w"></a>- w -</h3><ul>
+<li>WARP_ALLOC_UNIT
+: <a class="el" href="structcub_1_1_arch_props.html#a378def3dee75e77eb135efcf6f0ca063a25bc7bb8dac71df0b7962776e0ed9cde">cub::ArchProps&lt; SM_ARCH &gt;</a>
+</li>
+<li>warp_alloc_unit
+: <a class="el" href="classcub_1_1_device.html#ac5f8afb6f319b0dbd689f3f1188fc20b">cub::Device</a>
+</li>
+<li>warp_threads
+: <a class="el" href="classcub_1_1_device.html#a4498c242e597f67a4a752426ae262049">cub::Device</a>
+</li>
+<li>WARP_THREADS
+: <a class="el" href="structcub_1_1_arch_props.html#a378def3dee75e77eb135efcf6f0ca063ac5a2eb5b9e3b50dd43ad67c1ff020d9c">cub::ArchProps&lt; SM_ARCH &gt;</a>
+</li>
+</ul>
+
+
+<h3><a class="anchor" id="index_0x7e"></a>- ~ -</h3><ul>
+<li>~CachingDeviceAllocator()
+: <a class="el" href="structcub_1_1_caching_device_allocator.html#a8b5be1674adff948f45a4256839ad9e2">cub::CachingDeviceAllocator</a>
+</li>
+<li>~DeviceAllocator()
+: <a class="el" href="classcub_1_1_device_allocator.html#aa05f6eb52661fd42347e3a85c6164965">cub::DeviceAllocator</a>
 </li>
 </ul>
 </div><!-- contents -->
 <!-- HTML footer for doxygen 1.8.3.1-->
 <!-- start footer part -->
 <hr class="footer"/><address class="footer"><small>
-Generated on Thu Apr 4 2013 11:10:44 for CUB by &#160;<a href="http://www.doxygen.org/index.html">
+Generated on Wed May 1 2013 05:53:44 for CUB by &#160;<a href="http://www.doxygen.org/index.html">
 <img class="footer" src="doxygen.png" alt="doxygen"/>
 </a> 1.8.3.1
 <br>

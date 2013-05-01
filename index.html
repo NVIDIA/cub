@@ -76,7 +76,7 @@ var searchBox = new SearchBox("searchBox", "search",false,'Search');
      onmouseover="return searchBox.OnSearchSelectShow()"
      onmouseout="return searchBox.OnSearchSelectHide()"
      onkeydown="return searchBox.OnSearchSelectKey(event)">
-<a class="SelectItem" href="javascript:void(0)" onclick="searchBox.OnSelectItem(0)"><span class="SelectionMark">&#160;</span>All</a><a class="SelectItem" href="javascript:void(0)" onclick="searchBox.OnSelectItem(1)"><span class="SelectionMark">&#160;</span>Classes</a><a class="SelectItem" href="javascript:void(0)" onclick="searchBox.OnSelectItem(2)"><span class="SelectionMark">&#160;</span>Namespaces</a><a class="SelectItem" href="javascript:void(0)" onclick="searchBox.OnSelectItem(3)"><span class="SelectionMark">&#160;</span>Files</a><a class="SelectItem" href="javascript:void(0)" onclick="searchBox.OnSelectItem(4)"><span class="SelectionMark">&#160;</span>Functions</a><a class="SelectItem" href="javascript:void(0)" onclick="searchBox.OnSelectItem(5)"><span class="SelectionMark">&#160;</span>Variables</a><a class="SelectItem" href="javascript:void(0)" onclick="searchBox.OnSelectItem(6)"><span class="SelectionMark">&#160;</span>Typedefs</a><a class="SelectItem" href="javascript:void(0)" onclick="searchBox.OnSelectItem(7)"><span class="SelectionMark">&#160;</span>Enumerations</a><a class="SelectItem" href="javascript:void(0)" onclick="searchBox.OnSelectItem(8)"><span class="SelectionMark">&#160;</span>Enumerator</a><a class="SelectItem" href="javascript:void(0)" onclick="searchBox.OnSelectItem(9)"><span class="SelectionMark">&#160;</span>Friends</a><a class="SelectItem" href="javascript:void(0)" onclick="searchBox.OnSelectItem(10)"><span class="SelectionMark">&#160;</span>Macros</a><a class="SelectItem" href="javascript:void(0)" onclick="searchBox.OnSelectItem(11)"><span class="SelectionMark">&#160;</span>Groups</a><a class="SelectItem" href="javascript:void(0)" onclick="searchBox.OnSelectItem(12)"><span class="SelectionMark">&#160;</span>Pages</a></div>
+<a class="SelectItem" href="javascript:void(0)" onclick="searchBox.OnSelectItem(0)"><span class="SelectionMark">&#160;</span>All</a><a class="SelectItem" href="javascript:void(0)" onclick="searchBox.OnSelectItem(1)"><span class="SelectionMark">&#160;</span>Classes</a><a class="SelectItem" href="javascript:void(0)" onclick="searchBox.OnSelectItem(2)"><span class="SelectionMark">&#160;</span>Namespaces</a><a class="SelectItem" href="javascript:void(0)" onclick="searchBox.OnSelectItem(3)"><span class="SelectionMark">&#160;</span>Files</a><a class="SelectItem" href="javascript:void(0)" onclick="searchBox.OnSelectItem(4)"><span class="SelectionMark">&#160;</span>Functions</a><a class="SelectItem" href="javascript:void(0)" onclick="searchBox.OnSelectItem(5)"><span class="SelectionMark">&#160;</span>Variables</a><a class="SelectItem" href="javascript:void(0)" onclick="searchBox.OnSelectItem(6)"><span class="SelectionMark">&#160;</span>Typedefs</a><a class="SelectItem" href="javascript:void(0)" onclick="searchBox.OnSelectItem(7)"><span class="SelectionMark">&#160;</span>Enumerations</a><a class="SelectItem" href="javascript:void(0)" onclick="searchBox.OnSelectItem(8)"><span class="SelectionMark">&#160;</span>Enumerator</a><a class="SelectItem" href="javascript:void(0)" onclick="searchBox.OnSelectItem(9)"><span class="SelectionMark">&#160;</span>Groups</a><a class="SelectItem" href="javascript:void(0)" onclick="searchBox.OnSelectItem(10)"><span class="SelectionMark">&#160;</span>Pages</a></div>
 
 <!-- iframe showing the search results (closed by default) -->
 <div id="MSearchResultsWindow">
@@ -98,7 +98,7 @@ var searchBox = new SearchBox("searchBox", "search",false,'Search');
 <li class="level1"><a href="#sec5">(5) Where is CUB positioned in the CUDA ecosystem?</a></li>
 <li class="level1"><a href="#sec6">(6) How does CUB work?</a><ul><li class="level2"><a href="#sec3sec1">6.1 &nbsp;&nbsp; C++ templates</a></li>
 <li class="level2"><a href="#sec3sec2">6.2 &nbsp;&nbsp; Reflective type structure</a></li>
-<li class="level2"><a href="#sec3sec3">6.3 &nbsp;&nbsp; Flexible data mapping</a></li>
+<li class="level2"><a href="#sec3sec3">6.3 &nbsp;&nbsp; Flexible mapping of data onto threads</a></li>
 </ul>
 </li>
 <li class="level1"><a href="#sec7">(7) Contributors</a></li>
@@ -106,9 +106,9 @@ var searchBox = new SearchBox("searchBox", "search",false,'Search');
 </ul>
 </div>
 <div class="textblock"> 
-<a href="download_cub.html"><img src="download-icon.png" style="position:relative; bottom:-10px; border:0px;"/></a>
+<a href="http://research.nvidia.com"><img src="nvresearch.png" style="position:relative; bottom:-10px; border:0px;"/></a>
 &nbsp;&nbsp;
-<a href="download_cub.html"><em>Download CUB!</em></a>
+<a href="http://research.nvidia.com"><em>NVIDIA Research</em></a>
 <br>
 <a href="https://github.com/NVlabs/cub"><img src="github-icon-747d8b799a48162434b2c0595ba1317e.png" style="position:relative; bottom:-10px; border:0px;"/></a>
 &nbsp;&nbsp;
@@ -117,45 +117,60 @@ var searchBox = new SearchBox("searchBox", "search",false,'Search');
 <a href="http://groups.google.com/group/cub-users"><img src="groups-icon.png" style="position:relative; bottom:-10px; border:0px;"/></a>
 &nbsp;&nbsp;
 <a href="http://groups.google.com/group/cub-users"><em>Join the cub-users discussion forum!</em></a>
+<br>
+<a href="download_cub.html"><img src="download-icon.png" style="position:relative; bottom:-10px; border:0px;"/></a>
+&nbsp;&nbsp;
+<a href="download_cub.html"><em>Download CUB!</em></a>
 <h1><a class="anchor" id="sec0"></a>
 (1) What is CUB?</h1>
-<dl class="section user"><dt></dt><dd>CUB is a library of high-performance parallel primitives and other utilities for constructing CUDA kernel software. CUB enhances productivity, performance, and portability by providing an abstraction layer over complex <a href="http://docs.nvidia.com/cuda/cuda-c-programming-guide/index.html#programming-model">block-level</a>, <a href="http://docs.nvidia.com/cuda/cuda-c-programming-guide/index.html#hardware-implementation">warp-level</a>, and <a href="http://docs.nvidia.com/cuda/cuda-c-programming-guide/index.html#programming-model">thread-level</a> operations.</dd></dl>
-<dl class="section user"><dt></dt><dd>CUB's primitives are not bound to any particular width of parallelism or to any particular data type. This allows them to be flexible and tunable to fit your kernels' needs. Thus CUB is <a href="index.html"><em>CUDA Unbound</em></a>.</dd></dl>
-<div class="image">
-<img src="cub_overview.png" alt="cub_overview.png"/>
-</div>
-<dl class="section user"><dt></dt><dd>Browse our collections of:<ul>
-<li><a href="group___simt_coop.html"><b>Cooperative primitives</b></a>, including:<ul>
-<li>Thread block operations (e.g., radix sort, prefix scan, reduction, etc.)</li>
-<li>Warp operations (e.g., prefix scan)</li>
+<dl class="section user"><dt></dt><dd><b><em>Overview</em></b>. CUB is an open-source library of high performance primitives and utilities for constructing CUDA software. CUB provides reusable software components for every layer of execution within the CUDA programming model:<ul>
+<li><a href="group___device_module.html"><b><em>Device-wide primitives</em></b></a><ul>
+<li>Global histogram, reduction, etc. (More coming soon..)</li>
+<li>Compatible with CUDA dynamic/nested parallelism</li>
 </ul>
 </li>
-<li><a href="group___simt_utils.html"><b>SIMT utilities</b></a>, including:<ul>
-<li>Tile-based I/O utilities (e.g., for performing {vectorized, coalesced} data movement of {blocked, striped} data tiles)</li>
-<li>Low-level thread I/O using cache-modifiers</li>
-<li>Abstractions for thread block work distribution (e.g., work-stealing, even-share, etc.)</li>
+<li><a href="group___block_module.html"><b><em>Block-wide primitives</em></b></a><ul>
+<li>Local radix sort, prefix scan, histogram, reduction, I/O, etc.</li>
+<li>Compatible with arbitrary thread block sizes</li>
 </ul>
 </li>
-<li><a href="group___host_util.html"><b>Host utilities</b></a>, including:<ul>
-<li>Caching allocator for quick management of device temporaries</li>
-<li>Device reflection</li>
+<li><a href="group___warp_module.html"><b><em>Warp-wide primitives</em></b></a><ul>
+<li>Local prefix scan, reduction, etc.</li>
+</ul>
+</li>
+<li><a href="group___thread_module.html"><b><em>Thread</em></b></a>, <a href="group___grid_module.html"><b><em>grid dispatch</em></b></a>, and <a href="group___thread_module.html"><b><em>resource utilities</em></b></a><ul>
+<li>PTX intrinsics, device reflection, work distribution, caching memory allocators, etc.</li>
 </ul>
 </li>
 </ul>
 </dd></dl>
+<dl class="section user"><dt></dt><dd><b><em>Motivation</em></b>. CUB is inspired by the following goals:<ul>
+<li><em>Absolute performance</em>. CUB primitives are specialized and tuned to best match the features and capabilities of every CUDA architecture.</li>
+<li><em>Enhanced programmer productivity</em>. CUB primitives allow developers to quickly string together sequences of complex parallel operations at all levels of execution.</li>
+<li><em>Reduced maintenance burden</em>. CUB provides layers of abstraction over the complexities of diverse CUDA hardware. With CUB, applications can enjoy performance-portability without the intensive rewriting or porting efforts typically needed to accommodate new device instructions or behavior.</li>
+</ul>
+</dd></dl>
+<dl class="section user"><dt></dt><dd><b><em>Collective primitives</em></b>. CUB is unique in that it provides cooperative block-level and warp-level parallel primitives. Unlike traditional library software components, these operations are <em>collective</em>, i.e., they are called by a group of parallel SIMT threads rather than by a single sequential thread. These collective primitives are not bound to any particular width of parallelism or to any particular data type. This allows them to be flexible and tunable to fit the needs of the enclosing kernel computation. </dd></dl>
+<dl class="section user"><dt></dt><dd>Thus CUB is <a href="index.html"><em>CUDA Unbound</em></a>.</dd></dl>
+<dl class="section user"><dt></dt><dd><div class="image">
+<img src="cub_overview.png" alt="cub_overview.png"/>
+</div>
+ <div class="centercaption">Orientation of <em>collective</em> CUB thread block primitives within the CUDA software stack</div></dd></dl>
 <h1><a class="anchor" id="sec2"></a>
 (2) Recent news</h1>
 <dl class="section user"><dt></dt><dd><table class="doxtable">
 <tr>
-<td>04/04/2013 </td><td style="white-space: nowrap"><a href="https://github.com/NVlabs/cub/archive/0.9.2.zip">CUB v0.9.2 Update Release</a> </td><td>Minor cosmetic, feature, and compilation updates. See the <a href="https://github.com/NVlabs/cub/blob/master/CHANGE_LOG.TXT">change-log</a> for further details.  </td></tr>
+<td>04/30/2013 </td><td style="white-space: nowrap"><a href="https://github.com/NVlabs/cub/archive/0.9.3.zip">CUB v0.9.3 (update release)</a> </td><td>Introduced several new device-wide and block-wide primitives, including 256-bin histogram. Misc. cosmetic and bug fixes. See the <a href="https://github.com/NVlabs/cub/blob/master/CHANGE_LOG.TXT">change-log</a> for further details.  </td></tr>
 <tr>
-<td>03/07/2013 </td><td style="white-space: nowrap"><a href="https://github.com/NVlabs/cub/archive/0.9.zip">CUB v0.9 Preview Release</a> </td><td>CUB is the first durable, high-performance library of cooperative threadblock, warp, and thread primitives for CUDA kernel programming. More primitives and examples coming soon!  </td></tr>
+<td>04/04/2013 </td><td style="white-space: nowrap"><a href="https://github.com/NVlabs/cub/archive/0.9.2.zip">CUB v0.9.2 (update release)</a> </td><td>Minor cosmetic, feature, and compilation updates. See the <a href="https://github.com/NVlabs/cub/blob/master/CHANGE_LOG.TXT">change-log</a> for further details.  </td></tr>
+<tr>
+<td>03/07/2013 </td><td style="white-space: nowrap"><a href="https://github.com/NVlabs/cub/archive/0.9.zip">CUB v0.9 ("preview" release)</a> </td><td>CUB is the first durable, high-performance library of cooperative threadblock, warp, and thread primitives for CUDA kernel programming. More primitives and examples coming soon!  </td></tr>
 </table>
 </dd></dl>
 <h1><a class="anchor" id="sec3"></a>
 (3) A simple example</h1>
 <dl class="section user"><dt></dt><dd>The following code snippet illustrates a simple CUDA kernel for sorting a thread block's data:</dd></dl>
-<dl class="section user"><dt></dt><dd><div class="fragment"><div class="line"><span class="preprocessor">#include &lt;cub.cuh&gt;</span></div>
+<dl class="section user"><dt></dt><dd><div class="fragment"><div class="line"><span class="preprocessor">#include &lt;<a class="code" href="cub_8cuh.html">cub/cub.cuh</a>&gt;</span></div>
 <div class="line"></div>
 <div class="line"><span class="comment">// An tile-sorting CUDA kernel</span></div>
 <div class="line"><span class="keyword">template</span> &lt;</div>
@@ -171,23 +186,23 @@ var searchBox = new SearchBox("searchBox", "search",false,'Search');
 <div class="line">     <span class="keyword">typedef</span> <a class="code" href="classcub_1_1_block_radix_sort.html" title="BlockRadixSort provides variants of parallel radix sorting across a CUDA threadblock. .">BlockRadixSort&lt;T, BLOCK_THREADS&gt;</a> BlockRadixSort;</div>
 <div class="line"></div>
 <div class="line">     <span class="comment">// Declare the shared memory needed by BlockRadixSort</span></div>
-<div class="line">     __shared__ <span class="keyword">typename</span> <a class="code" href="classcub_1_1_block_radix_sort.html#a495e63ab526ce35e6dfce9fb5206746c" title="The operations exposed by BlockRadixSort require shared memory of this type. This opaque storage can ...">BlockRadixSort::SmemStorage</a> smem_storage;</div>
+<div class="line">     __shared__ <span class="keyword">typename</span> <a class="code" href="classcub_1_1_block_radix_sort.html#ab42b81b7a6587ecaca18f232104b3f3c" title="The operations exposed by BlockRadixSort require shared memory of this type. This opaque storage can ...">BlockRadixSort::SmemStorage</a> smem_storage;</div>
 <div class="line"></div>
 <div class="line">     <span class="comment">// A segment of data items per thread</span></div>
 <div class="line">     T data[ITEMS_PER_THREAD];</div>
 <div class="line"></div>
 <div class="line">     <span class="comment">// Load a tile of data using vector-load instructions</span></div>
-<div class="line">     <a class="code" href="group___simt_utils.html#gaea8200ef976bb588c569e039ea79005c" title="Load a tile of items across a threadblock directly using the specified cache modifier.">BlockLoadVectorized</a>(data, d_in + (blockIdx.x * TILE_SIZE));</div>
+<div class="line">     <a class="code" href="group___block_module.html#gaea8200ef976bb588c569e039ea79005c" title="Load a tile of items across a threadblock directly using the specified cache modifier.">BlockLoadVectorized</a>(data, d_in + (blockIdx.x * TILE_SIZE));</div>
 <div class="line"></div>
 <div class="line">     <span class="comment">// Sort data in ascending order</span></div>
-<div class="line">     <a class="code" href="classcub_1_1_block_radix_sort.html#abdbfda59c129946222ab10d2e2e6f6f5" title="Performs a threadblock-wide radix sort over a blocked arrangement of keys.">BlockRadixSort::SortBlocked</a>(smem_storage, data);</div>
+<div class="line">     <a class="code" href="classcub_1_1_block_radix_sort.html#a779bfcd00c57f6b97cbbb8a0aafb616a" title="Performs a threadblock-wide radix sort over a blocked arrangement of keys.">BlockRadixSort::SortBlocked</a>(smem_storage, data);</div>
 <div class="line"></div>
 <div class="line">     <span class="comment">// Store the sorted tile using vector-store instructions</span></div>
-<div class="line">     <a class="code" href="group___simt_utils.html#ga013c3ab8214854f45e8d678958e7dde9" title="Store a tile of items across a threadblock directly using the specified cache modifier.">BlockStoreVectorized</a>(data, d_out + (blockIdx.x * TILE_SIZE));</div>
+<div class="line">     <a class="code" href="group___block_module.html#ga013c3ab8214854f45e8d678958e7dde9" title="Store a tile of items across a threadblock directly using the specified cache modifier.">BlockStoreVectorized</a>(data, d_out + (blockIdx.x * TILE_SIZE));</div>
 <div class="line">}</div>
 </div><!-- fragment --></dd></dl>
 <dl class="section user"><dt></dt><dd>The <a class="el" href="classcub_1_1_block_radix_sort.html" title="BlockRadixSort provides variants of parallel radix sorting across a CUDA threadblock. .">cub::BlockRadixSort</a> type performs a cooperative radix sort across the thread block's data items. Its implementation is parameterized by the number of threads per block and the aggregate data type <code>T</code> and is specialized for the underlying architecture.</dd></dl>
-<dl class="section user"><dt></dt><dd>Once instantiated, the <a class="el" href="classcub_1_1_block_radix_sort.html" title="BlockRadixSort provides variants of parallel radix sorting across a CUDA threadblock. .">cub::BlockRadixSort</a> type exposes an opaque <a class="el" href="classcub_1_1_block_radix_sort.html#a495e63ab526ce35e6dfce9fb5206746c" title="The operations exposed by BlockRadixSort require shared memory of this type. This opaque storage can ...">cub::BlockRadixSort::SmemStorage</a> member type. The thread block uses this storage type to allocate the shared memory needed by the primitive. This storage type can be aliased or <code>union</code>'d with other types so that the shared memory can be reused for other purposes.</dd></dl>
+<dl class="section user"><dt></dt><dd>Once instantiated, the <a class="el" href="classcub_1_1_block_radix_sort.html" title="BlockRadixSort provides variants of parallel radix sorting across a CUDA threadblock. .">cub::BlockRadixSort</a> type exposes an opaque <a class="el" href="classcub_1_1_block_radix_sort.html#ab42b81b7a6587ecaca18f232104b3f3c" title="The operations exposed by BlockRadixSort require shared memory of this type. This opaque storage can ...">cub::BlockRadixSort::SmemStorage</a> member type. The thread block uses this storage type to allocate the shared memory needed by the primitive. This storage type can be aliased or <code>union</code>'d with other types so that the shared memory can be reused for other purposes.</dd></dl>
 <dl class="section user"><dt></dt><dd>Furthermore, the kernel uses CUB's primitives for vectorizing global loads and stores. For example, lower-level <code>ld.global.v4.s32</code> <a href="http://docs.nvidia.com/cuda/parallel-thread-execution">PTX instructions</a> will be generated when <code>T</code> = <code>int</code> and <code>ITEMS_PER_THREAD</code> is a multiple of 4.</dd></dl>
 <h1><a class="anchor" id="sec4"></a>
 (4) Why do you need CUB?</h1>
@@ -202,14 +217,24 @@ var searchBox = new SearchBox("searchBox", "search",false,'Search');
 </dd></dl>
 <h1><a class="anchor" id="sec5"></a>
 (5) Where is CUB positioned in the CUDA ecosystem?</h1>
-<dl class="section user"><dt></dt><dd>CUDA's programming model embodies three different levels of program execution, each engendering its own abstraction layer in the CUDA software stack (i.e., the "black boxes" below):</dd></dl>
+<dl class="section user"><dt></dt><dd>The CUDA ecosystem engenders four different layers of software abstraction:</dd></dl>
 <table  border="0px" cellpadding="0px" cellspacing="0px">
+<tr>
+<td width="50%"><dl class="section user"><dt></dt><dd><b>Runtime-agnostic</b>. A single thread calls through a library interface to perform some data-parallel function. The use of any particular parallel or sequential computing backend (e.g., CUDA, TBB, OpenMP, etc.) is opaque to the caller. Although these libraries are not CUDA-specific, primitives such as those provided by CUB can be used to implement them. Examples include:<ul>
+<li><a href="http://thrust.github.com/"><b><em>Thrust</em></b></a></li>
+<li><a href="https://github.com/harrism/hemi"><b><em>Hemi</em></b></a></li>
+<li><a href="http://www.accelereyes.com/products/arrayfire"><b><em>ArrayFire</em></b></a>  </li>
+</ul>
+</dd></dl>
+</td><td width="50%"> 
+<a href="generic_abstraction.png"><img src="generic_abstraction.png" width="100%" border="0px"/></a>
+  </td></tr>
 <tr>
 <td width="50%"><dl class="section user"><dt></dt><dd><b>CUDA kernel</b>. A single CPU thread invokes a CUDA kernel to perform some data-parallel function. The incorporation of entire kernels (and their corresponding invocation stubs) into libraries is the most common form of code reuse for CUDA. Libraries of CUDA kernels include the following:<ul>
 <li><a href="https://developer.nvidia.com/cublas"><b><em>cuBLAS</em></b></a></li>
 <li><a href="https://developer.nvidia.com/cufft"><b><em>cuFF</em>T</b></a></li>
 <li><a href="https://developer.nvidia.com/cusparse"><b><em>cuSPARSE</em></b></a></li>
-<li><a href="http://thrust.github.com/"><b><em>Thrust</em></b></a>  </li>
+<li><a href="index.html"><b><em>CUB</em></b></a>  </li>
 </ul>
 </dd></dl>
 </td><td width="50%"> 
@@ -252,7 +277,7 @@ var searchBox = new SearchBox("searchBox", "search",false,'Search');
 <li>Tuning requirements (e.g., latency vs. throughput)</li>
 </ul>
 </dd></dl>
-<dl class="section user"><dt></dt><dd>To provide this flexibility, CUB is implemented as a C++ template library. C++ templates are a way to write generic algorithms and data structures. There is no need to build CUB separately. You simply <code>#include</code> the <code>cub.cuh</code> header file into your <code>.cu</code> CUDA C++ sources and compile with NVIDIA's <code>nvcc</code> compiler.</dd></dl>
+<dl class="section user"><dt></dt><dd>To provide this flexibility, CUB is implemented as a C++ template library. C++ templates are a way to write generic algorithms and data structures. There is no need to build CUB separately. You simply <code>#include</code> the <code><a class="el" href="cub_8cuh.html">cub.cuh</a></code> header file into your <code>.cu</code> CUDA C++ sources and compile with NVIDIA's <code>nvcc</code> compiler.</dd></dl>
 <h2><a class="anchor" id="sec3sec2"></a>
 6.2    Reflective type structure</h2>
 <dl class="section user"><dt></dt><dd>Cooperation within a thread block requires shared memory for communicating between threads. However, the specific size and layout of the memory needed by a given primitive will be specific to the details of its parallel execution context (e.g., how many threads are calling into it, how many items are processed per thread, etc.). Furthermore, this shared memory must be allocated outside of the component itself if it is to be reused elsewhere by the thread block.</dd></dl>
@@ -278,13 +303,13 @@ var searchBox = new SearchBox("searchBox", "search",false,'Search');
 </ul>
 </dd></dl>
 <h2><a class="anchor" id="sec3sec3"></a>
-6.3    Flexible data mapping</h2>
+6.3    Flexible mapping of data onto threads</h2>
 <dl class="section user"><dt></dt><dd>We often design kernels such that each thread block is assigned a "tile" of data items for processing.</dd></dl>
 <dl class="section user"><dt></dt><dd><div class="image">
 <img src="tile.png" alt="tile.png"/>
 </div>
  <div class="centercaption">Tile of eight ordered data items</div></dd></dl>
-<dl class="section user"><dt></dt><dd>When the tile size equals the thread block size, the mapping of data onto threads is straightforward (one datum per thread). However, there are often performance advantages for processing more than one datum per thread. For these scenarios, CUB primitives support the following alternatives for partitioning data items across the block of threads:</dd></dl>
+<dl class="section user"><dt></dt><dd>When the tile size equals the thread block size, the mapping of data onto threads is straightforward (one datum per thread). However, there are often performance advantages for processing more than one datum per thread. For these scenarios, CUB primitives will specify which of the following partitioning alternatives they accommodate:</dd></dl>
 <table  border="0px" cellpadding="0px" cellspacing="0px">
 <tr>
 <td><dl class="section user"><dt></dt><dd><ul>
@@ -351,7 +376,7 @@ var searchBox = new SearchBox("searchBox", "search",false,'Search');
 <!-- HTML footer for doxygen 1.8.3.1-->
 <!-- start footer part -->
 <hr class="footer"/><address class="footer"><small>
-Generated on Thu Apr 4 2013 11:10:44 for CUB by &#160;<a href="http://www.doxygen.org/index.html">
+Generated on Wed May 1 2013 05:53:44 for CUB by &#160;<a href="http://www.doxygen.org/index.html">
 <img class="footer" src="doxygen.png" alt="doxygen"/>
 </a> 1.8.3.1
 <br>
