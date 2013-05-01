@@ -59,7 +59,7 @@
  * software components for every layer of execution within the CUDA programming 
  * model:
  * - [<b><em>Device-wide primitives</em></b>] (group___device_module.html) 
- *   - Global histogram, reduction, etc.  
+ *   - Global histogram, reduction, etc.  (More coming soon..)  
  *   - Compatible with CUDA dynamic/nested parallelism
  * - [<b><em>Block-wide primitives</em></b>] (group___block_module.html)
  *   - Local radix sort, prefix scan, histogram, reduction, I/O, etc.
