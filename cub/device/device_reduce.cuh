@@ -303,32 +303,32 @@ struct DeviceReduce
             if (ptx_version >= 350)
             {
                 typedef TunedPolicies<T, SizeT, 350> TunedPolicies;
-                multi_block_dispatch_params.Init<TunedPolicies::MultiBlockPolicy>(TunedPolicies::SUBSCRIPTION_FACTOR);
-                single_block_dispatch_params.Init<TunedPolicies::SingleBlockPolicy >();
+                multi_block_dispatch_params.Init<typename TunedPolicies::MultiBlockPolicy>(TunedPolicies::SUBSCRIPTION_FACTOR);
+                single_block_dispatch_params.Init<typename TunedPolicies::SingleBlockPolicy >();
             }
             else if (ptx_version >= 300)
             {
                 typedef TunedPolicies<T, SizeT, 300> TunedPolicies;
-                multi_block_dispatch_params.Init<TunedPolicies::MultiBlockPolicy>(TunedPolicies::SUBSCRIPTION_FACTOR);
-                single_block_dispatch_params.Init<TunedPolicies::SingleBlockPolicy >();
+                multi_block_dispatch_params.Init<typename TunedPolicies::MultiBlockPolicy>(TunedPolicies::SUBSCRIPTION_FACTOR);
+                single_block_dispatch_params.Init<typename TunedPolicies::SingleBlockPolicy >();
             }
             else if (ptx_version >= 200)
             {
                 typedef TunedPolicies<T, SizeT, 200> TunedPolicies;
-                multi_block_dispatch_params.Init<TunedPolicies::MultiBlockPolicy>(TunedPolicies::SUBSCRIPTION_FACTOR);
-                single_block_dispatch_params.Init<TunedPolicies::SingleBlockPolicy >();
+                multi_block_dispatch_params.Init<typename TunedPolicies::MultiBlockPolicy>(TunedPolicies::SUBSCRIPTION_FACTOR);
+                single_block_dispatch_params.Init<typename TunedPolicies::SingleBlockPolicy >();
             }
             else if (ptx_version >= 130)
             {
                 typedef TunedPolicies<T, SizeT, 130> TunedPolicies;
-                multi_block_dispatch_params.Init<TunedPolicies::MultiBlockPolicy>(TunedPolicies::SUBSCRIPTION_FACTOR);
-                single_block_dispatch_params.Init<TunedPolicies::SingleBlockPolicy >();
+                multi_block_dispatch_params.Init<typename TunedPolicies::MultiBlockPolicy>(TunedPolicies::SUBSCRIPTION_FACTOR);
+                single_block_dispatch_params.Init<typename TunedPolicies::SingleBlockPolicy >();
             }
             else
             {
                 typedef TunedPolicies<T, SizeT, 100> TunedPolicies;
-                multi_block_dispatch_params.Init<TunedPolicies::MultiBlockPolicy>(TunedPolicies::SUBSCRIPTION_FACTOR);
-                single_block_dispatch_params.Init<TunedPolicies::SingleBlockPolicy >();
+                multi_block_dispatch_params.Init<typename TunedPolicies::MultiBlockPolicy>(TunedPolicies::SUBSCRIPTION_FACTOR);
+                single_block_dispatch_params.Init<typename TunedPolicies::SingleBlockPolicy >();
             }
         }
     };
@@ -365,7 +365,7 @@ struct DeviceReduce
         do
         {
             if (stream_synchronous) CubLog("Invoking ReduceSingle<<<1, %d, 0, %d>>>(), %d items per thread\n",
-                single_block_dispatch_params.block_threads, stream, single_block_dispatch_params.items_per_thread);
+                single_block_dispatch_params.block_threads, (int) stream, single_block_dispatch_params.items_per_thread);
 
             // Invoke ReduceSingle
             single_block_kernel<<<1, single_block_dispatch_params.block_threads>>>(
@@ -495,7 +495,7 @@ struct DeviceReduce
                 #ifndef __CUDA_ARCH__
 
                     // We're on the host, so prepare queue on device (because its faster than if we prepare it here)
-                    if (stream_synchronous) CubLog("Invoking prepare_drain_kernel<<<1, 1, 0, %d>>>()\n", stream);
+                    if (stream_synchronous) CubLog("Invoking prepare_drain_kernel<<<1, 1, 0, %d>>>()\n", (int) stream);
 
                     prepare_drain_kernel<<<1, 1, 0, stream>>>(queue, num_items);
 
@@ -505,7 +505,7 @@ struct DeviceReduce
                 #else
 
                     // Prepare the queue here
-                    grid_queue.ResetDrain(num_items);
+                    queue.ResetDrain(num_items);
 
                 #endif
                 }
@@ -517,7 +517,7 @@ struct DeviceReduce
 
             // Invoke MultiBlockReduce
             if (stream_synchronous) CubLog("Invoking multi_block_kernel<<<%d, %d, 0, %d>>>(), %d items per thread, %d SM occupancy\n",
-                multi_grid_size, multi_block_dispatch_params.block_threads, stream, multi_block_dispatch_params.items_per_thread, multi_sm_occupancy);
+                multi_grid_size, multi_block_dispatch_params.block_threads, (int) stream, multi_block_dispatch_params.items_per_thread, multi_sm_occupancy);
 
             multi_block_kernel<<<multi_grid_size, multi_block_dispatch_params.block_threads, 0, stream>>>(
                 d_in,
@@ -537,7 +537,7 @@ struct DeviceReduce
 
             // Invoke SingleBlockReduce
             if (stream_synchronous) CubLog("Invoking single_block_kernel<<<%d, %d, 0, %d>>>(), %d items per thread\n",
-                1, single_block_dispatch_params.block_threads, stream, single_block_dispatch_params.items_per_thread);
+                1, single_block_dispatch_params.block_threads, (int) stream, single_block_dispatch_params.items_per_thread);
 
             single_block_kernel<<<1, single_block_dispatch_params.block_threads, 0, stream>>>(
                 d_block_partials,

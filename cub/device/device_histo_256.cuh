@@ -38,6 +38,8 @@
 #include <iterator>
 
 #include "tiles/tiles_histo_256.cuh"
+#include "../block/block_load.cuh"
+#include "../thread/thread_reduce.cuh"
 #include "../util_allocator.cuh"
 #include "../grid/grid_even_share.cuh"
 #include "../grid/grid_queue.cuh"
@@ -143,12 +145,15 @@ __global__ void FinalizeHisto256Kernel(
     // Accumulate threadblock-histograms from the channel
     HistoCounter bin_aggregate = 0;
 
-    HistoCounter *d_block_channel_histograms = d_block_histograms_linear + (blockIdx.x * num_threadblocks * 256);
+    int block_offset = blockIdx.x * (num_threadblocks * 256);
+    int block_oob = block_offset + (num_threadblocks * 256);
 
     #pragma unroll 32
-    for (int block = 0; block < num_threadblocks; ++block)
+    while (block_offset < block_oob)
     {
-        bin_aggregate += d_block_channel_histograms[(block * 256) + threadIdx.x];
+        bin_aggregate += d_block_histograms_linear[block_offset + threadIdx.x];
+
+        block_offset += 256;
     }
 
     // Output
@@ -174,6 +179,7 @@ __global__ void FinalizeHisto256Kernel(
 struct DeviceHisto256
 {
 #ifndef DOXYGEN_SHOULD_SKIP_THIS    // Do not document
+
 
     /// Generic structure for encapsulating dispatch properties.  Mirrors the constants within TilesHisto256Policy.
     struct KernelDispachParams
@@ -228,9 +234,11 @@ struct DeviceHisto256
     struct TunedPolicies<CHANNELS, ACTIVE_CHANNELS, BLOCK_ALGORITHM, 350>
     {
         typedef TilesHisto256Policy<
-            128, 25, BLOCK_ALGORITHM,
+            128, 
+            (BLOCK_ALGORITHM == BLOCK_BYTE_HISTO_SORT) ? 23 : 29, 
+            BLOCK_ALGORITHM,
             (BLOCK_ALGORITHM == BLOCK_BYTE_HISTO_SORT) ? GRID_MAPPING_DYNAMIC : GRID_MAPPING_EVEN_SHARE> MultiBlockPolicy;
-        enum { SUBSCRIPTION_FACTOR = 4 };
+        enum { SUBSCRIPTION_FACTOR = 7 };
     };
 
     /// SM20 tune
@@ -238,7 +246,9 @@ struct DeviceHisto256
     struct TunedPolicies<CHANNELS, ACTIVE_CHANNELS, BLOCK_ALGORITHM, 200>
     {
         typedef TilesHisto256Policy<
-            128, 17, BLOCK_ALGORITHM,
+            128, 
+            17, 
+            BLOCK_ALGORITHM,
             (BLOCK_ALGORITHM == BLOCK_BYTE_HISTO_SORT) ? GRID_MAPPING_DYNAMIC : GRID_MAPPING_EVEN_SHARE> MultiBlockPolicy;
         enum { SUBSCRIPTION_FACTOR = 3 };
     };
@@ -248,7 +258,9 @@ struct DeviceHisto256
     struct TunedPolicies<CHANNELS, ACTIVE_CHANNELS, BLOCK_ALGORITHM, 100>
     {
         typedef TilesHisto256Policy<
-            128, 7, BLOCK_ALGORITHM,
+            128, 
+            7, 
+            BLOCK_ALGORITHM,
             (BLOCK_ALGORITHM == BLOCK_BYTE_HISTO_SORT) ? GRID_MAPPING_DYNAMIC : GRID_MAPPING_EVEN_SHARE> MultiBlockPolicy;
         enum { SUBSCRIPTION_FACTOR = 2 };
     };
@@ -284,17 +296,17 @@ struct DeviceHisto256
             if (ptx_version >= 350)
             {
                 typedef TunedPolicies<CHANNELS, ACTIVE_CHANNELS, BLOCK_ALGORITHM, 350> TunedPolicies;
-                multi_block_dispatch_params.Init<TunedPolicies::MultiBlockPolicy>(TunedPolicies::SUBSCRIPTION_FACTOR);
+                multi_block_dispatch_params.Init<typename TunedPolicies::MultiBlockPolicy>(TunedPolicies::SUBSCRIPTION_FACTOR);
             }
             else if (ptx_version >= 200)
             {
                 typedef TunedPolicies<CHANNELS, ACTIVE_CHANNELS, BLOCK_ALGORITHM, 200> TunedPolicies;
-                multi_block_dispatch_params.Init<TunedPolicies::MultiBlockPolicy>(TunedPolicies::SUBSCRIPTION_FACTOR);
+                multi_block_dispatch_params.Init<typename TunedPolicies::MultiBlockPolicy>(TunedPolicies::SUBSCRIPTION_FACTOR);
             }
             else
             {
                 typedef TunedPolicies<CHANNELS, ACTIVE_CHANNELS, BLOCK_ALGORITHM, 100> TunedPolicies;
-                multi_block_dispatch_params.Init<TunedPolicies::MultiBlockPolicy>(TunedPolicies::SUBSCRIPTION_FACTOR);
+                multi_block_dispatch_params.Init<typename TunedPolicies::MultiBlockPolicy>(TunedPolicies::SUBSCRIPTION_FACTOR);
             }
         }
     };
@@ -319,7 +331,7 @@ struct DeviceHisto256
     static cudaError_t Dispatch(
         MultiBlockHisto256KernelPtr     multi_block_kernel_ptr,                             ///< [in] Kernel function pointer to parameterization of cub::MultiBlockHisto256Kernel
         FinalizeHisto256KernelPtr       finalize_kernel_ptr,                                ///< [in] Kernel function pointer to parameterization of cub::FinalizeHisto256Kernel
-        ResetDrainKernelPtr           prepare_drain_kernel_ptr,                           ///< [in] Kernel function pointer to parameterization of cub::ResetDrainKernel
+        ResetDrainKernelPtr             prepare_drain_kernel_ptr,                           ///< [in] Kernel function pointer to parameterization of cub::ResetDrainKernel
         KernelDispachParams             &multi_block_dispatch_params,                       ///< [in] Dispatch parameters that match the policy that \p multi_block_kernel_ptr was compiled for
         InputIteratorRA                 d_samples,                                          ///< [in] Input samples to histogram
         HistoCounter                    *(&d_histograms)[ACTIVE_CHANNELS],                  ///< [out] Array of channel histograms, each having 256 counters of integral type \p HistoCounter.
@@ -396,7 +408,7 @@ struct DeviceHisto256
             #ifndef __CUDA_ARCH__
 
                 // We're on the host, so prepare queue on device (because its faster than if we prepare it here)
-                if (stream_synchronous) CubLog("Invoking prepare_drain_kernel_ptr<<<1, 1, 0, %d>>>()\n", stream);
+                if (stream_synchronous) CubLog("Invoking prepare_drain_kernel_ptr<<<1, 1, 0, %d>>>()\n", (int) stream);
                 prepare_drain_kernel_ptr<<<1, 1, 0, stream>>>(queue, num_samples);
 
                 // Sync the stream on the host
@@ -405,7 +417,7 @@ struct DeviceHisto256
             #else
 
                 // Prepare the queue here
-                grid_queue.ResetDrain(num_samples);
+                queue.ResetDrain(num_samples);
 
             #endif
 
@@ -429,7 +441,7 @@ struct DeviceHisto256
 
             // Invoke MultiBlockHisto256
             if (stream_synchronous) CubLog("Invoking multi_block_kernel_ptr<<<%d, %d, 0, %d>>>(), %d items per thread, %d SM occupancy\n",
-                multi_grid_size, multi_block_dispatch_params.block_threads, stream, multi_block_dispatch_params.items_per_thread, multi_sm_occupancy);
+                multi_grid_size, multi_block_dispatch_params.block_threads, (int) stream, multi_block_dispatch_params.items_per_thread, multi_sm_occupancy);
 
             if (multi_grid_size == 1)
             {
@@ -474,7 +486,7 @@ struct DeviceHisto256
                 #endif
 
                 if (stream_synchronous) CubLog("Invoking finalize_kernel_ptr<<<%d, %d, 0, %d>>>()\n",
-                    ACTIVE_CHANNELS, 256, stream);
+                    ACTIVE_CHANNELS, 256, (int) stream);
 
                 finalize_kernel_ptr<<<ACTIVE_CHANNELS, 256, 0, stream>>>(
                     d_block_histograms_linear,
