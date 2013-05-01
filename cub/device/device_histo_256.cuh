@@ -235,7 +235,7 @@ struct DeviceHisto256
     {
         typedef TilesHisto256Policy<
             128, 
-            (BLOCK_ALGORITHM == BLOCK_BYTE_HISTO_SORT) ? 23 : 29, 
+            (BLOCK_ALGORITHM == BLOCK_BYTE_HISTO_SORT) ? 23 : (30 / ACTIVE_CHANNELS),
             BLOCK_ALGORITHM,
             (BLOCK_ALGORITHM == BLOCK_BYTE_HISTO_SORT) ? GRID_MAPPING_DYNAMIC : GRID_MAPPING_EVEN_SHARE> MultiBlockPolicy;
         enum { SUBSCRIPTION_FACTOR = 7 };
@@ -247,7 +247,7 @@ struct DeviceHisto256
     {
         typedef TilesHisto256Policy<
             128, 
-            17, 
+            (BLOCK_ALGORITHM == BLOCK_BYTE_HISTO_SORT) ? 17 : (21 / ACTIVE_CHANNELS),
             BLOCK_ALGORITHM,
             (BLOCK_ALGORITHM == BLOCK_BYTE_HISTO_SORT) ? GRID_MAPPING_DYNAMIC : GRID_MAPPING_EVEN_SHARE> MultiBlockPolicy;
         enum { SUBSCRIPTION_FACTOR = 3 };
@@ -436,8 +436,10 @@ struct DeviceHisto256
                 d_histo_wrapper.array[CHANNEL] = d_histograms[CHANNEL];
             }
 
-            // Bind texture
+        #ifndef __CUDA_ARCH__
+            // Host can bind texture if the iterator supports it
             if (CubDebug(error = BindIteratorTexture(d_samples))) break;
+        #endif // __CUDA_ARCH__
 
             // Invoke MultiBlockHisto256
             if (stream_synchronous) CubLog("Invoking multi_block_kernel_ptr<<<%d, %d, 0, %d>>>(), %d items per thread, %d SM occupancy\n",
@@ -511,7 +513,9 @@ struct DeviceHisto256
         if (multi_block_dispatch_params.grid_mapping == GRID_MAPPING_DYNAMIC) error = CubDebug(queue.Free(device_allocator));
 
         // Unbind texture
+    #ifndef __CUDA_ARCH__
         error = CubDebug(UnbindIteratorTexture(d_samples));
+    #endif // __CUDA_ARCH__
 
         return error;
 

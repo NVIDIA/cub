@@ -198,7 +198,6 @@ struct TexIteratorRef
 template <typename Value>
 typename TexIteratorRef<Value>::TexRef TexIteratorRef<Value>::ref = 0;
 
-
 } // Anonymous namespace
 
 
@@ -216,12 +215,12 @@ template <
     bool HAS_TEX_BINDING = HasTexBinding<InputIteratorRA>::VALUE>
 struct TexIteratorBinder
 {
-    static __host__ __device__ __forceinline__ cudaError_t Bind(InputIteratorRA d_itr)
+    static cudaError_t Bind(InputIteratorRA d_itr)
     {
         return d_itr.BindTexture();
     }
 
-    static __host__ __device__ __forceinline__ cudaError_t Unbind(InputIteratorRA d_itr)
+    static cudaError_t Unbind(InputIteratorRA d_itr)
     {
         return d_itr.UnindTexture();
     }
@@ -231,12 +230,12 @@ struct TexIteratorBinder
 template <typename InputIteratorRA>
 struct TexIteratorBinder<InputIteratorRA, false>
 {
-    static __host__ __device__ __forceinline__ cudaError_t Bind(InputIteratorRA d_itr)
+    static cudaError_t Bind(InputIteratorRA d_itr)
     {
         return cudaSuccess;
     }
 
-    static __host__ __device__ __forceinline__ cudaError_t Unbind(InputIteratorRA d_itr)
+    static cudaError_t Unbind(InputIteratorRA d_itr)
     {
         return cudaSuccess;
     }
@@ -244,14 +243,14 @@ struct TexIteratorBinder<InputIteratorRA, false>
 
 /// Bind iterator texture if supported (otherwise do nothing)
 template <typename InputIteratorRA>
-__host__ __device__ __forceinline__ cudaError_t BindIteratorTexture(InputIteratorRA d_itr)
+__host__ cudaError_t BindIteratorTexture(InputIteratorRA d_itr)
 {
     return TexIteratorBinder<InputIteratorRA>::Bind(d_itr);
 }
 
 /// Unbind iterator texture if supported (otherwise do nothing)
 template <typename InputIteratorRA>
-__host__ __device__ __forceinline__ cudaError_t UnbindIteratorTexture(InputIteratorRA d_itr)
+__host__ cudaError_t UnbindIteratorTexture(InputIteratorRA d_itr)
 {
     return TexIteratorBinder<InputIteratorRA>::Bind(d_itr);
 }
@@ -310,32 +309,16 @@ public:
         offset(0) {}
 
     /// \brief Bind iterator to texture reference
-    __host__ __forceinline__ cudaError_t BindTexture()
+    cudaError_t BindTexture()
     {
-#if (CUB_PTX_ARCH == 0)
         return TexIteratorRef<T>::BindTexture(ptr, offset);
-#elif (CUB_PTX_ARCH >= 350)
-        // We will just use LDG
-        return cudaSuccess;
-#else
-        // Texture binding not supported from this device
-        return CubDebug(cudaErrorInvalidConfiguration);
-#endif
     }
 
 
     /// \brief Unbind iterator to texture reference
-    __host__ __forceinline__ cudaError_t UnbindTexture()
+    cudaError_t UnbindTexture()
     {
-#if (CUB_PTX_ARCH == 0)
         return TexIteratorRef<T>::UnbindTexture();
-#elif (CUB_PTX_ARCH >= 350)
-        // We will just use LDG
-        return cudaSuccess;
-#else
-        // Texture binding not supported from this device
-        return CubDebug(cudaErrorInvalidConfiguration);
-#endif
     }
 
 #ifndef DOXYGEN_SHOULD_SKIP_THIS    // Do not document
@@ -485,31 +468,15 @@ public:
         offset(0) {}
 
     /// \brief Bind iterator to texture reference
-    __host__ __forceinline__ cudaError_t BindTexture()
+    cudaError_t BindTexture()
     {
-#if (CUB_PTX_ARCH == 0)
         return TexIteratorRef<InputType>::BindTexture(ptr, offset);
-#elif (CUB_PTX_ARCH >= 350)
-        // We will just use LDG
-        return cudaSuccess;
-#else
-        // Texture binding not supported from this device
-        return CubDebug(cudaErrorInvalidConfiguration);
-#endif
     }
 
     /// \brief Unbind iterator to texture reference
-    __host__ __forceinline__ cudaError_t UnbindTexture()
+    cudaError_t UnbindTexture()
     {
-#if (CUB_PTX_ARCH == 0)
         return TexIteratorRef<InputType>::UnbindTexture();
-#elif (CUB_PTX_ARCH >= 350)
-        // We will just use LDG
-        return cudaSuccess;
-#else
-        // Texture binding not supported from this device
-        return CubDebug(cudaErrorInvalidConfiguration);
-#endif
     }
 
 #ifndef DOXYGEN_SHOULD_SKIP_THIS    // Do not document
@@ -534,12 +501,12 @@ public:
 #if (CUB_PTX_ARCH == 0)
         // Simply dereference the pointer on the host
         return conversion_op(*ptr);
-#elif (CUB_PTX_ARCH < 350)
-        // Use the texture reference
-        return conversion_op(tex1Dfetch(TexIteratorRef<InputType>::ref, offset));
-#else
+/*#elif (CUB_PTX_ARCH <= 350)
         // Use LDG
         return conversion_op(ThreadLoad<PTX_LOAD_LDG>(ptr));
+*/#else
+        // Use the texture reference
+        return conversion_op(tex1Dfetch(TexIteratorRef<InputType>::ref, offset));
 #endif
     }
 
@@ -565,12 +532,12 @@ public:
 #if (CUB_PTX_ARCH == 0)
         // Simply dereference the pointer on the host
         return conversion_op(ptr[n]);
-#elif (CUB_PTX_ARCH < 350)
-        // Use the texture reference
-        return conversion_op(tex1Dfetch(TexIteratorRef<InputType>::ref, offset + n));
-#else
+/*#elif (CUB_PTX_ARCH >= 350)
         // Use LDG
         return conversion_op(ThreadLoad<PTX_LOAD_LDG>(ptr + n));
+*/#else
+        // Use the texture reference
+        return conversion_op(tex1Dfetch(TexIteratorRef<InputType>::ref, offset + n));
 #endif
     }
 
@@ -579,12 +546,12 @@ public:
 #if (CUB_PTX_ARCH == 0)
         // Simply dereference the pointer on the host
         return &conversion_op(*ptr);
-#elif (CUB_PTX_ARCH < 350)
-        // Use the texture reference
-        return &conversion_op(tex1Dfetch(TexIteratorRef<InputType>::ref, offset));
-#else
+/*#elif (CUB_PTX_ARCH >= 350)
         // Use LDG
         return &conversion_op(ThreadLoad<PTX_LOAD_LDG>(ptr));
+*/#else
+        // Use the texture reference
+        return &conversion_op(tex1Dfetch(TexIteratorRef<InputType>::ref, offset));
 #endif
     }
 
