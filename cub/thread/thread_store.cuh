@@ -35,17 +35,18 @@
 
 #include <cuda.h>
 
-#include "../ptx_intrinsics.cuh"
-#include "../type_utils.cuh"
-#include "../ns_wrapper.cuh"
+#include "../util_ptx.cuh"
+#include "../util_type.cuh"
+#include "../util_namespace.cuh"
 
+/// Optional outer namespace(s)
 CUB_NS_PREFIX
 
 /// CUB namespace
 namespace cub {
 
 /**
- * \addtogroup SimtUtils
+ * \addtogroup ThreadModule
  * @{
  */
 
@@ -72,12 +73,12 @@ enum PtxStoreModifier
 
 
 /**
- * \name Thread utilities for memory I/O using PTX cache modifiers
+ * \name I/O using PTX cache modifiers
  * @{
  */
 
 
-/** \cond INTERNAL */
+#ifndef DOXYGEN_SHOULD_SKIP_THIS    // Do not document
 
 //-----------------------------------------------------------------------------
 // Generic ThreadStore() operation
@@ -87,7 +88,7 @@ enum PtxStoreModifier
  * Define HasThreadStore structure for testing the presence of nested
  * ThreadStoreTag type names within data types
  */
-CUB_HAS_NESTED_TYPE(HasThreadStore, ThreadStoreTag)
+CUB_DEFINE_DETECT_NESTED_TYPE(HasThreadStore, ThreadStoreTag)
 
 
 /**
@@ -104,8 +105,8 @@ template <PtxStoreModifier MODIFIER>
 struct ThreadStoreDispatch<MODIFIER, true>
 {
     // Iterator
-    template <typename OutputIterator, typename T>
-    static __device__ __forceinline__ void ThreadStore(OutputIterator itr, const T& val)
+    template <typename OutputIteratorRA, typename T>
+    static __device__ __forceinline__ void ThreadStore(OutputIteratorRA itr, const T& val)
     {
         val.ThreadStore<MODIFIER>(itr);
     }
@@ -120,9 +121,9 @@ struct ThreadStoreDispatch<PTX_STORE_NONE, false>
 {
     // Iterator
     template <
-        typename OutputIterator,
+        typename OutputIteratorRA,
         typename T>
-    static __device__ __forceinline__ void ThreadStore(OutputIterator itr, const T& val)
+    static __device__ __forceinline__ void ThreadStore(OutputIteratorRA itr, const T& val)
     {
         // Straightforward dereference
         *itr = val;
@@ -138,9 +139,9 @@ struct ThreadStoreDispatch<PTX_STORE_VS, false>
 {
     // Iterator
     template <
-        typename OutputIterator,
+        typename OutputIteratorRA,
         typename T>
-    static __device__ __forceinline__ void ThreadStore(OutputIterator itr, const T& val)
+    static __device__ __forceinline__ void ThreadStore(OutputIteratorRA itr, const T& val)
     {
         const bool USE_VOLATILE = NumericTraits<T>::PRIMITIVE;
 
@@ -155,7 +156,7 @@ struct ThreadStoreDispatch<PTX_STORE_VS, false>
 };
 
 
-/** \endcond */     // INTERNAL
+#endif // DOXYGEN_SHOULD_SKIP_THIS
 
 
 /**
@@ -167,7 +168,7 @@ struct ThreadStoreDispatch<PTX_STORE_VS, false>
  * For example:
  * \par
  * \code
- * #include <cub.cuh>
+ * #include <cub/cub.cuh>
  *
  * // 32-bit store using cache-global modifier:
  * int *d_out;
@@ -194,16 +195,15 @@ struct ThreadStoreDispatch<PTX_STORE_VS, false>
  */
 template <
     PtxStoreModifier MODIFIER,
-    typename OutputIterator,
+    typename OutputIteratorRA,
     typename T>
-__device__ __forceinline__ void ThreadStore(OutputIterator itr, const T& val)
+__device__ __forceinline__ void ThreadStore(OutputIteratorRA itr, const T& val)
 {
     ThreadStoreDispatch<MODIFIER, HasThreadLoad<T>::VALUE>::ThreadStore(itr, val);
 }
 
 
-// Do not document specializations
-#ifndef DOXYGEN_SHOULD_SKIP_THIS
+#ifndef DOXYGEN_SHOULD_SKIP_THIS    // Do not document
 
 //-----------------------------------------------------------------------------
 // ThreadStore() specializations by modifier and data type (i.e., primitives
@@ -488,10 +488,10 @@ CUB_STORES_4L(double4, double2);
 #endif // DOXYGEN_SHOULD_SKIP_THIS
 
 
-//@}
+//@}  end member group
 
-/** @} */       // end of SimtUtils group
+/** @} */       // end group ThreadModule
 
 
-} // namespace cub
-CUB_NS_POSTFIX
+}               // CUB namespace
+CUB_NS_POSTFIX  // Optional outer namespace(s)

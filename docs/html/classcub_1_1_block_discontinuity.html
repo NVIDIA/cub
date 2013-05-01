@@ -74,8 +74,6 @@ var searchBox = new SearchBox("searchBox", "search",false,'Search');
     <ul class="tablist">
       <li><a href="annotated.html"><span>Class&#160;List</span></a></li>
       <li><a href="classes.html"><span>Class&#160;Index</span></a></li>
-      <li><a href="hierarchy.html"><span>Class&#160;Hierarchy</span></a></li>
-      <li><a href="functions.html"><span>Class&#160;Members</span></a></li>
     </ul>
   </div>
 <!-- window showing the filter options -->
@@ -83,7 +81,7 @@ var searchBox = new SearchBox("searchBox", "search",false,'Search');
      onmouseover="return searchBox.OnSearchSelectShow()"
      onmouseout="return searchBox.OnSearchSelectHide()"
      onkeydown="return searchBox.OnSearchSelectKey(event)">
-<a class="SelectItem" href="javascript:void(0)" onclick="searchBox.OnSelectItem(0)"><span class="SelectionMark">&#160;</span>All</a><a class="SelectItem" href="javascript:void(0)" onclick="searchBox.OnSelectItem(1)"><span class="SelectionMark">&#160;</span>Classes</a><a class="SelectItem" href="javascript:void(0)" onclick="searchBox.OnSelectItem(2)"><span class="SelectionMark">&#160;</span>Namespaces</a><a class="SelectItem" href="javascript:void(0)" onclick="searchBox.OnSelectItem(3)"><span class="SelectionMark">&#160;</span>Files</a><a class="SelectItem" href="javascript:void(0)" onclick="searchBox.OnSelectItem(4)"><span class="SelectionMark">&#160;</span>Functions</a><a class="SelectItem" href="javascript:void(0)" onclick="searchBox.OnSelectItem(5)"><span class="SelectionMark">&#160;</span>Variables</a><a class="SelectItem" href="javascript:void(0)" onclick="searchBox.OnSelectItem(6)"><span class="SelectionMark">&#160;</span>Typedefs</a><a class="SelectItem" href="javascript:void(0)" onclick="searchBox.OnSelectItem(7)"><span class="SelectionMark">&#160;</span>Enumerations</a><a class="SelectItem" href="javascript:void(0)" onclick="searchBox.OnSelectItem(8)"><span class="SelectionMark">&#160;</span>Enumerator</a><a class="SelectItem" href="javascript:void(0)" onclick="searchBox.OnSelectItem(9)"><span class="SelectionMark">&#160;</span>Friends</a><a class="SelectItem" href="javascript:void(0)" onclick="searchBox.OnSelectItem(10)"><span class="SelectionMark">&#160;</span>Macros</a><a class="SelectItem" href="javascript:void(0)" onclick="searchBox.OnSelectItem(11)"><span class="SelectionMark">&#160;</span>Groups</a><a class="SelectItem" href="javascript:void(0)" onclick="searchBox.OnSelectItem(12)"><span class="SelectionMark">&#160;</span>Pages</a></div>
+<a class="SelectItem" href="javascript:void(0)" onclick="searchBox.OnSelectItem(0)"><span class="SelectionMark">&#160;</span>All</a><a class="SelectItem" href="javascript:void(0)" onclick="searchBox.OnSelectItem(1)"><span class="SelectionMark">&#160;</span>Classes</a><a class="SelectItem" href="javascript:void(0)" onclick="searchBox.OnSelectItem(2)"><span class="SelectionMark">&#160;</span>Namespaces</a><a class="SelectItem" href="javascript:void(0)" onclick="searchBox.OnSelectItem(3)"><span class="SelectionMark">&#160;</span>Files</a><a class="SelectItem" href="javascript:void(0)" onclick="searchBox.OnSelectItem(4)"><span class="SelectionMark">&#160;</span>Functions</a><a class="SelectItem" href="javascript:void(0)" onclick="searchBox.OnSelectItem(5)"><span class="SelectionMark">&#160;</span>Variables</a><a class="SelectItem" href="javascript:void(0)" onclick="searchBox.OnSelectItem(6)"><span class="SelectionMark">&#160;</span>Typedefs</a><a class="SelectItem" href="javascript:void(0)" onclick="searchBox.OnSelectItem(7)"><span class="SelectionMark">&#160;</span>Enumerations</a><a class="SelectItem" href="javascript:void(0)" onclick="searchBox.OnSelectItem(8)"><span class="SelectionMark">&#160;</span>Enumerator</a><a class="SelectItem" href="javascript:void(0)" onclick="searchBox.OnSelectItem(9)"><span class="SelectionMark">&#160;</span>Groups</a><a class="SelectItem" href="javascript:void(0)" onclick="searchBox.OnSelectItem(10)"><span class="SelectionMark">&#160;</span>Pages</a></div>
 
 <!-- iframe showing the search results (closed by default) -->
 <div id="MSearchResultsWindow">
@@ -104,7 +102,7 @@ var searchBox = new SearchBox("searchBox", "search",false,'Search');
 <a href="#pub-static-methods">Static Public Methods</a> &#124;
 <a href="classcub_1_1_block_discontinuity-members.html">List of all members</a>  </div>
   <div class="headertitle">
-<div class="title">cub::BlockDiscontinuity&lt; T, BLOCK_THREADS &gt; Class Template Reference<div class="ingroups"><a class="el" href="group___simt_coop.html">Cooperative SIMT Operations</a></div></div>  </div>
+<div class="title">cub::BlockDiscontinuity&lt; T, BLOCK_THREADS &gt; Class Template Reference<div class="ingroups"><a class="el" href="group___block_module.html">Block-wide</a></div></div>  </div>
 </div><!--header-->
 <div class="contents">
 <a name="details" id="details"></a><h2 class="groupheader">Detailed description</h2>
@@ -117,9 +115,9 @@ class cub::BlockDiscontinuity&lt; T, BLOCK_THREADS &gt;</h3>
 <div class="caption">
 .</div></div>
  <dl class="section user"><dt>Overview</dt><dd>The operations exposed by <a class="el" href="classcub_1_1_block_discontinuity.html" title="BlockDiscontinuity provides operations for flagging discontinuities within a list of data items parti...">BlockDiscontinuity</a> allow threadblocks to set "head flags" for data elements that are different from their predecessor (as specified by a binary boolean operator). Head flags are often useful for orchestrating segmented scans and reductions.</dd></dl>
-<dl class="section user"><dt></dt><dd>For convenience, <a class="el" href="classcub_1_1_block_discontinuity.html" title="BlockDiscontinuity provides operations for flagging discontinuities within a list of data items parti...">BlockDiscontinuity</a> exposes a spectrum of entrypoints that differ by:<ul>
+<dl class="section user"><dt></dt><dd>For convenience, <a class="el" href="classcub_1_1_block_discontinuity.html" title="BlockDiscontinuity provides operations for flagging discontinuities within a list of data items parti...">BlockDiscontinuity</a> provides alternative entrypoints that differ by:<ul>
 <li>How the first item is handled (always-flagged <em>vs.</em> compared to a specific block-wide predecessor)</li>
-<li>Output (discontinuity flags only <em>vs.</em> discontinuity flags and a copy of the last tile item for thread<sub><em>0</em></sub>)</li>
+<li>What is computed (discontinuity flags only <em>vs.</em> discontinuity flags and a copy of the last tile item for thread<sub><em>0</em></sub>)</li>
 </ul>
 </dd></dl>
 <dl class="tparams"><dt>Template Parameters</dt><dd>
@@ -139,8 +137,9 @@ class cub::BlockDiscontinuity&lt; T, BLOCK_THREADS &gt;</h3>
 <li>Zero bank conflicts for most types.</li>
 </ul>
 </dd></dl>
-<dl class="section user"><dt>Examples</dt><dd><em>Example 1.</em> Given a tile of 512 non-zero matrix coordinates (ordered by row) in a blocked arrangement across a 128-thread threadblock, flag the first coordinate element of each row. <div class="fragment"><div class="line"><span class="preprocessor">#include &lt;cub.cuh&gt;</span></div>
+<dl class="section user"><dt>Examples</dt><dd><em>Example 1.</em> Given a tile of 512 non-zero matrix coordinates (ordered by row) in a blocked arrangement across a 128-thread threadblock, flag the first coordinate element of each row. <div class="fragment"><div class="line"><span class="preprocessor">#include &lt;<a class="code" href="cub_8cuh.html">cub/cub.cuh</a>&gt;</span></div>
 <div class="line"></div>
+<div class="line"><span class="comment">// Non-zero matrix coordinates</span></div>
 <div class="line"><span class="keyword">struct </span>NonZero</div>
 <div class="line">{</div>
 <div class="line">    <span class="keywordtype">int</span> row;</div>
@@ -148,8 +147,10 @@ class cub::BlockDiscontinuity&lt; T, BLOCK_THREADS &gt;</h3>
 <div class="line">    <span class="keywordtype">float</span> val;</div>
 <div class="line">};</div>
 <div class="line"></div>
+<div class="line"><span class="comment">// Functor for detecting row discontinuities.</span></div>
 <div class="line"><span class="keyword">struct </span>NewRowOp</div>
 <div class="line">{</div>
+<div class="line">    <span class="comment">// Returns true if row_b is the start of a new row</span></div>
 <div class="line">    __device__ __forceinline__ <span class="keywordtype">bool</span> operator()(</div>
 <div class="line">        <span class="keyword">const</span> NonZero&amp; a,</div>
 <div class="line">        <span class="keyword">const</span> NonZero&amp; b)</div>
@@ -160,7 +161,7 @@ class cub::BlockDiscontinuity&lt; T, BLOCK_THREADS &gt;</h3>
 <div class="line"></div>
 <div class="line">__global__ <span class="keywordtype">void</span> SomeKernel(...)</div>
 <div class="line">{</div>
-<div class="line">    <span class="comment">// Parameterize BlockDiscontinuity for the parallel execution context</span></div>
+<div class="line">    <span class="comment">// Parameterize BlockDiscontinuity for 128 threads on type NonZero</span></div>
 <div class="line">    <span class="keyword">typedef</span> <a class="code" href="classcub_1_1_block_discontinuity.html" title="BlockDiscontinuity provides operations for flagging discontinuities within a list of data items parti...">cub::BlockDiscontinuity&lt;NonZero, 128&gt;</a> BlockDiscontinuity;</div>
 <div class="line"></div>
 <div class="line">    <span class="comment">// Declare shared memory for BlockDiscontinuity</span></div>
@@ -277,16 +278,16 @@ template&lt;int ITEMS_PER_THREAD, typename FlagT , typename FlagOp &gt; </div>
   <table class="tparams">
     <tr><td class="paramname">ITEMS_PER_THREAD</td><td><b>[inferred]</b> The number of consecutive items partitioned onto each thread. </td></tr>
     <tr><td class="paramname">FlagT</td><td><b>[inferred]</b> The flag type (must be an integer type) </td></tr>
-    <tr><td class="paramname">FlagOp</td><td><b>[inferred]</b> Binary boolean functor type, having input parameters <code>(const T &amp;a, const T &amp;b)</code> and returning <code>true</code> if a discontinuity exists between <code>a</code> and <code>b</code>, otherwise <code>false</code>. </td></tr>
+    <tr><td class="paramname">FlagOp</td><td><b>[inferred]</b> Binary predicate functor type having member <code>T operator()(const T &amp;a, const T &amp;b)</code> or member <code>T operator()(const T &amp;a, const T &amp;b, unsigned int b_index)</code>, and returning <code>true</code> if a discontinuity exists between <code>a</code> and <code>b</code>, otherwise <code>false</code>. <code>b_index</code> is the rank of b in the aggregate tile of data. </td></tr>
   </table>
   </dd>
 </dl>
 <dl class="params"><dt>Parameters</dt><dd>
   <table class="params">
-    <tr><td class="paramdir">[in]</td><td class="paramname">smem_storage</td><td>Shared reference to opaque SmemStorage layout </td></tr>
-    <tr><td class="paramdir">[in]</td><td class="paramname">input</td><td>Input items </td></tr>
+    <tr><td class="paramdir">[in]</td><td class="paramname">smem_storage</td><td>Reference to shared memory allocation having layout type SmemStorage </td></tr>
+    <tr><td class="paramdir">[in]</td><td class="paramname">input</td><td>Calling thread's input items </td></tr>
     <tr><td class="paramdir">[in]</td><td class="paramname">flag_op</td><td>Binary boolean flag predicate </td></tr>
-    <tr><td class="paramdir">[out]</td><td class="paramname">flags</td><td>Discontinuity flags </td></tr>
+    <tr><td class="paramdir">[out]</td><td class="paramname">flags</td><td>Calling thread's discontinuity flags </td></tr>
     <tr><td class="paramdir">[out]</td><td class="paramname">last_tile_item</td><td><b>[<em>thread</em><sub>0</sub> only]</b> The last tile item (<code>input<sub><em>ITEMS_PER_THREAD</em>-1</sub></code> from thread<sub><code><em>BLOCK_THREADS</em></code>-1</sub>) </td></tr>
   </table>
   </dd>
@@ -350,16 +351,16 @@ template&lt;int ITEMS_PER_THREAD, typename FlagT , typename FlagOp &gt; </div>
   <table class="tparams">
     <tr><td class="paramname">ITEMS_PER_THREAD</td><td><b>[inferred]</b> The number of consecutive items partitioned onto each thread. </td></tr>
     <tr><td class="paramname">FlagT</td><td><b>[inferred]</b> The flag type (must be an integer type) </td></tr>
-    <tr><td class="paramname">FlagOp</td><td><b>[inferred]</b> Binary boolean functor type, having input parameters <code>(const T &amp;a, const T &amp;b)</code> and returning <code>true</code> if a discontinuity exists between <code>a</code> and <code>b</code>, otherwise <code>false</code>. </td></tr>
+    <tr><td class="paramname">FlagOp</td><td><b>[inferred]</b> Binary predicate functor type having member <code>T operator()(const T &amp;a, const T &amp;b)</code> or member <code>T operator()(const T &amp;a, const T &amp;b, unsigned int b_index)</code>, and returning <code>true</code> if a discontinuity exists between <code>a</code> and <code>b</code>, otherwise <code>false</code>. <code>b_index</code> is the rank of b in the aggregate tile of data. </td></tr>
   </table>
   </dd>
 </dl>
 <dl class="params"><dt>Parameters</dt><dd>
   <table class="params">
-    <tr><td class="paramdir">[in]</td><td class="paramname">smem_storage</td><td>Shared reference to opaque SmemStorage layout </td></tr>
-    <tr><td class="paramdir">[in]</td><td class="paramname">input</td><td>Input items </td></tr>
+    <tr><td class="paramdir">[in]</td><td class="paramname">smem_storage</td><td>Reference to shared memory allocation having layout type SmemStorage </td></tr>
+    <tr><td class="paramdir">[in]</td><td class="paramname">input</td><td>Calling thread's input items </td></tr>
     <tr><td class="paramdir">[in]</td><td class="paramname">flag_op</td><td>Binary boolean flag predicate </td></tr>
-    <tr><td class="paramdir">[out]</td><td class="paramname">flags</td><td>Discontinuity flags </td></tr>
+    <tr><td class="paramdir">[out]</td><td class="paramname">flags</td><td>Calling thread's discontinuity flags </td></tr>
   </table>
   </dd>
 </dl>
@@ -427,24 +428,24 @@ template&lt;int ITEMS_PER_THREAD, typename FlagT , typename FlagOp &gt; </div>
 </div><div class="memdoc">
 
 <p>Sets discontinuity flags for a tile of threadblock items. The last tile item of the last thread is also returned to thread<sub>0</sub>. </p>
-<p>Assuming a <em>blocked</em> arrangement of elements across threads, <code>flags</code><sub><em>i</em></sub> is set non-zero for item <code>input</code><sub><em>i</em></sub> when <code>scan_op(</code><em>previous-item</em>, <code>input<sub><em>i</em></sub>)</code> is <code>true</code> (where <em>previous-item</em> is either <code>input<sub><em>i-1</em></sub></code>, or <code>input<sub><em>ITEMS_PER_THREAD</em>-1</sub></code> in the previous thread). For <em>thread</em><sub>0</sub>, item <code>input<sub>0</sub></code> is compared against /p tile_predecessor.</p>
+<p>Assuming a <em>blocked</em> arrangement of elements across threads, <code>flags</code><sub><em>i</em></sub> is set non-zero for item <code>input</code><sub><em>i</em></sub> when <code>scan_op(</code><em>previous-item</em>, <code>input<sub><em>i</em></sub>)</code> is <code>true</code> (where <em>previous-item</em> is either <code>input<sub><em>i-1</em></sub></code>, or <code>input<sub><em>ITEMS_PER_THREAD</em>-1</sub></code> in the previous thread). For <em>thread</em><sub>0</sub>, item <code>input<sub>0</sub></code> is compared against <code>tile_predecessor</code>.</p>
 <p>The <code>tile_predecessor</code> and <code>last_tile_item</code> are undefined in threads other than <em>thread</em><sub>0</sub>.</p>
 <p>A subsequent <code>__syncthreads()</code> threadblock barrier should be invoked after calling this method if the supplied <code>smem_storage</code> is to be reused or repurposed by the threadblock.</p>
 <dl class="tparams"><dt>Template Parameters</dt><dd>
   <table class="tparams">
     <tr><td class="paramname">ITEMS_PER_THREAD</td><td><b>[inferred]</b> The number of consecutive items partitioned onto each thread. </td></tr>
     <tr><td class="paramname">FlagT</td><td><b>[inferred]</b> The flag type (must be an integer type) </td></tr>
-    <tr><td class="paramname">FlagOp</td><td><b>[inferred]</b> Binary boolean functor type, having input parameters <code>(const T &amp;a, const T &amp;b)</code> and returning <code>true</code> if a discontinuity exists between <code>a</code> and <code>b</code>, otherwise <code>false</code>. </td></tr>
+    <tr><td class="paramname">FlagOp</td><td><b>[inferred]</b> Binary predicate functor type having member <code>T operator()(const T &amp;a, const T &amp;b)</code> or member <code>T operator()(const T &amp;a, const T &amp;b, unsigned int b_index)</code>, and returning <code>true</code> if a discontinuity exists between <code>a</code> and <code>b</code>, otherwise <code>false</code>. <code>b_index</code> is the rank of b in the aggregate tile of data. </td></tr>
   </table>
   </dd>
 </dl>
 <dl class="params"><dt>Parameters</dt><dd>
   <table class="params">
-    <tr><td class="paramdir">[in]</td><td class="paramname">smem_storage</td><td>Shared reference to opaque SmemStorage layout </td></tr>
-    <tr><td class="paramdir">[in]</td><td class="paramname">input</td><td>Input items </td></tr>
+    <tr><td class="paramdir">[in]</td><td class="paramname">smem_storage</td><td>Reference to shared memory allocation having layout type SmemStorage </td></tr>
+    <tr><td class="paramdir">[in]</td><td class="paramname">input</td><td>Calling thread's input items </td></tr>
     <tr><td class="paramdir">[in]</td><td class="paramname">tile_predecessor</td><td><b>[<em>thread</em><sub>0</sub> only]</b> Item with which to compare the first tile item (<code>input<sub>0</sub></code>from <em>thread</em><sub>0</sub>). </td></tr>
     <tr><td class="paramdir">[in]</td><td class="paramname">flag_op</td><td>Binary boolean flag predicate </td></tr>
-    <tr><td class="paramdir">[out]</td><td class="paramname">flags</td><td>Discontinuity flags </td></tr>
+    <tr><td class="paramdir">[out]</td><td class="paramname">flags</td><td>Calling thread's discontinuity flags </td></tr>
     <tr><td class="paramdir">[out]</td><td class="paramname">last_tile_item</td><td><b>[<em>thread</em><sub>0</sub> only]</b> The last tile item (<code>input<sub><em>ITEMS_PER_THREAD</em>-1</sub></code> from <em>thread</em><sub><code><em>BLOCK_THREADS</em></code>-1</sub>) </td></tr>
   </table>
   </dd>
@@ -507,24 +508,24 @@ template&lt;int ITEMS_PER_THREAD, typename FlagT , typename FlagOp &gt; </div>
 </div><div class="memdoc">
 
 <p>Sets discontinuity flags for a tile of threadblock items. </p>
-<p>Assuming a <em>blocked</em> arrangement of elements across threads, <code>flags</code><sub><em>i</em></sub> is set non-zero for item <code>input</code><sub><em>i</em></sub> when <code>scan_op(</code><em>previous-item</em>, <code>input<sub><em>i</em></sub>)</code> is <code>true</code> (where <em>previous-item</em> is either <code>input<sub><em>i-1</em></sub></code>, or <code>input<sub><em>ITEMS_PER_THREAD</em>-1</sub></code> in the previous thread). For <em>thread</em><sub>0</sub>, item <code>input<sub>0</sub></code> is compared against /p tile_predecessor.</p>
+<p>Assuming a <em>blocked</em> arrangement of elements across threads, <code>flags</code><sub><em>i</em></sub> is set non-zero for item <code>input</code><sub><em>i</em></sub> when <code>scan_op(</code><em>previous-item</em>, <code>input<sub><em>i</em></sub>)</code> is <code>true</code> (where <em>previous-item</em> is either <code>input<sub><em>i-1</em></sub></code>, or <code>input<sub><em>ITEMS_PER_THREAD</em>-1</sub></code> in the previous thread). For <em>thread</em><sub>0</sub>, item <code>input<sub>0</sub></code> is compared against <code>tile_predecessor</code>.</p>
 <p>The <code>tile_predecessor</code> and <code>last_tile_item</code> are undefined in threads other than <em>thread</em><sub>0</sub>.</p>
 <p>A subsequent <code>__syncthreads()</code> threadblock barrier should be invoked after calling this method if the supplied <code>smem_storage</code> is to be reused or repurposed by the threadblock.</p>
 <dl class="tparams"><dt>Template Parameters</dt><dd>
   <table class="tparams">
     <tr><td class="paramname">ITEMS_PER_THREAD</td><td><b>[inferred]</b> The number of consecutive items partitioned onto each thread. </td></tr>
     <tr><td class="paramname">FlagT</td><td><b>[inferred]</b> The flag type (must be an integer type) </td></tr>
-    <tr><td class="paramname">FlagOp</td><td><b>[inferred]</b> Binary boolean functor type, having input parameters <code>(const T &amp;a, const T &amp;b)</code> and returning <code>true</code> if a discontinuity exists between <code>a</code> and <code>b</code>, otherwise <code>false</code>. </td></tr>
+    <tr><td class="paramname">FlagOp</td><td><b>[inferred]</b> Binary predicate functor type having member <code>T operator()(const T &amp;a, const T &amp;b)</code> or member <code>T operator()(const T &amp;a, const T &amp;b, unsigned int b_index)</code>, and returning <code>true</code> if a discontinuity exists between <code>a</code> and <code>b</code>, otherwise <code>false</code>. <code>b_index</code> is the rank of b in the aggregate tile of data. </td></tr>
   </table>
   </dd>
 </dl>
 <dl class="params"><dt>Parameters</dt><dd>
   <table class="params">
-    <tr><td class="paramdir">[in]</td><td class="paramname">smem_storage</td><td>Shared reference to opaque SmemStorage layout </td></tr>
-    <tr><td class="paramdir">[in]</td><td class="paramname">input</td><td>Input items </td></tr>
+    <tr><td class="paramdir">[in]</td><td class="paramname">smem_storage</td><td>Reference to shared memory allocation having layout type SmemStorage </td></tr>
+    <tr><td class="paramdir">[in]</td><td class="paramname">input</td><td>Calling thread's input items </td></tr>
     <tr><td class="paramdir">[in]</td><td class="paramname">tile_predecessor</td><td><b>[<em>thread</em><sub>0</sub> only]</b> Item with which to compare the first tile item (<code>input<sub>0</sub></code>from <em>thread</em><sub>0</sub>). </td></tr>
     <tr><td class="paramdir">[in]</td><td class="paramname">flag_op</td><td>Binary boolean flag predicate </td></tr>
-    <tr><td class="paramdir">[out]</td><td class="paramname">flags</td><td>Discontinuity flags </td></tr>
+    <tr><td class="paramdir">[out]</td><td class="paramname">flags</td><td>Calling thread's discontinuity flags </td></tr>
   </table>
   </dd>
 </dl>
@@ -538,7 +539,7 @@ template&lt;int ITEMS_PER_THREAD, typename FlagT , typename FlagOp &gt; </div>
 <!-- HTML footer for doxygen 1.8.3.1-->
 <!-- start footer part -->
 <hr class="footer"/><address class="footer"><small>
-Generated on Thu Apr 4 2013 11:10:44 for CUB by &#160;<a href="http://www.doxygen.org/index.html">
+Generated on Wed May 1 2013 05:38:34 for CUB by &#160;<a href="http://www.doxygen.org/index.html">
 <img class="footer" src="doxygen.png" alt="doxygen"/>
 </a> 1.8.3.1
 <br>

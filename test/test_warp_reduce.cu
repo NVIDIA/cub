@@ -35,8 +35,8 @@
 
 #include <stdio.h>
 #include <iostream>
-#include <test_util.h>
-#include "cub.cuh"
+#include "test_util.h"
+#include <cub/cub.cuh>
 
 using namespace cub;
 
@@ -205,13 +205,13 @@ template <
 T Initialize(
     int             gen_mode,
     T               *h_in,
-    int             num_elements,
+    int             num_items,
     ReductionOp     reduction_op)
 {
     InitValue(gen_mode, h_in[0], 0);
     T aggregate = h_in[0];
 
-    for (int i = 1; i < num_elements; ++i)
+    for (int i = 1; i < num_items; ++i)
     {
         InitValue(gen_mode, h_in[i], i);
         aggregate = reduction_op(aggregate, h_in[i]);
@@ -244,9 +244,10 @@ void Test(
     T *d_out = NULL;
     clock_t *d_elapsed = NULL;
     CubDebugExit(cudaMalloc((void**)&d_in, sizeof(T) * LOGICAL_WARP_THREADS));
-    CubDebugExit(cudaMalloc((void**)&d_out, sizeof(T)));
+    CubDebugExit(cudaMalloc((void**)&d_out, sizeof(T) * 1));
     CubDebugExit(cudaMalloc((void**)&d_elapsed, sizeof(clock_t)));
     CubDebugExit(cudaMemcpy(d_in, h_in, sizeof(T) * LOGICAL_WARP_THREADS, cudaMemcpyHostToDevice));
+    CubDebugExit(cudaMemset(d_out, 0, sizeof(T) * 1));
 
     // Run kernel
     printf("Gen-mode %d, %d warp threads, %d valid lanes, %s (%d bytes) elements:\n",

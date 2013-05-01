@@ -38,17 +38,39 @@
 
 #pragma once
 
-#include "../ns_wrapper.cuh"
-#include "../macro_utils.cuh"
-#include "../allocator.cuh"
+#include "../util_namespace.cuh"
+#include "../util_macro.cuh"
+#include "../util_allocator.cuh"
 
+/// Optional outer namespace(s)
 CUB_NS_PREFIX
+
+/// CUB namespace
 namespace cub {
 
 
+/**
+ * \addtogroup GridModule
+ * @{
+ */
+
 
 /**
- * Description of work distribution amongst threadblocks
+ * \brief A descriptor utility for distributing input among CUDA threadblocks in an "even-share" fashion.  Each threadblock gets roughly the same number of fixed-size work units (grains).
+ *
+ * \par Overview
+ * GridEvenShare indicates which sections of input are to be mapped onto which threadblocks.
+ * Threadblocks may receive one of three different amounts of work: "big", "normal",
+ * and "last".  The "big" workloads are one scheduling grain larger than "normal".  The "last" work unit
+ * for the last threadblock may be partially-full if the input is not an even multiple of
+ * the scheduling grain size.
+ *
+ * \par
+ * Before invoking a child grid, a parent thread will typically construct and initialize an instance of
+ * GridEvenShare using \p GridInit().  The instance can be passed to child threadblocks which can
+ * initialize their per-threadblock offsets using \p BlockInit().
+ *
+ * \tparam SizeT Integer type for array indexing
  */
 template <typename SizeT>
 class GridEvenShare
@@ -56,7 +78,6 @@ class GridEvenShare
 private:
 
     SizeT   total_grains;
-    int     grid_size;
     int     big_blocks;
     SizeT   big_share;
     SizeT   normal_share;
@@ -65,42 +86,44 @@ private:
 
 public:
 
-    SizeT   total_items;
+    /// Total number of input items
+    SizeT  num_items;
 
-    // Threadblock-specific fields
-    SizeT   block_offset;
+    /// Grid size in threadblocks
+    int grid_size;
+
+    /// Offset into input marking the beginning of the owning thread block's segment of input tiles
+    SizeT block_offset;
+
+    /// Offset into input of marking the end (one-past) of the owning thread block's segment of input tiles
     SizeT   block_oob;
 
+
     /**
-     * Constructor.
-     *
-     * Generally constructed in host code one time.
+     * \brief Initializes the grid-specific members \p num_items and \p grid_size. To be called prior prior to kernel launch)
      */
-    __host__ __device__ __forceinline__ GridEvenShare(
-        SizeT   total_items,
-        int     grid_size,
-        int     schedule_granularity) :
-            // initializers
-            total_items(total_items),
-            grid_size(grid_size),
-            block_offset(0),
-            block_oob(0)
+    __host__ __device__ __forceinline__ void GridInit(
+        SizeT   num_items,                  ///< Total number of input items
+        int     max_grid_size,              ///< Maximum grid size allowable (actual grid size may be less if not warranted by the the number of input items)
+        int     schedule_granularity)       ///< Granularity by which the input can be parcelled into and distributed among threablocks.  Usually the thread block's native tile size (or a multiple thereof.
     {
-        total_grains            = (total_items + schedule_granularity - 1) / schedule_granularity;
-        SizeT grains_per_block    = total_grains / grid_size;
-        big_blocks                = total_grains - (grains_per_block * grid_size);        // leftover grains go to big blocks
-        normal_share            = grains_per_block * schedule_granularity;
-        normal_base_offset      = big_blocks * schedule_granularity;
-        big_share               = normal_share + schedule_granularity;
+        this->num_items             = num_items;
+        this->block_offset          = 0;
+        this->block_oob             = 0;
+        this->total_grains          = (num_items + schedule_granularity - 1) / schedule_granularity;
+        this->grid_size             = CUB_MIN(total_grains, max_grid_size);
+        SizeT grains_per_block      = total_grains / grid_size;
+        this->big_blocks            = total_grains - (grains_per_block * grid_size);        // leftover grains go to big blocks
+        this->normal_share          = grains_per_block * schedule_granularity;
+        this->normal_base_offset    = big_blocks * schedule_granularity;
+        this->big_share             = normal_share + schedule_granularity;
     }
 
 
     /**
-     * Initializer.
-     *
-     * Generally initialized by each threadblock after construction on the host.
+     * \brief Initializes the threadblock-specific details (e.g., to be called by each threadblock after startup)
      */
-    __device__ __forceinline__ void Init()
+    __device__ __forceinline__ void BlockInit()
     {
         if (blockIdx.x < big_blocks)
         {
@@ -118,7 +141,7 @@ public:
         // Last threadblock
         if (blockIdx.x == grid_size - 1)
         {
-            block_oob = total_items;
+            block_oob = num_items;
         }
     }
 
@@ -134,7 +157,8 @@ public:
             "block_offset(%lu) "
             "block_oob(%lu) "
 #endif
-            "total_items(%lu)  "
+            "num_items(%lu)  "
+            "total_grains(%lu)  "
             "big_blocks(%lu)  "
             "big_share(%lu)  "
             "normal_share(%lu)\n",
@@ -143,7 +167,8 @@ public:
                 (unsigned long) block_offset,
                 (unsigned long) block_oob,
 #endif
-                (unsigned long) total_items,
+                (unsigned long) num_items,
+                (unsigned long) total_grains,
                 (unsigned long) big_blocks,
                 (unsigned long) big_share,
                 (unsigned long) normal_share);
@@ -152,7 +177,7 @@ public:
 
 
 
+/** @} */       // end group GridModule
 
-} // namespace cub
-CUB_NS_POSTFIX
-
+}               // CUB namespace
+CUB_NS_POSTFIX  // Optional outer namespace(s)

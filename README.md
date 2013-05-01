@@ -21,7 +21,7 @@ providing an abstraction layer over complex threadblock, warp, and thread-level 
 <h3>A Simple Example</h3>
 
 ```C++
-#include <cub.cuh>
+#include <cub/cub.cuh>
  
 // An exclusive prefix sum CUDA kernel (for a single-threadblock grid)
 template <
