@@ -126,7 +126,6 @@ __global__ void MultiBlockHisto256Kernel(
             d_out_histograms.array[CHANNEL][channel_offset + histo_offset + threadIdx.x] = histograms[CHANNEL][histo_offset + threadIdx.x];
         }
     }
-
 }
 
 
@@ -234,8 +233,8 @@ struct DeviceHisto256
     struct TunedPolicies<CHANNELS, ACTIVE_CHANNELS, BLOCK_ALGORITHM, 350>
     {
         typedef TilesHisto256Policy<
-            128, 
-            (BLOCK_ALGORITHM == BLOCK_BYTE_HISTO_SORT) ? 23 : (30 / ACTIVE_CHANNELS),
+            (BLOCK_ALGORITHM == BLOCK_BYTE_HISTO_SORT) ? 128 : 256,
+            (BLOCK_ALGORITHM == BLOCK_BYTE_HISTO_SORT) ? 12 : (30 / ACTIVE_CHANNELS),
             BLOCK_ALGORITHM,
             (BLOCK_ALGORITHM == BLOCK_BYTE_HISTO_SORT) ? GRID_MAPPING_DYNAMIC : GRID_MAPPING_EVEN_SHARE> MultiBlockPolicy;
         enum { SUBSCRIPTION_FACTOR = 7 };
@@ -246,7 +245,7 @@ struct DeviceHisto256
     struct TunedPolicies<CHANNELS, ACTIVE_CHANNELS, BLOCK_ALGORITHM, 200>
     {
         typedef TilesHisto256Policy<
-            128, 
+            128,
             (BLOCK_ALGORITHM == BLOCK_BYTE_HISTO_SORT) ? 17 : (21 / ACTIVE_CHANNELS),
             BLOCK_ALGORITHM,
             (BLOCK_ALGORITHM == BLOCK_BYTE_HISTO_SORT) ? GRID_MAPPING_DYNAMIC : GRID_MAPPING_EVEN_SHARE> MultiBlockPolicy;

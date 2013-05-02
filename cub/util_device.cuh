@@ -254,30 +254,49 @@ public:
             cudaFuncAttributes kernel_attrs;
             if (CubDebug(error = cudaFuncGetAttributes(&kernel_attrs, kernel_ptr))) break;
 
+            // Number of warps per threadblock
             int block_warps = (block_threads +  warp_threads - 1) / warp_threads;
 
-            int block_allocated_warps = CUB_ROUND_UP_NEAREST(block_warps, warp_alloc_unit);
+            // Max warp occupancy
+            int max_warp_occupancy = (block_warps > 0) ?
+                max_sm_warps / block_warps :
+                max_sm_blocks;
 
-            int block_allocated_regs = (regs_by_block) ?
-                CUB_ROUND_UP_NEAREST(
-                    block_allocated_warps * kernel_attrs.numRegs * warp_threads,
-                    reg_alloc_unit) :
-                block_allocated_warps * CUB_ROUND_UP_NEAREST(
-                    kernel_attrs.numRegs * warp_threads,
-                    reg_alloc_unit);
+            // Maximum register occupancy
+            int max_reg_occupancy;
+            if ((block_threads == 0) || (kernel_attrs.numRegs == 0))
+            {
+                // Prevent divide-by-zero
+                max_reg_occupancy = max_sm_blocks;
+            }
+            else if (regs_by_block)
+            {
+                // Allocates registers by threadblock
+                int block_regs = CUB_ROUND_UP_NEAREST(kernel_attrs.numRegs * warp_threads * block_warps, reg_alloc_unit);
+                max_reg_occupancy = max_sm_registers / block_regs;
+            }
+            else
+            {
+                // Allocates registers by warp
+                int sm_sides                = warp_alloc_unit;
+                int sm_registers_per_side   = max_sm_registers / sm_sides;
+                int regs_per_warp           = CUB_ROUND_UP_NEAREST(kernel_attrs.numRegs * warp_threads, reg_alloc_unit);
+                int warps_per_side          = sm_registers_per_side / regs_per_warp;
+                int warps                   = warps_per_side * sm_sides;
+                max_reg_occupancy           = warps / block_warps;
+            }
 
+            // Shared memory per threadblock
             int block_allocated_smem = CUB_ROUND_UP_NEAREST(
                 kernel_attrs.sharedSizeBytes,
                 smem_alloc_unit);
 
-            int max_warp_occupancy = max_sm_warps / block_warps;
-
+            // Max shared memory occupancy
             int max_smem_occupancy = (block_allocated_smem > 0) ?
-                    (smem_bytes / block_allocated_smem) :
-                    max_sm_blocks;
+                (smem_bytes / block_allocated_smem) :
+                max_sm_blocks;
 
-            int max_reg_occupancy = max_sm_registers / block_allocated_regs;
-
+            // Max occupancy
             max_sm_occupancy = CUB_MIN(
                 CUB_MIN(max_sm_blocks, max_warp_occupancy),
                 CUB_MIN(max_smem_occupancy, max_reg_occupancy));
