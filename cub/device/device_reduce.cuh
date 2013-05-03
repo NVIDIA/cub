@@ -60,12 +60,12 @@ namespace cub {
  * Multi-block reduction kernel entry point.  Computes privatized reductions, one per thread block.
  */
 template <
-    typename                TilesReducePolicy,      ///< Tuning policy for cub::TilesReduce abstraction
+    typename                GridBlockReducePolicy,      ///< Tuning policy for cub::GridBlockReduce abstraction
     typename                InputIteratorRA,        ///< The random-access iterator type for input (may be a simple pointer type).
     typename                OutputIteratorRA,       ///< The random-access iterator type for output (may be a simple pointer type).
     typename                SizeT,                  ///< Integral type used for global array indexing
     typename                ReductionOp>            ///< Binary reduction operator type having member <tt>T operator()(const T &a, const T &b)</tt>
-__launch_bounds__ (TilesReducePolicy::BLOCK_THREADS, 1)
+__launch_bounds__ (GridBlockReducePolicy::BLOCK_THREADS, 1)
 __global__ void MultiBlockReduceKernel(
     InputIteratorRA         d_in,                   ///< [in] Input data to reduce
     OutputIteratorRA        d_out,                  ///< [out] Output location for result
@@ -74,26 +74,30 @@ __global__ void MultiBlockReduceKernel(
     GridQueue<SizeT>        queue,                  ///< [in] Descriptor for performing dynamic mapping of tile data to thread blocks
     ReductionOp             reduction_op)           ///< [in] Binary reduction operator
 {
-    // Data type of input iterator
-    typedef typename std::iterator_traits<InputIteratorRA>::value_type T;
+    // Types
+    typedef typename std::iterator_traits<InputIteratorRA>::value_type                      T;
+    typedef GridBlockReduce<GridBlockReducePolicy, InputIteratorRA, SizeT, ReductionOp>     GridBlockReduceT;
 
-    // Parameterize TilesReduce for the parallel execution context
-    typedef TilesReduce <TilesReducePolicy, InputIteratorRA, SizeT> TilesReduceT;
+    // Block-wide aggregate
+    T block_aggregate;
 
-    // Parameterize which mapping of tiles -> thread blocks we will use
-    typedef typename TilesReduceT::template Mapping<TilesReducePolicy::GRID_MAPPING> Mapping;
+    // Shared memory storage
+    __shared__ typename GridBlockReduceT::SmemStorage smem_storage;
 
-    // Declare shared memory for TilesReduce
-    __shared__ typename TilesReduceT::SmemStorage smem_storage;
+    // Block abstraction for reducing tiles
+    GridBlockReduceT grid_block(smem_storage, d_in, reduction_op);
 
-    // Reduce tiles
-    T block_aggregate = Mapping::ProcessTiles(
-        smem_storage,
-        d_in,
-        num_items,
-        even_share,
-        queue,
-        reduction_op);
+    if (GridBlockReducePolicy::GridMappingStrategy == GRID_MAPPING_DYNAMIC)
+    {
+        // Dynamic input distribution
+        BlockConsumeTiles(grid_block, num_items, queue, block_aggregate);
+    }
+    else
+    {
+        // Even-share input distribution
+        even_share.BlockInit();
+        BlockConsumeTiles(grid_block, num_items, even_share, block_aggregate);
+    }
 
     // Output result
     if (threadIdx.x == 0)
@@ -107,41 +111,40 @@ __global__ void MultiBlockReduceKernel(
  * Single-block reduction kernel entry point.
  */
 template <
-    typename                TilesReducePolicy,      ///< Tuning policy for cub::TilesReduce abstraction
+    typename                GridBlockReducePolicy,      ///< Tuning policy for cub::GridBlockReduce abstraction
     typename                InputIteratorRA,        ///< The random-access iterator type for input (may be a simple pointer type).
     typename                OutputIteratorRA,       ///< The random-access iterator type for output (may be a simple pointer type).
     typename                SizeT,                  ///< Integral type used for global array indexing
     typename                ReductionOp>            ///< Binary reduction operator type having member <tt>T operator()(const T &a, const T &b)</tt>
-__launch_bounds__ (TilesReducePolicy::BLOCK_THREADS, 1)
+__launch_bounds__ (GridBlockReducePolicy::BLOCK_THREADS, 1)
 __global__ void SingleBlockReduceKernel(
     InputIteratorRA         d_in,                   ///< [in] Input data to reduce
     OutputIteratorRA        d_out,                  ///< [out] Output location for result
     SizeT                   num_items,              ///< [in] Total number of input data items
     ReductionOp             reduction_op)           ///< [in] Binary reduction operator
 {
-    // Data type of input iterator
-    typedef typename std::iterator_traits<InputIteratorRA>::value_type T;
+    // Types
+    typedef typename std::iterator_traits<InputIteratorRA>::value_type                      T;
+    typedef GridBlockReduce<GridBlockReducePolicy, InputIteratorRA, SizeT, ReductionOp>     GridBlockReduceT;
 
-    // Parameterize TilesReduce for the parallel execution context
-    typedef TilesReduce <TilesReducePolicy, InputIteratorRA, SizeT> TilesReduceT;
+    // Block-wide aggregate
+    T block_aggregate;
 
-    // Declare shared memory for TilesReduce
-    __shared__ typename TilesReduceT::SmemStorage smem_storage;
+    // Shared memory storage
+    __shared__ typename GridBlockReduceT::SmemStorage smem_storage;
 
-    // Reduce tiles
-    T block_aggregate = TilesReduceT::ProcessTilesEvenShare(
-        smem_storage,
-        d_in,
-        SizeT(0),
-        num_items,
-        reduction_op);
+    // Block abstraction for reducing tiles
+    GridBlockReduceT grid_block(smem_storage, d_in, reduction_op);
+
+    // Reduce input tiles
+    GridEvenShare<int> even_share(num_items);
+    BlockConsumeTiles(grid_block, num_items, even_share, block_aggregate);
 
     // Output result
     if (threadIdx.x == 0)
     {
         d_out[blockIdx.x] = block_aggregate;
     }
-
 }
 
 #endif // DOXYGEN_SHOULD_SKIP_THIS
@@ -163,7 +166,7 @@ struct DeviceReduce
 {
 #ifndef DOXYGEN_SHOULD_SKIP_THIS    // Do not document
 
-    /// Generic structure for encapsulating dispatch properties.  Mirrors the constants within TilesReducePolicy.
+    /// Generic structure for encapsulating dispatch properties.  Mirrors the constants within GridBlockReducePolicy.
     struct KernelDispachParams
     {
         // Policy fields
@@ -178,16 +181,16 @@ struct DeviceReduce
         // Derived fields
         int                     tile_size;
 
-        template <typename TilesReducePolicy>
+        template <typename GridBlockReducePolicy>
         __host__ __device__ __forceinline__
         void Init(int subscription_factor = 1)
         {
-            block_threads               = TilesReducePolicy::BLOCK_THREADS;
-            items_per_thread            = TilesReducePolicy::ITEMS_PER_THREAD;
-            vector_load_length          = TilesReducePolicy::VECTOR_LOAD_LENGTH;
-            block_algorithm             = TilesReducePolicy::BLOCK_ALGORITHM;
-            load_modifier               = TilesReducePolicy::LOAD_MODIFIER;
-            grid_mapping                = TilesReducePolicy::GRID_MAPPING;
+            block_threads               = GridBlockReducePolicy::BLOCK_THREADS;
+            items_per_thread            = GridBlockReducePolicy::ITEMS_PER_THREAD;
+            vector_load_length          = GridBlockReducePolicy::VECTOR_LOAD_LENGTH;
+            block_algorithm             = GridBlockReducePolicy::BLOCK_ALGORITHM;
+            load_modifier               = GridBlockReducePolicy::LOAD_MODIFIER;
+            grid_mapping                = GridBlockReducePolicy::GRID_MAPPING;
             this->subscription_factor   = subscription_factor;
 
             tile_size = block_threads * items_per_thread;
@@ -221,8 +224,8 @@ struct DeviceReduce
     struct TunedPolicies<T, SizeT, 350>
     {
         // K20C: 182.1 @ 48M 32-bit T
-        typedef TilesReducePolicy<256, 8,  2, BLOCK_REDUCE_RAKING, PTX_LOAD_NONE, GRID_MAPPING_EVEN_SHARE>             MultiBlockPolicy;
-        typedef TilesReducePolicy<256, 16, 2, BLOCK_REDUCE_WARP_REDUCTIONS, PTX_LOAD_NONE, GRID_MAPPING_EVEN_SHARE>    SingleBlockPolicy;
+        typedef GridBlockReducePolicy<256, 8,  2, BLOCK_REDUCE_RAKING, PTX_LOAD_NONE, GRID_MAPPING_EVEN_SHARE>             MultiBlockPolicy;
+        typedef GridBlockReducePolicy<256, 16, 2, BLOCK_REDUCE_WARP_REDUCTIONS, PTX_LOAD_NONE, GRID_MAPPING_EVEN_SHARE>    SingleBlockPolicy;
         enum { SUBSCRIPTION_FACTOR = 4 };
     };
 
@@ -231,8 +234,8 @@ struct DeviceReduce
     struct TunedPolicies<T, SizeT, 300>
     {
         // GTX670: 154.0 @ 48M 32-bit T
-        typedef TilesReducePolicy<256, 2,  2, BLOCK_REDUCE_RAKING,  PTX_LOAD_NONE, GRID_MAPPING_EVEN_SHARE>            MultiBlockPolicy;
-        typedef TilesReducePolicy<256, 24, 4, BLOCK_REDUCE_WARP_REDUCTIONS,  PTX_LOAD_NONE, GRID_MAPPING_EVEN_SHARE>   SingleBlockPolicy;
+        typedef GridBlockReducePolicy<256, 2,  2, BLOCK_REDUCE_RAKING,  PTX_LOAD_NONE, GRID_MAPPING_EVEN_SHARE>            MultiBlockPolicy;
+        typedef GridBlockReducePolicy<256, 24, 4, BLOCK_REDUCE_WARP_REDUCTIONS,  PTX_LOAD_NONE, GRID_MAPPING_EVEN_SHARE>   SingleBlockPolicy;
         enum { SUBSCRIPTION_FACTOR = 1 };
     };
 
@@ -241,8 +244,8 @@ struct DeviceReduce
     struct TunedPolicies<T, SizeT, 200>
     {
         // GTX 580: 178.9 @ 48M 32-bit T
-        typedef TilesReducePolicy<128, 8,  2, BLOCK_REDUCE_RAKING, PTX_LOAD_NONE, GRID_MAPPING_DYNAMIC>                MultiBlockPolicy;
-        typedef TilesReducePolicy<128, 4,  1, BLOCK_REDUCE_RAKING, PTX_LOAD_NONE, GRID_MAPPING_EVEN_SHARE>             SingleBlockPolicy;
+        typedef GridBlockReducePolicy<128, 8,  2, BLOCK_REDUCE_RAKING, PTX_LOAD_NONE, GRID_MAPPING_DYNAMIC>                MultiBlockPolicy;
+        typedef GridBlockReducePolicy<128, 4,  1, BLOCK_REDUCE_RAKING, PTX_LOAD_NONE, GRID_MAPPING_EVEN_SHARE>             SingleBlockPolicy;
         enum { SUBSCRIPTION_FACTOR = 1 };
     };
 
@@ -250,8 +253,8 @@ struct DeviceReduce
     template <typename T, typename SizeT>
     struct TunedPolicies<T, SizeT, 130>
     {
-        typedef TilesReducePolicy<128, 8,  2,  BLOCK_REDUCE_RAKING, PTX_LOAD_NONE, GRID_MAPPING_EVEN_SHARE>            MultiBlockPolicy;
-        typedef TilesReducePolicy<32,  4,  4,  BLOCK_REDUCE_RAKING, PTX_LOAD_NONE, GRID_MAPPING_EVEN_SHARE>            SingleBlockPolicy;
+        typedef GridBlockReducePolicy<128, 8,  2,  BLOCK_REDUCE_RAKING, PTX_LOAD_NONE, GRID_MAPPING_EVEN_SHARE>            MultiBlockPolicy;
+        typedef GridBlockReducePolicy<32,  4,  4,  BLOCK_REDUCE_RAKING, PTX_LOAD_NONE, GRID_MAPPING_EVEN_SHARE>            SingleBlockPolicy;
         enum { SUBSCRIPTION_FACTOR = 1 };
     };
 
@@ -259,8 +262,8 @@ struct DeviceReduce
     template <typename T, typename SizeT>
     struct TunedPolicies<T, SizeT, 100>
     {
-        typedef TilesReducePolicy<128, 8,  2,  BLOCK_REDUCE_RAKING, PTX_LOAD_NONE, GRID_MAPPING_EVEN_SHARE>            MultiBlockPolicy;
-        typedef TilesReducePolicy<32,  4,  4,  BLOCK_REDUCE_RAKING, PTX_LOAD_NONE, GRID_MAPPING_EVEN_SHARE>            SingleBlockPolicy;
+        typedef GridBlockReducePolicy<128, 8,  2,  BLOCK_REDUCE_RAKING, PTX_LOAD_NONE, GRID_MAPPING_EVEN_SHARE>            MultiBlockPolicy;
+        typedef GridBlockReducePolicy<32,  4,  4,  BLOCK_REDUCE_RAKING, PTX_LOAD_NONE, GRID_MAPPING_EVEN_SHARE>            SingleBlockPolicy;
         enum { SUBSCRIPTION_FACTOR = 1 };
     };
 
