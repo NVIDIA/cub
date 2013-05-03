@@ -58,7 +58,7 @@ namespace cub {
 enum GridMappingStrategy
 {
     /**
-     * \brief An "even-share" strategy.
+     * \brief An "even-share" strategy for assigning input tiles to thread blocks.
      *
      * \par Overview
      * The input is evenly partitioned into \p p segments, where \p p is
@@ -73,7 +73,7 @@ enum GridMappingStrategy
     GRID_MAPPING_EVEN_SHARE,
 
     /**
-     * \brief A dynamic "queue-based" strategy for commutative reduction operators.
+     * \brief A dynamic "queue-based" strategy for assigning input tiles to thread blocks.
      *
      * \par Overview
      * The input is treated as a queue to be dynamically consumed by a grid of
@@ -85,6 +85,164 @@ enum GridMappingStrategy
      */
     GRID_MAPPING_DYNAMIC,
 };
+
+
+
+/**
+ * \brief Thread blocks (abstracted as \p grid_block instances) consume input tiles using an GridEvenShare descriptor. (See GridMappingStrategy::GRID_MAPPING_EVEN_SHARE.)
+ *
+ * Expects the \p GridBlock type to have the following member functions for
+ * - Full-tile and partial-tile processing, respectively:
+ *   - <tt>template <bool FIRST_TILE> void ConsumeTile(SizeT block_offset);</tt>
+ *   - <tt>template <bool FIRST_TILE> void ConsumeTile(SizeT block_offset, SizeT valid_items);</tt>
+ * - Full-block and partial-block finalization, respectively:
+ *   - <tt>template <typename Result> void Finalize(Result &result);</tt>
+ *   - <tt>template <typename Result> void Finalize(Result &result, SizeT valid_items);</tt>
+ * - Getting the number of items processed per call to \p ConsumeTile:
+ *   - <tt>int TileItems();</tt>
+ *
+ * \tparam GridBlock    <b>[inferred]</b> Thread block abstraction type for tile processing
+ * \tparam SizeT        <b>[inferred]</b> Integral type used for global array indexing
+ * \tparam Result       <b>[inferred]</b> Result type to be returned by the GridBlock instance
+ */
+template <
+    typename                GridBlock,
+    typename                SizeT,
+    typename                Result>
+__device__ __forceinline__ void BlockConsumeTiles(
+    GridBlock               &grid_block,        ///< [in,out] Threadblock abstraction for tile processing
+    SizeT                   num_items,          ///< [in] Total number of global input items
+    GridEvenShare<SizeT>    &even_share,        ///< [in] GridEvenShare descriptor (assumed to have already been block-initialized).
+    Result                  &result)            ///< [out] Result returned by <tt>grid_block::Finalize()</tt>
+{
+    SizeT block_offset = even_share.block_offset;
+
+    // Number of items per tile that can be processed by grid_block
+    int tile_items = grid_block.TileItems();
+
+    if (block_offset + tile_items <= even_share.block_oob)
+    {
+        // We have at least one full tile to consume
+        grid_block.ConsumeTile<true>(block_offset);
+        block_offset += tile_items;
+
+        // Consume any other full tiles
+        while (block_offset + tile_items <= even_share.block_oob)
+        {
+            grid_block.ConsumeTile<false>(block_offset);
+            block_offset += tile_items;
+        }
+
+        // Consume any remaining input
+        grid_block.ConsumeTile<false>(block_offset, even_share.block_oob - block_offset);
+
+        // Compute the block-wide reduction (every thread has a valid input)
+        return grid_block.Finalize(result);
+    }
+    else
+    {
+        // We have less than a full tile to consume
+        SizeT block_items = even_share.block_oob - block_offset;
+        grid_block.ConsumeTile<true>(block_offset, block_items);
+        grid_block.Finalize(result, block_items);
+    }
+}
+
+
+
+/**
+ * \brief Thread blocks (abstracted as \p grid_block instances) consume input tiles using an GridQueue descriptor. (See GridMappingStrategy::GRID_MAPPING_DYNAMIC.)
+ *
+ * Expects the \p GridBlock type to have the following member functions for
+ * - Full-tile and partial-tile processing, respectively:
+ *   - <tt>template <bool FIRST_TILE> void ConsumeTile(SizeT block_offset);</tt>
+ *   - <tt>template <bool FIRST_TILE> void ConsumeTile(SizeT block_offset, SizeT valid_items);</tt>
+ * - Full-block and partial-block finalization, respectively:
+ *   - <tt>template <typename Result> void Finalize(Result &result);</tt>
+ *   - <tt>template <typename Result> void Finalize(Result &result, SizeT valid_items);</tt>
+ * - Getting the number of items processed per call to \p ConsumeTile:
+ *   - <tt>int TileItems();</tt>
+ *
+ * \tparam GridBlock    <b>[inferred]</b> Thread block abstraction type for tile processing
+ * \tparam SizeT        <b>[inferred]</b> Integral type used for global array indexing
+ * \tparam Result       <b>[inferred]</b> Result type to be returned by the GridBlock instance
+ */
+template <
+    typename                GridBlock,
+    typename                SizeT,
+    typename                Result>
+__device__ __forceinline__ void BlockConsumeTiles(
+    GridBlock               &grid_block,        ///< [in,out] Threadblock abstraction for tile processing
+    SizeT                   num_items,          ///< [in] Total number of global input items
+    GridQueue<SizeT>        &queue,             ///< [in,out] GridQueue descriptor
+    Result                  &result)            ///< [out] Result returned by <tt>grid_block::Finalize()</tt>
+{
+    // Shared tile-processing offset obtained dynamically from queue
+    __shared__ SizeT dynamic_block_offset;
+
+    // Number of items per tile that can be processed by grid_block
+    int tile_items = grid_block.TileItems();
+
+    // We give each thread block at least one tile of input.
+    SizeT block_offset = blockIdx.x * tile_items;
+
+    // Check if we have a full tile to consume
+    if (block_offset + tile_items <= num_items)
+    {
+        grid_block.ConsumeTile<true>(block_offset);
+
+        // Now that every block in the kernel has gotten a tile, attempt to dynamically consume any remaining
+        SizeT even_share_base = gridDim.x * tile_items;
+        if (even_share_base < num_items)
+        {
+            // There are tiles left to consume
+            while (true)
+            {
+                // Dequeue up to tile_items
+                if (threadIdx.x == 0)
+                {
+                    dynamic_block_offset = queue.Drain(tile_items) + even_share_base;
+                }
+
+                __syncthreads();
+
+                block_offset = dynamic_block_offset;
+
+                __syncthreads();
+
+                if (block_offset + tile_items > num_items)
+                {
+                    if (block_offset < num_items)
+                    {
+                        // We have less than a full tile to consume
+                        grid_block.ConsumeTile<false>(block_offset, num_items - block_offset);
+                    }
+
+                    // No more work to do
+                    break;
+                }
+
+                // We have a full tile to consume
+                grid_block.ConsumeTile<false>(block_offset);
+            }
+        }
+
+        // Compute the block-wide reduction (every thread has a valid input)
+        grid_block.Finalize(result);
+    }
+    else
+    {
+        // We have less than a full tile to consume
+        SizeT block_items = num_items - block_offset;
+        grid_block.ConsumeTile<true>(block_offset, block_items);
+        grid_block.Finalize(result, block_items);
+    }
+}
+
+
+
+
+
 
 
 /** @} */       // end group GridModule

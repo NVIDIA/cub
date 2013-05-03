@@ -35,6 +35,9 @@
 
 #include <iterator>
 
+#include "../../util_arch.cuh"
+#include "../../block/block_radix_sort.cuh"
+#include "../../block/block_discontinuity.cuh"
 #include "../../grid/grid_mapping.cuh"
 #include "../../grid/grid_even_share.cuh"
 #include "../../grid/grid_queue.cuh"
@@ -87,6 +90,8 @@ struct TilesHisto256Policy
 template <
     typename    TilesHisto256Policy,      ///< Tuning policy
     int         CHANNELS,                 ///< Number of channels interleaved in the input data (may be greater than the number of active channels being histogrammed)
+    int         ACTIVE_CHANNELS,          ///< Number of channels actively being histogrammed
+    typename    HistoCounter,             ///< Integral type for counting sample occurrences per histogram bin
     typename    SizeT>                    ///< Integer type for offsets
 class TilesHisto256
 {
@@ -107,21 +112,6 @@ private:
 
     static const BlockHisto256Algorithm BLOCK_ALGORITHM = TilesHisto256Policy::BLOCK_ALGORITHM;
 
-    // Parameterized BlockHisto256 primitive
-    typedef BlockHisto256<BLOCK_THREADS, ITEMS_PER_THREAD, BLOCK_ALGORITHM> BlockHisto256T;
-
-    // Shared memory type for this threadblock
-    struct _SmemStorage
-    {
-        SizeT                                   block_offset;   // Location where to dequeue input for dynamic operation
-        typename BlockHisto256T::SmemStorage    block_histo;    // Smem needed for cooperative histogramming
-    };
-
-public:
-
-    /// \smemstorage{TilesHisto256}
-    typedef _SmemStorage SmemStorage;
-
 private:
 
     //---------------------------------------------------------------------
@@ -129,13 +119,160 @@ private:
     //---------------------------------------------------------------------
 
     /**
-     * Channel-oriented (one channel at a time)
+     * BLOCK_BYTE_HISTO_SORT algorithmic variant.
+     *
+     * Keeps the histogram(s) in registers as tiles are processed
      */
     template <
-        BlockHisto256Algorithm _BLOCK_ALGORITHM,
-        bool CHANNEL_ORIENTED = (_BLOCK_ALGORITHM == BLOCK_BYTE_HISTO_SORT) >
-    struct TilesHisto256Internal
+        BlockHisto256Algorithm _BLOCK_ALGORITHM, int DUMMY = 0>
+    struct Internal
     {
+        //---------------------------------------------------------------------
+        // Types
+        //---------------------------------------------------------------------
+
+        // Constants
+        enum
+        {
+            STRIPED_BINS_PER_THREAD = (256 + BLOCK_THREADS - 1) / BLOCK_THREADS,
+        };
+
+        // Parameterize BlockRadixSort type for our thread block
+        typedef BlockRadixSort<unsigned char, BLOCK_THREADS, ITEMS_PER_THREAD> BlockRadixSortT;
+
+        // Parameterize BlockDiscontinuity type for our thread block
+        typedef BlockDiscontinuity<unsigned char, BLOCK_THREADS> BlockDiscontinuityT;
+
+        // Shared memory
+        union SmemStorage
+        {
+            // Storage for sorting bin values
+            typename BlockRadixSortT::SmemStorage sort_storage;
+
+            struct
+            {
+                // Storage for detecting discontinuities in the tile of sorted bin values
+                typename BlockDiscontinuityT::SmemStorage discont_storage;
+
+                // Storage for noting begin/end offsets of bin runs in the tile of sorted bin values
+                unsigned int run_begin[256];
+                unsigned int run_end[256];
+            };
+        };
+
+
+        // Discontinuity functor
+        struct DiscontinuityOp
+        {
+            // Reference to smem_storage
+            SmemStorage &smem_storage;
+
+            // Constructor
+            __device__ __forceinline__ DiscontinuityOp(SmemStorage &smem_storage) : smem_storage(smem_storage) {}
+
+            // Discontinuity predicate
+            __device__ __forceinline__ bool operator()(const unsigned char &a, const unsigned char &b, unsigned int b_index)
+            {
+                if (a != b)
+                {
+                    // Note the begin/end offsets in shared storage
+                    smem_storage.run_begin[b] = b_index;
+                    smem_storage.run_end[a] = b_index;
+
+                    return true;
+                }
+                else
+                {
+                    return false;
+                }
+            }
+        };
+
+
+        //---------------------------------------------------------------------
+        // Fields
+        //---------------------------------------------------------------------
+
+        // Shared memory storage reference
+        SmemStorage &smem_storage;
+
+        // Histogram counters striped across threads
+        HistoCounter bins[ACTIVE_CHANNELS][STRIPED_BINS_PER_THREAD];
+
+
+        //---------------------------------------------------------------------
+        // Operations
+        //---------------------------------------------------------------------
+
+        // Constructor
+        Internal(
+            SmemStorage     &smem_storage,
+            HistoCounter    (&histograms)[ACTIVE_CHANNELS][256])
+
+
+
+
+        template <
+            typename            HistoCounter>
+        static __device__ __forceinline__ void Composite(
+            SmemStorage         &smem_storage,
+            unsigned char       (&items)[ITEMS_PER_THREAD],
+            HistoCounter        histogram[256])
+        {
+            // Sort bytes in blocked arrangement
+            BlockRadixSortT::SortBlocked(smem_storage.sort_storage, items);
+
+            __syncthreads();
+
+            // Initialize the shared memory's run_begin and run_end for each bin
+            int histo_offset = 0;
+
+            #pragma unroll
+            for(; histo_offset + BLOCK_THREADS <= 256; histo_offset += BLOCK_THREADS)
+            {
+                smem_storage.run_begin[histo_offset + threadIdx.x] = TILE_CHANNEL_ITEMS;
+                smem_storage.run_end[histo_offset + threadIdx.x] = TILE_CHANNEL_ITEMS;
+            }
+            // Finish up with guarded initialization if necessary
+            if ((histo_offset < BLOCK_THREADS) && (histo_offset + threadIdx.x < 256))
+            {
+                smem_storage.run_begin[histo_offset + threadIdx.x] = TILE_CHANNEL_ITEMS;
+                smem_storage.run_end[histo_offset + threadIdx.x] = TILE_CHANNEL_ITEMS;
+            }
+
+            __syncthreads();
+
+            int flags[ITEMS_PER_THREAD];    // unused
+
+            // Note the begin/end run offsets of bin runs in the sorted tile
+            DiscontinuityOp flag_op(smem_storage);
+            BlockDiscontinuityT::Flag(smem_storage.discont_storage, items, flag_op, flags);
+
+            // Update begin for first item
+            if (threadIdx.x == 0) smem_storage.run_begin[items[0]] = 0;
+
+            __syncthreads();
+
+            // Composite into histogram
+            histo_offset = 0;
+
+            #pragma unroll
+            for(; histo_offset + BLOCK_THREADS <= 256; histo_offset += BLOCK_THREADS)
+            {
+                int thread_offset = histo_offset + threadIdx.x;
+                HistoCounter count = smem_storage.run_end[thread_offset] - smem_storage.run_begin[thread_offset];
+                histogram[thread_offset] += count;
+            }
+            // Finish up with guarded composition if necessary
+            if ((histo_offset < BLOCK_THREADS) && (histo_offset + threadIdx.x < 256))
+            {
+                int thread_offset = histo_offset + threadIdx.x;
+                HistoCounter count = smem_storage.run_end[thread_offset] - smem_storage.run_begin[thread_offset];
+                histogram[thread_offset] += count;
+            }
+        }
+
+
         /**
          * Process one channel within a tile.
          */
@@ -168,10 +305,11 @@ private:
                 }
 
                 // Composite our histogram data
-                BlockHisto256T::Composite(smem_storage.block_histo, items, histograms[channel]);
+                Composite(smem_storage, items, histograms[channel]);
 
                 __syncthreads();
 
+                // Correct the overcounting in the zero-bin from invalid (out-of-bounds) items
                 if (threadIdx.x == 0)
                 {
                     int extra = (TILE_ITEMS - guarded_items) / CHANNELS;
@@ -190,7 +328,7 @@ private:
                 }
 
                 // Composite our histogram data
-                BlockHisto256T::Composite(smem_storage.block_histo, items, histograms[channel]);
+                Composite(smem_storage, items, histograms[channel]);
             }
         }
 
@@ -230,9 +368,11 @@ private:
     /**
      * BLOCK_BYTE_HISTO_ATOMIC algorithmic variant
      */
-    template <BlockHisto256Algorithm _BLOCK_ALGORITHM>
-    struct TilesHisto256Internal<_BLOCK_ALGORITHM, false>
+    template <int DUMMY>
+    struct Internal<BLOCK_BYTE_HISTO_ATOMIC, DUMMY>
     {
+        struct SmemStorage {};
+
         /**
          * Process one tile.
          */
@@ -298,41 +438,46 @@ private:
                         }
                     }
                 }
-
-
-/*
-                #pragma unroll
-                for (int CHANNEL = 0; CHANNEL < CHANNELS; ++CHANNEL)
-                {
-                    unsigned char items[ITEMS_PER_THREAD][CHANNELS];
-
-                    int tile_offset = (CHANNEL * TILE_CHANNEL_ITEMS);
-
-                    #pragma unroll
-                    for (int ITEM = 0; ITEM < ITEMS_PER_THREAD; ITEM++)
-                    {
-                        items[ITEM] = d_in[block_offset + tile_offset + (ITEM * BLOCK_THREADS) + threadIdx.x];
-                    }
-
-                    __threadfence_block();
-
-                    // Update histogram
-
-                    if ((ACTIVE_CHANNELS == CHANNELS) || (my_channel < ACTIVE_CHANNELS))
-                    {
-                        #pragma unroll
-                        for (int ITEM = 0; ITEM < ITEMS_PER_THREAD; ITEM++)
-                        {
-                            atomicAdd(histograms[my_channel] + items[ITEM], 1);
-                        }
-                    }
-                }
-*/
             }
         }
     };
 
+    /**
+     * Initialize shared histogram
+     */
+    template <typename HistoCounter>
+    static __device__ __forceinline__ void InitHistogram(HistoCounter histogram[256])
+    {
+        // Initialize histogram bin counts to zeros
+        int histo_offset = 0;
 
+        #pragma unroll
+        for(; histo_offset + BLOCK_THREADS <= 256; histo_offset += BLOCK_THREADS)
+        {
+            histogram[histo_offset + threadIdx.x] = 0;
+        }
+        // Finish up with guarded initialization if necessary
+        if ((histo_offset < BLOCK_THREADS) && (histo_offset + threadIdx.x < 256))
+        {
+            histogram[histo_offset + threadIdx.x] = 0;
+        }
+    }
+
+
+    // The internal implementation we will use
+    typedef Internal<BLOCK_ALGORITHM> Internal;
+
+    // Shared memory type for this threadblock
+    struct _SmemStorage
+    {
+        SizeT                           block_offset;   // Location where to dequeue input for dynamic operation
+        typename Internal::SmemStorage  block_histo;    // Smem needed for cooperative histogramming
+    };
+
+public:
+
+    /// \smemstorage{TilesHisto256}
+    typedef _SmemStorage SmemStorage;
 
 
 
@@ -361,7 +506,7 @@ public:
         #pragma unroll
         for (int CHANNEL = 0; CHANNEL < ACTIVE_CHANNELS; ++CHANNEL)
         {
-            BlockHisto256T::InitHistogram(histograms[CHANNEL]);
+            InitHistogram(histograms[CHANNEL]);
         }
 
         __syncthreads();
@@ -369,7 +514,7 @@ public:
         // Consume full tiles
         while (block_offset + TILE_ITEMS <= block_oob)
         {
-            TilesHisto256Internal<BLOCK_ALGORITHM>::ConsumeTile(smem_storage, d_in, block_offset, histograms);
+            Internal<BLOCK_ALGORITHM>::ConsumeTile(smem_storage, d_in, block_offset, histograms);
 
             block_offset += TILE_ITEMS;
 
@@ -383,7 +528,7 @@ public:
         // Consume any remaining partial-tile
         if (block_offset < block_oob)
         {
-            TilesHisto256Internal<BLOCK_ALGORITHM>::ConsumeTile(smem_storage, d_in, block_offset, histograms, block_oob - block_offset);
+            Internal<BLOCK_ALGORITHM>::ConsumeTile(smem_storage, d_in, block_offset, histograms, block_oob - block_offset);
         }
     }
 
@@ -407,7 +552,7 @@ public:
         #pragma unroll
         for (int CHANNEL = 0; CHANNEL < ACTIVE_CHANNELS; ++CHANNEL)
         {
-            BlockHisto256T::InitHistogram(histograms[CHANNEL]);
+            InitHistogram(histograms[CHANNEL]);
         }
 
         // Dynamically consume tiles
@@ -430,7 +575,7 @@ public:
                 if (block_offset < num_items)
                 {
                     // We have less than a full tile to consume
-                    TilesHisto256Internal<BLOCK_ALGORITHM>::ConsumeTile(smem_storage, d_in, block_offset, histograms, num_items - block_offset);
+                    Internal<BLOCK_ALGORITHM>::ConsumeTile(smem_storage, d_in, block_offset, histograms, num_items - block_offset);
                 }
 
                 // No more work to do
@@ -438,7 +583,7 @@ public:
             }
 
             // We have a full tile to consume
-            TilesHisto256Internal<BLOCK_ALGORITHM>::ConsumeTile(smem_storage, d_in, block_offset, histograms);
+            Internal<BLOCK_ALGORITHM>::ConsumeTile(smem_storage, d_in, block_offset, histograms);
         }
     }
 
