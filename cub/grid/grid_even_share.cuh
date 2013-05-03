@@ -87,16 +87,35 @@ private:
 public:
 
     /// Total number of input items
-    SizeT  num_items;
+    SizeT   num_items;
 
     /// Grid size in threadblocks
-    int grid_size;
+    int     grid_size;
 
     /// Offset into input marking the beginning of the owning thread block's segment of input tiles
-    SizeT block_offset;
+    SizeT   block_offset;
 
     /// Offset into input of marking the end (one-past) of the owning thread block's segment of input tiles
     SizeT   block_oob;
+
+    /**
+     * \brief Block-initialized constructor for single-block grids.
+     */
+    GridEvenShare(SizeT num_items) :
+        num_items(num_items),
+        grid_size(1),
+        block_offset(0),
+        block_oob(num_items) {}
+
+
+    /**
+     * \brief Block-initialized default constructor.  Zero-initializes block-specific fields.
+     */
+    GridEvenShare() :
+        num_items(0),
+        grid_size(0),
+        block_offset(0),
+        block_oob(0) {}
 
 
     /**

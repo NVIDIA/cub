@@ -238,7 +238,6 @@ void Test(
     }
 
     // Create iterator wrapper for SampleType -> unsigned char conversion
-//    typedef TransformIteratorRA<unsigned char, BinOp, SampleType> BinningIterator;
     typedef TexTransformIteratorRA<unsigned char, BinOp, SampleType> BinningIterator;
     BinningIterator d_sample_itr(d_samples, bin_op);
 
@@ -246,7 +245,7 @@ void Test(
     printf("Host dispatch:\n"); fflush(stdout);
     if (g_atomic)
     {
-        CubDebugExit(DeviceHisto256::MultiChannelAtomic<CHANNELS>(d_sample_itr, d_histograms, num_samples, 0, true));
+//        CubDebugExit(DeviceHisto256::MultiChannelAtomic<CHANNELS>(d_sample_itr, d_histograms, num_samples, 0, true));
     }
     else
     {
@@ -270,7 +269,7 @@ void Test(
 
         if (g_atomic)
         {
-            CubDebugExit(DeviceHisto256::MultiChannelAtomic<CHANNELS>(d_sample_itr, d_histograms, num_samples));
+//            CubDebugExit(DeviceHisto256::MultiChannelAtomic<CHANNELS>(d_sample_itr, d_histograms, num_samples));
         }
         else
         {
@@ -420,7 +419,7 @@ int main(int argc, char** argv)
         cast_op,
         num_samples,
         CUB_TYPE_STRING(unsigned char));
-
+/*
     // unsigned short
     printf("\n\n-- UINT16 -------------- \n"); fflush(stdout);
 
@@ -472,7 +471,7 @@ int main(int argc, char** argv)
         scale_op,
         num_samples,
         CUB_TYPE_STRING(float));
-
+*/
     return 0;
 }
 
