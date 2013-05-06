@@ -37,8 +37,9 @@
 #include <stdio.h>
 #include <iterator>
 
-#include "tiles/tiles_reduce.cuh"
+#include "grid_block/grid_block_reduce.cuh"
 #include "../util_allocator.cuh"
+#include "../grid/grid_mapping.cuh"
 #include "../grid/grid_even_share.cuh"
 #include "../grid/grid_queue.cuh"
 
@@ -60,7 +61,7 @@ namespace cub {
  * Multi-block reduction kernel entry point.  Computes privatized reductions, one per thread block.
  */
 template <
-    typename                GridBlockReducePolicy,      ///< Tuning policy for cub::GridBlockReduce abstraction
+    typename                GridBlockReducePolicy,  ///< Tuning policy for cub::GridBlockReduce abstraction
     typename                InputIteratorRA,        ///< The random-access iterator type for input (may be a simple pointer type).
     typename                OutputIteratorRA,       ///< The random-access iterator type for output (may be a simple pointer type).
     typename                SizeT,                  ///< Integral type used for global array indexing
@@ -74,9 +75,11 @@ __global__ void MultiBlockReduceKernel(
     GridQueue<SizeT>        queue,                  ///< [in] Descriptor for performing dynamic mapping of tile data to thread blocks
     ReductionOp             reduction_op)           ///< [in] Binary reduction operator
 {
-    // Types
-    typedef typename std::iterator_traits<InputIteratorRA>::value_type                      T;
-    typedef GridBlockReduce<GridBlockReducePolicy, InputIteratorRA, SizeT, ReductionOp>     GridBlockReduceT;
+    // Data type
+    typedef typename std::iterator_traits<InputIteratorRA>::value_type T;
+
+    // Thread block type for reducing input tiles
+    typedef GridBlockReduce<GridBlockReducePolicy, InputIteratorRA, SizeT, ReductionOp> GridBlockReduceT;
 
     // Block-wide aggregate
     T block_aggregate;
@@ -84,19 +87,19 @@ __global__ void MultiBlockReduceKernel(
     // Shared memory storage
     __shared__ typename GridBlockReduceT::SmemStorage smem_storage;
 
-    // Block abstraction for reducing tiles
+    // Thread block instance
     GridBlockReduceT grid_block(smem_storage, d_in, reduction_op);
 
-    if (GridBlockReducePolicy::GridMappingStrategy == GRID_MAPPING_DYNAMIC)
+    if (GridBlockReducePolicy::GRID_MAPPING == GRID_MAPPING_DYNAMIC)
     {
         // Dynamic input distribution
-        BlockConsumeTiles(grid_block, num_items, queue, block_aggregate);
+        BlockConsumeTilesFlagFirst(grid_block, num_items, queue, block_aggregate);
     }
     else
     {
         // Even-share input distribution
         even_share.BlockInit();
-        BlockConsumeTiles(grid_block, num_items, even_share, block_aggregate);
+        BlockConsumeTilesFlagFirst(grid_block, num_items, even_share, block_aggregate);
     }
 
     // Output result
@@ -111,7 +114,7 @@ __global__ void MultiBlockReduceKernel(
  * Single-block reduction kernel entry point.
  */
 template <
-    typename                GridBlockReducePolicy,      ///< Tuning policy for cub::GridBlockReduce abstraction
+    typename                GridBlockReducePolicy,  ///< Tuning policy for cub::GridBlockReduce abstraction
     typename                InputIteratorRA,        ///< The random-access iterator type for input (may be a simple pointer type).
     typename                OutputIteratorRA,       ///< The random-access iterator type for output (may be a simple pointer type).
     typename                SizeT,                  ///< Integral type used for global array indexing
@@ -123,9 +126,11 @@ __global__ void SingleBlockReduceKernel(
     SizeT                   num_items,              ///< [in] Total number of input data items
     ReductionOp             reduction_op)           ///< [in] Binary reduction operator
 {
-    // Types
-    typedef typename std::iterator_traits<InputIteratorRA>::value_type                      T;
-    typedef GridBlockReduce<GridBlockReducePolicy, InputIteratorRA, SizeT, ReductionOp>     GridBlockReduceT;
+    // Data type
+    typedef typename std::iterator_traits<InputIteratorRA>::value_type T;
+
+    // Thread block type for reducing input tiles
+    typedef GridBlockReduce<GridBlockReducePolicy, InputIteratorRA, SizeT, ReductionOp> GridBlockReduceT;
 
     // Block-wide aggregate
     T block_aggregate;
@@ -137,8 +142,8 @@ __global__ void SingleBlockReduceKernel(
     GridBlockReduceT grid_block(smem_storage, d_in, reduction_op);
 
     // Reduce input tiles
-    GridEvenShare<int> even_share(num_items);
-    BlockConsumeTiles(grid_block, num_items, even_share, block_aggregate);
+    GridEvenShare<SizeT> even_share(num_items);
+    BlockConsumeTilesFlagFirst(grid_block, num_items, even_share, block_aggregate);
 
     // Output result
     if (threadIdx.x == 0)
@@ -234,7 +239,7 @@ struct DeviceReduce
     struct TunedPolicies<T, SizeT, 300>
     {
         // GTX670: 154.0 @ 48M 32-bit T
-        typedef GridBlockReducePolicy<256, 2,  2, BLOCK_REDUCE_RAKING,  PTX_LOAD_NONE, GRID_MAPPING_EVEN_SHARE>            MultiBlockPolicy;
+        typedef GridBlockReducePolicy<256, 2,  1, BLOCK_REDUCE_WARP_REDUCTIONS,  PTX_LOAD_NONE, GRID_MAPPING_EVEN_SHARE>            MultiBlockPolicy;
         typedef GridBlockReducePolicy<256, 24, 4, BLOCK_REDUCE_WARP_REDUCTIONS,  PTX_LOAD_NONE, GRID_MAPPING_EVEN_SHARE>   SingleBlockPolicy;
         enum { SUBSCRIPTION_FACTOR = 1 };
     };
@@ -399,7 +404,7 @@ struct DeviceReduce
     template <
         typename                    MultiBlockReduceKernelPtr,                          ///< Function type of cub::MultiBlockReduceKernel
         typename                    ReduceSingleKernelPtr,                              ///< Function type of cub::SingleBlockReduceKernel
-        typename                    ResetDrainKernelPtr,                              ///< Function type of cub::ResetDrainKernel
+        typename                    ResetDrainKernelPtr,                                ///< Function type of cub::ResetDrainKernel
         typename                    InputIteratorRA,                                    ///< The random-access iterator type for input (may be a simple pointer type).
         typename                    OutputIteratorRA,                                   ///< The random-access iterator type for output (may be a simple pointer type).
         typename                    SizeT,                                              ///< Integral type used for global array indexing
@@ -408,7 +413,7 @@ struct DeviceReduce
     static cudaError_t DispatchIterative(
         MultiBlockReduceKernelPtr   multi_block_kernel,                                 ///< [in] Kernel function pointer to parameterization of cub::MultiBlockReduceKernel
         ReduceSingleKernelPtr       single_block_kernel,                                ///< [in] Kernel function pointer to parameterization of cub::SingleBlockReduceKernel
-        ResetDrainKernelPtr       prepare_drain_kernel,                               ///< [in] Kernel function pointer to parameterization of cub::ResetDrainKernel
+        ResetDrainKernelPtr         prepare_drain_kernel,                               ///< [in] Kernel function pointer to parameterization of cub::ResetDrainKernel
         KernelDispachParams         &multi_block_dispatch_params,                       ///< [in] Dispatch parameters that match the policy that \p multi_block_kernel_ptr was compiled for
         KernelDispachParams         &single_block_dispatch_params,                      ///< [in] Dispatch parameters that match the policy that \p single_block_kernel was compiled for
         InputIteratorRA             d_in,                                               ///< [in] Input data to reduce
@@ -588,7 +593,7 @@ struct DeviceReduce
         KernelDispachParams         &single_block_dispatch_params,                      ///< [in] Dispatch parameters that match the policy that \p single_block_kernel was compiled for
         InputIteratorRA             d_in,                                               ///< [in] Input data to reduce
         OutputIteratorRA            d_out,                                              ///< [out] Output location for result
-        SizeT                         num_items,                                          ///< [in] Number of items to reduce
+        SizeT                       num_items,                                          ///< [in] Number of items to reduce
         ReductionOp                 reduction_op,                                       ///< [in] Binary reduction operator
         cudaStream_t                stream              = 0,                            ///< [in] <b>[optional]</b> CUDA stream to launch kernels within.  Default is stream-0.
         bool                        stream_synchronous  = false,                        ///< [in] <b>[optional]</b> Whether or not to synchronize the stream after every kernel launch to check for errors.  Default is \p false.

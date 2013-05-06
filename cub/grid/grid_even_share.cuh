@@ -99,9 +99,9 @@ public:
     SizeT   block_oob;
 
     /**
-     * \brief Block-initialized constructor for single-block grids.
+     * \brief Block-based constructor for single-block grids.
      */
-    GridEvenShare(SizeT num_items) :
+    __device__ __forceinline__ GridEvenShare(SizeT num_items) :
         num_items(num_items),
         grid_size(1),
         block_offset(0),
@@ -109,9 +109,9 @@ public:
 
 
     /**
-     * \brief Block-initialized default constructor.  Zero-initializes block-specific fields.
+     * \brief Default constructor.  Zero-initializes block-specific fields.
      */
-    GridEvenShare() :
+    __host__ __device__ __forceinline__ GridEvenShare() :
         num_items(0),
         grid_size(0),
         block_offset(0),

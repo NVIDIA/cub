@@ -186,24 +186,24 @@ struct Schmoo
      * Must have smem that fits in the SM
      * Must have vector load length that divides items per thread
      */
-    template <typename BlockReduceTilesPolicy>
+    template <typename GridBlockReducePolicy, typename ReductionOp>
     struct SmemSize
     {
         enum
         {
-            BYTES = sizeof(typename BlockReduceTiles<BlockReduceTilesPolicy, T*, SizeT>::SmemStorage),
+            BYTES = sizeof(typename GridBlockReduce<GridBlockReducePolicy, T*, SizeT, ReductionOp>::SmemStorage),
             IS_OK = ((BYTES < ArchProps<TUNE_ARCH>::SMEM_BYTES) &&
-                     (BlockReduceTilesPolicy::ITEMS_PER_THREAD % BlockReduceTilesPolicy::VECTOR_LOAD_LENGTH == 0))
+                     (GridBlockReducePolicy::ITEMS_PER_THREAD % GridBlockReducePolicy::VECTOR_LOAD_LENGTH == 0))
         };
     };
 
 
     /**
-     * Specialization that allows kernel generation with the specified BlockReduceTilesPolicy
+     * Specialization that allows kernel generation with the specified GridBlockReducePolicy
      */
     template <
-        typename BlockReduceTilesPolicy,
-        bool IsOk = SmemSize<BlockReduceTilesPolicy>::IS_OK>
+        typename    GridBlockReducePolicy,
+        bool        IsOk = SmemSize<GridBlockReducePolicy, ReductionOp>::IS_OK>
     struct Ok
     {
         /// Enumerate multi-block kernel and add to the list
@@ -213,8 +213,8 @@ struct Schmoo
             int subscription_factor)
         {
             MultiDispatchTuple tuple;
-            tuple.params.template Init<BlockReduceTilesPolicy>(subscription_factor);
-            tuple.kernel_ptr = MultiBlockDeviceReduceKernel<BlockReduceTilesPolicy, T*, T*, SizeT, ReductionOp>;
+            tuple.params.template Init<GridBlockReducePolicy>(subscription_factor);
+            tuple.kernel_ptr = MultiBlockReduceKernel<GridBlockReducePolicy, T*, T*, SizeT, ReductionOp>;
             multi_kernels.push_back(tuple);
         }
 
@@ -224,17 +224,17 @@ struct Schmoo
         static void GenerateSingle(KernelsVector &single_kernels)
         {
             SingleDispatchTuple tuple;
-            tuple.params.template Init<BlockReduceTilesPolicy>();
-            tuple.kernel_ptr = SingleBlockDeviceReduceKernel<BlockReduceTilesPolicy, T*, T*, SizeT, ReductionOp>;
+            tuple.params.template Init<GridBlockReducePolicy>();
+            tuple.kernel_ptr = SingleBlockReduceKernel<GridBlockReducePolicy, T*, T*, SizeT, ReductionOp>;
             single_kernels.push_back(tuple);
         }
     };
 
     /**
-     * Specialization that rejects kernel generation with the specified BlockReduceTilesPolicy
+     * Specialization that rejects kernel generation with the specified GridBlockReducePolicy
      */
-    template <typename BlockReduceTilesPolicy>
-    struct Ok<BlockReduceTilesPolicy, false>
+    template <typename GridBlockReducePolicy>
+    struct Ok<GridBlockReducePolicy, false>
     {
         template <typename KernelsVector>
         static void GenerateMulti(KernelsVector &multi_kernels, int subscription_factor) {}
@@ -254,16 +254,16 @@ struct Schmoo
     void Enumerate()
     {
         // Multi-block kernels
-        Ok<BlockReduceTilesPolicy<BLOCK_THREADS, ITEMS_PER_THREAD, VECTOR_LOAD_LENGTH, BLOCK_ALGORITHM, LOAD_MODIFIER, GRID_MAPPING_EVEN_SHARE> >::GenerateMulti(multi_kernels, 1);
-        Ok<BlockReduceTilesPolicy<BLOCK_THREADS, ITEMS_PER_THREAD, VECTOR_LOAD_LENGTH, BLOCK_ALGORITHM, LOAD_MODIFIER, GRID_MAPPING_EVEN_SHARE> >::GenerateMulti(multi_kernels, 2);
-        Ok<BlockReduceTilesPolicy<BLOCK_THREADS, ITEMS_PER_THREAD, VECTOR_LOAD_LENGTH, BLOCK_ALGORITHM, LOAD_MODIFIER, GRID_MAPPING_EVEN_SHARE> >::GenerateMulti(multi_kernels, 4);
-        Ok<BlockReduceTilesPolicy<BLOCK_THREADS, ITEMS_PER_THREAD, VECTOR_LOAD_LENGTH, BLOCK_ALGORITHM, LOAD_MODIFIER, GRID_MAPPING_EVEN_SHARE> >::GenerateMulti(multi_kernels, 8);
+        Ok<GridBlockReducePolicy<BLOCK_THREADS, ITEMS_PER_THREAD, VECTOR_LOAD_LENGTH, BLOCK_ALGORITHM, LOAD_MODIFIER, GRID_MAPPING_EVEN_SHARE> >::GenerateMulti(multi_kernels, 1);
+        Ok<GridBlockReducePolicy<BLOCK_THREADS, ITEMS_PER_THREAD, VECTOR_LOAD_LENGTH, BLOCK_ALGORITHM, LOAD_MODIFIER, GRID_MAPPING_EVEN_SHARE> >::GenerateMulti(multi_kernels, 2);
+        Ok<GridBlockReducePolicy<BLOCK_THREADS, ITEMS_PER_THREAD, VECTOR_LOAD_LENGTH, BLOCK_ALGORITHM, LOAD_MODIFIER, GRID_MAPPING_EVEN_SHARE> >::GenerateMulti(multi_kernels, 4);
+        Ok<GridBlockReducePolicy<BLOCK_THREADS, ITEMS_PER_THREAD, VECTOR_LOAD_LENGTH, BLOCK_ALGORITHM, LOAD_MODIFIER, GRID_MAPPING_EVEN_SHARE> >::GenerateMulti(multi_kernels, 8);
 #if TUNE_ARCH >= 200
-        Ok<BlockReduceTilesPolicy<BLOCK_THREADS, ITEMS_PER_THREAD, VECTOR_LOAD_LENGTH, BLOCK_ALGORITHM, LOAD_MODIFIER, GRID_MAPPING_DYNAMIC> >::GenerateMulti(multi_kernels, 1);
+        Ok<GridBlockReducePolicy<BLOCK_THREADS, ITEMS_PER_THREAD, VECTOR_LOAD_LENGTH, BLOCK_ALGORITHM, LOAD_MODIFIER, GRID_MAPPING_DYNAMIC> >::GenerateMulti(multi_kernels, 1);
 #endif
 
         // Single-block kernels
-        Ok<BlockReduceTilesPolicy<BLOCK_THREADS, ITEMS_PER_THREAD, VECTOR_LOAD_LENGTH, BLOCK_ALGORITHM, LOAD_MODIFIER, GRID_MAPPING_EVEN_SHARE> >::GenerateSingle(single_kernels);
+        Ok<GridBlockReducePolicy<BLOCK_THREADS, ITEMS_PER_THREAD, VECTOR_LOAD_LENGTH, BLOCK_ALGORITHM, LOAD_MODIFIER, GRID_MAPPING_EVEN_SHARE> >::GenerateSingle(single_kernels);
     }
 
 
@@ -321,13 +321,13 @@ struct Schmoo
 //      Enumerate<BLOCK_THREADS, 13>();
 //      Enumerate<BLOCK_THREADS, 15>();
         Enumerate<BLOCK_THREADS, 16>();
-//      Enumerate<BLOCK_THREADS, 17>();
+        Enumerate<BLOCK_THREADS, 17>();
 //      Enumerate<BLOCK_THREADS, 19>();
         Enumerate<BLOCK_THREADS, 20>();
 //      Enumerate<BLOCK_THREADS, 21>();
-//      Enumerate<BLOCK_THREADS, 23>();
+        Enumerate<BLOCK_THREADS, 23>();
         Enumerate<BLOCK_THREADS, 24>();
-//      Enumerate<BLOCK_THREADS, 25>();
+        Enumerate<BLOCK_THREADS, 25>();
     }
 
 
@@ -447,10 +447,10 @@ struct Schmoo
         ReductionOp             reduction_op)
     {
         // Simple single kernel tuple for use with multi kernel sweep
-        typedef typename DeviceReduce::TunedPolicies<T, SizeT, TUNE_ARCH>::SinglePolicy SimpleSinglePolicy;
+        typedef typename DeviceReduce::TunedPolicies<T, SizeT, TUNE_ARCH>::SingleBlockPolicy SimpleSingleBlockPolicy;
         SingleDispatchTuple simple_single_tuple;
-        simple_single_tuple.params.template Init<SimpleSinglePolicy>();
-        simple_single_tuple.kernel_ptr = SingleBlockDeviceReduceKernel<SimpleSinglePolicy, T*, T*, SizeT, ReductionOp>;
+        simple_single_tuple.params.template Init<SimpleSingleBlockPolicy>();
+        simple_single_tuple.kernel_ptr = SingleBlockReduceKernel<SimpleSingleBlockPolicy, T*, T*, SizeT, ReductionOp>;
 
         double max_exponent      = log2(double(g_max_items));
         double min_exponent      = log2(double(simple_single_tuple.params.tile_size));

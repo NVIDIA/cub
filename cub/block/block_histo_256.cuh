@@ -45,9 +45,12 @@ CUB_NS_PREFIX
 namespace cub {
 
 
+/******************************************************************************
+ * Algorithmic variants
+ ******************************************************************************/
+
 /**
- * BlockHisto256Algorithm enumerates alternative algorithms for the parallel
- * construction of 8b histograms.
+ * \brief BlockHisto256Algorithm enumerates alternative algorithms for the parallel construction of 8b histograms.
  */
 enum BlockHisto256Algorithm
 {
@@ -57,19 +60,31 @@ enum BlockHisto256Algorithm
      * Sorting followed by differentiation.  Execution is comprised of two phases:
      * -# Sort the 8b data using efficient radix sort
      * -# Look for "runs" of same-valued 8b keys by detecting discontinuities; the run-lengths are histogram bin counts.
+     *
+     * \par Performance Considerations
+     * Delivers consistent throughput regardless of sample bin distribution.
      */
-    BLOCK_BYTE_HISTO_SORT,
+    BLOCK_HISTO_256_SORT,
 
 
     /**
      * \par Overview
      * Use atomic addition to update byte counts directly
      *
-     * \par Usage Considerations
-     * BLOCK_BYTE_HISTO_ATOMIC can only be used on version SM120 or later. Otherwise BLOCK_BYTE_HISTO_SORT is used regardless.
+     * \par Performance Considerations
+     * Performance is strongly tied to the hardware implementation of atomic
+     * addition, and may be significantly degraded for non uniformly-random
+     * input distributions where many concurrent updates are likely to be
+     * made to the same bin counter.
      */
-    BLOCK_BYTE_HISTO_ATOMIC,
+    BLOCK_HISTO_256_ATOMIC,
 };
+
+
+
+/******************************************************************************
+ * Block histogram
+ ******************************************************************************/
 
 
 /**
@@ -90,12 +105,12 @@ enum BlockHisto256Algorithm
  *
  * \tparam BLOCK_THREADS        The threadblock size in threads
  * \tparam ITEMS_PER_THREAD     The number of items per thread
- * \tparam ALGORITHM            <b>[optional]</b> cub::BlockHisto256Algorithm enumerator specifying the underlying algorithm to use (default = cub::BLOCK_BYTE_HISTO_SORT)
+ * \tparam ALGORITHM            <b>[optional]</b> cub::BlockHisto256Algorithm enumerator specifying the underlying algorithm to use (default = cub::BLOCK_HISTO_256_SORT)
  *
  * \par Algorithm
  * BlockHisto256 can be (optionally) configured to use different algorithms:
- *   -# <b>cub::BLOCK_BYTE_HISTO_SORT</b>.  Sorting followed by differentiation. [More...](\ref cub::BlockHisto256Algorithm)
- *   -# <b>cub::BLOCK_BYTE_HISTO_ATOMIC</b>.  Use atomic addition to update byte counts directly. [More...](\ref cub::BlockHisto256Algorithm)
+ *   -# <b>cub::BLOCK_HISTO_256_SORT</b>.  Sorting followed by differentiation. [More...](\ref cub::BlockHisto256Algorithm)
+ *   -# <b>cub::BLOCK_HISTO_256_ATOMIC</b>.  Use atomic addition to update byte counts directly. [More...](\ref cub::BlockHisto256Algorithm)
  *
  * \par Usage Considerations
  * - The histogram output can be constructed in shared or global memory
@@ -167,7 +182,7 @@ enum BlockHisto256Algorithm
 template <
     int                         BLOCK_THREADS,
     int                         ITEMS_PER_THREAD,
-    BlockHisto256Algorithm      ALGORITHM = BLOCK_BYTE_HISTO_SORT>
+    BlockHisto256Algorithm      ALGORITHM = BLOCK_HISTO_256_SORT>
 class BlockHisto256
 {
 private:
@@ -178,13 +193,13 @@ private:
 
     /**
      * Ensure the template parameterization meets the requirements of the
-     * targeted device architecture.  BLOCK_BYTE_HISTO_ATOMIC can only be used
-     * on version SM120 or later.  Otherwise BLOCK_BYTE_HISTO_SORT is used
+     * targeted device architecture.  BLOCK_HISTO_256_ATOMIC can only be used
+     * on version SM120 or later.  Otherwise BLOCK_HISTO_256_SORT is used
      * regardless.
      */
     static const BlockHisto256Algorithm SAFE_ALGORITHM =
-        ((ALGORITHM == BLOCK_BYTE_HISTO_ATOMIC) && (CUB_PTX_ARCH < 120)) ?
-            BLOCK_BYTE_HISTO_SORT :
+        ((ALGORITHM == BLOCK_HISTO_256_ATOMIC) && (CUB_PTX_ARCH < 120)) ?
+            BLOCK_HISTO_256_SORT :
             ALGORITHM;
 
     #ifndef DOXYGEN_SHOULD_SKIP_THIS    // Do not document
@@ -195,7 +210,7 @@ private:
      ******************************************************************************/
 
     /**
-     * BLOCK_BYTE_HISTO_SORT algorithmic variant
+     * BLOCK_HISTO_256_SORT algorithmic variant
      */
     template <BlockHisto256Algorithm _ALGORITHM, int DUMMY = 0>
     struct BlockHisto256Internal
@@ -319,10 +334,10 @@ private:
 
 
     /**
-     * BLOCK_BYTE_HISTO_ATOMIC algorithmic variant
+     * BLOCK_HISTO_256_ATOMIC algorithmic variant
      */
     template <int DUMMY>
-    struct BlockHisto256Internal<BLOCK_BYTE_HISTO_ATOMIC, DUMMY>
+    struct BlockHisto256Internal<BLOCK_HISTO_256_ATOMIC, DUMMY>
     {
         /// Shared memory storage layout type
         struct SmemStorage {};
