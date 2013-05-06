@@ -37,7 +37,7 @@
 #include <stdio.h>
 #include <iterator>
 
-#include "tiles/tiles_histo_256.cuh"
+#include "grid_block/grid_block_histo_256.cuh"
 #include "../block/block_load.cuh"
 #include "../thread/thread_reduce.cuh"
 #include "../util_allocator.cuh"
@@ -61,82 +61,81 @@ namespace cub {
 
 
 /**
+ * Initialization kernel for queue descriptor preparation and for zeroing global counters
+ */
+template <
+    int                                             ACTIVE_CHANNELS,        ///< Number of channels actively being histogrammed
+    typename                                        SizeT,                  ///< Integral type used for global array indexing
+    typename                                        HistoCounter>           ///< Integral type for counting sample occurrences per histogram bin
+__launch_bounds__ (256, 1)
+__global__ void InitHisto256Kernel(
+    GridQueue<SizeT>                                grid_queue,             ///< [in] Descriptor for performing dynamic mapping of tile data to thread blocks
+    ArrayWrapper<HistoCounter*, ACTIVE_CHANNELS>    d_out_histograms,       ///< [out] Histogram counter data having logical dimensions <tt>HistoCounter[ACTIVE_CHANNELS][256]</tt>
+    SizeT                                           num_samples)            ///< [in] Total number of samples \p d_samples for all channels
+{
+    d_out_histograms.array[blockIdx.x][threadIdx.x] = 0;
+    if (threadIdx.x == 0) grid_queue.ResetDrain(num_samples);
+}
+
+
+/**
  * Multi-block histogram kernel entry point.  Computes privatized histograms, one per thread block.
  */
 template <
-    typename                TilesHisto256Policy,                ///< Tuning policy for cub::TilesHisto256 abstraction
-    int                     CHANNELS,                           ///< Number of channels interleaved in the input data (may be greater than the number of channels being actively histogrammed)
-    int                     ACTIVE_CHANNELS,                    ///< Number of channels actively being histogrammed
-    typename                InputIteratorRA,                    ///< The input iterator type (may be a simple pointer type).  Must have a value type that is assignable to <tt>unsigned char</tt>
-    typename                HistoCounter,                       ///< Integral type for counting sample occurrences per histogram bin
-    typename                SizeT>                              ///< Integral type used for global array indexing
-__launch_bounds__ (TilesHisto256Policy::BLOCK_THREADS)
+    typename                                        GridBlockHisto256Policy,    ///< Tuning policy for cub::GridBlockHisto256 abstraction
+    int                                             CHANNELS,                   ///< Number of channels interleaved in the input data (may be greater than the number of channels being actively histogrammed)
+    int                                             ACTIVE_CHANNELS,            ///< Number of channels actively being histogrammed
+    typename                                        InputIteratorRA,            ///< The input iterator type (may be a simple pointer type).  Must have a value type that is assignable to <tt>unsigned char</tt>
+    typename                                        HistoCounter,               ///< Integral type for counting sample occurrences per histogram bin
+    typename                                        SizeT>                      ///< Integral type used for global array indexing
+__launch_bounds__ (GridBlockHisto256Policy::BLOCK_THREADS)
 __global__ void MultiBlockHisto256Kernel(
-    InputIteratorRA                                 d_samples,          ///< [in] Array of sample data. (Channels, if any, are interleaved in "AOS" format)
-    ArrayWrapper<HistoCounter*, ACTIVE_CHANNELS>    d_out_histograms,   ///< [out] Histogram counter data having logical dimensions <tt>HistoCounter[ACTIVE_CHANNELS][gridDim.x][256]</tt>
-    SizeT                                           num_samples,        ///< [in] Total number of samples \p d_samples for all channels
-    GridEvenShare<SizeT>                            even_share,         ///< [in] Descriptor for how to map an even-share of tiles across thread blocks
-    GridQueue<SizeT>                                queue)              ///< [in] Descriptor for performing dynamic mapping of tile data to thread blocks
+    InputIteratorRA                                 d_samples,                  ///< [in] Array of sample data. (Channels, if any, are interleaved in "AOS" format)
+    ArrayWrapper<HistoCounter*, ACTIVE_CHANNELS>    d_out_histograms,           ///< [out] Histogram counter data having logical dimensions <tt>HistoCounter[ACTIVE_CHANNELS][gridDim.x][256]</tt>
+    SizeT                                           num_samples,                ///< [in] Total number of samples \p d_samples for all channels
+    GridEvenShare<SizeT>                            even_share,                 ///< [in] Descriptor for how to map an even-share of tiles across thread blocks
+    GridQueue<SizeT>                                queue)                      ///< [in] Descriptor for performing dynamic mapping of tile data to thread blocks
 {
     // Constants
-    enum {
-        BLOCK_THREADS       = TilesHisto256Policy::BLOCK_THREADS,
-        ITEMS_PER_THREAD    = TilesHisto256Policy::ITEMS_PER_THREAD,
+    enum
+    {
+        BLOCK_THREADS       = GridBlockHisto256Policy::BLOCK_THREADS,
+        ITEMS_PER_THREAD    = GridBlockHisto256Policy::ITEMS_PER_THREAD,
         TILE_SIZE           = BLOCK_THREADS * ITEMS_PER_THREAD,
     };
 
-    // Parameterize TilesHisto256 for the parallel execution context
-    typedef TilesHisto256 <TilesHisto256Policy, CHANNELS, SizeT> TilesHisto256T;
+    // Thread block type for compositing input tiles
+    typedef GridBlockHisto256<GridBlockHisto256Policy, CHANNELS, ACTIVE_CHANNELS, InputIteratorRA, HistoCounter, SizeT> GridBlockHisto256T;
 
-    // Parameterize which mapping of tiles -> thread blocks we will use
-    typedef typename TilesHisto256T::template Mapping<TilesHisto256Policy::GRID_MAPPING> Mapping;
+    // Shared memory for GridBlockHisto256
+    __shared__ typename GridBlockHisto256T::SmemStorage smem_storage;
 
-    // Declare shared memory
-    __shared__ typename TilesHisto256T::SmemStorage block_histo;                            // Shared memory for TilesHisto256
-    __shared__ HistoCounter                         histograms[ACTIVE_CHANNELS][256];       // Shared memory histograms
+    // Thread block instance
+    GridBlockHisto256T grid_block(smem_storage, d_samples, d_out_histograms.array);
 
-    // Composite samples into histogram(s)
-    Mapping::ProcessTiles(
-        block_histo,
-        d_samples,
-        num_samples,
-        even_share,
-        queue,
-        histograms);
-
-    // Barrier to ensure histograms are coherent
-    __syncthreads();
-
-    // Output histogram for each active channel
-
-    #pragma unroll
-    for (int CHANNEL = 0; CHANNEL < ACTIVE_CHANNELS; ++CHANNEL)
+    int dummy_result;
+    if (GridBlockHisto256Policy::GRID_MAPPING == GRID_MAPPING_DYNAMIC)
     {
-        int channel_offset  = (blockIdx.x * 256);
-        int histo_offset    = 0;
-
-        #pragma unroll
-        for(; histo_offset + BLOCK_THREADS <= 256; histo_offset += BLOCK_THREADS)
-        {
-            d_out_histograms.array[CHANNEL][channel_offset + histo_offset + threadIdx.x] = histograms[CHANNEL][histo_offset + threadIdx.x];
-        }
-        // Finish up with guarded initialization if necessary
-        if ((histo_offset < BLOCK_THREADS) && (histo_offset + threadIdx.x < 256))
-        {
-            d_out_histograms.array[CHANNEL][channel_offset + histo_offset + threadIdx.x] = histograms[CHANNEL][histo_offset + threadIdx.x];
-        }
+        // Dynamic input distribution
+        BlockConsumeTiles(grid_block, num_samples, queue, dummy_result);
+    }
+    else
+    {
+        // Even-share input distribution
+        even_share.BlockInit();
+        BlockConsumeTiles(grid_block, num_samples, even_share, dummy_result);
     }
 }
 
 
 /**
- * Single-block finalization kernel for aggregating privatized threadblock histograms from a previous kernel invocation.
+ * Aggregation kernel for aggregating privatized threadblock histograms from a previous kernel invocation.
  */
 template <
-    int             ACTIVE_CHANNELS,            ///< Number of channels actively being histogrammed
-    typename        HistoCounter>               ///< Integral type for counting sample occurrences per histogram bin
+    int                                             ACTIVE_CHANNELS,            ///< Number of channels actively being histogrammed
+    typename                                        HistoCounter>               ///< Integral type for counting sample occurrences per histogram bin
 __launch_bounds__ (256, 1)
-__global__ void FinalizeHisto256Kernel(
+__global__ void AggregateHisto256Kernel(
     HistoCounter*                                   d_block_histograms_linear,  ///< [in] Histogram counter data having logical dimensions <tt>HistoCounter[ACTIVE_CHANNELS][num_threadblocks][256]</tt>
     ArrayWrapper<HistoCounter*, ACTIVE_CHANNELS>    d_out_histograms,           ///< [out] Histogram counter data having logical dimensions <tt>HistoCounter[ACTIVE_CHANNELS][256]</tt>
     int                                             num_threadblocks)           ///< [in] Number of threadblock histograms per channel in \p d_block_histograms
@@ -151,7 +150,6 @@ __global__ void FinalizeHisto256Kernel(
     while (block_offset < block_oob)
     {
         bin_aggregate += d_block_histograms_linear[block_offset + threadIdx.x];
-
         block_offset += 256;
     }
 
@@ -180,30 +178,30 @@ struct DeviceHisto256
 #ifndef DOXYGEN_SHOULD_SKIP_THIS    // Do not document
 
 
-    /// Generic structure for encapsulating dispatch properties.  Mirrors the constants within TilesHisto256Policy.
+    /// Generic structure for encapsulating dispatch properties.  Mirrors the constants within GridBlockHisto256Policy.
     struct KernelDispachParams
     {
         // Policy fields
-        int                     block_threads;
-        int                     items_per_thread;
-        BlockHisto256Algorithm  block_algorithm;
-        GridMappingStrategy     grid_mapping;
-        int                     subscription_factor;
+        int                         block_threads;
+        int                         items_per_thread;
+        GridBlockHisto256Algorithm  block_algorithm;
+        GridMappingStrategy         grid_mapping;
+        int                         subscription_factor;
 
         // Derived fields
-        int                     tile_size;
+        int                         tile_size;
 
-        template <typename TilesHisto256Policy>
+        template <typename GridBlockHisto256Policy>
         __host__ __device__ __forceinline__
         void Init(int subscription_factor = 1)
         {
-            block_threads               = TilesHisto256Policy::BLOCK_THREADS;
-            items_per_thread            = TilesHisto256Policy::ITEMS_PER_THREAD;
-            block_algorithm             = TilesHisto256Policy::BLOCK_ALGORITHM;
-            grid_mapping                = TilesHisto256Policy::GRID_MAPPING;
+            block_threads               = GridBlockHisto256Policy::BLOCK_THREADS;
+            items_per_thread            = GridBlockHisto256Policy::ITEMS_PER_THREAD;
+            block_algorithm             = GridBlockHisto256Policy::GRID_ALGORITHM;
+            grid_mapping                = GridBlockHisto256Policy::GRID_MAPPING;
             this->subscription_factor   = subscription_factor;
 
-            tile_size = block_threads * items_per_thread;
+            tile_size                   = block_threads * items_per_thread;
         }
 
         __host__ __device__ __forceinline__
@@ -224,44 +222,56 @@ struct DeviceHisto256
     template <
         int                         CHANNELS,
         int                         ACTIVE_CHANNELS,
-        BlockHisto256Algorithm      BLOCK_ALGORITHM,
+        GridBlockHisto256Algorithm      GRID_ALGORITHM,
         int                         ARCH>
     struct TunedPolicies;
 
     /// SM35 tune
-    template <int CHANNELS, int ACTIVE_CHANNELS, BlockHisto256Algorithm BLOCK_ALGORITHM>
-    struct TunedPolicies<CHANNELS, ACTIVE_CHANNELS, BLOCK_ALGORITHM, 350>
+    template <int CHANNELS, int ACTIVE_CHANNELS, GridBlockHisto256Algorithm GRID_ALGORITHM>
+    struct TunedPolicies<CHANNELS, ACTIVE_CHANNELS, GRID_ALGORITHM, 350>
     {
-        typedef TilesHisto256Policy<
-            (BLOCK_ALGORITHM == BLOCK_BYTE_HISTO_SORT) ? 128 : 256,
-            (BLOCK_ALGORITHM == BLOCK_BYTE_HISTO_SORT) ? 12 : (30 / ACTIVE_CHANNELS),
-            BLOCK_ALGORITHM,
-            (BLOCK_ALGORITHM == BLOCK_BYTE_HISTO_SORT) ? GRID_MAPPING_DYNAMIC : GRID_MAPPING_EVEN_SHARE> MultiBlockPolicy;
+        typedef GridBlockHisto256Policy<
+            (GRID_ALGORITHM == GRID_HISTO_256_SORT) ? 128 : 256,
+            (GRID_ALGORITHM == GRID_HISTO_256_SORT) ? 12 : (30 / ACTIVE_CHANNELS),
+            GRID_ALGORITHM,
+            (GRID_ALGORITHM == GRID_HISTO_256_SORT) ? GRID_MAPPING_DYNAMIC : GRID_MAPPING_EVEN_SHARE> MultiBlockPolicy;
         enum { SUBSCRIPTION_FACTOR = 7 };
     };
 
-    /// SM20 tune
-    template <int CHANNELS, int ACTIVE_CHANNELS, BlockHisto256Algorithm BLOCK_ALGORITHM>
-    struct TunedPolicies<CHANNELS, ACTIVE_CHANNELS, BLOCK_ALGORITHM, 200>
+    /// SM30 tune
+    template <int CHANNELS, int ACTIVE_CHANNELS, GridBlockHisto256Algorithm GRID_ALGORITHM>
+    struct TunedPolicies<CHANNELS, ACTIVE_CHANNELS, GRID_ALGORITHM, 300>
     {
-        typedef TilesHisto256Policy<
+        typedef GridBlockHisto256Policy<
             128,
-            (BLOCK_ALGORITHM == BLOCK_BYTE_HISTO_SORT) ? 17 : (21 / ACTIVE_CHANNELS),
-            BLOCK_ALGORITHM,
-            (BLOCK_ALGORITHM == BLOCK_BYTE_HISTO_SORT) ? GRID_MAPPING_DYNAMIC : GRID_MAPPING_EVEN_SHARE> MultiBlockPolicy;
-        enum { SUBSCRIPTION_FACTOR = 3 };
+            (GRID_ALGORITHM == GRID_HISTO_256_SORT) ? 20 : (22 / ACTIVE_CHANNELS),
+            GRID_ALGORITHM,
+            (GRID_ALGORITHM == GRID_HISTO_256_SORT) ? GRID_MAPPING_DYNAMIC : GRID_MAPPING_EVEN_SHARE> MultiBlockPolicy;
+        enum { SUBSCRIPTION_FACTOR = 1 };
+    };
+
+    /// SM20 tune
+    template <int CHANNELS, int ACTIVE_CHANNELS, GridBlockHisto256Algorithm GRID_ALGORITHM>
+    struct TunedPolicies<CHANNELS, ACTIVE_CHANNELS, GRID_ALGORITHM, 200>
+    {
+        typedef GridBlockHisto256Policy<
+            128,
+            (GRID_ALGORITHM == GRID_HISTO_256_SORT) ? 21 : (23 / ACTIVE_CHANNELS),
+            GRID_ALGORITHM,
+            GRID_MAPPING_DYNAMIC> MultiBlockPolicy;
+        enum { SUBSCRIPTION_FACTOR = 1 };
     };
 
     /// SM10 tune
-    template <int CHANNELS, int ACTIVE_CHANNELS, BlockHisto256Algorithm BLOCK_ALGORITHM>
-    struct TunedPolicies<CHANNELS, ACTIVE_CHANNELS, BLOCK_ALGORITHM, 100>
+    template <int CHANNELS, int ACTIVE_CHANNELS, GridBlockHisto256Algorithm GRID_ALGORITHM>
+    struct TunedPolicies<CHANNELS, ACTIVE_CHANNELS, GRID_ALGORITHM, 100>
     {
-        typedef TilesHisto256Policy<
+        typedef GridBlockHisto256Policy<
             128, 
             7, 
-            BLOCK_ALGORITHM,
-            (BLOCK_ALGORITHM == BLOCK_BYTE_HISTO_SORT) ? GRID_MAPPING_DYNAMIC : GRID_MAPPING_EVEN_SHARE> MultiBlockPolicy;
-        enum { SUBSCRIPTION_FACTOR = 2 };
+            GRID_ALGORITHM,
+            GRID_MAPPING_DYNAMIC> MultiBlockPolicy;
+        enum { SUBSCRIPTION_FACTOR = 1 };
     };
 
 
@@ -269,17 +279,19 @@ struct DeviceHisto256
     template <
         int                         CHANNELS,
         int                         ACTIVE_CHANNELS,
-        BlockHisto256Algorithm      BLOCK_ALGORITHM>
+        GridBlockHisto256Algorithm      GRID_ALGORITHM>
     struct PtxDefaultPolicies
     {
         static const int PTX_TUNE_ARCH =   (CUB_PTX_ARCH >= 350) ?
                                                 350 :
-                                                (CUB_PTX_ARCH >= 200) ?
-                                                    200 :
-                                                    100;
+                                                (CUB_PTX_ARCH >= 300) ?
+                                                    300 :
+                                                    (CUB_PTX_ARCH >= 200) ?
+                                                        200 :
+                                                        100;
 
         // Tuned policy set for the current PTX compiler pass
-        typedef TunedPolicies<CHANNELS, ACTIVE_CHANNELS, BLOCK_ALGORITHM, PTX_TUNE_ARCH> PtxPassTunedPolicies;
+        typedef TunedPolicies<CHANNELS, ACTIVE_CHANNELS, GRID_ALGORITHM, PTX_TUNE_ARCH> PtxPassTunedPolicies;
 
         // Subscription factor for the current PTX compiler pass
         static const int SUBSCRIPTION_FACTOR = PtxPassTunedPolicies::SUBSCRIPTION_FACTOR;
@@ -294,17 +306,22 @@ struct DeviceHisto256
         {
             if (ptx_version >= 350)
             {
-                typedef TunedPolicies<CHANNELS, ACTIVE_CHANNELS, BLOCK_ALGORITHM, 350> TunedPolicies;
+                typedef TunedPolicies<CHANNELS, ACTIVE_CHANNELS, GRID_ALGORITHM, 350> TunedPolicies;
+                multi_block_dispatch_params.Init<typename TunedPolicies::MultiBlockPolicy>(TunedPolicies::SUBSCRIPTION_FACTOR);
+            }
+            else if (ptx_version >= 300)
+            {
+                typedef TunedPolicies<CHANNELS, ACTIVE_CHANNELS, GRID_ALGORITHM, 300> TunedPolicies;
                 multi_block_dispatch_params.Init<typename TunedPolicies::MultiBlockPolicy>(TunedPolicies::SUBSCRIPTION_FACTOR);
             }
             else if (ptx_version >= 200)
             {
-                typedef TunedPolicies<CHANNELS, ACTIVE_CHANNELS, BLOCK_ALGORITHM, 200> TunedPolicies;
+                typedef TunedPolicies<CHANNELS, ACTIVE_CHANNELS, GRID_ALGORITHM, 200> TunedPolicies;
                 multi_block_dispatch_params.Init<typename TunedPolicies::MultiBlockPolicy>(TunedPolicies::SUBSCRIPTION_FACTOR);
             }
             else
             {
-                typedef TunedPolicies<CHANNELS, ACTIVE_CHANNELS, BLOCK_ALGORITHM, 100> TunedPolicies;
+                typedef TunedPolicies<CHANNELS, ACTIVE_CHANNELS, GRID_ALGORITHM, 100> TunedPolicies;
                 multi_block_dispatch_params.Init<typename TunedPolicies::MultiBlockPolicy>(TunedPolicies::SUBSCRIPTION_FACTOR);
             }
         }
@@ -320,17 +337,17 @@ struct DeviceHisto256
     template <
         int                             CHANNELS,                                           ///< Number of channels interleaved in the input data (may be greater than the number of channels being actively histogrammed)
         int                             ACTIVE_CHANNELS,                                    ///< Number of channels actively being histogrammed
+        typename                        InitHisto256KernelPtr,                              ///< Function type of cub::InitHisto256Kernel
         typename                        MultiBlockHisto256KernelPtr,                        ///< Function type of cub::MultiBlockHisto256Kernel
-        typename                        FinalizeHisto256KernelPtr,                          ///< Function type of cub::FinalizeHisto256Kernel
-        typename                        ResetDrainKernelPtr,                              ///< Function type of cub::ResetDrainKernel
+        typename                        AggregateHisto256KernelPtr,                         ///< Function type of cub::AggregateHisto256Kernel
         typename                        InputIteratorRA,                                    ///< The input iterator type (may be a simple pointer type).  Must have a value type that is assignable to <tt>unsigned char</tt>
         typename                        HistoCounter,                                       ///< Integral type for counting sample occurrences per histogram bin
         typename                        SizeT>                                              ///< Integral type used for global array indexing
     __host__ __device__ __forceinline__
     static cudaError_t Dispatch(
+        InitHisto256KernelPtr           init_kernel_ptr,                                    ///< [in] Kernel function pointer to parameterization of cub::InitHisto256Kernel
         MultiBlockHisto256KernelPtr     multi_block_kernel_ptr,                             ///< [in] Kernel function pointer to parameterization of cub::MultiBlockHisto256Kernel
-        FinalizeHisto256KernelPtr       finalize_kernel_ptr,                                ///< [in] Kernel function pointer to parameterization of cub::FinalizeHisto256Kernel
-        ResetDrainKernelPtr             prepare_drain_kernel_ptr,                           ///< [in] Kernel function pointer to parameterization of cub::ResetDrainKernel
+        AggregateHisto256KernelPtr      aggregate_kernel_ptr,                               ///< [in] Kernel function pointer to parameterization of cub::AggregateHisto256Kernel
         KernelDispachParams             &multi_block_dispatch_params,                       ///< [in] Dispatch parameters that match the policy that \p multi_block_kernel_ptr was compiled for
         InputIteratorRA                 d_samples,                                          ///< [in] Input samples to histogram
         HistoCounter                    *(&d_histograms)[ACTIVE_CHANNELS],                  ///< [out] Array of channel histograms, each having 256 counters of integral type \p HistoCounter.
@@ -353,11 +370,37 @@ struct DeviceHisto256
         cudaError error = cudaSuccess;
         do
         {
-            // Get GPU ordinal
+            // Setup array wrapper for histogram channel output because we can't pass static arrays as kernel parameters
+            ArrayWrapper<HistoCounter*, ACTIVE_CHANNELS> d_histo_wrapper;
+            for (int CHANNEL = 0; CHANNEL < ACTIVE_CHANNELS; ++CHANNEL)
+            {
+                d_histo_wrapper.array[CHANNEL] = d_histograms[CHANNEL];
+            }
+
+            // Initialize counters and queue descriptor if necessary
+            if ((multi_block_dispatch_params.grid_mapping == GRID_MAPPING_DYNAMIC) ||
+                (multi_block_dispatch_params.block_algorithm == GRID_HISTO_256_GLOBAL_ATOMIC))
+            {
+                queue.Allocate(device_allocator);
+
+                if (stream_synchronous) CubLog("Invoking init_kernel_ptr<<<%d, 256, 0, %d>>>()\n", ACTIVE_CHANNELS, (int) stream);
+
+                init_kernel_ptr<<<ACTIVE_CHANNELS, 256, 0, stream>>>(queue, d_histo_wrapper, num_samples);
+
+            #ifndef __CUDA_ARCH__
+                // Sync the stream on the host
+                if (stream_synchronous && CubDebug(error = cudaStreamSynchronize(stream))) break;
+            #else
+                // Sync the entire device on the device (cudaStreamSynchronize doesn't exist on device)
+                if (stream_synchronous && CubDebug(error = cudaDeviceSynchronize())) break;
+            #endif
+            }
+
+            // Determine grid size for the multi-block kernel
+
             int device_ordinal;
             if (CubDebug(error = cudaGetDevice(&device_ordinal))) break;
 
-            // Get SM count
             int sm_count;
             if (CubDebug(error = cudaDeviceGetAttribute (&sm_count, cudaDevAttrMultiProcessorCount, device_ordinal))) break;
 
@@ -379,7 +422,6 @@ struct DeviceHisto256
 
         #endif
 
-            // Determine grid size for the multi-block kernel
             int multi_occupancy = multi_sm_occupancy * sm_count;
             int multi_tile_size = multi_block_dispatch_params.block_threads * multi_block_dispatch_params.items_per_thread;
             int multi_grid_size;
@@ -401,42 +443,18 @@ struct DeviceHisto256
             case GRID_MAPPING_DYNAMIC:
 
                 // Prepare queue to distribute work dynamically
-                queue.Allocate(device_allocator);
                 int num_tiles = (num_samples + multi_tile_size - 1) / multi_tile_size;
-
-            #ifndef __CUDA_ARCH__
-
-                // We're on the host, so prepare queue on device (because its faster than if we prepare it here)
-                if (stream_synchronous) CubLog("Invoking prepare_drain_kernel_ptr<<<1, 1, 0, %d>>>()\n", (int) stream);
-                prepare_drain_kernel_ptr<<<1, 1, 0, stream>>>(queue, num_samples);
-
-                // Sync the stream on the host
-                if (stream_synchronous && CubDebug(error = cudaStreamSynchronize(stream))) break;
-
-            #else
-
-                // Prepare the queue here
-                queue.ResetDrain(num_samples);
-
-            #endif
 
                 // Set MultiBlock grid size
                 multi_grid_size = (num_tiles < multi_occupancy) ?
                     num_tiles :                 // Not enough to fill the device with threadblocks
                     multi_occupancy;            // Fill the device with threadblocks
 
-            break;
+                break;
             };
 
-            // Setup array wrapper for histogram channel output because we can't pass static arrays as kernel parameters
-            ArrayWrapper<HistoCounter*, ACTIVE_CHANNELS> d_histo_wrapper;
-            for (int CHANNEL = 0; CHANNEL < ACTIVE_CHANNELS; ++CHANNEL)
-            {
-                d_histo_wrapper.array[CHANNEL] = d_histograms[CHANNEL];
-            }
-
+            // Bind textures if the iterator supports it
         #ifndef __CUDA_ARCH__
-            // Host can bind texture if the iterator supports it
             if (CubDebug(error = BindIteratorTexture(d_samples))) break;
         #endif // __CUDA_ARCH__
 
@@ -444,7 +462,7 @@ struct DeviceHisto256
             if (stream_synchronous) CubLog("Invoking multi_block_kernel_ptr<<<%d, %d, 0, %d>>>(), %d items per thread, %d SM occupancy\n",
                 multi_grid_size, multi_block_dispatch_params.block_threads, (int) stream, multi_block_dispatch_params.items_per_thread, multi_sm_occupancy);
 
-            if (multi_grid_size == 1)
+            if ((multi_grid_size == 1) || (multi_block_dispatch_params.block_algorithm == GRID_HISTO_256_GLOBAL_ATOMIC))
             {
                 // A single pass will do
                 multi_block_kernel_ptr<<<multi_grid_size, multi_block_dispatch_params.block_threads, 0, stream>>>(
@@ -486,10 +504,10 @@ struct DeviceHisto256
                     if (stream_synchronous && CubDebug(error = cudaDeviceSynchronize())) break;
                 #endif
 
-                if (stream_synchronous) CubLog("Invoking finalize_kernel_ptr<<<%d, %d, 0, %d>>>()\n",
+                if (stream_synchronous) CubLog("Invoking aggregate_kernel_ptr<<<%d, %d, 0, %d>>>()\n",
                     ACTIVE_CHANNELS, 256, (int) stream);
 
-                finalize_kernel_ptr<<<ACTIVE_CHANNELS, 256, 0, stream>>>(
+                aggregate_kernel_ptr<<<ACTIVE_CHANNELS, 256, 0, stream>>>(
                     d_block_histograms_linear,
                     d_histo_wrapper,
                     multi_grid_size);
@@ -506,10 +524,15 @@ struct DeviceHisto256
         while (0);
 
         // Free temporary storage allocation
-        if (d_block_histograms_linear) error = CubDebug(DeviceFree(d_block_histograms_linear, device_allocator));
+        if (d_block_histograms_linear)
+            error = CubDebug(DeviceFree(d_block_histograms_linear, device_allocator));
 
         // Free queue allocation
-        if (multi_block_dispatch_params.grid_mapping == GRID_MAPPING_DYNAMIC) error = CubDebug(queue.Free(device_allocator));
+        if ((multi_block_dispatch_params.grid_mapping == GRID_MAPPING_DYNAMIC) ||
+            (multi_block_dispatch_params.block_algorithm == GRID_HISTO_256_GLOBAL_ATOMIC))
+        {
+            error = CubDebug(queue.Free(device_allocator));
+        }
 
         // Unbind texture
     #ifndef __CUDA_ARCH__
@@ -525,18 +548,18 @@ struct DeviceHisto256
     /**
      * \brief Computes a 256-bin device-wide histogram
      *
-     * \tparam BLOCK_ALGORITHM      cub::BlockHisto256Algorithm enumerator specifying the underlying algorithm to use
+     * \tparam GRID_ALGORITHM      cub::GridBlockHisto256Algorithm enumerator specifying the underlying algorithm to use
      * \tparam CHANNELS             Number of channels interleaved in the input data (may be greater than the number of channels being actively histogrammed)
      * \tparam ACTIVE_CHANNELS      <b>[inferred]</b> Number of channels actively being histogrammed
      * \tparam InputIteratorRA      <b>[inferred]</b> The random-access iterator type for input (may be a simple pointer type).  Must have a value type that is assignable to <tt>unsigned char</tt>
      * \tparam HistoCounter         <b>[inferred]</b> Integral type for counting sample occurrences per histogram bin
      */
     template <
-        BlockHisto256Algorithm  BLOCK_ALGORITHM,
-        int                     CHANNELS,                                           ///< Number of channels interleaved in the input data (may be greater than the number of channels being actively histogrammed)
-        int                     ACTIVE_CHANNELS,                                    ///< Number of channels actively being histogrammed
-        typename                InputIteratorRA,
-        typename                HistoCounter>
+        GridBlockHisto256Algorithm  GRID_ALGORITHM,
+        int                         CHANNELS,                                           ///< Number of channels interleaved in the input data (may be greater than the number of channels being actively histogrammed)
+        int                         ACTIVE_CHANNELS,                                    ///< Number of channels actively being histogrammed
+        typename                    InputIteratorRA,
+        typename                    HistoCounter>
     __host__ __device__ __forceinline__
     static cudaError_t Dispatch(
         InputIteratorRA         d_samples,                                          ///< [in] Input samples to histogram
@@ -550,7 +573,7 @@ struct DeviceHisto256
         typedef int SizeT;
 
         // Tuning polices for the PTX architecture that will get dispatched to
-        typedef PtxDefaultPolicies<CHANNELS, ACTIVE_CHANNELS, BLOCK_ALGORITHM> PtxDefaultPolicies;
+        typedef PtxDefaultPolicies<CHANNELS, ACTIVE_CHANNELS, GRID_ALGORITHM> PtxDefaultPolicies;
         typedef typename PtxDefaultPolicies::MultiBlockPolicy MultiBlockPolicy;
 
         cudaError error = cudaSuccess;
@@ -574,9 +597,9 @@ struct DeviceHisto256
         #endif
 
             Dispatch<CHANNELS, ACTIVE_CHANNELS>(
+                InitHisto256Kernel<ACTIVE_CHANNELS, SizeT, HistoCounter>,
                 MultiBlockHisto256Kernel<MultiBlockPolicy, CHANNELS, ACTIVE_CHANNELS, InputIteratorRA, HistoCounter, SizeT>,
-                FinalizeHisto256Kernel<ACTIVE_CHANNELS, HistoCounter>,
-                ResetDrainKernel<SizeT>,
+                AggregateHisto256Kernel<ACTIVE_CHANNELS, HistoCounter>,
                 multi_block_dispatch_params,
                 d_samples,
                 d_histograms,
@@ -600,7 +623,9 @@ struct DeviceHisto256
     //---------------------------------------------------------------------
 
     /**
-     * \brief Computes a 256-bin device-wide histogram
+     * \brief Computes a 256-bin device-wide histogram.  Uses fast block-sorting to compute the histogram.
+     *
+     * Delivers consistent throughput regardless of sample diversity.
      *
      * \tparam InputIteratorRA      <b>[inferred]</b> The random-access iterator type for input (may be a simple pointer type).  Must have a value type that is assignable to <tt>unsigned char</tt>
      * \tparam HistoCounter         <b>[inferred]</b> Integral type for counting sample occurrences per histogram bin
@@ -617,12 +642,12 @@ struct DeviceHisto256
         bool                stream_synchronous  = false,                        ///< [in] <b>[optional]</b> Whether or not to synchronize the stream after every kernel launch to check for errors.  Default is \p false.
         DeviceAllocator*    device_allocator    = DefaultDeviceAllocator())     ///< [in] <b>[optional]</b> Allocator for allocating and freeing device memory.  Default is provided by DefaultDeviceAllocator.
     {
-        return Dispatch<BLOCK_BYTE_HISTO_SORT, 1, 1>(
+        return Dispatch<GRID_HISTO_256_SORT, 1, 1>(
             d_samples, &d_histogram, num_samples, stream, stream_synchronous, device_allocator);
     }
 
     /**
-     * \brief Computes a 256-bin device-wide histogram.  Uses atomic read-modify-write operations to compute the histogram.
+     * \brief Computes a 256-bin device-wide histogram.  Uses shared-memory atomic read-modify-write operations to compute the histogram.
      *
      * Sample input having lower diversity cause performance to be degraded.
      *
@@ -641,13 +666,40 @@ struct DeviceHisto256
         bool                stream_synchronous  = false,                        ///< [in] <b>[optional]</b> Whether or not to synchronize the stream after every kernel launch to check for errors.  Default is \p false.
         DeviceAllocator*    device_allocator    = DefaultDeviceAllocator())     ///< [in] <b>[optional]</b> Allocator for allocating and freeing device memory.  Default is provided by DefaultDeviceAllocator.
     {
-        return Dispatch<BLOCK_BYTE_HISTO_ATOMIC, 1, 1>(
+        return Dispatch<GRID_HISTO_256_SHARED_ATOMIC, 1, 1>(
             d_samples, &d_histogram, num_samples, stream, stream_synchronous, device_allocator);
     }
 
 
     /**
-     * \brief Computes a 256-bin device-wide histogram from multi-channel data.
+     * \brief Computes a 256-bin device-wide histogram.  Uses global-memory atomic read-modify-write operations to compute the histogram.
+     *
+     * Sample input having lower diversity cause performance to be degraded.
+     *
+     * \tparam InputIteratorRA      <b>[inferred]</b> The random-access iterator type for input (may be a simple pointer type).  Must have a value type that is assignable to <tt>unsigned char</tt>
+     * \tparam HistoCounter         <b>[inferred]</b> Integral type for counting sample occurrences per histogram bin
+     */
+    template <
+        typename            InputIteratorRA,
+        typename            HistoCounter>
+    __host__ __device__ __forceinline__
+    static cudaError_t SingleChannelGlobalAtomic(
+        InputIteratorRA     d_samples,                                          ///< [in] Input samples
+        HistoCounter*       d_histogram,                                        ///< [out] Array of 256 counters of integral type \p HistoCounter.
+        int                 num_samples,                                        ///< [in] Number of samples to process
+        cudaStream_t        stream              = 0,                            ///< [in] <b>[optional]</b> CUDA stream to launch kernels within.  Default is stream-0.
+        bool                stream_synchronous  = false,                        ///< [in] <b>[optional]</b> Whether or not to synchronize the stream after every kernel launch to check for errors.  Default is \p false.
+        DeviceAllocator*    device_allocator    = DefaultDeviceAllocator())     ///< [in] <b>[optional]</b> Allocator for allocating and freeing device memory.  Default is provided by DefaultDeviceAllocator.
+    {
+        return Dispatch<GRID_HISTO_256_GLOBAL_ATOMIC, 1, 1>(
+            d_samples, &d_histogram, num_samples, stream, stream_synchronous, device_allocator);
+    }
+
+
+    /**
+     * \brief Computes a 256-bin device-wide histogram from multi-channel data.  Uses fast block-sorting to compute the histogram.
+     *
+     * Delivers consistent throughput regardless of sample diversity.
      *
      * \tparam CHANNELS             Number of channels interleaved in the input data (may be greater than the number of channels being actively histogrammed)
      * \tparam ACTIVE_CHANNELS      <b>[inferred]</b> Number of channels actively being histogrammed
@@ -668,12 +720,13 @@ struct DeviceHisto256
         bool                stream_synchronous  = false,                        ///< [in] <b>[optional]</b> Whether or not to synchronize the stream after every kernel launch to check for errors.  Default is \p false.
         DeviceAllocator*    device_allocator    = DefaultDeviceAllocator())     ///< [in] <b>[optional]</b> Allocator for allocating and freeing device memory.  Default is provided by DefaultDeviceAllocator.
     {
-        return Dispatch<BLOCK_BYTE_HISTO_SORT, CHANNELS, ACTIVE_CHANNELS>(
+        return Dispatch<GRID_HISTO_256_SORT, CHANNELS, ACTIVE_CHANNELS>(
             d_samples, d_histograms, num_samples, stream, stream_synchronous, device_allocator);
     }
 
+
     /**
-     * \brief Computes a 256-bin device-wide histogram from multi-channel data.  Uses atomic read-modify-write operations to compute the histogram.
+     * \brief Computes a 256-bin device-wide histogram from multi-channel data.  Uses shared-memory atomic read-modify-write operations to compute the histogram.
      *
      * Sample input having lower diversity cause performance to be degraded.
      *
@@ -696,7 +749,36 @@ struct DeviceHisto256
         bool                stream_synchronous  = false,                        ///< [in] <b>[optional]</b> Whether or not to synchronize the stream after every kernel launch to check for errors.  Default is \p false.
         DeviceAllocator*    device_allocator    = DefaultDeviceAllocator())     ///< [in] <b>[optional]</b> Allocator for allocating and freeing device memory.  Default is provided by DefaultDeviceAllocator.
     {
-        return Dispatch<BLOCK_BYTE_HISTO_ATOMIC, CHANNELS, ACTIVE_CHANNELS>(
+        return Dispatch<GRID_HISTO_256_SHARED_ATOMIC, CHANNELS, ACTIVE_CHANNELS>(
+            d_samples, d_histograms, num_samples, stream, stream_synchronous, device_allocator);
+    }
+
+
+    /**
+     * \brief Computes a 256-bin device-wide histogram from multi-channel data.  Uses global-memory atomic read-modify-write operations to compute the histogram.
+     *
+     * Sample input having lower diversity cause performance to be degraded.
+     *
+     * \tparam CHANNELS             Number of channels interleaved in the input data (may be greater than the number of channels being actively histogrammed)
+     * \tparam ACTIVE_CHANNELS      <b>[inferred]</b> Number of channels actively being histogrammed
+     * \tparam InputIteratorRA      <b>[inferred]</b> The random-access iterator type for input (may be a simple pointer type).  Must have a value type that is assignable to <tt>unsigned char</tt>
+     * \tparam HistoCounter         <b>[inferred]</b> Integral type for counting sample occurrences per histogram bin
+     */
+    template <
+        int                 CHANNELS,                                           ///< Number of channels interleaved in the input data (may be greater than the number of channels being actively histogrammed)
+        int                 ACTIVE_CHANNELS,                                    ///< Number of channels actively being histogrammed
+        typename            InputIteratorRA,
+        typename            HistoCounter>
+    __host__ __device__ __forceinline__
+    static cudaError_t MultiChannelGlobalAtomic(
+        InputIteratorRA     d_samples,                                          ///< [in] Input samples. (Channels, if any, are interleaved in "AOS" format)
+        HistoCounter        *(&d_histograms)[ACTIVE_CHANNELS],                  ///< [out] Array of channel histograms, each having 256 counters of integral type \p HistoCounter.
+        int                 num_samples,                                        ///< [in] Number of samples to process
+        cudaStream_t        stream              = 0,                            ///< [in] <b>[optional]</b> CUDA stream to launch kernels within.  Default is stream-0.
+        bool                stream_synchronous  = false,                        ///< [in] <b>[optional]</b> Whether or not to synchronize the stream after every kernel launch to check for errors.  Default is \p false.
+        DeviceAllocator*    device_allocator    = DefaultDeviceAllocator())     ///< [in] <b>[optional]</b> Allocator for allocating and freeing device memory.  Default is provided by DefaultDeviceAllocator.
+    {
+        return Dispatch<GRID_HISTO_256_GLOBAL_ATOMIC, CHANNELS, ACTIVE_CHANNELS>(
             d_samples, d_histograms, num_samples, stream, stream_synchronous, device_allocator);
     }
 
