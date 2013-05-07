@@ -26,15 +26,11 @@
  *
  ******************************************************************************/
 
-/******************************************************************************
- * Threadblock Work management.
- *
- * A given threadblock may receive one of three different amounts of
- * work: "big", "normal", and "last".  The big workloads are one
- * grain greater than the normal, and the last workload
- * does the extra work.
- *
- ******************************************************************************/
+/**
+ * \file
+ * cub::GridEvenShare is a descriptor utility for distributing input among CUDA threadblocks in an "even-share" fashion.  Each threadblock gets roughly the same number of fixed-size work units (grains).
+ */
+
 
 #pragma once
 
@@ -56,7 +52,7 @@ namespace cub {
 
 
 /**
- * \brief A descriptor utility for distributing input among CUDA threadblocks in an "even-share" fashion.  Each threadblock gets roughly the same number of fixed-size work units (grains).
+ * \brief GridEvenShare is a descriptor utility for distributing input among CUDA threadblocks in an "even-share" fashion.  Each threadblock gets roughly the same number of fixed-size work units (grains).
  *
  * \par Overview
  * GridEvenShare indicates which sections of input are to be mapped onto which threadblocks.
@@ -87,16 +83,35 @@ private:
 public:
 
     /// Total number of input items
-    SizeT  num_items;
+    SizeT   num_items;
 
     /// Grid size in threadblocks
-    int grid_size;
+    int     grid_size;
 
     /// Offset into input marking the beginning of the owning thread block's segment of input tiles
-    SizeT block_offset;
+    SizeT   block_offset;
 
     /// Offset into input of marking the end (one-past) of the owning thread block's segment of input tiles
     SizeT   block_oob;
+
+    /**
+     * \brief Block-based constructor for single-block grids.
+     */
+    __device__ __forceinline__ GridEvenShare(SizeT num_items) :
+        num_items(num_items),
+        grid_size(1),
+        block_offset(0),
+        block_oob(num_items) {}
+
+
+    /**
+     * \brief Default constructor.  Zero-initializes block-specific fields.
+     */
+    __host__ __device__ __forceinline__ GridEvenShare() :
+        num_items(0),
+        grid_size(0),
+        block_offset(0),
+        block_oob(0) {}
 
 
     /**

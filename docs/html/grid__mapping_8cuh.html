@@ -98,12 +98,15 @@ var searchBox = new SearchBox("searchBox", "search",false,'Search');
 <div class="header">
   <div class="summary">
 <a href="#namespaces">Namespaces</a> &#124;
-<a href="#enum-members">Enumerations</a>  </div>
+<a href="#enum-members">Enumerations</a> &#124;
+<a href="#func-members">Functions</a>  </div>
   <div class="headertitle">
 <div class="title">grid_mapping.cuh File Reference</div>  </div>
 </div><!--header-->
 <div class="contents">
-<div class="textblock"><code>#include &quot;../util_namespace.cuh&quot;</code><br/>
+<div class="textblock"><code>#include &quot;<a class="el" href="grid__even__share_8cuh.html">grid_even_share.cuh</a>&quot;</code><br/>
+<code>#include &quot;<a class="el" href="grid__queue_8cuh.html">grid_queue.cuh</a>&quot;</code><br/>
+<code>#include &quot;../util_namespace.cuh&quot;</code><br/>
 </div><table class="memberdecls">
 <tr class="heading"><td colspan="2"><h2 class="groupheader"><a name="namespaces"></a>
 Namespaces</h2></td></tr>
@@ -116,15 +119,43 @@ Enumerations</h2></td></tr>
 <tr class="memitem:gab0872c68bb2f2deba92ae650a9aa3e97"><td class="memItemLeft" align="right" valign="top">enum &#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="group___grid_module.html#gab0872c68bb2f2deba92ae650a9aa3e97">cub::GridMappingStrategy</a> { <a class="el" href="group___grid_module.html#ggab0872c68bb2f2deba92ae650a9aa3e97a8f282fc1684924a8503850b8b302d3a5">cub::GRID_MAPPING_EVEN_SHARE</a>, 
 <a class="el" href="group___grid_module.html#ggab0872c68bb2f2deba92ae650a9aa3e97a6857b21076c6af5e9b1f4a55c0bdc971">cub::GRID_MAPPING_DYNAMIC</a>
  }</td></tr>
+<tr class="memdesc:gab0872c68bb2f2deba92ae650a9aa3e97"><td class="mdescLeft">&#160;</td><td class="mdescRight"><a class="el" href="group___grid_module.html#gab0872c68bb2f2deba92ae650a9aa3e97" title="cub::GridMappingStrategy enumerates alternative strategies for mapping constant-sized tiles of device...">cub::GridMappingStrategy</a> enumerates alternative strategies for mapping constant-sized tiles of device-wide data onto a grid of CUDA thread blocks.  <a href="group___grid_module.html#gab0872c68bb2f2deba92ae650a9aa3e97">More...</a><br/></td></tr>
 <tr class="separator:gab0872c68bb2f2deba92ae650a9aa3e97"><td class="memSeparator" colspan="2">&#160;</td></tr>
+</table><table class="memberdecls">
+<tr class="heading"><td colspan="2"><h2 class="groupheader"><a name="func-members"></a>
+Functions</h2></td></tr>
+<tr class="memitem:ga86fcdb021fa1a4cbfa0e5952b6c1920f"><td class="memTemplParams" colspan="2">template&lt;typename PersistentBlock , typename SizeT , typename Result &gt; </td></tr>
+<tr class="memitem:ga86fcdb021fa1a4cbfa0e5952b6c1920f"><td class="memTemplItemLeft" align="right" valign="top">__device__ __forceinline__ void&#160;</td><td class="memTemplItemRight" valign="bottom"><a class="el" href="group___grid_module.html#ga86fcdb021fa1a4cbfa0e5952b6c1920f">cub::ConsumeTiles</a> (PersistentBlock &amp;persistent_block, SizeT block_offset, SizeT block_oob, Result &amp;result)</td></tr>
+<tr class="memdesc:ga86fcdb021fa1a4cbfa0e5952b6c1920f"><td class="mdescLeft">&#160;</td><td class="mdescRight">Dispatches tiles of work from the given input range to the specified thread block abstraction.  <a href="group___grid_module.html#ga86fcdb021fa1a4cbfa0e5952b6c1920f">More...</a><br/></td></tr>
+<tr class="separator:ga86fcdb021fa1a4cbfa0e5952b6c1920f"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:ga771bd863d4c690a25c267537e2b8cbf9"><td class="memTemplParams" colspan="2">template&lt;typename PersistentBlock , typename SizeT , typename Result &gt; </td></tr>
+<tr class="memitem:ga771bd863d4c690a25c267537e2b8cbf9"><td class="memTemplItemLeft" align="right" valign="top">__device__ __forceinline__ void&#160;</td><td class="memTemplItemRight" valign="bottom"><a class="el" href="group___grid_module.html#ga771bd863d4c690a25c267537e2b8cbf9">cub::ConsumeTiles</a> (PersistentBlock &amp;persistent_block, SizeT num_items, GridEvenShare&lt; SizeT &gt; &amp;even_share, Result &amp;result)</td></tr>
+<tr class="memdesc:ga771bd863d4c690a25c267537e2b8cbf9"><td class="mdescLeft">&#160;</td><td class="mdescRight">Uses a <a class="el" href="classcub_1_1_grid_even_share.html" title="GridEvenShare is a descriptor utility for distributing input among CUDA threadblocks in an &quot;even-shar...">GridEvenShare</a> descriptor to dispatch tiles of work to the specified thread block abstraction. (See GridMappingStrategy::GRID_MAPPING_EVEN_SHARE.)  <a href="group___grid_module.html#ga771bd863d4c690a25c267537e2b8cbf9">More...</a><br/></td></tr>
+<tr class="separator:ga771bd863d4c690a25c267537e2b8cbf9"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:ga39f156542d92e308412515e349e90300"><td class="memTemplParams" colspan="2">template&lt;typename PersistentBlock , typename SizeT , typename Result &gt; </td></tr>
+<tr class="memitem:ga39f156542d92e308412515e349e90300"><td class="memTemplItemLeft" align="right" valign="top">__device__ __forceinline__ void&#160;</td><td class="memTemplItemRight" valign="bottom"><a class="el" href="group___grid_module.html#ga39f156542d92e308412515e349e90300">cub::ConsumeTiles</a> (PersistentBlock &amp;persistent_block, SizeT num_items, GridQueue&lt; SizeT &gt; &amp;queue, Result &amp;result)</td></tr>
+<tr class="memdesc:ga39f156542d92e308412515e349e90300"><td class="mdescLeft">&#160;</td><td class="mdescRight">Uses a <a class="el" href="classcub_1_1_grid_queue.html" title="GridQueue is a descriptor utility for dynamic queue management.">GridQueue</a> descriptor to dispatch tiles of work to the specified thread block abstraction. (See GridMappingStrategy::GRID_MAPPING_DYNAMIC.)  <a href="group___grid_module.html#ga39f156542d92e308412515e349e90300">More...</a><br/></td></tr>
+<tr class="separator:ga39f156542d92e308412515e349e90300"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:gad719cb805d4b53ddca9943abbde1c0ca"><td class="memTemplParams" colspan="2">template&lt;typename PersistentBlock , typename SizeT , typename Result &gt; </td></tr>
+<tr class="memitem:gad719cb805d4b53ddca9943abbde1c0ca"><td class="memTemplItemLeft" align="right" valign="top">__device__ __forceinline__ void&#160;</td><td class="memTemplItemRight" valign="bottom"><a class="el" href="group___grid_module.html#gad719cb805d4b53ddca9943abbde1c0ca">cub::ConsumeTilesFlagFirst</a> (PersistentBlock &amp;persistent_block, SizeT block_offset, SizeT block_oob, Result &amp;result)</td></tr>
+<tr class="memdesc:gad719cb805d4b53ddca9943abbde1c0ca"><td class="mdescLeft">&#160;</td><td class="mdescRight">Dispatches tiles of work from the given input range to the specified thread block abstraction. The first tile given to each thread block is flagged as such.  <a href="group___grid_module.html#gad719cb805d4b53ddca9943abbde1c0ca">More...</a><br/></td></tr>
+<tr class="separator:gad719cb805d4b53ddca9943abbde1c0ca"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:gabae8550f492407f0795171a140d82084"><td class="memTemplParams" colspan="2">template&lt;typename PersistentBlock , typename SizeT , typename Result &gt; </td></tr>
+<tr class="memitem:gabae8550f492407f0795171a140d82084"><td class="memTemplItemLeft" align="right" valign="top">__device__ __forceinline__ void&#160;</td><td class="memTemplItemRight" valign="bottom"><a class="el" href="group___grid_module.html#gabae8550f492407f0795171a140d82084">cub::ConsumeTilesFlagFirst</a> (PersistentBlock &amp;persistent_block, SizeT num_items, GridEvenShare&lt; SizeT &gt; &amp;even_share, Result &amp;result)</td></tr>
+<tr class="memdesc:gabae8550f492407f0795171a140d82084"><td class="mdescLeft">&#160;</td><td class="mdescRight">Uses a <a class="el" href="classcub_1_1_grid_even_share.html" title="GridEvenShare is a descriptor utility for distributing input among CUDA threadblocks in an &quot;even-shar...">GridEvenShare</a> descriptor to dispatch tiles of work to the specified thread block abstraction. The first tile given to each thread block is flagged as such. (See GridMappingStrategy::GRID_MAPPING_EVEN_SHARE.)  <a href="group___grid_module.html#gabae8550f492407f0795171a140d82084">More...</a><br/></td></tr>
+<tr class="separator:gabae8550f492407f0795171a140d82084"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:ga6492a0a23e402a3134bd5b15fa10ecab"><td class="memTemplParams" colspan="2">template&lt;typename PersistentBlock , typename SizeT , typename Result &gt; </td></tr>
+<tr class="memitem:ga6492a0a23e402a3134bd5b15fa10ecab"><td class="memTemplItemLeft" align="right" valign="top">__device__ __forceinline__ void&#160;</td><td class="memTemplItemRight" valign="bottom"><a class="el" href="group___grid_module.html#ga6492a0a23e402a3134bd5b15fa10ecab">cub::ConsumeTilesFlagFirst</a> (PersistentBlock &amp;persistent_block, SizeT num_items, GridQueue&lt; SizeT &gt; &amp;queue, Result &amp;result)</td></tr>
+<tr class="memdesc:ga6492a0a23e402a3134bd5b15fa10ecab"><td class="mdescLeft">&#160;</td><td class="mdescRight">Uses a <a class="el" href="classcub_1_1_grid_queue.html" title="GridQueue is a descriptor utility for dynamic queue management.">GridQueue</a> descriptor to dispatch tiles of work to the specified thread block abstraction. The first tile given to each thread block is flagged as such. (See GridMappingStrategy::GRID_MAPPING_DYNAMIC.)  <a href="group___grid_module.html#ga6492a0a23e402a3134bd5b15fa10ecab">More...</a><br/></td></tr>
+<tr class="separator:ga6492a0a23e402a3134bd5b15fa10ecab"><td class="memSeparator" colspan="2">&#160;</td></tr>
 </table>
 <a name="details" id="details"></a><h2 class="groupheader">Detailed Description</h2>
-<div class="textblock"><p><a class="el" href="group___grid_module.html#gab0872c68bb2f2deba92ae650a9aa3e97">cub::GridMappingStrategy</a> enumerates alternative strategies for mapping constant-sized tiles of device-wide data onto a grid of CUDA thread blocks. </p>
+<div class="textblock"><p><a class="el" href="group___grid_module.html#gab0872c68bb2f2deba92ae650a9aa3e97" title="cub::GridMappingStrategy enumerates alternative strategies for mapping constant-sized tiles of device...">cub::GridMappingStrategy</a> enumerates alternative strategies for mapping constant-sized tiles of device-wide data onto a grid of CUDA thread blocks. </p>
 </div></div><!-- contents -->
 <!-- HTML footer for doxygen 1.8.3.1-->
 <!-- start footer part -->
 <hr class="footer"/><address class="footer"><small>
-Generated on Wed May 1 2013 05:38:34 for CUB by &#160;<a href="http://www.doxygen.org/index.html">
+Generated on Tue May 7 2013 16:26:25 for CUB by &#160;<a href="http://www.doxygen.org/index.html">
 <img class="footer" src="doxygen.png" alt="doxygen"/>
 </a> 1.8.3.1
 <br>

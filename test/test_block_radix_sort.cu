@@ -470,34 +470,29 @@ int main(int argc, char** argv)
     // Initialize command line
     CommandLineArgs args(argc, argv);
     g_verbose = args.CheckCmdLineFlag("v");
-    bool quick = args.CheckCmdLineFlag("quick");
 
     // Print usage
     if (args.CheckCmdLineFlag("help"))
     {
-        printf("%s [--device=<device-id>] [--v] [--quick]\n", argv[0]);
+        printf("%s "
+            "[--device=<device-id>] "
+            "[--v] "
+            "\n", argv[0]);
         exit(0);
     }
 
     // Initialize device
     CubDebugExit(args.DeviceInit());
 
-    if (quick)
-    {
-        // Quick test
-        typedef unsigned int T;
-        TestDriver<64, 2, 5, true, BLOCK_SCAN_WARP_SCANS, cudaSharedMemBankSizeFourByte, T, NullType>(0, 0, sizeof(T) * 8);
-    }
-    else
-    {
-/*
-        // Test threads
-        Test<32>();
-        Test<64>();
-        Test<128>();
-        Test<256>();
-*/
-    }
+    // Quick test
+    typedef unsigned int T;
+    TestDriver<64, 2, 5, true, BLOCK_SCAN_WARP_SCANS, cudaSharedMemBankSizeFourByte, T, NullType>(0, 0, sizeof(T) * 8);
+
+    // Test threads
+    Test<32>();
+    Test<64>();
+    Test<128>();
+    Test<256>();
 
     return 0;
 }

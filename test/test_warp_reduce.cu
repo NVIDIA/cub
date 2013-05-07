@@ -285,8 +285,9 @@ void Test(
 
     // Copy out and display results
     printf("\tReduction results: ");
-    AssertEquals(0, CompareDeviceResults(&aggregate, d_out, 1, g_verbose, g_verbose));
-    printf("\n");
+    int compare = CompareDeviceResults(&aggregate, d_out, 1, g_verbose, g_verbose);
+    printf("%s\n", compare ? "FAIL" : "PASS");
+    AssertEquals(0, compare);
 
     // Cleanup
     if (h_in) delete[] h_in;

@@ -197,11 +197,10 @@ Static Public Methods</h2></td></tr>
 __forceinline__ void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classcub_1_1_block_store.html#a4d7858f738321f7130bc0be7d6fa46a5">Store</a> (<a class="el" href="classcub_1_1_block_store.html#a44f8ee5a77fc8cc348a68a6d233ae68d">SmemStorage</a> &amp;smem_storage, OutputIteratorRA block_itr, T(&amp;items)[ITEMS_PER_THREAD])</td></tr>
 <tr class="memdesc:a4d7858f738321f7130bc0be7d6fa46a5"><td class="mdescLeft">&#160;</td><td class="mdescRight">Store a tile of items across a threadblock.  <a href="#a4d7858f738321f7130bc0be7d6fa46a5">More...</a><br/></td></tr>
 <tr class="separator:a4d7858f738321f7130bc0be7d6fa46a5"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:a54a10a5fcc8e755941ee5d293440b0af"><td class="memTemplParams" colspan="2">template&lt;typename SizeT &gt; </td></tr>
-<tr class="memitem:a54a10a5fcc8e755941ee5d293440b0af"><td class="memTemplItemLeft" align="right" valign="top">static __device__ <br class="typebreak"/>
-__forceinline__ void&#160;</td><td class="memTemplItemRight" valign="bottom"><a class="el" href="classcub_1_1_block_store.html#a54a10a5fcc8e755941ee5d293440b0af">Store</a> (<a class="el" href="classcub_1_1_block_store.html#a44f8ee5a77fc8cc348a68a6d233ae68d">SmemStorage</a> &amp;smem_storage, OutputIteratorRA block_itr, const SizeT &amp;guarded_items, T(&amp;items)[ITEMS_PER_THREAD])</td></tr>
-<tr class="memdesc:a54a10a5fcc8e755941ee5d293440b0af"><td class="mdescLeft">&#160;</td><td class="mdescRight">Store a tile of items across a threadblock, guarded by range.  <a href="#a54a10a5fcc8e755941ee5d293440b0af">More...</a><br/></td></tr>
-<tr class="separator:a54a10a5fcc8e755941ee5d293440b0af"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a2244c761e873e8e5334dccad9bea6657"><td class="memItemLeft" align="right" valign="top">static __device__ <br class="typebreak"/>
+__forceinline__ void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classcub_1_1_block_store.html#a2244c761e873e8e5334dccad9bea6657">Store</a> (<a class="el" href="classcub_1_1_block_store.html#a44f8ee5a77fc8cc348a68a6d233ae68d">SmemStorage</a> &amp;smem_storage, OutputIteratorRA block_itr, const int &amp;guarded_items, T(&amp;items)[ITEMS_PER_THREAD])</td></tr>
+<tr class="memdesc:a2244c761e873e8e5334dccad9bea6657"><td class="mdescLeft">&#160;</td><td class="mdescRight">Store a tile of items across a threadblock, guarded by range.  <a href="#a2244c761e873e8e5334dccad9bea6657">More...</a><br/></td></tr>
+<tr class="separator:a2244c761e873e8e5334dccad9bea6657"><td class="memSeparator" colspan="2">&#160;</td></tr>
 </table>
 <h2 class="groupheader">Member Function Documentation</h2>
 <a class="anchor" id="a4d7858f738321f7130bc0be7d6fa46a5"></a>
@@ -256,13 +255,11 @@ template&lt;typename OutputIteratorRA , int BLOCK_THREADS, int ITEMS_PER_THREAD,
 
 </div>
 </div>
-<a class="anchor" id="a54a10a5fcc8e755941ee5d293440b0af"></a>
+<a class="anchor" id="a2244c761e873e8e5334dccad9bea6657"></a>
 <div class="memitem">
 <div class="memproto">
 <div class="memtemplate">
 template&lt;typename OutputIteratorRA , int BLOCK_THREADS, int ITEMS_PER_THREAD, BlockStorePolicy POLICY = BLOCK_STORE_DIRECT, PtxStoreModifier MODIFIER = PTX_STORE_NONE&gt; </div>
-<div class="memtemplate">
-template&lt;typename SizeT &gt; </div>
 <table class="mlabels">
   <tr>
   <td class="mlabels-left">
@@ -282,7 +279,7 @@ template&lt;typename SizeT &gt; </div>
         <tr>
           <td class="paramkey"></td>
           <td></td>
-          <td class="paramtype">const SizeT &amp;&#160;</td>
+          <td class="paramtype">const int &amp;&#160;</td>
           <td class="paramname"><em>guarded_items</em>, </td>
         </tr>
         <tr>
@@ -305,12 +302,6 @@ template&lt;typename SizeT &gt; </div>
 </div><div class="memdoc">
 
 <p>Store a tile of items across a threadblock, guarded by range. </p>
-<dl class="tparams"><dt>Template Parameters</dt><dd>
-  <table class="tparams">
-    <tr><td class="paramname">SizeT</td><td><b>[inferred]</b> Integer type for offsets </td></tr>
-  </table>
-  </dd>
-</dl>
 <dl class="params"><dt>Parameters</dt><dd>
   <table class="params">
     <tr><td class="paramdir">[in]</td><td class="paramname">smem_storage</td><td>Reference to shared memory allocation having layout type SmemStorage </td></tr>
@@ -330,7 +321,7 @@ template&lt;typename SizeT &gt; </div>
 <!-- HTML footer for doxygen 1.8.3.1-->
 <!-- start footer part -->
 <hr class="footer"/><address class="footer"><small>
-Generated on Wed May 1 2013 05:38:34 for CUB by &#160;<a href="http://www.doxygen.org/index.html">
+Generated on Tue May 7 2013 16:26:26 for CUB by &#160;<a href="http://www.doxygen.org/index.html">
 <img class="footer" src="doxygen.png" alt="doxygen"/>
 </a> 1.8.3.1
 <br>
