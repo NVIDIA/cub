@@ -205,24 +205,21 @@ private:
       * Constants and typedefs
       ******************************************************************************/
 
-    /// WarpScan algorithmic variants
-    enum WarpScanPolicy
-    {
-        SHFL_SCAN,          // Warp-synchronous SHFL-based scan
-        SMEM_SCAN,          // Warp-synchronous smem-based scan
-    };
-
     /// Constants
     enum
     {
         POW_OF_TWO = ((LOGICAL_WARP_THREADS & (LOGICAL_WARP_THREADS - 1)) == 0),
     };
 
+    /// WarpScan algorithmic variants (would use an enum, but it causes GCC crash as of CUDA5)
+    static const int SHFL_SCAN = 0;          // Warp-synchronous SHFL-based scan
+    static const int SMEM_SCAN = 1;          // Warp-synchronous smem-based scan
+
 
     /// Use SHFL_SCAN if (architecture is >= SM30) and (T is a primitive) and (T is 4-bytes or smaller) and (LOGICAL_WARP_THREADS is a power-of-two)
-    static const WarpScanPolicy POLICY = ((CUB_PTX_ARCH >= 300) && Traits<T>::PRIMITIVE && (sizeof(T) <= 4) && POW_OF_TWO) ?
-                                            SHFL_SCAN :
-                                            SMEM_SCAN;
+    static const int POLICY = ((CUB_PTX_ARCH >= 300) && Traits<T>::PRIMITIVE && (sizeof(T) <= 4) && POW_OF_TWO) ?
+        SHFL_SCAN :
+        SMEM_SCAN;
 
 
 
