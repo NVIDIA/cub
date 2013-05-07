@@ -161,6 +161,26 @@ struct ThreadLoadDispatch<PTX_LOAD_VS, false>
 };
 
 
+
+/**
+ * Generic PTX_LOAD_CG specialization for SM10-SM13 architectures
+ */
+#if CUB_PTX_ARCH < 200
+template <>
+struct ThreadLoadDispatch<PTX_LOAD_CG, false>
+{
+    // Iterator
+    template <typename InputIteratorRA>
+    static __device__ __forceinline__ typename std::iterator_traits<InputIteratorRA>::value_type ThreadLoad(InputIteratorRA itr)
+    {
+        // Straightforward dereference
+        return *itr;
+    }
+};
+#endif  // CUB_PTX_ARCH < 200
+
+
+
 #endif // DOXYGEN_SHOULD_SKIP_THIS
 
 /**
@@ -456,6 +476,7 @@ __device__ __forceinline__ typename std::iterator_traits<InputIteratorRA>::value
 /**
  * Expand ThreadLoad() implementations for primitive types.
  */
+#if CUB_PTX_ARCH >= 200
 
 // Signed
 CUB_LOADS_0124(char, char, short, s8, h)
@@ -491,6 +512,7 @@ CUB_LOADS_4L(double4, double2);
     CUB_LOADS_0124(unsigned long, ulong, unsigned long, u32, r)
 #endif
 
+#endif  // CUB_PTX_ARCH >= 200
 
 /**
  * Undefine macros

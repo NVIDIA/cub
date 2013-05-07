@@ -180,20 +180,20 @@ struct CachingDeviceAllocator : DeviceAllocator
      */
     struct BlockDescriptor
     {
-        DeviceOrdinal   device;        // device ordinal
+        int   device;        // device ordinal
         void*           d_ptr;      // Device pointer
         size_t          bytes;      // Size of allocation in bytes
         unsigned int    bin;        // Bin enumeration
 
         // Constructor
-        BlockDescriptor(void *d_ptr, DeviceOrdinal device) :
+        BlockDescriptor(void *d_ptr, int device) :
             d_ptr(d_ptr),
             bytes(0),
             bin(0),
             device(device) {}
 
         // Constructor
-        BlockDescriptor(size_t bytes, unsigned int bin, DeviceOrdinal device) :
+        BlockDescriptor(size_t bytes, unsigned int bin, int device) :
             d_ptr(NULL),
             bytes(bytes),
             bin(bin),
@@ -234,7 +234,7 @@ struct CachingDeviceAllocator : DeviceAllocator
     typedef std::multiset<BlockDescriptor, Compare> BusyBlocks;
 
     /// Map type of device ordinals to the number of cached bytes cached by each device
-    typedef std::map<DeviceOrdinal, size_t> GpuCachedBytes;
+    typedef std::map<int, size_t> GpuCachedBytes;
 
 
     //---------------------------------------------------------------------
@@ -355,7 +355,7 @@ struct CachingDeviceAllocator : DeviceAllocator
     __host__ __device__ __forceinline__ cudaError_t DeviceAllocate(
         void** d_ptr,
         size_t bytes,
-        DeviceOrdinal device)
+        int device)
     {
     #ifdef __CUDA_ARCH__
         // Caching functionality only defined on host
@@ -363,7 +363,7 @@ struct CachingDeviceAllocator : DeviceAllocator
     #else
 
         bool locked                     = false;
-        DeviceOrdinal entrypoint_device = INVALID_DEVICE_ORDINAL;
+        int entrypoint_device = INVALID_DEVICE_ORDINAL;
         cudaError_t error               = cudaSuccess;
 
         // Round up to nearest bin size
@@ -472,7 +472,7 @@ struct CachingDeviceAllocator : DeviceAllocator
     #else
         cudaError_t error = cudaSuccess;
         do {
-            DeviceOrdinal current_device;
+            int current_device;
             if (CubDebug(error = cudaGetDevice(&current_device))) break;
             if (CubDebug(error = DeviceAllocate(d_ptr, bytes, current_device))) break;
         } while(0);
@@ -488,7 +488,7 @@ struct CachingDeviceAllocator : DeviceAllocator
      */
     __host__ __device__ __forceinline__ cudaError_t DeviceFree(
         void* d_ptr,
-        DeviceOrdinal device)
+        int device)
     {
     #ifdef __CUDA_ARCH__
         // Caching functionality only defined on host
@@ -496,7 +496,7 @@ struct CachingDeviceAllocator : DeviceAllocator
     #else
 
         bool locked                     = false;
-        DeviceOrdinal entrypoint_device = INVALID_DEVICE_ORDINAL;
+        int entrypoint_device = INVALID_DEVICE_ORDINAL;
         cudaError_t error               = cudaSuccess;
 
         BlockDescriptor search_key(d_ptr, device);
@@ -581,7 +581,7 @@ struct CachingDeviceAllocator : DeviceAllocator
         return CubDebug(cudaErrorInvalidConfiguration);
     #else
 
-        DeviceOrdinal current_device;
+        int current_device;
         cudaError_t error = cudaSuccess;
 
         do {
@@ -607,8 +607,8 @@ struct CachingDeviceAllocator : DeviceAllocator
 
         cudaError_t error                   = cudaSuccess;
         bool locked                         = false;
-        DeviceOrdinal entrypoint_device     = INVALID_DEVICE_ORDINAL;
-        DeviceOrdinal current_device        = INVALID_DEVICE_ORDINAL;
+        int entrypoint_device     = INVALID_DEVICE_ORDINAL;
+        int current_device        = INVALID_DEVICE_ORDINAL;
 
         // Lock
         if (!locked) {
@@ -723,7 +723,7 @@ __host__ __device__ __forceinline__ cudaError_t DeviceAllocate(
 {
     if (device_allocator == NULL)
     {
-    #if !CUB_CNP_ENABLED
+    #ifndef CUB_RUNTIME_ENABLED
         // CUDA API not supported from this device
         return CubDebug(cudaErrorInvalidConfiguration);
     #else
@@ -744,7 +744,7 @@ __host__ __device__ __forceinline__ cudaError_t DeviceFree(
 {
     if (device_allocator == NULL)
     {
-    #if !CUB_CNP_ENABLED
+    #ifndef CUB_RUNTIME_ENABLED
         // CUDA API not supported from this device
         return CubDebug(cudaErrorInvalidConfiguration);
     #else

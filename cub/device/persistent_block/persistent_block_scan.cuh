@@ -28,7 +28,7 @@
 
 /**
  * \file
- * cub::TilesScan implements an abstraction of CUDA thread blocks for
+ * cub::PersistentBlockScan implements an abstraction of CUDA thread blocks for
  * participating in device-wide prefix scan.
  */
 
@@ -61,7 +61,7 @@ enum
 
 
 /**
- * Tuning policy for TilesScan
+ * Tuning policy for PersistentBlockScan
  */
 template <
     int                         _BLOCK_THREADS,
@@ -69,7 +69,7 @@ template <
     BlockLoadPolicy             _LOAD_POLICY,
     BlockStorePolicy            _STORE_POLICY,
     BlockScanAlgorithm          _SCAN_ALGORITHM>
-struct TilesScanPolicy
+struct PersistentBlockScanPolicy
 {
     enum
     {
@@ -87,15 +87,15 @@ struct TilesScanPolicy
 
 
 /**
- * \brief TilesScan implements an abstraction of CUDA thread blocks for
+ * \brief PersistentBlockScan implements an abstraction of CUDA thread blocks for
  * participating in device-wide reduction.
  */
 template <
-    typename TilesScanPolicy,
+    typename PersistentBlockScanPolicy,
     typename InputIteratorRA,
     typename OutputIteratorRA,
     typename SizeT>
-class TilesScan
+class PersistentBlockScan
 {
 public:
 
@@ -107,12 +107,12 @@ public:
     typedef typename std::iterator_traits<InputIteratorRA>::value_type T;
 
     // Data type of block-signaling flag
-    typedef typename TilesScanPolicy::BlockFlag BlockFlag;
+    typedef typename PersistentBlockScanPolicy::BlockFlag BlockFlag;
 
     // Constants
     enum
     {
-        TILE_ITEMS = TilesScanPolicy::BLOCK_THREADS * TilesScanPolicy::ITEMS_PER_THREAD,
+        TILE_ITEMS = PersistentBlockScanPolicy::BLOCK_THREADS * PersistentBlockScanPolicy::ITEMS_PER_THREAD,
     };
 
     struct Signal
@@ -146,22 +146,22 @@ public:
     // Parameterized block load
     typedef BlockLoad<
         InputIteratorRA,
-        TilesScanPolicy::BLOCK_THREADS,
-        TilesScanPolicy::ITEMS_PER_THREAD,
-        TilesScanPolicy::LOAD_POLICY>          BlockLoadT;
+        PersistentBlockScanPolicy::BLOCK_THREADS,
+        PersistentBlockScanPolicy::ITEMS_PER_THREAD,
+        PersistentBlockScanPolicy::LOAD_POLICY>          BlockLoadT;
 
     // Parameterized block store
     typedef BlockStore<
         OutputIteratorRA,
-        TilesScanPolicy::BLOCK_THREADS,
-        TilesScanPolicy::ITEMS_PER_THREAD,
-        TilesScanPolicy::STORE_POLICY>         BlockStoreT;
+        PersistentBlockScanPolicy::BLOCK_THREADS,
+        PersistentBlockScanPolicy::ITEMS_PER_THREAD,
+        PersistentBlockScanPolicy::STORE_POLICY>         BlockStoreT;
 
     // Parameterized block scan
     typedef BlockScan<
         T,
-        TilesScanPolicy::BLOCK_THREADS,
-        TilesScanPolicy::SCAN_ALGORITHM>       BlockScanT;
+        PersistentBlockScanPolicy::BLOCK_THREADS,
+        PersistentBlockScanPolicy::SCAN_ALGORITHM>       BlockScanT;
 
     // Parameterized warp reduce
     typedef WarpReduce<Signal>                      WarpReduceT;
@@ -270,7 +270,7 @@ public:
         ScanOp                  &scan_op,
         T                       &thread_aggregate)
     {
-        T items[TilesScanPolicy::ITEMS_PER_THREAD];
+        T items[PersistentBlockScanPolicy::ITEMS_PER_THREAD];
 
         BlockLoadT::Load(smem_storage.load, d_in + block_offset, items);
 
@@ -392,7 +392,7 @@ public:
      * The return value is undefined in threads other than thread<sub>0</sub>.
      */
     template <typename SizeT, typename ScanOp>
-    static __device__ __forceinline__ T ProcessTilesEvenShare(
+    static __device__ __forceinline__ T ProcessPersistentBlockEvenShare(
         SmemStorage             &smem_storage,
         InputIteratorRA           d_in,
         SizeT                   block_offset,
@@ -438,7 +438,7 @@ public:
      * The return value is undefined in threads other than thread<sub>0</sub>.
      */
     template <typename SizeT, typename ScanOp>
-    static __device__ __forceinline__ T ProcessTilesDynamic(
+    static __device__ __forceinline__ T ProcessPersistentBlockDynamic(
         SmemStorage             &smem_storage,
         InputIteratorRA           d_in,
         SizeT                   num_items,
@@ -502,45 +502,6 @@ public:
 
             // Compute the block-wide reduction  (up to block_items threads have valid inputs)
             return BlockReduceT::Reduce(smem_storage.reduce, thread_aggregate, scan_op, block_items);
-        }
-    }
-
-
-    /**
-     * \brief Consumes input tiles according to <tt>TilesScanPolicy::GRID_MAPPING</tt>, computing a threadblock-wide reduction for thread<sub>0</sub> using the specified binary reduction functor.
-     *
-     * The return value is undefined in threads other than thread<sub>0</sub>.
-     */
-    template <typename SizeT, typename ScanOp>
-    static __device__ __forceinline__ T ProcessTiles(
-        SmemStorage             &smem_storage,
-        InputIteratorRA           d_in,
-        SizeT                   num_items,
-        GridEvenShare<SizeT>    &even_share,
-        GridQueue<SizeT>        &queue,
-        ScanOp             &scan_op)
-    {
-        if (TilesScanPolicy::GRID_MAPPING == GRID_MAPPING_EVEN_SHARE)
-        {
-            // Even share
-            even_share.BlockInit();
-
-            return ProcessTilesEvenShare(
-                smem_storage,
-                d_in,
-                even_share.block_offset,
-                even_share.block_oob,
-                scan_op);
-        }
-        else
-        {
-            // Dynamically dequeue
-            return ProcessTilesDynamic(
-                smem_storage,
-                d_in,
-                num_items,
-                queue,
-                scan_op);
         }
     }
 
