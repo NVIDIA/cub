@@ -26,9 +26,10 @@
  *
  ******************************************************************************/
 
-/******************************************************************************
- * Abstraction for grid-wide queue management
- ******************************************************************************/
+/**
+ * \file
+ * cub::GridQueue is a descriptor utility for dynamic queue management.
+ */
 
 #pragma once
 
@@ -52,7 +53,7 @@ namespace cub {
 
 
 /**
- * \brief Abstraction for grid-wide queue management.
+ * \brief GridQueue is a descriptor utility for dynamic queue management.
  *
  * \par Overview
  * GridQueue descriptors provides abstractions for "filling" or
@@ -77,7 +78,8 @@ namespace cub {
  * \par
  * Iterative work management can be implemented simply with a pair of flip-flopping
  * work buffers, each with an associated set of fill and drain GridQueue descriptors.
-
+ *
+ * \tparam SizeT Integer type for array indexing
  */
 template <typename SizeT>
 class GridQueue

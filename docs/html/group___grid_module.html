@@ -88,7 +88,8 @@ var searchBox = new SearchBox("searchBox", "search",false,'Search');
 <div class="header">
   <div class="summary">
 <a href="#nested-classes">Classes</a> &#124;
-<a href="#enum-members">Enumerations</a>  </div>
+<a href="#enum-members">Enumerations</a> &#124;
+<a href="#func-members">Functions</a>  </div>
   <div class="headertitle">
 <div class="title">Grid utilities</div>  </div>
 </div><!--header-->
@@ -97,10 +98,10 @@ var searchBox = new SearchBox("searchBox", "search",false,'Search');
 <tr class="heading"><td colspan="2"><h2 class="groupheader"><a name="nested-classes"></a>
 Classes</h2></td></tr>
 <tr class="memitem:"><td class="memItemLeft" align="right" valign="top">class &#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classcub_1_1_grid_even_share.html">cub::GridEvenShare&lt; SizeT &gt;</a></td></tr>
-<tr class="memdesc:"><td class="mdescLeft">&#160;</td><td class="mdescRight">A descriptor utility for distributing input among CUDA threadblocks in an "even-share" fashion. Each threadblock gets roughly the same number of fixed-size work units (grains).  <a href="classcub_1_1_grid_even_share.html#details">More...</a><br/></td></tr>
+<tr class="memdesc:"><td class="mdescLeft">&#160;</td><td class="mdescRight"><a class="el" href="classcub_1_1_grid_even_share.html" title="GridEvenShare is a descriptor utility for distributing input among CUDA threadblocks in an &quot;even-shar...">GridEvenShare</a> is a descriptor utility for distributing input among CUDA threadblocks in an "even-share" fashion. Each threadblock gets roughly the same number of fixed-size work units (grains).  <a href="classcub_1_1_grid_even_share.html#details">More...</a><br/></td></tr>
 <tr class="separator:"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:"><td class="memItemLeft" align="right" valign="top">class &#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classcub_1_1_grid_queue.html">cub::GridQueue&lt; SizeT &gt;</a></td></tr>
-<tr class="memdesc:"><td class="mdescLeft">&#160;</td><td class="mdescRight">Abstraction for grid-wide queue management.  <a href="classcub_1_1_grid_queue.html#details">More...</a><br/></td></tr>
+<tr class="memdesc:"><td class="mdescLeft">&#160;</td><td class="mdescRight"><a class="el" href="classcub_1_1_grid_queue.html" title="GridQueue is a descriptor utility for dynamic queue management.">GridQueue</a> is a descriptor utility for dynamic queue management.  <a href="classcub_1_1_grid_queue.html#details">More...</a><br/></td></tr>
 <tr class="separator:"><td class="memSeparator" colspan="2">&#160;</td></tr>
 </table><table class="memberdecls">
 <tr class="heading"><td colspan="2"><h2 class="groupheader"><a name="enum-members"></a>
@@ -108,7 +109,35 @@ Enumerations</h2></td></tr>
 <tr class="memitem:gab0872c68bb2f2deba92ae650a9aa3e97"><td class="memItemLeft" align="right" valign="top">enum &#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="group___grid_module.html#gab0872c68bb2f2deba92ae650a9aa3e97">cub::GridMappingStrategy</a> { <a class="el" href="group___grid_module.html#ggab0872c68bb2f2deba92ae650a9aa3e97a8f282fc1684924a8503850b8b302d3a5">cub::GRID_MAPPING_EVEN_SHARE</a>, 
 <a class="el" href="group___grid_module.html#ggab0872c68bb2f2deba92ae650a9aa3e97a6857b21076c6af5e9b1f4a55c0bdc971">cub::GRID_MAPPING_DYNAMIC</a>
  }</td></tr>
+<tr class="memdesc:gab0872c68bb2f2deba92ae650a9aa3e97"><td class="mdescLeft">&#160;</td><td class="mdescRight"><a class="el" href="group___grid_module.html#gab0872c68bb2f2deba92ae650a9aa3e97" title="cub::GridMappingStrategy enumerates alternative strategies for mapping constant-sized tiles of device...">cub::GridMappingStrategy</a> enumerates alternative strategies for mapping constant-sized tiles of device-wide data onto a grid of CUDA thread blocks.  <a href="group___grid_module.html#gab0872c68bb2f2deba92ae650a9aa3e97">More...</a><br/></td></tr>
 <tr class="separator:gab0872c68bb2f2deba92ae650a9aa3e97"><td class="memSeparator" colspan="2">&#160;</td></tr>
+</table><table class="memberdecls">
+<tr class="heading"><td colspan="2"><h2 class="groupheader"><a name="func-members"></a>
+Functions</h2></td></tr>
+<tr class="memitem:ga86fcdb021fa1a4cbfa0e5952b6c1920f"><td class="memTemplParams" colspan="2">template&lt;typename PersistentBlock , typename SizeT , typename Result &gt; </td></tr>
+<tr class="memitem:ga86fcdb021fa1a4cbfa0e5952b6c1920f"><td class="memTemplItemLeft" align="right" valign="top">__device__ __forceinline__ void&#160;</td><td class="memTemplItemRight" valign="bottom"><a class="el" href="group___grid_module.html#ga86fcdb021fa1a4cbfa0e5952b6c1920f">cub::ConsumeTiles</a> (PersistentBlock &amp;persistent_block, SizeT block_offset, SizeT block_oob, Result &amp;result)</td></tr>
+<tr class="memdesc:ga86fcdb021fa1a4cbfa0e5952b6c1920f"><td class="mdescLeft">&#160;</td><td class="mdescRight">Dispatches tiles of work from the given input range to the specified thread block abstraction.  <a href="#ga86fcdb021fa1a4cbfa0e5952b6c1920f">More...</a><br/></td></tr>
+<tr class="separator:ga86fcdb021fa1a4cbfa0e5952b6c1920f"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:ga771bd863d4c690a25c267537e2b8cbf9"><td class="memTemplParams" colspan="2">template&lt;typename PersistentBlock , typename SizeT , typename Result &gt; </td></tr>
+<tr class="memitem:ga771bd863d4c690a25c267537e2b8cbf9"><td class="memTemplItemLeft" align="right" valign="top">__device__ __forceinline__ void&#160;</td><td class="memTemplItemRight" valign="bottom"><a class="el" href="group___grid_module.html#ga771bd863d4c690a25c267537e2b8cbf9">cub::ConsumeTiles</a> (PersistentBlock &amp;persistent_block, SizeT num_items, GridEvenShare&lt; SizeT &gt; &amp;even_share, Result &amp;result)</td></tr>
+<tr class="memdesc:ga771bd863d4c690a25c267537e2b8cbf9"><td class="mdescLeft">&#160;</td><td class="mdescRight">Uses a <a class="el" href="classcub_1_1_grid_even_share.html" title="GridEvenShare is a descriptor utility for distributing input among CUDA threadblocks in an &quot;even-shar...">GridEvenShare</a> descriptor to dispatch tiles of work to the specified thread block abstraction. (See GridMappingStrategy::GRID_MAPPING_EVEN_SHARE.)  <a href="#ga771bd863d4c690a25c267537e2b8cbf9">More...</a><br/></td></tr>
+<tr class="separator:ga771bd863d4c690a25c267537e2b8cbf9"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:ga39f156542d92e308412515e349e90300"><td class="memTemplParams" colspan="2">template&lt;typename PersistentBlock , typename SizeT , typename Result &gt; </td></tr>
+<tr class="memitem:ga39f156542d92e308412515e349e90300"><td class="memTemplItemLeft" align="right" valign="top">__device__ __forceinline__ void&#160;</td><td class="memTemplItemRight" valign="bottom"><a class="el" href="group___grid_module.html#ga39f156542d92e308412515e349e90300">cub::ConsumeTiles</a> (PersistentBlock &amp;persistent_block, SizeT num_items, GridQueue&lt; SizeT &gt; &amp;queue, Result &amp;result)</td></tr>
+<tr class="memdesc:ga39f156542d92e308412515e349e90300"><td class="mdescLeft">&#160;</td><td class="mdescRight">Uses a <a class="el" href="classcub_1_1_grid_queue.html" title="GridQueue is a descriptor utility for dynamic queue management.">GridQueue</a> descriptor to dispatch tiles of work to the specified thread block abstraction. (See GridMappingStrategy::GRID_MAPPING_DYNAMIC.)  <a href="#ga39f156542d92e308412515e349e90300">More...</a><br/></td></tr>
+<tr class="separator:ga39f156542d92e308412515e349e90300"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:gad719cb805d4b53ddca9943abbde1c0ca"><td class="memTemplParams" colspan="2">template&lt;typename PersistentBlock , typename SizeT , typename Result &gt; </td></tr>
+<tr class="memitem:gad719cb805d4b53ddca9943abbde1c0ca"><td class="memTemplItemLeft" align="right" valign="top">__device__ __forceinline__ void&#160;</td><td class="memTemplItemRight" valign="bottom"><a class="el" href="group___grid_module.html#gad719cb805d4b53ddca9943abbde1c0ca">cub::ConsumeTilesFlagFirst</a> (PersistentBlock &amp;persistent_block, SizeT block_offset, SizeT block_oob, Result &amp;result)</td></tr>
+<tr class="memdesc:gad719cb805d4b53ddca9943abbde1c0ca"><td class="mdescLeft">&#160;</td><td class="mdescRight">Dispatches tiles of work from the given input range to the specified thread block abstraction. The first tile given to each thread block is flagged as such.  <a href="#gad719cb805d4b53ddca9943abbde1c0ca">More...</a><br/></td></tr>
+<tr class="separator:gad719cb805d4b53ddca9943abbde1c0ca"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:gabae8550f492407f0795171a140d82084"><td class="memTemplParams" colspan="2">template&lt;typename PersistentBlock , typename SizeT , typename Result &gt; </td></tr>
+<tr class="memitem:gabae8550f492407f0795171a140d82084"><td class="memTemplItemLeft" align="right" valign="top">__device__ __forceinline__ void&#160;</td><td class="memTemplItemRight" valign="bottom"><a class="el" href="group___grid_module.html#gabae8550f492407f0795171a140d82084">cub::ConsumeTilesFlagFirst</a> (PersistentBlock &amp;persistent_block, SizeT num_items, GridEvenShare&lt; SizeT &gt; &amp;even_share, Result &amp;result)</td></tr>
+<tr class="memdesc:gabae8550f492407f0795171a140d82084"><td class="mdescLeft">&#160;</td><td class="mdescRight">Uses a <a class="el" href="classcub_1_1_grid_even_share.html" title="GridEvenShare is a descriptor utility for distributing input among CUDA threadblocks in an &quot;even-shar...">GridEvenShare</a> descriptor to dispatch tiles of work to the specified thread block abstraction. The first tile given to each thread block is flagged as such. (See GridMappingStrategy::GRID_MAPPING_EVEN_SHARE.)  <a href="#gabae8550f492407f0795171a140d82084">More...</a><br/></td></tr>
+<tr class="separator:gabae8550f492407f0795171a140d82084"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:ga6492a0a23e402a3134bd5b15fa10ecab"><td class="memTemplParams" colspan="2">template&lt;typename PersistentBlock , typename SizeT , typename Result &gt; </td></tr>
+<tr class="memitem:ga6492a0a23e402a3134bd5b15fa10ecab"><td class="memTemplItemLeft" align="right" valign="top">__device__ __forceinline__ void&#160;</td><td class="memTemplItemRight" valign="bottom"><a class="el" href="group___grid_module.html#ga6492a0a23e402a3134bd5b15fa10ecab">cub::ConsumeTilesFlagFirst</a> (PersistentBlock &amp;persistent_block, SizeT num_items, GridQueue&lt; SizeT &gt; &amp;queue, Result &amp;result)</td></tr>
+<tr class="memdesc:ga6492a0a23e402a3134bd5b15fa10ecab"><td class="mdescLeft">&#160;</td><td class="mdescRight">Uses a <a class="el" href="classcub_1_1_grid_queue.html" title="GridQueue is a descriptor utility for dynamic queue management.">GridQueue</a> descriptor to dispatch tiles of work to the specified thread block abstraction. The first tile given to each thread block is flagged as such. (See GridMappingStrategy::GRID_MAPPING_DYNAMIC.)  <a href="#ga6492a0a23e402a3134bd5b15fa10ecab">More...</a><br/></td></tr>
+<tr class="separator:ga6492a0a23e402a3134bd5b15fa10ecab"><td class="memSeparator" colspan="2">&#160;</td></tr>
 </table>
 <h2 class="groupheader">Enumeration Type Documentation</h2>
 <a class="anchor" id="gab0872c68bb2f2deba92ae650a9aa3e97"></a>
@@ -120,17 +149,463 @@ Enumerations</h2></td></tr>
         </tr>
       </table>
 </div><div class="memdoc">
-<p>GridMappingStrategy enumerates alternative strategies for mapping constant-sized tiles of device-wide data onto a grid of CUDA thread blocks. </p>
+
+<p><a class="el" href="group___grid_module.html#gab0872c68bb2f2deba92ae650a9aa3e97" title="cub::GridMappingStrategy enumerates alternative strategies for mapping constant-sized tiles of device...">cub::GridMappingStrategy</a> enumerates alternative strategies for mapping constant-sized tiles of device-wide data onto a grid of CUDA thread blocks. </p>
 <table class="fieldtable">
 <tr><th colspan="2">Enumerator</th></tr><tr><td class="fieldname"><em><a class="anchor" id="ggab0872c68bb2f2deba92ae650a9aa3e97a8f282fc1684924a8503850b8b302d3a5"></a>GRID_MAPPING_EVEN_SHARE</em>&nbsp;</td><td class="fielddoc">
-<p>An "even-share" strategy. </p>
+<p>An "even-share" strategy for assigning input tiles to thread blocks. </p>
 <dl class="section user"><dt>Overview</dt><dd>The input is evenly partitioned into <code>p</code> segments, where <code>p</code> is constant and corresponds loosely to the number of thread blocks that may actively reside on the target device. Each segment is comprised of consecutive tiles, where a tile is a small, constant-sized unit of input to be processed to completion before the thread block terminates or obtains more work. The kernel invokes <code>p</code> thread blocks, each of which iteratively consumes a segment of <em>n</em>/<em>p</em> elements in tile-size increments. </dd></dl>
 </td></tr>
 <tr><td class="fieldname"><em><a class="anchor" id="ggab0872c68bb2f2deba92ae650a9aa3e97a6857b21076c6af5e9b1f4a55c0bdc971"></a>GRID_MAPPING_DYNAMIC</em>&nbsp;</td><td class="fielddoc">
-<p>A dynamic "queue-based" strategy for commutative reduction operators. </p>
+<p>A dynamic "queue-based" strategy for assigning input tiles to thread blocks. </p>
 <dl class="section user"><dt>Overview</dt><dd>The input is treated as a queue to be dynamically consumed by a grid of thread blocks. Work is atomically dequeued in tiles, where a tile is a unit of input to be processed to completion before the thread block terminates or obtains more work. The grid size <code>p</code> is constant, loosely corresponding to the number of thread blocks that may actively reside on the target device. </dd></dl>
 </td></tr>
 </table>
+
+</div>
+</div>
+<h2 class="groupheader">Function Documentation</h2>
+<a class="anchor" id="ga86fcdb021fa1a4cbfa0e5952b6c1920f"></a>
+<div class="memitem">
+<div class="memproto">
+<div class="memtemplate">
+template&lt;typename PersistentBlock , typename SizeT , typename Result &gt; </div>
+      <table class="memname">
+        <tr>
+          <td class="memname">__device__ __forceinline__ void cub::ConsumeTiles </td>
+          <td>(</td>
+          <td class="paramtype">PersistentBlock &amp;&#160;</td>
+          <td class="paramname"><em>persistent_block</em>, </td>
+        </tr>
+        <tr>
+          <td class="paramkey"></td>
+          <td></td>
+          <td class="paramtype">SizeT&#160;</td>
+          <td class="paramname"><em>block_offset</em>, </td>
+        </tr>
+        <tr>
+          <td class="paramkey"></td>
+          <td></td>
+          <td class="paramtype">SizeT&#160;</td>
+          <td class="paramname"><em>block_oob</em>, </td>
+        </tr>
+        <tr>
+          <td class="paramkey"></td>
+          <td></td>
+          <td class="paramtype">Result &amp;&#160;</td>
+          <td class="paramname"><em>result</em>&#160;</td>
+        </tr>
+        <tr>
+          <td></td>
+          <td>)</td>
+          <td></td><td></td>
+        </tr>
+      </table>
+</div><div class="memdoc">
+
+<p>Dispatches tiles of work from the given input range to the specified thread block abstraction. </p>
+<dl class="section user"><dt></dt><dd>Expects the <code>PersistentBlock</code> type to have the following callback member functions:<ul>
+<li>Tile processing:<ul>
+<li><code>void ConsumeTile(bool sync_after, SizeT block_offset, SizeT valid_tile_items);</code></li>
+</ul>
+</li>
+<li>Getting the maximum number of items processed per call to <code>PersistentBlock::ConsumeTile</code>:<ul>
+<li><code>int TileItems()</code></li>
+</ul>
+</li>
+<li>Finalization:<ul>
+<li><code>void Finalize(Result &amp;result);</code></li>
+</ul>
+</li>
+</ul>
+</dd></dl>
+<dl class="tparams"><dt>Template Parameters</dt><dd>
+  <table class="tparams">
+    <tr><td class="paramname">PersistentBlock</td><td><b>[inferred]</b> Thread block abstraction type for tile processing </td></tr>
+    <tr><td class="paramname">SizeT</td><td><b>[inferred]</b> Integral type used for global array indexing </td></tr>
+    <tr><td class="paramname">Result</td><td><b>[inferred]</b> Result type to be returned by the PersistentBlock instance </td></tr>
+  </table>
+  </dd>
+</dl>
+<dl class="params"><dt>Parameters</dt><dd>
+  <table class="params">
+    <tr><td class="paramdir">[in,out]</td><td class="paramname">persistent_block</td><td>Threadblock abstraction for tile processing </td></tr>
+    <tr><td class="paramdir">[in]</td><td class="paramname">block_offset</td><td>Threadblock begin offset (inclusive) </td></tr>
+    <tr><td class="paramdir">[in]</td><td class="paramname">block_oob</td><td>Threadblock end offset (exclusive) </td></tr>
+    <tr><td class="paramdir">[out]</td><td class="paramname">result</td><td>Result returned by <code>tiles::Finalize()</code> </td></tr>
+  </table>
+  </dd>
+</dl>
+
+</div>
+</div>
+<a class="anchor" id="ga771bd863d4c690a25c267537e2b8cbf9"></a>
+<div class="memitem">
+<div class="memproto">
+<div class="memtemplate">
+template&lt;typename PersistentBlock , typename SizeT , typename Result &gt; </div>
+      <table class="memname">
+        <tr>
+          <td class="memname">__device__ __forceinline__ void cub::ConsumeTiles </td>
+          <td>(</td>
+          <td class="paramtype">PersistentBlock &amp;&#160;</td>
+          <td class="paramname"><em>persistent_block</em>, </td>
+        </tr>
+        <tr>
+          <td class="paramkey"></td>
+          <td></td>
+          <td class="paramtype">SizeT&#160;</td>
+          <td class="paramname"><em>num_items</em>, </td>
+        </tr>
+        <tr>
+          <td class="paramkey"></td>
+          <td></td>
+          <td class="paramtype">GridEvenShare&lt; SizeT &gt; &amp;&#160;</td>
+          <td class="paramname"><em>even_share</em>, </td>
+        </tr>
+        <tr>
+          <td class="paramkey"></td>
+          <td></td>
+          <td class="paramtype">Result &amp;&#160;</td>
+          <td class="paramname"><em>result</em>&#160;</td>
+        </tr>
+        <tr>
+          <td></td>
+          <td>)</td>
+          <td></td><td></td>
+        </tr>
+      </table>
+</div><div class="memdoc">
+
+<p>Uses a <a class="el" href="classcub_1_1_grid_even_share.html" title="GridEvenShare is a descriptor utility for distributing input among CUDA threadblocks in an &quot;even-shar...">GridEvenShare</a> descriptor to dispatch tiles of work to the specified thread block abstraction. (See GridMappingStrategy::GRID_MAPPING_EVEN_SHARE.) </p>
+<dl class="section user"><dt></dt><dd>Expects the <code>PersistentBlock</code> type to have the following callback member functions:<ul>
+<li>Tile processing:<ul>
+<li><code>void ConsumeTile(bool sync_after, SizeT block_offset, SizeT valid_tile_items);</code></li>
+</ul>
+</li>
+<li>Getting the maximum number of items processed per call to <code>PersistentBlock::ConsumeTile</code>:<ul>
+<li><code>int TileItems()</code></li>
+</ul>
+</li>
+<li>Finalization:<ul>
+<li><code>void Finalize(Result &amp;result);</code></li>
+</ul>
+</li>
+</ul>
+</dd></dl>
+<dl class="tparams"><dt>Template Parameters</dt><dd>
+  <table class="tparams">
+    <tr><td class="paramname">PersistentBlock</td><td><b>[inferred]</b> Thread block abstraction type for tile processing </td></tr>
+    <tr><td class="paramname">SizeT</td><td><b>[inferred]</b> Integral type used for global array indexing </td></tr>
+    <tr><td class="paramname">Result</td><td><b>[inferred]</b> Result type to be returned by the PersistentBlock instance </td></tr>
+  </table>
+  </dd>
+</dl>
+<dl class="params"><dt>Parameters</dt><dd>
+  <table class="params">
+    <tr><td class="paramdir">[in,out]</td><td class="paramname">persistent_block</td><td>Threadblock abstraction for tile processing </td></tr>
+    <tr><td class="paramdir">[in]</td><td class="paramname">num_items</td><td>Total number of global input items </td></tr>
+    <tr><td class="paramdir">[in]</td><td class="paramname">even_share</td><td><a class="el" href="classcub_1_1_grid_even_share.html" title="GridEvenShare is a descriptor utility for distributing input among CUDA threadblocks in an &quot;even-shar...">GridEvenShare</a> descriptor </td></tr>
+    <tr><td class="paramdir">[out]</td><td class="paramname">result</td><td>Result returned by <code>tiles::Finalize()</code> </td></tr>
+  </table>
+  </dd>
+</dl>
+
+</div>
+</div>
+<a class="anchor" id="gad719cb805d4b53ddca9943abbde1c0ca"></a>
+<div class="memitem">
+<div class="memproto">
+<div class="memtemplate">
+template&lt;typename PersistentBlock , typename SizeT , typename Result &gt; </div>
+      <table class="memname">
+        <tr>
+          <td class="memname">__device__ __forceinline__ void cub::ConsumeTilesFlagFirst </td>
+          <td>(</td>
+          <td class="paramtype">PersistentBlock &amp;&#160;</td>
+          <td class="paramname"><em>persistent_block</em>, </td>
+        </tr>
+        <tr>
+          <td class="paramkey"></td>
+          <td></td>
+          <td class="paramtype">SizeT&#160;</td>
+          <td class="paramname"><em>block_offset</em>, </td>
+        </tr>
+        <tr>
+          <td class="paramkey"></td>
+          <td></td>
+          <td class="paramtype">SizeT&#160;</td>
+          <td class="paramname"><em>block_oob</em>, </td>
+        </tr>
+        <tr>
+          <td class="paramkey"></td>
+          <td></td>
+          <td class="paramtype">Result &amp;&#160;</td>
+          <td class="paramname"><em>result</em>&#160;</td>
+        </tr>
+        <tr>
+          <td></td>
+          <td>)</td>
+          <td></td><td></td>
+        </tr>
+      </table>
+</div><div class="memdoc">
+
+<p>Dispatches tiles of work from the given input range to the specified thread block abstraction. The first tile given to each thread block is flagged as such. </p>
+<dl class="section user"><dt></dt><dd>Expects the <code>PersistentBlock</code> type to have the following callback member functions:<ul>
+<li>Tile processing:<ul>
+<li><code>void ConsumeTile(bool sync_after, SizeT block_offset, SizeT valid_tile_items, is_first_tile);</code></li>
+</ul>
+</li>
+<li>Getting the maximum number of items processed per call to <code>PersistentBlock::ConsumeTile</code>:<ul>
+<li><code>int TileItems()</code></li>
+</ul>
+</li>
+<li>Finalization:<ul>
+<li><code>void Finalize(Result &amp;result);</code></li>
+</ul>
+</li>
+</ul>
+</dd></dl>
+<dl class="tparams"><dt>Template Parameters</dt><dd>
+  <table class="tparams">
+    <tr><td class="paramname">PersistentBlock</td><td><b>[inferred]</b> Thread block abstraction type for tile processing </td></tr>
+    <tr><td class="paramname">SizeT</td><td><b>[inferred]</b> Integral type used for global array indexing </td></tr>
+    <tr><td class="paramname">Result</td><td><b>[inferred]</b> Result type to be returned by the PersistentBlock instance </td></tr>
+  </table>
+  </dd>
+</dl>
+<dl class="params"><dt>Parameters</dt><dd>
+  <table class="params">
+    <tr><td class="paramdir">[in,out]</td><td class="paramname">persistent_block</td><td>Threadblock abstraction for tile processing </td></tr>
+    <tr><td class="paramdir">[in]</td><td class="paramname">block_offset</td><td>Threadblock begin offset (inclusive) </td></tr>
+    <tr><td class="paramdir">[in]</td><td class="paramname">block_oob</td><td>Threadblock end offset (exclusive) </td></tr>
+    <tr><td class="paramdir">[out]</td><td class="paramname">result</td><td>Result returned by <code>tiles::Finalize()</code> </td></tr>
+  </table>
+  </dd>
+</dl>
+
+</div>
+</div>
+<a class="anchor" id="gabae8550f492407f0795171a140d82084"></a>
+<div class="memitem">
+<div class="memproto">
+<div class="memtemplate">
+template&lt;typename PersistentBlock , typename SizeT , typename Result &gt; </div>
+      <table class="memname">
+        <tr>
+          <td class="memname">__device__ __forceinline__ void cub::ConsumeTilesFlagFirst </td>
+          <td>(</td>
+          <td class="paramtype">PersistentBlock &amp;&#160;</td>
+          <td class="paramname"><em>persistent_block</em>, </td>
+        </tr>
+        <tr>
+          <td class="paramkey"></td>
+          <td></td>
+          <td class="paramtype">SizeT&#160;</td>
+          <td class="paramname"><em>num_items</em>, </td>
+        </tr>
+        <tr>
+          <td class="paramkey"></td>
+          <td></td>
+          <td class="paramtype">GridEvenShare&lt; SizeT &gt; &amp;&#160;</td>
+          <td class="paramname"><em>even_share</em>, </td>
+        </tr>
+        <tr>
+          <td class="paramkey"></td>
+          <td></td>
+          <td class="paramtype">Result &amp;&#160;</td>
+          <td class="paramname"><em>result</em>&#160;</td>
+        </tr>
+        <tr>
+          <td></td>
+          <td>)</td>
+          <td></td><td></td>
+        </tr>
+      </table>
+</div><div class="memdoc">
+
+<p>Uses a <a class="el" href="classcub_1_1_grid_even_share.html" title="GridEvenShare is a descriptor utility for distributing input among CUDA threadblocks in an &quot;even-shar...">GridEvenShare</a> descriptor to dispatch tiles of work to the specified thread block abstraction. The first tile given to each thread block is flagged as such. (See GridMappingStrategy::GRID_MAPPING_EVEN_SHARE.) </p>
+<dl class="section user"><dt></dt><dd>Expects the <code>PersistentBlock</code> type to have the following callback member functions:<ul>
+<li>Tile processing:<ul>
+<li><code>void ConsumeTile(bool sync_after, SizeT block_offset, SizeT valid_tile_items, is_first_tile);</code></li>
+</ul>
+</li>
+<li>Getting the maximum number of items processed per call to <code>PersistentBlock::ConsumeTile</code>:<ul>
+<li><code>int TileItems()</code></li>
+</ul>
+</li>
+<li>Finalization:<ul>
+<li><code>void Finalize(Result &amp;result);</code></li>
+</ul>
+</li>
+</ul>
+</dd></dl>
+<dl class="tparams"><dt>Template Parameters</dt><dd>
+  <table class="tparams">
+    <tr><td class="paramname">PersistentBlock</td><td><b>[inferred]</b> Thread block abstraction type for tile processing </td></tr>
+    <tr><td class="paramname">SizeT</td><td><b>[inferred]</b> Integral type used for global array indexing </td></tr>
+    <tr><td class="paramname">Result</td><td><b>[inferred]</b> Result type to be returned by the PersistentBlock instance </td></tr>
+  </table>
+  </dd>
+</dl>
+<dl class="params"><dt>Parameters</dt><dd>
+  <table class="params">
+    <tr><td class="paramdir">[in,out]</td><td class="paramname">persistent_block</td><td>Threadblock abstraction for tile processing </td></tr>
+    <tr><td class="paramdir">[in]</td><td class="paramname">num_items</td><td>Total number of global input items </td></tr>
+    <tr><td class="paramdir">[in]</td><td class="paramname">even_share</td><td><a class="el" href="classcub_1_1_grid_even_share.html" title="GridEvenShare is a descriptor utility for distributing input among CUDA threadblocks in an &quot;even-shar...">GridEvenShare</a> descriptor </td></tr>
+    <tr><td class="paramdir">[out]</td><td class="paramname">result</td><td>Result returned by <code>tiles::Finalize()</code> </td></tr>
+  </table>
+  </dd>
+</dl>
+
+</div>
+</div>
+<a class="anchor" id="ga39f156542d92e308412515e349e90300"></a>
+<div class="memitem">
+<div class="memproto">
+<div class="memtemplate">
+template&lt;typename PersistentBlock , typename SizeT , typename Result &gt; </div>
+      <table class="memname">
+        <tr>
+          <td class="memname">__device__ __forceinline__ void cub::ConsumeTiles </td>
+          <td>(</td>
+          <td class="paramtype">PersistentBlock &amp;&#160;</td>
+          <td class="paramname"><em>persistent_block</em>, </td>
+        </tr>
+        <tr>
+          <td class="paramkey"></td>
+          <td></td>
+          <td class="paramtype">SizeT&#160;</td>
+          <td class="paramname"><em>num_items</em>, </td>
+        </tr>
+        <tr>
+          <td class="paramkey"></td>
+          <td></td>
+          <td class="paramtype">GridQueue&lt; SizeT &gt; &amp;&#160;</td>
+          <td class="paramname"><em>queue</em>, </td>
+        </tr>
+        <tr>
+          <td class="paramkey"></td>
+          <td></td>
+          <td class="paramtype">Result &amp;&#160;</td>
+          <td class="paramname"><em>result</em>&#160;</td>
+        </tr>
+        <tr>
+          <td></td>
+          <td>)</td>
+          <td></td><td></td>
+        </tr>
+      </table>
+</div><div class="memdoc">
+
+<p>Uses a <a class="el" href="classcub_1_1_grid_queue.html" title="GridQueue is a descriptor utility for dynamic queue management.">GridQueue</a> descriptor to dispatch tiles of work to the specified thread block abstraction. (See GridMappingStrategy::GRID_MAPPING_DYNAMIC.) </p>
+<dl class="section user"><dt></dt><dd>Expects the <code>PersistentBlock</code> type to have the following callback member functions:<ul>
+<li>Tile processing:<ul>
+<li><code>void ConsumeTile(bool sync_after, SizeT block_offset, SizeT valid_tile_items);</code></li>
+</ul>
+</li>
+<li>Getting the maximum number of items processed per call to <code>PersistentBlock::ConsumeTile</code>:<ul>
+<li><code>int TileItems()</code></li>
+</ul>
+</li>
+<li>Finalization:<ul>
+<li><code>void Finalize(Result &amp;result);</code></li>
+</ul>
+</li>
+</ul>
+</dd></dl>
+<dl class="tparams"><dt>Template Parameters</dt><dd>
+  <table class="tparams">
+    <tr><td class="paramname">PersistentBlock</td><td><b>[inferred]</b> Thread block abstraction type for tile processing </td></tr>
+    <tr><td class="paramname">SizeT</td><td><b>[inferred]</b> Integral type used for global array indexing </td></tr>
+    <tr><td class="paramname">Result</td><td><b>[inferred]</b> Result type to be returned by the PersistentBlock instance </td></tr>
+  </table>
+  </dd>
+</dl>
+<dl class="params"><dt>Parameters</dt><dd>
+  <table class="params">
+    <tr><td class="paramdir">[in,out]</td><td class="paramname">persistent_block</td><td>Threadblock abstraction for tile processing </td></tr>
+    <tr><td class="paramdir">[in]</td><td class="paramname">num_items</td><td>Total number of global input items </td></tr>
+    <tr><td class="paramdir">[in,out]</td><td class="paramname">queue</td><td><a class="el" href="classcub_1_1_grid_queue.html" title="GridQueue is a descriptor utility for dynamic queue management.">GridQueue</a> descriptor </td></tr>
+    <tr><td class="paramdir">[out]</td><td class="paramname">result</td><td>Result returned by <code>tiles::Finalize()</code> </td></tr>
+  </table>
+  </dd>
+</dl>
+
+</div>
+</div>
+<a class="anchor" id="ga6492a0a23e402a3134bd5b15fa10ecab"></a>
+<div class="memitem">
+<div class="memproto">
+<div class="memtemplate">
+template&lt;typename PersistentBlock , typename SizeT , typename Result &gt; </div>
+      <table class="memname">
+        <tr>
+          <td class="memname">__device__ __forceinline__ void cub::ConsumeTilesFlagFirst </td>
+          <td>(</td>
+          <td class="paramtype">PersistentBlock &amp;&#160;</td>
+          <td class="paramname"><em>persistent_block</em>, </td>
+        </tr>
+        <tr>
+          <td class="paramkey"></td>
+          <td></td>
+          <td class="paramtype">SizeT&#160;</td>
+          <td class="paramname"><em>num_items</em>, </td>
+        </tr>
+        <tr>
+          <td class="paramkey"></td>
+          <td></td>
+          <td class="paramtype">GridQueue&lt; SizeT &gt; &amp;&#160;</td>
+          <td class="paramname"><em>queue</em>, </td>
+        </tr>
+        <tr>
+          <td class="paramkey"></td>
+          <td></td>
+          <td class="paramtype">Result &amp;&#160;</td>
+          <td class="paramname"><em>result</em>&#160;</td>
+        </tr>
+        <tr>
+          <td></td>
+          <td>)</td>
+          <td></td><td></td>
+        </tr>
+      </table>
+</div><div class="memdoc">
+
+<p>Uses a <a class="el" href="classcub_1_1_grid_queue.html" title="GridQueue is a descriptor utility for dynamic queue management.">GridQueue</a> descriptor to dispatch tiles of work to the specified thread block abstraction. The first tile given to each thread block is flagged as such. (See GridMappingStrategy::GRID_MAPPING_DYNAMIC.) </p>
+<dl class="section user"><dt></dt><dd>Expects the <code>PersistentBlock</code> type to have the following callback member functions:<ul>
+<li>Tile processing:<ul>
+<li><code>void ConsumeTile(bool sync_after, SizeT block_offset, SizeT valid_tile_items, is_first_tile);</code></li>
+</ul>
+</li>
+<li>Getting the maximum number of items processed per call to <code>PersistentBlock::ConsumeTile</code>:<ul>
+<li><code>int TileItems()</code></li>
+</ul>
+</li>
+<li>Finalization:<ul>
+<li><code>void Finalize(Result &amp;result);</code></li>
+</ul>
+</li>
+</ul>
+</dd></dl>
+<dl class="tparams"><dt>Template Parameters</dt><dd>
+  <table class="tparams">
+    <tr><td class="paramname">PersistentBlock</td><td><b>[inferred]</b> Thread block abstraction type for tile processing </td></tr>
+    <tr><td class="paramname">SizeT</td><td><b>[inferred]</b> Integral type used for global array indexing </td></tr>
+    <tr><td class="paramname">Result</td><td><b>[inferred]</b> Result type to be returned by the PersistentBlock instance </td></tr>
+  </table>
+  </dd>
+</dl>
+<dl class="params"><dt>Parameters</dt><dd>
+  <table class="params">
+    <tr><td class="paramdir">[in,out]</td><td class="paramname">persistent_block</td><td>Threadblock abstraction for tile processing </td></tr>
+    <tr><td class="paramdir">[in]</td><td class="paramname">num_items</td><td>Total number of global input items </td></tr>
+    <tr><td class="paramdir">[in,out]</td><td class="paramname">queue</td><td><a class="el" href="classcub_1_1_grid_queue.html" title="GridQueue is a descriptor utility for dynamic queue management.">GridQueue</a> descriptor </td></tr>
+    <tr><td class="paramdir">[out]</td><td class="paramname">result</td><td>Result returned by <code>tiles::Finalize()</code> </td></tr>
+  </table>
+  </dd>
+</dl>
 
 </div>
 </div>
@@ -138,7 +613,7 @@ Enumerations</h2></td></tr>
 <!-- HTML footer for doxygen 1.8.3.1-->
 <!-- start footer part -->
 <hr class="footer"/><address class="footer"><small>
-Generated on Wed May 1 2013 05:38:34 for CUB by &#160;<a href="http://www.doxygen.org/index.html">
+Generated on Tue May 7 2013 16:26:26 for CUB by &#160;<a href="http://www.doxygen.org/index.html">
 <img class="footer" src="doxygen.png" alt="doxygen"/>
 </a> 1.8.3.1
 <br>

@@ -37,8 +37,9 @@
 #include <stdio.h>
 #include <iterator>
 
-#include "tiles/tiles_reduce.cuh"
+#include "persistent_block/persistent_block_reduce.cuh"
 #include "../util_allocator.cuh"
+#include "../grid/grid_mapping.cuh"
 #include "../grid/grid_even_share.cuh"
 #include "../grid/grid_queue.cuh"
 
@@ -60,12 +61,12 @@ namespace cub {
  * Multi-block reduction kernel entry point.  Computes privatized reductions, one per thread block.
  */
 template <
-    typename                TilesReducePolicy,      ///< Tuning policy for cub::TilesReduce abstraction
+    typename                PersistentBlockReducePolicy,  ///< Tuning policy for cub::PersistentBlockReduce abstraction
     typename                InputIteratorRA,        ///< The random-access iterator type for input (may be a simple pointer type).
     typename                OutputIteratorRA,       ///< The random-access iterator type for output (may be a simple pointer type).
     typename                SizeT,                  ///< Integral type used for global array indexing
     typename                ReductionOp>            ///< Binary reduction operator type having member <tt>T operator()(const T &a, const T &b)</tt>
-__launch_bounds__ (TilesReducePolicy::BLOCK_THREADS, 1)
+__launch_bounds__ (int(PersistentBlockReducePolicy::BLOCK_THREADS), 1)
 __global__ void MultiBlockReduceKernel(
     InputIteratorRA         d_in,                   ///< [in] Input data to reduce
     OutputIteratorRA        d_out,                  ///< [out] Output location for result
@@ -74,26 +75,24 @@ __global__ void MultiBlockReduceKernel(
     GridQueue<SizeT>        queue,                  ///< [in] Descriptor for performing dynamic mapping of tile data to thread blocks
     ReductionOp             reduction_op)           ///< [in] Binary reduction operator
 {
-    // Data type of input iterator
+    // Data type
     typedef typename std::iterator_traits<InputIteratorRA>::value_type T;
 
-    // Parameterize TilesReduce for the parallel execution context
-    typedef TilesReduce <TilesReducePolicy, InputIteratorRA, SizeT> TilesReduceT;
+    // Thread block type for reducing input tiles
+    typedef PersistentBlockReduce<PersistentBlockReducePolicy, InputIteratorRA, SizeT, ReductionOp> PersistentBlockReduceT;
 
-    // Parameterize which mapping of tiles -> thread blocks we will use
-    typedef typename TilesReduceT::template Mapping<TilesReducePolicy::GRID_MAPPING> Mapping;
+    // Block-wide aggregate
+    T block_aggregate;
 
-    // Declare shared memory for TilesReduce
-    __shared__ typename TilesReduceT::SmemStorage smem_storage;
+    // Shared memory storage
+    __shared__ typename PersistentBlockReduceT::SmemStorage smem_storage;
 
-    // Reduce tiles
-    T block_aggregate = Mapping::ProcessTiles(
-        smem_storage,
-        d_in,
-        num_items,
-        even_share,
-        queue,
-        reduction_op);
+    // Thread block instance
+    PersistentBlockReduceT tiles(smem_storage, d_in, reduction_op);
+
+    // Consume tiles using thread block instance
+    GridMapping<PersistentBlockReducePolicy::GRID_MAPPING>::ConsumeTilesFlagFirst(
+        tiles, num_items, even_share, queue, block_aggregate);
 
     // Output result
     if (threadIdx.x == 0)
@@ -107,41 +106,41 @@ __global__ void MultiBlockReduceKernel(
  * Single-block reduction kernel entry point.
  */
 template <
-    typename                TilesReducePolicy,      ///< Tuning policy for cub::TilesReduce abstraction
+    typename                PersistentBlockReducePolicy,  ///< Tuning policy for cub::PersistentBlockReduce abstraction
     typename                InputIteratorRA,        ///< The random-access iterator type for input (may be a simple pointer type).
     typename                OutputIteratorRA,       ///< The random-access iterator type for output (may be a simple pointer type).
     typename                SizeT,                  ///< Integral type used for global array indexing
     typename                ReductionOp>            ///< Binary reduction operator type having member <tt>T operator()(const T &a, const T &b)</tt>
-__launch_bounds__ (TilesReducePolicy::BLOCK_THREADS, 1)
+__launch_bounds__ (int(PersistentBlockReducePolicy::BLOCK_THREADS), 1)
 __global__ void SingleBlockReduceKernel(
     InputIteratorRA         d_in,                   ///< [in] Input data to reduce
     OutputIteratorRA        d_out,                  ///< [out] Output location for result
     SizeT                   num_items,              ///< [in] Total number of input data items
     ReductionOp             reduction_op)           ///< [in] Binary reduction operator
 {
-    // Data type of input iterator
+    // Data type
     typedef typename std::iterator_traits<InputIteratorRA>::value_type T;
 
-    // Parameterize TilesReduce for the parallel execution context
-    typedef TilesReduce <TilesReducePolicy, InputIteratorRA, SizeT> TilesReduceT;
+    // Thread block type for reducing input tiles
+    typedef PersistentBlockReduce<PersistentBlockReducePolicy, InputIteratorRA, SizeT, ReductionOp> PersistentBlockReduceT;
 
-    // Declare shared memory for TilesReduce
-    __shared__ typename TilesReduceT::SmemStorage smem_storage;
+    // Block-wide aggregate
+    T block_aggregate;
 
-    // Reduce tiles
-    T block_aggregate = TilesReduceT::ProcessTilesEvenShare(
-        smem_storage,
-        d_in,
-        SizeT(0),
-        num_items,
-        reduction_op);
+    // Shared memory storage
+    __shared__ typename PersistentBlockReduceT::SmemStorage smem_storage;
+
+    // Block abstraction for reducing tiles
+    PersistentBlockReduceT tiles(smem_storage, d_in, reduction_op);
+
+    // Reduce input tiles
+    ConsumeTilesFlagFirst(tiles, 0, num_items, block_aggregate);
 
     // Output result
     if (threadIdx.x == 0)
     {
         d_out[blockIdx.x] = block_aggregate;
     }
-
 }
 
 #endif // DOXYGEN_SHOULD_SKIP_THIS
@@ -163,7 +162,7 @@ struct DeviceReduce
 {
 #ifndef DOXYGEN_SHOULD_SKIP_THIS    // Do not document
 
-    /// Generic structure for encapsulating dispatch properties.  Mirrors the constants within TilesReducePolicy.
+    /// Generic structure for encapsulating dispatch properties.  Mirrors the constants within PersistentBlockReducePolicy.
     struct KernelDispachParams
     {
         // Policy fields
@@ -178,16 +177,16 @@ struct DeviceReduce
         // Derived fields
         int                     tile_size;
 
-        template <typename TilesReducePolicy>
+        template <typename PersistentBlockReducePolicy>
         __host__ __device__ __forceinline__
         void Init(int subscription_factor = 1)
         {
-            block_threads               = TilesReducePolicy::BLOCK_THREADS;
-            items_per_thread            = TilesReducePolicy::ITEMS_PER_THREAD;
-            vector_load_length          = TilesReducePolicy::VECTOR_LOAD_LENGTH;
-            block_algorithm             = TilesReducePolicy::BLOCK_ALGORITHM;
-            load_modifier               = TilesReducePolicy::LOAD_MODIFIER;
-            grid_mapping                = TilesReducePolicy::GRID_MAPPING;
+            block_threads               = PersistentBlockReducePolicy::BLOCK_THREADS;
+            items_per_thread            = PersistentBlockReducePolicy::ITEMS_PER_THREAD;
+            vector_load_length          = PersistentBlockReducePolicy::VECTOR_LOAD_LENGTH;
+            block_algorithm             = PersistentBlockReducePolicy::BLOCK_ALGORITHM;
+            load_modifier               = PersistentBlockReducePolicy::LOAD_MODIFIER;
+            grid_mapping                = PersistentBlockReducePolicy::GRID_MAPPING;
             this->subscription_factor   = subscription_factor;
 
             tile_size = block_threads * items_per_thread;
@@ -221,8 +220,8 @@ struct DeviceReduce
     struct TunedPolicies<T, SizeT, 350>
     {
         // K20C: 182.1 @ 48M 32-bit T
-        typedef TilesReducePolicy<256, 8,  2, BLOCK_REDUCE_RAKING, PTX_LOAD_NONE, GRID_MAPPING_EVEN_SHARE>             MultiBlockPolicy;
-        typedef TilesReducePolicy<256, 16, 2, BLOCK_REDUCE_WARP_REDUCTIONS, PTX_LOAD_NONE, GRID_MAPPING_EVEN_SHARE>    SingleBlockPolicy;
+        typedef PersistentBlockReducePolicy<256, 8,  2, BLOCK_REDUCE_RAKING, PTX_LOAD_NONE, GRID_MAPPING_EVEN_SHARE>             MultiBlockPolicy;
+        typedef PersistentBlockReducePolicy<256, 16, 2, BLOCK_REDUCE_WARP_REDUCTIONS, PTX_LOAD_NONE, GRID_MAPPING_EVEN_SHARE>    SingleBlockPolicy;
         enum { SUBSCRIPTION_FACTOR = 4 };
     };
 
@@ -231,8 +230,8 @@ struct DeviceReduce
     struct TunedPolicies<T, SizeT, 300>
     {
         // GTX670: 154.0 @ 48M 32-bit T
-        typedef TilesReducePolicy<256, 2,  2, BLOCK_REDUCE_RAKING,  PTX_LOAD_NONE, GRID_MAPPING_EVEN_SHARE>            MultiBlockPolicy;
-        typedef TilesReducePolicy<256, 24, 4, BLOCK_REDUCE_WARP_REDUCTIONS,  PTX_LOAD_NONE, GRID_MAPPING_EVEN_SHARE>   SingleBlockPolicy;
+        typedef PersistentBlockReducePolicy<256, 2,  1, BLOCK_REDUCE_WARP_REDUCTIONS,  PTX_LOAD_NONE, GRID_MAPPING_EVEN_SHARE>            MultiBlockPolicy;
+        typedef PersistentBlockReducePolicy<256, 24, 4, BLOCK_REDUCE_WARP_REDUCTIONS,  PTX_LOAD_NONE, GRID_MAPPING_EVEN_SHARE>   SingleBlockPolicy;
         enum { SUBSCRIPTION_FACTOR = 1 };
     };
 
@@ -241,8 +240,8 @@ struct DeviceReduce
     struct TunedPolicies<T, SizeT, 200>
     {
         // GTX 580: 178.9 @ 48M 32-bit T
-        typedef TilesReducePolicy<128, 8,  2, BLOCK_REDUCE_RAKING, PTX_LOAD_NONE, GRID_MAPPING_DYNAMIC>                MultiBlockPolicy;
-        typedef TilesReducePolicy<128, 4,  1, BLOCK_REDUCE_RAKING, PTX_LOAD_NONE, GRID_MAPPING_EVEN_SHARE>             SingleBlockPolicy;
+        typedef PersistentBlockReducePolicy<128, 8,  2, BLOCK_REDUCE_RAKING, PTX_LOAD_NONE, GRID_MAPPING_DYNAMIC>                MultiBlockPolicy;
+        typedef PersistentBlockReducePolicy<128, 4,  1, BLOCK_REDUCE_RAKING, PTX_LOAD_NONE, GRID_MAPPING_EVEN_SHARE>             SingleBlockPolicy;
         enum { SUBSCRIPTION_FACTOR = 1 };
     };
 
@@ -250,8 +249,8 @@ struct DeviceReduce
     template <typename T, typename SizeT>
     struct TunedPolicies<T, SizeT, 130>
     {
-        typedef TilesReducePolicy<128, 8,  2,  BLOCK_REDUCE_RAKING, PTX_LOAD_NONE, GRID_MAPPING_EVEN_SHARE>            MultiBlockPolicy;
-        typedef TilesReducePolicy<32,  4,  4,  BLOCK_REDUCE_RAKING, PTX_LOAD_NONE, GRID_MAPPING_EVEN_SHARE>            SingleBlockPolicy;
+        typedef PersistentBlockReducePolicy<128, 8,  2,  BLOCK_REDUCE_RAKING, PTX_LOAD_NONE, GRID_MAPPING_EVEN_SHARE>            MultiBlockPolicy;
+        typedef PersistentBlockReducePolicy<32,  4,  4,  BLOCK_REDUCE_RAKING, PTX_LOAD_NONE, GRID_MAPPING_EVEN_SHARE>            SingleBlockPolicy;
         enum { SUBSCRIPTION_FACTOR = 1 };
     };
 
@@ -259,8 +258,8 @@ struct DeviceReduce
     template <typename T, typename SizeT>
     struct TunedPolicies<T, SizeT, 100>
     {
-        typedef TilesReducePolicy<128, 8,  2,  BLOCK_REDUCE_RAKING, PTX_LOAD_NONE, GRID_MAPPING_EVEN_SHARE>            MultiBlockPolicy;
-        typedef TilesReducePolicy<32,  4,  4,  BLOCK_REDUCE_RAKING, PTX_LOAD_NONE, GRID_MAPPING_EVEN_SHARE>            SingleBlockPolicy;
+        typedef PersistentBlockReducePolicy<128, 8,  2,  BLOCK_REDUCE_RAKING, PTX_LOAD_NONE, GRID_MAPPING_EVEN_SHARE>            MultiBlockPolicy;
+        typedef PersistentBlockReducePolicy<32,  4,  4,  BLOCK_REDUCE_RAKING, PTX_LOAD_NONE, GRID_MAPPING_EVEN_SHARE>            SingleBlockPolicy;
         enum { SUBSCRIPTION_FACTOR = 1 };
     };
 
@@ -354,7 +353,7 @@ struct DeviceReduce
         cudaStream_t            stream              = 0,                            ///< [in] <b>[optional]</b> CUDA stream to launch kernels within.  Default is stream-0.
         bool                    stream_synchronous  = false)                        ///< [in] <b>[optional]</b> Whether or not to synchronize the stream after every kernel launch to check for errors.  Default is \p false.
     {
-    #if !CUB_CNP_ENABLED
+    #ifndef CUB_RUNTIME_ENABLED
 
         // Kernel launch not supported from this device
         return CubDebug(cudaErrorInvalidConfiguration);
@@ -396,7 +395,7 @@ struct DeviceReduce
     template <
         typename                    MultiBlockReduceKernelPtr,                          ///< Function type of cub::MultiBlockReduceKernel
         typename                    ReduceSingleKernelPtr,                              ///< Function type of cub::SingleBlockReduceKernel
-        typename                    ResetDrainKernelPtr,                              ///< Function type of cub::ResetDrainKernel
+        typename                    ResetDrainKernelPtr,                                ///< Function type of cub::ResetDrainKernel
         typename                    InputIteratorRA,                                    ///< The random-access iterator type for input (may be a simple pointer type).
         typename                    OutputIteratorRA,                                   ///< The random-access iterator type for output (may be a simple pointer type).
         typename                    SizeT,                                              ///< Integral type used for global array indexing
@@ -405,7 +404,7 @@ struct DeviceReduce
     static cudaError_t DispatchIterative(
         MultiBlockReduceKernelPtr   multi_block_kernel,                                 ///< [in] Kernel function pointer to parameterization of cub::MultiBlockReduceKernel
         ReduceSingleKernelPtr       single_block_kernel,                                ///< [in] Kernel function pointer to parameterization of cub::SingleBlockReduceKernel
-        ResetDrainKernelPtr       prepare_drain_kernel,                               ///< [in] Kernel function pointer to parameterization of cub::ResetDrainKernel
+        ResetDrainKernelPtr         prepare_drain_kernel,                               ///< [in] Kernel function pointer to parameterization of cub::ResetDrainKernel
         KernelDispachParams         &multi_block_dispatch_params,                       ///< [in] Dispatch parameters that match the policy that \p multi_block_kernel_ptr was compiled for
         KernelDispachParams         &single_block_dispatch_params,                      ///< [in] Dispatch parameters that match the policy that \p single_block_kernel was compiled for
         InputIteratorRA             d_in,                                               ///< [in] Input data to reduce
@@ -416,7 +415,7 @@ struct DeviceReduce
         bool                        stream_synchronous  = false,                        ///< [in] <b>[optional]</b> Whether or not to synchronize the stream after every kernel launch to check for errors.  Default is \p false.
         DeviceAllocator             *device_allocator   = DefaultDeviceAllocator())     ///< [in] <b>[optional]</b> Allocator for allocating and freeing device memory.  Default is provided by DefaultDeviceAllocator.
     {
-    #if !CUB_CNP_ENABLED
+    #ifndef CUB_RUNTIME_ENABLED
 
         // Kernel launch not supported from this device
         return CubDebug(cudaErrorInvalidConfiguration);
@@ -585,7 +584,7 @@ struct DeviceReduce
         KernelDispachParams         &single_block_dispatch_params,                      ///< [in] Dispatch parameters that match the policy that \p single_block_kernel was compiled for
         InputIteratorRA             d_in,                                               ///< [in] Input data to reduce
         OutputIteratorRA            d_out,                                              ///< [out] Output location for result
-        SizeT                         num_items,                                          ///< [in] Number of items to reduce
+        SizeT                       num_items,                                          ///< [in] Number of items to reduce
         ReductionOp                 reduction_op,                                       ///< [in] Binary reduction operator
         cudaStream_t                stream              = 0,                            ///< [in] <b>[optional]</b> CUDA stream to launch kernels within.  Default is stream-0.
         bool                        stream_synchronous  = false,                        ///< [in] <b>[optional]</b> Whether or not to synchronize the stream after every kernel launch to check for errors.  Default is \p false.

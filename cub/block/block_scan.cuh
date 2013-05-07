@@ -49,6 +49,10 @@ CUB_NS_PREFIX
 namespace cub {
 
 
+/******************************************************************************
+ * Algorithmic variants
+ ******************************************************************************/
+
 /**
  * BlockScanAlgorithm enumerates alternative algorithms for parallel prefix
  * scan across a CUDA threadblock.
@@ -107,6 +111,10 @@ enum BlockScanAlgorithm
     BLOCK_SCAN_WARP_SCANS,
 };
 
+
+/******************************************************************************
+ * Block scan
+ ******************************************************************************/
 
 /**
  * \addtogroup BlockModule

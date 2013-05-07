@@ -77,8 +77,8 @@ template <
     int             ITEMS_PER_THREAD,
     typename        InputIteratorRA>
 __device__ __forceinline__ void BlockLoadDirect(
-    InputIteratorRA   block_itr,                        ///< [in] The threadblock's base input iterator for loading from
-    T               (&items)[ITEMS_PER_THREAD])     ///< [out] Data to load
+    InputIteratorRA     block_itr,                          ///< [in] The threadblock's base input iterator for loading from
+    T                   (&items)[ITEMS_PER_THREAD])         ///< [out] Data to load
 {
     // Load directly in thread-blocked order
     #pragma unroll
@@ -106,8 +106,8 @@ template <
     int             ITEMS_PER_THREAD,
     typename        InputIteratorRA>
 __device__ __forceinline__ void BlockLoadDirect(
-    InputIteratorRA block_itr,                        ///< [in] The threadblock's base input iterator for loading from
-    T               (&items)[ITEMS_PER_THREAD])     ///< [out] Data to load
+    InputIteratorRA block_itr,                          ///< [in] The threadblock's base input iterator for loading from
+    T               (&items)[ITEMS_PER_THREAD])         ///< [out] Data to load
 {
     BlockLoadDirect<PTX_LOAD_NONE>(block_itr, items);
 }
@@ -132,9 +132,9 @@ template <
     int             ITEMS_PER_THREAD,
     typename        InputIteratorRA>
 __device__ __forceinline__ void BlockLoadDirect(
-    InputIteratorRA block_itr,                        ///< [in] The threadblock's base input iterator for loading from
-    const int       &guarded_items,                 ///< [in] Number of valid items in the tile
-    T               (&items)[ITEMS_PER_THREAD])     ///< [out] Data to load
+    InputIteratorRA block_itr,                          ///< [in] The threadblock's base input iterator for loading from
+    const int       &guarded_items,                     ///< [in] Number of valid items in the tile
+    T               (&items)[ITEMS_PER_THREAD])         ///< [out] Data to load
 {
     int bounds = guarded_items - (threadIdx.x * ITEMS_PER_THREAD);
 
@@ -165,9 +165,9 @@ template <
     int             ITEMS_PER_THREAD,
     typename        InputIteratorRA>
 __device__ __forceinline__ void BlockLoadDirect(
-    InputIteratorRA block_itr,                        ///< [in] The threadblock's base input iterator for loading from
-    const int       &guarded_items,                 ///< [in] Number of valid items in the tile
-    T               (&items)[ITEMS_PER_THREAD])     ///< [out] Data to load
+    InputIteratorRA block_itr,                          ///< [in] The threadblock's base input iterator for loading from
+    const int       &guarded_items,                     ///< [in] Number of valid items in the tile
+    T               (&items)[ITEMS_PER_THREAD])         ///< [out] Data to load
 {
     BlockLoadDirect<PTX_LOAD_NONE>(block_itr, guarded_items, items);
 }
@@ -191,10 +191,10 @@ template <
     int             ITEMS_PER_THREAD,
     typename        InputIteratorRA>
 __device__ __forceinline__ void BlockLoadDirect(
-    InputIteratorRA block_itr,                        ///< [in] The threadblock's base input iterator for loading from
-    const int       &guarded_items,                 ///< [in] Number of valid items in the tile
-    T               oob_default,                    ///< [in] Default value to assign out-of-bound items
-    T               (&items)[ITEMS_PER_THREAD])     ///< [out] Data to load
+    InputIteratorRA block_itr,                          ///< [in] The threadblock's base input iterator for loading from
+    const int       &guarded_items,                     ///< [in] Number of valid items in the tile
+    T               oob_default,                        ///< [in] Default value to assign out-of-bound items
+    T               (&items)[ITEMS_PER_THREAD])         ///< [out] Data to load
 {
     int bounds = guarded_items - (threadIdx.x * ITEMS_PER_THREAD);
 
@@ -224,10 +224,10 @@ template <
     int             ITEMS_PER_THREAD,
     typename        InputIteratorRA>
 __device__ __forceinline__ void BlockLoadDirect(
-    InputIteratorRA block_itr,                        ///< [in] The threadblock's base input iterator for loading from
-    const int       &guarded_items,                 ///< [in] Number of valid items in the tile
-    T               oob_default,                    ///< [in] Default value to assign out-of-bound items
-    T               (&items)[ITEMS_PER_THREAD])     ///< [out] Data to load
+    InputIteratorRA block_itr,                          ///< [in] The threadblock's base input iterator for loading from
+    const int       &guarded_items,                     ///< [in] Number of valid items in the tile
+    T               oob_default,                        ///< [in] Default value to assign out-of-bound items
+    T               (&items)[ITEMS_PER_THREAD])         ///< [out] Data to load
 {
     BlockLoadDirect<PTX_LOAD_NONE>(block_itr, guarded_items, oob_default, items);
 }
@@ -348,10 +348,10 @@ template <
     int             ITEMS_PER_THREAD,
     typename        InputIteratorRA>
 __device__ __forceinline__ void BlockLoadDirectStriped(
-    InputIteratorRA block_itr,                        ///< [in] The threadblock's base input iterator for loading from
-    const int       &guarded_items,                 ///< [in] Number of valid items in the tile
-    T               (&items)[ITEMS_PER_THREAD],     ///< [out] Data to load
-    int             stride = blockDim.x)            ///< [in] <b>[optional]</b> Stripe stride.  Default is the width of the threadblock.  More efficient code can be generated if a compile-time-constant (e.g., BLOCK_THREADS) is supplied.
+    InputIteratorRA block_itr,                          ///< [in] The threadblock's base input iterator for loading from
+    const int       &guarded_items,                     ///< [in] Number of valid items in the tile
+    T               (&items)[ITEMS_PER_THREAD],         ///< [out] Data to load
+    int             stride = blockDim.x)                ///< [in] <b>[optional]</b> Stripe stride.  Default is the width of the threadblock.  More efficient code can be generated if a compile-time-constant (e.g., BLOCK_THREADS) is supplied.
 {
     BlockLoadDirectStriped<PTX_LOAD_NONE>(block_itr, guarded_items, items, stride);
 }
@@ -409,11 +409,11 @@ template <
     int             ITEMS_PER_THREAD,
     typename        InputIteratorRA>
 __device__ __forceinline__ void BlockLoadDirectStriped(
-    InputIteratorRA block_itr,                        ///< [in] The threadblock's base input iterator for loading from
-    const int       &guarded_items,                 ///< [in] Number of valid items in the tile
-    T               oob_default,                    ///< [in] Default value to assign out-of-bound items
-    T               (&items)[ITEMS_PER_THREAD],     ///< [out] Data to load
-    int             stride = blockDim.x)            ///< [in] <b>[optional]</b> Stripe stride.  Default is the width of the threadblock.  More efficient code can be generated if a compile-time-constant (e.g., BLOCK_THREADS) is supplied.
+    InputIteratorRA block_itr,                          ///< [in] The threadblock's base input iterator for loading from
+    const int       &guarded_items,                     ///< [in] Number of valid items in the tile
+    T               oob_default,                        ///< [in] Default value to assign out-of-bound items
+    T               (&items)[ITEMS_PER_THREAD],         ///< [out] Data to load
+    int             stride = blockDim.x)                ///< [in] <b>[optional]</b> Stripe stride.  Default is the width of the threadblock.  More efficient code can be generated if a compile-time-constant (e.g., BLOCK_THREADS) is supplied.
 {
     BlockLoadDirectStriped<PTX_LOAD_NONE>(block_itr, guarded_items, oob_default, items, stride);
 }
@@ -446,8 +446,8 @@ template <
     typename        T,
     int             ITEMS_PER_THREAD>
 __device__ __forceinline__ void BlockLoadVectorized(
-    T               *block_ptr,                       ///< [in] Input pointer for loading from
-    T               (&items)[ITEMS_PER_THREAD])     ///< [out] Data to load
+    T               *block_ptr,                         ///< [in] Input pointer for loading from
+    T               (&items)[ITEMS_PER_THREAD])         ///< [out] Data to load
 {
     enum
     {
@@ -503,8 +503,8 @@ template <
     typename        T,
     int             ITEMS_PER_THREAD>
 __device__ __forceinline__ void BlockLoadVectorized(
-    T               *block_ptr,                       ///< [in] Input pointer for loading from
-    T               (&items)[ITEMS_PER_THREAD])     ///< [out] Data to load
+    T               *block_ptr,                         ///< [in] Input pointer for loading from
+    T               (&items)[ITEMS_PER_THREAD])         ///< [out] Data to load
 {
     BlockLoadVectorized<PTX_LOAD_NONE>(block_ptr, items);
 }

@@ -1,14 +1,15 @@
 //-----------------------------------------------------------------------------
 
-0.9.3	04/30/2013
+0.9.4	05/07/2013
 
+    - Fixed compilation errors for SM10-SM13
+    - Fixed compilation errors for some WarpScan entrypoints on SM30+
+    - Added block-wide histogram (BlockHisto256)
+    - Added device-wide histogram (DeviceHisto256)
     - Added new BlockScan algorithm variant BLOCK_SCAN_RAKING_MEMOIZE, which 
       trades more register consumption for less shared memory I/O)
-    - Added block-wide histogram (BlockHisto256)
     - Updates to BlockRadixRank to use BlockScan (which improves performance
       on Kepler due to SHFL instruction)
-    - Added device-wide histogram (DeviceHisto256)
-    - Fixed compilation errors for some WarpScan entrypoints on SM30+
     - Allow types other than C++ primitives to be used in WarpScan::*Sum methods 
       if they only have operator + overloaded.  (Previously they also required 
       to support assignment from int(0).) 
