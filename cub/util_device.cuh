@@ -58,11 +58,6 @@ template <typename T>
 __global__ void EmptyKernel(void) { }
 
 
-/**
- * \brief Type for representing GPU device ordinals
- */
-typedef int DeviceOrdinal;
-
 /// Invalid device ordinal
 enum
 {
@@ -75,7 +70,7 @@ enum
  */
 __host__ __device__ __forceinline__ cudaError_t PtxVersion(int &ptx_version)
 {
-#if !CUB_CNP_ENABLED
+#ifndef CUB_RUNTIME_ENABLED
 
     // CUDA API calls not supported from this device
     return cudaErrorInvalidConfiguration;
@@ -166,7 +161,7 @@ public:
     __host__ __device__ __forceinline__
     cudaError_t Init(int device_ordinal)
     {
-    #if !CUB_CNP_ENABLED
+    #ifndef CUB_RUNTIME_ENABLED
 
         // CUDA API calls not supported from this device
         return CubDebug(cudaErrorInvalidConfiguration);
@@ -210,7 +205,7 @@ public:
     __host__ __device__ __forceinline__
     cudaError_t Init()
     {
-    #if !CUB_CNP_ENABLED
+    #ifndef CUB_RUNTIME_ENABLED
 
         // CUDA API calls not supported from this device
         return CubDebug(cudaErrorInvalidConfiguration);
@@ -240,7 +235,7 @@ public:
         KernelPtr           kernel_ptr,                 ///< [in] Kernel pointer for which to compute SM occupancy
         int                 block_threads)              ///< [in] Number of threads per thread block
     {
-    #if !CUB_CNP_ENABLED
+    #ifndef CUB_RUNTIME_ENABLED
 
         // CUDA API calls not supported from this device
         return CubDebug(cudaErrorInvalidConfiguration);

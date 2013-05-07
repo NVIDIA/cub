@@ -123,10 +123,6 @@ Namespaces</h2></td></tr>
 </table><table class="memberdecls">
 <tr class="heading"><td colspan="2"><h2 class="groupheader"><a name="define-members"></a>
 Macros</h2></td></tr>
-<tr class="memitem:ga9b4969946073d1c94ec927991f8b3a6b"><td class="memItemLeft" align="right" valign="top"><a class="anchor" id="ga9b4969946073d1c94ec927991f8b3a6b"></a>
-#define&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="group___util_module.html#ga9b4969946073d1c94ec927991f8b3a6b">CUB_CNP_ENABLED</a>&#160;&#160;&#160;1</td></tr>
-<tr class="memdesc:ga9b4969946073d1c94ec927991f8b3a6b"><td class="mdescLeft">&#160;</td><td class="mdescRight">Whether or not the source targeted by the active compiler pass is allowed to invoke device kernels or methods from the CUDA runtime API. <br/></td></tr>
-<tr class="separator:ga9b4969946073d1c94ec927991f8b3a6b"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:ga756ebe2b0566abfdfcd3c13fe7d1e9c6"><td class="memItemLeft" align="right" valign="top"><a class="anchor" id="ga756ebe2b0566abfdfcd3c13fe7d1e9c6"></a>
 #define&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="group___util_module.html#ga756ebe2b0566abfdfcd3c13fe7d1e9c6">CUB_DESTRUCTOR</a>&#160;&#160;&#160;__host__ __device__</td></tr>
 <tr class="memdesc:ga756ebe2b0566abfdfcd3c13fe7d1e9c6"><td class="mdescLeft">&#160;</td><td class="mdescRight">Execution space for destructors. <br/></td></tr>
@@ -135,6 +131,10 @@ Macros</h2></td></tr>
 #define&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="group___util_module.html#ga76769ce380739b38e0bd00f57e0dbe4f">CUB_PTX_ARCH</a>&#160;&#160;&#160;0</td></tr>
 <tr class="memdesc:ga76769ce380739b38e0bd00f57e0dbe4f"><td class="mdescLeft">&#160;</td><td class="mdescRight">CUB_PTX_ARCH reflects the PTX version targeted by the active compiler pass (or zero during the host pass). <br/></td></tr>
 <tr class="separator:ga76769ce380739b38e0bd00f57e0dbe4f"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:gac029dc29df3c1871ab3b8a38f50904a6"><td class="memItemLeft" align="right" valign="top"><a class="anchor" id="gac029dc29df3c1871ab3b8a38f50904a6"></a>
+#define&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="group___util_module.html#gac029dc29df3c1871ab3b8a38f50904a6">CUB_RUNTIME_ENABLED</a></td></tr>
+<tr class="memdesc:gac029dc29df3c1871ab3b8a38f50904a6"><td class="mdescLeft">&#160;</td><td class="mdescRight">Whether or not the source targeted by the active compiler pass is allowed to invoke device kernels or methods from the CUDA runtime API. <br/></td></tr>
+<tr class="separator:gac029dc29df3c1871ab3b8a38f50904a6"><td class="memSeparator" colspan="2">&#160;</td></tr>
 </table>
 <a name="details" id="details"></a><h2 class="groupheader">Detailed Description</h2>
 <div class="textblock"><p>Static architectural properties by SM version. </p>
@@ -142,7 +142,7 @@ Macros</h2></td></tr>
 <!-- HTML footer for doxygen 1.8.3.1-->
 <!-- start footer part -->
 <hr class="footer"/><address class="footer"><small>
-Generated on Wed May 1 2013 05:38:34 for CUB by &#160;<a href="http://www.doxygen.org/index.html">
+Generated on Tue May 7 2013 16:18:52 for CUB by &#160;<a href="http://www.doxygen.org/index.html">
 <img class="footer" src="doxygen.png" alt="doxygen"/>
 </a> 1.8.3.1
 <br>

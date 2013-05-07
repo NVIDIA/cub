@@ -5,7 +5,7 @@
 <meta http-equiv="Content-Type" content="text/xhtml;charset=UTF-8"/>
 <meta http-equiv="X-UA-Compatible" content="IE=9"/>
 <meta name="generator" content="Doxygen 1.8.3.1"/>
-<title>CUB: Member List</title>
+<title>CUB: grid_even_share.cuh File Reference</title>
 <link href="tabs.css" rel="stylesheet" type="text/css"/>
 <script type="text/javascript" src="jquery.js"></script>
 <script type="text/javascript" src="dynsections.js"></script>
@@ -51,7 +51,7 @@ var searchBox = new SearchBox("searchBox", "search",false,'Search');
     <ul class="tablist">
       <li><a href="index.html"><span>Main&#160;Page</span></a></li>
       <li><a href="modules.html"><span>Modules</span></a></li>
-      <li class="current"><a href="annotated.html"><span>Classes</span></a></li>
+      <li><a href="annotated.html"><span>Classes</span></a></li>
       <li>
         <div id="MSearchBox" class="MSearchBoxInactive">
         <span class="left">
@@ -72,8 +72,8 @@ var searchBox = new SearchBox("searchBox", "search",false,'Search');
   </div>
   <div id="navrow2" class="tabs2">
     <ul class="tablist">
-      <li><a href="annotated.html"><span>Class&#160;List</span></a></li>
-      <li><a href="classes.html"><span>Class&#160;Index</span></a></li>
+      <li><a href="files.html"><span>File&#160;List</span></a></li>
+      <li><a href="globals.html"><span>File&#160;Members</span></a></li>
     </ul>
   </div>
 <!-- window showing the filter options -->
@@ -92,23 +92,36 @@ var searchBox = new SearchBox("searchBox", "search",false,'Search');
 
 <div id="nav-path" class="navpath">
   <ul>
-<li class="navelem"><a class="el" href="namespacecub.html">cub</a></li><li class="navelem"><a class="el" href="classcub_1_1_warp_reduce.html">WarpReduce</a></li>  </ul>
+<li class="navelem"><a class="el" href="dir_d583f216f1aafe19404e836b0c097ad2.html">cub</a></li><li class="navelem"><a class="el" href="dir_f2530eaff2fd0556614e1cfc33864b65.html">grid</a></li>  </ul>
 </div>
 </div><!-- top -->
 <div class="header">
+  <div class="summary">
+<a href="#nested-classes">Classes</a> &#124;
+<a href="#namespaces">Namespaces</a>  </div>
   <div class="headertitle">
-<div class="title">cub::WarpReduce&lt; T, WARPS, LOGICAL_WARP_THREADS &gt; Member List</div>  </div>
+<div class="title">grid_even_share.cuh File Reference</div>  </div>
 </div><!--header-->
 <div class="contents">
-
-<p>This is the complete list of members for <a class="el" href="classcub_1_1_warp_reduce.html">cub::WarpReduce&lt; T, WARPS, LOGICAL_WARP_THREADS &gt;</a>, including all inherited members.</p>
-<table class="directory">
-  <tr class="even"><td class="entry"><a class="el" href="classcub_1_1_warp_reduce.html#ae738f8236bead17ca279b34419892ef9">Reduce</a>(SmemStorage &amp;smem_storage, T input, ReductionOp reduction_op)</td><td class="entry"><a class="el" href="classcub_1_1_warp_reduce.html">cub::WarpReduce&lt; T, WARPS, LOGICAL_WARP_THREADS &gt;</a></td><td class="entry"><span class="mlabel">inline</span><span class="mlabel">static</span></td></tr>
-  <tr><td class="entry"><a class="el" href="classcub_1_1_warp_reduce.html#a4f893685caf95690550964c45a34f19b">Reduce</a>(SmemStorage &amp;smem_storage, T input, ReductionOp reduction_op, const unsigned int &amp;valid_lanes)</td><td class="entry"><a class="el" href="classcub_1_1_warp_reduce.html">cub::WarpReduce&lt; T, WARPS, LOGICAL_WARP_THREADS &gt;</a></td><td class="entry"><span class="mlabel">inline</span><span class="mlabel">static</span></td></tr>
-  <tr class="even"><td class="entry"><a class="el" href="classcub_1_1_warp_reduce.html#a71f87b76f0deeaa5ba3a708374d19c8c">SmemStorage</a> typedef</td><td class="entry"><a class="el" href="classcub_1_1_warp_reduce.html">cub::WarpReduce&lt; T, WARPS, LOGICAL_WARP_THREADS &gt;</a></td><td class="entry"></td></tr>
-  <tr><td class="entry"><a class="el" href="classcub_1_1_warp_reduce.html#a50e4be93dbd298b7c2b5080d1449cf8c">Sum</a>(SmemStorage &amp;smem_storage, T input)</td><td class="entry"><a class="el" href="classcub_1_1_warp_reduce.html">cub::WarpReduce&lt; T, WARPS, LOGICAL_WARP_THREADS &gt;</a></td><td class="entry"><span class="mlabel">inline</span><span class="mlabel">static</span></td></tr>
-  <tr class="even"><td class="entry"><a class="el" href="classcub_1_1_warp_reduce.html#a0c1ad8bee00bc64f14f3b0d762b84363">Sum</a>(SmemStorage &amp;smem_storage, T input, const unsigned int &amp;valid_lanes)</td><td class="entry"><a class="el" href="classcub_1_1_warp_reduce.html">cub::WarpReduce&lt; T, WARPS, LOGICAL_WARP_THREADS &gt;</a></td><td class="entry"><span class="mlabel">inline</span><span class="mlabel">static</span></td></tr>
-</table></div><!-- contents -->
+<div class="textblock"><code>#include &quot;../util_namespace.cuh&quot;</code><br/>
+<code>#include &quot;../util_macro.cuh&quot;</code><br/>
+<code>#include &quot;../util_allocator.cuh&quot;</code><br/>
+</div><table class="memberdecls">
+<tr class="heading"><td colspan="2"><h2 class="groupheader"><a name="nested-classes"></a>
+Classes</h2></td></tr>
+<tr class="memitem:"><td class="memItemLeft" align="right" valign="top">class &#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classcub_1_1_grid_even_share.html">cub::GridEvenShare&lt; SizeT &gt;</a></td></tr>
+<tr class="memdesc:"><td class="mdescLeft">&#160;</td><td class="mdescRight"><a class="el" href="classcub_1_1_grid_even_share.html" title="GridEvenShare is a descriptor utility for distributing input among CUDA threadblocks in an &quot;even-shar...">GridEvenShare</a> is a descriptor utility for distributing input among CUDA threadblocks in an "even-share" fashion. Each threadblock gets roughly the same number of fixed-size work units (grains).  <a href="classcub_1_1_grid_even_share.html#details">More...</a><br/></td></tr>
+<tr class="separator:"><td class="memSeparator" colspan="2">&#160;</td></tr>
+</table><table class="memberdecls">
+<tr class="heading"><td colspan="2"><h2 class="groupheader"><a name="namespaces"></a>
+Namespaces</h2></td></tr>
+<tr class="memitem:namespacecub"><td class="memItemLeft" align="right" valign="top">namespace &#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="namespacecub.html">cub</a></td></tr>
+<tr class="memdesc:namespacecub"><td class="mdescLeft">&#160;</td><td class="mdescRight">Optional outer namespace(s) <br/></td></tr>
+<tr class="separator:"><td class="memSeparator" colspan="2">&#160;</td></tr>
+</table>
+<a name="details" id="details"></a><h2 class="groupheader">Detailed Description</h2>
+<div class="textblock"><p><a class="el" href="classcub_1_1_grid_even_share.html" title="GridEvenShare is a descriptor utility for distributing input among CUDA threadblocks in an &quot;even-shar...">cub::GridEvenShare</a> is a descriptor utility for distributing input among CUDA threadblocks in an "even-share" fashion. Each threadblock gets roughly the same number of fixed-size work units (grains). </p>
+</div></div><!-- contents -->
 <!-- HTML footer for doxygen 1.8.3.1-->
 <!-- start footer part -->
 <hr class="footer"/><address class="footer"><small>

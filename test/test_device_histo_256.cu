@@ -47,10 +47,10 @@ using namespace cub;
 // Globals, constants and typedefs
 //---------------------------------------------------------------------
 
-bool                        g_verbose       = false;
-int                         g_iterations    = 100;
-bool                        g_verbose_input = false;
-TilesHisto256Algorithm  g_algorithm     = GRID_HISTO_256_SORT;
+bool                                g_verbose           = false;
+int                                 g_iterations        = 100;
+bool                                g_verbose_input     = false;
+PersistentBlockHisto256Algorithm    g_algorithm         = GRID_HISTO_256_SORT;
     
 
 /**
@@ -90,7 +90,7 @@ __global__ void CnpHisto(
 {
     cudaError_t error = cudaSuccess;
 
-#if CUB_CNP_ENABLED
+#ifdef CUB_RUNTIME_ENABLED
     for (int i = 0; i < iterations; ++i)
     {
         error = DeviceHisto256::SingleChannel(d_samples, d_out, num_samples, reduction_op, 0, STREAM_SYNCHRONOUS);
