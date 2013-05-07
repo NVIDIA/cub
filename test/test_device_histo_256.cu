@@ -50,7 +50,7 @@ using namespace cub;
 bool                        g_verbose       = false;
 int                         g_iterations    = 100;
 bool                        g_verbose_input = false;
-GridBlockHisto256Algorithm  g_algorithm     = GRID_HISTO_256_SORT;
+TilesHisto256Algorithm  g_algorithm     = GRID_HISTO_256_SORT;
     
 
 /**
@@ -454,7 +454,6 @@ int main(int argc, char** argv)
         cast_op,
         num_samples,
         CUB_TYPE_STRING(unsigned short));
-
 
     // unsigned int
     printf("\n\n-- UINT32 -------------- \n"); fflush(stdout);

@@ -28,7 +28,7 @@
 
 /**
  * \file
- * cub::GridBlockReduce implements a stateful abstraction of CUDA thread blocks for participating in device-wide reduction.
+ * cub::TilesReduce implements a stateful abstraction of CUDA thread blocks for participating in device-wide reduction.
 
  */
 
@@ -52,7 +52,7 @@ namespace cub {
 
 
 /**
- * Tuning policy for GridBlockReduce
+ * Tuning policy for TilesReduce
  */
 template <
     int                     _BLOCK_THREADS,
@@ -61,7 +61,7 @@ template <
     BlockReduceAlgorithm    _BLOCK_ALGORITHM,
     PtxLoadModifier         _LOAD_MODIFIER,
     GridMappingStrategy     _GRID_MAPPING>
-struct GridBlockReducePolicy
+struct TilesReducePolicy
 {
     enum
     {
@@ -77,14 +77,14 @@ struct GridBlockReducePolicy
 
 
 /**
- * \brief GridBlockReduce implements a stateful abstraction of CUDA thread blocks for participating in device-wide reduction.
+ * \brief TilesReduce implements a stateful abstraction of CUDA thread blocks for participating in device-wide reduction.
  */
 template <
-    typename GridBlockReducePolicy,
+    typename TilesReducePolicy,
     typename InputIteratorRA,
     typename SizeT,
     typename ReductionOp>
-struct GridBlockReduce
+struct TilesReduce
 {
 
     //---------------------------------------------------------------------
@@ -92,28 +92,28 @@ struct GridBlockReduce
     //---------------------------------------------------------------------
 
     typedef typename std::iterator_traits<InputIteratorRA>::value_type      T;              // Type of input iterator
-    typedef VectorHelper<T, GridBlockReducePolicy::VECTOR_LOAD_LENGTH>      VecHelper;      // Helper type for vectorizing loads of T
+    typedef VectorHelper<T, TilesReducePolicy::VECTOR_LOAD_LENGTH>      VecHelper;      // Helper type for vectorizing loads of T
     typedef typename VecHelper::Type                                        VectorT;        // Vector of T
 
     // Constants
     enum
     {
-        BLOCK_THREADS       = GridBlockReducePolicy::BLOCK_THREADS,
-        ITEMS_PER_THREAD    = GridBlockReducePolicy::ITEMS_PER_THREAD,
+        BLOCK_THREADS       = TilesReducePolicy::BLOCK_THREADS,
+        ITEMS_PER_THREAD    = TilesReducePolicy::ITEMS_PER_THREAD,
         TILE_ITEMS          = BLOCK_THREADS * ITEMS_PER_THREAD,
-        VECTOR_LOAD_LENGTH  = GridBlockReducePolicy::VECTOR_LOAD_LENGTH,
+        VECTOR_LOAD_LENGTH  = TilesReducePolicy::VECTOR_LOAD_LENGTH,
 
         // Can vectorize according to the policy if the input iterator is a native pointer to a built-in primitive
-        CAN_VECTORIZE       = (GridBlockReducePolicy::VECTOR_LOAD_LENGTH > 1) &&
+        CAN_VECTORIZE       = (TilesReducePolicy::VECTOR_LOAD_LENGTH > 1) &&
                                 (IsPointer<InputIteratorRA>::VALUE) &&
                                 (VecHelper::BUILT_IN),
 
     };
 
-    static const BlockReduceAlgorithm BLOCK_ALGORITHM = GridBlockReducePolicy::BLOCK_ALGORITHM;
+    static const BlockReduceAlgorithm BLOCK_ALGORITHM = TilesReducePolicy::BLOCK_ALGORITHM;
 
     // Parameterized BlockReduce primitive
-    typedef BlockReduce<T, BLOCK_THREADS, GridBlockReducePolicy::BLOCK_ALGORITHM> BlockReduceT;
+    typedef BlockReduce<T, BLOCK_THREADS, TilesReducePolicy::BLOCK_ALGORITHM> BlockReduceT;
 
     // Shared memory type required by this thread block
     typedef typename BlockReduceT::SmemStorage SmemStorage;
@@ -138,7 +138,7 @@ struct GridBlockReduce
     /**
      * Constructor
      */
-    __device__ __forceinline__ GridBlockReduce(
+    __device__ __forceinline__ TilesReduce(
         SmemStorage&            smem_storage,       ///< Reference to smem_storage
         InputIteratorRA         d_in,               ///< Input data to reduce
         ReductionOp             reduction_op) :     ///< Binary reduction operator
@@ -181,13 +181,13 @@ struct GridBlockReduce
 
             if ((first_tile) && (thread_offset < num_valid))
             {
-                thread_aggregate = ThreadLoad<GridBlockReducePolicy::LOAD_MODIFIER>(d_in + block_offset + thread_offset);
+                thread_aggregate = ThreadLoad<TilesReducePolicy::LOAD_MODIFIER>(d_in + block_offset + thread_offset);
                 thread_offset += BLOCK_THREADS;
             }
 
             while (thread_offset < num_valid)
             {
-                T item = ThreadLoad<GridBlockReducePolicy::LOAD_MODIFIER>(d_in + block_offset + thread_offset);
+                T item = ThreadLoad<TilesReducePolicy::LOAD_MODIFIER>(d_in + block_offset + thread_offset);
                 thread_aggregate = reduction_op(thread_aggregate, item);
                 thread_offset += BLOCK_THREADS;
             }

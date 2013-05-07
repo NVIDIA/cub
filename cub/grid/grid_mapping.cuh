@@ -98,40 +98,40 @@ enum GridMappingStrategy
  *****************************************************************************/
 
 /**
- * \brief Uses a GridEvenShare descriptor to dispatch tiles of work to a thread block abstraction of type \p GridBlock.  (See GridMappingStrategy::GRID_MAPPING_EVEN_SHARE.)
+ * \brief Uses a GridEvenShare descriptor to dispatch tiles of work to a thread block abstraction of type \p Tiles.  (See GridMappingStrategy::GRID_MAPPING_EVEN_SHARE.)
  *
- * Expects the \p GridBlock type to have the following member functions for
+ * Expects the \p Tiles type to have the following member functions for
  * - Tile processing:
  *   - <tt>void ConsumeTile(bool sync_after, SizeT block_offset, SizeT valid_tile_items);</tt>
- * - Getting the maximum number of items processed per call to <tt>GridBlock::ConsumeTile</tt>:
+ * - Getting the maximum number of items processed per call to <tt>Tiles::ConsumeTile</tt>:
  *   - <tt>int TileItems()</tt>
  * - Finalization:
  *   - <tt>void Finalize(Result &result);</tt>
  *
- * \tparam GridBlock    <b>[inferred]</b> Thread block abstraction type for tile processing
+ * \tparam Tiles    <b>[inferred]</b> Thread block abstraction type for tile processing
  * \tparam SizeT        <b>[inferred]</b> Integral type used for global array indexing
- * \tparam Result       <b>[inferred]</b> Result type to be returned by the GridBlock instance
+ * \tparam Result       <b>[inferred]</b> Result type to be returned by the Tiles instance
  */
 
 template <
-    typename                GridBlock,
+    typename                Tiles,
     typename                SizeT,
     typename                Result>
 __device__ __forceinline__ void BlockConsumeTiles(
-    GridBlock               &grid_block,        ///< [in,out] Threadblock abstraction for tile processing
+    Tiles               &tiles,        ///< [in,out] Threadblock abstraction for tile processing
     SizeT                   block_offset,       ///< [in] Threadblock begin offset (inclusive)
     SizeT                   block_oob,          ///< [in] Threadblock end offset (exclusive)
-    Result                  &result)            ///< [out] Result returned by <tt>grid_block::Finalize()</tt>
+    Result                  &result)            ///< [out] Result returned by <tt>tiles::Finalize()</tt>
 {
     bool sync_after = true;
 
-    // Number of items per tile that can be processed by grid_block
-    int tile_items = grid_block.TileItems();
+    // Number of items per tile that can be processed by tiles
+    int tile_items = tiles.TileItems();
 
     // Consume any full tiles
     while (block_offset + tile_items <= block_oob)
     {
-        grid_block.ConsumeTile(sync_after, block_offset, tile_items);
+        tiles.ConsumeTile(sync_after, block_offset, tile_items);
         if (sync_after) __syncthreads();
 
         block_offset += tile_items;
@@ -140,81 +140,81 @@ __device__ __forceinline__ void BlockConsumeTiles(
     // Consume any remaining input
     if (block_offset < block_oob)
     {
-        grid_block.ConsumeTile(sync_after, block_offset, block_oob - block_offset);
+        tiles.ConsumeTile(sync_after, block_offset, block_oob - block_offset);
         if (sync_after) __syncthreads();
     }
 
     // Compute the block-wide reduction (every thread has a valid input)
-    grid_block.Finalize(result);
+    tiles.Finalize(result);
 }
 
 
 /**
- * \brief Uses a GridEvenShare descriptor to dispatch tiles of work to a thread block abstraction of type \p GridBlock.  (See GridMappingStrategy::GRID_MAPPING_EVEN_SHARE.)
+ * \brief Uses a GridEvenShare descriptor to dispatch tiles of work to a thread block abstraction of type \p Tiles.  (See GridMappingStrategy::GRID_MAPPING_EVEN_SHARE.)
  *
- * Expects the \p GridBlock type to have the following member functions for
+ * Expects the \p Tiles type to have the following member functions for
  * - Tile processing:
  *   - <tt>void ConsumeTile(bool sync_after, SizeT block_offset, SizeT valid_tile_items);</tt>
- * - Getting the maximum number of items processed per call to <tt>GridBlock::ConsumeTile</tt>:
+ * - Getting the maximum number of items processed per call to <tt>Tiles::ConsumeTile</tt>:
  *   - <tt>int TileItems()</tt>
  * - Finalization:
  *   - <tt>void Finalize(Result &result);</tt>
  *
- * \tparam GridBlock    <b>[inferred]</b> Thread block abstraction type for tile processing
+ * \tparam Tiles    <b>[inferred]</b> Thread block abstraction type for tile processing
  * \tparam SizeT        <b>[inferred]</b> Integral type used for global array indexing
- * \tparam Result       <b>[inferred]</b> Result type to be returned by the GridBlock instance
+ * \tparam Result       <b>[inferred]</b> Result type to be returned by the Tiles instance
  */
 
 template <
-    typename                GridBlock,
+    typename                Tiles,
     typename                SizeT,
     typename                Result>
 __device__ __forceinline__ void BlockConsumeTiles(
-    GridBlock               &grid_block,        ///< [in,out] Threadblock abstraction for tile processing
+    Tiles               &tiles,        ///< [in,out] Threadblock abstraction for tile processing
     SizeT                   num_items,          ///< [in] Total number of global input items
     GridEvenShare<SizeT>    &even_share,        ///< [in] GridEvenShare descriptor
-    Result                  &result)            ///< [out] Result returned by <tt>grid_block::Finalize()</tt>
+    Result                  &result)            ///< [out] Result returned by <tt>tiles::Finalize()</tt>
 {
     even_share.BlockInit();
-    BlockConsumeTiles(grid_block, even_share.block_offset, even_share.block_oob, result);
+    BlockConsumeTiles(tiles, even_share.block_offset, even_share.block_oob, result);
 }
 
 
 
 /**
- * \brief Uses a GridEvenShare descriptor to dispatch tiles of work to a thread block abstraction of type \p GridBlock.  The first tile given to each thread block is flagged as such. (See GridMappingStrategy::GRID_MAPPING_EVEN_SHARE.)
+ * \brief Uses a GridEvenShare descriptor to dispatch tiles of work to a thread block abstraction of type \p Tiles.  The first tile given to each thread block is flagged as such. (See GridMappingStrategy::GRID_MAPPING_EVEN_SHARE.)
  *
- * Expects the \p GridBlock type to have the following member functions for
+ * Expects the \p Tiles type to have the following member functions for
  * - Tile processing:
  *   - <tt>void ConsumeTile(bool sync_after, SizeT block_offset, SizeT valid_tile_items, is_first_tile);</tt>
- * - Getting the maximum number of items processed per call to <tt>GridBlock::ConsumeTile</tt>:
+ * - Getting the maximum number of items processed per call to <tt>Tiles::ConsumeTile</tt>:
  *   - <tt>int TileItems()</tt>
  * - Finalization:
  *   - <tt>void Finalize(Result &result);</tt>
  *
- * \tparam GridBlock    <b>[inferred]</b> Thread block abstraction type for tile processing
+ * \tparam Tiles    <b>[inferred]</b> Thread block abstraction type for tile processing
  * \tparam SizeT        <b>[inferred]</b> Integral type used for global array indexing
- * \tparam Result       <b>[inferred]</b> Result type to be returned by the GridBlock instance
+ * \tparam Result       <b>[inferred]</b> Result type to be returned by the Tiles instance
  */
 template <
-    typename                GridBlock,
+    typename                Tiles,
     typename                SizeT,
     typename                Result>
 __device__ __forceinline__ void BlockConsumeTilesFlagFirst(
-    GridBlock               &grid_block,        ///< [in,out] Threadblock abstraction for tile processing
+    Tiles               &tiles,        ///< [in,out] Threadblock abstraction for tile processing
     SizeT                   block_offset,       ///< [in] Threadblock begin offset (inclusive)
     SizeT                   block_oob,          ///< [in] Threadblock end offset (exclusive)
-    Result                  &result)            ///< [out] Result returned by <tt>grid_block::Finalize()</tt>
+    Result                  &result)            ///< [out] Result returned by <tt>tiles::Finalize()</tt>
 {
     bool sync_after = true;
 
-    // Number of items per tile that can be processed by grid_block
-    int tile_items = grid_block.TileItems();
+    // Number of items per tile that can be processed by tiles
+    int tile_items = tiles.TileItems();
 
     if (block_offset + tile_items <= block_oob)
     {
         // We have at least one full tile to consume
-        grid_block.ConsumeTile(sync_after, block_offset, tile_items, true);
+        tiles.ConsumeTile(sync_after, block_offset, tile_items, true);
         if (sync_after) __syncthreads();
 
         block_offset += tile_items;
@@ -222,7 +222,7 @@ __device__ __forceinline__ void BlockConsumeTilesFlagFirst(
         // Consume any other full tiles
         while (block_offset + tile_items <= block_oob)
         {
-            grid_block.ConsumeTile(sync_after, block_offset, tile_items, false);
+            tiles.ConsumeTile(sync_after, block_offset, tile_items, false);
             if (sync_after) __syncthreads();
 
             block_offset += tile_items;
@@ -231,7 +231,7 @@ __device__ __forceinline__ void BlockConsumeTilesFlagFirst(
         // Consume any remaining input
         if (block_offset < block_oob)
         {
-            grid_block.ConsumeTile(sync_after, block_offset, block_oob - block_offset, false);
+            tiles.ConsumeTile(sync_after, block_offset, block_oob - block_offset, false);
             if (sync_after) __syncthreads();
         }
     }
@@ -240,78 +240,78 @@ __device__ __forceinline__ void BlockConsumeTilesFlagFirst(
         // We have less than a full tile to consume
         SizeT block_items = block_oob - block_offset;
 
-        grid_block.ConsumeTile(sync_after, block_offset, block_items, true);
+        tiles.ConsumeTile(sync_after, block_offset, block_items, true);
         if (sync_after) __syncthreads();
     }
 
     // Compute the block-wide reduction (every thread has a valid input)
-    grid_block.Finalize(result);
+    tiles.Finalize(result);
 }
 
 
 /**
- * \brief Uses a GridEvenShare descriptor to dispatch tiles of work to a thread block abstraction of type \p GridBlock.  The first tile given to each thread block is flagged as such. (See GridMappingStrategy::GRID_MAPPING_EVEN_SHARE.)
+ * \brief Uses a GridEvenShare descriptor to dispatch tiles of work to a thread block abstraction of type \p Tiles.  The first tile given to each thread block is flagged as such. (See GridMappingStrategy::GRID_MAPPING_EVEN_SHARE.)
  *
- * Expects the \p GridBlock type to have the following member functions for
+ * Expects the \p Tiles type to have the following member functions for
  * - Tile processing:
  *   - <tt>void ConsumeTile(bool sync_after, SizeT block_offset, SizeT valid_tile_items, is_first_tile);</tt>
- * - Getting the maximum number of items processed per call to <tt>GridBlock::ConsumeTile</tt>:
+ * - Getting the maximum number of items processed per call to <tt>Tiles::ConsumeTile</tt>:
  *   - <tt>int TileItems()</tt>
  * - Finalization:
  *   - <tt>void Finalize(Result &result);</tt>
  *
- * \tparam GridBlock    <b>[inferred]</b> Thread block abstraction type for tile processing
+ * \tparam Tiles    <b>[inferred]</b> Thread block abstraction type for tile processing
  * \tparam SizeT        <b>[inferred]</b> Integral type used for global array indexing
- * \tparam Result       <b>[inferred]</b> Result type to be returned by the GridBlock instance
+ * \tparam Result       <b>[inferred]</b> Result type to be returned by the Tiles instance
  */
 template <
-    typename                GridBlock,
+    typename                Tiles,
     typename                SizeT,
     typename                Result>
 __device__ __forceinline__ void BlockConsumeTilesFlagFirst(
-    GridBlock               &grid_block,        ///< [in,out] Threadblock abstraction for tile processing
+    Tiles               &tiles,        ///< [in,out] Threadblock abstraction for tile processing
     SizeT                   num_items,          ///< [in] Total number of global input items
     GridEvenShare<SizeT>    &even_share,        ///< [in] GridEvenShare descriptor
-    Result                  &result)            ///< [out] Result returned by <tt>grid_block::Finalize()</tt>
+    Result                  &result)            ///< [out] Result returned by <tt>tiles::Finalize()</tt>
 {
     even_share.BlockInit();
-    BlockConsumeTilesFlagFirst(grid_block, even_share.block_offset, even_share.block_oob, result);
+    BlockConsumeTilesFlagFirst(tiles, even_share.block_offset, even_share.block_oob, result);
 }
 
 
 
 /**
- * \brief Uses a GridQueue descriptor to dispatch tiles of work to a thread block abstraction of type \p GridBlock.  (See GridMappingStrategy::GRID_MAPPING_DYNAMIC.)
+ * \brief Uses a GridQueue descriptor to dispatch tiles of work to a thread block abstraction of type \p Tiles.  (See GridMappingStrategy::GRID_MAPPING_DYNAMIC.)
  *
- * Expects the \p GridBlock type to have the following member functions for
+ * Expects the \p Tiles type to have the following member functions for
  * - Tile processing:
  *   - <tt>void ConsumeTile(bool sync_after, SizeT block_offset, SizeT valid_tile_items);</tt>
- * - Getting the maximum number of items processed per call to <tt>GridBlock::ConsumeTile</tt>:
+ * - Getting the maximum number of items processed per call to <tt>Tiles::ConsumeTile</tt>:
  *   - <tt>int TileItems()</tt>
  * - Finalization:
  *   - <tt>void Finalize(Result &result);</tt>
  *
- * \tparam GridBlock    <b>[inferred]</b> Thread block abstraction type for tile processing
+ * \tparam Tiles    <b>[inferred]</b> Thread block abstraction type for tile processing
  * \tparam SizeT        <b>[inferred]</b> Integral type used for global array indexing
- * \tparam Result       <b>[inferred]</b> Result type to be returned by the GridBlock instance
+ * \tparam Result       <b>[inferred]</b> Result type to be returned by the Tiles instance
  */
 template <
-    typename                GridBlock,
+    typename                Tiles,
     typename                SizeT,
     typename                Result>
 __device__ __forceinline__ void BlockConsumeTiles(
-    GridBlock               &grid_block,        ///< [in,out] Threadblock abstraction for tile processing
+    Tiles               &tiles,        ///< [in,out] Threadblock abstraction for tile processing
     SizeT                   num_items,          ///< [in] Total number of global input items
     GridQueue<SizeT>        &queue,             ///< [in,out] GridQueue descriptor
-    Result                  &result)            ///< [out] Result returned by <tt>grid_block::Finalize()</tt>
+    Result                  &result)            ///< [out] Result returned by <tt>tiles::Finalize()</tt>
 {
     // Shared tile-processing offset obtained dynamically from queue
     __shared__ SizeT dynamic_block_offset;
 
     bool sync_after = true;
 
-    // Number of items per tile that can be processed by grid_block
-    int tile_items = grid_block.TileItems();
+    // Number of items per tile that can be processed by tiles
+    int tile_items = tiles.TileItems();
 
     // There are tiles left to consume
     while (true)
@@ -333,7 +333,7 @@ __device__ __forceinline__ void BlockConsumeTiles(
             if (block_offset < num_items)
             {
                 // We have less than a full tile to consume
-                grid_block.ConsumeTile(sync_after, block_offset, num_items - block_offset);
+                tiles.ConsumeTile(sync_after, block_offset, num_items - block_offset);
                 if (sync_after) __syncthreads();
             }
 
@@ -342,46 +342,46 @@ __device__ __forceinline__ void BlockConsumeTiles(
         }
 
         // We have a full tile to consume
-        grid_block.ConsumeTile(sync_after, block_offset, tile_items);
+        tiles.ConsumeTile(sync_after, block_offset, tile_items);
     }
 
-    grid_block.Finalize(result);
+    tiles.Finalize(result);
 }
 
 
 
 /**
- * \brief Uses a GridQueue descriptor to dispatch tiles of work to a thread block abstraction of type \p GridBlock.  The first tile given to each thread block is flagged as such. (See GridMappingStrategy::GRID_MAPPING_DYNAMIC.)
+ * \brief Uses a GridQueue descriptor to dispatch tiles of work to a thread block abstraction of type \p Tiles.  The first tile given to each thread block is flagged as such. (See GridMappingStrategy::GRID_MAPPING_DYNAMIC.)
  *
- * Expects the \p GridBlock type to have the following member functions for
+ * Expects the \p Tiles type to have the following member functions for
  * - Tile processing:
  *   - <tt>void ConsumeTile(bool sync_after, SizeT block_offset, SizeT valid_tile_items, is_first_tile);</tt>
- * - Getting the maximum number of items processed per call to <tt>GridBlock::ConsumeTile</tt>:
+ * - Getting the maximum number of items processed per call to <tt>Tiles::ConsumeTile</tt>:
  *   - <tt>int TileItems()</tt>
  * - Finalization:
  *   - <tt>void Finalize(Result &result);</tt>
  *
- * \tparam GridBlock    <b>[inferred]</b> Thread block abstraction type for tile processing
+ * \tparam Tiles    <b>[inferred]</b> Thread block abstraction type for tile processing
  * \tparam SizeT        <b>[inferred]</b> Integral type used for global array indexing
- * \tparam Result       <b>[inferred]</b> Result type to be returned by the GridBlock instance
+ * \tparam Result       <b>[inferred]</b> Result type to be returned by the Tiles instance
  */
 template <
-    typename                GridBlock,
+    typename                Tiles,
     typename                SizeT,
     typename                Result>
 __device__ __forceinline__ void BlockConsumeTilesFlagFirst(
-    GridBlock               &grid_block,        ///< [in,out] Threadblock abstraction for tile processing
+    Tiles               &tiles,        ///< [in,out] Threadblock abstraction for tile processing
     SizeT                   num_items,          ///< [in] Total number of global input items
     GridQueue<SizeT>        &queue,             ///< [in,out] GridQueue descriptor
-    Result                  &result)            ///< [out] Result returned by <tt>grid_block::Finalize()</tt>
+    Result                  &result)            ///< [out] Result returned by <tt>tiles::Finalize()</tt>
 {
     // Shared tile-processing offset obtained dynamically from queue
     __shared__ SizeT dynamic_block_offset;
 
     bool sync_after = true;
 
-    // Number of items per tile that can be processed by grid_block
-    int tile_items = grid_block.TileItems();
+    // Number of items per tile that can be processed by tiles
+    int tile_items = tiles.TileItems();
 
     // We give each thread block at least one tile of input.
     SizeT block_offset = blockIdx.x * tile_items;
@@ -389,7 +389,7 @@ __device__ __forceinline__ void BlockConsumeTilesFlagFirst(
     // Check if we have a full tile to consume
     if (block_offset + tile_items <= num_items)
     {
-        grid_block.ConsumeTile(sync_after, block_offset, tile_items, true);
+        tiles.ConsumeTile(sync_after, block_offset, tile_items, true);
         if (sync_after) __syncthreads();
 
         // Now that every block in the kernel has gotten a tile, attempt to dynamically consume any remaining
@@ -416,7 +416,7 @@ __device__ __forceinline__ void BlockConsumeTilesFlagFirst(
                     if (block_offset < num_items)
                     {
                         // We have less than a full tile to consume
-                        grid_block.ConsumeTile(sync_after, block_offset, num_items - block_offset, false);
+                        tiles.ConsumeTile(sync_after, block_offset, num_items - block_offset, false);
                         if (sync_after) __syncthreads();
                     }
 
@@ -425,19 +425,19 @@ __device__ __forceinline__ void BlockConsumeTilesFlagFirst(
                 }
 
                 // We have a full tile to consume
-                grid_block.ConsumeTile(sync_after, block_offset, tile_items, false);
+                tiles.ConsumeTile(sync_after, block_offset, tile_items, false);
             }
         }
     }
     else
     {
         // We have less than a full tile to consume
-        grid_block.ConsumeTile(sync_after, block_offset, num_items - block_offset, true);
+        tiles.ConsumeTile(sync_after, block_offset, num_items - block_offset, true);
         if (sync_after) __syncthreads();
     }
 
     // Compute the block-wide reduction (every thread has a valid input)
-    grid_block.Finalize(result);
+    tiles.Finalize(result);
 
 }
 
@@ -463,31 +463,31 @@ template<>
 struct GridMapping<GRID_MAPPING_EVEN_SHARE>
 {
     template <
-        typename                GridBlock,
+        typename                Tiles,
         typename                SizeT,
         typename                Result>
     static __device__ __forceinline__ void BlockConsumeTiles(
-        GridBlock               &grid_block,        ///< [in,out] Threadblock abstraction for tile processing
+        Tiles               &tiles,        ///< [in,out] Threadblock abstraction for tile processing
         SizeT                   num_items,          ///< [in] Total number of global input items
         GridEvenShare<SizeT>    &even_share,        ///< [in] GridEvenShare descriptor
         GridQueue<SizeT>        &queue,             ///< [in,out] GridQueue descriptor
-        Result                  &result)            ///< [out] Result returned by <tt>grid_block::Finalize()</tt>
+        Result                  &result)            ///< [out] Result returned by <tt>tiles::Finalize()</tt>
     {
-        cub::BlockConsumeTiles(grid_block, num_items, even_share, result);
+        cub::BlockConsumeTiles(tiles, num_items, even_share, result);
     }
 
     template <
-        typename                GridBlock,
+        typename                Tiles,
         typename                SizeT,
         typename                Result>
     static __device__ __forceinline__ void BlockConsumeTilesFlagFirst(
-        GridBlock               &grid_block,        ///< [in,out] Threadblock abstraction for tile processing
+        Tiles               &tiles,        ///< [in,out] Threadblock abstraction for tile processing
         SizeT                   num_items,          ///< [in] Total number of global input items
         GridEvenShare<SizeT>    &even_share,        ///< [in] GridEvenShare descriptor
         GridQueue<SizeT>        &queue,             ///< [in,out] GridQueue descriptor
-        Result                  &result)            ///< [out] Result returned by <tt>grid_block::Finalize()</tt>
+        Result                  &result)            ///< [out] Result returned by <tt>tiles::Finalize()</tt>
     {
-        cub::BlockConsumeTilesFlagFirst(grid_block, num_items, even_share, result);
+        cub::BlockConsumeTilesFlagFirst(tiles, num_items, even_share, result);
     }
 };
 
@@ -499,31 +499,31 @@ template<>
 struct GridMapping<GRID_MAPPING_DYNAMIC>
 {
     template <
-        typename                GridBlock,
+        typename                Tiles,
         typename                SizeT,
         typename                Result>
     static __device__ __forceinline__ void BlockConsumeTiles(
-        GridBlock               &grid_block,        ///< [in,out] Threadblock abstraction for tile processing
+        Tiles               &tiles,        ///< [in,out] Threadblock abstraction for tile processing
         SizeT                   num_items,          ///< [in] Total number of global input items
         GridEvenShare<SizeT>    &even_share,        ///< [in] GridEvenShare descriptor
         GridQueue<SizeT>        &queue,             ///< [in,out] GridQueue descriptor
-        Result                  &result)            ///< [out] Result returned by <tt>grid_block::Finalize()</tt>
+        Result                  &result)            ///< [out] Result returned by <tt>tiles::Finalize()</tt>
     {
-        cub::BlockConsumeTiles(grid_block, num_items, queue, result);
+        cub::BlockConsumeTiles(tiles, num_items, queue, result);
     }
 
     template <
-        typename                GridBlock,
+        typename                Tiles,
         typename                SizeT,
         typename                Result>
     static __device__ __forceinline__ void BlockConsumeTilesFlagFirst(
-        GridBlock               &grid_block,        ///< [in,out] Threadblock abstraction for tile processing
+        Tiles               &tiles,        ///< [in,out] Threadblock abstraction for tile processing
         SizeT                   num_items,          ///< [in] Total number of global input items
         GridEvenShare<SizeT>    &even_share,        ///< [in] GridEvenShare descriptor
         GridQueue<SizeT>        &queue,             ///< [in,out] GridQueue descriptor
-        Result                  &result)            ///< [out] Result returned by <tt>grid_block::Finalize()</tt>
+        Result                  &result)            ///< [out] Result returned by <tt>tiles::Finalize()</tt>
     {
-        cub::BlockConsumeTilesFlagFirst(grid_block, num_items, queue, result);
+        cub::BlockConsumeTilesFlagFirst(tiles, num_items, queue, result);
     }
 };
 
