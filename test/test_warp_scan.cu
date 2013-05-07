@@ -558,7 +558,6 @@ int main(int argc, char** argv)
     // Initialize command line
     CommandLineArgs args(argc, argv);
     g_verbose = args.CheckCmdLineFlag("v");
-    bool quick = args.CheckCmdLineFlag("quick");
 
     // Print usage
     if (args.CheckCmdLineFlag("help"))
@@ -566,7 +565,6 @@ int main(int argc, char** argv)
         printf("%s "
             "[--device=<device-id>] "
             "[--v] "
-            "[--quick]"
             "\n", argv[0]);
         exit(0);
     }
@@ -574,19 +572,14 @@ int main(int argc, char** argv)
     // Initialize device
     CubDebugExit(args.DeviceInit());
 
-    if (quick)
-    {
-        // Quick exclusive test
-        Test<32, PREFIX_AGGREGATE>(UNIFORM, Sum<int>(), (int) 0, (int) 99, CUB_TYPE_STRING(Sum<int>));
-    }
-    else
-    {
-        // Test logical warp sizes
-        Test<32>();
-        Test<16>();
-        Test<9>();
-        Test<7>();
-    }
+    // Quick exclusive test
+    Test<32, PREFIX_AGGREGATE>(UNIFORM, Sum<int>(), (int) 0, (int) 99, CUB_TYPE_STRING(Sum<int>));
+
+    // Test logical warp sizes
+    Test<32>();
+    Test<16>();
+    Test<9>();
+    Test<7>();
 
     return 0;
 }

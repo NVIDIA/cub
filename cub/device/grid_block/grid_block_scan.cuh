@@ -505,45 +505,6 @@ public:
         }
     }
 
-
-    /**
-     * \brief Consumes input tiles according to <tt>TilesScanPolicy::GRID_MAPPING</tt>, computing a threadblock-wide reduction for thread<sub>0</sub> using the specified binary reduction functor.
-     *
-     * The return value is undefined in threads other than thread<sub>0</sub>.
-     */
-    template <typename SizeT, typename ScanOp>
-    static __device__ __forceinline__ T ProcessTiles(
-        SmemStorage             &smem_storage,
-        InputIteratorRA           d_in,
-        SizeT                   num_items,
-        GridEvenShare<SizeT>    &even_share,
-        GridQueue<SizeT>        &queue,
-        ScanOp             &scan_op)
-    {
-        if (TilesScanPolicy::GRID_MAPPING == GRID_MAPPING_EVEN_SHARE)
-        {
-            // Even share
-            even_share.BlockInit();
-
-            return ProcessTilesEvenShare(
-                smem_storage,
-                d_in,
-                even_share.block_offset,
-                even_share.block_oob,
-                scan_op);
-        }
-        else
-        {
-            // Dynamically dequeue
-            return ProcessTilesDynamic(
-                smem_storage,
-                d_in,
-                num_items,
-                queue,
-                scan_op);
-        }
-    }
-
 };
 
 

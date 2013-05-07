@@ -121,13 +121,15 @@ template <
     int                         _BLOCK_THREADS,
     int                         _ITEMS_PER_THREAD,
     GridBlockHisto256Algorithm  _GRID_ALGORITHM,
-    GridMappingStrategy         _GRID_MAPPING>
+    GridMappingStrategy         _GRID_MAPPING,
+    int                         _SM_OCCUPANCY>
 struct GridBlockHisto256Policy
 {
     enum
     {
         BLOCK_THREADS       = _BLOCK_THREADS,
         ITEMS_PER_THREAD    = _ITEMS_PER_THREAD,
+        SM_OCCUPANCY        = _SM_OCCUPANCY,
     };
 
     static const GridBlockHisto256Algorithm     GRID_ALGORITHM      = _GRID_ALGORITHM;
@@ -227,6 +229,7 @@ struct GridBlockHisto256<GridBlockHisto256Policy, CHANNELS, ACTIVE_CHANNELS, Inp
      * Process a single tile.
      */
     __device__ __forceinline__ void ConsumeTile(
+        bool    &sync_after,
         SizeT   block_offset,
         int     num_valid)
     {
@@ -283,6 +286,9 @@ struct GridBlockHisto256<GridBlockHisto256Policy, CHANNELS, ACTIVE_CHANNELS, Inp
                 }
             }
         }
+
+        // No need to sync after processing this tile to ensure smem coherence
+        sync_after = false;
     }
 
 
@@ -391,6 +397,7 @@ struct GridBlockHisto256<GridBlockHisto256Policy, CHANNELS, ACTIVE_CHANNELS, Inp
      * Process a single tile.
      */
     __device__ __forceinline__ void ConsumeTile(
+        bool    &sync_after,
         SizeT   block_offset,
         int     num_valid)
     {
@@ -447,6 +454,9 @@ struct GridBlockHisto256<GridBlockHisto256Policy, CHANNELS, ACTIVE_CHANNELS, Inp
                 }
             }
         }
+
+        // No need to sync after processing this tile to ensure smem coherence
+        sync_after = false;
     }
 
 
@@ -718,6 +728,7 @@ struct GridBlockHisto256<GridBlockHisto256Policy, CHANNELS, ACTIVE_CHANNELS, Inp
      * We take several passes through the tile in this variant, extracting the samples for one channel at a time
      */
     __device__ __forceinline__ void ConsumeTile(
+        bool    &sync_after,
         SizeT   block_offset,
         int     num_valid)
     {
@@ -732,6 +743,9 @@ struct GridBlockHisto256<GridBlockHisto256Policy, CHANNELS, ACTIVE_CHANNELS, Inp
 
             ConsumeTileChannel(CHANNEL, block_offset, num_valid);
         }
+
+        // Need to sync after processing this tile to ensure smem coherence
+        sync_after = true;
     }
 
 

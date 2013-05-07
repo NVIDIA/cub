@@ -512,9 +512,6 @@ private:
         {
             /// Warpscan layout: 1.5 warps-worth of elements for each warp.
             T warp_scan[WARPS][WARP_SMEM_ELEMENTS];
-
-            /// Single variable for broadcasting aggregate, etc.
-            T broadcast;
         };
 
 
@@ -522,17 +519,61 @@ private:
         static __device__ __forceinline__ T Broadcast(
             SmemStorage     &smem_storage,      ///< [in] Reference to shared memory allocation having layout type SmemStorage
             T               input,              ///< [in] The value to broadcast
-            unsigned int    src_lane)           ///< [in] Which warp lane is to do the broacasting
+            unsigned int    src_lane)           ///< [in] Which warp lane is to do the broadcasting
         {
             unsigned int lane_id = (WARPS == 1) ? threadIdx.x : (threadIdx.x & (LOGICAL_WARP_THREADS - 1));
+            unsigned int warp_id = (WARPS == 1) ? 0 : (threadIdx.x / LOGICAL_WARP_THREADS);
 
             if (lane_id == src_lane)
             {
-                ThreadStore<PTX_STORE_VS>(&smem_storage.broadcast, input);
+                ThreadStore<PTX_STORE_VS>(smem_storage.warp_scan[warp_id], input);
             }
 
-            return ThreadLoad<PTX_LOAD_VS>(&smem_storage.broadcast);
+#if (CUB_PTX_ARCH <= 110)
+            __threadfence_block();
+#endif
+            return ThreadLoad<PTX_LOAD_VS>(smem_storage.warp_scan[warp_id]);
         }
+
+
+
+        /// Basic inclusive scan iteration (template unrolled, inductive-case specialization)
+        template <
+            bool HAS_IDENTITY,
+            bool SHARE_FINAL,
+            int STEP>
+        struct Iteration
+        {
+            template <typename ScanOp>
+            static __device__ __forceinline__ void ScanStep(SmemStorage &smem_storage, unsigned int warp_id, unsigned int lane_id, T &partial, ScanOp scan_op)
+            {
+                const int OFFSET = 1 << STEP;
+
+                // Share partial into buffer
+                ThreadStore<PTX_STORE_VS>(&smem_storage.warp_scan[warp_id][HALF_WARP_THREADS + lane_id], partial);
+
+                // Update partial if addend is in range
+                if (HAS_IDENTITY || (lane_id >= OFFSET))
+                {
+                    T addend = ThreadLoad<PTX_LOAD_VS>(&smem_storage.warp_scan[warp_id][HALF_WARP_THREADS + lane_id - OFFSET]);
+                    partial = scan_op(addend, partial);
+                }
+
+                Iteration<HAS_IDENTITY, SHARE_FINAL, STEP + 1>::ScanStep(smem_storage, warp_id, lane_id, partial, scan_op);
+            }
+        };
+
+
+        /// Basic inclusive scan iteration(template unrolled, base-case specialization)
+        template <
+            bool HAS_IDENTITY,
+            bool SHARE_FINAL>
+        struct Iteration<HAS_IDENTITY, SHARE_FINAL, STEPS>
+        {
+            template <typename ScanOp>
+            static __device__ __forceinline__ void ScanStep(SmemStorage &smem_storage, unsigned int warp_id, unsigned int lane_id, T &partial, ScanOp scan_op) {}
+        };
+
 
         /// Basic inclusive scan
         template <
@@ -547,22 +588,7 @@ private:
             ScanOp          scan_op)            ///< Binary associative scan functor
         {
             // Iterate scan steps
-            #pragma unroll
-            for (int STEP = 0; STEP < STEPS; STEP++)
-            {
-                const int OFFSET = 1 << STEP;
-
-                // Share partial into buffer
-                ThreadStore<PTX_STORE_VS>(&smem_storage.warp_scan[warp_id][HALF_WARP_THREADS + lane_id], partial);
-
-                // Update partial if addend is in range
-                if (HAS_IDENTITY || (lane_id >= OFFSET))
-                {
-                    T addend = ThreadLoad<PTX_LOAD_VS>(&smem_storage.warp_scan[warp_id][HALF_WARP_THREADS + lane_id - OFFSET]);
-                    partial = scan_op(addend, partial);
-                }
-            }
-
+            Iteration<HAS_IDENTITY, SHARE_FINAL, 0>::ScanStep(smem_storage, warp_id, lane_id, partial, scan_op);
 
             if (SHARE_FINAL)
             {
