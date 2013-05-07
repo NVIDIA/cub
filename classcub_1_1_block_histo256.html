@@ -105,7 +105,7 @@ var searchBox = new SearchBox("searchBox", "search",false,'Search');
 </div><!--header-->
 <div class="contents">
 <a name="details" id="details"></a><h2 class="groupheader">Detailed description</h2>
-<div class="textblock"><h3>template&lt;int BLOCK_THREADS, int ITEMS_PER_THREAD, BlockHisto256Algorithm ALGORITHM = BLOCK_BYTE_HISTO_SORT&gt;<br/>
+<div class="textblock"><h3>template&lt;int BLOCK_THREADS, int ITEMS_PER_THREAD, BlockHisto256Algorithm ALGORITHM = BLOCK_HISTO_256_SORT&gt;<br/>
 class cub::BlockHisto256&lt; BLOCK_THREADS, ITEMS_PER_THREAD, ALGORITHM &gt;</h3>
 
 <p><a class="el" href="classcub_1_1_block_histo256.html" title="BlockHisto256 provides methods for constructing (and compositing into) 256-bin histograms from 8b dat...">BlockHisto256</a> provides methods for constructing (and compositing into) 256-bin histograms from 8b data partitioned across threads within a CUDA thread block. </p>
@@ -122,13 +122,13 @@ class cub::BlockHisto256&lt; BLOCK_THREADS, ITEMS_PER_THREAD, ALGORITHM &gt;</h3
   <table class="tparams">
     <tr><td class="paramname">BLOCK_THREADS</td><td>The threadblock size in threads </td></tr>
     <tr><td class="paramname">ITEMS_PER_THREAD</td><td>The number of items per thread </td></tr>
-    <tr><td class="paramname">ALGORITHM</td><td><b>[optional]</b> <a class="el" href="namespacecub.html#a0f61554b5c901fcc01adb8af3d9aacca">cub::BlockHisto256Algorithm</a> enumerator specifying the underlying algorithm to use (default = <a class="el" href="namespacecub.html#a0f61554b5c901fcc01adb8af3d9aaccaa5ca4cd67fcb7cc2a2e5fad154828f48d">cub::BLOCK_BYTE_HISTO_SORT</a>)</td></tr>
+    <tr><td class="paramname">ALGORITHM</td><td><b>[optional]</b> <a class="el" href="namespacecub.html#a0f61554b5c901fcc01adb8af3d9aacca" title="BlockHisto256Algorithm enumerates alternative algorithms for the parallel construction of 8b histogra...">cub::BlockHisto256Algorithm</a> enumerator specifying the underlying algorithm to use (default = <a class="el" href="namespacecub.html#a0f61554b5c901fcc01adb8af3d9aaccaad00d3bfb0c22bb57cfb9700ff638a0d8">cub::BLOCK_HISTO_256_SORT</a>)</td></tr>
   </table>
   </dd>
 </dl>
 <dl class="section user"><dt>Algorithm</dt><dd><a class="el" href="classcub_1_1_block_histo256.html" title="BlockHisto256 provides methods for constructing (and compositing into) 256-bin histograms from 8b dat...">BlockHisto256</a> can be (optionally) configured to use different algorithms:<ol type="1">
-<li><b><a class="el" href="namespacecub.html#a0f61554b5c901fcc01adb8af3d9aaccaa5ca4cd67fcb7cc2a2e5fad154828f48d">cub::BLOCK_BYTE_HISTO_SORT</a></b>. Sorting followed by differentiation. <a class="el" href="namespacecub.html#a0f61554b5c901fcc01adb8af3d9aacca">More...</a></li>
-<li><b><a class="el" href="namespacecub.html#a0f61554b5c901fcc01adb8af3d9aaccaa0c3b7f30e0f0738bf508fdbdbe650f46">cub::BLOCK_BYTE_HISTO_ATOMIC</a></b>. Use atomic addition to update byte counts directly. <a class="el" href="namespacecub.html#a0f61554b5c901fcc01adb8af3d9aacca">More...</a></li>
+<li><b><a class="el" href="namespacecub.html#a0f61554b5c901fcc01adb8af3d9aaccaad00d3bfb0c22bb57cfb9700ff638a0d8">cub::BLOCK_HISTO_256_SORT</a></b>. Sorting followed by differentiation. <a class="el" href="namespacecub.html#a0f61554b5c901fcc01adb8af3d9aacca">More...</a></li>
+<li><b><a class="el" href="namespacecub.html#a0f61554b5c901fcc01adb8af3d9aaccaa67faf22d4ff128547b2bc379efc9b99e">cub::BLOCK_HISTO_256_ATOMIC</a></b>. Use atomic addition to update byte counts directly. <a class="el" href="namespacecub.html#a0f61554b5c901fcc01adb8af3d9aacca">More...</a></li>
 </ol>
 </dd></dl>
 <dl class="section user"><dt>Usage Considerations</dt><dd><ul>
@@ -143,7 +143,7 @@ class cub::BlockHisto256&lt; BLOCK_THREADS, ITEMS_PER_THREAD, ALGORITHM &gt;</h3
 <li>Every thread has a valid input (i.e., full <em>vs.</em> partial-tiles)</li>
 </ul>
 </li>
-<li>See <a class="el" href="namespacecub.html#a0f61554b5c901fcc01adb8af3d9aacca">cub::BlockHisto256Algorithm</a> for performance details regarding algorithmic alternatives</li>
+<li>See <a class="el" href="namespacecub.html#a0f61554b5c901fcc01adb8af3d9aacca" title="BlockHisto256Algorithm enumerates alternative algorithms for the parallel construction of 8b histogra...">cub::BlockHisto256Algorithm</a> for performance details regarding algorithmic alternatives</li>
 </ul>
 </dd></dl>
 <dl class="section user"><dt>Examples</dt><dd></dd></dl>
@@ -221,7 +221,7 @@ __forceinline__ void&#160;</td><td class="memTemplItemRight" valign="bottom"><a 
 <div class="memitem">
 <div class="memproto">
 <div class="memtemplate">
-template&lt;int BLOCK_THREADS, int ITEMS_PER_THREAD, BlockHisto256Algorithm ALGORITHM = BLOCK_BYTE_HISTO_SORT&gt; </div>
+template&lt;int BLOCK_THREADS, int ITEMS_PER_THREAD, BlockHisto256Algorithm ALGORITHM = BLOCK_HISTO_256_SORT&gt; </div>
 <div class="memtemplate">
 template&lt;typename HistoCounter &gt; </div>
 <table class="mlabels">
@@ -250,7 +250,7 @@ template&lt;typename HistoCounter &gt; </div>
 <div class="memitem">
 <div class="memproto">
 <div class="memtemplate">
-template&lt;int BLOCK_THREADS, int ITEMS_PER_THREAD, BlockHisto256Algorithm ALGORITHM = BLOCK_BYTE_HISTO_SORT&gt; </div>
+template&lt;int BLOCK_THREADS, int ITEMS_PER_THREAD, BlockHisto256Algorithm ALGORITHM = BLOCK_HISTO_256_SORT&gt; </div>
 <div class="memtemplate">
 template&lt;typename HistoCounter &gt; </div>
 <table class="mlabels">
@@ -312,7 +312,7 @@ template&lt;typename HistoCounter &gt; </div>
 <div class="memitem">
 <div class="memproto">
 <div class="memtemplate">
-template&lt;int BLOCK_THREADS, int ITEMS_PER_THREAD, BlockHisto256Algorithm ALGORITHM = BLOCK_BYTE_HISTO_SORT&gt; </div>
+template&lt;int BLOCK_THREADS, int ITEMS_PER_THREAD, BlockHisto256Algorithm ALGORITHM = BLOCK_HISTO_256_SORT&gt; </div>
 <div class="memtemplate">
 template&lt;typename HistoCounter &gt; </div>
 <table class="mlabels">
@@ -376,7 +376,7 @@ template&lt;typename HistoCounter &gt; </div>
 <!-- HTML footer for doxygen 1.8.3.1-->
 <!-- start footer part -->
 <hr class="footer"/><address class="footer"><small>
-Generated on Wed May 1 2013 06:01:33 for CUB by &#160;<a href="http://www.doxygen.org/index.html">
+Generated on Tue May 7 2013 16:30:31 for CUB by &#160;<a href="http://www.doxygen.org/index.html">
 <img class="footer" src="doxygen.png" alt="doxygen"/>
 </a> 1.8.3.1
 <br>

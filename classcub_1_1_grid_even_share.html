@@ -108,9 +108,9 @@ var searchBox = new SearchBox("searchBox", "search",false,'Search');
 <div class="textblock"><h3>template&lt;typename SizeT&gt;<br/>
 class cub::GridEvenShare&lt; SizeT &gt;</h3>
 
-<p>A descriptor utility for distributing input among CUDA threadblocks in an "even-share" fashion. Each threadblock gets roughly the same number of fixed-size work units (grains). </p>
-<dl class="section user"><dt>Overview</dt><dd><a class="el" href="classcub_1_1_grid_even_share.html" title="A descriptor utility for distributing input among CUDA threadblocks in an &quot;even-share&quot; fashion...">GridEvenShare</a> indicates which sections of input are to be mapped onto which threadblocks. Threadblocks may receive one of three different amounts of work: "big", "normal", and "last". The "big" workloads are one scheduling grain larger than "normal". The "last" work unit for the last threadblock may be partially-full if the input is not an even multiple of the scheduling grain size.</dd></dl>
-<dl class="section user"><dt></dt><dd>Before invoking a child grid, a parent thread will typically construct and initialize an instance of <a class="el" href="classcub_1_1_grid_even_share.html" title="A descriptor utility for distributing input among CUDA threadblocks in an &quot;even-share&quot; fashion...">GridEvenShare</a> using <code><a class="el" href="classcub_1_1_grid_even_share.html#a239f96ab615df22e26c53cde6000e39f" title="Initializes the grid-specific members num_items and grid_size. To be called prior prior to kernel lau...">GridInit()</a></code>. The instance can be passed to child threadblocks which can initialize their per-threadblock offsets using <code><a class="el" href="classcub_1_1_grid_even_share.html#a214c0fc54f5ade75049ade09a08becf5" title="Initializes the threadblock-specific details (e.g., to be called by each threadblock after startup)...">BlockInit()</a></code>.</dd></dl>
+<p><a class="el" href="classcub_1_1_grid_even_share.html" title="GridEvenShare is a descriptor utility for distributing input among CUDA threadblocks in an &quot;even-shar...">GridEvenShare</a> is a descriptor utility for distributing input among CUDA threadblocks in an "even-share" fashion. Each threadblock gets roughly the same number of fixed-size work units (grains). </p>
+<dl class="section user"><dt>Overview</dt><dd><a class="el" href="classcub_1_1_grid_even_share.html" title="GridEvenShare is a descriptor utility for distributing input among CUDA threadblocks in an &quot;even-shar...">GridEvenShare</a> indicates which sections of input are to be mapped onto which threadblocks. Threadblocks may receive one of three different amounts of work: "big", "normal", and "last". The "big" workloads are one scheduling grain larger than "normal". The "last" work unit for the last threadblock may be partially-full if the input is not an even multiple of the scheduling grain size.</dd></dl>
+<dl class="section user"><dt></dt><dd>Before invoking a child grid, a parent thread will typically construct and initialize an instance of <a class="el" href="classcub_1_1_grid_even_share.html" title="GridEvenShare is a descriptor utility for distributing input among CUDA threadblocks in an &quot;even-shar...">GridEvenShare</a> using <code><a class="el" href="classcub_1_1_grid_even_share.html#a239f96ab615df22e26c53cde6000e39f" title="Initializes the grid-specific members num_items and grid_size. To be called prior prior to kernel lau...">GridInit()</a></code>. The instance can be passed to child threadblocks which can initialize their per-threadblock offsets using <code><a class="el" href="classcub_1_1_grid_even_share.html#a214c0fc54f5ade75049ade09a08becf5" title="Initializes the threadblock-specific details (e.g., to be called by each threadblock after startup)...">BlockInit()</a></code>.</dd></dl>
 <dl class="tparams"><dt>Template Parameters</dt><dd>
   <table class="tparams">
     <tr><td class="paramname">SizeT</td><td>Integer type for array indexing </td></tr>
@@ -120,6 +120,14 @@ class cub::GridEvenShare&lt; SizeT &gt;</h3>
 </div><table class="memberdecls">
 <tr class="heading"><td colspan="2"><h2 class="groupheader"><a name="pub-methods"></a>
 Public Methods</h2></td></tr>
+<tr class="memitem:a34167aebdf4b8f6e0ab0d8dbee988e91"><td class="memItemLeft" align="right" valign="top"><a class="anchor" id="a34167aebdf4b8f6e0ab0d8dbee988e91"></a>
+__device__ __forceinline__&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classcub_1_1_grid_even_share.html#a34167aebdf4b8f6e0ab0d8dbee988e91">GridEvenShare</a> (SizeT <a class="el" href="classcub_1_1_grid_even_share.html#a80a9d9d0c146b1aa7b26137553941c83">num_items</a>)</td></tr>
+<tr class="memdesc:a34167aebdf4b8f6e0ab0d8dbee988e91"><td class="mdescLeft">&#160;</td><td class="mdescRight">Block-based constructor for single-block grids. <br/></td></tr>
+<tr class="separator:a34167aebdf4b8f6e0ab0d8dbee988e91"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:ae37f606dd91894e9341e82affe757b0b"><td class="memItemLeft" align="right" valign="top"><a class="anchor" id="ae37f606dd91894e9341e82affe757b0b"></a>
+__host__ __device__ __forceinline__&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classcub_1_1_grid_even_share.html#ae37f606dd91894e9341e82affe757b0b">GridEvenShare</a> ()</td></tr>
+<tr class="memdesc:ae37f606dd91894e9341e82affe757b0b"><td class="mdescLeft">&#160;</td><td class="mdescRight">Default constructor. Zero-initializes block-specific fields. <br/></td></tr>
+<tr class="separator:ae37f606dd91894e9341e82affe757b0b"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:a214c0fc54f5ade75049ade09a08becf5"><td class="memItemLeft" align="right" valign="top"><a class="anchor" id="a214c0fc54f5ade75049ade09a08becf5"></a>
 __device__ __forceinline__ void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classcub_1_1_grid_even_share.html#a214c0fc54f5ade75049ade09a08becf5">BlockInit</a> ()</td></tr>
 <tr class="memdesc:a214c0fc54f5ade75049ade09a08becf5"><td class="mdescLeft">&#160;</td><td class="mdescRight">Initializes the threadblock-specific details (e.g., to be called by each threadblock after startup) <br/></td></tr>
@@ -231,13 +239,13 @@ template&lt;typename SizeT &gt; </div>
 </div>
 </div>
 <hr/>The documentation for this class was generated from the following file:<ul>
-<li>grid_even_share.cuh</li>
+<li><a class="el" href="grid__even__share_8cuh.html">grid_even_share.cuh</a></li>
 </ul>
 </div><!-- contents -->
 <!-- HTML footer for doxygen 1.8.3.1-->
 <!-- start footer part -->
 <hr class="footer"/><address class="footer"><small>
-Generated on Wed May 1 2013 06:01:34 for CUB by &#160;<a href="http://www.doxygen.org/index.html">
+Generated on Tue May 7 2013 16:30:31 for CUB by &#160;<a href="http://www.doxygen.org/index.html">
 <img class="footer" src="doxygen.png" alt="doxygen"/>
 </a> 1.8.3.1
 <br>

@@ -5,7 +5,7 @@
 <meta http-equiv="Content-Type" content="text/xhtml;charset=UTF-8"/>
 <meta http-equiv="X-UA-Compatible" content="IE=9"/>
 <meta name="generator" content="Doxygen 1.8.3.1"/>
-<title>CUB: File Members</title>
+<title>CUB: grid_queue.cuh File Reference</title>
 <link href="tabs.css" rel="stylesheet" type="text/css"/>
 <script type="text/javascript" src="jquery.js"></script>
 <script type="text/javascript" src="dynsections.js"></script>
@@ -73,16 +73,9 @@ var searchBox = new SearchBox("searchBox", "search",false,'Search');
   <div id="navrow2" class="tabs2">
     <ul class="tablist">
       <li><a href="files.html"><span>File&#160;List</span></a></li>
-      <li class="current"><a href="globals.html"><span>File&#160;Members</span></a></li>
+      <li><a href="globals.html"><span>File&#160;Members</span></a></li>
     </ul>
   </div>
-  <div id="navrow3" class="tabs2">
-    <ul class="tablist">
-      <li class="current"><a href="globals.html"><span>All</span></a></li>
-      <li><a href="globals_defs.html"><span>Macros</span></a></li>
-    </ul>
-  </div>
-</div><!-- top -->
 <!-- window showing the filter options -->
 <div id="MSearchSelectWindow"
      onmouseover="return searchBox.OnSearchSelectShow()"
@@ -97,34 +90,40 @@ var searchBox = new SearchBox("searchBox", "search",false,'Search');
 </iframe>
 </div>
 
+<div id="nav-path" class="navpath">
+  <ul>
+<li class="navelem"><a class="el" href="dir_d583f216f1aafe19404e836b0c097ad2.html">cub</a></li><li class="navelem"><a class="el" href="dir_f2530eaff2fd0556614e1cfc33864b65.html">grid</a></li>  </ul>
+</div>
+</div><!-- top -->
+<div class="header">
+  <div class="summary">
+<a href="#nested-classes">Classes</a> &#124;
+<a href="#namespaces">Namespaces</a>  </div>
+  <div class="headertitle">
+<div class="title">grid_queue.cuh File Reference</div>  </div>
+</div><!--header-->
 <div class="contents">
-<div class="textblock">Here is a list of all documented file members with links to the documentation:</div><ul>
-<li>CUB_DEFINE_DETECT_NESTED_TYPE
-: <a class="el" href="group___util_module.html#ga84bf1a8ed872e12577935eb28feca420">util_type.cuh</a>
-</li>
-<li>CUB_DESTRUCTOR
-: <a class="el" href="group___util_module.html#ga756ebe2b0566abfdfcd3c13fe7d1e9c6">util_arch.cuh</a>
-</li>
-<li>CUB_PTX_ARCH
-: <a class="el" href="group___util_module.html#ga76769ce380739b38e0bd00f57e0dbe4f">util_arch.cuh</a>
-</li>
-<li>CUB_RUNTIME_ENABLED
-: <a class="el" href="group___util_module.html#gac029dc29df3c1871ab3b8a38f50904a6">util_arch.cuh</a>
-</li>
-<li>CubDebug
-: <a class="el" href="group___util_module.html#ga84c3a4c178bf6593e0fad2b763606236">util_debug.cuh</a>
-</li>
-<li>CubDebug2
-: <a class="el" href="group___util_module.html#gaf5994e3dce3f85e8fb00fc175303e545">util_debug.cuh</a>
-</li>
-<li>CubDebugExit
-: <a class="el" href="group___util_module.html#ga26211db894893b3cec946e4e537536f8">util_debug.cuh</a>
-</li>
-<li>CubLog
-: <a class="el" href="group___util_module.html#ga6788287a780dc10c443aa1ab5ae9f0db">util_debug.cuh</a>
-</li>
-</ul>
-</div><!-- contents -->
+<div class="textblock"><code>#include &quot;../util_namespace.cuh&quot;</code><br/>
+<code>#include &quot;../util_macro.cuh&quot;</code><br/>
+<code>#include &quot;<a class="el" href="util__debug_8cuh.html">../util_debug.cuh</a>&quot;</code><br/>
+<code>#include &quot;<a class="el" href="util__arch_8cuh.html">../util_arch.cuh</a>&quot;</code><br/>
+<code>#include &quot;../util_allocator.cuh&quot;</code><br/>
+</div><table class="memberdecls">
+<tr class="heading"><td colspan="2"><h2 class="groupheader"><a name="nested-classes"></a>
+Classes</h2></td></tr>
+<tr class="memitem:"><td class="memItemLeft" align="right" valign="top">class &#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classcub_1_1_grid_queue.html">cub::GridQueue&lt; SizeT &gt;</a></td></tr>
+<tr class="memdesc:"><td class="mdescLeft">&#160;</td><td class="mdescRight"><a class="el" href="classcub_1_1_grid_queue.html" title="GridQueue is a descriptor utility for dynamic queue management.">GridQueue</a> is a descriptor utility for dynamic queue management.  <a href="classcub_1_1_grid_queue.html#details">More...</a><br/></td></tr>
+<tr class="separator:"><td class="memSeparator" colspan="2">&#160;</td></tr>
+</table><table class="memberdecls">
+<tr class="heading"><td colspan="2"><h2 class="groupheader"><a name="namespaces"></a>
+Namespaces</h2></td></tr>
+<tr class="memitem:namespacecub"><td class="memItemLeft" align="right" valign="top">namespace &#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="namespacecub.html">cub</a></td></tr>
+<tr class="memdesc:namespacecub"><td class="mdescLeft">&#160;</td><td class="mdescRight">Optional outer namespace(s) <br/></td></tr>
+<tr class="separator:"><td class="memSeparator" colspan="2">&#160;</td></tr>
+</table>
+<a name="details" id="details"></a><h2 class="groupheader">Detailed Description</h2>
+<div class="textblock"><p><a class="el" href="classcub_1_1_grid_queue.html" title="GridQueue is a descriptor utility for dynamic queue management.">cub::GridQueue</a> is a descriptor utility for dynamic queue management. </p>
+</div></div><!-- contents -->
 <!-- HTML footer for doxygen 1.8.3.1-->
 <!-- start footer part -->
 <hr class="footer"/><address class="footer"><small>
