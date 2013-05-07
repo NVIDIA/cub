@@ -70,7 +70,7 @@ __global__ void CnpReduce(
 {
     cudaError_t error = cudaSuccess;
 
-#if CUB_CNP_ENABLED
+#ifdef CUB_RUNTIME_ENABLED
     for (int i = 0; i < iterations; ++i)
     {
         error = DeviceReduce::Reduce(d_in, d_out, num_items, reduction_op, 0, STREAM_SYNCHRONOUS);
@@ -310,7 +310,6 @@ int main(int argc, char** argv)
 
     // Quick test
     typedef int T;
-//    typedef unsigned short T;
     Test<T>(num_items, UNIFORM, Sum<T>(), CUB_TYPE_STRING(T));
 
 /*

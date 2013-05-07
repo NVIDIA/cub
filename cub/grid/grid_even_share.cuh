@@ -26,15 +26,11 @@
  *
  ******************************************************************************/
 
-/******************************************************************************
- * Threadblock Work management.
- *
- * A given threadblock may receive one of three different amounts of
- * work: "big", "normal", and "last".  The big workloads are one
- * grain greater than the normal, and the last workload
- * does the extra work.
- *
- ******************************************************************************/
+/**
+ * \file
+ * cub::GridEvenShare is a descriptor utility for distributing input among CUDA threadblocks in an "even-share" fashion.  Each threadblock gets roughly the same number of fixed-size work units (grains).
+ */
+
 
 #pragma once
 
@@ -56,7 +52,7 @@ namespace cub {
 
 
 /**
- * \brief A descriptor utility for distributing input among CUDA threadblocks in an "even-share" fashion.  Each threadblock gets roughly the same number of fixed-size work units (grains).
+ * \brief GridEvenShare is a descriptor utility for distributing input among CUDA threadblocks in an "even-share" fashion.  Each threadblock gets roughly the same number of fixed-size work units (grains).
  *
  * \par Overview
  * GridEvenShare indicates which sections of input are to be mapped onto which threadblocks.

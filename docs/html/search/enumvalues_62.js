@@ -1,7 +1,7 @@
 var searchData=
 [
-  ['block_5fbyte_5fhisto_5fatomic',['BLOCK_BYTE_HISTO_ATOMIC',['../namespacecub.html#a0f61554b5c901fcc01adb8af3d9aaccaa0c3b7f30e0f0738bf508fdbdbe650f46',1,'cub']]],
-  ['block_5fbyte_5fhisto_5fsort',['BLOCK_BYTE_HISTO_SORT',['../namespacecub.html#a0f61554b5c901fcc01adb8af3d9aaccaa5ca4cd67fcb7cc2a2e5fad154828f48d',1,'cub']]],
+  ['block_5fhisto_5f256_5fatomic',['BLOCK_HISTO_256_ATOMIC',['../namespacecub.html#a0f61554b5c901fcc01adb8af3d9aaccaa67faf22d4ff128547b2bc379efc9b99e',1,'cub']]],
+  ['block_5fhisto_5f256_5fsort',['BLOCK_HISTO_256_SORT',['../namespacecub.html#a0f61554b5c901fcc01adb8af3d9aaccaad00d3bfb0c22bb57cfb9700ff638a0d8',1,'cub']]],
   ['block_5fload_5fdirect',['BLOCK_LOAD_DIRECT',['../namespacecub.html#a70f1d3c7536d858d49b896e937d25290a2d4d8900d7e697e9dac4062e97d3d835',1,'cub']]],
   ['block_5fload_5fstriped',['BLOCK_LOAD_STRIPED',['../namespacecub.html#a70f1d3c7536d858d49b896e937d25290a2656cd687526977aa60f925d1f0ca86f',1,'cub']]],
   ['block_5fload_5ftranspose',['BLOCK_LOAD_TRANSPOSE',['../namespacecub.html#a70f1d3c7536d858d49b896e937d25290acd94f285472e8f7c883a7407f6f4efc4',1,'cub']]],
