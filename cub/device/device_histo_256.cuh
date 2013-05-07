@@ -37,7 +37,7 @@
 #include <stdio.h>
 #include <iterator>
 
-#include "tiles/tiles_histo_256.cuh"
+#include "persistent_block/persistent_block_histo_256.cuh"
 #include "../block/block_load.cuh"
 #include "../thread/thread_reduce.cuh"
 #include "../util_allocator.cuh"
@@ -82,13 +82,13 @@ __global__ void InitHisto256Kernel(
  * Multi-block histogram kernel entry point.  Computes privatized histograms, one per thread block.
  */
 template <
-    typename                                        TilesHisto256Policy,    ///< Tuning policy for cub::TilesHisto256 abstraction
+    typename                                        PersistentBlockHisto256Policy,    ///< Tuning policy for cub::PersistentBlockHisto256 abstraction
     int                                             CHANNELS,                   ///< Number of channels interleaved in the input data (may be greater than the number of channels being actively histogrammed)
     int                                             ACTIVE_CHANNELS,            ///< Number of channels actively being histogrammed
     typename                                        InputIteratorRA,            ///< The input iterator type (may be a simple pointer type).  Must have a value type that is assignable to <tt>unsigned char</tt>
     typename                                        HistoCounter,               ///< Integral type for counting sample occurrences per histogram bin
     typename                                        SizeT>                      ///< Integral type used for global array indexing
-__launch_bounds__ (int(TilesHisto256Policy::BLOCK_THREADS), TilesHisto256Policy::SM_OCCUPANCY)
+__launch_bounds__ (int(PersistentBlockHisto256Policy::BLOCK_THREADS), PersistentBlockHisto256Policy::SM_OCCUPANCY)
 __global__ void MultiBlockHisto256Kernel(
     InputIteratorRA                                 d_samples,                  ///< [in] Array of sample data. (Channels, if any, are interleaved in "AOS" format)
     ArrayWrapper<HistoCounter*, ACTIVE_CHANNELS>    d_out_histograms,           ///< [out] Histogram counter data having logical dimensions <tt>HistoCounter[ACTIVE_CHANNELS][gridDim.x][256]</tt>
@@ -99,23 +99,23 @@ __global__ void MultiBlockHisto256Kernel(
     // Constants
     enum
     {
-        BLOCK_THREADS       = TilesHisto256Policy::BLOCK_THREADS,
-        ITEMS_PER_THREAD    = TilesHisto256Policy::ITEMS_PER_THREAD,
+        BLOCK_THREADS       = PersistentBlockHisto256Policy::BLOCK_THREADS,
+        ITEMS_PER_THREAD    = PersistentBlockHisto256Policy::ITEMS_PER_THREAD,
         TILE_SIZE           = BLOCK_THREADS * ITEMS_PER_THREAD,
     };
 
     // Thread block type for compositing input tiles
-    typedef TilesHisto256<TilesHisto256Policy, CHANNELS, ACTIVE_CHANNELS, InputIteratorRA, HistoCounter, SizeT> TilesHisto256T;
+    typedef PersistentBlockHisto256<PersistentBlockHisto256Policy, CHANNELS, ACTIVE_CHANNELS, InputIteratorRA, HistoCounter, SizeT> PersistentBlockHisto256T;
 
-    // Shared memory for TilesHisto256
-    __shared__ typename TilesHisto256T::SmemStorage smem_storage;
+    // Shared memory for PersistentBlockHisto256
+    __shared__ typename PersistentBlockHisto256T::SmemStorage smem_storage;
 
     // Thread block instance
-    TilesHisto256T tiles(smem_storage, d_samples, d_out_histograms.array);
+    PersistentBlockHisto256T tiles(smem_storage, d_samples, d_out_histograms.array);
 
     // Consume tiles using thread block instance
     int dummy_result;
-    GridMapping<TilesHisto256Policy::GRID_MAPPING>::BlockConsumeTiles(
+    GridMapping<PersistentBlockHisto256Policy::GRID_MAPPING>::ConsumeTiles(
         tiles, num_samples, even_share, queue, dummy_result);
 }
 
@@ -172,27 +172,27 @@ struct DeviceHisto256
 #ifndef DOXYGEN_SHOULD_SKIP_THIS    // Do not document
 
 
-    /// Generic structure for encapsulating dispatch properties.  Mirrors the constants within TilesHisto256Policy.
+    /// Generic structure for encapsulating dispatch properties.  Mirrors the constants within PersistentBlockHisto256Policy.
     struct KernelDispachParams
     {
         // Policy fields
         int                         block_threads;
         int                         items_per_thread;
-        TilesHisto256Algorithm  block_algorithm;
+        PersistentBlockHisto256Algorithm  block_algorithm;
         GridMappingStrategy         grid_mapping;
         int                         subscription_factor;
 
         // Derived fields
         int                         tile_size;
 
-        template <typename TilesHisto256Policy>
+        template <typename PersistentBlockHisto256Policy>
         __host__ __device__ __forceinline__
         void Init(int subscription_factor = 1)
         {
-            block_threads               = TilesHisto256Policy::BLOCK_THREADS;
-            items_per_thread            = TilesHisto256Policy::ITEMS_PER_THREAD;
-            block_algorithm             = TilesHisto256Policy::GRID_ALGORITHM;
-            grid_mapping                = TilesHisto256Policy::GRID_MAPPING;
+            block_threads               = PersistentBlockHisto256Policy::BLOCK_THREADS;
+            items_per_thread            = PersistentBlockHisto256Policy::ITEMS_PER_THREAD;
+            block_algorithm             = PersistentBlockHisto256Policy::GRID_ALGORITHM;
+            grid_mapping                = PersistentBlockHisto256Policy::GRID_MAPPING;
             this->subscription_factor   = subscription_factor;
 
             tile_size                   = block_threads * items_per_thread;
@@ -216,15 +216,15 @@ struct DeviceHisto256
     template <
         int                         CHANNELS,
         int                         ACTIVE_CHANNELS,
-        TilesHisto256Algorithm      GRID_ALGORITHM,
+        PersistentBlockHisto256Algorithm      GRID_ALGORITHM,
         int                         ARCH>
     struct TunedPolicies;
 
     /// SM35 tune
-    template <int CHANNELS, int ACTIVE_CHANNELS, TilesHisto256Algorithm GRID_ALGORITHM>
+    template <int CHANNELS, int ACTIVE_CHANNELS, PersistentBlockHisto256Algorithm GRID_ALGORITHM>
     struct TunedPolicies<CHANNELS, ACTIVE_CHANNELS, GRID_ALGORITHM, 350>
     {
-        typedef TilesHisto256Policy<
+        typedef PersistentBlockHisto256Policy<
             (GRID_ALGORITHM == GRID_HISTO_256_SORT) ? 128 : 256,
             (GRID_ALGORITHM == GRID_HISTO_256_SORT) ? 12 : (30 / ACTIVE_CHANNELS),
             GRID_ALGORITHM,
@@ -234,10 +234,10 @@ struct DeviceHisto256
     };
 
     /// SM30 tune
-    template <int CHANNELS, int ACTIVE_CHANNELS, TilesHisto256Algorithm GRID_ALGORITHM>
+    template <int CHANNELS, int ACTIVE_CHANNELS, PersistentBlockHisto256Algorithm GRID_ALGORITHM>
     struct TunedPolicies<CHANNELS, ACTIVE_CHANNELS, GRID_ALGORITHM, 300>
     {
-        typedef TilesHisto256Policy<
+        typedef PersistentBlockHisto256Policy<
             128,
             (GRID_ALGORITHM == GRID_HISTO_256_SORT) ? 20 : (22 / ACTIVE_CHANNELS),
             GRID_ALGORITHM,
@@ -247,10 +247,10 @@ struct DeviceHisto256
     };
 
     /// SM20 tune
-    template <int CHANNELS, int ACTIVE_CHANNELS, TilesHisto256Algorithm GRID_ALGORITHM>
+    template <int CHANNELS, int ACTIVE_CHANNELS, PersistentBlockHisto256Algorithm GRID_ALGORITHM>
     struct TunedPolicies<CHANNELS, ACTIVE_CHANNELS, GRID_ALGORITHM, 200>
     {
-        typedef TilesHisto256Policy<
+        typedef PersistentBlockHisto256Policy<
             128,
             (GRID_ALGORITHM == GRID_HISTO_256_SORT) ? 21 : (23 / ACTIVE_CHANNELS),
             GRID_ALGORITHM,
@@ -260,10 +260,10 @@ struct DeviceHisto256
     };
 
     /// SM10 tune
-    template <int CHANNELS, int ACTIVE_CHANNELS, TilesHisto256Algorithm GRID_ALGORITHM>
+    template <int CHANNELS, int ACTIVE_CHANNELS, PersistentBlockHisto256Algorithm GRID_ALGORITHM>
     struct TunedPolicies<CHANNELS, ACTIVE_CHANNELS, GRID_ALGORITHM, 100>
     {
-        typedef TilesHisto256Policy<
+        typedef PersistentBlockHisto256Policy<
             128, 
             7, 
             GRID_HISTO_256_SORT,        // (use sort regardless because atomics are perf-useless)
@@ -277,7 +277,7 @@ struct DeviceHisto256
     template <
         int                         CHANNELS,
         int                         ACTIVE_CHANNELS,
-        TilesHisto256Algorithm      GRID_ALGORITHM>
+        PersistentBlockHisto256Algorithm      GRID_ALGORITHM>
     struct PtxDefaultPolicies
     {
         static const int PTX_TUNE_ARCH =   (CUB_PTX_ARCH >= 350) ?
@@ -354,7 +354,7 @@ struct DeviceHisto256
         bool                            stream_synchronous  = false,                        ///< [in] <b>[optional]</b> Whether or not to synchronize the stream after every kernel launch to check for errors.  Default is \p false.
         DeviceAllocator                 *device_allocator   = DefaultDeviceAllocator())     ///< [in] <b>[optional]</b> Allocator for allocating and freeing device memory.  Default is provided by DefaultDeviceAllocator.
     {
-    #if !CUB_CNP_ENABLED
+    #ifndef CUB_RUNTIME_ENABLED
 
         // Kernel launch not supported from this device
         return CubDebug(cudaErrorInvalidConfiguration);
@@ -546,14 +546,14 @@ struct DeviceHisto256
     /**
      * \brief Computes a 256-bin device-wide histogram
      *
-     * \tparam GRID_ALGORITHM      cub::TilesHisto256Algorithm enumerator specifying the underlying algorithm to use
+     * \tparam GRID_ALGORITHM      cub::PersistentBlockHisto256Algorithm enumerator specifying the underlying algorithm to use
      * \tparam CHANNELS             Number of channels interleaved in the input data (may be greater than the number of channels being actively histogrammed)
      * \tparam ACTIVE_CHANNELS      <b>[inferred]</b> Number of channels actively being histogrammed
      * \tparam InputIteratorRA      <b>[inferred]</b> The random-access iterator type for input (may be a simple pointer type).  Must have a value type that is assignable to <tt>unsigned char</tt>
      * \tparam HistoCounter         <b>[inferred]</b> Integral type for counting sample occurrences per histogram bin
      */
     template <
-        TilesHisto256Algorithm  GRID_ALGORITHM,
+        PersistentBlockHisto256Algorithm  GRID_ALGORITHM,
         int                         CHANNELS,                                           ///< Number of channels interleaved in the input data (may be greater than the number of channels being actively histogrammed)
         int                         ACTIVE_CHANNELS,                                    ///< Number of channels actively being histogrammed
         typename                    InputIteratorRA,

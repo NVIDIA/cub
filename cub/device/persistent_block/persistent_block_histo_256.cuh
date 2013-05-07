@@ -28,7 +28,7 @@
 
 /**
  * \file
- * cub::TilesHisto256 implements a stateful abstraction of CUDA thread blocks for histogramming multiple tiles as part of device-wide 256-bin histogram.
+ * cub::PersistentBlockHisto256 implements a stateful abstraction of CUDA thread blocks for histogramming multiple tiles as part of device-wide 256-bin histogram.
  */
 
 #pragma once
@@ -59,9 +59,9 @@ namespace cub {
 
 
 /**
- * \brief TilesHisto256Algorithm enumerates alternative algorithms for the parallel construction of 8b histograms.
+ * \brief PersistentBlockHisto256Algorithm enumerates alternative algorithms for the parallel construction of 8b histograms.
  */
-enum TilesHisto256Algorithm
+enum PersistentBlockHisto256Algorithm
 {
 
     /**
@@ -115,15 +115,15 @@ enum TilesHisto256Algorithm
  ******************************************************************************/
 
 /**
- * Tuning policy for TilesHisto256
+ * Tuning policy for PersistentBlockHisto256
  */
 template <
     int                         _BLOCK_THREADS,
     int                         _ITEMS_PER_THREAD,
-    TilesHisto256Algorithm  _GRID_ALGORITHM,
+    PersistentBlockHisto256Algorithm  _GRID_ALGORITHM,
     GridMappingStrategy         _GRID_MAPPING,
     int                         _SM_OCCUPANCY>
-struct TilesHisto256Policy
+struct PersistentBlockHisto256Policy
 {
     enum
     {
@@ -132,41 +132,41 @@ struct TilesHisto256Policy
         SM_OCCUPANCY        = _SM_OCCUPANCY,
     };
 
-    static const TilesHisto256Algorithm     GRID_ALGORITHM      = _GRID_ALGORITHM;
+    static const PersistentBlockHisto256Algorithm     GRID_ALGORITHM      = _GRID_ALGORITHM;
     static const GridMappingStrategy            GRID_MAPPING        = _GRID_MAPPING;
 };
 
 
 
 /******************************************************************************
- * TilesHisto256
+ * PersistentBlockHisto256
  ******************************************************************************/
 
 /**
  * \brief implements a stateful abstraction of CUDA thread blocks for histogramming multiple tiles as part of device-wide 256-bin histogram.
  */
 template <
-    typename                TilesHisto256Policy,                                        ///< Tuning policy
+    typename                PersistentBlockHisto256Policy,                                        ///< Tuning policy
     int                     CHANNELS,                                                       ///< Number of channels interleaved in the input data (may be greater than the number of active channels being histogrammed)
     int                     ACTIVE_CHANNELS,                                                ///< Number of channels actively being histogrammed
     typename                InputIteratorRA,                                                ///< The input iterator type (may be a simple pointer type).  Must have a value type that is assignable to <tt>unsigned char</tt>
     typename                HistoCounter,                                                   ///< Integral type for counting sample occurrences per histogram bin
     typename                SizeT,                                                          ///< Integer type for offsets
-    TilesHisto256Algorithm  GRID_ALGORITHM = TilesHisto256Policy::GRID_ALGORITHM>
-struct TilesHisto256;
+    PersistentBlockHisto256Algorithm  GRID_ALGORITHM = PersistentBlockHisto256Policy::GRID_ALGORITHM>
+struct PersistentBlockHisto256;
 
 
 /**
  * Specialized for GRID_HISTO_256_GLOBAL_ATOMIC
  */
 template <
-    typename                TilesHisto256Policy,    ///< Tuning policy
+    typename                PersistentBlockHisto256Policy,    ///< Tuning policy
     int                     CHANNELS,                   ///< Number of channels interleaved in the input data (may be greater than the number of active channels being histogrammed)
     int                     ACTIVE_CHANNELS,            ///< Number of channels actively being histogrammed
     typename                InputIteratorRA,            ///< The input iterator type (may be a simple pointer type).  Must have a value type that is assignable to <tt>unsigned char</tt>
     typename                HistoCounter,               ///< Integral type for counting sample occurrences per histogram bin
     typename                SizeT>                      ///< Integer type for offsets
-struct TilesHisto256<TilesHisto256Policy, CHANNELS, ACTIVE_CHANNELS, InputIteratorRA, HistoCounter, SizeT, GRID_HISTO_256_GLOBAL_ATOMIC>
+struct PersistentBlockHisto256<PersistentBlockHisto256Policy, CHANNELS, ACTIVE_CHANNELS, InputIteratorRA, HistoCounter, SizeT, GRID_HISTO_256_GLOBAL_ATOMIC>
 {
     //---------------------------------------------------------------------
     // Types and constants
@@ -175,8 +175,8 @@ struct TilesHisto256<TilesHisto256Policy, CHANNELS, ACTIVE_CHANNELS, InputIterat
     // Constants
     enum
     {
-        BLOCK_THREADS       = TilesHisto256Policy::BLOCK_THREADS,
-        ITEMS_PER_THREAD    = TilesHisto256Policy::ITEMS_PER_THREAD,
+        BLOCK_THREADS       = PersistentBlockHisto256Policy::BLOCK_THREADS,
+        ITEMS_PER_THREAD    = PersistentBlockHisto256Policy::ITEMS_PER_THREAD,
         TILE_CHANNEL_ITEMS  = BLOCK_THREADS * ITEMS_PER_THREAD,
         TILE_ITEMS          = TILE_CHANNEL_ITEMS * CHANNELS,
     };
@@ -206,7 +206,7 @@ struct TilesHisto256<TilesHisto256Policy, CHANNELS, ACTIVE_CHANNELS, InputIterat
     /**
      * Constructor
      */
-    __device__ __forceinline__ TilesHisto256(
+    __device__ __forceinline__ PersistentBlockHisto256(
         SmemStorage         &smem_storage,                                  ///< Reference to smem_storage
         InputIteratorRA     d_in,                                           ///< Input data to reduce
         HistoCounter*       (&d_out_histograms)[ACTIVE_CHANNELS]) :         ///< Reference to output histograms
@@ -307,13 +307,13 @@ struct TilesHisto256<TilesHisto256Policy, CHANNELS, ACTIVE_CHANNELS, InputIterat
  * Specialized for GRID_HISTO_256_SHARED_ATOMIC
  */
 template <
-    typename                TilesHisto256Policy,    ///< Tuning policy
+    typename                PersistentBlockHisto256Policy,    ///< Tuning policy
     int                     CHANNELS,                   ///< Number of channels interleaved in the input data (may be greater than the number of active channels being histogrammed)
     int                     ACTIVE_CHANNELS,            ///< Number of channels actively being histogrammed
     typename                InputIteratorRA,            ///< The input iterator type (may be a simple pointer type).  Must have a value type that is assignable to <tt>unsigned char</tt>
     typename                HistoCounter,               ///< Integral type for counting sample occurrences per histogram bin
     typename                SizeT>                      ///< Integer type for offsets
-struct TilesHisto256<TilesHisto256Policy, CHANNELS, ACTIVE_CHANNELS, InputIteratorRA, HistoCounter, SizeT, GRID_HISTO_256_SHARED_ATOMIC>
+struct PersistentBlockHisto256<PersistentBlockHisto256Policy, CHANNELS, ACTIVE_CHANNELS, InputIteratorRA, HistoCounter, SizeT, GRID_HISTO_256_SHARED_ATOMIC>
 {
     //---------------------------------------------------------------------
     // Types and constants
@@ -322,8 +322,8 @@ struct TilesHisto256<TilesHisto256Policy, CHANNELS, ACTIVE_CHANNELS, InputIterat
     // Constants
     enum
     {
-        BLOCK_THREADS       = TilesHisto256Policy::BLOCK_THREADS,
-        ITEMS_PER_THREAD    = TilesHisto256Policy::ITEMS_PER_THREAD,
+        BLOCK_THREADS       = PersistentBlockHisto256Policy::BLOCK_THREADS,
+        ITEMS_PER_THREAD    = PersistentBlockHisto256Policy::ITEMS_PER_THREAD,
         TILE_CHANNEL_ITEMS  = BLOCK_THREADS * ITEMS_PER_THREAD,
         TILE_ITEMS          = TILE_CHANNEL_ITEMS * CHANNELS,
     };
@@ -356,7 +356,7 @@ struct TilesHisto256<TilesHisto256Policy, CHANNELS, ACTIVE_CHANNELS, InputIterat
     /**
      * Constructor
      */
-    __device__ __forceinline__ TilesHisto256(
+    __device__ __forceinline__ PersistentBlockHisto256(
         SmemStorage         &smem_storage,                                  ///< Reference to smem_storage
         InputIteratorRA     d_in,                                           ///< Input data to reduce
         HistoCounter*       (&d_out_histograms)[ACTIVE_CHANNELS]) :         ///< Reference to output histograms
@@ -495,13 +495,13 @@ struct TilesHisto256<TilesHisto256Policy, CHANNELS, ACTIVE_CHANNELS, InputIterat
  * Specialized for GRID_HISTO_256_SORT
  */
 template <
-    typename                TilesHisto256Policy,    ///< Tuning policy
+    typename                PersistentBlockHisto256Policy,    ///< Tuning policy
     int                     CHANNELS,                   ///< Number of channels interleaved in the input data (may be greater than the number of active channels being histogrammed)
     int                     ACTIVE_CHANNELS,            ///< Number of channels actively being histogrammed
     typename                InputIteratorRA,            ///< The input iterator type (may be a simple pointer type).  Must have a value type that is assignable to <tt>unsigned char</tt>
     typename                HistoCounter,               ///< Integral type for counting sample occurrences per histogram bin
     typename                SizeT>                      ///< Integer type for offsets
-struct TilesHisto256<TilesHisto256Policy, CHANNELS, ACTIVE_CHANNELS, InputIteratorRA, HistoCounter, SizeT, GRID_HISTO_256_SORT>
+struct PersistentBlockHisto256<PersistentBlockHisto256Policy, CHANNELS, ACTIVE_CHANNELS, InputIteratorRA, HistoCounter, SizeT, GRID_HISTO_256_SORT>
 {
     //---------------------------------------------------------------------
     // Types and constants
@@ -510,8 +510,8 @@ struct TilesHisto256<TilesHisto256Policy, CHANNELS, ACTIVE_CHANNELS, InputIterat
     // Constants
     enum
     {
-        BLOCK_THREADS       = TilesHisto256Policy::BLOCK_THREADS,
-        ITEMS_PER_THREAD    = TilesHisto256Policy::ITEMS_PER_THREAD,
+        BLOCK_THREADS       = PersistentBlockHisto256Policy::BLOCK_THREADS,
+        ITEMS_PER_THREAD    = PersistentBlockHisto256Policy::ITEMS_PER_THREAD,
         TILE_CHANNEL_ITEMS  = BLOCK_THREADS * ITEMS_PER_THREAD,
         TILE_ITEMS          = TILE_CHANNEL_ITEMS * CHANNELS,
 
@@ -594,7 +594,7 @@ struct TilesHisto256<TilesHisto256Policy, CHANNELS, ACTIVE_CHANNELS, InputIterat
     /**
      * Constructor
      */
-    __device__ __forceinline__ TilesHisto256(
+    __device__ __forceinline__ PersistentBlockHisto256(
         SmemStorage         &smem_storage,                                  ///< Reference to smem_storage
         InputIteratorRA     d_in,                                           ///< Input data to reduce
         HistoCounter*       (&d_out_histograms)[ACTIVE_CHANNELS]) :         ///< Reference to output histograms
@@ -732,15 +732,15 @@ struct TilesHisto256<TilesHisto256Policy, CHANNELS, ACTIVE_CHANNELS, InputIterat
          * Process one channel within a tile.
          */
         static __device__ __forceinline__ void ConsumeTileChannel(
-            TilesHisto256   *tiles_histo,
+            PersistentBlockHisto256   *persistent_block_histo,
             SizeT           block_offset,
             int             num_valid)
         {
             __syncthreads();
 
-            tiles_histo->ConsumeTileChannel(CHANNEL, block_offset, num_valid);
+            persistent_block_histo->ConsumeTileChannel(CHANNEL, block_offset, num_valid);
 
-            IterateChannels<CHANNEL + 1, END>::ConsumeTileChannel(tiles_histo, block_offset, num_valid);
+            IterateChannels<CHANNEL + 1, END>::ConsumeTileChannel(persistent_block_histo, block_offset, num_valid);
         }
     };
 
@@ -751,7 +751,7 @@ struct TilesHisto256<TilesHisto256Policy, CHANNELS, ACTIVE_CHANNELS, InputIterat
     template <int END>
     struct IterateChannels<END, END>
     {
-        static __device__ __forceinline__ void ConsumeTileChannel(TilesHisto256 *tiles_histo, SizeT block_offset, int num_valid) {}
+        static __device__ __forceinline__ void ConsumeTileChannel(PersistentBlockHisto256 *persistent_block_histo, SizeT block_offset, int num_valid) {}
     };
 
 
