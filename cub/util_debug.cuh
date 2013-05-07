@@ -75,7 +75,7 @@ __host__ __device__ __forceinline__ cudaError_t Debug(
     if (error && !silent)
     {
     #if (CUB_PTX_ARCH == 0)
-        printf("CUDA error %d [%s, %d]: %s\n", error, filename, line, cudaGetErrorString(error));
+        fprintf(stderr, "CUDA error %d [%s, %d]: %s\n", error, filename, line, cudaGetErrorString(error));
         fflush(stderr);
     #elif (CUB_PTX_ARCH >= 200)
         printf("CUDA error %d [block %d, thread %d, %s, %d]\n", error, blockIdx.x, threadIdx.x, filename, line);

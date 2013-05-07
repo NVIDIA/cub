@@ -37,7 +37,7 @@
 #include <stdio.h>
 #include <iterator>
 
-#include "grid_block/grid_block_histo_256.cuh"
+#include "tiles/tiles_histo_256.cuh"
 #include "../block/block_load.cuh"
 #include "../thread/thread_reduce.cuh"
 #include "../util_allocator.cuh"
@@ -82,13 +82,13 @@ __global__ void InitHisto256Kernel(
  * Multi-block histogram kernel entry point.  Computes privatized histograms, one per thread block.
  */
 template <
-    typename                                        GridBlockHisto256Policy,    ///< Tuning policy for cub::GridBlockHisto256 abstraction
+    typename                                        TilesHisto256Policy,    ///< Tuning policy for cub::TilesHisto256 abstraction
     int                                             CHANNELS,                   ///< Number of channels interleaved in the input data (may be greater than the number of channels being actively histogrammed)
     int                                             ACTIVE_CHANNELS,            ///< Number of channels actively being histogrammed
     typename                                        InputIteratorRA,            ///< The input iterator type (may be a simple pointer type).  Must have a value type that is assignable to <tt>unsigned char</tt>
     typename                                        HistoCounter,               ///< Integral type for counting sample occurrences per histogram bin
     typename                                        SizeT>                      ///< Integral type used for global array indexing
-__launch_bounds__ (GridBlockHisto256Policy::BLOCK_THREADS, GridBlockHisto256Policy::SM_OCCUPANCY)
+__launch_bounds__ (int(TilesHisto256Policy::BLOCK_THREADS), TilesHisto256Policy::SM_OCCUPANCY)
 __global__ void MultiBlockHisto256Kernel(
     InputIteratorRA                                 d_samples,                  ///< [in] Array of sample data. (Channels, if any, are interleaved in "AOS" format)
     ArrayWrapper<HistoCounter*, ACTIVE_CHANNELS>    d_out_histograms,           ///< [out] Histogram counter data having logical dimensions <tt>HistoCounter[ACTIVE_CHANNELS][gridDim.x][256]</tt>
@@ -99,24 +99,24 @@ __global__ void MultiBlockHisto256Kernel(
     // Constants
     enum
     {
-        BLOCK_THREADS       = GridBlockHisto256Policy::BLOCK_THREADS,
-        ITEMS_PER_THREAD    = GridBlockHisto256Policy::ITEMS_PER_THREAD,
+        BLOCK_THREADS       = TilesHisto256Policy::BLOCK_THREADS,
+        ITEMS_PER_THREAD    = TilesHisto256Policy::ITEMS_PER_THREAD,
         TILE_SIZE           = BLOCK_THREADS * ITEMS_PER_THREAD,
     };
 
     // Thread block type for compositing input tiles
-    typedef GridBlockHisto256<GridBlockHisto256Policy, CHANNELS, ACTIVE_CHANNELS, InputIteratorRA, HistoCounter, SizeT> GridBlockHisto256T;
+    typedef TilesHisto256<TilesHisto256Policy, CHANNELS, ACTIVE_CHANNELS, InputIteratorRA, HistoCounter, SizeT> TilesHisto256T;
 
-    // Shared memory for GridBlockHisto256
-    __shared__ typename GridBlockHisto256T::SmemStorage smem_storage;
+    // Shared memory for TilesHisto256
+    __shared__ typename TilesHisto256T::SmemStorage smem_storage;
 
     // Thread block instance
-    GridBlockHisto256T grid_block(smem_storage, d_samples, d_out_histograms.array);
+    TilesHisto256T tiles(smem_storage, d_samples, d_out_histograms.array);
 
     // Consume tiles using thread block instance
     int dummy_result;
-    GridMapping<GridBlockHisto256Policy::GRID_MAPPING>::BlockConsumeTiles(
-        grid_block, num_samples, even_share, queue, dummy_result);
+    GridMapping<TilesHisto256Policy::GRID_MAPPING>::BlockConsumeTiles(
+        tiles, num_samples, even_share, queue, dummy_result);
 }
 
 
@@ -138,7 +138,9 @@ __global__ void AggregateHisto256Kernel(
     int block_offset = blockIdx.x * (num_threadblocks * 256);
     int block_oob = block_offset + (num_threadblocks * 256);
 
+#if CUB_PTX_ARCH >= 200
     #pragma unroll 32
+#endif
     while (block_offset < block_oob)
     {
         bin_aggregate += d_block_histograms_linear[block_offset + threadIdx.x];
@@ -170,27 +172,27 @@ struct DeviceHisto256
 #ifndef DOXYGEN_SHOULD_SKIP_THIS    // Do not document
 
 
-    /// Generic structure for encapsulating dispatch properties.  Mirrors the constants within GridBlockHisto256Policy.
+    /// Generic structure for encapsulating dispatch properties.  Mirrors the constants within TilesHisto256Policy.
     struct KernelDispachParams
     {
         // Policy fields
         int                         block_threads;
         int                         items_per_thread;
-        GridBlockHisto256Algorithm  block_algorithm;
+        TilesHisto256Algorithm  block_algorithm;
         GridMappingStrategy         grid_mapping;
         int                         subscription_factor;
 
         // Derived fields
         int                         tile_size;
 
-        template <typename GridBlockHisto256Policy>
+        template <typename TilesHisto256Policy>
         __host__ __device__ __forceinline__
         void Init(int subscription_factor = 1)
         {
-            block_threads               = GridBlockHisto256Policy::BLOCK_THREADS;
-            items_per_thread            = GridBlockHisto256Policy::ITEMS_PER_THREAD;
-            block_algorithm             = GridBlockHisto256Policy::GRID_ALGORITHM;
-            grid_mapping                = GridBlockHisto256Policy::GRID_MAPPING;
+            block_threads               = TilesHisto256Policy::BLOCK_THREADS;
+            items_per_thread            = TilesHisto256Policy::ITEMS_PER_THREAD;
+            block_algorithm             = TilesHisto256Policy::GRID_ALGORITHM;
+            grid_mapping                = TilesHisto256Policy::GRID_MAPPING;
             this->subscription_factor   = subscription_factor;
 
             tile_size                   = block_threads * items_per_thread;
@@ -214,15 +216,15 @@ struct DeviceHisto256
     template <
         int                         CHANNELS,
         int                         ACTIVE_CHANNELS,
-        GridBlockHisto256Algorithm      GRID_ALGORITHM,
+        TilesHisto256Algorithm      GRID_ALGORITHM,
         int                         ARCH>
     struct TunedPolicies;
 
     /// SM35 tune
-    template <int CHANNELS, int ACTIVE_CHANNELS, GridBlockHisto256Algorithm GRID_ALGORITHM>
+    template <int CHANNELS, int ACTIVE_CHANNELS, TilesHisto256Algorithm GRID_ALGORITHM>
     struct TunedPolicies<CHANNELS, ACTIVE_CHANNELS, GRID_ALGORITHM, 350>
     {
-        typedef GridBlockHisto256Policy<
+        typedef TilesHisto256Policy<
             (GRID_ALGORITHM == GRID_HISTO_256_SORT) ? 128 : 256,
             (GRID_ALGORITHM == GRID_HISTO_256_SORT) ? 12 : (30 / ACTIVE_CHANNELS),
             GRID_ALGORITHM,
@@ -232,10 +234,10 @@ struct DeviceHisto256
     };
 
     /// SM30 tune
-    template <int CHANNELS, int ACTIVE_CHANNELS, GridBlockHisto256Algorithm GRID_ALGORITHM>
+    template <int CHANNELS, int ACTIVE_CHANNELS, TilesHisto256Algorithm GRID_ALGORITHM>
     struct TunedPolicies<CHANNELS, ACTIVE_CHANNELS, GRID_ALGORITHM, 300>
     {
-        typedef GridBlockHisto256Policy<
+        typedef TilesHisto256Policy<
             128,
             (GRID_ALGORITHM == GRID_HISTO_256_SORT) ? 20 : (22 / ACTIVE_CHANNELS),
             GRID_ALGORITHM,
@@ -245,10 +247,10 @@ struct DeviceHisto256
     };
 
     /// SM20 tune
-    template <int CHANNELS, int ACTIVE_CHANNELS, GridBlockHisto256Algorithm GRID_ALGORITHM>
+    template <int CHANNELS, int ACTIVE_CHANNELS, TilesHisto256Algorithm GRID_ALGORITHM>
     struct TunedPolicies<CHANNELS, ACTIVE_CHANNELS, GRID_ALGORITHM, 200>
     {
-        typedef GridBlockHisto256Policy<
+        typedef TilesHisto256Policy<
             128,
             (GRID_ALGORITHM == GRID_HISTO_256_SORT) ? 21 : (23 / ACTIVE_CHANNELS),
             GRID_ALGORITHM,
@@ -258,10 +260,10 @@ struct DeviceHisto256
     };
 
     /// SM10 tune
-    template <int CHANNELS, int ACTIVE_CHANNELS, GridBlockHisto256Algorithm GRID_ALGORITHM>
+    template <int CHANNELS, int ACTIVE_CHANNELS, TilesHisto256Algorithm GRID_ALGORITHM>
     struct TunedPolicies<CHANNELS, ACTIVE_CHANNELS, GRID_ALGORITHM, 100>
     {
-        typedef GridBlockHisto256Policy<
+        typedef TilesHisto256Policy<
             128, 
             7, 
             GRID_HISTO_256_SORT,        // (use sort regardless because atomics are perf-useless)
@@ -275,7 +277,7 @@ struct DeviceHisto256
     template <
         int                         CHANNELS,
         int                         ACTIVE_CHANNELS,
-        GridBlockHisto256Algorithm      GRID_ALGORITHM>
+        TilesHisto256Algorithm      GRID_ALGORITHM>
     struct PtxDefaultPolicies
     {
         static const int PTX_TUNE_ARCH =   (CUB_PTX_ARCH >= 350) ?
@@ -544,14 +546,14 @@ struct DeviceHisto256
     /**
      * \brief Computes a 256-bin device-wide histogram
      *
-     * \tparam GRID_ALGORITHM      cub::GridBlockHisto256Algorithm enumerator specifying the underlying algorithm to use
+     * \tparam GRID_ALGORITHM      cub::TilesHisto256Algorithm enumerator specifying the underlying algorithm to use
      * \tparam CHANNELS             Number of channels interleaved in the input data (may be greater than the number of channels being actively histogrammed)
      * \tparam ACTIVE_CHANNELS      <b>[inferred]</b> Number of channels actively being histogrammed
      * \tparam InputIteratorRA      <b>[inferred]</b> The random-access iterator type for input (may be a simple pointer type).  Must have a value type that is assignable to <tt>unsigned char</tt>
      * \tparam HistoCounter         <b>[inferred]</b> Integral type for counting sample occurrences per histogram bin
      */
     template <
-        GridBlockHisto256Algorithm  GRID_ALGORITHM,
+        TilesHisto256Algorithm  GRID_ALGORITHM,
         int                         CHANNELS,                                           ///< Number of channels interleaved in the input data (may be greater than the number of channels being actively histogrammed)
         int                         ACTIVE_CHANNELS,                                    ///< Number of channels actively being histogrammed
         typename                    InputIteratorRA,
