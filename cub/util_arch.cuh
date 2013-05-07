@@ -70,10 +70,8 @@ namespace cub {
 
 
 /// Whether or not the source targeted by the active compiler pass is allowed to  invoke device kernels or methods from the CUDA runtime API.
-#if (!defined(__CUDA_ARCH__) || (__CUDA_ARCH__ >= 350))
-#define CUB_CNP_ENABLED 1
-#else
-#define CUB_CNP_ENABLED 0
+#if !defined(CUB_RUNTIME_ENABLED) && (!defined(__CUDA_ARCH__) || (__CUDA_ARCH__ >= 350))
+#define CUB_RUNTIME_ENABLED
 #endif
 
 

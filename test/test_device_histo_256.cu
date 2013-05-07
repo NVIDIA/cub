@@ -35,6 +35,7 @@
 
 #include <stdio.h>
 #include <limits>
+#include <string>
 
 #include <cub/cub.cuh>
 #include "test_util.h"
@@ -46,10 +47,10 @@ using namespace cub;
 // Globals, constants and typedefs
 //---------------------------------------------------------------------
 
-bool    g_verbose       = false;
-int     g_iterations    = 100;
-bool    g_atomic        = false;
-bool    g_verbose_input = false;
+bool                                g_verbose           = false;
+int                                 g_iterations        = 100;
+bool                                g_verbose_input     = false;
+PersistentBlockHisto256Algorithm    g_algorithm         = GRID_HISTO_256_SORT;
     
 
 /**
@@ -89,7 +90,7 @@ __global__ void CnpHisto(
 {
     cudaError_t error = cudaSuccess;
 
-#if CUB_CNP_ENABLED
+#ifdef CUB_RUNTIME_ENABLED
     for (int i = 0; i < iterations; ++i)
     {
         error = DeviceHisto256::SingleChannel(d_samples, d_out, num_samples, reduction_op, 0, STREAM_SYNCHRONOUS);
@@ -202,7 +203,8 @@ void Test(
     int cnp_compare     = 0;
     int total_bins      = ACTIVE_CHANNELS * 256;
 
-    printf("cub::DeviceHisto256 %d %s samples (%dB), %d channels, %d active channels, gen-mode %d\n\n",
+    printf("cub::DeviceHisto256 %s %d %s samples (%dB), %d channels, %d active channels, gen-mode %d\n\n",
+        (g_algorithm == GRID_HISTO_256_SHARED_ATOMIC) ? "satomic" : (g_algorithm == GRID_HISTO_256_GLOBAL_ATOMIC) ? "gatomic" : "sort",
         num_samples,
         type_string,
         (int) sizeof(SampleType),
@@ -238,15 +240,18 @@ void Test(
     }
 
     // Create iterator wrapper for SampleType -> unsigned char conversion
-//    typedef TransformIteratorRA<unsigned char, BinOp, SampleType> BinningIterator;
     typedef TexTransformIteratorRA<unsigned char, BinOp, SampleType> BinningIterator;
     BinningIterator d_sample_itr(d_samples, bin_op);
 
     // Run warmup/correctness iteration
     printf("Host dispatch:\n"); fflush(stdout);
-    if (g_atomic)
+    if (g_algorithm == GRID_HISTO_256_SHARED_ATOMIC)
     {
         CubDebugExit(DeviceHisto256::MultiChannelAtomic<CHANNELS>(d_sample_itr, d_histograms, num_samples, 0, true));
+    }
+    else if (g_algorithm == GRID_HISTO_256_GLOBAL_ATOMIC)
+    {
+        CubDebugExit(DeviceHisto256::MultiChannelGlobalAtomic<CHANNELS>(d_sample_itr, d_histograms, num_samples, 0, true));
     }
     else
     {
@@ -268,13 +273,17 @@ void Test(
     {
         gpu_timer.Start();
 
-        if (g_atomic)
+        if (g_algorithm == GRID_HISTO_256_SHARED_ATOMIC)
         {
-            CubDebugExit(DeviceHisto256::MultiChannelAtomic<CHANNELS>(d_sample_itr, d_histograms, num_samples));
+            CubDebugExit(DeviceHisto256::MultiChannelAtomic<CHANNELS>(d_sample_itr, d_histograms, num_samples, 0));
+        }
+        else if (g_algorithm == GRID_HISTO_256_GLOBAL_ATOMIC)
+        {
+            CubDebugExit(DeviceHisto256::MultiChannelGlobalAtomic<CHANNELS>(d_sample_itr, d_histograms, num_samples, 0));
         }
         else
         {
-            CubDebugExit(DeviceHisto256::MultiChannel<CHANNELS>(d_sample_itr, d_histograms, num_samples));
+            CubDebugExit(DeviceHisto256::MultiChannel<CHANNELS>(d_sample_itr, d_histograms, num_samples, 0));
         }
 
         gpu_timer.Stop();
@@ -297,7 +306,7 @@ void Test(
         printf("\n");
     }
 
-
+/*
     // Evaluate using CUDA nested parallelism
 #if (TEST_CNP == 1)
 
@@ -348,6 +357,7 @@ void Test(
     }
 
 #endif
+*/
 
     // Cleanup
     if (h_samples) delete[] h_samples;
@@ -380,8 +390,15 @@ int main(int argc, char** argv)
     args.GetCmdLineArgument("n", num_samples);          // Total number of samples across all channels
     args.GetCmdLineArgument("i", g_iterations);         // Timing iterations
     g_verbose = args.CheckCmdLineFlag("v");             // Display input/output data
-    g_atomic = args.CheckCmdLineFlag("atomic");         // Use atomic or regular (sorting) algorithm
     bool uniform = args.CheckCmdLineFlag("uniform");    // Random data vs. uniform (homogeneous)
+
+    // Get algorithm type
+    std::string type;
+    args.GetCmdLineArgument("algorithm", type);
+    if (type == std::string("satomic"))
+        g_algorithm = GRID_HISTO_256_SHARED_ATOMIC;
+    else if (type == std::string("gatomic"))
+        g_algorithm = GRID_HISTO_256_GLOBAL_ATOMIC;
 
     // Print usage
     if (args.CheckCmdLineFlag("help"))
@@ -389,7 +406,7 @@ int main(int argc, char** argv)
         printf("%s "
             "[--device=<device-id>] "
             "[--v] "
-            "[--atomic] "
+            "[--algorithm=<sort|satomic|gatomic>] "
             "[--uniform]"
             "[--n=<total number of samples across all channels>]"
             "[--i=<timing iterations>]"
@@ -437,7 +454,6 @@ int main(int argc, char** argv)
         cast_op,
         num_samples,
         CUB_TYPE_STRING(unsigned short));
-
 
     // unsigned int
     printf("\n\n-- UINT32 -------------- \n"); fflush(stdout);
