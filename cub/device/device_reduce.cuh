@@ -90,17 +90,9 @@ __global__ void MultiBlockReduceKernel(
     // Thread block instance
     GridBlockReduceT grid_block(smem_storage, d_in, reduction_op);
 
-    if (GridBlockReducePolicy::GRID_MAPPING == GRID_MAPPING_DYNAMIC)
-    {
-        // Dynamic input distribution
-        BlockConsumeTilesFlagFirst(grid_block, num_items, queue, block_aggregate);
-    }
-    else
-    {
-        // Even-share input distribution
-        even_share.BlockInit();
-        BlockConsumeTilesFlagFirst(grid_block, num_items, even_share, block_aggregate);
-    }
+    // Consume tiles using thread block instance
+    GridMapping<GridBlockReducePolicy::GRID_MAPPING>::BlockConsumeTilesFlagFirst(
+        grid_block, num_items, even_share, queue, block_aggregate);
 
     // Output result
     if (threadIdx.x == 0)
@@ -142,8 +134,7 @@ __global__ void SingleBlockReduceKernel(
     GridBlockReduceT grid_block(smem_storage, d_in, reduction_op);
 
     // Reduce input tiles
-    GridEvenShare<SizeT> even_share(num_items);
-    BlockConsumeTilesFlagFirst(grid_block, num_items, even_share, block_aggregate);
+    BlockConsumeTilesFlagFirst(grid_block, 0, num_items, block_aggregate);
 
     // Output result
     if (threadIdx.x == 0)

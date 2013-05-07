@@ -166,6 +166,7 @@ struct GridBlockReduce
      * accumulated into \p thread_aggregate.
      */
     __device__ __forceinline__ void ConsumeTile(
+        bool    &sync_after,
         SizeT   block_offset,
         int     num_valid,
         bool    first_tile)
@@ -220,6 +221,9 @@ struct GridBlockReduce
                 partial :
                 reduction_op(thread_aggregate, partial);
         }
+
+        // No synchronization needed after tile processing
+        sync_after = false;
     }
 
 

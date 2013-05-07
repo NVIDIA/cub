@@ -88,7 +88,7 @@ template <
     typename                                        InputIteratorRA,            ///< The input iterator type (may be a simple pointer type).  Must have a value type that is assignable to <tt>unsigned char</tt>
     typename                                        HistoCounter,               ///< Integral type for counting sample occurrences per histogram bin
     typename                                        SizeT>                      ///< Integral type used for global array indexing
-__launch_bounds__ (GridBlockHisto256Policy::BLOCK_THREADS)
+__launch_bounds__ (GridBlockHisto256Policy::BLOCK_THREADS, GridBlockHisto256Policy::SM_OCCUPANCY)
 __global__ void MultiBlockHisto256Kernel(
     InputIteratorRA                                 d_samples,                  ///< [in] Array of sample data. (Channels, if any, are interleaved in "AOS" format)
     ArrayWrapper<HistoCounter*, ACTIVE_CHANNELS>    d_out_histograms,           ///< [out] Histogram counter data having logical dimensions <tt>HistoCounter[ACTIVE_CHANNELS][gridDim.x][256]</tt>
@@ -113,18 +113,10 @@ __global__ void MultiBlockHisto256Kernel(
     // Thread block instance
     GridBlockHisto256T grid_block(smem_storage, d_samples, d_out_histograms.array);
 
+    // Consume tiles using thread block instance
     int dummy_result;
-    if (GridBlockHisto256Policy::GRID_MAPPING == GRID_MAPPING_DYNAMIC)
-    {
-        // Dynamic input distribution
-        BlockConsumeTiles(grid_block, num_samples, queue, dummy_result);
-    }
-    else
-    {
-        // Even-share input distribution
-        even_share.BlockInit();
-        BlockConsumeTiles(grid_block, num_samples, even_share, dummy_result);
-    }
+    GridMapping<GridBlockHisto256Policy::GRID_MAPPING>::BlockConsumeTiles(
+        grid_block, num_samples, even_share, queue, dummy_result);
 }
 
 
@@ -234,7 +226,8 @@ struct DeviceHisto256
             (GRID_ALGORITHM == GRID_HISTO_256_SORT) ? 128 : 256,
             (GRID_ALGORITHM == GRID_HISTO_256_SORT) ? 12 : (30 / ACTIVE_CHANNELS),
             GRID_ALGORITHM,
-            (GRID_ALGORITHM == GRID_HISTO_256_SORT) ? GRID_MAPPING_DYNAMIC : GRID_MAPPING_EVEN_SHARE> MultiBlockPolicy;
+            (GRID_ALGORITHM == GRID_HISTO_256_SORT) ? GRID_MAPPING_DYNAMIC : GRID_MAPPING_EVEN_SHARE,
+            (GRID_ALGORITHM == GRID_HISTO_256_SORT) ? 8 : 1> MultiBlockPolicy;
         enum { SUBSCRIPTION_FACTOR = 7 };
     };
 
@@ -246,7 +239,8 @@ struct DeviceHisto256
             128,
             (GRID_ALGORITHM == GRID_HISTO_256_SORT) ? 20 : (22 / ACTIVE_CHANNELS),
             GRID_ALGORITHM,
-            (GRID_ALGORITHM == GRID_HISTO_256_SORT) ? GRID_MAPPING_DYNAMIC : GRID_MAPPING_EVEN_SHARE> MultiBlockPolicy;
+            (GRID_ALGORITHM == GRID_HISTO_256_SORT) ? GRID_MAPPING_DYNAMIC : GRID_MAPPING_EVEN_SHARE,
+            1> MultiBlockPolicy;
         enum { SUBSCRIPTION_FACTOR = 1 };
     };
 
@@ -258,7 +252,8 @@ struct DeviceHisto256
             128,
             (GRID_ALGORITHM == GRID_HISTO_256_SORT) ? 21 : (23 / ACTIVE_CHANNELS),
             GRID_ALGORITHM,
-            GRID_MAPPING_DYNAMIC> MultiBlockPolicy;
+            GRID_MAPPING_DYNAMIC,
+            1> MultiBlockPolicy;
         enum { SUBSCRIPTION_FACTOR = 1 };
     };
 
@@ -269,8 +264,9 @@ struct DeviceHisto256
         typedef GridBlockHisto256Policy<
             128, 
             7, 
-            GRID_ALGORITHM,
-            GRID_MAPPING_DYNAMIC> MultiBlockPolicy;
+            GRID_HISTO_256_SORT,        // (use sort regardless because atomics are perf-useless)
+            GRID_MAPPING_EVEN_SHARE,
+            1> MultiBlockPolicy;
         enum { SUBSCRIPTION_FACTOR = 1 };
     };
 
