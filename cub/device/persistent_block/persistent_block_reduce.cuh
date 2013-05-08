@@ -29,16 +29,12 @@
 /**
  * \file
  * cub::PersistentBlockReduce implements a stateful abstraction of CUDA thread blocks for participating in device-wide reduction.
-
  */
 
 #pragma once
 
 #include <iterator>
 
-#include "../../grid/grid_mapping.cuh"
-#include "../../grid/grid_even_share.cuh"
-#include "../../grid/grid_queue.cuh"
 #include "../../block/block_load.cuh"
 #include "../../block/block_reduce.cuh"
 #include "../../util_vector.cuh"
@@ -78,6 +74,10 @@ struct PersistentBlockReducePolicy
 
 /**
  * \brief PersistentBlockReduce implements a stateful abstraction of CUDA thread blocks for participating in device-wide reduction.
+ *
+ * Each thread reduces only the values it loads. If \p FIRST_TILE, this
+ * partial reduction is stored into \p thread_aggregate.  Otherwise it is
+ * accumulated into \p thread_aggregate.
  */
 template <
     typename PersistentBlockReducePolicy,
@@ -91,9 +91,9 @@ struct PersistentBlockReduce
     // Types and constants
     //---------------------------------------------------------------------
 
-    typedef typename std::iterator_traits<InputIteratorRA>::value_type      T;              // Type of input iterator
-    typedef VectorHelper<T, PersistentBlockReducePolicy::VECTOR_LOAD_LENGTH>      VecHelper;      // Helper type for vectorizing loads of T
-    typedef typename VecHelper::Type                                        VectorT;        // Vector of T
+    typedef typename std::iterator_traits<InputIteratorRA>::value_type          T;              // Type of input iterator
+    typedef VectorHelper<T, PersistentBlockReducePolicy::VECTOR_LOAD_LENGTH>    VecHelper;      // Helper type for vectorizing loads of T
+    typedef typename VecHelper::Type                                            VectorT;        // Vector of T
 
     // Constants
     enum
@@ -145,7 +145,7 @@ struct PersistentBlockReduce
             smem_storage(smem_storage),
             d_in(d_in),
             reduction_op(reduction_op),
-            first_tile_size(TILE_ITEMS),
+            first_tile_size(0),
             input_aligned(CAN_VECTORIZE && ((size_t(d_in) & (sizeof(VectorT) - 1)) == 0)){}
 
 
@@ -159,38 +159,35 @@ struct PersistentBlockReduce
 
 
     /**
-     * Process a single tile.
-     *
-     * Each thread reduces only the values it loads. If \p FIRST_TILE, this
-     * partial reduction is stored into \p thread_aggregate.  Otherwise it is
-     * accumulated into \p thread_aggregate.
+     * Process a single tile of input
      */
     __device__ __forceinline__ void ConsumeTile(
-        bool    &sync_after,
-        SizeT   block_offset,
-        int     num_valid,
-        bool    first_tile)
+        bool    &sync_after,    ///< Whether or not the caller needs to synchronize before repurposing the shared memory used by this instance
+        SizeT   block_offset,   ///< The offset the tile to consume
+        int     num_valid)      ///< The number of valid items in the tile
     {
         if (num_valid < TILE_ITEMS)
         {
-            // Our first tile is a partial tile size
-            if (first_tile) first_tile_size = num_valid;
-
             // Partial tile
             int thread_offset = threadIdx.x;
 
-            if ((first_tile) && (thread_offset < num_valid))
+            if ((first_tile_size == 0) && (thread_offset < num_valid))
             {
+                // Assign thread_aggregate
                 thread_aggregate = ThreadLoad<PersistentBlockReducePolicy::LOAD_MODIFIER>(d_in + block_offset + thread_offset);
                 thread_offset += BLOCK_THREADS;
             }
 
             while (thread_offset < num_valid)
             {
+                // Update thread aggregate
                 T item = ThreadLoad<PersistentBlockReducePolicy::LOAD_MODIFIER>(d_in + block_offset + thread_offset);
                 thread_aggregate = reduction_op(thread_aggregate, item);
                 thread_offset += BLOCK_THREADS;
             }
+
+            // Update first tile size
+            if (first_tile_size == 0) first_tile_size = num_valid;
         }
         else
         {
@@ -216,10 +213,13 @@ struct PersistentBlockReduce
             // Reduce items within each thread
             T partial = ThreadReduce(items, reduction_op);
 
-            // Update|assign the thread's running aggregate
-            thread_aggregate = (first_tile) ?
-                partial :
-                reduction_op(thread_aggregate, partial);
+            // Update running thread aggregate
+            thread_aggregate = (first_tile_size) ?
+                reduction_op(thread_aggregate, partial) :       // Update
+                partial;                                        // Assign
+
+            // Update first tile size
+            if (first_tile_size == 0) first_tile_size = num_valid;
         }
 
         // No synchronization needed after tile processing

@@ -29,7 +29,7 @@
 
 /**
  * \file
- * cub::DeviceReduce provides device-wide parallel operations for reducing data items residing within a CUDA device's global memory.
+ * cub::DeviceReduce provides operations for computing a device-wide, parallel reduction across data items residing within global memory.
  */
 
 #pragma once
@@ -39,9 +39,9 @@
 
 #include "persistent_block/persistent_block_reduce.cuh"
 #include "../util_allocator.cuh"
-#include "../grid/grid_mapping.cuh"
 #include "../grid/grid_even_share.cuh"
 #include "../grid/grid_queue.cuh"
+#include "../grid/grid_mapping.cuh"
 
 /// Optional outer namespace(s)
 CUB_NS_PREFIX
@@ -88,11 +88,11 @@ __global__ void MultiBlockReduceKernel(
     __shared__ typename PersistentBlockReduceT::SmemStorage smem_storage;
 
     // Thread block instance
-    PersistentBlockReduceT tiles(smem_storage, d_in, reduction_op);
+    PersistentBlockReduceT persistent_block(smem_storage, d_in, reduction_op);
 
     // Consume tiles using thread block instance
     GridMapping<PersistentBlockReducePolicy::GRID_MAPPING>::ConsumeTilesFlagFirst(
-        tiles, num_items, even_share, queue, block_aggregate);
+        persistent_block, num_items, even_share, queue, block_aggregate);
 
     // Output result
     if (threadIdx.x == 0)
@@ -134,7 +134,7 @@ __global__ void SingleBlockReduceKernel(
     PersistentBlockReduceT tiles(smem_storage, d_in, reduction_op);
 
     // Reduce input tiles
-    ConsumeTilesFlagFirst(tiles, 0, num_items, block_aggregate);
+    ConsumeTiles(tiles, 0, num_items, block_aggregate);
 
     // Output result
     if (threadIdx.x == 0)
@@ -156,7 +156,7 @@ __global__ void SingleBlockReduceKernel(
  */
 
 /**
- * \brief DeviceReduce provides device-wide parallel operations for reducing data items residing within a CUDA device's global memory. ![](reduce_logo.png)
+ * \brief DeviceReduce provides operations for computing a device-wide, parallel reduction across data items residing within global memory. ![](reduce_logo.png)
  */
 struct DeviceReduce
 {
