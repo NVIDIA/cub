@@ -40,10 +40,6 @@
 #include "../../block/block_histo_256.cuh"
 #include "../../block/block_radix_sort.cuh"
 #include "../../block/block_discontinuity.cuh"
-#include "../../grid/grid_mapping.cuh"
-#include "../../grid/grid_even_share.cuh"
-#include "../../grid/grid_queue.cuh"
-#include "../../util_vector.cuh"
 #include "../../util_namespace.cuh"
 
 /// Optional outer namespace(s)
@@ -226,12 +222,12 @@ struct PersistentBlockHisto256<PersistentBlockHisto256Policy, CHANNELS, ACTIVE_C
 
 
     /**
-     * Process a single tile.
+     * Process a single tile of input
      */
     __device__ __forceinline__ void ConsumeTile(
-        bool    &sync_after,
-        SizeT   block_offset,
-        int     num_valid)
+        bool    &sync_after,    ///< Whether or not the caller needs to synchronize before repurposing the shared memory used by this instance
+        SizeT   block_offset,   ///< The offset the tile to consume
+        int     num_valid)      ///< The number of valid items in the tile
     {
         if (num_valid < TILE_ITEMS)
         {
@@ -394,12 +390,12 @@ struct PersistentBlockHisto256<PersistentBlockHisto256Policy, CHANNELS, ACTIVE_C
 
 
     /**
-     * Process a single tile.
+     * Process a single tile of input
      */
     __device__ __forceinline__ void ConsumeTile(
-        bool    &sync_after,
-        SizeT   block_offset,
-        int     num_valid)
+        bool    &sync_after,    ///< Whether or not the caller needs to synchronize before repurposing the shared memory used by this instance
+        SizeT   block_offset,   ///< The offset the tile to consume
+        int     num_valid)      ///< The number of valid items in the tile
     {
         if (num_valid < TILE_ITEMS)
         {
@@ -756,14 +752,12 @@ struct PersistentBlockHisto256<PersistentBlockHisto256Policy, CHANNELS, ACTIVE_C
 
 
     /**
-     * Process a single tile.
-     *
-     * We take several passes through the tile in this variant, extracting the samples for one channel at a time
+     * Process a single tile of input
      */
     __device__ __forceinline__ void ConsumeTile(
-        bool    &sync_after,
-        SizeT   block_offset,
-        int     num_valid)
+        bool    &sync_after,    ///< Whether or not the caller needs to synchronize before repurposing the shared memory used by this instance
+        SizeT   block_offset,   ///< The offset the tile to consume
+        int     num_valid)      ///< The number of valid items in the tile
     {
         // First channel
         ConsumeTileChannel(0, block_offset, num_valid);
