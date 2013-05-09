@@ -37,8 +37,10 @@
 
 #include "../../block/block_load.cuh"
 #include "../../block/block_reduce.cuh"
+#include "../../grid/grid_mapping.cuh"
 #include "../../util_vector.cuh"
 #include "../../util_namespace.cuh"
+
 
 /// Optional outer namespace(s)
 CUB_NS_PREFIX

@@ -52,11 +52,17 @@ namespace cub {
  */
 enum
 {
-    PERSISTENT_BLOCK_SCAN_OOB,          // Out-of-bounds (e.g., padding)
-    PERSISTENT_BLOCK_SCAN_INVALID,      // Not yet processed
-    PERSISTENT_BLOCK_SCAN_PARTIAL,      // Tile aggregate is available
-    PERSISTENT_BLOCK_SCAN_PREFIX,       // Inclusive tile prefix is available
+    DEVICE_SCAN_TILE_OOB,          // Out-of-bounds (e.g., padding)
+    DEVICE_SCAN_TILE_INVALID,      // Not yet processed
+    DEVICE_SCAN_TILE_PARTIAL,      // Tile aggregate is available
+    DEVICE_SCAN_TILE_PREFIX,       // Inclusive tile prefix is available
 };
+
+
+/**
+ * Data type of tile status word
+ */
+typedef int DeviceScanTileStatus;
 
 
 /**
@@ -79,9 +85,6 @@ struct PersistentBlockScanPolicy
     static const BlockLoadPolicy        LOAD_POLICY      = _LOAD_POLICY;
     static const BlockStorePolicy       STORE_POLICY     = _STORE_POLICY;
     static const BlockScanAlgorithm     SCAN_ALGORITHM   = _SCAN_ALGORITHM;
-
-    // Data type of tile status word
-    typedef int TileStatus;
 };
 
 
@@ -104,9 +107,6 @@ struct PersistentBlockScan
     // Data type of input iterator
     typedef typename std::iterator_traits<InputIteratorRA>::value_type T;
 
-    // Data type of tile status word
-    typedef typename PersistentBlockScanPolicy::TileStatus TileStatus;
-
     // Constants
     enum
     {
@@ -120,8 +120,8 @@ struct PersistentBlockScan
     // Pairing of a tile aggregate/prefix and tile status word
     struct PredecessorTile
     {
-        T           value;
-        TileStatus  status;
+        T                       value;
+        DeviceScanTileStatus    status;
     };
 
     // Reduction operator for computing the exclusive prefix from predecessor tile status
@@ -136,7 +136,7 @@ struct PersistentBlockScan
         __device__ __forceinline__
         PredecessorTile operator()(const PredecessorTile& first, const PredecessorTile& second)
         {
-            if ((first.status == PERSISTENT_BLOCK_SCAN_OOB) || (second.status == PERSISTENT_BLOCK_SCAN_PREFIX))
+            if ((first.status == DEVICE_SCAN_TILE_OOB) || (second.status == DEVICE_SCAN_TILE_PREFIX))
                 return second;
 
             PredecessorTile retval;
@@ -214,7 +214,7 @@ struct PersistentBlockScan
 
                 __threadfence();
 
-                block_scan->d_tile_status[STATUS_PADDING + tile_index] = PERSISTENT_BLOCK_SCAN_PARTIAL;
+                block_scan->d_tile_status[STATUS_PADDING + tile_index] = DEVICE_SCAN_TILE_PARTIAL;
             }
 
             // Wait for all predecessor blocks to become valid and at least one prefix to show up.
@@ -224,10 +224,10 @@ struct PersistentBlockScan
             {
                 predecessor_status.status = ThreadLoad<PTX_LOAD_CG>(d_tile_status + predecessor_idx);
             }
-            while (__any(predecessor_status.status == PERSISTENT_BLOCK_SCAN_INVALID) || __all(predecessor_status.status != PERSISTENT_BLOCK_SCAN_PREFIX));
+            while (__any(predecessor_status.status == DEVICE_SCAN_TILE_INVALID) || __all(predecessor_status.status != DEVICE_SCAN_TILE_PREFIX));
 
             // Grab predecessor block's corresponding partial/prefix
-            predecessor_status.value = (predecessor_status.status == PERSISTENT_BLOCK_SCAN_PREFIX) ?
+            predecessor_status.value = (predecessor_status.status == DEVICE_SCAN_TILE_PREFIX) ?
                 block_scan->d_tile_prefixes[predecessor_idx] :
                 block_scan->d_tile_aggregates[predecessor_idx];
 
@@ -246,7 +246,7 @@ struct PersistentBlockScan
 
                 __threadfence();
 
-                d_tile_status[STATUS_PADDING + tile_index] = PERSISTENT_BLOCK_SCAN_PREFIX;
+                d_tile_status[STATUS_PADDING + tile_index] = DEVICE_SCAN_TILE_PREFIX;
             }
 
             // Return block-wide exclusive prefix
@@ -264,7 +264,7 @@ struct PersistentBlockScan
     OutputIteratorRA        d_out;              ///< Output data
     T                       *d_tile_aggregates; ///< Global list of block aggregates
     T                       *d_tile_prefixes;   ///< Global list of block inclusive prefixes
-    TileStatus              *d_tile_status;     ///< Global list of tile status
+    DeviceScanTileStatus    *d_tile_status;     ///< Global list of tile status
     ScanOp                  scan_op;            ///< Binary scan operator
     Identity                identity;           ///< Identity element
     SizeT                   num_items;          ///< Total number of scan items for the entire problem
@@ -278,15 +278,15 @@ struct PersistentBlockScan
     // Constructor
     __device__ __forceinline__
     PersistentBlockScan(
-        SmemStorage         &smem_storage,      ///< Reference to smem_storage
-        InputIteratorRA     d_in,               ///< Input data
-        OutputIteratorRA    d_out,              ///< Output data
-        T                   *d_tile_aggregates, ///< Global list of block aggregates
-        T                   *d_tile_prefixes,   ///< Global list of block inclusive prefixes
-        TileStatus          *d_tile_status,     ///< Global list of tile status
-        ScanOp              scan_op,            ///< Binary scan operator
-        Identity            identity,           ///< Identity element
-        SizeT               num_items) :        ///< Total number of scan items for the entire problem
+        SmemStorage             &smem_storage,      ///< Reference to smem_storage
+        InputIteratorRA         d_in,               ///< Input data
+        OutputIteratorRA        d_out,              ///< Output data
+        T                       *d_tile_aggregates, ///< Global list of block aggregates
+        T                       *d_tile_prefixes,   ///< Global list of block inclusive prefixes
+        DeviceScanTileStatus    *d_tile_status,     ///< Global list of tile status
+        ScanOp                  scan_op,            ///< Binary scan operator
+        Identity                identity,           ///< Identity element
+        SizeT                   num_items) :        ///< Total number of scan items for the entire problem
             smem_storage(smem_storage),
             d_in(d_in),
             d_out(d_out),
@@ -364,7 +364,7 @@ struct PersistentBlockScan
             __syncthreads();
 
             // Update tile prefix status
-            d_tile_status[STATUS_PADDING + tile_index] = PERSISTENT_BLOCK_SCAN_PREFIX;
+            d_tile_status[STATUS_PADDING + tile_index] = DEVICE_SCAN_TILE_PREFIX;
 
             // Store items
             BlockStoreT::Store(smem_storage.store, d_out + block_offset, items);

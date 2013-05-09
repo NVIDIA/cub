@@ -458,11 +458,11 @@ struct DeviceReduce
 
         #endif
 
-            // Determine grid size for the multi-block kernel
+            // Device occupancy
             int multi_occupancy = multi_sm_occupancy * sm_count;
-            int multi_tile_size = multi_block_dispatch_params.block_threads * multi_block_dispatch_params.items_per_thread;
-            int multi_grid_size;
 
+            // Determine grid size
+            int multi_grid_size;
             switch (multi_block_dispatch_params.grid_mapping)
             {
             case GRID_MAPPING_EVEN_SHARE:
@@ -471,7 +471,7 @@ struct DeviceReduce
                 even_share.GridInit(
                     num_items,
                     multi_occupancy * multi_block_dispatch_params.subscription_factor,
-                    multi_tile_size);
+                    multi_block_dispatch_params.tile_size);
 
                 multi_grid_size = even_share.grid_size;
                 break;
@@ -479,8 +479,8 @@ struct DeviceReduce
             case GRID_MAPPING_DYNAMIC:
 
                 // Work is distributed dynamically
-                queue.Allocate(device_allocator);
-                int num_tiles = (num_items + multi_tile_size - 1) / multi_tile_size;
+                if (CubDebug(error = queue.Allocate(device_allocator))) break;
+                int num_tiles = (num_items + multi_block_dispatch_params.tile_size - 1) / multi_block_dispatch_params.tile_size;
                 if (num_tiles < multi_occupancy)
                 {
                     // Every thread block gets one input tile each and nothing is queued
@@ -504,7 +504,7 @@ struct DeviceReduce
                 #else
 
                     // Prepare the queue here
-                    queue.ResetDrain(num_items);
+                    if (CubDebug(error = queue.ResetDrain(num_items))) break;
 
                 #endif
                 }
