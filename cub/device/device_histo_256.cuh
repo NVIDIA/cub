@@ -419,7 +419,6 @@ struct DeviceHisto256
         #endif
 
             int multi_occupancy = multi_sm_occupancy * sm_count;
-            int multi_tile_size = multi_block_dispatch_params.block_threads * multi_block_dispatch_params.items_per_thread;
             int multi_grid_size;
 
             switch (multi_block_dispatch_params.grid_mapping)
@@ -430,7 +429,7 @@ struct DeviceHisto256
                 even_share.GridInit(
                     num_samples,
                     multi_occupancy * multi_block_dispatch_params.subscription_factor,
-                    multi_tile_size);
+                    multi_block_dispatch_params.tile_size);
 
                 // Set MultiBlock grid size
                 multi_grid_size = even_share.grid_size;
@@ -439,7 +438,7 @@ struct DeviceHisto256
             case GRID_MAPPING_DYNAMIC:
 
                 // Prepare queue to distribute work dynamically
-                int num_tiles = (num_samples + multi_tile_size - 1) / multi_tile_size;
+                int num_tiles = (num_samples + multi_block_dispatch_params.tile_size - 1) / multi_block_dispatch_params.tile_size;
 
                 // Set MultiBlock grid size
                 multi_grid_size = (num_tiles < multi_occupancy) ?
