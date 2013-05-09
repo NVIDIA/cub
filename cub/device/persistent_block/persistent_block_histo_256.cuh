@@ -327,7 +327,7 @@ struct PersistentBlockHisto256<PersistentBlockHisto256Policy, CHANNELS, ACTIVE_C
     // Shared memory type required by this thread block
     struct SmemStorage
     {
-        HistoCounter histograms[ACTIVE_CHANNELS][256];
+        HistoCounter histograms[ACTIVE_CHANNELS][257];  // One word of padding between channel histograms to prevent warps working on different histograms from hammering on the same bank
     };
 
 
@@ -449,6 +449,8 @@ struct PersistentBlockHisto256<PersistentBlockHisto256Policy, CHANNELS, ACTIVE_C
                     }
                 }
             }
+
+            __threadfence_block();
         }
 
         // No need to sync after processing this tile to ensure smem coherence

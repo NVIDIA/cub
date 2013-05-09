@@ -214,22 +214,32 @@ __device__ __forceinline__ void ConsumeTiles(
     // Number of items per tile that can be processed by tiles
     int tile_items = persistent_block.TileItems();
 
-    // There are tiles left to consume
+    // We give each thread block at least one tile of input.
+    SizeT block_offset      = blockIdx.x * tile_items;
+    SizeT even_share_base   = gridDim.x * tile_items;
+
+    // Check if we have a full tile to consume
     while (true)
     {
-        // Dequeue up to tile_items
-        if (threadIdx.x == 0)
+        if (block_offset + tile_items <= num_items)
         {
-            dynamic_block_offset = queue.Drain(tile_items);
+            // Full tile to consume
+            persistent_block.ConsumeTile(sync_after, block_offset, tile_items);
+
+            __syncthreads();
+
+            if (even_share_base >= num_items)
+                break;
+
+            // Dequeue up to tile_items
+            if (threadIdx.x == 0)
+                dynamic_block_offset = queue.Drain(tile_items) + even_share_base;
+
+            __syncthreads();
+
+            block_offset = dynamic_block_offset;
         }
-
-        __syncthreads();
-
-        SizeT block_offset = dynamic_block_offset;
-
-        __syncthreads();
-
-        if (block_offset + tile_items > num_items)
+        else
         {
             if (block_offset < num_items)
             {
@@ -238,13 +248,9 @@ __device__ __forceinline__ void ConsumeTiles(
                 if (sync_after) __syncthreads();
             }
 
-            // No more work to do
             break;
         }
-
-        // We have a full tile to consume
-        persistent_block.ConsumeTile(sync_after, block_offset, tile_items);
-    }
+    };
 
     persistent_block.Finalize(result);
 }
