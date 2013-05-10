@@ -136,12 +136,12 @@ struct PersistentBlockScan
         __device__ __forceinline__
         PredecessorTile operator()(const PredecessorTile& first, const PredecessorTile& second)
         {
-            if ((first.status == DEVICE_SCAN_TILE_OOB) || (second.status == DEVICE_SCAN_TILE_PREFIX))
-                return second;
+            if ((second.status == DEVICE_SCAN_TILE_OOB) || (first.status == DEVICE_SCAN_TILE_PREFIX))
+                return first;
 
             PredecessorTile retval;
-            retval.status = first.status;
-            retval.value = scan_op(first.value, second.value);
+            retval.status = second.status;
+            retval.value = scan_op(second.value, first.value);
             return retval;
         }
     };
@@ -210,19 +210,19 @@ struct PersistentBlockScan
             // Update our status with our tile-aggregate
             if (threadIdx.x == 0)
             {
-                block_scan->d_tile_aggregates[STATUS_PADDING + tile_index] = block_aggregate;
+                block_scan->d_tile_aggregates[tile_index] = block_aggregate;
 
                 __threadfence();
 
-                block_scan->d_tile_status[STATUS_PADDING + tile_index] = DEVICE_SCAN_TILE_PARTIAL;
+                block_scan->d_tile_status[tile_index] = DEVICE_SCAN_TILE_PARTIAL;
             }
 
             // Wait for all predecessor blocks to become valid and at least one prefix to show up.
             PredecessorTile predecessor_status;
-            unsigned int predecessor_idx = STATUS_PADDING + tile_index - threadIdx.x;
+            unsigned int predecessor_idx = tile_index - threadIdx.x - 1;
             do
             {
-                predecessor_status.status = ThreadLoad<PTX_LOAD_CG>(d_tile_status + predecessor_idx);
+                predecessor_status.status = block_scan->d_tile_status[predecessor_idx];
             }
             while (__any(predecessor_status.status == DEVICE_SCAN_TILE_INVALID) || __all(predecessor_status.status != DEVICE_SCAN_TILE_PREFIX));
 
@@ -242,11 +242,11 @@ struct PersistentBlockScan
             {
                 T inclusive_prefix = block_scan->scan_op(prefix_status.value, block_aggregate);
 
-                d_tile_prefixes[STATUS_PADDING + tile_index] = inclusive_prefix;
+                block_scan->d_tile_prefixes[tile_index] = inclusive_prefix;
 
                 __threadfence();
 
-                d_tile_status[STATUS_PADDING + tile_index] = DEVICE_SCAN_TILE_PREFIX;
+                block_scan->d_tile_status[tile_index] = DEVICE_SCAN_TILE_PREFIX;
             }
 
             // Return block-wide exclusive prefix
@@ -262,9 +262,9 @@ struct PersistentBlockScan
     SmemStorage             &smem_storage;      ///< Reference to smem_storage
     InputIteratorRA         d_in;               ///< Input data
     OutputIteratorRA        d_out;              ///< Output data
-    T                       *d_tile_aggregates; ///< Global list of block aggregates
-    T                       *d_tile_prefixes;   ///< Global list of block inclusive prefixes
-    DeviceScanTileStatus    *d_tile_status;     ///< Global list of tile status
+    volatile T                       *d_tile_aggregates; ///< Global list of block aggregates
+    volatile T                       *d_tile_prefixes;   ///< Global list of block inclusive prefixes
+    volatile DeviceScanTileStatus    *d_tile_status;     ///< Global list of tile status
     ScanOp                  scan_op;            ///< Binary scan operator
     Identity                identity;           ///< Identity element
     SizeT                   num_items;          ///< Total number of scan items for the entire problem
@@ -292,7 +292,7 @@ struct PersistentBlockScan
             d_out(d_out),
             d_tile_aggregates(d_tile_aggregates),
             d_tile_prefixes(d_tile_prefixes),
-            d_tile_status(d_tile_status),
+            d_tile_status(d_tile_status + STATUS_PADDING),
             scan_op(scan_op),
             identity(identity) {}
 
@@ -323,7 +323,7 @@ struct PersistentBlockScan
 
             // Load items
             T items[ITEMS_PER_THREAD];
-            BlockLoadT::Load(smem_storage.load, d_in + block_offset, items, valid_items);
+            BlockLoadT::Load(smem_storage.load, d_in + block_offset, valid_items, items);
 
             __syncthreads();
 
@@ -336,7 +336,7 @@ struct PersistentBlockScan
             __syncthreads();
 
             // Store items
-            BlockStoreT::Store(smem_storage.store, d_out + block_offset, items, valid_items);
+            BlockStoreT::Store(smem_storage.store, d_out + block_offset, valid_items, items);
         }
         else if (tile_index == 0)
         {
@@ -357,14 +357,19 @@ struct PersistentBlockScan
             else
                 BlockScanT::ExclusiveScan(smem_storage.scan, items, items, identity, scan_op, block_aggregate);
 
-            // Update tile prefix value
-            d_tile_prefixes[STATUS_PADDING + tile_index] = block_aggregate;
-
             // Use barrier also as thread fence
             __syncthreads();
 
-            // Update tile prefix status
-            d_tile_status[STATUS_PADDING + tile_index] = DEVICE_SCAN_TILE_PREFIX;
+            if (threadIdx.x == 0)
+            {
+                // Update tile prefix value
+                d_tile_prefixes[tile_index] = block_aggregate;
+
+                __threadfence();
+
+                // Update tile prefix status
+                d_tile_status[tile_index] = DEVICE_SCAN_TILE_PREFIX;
+            }
 
             // Store items
             BlockStoreT::Store(smem_storage.store, d_out + block_offset, items);
@@ -384,9 +389,9 @@ struct PersistentBlockScan
             // Block scan
             T block_aggregate;
             if (INCLUSIVE)
-                BlockScanT::InclusiveScan(smem_storage.scan, items, items, scan_op, block_aggregate, BlockPrefixOp(this));
+                BlockScanT::InclusiveScan(smem_storage.scan, items, items, scan_op, block_aggregate, BlockPrefixOp(this, tile_index));
             else
-                BlockScanT::ExclusiveScan(smem_storage.scan, items, items, identity, scan_op, block_aggregate, BlockPrefixOp(this));
+                BlockScanT::ExclusiveScan(smem_storage.scan, items, items, identity, scan_op, block_aggregate, BlockPrefixOp(this, tile_index));
 
             __syncthreads();
 
