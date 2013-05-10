@@ -307,3 +307,14 @@ bin/test_device_histo_256_$(SUFFIX) : test_device_histo_256.cu $(DEPS)
 	$(NVCC) $(DEFINES) $(SM_TARGETS) -o bin/test_device_histo_256_$(SUFFIX) test_device_histo_256.cu $(NVCCFLAGS) $(CPU_ARCH) $(INC) -O3
 
 
+#-------------------------------------------------------------------------------
+# make test_device_scan
+#-------------------------------------------------------------------------------
+
+test_device_scan: bin/test_device_scan_$(SUFFIX)
+
+bin/test_device_scan_$(SUFFIX) : test_device_scan.cu $(DEPS)
+	mkdir -p bin
+	$(NVCC) $(DEFINES) $(SM_TARGETS) -o bin/test_device_scan_$(SUFFIX) test_device_scan.cu $(NVCCFLAGS) $(CPU_ARCH) $(INC) -O3
+
+

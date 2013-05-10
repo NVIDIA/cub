@@ -82,6 +82,7 @@ __global__ void InitScanKernel(
         // Not-yet-set
         d_tile_status[STATUS_PADDING + tile_offset] =  DEVICE_SCAN_TILE_INVALID;
     }
+
     if ((blockIdx.x == 0) && (threadIdx.x < STATUS_PADDING))
     {
         // Padding
@@ -222,14 +223,14 @@ struct DeviceScan
     template <typename T, typename SizeT>
     struct TunedPolicies<T, SizeT, 300>
     {
-        typedef PersistentBlockScanPolicy<128, 12,  BLOCK_LOAD_TRANSPOSE, BLOCK_STORE_TRANSPOSE, BLOCK_SCAN_RAKING_MEMOIZE> MultiBlockPolicy;
+        typedef PersistentBlockScanPolicy<128, 13,  BLOCK_LOAD_TRANSPOSE, BLOCK_STORE_TRANSPOSE, BLOCK_SCAN_RAKING_MEMOIZE> MultiBlockPolicy;
     };
 
     /// SM20 tune
     template <typename T, typename SizeT>
     struct TunedPolicies<T, SizeT, 200>
     {
-        typedef PersistentBlockScanPolicy<128, 12,  BLOCK_LOAD_TRANSPOSE, BLOCK_STORE_TRANSPOSE, BLOCK_SCAN_RAKING_MEMOIZE> MultiBlockPolicy;
+        typedef PersistentBlockScanPolicy<128, 14,  BLOCK_LOAD_TRANSPOSE, BLOCK_STORE_TRANSPOSE, BLOCK_SCAN_RAKING_MEMOIZE> MultiBlockPolicy;
     };
 
     /// SM10 tune
@@ -474,7 +475,7 @@ struct DeviceScan
         #ifdef __CUDA_ARCH__
 
             // We're on the device, so initialize the dispatch parameters with the PtxDefaultPolicies directly
-            multi_block_dispatch_params.Init<MultiBlockPolicy>(PtxDefaultPolicies::SUBSCRIPTION_FACTOR);
+            multi_block_dispatch_params.Init<MultiBlockPolicy>();
 
         #else
 
@@ -513,19 +514,45 @@ struct DeviceScan
     //---------------------------------------------------------------------
 
     /**
+     * \brief Computes a device-wide exclusive prefix sum.
+     *
+     * \tparam InputIteratorRA      <b>[inferred]</b> The random-access iterator type for input (may be a simple pointer type).
+     * \tparam OutputIteratorRA     <b>[inferred]</b> The random-access iterator type for output (may be a simple pointer type).
+     * \tparam SizeT                <b>[inferred]</b> Integral type used for global array indexing
+     */
+    template <
+        typename                    InputIteratorRA,
+        typename                    OutputIteratorRA,
+        typename                    SizeT>
+    __host__ __device__ __forceinline__
+    static cudaError_t ExclusiveSum(
+        InputIteratorRA             d_in,                                               ///< [in] Input samples to histogram
+        OutputIteratorRA            d_out,                                              ///< Output data
+        SizeT                       num_items,                                          ///< Total number of scan items for the entire problem
+        cudaStream_t                stream              = 0,                            ///< [in] <b>[optional]</b> CUDA stream to launch kernels within.  Default is stream-0.
+        bool                        stream_synchronous  = false,                        ///< [in] <b>[optional]</b> Whether or not to synchronize the stream after every kernel launch to check for errors.  Default is \p false.
+        DeviceAllocator             *device_allocator   = DefaultDeviceAllocator())
+    {
+        typedef typename std::iterator_traits<InputIteratorRA>::value_type T;
+        return Dispatch(d_in, d_out, Sum<T>(), T(), num_items, stream, stream_synchronous, device_allocator);
+    }
+
+
+    /**
      * \brief Computes a device-wide exclusive prefix scan using the specified binary \p scan_op functor.
      *
      * \tparam InputIteratorRA      <b>[inferred]</b> The random-access iterator type for input (may be a simple pointer type).
      * \tparam OutputIteratorRA     <b>[inferred]</b> The random-access iterator type for output (may be a simple pointer type).
      * \tparam ScanOp               <b>[inferred]</b> Binary scan operator type having member <tt>T operator()(const T &a, const T &b)</tt>
      * \tparam Identity             <b>[inferred]</b> Type of the \p identity value used Binary scan operator type having member <tt>T operator()(const T &a, const T &b)</tt>
+     * \tparam SizeT                <b>[inferred]</b> Integral type used for global array indexing
      */
     template <
-        typename                    InputIteratorRA,            ///< The random-access iterator type for input (may be a simple pointer type).
-        typename                    OutputIteratorRA,           ///< The random-access iterator type for output (may be a simple pointer type).
-        typename                    ScanOp,                     ///< Binary scan operator type having member <tt>T operator()(const T &a, const T &b)</tt>
-        typename                    Identity,                   ///< Identity value type (cub::NullType for inclusive scans)
-        typename                    SizeT>                      ///< Integral type used for global array indexing
+        typename                    InputIteratorRA,
+        typename                    OutputIteratorRA,
+        typename                    ScanOp,
+        typename                    Identity,
+        typename                    SizeT>
     __host__ __device__ __forceinline__
     static cudaError_t ExclusiveScan(
         InputIteratorRA             d_in,                                               ///< [in] Input samples to histogram
@@ -537,7 +564,59 @@ struct DeviceScan
         bool                        stream_synchronous  = false,                        ///< [in] <b>[optional]</b> Whether or not to synchronize the stream after every kernel launch to check for errors.  Default is \p false.
         DeviceAllocator             *device_allocator   = DefaultDeviceAllocator())
     {
-        Dispatch(d_in, d_out, scan_op, identity, num_items, stream, stream_synchronous, device_allocator);
+        return Dispatch(d_in, d_out, scan_op, identity, num_items, stream, stream_synchronous, device_allocator);
+    }
+
+
+    /**
+     * \brief Computes a device-wide inclusive prefix sum.
+     *
+     * \tparam InputIteratorRA      <b>[inferred]</b> The random-access iterator type for input (may be a simple pointer type).
+     * \tparam OutputIteratorRA     <b>[inferred]</b> The random-access iterator type for output (may be a simple pointer type).
+     * \tparam SizeT                <b>[inferred]</b> Integral type used for global array indexing
+     */
+    template <
+        typename                    InputIteratorRA,
+        typename                    OutputIteratorRA,
+        typename                    SizeT>
+    __host__ __device__ __forceinline__
+    static cudaError_t InclusiveSum(
+        InputIteratorRA             d_in,                                               ///< [in] Input samples to histogram
+        OutputIteratorRA            d_out,                                              ///< Output data
+        SizeT                       num_items,                                          ///< Total number of scan items for the entire problem
+        cudaStream_t                stream              = 0,                            ///< [in] <b>[optional]</b> CUDA stream to launch kernels within.  Default is stream-0.
+        bool                        stream_synchronous  = false,                        ///< [in] <b>[optional]</b> Whether or not to synchronize the stream after every kernel launch to check for errors.  Default is \p false.
+        DeviceAllocator             *device_allocator   = DefaultDeviceAllocator())
+    {
+        typedef typename std::iterator_traits<InputIteratorRA>::value_type T;
+        return Dispatch(d_in, d_out, Sum<T>(), NullType(), num_items, stream, stream_synchronous, device_allocator);
+    }
+
+
+    /**
+     * \brief Computes a device-wide exclusive prefix scan using the specified binary \p scan_op functor.
+     *
+     * \tparam InputIteratorRA      <b>[inferred]</b> The random-access iterator type for input (may be a simple pointer type).
+     * \tparam OutputIteratorRA     <b>[inferred]</b> The random-access iterator type for output (may be a simple pointer type).
+     * \tparam ScanOp               <b>[inferred]</b> Binary scan operator type having member <tt>T operator()(const T &a, const T &b)</tt>
+     * \tparam SizeT                <b>[inferred]</b> Integral type used for global array indexing
+     */
+    template <
+        typename                    InputIteratorRA,
+        typename                    OutputIteratorRA,
+        typename                    ScanOp,
+        typename                    SizeT>
+    __host__ __device__ __forceinline__
+    static cudaError_t InclusiveScan(
+        InputIteratorRA             d_in,                                               ///< [in] Input samples to histogram
+        OutputIteratorRA            d_out,                                              ///< Output data
+        ScanOp                      scan_op,                                            ///< Binary scan operator
+        SizeT                       num_items,                                          ///< Total number of scan items for the entire problem
+        cudaStream_t                stream              = 0,                            ///< [in] <b>[optional]</b> CUDA stream to launch kernels within.  Default is stream-0.
+        bool                        stream_synchronous  = false,                        ///< [in] <b>[optional]</b> Whether or not to synchronize the stream after every kernel launch to check for errors.  Default is \p false.
+        DeviceAllocator             *device_allocator   = DefaultDeviceAllocator())
+    {
+        return Dispatch(d_in, d_out, scan_op, NullType(), num_items, stream, stream_synchronous, device_allocator);
     }
 
 };

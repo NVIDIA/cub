@@ -40,6 +40,7 @@
 #include "../../block/block_histo_256.cuh"
 #include "../../block/block_radix_sort.cuh"
 #include "../../block/block_discontinuity.cuh"
+#include "../../grid/grid_mapping.cuh"
 #include "../../util_namespace.cuh"
 
 /// Optional outer namespace(s)
@@ -128,8 +129,8 @@ struct PersistentBlockHisto256Policy
         SM_OCCUPANCY        = _SM_OCCUPANCY,
     };
 
-    static const PersistentBlockHisto256Algorithm     GRID_ALGORITHM      = _GRID_ALGORITHM;
-    static const GridMappingStrategy            GRID_MAPPING        = _GRID_MAPPING;
+    static const PersistentBlockHisto256Algorithm   GRID_ALGORITHM      = _GRID_ALGORITHM;
+    static const GridMappingStrategy                GRID_MAPPING        = _GRID_MAPPING;
 };
 
 
