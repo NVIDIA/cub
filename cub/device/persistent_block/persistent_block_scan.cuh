@@ -122,6 +122,27 @@ struct PersistentBlockScan
     {
         T                       value;
         DeviceScanTileStatus    status;
+/*
+        typedef void ThreadLoadTag;
+        typedef void ThreadStoreTag;
+
+        // ThreadLoad
+        template <cub::PtxLoadModifier MODIFIER>
+        __device__ __forceinline__
+        void ThreadLoad(PredecessorTile *ptr)
+        {
+            value = cub::ThreadLoad<MODIFIER>(&(ptr->value));
+            status = cub::ThreadLoad<MODIFIER>(&(ptr->status));
+        }
+
+         // ThreadStore
+        template <cub::PtxStoreModifier MODIFIER>
+        __device__ __forceinline__ void ThreadStore(PredecessorTile *ptr) const
+        {
+            cub::ThreadStore<MODIFIER>(&(ptr->value), value);
+            cub::ThreadStore<MODIFIER>(&(ptr->status), status);
+        }
+*/
     };
 
     // Reduction operator for computing the exclusive prefix from predecessor tile status
@@ -251,6 +272,85 @@ struct PersistentBlockScan
 
             // Return block-wide exclusive prefix
             return prefix_status.value;
+
+/*
+
+
+            // Update our status with our tile-aggregate
+            if (threadIdx.x == 0)
+            {
+                block_scan->d_tile_aggregates[tile_index] = block_aggregate;
+
+                __threadfence();
+
+                block_scan->d_tile_status[tile_index] = DEVICE_SCAN_TILE_PARTIAL;
+            }
+
+            // Wait for all predecessor blocks to become valid and at least one prefix to show up.
+            unsigned int predecessor_idx = tile_index - threadIdx.x - 1;
+
+            PredecessorTile predecessor_status;
+            do
+            {
+                predecessor_status.status = block_scan->d_tile_status[predecessor_idx];
+            }
+            while (__any(predecessor_status.status == DEVICE_SCAN_TILE_INVALID));
+
+            // Grab predecessor block's corresponding partial/prefix
+            predecessor_status.value = (predecessor_status.status == DEVICE_SCAN_TILE_PREFIX) ?
+                block_scan->d_tile_prefixes[predecessor_idx] :
+                block_scan->d_tile_aggregates[predecessor_idx];
+
+            // Reduce predecessor partials/prefixes to get our block-wide exclusive prefix
+            PredecessorTileReduceOp status_reduce_op(block_scan->scan_op);
+
+            PredecessorTile window_prefix_status = WarpReduceT::Reduce(
+                block_scan->smem_storage.warp_reduce,
+                predecessor_status,
+                status_reduce_op);
+
+            // Continue looking at more predecessors if necessary
+            PredecessorTile prefix_status = window_prefix_status;
+            while (__all(predecessor_status.status != DEVICE_SCAN_TILE_PREFIX))
+            {
+                predecessor_idx -= PtxArchProps::WARP_THREADS;
+
+                do
+                {
+                    predecessor_status.status = block_scan->d_tile_status[predecessor_idx];
+                }
+                while (__any(predecessor_status.status == DEVICE_SCAN_TILE_INVALID));
+
+                // Grab predecessor block's corresponding partial/prefix
+                predecessor_status.value = (predecessor_status.status == DEVICE_SCAN_TILE_PREFIX) ?
+                    block_scan->d_tile_prefixes[predecessor_idx] :
+                    block_scan->d_tile_aggregates[predecessor_idx];
+
+                // Reduce predecessor partials/prefixes to get our block-wide exclusive prefix
+                PredecessorTile window_prefix_status = WarpReduceT::Reduce(
+                    block_scan->smem_storage.warp_reduce,
+                    predecessor_status,
+                    status_reduce_op);
+
+                prefix_status = status_reduce_op(prefix_status, window_prefix_status);
+            }
+
+            // Update our status with our inclusive prefix
+            if (threadIdx.x == 0)
+            {
+                T inclusive_prefix = block_scan->scan_op(prefix_status.value, block_aggregate);
+
+                block_scan->d_tile_prefixes[tile_index] = inclusive_prefix;
+
+                __threadfence();
+
+                block_scan->d_tile_status[tile_index] = DEVICE_SCAN_TILE_PREFIX;
+            }
+
+            // Return block-wide exclusive prefix
+            return prefix_status.value;
+
+ */
         }
     };
 
