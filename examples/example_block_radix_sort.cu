@@ -302,15 +302,15 @@ int main(int argc, char** argv)
 
     // Run tests
     printf("\nuint32:\n"); fflush(stdout);
-    Test<unsigned int, 128, 17>();
+    Test<unsigned int, 128, 21>();
     printf("\n"); fflush(stdout);
 
     printf("\nfp32:\n"); fflush(stdout);
-    Test<float, 128, 17>();
+    Test<float, 128, 21>();
     printf("\n"); fflush(stdout);
 
     printf("\nuint8:\n"); fflush(stdout);
-    Test<unsigned char, 128, 17>();
+    Test<unsigned char, 128, 21>();
     printf("\n"); fflush(stdout);
 
     return 0;
