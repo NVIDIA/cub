@@ -223,14 +223,14 @@ struct DeviceScan
     template <typename T, typename SizeT>
     struct TunedPolicies<T, SizeT, 300>
     {
-        typedef PersistentBlockScanPolicy<128, 13,  BLOCK_LOAD_TRANSPOSE, BLOCK_STORE_TRANSPOSE, BLOCK_SCAN_RAKING_MEMOIZE> MultiBlockPolicy;
+        typedef PersistentBlockScanPolicy<128, 12,  BLOCK_LOAD_TRANSPOSE, BLOCK_STORE_TRANSPOSE, BLOCK_SCAN_RAKING_MEMOIZE> MultiBlockPolicy;
     };
 
     /// SM20 tune
     template <typename T, typename SizeT>
     struct TunedPolicies<T, SizeT, 200>
     {
-        typedef PersistentBlockScanPolicy<128, 14,  BLOCK_LOAD_TRANSPOSE, BLOCK_STORE_TRANSPOSE, BLOCK_SCAN_RAKING_MEMOIZE> MultiBlockPolicy;
+        typedef PersistentBlockScanPolicy<128, 15,  BLOCK_LOAD_TRANSPOSE, BLOCK_STORE_TRANSPOSE, BLOCK_SCAN_RAKING_MEMOIZE> MultiBlockPolicy;
     };
 
     /// SM10 tune
