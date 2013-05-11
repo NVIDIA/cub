@@ -223,7 +223,7 @@ struct DeviceScan
     template <typename T, typename SizeT>
     struct TunedPolicies<T, SizeT, 300>
     {
-        typedef PersistentBlockScanPolicy<128, 12,  BLOCK_LOAD_TRANSPOSE, BLOCK_STORE_TRANSPOSE, BLOCK_SCAN_RAKING_MEMOIZE> MultiBlockPolicy;
+        typedef PersistentBlockScanPolicy<256, 9,  BLOCK_LOAD_TRANSPOSE, BLOCK_STORE_TRANSPOSE, BLOCK_SCAN_RAKING_MEMOIZE> MultiBlockPolicy;
     };
 
     /// SM20 tune
@@ -323,6 +323,11 @@ struct DeviceScan
 
     #else
 
+        enum
+        {
+            STATUS_PADDING = 32,
+        };
+
         // Data type
         typedef typename std::iterator_traits<InputIteratorRA>::value_type T;
 
@@ -340,7 +345,7 @@ struct DeviceScan
             // Allocate temporary storage for tile aggregates, prefixes, and status
             if (CubDebug(error = DeviceAllocate((void**) &d_tile_aggregates, num_tiles * sizeof(T), device_allocator))) break;
             if (CubDebug(error = DeviceAllocate((void**) &d_tile_prefixes, num_tiles * sizeof(T), device_allocator))) break;
-            if (CubDebug(error = DeviceAllocate((void**) &d_tile_status, num_tiles * sizeof(DeviceScanTileStatus), device_allocator))) break;
+            if (CubDebug(error = DeviceAllocate((void**) &d_tile_status, (num_tiles + STATUS_PADDING) * sizeof(DeviceScanTileStatus), device_allocator))) break;
 
             // Allocate temporary storage for queue descriptor
             queue.Allocate(device_allocator);
