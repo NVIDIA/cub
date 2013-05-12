@@ -117,12 +117,13 @@ struct PersistentBlockScan
         STATUS_PADDING      = PtxArchProps::WARP_THREADS,
     };
 
+/*
     // Pairing of a tile aggregate/prefix and tile status word
     struct PredecessorTile
     {
         T                       value;
         DeviceScanTileStatus    status;
-/*
+
         typedef void ThreadLoadTag;
         typedef void ThreadStoreTag;
 
@@ -142,7 +143,6 @@ struct PersistentBlockScan
             cub::ThreadStore<MODIFIER>(&(ptr->value), value);
             cub::ThreadStore<MODIFIER>(&(ptr->status), status);
         }
-*/
     };
 
     // Reduction operator for computing the exclusive prefix from predecessor tile status
@@ -166,6 +166,7 @@ struct PersistentBlockScan
             return retval;
         }
     };
+*/
 
     // Parameterized block load
     typedef BlockLoad<
@@ -188,7 +189,8 @@ struct PersistentBlockScan
         PersistentBlockScanPolicy::SCAN_ALGORITHM>      BlockScanT;
 
     // Parameterized warp reduce
-    typedef WarpReduce<PredecessorTile>                 WarpReduceT;
+    typedef WarpReduce<T>                               WarpReduceT;
+//    typedef WarpReduce<PredecessorTile>                 WarpReduceT;
 
     // Shared memory type for this threadblock
     struct SmemStorage
@@ -222,18 +224,16 @@ struct PersistentBlockScan
                 block_scan(block_scan),
                 tile_idx(tile_idx) {}
 
+/*
         // Prefix functor (called by the first warp)
         __device__ __forceinline__
         T operator()(T block_aggregate)
         {
-/*
             // Update our status with our tile-aggregate
             if (threadIdx.x == 0)
             {
                 block_scan->d_tile_aggregates[tile_idx] = block_aggregate;
-
                 __threadfence_block();
-
                 block_scan->d_tile_status[tile_idx] = DEVICE_SCAN_TILE_PARTIAL;
             }
 
@@ -264,17 +264,20 @@ struct PersistentBlockScan
                 T inclusive_prefix = block_scan->scan_op(prefix_status.value, block_aggregate);
 
                 block_scan->d_tile_prefixes[tile_idx] = inclusive_prefix;
-
                 __threadfence_block();
-
                 block_scan->d_tile_status[tile_idx] = DEVICE_SCAN_TILE_PREFIX;
             }
 
             // Return block-wide exclusive prefix
             return prefix_status.value;
+        }
 */
 
-
+/*
+        // Prefix functor (called by the first warp)
+        __device__ __forceinline__
+        T operator()(T block_aggregate)
+        {
             // Update our status with our tile-aggregate
             if (threadIdx.x == 0)
             {
@@ -347,7 +350,142 @@ struct PersistentBlockScan
 
             // Return block-wide exclusive prefix
             return prefix_status.value;
+        }
+*/
+/*
+        // Prefix functor (called by the first warp)
+        __device__ __forceinline__
+        T operator()(T block_aggregate)
+        {
+            // Update our status with our tile-aggregate
+            if (threadIdx.x == 0)
+            {
+                block_scan->d_tile_aggregates[tile_idx] = block_aggregate;
+                __threadfence_block();
+                block_scan->d_tile_status[tile_idx] = DEVICE_SCAN_TILE_PARTIAL;
+            }
 
+            // Wait for all predecessor blocks to become valid and at least one prefix to show up.
+            PredecessorTile predecessor_status;
+            unsigned int predecessor_idx = tile_idx - threadIdx.x - 1;
+            do
+            {
+                predecessor_status.status = ThreadLoad<PTX_LOAD_CG>(block_scan->d_tile_status + predecessor_idx);
+                __threadfence_block();
+            }
+            while (__all(predecessor_status.status != DEVICE_SCAN_TILE_PREFIX) || __any(predecessor_status.status == DEVICE_SCAN_TILE_INVALID));
+
+            // Grab predecessor block's corresponding partial/prefix
+            predecessor_status.value = (predecessor_status.status == DEVICE_SCAN_TILE_PREFIX) ?
+                ThreadLoad<PTX_LOAD_CG>(block_scan->d_tile_prefixes + predecessor_idx) :
+                ThreadLoad<PTX_LOAD_CG>(block_scan->d_tile_aggregates + predecessor_idx);
+
+            int flag = (predecessor_status.status != DEVICE_SCAN_TILE_PARTIAL);
+
+            T prefix = WarpReduceT::SegmentedReduce(
+                block_scan->smem_storage.warp_reduce,
+                predecessor_status.value,
+                flag,
+                block_scan->scan_op);
+
+            // Update our status with our inclusive prefix
+            if (threadIdx.x == 0)
+            {
+                T inclusive_prefix = block_scan->scan_op(prefix, block_aggregate);
+
+                block_scan->d_tile_prefixes[tile_idx] = inclusive_prefix;
+                __threadfence_block();
+                block_scan->d_tile_status[tile_idx] = DEVICE_SCAN_TILE_PREFIX;
+            }
+
+            // Return block-wide exclusive prefix
+            return prefix;
+        }
+*/
+
+
+
+        // Prefix functor (called by the first warp)
+        __device__ __forceinline__
+        T operator()(T block_aggregate)
+        {
+            // Update our status with our tile-aggregate
+            if (threadIdx.x == 0)
+            {
+                block_scan->d_tile_aggregates[tile_idx] = block_aggregate;
+                __threadfence_block();
+                block_scan->d_tile_status[tile_idx] = DEVICE_SCAN_TILE_PARTIAL;
+            }
+
+            // Wait for the window of predecessor blocks to become valid
+            int predecessor_idx = tile_idx - threadIdx.x - 1;
+
+            DeviceScanTileStatus predecessor_status;
+            do
+            {
+                predecessor_status = ThreadLoad<PTX_LOAD_CG>(block_scan->d_tile_status + predecessor_idx);
+                __threadfence_block();
+            }
+            while (predecessor_status == DEVICE_SCAN_TILE_INVALID);
+
+            // Grab predecessor block's corresponding partial/prefix
+            T predecessor_value = (predecessor_status == DEVICE_SCAN_TILE_PREFIX) ?
+                ThreadLoad<PTX_LOAD_CG>(block_scan->d_tile_prefixes + predecessor_idx) :
+                ThreadLoad<PTX_LOAD_CG>(block_scan->d_tile_aggregates + predecessor_idx);
+
+            // Perform a segmented reduction to get the prefix for the current window
+            int flag = (predecessor_status != DEVICE_SCAN_TILE_PARTIAL);
+            T window_prefix = WarpReduceT::SegmentedReduce(
+                block_scan->smem_storage.warp_reduce,
+                predecessor_value,
+                flag,
+                block_scan->scan_op);
+
+            // The block prefix starts out as the current window prefix
+            T block_prefix = window_prefix;
+
+            // Keep sliding the window back until we come across a tile whose prefix (not aggregate) is known
+            while (__all(predecessor_status != DEVICE_SCAN_TILE_PREFIX))
+            {
+                predecessor_idx -= PtxArchProps::WARP_THREADS;
+
+                // Wait for the window of predecessor blocks to become valid
+                do
+                {
+                    predecessor_status = ThreadLoad<PTX_LOAD_CG>(block_scan->d_tile_status + predecessor_idx);
+                    __threadfence_block();
+                }
+                while (predecessor_status == DEVICE_SCAN_TILE_INVALID);
+
+                // Grab predecessor block's corresponding partial/prefix
+                predecessor_value = (predecessor_status == DEVICE_SCAN_TILE_PREFIX) ?
+                    ThreadLoad<PTX_LOAD_CG>(block_scan->d_tile_prefixes + predecessor_idx) :
+                    ThreadLoad<PTX_LOAD_CG>(block_scan->d_tile_aggregates + predecessor_idx);
+
+                // Perform a segmented reduction to get the prefix for the current window
+                flag = (predecessor_status != DEVICE_SCAN_TILE_PARTIAL);
+                window_prefix = WarpReduceT::SegmentedReduce(
+                    block_scan->smem_storage.warp_reduce,
+                    predecessor_value,
+                    flag,
+                    block_scan->scan_op);
+
+                // Update block prefix with the window prefix
+                block_prefix = block_scan->scan_op(window_prefix, block_prefix);
+            }
+
+            // Update our status with our inclusive block_prefix
+            if (threadIdx.x == 0)
+            {
+                T inclusive_prefix = block_scan->scan_op(block_prefix, block_aggregate);
+
+                block_scan->d_tile_prefixes[tile_idx] = inclusive_prefix;
+                __threadfence_block();
+                block_scan->d_tile_status[tile_idx] = DEVICE_SCAN_TILE_PREFIX;
+            }
+
+            // Return block-wide exclusive block_prefix
+            return block_prefix;
         }
     };
 
@@ -396,99 +534,118 @@ struct PersistentBlockScan
 
 
     /**
-     * The number of tiles processed per tile
+     * Exclusive scan specialization
      */
-    __device__ __forceinline__ int TileItems()
+    template <typename _ScanOp, typename _Identity>
+    __device__ __forceinline__
+    void ScanBlock(T (&items)[ITEMS_PER_THREAD], _ScanOp scan_op, _Identity identity, T& block_aggregate)
     {
-        return 1;
+        BlockScanT::ExclusiveScan(smem_storage.scan, items, items, identity, scan_op, block_aggregate);
     }
 
-
     /**
-     * Process the grid's first tile (full)
+     * Exclusive sum specialization
      */
-    __device__ __forceinline__ void ConsumeFirstTileFull()
+    template <typename _Identity>
+    __device__ __forceinline__
+    void ScanBlock(T (&items)[ITEMS_PER_THREAD], Sum<T> scan_op, _Identity identity, T& block_aggregate)
     {
-        // Load items
-        T items[ITEMS_PER_THREAD];
-        BlockLoadT::Load(smem_storage.load, d_in, items);
-
-        __syncthreads();
-
-        // Block scan
-        T block_aggregate;
-        if (INCLUSIVE)
-            BlockScanT::InclusiveScan(smem_storage.scan, items, items, scan_op, block_aggregate);
-        else
-            BlockScanT::ExclusiveScan(smem_storage.scan, items, items, identity, scan_op, block_aggregate);
-
-        // Update tile status
-        if (threadIdx.x == 0)
-        {
-            d_tile_prefixes[0] = block_aggregate;
-            __threadfence_block();
-            d_tile_status[0] = DEVICE_SCAN_TILE_PREFIX;
-        }
-
-        __syncthreads();
-
-        // Store items
-        BlockStoreT::Store(smem_storage.store, d_out, items);
+        BlockScanT::ExclusiveSum(smem_storage.scan, items, items, block_aggregate);
     }
 
+    /**
+     * Inclusive scan specialization
+     */
+    template <typename _ScanOp>
+    __device__ __forceinline__
+    void ScanBlock(T (&items)[ITEMS_PER_THREAD], _ScanOp scan_op, NullType identity, T& block_aggregate)
+    {
+        BlockScanT::InclusiveScan(smem_storage.scan, items, items, scan_op, block_aggregate);
+    }
 
     /**
-     * Process the grid's first tile (partial)
+     * Inclusive sum specialization
      */
-    __device__ __forceinline__ void ConsumeFirstTilePartial()
+    template <typename _ScanOp>
+    __device__ __forceinline__
+    void ScanBlock(T (&items)[ITEMS_PER_THREAD], Sum<T> scan_op, NullType identity, T& block_aggregate)
     {
-        int num_valid = num_items - TILE_ITEMS;
+        BlockScanT::InclusiveSum(smem_storage.scan, items, items, block_aggregate);
+    }
 
-        // Load items
-        T items[ITEMS_PER_THREAD];
-        BlockLoadT::Load(smem_storage.load, d_in, num_valid, items);
+    /**
+     * Exclusive scan specialization (with prefix from predecessors)
+     */
+    template <typename _ScanOp, typename _Identity>
+    __device__ __forceinline__
+    void ScanBlock(T (&items)[ITEMS_PER_THREAD], _ScanOp scan_op, _Identity identity, T& block_aggregate, int tile_idx)
+    {
+        BlockScanT::ExclusiveScan(smem_storage.scan, items, items, identity, scan_op, block_aggregate, BlockPrefixOp(this, tile_idx));
+    }
 
-        __syncthreads();
+    /**
+     * Exclusive sum specialization (with prefix from predecessors)
+     */
+    template <typename _Identity>
+    __device__ __forceinline__
+    void ScanBlock(T (&items)[ITEMS_PER_THREAD], Sum<T> scan_op, _Identity identity, T& block_aggregate, int tile_idx)
+    {
+        BlockScanT::ExclusiveSum(smem_storage.scan, items, items, block_aggregate, BlockPrefixOp(this, tile_idx));
+    }
 
-        // Block scan
-        T block_aggregate;
-        if (INCLUSIVE)
-            BlockScanT::InclusiveScan(smem_storage.scan, items, items, scan_op, block_aggregate);
-        else
-            BlockScanT::ExclusiveScan(smem_storage.scan, items, items, identity, scan_op, block_aggregate);
+    /**
+     * Inclusive scan specialization (with prefix from predecessors)
+     */
+    template <typename _ScanOp>
+    __device__ __forceinline__
+    void ScanBlock(T (&items)[ITEMS_PER_THREAD], _ScanOp scan_op, NullType identity, T& block_aggregate, int tile_idx)
+    {
+        BlockScanT::InclusiveScan(smem_storage.scan, items, items, scan_op, block_aggregate, BlockPrefixOp(this, tile_idx));
+    }
 
-        __syncthreads();
-
-        // Store items
-        BlockStoreT::Store(smem_storage.store, d_out, num_valid, items);
+    /**
+     * Inclusive sum specialization (with prefix from predecessors)
+     */
+    template <typename _ScanOp>
+    __device__ __forceinline__
+    void ScanBlock(T (&items)[ITEMS_PER_THREAD], Sum<T> scan_op, NullType identity, T& block_aggregate, int tile_idx)
+    {
+        BlockScanT::InclusiveSum(smem_storage.scan, items, items, block_aggregate, BlockPrefixOp(this, tile_idx));
     }
 
 
     /**
      * Process the tile (full)
      */
-    __device__ __forceinline__ void ConsumeTileFull(
-        int tile_idx,
-        SizeT block_offset)
+    __device__ __forceinline__ void ConsumeTileFull(int tile_idx)
     {
+        SizeT block_offset = SizeT(TILE_ITEMS) * tile_idx;
+
         // Load items
         T items[ITEMS_PER_THREAD];
         BlockLoadT::Load(smem_storage.load, d_in + block_offset, items);
 
         __syncthreads();
 
-        // Block scan
-        T block_aggregate;
-        BlockPrefixOp prefix_op(this, tile_idx);
-/*
-        if (threadIdx.x < 32)
-        prefix_op(0);
-*/
+        if (tile_idx == 0)
+        {
+            T block_aggregate;
+            ScanBlock(items, scan_op, identity, block_aggregate);
 
-        if (INCLUSIVE)
-            BlockScanT::InclusiveScan(smem_storage.scan, items, items, scan_op, block_aggregate, prefix_op);
+            // Update tile status
+            if (threadIdx.x == 0)
+            {
+                d_tile_prefixes[0] = block_aggregate;
+                __threadfence_block();
+                d_tile_status[0] = DEVICE_SCAN_TILE_PREFIX;
+            }
+        }
         else
-            BlockScanT::ExclusiveScan(smem_storage.scan, items, items, identity, scan_op, block_aggregate, prefix_op);
+        {
+            T block_aggregate;
+            ScanBlock(items, scan_op, identity, block_aggregate, tile_idx);
+        }
+
 
         __syncthreads();
 
@@ -500,10 +657,9 @@ struct PersistentBlockScan
     /**
      * Process the tile (partial)
      */
-    __device__ __forceinline__ void ConsumeTilePartial(
-        int tile_idx,
-        SizeT block_offset)
+    __device__ __forceinline__ void ConsumeTilePartial(int tile_idx)
     {
+        SizeT block_offset = SizeT(TILE_ITEMS) * tile_idx;
         int num_valid = num_items - block_offset;
 
         // Load items
@@ -512,13 +668,19 @@ struct PersistentBlockScan
 
         __syncthreads();
 
-        // Block scan
-        T block_aggregate;
-        BlockPrefixOp prefix_op(this, tile_idx);
-        if (INCLUSIVE)
-            BlockScanT::InclusiveScan(smem_storage.scan, items, items, scan_op, block_aggregate, prefix_op);
+        if (tile_idx == 0)
+        {
+            // Block scan
+            T block_aggregate;
+            ScanBlock(items, scan_op, identity, block_aggregate);
+        }
         else
-            BlockScanT::ExclusiveScan(smem_storage.scan, items, items, identity, scan_op, block_aggregate, prefix_op);
+        {
+            // Block scan
+            T block_aggregate;
+            ScanBlock(items, scan_op, identity, block_aggregate, tile_idx);
+        }
+
 
         __syncthreads();
 
@@ -526,41 +688,6 @@ struct PersistentBlockScan
         BlockStoreT::Store(smem_storage.store, d_out + block_offset, num_valid, items);
     }
 
-
-    /**
-     * Process a single tile of input
-     */
-    __device__ __forceinline__ void ConsumeTile(
-        bool    &sync_after,    ///< Whether or not the caller needs to synchronize before repurposing the shared memory used by this instance
-        int     tile_idx,       ///< The index of the tile to consume
-        int     num_valid)      ///< Unused
-    {
-        if (tile_idx == 0)
-        {
-//            if (TILE_ITEMS < num_items)
-                ConsumeFirstTileFull();
-//            else
-//                ConsumeFirstTilePartial();
-        }
-        else
-        {
-            SizeT block_offset = SizeT(TILE_ITEMS) * tile_idx;
-//            if (block_offset + TILE_ITEMS <= num_items)
-                ConsumeTileFull(tile_idx, block_offset);
-//            else
-//                ConsumeTilePartial(tile_idx, block_offset);
-        }
-
-        sync_after = false;
-    }
-
-
-    /**
-     * Finalize the computation.
-     */
-    __device__ __forceinline__ void Finalize(
-        int dummy_result)
-    {}
 
 };
 
