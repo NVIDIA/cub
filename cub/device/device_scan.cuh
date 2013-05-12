@@ -138,9 +138,43 @@ __global__ void MultiBlockScanKernel(
         identity,
         num_items);
 
-    // Consume tiles using thread block instance
-    int dummy_result;
-    ConsumeTiles(persistent_block, num_tiles, queue, dummy_result);
+    // Shared tile-processing offset obtained dynamically from queue
+    __shared__ SizeT dynamic_tile_idx;
+
+    // We give each thread block at least one tile of input.
+    SizeT tile_idx = blockIdx.x;
+
+    // Check if we have a full tile to consume
+    while (true)
+    {
+        if (tile_idx <= num_tiles - 1)
+        {
+            // Full tile to consume
+            persistent_block.ConsumeTileFull(tile_idx);
+
+            __syncthreads();
+
+            // Dequeue up to tile_items
+            if (threadIdx.x == 0)
+                dynamic_tile_idx = queue.Drain(1) + gridDim.x;
+
+            __syncthreads();
+
+            tile_idx = dynamic_tile_idx;
+        }
+        else
+        {
+            if (tile_idx == num_tiles - 1)
+            {
+                // We have less than a full tile to consume
+                persistent_block.ConsumeTilePartial(tile_idx);
+            }
+
+            break;
+        }
+    };
+
+
 }
 
 

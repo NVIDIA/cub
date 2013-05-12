@@ -368,6 +368,38 @@ private:
             return input;
         }
 
+
+        /// Segmented reduction (generic)
+        template <typename ReductionOp>
+        static __device__ __forceinline__ T SegmentedReduce(
+            SmemStorage         &smem_storage,      ///< [in] Reference to shared memory allocation having layout type SmemStorage
+            T                   input,              ///< [in] Calling thread's input
+            unsigned int        distance,           ///< [in] The distance from the calling thread's \p input to the start of the segment.
+            ReductionOp         reduction_op)       ///< [in] Reduction operator
+        {
+            int &uinput = reinterpret_cast<int&>(input);
+
+            // Iterate scan steps
+            #pragma unroll
+            for (int STEP = 0; STEP < STEPS; STEP++)
+            {
+                const unsigned int OFFSET = 1 << STEP;
+                const int c = ((0) << 8) | 0x1f;
+
+                asm(
+                    "{"
+                    "  .reg .u32 r0;"
+                    "  .reg .pred p;"
+                    "  shfl.down.b32 r0, %1, %2, %4;"
+                    "  setp.le.u32 p, %2, %3;"
+                    "  @p add.u32 %1, r0, %1;"
+                    "  mov.u32 %0, %1;"
+                    "}"
+                    : "=r"(uinput) : "r"(uinput), "r"(OFFSET), "r"(distance), "r"(c));
+            }
+
+            return input;
+        }
     };
 
 
@@ -424,6 +456,39 @@ private:
 
                 // Update input if addend is in range
                 if ((FULL_TILE && POW_OF_TWO) || ((lane_id + OFFSET) * VALID_PER_LANE < valid))
+                {
+                    T addend = ThreadLoad<PTX_LOAD_VS>(&smem_storage.warp_buffer[warp_id][lane_id + OFFSET]);
+                    input = reduction_op(input, addend);
+                }
+            }
+
+            return input;
+        }
+
+
+        /**
+         * Segmented reduction
+         */
+        template <typename ReductionOp>
+        static __device__ __forceinline__ T SegmentedReduce(
+            SmemStorage         &smem_storage,      ///< [in] Reference to shared memory allocation having layout type SmemStorage
+            T                   input,              ///< [in] Calling thread's input
+            unsigned int        distance,           ///< [in] The distance from the calling thread's \p input to the start of the segment.
+            ReductionOp         reduction_op)       ///< [in] Reduction operator
+        {
+            // Warp, thread-lane-IDs
+            unsigned int warp_id = (WARPS == 1) ? 0 : (threadIdx.x / LOGICAL_WARP_THREADS);
+            unsigned int lane_id = (WARPS == 1) ? threadIdx.x : (threadIdx.x & (LOGICAL_WARP_THREADS - 1));
+
+            for (int STEP = 0; STEP < STEPS; STEP++)
+            {
+                const int OFFSET = 1 << STEP;
+
+                // Share input into buffer
+                ThreadStore<PTX_STORE_VS>(&smem_storage.warp_buffer[warp_id][lane_id], input);
+
+                // Update input if addend is in range
+                if (OFFSET <= distance)
                 {
                     T addend = ThreadLoad<PTX_LOAD_VS>(&smem_storage.warp_buffer[warp_id][lane_id + OFFSET]);
                     input = reduction_op(input, addend);
@@ -568,6 +633,33 @@ public:
         {
             return Internal::Reduce<false, 1>(smem_storage, input, valid_lanes, reduction_op);
         }
+    }
+
+
+    /**
+     * Segmented reduction
+     */
+    template <
+        typename            ReductionOp,
+        typename            Flag>
+    static __device__ __forceinline__ T SegmentedReduce(
+        SmemStorage         &smem_storage,      ///< [in] Reference to shared memory allocation having layout type SmemStorage
+        T                   input,              ///< [in] Calling thread's input
+        Flag                flag,               ///< [in] Head flag denoting whether or not \p input is the start of a new segment
+        ReductionOp         reduction_op)       ///< [in] Reduction operator
+    {
+        // Get the start flags for each thread in the warp.
+        unsigned int flags = __ballot(flag);
+
+        // Mask out the bits below the current thread.
+        unsigned int mask = (0xffffffff << threadIdx.x);
+        flags &= mask;
+
+        // Find the distance from the current thread to the thread at the start of
+        // the segment.
+        unsigned int distance = __ffs(flags) - threadIdx.x - 1;
+
+        return Internal::SegmentedReduce(smem_storage, input, distance, reduction_op);
     }
 
 
