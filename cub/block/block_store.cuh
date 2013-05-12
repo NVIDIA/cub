@@ -135,13 +135,11 @@ __device__ __forceinline__ void BlockStoreDirect(
     const int           &guarded_items,                 ///< [in] Number of valid items in the tile
     T                   (&items)[ITEMS_PER_THREAD])     ///< [in] Data to store
 {
-    int bounds = guarded_items - (threadIdx.x * ITEMS_PER_THREAD);
-
     // Store directly in thread-blocked order
     #pragma unroll
     for (int ITEM = 0; ITEM < ITEMS_PER_THREAD; ITEM++)
     {
-        if (ITEM < bounds)
+        if (ITEM + (threadIdx.x * ITEMS_PER_THREAD) < guarded_items)
         {
             ThreadStore<MODIFIER>(block_itr + (threadIdx.x * ITEMS_PER_THREAD) + ITEM, items[ITEM]);
         }
@@ -261,13 +259,11 @@ __device__ __forceinline__ void BlockStoreDirectStriped(
     T               (&items)[ITEMS_PER_THREAD],         ///< [in] Data to store
     int             stride = blockDim.x)                ///< [in] <b>[optional]</b> Stripe stride.  Default is the width of the threadblock.  More efficient code can be generated if a compile-time-constant (e.g., BLOCK_THREADS) is supplied.
 {
-    int bounds = guarded_items - threadIdx.x;
-
     // Store directly in striped order
     #pragma unroll
     for (int ITEM = 0; ITEM < ITEMS_PER_THREAD; ITEM++)
     {
-        if (ITEM * stride < bounds)
+        if ((ITEM * stride) + threadIdx.x < guarded_items)
         {
             ThreadStore<MODIFIER>(block_itr + (ITEM * stride) + threadIdx.x, items[ITEM]);
         }
