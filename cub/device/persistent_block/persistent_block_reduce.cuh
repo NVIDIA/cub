@@ -199,14 +199,14 @@ struct PersistentBlockReduce
             if (input_aligned)
             {
                 // Alias items as an array of VectorT and load it in striped fashion
-                BlockLoadDirectStriped(
+                BlockLoadStriped(
                     reinterpret_cast<VectorT*>(d_in + block_offset),
                     reinterpret_cast<VectorT (&)[ITEMS_PER_THREAD / VECTOR_LOAD_LENGTH]>(items));
             }
             else
             {
                 // Load items in striped fashion
-                BlockLoadDirectStriped(d_in + block_offset, items);
+                BlockLoadStriped(d_in + block_offset, items);
             }
 
             // Prevent hoisting
