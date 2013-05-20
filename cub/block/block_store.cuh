@@ -55,7 +55,7 @@ namespace cub {
 
 
 /******************************************************************//**
- * \name Direct threadblock I/O (blocked arrangement)
+ * \name Blocked threadblock I/O
  *********************************************************************/
 //@{
 
@@ -72,13 +72,13 @@ namespace cub {
  * \tparam OutputIteratorRA     <b>[inferred]</b> The random-access iterator type for output (may be a simple pointer type).
  */
 template <
-    PtxStoreModifier MODIFIER,
-    typename        T,
-    int             ITEMS_PER_THREAD,
-    typename        OutputIteratorRA>
-__device__ __forceinline__ void BlockStoreDirect(
-    OutputIteratorRA    block_itr,                          ///< [in] The threadblock's base output iterator for storing to
-    T                   (&items)[ITEMS_PER_THREAD])         ///< [in] Data to store
+    PtxStoreModifier    MODIFIER,
+    typename            T,
+    int                 ITEMS_PER_THREAD,
+    typename            OutputIteratorRA>
+__device__ __forceinline__ void BlockStoreBlocked(
+    OutputIteratorRA    block_itr,                      ///< [in] The threadblock's base output iterator for storing to
+    T                   (&items)[ITEMS_PER_THREAD])     ///< [in] Data to store
 {
     // Store directly in thread-blocked order
     #pragma unroll
@@ -102,14 +102,14 @@ __device__ __forceinline__ void BlockStoreDirect(
  * \tparam OutputIteratorRA     <b>[inferred]</b> The random-access iterator type for output (may be a simple pointer type).
  */
 template <
-    typename        T,
-    int             ITEMS_PER_THREAD,
-    typename        OutputIteratorRA>
-__device__ __forceinline__ void BlockStoreDirect(
+    typename            T,
+    int                 ITEMS_PER_THREAD,
+    typename            OutputIteratorRA>
+__device__ __forceinline__ void BlockStoreBlocked(
     OutputIteratorRA    block_itr,                      ///< [in] The threadblock's base output iterator for storing to
     T                   (&items)[ITEMS_PER_THREAD])     ///< [in] Data to store
 {
-    BlockStoreDirect<PTX_STORE_NONE>(block_itr, items);
+    BlockStoreBlocked<PTX_STORE_NONE>(block_itr, items);
 }
 
 
@@ -126,11 +126,11 @@ __device__ __forceinline__ void BlockStoreDirect(
  * \tparam OutputIteratorRA     <b>[inferred]</b> The random-access iterator type for output (may be a simple pointer type).
  */
 template <
-    PtxStoreModifier MODIFIER,
-    typename        T,
-    int             ITEMS_PER_THREAD,
-    typename        OutputIteratorRA>
-__device__ __forceinline__ void BlockStoreDirect(
+    PtxStoreModifier    MODIFIER,
+    typename            T,
+    int                 ITEMS_PER_THREAD,
+    typename            OutputIteratorRA>
+__device__ __forceinline__ void BlockStoreBlocked(
     OutputIteratorRA    block_itr,                      ///< [in] The threadblock's base output iterator for storing to
     const int           &guarded_items,                 ///< [in] Number of valid items in the tile
     T                   (&items)[ITEMS_PER_THREAD])     ///< [in] Data to store
@@ -159,21 +159,21 @@ __device__ __forceinline__ void BlockStoreDirect(
  * \tparam OutputIteratorRA     <b>[inferred]</b> The random-access iterator type for output (may be a simple pointer type).
  */
 template <
-    typename        T,
-    int             ITEMS_PER_THREAD,
-    typename        OutputIteratorRA>
-__device__ __forceinline__ void BlockStoreDirect(
+    typename            T,
+    int                 ITEMS_PER_THREAD,
+    typename            OutputIteratorRA>
+__device__ __forceinline__ void BlockStoreBlocked(
     OutputIteratorRA    block_itr,                      ///< [in] The threadblock's base output iterator for storing to
     const int           &guarded_items,                 ///< [in] Number of valid items in the tile
     T                   (&items)[ITEMS_PER_THREAD])     ///< [in] Data to store
 {
-    BlockStoreDirect<PTX_STORE_NONE>(block_itr, guarded_items, items);
+    BlockStoreBlocked<PTX_STORE_NONE>(block_itr, guarded_items, items);
 }
 
 
 //@}  end member group
 /******************************************************************//**
- * \name Direct threadblock I/O (striped arrangement)
+ * \name Striped threadblock I/O
  *********************************************************************/
 //@{
 
@@ -192,11 +192,11 @@ __device__ __forceinline__ void BlockStoreDirect(
  * \tparam OutputIteratorRA     <b>[inferred]</b> The random-access iterator type for output (may be a simple pointer type).
  */
 template <
-    PtxStoreModifier MODIFIER,
-    typename        T,
-    int             ITEMS_PER_THREAD,
-    typename        OutputIteratorRA>
-__device__ __forceinline__ void BlockStoreDirectStriped(
+    PtxStoreModifier    MODIFIER,
+    typename            T,
+    int                 ITEMS_PER_THREAD,
+    typename            OutputIteratorRA>
+__device__ __forceinline__ void BlockStoreStriped(
     OutputIteratorRA    block_itr,                      ///< [in] The threadblock's base output iterator for storing to
     T                   (&items)[ITEMS_PER_THREAD],     ///< [in] Data to store
     int                 stride = blockDim.x)            ///< [in] <b>[optional]</b> Stripe stride.  Default is the width of the threadblock.  More efficient code can be generated if a compile-time-constant (e.g., BLOCK_THREADS) is supplied.
@@ -218,21 +218,20 @@ __device__ __forceinline__ void BlockStoreDirectStriped(
  * threads in <em>striped</em> arrangement, i.e., the \p ITEMS_PER_THREAD
  * items owned by each thread have logical stride \p BLOCK_THREADS between them.
  *
- * \tparam MODIFIER             cub::PtxStoreModifier cache modifier.
  * \tparam T                    <b>[inferred]</b> The data type to store.
  * \tparam ITEMS_PER_THREAD     <b>[inferred]</b> The number of consecutive items partitioned onto each thread.
  * \tparam OutputIteratorRA     <b>[inferred]</b> The random-access iterator type for output (may be a simple pointer type).
  */
 template <
-    typename        T,
-    int             ITEMS_PER_THREAD,
-    typename        OutputIteratorRA>
-__device__ __forceinline__ void BlockStoreDirectStriped(
+    typename            T,
+    int                 ITEMS_PER_THREAD,
+    typename            OutputIteratorRA>
+__device__ __forceinline__ void BlockStoreStriped(
     OutputIteratorRA    block_itr,                      ///< [in] The threadblock's base output iterator for storing to
     T                   (&items)[ITEMS_PER_THREAD],     ///< [in] Data to store
     int                 stride = blockDim.x)            ///< [in] <b>[optional]</b> Stripe stride.  Default is the width of the threadblock.  More efficient code can be generated if a compile-time-constant (e.g., BLOCK_THREADS) is supplied.
 {
-    BlockStoreDirectStriped<PTX_STORE_NONE>(block_itr, items, stride);
+    BlockStoreStriped<PTX_STORE_NONE>(block_itr, items, stride);
 }
 
 
@@ -249,15 +248,15 @@ __device__ __forceinline__ void BlockStoreDirectStriped(
  * \tparam OutputIteratorRA     <b>[inferred]</b> The random-access iterator type for output (may be a simple pointer type).
  */
 template <
-    PtxStoreModifier MODIFIER,
-    typename        T,
-    int             ITEMS_PER_THREAD,
-    typename        OutputIteratorRA>
-__device__ __forceinline__ void BlockStoreDirectStriped(
-    OutputIteratorRA  block_itr,                        ///< [in] The threadblock's base output iterator for storing to
-    const int       &guarded_items,                     ///< [in] Number of valid items in the tile
-    T               (&items)[ITEMS_PER_THREAD],         ///< [in] Data to store
-    int             stride = blockDim.x)                ///< [in] <b>[optional]</b> Stripe stride.  Default is the width of the threadblock.  More efficient code can be generated if a compile-time-constant (e.g., BLOCK_THREADS) is supplied.
+    PtxStoreModifier    MODIFIER,
+    typename            T,
+    int                 ITEMS_PER_THREAD,
+    typename            OutputIteratorRA>
+__device__ __forceinline__ void BlockStoreStriped(
+    OutputIteratorRA    block_itr,                      ///< [in] The threadblock's base output iterator for storing to
+    const int           &guarded_items,                 ///< [in] Number of valid items in the tile
+    T                   (&items)[ITEMS_PER_THREAD],     ///< [in] Data to store
+    int                 stride = blockDim.x)            ///< [in] <b>[optional]</b> Stripe stride.  Default is the width of the threadblock.  More efficient code can be generated if a compile-time-constant (e.g., BLOCK_THREADS) is supplied.
 {
     // Store directly in striped order
     #pragma unroll
@@ -283,22 +282,158 @@ __device__ __forceinline__ void BlockStoreDirectStriped(
  * \tparam OutputIteratorRA     <b>[inferred]</b> The random-access iterator type for output (may be a simple pointer type).
  */
 template <
-    typename        T,
-    int             ITEMS_PER_THREAD,
-    typename        OutputIteratorRA>
-__device__ __forceinline__ void BlockStoreDirectStriped(
-    OutputIteratorRA  block_itr,                        ///< [in] The threadblock's base output iterator for storing to
-    const int       &guarded_items,                     ///< [in] Number of valid items in the tile
-    T               (&items)[ITEMS_PER_THREAD],         ///< [in] Data to store
-    int             stride = blockDim.x)                ///< [in] <b>[optional]</b> Stripe stride.  Default is the width of the threadblock.  More efficient code can be generated if a compile-time-constant (e.g., BLOCK_THREADS) is supplied.
+    typename            T,
+    int                 ITEMS_PER_THREAD,
+    typename            OutputIteratorRA>
+__device__ __forceinline__ void BlockStoreStriped(
+    OutputIteratorRA    block_itr,                      ///< [in] The threadblock's base output iterator for storing to
+    const int           &guarded_items,                 ///< [in] Number of valid items in the tile
+    T                   (&items)[ITEMS_PER_THREAD],     ///< [in] Data to store
+    int                 stride = blockDim.x)            ///< [in] <b>[optional]</b> Stripe stride.  Default is the width of the threadblock.  More efficient code can be generated if a compile-time-constant (e.g., BLOCK_THREADS) is supplied.
 {
-    BlockStoreDirectStriped<PTX_STORE_NONE>(block_itr, guarded_items, items, stride);
+    BlockStoreStriped<PTX_STORE_NONE>(block_itr, guarded_items, items, stride);
 }
 
 
 //@}  end member group
 /******************************************************************//**
- * \name Threadblock vectorized I/O (blocked arrangement)
+ * \name Warp-striped threadblock I/O
+ *********************************************************************/
+//@{
+
+
+/**
+ * \brief Store warp-striped tile directly using the specified cache modifier.
+ *
+ * The aggregate tile of items is assumed to be partitioned across threads in
+ * "warp-striped" fashion, i.e., each warp owns a contiguous segment of
+ * (\p WARP_THREADS * \p ITEMS_PER_THREAD) items, and the \p ITEMS_PER_THREAD
+ * items owned by each thread within the same warp have logical stride
+ * \p WARP_THREADS between them.
+ *
+ * \tparam MODIFIER             cub::PtxStoreModifier cache modifier.
+ * \tparam T                    <b>[inferred]</b> The data type to store.
+ * \tparam ITEMS_PER_THREAD     <b>[inferred]</b> The number of consecutive items partitioned onto each thread.
+ * \tparam OutputIteratorRA     <b>[inferred]</b> The random-access iterator type for output (may be a simple pointer type).
+ */
+template <
+    PtxStoreModifier    MODIFIER,
+    typename            T,
+    int                 ITEMS_PER_THREAD,
+    typename            OutputIteratorRA>
+__device__ __forceinline__ void BlockStoreWarpStriped(
+    OutputIteratorRA    block_itr,                      ///< [in] The threadblock's base output iterator for storing to
+    T                   (&items)[ITEMS_PER_THREAD])     ///< [in] Data to store
+{
+    const int WARP_TILE_ITEMS   = PtxArchProps::WARP_THREADS * ITEMS_PER_THREAD;
+    int tid                     = threadIdx.x % PtxArchProps::WARP_THREADS;
+    int wid                     = threadIdx.x / PtxArchProps::WARP_THREADS;
+    int warp_offset             = wid * WARP_TILE_ITEMS;
+
+    // Store directly in warp-striped order
+    #pragma unroll
+    for (int ITEM = 0; ITEM < ITEMS_PER_THREAD; ITEM++)
+    {
+        ThreadStore<MODIFIER>(block_itr + warp_offset + tid + (ITEM * PtxArchProps::WARP_THREADS), items[ITEM]);
+    }
+}
+
+
+/**
+ * \brief Store warp-striped tile directly.
+ *
+ * The aggregate tile of items is assumed to be partitioned across threads in
+ * "warp-striped" fashion, i.e., each warp owns a contiguous segment of
+ * (\p WARP_THREADS * \p ITEMS_PER_THREAD) items, and the \p ITEMS_PER_THREAD
+ * items owned by each thread within the same warp have logical stride
+ * \p WARP_THREADS between them.
+ *
+ * \tparam T                    <b>[inferred]</b> The data type to store.
+ * \tparam ITEMS_PER_THREAD     <b>[inferred]</b> The number of consecutive items partitioned onto each thread.
+ * \tparam OutputIteratorRA     <b>[inferred]</b> The random-access iterator type for output (may be a simple pointer type).
+ */
+template <
+    typename            T,
+    int                 ITEMS_PER_THREAD,
+    typename            OutputIteratorRA>
+__device__ __forceinline__ void BlockStoreWarpStriped(
+    OutputIteratorRA    block_itr,                      ///< [in] The threadblock's base output iterator for storing to
+    T                   (&items)[ITEMS_PER_THREAD])     ///< [in] Data to store
+{
+    BlockStoreWarpStriped<PTX_STORE_NONE>(block_itr, items);
+}
+
+
+/**
+ * Store warp-striped directly tile using the specified cache modifier, guarded by range
+ *
+ * The aggregate tile of items is assumed to be partitioned across threads in
+ * "warp-striped" fashion, i.e., each warp owns a contiguous segment of
+ * (\p WARP_THREADS * \p ITEMS_PER_THREAD) items, and the \p ITEMS_PER_THREAD
+ * items owned by each thread within the same warp have logical stride
+ * \p WARP_THREADS between them.
+ *
+ * \tparam MODIFIER             cub::PtxStoreModifier cache modifier.
+ * \tparam T                    <b>[inferred]</b> The data type to store.
+ * \tparam ITEMS_PER_THREAD     <b>[inferred]</b> The number of consecutive items partitioned onto each thread.
+ * \tparam OutputIteratorRA     <b>[inferred]</b> The random-access iterator type for output (may be a simple pointer type).
+ */
+template <
+    PtxStoreModifier    MODIFIER,
+    typename            T,
+    int                 ITEMS_PER_THREAD,
+    typename            OutputIteratorRA>
+__device__ __forceinline__ void BlockStoreWarpStriped(
+    OutputIteratorRA    block_itr,                      ///< [in] The threadblock's base output iterator for storing to
+    const int           &guarded_items,                 ///< [in] Number of valid items in the tile
+    T                   (&items)[ITEMS_PER_THREAD])     ///< [in] Data to store
+{
+    const int WARP_TILE_ITEMS   = PtxArchProps::WARP_THREADS * ITEMS_PER_THREAD;
+    int tid                     = threadIdx.x % PtxArchProps::WARP_THREADS;
+    int wid                     = threadIdx.x / PtxArchProps::WARP_THREADS;
+    int warp_offset             = wid * WARP_TILE_ITEMS;
+
+    // Store directly in warp-striped order
+    #pragma unroll
+    for (int ITEM = 0; ITEM < ITEMS_PER_THREAD; ITEM++)
+    {
+        if (warp_offset + tid + (ITEM * PtxArchProps::WARP_THREADS) < guarded_items)
+        {
+            items[ITEM] = ThreadLoad<MODIFIER>(block_itr + warp_offset + tid + (ITEM * PtxArchProps::WARP_THREADS));
+        }
+    }
+}
+
+
+/**
+ * \brief Store warp-striped tile directly, guarded by range
+ *
+ * The aggregate tile of items is assumed to be partitioned across threads in
+ * "warp-striped" fashion, i.e., each warp owns a contiguous segment of
+ * (\p WARP_THREADS * \p ITEMS_PER_THREAD) items, and the \p ITEMS_PER_THREAD
+ * items owned by each thread within the same warp have logical stride
+ * \p WARP_THREADS between them.
+ *
+ * \tparam T                    <b>[inferred]</b> The data type to store.
+ * \tparam ITEMS_PER_THREAD     <b>[inferred]</b> The number of consecutive items partitioned onto each thread.
+ * \tparam OutputIteratorRA     <b>[inferred]</b> The random-access iterator type for output (may be a simple pointer type).
+ */
+template <
+    typename            T,
+    int                 ITEMS_PER_THREAD,
+    typename            OutputIteratorRA>
+__device__ __forceinline__ void BlockStoreWarpStriped(
+    OutputIteratorRA    block_itr,                      ///< [in] The threadblock's base output iterator for storing to
+    const int           &guarded_items,                 ///< [in] Number of valid items in the tile
+    T                   (&items)[ITEMS_PER_THREAD])     ///< [in] Data to store
+{
+    BlockStoreWarpStriped<PTX_STORE_NONE>(block_itr, guarded_items, items);
+}
+
+
+//@}  end member group
+/******************************************************************//**
+ * \name Blocked, vectorized threadblock I/O
  *********************************************************************/
 //@{
 
@@ -323,12 +458,12 @@ __device__ __forceinline__ void BlockStoreDirectStriped(
  *
  */
 template <
-    PtxStoreModifier MODIFIER,
-    typename        T,
-    int             ITEMS_PER_THREAD>
+    PtxStoreModifier    MODIFIER,
+    typename            T,
+    int                 ITEMS_PER_THREAD>
 __device__ __forceinline__ void BlockStoreVectorized(
-    T               *block_ptr,                         ///< [in] Input pointer for storing from
-    T               (&items)[ITEMS_PER_THREAD])         ///< [in] Data to store
+    T                   *block_ptr,                     ///< [in] Input pointer for storing from
+    T                   (&items)[ITEMS_PER_THREAD])     ///< [in] Data to store
 {
     enum
     {
@@ -340,7 +475,7 @@ __device__ __forceinline__ void BlockStoreVectorized(
             MAX_VEC_SIZE :
             1,
 
-        VECTORS_PER_THREAD     = ITEMS_PER_THREAD / VEC_SIZE,
+        VECTORS_PER_THREAD = ITEMS_PER_THREAD / VEC_SIZE,
     };
 
     // Vector type
@@ -361,7 +496,7 @@ __device__ __forceinline__ void BlockStoreVectorized(
     }
 
     // Direct-store using vector types
-    BlockStoreDirect<MODIFIER>(block_ptr_vectors, raw_vector);
+    BlockStoreBlocked<MODIFIER>(block_ptr_vectors, raw_vector);
 }
 
 
@@ -444,12 +579,14 @@ enum BlockStorePolicy
 
     /**
      * \par Overview
-     * A [<em>blocked arrangement</em>](index.html#sec3sec3) is locally transposed into
-     * a [<em>striped arrangement</em>](index.html#sec3sec3) which is then written to
-     * memory.  More specifically, cub::BlockExchange used to locally reorder the items into a
-     * [<em>striped arrangement</em>](index.html#sec3sec3), after which the threadblock
-     * writes items in a parallel "strip-mining" fashion: consecutive items owned by thread<sub><em>i</em></sub>
-     * are written to memory with stride \p BLOCK_THREADS between them.
+     * A [<em>blocked arrangement</em>](index.html#sec3sec3) is locally
+     * transposed into a [<em>striped arrangement</em>](index.html#sec3sec3)
+     * which is then written to memory.  More specifically, cub::BlockExchange
+     * used to locally reorder the items into a
+     * [<em>striped arrangement</em>](index.html#sec3sec3), after which the
+     * threadblock writes items in a parallel "strip-mining" fashion: consecutive
+     * items owned by thread<sub><em>i</em></sub> are written to memory with
+     * stride \p BLOCK_THREADS between them.
      *
      * \par Performance Considerations
      * - The utilization of memory transactions (coalescing) remains high regardless
@@ -461,16 +598,22 @@ enum BlockStorePolicy
 
     /**
      * \par Overview
-     * A [<em>striped arrangement</em>](index.html#sec3sec3) of data is written
-     * directly to memory.   The threadblock writes items in a parallel
-     * "strip-mining" fashion: consecutive items owned by thread<sub><em>i</em></sub>
-     * are written to memory with stride \p BLOCK_THREADS between them.
+     * A [<em>blocked arrangement</em>](index.html#sec3sec3) is locally
+     * transposed into a [<em>warp-striped arrangement</em>](index.html#sec3sec3)
+     * which is then written to memory.  More specifically, cub::BlockExchange used
+     * to locally reorder the items into a
+     * [<em>warp-striped arrangement</em>](index.html#sec3sec3), after which
+     * each warp writes its own contiguous segment in a parallel "strip-mining" fashion:
+     * consecutive items owned by lane<sub><em>i</em></sub> are written to memory
+     * with stride \p WARP_THREADS between them.
      *
      * \par Performance Considerations
      * - The utilization of memory transactions (coalescing) remains high regardless
      *   of items written per thread.
+     * - The local reordering incurs slightly longer latencies and throughput than the
+     *   direct cub::BLOCK_STORE_DIRECT and cub::BLOCK_STORE_VECTORIZE alternatives.
      */
-    BLOCK_STORE_STRIPED,
+    BLOCK_STORE_WARP_TRANSPOSE,
 };
 
 
@@ -503,6 +646,9 @@ enum BlockStorePolicy
  *      coalescing optimization.  [More...](\ref cub::BlockStorePolicy)
  *   -# <b>cub::BLOCK_STORE_TRANSPOSE</b>.  A [<em>blocked arrangement</em>](index.html#sec3sec3)
  *      is locally transposed into a [<em>striped arrangement</em>](index.html#sec3sec3) which is
+ *      then written to memory.  [More...](\ref cub::BlockStorePolicy)
+ *   -# <b>cub::BLOCK_STORE_WARP_TRANSPOSE</b>.  A [<em>blocked arrangement</em>](index.html#sec3sec3)
+ *      is locally transposed into a [<em>warp-striped arrangement</em>](index.html#sec3sec3) which is
  *      then written to memory.  [More...](\ref cub::BlockStorePolicy)
  *
  * \par Usage Considerations
@@ -600,7 +746,7 @@ private:
             OutputIteratorRA    block_itr,                  ///< [in] The threadblock's base output iterator for storing to
             T                   (&items)[ITEMS_PER_THREAD]) ///< [in] Data to store
         {
-            BlockStoreDirect<MODIFIER>(block_itr, items);
+            BlockStoreBlocked<MODIFIER>(block_itr, items);
         }
 
         /// Store a tile of items across a threadblock, guarded by range
@@ -610,7 +756,7 @@ private:
             const int           &guarded_items,             ///< [in] Number of valid items in the tile
             T                   (&items)[ITEMS_PER_THREAD]) ///< [in] Data to store
         {
-            BlockStoreDirect<MODIFIER>(block_itr, guarded_items, items);
+            BlockStoreBlocked<MODIFIER>(block_itr, guarded_items, items);
         }
     };
 
@@ -640,7 +786,7 @@ private:
             _OutputIteratorRA   block_itr,                  ///< [in] The threadblock's base output iterator for storing to
             T                   (&items)[ITEMS_PER_THREAD]) ///< [in] Data to store
         {
-            BlockStoreDirect<MODIFIER>(block_itr, items);
+            BlockStoreBlocked<MODIFIER>(block_itr, items);
         }
 
         /// Store a tile of items across a threadblock, guarded by range
@@ -650,7 +796,7 @@ private:
             const int           &guarded_items,             ///< [in] Number of valid items in the tile
             T                   (&items)[ITEMS_PER_THREAD]) ///< [in] Data to store
         {
-            BlockStoreDirect<MODIFIER>(block_itr, guarded_items, items);
+            BlockStoreBlocked<MODIFIER>(block_itr, guarded_items, items);
         }
     };
 
@@ -673,10 +819,8 @@ private:
             OutputIteratorRA    block_itr,                  ///< [in] The threadblock's base output iterator for storing to
             T                   (&items)[ITEMS_PER_THREAD]) ///< [in] Data to store
         {
-            // Transpose to striped order
             BlockExchange::BlockedToStriped(smem_storage, items);
-
-            BlockStoreDirectStriped<MODIFIER>(block_itr, items, BLOCK_THREADS);
+            BlockStoreStriped<MODIFIER>(block_itr, items, BLOCK_THREADS);
         }
 
         /// Store a tile of items across a threadblock, guarded by range
@@ -686,22 +830,23 @@ private:
             const int           &guarded_items,             ///< [in] Number of valid items in the tile
             T                   (&items)[ITEMS_PER_THREAD]) ///< [in] Data to store
         {
-            // Transpose to striped order
             BlockExchange::BlockedToStriped(smem_storage, items);
-
-            BlockStoreDirectStriped<MODIFIER>(block_itr, guarded_items, items, BLOCK_THREADS);
+            BlockStoreStriped<MODIFIER>(block_itr, guarded_items, items, BLOCK_THREADS);
         }
     };
 
 
     /**
-     * BLOCK_STORE_STRIPED specialization of store helper
+     * BLOCK_STORE_WARP_TRANSPOSE specialization of store helper
      */
     template <int DUMMY>
-    struct StoreInternal<BLOCK_STORE_STRIPED, DUMMY>
+    struct StoreInternal<BLOCK_STORE_WARP_TRANSPOSE, DUMMY>
     {
+        // BlockExchange utility type for keys
+        typedef BlockExchange<T, BLOCK_THREADS, ITEMS_PER_THREAD> BlockExchange;
+
         /// Shared memory storage layout type
-        typedef NullType SmemStorage;
+        typedef typename BlockExchange::SmemStorage SmemStorage;
 
         /// Store a tile of items across a threadblock
         static __device__ __forceinline__ void Store(
@@ -709,7 +854,8 @@ private:
             OutputIteratorRA    block_itr,                  ///< [in] The threadblock's base output iterator for storing to
             T                   (&items)[ITEMS_PER_THREAD]) ///< [in] Data to store
         {
-            BlockStoreDirectStriped<MODIFIER>(block_itr, items);
+            BlockExchange::BlockedToWarpStriped(smem_storage, items);
+            BlockStoreWarpStriped<MODIFIER>(block_itr, items);
         }
 
         /// Store a tile of items across a threadblock, guarded by range
@@ -719,7 +865,8 @@ private:
             const int           &guarded_items,             ///< [in] Number of valid items in the tile
             T                   (&items)[ITEMS_PER_THREAD]) ///< [in] Data to store
         {
-            BlockStoreDirectStriped<MODIFIER>(block_itr, guarded_items, items);
+            BlockExchange::BlockedToWarpStriped(smem_storage, items);
+            BlockStoreWarpStriped<MODIFIER>(block_itr, guarded_items, items);
         }
     };
 

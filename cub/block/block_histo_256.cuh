@@ -132,8 +132,8 @@ enum BlockHisto256Algorithm
  *
  * __global__ void SomeKernel(...)
  * {
- *      // Parameterize BlockHisto256 for 128 threads
- *      typedef cub::BlockHisto256<128> BlockHisto256;
+ *      // Parameterize BlockHisto256 for 128 threads having 4 samples each
+ *      typedef cub::BlockHisto256<128, 4> BlockHisto256;
  *
  *      // Declare shared memory for BlockHisto256
  *      __shared__ typename BlockHisto256::SmemStorage smem_storage;
@@ -148,7 +148,7 @@ enum BlockHisto256Algorithm
  *      ...
  *
  *      // Compute the threadblock-wide histogram
- *      BlockHisto256::Histogram(smem_storage, smem_histogram, data);
+ *      BlockHisto256::Histogram(smem_storage, data, smem_histogram);
  *
  *      ...
  * \endcode
@@ -162,18 +162,18 @@ enum BlockHisto256Algorithm
  * template <int BLOCK_THREADS>
  * __global__ void SomeKernel(..., int *d_histogram)
  * {
- *      // Parameterize BlockHisto256
- *      typedef cub::BlockHisto256<BLOCK_THREADS> BlockHisto256;
+ *      // Parameterize BlockHisto256 where each thread composites one sample item
+ *      typedef cub::BlockHisto256<BLOCK_THREADS, 1> BlockHisto256;
  *
  *      // Declare shared memory for BlockHisto256
  *      __shared__ typename BlockHisto256::SmemStorage smem_storage;
  *
  *      // Guarded load of input item
- *      int data;
- *      if (threadIdx.x < num_items) data = ...;
+ *      int data[1];
+ *      if (threadIdx.x < num_items) data[0] = ...;
  *
  *      // Compute the threadblock-wide sum of valid elements in thread0
- *      BlockHisto256::Composite(smem_storage, d_histogram, data);
+ *      BlockHisto256::Composite(smem_storage, data, d_histogram);
  *
  *      ...
  * \endcode

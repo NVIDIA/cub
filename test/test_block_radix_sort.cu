@@ -96,14 +96,14 @@ __global__ void Kernel(
     KeyType keys[ITEMS_PER_THREAD];
     ValueType values[ITEMS_PER_THREAD];
 
-    BlockLoadDirectStriped(d_keys, keys, BLOCK_THREADS);
-    BlockLoadDirectStriped(d_values, values, BLOCK_THREADS);
+    BlockLoadStriped(d_keys, keys, BLOCK_THREADS);
+    BlockLoadStriped(d_values, values, BLOCK_THREADS);
 
     // Test keys-value sorting (in striped arrangement)
     BlockRadixSort::SortStriped(smem_storage, keys, values, begin_bit, end_bit);
 
-    BlockStoreDirectStriped(d_keys, keys, BLOCK_THREADS);
-    BlockStoreDirectStriped(d_values, values, BLOCK_THREADS);
+    BlockStoreStriped(d_keys, keys, BLOCK_THREADS);
+    BlockStoreStriped(d_values, values, BLOCK_THREADS);
 }
 
 
@@ -147,12 +147,12 @@ __global__ void Kernel(
     // Keys per thread
     KeyType keys[ITEMS_PER_THREAD];
 
-    BlockLoadDirectStriped(d_keys, keys, BLOCK_THREADS);
+    BlockLoadStriped(d_keys, keys, BLOCK_THREADS);
 
     // Test keys-only sorting (in striped arrangement)
     BlockRadixSort::SortStriped(smem_storage, keys, begin_bit, end_bit);
 
-    BlockStoreDirectStriped(d_keys, keys, BLOCK_THREADS);
+    BlockStoreStriped(d_keys, keys, BLOCK_THREADS);
 }
 
 

@@ -171,85 +171,85 @@ Classes</h2></td></tr>
 <tr class="heading"><td colspan="2"><h2 class="groupheader"><a name="member-group"></a>
 Direct threadblock I/O (blocked arrangement)</h2></td></tr>
 <tr class="memitem:ga17dd53c5e498a457cb002ea8a17fd26f"><td class="memTemplParams" colspan="2">template&lt;PtxLoadModifier MODIFIER, typename T , int ITEMS_PER_THREAD, typename InputIteratorRA &gt; </td></tr>
-<tr class="memitem:ga17dd53c5e498a457cb002ea8a17fd26f"><td class="memTemplItemLeft" align="right" valign="top">__device__ __forceinline__ void&#160;</td><td class="memTemplItemRight" valign="bottom"><a class="el" href="group___block_module.html#ga17dd53c5e498a457cb002ea8a17fd26f">cub::BlockLoadDirect</a> (InputIteratorRA block_itr, T(&amp;items)[ITEMS_PER_THREAD])</td></tr>
+<tr class="memitem:ga17dd53c5e498a457cb002ea8a17fd26f"><td class="memTemplItemLeft" align="right" valign="top">__device__ __forceinline__ void&#160;</td><td class="memTemplItemRight" valign="bottom"><a class="el" href="group___block_module.html#ga17dd53c5e498a457cb002ea8a17fd26f">cub::BlockLoadBlocked</a> (InputIteratorRA block_itr, T(&amp;items)[ITEMS_PER_THREAD])</td></tr>
 <tr class="memdesc:ga17dd53c5e498a457cb002ea8a17fd26f"><td class="mdescLeft">&#160;</td><td class="mdescRight">Load a tile of items across a threadblock directly using the specified cache modifier.  <a href="#ga17dd53c5e498a457cb002ea8a17fd26f">More...</a><br/></td></tr>
 <tr class="separator:ga17dd53c5e498a457cb002ea8a17fd26f"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:ga58df9568d2e73868661204e665dfba75"><td class="memTemplParams" colspan="2">template&lt;typename T , int ITEMS_PER_THREAD, typename InputIteratorRA &gt; </td></tr>
-<tr class="memitem:ga58df9568d2e73868661204e665dfba75"><td class="memTemplItemLeft" align="right" valign="top">__device__ __forceinline__ void&#160;</td><td class="memTemplItemRight" valign="bottom"><a class="el" href="group___block_module.html#ga58df9568d2e73868661204e665dfba75">cub::BlockLoadDirect</a> (InputIteratorRA block_itr, T(&amp;items)[ITEMS_PER_THREAD])</td></tr>
+<tr class="memitem:ga58df9568d2e73868661204e665dfba75"><td class="memTemplItemLeft" align="right" valign="top">__device__ __forceinline__ void&#160;</td><td class="memTemplItemRight" valign="bottom"><a class="el" href="group___block_module.html#ga58df9568d2e73868661204e665dfba75">cub::BlockLoadBlocked</a> (InputIteratorRA block_itr, T(&amp;items)[ITEMS_PER_THREAD])</td></tr>
 <tr class="memdesc:ga58df9568d2e73868661204e665dfba75"><td class="mdescLeft">&#160;</td><td class="mdescRight">Load a tile of items across a threadblock directly.  <a href="#ga58df9568d2e73868661204e665dfba75">More...</a><br/></td></tr>
 <tr class="separator:ga58df9568d2e73868661204e665dfba75"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:ga526e6017bd1939c9e91c713834d556b7"><td class="memTemplParams" colspan="2">template&lt;PtxLoadModifier MODIFIER, typename T , int ITEMS_PER_THREAD, typename InputIteratorRA &gt; </td></tr>
-<tr class="memitem:ga526e6017bd1939c9e91c713834d556b7"><td class="memTemplItemLeft" align="right" valign="top">__device__ __forceinline__ void&#160;</td><td class="memTemplItemRight" valign="bottom"><a class="el" href="group___block_module.html#ga526e6017bd1939c9e91c713834d556b7">cub::BlockLoadDirect</a> (InputIteratorRA block_itr, const int &amp;guarded_items, T(&amp;items)[ITEMS_PER_THREAD])</td></tr>
+<tr class="memitem:ga526e6017bd1939c9e91c713834d556b7"><td class="memTemplItemLeft" align="right" valign="top">__device__ __forceinline__ void&#160;</td><td class="memTemplItemRight" valign="bottom"><a class="el" href="group___block_module.html#ga526e6017bd1939c9e91c713834d556b7">cub::BlockLoadBlocked</a> (InputIteratorRA block_itr, const int &amp;guarded_items, T(&amp;items)[ITEMS_PER_THREAD])</td></tr>
 <tr class="memdesc:ga526e6017bd1939c9e91c713834d556b7"><td class="mdescLeft">&#160;</td><td class="mdescRight">Load a tile of items across a threadblock directly using the specified cache modifier, guarded by range.  <a href="#ga526e6017bd1939c9e91c713834d556b7">More...</a><br/></td></tr>
 <tr class="separator:ga526e6017bd1939c9e91c713834d556b7"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:gabffc17c4e3b322b7d8ce3affdd803e36"><td class="memTemplParams" colspan="2">template&lt;typename T , int ITEMS_PER_THREAD, typename InputIteratorRA &gt; </td></tr>
-<tr class="memitem:gabffc17c4e3b322b7d8ce3affdd803e36"><td class="memTemplItemLeft" align="right" valign="top">__device__ __forceinline__ void&#160;</td><td class="memTemplItemRight" valign="bottom"><a class="el" href="group___block_module.html#gabffc17c4e3b322b7d8ce3affdd803e36">cub::BlockLoadDirect</a> (InputIteratorRA block_itr, const int &amp;guarded_items, T(&amp;items)[ITEMS_PER_THREAD])</td></tr>
+<tr class="memitem:gabffc17c4e3b322b7d8ce3affdd803e36"><td class="memTemplItemLeft" align="right" valign="top">__device__ __forceinline__ void&#160;</td><td class="memTemplItemRight" valign="bottom"><a class="el" href="group___block_module.html#gabffc17c4e3b322b7d8ce3affdd803e36">cub::BlockLoadBlocked</a> (InputIteratorRA block_itr, const int &amp;guarded_items, T(&amp;items)[ITEMS_PER_THREAD])</td></tr>
 <tr class="memdesc:gabffc17c4e3b322b7d8ce3affdd803e36"><td class="mdescLeft">&#160;</td><td class="mdescRight">Load a tile of items across a threadblock directly, guarded by range.  <a href="#gabffc17c4e3b322b7d8ce3affdd803e36">More...</a><br/></td></tr>
 <tr class="separator:gabffc17c4e3b322b7d8ce3affdd803e36"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:ga19e97352c195418039667c47af6e04ec"><td class="memTemplParams" colspan="2">template&lt;PtxLoadModifier MODIFIER, typename T , int ITEMS_PER_THREAD, typename InputIteratorRA &gt; </td></tr>
-<tr class="memitem:ga19e97352c195418039667c47af6e04ec"><td class="memTemplItemLeft" align="right" valign="top">__device__ __forceinline__ void&#160;</td><td class="memTemplItemRight" valign="bottom"><a class="el" href="group___block_module.html#ga19e97352c195418039667c47af6e04ec">cub::BlockLoadDirect</a> (InputIteratorRA block_itr, const int &amp;guarded_items, T oob_default, T(&amp;items)[ITEMS_PER_THREAD])</td></tr>
+<tr class="memitem:ga19e97352c195418039667c47af6e04ec"><td class="memTemplItemLeft" align="right" valign="top">__device__ __forceinline__ void&#160;</td><td class="memTemplItemRight" valign="bottom"><a class="el" href="group___block_module.html#ga19e97352c195418039667c47af6e04ec">cub::BlockLoadBlocked</a> (InputIteratorRA block_itr, const int &amp;guarded_items, T oob_default, T(&amp;items)[ITEMS_PER_THREAD])</td></tr>
 <tr class="memdesc:ga19e97352c195418039667c47af6e04ec"><td class="mdescLeft">&#160;</td><td class="mdescRight">Load a tile of items across a threadblock directly using the specified cache modifier, guarded by range, with assignment for out-of-bound elements.  <a href="#ga19e97352c195418039667c47af6e04ec">More...</a><br/></td></tr>
 <tr class="separator:ga19e97352c195418039667c47af6e04ec"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:ga5ffee768b986f93e7ac825aadaadb8bd"><td class="memTemplParams" colspan="2">template&lt;typename T , int ITEMS_PER_THREAD, typename InputIteratorRA &gt; </td></tr>
-<tr class="memitem:ga5ffee768b986f93e7ac825aadaadb8bd"><td class="memTemplItemLeft" align="right" valign="top">__device__ __forceinline__ void&#160;</td><td class="memTemplItemRight" valign="bottom"><a class="el" href="group___block_module.html#ga5ffee768b986f93e7ac825aadaadb8bd">cub::BlockLoadDirect</a> (InputIteratorRA block_itr, const int &amp;guarded_items, T oob_default, T(&amp;items)[ITEMS_PER_THREAD])</td></tr>
+<tr class="memitem:ga5ffee768b986f93e7ac825aadaadb8bd"><td class="memTemplItemLeft" align="right" valign="top">__device__ __forceinline__ void&#160;</td><td class="memTemplItemRight" valign="bottom"><a class="el" href="group___block_module.html#ga5ffee768b986f93e7ac825aadaadb8bd">cub::BlockLoadBlocked</a> (InputIteratorRA block_itr, const int &amp;guarded_items, T oob_default, T(&amp;items)[ITEMS_PER_THREAD])</td></tr>
 <tr class="memdesc:ga5ffee768b986f93e7ac825aadaadb8bd"><td class="mdescLeft">&#160;</td><td class="mdescRight">Load a tile of items across a threadblock directly, guarded by range, with assignment for out-of-bound elements.  <a href="#ga5ffee768b986f93e7ac825aadaadb8bd">More...</a><br/></td></tr>
 <tr class="separator:ga5ffee768b986f93e7ac825aadaadb8bd"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:gade556bdfdfee03872a67580e0ec3b3f0"><td class="memTemplParams" colspan="2">template&lt;PtxStoreModifier MODIFIER, typename T , int ITEMS_PER_THREAD, typename OutputIteratorRA &gt; </td></tr>
-<tr class="memitem:gade556bdfdfee03872a67580e0ec3b3f0"><td class="memTemplItemLeft" align="right" valign="top">__device__ __forceinline__ void&#160;</td><td class="memTemplItemRight" valign="bottom"><a class="el" href="group___block_module.html#gade556bdfdfee03872a67580e0ec3b3f0">cub::BlockStoreDirect</a> (OutputIteratorRA block_itr, T(&amp;items)[ITEMS_PER_THREAD])</td></tr>
+<tr class="memitem:gade556bdfdfee03872a67580e0ec3b3f0"><td class="memTemplItemLeft" align="right" valign="top">__device__ __forceinline__ void&#160;</td><td class="memTemplItemRight" valign="bottom"><a class="el" href="group___block_module.html#gade556bdfdfee03872a67580e0ec3b3f0">cub::BlockStoreBlocked</a> (OutputIteratorRA block_itr, T(&amp;items)[ITEMS_PER_THREAD])</td></tr>
 <tr class="memdesc:gade556bdfdfee03872a67580e0ec3b3f0"><td class="mdescLeft">&#160;</td><td class="mdescRight">Store a tile of items across a threadblock directly using the specified cache modifier.  <a href="#gade556bdfdfee03872a67580e0ec3b3f0">More...</a><br/></td></tr>
 <tr class="separator:gade556bdfdfee03872a67580e0ec3b3f0"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:ga44dddae56b59b69c3786d65bd0a5b111"><td class="memTemplParams" colspan="2">template&lt;typename T , int ITEMS_PER_THREAD, typename OutputIteratorRA &gt; </td></tr>
-<tr class="memitem:ga44dddae56b59b69c3786d65bd0a5b111"><td class="memTemplItemLeft" align="right" valign="top">__device__ __forceinline__ void&#160;</td><td class="memTemplItemRight" valign="bottom"><a class="el" href="group___block_module.html#ga44dddae56b59b69c3786d65bd0a5b111">cub::BlockStoreDirect</a> (OutputIteratorRA block_itr, T(&amp;items)[ITEMS_PER_THREAD])</td></tr>
+<tr class="memitem:ga44dddae56b59b69c3786d65bd0a5b111"><td class="memTemplItemLeft" align="right" valign="top">__device__ __forceinline__ void&#160;</td><td class="memTemplItemRight" valign="bottom"><a class="el" href="group___block_module.html#ga44dddae56b59b69c3786d65bd0a5b111">cub::BlockStoreBlocked</a> (OutputIteratorRA block_itr, T(&amp;items)[ITEMS_PER_THREAD])</td></tr>
 <tr class="memdesc:ga44dddae56b59b69c3786d65bd0a5b111"><td class="mdescLeft">&#160;</td><td class="mdescRight">Store a tile of items across a threadblock directly.  <a href="#ga44dddae56b59b69c3786d65bd0a5b111">More...</a><br/></td></tr>
 <tr class="separator:ga44dddae56b59b69c3786d65bd0a5b111"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:gabb1342fbedb7bc02751bcfdf33be9ce8"><td class="memTemplParams" colspan="2">template&lt;PtxStoreModifier MODIFIER, typename T , int ITEMS_PER_THREAD, typename OutputIteratorRA &gt; </td></tr>
-<tr class="memitem:gabb1342fbedb7bc02751bcfdf33be9ce8"><td class="memTemplItemLeft" align="right" valign="top">__device__ __forceinline__ void&#160;</td><td class="memTemplItemRight" valign="bottom"><a class="el" href="group___block_module.html#gabb1342fbedb7bc02751bcfdf33be9ce8">cub::BlockStoreDirect</a> (OutputIteratorRA block_itr, const int &amp;guarded_items, T(&amp;items)[ITEMS_PER_THREAD])</td></tr>
+<tr class="memitem:gabb1342fbedb7bc02751bcfdf33be9ce8"><td class="memTemplItemLeft" align="right" valign="top">__device__ __forceinline__ void&#160;</td><td class="memTemplItemRight" valign="bottom"><a class="el" href="group___block_module.html#gabb1342fbedb7bc02751bcfdf33be9ce8">cub::BlockStoreBlocked</a> (OutputIteratorRA block_itr, const int &amp;guarded_items, T(&amp;items)[ITEMS_PER_THREAD])</td></tr>
 <tr class="memdesc:gabb1342fbedb7bc02751bcfdf33be9ce8"><td class="mdescLeft">&#160;</td><td class="mdescRight">Store a tile of items across a threadblock directly using the specified cache modifier, guarded by range.  <a href="#gabb1342fbedb7bc02751bcfdf33be9ce8">More...</a><br/></td></tr>
 <tr class="separator:gabb1342fbedb7bc02751bcfdf33be9ce8"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:ga71ed9e38c7d5c183024adb72d40dae1a"><td class="memTemplParams" colspan="2">template&lt;typename T , int ITEMS_PER_THREAD, typename OutputIteratorRA &gt; </td></tr>
-<tr class="memitem:ga71ed9e38c7d5c183024adb72d40dae1a"><td class="memTemplItemLeft" align="right" valign="top">__device__ __forceinline__ void&#160;</td><td class="memTemplItemRight" valign="bottom"><a class="el" href="group___block_module.html#ga71ed9e38c7d5c183024adb72d40dae1a">cub::BlockStoreDirect</a> (OutputIteratorRA block_itr, const int &amp;guarded_items, T(&amp;items)[ITEMS_PER_THREAD])</td></tr>
+<tr class="memitem:ga71ed9e38c7d5c183024adb72d40dae1a"><td class="memTemplItemLeft" align="right" valign="top">__device__ __forceinline__ void&#160;</td><td class="memTemplItemRight" valign="bottom"><a class="el" href="group___block_module.html#ga71ed9e38c7d5c183024adb72d40dae1a">cub::BlockStoreBlocked</a> (OutputIteratorRA block_itr, const int &amp;guarded_items, T(&amp;items)[ITEMS_PER_THREAD])</td></tr>
 <tr class="memdesc:ga71ed9e38c7d5c183024adb72d40dae1a"><td class="mdescLeft">&#160;</td><td class="mdescRight">Store a tile of items across a threadblock directly, guarded by range.  <a href="#ga71ed9e38c7d5c183024adb72d40dae1a">More...</a><br/></td></tr>
 <tr class="separator:ga71ed9e38c7d5c183024adb72d40dae1a"><td class="memSeparator" colspan="2">&#160;</td></tr>
 </table><table class="memberdecls">
 <tr class="heading"><td colspan="2"><h2 class="groupheader"><a name="member-group"></a>
 Direct threadblock I/O (striped arrangement)</h2></td></tr>
 <tr class="memitem:ga83ee84ebf1fdb8bf7be2c87f405c0ea2"><td class="memTemplParams" colspan="2">template&lt;PtxLoadModifier MODIFIER, typename T , int ITEMS_PER_THREAD, typename InputIteratorRA &gt; </td></tr>
-<tr class="memitem:ga83ee84ebf1fdb8bf7be2c87f405c0ea2"><td class="memTemplItemLeft" align="right" valign="top">__device__ __forceinline__ void&#160;</td><td class="memTemplItemRight" valign="bottom"><a class="el" href="group___block_module.html#ga83ee84ebf1fdb8bf7be2c87f405c0ea2">cub::BlockLoadDirectStriped</a> (InputIteratorRA block_itr, T(&amp;items)[ITEMS_PER_THREAD], int stride=blockDim.x)</td></tr>
+<tr class="memitem:ga83ee84ebf1fdb8bf7be2c87f405c0ea2"><td class="memTemplItemLeft" align="right" valign="top">__device__ __forceinline__ void&#160;</td><td class="memTemplItemRight" valign="bottom"><a class="el" href="group___block_module.html#ga83ee84ebf1fdb8bf7be2c87f405c0ea2">cub::BlockLoadStriped</a> (InputIteratorRA block_itr, T(&amp;items)[ITEMS_PER_THREAD], int stride=blockDim.x)</td></tr>
 <tr class="memdesc:ga83ee84ebf1fdb8bf7be2c87f405c0ea2"><td class="mdescLeft">&#160;</td><td class="mdescRight">Load striped tile directly using the specified cache modifier.  <a href="#ga83ee84ebf1fdb8bf7be2c87f405c0ea2">More...</a><br/></td></tr>
 <tr class="separator:ga83ee84ebf1fdb8bf7be2c87f405c0ea2"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:ga1f83b2777086bb0cc23239f45ca89539"><td class="memTemplParams" colspan="2">template&lt;typename T , int ITEMS_PER_THREAD, typename InputIteratorRA &gt; </td></tr>
-<tr class="memitem:ga1f83b2777086bb0cc23239f45ca89539"><td class="memTemplItemLeft" align="right" valign="top">__device__ __forceinline__ void&#160;</td><td class="memTemplItemRight" valign="bottom"><a class="el" href="group___block_module.html#ga1f83b2777086bb0cc23239f45ca89539">cub::BlockLoadDirectStriped</a> (InputIteratorRA block_itr, T(&amp;items)[ITEMS_PER_THREAD], int stride=blockDim.x)</td></tr>
+<tr class="memitem:ga1f83b2777086bb0cc23239f45ca89539"><td class="memTemplItemLeft" align="right" valign="top">__device__ __forceinline__ void&#160;</td><td class="memTemplItemRight" valign="bottom"><a class="el" href="group___block_module.html#ga1f83b2777086bb0cc23239f45ca89539">cub::BlockLoadStriped</a> (InputIteratorRA block_itr, T(&amp;items)[ITEMS_PER_THREAD], int stride=blockDim.x)</td></tr>
 <tr class="memdesc:ga1f83b2777086bb0cc23239f45ca89539"><td class="mdescLeft">&#160;</td><td class="mdescRight">Load striped tile directly.  <a href="#ga1f83b2777086bb0cc23239f45ca89539">More...</a><br/></td></tr>
 <tr class="separator:ga1f83b2777086bb0cc23239f45ca89539"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:ga9512f7cafeba9baeabbe4f45b553b07c"><td class="memTemplParams" colspan="2">template&lt;PtxLoadModifier MODIFIER, typename T , int ITEMS_PER_THREAD, typename InputIteratorRA &gt; </td></tr>
-<tr class="memitem:ga9512f7cafeba9baeabbe4f45b553b07c"><td class="memTemplItemLeft" align="right" valign="top">__device__ __forceinline__ void&#160;</td><td class="memTemplItemRight" valign="bottom"><a class="el" href="group___block_module.html#ga9512f7cafeba9baeabbe4f45b553b07c">cub::BlockLoadDirectStriped</a> (InputIteratorRA block_itr, const int &amp;guarded_items, T(&amp;items)[ITEMS_PER_THREAD], int stride=blockDim.x)</td></tr>
+<tr class="memitem:ga9512f7cafeba9baeabbe4f45b553b07c"><td class="memTemplItemLeft" align="right" valign="top">__device__ __forceinline__ void&#160;</td><td class="memTemplItemRight" valign="bottom"><a class="el" href="group___block_module.html#ga9512f7cafeba9baeabbe4f45b553b07c">cub::BlockLoadStriped</a> (InputIteratorRA block_itr, const int &amp;guarded_items, T(&amp;items)[ITEMS_PER_THREAD], int stride=blockDim.x)</td></tr>
 <tr class="memdesc:ga9512f7cafeba9baeabbe4f45b553b07c"><td class="mdescLeft">&#160;</td><td class="mdescRight">Load striped directly tile using the specified cache modifier, guarded by range.  <a href="#ga9512f7cafeba9baeabbe4f45b553b07c">More...</a><br/></td></tr>
 <tr class="separator:ga9512f7cafeba9baeabbe4f45b553b07c"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:ga4889345dc6435111948f97522b0fea85"><td class="memTemplParams" colspan="2">template&lt;typename T , int ITEMS_PER_THREAD, typename InputIteratorRA &gt; </td></tr>
-<tr class="memitem:ga4889345dc6435111948f97522b0fea85"><td class="memTemplItemLeft" align="right" valign="top">__device__ __forceinline__ void&#160;</td><td class="memTemplItemRight" valign="bottom"><a class="el" href="group___block_module.html#ga4889345dc6435111948f97522b0fea85">cub::BlockLoadDirectStriped</a> (InputIteratorRA block_itr, const int &amp;guarded_items, T(&amp;items)[ITEMS_PER_THREAD], int stride=blockDim.x)</td></tr>
+<tr class="memitem:ga4889345dc6435111948f97522b0fea85"><td class="memTemplItemLeft" align="right" valign="top">__device__ __forceinline__ void&#160;</td><td class="memTemplItemRight" valign="bottom"><a class="el" href="group___block_module.html#ga4889345dc6435111948f97522b0fea85">cub::BlockLoadStriped</a> (InputIteratorRA block_itr, const int &amp;guarded_items, T(&amp;items)[ITEMS_PER_THREAD], int stride=blockDim.x)</td></tr>
 <tr class="memdesc:ga4889345dc6435111948f97522b0fea85"><td class="mdescLeft">&#160;</td><td class="mdescRight">Load striped tile directly, guarded by range.  <a href="#ga4889345dc6435111948f97522b0fea85">More...</a><br/></td></tr>
 <tr class="separator:ga4889345dc6435111948f97522b0fea85"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:gab609d301efe4570a61a1ddcffc6927ce"><td class="memTemplParams" colspan="2">template&lt;PtxLoadModifier MODIFIER, typename T , int ITEMS_PER_THREAD, typename InputIteratorRA &gt; </td></tr>
-<tr class="memitem:gab609d301efe4570a61a1ddcffc6927ce"><td class="memTemplItemLeft" align="right" valign="top">__device__ __forceinline__ void&#160;</td><td class="memTemplItemRight" valign="bottom"><a class="el" href="group___block_module.html#gab609d301efe4570a61a1ddcffc6927ce">cub::BlockLoadDirectStriped</a> (InputIteratorRA block_itr, const int &amp;guarded_items, T oob_default, T(&amp;items)[ITEMS_PER_THREAD], int stride=blockDim.x)</td></tr>
+<tr class="memitem:gab609d301efe4570a61a1ddcffc6927ce"><td class="memTemplItemLeft" align="right" valign="top">__device__ __forceinline__ void&#160;</td><td class="memTemplItemRight" valign="bottom"><a class="el" href="group___block_module.html#gab609d301efe4570a61a1ddcffc6927ce">cub::BlockLoadStriped</a> (InputIteratorRA block_itr, const int &amp;guarded_items, T oob_default, T(&amp;items)[ITEMS_PER_THREAD], int stride=blockDim.x)</td></tr>
 <tr class="memdesc:gab609d301efe4570a61a1ddcffc6927ce"><td class="mdescLeft">&#160;</td><td class="mdescRight">Load striped directly tile using the specified cache modifier, guarded by range, with assignment for out-of-bound elements.  <a href="#gab609d301efe4570a61a1ddcffc6927ce">More...</a><br/></td></tr>
 <tr class="separator:gab609d301efe4570a61a1ddcffc6927ce"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:ga615141197055656db62c416452ce18b0"><td class="memTemplParams" colspan="2">template&lt;typename T , int ITEMS_PER_THREAD, typename InputIteratorRA &gt; </td></tr>
-<tr class="memitem:ga615141197055656db62c416452ce18b0"><td class="memTemplItemLeft" align="right" valign="top">__device__ __forceinline__ void&#160;</td><td class="memTemplItemRight" valign="bottom"><a class="el" href="group___block_module.html#ga615141197055656db62c416452ce18b0">cub::BlockLoadDirectStriped</a> (InputIteratorRA block_itr, const int &amp;guarded_items, T oob_default, T(&amp;items)[ITEMS_PER_THREAD], int stride=blockDim.x)</td></tr>
+<tr class="memitem:ga615141197055656db62c416452ce18b0"><td class="memTemplItemLeft" align="right" valign="top">__device__ __forceinline__ void&#160;</td><td class="memTemplItemRight" valign="bottom"><a class="el" href="group___block_module.html#ga615141197055656db62c416452ce18b0">cub::BlockLoadStriped</a> (InputIteratorRA block_itr, const int &amp;guarded_items, T oob_default, T(&amp;items)[ITEMS_PER_THREAD], int stride=blockDim.x)</td></tr>
 <tr class="memdesc:ga615141197055656db62c416452ce18b0"><td class="mdescLeft">&#160;</td><td class="mdescRight">Load striped tile directly, guarded by range, with assignment for out-of-bound elements.  <a href="#ga615141197055656db62c416452ce18b0">More...</a><br/></td></tr>
 <tr class="separator:ga615141197055656db62c416452ce18b0"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:gac9496dc1855119887042c1f3879b8c2f"><td class="memTemplParams" colspan="2">template&lt;PtxStoreModifier MODIFIER, typename T , int ITEMS_PER_THREAD, typename OutputIteratorRA &gt; </td></tr>
-<tr class="memitem:gac9496dc1855119887042c1f3879b8c2f"><td class="memTemplItemLeft" align="right" valign="top">__device__ __forceinline__ void&#160;</td><td class="memTemplItemRight" valign="bottom"><a class="el" href="group___block_module.html#gac9496dc1855119887042c1f3879b8c2f">cub::BlockStoreDirectStriped</a> (OutputIteratorRA block_itr, T(&amp;items)[ITEMS_PER_THREAD], int stride=blockDim.x)</td></tr>
+<tr class="memitem:gac9496dc1855119887042c1f3879b8c2f"><td class="memTemplItemLeft" align="right" valign="top">__device__ __forceinline__ void&#160;</td><td class="memTemplItemRight" valign="bottom"><a class="el" href="group___block_module.html#gac9496dc1855119887042c1f3879b8c2f">cub::BlockStoreStriped</a> (OutputIteratorRA block_itr, T(&amp;items)[ITEMS_PER_THREAD], int stride=blockDim.x)</td></tr>
 <tr class="memdesc:gac9496dc1855119887042c1f3879b8c2f"><td class="mdescLeft">&#160;</td><td class="mdescRight">Store striped tile directly using the specified cache modifier.  <a href="#gac9496dc1855119887042c1f3879b8c2f">More...</a><br/></td></tr>
 <tr class="separator:gac9496dc1855119887042c1f3879b8c2f"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:ga23b34fe2b784fb75221a9d5e944cec26"><td class="memTemplParams" colspan="2">template&lt;typename T , int ITEMS_PER_THREAD, typename OutputIteratorRA &gt; </td></tr>
-<tr class="memitem:ga23b34fe2b784fb75221a9d5e944cec26"><td class="memTemplItemLeft" align="right" valign="top">__device__ __forceinline__ void&#160;</td><td class="memTemplItemRight" valign="bottom"><a class="el" href="group___block_module.html#ga23b34fe2b784fb75221a9d5e944cec26">cub::BlockStoreDirectStriped</a> (OutputIteratorRA block_itr, T(&amp;items)[ITEMS_PER_THREAD], int stride=blockDim.x)</td></tr>
+<tr class="memitem:ga23b34fe2b784fb75221a9d5e944cec26"><td class="memTemplItemLeft" align="right" valign="top">__device__ __forceinline__ void&#160;</td><td class="memTemplItemRight" valign="bottom"><a class="el" href="group___block_module.html#ga23b34fe2b784fb75221a9d5e944cec26">cub::BlockStoreStriped</a> (OutputIteratorRA block_itr, T(&amp;items)[ITEMS_PER_THREAD], int stride=blockDim.x)</td></tr>
 <tr class="memdesc:ga23b34fe2b784fb75221a9d5e944cec26"><td class="mdescLeft">&#160;</td><td class="mdescRight">Store striped tile directly.  <a href="#ga23b34fe2b784fb75221a9d5e944cec26">More...</a><br/></td></tr>
 <tr class="separator:ga23b34fe2b784fb75221a9d5e944cec26"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:ga606eaef596511b99efa4417b1ac3f896"><td class="memTemplParams" colspan="2">template&lt;PtxStoreModifier MODIFIER, typename T , int ITEMS_PER_THREAD, typename OutputIteratorRA &gt; </td></tr>
-<tr class="memitem:ga606eaef596511b99efa4417b1ac3f896"><td class="memTemplItemLeft" align="right" valign="top">__device__ __forceinline__ void&#160;</td><td class="memTemplItemRight" valign="bottom"><a class="el" href="group___block_module.html#ga606eaef596511b99efa4417b1ac3f896">cub::BlockStoreDirectStriped</a> (OutputIteratorRA block_itr, const int &amp;guarded_items, T(&amp;items)[ITEMS_PER_THREAD], int stride=blockDim.x)</td></tr>
+<tr class="memitem:ga606eaef596511b99efa4417b1ac3f896"><td class="memTemplItemLeft" align="right" valign="top">__device__ __forceinline__ void&#160;</td><td class="memTemplItemRight" valign="bottom"><a class="el" href="group___block_module.html#ga606eaef596511b99efa4417b1ac3f896">cub::BlockStoreStriped</a> (OutputIteratorRA block_itr, const int &amp;guarded_items, T(&amp;items)[ITEMS_PER_THREAD], int stride=blockDim.x)</td></tr>
 <tr class="separator:ga606eaef596511b99efa4417b1ac3f896"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:ga8eac6cb6eeffd296c66554b85dff7e82"><td class="memTemplParams" colspan="2">template&lt;typename T , int ITEMS_PER_THREAD, typename OutputIteratorRA &gt; </td></tr>
-<tr class="memitem:ga8eac6cb6eeffd296c66554b85dff7e82"><td class="memTemplItemLeft" align="right" valign="top">__device__ __forceinline__ void&#160;</td><td class="memTemplItemRight" valign="bottom"><a class="el" href="group___block_module.html#ga8eac6cb6eeffd296c66554b85dff7e82">cub::BlockStoreDirectStriped</a> (OutputIteratorRA block_itr, const int &amp;guarded_items, T(&amp;items)[ITEMS_PER_THREAD], int stride=blockDim.x)</td></tr>
+<tr class="memitem:ga8eac6cb6eeffd296c66554b85dff7e82"><td class="memTemplItemLeft" align="right" valign="top">__device__ __forceinline__ void&#160;</td><td class="memTemplItemRight" valign="bottom"><a class="el" href="group___block_module.html#ga8eac6cb6eeffd296c66554b85dff7e82">cub::BlockStoreStriped</a> (OutputIteratorRA block_itr, const int &amp;guarded_items, T(&amp;items)[ITEMS_PER_THREAD], int stride=blockDim.x)</td></tr>
 <tr class="memdesc:ga8eac6cb6eeffd296c66554b85dff7e82"><td class="mdescLeft">&#160;</td><td class="mdescRight">Store striped tile directly, guarded by range.  <a href="#ga8eac6cb6eeffd296c66554b85dff7e82">More...</a><br/></td></tr>
 <tr class="separator:ga8eac6cb6eeffd296c66554b85dff7e82"><td class="memSeparator" colspan="2">&#160;</td></tr>
 </table><table class="memberdecls">
@@ -280,7 +280,7 @@ Threadblock vectorized I/O (blocked arrangement)</h2></td></tr>
 template&lt;PtxLoadModifier MODIFIER, typename T , int ITEMS_PER_THREAD, typename InputIteratorRA &gt; </div>
       <table class="memname">
         <tr>
-          <td class="memname">__device__ __forceinline__ void cub::BlockLoadDirect </td>
+          <td class="memname">__device__ __forceinline__ void cub::BlockLoadBlocked </td>
           <td>(</td>
           <td class="paramtype">InputIteratorRA&#160;</td>
           <td class="paramname"><em>block_itr</em>, </td>
@@ -327,7 +327,7 @@ template&lt;PtxLoadModifier MODIFIER, typename T , int ITEMS_PER_THREAD, typenam
 template&lt;typename T , int ITEMS_PER_THREAD, typename InputIteratorRA &gt; </div>
       <table class="memname">
         <tr>
-          <td class="memname">__device__ __forceinline__ void cub::BlockLoadDirect </td>
+          <td class="memname">__device__ __forceinline__ void cub::BlockLoadBlocked </td>
           <td>(</td>
           <td class="paramtype">InputIteratorRA&#160;</td>
           <td class="paramname"><em>block_itr</em>, </td>
@@ -373,7 +373,7 @@ template&lt;typename T , int ITEMS_PER_THREAD, typename InputIteratorRA &gt; </d
 template&lt;PtxLoadModifier MODIFIER, typename T , int ITEMS_PER_THREAD, typename InputIteratorRA &gt; </div>
       <table class="memname">
         <tr>
-          <td class="memname">__device__ __forceinline__ void cub::BlockLoadDirect </td>
+          <td class="memname">__device__ __forceinline__ void cub::BlockLoadBlocked </td>
           <td>(</td>
           <td class="paramtype">InputIteratorRA&#160;</td>
           <td class="paramname"><em>block_itr</em>, </td>
@@ -427,7 +427,7 @@ template&lt;PtxLoadModifier MODIFIER, typename T , int ITEMS_PER_THREAD, typenam
 template&lt;typename T , int ITEMS_PER_THREAD, typename InputIteratorRA &gt; </div>
       <table class="memname">
         <tr>
-          <td class="memname">__device__ __forceinline__ void cub::BlockLoadDirect </td>
+          <td class="memname">__device__ __forceinline__ void cub::BlockLoadBlocked </td>
           <td>(</td>
           <td class="paramtype">InputIteratorRA&#160;</td>
           <td class="paramname"><em>block_itr</em>, </td>
@@ -480,7 +480,7 @@ template&lt;typename T , int ITEMS_PER_THREAD, typename InputIteratorRA &gt; </d
 template&lt;PtxLoadModifier MODIFIER, typename T , int ITEMS_PER_THREAD, typename InputIteratorRA &gt; </div>
       <table class="memname">
         <tr>
-          <td class="memname">__device__ __forceinline__ void cub::BlockLoadDirect </td>
+          <td class="memname">__device__ __forceinline__ void cub::BlockLoadBlocked </td>
           <td>(</td>
           <td class="paramtype">InputIteratorRA&#160;</td>
           <td class="paramname"><em>block_itr</em>, </td>
@@ -541,7 +541,7 @@ template&lt;PtxLoadModifier MODIFIER, typename T , int ITEMS_PER_THREAD, typenam
 template&lt;typename T , int ITEMS_PER_THREAD, typename InputIteratorRA &gt; </div>
       <table class="memname">
         <tr>
-          <td class="memname">__device__ __forceinline__ void cub::BlockLoadDirect </td>
+          <td class="memname">__device__ __forceinline__ void cub::BlockLoadBlocked </td>
           <td>(</td>
           <td class="paramtype">InputIteratorRA&#160;</td>
           <td class="paramname"><em>block_itr</em>, </td>
@@ -601,7 +601,7 @@ template&lt;typename T , int ITEMS_PER_THREAD, typename InputIteratorRA &gt; </d
 template&lt;PtxLoadModifier MODIFIER, typename T , int ITEMS_PER_THREAD, typename InputIteratorRA &gt; </div>
       <table class="memname">
         <tr>
-          <td class="memname">__device__ __forceinline__ void cub::BlockLoadDirectStriped </td>
+          <td class="memname">__device__ __forceinline__ void cub::BlockLoadStriped </td>
           <td>(</td>
           <td class="paramtype">InputIteratorRA&#160;</td>
           <td class="paramname"><em>block_itr</em>, </td>
@@ -655,7 +655,7 @@ template&lt;PtxLoadModifier MODIFIER, typename T , int ITEMS_PER_THREAD, typenam
 template&lt;typename T , int ITEMS_PER_THREAD, typename InputIteratorRA &gt; </div>
       <table class="memname">
         <tr>
-          <td class="memname">__device__ __forceinline__ void cub::BlockLoadDirectStriped </td>
+          <td class="memname">__device__ __forceinline__ void cub::BlockLoadStriped </td>
           <td>(</td>
           <td class="paramtype">InputIteratorRA&#160;</td>
           <td class="paramname"><em>block_itr</em>, </td>
@@ -709,7 +709,7 @@ template&lt;typename T , int ITEMS_PER_THREAD, typename InputIteratorRA &gt; </d
 template&lt;PtxLoadModifier MODIFIER, typename T , int ITEMS_PER_THREAD, typename InputIteratorRA &gt; </div>
       <table class="memname">
         <tr>
-          <td class="memname">__device__ __forceinline__ void cub::BlockLoadDirectStriped </td>
+          <td class="memname">__device__ __forceinline__ void cub::BlockLoadStriped </td>
           <td>(</td>
           <td class="paramtype">InputIteratorRA&#160;</td>
           <td class="paramname"><em>block_itr</em>, </td>
@@ -771,7 +771,7 @@ template&lt;PtxLoadModifier MODIFIER, typename T , int ITEMS_PER_THREAD, typenam
 template&lt;typename T , int ITEMS_PER_THREAD, typename InputIteratorRA &gt; </div>
       <table class="memname">
         <tr>
-          <td class="memname">__device__ __forceinline__ void cub::BlockLoadDirectStriped </td>
+          <td class="memname">__device__ __forceinline__ void cub::BlockLoadStriped </td>
           <td>(</td>
           <td class="paramtype">InputIteratorRA&#160;</td>
           <td class="paramname"><em>block_itr</em>, </td>
@@ -831,7 +831,7 @@ template&lt;typename T , int ITEMS_PER_THREAD, typename InputIteratorRA &gt; </d
 template&lt;PtxLoadModifier MODIFIER, typename T , int ITEMS_PER_THREAD, typename InputIteratorRA &gt; </div>
       <table class="memname">
         <tr>
-          <td class="memname">__device__ __forceinline__ void cub::BlockLoadDirectStriped </td>
+          <td class="memname">__device__ __forceinline__ void cub::BlockLoadStriped </td>
           <td>(</td>
           <td class="paramtype">InputIteratorRA&#160;</td>
           <td class="paramname"><em>block_itr</em>, </td>
@@ -899,7 +899,7 @@ template&lt;PtxLoadModifier MODIFIER, typename T , int ITEMS_PER_THREAD, typenam
 template&lt;typename T , int ITEMS_PER_THREAD, typename InputIteratorRA &gt; </div>
       <table class="memname">
         <tr>
-          <td class="memname">__device__ __forceinline__ void cub::BlockLoadDirectStriped </td>
+          <td class="memname">__device__ __forceinline__ void cub::BlockLoadStriped </td>
           <td>(</td>
           <td class="paramtype">InputIteratorRA&#160;</td>
           <td class="paramname"><em>block_itr</em>, </td>
@@ -1069,7 +1069,7 @@ template&lt;typename T , int ITEMS_PER_THREAD&gt; </div>
 template&lt;PtxStoreModifier MODIFIER, typename T , int ITEMS_PER_THREAD, typename OutputIteratorRA &gt; </div>
       <table class="memname">
         <tr>
-          <td class="memname">__device__ __forceinline__ void cub::BlockStoreDirect </td>
+          <td class="memname">__device__ __forceinline__ void cub::BlockStoreBlocked </td>
           <td>(</td>
           <td class="paramtype">OutputIteratorRA&#160;</td>
           <td class="paramname"><em>block_itr</em>, </td>
@@ -1116,7 +1116,7 @@ template&lt;PtxStoreModifier MODIFIER, typename T , int ITEMS_PER_THREAD, typena
 template&lt;typename T , int ITEMS_PER_THREAD, typename OutputIteratorRA &gt; </div>
       <table class="memname">
         <tr>
-          <td class="memname">__device__ __forceinline__ void cub::BlockStoreDirect </td>
+          <td class="memname">__device__ __forceinline__ void cub::BlockStoreBlocked </td>
           <td>(</td>
           <td class="paramtype">OutputIteratorRA&#160;</td>
           <td class="paramname"><em>block_itr</em>, </td>
@@ -1162,7 +1162,7 @@ template&lt;typename T , int ITEMS_PER_THREAD, typename OutputIteratorRA &gt; </
 template&lt;PtxStoreModifier MODIFIER, typename T , int ITEMS_PER_THREAD, typename OutputIteratorRA &gt; </div>
       <table class="memname">
         <tr>
-          <td class="memname">__device__ __forceinline__ void cub::BlockStoreDirect </td>
+          <td class="memname">__device__ __forceinline__ void cub::BlockStoreBlocked </td>
           <td>(</td>
           <td class="paramtype">OutputIteratorRA&#160;</td>
           <td class="paramname"><em>block_itr</em>, </td>
@@ -1216,7 +1216,7 @@ template&lt;PtxStoreModifier MODIFIER, typename T , int ITEMS_PER_THREAD, typena
 template&lt;typename T , int ITEMS_PER_THREAD, typename OutputIteratorRA &gt; </div>
       <table class="memname">
         <tr>
-          <td class="memname">__device__ __forceinline__ void cub::BlockStoreDirect </td>
+          <td class="memname">__device__ __forceinline__ void cub::BlockStoreBlocked </td>
           <td>(</td>
           <td class="paramtype">OutputIteratorRA&#160;</td>
           <td class="paramname"><em>block_itr</em>, </td>
@@ -1269,7 +1269,7 @@ template&lt;typename T , int ITEMS_PER_THREAD, typename OutputIteratorRA &gt; </
 template&lt;PtxStoreModifier MODIFIER, typename T , int ITEMS_PER_THREAD, typename OutputIteratorRA &gt; </div>
       <table class="memname">
         <tr>
-          <td class="memname">__device__ __forceinline__ void cub::BlockStoreDirectStriped </td>
+          <td class="memname">__device__ __forceinline__ void cub::BlockStoreStriped </td>
           <td>(</td>
           <td class="paramtype">OutputIteratorRA&#160;</td>
           <td class="paramname"><em>block_itr</em>, </td>
@@ -1323,7 +1323,7 @@ template&lt;PtxStoreModifier MODIFIER, typename T , int ITEMS_PER_THREAD, typena
 template&lt;typename T , int ITEMS_PER_THREAD, typename OutputIteratorRA &gt; </div>
       <table class="memname">
         <tr>
-          <td class="memname">__device__ __forceinline__ void cub::BlockStoreDirectStriped </td>
+          <td class="memname">__device__ __forceinline__ void cub::BlockStoreStriped </td>
           <td>(</td>
           <td class="paramtype">OutputIteratorRA&#160;</td>
           <td class="paramname"><em>block_itr</em>, </td>
@@ -1377,7 +1377,7 @@ template&lt;typename T , int ITEMS_PER_THREAD, typename OutputIteratorRA &gt; </
 template&lt;PtxStoreModifier MODIFIER, typename T , int ITEMS_PER_THREAD, typename OutputIteratorRA &gt; </div>
       <table class="memname">
         <tr>
-          <td class="memname">__device__ __forceinline__ void cub::BlockStoreDirectStriped </td>
+          <td class="memname">__device__ __forceinline__ void cub::BlockStoreStriped </td>
           <td>(</td>
           <td class="paramtype">OutputIteratorRA&#160;</td>
           <td class="paramname"><em>block_itr</em>, </td>
@@ -1437,7 +1437,7 @@ template&lt;PtxStoreModifier MODIFIER, typename T , int ITEMS_PER_THREAD, typena
 template&lt;typename T , int ITEMS_PER_THREAD, typename OutputIteratorRA &gt; </div>
       <table class="memname">
         <tr>
-          <td class="memname">__device__ __forceinline__ void cub::BlockStoreDirectStriped </td>
+          <td class="memname">__device__ __forceinline__ void cub::BlockStoreStriped </td>
           <td>(</td>
           <td class="paramtype">OutputIteratorRA&#160;</td>
           <td class="paramname"><em>block_itr</em>, </td>

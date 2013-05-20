@@ -61,17 +61,17 @@ bool g_verbose = false;
 template <
     int                 BLOCK_THREADS,
     int                 ITEMS_PER_THREAD,
-    BlockLoadPolicy       LOAD_POLICY,
-    BlockStorePolicy      STORE_POLICY,
+    BlockLoadPolicy     LOAD_POLICY,
+    BlockStorePolicy    STORE_POLICY,
     PtxLoadModifier     LOAD_MODIFIER,
     PtxStoreModifier    STORE_MODIFIER,
     typename            InputIteratorRA,
     typename            OutputIteratorRA>
 __launch_bounds__ (BLOCK_THREADS, 1)
 __global__ void Kernel(
-    InputIteratorRA       d_in,
-    OutputIteratorRA      d_out_unguarded,
-    OutputIteratorRA      d_out_guarded_range,
+    InputIteratorRA     d_in,
+    OutputIteratorRA    d_out_unguarded,
+    OutputIteratorRA    d_out_guarded_range,
     int                 num_items)
 {
     enum
