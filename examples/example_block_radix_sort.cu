@@ -102,7 +102,7 @@ __global__ void BlockSortKernel(
 
     // Load items in striped fashion
     int block_offset = blockIdx.x * TILE_SIZE;
-    BlockLoadDirectStriped(d_in + block_offset, items);
+    BlockLoadStriped(d_in + block_offset, items);
 
     // Start cycle timer
     clock_t start = clock();
@@ -114,7 +114,7 @@ __global__ void BlockSortKernel(
     clock_t stop = clock();
 
     // Store output
-    BlockStoreDirectStriped(d_out + block_offset, items);
+    BlockStoreStriped(d_out + block_offset, items);
 
     // Store elapsed clocks
     if (threadIdx.x == 0)

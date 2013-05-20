@@ -644,14 +644,14 @@ struct SpmvBlock
         {
             // This is a partial-tile (e.g., the last tile of input).  Extend the coordinates of the last
             // vertex for out-of-bound items, but zero-valued
-            BlockLoadDirectStriped(d_columns + block_offset, guarded_items, VertexId(0), columns, BLOCK_THREADS);
-            BlockLoadDirectStriped(d_values + block_offset, guarded_items, Value(0), values, BLOCK_THREADS);
+            BlockLoadStriped(d_columns + block_offset, guarded_items, VertexId(0), columns, BLOCK_THREADS);
+            BlockLoadStriped(d_values + block_offset, guarded_items, Value(0), values, BLOCK_THREADS);
         }
         else
         {
             // Unguarded loads
-            BlockLoadDirectStriped(d_columns + block_offset, columns, BLOCK_THREADS);
-            BlockLoadDirectStriped(d_values + block_offset, values, BLOCK_THREADS);
+            BlockLoadStriped(d_columns + block_offset, columns, BLOCK_THREADS);
+            BlockLoadStriped(d_values + block_offset, values, BLOCK_THREADS);
         }
 
         // Fence to prevent hoisting any dependent code below into the loads above
@@ -669,12 +669,12 @@ struct SpmvBlock
         {
             // This is a partial-tile (e.g., the last tile of input).  Extend the coordinates of the last
             // vertex for out-of-bound items, but zero-valued
-            BlockLoadDirectStriped(d_rows + block_offset, guarded_items, smem_storage.last_block_row, rows, BLOCK_THREADS);
+            BlockLoadStriped(d_rows + block_offset, guarded_items, smem_storage.last_block_row, rows, BLOCK_THREADS);
         }
         else
         {
             // Unguarded loads
-            BlockLoadDirectStriped(d_rows + block_offset, rows, BLOCK_THREADS);
+            BlockLoadStriped(d_rows + block_offset, rows, BLOCK_THREADS);
         }
 
         // Transpose from threadblock-striped to threadblock-blocked arrangement
@@ -946,12 +946,12 @@ struct FinalizeSpmvBlock
             default_sum.row = smem_storage.last_block_row;
             default_sum.partial = Value(0);
 
-            BlockLoadDirect(d_block_partials + block_offset, guarded_items, default_sum, partial_sums);
+            BlockLoadBlocked(d_block_partials + block_offset, guarded_items, default_sum, partial_sums);
         }
         else
         {
             // Unguarded loads
-            BlockLoadDirect(d_block_partials + block_offset, partial_sums);
+            BlockLoadBlocked(d_block_partials + block_offset, partial_sums);
         }
 
         // Fence to prevent hoisting any dependent code below into the loads above
