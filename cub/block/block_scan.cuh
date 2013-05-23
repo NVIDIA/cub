@@ -54,8 +54,7 @@ namespace cub {
  ******************************************************************************/
 
 /**
- * BlockScanAlgorithm enumerates alternative algorithms for parallel prefix
- * scan across a CUDA threadblock.
+ * \brief BlockScanAlgorithm enumerates alternative algorithms for cub::BlockScan to compute a parallel prefix scan across a CUDA thread block.
  */
 enum BlockScanAlgorithm
 {

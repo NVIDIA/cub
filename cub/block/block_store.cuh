@@ -399,7 +399,7 @@ __device__ __forceinline__ void BlockStoreWarpStriped(
     {
         if (warp_offset + tid + (ITEM * PtxArchProps::WARP_THREADS) < guarded_items)
         {
-            items[ITEM] = ThreadLoad<MODIFIER>(block_itr + warp_offset + tid + (ITEM * PtxArchProps::WARP_THREADS));
+            ThreadStore<MODIFIER>(block_itr + warp_offset + tid + (ITEM * PtxArchProps::WARP_THREADS), items[ITEM]);
         }
     }
 }
@@ -539,7 +539,9 @@ __device__ __forceinline__ void BlockStoreVectorized(
 // Generic BlockStore abstraction
 //-----------------------------------------------------------------------------
 
-/// Tuning policy for cub::BlockStore
+/**
+ * \brief cub::BlockStorePolicy enumerates alternative algorithms for cub::BlockStore to store a tile of data to memory from a blocked arrangement across a CUDA thread block.
+ */
 enum BlockStorePolicy
 {
     /**
@@ -568,8 +570,8 @@ enum BlockStorePolicy
      * \par Performance Considerations
      * - The utilization of memory transactions (coalescing) remains high until the the
      *   access stride between threads (i.e., the number items per thread) exceeds the
-     *   maximum vector load width (typically 4 items or 64B, whichever is lower).
-     * - The following conditions will prevent vectorization and loading will fall back to cub::BLOCK_STORE_DIRECT:
+     *   maximum vector store width (typically 4 items or 64B, whichever is lower).
+     * - The following conditions will prevent vectorization and writing will fall back to cub::BLOCK_STORE_DIRECT:
      *   - \p ITEMS_PER_THREAD is odd
      *   - The \p OutputIteratorRA is not a simple pointer type
      *   - The block output offset is not quadword-aligned
@@ -625,17 +627,19 @@ enum BlockStorePolicy
 
 
 /**
- * \brief BlockStore provides data movement operations for writing [<em>blocked-arranged</em>](index.html#sec3sec3) data to global memory.  ![](block_store_logo.png)
+ * \brief BlockStore provides data movement operations for storing a tile of data to memory from a [<em>block arrangement</em>](index.html#sec3sec3) across a CUDA thread block.  ![](block_store_logo.png)
  *
- * BlockStore provides a single tile-storing abstraction whose performance behavior can be statically tuned.  In particular,
- * BlockStore implements several alternative cub::BlockStorePolicy strategies catering to different granularity sizes (i.e.,
+ * BlockStore provides a tile-storing abstraction that implements alternative
+ * cub::BlockStoreAlgorithm strategies that can be used to optimize data
+ * movement on different architectures for different granularity sizes (i.e.,
  * number of items per thread).
  *
- * \tparam OutputIteratorRA       The input iterator type (may be a simple pointer type).
+ * \tparam OutputIteratorRA     The input iterator type (may be a simple pointer type).
  * \tparam BLOCK_THREADS        The threadblock size in threads.
  * \tparam ITEMS_PER_THREAD     The number of consecutive items partitioned onto each thread.
- * \tparam POLICY               <b>[optional]</b> cub::BlockStorePolicy tuning policy enumeration.  Default = cub::BLOCK_STORE_DIRECT.
+ * \tparam ALGORITHM            <b>[optional]</b> cub::BlockStorePolicy tuning policy enumeration.  Default = cub::BLOCK_STORE_DIRECT.
  * \tparam MODIFIER             <b>[optional]</b> cub::PtxStoreModifier cache modifier.  Default = cub::PTX_STORE_NONE.
+ * \tparam WARP_TIME_SLICING          <b>[optional]</b> For cooperative cub::BlockStoreAlgorithm parameterizations that utilize shared memory: the number of communication rounds needed to complete the all-to-all exchange; more rounds can be traded for a smaller shared memory footprint (default = 1)
  *
  * \par Algorithm
  * BlockStore can be (optionally) configured to use one of three alternative methods:
@@ -658,11 +662,13 @@ enum BlockStorePolicy
  *  - See cub::BlockStorePolicy for more performance details regarding algorithmic alternatives
  *
  * \par Examples
- * <em>Example 1.</em> Have a 128-thread threadblock directly store a blocked arrangement of four consecutive integers per thread.
+ * <em>Example 1.</em> Have a 128-thread thread block directly store a blocked
+ * arrangement of four consecutive integers per thread.  The store operation
+ * may suffer from non-coalesced memory accesses because consecutive threads are
+ * referencing non-consecutive outputs as each item is written.
  * \code
  * #include <cub/cub.cuh>
  *
- * template <int BLOCK_THREADS>
  * __global__ void SomeKernel(int *d_out, ...)
  * {
  *      // Parameterize BlockStore for 128 threads (4 items each) on type int
@@ -674,37 +680,66 @@ enum BlockStorePolicy
  *      // A segment of consecutive items per thread
  *      int data[4];
  *
- *      // Store a tile of data
+ *      // Store a tile of data at this block's offset
  *      BlockStore::Store(smem_storage, d_out + blockIdx.x * 128 * 4, data);
  *
  *      ...
- * }
  * \endcode
  *
- * <em>Example 2.</em> Have a threadblock store a blocked arrangement of \p ITEMS_PER_THREAD consecutive
- * integers per thread using vectorized stores and global-only caching:
+ * \par
+ * <em>Example 2.</em> Have a thread block transpose a blocked arrangement of 21
+ * consecutive integers per thread into a striped arrangement across the thread
+ * block and then store the items to memory using strip-mined writes.  The store
+ * operation has perfectly coalesced memory accesses because consecutive threads
+ * are referencing consecutive output items.
  * \code
  * #include <cub/cub.cuh>
  *
  * template <int BLOCK_THREADS>
  * __global__ void SomeKernel(int *d_out, ...)
  * {
- *      const int ITEMS_PER_THREAD = 4;
- *
  *      // Parameterize BlockStore on type int
- *      typedef cub::BlockStore<int, BLOCK_THREADS, 4, BLOCK_STORE_VECTORIZE, PTX_STORE_CG> BlockStore;
+ *      typedef cub::BlockStore<int*, BLOCK_THREADS, 21, BLOCK_STORE_TRANSPOSE> BlockStore;
  *
  *      // Declare shared memory for BlockStore
  *      __shared__ typename BlockStore::SmemStorage smem_storage;
  *
  *      // A segment of consecutive items per thread
- *      int data[4];
+ *      int data[21];
  *
- *      // Store a tile of data using vector-store instructions if possible
- *      BlockStore::Store(smem_storage, d_out + blockIdx.x * BLOCK_THREADS * 4, data);
+ *      // Store a tile of data at this block's offset
+ *      BlockStore::Store(smem_storage, d_out + blockIdx.x * BLOCK_THREADS * 21, data);
  *
  *      ...
- * }
+ * \endcode
+ *
+ * \par
+ * <em>Example 3</em> Have a thread block store a blocked arrangement of
+ * \p ITEMS_PER_THREAD consecutive integers per thread using vectorized
+ * stores and global-only caching.  The store operation will have perfectly
+ * coalesced memory accesses if ITEMS_PER_THREAD is 1, 2, or 4 which allows
+ * consecutive threads to write consecutive int1, int2, or int4 words.
+ * \code
+ * #include <cub/cub.cuh>
+ *
+ * template <
+ *     int BLOCK_THREADS,
+ *     int ITEMS_PER_THREAD>
+ * __global__ void SomeKernel(int *d_out, ...)
+ * {
+ *      // Parameterize BlockStore on type int
+ *      typedef cub::BlockStore<int*, BLOCK_THREADS, ITEMS_PER_THREAD, BLOCK_STORE_VECTORIZE, PTX_STORE_CG> BlockStore;
+ *
+ *      // Declare shared memory for BlockStore
+ *      __shared__ typename BlockStore::SmemStorage smem_storage;
+ *
+ *      // A segment of consecutive items per thread
+ *      int data[ITEMS_PER_THREAD];
+ *
+ *      // Store a tile of data using vector-store instructions if possible
+ *      BlockStore::Store(smem_storage, d_out + blockIdx.x * BLOCK_THREADS * ITEMS_PER_THREAD, data);
+ *
+ *      ...
  * \endcode
  * <br>
  */
@@ -712,8 +747,9 @@ template <
     typename            OutputIteratorRA,
     int                 BLOCK_THREADS,
     int                 ITEMS_PER_THREAD,
-    BlockStorePolicy    POLICY = BLOCK_STORE_DIRECT,
-    PtxStoreModifier    MODIFIER = PTX_STORE_NONE>
+    BlockStorePolicy    ALGORITHM = BLOCK_STORE_DIRECT,
+    PtxStoreModifier    MODIFIER = PTX_STORE_NONE,
+    int                 WARP_TIME_SLICING = 1>
 class BlockStore
 {
     //---------------------------------------------------------------------
@@ -808,7 +844,7 @@ private:
     struct StoreInternal<BLOCK_STORE_TRANSPOSE, DUMMY>
     {
         // BlockExchange utility type for keys
-        typedef BlockExchange<T, BLOCK_THREADS, ITEMS_PER_THREAD> BlockExchange;
+        typedef BlockExchange<T, BLOCK_THREADS, ITEMS_PER_THREAD, WARP_TIME_SLICING> BlockExchange;
 
         /// Shared memory storage layout type
         typedef typename BlockExchange::SmemStorage SmemStorage;
@@ -843,7 +879,7 @@ private:
     struct StoreInternal<BLOCK_STORE_WARP_TRANSPOSE, DUMMY>
     {
         // BlockExchange utility type for keys
-        typedef BlockExchange<T, BLOCK_THREADS, ITEMS_PER_THREAD> BlockExchange;
+        typedef BlockExchange<T, BLOCK_THREADS, ITEMS_PER_THREAD, WARP_TIME_SLICING> BlockExchange;
 
         /// Shared memory storage layout type
         typedef typename BlockExchange::SmemStorage SmemStorage;
@@ -871,7 +907,7 @@ private:
     };
 
     /// Shared memory storage layout type
-    typedef typename StoreInternal<POLICY>::SmemStorage _SmemStorage;
+    typedef typename StoreInternal<ALGORITHM>::SmemStorage _SmemStorage;
 
 public:
 
@@ -892,7 +928,7 @@ public:
         OutputIteratorRA    block_itr,                      ///< [in] The threadblock's base output iterator for storing to
         T                   (&items)[ITEMS_PER_THREAD])     ///< [in] Data to store
     {
-        StoreInternal<POLICY>::Store(smem_storage, block_itr, items);
+        StoreInternal<ALGORITHM>::Store(smem_storage, block_itr, items);
     }
 
     /**
@@ -904,7 +940,7 @@ public:
         const int           &guarded_items,                 ///< [in] Number of valid items in the tile
         T                   (&items)[ITEMS_PER_THREAD])     ///< [in] Data to store
     {
-        StoreInternal<POLICY>::Store(smem_storage, block_itr, guarded_items, items);
+        StoreInternal<ALGORITHM>::Store(smem_storage, block_itr, guarded_items, items);
     }
 };
 
