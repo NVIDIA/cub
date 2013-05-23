@@ -205,7 +205,7 @@ struct DeviceScan
         // Policy fields
         int                             block_threads;
         int                             items_per_thread;
-        BlockLoadPolicy                 load_policy;
+        BlockLoadAlgorithm                 load_policy;
         BlockStorePolicy                store_policy;
         BlockScanAlgorithm              scan_algorithm;
 

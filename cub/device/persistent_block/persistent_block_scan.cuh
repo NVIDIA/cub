@@ -71,7 +71,7 @@ typedef int DeviceScanTileStatus;
 template <
     int                         _BLOCK_THREADS,
     int                         _ITEMS_PER_THREAD,
-    BlockLoadPolicy             _LOAD_POLICY,
+    BlockLoadAlgorithm             _LOAD_POLICY,
     BlockStorePolicy            _STORE_POLICY,
     BlockScanAlgorithm          _SCAN_ALGORITHM>
 struct PersistentBlockScanPolicy
@@ -82,7 +82,7 @@ struct PersistentBlockScanPolicy
         ITEMS_PER_THREAD    = _ITEMS_PER_THREAD,
     };
 
-    static const BlockLoadPolicy        LOAD_POLICY      = _LOAD_POLICY;
+    static const BlockLoadAlgorithm        LOAD_POLICY      = _LOAD_POLICY;
     static const BlockStorePolicy       STORE_POLICY     = _STORE_POLICY;
     static const BlockScanAlgorithm     SCAN_ALGORITHM   = _SCAN_ALGORITHM;
 };

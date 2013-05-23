@@ -61,10 +61,11 @@ bool g_verbose = false;
 template <
     int                 BLOCK_THREADS,
     int                 ITEMS_PER_THREAD,
-    BlockLoadPolicy     LOAD_POLICY,
+    BlockLoadAlgorithm  LOAD_POLICY,
     BlockStorePolicy    STORE_POLICY,
     PtxLoadModifier     LOAD_MODIFIER,
     PtxStoreModifier    STORE_MODIFIER,
+    int                 TIME_SLICES,
     typename            InputIteratorRA,
     typename            OutputIteratorRA>
 __launch_bounds__ (BLOCK_THREADS, 1)
@@ -83,8 +84,8 @@ __global__ void Kernel(
     typedef typename std::iterator_traits<InputIteratorRA>::value_type T;
 
     // Threadblock load/store abstraction types
-    typedef BlockLoad<InputIteratorRA, BLOCK_THREADS, ITEMS_PER_THREAD, LOAD_POLICY, LOAD_MODIFIER> BlockLoad;
-    typedef BlockStore<OutputIteratorRA, BLOCK_THREADS, ITEMS_PER_THREAD, STORE_POLICY, STORE_MODIFIER> BlockStore;
+    typedef BlockLoad<InputIteratorRA, BLOCK_THREADS, ITEMS_PER_THREAD, LOAD_POLICY, LOAD_MODIFIER, TIME_SLICES> BlockLoad;
+    typedef BlockStore<OutputIteratorRA, BLOCK_THREADS, ITEMS_PER_THREAD, STORE_POLICY, STORE_MODIFIER, TIME_SLICES> BlockStore;
 
     // Shared memory type for this threadblock
     union SmemStorage
@@ -113,7 +114,7 @@ __global__ void Kernel(
         // Store data
         BlockStore::Store(smem_storage.store, d_out_unguarded + block_offset, data);
     }
-
+/*
     __syncthreads();
 
     // Test guarded by range
@@ -129,6 +130,7 @@ __global__ void Kernel(
         // Store data
         BlockStore::Store(smem_storage.store, d_out_guarded_range + block_offset, guarded_elements, data);
     }
+*/
 }
 
 
@@ -144,24 +146,25 @@ template <
     typename            T,
     int                 BLOCK_THREADS,
     int                 ITEMS_PER_THREAD,
-    BlockLoadPolicy       LOAD_POLICY,
-    BlockStorePolicy      STORE_POLICY,
+    BlockLoadAlgorithm  LOAD_POLICY,
+    BlockStorePolicy    STORE_POLICY,
     PtxLoadModifier     LOAD_MODIFIER,
     PtxStoreModifier    STORE_MODIFIER,
+    int                 TIME_SLICES,
     typename            InputIteratorRA,
     typename            OutputIteratorRA>
 void TestKernel(
     T                   *h_in,
-    InputIteratorRA       d_in,
-    OutputIteratorRA      d_out_unguarded,
-    OutputIteratorRA      d_out_guarded_range,
+    InputIteratorRA     d_in,
+    OutputIteratorRA    d_out_unguarded,
+    OutputIteratorRA    d_out_guarded_range,
     int                 grid_size,
     int                 guarded_elements)
 {
     int unguarded_elements = grid_size * BLOCK_THREADS * ITEMS_PER_THREAD;
 
     // Run kernel
-    Kernel<BLOCK_THREADS, ITEMS_PER_THREAD, LOAD_POLICY, STORE_POLICY, LOAD_MODIFIER, STORE_MODIFIER>
+    Kernel<BLOCK_THREADS, ITEMS_PER_THREAD, LOAD_POLICY, STORE_POLICY, LOAD_MODIFIER, STORE_MODIFIER, TIME_SLICES>
         <<<grid_size, BLOCK_THREADS>>>(
             d_in,
             d_out_unguarded,
@@ -188,10 +191,11 @@ template <
     typename            T,
     int                 BLOCK_THREADS,
     int                 ITEMS_PER_THREAD,
-    BlockLoadPolicy       LOAD_POLICY,
-    BlockStorePolicy      STORE_POLICY,
+    BlockLoadAlgorithm  LOAD_POLICY,
+    BlockStorePolicy    STORE_POLICY,
     PtxLoadModifier     LOAD_MODIFIER,
-    PtxStoreModifier    STORE_MODIFIER>
+    PtxStoreModifier    STORE_MODIFIER,
+    int                 TIME_SLICES>
 void TestNative(
     int                 grid_size,
     float               fraction_valid)
@@ -215,7 +219,8 @@ void TestNative(
     // Initialize problem on host and device
     for (int i = 0; i < unguarded_elements; ++i)
     {
-        RandomBits(h_in[i]);
+//        RandomBits(h_in[i]);
+        h_in[i] = i;
     }
     CubDebugExit(cudaMemcpy(d_in, h_in, sizeof(T) * unguarded_elements, cudaMemcpyHostToDevice));
 
@@ -229,10 +234,11 @@ void TestNative(
         "STORE_POLICY(%d) "
         "LOAD_MODIFIER(%d) "
         "STORE_MODIFIER(%d) "
+        "TIME_SLICES(%d) "
         "sizeof(T)(%d)\n",
-            IsPointer<T*>::VALUE, grid_size, guarded_elements, unguarded_elements, BLOCK_THREADS, ITEMS_PER_THREAD, LOAD_POLICY, STORE_POLICY, LOAD_MODIFIER, STORE_MODIFIER, (int) sizeof(T));
+            IsPointer<T*>::VALUE, grid_size, guarded_elements, unguarded_elements, BLOCK_THREADS, ITEMS_PER_THREAD, LOAD_POLICY, STORE_POLICY, LOAD_MODIFIER, STORE_MODIFIER, TIME_SLICES, (int) sizeof(T));
 
-    TestKernel<T, BLOCK_THREADS, ITEMS_PER_THREAD, LOAD_POLICY, STORE_POLICY, LOAD_MODIFIER, STORE_MODIFIER>(
+    TestKernel<T, BLOCK_THREADS, ITEMS_PER_THREAD, LOAD_POLICY, STORE_POLICY, LOAD_MODIFIER, STORE_MODIFIER, TIME_SLICES>(
         h_in,
         d_in,
         d_out_unguarded,
@@ -255,8 +261,9 @@ template <
     typename            T,
     int                 BLOCK_THREADS,
     int                 ITEMS_PER_THREAD,
-    BlockLoadPolicy     LOAD_POLICY,
-    BlockStorePolicy    STORE_POLICY>
+    BlockLoadAlgorithm  LOAD_POLICY,
+    BlockStorePolicy    STORE_POLICY,
+    int                 TIME_SLICES>
 void TestIterator(
     int                 grid_size,
     float               fraction_valid)
@@ -292,10 +299,11 @@ void TestIterator(
         "ITEMS_PER_THREAD(%d) "
         "LOAD_POLICY(%d) "
         "STORE_POLICY(%d) "
+        "TIME_SLICES(%d) "
         "sizeof(T)(%d)\n",
-            !IsPointer<Iterator>::VALUE, grid_size, guarded_elements, unguarded_elements, BLOCK_THREADS, ITEMS_PER_THREAD, LOAD_POLICY, STORE_POLICY, (int) sizeof(T));
+            !IsPointer<Iterator>::VALUE, grid_size, guarded_elements, unguarded_elements, BLOCK_THREADS, ITEMS_PER_THREAD, LOAD_POLICY, STORE_POLICY, TIME_SLICES, (int) sizeof(T));
 
-    TestKernel<T, BLOCK_THREADS, ITEMS_PER_THREAD, LOAD_POLICY, STORE_POLICY, PTX_LOAD_NONE, PTX_STORE_NONE>(
+    TestKernel<T, BLOCK_THREADS, ITEMS_PER_THREAD, LOAD_POLICY, STORE_POLICY, PTX_LOAD_NONE, PTX_STORE_NONE, TIME_SLICES>(
         h_in,
         counting_itr,
         d_out_unguarded,
@@ -314,20 +322,44 @@ void TestIterator(
  * Evaluate different pointer access types
  */
 template <
-    typename        T,
-    int             BLOCK_THREADS,
-    int             ITEMS_PER_THREAD,
-    BlockLoadPolicy   LOAD_POLICY,
-    BlockStorePolicy  STORE_POLICY>
+    typename                T,
+    int                     BLOCK_THREADS,
+    int                     ITEMS_PER_THREAD,
+    BlockLoadAlgorithm      LOAD_POLICY,
+    BlockStorePolicy        STORE_POLICY,
+    int                     TIME_SLICES>
 void TestPointerAccess(
     int             grid_size,
     float           fraction_valid)
 {
-    TestNative<T, BLOCK_THREADS, ITEMS_PER_THREAD, LOAD_POLICY, STORE_POLICY, PTX_LOAD_NONE, PTX_STORE_NONE>(grid_size, fraction_valid);
-    TestNative<T, BLOCK_THREADS, ITEMS_PER_THREAD, LOAD_POLICY, STORE_POLICY, PTX_LOAD_CG, PTX_STORE_CG>(grid_size, fraction_valid);
-    TestNative<T, BLOCK_THREADS, ITEMS_PER_THREAD, LOAD_POLICY, STORE_POLICY, PTX_LOAD_CS, PTX_STORE_CS>(grid_size, fraction_valid);
-    TestIterator<T, BLOCK_THREADS, ITEMS_PER_THREAD, LOAD_POLICY, STORE_POLICY>(grid_size, fraction_valid);
+    TestNative<T, BLOCK_THREADS, ITEMS_PER_THREAD, LOAD_POLICY, STORE_POLICY, PTX_LOAD_NONE, PTX_STORE_NONE, TIME_SLICES>(grid_size, fraction_valid);
+    TestNative<T, BLOCK_THREADS, ITEMS_PER_THREAD, LOAD_POLICY, STORE_POLICY, PTX_LOAD_CG, PTX_STORE_CG, TIME_SLICES>(grid_size, fraction_valid);
+    TestNative<T, BLOCK_THREADS, ITEMS_PER_THREAD, LOAD_POLICY, STORE_POLICY, PTX_LOAD_CS, PTX_STORE_CS, TIME_SLICES>(grid_size, fraction_valid);
+    TestIterator<T, BLOCK_THREADS, ITEMS_PER_THREAD, LOAD_POLICY, STORE_POLICY, TIME_SLICES>(grid_size, fraction_valid);
 }
+
+
+/**
+ * Evaluate different time-slicing strategies
+ */
+template <
+    typename                T,
+    int                     BLOCK_THREADS,
+    int                     ITEMS_PER_THREAD,
+    BlockLoadAlgorithm      LOAD_POLICY,
+    BlockStorePolicy        STORE_POLICY>
+void TestSlicedStrategy(
+    int             grid_size,
+    float           fraction_valid)
+{
+    if (ITEMS_PER_THREAD >= 1)
+        TestPointerAccess<T, BLOCK_THREADS, ITEMS_PER_THREAD, LOAD_POLICY, STORE_POLICY, 1>(grid_size, fraction_valid);
+    if (ITEMS_PER_THREAD >= 2)
+        TestPointerAccess<T, BLOCK_THREADS, ITEMS_PER_THREAD, LOAD_POLICY, STORE_POLICY, 2>(grid_size, fraction_valid);
+    if (ITEMS_PER_THREAD >= 4)
+        TestPointerAccess<T, BLOCK_THREADS, ITEMS_PER_THREAD, LOAD_POLICY, STORE_POLICY, 4>(grid_size, fraction_valid);
+}
+
 
 
 /**
@@ -342,8 +374,9 @@ void TestStrategy(
     float           fraction_valid)
 {
     TestPointerAccess<T, BLOCK_THREADS, ITEMS_PER_THREAD, BLOCK_LOAD_DIRECT, BLOCK_STORE_DIRECT>(grid_size, fraction_valid);
-    TestPointerAccess<T, BLOCK_THREADS, ITEMS_PER_THREAD, BLOCK_LOAD_TRANSPOSE, BLOCK_STORE_TRANSPOSE>(grid_size, fraction_valid);
     TestPointerAccess<T, BLOCK_THREADS, ITEMS_PER_THREAD, BLOCK_LOAD_VECTORIZE, BLOCK_STORE_VECTORIZE>(grid_size, fraction_valid);
+    TestSlicedStrategy<T, BLOCK_THREADS, ITEMS_PER_THREAD, BLOCK_LOAD_TRANSPOSE, BLOCK_STORE_TRANSPOSE>(grid_size, fraction_valid);
+    TestSlicedStrategy<T, BLOCK_THREADS, ITEMS_PER_THREAD, BLOCK_LOAD_WARP_TRANSPOSE, BLOCK_STORE_WARP_TRANSPOSE>(grid_size, fraction_valid);
 }
 
 
@@ -361,6 +394,7 @@ void TestItemsPerThread(
     TestStrategy<T, BLOCK_THREADS, 3>(grid_size, fraction_valid);
     TestStrategy<T, BLOCK_THREADS, 4>(grid_size, fraction_valid);
     TestStrategy<T, BLOCK_THREADS, 8>(grid_size, fraction_valid);
+    TestStrategy<T, BLOCK_THREADS, 17>(grid_size, fraction_valid);
 }
 
 
@@ -401,9 +435,14 @@ int main(int argc, char** argv)
     // Initialize device
     CubDebugExit(args.DeviceInit());
 
+    // Simple test
+//    TestNative<int, 64, 2, BLOCK_LOAD_TRANSPOSE, BLOCK_STORE_TRANSPOSE, PTX_LOAD_NONE, PTX_STORE_NONE, 2>(1, 0.8);
+    TestNative<int, 64, 2, BLOCK_LOAD_WARP_TRANSPOSE, BLOCK_STORE_WARP_TRANSPOSE, PTX_LOAD_NONE, PTX_STORE_NONE, 1>(1, 0.8);
+
+/*
     // Evaluate different data types
     TestThreads<int>(2, 0.8);
-
+*/
     return 0;
 }
 
