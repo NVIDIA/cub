@@ -66,7 +66,7 @@ namespace cub {
  * \tparam T                    The data type to be exchanged.
  * \tparam BLOCK_THREADS        The threadblock size in threads.
  * \tparam ITEMS_PER_THREAD     The number of items partitioned onto each thread.
- * \tparam WARP_TIME_SLICING          <b>[optional]</b> The number of communication rounds needed to complete the all-to-all exchange; more rounds can be traded for a smaller shared memory footprint (default = 1)
+ * \tparam WARP_TIME_SLICING    <b>[optional]</b> When \p true, only use enough shared memory for a single warp's worth of tile data, time-slicing the block-wide exchange over multiple synchronized rounds (default = false)
  *
  * \par Algorithm
  * Threads scatter items by item-order into shared memory, allowing one item of padding
@@ -85,7 +85,7 @@ template <
     typename        T,
     int             BLOCK_THREADS,
     int             ITEMS_PER_THREAD,
-    bool            WARP_TIME_SLICING = false>          // if true, the number of items per thread must be greater than or equal to the number of warps
+    bool            WARP_TIME_SLICING = false>
 class BlockExchange
 {
     //---------------------------------------------------------------------
@@ -94,34 +94,537 @@ class BlockExchange
 
 private:
 
-
-
     enum
     {
+        LOG_WARP_THREADS            = PtxArchProps::LOG_WARP_THREADS,
+        WARP_THREADS                = 1 << LOG_WARP_THREADS,
+        WARPS                       = (BLOCK_THREADS + PtxArchProps::WARP_THREADS - 1) / PtxArchProps::WARP_THREADS,
+
         LOG_SMEM_BANKS              = PtxArchProps::LOG_SMEM_BANKS,
         SMEM_BANKS                  = 1 << LOG_SMEM_BANKS,
+
         TILE_ITEMS                  = BLOCK_THREADS * ITEMS_PER_THREAD,
 
-        WARPS                       = (BLOCK_THREADS + PtxArchProps::WARP_THREADS - 1) / PtxArchProps::WARP_THREADS,
-        TIME_SLICED_THREADS         = (WARP_TIME_SLICING && (BLOCK_THREADS > PtxArchProps::WARP_THREADS)) ? PtxArchProps::WARP_THREADS : BLOCK_THREADS,
+        TIME_SLICES                 = (WARP_TIME_SLICING) ? WARPS : 1,
+
+        TIME_SLICED_THREADS         = (WARP_TIME_SLICING) ? CUB_MIN(BLOCK_THREADS, WARP_THREADS) : BLOCK_THREADS,
         TIME_SLICED_ITEMS           = TIME_SLICED_THREADS * ITEMS_PER_THREAD,
-        TIME_SLICES                 = (BLOCK_THREADS + TIME_SLICED_THREADS - 1) / TIME_SLICED_THREADS,
+
+        WARP_TIME_SLICED_THREADS    = CUB_MIN(BLOCK_THREADS, WARP_THREADS),
+        WARP_TIME_SLICED_ITEMS      = WARP_TIME_SLICED_THREADS * ITEMS_PER_THREAD,
 
         // Insert padding if the number of items per thread is a power of two
-        PADDING                     = ((ITEMS_PER_THREAD & (ITEMS_PER_THREAD - 1)) == 0),
+        INSERT_PADDING              = ((ITEMS_PER_THREAD & (ITEMS_PER_THREAD - 1)) == 0),
+        PADDING_ITEMS               = (INSERT_PADDING) ? (TIME_SLICED_ITEMS >> LOG_SMEM_BANKS) : 0,
     };
 
     /// Shared memory storage layout type
-    union SmemStorage
-    {
-        T exchange[TIME_SLICED_ITEMS + (PADDING) ? (TIME_SLICED_ITEMS >> LOG_SMEM_BANKS) : 0];
-    };
+    typedef volatile T _SmemStorage[TIME_SLICED_ITEMS + PADDING_ITEMS];
 
 public:
 
     /// \smemstorage{BlockExchange}
-    typedef SmemStorage SmemStorage;
+    typedef _SmemStorage SmemStorage;
 
+private:
+
+
+    /**
+     * Transposes data items from <em>blocked</em> arrangement to <em>striped</em> arrangement.  Specialized for no timeslicing.
+     */
+    static __device__ __forceinline__ void BlockedToStriped(
+        SmemStorage     &smem_storage,              ///< [in] Reference to shared memory allocation having layout type SmemStorage
+        T               items[ITEMS_PER_THREAD],    ///< [in-out] Items to exchange, converting between <em>blocked</em> and <em>striped</em> arrangements.
+        Int2Type<false> time_slicing)
+    {
+        #pragma unroll
+        for (int ITEM = 0; ITEM < ITEMS_PER_THREAD; ITEM++)
+        {
+            int item_offset = (threadIdx.x * ITEMS_PER_THREAD) + ITEM;
+            if (INSERT_PADDING) item_offset += item_offset >> LOG_SMEM_BANKS;
+            smem_storage[item_offset] = items[ITEM];
+        }
+
+        __syncthreads();
+
+        #pragma unroll
+        for (int ITEM = 0; ITEM < ITEMS_PER_THREAD; ITEM++)
+        {
+            int item_offset = int(ITEM * BLOCK_THREADS) + threadIdx.x;
+            if (INSERT_PADDING) item_offset += item_offset >> LOG_SMEM_BANKS;
+            items[ITEM] = smem_storage[item_offset];
+        }
+    }
+
+
+    /**
+     * Transposes data items from <em>blocked</em> arrangement to <em>striped</em> arrangement.  Specialized for warp-timeslicing.
+     */
+    static __device__ __forceinline__ void BlockedToStriped(
+        SmemStorage     &smem_storage,              ///< [in] Reference to shared memory allocation having layout type SmemStorage
+        T               items[ITEMS_PER_THREAD],    ///< [in-out] Items to exchange, converting between <em>blocked</em> and <em>striped</em> arrangements.
+        Int2Type<true>  time_slicing)
+    {
+        T temp_items[ITEMS_PER_THREAD];
+
+        int warp_lane   = threadIdx.x & (WARP_THREADS - 1);
+        int warp_id     = threadIdx.x >> LOG_WARP_THREADS;
+
+        #pragma unroll
+        for (int SLICE = 0; SLICE < TIME_SLICES; SLICE++)
+        {
+            __syncthreads();
+
+            const int ITEMS_PROCESSED = TIME_SLICED_ITEMS * SLICE;
+
+            if (warp_id == SLICE)
+            {
+                #pragma unroll
+                for (int ITEM = 0; ITEM < ITEMS_PER_THREAD; ITEM++)
+                {
+                    int item_offset = (warp_lane * ITEMS_PER_THREAD) + ITEM;
+                    if (INSERT_PADDING) item_offset += item_offset >> LOG_SMEM_BANKS;
+                    smem_storage[item_offset] = items[ITEM];
+                }
+            }
+
+            __syncthreads();
+
+            #pragma unroll
+            for (int ITEM = 0; ITEM < ITEMS_PER_THREAD; ITEM++)
+            {
+                // Read a strip of items
+                const int STRIP_OFFSET = ITEM * BLOCK_THREADS;
+
+                if ((ITEMS_PROCESSED <= STRIP_OFFSET + TIME_SLICED_ITEMS) && (STRIP_OFFSET < ITEMS_PROCESSED + TIME_SLICED_ITEMS))
+                {
+                    int item_offset = STRIP_OFFSET + threadIdx.x - ITEMS_PROCESSED;
+                    if ((item_offset >= 0) && (item_offset < TIME_SLICED_ITEMS))
+                    {
+                        if (INSERT_PADDING) item_offset += item_offset >> LOG_SMEM_BANKS;
+                        temp_items[ITEM] = smem_storage[item_offset];
+                    }
+                }
+            }
+        }
+
+        // Copy
+        #pragma unroll
+        for (int ITEM = 0; ITEM < ITEMS_PER_THREAD; ITEM++)
+        {
+            items[ITEM] = temp_items[ITEM];
+        }
+    }
+
+
+    /**
+     * Transposes data items from <em>blocked</em> arrangement to <em>warp-striped</em> arrangement. Specialized for no timeslicing
+     */
+    static __device__ __forceinline__ void BlockedToWarpStriped(
+        SmemStorage     &smem_storage,             ///< [in] Reference to shared memory allocation having layout type SmemStorage
+        T               items[ITEMS_PER_THREAD],   ///< [in-out] Items to exchange, converting between <em>blocked</em> and <em>warp-striped</em> arrangements.
+        Int2Type<false> time_slicing)
+    {
+        int warp_lane   = threadIdx.x & (WARP_THREADS - 1);
+        int warp_id     = threadIdx.x >> LOG_WARP_THREADS;
+        int warp_offset = warp_id * WARP_TIME_SLICED_ITEMS;
+
+        #pragma unroll
+        for (int ITEM = 0; ITEM < ITEMS_PER_THREAD; ITEM++)
+        {
+            int item_offset = warp_offset + ITEM + (warp_lane * ITEMS_PER_THREAD);
+            if (INSERT_PADDING) item_offset += item_offset >> LOG_SMEM_BANKS;
+            smem_storage[item_offset] = items[ITEM];
+        }
+
+        // Prevent hoisting
+        __threadfence_block();
+
+        #pragma unroll
+        for (int ITEM = 0; ITEM < ITEMS_PER_THREAD; ITEM++)
+        {
+            int item_offset = warp_offset + (ITEM * WARP_TIME_SLICED_THREADS) + warp_lane;
+            if (INSERT_PADDING) item_offset += item_offset >> LOG_SMEM_BANKS;
+            items[ITEM] = smem_storage[item_offset];
+        }
+    }
+
+    /**
+     * Transposes data items from <em>blocked</em> arrangement to <em>warp-striped</em> arrangement. Specialized for warp-timeslicing
+     */
+    static __device__ __forceinline__ void BlockedToWarpStriped(
+        SmemStorage     &smem_storage,             ///< [in] Reference to shared memory allocation having layout type SmemStorage
+        T               items[ITEMS_PER_THREAD],   ///< [in-out] Items to exchange, converting between <em>blocked</em> and <em>warp-striped</em> arrangements.
+        Int2Type<true>  time_slicing)
+    {
+        int warp_lane   = threadIdx.x & (WARP_THREADS - 1);
+        int warp_id     = threadIdx.x >> LOG_WARP_THREADS;
+
+        #pragma unroll
+        for (int SLICE = 0; SLICE < TIME_SLICES; ++SLICE)
+        {
+            __syncthreads();
+
+            if (warp_id == SLICE)
+            {
+                #pragma unroll
+                for (int ITEM = 0; ITEM < ITEMS_PER_THREAD; ITEM++)
+                {
+                    int item_offset = ITEM + (warp_lane * ITEMS_PER_THREAD);
+                    if (INSERT_PADDING) item_offset += item_offset >> LOG_SMEM_BANKS;
+                    smem_storage[item_offset] = items[ITEM];
+                }
+
+                // Prevent hoisting
+                __threadfence_block();
+
+                #pragma unroll
+                for (int ITEM = 0; ITEM < ITEMS_PER_THREAD; ITEM++)
+                {
+                    int item_offset = (ITEM * WARP_TIME_SLICED_THREADS) + warp_lane;
+                    if (INSERT_PADDING) item_offset += item_offset >> LOG_SMEM_BANKS;
+                    items[ITEM] = smem_storage[item_offset];
+                }
+            }
+        }
+    }
+
+
+    /**
+     * Transposes data items from <em>striped</em> arrangement to <em>blocked</em> arrangement.  Specialized for no timeslicing.
+     */
+    static __device__ __forceinline__ void StripedToBlocked(
+        SmemStorage     &smem_storage,             ///< [in] Reference to shared memory allocation having layout type SmemStorage
+        T               items[ITEMS_PER_THREAD],   ///< [in-out] Items to exchange, converting between <em>striped</em> and <em>blocked</em> arrangements.
+        Int2Type<false> time_slicing)
+    {
+        #pragma unroll
+        for (int ITEM = 0; ITEM < ITEMS_PER_THREAD; ITEM++)
+        {
+            int item_offset = int(ITEM * BLOCK_THREADS) + threadIdx.x;
+            if (INSERT_PADDING) item_offset += item_offset >> LOG_SMEM_BANKS;
+            smem_storage[item_offset] = items[ITEM];
+        }
+
+        __syncthreads();
+
+        // No timeslicing
+        #pragma unroll
+        for (int ITEM = 0; ITEM < ITEMS_PER_THREAD; ITEM++)
+        {
+            int item_offset = (threadIdx.x * ITEMS_PER_THREAD) + ITEM;
+            if (INSERT_PADDING) item_offset += item_offset >> LOG_SMEM_BANKS;
+            items[ITEM] = smem_storage[item_offset];
+        }
+    }
+
+
+    /**
+     * Transposes data items from <em>striped</em> arrangement to <em>blocked</em> arrangement.  Specialized for warp-timeslicing.
+     */
+    static __device__ __forceinline__ void StripedToBlocked(
+        SmemStorage     &smem_storage,             ///< [in] Reference to shared memory allocation having layout type SmemStorage
+        T               items[ITEMS_PER_THREAD],   ///< [in-out] Items to exchange, converting between <em>striped</em> and <em>blocked</em> arrangements.
+        Int2Type<true>  time_slicing)
+    {
+        // Warp time-slicing
+        T temp_items[ITEMS_PER_THREAD];
+
+        int warp_lane   = threadIdx.x & (WARP_THREADS - 1);
+        int warp_id     = threadIdx.x >> LOG_WARP_THREADS;
+
+        #pragma unroll
+        for (int SLICE = 0; SLICE < TIME_SLICES; SLICE++)
+        {
+            __syncthreads();
+
+            const int ITEMS_PROCESSED = TIME_SLICED_ITEMS * SLICE;
+
+            #pragma unroll
+            for (int ITEM = 0; ITEM < ITEMS_PER_THREAD; ITEM++)
+            {
+                // Write a strip of items
+                const int STRIP_OFFSET = ITEM * BLOCK_THREADS;
+
+                if ((ITEMS_PROCESSED <= STRIP_OFFSET + TIME_SLICED_ITEMS) && (STRIP_OFFSET < ITEMS_PROCESSED + TIME_SLICED_ITEMS))
+                {
+                    int item_offset = STRIP_OFFSET + threadIdx.x - ITEMS_PROCESSED;
+                    if ((item_offset >= 0) && (item_offset < TIME_SLICED_ITEMS))
+                    {
+                        if (INSERT_PADDING) item_offset += item_offset >> LOG_SMEM_BANKS;
+                        smem_storage[item_offset] = items[ITEM];
+                    }
+                }
+            }
+
+            __syncthreads();
+
+            if (warp_id == SLICE)
+            {
+                #pragma unroll
+                for (int ITEM = 0; ITEM < ITEMS_PER_THREAD; ITEM++)
+                {
+                    int item_offset = (warp_lane * ITEMS_PER_THREAD) + ITEM;
+                    if (INSERT_PADDING) item_offset += item_offset >> LOG_SMEM_BANKS;
+                    temp_items[ITEM] = smem_storage[item_offset];
+                }
+            }
+        }
+
+        // Copy
+        #pragma unroll
+        for (int ITEM = 0; ITEM < ITEMS_PER_THREAD; ITEM++)
+        {
+            items[ITEM] = temp_items[ITEM];
+        }
+    }
+
+
+    /**
+     * Transposes data items from <em>warp-striped</em> arrangement to <em>blocked</em> arrangement.  Specialized for no timeslicing
+     */
+    static __device__ __forceinline__ void WarpStripedToBlocked(
+        SmemStorage     &smem_storage,             ///< [in] Reference to shared memory allocation having layout type SmemStorage
+        T               items[ITEMS_PER_THREAD],   ///< [in-out] Items to exchange, converting between <em>warp-striped</em> and <em>blocked</em> arrangements.
+        Int2Type<false> time_slicing)
+    {
+        int warp_lane   = threadIdx.x & (WARP_THREADS - 1);
+        int warp_id     = threadIdx.x >> LOG_WARP_THREADS;
+        int warp_offset = warp_id * WARP_TIME_SLICED_ITEMS;
+
+        #pragma unroll
+        for (int ITEM = 0; ITEM < ITEMS_PER_THREAD; ITEM++)
+        {
+            int item_offset = warp_offset + (ITEM * WARP_TIME_SLICED_THREADS) + warp_lane;
+            if (INSERT_PADDING) item_offset += item_offset >> LOG_SMEM_BANKS;
+            smem_storage[item_offset] = items[ITEM];
+        }
+
+        // Prevent hoisting
+        __threadfence_block();
+
+        #pragma unroll
+        for (int ITEM = 0; ITEM < ITEMS_PER_THREAD; ITEM++)
+        {
+            int item_offset = warp_offset + ITEM + (warp_lane * ITEMS_PER_THREAD);
+            if (INSERT_PADDING) item_offset += item_offset >> LOG_SMEM_BANKS;
+            items[ITEM] = smem_storage[item_offset];
+        }
+    }
+
+
+    /**
+     * Transposes data items from <em>warp-striped</em> arrangement to <em>blocked</em> arrangement.  Specialized for warp-timeslicing
+     */
+    static __device__ __forceinline__ void WarpStripedToBlocked(
+        SmemStorage     &smem_storage,             ///< [in] Reference to shared memory allocation having layout type SmemStorage
+        T               items[ITEMS_PER_THREAD],   ///< [in-out] Items to exchange, converting between <em>warp-striped</em> and <em>blocked</em> arrangements.
+        Int2Type<true>  time_slicing)
+    {
+        int warp_lane   = threadIdx.x & (WARP_THREADS - 1);
+        int warp_id     = threadIdx.x >> LOG_WARP_THREADS;
+
+        #pragma unroll
+        for (int SLICE = 0; SLICE < TIME_SLICES; ++SLICE)
+        {
+            __syncthreads();
+
+            if (warp_id == SLICE)
+            {
+                #pragma unroll
+                for (int ITEM = 0; ITEM < ITEMS_PER_THREAD; ITEM++)
+                {
+                    int item_offset = (ITEM * WARP_TIME_SLICED_THREADS) + warp_lane;
+                    if (INSERT_PADDING) item_offset += item_offset >> LOG_SMEM_BANKS;
+                    smem_storage[item_offset] = items[ITEM];
+                }
+
+                // Prevent hoisting
+                __threadfence_block();
+
+                #pragma unroll
+                for (int ITEM = 0; ITEM < ITEMS_PER_THREAD; ITEM++)
+                {
+                    int item_offset = ITEM + (warp_lane * ITEMS_PER_THREAD);
+                    if (INSERT_PADDING) item_offset += item_offset >> LOG_SMEM_BANKS;
+                    items[ITEM] = smem_storage[item_offset];
+                }
+            }
+        }
+    }
+
+
+    /**
+     * Exchanges data items annotated by rank into <em>blocked</em> arrangement.  Specialized for no timeslicing.
+     */
+    static __device__ __forceinline__ void ScatterToBlocked(
+        SmemStorage     &smem_storage,              ///< [in] Reference to shared memory allocation having layout type SmemStorage
+        T               items[ITEMS_PER_THREAD],    ///< [in-out] Items to exchange
+        int             ranks[ITEMS_PER_THREAD],    ///< [in] Corresponding scatter ranks
+        Int2Type<false> time_slicing)
+    {
+        #pragma unroll
+        for (int ITEM = 0; ITEM < ITEMS_PER_THREAD; ITEM++)
+        {
+            int item_offset = ranks[ITEM];
+            if (INSERT_PADDING) item_offset = SHR_ADD(item_offset, LOG_SMEM_BANKS, item_offset);
+            smem_storage[item_offset] = items[ITEM];
+        }
+
+        __syncthreads();
+
+        #pragma unroll
+        for (int ITEM = 0; ITEM < ITEMS_PER_THREAD; ITEM++)
+        {
+            int item_offset = (threadIdx.x * ITEMS_PER_THREAD) + ITEM;
+            if (INSERT_PADDING) item_offset = SHR_ADD(item_offset, LOG_SMEM_BANKS, item_offset);
+            items[ITEM] = smem_storage[item_offset];
+        }
+    }
+
+    /**
+     * Exchanges data items annotated by rank into <em>blocked</em> arrangement.  Specialized for warp-timeslicing.
+     */
+    static __device__ __forceinline__ void ScatterToBlocked(
+        SmemStorage     &smem_storage,              ///< [in] Reference to shared memory allocation having layout type SmemStorage
+        T               items[ITEMS_PER_THREAD],    ///< [in-out] Items to exchange
+        int             ranks[ITEMS_PER_THREAD],    ///< [in] Corresponding scatter ranks
+        Int2Type<true>  time_slicing)
+    {
+        int warp_lane   = threadIdx.x & (WARP_THREADS - 1);
+        int warp_id     = threadIdx.x >> LOG_WARP_THREADS;
+
+        T temp_items[ITEMS_PER_THREAD];
+
+        #pragma unroll
+        for (int SLICE = 0; SLICE < TIME_SLICES; SLICE++)
+        {
+            __syncthreads();
+
+            const int ITEMS_PROCESSED = TIME_SLICED_ITEMS * SLICE;
+
+            #pragma unroll
+            for (int ITEM = 0; ITEM < ITEMS_PER_THREAD; ITEM++)
+            {
+                int item_offset = ranks[ITEM] - ITEMS_PROCESSED;
+                if ((item_offset >= 0) && (item_offset < WARP_TIME_SLICED_ITEMS))
+                {
+                    if (INSERT_PADDING) item_offset = SHR_ADD(item_offset, LOG_SMEM_BANKS, item_offset);
+                    smem_storage[item_offset] = items[ITEM];
+                }
+            }
+
+            __syncthreads();
+
+            if (warp_id == SLICE)
+            {
+                #pragma unroll
+                for (int ITEM = 0; ITEM < ITEMS_PER_THREAD; ITEM++)
+                {
+                    int item_offset = (warp_lane * ITEMS_PER_THREAD) + ITEM;
+                    if (INSERT_PADDING) item_offset = SHR_ADD(item_offset, LOG_SMEM_BANKS, item_offset);
+                    temp_items[ITEM] = smem_storage[item_offset];
+                }
+            }
+        }
+
+        // Copy
+        #pragma unroll
+        for (int ITEM = 0; ITEM < ITEMS_PER_THREAD; ITEM++)
+        {
+            items[ITEM] = temp_items[ITEM];
+        }
+    }
+
+
+    /**
+     * Exchanges data items annotated by rank into <em>striped</em> arrangement.  Specialized for no timeslicing.
+     */
+    static __device__ __forceinline__ void ScatterToStriped(
+        SmemStorage     &smem_storage,              ///< [in] Reference to shared memory allocation having layout type SmemStorage
+        T               items[ITEMS_PER_THREAD],    ///< [in-out] Items to exchange
+        int             ranks[ITEMS_PER_THREAD],    ///< [in] Corresponding scatter ranks
+        Int2Type<false> time_slicing)
+    {
+        #pragma unroll
+        for (int ITEM = 0; ITEM < ITEMS_PER_THREAD; ITEM++)
+        {
+            int item_offset = ranks[ITEM];
+            if (INSERT_PADDING) item_offset = SHR_ADD(item_offset, LOG_SMEM_BANKS, item_offset);
+            smem_storage[item_offset] = items[ITEM];
+        }
+
+        __syncthreads();
+
+        #pragma unroll
+        for (int ITEM = 0; ITEM < ITEMS_PER_THREAD; ITEM++)
+        {
+            int item_offset = int(ITEM * BLOCK_THREADS) + threadIdx.x;
+            if (INSERT_PADDING) item_offset = SHR_ADD(item_offset, LOG_SMEM_BANKS, item_offset);
+            items[ITEM] = smem_storage[item_offset];
+        }
+    }
+
+
+    /**
+     * Exchanges data items annotated by rank into <em>striped</em> arrangement.  Specialized for warp-timeslicing.
+     */
+    static __device__ __forceinline__ void ScatterToStriped(
+        SmemStorage     &smem_storage,              ///< [in] Reference to shared memory allocation having layout type SmemStorage
+        T               items[ITEMS_PER_THREAD],    ///< [in-out] Items to exchange
+        int             ranks[ITEMS_PER_THREAD],    ///< [in] Corresponding scatter ranks
+        Int2Type<true> time_slicing)
+    {
+        T temp_items[ITEMS_PER_THREAD];
+
+        #pragma unroll
+        for (int SLICE = 0; SLICE < TIME_SLICES; SLICE++)
+        {
+            __syncthreads();
+
+            const int ITEMS_PROCESSED = TIME_SLICED_ITEMS * SLICE;
+
+            #pragma unroll
+            for (int ITEM = 0; ITEM < ITEMS_PER_THREAD; ITEM++)
+            {
+                int item_offset = ranks[ITEM] - ITEMS_PROCESSED;
+                if ((item_offset >= 0) && (item_offset < WARP_TIME_SLICED_ITEMS))
+                {
+                    if (INSERT_PADDING) item_offset = SHR_ADD(item_offset, LOG_SMEM_BANKS, item_offset);
+                    smem_storage[item_offset] = items[ITEM];
+                }
+            }
+
+            __syncthreads();
+
+            #pragma unroll
+            for (int ITEM = 0; ITEM < ITEMS_PER_THREAD; ITEM++)
+            {
+                // Read a strip of items
+                const int STRIP_OFFSET = ITEM * BLOCK_THREADS;
+
+                if ((ITEMS_PROCESSED <= STRIP_OFFSET + TIME_SLICED_ITEMS) && (STRIP_OFFSET < ITEMS_PROCESSED + TIME_SLICED_ITEMS))
+                {
+                    int item_offset = STRIP_OFFSET + threadIdx.x - ITEMS_PROCESSED;
+                    if ((item_offset >= 0) && (item_offset < TIME_SLICED_ITEMS))
+                    {
+                        if (INSERT_PADDING) item_offset += item_offset >> LOG_SMEM_BANKS;
+                        temp_items[ITEM] = smem_storage[item_offset];
+                    }
+                }
+            }
+        }
+
+        // Copy
+        #pragma unroll
+        for (int ITEM = 0; ITEM < ITEMS_PER_THREAD; ITEM++)
+        {
+            items[ITEM] = temp_items[ITEM];
+        }
+    }
+
+
+public:
 
     //@}  end member group
     /******************************************************************//**
@@ -138,73 +641,9 @@ public:
         SmemStorage     &smem_storage,              ///< [in] Reference to shared memory allocation having layout type SmemStorage
         T               items[ITEMS_PER_THREAD])    ///< [in-out] Items to exchange, converting between <em>blocked</em> and <em>striped</em> arrangements.
     {
-        if (WARP_TIME_SLICING == 0)
-        {
-            // No timeslicing
-            #pragma unroll
-            for (int ITEM = 0; ITEM < ITEMS_PER_THREAD; ITEM++)
-            {
-                int item_offset = (threadIdx.x * ITEMS_PER_THREAD) + ITEM;
-                if (PADDING) item_offset += item_offset >> LOG_SMEM_BANKS;
-                smem_storage.exchange[item_offset] = items[ITEM];
-            }
-
-            __syncthreads();
-
-            #pragma unroll
-            for (int ITEM = 0; ITEM < ITEMS_PER_THREAD; ITEM++)
-            {
-                int item_offset = int(ITEM * BLOCK_THREADS) + threadIdx.x;
-                if (PADDING) item_offset += item_offset >> LOG_SMEM_BANKS;
-                items[ITEM] = smem_storage.exchange[item_offset];
-            }
-        }
-        else
-        {
-            T temp_items[ITEMS_PER_THREAD];
-
-            int slice_lane  = threadIdx.x % TIME_SLICED_THREADS;
-            int slice_id    = threadIdx.x / TIME_SLICED_THREADS;
-
-            #pragma unroll
-            for (int SLICE = 0; SLICE < TIME_SLICES; SLICE++)
-            {
-                __syncthreads();
-
-                if (slice_id == SLICE)
-                {
-                    #pragma unroll
-                    for (int ITEM = 0; ITEM < ITEMS_PER_THREAD; ITEM++)
-                    {
-                        int item_offset = (slice_lane * ITEMS_PER_THREAD) + ITEM;
-                        if (PADDING) item_offset += item_offset >> LOG_SMEM_BANKS;
-                        smem_storage.exchange[item_offset] = items[ITEM];
-                    }
-                }
-
-                __syncthreads();
-
-                #pragma unroll
-                for (int ITEM = 0; ITEM < ITEMS_PER_THREAD; ITEM++)
-                {
-                    int item_offset = int(ITEM * BLOCK_THREADS) + threadIdx.x - (TIME_SLICED_ITEMS * SLICE);
-                    if ((item_offset >= 0) && (item_offset < TIME_SLICED_ITEMS))
-                    {
-                        if (PADDING) item_offset += item_offset >> LOG_SMEM_BANKS;
-                        temp_items[ITEM] = smem_storage.exchange[item_offset];
-                    }
-                }
-            }
-
-            // Copy
-            #pragma unroll
-            for (int ITEM = 0; ITEM < ITEMS_PER_THREAD; ITEM++)
-            {
-                items[ITEM] = temp_items[ITEM];
-            }
-        }
-
-        CubLog("items [%d, %d]\n", items[0], items[1]);
+//        CubLog("BlockedToStriped<%d> in items [%d, %d]\n", WARP_TIME_SLICING, items[0], items[1]);
+        BlockedToStriped(smem_storage, items, Int2Type<WARP_TIME_SLICING>());
+//        CubLog("\t\t BlockedToStriped<%d> out items [%d, %d]\n", WARP_TIME_SLICING, items[0], items[1]);
     }
 
 
@@ -217,64 +656,9 @@ public:
         SmemStorage      &smem_storage,             ///< [in] Reference to shared memory allocation having layout type SmemStorage
         T                items[ITEMS_PER_THREAD])   ///< [in-out] Items to exchange, converting between <em>blocked</em> and <em>warp-striped</em> arrangements.
     {
-        CubLog("Out begin items [%d, %d]\n", items[0], items[1]);
-
-        int slice_lane         = (WARP_TIME_SLICING == 1) ? threadIdx.x : threadIdx.x % TIME_SLICED_THREADS;
-        int slice_id    = (WARP_TIME_SLICING == 1) ? 0 : threadIdx.x / TIME_SLICED_THREADS;
-
-        // First slice
-        if (slice_id == 0)
-        {
-            #pragma unroll
-            for (int ITEM = 0; ITEM < ITEMS_PER_THREAD; ITEM++)
-            {
-                int item_offset = (slice_lane * ITEMS_PER_THREAD) + ITEM;
-                if (PADDING) item_offset += item_offset >> LOG_SMEM_BANKS;
-                smem_storage.exchange[item_offset] = items[ITEM];
-            }
-
-            // Prevent hoisting
-            __threadfence_block();
-
-            #pragma unroll
-            for (int ITEM = 0; ITEM < ITEMS_PER_THREAD; ITEM++)
-            {
-                int item_offset = (ITEM * TIME_SLICED_THREADS) + slice_lane;
-                if (PADDING) item_offset += item_offset >> LOG_SMEM_BANKS;
-                items[ITEM] = smem_storage.exchange[item_offset];
-            }
-        }
-
-        // Continue unrolling slices
-        #pragma unroll
-        for (int SLICE = 1; SLICE < TIME_SLICES; SLICE++)
-        {
-            __syncthreads();
-
-            if (slice_id == SLICE)
-            {
-                #pragma unroll
-                for (int ITEM = 0; ITEM < ITEMS_PER_THREAD; ITEM++)
-                {
-                    int item_offset = (slice_lane * ITEMS_PER_THREAD) + ITEM;
-                    if (PADDING) item_offset += item_offset >> LOG_SMEM_BANKS;
-                    smem_storage.exchange[item_offset] = items[ITEM];
-                }
-
-                // Prevent hoisting
-                __threadfence_block();
-
-                #pragma unroll
-                for (int ITEM = 0; ITEM < ITEMS_PER_THREAD; ITEM++)
-                {
-                    int item_offset = (ITEM * TIME_SLICED_THREADS) + slice_lane;
-                    if (PADDING) item_offset += item_offset >> LOG_SMEM_BANKS;
-                    items[ITEM] = smem_storage.exchange[item_offset];
-                }
-            }
-        }
-
-        CubLog("\t\tOut end items [%d, %d]\n", items[0], items[1]);
+//        CubLog("BlockedToWarpStriped<%d> in items [%d, %d, %d]\n", WARP_TIME_SLICING, items[0], items[1], items[2]);
+        BlockedToWarpStriped(smem_storage, items, Int2Type<WARP_TIME_SLICING>());
+//        CubLog("\t\t BlockedToWarpStriped<%d> out items [%d, %d, %d]\n", WARP_TIME_SLICING, items[0], items[1], items[2]);
     }
 
 
@@ -294,72 +678,9 @@ public:
         SmemStorage      &smem_storage,             ///< [in] Reference to shared memory allocation having layout type SmemStorage
         T                items[ITEMS_PER_THREAD])   ///< [in-out] Items to exchange, converting between <em>striped</em> and <em>blocked</em> arrangements.
     {
-        if (WARP_TIME_SLICING == 1)
-        {
-            #pragma unroll
-            for (int ITEM = 0; ITEM < ITEMS_PER_THREAD; ITEM++)
-            {
-                int item_offset = int(ITEM * BLOCK_THREADS) + threadIdx.x;
-                if (PADDING) item_offset = SHR_ADD(item_offset, LOG_SMEM_BANKS, item_offset);
-                smem_storage.exchange[item_offset] = items[ITEM];
-            }
-
-            __syncthreads();
-
-            #pragma unroll
-            for (int ITEM = 0; ITEM < ITEMS_PER_THREAD; ITEM++)
-            {
-                int item_offset = (threadIdx.x * ITEMS_PER_THREAD) + ITEM;
-                if (PADDING) item_offset = SHR_ADD(item_offset, LOG_SMEM_BANKS, item_offset);
-                items[ITEM] = smem_storage.exchange[item_offset];
-            }
-        }
-        else
-        {
-            T temp_items[ITEMS_PER_THREAD];
-
-            int slice_lane         = (WARP_TIME_SLICING == 1) ? threadIdx.x : threadIdx.x % TIME_SLICED_THREADS;
-            int slice_id    = (WARP_TIME_SLICING == 1) ? 0 : threadIdx.x / TIME_SLICED_THREADS;
-
-            #pragma unroll
-            for (int SLICE = 0; SLICE < TIME_SLICES; SLICE++)
-            {
-                __syncthreads();
-
-                #pragma unroll
-                for (
-                    int ITEM = SLICE * ITEMS_PER_THREAD_PER_SLICE;
-                    ITEM < CUB_MIN((SLICE + 1)* ITEMS_PER_THREAD_PER_SLICE, ITEMS_PER_THREAD);
-                    ITEM++)
-                {
-                    int item_offset = int(ITEM * BLOCK_THREADS) + threadIdx.x - (TIME_SLICED_ITEMS * SLICE);
-                    if (PADDING) item_offset = SHR_ADD(item_offset, LOG_SMEM_BANKS, item_offset);
-                    smem_storage.exchange[item_offset] = items[ITEM];
-                }
-
-                __syncthreads();
-
-                if (slice_id == SLICE)
-                {
-                    #pragma unroll
-                    for (int ITEM = 0; ITEM < ITEMS_PER_THREAD; ITEM++)
-                    {
-                        int item_offset = (slice_lane * ITEMS_PER_THREAD) + ITEM;
-                        if (PADDING) item_offset = SHR_ADD(item_offset, LOG_SMEM_BANKS, item_offset);
-                        temp_items[ITEM] = smem_storage.exchange[item_offset];
-                    }
-                }
-            }
-
-            // Copy
-            #pragma unroll
-            for (int ITEM = 0; ITEM < ITEMS_PER_THREAD; ITEM++)
-            {
-                items[ITEM] = temp_items[ITEM];
-            }
-        }
-
-        CubLog("\t\titems [%d, %d]\n", items[0], items[1]);
+//        CubLog("StripedToBlocked<%d> in items [%d, %d]\n", WARP_TIME_SLICING, items[0], items[1]);
+        StripedToBlocked(smem_storage, items, Int2Type<WARP_TIME_SLICING>());
+//        CubLog("\t\t StripedToBlocked<%d> out items [%d, %d]\n", WARP_TIME_SLICING, items[0], items[1]);
     }
 
 
@@ -379,75 +700,9 @@ public:
         SmemStorage      &smem_storage,             ///< [in] Reference to shared memory allocation having layout type SmemStorage
         T                items[ITEMS_PER_THREAD])   ///< [in-out] Items to exchange, converting between <em>warp-striped</em> and <em>blocked</em> arrangements.
     {
-        int warp_lane               = threadIdx.x % PtxArchProps::WARP_THREADS;
-        int wid                     = threadIdx.x / PtxArchProps::WARP_THREADS;
-        int slice_id                = (WARP_TIME_SLICING == 1) ? 0 : wid / WARP_TIME_SLICING;
-        int slice_offset             = slice_id * WARP_TILE_ITEMS;
-
-
-
-        int slice_lane         = (WARP_TIME_SLICING == 1) ? threadIdx.x : threadIdx.x % TIME_SLICED_THREADS;
-        int slice_id    = (WARP_TIME_SLICING == 1) ? 0 : threadIdx.x / TIME_SLICED_THREADS;
-
-        // First slice
-        if (slice_id == 0)
-        {
-
-
-
-            #pragma unroll
-            for (int ITEM = 0; ITEM < ITEMS_PER_THREAD; ITEM++)
-            {
-                int item_offset = (ITEM * PtxArchProps::WARP_THREADS) +  + slice_lane;
-                if (PADDING) item_offset = SHR_ADD(item_offset, LOG_SMEM_BANKS, item_offset);
-
-                CubLog("In begin items[%d](%d) slice_lane %d slice_id %d item_offset %d\n", ITEM, items[ITEM], slice_lane, slice_id, item_offset);
-
-                smem_storage.exchange[item_offset] = items[ITEM];
-            }
-
-            // Prevent hoisting
-            __threadfence_block();
-
-            #pragma unroll
-            for (int ITEM = 0; ITEM < ITEMS_PER_THREAD; ITEM++)
-            {
-                int item_offset = (slice_lane * ITEMS_PER_THREAD) + ITEM;
-                if (PADDING) item_offset = SHR_ADD(item_offset, LOG_SMEM_BANKS, item_offset);
-                items[ITEM] = smem_storage.exchange[item_offset];
-            }
-        }
-
-        // Continue unrolling slices
-        #pragma unroll
-        for (int SLICE = 1; SLICE < TIME_SLICES; SLICE++)
-        {
-            __syncthreads();
-
-            if (slice_id == SLICE)
-            {
-                #pragma unroll
-                for (int ITEM = 0; ITEM < ITEMS_PER_THREAD; ITEM++)
-                {
-                    int item_offset = (ITEM * TIME_SLICED_THREADS) + slice_lane;
-                    if (PADDING) item_offset = SHR_ADD(item_offset, LOG_SMEM_BANKS, item_offset);
-                    smem_storage.exchange[item_offset] = items[ITEM];
-                }
-
-                // Prevent hoisting
-                __threadfence_block();
-
-                #pragma unroll
-                for (int ITEM = 0; ITEM < ITEMS_PER_THREAD; ITEM++)
-                {
-                    int item_offset = (slice_lane * ITEMS_PER_THREAD) + ITEM;
-                    if (PADDING) item_offset = SHR_ADD(item_offset, LOG_SMEM_BANKS, item_offset);
-                    items[ITEM] = smem_storage.exchange[item_offset];
-                }
-            }
-        }
-
-        CubLog("\t\tIn end items [%d, %d]\n", items[0], items[1]);
+//        CubLog("WarpStripedToBlocked<%d> in items [%d, %d, %d]\n", WARP_TIME_SLICING, items[0], items[1], items[2]);
+        WarpStripedToBlocked(smem_storage, items, Int2Type<WARP_TIME_SLICING>());
+//        CubLog("\t\t WarpStripedToBlocked<%d> out items [%d, %d, %d]\n", WARP_TIME_SLICING, items[0], items[1], items[2]);
     }
 
 
@@ -468,70 +723,9 @@ public:
         T               items[ITEMS_PER_THREAD],    ///< [in-out] Items to exchange
         int             ranks[ITEMS_PER_THREAD])    ///< [in] Corresponding scatter ranks
     {
-        if (WARP_TIME_SLICING == 1)
-        {
-            #pragma unroll
-            for (int ITEM = 0; ITEM < ITEMS_PER_THREAD; ITEM++)
-            {
-                int item_offset = ranks[ITEM];
-                if (PADDING) item_offset = SHR_ADD(item_offset, LOG_SMEM_BANKS, item_offset);
-                smem_storage.exchange[item_offset] = items[ITEM];
-            }
-
-            __syncthreads();
-
-            #pragma unroll
-            for (int ITEM = 0; ITEM < ITEMS_PER_THREAD; ITEM++)
-            {
-                int item_offset = (threadIdx.x * ITEMS_PER_THREAD) + ITEM;
-                if (PADDING) item_offset = SHR_ADD(item_offset, LOG_SMEM_BANKS, item_offset);
-                items[ITEM] = smem_storage.exchange[item_offset];
-            }
-        }
-        else
-        {
-            T temp_items[ITEMS_PER_THREAD];
-
-            int slice_lane  = (WARP_TIME_SLICING == 1) ? threadIdx.x : threadIdx.x % TIME_SLICED_THREADS;
-            int slice_id    = (WARP_TIME_SLICING == 1) ? 0 : threadIdx.x / TIME_SLICED_THREADS;
-
-            #pragma unroll
-            for (int SLICE = 0; SLICE < TIME_SLICES; SLICE++)
-            {
-                __syncthreads();
-
-                #pragma unroll
-                for (int ITEM = 0; ITEM < ITEMS_PER_THREAD; ITEM++)
-                {
-                    if ((ranks[ITEM] >= TIME_SLICED_ITEMS * SLICE) && (ranks[ITEM] < TIME_SLICED_ITEMS * (SLICE + 1)))
-                    {
-                        int item_offset = ranks[ITEM] - (TIME_SLICED_ITEMS * SLICE);
-                        if (PADDING) item_offset = SHR_ADD(item_offset, LOG_SMEM_BANKS, item_offset);
-                        smem_storage.exchange[item_offset] = items[ITEM];
-                    }
-                }
-
-                __syncthreads();
-
-                if (slice_id == SLICE)
-                {
-                    #pragma unroll
-                    for (int ITEM = 0; ITEM < ITEMS_PER_THREAD; ITEM++)
-                    {
-                        int item_offset = (slice_lane * ITEMS_PER_THREAD) + ITEM;
-                        if (PADDING) item_offset = SHR_ADD(item_offset, LOG_SMEM_BANKS, item_offset);
-                        temp_items[ITEM] = smem_storage.exchange[item_offset];
-                    }
-                }
-            }
-
-            // Copy
-            #pragma unroll
-            for (int ITEM = 0; ITEM < ITEMS_PER_THREAD; ITEM++)
-            {
-                items[ITEM] = temp_items[ITEM];
-            }
-        }
+//        CubLog("ScatterToBlocked<%d> in items [%d, %d]\n", WARP_TIME_SLICING, items[0], items[1]);
+        ScatterToBlocked(smem_storage, items, ranks, Int2Type<WARP_TIME_SLICING>());
+//        CubLog("\t\t ScatterToBlocked<%d> out items [%d, %d]\n", WARP_TIME_SLICING, items[0], items[1]);
     }
 
 
@@ -545,70 +739,9 @@ public:
         T               items[ITEMS_PER_THREAD],    ///< [in-out] Items to exchange
         int             ranks[ITEMS_PER_THREAD])    ///< [in] Corresponding scatter ranks
     {
-        if (WARP_TIME_SLICING == 1)
-        {
-            #pragma unroll
-            for (int ITEM = 0; ITEM < ITEMS_PER_THREAD; ITEM++)
-            {
-                int item_offset = ranks[ITEM];
-                if (PADDING) item_offset = SHR_ADD(item_offset, LOG_SMEM_BANKS, item_offset);
-                smem_storage.exchange[item_offset] = items[ITEM];
-            }
-
-            __syncthreads();
-
-            #pragma unroll
-            for (int ITEM = 0; ITEM < ITEMS_PER_THREAD; ITEM++)
-            {
-                int item_offset = int(ITEM * BLOCK_THREADS) + threadIdx.x;
-                if (PADDING) item_offset = SHR_ADD(item_offset, LOG_SMEM_BANKS, item_offset);
-                items[ITEM] = smem_storage.exchange[item_offset];
-            }
-        }
-        else
-        {
-            T temp_items[ITEMS_PER_THREAD];
-
-            int slice_lane  = (WARP_TIME_SLICING == 1) ? threadIdx.x : threadIdx.x % TIME_SLICED_THREADS;
-            int slice_id    = (WARP_TIME_SLICING == 1) ? 0 : threadIdx.x / TIME_SLICED_THREADS;
-
-            #pragma unroll
-            for (int SLICE = 0; SLICE < TIME_SLICES; SLICE++)
-            {
-                __syncthreads();
-
-                #pragma unroll
-                for (int ITEM = 0; ITEM < ITEMS_PER_THREAD; ITEM++)
-                {
-                    if ((ranks[ITEM] >= TIME_SLICED_ITEMS * SLICE) && (ranks[ITEM] < TIME_SLICED_ITEMS * (SLICE + 1)))
-                    {
-                        int item_offset = ranks[ITEM] - (TIME_SLICED_ITEMS * SLICE);
-                        if (PADDING) item_offset = SHR_ADD(item_offset, LOG_SMEM_BANKS, item_offset);
-                        smem_storage.exchange[item_offset] = items[ITEM];
-                    }
-                }
-
-                __syncthreads();
-
-                #pragma unroll
-                for (
-                    int ITEM = SLICE * ITEMS_PER_THREAD_PER_SLICE;
-                    ITEM < CUB_MIN((SLICE + 1)* ITEMS_PER_THREAD_PER_SLICE, ITEMS_PER_THREAD);
-                    ITEM++)
-                {
-                    int item_offset = int(ITEM * BLOCK_THREADS) + threadIdx.x - (TIME_SLICED_ITEMS * SLICE);
-                    if (PADDING) item_offset = SHR_ADD(item_offset, LOG_SMEM_BANKS, item_offset);
-                    temp_items[ITEM] = smem_storage.exchange[item_offset];
-                }
-            }
-
-            // Copy
-            #pragma unroll
-            for (int ITEM = 0; ITEM < ITEMS_PER_THREAD; ITEM++)
-            {
-                items[ITEM] = temp_items[ITEM];
-            }
-        }
+//        CubLog("ScatterToStriped<%d> in items [%d, %d]\n", WARP_TIME_SLICING, items[0], items[1]);
+        ScatterToStriped(smem_storage, items, ranks, Int2Type<WARP_TIME_SLICING>());
+//        CubLog("\t\t ScatterToStriped<%d> out items [%d, %d]\n", WARP_TIME_SLICING, items[0], items[1]);
     }
 
     //@}  end member group

@@ -260,12 +260,12 @@ template <
 __device__ __forceinline__ void BlockLoadStriped(
     InputIteratorRA block_itr,                          ///< [in] The threadblock's base input iterator for loading from
     T               (&items)[ITEMS_PER_THREAD],         ///< [out] Data to load
-    int             stride = blockDim.x)                ///< [in] <b>[optional]</b> Stripe stride.  Default is the width of the threadblock.  More efficient code can be generated if a compile-time-constant (e.g., BLOCK_THREADS) is supplied.
+    int             block_stride = blockDim.x)          ///< [in] <b>[optional]</b> Block stripe stride.  Default is the width of the threadblock.  More efficient code can be generated if a compile-time-constant (e.g., BLOCK_THREADS) is supplied.
 {
     #pragma unroll
     for (int ITEM = 0; ITEM < ITEMS_PER_THREAD; ITEM++)
     {
-        int item_offset = (ITEM * stride) + threadIdx.x;
+        int item_offset = (ITEM * block_stride) + threadIdx.x;
         items[ITEM] = ThreadLoad<MODIFIER>(block_itr + item_offset);
     }
 }
@@ -289,9 +289,9 @@ template <
 __device__ __forceinline__ void BlockLoadStriped(
     InputIteratorRA block_itr,                          ///< [in] The threadblock's base input iterator for loading from
     T               (&items)[ITEMS_PER_THREAD],         ///< [out] Data to load
-    int             stride = blockDim.x)                ///< [in] <b>[optional]</b> Stripe stride.  Default is the width of the threadblock.  More efficient code can be generated if a compile-time-constant (e.g., BLOCK_THREADS) is supplied.
+    int             block_stride = blockDim.x)          ///< [in] <b>[optional]</b> Block stripe stride.  Default is the width of the threadblock.  More efficient code can be generated if a compile-time-constant (e.g., BLOCK_THREADS) is supplied.
 {
-    BlockLoadStriped<PTX_LOAD_NONE>(block_itr, items, stride);
+    BlockLoadStriped<PTX_LOAD_NONE>(block_itr, items, block_stride);
 }
 
 /**
@@ -315,16 +315,16 @@ __device__ __forceinline__ void BlockLoadStriped(
     InputIteratorRA block_itr,                      ///< [in] The threadblock's base input iterator for loading from
     const int       &guarded_items,                 ///< [in] Number of valid items in the tile
     T               (&items)[ITEMS_PER_THREAD],     ///< [out] Data to load
-    int             stride = blockDim.x)            ///< [in] <b>[optional]</b> Stripe stride.  Default is the width of the threadblock.  More efficient code can be generated if a compile-time-constant (e.g., BLOCK_THREADS) is supplied.
+    int             block_stride = blockDim.x)      ///< [in] <b>[optional]</b> Block stripe stride.  Default is the width of the threadblock.  More efficient code can be generated if a compile-time-constant (e.g., BLOCK_THREADS) is supplied.
 {
     int bounds = guarded_items - threadIdx.x;
 
     #pragma unroll
     for (int ITEM = 0; ITEM < ITEMS_PER_THREAD; ITEM++)
     {
-        if (ITEM * stride < bounds)
+        if (ITEM * block_stride < bounds)
         {
-            items[ITEM] = ThreadLoad<MODIFIER>(block_itr + threadIdx.x + (ITEM * stride));
+            items[ITEM] = ThreadLoad<MODIFIER>(block_itr + threadIdx.x + (ITEM * block_stride));
         }
     }
 }
@@ -349,9 +349,9 @@ __device__ __forceinline__ void BlockLoadStriped(
     InputIteratorRA block_itr,                          ///< [in] The threadblock's base input iterator for loading from
     const int       &guarded_items,                     ///< [in] Number of valid items in the tile
     T               (&items)[ITEMS_PER_THREAD],         ///< [out] Data to load
-    int             stride = blockDim.x)                ///< [in] <b>[optional]</b> Stripe stride.  Default is the width of the threadblock.  More efficient code can be generated if a compile-time-constant (e.g., BLOCK_THREADS) is supplied.
+    int             block_stride = blockDim.x)          ///< [in] <b>[optional]</b> Block stripe stride.  Default is the width of the threadblock.  More efficient code can be generated if a compile-time-constant (e.g., BLOCK_THREADS) is supplied.
 {
-    BlockLoadStriped<PTX_LOAD_NONE>(block_itr, guarded_items, items, stride);
+    BlockLoadStriped<PTX_LOAD_NONE>(block_itr, guarded_items, items, block_stride);
 }
 
 
@@ -377,15 +377,15 @@ __device__ __forceinline__ void BlockLoadStriped(
     const int       &guarded_items,                 ///< [in] Number of valid items in the tile
     T               oob_default,                    ///< [in] Default value to assign out-of-bound items
     T               (&items)[ITEMS_PER_THREAD],     ///< [out] Data to load
-    int             stride = blockDim.x)            ///< [in] <b>[optional]</b> Stripe stride.  Default is the width of the threadblock.  More efficient code can be generated if a compile-time-constant (e.g., BLOCK_THREADS) is supplied.
+    int             block_stride = blockDim.x)      ///< [in] <b>[optional]</b> Block stripe stride.  Default is the width of the threadblock.  More efficient code can be generated if a compile-time-constant (e.g., BLOCK_THREADS) is supplied.
 {
     int bounds = guarded_items - threadIdx.x;
 
     #pragma unroll
     for (int ITEM = 0; ITEM < ITEMS_PER_THREAD; ITEM++)
     {
-        items[ITEM] = (ITEM * stride < bounds) ?
-             ThreadLoad<MODIFIER>(block_itr + threadIdx.x + (ITEM * stride)) :
+        items[ITEM] = (ITEM * block_stride < bounds) ?
+             ThreadLoad<MODIFIER>(block_itr + threadIdx.x + (ITEM * block_stride)) :
              oob_default;
     }
 }
@@ -411,9 +411,9 @@ __device__ __forceinline__ void BlockLoadStriped(
     const int       &guarded_items,                     ///< [in] Number of valid items in the tile
     T               oob_default,                        ///< [in] Default value to assign out-of-bound items
     T               (&items)[ITEMS_PER_THREAD],         ///< [out] Data to load
-    int             stride = blockDim.x)                ///< [in] <b>[optional]</b> Stripe stride.  Default is the width of the threadblock.  More efficient code can be generated if a compile-time-constant (e.g., BLOCK_THREADS) is supplied.
+    int             block_stride = blockDim.x)          ///< [in] <b>[optional]</b> Block stripe stride.  Default is the width of the threadblock.  More efficient code can be generated if a compile-time-constant (e.g., BLOCK_THREADS) is supplied.
 {
-    BlockLoadStriped<PTX_LOAD_NONE>(block_itr, guarded_items, oob_default, items, stride);
+    BlockLoadStriped<PTX_LOAD_NONE>(block_itr, guarded_items, oob_default, items, block_stride);
 }
 
 
@@ -444,19 +444,19 @@ template <
     int             ITEMS_PER_THREAD,
     typename        InputIteratorRA>
 __device__ __forceinline__ void BlockLoadWarpStriped(
-    InputIteratorRA block_itr,                          ///< [in] The threadblock's base input iterator for loading from
-    T               (&items)[ITEMS_PER_THREAD])         ///< [out] Data to load
+    InputIteratorRA block_itr,                                                      ///< [in] The threadblock's base input iterator for loading from
+    T               (&items)[ITEMS_PER_THREAD],                                     ///< [out] Data to load
+    int             warp_stride = CUB_MIN(blockDim.x, PtxArchProps::WARP_THREADS))  ///< [in] <b>[optional]</b> Warp stripe stride.  Default is the width of the warp (or threadblock, if smaller).  More efficient code can be generated if a compile-time-constant (e.g., WARP_THREADS) is supplied.
 {
-    const int WARP_TILE_ITEMS   = PtxArchProps::WARP_THREADS * ITEMS_PER_THREAD;
-    int tid                     = threadIdx.x % PtxArchProps::WARP_THREADS;
-    int wid                     = threadIdx.x / PtxArchProps::WARP_THREADS;
-    int warp_offset             = wid * WARP_TILE_ITEMS;
+    int tid         = threadIdx.x & (PtxArchProps::WARP_THREADS - 1);
+    int wid         = threadIdx.x >> PtxArchProps::LOG_WARP_THREADS;
+    int warp_offset = wid * warp_stride * ITEMS_PER_THREAD;
 
     // Load directly in warp-striped order
     #pragma unroll
     for (int ITEM = 0; ITEM < ITEMS_PER_THREAD; ITEM++)
     {
-        items[ITEM] = ThreadLoad<MODIFIER>(block_itr + warp_offset + tid + (ITEM * PtxArchProps::WARP_THREADS));
+        items[ITEM] = ThreadLoad<MODIFIER>(block_itr + warp_offset + tid + (ITEM * warp_stride));
     }
 }
 
@@ -479,10 +479,11 @@ template <
     int             ITEMS_PER_THREAD,
     typename        InputIteratorRA>
 __device__ __forceinline__ void BlockLoadWarpStriped(
-    InputIteratorRA block_itr,                          ///< [in] The threadblock's base input iterator for loading from
-    T               (&items)[ITEMS_PER_THREAD])         ///< [out] Data to load
+    InputIteratorRA block_itr,                                                      ///< [in] The threadblock's base input iterator for loading from
+    T               (&items)[ITEMS_PER_THREAD],                                     ///< [out] Data to load
+    int             warp_stride = CUB_MIN(blockDim.x, PtxArchProps::WARP_THREADS))  ///< [in] <b>[optional]</b> Warp stripe stride.  Default is the width of the warp (or threadblock, if smaller).  More efficient code can be generated if a compile-time-constant (e.g., WARP_THREADS) is supplied.
 {
-    BlockLoadWarpStriped<PTX_LOAD_NONE>(block_itr, items);
+    BlockLoadWarpStriped<PTX_LOAD_NONE>(block_itr, items, warp_stride);
 }
 
 /**
@@ -505,23 +506,23 @@ template <
     int             ITEMS_PER_THREAD,
     typename        InputIteratorRA>
 __device__ __forceinline__ void BlockLoadWarpStriped(
-    InputIteratorRA block_itr,                      ///< [in] The threadblock's base input iterator for loading from
-    const int       &guarded_items,                 ///< [in] Number of valid items in the tile
-    T               (&items)[ITEMS_PER_THREAD])     ///< [out] Data to load
+    InputIteratorRA block_itr,                                                      ///< [in] The threadblock's base input iterator for loading from
+    const int       &guarded_items,                                                 ///< [in] Number of valid items in the tile
+    T               (&items)[ITEMS_PER_THREAD],                                     ///< [out] Data to load
+    int             warp_stride = CUB_MIN(blockDim.x, PtxArchProps::WARP_THREADS))  ///< [in] <b>[optional]</b> Warp stripe stride.  Default is the width of the warp (or threadblock, if smaller).  More efficient code can be generated if a compile-time-constant (e.g., WARP_THREADS) is supplied.
 {
-    const int WARP_TILE_ITEMS   = PtxArchProps::WARP_THREADS * ITEMS_PER_THREAD;
-    int tid                     = threadIdx.x % PtxArchProps::WARP_THREADS;
-    int wid                     = threadIdx.x / PtxArchProps::WARP_THREADS;
-    int warp_offset             = wid * WARP_TILE_ITEMS;
-    int bounds                  = guarded_items - warp_offset - tid;
+    int tid         = threadIdx.x & (PtxArchProps::WARP_THREADS - 1);
+    int wid         = threadIdx.x >> PtxArchProps::LOG_WARP_THREADS;
+    int warp_offset = wid * warp_stride * ITEMS_PER_THREAD;
+    int bounds      = guarded_items - warp_offset - tid;
 
     // Load directly in warp-striped order
     #pragma unroll
     for (int ITEM = 0; ITEM < ITEMS_PER_THREAD; ITEM++)
     {
-        if ((ITEM * PtxArchProps::WARP_THREADS) < bounds)
+        if ((ITEM * warp_stride) < bounds)
         {
-            items[ITEM] = ThreadLoad<MODIFIER>(block_itr + warp_offset + tid + (ITEM * PtxArchProps::WARP_THREADS));
+            items[ITEM] = ThreadLoad<MODIFIER>(block_itr + warp_offset + tid + (ITEM * warp_stride));
         }
     }
 }
@@ -545,11 +546,12 @@ template <
     int             ITEMS_PER_THREAD,
     typename        InputIteratorRA>
 __device__ __forceinline__ void BlockLoadWarpStriped(
-    InputIteratorRA block_itr,                          ///< [in] The threadblock's base input iterator for loading from
-    const int       &guarded_items,                     ///< [in] Number of valid items in the tile
-    T               (&items)[ITEMS_PER_THREAD])         ///< [out] Data to load
+    InputIteratorRA block_itr,                                                      ///< [in] The threadblock's base input iterator for loading from
+    const int       &guarded_items,                                                 ///< [in] Number of valid items in the tile
+    T               (&items)[ITEMS_PER_THREAD],                                     ///< [out] Data to load
+    int             warp_stride = CUB_MIN(blockDim.x, PtxArchProps::WARP_THREADS))  ///< [in] <b>[optional]</b> Warp stripe stride.  Default is the width of the warp (or threadblock, if smaller).  More efficient code can be generated if a compile-time-constant (e.g., WARP_THREADS) is supplied.
 {
-    BlockLoadWarpStriped<PTX_LOAD_NONE>(block_itr, guarded_items, items);
+    BlockLoadWarpStriped<PTX_LOAD_NONE>(block_itr, guarded_items, items, warp_stride);
 }
 
 
@@ -573,24 +575,23 @@ template <
     int             ITEMS_PER_THREAD,
     typename        InputIteratorRA>
 __device__ __forceinline__ void BlockLoadWarpStriped(
-    InputIteratorRA block_itr,                      ///< [in] The threadblock's base input iterator for loading from
-    const int       &guarded_items,                 ///< [in] Number of valid items in the tile
-    T               oob_default,                    ///< [in] Default value to assign out-of-bound items
-    T               (&items)[ITEMS_PER_THREAD],     ///< [out] Data to load
-    int             stride = blockDim.x)            ///< [in] <b>[optional]</b> Stripe stride.  Default is the width of the threadblock.  More efficient code can be generated if a compile-time-constant (e.g., BLOCK_THREADS) is supplied.
+    InputIteratorRA block_itr,                                                      ///< [in] The threadblock's base input iterator for loading from
+    const int       &guarded_items,                                                 ///< [in] Number of valid items in the tile
+    T               oob_default,                                                    ///< [in] Default value to assign out-of-bound items
+    T               (&items)[ITEMS_PER_THREAD],                                     ///< [out] Data to load
+    int             warp_stride = CUB_MIN(blockDim.x, PtxArchProps::WARP_THREADS))  ///< [in] <b>[optional]</b> Warp stripe stride.  Default is the width of the warp (or threadblock, if smaller).  More efficient code can be generated if a compile-time-constant (e.g., WARP_THREADS) is supplied.
 {
-    const int WARP_TILE_ITEMS   = PtxArchProps::WARP_THREADS * ITEMS_PER_THREAD;
-    int tid                     = threadIdx.x % PtxArchProps::WARP_THREADS;
-    int wid                     = threadIdx.x / PtxArchProps::WARP_THREADS;
-    int warp_offset             = wid * WARP_TILE_ITEMS;
-    int bounds                  = guarded_items - warp_offset - tid;
+    int tid         = threadIdx.x & (PtxArchProps::WARP_THREADS - 1);
+    int wid         = threadIdx.x >> PtxArchProps::LOG_WARP_THREADS;
+    int warp_offset = wid * warp_stride * ITEMS_PER_THREAD;
+    int bounds      = guarded_items - warp_offset - tid;
 
     // Load directly in warp-striped order
     #pragma unroll
     for (int ITEM = 0; ITEM < ITEMS_PER_THREAD; ITEM++)
     {
-        items[ITEM] = ((ITEM * PtxArchProps::WARP_THREADS) < bounds) ?
-            ThreadLoad<MODIFIER>(block_itr + warp_offset + tid + (ITEM * PtxArchProps::WARP_THREADS)) :
+        items[ITEM] = ((ITEM * warp_stride) < bounds) ?
+            ThreadLoad<MODIFIER>(block_itr + warp_offset + tid + (ITEM * warp_stride)) :
             oob_default;
     }
 }
@@ -614,12 +615,13 @@ template <
     int             ITEMS_PER_THREAD,
     typename        InputIteratorRA>
 __device__ __forceinline__ void BlockLoadWarpStriped(
-    InputIteratorRA block_itr,                          ///< [in] The threadblock's base input iterator for loading from
-    const int       &guarded_items,                     ///< [in] Number of valid items in the tile
-    T               oob_default,                        ///< [in] Default value to assign out-of-bound items
-    T               (&items)[ITEMS_PER_THREAD])         ///< [out] Data to load
+    InputIteratorRA block_itr,                                                      ///< [in] The threadblock's base input iterator for loading from
+    const int       &guarded_items,                                                 ///< [in] Number of valid items in the tile
+    T               oob_default,                                                    ///< [in] Default value to assign out-of-bound items
+    T               (&items)[ITEMS_PER_THREAD],                                     ///< [out] Data to load
+    int             warp_stride = CUB_MIN(blockDim.x, PtxArchProps::WARP_THREADS))  ///< [in] <b>[optional]</b> Warp stripe stride.  Default is the width of the warp (or threadblock, if smaller).  More efficient code can be generated if a compile-time-constant (e.g., WARP_THREADS) is supplied.
 {
-    BlockLoadWarpStriped<PTX_LOAD_NONE>(block_itr, guarded_items, oob_default, items);
+    BlockLoadWarpStriped<PTX_LOAD_NONE>(block_itr, guarded_items, oob_default, items, warp_stride);
 }
 
 
@@ -824,7 +826,7 @@ enum BlockLoadAlgorithm
  * \tparam ITEMS_PER_THREAD     The number of consecutive items partitioned onto each thread.
  * \tparam ALGORITHM            <b>[optional]</b> cub::BlockLoadAlgorithm tuning policy.  Default = cub::BLOCK_LOAD_DIRECT.
  * \tparam MODIFIER             <b>[optional]</b> cub::PtxLoadModifier cache modifier.  Default = cub::PTX_LOAD_NONE.
- * \tparam WARP_TIME_SLICING          <b>[optional]</b> For cooperative cub::BlockLoadAlgorithm parameterizations that utilize shared memory: the number of communication rounds needed to complete the all-to-all exchange; more rounds can be traded for a smaller shared memory footprint (default = 1)
+ * \tparam WARP_TIME_SLICING    <b>[optional]</b> For cooperative cub::BlockLoadAlgorithm parameterizations that utilize shared memory: When \p true, only use enough shared memory for a single warp's worth of tile data, time-slicing the block-wide exchange over multiple synchronized rounds (default = false)
  *
  * \par Algorithm
  * BlockLoad can be (optionally) configured to use one of three alternative methods:
@@ -934,7 +936,7 @@ template <
     int                 ITEMS_PER_THREAD,
     BlockLoadAlgorithm  ALGORITHM = BLOCK_LOAD_DIRECT,
     PtxLoadModifier     MODIFIER = PTX_LOAD_NONE,
-    int                 WARP_TIME_SLICING = 1>
+    bool                WARP_TIME_SLICING = false>
 class BlockLoad
 {
 
@@ -944,7 +946,12 @@ private:
     // Type definitions and constants
     //---------------------------------------------------------------------
 
-    // Data type of input iterator
+     enum
+     {
+         WARP_THREADS = PtxArchProps::WARP_THREADS
+     };
+
+     // Data type of input iterator
     typedef typename std::iterator_traits<InputIteratorRA>::value_type T;
 
 
@@ -1079,7 +1086,7 @@ private:
             InputIteratorRA     block_itr,                      ///< [in] The threadblock's base input iterator for loading from
             T                   (&items)[ITEMS_PER_THREAD])     ///< [out] Data to load{
         {
-            BlockLoadWarpStriped<MODIFIER>(block_itr, items);
+            BlockLoadWarpStriped<MODIFIER>(block_itr, items, CUB_MIN(BLOCK_THREADS, WARP_THREADS));
             BlockExchange::WarpStripedToBlocked(smem_storage, items);
         }
 
@@ -1090,7 +1097,7 @@ private:
             const int           &guarded_items,                 ///< [in] Number of valid items in the tile
             T                   (&items)[ITEMS_PER_THREAD])     ///< [out] Data to load{
         {
-            BlockLoadWarpStriped<MODIFIER>(block_itr, guarded_items, items);
+            BlockLoadWarpStriped<MODIFIER>(block_itr, guarded_items, items, CUB_MIN(BLOCK_THREADS, WARP_THREADS));
             BlockExchange::WarpStripedToBlocked(smem_storage, items);
         }
 
