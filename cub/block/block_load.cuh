@@ -456,7 +456,7 @@ __device__ __forceinline__ void BlockLoadWarpStriped(
     #pragma unroll
     for (int ITEM = 0; ITEM < ITEMS_PER_THREAD; ITEM++)
     {
-        ThreadLoad<MODIFIER>(block_itr + warp_offset + tid + (ITEM * PtxArchProps::WARP_THREADS));
+        items[ITEM] = ThreadLoad<MODIFIER>(block_itr + warp_offset + tid + (ITEM * PtxArchProps::WARP_THREADS));
     }
 }
 
@@ -724,8 +724,10 @@ __device__ __forceinline__ void BlockLoadVectorized(
 // Generic BlockLoad abstraction
 //-----------------------------------------------------------------------------
 
-/// Tuning policy for cub::BlockLoad
-enum BlockLoadPolicy
+/**
+ * \brief cub::BlockLoadAlgorithm enumerates alternative algorithms for cub::BlockLoad to load a tile of data from memory into a blocked arrangement across a CUDA thread block.
+ */
+enum BlockLoadAlgorithm
 {
     /**
      * \par Overview
@@ -738,7 +740,7 @@ enum BlockLoadPolicy
      * - The utilization of memory transactions (coalescing) decreases as the
      *   access stride between threads increases (i.e., the number items per thread).
      */
-    BLOCK_LOAD_DIRECT,
+    BLOCK_LOAD_DIRECT,        //!< BLOCK_LOAD_DIRECT
 
     /**
      * \par Overview
@@ -760,7 +762,7 @@ enum BlockLoadPolicy
      *   - The block input offset is not quadword-aligned
      *   - The data type \p T is not a built-in primitive or CUDA vector type (e.g., \p short, \p int2, \p double, \p float2, etc.)
      */
-    BLOCK_LOAD_VECTORIZE,
+    BLOCK_LOAD_VECTORIZE,     //!< BLOCK_LOAD_VECTORIZE
 
     /**
      * \par Overview
@@ -779,7 +781,7 @@ enum BlockLoadPolicy
      * - The local reordering incurs slightly longer latencies and throughput than the
      *   direct cub::BLOCK_LOAD_DIRECT and cub::BLOCK_LOAD_VECTORIZE alternatives.
      */
-    BLOCK_LOAD_TRANSPOSE,
+    BLOCK_LOAD_TRANSPOSE,     //!< BLOCK_LOAD_TRANSPOSE
 
 
     /**
@@ -799,7 +801,7 @@ enum BlockLoadPolicy
      * - The local reordering incurs slightly longer latencies and throughput than the
      *   direct cub::BLOCK_LOAD_DIRECT and cub::BLOCK_LOAD_VECTORIZE alternatives.
      */
-    BLOCK_LOAD_WARP_TRANSPOSE,
+    BLOCK_LOAD_WARP_TRANSPOSE,//!< BLOCK_LOAD_WARP_TRANSPOSE
 };
 
 
@@ -810,41 +812,46 @@ enum BlockLoadPolicy
 
 
 /**
- * \brief BlockLoad provides data movement operations for reading [<em>block-arranged</em>](index.html#sec3sec3) data from global memory. ![](block_load_logo.png)
+ * \brief BlockLoad provides cooperative data movement operations for loading a tile of data from memory into a [<em>block arrangement</em>](index.html#sec3sec3) across a CUDA thread block.  ![](block_load_logo.png)
  *
- * BlockLoad provides a single tile-loading abstraction whose performance behavior can be statically tuned.  In particular,
- * BlockLoad implements alternative cub::BlockLoadPolicy strategies catering to different granularity sizes (i.e.,
+ * BlockLoad provides a tile-loading abstraction that implements alternative
+ * cub::BlockLoadAlgorithm strategies that can be used to optimize data
+ * movement on different architectures for different granularity sizes (i.e.,
  * number of items per thread).
  *
- * \tparam InputIteratorRA        The input iterator type (may be a simple pointer type).
+ * \tparam InputIteratorRA      The input iterator type (may be a simple pointer type).
  * \tparam BLOCK_THREADS        The threadblock size in threads.
  * \tparam ITEMS_PER_THREAD     The number of consecutive items partitioned onto each thread.
- * \tparam POLICY               <b>[optional]</b> cub::BlockLoadPolicy tuning policy.  Default = cub::BLOCK_LOAD_DIRECT.
+ * \tparam ALGORITHM            <b>[optional]</b> cub::BlockLoadAlgorithm tuning policy.  Default = cub::BLOCK_LOAD_DIRECT.
  * \tparam MODIFIER             <b>[optional]</b> cub::PtxLoadModifier cache modifier.  Default = cub::PTX_LOAD_NONE.
+ * \tparam WARP_TIME_SLICING          <b>[optional]</b> For cooperative cub::BlockLoadAlgorithm parameterizations that utilize shared memory: the number of communication rounds needed to complete the all-to-all exchange; more rounds can be traded for a smaller shared memory footprint (default = 1)
  *
  * \par Algorithm
  * BlockLoad can be (optionally) configured to use one of three alternative methods:
  *   -# <b>cub::BLOCK_LOAD_DIRECT</b>.  A [<em>blocked arrangement</em>](index.html#sec3sec3)
- *      of data is read directly from memory.  [More...](\ref cub::BlockLoadPolicy)
+ *      of data is read directly from memory.  [More...](\ref cub::BlockLoadAlgorithm)
  *   -# <b>cub::BLOCK_LOAD_VECTORIZE</b>.  A [<em>blocked arrangement</em>](index.html#sec3sec3)
  *      of data is read directly from memory using CUDA's built-in vectorized loads as a
- *      coalescing optimization.    [More...](\ref cub::BlockLoadPolicy)
+ *      coalescing optimization.    [More...](\ref cub::BlockLoadAlgorithm)
  *   -# <b>cub::BLOCK_LOAD_TRANSPOSE</b>.  A [<em>striped arrangement</em>](index.html#sec3sec3)
  *      of data is read directly from memory and is then locally transposed into a
- *      [<em>blocked arrangement</em>](index.html#sec3sec3).  [More...](\ref cub::BlockLoadPolicy)
+ *      [<em>blocked arrangement</em>](index.html#sec3sec3).  [More...](\ref cub::BlockLoadAlgorithm)
  *   -# <b>cub::BLOCK_LOAD_WARP_TRANSPOSE</b>.  A [<em>warp-striped arrangement</em>](index.html#sec3sec3)
  *      of data is read directly from memory and is then locally transposed into a
- *      [<em>blocked arrangement</em>](index.html#sec3sec3).  [More...](\ref cub::BlockLoadPolicy)
+ *      [<em>blocked arrangement</em>](index.html#sec3sec3).  [More...](\ref cub::BlockLoadAlgorithm)
  *
  * \par Usage Considerations
  * - \smemreuse{BlockLoad::SmemStorage}
  *
  * \par Performance Considerations
- *  - See cub::BlockLoadPolicy for more performance details regarding algorithmic alternatives
+ *  - See cub::BlockLoadAlgorithm for more performance details regarding algorithmic alternatives
  *
  *
  * \par Examples
- * <em>Example 1.</em> Have a 128-thread threadblock directly load a blocked arrangement of four consecutive integers per thread.
+ * <em>Example 1.</em> Have a 128-thread thread block directly load a blocked
+ * arrangement of four consecutive integers per thread.  The load operation
+ * may suffer from non-coalesced memory accesses because consecutive threads are
+ * referencing non-consecutive inputs as each item is read.
  * \code
  * #include <cub/cub.cuh>
  *
@@ -866,8 +873,38 @@ enum BlockLoadPolicy
  * \endcode
  *
  * \par
- * <em>Example 2.</em> Have a threadblock load a blocked arrangement of \p ITEMS_PER_THREAD consecutive
- * integers per thread using vectorized loads and global-only caching:
+ * <em>Example 2.</em> Have a thread block load a blocked arrangement of 21
+ * consecutive integers per thread using strip-mined loads which are
+ * transposed in shared memory.  The load operation has perfectly coalesced
+ * memory accesses because consecutive threads are referencing consecutive
+ * input items.
+ * \code
+ * #include <cub/cub.cuh>
+ *
+ * template <int BLOCK_THREADS>
+ * __global__ void SomeKernel(int *d_in, ...)
+ * {
+ *     // Parameterize BlockLoad on type int
+ *     typedef cub::BlockLoad<int*, BLOCK_THREADS, 21, BLOCK_LOAD_TRANSPOSE> BlockLoad;
+ *
+ *     // Declare shared memory for BlockLoad
+ *     __shared__ typename BlockLoad::SmemStorage smem_storage;
+ *
+ *     // A segment of consecutive items per thread
+ *     int data[21];
+ *
+ *     // Load a tile of data at this block's offset
+ *     BlockLoad::Load(smem_storage, d_in + blockIdx.x * BLOCK_THREADS * 21, data);
+ *
+ *     ...
+ * \endcode
+ *
+ * \par
+ * <em>Example 3.</em> Have a thread block load a blocked arrangement of
+ * \p ITEMS_PER_THREAD consecutive integers per thread using vectorized
+ * loads and global-only caching.  The load operation will have perfectly
+ * coalesced memory accesses if ITEMS_PER_THREAD is 1, 2, or 4 which allows
+ * consecutive threads to read consecutive int1, int2, or int4 words.
  * \code
  * #include <cub/cub.cuh>
  *
@@ -890,14 +927,14 @@ enum BlockLoadPolicy
  *
  *     ...
  * \endcode
- * <br>
  */
 template <
     typename            InputIteratorRA,
     int                 BLOCK_THREADS,
     int                 ITEMS_PER_THREAD,
-    BlockLoadPolicy     POLICY = BLOCK_LOAD_DIRECT,
-    PtxLoadModifier     MODIFIER = PTX_LOAD_NONE>
+    BlockLoadAlgorithm  ALGORITHM = BLOCK_LOAD_DIRECT,
+    PtxLoadModifier     MODIFIER = PTX_LOAD_NONE,
+    int                 WARP_TIME_SLICING = 1>
 class BlockLoad
 {
 
@@ -912,7 +949,7 @@ private:
 
 
     /// Load helper
-    template <BlockLoadPolicy _POLICY, int DUMMY = 0>
+    template <BlockLoadAlgorithm _POLICY, int DUMMY = 0>
     struct LoadInternal;
 
 
@@ -995,7 +1032,7 @@ private:
     struct LoadInternal<BLOCK_LOAD_TRANSPOSE, DUMMY>
     {
         // BlockExchange utility type for keys
-        typedef BlockExchange<T, BLOCK_THREADS, ITEMS_PER_THREAD> BlockExchange;
+        typedef BlockExchange<T, BLOCK_THREADS, ITEMS_PER_THREAD, WARP_TIME_SLICING> BlockExchange;
 
         /// Shared memory storage layout type
         typedef typename BlockExchange::SmemStorage SmemStorage;
@@ -1031,7 +1068,7 @@ private:
     struct LoadInternal<BLOCK_LOAD_WARP_TRANSPOSE, DUMMY>
     {
         // BlockExchange utility type for keys
-        typedef BlockExchange<T, BLOCK_THREADS, ITEMS_PER_THREAD> BlockExchange;
+        typedef BlockExchange<T, BLOCK_THREADS, ITEMS_PER_THREAD, WARP_TIME_SLICING> BlockExchange;
 
         /// Shared memory storage layout type
         typedef typename BlockExchange::SmemStorage SmemStorage;
@@ -1060,7 +1097,7 @@ private:
     };
 
     /// Shared memory storage layout type
-    typedef typename LoadInternal<POLICY>::SmemStorage _SmemStorage;
+    typedef typename LoadInternal<ALGORITHM>::SmemStorage _SmemStorage;
 
 public:
 
@@ -1081,7 +1118,7 @@ public:
         InputIteratorRA     block_itr,                      ///< [in] The threadblock's base input iterator for loading from
         T                   (&items)[ITEMS_PER_THREAD])     ///< [out] Data to load
     {
-        LoadInternal<POLICY>::Load(smem_storage, block_itr, items);
+        LoadInternal<ALGORITHM>::Load(smem_storage, block_itr, items);
     }
 
     /**
@@ -1093,7 +1130,7 @@ public:
         const int           &guarded_items,                 ///< [in] Number of valid items in the tile
         T                   (&items)[ITEMS_PER_THREAD])     ///< [out] Data to load
     {
-        LoadInternal<POLICY>::Load(smem_storage, block_itr, guarded_items, items);
+        LoadInternal<ALGORITHM>::Load(smem_storage, block_itr, guarded_items, items);
     }
 };
 
