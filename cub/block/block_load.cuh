@@ -49,15 +49,16 @@ CUB_NS_PREFIX
 namespace cub {
 
 /**
- * \addtogroup BlockModule
+ * \addtogroup IoModule
  * @{
  */
 
 
 /******************************************************************//**
- * \name Blocked threadblock I/O
+ * \name Blocked I/O
  *********************************************************************/
 //@{
+
 
 /**
  * \brief Load a tile of items across a threadblock directly using the specified cache modifier.
@@ -76,7 +77,7 @@ template <
     typename        T,
     int             ITEMS_PER_THREAD,
     typename        InputIteratorRA>
-__device__ __forceinline__ void BlockLoadBlocked(
+__device__ __forceinline__ void LoadBlocked(
     InputIteratorRA block_itr,                          ///< [in] The threadblock's base input iterator for loading from
     T               (&items)[ITEMS_PER_THREAD])         ///< [out] Data to load
 {
@@ -85,33 +86,9 @@ __device__ __forceinline__ void BlockLoadBlocked(
     for (int ITEM = 0; ITEM < ITEMS_PER_THREAD; ITEM++)
     {
         int item_offset = (threadIdx.x * ITEMS_PER_THREAD) + ITEM;
-        items[ITEM] = ThreadLoad<MODIFIER>(block_itr + item_offset);
+        items[ITEM] = Load<MODIFIER>(block_itr + item_offset);
     }
 }
-
-
-/**
- * \brief Load a tile of items across a threadblock directly.
- *
- * The aggregate tile of items is assumed to be partitioned evenly across
- * threads in "blocked" fashion with thread<sub><em>i</em></sub> owning
- * the <em>i</em><sup>th</sup> segment of consecutive elements.
- *
- * \tparam T                    <b>[inferred]</b> The data type to load.
- * \tparam ITEMS_PER_THREAD     <b>[inferred]</b> The number of consecutive items partitioned onto each thread.
- * \tparam InputIteratorRA      <b>[inferred]</b> The random-access iterator type for input (may be a simple pointer type).
- */
-template <
-    typename        T,
-    int             ITEMS_PER_THREAD,
-    typename        InputIteratorRA>
-__device__ __forceinline__ void BlockLoadBlocked(
-    InputIteratorRA block_itr,                          ///< [in] The threadblock's base input iterator for loading from
-    T               (&items)[ITEMS_PER_THREAD])         ///< [out] Data to load
-{
-    BlockLoadBlocked<PTX_LOAD_NONE>(block_itr, items);
-}
-
 
 
 /**
@@ -131,7 +108,7 @@ template <
     typename        T,
     int             ITEMS_PER_THREAD,
     typename        InputIteratorRA>
-__device__ __forceinline__ void BlockLoadBlocked(
+__device__ __forceinline__ void LoadBlocked(
     InputIteratorRA block_itr,                          ///< [in] The threadblock's base input iterator for loading from
     const int       &guarded_items,                     ///< [in] Number of valid items in the tile
     T               (&items)[ITEMS_PER_THREAD])         ///< [out] Data to load
@@ -143,33 +120,9 @@ __device__ __forceinline__ void BlockLoadBlocked(
     {
         if (ITEM < bounds)
         {
-            items[ITEM] = ThreadLoad<MODIFIER>(block_itr + (threadIdx.x * ITEMS_PER_THREAD) + ITEM);
+            items[ITEM] = Load<MODIFIER>(block_itr + (threadIdx.x * ITEMS_PER_THREAD) + ITEM);
         }
     }
-}
-
-
-/**
- * \brief Load a tile of items across a threadblock directly, guarded by range
- *
- * The aggregate tile of items is assumed to be partitioned evenly across
- * threads in "blocked" fashion with thread<sub><em>i</em></sub> owning
- * the <em>i</em><sup>th</sup> segment of consecutive elements.
- *
- * \tparam T                    <b>[inferred]</b> The data type to load.
- * \tparam ITEMS_PER_THREAD     <b>[inferred]</b> The number of consecutive items partitioned onto each thread.
- * \tparam InputIteratorRA      <b>[inferred]</b> The random-access iterator type for input (may be a simple pointer type).
- */
-template <
-    typename        T,
-    int             ITEMS_PER_THREAD,
-    typename        InputIteratorRA>
-__device__ __forceinline__ void BlockLoadBlocked(
-    InputIteratorRA block_itr,                          ///< [in] The threadblock's base input iterator for loading from
-    const int       &guarded_items,                     ///< [in] Number of valid items in the tile
-    T               (&items)[ITEMS_PER_THREAD])         ///< [out] Data to load
-{
-    BlockLoadBlocked<PTX_LOAD_NONE>(block_itr, guarded_items, items);
 }
 
 
@@ -190,7 +143,7 @@ template <
     typename        T,
     int             ITEMS_PER_THREAD,
     typename        InputIteratorRA>
-__device__ __forceinline__ void BlockLoadBlocked(
+__device__ __forceinline__ void LoadBlocked(
     InputIteratorRA block_itr,                          ///< [in] The threadblock's base input iterator for loading from
     const int       &guarded_items,                     ///< [in] Number of valid items in the tile
     T               oob_default,                        ///< [in] Default value to assign out-of-bound items
@@ -202,40 +155,16 @@ __device__ __forceinline__ void BlockLoadBlocked(
     for (int ITEM = 0; ITEM < ITEMS_PER_THREAD; ITEM++)
     {
         items[ITEM] = (ITEM < bounds) ?
-            ThreadLoad<MODIFIER>(block_itr + (threadIdx.x * ITEMS_PER_THREAD) + ITEM) :
+            Load<MODIFIER>(block_itr + (threadIdx.x * ITEMS_PER_THREAD) + ITEM) :
             oob_default;
     }
 }
 
 
-/**
- * \brief Load a tile of items across a threadblock directly, guarded by range, with assignment for out-of-bound elements
- *
- * The aggregate tile of items is assumed to be partitioned evenly across
- * threads in "blocked" fashion with thread<sub><em>i</em></sub> owning
- * the <em>i</em><sup>th</sup> segment of consecutive elements.
- *
- * \tparam T                    <b>[inferred]</b> The data type to load.
- * \tparam ITEMS_PER_THREAD     <b>[inferred]</b> The number of consecutive items partitioned onto each thread.
- * \tparam InputIteratorRA      <b>[inferred]</b> The random-access iterator type for input (may be a simple pointer type).
- */
-template <
-    typename        T,
-    int             ITEMS_PER_THREAD,
-    typename        InputIteratorRA>
-__device__ __forceinline__ void BlockLoadBlocked(
-    InputIteratorRA block_itr,                          ///< [in] The threadblock's base input iterator for loading from
-    const int       &guarded_items,                     ///< [in] Number of valid items in the tile
-    T               oob_default,                        ///< [in] Default value to assign out-of-bound items
-    T               (&items)[ITEMS_PER_THREAD])         ///< [out] Data to load
-{
-    BlockLoadBlocked<PTX_LOAD_NONE>(block_itr, guarded_items, oob_default, items);
-}
-
 
 //@}  end member group
 /******************************************************************//**
- * \name Striped threadblock I/O
+ * \name Striped I/O
  *********************************************************************/
 //@{
 
@@ -257,7 +186,7 @@ template <
     typename        T,
     int             ITEMS_PER_THREAD,
     typename        InputIteratorRA>
-__device__ __forceinline__ void BlockLoadStriped(
+__device__ __forceinline__ void LoadStriped(
     InputIteratorRA block_itr,                          ///< [in] The threadblock's base input iterator for loading from
     T               (&items)[ITEMS_PER_THREAD],         ///< [out] Data to load
     int             block_stride = blockDim.x)          ///< [in] <b>[optional]</b> Block stripe stride.  Default is the width of the threadblock.  More efficient code can be generated if a compile-time-constant (e.g., BLOCK_THREADS) is supplied.
@@ -266,33 +195,10 @@ __device__ __forceinline__ void BlockLoadStriped(
     for (int ITEM = 0; ITEM < ITEMS_PER_THREAD; ITEM++)
     {
         int item_offset = (ITEM * block_stride) + threadIdx.x;
-        items[ITEM] = ThreadLoad<MODIFIER>(block_itr + item_offset);
+        items[ITEM] = Load<MODIFIER>(block_itr + item_offset);
     }
 }
 
-
-/**
- * \brief Load striped tile directly.
- *
- * The aggregate tile of items is assumed to be partitioned across
- * threads in "striped" fashion, i.e., the \p ITEMS_PER_THREAD
- * items owned by each thread have logical stride \p BLOCK_THREADS between them.
- *
- * \tparam T                    <b>[inferred]</b> The data type to load.
- * \tparam ITEMS_PER_THREAD     <b>[inferred]</b> The number of consecutive items partitioned onto each thread.
- * \tparam InputIteratorRA      <b>[inferred]</b> The random-access iterator type for input (may be a simple pointer type).
- */
-template <
-    typename        T,
-    int             ITEMS_PER_THREAD,
-    typename        InputIteratorRA>
-__device__ __forceinline__ void BlockLoadStriped(
-    InputIteratorRA block_itr,                          ///< [in] The threadblock's base input iterator for loading from
-    T               (&items)[ITEMS_PER_THREAD],         ///< [out] Data to load
-    int             block_stride = blockDim.x)          ///< [in] <b>[optional]</b> Block stripe stride.  Default is the width of the threadblock.  More efficient code can be generated if a compile-time-constant (e.g., BLOCK_THREADS) is supplied.
-{
-    BlockLoadStriped<PTX_LOAD_NONE>(block_itr, items, block_stride);
-}
 
 /**
  * \brief Load striped directly tile using the specified cache modifier, guarded by range
@@ -311,7 +217,7 @@ template <
     typename        T,
     int             ITEMS_PER_THREAD,
     typename        InputIteratorRA>
-__device__ __forceinline__ void BlockLoadStriped(
+__device__ __forceinline__ void LoadStriped(
     InputIteratorRA block_itr,                      ///< [in] The threadblock's base input iterator for loading from
     const int       &guarded_items,                 ///< [in] Number of valid items in the tile
     T               (&items)[ITEMS_PER_THREAD],     ///< [out] Data to load
@@ -324,34 +230,9 @@ __device__ __forceinline__ void BlockLoadStriped(
     {
         if (ITEM * block_stride < bounds)
         {
-            items[ITEM] = ThreadLoad<MODIFIER>(block_itr + threadIdx.x + (ITEM * block_stride));
+            items[ITEM] = Load<MODIFIER>(block_itr + threadIdx.x + (ITEM * block_stride));
         }
     }
-}
-
-
-/**
- * \brief Load striped tile directly, guarded by range
- *
- * The aggregate tile of items is assumed to be partitioned across
- * threads in "striped" fashion, i.e., the \p ITEMS_PER_THREAD
- * items owned by each thread have logical stride \p BLOCK_THREADS between them.
- *
- * \tparam T                    <b>[inferred]</b> The data type to load.
- * \tparam ITEMS_PER_THREAD     <b>[inferred]</b> The number of consecutive items partitioned onto each thread.
- * \tparam InputIteratorRA      <b>[inferred]</b> The random-access iterator type for input (may be a simple pointer type).
- */
-template <
-    typename        T,
-    int             ITEMS_PER_THREAD,
-    typename        InputIteratorRA>
-__device__ __forceinline__ void BlockLoadStriped(
-    InputIteratorRA block_itr,                          ///< [in] The threadblock's base input iterator for loading from
-    const int       &guarded_items,                     ///< [in] Number of valid items in the tile
-    T               (&items)[ITEMS_PER_THREAD],         ///< [out] Data to load
-    int             block_stride = blockDim.x)          ///< [in] <b>[optional]</b> Block stripe stride.  Default is the width of the threadblock.  More efficient code can be generated if a compile-time-constant (e.g., BLOCK_THREADS) is supplied.
-{
-    BlockLoadStriped<PTX_LOAD_NONE>(block_itr, guarded_items, items, block_stride);
 }
 
 
@@ -372,7 +253,7 @@ template <
     typename        T,
     int             ITEMS_PER_THREAD,
     typename        InputIteratorRA>
-__device__ __forceinline__ void BlockLoadStriped(
+__device__ __forceinline__ void LoadStriped(
     InputIteratorRA block_itr,                      ///< [in] The threadblock's base input iterator for loading from
     const int       &guarded_items,                 ///< [in] Number of valid items in the tile
     T               oob_default,                    ///< [in] Default value to assign out-of-bound items
@@ -385,47 +266,24 @@ __device__ __forceinline__ void BlockLoadStriped(
     for (int ITEM = 0; ITEM < ITEMS_PER_THREAD; ITEM++)
     {
         items[ITEM] = (ITEM * block_stride < bounds) ?
-             ThreadLoad<MODIFIER>(block_itr + threadIdx.x + (ITEM * block_stride)) :
+             Load<MODIFIER>(block_itr + threadIdx.x + (ITEM * block_stride)) :
              oob_default;
     }
 }
 
 
-/**
- * \brief Load striped tile directly, guarded by range, with assignment for out-of-bound elements
- *
- * The aggregate tile of items is assumed to be partitioned across
- * threads in "striped" fashion, i.e., the \p ITEMS_PER_THREAD
- * items owned by each thread have logical stride \p BLOCK_THREADS between them.
- *
- * \tparam T                    <b>[inferred]</b> The data type to load.
- * \tparam ITEMS_PER_THREAD     <b>[inferred]</b> The number of consecutive items partitioned onto each thread.
- * \tparam InputIteratorRA      <b>[inferred]</b> The random-access iterator type for input (may be a simple pointer type).
- */
-template <
-    typename        T,
-    int             ITEMS_PER_THREAD,
-    typename        InputIteratorRA>
-__device__ __forceinline__ void BlockLoadStriped(
-    InputIteratorRA block_itr,                          ///< [in] The threadblock's base input iterator for loading from
-    const int       &guarded_items,                     ///< [in] Number of valid items in the tile
-    T               oob_default,                        ///< [in] Default value to assign out-of-bound items
-    T               (&items)[ITEMS_PER_THREAD],         ///< [out] Data to load
-    int             block_stride = blockDim.x)          ///< [in] <b>[optional]</b> Block stripe stride.  Default is the width of the threadblock.  More efficient code can be generated if a compile-time-constant (e.g., BLOCK_THREADS) is supplied.
-{
-    BlockLoadStriped<PTX_LOAD_NONE>(block_itr, guarded_items, oob_default, items, block_stride);
-}
-
 
 //@}  end member group
 /******************************************************************//**
- * \name Warp-striped threadblock I/O
+ * \name Warp-striped I/O
  *********************************************************************/
 //@{
 
 
 /**
  * \brief Load warp-striped tile directly using the specified cache modifier.
+ *
+ * The number of threads in the thread block must be a multiple of the architecture's warp size.
  *
  * The aggregate tile of items is assumed to be partitioned across threads in
  * "warp-striped" fashion, i.e., each warp owns a contiguous segment of
@@ -443,10 +301,10 @@ template <
     typename        T,
     int             ITEMS_PER_THREAD,
     typename        InputIteratorRA>
-__device__ __forceinline__ void BlockLoadWarpStriped(
+__device__ __forceinline__ void LoadWarpStriped(
     InputIteratorRA block_itr,                                                      ///< [in] The threadblock's base input iterator for loading from
     T               (&items)[ITEMS_PER_THREAD],                                     ///< [out] Data to load
-    int             warp_stride = CUB_MIN(blockDim.x, PtxArchProps::WARP_THREADS))  ///< [in] <b>[optional]</b> Warp stripe stride.  Default is the width of the warp (or threadblock, if smaller).  More efficient code can be generated if a compile-time-constant (e.g., WARP_THREADS) is supplied.
+    int             warp_stride = PtxArchProps::WARP_THREADS)                       ///< [in] <b>[optional]</b> Warp stripe stride.  Default is the width of the warp.
 {
     int tid         = threadIdx.x & (PtxArchProps::WARP_THREADS - 1);
     int wid         = threadIdx.x >> PtxArchProps::LOG_WARP_THREADS;
@@ -456,35 +314,10 @@ __device__ __forceinline__ void BlockLoadWarpStriped(
     #pragma unroll
     for (int ITEM = 0; ITEM < ITEMS_PER_THREAD; ITEM++)
     {
-        items[ITEM] = ThreadLoad<MODIFIER>(block_itr + warp_offset + tid + (ITEM * warp_stride));
+        items[ITEM] = Load<MODIFIER>(block_itr + warp_offset + tid + (ITEM * warp_stride));
     }
 }
 
-
-/**
- * \brief Load warp-striped tile directly.
- *
- * The aggregate tile of items is assumed to be partitioned across threads in
- * "warp-striped" fashion, i.e., each warp owns a contiguous segment of
- * (\p WARP_THREADS * \p ITEMS_PER_THREAD) items, and the \p ITEMS_PER_THREAD
- * items owned by each thread within the same warp have logical stride
- * \p WARP_THREADS between them.
- *
- * \tparam T                    <b>[inferred]</b> The data type to load.
- * \tparam ITEMS_PER_THREAD     <b>[inferred]</b> The number of consecutive items partitioned onto each thread.
- * \tparam InputIteratorRA      <b>[inferred]</b> The random-access iterator type for input (may be a simple pointer type).
- */
-template <
-    typename        T,
-    int             ITEMS_PER_THREAD,
-    typename        InputIteratorRA>
-__device__ __forceinline__ void BlockLoadWarpStriped(
-    InputIteratorRA block_itr,                                                      ///< [in] The threadblock's base input iterator for loading from
-    T               (&items)[ITEMS_PER_THREAD],                                     ///< [out] Data to load
-    int             warp_stride = CUB_MIN(blockDim.x, PtxArchProps::WARP_THREADS))  ///< [in] <b>[optional]</b> Warp stripe stride.  Default is the width of the warp (or threadblock, if smaller).  More efficient code can be generated if a compile-time-constant (e.g., WARP_THREADS) is supplied.
-{
-    BlockLoadWarpStriped<PTX_LOAD_NONE>(block_itr, items, warp_stride);
-}
 
 /**
  * \brief Load warp-striped directly tile using the specified cache modifier, guarded by range
@@ -505,11 +338,11 @@ template <
     typename        T,
     int             ITEMS_PER_THREAD,
     typename        InputIteratorRA>
-__device__ __forceinline__ void BlockLoadWarpStriped(
+__device__ __forceinline__ void LoadWarpStriped(
     InputIteratorRA block_itr,                                                      ///< [in] The threadblock's base input iterator for loading from
     const int       &guarded_items,                                                 ///< [in] Number of valid items in the tile
     T               (&items)[ITEMS_PER_THREAD],                                     ///< [out] Data to load
-    int             warp_stride = CUB_MIN(blockDim.x, PtxArchProps::WARP_THREADS))  ///< [in] <b>[optional]</b> Warp stripe stride.  Default is the width of the warp (or threadblock, if smaller).  More efficient code can be generated if a compile-time-constant (e.g., WARP_THREADS) is supplied.
+    int             warp_stride = PtxArchProps::WARP_THREADS)                       ///< [in] <b>[optional]</b> Warp stripe stride.  Default is the width of the warp.
 {
     int tid         = threadIdx.x & (PtxArchProps::WARP_THREADS - 1);
     int wid         = threadIdx.x >> PtxArchProps::LOG_WARP_THREADS;
@@ -522,36 +355,9 @@ __device__ __forceinline__ void BlockLoadWarpStriped(
     {
         if ((ITEM * warp_stride) < bounds)
         {
-            items[ITEM] = ThreadLoad<MODIFIER>(block_itr + warp_offset + tid + (ITEM * warp_stride));
+            items[ITEM] = Load<MODIFIER>(block_itr + warp_offset + tid + (ITEM * warp_stride));
         }
     }
-}
-
-
-/**
- * \brief Load warp-striped tile directly, guarded by range
- *
- * The aggregate tile of items is assumed to be partitioned across threads in
- * "warp-striped" fashion, i.e., each warp owns a contiguous segment of
- * (\p WARP_THREADS * \p ITEMS_PER_THREAD) items, and the \p ITEMS_PER_THREAD
- * items owned by each thread within the same warp have logical stride
- * \p WARP_THREADS between them.
- *
- * \tparam T                    <b>[inferred]</b> The data type to load.
- * \tparam ITEMS_PER_THREAD     <b>[inferred]</b> The number of consecutive items partitioned onto each thread.
- * \tparam InputIteratorRA      <b>[inferred]</b> The random-access iterator type for input (may be a simple pointer type).
- */
-template <
-    typename        T,
-    int             ITEMS_PER_THREAD,
-    typename        InputIteratorRA>
-__device__ __forceinline__ void BlockLoadWarpStriped(
-    InputIteratorRA block_itr,                                                      ///< [in] The threadblock's base input iterator for loading from
-    const int       &guarded_items,                                                 ///< [in] Number of valid items in the tile
-    T               (&items)[ITEMS_PER_THREAD],                                     ///< [out] Data to load
-    int             warp_stride = CUB_MIN(blockDim.x, PtxArchProps::WARP_THREADS))  ///< [in] <b>[optional]</b> Warp stripe stride.  Default is the width of the warp (or threadblock, if smaller).  More efficient code can be generated if a compile-time-constant (e.g., WARP_THREADS) is supplied.
-{
-    BlockLoadWarpStriped<PTX_LOAD_NONE>(block_itr, guarded_items, items, warp_stride);
 }
 
 
@@ -574,12 +380,12 @@ template <
     typename        T,
     int             ITEMS_PER_THREAD,
     typename        InputIteratorRA>
-__device__ __forceinline__ void BlockLoadWarpStriped(
+__device__ __forceinline__ void LoadWarpStriped(
     InputIteratorRA block_itr,                                                      ///< [in] The threadblock's base input iterator for loading from
     const int       &guarded_items,                                                 ///< [in] Number of valid items in the tile
     T               oob_default,                                                    ///< [in] Default value to assign out-of-bound items
     T               (&items)[ITEMS_PER_THREAD],                                     ///< [out] Data to load
-    int             warp_stride = CUB_MIN(blockDim.x, PtxArchProps::WARP_THREADS))  ///< [in] <b>[optional]</b> Warp stripe stride.  Default is the width of the warp (or threadblock, if smaller).  More efficient code can be generated if a compile-time-constant (e.g., WARP_THREADS) is supplied.
+    int             warp_stride = PtxArchProps::WARP_THREADS)                       ///< [in] <b>[optional]</b> Warp stripe stride.  Default is the width of the warp.
 {
     int tid         = threadIdx.x & (PtxArchProps::WARP_THREADS - 1);
     int wid         = threadIdx.x >> PtxArchProps::LOG_WARP_THREADS;
@@ -591,43 +397,16 @@ __device__ __forceinline__ void BlockLoadWarpStriped(
     for (int ITEM = 0; ITEM < ITEMS_PER_THREAD; ITEM++)
     {
         items[ITEM] = ((ITEM * warp_stride) < bounds) ?
-            ThreadLoad<MODIFIER>(block_itr + warp_offset + tid + (ITEM * warp_stride)) :
+            Load<MODIFIER>(block_itr + warp_offset + tid + (ITEM * warp_stride)) :
             oob_default;
     }
 }
 
 
-/**
- * \brief Load warp-striped tile directly, guarded by range, with assignment for out-of-bound elements
- *
- * The aggregate tile of items is assumed to be partitioned across threads in
- * "warp-striped" fashion, i.e., each warp owns a contiguous segment of
- * (\p WARP_THREADS * \p ITEMS_PER_THREAD) items, and the \p ITEMS_PER_THREAD
- * items owned by each thread within the same warp have logical stride
- * \p WARP_THREADS between them.
- *
- * \tparam T                    <b>[inferred]</b> The data type to load.
- * \tparam ITEMS_PER_THREAD     <b>[inferred]</b> The number of consecutive items partitioned onto each thread.
- * \tparam InputIteratorRA      <b>[inferred]</b> The random-access iterator type for input (may be a simple pointer type).
- */
-template <
-    typename        T,
-    int             ITEMS_PER_THREAD,
-    typename        InputIteratorRA>
-__device__ __forceinline__ void BlockLoadWarpStriped(
-    InputIteratorRA block_itr,                                                      ///< [in] The threadblock's base input iterator for loading from
-    const int       &guarded_items,                                                 ///< [in] Number of valid items in the tile
-    T               oob_default,                                                    ///< [in] Default value to assign out-of-bound items
-    T               (&items)[ITEMS_PER_THREAD],                                     ///< [out] Data to load
-    int             warp_stride = CUB_MIN(blockDim.x, PtxArchProps::WARP_THREADS))  ///< [in] <b>[optional]</b> Warp stripe stride.  Default is the width of the warp (or threadblock, if smaller).  More efficient code can be generated if a compile-time-constant (e.g., WARP_THREADS) is supplied.
-{
-    BlockLoadWarpStriped<PTX_LOAD_NONE>(block_itr, guarded_items, oob_default, items, warp_stride);
-}
-
 
 //@}  end member group
 /******************************************************************//**
- * \name Blocked, vectorized threadblock I/O
+ * \name Blocked, vectorized I/O
  *********************************************************************/
 //@{
 
@@ -652,7 +431,7 @@ template <
     PtxLoadModifier MODIFIER,
     typename        T,
     int             ITEMS_PER_THREAD>
-__device__ __forceinline__ void BlockLoadVectorized(
+__device__ __forceinline__ void LoadBlockedVectorized(
     T               *block_ptr,                         ///< [in] Input pointer for loading from
     T               (&items)[ITEMS_PER_THREAD])         ///< [out] Data to load
 {
@@ -676,7 +455,7 @@ __device__ __forceinline__ void BlockLoadVectorized(
     T raw_items[ITEMS_PER_THREAD];
 
     // Direct-load using vector types
-    BlockLoadBlocked<MODIFIER>(
+    LoadBlocked<MODIFIER>(
         reinterpret_cast<Vector *>(block_ptr),
         reinterpret_cast<Vector (&)[VECTORS_PER_THREAD]>(raw_items));
 
@@ -689,36 +468,9 @@ __device__ __forceinline__ void BlockLoadVectorized(
 }
 
 
-
-/**
- * \brief Load a tile of items across a threadblock directly.
- *
- * The aggregate tile of items is assumed to be partitioned evenly across
- * threads in "blocked" fashion with thread<sub><em>i</em></sub> owning
- * the <em>i</em><sup>th</sup> segment of consecutive elements.
- *
- * The input offset (\p block_ptr + \p block_offset) must be quad-item aligned
- *
- * The following conditions will prevent vectorization and loading will fall back to cub::BLOCK_LOAD_DIRECT:
- *   - \p ITEMS_PER_THREAD is odd
- *   - The data type \p T is not a built-in primitive or CUDA vector type (e.g., \p short, \p int2, \p double, \p float2, etc.)
- *
- * \tparam T                    <b>[inferred]</b> The data type to load.
- * \tparam ITEMS_PER_THREAD     <b>[inferred]</b> The number of consecutive items partitioned onto each thread.
- */
-template <
-    typename        T,
-    int             ITEMS_PER_THREAD>
-__device__ __forceinline__ void BlockLoadVectorized(
-    T               *block_ptr,                         ///< [in] Input pointer for loading from
-    T               (&items)[ITEMS_PER_THREAD])         ///< [out] Data to load
-{
-    BlockLoadVectorized<PTX_LOAD_NONE>(block_ptr, items);
-}
-
 //@}  end member group
 
-/** @} */       // end group BlockModule
+/** @} */       // end group IoModule
 
 
 
@@ -742,7 +494,7 @@ enum BlockLoadAlgorithm
      * - The utilization of memory transactions (coalescing) decreases as the
      *   access stride between threads increases (i.e., the number items per thread).
      */
-    BLOCK_LOAD_DIRECT,        //!< BLOCK_LOAD_DIRECT
+    BLOCK_LOAD_DIRECT,
 
     /**
      * \par Overview
@@ -764,7 +516,7 @@ enum BlockLoadAlgorithm
      *   - The block input offset is not quadword-aligned
      *   - The data type \p T is not a built-in primitive or CUDA vector type (e.g., \p short, \p int2, \p double, \p float2, etc.)
      */
-    BLOCK_LOAD_VECTORIZE,     //!< BLOCK_LOAD_VECTORIZE
+    BLOCK_LOAD_VECTORIZE,
 
     /**
      * \par Overview
@@ -783,7 +535,7 @@ enum BlockLoadAlgorithm
      * - The local reordering incurs slightly longer latencies and throughput than the
      *   direct cub::BLOCK_LOAD_DIRECT and cub::BLOCK_LOAD_VECTORIZE alternatives.
      */
-    BLOCK_LOAD_TRANSPOSE,     //!< BLOCK_LOAD_TRANSPOSE
+    BLOCK_LOAD_TRANSPOSE,
 
 
     /**
@@ -803,18 +555,13 @@ enum BlockLoadAlgorithm
      * - The local reordering incurs slightly longer latencies and throughput than the
      *   direct cub::BLOCK_LOAD_DIRECT and cub::BLOCK_LOAD_VECTORIZE alternatives.
      */
-    BLOCK_LOAD_WARP_TRANSPOSE,//!< BLOCK_LOAD_WARP_TRANSPOSE
+    BLOCK_LOAD_WARP_TRANSPOSE,
 };
 
 
 /**
- * \addtogroup BlockModule
- * @{
- */
-
-
-/**
  * \brief BlockLoad provides cooperative data movement operations for loading a tile of data from memory into a [<em>block arrangement</em>](index.html#sec3sec3) across a CUDA thread block.  ![](block_load_logo.png)
+ * \ingroup BlockModule
  *
  * BlockLoad provides a tile-loading abstraction that implements alternative
  * cub::BlockLoadAlgorithm strategies that can be used to optimize data
@@ -825,7 +572,7 @@ enum BlockLoadAlgorithm
  * \tparam BLOCK_THREADS        The threadblock size in threads.
  * \tparam ITEMS_PER_THREAD     The number of consecutive items partitioned onto each thread.
  * \tparam ALGORITHM            <b>[optional]</b> cub::BlockLoadAlgorithm tuning policy.  Default = cub::BLOCK_LOAD_DIRECT.
- * \tparam MODIFIER             <b>[optional]</b> cub::PtxLoadModifier cache modifier.  Default = cub::PTX_LOAD_NONE.
+ * \tparam MODIFIER             <b>[optional]</b> cub::PtxLoadModifier cache modifier.  Default = cub::LOAD_DEFAULT.
  * \tparam WARP_TIME_SLICING    <b>[optional]</b> For cooperative cub::BlockLoadAlgorithm parameterizations that utilize shared memory: When \p true, only use enough shared memory for a single warp's worth of tile data, time-slicing the block-wide exchange over multiple synchronized rounds (default = false)
  *
  * \par Algorithm
@@ -916,7 +663,7 @@ enum BlockLoadAlgorithm
  * __global__ void SomeKernel(int *d_in, ...)
  * {
  *     // Parameterize BlockLoad on type int
- *     typedef cub::BlockLoad<int*, BLOCK_THREADS, ITEMS_PER_THREAD, BLOCK_LOAD_VECTORIZE, PTX_LOAD_CG> BlockLoad;
+ *     typedef cub::BlockLoad<int*, BLOCK_THREADS, ITEMS_PER_THREAD, BLOCK_LOAD_VECTORIZE, LOAD_CG> BlockLoad;
  *
  *     // Declare shared memory for BlockLoad
  *     __shared__ typename BlockLoad::SmemStorage smem_storage;
@@ -935,7 +682,7 @@ template <
     int                 BLOCK_THREADS,
     int                 ITEMS_PER_THREAD,
     BlockLoadAlgorithm  ALGORITHM = BLOCK_LOAD_DIRECT,
-    PtxLoadModifier     MODIFIER = PTX_LOAD_NONE,
+    PtxLoadModifier     MODIFIER = LOAD_DEFAULT,
     bool                WARP_TIME_SLICING = false>
 class BlockLoad
 {
@@ -946,12 +693,12 @@ private:
     // Type definitions and constants
     //---------------------------------------------------------------------
 
-     enum
-     {
-         WARP_THREADS = PtxArchProps::WARP_THREADS
-     };
+    enum
+    {
+        WARP_THREADS = PtxArchProps::WARP_THREADS
+    };
 
-     // Data type of input iterator
+    // Data type of input iterator
     typedef typename std::iterator_traits<InputIteratorRA>::value_type T;
 
 
@@ -975,7 +722,7 @@ private:
             InputIteratorRA block_itr,                      ///< [in] The threadblock's base input iterator for loading from
             T               (&items)[ITEMS_PER_THREAD])     ///< [out] Data to load
         {
-            BlockLoadBlocked<MODIFIER>(block_itr, items);
+            LoadBlocked<MODIFIER>(block_itr, items);
         }
 
         /// Load a tile of items across a threadblock, guarded by range
@@ -985,7 +732,7 @@ private:
             const int       &guarded_items,                 ///< [in] Number of valid items in the tile
             T               (&items)[ITEMS_PER_THREAD])     ///< [out] Data to load
         {
-            BlockLoadBlocked<MODIFIER>(block_itr, guarded_items, items);
+            LoadBlocked<MODIFIER>(block_itr, guarded_items, items);
         }
     };
 
@@ -1005,7 +752,7 @@ private:
             T                   *block_ptr,                     ///< [in] The threadblock's base input iterator for loading from
             T                   (&items)[ITEMS_PER_THREAD])     ///< [out] Data to load
         {
-            BlockLoadVectorized<MODIFIER>(block_ptr, items);
+            LoadBlockedVectorized<MODIFIER>(block_ptr, items);
         }
 
         /// Load a tile of items across a threadblock, specialized for opaque input iterators (skips vectorization)
@@ -1017,7 +764,7 @@ private:
             _InputIteratorRA    block_itr,                      ///< [in] The threadblock's base input iterator for loading from
             T                   (&items)[ITEMS_PER_THREAD])     ///< [out] Data to load
         {
-            BlockLoadBlocked<MODIFIER>(block_itr, items);
+            LoadBlocked<MODIFIER>(block_itr, items);
         }
 
         /// Load a tile of items across a threadblock, guarded by range
@@ -1027,7 +774,7 @@ private:
             const int           &guarded_items,                 ///< [in] Number of valid items in the tile
             T                   (&items)[ITEMS_PER_THREAD])     ///< [out] Data to load{
         {
-            BlockLoadBlocked<MODIFIER>(block_itr, guarded_items, items);
+            LoadBlocked<MODIFIER>(block_itr, guarded_items, items);
         }
     };
 
@@ -1050,7 +797,7 @@ private:
             InputIteratorRA     block_itr,                      ///< [in] The threadblock's base input iterator for loading from
             T                   (&items)[ITEMS_PER_THREAD])     ///< [out] Data to load{
         {
-            BlockLoadStriped<MODIFIER>(block_itr, items, BLOCK_THREADS);
+            LoadStriped<MODIFIER>(block_itr, items, BLOCK_THREADS);
             BlockExchange::StripedToBlocked(smem_storage, items);
         }
 
@@ -1061,7 +808,7 @@ private:
             const int           &guarded_items,                 ///< [in] Number of valid items in the tile
             T                   (&items)[ITEMS_PER_THREAD])     ///< [out] Data to load{
         {
-            BlockLoadStriped<MODIFIER>(block_itr, guarded_items, items, BLOCK_THREADS);
+            LoadStriped<MODIFIER>(block_itr, guarded_items, items, BLOCK_THREADS);
             BlockExchange::StripedToBlocked(smem_storage, items);
         }
 
@@ -1086,7 +833,7 @@ private:
             InputIteratorRA     block_itr,                      ///< [in] The threadblock's base input iterator for loading from
             T                   (&items)[ITEMS_PER_THREAD])     ///< [out] Data to load{
         {
-            BlockLoadWarpStriped<MODIFIER>(block_itr, items, CUB_MIN(BLOCK_THREADS, WARP_THREADS));
+            LoadWarpStriped<MODIFIER>(block_itr, items, CUB_MIN(BLOCK_THREADS, WARP_THREADS));
             BlockExchange::WarpStripedToBlocked(smem_storage, items);
         }
 
@@ -1097,7 +844,7 @@ private:
             const int           &guarded_items,                 ///< [in] Number of valid items in the tile
             T                   (&items)[ITEMS_PER_THREAD])     ///< [out] Data to load{
         {
-            BlockLoadWarpStriped<MODIFIER>(block_itr, guarded_items, items, CUB_MIN(BLOCK_THREADS, WARP_THREADS));
+            LoadWarpStriped<MODIFIER>(block_itr, guarded_items, items, CUB_MIN(BLOCK_THREADS, WARP_THREADS));
             BlockExchange::WarpStripedToBlocked(smem_storage, items);
         }
 
@@ -1141,7 +888,6 @@ public:
     }
 };
 
-/** @} */       // end group BlockModule
 
 }               // CUB namespace
 CUB_NS_POSTFIX  // Optional outer namespace(s)

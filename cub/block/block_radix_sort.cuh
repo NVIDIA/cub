@@ -47,12 +47,8 @@ CUB_NS_PREFIX
 namespace cub {
 
 /**
- * \addtogroup BlockModule
- * @{
- */
-
-/**
  * \brief BlockRadixSort provides variants of parallel radix sorting across a CUDA threadblock.  ![](sorting_logo.png)
+ * \ingroup BlockModule
  *
  * \par Overview
  * The [<em>radix sorting method</em>](http://en.wikipedia.org/wiki/Radix_sort) relies upon a positional representation for
@@ -498,8 +494,6 @@ public:
     /** @} */   // Key-value pair sorting
 
 };
-
-/** @} */       // BlockModule
 
 }               // CUB namespace
 CUB_NS_POSTFIX  // Optional outer namespace(s)

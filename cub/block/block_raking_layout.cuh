@@ -45,15 +45,9 @@ CUB_NS_PREFIX
 /// CUB namespace
 namespace cub {
 
-
-/**
- * \addtogroup BlockModule
- * @{
- */
-
-
 /**
  * \brief BlockRakingLayout provides a conflict-free shared memory layout abstraction for raking across thread block data.    ![](raking.png)
+ * \ingroup BlockModule
  *
  * \par Overview
  * This type facilitates a shared memory usage pattern where a block of CUDA
@@ -146,8 +140,6 @@ struct BlockRakingLayout
         return smem_storage + (tid * (SEGMENT_LENGTH + SEGMENT_PADDING));
     }
 };
-
-/** @} */       // end group BlockModule
 
 }               // CUB namespace
 CUB_NS_POSTFIX  // Optional outer namespace(s)

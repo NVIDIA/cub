@@ -452,12 +452,12 @@ private:
                 const int OFFSET = 1 << STEP;
 
                 // Share input into buffer
-                ThreadStore<PTX_STORE_VS>(&smem_storage.warp_buffer[warp_id][lane_id], input);
+                Store<STORE_VS>(&smem_storage.warp_buffer[warp_id][lane_id], input);
 
                 // Update input if addend is in range
                 if ((FULL_TILE && POW_OF_TWO) || ((lane_id + OFFSET) * VALID_PER_LANE < valid))
                 {
-                    T addend = ThreadLoad<PTX_LOAD_VS>(&smem_storage.warp_buffer[warp_id][lane_id + OFFSET]);
+                    T addend = Load<LOAD_VS>(&smem_storage.warp_buffer[warp_id][lane_id + OFFSET]);
                     input = reduction_op(input, addend);
                 }
             }
@@ -485,12 +485,12 @@ private:
                 const int OFFSET = 1 << STEP;
 
                 // Share input into buffer
-                ThreadStore<PTX_STORE_VS>(&smem_storage.warp_buffer[warp_id][lane_id], input);
+                Store<STORE_VS>(&smem_storage.warp_buffer[warp_id][lane_id], input);
 
                 // Update input if addend is in range
                 if (OFFSET <= distance)
                 {
-                    T addend = ThreadLoad<PTX_LOAD_VS>(&smem_storage.warp_buffer[warp_id][lane_id + OFFSET]);
+                    T addend = Load<LOAD_VS>(&smem_storage.warp_buffer[warp_id][lane_id + OFFSET]);
                     input = reduction_op(input, addend);
                 }
             }

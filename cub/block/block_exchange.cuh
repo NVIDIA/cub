@@ -47,12 +47,8 @@ CUB_NS_PREFIX
 namespace cub {
 
 /**
- * \addtogroup BlockModule
- * @{
- */
-
-/**
  * \brief BlockExchange provides operations for reorganizing the partitioning of ordered data across a CUDA threadblock. ![](transpose_logo.png)
+ * \ingroup BlockModule
  *
  * \par Overview
  * BlockExchange allows threadblocks to reorganize data items between
@@ -173,9 +169,10 @@ private:
         #pragma unroll
         for (int SLICE = 0; SLICE < TIME_SLICES; SLICE++)
         {
-            __syncthreads();
+            const int SLICE_OFFSET  = SLICE * TIME_SLICED_ITEMS;
+            const int SLICE_OOB     = SLICE_OFFSET + TIME_SLICED_ITEMS;
 
-            const int ITEMS_PROCESSED = TIME_SLICED_ITEMS * SLICE;
+            __syncthreads();
 
             if (warp_id == SLICE)
             {
@@ -194,11 +191,12 @@ private:
             for (int ITEM = 0; ITEM < ITEMS_PER_THREAD; ITEM++)
             {
                 // Read a strip of items
-                const int STRIP_OFFSET = ITEM * BLOCK_THREADS;
+                const int STRIP_OFFSET  = ITEM * BLOCK_THREADS;
+                const int STRIP_OOB     = STRIP_OFFSET + BLOCK_THREADS;
 
-                if ((ITEMS_PROCESSED <= STRIP_OFFSET + TIME_SLICED_ITEMS) && (STRIP_OFFSET < ITEMS_PROCESSED + TIME_SLICED_ITEMS))
+                if ((SLICE_OFFSET < STRIP_OOB) && (SLICE_OOB > STRIP_OFFSET))
                 {
-                    int item_offset = STRIP_OFFSET + threadIdx.x - ITEMS_PROCESSED;
+                    int item_offset = STRIP_OFFSET + threadIdx.x - SLICE_OFFSET;
                     if ((item_offset >= 0) && (item_offset < TIME_SLICED_ITEMS))
                     {
                         if (INSERT_PADDING) item_offset += item_offset >> LOG_SMEM_BANKS;
@@ -336,23 +334,27 @@ private:
         #pragma unroll
         for (int SLICE = 0; SLICE < TIME_SLICES; SLICE++)
         {
-            __syncthreads();
+            const int SLICE_OFFSET  = SLICE * TIME_SLICED_ITEMS;
+            const int SLICE_OOB     = SLICE_OFFSET + TIME_SLICED_ITEMS;
 
-            const int ITEMS_PROCESSED = TIME_SLICED_ITEMS * SLICE;
+            __syncthreads();
 
             #pragma unroll
             for (int ITEM = 0; ITEM < ITEMS_PER_THREAD; ITEM++)
             {
                 // Write a strip of items
-                const int STRIP_OFFSET = ITEM * BLOCK_THREADS;
+                const int STRIP_OFFSET  = ITEM * BLOCK_THREADS;
+                const int STRIP_OOB     = STRIP_OFFSET + BLOCK_THREADS;
 
-                if ((ITEMS_PROCESSED <= STRIP_OFFSET + TIME_SLICED_ITEMS) && (STRIP_OFFSET < ITEMS_PROCESSED + TIME_SLICED_ITEMS))
+                if ((SLICE_OFFSET < STRIP_OOB) && (SLICE_OOB > STRIP_OFFSET))
                 {
-                    int item_offset = STRIP_OFFSET + threadIdx.x - ITEMS_PROCESSED;
+                    int item_offset = STRIP_OFFSET + threadIdx.x - SLICE_OFFSET;
                     if ((item_offset >= 0) && (item_offset < TIME_SLICED_ITEMS))
                     {
                         if (INSERT_PADDING) item_offset += item_offset >> LOG_SMEM_BANKS;
                         smem_storage[item_offset] = items[ITEM];
+
+//                        CubLog("\t\t ITEM[%d](%d) item_offset(%d)\n", ITEM, items[ITEM], item_offset);
                     }
                 }
             }
@@ -367,6 +369,8 @@ private:
                     int item_offset = (warp_lane * ITEMS_PER_THREAD) + ITEM;
                     if (INSERT_PADDING) item_offset += item_offset >> LOG_SMEM_BANKS;
                     temp_items[ITEM] = smem_storage[item_offset];
+
+//                    CubLog("Out ITEM[%d](%d) item_offset(%d)\n", ITEM, temp_items[ITEM], item_offset);
                 }
             }
         }
@@ -501,12 +505,12 @@ private:
         {
             __syncthreads();
 
-            const int ITEMS_PROCESSED = TIME_SLICED_ITEMS * SLICE;
+            const int SLICE_OFFSET = TIME_SLICED_ITEMS * SLICE;
 
             #pragma unroll
             for (int ITEM = 0; ITEM < ITEMS_PER_THREAD; ITEM++)
             {
-                int item_offset = ranks[ITEM] - ITEMS_PROCESSED;
+                int item_offset = ranks[ITEM] - SLICE_OFFSET;
                 if ((item_offset >= 0) && (item_offset < WARP_TIME_SLICED_ITEMS))
                 {
                     if (INSERT_PADDING) item_offset = SHR_ADD(item_offset, LOG_SMEM_BANKS, item_offset);
@@ -580,14 +584,15 @@ private:
         #pragma unroll
         for (int SLICE = 0; SLICE < TIME_SLICES; SLICE++)
         {
-            __syncthreads();
+            const int SLICE_OFFSET  = SLICE * TIME_SLICED_ITEMS;
+            const int SLICE_OOB     = SLICE_OFFSET + TIME_SLICED_ITEMS;
 
-            const int ITEMS_PROCESSED = TIME_SLICED_ITEMS * SLICE;
+            __syncthreads();
 
             #pragma unroll
             for (int ITEM = 0; ITEM < ITEMS_PER_THREAD; ITEM++)
             {
-                int item_offset = ranks[ITEM] - ITEMS_PROCESSED;
+                int item_offset = ranks[ITEM] - SLICE_OFFSET;
                 if ((item_offset >= 0) && (item_offset < WARP_TIME_SLICED_ITEMS))
                 {
                     if (INSERT_PADDING) item_offset = SHR_ADD(item_offset, LOG_SMEM_BANKS, item_offset);
@@ -601,11 +606,12 @@ private:
             for (int ITEM = 0; ITEM < ITEMS_PER_THREAD; ITEM++)
             {
                 // Read a strip of items
-                const int STRIP_OFFSET = ITEM * BLOCK_THREADS;
+                const int STRIP_OFFSET  = ITEM * BLOCK_THREADS;
+                const int STRIP_OOB     = STRIP_OFFSET + BLOCK_THREADS;
 
-                if ((ITEMS_PROCESSED <= STRIP_OFFSET + TIME_SLICED_ITEMS) && (STRIP_OFFSET < ITEMS_PROCESSED + TIME_SLICED_ITEMS))
+                if ((SLICE_OFFSET < STRIP_OOB) && (SLICE_OOB > STRIP_OFFSET))
                 {
-                    int item_offset = STRIP_OFFSET + threadIdx.x - ITEMS_PROCESSED;
+                    int item_offset = STRIP_OFFSET + threadIdx.x - SLICE_OFFSET;
                     if ((item_offset >= 0) && (item_offset < TIME_SLICED_ITEMS))
                     {
                         if (INSERT_PADDING) item_offset += item_offset >> LOG_SMEM_BANKS;
@@ -641,9 +647,9 @@ public:
         SmemStorage     &smem_storage,              ///< [in] Reference to shared memory allocation having layout type SmemStorage
         T               items[ITEMS_PER_THREAD])    ///< [in-out] Items to exchange, converting between <em>blocked</em> and <em>striped</em> arrangements.
     {
-//        CubLog("BlockedToStriped<%d> in items [%d, %d]\n", WARP_TIME_SLICING, items[0], items[1]);
+//        CubLog("BlockedToStriped<%d> in items [%d, %d, %d]\n", WARP_TIME_SLICING, items[0], items[1], items[2]);
         BlockedToStriped(smem_storage, items, Int2Type<WARP_TIME_SLICING>());
-//        CubLog("\t\t BlockedToStriped<%d> out items [%d, %d]\n", WARP_TIME_SLICING, items[0], items[1]);
+//        CubLog("\t\t BlockedToStriped<%d> out items [%d, %d, %d]\n", WARP_TIME_SLICING, items[0], items[1], items[2]);
     }
 
 
@@ -678,9 +684,9 @@ public:
         SmemStorage      &smem_storage,             ///< [in] Reference to shared memory allocation having layout type SmemStorage
         T                items[ITEMS_PER_THREAD])   ///< [in-out] Items to exchange, converting between <em>striped</em> and <em>blocked</em> arrangements.
     {
-//        CubLog("StripedToBlocked<%d> in items [%d, %d]\n", WARP_TIME_SLICING, items[0], items[1]);
+//        CubLog("StripedToBlocked<%d> in items [%d, %d, %d]\n", WARP_TIME_SLICING, items[0], items[1], items[2]);
         StripedToBlocked(smem_storage, items, Int2Type<WARP_TIME_SLICING>());
-//        CubLog("\t\t StripedToBlocked<%d> out items [%d, %d]\n", WARP_TIME_SLICING, items[0], items[1]);
+//        CubLog("\t\t StripedToBlocked<%d> out items [%d, %d, %d]\n", WARP_TIME_SLICING, items[0], items[1], items[2]);
     }
 
 
@@ -748,8 +754,6 @@ public:
 
 
 };
-
-/** @} */       // end group BlockModule
 
 }               // CUB namespace
 CUB_NS_POSTFIX  // Optional outer namespace(s)
