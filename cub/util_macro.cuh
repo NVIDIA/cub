@@ -46,12 +46,10 @@ namespace cub {
  * @{
  */
 
-
 /**
  * Select maximum(a, b)
  */
 #define CUB_MAX(a, b) (((a) > (b)) ? (a) : (b))
-
 
 /**
  * Select minimum(a, b)
@@ -73,7 +71,6 @@ namespace cub {
  */
 #define CUB_ROUND_UP_NEAREST(x, y) ((((x) + (y) - 1) / (y)) * y)
 
-
 /**
  * x rounded down to the nearest multiple of y
  */
@@ -83,6 +80,16 @@ namespace cub {
  * Return character string for given type
  */
 #define CUB_TYPE_STRING(type) ""#type
+
+#ifndef DOXYGEN_SHOULD_SKIP_THIS    // Do not document
+    #define CUB_CAT_(a, b) a ## b
+    #define CUB_CAT(a, b) CUB_CAT_(a, b)
+#endif // DOXYGEN_SHOULD_SKIP_THIS
+
+/**
+ * Static assert
+ */
+#define CUB_STATIC_ASSERT(cond, msg) typedef int CUB_CAT(cub_static_assert, __LINE__)[(cond) ? 1 : -1]
 
 
 /** @} */       // end group UtilModule
