@@ -115,7 +115,7 @@ private:
     };
 
     /// Shared memory storage layout type
-    typedef volatile T _SmemStorage[TIME_SLICED_ITEMS + PADDING_ITEMS];
+    typedef T _SmemStorage[TIME_SLICED_ITEMS + PADDING_ITEMS];
 
 public:
 
