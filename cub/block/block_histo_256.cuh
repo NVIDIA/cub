@@ -88,12 +88,8 @@ enum BlockHisto256Algorithm
 
 
 /**
- * \addtogroup BlockModule
- * @{
- */
-
-/**
  * \brief BlockHisto256 provides methods for constructing (and compositing into) 256-bin histograms from 8b data partitioned across threads within a CUDA thread block. ![](histogram_logo.png)
+ * \ingroup BlockModule
  *
  * \par Overview
  * A <a href="http://en.wikipedia.org/wiki/Histogram"><em>histogram</em></a>
@@ -438,8 +434,6 @@ public:
     }
 
 };
-
-/** @} */       // end group BlockModule
 
 }               // CUB namespace
 CUB_NS_POSTFIX  // Optional outer namespace(s)

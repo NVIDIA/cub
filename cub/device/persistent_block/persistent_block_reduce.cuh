@@ -176,14 +176,14 @@ struct PersistentBlockReduce
             if ((first_tile_size == 0) && (thread_offset < num_valid))
             {
                 // Assign thread_aggregate
-                thread_aggregate = ThreadLoad<PersistentBlockReducePolicy::LOAD_MODIFIER>(d_in + block_offset + thread_offset);
+                thread_aggregate = Load<PersistentBlockReducePolicy::LOAD_MODIFIER>(d_in + block_offset + thread_offset);
                 thread_offset += BLOCK_THREADS;
             }
 
             while (thread_offset < num_valid)
             {
                 // Update thread aggregate
-                T item = ThreadLoad<PersistentBlockReducePolicy::LOAD_MODIFIER>(d_in + block_offset + thread_offset);
+                T item = Load<PersistentBlockReducePolicy::LOAD_MODIFIER>(d_in + block_offset + thread_offset);
                 thread_aggregate = reduction_op(thread_aggregate, item);
                 thread_offset += BLOCK_THREADS;
             }
@@ -199,14 +199,14 @@ struct PersistentBlockReduce
             if (input_aligned)
             {
                 // Alias items as an array of VectorT and load it in striped fashion
-                BlockLoadStriped(
+                LoadStriped<LOAD_DEFAULT>(
                     reinterpret_cast<VectorT*>(d_in + block_offset),
                     reinterpret_cast<VectorT (&)[ITEMS_PER_THREAD / VECTOR_LOAD_LENGTH]>(items));
             }
             else
             {
                 // Load items in striped fashion
-                BlockLoadStriped(d_in + block_offset, items);
+                LoadStriped<LOAD_DEFAULT>(d_in + block_offset, items);
             }
 
             // Prevent hoisting

@@ -74,17 +74,19 @@
  * - <em>Absolute performance</em>.  CUB primitives are specialized and tuned to 
  *   best match the features and capabilities of every CUDA architecture.
  * - <em>Enhanced programmer productivity</em>.  CUB primitives allow developers to quickly 
- *   string together sequences of complex parallel operations at all levels of execution.       
+ *   string together sequences of complex parallel operations in both CUDA kernel code and CUDA host code.       
  * - <em>Reduced maintenance burden</em>.  CUB provides layers of abstraction over
  *   the complexities of diverse CUDA hardware.  With CUB, applications can 
  * 	 enjoy performance-portability without the intensive rewriting or porting efforts 
  *   typically needed to accommodate new device instructions or behavior.  
  * 
  * \par
- * <b><em>Collective primitives</em></b>. CUB is unique in that it provides cooperative block-level and 
- * warp-level parallel primitives.  Unlike traditional library software 
- * components, these operations are <em>collective</em>, i.e., they are called 
- * by a group of parallel SIMT threads rather than by a single sequential 
+ * <b><em>Collective block-wide and warp-wide primitives</em></b>. CUB is 
+ * unique in that it provides block-level and warp-level parallel 
+ * primitives, e.g., cub::BlockReduce, cub::BlockRadixSort, cub::WarpScan, 
+ * etc. Unlike traditional library software components, these 
+ * operations are <em>collective</em>, i.e., they are called 
+ * by a cooperating group of parallel SIMT threads rather than by a single sequential 
  * thread.  These collective primitives are not bound to any particular width 
  * of parallelism or to any particular data type.  This allows them to be 
  * flexible and tunable to fit the needs of the enclosing kernel computation.
@@ -133,13 +135,13 @@
  *      T data[ITEMS_PER_THREAD];
  *
  *      // Load a tile of data using vector-load instructions
- *      BlockLoadVectorized(data, d_in + (blockIdx.x * TILE_SIZE));
+ *      LoadBlockedVectorized(data, d_in + (blockIdx.x * TILE_SIZE));
  *
  *      // Sort data in ascending order
  *      BlockRadixSort::SortBlocked(smem_storage, data);
  *
  *      // Store the sorted tile using vector-store instructions
- *      BlockStoreVectorized(data, d_out + (blockIdx.x * TILE_SIZE));
+ *      StoreBlockedVectorized(data, d_out + (blockIdx.x * TILE_SIZE));
  * }
  * \endcode
  *
@@ -451,6 +453,10 @@
 
 /**
  * \defgroup ThreadModule Thread
+ */
+
+/**
+ * \defgroup IoModule Kernel I/O
  */
 
 /**

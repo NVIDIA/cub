@@ -42,13 +42,13 @@ __global__ void PrefixSumKernel(T *d_in, T *d_out)
     T data[ITEMS_PER_THREAD];
  
     // Load a tile of data using vector-load instructions
-    BlockLoadVectorized(data, d_in, 0);
+    LoadBlockedVectorized(data, d_in, 0);
  
     // Perform an exclusive prefix sum across the tile of data
     BlockScan::ExclusiveSum(smem_storage, data, data);
 
     // Store a tile of data using vector-load instructions
-    BlockStoreVectorized(data, d_out, 0);
+    StoreBlockedVectorized(data, d_out, 0);
 }
 ```
 

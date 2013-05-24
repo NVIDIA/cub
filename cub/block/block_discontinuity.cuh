@@ -46,13 +46,8 @@ CUB_NS_PREFIX
 namespace cub {
 
 /**
- * \addtogroup BlockModule
- * @{
- */
-
-
-/**
  * \brief BlockDiscontinuity provides operations for flagging discontinuities within a list of data items partitioned across a CUDA threadblock. ![](discont_logo.png)
+ * \ingroup BlockModule
  *
  * \par Overview
  * The operations exposed by BlockDiscontinuity allow threadblocks to set "head flags" for data elements that
@@ -376,8 +371,6 @@ public:
 
 };
 
-
-/** @} */       // end group BlockModule
 
 }               // CUB namespace
 CUB_NS_POSTFIX  // Optional outer namespace(s)
