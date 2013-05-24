@@ -50,12 +50,8 @@ CUB_NS_PREFIX
 namespace cub {
 
 /**
- * \addtogroup BlockModule
- * @{
- */
-
-/**
  * \brief BlockRadixRank provides operations for ranking unsigned integer types within a CUDA threadblock.
+ * \ingroup BlockModule
  *
  * \par Overview
  * Blah...
@@ -419,8 +415,6 @@ public:
         }
     }
 };
-
-/** @} */       // BlockModule
 
 }               // CUB namespace
 CUB_NS_POSTFIX  // Optional outer namespace(s)

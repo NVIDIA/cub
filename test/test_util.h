@@ -669,8 +669,8 @@ void InitValue(int gen_mode, TestFoo &value, int index = 0)
  */
 struct TestBar
 {
-    typedef void ThreadLoadTag;
-    typedef void ThreadStoreTag;
+    typedef void LoadTag;
+    typedef void StoreTag;
 
     long long       x;
     int             y;
@@ -702,21 +702,21 @@ struct TestBar
         return (x != b.x) || (y != b.y);
     }
 
-    // ThreadLoad
+    // Load
     template <cub::PtxLoadModifier MODIFIER>
     __device__ __forceinline__
-    void ThreadLoad(TestBar *ptr)
+    void Load(TestBar *ptr)
     {
-        x = cub::ThreadLoad<MODIFIER>(&(ptr->x));
-        y = cub::ThreadLoad<MODIFIER>(&(ptr->y));
+        x = cub::Load<MODIFIER>(&(ptr->x));
+        y = cub::Load<MODIFIER>(&(ptr->y));
     }
 
-     // ThreadStore
+     // Store
     template <cub::PtxStoreModifier MODIFIER>
-    __device__ __forceinline__ void ThreadStore(TestBar *ptr) const
+    __device__ __forceinline__ void Store(TestBar *ptr) const
     {
-        cub::ThreadStore<MODIFIER>(&(ptr->x), x);
-        cub::ThreadStore<MODIFIER>(&(ptr->y), y);
+        cub::Store<MODIFIER>(&(ptr->x), x);
+        cub::Store<MODIFIER>(&(ptr->y), y);
     }
 };
 

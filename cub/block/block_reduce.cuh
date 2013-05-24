@@ -116,12 +116,8 @@ enum BlockReduceAlgorithm
  ******************************************************************************/
 
 /**
- * \addtogroup BlockModule
- * @{
- */
-
-/**
  * \brief BlockReduce provides variants of parallel reduction across a CUDA threadblock. ![](reduce_logo.png)
+ * \ingroup BlockModule
  *
  * \par Overview
  * A <a href="http://en.wikipedia.org/wiki/Reduce_(higher-order_function)"><em>reduction</em></a> (or <em>fold</em>)
@@ -668,8 +664,6 @@ public:
 
     //@}  end member group
 };
-
-/** @} */       // end group BlockModule
 
 }               // CUB namespace
 CUB_NS_POSTFIX  // Optional outer namespace(s)

@@ -116,12 +116,8 @@ enum BlockScanAlgorithm
  ******************************************************************************/
 
 /**
- * \addtogroup BlockModule
- * @{
- */
-
-/**
  * \brief BlockScan provides variants of parallel prefix scan (and prefix sum) across a CUDA threadblock. ![](scan_logo.png)
+ * \ingroup BlockModule
  *
  * \par Overview
  * Given a list of input elements and a binary reduction operator, a [<em>prefix scan</em>](http://en.wikipedia.org/wiki/Prefix_sum)
@@ -2206,8 +2202,6 @@ public:
 
 
 };
-
-/** @} */       // BlockModule
 
 }               // CUB namespace
 CUB_NS_POSTFIX  // Optional outer namespace(s)

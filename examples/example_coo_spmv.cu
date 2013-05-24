@@ -429,25 +429,25 @@ struct PartialSum
     Value       partial;        /// PartialSum sum
     VertexId    row;            /// Row-id
 
-    /// Tags indicating this structure provides overloaded ThreadLoad and ThreadStore operations
-    typedef void ThreadLoadTag;
-    typedef void ThreadStoreTag;
+    /// Tags indicating this structure provides overloaded Load and Store operations
+    typedef void LoadTag;
+    typedef void StoreTag;
 
-    /// ThreadLoad (simply defer to loading individual items)
+    /// Load (simply defer to loading individual items)
     template <PtxLoadModifier MODIFIER>
-    __device__ __forceinline__ void ThreadLoad(PartialSum *ptr)
+    __device__ __forceinline__ void Load(PartialSum *ptr)
     {
-        partial = cub::ThreadLoad<MODIFIER>(&(ptr->partial));
-        row = cub::ThreadLoad<MODIFIER>(&(ptr->row));
+        partial = cub::Load<MODIFIER>(&(ptr->partial));
+        row = cub::Load<MODIFIER>(&(ptr->row));
     }
 
-     /// ThreadStore (simply defer to storing individual items)
+     /// Store (simply defer to storing individual items)
     template <PtxStoreModifier MODIFIER>
-    __device__ __forceinline__ void ThreadStore(PartialSum *ptr) const
+    __device__ __forceinline__ void Store(PartialSum *ptr) const
     {
         // Always write partial first
-        cub::ThreadStore<MODIFIER>(&(ptr->partial), partial);
-        cub::ThreadStore<MODIFIER>(&(ptr->row), row);
+        cub::Store<MODIFIER>(&(ptr->partial), partial);
+        cub::Store<MODIFIER>(&(ptr->row), row);
     }
 
 };
@@ -644,14 +644,14 @@ struct SpmvBlock
         {
             // This is a partial-tile (e.g., the last tile of input).  Extend the coordinates of the last
             // vertex for out-of-bound items, but zero-valued
-            BlockLoadStriped(d_columns + block_offset, guarded_items, VertexId(0), columns, BLOCK_THREADS);
-            BlockLoadStriped(d_values + block_offset, guarded_items, Value(0), values, BLOCK_THREADS);
+            LoadStriped<LOAD_DEFAULT>(d_columns + block_offset, guarded_items, VertexId(0), columns, BLOCK_THREADS);
+            LoadStriped<LOAD_DEFAULT>(d_values + block_offset, guarded_items, Value(0), values, BLOCK_THREADS);
         }
         else
         {
             // Unguarded loads
-            BlockLoadStriped(d_columns + block_offset, columns, BLOCK_THREADS);
-            BlockLoadStriped(d_values + block_offset, values, BLOCK_THREADS);
+            LoadStriped<LOAD_DEFAULT>(d_columns + block_offset, columns, BLOCK_THREADS);
+            LoadStriped<LOAD_DEFAULT>(d_values + block_offset, values, BLOCK_THREADS);
         }
 
         // Fence to prevent hoisting any dependent code below into the loads above
@@ -669,12 +669,12 @@ struct SpmvBlock
         {
             // This is a partial-tile (e.g., the last tile of input).  Extend the coordinates of the last
             // vertex for out-of-bound items, but zero-valued
-            BlockLoadStriped(d_rows + block_offset, guarded_items, smem_storage.last_block_row, rows, BLOCK_THREADS);
+            LoadStriped<LOAD_DEFAULT>(d_rows + block_offset, guarded_items, smem_storage.last_block_row, rows, BLOCK_THREADS);
         }
         else
         {
             // Unguarded loads
-            BlockLoadStriped(d_rows + block_offset, rows, BLOCK_THREADS);
+            LoadStriped<LOAD_DEFAULT>(d_rows + block_offset, rows, BLOCK_THREADS);
         }
 
         // Transpose from threadblock-striped to threadblock-blocked arrangement
@@ -946,12 +946,12 @@ struct FinalizeSpmvBlock
             default_sum.row = smem_storage.last_block_row;
             default_sum.partial = Value(0);
 
-            BlockLoadBlocked(d_block_partials + block_offset, guarded_items, default_sum, partial_sums);
+            LoadBlocked(d_block_partials + block_offset, guarded_items, default_sum, partial_sums);
         }
         else
         {
             // Unguarded loads
-            BlockLoadBlocked(d_block_partials + block_offset, partial_sums);
+            LoadBlocked(d_block_partials + block_offset, partial_sums);
         }
 
         // Fence to prevent hoisting any dependent code below into the loads above

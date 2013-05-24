@@ -220,8 +220,8 @@ struct DeviceReduce
     struct TunedPolicies<T, SizeT, 350>
     {
         // K20C: 182.1 @ 48M 32-bit T
-        typedef PersistentBlockReducePolicy<256, 8,  2, BLOCK_REDUCE_RAKING, PTX_LOAD_NONE, GRID_MAPPING_EVEN_SHARE>             MultiBlockPolicy;
-        typedef PersistentBlockReducePolicy<256, 16, 2, BLOCK_REDUCE_WARP_REDUCTIONS, PTX_LOAD_NONE, GRID_MAPPING_EVEN_SHARE>    SingleBlockPolicy;
+        typedef PersistentBlockReducePolicy<256, 8,  2, BLOCK_REDUCE_RAKING, LOAD_DEFAULT, GRID_MAPPING_EVEN_SHARE>             MultiBlockPolicy;
+        typedef PersistentBlockReducePolicy<256, 16, 2, BLOCK_REDUCE_WARP_REDUCTIONS, LOAD_DEFAULT, GRID_MAPPING_EVEN_SHARE>    SingleBlockPolicy;
         enum { SUBSCRIPTION_FACTOR = 4 };
     };
 
@@ -230,8 +230,8 @@ struct DeviceReduce
     struct TunedPolicies<T, SizeT, 300>
     {
         // GTX670: 154.0 @ 48M 32-bit T
-        typedef PersistentBlockReducePolicy<256, 2,  1, BLOCK_REDUCE_WARP_REDUCTIONS,  PTX_LOAD_NONE, GRID_MAPPING_EVEN_SHARE>            MultiBlockPolicy;
-        typedef PersistentBlockReducePolicy<256, 24, 4, BLOCK_REDUCE_WARP_REDUCTIONS,  PTX_LOAD_NONE, GRID_MAPPING_EVEN_SHARE>   SingleBlockPolicy;
+        typedef PersistentBlockReducePolicy<256, 2,  1, BLOCK_REDUCE_WARP_REDUCTIONS,  LOAD_DEFAULT, GRID_MAPPING_EVEN_SHARE>            MultiBlockPolicy;
+        typedef PersistentBlockReducePolicy<256, 24, 4, BLOCK_REDUCE_WARP_REDUCTIONS,  LOAD_DEFAULT, GRID_MAPPING_EVEN_SHARE>   SingleBlockPolicy;
         enum { SUBSCRIPTION_FACTOR = 1 };
     };
 
@@ -240,8 +240,8 @@ struct DeviceReduce
     struct TunedPolicies<T, SizeT, 200>
     {
         // GTX 580: 178.9 @ 48M 32-bit T
-        typedef PersistentBlockReducePolicy<128, 8,  2, BLOCK_REDUCE_RAKING, PTX_LOAD_NONE, GRID_MAPPING_DYNAMIC>                MultiBlockPolicy;
-        typedef PersistentBlockReducePolicy<128, 4,  1, BLOCK_REDUCE_RAKING, PTX_LOAD_NONE, GRID_MAPPING_EVEN_SHARE>             SingleBlockPolicy;
+        typedef PersistentBlockReducePolicy<128, 8,  2, BLOCK_REDUCE_RAKING, LOAD_DEFAULT, GRID_MAPPING_DYNAMIC>                MultiBlockPolicy;
+        typedef PersistentBlockReducePolicy<128, 4,  1, BLOCK_REDUCE_RAKING, LOAD_DEFAULT, GRID_MAPPING_EVEN_SHARE>             SingleBlockPolicy;
         enum { SUBSCRIPTION_FACTOR = 1 };
     };
 
@@ -249,8 +249,8 @@ struct DeviceReduce
     template <typename T, typename SizeT>
     struct TunedPolicies<T, SizeT, 130>
     {
-        typedef PersistentBlockReducePolicy<128, 8,  2,  BLOCK_REDUCE_RAKING, PTX_LOAD_NONE, GRID_MAPPING_EVEN_SHARE>            MultiBlockPolicy;
-        typedef PersistentBlockReducePolicy<32,  4,  4,  BLOCK_REDUCE_RAKING, PTX_LOAD_NONE, GRID_MAPPING_EVEN_SHARE>            SingleBlockPolicy;
+        typedef PersistentBlockReducePolicy<128, 8,  2,  BLOCK_REDUCE_RAKING, LOAD_DEFAULT, GRID_MAPPING_EVEN_SHARE>            MultiBlockPolicy;
+        typedef PersistentBlockReducePolicy<32,  4,  4,  BLOCK_REDUCE_RAKING, LOAD_DEFAULT, GRID_MAPPING_EVEN_SHARE>            SingleBlockPolicy;
         enum { SUBSCRIPTION_FACTOR = 1 };
     };
 
@@ -258,8 +258,8 @@ struct DeviceReduce
     template <typename T, typename SizeT>
     struct TunedPolicies<T, SizeT, 100>
     {
-        typedef PersistentBlockReducePolicy<128, 8,  2,  BLOCK_REDUCE_RAKING, PTX_LOAD_NONE, GRID_MAPPING_EVEN_SHARE>            MultiBlockPolicy;
-        typedef PersistentBlockReducePolicy<32,  4,  4,  BLOCK_REDUCE_RAKING, PTX_LOAD_NONE, GRID_MAPPING_EVEN_SHARE>            SingleBlockPolicy;
+        typedef PersistentBlockReducePolicy<128, 8,  2,  BLOCK_REDUCE_RAKING, LOAD_DEFAULT, GRID_MAPPING_EVEN_SHARE>            MultiBlockPolicy;
+        typedef PersistentBlockReducePolicy<32,  4,  4,  BLOCK_REDUCE_RAKING, LOAD_DEFAULT, GRID_MAPPING_EVEN_SHARE>            SingleBlockPolicy;
         enum { SUBSCRIPTION_FACTOR = 1 };
     };
 

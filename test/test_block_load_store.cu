@@ -346,7 +346,7 @@ void TestIterator(
         "sizeof(T)(%d)\n",
             !IsPointer<Iterator>::VALUE, grid_size, guarded_elements, unguarded_elements, BLOCK_THREADS, ITEMS_PER_THREAD, LOAD_POLICY, STORE_POLICY, WARP_TIME_SLICING, (int) sizeof(T));
 
-    TestKernel<T, BLOCK_THREADS, ITEMS_PER_THREAD, LOAD_POLICY, STORE_POLICY, PTX_LOAD_NONE, PTX_STORE_NONE, WARP_TIME_SLICING>(
+    TestKernel<T, BLOCK_THREADS, ITEMS_PER_THREAD, LOAD_POLICY, STORE_POLICY, LOAD_DEFAULT, STORE_DEFAULT, WARP_TIME_SLICING>(
         h_in,
         counting_itr,
         d_out_unguarded,
@@ -375,9 +375,9 @@ void TestPointerAccess(
     int             grid_size,
     float           fraction_valid)
 {
-    TestNative<T, BLOCK_THREADS, ITEMS_PER_THREAD, LOAD_POLICY, STORE_POLICY, PTX_LOAD_NONE, PTX_STORE_NONE, WARP_TIME_SLICING>(grid_size, fraction_valid);
-    TestNative<T, BLOCK_THREADS, ITEMS_PER_THREAD, LOAD_POLICY, STORE_POLICY, PTX_LOAD_CG, PTX_STORE_CG, WARP_TIME_SLICING>(grid_size, fraction_valid);
-    TestNative<T, BLOCK_THREADS, ITEMS_PER_THREAD, LOAD_POLICY, STORE_POLICY, PTX_LOAD_CS, PTX_STORE_CS, WARP_TIME_SLICING>(grid_size, fraction_valid);
+    TestNative<T, BLOCK_THREADS, ITEMS_PER_THREAD, LOAD_POLICY, STORE_POLICY, LOAD_DEFAULT, STORE_DEFAULT, WARP_TIME_SLICING>(grid_size, fraction_valid);
+    TestNative<T, BLOCK_THREADS, ITEMS_PER_THREAD, LOAD_POLICY, STORE_POLICY, LOAD_CG, STORE_CG, WARP_TIME_SLICING>(grid_size, fraction_valid);
+    TestNative<T, BLOCK_THREADS, ITEMS_PER_THREAD, LOAD_POLICY, STORE_POLICY, LOAD_CS, STORE_CS, WARP_TIME_SLICING>(grid_size, fraction_valid);
     TestIterator<T, BLOCK_THREADS, ITEMS_PER_THREAD, LOAD_POLICY, STORE_POLICY, WARP_TIME_SLICING>(grid_size, fraction_valid);
 }
 
@@ -476,9 +476,9 @@ int main(int argc, char** argv)
     CubDebugExit(args.DeviceInit());
 
     // Simple test
-//    TestNative<int, 64, 2, BLOCK_LOAD_WARP_TRANSPOSE, BLOCK_STORE_WARP_TRANSPOSE, PTX_LOAD_NONE, PTX_STORE_NONE, true>(1, 0.8);
+//    TestNative<int, 64, 2, BLOCK_LOAD_WARP_TRANSPOSE, BLOCK_STORE_WARP_TRANSPOSE, LOAD_DEFAULT, STORE_DEFAULT, true>(1, 0.8);
 
-    TestNative<int, 15, 3, BLOCK_LOAD_WARP_TRANSPOSE, BLOCK_STORE_WARP_TRANSPOSE, PTX_LOAD_NONE, PTX_STORE_NONE, true>(1, 0.8);
+    TestNative<int, 72, 3, BLOCK_LOAD_WARP_TRANSPOSE, BLOCK_STORE_WARP_TRANSPOSE, LOAD_DEFAULT, STORE_DEFAULT, true>(1, 0.8);
 
     // Evaluate different data types
 //    TestThreads<int>(2, 0.8);

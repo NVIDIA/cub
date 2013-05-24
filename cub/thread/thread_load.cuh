@@ -48,7 +48,7 @@ CUB_NS_PREFIX
 namespace cub {
 
 /**
- * \addtogroup ThreadModule
+ * \addtogroup IoModule
  * @{
  */
 
@@ -62,21 +62,21 @@ namespace cub {
 enum PtxLoadModifier
 {
     // Global load modifiers
-    PTX_LOAD_NONE,          ///< Default (no modifier)
-    PTX_LOAD_CA,            ///< Cache at all levels
-    PTX_LOAD_CG,            ///< Cache at global level
-    PTX_LOAD_CS,            ///< Cache streaming (likely to be accessed once)
-    PTX_LOAD_CV,            ///< Cache as volatile (including cached system lines)
-    PTX_LOAD_LDG,           ///< Cache as texture
+    LOAD_DEFAULT,       ///< Default (no modifier)
+    LOAD_CA,            ///< Cache at all levels
+    LOAD_CG,            ///< Cache at global level
+    LOAD_CS,            ///< Cache streaming (likely to be accessed once)
+    LOAD_CV,            ///< Cache as volatile (including cached system lines)
+    LOAD_LDG,           ///< Cache as texture
 
     // Shared load modifiers
-    PTX_LOAD_VS,            ///< Volatile shared
+    LOAD_VS,            ///< Volatile shared
 
 };
 
 
 /**
- * \name I/O using PTX cache modifiers
+ * \name Simple I/O
  * @{
  */
 
@@ -84,49 +84,49 @@ enum PtxLoadModifier
 #ifndef DOXYGEN_SHOULD_SKIP_THIS    // Do not document
 
 //-----------------------------------------------------------------------------
-// Generic ThreadLoad() operation
+// Generic Load() operation
 //-----------------------------------------------------------------------------
 
 /**
- * Define HasThreadLoad structure for testing the presence of nested
- * ThreadLoadTag type names within data types
+ * Define HasLoad structure for testing the presence of nested
+ * LoadTag type names within data types
  */
-CUB_DEFINE_DETECT_NESTED_TYPE(HasThreadLoad, ThreadLoadTag)
+CUB_DEFINE_DETECT_NESTED_TYPE(HasLoad, LoadTag)
 
 
 /**
  * Dispatch specializer
  */
 template <PtxLoadModifier MODIFIER, bool HAS_THREAD_LOAD>
-struct ThreadLoadDispatch;
+struct LoadDispatch;
 
 
 /**
- * Dispatch ThreadLoad() to value if it exposes a ThreadLoadTag typedef
+ * Dispatch Load() to value if it exposes a LoadTag typedef
  */
 template <PtxLoadModifier MODIFIER>
-struct ThreadLoadDispatch<MODIFIER, true>
+struct LoadDispatch<MODIFIER, true>
 {
     // Iterator
     template <typename InputIteratorRA>
-    static __device__ __forceinline__ typename std::iterator_traits<InputIteratorRA>::value_type ThreadLoad(InputIteratorRA itr)
+    static __device__ __forceinline__ typename std::iterator_traits<InputIteratorRA>::value_type Load(InputIteratorRA itr)
     {
         typename std::iterator_traits<InputIteratorRA>::value_type val;
-        val.ThreadLoad<MODIFIER>(itr);
+        val.Load<MODIFIER>(itr);
         return val;
     }
 };
 
 
 /**
- * Generic PTX_LOAD_NONE specialization
+ * Generic LOAD_DEFAULT specialization
  */
 template <>
-struct ThreadLoadDispatch<PTX_LOAD_NONE, false>
+struct LoadDispatch<LOAD_DEFAULT, false>
 {
     // Iterator
     template <typename InputIteratorRA>
-    static __device__ __forceinline__ typename std::iterator_traits<InputIteratorRA>::value_type ThreadLoad(InputIteratorRA itr)
+    static __device__ __forceinline__ typename std::iterator_traits<InputIteratorRA>::value_type Load(InputIteratorRA itr)
     {
         // Straightforward dereference
         return *itr;
@@ -135,14 +135,14 @@ struct ThreadLoadDispatch<PTX_LOAD_NONE, false>
 
 
 /**
- * Generic PTX_LOAD_VS specialization
+ * Generic LOAD_VS specialization
  */
 template <>
-struct ThreadLoadDispatch<PTX_LOAD_VS, false>
+struct LoadDispatch<LOAD_VS, false>
 {
     // Iterator
     template <typename InputIteratorRA>
-    static __device__ __forceinline__ typename std::iterator_traits<InputIteratorRA>::value_type ThreadLoad(InputIteratorRA itr)
+    static __device__ __forceinline__ typename std::iterator_traits<InputIteratorRA>::value_type Load(InputIteratorRA itr)
     {
         typedef typename std::iterator_traits<InputIteratorRA>::value_type T;
 
@@ -163,15 +163,15 @@ struct ThreadLoadDispatch<PTX_LOAD_VS, false>
 
 
 /**
- * Generic PTX_LOAD_CG specialization for SM10-SM13 architectures
+ * Generic LOAD_CG specialization for SM10-SM13 architectures
  */
 #if CUB_PTX_ARCH < 200
 template <>
-struct ThreadLoadDispatch<PTX_LOAD_CG, false>
+struct LoadDispatch<LOAD_CG, false>
 {
     // Iterator
     template <typename InputIteratorRA>
-    static __device__ __forceinline__ typename std::iterator_traits<InputIteratorRA>::value_type ThreadLoad(InputIteratorRA itr)
+    static __device__ __forceinline__ typename std::iterator_traits<InputIteratorRA>::value_type Load(InputIteratorRA itr)
     {
         // Straightforward dereference
         return *itr;
@@ -196,30 +196,30 @@ struct ThreadLoadDispatch<PTX_LOAD_CG, false>
  *
  * // 32-bit load using cache-global modifier:
  * int *d_in;
- * int val = cub::ThreadLoad<cub::PTX_LOAD_CA>(d_in + threadIdx.x);
+ * int val = cub::Load<cub::LOAD_CA>(d_in + threadIdx.x);
  *
  * // 16-bit load using default modifier
  * short *d_in;
- * short val = cub::ThreadLoad<cub::PTX_LOAD_NONE>(d_in + threadIdx.x);
+ * short val = cub::Load<cub::LOAD_DEFAULT>(d_in + threadIdx.x);
  *
  * // 256-bit load using cache-volatile modifier
  * double4 *d_in;
- * double4 val = cub::ThreadLoad<cub::PTX_LOAD_CV>(d_in + threadIdx.x);
+ * double4 val = cub::Load<cub::LOAD_CV>(d_in + threadIdx.x);
  *
- * // 96-bit load using default cache modifier (ignoring PTX_LOAD_CS)
+ * // 96-bit load using default cache modifier (ignoring LOAD_CS)
  * struct TestFoo { bool a; short b; };
  * TestFoo *d_struct;
- * TestFoo val = cub::ThreadLoad<cub::PTX_LOAD_CS>(d_in + threadIdx.x);
+ * TestFoo val = cub::Load<cub::LOAD_CS>(d_in + threadIdx.x);
  * \endcode
  *
  */
 template <
     PtxLoadModifier MODIFIER,
     typename InputIteratorRA>
-__device__ __forceinline__ typename std::iterator_traits<InputIteratorRA>::value_type ThreadLoad(InputIteratorRA itr)
+__device__ __forceinline__ typename std::iterator_traits<InputIteratorRA>::value_type Load(InputIteratorRA itr)
 {
     typedef typename std::iterator_traits<InputIteratorRA>::value_type T;
-    return ThreadLoadDispatch<MODIFIER, HasThreadLoad<T>::VALUE>::ThreadLoad(itr);
+    return LoadDispatch<MODIFIER, HasLoad<T>::VALUE>::Load(itr);
 }
 
 
@@ -227,16 +227,16 @@ __device__ __forceinline__ typename std::iterator_traits<InputIteratorRA>::value
 #ifndef DOXYGEN_SHOULD_SKIP_THIS    // Do not document
 
 //-----------------------------------------------------------------------------
-// ThreadLoad() specializations by modifier and data type (i.e., primitives
+// Load() specializations by modifier and data type (i.e., primitives
 // and CUDA vector types)
 //-----------------------------------------------------------------------------
 
 /**
- * Define a global ThreadLoad() specialization for type
+ * Define a global Load() specialization for type
  */
 #define CUB_G_LOAD_0(type, asm_type, ptx_type, reg_mod, cub_modifier, ptx_modifier)     \
     template<>                                                                          \
-    type ThreadLoad<cub_modifier, type*>(type* ptr)                                     \
+    type Load<cub_modifier, type*>(type* ptr)                                     \
     {                                                                                   \
         asm_type raw;                                                                   \
         asm volatile ("ld.global."#ptx_modifier"."#ptx_type" %0, [%1];" :               \
@@ -247,11 +247,11 @@ __device__ __forceinline__ typename std::iterator_traits<InputIteratorRA>::value
     }
 
 /**
- * Define a global ThreadLoad() specialization for the vector-1 type
+ * Define a global Load() specialization for the vector-1 type
  */
 #define CUB_G_LOAD_1(type, component_type, asm_type, ptx_type, reg_mod, cub_modifier, ptx_modifier)     \
     template<>                                                                          \
-    type ThreadLoad<cub_modifier, type*>(type* ptr)                                     \
+    type Load<cub_modifier, type*>(type* ptr)                                     \
     {                                                                                   \
         asm_type raw;                                                                   \
         asm volatile ("ld.global."#ptx_modifier"."#ptx_type" %0, [%1];" :               \
@@ -262,24 +262,24 @@ __device__ __forceinline__ typename std::iterator_traits<InputIteratorRA>::value
     }
 
 /**
- * Define a volatile-shared ThreadLoad() specialization for the built-in
+ * Define a volatile-shared Load() specialization for the built-in
  * vector-1 type.  Simply use the component version.
  */
 #define CUB_VS_LOAD_1(type, component_type, asm_type, ptx_type, reg_mod)                \
     template<>                                                                          \
-    type ThreadLoad<PTX_LOAD_VS, type*>(type* ptr)                                      \
+    type Load<LOAD_VS, type*>(type* ptr)                                      \
     {                                                                                   \
         type val;                                                                       \
-        val.x = ThreadLoad<PTX_LOAD_VS>((component_type*) ptr);                         \
+        val.x = Load<LOAD_VS>((component_type*) ptr);                         \
         return val;                                                                     \
     }
 
 /**
- * Define a global ThreadLoad() specialization for the vector-2 type
+ * Define a global Load() specialization for the vector-2 type
  */
 #define CUB_G_LOAD_2(type, component_type, asm_type, ptx_type, reg_mod, cub_modifier, ptx_modifier)     \
     template<>                                                                          \
-    type ThreadLoad<cub_modifier, type*>(type* ptr)                                     \
+    type Load<cub_modifier, type*>(type* ptr)                                     \
     {                                                                                   \
         asm_type raw_x, raw_y;                                                          \
         asm volatile ("ld.global."#ptx_modifier".v2."#ptx_type" {%0, %1}, [%2];" :      \
@@ -293,20 +293,20 @@ __device__ __forceinline__ typename std::iterator_traits<InputIteratorRA>::value
     }
 
 /**
- * Define a volatile-shared ThreadLoad() specialization for the vector-2 type
+ * Define a volatile-shared Load() specialization for the vector-2 type
  * Performs separate references if the component_type is only 1 byte (otherwise we lose
  * performance due to the bitfield ops to assemble the value)
  */
 #define CUB_VS_LOAD_2(type, component_type, asm_type, ptx_type, reg_mod)                \
     template<>                                                                          \
-    type ThreadLoad<PTX_LOAD_VS, type*>(type* ptr)                                      \
+    type Load<LOAD_VS, type*>(type* ptr)                                      \
     {                                                                                   \
         type val;                                                                       \
         if ((sizeof(component_type) == 1) || (CUDA_VERSION < 4100))                     \
         {                                                                               \
             component_type *base_ptr = (component_type*) ptr;                           \
-            val.x = ThreadLoad<PTX_LOAD_VS>(base_ptr);                                  \
-            val.y = ThreadLoad<PTX_LOAD_VS>(base_ptr + 1);                              \
+            val.x = Load<LOAD_VS>(base_ptr);                                  \
+            val.y = Load<LOAD_VS>(base_ptr + 1);                              \
         }                                                                               \
         else                                                                            \
         {                                                                               \
@@ -326,11 +326,11 @@ __device__ __forceinline__ typename std::iterator_traits<InputIteratorRA>::value
     }
 
 /**
- * Define a global ThreadLoad() specialization for the vector-4 type
+ * Define a global Load() specialization for the vector-4 type
  */
 #define CUB_G_LOAD_4(type, component_type, asm_type, ptx_type, reg_mod, cub_modifier, ptx_modifier)     \
     template<>                                                                          \
-    type ThreadLoad<cub_modifier, type*>(type* ptr)                                     \
+    type Load<cub_modifier, type*>(type* ptr)                                     \
     {                                                                                   \
         asm_type raw_x, raw_y, raw_z, raw_w;                                            \
         asm volatile ("ld.global."#ptx_modifier".v4."#ptx_type" {%0, %1, %2, %3}, [%4];" :              \
@@ -348,22 +348,22 @@ __device__ __forceinline__ typename std::iterator_traits<InputIteratorRA>::value
     }
 
 /**
- * Define a volatile-shared ThreadLoad() specialization for the vector-4 type.
+ * Define a volatile-shared Load() specialization for the vector-4 type.
  * Performs separate references if the component_type is only 1 byte (otherwise we lose
  * performance due to the bitfield ops to assemble the value)
  */
 #define CUB_VS_LOAD_4(type, component_type, asm_type, ptx_type, reg_mod)                \
     template<>                                                                          \
-    type ThreadLoad<PTX_LOAD_VS, type*>(type* ptr)                                      \
+    type Load<LOAD_VS, type*>(type* ptr)                                      \
     {                                                                                   \
         type val;                                                                       \
         if ((sizeof(component_type) == 1) || (CUDA_VERSION < 4100))                     \
         {                                                                               \
             component_type *base_ptr = (component_type*) ptr;                           \
-            val.x = ThreadLoad<PTX_LOAD_VS>(base_ptr);                                  \
-            val.y = ThreadLoad<PTX_LOAD_VS>(base_ptr + 1);                              \
-            val.z = ThreadLoad<PTX_LOAD_VS>(base_ptr + 2);                              \
-            val.w = ThreadLoad<PTX_LOAD_VS>(base_ptr + 3);                              \
+            val.x = Load<LOAD_VS>(base_ptr);                                  \
+            val.y = Load<LOAD_VS>(base_ptr + 1);                              \
+            val.z = Load<LOAD_VS>(base_ptr + 2);                              \
+            val.w = Load<LOAD_VS>(base_ptr + 3);                              \
         }                                                                               \
         else                                                                            \
         {                                                                               \
@@ -387,77 +387,77 @@ __device__ __forceinline__ typename std::iterator_traits<InputIteratorRA>::value
     }
 
 /**
- * Define a ThreadLoad() specialization for the 64-bit
+ * Define a Load() specialization for the 64-bit
  * vector-4 type
  */
 #define CUB_LOAD_4L(type, half_type, cub_modifier)                                      \
     template<>                                                                          \
-    type ThreadLoad<cub_modifier, type*>(type* ptr)                                     \
+    type Load<cub_modifier, type*>(type* ptr)                                     \
     {                                                                                   \
         type val;                                                                       \
         half_type* half_val = reinterpret_cast<half_type*>(&val);                       \
         half_type* half_ptr = reinterpret_cast<half_type*>(ptr);                        \
-        half_val[0] = ThreadLoad<cub_modifier>(half_ptr);                               \
-        half_val[1] = ThreadLoad<cub_modifier>(half_ptr + 1);                           \
+        half_val[0] = Load<cub_modifier>(half_ptr);                               \
+        half_val[1] = Load<cub_modifier>(half_ptr + 1);                           \
         return val;                                                                     \
     }
 
 /**
- * Define ThreadLoad() specializations for the (non-vector) type
+ * Define Load() specializations for the (non-vector) type
  */
 #define CUB_LOADS_0(type, asm_type, ptx_type, reg_mod)                                  \
-    CUB_G_LOAD_0(type, asm_type, ptx_type, reg_mod, PTX_LOAD_LDG, nc)                   \
-    CUB_G_LOAD_0(type, asm_type, ptx_type, reg_mod, PTX_LOAD_CA, ca)                    \
-    CUB_G_LOAD_0(type, asm_type, ptx_type, reg_mod, PTX_LOAD_CG, cg)                    \
-    CUB_G_LOAD_0(type, asm_type, ptx_type, reg_mod, PTX_LOAD_CS, cs)                    \
-    CUB_G_LOAD_0(type, asm_type, ptx_type, reg_mod, PTX_LOAD_CV, cv)
+    CUB_G_LOAD_0(type, asm_type, ptx_type, reg_mod, LOAD_LDG, nc)                   \
+    CUB_G_LOAD_0(type, asm_type, ptx_type, reg_mod, LOAD_CA, ca)                    \
+    CUB_G_LOAD_0(type, asm_type, ptx_type, reg_mod, LOAD_CG, cg)                    \
+    CUB_G_LOAD_0(type, asm_type, ptx_type, reg_mod, LOAD_CS, cs)                    \
+    CUB_G_LOAD_0(type, asm_type, ptx_type, reg_mod, LOAD_CV, cv)
 
 /**
- * Define ThreadLoad() specializations for the vector-1 component_type
+ * Define Load() specializations for the vector-1 component_type
  */
 #define CUB_LOADS_1(type, component_type, asm_type, ptx_type, reg_mod)                  \
     CUB_VS_LOAD_1(type, component_type, asm_type, ptx_type, reg_mod)                    \
-    CUB_G_LOAD_1(type, component_type, asm_type, ptx_type, reg_mod, PTX_LOAD_LDG, nc)   \
-    CUB_G_LOAD_1(type, component_type, asm_type, ptx_type, reg_mod, PTX_LOAD_CA, ca)    \
-    CUB_G_LOAD_1(type, component_type, asm_type, ptx_type, reg_mod, PTX_LOAD_CG, cg)    \
-    CUB_G_LOAD_1(type, component_type, asm_type, ptx_type, reg_mod, PTX_LOAD_CS, cs)    \
-    CUB_G_LOAD_1(type, component_type, asm_type, ptx_type, reg_mod, PTX_LOAD_CV, cv)
+    CUB_G_LOAD_1(type, component_type, asm_type, ptx_type, reg_mod, LOAD_LDG, nc)   \
+    CUB_G_LOAD_1(type, component_type, asm_type, ptx_type, reg_mod, LOAD_CA, ca)    \
+    CUB_G_LOAD_1(type, component_type, asm_type, ptx_type, reg_mod, LOAD_CG, cg)    \
+    CUB_G_LOAD_1(type, component_type, asm_type, ptx_type, reg_mod, LOAD_CS, cs)    \
+    CUB_G_LOAD_1(type, component_type, asm_type, ptx_type, reg_mod, LOAD_CV, cv)
 
 /**
- * Define ThreadLoad() specializations for the vector-2 component_type
+ * Define Load() specializations for the vector-2 component_type
  */
 #define CUB_LOADS_2(type, component_type, asm_type, ptx_type, reg_mod)                  \
     CUB_VS_LOAD_2(type, component_type, asm_type, ptx_type, reg_mod)                    \
-    CUB_G_LOAD_2(type, component_type, asm_type, ptx_type, reg_mod, PTX_LOAD_LDG, nc)   \
-    CUB_G_LOAD_2(type, component_type, asm_type, ptx_type, reg_mod, PTX_LOAD_CA, ca)    \
-    CUB_G_LOAD_2(type, component_type, asm_type, ptx_type, reg_mod, PTX_LOAD_CG, cg)    \
-    CUB_G_LOAD_2(type, component_type, asm_type, ptx_type, reg_mod, PTX_LOAD_CS, cs)    \
-    CUB_G_LOAD_2(type, component_type, asm_type, ptx_type, reg_mod, PTX_LOAD_CV, cv)
+    CUB_G_LOAD_2(type, component_type, asm_type, ptx_type, reg_mod, LOAD_LDG, nc)   \
+    CUB_G_LOAD_2(type, component_type, asm_type, ptx_type, reg_mod, LOAD_CA, ca)    \
+    CUB_G_LOAD_2(type, component_type, asm_type, ptx_type, reg_mod, LOAD_CG, cg)    \
+    CUB_G_LOAD_2(type, component_type, asm_type, ptx_type, reg_mod, LOAD_CS, cs)    \
+    CUB_G_LOAD_2(type, component_type, asm_type, ptx_type, reg_mod, LOAD_CV, cv)
 
 /**
- * Define ThreadLoad() specializations for the vector-4 component_type
+ * Define Load() specializations for the vector-4 component_type
  */
 #define CUB_LOADS_4(type, component_type, asm_type, ptx_type, reg_mod)                  \
     CUB_VS_LOAD_4(type, component_type, asm_type, ptx_type, reg_mod)                    \
-    CUB_G_LOAD_4(type, component_type, asm_type, ptx_type, reg_mod, PTX_LOAD_LDG, nc)   \
-    CUB_G_LOAD_4(type, component_type, asm_type, ptx_type, reg_mod, PTX_LOAD_CA, ca)    \
-    CUB_G_LOAD_4(type, component_type, asm_type, ptx_type, reg_mod, PTX_LOAD_CG, cg)    \
-    CUB_G_LOAD_4(type, component_type, asm_type, ptx_type, reg_mod, PTX_LOAD_CS, cs)    \
-    CUB_G_LOAD_4(type, component_type, asm_type, ptx_type, reg_mod, PTX_LOAD_CV, cv)
+    CUB_G_LOAD_4(type, component_type, asm_type, ptx_type, reg_mod, LOAD_LDG, nc)   \
+    CUB_G_LOAD_4(type, component_type, asm_type, ptx_type, reg_mod, LOAD_CA, ca)    \
+    CUB_G_LOAD_4(type, component_type, asm_type, ptx_type, reg_mod, LOAD_CG, cg)    \
+    CUB_G_LOAD_4(type, component_type, asm_type, ptx_type, reg_mod, LOAD_CS, cs)    \
+    CUB_G_LOAD_4(type, component_type, asm_type, ptx_type, reg_mod, LOAD_CV, cv)
 
 /**
- * Define ThreadLoad() specializations for the 256-bit vector-4 component_type
+ * Define Load() specializations for the 256-bit vector-4 component_type
  */
 #define CUB_LOADS_4L(type, half_type)                       \
-    CUB_LOAD_4L(type, half_type, PTX_LOAD_VS)               \
-    CUB_LOAD_4L(type, half_type, PTX_LOAD_LDG)              \
-    CUB_LOAD_4L(type, half_type, PTX_LOAD_CA)               \
-    CUB_LOAD_4L(type, half_type, PTX_LOAD_CG)               \
-    CUB_LOAD_4L(type, half_type, PTX_LOAD_CS)               \
-    CUB_LOAD_4L(type, half_type, PTX_LOAD_CV)
+    CUB_LOAD_4L(type, half_type, LOAD_VS)               \
+    CUB_LOAD_4L(type, half_type, LOAD_LDG)              \
+    CUB_LOAD_4L(type, half_type, LOAD_CA)               \
+    CUB_LOAD_4L(type, half_type, LOAD_CG)               \
+    CUB_LOAD_4L(type, half_type, LOAD_CS)               \
+    CUB_LOAD_4L(type, half_type, LOAD_CV)
 
 /**
- * Define vector-0/1/2 ThreadLoad() specializations for the component type
+ * Define vector-0/1/2 Load() specializations for the component type
  */
 #define CUB_LOADS_012(component_type, vec_prefix, asm_type, ptx_type, reg_mod)          \
     CUB_LOADS_0(component_type, asm_type, ptx_type, reg_mod)                            \
@@ -465,7 +465,7 @@ __device__ __forceinline__ typename std::iterator_traits<InputIteratorRA>::value
     CUB_LOADS_2(vec_prefix##2, component_type, asm_type, ptx_type, reg_mod)
 
 /**
- * Define vector-0/1/2/4 ThreadLoad() specializations for the component type
+ * Define vector-0/1/2/4 Load() specializations for the component type
  */
 #define CUB_LOADS_0124(component_type, vec_prefix, asm_type, ptx_type, reg_mod)         \
     CUB_LOADS_012(component_type, vec_prefix, asm_type, ptx_type, reg_mod)              \
@@ -474,7 +474,7 @@ __device__ __forceinline__ typename std::iterator_traits<InputIteratorRA>::value
 
 
 /**
- * Expand ThreadLoad() implementations for primitive types.
+ * Expand Load() implementations for primitive types.
  */
 #if CUB_PTX_ARCH >= 200
 
@@ -539,7 +539,7 @@ CUB_LOADS_4L(double4, double2);
 
 //@}  end member group
 
-/** @} */       // end group ThreadModule
+/** @} */       // end group IoModule
 
 
 }               // CUB namespace
