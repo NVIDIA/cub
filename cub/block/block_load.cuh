@@ -61,7 +61,7 @@ namespace cub {
 
 
 /**
- * \brief Load a tile of items across a threadblock directly using the specified cache modifier.
+ * \brief Load a blocked arrangement of items across the thread block using the specified cache modifier.
  *
  * The aggregate tile of items is assumed to be partitioned evenly across
  * threads in "blocked" fashion with thread<sub><em>i</em></sub> owning
@@ -92,7 +92,7 @@ __device__ __forceinline__ void LoadBlocked(
 
 
 /**
- * \brief Load a tile of items across a threadblock directly using the specified cache modifier, guarded by range
+ * \brief Load a blocked arrangement of items across the thread block using the specified cache modifier, guarded by range.
  *
  * The aggregate tile of items is assumed to be partitioned evenly across
  * threads in "blocked" fashion with thread<sub><em>i</em></sub> owning
@@ -127,7 +127,7 @@ __device__ __forceinline__ void LoadBlocked(
 
 
 /**
- * \brief Load a tile of items across a threadblock directly using the specified cache modifier, guarded by range, with assignment for out-of-bound elements
+ * \brief Load a blocked arrangement of items across a thread block using the specified cache modifier, guarded by range, with a fall-back assignment of out-of-bound elements..
  *
  * The aggregate tile of items is assumed to be partitioned evenly across
  * threads in "blocked" fashion with thread<sub><em>i</em></sub> owning
@@ -170,7 +170,7 @@ __device__ __forceinline__ void LoadBlocked(
 
 
 /**
- * \brief Load striped tile directly using the specified cache modifier.
+ * \brief Load a striped arrangement of data across the thread block using the specified cache modifier.
  *
  * The aggregate tile of items is assumed to be partitioned across
  * threads in "striped" fashion, i.e., the \p ITEMS_PER_THREAD
@@ -201,7 +201,7 @@ __device__ __forceinline__ void LoadStriped(
 
 
 /**
- * \brief Load striped directly tile using the specified cache modifier, guarded by range
+ * \brief Load a striped arrangement of data across the thread block using the specified cache modifier, guarded by range
  *
  * The aggregate tile of items is assumed to be partitioned across
  * threads in "striped" fashion, i.e., the \p ITEMS_PER_THREAD
@@ -237,7 +237,7 @@ __device__ __forceinline__ void LoadStriped(
 
 
 /**
- * \brief Load striped directly tile using the specified cache modifier, guarded by range, with assignment for out-of-bound elements
+ * \brief Load a striped arrangement of data across the thread block using the specified cache modifier, guarded by range, with a fall-back assignment of out-of-bound elements.
  *
  * The aggregate tile of items is assumed to be partitioned across
  * threads in "striped" fashion, i.e., the \p ITEMS_PER_THREAD
@@ -283,13 +283,14 @@ __device__ __forceinline__ void LoadStriped(
 /**
  * \brief Load warp-striped tile directly using the specified cache modifier.
  *
- * The number of threads in the thread block must be a multiple of the architecture's warp size.
- *
  * The aggregate tile of items is assumed to be partitioned across threads in
  * "warp-striped" fashion, i.e., each warp owns a contiguous segment of
  * (\p WARP_THREADS * \p ITEMS_PER_THREAD) items, and the \p ITEMS_PER_THREAD
  * items owned by each thread within the same warp have logical stride
  * \p WARP_THREADS between them.
+ *
+ * \par Usage Considerations
+ * The number of threads in the thread block must be a multiple of the architecture's warp size.
  *
  * \tparam MODIFIER             cub::PtxLoadModifier cache modifier.
  * \tparam T                    <b>[inferred]</b> The data type to load.
@@ -328,6 +329,9 @@ __device__ __forceinline__ void LoadWarpStriped(
  * items owned by each thread within the same warp have logical stride
  * \p WARP_THREADS between them.
  *
+ * \par Usage Considerations
+ * The number of threads in the thread block must be a multiple of the architecture's warp size.
+ *
  * \tparam MODIFIER             cub::PtxLoadModifier cache modifier.
  * \tparam T                    <b>[inferred]</b> The data type to load.
  * \tparam ITEMS_PER_THREAD     <b>[inferred]</b> The number of consecutive items partitioned onto each thread.
@@ -362,13 +366,16 @@ __device__ __forceinline__ void LoadWarpStriped(
 
 
 /**
- * \brief Load warp-striped directly tile using the specified cache modifier, guarded by range, with assignment for out-of-bound elements
+ * \brief Load warp-striped directly tile using the specified cache modifier, guarded by range, with a fall-back assignment of out-of-bound elements.
  *
  * The aggregate tile of items is assumed to be partitioned across threads in
  * "warp-striped" fashion, i.e., each warp owns a contiguous segment of
  * (\p WARP_THREADS * \p ITEMS_PER_THREAD) items, and the \p ITEMS_PER_THREAD
  * items owned by each thread within the same warp have logical stride
  * \p WARP_THREADS between them.
+ *
+ * \par Usage Considerations
+ * The number of threads in the thread block must be a multiple of the architecture's warp size.
  *
  * \tparam MODIFIER             cub::PtxLoadModifier cache modifier.
  * \tparam T                    <b>[inferred]</b> The data type to load.
@@ -411,7 +418,7 @@ __device__ __forceinline__ void LoadWarpStriped(
 //@{
 
 /**
- * \brief Load a tile of items across a threadblock directly using the specified cache modifier.
+ * \brief Load a blocked arrangement of items across the thread block using the specified cache modifier.
  *
  * The aggregate tile of items is assumed to be partitioned evenly across
  * threads in "blocked" fashion with thread<sub><em>i</em></sub> owning
@@ -549,6 +556,9 @@ enum BlockLoadAlgorithm
      * is then used to locally reorder the items into a
      * [<em>blocked arrangement</em>](index.html#sec3sec3).
      *
+     * \par Usage Considerations
+     * - BLOCK_THREADS must be a multiple of WARP_THREADS
+     *
      * \par Performance Considerations
      * - The utilization of memory transactions (coalescing) remains high regardless
      *   of items loaded per thread.
@@ -622,7 +632,7 @@ enum BlockLoadAlgorithm
  * \endcode
  *
  * \par
- * <em>Example 2.</em> Have a thread block load a blocked arrangement of 21
+ * <em>Example 2.</em> Have the thread block load a blocked arrangement of 21
  * consecutive integers per thread using strip-mined loads which are
  * transposed in shared memory.  The load operation has perfectly coalesced
  * memory accesses because consecutive threads are referencing consecutive
@@ -649,7 +659,7 @@ enum BlockLoadAlgorithm
  * \endcode
  *
  * \par
- * <em>Example 3.</em> Have a thread block load a blocked arrangement of
+ * <em>Example 3.</em> Have the thread block load a blocked arrangement of
  * \p ITEMS_PER_THREAD consecutive integers per thread using vectorized
  * loads and global-only caching.  The load operation will have perfectly
  * coalesced memory accesses if ITEMS_PER_THREAD is 1, 2, or 4 which allows
@@ -821,6 +831,9 @@ private:
     template <int DUMMY>
     struct LoadInternal<BLOCK_LOAD_WARP_TRANSPOSE, DUMMY>
     {
+        // Assert BLOCK_THREADS must be a multiple of WARP_THREADS
+        CUB_STATIC_ASSERT((BLOCK_THREADS % WARP_THREADS == 0), "BLOCK_THREADS must be a multiple of WARP_THREADS");
+
         // BlockExchange utility type for keys
         typedef BlockExchange<T, BLOCK_THREADS, ITEMS_PER_THREAD, WARP_TIME_SLICING> BlockExchange;
 
@@ -833,7 +846,7 @@ private:
             InputIteratorRA     block_itr,                      ///< [in] The threadblock's base input iterator for loading from
             T                   (&items)[ITEMS_PER_THREAD])     ///< [out] Data to load{
         {
-            LoadWarpStriped<MODIFIER>(block_itr, items, CUB_MIN(BLOCK_THREADS, WARP_THREADS));
+            LoadWarpStriped<MODIFIER>(block_itr, items, WARP_THREADS);
             BlockExchange::WarpStripedToBlocked(smem_storage, items);
         }
 
@@ -844,7 +857,7 @@ private:
             const int           &guarded_items,                 ///< [in] Number of valid items in the tile
             T                   (&items)[ITEMS_PER_THREAD])     ///< [out] Data to load{
         {
-            LoadWarpStriped<MODIFIER>(block_itr, guarded_items, items, CUB_MIN(BLOCK_THREADS, WARP_THREADS));
+            LoadWarpStriped<MODIFIER>(block_itr, guarded_items, items, WARP_THREADS);
             BlockExchange::WarpStripedToBlocked(smem_storage, items);
         }
 

@@ -402,7 +402,7 @@ void TestSlicedStrategy(
 
 
 /**
- * Evaluate different load/store strategies
+ * Evaluate different load/store strategies (specialized for block sizes that are not a multiple of 32)
  */
 template <
     typename        T,
@@ -410,11 +410,28 @@ template <
     int             ITEMS_PER_THREAD>
 void TestStrategy(
     int             grid_size,
-    float           fraction_valid)
+    float           fraction_valid,
+    Int2Type<false> is_warp_multiple)
 {
     TestPointerAccess<T, BLOCK_THREADS, ITEMS_PER_THREAD, BLOCK_LOAD_DIRECT, BLOCK_STORE_DIRECT, false>(grid_size, fraction_valid);
     TestPointerAccess<T, BLOCK_THREADS, ITEMS_PER_THREAD, BLOCK_LOAD_VECTORIZE, BLOCK_STORE_VECTORIZE, false>(grid_size, fraction_valid);
     TestSlicedStrategy<T, BLOCK_THREADS, ITEMS_PER_THREAD, BLOCK_LOAD_TRANSPOSE, BLOCK_STORE_TRANSPOSE>(grid_size, fraction_valid);
+}
+
+
+/**
+ * Evaluate different load/store strategies (specialized for block sizes that are a multiple of 32)
+ */
+template <
+    typename        T,
+    int             BLOCK_THREADS,
+    int             ITEMS_PER_THREAD>
+void TestStrategy(
+    int             grid_size,
+    float           fraction_valid,
+    Int2Type<true>  is_warp_multiple)
+{
+    TestStrategy<T, BLOCK_THREADS, ITEMS_PER_THREAD>(grid_size, fraction_valid, Int2Type<false>());
     TestSlicedStrategy<T, BLOCK_THREADS, ITEMS_PER_THREAD, BLOCK_LOAD_WARP_TRANSPOSE, BLOCK_STORE_WARP_TRANSPOSE>(grid_size, fraction_valid);
 }
 
@@ -429,11 +446,11 @@ void TestItemsPerThread(
     int grid_size,
     float fraction_valid)
 {
-    TestStrategy<T, BLOCK_THREADS, 1>(grid_size, fraction_valid);
-    TestStrategy<T, BLOCK_THREADS, 3>(grid_size, fraction_valid);
-    TestStrategy<T, BLOCK_THREADS, 4>(grid_size, fraction_valid);
-    TestStrategy<T, BLOCK_THREADS, 8>(grid_size, fraction_valid);
-    TestStrategy<T, BLOCK_THREADS, 17>(grid_size, fraction_valid);
+    TestStrategy<T, BLOCK_THREADS, 1>(grid_size, fraction_valid, Int2Type<BLOCK_THREADS % 32 == 0>());
+    TestStrategy<T, BLOCK_THREADS, 3>(grid_size, fraction_valid, Int2Type<BLOCK_THREADS % 32 == 0>());
+    TestStrategy<T, BLOCK_THREADS, 4>(grid_size, fraction_valid, Int2Type<BLOCK_THREADS % 32 == 0>());
+    TestStrategy<T, BLOCK_THREADS, 8>(grid_size, fraction_valid, Int2Type<BLOCK_THREADS % 32 == 0>());
+    TestStrategy<T, BLOCK_THREADS, 17>(grid_size, fraction_valid, Int2Type<BLOCK_THREADS % 32 == 0>());
 }
 
 
@@ -476,12 +493,13 @@ int main(int argc, char** argv)
     CubDebugExit(args.DeviceInit());
 
     // Simple test
-//    TestNative<int, 64, 2, BLOCK_LOAD_WARP_TRANSPOSE, BLOCK_STORE_WARP_TRANSPOSE, LOAD_DEFAULT, STORE_DEFAULT, true>(1, 0.8);
-
-    TestNative<int, 72, 3, BLOCK_LOAD_WARP_TRANSPOSE, BLOCK_STORE_WARP_TRANSPOSE, LOAD_DEFAULT, STORE_DEFAULT, true>(1, 0.8);
+    TestNative<int, 64, 2, BLOCK_LOAD_WARP_TRANSPOSE, BLOCK_STORE_WARP_TRANSPOSE, LOAD_DEFAULT, STORE_DEFAULT, true>(1, 0.8);
 
     // Evaluate different data types
+//    TestThreads<char>(2, 0.8);
 //    TestThreads<int>(2, 0.8);
+//    TestThreads<int4>(2, 0.8);
+    TestThreads<TestFoo>(2, 0.8);
 
     return 0;
 }

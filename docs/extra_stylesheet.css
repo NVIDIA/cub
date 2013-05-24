@@ -232,6 +232,10 @@ div.memdoc p {
 		margin-left: 40px;
 }
 
+div.memdoc dt {
+		color: black;
+}
+
 div.toc {
 		box-shadow: 5px 5px 5px rgba(0, 0, 0, 0.15);
 		margin: 10px -10px 40px 20px;

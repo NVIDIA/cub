@@ -60,7 +60,7 @@ namespace cub {
 //@{
 
 /**
- * \brief Store a tile of items across a threadblock directly using the specified cache modifier.
+ * \brief Store a blocked arrangement of items across a thread block using the specified cache modifier.
  *
  * The aggregate tile of items is assumed to be partitioned evenly across
  * threads in <em>blocked</em> arrangement with thread<sub><em>i</em></sub> owning
@@ -91,7 +91,7 @@ __device__ __forceinline__ void StoreBlocked(
 
 
 /**
- * \brief Store a tile of items across a threadblock directly using the specified cache modifier, guarded by range
+ * \brief Store a blocked arrangement of items across a thread block using the specified cache modifier, guarded by range
  *
  * The aggregate tile of items is assumed to be partitioned evenly across
  * threads in <em>blocked</em> arrangement with thread<sub><em>i</em></sub> owning
@@ -133,7 +133,7 @@ __device__ __forceinline__ void StoreBlocked(
 
 
 /**
- * \brief Store striped tile directly using the specified cache modifier.
+ * \brief Store a striped arrangement of data across the thread block using the specified cache modifier.
  *
  * The aggregate tile of items is assumed to be partitioned across
  * threads in "striped" arrangement, i.e., the \p ITEMS_PER_THREAD
@@ -165,7 +165,7 @@ __device__ __forceinline__ void StoreStriped(
 
 
 /**
- * \brief Store striped directly tile using the specified cache modifier, guarded by range
+ * \brief  Store a striped arrangement of data across the thread block using the specified cache modifier, guarded by range
  *
  * The aggregate tile of items is assumed to be partitioned across
  * threads in <em>striped</em> arrangement, i.e., the \p ITEMS_PER_THREAD
@@ -216,6 +216,9 @@ __device__ __forceinline__ void StoreStriped(
  * items owned by each thread within the same warp have logical stride
  * \p WARP_THREADS between them.
  *
+ * \par Usage Considerations
+ * The number of threads in the thread block must be a multiple of the architecture's warp size.
+ *
  * \tparam MODIFIER             cub::PtxStoreModifier cache modifier.
  * \tparam T                    <b>[inferred]</b> The data type to store.
  * \tparam ITEMS_PER_THREAD     <b>[inferred]</b> The number of consecutive items partitioned onto each thread.
@@ -252,6 +255,9 @@ __device__ __forceinline__ void StoreWarpStriped(
  * (\p WARP_THREADS * \p ITEMS_PER_THREAD) items, and the \p ITEMS_PER_THREAD
  * items owned by each thread within the same warp have logical stride
  * \p WARP_THREADS between them.
+ *
+ * \par Usage Considerations
+ * The number of threads in the thread block must be a multiple of the architecture's warp size.
  *
  * \tparam MODIFIER             cub::PtxStoreModifier cache modifier.
  * \tparam T                    <b>[inferred]</b> The data type to store.
@@ -293,7 +299,7 @@ __device__ __forceinline__ void StoreWarpStriped(
 //@{
 
 /**
- * \brief Store a tile of items across a threadblock directly using the specified cache modifier.
+ * \brief Store a blocked arrangement of items across a thread block using the specified cache modifier.
  *
  * The aggregate tile of items is assumed to be partitioned evenly across
  * threads in <em>blocked</em> arrangement with thread<sub><em>i</em></sub> owning
@@ -709,6 +715,9 @@ private:
     template <int DUMMY>
     struct StoreInternal<BLOCK_STORE_WARP_TRANSPOSE, DUMMY>
     {
+        // Assert BLOCK_THREADS must be a multiple of WARP_THREADS
+        CUB_STATIC_ASSERT((BLOCK_THREADS % WARP_THREADS == 0), "BLOCK_THREADS must be a multiple of WARP_THREADS");
+
         // BlockExchange utility type for keys
         typedef BlockExchange<T, BLOCK_THREADS, ITEMS_PER_THREAD, WARP_TIME_SLICING> BlockExchange;
 
@@ -722,7 +731,7 @@ private:
             T                   (&items)[ITEMS_PER_THREAD]) ///< [in] Data to store
         {
             BlockExchange::BlockedToWarpStriped(smem_storage, items);
-            StoreWarpStriped<MODIFIER>(block_itr, items, CUB_MIN(BLOCK_THREADS, WARP_THREADS));
+            StoreWarpStriped<MODIFIER>(block_itr, items, WARP_THREADS);
         }
 
         /// Store a tile of items across a threadblock, guarded by range
@@ -733,7 +742,7 @@ private:
             T                   (&items)[ITEMS_PER_THREAD]) ///< [in] Data to store
         {
             BlockExchange::BlockedToWarpStriped(smem_storage, items);
-            StoreWarpStriped<MODIFIER>(block_itr, guarded_items, items, CUB_MIN(BLOCK_THREADS, WARP_THREADS));
+            StoreWarpStriped<MODIFIER>(block_itr, guarded_items, items, WARP_THREADS);
         }
     };
 
