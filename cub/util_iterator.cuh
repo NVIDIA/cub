@@ -348,7 +348,7 @@ public:
         return tex1Dfetch(TexIteratorRef<T>::ref, offset);
 #else
         // Use LDG
-        return Load<LOAD_LDG>(ptr);
+        return ThreadLoad<LOAD_LDG>(ptr);
 #endif
     }
 
@@ -379,7 +379,7 @@ public:
         return tex1Dfetch(TexIteratorRef<T>::ref, offset + n);
 #else
         // Use LDG
-        return Load<LOAD_LDG>(ptr + n);
+        return ThreadLoad<LOAD_LDG>(ptr + n);
 #endif
     }
 
@@ -393,7 +393,7 @@ public:
         return &(tex1Dfetch(TexIteratorRef<T>::ref, offset));
 #else
         // Use LDG
-        return &(Load<LOAD_LDG>(ptr));
+        return &(ThreadLoad<LOAD_LDG>(ptr));
 #endif
     }
 
@@ -503,7 +503,7 @@ public:
         return conversion_op(*ptr);
 /*#elif (CUB_PTX_ARCH <= 350)
         // Use LDG
-        return conversion_op(Load<LOAD_LDG>(ptr));
+        return conversion_op(ThreadLoad<LOAD_LDG>(ptr));
 */#else
         // Use the texture reference
         return conversion_op(tex1Dfetch(TexIteratorRef<InputType>::ref, offset));
@@ -534,7 +534,7 @@ public:
         return conversion_op(ptr[n]);
 /*#elif (CUB_PTX_ARCH >= 350)
         // Use LDG
-        return conversion_op(Load<LOAD_LDG>(ptr + n));
+        return conversion_op(ThreadLoad<LOAD_LDG>(ptr + n));
 */#else
         // Use the texture reference
         return conversion_op(tex1Dfetch(TexIteratorRef<InputType>::ref, offset + n));
@@ -548,7 +548,7 @@ public:
         return &conversion_op(*ptr);
 /*#elif (CUB_PTX_ARCH >= 350)
         // Use LDG
-        return &conversion_op(Load<LOAD_LDG>(ptr));
+        return &conversion_op(ThreadLoad<LOAD_LDG>(ptr));
 */#else
         // Use the texture reference
         return &conversion_op(tex1Dfetch(TexIteratorRef<InputType>::ref, offset));

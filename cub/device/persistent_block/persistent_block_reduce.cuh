@@ -176,14 +176,14 @@ struct PersistentBlockReduce
             if ((first_tile_size == 0) && (thread_offset < num_valid))
             {
                 // Assign thread_aggregate
-                thread_aggregate = Load<PersistentBlockReducePolicy::LOAD_MODIFIER>(d_in + block_offset + thread_offset);
+                thread_aggregate = ThreadLoad<PersistentBlockReducePolicy::LOAD_MODIFIER>(d_in + block_offset + thread_offset);
                 thread_offset += BLOCK_THREADS;
             }
 
             while (thread_offset < num_valid)
             {
                 // Update thread aggregate
-                T item = Load<PersistentBlockReducePolicy::LOAD_MODIFIER>(d_in + block_offset + thread_offset);
+                T item = ThreadLoad<PersistentBlockReducePolicy::LOAD_MODIFIER>(d_in + block_offset + thread_offset);
                 thread_aggregate = reduction_op(thread_aggregate, item);
                 thread_offset += BLOCK_THREADS;
             }

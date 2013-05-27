@@ -379,7 +379,7 @@ struct DeviceHisto256
             {
                 queue.Allocate(device_allocator);
 
-                if (stream_synchronous) CubLog("Invoking init_kernel_ptr<<<%d, 256, 0, %d>>>()\n", ACTIVE_CHANNELS, (int) stream);
+                if (stream_synchronous) CubLog("Invoking init_kernel_ptr<<<%d, 256, 0, %lld>>>()\n", ACTIVE_CHANNELS, (long long) stream);
 
                 init_kernel_ptr<<<ACTIVE_CHANNELS, 256, 0, stream>>>(queue, d_histo_wrapper, num_samples);
 
@@ -454,8 +454,8 @@ struct DeviceHisto256
         #endif // __CUDA_ARCH__
 
             // Invoke MultiBlockHisto256
-            if (stream_synchronous) CubLog("Invoking multi_block_kernel_ptr<<<%d, %d, 0, %d>>>(), %d items per thread, %d SM occupancy\n",
-                multi_grid_size, multi_block_dispatch_params.block_threads, (int) stream, multi_block_dispatch_params.items_per_thread, multi_sm_occupancy);
+            if (stream_synchronous) CubLog("Invoking multi_block_kernel_ptr<<<%d, %d, 0, %lld>>>(), %d items per thread, %d SM occupancy\n",
+                multi_grid_size, multi_block_dispatch_params.block_threads, (long long) stream, multi_block_dispatch_params.items_per_thread, multi_sm_occupancy);
 
             if ((multi_grid_size == 1) || (multi_block_dispatch_params.block_algorithm == GRID_HISTO_256_GLOBAL_ATOMIC))
             {
@@ -499,8 +499,8 @@ struct DeviceHisto256
                     if (stream_synchronous && CubDebug(error = cudaDeviceSynchronize())) break;
                 #endif
 
-                if (stream_synchronous) CubLog("Invoking aggregate_kernel_ptr<<<%d, %d, 0, %d>>>()\n",
-                    ACTIVE_CHANNELS, 256, (int) stream);
+                if (stream_synchronous) CubLog("Invoking aggregate_kernel_ptr<<<%d, %d, 0, %lld>>>()\n",
+                    ACTIVE_CHANNELS, 256, (long long) stream);
 
                 aggregate_kernel_ptr<<<ACTIVE_CHANNELS, 256, 0, stream>>>(
                     d_block_histograms_linear,

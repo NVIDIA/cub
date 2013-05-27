@@ -353,8 +353,6 @@ private:
                     {
                         if (INSERT_PADDING) item_offset += item_offset >> LOG_SMEM_BANKS;
                         smem_storage[item_offset] = items[ITEM];
-
-//                        CubLog("\t\t ITEM[%d](%d) item_offset(%d)\n", ITEM, items[ITEM], item_offset);
                     }
                 }
             }
@@ -369,8 +367,6 @@ private:
                     int item_offset = (warp_lane * ITEMS_PER_THREAD) + ITEM;
                     if (INSERT_PADDING) item_offset += item_offset >> LOG_SMEM_BANKS;
                     temp_items[ITEM] = smem_storage[item_offset];
-
-//                    CubLog("Out ITEM[%d](%d) item_offset(%d)\n", ITEM, temp_items[ITEM], item_offset);
                 }
             }
         }
@@ -647,9 +643,7 @@ public:
         SmemStorage     &smem_storage,              ///< [in] Reference to shared memory allocation having layout type SmemStorage
         T               items[ITEMS_PER_THREAD])    ///< [in-out] Items to exchange, converting between <em>blocked</em> and <em>striped</em> arrangements.
     {
-//        CubLog("BlockedToStriped<%d> in items [%d, %d, %d]\n", WARP_TIME_SLICING, items[0], items[1], items[2]);
         BlockedToStriped(smem_storage, items, Int2Type<WARP_TIME_SLICING>());
-//        CubLog("\t\t BlockedToStriped<%d> out items [%d, %d, %d]\n", WARP_TIME_SLICING, items[0], items[1], items[2]);
     }
 
 
@@ -662,9 +656,7 @@ public:
         SmemStorage      &smem_storage,             ///< [in] Reference to shared memory allocation having layout type SmemStorage
         T                items[ITEMS_PER_THREAD])   ///< [in-out] Items to exchange, converting between <em>blocked</em> and <em>warp-striped</em> arrangements.
     {
-//        CubLog("BlockedToWarpStriped<%d> in items [%d, %d, %d]\n", WARP_TIME_SLICING, items[0], items[1], items[2]);
         BlockedToWarpStriped(smem_storage, items, Int2Type<WARP_TIME_SLICING>());
-//        CubLog("\t\t BlockedToWarpStriped<%d> out items [%d, %d, %d]\n", WARP_TIME_SLICING, items[0], items[1], items[2]);
     }
 
 
@@ -684,9 +676,7 @@ public:
         SmemStorage      &smem_storage,             ///< [in] Reference to shared memory allocation having layout type SmemStorage
         T                items[ITEMS_PER_THREAD])   ///< [in-out] Items to exchange, converting between <em>striped</em> and <em>blocked</em> arrangements.
     {
-//        CubLog("StripedToBlocked<%d> in items [%d, %d, %d]\n", WARP_TIME_SLICING, items[0], items[1], items[2]);
         StripedToBlocked(smem_storage, items, Int2Type<WARP_TIME_SLICING>());
-//        CubLog("\t\t StripedToBlocked<%d> out items [%d, %d, %d]\n", WARP_TIME_SLICING, items[0], items[1], items[2]);
     }
 
 
@@ -706,9 +696,7 @@ public:
         SmemStorage      &smem_storage,             ///< [in] Reference to shared memory allocation having layout type SmemStorage
         T                items[ITEMS_PER_THREAD])   ///< [in-out] Items to exchange, converting between <em>warp-striped</em> and <em>blocked</em> arrangements.
     {
-//        CubLog("WarpStripedToBlocked<%d> in items [%d, %d, %d]\n", WARP_TIME_SLICING, items[0], items[1], items[2]);
         WarpStripedToBlocked(smem_storage, items, Int2Type<WARP_TIME_SLICING>());
-//        CubLog("\t\t WarpStripedToBlocked<%d> out items [%d, %d, %d]\n", WARP_TIME_SLICING, items[0], items[1], items[2]);
     }
 
 
@@ -729,9 +717,7 @@ public:
         T               items[ITEMS_PER_THREAD],    ///< [in-out] Items to exchange
         int             ranks[ITEMS_PER_THREAD])    ///< [in] Corresponding scatter ranks
     {
-//        CubLog("ScatterToBlocked<%d> in items [%d, %d]\n", WARP_TIME_SLICING, items[0], items[1]);
         ScatterToBlocked(smem_storage, items, ranks, Int2Type<WARP_TIME_SLICING>());
-//        CubLog("\t\t ScatterToBlocked<%d> out items [%d, %d]\n", WARP_TIME_SLICING, items[0], items[1]);
     }
 
 
@@ -745,9 +731,7 @@ public:
         T               items[ITEMS_PER_THREAD],    ///< [in-out] Items to exchange
         int             ranks[ITEMS_PER_THREAD])    ///< [in] Corresponding scatter ranks
     {
-//        CubLog("ScatterToStriped<%d> in items [%d, %d]\n", WARP_TIME_SLICING, items[0], items[1]);
         ScatterToStriped(smem_storage, items, ranks, Int2Type<WARP_TIME_SLICING>());
-//        CubLog("\t\t ScatterToStriped<%d> out items [%d, %d]\n", WARP_TIME_SLICING, items[0], items[1]);
     }
 
     //@}  end member group
