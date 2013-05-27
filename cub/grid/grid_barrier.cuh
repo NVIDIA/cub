@@ -95,7 +95,7 @@ public:
             // Wait for everyone else to report in
             for (int peer_block = threadIdx.x; peer_block < gridDim.x; peer_block += blockDim.x)
             {
-                while (Load<LOAD_CG>(d_sync + peer_block) == 0)
+                while (ThreadLoad<LOAD_CG>(d_sync + peer_block) == 0)
                 {
                     __threadfence_block();
                 }
@@ -117,7 +117,7 @@ public:
                 d_vol_sync[blockIdx.x] = 1;
 
                 // Wait for acknowledgment
-                while (Load<LOAD_CG>(d_sync + blockIdx.x) == 1)
+                while (ThreadLoad<LOAD_CG>(d_sync + blockIdx.x) == 1)
                 {
                     __threadfence_block();
                 }

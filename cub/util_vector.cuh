@@ -91,14 +91,14 @@ struct VectorHelper<T, 1>
     template <PtxLoadModifier MODIFIER>
     __device__ __forceinline__     void Load(VectorHelper *ptr)
     {
-        x = cub::Load<MODIFIER>(&(ptr->x));
+        x = cub::ThreadLoad<MODIFIER>(&(ptr->x));
     }
 
      // Store
     template <PtxStoreModifier MODIFIER>
     __device__ __forceinline__ void Store(VectorHelper *ptr) const
     {
-        cub::Store<MODIFIER>(&(ptr->x), x);
+        cub::ThreadStore<MODIFIER>(&(ptr->x), x);
     }
 };
 
@@ -121,16 +121,16 @@ struct VectorHelper<T, 2>
     template <PtxLoadModifier MODIFIER>
     __device__ __forceinline__ void Load(VectorHelper *ptr)
     {
-        x = cub::Load<MODIFIER>(&(ptr->x));
-        y = cub::Load<MODIFIER>(&(ptr->y));
+        x = cub::ThreadLoad<MODIFIER>(&(ptr->x));
+        y = cub::ThreadLoad<MODIFIER>(&(ptr->y));
     }
 
      // Store
     template <PtxStoreModifier MODIFIER>
     __device__ __forceinline__ void Store(VectorHelper *ptr) const
     {
-        cub::Store<MODIFIER>(&(ptr->x), x);
-        cub::Store<MODIFIER>(&(ptr->y), y);
+        cub::ThreadStore<MODIFIER>(&(ptr->x), x);
+        cub::ThreadStore<MODIFIER>(&(ptr->y), y);
     }
 };
 
@@ -154,18 +154,18 @@ struct VectorHelper<T, 3>
     template <PtxLoadModifier MODIFIER>
     __device__ __forceinline__ void Load(VectorHelper *ptr)
     {
-        x = cub::Load<MODIFIER>(&(ptr->x));
-        y = cub::Load<MODIFIER>(&(ptr->y));
-        z = cub::Load<MODIFIER>(&(ptr->z));
+        x = cub::ThreadLoad<MODIFIER>(&(ptr->x));
+        y = cub::ThreadLoad<MODIFIER>(&(ptr->y));
+        z = cub::ThreadLoad<MODIFIER>(&(ptr->z));
     }
 
      // Store
     template <PtxStoreModifier MODIFIER>
     __device__ __forceinline__ void Store(VectorHelper *ptr) const
     {
-        cub::Store<MODIFIER>(&(ptr->x), x);
-        cub::Store<MODIFIER>(&(ptr->y), y);
-        cub::Store<MODIFIER>(&(ptr->z), z);
+        cub::ThreadStore<MODIFIER>(&(ptr->x), x);
+        cub::ThreadStore<MODIFIER>(&(ptr->y), y);
+        cub::ThreadStore<MODIFIER>(&(ptr->z), z);
     }
 
 };
@@ -191,20 +191,20 @@ struct VectorHelper<T, 4>
     template <PtxLoadModifier MODIFIER>
     __device__ __forceinline__ void Load(VectorHelper *ptr)
     {
-        x = cub::Load<MODIFIER>(&(ptr->x));
-        y = cub::Load<MODIFIER>(&(ptr->y));
-        z = cub::Load<MODIFIER>(&(ptr->z));
-        w = cub::Load<MODIFIER>(&(ptr->w));
+        x = cub::ThreadLoad<MODIFIER>(&(ptr->x));
+        y = cub::ThreadLoad<MODIFIER>(&(ptr->y));
+        z = cub::ThreadLoad<MODIFIER>(&(ptr->z));
+        w = cub::ThreadLoad<MODIFIER>(&(ptr->w));
     }
 
      // Store
     template <PtxStoreModifier MODIFIER>
     __device__ __forceinline__ void Store(VectorHelper *ptr) const
     {
-        cub::Store<MODIFIER>(&(ptr->x), x);
-        cub::Store<MODIFIER>(&(ptr->y), y);
-        cub::Store<MODIFIER>(&(ptr->z), z);
-        cub::Store<MODIFIER>(&(ptr->w), w);
+        cub::ThreadStore<MODIFIER>(&(ptr->x), x);
+        cub::ThreadStore<MODIFIER>(&(ptr->y), y);
+        cub::ThreadStore<MODIFIER>(&(ptr->z), z);
+        cub::ThreadStore<MODIFIER>(&(ptr->w), w);
     }
 };
 

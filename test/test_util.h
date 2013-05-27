@@ -707,16 +707,16 @@ struct TestBar
     __device__ __forceinline__
     void Load(TestBar *ptr)
     {
-        x = cub::Load<MODIFIER>(&(ptr->x));
-        y = cub::Load<MODIFIER>(&(ptr->y));
+        x = cub::ThreadLoad<MODIFIER>(&(ptr->x));
+        y = cub::ThreadLoad<MODIFIER>(&(ptr->y));
     }
 
      // Store
     template <cub::PtxStoreModifier MODIFIER>
     __device__ __forceinline__ void Store(TestBar *ptr) const
     {
-        cub::Store<MODIFIER>(&(ptr->x), x);
-        cub::Store<MODIFIER>(&(ptr->y), y);
+        cub::ThreadStore<MODIFIER>(&(ptr->x), x);
+        cub::ThreadStore<MODIFIER>(&(ptr->y), y);
     }
 };
 

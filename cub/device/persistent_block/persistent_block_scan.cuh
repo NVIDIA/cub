@@ -191,15 +191,15 @@ struct PersistentBlockScan
             unsigned int predecessor_idx = tile_idx - threadIdx.x - 1;
             do
             {
-                predecessor_status.status = Load<LOAD_CG>(block_scan->d_tile_status + predecessor_idx);
+                predecessor_status.status = ThreadLoad<LOAD_CG>(block_scan->d_tile_status + predecessor_idx);
                 __threadfence_block();
             }
             while (__all(predecessor_status.status != DEVICE_SCAN_TILE_PREFIX) || __any(predecessor_status.status == DEVICE_SCAN_TILE_INVALID));
 
             // Grab predecessor block's corresponding partial/prefix
             predecessor_status.value = (predecessor_status.status == DEVICE_SCAN_TILE_PREFIX) ?
-                Load<LOAD_CG>(block_scan->d_tile_prefixes + predecessor_idx) :
-                Load<LOAD_CG>(block_scan->d_tile_aggregates + predecessor_idx);
+                ThreadLoad<LOAD_CG>(block_scan->d_tile_prefixes + predecessor_idx) :
+                ThreadLoad<LOAD_CG>(block_scan->d_tile_aggregates + predecessor_idx);
 
             int flag = (predecessor_status.status != DEVICE_SCAN_TILE_PARTIAL);
 
@@ -244,15 +244,15 @@ struct PersistentBlockScan
             DeviceScanTileStatus predecessor_status;
             do
             {
-                predecessor_status = Load<LOAD_CG>(block_scan->d_tile_status + predecessor_idx);
+                predecessor_status = ThreadLoad<LOAD_CG>(block_scan->d_tile_status + predecessor_idx);
                 __threadfence_block();
             }
             while (predecessor_status == DEVICE_SCAN_TILE_INVALID);
 
             // Grab predecessor block's corresponding partial/prefix
             T predecessor_value = (predecessor_status == DEVICE_SCAN_TILE_PREFIX) ?
-                Load<LOAD_CG>(block_scan->d_tile_prefixes + predecessor_idx) :
-                Load<LOAD_CG>(block_scan->d_tile_aggregates + predecessor_idx);
+                ThreadLoad<LOAD_CG>(block_scan->d_tile_prefixes + predecessor_idx) :
+                ThreadLoad<LOAD_CG>(block_scan->d_tile_aggregates + predecessor_idx);
 
             // Perform a segmented reduction to get the prefix for the current window
             int flag = (predecessor_status != DEVICE_SCAN_TILE_PARTIAL);
@@ -273,15 +273,15 @@ struct PersistentBlockScan
                 // Wait for the window of predecessor blocks to become valid
                 do
                 {
-                    predecessor_status = Load<LOAD_CG>(block_scan->d_tile_status + predecessor_idx);
+                    predecessor_status = ThreadLoad<LOAD_CG>(block_scan->d_tile_status + predecessor_idx);
                     __threadfence_block();
                 }
                 while (predecessor_status == DEVICE_SCAN_TILE_INVALID);
 
                 // Grab predecessor block's corresponding partial/prefix
                 predecessor_value = (predecessor_status == DEVICE_SCAN_TILE_PREFIX) ?
-                    Load<LOAD_CG>(block_scan->d_tile_prefixes + predecessor_idx) :
-                    Load<LOAD_CG>(block_scan->d_tile_aggregates + predecessor_idx);
+                    ThreadLoad<LOAD_CG>(block_scan->d_tile_prefixes + predecessor_idx) :
+                    ThreadLoad<LOAD_CG>(block_scan->d_tile_aggregates + predecessor_idx);
 
                 // Perform a segmented reduction to get the prefix for the current window
                 flag = (predecessor_status != DEVICE_SCAN_TILE_PARTIAL);

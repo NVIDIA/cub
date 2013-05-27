@@ -86,7 +86,7 @@ __device__ __forceinline__ void LoadBlocked(
     for (int ITEM = 0; ITEM < ITEMS_PER_THREAD; ITEM++)
     {
         int item_offset = (threadIdx.x * ITEMS_PER_THREAD) + ITEM;
-        items[ITEM] = Load<MODIFIER>(block_itr + item_offset);
+        items[ITEM] = ThreadLoad<MODIFIER>(block_itr + item_offset);
     }
 }
 
@@ -120,7 +120,7 @@ __device__ __forceinline__ void LoadBlocked(
     {
         if (ITEM < bounds)
         {
-            items[ITEM] = Load<MODIFIER>(block_itr + (threadIdx.x * ITEMS_PER_THREAD) + ITEM);
+            items[ITEM] = ThreadLoad<MODIFIER>(block_itr + (threadIdx.x * ITEMS_PER_THREAD) + ITEM);
         }
     }
 }
@@ -155,7 +155,7 @@ __device__ __forceinline__ void LoadBlocked(
     for (int ITEM = 0; ITEM < ITEMS_PER_THREAD; ITEM++)
     {
         items[ITEM] = (ITEM < bounds) ?
-            Load<MODIFIER>(block_itr + (threadIdx.x * ITEMS_PER_THREAD) + ITEM) :
+            ThreadLoad<MODIFIER>(block_itr + (threadIdx.x * ITEMS_PER_THREAD) + ITEM) :
             oob_default;
     }
 }
@@ -195,7 +195,7 @@ __device__ __forceinline__ void LoadStriped(
     for (int ITEM = 0; ITEM < ITEMS_PER_THREAD; ITEM++)
     {
         int item_offset = (ITEM * block_stride) + threadIdx.x;
-        items[ITEM] = Load<MODIFIER>(block_itr + item_offset);
+        items[ITEM] = ThreadLoad<MODIFIER>(block_itr + item_offset);
     }
 }
 
@@ -230,7 +230,7 @@ __device__ __forceinline__ void LoadStriped(
     {
         if (ITEM * block_stride < bounds)
         {
-            items[ITEM] = Load<MODIFIER>(block_itr + threadIdx.x + (ITEM * block_stride));
+            items[ITEM] = ThreadLoad<MODIFIER>(block_itr + threadIdx.x + (ITEM * block_stride));
         }
     }
 }
@@ -266,7 +266,7 @@ __device__ __forceinline__ void LoadStriped(
     for (int ITEM = 0; ITEM < ITEMS_PER_THREAD; ITEM++)
     {
         items[ITEM] = (ITEM * block_stride < bounds) ?
-             Load<MODIFIER>(block_itr + threadIdx.x + (ITEM * block_stride)) :
+             ThreadLoad<MODIFIER>(block_itr + threadIdx.x + (ITEM * block_stride)) :
              oob_default;
     }
 }
@@ -315,7 +315,7 @@ __device__ __forceinline__ void LoadWarpStriped(
     #pragma unroll
     for (int ITEM = 0; ITEM < ITEMS_PER_THREAD; ITEM++)
     {
-        items[ITEM] = Load<MODIFIER>(block_itr + warp_offset + tid + (ITEM * warp_stride));
+        items[ITEM] = ThreadLoad<MODIFIER>(block_itr + warp_offset + tid + (ITEM * warp_stride));
     }
 }
 
@@ -359,7 +359,7 @@ __device__ __forceinline__ void LoadWarpStriped(
     {
         if ((ITEM * warp_stride) < bounds)
         {
-            items[ITEM] = Load<MODIFIER>(block_itr + warp_offset + tid + (ITEM * warp_stride));
+            items[ITEM] = ThreadLoad<MODIFIER>(block_itr + warp_offset + tid + (ITEM * warp_stride));
         }
     }
 }
@@ -404,7 +404,7 @@ __device__ __forceinline__ void LoadWarpStriped(
     for (int ITEM = 0; ITEM < ITEMS_PER_THREAD; ITEM++)
     {
         items[ITEM] = ((ITEM * warp_stride) < bounds) ?
-            Load<MODIFIER>(block_itr + warp_offset + tid + (ITEM * warp_stride)) :
+            ThreadLoad<MODIFIER>(block_itr + warp_offset + tid + (ITEM * warp_stride)) :
             oob_default;
     }
 }

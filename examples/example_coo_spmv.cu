@@ -437,8 +437,8 @@ struct PartialSum
     template <PtxLoadModifier MODIFIER>
     __device__ __forceinline__ void Load(PartialSum *ptr)
     {
-        partial = cub::Load<MODIFIER>(&(ptr->partial));
-        row = cub::Load<MODIFIER>(&(ptr->row));
+        partial = cub::ThreadLoad<MODIFIER>(&(ptr->partial));
+        row = cub::ThreadLoad<MODIFIER>(&(ptr->row));
     }
 
      /// Store (simply defer to storing individual items)
@@ -446,8 +446,8 @@ struct PartialSum
     __device__ __forceinline__ void Store(PartialSum *ptr) const
     {
         // Always write partial first
-        cub::Store<MODIFIER>(&(ptr->partial), partial);
-        cub::Store<MODIFIER>(&(ptr->row), row);
+        cub::ThreadStore<MODIFIER>(&(ptr->partial), partial);
+        cub::ThreadStore<MODIFIER>(&(ptr->row), row);
     }
 
 };
