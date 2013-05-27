@@ -169,7 +169,6 @@ __global__ void KernelGuarded(
 }
 
 
-
 //---------------------------------------------------------------------
 // Host testing subroutines
 //---------------------------------------------------------------------
@@ -197,6 +196,8 @@ void TestKernel(
     int                 grid_size,
     int                 guarded_elements)
 {
+    int compare;
+
     int unguarded_elements = grid_size * BLOCK_THREADS * ITEMS_PER_THREAD;
 
     // Run unguarded kernel
@@ -208,7 +209,7 @@ void TestKernel(
     CubDebugExit(cudaDeviceSynchronize());
 
     // Check results
-    int compare = CompareDeviceResults(h_in, d_out_unguarded, unguarded_elements, g_verbose, g_verbose);
+    compare = CompareDeviceResults(h_in, d_out_unguarded, unguarded_elements, g_verbose, g_verbose);
     printf("\tUnguarded: %s\n", (compare) ? "FAIL" : "PASS");
     AssertEquals(0, compare);
 
@@ -309,7 +310,25 @@ template <
     int                 WARP_TIME_SLICING>
 void TestIterator(
     int                 grid_size,
-    float               fraction_valid)
+    float               fraction_valid,
+    Int2Type<false>     is_integer)
+{}
+
+
+/**
+ * Test iterator (uses thrust counting iterator)
+ */
+template <
+    typename            T,
+    int                 BLOCK_THREADS,
+    int                 ITEMS_PER_THREAD,
+    BlockLoadAlgorithm  LOAD_POLICY,
+    BlockStorePolicy    STORE_POLICY,
+    int                 WARP_TIME_SLICING>
+void TestIterator(
+    int                 grid_size,
+    float               fraction_valid,
+    Int2Type<true>      is_integer)
 {
     typedef thrust::counting_iterator<T> Iterator;
 
@@ -378,7 +397,7 @@ void TestPointerAccess(
     TestNative<T, BLOCK_THREADS, ITEMS_PER_THREAD, LOAD_POLICY, STORE_POLICY, LOAD_DEFAULT, STORE_DEFAULT, WARP_TIME_SLICING>(grid_size, fraction_valid);
     TestNative<T, BLOCK_THREADS, ITEMS_PER_THREAD, LOAD_POLICY, STORE_POLICY, LOAD_CG, STORE_CG, WARP_TIME_SLICING>(grid_size, fraction_valid);
     TestNative<T, BLOCK_THREADS, ITEMS_PER_THREAD, LOAD_POLICY, STORE_POLICY, LOAD_CS, STORE_CS, WARP_TIME_SLICING>(grid_size, fraction_valid);
-    TestIterator<T, BLOCK_THREADS, ITEMS_PER_THREAD, LOAD_POLICY, STORE_POLICY, WARP_TIME_SLICING>(grid_size, fraction_valid);
+    TestIterator<T, BLOCK_THREADS, ITEMS_PER_THREAD, LOAD_POLICY, STORE_POLICY, WARP_TIME_SLICING>(grid_size, fraction_valid, Int2Type<((Traits<T>::CATEGORY == SIGNED_INTEGER) || (Traits<T>::CATEGORY == UNSIGNED_INTEGER))>());
 }
 
 
@@ -493,13 +512,14 @@ int main(int argc, char** argv)
     CubDebugExit(args.DeviceInit());
 
     // Simple test
-    TestNative<int, 64, 2, BLOCK_LOAD_WARP_TRANSPOSE, BLOCK_STORE_WARP_TRANSPOSE, LOAD_DEFAULT, STORE_DEFAULT, true>(1, 0.8);
+//    TestNative<int, 64, 2, BLOCK_LOAD_WARP_TRANSPOSE, BLOCK_STORE_WARP_TRANSPOSE, LOAD_DEFAULT, STORE_DEFAULT, true>(1, 0.8);
+    TestNative<int4, 64, 2, BLOCK_LOAD_DIRECT, BLOCK_STORE_DIRECT, LOAD_CG, STORE_DEFAULT, true>(1, 0.8);
 
     // Evaluate different data types
 //    TestThreads<char>(2, 0.8);
 //    TestThreads<int>(2, 0.8);
 //    TestThreads<int4>(2, 0.8);
-    TestThreads<TestFoo>(2, 0.8);
+//    TestThreads<TestBar>(2, 0.8);
 
     return 0;
 }

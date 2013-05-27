@@ -85,7 +85,7 @@ __device__ __forceinline__ void StoreBlocked(
     for (int ITEM = 0; ITEM < ITEMS_PER_THREAD; ITEM++)
     {
         int item_offset = (threadIdx.x * ITEMS_PER_THREAD) + ITEM;
-        Store<MODIFIER>(block_itr + item_offset, items[ITEM]);
+        ThreadStore<MODIFIER>(block_itr + item_offset, items[ITEM]);
     }
 }
 
@@ -118,7 +118,7 @@ __device__ __forceinline__ void StoreBlocked(
     {
         if (ITEM + (threadIdx.x * ITEMS_PER_THREAD) < guarded_items)
         {
-            Store<MODIFIER>(block_itr + (threadIdx.x * ITEMS_PER_THREAD) + ITEM, items[ITEM]);
+            ThreadStore<MODIFIER>(block_itr + (threadIdx.x * ITEMS_PER_THREAD) + ITEM, items[ITEM]);
         }
     }
 }
@@ -159,7 +159,7 @@ __device__ __forceinline__ void StoreStriped(
     for (int ITEM = 0; ITEM < ITEMS_PER_THREAD; ITEM++)
     {
         int item_offset = (ITEM * block_stride) + threadIdx.x;
-        Store<MODIFIER>(block_itr + item_offset, items[ITEM]);
+        ThreadStore<MODIFIER>(block_itr + item_offset, items[ITEM]);
     }
 }
 
@@ -193,7 +193,7 @@ __device__ __forceinline__ void StoreStriped(
     {
         if ((ITEM * block_stride) + threadIdx.x < guarded_items)
         {
-            Store<MODIFIER>(block_itr + (ITEM * block_stride) + threadIdx.x, items[ITEM]);
+            ThreadStore<MODIFIER>(block_itr + (ITEM * block_stride) + threadIdx.x, items[ITEM]);
         }
     }
 }
@@ -242,7 +242,7 @@ __device__ __forceinline__ void StoreWarpStriped(
     #pragma unroll
     for (int ITEM = 0; ITEM < ITEMS_PER_THREAD; ITEM++)
     {
-        Store<MODIFIER>(block_itr + warp_offset + tid + (ITEM * warp_stride), items[ITEM]);
+        ThreadStore<MODIFIER>(block_itr + warp_offset + tid + (ITEM * warp_stride), items[ITEM]);
     }
 }
 
@@ -285,7 +285,7 @@ __device__ __forceinline__ void StoreWarpStriped(
     {
         if (warp_offset + tid + (ITEM * warp_stride) < guarded_items)
         {
-            Store<MODIFIER>(block_itr + warp_offset + tid + (ITEM * warp_stride), items[ITEM]);
+            ThreadStore<MODIFIER>(block_itr + warp_offset + tid + (ITEM * warp_stride), items[ITEM]);
         }
     }
 }

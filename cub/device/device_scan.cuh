@@ -387,7 +387,7 @@ struct DeviceScan
             // Run initialization kernel
             int init_kernel_threads = 128;
             int init_grid_size = (num_tiles + init_kernel_threads - 1) / init_kernel_threads;
-            if (stream_synchronous) CubLog("Invoking init_kernel_ptr<<<%d, %d, 0, %d>>>()\n", init_grid_size, init_kernel_threads, (int) stream);
+            if (stream_synchronous) CubLog("Invoking init_kernel_ptr<<<%d, %d, 0, %lld>>>()\n", init_grid_size, init_kernel_threads, (long long) stream);
 
             init_kernel_ptr<<<init_grid_size, init_kernel_threads, 0, stream>>>(queue, d_tile_status, num_tiles);
 
@@ -434,8 +434,8 @@ struct DeviceScan
                 multi_occupancy;            // Fill the device with threadblocks
 
             // Invoke MultiBlockScan
-            if (stream_synchronous) CubLog("Invoking multi_block_kernel_ptr<<<%d, %d, 0, %d>>>(), %d items per thread, %d SM occupancy\n",
-                multi_grid_size, multi_block_dispatch_params.block_threads, (int) stream, multi_block_dispatch_params.items_per_thread, multi_sm_occupancy);
+            if (stream_synchronous) CubLog("Invoking multi_block_kernel_ptr<<<%d, %d, 0, %lld>>>(), %d items per thread, %d SM occupancy\n",
+                multi_grid_size, multi_block_dispatch_params.block_threads, (long long) stream, multi_block_dispatch_params.items_per_thread, multi_sm_occupancy);
 
             multi_block_kernel_ptr<<<multi_grid_size, multi_block_dispatch_params.block_threads, 0, stream>>>(
                 d_in,

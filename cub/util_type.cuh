@@ -187,6 +187,24 @@ struct Equals <A, A>
 
 
 /******************************************************************************
+ * Size and alignment
+ ******************************************************************************/
+
+template <typename T>
+struct WordAlignment
+{
+    typedef typename If<(sizeof(T) % 16 == 0),
+        int4,
+        typename If<(sizeof(T) % 8 == 0),
+            int2,
+            typename If<(sizeof(T) % 4 == 0),
+                int,
+                typename If<(sizeof(T) % 2 == 0),
+                    short,
+                    char>::Type>::Type>::Type>::Type Type;
+};
+
+/******************************************************************************
  * Pointer vs. iterator detection
  ******************************************************************************/
 
