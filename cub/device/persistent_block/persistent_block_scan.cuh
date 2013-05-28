@@ -60,9 +60,106 @@ enum
 
 
 /**
- * Data type of tile status word
+ * Data type of tile status word.  Specialized for scan types that can be
+ * combined with a status flag to form a single word that can be singly read/written
+ * (i.e., power-of-two-sized data less than or equal to 8B).
  */
-typedef int DeviceScanTileStatus;
+template <
+    typename T,
+    bool SINGLE_WORD = (((sizeof(T) & (sizeof(T)  - 1)) == 0) && sizeof(T) <= 8)>
+struct DeviceScanTileStatus
+{
+    T                                               value;
+    typename WordAlignment<T>::VolatileAlignWord    status;
+
+    static __device__ __forceinline__ void SetPrefix(DeviceScanTileStatus *ptr, T prefix)
+    {
+        DeviceScanTileStatus tile_status;
+        tile_status.status = DEVICE_SCAN_TILE_PREFIX;
+        tile_status.value = prefix;
+        ThreadStore<STORE_CG>(ptr, tile_status);
+    }
+
+    static __device__ __forceinline__ void SetPartial(DeviceScanTileStatus *ptr, T partial)
+    {
+        DeviceScanTileStatus tile_status;
+        tile_status.status = DEVICE_SCAN_TILE_PARTIAL;
+        tile_status.value = partial;
+        ThreadStore<STORE_CG>(ptr, tile_status);
+    }
+
+    static __device__ __forceinline__ void WaitForValid(
+        DeviceScanTileStatus    *ptr,
+        int                     &status,
+        T                       &value)
+    {
+        DeviceScanTileStatus tile_status;
+        while (true)
+        {
+            tile_status = ThreadLoad<LOAD_CG>(ptr);
+            if (tile_status.status != DEVICE_SCAN_TILE_INVALID) break;
+            __threadfence_block();
+
+            tile_status = ThreadLoad<LOAD_CG>(ptr);
+            if (tile_status.status != DEVICE_SCAN_TILE_INVALID) break;
+            __threadfence_block();
+        }
+
+        status = tile_status.status;
+        value = tile_status.value;
+    }
+
+};
+
+
+/**
+ * Data type of tile status word.  Specialized for scan types that cannot be
+ * combined with a status flag to form a single word that can be singly read/written
+ * (i.e., non-power-of-two-sized data or data greater than 8B).
+ */
+template <typename T>
+struct DeviceScanTileStatus<T, false>
+{
+    T       prefix_value;
+    T       partial_value;
+    int     status;
+
+    static __device__ __forceinline__ void SetPrefix(DeviceScanTileStatus *ptr, T prefix)
+    {
+        ThreadStore<STORE_CG>(&ptr->prefix_value, prefix);
+        __threadfence_block();  // We can get away with not using a global fence because the fields will all be on the same cache line
+        ThreadStore<STORE_CG>(&ptr->status, DEVICE_SCAN_TILE_PREFIX);
+    }
+
+    static __device__ __forceinline__ void SetPartial(DeviceScanTileStatus *ptr, T partial)
+    {
+        ThreadStore<STORE_CG>(&ptr->partial_value, partial);
+        __threadfence_block();  // We can get away with not using a global fence because the fields will all be on the same cache line
+        ThreadStore<STORE_CG>(&ptr->status, DEVICE_SCAN_TILE_PARTIAL);
+    }
+
+    static __device__ __forceinline__ void WaitForValid(
+        DeviceScanTileStatus    *ptr,
+        int                     &status,
+        T                       &value)
+    {
+        while (true)
+        {
+            status = ThreadLoad<LOAD_CG>(&ptr->status);
+            if (__all(status != DEVICE_SCAN_TILE_INVALID)) break;
+            __threadfence_block();
+
+            status = ThreadLoad<LOAD_CG>(&ptr->status);
+            if (__all(status != DEVICE_SCAN_TILE_INVALID)) break;
+            __threadfence_block();
+        }
+
+        T partial   = ThreadLoad<LOAD_CG>(&ptr->partial_value);
+        T prefix    = ThreadLoad<LOAD_CG>(&ptr->prefix_value);
+
+        value = (status == DEVICE_SCAN_TILE_PARTIAL) ? partial : prefix;
+    }
+};
 
 
 /**
@@ -71,20 +168,26 @@ typedef int DeviceScanTileStatus;
 template <
     int                         _BLOCK_THREADS,
     int                         _ITEMS_PER_THREAD,
-    BlockLoadAlgorithm             _LOAD_POLICY,
+    BlockLoadAlgorithm          _LOAD_POLICY,
+    PtxLoadModifier             _LOAD_MODIFIER,
+    bool                        _LOAD_WARP_TIME_SLICING,
     BlockStorePolicy            _STORE_POLICY,
+    bool                        _STORE_WARP_TIME_SLICING,
     BlockScanAlgorithm          _SCAN_ALGORITHM>
 struct PersistentBlockScanPolicy
 {
     enum
     {
-        BLOCK_THREADS       = _BLOCK_THREADS,
-        ITEMS_PER_THREAD    = _ITEMS_PER_THREAD,
+        BLOCK_THREADS           = _BLOCK_THREADS,
+        ITEMS_PER_THREAD        = _ITEMS_PER_THREAD,
+        LOAD_WARP_TIME_SLICING  = _LOAD_WARP_TIME_SLICING,
+        STORE_WARP_TIME_SLICING = _STORE_WARP_TIME_SLICING,
     };
 
-    static const BlockLoadAlgorithm        LOAD_POLICY      = _LOAD_POLICY;
-    static const BlockStorePolicy       STORE_POLICY     = _STORE_POLICY;
-    static const BlockScanAlgorithm     SCAN_ALGORITHM   = _SCAN_ALGORITHM;
+    static const BlockLoadAlgorithm     LOAD_POLICY     = _LOAD_POLICY;
+    static const PtxLoadModifier        LOAD_MODIFIER   = _LOAD_MODIFIER;
+    static const BlockStorePolicy       STORE_POLICY    = _STORE_POLICY;
+    static const BlockScanAlgorithm     SCAN_ALGORITHM  = _SCAN_ALGORITHM;
 };
 
 
@@ -122,23 +225,27 @@ struct PersistentBlockScan
         InputIteratorRA,
         PersistentBlockScanPolicy::BLOCK_THREADS,
         PersistentBlockScanPolicy::ITEMS_PER_THREAD,
-        PersistentBlockScanPolicy::LOAD_POLICY>         BlockLoadT;
+        PersistentBlockScanPolicy::LOAD_POLICY,
+        PersistentBlockScanPolicy::LOAD_MODIFIER,
+        PersistentBlockScanPolicy::LOAD_WARP_TIME_SLICING>  BlockLoadT;
 
     // Parameterized block store
     typedef BlockStore<
         OutputIteratorRA,
         PersistentBlockScanPolicy::BLOCK_THREADS,
         PersistentBlockScanPolicy::ITEMS_PER_THREAD,
-        PersistentBlockScanPolicy::STORE_POLICY>        BlockStoreT;
+        PersistentBlockScanPolicy::STORE_POLICY,
+        STORE_DEFAULT,
+        PersistentBlockScanPolicy::STORE_WARP_TIME_SLICING> BlockStoreT;
 
     // Parameterized block scan
     typedef BlockScan<
         T,
         PersistentBlockScanPolicy::BLOCK_THREADS,
-        PersistentBlockScanPolicy::SCAN_ALGORITHM>      BlockScanT;
+        PersistentBlockScanPolicy::SCAN_ALGORITHM>          BlockScanT;
 
     // Parameterized warp reduce
-    typedef WarpReduce<T>                               WarpReduceT;
+    typedef WarpReduce<T>                                   WarpReduceT;
 
     // Shared memory type for this threadblock
     struct SmemStorage
@@ -173,58 +280,24 @@ struct PersistentBlockScan
                 tile_idx(tile_idx) {}
 
 
-/*
-        // Prefix functor (called by the first warp)
+        // Block until all predecessors within the specified window have non-invalid status
         __device__ __forceinline__
-        T operator()(T block_aggregate)
+        void ProcessWindow(
+            int                         predecessor_idx,
+            int                         &predecessor_status,
+            T                           &window_prefix)
         {
-            // Update our status with our tile-aggregate
-            if (threadIdx.x == 0)
-            {
-                block_scan->d_tile_aggregates[tile_idx] = block_aggregate;
-                __threadfence_block();
-                block_scan->d_tile_status[tile_idx] = DEVICE_SCAN_TILE_PARTIAL;
-            }
+            T value;
+            DeviceScanTileStatus<T>::WaitForValid(block_scan->d_tile_status + predecessor_idx, predecessor_status, value);
 
-            // Wait for all predecessor blocks to become valid and at least one prefix to show up.
-            PredecessorTile predecessor_status;
-            unsigned int predecessor_idx = tile_idx - threadIdx.x - 1;
-            do
-            {
-                predecessor_status.status = ThreadLoad<LOAD_CG>(block_scan->d_tile_status + predecessor_idx);
-                __threadfence_block();
-            }
-            while (__all(predecessor_status.status != DEVICE_SCAN_TILE_PREFIX) || __any(predecessor_status.status == DEVICE_SCAN_TILE_INVALID));
-
-            // Grab predecessor block's corresponding partial/prefix
-            predecessor_status.value = (predecessor_status.status == DEVICE_SCAN_TILE_PREFIX) ?
-                ThreadLoad<LOAD_CG>(block_scan->d_tile_prefixes + predecessor_idx) :
-                ThreadLoad<LOAD_CG>(block_scan->d_tile_aggregates + predecessor_idx);
-
-            int flag = (predecessor_status.status != DEVICE_SCAN_TILE_PARTIAL);
-
-            T prefix = WarpReduceT::SegmentedReduce(
+            // Perform a segmented reduction to get the prefix for the current window
+            int flag = (predecessor_status != DEVICE_SCAN_TILE_PARTIAL);
+            window_prefix = WarpReduceT::SegmentedReduce(
                 block_scan->smem_storage.warp_reduce,
-                predecessor_status.value,
+                value,
                 flag,
                 block_scan->scan_op);
-
-            // Update our status with our inclusive prefix
-            if (threadIdx.x == 0)
-            {
-                T inclusive_prefix = block_scan->scan_op(prefix, block_aggregate);
-
-                block_scan->d_tile_prefixes[tile_idx] = inclusive_prefix;
-                __threadfence_block();
-                block_scan->d_tile_status[tile_idx] = DEVICE_SCAN_TILE_PREFIX;
-            }
-
-            // Return block-wide exclusive prefix
-            return prefix;
         }
-*/
-
-
 
         // Prefix functor (called by the first warp)
         __device__ __forceinline__
@@ -233,34 +306,16 @@ struct PersistentBlockScan
             // Update our status with our tile-aggregate
             if (threadIdx.x == 0)
             {
-                block_scan->d_tile_aggregates[tile_idx] = block_aggregate;
-                __threadfence_block();
-                block_scan->d_tile_status[tile_idx] = DEVICE_SCAN_TILE_PARTIAL;
+                DeviceScanTileStatus<T>::SetPartial(
+                    block_scan->d_tile_status + tile_idx,
+                    block_aggregate);
             }
 
             // Wait for the window of predecessor blocks to become valid
             int predecessor_idx = tile_idx - threadIdx.x - 1;
-
-            DeviceScanTileStatus predecessor_status;
-            do
-            {
-                predecessor_status = ThreadLoad<LOAD_CG>(block_scan->d_tile_status + predecessor_idx);
-                __threadfence_block();
-            }
-            while (predecessor_status == DEVICE_SCAN_TILE_INVALID);
-
-            // Grab predecessor block's corresponding partial/prefix
-            T predecessor_value = (predecessor_status == DEVICE_SCAN_TILE_PREFIX) ?
-                ThreadLoad<LOAD_CG>(block_scan->d_tile_prefixes + predecessor_idx) :
-                ThreadLoad<LOAD_CG>(block_scan->d_tile_aggregates + predecessor_idx);
-
-            // Perform a segmented reduction to get the prefix for the current window
-            int flag = (predecessor_status != DEVICE_SCAN_TILE_PARTIAL);
-            T window_prefix = WarpReduceT::SegmentedReduce(
-                block_scan->smem_storage.warp_reduce,
-                predecessor_value,
-                flag,
-                block_scan->scan_op);
+            int predecessor_status;
+            T window_prefix;
+            ProcessWindow(predecessor_idx, predecessor_status, window_prefix);
 
             // The block prefix starts out as the current window prefix
             T block_prefix = window_prefix;
@@ -270,39 +325,17 @@ struct PersistentBlockScan
             {
                 predecessor_idx -= PtxArchProps::WARP_THREADS;
 
-                // Wait for the window of predecessor blocks to become valid
-                do
-                {
-                    predecessor_status = ThreadLoad<LOAD_CG>(block_scan->d_tile_status + predecessor_idx);
-                    __threadfence_block();
-                }
-                while (predecessor_status == DEVICE_SCAN_TILE_INVALID);
-
-                // Grab predecessor block's corresponding partial/prefix
-                predecessor_value = (predecessor_status == DEVICE_SCAN_TILE_PREFIX) ?
-                    ThreadLoad<LOAD_CG>(block_scan->d_tile_prefixes + predecessor_idx) :
-                    ThreadLoad<LOAD_CG>(block_scan->d_tile_aggregates + predecessor_idx);
-
-                // Perform a segmented reduction to get the prefix for the current window
-                flag = (predecessor_status != DEVICE_SCAN_TILE_PARTIAL);
-                window_prefix = WarpReduceT::SegmentedReduce(
-                    block_scan->smem_storage.warp_reduce,
-                    predecessor_value,
-                    flag,
-                    block_scan->scan_op);
-
                 // Update block prefix with the window prefix
+                ProcessWindow(predecessor_idx, predecessor_status, window_prefix);
                 block_prefix = block_scan->scan_op(window_prefix, block_prefix);
             }
 
             // Update our status with our inclusive block_prefix
             if (threadIdx.x == 0)
             {
-                T inclusive_prefix = block_scan->scan_op(block_prefix, block_aggregate);
-
-                block_scan->d_tile_prefixes[tile_idx] = inclusive_prefix;
-                __threadfence_block();
-                block_scan->d_tile_status[tile_idx] = DEVICE_SCAN_TILE_PREFIX;
+                DeviceScanTileStatus<T>::SetPrefix(
+                    block_scan->d_tile_status + tile_idx,
+                    block_scan->scan_op(block_prefix, block_aggregate));
             }
 
             // Return block-wide exclusive block_prefix
@@ -315,15 +348,13 @@ struct PersistentBlockScan
     // Per-thread fields
     //---------------------------------------------------------------------
 
-    SmemStorage             &smem_storage;      ///< Reference to smem_storage
-    InputIteratorRA         d_in;               ///< Input data
-    OutputIteratorRA        d_out;              ///< Output data
-    T                       *d_tile_aggregates; ///< Global list of block aggregates
-    T                       *d_tile_prefixes;   ///< Global list of block inclusive prefixes
-    DeviceScanTileStatus    *d_tile_status;     ///< Global list of tile status
-    ScanOp                  scan_op;            ///< Binary scan operator
-    Identity                identity;           ///< Identity element
-    SizeT                   num_items;          ///< Total number of scan items for the entire problem
+    SmemStorage                 &smem_storage;      ///< Reference to smem_storage
+    InputIteratorRA             d_in;               ///< Input data
+    OutputIteratorRA            d_out;              ///< Output data
+    DeviceScanTileStatus<T>     *d_tile_status;     ///< Global list of tile status
+    ScanOp                      scan_op;            ///< Binary scan operator
+    Identity                    identity;           ///< Identity element
+    SizeT                       num_items;          ///< Total number of scan items for the entire problem
 
 
 
@@ -334,20 +365,16 @@ struct PersistentBlockScan
     // Constructor
     __device__ __forceinline__
     PersistentBlockScan(
-        SmemStorage             &smem_storage,      ///< Reference to smem_storage
-        InputIteratorRA         d_in,               ///< Input data
-        OutputIteratorRA        d_out,              ///< Output data
-        T                       *d_tile_aggregates, ///< Global list of block aggregates
-        T                       *d_tile_prefixes,   ///< Global list of block inclusive prefixes
-        DeviceScanTileStatus    *d_tile_status,     ///< Global list of tile status
-        ScanOp                  scan_op,            ///< Binary scan operator
-        Identity                identity,           ///< Identity element
-        SizeT                   num_items) :        ///< Total number of scan items for the entire problem
+        SmemStorage                 &smem_storage,      ///< Reference to smem_storage
+        InputIteratorRA             d_in,               ///< Input data
+        OutputIteratorRA            d_out,              ///< Output data
+        DeviceScanTileStatus<T>     *d_tile_status,     ///< Global list of tile status
+        ScanOp                      scan_op,            ///< Binary scan operator
+        Identity                    identity,           ///< Identity element
+        SizeT                       num_items) :        ///< Total number of scan items for the entire problem
             smem_storage(smem_storage),
             d_in(d_in),
             d_out(d_out),
-            d_tile_aggregates(d_tile_aggregates),
-            d_tile_prefixes(d_tile_prefixes),
             d_tile_status(d_tile_status + STATUS_PADDING),
             scan_op(scan_op),
             identity(identity),
@@ -460,9 +487,7 @@ struct PersistentBlockScan
             // Update tile status
             if (threadIdx.x == 0)
             {
-                d_tile_prefixes[0] = block_aggregate;
-                __threadfence_block();
-                d_tile_status[0] = DEVICE_SCAN_TILE_PREFIX;
+                DeviceScanTileStatus<T>::SetPrefix(d_tile_status, block_aggregate);
             }
         }
         else

@@ -523,12 +523,9 @@ private:
 
             if (lane_id == src_lane)
             {
-                ThreadStore<STORE_VS>(smem_storage.warp_scan[warp_id], input);
+                ThreadStore<STORE_VOLATILE>(smem_storage.warp_scan[warp_id], input);
             }
 
-#if (CUB_PTX_ARCH <= 110)
-            __threadfence_block();
-#endif
             return ThreadLoad<LOAD_VOLATILE>(smem_storage.warp_scan[warp_id]);
         }
 
@@ -547,7 +544,7 @@ private:
                 const int OFFSET = 1 << STEP;
 
                 // Share partial into buffer
-                ThreadStore<STORE_VS>(&smem_storage.warp_scan[warp_id][HALF_WARP_THREADS + lane_id], partial);
+                ThreadStore<STORE_VOLATILE>(&smem_storage.warp_scan[warp_id][HALF_WARP_THREADS + lane_id], partial);
 
                 // Update partial if addend is in range
                 if (HAS_IDENTITY || (lane_id >= OFFSET))
@@ -590,7 +587,7 @@ private:
             if (SHARE_FINAL)
             {
                 // Share partial into buffer
-                ThreadStore<STORE_VS>(&smem_storage.warp_scan[warp_id][HALF_WARP_THREADS + lane_id], partial);
+                ThreadStore<STORE_VOLATILE>(&smem_storage.warp_scan[warp_id][HALF_WARP_THREADS + lane_id], partial);
             }
 
             return partial;
@@ -608,7 +605,7 @@ private:
             unsigned int lane_id = (WARPS == 1) ? threadIdx.x : (threadIdx.x & (LOGICAL_WARP_THREADS - 1));
 
             // Initialize identity region
-            ThreadStore<STORE_VS>(&smem_storage.warp_scan[warp_id][lane_id], T(0));
+            ThreadStore<STORE_VOLATILE>(&smem_storage.warp_scan[warp_id][lane_id], T(0));
 
             // Compute inclusive warp scan (has identity, don't share final)
             output = BasicScan<true, false>(
@@ -632,7 +629,7 @@ private:
             unsigned int lane_id = (WARPS == 1) ? threadIdx.x : (threadIdx.x & (LOGICAL_WARP_THREADS - 1));
 
             // Initialize identity region
-            ThreadStore<STORE_VS>(&smem_storage.warp_scan[warp_id][lane_id], T(0));
+            ThreadStore<STORE_VOLATILE>(&smem_storage.warp_scan[warp_id][lane_id], T(0));
 
             // Compute inclusive warp scan (has identity, share final)
             output = BasicScan<true, true>(
@@ -708,7 +705,7 @@ private:
             unsigned int lane_id = (WARPS == 1) ? threadIdx.x : (threadIdx.x & (LOGICAL_WARP_THREADS - 1));
 
             // Initialize identity region
-            ThreadStore<STORE_VS>(&smem_storage.warp_scan[warp_id][lane_id], identity);
+            ThreadStore<STORE_VOLATILE>(&smem_storage.warp_scan[warp_id][lane_id], identity);
 
             // Compute inclusive warp scan (identity, share final)
             T inclusive = BasicScan<true, true>(

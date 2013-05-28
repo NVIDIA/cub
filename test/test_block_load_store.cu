@@ -108,6 +108,7 @@ __global__ void Kernel(
 
     // Store data
     BlockStore::Store(smem_storage.store, d_out_unguarded + block_offset, data);
+
 }
 
 
@@ -396,7 +397,6 @@ void TestPointerAccess(
 {
     TestNative<T, BLOCK_THREADS, ITEMS_PER_THREAD, LOAD_POLICY, STORE_POLICY, LOAD_DEFAULT, STORE_DEFAULT, WARP_TIME_SLICING>(grid_size, fraction_valid);
     TestNative<T, BLOCK_THREADS, ITEMS_PER_THREAD, LOAD_POLICY, STORE_POLICY, LOAD_CG, STORE_CG, WARP_TIME_SLICING>(grid_size, fraction_valid);
-    TestNative<T, BLOCK_THREADS, ITEMS_PER_THREAD, LOAD_POLICY, STORE_POLICY, LOAD_CS, STORE_CS, WARP_TIME_SLICING>(grid_size, fraction_valid);
     TestIterator<T, BLOCK_THREADS, ITEMS_PER_THREAD, LOAD_POLICY, STORE_POLICY, WARP_TIME_SLICING>(grid_size, fraction_valid, Int2Type<((Traits<T>::CATEGORY == SIGNED_INTEGER) || (Traits<T>::CATEGORY == UNSIGNED_INTEGER))>());
 }
 
@@ -513,13 +513,15 @@ int main(int argc, char** argv)
 
     // Simple test
 //    TestNative<int, 64, 2, BLOCK_LOAD_WARP_TRANSPOSE, BLOCK_STORE_WARP_TRANSPOSE, LOAD_DEFAULT, STORE_DEFAULT, true>(1, 0.8);
-    TestNative<int4, 64, 2, BLOCK_LOAD_DIRECT, BLOCK_STORE_DIRECT, LOAD_CG, STORE_DEFAULT, true>(1, 0.8);
 
     // Evaluate different data types
-//    TestThreads<char>(2, 0.8);
-//    TestThreads<int>(2, 0.8);
-//    TestThreads<int4>(2, 0.8);
-//    TestThreads<TestBar>(2, 0.8);
+/*
+    TestThreads<char>(2, 0.8);
+    TestThreads<int>(2, 0.8);
+    TestThreads<double2>(2, 0.8);
+    TestThreads<TestFoo>(2, 0.8);
+*/
+    TestThreads<TestBar>(2, 0.8);
 
     return 0;
 }

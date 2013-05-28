@@ -61,7 +61,6 @@ namespace cub {
  */
 enum PtxLoadModifier
 {
-    // Global load modifiers
     LOAD_DEFAULT,       ///< Default (no modifier)
     LOAD_CA,            ///< Cache at all levels
     LOAD_CG,            ///< Cache at global level
@@ -78,9 +77,7 @@ enum PtxLoadModifier
  * Helper structure for giving type errors when combining non-default load
  * modifiers with (a) iterators or (b) pointers to non-primitives
  */
-template <
-    typename            InputIteratorRA,
-    typename            AlignWord>
+template <typename InputIteratorRA>
 struct ThreadLoadHelper;
 
 #endif // DOXYGEN_SHOULD_SKIP_THIS
@@ -128,10 +125,11 @@ template <
 __device__ __forceinline__ typename std::iterator_traits<InputIteratorRA>::value_type ThreadLoad(InputIteratorRA itr)
 {
     typedef typename std::iterator_traits<InputIteratorRA>::value_type T;
-    return ThreadLoadHelper<
-        InputIteratorRA,
-        typename WordAlignment<T>::Type>::template Load<MODIFIER>(itr);
+    typedef ThreadLoadHelper<InputIteratorRA> Helper;
+    return Helper::template Load<MODIFIER>(itr);
 }
+
+
 
 //@}  end member group
 
@@ -141,18 +139,18 @@ __device__ __forceinline__ typename std::iterator_traits<InputIteratorRA>::value
 
 
 /// ThreadLoadHelper specialized for iterators
-template <
-    typename    InputIteratorRA,
-    typename    AlignWord>
+template <typename InputIteratorRA>
 struct ThreadLoadHelper
 {
+    typedef typename std::iterator_traits<InputIteratorRA>::value_type  T;
+    typedef typename WordAlignment<T>::AlignWord                        AlignWord;
+    typedef typename WordAlignment<T>::VolatileAlignWord                VolatileAlignWord;
+
     template <PtxLoadModifier MODIFIER>
-    static __device__ __forceinline__ typename std::iterator_traits<InputIteratorRA>::value_type Load(
-        InputIteratorRA itr);
+    static __device__ __forceinline__ T Load(InputIteratorRA itr);
 
     template <>
-    static __device__ __forceinline__ typename std::iterator_traits<InputIteratorRA>::value_type Load<LOAD_DEFAULT>(
-        InputIteratorRA itr)
+    static __device__ __forceinline__ T Load<LOAD_DEFAULT>(InputIteratorRA itr)
     {
         // Straightforward dereference
         return *itr;
@@ -161,11 +159,17 @@ struct ThreadLoadHelper
 
 
 /// ThreadLoadHelper specialized for native pointer types
-template <
-    typename            T,
-    typename            AlignWord>
-struct ThreadLoadHelper<T*, AlignWord>
+template <typename T>
+struct ThreadLoadHelper<T*>
 {
+    typedef typename WordAlignment<T>::AlignWord                        AlignWord;
+    typedef typename WordAlignment<T>::VolatileAlignWord                VolatileAlignWord;
+
+    enum {
+        ALIGN_UNROLL            = sizeof(T) / sizeof(AlignWord),
+        VOLATILE_ALIGN_UNROLL   = sizeof(T) / sizeof(VolatileAlignWord),
+    };
+
     template <PtxLoadModifier MODIFIER>
     static __device__ __forceinline__ T Load(T *ptr)
     {
@@ -174,8 +178,33 @@ struct ThreadLoadHelper<T*, AlignWord>
         AlignWord *alias_ptr     = reinterpret_cast<AlignWord*>(ptr);
 
         #pragma unroll
-        for (int i = 0; i < sizeof(T) / sizeof(AlignWord); ++i)
+        for (int i = 0; i < ALIGN_UNROLL; ++i)
             alias[i] = ThreadLoad<MODIFIER>(alias_ptr + i);
+
+        return retval;
+    }
+
+    template <>
+    static __device__ __forceinline__ T Load<LOAD_VOLATILE>(T *ptr)
+    {
+        T retval;
+
+#if (CUB_PTX_ARCH <= 130)
+
+        retval = *ptr;
+        __threadfence_block();
+
+
+#else
+
+        VolatileAlignWord *alias                = reinterpret_cast<VolatileAlignWord*>(&retval);
+        volatile VolatileAlignWord *alias_ptr   = reinterpret_cast<volatile VolatileAlignWord*>(ptr);
+
+        #pragma unroll
+        for (int i = 0; i < VOLATILE_ALIGN_UNROLL; ++i)
+            alias[i] = alias_ptr[i];
+
+#endif
 
         return retval;
     }
@@ -194,7 +223,7 @@ struct ThreadLoadHelper<T*, AlignWord>
  */
 #define CUB_LOAD_16(cub_modifier, ptx_modifier)                                             \
     template<>                                                                              \
-    static __device__ __forceinline__ int4 ThreadLoad<cub_modifier, int4*>(int4* ptr)       \
+    __device__ __forceinline__ int4 ThreadLoad<cub_modifier, int4*>(int4* ptr)              \
     {                                                                                       \
         int4 retval;                                                                        \
         asm volatile ("ld."#ptx_modifier".v4.s32 {%0, %1, %2, %3}, [%4];" :                 \
@@ -212,7 +241,7 @@ struct ThreadLoadHelper<T*, AlignWord>
  */
 #define CUB_LOAD_8(cub_modifier, ptx_modifier)                                              \
     template<>                                                                              \
-    static __device__ __forceinline__ int2 ThreadLoad<cub_modifier, int2*>(int2* ptr)       \
+    __device__ __forceinline__ int2 ThreadLoad<cub_modifier, int2*>(int2* ptr)              \
     {                                                                                       \
         int2 retval;                                                                        \
         asm volatile ("ld."#ptx_modifier".v2.s32 {%0, %1}, [%2];" :                         \
@@ -222,13 +251,12 @@ struct ThreadLoadHelper<T*, AlignWord>
         return retval;                                                                      \
     }
 
-
 /**
  * Define a int (4B) ThreadLoad specialization for the given PTX load modifier
  */
 #define CUB_LOAD_4(cub_modifier, ptx_modifier)                                              \
     template<>                                                                              \
-    static __device__ __forceinline__ int ThreadLoad<cub_modifier, int*>(int* ptr)          \
+    __device__ __forceinline__ int ThreadLoad<cub_modifier, int*>(int* ptr)                 \
     {                                                                                       \
         int retval;                                                                         \
         asm volatile ("ld."#ptx_modifier".s32 %0, [%1];" :                                  \
@@ -243,7 +271,7 @@ struct ThreadLoadHelper<T*, AlignWord>
  */
 #define CUB_LOAD_2(cub_modifier, ptx_modifier)                                              \
     template<>                                                                              \
-    static __device__ __forceinline__ short ThreadLoad<cub_modifier, short*>(short* ptr)    \
+    __device__ __forceinline__ short ThreadLoad<cub_modifier, short*>(short* ptr)           \
     {                                                                                       \
         short retval;                                                                       \
         asm volatile ("ld."#ptx_modifier".s16 %0, [%1];" :                                  \
@@ -258,7 +286,7 @@ struct ThreadLoadHelper<T*, AlignWord>
  */
 #define CUB_LOAD_1(cub_modifier, ptx_modifier)                                              \
     template<>                                                                              \
-    static __device__ __forceinline__ char ThreadLoad<cub_modifier, char*>(char* ptr)       \
+    __device__ __forceinline__ char ThreadLoad<cub_modifier, char*>(char* ptr)              \
     {                                                                                       \
         short retval;                                                                       \
         asm volatile (                                                                      \
@@ -295,7 +323,7 @@ struct ThreadLoadHelper<T*, AlignWord>
     CUB_LOAD_ALL(LOAD_LDG, nc)
 #endif
 
-CUB_LOAD_ALL(LOAD_VOLATILE, ca)
+//CUB_LOAD_ALL(LOAD_VOLATILE, volatile)
 
 
 #endif // DOXYGEN_SHOULD_SKIP_THIS

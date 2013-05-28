@@ -61,11 +61,13 @@ namespace cub {
 /**
  * Initialization kernel for queue descriptor preparation and for zeroing block status
  */
-template <typename SizeT>                       ///< Integral type used for global array indexing
+template <
+    typename T,                                     ///< Scan value type
+    typename SizeT>                                 ///< Integral type used for global array indexing
 __global__ void InitScanKernel(
-    GridQueue<SizeT>        grid_queue,         ///< [in] Descriptor for performing dynamic mapping of input tiles to thread blocks
-    DeviceScanTileStatus    *d_tile_status,     ///< [out] Tile status words
-    int                     num_tiles)          ///< [in] Number of tiles
+    GridQueue<SizeT>            grid_queue,         ///< [in] Descriptor for performing dynamic mapping of input tiles to thread blocks
+    DeviceScanTileStatus<T>     *d_tile_status,     ///< [out] Tile status words
+    int                         num_tiles)          ///< [in] Number of tiles
 {
     enum
     {
@@ -80,13 +82,13 @@ __global__ void InitScanKernel(
     if (tile_offset < num_tiles)
     {
         // Not-yet-set
-        d_tile_status[STATUS_PADDING + tile_offset] =  DEVICE_SCAN_TILE_INVALID;
+        d_tile_status[STATUS_PADDING + tile_offset].status =  DEVICE_SCAN_TILE_INVALID;
     }
 
     if ((blockIdx.x == 0) && (threadIdx.x < STATUS_PADDING))
     {
         // Padding
-        d_tile_status[threadIdx.x] = DEVICE_SCAN_TILE_OOB;
+        d_tile_status[threadIdx.x].status = DEVICE_SCAN_TILE_OOB;
     }
 }
 
@@ -95,24 +97,23 @@ __global__ void InitScanKernel(
  * Multi-block histogram kernel entry point.  Computes privatized histograms, one per thread block.
  */
 template <
-    typename    PersistentBlockScanPolicy,  ///< Tuning policy for cub::PersistentBlockScan abstraction
-    typename    InputIteratorRA,            ///< The random-access iterator type for input (may be a simple pointer type).
-    typename    OutputIteratorRA,           ///< The random-access iterator type for output (may be a simple pointer type).
-    typename    ScanOp,                     ///< Binary scan operator type having member <tt>T operator()(const T &a, const T &b)</tt>
-    typename    Identity,                   ///< Identity value type (cub::NullType for inclusive scans)
-    typename    SizeT>                      ///< Integral type used for global array indexing
+    typename    PersistentBlockScanPolicy,      ///< Tuning policy for cub::PersistentBlockScan abstraction
+    typename    InputIteratorRA,                ///< The random-access iterator type for input (may be a simple pointer type).
+    typename    OutputIteratorRA,               ///< The random-access iterator type for output (may be a simple pointer type).
+    typename    T,                              ///< The scan data type
+    typename    ScanOp,                         ///< Binary scan operator type having member <tt>T operator()(const T &a, const T &b)</tt>
+    typename    Identity,                       ///< Identity value type (cub::NullType for inclusive scans)
+    typename    SizeT>                          ///< Integral type used for global array indexing
 __launch_bounds__ (int(PersistentBlockScanPolicy::BLOCK_THREADS))
 __global__ void MultiBlockScanKernel(
-    InputIteratorRA                                             d_in,               ///< Input data
-    OutputIteratorRA                                            d_out,              ///< Output data
-    typename std::iterator_traits<InputIteratorRA>::value_type  *d_tile_aggregates, ///< Global list of block aggregates
-    typename std::iterator_traits<InputIteratorRA>::value_type  *d_tile_prefixes,   ///< Global list of block inclusive prefixes
-    DeviceScanTileStatus                                        *d_tile_status,     ///< Global list of tile status
-    ScanOp                                                      scan_op,            ///< Binary scan operator
-    Identity                                                    identity,           ///< Identity element
-    SizeT                                                       num_items,          ///< Total number of scan items for the entire problem
-    int                                                         num_tiles,          ///< Total number of input tiles
-    GridQueue<SizeT>                                            queue)              ///< Descriptor for performing dynamic mapping of tile data to thread blocks
+    InputIteratorRA             d_in,           ///< Input data
+    OutputIteratorRA            d_out,          ///< Output data
+    DeviceScanTileStatus<T>     *d_tile_status, ///< Global list of tile status
+    ScanOp                      scan_op,        ///< Binary scan operator
+    Identity                    identity,       ///< Identity element
+    SizeT                       num_items,      ///< Total number of scan items for the entire problem
+    int                         num_tiles,      ///< Total number of input tiles
+    GridQueue<SizeT>            queue)          ///< Descriptor for performing dynamic mapping of tile data to thread blocks
 {
     // Thread block type for scanning input tiles
     typedef PersistentBlockScan<
@@ -131,8 +132,6 @@ __global__ void MultiBlockScanKernel(
         smem_storage,
         d_in,
         d_out,
-        d_tile_aggregates,
-        d_tile_prefixes,
         d_tile_status,
         scan_op,
         identity,
@@ -250,28 +249,28 @@ struct DeviceScan
     template <typename T, typename SizeT>
     struct TunedPolicies<T, SizeT, 350>
     {
-        typedef PersistentBlockScanPolicy<128, 12,  BLOCK_LOAD_TRANSPOSE, BLOCK_STORE_TRANSPOSE, BLOCK_SCAN_RAKING_MEMOIZE> MultiBlockPolicy;
+        typedef PersistentBlockScanPolicy<128, 12,  BLOCK_LOAD_TRANSPOSE, LOAD_DEFAULT, false, BLOCK_STORE_TRANSPOSE, false, BLOCK_SCAN_RAKING_MEMOIZE> MultiBlockPolicy;
     };
 
     /// SM30 tune
     template <typename T, typename SizeT>
     struct TunedPolicies<T, SizeT, 300>
     {
-        typedef PersistentBlockScanPolicy<256, 9,  BLOCK_LOAD_TRANSPOSE, BLOCK_STORE_TRANSPOSE, BLOCK_SCAN_RAKING_MEMOIZE> MultiBlockPolicy;
+        typedef PersistentBlockScanPolicy<256, 9,  BLOCK_LOAD_TRANSPOSE, LOAD_DEFAULT, false, BLOCK_STORE_TRANSPOSE, false, BLOCK_SCAN_RAKING_MEMOIZE> MultiBlockPolicy;
     };
 
     /// SM20 tune
     template <typename T, typename SizeT>
     struct TunedPolicies<T, SizeT, 200>
     {
-        typedef PersistentBlockScanPolicy<128, 15,  BLOCK_LOAD_TRANSPOSE, BLOCK_STORE_TRANSPOSE, BLOCK_SCAN_RAKING_MEMOIZE> MultiBlockPolicy;
+        typedef PersistentBlockScanPolicy<128, 15,  BLOCK_LOAD_WARP_TRANSPOSE, LOAD_DEFAULT, false, BLOCK_STORE_WARP_TRANSPOSE, false, BLOCK_SCAN_RAKING_MEMOIZE> MultiBlockPolicy;
     };
 
     /// SM10 tune
     template <typename T, typename SizeT>
     struct TunedPolicies<T, SizeT, 100>
     {
-        typedef PersistentBlockScanPolicy<128, 6,  BLOCK_LOAD_TRANSPOSE, BLOCK_STORE_TRANSPOSE, BLOCK_SCAN_RAKING_MEMOIZE> MultiBlockPolicy;
+        typedef PersistentBlockScanPolicy<128, 6,  BLOCK_LOAD_TRANSPOSE, LOAD_DEFAULT, false, BLOCK_STORE_TRANSPOSE, false, BLOCK_SCAN_RAKING_MEMOIZE> MultiBlockPolicy;
     };
 
 
@@ -365,9 +364,7 @@ struct DeviceScan
         // Data type
         typedef typename std::iterator_traits<InputIteratorRA>::value_type T;
 
-        T                       *d_tile_aggregates;     // Global list of block aggregates
-        T                       *d_tile_prefixes;       // Global list of block inclusive prefixes
-        DeviceScanTileStatus    *d_tile_status;         // Global list of tile status
+        DeviceScanTileStatus<T> *d_tile_status;         // Global list of tile status
         GridQueue<SizeT>        queue;                  // Dynamic, queue-based work distribution
 
         cudaError error = cudaSuccess;
@@ -377,9 +374,7 @@ struct DeviceScan
             int num_tiles = (num_items + multi_block_dispatch_params.tile_size - 1) / multi_block_dispatch_params.tile_size;
 
             // Allocate temporary storage for tile aggregates, prefixes, and status
-            if (CubDebug(error = DeviceAllocate((void**) &d_tile_aggregates, num_tiles * sizeof(T), device_allocator))) break;
-            if (CubDebug(error = DeviceAllocate((void**) &d_tile_prefixes, num_tiles * sizeof(T), device_allocator))) break;
-            if (CubDebug(error = DeviceAllocate((void**) &d_tile_status, (num_tiles + STATUS_PADDING) * sizeof(DeviceScanTileStatus), device_allocator))) break;
+            if (CubDebug(error = DeviceAllocate((void**) &d_tile_status, (num_tiles + STATUS_PADDING) * sizeof(DeviceScanTileStatus<T>), device_allocator))) break;
 
             // Allocate temporary storage for queue descriptor
             queue.Allocate(device_allocator);
@@ -389,7 +384,10 @@ struct DeviceScan
             int init_grid_size = (num_tiles + init_kernel_threads - 1) / init_kernel_threads;
             if (stream_synchronous) CubLog("Invoking init_kernel_ptr<<<%d, %d, 0, %lld>>>()\n", init_grid_size, init_kernel_threads, (long long) stream);
 
-            init_kernel_ptr<<<init_grid_size, init_kernel_threads, 0, stream>>>(queue, d_tile_status, num_tiles);
+            init_kernel_ptr<<<init_grid_size, init_kernel_threads, 0, stream>>>(
+                queue,
+                d_tile_status,
+                num_tiles);
 
         #ifndef __CUDA_ARCH__
             // Sync the stream on the host
@@ -433,6 +431,11 @@ struct DeviceScan
                 num_tiles :                 // Not enough to fill the device with threadblocks
                 multi_occupancy;            // Fill the device with threadblocks
 
+            // Bind textures if the iterator supports it
+        #ifndef __CUDA_ARCH__
+            if (CubDebug(error = BindIteratorTexture(d_in))) break;
+        #endif // __CUDA_ARCH__
+
             // Invoke MultiBlockScan
             if (stream_synchronous) CubLog("Invoking multi_block_kernel_ptr<<<%d, %d, 0, %lld>>>(), %d items per thread, %d SM occupancy\n",
                 multi_grid_size, multi_block_dispatch_params.block_threads, (long long) stream, multi_block_dispatch_params.items_per_thread, multi_sm_occupancy);
@@ -440,8 +443,6 @@ struct DeviceScan
             multi_block_kernel_ptr<<<multi_grid_size, multi_block_dispatch_params.block_threads, 0, stream>>>(
                 d_in,
                 d_out,
-                d_tile_aggregates,
-                d_tile_prefixes,
                 d_tile_status,
                 scan_op,
                 identity,
@@ -461,15 +462,16 @@ struct DeviceScan
         while (0);
 
         // Free temporary storage allocations
-        if (d_tile_aggregates)
-            error = CubDebug(DeviceFree(d_tile_aggregates, device_allocator));
-        if (d_tile_prefixes)
-            error = CubDebug(DeviceFree(d_tile_prefixes, device_allocator));
         if (d_tile_status)
             error = CubDebug(DeviceFree(d_tile_status, device_allocator));
 
         // Free queue allocation
         error = CubDebug(queue.Free(device_allocator));
+
+        // Unbind texture
+    #ifndef __CUDA_ARCH__
+        error = CubDebug(UnbindIteratorTexture(d_in));
+    #endif // __CUDA_ARCH__
 
         return error;
 
@@ -526,8 +528,8 @@ struct DeviceScan
         #endif
 
             Dispatch(
-                InitScanKernel<SizeT>,
-                MultiBlockScanKernel<MultiBlockPolicy, InputIteratorRA, OutputIteratorRA, ScanOp, Identity, SizeT>,
+                InitScanKernel<T, SizeT>,
+                MultiBlockScanKernel<MultiBlockPolicy, InputIteratorRA, OutputIteratorRA, T, ScanOp, Identity, SizeT>,
                 multi_block_dispatch_params,
                 d_in,
                 d_out,
