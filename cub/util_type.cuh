@@ -201,7 +201,15 @@ struct WordAlignment
                 int,
                 typename If<(sizeof(T) % 2 == 0),
                     short,
-                    char>::Type>::Type>::Type>::Type Type;
+                    char>::Type>::Type>::Type>::Type AlignWord;
+
+    typedef typename If<(sizeof(T) % 8 == 0),
+        long long,
+        typename If<(sizeof(T) % 4 == 0),
+            int,
+            typename If<(sizeof(T) % 2 == 0),
+                short,
+                char>::Type>::Type>::Type VolatileAlignWord;
 };
 
 /******************************************************************************

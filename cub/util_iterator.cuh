@@ -343,12 +343,9 @@ public:
 #if (CUB_PTX_ARCH == 0)
         // Simply dereference the pointer on the host
         return *ptr;
-#elif (CUB_PTX_ARCH < 350)
+#else
         // Use the texture reference
         return tex1Dfetch(TexIteratorRef<T>::ref, offset);
-#else
-        // Use LDG
-        return ThreadLoad<LOAD_LDG>(ptr);
 #endif
     }
 
@@ -374,12 +371,9 @@ public:
 #if (CUB_PTX_ARCH == 0)
         // Simply dereference the pointer on the host
         return ptr[n];
-#elif (CUB_PTX_ARCH < 350)
+#else
         // Use the texture reference
         return tex1Dfetch(TexIteratorRef<T>::ref, offset + n);
-#else
-        // Use LDG
-        return ThreadLoad<LOAD_LDG>(ptr + n);
 #endif
     }
 
@@ -388,12 +382,9 @@ public:
 #if (CUB_PTX_ARCH == 0)
         // Simply dereference the pointer on the host
         return &(*ptr);
-#elif (CUB_PTX_ARCH < 350)
+#else
         // Use the texture reference
         return &(tex1Dfetch(TexIteratorRef<T>::ref, offset));
-#else
-        // Use LDG
-        return &(ThreadLoad<LOAD_LDG>(ptr));
 #endif
     }
 
@@ -501,10 +492,7 @@ public:
 #if (CUB_PTX_ARCH == 0)
         // Simply dereference the pointer on the host
         return conversion_op(*ptr);
-/*#elif (CUB_PTX_ARCH <= 350)
-        // Use LDG
-        return conversion_op(ThreadLoad<LOAD_LDG>(ptr));
-*/#else
+#else
         // Use the texture reference
         return conversion_op(tex1Dfetch(TexIteratorRef<InputType>::ref, offset));
 #endif
@@ -532,10 +520,7 @@ public:
 #if (CUB_PTX_ARCH == 0)
         // Simply dereference the pointer on the host
         return conversion_op(ptr[n]);
-/*#elif (CUB_PTX_ARCH >= 350)
-        // Use LDG
-        return conversion_op(ThreadLoad<LOAD_LDG>(ptr + n));
-*/#else
+#else
         // Use the texture reference
         return conversion_op(tex1Dfetch(TexIteratorRef<InputType>::ref, offset + n));
 #endif
@@ -546,10 +531,7 @@ public:
 #if (CUB_PTX_ARCH == 0)
         // Simply dereference the pointer on the host
         return &conversion_op(*ptr);
-/*#elif (CUB_PTX_ARCH >= 350)
-        // Use LDG
-        return &conversion_op(ThreadLoad<LOAD_LDG>(ptr));
-*/#else
+#else
         // Use the texture reference
         return &conversion_op(tex1Dfetch(TexIteratorRef<InputType>::ref, offset));
 #endif

@@ -669,9 +669,6 @@ void InitValue(int gen_mode, TestFoo &value, int index = 0)
  */
 struct TestBar
 {
-    typedef void LoadTag;
-    typedef void StoreTag;
-
     long long       x;
     int             y;
 
@@ -701,24 +698,32 @@ struct TestBar
     {
         return (x != b.x) || (y != b.y);
     }
-
-    // Load
-    template <cub::PtxLoadModifier MODIFIER>
-    __device__ __forceinline__
-    void Load(TestBar *ptr)
-    {
-        x = cub::ThreadLoad<MODIFIER>(&(ptr->x));
-        y = cub::ThreadLoad<MODIFIER>(&(ptr->y));
-    }
-
-     // Store
-    template <cub::PtxStoreModifier MODIFIER>
-    __device__ __forceinline__ void Store(TestBar *ptr) const
-    {
-        cub::ThreadStore<MODIFIER>(&(ptr->x), x);
-        cub::ThreadStore<MODIFIER>(&(ptr->y), y);
-    }
 };
+
+/* todo: uncomment once Fermi codegen bug is fixed
+
+/// Load (simply defer to loading individual items)
+template <cub::PtxLoadModifier MODIFIER>
+__device__ __forceinline__ TestBar ThreadLoad(TestBar *ptr)
+{
+    TestBar retval;
+    retval.x = cub::ThreadLoad<MODIFIER>(&(ptr->x));
+    retval.y = cub::ThreadLoad<MODIFIER>(&(ptr->y));
+    return retval;
+}
+
+ /// Store (simply defer to storing individual items)
+template <cub::PtxLoadModifier MODIFIER, typename VertexId>
+__device__ __forceinline__ void ThreadStore(
+    TestBar *ptr,
+    TestBar val)
+{
+    // Always write partial first
+    cub::ThreadStore<MODIFIER>(&(ptr->x), val.x);
+    cub::ThreadStore<MODIFIER>(&(ptr->y), val.y);
+}
+
+*/
 
 /**
  * TestBar ostream operator

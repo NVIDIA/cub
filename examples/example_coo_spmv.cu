@@ -421,37 +421,34 @@ struct CooGraph
 // GPU types and device functions
 //---------------------------------------------------------------------
 
-
 /// Pairing of dot product partial sums and corresponding row-id
 template <typename VertexId, typename Value>
 struct PartialSum
 {
     Value       partial;        /// PartialSum sum
     VertexId    row;            /// Row-id
-
-    /// Tags indicating this structure provides overloaded Load and Store operations
-    typedef void LoadTag;
-    typedef void StoreTag;
-
-    /// Load (simply defer to loading individual items)
-    template <PtxLoadModifier MODIFIER>
-    __device__ __forceinline__ void Load(PartialSum *ptr)
-    {
-        partial = cub::ThreadLoad<MODIFIER>(&(ptr->partial));
-        row = cub::ThreadLoad<MODIFIER>(&(ptr->row));
-    }
-
-     /// Store (simply defer to storing individual items)
-    template <PtxStoreModifier MODIFIER>
-    __device__ __forceinline__ void Store(PartialSum *ptr) const
-    {
-        // Always write partial first
-        cub::ThreadStore<MODIFIER>(&(ptr->partial), partial);
-        cub::ThreadStore<MODIFIER>(&(ptr->row), row);
-    }
-
 };
 
+/// Load (simply defer to loading individual items)
+template <PtxLoadModifier MODIFIER, typename VertexId, typename Value>
+__device__ __forceinline__ PartialSum ThreadLoad(PartialSum<VertexId, VertexId> *ptr)
+{
+    PartialSum<VertexId, VertexId> retval;
+    retval.partial = cub::ThreadLoad<MODIFIER>(&(ptr->partial));
+    retval.row = cub::ThreadLoad<MODIFIER>(&(ptr->row));
+    return retval;
+}
+
+ /// Store (simply defer to storing individual items)
+template <PtxLoadModifier MODIFIER, typename VertexId>
+__device__ __forceinline__ void ThreadStore(
+    PartialSum<VertexId, VertexId> *ptr,
+    PartialSum<VertexId, VertexId> val)
+{
+    // Always write partial first
+    cub::ThreadStore<MODIFIER>(&(ptr->partial), val.partial);
+    cub::ThreadStore<MODIFIER>(&(ptr->row), val.row);
+}
 
 /// Templated Texture reference type for multiplicand vector
 template <typename Value>
