@@ -452,7 +452,7 @@ private:
                 const int OFFSET = 1 << STEP;
 
                 // Share input into buffer
-                ThreadStore<STORE_VS>(&smem_storage.warp_buffer[warp_id][lane_id], input);
+                ThreadStore<STORE_VOLATILE>(&smem_storage.warp_buffer[warp_id][lane_id], input);
 
                 // Update input if addend is in range
                 if ((FULL_TILE && POW_OF_TWO) || ((lane_id + OFFSET) * VALID_PER_LANE < valid))
@@ -485,7 +485,7 @@ private:
                 const int OFFSET = 1 << STEP;
 
                 // Share input into buffer
-                ThreadStore<STORE_VS>(&smem_storage.warp_buffer[warp_id][lane_id], input);
+                ThreadStore<STORE_VOLATILE>(&smem_storage.warp_buffer[warp_id][lane_id], input);
 
                 // Update input if addend is in range
                 if (OFFSET <= distance)

@@ -573,7 +573,7 @@ int main(int argc, char** argv)
     CubDebugExit(args.DeviceInit());
 
     // Quick exclusive test
-    Test<32, PREFIX_AGGREGATE>(UNIFORM, Sum<int>(), (int) 0, (int) 99, CUB_TYPE_STRING(Sum<int>));
+    Test<32, BASIC>(UNIFORM, Sum<int>(), (int) 0, (int) 99, CUB_TYPE_STRING(Sum<int>));
 
     // Test logical warp sizes
     Test<32>();

@@ -307,7 +307,7 @@ void Test(
     CubDebugExit(Dispatch(d_in, d_out, scan_op, identity, num_items, 0, true));
 
     // Check for correctness (and display results, if specified)
-    compare = CompareDeviceResults(h_reference, d_out, num_items, g_verbose, g_verbose);
+    compare = CompareDeviceResults(h_reference, d_out, num_items, true, g_verbose);
     printf("\n%s", compare ? "FAIL" : "PASS");
 
     // Flush any stdout/stderr
