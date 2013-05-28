@@ -191,7 +191,7 @@ struct Schmoo
     {
         enum
         {
-            BYTES = sizeof(typename TilesReduce<TilesReducePolicy, T*, SizeT, ReductionOp>::SmemStorage),
+            BYTES = sizeof(typename PersistentBlockReduce<TilesReducePolicy, T*, SizeT, ReductionOp>::SmemStorage),
             IS_OK = ((BYTES < ArchProps<TUNE_ARCH>::SMEM_BYTES) &&
                      (TilesReducePolicy::ITEMS_PER_THREAD % TilesReducePolicy::VECTOR_LOAD_LENGTH == 0))
         };
@@ -254,16 +254,16 @@ struct Schmoo
     void Enumerate()
     {
         // Multi-block kernels
-        Ok<TilesReducePolicy<BLOCK_THREADS, ITEMS_PER_THREAD, VECTOR_LOAD_LENGTH, BLOCK_ALGORITHM, LOAD_MODIFIER, GRID_MAPPING_EVEN_SHARE> >::GenerateMulti(multi_kernels, 1);
-        Ok<TilesReducePolicy<BLOCK_THREADS, ITEMS_PER_THREAD, VECTOR_LOAD_LENGTH, BLOCK_ALGORITHM, LOAD_MODIFIER, GRID_MAPPING_EVEN_SHARE> >::GenerateMulti(multi_kernels, 2);
-        Ok<TilesReducePolicy<BLOCK_THREADS, ITEMS_PER_THREAD, VECTOR_LOAD_LENGTH, BLOCK_ALGORITHM, LOAD_MODIFIER, GRID_MAPPING_EVEN_SHARE> >::GenerateMulti(multi_kernels, 4);
-        Ok<TilesReducePolicy<BLOCK_THREADS, ITEMS_PER_THREAD, VECTOR_LOAD_LENGTH, BLOCK_ALGORITHM, LOAD_MODIFIER, GRID_MAPPING_EVEN_SHARE> >::GenerateMulti(multi_kernels, 8);
+        Ok<PersistentBlockReducePolicy<BLOCK_THREADS, ITEMS_PER_THREAD, VECTOR_LOAD_LENGTH, BLOCK_ALGORITHM, LOAD_MODIFIER, GRID_MAPPING_EVEN_SHARE> >::GenerateMulti(multi_kernels, 1);
+        Ok<PersistentBlockReducePolicy<BLOCK_THREADS, ITEMS_PER_THREAD, VECTOR_LOAD_LENGTH, BLOCK_ALGORITHM, LOAD_MODIFIER, GRID_MAPPING_EVEN_SHARE> >::GenerateMulti(multi_kernels, 2);
+        Ok<PersistentBlockReducePolicy<BLOCK_THREADS, ITEMS_PER_THREAD, VECTOR_LOAD_LENGTH, BLOCK_ALGORITHM, LOAD_MODIFIER, GRID_MAPPING_EVEN_SHARE> >::GenerateMulti(multi_kernels, 4);
+        Ok<PersistentBlockReducePolicy<BLOCK_THREADS, ITEMS_PER_THREAD, VECTOR_LOAD_LENGTH, BLOCK_ALGORITHM, LOAD_MODIFIER, GRID_MAPPING_EVEN_SHARE> >::GenerateMulti(multi_kernels, 8);
 #if TUNE_ARCH >= 200
-        Ok<TilesReducePolicy<BLOCK_THREADS, ITEMS_PER_THREAD, VECTOR_LOAD_LENGTH, BLOCK_ALGORITHM, LOAD_MODIFIER, GRID_MAPPING_DYNAMIC> >::GenerateMulti(multi_kernels, 1);
+        Ok<PersistentBlockReducePolicy<BLOCK_THREADS, ITEMS_PER_THREAD, VECTOR_LOAD_LENGTH, BLOCK_ALGORITHM, LOAD_MODIFIER, GRID_MAPPING_DYNAMIC> >::GenerateMulti(multi_kernels, 1);
 #endif
 
         // Single-block kernels
-        Ok<TilesReducePolicy<BLOCK_THREADS, ITEMS_PER_THREAD, VECTOR_LOAD_LENGTH, BLOCK_ALGORITHM, LOAD_MODIFIER, GRID_MAPPING_EVEN_SHARE> >::GenerateSingle(single_kernels);
+        Ok<PersistentBlockReducePolicy<BLOCK_THREADS, ITEMS_PER_THREAD, VECTOR_LOAD_LENGTH, BLOCK_ALGORITHM, LOAD_MODIFIER, GRID_MAPPING_EVEN_SHARE> >::GenerateSingle(single_kernels);
     }
 
 

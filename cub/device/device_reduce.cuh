@@ -91,7 +91,7 @@ __global__ void MultiBlockReduceKernel(
     PersistentBlockReduceT persistent_block(smem_storage, d_in, reduction_op);
 
     // Consume tiles using thread block instance
-    GridMapping<PersistentBlockReducePolicy::GRID_MAPPING>::ConsumeTilesFlagFirst(
+    GridMapping<PersistentBlockReducePolicy::GRID_MAPPING>::ConsumeTiles(
         persistent_block, num_items, even_share, queue, block_aggregate);
 
     // Output result
@@ -131,10 +131,10 @@ __global__ void SingleBlockReduceKernel(
     __shared__ typename PersistentBlockReduceT::SmemStorage smem_storage;
 
     // Block abstraction for reducing tiles
-    PersistentBlockReduceT tiles(smem_storage, d_in, reduction_op);
+    PersistentBlockReduceT persistent_block(smem_storage, d_in, reduction_op);
 
     // Reduce input tiles
-    ConsumeTiles(tiles, 0, num_items, block_aggregate);
+    ConsumeTiles(persistent_block, SizeT(0), SizeT(num_items), block_aggregate);
 
     // Output result
     if (threadIdx.x == 0)

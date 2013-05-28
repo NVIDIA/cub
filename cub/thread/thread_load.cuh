@@ -320,7 +320,7 @@ struct ThreadLoadHelper<T*>
     CUB_LOAD_ALL(LOAD_CV, cv)
 #endif
 #if CUB_PTX_ARCH >= 350
-    CUB_LOAD_ALL(LOAD_LDG, nc)
+    CUB_LOAD_ALL(LOAD_LDG, global.nc)
 #endif
 
 //CUB_LOAD_ALL(LOAD_VOLATILE, volatile)

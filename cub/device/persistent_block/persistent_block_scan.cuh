@@ -97,11 +97,11 @@ struct DeviceScanTileStatus
         while (true)
         {
             tile_status = ThreadLoad<LOAD_CG>(ptr);
-            if (tile_status.status != DEVICE_SCAN_TILE_INVALID) break;
+            if (__all(tile_status.status != DEVICE_SCAN_TILE_INVALID)) break;
             __threadfence_block();
 
             tile_status = ThreadLoad<LOAD_CG>(ptr);
-            if (tile_status.status != DEVICE_SCAN_TILE_INVALID) break;
+            if (__all(tile_status.status != DEVICE_SCAN_TILE_INVALID)) break;
             __threadfence_block();
         }
 
