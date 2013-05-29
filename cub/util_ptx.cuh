@@ -239,6 +239,18 @@ __device__ __forceinline__ unsigned int LaneId()
 }
 
 
+/**
+ * Returns the warp ID of the calling thread
+ */
+__device__ __forceinline__ unsigned int WarpId()
+{
+    unsigned int ret;
+    asm("mov.u32 %0, %warpid;" : "=r"(ret) );
+    return ret;
+}
+
+
+
 /** @} */       // end group UtilModule
 
 }               // CUB namespace
