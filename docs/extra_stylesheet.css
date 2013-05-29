@@ -391,6 +391,7 @@ td.memTemplItemLeft, td.memItemLeft {
 div.groupHeader {
 		margin-left: 10px;
 		margin-bottom: 12px;
+		font-style:italic;
 }
 
 td.memSeparator {
