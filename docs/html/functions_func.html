@@ -104,6 +104,7 @@ var searchBox = new SearchBox("searchBox", "search",false,'Search');
       <li><a href="#index_s"><span>s</span></a></li>
       <li><a href="#index_t"><span>t</span></a></li>
       <li><a href="#index_u"><span>u</span></a></li>
+      <li><a href="#index_w"><span>w</span></a></li>
       <li><a href="#index_0x7e"><span>~</span></a></li>
     </ul>
   </div>
@@ -138,7 +139,10 @@ var searchBox = new SearchBox("searchBox", "search",false,'Search');
 , <a class="el" href="classcub_1_1_tex_transform_iterator_r_a.html#aaa167451624a1326a9d66b927a861c18">cub::TexTransformIteratorRA&lt; OutputType, ConversionOp, InputType &gt;</a>
 </li>
 <li>BlockedToStriped()
-: <a class="el" href="classcub_1_1_block_exchange.html#a068f68d3f9d5c53920eeae82594d6935">cub::BlockExchange&lt; T, BLOCK_THREADS, ITEMS_PER_THREAD &gt;</a>
+: <a class="el" href="classcub_1_1_block_exchange.html#a2e5d1bdb3c9b33a6a6237529e31e758a">cub::BlockExchange&lt; T, BLOCK_THREADS, ITEMS_PER_THREAD, WARP_TIME_SLICING &gt;</a>
+</li>
+<li>BlockedToWarpStriped()
+: <a class="el" href="classcub_1_1_block_exchange.html#aea8cf97eaee4fd6662b6385ab1ae1bf1">cub::BlockExchange&lt; T, BLOCK_THREADS, ITEMS_PER_THREAD, WARP_TIME_SLICING &gt;</a>
 </li>
 <li>BlockInit()
 : <a class="el" href="classcub_1_1_grid_even_share.html#a214c0fc54f5ade75049ade09a08becf5">cub::GridEvenShare&lt; SizeT &gt;</a>
@@ -259,7 +263,7 @@ var searchBox = new SearchBox("searchBox", "search",false,'Search');
 
 <h3><a class="anchor" id="index_l"></a>- l -</h3><ul>
 <li>Load()
-: <a class="el" href="classcub_1_1_block_load.html#a4c379a2f7f8aa08aa2d6b134c9a2955f">cub::BlockLoad&lt; InputIteratorRA, BLOCK_THREADS, ITEMS_PER_THREAD, POLICY, MODIFIER &gt;</a>
+: <a class="el" href="classcub_1_1_block_load.html#aaa43ba3b2cb6bb6b077b128ca6ab7dc8">cub::BlockLoad&lt; InputIteratorRA, BLOCK_THREADS, ITEMS_PER_THREAD, ALGORITHM, MODIFIER, WARP_TIME_SLICING &gt;</a>
 </li>
 </ul>
 
@@ -324,10 +328,13 @@ var searchBox = new SearchBox("searchBox", "search",false,'Search');
 
 <h3><a class="anchor" id="index_s"></a>- s -</h3><ul>
 <li>ScatterToBlocked()
-: <a class="el" href="classcub_1_1_block_exchange.html#a7a429434bbdc3e949a8291461a74bff9">cub::BlockExchange&lt; T, BLOCK_THREADS, ITEMS_PER_THREAD &gt;</a>
+: <a class="el" href="classcub_1_1_block_exchange.html#a5058c1c71fff6c1c477b093a5dd08ef4">cub::BlockExchange&lt; T, BLOCK_THREADS, ITEMS_PER_THREAD, WARP_TIME_SLICING &gt;</a>
 </li>
 <li>ScatterToStriped()
-: <a class="el" href="classcub_1_1_block_exchange.html#a8b8997367d0d42ee7eb600b981f7b72d">cub::BlockExchange&lt; T, BLOCK_THREADS, ITEMS_PER_THREAD &gt;</a>
+: <a class="el" href="classcub_1_1_block_exchange.html#a034a53f6e8e69825804ecd5c59250ed5">cub::BlockExchange&lt; T, BLOCK_THREADS, ITEMS_PER_THREAD, WARP_TIME_SLICING &gt;</a>
+</li>
+<li>SegmentedReduce()
+: <a class="el" href="classcub_1_1_warp_reduce.html#a28e4649d4500bba6ef38f2b3f3d621c5">cub::WarpReduce&lt; T, WARPS, LOGICAL_WARP_THREADS &gt;</a>
 </li>
 <li>SetMaxCachedBytes()
 : <a class="el" href="structcub_1_1_caching_device_allocator.html#a5ddac0917fce3445aa660d747e67a8d9">cub::CachingDeviceAllocator</a>
@@ -342,7 +349,7 @@ var searchBox = new SearchBox("searchBox", "search",false,'Search');
 : <a class="el" href="structcub_1_1_device_histo256.html#a3b832f1fc945bdce122edc8a64cf6ec6">cub::DeviceHisto256</a>
 </li>
 <li>SortBlocked()
-: <a class="el" href="classcub_1_1_block_radix_sort.html#acd0282613cbd6ad6c52ab1bb05b82def">cub::BlockRadixSort&lt; KeyType, BLOCK_THREADS, ITEMS_PER_THREAD, ValueType, RADIX_BITS, MEMOIZE_OUTER_SCAN, INNER_SCAN_ALGORITHM, SMEM_CONFIG &gt;</a>
+: <a class="el" href="classcub_1_1_block_radix_sort.html#a779bfcd00c57f6b97cbbb8a0aafb616a">cub::BlockRadixSort&lt; KeyType, BLOCK_THREADS, ITEMS_PER_THREAD, ValueType, RADIX_BITS, MEMOIZE_OUTER_SCAN, INNER_SCAN_ALGORITHM, SMEM_CONFIG &gt;</a>
 </li>
 <li>SortBlockedToStriped()
 : <a class="el" href="classcub_1_1_block_radix_sort.html#ad6cc88c2ae0d36c4c98b901748645e10">cub::BlockRadixSort&lt; KeyType, BLOCK_THREADS, ITEMS_PER_THREAD, ValueType, RADIX_BITS, MEMOIZE_OUTER_SCAN, INNER_SCAN_ALGORITHM, SMEM_CONFIG &gt;</a>
@@ -351,17 +358,17 @@ var searchBox = new SearchBox("searchBox", "search",false,'Search');
 : <a class="el" href="classcub_1_1_block_radix_sort.html#aea1b6f367da1b17ed80f65d511aec15e">cub::BlockRadixSort&lt; KeyType, BLOCK_THREADS, ITEMS_PER_THREAD, ValueType, RADIX_BITS, MEMOIZE_OUTER_SCAN, INNER_SCAN_ALGORITHM, SMEM_CONFIG &gt;</a>
 </li>
 <li>Store()
-: <a class="el" href="classcub_1_1_block_store.html#a4d7858f738321f7130bc0be7d6fa46a5">cub::BlockStore&lt; OutputIteratorRA, BLOCK_THREADS, ITEMS_PER_THREAD, POLICY, MODIFIER &gt;</a>
+: <a class="el" href="classcub_1_1_block_store.html#aaa9c805a619d46ca971baffaab03ab2b">cub::BlockStore&lt; OutputIteratorRA, BLOCK_THREADS, ITEMS_PER_THREAD, ALGORITHM, MODIFIER, WARP_TIME_SLICING &gt;</a>
 </li>
 <li>StripedToBlocked()
-: <a class="el" href="classcub_1_1_block_exchange.html#ad8000bf73c3ce935018f32451985ae37">cub::BlockExchange&lt; T, BLOCK_THREADS, ITEMS_PER_THREAD &gt;</a>
+: <a class="el" href="classcub_1_1_block_exchange.html#a7230d36de4370d23ac3c7bb54dca1634">cub::BlockExchange&lt; T, BLOCK_THREADS, ITEMS_PER_THREAD, WARP_TIME_SLICING &gt;</a>
 </li>
 <li>Sum()
-: <a class="el" href="classcub_1_1_block_reduce.html#adfc657d856d583321d2604589c52b43a">cub::BlockReduce&lt; T, BLOCK_THREADS, ALGORITHM &gt;</a>
-, <a class="el" href="classcub_1_1_warp_reduce.html#a50e4be93dbd298b7c2b5080d1449cf8c">cub::WarpReduce&lt; T, WARPS, LOGICAL_WARP_THREADS &gt;</a>
-, <a class="el" href="classcub_1_1_block_reduce.html#a8cc68b77f25c80b972bdedced6878214">cub::BlockReduce&lt; T, BLOCK_THREADS, ALGORITHM &gt;</a>
+: <a class="el" href="classcub_1_1_block_reduce.html#a8cc68b77f25c80b972bdedced6878214">cub::BlockReduce&lt; T, BLOCK_THREADS, ALGORITHM &gt;</a>
 , <a class="el" href="classcub_1_1_warp_reduce.html#a0c1ad8bee00bc64f14f3b0d762b84363">cub::WarpReduce&lt; T, WARPS, LOGICAL_WARP_THREADS &gt;</a>
 , <a class="el" href="classcub_1_1_block_reduce.html#af81b914f22d1c1608d46d12e1c1d888e">cub::BlockReduce&lt; T, BLOCK_THREADS, ALGORITHM &gt;</a>
+, <a class="el" href="classcub_1_1_warp_reduce.html#a50e4be93dbd298b7c2b5080d1449cf8c">cub::WarpReduce&lt; T, WARPS, LOGICAL_WARP_THREADS &gt;</a>
+, <a class="el" href="classcub_1_1_block_reduce.html#adfc657d856d583321d2604589c52b43a">cub::BlockReduce&lt; T, BLOCK_THREADS, ALGORITHM &gt;</a>
 </li>
 </ul>
 
@@ -387,6 +394,13 @@ var searchBox = new SearchBox("searchBox", "search",false,'Search');
 </ul>
 
 
+<h3><a class="anchor" id="index_w"></a>- w -</h3><ul>
+<li>WarpStripedToBlocked()
+: <a class="el" href="classcub_1_1_block_exchange.html#a3ac92db5591493636a12b1035969122e">cub::BlockExchange&lt; T, BLOCK_THREADS, ITEMS_PER_THREAD, WARP_TIME_SLICING &gt;</a>
+</li>
+</ul>
+
+
 <h3><a class="anchor" id="index_0x7e"></a>- ~ -</h3><ul>
 <li>~CachingDeviceAllocator()
 : <a class="el" href="structcub_1_1_caching_device_allocator.html#a8b5be1674adff948f45a4256839ad9e2">cub::CachingDeviceAllocator</a>
@@ -399,7 +413,7 @@ var searchBox = new SearchBox("searchBox", "search",false,'Search');
 <!-- HTML footer for doxygen 1.8.3.1-->
 <!-- start footer part -->
 <hr class="footer"/><address class="footer"><small>
-Generated on Tue May 7 2013 16:26:26 for CUB by &#160;<a href="http://www.doxygen.org/index.html">
+Generated on Tue May 28 2013 23:34:50 for CUB by &#160;<a href="http://www.doxygen.org/index.html">
 <img class="footer" src="doxygen.png" alt="doxygen"/>
 </a> 1.8.3.1
 <br>

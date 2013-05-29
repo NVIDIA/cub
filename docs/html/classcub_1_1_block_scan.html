@@ -125,7 +125,7 @@ class cub::BlockScan&lt; T, BLOCK_THREADS, ALGORITHM &gt;</h3>
   <table class="tparams">
     <tr><td class="paramname">T</td><td>The reduction input/output element type </td></tr>
     <tr><td class="paramname">BLOCK_THREADS</td><td>The threadblock size in threads </td></tr>
-    <tr><td class="paramname">ALGORITHM</td><td><b>[optional]</b> <a class="el" href="namespacecub.html#abec44bba36037c547e7e84906d0d23ab">cub::BlockScanAlgorithm</a> enumerator specifying the underlying algorithm to use (default = <a class="el" href="namespacecub.html#abec44bba36037c547e7e84906d0d23aba0fa6cac57b7df2f475a67af053b9371c">cub::BLOCK_SCAN_RAKING</a>)</td></tr>
+    <tr><td class="paramname">ALGORITHM</td><td><b>[optional]</b> <a class="el" href="namespacecub.html#abec44bba36037c547e7e84906d0d23ab" title="BlockScanAlgorithm enumerates alternative algorithms for cub::BlockScan to compute a parallel prefix ...">cub::BlockScanAlgorithm</a> enumerator specifying the underlying algorithm to use (default = <a class="el" href="namespacecub.html#abec44bba36037c547e7e84906d0d23aba0fa6cac57b7df2f475a67af053b9371c">cub::BLOCK_SCAN_RAKING</a>)</td></tr>
   </table>
   </dd>
 </dl>
@@ -153,7 +153,7 @@ class cub::BlockScan&lt; T, BLOCK_THREADS, ALGORITHM &gt;</h3>
 <li><code>BLOCK_THREADS</code> is a multiple of the architecture's warp size</li>
 </ul>
 </li>
-<li>See <a class="el" href="namespacecub.html#abec44bba36037c547e7e84906d0d23ab">cub::BlockScanAlgorithm</a> for performance details regarding algorithmic alternatives</li>
+<li>See <a class="el" href="namespacecub.html#abec44bba36037c547e7e84906d0d23ab" title="BlockScanAlgorithm enumerates alternative algorithms for cub::BlockScan to compute a parallel prefix ...">cub::BlockScanAlgorithm</a> for performance details regarding algorithmic alternatives</li>
 </ul>
 </dd></dl>
 <dl class="section user"><dt>Examples</dt><dd><em>Example 1.</em> Perform a simple exclusive prefix sum of 512 integer keys that are partitioned in a blocked arrangement across a 128-thread threadblock (where each thread holds 4 keys). <div class="fragment"><div class="line"><span class="preprocessor">#include &lt;<a class="code" href="cub_8cuh.html">cub/cub.cuh</a>&gt;</span></div>
@@ -2639,7 +2639,7 @@ template&lt;int ITEMS_PER_THREAD, typename ScanOp , typename BlockPrefixOp &gt; 
 <!-- HTML footer for doxygen 1.8.3.1-->
 <!-- start footer part -->
 <hr class="footer"/><address class="footer"><small>
-Generated on Tue May 7 2013 16:26:26 for CUB by &#160;<a href="http://www.doxygen.org/index.html">
+Generated on Tue May 28 2013 23:34:50 for CUB by &#160;<a href="http://www.doxygen.org/index.html">
 <img class="footer" src="doxygen.png" alt="doxygen"/>
 </a> 1.8.3.1
 <br>

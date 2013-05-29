@@ -202,6 +202,9 @@ Static Public Methods</h2></td></tr>
 <tr class="memitem:a4f893685caf95690550964c45a34f19b"><td class="memTemplItemLeft" align="right" valign="top">static __device__ __forceinline__ T&#160;</td><td class="memTemplItemRight" valign="bottom"><a class="el" href="classcub_1_1_warp_reduce.html#a4f893685caf95690550964c45a34f19b">Reduce</a> (<a class="el" href="classcub_1_1_warp_reduce.html#a71f87b76f0deeaa5ba3a708374d19c8c">SmemStorage</a> &amp;smem_storage, T input, ReductionOp reduction_op, const unsigned int &amp;valid_lanes)</td></tr>
 <tr class="memdesc:a4f893685caf95690550964c45a34f19b"><td class="mdescLeft">&#160;</td><td class="mdescRight">Computes a warp-wide reduction for <em>warp-lane</em><sub>0</sub> in each active warp using the specified binary reduction functor.  <a href="#a4f893685caf95690550964c45a34f19b">More...</a><br/></td></tr>
 <tr class="separator:a4f893685caf95690550964c45a34f19b"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a28e4649d4500bba6ef38f2b3f3d621c5"><td class="memTemplParams" colspan="2">template&lt;typename ReductionOp , typename Flag &gt; </td></tr>
+<tr class="memitem:a28e4649d4500bba6ef38f2b3f3d621c5"><td class="memTemplItemLeft" align="right" valign="top">static __device__ __forceinline__ T&#160;</td><td class="memTemplItemRight" valign="bottom"><a class="el" href="classcub_1_1_warp_reduce.html#a28e4649d4500bba6ef38f2b3f3d621c5">SegmentedReduce</a> (<a class="el" href="classcub_1_1_warp_reduce.html#a71f87b76f0deeaa5ba3a708374d19c8c">SmemStorage</a> &amp;smem_storage, T input, Flag flag, ReductionOp reduction_op)</td></tr>
+<tr class="separator:a28e4649d4500bba6ef38f2b3f3d621c5"><td class="memSeparator" colspan="2">&#160;</td></tr>
 </table>
 <h2 class="groupheader">Member Function Documentation</h2>
 <a class="anchor" id="a50e4be93dbd298b7c2b5080d1449cf8c"></a>
@@ -442,6 +445,66 @@ template&lt;typename ReductionOp &gt; </div>
 
 </div>
 </div>
+<a class="anchor" id="a28e4649d4500bba6ef38f2b3f3d621c5"></a>
+<div class="memitem">
+<div class="memproto">
+<div class="memtemplate">
+template&lt;typename T , int WARPS = 1, int LOGICAL_WARP_THREADS = PtxArchProps::WARP_THREADS&gt; </div>
+<div class="memtemplate">
+template&lt;typename ReductionOp , typename Flag &gt; </div>
+<table class="mlabels">
+  <tr>
+  <td class="mlabels-left">
+      <table class="memname">
+        <tr>
+          <td class="memname">static __device__ __forceinline__ T <a class="el" href="classcub_1_1_warp_reduce.html">cub::WarpReduce</a>&lt; T, WARPS, LOGICAL_WARP_THREADS &gt;::SegmentedReduce </td>
+          <td>(</td>
+          <td class="paramtype"><a class="el" href="classcub_1_1_warp_reduce.html#a71f87b76f0deeaa5ba3a708374d19c8c">SmemStorage</a> &amp;&#160;</td>
+          <td class="paramname"><em>smem_storage</em>, </td>
+        </tr>
+        <tr>
+          <td class="paramkey"></td>
+          <td></td>
+          <td class="paramtype">T&#160;</td>
+          <td class="paramname"><em>input</em>, </td>
+        </tr>
+        <tr>
+          <td class="paramkey"></td>
+          <td></td>
+          <td class="paramtype">Flag&#160;</td>
+          <td class="paramname"><em>flag</em>, </td>
+        </tr>
+        <tr>
+          <td class="paramkey"></td>
+          <td></td>
+          <td class="paramtype">ReductionOp&#160;</td>
+          <td class="paramname"><em>reduction_op</em>&#160;</td>
+        </tr>
+        <tr>
+          <td></td>
+          <td>)</td>
+          <td></td><td></td>
+        </tr>
+      </table>
+  </td>
+  <td class="mlabels-right">
+<span class="mlabels"><span class="mlabel">inline</span><span class="mlabel">static</span></span>  </td>
+  </tr>
+</table>
+</div><div class="memdoc">
+<p>Segmented reduction </p>
+<dl class="params"><dt>Parameters</dt><dd>
+  <table class="params">
+    <tr><td class="paramdir">[in]</td><td class="paramname">smem_storage</td><td>Reference to shared memory allocation having layout type SmemStorage </td></tr>
+    <tr><td class="paramdir">[in]</td><td class="paramname">input</td><td>Calling thread's input </td></tr>
+    <tr><td class="paramdir">[in]</td><td class="paramname">flag</td><td>Head flag denoting whether or not <code>input</code> is the start of a new segment </td></tr>
+    <tr><td class="paramdir">[in]</td><td class="paramname">reduction_op</td><td>Reduction operator </td></tr>
+  </table>
+  </dd>
+</dl>
+
+</div>
+</div>
 <hr/>The documentation for this class was generated from the following file:<ul>
 <li><a class="el" href="warp__reduce_8cuh.html">warp_reduce.cuh</a></li>
 </ul>
@@ -449,7 +512,7 @@ template&lt;typename ReductionOp &gt; </div>
 <!-- HTML footer for doxygen 1.8.3.1-->
 <!-- start footer part -->
 <hr class="footer"/><address class="footer"><small>
-Generated on Tue May 7 2013 16:26:26 for CUB by &#160;<a href="http://www.doxygen.org/index.html">
+Generated on Tue May 28 2013 23:34:50 for CUB by &#160;<a href="http://www.doxygen.org/index.html">
 <img class="footer" src="doxygen.png" alt="doxygen"/>
 </a> 1.8.3.1
 <br>

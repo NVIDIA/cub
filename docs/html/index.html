@@ -146,11 +146,11 @@ var searchBox = new SearchBox("searchBox", "search",false,'Search');
 </dd></dl>
 <dl class="section user"><dt></dt><dd><b><em>Motivation</em></b>. CUB is inspired by the following goals:<ul>
 <li><em>Absolute performance</em>. CUB primitives are specialized and tuned to best match the features and capabilities of every CUDA architecture.</li>
-<li><em>Enhanced programmer productivity</em>. CUB primitives allow developers to quickly string together sequences of complex parallel operations at all levels of execution.</li>
+<li><em>Enhanced programmer productivity</em>. CUB primitives allow developers to quickly string together sequences of complex parallel operations in both CUDA kernel code and CUDA host code.</li>
 <li><em>Reduced maintenance burden</em>. CUB provides layers of abstraction over the complexities of diverse CUDA hardware. With CUB, applications can enjoy performance-portability without the intensive rewriting or porting efforts typically needed to accommodate new device instructions or behavior.</li>
 </ul>
 </dd></dl>
-<dl class="section user"><dt></dt><dd><b><em>Collective primitives</em></b>. CUB is unique in that it provides cooperative block-level and warp-level parallel primitives. Unlike traditional library software components, these operations are <em>collective</em>, i.e., they are called by a group of parallel SIMT threads rather than by a single sequential thread. These collective primitives are not bound to any particular width of parallelism or to any particular data type. This allows them to be flexible and tunable to fit the needs of the enclosing kernel computation. </dd></dl>
+<dl class="section user"><dt></dt><dd><b><em>Collective block-wide and warp-wide primitives</em></b>. CUB is unique in that it provides block-level and warp-level parallel primitives, e.g., <a class="el" href="classcub_1_1_block_reduce.html" title="BlockReduce provides variants of parallel reduction across a CUDA threadblock. .">cub::BlockReduce</a>, <a class="el" href="classcub_1_1_block_radix_sort.html" title="BlockRadixSort provides variants of parallel radix sorting across a CUDA threadblock. .">cub::BlockRadixSort</a>, <a class="el" href="classcub_1_1_warp_scan.html" title="WarpScan provides variants of parallel prefix scan across CUDA warps. .">cub::WarpScan</a>, etc. Unlike traditional library software components, these operations are <em>collective</em>, i.e., they are called by a cooperating group of parallel SIMT threads rather than by a single sequential thread. These collective primitives are not bound to any particular width of parallelism or to any particular data type. This allows them to be flexible and tunable to fit the needs of the enclosing kernel computation. </dd></dl>
 <dl class="section user"><dt></dt><dd>Thus CUB is <a href="index.html"><em>CUDA Unbound</em></a>.</dd></dl>
 <dl class="section user"><dt></dt><dd><div class="image">
 <img src="cub_overview.png" alt="cub_overview.png"/>
@@ -192,13 +192,13 @@ var searchBox = new SearchBox("searchBox", "search",false,'Search');
 <div class="line">     T data[ITEMS_PER_THREAD];</div>
 <div class="line"></div>
 <div class="line">     <span class="comment">// Load a tile of data using vector-load instructions</span></div>
-<div class="line">     <a class="code" href="group___block_module.html#gaea8200ef976bb588c569e039ea79005c" title="Load a tile of items across a threadblock directly using the specified cache modifier.">BlockLoadVectorized</a>(data, d_in + (blockIdx.x * TILE_SIZE));</div>
+<div class="line">     <a class="code" href="group___io_module.html#ga2fa7c001a713aa79fabca8d40ee7a24c" title="Load a blocked arrangement of items across the thread block using the specified cache modifier...">LoadBlockedVectorized</a>(data, d_in + (blockIdx.x * TILE_SIZE));</div>
 <div class="line"></div>
 <div class="line">     <span class="comment">// Sort data in ascending order</span></div>
 <div class="line">     <a class="code" href="classcub_1_1_block_radix_sort.html#a779bfcd00c57f6b97cbbb8a0aafb616a" title="Performs a threadblock-wide radix sort over a blocked arrangement of keys.">BlockRadixSort::SortBlocked</a>(smem_storage, data);</div>
 <div class="line"></div>
 <div class="line">     <span class="comment">// Store the sorted tile using vector-store instructions</span></div>
-<div class="line">     <a class="code" href="group___block_module.html#ga013c3ab8214854f45e8d678958e7dde9" title="Store a tile of items across a threadblock directly using the specified cache modifier.">BlockStoreVectorized</a>(data, d_out + (blockIdx.x * TILE_SIZE));</div>
+<div class="line">     <a class="code" href="group___io_module.html#ga89ea0e836b7b3110939f0cc3f9f54f48" title="Store a blocked arrangement of items across a thread block using the specified cache modifier...">StoreBlockedVectorized</a>(data, d_out + (blockIdx.x * TILE_SIZE));</div>
 <div class="line">}</div>
 </div><!-- fragment --></dd></dl>
 <dl class="section user"><dt></dt><dd>The <a class="el" href="classcub_1_1_block_radix_sort.html" title="BlockRadixSort provides variants of parallel radix sorting across a CUDA threadblock. .">cub::BlockRadixSort</a> type performs a cooperative radix sort across the thread block's data items. Its implementation is parameterized by the number of threads per block and the aggregate data type <code>T</code> and is specialized for the underlying architecture.</dd></dl>
@@ -376,7 +376,7 @@ var searchBox = new SearchBox("searchBox", "search",false,'Search');
 <!-- HTML footer for doxygen 1.8.3.1-->
 <!-- start footer part -->
 <hr class="footer"/><address class="footer"><small>
-Generated on Tue May 7 2013 16:26:26 for CUB by &#160;<a href="http://www.doxygen.org/index.html">
+Generated on Tue May 28 2013 23:34:50 for CUB by &#160;<a href="http://www.doxygen.org/index.html">
 <img class="footer" src="doxygen.png" alt="doxygen"/>
 </a> 1.8.3.1
 <br>
