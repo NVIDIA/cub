@@ -68,11 +68,10 @@ namespace cub {
 __host__ __device__ __forceinline__ cudaError_t Debug(
     cudaError_t     error,
     const char*     filename,
-    int             line,
-    bool            silent = false)
+    int             line)
 {
 #ifdef CUB_STDERR
-    if (error && !silent)
+    if (error)
     {
     #if (CUB_PTX_ARCH == 0)
         fprintf(stderr, "CUDA error %d [%s, %d]: %s\n", error, filename, line, cudaGetErrorString(error));
@@ -90,12 +89,6 @@ __host__ __device__ __forceinline__ cudaError_t Debug(
  * \brief Debug macro
  */
 #define CubDebug(e) cub::Debug((e), __FILE__, __LINE__)
-
-
-/**
- * \brief Debug macro
- */
-#define CubDebug2(e, silent) cub::Debug((e), __FILE__, __LINE__, silent)
 
 
 /**
