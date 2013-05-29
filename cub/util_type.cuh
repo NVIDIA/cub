@@ -190,6 +190,8 @@ struct Equals <A, A>
  * Size and alignment
  ******************************************************************************/
 
+#ifndef DOXYGEN_SHOULD_SKIP_THIS    // Do not document
+
 template <typename T>
 struct WordAlignment
 {
@@ -211,6 +213,8 @@ struct WordAlignment
                 short,
                 char>::Type>::Type>::Type VolatileAlignWord;
 };
+
+#endif // DOXYGEN_SHOULD_SKIP_THIS
 
 /******************************************************************************
  * Pointer vs. iterator detection
