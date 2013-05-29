@@ -5,7 +5,7 @@
 <meta http-equiv="Content-Type" content="text/xhtml;charset=UTF-8"/>
 <meta http-equiv="X-UA-Compatible" content="IE=9"/>
 <meta name="generator" content="Doxygen 1.8.3.1"/>
-<title>CUB: cub::BlockExchange&lt; T, BLOCK_THREADS, ITEMS_PER_THREAD &gt; Class Template Reference</title>
+<title>CUB: cub::BlockExchange&lt; T, BLOCK_THREADS, ITEMS_PER_THREAD, WARP_TIME_SLICING &gt; Class Template Reference</title>
 <link href="tabs.css" rel="stylesheet" type="text/css"/>
 <script type="text/javascript" src="jquery.js"></script>
 <script type="text/javascript" src="dynsections.js"></script>
@@ -97,16 +97,15 @@ var searchBox = new SearchBox("searchBox", "search",false,'Search');
 </div><!-- top -->
 <div class="header">
   <div class="summary">
-<a href="#nested-classes">Classes</a> &#124;
 <a href="#pub-types">Public Types</a> &#124;
 <a href="classcub_1_1_block_exchange-members.html">List of all members</a>  </div>
   <div class="headertitle">
-<div class="title">cub::BlockExchange&lt; T, BLOCK_THREADS, ITEMS_PER_THREAD &gt; Class Template Reference<div class="ingroups"><a class="el" href="group___block_module.html">Block-wide</a></div></div>  </div>
+<div class="title">cub::BlockExchange&lt; T, BLOCK_THREADS, ITEMS_PER_THREAD, WARP_TIME_SLICING &gt; Class Template Reference<div class="ingroups"><a class="el" href="group___block_module.html">Block-wide</a></div></div>  </div>
 </div><!--header-->
 <div class="contents">
 <a name="details" id="details"></a><h2 class="groupheader">Detailed description</h2>
-<div class="textblock"><h3>template&lt;typename T, int BLOCK_THREADS, int ITEMS_PER_THREAD&gt;<br/>
-class cub::BlockExchange&lt; T, BLOCK_THREADS, ITEMS_PER_THREAD &gt;</h3>
+<div class="textblock"><h3>template&lt;typename T, int BLOCK_THREADS, int ITEMS_PER_THREAD, bool WARP_TIME_SLICING = false&gt;<br/>
+class cub::BlockExchange&lt; T, BLOCK_THREADS, ITEMS_PER_THREAD, WARP_TIME_SLICING &gt;</h3>
 
 <p><a class="el" href="classcub_1_1_block_exchange.html" title="BlockExchange provides operations for reorganizing the partitioning of ordered data across a CUDA thr...">BlockExchange</a> provides operations for reorganizing the partitioning of ordered data across a CUDA threadblock. </p>
 <div class="image">
@@ -115,6 +114,7 @@ class cub::BlockExchange&lt; T, BLOCK_THREADS, ITEMS_PER_THREAD &gt;</h3>
 .</div></div>
  <dl class="section user"><dt>Overview</dt><dd><a class="el" href="classcub_1_1_block_exchange.html" title="BlockExchange provides operations for reorganizing the partitioning of ordered data across a CUDA thr...">BlockExchange</a> allows threadblocks to reorganize data items between threads. More specifically, <a class="el" href="classcub_1_1_block_exchange.html" title="BlockExchange provides operations for reorganizing the partitioning of ordered data across a CUDA thr...">BlockExchange</a> supports the following types of data exchanges:<ul>
 <li>Transposing between <a href="index.html#sec3sec3"><em>blocked</em></a> and <a href="index.html#sec3sec3"><em>striped</em></a> arrangements</li>
+<li>Transposing between <a href="index.html#sec3sec3"><em>blocked</em></a> and <a href="index.html#sec3sec3"><em>warp-striped</em></a> arrangements</li>
 <li>Scattering to a <a href="index.html#sec3sec3"><em>blocked arrangement</em></a></li>
 <li>Scattering to a <a href="index.html#sec3sec3"><em>striped arrangement</em></a></li>
 </ul>
@@ -123,7 +123,8 @@ class cub::BlockExchange&lt; T, BLOCK_THREADS, ITEMS_PER_THREAD &gt;</h3>
   <table class="tparams">
     <tr><td class="paramname">T</td><td>The data type to be exchanged. </td></tr>
     <tr><td class="paramname">BLOCK_THREADS</td><td>The threadblock size in threads. </td></tr>
-    <tr><td class="paramname">ITEMS_PER_THREAD</td><td>The number of items partitioned onto each thread.</td></tr>
+    <tr><td class="paramname">ITEMS_PER_THREAD</td><td>The number of items partitioned onto each thread. </td></tr>
+    <tr><td class="paramname">WARP_TIME_SLICING</td><td><b>[optional]</b> When <code>true</code>, only use enough shared memory for a single warp's worth of tile data, time-slicing the block-wide exchange over multiple synchronized rounds (default = false)</td></tr>
   </table>
   </dd>
 </dl>
@@ -132,7 +133,7 @@ class cub::BlockExchange&lt; T, BLOCK_THREADS, ITEMS_PER_THREAD &gt;</h3>
 </div>
  <div class="centercaption">A threadblock of 16 threads reading a blocked arrangement of 64 items in a parallel "raking" fashion.</div></dd></dl>
 <dl class="section user"><dt>Usage Considerations</dt><dd><ul>
-<li>After any operation, a subsequent <code>__syncthreads()</code> barrier is required if the supplied <a class="el" href="classcub_1_1_block_exchange.html#ad91573946e4abe5ae5e34277ded1c215" title="The operations exposed by BlockExchange require shared memory of this type. This opaque storage can b...">BlockExchange::SmemStorage</a> is to be reused or repurposed by the threadblock</li>
+<li>After any operation, a subsequent <code>__syncthreads()</code> barrier is required if the supplied <a class="el" href="classcub_1_1_block_exchange.html#aa4041ddd2dd44f66a4171ad076bbba35" title="The operations exposed by BlockExchange require shared memory of this type. This opaque storage can b...">BlockExchange::SmemStorage</a> is to be reused or repurposed by the threadblock</li>
 </ul>
 </dd></dl>
 <dl class="section user"><dt>Performance Considerations</dt><dd><ul>
@@ -142,46 +143,56 @@ class cub::BlockExchange&lt; T, BLOCK_THREADS, ITEMS_PER_THREAD &gt;</h3>
 </div><table class="memberdecls">
 <tr class="heading"><td colspan="2"><h2 class="groupheader"><a name="pub-types"></a>
 Public Types</h2></td></tr>
-<tr class="memitem:ad91573946e4abe5ae5e34277ded1c215"><td class="memItemLeft" align="right" valign="top"><a class="anchor" id="ad91573946e4abe5ae5e34277ded1c215"></a>
-typedef SmemStorage&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classcub_1_1_block_exchange.html#ad91573946e4abe5ae5e34277ded1c215">SmemStorage</a></td></tr>
-<tr class="memdesc:ad91573946e4abe5ae5e34277ded1c215"><td class="mdescLeft">&#160;</td><td class="mdescRight">The operations exposed by <a class="el" href="classcub_1_1_block_exchange.html" title="BlockExchange provides operations for reorganizing the partitioning of ordered data across a CUDA thr...">BlockExchange</a> require shared memory of this type. This opaque storage can be allocated directly using the <code>__shared__</code> keyword. Alternatively, it can be aliased to externally allocated shared memory or <code>union</code>'d with other types to facilitate shared memory reuse. <br/></td></tr>
-<tr class="separator:ad91573946e4abe5ae5e34277ded1c215"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:aa4041ddd2dd44f66a4171ad076bbba35"><td class="memItemLeft" align="right" valign="top"><a class="anchor" id="aa4041ddd2dd44f66a4171ad076bbba35"></a>
+typedef _SmemStorage&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classcub_1_1_block_exchange.html#aa4041ddd2dd44f66a4171ad076bbba35">SmemStorage</a></td></tr>
+<tr class="memdesc:aa4041ddd2dd44f66a4171ad076bbba35"><td class="mdescLeft">&#160;</td><td class="mdescRight">The operations exposed by <a class="el" href="classcub_1_1_block_exchange.html" title="BlockExchange provides operations for reorganizing the partitioning of ordered data across a CUDA thr...">BlockExchange</a> require shared memory of this type. This opaque storage can be allocated directly using the <code>__shared__</code> keyword. Alternatively, it can be aliased to externally allocated shared memory or <code>union</code>'d with other types to facilitate shared memory reuse. <br/></td></tr>
+<tr class="separator:aa4041ddd2dd44f66a4171ad076bbba35"><td class="memSeparator" colspan="2">&#160;</td></tr>
 </table><table class="memberdecls">
 <tr class="heading"><td colspan="2"><h2 class="groupheader"><a name="pub-static-methods"></a>
 Static Public Methods</h2></td></tr>
-<tr><td colspan="2"><div class="groupHeader">Transpose exchanges</div></td></tr>
-<tr class="memitem:a068f68d3f9d5c53920eeae82594d6935"><td class="memItemLeft" align="right" valign="top">static __device__ <br class="typebreak"/>
-__forceinline__ void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classcub_1_1_block_exchange.html#a068f68d3f9d5c53920eeae82594d6935">BlockedToStriped</a> (<a class="el" href="classcub_1_1_block_exchange.html#ad91573946e4abe5ae5e34277ded1c215">SmemStorage</a> &amp;smem_storage, T items[ITEMS_PER_THREAD])</td></tr>
-<tr class="memdesc:a068f68d3f9d5c53920eeae82594d6935"><td class="mdescLeft">&#160;</td><td class="mdescRight">Transposes data items from <em>blocked</em> arrangement to <em>striped</em> arrangement.  <a href="#a068f68d3f9d5c53920eeae82594d6935">More...</a><br/></td></tr>
-<tr class="separator:a068f68d3f9d5c53920eeae82594d6935"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:ad8000bf73c3ce935018f32451985ae37"><td class="memItemLeft" align="right" valign="top">static __device__ <br class="typebreak"/>
-__forceinline__ void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classcub_1_1_block_exchange.html#ad8000bf73c3ce935018f32451985ae37">StripedToBlocked</a> (<a class="el" href="classcub_1_1_block_exchange.html#ad91573946e4abe5ae5e34277ded1c215">SmemStorage</a> &amp;smem_storage, T items[ITEMS_PER_THREAD])</td></tr>
-<tr class="memdesc:ad8000bf73c3ce935018f32451985ae37"><td class="mdescLeft">&#160;</td><td class="mdescRight">Transposes data items from <em>striped</em> arrangement to <em>blocked</em> arrangement.  <a href="#ad8000bf73c3ce935018f32451985ae37">More...</a><br/></td></tr>
-<tr class="separator:ad8000bf73c3ce935018f32451985ae37"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr><td colspan="2"><div class="groupHeader">Blocked exchanges</div></td></tr>
+<tr class="memitem:a2e5d1bdb3c9b33a6a6237529e31e758a"><td class="memItemLeft" align="right" valign="top">static __device__ <br class="typebreak"/>
+__forceinline__ void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classcub_1_1_block_exchange.html#a2e5d1bdb3c9b33a6a6237529e31e758a">BlockedToStriped</a> (<a class="el" href="classcub_1_1_block_exchange.html#aa4041ddd2dd44f66a4171ad076bbba35">SmemStorage</a> &amp;smem_storage, T items[ITEMS_PER_THREAD])</td></tr>
+<tr class="memdesc:a2e5d1bdb3c9b33a6a6237529e31e758a"><td class="mdescLeft">&#160;</td><td class="mdescRight">Transposes data items from <em>blocked</em> arrangement to <em>striped</em> arrangement.  <a href="#a2e5d1bdb3c9b33a6a6237529e31e758a">More...</a><br/></td></tr>
+<tr class="separator:a2e5d1bdb3c9b33a6a6237529e31e758a"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:aea8cf97eaee4fd6662b6385ab1ae1bf1"><td class="memItemLeft" align="right" valign="top">static __device__ <br class="typebreak"/>
+__forceinline__ void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classcub_1_1_block_exchange.html#aea8cf97eaee4fd6662b6385ab1ae1bf1">BlockedToWarpStriped</a> (<a class="el" href="classcub_1_1_block_exchange.html#aa4041ddd2dd44f66a4171ad076bbba35">SmemStorage</a> &amp;smem_storage, T items[ITEMS_PER_THREAD])</td></tr>
+<tr class="memdesc:aea8cf97eaee4fd6662b6385ab1ae1bf1"><td class="mdescLeft">&#160;</td><td class="mdescRight">Transposes data items from <em>blocked</em> arrangement to <em>warp-striped</em> arrangement.  <a href="#aea8cf97eaee4fd6662b6385ab1ae1bf1">More...</a><br/></td></tr>
+<tr class="separator:aea8cf97eaee4fd6662b6385ab1ae1bf1"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr><td colspan="2"><div class="groupHeader">Striped exchanges</div></td></tr>
+<tr class="memitem:a7230d36de4370d23ac3c7bb54dca1634"><td class="memItemLeft" align="right" valign="top">static __device__ <br class="typebreak"/>
+__forceinline__ void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classcub_1_1_block_exchange.html#a7230d36de4370d23ac3c7bb54dca1634">StripedToBlocked</a> (<a class="el" href="classcub_1_1_block_exchange.html#aa4041ddd2dd44f66a4171ad076bbba35">SmemStorage</a> &amp;smem_storage, T items[ITEMS_PER_THREAD])</td></tr>
+<tr class="memdesc:a7230d36de4370d23ac3c7bb54dca1634"><td class="mdescLeft">&#160;</td><td class="mdescRight">Transposes data items from <em>striped</em> arrangement to <em>blocked</em> arrangement.  <a href="#a7230d36de4370d23ac3c7bb54dca1634">More...</a><br/></td></tr>
+<tr class="separator:a7230d36de4370d23ac3c7bb54dca1634"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr><td colspan="2"><div class="groupHeader">Warp-striped exchanges</div></td></tr>
+<tr class="memitem:a3ac92db5591493636a12b1035969122e"><td class="memItemLeft" align="right" valign="top">static __device__ <br class="typebreak"/>
+__forceinline__ void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classcub_1_1_block_exchange.html#a3ac92db5591493636a12b1035969122e">WarpStripedToBlocked</a> (<a class="el" href="classcub_1_1_block_exchange.html#aa4041ddd2dd44f66a4171ad076bbba35">SmemStorage</a> &amp;smem_storage, T items[ITEMS_PER_THREAD])</td></tr>
+<tr class="memdesc:a3ac92db5591493636a12b1035969122e"><td class="mdescLeft">&#160;</td><td class="mdescRight">Transposes data items from <em>warp-striped</em> arrangement to <em>blocked</em> arrangement.  <a href="#a3ac92db5591493636a12b1035969122e">More...</a><br/></td></tr>
+<tr class="separator:a3ac92db5591493636a12b1035969122e"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr><td colspan="2"><div class="groupHeader">Scatter exchanges</div></td></tr>
-<tr class="memitem:a7a429434bbdc3e949a8291461a74bff9"><td class="memItemLeft" align="right" valign="top">static __device__ <br class="typebreak"/>
-__forceinline__ void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classcub_1_1_block_exchange.html#a7a429434bbdc3e949a8291461a74bff9">ScatterToBlocked</a> (<a class="el" href="classcub_1_1_block_exchange.html#ad91573946e4abe5ae5e34277ded1c215">SmemStorage</a> &amp;smem_storage, T items[ITEMS_PER_THREAD], unsigned int ranks[ITEMS_PER_THREAD])</td></tr>
-<tr class="memdesc:a7a429434bbdc3e949a8291461a74bff9"><td class="mdescLeft">&#160;</td><td class="mdescRight">Exchanges data items annotated by rank into <em>blocked</em> arrangement.  <a href="#a7a429434bbdc3e949a8291461a74bff9">More...</a><br/></td></tr>
-<tr class="separator:a7a429434bbdc3e949a8291461a74bff9"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:a8b8997367d0d42ee7eb600b981f7b72d"><td class="memItemLeft" align="right" valign="top">static __device__ <br class="typebreak"/>
-__forceinline__ void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classcub_1_1_block_exchange.html#a8b8997367d0d42ee7eb600b981f7b72d">ScatterToStriped</a> (<a class="el" href="classcub_1_1_block_exchange.html#ad91573946e4abe5ae5e34277ded1c215">SmemStorage</a> &amp;smem_storage, T items[ITEMS_PER_THREAD], unsigned int ranks[ITEMS_PER_THREAD])</td></tr>
-<tr class="memdesc:a8b8997367d0d42ee7eb600b981f7b72d"><td class="mdescLeft">&#160;</td><td class="mdescRight">Exchanges data items annotated by rank into <em>striped</em> arrangement.  <a href="#a8b8997367d0d42ee7eb600b981f7b72d">More...</a><br/></td></tr>
-<tr class="separator:a8b8997367d0d42ee7eb600b981f7b72d"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a5058c1c71fff6c1c477b093a5dd08ef4"><td class="memItemLeft" align="right" valign="top">static __device__ <br class="typebreak"/>
+__forceinline__ void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classcub_1_1_block_exchange.html#a5058c1c71fff6c1c477b093a5dd08ef4">ScatterToBlocked</a> (<a class="el" href="classcub_1_1_block_exchange.html#aa4041ddd2dd44f66a4171ad076bbba35">SmemStorage</a> &amp;smem_storage, T items[ITEMS_PER_THREAD], int ranks[ITEMS_PER_THREAD])</td></tr>
+<tr class="memdesc:a5058c1c71fff6c1c477b093a5dd08ef4"><td class="mdescLeft">&#160;</td><td class="mdescRight">Exchanges data items annotated by rank into <em>blocked</em> arrangement.  <a href="#a5058c1c71fff6c1c477b093a5dd08ef4">More...</a><br/></td></tr>
+<tr class="separator:a5058c1c71fff6c1c477b093a5dd08ef4"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a034a53f6e8e69825804ecd5c59250ed5"><td class="memItemLeft" align="right" valign="top">static __device__ <br class="typebreak"/>
+__forceinline__ void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classcub_1_1_block_exchange.html#a034a53f6e8e69825804ecd5c59250ed5">ScatterToStriped</a> (<a class="el" href="classcub_1_1_block_exchange.html#aa4041ddd2dd44f66a4171ad076bbba35">SmemStorage</a> &amp;smem_storage, T items[ITEMS_PER_THREAD], int ranks[ITEMS_PER_THREAD])</td></tr>
+<tr class="memdesc:a034a53f6e8e69825804ecd5c59250ed5"><td class="mdescLeft">&#160;</td><td class="mdescRight">Exchanges data items annotated by rank into <em>striped</em> arrangement.  <a href="#a034a53f6e8e69825804ecd5c59250ed5">More...</a><br/></td></tr>
+<tr class="separator:a034a53f6e8e69825804ecd5c59250ed5"><td class="memSeparator" colspan="2">&#160;</td></tr>
 </table>
 <h2 class="groupheader">Member Function Documentation</h2>
-<a class="anchor" id="a068f68d3f9d5c53920eeae82594d6935"></a>
+<a class="anchor" id="a2e5d1bdb3c9b33a6a6237529e31e758a"></a>
 <div class="memitem">
 <div class="memproto">
 <div class="memtemplate">
-template&lt;typename T , int BLOCK_THREADS, int ITEMS_PER_THREAD&gt; </div>
+template&lt;typename T , int BLOCK_THREADS, int ITEMS_PER_THREAD, bool WARP_TIME_SLICING = false&gt; </div>
 <table class="mlabels">
   <tr>
   <td class="mlabels-left">
       <table class="memname">
         <tr>
-          <td class="memname">static __device__ __forceinline__ void <a class="el" href="classcub_1_1_block_exchange.html">cub::BlockExchange</a>&lt; T, BLOCK_THREADS, ITEMS_PER_THREAD &gt;::BlockedToStriped </td>
+          <td class="memname">static __device__ __forceinline__ void <a class="el" href="classcub_1_1_block_exchange.html">cub::BlockExchange</a>&lt; T, BLOCK_THREADS, ITEMS_PER_THREAD, WARP_TIME_SLICING &gt;::BlockedToStriped </td>
           <td>(</td>
-          <td class="paramtype"><a class="el" href="classcub_1_1_block_exchange.html#ad91573946e4abe5ae5e34277ded1c215">SmemStorage</a> &amp;&#160;</td>
+          <td class="paramtype"><a class="el" href="classcub_1_1_block_exchange.html#aa4041ddd2dd44f66a4171ad076bbba35">SmemStorage</a> &amp;&#160;</td>
           <td class="paramname"><em>smem_storage</em>, </td>
         </tr>
         <tr>
@@ -215,19 +226,65 @@ template&lt;typename T , int BLOCK_THREADS, int ITEMS_PER_THREAD&gt; </div>
 
 </div>
 </div>
-<a class="anchor" id="ad8000bf73c3ce935018f32451985ae37"></a>
+<a class="anchor" id="aea8cf97eaee4fd6662b6385ab1ae1bf1"></a>
 <div class="memitem">
 <div class="memproto">
 <div class="memtemplate">
-template&lt;typename T , int BLOCK_THREADS, int ITEMS_PER_THREAD&gt; </div>
+template&lt;typename T , int BLOCK_THREADS, int ITEMS_PER_THREAD, bool WARP_TIME_SLICING = false&gt; </div>
 <table class="mlabels">
   <tr>
   <td class="mlabels-left">
       <table class="memname">
         <tr>
-          <td class="memname">static __device__ __forceinline__ void <a class="el" href="classcub_1_1_block_exchange.html">cub::BlockExchange</a>&lt; T, BLOCK_THREADS, ITEMS_PER_THREAD &gt;::StripedToBlocked </td>
+          <td class="memname">static __device__ __forceinline__ void <a class="el" href="classcub_1_1_block_exchange.html">cub::BlockExchange</a>&lt; T, BLOCK_THREADS, ITEMS_PER_THREAD, WARP_TIME_SLICING &gt;::BlockedToWarpStriped </td>
           <td>(</td>
-          <td class="paramtype"><a class="el" href="classcub_1_1_block_exchange.html#ad91573946e4abe5ae5e34277ded1c215">SmemStorage</a> &amp;&#160;</td>
+          <td class="paramtype"><a class="el" href="classcub_1_1_block_exchange.html#aa4041ddd2dd44f66a4171ad076bbba35">SmemStorage</a> &amp;&#160;</td>
+          <td class="paramname"><em>smem_storage</em>, </td>
+        </tr>
+        <tr>
+          <td class="paramkey"></td>
+          <td></td>
+          <td class="paramtype">T&#160;</td>
+          <td class="paramname"><em>items</em>[ITEMS_PER_THREAD]&#160;</td>
+        </tr>
+        <tr>
+          <td></td>
+          <td>)</td>
+          <td></td><td></td>
+        </tr>
+      </table>
+  </td>
+  <td class="mlabels-right">
+<span class="mlabels"><span class="mlabel">inline</span><span class="mlabel">static</span></span>  </td>
+  </tr>
+</table>
+</div><div class="memdoc">
+
+<p>Transposes data items from <em>blocked</em> arrangement to <em>warp-striped</em> arrangement. </p>
+<p>A subsequent <code>__syncthreads()</code> threadblock barrier should be invoked after calling this method if the supplied <code>smem_storage</code> is to be reused or repurposed by the threadblock. </p>
+<dl class="params"><dt>Parameters</dt><dd>
+  <table class="params">
+    <tr><td class="paramdir">[in]</td><td class="paramname">smem_storage</td><td>Reference to shared memory allocation having layout type SmemStorage </td></tr>
+    <tr><td class="paramdir">[in,out]</td><td class="paramname">items</td><td>Items to exchange, converting between <em>blocked</em> and <em>warp-striped</em> arrangements. </td></tr>
+  </table>
+  </dd>
+</dl>
+
+</div>
+</div>
+<a class="anchor" id="a7230d36de4370d23ac3c7bb54dca1634"></a>
+<div class="memitem">
+<div class="memproto">
+<div class="memtemplate">
+template&lt;typename T , int BLOCK_THREADS, int ITEMS_PER_THREAD, bool WARP_TIME_SLICING = false&gt; </div>
+<table class="mlabels">
+  <tr>
+  <td class="mlabels-left">
+      <table class="memname">
+        <tr>
+          <td class="memname">static __device__ __forceinline__ void <a class="el" href="classcub_1_1_block_exchange.html">cub::BlockExchange</a>&lt; T, BLOCK_THREADS, ITEMS_PER_THREAD, WARP_TIME_SLICING &gt;::StripedToBlocked </td>
+          <td>(</td>
+          <td class="paramtype"><a class="el" href="classcub_1_1_block_exchange.html#aa4041ddd2dd44f66a4171ad076bbba35">SmemStorage</a> &amp;&#160;</td>
           <td class="paramname"><em>smem_storage</em>, </td>
         </tr>
         <tr>
@@ -261,19 +318,65 @@ template&lt;typename T , int BLOCK_THREADS, int ITEMS_PER_THREAD&gt; </div>
 
 </div>
 </div>
-<a class="anchor" id="a7a429434bbdc3e949a8291461a74bff9"></a>
+<a class="anchor" id="a3ac92db5591493636a12b1035969122e"></a>
 <div class="memitem">
 <div class="memproto">
 <div class="memtemplate">
-template&lt;typename T , int BLOCK_THREADS, int ITEMS_PER_THREAD&gt; </div>
+template&lt;typename T , int BLOCK_THREADS, int ITEMS_PER_THREAD, bool WARP_TIME_SLICING = false&gt; </div>
 <table class="mlabels">
   <tr>
   <td class="mlabels-left">
       <table class="memname">
         <tr>
-          <td class="memname">static __device__ __forceinline__ void <a class="el" href="classcub_1_1_block_exchange.html">cub::BlockExchange</a>&lt; T, BLOCK_THREADS, ITEMS_PER_THREAD &gt;::ScatterToBlocked </td>
+          <td class="memname">static __device__ __forceinline__ void <a class="el" href="classcub_1_1_block_exchange.html">cub::BlockExchange</a>&lt; T, BLOCK_THREADS, ITEMS_PER_THREAD, WARP_TIME_SLICING &gt;::WarpStripedToBlocked </td>
           <td>(</td>
-          <td class="paramtype"><a class="el" href="classcub_1_1_block_exchange.html#ad91573946e4abe5ae5e34277ded1c215">SmemStorage</a> &amp;&#160;</td>
+          <td class="paramtype"><a class="el" href="classcub_1_1_block_exchange.html#aa4041ddd2dd44f66a4171ad076bbba35">SmemStorage</a> &amp;&#160;</td>
+          <td class="paramname"><em>smem_storage</em>, </td>
+        </tr>
+        <tr>
+          <td class="paramkey"></td>
+          <td></td>
+          <td class="paramtype">T&#160;</td>
+          <td class="paramname"><em>items</em>[ITEMS_PER_THREAD]&#160;</td>
+        </tr>
+        <tr>
+          <td></td>
+          <td>)</td>
+          <td></td><td></td>
+        </tr>
+      </table>
+  </td>
+  <td class="mlabels-right">
+<span class="mlabels"><span class="mlabel">inline</span><span class="mlabel">static</span></span>  </td>
+  </tr>
+</table>
+</div><div class="memdoc">
+
+<p>Transposes data items from <em>warp-striped</em> arrangement to <em>blocked</em> arrangement. </p>
+<p>A subsequent <code>__syncthreads()</code> threadblock barrier should be invoked after calling this method if the supplied <code>smem_storage</code> is to be reused or repurposed by the threadblock. </p>
+<dl class="params"><dt>Parameters</dt><dd>
+  <table class="params">
+    <tr><td class="paramdir">[in]</td><td class="paramname">smem_storage</td><td>Reference to shared memory allocation having layout type SmemStorage </td></tr>
+    <tr><td class="paramdir">[in,out]</td><td class="paramname">items</td><td>Items to exchange, converting between <em>warp-striped</em> and <em>blocked</em> arrangements. </td></tr>
+  </table>
+  </dd>
+</dl>
+
+</div>
+</div>
+<a class="anchor" id="a5058c1c71fff6c1c477b093a5dd08ef4"></a>
+<div class="memitem">
+<div class="memproto">
+<div class="memtemplate">
+template&lt;typename T , int BLOCK_THREADS, int ITEMS_PER_THREAD, bool WARP_TIME_SLICING = false&gt; </div>
+<table class="mlabels">
+  <tr>
+  <td class="mlabels-left">
+      <table class="memname">
+        <tr>
+          <td class="memname">static __device__ __forceinline__ void <a class="el" href="classcub_1_1_block_exchange.html">cub::BlockExchange</a>&lt; T, BLOCK_THREADS, ITEMS_PER_THREAD, WARP_TIME_SLICING &gt;::ScatterToBlocked </td>
+          <td>(</td>
+          <td class="paramtype"><a class="el" href="classcub_1_1_block_exchange.html#aa4041ddd2dd44f66a4171ad076bbba35">SmemStorage</a> &amp;&#160;</td>
           <td class="paramname"><em>smem_storage</em>, </td>
         </tr>
         <tr>
@@ -285,7 +388,7 @@ template&lt;typename T , int BLOCK_THREADS, int ITEMS_PER_THREAD&gt; </div>
         <tr>
           <td class="paramkey"></td>
           <td></td>
-          <td class="paramtype">unsigned int&#160;</td>
+          <td class="paramtype">int&#160;</td>
           <td class="paramname"><em>ranks</em>[ITEMS_PER_THREAD]&#160;</td>
         </tr>
         <tr>
@@ -314,19 +417,19 @@ template&lt;typename T , int BLOCK_THREADS, int ITEMS_PER_THREAD&gt; </div>
 
 </div>
 </div>
-<a class="anchor" id="a8b8997367d0d42ee7eb600b981f7b72d"></a>
+<a class="anchor" id="a034a53f6e8e69825804ecd5c59250ed5"></a>
 <div class="memitem">
 <div class="memproto">
 <div class="memtemplate">
-template&lt;typename T , int BLOCK_THREADS, int ITEMS_PER_THREAD&gt; </div>
+template&lt;typename T , int BLOCK_THREADS, int ITEMS_PER_THREAD, bool WARP_TIME_SLICING = false&gt; </div>
 <table class="mlabels">
   <tr>
   <td class="mlabels-left">
       <table class="memname">
         <tr>
-          <td class="memname">static __device__ __forceinline__ void <a class="el" href="classcub_1_1_block_exchange.html">cub::BlockExchange</a>&lt; T, BLOCK_THREADS, ITEMS_PER_THREAD &gt;::ScatterToStriped </td>
+          <td class="memname">static __device__ __forceinline__ void <a class="el" href="classcub_1_1_block_exchange.html">cub::BlockExchange</a>&lt; T, BLOCK_THREADS, ITEMS_PER_THREAD, WARP_TIME_SLICING &gt;::ScatterToStriped </td>
           <td>(</td>
-          <td class="paramtype"><a class="el" href="classcub_1_1_block_exchange.html#ad91573946e4abe5ae5e34277ded1c215">SmemStorage</a> &amp;&#160;</td>
+          <td class="paramtype"><a class="el" href="classcub_1_1_block_exchange.html#aa4041ddd2dd44f66a4171ad076bbba35">SmemStorage</a> &amp;&#160;</td>
           <td class="paramname"><em>smem_storage</em>, </td>
         </tr>
         <tr>
@@ -338,7 +441,7 @@ template&lt;typename T , int BLOCK_THREADS, int ITEMS_PER_THREAD&gt; </div>
         <tr>
           <td class="paramkey"></td>
           <td></td>
-          <td class="paramtype">unsigned int&#160;</td>
+          <td class="paramtype">int&#160;</td>
           <td class="paramname"><em>ranks</em>[ITEMS_PER_THREAD]&#160;</td>
         </tr>
         <tr>
@@ -374,7 +477,7 @@ template&lt;typename T , int BLOCK_THREADS, int ITEMS_PER_THREAD&gt; </div>
 <!-- HTML footer for doxygen 1.8.3.1-->
 <!-- start footer part -->
 <hr class="footer"/><address class="footer"><small>
-Generated on Tue May 7 2013 16:26:26 for CUB by &#160;<a href="http://www.doxygen.org/index.html">
+Generated on Tue May 28 2013 23:34:49 for CUB by &#160;<a href="http://www.doxygen.org/index.html">
 <img class="footer" src="doxygen.png" alt="doxygen"/>
 </a> 1.8.3.1
 <br>

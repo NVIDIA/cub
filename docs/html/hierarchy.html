@@ -114,7 +114,7 @@ var searchBox = new SearchBox("searchBox", "search",false,'Search');
 <img src="discont_logo.png" alt="discont_logo.png"/>
 </div>
 </td></tr>
-<tr id="row_8_" class="even"><td class="entry"><img src="ftv2node.png" alt="o" width="16" height="22" /><img src="ftv2cl.png" alt="C" width="24" height="22" /><a class="el" href="classcub_1_1_block_exchange.html" target="_self">cub::BlockExchange&lt; T, BLOCK_THREADS, ITEMS_PER_THREAD &gt;</a></td><td class="desc"><a class="el" href="classcub_1_1_block_exchange.html" title="BlockExchange provides operations for reorganizing the partitioning of ordered data across a CUDA thr...">BlockExchange</a> provides operations for reorganizing the partitioning of ordered data across a CUDA threadblock. </p>
+<tr id="row_8_" class="even"><td class="entry"><img src="ftv2node.png" alt="o" width="16" height="22" /><img src="ftv2cl.png" alt="C" width="24" height="22" /><a class="el" href="classcub_1_1_block_exchange.html" target="_self">cub::BlockExchange&lt; T, BLOCK_THREADS, ITEMS_PER_THREAD, WARP_TIME_SLICING &gt;</a></td><td class="desc"><a class="el" href="classcub_1_1_block_exchange.html" title="BlockExchange provides operations for reorganizing the partitioning of ordered data across a CUDA thr...">BlockExchange</a> provides operations for reorganizing the partitioning of ordered data across a CUDA threadblock. </p>
 <div class="image">
 <img src="transpose_logo.png" alt="transpose_logo.png"/>
 </div>
@@ -124,11 +124,11 @@ var searchBox = new SearchBox("searchBox", "search",false,'Search');
 <img src="histogram_logo.png" alt="histogram_logo.png"/>
 </div>
 </td></tr>
-<tr id="row_10_" class="even"><td class="entry"><img src="ftv2node.png" alt="o" width="16" height="22" /><img src="ftv2cl.png" alt="C" width="24" height="22" /><a class="el" href="classcub_1_1_block_load.html" target="_self">cub::BlockLoad&lt; InputIteratorRA, BLOCK_THREADS, ITEMS_PER_THREAD, POLICY, MODIFIER &gt;</a></td><td class="desc"><a class="el" href="classcub_1_1_block_load.html" title="BlockLoad provides data movement operations for reading block-arranged data from global memory...">BlockLoad</a> provides data movement operations for reading <a href="index.html#sec3sec3"><em>block-arranged</em></a> data from global memory. </p>
+<tr id="row_10_" class="even"><td class="entry"><img src="ftv2node.png" alt="o" width="16" height="22" /><img src="ftv2cl.png" alt="C" width="24" height="22" /><a class="el" href="classcub_1_1_block_load.html" target="_self">cub::BlockLoad&lt; InputIteratorRA, BLOCK_THREADS, ITEMS_PER_THREAD, ALGORITHM, MODIFIER, WARP_TIME_SLICING &gt;</a></td><td class="desc"><a class="el" href="classcub_1_1_block_load.html" title="BlockLoad provides cooperative data movement operations for loading a tile of data from memory into a...">BlockLoad</a> provides cooperative data movement operations for loading a tile of data from memory into a <a href="index.html#sec3sec3"><em>block arrangement</em></a> across a CUDA thread block. </p>
 <div class="image">
 <img src="block_load_logo.png" alt="block_load_logo.png"/>
 </div>
-</td></tr>
+<a class="el" href="classcub_1_1_block_load.html" title="BlockLoad provides cooperative data movement operations for loading a tile of data from memory into a...">BlockLoad</a> provides a tile-loading abstraction that implements alternative <a class="el" href="namespacecub.html#a9d7e37497fdd99864c57adecda710401" title="cub::BlockLoadAlgorithm enumerates alternative algorithms for cub::BlockLoad to load a tile of data f...">cub::BlockLoadAlgorithm</a> strategies that can be used to optimize data movement on different architectures for different granularity sizes (i.e., number of items per thread)</td></tr>
 <tr id="row_11_"><td class="entry"><img src="ftv2node.png" alt="o" width="16" height="22" /><img src="ftv2cl.png" alt="C" width="24" height="22" /><a class="el" href="classcub_1_1_block_radix_sort.html" target="_self">cub::BlockRadixSort&lt; KeyType, BLOCK_THREADS, ITEMS_PER_THREAD, ValueType, RADIX_BITS, MEMOIZE_OUTER_SCAN, INNER_SCAN_ALGORITHM, SMEM_CONFIG &gt;</a></td><td class="desc"><a class="el" href="classcub_1_1_block_radix_sort.html" title="BlockRadixSort provides variants of parallel radix sorting across a CUDA threadblock. .">BlockRadixSort</a> provides variants of parallel radix sorting across a CUDA threadblock. </p>
 <div class="image">
 <img src="sorting_logo.png" alt="sorting_logo.png"/>
@@ -149,7 +149,7 @@ var searchBox = new SearchBox("searchBox", "search",false,'Search');
 <img src="scan_logo.png" alt="scan_logo.png"/>
 </div>
 </td></tr>
-<tr id="row_15_"><td class="entry"><img src="ftv2node.png" alt="o" width="16" height="22" /><img src="ftv2cl.png" alt="C" width="24" height="22" /><a class="el" href="classcub_1_1_block_store.html" target="_self">cub::BlockStore&lt; OutputIteratorRA, BLOCK_THREADS, ITEMS_PER_THREAD, POLICY, MODIFIER &gt;</a></td><td class="desc"><a class="el" href="classcub_1_1_block_store.html" title="BlockStore provides data movement operations for writing blocked-arranged data to global memory...">BlockStore</a> provides data movement operations for writing <a href="index.html#sec3sec3"><em>blocked-arranged</em></a> data to global memory. </p>
+<tr id="row_15_"><td class="entry"><img src="ftv2node.png" alt="o" width="16" height="22" /><img src="ftv2cl.png" alt="C" width="24" height="22" /><a class="el" href="classcub_1_1_block_store.html" target="_self">cub::BlockStore&lt; OutputIteratorRA, BLOCK_THREADS, ITEMS_PER_THREAD, ALGORITHM, MODIFIER, WARP_TIME_SLICING &gt;</a></td><td class="desc"><a class="el" href="classcub_1_1_block_store.html" title="BlockStore provides data movement operations for storing a tile of data to memory from a block arrang...">BlockStore</a> provides data movement operations for storing a tile of data to memory from a <a href="index.html#sec3sec3"><em>block arrangement</em></a> across a CUDA thread block. </p>
 <div class="image">
 <img src="block_store_logo.png" alt="block_store_logo.png"/>
 </div>
@@ -163,7 +163,7 @@ var searchBox = new SearchBox("searchBox", "search",false,'Search');
 <img src="histogram_logo.png" alt="histogram_logo.png"/>
 </div>
 </td></tr>
-<tr id="row_20_"><td class="entry"><img src="ftv2node.png" alt="o" width="16" height="22" /><img src="ftv2cl.png" alt="C" width="24" height="22" /><a class="el" href="structcub_1_1_device_reduce.html" target="_self">cub::DeviceReduce</a></td><td class="desc"><a class="el" href="structcub_1_1_device_reduce.html" title="DeviceReduce provides device-wide parallel operations for reducing data items residing within a CUDA ...">DeviceReduce</a> provides device-wide parallel operations for reducing data items residing within a CUDA device's global memory. </p>
+<tr id="row_20_"><td class="entry"><img src="ftv2node.png" alt="o" width="16" height="22" /><img src="ftv2cl.png" alt="C" width="24" height="22" /><a class="el" href="structcub_1_1_device_reduce.html" target="_self">cub::DeviceReduce</a></td><td class="desc"><a class="el" href="structcub_1_1_device_reduce.html" title="DeviceReduce provides operations for computing a device-wide, parallel reduction across data items re...">DeviceReduce</a> provides operations for computing a device-wide, parallel reduction across data items residing within global memory. </p>
 <div class="image">
 <img src="reduce_logo.png" alt="reduce_logo.png"/>
 </div>
@@ -201,7 +201,7 @@ var searchBox = new SearchBox("searchBox", "search",false,'Search');
 <!-- HTML footer for doxygen 1.8.3.1-->
 <!-- start footer part -->
 <hr class="footer"/><address class="footer"><small>
-Generated on Tue May 7 2013 16:26:26 for CUB by &#160;<a href="http://www.doxygen.org/index.html">
+Generated on Tue May 28 2013 23:34:50 for CUB by &#160;<a href="http://www.doxygen.org/index.html">
 <img class="footer" src="doxygen.png" alt="doxygen"/>
 </a> 1.8.3.1
 <br>

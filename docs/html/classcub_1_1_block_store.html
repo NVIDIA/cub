@@ -5,7 +5,7 @@
 <meta http-equiv="Content-Type" content="text/xhtml;charset=UTF-8"/>
 <meta http-equiv="X-UA-Compatible" content="IE=9"/>
 <meta name="generator" content="Doxygen 1.8.3.1"/>
-<title>CUB: cub::BlockStore&lt; OutputIteratorRA, BLOCK_THREADS, ITEMS_PER_THREAD, POLICY, MODIFIER &gt; Class Template Reference</title>
+<title>CUB: cub::BlockStore&lt; OutputIteratorRA, BLOCK_THREADS, ITEMS_PER_THREAD, ALGORITHM, MODIFIER, WARP_TIME_SLICING &gt; Class Template Reference</title>
 <link href="tabs.css" rel="stylesheet" type="text/css"/>
 <script type="text/javascript" src="jquery.js"></script>
 <script type="text/javascript" src="dynsections.js"></script>
@@ -102,120 +102,137 @@ var searchBox = new SearchBox("searchBox", "search",false,'Search');
 <a href="#pub-static-methods">Static Public Methods</a> &#124;
 <a href="classcub_1_1_block_store-members.html">List of all members</a>  </div>
   <div class="headertitle">
-<div class="title">cub::BlockStore&lt; OutputIteratorRA, BLOCK_THREADS, ITEMS_PER_THREAD, POLICY, MODIFIER &gt; Class Template Reference<div class="ingroups"><a class="el" href="group___block_module.html">Block-wide</a></div></div>  </div>
+<div class="title">cub::BlockStore&lt; OutputIteratorRA, BLOCK_THREADS, ITEMS_PER_THREAD, ALGORITHM, MODIFIER, WARP_TIME_SLICING &gt; Class Template Reference<div class="ingroups"><a class="el" href="group___block_module.html">Block-wide</a></div></div>  </div>
 </div><!--header-->
 <div class="contents">
 <a name="details" id="details"></a><h2 class="groupheader">Detailed description</h2>
-<div class="textblock"><h3>template&lt;typename OutputIteratorRA, int BLOCK_THREADS, int ITEMS_PER_THREAD, BlockStorePolicy POLICY = BLOCK_STORE_DIRECT, PtxStoreModifier MODIFIER = PTX_STORE_NONE&gt;<br/>
-class cub::BlockStore&lt; OutputIteratorRA, BLOCK_THREADS, ITEMS_PER_THREAD, POLICY, MODIFIER &gt;</h3>
+<div class="textblock"><h3>template&lt;typename OutputIteratorRA, int BLOCK_THREADS, int ITEMS_PER_THREAD, BlockStorePolicy ALGORITHM = BLOCK_STORE_DIRECT, PtxStoreModifier MODIFIER = STORE_DEFAULT, bool WARP_TIME_SLICING = false&gt;<br/>
+class cub::BlockStore&lt; OutputIteratorRA, BLOCK_THREADS, ITEMS_PER_THREAD, ALGORITHM, MODIFIER, WARP_TIME_SLICING &gt;</h3>
 
-<p><a class="el" href="classcub_1_1_block_store.html" title="BlockStore provides data movement operations for writing blocked-arranged data to global memory...">BlockStore</a> provides data movement operations for writing <a href="index.html#sec3sec3"><em>blocked-arranged</em></a> data to global memory. </p>
+<p><a class="el" href="classcub_1_1_block_store.html" title="BlockStore provides data movement operations for storing a tile of data to memory from a block arrang...">BlockStore</a> provides data movement operations for storing a tile of data to memory from a <a href="index.html#sec3sec3"><em>block arrangement</em></a> across a CUDA thread block. </p>
 <div class="image">
 <img src="block_store_logo.png" alt="block_store_logo.png"/>
 <div class="caption">
 .</div></div>
- <p><a class="el" href="classcub_1_1_block_store.html" title="BlockStore provides data movement operations for writing blocked-arranged data to global memory...">BlockStore</a> provides a single tile-storing abstraction whose performance behavior can be statically tuned. In particular, <a class="el" href="classcub_1_1_block_store.html" title="BlockStore provides data movement operations for writing blocked-arranged data to global memory...">BlockStore</a> implements several alternative <a class="el" href="namespacecub.html#aaaa9ee8c8a57c6607909c110affd189e" title="Tuning policy for cub::BlockStore.">cub::BlockStorePolicy</a> strategies catering to different granularity sizes (i.e., number of items per thread).</p>
+ <p><a class="el" href="classcub_1_1_block_store.html" title="BlockStore provides data movement operations for storing a tile of data to memory from a block arrang...">BlockStore</a> provides a tile-storing abstraction that implements alternative cub::BlockStoreAlgorithm strategies that can be used to optimize data movement on different architectures for different granularity sizes (i.e., number of items per thread).</p>
 <dl class="tparams"><dt>Template Parameters</dt><dd>
   <table class="tparams">
     <tr><td class="paramname">OutputIteratorRA</td><td>The input iterator type (may be a simple pointer type). </td></tr>
     <tr><td class="paramname">BLOCK_THREADS</td><td>The threadblock size in threads. </td></tr>
     <tr><td class="paramname">ITEMS_PER_THREAD</td><td>The number of consecutive items partitioned onto each thread. </td></tr>
-    <tr><td class="paramname">POLICY</td><td><b>[optional]</b> <a class="el" href="namespacecub.html#aaaa9ee8c8a57c6607909c110affd189e" title="Tuning policy for cub::BlockStore.">cub::BlockStorePolicy</a> tuning policy enumeration. Default = <a class="el" href="namespacecub.html#aaaa9ee8c8a57c6607909c110affd189ea9b8dcc7b6b06bcfc24af4f499523b880">cub::BLOCK_STORE_DIRECT</a>. </td></tr>
-    <tr><td class="paramname">MODIFIER</td><td><b>[optional]</b> <a class="el" href="group___thread_module.html#gae9c7d6a6af7104f528509182ac9c9da2" title="Enumeration of PTX cache-modifiers for memory store operations.">cub::PtxStoreModifier</a> cache modifier. Default = <a class="el" href="group___thread_module.html#ggae9c7d6a6af7104f528509182ac9c9da2a5437dabe5d300b7188dbb42132363c05" title="Default (no modifier)">cub::PTX_STORE_NONE</a>.</td></tr>
+    <tr><td class="paramname">ALGORITHM</td><td><b>[optional]</b> <a class="el" href="namespacecub.html#aaaa9ee8c8a57c6607909c110affd189e" title="cub::BlockStorePolicy enumerates alternative algorithms for cub::BlockStore to store a tile of data t...">cub::BlockStorePolicy</a> tuning policy enumeration. Default = <a class="el" href="namespacecub.html#aaaa9ee8c8a57c6607909c110affd189ea9b8dcc7b6b06bcfc24af4f499523b880">cub::BLOCK_STORE_DIRECT</a>. </td></tr>
+    <tr><td class="paramname">MODIFIER</td><td><b>[optional]</b> <a class="el" href="group___io_module.html#gae9c7d6a6af7104f528509182ac9c9da2" title="Enumeration of PTX cache-modifiers for memory store operations.">cub::PtxStoreModifier</a> cache modifier. Default = <a class="el" href="group___io_module.html#ggae9c7d6a6af7104f528509182ac9c9da2a434aa4b3efc8e0c0ce4f1a00cdad26bd" title="Default (no modifier)">cub::STORE_DEFAULT</a>. </td></tr>
+    <tr><td class="paramname">WARP_TIME_SLICING</td><td><b>[optional]</b> For cooperative cub::BlockStoreAlgorithm parameterizations that utilize shared memory: When <code>true</code>, only use enough shared memory for a single warp's worth of tile data, time-slicing the block-wide exchange over multiple synchronized rounds (default = false)</td></tr>
   </table>
   </dd>
 </dl>
-<dl class="section user"><dt>Algorithm</dt><dd><a class="el" href="classcub_1_1_block_store.html" title="BlockStore provides data movement operations for writing blocked-arranged data to global memory...">BlockStore</a> can be (optionally) configured to use one of three alternative methods:<ol type="1">
+<dl class="section user"><dt>Algorithm</dt><dd><a class="el" href="classcub_1_1_block_store.html" title="BlockStore provides data movement operations for storing a tile of data to memory from a block arrang...">BlockStore</a> can be (optionally) configured to use one of three alternative methods:<ol type="1">
 <li><b><a class="el" href="namespacecub.html#aaaa9ee8c8a57c6607909c110affd189ea9b8dcc7b6b06bcfc24af4f499523b880">cub::BLOCK_STORE_DIRECT</a></b>. A <a href="index.html#sec3sec3"><em>blocked arrangement</em></a> of data is written directly to memory. <a class="el" href="namespacecub.html#aaaa9ee8c8a57c6607909c110affd189e">More...</a></li>
 <li><b><a class="el" href="namespacecub.html#aaaa9ee8c8a57c6607909c110affd189ea0ccd625a7f2f3649155cbd5a27adfb41">cub::BLOCK_STORE_VECTORIZE</a></b>. A <a href="index.html#sec3sec3"><em>blocked arrangement</em></a> of data is written directly to memory using CUDA's built-in vectorized stores as a coalescing optimization. <a class="el" href="namespacecub.html#aaaa9ee8c8a57c6607909c110affd189e">More...</a></li>
 <li><b><a class="el" href="namespacecub.html#aaaa9ee8c8a57c6607909c110affd189eab0bbe20613466c3cedfcfea33a97d69c">cub::BLOCK_STORE_TRANSPOSE</a></b>. A <a href="index.html#sec3sec3"><em>blocked arrangement</em></a> is locally transposed into a <a href="index.html#sec3sec3"><em>striped arrangement</em></a> which is then written to memory. <a class="el" href="namespacecub.html#aaaa9ee8c8a57c6607909c110affd189e">More...</a></li>
+<li><b><a class="el" href="namespacecub.html#aaaa9ee8c8a57c6607909c110affd189ea9178e3be2332f84a66761cee4ee6f3e3">cub::BLOCK_STORE_WARP_TRANSPOSE</a></b>. A <a href="index.html#sec3sec3"><em>blocked arrangement</em></a> is locally transposed into a <a href="index.html#sec3sec3"><em>warp-striped arrangement</em></a> which is then written to memory. <a class="el" href="namespacecub.html#aaaa9ee8c8a57c6607909c110affd189e">More...</a></li>
 </ol>
 </dd></dl>
 <dl class="section user"><dt>Usage Considerations</dt><dd><ul>
-<li>After any operation, a subsequent <code>__syncthreads()</code> barrier is required if the supplied <a class="el" href="classcub_1_1_block_store.html#a44f8ee5a77fc8cc348a68a6d233ae68d" title="The operations exposed by BlockStore require shared memory of this type. This opaque storage can be a...">BlockStore::SmemStorage</a> is to be reused or repurposed by the threadblock</li>
+<li>After any operation, a subsequent <code>__syncthreads()</code> barrier is required if the supplied <a class="el" href="classcub_1_1_block_store.html#a421dd27beee71825a56db98cafb4ada7" title="The operations exposed by BlockStore require shared memory of this type. This opaque storage can be a...">BlockStore::SmemStorage</a> is to be reused or repurposed by the threadblock</li>
 </ul>
 </dd></dl>
 <dl class="section user"><dt>Performance Considerations</dt><dd><ul>
-<li>See <a class="el" href="namespacecub.html#aaaa9ee8c8a57c6607909c110affd189e" title="Tuning policy for cub::BlockStore.">cub::BlockStorePolicy</a> for more performance details regarding algorithmic alternatives</li>
+<li>See <a class="el" href="namespacecub.html#aaaa9ee8c8a57c6607909c110affd189e" title="cub::BlockStorePolicy enumerates alternative algorithms for cub::BlockStore to store a tile of data t...">cub::BlockStorePolicy</a> for more performance details regarding algorithmic alternatives</li>
 </ul>
 </dd></dl>
-<dl class="section user"><dt>Examples</dt><dd><em>Example 1.</em> Have a 128-thread threadblock directly store a blocked arrangement of four consecutive integers per thread. <div class="fragment"><div class="line"><span class="preprocessor">#include &lt;<a class="code" href="cub_8cuh.html">cub/cub.cuh</a>&gt;</span></div>
+<dl class="section user"><dt>Examples</dt><dd><em>Example 1.</em> Have a 128-thread thread block directly store a blocked arrangement of four consecutive integers per thread. The store operation may suffer from non-coalesced memory accesses because consecutive threads are referencing non-consecutive outputs as each item is written. <div class="fragment"><div class="line"><span class="preprocessor">#include &lt;<a class="code" href="cub_8cuh.html">cub/cub.cuh</a>&gt;</span></div>
 <div class="line"></div>
-<div class="line"><span class="keyword">template</span> &lt;<span class="keywordtype">int</span> BLOCK_THREADS&gt;</div>
 <div class="line">__global__ <span class="keywordtype">void</span> SomeKernel(<span class="keywordtype">int</span> *d_out, ...)</div>
 <div class="line">{</div>
 <div class="line">     <span class="comment">// Parameterize BlockStore for 128 threads (4 items each) on type int</span></div>
-<div class="line">     <span class="keyword">typedef</span> <a class="code" href="classcub_1_1_block_store.html" title="BlockStore provides data movement operations for writing blocked-arranged data to global memory...">cub::BlockStore&lt;int*, 128, 4&gt;</a> BlockStore;</div>
+<div class="line">     <span class="keyword">typedef</span> <a class="code" href="classcub_1_1_block_store.html" title="BlockStore provides data movement operations for storing a tile of data to memory from a block arrang...">cub::BlockStore&lt;int*, 128, 4&gt;</a> BlockStore;</div>
 <div class="line"></div>
 <div class="line">     <span class="comment">// Declare shared memory for BlockStore</span></div>
-<div class="line">     __shared__ <span class="keyword">typename</span> <a class="code" href="classcub_1_1_block_store.html#a44f8ee5a77fc8cc348a68a6d233ae68d" title="The operations exposed by BlockStore require shared memory of this type. This opaque storage can be a...">BlockStore::SmemStorage</a> smem_storage;</div>
+<div class="line">     __shared__ <span class="keyword">typename</span> <a class="code" href="classcub_1_1_block_store.html#a421dd27beee71825a56db98cafb4ada7" title="The operations exposed by BlockStore require shared memory of this type. This opaque storage can be a...">BlockStore::SmemStorage</a> smem_storage;</div>
 <div class="line"></div>
 <div class="line">     <span class="comment">// A segment of consecutive items per thread</span></div>
 <div class="line">     <span class="keywordtype">int</span> data[4];</div>
 <div class="line"></div>
-<div class="line">     <span class="comment">// Store a tile of data</span></div>
-<div class="line">     <a class="code" href="classcub_1_1_block_store.html#a4d7858f738321f7130bc0be7d6fa46a5" title="Store a tile of items across a threadblock.">BlockStore::Store</a>(smem_storage, d_out + blockIdx.x * 128 * 4, data);</div>
+<div class="line">     <span class="comment">// Store a tile of data at this block&#39;s offset</span></div>
+<div class="line">     <a class="code" href="classcub_1_1_block_store.html#af6d2a7d6f3bb37793cd0cb3a6e1b3934" title="Store a tile of items across a threadblock.">BlockStore::Store</a>(smem_storage, d_out + blockIdx.x * 128 * 4, data);</div>
 <div class="line"></div>
 <div class="line">     ...</div>
-<div class="line">}</div>
 </div><!-- fragment --></dd></dl>
-<p><em>Example 2.</em> Have a threadblock store a blocked arrangement of <code>ITEMS_PER_THREAD</code> consecutive integers per thread using vectorized stores and global-only caching: </p>
-<div class="fragment"><div class="line"><span class="preprocessor">#include &lt;<a class="code" href="cub_8cuh.html">cub/cub.cuh</a>&gt;</span></div>
+<dl class="section user"><dt></dt><dd><em>Example 2.</em> Have a thread block transpose a blocked arrangement of 21 consecutive integers per thread into a striped arrangement across the thread block and then store the items to memory using strip-mined writes. The store operation has perfectly coalesced memory accesses because consecutive threads are referencing consecutive output items. <div class="fragment"><div class="line"><span class="preprocessor">#include &lt;<a class="code" href="cub_8cuh.html">cub/cub.cuh</a>&gt;</span></div>
 <div class="line"></div>
 <div class="line"><span class="keyword">template</span> &lt;<span class="keywordtype">int</span> BLOCK_THREADS&gt;</div>
 <div class="line">__global__ <span class="keywordtype">void</span> SomeKernel(<span class="keywordtype">int</span> *d_out, ...)</div>
 <div class="line">{</div>
-<div class="line">     <span class="keyword">const</span> <span class="keywordtype">int</span> ITEMS_PER_THREAD = 4;</div>
-<div class="line"></div>
 <div class="line">     <span class="comment">// Parameterize BlockStore on type int</span></div>
-<div class="line">     <span class="keyword">typedef</span> <a class="code" href="classcub_1_1_block_store.html" title="BlockStore provides data movement operations for writing blocked-arranged data to global memory...">cub::BlockStore&lt;int, BLOCK_THREADS, 4, BLOCK_STORE_VECTORIZE, PTX_STORE_CG&gt;</a> BlockStore;</div>
+<div class="line">     <span class="keyword">typedef</span> <a class="code" href="classcub_1_1_block_store.html" title="BlockStore provides data movement operations for storing a tile of data to memory from a block arrang...">cub::BlockStore&lt;int*, BLOCK_THREADS, 21, BLOCK_STORE_TRANSPOSE&gt;</a> BlockStore;</div>
 <div class="line"></div>
 <div class="line">     <span class="comment">// Declare shared memory for BlockStore</span></div>
-<div class="line">     __shared__ <span class="keyword">typename</span> <a class="code" href="classcub_1_1_block_store.html#a44f8ee5a77fc8cc348a68a6d233ae68d" title="The operations exposed by BlockStore require shared memory of this type. This opaque storage can be a...">BlockStore::SmemStorage</a> smem_storage;</div>
+<div class="line">     __shared__ <span class="keyword">typename</span> <a class="code" href="classcub_1_1_block_store.html#a421dd27beee71825a56db98cafb4ada7" title="The operations exposed by BlockStore require shared memory of this type. This opaque storage can be a...">BlockStore::SmemStorage</a> smem_storage;</div>
 <div class="line"></div>
 <div class="line">     <span class="comment">// A segment of consecutive items per thread</span></div>
-<div class="line">     <span class="keywordtype">int</span> data[4];</div>
+<div class="line">     <span class="keywordtype">int</span> data[21];</div>
 <div class="line"></div>
-<div class="line">     <span class="comment">// Store a tile of data using vector-store instructions if possible</span></div>
-<div class="line">     <a class="code" href="classcub_1_1_block_store.html#a4d7858f738321f7130bc0be7d6fa46a5" title="Store a tile of items across a threadblock.">BlockStore::Store</a>(smem_storage, d_out + blockIdx.x * BLOCK_THREADS * 4, data);</div>
+<div class="line">     <span class="comment">// Store a tile of data at this block&#39;s offset</span></div>
+<div class="line">     <a class="code" href="classcub_1_1_block_store.html#af6d2a7d6f3bb37793cd0cb3a6e1b3934" title="Store a tile of items across a threadblock.">BlockStore::Store</a>(smem_storage, d_out + blockIdx.x * BLOCK_THREADS * 21, data);</div>
 <div class="line"></div>
 <div class="line">     ...</div>
-<div class="line">}</div>
-</div><!-- fragment --><p> <br/>
- </p>
+</div><!-- fragment --></dd></dl>
+<dl class="section user"><dt></dt><dd><em>Example 3</em> Have a thread block store a blocked arrangement of <code>ITEMS_PER_THREAD</code> consecutive integers per thread using vectorized stores and global-only caching. The store operation will have perfectly coalesced memory accesses if ITEMS_PER_THREAD is 1, 2, or 4 which allows consecutive threads to write consecutive int1, int2, or int4 words. <div class="fragment"><div class="line"><span class="preprocessor">#include &lt;<a class="code" href="cub_8cuh.html">cub/cub.cuh</a>&gt;</span></div>
+<div class="line"></div>
+<div class="line"><span class="keyword">template</span> &lt;</div>
+<div class="line">    <span class="keywordtype">int</span> BLOCK_THREADS,</div>
+<div class="line">    <span class="keywordtype">int</span> ITEMS_PER_THREAD&gt;</div>
+<div class="line">__global__ <span class="keywordtype">void</span> SomeKernel(<span class="keywordtype">int</span> *d_out, ...)</div>
+<div class="line">{</div>
+<div class="line">     <span class="comment">// Parameterize BlockStore on type int</span></div>
+<div class="line">     <span class="keyword">typedef</span> <a class="code" href="classcub_1_1_block_store.html" title="BlockStore provides data movement operations for storing a tile of data to memory from a block arrang...">cub::BlockStore&lt;int*, BLOCK_THREADS, ITEMS_PER_THREAD, BLOCK_STORE_VECTORIZE, STORE_CG&gt;</a> BlockStore;</div>
+<div class="line"></div>
+<div class="line">     <span class="comment">// Declare shared memory for BlockStore</span></div>
+<div class="line">     __shared__ <span class="keyword">typename</span> <a class="code" href="classcub_1_1_block_store.html#a421dd27beee71825a56db98cafb4ada7" title="The operations exposed by BlockStore require shared memory of this type. This opaque storage can be a...">BlockStore::SmemStorage</a> smem_storage;</div>
+<div class="line"></div>
+<div class="line">     <span class="comment">// A segment of consecutive items per thread</span></div>
+<div class="line">     <span class="keywordtype">int</span> data[ITEMS_PER_THREAD];</div>
+<div class="line"></div>
+<div class="line">     <span class="comment">// Store a tile of data using vector-store instructions if possible</span></div>
+<div class="line">     <a class="code" href="classcub_1_1_block_store.html#af6d2a7d6f3bb37793cd0cb3a6e1b3934" title="Store a tile of items across a threadblock.">BlockStore::Store</a>(smem_storage, d_out + blockIdx.x * BLOCK_THREADS * ITEMS_PER_THREAD, data);</div>
+<div class="line"></div>
+<div class="line">     ...</div>
+</div><!-- fragment --> <br/>
+ </dd></dl>
 </div><table class="memberdecls">
 <tr class="heading"><td colspan="2"><h2 class="groupheader"><a name="pub-types"></a>
 Public Types</h2></td></tr>
-<tr class="memitem:a44f8ee5a77fc8cc348a68a6d233ae68d"><td class="memItemLeft" align="right" valign="top"><a class="anchor" id="a44f8ee5a77fc8cc348a68a6d233ae68d"></a>
-typedef _SmemStorage&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classcub_1_1_block_store.html#a44f8ee5a77fc8cc348a68a6d233ae68d">SmemStorage</a></td></tr>
-<tr class="memdesc:a44f8ee5a77fc8cc348a68a6d233ae68d"><td class="mdescLeft">&#160;</td><td class="mdescRight">The operations exposed by <a class="el" href="classcub_1_1_block_store.html" title="BlockStore provides data movement operations for writing blocked-arranged data to global memory...">BlockStore</a> require shared memory of this type. This opaque storage can be allocated directly using the <code>__shared__</code> keyword. Alternatively, it can be aliased to externally allocated shared memory or <code>union</code>'d with other types to facilitate shared memory reuse. <br/></td></tr>
-<tr class="separator:a44f8ee5a77fc8cc348a68a6d233ae68d"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a421dd27beee71825a56db98cafb4ada7"><td class="memItemLeft" align="right" valign="top"><a class="anchor" id="a421dd27beee71825a56db98cafb4ada7"></a>
+typedef _SmemStorage&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classcub_1_1_block_store.html#a421dd27beee71825a56db98cafb4ada7">SmemStorage</a></td></tr>
+<tr class="memdesc:a421dd27beee71825a56db98cafb4ada7"><td class="mdescLeft">&#160;</td><td class="mdescRight">The operations exposed by <a class="el" href="classcub_1_1_block_store.html" title="BlockStore provides data movement operations for storing a tile of data to memory from a block arrang...">BlockStore</a> require shared memory of this type. This opaque storage can be allocated directly using the <code>__shared__</code> keyword. Alternatively, it can be aliased to externally allocated shared memory or <code>union</code>'d with other types to facilitate shared memory reuse. <br/></td></tr>
+<tr class="separator:a421dd27beee71825a56db98cafb4ada7"><td class="memSeparator" colspan="2">&#160;</td></tr>
 </table><table class="memberdecls">
 <tr class="heading"><td colspan="2"><h2 class="groupheader"><a name="pub-static-methods"></a>
 Static Public Methods</h2></td></tr>
-<tr class="memitem:a4d7858f738321f7130bc0be7d6fa46a5"><td class="memItemLeft" align="right" valign="top">static __device__ <br class="typebreak"/>
-__forceinline__ void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classcub_1_1_block_store.html#a4d7858f738321f7130bc0be7d6fa46a5">Store</a> (<a class="el" href="classcub_1_1_block_store.html#a44f8ee5a77fc8cc348a68a6d233ae68d">SmemStorage</a> &amp;smem_storage, OutputIteratorRA block_itr, T(&amp;items)[ITEMS_PER_THREAD])</td></tr>
-<tr class="memdesc:a4d7858f738321f7130bc0be7d6fa46a5"><td class="mdescLeft">&#160;</td><td class="mdescRight">Store a tile of items across a threadblock.  <a href="#a4d7858f738321f7130bc0be7d6fa46a5">More...</a><br/></td></tr>
-<tr class="separator:a4d7858f738321f7130bc0be7d6fa46a5"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:a2244c761e873e8e5334dccad9bea6657"><td class="memItemLeft" align="right" valign="top">static __device__ <br class="typebreak"/>
-__forceinline__ void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classcub_1_1_block_store.html#a2244c761e873e8e5334dccad9bea6657">Store</a> (<a class="el" href="classcub_1_1_block_store.html#a44f8ee5a77fc8cc348a68a6d233ae68d">SmemStorage</a> &amp;smem_storage, OutputIteratorRA block_itr, const int &amp;guarded_items, T(&amp;items)[ITEMS_PER_THREAD])</td></tr>
-<tr class="memdesc:a2244c761e873e8e5334dccad9bea6657"><td class="mdescLeft">&#160;</td><td class="mdescRight">Store a tile of items across a threadblock, guarded by range.  <a href="#a2244c761e873e8e5334dccad9bea6657">More...</a><br/></td></tr>
-<tr class="separator:a2244c761e873e8e5334dccad9bea6657"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:af6d2a7d6f3bb37793cd0cb3a6e1b3934"><td class="memItemLeft" align="right" valign="top">static __device__ <br class="typebreak"/>
+__forceinline__ void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classcub_1_1_block_store.html#af6d2a7d6f3bb37793cd0cb3a6e1b3934">Store</a> (<a class="el" href="classcub_1_1_block_store.html#a421dd27beee71825a56db98cafb4ada7">SmemStorage</a> &amp;smem_storage, OutputIteratorRA block_itr, T(&amp;items)[ITEMS_PER_THREAD])</td></tr>
+<tr class="memdesc:af6d2a7d6f3bb37793cd0cb3a6e1b3934"><td class="mdescLeft">&#160;</td><td class="mdescRight">Store a tile of items across a threadblock.  <a href="#af6d2a7d6f3bb37793cd0cb3a6e1b3934">More...</a><br/></td></tr>
+<tr class="separator:af6d2a7d6f3bb37793cd0cb3a6e1b3934"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:aaa9c805a619d46ca971baffaab03ab2b"><td class="memItemLeft" align="right" valign="top">static __device__ <br class="typebreak"/>
+__forceinline__ void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classcub_1_1_block_store.html#aaa9c805a619d46ca971baffaab03ab2b">Store</a> (<a class="el" href="classcub_1_1_block_store.html#a421dd27beee71825a56db98cafb4ada7">SmemStorage</a> &amp;smem_storage, OutputIteratorRA block_itr, const int &amp;guarded_items, T(&amp;items)[ITEMS_PER_THREAD])</td></tr>
+<tr class="memdesc:aaa9c805a619d46ca971baffaab03ab2b"><td class="mdescLeft">&#160;</td><td class="mdescRight">Store a tile of items across a threadblock, guarded by range.  <a href="#aaa9c805a619d46ca971baffaab03ab2b">More...</a><br/></td></tr>
+<tr class="separator:aaa9c805a619d46ca971baffaab03ab2b"><td class="memSeparator" colspan="2">&#160;</td></tr>
 </table>
 <h2 class="groupheader">Member Function Documentation</h2>
-<a class="anchor" id="a4d7858f738321f7130bc0be7d6fa46a5"></a>
+<a class="anchor" id="af6d2a7d6f3bb37793cd0cb3a6e1b3934"></a>
 <div class="memitem">
 <div class="memproto">
 <div class="memtemplate">
-template&lt;typename OutputIteratorRA , int BLOCK_THREADS, int ITEMS_PER_THREAD, BlockStorePolicy POLICY = BLOCK_STORE_DIRECT, PtxStoreModifier MODIFIER = PTX_STORE_NONE&gt; </div>
+template&lt;typename OutputIteratorRA , int BLOCK_THREADS, int ITEMS_PER_THREAD, BlockStorePolicy ALGORITHM = BLOCK_STORE_DIRECT, PtxStoreModifier MODIFIER = STORE_DEFAULT, bool WARP_TIME_SLICING = false&gt; </div>
 <table class="mlabels">
   <tr>
   <td class="mlabels-left">
       <table class="memname">
         <tr>
-          <td class="memname">static __device__ __forceinline__ void <a class="el" href="classcub_1_1_block_store.html">cub::BlockStore</a>&lt; OutputIteratorRA, BLOCK_THREADS, ITEMS_PER_THREAD, POLICY, MODIFIER &gt;::Store </td>
+          <td class="memname">static __device__ __forceinline__ void <a class="el" href="classcub_1_1_block_store.html">cub::BlockStore</a>&lt; OutputIteratorRA, BLOCK_THREADS, ITEMS_PER_THREAD, ALGORITHM, MODIFIER, WARP_TIME_SLICING &gt;::Store </td>
           <td>(</td>
-          <td class="paramtype"><a class="el" href="classcub_1_1_block_store.html#a44f8ee5a77fc8cc348a68a6d233ae68d">SmemStorage</a> &amp;&#160;</td>
+          <td class="paramtype"><a class="el" href="classcub_1_1_block_store.html#a421dd27beee71825a56db98cafb4ada7">SmemStorage</a> &amp;&#160;</td>
           <td class="paramname"><em>smem_storage</em>, </td>
         </tr>
         <tr>
@@ -255,19 +272,19 @@ template&lt;typename OutputIteratorRA , int BLOCK_THREADS, int ITEMS_PER_THREAD,
 
 </div>
 </div>
-<a class="anchor" id="a2244c761e873e8e5334dccad9bea6657"></a>
+<a class="anchor" id="aaa9c805a619d46ca971baffaab03ab2b"></a>
 <div class="memitem">
 <div class="memproto">
 <div class="memtemplate">
-template&lt;typename OutputIteratorRA , int BLOCK_THREADS, int ITEMS_PER_THREAD, BlockStorePolicy POLICY = BLOCK_STORE_DIRECT, PtxStoreModifier MODIFIER = PTX_STORE_NONE&gt; </div>
+template&lt;typename OutputIteratorRA , int BLOCK_THREADS, int ITEMS_PER_THREAD, BlockStorePolicy ALGORITHM = BLOCK_STORE_DIRECT, PtxStoreModifier MODIFIER = STORE_DEFAULT, bool WARP_TIME_SLICING = false&gt; </div>
 <table class="mlabels">
   <tr>
   <td class="mlabels-left">
       <table class="memname">
         <tr>
-          <td class="memname">static __device__ __forceinline__ void <a class="el" href="classcub_1_1_block_store.html">cub::BlockStore</a>&lt; OutputIteratorRA, BLOCK_THREADS, ITEMS_PER_THREAD, POLICY, MODIFIER &gt;::Store </td>
+          <td class="memname">static __device__ __forceinline__ void <a class="el" href="classcub_1_1_block_store.html">cub::BlockStore</a>&lt; OutputIteratorRA, BLOCK_THREADS, ITEMS_PER_THREAD, ALGORITHM, MODIFIER, WARP_TIME_SLICING &gt;::Store </td>
           <td>(</td>
-          <td class="paramtype"><a class="el" href="classcub_1_1_block_store.html#a44f8ee5a77fc8cc348a68a6d233ae68d">SmemStorage</a> &amp;&#160;</td>
+          <td class="paramtype"><a class="el" href="classcub_1_1_block_store.html#a421dd27beee71825a56db98cafb4ada7">SmemStorage</a> &amp;&#160;</td>
           <td class="paramname"><em>smem_storage</em>, </td>
         </tr>
         <tr>
@@ -321,7 +338,7 @@ template&lt;typename OutputIteratorRA , int BLOCK_THREADS, int ITEMS_PER_THREAD,
 <!-- HTML footer for doxygen 1.8.3.1-->
 <!-- start footer part -->
 <hr class="footer"/><address class="footer"><small>
-Generated on Tue May 7 2013 16:26:26 for CUB by &#160;<a href="http://www.doxygen.org/index.html">
+Generated on Tue May 28 2013 23:34:50 for CUB by &#160;<a href="http://www.doxygen.org/index.html">
 <img class="footer" src="doxygen.png" alt="doxygen"/>
 </a> 1.8.3.1
 <br>

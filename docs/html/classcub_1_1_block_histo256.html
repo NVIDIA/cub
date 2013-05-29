@@ -151,8 +151,8 @@ class cub::BlockHisto256&lt; BLOCK_THREADS, ITEMS_PER_THREAD, ALGORITHM &gt;</h3
 <div class="line"></div>
 <div class="line">__global__ <span class="keywordtype">void</span> SomeKernel(...)</div>
 <div class="line">{</div>
-<div class="line">     <span class="comment">// Parameterize BlockHisto256 for 128 threads</span></div>
-<div class="line">     <span class="keyword">typedef</span> <a class="code" href="classcub_1_1_block_histo256.html" title="BlockHisto256 provides methods for constructing (and compositing into) 256-bin histograms from 8b dat...">cub::BlockHisto256&lt;128&gt;</a> BlockHisto256;</div>
+<div class="line">     <span class="comment">// Parameterize BlockHisto256 for 128 threads having 4 samples each</span></div>
+<div class="line">     <span class="keyword">typedef</span> <a class="code" href="classcub_1_1_block_histo256.html" title="BlockHisto256 provides methods for constructing (and compositing into) 256-bin histograms from 8b dat...">cub::BlockHisto256&lt;128, 4&gt;</a> BlockHisto256;</div>
 <div class="line"></div>
 <div class="line">     <span class="comment">// Declare shared memory for BlockHisto256</span></div>
 <div class="line">     __shared__ <span class="keyword">typename</span> <a class="code" href="classcub_1_1_block_histo256.html#a620661d7ec6ab2fc9d0d843329c901ff" title="The operations exposed by BlockHisto256 require shared memory of this type. This opaque storage can b...">BlockHisto256::SmemStorage</a> smem_storage;</div>
@@ -167,7 +167,7 @@ class cub::BlockHisto256&lt; BLOCK_THREADS, ITEMS_PER_THREAD, ALGORITHM &gt;</h3
 <div class="line">     ...</div>
 <div class="line"></div>
 <div class="line">     <span class="comment">// Compute the threadblock-wide histogram</span></div>
-<div class="line">     <a class="code" href="classcub_1_1_block_histo256.html#a6496bd253fd4611a5722d6c6e7af4b4d" title="Constructs a threadblock-wide histogram in shared/global memory. Each thread contributes an array of ...">BlockHisto256::Histogram</a>(smem_storage, smem_histogram, data);</div>
+<div class="line">     <a class="code" href="classcub_1_1_block_histo256.html#a6496bd253fd4611a5722d6c6e7af4b4d" title="Constructs a threadblock-wide histogram in shared/global memory. Each thread contributes an array of ...">BlockHisto256::Histogram</a>(smem_storage, data, smem_histogram);</div>
 <div class="line"></div>
 <div class="line">     ...</div>
 </div><!-- fragment --></dd></dl>
@@ -176,18 +176,18 @@ class cub::BlockHisto256&lt; BLOCK_THREADS, ITEMS_PER_THREAD, ALGORITHM &gt;</h3
 <div class="line"><span class="keyword">template</span> &lt;<span class="keywordtype">int</span> BLOCK_THREADS&gt;</div>
 <div class="line">__global__ <span class="keywordtype">void</span> SomeKernel(..., <span class="keywordtype">int</span> *d_histogram)</div>
 <div class="line">{</div>
-<div class="line">     <span class="comment">// Parameterize BlockHisto256</span></div>
-<div class="line">     <span class="keyword">typedef</span> <a class="code" href="classcub_1_1_block_histo256.html" title="BlockHisto256 provides methods for constructing (and compositing into) 256-bin histograms from 8b dat...">cub::BlockHisto256&lt;BLOCK_THREADS&gt;</a> BlockHisto256;</div>
+<div class="line">     <span class="comment">// Parameterize BlockHisto256 where each thread composites one sample item</span></div>
+<div class="line">     <span class="keyword">typedef</span> <a class="code" href="classcub_1_1_block_histo256.html" title="BlockHisto256 provides methods for constructing (and compositing into) 256-bin histograms from 8b dat...">cub::BlockHisto256&lt;BLOCK_THREADS, 1&gt;</a> BlockHisto256;</div>
 <div class="line"></div>
 <div class="line">     <span class="comment">// Declare shared memory for BlockHisto256</span></div>
 <div class="line">     __shared__ <span class="keyword">typename</span> <a class="code" href="classcub_1_1_block_histo256.html#a620661d7ec6ab2fc9d0d843329c901ff" title="The operations exposed by BlockHisto256 require shared memory of this type. This opaque storage can b...">BlockHisto256::SmemStorage</a> smem_storage;</div>
 <div class="line"></div>
 <div class="line">     <span class="comment">// Guarded load of input item</span></div>
-<div class="line">     <span class="keywordtype">int</span> data;</div>
-<div class="line">     <span class="keywordflow">if</span> (threadIdx.x &lt; num_items) data = ...;</div>
+<div class="line">     <span class="keywordtype">int</span> data[1];</div>
+<div class="line">     <span class="keywordflow">if</span> (threadIdx.x &lt; num_items) data[0] = ...;</div>
 <div class="line"></div>
 <div class="line">     <span class="comment">// Compute the threadblock-wide sum of valid elements in thread0</span></div>
-<div class="line">     <a class="code" href="classcub_1_1_block_histo256.html#a73ead0815070a889b36b13171abcca2e" title="Updates an existing threadblock-wide histogram in shared/global memory. Each thread composites an arr...">BlockHisto256::Composite</a>(smem_storage, d_histogram, data);</div>
+<div class="line">     <a class="code" href="classcub_1_1_block_histo256.html#a73ead0815070a889b36b13171abcca2e" title="Updates an existing threadblock-wide histogram in shared/global memory. Each thread composites an arr...">BlockHisto256::Composite</a>(smem_storage, data, d_histogram);</div>
 <div class="line"></div>
 <div class="line">     ...</div>
 </div><!-- fragment --> </dd></dl>
@@ -376,7 +376,7 @@ template&lt;typename HistoCounter &gt; </div>
 <!-- HTML footer for doxygen 1.8.3.1-->
 <!-- start footer part -->
 <hr class="footer"/><address class="footer"><small>
-Generated on Tue May 7 2013 16:26:26 for CUB by &#160;<a href="http://www.doxygen.org/index.html">
+Generated on Tue May 28 2013 23:34:49 for CUB by &#160;<a href="http://www.doxygen.org/index.html">
 <img class="footer" src="doxygen.png" alt="doxygen"/>
 </a> 1.8.3.1
 <br>
