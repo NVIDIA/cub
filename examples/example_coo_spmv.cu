@@ -592,17 +592,17 @@ struct SpmvBlock
     typedef BlockReduce<PartialSum, BLOCK_THREADS>                      BlockReduce;
 
     // Shared memory type for this threadblock
-    struct SmemStorage
+    struct TempStorage
     {
         union
         {
-            typename BlockExchangeRows::SmemStorage   exchange_rows;      // Smem needed for striped->blocked transpose
-            typename BlockExchangeValues::SmemStorage exchange_values;    // Smem needed for striped->blocked transpose
+            typename BlockExchangeRows::TempStorage   exchange_rows;      // Smem needed for striped->blocked transpose
+            typename BlockExchangeValues::TempStorage exchange_values;    // Smem needed for striped->blocked transpose
             struct {
-                typename BlockScan::SmemStorage           scan;               // Smem needed for reduce-value-by-row scan
-                typename BlockDiscontinuity::SmemStorage  discontinuity;      // Smem needed for head-flagging
+                typename BlockScan::TempStorage           scan;               // Smem needed for reduce-value-by-row scan
+                typename BlockDiscontinuity::TempStorage  discontinuity;      // Smem needed for head-flagging
             };
-            typename BlockReduce::SmemStorage         reduce;             // Smem needed for min-finding reduction
+            typename BlockReduce::TempStorage         reduce;             // Smem needed for min-finding reduction
         };
 
         VertexId        last_block_row;
@@ -620,7 +620,7 @@ struct SpmvBlock
      */
     __device__ __forceinline__
     static void ProcessTile(
-        SmemStorage                     &smem_storage,
+        TempStorage                     &temp_storage,
         BlockPrefixOp<PartialSum>         &carry,
         VertexId*                       d_rows,
         VertexId*                       d_columns,
@@ -666,7 +666,7 @@ struct SpmvBlock
         {
             // This is a partial-tile (e.g., the last tile of input).  Extend the coordinates of the last
             // vertex for out-of-bound items, but zero-valued
-            LoadStriped<LOAD_DEFAULT>(d_rows + block_offset, guarded_items, smem_storage.last_block_row, rows, BLOCK_THREADS);
+            LoadStriped<LOAD_DEFAULT>(d_rows + block_offset, guarded_items, temp_storage.last_block_row, rows, BLOCK_THREADS);
         }
         else
         {
@@ -675,22 +675,22 @@ struct SpmvBlock
         }
 
         // Transpose from threadblock-striped to threadblock-blocked arrangement
-        BlockExchangeValues::StripedToBlocked(smem_storage.exchange_values, values);
+        BlockExchangeValues::StripedToBlocked(temp_storage.exchange_values, values);
 
         // Barrier for smem reuse and coherence
         __syncthreads();
 
         // Transpose from threadblock-striped to threadblock-blocked arrangement
-        BlockExchangeRows::StripedToBlocked(smem_storage.exchange_rows, rows);
+        BlockExchangeRows::StripedToBlocked(temp_storage.exchange_rows, rows);
 
         // Barrier for smem reuse and coherence
         __syncthreads();
 
         // Flag row heads by looking for discontinuities
         BlockDiscontinuity::Flag(
-            smem_storage.discontinuity,
+            temp_storage.discontinuity,
             rows,                           // Original row ids
-            smem_storage.prev_tile_row,     // Last row id from previous threadblock
+            temp_storage.prev_tile_row,     // Last row id from previous threadblock
             NewRowOp(),                     // Functor for detecting start of new rows
             head_flags);                    // (Out) Head flags
 
@@ -706,10 +706,10 @@ struct SpmvBlock
         // Compute the exclusive scan of partial_sums
         PartialSum block_aggregate;         // Threadblock-wide aggregate in thread0 (unused)
         BlockScan::ExclusiveScan(
-            smem_storage.scan,
+            temp_storage.scan,
             partial_sums,
             partial_sums,                   // (Out)
-            smem_storage.identity,
+            temp_storage.identity,
             ReduceByKeyOp(),
             block_aggregate,                // (Out)
             carry);                         // (In-out)
@@ -717,11 +717,11 @@ struct SpmvBlock
         // Store the last row in the tile (for computing head flags in the next tile)
         if (threadIdx.x == BLOCK_THREADS - 1)
         {
-            smem_storage.prev_tile_row = rows[ITEMS_PER_THREAD - 1];
+            temp_storage.prev_tile_row = rows[ITEMS_PER_THREAD - 1];
         }
 
         // Pull the last row ID out of smem
-        VertexId last_block_row = smem_storage.last_block_row;
+        VertexId last_block_row = temp_storage.last_block_row;
 
         // Scatter an accumulated dot product if it is the head of a valid row
         #pragma unroll
@@ -740,20 +740,20 @@ struct SpmvBlock
         }
 
         // Find the first-scattered dot product if not yet set
-        if (smem_storage.first_scatter.row == last_block_row)
+        if (temp_storage.first_scatter.row == last_block_row)
         {
             // Barrier for smem reuse and coherence
             __syncthreads();
 
             PartialSum candidate = BlockReduce::Reduce(
-                smem_storage.reduce,
+                temp_storage.reduce,
                 partial_sums,
                 MinRowOp());
 
             // Stash the first-scattered dot product in smem
             if (threadIdx.x == 0)
             {
-                smem_storage.first_scatter = candidate;
+                temp_storage.first_scatter = candidate;
             }
         }
 
@@ -789,7 +789,7 @@ __global__ void CooKernel(
     typedef SpmvBlock<BLOCK_THREADS, ITEMS_PER_THREAD, VertexId, Value> SpmvBlock;
 
     // Shared memory
-    __shared__ typename SpmvBlock::SmemStorage smem_storage;
+    __shared__ typename SpmvBlock::TempStorage temp_storage;
 
     // Initialize threadblock even-share to tell us where to start and stop our tile-processing
     even_share.BlockInit();
@@ -806,12 +806,12 @@ __global__ void CooKernel(
         // Initialize carry to identity
         carry.running_prefix.row            = first_block_row;
         carry.running_prefix.partial        = Value(0);
-        smem_storage.identity               = carry.running_prefix;
+        temp_storage.identity               = carry.running_prefix;
 
-        smem_storage.first_scatter.row      = last_block_row;
-        smem_storage.first_scatter.partial  = Value(0);
-        smem_storage.last_block_row         = last_block_row;
-        smem_storage.prev_tile_row          = (blockIdx.x == 0) ?
+        temp_storage.first_scatter.row      = last_block_row;
+        temp_storage.first_scatter.partial  = Value(0);
+        temp_storage.last_block_row         = last_block_row;
+        temp_storage.prev_tile_row          = (blockIdx.x == 0) ?
                                                 first_block_row :
                                                 d_rows[even_share.block_offset - 1];
     }
@@ -820,7 +820,7 @@ __global__ void CooKernel(
     while (even_share.block_offset <= even_share.block_oob - TILE_SIZE)
     {
         SpmvBlock::ProcessTile(
-            smem_storage,
+            temp_storage,
             carry,
             d_rows,
             d_columns,
@@ -837,7 +837,7 @@ __global__ void CooKernel(
     if (guarded_items)
     {
         SpmvBlock::ProcessTile(
-            smem_storage,
+            temp_storage,
             carry,
             d_rows,
             d_columns,
@@ -860,7 +860,7 @@ __global__ void CooKernel(
             // Write out threadblock first-item and carry aggregate
 
             // Unweight the first-output if it's the same row as the carry aggregate
-            PartialSum<VertexId, Value> first_scatter = smem_storage.first_scatter;
+            PartialSum<VertexId, Value> first_scatter = temp_storage.first_scatter;
             if (first_scatter.row == carry.running_prefix.row) first_scatter.partial = Value(0);
 
             d_block_partials[blockIdx.x * 2]          = first_scatter;
@@ -901,12 +901,12 @@ struct FinalizeSpmvBlock
     typedef BlockDiscontinuity<HeadFlag, BLOCK_THREADS>                 BlockDiscontinuity;
 
     // Shared memory type for this threadblock
-    struct SmemStorage
+    struct TempStorage
     {
         union
         {
-            typename BlockScan::SmemStorage           scan;               // Smem needed for reduce-value-by-row scan
-            typename BlockDiscontinuity::SmemStorage  discontinuity;      // Smem needed for head-flagging
+            typename BlockScan::TempStorage           scan;               // Smem needed for reduce-value-by-row scan
+            typename BlockDiscontinuity::TempStorage  discontinuity;      // Smem needed for head-flagging
         };
 
         VertexId        last_block_row;
@@ -923,7 +923,7 @@ struct FinalizeSpmvBlock
      */
     __device__ __forceinline__
     static void ProcessTile(
-        SmemStorage                     &smem_storage,
+        TempStorage                     &temp_storage,
         BlockPrefixOp<PartialSum>         &carry,
         PartialSum                      *d_block_partials,
         Value                           *d_result,
@@ -940,7 +940,7 @@ struct FinalizeSpmvBlock
             // This is a partial-tile (e.g., the last tile of input).  Extend the coordinates of the last
             // vertex for out-of-bound items, but zero-valued
             PartialSum default_sum;
-            default_sum.row = smem_storage.last_block_row;
+            default_sum.row = temp_storage.last_block_row;
             default_sum.partial = Value(0);
 
             LoadBlocked(d_block_partials + block_offset, guarded_items, default_sum, partial_sums);
@@ -963,9 +963,9 @@ struct FinalizeSpmvBlock
 
         // Flag row heads by looking for discontinuities
         BlockDiscontinuity::Flag(
-            smem_storage.discontinuity,
+            temp_storage.discontinuity,
             rows,                           // Original row ids
-            smem_storage.prev_tile_row,     // Last row id from previous threadblock
+            temp_storage.prev_tile_row,     // Last row id from previous threadblock
             NewRowOp(),                     // Functor for detecting start of new rows
             head_flags);                    // (Out) Head flags
 
@@ -975,16 +975,16 @@ struct FinalizeSpmvBlock
         // Store the last row in the tile (for computing head flags in the next tile)
         if (threadIdx.x == BLOCK_THREADS - 1)
         {
-            smem_storage.prev_tile_row = rows[ITEMS_PER_THREAD - 1];
+            temp_storage.prev_tile_row = rows[ITEMS_PER_THREAD - 1];
         }
 
         // Compute the exclusive scan of partial_sums
         PartialSum block_aggregate;         // Threadblock-wide aggregate in thread0 (unused)
         BlockScan::ExclusiveScan(
-            smem_storage.scan,
+            temp_storage.scan,
             partial_sums,
             partial_sums,                   // (Out)
-            smem_storage.identity,
+            temp_storage.identity,
             ReduceByKeyOp(),
             block_aggregate,                // (Out)
             carry);                         // (In-out)
@@ -1028,7 +1028,7 @@ __global__ void CooFinalizeKernel(
     typedef FinalizeSpmvBlock<BLOCK_THREADS, ITEMS_PER_THREAD, VertexId, Value> FinalizeSpmvBlock;
 
     // Shared memory
-    __shared__ typename FinalizeSpmvBlock::SmemStorage smem_storage;
+    __shared__ typename FinalizeSpmvBlock::TempStorage temp_storage;
 
     // Stateful prefix carryover from one tile to the next
     BlockPrefixOp<PartialSum<VertexId, Value> > carry;
@@ -1042,10 +1042,10 @@ __global__ void CooFinalizeKernel(
         // Initialize carry to identity
         carry.running_prefix.row            = first_block_row;
         carry.running_prefix.partial        = Value(0);
-        smem_storage.identity               = carry.running_prefix;
+        temp_storage.identity               = carry.running_prefix;
 
-        smem_storage.last_block_row         = last_block_row;
-        smem_storage.prev_tile_row          = first_block_row;
+        temp_storage.last_block_row         = last_block_row;
+        temp_storage.prev_tile_row          = first_block_row;
     }
 
     // Barrier for smem coherence
@@ -1056,7 +1056,7 @@ __global__ void CooFinalizeKernel(
     while (block_offset <= finalize_partials - TILE_SIZE)
     {
         FinalizeSpmvBlock::ProcessTile(
-            smem_storage,
+            temp_storage,
             carry,
             d_block_partials,
             d_result,
@@ -1073,7 +1073,7 @@ __global__ void CooFinalizeKernel(
     if (guarded_items)
     {
         FinalizeSpmvBlock::ProcessTile(
-            smem_storage,
+            temp_storage,
             carry,
             d_block_partials,
             d_result,

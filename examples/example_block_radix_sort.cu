@@ -95,7 +95,7 @@ __global__ void BlockSortKernel(
     typedef BlockRadixSort<KeyType, BLOCK_THREADS, ITEMS_PER_THREAD> BlockRadixSortT;
 
     // Shared memory
-    __shared__ typename BlockRadixSortT::SmemStorage smem_storage;
+    __shared__ typename BlockRadixSortT::TempStorage temp_storage;
 
     // Per-thread tile items
     KeyType items[ITEMS_PER_THREAD];
@@ -108,7 +108,7 @@ __global__ void BlockSortKernel(
     clock_t start = clock();
 
     // Sort keys
-    BlockRadixSortT::SortStriped(smem_storage, items);
+    BlockRadixSortT::SortStriped(temp_storage, items);
 
     // Stop cycle timer
     clock_t stop = clock();

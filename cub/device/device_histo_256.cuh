@@ -106,10 +106,10 @@ __global__ void MultiBlockHisto256Kernel(
     typedef PersistentBlockHisto256<PersistentBlockHisto256Policy, CHANNELS, ACTIVE_CHANNELS, InputIteratorRA, HistoCounter, SizeT> PersistentBlockHisto256T;
 
     // Shared memory for PersistentBlockHisto256
-    __shared__ typename PersistentBlockHisto256T::SmemStorage smem_storage;
+    __shared__ typename PersistentBlockHisto256T::TempStorage temp_storage;
 
     // Thread block instance
-    PersistentBlockHisto256T persistent_block(smem_storage, d_samples, d_out_histograms.array);
+    PersistentBlockHisto256T persistent_block(temp_storage, d_samples, d_out_histograms.array);
 
     // Consume tiles using thread block instance
     int dummy_result;

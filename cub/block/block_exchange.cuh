@@ -71,7 +71,7 @@ namespace cub {
  * <div class="centercaption">A threadblock of 16 threads reading a blocked arrangement of 64 items in a parallel "raking" fashion.</div>
  *
  * \par Usage Considerations
- * - \smemreuse{BlockExchange::SmemStorage}
+ * - \smemreuse{BlockExchange::TempStorage}
  *
  * \par Performance Considerations
  * - Proper device-specific padding ensures zero bank conflicts for most types.
@@ -115,12 +115,12 @@ private:
     };
 
     /// Shared memory storage layout type
-    typedef T _SmemStorage[TIME_SLICED_ITEMS + PADDING_ITEMS];
+    typedef T _TempStorage[TIME_SLICED_ITEMS + PADDING_ITEMS];
 
 public:
 
     /// \smemstorage{BlockExchange}
-    typedef _SmemStorage SmemStorage;
+    typedef _TempStorage TempStorage;
 
 private:
 
@@ -129,7 +129,7 @@ private:
      * Transposes data items from <em>blocked</em> arrangement to <em>striped</em> arrangement.  Specialized for no timeslicing.
      */
     static __device__ __forceinline__ void BlockedToStriped(
-        SmemStorage     &smem_storage,              ///< [in] Reference to shared memory allocation having layout type SmemStorage
+        TempStorage     &temp_storage,              ///< [in] Reference to shared memory allocation having layout type TempStorage
         T               items[ITEMS_PER_THREAD],    ///< [in-out] Items to exchange, converting between <em>blocked</em> and <em>striped</em> arrangements.
         Int2Type<false> time_slicing)
     {
@@ -138,7 +138,7 @@ private:
         {
             int item_offset = (threadIdx.x * ITEMS_PER_THREAD) + ITEM;
             if (INSERT_PADDING) item_offset += item_offset >> LOG_SMEM_BANKS;
-            smem_storage[item_offset] = items[ITEM];
+            temp_storage[item_offset] = items[ITEM];
         }
 
         __syncthreads();
@@ -148,7 +148,7 @@ private:
         {
             int item_offset = int(ITEM * BLOCK_THREADS) + threadIdx.x;
             if (INSERT_PADDING) item_offset += item_offset >> LOG_SMEM_BANKS;
-            items[ITEM] = smem_storage[item_offset];
+            items[ITEM] = temp_storage[item_offset];
         }
     }
 
@@ -157,7 +157,7 @@ private:
      * Transposes data items from <em>blocked</em> arrangement to <em>striped</em> arrangement.  Specialized for warp-timeslicing.
      */
     static __device__ __forceinline__ void BlockedToStriped(
-        SmemStorage     &smem_storage,              ///< [in] Reference to shared memory allocation having layout type SmemStorage
+        TempStorage     &temp_storage,              ///< [in] Reference to shared memory allocation having layout type TempStorage
         T               items[ITEMS_PER_THREAD],    ///< [in-out] Items to exchange, converting between <em>blocked</em> and <em>striped</em> arrangements.
         Int2Type<true>  time_slicing)
     {
@@ -181,7 +181,7 @@ private:
                 {
                     int item_offset = (warp_lane * ITEMS_PER_THREAD) + ITEM;
                     if (INSERT_PADDING) item_offset += item_offset >> LOG_SMEM_BANKS;
-                    smem_storage[item_offset] = items[ITEM];
+                    temp_storage[item_offset] = items[ITEM];
                 }
             }
 
@@ -200,7 +200,7 @@ private:
                     if ((item_offset >= 0) && (item_offset < TIME_SLICED_ITEMS))
                     {
                         if (INSERT_PADDING) item_offset += item_offset >> LOG_SMEM_BANKS;
-                        temp_items[ITEM] = smem_storage[item_offset];
+                        temp_items[ITEM] = temp_storage[item_offset];
                     }
                 }
             }
@@ -219,7 +219,7 @@ private:
      * Transposes data items from <em>blocked</em> arrangement to <em>warp-striped</em> arrangement. Specialized for no timeslicing
      */
     static __device__ __forceinline__ void BlockedToWarpStriped(
-        SmemStorage     &smem_storage,             ///< [in] Reference to shared memory allocation having layout type SmemStorage
+        TempStorage     &temp_storage,             ///< [in] Reference to shared memory allocation having layout type TempStorage
         T               items[ITEMS_PER_THREAD],   ///< [in-out] Items to exchange, converting between <em>blocked</em> and <em>warp-striped</em> arrangements.
         Int2Type<false> time_slicing)
     {
@@ -232,7 +232,7 @@ private:
         {
             int item_offset = warp_offset + ITEM + (warp_lane * ITEMS_PER_THREAD);
             if (INSERT_PADDING) item_offset += item_offset >> LOG_SMEM_BANKS;
-            smem_storage[item_offset] = items[ITEM];
+            temp_storage[item_offset] = items[ITEM];
         }
 
         // Prevent hoisting
@@ -243,7 +243,7 @@ private:
         {
             int item_offset = warp_offset + (ITEM * WARP_TIME_SLICED_THREADS) + warp_lane;
             if (INSERT_PADDING) item_offset += item_offset >> LOG_SMEM_BANKS;
-            items[ITEM] = smem_storage[item_offset];
+            items[ITEM] = temp_storage[item_offset];
         }
     }
 
@@ -251,7 +251,7 @@ private:
      * Transposes data items from <em>blocked</em> arrangement to <em>warp-striped</em> arrangement. Specialized for warp-timeslicing
      */
     static __device__ __forceinline__ void BlockedToWarpStriped(
-        SmemStorage     &smem_storage,             ///< [in] Reference to shared memory allocation having layout type SmemStorage
+        TempStorage     &temp_storage,             ///< [in] Reference to shared memory allocation having layout type TempStorage
         T               items[ITEMS_PER_THREAD],   ///< [in-out] Items to exchange, converting between <em>blocked</em> and <em>warp-striped</em> arrangements.
         Int2Type<true>  time_slicing)
     {
@@ -270,7 +270,7 @@ private:
                 {
                     int item_offset = ITEM + (warp_lane * ITEMS_PER_THREAD);
                     if (INSERT_PADDING) item_offset += item_offset >> LOG_SMEM_BANKS;
-                    smem_storage[item_offset] = items[ITEM];
+                    temp_storage[item_offset] = items[ITEM];
                 }
 
                 // Prevent hoisting
@@ -281,7 +281,7 @@ private:
                 {
                     int item_offset = (ITEM * WARP_TIME_SLICED_THREADS) + warp_lane;
                     if (INSERT_PADDING) item_offset += item_offset >> LOG_SMEM_BANKS;
-                    items[ITEM] = smem_storage[item_offset];
+                    items[ITEM] = temp_storage[item_offset];
                 }
             }
         }
@@ -292,7 +292,7 @@ private:
      * Transposes data items from <em>striped</em> arrangement to <em>blocked</em> arrangement.  Specialized for no timeslicing.
      */
     static __device__ __forceinline__ void StripedToBlocked(
-        SmemStorage     &smem_storage,             ///< [in] Reference to shared memory allocation having layout type SmemStorage
+        TempStorage     &temp_storage,             ///< [in] Reference to shared memory allocation having layout type TempStorage
         T               items[ITEMS_PER_THREAD],   ///< [in-out] Items to exchange, converting between <em>striped</em> and <em>blocked</em> arrangements.
         Int2Type<false> time_slicing)
     {
@@ -301,7 +301,7 @@ private:
         {
             int item_offset = int(ITEM * BLOCK_THREADS) + threadIdx.x;
             if (INSERT_PADDING) item_offset += item_offset >> LOG_SMEM_BANKS;
-            smem_storage[item_offset] = items[ITEM];
+            temp_storage[item_offset] = items[ITEM];
         }
 
         __syncthreads();
@@ -312,7 +312,7 @@ private:
         {
             int item_offset = (threadIdx.x * ITEMS_PER_THREAD) + ITEM;
             if (INSERT_PADDING) item_offset += item_offset >> LOG_SMEM_BANKS;
-            items[ITEM] = smem_storage[item_offset];
+            items[ITEM] = temp_storage[item_offset];
         }
     }
 
@@ -321,7 +321,7 @@ private:
      * Transposes data items from <em>striped</em> arrangement to <em>blocked</em> arrangement.  Specialized for warp-timeslicing.
      */
     static __device__ __forceinline__ void StripedToBlocked(
-        SmemStorage     &smem_storage,             ///< [in] Reference to shared memory allocation having layout type SmemStorage
+        TempStorage     &temp_storage,             ///< [in] Reference to shared memory allocation having layout type TempStorage
         T               items[ITEMS_PER_THREAD],   ///< [in-out] Items to exchange, converting between <em>striped</em> and <em>blocked</em> arrangements.
         Int2Type<true>  time_slicing)
     {
@@ -352,7 +352,7 @@ private:
                     if ((item_offset >= 0) && (item_offset < TIME_SLICED_ITEMS))
                     {
                         if (INSERT_PADDING) item_offset += item_offset >> LOG_SMEM_BANKS;
-                        smem_storage[item_offset] = items[ITEM];
+                        temp_storage[item_offset] = items[ITEM];
                     }
                 }
             }
@@ -366,7 +366,7 @@ private:
                 {
                     int item_offset = (warp_lane * ITEMS_PER_THREAD) + ITEM;
                     if (INSERT_PADDING) item_offset += item_offset >> LOG_SMEM_BANKS;
-                    temp_items[ITEM] = smem_storage[item_offset];
+                    temp_items[ITEM] = temp_storage[item_offset];
                 }
             }
         }
@@ -384,7 +384,7 @@ private:
      * Transposes data items from <em>warp-striped</em> arrangement to <em>blocked</em> arrangement.  Specialized for no timeslicing
      */
     static __device__ __forceinline__ void WarpStripedToBlocked(
-        SmemStorage     &smem_storage,             ///< [in] Reference to shared memory allocation having layout type SmemStorage
+        TempStorage     &temp_storage,             ///< [in] Reference to shared memory allocation having layout type TempStorage
         T               items[ITEMS_PER_THREAD],   ///< [in-out] Items to exchange, converting between <em>warp-striped</em> and <em>blocked</em> arrangements.
         Int2Type<false> time_slicing)
     {
@@ -397,7 +397,7 @@ private:
         {
             int item_offset = warp_offset + (ITEM * WARP_TIME_SLICED_THREADS) + warp_lane;
             if (INSERT_PADDING) item_offset += item_offset >> LOG_SMEM_BANKS;
-            smem_storage[item_offset] = items[ITEM];
+            temp_storage[item_offset] = items[ITEM];
         }
 
         // Prevent hoisting
@@ -408,7 +408,7 @@ private:
         {
             int item_offset = warp_offset + ITEM + (warp_lane * ITEMS_PER_THREAD);
             if (INSERT_PADDING) item_offset += item_offset >> LOG_SMEM_BANKS;
-            items[ITEM] = smem_storage[item_offset];
+            items[ITEM] = temp_storage[item_offset];
         }
     }
 
@@ -417,7 +417,7 @@ private:
      * Transposes data items from <em>warp-striped</em> arrangement to <em>blocked</em> arrangement.  Specialized for warp-timeslicing
      */
     static __device__ __forceinline__ void WarpStripedToBlocked(
-        SmemStorage     &smem_storage,             ///< [in] Reference to shared memory allocation having layout type SmemStorage
+        TempStorage     &temp_storage,             ///< [in] Reference to shared memory allocation having layout type TempStorage
         T               items[ITEMS_PER_THREAD],   ///< [in-out] Items to exchange, converting between <em>warp-striped</em> and <em>blocked</em> arrangements.
         Int2Type<true>  time_slicing)
     {
@@ -436,7 +436,7 @@ private:
                 {
                     int item_offset = (ITEM * WARP_TIME_SLICED_THREADS) + warp_lane;
                     if (INSERT_PADDING) item_offset += item_offset >> LOG_SMEM_BANKS;
-                    smem_storage[item_offset] = items[ITEM];
+                    temp_storage[item_offset] = items[ITEM];
                 }
 
                 // Prevent hoisting
@@ -447,7 +447,7 @@ private:
                 {
                     int item_offset = ITEM + (warp_lane * ITEMS_PER_THREAD);
                     if (INSERT_PADDING) item_offset += item_offset >> LOG_SMEM_BANKS;
-                    items[ITEM] = smem_storage[item_offset];
+                    items[ITEM] = temp_storage[item_offset];
                 }
             }
         }
@@ -458,7 +458,7 @@ private:
      * Exchanges data items annotated by rank into <em>blocked</em> arrangement.  Specialized for no timeslicing.
      */
     static __device__ __forceinline__ void ScatterToBlocked(
-        SmemStorage     &smem_storage,              ///< [in] Reference to shared memory allocation having layout type SmemStorage
+        TempStorage     &temp_storage,              ///< [in] Reference to shared memory allocation having layout type TempStorage
         T               items[ITEMS_PER_THREAD],    ///< [in-out] Items to exchange
         int             ranks[ITEMS_PER_THREAD],    ///< [in] Corresponding scatter ranks
         Int2Type<false> time_slicing)
@@ -468,7 +468,7 @@ private:
         {
             int item_offset = ranks[ITEM];
             if (INSERT_PADDING) item_offset = SHR_ADD(item_offset, LOG_SMEM_BANKS, item_offset);
-            smem_storage[item_offset] = items[ITEM];
+            temp_storage[item_offset] = items[ITEM];
         }
 
         __syncthreads();
@@ -478,7 +478,7 @@ private:
         {
             int item_offset = (threadIdx.x * ITEMS_PER_THREAD) + ITEM;
             if (INSERT_PADDING) item_offset = SHR_ADD(item_offset, LOG_SMEM_BANKS, item_offset);
-            items[ITEM] = smem_storage[item_offset];
+            items[ITEM] = temp_storage[item_offset];
         }
     }
 
@@ -486,7 +486,7 @@ private:
      * Exchanges data items annotated by rank into <em>blocked</em> arrangement.  Specialized for warp-timeslicing.
      */
     static __device__ __forceinline__ void ScatterToBlocked(
-        SmemStorage     &smem_storage,              ///< [in] Reference to shared memory allocation having layout type SmemStorage
+        TempStorage     &temp_storage,              ///< [in] Reference to shared memory allocation having layout type TempStorage
         T               items[ITEMS_PER_THREAD],    ///< [in-out] Items to exchange
         int             ranks[ITEMS_PER_THREAD],    ///< [in] Corresponding scatter ranks
         Int2Type<true>  time_slicing)
@@ -510,7 +510,7 @@ private:
                 if ((item_offset >= 0) && (item_offset < WARP_TIME_SLICED_ITEMS))
                 {
                     if (INSERT_PADDING) item_offset = SHR_ADD(item_offset, LOG_SMEM_BANKS, item_offset);
-                    smem_storage[item_offset] = items[ITEM];
+                    temp_storage[item_offset] = items[ITEM];
                 }
             }
 
@@ -523,7 +523,7 @@ private:
                 {
                     int item_offset = (warp_lane * ITEMS_PER_THREAD) + ITEM;
                     if (INSERT_PADDING) item_offset = SHR_ADD(item_offset, LOG_SMEM_BANKS, item_offset);
-                    temp_items[ITEM] = smem_storage[item_offset];
+                    temp_items[ITEM] = temp_storage[item_offset];
                 }
             }
         }
@@ -541,7 +541,7 @@ private:
      * Exchanges data items annotated by rank into <em>striped</em> arrangement.  Specialized for no timeslicing.
      */
     static __device__ __forceinline__ void ScatterToStriped(
-        SmemStorage     &smem_storage,              ///< [in] Reference to shared memory allocation having layout type SmemStorage
+        TempStorage     &temp_storage,              ///< [in] Reference to shared memory allocation having layout type TempStorage
         T               items[ITEMS_PER_THREAD],    ///< [in-out] Items to exchange
         int             ranks[ITEMS_PER_THREAD],    ///< [in] Corresponding scatter ranks
         Int2Type<false> time_slicing)
@@ -551,7 +551,7 @@ private:
         {
             int item_offset = ranks[ITEM];
             if (INSERT_PADDING) item_offset = SHR_ADD(item_offset, LOG_SMEM_BANKS, item_offset);
-            smem_storage[item_offset] = items[ITEM];
+            temp_storage[item_offset] = items[ITEM];
         }
 
         __syncthreads();
@@ -561,7 +561,7 @@ private:
         {
             int item_offset = int(ITEM * BLOCK_THREADS) + threadIdx.x;
             if (INSERT_PADDING) item_offset = SHR_ADD(item_offset, LOG_SMEM_BANKS, item_offset);
-            items[ITEM] = smem_storage[item_offset];
+            items[ITEM] = temp_storage[item_offset];
         }
     }
 
@@ -570,7 +570,7 @@ private:
      * Exchanges data items annotated by rank into <em>striped</em> arrangement.  Specialized for warp-timeslicing.
      */
     static __device__ __forceinline__ void ScatterToStriped(
-        SmemStorage     &smem_storage,              ///< [in] Reference to shared memory allocation having layout type SmemStorage
+        TempStorage     &temp_storage,              ///< [in] Reference to shared memory allocation having layout type TempStorage
         T               items[ITEMS_PER_THREAD],    ///< [in-out] Items to exchange
         int             ranks[ITEMS_PER_THREAD],    ///< [in] Corresponding scatter ranks
         Int2Type<true> time_slicing)
@@ -592,7 +592,7 @@ private:
                 if ((item_offset >= 0) && (item_offset < WARP_TIME_SLICED_ITEMS))
                 {
                     if (INSERT_PADDING) item_offset = SHR_ADD(item_offset, LOG_SMEM_BANKS, item_offset);
-                    smem_storage[item_offset] = items[ITEM];
+                    temp_storage[item_offset] = items[ITEM];
                 }
             }
 
@@ -611,7 +611,7 @@ private:
                     if ((item_offset >= 0) && (item_offset < TIME_SLICED_ITEMS))
                     {
                         if (INSERT_PADDING) item_offset += item_offset >> LOG_SMEM_BANKS;
-                        temp_items[ITEM] = smem_storage[item_offset];
+                        temp_items[ITEM] = temp_storage[item_offset];
                     }
                 }
             }
@@ -640,10 +640,10 @@ public:
      * \smemreuse
      */
     static __device__ __forceinline__ void BlockedToStriped(
-        SmemStorage     &smem_storage,              ///< [in] Reference to shared memory allocation having layout type SmemStorage
+        TempStorage     &temp_storage,              ///< [in] Reference to shared memory allocation having layout type TempStorage
         T               items[ITEMS_PER_THREAD])    ///< [in-out] Items to exchange, converting between <em>blocked</em> and <em>striped</em> arrangements.
     {
-        BlockedToStriped(smem_storage, items, Int2Type<WARP_TIME_SLICING>());
+        BlockedToStriped(temp_storage, items, Int2Type<WARP_TIME_SLICING>());
     }
 
 
@@ -653,10 +653,10 @@ public:
      * \smemreuse
      */
     static __device__ __forceinline__ void BlockedToWarpStriped(
-        SmemStorage      &smem_storage,             ///< [in] Reference to shared memory allocation having layout type SmemStorage
+        TempStorage      &temp_storage,             ///< [in] Reference to shared memory allocation having layout type TempStorage
         T                items[ITEMS_PER_THREAD])   ///< [in-out] Items to exchange, converting between <em>blocked</em> and <em>warp-striped</em> arrangements.
     {
-        BlockedToWarpStriped(smem_storage, items, Int2Type<WARP_TIME_SLICING>());
+        BlockedToWarpStriped(temp_storage, items, Int2Type<WARP_TIME_SLICING>());
     }
 
 
@@ -673,10 +673,10 @@ public:
      * \smemreuse
      */
     static __device__ __forceinline__ void StripedToBlocked(
-        SmemStorage      &smem_storage,             ///< [in] Reference to shared memory allocation having layout type SmemStorage
+        TempStorage      &temp_storage,             ///< [in] Reference to shared memory allocation having layout type TempStorage
         T                items[ITEMS_PER_THREAD])   ///< [in-out] Items to exchange, converting between <em>striped</em> and <em>blocked</em> arrangements.
     {
-        StripedToBlocked(smem_storage, items, Int2Type<WARP_TIME_SLICING>());
+        StripedToBlocked(temp_storage, items, Int2Type<WARP_TIME_SLICING>());
     }
 
 
@@ -693,10 +693,10 @@ public:
      * \smemreuse
      */
     static __device__ __forceinline__ void WarpStripedToBlocked(
-        SmemStorage      &smem_storage,             ///< [in] Reference to shared memory allocation having layout type SmemStorage
+        TempStorage      &temp_storage,             ///< [in] Reference to shared memory allocation having layout type TempStorage
         T                items[ITEMS_PER_THREAD])   ///< [in-out] Items to exchange, converting between <em>warp-striped</em> and <em>blocked</em> arrangements.
     {
-        WarpStripedToBlocked(smem_storage, items, Int2Type<WARP_TIME_SLICING>());
+        WarpStripedToBlocked(temp_storage, items, Int2Type<WARP_TIME_SLICING>());
     }
 
 
@@ -713,11 +713,11 @@ public:
      * \smemreuse
      */
     static __device__ __forceinline__ void ScatterToBlocked(
-        SmemStorage     &smem_storage,              ///< [in] Reference to shared memory allocation having layout type SmemStorage
+        TempStorage     &temp_storage,              ///< [in] Reference to shared memory allocation having layout type TempStorage
         T               items[ITEMS_PER_THREAD],    ///< [in-out] Items to exchange
         int             ranks[ITEMS_PER_THREAD])    ///< [in] Corresponding scatter ranks
     {
-        ScatterToBlocked(smem_storage, items, ranks, Int2Type<WARP_TIME_SLICING>());
+        ScatterToBlocked(temp_storage, items, ranks, Int2Type<WARP_TIME_SLICING>());
     }
 
 
@@ -727,11 +727,11 @@ public:
      * \smemreuse
      */
     static __device__ __forceinline__ void ScatterToStriped(
-        SmemStorage     &smem_storage,              ///< [in] Reference to shared memory allocation having layout type SmemStorage
+        TempStorage     &temp_storage,              ///< [in] Reference to shared memory allocation having layout type TempStorage
         T               items[ITEMS_PER_THREAD],    ///< [in-out] Items to exchange
         int             ranks[ITEMS_PER_THREAD])    ///< [in] Corresponding scatter ranks
     {
-        ScatterToStriped(smem_storage, items, ranks, Int2Type<WARP_TIME_SLICING>());
+        ScatterToStriped(temp_storage, items, ranks, Int2Type<WARP_TIME_SLICING>());
     }
 
     //@}  end member group

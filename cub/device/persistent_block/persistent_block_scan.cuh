@@ -248,16 +248,16 @@ struct PersistentBlockScan
     typedef WarpReduce<T>                                   WarpReduceT;
 
     // Shared memory type for this threadblock
-    struct SmemStorage
+    struct TempStorage
     {
         union
         {
-            typename BlockLoadT::SmemStorage    load;   // Smem needed for tile loading
-            typename BlockStoreT::SmemStorage   store;  // Smem needed for tile storing
-            typename BlockScanT::SmemStorage    scan;   // Smem needed for tile scanning
+            typename BlockLoadT::TempStorage    load;   // Smem needed for tile loading
+            typename BlockStoreT::TempStorage   store;  // Smem needed for tile storing
+            typename BlockScanT::TempStorage    scan;   // Smem needed for tile scanning
         };
 
-        typename WarpReduceT::SmemStorage       warp_reduce;    // Smem needed for warp reduction
+        typename WarpReduceT::TempStorage       warp_reduce;    // Smem needed for warp reduction
     };
 
 
@@ -293,7 +293,7 @@ struct PersistentBlockScan
             // Perform a segmented reduction to get the prefix for the current window
             int flag = (predecessor_status != DEVICE_SCAN_TILE_PARTIAL);
             window_prefix = WarpReduceT::SegmentedReduce(
-                block_scan->smem_storage.warp_reduce,
+                block_scan->temp_storage.warp_reduce,
                 value,
                 flag,
                 block_scan->scan_op);
@@ -348,7 +348,7 @@ struct PersistentBlockScan
     // Per-thread fields
     //---------------------------------------------------------------------
 
-    SmemStorage                 &smem_storage;      ///< Reference to smem_storage
+    TempStorage                 &temp_storage;      ///< Reference to temp_storage
     InputIteratorRA             d_in;               ///< Input data
     OutputIteratorRA            d_out;              ///< Output data
     DeviceScanTileStatus<T>     *d_tile_status;     ///< Global list of tile status
@@ -365,14 +365,14 @@ struct PersistentBlockScan
     // Constructor
     __device__ __forceinline__
     PersistentBlockScan(
-        SmemStorage                 &smem_storage,      ///< Reference to smem_storage
+        TempStorage                 &temp_storage,      ///< Reference to temp_storage
         InputIteratorRA             d_in,               ///< Input data
         OutputIteratorRA            d_out,              ///< Output data
         DeviceScanTileStatus<T>     *d_tile_status,     ///< Global list of tile status
         ScanOp                      scan_op,            ///< Binary scan operator
         Identity                    identity,           ///< Identity element
         SizeT                       num_items) :        ///< Total number of scan items for the entire problem
-            smem_storage(smem_storage),
+            temp_storage(temp_storage),
             d_in(d_in),
             d_out(d_out),
             d_tile_status(d_tile_status + STATUS_PADDING),
@@ -388,7 +388,7 @@ struct PersistentBlockScan
     __device__ __forceinline__
     void ScanBlock(T (&items)[ITEMS_PER_THREAD], _ScanOp scan_op, _Identity identity, T& block_aggregate)
     {
-        BlockScanT::ExclusiveScan(smem_storage.scan, items, items, identity, scan_op, block_aggregate);
+        BlockScanT::ExclusiveScan(temp_storage.scan, items, items, identity, scan_op, block_aggregate);
     }
 
     /**
@@ -398,7 +398,7 @@ struct PersistentBlockScan
     __device__ __forceinline__
     void ScanBlock(T (&items)[ITEMS_PER_THREAD], Sum<T> scan_op, _Identity identity, T& block_aggregate)
     {
-        BlockScanT::ExclusiveSum(smem_storage.scan, items, items, block_aggregate);
+        BlockScanT::ExclusiveSum(temp_storage.scan, items, items, block_aggregate);
     }
 
     /**
@@ -408,7 +408,7 @@ struct PersistentBlockScan
     __device__ __forceinline__
     void ScanBlock(T (&items)[ITEMS_PER_THREAD], _ScanOp scan_op, NullType identity, T& block_aggregate)
     {
-        BlockScanT::InclusiveScan(smem_storage.scan, items, items, scan_op, block_aggregate);
+        BlockScanT::InclusiveScan(temp_storage.scan, items, items, scan_op, block_aggregate);
     }
 
     /**
@@ -418,7 +418,7 @@ struct PersistentBlockScan
     __device__ __forceinline__
     void ScanBlock(T (&items)[ITEMS_PER_THREAD], Sum<T> scan_op, NullType identity, T& block_aggregate)
     {
-        BlockScanT::InclusiveSum(smem_storage.scan, items, items, block_aggregate);
+        BlockScanT::InclusiveSum(temp_storage.scan, items, items, block_aggregate);
     }
 
     /**
@@ -429,7 +429,7 @@ struct PersistentBlockScan
     void ScanBlock(T (&items)[ITEMS_PER_THREAD], _ScanOp scan_op, _Identity identity, T& block_aggregate, int tile_idx)
     {
         BlockPrefixOp prefix_op(this, tile_idx);
-        BlockScanT::ExclusiveScan(smem_storage.scan, items, items, identity, scan_op, block_aggregate, prefix_op);
+        BlockScanT::ExclusiveScan(temp_storage.scan, items, items, identity, scan_op, block_aggregate, prefix_op);
     }
 
     /**
@@ -440,7 +440,7 @@ struct PersistentBlockScan
     void ScanBlock(T (&items)[ITEMS_PER_THREAD], Sum<T> scan_op, _Identity identity, T& block_aggregate, int tile_idx)
     {
         BlockPrefixOp prefix_op(this, tile_idx);
-        BlockScanT::ExclusiveSum(smem_storage.scan, items, items, block_aggregate, prefix_op);
+        BlockScanT::ExclusiveSum(temp_storage.scan, items, items, block_aggregate, prefix_op);
     }
 
     /**
@@ -451,7 +451,7 @@ struct PersistentBlockScan
     void ScanBlock(T (&items)[ITEMS_PER_THREAD], _ScanOp scan_op, NullType identity, T& block_aggregate, int tile_idx)
     {
         BlockPrefixOp prefix_op(this, tile_idx);
-        BlockScanT::InclusiveScan(smem_storage.scan, items, items, scan_op, block_aggregate, prefix_op);
+        BlockScanT::InclusiveScan(temp_storage.scan, items, items, scan_op, block_aggregate, prefix_op);
     }
 
     /**
@@ -462,7 +462,7 @@ struct PersistentBlockScan
     void ScanBlock(T (&items)[ITEMS_PER_THREAD], Sum<T> scan_op, NullType identity, T& block_aggregate, int tile_idx)
     {
         BlockPrefixOp prefix_op(this, tile_idx);
-        BlockScanT::InclusiveSum(smem_storage.scan, items, items, block_aggregate, prefix_op);
+        BlockScanT::InclusiveSum(temp_storage.scan, items, items, block_aggregate, prefix_op);
     }
 
 
@@ -475,7 +475,7 @@ struct PersistentBlockScan
 
         // Load items
         T items[ITEMS_PER_THREAD];
-        BlockLoadT::Load(smem_storage.load, d_in + block_offset, items);
+        BlockLoadT::Load(temp_storage.load, d_in + block_offset, items);
 
         __syncthreads();
 
@@ -500,7 +500,7 @@ struct PersistentBlockScan
         __syncthreads();
 
         // Store items
-        BlockStoreT::Store(smem_storage.store, d_out + block_offset, items);
+        BlockStoreT::Store(temp_storage.store, d_out + block_offset, items);
     }
 
 
@@ -514,7 +514,7 @@ struct PersistentBlockScan
 
         // Load items
         T items[ITEMS_PER_THREAD];
-        BlockLoadT::Load(smem_storage.load, d_in + block_offset, num_valid, items);
+        BlockLoadT::Load(temp_storage.load, d_in + block_offset, num_valid, items);
 
         __syncthreads();
 
@@ -535,7 +535,7 @@ struct PersistentBlockScan
         __syncthreads();
 
         // Store items
-        BlockStoreT::Store(smem_storage.store, d_out + block_offset, num_valid, items);
+        BlockStoreT::Store(temp_storage.store, d_out + block_offset, num_valid, items);
     }
 
 

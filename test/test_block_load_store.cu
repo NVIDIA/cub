@@ -86,14 +86,14 @@ __global__ void Kernel(
     typedef BlockStore<OutputIteratorRA, BLOCK_THREADS, ITEMS_PER_THREAD, STORE_POLICY, STORE_MODIFIER, WARP_TIME_SLICING> BlockStore;
 
     // Shared memory type for this threadblock
-    union SmemStorage
+    union TempStorage
     {
-        typename BlockLoad::SmemStorage     load;
-        typename BlockStore::SmemStorage    store;
+        typename BlockLoad::TempStorage     load;
+        typename BlockStore::TempStorage    store;
     };
 
     // Shared memory
-    __shared__ SmemStorage smem_storage;
+    __shared__ TempStorage temp_storage;
 
     // Threadblock work bounds
     int block_offset = blockIdx.x * TILE_SIZE;
@@ -102,12 +102,12 @@ __global__ void Kernel(
     T data[ITEMS_PER_THREAD];
 
     // Load data
-    BlockLoad::Load(smem_storage.load, d_in + block_offset, data);
+    BlockLoad::Load(temp_storage.load, d_in + block_offset, data);
 
     __syncthreads();
 
     // Store data
-    BlockStore::Store(smem_storage.store, d_out_unguarded + block_offset, data);
+    BlockStore::Store(temp_storage.store, d_out_unguarded + block_offset, data);
 
 }
 
@@ -144,14 +144,14 @@ __global__ void KernelGuarded(
     typedef BlockStore<OutputIteratorRA, BLOCK_THREADS, ITEMS_PER_THREAD, STORE_POLICY, STORE_MODIFIER, WARP_TIME_SLICING> BlockStore;
 
     // Shared memory type for this threadblock
-    union SmemStorage
+    union TempStorage
     {
-        typename BlockLoad::SmemStorage     load;
-        typename BlockStore::SmemStorage    store;
+        typename BlockLoad::TempStorage     load;
+        typename BlockStore::TempStorage    store;
     };
 
     // Shared memory
-    __shared__ SmemStorage smem_storage;
+    __shared__ TempStorage temp_storage;
 
     // Threadblock work bounds
     int block_offset = blockIdx.x * TILE_SIZE;
@@ -161,12 +161,12 @@ __global__ void KernelGuarded(
     T data[ITEMS_PER_THREAD];
 
     // Load data
-    BlockLoad::Load(smem_storage.load, d_in + block_offset, guarded_elements, data);
+    BlockLoad::Load(temp_storage.load, d_in + block_offset, guarded_elements, data);
 
     __syncthreads();
 
     // Store data
-    BlockStore::Store(smem_storage.store, d_out_guarded + block_offset, guarded_elements, data);
+    BlockStore::Store(temp_storage.store, d_out_guarded + block_offset, guarded_elements, data);
 }
 
 

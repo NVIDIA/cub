@@ -65,21 +65,21 @@ struct DeviceTest
         typename    BlockReduce,
         int         ITEMS_PER_THREAD>
     static __device__ __forceinline__ T Test(
-        typename BlockReduce::SmemStorage   &smem_storage,
+        typename BlockReduce::TempStorage   &temp_storage,
         T                                   (&data)[ITEMS_PER_THREAD],
         ReductionOp                         &reduction_op)
     {
-        return BlockReduce::Reduce(smem_storage, data, reduction_op);
+        return BlockReduce::Reduce(temp_storage, data, reduction_op);
     }
 
     template < typename BlockReduce>
     static __device__ __forceinline__ T Test(
-        typename BlockReduce::SmemStorage   &smem_storage,
+        typename BlockReduce::TempStorage   &temp_storage,
         T                                   &data,
         ReductionOp                         &reduction_op,
         int                                 valid_threads)
     {
-        return BlockReduce::Reduce(smem_storage, data, reduction_op, valid_threads);
+        return BlockReduce::Reduce(temp_storage, data, reduction_op, valid_threads);
     }
 };
 
@@ -94,21 +94,21 @@ struct DeviceTest<T, Sum<T>, true>
         typename    BlockReduce,
         int         ITEMS_PER_THREAD>
     static __device__ __forceinline__ T Test(
-        typename BlockReduce::SmemStorage   &smem_storage,
+        typename BlockReduce::TempStorage   &temp_storage,
         T                                   (&data)[ITEMS_PER_THREAD],
         Sum<T>                              &reduction_op)
     {
-        return BlockReduce::Sum(smem_storage, data);
+        return BlockReduce::Sum(temp_storage, data);
     }
 
     template <typename BlockReduce>
     static __device__ __forceinline__ T Test(
-        typename BlockReduce::SmemStorage   &smem_storage,
+        typename BlockReduce::TempStorage   &temp_storage,
         T                                   &data,
         Sum<T>                              &reduction_op,
         int                                 valid_threads)
     {
-        return BlockReduce::Sum(smem_storage, data, valid_threads);
+        return BlockReduce::Sum(temp_storage, data, valid_threads);
     }
 };
 
@@ -136,7 +136,7 @@ __global__ void FullTileReduceKernel(
     typedef BlockReduce<T, BLOCK_THREADS, ALGORITHM> BlockReduce;
 
     // Shared memory
-    __shared__ typename BlockReduce::SmemStorage smem_storage;
+    __shared__ typename BlockReduce::TempStorage temp_storage;
 
     // Per-thread tile data
     T data[ITEMS_PER_THREAD];
@@ -147,7 +147,7 @@ __global__ void FullTileReduceKernel(
     block_offset += TILE_SIZE;
 
     // Cooperative reduce first tile
-    T block_aggregate = DeviceTest<T, ReductionOp>::template Test<BlockReduce>(smem_storage, data, reduction_op);
+    T block_aggregate = DeviceTest<T, ReductionOp>::template Test<BlockReduce>(temp_storage, data, reduction_op);
 
     // Loop over input tiles
     while (block_offset < TILE_SIZE * tiles)
@@ -160,7 +160,7 @@ __global__ void FullTileReduceKernel(
         block_offset += TILE_SIZE;
 
         // Cooperatively reduce the tile's aggregate
-        T tile_aggregate = DeviceTest<T, ReductionOp>::template Test<BlockReduce>(smem_storage, data, reduction_op);
+        T tile_aggregate = DeviceTest<T, ReductionOp>::template Test<BlockReduce>(temp_storage, data, reduction_op);
 
         // Reduce threadblock aggregate
         block_aggregate = reduction_op(block_aggregate, tile_aggregate);
@@ -194,7 +194,7 @@ __global__ void PartialTileReduceKernel(
     typedef BlockReduce<T, BLOCK_THREADS, ALGORITHM> BlockReduce;
 
     // Shared memory
-    __shared__ typename BlockReduce::SmemStorage smem_storage;
+    __shared__ typename BlockReduce::TempStorage temp_storage;
 
     // Per-thread tile data
     T partial;
@@ -206,7 +206,7 @@ __global__ void PartialTileReduceKernel(
     }
 
     // Cooperatively reduce the tile's aggregate
-    T tile_aggregate = DeviceTest<T, ReductionOp>::template Test<BlockReduce>(smem_storage, partial, reduction_op, num_elements);
+    T tile_aggregate = DeviceTest<T, ReductionOp>::template Test<BlockReduce>(temp_storage, partial, reduction_op, num_elements);
 
     // Store data
     if (threadIdx.x == 0)

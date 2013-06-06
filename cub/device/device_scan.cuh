@@ -125,11 +125,11 @@ __global__ void MultiBlockScanKernel(
         SizeT> PersistentBlockScanT;
 
     // Shared memory for PersistentBlockScan
-    __shared__ typename PersistentBlockScanT::SmemStorage smem_storage;
+    __shared__ typename PersistentBlockScanT::TempStorage temp_storage;
 
     // Thread block instance
     PersistentBlockScanT persistent_block(
-        smem_storage,
+        temp_storage,
         d_in,
         d_out,
         d_tile_status,
