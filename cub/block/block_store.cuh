@@ -488,7 +488,7 @@ enum BlockStorePolicy
  *      then written to memory.  [More...](\ref cub::BlockStorePolicy)
  *
  * \par Usage Considerations
- * - \smemreuse{BlockStore::SmemStorage}
+ * - \smemreuse{BlockStore::TempStorage}
  *
  * \par Performance Considerations
  *  - See cub::BlockStorePolicy for more performance details regarding algorithmic alternatives
@@ -507,13 +507,13 @@ enum BlockStorePolicy
  *      typedef cub::BlockStore<int*, 128, 4> BlockStore;
  *
  *      // Declare shared memory for BlockStore
- *      __shared__ typename BlockStore::SmemStorage smem_storage;
+ *      __shared__ typename BlockStore::TempStorage temp_storage;
  *
  *      // A segment of consecutive items per thread
  *      int data[4];
  *
  *      // Store a tile of data at this block's offset
- *      BlockStore::Store(smem_storage, d_out + blockIdx.x * 128 * 4, data);
+ *      BlockStore::Store(temp_storage, d_out + blockIdx.x * 128 * 4, data);
  *
  *      ...
  * \endcode
@@ -534,13 +534,13 @@ enum BlockStorePolicy
  *      typedef cub::BlockStore<int*, BLOCK_THREADS, 21, BLOCK_STORE_TRANSPOSE> BlockStore;
  *
  *      // Declare shared memory for BlockStore
- *      __shared__ typename BlockStore::SmemStorage smem_storage;
+ *      __shared__ typename BlockStore::TempStorage temp_storage;
  *
  *      // A segment of consecutive items per thread
  *      int data[21];
  *
  *      // Store a tile of data at this block's offset
- *      BlockStore::Store(smem_storage, d_out + blockIdx.x * BLOCK_THREADS * 21, data);
+ *      BlockStore::Store(temp_storage, d_out + blockIdx.x * BLOCK_THREADS * 21, data);
  *
  *      ...
  * \endcode
@@ -563,13 +563,13 @@ enum BlockStorePolicy
  *      typedef cub::BlockStore<int*, BLOCK_THREADS, ITEMS_PER_THREAD, BLOCK_STORE_VECTORIZE, STORE_CG> BlockStore;
  *
  *      // Declare shared memory for BlockStore
- *      __shared__ typename BlockStore::SmemStorage smem_storage;
+ *      __shared__ typename BlockStore::TempStorage temp_storage;
  *
  *      // A segment of consecutive items per thread
  *      int data[ITEMS_PER_THREAD];
  *
  *      // Store a tile of data using vector-store instructions if possible
- *      BlockStore::Store(smem_storage, d_out + blockIdx.x * BLOCK_THREADS * ITEMS_PER_THREAD, data);
+ *      BlockStore::Store(temp_storage, d_out + blockIdx.x * BLOCK_THREADS * ITEMS_PER_THREAD, data);
  *
  *      ...
  * \endcode
@@ -611,11 +611,11 @@ private:
     struct StoreInternal<BLOCK_STORE_DIRECT, DUMMY>
     {
         /// Shared memory storage layout type
-        typedef NullType SmemStorage;
+        typedef NullType TempStorage;
 
         /// Store a tile of items across a threadblock
         static __device__ __forceinline__ void Store(
-            SmemStorage         &smem_storage,              ///< [in] Reference to shared memory allocation having layout type SmemStorage
+            TempStorage         &temp_storage,              ///< [in] Reference to shared memory allocation having layout type TempStorage
             OutputIteratorRA    block_itr,                  ///< [in] The threadblock's base output iterator for storing to
             T                   (&items)[ITEMS_PER_THREAD]) ///< [in] Data to store
         {
@@ -624,7 +624,7 @@ private:
 
         /// Store a tile of items across a threadblock, guarded by range
         static __device__ __forceinline__ void Store(
-            SmemStorage         &smem_storage,              ///< [in] Reference to shared memory allocation having layout type SmemStorage
+            TempStorage         &temp_storage,              ///< [in] Reference to shared memory allocation having layout type TempStorage
             OutputIteratorRA    block_itr,                  ///< [in] The threadblock's base output iterator for storing to
             const int           &guarded_items,             ///< [in] Number of valid items in the tile
             T                   (&items)[ITEMS_PER_THREAD]) ///< [in] Data to store
@@ -641,11 +641,11 @@ private:
     struct StoreInternal<BLOCK_STORE_VECTORIZE, DUMMY>
     {
         /// Shared memory storage layout type
-        typedef NullType SmemStorage;
+        typedef NullType TempStorage;
 
         /// Store a tile of items across a threadblock, specialized for native pointer types (attempts vectorization)
         static __device__ __forceinline__ void Store(
-            SmemStorage         &smem_storage,              ///< [in] Reference to shared memory allocation having layout type SmemStorage
+            TempStorage         &temp_storage,              ///< [in] Reference to shared memory allocation having layout type TempStorage
             T                   *block_ptr,                 ///< [in] The threadblock's base output iterator for storing to
             T                   (&items)[ITEMS_PER_THREAD]) ///< [in] Data to store
         {
@@ -655,7 +655,7 @@ private:
         /// Store a tile of items across a threadblock, specialized for opaque input iterators (skips vectorization)
         template <typename _OutputIteratorRA>
         static __device__ __forceinline__ void Store(
-            SmemStorage         &smem_storage,              ///< [in] Reference to shared memory allocation having layout type SmemStorage
+            TempStorage         &temp_storage,              ///< [in] Reference to shared memory allocation having layout type TempStorage
             _OutputIteratorRA   block_itr,                  ///< [in] The threadblock's base output iterator for storing to
             T                   (&items)[ITEMS_PER_THREAD]) ///< [in] Data to store
         {
@@ -664,7 +664,7 @@ private:
 
         /// Store a tile of items across a threadblock, guarded by range
         static __device__ __forceinline__ void Store(
-            SmemStorage         &smem_storage,              ///< [in] Reference to shared memory allocation having layout type SmemStorage
+            TempStorage         &temp_storage,              ///< [in] Reference to shared memory allocation having layout type TempStorage
             OutputIteratorRA    block_itr,                  ///< [in] The threadblock's base output iterator for storing to
             const int           &guarded_items,             ///< [in] Number of valid items in the tile
             T                   (&items)[ITEMS_PER_THREAD]) ///< [in] Data to store
@@ -684,26 +684,26 @@ private:
         typedef BlockExchange<T, BLOCK_THREADS, ITEMS_PER_THREAD, WARP_TIME_SLICING> BlockExchange;
 
         /// Shared memory storage layout type
-        typedef typename BlockExchange::SmemStorage SmemStorage;
+        typedef typename BlockExchange::TempStorage TempStorage;
 
         /// Store a tile of items across a threadblock
         static __device__ __forceinline__ void Store(
-            SmemStorage         &smem_storage,              ///< [in] Reference to shared memory allocation having layout type SmemStorage
+            TempStorage         &temp_storage,              ///< [in] Reference to shared memory allocation having layout type TempStorage
             OutputIteratorRA    block_itr,                  ///< [in] The threadblock's base output iterator for storing to
             T                   (&items)[ITEMS_PER_THREAD]) ///< [in] Data to store
         {
-            BlockExchange::BlockedToStriped(smem_storage, items);
+            BlockExchange::BlockedToStriped(temp_storage, items);
             StoreStriped<MODIFIER>(block_itr, items, BLOCK_THREADS);
         }
 
         /// Store a tile of items across a threadblock, guarded by range
         static __device__ __forceinline__ void Store(
-            SmemStorage         &smem_storage,              ///< [in] Reference to shared memory allocation having layout type SmemStorage
+            TempStorage         &temp_storage,              ///< [in] Reference to shared memory allocation having layout type TempStorage
             OutputIteratorRA    block_itr,                  ///< [in] The threadblock's base output iterator for storing to
             const int           &guarded_items,             ///< [in] Number of valid items in the tile
             T                   (&items)[ITEMS_PER_THREAD]) ///< [in] Data to store
         {
-            BlockExchange::BlockedToStriped(smem_storage, items);
+            BlockExchange::BlockedToStriped(temp_storage, items);
             StoreStriped<MODIFIER>(block_itr, guarded_items, items, BLOCK_THREADS);
         }
     };
@@ -722,37 +722,37 @@ private:
         typedef BlockExchange<T, BLOCK_THREADS, ITEMS_PER_THREAD, WARP_TIME_SLICING> BlockExchange;
 
         /// Shared memory storage layout type
-        typedef typename BlockExchange::SmemStorage SmemStorage;
+        typedef typename BlockExchange::TempStorage TempStorage;
 
         /// Store a tile of items across a threadblock
         static __device__ __forceinline__ void Store(
-            SmemStorage         &smem_storage,              ///< [in] Reference to shared memory allocation having layout type SmemStorage
+            TempStorage         &temp_storage,              ///< [in] Reference to shared memory allocation having layout type TempStorage
             OutputIteratorRA    block_itr,                  ///< [in] The threadblock's base output iterator for storing to
             T                   (&items)[ITEMS_PER_THREAD]) ///< [in] Data to store
         {
-            BlockExchange::BlockedToWarpStriped(smem_storage, items);
+            BlockExchange::BlockedToWarpStriped(temp_storage, items);
             StoreWarpStriped<MODIFIER>(block_itr, items, WARP_THREADS);
         }
 
         /// Store a tile of items across a threadblock, guarded by range
         static __device__ __forceinline__ void Store(
-            SmemStorage         &smem_storage,              ///< [in] Reference to shared memory allocation having layout type SmemStorage
+            TempStorage         &temp_storage,              ///< [in] Reference to shared memory allocation having layout type TempStorage
             OutputIteratorRA    block_itr,                  ///< [in] The threadblock's base output iterator for storing to
             const int           &guarded_items,             ///< [in] Number of valid items in the tile
             T                   (&items)[ITEMS_PER_THREAD]) ///< [in] Data to store
         {
-            BlockExchange::BlockedToWarpStriped(smem_storage, items);
+            BlockExchange::BlockedToWarpStriped(temp_storage, items);
             StoreWarpStriped<MODIFIER>(block_itr, guarded_items, items, WARP_THREADS);
         }
     };
 
     /// Shared memory storage layout type
-    typedef typename StoreInternal<ALGORITHM>::SmemStorage _SmemStorage;
+    typedef typename StoreInternal<ALGORITHM>::TempStorage _TempStorage;
 
 public:
 
     /// \smemstorage{BlockStore}
-    typedef _SmemStorage SmemStorage;
+    typedef _TempStorage TempStorage;
 
 
 
@@ -764,23 +764,23 @@ public:
      * \brief Store a tile of items across a threadblock.
      */
     static __device__ __forceinline__ void Store(
-        SmemStorage         &smem_storage,                  ///< [in] Reference to shared memory allocation having layout type SmemStorage
+        TempStorage         &temp_storage,                  ///< [in] Reference to shared memory allocation having layout type TempStorage
         OutputIteratorRA    block_itr,                      ///< [in] The threadblock's base output iterator for storing to
         T                   (&items)[ITEMS_PER_THREAD])     ///< [in] Data to store
     {
-        StoreInternal<ALGORITHM>::Store(smem_storage, block_itr, items);
+        StoreInternal<ALGORITHM>::Store(temp_storage, block_itr, items);
     }
 
     /**
      * \brief Store a tile of items across a threadblock, guarded by range.
      */
     static __device__ __forceinline__ void Store(
-        SmemStorage         &smem_storage,                  ///< [in] Reference to shared memory allocation having layout type SmemStorage
+        TempStorage         &temp_storage,                  ///< [in] Reference to shared memory allocation having layout type TempStorage
         OutputIteratorRA    block_itr,                      ///< [in] The threadblock's base output iterator for storing to
         const int           &guarded_items,                 ///< [in] Number of valid items in the tile
         T                   (&items)[ITEMS_PER_THREAD])     ///< [in] Data to store
     {
-        StoreInternal<ALGORITHM>::Store(smem_storage, block_itr, guarded_items, items);
+        StoreInternal<ALGORITHM>::Store(temp_storage, block_itr, guarded_items, items);
     }
 };
 

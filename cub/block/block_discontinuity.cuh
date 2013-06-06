@@ -66,7 +66,7 @@ namespace cub {
  * - Assumes a [<em>blocked arrangement</em>](index.html#sec3sec3) of elements across threads
  * - Any threadblock-wide scalar inputs and outputs (e.g., \p tile_predecessor and \p last_tile_item) are
  *   only considered valid in <em>thread</em><sub>0</sub>
- * - \smemreuse{BlockDiscontinuity::SmemStorage}
+ * - \smemreuse{BlockDiscontinuity::TempStorage}
  *
  * \par Performance Considerations
  * - Zero bank conflicts for most types.
@@ -104,7 +104,7 @@ namespace cub {
  *     typedef cub::BlockDiscontinuity<NonZero, 128> BlockDiscontinuity;
  *
  *     // Declare shared memory for BlockDiscontinuity
- *     __shared__ typename BlockDiscontinuity::SmemStorage smem_storage;
+ *     __shared__ typename BlockDiscontinuity::TempStorage temp_storage;
  *
  *     // A segment of consecutive non-zeroes per thread
  *     NonZero coordinates[4];
@@ -121,7 +121,7 @@ namespace cub {
  *
  *     // Set head flags
  *     int head_flags[4];
- *     BlockDiscontinuity::Flag(smem_storage, coordinates, block_predecessor, NewRowOp(), head_flags);
+ *     BlockDiscontinuity::Flag(temp_storage, coordinates, block_predecessor, NewRowOp(), head_flags);
  *
  * \endcode
  */
@@ -137,7 +137,7 @@ private:
     //---------------------------------------------------------------------
 
     /// Shared memory storage layout type
-    struct _SmemStorage
+    struct _TempStorage
     {
         T last_items[BLOCK_THREADS];      ///< Last element from each thread's input
     };
@@ -168,7 +168,7 @@ private:
 public:
 
     /// \smemstorage{BlockDiscontinuity}
-    typedef _SmemStorage SmemStorage;
+    typedef _TempStorage TempStorage;
 
 
     /**
@@ -195,14 +195,14 @@ public:
         typename        FlagT,
         typename        FlagOp>
     static __device__ __forceinline__ void Flag(
-        SmemStorage     &smem_storage,                  ///< [in] Reference to shared memory allocation having layout type SmemStorage
+        TempStorage     &temp_storage,                  ///< [in] Reference to shared memory allocation having layout type TempStorage
         T               (&input)[ITEMS_PER_THREAD],     ///< [in] Calling thread's input items
         FlagOp          flag_op,                        ///< [in] Binary boolean flag predicate
         FlagT           (&flags)[ITEMS_PER_THREAD],     ///< [out] Calling thread's discontinuity flags
         T               &last_tile_item)                ///< [out] <b>[<em>thread</em><sub>0</sub> only]</b> The last tile item (<tt>input<sub><em>ITEMS_PER_THREAD</em>-1</sub></tt> from thread<sub><tt><em>BLOCK_THREADS</em></tt>-1</sub>)
     {
         // Share last item
-        smem_storage.last_items[threadIdx.x] = input[ITEMS_PER_THREAD - 1];
+        temp_storage.last_items[threadIdx.x] = input[ITEMS_PER_THREAD - 1];
 
         __syncthreads();
 
@@ -210,13 +210,13 @@ public:
         if (threadIdx.x == 0)
         {
             flags[0] = 1;
-            last_tile_item = smem_storage.last_items[BLOCK_THREADS - 1];
+            last_tile_item = temp_storage.last_items[BLOCK_THREADS - 1];
         }
         else
         {
             flags[0] = ApplyOp<FlagOp>::Flag(
                 flag_op,
-                smem_storage.last_items[threadIdx.x - 1],
+                temp_storage.last_items[threadIdx.x - 1],
                 input[0],
                 threadIdx.x * ITEMS_PER_THREAD);
         }
@@ -258,13 +258,13 @@ public:
         typename        FlagT,
         typename        FlagOp>
     static __device__ __forceinline__ void Flag(
-        SmemStorage     &smem_storage,                  ///< [in] Reference to shared memory allocation having layout type SmemStorage
+        TempStorage     &temp_storage,                  ///< [in] Reference to shared memory allocation having layout type TempStorage
         T               (&input)[ITEMS_PER_THREAD],     ///< [in] Calling thread's input items
         FlagOp          flag_op,                        ///< [in] Binary boolean flag predicate
         FlagT           (&flags)[ITEMS_PER_THREAD])     ///< [out] Calling thread's discontinuity flags
     {
         T last_tile_item;   // discard
-        Flag(smem_storage, input, flag_op, flags, last_tile_item);
+        Flag(temp_storage, input, flag_op, flags, last_tile_item);
     }
 
 
@@ -293,7 +293,7 @@ public:
         typename        FlagT,
         typename        FlagOp>
     static __device__ __forceinline__ void Flag(
-        SmemStorage     &smem_storage,                  ///< [in] Reference to shared memory allocation having layout type SmemStorage
+        TempStorage     &temp_storage,                  ///< [in] Reference to shared memory allocation having layout type TempStorage
         T               (&input)[ITEMS_PER_THREAD],     ///< [in] Calling thread's input items
         T               tile_predecessor,               ///< [in] <b>[<em>thread</em><sub>0</sub> only]</b> Item with which to compare the first tile item (<tt>input<sub>0</sub></tt>from <em>thread</em><sub>0</sub>).
         FlagOp          flag_op,                        ///< [in] Binary boolean flag predicate
@@ -301,7 +301,7 @@ public:
         T               &last_tile_item)                ///< [out] <b>[<em>thread</em><sub>0</sub> only]</b> The last tile item (<tt>input<sub><em>ITEMS_PER_THREAD</em>-1</sub></tt> from <em>thread</em><sub><tt><em>BLOCK_THREADS</em></tt>-1</sub>)
     {
         // Share last item
-        smem_storage.last_items[threadIdx.x] = input[ITEMS_PER_THREAD - 1];
+        temp_storage.last_items[threadIdx.x] = input[ITEMS_PER_THREAD - 1];
 
         __syncthreads();
 
@@ -310,11 +310,11 @@ public:
         if (threadIdx.x == 0)
         {
             prefix = tile_predecessor;
-            last_tile_item = smem_storage.last_items[BLOCK_THREADS - 1];
+            last_tile_item = temp_storage.last_items[BLOCK_THREADS - 1];
         }
         else
         {
-            prefix = smem_storage.last_items[threadIdx.x - 1];
+            prefix = temp_storage.last_items[threadIdx.x - 1];
         }
         flags[0] = ApplyOp<FlagOp>::Flag(
             flag_op,
@@ -359,14 +359,14 @@ public:
         typename        FlagT,
         typename        FlagOp>
     static __device__ __forceinline__ void Flag(
-        SmemStorage     &smem_storage,                  ///< [in] Reference to shared memory allocation having layout type SmemStorage
+        TempStorage     &temp_storage,                  ///< [in] Reference to shared memory allocation having layout type TempStorage
         T               (&input)[ITEMS_PER_THREAD],     ///< [in] Calling thread's input items
         T               tile_predecessor,               ///< [in] <b>[<em>thread</em><sub>0</sub> only]</b> Item with which to compare the first tile item (<tt>input<sub>0</sub></tt>from <em>thread</em><sub>0</sub>).
         FlagOp          flag_op,                        ///< [in] Binary boolean flag predicate
         FlagT           (&flags)[ITEMS_PER_THREAD])     ///< [out] Calling thread's discontinuity flags
     {
         T last_tile_item;   // discard
-        Flag(smem_storage, input, tile_predecessor, flag_op, flags, last_tile_item);
+        Flag(temp_storage, input, tile_predecessor, flag_op, flags, last_tile_item);
     }
 
 };

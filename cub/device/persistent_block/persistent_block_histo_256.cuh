@@ -179,15 +179,15 @@ struct PersistentBlockHisto256<PersistentBlockHisto256Policy, CHANNELS, ACTIVE_C
     };
 
     // Shared memory type required by this thread block
-    struct SmemStorage {};
+    struct TempStorage {};
 
 
     //---------------------------------------------------------------------
     // Per-thread fields
     //---------------------------------------------------------------------
 
-    /// Reference to smem_storage
-    SmemStorage &smem_storage;
+    /// Reference to temp_storage
+    TempStorage &temp_storage;
 
     /// Reference to output histograms
     HistoCounter* (&d_out_histograms)[ACTIVE_CHANNELS];
@@ -204,10 +204,10 @@ struct PersistentBlockHisto256<PersistentBlockHisto256Policy, CHANNELS, ACTIVE_C
      * Constructor
      */
     __device__ __forceinline__ PersistentBlockHisto256(
-        SmemStorage         &smem_storage,                                  ///< Reference to smem_storage
+        TempStorage         &temp_storage,                                  ///< Reference to temp_storage
         InputIteratorRA     d_in,                                           ///< Input data to reduce
         HistoCounter*       (&d_out_histograms)[ACTIVE_CHANNELS]) :         ///< Reference to output histograms
-            smem_storage(smem_storage),
+            temp_storage(temp_storage),
             d_in(d_in),
             d_out_histograms(d_out_histograms)
     {}
@@ -326,7 +326,7 @@ struct PersistentBlockHisto256<PersistentBlockHisto256Policy, CHANNELS, ACTIVE_C
     };
 
     // Shared memory type required by this thread block
-    struct SmemStorage
+    struct TempStorage
     {
         HistoCounter histograms[ACTIVE_CHANNELS][257];  // One word of padding between channel histograms to prevent warps working on different histograms from hammering on the same bank
     };
@@ -336,8 +336,8 @@ struct PersistentBlockHisto256<PersistentBlockHisto256Policy, CHANNELS, ACTIVE_C
     // Per-thread fields
     //---------------------------------------------------------------------
 
-    /// Reference to smem_storage
-    SmemStorage &smem_storage;
+    /// Reference to temp_storage
+    TempStorage &temp_storage;
 
     /// Reference to output histograms
     HistoCounter* (&d_out_histograms)[ACTIVE_CHANNELS];
@@ -354,10 +354,10 @@ struct PersistentBlockHisto256<PersistentBlockHisto256Policy, CHANNELS, ACTIVE_C
      * Constructor
      */
     __device__ __forceinline__ PersistentBlockHisto256(
-        SmemStorage         &smem_storage,                                  ///< Reference to smem_storage
+        TempStorage         &temp_storage,                                  ///< Reference to temp_storage
         InputIteratorRA     d_in,                                           ///< Input data to reduce
         HistoCounter*       (&d_out_histograms)[ACTIVE_CHANNELS]) :         ///< Reference to output histograms
-            smem_storage(smem_storage),
+            temp_storage(temp_storage),
             d_in(d_in),
             d_out_histograms(d_out_histograms)
     {
@@ -370,12 +370,12 @@ struct PersistentBlockHisto256<PersistentBlockHisto256Policy, CHANNELS, ACTIVE_C
             #pragma unroll
             for(; histo_offset + BLOCK_THREADS <= 256; histo_offset += BLOCK_THREADS)
             {
-                smem_storage.histograms[CHANNEL][histo_offset + threadIdx.x] = 0;
+                temp_storage.histograms[CHANNEL][histo_offset + threadIdx.x] = 0;
             }
             // Finish up with guarded initialization if necessary
             if ((histo_offset < BLOCK_THREADS) && (histo_offset + threadIdx.x < 256))
             {
-                smem_storage.histograms[CHANNEL][histo_offset + threadIdx.x] = 0;
+                temp_storage.histograms[CHANNEL][histo_offset + threadIdx.x] = 0;
             }
         }
     }
@@ -412,7 +412,7 @@ struct PersistentBlockHisto256<PersistentBlockHisto256Policy, CHANNELS, ACTIVE_C
                     if (((ACTIVE_CHANNELS == CHANNELS) || (CHANNEL < ACTIVE_CHANNELS)) && ((ITEM * BLOCK_THREADS * CHANNELS) + CHANNEL < bounds))
                     {
                         unsigned char item  = d_in[block_offset + (ITEM * BLOCK_THREADS * CHANNELS) + (threadIdx.x * CHANNELS) + CHANNEL];
-                        atomicAdd(smem_storage.histograms[CHANNEL] + item, 1);
+                        atomicAdd(temp_storage.histograms[CHANNEL] + item, 1);
                     }
                 }
             }
@@ -446,7 +446,7 @@ struct PersistentBlockHisto256<PersistentBlockHisto256Policy, CHANNELS, ACTIVE_C
                 {
                     if (CHANNEL < ACTIVE_CHANNELS)
                     {
-                        atomicAdd(smem_storage.histograms[CHANNEL] + items[ITEM][CHANNEL], 1);
+                        atomicAdd(temp_storage.histograms[CHANNEL] + items[ITEM][CHANNEL], 1);
                     }
                 }
             }
@@ -478,12 +478,12 @@ struct PersistentBlockHisto256<PersistentBlockHisto256Policy, CHANNELS, ACTIVE_C
             #pragma unroll
             for(; histo_offset + BLOCK_THREADS <= 256; histo_offset += BLOCK_THREADS)
             {
-                d_out_histograms[CHANNEL][channel_offset + histo_offset + threadIdx.x] = smem_storage.histograms[CHANNEL][histo_offset + threadIdx.x];
+                d_out_histograms[CHANNEL][channel_offset + histo_offset + threadIdx.x] = temp_storage.histograms[CHANNEL][histo_offset + threadIdx.x];
             }
             // Finish up with guarded initialization if necessary
             if ((histo_offset < BLOCK_THREADS) && (histo_offset + threadIdx.x < 256))
             {
-                d_out_histograms[CHANNEL][channel_offset + histo_offset + threadIdx.x] = smem_storage.histograms[CHANNEL][histo_offset + threadIdx.x];
+                d_out_histograms[CHANNEL][channel_offset + histo_offset + threadIdx.x] = temp_storage.histograms[CHANNEL][histo_offset + threadIdx.x];
             }
         }
     }
@@ -524,15 +524,15 @@ struct PersistentBlockHisto256<PersistentBlockHisto256Policy, CHANNELS, ACTIVE_C
     typedef BlockDiscontinuity<unsigned char, BLOCK_THREADS> BlockDiscontinuityT;
 
     // Shared memory type required by this thread block
-    union SmemStorage
+    union TempStorage
     {
         // Storage for sorting bin values
-        typename BlockRadixSortT::SmemStorage sort_storage;
+        typename BlockRadixSortT::TempStorage sort_storage;
 
         struct
         {
             // Storage for detecting discontinuities in the tile of sorted bin values
-            typename BlockDiscontinuityT::SmemStorage discont_storage;
+            typename BlockDiscontinuityT::TempStorage discont_storage;
 
             // Storage for noting begin/end offsets of bin runs in the tile of sorted bin values
             unsigned int run_begin[BLOCK_THREADS * STRIPED_COUNTERS_PER_THREAD];
@@ -544,11 +544,11 @@ struct PersistentBlockHisto256<PersistentBlockHisto256Policy, CHANNELS, ACTIVE_C
     // Discontinuity functor
     struct DiscontinuityOp
     {
-        // Reference to smem_storage
-        SmemStorage &smem_storage;
+        // Reference to temp_storage
+        TempStorage &temp_storage;
 
         // Constructor
-        __device__ __forceinline__ DiscontinuityOp(SmemStorage &smem_storage) : smem_storage(smem_storage) {}
+        __device__ __forceinline__ DiscontinuityOp(TempStorage &temp_storage) : temp_storage(temp_storage) {}
 
         // Discontinuity predicate
         __device__ __forceinline__ bool operator()(const unsigned char &a, const unsigned char &b, unsigned int b_index)
@@ -556,8 +556,8 @@ struct PersistentBlockHisto256<PersistentBlockHisto256Policy, CHANNELS, ACTIVE_C
             if (a != b)
             {
                 // Note the begin/end offsets in shared storage
-                smem_storage.run_begin[b] = b_index;
-                smem_storage.run_end[a] = b_index;
+                temp_storage.run_begin[b] = b_index;
+                temp_storage.run_end[a] = b_index;
 
                 return true;
             }
@@ -573,8 +573,8 @@ struct PersistentBlockHisto256<PersistentBlockHisto256Policy, CHANNELS, ACTIVE_C
     // Per-thread fields
     //---------------------------------------------------------------------
 
-    /// Reference to smem_storage
-    SmemStorage &smem_storage;
+    /// Reference to temp_storage
+    TempStorage &temp_storage;
 
     /// Histogram counters striped across threads
     HistoCounter thread_counters[ACTIVE_CHANNELS][STRIPED_COUNTERS_PER_THREAD];
@@ -594,10 +594,10 @@ struct PersistentBlockHisto256<PersistentBlockHisto256Policy, CHANNELS, ACTIVE_C
      * Constructor
      */
     __device__ __forceinline__ PersistentBlockHisto256(
-        SmemStorage         &smem_storage,                                  ///< Reference to smem_storage
+        TempStorage         &temp_storage,                                  ///< Reference to temp_storage
         InputIteratorRA     d_in,                                           ///< Input data to reduce
         HistoCounter*       (&d_out_histograms)[ACTIVE_CHANNELS]) :         ///< Reference to output histograms
-            smem_storage(smem_storage),
+            temp_storage(temp_storage),
             d_in(d_in),
             d_out_histograms(d_out_histograms)
     {
@@ -631,7 +631,7 @@ struct PersistentBlockHisto256<PersistentBlockHisto256Policy, CHANNELS, ACTIVE_C
         HistoCounter    thread_counters[STRIPED_COUNTERS_PER_THREAD])   ///< Histogram counters striped across threads
     {
         // Sort bytes in blocked arrangement
-        BlockRadixSortT::SortBlocked(smem_storage.sort_storage, items);
+        BlockRadixSortT::SortBlocked(temp_storage.sort_storage, items);
 
         __syncthreads();
 
@@ -639,19 +639,19 @@ struct PersistentBlockHisto256<PersistentBlockHisto256Policy, CHANNELS, ACTIVE_C
         #pragma unroll
         for (int COUNTER = 0; COUNTER < STRIPED_COUNTERS_PER_THREAD; ++COUNTER)
         {
-            smem_storage.run_begin[(COUNTER * BLOCK_THREADS) + threadIdx.x] = TILE_CHANNEL_ITEMS;
-            smem_storage.run_end[(COUNTER * BLOCK_THREADS) + threadIdx.x] = TILE_CHANNEL_ITEMS;
+            temp_storage.run_begin[(COUNTER * BLOCK_THREADS) + threadIdx.x] = TILE_CHANNEL_ITEMS;
+            temp_storage.run_end[(COUNTER * BLOCK_THREADS) + threadIdx.x] = TILE_CHANNEL_ITEMS;
         }
 
         __syncthreads();
 
         // Note the begin/end run offsets of bin runs in the sorted tile
         int flags[ITEMS_PER_THREAD];                // unused
-        DiscontinuityOp flag_op(smem_storage);
-        BlockDiscontinuityT::Flag(smem_storage.discont_storage, items, flag_op, flags);
+        DiscontinuityOp flag_op(temp_storage);
+        BlockDiscontinuityT::Flag(temp_storage.discont_storage, items, flag_op, flags);
 
         // Update begin for first item
-        if (threadIdx.x == 0) smem_storage.run_begin[items[0]] = 0;
+        if (threadIdx.x == 0) temp_storage.run_begin[items[0]] = 0;
 
         __syncthreads();
 
@@ -661,7 +661,7 @@ struct PersistentBlockHisto256<PersistentBlockHisto256Policy, CHANNELS, ACTIVE_C
         for (int COUNTER = 0; COUNTER < STRIPED_COUNTERS_PER_THREAD; ++COUNTER)
         {
             int bin = (COUNTER * BLOCK_THREADS) + threadIdx.x;
-            thread_counters[COUNTER] += smem_storage.run_end[bin] - smem_storage.run_begin[bin];
+            thread_counters[COUNTER] += temp_storage.run_end[bin] - temp_storage.run_begin[bin];
         }
     }
 

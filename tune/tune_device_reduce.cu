@@ -191,7 +191,7 @@ struct Schmoo
     {
         enum
         {
-            BYTES = sizeof(typename PersistentBlockReduce<TilesReducePolicy, T*, SizeT, ReductionOp>::SmemStorage),
+            BYTES = sizeof(typename PersistentBlockReduce<TilesReducePolicy, T*, SizeT, ReductionOp>::TempStorage),
             IS_OK = ((BYTES < ArchProps<TUNE_ARCH>::SMEM_BYTES) &&
                      (TilesReducePolicy::ITEMS_PER_THREAD % TilesReducePolicy::VECTOR_LOAD_LENGTH == 0))
         };

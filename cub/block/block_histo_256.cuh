@@ -111,7 +111,7 @@ enum BlockHisto256Algorithm
  * \par Usage Considerations
  * - The histogram output can be constructed in shared or global memory
  * - Supports partially-full threadblocks (i.e., the most-significant thread ranks having undefined values).
- * - \smemreuse{BlockHisto256::SmemStorage}
+ * - \smemreuse{BlockHisto256::TempStorage}
  *
  * \par Performance Considerations
  * - Computation is slightly more efficient (i.e., having lower instruction overhead) for:
@@ -132,7 +132,7 @@ enum BlockHisto256Algorithm
  *      typedef cub::BlockHisto256<128, 4> BlockHisto256;
  *
  *      // Declare shared memory for BlockHisto256
- *      __shared__ typename BlockHisto256::SmemStorage smem_storage;
+ *      __shared__ typename BlockHisto256::TempStorage temp_storage;
  *
  *      // Declare shared memory for histogram bins
  *      __shared__ unsigned int smem_histogram[256];
@@ -144,7 +144,7 @@ enum BlockHisto256Algorithm
  *      ...
  *
  *      // Compute the threadblock-wide histogram
- *      BlockHisto256::Histogram(smem_storage, data, smem_histogram);
+ *      BlockHisto256::Histogram(temp_storage, data, smem_histogram);
  *
  *      ...
  * \endcode
@@ -162,14 +162,14 @@ enum BlockHisto256Algorithm
  *      typedef cub::BlockHisto256<BLOCK_THREADS, 1> BlockHisto256;
  *
  *      // Declare shared memory for BlockHisto256
- *      __shared__ typename BlockHisto256::SmemStorage smem_storage;
+ *      __shared__ typename BlockHisto256::TempStorage temp_storage;
  *
  *      // Guarded load of input item
  *      int data[1];
  *      if (threadIdx.x < num_items) data[0] = ...;
  *
  *      // Compute the threadblock-wide sum of valid elements in thread0
- *      BlockHisto256::Composite(smem_storage, data, d_histogram);
+ *      BlockHisto256::Composite(temp_storage, data, d_histogram);
  *
  *      ...
  * \endcode
@@ -218,15 +218,15 @@ private:
         typedef BlockDiscontinuity<unsigned char, BLOCK_THREADS> BlockDiscontinuityT;
 
         // Shared memory
-        union SmemStorage
+        union TempStorage
         {
             // Storage for sorting bin values
-            typename BlockRadixSortT::SmemStorage sort_storage;
+            typename BlockRadixSortT::TempStorage sort_storage;
 
             struct
             {
                 // Storage for detecting discontinuities in the tile of sorted bin values
-                typename BlockDiscontinuityT::SmemStorage discont_storage;
+                typename BlockDiscontinuityT::TempStorage discont_storage;
 
                 // Storage for noting begin/end offsets of bin runs in the tile of sorted bin values
                 unsigned int run_begin[256];
@@ -238,11 +238,11 @@ private:
         // Discontinuity functor
         struct DiscontinuityOp
         {
-            // Reference to smem_storage
-            SmemStorage &smem_storage;
+            // Reference to temp_storage
+            TempStorage &temp_storage;
 
             // Constructor
-            __device__ __forceinline__ DiscontinuityOp(SmemStorage &smem_storage) : smem_storage(smem_storage) {}
+            __device__ __forceinline__ DiscontinuityOp(TempStorage &temp_storage) : temp_storage(temp_storage) {}
 
             // Discontinuity predicate
             __device__ __forceinline__ bool operator()(const unsigned char &a, const unsigned char &b, unsigned int b_index)
@@ -250,8 +250,8 @@ private:
                 if (a != b)
                 {
                     // Note the begin/end offsets in shared storage
-                    smem_storage.run_begin[b] = b_index;
-                    smem_storage.run_end[a] = b_index;
+                    temp_storage.run_begin[b] = b_index;
+                    temp_storage.run_end[a] = b_index;
 
                     return true;
                 }
@@ -267,14 +267,14 @@ private:
         template <
             typename            HistoCounter>
         static __device__ __forceinline__ void Composite(
-            SmemStorage         &smem_storage,                  ///< [in] Reference to shared memory allocation having layout type SmemStorage
+            TempStorage         &temp_storage,                  ///< [in] Reference to shared memory allocation having layout type TempStorage
             unsigned char       (&items)[ITEMS_PER_THREAD],     ///< [in] Calling thread's 8b input values to histogram
             HistoCounter        histogram[256])                 ///< [out] Reference to shared/global memory 256-bin histogram
         {
             enum { TILE_SIZE = BLOCK_THREADS * ITEMS_PER_THREAD };
 
             // Sort bytes in blocked arrangement
-            BlockRadixSortT::SortBlocked(smem_storage.sort_storage, items);
+            BlockRadixSortT::SortBlocked(temp_storage.sort_storage, items);
 
             __syncthreads();
 
@@ -284,14 +284,14 @@ private:
             #pragma unroll
             for(; histo_offset + BLOCK_THREADS <= 256; histo_offset += BLOCK_THREADS)
             {
-                smem_storage.run_begin[histo_offset + threadIdx.x] = TILE_SIZE;
-                smem_storage.run_end[histo_offset + threadIdx.x] = TILE_SIZE;
+                temp_storage.run_begin[histo_offset + threadIdx.x] = TILE_SIZE;
+                temp_storage.run_end[histo_offset + threadIdx.x] = TILE_SIZE;
             }
             // Finish up with guarded initialization if necessary
             if ((histo_offset < BLOCK_THREADS) && (histo_offset + threadIdx.x < 256))
             {
-                smem_storage.run_begin[histo_offset + threadIdx.x] = TILE_SIZE;
-                smem_storage.run_end[histo_offset + threadIdx.x] = TILE_SIZE;
+                temp_storage.run_begin[histo_offset + threadIdx.x] = TILE_SIZE;
+                temp_storage.run_end[histo_offset + threadIdx.x] = TILE_SIZE;
             }
 
             __syncthreads();
@@ -299,11 +299,11 @@ private:
             int flags[ITEMS_PER_THREAD];    // unused
 
             // Note the begin/end run offsets of bin runs in the sorted tile
-            DiscontinuityOp flag_op(smem_storage);
-            BlockDiscontinuityT::Flag(smem_storage.discont_storage, items, flag_op, flags);
+            DiscontinuityOp flag_op(temp_storage);
+            BlockDiscontinuityT::Flag(temp_storage.discont_storage, items, flag_op, flags);
 
             // Update begin for first item
-            if (threadIdx.x == 0) smem_storage.run_begin[items[0]] = 0;
+            if (threadIdx.x == 0) temp_storage.run_begin[items[0]] = 0;
 
             __syncthreads();
 
@@ -314,14 +314,14 @@ private:
             for(; histo_offset + BLOCK_THREADS <= 256; histo_offset += BLOCK_THREADS)
             {
                 int thread_offset = histo_offset + threadIdx.x;
-                HistoCounter count = smem_storage.run_end[thread_offset] - smem_storage.run_begin[thread_offset];
+                HistoCounter count = temp_storage.run_end[thread_offset] - temp_storage.run_begin[thread_offset];
                 histogram[thread_offset] += count;
             }
             // Finish up with guarded composition if necessary
             if ((histo_offset < BLOCK_THREADS) && (histo_offset + threadIdx.x < 256))
             {
                 int thread_offset = histo_offset + threadIdx.x;
-                HistoCounter count = smem_storage.run_end[thread_offset] - smem_storage.run_begin[thread_offset];
+                HistoCounter count = temp_storage.run_end[thread_offset] - temp_storage.run_begin[thread_offset];
                 histogram[thread_offset] += count;
             }
         }
@@ -336,13 +336,13 @@ private:
     struct BlockHisto256Internal<BLOCK_HISTO_256_ATOMIC, DUMMY>
     {
         /// Shared memory storage layout type
-        struct SmemStorage {};
+        struct TempStorage {};
 
         /// Composite data onto an existing histogram
         template <
             typename            HistoCounter>
         static __device__ __forceinline__ void Composite(
-            SmemStorage         &smem_storage,                  ///< [in] Reference to shared memory allocation having layout type SmemStorage
+            TempStorage         &temp_storage,                  ///< [in] Reference to shared memory allocation having layout type TempStorage
             unsigned char       (&items)[ITEMS_PER_THREAD],     ///< [in] Calling thread's 8b input values to histogram
             HistoCounter        histogram[256])                 ///< [out] Reference to shared/global memory 256-bin histogram
         {
@@ -361,13 +361,13 @@ private:
 
 
     /// Shared memory storage layout type for BlockHisto256
-    typedef typename BlockHisto256Internal<SAFE_ALGORITHM>::SmemStorage _SmemStorage;
+    typedef typename BlockHisto256Internal<SAFE_ALGORITHM>::TempStorage _TempStorage;
 
 
 public:
 
     /// \smemstorage{BlockHisto256}
-    typedef _SmemStorage SmemStorage;
+    typedef _TempStorage TempStorage;
 
 
     /**
@@ -403,7 +403,7 @@ public:
     template <
         typename            HistoCounter>
     static __device__ __forceinline__ void Histogram(
-        SmemStorage         &smem_storage,                  ///< [in] Reference to shared memory allocation having layout type SmemStorage
+        TempStorage         &temp_storage,                  ///< [in] Reference to shared memory allocation having layout type TempStorage
         unsigned char       (&items)[ITEMS_PER_THREAD],     ///< [in] Calling thread's 8b input values to histogram
         HistoCounter        histogram[256])                 ///< [out] Reference to shared/global memory 256-bin histogram
     {
@@ -411,7 +411,7 @@ public:
         InitHistogram(histogram);
 
         // Composite the histogram
-        BlockHisto256Internal<SAFE_ALGORITHM>::Composite(smem_storage, items, histogram);
+        BlockHisto256Internal<SAFE_ALGORITHM>::Composite(temp_storage, items, histogram);
     }
 
 
@@ -426,11 +426,11 @@ public:
     template <
         typename            HistoCounter>
     static __device__ __forceinline__ void Composite(
-        SmemStorage         &smem_storage,                  ///< [in] Reference to shared memory allocation having layout type SmemStorage
+        TempStorage         &temp_storage,                  ///< [in] Reference to shared memory allocation having layout type TempStorage
         unsigned char       (&items)[ITEMS_PER_THREAD],     ///< [in] Calling thread's 8b input values to histogram
         HistoCounter        histogram[256])                 ///< [out] Reference to shared/global memory 256-bin histogram
     {
-        BlockHisto256Internal<SAFE_ALGORITHM>::Composite(smem_storage, items, histogram);
+        BlockHisto256Internal<SAFE_ALGORITHM>::Composite(temp_storage, items, histogram);
     }
 
 };

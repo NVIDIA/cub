@@ -36,7 +36,7 @@ __global__ void PrefixSumKernel(T *d_in, T *d_out)
     typedef BlockScan<T, BLOCK_THREADS> BlockScan;
  
     // The shared memory needed by BlockScan
-    __shared__ typename BlockScan::SmemStorage smem_storage;
+    __shared__ typename BlockScan::TempStorage temp_storage;
  
     // A segment of data items per thread
     T data[ITEMS_PER_THREAD];
@@ -45,7 +45,7 @@ __global__ void PrefixSumKernel(T *d_in, T *d_out)
     LoadBlockedVectorized(data, d_in, 0);
  
     // Perform an exclusive prefix sum across the tile of data
-    BlockScan::ExclusiveSum(smem_storage, data, data);
+    BlockScan::ExclusiveSum(temp_storage, data, data);
 
     // Store a tile of data using vector-load instructions
     StoreBlockedVectorized(data, d_out, 0);

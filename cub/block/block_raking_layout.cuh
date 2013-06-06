@@ -105,14 +105,14 @@ struct BlockRakingLayout
     /**
      * \brief Shared memory storage type
      */
-    typedef T SmemStorage[BlockRakingLayout::GRID_ELEMENTS];
+    typedef T TempStorage[BlockRakingLayout::GRID_ELEMENTS];
 
 
     /**
      * \brief Returns the location for the calling thread to place data into the grid
      */
     static __device__ __forceinline__ T* PlacementPtr(
-        SmemStorage &smem_storage,
+        TempStorage &temp_storage,
         int block_strip = 0,
         int tid = threadIdx.x)
     {
@@ -126,7 +126,7 @@ struct BlockRakingLayout
         }
 
         // Incorporating a block of padding partials every shared memory segment
-        return smem_storage + offset;
+        return temp_storage + offset;
     }
 
 
@@ -134,10 +134,10 @@ struct BlockRakingLayout
      * \brief Returns the location for the calling thread to begin sequential raking
      */
     static __device__ __forceinline__ T* RakingPtr(
-        SmemStorage &smem_storage,
+        TempStorage &temp_storage,
         int tid = threadIdx.x)
     {
-        return smem_storage + (tid * (SEGMENT_LENGTH + SEGMENT_PADDING));
+        return temp_storage + (tid * (SEGMENT_LENGTH + SEGMENT_PADDING));
     }
 };
 

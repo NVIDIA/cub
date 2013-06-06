@@ -90,7 +90,7 @@ __global__ void Kernel(
         SMEM_CONFIG> BlockRadixSort;
 
     // Shared memory
-    __shared__ typename BlockRadixSort::SmemStorage smem_storage;
+    __shared__ typename BlockRadixSort::TempStorage temp_storage;
 
     // Keys per thread
     KeyType keys[ITEMS_PER_THREAD];
@@ -100,7 +100,7 @@ __global__ void Kernel(
     LoadStriped<LOAD_DEFAULT>(d_values, values, BLOCK_THREADS);
 
     // Test keys-value sorting (in striped arrangement)
-    BlockRadixSort::SortStriped(smem_storage, keys, values, begin_bit, end_bit);
+    BlockRadixSort::SortStriped(temp_storage, keys, values, begin_bit, end_bit);
 
     StoreStriped<STORE_DEFAULT>(d_keys, keys, BLOCK_THREADS);
     StoreStriped<STORE_DEFAULT>(d_values, values, BLOCK_THREADS);
@@ -142,7 +142,7 @@ __global__ void Kernel(
         SMEM_CONFIG> BlockRadixSort;
 
     // Shared memory
-    __shared__ typename BlockRadixSort::SmemStorage smem_storage;
+    __shared__ typename BlockRadixSort::TempStorage temp_storage;
 
     // Keys per thread
     KeyType keys[ITEMS_PER_THREAD];
@@ -150,7 +150,7 @@ __global__ void Kernel(
     LoadStriped<LOAD_DEFAULT>(d_keys, keys, BLOCK_THREADS);
 
     // Test keys-only sorting (in striped arrangement)
-    BlockRadixSort::SortStriped(smem_storage, keys, begin_bit, end_bit);
+    BlockRadixSort::SortStriped(temp_storage, keys, begin_bit, end_bit);
 
     StoreStriped<STORE_DEFAULT>(d_keys, keys, BLOCK_THREADS);
 }
@@ -297,7 +297,7 @@ template <
     typename                KeyType,
     typename                ValueType,
     typename                BlockRadixSortT = BlockRadixSort<KeyType, BLOCK_THREADS, ITEMS_PER_THREAD, ValueType, RADIX_BITS, MEMOIZE_OUTER_SCAN, INNER_SCAN_ALGORITHM, SMEM_CONFIG>,
-    bool                    VALID = (sizeof(typename BlockRadixSortT::SmemStorage) <= (1024 * 48))>
+    bool                    VALID = (sizeof(typename BlockRadixSortT::TempStorage) <= (1024 * 48))>
 struct Valid
 {
     static void Test()

@@ -600,7 +600,7 @@ enum BlockLoadAlgorithm
  *      [<em>blocked arrangement</em>](index.html#sec3sec3).  [More...](\ref cub::BlockLoadAlgorithm)
  *
  * \par Usage Considerations
- * - \smemreuse{BlockLoad::SmemStorage}
+ * - \smemreuse{BlockLoad::TempStorage}
  *
  * \par Performance Considerations
  *  - See cub::BlockLoadAlgorithm for more performance details regarding algorithmic alternatives
@@ -620,13 +620,13 @@ enum BlockLoadAlgorithm
  *     typedef cub::BlockLoad<int*, 128, 4> BlockLoad;
  *
  *     // Declare shared memory for BlockLoad
- *     __shared__ typename BlockLoad::SmemStorage smem_storage;
+ *     __shared__ typename BlockLoad::TempStorage temp_storage;
  *
  *     // A segment of consecutive items per thread
  *     int data[4];
  *
  *     // Load a tile of data at this block's offset
- *     BlockLoad::Load(smem_storage, d_in + blockIdx.x * 128 * 4, data);
+ *     BlockLoad::Load(temp_storage, d_in + blockIdx.x * 128 * 4, data);
  *
  *     ...
  * \endcode
@@ -647,13 +647,13 @@ enum BlockLoadAlgorithm
  *     typedef cub::BlockLoad<int*, BLOCK_THREADS, 21, BLOCK_LOAD_TRANSPOSE> BlockLoad;
  *
  *     // Declare shared memory for BlockLoad
- *     __shared__ typename BlockLoad::SmemStorage smem_storage;
+ *     __shared__ typename BlockLoad::TempStorage temp_storage;
  *
  *     // A segment of consecutive items per thread
  *     int data[21];
  *
  *     // Load a tile of data at this block's offset
- *     BlockLoad::Load(smem_storage, d_in + blockIdx.x * BLOCK_THREADS * 21, data);
+ *     BlockLoad::Load(temp_storage, d_in + blockIdx.x * BLOCK_THREADS * 21, data);
  *
  *     ...
  * \endcode
@@ -676,13 +676,13 @@ enum BlockLoadAlgorithm
  *     typedef cub::BlockLoad<int*, BLOCK_THREADS, ITEMS_PER_THREAD, BLOCK_LOAD_VECTORIZE, LOAD_CG> BlockLoad;
  *
  *     // Declare shared memory for BlockLoad
- *     __shared__ typename BlockLoad::SmemStorage smem_storage;
+ *     __shared__ typename BlockLoad::TempStorage temp_storage;
  *
  *     // A segment of consecutive items per thread
  *     int data[ITEMS_PER_THREAD];
  *
  *     // Load a tile of data at this block's offset
- *     BlockLoad::Load(smem_storage, d_in + blockIdx.x * BLOCK_THREADS * ITEMS_PER_THREAD, data);
+ *     BlockLoad::Load(temp_storage, d_in + blockIdx.x * BLOCK_THREADS * ITEMS_PER_THREAD, data);
  *
  *     ...
  * \endcode
@@ -724,11 +724,11 @@ private:
     struct LoadInternal<BLOCK_LOAD_DIRECT, DUMMY>
     {
         /// Shared memory storage layout type
-        typedef NullType SmemStorage;
+        typedef NullType TempStorage;
 
         /// Load a tile of items across a threadblock
         static __device__ __forceinline__ void Load(
-            SmemStorage     &smem_storage,                  ///< [in] Reference to shared memory allocation having layout type SmemStorage
+            TempStorage     &temp_storage,                  ///< [in] Reference to shared memory allocation having layout type TempStorage
             InputIteratorRA block_itr,                      ///< [in] The threadblock's base input iterator for loading from
             T               (&items)[ITEMS_PER_THREAD])     ///< [out] Data to load
         {
@@ -737,7 +737,7 @@ private:
 
         /// Load a tile of items across a threadblock, guarded by range
         static __device__ __forceinline__ void Load(
-            SmemStorage     &smem_storage,                  ///< [in] Reference to shared memory allocation having layout type SmemStorage
+            TempStorage     &temp_storage,                  ///< [in] Reference to shared memory allocation having layout type TempStorage
             InputIteratorRA block_itr,                      ///< [in] The threadblock's base input iterator for loading from
             const int       &guarded_items,                 ///< [in] Number of valid items in the tile
             T               (&items)[ITEMS_PER_THREAD])     ///< [out] Data to load
@@ -754,11 +754,11 @@ private:
     struct LoadInternal<BLOCK_LOAD_VECTORIZE, DUMMY>
     {
         /// Shared memory storage layout type
-        typedef NullType SmemStorage;
+        typedef NullType TempStorage;
 
         /// Load a tile of items across a threadblock, specialized for native pointer types (attempts vectorization)
         static __device__ __forceinline__ void Load(
-            SmemStorage         &smem_storage,                  ///< [in] Reference to shared memory allocation having layout type SmemStorage
+            TempStorage         &temp_storage,                  ///< [in] Reference to shared memory allocation having layout type TempStorage
             T                   *block_ptr,                     ///< [in] The threadblock's base input iterator for loading from
             T                   (&items)[ITEMS_PER_THREAD])     ///< [out] Data to load
         {
@@ -770,7 +770,7 @@ private:
             typename T,
             typename _InputIteratorRA>
         static __device__ __forceinline__ void Load(
-            SmemStorage         &smem_storage,                  ///< [in] Reference to shared memory allocation having layout type SmemStorage
+            TempStorage         &temp_storage,                  ///< [in] Reference to shared memory allocation having layout type TempStorage
             _InputIteratorRA    block_itr,                      ///< [in] The threadblock's base input iterator for loading from
             T                   (&items)[ITEMS_PER_THREAD])     ///< [out] Data to load
         {
@@ -779,7 +779,7 @@ private:
 
         /// Load a tile of items across a threadblock, guarded by range
         static __device__ __forceinline__ void Load(
-            SmemStorage         &smem_storage,                  ///< [in] Reference to shared memory allocation having layout type SmemStorage
+            TempStorage         &temp_storage,                  ///< [in] Reference to shared memory allocation having layout type TempStorage
             InputIteratorRA     block_itr,                      ///< [in] The threadblock's base input iterator for loading from
             const int           &guarded_items,                 ///< [in] Number of valid items in the tile
             T                   (&items)[ITEMS_PER_THREAD])     ///< [out] Data to load{
@@ -799,27 +799,27 @@ private:
         typedef BlockExchange<T, BLOCK_THREADS, ITEMS_PER_THREAD, WARP_TIME_SLICING> BlockExchange;
 
         /// Shared memory storage layout type
-        typedef typename BlockExchange::SmemStorage SmemStorage;
+        typedef typename BlockExchange::TempStorage TempStorage;
 
         /// Load a tile of items across a threadblock
         static __device__ __forceinline__ void Load(
-            SmemStorage         &smem_storage,                  ///< [in] Reference to shared memory allocation having layout type SmemStorage
+            TempStorage         &temp_storage,                  ///< [in] Reference to shared memory allocation having layout type TempStorage
             InputIteratorRA     block_itr,                      ///< [in] The threadblock's base input iterator for loading from
             T                   (&items)[ITEMS_PER_THREAD])     ///< [out] Data to load{
         {
             LoadStriped<MODIFIER>(block_itr, items, BLOCK_THREADS);
-            BlockExchange::StripedToBlocked(smem_storage, items);
+            BlockExchange::StripedToBlocked(temp_storage, items);
         }
 
         /// Load a tile of items across a threadblock, guarded by range
         static __device__ __forceinline__ void Load(
-            SmemStorage         &smem_storage,                  ///< [in] Reference to shared memory allocation having layout type SmemStorage
+            TempStorage         &temp_storage,                  ///< [in] Reference to shared memory allocation having layout type TempStorage
             InputIteratorRA     block_itr,                      ///< [in] The threadblock's base input iterator for loading from
             const int           &guarded_items,                 ///< [in] Number of valid items in the tile
             T                   (&items)[ITEMS_PER_THREAD])     ///< [out] Data to load{
         {
             LoadStriped<MODIFIER>(block_itr, guarded_items, items, BLOCK_THREADS);
-            BlockExchange::StripedToBlocked(smem_storage, items);
+            BlockExchange::StripedToBlocked(temp_storage, items);
         }
 
     };
@@ -838,39 +838,39 @@ private:
         typedef BlockExchange<T, BLOCK_THREADS, ITEMS_PER_THREAD, WARP_TIME_SLICING> BlockExchange;
 
         /// Shared memory storage layout type
-        typedef typename BlockExchange::SmemStorage SmemStorage;
+        typedef typename BlockExchange::TempStorage TempStorage;
 
         /// Load a tile of items across a threadblock
         static __device__ __forceinline__ void Load(
-            SmemStorage         &smem_storage,                  ///< [in] Reference to shared memory allocation having layout type SmemStorage
+            TempStorage         &temp_storage,                  ///< [in] Reference to shared memory allocation having layout type TempStorage
             InputIteratorRA     block_itr,                      ///< [in] The threadblock's base input iterator for loading from
             T                   (&items)[ITEMS_PER_THREAD])     ///< [out] Data to load{
         {
             LoadWarpStriped<MODIFIER>(block_itr, items, WARP_THREADS);
-            BlockExchange::WarpStripedToBlocked(smem_storage, items);
+            BlockExchange::WarpStripedToBlocked(temp_storage, items);
         }
 
         /// Load a tile of items across a threadblock, guarded by range
         static __device__ __forceinline__ void Load(
-            SmemStorage         &smem_storage,                  ///< [in] Reference to shared memory allocation having layout type SmemStorage
+            TempStorage         &temp_storage,                  ///< [in] Reference to shared memory allocation having layout type TempStorage
             InputIteratorRA     block_itr,                      ///< [in] The threadblock's base input iterator for loading from
             const int           &guarded_items,                 ///< [in] Number of valid items in the tile
             T                   (&items)[ITEMS_PER_THREAD])     ///< [out] Data to load{
         {
             LoadWarpStriped<MODIFIER>(block_itr, guarded_items, items, WARP_THREADS);
-            BlockExchange::WarpStripedToBlocked(smem_storage, items);
+            BlockExchange::WarpStripedToBlocked(temp_storage, items);
         }
 
     };
 
     /// Shared memory storage layout type
-    typedef typename LoadInternal<ALGORITHM>::SmemStorage _SmemStorage;
+    typedef typename LoadInternal<ALGORITHM>::TempStorage _TempStorage;
 
 public:
 
 
     /// \smemstorage{BlockLoad}
-    typedef _SmemStorage SmemStorage;
+    typedef _TempStorage TempStorage;
 
 
     //---------------------------------------------------------------------
@@ -881,23 +881,23 @@ public:
      * \brief Load a tile of items across a threadblock.
      */
     static __device__ __forceinline__ void Load(
-        SmemStorage         &smem_storage,                  ///< [in] Reference to shared memory allocation having layout type SmemStorage
+        TempStorage         &temp_storage,                  ///< [in] Reference to shared memory allocation having layout type TempStorage
         InputIteratorRA     block_itr,                      ///< [in] The threadblock's base input iterator for loading from
         T                   (&items)[ITEMS_PER_THREAD])     ///< [out] Data to load
     {
-        LoadInternal<ALGORITHM>::Load(smem_storage, block_itr, items);
+        LoadInternal<ALGORITHM>::Load(temp_storage, block_itr, items);
     }
 
     /**
      * \brief Load a tile of items across a threadblock, guarded by range.
      */
     static __device__ __forceinline__ void Load(
-        SmemStorage         &smem_storage,                  ///< [in] Reference to shared memory allocation having layout type SmemStorage
+        TempStorage         &temp_storage,                  ///< [in] Reference to shared memory allocation having layout type TempStorage
         InputIteratorRA     block_itr,                      ///< [in] The threadblock's base input iterator for loading from
         const int           &guarded_items,                 ///< [in] Number of valid items in the tile
         T                   (&items)[ITEMS_PER_THREAD])     ///< [out] Data to load
     {
-        LoadInternal<ALGORITHM>::Load(smem_storage, block_itr, guarded_items, items);
+        LoadInternal<ALGORITHM>::Load(temp_storage, block_itr, guarded_items, items);
     }
 };
 
