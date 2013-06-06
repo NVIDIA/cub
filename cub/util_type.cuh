@@ -212,6 +212,12 @@ struct WordAlignment
             typename If<(sizeof(T) % 2 == 0),
                 short,
                 char>::Type>::Type>::Type VolatileAlignWord;
+
+    typedef typename If<(sizeof(T) % 4 == 0),
+        int,
+        typename If<(sizeof(T) % 2 == 0),
+            short,
+            char>::Type>::Type ShuffleWord;
 };
 
 #endif // DOXYGEN_SHOULD_SKIP_THIS

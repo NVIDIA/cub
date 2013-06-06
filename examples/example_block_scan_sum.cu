@@ -81,7 +81,7 @@ __global__ void BlockPrefixSumKernel(
     typedef BlockScan<int, BLOCK_THREADS> BlockScanT;
 
     // Shared memory
-    __shared__ typename BlockScanT::SmemStorage smem_storage;
+    __shared__ typename BlockScanT::TempStorage temp_storage;
 
     // Per-thread tile data
     int data[ITEMS_PER_THREAD];
@@ -92,7 +92,7 @@ __global__ void BlockPrefixSumKernel(
 
     // Compute exclusive prefix sum
     int aggregate;
-    BlockScanT::ExclusiveSum(smem_storage, data, data, aggregate);
+    BlockScanT::ExclusiveSum(temp_storage, data, data, aggregate);
 
     // Stop cycle timer
     clock_t stop = clock();

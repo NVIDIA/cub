@@ -82,7 +82,7 @@ namespace cub {
  *
  * \par Usage Considerations
  * - After any sorting operation, a subsequent <tt>__syncthreads()</tt> barrier
- *   is required if the supplied BlockRadixSort::SmemStorage is to be reused or repurposed
+ *   is required if the supplied BlockRadixSort::TempStorage is to be reused or repurposed
  *   by the threadblock.
  * - BlockRadixSort can only accommodate one associated tile of values. To "truck along"
  *   more than one tile of values, simply perform a key-value sort of the keys paired
@@ -115,7 +115,7 @@ namespace cub {
  *          typedef cub::BlockRadixSort<unsigned int, 128, 4> BlockRadixSort;
  *
  *          // Declare shared memory for BlockRadixSort
- *          __shared__ typename BlockRadixSort::SmemStorage smem_storage;
+ *          __shared__ typename BlockRadixSort::TempStorage temp_storage;
  *
  *          // A segment of consecutive input items per thread
  *          int keys[4];
@@ -124,7 +124,7 @@ namespace cub {
  *          ...
  *
  *          // Sort keys in ascending order
- *          BlockRadixSort::SortBlocked(smem_storage, keys);
+ *          BlockRadixSort::SortBlocked(temp_storage, keys);
  *
  *      \endcode
  *
@@ -141,7 +141,7 @@ namespace cub {
  *          typedef cub::BlockRadixSort<unsigned int, BLOCK_THREADS, ITEMS_PER_THREAD, float> BlockRadixSort;
  *
  *          // Declare shared memory for BlockRadixSort
- *          __shared__ typename BlockRadixSort::SmemStorage smem_storage;
+ *          __shared__ typename BlockRadixSort::TempStorage temp_storage;
  *
  *          // Input keys and values per thread (striped across the threadblock)
  *          int keys[ITEMS_PER_THREAD];
@@ -151,7 +151,7 @@ namespace cub {
  *          ...
  *
  *          // Sort pairs in ascending order (using only the lower 20 distinguishing key bits)
- *          BlockRadixSort::SortStriped(smem_storage, keys, values, 0, 20);
+ *          BlockRadixSort::SortStriped(temp_storage, keys, values, 0, 20);
  *      }
  *
  *      \endcode
@@ -187,20 +187,20 @@ private:
     typedef BlockExchange<ValueType, BLOCK_THREADS, ITEMS_PER_THREAD> ValueBlockExchange;
 
     /// Shared memory storage layout type
-    struct _SmemStorage
+    struct _TempStorage
     {
         union
         {
-            typename BlockRadixRank::SmemStorage          ranking_storage;
-            typename KeyBlockExchange::SmemStorage        key_storage;
-            typename ValueBlockExchange::SmemStorage      value_storage;
+            typename BlockRadixRank::TempStorage          ranking_storage;
+            typename KeyBlockExchange::TempStorage        key_storage;
+            typename ValueBlockExchange::TempStorage      value_storage;
         };
     };
 
 public:
 
     /// \smemstorage{BlockRadixSort}
-    typedef _SmemStorage SmemStorage;
+    typedef _TempStorage TempStorage;
 
 
     /******************************************************************//**
@@ -214,7 +214,7 @@ public:
      * \smemreuse
      */
     static __device__ __forceinline__ void SortBlocked(
-        SmemStorage         &smem_storage,                      ///< [in] Reference to shared memory allocation having layout type SmemStorage
+        TempStorage         &temp_storage,                      ///< [in] Reference to shared memory allocation having layout type TempStorage
         KeyType             (&keys)[ITEMS_PER_THREAD],          ///< [in-out] Keys to sort
         unsigned int        begin_bit = 0,                      ///< [in] <b>[optional]</b> The beginning (least-significant) bit index needed for key comparison
         const unsigned int  &end_bit = sizeof(KeyType) * 8)     ///< [in] <b>[optional]</b> The past-the-end (most-significant) bit index needed for key comparison
@@ -234,13 +234,13 @@ public:
         {
             // Rank the blocked keys
             unsigned int ranks[ITEMS_PER_THREAD];
-            BlockRadixRank::RankKeys(smem_storage.ranking_storage, unsigned_keys, ranks, begin_bit);
+            BlockRadixRank::RankKeys(temp_storage.ranking_storage, unsigned_keys, ranks, begin_bit);
             begin_bit += RADIX_BITS;
 
             __syncthreads();
 
             // Exchange keys through shared memory in blocked arrangement
-            KeyBlockExchange::ScatterToBlocked(smem_storage.key_storage, keys, ranks);
+            KeyBlockExchange::ScatterToBlocked(temp_storage.key_storage, keys, ranks);
 
             // Quit if done
             if (begin_bit >= end_bit) break;
@@ -263,7 +263,7 @@ public:
      * \smemreuse
      */
     static __device__ __forceinline__ void SortBlockedToStriped(
-        SmemStorage         &smem_storage,                      ///< [in] Reference to shared memory allocation having layout type SmemStorage
+        TempStorage         &temp_storage,                      ///< [in] Reference to shared memory allocation having layout type TempStorage
         KeyType             (&keys)[ITEMS_PER_THREAD],          ///< [in-out] Keys to sort
         unsigned int        begin_bit = 0,                      ///< [in] <b>[optional]</b> The beginning (least-significant) bit index needed for key comparison
         const unsigned int  &end_bit = sizeof(KeyType) * 8)     ///< [in] <b>[optional]</b> The past-the-end (most-significant) bit index needed for key comparison
@@ -283,7 +283,7 @@ public:
         {
             // Rank the blocked keys
             unsigned int ranks[ITEMS_PER_THREAD];
-            BlockRadixRank::RankKeys(smem_storage.ranking_storage, unsigned_keys, ranks, begin_bit);
+            BlockRadixRank::RankKeys(temp_storage.ranking_storage, unsigned_keys, ranks, begin_bit);
             begin_bit += RADIX_BITS;
 
             __syncthreads();
@@ -292,7 +292,7 @@ public:
             if (begin_bit >= end_bit)
             {
                 // Last pass exchanges keys through shared memory in striped arrangement
-                KeyBlockExchange::ScatterToStriped(smem_storage.key_storage, keys, ranks);
+                KeyBlockExchange::ScatterToStriped(temp_storage.key_storage, keys, ranks);
 
                 // Quit
                 break;
@@ -300,7 +300,7 @@ public:
 
             // Exchange keys through shared memory in blocked arrangement
             KeyBlockExchange::ScatterToBlocked(
-                smem_storage.key_storage,
+                temp_storage.key_storage,
                 keys,
                 ranks);
 
@@ -322,18 +322,18 @@ public:
      * \smemreuse
      */
     static __device__ __forceinline__ void SortStriped(
-        SmemStorage         &smem_storage,                      ///< [in] Reference to shared memory allocation having layout type SmemStorage
+        TempStorage         &temp_storage,                      ///< [in] Reference to shared memory allocation having layout type TempStorage
         KeyType             (&keys)[ITEMS_PER_THREAD],          ///< [in-out] Keys to sort
         unsigned int        begin_bit = 0,                      ///< [in] <b>[optional]</b> The beginning (least-significant) bit index needed for key comparison
         const unsigned int  &end_bit = sizeof(KeyType) * 8)     ///< [in] <b>[optional]</b> The past-the-end (most-significant) bit index needed for key comparison
     {
         // Transpose keys from striped to blocked arrangement
-        KeyBlockExchange::StripedToBlocked(smem_storage.key_storage, keys);
+        KeyBlockExchange::StripedToBlocked(temp_storage.key_storage, keys);
 
         __syncthreads();
 
         // Sort blocked-to-striped
-        SortBlockedToStriped(smem_storage, keys, begin_bit, end_bit);
+        SortBlockedToStriped(temp_storage, keys, begin_bit, end_bit);
     }
 
     //@}  end member group
@@ -348,7 +348,7 @@ public:
      * \smemreuse
      */
     static __device__ __forceinline__ void SortBlocked(
-        SmemStorage         &smem_storage,                      ///< [in] Reference to shared memory allocation having layout type SmemStorage
+        TempStorage         &temp_storage,                      ///< [in] Reference to shared memory allocation having layout type TempStorage
         KeyType             (&keys)[ITEMS_PER_THREAD],          ///< [in-out] Keys to sort
         ValueType           (&values)[ITEMS_PER_THREAD],        ///< [in-out] Values to sort
         unsigned int        begin_bit = 0,                      ///< [in] <b>[optional]</b> The beginning (least-significant) bit index needed for key comparison
@@ -369,18 +369,18 @@ public:
         {
             // Rank the blocked keys
             unsigned int ranks[ITEMS_PER_THREAD];
-            BlockRadixRank::RankKeys(smem_storage.ranking_storage, unsigned_keys, ranks, begin_bit);
+            BlockRadixRank::RankKeys(temp_storage.ranking_storage, unsigned_keys, ranks, begin_bit);
             begin_bit += RADIX_BITS;
 
             __syncthreads();
 
             // Exchange keys through shared memory in blocked arrangement
-            KeyBlockExchange::ScatterToBlocked(smem_storage.key_storage, keys, ranks);
+            KeyBlockExchange::ScatterToBlocked(temp_storage.key_storage, keys, ranks);
 
             __syncthreads();
 
             // Exchange values through shared memory in blocked arrangement
-            ValueBlockExchange::ScatterToBlocked(smem_storage.value_storage, values, ranks);
+            ValueBlockExchange::ScatterToBlocked(temp_storage.value_storage, values, ranks);
 
             // Quit if done
             if (begin_bit >= end_bit) break;
@@ -403,7 +403,7 @@ public:
      * \smemreuse
      */
     static __device__ __forceinline__ void SortBlockedToStriped(
-        SmemStorage         &smem_storage,                      ///< [in] Reference to shared memory allocation having layout type SmemStorage
+        TempStorage         &temp_storage,                      ///< [in] Reference to shared memory allocation having layout type TempStorage
         KeyType             (&keys)[ITEMS_PER_THREAD],          ///< [in-out] Keys to sort
         ValueType           (&values)[ITEMS_PER_THREAD],        ///< [in-out] Values to sort
         unsigned int        begin_bit = 0,                      ///< [in] <b>[optional]</b> The beginning (least-significant) bit index needed for key comparison
@@ -424,7 +424,7 @@ public:
         {
             // Rank the blocked keys
             unsigned int ranks[ITEMS_PER_THREAD];
-            BlockRadixRank::RankKeys(smem_storage.ranking_storage, unsigned_keys, ranks, begin_bit);
+            BlockRadixRank::RankKeys(temp_storage.ranking_storage, unsigned_keys, ranks, begin_bit);
             begin_bit += RADIX_BITS;
 
             __syncthreads();
@@ -433,24 +433,24 @@ public:
             if (begin_bit >= end_bit)
             {
                 // Last pass exchanges keys through shared memory in striped arrangement
-                KeyBlockExchange::ScatterToStriped(smem_storage.key_storage, keys, ranks);
+                KeyBlockExchange::ScatterToStriped(temp_storage.key_storage, keys, ranks);
 
                 __syncthreads();
 
                 // Last pass exchanges through shared memory in striped arrangement
-                ValueBlockExchange::ScatterToStriped(smem_storage.value_storage, values, ranks);
+                ValueBlockExchange::ScatterToStriped(temp_storage.value_storage, values, ranks);
 
                 // Quit
                 break;
             }
 
             // Exchange keys through shared memory in blocked arrangement
-            KeyBlockExchange::ScatterToBlocked(smem_storage.key_storage, keys, ranks);
+            KeyBlockExchange::ScatterToBlocked(temp_storage.key_storage, keys, ranks);
 
             __syncthreads();
 
             // Exchange values through shared memory in blocked arrangement
-            ValueBlockExchange::ScatterToBlocked(smem_storage.value_storage, values, ranks);
+            ValueBlockExchange::ScatterToBlocked(temp_storage.value_storage, values, ranks);
 
             __syncthreads();
         }
@@ -470,24 +470,24 @@ public:
      * \smemreuse
      */
     static __device__ __forceinline__ void SortStriped(
-        SmemStorage         &smem_storage,                      ///< [in] Reference to shared memory allocation having layout type SmemStorage
+        TempStorage         &temp_storage,                      ///< [in] Reference to shared memory allocation having layout type TempStorage
         KeyType             (&keys)[ITEMS_PER_THREAD],          ///< [in-out] Keys to sort
         ValueType           (&values)[ITEMS_PER_THREAD],        ///< [in-out] Values to sort
         unsigned int        begin_bit = 0,                      ///< [in] <b>[optional]</b> The beginning (least-significant) bit index needed for key comparison
         const unsigned int  &end_bit = sizeof(KeyType) * 8)     ///< [in] <b>[optional]</b> The past-the-end (most-significant) bit index needed for key comparison
     {
         // Transpose keys from striped to blocked arrangement
-        KeyBlockExchange::StripedToBlocked(smem_storage.key_storage, keys);
+        KeyBlockExchange::StripedToBlocked(temp_storage.key_storage, keys);
 
         __syncthreads();
 
         // Transpose values from striped to blocked arrangement
-        ValueBlockExchange::StripedToBlocked(smem_storage.value_storage, values);
+        ValueBlockExchange::StripedToBlocked(temp_storage.value_storage, values);
 
         __syncthreads();
 
         // Sort blocked-to-striped
-        SortBlockedToStriped(smem_storage, keys, values, begin_bit, end_bit);
+        SortBlockedToStriped(temp_storage, keys, values, begin_bit, end_bit);
     }
 
 

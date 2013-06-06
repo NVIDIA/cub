@@ -118,7 +118,7 @@ struct PersistentBlockReduce
     typedef BlockReduce<T, BLOCK_THREADS, PersistentBlockReducePolicy::BLOCK_ALGORITHM> BlockReduceT;
 
     // Shared memory type required by this thread block
-    typedef typename BlockReduceT::SmemStorage SmemStorage;
+    typedef typename BlockReduceT::TempStorage TempStorage;
 
 
     //---------------------------------------------------------------------
@@ -126,7 +126,7 @@ struct PersistentBlockReduce
     //---------------------------------------------------------------------
 
     T                       thread_aggregate;   ///< Each thread's partial reduction
-    SmemStorage&            smem_storage;       ///< Reference to smem_storage
+    TempStorage&            temp_storage;       ///< Reference to temp_storage
     InputIteratorRA         d_in;               ///< Input data to reduce
     ReductionOp             reduction_op;       ///< Binary reduction operator
     int                     first_tile_size;    ///< Size of first tile consumed
@@ -141,10 +141,10 @@ struct PersistentBlockReduce
      * Constructor
      */
     __device__ __forceinline__ PersistentBlockReduce(
-        SmemStorage&            smem_storage,       ///< Reference to smem_storage
+        TempStorage&            temp_storage,       ///< Reference to temp_storage
         InputIteratorRA         d_in,               ///< Input data to reduce
         ReductionOp             reduction_op) :     ///< Binary reduction operator
-            smem_storage(smem_storage),
+            temp_storage(temp_storage),
             d_in(d_in),
             reduction_op(reduction_op),
             first_tile_size(0),
@@ -237,8 +237,8 @@ struct PersistentBlockReduce
     {
         // Cooperative reduction across the thread block (guarded reduction if our first tile was a partial tile)
         block_aggregate = (first_tile_size < TILE_ITEMS) ?
-            BlockReduceT::Reduce(smem_storage, thread_aggregate, reduction_op, first_tile_size) :
-            BlockReduceT::Reduce(smem_storage, thread_aggregate, reduction_op);
+            BlockReduceT::Reduce(temp_storage, thread_aggregate, reduction_op, first_tile_size) :
+            BlockReduceT::Reduce(temp_storage, thread_aggregate, reduction_op);
     }
 
 };

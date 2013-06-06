@@ -65,7 +65,7 @@ namespace cub {
  * \par Usage Considerations
  * - Keys must be in a form suitable for radix ranking (i.e., unsigned bits).
  * - Assumes a [<em>blocked arrangement</em>](index.html#sec3sec3) of elements across threads
- * - \smemreuse{BlockRadixRank::SmemStorage}
+ * - \smemreuse{BlockRadixRank::TempStorage}
  *
  * \par Performance Considerations
  *
@@ -135,10 +135,10 @@ private:
     typedef BlockScan<PackedCounter, BLOCK_THREADS, INNER_SCAN_ALGORITHM> BlockScan;
 
     /// Shared memory storage layout type for BlockRadixRank
-    struct _SmemStorage
+    struct _TempStorage
     {
         // Storage for scanning local ranks
-        typename BlockScan::SmemStorage block_scan;
+        typename BlockScan::TempStorage block_scan;
 
         union
         {
@@ -150,7 +150,7 @@ private:
 public:
 
     /// \smemstorage{BlockRadixRank}
-    typedef _SmemStorage SmemStorage;
+    typedef _TempStorage TempStorage;
 
 private :
 
@@ -175,7 +175,7 @@ private :
          */
         template <typename UnsignedBits, int KEYS_PER_THREAD>
         static __device__ __forceinline__ void DecodeKeys(
-            SmemStorage     &smem_storage,                       // Shared memory storage
+            TempStorage     &temp_storage,                       // Shared memory storage
             UnsignedBits    (&keys)[KEYS_PER_THREAD],              // Key to decode
             DigitCounter    (&thread_prefixes)[KEYS_PER_THREAD],   // Prefix counter value (out parameter)
             DigitCounter*   (&digit_counters)[KEYS_PER_THREAD],   // Counter smem offset (out parameter)
@@ -188,7 +188,7 @@ private :
             UnsignedBits row_offset = BFE(keys[COUNT], current_bit, LOG_COUNTER_LANES);
 
             // Pointer to smem digit counter
-            digit_counters[COUNT] = &smem_storage.digit_counters[row_offset][threadIdx.x][sub_counter];
+            digit_counters[COUNT] = &temp_storage.digit_counters[row_offset][threadIdx.x][sub_counter];
 
             // Load thread-exclusive prefix
             thread_prefixes[COUNT] = *digit_counters[COUNT];
@@ -197,14 +197,14 @@ private :
             *digit_counters[COUNT] = thread_prefixes[COUNT] + 1;
 
             // Iterate next key
-            Iterate<COUNT + 1, MAX>::DecodeKeys(smem_storage, keys, thread_prefixes, digit_counters, current_bit);
+            Iterate<COUNT + 1, MAX>::DecodeKeys(temp_storage, keys, thread_prefixes, digit_counters, current_bit);
         }
 
 
         // Termination
         template <int KEYS_PER_THREAD>
         static __device__ __forceinline__ void UpdateRanks(
-            SmemStorage     &smem_storage,                       // Shared memory storage
+            TempStorage     &temp_storage,                       // Shared memory storage
             unsigned int    (&ranks)[KEYS_PER_THREAD],             // Local ranks (out parameter)
             DigitCounter    (&thread_prefixes)[KEYS_PER_THREAD],   // Prefix counter value
             DigitCounter*   (&digit_counters)[KEYS_PER_THREAD])   // Counter smem offset
@@ -213,7 +213,7 @@ private :
             ranks[COUNT] = thread_prefixes[COUNT] + *digit_counters[COUNT];
 
             // Iterate next key
-            Iterate<COUNT + 1, MAX>::UpdateRanks(smem_storage, ranks, thread_prefixes, digit_counters);
+            Iterate<COUNT + 1, MAX>::UpdateRanks(temp_storage, ranks, thread_prefixes, digit_counters);
         }
     };
 
@@ -225,7 +225,7 @@ private :
         // DecodeKeys
         template <typename UnsignedBits, int KEYS_PER_THREAD>
         static __device__ __forceinline__ void DecodeKeys(
-            SmemStorage     &smem_storage,
+            TempStorage     &temp_storage,
             UnsignedBits    (&keys)[KEYS_PER_THREAD],
             DigitCounter    (&thread_prefixes)[KEYS_PER_THREAD],
             DigitCounter*   (&digit_counters)[KEYS_PER_THREAD],
@@ -235,7 +235,7 @@ private :
         // UpdateRanks
         template <int KEYS_PER_THREAD>
         static __device__ __forceinline__ void UpdateRanks(
-            SmemStorage     &smem_storage,
+            TempStorage     &temp_storage,
             unsigned int    (&ranks)[KEYS_PER_THREAD],
             DigitCounter    (&thread_prefixes)[KEYS_PER_THREAD],
             DigitCounter    *(&digit_counters)[KEYS_PER_THREAD]) {}
@@ -254,9 +254,9 @@ private :
         PackedCounter cached_segment[RAKING_SEGMENT];
 
         // Performs upsweep raking reduction, returning the aggregate
-        __device__ __forceinline__ PackedCounter Upsweep(SmemStorage &smem_storage)
+        __device__ __forceinline__ PackedCounter Upsweep(TempStorage &temp_storage)
         {
-            PackedCounter *smem_raking_ptr = smem_storage.raking_grid[threadIdx.x];
+            PackedCounter *smem_raking_ptr = temp_storage.raking_grid[threadIdx.x];
             PackedCounter *raking_ptr;
 
             if (MEMOIZE_OUTER_SCAN)
@@ -280,10 +280,10 @@ private :
 
         /// Performs exclusive downsweep raking scan
         __device__ __forceinline__ void ExclusiveDownsweep(
-            SmemStorage&    smem_storage,
+            TempStorage&    temp_storage,
             PackedCounter   raking_partial)
         {
-            PackedCounter *smem_raking_ptr = smem_storage.raking_grid[threadIdx.x];
+            PackedCounter *smem_raking_ptr = temp_storage.raking_grid[threadIdx.x];
 
             PackedCounter *raking_ptr = (MEMOIZE_OUTER_SCAN) ?
                 cached_segment :
@@ -308,13 +308,13 @@ private :
     /**
      * Reset shared memory digit counters
      */
-    static __device__ __forceinline__ void ResetCounters(SmemStorage &smem_storage)
+    static __device__ __forceinline__ void ResetCounters(TempStorage &temp_storage)
     {
         // Reset shared memory digit counters
         #pragma unroll
         for (int LANE = 0; LANE < COUNTER_LANES + 1; LANE++)
         {
-            *((PackedCounter*) smem_storage.digit_counters[LANE][threadIdx.x]) = 0;
+            *((PackedCounter*) temp_storage.digit_counters[LANE][threadIdx.x]) = 0;
         }
     }
 
@@ -322,16 +322,16 @@ private :
     /**
      * Scan shared memory digit counters.
      */
-    static __device__ __forceinline__ void ScanCounters(SmemStorage &smem_storage)
+    static __device__ __forceinline__ void ScanCounters(TempStorage &temp_storage)
     {
         // Upsweep scan
         RakingHelper helper;
-        PackedCounter raking_partial = helper.Upsweep(smem_storage);
+        PackedCounter raking_partial = helper.Upsweep(temp_storage);
 
         // Compute inclusive sum
         PackedCounter inclusive_partial;
         PackedCounter packed_aggregate;
-        BlockScan::InclusiveSum(smem_storage.block_scan, raking_partial, inclusive_partial, packed_aggregate);
+        BlockScan::InclusiveSum(temp_storage.block_scan, raking_partial, inclusive_partial, packed_aggregate);
 
         // Propagate totals in packed fields
         #pragma unroll
@@ -342,7 +342,7 @@ private :
 
         // Downsweep scan with exclusive partial
         PackedCounter exclusive_partial = inclusive_partial - raking_partial;
-        helper.ExclusiveDownsweep(smem_storage, exclusive_partial);
+        helper.ExclusiveDownsweep(temp_storage, exclusive_partial);
     }
 
 public:
@@ -358,7 +358,7 @@ public:
         typename UnsignedBits,
         int KEYS_PER_THREAD>
     static __device__ __forceinline__ void RankKeys(
-        SmemStorage     &smem_storage,                      // Shared memory storage
+        TempStorage     &temp_storage,                      // Shared memory storage
         UnsignedBits    (&keys)[KEYS_PER_THREAD],           // Keys for this tile
         unsigned int    (&ranks)[KEYS_PER_THREAD],          // For each key, the local rank within the tile
         unsigned int    current_bit)                        // The least-significant bit position of the current digit to extract
@@ -367,20 +367,20 @@ public:
         DigitCounter*     digit_counters[KEYS_PER_THREAD];  // For each key, the byte-offset of its corresponding digit counter in smem
 
         // Reset shared memory digit counters
-        ResetCounters(smem_storage);
+        ResetCounters(temp_storage);
 
         // Decode keys and update digit counters
-        Iterate<0, KEYS_PER_THREAD>::DecodeKeys(smem_storage, keys, thread_prefixes, digit_counters, current_bit);
+        Iterate<0, KEYS_PER_THREAD>::DecodeKeys(temp_storage, keys, thread_prefixes, digit_counters, current_bit);
 
         __syncthreads();
 
         // Scan shared memory counters
-        ScanCounters(smem_storage);
+        ScanCounters(temp_storage);
 
         __syncthreads();
 
         // Extract the local ranks of each key
-        Iterate<0, KEYS_PER_THREAD>::UpdateRanks(smem_storage, ranks, thread_prefixes, digit_counters);
+        Iterate<0, KEYS_PER_THREAD>::UpdateRanks(temp_storage, ranks, thread_prefixes, digit_counters);
     }
 
 
@@ -392,14 +392,14 @@ public:
         typename UnsignedBits,
         int KEYS_PER_THREAD>
     static __device__ __forceinline__ void RankKeys(
-        SmemStorage     &smem_storage,                      // Shared memory storage
+        TempStorage     &temp_storage,                      // Shared memory storage
         UnsignedBits    (&keys)[KEYS_PER_THREAD],           // Keys for this tile
         unsigned int    (&ranks)[KEYS_PER_THREAD],          // For each key, the local rank within the tile (out parameter)
         unsigned int    digit_prefixes[RADIX_DIGITS],
         unsigned int    current_bit)                        // The least-significant bit position of the current digit to extract
     {
         // Rank keys
-        RankKeys(smem_storage, keys, ranks, current_bit);
+        RankKeys(temp_storage, keys, ranks, current_bit);
 
         // Get the inclusive and exclusive digit totals corresponding to the calling thread.
         if ((BLOCK_THREADS == RADIX_DIGITS) || (threadIdx.x < RADIX_DIGITS))
@@ -411,7 +411,7 @@ public:
             // first counter column, resulting in unavoidable bank conflicts.)
             int counter_lane = (threadIdx.x & (COUNTER_LANES - 1));
             int sub_counter = threadIdx.x >> (LOG_COUNTER_LANES);
-            digit_prefixes[threadIdx.x + 1] = smem_storage.digit_counters[counter_lane + 1][0][sub_counter];
+            digit_prefixes[threadIdx.x + 1] = temp_storage.digit_counters[counter_lane + 1][0][sub_counter];
         }
     }
 };

@@ -253,15 +253,13 @@ private:
 
         // Thread fields
         TempStorage     &temp_storage;
-        unsigned int    linear_tid;
 
         /// Constructor
         __device__ __forceinline__ WarpScanInternal(
-            TempStorage &temp_storage,
-            unsigned int linear_tid)
+            TempStorage &temp_storage)
         :
-            temp_storage(temp_storage),
-            linear_tid(linear_tid) {}
+            temp_storage(temp_storage)
+        {}
 
 
         /// Broadcast
@@ -530,7 +528,8 @@ private:
                 0 :
                 (LOGICAL_WARP_THREADS == PtxArchProps::WARP_THREADS) ?
                     WarpId() :
-                    (WarpId() * PtxArchProps::WARP_THREADS + LaneId()) / LOGICAL_WARP_THREADS) {}
+                    (WarpId() * PtxArchProps::WARP_THREADS + LaneId()) / LOGICAL_WARP_THREADS)
+        {}
 
 
         /// Basic inclusive scan iteration (template unrolled, inductive-case specialization)
@@ -741,23 +740,28 @@ private:
     #endif // DOXYGEN_SHOULD_SKIP_THIS
 
 
-
     /******************************************************************************
      * Type definitions
      ******************************************************************************/
 
-    /// Shared memory storage layout type for WarpScan
-    typedef typename WarpScanInternal<POLICY>::TempStorage _TempStorage;
+    /// Internal warpscan implementation to use
+    typedef WarpScanInternal<POLICY> InternalWarpScan;
 
+public:
+
+    /// Shared memory storage layout type for WarpScan
+    typedef typename InternalWarpScan::TempStorage TempStorage;
+
+private:
 
     /******************************************************************************
      * Utility methods
      ******************************************************************************/
 
     /// Internal storage allocator
-    __device__ __forceinline__ _TempStorage& PrivateStorage()
+    __device__ __forceinline__ TempStorage& PrivateStorage()
     {
-        __shared__ _TempStorage private_storage;
+        __shared__ TempStorage private_storage;
         return private_storage;
     }
 
@@ -767,18 +771,15 @@ private:
      ******************************************************************************/
 
     /// Shared storage reference
-    _TempStorage &temp_storage;
+    TempStorage &temp_storage;
 
 
 public:
 
-    /// \smemstorage{WarpScan}
-    typedef _TempStorage TempStorage;
-
-
     /******************************************************************//**
      * \name Collective construction
      *********************************************************************/
+    //@{
 
     /**
      * \brief Collective constructor for 1D thread blocks using a private static allocation of shared memory as temporary storage.
@@ -803,7 +804,7 @@ private:
     /// Computes an exclusive prefix sum in each logical warp.
     __device__ __forceinline__ void InclusiveSum(T input, T &output, Int2Type<true> is_primitive)
     {
-        WarpScanInternal<POLICY>(temp_storage).InclusiveSum(input, output);
+        InternalWarpScan(temp_storage).InclusiveSum(input, output);
     }
 
     /// Computes an exclusive prefix sum in each logical warp.  Specialized for non-primitive types.
@@ -816,7 +817,7 @@ private:
     /// Computes an exclusive prefix sum in each logical warp.  Also provides every thread with the warp-wide \p warp_aggregate of all inputs.
     __device__ __forceinline__ void InclusiveSum(T input, T &output, T &warp_aggregate, Int2Type<true> is_primitive)
     {
-        WarpScanInternal<POLICY>(temp_storage).InclusiveSum(input, output, warp_aggregate);
+        InternalWarpScan(temp_storage).InclusiveSum(input, output, warp_aggregate);
     }
 
     /// Computes an exclusive prefix sum in each logical warp.  Also provides every thread with the warp-wide \p warp_aggregate of all inputs.  Specialized for non-primitive types.
@@ -836,7 +837,7 @@ private:
         // Compute warp-wide prefix from aggregate, then broadcast to other lanes
         T prefix;
         prefix = warp_prefix_op(warp_aggregate);
-        prefix = WarpScanInternal<POLICY>(temp_storage).Broadcast(prefix, 0);
+        prefix = InternalWarpScan(temp_storage).Broadcast(prefix, 0);
 
         // Update output
         output = prefix + output;
@@ -1061,7 +1062,7 @@ public:
         T               &output,            ///< [out] Calling thread's output item.  May be aliased with \p input.
         ScanOp          scan_op)            ///< [in] Binary scan operator
     {
-        WarpScanInternal<POLICY>(temp_storage).InclusiveScan(input, output, scan_op);
+        InternalWarpScan(temp_storage).InclusiveScan(input, output, scan_op);
     }
 
 
@@ -1081,7 +1082,7 @@ public:
         ScanOp          scan_op,            ///< [in] Binary scan operator
         T               &warp_aggregate)    ///< [out] Warp-wide aggregate reduction of input items.
     {
-        WarpScanInternal<POLICY>(temp_storage).InclusiveScan(input, output, scan_op, warp_aggregate);
+        InternalWarpScan(temp_storage).InclusiveScan(input, output, scan_op, warp_aggregate);
     }
 
 
@@ -1116,7 +1117,7 @@ public:
         // Compute warp-wide prefix from aggregate, then broadcast to other lanes
         T prefix;
         prefix = warp_prefix_op(warp_aggregate);
-        prefix = WarpScanInternal<POLICY>(temp_storage).Broadcast(prefix, 0);
+        prefix = InternalWarpScan(temp_storage).Broadcast(prefix, 0);
 
         // Update output
         output = scan_op(prefix, output);
@@ -1143,7 +1144,7 @@ public:
         const T         &identity,          ///< [in] Identity value
         ScanOp          scan_op)            ///< [in] Binary scan operator
     {
-        WarpScanInternal<POLICY>(temp_storage).ExclusiveScan(input, output, identity, scan_op);
+        InternalWarpScan(temp_storage).ExclusiveScan(input, output, identity, scan_op);
     }
 
 
@@ -1164,7 +1165,7 @@ public:
         ScanOp          scan_op,            ///< [in] Binary scan operator
         T               &warp_aggregate)    ///< [out] Warp-wide aggregate reduction of input items.
     {
-        WarpScanInternal<POLICY>(temp_storage).ExclusiveScan(input, output, identity, scan_op, warp_aggregate);
+        InternalWarpScan(temp_storage).ExclusiveScan(input, output, identity, scan_op, warp_aggregate);
     }
 
 
@@ -1203,7 +1204,7 @@ public:
             (WarpId() * PtxArchProps::WARP_THREADS + LaneId()) % LOGICAL_WARP_THREADS;
 
         T prefix = warp_prefix_op(warp_aggregate);
-        prefix = WarpScanInternal<POLICY>(temp_storage).Broadcast(prefix, 0);
+        prefix = InternalWarpScan(temp_storage).Broadcast(prefix, 0);
 
         // Update output
         output = (lane_id == 0) ?
@@ -1232,7 +1233,7 @@ public:
         T               &output,            ///< [out] Calling thread's output item.  May be aliased with \p input.
         ScanOp          scan_op)            ///< [in] Binary scan operator
     {
-        WarpScanInternal<POLICY>(temp_storage).ExclusiveScan(input, output, scan_op);
+        InternalWarpScan(temp_storage).ExclusiveScan(input, output, scan_op);
     }
 
 
@@ -1252,7 +1253,7 @@ public:
         ScanOp          scan_op,            ///< [in] Binary scan operator
         T               &warp_aggregate)    ///< [out] Warp-wide aggregate reduction of input items.
     {
-        WarpScanInternal<POLICY>(temp_storage).ExclusiveScan(input, output, scan_op, warp_aggregate);
+        InternalWarpScan(temp_storage).ExclusiveScan(input, output, scan_op, warp_aggregate);
     }
 
 
@@ -1290,7 +1291,7 @@ public:
             (WarpId() * PtxArchProps::WARP_THREADS + LaneId()) % LOGICAL_WARP_THREADS;
 
         T prefix = warp_prefix_op(warp_aggregate);
-        prefix = WarpScanInternal<POLICY>(temp_storage).Broadcast(prefix, 0);
+        prefix = InternalWarpScan(temp_storage).Broadcast(prefix, 0);
 
         // Update output with prefix
         output = (lane_id == 0) ?

@@ -61,26 +61,35 @@ bool g_verbose = false;
 template <
     typename    T,
     typename    ReductionOp,
+    typename    WarpReduce,
     bool        PRIMITIVE = Traits<T>::PRIMITIVE>
 struct DeviceTest
 {
-    template <typename WarpReduce>
-    static __device__ __forceinline__ T Test(
-        typename WarpReduce::SmemStorage    &smem_storage,
+    static __device__ __forceinline__ T Reduce(
+        typename WarpReduce::TempStorage    &temp_storage,
         T                                   &data,
-        ReductionOp                              &reduction_op)
+        ReductionOp                         &reduction_op)
     {
-        return WarpReduce::Reduce(smem_storage, data, reduction_op);
+        return WarpReduce(temp_storage).Reduce(data, reduction_op);
     }
 
-    template <typename WarpReduce>
-    static __device__ __forceinline__ T Test(
-        typename WarpReduce::SmemStorage    &smem_storage,
+    static __device__ __forceinline__ T Reduce(
+        typename WarpReduce::TempStorage    &temp_storage,
         T                                   &data,
-        ReductionOp                              &reduction_op,
+        ReductionOp                         &reduction_op,
         const int                           &valid_lanes)
     {
-        return WarpReduce::Reduce(smem_storage, data, reduction_op, valid_lanes);
+        return WarpReduce(temp_storage).Reduce(data, reduction_op, valid_lanes);
+    }
+
+    template <typename Flag>
+    static __device__ __forceinline__ T SegmentedReduce(
+        typename WarpReduce::TempStorage    &temp_storage,
+        T                                   &data,
+        Flag                                &flag,
+        ReductionOp                         &reduction_op)
+    {
+        return WarpReduce(temp_storage).SegmentedReduce(data, flag, reduction_op);
     }
 };
 
@@ -88,26 +97,36 @@ struct DeviceTest
 /**
  * Summation
  */
-template <typename T>
-struct DeviceTest<T, Sum<T>, true>
+template <
+    typename    T,
+    typename    WarpReduce>
+struct DeviceTest<T, Sum<T>, WarpReduce, true>
 {
-    template <typename WarpReduce>
-    static __device__ __forceinline__ T Test(
-        typename WarpReduce::SmemStorage    &smem_storage,
+    static __device__ __forceinline__ T Reduce(
+        typename WarpReduce::TempStorage    &temp_storage,
         T                                   &data,
         Sum<T>                              &reduction_op)
     {
-        return WarpReduce::Sum(smem_storage, data);
+        return WarpReduce(temp_storage).Sum(data);
     }
 
-    template <typename WarpReduce>
-    static __device__ __forceinline__ T Test(
-        typename WarpReduce::SmemStorage    &smem_storage,
+    static __device__ __forceinline__ T Reduce(
+        typename WarpReduce::TempStorage    &temp_storage,
         T                                   &data,
         Sum<T>                              &reduction_op,
         const int                           &valid_lanes)
     {
-        return WarpReduce::Sum(smem_storage, data, valid_lanes);
+        return WarpReduce(temp_storage).Sum(data, valid_lanes);
+    }
+
+    template <typename Flag>
+    static __device__ __forceinline__ T SegmentedReduce(
+        typename WarpReduce::TempStorage    &temp_storage,
+        T                                   &data,
+        Flag                                &flag,
+        Sum<T>                              &reduction_op)
+    {
+        return WarpReduce(temp_storage).SegmentedSum(data, flag);
     }
 };
 
@@ -129,17 +148,17 @@ __global__ void WarpReduceKernel(
     typedef WarpReduce<T, 1, LOGICAL_WARP_THREADS> WarpReduce;
 
     // Shared memory
-    __shared__ typename WarpReduce::SmemStorage smem_storage;
+    __shared__ typename WarpReduce::TempStorage temp_storage;
 
     // Per-thread tile data
-    T data = d_in[threadIdx.x];
+    T input = d_in[threadIdx.x];
 
     // Record elapsed clocks
     clock_t start = clock();
 
-    // Test reduce
-    T output = DeviceTest<T, ReductionOp>::template Test<WarpReduce>(
-        smem_storage, data, reduction_op);
+    // Test warp reduce
+    T output = DeviceTest<T, ReductionOp, WarpReduce>::Reduce(
+        temp_storage, input, reduction_op);
 
     // Record elapsed clocks
     *d_elapsed = clock() - start;
@@ -158,7 +177,7 @@ template <
     int         LOGICAL_WARP_THREADS,
     typename    T,
     typename    ReductionOp>
-__global__ void WarpReduceKernel(
+__global__ void PartialWarpReduceKernel(
     T               *d_in,
     T               *d_out,
     ReductionOp     reduction_op,
@@ -169,17 +188,17 @@ __global__ void WarpReduceKernel(
     typedef WarpReduce<T, 1, LOGICAL_WARP_THREADS> WarpReduce;
 
     // Shared memory
-    __shared__ typename WarpReduce::SmemStorage smem_storage;
+    __shared__ typename WarpReduce::TempStorage temp_storage;
 
     // Per-thread tile data
-    T data = d_in[threadIdx.x];
+    T input = d_in[threadIdx.x];
 
     // Record elapsed clocks
     clock_t start = clock();
 
-    // Test reduce
-    T output = DeviceTest<T, ReductionOp>::template Test<WarpReduce>(
-        smem_storage, data, reduction_op, valid_lanes);
+    // Test partial-warp reduce
+    T output = DeviceTest<T, ReductionOp, WarpReduce>::Reduce(
+        temp_storage, input, reduction_op, valid_lanes);
 
     // Record elapsed clocks
     *d_elapsed = clock() - start;
@@ -189,6 +208,46 @@ __global__ void WarpReduceKernel(
     {
         *d_out = output;
     }
+}
+
+
+/**
+ * WarpReduce test kernel (segmented)
+ */
+template <
+    int         LOGICAL_WARP_THREADS,
+    typename    T,
+    typename    Flag,
+    typename    ReductionOp>
+__global__ void SegmentedWarpReduceKernel(
+    T               *d_in,
+    Flag            *d_head_flags,
+    T               *d_out,
+    ReductionOp     reduction_op,
+    clock_t         *d_elapsed)
+{
+    // Cooperative warp-reduce utility type (1 warp)
+    typedef WarpReduce<T, 1, LOGICAL_WARP_THREADS> WarpReduce;
+
+    // Shared memory
+    __shared__ typename WarpReduce::TempStorage temp_storage;
+
+    // Per-thread tile data
+    T       input   = d_in[threadIdx.x];
+    Flag    flag    = d_head_flags[threadIdx.x];
+
+    // Record elapsed clocks
+    clock_t start = clock();
+
+    // Test segmented warp reduce
+    T output = DeviceTest<T, ReductionOp, WarpReduce>::SegmentedReduce(
+        temp_storage, input, flag, reduction_op);
+
+    // Record elapsed clocks
+    *d_elapsed = clock() - start;
+
+    // Store aggregate
+    d_out[threadIdx.x] = output;
 }
 
 
@@ -270,7 +329,7 @@ void Test(
     else
     {
         // Run partial-tile kernel
-        WarpReduceKernel<LOGICAL_WARP_THREADS><<<1, LOGICAL_WARP_THREADS>>>(
+        PartialWarpReduceKernel<LOGICAL_WARP_THREADS><<<1, LOGICAL_WARP_THREADS>>>(
             d_in,
             d_out,
             reduction_op,
@@ -309,6 +368,7 @@ void Test(
     ReductionOp     reduction_op,
     const char*     type_string)
 {
+    // Partial tiles
     for (
         int valid_lanes = 1;
         valid_lanes < LOGICAL_WARP_THREADS;
@@ -378,7 +438,6 @@ int main(int argc, char** argv)
     // Initialize command line
     CommandLineArgs args(argc, argv);
     g_verbose = args.CheckCmdLineFlag("v");
-    bool quick = args.CheckCmdLineFlag("quick");
 
     // Print usage
     if (args.CheckCmdLineFlag("help"))
@@ -386,7 +445,6 @@ int main(int argc, char** argv)
         printf("%s "
             "[--device=<device-id>] "
             "[--v] "
-            "[--quick]"
             "\n", argv[0]);
         exit(0);
     }
@@ -394,21 +452,14 @@ int main(int argc, char** argv)
     // Initialize device
     CubDebugExit(args.DeviceInit());
 
-    if (quick)
-    {
-        // Quick exclusive test
-        Test<32, int>(UNIFORM, Sum<int>(), CUB_TYPE_STRING(int), 32);
-//        Test<32, int>(UNIFORM, Sum<int>(), CUB_TYPE_STRING(int), 7);
-//        Test<16, int>(UNIFORM, Sum<int>(), CUB_TYPE_STRING(int), 16);
-    }
-    else
-    {
-        // Test logical warp sizes
-        Test<32>();
-        Test<16>();
-        Test<9>();
-        Test<7>();
-    }
+    // Quick exclusive test
+    Test<32, int>(UNIFORM, Sum<int>(), CUB_TYPE_STRING(int), 32);
+
+    // Test logical warp sizes
+    Test<32>();
+    Test<16>();
+    Test<9>();
+    Test<7>();
 
     return 0;
 }

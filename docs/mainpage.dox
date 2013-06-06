@@ -129,7 +129,7 @@
  *      typedef BlockRadixSort<T, BLOCK_THREADS> BlockRadixSort;
  *
  *      // Declare the shared memory needed by BlockRadixSort
- *      __shared__ typename BlockRadixSort::SmemStorage smem_storage;
+ *      __shared__ typename BlockRadixSort::TempStorage temp_storage;
  *
  *      // A segment of data items per thread
  *      T data[ITEMS_PER_THREAD];
@@ -138,7 +138,7 @@
  *      LoadBlockedVectorized(data, d_in + (blockIdx.x * TILE_SIZE));
  *
  *      // Sort data in ascending order
- *      BlockRadixSort::SortBlocked(smem_storage, data);
+ *      BlockRadixSort::SortBlocked(temp_storage, data);
  *
  *      // Store the sorted tile using vector-store instructions
  *      StoreBlockedVectorized(data, d_out + (blockIdx.x * TILE_SIZE));
@@ -151,7 +151,7 @@
  * data type \p T and is specialized for the underlying architecture.
  *
  * \par
- * Once instantiated, the cub::BlockRadixSort type exposes an opaque cub::BlockRadixSort::SmemStorage
+ * Once instantiated, the cub::BlockRadixSort type exposes an opaque cub::BlockRadixSort::TempStorage
  * member type.  The thread block uses this storage type to allocate the shared memory needed by the
  * primitive.  This storage type can be aliased or <tt>union</tt>'d with other types so that the
  * shared memory can be reused for other purposes.
@@ -312,7 +312,7 @@
  * typedef cub::BlockScan<unsigned int, 128, 4> BlockScan;
  *
  * // Declare shared memory for BlockScan
- * __shared__ typename BlockScan::SmemStorage smem_storage;
+ * __shared__ typename BlockScan::TempStorage temp_storage;
  *
  * // A segment of consecutive input items per thread
  * int data[4];
@@ -321,7 +321,7 @@
  * ...
  *
  * // Perform an exclusive prefix sum across the tile of data
- * BlockScan::ExclusiveSum(smem_storage, data, data);
+ * BlockScan::ExclusiveSum(temp_storage, data, data);
  *
  * \endcode
  *

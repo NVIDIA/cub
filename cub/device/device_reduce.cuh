@@ -85,10 +85,10 @@ __global__ void MultiBlockReduceKernel(
     T block_aggregate;
 
     // Shared memory storage
-    __shared__ typename PersistentBlockReduceT::SmemStorage smem_storage;
+    __shared__ typename PersistentBlockReduceT::TempStorage temp_storage;
 
     // Thread block instance
-    PersistentBlockReduceT persistent_block(smem_storage, d_in, reduction_op);
+    PersistentBlockReduceT persistent_block(temp_storage, d_in, reduction_op);
 
     // Consume tiles using thread block instance
     GridMapping<PersistentBlockReducePolicy::GRID_MAPPING>::ConsumeTiles(
@@ -128,10 +128,10 @@ __global__ void SingleBlockReduceKernel(
     T block_aggregate;
 
     // Shared memory storage
-    __shared__ typename PersistentBlockReduceT::SmemStorage smem_storage;
+    __shared__ typename PersistentBlockReduceT::TempStorage temp_storage;
 
     // Block abstraction for reducing tiles
-    PersistentBlockReduceT persistent_block(smem_storage, d_in, reduction_op);
+    PersistentBlockReduceT persistent_block(temp_storage, d_in, reduction_op);
 
     // Reduce input tiles
     ConsumeTiles(persistent_block, SizeT(0), SizeT(num_items), block_aggregate);
