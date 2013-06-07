@@ -263,13 +263,13 @@ public:
  *
  * entropy_reduction    | Effectively-unique bits per key
  * -----------------------------------------------------
- * -1                    | 0
+ * -1                   | 0
  * 0                    | 32
  * 1                    | 25.95
  * 2                    | 17.41
  * 3                    | 10.78
  * 4                    | 6.42
- * ...                    | ...
+ * ...                  | ...
  *
  */
 template <typename K>
@@ -281,6 +281,12 @@ void RandomBits(
 {
     const unsigned int NUM_UCHARS = (sizeof(K) + sizeof(unsigned char) - 1) / sizeof(unsigned char);
     unsigned char key_bits[NUM_UCHARS];
+
+    if (entropy_reduction == -1)
+    {
+        memset((void *) &key, 0, sizeof(key));
+        return;
+    }
 
     do {
         // Generate random bits
