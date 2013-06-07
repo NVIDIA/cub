@@ -284,6 +284,7 @@ T Initialize(
  */
 template <
     int         LOGICAL_WARP_THREADS,
+    int         WARPS,
     typename    T,
     typename    ReductionOp>
 void Test(
@@ -292,8 +293,10 @@ void Test(
     const char  *type_string,
     int         valid_lanes)
 {
+    const int BLOCK_THREADS = LOGICAL_WARP_THREADS * WARPS;
+
     // Allocate host arrays
-    T *h_in = new T[LOGICAL_WARP_THREADS];
+    T *h_in = new T[BLOCK_THREADS];
 
     // Initialize problem
     T aggregate = Initialize(gen_mode, h_in, valid_lanes, reduction_op);
@@ -361,6 +364,7 @@ void Test(
  */
 template <
     int         LOGICAL_WARP_THREADS,
+    int         WARPS,
     typename    T,
     typename    ReductionOp>
 void Test(
@@ -374,47 +378,63 @@ void Test(
         valid_lanes < LOGICAL_WARP_THREADS;
         valid_lanes += CUB_MAX(1, LOGICAL_WARP_THREADS / 5))
     {
-        Test<LOGICAL_WARP_THREADS, T>(gen_mode, reduction_op, type_string, valid_lanes);
+        Test<LOGICAL_WARP_THREADS, WARPS, T>(gen_mode, reduction_op, type_string, valid_lanes);
     }
 
     // Full tile
-    Test<LOGICAL_WARP_THREADS, T>(gen_mode, reduction_op, type_string, LOGICAL_WARP_THREADS);
+    Test<LOGICAL_WARP_THREADS, WARPS, T>(gen_mode, reduction_op, type_string, LOGICAL_WARP_THREADS);
 }
 
 
 /**
  * Run battery of tests for different data types and reduce ops
  */
-template <int LOGICAL_WARP_THREADS>
+template <
+    int LOGICAL_WARP_THREADS,
+    int WARPS>
 void Test(int gen_mode)
 {
     // primitive
-    Test<LOGICAL_WARP_THREADS, unsigned char>(      gen_mode, Sum<unsigned char>(),         CUB_TYPE_STRING(unsigned char));
-    Test<LOGICAL_WARP_THREADS, unsigned short>(     gen_mode, Sum<unsigned short>(),        CUB_TYPE_STRING(unsigned short));
-    Test<LOGICAL_WARP_THREADS, unsigned int>(       gen_mode, Sum<unsigned int>(),          CUB_TYPE_STRING(unsigned int));
-    Test<LOGICAL_WARP_THREADS, unsigned long long>( gen_mode, Sum<unsigned long long>(),    CUB_TYPE_STRING(unsigned long long));
+    Test<LOGICAL_WARP_THREADS, WARPS, unsigned char>(      gen_mode, Sum<unsigned char>(),         CUB_TYPE_STRING(unsigned char));
+    Test<LOGICAL_WARP_THREADS, WARPS, unsigned short>(     gen_mode, Sum<unsigned short>(),        CUB_TYPE_STRING(unsigned short));
+    Test<LOGICAL_WARP_THREADS, WARPS, unsigned int>(       gen_mode, Sum<unsigned int>(),          CUB_TYPE_STRING(unsigned int));
+    Test<LOGICAL_WARP_THREADS, WARPS, unsigned long long>( gen_mode, Sum<unsigned long long>(),    CUB_TYPE_STRING(unsigned long long));
 
     // primitive (alternative reduce op)
-    Test<LOGICAL_WARP_THREADS, unsigned char>(      gen_mode, Max<unsigned char>(),         CUB_TYPE_STRING(unsigned char));
-    Test<LOGICAL_WARP_THREADS, unsigned short>(     gen_mode, Max<unsigned short>(),        CUB_TYPE_STRING(unsigned short));
-    Test<LOGICAL_WARP_THREADS, unsigned int>(       gen_mode, Max<unsigned int>(),          CUB_TYPE_STRING(unsigned int));
-    Test<LOGICAL_WARP_THREADS, unsigned long long>( gen_mode, Max<unsigned long long>(),    CUB_TYPE_STRING(unsigned long long));
+    Test<LOGICAL_WARP_THREADS, WARPS, unsigned char>(      gen_mode, Max<unsigned char>(),         CUB_TYPE_STRING(unsigned char));
+    Test<LOGICAL_WARP_THREADS, WARPS, unsigned short>(     gen_mode, Max<unsigned short>(),        CUB_TYPE_STRING(unsigned short));
+    Test<LOGICAL_WARP_THREADS, WARPS, unsigned int>(       gen_mode, Max<unsigned int>(),          CUB_TYPE_STRING(unsigned int));
+    Test<LOGICAL_WARP_THREADS, WARPS, unsigned long long>( gen_mode, Max<unsigned long long>(),    CUB_TYPE_STRING(unsigned long long));
 
     // vec-2
-    Test<LOGICAL_WARP_THREADS, uchar2>(             gen_mode, Sum<uchar2>(),                CUB_TYPE_STRING(uchar2));
-    Test<LOGICAL_WARP_THREADS, ushort2>(            gen_mode, Sum<ushort2>(),               CUB_TYPE_STRING(ushort2));
-    Test<LOGICAL_WARP_THREADS, uint2>(              gen_mode, Sum<uint2>(),                 CUB_TYPE_STRING(uint2));
-    Test<LOGICAL_WARP_THREADS, ulonglong2>(         gen_mode, Sum<ulonglong2>(),            CUB_TYPE_STRING(ulonglong2));
+    Test<LOGICAL_WARP_THREADS, WARPS, uchar2>(             gen_mode, Sum<uchar2>(),                CUB_TYPE_STRING(uchar2));
+    Test<LOGICAL_WARP_THREADS, WARPS, ushort2>(            gen_mode, Sum<ushort2>(),               CUB_TYPE_STRING(ushort2));
+    Test<LOGICAL_WARP_THREADS, WARPS, uint2>(              gen_mode, Sum<uint2>(),                 CUB_TYPE_STRING(uint2));
+    Test<LOGICAL_WARP_THREADS, WARPS, ulonglong2>(         gen_mode, Sum<ulonglong2>(),            CUB_TYPE_STRING(ulonglong2));
 
     // vec-4
-    Test<LOGICAL_WARP_THREADS, uchar4>(             gen_mode, Sum<uchar4>(),                CUB_TYPE_STRING(uchar4));
-    Test<LOGICAL_WARP_THREADS, ushort4>(            gen_mode, Sum<ushort4>(),               CUB_TYPE_STRING(ushort4));
-    Test<LOGICAL_WARP_THREADS, uint4>(              gen_mode, Sum<uint4>(),                 CUB_TYPE_STRING(uint4));
-    Test<LOGICAL_WARP_THREADS, ulonglong4>(         gen_mode, Sum<ulonglong4>(),            CUB_TYPE_STRING(ulonglong4));
+    Test<LOGICAL_WARP_THREADS, WARPS, uchar4>(             gen_mode, Sum<uchar4>(),                CUB_TYPE_STRING(uchar4));
+    Test<LOGICAL_WARP_THREADS, WARPS, ushort4>(            gen_mode, Sum<ushort4>(),               CUB_TYPE_STRING(ushort4));
+    Test<LOGICAL_WARP_THREADS, WARPS, uint4>(              gen_mode, Sum<uint4>(),                 CUB_TYPE_STRING(uint4));
+    Test<LOGICAL_WARP_THREADS, WARPS, ulonglong4>(         gen_mode, Sum<ulonglong4>(),            CUB_TYPE_STRING(ulonglong4));
 
     // complex
-    Test<LOGICAL_WARP_THREADS, TestFoo>(            gen_mode, Sum<TestFoo>(),               CUB_TYPE_STRING(TestFoo));
-    Test<LOGICAL_WARP_THREADS, TestBar>(            gen_mode, Sum<TestBar>(),               CUB_TYPE_STRING(TestBar));
+    Test<LOGICAL_WARP_THREADS, WARPS, TestFoo>(            gen_mode, Sum<TestFoo>(),               CUB_TYPE_STRING(TestFoo));
+    Test<LOGICAL_WARP_THREADS, WARPS, TestBar>(            gen_mode, Sum<TestBar>(),               CUB_TYPE_STRING(TestBar));
+}
+
+
+/**
+ * Run battery of tests for different problem generation options
+ */
+template <
+    int LOGICAL_WARP_THREADS,
+    int WARPS>
+void Test()
+{
+    Test<LOGICAL_WARP_THREADS, WARPS>(UNIFORM);
+    Test<LOGICAL_WARP_THREADS, WARPS>(SEQ_INC);
+    Test<LOGICAL_WARP_THREADS, WARPS>(RANDOM);
 }
 
 
@@ -424,9 +444,8 @@ void Test(int gen_mode)
 template <int LOGICAL_WARP_THREADS>
 void Test()
 {
-    Test<LOGICAL_WARP_THREADS>(UNIFORM);
-    Test<LOGICAL_WARP_THREADS>(SEQ_INC);
-    Test<LOGICAL_WARP_THREADS>(RANDOM);
+    Test<LOGICAL_WARP_THREADS, 1>();
+    Test<LOGICAL_WARP_THREADS, 2>();
 }
 
 
