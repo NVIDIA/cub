@@ -77,20 +77,31 @@ struct DeviceTest
         typename WarpReduce::TempStorage    &temp_storage,
         T                                   &data,
         ReductionOp                         &reduction_op,
-        const int                           &valid_lanes)
+        const int                           &valid_warp_threads)
     {
-        return WarpReduce(temp_storage).Reduce(data, reduction_op, valid_lanes);
+        return WarpReduce(temp_storage).Reduce(data, reduction_op, valid_warp_threads);
     }
 
     template <typename Flag>
-    static __device__ __forceinline__ T SegmentedReduce(
+    static __device__ __forceinline__ T HeadSegmentedReduce(
         typename WarpReduce::TempStorage    &temp_storage,
         T                                   &data,
         Flag                                &flag,
         ReductionOp                         &reduction_op)
     {
-        return WarpReduce(temp_storage).SegmentedReduce(data, flag, reduction_op);
+        return WarpReduce(temp_storage).HeadSegmentedReduce(data, flag, reduction_op);
     }
+
+    template <typename Flag>
+    static __device__ __forceinline__ T TailSegmentedReduce(
+        typename WarpReduce::TempStorage    &temp_storage,
+        T                                   &data,
+        Flag                                &flag,
+        ReductionOp                         &reduction_op)
+    {
+        return WarpReduce(temp_storage).TailSegmentedReduce(data, flag, reduction_op);
+    }
+
 };
 
 
@@ -114,38 +125,50 @@ struct DeviceTest<T, Sum<T>, WarpReduce, true>
         typename WarpReduce::TempStorage    &temp_storage,
         T                                   &data,
         Sum<T>                              &reduction_op,
-        const int                           &valid_lanes)
+        const int                           &valid_warp_threads)
     {
-        return WarpReduce(temp_storage).Sum(data, valid_lanes);
+        return WarpReduce(temp_storage).Sum(data, valid_warp_threads);
     }
 
     template <typename Flag>
-    static __device__ __forceinline__ T SegmentedReduce(
+    static __device__ __forceinline__ T HeadSegmentedReduce(
         typename WarpReduce::TempStorage    &temp_storage,
         T                                   &data,
         Flag                                &flag,
         Sum<T>                              &reduction_op)
     {
-        return WarpReduce(temp_storage).SegmentedSum(data, flag);
+        return WarpReduce(temp_storage).HeadSegmentedSum(data, flag);
     }
+
+    template <typename Flag>
+    static __device__ __forceinline__ T TailSegmentedReduce(
+        typename WarpReduce::TempStorage    &temp_storage,
+        T                                   &data,
+        Flag                                &flag,
+        Sum<T>                              &reduction_op)
+    {
+        return WarpReduce(temp_storage).TailSegmentedSum(data, flag);
+    }
+
 };
 
 
 /**
- * WarpReduce test kernel (full tile)
+ * Full-tile warp reduction kernel
  */
 template <
+    int         WARPS,
     int         LOGICAL_WARP_THREADS,
     typename    T,
     typename    ReductionOp>
-__global__ void WarpReduceKernel(
+__global__ void FullWarpReduceKernel(
     T               *d_in,
     T               *d_out,
     ReductionOp     reduction_op,
     clock_t         *d_elapsed)
 {
     // Cooperative warp-reduce utility type (1 warp)
-    typedef WarpReduce<T, 1, LOGICAL_WARP_THREADS> WarpReduce;
+    typedef WarpReduce<T, WARPS, LOGICAL_WARP_THREADS> WarpReduce;
 
     // Shared memory
     __shared__ typename WarpReduce::TempStorage temp_storage;
@@ -164,28 +187,28 @@ __global__ void WarpReduceKernel(
     *d_elapsed = clock() - start;
 
     // Store aggregate
-    if (threadIdx.x == 0)
-    {
-        *d_out = output;
-    }
+    d_out[threadIdx.x] = (threadIdx.x % LOGICAL_WARP_THREADS == 0) ?
+        output :
+        input;
 }
 
 /**
- * WarpReduce test kernel (partially-full tile)
+ * Partially-full warp reduction kernel
  */
 template <
+    int         WARPS,
     int         LOGICAL_WARP_THREADS,
     typename    T,
     typename    ReductionOp>
 __global__ void PartialWarpReduceKernel(
-    T               *d_in,
-    T               *d_out,
-    ReductionOp     reduction_op,
-    clock_t         *d_elapsed,
-    int             valid_lanes)
+    T           *d_in,
+    T           *d_out,
+    ReductionOp reduction_op,
+    clock_t     *d_elapsed,
+    int         valid_warp_threads)
 {
     // Cooperative warp-reduce utility type (1 warp)
-    typedef WarpReduce<T, 1, LOGICAL_WARP_THREADS> WarpReduce;
+    typedef WarpReduce<T, WARPS, LOGICAL_WARP_THREADS> WarpReduce;
 
     // Shared memory
     __shared__ typename WarpReduce::TempStorage temp_storage;
@@ -198,56 +221,108 @@ __global__ void PartialWarpReduceKernel(
 
     // Test partial-warp reduce
     T output = DeviceTest<T, ReductionOp, WarpReduce>::Reduce(
-        temp_storage, input, reduction_op, valid_lanes);
+        temp_storage, input, reduction_op, valid_warp_threads);
 
     // Record elapsed clocks
     *d_elapsed = clock() - start;
 
     // Store aggregate
-    if (threadIdx.x == 0)
-    {
-        *d_out = output;
-    }
+    d_out[threadIdx.x] = (threadIdx.x % LOGICAL_WARP_THREADS == 0) ?
+        output :
+        input;
 }
 
 
 /**
- * WarpReduce test kernel (segmented)
+ * Head-based segmented warp reduction test kernel
  */
 template <
+    int         WARPS,
     int         LOGICAL_WARP_THREADS,
     typename    T,
     typename    Flag,
     typename    ReductionOp>
-__global__ void SegmentedWarpReduceKernel(
-    T               *d_in,
-    Flag            *d_head_flags,
-    T               *d_out,
-    ReductionOp     reduction_op,
-    clock_t         *d_elapsed)
+__global__ void WarpHeadSegmentedReduceKernel(
+    T           *d_in,
+    Flag        *d_head_flags,
+    T           *d_out,
+    ReductionOp reduction_op,
+    clock_t     *d_elapsed)
 {
     // Cooperative warp-reduce utility type (1 warp)
-    typedef WarpReduce<T, 1, LOGICAL_WARP_THREADS> WarpReduce;
+    typedef WarpReduce<T, WARPS, LOGICAL_WARP_THREADS> WarpReduce;
 
     // Shared memory
     __shared__ typename WarpReduce::TempStorage temp_storage;
 
     // Per-thread tile data
-    T       input   = d_in[threadIdx.x];
-    Flag    flag    = d_head_flags[threadIdx.x];
+    T       input       = d_in[threadIdx.x];
+    Flag    head_flag   = d_head_flags[threadIdx.x];
+
+    __syncthreads();
 
     // Record elapsed clocks
     clock_t start = clock();
 
     // Test segmented warp reduce
-    T output = DeviceTest<T, ReductionOp, WarpReduce>::SegmentedReduce(
-        temp_storage, input, flag, reduction_op);
+    T output = DeviceTest<T, ReductionOp, WarpReduce>::HeadSegmentedReduce(
+        temp_storage, input, head_flag, reduction_op);
 
     // Record elapsed clocks
     *d_elapsed = clock() - start;
 
     // Store aggregate
-    d_out[threadIdx.x] = output;
+    d_out[threadIdx.x] = ((threadIdx.x % LOGICAL_WARP_THREADS == 0) || head_flag) ?
+        output :
+        input;
+}
+
+
+/**
+ * Tail-based segmented warp reduction test kernel
+ */
+template <
+    int         WARPS,
+    int         LOGICAL_WARP_THREADS,
+    typename    T,
+    typename    Flag,
+    typename    ReductionOp>
+__global__ void WarpTailSegmentedReduceKernel(
+    T           *d_in,
+    Flag        *d_tail_flags,
+    T           *d_out,
+    ReductionOp reduction_op,
+    clock_t     *d_elapsed)
+{
+    // Cooperative warp-reduce utility type (1 warp)
+    typedef WarpReduce<T, WARPS, LOGICAL_WARP_THREADS> WarpReduce;
+
+    // Shared memory
+    __shared__ typename WarpReduce::TempStorage temp_storage;
+
+    // Per-thread tile data
+    T       input       = d_in[threadIdx.x];
+    Flag    tail_flag   = d_tail_flags[threadIdx.x];
+    Flag    head_flag   = (threadIdx.x == 0) ?
+                            0 :
+                            d_tail_flags[threadIdx.x - 1];
+
+    __syncthreads();
+
+    // Record elapsed clocks
+    clock_t start = clock();
+
+    // Test segmented warp reduce
+    T output = DeviceTest<T, ReductionOp, WarpReduce>::TailSegmentedReduce(
+        temp_storage, input, tail_flag, reduction_op);
+
+    // Record elapsed clocks
+    *d_elapsed = clock() - start;
+
+    // Store aggregate
+    d_out[threadIdx.x] = ((threadIdx.x % LOGICAL_WARP_THREADS == 0) || head_flag) ?
+        output :
+        input;
 }
 
 
@@ -261,69 +336,130 @@ __global__ void SegmentedWarpReduceKernel(
 template <
     typename    T,
     typename    ReductionOp>
-T Initialize(
+void Initialize(
     int             gen_mode,
+    int             flag_entropy,
     T               *h_in,
-    int             num_items,
-    ReductionOp     reduction_op)
+    int             *h_flags,
+    int             warps,
+    int             warp_threads,
+    int             valid_warp_threads,
+    ReductionOp     reduction_op,
+    T               *h_head_out,
+    T               *h_tail_out)
 {
-    InitValue(gen_mode, h_in[0], 0);
-    T aggregate = h_in[0];
-
-    for (int i = 1; i < num_items; ++i)
+    for (int i = 0; i < warps * warp_threads; ++i)
     {
+        // Sample a value for this item
         InitValue(gen_mode, h_in[i], i);
-        aggregate = reduction_op(aggregate, h_in[i]);
+        h_head_out[i] = h_in[i];
+        h_tail_out[i] = h_in[i];
+
+        // Sample whether or not this item will be a segment head
+        char bits;
+        RandomBits(bits, flag_entropy);
+        h_flags[i] = bits & 0x1;
+
+//        printf("item[%d] = %d (%d)\n", i, h_in[i], h_flags[i]);
     }
 
-    return aggregate;
+    // Accumulate segments (lane 0 of each warp is implicitly a segment head)
+    for (int warp = 0; warp < warps; ++warp)
+    {
+        int warp_offset  = warp * warp_threads;
+        int item_offset = warp_offset + valid_warp_threads - 1;
+
+        // Last item in warp
+        T head_aggregate = h_in[item_offset];
+        T tail_aggregate = h_in[item_offset];
+
+        if (h_flags[item_offset])
+            h_head_out[item_offset] = head_aggregate;
+        item_offset--;
+
+        // Work backwards
+        while (item_offset >= warp_offset)
+        {
+            if (h_flags[item_offset + 1])
+            {
+                head_aggregate = h_in[item_offset];
+            }
+            else
+            {
+                head_aggregate = reduction_op(head_aggregate, h_in[item_offset]);
+            }
+
+            if (h_flags[item_offset])
+            {
+                h_head_out[item_offset] = head_aggregate;
+                h_tail_out[item_offset + 1] = tail_aggregate;
+                tail_aggregate = h_in[item_offset];
+            }
+            else
+            {
+                tail_aggregate = reduction_op(tail_aggregate, h_in[item_offset]);
+            }
+
+            item_offset--;
+        }
+
+        // Record last segment head_aggregate to head offset
+        h_head_out[warp_offset] = head_aggregate;
+        h_tail_out[warp_offset] = tail_aggregate;
+    }
 }
+
 
 /**
  * Test warp reduction
  */
 template <
-    int         LOGICAL_WARP_THREADS,
     int         WARPS,
+    int         LOGICAL_WARP_THREADS,
     typename    T,
     typename    ReductionOp>
-void Test(
+void TestReduce(
     int         gen_mode,
     ReductionOp reduction_op,
     const char  *type_string,
-    int         valid_lanes)
+    int         valid_warp_threads)
 {
     const int BLOCK_THREADS = LOGICAL_WARP_THREADS * WARPS;
 
     // Allocate host arrays
-    T *h_in = new T[BLOCK_THREADS];
+    T   *h_in           = new T[BLOCK_THREADS];
+    int *h_flags        = new int[BLOCK_THREADS];
+    T   *h_out          = new T[BLOCK_THREADS];
+    T   *h_tail_out     = new T[BLOCK_THREADS];
 
     // Initialize problem
-    T aggregate = Initialize(gen_mode, h_in, valid_lanes, reduction_op);
+    Initialize(gen_mode, -1, h_in, h_flags, WARPS, LOGICAL_WARP_THREADS, valid_warp_threads, reduction_op, h_out, h_tail_out);
 
     // Initialize device arrays
     T *d_in = NULL;
     T *d_out = NULL;
     clock_t *d_elapsed = NULL;
-    CubDebugExit(cudaMalloc((void**)&d_in, sizeof(T) * LOGICAL_WARP_THREADS));
-    CubDebugExit(cudaMalloc((void**)&d_out, sizeof(T) * 1));
+
+    CubDebugExit(cudaMalloc((void**)&d_in, sizeof(T) * BLOCK_THREADS));
+    CubDebugExit(cudaMalloc((void**)&d_out, sizeof(T) * BLOCK_THREADS));
     CubDebugExit(cudaMalloc((void**)&d_elapsed, sizeof(clock_t)));
-    CubDebugExit(cudaMemcpy(d_in, h_in, sizeof(T) * LOGICAL_WARP_THREADS, cudaMemcpyHostToDevice));
-    CubDebugExit(cudaMemset(d_out, 0, sizeof(T) * 1));
+    CubDebugExit(cudaMemcpy(d_in, h_in, sizeof(T) * BLOCK_THREADS, cudaMemcpyHostToDevice));
+    CubDebugExit(cudaMemset(d_out, 0, sizeof(T) * BLOCK_THREADS));
 
     // Run kernel
-    printf("Gen-mode %d, %d warp threads, %d valid lanes, %s (%d bytes) elements:\n",
+    printf("Gen-mode %d, %d warps, %d warp threads, %d valid lanes, %s (%d bytes) elements:\n",
         gen_mode,
+        WARPS,
         LOGICAL_WARP_THREADS,
-        valid_lanes,
+        valid_warp_threads,
         type_string,
         (int) sizeof(T));
     fflush(stdout);
 
-    if (valid_lanes == LOGICAL_WARP_THREADS)
+    if (valid_warp_threads == LOGICAL_WARP_THREADS)
     {
-        // Run full-tile kernel
-        WarpReduceKernel<LOGICAL_WARP_THREADS><<<1, LOGICAL_WARP_THREADS>>>(
+        // Run full-warp kernel
+        FullWarpReduceKernel<WARPS, LOGICAL_WARP_THREADS><<<1, BLOCK_THREADS>>>(
             d_in,
             d_out,
             reduction_op,
@@ -331,30 +467,133 @@ void Test(
     }
     else
     {
-        // Run partial-tile kernel
-        PartialWarpReduceKernel<LOGICAL_WARP_THREADS><<<1, LOGICAL_WARP_THREADS>>>(
+        // Run partial-warp kernel
+        PartialWarpReduceKernel<WARPS, LOGICAL_WARP_THREADS><<<1, BLOCK_THREADS>>>(
             d_in,
             d_out,
             reduction_op,
             d_elapsed,
-            valid_lanes);
+            valid_warp_threads);
     }
-
-    printf("\tElapsed clocks: ");
-    DisplayDeviceResults(d_elapsed, 1);
 
     CubDebugExit(cudaDeviceSynchronize());
 
     // Copy out and display results
     printf("\tReduction results: ");
-    int compare = CompareDeviceResults(&aggregate, d_out, 1, g_verbose, g_verbose);
+    int compare = CompareDeviceResults(h_out, d_out, BLOCK_THREADS, g_verbose, g_verbose);
     printf("%s\n", compare ? "FAIL" : "PASS");
     AssertEquals(0, compare);
+    printf("\tElapsed clocks: ");
+    DisplayDeviceResults(d_elapsed, 1);
 
     // Cleanup
     if (h_in) delete[] h_in;
+    if (h_flags) delete[] h_flags;
+    if (h_out) delete[] h_out;
+    if (h_tail_out) delete[] h_tail_out;
     if (d_in) CubDebugExit(cudaFree(d_in));
     if (d_out) CubDebugExit(cudaFree(d_out));
+    if (d_elapsed) CubDebugExit(cudaFree(d_elapsed));
+}
+
+
+/**
+ * Test warp segmented reduction
+ */
+template <
+    int         WARPS,
+    int         LOGICAL_WARP_THREADS,
+    typename    T,
+    typename    ReductionOp>
+void TestSegmentedReduce(
+    int         gen_mode,
+    int         flag_entropy,
+    ReductionOp reduction_op,
+    const char  *type_string)
+{
+    const int BLOCK_THREADS = LOGICAL_WARP_THREADS * WARPS;
+
+    // Allocate host arrays
+    int compare;
+    T   *h_in           = new T[BLOCK_THREADS];
+    int *h_flags        = new int[BLOCK_THREADS];
+    T   *h_head_out     = new T[BLOCK_THREADS];
+    T   *h_tail_out     = new T[BLOCK_THREADS];
+
+    // Initialize problem
+    Initialize(gen_mode, flag_entropy, h_in, h_flags, WARPS, LOGICAL_WARP_THREADS, LOGICAL_WARP_THREADS, reduction_op, h_head_out, h_tail_out);
+
+    // Initialize device arrays
+    T           *d_in = NULL;
+    int         *d_flags = NULL;
+    T           *d_head_out = NULL;
+    T           *d_tail_out = NULL;
+    clock_t     *d_elapsed = NULL;
+
+    CubDebugExit(cudaMalloc((void**)&d_in, sizeof(T) * BLOCK_THREADS));
+    CubDebugExit(cudaMalloc((void**)&d_flags, sizeof(int) * BLOCK_THREADS));
+    CubDebugExit(cudaMalloc((void**)&d_head_out, sizeof(T) * BLOCK_THREADS));
+    CubDebugExit(cudaMalloc((void**)&d_tail_out, sizeof(T) * BLOCK_THREADS));
+    CubDebugExit(cudaMalloc((void**)&d_elapsed, sizeof(clock_t)));
+    CubDebugExit(cudaMemcpy(d_in, h_in, sizeof(T) * BLOCK_THREADS, cudaMemcpyHostToDevice));
+    CubDebugExit(cudaMemcpy(d_flags, h_flags, sizeof(int) * BLOCK_THREADS, cudaMemcpyHostToDevice));
+    CubDebugExit(cudaMemset(d_head_out, 0, sizeof(T) * BLOCK_THREADS));
+    CubDebugExit(cudaMemset(d_tail_out, 0, sizeof(T) * BLOCK_THREADS));
+
+    printf("Gen-mode %d, head flag entropy reduction %d, %d warps, %d warp threads, %s (%d bytes) elements:\n",
+        gen_mode,
+        flag_entropy,
+        WARPS,
+        LOGICAL_WARP_THREADS,
+        type_string,
+        (int) sizeof(T));
+    fflush(stdout);
+
+    // Run head-based kernel
+    WarpHeadSegmentedReduceKernel<WARPS, LOGICAL_WARP_THREADS><<<1, BLOCK_THREADS>>>(
+        d_in,
+        d_flags,
+        d_head_out,
+        reduction_op,
+        d_elapsed);
+
+    CubDebugExit(cudaDeviceSynchronize());
+
+    // Copy out and display results
+    printf("\tHead-based segmented reduction results: ");
+    compare = CompareDeviceResults(h_head_out, d_head_out, BLOCK_THREADS, g_verbose, g_verbose);
+    printf("%s\n", compare ? "FAIL" : "PASS");
+    AssertEquals(0, compare);
+    printf("\tElapsed clocks: ");
+    DisplayDeviceResults(d_elapsed, 1);
+
+    // Run tail-based kernel
+    WarpTailSegmentedReduceKernel<WARPS, LOGICAL_WARP_THREADS><<<1, BLOCK_THREADS>>>(
+        d_in,
+        d_flags,
+        d_tail_out,
+        reduction_op,
+        d_elapsed);
+
+    CubDebugExit(cudaDeviceSynchronize());
+
+    // Copy out and display results
+    printf("\tTail-based segmented reduction results: ");
+    compare = CompareDeviceResults(h_tail_out, d_tail_out, BLOCK_THREADS, g_verbose, g_verbose);
+    printf("%s\n", compare ? "FAIL" : "PASS");
+    AssertEquals(0, compare);
+    printf("\tElapsed clocks: ");
+    DisplayDeviceResults(d_elapsed, 1);
+
+    // Cleanup
+    if (h_in) delete[] h_in;
+    if (h_flags) delete[] h_flags;
+    if (h_head_out) delete[] h_head_out;
+    if (h_tail_out) delete[] h_tail_out;
+    if (d_in) CubDebugExit(cudaFree(d_in));
+    if (d_flags) CubDebugExit(cudaFree(d_flags));
+    if (d_head_out) CubDebugExit(cudaFree(d_head_out));
+    if (d_tail_out) CubDebugExit(cudaFree(d_tail_out));
     if (d_elapsed) CubDebugExit(cudaFree(d_elapsed));
 }
 
@@ -363,8 +602,8 @@ void Test(
  * Run battery of tests for different full and partial tile sizes
  */
 template <
-    int         LOGICAL_WARP_THREADS,
     int         WARPS,
+    int         LOGICAL_WARP_THREADS,
     typename    T,
     typename    ReductionOp>
 void Test(
@@ -374,15 +613,21 @@ void Test(
 {
     // Partial tiles
     for (
-        int valid_lanes = 1;
-        valid_lanes < LOGICAL_WARP_THREADS;
-        valid_lanes += CUB_MAX(1, LOGICAL_WARP_THREADS / 5))
+        int valid_warp_threads = 1;
+        valid_warp_threads < LOGICAL_WARP_THREADS;
+        valid_warp_threads += CUB_MAX(1, LOGICAL_WARP_THREADS / 5))
     {
-        Test<LOGICAL_WARP_THREADS, WARPS, T>(gen_mode, reduction_op, type_string, valid_lanes);
+        TestReduce<WARPS, LOGICAL_WARP_THREADS, T>(gen_mode, reduction_op, type_string, valid_warp_threads);
     }
 
     // Full tile
-    Test<LOGICAL_WARP_THREADS, WARPS, T>(gen_mode, reduction_op, type_string, LOGICAL_WARP_THREADS);
+    TestReduce<WARPS, LOGICAL_WARP_THREADS, T>(gen_mode, reduction_op, type_string, LOGICAL_WARP_THREADS);
+
+    // Segmented reduction with different head flags
+    for (int flag_entropy = 0; flag_entropy < 10; ++flag_entropy)
+    {
+        TestSegmentedReduce<WARPS, LOGICAL_WARP_THREADS, T>(gen_mode, flag_entropy, reduction_op, type_string);
+    }
 }
 
 
@@ -390,37 +635,37 @@ void Test(
  * Run battery of tests for different data types and reduce ops
  */
 template <
-    int LOGICAL_WARP_THREADS,
-    int WARPS>
+    int WARPS,
+    int LOGICAL_WARP_THREADS>
 void Test(int gen_mode)
 {
     // primitive
-    Test<LOGICAL_WARP_THREADS, WARPS, unsigned char>(      gen_mode, Sum<unsigned char>(),         CUB_TYPE_STRING(unsigned char));
-    Test<LOGICAL_WARP_THREADS, WARPS, unsigned short>(     gen_mode, Sum<unsigned short>(),        CUB_TYPE_STRING(unsigned short));
-    Test<LOGICAL_WARP_THREADS, WARPS, unsigned int>(       gen_mode, Sum<unsigned int>(),          CUB_TYPE_STRING(unsigned int));
-    Test<LOGICAL_WARP_THREADS, WARPS, unsigned long long>( gen_mode, Sum<unsigned long long>(),    CUB_TYPE_STRING(unsigned long long));
+    Test<WARPS, LOGICAL_WARP_THREADS, unsigned char>(      gen_mode, Sum<unsigned char>(),         CUB_TYPE_STRING(unsigned char));
+    Test<WARPS, LOGICAL_WARP_THREADS, unsigned short>(     gen_mode, Sum<unsigned short>(),        CUB_TYPE_STRING(unsigned short));
+    Test<WARPS, LOGICAL_WARP_THREADS, unsigned int>(       gen_mode, Sum<unsigned int>(),          CUB_TYPE_STRING(unsigned int));
+    Test<WARPS, LOGICAL_WARP_THREADS, unsigned long long>( gen_mode, Sum<unsigned long long>(),    CUB_TYPE_STRING(unsigned long long));
 
     // primitive (alternative reduce op)
-    Test<LOGICAL_WARP_THREADS, WARPS, unsigned char>(      gen_mode, Max<unsigned char>(),         CUB_TYPE_STRING(unsigned char));
-    Test<LOGICAL_WARP_THREADS, WARPS, unsigned short>(     gen_mode, Max<unsigned short>(),        CUB_TYPE_STRING(unsigned short));
-    Test<LOGICAL_WARP_THREADS, WARPS, unsigned int>(       gen_mode, Max<unsigned int>(),          CUB_TYPE_STRING(unsigned int));
-    Test<LOGICAL_WARP_THREADS, WARPS, unsigned long long>( gen_mode, Max<unsigned long long>(),    CUB_TYPE_STRING(unsigned long long));
+    Test<WARPS, LOGICAL_WARP_THREADS, unsigned char>(      gen_mode, Max<unsigned char>(),         CUB_TYPE_STRING(unsigned char));
+    Test<WARPS, LOGICAL_WARP_THREADS, unsigned short>(     gen_mode, Max<unsigned short>(),        CUB_TYPE_STRING(unsigned short));
+    Test<WARPS, LOGICAL_WARP_THREADS, unsigned int>(       gen_mode, Max<unsigned int>(),          CUB_TYPE_STRING(unsigned int));
+    Test<WARPS, LOGICAL_WARP_THREADS, unsigned long long>( gen_mode, Max<unsigned long long>(),    CUB_TYPE_STRING(unsigned long long));
 
     // vec-2
-    Test<LOGICAL_WARP_THREADS, WARPS, uchar2>(             gen_mode, Sum<uchar2>(),                CUB_TYPE_STRING(uchar2));
-    Test<LOGICAL_WARP_THREADS, WARPS, ushort2>(            gen_mode, Sum<ushort2>(),               CUB_TYPE_STRING(ushort2));
-    Test<LOGICAL_WARP_THREADS, WARPS, uint2>(              gen_mode, Sum<uint2>(),                 CUB_TYPE_STRING(uint2));
-    Test<LOGICAL_WARP_THREADS, WARPS, ulonglong2>(         gen_mode, Sum<ulonglong2>(),            CUB_TYPE_STRING(ulonglong2));
+    Test<WARPS, LOGICAL_WARP_THREADS, uchar2>(             gen_mode, Sum<uchar2>(),                CUB_TYPE_STRING(uchar2));
+    Test<WARPS, LOGICAL_WARP_THREADS, ushort2>(            gen_mode, Sum<ushort2>(),               CUB_TYPE_STRING(ushort2));
+    Test<WARPS, LOGICAL_WARP_THREADS, uint2>(              gen_mode, Sum<uint2>(),                 CUB_TYPE_STRING(uint2));
+    Test<WARPS, LOGICAL_WARP_THREADS, ulonglong2>(         gen_mode, Sum<ulonglong2>(),            CUB_TYPE_STRING(ulonglong2));
 
     // vec-4
-    Test<LOGICAL_WARP_THREADS, WARPS, uchar4>(             gen_mode, Sum<uchar4>(),                CUB_TYPE_STRING(uchar4));
-    Test<LOGICAL_WARP_THREADS, WARPS, ushort4>(            gen_mode, Sum<ushort4>(),               CUB_TYPE_STRING(ushort4));
-    Test<LOGICAL_WARP_THREADS, WARPS, uint4>(              gen_mode, Sum<uint4>(),                 CUB_TYPE_STRING(uint4));
-    Test<LOGICAL_WARP_THREADS, WARPS, ulonglong4>(         gen_mode, Sum<ulonglong4>(),            CUB_TYPE_STRING(ulonglong4));
+    Test<WARPS, LOGICAL_WARP_THREADS, uchar4>(             gen_mode, Sum<uchar4>(),                CUB_TYPE_STRING(uchar4));
+    Test<WARPS, LOGICAL_WARP_THREADS, ushort4>(            gen_mode, Sum<ushort4>(),               CUB_TYPE_STRING(ushort4));
+    Test<WARPS, LOGICAL_WARP_THREADS, uint4>(              gen_mode, Sum<uint4>(),                 CUB_TYPE_STRING(uint4));
+    Test<WARPS, LOGICAL_WARP_THREADS, ulonglong4>(         gen_mode, Sum<ulonglong4>(),            CUB_TYPE_STRING(ulonglong4));
 
     // complex
-    Test<LOGICAL_WARP_THREADS, WARPS, TestFoo>(            gen_mode, Sum<TestFoo>(),               CUB_TYPE_STRING(TestFoo));
-    Test<LOGICAL_WARP_THREADS, WARPS, TestBar>(            gen_mode, Sum<TestBar>(),               CUB_TYPE_STRING(TestBar));
+    Test<WARPS, LOGICAL_WARP_THREADS, TestFoo>(            gen_mode, Sum<TestFoo>(),               CUB_TYPE_STRING(TestFoo));
+    Test<WARPS, LOGICAL_WARP_THREADS, TestBar>(            gen_mode, Sum<TestBar>(),               CUB_TYPE_STRING(TestBar));
 }
 
 
@@ -428,13 +673,13 @@ void Test(int gen_mode)
  * Run battery of tests for different problem generation options
  */
 template <
-    int LOGICAL_WARP_THREADS,
-    int WARPS>
+    int WARPS,
+    int LOGICAL_WARP_THREADS>
 void Test()
 {
-    Test<LOGICAL_WARP_THREADS, WARPS>(UNIFORM);
-    Test<LOGICAL_WARP_THREADS, WARPS>(SEQ_INC);
-    Test<LOGICAL_WARP_THREADS, WARPS>(RANDOM);
+    Test<WARPS, LOGICAL_WARP_THREADS>(UNIFORM);
+    Test<WARPS, LOGICAL_WARP_THREADS>(SEQ_INC);
+    Test<WARPS, LOGICAL_WARP_THREADS>(RANDOM);
 }
 
 
@@ -444,8 +689,8 @@ void Test()
 template <int LOGICAL_WARP_THREADS>
 void Test()
 {
-    Test<LOGICAL_WARP_THREADS, 1>();
-    Test<LOGICAL_WARP_THREADS, 2>();
+    Test<1, LOGICAL_WARP_THREADS>();
+    Test<2, LOGICAL_WARP_THREADS>();
 }
 
 
@@ -472,7 +717,8 @@ int main(int argc, char** argv)
     CubDebugExit(args.DeviceInit());
 
     // Quick exclusive test
-    Test<32, int>(UNIFORM, Sum<int>(), CUB_TYPE_STRING(int), 32);
+    TestReduce<1, 32, int>(UNIFORM, Sum<int>(), CUB_TYPE_STRING(int), 32);
+    TestSegmentedReduce<1, 32, int>(UNIFORM, 1, Sum<int>(), CUB_TYPE_STRING(int));
 
     // Test logical warp sizes
     Test<32>();
