@@ -249,6 +249,48 @@ __device__ __forceinline__ unsigned int WarpId()
     return ret;
 }
 
+/**
+ * Returns the warp lane mask of all lanes less than the calling thread
+ */
+__device__ __forceinline__ unsigned int LaneMaskLt()
+{
+    unsigned int ret;
+    asm("mov.u32 %0, %lanemask_lt;" : "=r"(ret) );
+    return ret;
+}
+
+/**
+ * Returns the warp lane mask of all lanes less than or equal to the calling thread
+ */
+__device__ __forceinline__ unsigned int LaneMaskLe()
+{
+    unsigned int ret;
+    asm("mov.u32 %0, %lanemask_le;" : "=r"(ret) );
+    return ret;
+}
+
+/**
+ * Returns the warp lane mask of all lanes greater than the calling thread
+ */
+__device__ __forceinline__ unsigned int LaneMaskGt()
+{
+    unsigned int ret;
+    asm("mov.u32 %0, %lanemask_gt;" : "=r"(ret) );
+    return ret;
+}
+
+/**
+ * Returns the warp lane mask of all lanes greater than or equal to the calling thread
+ */
+__device__ __forceinline__ unsigned int LaneMaskGe()
+{
+    unsigned int ret;
+    asm("mov.u32 %0, %lanemask_ge;" : "=r"(ret) );
+    return ret;
+}
+
+
+
 
 
 /** @} */       // end group UtilModule
