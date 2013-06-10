@@ -1342,10 +1342,10 @@ private:
      ******************************************************************************/
 
     /// Internal blockscan implementation to use
-    typedef BlockScanInternal<SAFE_ALGORITHM> InternalWarpScan;
+    typedef BlockScanInternal<SAFE_ALGORITHM> InternalBlockScan;
 
     /// Shared memory storage layout type for BlockScan
-    typedef typename InternalWarpScan::TempStorage _TempStorage;
+    typedef typename InternalBlockScan::TempStorage _TempStorage;
 
 
     /******************************************************************************
@@ -1443,7 +1443,7 @@ public:
         T               &output)                        ///< [out] Calling thread's output item (may be aliased to \p input)
     {
         T block_aggregate;
-        InternalWarpScan(temp_storage, linear_tid).ExclusiveSum(input, output, block_aggregate);
+        InternalBlockScan(temp_storage, linear_tid).ExclusiveSum(input, output, block_aggregate);
     }
 
 
@@ -1457,7 +1457,7 @@ public:
         T               &output,                        ///< [out] Calling thread's output item (may be aliased to \p input)
         T               &block_aggregate)               ///< [out] Threadblock-wide aggregate reduction of input items
     {
-        InternalWarpScan(temp_storage, linear_tid).ExclusiveSum(input, output, block_aggregate);
+        InternalBlockScan(temp_storage, linear_tid).ExclusiveSum(input, output, block_aggregate);
     }
 
 
@@ -1480,7 +1480,7 @@ public:
         T               &block_aggregate,               ///< [out] Threadblock-wide aggregate reduction of input items (exclusive of the \p block_prefix_op value)
         BlockPrefixOp   &block_prefix_op)               ///< [in-out] <b>[<em>warp</em><sub>0</sub> only]</b> Call-back functor for specifying a threadblock-wide prefix to be applied to all inputs.
     {
-        InternalWarpScan(temp_storage, linear_tid).ExclusiveSum(input, output, block_aggregate, block_prefix_op);
+        InternalBlockScan(temp_storage, linear_tid).ExclusiveSum(input, output, block_aggregate, block_prefix_op);
     }
 
 
@@ -1593,7 +1593,7 @@ public:
         T               &output)                        ///< [out] Calling thread's output item (may be aliased to \p input)
     {
         T block_aggregate;
-        InternalWarpScan(temp_storage, linear_tid).InclusiveSum(input, output, block_aggregate);
+        InternalBlockScan(temp_storage, linear_tid).InclusiveSum(input, output, block_aggregate);
     }
 
 
@@ -1607,7 +1607,7 @@ public:
         T               &output,                        ///< [out] Calling thread's output item (may be aliased to \p input)
         T               &block_aggregate)               ///< [out] Threadblock-wide aggregate reduction of input items
     {
-        InternalWarpScan(temp_storage, linear_tid).InclusiveSum(input, output, block_aggregate);
+        InternalBlockScan(temp_storage, linear_tid).InclusiveSum(input, output, block_aggregate);
     }
 
 
@@ -1631,7 +1631,7 @@ public:
         T               &block_aggregate,               ///< [out] Threadblock-wide aggregate reduction of input items (exclusive of the \p block_prefix_op value)
         BlockPrefixOp   &block_prefix_op)               ///< [in-out] <b>[<em>warp</em><sub>0</sub> only]</b> Call-back functor for specifying a threadblock-wide prefix to be applied to all inputs.
     {
-        InternalWarpScan(temp_storage, linear_tid).InclusiveSum(input, output, block_aggregate, block_prefix_op);
+        InternalBlockScan(temp_storage, linear_tid).InclusiveSum(input, output, block_aggregate, block_prefix_op);
     }
 
 
@@ -1770,7 +1770,7 @@ public:
         ScanOp          scan_op)                        ///< [in] Binary scan operator
     {
         T block_aggregate;
-        InternalWarpScan(temp_storage, linear_tid).ExclusiveScan(input, output, identity, scan_op, block_aggregate);
+        InternalBlockScan(temp_storage, linear_tid).ExclusiveScan(input, output, identity, scan_op, block_aggregate);
     }
 
 
@@ -1789,7 +1789,7 @@ public:
         ScanOp          scan_op,            ///< [in] Binary scan operator
         T               &block_aggregate)   ///< [out] Threadblock-wide aggregate reduction of input items
     {
-        InternalWarpScan(temp_storage, linear_tid).ExclusiveScan(input, output, identity, scan_op, block_aggregate);
+        InternalBlockScan(temp_storage, linear_tid).ExclusiveScan(input, output, identity, scan_op, block_aggregate);
     }
 
 
@@ -1817,7 +1817,7 @@ public:
         T               &block_aggregate,               ///< [out] Threadblock-wide aggregate reduction of input items (exclusive of the \p block_prefix_op value)
         BlockPrefixOp   &block_prefix_op)               ///< [in-out] <b>[<em>warp</em><sub>0</sub> only]</b> Call-back functor for specifying a threadblock-wide prefix to be applied to all inputs.
     {
-        InternalWarpScan(temp_storage, linear_tid).ExclusiveScan(input, output, identity, scan_op, block_aggregate, block_prefix_op);
+        InternalBlockScan(temp_storage, linear_tid).ExclusiveScan(input, output, identity, scan_op, block_aggregate, block_prefix_op);
     }
 
 
@@ -1943,7 +1943,7 @@ public:
         ScanOp          scan_op)                        ///< [in] Binary scan operator
     {
         T block_aggregate;
-        InternalWarpScan(temp_storage, linear_tid).ExclusiveScan(input, output, scan_op, block_aggregate);
+        InternalBlockScan(temp_storage, linear_tid).ExclusiveScan(input, output, scan_op, block_aggregate);
     }
 
 
@@ -1961,7 +1961,7 @@ public:
         ScanOp          scan_op,                        ///< [in] Binary scan operator
         T               &block_aggregate)               ///< [out] Threadblock-wide aggregate reduction of input items
     {
-        InternalWarpScan(temp_storage, linear_tid).ExclusiveScan(input, output, scan_op, block_aggregate);
+        InternalBlockScan(temp_storage, linear_tid).ExclusiveScan(input, output, scan_op, block_aggregate);
     }
 
 
@@ -1988,7 +1988,7 @@ public:
         T               &block_aggregate,               ///< [out] Threadblock-wide aggregate reduction of input items (exclusive of the \p block_prefix_op value)
         BlockPrefixOp   &block_prefix_op)               ///< [in-out] <b>[<em>warp</em><sub>0</sub> only]</b> Call-back functor for specifying a threadblock-wide prefix to be applied to all inputs.
     {
-        InternalWarpScan(temp_storage, linear_tid).ExclusiveScan(input, output, scan_op, block_aggregate, block_prefix_op);
+        InternalBlockScan(temp_storage, linear_tid).ExclusiveScan(input, output, scan_op, block_aggregate, block_prefix_op);
     }
 
 
@@ -2131,7 +2131,7 @@ public:
         ScanOp          scan_op,                        ///< [in] Binary scan operator
         T               &block_aggregate)               ///< [out] Threadblock-wide aggregate reduction of input items
     {
-        InternalWarpScan(temp_storage, linear_tid).InclusiveScan(input, output, scan_op, block_aggregate);
+        InternalBlockScan(temp_storage, linear_tid).InclusiveScan(input, output, scan_op, block_aggregate);
     }
 
 
@@ -2158,7 +2158,7 @@ public:
         T               &block_aggregate,               ///< [out] Threadblock-wide aggregate reduction of input items (exclusive of the \p block_prefix_op value)
         BlockPrefixOp   &block_prefix_op)               ///< [in-out] <b>[<em>warp</em><sub>0</sub> only]</b> Call-back functor for specifying a threadblock-wide prefix to be applied to all inputs.
     {
-        InternalWarpScan(temp_storage, linear_tid).InclusiveScan(input, output, scan_op, block_aggregate, block_prefix_op);
+        InternalBlockScan(temp_storage, linear_tid).InclusiveScan(input, output, scan_op, block_aggregate, block_prefix_op);
     }
 
 

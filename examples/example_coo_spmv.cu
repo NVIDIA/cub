@@ -39,10 +39,10 @@
 #include <algorithm>
 #include <stdio.h>
 
-#include <cuda_runtime.h>
-
-#include "../test/test_util.h"
 #include <cub/cub.cuh>
+
+#include "coo_graph.cuh"
+#include "../test/test_util.h"
 
 using namespace cub;
 using namespace std;
@@ -57,367 +57,6 @@ int     g_iterations    = 1;
 
 
 //---------------------------------------------------------------------
-// Graph building types and utilities
-//---------------------------------------------------------------------
-
-/**
- * COO graph type.  A COO graph is just a vector of edge tuples.
- */
-template<typename VertexId, typename Value>
-struct CooGraph
-{
-    /**
-     * COO edge tuple.  (A COO graph is just a vector of these.)
-     */
-    struct CooTuple
-    {
-        VertexId            row;
-        VertexId            col;
-        Value               val;
-
-        CooTuple() {}
-        CooTuple(VertexId row, VertexId col) : row(row), col(col) {}
-        CooTuple(VertexId row, VertexId col, Value val) : row(row), col(col), val(val) {}
-    };
-
-    /**
-     * Comparator for sorting COO sparse format edges
-     */
-    static bool CooTupleCompare (const CooTuple &elem1, const CooTuple &elem2)
-    {
-        if (elem1.row < elem2.row)
-        {
-            return true;
-        }
-        else if ((elem1.row == elem2.row) && (elem1.col < elem2.col))
-        {
-            return true;
-        }
-
-        return false;
-    }
-
-
-    /**
-     * Fields
-     */
-    int                 row_dim;        // Num rows
-    int                 col_dim;        // Num cols
-    vector<CooTuple>    coo_tuples;     // Non-zero entries
-
-
-    /**
-     * CooGraph ostream operator
-     */
-    friend std::ostream& operator<<(std::ostream& os, const CooGraph& coo_graph)
-    {
-        os << "Sparse COO (" << coo_graph.row_dim << " rows, " << coo_graph.col_dim << " cols, " << coo_graph.coo_tuples.size() << " nonzeros):\n";
-        os << "Ordinal, Row, Col, Val\n";
-        for (int i = 0; i < coo_graph.coo_tuples.size(); i++)
-        {
-            os << i << ',' << coo_graph.coo_tuples[i].row << ',' << coo_graph.coo_tuples[i].col << ',' << coo_graph.coo_tuples[i].val << "\n";
-        }
-        return os;
-    }
-
-    /**
-     * Update graph dims based upon COO tuples
-     */
-    void UpdateDims()
-    {
-        row_dim = -1;
-        col_dim = -1;
-
-        for (int i = 0; i < coo_tuples.size(); i++)
-        {
-            row_dim = CUB_MAX(row_dim, coo_tuples[i].row);
-            col_dim = CUB_MAX(col_dim, coo_tuples[i].col);
-        }
-
-        row_dim++;
-        col_dim++;
-    }
-
-    /**
-     * Builds a METIS COO sparse from the given file.
-     */
-    int InitMetis(const string &metis_filename)
-    {
-        coo_tuples.clear();
-
-        // Read from file
-        FILE *f_in = fopen(metis_filename.c_str(), "r");
-        if (!f_in) return -1;
-
-        int edges_read = -1;
-        int edges = 0;
-
-        char line[1024];
-
-        while(true)
-        {
-            if (fscanf(f_in, "%[^\n]\n", line) <= 0)
-            {
-                break;
-            }
-            if (line[0] == '%')
-            {
-                // Comment
-            }
-            else if (edges_read == -1)
-            {
-                // Problem description
-                long long ll_nodes_x, ll_nodes_y, ll_edges;
-                if (sscanf(line, "%lld %lld %lld", &ll_nodes_x, &ll_nodes_y, &ll_edges) != 3)
-                {
-                    fprintf(stderr, "Error parsing MARKET graph: invalid problem description\n");
-                    return -1;
-                }
-
-                if (ll_nodes_x != ll_nodes_y)
-                {
-                    fprintf(stderr, "Error parsing MARKET graph: not square (%lld, %lld)\n", ll_nodes_x, ll_nodes_y);
-                    return -1;
-                }
-
-                edges = ll_edges;
-
-                printf(" (%lld nodes, %lld directed edges)... ",
-                    (unsigned long long) ll_nodes_x,
-                    (unsigned long long) ll_edges);
-                fflush(stdout);
-
-                // Allocate coo graph
-                coo_tuples.reserve(edges);
-                edges_read++;
-            }
-            else
-            {
-                if (edges_read >= edges)
-                {
-                    fprintf(stderr, "Error parsing MARKET graph: encountered more than %d edges\n", edges);
-                    fclose(f_in);
-                    return -1;
-                }
-
-                long long ll_row, ll_col;
-                float val;
-                if (sscanf(line, "%lld %lld %f", &ll_col, &ll_row, &val) != 3)
-                {
-                    fprintf(stderr, "Error parsing MARKET graph: badly formed edge\n", edges);
-                    fclose(f_in);
-                    return -1;
-                }
-
-                ll_row -= 1;
-                ll_col -= 1;
-
-                coo_tuples.push_back(CooTuple(ll_row, ll_col, val));    // zero-based array
-                edges_read++;
-            }
-        }
-
-        if (edges_read != edges)
-        {
-            fprintf(stderr, "Error parsing MARKET graph: only %d/%d edges read\n", edges_read, edges);
-            fclose(f_in);
-            return -1;
-        }
-
-        // Sort by rows, then columns, update dims
-        std::stable_sort(coo_tuples.begin(), coo_tuples.end(), CooTupleCompare);
-        UpdateDims();
-
-        fclose(f_in);
-
-        return 0;
-    }
-
-
-    /**
-     * Builds a wheel COO sparse graph having spokes spokes.
-     */
-    int InitWheel(VertexId spokes)
-    {
-        VertexId edges  = spokes + (spokes - 1);
-
-        coo_tuples.clear();
-        coo_tuples.reserve(edges);
-
-        // Add spoke edges
-        for (VertexId i = 0; i < spokes; i++)
-        {
-            coo_tuples.push_back(CooTuple(0, i + 1));
-        }
-
-        // Add rim
-        for (VertexId i = 0; i < spokes; i++)
-        {
-            VertexId dest = (i + 1) % spokes;
-            coo_tuples.push_back(CooTuple(i + 1, dest + 1));
-        }
-
-        // Sort by rows, then columns, update dims
-        std::stable_sort(coo_tuples.begin(), coo_tuples.end(), CooTupleCompare);
-        UpdateDims();
-
-        // Assign arbitrary values to graph vertices
-        for (int i = 0; i < coo_tuples.size(); i++)
-        {
-            coo_tuples[i].val = i % 21;
-        }
-
-        return 0;
-    }
-
-
-    /**
-     * Builds a square 3D grid COO sparse graph.  Interior nodes have degree 7 when including
-     * a self-loop.  Values are unintialized, coo_tuples are sorted.
-     */
-    int InitGrid3d(VertexId width, bool self_loop)
-    {
-        VertexId interior_nodes        = (width - 2) * (width - 2) * (width - 2);
-        VertexId face_nodes            = (width - 2) * (width - 2) * 6;
-        VertexId edge_nodes            = (width - 2) * 12;
-        VertexId corner_nodes          = 8;
-        VertexId nodes                 = width * width * width;
-        VertexId edges                 = (interior_nodes * 6) + (face_nodes * 5) + (edge_nodes * 4) + (corner_nodes * 3);
-
-        if (self_loop) edges += nodes;
-
-        coo_tuples.clear();
-        coo_tuples.reserve(edges);
-
-        for (VertexId i = 0; i < width; i++) {
-            for (VertexId j = 0; j < width; j++) {
-                for (VertexId k = 0; k < width; k++) {
-
-                    VertexId me = (i * width * width) + (j * width) + k;
-
-                    VertexId neighbor = (i * width * width) + (j * width) + (k - 1);
-                    if (k - 1 >= 0) {
-                        coo_tuples.push_back(CooTuple(me, neighbor));
-                    }
-
-                    neighbor = (i * width * width) + (j * width) + (k + 1);
-                    if (k + 1 < width) {
-                        coo_tuples.push_back(CooTuple(me, neighbor));
-                    }
-
-                    neighbor = (i * width * width) + ((j - 1) * width) + k;
-                    if (j - 1 >= 0) {
-                        coo_tuples.push_back(CooTuple(me, neighbor));
-                    }
-
-                    neighbor = (i * width * width) + ((j + 1) * width) + k;
-                    if (j + 1 < width) {
-                        coo_tuples.push_back(CooTuple(me, neighbor));
-                    }
-
-                    neighbor = ((i - 1) * width * width) + (j * width) + k;
-                    if (i - 1 >= 0) {
-                        coo_tuples.push_back(CooTuple(me, neighbor));
-                    }
-
-                    neighbor = ((i + 1) * width * width) + (j * width) + k;
-                    if (i + 1 < width) {
-                        coo_tuples.push_back(CooTuple(me, neighbor));
-                    }
-
-                    if (self_loop)
-                    {
-                        neighbor = me;
-                        coo_tuples.push_back(CooTuple(me, neighbor));
-                    }
-                }
-            }
-        }
-
-        // Sort by rows, then columns, update dims
-        std::stable_sort(coo_tuples.begin(), coo_tuples.end(), CooTupleCompare);
-        UpdateDims();
-
-        // Assign arbitrary values to graph vertices
-        for (int i = 0; i < coo_tuples.size(); i++)
-        {
-            coo_tuples[i].val = i % 21;
-        }
-
-        return 0;
-    }
-
-
-    /**
-     * Builds a square 2D grid CSR graph.  Interior nodes have degree 5 when including
-     * a self-loop.
-     *
-     * Returns 0 on success, 1 on failure.
-     */
-    int InitGrid2d(VertexId width, bool self_loop)
-    {
-        VertexId interior_nodes         = (width - 2) * (width - 2);
-        VertexId edge_nodes             = (width - 2) * 4;
-        VertexId corner_nodes           = 4;
-        VertexId nodes                  = width * width;
-        VertexId edges                  = (interior_nodes * 4) + (edge_nodes * 3) + (corner_nodes * 2);
-
-        if (self_loop) edges += nodes;
-
-        coo_tuples.clear();
-        coo_tuples.reserve(edges);
-
-        for (VertexId j = 0; j < width; j++) {
-            for (VertexId k = 0; k < width; k++) {
-
-                VertexId me = (j * width) + k;
-
-                VertexId neighbor = (j * width) + (k - 1);
-                if (k - 1 >= 0) {
-                    coo_tuples.push_back(CooTuple(me, neighbor));
-                }
-
-                neighbor = (j * width) + (k + 1);
-                if (k + 1 < width) {
-                    coo_tuples.push_back(CooTuple(me, neighbor));
-                }
-
-                neighbor = ((j - 1) * width) + k;
-                if (j - 1 >= 0) {
-                    coo_tuples.push_back(CooTuple(me, neighbor));
-                }
-
-                neighbor = ((j + 1) * width) + k;
-                if (j + 1 < width) {
-                    coo_tuples.push_back(CooTuple(me, neighbor));
-                }
-
-                if (self_loop)
-                {
-                    neighbor = me;
-                    coo_tuples.push_back(CooTuple(me, neighbor));
-                }
-            }
-        }
-
-        // Sort by rows, then columns, update dims
-        std::stable_sort(coo_tuples.begin(), coo_tuples.end(), CooTupleCompare);
-        UpdateDims();
-
-        // Assign arbitrary values to graph vertices
-        for (int i = 0; i < coo_tuples.size(); i++)
-        {
-            coo_tuples[i].val = i % 21;
-        }
-
-        return 0;
-    }
-};
-
-
-
-
-//---------------------------------------------------------------------
 // GPU types and device functions
 //---------------------------------------------------------------------
 
@@ -429,33 +68,24 @@ struct PartialSum
     VertexId    row;            /// Row-id
 };
 
-/// Load (simply defer to loading individual items)
-template <PtxLoadModifier MODIFIER, typename VertexId, typename Value>
-__device__ __forceinline__ PartialSum ThreadLoad(PartialSum<VertexId, VertexId> *ptr)
-{
-    PartialSum<VertexId, VertexId> retval;
-    retval.partial = cub::ThreadLoad<MODIFIER>(&(ptr->partial));
-    retval.row = cub::ThreadLoad<MODIFIER>(&(ptr->row));
-    return retval;
-}
 
- /// Store (simply defer to storing individual items)
-template <PtxLoadModifier MODIFIER, typename VertexId>
-__device__ __forceinline__ void ThreadStore(
-    PartialSum<VertexId, VertexId> *ptr,
-    PartialSum<VertexId, VertexId> val)
+/// Pairing of dot product partial sums and corresponding row-id (specialized for int32 vertex ids and double values)
+template <>
+struct PartialSum<int, double>
 {
-    // Always write partial first
-    cub::ThreadStore<MODIFIER>(&(ptr->partial), val.partial);
-    cub::ThreadStore<MODIFIER>(&(ptr->row), val.row);
-}
+    long long   row;            /// Row-id
+    double      partial;        /// PartialSum sum
+};
 
-/// Templated Texture reference type for multiplicand vector
+/// Templated texture reference type for multiplicand vector
 template <typename Value>
 struct TexVector
 {
+    // Texture type to actually use (e.g., because CUDA doesn't load doubles as texture items)
+    typedef typename If<(Equals<Value, double>::VALUE), uint2, Value>::Type CastType;
+
     // Texture reference type
-    typedef texture<Value, cudaTextureType1D, cudaReadModeElementType> TexRef;
+    typedef texture<CastType, cudaTextureType1D, cudaReadModeElementType> TexRef;
 
     static TexRef ref;
 
@@ -464,11 +94,11 @@ struct TexVector
      */
     static void BindTexture(void *d_in, int elements)
     {
-        cudaChannelFormatDesc tex_desc = cudaCreateChannelDesc<Value>();
+        cudaChannelFormatDesc tex_desc = cudaCreateChannelDesc<CastType>();
         if (d_in)
         {
             size_t offset;
-            size_t bytes = sizeof(Value) * elements;
+            size_t bytes = sizeof(CastType) * elements;
             CubDebugExit(cudaBindTexture(&offset, ref, d_in, tex_desc, bytes));
         }
     }
@@ -479,6 +109,16 @@ struct TexVector
     static void UnbindTexture()
     {
         CubDebugExit(cudaUnbindTexture(ref));
+    }
+
+    /**
+     * Load
+     */
+    static __device__ __forceinline__ Value Load(int offset)
+    {
+        Value output;
+        reinterpret_cast<typename TexVector<Value>::CastType &>(output) = tex1Dfetch(TexVector<Value>::ref, offset);
+        return output;
     }
 };
 
@@ -585,24 +225,26 @@ struct SpmvBlock
     typedef PartialSum<VertexId, Value> PartialSum;
 
     // Parameterized CUB types for the parallel execution context
-    typedef BlockScan<PartialSum, BLOCK_THREADS>                        BlockScan;
-    typedef BlockExchange<VertexId, BLOCK_THREADS, ITEMS_PER_THREAD>    BlockExchangeRows;
-    typedef BlockExchange<Value, BLOCK_THREADS, ITEMS_PER_THREAD>       BlockExchangeValues;
-    typedef BlockDiscontinuity<HeadFlag, BLOCK_THREADS>                 BlockDiscontinuity;
-    typedef BlockReduce<PartialSum, BLOCK_THREADS>                      BlockReduce;
+    typedef BlockScan<PartialSum, BLOCK_THREADS, BLOCK_SCAN_RAKING_MEMOIZE>         BlockScan;
+    typedef BlockExchange<VertexId, BLOCK_THREADS, ITEMS_PER_THREAD, true>        BlockExchangeRows;
+    typedef BlockExchange<Value, BLOCK_THREADS, ITEMS_PER_THREAD, true>           BlockExchangeValues;
+    typedef BlockDiscontinuity<HeadFlag, BLOCK_THREADS>                     BlockDiscontinuity;
+    typedef BlockReduce<PartialSum, BLOCK_THREADS>                          BlockReduce;
 
     // Shared memory type for this threadblock
     struct TempStorage
     {
         union
         {
-            typename BlockExchangeRows::TempStorage   exchange_rows;      // Smem needed for striped->blocked transpose
-            typename BlockExchangeValues::TempStorage exchange_values;    // Smem needed for striped->blocked transpose
             struct {
-                typename BlockScan::TempStorage           scan;               // Smem needed for reduce-value-by-row scan
-                typename BlockDiscontinuity::TempStorage  discontinuity;      // Smem needed for head-flagging
+                typename BlockExchangeRows::TempStorage     exchange_rows;      // Smem needed for striped->blocked transpose
+                typename BlockExchangeValues::TempStorage   exchange_values;    // Smem needed for striped->blocked transpose
             };
-            typename BlockReduce::TempStorage         reduce;             // Smem needed for min-finding reduction
+            struct {
+                typename BlockScan::TempStorage             scan;               // Smem needed for reduce-value-by-row scan
+                typename BlockDiscontinuity::TempStorage    discontinuity;      // Smem needed for head-flagging
+            };
+            typename BlockReduce::TempStorage               reduce;             // Smem needed for min-finding reduction
         };
 
         VertexId        last_block_row;
@@ -658,7 +300,11 @@ struct SpmvBlock
         #pragma unroll
         for (int ITEM = 0; ITEM < ITEMS_PER_THREAD; ITEM++)
         {
-            values[ITEM] *= tex1Dfetch(TexVector<Value>::ref, columns[ITEM]);
+#if CUB_PTX_ARCH >= 350
+            values[ITEM] *= ThreadLoad<LOAD_LDG>(d_vector + columns[ITEM]);
+#else
+            values[ITEM] *= TexVector<Value>::Load(columns[ITEM]);
+#endif
         }
 
         // Load a threadblock-striped tile of A (sparse row-ids, column-ids, and values)
@@ -676,9 +322,6 @@ struct SpmvBlock
 
         // Transpose from threadblock-striped to threadblock-blocked arrangement
         BlockExchangeValues::StripedToBlocked(temp_storage.exchange_values, values);
-
-        // Barrier for smem reuse and coherence
-        __syncthreads();
 
         // Transpose from threadblock-striped to threadblock-blocked arrangement
         BlockExchangeRows::StripedToBlocked(temp_storage.exchange_rows, rows);
@@ -705,8 +348,7 @@ struct SpmvBlock
 
         // Compute the exclusive scan of partial_sums
         PartialSum block_aggregate;         // Threadblock-wide aggregate in thread0 (unused)
-        BlockScan::ExclusiveScan(
-            temp_storage.scan,
+        BlockScan(temp_storage.scan).ExclusiveScan(
             partial_sums,
             partial_sums,                   // (Out)
             temp_storage.identity,
@@ -745,8 +387,7 @@ struct SpmvBlock
             // Barrier for smem reuse and coherence
             __syncthreads();
 
-            PartialSum candidate = BlockReduce::Reduce(
-                temp_storage.reduce,
+            PartialSum candidate = BlockReduce(temp_storage.reduce).Reduce(
                 partial_sums,
                 MinRowOp());
 
@@ -980,8 +621,7 @@ struct FinalizeSpmvBlock
 
         // Compute the exclusive scan of partial_sums
         PartialSum block_aggregate;         // Threadblock-wide aggregate in thread0 (unused)
-        BlockScan::ExclusiveScan(
-            temp_storage.scan,
+        BlockScan(temp_storage.scan).ExclusiveScan(
             partial_sums,
             partial_sums,                   // (Out)
             temp_storage.identity,
@@ -1252,6 +892,8 @@ void TestDevice(
     }
     fflush(stdout);
 
+    CubDebugExit(cudaDeviceSetSharedMemConfig(cudaSharedMemBankSizeEightByte));
+
     // Run kernel
     GpuTimer gpu_timer;
     float elapsed_millis = 0.0;
@@ -1358,9 +1000,9 @@ void AssignVectorValues(Value *vector, int col_dim)
  */
 int main(int argc, char** argv)
 {
-    // Graph of uint32s as vertex ids, floats as values
+    // Graph of uint32s as vertex ids, double as values
     typedef int                 VertexId;
-    typedef float               Value;
+    typedef double              Value;
 
     // Initialize command line
     CommandLineArgs args(argc, argv);
@@ -1374,6 +1016,7 @@ int main(int argc, char** argv)
             "\t--type=wheel --spokes=<spokes>\n"
             "\t--type=grid2d --width=<width> [--no-self-loops]\n"
             "\t--type=grid3d --width=<width> [--no-self-loops]\n"
+            "\t--type=metis --file=<file>\n"
             "\t--type=market --file=<file>\n"
             "\n", argv[0]);
         exit(0);
@@ -1413,12 +1056,19 @@ int main(int argc, char** argv)
         printf("Generating wheel spokes(%d)... ", spokes); fflush(stdout);
         if (coo_graph.InitWheel(spokes)) exit(1);
     }
+    else if (type == string("metis"))
+    {
+        string filename;
+        args.GetCmdLineArgument("file", filename);
+        printf("Generating METIS for %s... ", filename.c_str()); fflush(stdout);
+        if (coo_graph.InitMetis(filename)) exit(1);
+    }
     else if (type == string("market"))
     {
         string filename;
         args.GetCmdLineArgument("file", filename);
         printf("Generating MARKET for %s... ", filename.c_str()); fflush(stdout);
-        if (coo_graph.InitMetis(filename)) exit(1);
+        if (coo_graph.InitMarket(filename)) exit(1);
     }
     else
     {
@@ -1460,8 +1110,8 @@ int main(int argc, char** argv)
 
     enum
     {
-        COO_BLOCK_THREADS           = 128,
-        COO_ITEMS_PER_THREAD        = 10,
+        COO_BLOCK_THREADS           = 64,
+        COO_ITEMS_PER_THREAD        = 15,
         COO_SUBSCRIPTION_FACTOR     = 4,
         FINALIZE_BLOCK_THREADS      = 256,
         FINALIZE_ITEMS_PER_THREAD   = 4,
