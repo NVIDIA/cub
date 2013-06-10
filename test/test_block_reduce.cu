@@ -69,7 +69,10 @@ struct DeviceTest
         T                                   (&data)[ITEMS_PER_THREAD],
         ReductionOp                         &reduction_op)
     {
-        return BlockReduce::Reduce(temp_storage, data, reduction_op);
+        if (ITEMS_PER_THREAD == 1)
+            return BlockReduce(temp_storage).Reduce(data[0], reduction_op);
+        else
+            return BlockReduce(temp_storage).Reduce(data, reduction_op);
     }
 
     template < typename BlockReduce>
@@ -79,7 +82,7 @@ struct DeviceTest
         ReductionOp                         &reduction_op,
         int                                 valid_threads)
     {
-        return BlockReduce::Reduce(temp_storage, data, reduction_op, valid_threads);
+        return BlockReduce(temp_storage).Reduce(data, reduction_op, valid_threads);
     }
 };
 
@@ -98,7 +101,10 @@ struct DeviceTest<T, Sum<T>, true>
         T                                   (&data)[ITEMS_PER_THREAD],
         Sum<T>                              &reduction_op)
     {
-        return BlockReduce::Sum(temp_storage, data);
+        if (ITEMS_PER_THREAD == 1)
+            return BlockReduce(temp_storage).Sum(data[0]);
+        else
+            return BlockReduce(temp_storage).Sum(data);
     }
 
     template <typename BlockReduce>
@@ -108,7 +114,7 @@ struct DeviceTest<T, Sum<T>, true>
         Sum<T>                              &reduction_op,
         int                                 valid_threads)
     {
-        return BlockReduce::Sum(temp_storage, data, valid_threads);
+        return BlockReduce(temp_storage).Sum(data, valid_threads);
     }
 };
 
@@ -529,7 +535,6 @@ int main(int argc, char** argv)
         printf("%s "
             "[--device=<device-id>] "
             "[--v] "
-            "[--quick]"
             "\n", argv[0]);
         exit(0);
     }
@@ -537,35 +542,30 @@ int main(int argc, char** argv)
     // Initialize device
     CubDebugExit(args.DeviceInit());
 
-    if (quick)
-    {
-        // Quick test
-        typedef int T;
-        TestFullTile<BLOCK_REDUCE_RAKING, 128, 4, T>(UNIFORM, 1, Sum<T>(), CUB_TYPE_STRING(T));
-    }
-    else
-    {
-        // primitives
-        Test<char>(CUB_TYPE_STRING(char));
-        Test<short>(CUB_TYPE_STRING(short));
-        Test<int>(CUB_TYPE_STRING(int));
-        Test<long long>(CUB_TYPE_STRING(long long));
+    // Quick test
+    typedef int T;
+    TestFullTile<BLOCK_REDUCE_RAKING, 128, 4, T>(UNIFORM, 1, Sum<T>(), CUB_TYPE_STRING(T));
 
-        // vector types
-        Test<char2>(CUB_TYPE_STRING(char2));
-        Test<short2>(CUB_TYPE_STRING(short2));
-        Test<int2>(CUB_TYPE_STRING(int2));
-        Test<longlong2>(CUB_TYPE_STRING(longlong2));
+    // primitives
+    Test<char>(CUB_TYPE_STRING(char));
+    Test<short>(CUB_TYPE_STRING(short));
+    Test<int>(CUB_TYPE_STRING(int));
+    Test<long long>(CUB_TYPE_STRING(long long));
 
-        Test<char4>(CUB_TYPE_STRING(char4));
-        Test<short4>(CUB_TYPE_STRING(short4));
-        Test<int4>(CUB_TYPE_STRING(int4));
-        Test<longlong4>(CUB_TYPE_STRING(longlong4));
+    // vector types
+    Test<char2>(CUB_TYPE_STRING(char2));
+    Test<short2>(CUB_TYPE_STRING(short2));
+    Test<int2>(CUB_TYPE_STRING(int2));
+    Test<longlong2>(CUB_TYPE_STRING(longlong2));
 
-        // Complex types
-        Test<TestFoo>(CUB_TYPE_STRING(TestFoo));
-        Test<TestBar>(CUB_TYPE_STRING(TestBar));
-    }
+    Test<char4>(CUB_TYPE_STRING(char4));
+    Test<short4>(CUB_TYPE_STRING(short4));
+    Test<int4>(CUB_TYPE_STRING(int4));
+    Test<longlong4>(CUB_TYPE_STRING(longlong4));
+
+    // Complex types
+    Test<TestFoo>(CUB_TYPE_STRING(TestFoo));
+    Test<TestBar>(CUB_TYPE_STRING(TestBar));
 
     return 0;
 }
