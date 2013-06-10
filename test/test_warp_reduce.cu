@@ -651,6 +651,9 @@ void Test(int gen_mode)
     Test<WARPS, LOGICAL_WARP_THREADS, unsigned int>(       gen_mode, Max<unsigned int>(),          CUB_TYPE_STRING(unsigned int));
     Test<WARPS, LOGICAL_WARP_THREADS, unsigned long long>( gen_mode, Max<unsigned long long>(),    CUB_TYPE_STRING(unsigned long long));
 
+    // vec-1
+    Test<WARPS, LOGICAL_WARP_THREADS, uchar1>(             gen_mode, Sum<uchar1>(),                CUB_TYPE_STRING(uchar1));
+
     // vec-2
     Test<WARPS, LOGICAL_WARP_THREADS, uchar2>(             gen_mode, Sum<uchar2>(),                CUB_TYPE_STRING(uchar2));
     Test<WARPS, LOGICAL_WARP_THREADS, ushort2>(            gen_mode, Sum<ushort2>(),               CUB_TYPE_STRING(ushort2));
