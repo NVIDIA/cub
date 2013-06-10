@@ -59,6 +59,37 @@ else
 	CNP_SUFFIX = nocnp
 endif
 
+#-------------------------------------------------------------------------------
+# SM Arch
+#-------------------------------------------------------------------------------
+
+# Architecture(s) to compile for, e.g., "sm=200,300,350" (SM20 by default).  
+COMMA = ,
+ifdef sm
+	SM_ARCH = $(subst $(COMMA),-,$(sm))
+else 
+    SM_ARCH = 200
+endif
+
+ifeq (350, $(findstring 350, $(SM_ARCH)))
+    SM_TARGETS += -gencode=arch=compute_35,code=\"sm_35,compute_35\" 
+endif
+ifeq (300, $(findstring 300, $(SM_ARCH)))
+    SM_TARGETS += -gencode=arch=compute_30,code=\"sm_30,compute_30\"
+endif
+ifeq (200, $(findstring 200, $(SM_ARCH)))
+    SM_TARGETS += -gencode=arch=compute_20,code=\"sm_20,compute_20\"
+endif
+ifeq (130, $(findstring 130, $(SM_ARCH)))
+    SM_TARGETS += -gencode=arch=compute_13,code=\"sm_13,compute_13\" 
+endif
+ifeq (110, $(findstring 110, $(SM_ARCH)))
+    SM_TARGETS += -gencode=arch=compute_11,code=\"sm_11,compute_11\" 
+endif
+ifeq (100, $(findstring 100, $(SM_ARCH)))
+    SM_TARGETS += -gencode=arch=compute_10,code=\"sm_10,compute_10\" 
+endif
+
 
 #-------------------------------------------------------------------------------
 # Compiler Flags
@@ -66,6 +97,18 @@ endif
 
 # Default flags: verbose kernel properties (regs, smem, cmem, etc.); runtimes for compilation phases 
 NVCCFLAGS += -Xptxas -v -Xcudafe -\#
+
+ifeq (WIN_NT, $(findstring WIN_NT, $(OSUPPER)))
+    # For MSVC
+    # Disable excess x86 floating point precision that can lead to results being labeled incorrectly
+    NVCCFLAGS += -Xcompiler /fp:strict
+    # Help the compiler/linker work with huge numbers of kernels on Windows
+	NVCCFLAGS += -Xcompiler /bigobj -Xcompiler /Zm500
+else
+    # For g++
+    # Disable excess x86 floating point precision that can lead to results being labeled incorrectly
+    NVCCFLAGS += -Xcompiler -ffloat-store
+endif
 
 # 32/64-bit (32-bit device pointers by default) 
 ifneq ($(force64), 1)
@@ -106,36 +149,6 @@ endif
 # Suffix to append to each binary
 SUFFIX = sm$(SM_ARCH)_$(PTX_SUFFIX)_$(NVCC_VERSION)_$(ABI_SUFFIX)_$(CNP_SUFFIX)_$(CPU_ARCH_SUFFIX)
 
-
-#-------------------------------------------------------------------------------
-# SM Arch
-#-------------------------------------------------------------------------------
-
-# Architecture(s) to compile for, e.g., "sm=200,300,350" (SM20 by default).  
-ifdef sm
-	SM_ARCH = $(sm)
-else 
-    SM_ARCH = 200
-endif
-
-ifeq (350, $(findstring 350, $(SM_ARCH)))
-    SM_TARGETS += -gencode=arch=compute_35,code=\"sm_35,compute_35\" 
-endif
-ifeq (300, $(findstring 300, $(SM_ARCH)))
-    SM_TARGETS += -gencode=arch=compute_30,code=\"sm_30,compute_30\"
-endif
-ifeq (200, $(findstring 200, $(SM_ARCH)))
-    SM_TARGETS += -gencode=arch=compute_20,code=\"sm_20,compute_20\"
-endif
-ifeq (130, $(findstring 130, $(SM_ARCH)))
-    SM_TARGETS += -gencode=arch=compute_13,code=\"sm_13,compute_13\" 
-endif
-ifeq (110, $(findstring 110, $(SM_ARCH)))
-    SM_TARGETS += -gencode=arch=compute_11,code=\"sm_11,compute_11\" 
-endif
-ifeq (100, $(findstring 100, $(SM_ARCH)))
-    SM_TARGETS += -gencode=arch=compute_10,code=\"sm_10,compute_10\" 
-endif
 
 
 #-------------------------------------------------------------------------------

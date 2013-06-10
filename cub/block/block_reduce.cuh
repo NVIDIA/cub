@@ -234,7 +234,7 @@ private:
         typedef BlockRakingLayout<T, BLOCK_THREADS, 1> BlockRakingLayout;
 
         ///  WarpReduce utility type
-        typedef typename WarpReduce<T, 1, BlockRakingLayout::RAKING_THREADS>::Internal WarpReduce;
+        typedef typename WarpReduce<T, 1, BlockRakingLayout::RAKING_THREADS>::InternalWarpReduce WarpReduce;
 
         /// Constants
         enum
@@ -265,20 +265,33 @@ private:
         };
 
 
+        // Thread fields
+        TempStorage &temp_storage;
+        int linear_tid;
+
+
+        /// Constructor
+        __device__ __forceinline__ BlockReduceInternal(
+            TempStorage &temp_storage,
+            int linear_tid)
+        :
+            temp_storage(temp_storage),
+            linear_tid(linear_tid)
+        {}
+
+
         /// Computes a threadblock-wide reduction using addition (+) as the reduction operator. The first num_valid threads each contribute one reduction partial.  The return value is only valid for thread<sub>0</sub>.
         template <bool FULL_TILE>
-        static __device__ __forceinline__ T Sum(
-            TempStorage         &temp_storage,      ///< [in] Reference to shared memory allocation having layout type TempStorage
+        __device__ __forceinline__ T Sum(
             T                   partial,            ///< [in] Calling thread's input partial reductions
-            const unsigned int  &num_valid)         ///< [in] Number of valid elements (may be less than BLOCK_THREADS)
+            int                 num_valid)          ///< [in] Number of valid elements (may be less than BLOCK_THREADS)
         {
             cub::Sum<T> reduction_op;
 
             if (WARP_SYNCHRONOUS)
             {
                 // Short-circuit directly to warp synchronous reduction (unguarded if active threads is a power-of-two)
-                partial = WarpReduce::Sum<FULL_TILE, SEGMENT_LENGTH>(
-                    temp_storage.warp_storage,
+                partial = WarpReduce(temp_storage.warp_storage, 0, linear_tid).template Sum<FULL_TILE, SEGMENT_LENGTH>(
                     partial,
                     num_valid);
             }
@@ -293,7 +306,7 @@ private:
                 if (threadIdx.x < RAKING_THREADS)
                 {
                     // Raking reduction in grid
-                    T *raking_segment = BlockRakingLayout::RakingPtr(temp_storage.raking_grid);
+                    T *raking_segment = BlockRakingLayout::RakingPtr(temp_storage.raking_grid, linear_tid);
                     partial = raking_segment[0];
 
                     #pragma unroll
@@ -306,8 +319,7 @@ private:
                         }
                     }
 
-                    partial = WarpReduce::Sum<FULL_TILE && RAKING_UNGUARDED, SEGMENT_LENGTH>(
-                        temp_storage.warp_storage,
+                    partial = WarpReduce(temp_storage.warp_storage, 0, linear_tid).template Sum<FULL_TILE && RAKING_UNGUARDED, SEGMENT_LENGTH>(
                         partial,
                         num_valid);
                 }
@@ -321,17 +333,15 @@ private:
         template <
             bool                FULL_TILE,
             typename            ReductionOp>
-        static __device__ __forceinline__ T Reduce(
-            TempStorage         &temp_storage,      ///< [in] Reference to shared memory allocation having layout type TempStorage
+        __device__ __forceinline__ T Reduce(
             T                   partial,            ///< [in] Calling thread's input partial reductions
-            const unsigned int  &num_valid,         ///< [in] Number of valid elements (may be less than BLOCK_THREADS)
+            int                 num_valid,          ///< [in] Number of valid elements (may be less than BLOCK_THREADS)
             ReductionOp         reduction_op)       ///< [in] Binary reduction operator
         {
             if (WARP_SYNCHRONOUS)
             {
                 // Short-circuit directly to warp synchronous reduction (unguarded if active threads is a power-of-two)
-                partial = WarpReduce::Reduce<FULL_TILE, SEGMENT_LENGTH>(
-                    temp_storage.warp_storage,
+                partial = WarpReduce(temp_storage.warp_storage, 0, linear_tid).template Reduce<FULL_TILE, SEGMENT_LENGTH>(
                     partial,
                     num_valid,
                     reduction_op);
@@ -347,7 +357,7 @@ private:
                 if (threadIdx.x < RAKING_THREADS)
                 {
                     // Raking reduction in grid
-                    T *raking_segment = BlockRakingLayout::RakingPtr(temp_storage.raking_grid);
+                    T *raking_segment = BlockRakingLayout::RakingPtr(temp_storage.raking_grid, linear_tid);
                     partial = raking_segment[0];
 
                     #pragma unroll
@@ -360,8 +370,7 @@ private:
                         }
                     }
 
-                    partial = WarpReduce::Reduce<FULL_TILE && RAKING_UNGUARDED, SEGMENT_LENGTH>(
-                        temp_storage.warp_storage,
+                    partial = WarpReduce(temp_storage.warp_storage, 0, linear_tid).template Reduce<FULL_TILE && RAKING_UNGUARDED, SEGMENT_LENGTH>(
                         partial,
                         num_valid,
                         reduction_op);
@@ -397,7 +406,7 @@ private:
 
 
         ///  WarpReduce utility type
-        typedef typename WarpReduce<T, WARPS, LOGICAL_WARP_SIZE>::Internal WarpReduce;
+        typedef typename WarpReduce<T, WARPS, LOGICAL_WARP_SIZE>::InternalWarpReduce WarpReduce;
 
 
         /// Shared memory storage layout type
@@ -408,21 +417,38 @@ private:
             T                                   block_prefix;               ///< Shared prefix for the entire threadblock
         };
 
+        // Thread fields
+        TempStorage &temp_storage;
+        int linear_tid;
+        int warp_id;
+        int lane_id;
+
+
+        /// Constructor
+        __device__ __forceinline__ BlockReduceInternal(
+            TempStorage &temp_storage,
+            int linear_tid)
+        :
+            temp_storage(temp_storage),
+            linear_tid(linear_tid),
+            warp_id((BLOCK_THREADS <= PtxArchProps::WARP_THREADS) ?
+                0 :
+                linear_tid / PtxArchProps::WARP_THREADS),
+            lane_id((BLOCK_THREADS <= PtxArchProps::WARP_THREADS) ?
+                linear_tid :
+                linear_tid % PtxArchProps::WARP_THREADS)
+        {}
+
 
         /// Returns block-wide aggregate in <em>thread</em><sub>0</sub>.
         template <
             bool                FULL_TILE,
             typename            ReductionOp>
-        static __device__ __forceinline__ T ApplyWarpAggregates(
-            TempStorage         &temp_storage,      ///< [in] Reference to shared memory allocation having layout type TempStorage
+        __device__ __forceinline__ T ApplyWarpAggregates(
             ReductionOp         reduction_op,       ///< [in] Binary scan operator
             T                   warp_aggregate,     ///< [in] <b>[<em>lane</em><sub>0</sub>s only]</b> Warp-wide aggregate reduction of input items
-            const unsigned int  &num_valid)         ///< [in] Number of valid elements (may be less than BLOCK_THREADS)
+            int                 num_valid)          ///< [in] Number of valid elements (may be less than BLOCK_THREADS)
         {
-            // Warp, thread-lane-IDs
-            unsigned int warp_id = (WARPS == 1) ? 0 : (threadIdx.x / LOGICAL_WARP_SIZE);
-            unsigned int lane_id = (WARPS == 1) ? threadIdx.x : (threadIdx.x & (LOGICAL_WARP_SIZE - 1));
-
             // Share lane aggregates
             if (lane_id == 0)
             {
@@ -450,13 +476,11 @@ private:
 
         /// Computes a threadblock-wide reduction using addition (+) as the reduction operator. The first num_valid threads each contribute one reduction partial.  The return value is only valid for thread<sub>0</sub>.
         template <bool FULL_TILE>
-        static __device__ __forceinline__ T Sum(
-            TempStorage         &temp_storage,  ///< [in] Reference to shared memory allocation having layout type TempStorage
+        __device__ __forceinline__ T Sum(
             T                   input,          ///< [in] Calling thread's input partial reductions
-            const unsigned int  &num_valid)     ///< [in] Number of valid elements (may be less than BLOCK_THREADS)
+            int                 num_valid)      ///< [in] Number of valid elements (may be less than BLOCK_THREADS)
         {
             cub::Sum<T>     reduction_op;
-            unsigned int    warp_id = (WARPS == 1) ? 0 : (threadIdx.x / LOGICAL_WARP_SIZE);
             unsigned int    warp_offset = warp_id * LOGICAL_WARP_SIZE;
             unsigned int    warp_num_valid = (FULL_TILE && EVEN_WARP_MULTIPLE) ?
                                 LOGICAL_WARP_SIZE :
@@ -465,13 +489,12 @@ private:
                                     0;
 
             // Warp reduction in every warp
-            T warp_aggregate = WarpReduce::template Sum<(FULL_TILE && EVEN_WARP_MULTIPLE), 1>(
-                temp_storage.warp_reduce,
+            T warp_aggregate = WarpReduce(temp_storage.warp_reduce, warp_id, lane_id).template Sum<(FULL_TILE && EVEN_WARP_MULTIPLE), 1>(
                 input,
                 warp_num_valid);
 
             // Update outputs and block_aggregate with warp-wide aggregates from lane-0s
-            return ApplyWarpAggregates<FULL_TILE>(temp_storage, reduction_op, warp_aggregate, num_valid);
+            return ApplyWarpAggregates<FULL_TILE>(reduction_op, warp_aggregate, num_valid);
         }
 
 
@@ -479,10 +502,9 @@ private:
         template <
             bool                FULL_TILE,
             typename            ReductionOp>
-        static __device__ __forceinline__ T Reduce(
-            TempStorage         &temp_storage,      ///< [in] Reference to shared memory allocation having layout type TempStorage
+        __device__ __forceinline__ T Reduce(
             T                   input,              ///< [in] Calling thread's input partial reductions
-            const unsigned int  &num_valid,         ///< [in] Number of valid elements (may be less than BLOCK_THREADS)
+            int                 num_valid,          ///< [in] Number of valid elements (may be less than BLOCK_THREADS)
             ReductionOp         reduction_op)       ///< [in] Binary reduction operator
         {
             unsigned int    warp_id = (WARPS == 1) ? 0 : (threadIdx.x / LOGICAL_WARP_SIZE);
@@ -494,14 +516,13 @@ private:
                                     0;
 
             // Warp reduction in every warp
-            T warp_aggregate = WarpReduce::template Reduce<(FULL_TILE && EVEN_WARP_MULTIPLE), 1>(
-                temp_storage.warp_reduce,
+            T warp_aggregate = WarpReduce(temp_storage.warp_reduce, warp_id, lane_id).template Reduce<(FULL_TILE && EVEN_WARP_MULTIPLE), 1>(
                 input,
                 warp_num_valid,
                 reduction_op);
 
             // Update outputs and block_aggregate with warp-wide aggregates from lane-0s
-            return ApplyWarpAggregates<FULL_TILE>(temp_storage, reduction_op, warp_aggregate, num_valid);
+            return ApplyWarpAggregates<FULL_TILE>(reduction_op, warp_aggregate, num_valid);
         }
 
     };
@@ -509,9 +530,38 @@ private:
 
     #endif // DOXYGEN_SHOULD_SKIP_THIS
 
+    /******************************************************************************
+     * Type definitions
+     ******************************************************************************/
+
+    /// Internal block reduce implementation to use
+    typedef BlockReduceInternal<ALGORITHM> InternalBlockReduce;
 
     /// Shared memory storage layout type for BlockReduce
-    typedef typename BlockReduceInternal<ALGORITHM>::TempStorage _TempStorage;
+    typedef typename InternalBlockReduce::TempStorage _TempStorage;
+
+
+    /******************************************************************************
+     * Utility methods
+     ******************************************************************************/
+
+    /// Internal storage allocator
+    __device__ __forceinline__ _TempStorage& PrivateStorage()
+    {
+        __shared__ _TempStorage private_storage;
+        return private_storage;
+    }
+
+
+    /******************************************************************************
+     * Thread fields
+     ******************************************************************************/
+
+    /// Shared storage reference
+    _TempStorage &temp_storage;
+
+    /// Linear thread-id
+    int linear_tid;
 
 
 public:
@@ -520,6 +570,56 @@ public:
     typedef _TempStorage TempStorage;
 
 
+    /******************************************************************//**
+     * \name Collective construction
+     *********************************************************************/
+
+    /**
+     * \brief Collective constructor for 1D thread blocks using a private static allocation of shared memory as temporary storage.  Threads are identified using <tt>threadIdx.x</tt>.
+     */
+    __device__ __forceinline__ BlockReduce()
+    :
+        temp_storage(PrivateStorage()),
+        linear_tid(threadIdx.x)
+    {}
+
+
+    /**
+     * \brief Collective constructor for 1D thread blocks using the specified memory allocation as temporary storage.  Threads are identified using <tt>threadIdx.x</tt>.
+     */
+    __device__ __forceinline__ BlockReduce(
+        TempStorage &temp_storage)                      ///< [in] Reference to memory allocation having layout type TempStorage
+    :
+        temp_storage(temp_storage),
+        linear_tid(threadIdx.x)
+    {}
+
+
+    /**
+     * \brief Collective constructor using a private static allocation of shared memory as temporary storage.  Threads are identified using the given linear thread identifier
+     */
+    __device__ __forceinline__ BlockReduce(
+        int linear_tid)                        ///< [in] A suitable 1D thread-identifier for the calling thread (e.g., <tt>(threadIdx.y * blockDim.x) + linear_tid</tt> for 2D thread blocks)
+    :
+        temp_storage(PrivateStorage()),
+        linear_tid(linear_tid)
+    {}
+
+
+    /**
+     * \brief Collective constructor using the specified memory allocation as temporary storage.  Threads are identified using the given linear thread identifier.
+     */
+    __device__ __forceinline__ BlockReduce(
+        TempStorage &temp_storage,                      ///< [in] Reference to memory allocation having layout type TempStorage
+        int linear_tid)                        ///< [in] <b>[optional]</b> A suitable 1D thread-identifier for the calling thread (e.g., <tt>(threadIdx.y * blockDim.x) + linear_tid</tt> for 2D thread blocks)
+    :
+        temp_storage(temp_storage),
+        linear_tid(linear_tid)
+    {}
+
+
+
+    //@}  end member group
     /******************************************************************//**
      * \name Generic reductions
      *********************************************************************/
@@ -536,12 +636,11 @@ public:
      * \tparam ReductionOp          <b>[inferred]</b> Binary reduction operator type having member <tt>T operator()(const T &a, const T &b)</tt>
      */
     template <typename ReductionOp>
-    static __device__ __forceinline__ T Reduce(
-        TempStorage     &temp_storage,              ///< [in] Reference to shared memory allocation having layout type TempStorage
+    __device__ __forceinline__ T Reduce(
         T               input,                      ///< [in] Calling thread's input
         ReductionOp     reduction_op)               ///< [in] Binary reduction operator
     {
-        return BlockReduceInternal<ALGORITHM>::template Reduce<true>(temp_storage, input, BLOCK_THREADS, reduction_op);
+        return InternalBlockReduce(temp_storage, linear_tid).template Reduce<true>(input, BLOCK_THREADS, reduction_op);
     }
 
 
@@ -558,14 +657,13 @@ public:
     template <
         int ITEMS_PER_THREAD,
         typename ReductionOp>
-    static __device__ __forceinline__ T Reduce(
-        TempStorage     &temp_storage,                  ///< [in] Reference to shared memory allocation having layout type TempStorage
+    __device__ __forceinline__ T Reduce(
         T               (&inputs)[ITEMS_PER_THREAD],    ///< [in] Calling thread's input segment
         ReductionOp     reduction_op)                   ///< [in] Binary reduction operator
     {
         // Reduce partials
         T partial = ThreadReduce(inputs, reduction_op);
-        return Reduce(temp_storage, partial, reduction_op);
+        return Reduce(partial, reduction_op);
     }
 
 
@@ -579,20 +677,19 @@ public:
      * \tparam ReductionOp          <b>[inferred]</b> Binary reduction operator type having member <tt>T operator()(const T &a, const T &b)</tt>
      */
     template <typename ReductionOp>
-    static __device__ __forceinline__ T Reduce(
-        TempStorage         &temp_storage,          ///< [in] Reference to shared memory allocation having layout type TempStorage
+    __device__ __forceinline__ T Reduce(
         T                   input,                  ///< [in] Calling thread's input
         ReductionOp         reduction_op,           ///< [in] Binary reduction operator
-        const unsigned int  &num_valid)             ///< [in] Number of threads containing valid elements (may be less than BLOCK_THREADS)
+        int                 num_valid)              ///< [in] Number of threads containing valid elements (may be less than BLOCK_THREADS)
     {
         // Determine if we scan skip bounds checking
         if (num_valid >= BLOCK_THREADS)
         {
-            return BlockReduceInternal<ALGORITHM>::template Reduce<true>(temp_storage, input, num_valid, reduction_op);
+            return InternalBlockReduce(temp_storage, linear_tid).template Reduce<true>(input, num_valid, reduction_op);
         }
         else
         {
-            return BlockReduceInternal<ALGORITHM>::template Reduce<false>(temp_storage, input, num_valid, reduction_op);
+            return InternalBlockReduce(temp_storage, linear_tid).template Reduce<false>(input, num_valid, reduction_op);
         }
     }
 
@@ -611,11 +708,10 @@ public:
      *
      * \smemreuse
      */
-    static __device__ __forceinline__ T Sum(
-        TempStorage     &temp_storage,              ///< [in] Reference to shared memory allocation having layout type TempStorage
+    __device__ __forceinline__ T Sum(
         T               input)                      ///< [in] Calling thread's input
     {
-        return BlockReduceInternal<ALGORITHM>::template Sum<true>(temp_storage, input, BLOCK_THREADS);
+        return InternalBlockReduce(temp_storage, linear_tid).template Sum<true>(input, BLOCK_THREADS);
     }
 
     /**
@@ -628,13 +724,12 @@ public:
      * \tparam ITEMS_PER_THREAD     <b>[inferred]</b> The number of consecutive items partitioned onto each thread.
      */
     template <int ITEMS_PER_THREAD>
-    static __device__ __forceinline__ T Sum(
-        TempStorage     &temp_storage,                  ///< [in] Reference to shared memory allocation having layout type TempStorage
+    __device__ __forceinline__ T Sum(
         T               (&inputs)[ITEMS_PER_THREAD])    ///< [in] Calling thread's input segment
     {
         // Reduce partials
         T partial = ThreadReduce(inputs, cub::Sum<T>());
-        return Sum(temp_storage, partial);
+        return Sum(partial);
     }
 
 
@@ -645,19 +740,18 @@ public:
      *
      * The return value is undefined in threads other than thread<sub>0</sub>.
      */
-    static __device__ __forceinline__ T Sum(
-        TempStorage         &temp_storage,          ///< [in] Reference to shared memory allocation having layout type TempStorage
+    __device__ __forceinline__ T Sum(
         T                   input,                  ///< [in] Calling thread's input
-        const unsigned int  &num_valid)             ///< [in] Number of threads containing valid elements (may be less than BLOCK_THREADS)
+        int                 num_valid)              ///< [in] Number of threads containing valid elements (may be less than BLOCK_THREADS)
     {
         // Determine if we scan skip bounds checking
         if (num_valid >= BLOCK_THREADS)
         {
-            return BlockReduceInternal<ALGORITHM>::template Sum<true>(temp_storage, input, num_valid);
+            return InternalBlockReduce(temp_storage, linear_tid).template Sum<true>(input, num_valid);
         }
         else
         {
-            return BlockReduceInternal<ALGORITHM>::template Sum<false>(temp_storage, input, num_valid);
+            return InternalBlockReduce(temp_storage, linear_tid).template Sum<false>(input, num_valid);
         }
     }
 
