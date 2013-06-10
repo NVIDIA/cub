@@ -943,12 +943,12 @@ struct FinalizeSpmvBlock
             default_sum.row = temp_storage.last_block_row;
             default_sum.partial = Value(0);
 
-            LoadBlocked(d_block_partials + block_offset, guarded_items, default_sum, partial_sums);
+            LoadBlocked<LOAD_DEFAULT>(d_block_partials + block_offset, guarded_items, default_sum, partial_sums);
         }
         else
         {
             // Unguarded loads
-            LoadBlocked(d_block_partials + block_offset, partial_sums);
+            LoadBlocked<LOAD_DEFAULT>(d_block_partials + block_offset, partial_sums);
         }
 
         // Fence to prevent hoisting any dependent code below into the loads above

@@ -113,17 +113,27 @@ struct DeviceTest
         if (TEST_MODE == BASIC)
         {
             // Test basic warp scan
-            BlockScan::ExclusiveScan(temp_storage, data, data, identity, scan_op);
+            if (ITEMS_PER_THREAD == 1)
+                BlockScan(temp_storage).ExclusiveScan(data[0], data[0], identity, scan_op);
+            else
+                BlockScan(temp_storage).ExclusiveScan(data, data, identity, scan_op);
         }
         else if (TEST_MODE == AGGREGATE)
         {
             // Test with cumulative aggregate
-            BlockScan::ExclusiveScan(temp_storage, data, data, identity, scan_op, aggregate);
+            if (ITEMS_PER_THREAD == 1)
+                BlockScan(temp_storage).ExclusiveScan(data[0], data[0], identity, scan_op, aggregate);
+            else
+                BlockScan(temp_storage).ExclusiveScan(data, data, identity, scan_op, aggregate);
         }
         else if (TEST_MODE == PREFIX_AGGREGATE)
         {
             // Test with warp-prefix and cumulative aggregate
-            BlockScan::ExclusiveScan(temp_storage, data, data, identity, scan_op, aggregate, prefix_op);
+            if (ITEMS_PER_THREAD == 1)
+                BlockScan(temp_storage).ExclusiveScan(data[0], data[0], identity, scan_op, aggregate, prefix_op);
+            else
+                BlockScan(temp_storage).ExclusiveScan(data, data, identity, scan_op, aggregate, prefix_op);
+
         }
     }
 };
@@ -153,17 +163,26 @@ struct DeviceTest<T, Sum<T>, IdentityT>
         if (TEST_MODE == BASIC)
         {
             // Test basic warp scan
-            BlockScan::ExclusiveSum(temp_storage, data, data);
+            if (ITEMS_PER_THREAD == 1)
+                BlockScan(temp_storage).ExclusiveSum(data[0], data[0]);
+            else
+                BlockScan(temp_storage).ExclusiveSum(data, data);
         }
         else if (TEST_MODE == AGGREGATE)
         {
             // Test with cumulative aggregate
-            BlockScan::ExclusiveSum(temp_storage, data, data, aggregate);
+            if (ITEMS_PER_THREAD == 1)
+                BlockScan(temp_storage).ExclusiveSum(data[0], data[0], aggregate);
+            else
+                BlockScan(temp_storage).ExclusiveSum(data, data, aggregate);
         }
         else if (TEST_MODE == PREFIX_AGGREGATE)
         {
             // Test with warp-prefix and cumulative aggregate
-            BlockScan::ExclusiveSum(temp_storage, data, data, aggregate, prefix_op);
+            if (ITEMS_PER_THREAD == 1)
+                BlockScan(temp_storage).ExclusiveSum(data[0], data[0], aggregate, prefix_op);
+            else
+                BlockScan(temp_storage).ExclusiveSum(data, data, aggregate, prefix_op);
         }
     }
 };
@@ -193,17 +212,26 @@ struct DeviceTest<T, ScanOp, NullType>
         if (TEST_MODE == BASIC)
         {
             // Test basic warp scan
-            BlockScan::InclusiveScan(temp_storage, data, data, scan_op);
+            if (ITEMS_PER_THREAD == 1)
+                BlockScan(temp_storage).InclusiveScan(data[0], data[0], scan_op);
+            else
+                BlockScan(temp_storage).InclusiveScan(data, data, scan_op);
         }
         else if (TEST_MODE == AGGREGATE)
         {
             // Test with cumulative aggregate
-            BlockScan::InclusiveScan(temp_storage, data, data, scan_op, aggregate);
+            if (ITEMS_PER_THREAD == 1)
+                BlockScan(temp_storage).InclusiveScan(data[0], data[0], scan_op, aggregate);
+            else
+                BlockScan(temp_storage).InclusiveScan(data, data, scan_op, aggregate);
         }
         else if (TEST_MODE == PREFIX_AGGREGATE)
         {
             // Test with warp-prefix and cumulative aggregate
-            BlockScan::InclusiveScan(temp_storage, data, data, scan_op, aggregate, prefix_op);
+            if (ITEMS_PER_THREAD == 1)
+                BlockScan(temp_storage).InclusiveScan(data[0], data[0], scan_op, aggregate, prefix_op);
+            else
+                BlockScan(temp_storage).InclusiveScan(data, data, scan_op, aggregate, prefix_op);
         }
     }
 };
@@ -231,17 +259,26 @@ struct DeviceTest<T, Sum<T>, NullType>
         if (TEST_MODE == BASIC)
         {
             // Test basic warp scan
-            BlockScan::InclusiveSum(temp_storage, data, data);
+            if (ITEMS_PER_THREAD == 1)
+                BlockScan(temp_storage).InclusiveSum(data[0], data[0]);
+            else
+                BlockScan(temp_storage).InclusiveSum(data, data);
         }
         else if (TEST_MODE == AGGREGATE)
         {
             // Test with cumulative aggregate
-            BlockScan::InclusiveSum(temp_storage, data, data, aggregate);
+            if (ITEMS_PER_THREAD == 1)
+                BlockScan(temp_storage).InclusiveSum(data[0], data[0], aggregate);
+            else
+                BlockScan(temp_storage).InclusiveSum(data, data, aggregate);
         }
         else if (TEST_MODE == PREFIX_AGGREGATE)
         {
             // Test with warp-prefix and cumulative aggregate
-            BlockScan::InclusiveSum(temp_storage, data, data, aggregate, prefix_op);
+            if (ITEMS_PER_THREAD == 1)
+            BlockScan(temp_storage).InclusiveSum(data[0], data[0], aggregate, prefix_op);
+            else
+                BlockScan(temp_storage).InclusiveSum(data, data, aggregate, prefix_op);
         }
     }
 };
@@ -281,7 +318,7 @@ __global__ void BlockScanKernel(
 
     // Per-thread tile data
     T data[ITEMS_PER_THREAD];
-    LoadBlocked(d_in, data);
+    LoadBlocked<LOAD_DEFAULT>(d_in, data);
 
     // Start cycle timer
     clock_t start = clock();
@@ -297,7 +334,7 @@ __global__ void BlockScanKernel(
     clock_t stop = clock();
 
     // Store output
-    StoreBlocked(d_out, data);
+    StoreBlocked<STORE_DEFAULT>(d_out, data);
 
     // Store aggregate
     d_aggregate[threadIdx.x] = aggregate;
@@ -474,12 +511,6 @@ void Test(
         prefix,
         d_elapsed);
 
-    if (g_verbose)
-    {
-        printf("\tElapsed clocks: ");
-        DisplayDeviceResults(d_elapsed, 1);
-    }
-
     CubDebugExit(cudaDeviceSynchronize());
 
     // Copy out and display results
@@ -507,6 +538,8 @@ void Test(
         }
     }
 
+    printf("\tElapsed clocks: ");
+    DisplayDeviceResults(d_elapsed, 1);
 
     // Cleanup
     if (h_in) delete[] h_in;
@@ -589,6 +622,9 @@ void Test(int gen_mode)
     Test<BLOCK_THREADS, ITEMS_PER_THREAD>(gen_mode, Max<unsigned int>(), (unsigned int) 0, (unsigned int) 99, CUB_TYPE_STRING(Max<unsigned int>));
     Test<BLOCK_THREADS, ITEMS_PER_THREAD>(gen_mode, Max<unsigned long long>(), (unsigned long long) 0, (unsigned long long) 99, CUB_TYPE_STRING(Max<unsigned long long>));
 
+    // vec-1
+    Test<BLOCK_THREADS, ITEMS_PER_THREAD>(gen_mode, Sum<uchar1>(), make_uchar1(0), make_uchar1(17), CUB_TYPE_STRING(Sum<uchar1>));
+
     // vec-2
     Test<BLOCK_THREADS, ITEMS_PER_THREAD>(gen_mode, Sum<uchar2>(), make_uchar2(0, 0), make_uchar2(17, 21), CUB_TYPE_STRING(Sum<uchar2>));
     Test<BLOCK_THREADS, ITEMS_PER_THREAD>(gen_mode, Sum<ushort2>(), make_ushort2(0, 0), make_ushort2(17, 21), CUB_TYPE_STRING(Sum<ushort2>));
@@ -627,8 +663,7 @@ void Test()
 {
     Test<BLOCK_THREADS, 1>();
     Test<BLOCK_THREADS, 2>();
-    Test<BLOCK_THREADS, 3>();
-    Test<BLOCK_THREADS, 8>();
+    Test<BLOCK_THREADS, 9>();
 }
 
 
@@ -641,7 +676,6 @@ int main(int argc, char** argv)
     // Initialize command line
     CommandLineArgs args(argc, argv);
     g_verbose = args.CheckCmdLineFlag("v");
-    bool quick = args.CheckCmdLineFlag("quick");
 
     // Print usage
     if (args.CheckCmdLineFlag("help"))
@@ -649,7 +683,6 @@ int main(int argc, char** argv)
         printf("%s "
             "[--device=<device-id>] "
             "[--v] "
-            "[--quick]"
             "\n", argv[0]);
         exit(0);
     }
@@ -657,24 +690,20 @@ int main(int argc, char** argv)
     // Initialize device
     CubDebugExit(args.DeviceInit());
 
-    if (quick)
-    {
-        Test<128, 4, AGGREGATE, BLOCK_SCAN_WARP_SCANS>(UNIFORM, Sum<int>(), int(0), int(10), CUB_TYPE_STRING(Sum<int>));
-        Test<128, 4, AGGREGATE, BLOCK_SCAN_RAKING>(UNIFORM, Sum<int>(), int(0), int(10), CUB_TYPE_STRING(Sum<int>));
+    Test<128, 4, AGGREGATE, BLOCK_SCAN_WARP_SCANS>(UNIFORM, Sum<int>(), int(0), int(10), CUB_TYPE_STRING(Sum<int>));
+    Test<128, 4, AGGREGATE, BLOCK_SCAN_RAKING_MEMOIZE>(UNIFORM, Sum<int>(), int(0), int(10), CUB_TYPE_STRING(Sum<int>));
 
-        TestFoo prefix = TestFoo::MakeTestFoo(17, 21, 32, 85);
-        Test<128, 2, PREFIX_AGGREGATE, BLOCK_SCAN_RAKING>(SEQ_INC, Sum<TestFoo>(), NullType(), prefix, CUB_TYPE_STRING(Sum<TestFoo>));
-    }
-    else
-    {
-        // Run battery of tests for different threadblock sizes
-        Test<17>();
-        Test<32>();
-        Test<62>();
-        Test<65>();
-        Test<96>();
-        Test<128>();
-    }
+    TestFoo prefix = TestFoo::MakeTestFoo(17, 21, 32, 85);
+    Test<128, 2, PREFIX_AGGREGATE, BLOCK_SCAN_RAKING>(SEQ_INC, Sum<TestFoo>(), NullType(), prefix, CUB_TYPE_STRING(Sum<TestFoo>));
+
+    // Run battery of tests for different threadblock sizes
+    Test<17>();
+    Test<32>();
+
+    Test<62>();
+    Test<65>();
+    Test<96>();
+    Test<128>();
 
     return 0;
 }

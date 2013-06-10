@@ -35,6 +35,7 @@
 
 #include "../thread/thread_load.cuh"
 #include "../thread/thread_store.cuh"
+#include "../util_debug.cuh"
 #include "../util_arch.cuh"
 #include "../util_type.cuh"
 #include "../util_ptx.cuh"
@@ -72,7 +73,7 @@ namespace cub {
  * - What is computed (scanned elements only <em>vs.</em> scanned elements and the total aggregate)
  *
  * \tparam T                        The scan input/output element type
- * \tparam WARPS                    <b>[optional]</b> The number of "logical" warps performing concurrent warp scans. Default is 1.
+ * \tparam LOGICAL_WARPS                    <b>[optional]</b> The number of "logical" warps performing concurrent warp scans. Default is 1.
  * \tparam LOGICAL_WARP_THREADS     <b>[optional]</b> The number of threads per "logical" warp (may be less than the number of hardware warp threads).  Default is the warp size associated with the CUDA Compute Capability targeted by the compiler (e.g., 32 threads for SM20).
  *
  * \par Usage Considerations
@@ -196,7 +197,7 @@ namespace cub {
  */
 template <
     typename    T,
-    int         WARPS                   = 1,
+    int         LOGICAL_WARPS           = 1,
     int         LOGICAL_WARP_THREADS    = PtxArchProps::WARP_THREADS>
 class WarpScan
 {
@@ -217,11 +218,10 @@ private:
     static const int SMEM_SCAN = 1;          // Warp-synchronous smem-based scan
 
 
-    /// Use SHFL_SCAN if (architecture is >= SM30) and (T is a primitive) and (T is 4-bytes or smaller) and (LOGICAL_WARP_THREADS is a power-of-two)
-    static const int POLICY = ((CUB_PTX_ARCH >= 300) && Traits<T>::PRIMITIVE && (sizeof(T) <= 4) && POW_OF_TWO) ?
-        SHFL_SCAN :
-        SMEM_SCAN;
-
+    /// Use SHFL_SCAN if (architecture is >= SM30) and (LOGICAL_WARP_THREADS is a power-of-two)
+    static const int POLICY = ((CUB_PTX_ARCH >= 300) && POW_OF_TWO) ?
+                                SHFL_SCAN :
+                                SMEM_SCAN;
 
 
     #ifndef DOXYGEN_SHOULD_SKIP_THIS    // Do not document
@@ -244,7 +244,7 @@ private:
             STEPS = Log2<LOGICAL_WARP_THREADS>::VALUE,
 
             // The 5-bit SHFL mask for logically splitting warps into sub-segments starts 8-bits up
-            SHFL_MASK = ((-1 << STEPS) & 31) << 8,
+            SHFL_C = ((-1 << STEPS) & 31) << 8,
         };
 
         /// Shared memory storage layout type
@@ -252,41 +252,90 @@ private:
 
 
         // Thread fields
-        TempStorage     &temp_storage;
+        int             warp_id;
+        int             lane_id;
+
 
         /// Constructor
         __device__ __forceinline__ WarpScanInternal(
-            TempStorage &temp_storage)
+            TempStorage &temp_storage,
+            int warp_id,
+            int lane_id)
         :
-            temp_storage(temp_storage)
+            warp_id(warp_id),
+            lane_id(lane_id)
         {}
 
 
         /// Broadcast
         __device__ __forceinline__ T Broadcast(
             T               input,              ///< [in] The value to broadcast
-            unsigned int    src_lane)           ///< [in] Which warp lane is to do the broadcasting
+            int             src_lane)           ///< [in] Which warp lane is to do the broadcasting
         {
-            T               output;
-            unsigned int    &uinput     = reinterpret_cast<unsigned int&>(input);
-            unsigned int    &uoutput    = reinterpret_cast<unsigned int&>(output);
+            typedef typename WordAlignment<T>::ShuffleWord ShuffleWord;
 
-            asm("shfl.idx.b32 %0, %1, %2, %3;"
-                : "=r"(uoutput) : "r"(uinput), "r"(src_lane), "r"(LOGICAL_WARP_THREADS - 1));
+            const int       WORDS           = (sizeof(T) + sizeof(ShuffleWord) - 1) / sizeof(ShuffleWord);
+            T               output;
+            ShuffleWord     *output_alias   = reinterpret_cast<ShuffleWord *>(&output);
+            ShuffleWord     *input_alias    = reinterpret_cast<ShuffleWord *>(&input);
+
+            #pragma unroll
+            for (int WORD = 0; WORD < WORDS; ++WORD)
+            {
+                unsigned int shuffle_word = input_alias[WORD];
+                asm("shfl.idx.b32 %0, %1, %2, %3;"
+                    : "=r"(shuffle_word) : "r"(shuffle_word), "r"(src_lane), "r"(LOGICAL_WARP_THREADS - 1));
+                output_alias[WORD] = (ShuffleWord) shuffle_word;
+            }
 
             return output;
         }
 
-        /// Inclusive prefix sum with aggregate (specialized for unsigned int)
-        __device__ __forceinline__ void InclusiveSum(
-            unsigned int    input,              ///< [in] Calling thread's input item.
-            unsigned int    &output,            ///< [out] Calling thread's output item.  May be aliased with \p input.
-            unsigned int    &warp_aggregate)    ///< [out] Warp-wide aggregate reduction of input items.
+
+        /// Generic shuffle-up
+        __device__ __forceinline__ T ShuffleUp(
+            T               input,              ///< [in] The value to broadcast
+            int             src_offset)         ///< [in] The up-offset of the peer to read from
         {
+            typedef typename WordAlignment<T>::ShuffleWord ShuffleWord;
+
+            const int       WORDS           = (sizeof(T) + sizeof(ShuffleWord) - 1) / sizeof(ShuffleWord);
+            T               output;
+            ShuffleWord     *output_alias   = reinterpret_cast<ShuffleWord *>(&output);
+            ShuffleWord     *input_alias    = reinterpret_cast<ShuffleWord *>(&input);
+
+            #pragma unroll
+            for (int WORD = 0; WORD < WORDS; ++WORD)
+            {
+                unsigned int shuffle_word = input_alias[WORD];
+                asm(
+                    "  shfl.up.b32 %0, %1, %2, %3;"
+                    : "=r"(shuffle_word) : "r"(shuffle_word), "r"(src_offset), "r"(SHFL_C));
+                output_alias[WORD] = (ShuffleWord) shuffle_word;
+            }
+
+            return output;
+        }
+
+
+        //---------------------------------------------------------------------
+        // Inclusive operations
+        //---------------------------------------------------------------------
+
+        /// Inclusive prefix sum with aggregate (single-SHFL)
+        __device__ __forceinline__ void InclusiveSum(
+            T               input,              ///< [in] Calling thread's input item.
+            T               &output,            ///< [out] Calling thread's output item.  May be aliased with \p input.
+            T               &warp_aggregate,    ///< [out] Warp-wide aggregate reduction of input items.
+            Int2Type<true>  single_shfl)
+        {
+            unsigned int temp = reinterpret_cast<unsigned int &>(input);
+
             // Iterate scan steps
             #pragma unroll
             for (int STEP = 0; STEP < STEPS; STEP++)
             {
+                // Use predicate set from SHFL to guard against invalid peers
                 asm(
                     "{"
                     "  .reg .u32 r0;"
@@ -295,14 +344,25 @@ private:
                     "  @p add.u32 r0, r0, %4;"
                     "  mov.u32 %0, r0;"
                     "}"
-                    : "=r"(input) : "r"(input), "r"(1 << STEP), "r"(SHFL_MASK), "r"(input));
+                    : "=r"(temp) : "r"(temp), "r"(1 << STEP), "r"(SHFL_C), "r"(temp));
             }
 
-            // Grab aggregate from last warp lane
-            warp_aggregate = Broadcast(input, LOGICAL_WARP_THREADS - 1);
+            output = temp;
 
-            // Update output
-            output = input;
+            // Grab aggregate from last warp lane
+            warp_aggregate = Broadcast(output, LOGICAL_WARP_THREADS - 1);
+        }
+
+
+        /// Inclusive prefix sum with aggregate (multi-SHFL)
+        __device__ __forceinline__ void InclusiveSum(
+            T               input,              ///< [in] Calling thread's input item.
+            T               &output,            ///< [out] Calling thread's output item.  May be aliased with \p input.
+            T               &warp_aggregate,    ///< [out] Warp-wide aggregate reduction of input items.
+            Int2Type<false> single_shfl)        ///< [in] Marker type indicating whether only one SHFL instruction is required
+        {
+            // Delegate to generic scan
+            InclusiveScan(input, output, Sum<T>(), warp_aggregate);
         }
 
 
@@ -312,10 +372,13 @@ private:
             float           &output,            ///< [out] Calling thread's output item.  May be aliased with \p input.
             float           &warp_aggregate)    ///< [out] Warp-wide aggregate reduction of input items.
         {
+            output = input;
+
             // Iterate scan steps
             #pragma unroll
             for (int STEP = 0; STEP < STEPS; STEP++)
             {
+                // Use predicate set from SHFL to guard against invalid peers
                 asm(
                     "{"
                     "  .reg .f32 r0;"
@@ -324,32 +387,27 @@ private:
                     "  @p add.f32 r0, r0, %4;"
                     "  mov.f32 %0, r0;"
                     "}"
-                    : "=f"(input) : "f"(input), "r"(1 << STEP), "r"(SHFL_MASK), "f"(input));
+                    : "=f"(output) : "f"(output), "r"(1 << STEP), "r"(SHFL_C), "f"(output));
             }
 
             // Grab aggregate from last warp lane
-            warp_aggregate = Broadcast(input, LOGICAL_WARP_THREADS - 1);
-
-            // Update output
-            output = input;
+            warp_aggregate = Broadcast(output, LOGICAL_WARP_THREADS - 1);
         }
 
-        /// Inclusive prefix sum with aggregate
+
+        /// Inclusive prefix sum with aggregate (generic)
         template <typename _T>
         __device__ __forceinline__ void InclusiveSum(
             _T               input,             ///< [in] Calling thread's input item.
             _T               &output,           ///< [out] Calling thread's output item.  May be aliased with \p input.
             _T               &warp_aggregate)   ///< [out] Warp-wide aggregate reduction of input items.
         {
-            unsigned int uinput = (unsigned int) input;
-            unsigned int uoutput;
-            unsigned int uwarp_aggregate;
+            // Whether sharing can be done with a single SHFL instruction (vs multiple SFHL instructions)
+            Int2Type<(Traits<_T>::PRIMITIVE) && (sizeof(_T) <= sizeof(unsigned int))> single_shfl;
 
-            InclusiveSum(uinput, uoutput, uwarp_aggregate);
-
-            warp_aggregate = (T) uwarp_aggregate;
-            output = (T) uoutput;
+            InclusiveSum(input, output, warp_aggregate, single_shfl);
         }
+
 
         /// Inclusive prefix sum
         __device__ __forceinline__ void InclusiveSum(
@@ -369,33 +427,23 @@ private:
             ScanOp          scan_op,            ///< [in] Binary scan operator
             T               &warp_aggregate)    ///< [out] Warp-wide aggregate reduction of input items.
         {
-            T               temp;
-            unsigned int    &utemp              = reinterpret_cast<unsigned int&>(temp);
-            unsigned int    &uinput             = reinterpret_cast<unsigned int&>(input);
+            output = input;
 
             // Iterate scan steps
             #pragma unroll
             for (int STEP = 0; STEP < STEPS; STEP++)
             {
-                asm(
-                    "{"
-                    "  .reg .pred p;"
-                    "  shfl.up.b32 %0|p, %1, %2, %3;"
-                    : "=r"(utemp) : "r"(uinput), "r"(1 << STEP), "r"(SHFL_MASK));
+                // Grab addend from peer
+                const int OFFSET = 1 << STEP;
+                T temp = ShuffleUp(output, OFFSET);
 
-                temp = scan_op(temp, input);
-
-                asm(
-                    "  selp.b32 %0, %1, %2, p;"
-                    "}"
-                    : "=r"(uinput) : "r"(utemp), "r"(uinput));
+                // Perform scan op if from a valid peer
+                if (lane_id >= OFFSET)
+                    output = scan_op(temp, output);
             }
 
             // Grab aggregate from last warp lane
-            warp_aggregate = Broadcast(input, LOGICAL_WARP_THREADS - 1);
-
-            // Update output
-            output = input;
+            warp_aggregate = Broadcast(output, LOGICAL_WARP_THREADS - 1);
         }
 
 
@@ -411,12 +459,16 @@ private:
         }
 
 
+        //---------------------------------------------------------------------
+        // Exclusive operations
+        //---------------------------------------------------------------------
+
         /// Exclusive scan with aggregate
         template <typename ScanOp>
         __device__ __forceinline__ void ExclusiveScan(
             T               input,              ///< [in] Calling thread's input item.
             T               &output,            ///< [out] Calling thread's output item.  May be aliased with \p input.
-            const T         &identity,          ///< [in] Identity value
+            T               identity,           ///< [in] Identity value
             ScanOp          scan_op,            ///< [in] Binary scan operator
             T               &warp_aggregate)    ///< [out] Warp-wide aggregate reduction of input items.
         {
@@ -424,18 +476,12 @@ private:
             T inclusive;
             InclusiveScan(input, inclusive, scan_op, warp_aggregate);
 
-            unsigned int    &uinclusive     = reinterpret_cast<unsigned int&>(inclusive);
-            unsigned int    &uidentity      = reinterpret_cast<unsigned int&>(const_cast<T&>(identity));
-            unsigned int    &uoutput        = reinterpret_cast<unsigned int&>(output);
+            // Grab result from predecessor
+            T exclusive = ShuffleUp(inclusive, 1);
 
-            asm(
-                "{"
-                "  .reg .u32 r0;"
-                "  .reg .pred p;"
-                "  shfl.up.b32 r0|p, %1, 1, %2;"
-                "  selp.b32 %0, r0, %3, p;"
-                "}"
-                : "=r"(uoutput) : "r"(uinclusive), "r"(SHFL_MASK), "r"(uidentity));
+            output = (lane_id == 0) ?
+                identity :
+                exclusive;
         }
 
 
@@ -444,7 +490,7 @@ private:
         __device__ __forceinline__ void ExclusiveScan(
             T               input,              ///< [in] Calling thread's input item.
             T               &output,            ///< [out] Calling thread's output item.  May be aliased with \p input.
-            const T         &identity,          ///< [in] Identity value
+            T               identity,           ///< [in] Identity value
             ScanOp          scan_op)            ///< [in] Binary scan operator
         {
             T warp_aggregate;
@@ -464,12 +510,8 @@ private:
             T inclusive;
             InclusiveScan(input, inclusive, scan_op, warp_aggregate);
 
-            unsigned int    &uinclusive     = reinterpret_cast<unsigned int&>(inclusive);
-            unsigned int    &uoutput        = reinterpret_cast<unsigned int&>(output);
-
-            asm(
-                "shfl.up.b32 %0, %1, 1, %2;"
-                : "=r"(uoutput) : "r"(uinclusive), "r"(SHFL_MASK));
+            // Grab result from predecessor
+            output = ShuffleUp(inclusive, 1);
         }
 
 
@@ -507,7 +549,7 @@ private:
 
 
         /// Shared memory storage layout type (1.5 warps-worth of elements for each warp)
-        typedef T TempStorage[WARPS][WARP_SMEM_ELEMENTS];
+        typedef T TempStorage[LOGICAL_WARPS][WARP_SMEM_ELEMENTS];
 
 
         // Thread fields
@@ -518,17 +560,13 @@ private:
 
         /// Constructor
         __device__ __forceinline__ WarpScanInternal(
-            TempStorage &temp_storage)
+            TempStorage     &temp_storage,
+            int             warp_id,
+            int             lane_id)
         :
             temp_storage(temp_storage),
-            lane_id(((WARPS == 1) || (LOGICAL_WARP_THREADS == PtxArchProps::WARP_THREADS)) ?
-                LaneId() :
-                (WarpId() * PtxArchProps::WARP_THREADS + LaneId()) % LOGICAL_WARP_THREADS),
-            warp_id((WARPS == 1) ?
-                0 :
-                (LOGICAL_WARP_THREADS == PtxArchProps::WARP_THREADS) ?
-                    WarpId() :
-                    (WarpId() * PtxArchProps::WARP_THREADS + LaneId()) / LOGICAL_WARP_THREADS)
+            warp_id(warp_id),
+            lane_id(lane_id)
         {}
 
 
@@ -673,7 +711,7 @@ private:
         __device__ __forceinline__ void ExclusiveScan(
             T               input,              ///< [in] Calling thread's input item.
             T               &output,            ///< [out] Calling thread's output item.  May be aliased with \p input.
-            const T         &identity,          ///< [in] Identity value
+            T               identity,           ///< [in] Identity value
             ScanOp          scan_op)            ///< [in] Binary scan operator
         {
             // Initialize identity region
@@ -692,7 +730,7 @@ private:
         __device__ __forceinline__ void ExclusiveScan(
             T               input,              ///< [in] Calling thread's input item.
             T               &output,            ///< [out] Calling thread's output item.  May be aliased with \p input.
-            const T         &identity,          ///< [in] Identity value
+            T               identity,           ///< [in] Identity value
             ScanOp          scan_op,            ///< [in] Binary scan operator
             T               &warp_aggregate)    ///< [out] Warp-wide aggregate reduction of input items.
         {
@@ -773,6 +811,11 @@ private:
     /// Shared storage reference
     TempStorage &temp_storage;
 
+    /// Warp ID
+    int warp_id;
+
+    /// Lane ID
+    int lane_id;
 
 public:
 
@@ -782,20 +825,62 @@ public:
     //@{
 
     /**
-     * \brief Collective constructor for 1D thread blocks using a private static allocation of shared memory as temporary storage.
+     * \brief Collective constructor for 1D thread blocks using a private static allocation of shared memory as temporary storage.  Logical warp and lane identifiers are constructed from <tt>threadIdx.x</tt>.
      */
     __device__ __forceinline__ WarpScan()
     :
-        temp_storage(PrivateStorage()) {}
+        temp_storage(PrivateStorage()),
+        warp_id((LOGICAL_WARPS == 1) ?
+            0 :
+            threadIdx.x / LOGICAL_WARP_THREADS),
+        lane_id(((LOGICAL_WARPS == 1) || (LOGICAL_WARP_THREADS == PtxArchProps::WARP_THREADS)) ?
+            LaneId() :
+            threadIdx.x % LOGICAL_WARP_THREADS)
+    {}
 
 
     /**
-     * \brief Collective constructor for 1D thread blocks using the specified memory allocation as temporary storage.
+     * \brief Collective constructor for 1D thread blocks using the specified memory allocation as temporary storage.  Logical warp and lane identifiers are constructed from <tt>threadIdx.x</tt>.
      */
     __device__ __forceinline__ WarpScan(
-        TempStorage &temp_storage)                      ///< [in] Reference to memory allocation having layout type TempStorage
+        TempStorage &temp_storage)             ///< [in] Reference to memory allocation having layout type TempStorage
     :
-        temp_storage(temp_storage) {}
+        temp_storage(temp_storage),
+        warp_id((LOGICAL_WARPS == 1) ?
+            0 :
+            threadIdx.x / LOGICAL_WARP_THREADS),
+        lane_id(((LOGICAL_WARPS == 1) || (LOGICAL_WARP_THREADS == PtxArchProps::WARP_THREADS)) ?
+            LaneId() :
+            threadIdx.x % LOGICAL_WARP_THREADS)
+    {}
+
+
+    /**
+     * \brief Collective constructor using a private static allocation of shared memory as temporary storage.  Threads are identified using the given warp and lane identifiers.
+     */
+    __device__ __forceinline__ WarpScan(
+        int warp_id,                           ///< [in] A suitable warp membership identifier
+        int lane_id)                           ///< [in] A lane identifier within the warp
+    :
+        temp_storage(PrivateStorage()),
+        warp_id(warp_id),
+        lane_id(lane_id)
+    {}
+
+
+    /**
+     * \brief Collective constructor using the specified memory allocation as temporary storage.  Threads are identified using the given warp and lane identifiers.
+     */
+    __device__ __forceinline__ WarpScan(
+        TempStorage &temp_storage,             ///< [in] Reference to memory allocation having layout type TempStorage
+        int warp_id,                           ///< [in] A suitable warp membership identifier
+        int lane_id)                           ///< [in] A lane identifier within the warp
+    :
+        temp_storage(temp_storage),
+        warp_id(warp_id),
+        lane_id(lane_id)
+    {}
+
 
     //@}  end member group
 
@@ -804,7 +889,7 @@ private:
     /// Computes an exclusive prefix sum in each logical warp.
     __device__ __forceinline__ void InclusiveSum(T input, T &output, Int2Type<true> is_primitive)
     {
-        InternalWarpScan(temp_storage).InclusiveSum(input, output);
+        InternalWarpScan(temp_storage, warp_id, lane_id).InclusiveSum(input, output);
     }
 
     /// Computes an exclusive prefix sum in each logical warp.  Specialized for non-primitive types.
@@ -817,7 +902,7 @@ private:
     /// Computes an exclusive prefix sum in each logical warp.  Also provides every thread with the warp-wide \p warp_aggregate of all inputs.
     __device__ __forceinline__ void InclusiveSum(T input, T &output, T &warp_aggregate, Int2Type<true> is_primitive)
     {
-        InternalWarpScan(temp_storage).InclusiveSum(input, output, warp_aggregate);
+        InternalWarpScan(temp_storage, warp_id, lane_id).InclusiveSum(input, output, warp_aggregate);
     }
 
     /// Computes an exclusive prefix sum in each logical warp.  Also provides every thread with the warp-wide \p warp_aggregate of all inputs.  Specialized for non-primitive types.
@@ -837,7 +922,7 @@ private:
         // Compute warp-wide prefix from aggregate, then broadcast to other lanes
         T prefix;
         prefix = warp_prefix_op(warp_aggregate);
-        prefix = InternalWarpScan(temp_storage).Broadcast(prefix, 0);
+        prefix = InternalWarpScan(temp_storage, warp_id, lane_id).Broadcast(prefix, 0);
 
         // Update output
         output = prefix + output;
@@ -1062,7 +1147,7 @@ public:
         T               &output,            ///< [out] Calling thread's output item.  May be aliased with \p input.
         ScanOp          scan_op)            ///< [in] Binary scan operator
     {
-        InternalWarpScan(temp_storage).InclusiveScan(input, output, scan_op);
+        InternalWarpScan(temp_storage, warp_id, lane_id).InclusiveScan(input, output, scan_op);
     }
 
 
@@ -1082,7 +1167,7 @@ public:
         ScanOp          scan_op,            ///< [in] Binary scan operator
         T               &warp_aggregate)    ///< [out] Warp-wide aggregate reduction of input items.
     {
-        InternalWarpScan(temp_storage).InclusiveScan(input, output, scan_op, warp_aggregate);
+        InternalWarpScan(temp_storage, warp_id, lane_id).InclusiveScan(input, output, scan_op, warp_aggregate);
     }
 
 
@@ -1117,7 +1202,7 @@ public:
         // Compute warp-wide prefix from aggregate, then broadcast to other lanes
         T prefix;
         prefix = warp_prefix_op(warp_aggregate);
-        prefix = InternalWarpScan(temp_storage).Broadcast(prefix, 0);
+        prefix = InternalWarpScan(temp_storage, warp_id, lane_id).Broadcast(prefix, 0);
 
         // Update output
         output = scan_op(prefix, output);
@@ -1141,10 +1226,10 @@ public:
     __device__ __forceinline__ void ExclusiveScan(
         T               input,              ///< [in] Calling thread's input item.
         T               &output,            ///< [out] Calling thread's output item.  May be aliased with \p input.
-        const T         &identity,          ///< [in] Identity value
+        T               identity,           ///< [in] Identity value
         ScanOp          scan_op)            ///< [in] Binary scan operator
     {
-        InternalWarpScan(temp_storage).ExclusiveScan(input, output, identity, scan_op);
+        InternalWarpScan(temp_storage, warp_id, lane_id).ExclusiveScan(input, output, identity, scan_op);
     }
 
 
@@ -1161,11 +1246,11 @@ public:
     __device__ __forceinline__ void ExclusiveScan(
         T               input,              ///< [in] Calling thread's input item.
         T               &output,            ///< [out] Calling thread's output item.  May be aliased with \p input.
-        const T         &identity,          ///< [in] Identity value
+        T               identity,           ///< [in] Identity value
         ScanOp          scan_op,            ///< [in] Binary scan operator
         T               &warp_aggregate)    ///< [out] Warp-wide aggregate reduction of input items.
     {
-        InternalWarpScan(temp_storage).ExclusiveScan(input, output, identity, scan_op, warp_aggregate);
+        InternalWarpScan(temp_storage, warp_id, lane_id).ExclusiveScan(input, output, identity, scan_op, warp_aggregate);
     }
 
 
@@ -1190,7 +1275,7 @@ public:
     __device__ __forceinline__ void ExclusiveScan(
         T               input,              ///< [in] Calling thread's input item.
         T               &output,            ///< [out] Calling thread's output item.  May be aliased with \p input.
-        const T         &identity,          ///< [in] Identity value
+        T               identity,           ///< [in] Identity value
         ScanOp          scan_op,            ///< [in] Binary scan operator
         T               &warp_aggregate,    ///< [out] <b>[<em>warp-lane</em><sub>0</sub> only]</b> Warp-wide aggregate reduction of input items (exclusive of the \p warp_prefix_op value).
         WarpPrefixOp    &warp_prefix_op)    ///< [in-out] <b>[<em>warp-lane</em><sub>0</sub> only]</b> Call-back functor for specifying a warp-wide prefix to be applied to all inputs.
@@ -1199,12 +1284,8 @@ public:
         ExclusiveScan(input, output, identity, scan_op, warp_aggregate);
 
         // Compute warp-wide prefix from aggregate, then broadcast to other lanes
-        unsigned int lane_id = ((WARPS == 1) || (LOGICAL_WARP_THREADS == PtxArchProps::WARP_THREADS)) ?
-            LaneId() :
-            (WarpId() * PtxArchProps::WARP_THREADS + LaneId()) % LOGICAL_WARP_THREADS;
-
         T prefix = warp_prefix_op(warp_aggregate);
-        prefix = InternalWarpScan(temp_storage).Broadcast(prefix, 0);
+        prefix = InternalWarpScan(temp_storage, warp_id, lane_id).Broadcast(prefix, 0);
 
         // Update output
         output = (lane_id == 0) ?
@@ -1233,7 +1314,7 @@ public:
         T               &output,            ///< [out] Calling thread's output item.  May be aliased with \p input.
         ScanOp          scan_op)            ///< [in] Binary scan operator
     {
-        InternalWarpScan(temp_storage).ExclusiveScan(input, output, scan_op);
+        InternalWarpScan(temp_storage, warp_id, lane_id).ExclusiveScan(input, output, scan_op);
     }
 
 
@@ -1253,7 +1334,7 @@ public:
         ScanOp          scan_op,            ///< [in] Binary scan operator
         T               &warp_aggregate)    ///< [out] Warp-wide aggregate reduction of input items.
     {
-        InternalWarpScan(temp_storage).ExclusiveScan(input, output, scan_op, warp_aggregate);
+        InternalWarpScan(temp_storage, warp_id, lane_id).ExclusiveScan(input, output, scan_op, warp_aggregate);
     }
 
 
@@ -1286,12 +1367,8 @@ public:
         ExclusiveScan(input, output, scan_op, warp_aggregate);
 
         // Compute warp-wide prefix from aggregate, then broadcast to other lanes
-        unsigned int lane_id = ((WARPS == 1) || (LOGICAL_WARP_THREADS == PtxArchProps::WARP_THREADS)) ?
-            LaneId() :
-            (WarpId() * PtxArchProps::WARP_THREADS + LaneId()) % LOGICAL_WARP_THREADS;
-
         T prefix = warp_prefix_op(warp_aggregate);
-        prefix = InternalWarpScan(temp_storage).Broadcast(prefix, 0);
+        prefix = InternalWarpScan(temp_storage, warp_id, lane_id).Broadcast(prefix, 0);
 
         // Update output with prefix
         output = (lane_id == 0) ?

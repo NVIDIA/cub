@@ -113,11 +113,11 @@ struct BlockRakingLayout
      */
     static __device__ __forceinline__ T* PlacementPtr(
         TempStorage &temp_storage,
-        int block_strip = 0,
-        int tid = threadIdx.x)
+        int linear_tid = threadIdx.x,
+        int block_strip = 0)
     {
         // Offset for partial
-        unsigned int offset = (block_strip * BLOCK_THREADS) + tid;
+        unsigned int offset = (block_strip * BLOCK_THREADS) + linear_tid;
 
         // Add in one padding element for every segment
         if (SEGMENT_PADDING > 0)
@@ -135,9 +135,9 @@ struct BlockRakingLayout
      */
     static __device__ __forceinline__ T* RakingPtr(
         TempStorage &temp_storage,
-        int tid = threadIdx.x)
+        int linear_tid = threadIdx.x)
     {
-        return temp_storage + (tid * (SEGMENT_LENGTH + SEGMENT_PADDING));
+        return temp_storage + (linear_tid * (SEGMENT_LENGTH + SEGMENT_PADDING));
     }
 };
 

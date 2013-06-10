@@ -360,11 +360,17 @@ private:
 
         // Thread fields
         TempStorage &temp_storage;
+        int linear_tid;
 
 
         /// Constructor
-        BlockScanInternal(TempStorage &temp_storage) : temp_storage(temp_storage) {}
-
+        __device__ __forceinline__ BlockScanInternal(
+            TempStorage &temp_storage,
+            int linear_tid)
+        :
+            temp_storage(temp_storage),
+            linear_tid(linear_tid)
+        {}
 
         /// Raking helper structure
         struct RakingHelper
@@ -376,9 +382,10 @@ private:
             template <typename ScanOp>
             __device__ __forceinline__ T Upsweep(
                 TempStorage&    temp_storage,
+                int             linear_tid,
                 ScanOp          scan_op)
             {
-                T *smem_raking_ptr = BlockRakingLayout::RakingPtr(temp_storage.raking_grid);
+                T *smem_raking_ptr = BlockRakingLayout::RakingPtr(temp_storage.raking_grid, linear_tid);
                 T *raking_ptr;
 
                 if (_ALGORITHM == BLOCK_SCAN_RAKING_MEMOIZE)
@@ -415,11 +422,12 @@ private:
             template <typename ScanOp>
             __device__ __forceinline__ void ExclusiveDownsweep(
                 TempStorage&    temp_storage,
+                int             linear_tid,
                 ScanOp          scan_op,
                 T               raking_partial,
                 bool            apply_prefix = true)
             {
-                T *smem_raking_ptr = BlockRakingLayout::RakingPtr(temp_storage.raking_grid);
+                T *smem_raking_ptr = BlockRakingLayout::RakingPtr(temp_storage.raking_grid, linear_tid);
 
                 T *raking_ptr = (_ALGORITHM == BLOCK_SCAN_RAKING_MEMOIZE) ?
                     cached_segment :
@@ -443,11 +451,12 @@ private:
             template <typename ScanOp>
             __device__ __forceinline__ void InclusiveDownsweep(
                 TempStorage&    temp_storage,
+                int             linear_tid,
                 ScanOp          scan_op,
                 T               raking_partial,
                 bool            apply_prefix = true)
             {
-                T *smem_raking_ptr = BlockRakingLayout::RakingPtr(temp_storage.raking_grid);
+                T *smem_raking_ptr = BlockRakingLayout::RakingPtr(temp_storage.raking_grid, linear_tid);
 
                 T *raking_ptr = (_ALGORITHM == BLOCK_SCAN_RAKING_MEMOIZE) ?
                     cached_segment :
@@ -479,8 +488,7 @@ private:
             if (WARP_SYNCHRONOUS)
             {
                 // Short-circuit directly to warp scan
-                WarpScan::ExclusiveScan(
-                    temp_storage.warp_scan,
+                WarpScan(temp_storage.warp_scan, 0, linear_tid).ExclusiveScan(
                     input,
                     output,
                     identity,
@@ -490,7 +498,7 @@ private:
             else
             {
                 // Place thread partial into shared memory raking grid
-                T *placement_ptr = BlockRakingLayout::PlacementPtr(temp_storage.raking_grid);
+                T *placement_ptr = BlockRakingLayout::PlacementPtr(temp_storage.raking_grid, linear_tid);
                 *placement_ptr = input;
 
                 __syncthreads();
@@ -500,11 +508,10 @@ private:
                 {
                     // Raking upsweep reduction in grid
                     RakingHelper helper;
-                    T raking_partial = helper.Upsweep(temp_storage, scan_op);
+                    T raking_partial = helper.Upsweep(temp_storage, linear_tid, scan_op);
 
                     // Exclusive warp synchronous scan
-                    WarpScan::ExclusiveScan(
-                        temp_storage.warp_scan,
+                    WarpScan(temp_storage.warp_scan, 0, linear_tid).ExclusiveScan(
                         raking_partial,
                         raking_partial,
                         identity,
@@ -512,7 +519,7 @@ private:
                         temp_storage.block_aggregate);
 
                     // Exclusive raking downsweep scan
-                    helper.ExclusiveDownsweep(temp_storage, scan_op, raking_partial);
+                    helper.ExclusiveDownsweep(temp_storage, linear_tid, scan_op, raking_partial);
                 }
 
                 __syncthreads();
@@ -541,8 +548,7 @@ private:
             if (WARP_SYNCHRONOUS)
             {
                 // Short-circuit directly to warp scan
-                WarpScan::ExclusiveScan(
-                    temp_storage.warp_scan,
+                WarpScan(temp_storage.warp_scan, 0, linear_tid).ExclusiveScan(
                     input,
                     output,
                     identity,
@@ -553,7 +559,7 @@ private:
             else
             {
                 // Place thread partial into shared memory raking grid
-                T *placement_ptr = BlockRakingLayout::PlacementPtr(temp_storage.raking_grid);
+                T *placement_ptr = BlockRakingLayout::PlacementPtr(temp_storage.raking_grid, linear_tid);
                 *placement_ptr = input;
 
                 __syncthreads();
@@ -563,11 +569,10 @@ private:
                 {
                     // Raking upsweep reduction in grid
                     RakingHelper helper;
-                    T raking_partial = helper.Upsweep(temp_storage, scan_op);
+                    T raking_partial = helper.Upsweep(temp_storage, linear_tid, scan_op);
 
                     // Exclusive warp synchronous scan
-                    WarpScan::ExclusiveScan(
-                        temp_storage.warp_scan,
+                    WarpScan(temp_storage.warp_scan, 0, linear_tid).ExclusiveScan(
                         raking_partial,
                         raking_partial,
                         identity,
@@ -576,7 +581,7 @@ private:
                         block_prefix_op);
 
                     // Exclusive raking downsweep scan
-                    helper.ExclusiveDownsweep(temp_storage, scan_op, raking_partial);
+                    helper.ExclusiveDownsweep(temp_storage, linear_tid, scan_op, raking_partial);
                 }
 
                 __syncthreads();
@@ -601,8 +606,7 @@ private:
             if (WARP_SYNCHRONOUS)
             {
                 // Short-circuit directly to warp scan
-                WarpScan::ExclusiveScan(
-                    temp_storage.warp_scan,
+                WarpScan(temp_storage.warp_scan, 0, linear_tid).ExclusiveScan(
                     input,
                     output,
                     scan_op,
@@ -611,7 +615,7 @@ private:
             else
             {
                 // Place thread partial into shared memory raking grid
-                T *placement_ptr = BlockRakingLayout::PlacementPtr(temp_storage.raking_grid);
+                T *placement_ptr = BlockRakingLayout::PlacementPtr(temp_storage.raking_grid, linear_tid);
                 *placement_ptr = input;
 
                 __syncthreads();
@@ -621,18 +625,17 @@ private:
                 {
                     // Raking upsweep reduction in grid
                     RakingHelper helper;
-                    T raking_partial = helper.Upsweep(temp_storage, scan_op);
+                    T raking_partial = helper.Upsweep(temp_storage, linear_tid, scan_op);
 
                     // Exclusive warp synchronous scan
-                    WarpScan::ExclusiveScan(
-                        temp_storage.warp_scan,
+                    WarpScan(temp_storage.warp_scan, 0, linear_tid).ExclusiveScan(
                         raking_partial,
                         raking_partial,
                         scan_op,
                         temp_storage.block_aggregate);
 
                     // Exclusive raking downsweep scan
-                    helper.ExclusiveDownsweep(scan_op, raking_partial, (linear_tid != 0));
+                    helper.ExclusiveDownsweep(temp_storage, linear_tid, scan_op, raking_partial, (linear_tid != 0));
                 }
 
                 __syncthreads();
@@ -660,8 +663,7 @@ private:
             if (WARP_SYNCHRONOUS)
             {
                 // Short-circuit directly to warp scan
-                WarpScan::ExclusiveScan(
-                    temp_storage.warp_scan,
+                WarpScan(temp_storage.warp_scan, 0, linear_tid).ExclusiveScan(
                     input,
                     output,
                     scan_op,
@@ -671,7 +673,7 @@ private:
             else
             {
                 // Place thread partial into shared memory raking grid
-                T *placement_ptr = BlockRakingLayout::PlacementPtr(temp_storage.raking_grid);
+                T *placement_ptr = BlockRakingLayout::PlacementPtr(temp_storage.raking_grid, linear_tid);
                 *placement_ptr = input;
 
                 __syncthreads();
@@ -681,11 +683,10 @@ private:
                 {
                     // Raking upsweep reduction in grid
                     RakingHelper helper;
-                    T raking_partial = helper.Upsweep(temp_storage, scan_op);
+                    T raking_partial = helper.Upsweep(temp_storage, linear_tid, scan_op);
 
                     // Exclusive warp synchronous scan
-                    WarpScan::ExclusiveScan(
-                        temp_storage.warp_scan,
+                    WarpScan(temp_storage.warp_scan, 0, linear_tid).ExclusiveScan(
                         raking_partial,
                         raking_partial,
                         scan_op,
@@ -693,7 +694,7 @@ private:
                         block_prefix_op);
 
                     // Exclusive raking downsweep scan
-                    helper.ExclusiveDownsweep(temp_storage, scan_op, raking_partial);
+                    helper.ExclusiveDownsweep(temp_storage, linear_tid, scan_op, raking_partial);
                 }
 
                 __syncthreads();
@@ -716,8 +717,7 @@ private:
             if (WARP_SYNCHRONOUS)
             {
                 // Short-circuit directly to warp scan
-                WarpScan::ExclusiveSum(
-                    temp_storage.warp_scan,
+                WarpScan(temp_storage.warp_scan, 0, linear_tid).ExclusiveSum(
                     input,
                     output,
                     block_aggregate);
@@ -728,7 +728,7 @@ private:
                 Sum<T> scan_op;
 
                 // Place thread partial into shared memory raking grid
-                T *placement_ptr = BlockRakingLayout::PlacementPtr(temp_storage.raking_grid);
+                T *placement_ptr = BlockRakingLayout::PlacementPtr(temp_storage.raking_grid, linear_tid);
                 *placement_ptr = input;
 
                 __syncthreads();
@@ -738,17 +738,16 @@ private:
                 {
                     // Raking upsweep reduction in grid
                     RakingHelper helper;
-                    T raking_partial = helper.Upsweep(temp_storage, scan_op);
+                    T raking_partial = helper.Upsweep(temp_storage, linear_tid, scan_op);
 
                     // Exclusive warp synchronous scan
-                    WarpScan::ExclusiveSum(
-                        temp_storage.warp_scan,
+                    WarpScan(temp_storage.warp_scan, 0, linear_tid).ExclusiveSum(
                         raking_partial,
                         raking_partial,
                         temp_storage.block_aggregate);
 
                     // Exclusive raking downsweep scan
-                    helper.ExclusiveDownsweep(temp_storage, scan_op, raking_partial);
+                    helper.ExclusiveDownsweep(temp_storage, linear_tid, scan_op, raking_partial);
                 }
 
                 __syncthreads();
@@ -773,8 +772,7 @@ private:
             if (WARP_SYNCHRONOUS)
             {
                 // Short-circuit directly to warp scan
-                WarpScan::ExclusiveSum(
-                    temp_storage.warp_scan,
+                WarpScan(temp_storage.warp_scan, 0, linear_tid).ExclusiveSum(
                     input,
                     output,
                     block_aggregate,
@@ -786,7 +784,7 @@ private:
                 Sum<T> scan_op;
 
                 // Place thread partial into shared memory raking grid
-                T *placement_ptr = BlockRakingLayout::PlacementPtr(temp_storage.raking_grid);
+                T *placement_ptr = BlockRakingLayout::PlacementPtr(temp_storage.raking_grid, linear_tid);
                 *placement_ptr = input;
 
                 __syncthreads();
@@ -796,18 +794,17 @@ private:
                 {
                     // Raking upsweep reduction in grid
                     RakingHelper helper;
-                    T raking_partial = helper.Upsweep(temp_storage, scan_op);
+                    T raking_partial = helper.Upsweep(temp_storage, linear_tid, scan_op);
 
                     // Exclusive warp synchronous scan
-                    WarpScan::ExclusiveSum(
-                        temp_storage.warp_scan,
+                    WarpScan(temp_storage.warp_scan, 0, linear_tid).ExclusiveSum(
                         raking_partial,
                         raking_partial,
                         temp_storage.block_aggregate,
                         block_prefix_op);
 
                     // Exclusive raking downsweep scan
-                    helper.ExclusiveDownsweep(temp_storage, scan_op, raking_partial);
+                    helper.ExclusiveDownsweep(temp_storage, linear_tid, scan_op, raking_partial);
                 }
 
                 __syncthreads();
@@ -832,8 +829,7 @@ private:
             if (WARP_SYNCHRONOUS)
             {
                 // Short-circuit directly to warp scan
-                WarpScan::InclusiveScan(
-                    temp_storage.warp_scan,
+                WarpScan(temp_storage.warp_scan, 0, linear_tid).InclusiveScan(
                     input,
                     output,
                     scan_op,
@@ -842,7 +838,7 @@ private:
             else
             {
                 // Place thread partial into shared memory raking grid
-                T *placement_ptr = BlockRakingLayout::PlacementPtr(temp_storage.raking_grid);
+                T *placement_ptr = BlockRakingLayout::PlacementPtr(temp_storage.raking_grid, linear_tid);
                 *placement_ptr = input;
 
                 __syncthreads();
@@ -852,18 +848,17 @@ private:
                 {
                     // Raking upsweep reduction in grid
                     RakingHelper helper;
-                    T raking_partial = helper.Upsweep(temp_storage, scan_op);
+                    T raking_partial = helper.Upsweep(temp_storage, linear_tid, scan_op);
 
                     // Exclusive warp synchronous scan
-                    WarpScan::ExclusiveScan(
-                        temp_storage.warp_scan,
+                    WarpScan(temp_storage.warp_scan, 0, linear_tid).ExclusiveScan(
                         raking_partial,
                         raking_partial,
                         scan_op,
                         temp_storage.block_aggregate);
 
                     // Inclusive raking downsweep scan
-                    helper.InclusiveDownsweep(temp_storage, scan_op, raking_partial, (linear_tid != 0));
+                    helper.InclusiveDownsweep(temp_storage, linear_tid, scan_op, raking_partial, (linear_tid != 0));
                 }
 
                 __syncthreads();
@@ -891,8 +886,7 @@ private:
             if (WARP_SYNCHRONOUS)
             {
                 // Short-circuit directly to warp scan
-                WarpScan::InclusiveScan(
-                    temp_storage.warp_scan,
+                WarpScan(temp_storage.warp_scan, 0, linear_tid).InclusiveScan(
                     input,
                     output,
                     scan_op,
@@ -902,7 +896,7 @@ private:
             else
             {
                 // Place thread partial into shared memory raking grid
-                T *placement_ptr = BlockRakingLayout::PlacementPtr(temp_storage.raking_grid);
+                T *placement_ptr = BlockRakingLayout::PlacementPtr(temp_storage.raking_grid, linear_tid);
                 *placement_ptr = input;
 
                 __syncthreads();
@@ -912,11 +906,10 @@ private:
                 {
                     // Raking upsweep reduction in grid
                     RakingHelper helper;
-                    T raking_partial = helper.Upsweep(temp_storage, scan_op);
+                    T raking_partial = helper.Upsweep(temp_storage, linear_tid, scan_op);
 
                     // Warp synchronous scan
-                    WarpScan::ExclusiveScan(
-                        temp_storage.warp_scan,
+                    WarpScan(temp_storage.warp_scan, 0, linear_tid).ExclusiveScan(
                         raking_partial,
                         raking_partial,
                         scan_op,
@@ -924,7 +917,7 @@ private:
                         block_prefix_op);
 
                     // Inclusive raking downsweep scan
-                    helper.InclusiveDownsweep(temp_storage, scan_op, raking_partial);
+                    helper.InclusiveDownsweep(temp_storage, linear_tid, scan_op, raking_partial);
                 }
 
                 __syncthreads();
@@ -947,8 +940,7 @@ private:
             if (WARP_SYNCHRONOUS)
             {
                 // Short-circuit directly to warp scan
-                WarpScan::InclusiveSum(
-                    temp_storage.warp_scan,
+                WarpScan(temp_storage.warp_scan, 0, linear_tid).InclusiveSum(
                     input,
                     output,
                     block_aggregate);
@@ -959,7 +951,7 @@ private:
                 Sum<T> scan_op;
 
                 // Place thread partial into shared memory raking grid
-                T *placement_ptr = BlockRakingLayout::PlacementPtr(temp_storage.raking_grid);
+                T *placement_ptr = BlockRakingLayout::PlacementPtr(temp_storage.raking_grid, linear_tid);
                 *placement_ptr = input;
 
                 __syncthreads();
@@ -969,17 +961,16 @@ private:
                 {
                     // Raking upsweep reduction in grid
                     RakingHelper helper;
-                    T raking_partial = helper.Upsweep(temp_storage, scan_op);
+                    T raking_partial = helper.Upsweep(temp_storage, linear_tid, scan_op);
 
                     // Exclusive warp synchronous scan
-                    WarpScan::ExclusiveSum(
-                        temp_storage.warp_scan,
+                    WarpScan(temp_storage.warp_scan, 0, linear_tid).ExclusiveSum(
                         raking_partial,
                         raking_partial,
                         temp_storage.block_aggregate);
 
                     // Inclusive raking downsweep scan
-                    helper.InclusiveDownsweep(temp_storage, scan_op, raking_partial, (linear_tid != 0));
+                    helper.InclusiveDownsweep(temp_storage, linear_tid, scan_op, raking_partial, (linear_tid != 0));
                 }
 
                 __syncthreads();
@@ -1004,8 +995,7 @@ private:
             if (WARP_SYNCHRONOUS)
             {
                 // Short-circuit directly to warp scan
-                WarpScan::InclusiveSum(
-                    temp_storage.warp_scan,
+                WarpScan(temp_storage.warp_scan, 0, linear_tid).InclusiveSum(
                     input,
                     output,
                     block_aggregate,
@@ -1017,7 +1007,7 @@ private:
                 Sum<T> scan_op;
 
                 // Place thread partial into shared memory raking grid
-                T *placement_ptr = BlockRakingLayout::PlacementPtr(temp_storage.raking_grid);
+                T *placement_ptr = BlockRakingLayout::PlacementPtr(temp_storage.raking_grid, linear_tid);
                 *placement_ptr = input;
 
                 __syncthreads();
@@ -1027,18 +1017,17 @@ private:
                 {
                     // Raking upsweep reduction in grid
                     RakingHelper helper;
-                    T raking_partial = helper.Upsweep(temp_storage, scan_op);
+                    T raking_partial = helper.Upsweep(temp_storage, linear_tid, scan_op);
 
                     // Warp synchronous scan
-                    WarpScan::ExclusiveSum(
-                        temp_storage.warp_scan,
+                    WarpScan(temp_storage.warp_scan, 0, linear_tid).ExclusiveSum(
                         raking_partial,
                         raking_partial,
                         temp_storage.block_aggregate,
                         block_prefix_op);
 
                     // Inclusive raking downsweep scan
-                    helper.InclusiveDownsweep(temp_storage, scan_op, raking_partial);
+                    helper.InclusiveDownsweep(temp_storage, linear_tid, scan_op, raking_partial);
                 }
 
                 __syncthreads();
@@ -1084,19 +1073,28 @@ private:
 
         // Thread fields
         TempStorage &temp_storage;
-        unsigned int linear_tid;
+        int linear_tid;
+        int warp_id;
+        int lane_id;
 
 
         /// Constructor
-        BlockScanInternal(
+        __device__ __forceinline__ BlockScanInternal(
             TempStorage &temp_storage,
-            unsigned int linear_tid)
+            int linear_tid)
         :
             temp_storage(temp_storage),
-            linear_tid(linear_tid) {}
+            linear_tid(linear_tid),
+            warp_id((BLOCK_THREADS <= PtxArchProps::WARP_THREADS) ?
+                0 :
+                linear_tid / PtxArchProps::WARP_THREADS),
+            lane_id((BLOCK_THREADS <= PtxArchProps::WARP_THREADS) ?
+                linear_tid :
+                linear_tid % PtxArchProps::WARP_THREADS)
+        {}
 
 
-        /// Update the calling thread's partial reduction with the warp-wide aggregates from preceeding warps.  Also returns block-wide aggregate in <em>thread</em><sub>0</sub>.
+        /// Update the calling thread's partial reduction with the warp-wide aggregates from preceding warps.  Also returns block-wide aggregate in <em>thread</em><sub>0</sub>.
         template <typename ScanOp>
         __device__ __forceinline__ void ApplyWarpAggregates(
             T               &partial,           ///< [out] The calling thread's partial reduction
@@ -1105,8 +1103,6 @@ private:
             T               &block_aggregate,   ///< [out] Threadblock-wide aggregate reduction of input items
             bool            lane_valid = true)  ///< [in] Whether or not the partial belonging to the current thread is valid
         {
-            unsigned int warp_id = linear_tid / PtxArchProps::WARP_THREADS;
-
             // Share lane aggregates
             temp_storage.warp_aggregates[warp_id] = warp_aggregate;
 
@@ -1139,7 +1135,7 @@ private:
             T               &block_aggregate)   ///< [out] Threadblock-wide aggregate reduction of input items
         {
             T warp_aggregate;
-            WarpScan::ExclusiveScan(temp_storage.warp_scan, input, output, identity, scan_op, warp_aggregate);
+            WarpScan(temp_storage.warp_scan, warp_id, lane_id).ExclusiveScan(input, output, identity, scan_op, warp_aggregate);
 
             // Update outputs and block_aggregate with warp-wide aggregates
             ApplyWarpAggregates(output, scan_op, warp_aggregate, block_aggregate);
@@ -1161,7 +1157,7 @@ private:
             ExclusiveScan(input, output, identity, scan_op, block_aggregate);
 
             // Compute and share threadblock prefix
-            if (linear_tid == 0)
+            if (warp_id == 0)
             {
                 temp_storage.block_prefix = block_prefix_op(block_aggregate);
             }
@@ -1182,10 +1178,9 @@ private:
             T               &block_aggregate)               ///< [out] Threadblock-wide aggregate reduction of input items
         {
             T warp_aggregate;
-            WarpScan::ExclusiveScan(temp_storage.warp_scan, input, output, scan_op, warp_aggregate);
+            WarpScan(temp_storage.warp_scan, warp_id, lane_id).ExclusiveScan(input, output, scan_op, warp_aggregate);
 
             // Update outputs and block_aggregate with warp-wide aggregates
-            unsigned int lane_id = linear_tid & (PtxArchProps::WARP_THREADS - 1);
             ApplyWarpAggregates(output, scan_op, warp_aggregate, block_aggregate, (lane_id > 0));
         }
 
@@ -1204,7 +1199,6 @@ private:
             ExclusiveScan(input, output, scan_op, block_aggregate);
 
             // Compute and share threadblock prefix
-            unsigned int warp_id = linear_tid / PtxArchProps::WARP_THREADS;
             if (warp_id == 0)
             {
                 temp_storage.block_prefix = block_prefix_op(block_aggregate);
@@ -1226,7 +1220,7 @@ private:
             T               &block_aggregate)               ///< [out] Threadblock-wide aggregate reduction of input items
         {
             T warp_aggregate;
-            WarpScan::ExclusiveSum(temp_storage.warp_scan, input, output, warp_aggregate);
+            WarpScan(temp_storage.warp_scan, warp_id, lane_id).ExclusiveSum(input, output, warp_aggregate);
 
             // Update outputs and block_aggregate with warp-wide aggregates from lane-0s
             ApplyWarpAggregates(output, Sum<T>(), warp_aggregate, block_aggregate);
@@ -1244,7 +1238,6 @@ private:
             ExclusiveSum(input, output, block_aggregate);
 
             // Compute and share threadblock prefix
-            unsigned int warp_id = linear_tid / PtxArchProps::WARP_THREADS;
             if (warp_id == 0)
             {
                 temp_storage.block_prefix = block_prefix_op(block_aggregate);
@@ -1267,7 +1260,7 @@ private:
             T               &block_aggregate)               ///< [out] Threadblock-wide aggregate reduction of input items
         {
             T warp_aggregate;
-            WarpScan::InclusiveScan(temp_storage.warp_scan, input, output, scan_op, warp_aggregate);
+            WarpScan(temp_storage.warp_scan, warp_id, lane_id).InclusiveScan(input, output, scan_op, warp_aggregate);
 
             // Update outputs and block_aggregate with warp-wide aggregates from lane-0s
             ApplyWarpAggregates(output, scan_op, warp_aggregate, block_aggregate);
@@ -1289,7 +1282,6 @@ private:
             InclusiveScan(input, output, scan_op, block_aggregate);
 
             // Compute and share threadblock prefix
-            unsigned int warp_id = linear_tid / PtxArchProps::WARP_THREADS;
             if (warp_id == 0)
             {
                 temp_storage.block_prefix = block_prefix_op(block_aggregate);
@@ -1309,7 +1301,7 @@ private:
             T               &block_aggregate)               ///< [out] Threadblock-wide aggregate reduction of input items
         {
             T warp_aggregate;
-            WarpScan::InclusiveSum(temp_storage.warp_scan, input, output, warp_aggregate);
+            WarpScan(temp_storage.warp_scan, warp_id, lane_id).InclusiveSum(input, output, warp_aggregate);
 
             // Update outputs and block_aggregate with warp-wide aggregates from lane-0s
             ApplyWarpAggregates(output, Sum<T>(), warp_aggregate, block_aggregate);
@@ -1327,7 +1319,6 @@ private:
             InclusiveSum(input, output, block_aggregate);
 
             // Compute and share threadblock prefix
-            unsigned int warp_id = linear_tid / PtxArchProps::WARP_THREADS;
             if (warp_id == 0)
             {
                 temp_storage.block_prefix = block_prefix_op(block_aggregate);
@@ -1350,8 +1341,11 @@ private:
      * Type definitions
      ******************************************************************************/
 
+    /// Internal blockscan implementation to use
+    typedef BlockScanInternal<SAFE_ALGORITHM> InternalWarpScan;
+
     /// Shared memory storage layout type for BlockScan
-    typedef typename BlockScanInternal<SAFE_ALGORITHM>::TempStorage _TempStorage;
+    typedef typename InternalWarpScan::TempStorage _TempStorage;
 
 
     /******************************************************************************
@@ -1374,7 +1368,7 @@ private:
     _TempStorage &temp_storage;
 
     /// Linear thread-id
-    unsigned int linear_tid;
+    int linear_tid;
 
 
 public:
@@ -1393,7 +1387,8 @@ public:
     __device__ __forceinline__ BlockScan()
     :
         temp_storage(PrivateStorage()),
-        linear_tid(threadIdx.x){}
+        linear_tid(threadIdx.x)
+    {}
 
 
     /**
@@ -1403,17 +1398,19 @@ public:
         TempStorage &temp_storage)                      ///< [in] Reference to memory allocation having layout type TempStorage
     :
         temp_storage(temp_storage),
-        linear_tid(threadIdx.x){}
+        linear_tid(threadIdx.x)
+    {}
 
 
     /**
      * \brief Collective constructor using a private static allocation of shared memory as temporary storage.  Threads are identified using the given linear thread identifier
      */
     __device__ __forceinline__ BlockScan(
-        unsigned int linear_tid)                        ///< [in] A suitable 1D thread-identifier for the calling thread (e.g., <tt>(threadIdx.y * blockDim.x) + linear_tid</tt> for 2D thread blocks)
+        int linear_tid)                        ///< [in] A suitable 1D thread-identifier for the calling thread (e.g., <tt>(threadIdx.y * blockDim.x) + linear_tid</tt> for 2D thread blocks)
     :
         temp_storage(PrivateStorage()),
-        linear_tid(linear_tid){}
+        linear_tid(linear_tid)
+    {}
 
 
     /**
@@ -1421,10 +1418,11 @@ public:
      */
     __device__ __forceinline__ BlockScan(
         TempStorage &temp_storage,                      ///< [in] Reference to memory allocation having layout type TempStorage
-        unsigned int linear_tid)                        ///< [in] <b>[optional]</b> A suitable 1D thread-identifier for the calling thread (e.g., <tt>(threadIdx.y * blockDim.x) + linear_tid</tt> for 2D thread blocks)
+        int linear_tid)                        ///< [in] <b>[optional]</b> A suitable 1D thread-identifier for the calling thread (e.g., <tt>(threadIdx.y * blockDim.x) + linear_tid</tt> for 2D thread blocks)
     :
         temp_storage(temp_storage),
-        linear_tid(linear_tid){}
+        linear_tid(linear_tid)
+    {}
 
 
 
@@ -1445,7 +1443,7 @@ public:
         T               &output)                        ///< [out] Calling thread's output item (may be aliased to \p input)
     {
         T block_aggregate;
-        BlockScanInternal<SAFE_ALGORITHM>(temp_storage, linear_tid).ExclusiveSum(input, output, block_aggregate);
+        InternalWarpScan(temp_storage, linear_tid).ExclusiveSum(input, output, block_aggregate);
     }
 
 
@@ -1459,7 +1457,7 @@ public:
         T               &output,                        ///< [out] Calling thread's output item (may be aliased to \p input)
         T               &block_aggregate)               ///< [out] Threadblock-wide aggregate reduction of input items
     {
-        BlockScanInternal<SAFE_ALGORITHM>(temp_storage, linear_tid).ExclusiveSum(input, output, block_aggregate);
+        InternalWarpScan(temp_storage, linear_tid).ExclusiveSum(input, output, block_aggregate);
     }
 
 
@@ -1482,7 +1480,7 @@ public:
         T               &block_aggregate,               ///< [out] Threadblock-wide aggregate reduction of input items (exclusive of the \p block_prefix_op value)
         BlockPrefixOp   &block_prefix_op)               ///< [in-out] <b>[<em>warp</em><sub>0</sub> only]</b> Call-back functor for specifying a threadblock-wide prefix to be applied to all inputs.
     {
-        BlockScanInternal<SAFE_ALGORITHM>(temp_storage, linear_tid).ExclusiveSum(input, output, block_aggregate, block_prefix_op);
+        InternalWarpScan(temp_storage, linear_tid).ExclusiveSum(input, output, block_aggregate, block_prefix_op);
     }
 
 
@@ -1595,7 +1593,7 @@ public:
         T               &output)                        ///< [out] Calling thread's output item (may be aliased to \p input)
     {
         T block_aggregate;
-        BlockScanInternal<SAFE_ALGORITHM>(temp_storage, linear_tid).InclusiveSum(input, output, block_aggregate);
+        InternalWarpScan(temp_storage, linear_tid).InclusiveSum(input, output, block_aggregate);
     }
 
 
@@ -1609,7 +1607,7 @@ public:
         T               &output,                        ///< [out] Calling thread's output item (may be aliased to \p input)
         T               &block_aggregate)               ///< [out] Threadblock-wide aggregate reduction of input items
     {
-        BlockScanInternal<SAFE_ALGORITHM>(temp_storage, linear_tid).InclusiveSum(input, output, block_aggregate);
+        InternalWarpScan(temp_storage, linear_tid).InclusiveSum(input, output, block_aggregate);
     }
 
 
@@ -1633,7 +1631,7 @@ public:
         T               &block_aggregate,               ///< [out] Threadblock-wide aggregate reduction of input items (exclusive of the \p block_prefix_op value)
         BlockPrefixOp   &block_prefix_op)               ///< [in-out] <b>[<em>warp</em><sub>0</sub> only]</b> Call-back functor for specifying a threadblock-wide prefix to be applied to all inputs.
     {
-        BlockScanInternal<SAFE_ALGORITHM>(temp_storage, linear_tid).InclusiveSum(input, output, block_aggregate, block_prefix_op);
+        InternalWarpScan(temp_storage, linear_tid).InclusiveSum(input, output, block_aggregate, block_prefix_op);
     }
 
 
@@ -1772,7 +1770,7 @@ public:
         ScanOp          scan_op)                        ///< [in] Binary scan operator
     {
         T block_aggregate;
-        BlockScanInternal<SAFE_ALGORITHM>(temp_storage, linear_tid).ExclusiveScan(input, output, identity, scan_op, block_aggregate);
+        InternalWarpScan(temp_storage, linear_tid).ExclusiveScan(input, output, identity, scan_op, block_aggregate);
     }
 
 
@@ -1791,7 +1789,7 @@ public:
         ScanOp          scan_op,            ///< [in] Binary scan operator
         T               &block_aggregate)   ///< [out] Threadblock-wide aggregate reduction of input items
     {
-        BlockScanInternal<SAFE_ALGORITHM>(temp_storage, linear_tid).ExclusiveScan(input, output, identity, scan_op, block_aggregate);
+        InternalWarpScan(temp_storage, linear_tid).ExclusiveScan(input, output, identity, scan_op, block_aggregate);
     }
 
 
@@ -1819,7 +1817,7 @@ public:
         T               &block_aggregate,               ///< [out] Threadblock-wide aggregate reduction of input items (exclusive of the \p block_prefix_op value)
         BlockPrefixOp   &block_prefix_op)               ///< [in-out] <b>[<em>warp</em><sub>0</sub> only]</b> Call-back functor for specifying a threadblock-wide prefix to be applied to all inputs.
     {
-        BlockScanInternal<SAFE_ALGORITHM>(temp_storage, linear_tid).ExclusiveScan(input, output, identity, scan_op, block_aggregate, block_prefix_op);
+        InternalWarpScan(temp_storage, linear_tid).ExclusiveScan(input, output, identity, scan_op, block_aggregate, block_prefix_op);
     }
 
 
@@ -1945,7 +1943,7 @@ public:
         ScanOp          scan_op)                        ///< [in] Binary scan operator
     {
         T block_aggregate;
-        BlockScanInternal<SAFE_ALGORITHM>(temp_storage, linear_tid).ExclusiveScan(input, output, scan_op, block_aggregate);
+        InternalWarpScan(temp_storage, linear_tid).ExclusiveScan(input, output, scan_op, block_aggregate);
     }
 
 
@@ -1963,7 +1961,7 @@ public:
         ScanOp          scan_op,                        ///< [in] Binary scan operator
         T               &block_aggregate)               ///< [out] Threadblock-wide aggregate reduction of input items
     {
-        BlockScanInternal<SAFE_ALGORITHM>(temp_storage, linear_tid).ExclusiveScan(input, output, scan_op, block_aggregate);
+        InternalWarpScan(temp_storage, linear_tid).ExclusiveScan(input, output, scan_op, block_aggregate);
     }
 
 
@@ -1990,7 +1988,7 @@ public:
         T               &block_aggregate,               ///< [out] Threadblock-wide aggregate reduction of input items (exclusive of the \p block_prefix_op value)
         BlockPrefixOp   &block_prefix_op)               ///< [in-out] <b>[<em>warp</em><sub>0</sub> only]</b> Call-back functor for specifying a threadblock-wide prefix to be applied to all inputs.
     {
-        BlockScanInternal<SAFE_ALGORITHM>(temp_storage, linear_tid).ExclusiveScan(input, output, scan_op, block_aggregate, block_prefix_op);
+        InternalWarpScan(temp_storage, linear_tid).ExclusiveScan(input, output, scan_op, block_aggregate, block_prefix_op);
     }
 
 
@@ -2133,7 +2131,7 @@ public:
         ScanOp          scan_op,                        ///< [in] Binary scan operator
         T               &block_aggregate)               ///< [out] Threadblock-wide aggregate reduction of input items
     {
-        BlockScanInternal<SAFE_ALGORITHM>(temp_storage, linear_tid).InclusiveScan(input, output, scan_op, block_aggregate);
+        InternalWarpScan(temp_storage, linear_tid).InclusiveScan(input, output, scan_op, block_aggregate);
     }
 
 
@@ -2160,7 +2158,7 @@ public:
         T               &block_aggregate,               ///< [out] Threadblock-wide aggregate reduction of input items (exclusive of the \p block_prefix_op value)
         BlockPrefixOp   &block_prefix_op)               ///< [in-out] <b>[<em>warp</em><sub>0</sub> only]</b> Call-back functor for specifying a threadblock-wide prefix to be applied to all inputs.
     {
-        BlockScanInternal<SAFE_ALGORITHM>(temp_storage, linear_tid).InclusiveScan(input, output, scan_op, block_aggregate, block_prefix_op);
+        InternalWarpScan(temp_storage, linear_tid).InclusiveScan(input, output, scan_op, block_aggregate, block_prefix_op);
     }
 
 
