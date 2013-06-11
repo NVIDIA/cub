@@ -37,7 +37,7 @@
 
 #include "../../util_arch.cuh"
 #include "../../block/block_load.cuh"
-#include "../../block/block_histo_256.cuh"
+#include "../../block/block_histo.cuh"
 #include "../../block/block_radix_sort.cuh"
 #include "../../block/block_discontinuity.cuh"
 #include "../../grid/grid_mapping.cuh"

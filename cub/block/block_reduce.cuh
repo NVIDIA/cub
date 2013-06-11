@@ -573,6 +573,7 @@ public:
     /******************************************************************//**
      * \name Collective construction
      *********************************************************************/
+    //@{
 
     /**
      * \brief Collective constructor for 1D thread blocks using a private static allocation of shared memory as temporary storage.  Threads are identified using <tt>threadIdx.x</tt>.
@@ -588,7 +589,7 @@ public:
      * \brief Collective constructor for 1D thread blocks using the specified memory allocation as temporary storage.  Threads are identified using <tt>threadIdx.x</tt>.
      */
     __device__ __forceinline__ BlockReduce(
-        TempStorage &temp_storage)                      ///< [in] Reference to memory allocation having layout type TempStorage
+        TempStorage &temp_storage)             ///< [in] Reference to memory allocation having layout type TempStorage
     :
         temp_storage(temp_storage),
         linear_tid(threadIdx.x)
@@ -610,7 +611,7 @@ public:
      * \brief Collective constructor using the specified memory allocation as temporary storage.  Threads are identified using the given linear thread identifier.
      */
     __device__ __forceinline__ BlockReduce(
-        TempStorage &temp_storage,                      ///< [in] Reference to memory allocation having layout type TempStorage
+        TempStorage &temp_storage,             ///< [in] Reference to memory allocation having layout type TempStorage
         int linear_tid)                        ///< [in] <b>[optional]</b> A suitable 1D thread-identifier for the calling thread (e.g., <tt>(threadIdx.y * blockDim.x) + linear_tid</tt> for 2D thread blocks)
     :
         temp_storage(temp_storage),
