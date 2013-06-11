@@ -33,11 +33,11 @@
 
 #pragma once
 
-#include "../thread/thread_load.cuh"
-#include "../thread/thread_store.cuh"
+#include "specializations/warp_reduce_shfl.cuh"
+#include "specializations/warp_reduce_smem.cuh"
+#include "../thread/thread_operators.cuh"
 #include "../util_device.cuh"
 #include "../util_type.cuh"
-#include "../thread/thread_operators.cuh"
 #include "../util_namespace.cuh"
 
 /// Optional outer namespace(s)
@@ -45,7 +45,6 @@ CUB_NS_PREFIX
 
 /// CUB namespace
 namespace cub {
-
 
 
 /**
@@ -98,7 +97,9 @@ namespace cub {
  * <br>
  *
  * \par Examples
- * <em>Example 1.</em> Perform a simple sum reduction for one warp
+ *
+ * \par
+ * <em><b>Example 1</b></em>. Perform a simple sum reduction for one warp
  * \code
  * #include <cub/cub.cuh>
  *
@@ -110,23 +111,48 @@ namespace cub {
  *     // Opaque shared memory for WarpReduce
  *     __shared__ typename WarpReduce::TempStorage temp_storage;
  *
- *     // Perform a reduction of thread ranks in first warp
+ *     // Compute sum of thread ranks in first warp
  *     if (threadIdx.x < 32)
  *     {
  *         int input = threadIdx.x;
- *         int output = WarpReduce::Sum(temp_storage, input);
+ *         int output = WarpReduce(temp_storage).Sum(input);
  *
- *         if (threadIdx.x == 0)
- *             printf("tid(%d) output(%d)\n\n", threadIdx.x, output);
+ *         ...
+ *
+ * \endcode
+ *
+ * \par
+ * <em><b>Example 2</b></em>. Perform a simple max in every warp
+ * \code
+ * #include <cub/cub.cuh>
+ *
+ * // Max functor
+ * struct Max
+ * {
+ *     __host__ __device__ __forceinline__ T operator()(const int &a, const int &b)
+ *     {
+ *         return (b > a) ? b : a;
  *     }
+ * };
+ *
+ * template <int BLOCK_THREADS>
+ * __global__ void SomeKernel(...)
+ * {
+ *     const int WARPS = BLOCK_THREADS / 32;
+ *
+ *     // Parameterize WarpReduce for all active warp on type int
+ *     typedef cub::WarpReduce<int, WARPS> WarpReduce;
+ *
+ *     // Opaque shared memory for WarpReduce
+ *     __shared__ typename WarpReduce::TempStorage temp_storage;
+ *
+ *     // Compute max thread rank every warp
+ *     int input = threadIdx.x;
+ *     int output = WarpReduce(temp_storage).Reduce(input, Max());
  *
  *     ...
- * \endcode
- * Printed output:
- * \code
- * tid(0) output(496)
- * \endcode
  *
+ * \endcode
  */
 template <
     typename    T,
@@ -140,474 +166,17 @@ private:
      * Constants and typedefs
      ******************************************************************************/
 
-    /// WarpReduce algorithmic variants
-    enum WarpReducePolicy
-    {
-        SHFL_REDUCE,          // Warp-synchronous SHFL-based reduction
-        SMEM_REDUCE,          // Warp-synchronous smem-based reduction
-    };
-
-    /// Constants
     enum
     {
         POW_OF_TWO = ((LOGICAL_WARP_THREADS & (LOGICAL_WARP_THREADS - 1)) == 0),
     };
 
-    /// Use shuffle-based reduction if (architecture is >= SM30) and (LOGICAL_WARP_THREADS is a power-of-two)
-    static const WarpReducePolicy POLICY = ((CUB_PTX_ARCH >= 300) && POW_OF_TWO) ?
-                                            SHFL_REDUCE :
-                                            SMEM_REDUCE;
-
-
-    #ifndef DOXYGEN_SHOULD_SKIP_THIS    // Do not document
-
-
-    /******************************************************************************
-     * Algorithmic variants
-     ******************************************************************************/
-
-    /**
-     * SHFL_REDUCE algorithmic variant
-     */
-    template <int _ALGORITHM, int DUMMY = 0>
-    struct WarpReduceInternal
-    {
-        /// Constants
-        enum
-        {
-            /// The number of warp reduction steps
-            STEPS = Log2<LOGICAL_WARP_THREADS>::VALUE,
-
-            // The 5-bit SHFL mask for logically splitting warps into sub-segments
-            SHFL_MASK = (-1 << STEPS) & 31,
-
-            // The 5-bit SFHL clamp
-            SHFL_CLAMP = LOGICAL_WARP_THREADS - 1,
-
-            // The packed C argument (mask starts 8 bits up)
-            SHFL_C = (SHFL_MASK << 8) | SHFL_CLAMP,
-        };
-
-
-        /// Shared memory storage layout type
-        typedef NullType TempStorage;
-
-
-        // Thread fields
-        int             warp_id;
-        int             lane_id;
-
-
-        /// Constructor
-        __device__ __forceinline__ WarpReduceInternal(
-            TempStorage &temp_storage,
-            int warp_id,
-            int lane_id)
-        :
-            warp_id(warp_id),
-            lane_id(lane_id)
-        {}
-
-
-        /// Summation (single-SHFL)
-        template <
-            bool                FULL_TILE,
-            int                 FOLDED_ITEMS_PER_LANE>
-        __device__ __forceinline__ T Sum(
-            T                   input,              ///< [in] Calling thread's input
-            int                 valid_items,        ///< [in] Total number of valid items in the calling thread's logical warp (may be less than \p LOGICAL_WARP_THREADS)
-            Int2Type<true>      single_shfl)
-        {
-            unsigned int output = reinterpret_cast<unsigned int &>(input);
-
-            // Iterate reduction steps
-            #pragma unroll
-            for (int STEP = 0; STEP < STEPS; STEP++)
-            {
-                const int OFFSET = 1 << STEP;
-
-                if (FULL_TILE)
-                {
-                    // Use predicate set from SHFL to guard against invalid peers
-                    asm(
-                        "{"
-                        "  .reg .u32 r0;"
-                        "  .reg .pred p;"
-                        "  shfl.down.b32 r0|p, %1, %2, %3;"
-                        "  @p add.u32 r0, r0, %4;"
-                        "  mov.u32 %0, r0;"
-                        "}"
-                        : "=r"(output) : "r"(output), "r"(OFFSET), "r"(SHFL_C), "r"(output));
-                }
-                else
-                {
-                    // Set range predicate to guard against invalid peers
-                    asm(
-                        "{"
-                        "  .reg .u32 r0;"
-                        "  .reg .pred p;"
-                        "  shfl.down.b32 r0, %1, %2, %3;"
-                        "  setp.lt.u32 p, %5, %6;"
-                        "  mov.u32 %0, %1;"
-                        "  @p add.u32 %0, %1, r0;"
-                        "}"
-                        : "=r"(output) : "r"(output), "r"(OFFSET), "r"(SHFL_C), "r"(output), "r"((lane_id + OFFSET) * FOLDED_ITEMS_PER_LANE), "r"(valid_items));
-                }
-            }
-
-            return output;
-        }
-
-
-        /// Summation (multi-SHFL)
-        template <
-            bool                FULL_TILE,
-            int                 FOLDED_ITEMS_PER_LANE>
-        __device__ __forceinline__ T Sum(
-            T                   input,              ///< [in] Calling thread's input
-            int                 valid_items,        ///< [in] Total number of valid items in the calling thread's logical warp (may be less than \p LOGICAL_WARP_THREADS)
-            Int2Type<false>     single_shfl)
-        {
-            // Delegate to generic reduce
-            return Reduce<FULL_TILE, FOLDED_ITEMS_PER_LANE>(input, valid_items, cub::Sum<T>());
-        }
-
-
-        /// Summation (float)
-        template <
-            bool                FULL_TILE,
-            int                 FOLDED_ITEMS_PER_LANE>
-        __device__ __forceinline__ float Sum(
-            float               input,              ///< [in] Calling thread's input
-            int                 valid_items)        ///< [in] Total number of valid items in the calling thread's logical warp (may be less than \p LOGICAL_WARP_THREADS)
-        {
-            T output = input;
-
-            // Iterate reduction steps
-            #pragma unroll
-            for (int STEP = 0; STEP < STEPS; STEP++)
-            {
-                const int OFFSET = 1 << STEP;
-
-                if (FULL_TILE)
-                {
-                    // Use predicate set from SHFL to guard against invalid peers
-                    asm(
-                        "{"
-                        "  .reg .f32 r0;"
-                        "  .reg .pred p;"
-                        "  shfl.down.b32 r0|p, %1, %2, %3;"
-                        "  @p add.f32 r0, r0, %4;"
-                        "  mov.f32 %0, r0;"
-                        "}"
-                        : "=f"(output) : "f"(output), "r"(OFFSET), "r"(SHFL_C), "f"(output));
-                }
-                else
-                {
-                    // Set range predicate to guard against invalid peers
-                    asm(
-                        "{"
-                        "  .reg .f32 r0;"
-                        "  .reg .pred p;"
-                        "  shfl.down.b32 r0, %1, %2, %3;"
-                        "  setp.lt.u32 p, %5, %6;"
-                        "  mov.f32 %0, %1;"
-                        "  @p add.f32 %0, %0, r0;"
-                        "}"
-                        : "=f"(output) : "f"(output), "r"(OFFSET), "r"(SHFL_C), "f"(output), "r"((lane_id + OFFSET) * FOLDED_ITEMS_PER_LANE), "r"(valid_items));
-                }
-            }
-
-            return output;
-        }
-
-        /// Summation (generic)
-        template <
-            bool                FULL_TILE,
-            int                 FOLDED_ITEMS_PER_LANE,
-            typename            _T>
-        __device__ __forceinline__ _T Sum(
-            _T                  input,              ///< [in] Calling thread's input
-            int                 valid_items)        ///< [in] Total number of valid items in the calling thread's logical warp (may be less than \p LOGICAL_WARP_THREADS)
-        {
-            // Whether sharing can be done with a single SHFL instruction (vs multiple SFHL instructions)
-            Int2Type<(Traits<_T>::PRIMITIVE) && (sizeof(_T) <= sizeof(unsigned int))> single_shfl;
-
-            return Sum<FULL_TILE, FOLDED_ITEMS_PER_LANE>(input, valid_items, single_shfl);
-        }
-
-
-        /// Reduction
-        template <
-            bool            FULL_TILE,
-            int             FOLDED_ITEMS_PER_LANE,
-            typename        ReductionOp>
-        __device__ __forceinline__ T Reduce(
-            T               input,              ///< [in] Calling thread's input
-            int             valid_items,        ///< [in] Total number of valid items in the calling thread's logical warp (may be less than \p LOGICAL_WARP_THREADS)
-            ReductionOp     reduction_op)       ///< [in] Binary reduction operator
-        {
-            typedef typename WordAlignment<T>::ShuffleWord ShuffleWord;
-
-            const int       WORDS           = (sizeof(T) + sizeof(ShuffleWord) - 1) / sizeof(ShuffleWord);
-            T               output          = input;
-            T               temp;
-            ShuffleWord     *temp_alias     = reinterpret_cast<ShuffleWord *>(&temp);
-            ShuffleWord     *output_alias   = reinterpret_cast<ShuffleWord *>(&output);
-
-            // Iterate scan steps
-            #pragma unroll
-            for (int STEP = 0; STEP < STEPS; STEP++)
-            {
-                // Grab addend from peer
-                const int OFFSET = 1 << STEP;
-
-                #pragma unroll
-                for (int WORD = 0; WORD < WORDS; ++WORD)
-                {
-                    unsigned int shuffle_word = output_alias[WORD];
-                    asm(
-                        "  shfl.down.b32 %0, %1, %2, %3;"
-                        : "=r"(shuffle_word) : "r"(shuffle_word), "r"(OFFSET), "r"(SHFL_C));
-                    temp_alias[WORD] = (ShuffleWord) shuffle_word;
-                }
-
-                // Perform reduction op if from a valid peer
-                if (FULL_TILE)
-                {
-                    if (lane_id < LOGICAL_WARP_THREADS - OFFSET)
-                        output = reduction_op(output, temp);
-                }
-                else
-                {
-                    if (((lane_id + OFFSET) * FOLDED_ITEMS_PER_LANE) < valid_items)
-                        output = reduction_op(output, temp);
-                }
-            }
-
-            return output;
-
-        }
-
-
-        /// Segmented reduction
-        template <
-            bool            HEAD_SEGMENTED,
-            typename        Flag,
-            typename        ReductionOp>
-        __device__ __forceinline__ T SegmentedReduce(
-            T               input,              ///< [in] Calling thread's input
-            Flag            flag,               ///< [in] Whether or not the current lane is a segment head/tail
-            ReductionOp     reduction_op)       ///< [in] Binary reduction operator
-        {
-            typedef typename WordAlignment<T>::ShuffleWord ShuffleWord;
-
-            T output = input;
-
-            const int       WORDS           = (sizeof(T) + sizeof(ShuffleWord) - 1) / sizeof(ShuffleWord);
-            T               temp;
-            ShuffleWord     *temp_alias     = reinterpret_cast<ShuffleWord *>(&temp);
-            ShuffleWord     *output_alias   = reinterpret_cast<ShuffleWord *>(&output);
-
-            // Get the start flags for each thread in the warp.
-            int warp_flags = __ballot(flag);
-
-            if (!HEAD_SEGMENTED)
-                warp_flags <<= 1;
-
-            // Keep bits above the current thread.
-            warp_flags &= LaneMaskGt();
-
-            // Accommodate packing of multiple logical warps in a single physical warp
-            if ((LOGICAL_WARPS > 1) && (LOGICAL_WARP_THREADS < 32))
-                warp_flags >>= (warp_id * LOGICAL_WARP_THREADS);
-
-            // Find next flag
-            int next_flag = __clz(__brev(warp_flags));
-
-            // Clip the next segment at the warp boundary if necessary
-            if (LOGICAL_WARP_THREADS != 32)
-                next_flag = CUB_MIN(next_flag, LOGICAL_WARP_THREADS);
-
-            // Iterate scan steps
-            #pragma unroll
-            for (int STEP = 0; STEP < STEPS; STEP++)
-            {
-                const int OFFSET = 1 << STEP;
-
-                // Grab addend from peer
-                #pragma unroll
-                for (int WORD = 0; WORD < WORDS; ++WORD)
-                {
-                    unsigned int shuffle_word = output_alias[WORD];
-                    asm(
-                        "  shfl.down.b32 %0, %1, %2, %3;"
-                        : "=r"(shuffle_word) : "r"(shuffle_word), "r"(OFFSET), "r"(SHFL_C));
-                    temp_alias[WORD] = (ShuffleWord) shuffle_word;
-                }
-
-                // Perform reduction op if valid
-                if (OFFSET < next_flag - lane_id)
-                    output = reduction_op(output, temp);
-            }
-
-            return output;
-        }
-
-    };
-
-
-    /**
-     * SMEM_REDUCE algorithmic variant
-     */
-    template <int DUMMY>
-    struct WarpReduceInternal<SMEM_REDUCE, DUMMY>
-    {
-        /// Constants
-        enum
-        {
-            /// The number of warp scan steps
-            STEPS = Log2<LOGICAL_WARP_THREADS>::VALUE,
-
-            /// The number of threads in half a warp
-            HALF_WARP_THREADS = 1 << (STEPS - 1),
-
-            /// The number of shared memory elements per warp
-            WARP_SMEM_ELEMENTS =  LOGICAL_WARP_THREADS + HALF_WARP_THREADS,
-        };
-
-
-        /// Shared memory storage layout type (1.5 warps-worth of elements for each warp)
-        typedef T TempStorage[LOGICAL_WARPS][WARP_SMEM_ELEMENTS];
-
-
-        // Thread fields
-        TempStorage     &temp_storage;
-        int             warp_id;
-        int             lane_id;
-
-
-        /// Constructor
-        __device__ __forceinline__ WarpReduceInternal(
-            TempStorage     &temp_storage,
-            int             warp_id,
-            int             lane_id)
-        :
-            temp_storage(temp_storage),
-            warp_id(warp_id),
-            lane_id(lane_id)
-        {}
-
-
-        /**
-         * Reduction
-         */
-        template <
-            bool                FULL_TILE,
-            int                 FOLDED_ITEMS_PER_LANE,
-            typename            ReductionOp>
-        __device__ __forceinline__ T Reduce(
-            T                   input,              ///< [in] Calling thread's input
-            int                 valid_items,        ///< [in] Total number of valid items in the calling thread's logical warp (may be less than \p LOGICAL_WARP_THREADS)
-            ReductionOp         reduction_op)       ///< [in] Reduction operator
-        {
-            for (int STEP = 0; STEP < STEPS; STEP++)
-            {
-                const int OFFSET = 1 << STEP;
-
-                // Share input into buffer
-                ThreadStore<STORE_VOLATILE>(&temp_storage[warp_id][lane_id], input);
-
-                // Update input if addend is in range
-                if ((FULL_TILE && POW_OF_TWO) || ((lane_id + OFFSET) * FOLDED_ITEMS_PER_LANE < valid_items))
-                {
-                    T addend = ThreadLoad<LOAD_VOLATILE>(&temp_storage[warp_id][lane_id + OFFSET]);
-                    input = reduction_op(input, addend);
-                }
-            }
-
-            return input;
-        }
-
-
-        /**
-         * Segmented reduction
-         */
-        template <
-            bool            HEAD_SEGMENTED,
-            typename        Flag,
-            typename        ReductionOp>
-        __device__ __forceinline__ T SegmentedReduce(
-            T               input,              ///< [in] Calling thread's input
-            Flag            flag,               ///< [in] Whether or not the current lane is a segment head/tail
-            ReductionOp     reduction_op)       ///< [in] Reduction operator
-        {
-            // Get the start flags for each thread in the warp.
-            int warp_flags = __ballot(flag);
-
-            if (!HEAD_SEGMENTED)
-                warp_flags <<= 1;
-
-            // Keep bits above the current thread.
-            warp_flags &= LaneMaskGt();
-
-            // Accommodate packing of multiple logical warps in a single physical warp
-            if ((LOGICAL_WARPS > 1) && (LOGICAL_WARP_THREADS < 32))
-                warp_flags >>= (warp_id * LOGICAL_WARP_THREADS);
-
-            // Find next flag
-            int next_flag = __clz(__brev(warp_flags));
-
-            // Clip the next segment at the warp boundary if necessary
-            if (LOGICAL_WARP_THREADS != 32)
-                next_flag = CUB_MIN(next_flag, LOGICAL_WARP_THREADS);
-
-            for (int STEP = 0; STEP < STEPS; STEP++)
-            {
-                const int OFFSET = 1 << STEP;
-
-                // Share input into buffer
-                ThreadStore<STORE_VOLATILE>(&temp_storage[warp_id][lane_id], input);
-
-                // Update input if addend is in range
-                if (OFFSET < next_flag - lane_id)
-                {
-                    T addend = ThreadLoad<LOAD_VOLATILE>(&temp_storage[warp_id][lane_id + OFFSET]);
-                    input = reduction_op(input, addend);
-                }
-            }
-
-            return input;
-        }
-
-
-        /**
-         * Summation
-         */
-        template <
-            bool    FULL_TILE,
-            int     FOLDED_ITEMS_PER_LANE>
-        __device__ __forceinline__ T Sum(
-            T                   input,              ///< [in] Calling thread's input
-            int                 valid_items)        ///< [in] Total number of valid items in the calling thread's logical warp (may be less than \p LOGICAL_WARP_THREADS)
-        {
-            return Reduce<FULL_TILE, FOLDED_ITEMS_PER_LANE>(input, valid_items, cub::Sum<T>());
-        }
-
-    };
-
-
-    /******************************************************************************
-     * Type definitions
-     ******************************************************************************/
-
 public:
 
-    typedef WarpReduceInternal<POLICY> InternalWarpReduce;
-
-
-    #endif // DOXYGEN_SHOULD_SKIP_THIS
-
+    /// Internal specialization.  Use SHFL-based reduction if (architecture is >= SM30) and ((only one logical warp) or (LOGICAL_WARP_THREADS is a power-of-two))
+    typedef typename If<(CUB_PTX_ARCH >= 300) && ((LOGICAL_WARPS == 1) || POW_OF_TWO),
+        WarpReduceShfl<T, LOGICAL_WARPS, LOGICAL_WARP_THREADS>,
+        WarpReduceSmem<T, LOGICAL_WARPS, LOGICAL_WARP_THREADS> >::Type InternalWarpReduce;
 
     /// \smemstorage{WarpReduce}
     typedef typename InternalWarpReduce::TempStorage TempStorage;
@@ -650,6 +219,7 @@ public:
 
     /**
      * \brief Collective constructor for 1D thread blocks using a private static allocation of shared memory as temporary storage.  Logical warp and lane identifiers are constructed from <tt>threadIdx.x</tt>.
+     *
      */
     __device__ __forceinline__ WarpReduce()
     :
@@ -717,8 +287,6 @@ public:
     /**
      * \brief Computes a warp-wide sum in each active warp.  The output is valid in warp <em>lane</em><sub>0</sub>.
      *
-     * The return value is undefined in threads other than thread<sub>0</sub>.
-     *
      * \smemreuse
      */
     __device__ __forceinline__ T Sum(
@@ -732,12 +300,10 @@ public:
      *
      * All threads in each logical warp must agree on the same value for \p valid_items.  Otherwise the result is undefined.
      *
-     * The return value is undefined in threads other than warp <em>lane</em><sub>0</sub>.
-     *
      * \smemreuse
      */
     __device__ __forceinline__ T Sum(
-        T                   input,                  ///< [in] Calling thread's input
+        T                   input,              ///< [in] Calling thread's input
         int                 valid_items)        ///< [in] Total number of valid items in the calling thread's logical warp (may be less than \p LOGICAL_WARP_THREADS)
     {
         // Determine if we don't need bounds checking
@@ -796,8 +362,6 @@ public:
     /**
      * \brief Computes a warp-wide reduction in each active warp using the specified binary reduction functor.  The output is valid in warp <em>lane</em><sub>0</sub>.
      *
-     * The return value is undefined in threads other than warp <em>lane</em><sub>0</sub>.
-     *
      * \smemreuse
      *
      * \tparam ReductionOp     <b>[inferred]</b> Binary scan operator type having member <tt>T operator()(const T &a, const T &b)</tt>
@@ -814,8 +378,6 @@ public:
      * \brief Computes a partially-full warp-wide reduction in each active warp using the specified binary reduction functor.  The output is valid in warp <em>lane</em><sub>0</sub>.
      *
      * All threads in each logical warp must agree on the same value for \p valid_items.  Otherwise the result is undefined.
-     *
-     * The return value is undefined in threads other than warp <em>lane</em><sub>0</sub>.
      *
      * \smemreuse
      *
