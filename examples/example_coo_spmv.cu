@@ -221,7 +221,6 @@ struct PersistentBlockSpmv
     typedef BlockExchange<VertexId, BLOCK_THREADS, ITEMS_PER_THREAD, true>      BlockExchangeRows;
     typedef BlockExchange<Value, BLOCK_THREADS, ITEMS_PER_THREAD, true>         BlockExchangeValues;
     typedef BlockDiscontinuity<HeadFlag, BLOCK_THREADS>                         BlockDiscontinuity;
-    typedef BlockReduce<PartialSum, BLOCK_THREADS>                              BlockReduce;
 
     // Shared memory type for this threadblock
     struct TempStorage
@@ -235,12 +234,13 @@ struct PersistentBlockSpmv
                 typename BlockScan::TempStorage             scan;               // Smem needed for reduce-value-by-row scan
                 typename BlockDiscontinuity::TempStorage    discontinuity;      // Smem needed for head-flagging
             };
-            typename BlockReduce::TempStorage               reduce;             // Smem needed for min-finding reduction
         };
 
+        VertexId        first_block_row;
         VertexId        last_block_row;
+
         PartialSum      identity;
-        PartialSum      first_scatter;
+        Value           first_scatter_partial;
     };
 
     //---------------------------------------------------------------------
@@ -255,7 +255,6 @@ struct PersistentBlockSpmv
     Value                           *d_vector;
     Value                           *d_result;
     PartialSum                      *d_block_partials;
-    VertexId                        last_block_row;
 
 
     /**
@@ -285,21 +284,21 @@ struct PersistentBlockSpmv
         if (threadIdx.x == 0)
         {
             VertexId first_block_row            = d_rows[block_offset];
-            last_block_row                      = d_rows[block_oob - 1];
+            VertexId last_block_row             = d_rows[block_oob - 1];
 
             // Initialize carry to identity
             carry.running_prefix.row            = first_block_row;
             carry.running_prefix.partial        = Value(0);
             temp_storage.identity               = carry.running_prefix;
 
-            temp_storage.first_scatter.row      = last_block_row;
-            temp_storage.first_scatter.partial  = Value(0);
+            temp_storage.first_scatter_partial  = Value(0);
+
+            temp_storage.first_block_row        = first_block_row;
             temp_storage.last_block_row         = last_block_row;
         }
 
         __syncthreads();
 
-        last_block_row = temp_storage.last_block_row;
     }
 
 
@@ -328,7 +327,7 @@ struct PersistentBlockSpmv
             // vertex for out-of-bound items, but zero-valued
             LoadWarpStriped<LOAD_DEFAULT>(d_columns + block_offset, guarded_items, VertexId(0), columns);
             LoadWarpStriped<LOAD_DEFAULT>(d_values + block_offset, guarded_items, Value(0), values);
-            LoadWarpStriped<LOAD_DEFAULT>(d_rows + block_offset, guarded_items, last_block_row, rows);
+            LoadWarpStriped<LOAD_DEFAULT>(d_rows + block_offset, guarded_items, temp_storage.last_block_row, rows);
         }
         else
         {
@@ -339,7 +338,7 @@ struct PersistentBlockSpmv
         }
 
         // Fence to prevent hoisting any dependent code below into the loads above
-        __syncthreads();
+//        __syncthreads();
 
         // Load the referenced values from x and compute the dot product partials sums
         #pragma unroll
@@ -388,6 +387,9 @@ struct PersistentBlockSpmv
             block_aggregate,                // (Out)
             carry);                         // (In-out)
 
+        // Barrier for smem reuse and coherence
+        __syncthreads();
+
         // Scatter an accumulated dot product if it is the head of a valid row
         #pragma unroll
         for (int ITEM = 0; ITEM < ITEMS_PER_THREAD; ITEM++)
@@ -396,28 +398,12 @@ struct PersistentBlockSpmv
             {
                 // Scatter
                 d_result[partial_sums[ITEM].row] = partial_sums[ITEM].partial;
-            }
-            else
-            {
-                // Otherwise reset the row ID to the last row in the threadblock's range
-                partial_sums[ITEM].row = last_block_row;
-            }
-        }
 
-        // Find the first-scattered dot product if not yet set
-        if (temp_storage.first_scatter.row == last_block_row)
-        {
-            // Barrier for smem reuse and coherence
-            __syncthreads();
-
-            PartialSum first_scatter = BlockReduce(temp_storage.reduce).Reduce(
-                partial_sums,
-                MinRowOp());
-
-            // Stash the first-scattered dot product in smem
-            if (threadIdx.x == 0)
-            {
-                temp_storage.first_scatter = first_scatter;
+                // Save off first scatter partial
+                if (partial_sums[ITEM].row == temp_storage.first_block_row)
+                {
+                    temp_storage.first_scatter_partial = partial_sums[ITEM].partial;
+                }
             }
         }
     }
@@ -438,12 +424,11 @@ struct PersistentBlockSpmv
             }
             else
             {
-                // Unweight the first-output if it's the same row as the carry aggregate
-                PartialSum first_scatter = temp_storage.first_scatter;
-                if (first_scatter.row == carry.running_prefix.row)
-                    first_scatter.partial = Value(0);
+                // Write out threadblock first-scattered-item and running total
+                PartialSum first_scatter;
+                first_scatter.row       = temp_storage.first_block_row;
+                first_scatter.partial   = temp_storage.first_scatter_partial;
 
-                // Write out threadblock first-item and carry aggregate
                 d_block_partials[blockIdx.x * 2]          = first_scatter;
                 d_block_partials[(blockIdx.x * 2) + 1]    = carry.running_prefix;
             }
