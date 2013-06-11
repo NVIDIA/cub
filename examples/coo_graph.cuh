@@ -171,12 +171,6 @@ struct CooGraph
                     return -1;
                 }
 
-                if (ll_nodes_x != ll_nodes_y)
-                {
-                    fprintf(stderr, "Error parsing MARKET graph: not square (%lld, %lld)\n", ll_nodes_x, ll_nodes_y);
-                    return -1;
-                }
-
                 edges = ll_edges;
 
                 printf(" (%lld nodes, %lld directed edges)... ",

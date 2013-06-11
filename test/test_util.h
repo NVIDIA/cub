@@ -45,6 +45,7 @@
 #include <vector>
 #include <sstream>
 #include <iostream>
+#include <limits>
 
 #include <cub/cub.cuh>
 
@@ -719,7 +720,7 @@ __device__ __forceinline__ TestBar ThreadLoad(TestBar *ptr)
 }
 
  /// Store (simply defer to storing individual items)
-template <cub::PtxLoadModifier MODIFIER, typename VertexId>
+template <cub::PtxLoadModifier MODIFIER>
 __device__ __forceinline__ void ThreadStore(
     TestBar *ptr,
     TestBar val)
@@ -780,6 +781,57 @@ int CompareResults(T* computed, S* reference, SizeT len, bool verbose = true)
         }
     }
     return 0;
+}
+
+
+/**
+ * Compares the equivalence of two arrays
+ */
+template <typename SizeT>
+int CompareResults(float* computed, float* reference, SizeT len, bool verbose = true)
+{
+    int retval = 0;
+    for (SizeT i = 0; i < len; i++)
+    {
+        float difference = std::abs(computed[i]-reference[i]);
+        float fraction = difference / std::abs(reference[i]);
+
+        if (fraction > 0.0001)
+        {
+            if (verbose) std::cout << "INCORRECT: [" << i << "]: "
+                << CoutCast(computed[i]) << " != "
+                << CoutCast(reference[i]) << " (difference:" << difference << ", fraction: " << fraction << ")";
+            return 1;
+        }
+    }
+
+    if (!retval) printf("CORRECT\n");
+    return retval;
+}
+
+/**
+ * Compares the equivalence of two arrays
+ */
+template <typename SizeT>
+int CompareResults(double* computed, double* reference, SizeT len, bool verbose = true)
+{
+    int retval = 0;
+    for (SizeT i = 0; i < len; i++)
+    {
+        double difference = std::abs(computed[i]-reference[i]);
+        double fraction = difference / std::abs(reference[i]);
+
+        if (fraction > 0.0001)
+        {
+            if (verbose) std::cout << "INCORRECT: [" << i << "]: "
+                << CoutCast(computed[i]) << " != "
+                << CoutCast(reference[i]) << " (difference:" << difference << ", fraction: " << fraction << ")";
+            return 1;
+        }
+    }
+
+    if (!retval) printf("CORRECT\n");
+    return retval;
 }
 
 
