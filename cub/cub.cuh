@@ -35,7 +35,7 @@
 
 
 // Block
-#include "block/block_histo_256.cuh"
+#include "block/block_histo.cuh"
 #include "block/block_discontinuity.cuh"
 #include "block/block_exchange.cuh"
 #include "block/block_load.cuh"
