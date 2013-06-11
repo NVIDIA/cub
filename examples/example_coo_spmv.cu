@@ -941,7 +941,7 @@ void TestDevice(
         num_edges * 2 / avg_elapsed / 1000.0 / 1000.0);
 
     // Check results
-    int compare = CompareDeviceResults(h_reference, d_result, coo_graph.row_dim, g_verbose, g_verbose);
+    int compare = CompareDeviceResults(h_reference, d_result, coo_graph.row_dim, true, g_verbose);
     printf("%s\n", compare ? "FAIL" : "PASS");
     AssertEquals(0, compare);
 
