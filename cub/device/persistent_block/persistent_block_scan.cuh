@@ -47,6 +47,10 @@ CUB_NS_PREFIX
 namespace cub {
 
 
+/******************************************************************************
+ * Utility data types
+ ******************************************************************************/
+
 /**
  * Enumerations of tile status
  */
@@ -162,16 +166,20 @@ struct DeviceScanTileStatus<T, false>
 };
 
 
+/******************************************************************************
+ * Tuning policy types
+ ******************************************************************************/
+
 /**
  * Tuning policy for PersistentBlockScan
  */
 template <
     int                         _BLOCK_THREADS,
     int                         _ITEMS_PER_THREAD,
-    BlockLoadAlgorithm          _LOAD_POLICY,
-    PtxLoadModifier             _LOAD_MODIFIER,
+    BlockLoadAlgorithm          _LOAD_ALGORITHM,
     bool                        _LOAD_WARP_TIME_SLICING,
-    BlockStorePolicy            _STORE_POLICY,
+    PtxLoadModifier             _LOAD_MODIFIER,
+    BlockStorePolicy            _STORE_ALGORITHM,
     bool                        _STORE_WARP_TIME_SLICING,
     BlockScanAlgorithm          _SCAN_ALGORITHM>
 struct PersistentBlockScanPolicy
@@ -184,12 +192,16 @@ struct PersistentBlockScanPolicy
         STORE_WARP_TIME_SLICING = _STORE_WARP_TIME_SLICING,
     };
 
-    static const BlockLoadAlgorithm     LOAD_POLICY     = _LOAD_POLICY;
-    static const PtxLoadModifier        LOAD_MODIFIER   = _LOAD_MODIFIER;
-    static const BlockStorePolicy       STORE_POLICY    = _STORE_POLICY;
-    static const BlockScanAlgorithm     SCAN_ALGORITHM  = _SCAN_ALGORITHM;
+    static const BlockLoadAlgorithm     LOAD_ALGORITHM      = _LOAD_ALGORITHM;
+    static const PtxLoadModifier        LOAD_MODIFIER       = _LOAD_MODIFIER;
+    static const BlockStorePolicy       STORE_ALGORITHM     = _STORE_ALGORITHM;
+    static const BlockScanAlgorithm     SCAN_ALGORITHM      = _SCAN_ALGORITHM;
 };
 
+
+/******************************************************************************
+ * Thread block abstractions
+ ******************************************************************************/
 
 /**
  * \brief PersistentBlockScan implements a stateful abstraction of CUDA thread blocks for participating in device-wide prefix scan.
@@ -225,7 +237,7 @@ struct PersistentBlockScan
         InputIteratorRA,
         PersistentBlockScanPolicy::BLOCK_THREADS,
         PersistentBlockScanPolicy::ITEMS_PER_THREAD,
-        PersistentBlockScanPolicy::LOAD_POLICY,
+        PersistentBlockScanPolicy::LOAD_ALGORITHM,
         PersistentBlockScanPolicy::LOAD_MODIFIER,
         PersistentBlockScanPolicy::LOAD_WARP_TIME_SLICING>  BlockLoadT;
 
@@ -234,7 +246,7 @@ struct PersistentBlockScan
         OutputIteratorRA,
         PersistentBlockScanPolicy::BLOCK_THREADS,
         PersistentBlockScanPolicy::ITEMS_PER_THREAD,
-        PersistentBlockScanPolicy::STORE_POLICY,
+        PersistentBlockScanPolicy::STORE_ALGORITHM,
         STORE_DEFAULT,
         PersistentBlockScanPolicy::STORE_WARP_TIME_SLICING> BlockStoreT;
 
