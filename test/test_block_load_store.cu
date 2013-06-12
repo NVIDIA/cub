@@ -61,8 +61,8 @@ bool g_verbose = false;
 template <
     int                 BLOCK_THREADS,
     int                 ITEMS_PER_THREAD,
-    BlockLoadAlgorithm  LOAD_POLICY,
-    BlockStorePolicy    STORE_POLICY,
+    BlockLoadAlgorithm  LOAD_ALGORITHM,
+    BlockStorePolicy    STORE_ALGORITHM,
     PtxLoadModifier     LOAD_MODIFIER,
     PtxStoreModifier    STORE_MODIFIER,
     int                 WARP_TIME_SLICING,
@@ -82,8 +82,8 @@ __global__ void Kernel(
     typedef typename std::iterator_traits<InputIteratorRA>::value_type T;
 
     // Threadblock load/store abstraction types
-    typedef BlockLoad<InputIteratorRA, BLOCK_THREADS, ITEMS_PER_THREAD, LOAD_POLICY, LOAD_MODIFIER, WARP_TIME_SLICING> BlockLoad;
-    typedef BlockStore<OutputIteratorRA, BLOCK_THREADS, ITEMS_PER_THREAD, STORE_POLICY, STORE_MODIFIER, WARP_TIME_SLICING> BlockStore;
+    typedef BlockLoad<InputIteratorRA, BLOCK_THREADS, ITEMS_PER_THREAD, LOAD_ALGORITHM, LOAD_MODIFIER, WARP_TIME_SLICING> BlockLoad;
+    typedef BlockStore<OutputIteratorRA, BLOCK_THREADS, ITEMS_PER_THREAD, STORE_ALGORITHM, STORE_MODIFIER, WARP_TIME_SLICING> BlockStore;
 
     // Shared memory type for this threadblock
     union TempStorage
@@ -118,8 +118,8 @@ __global__ void Kernel(
 template <
     int                 BLOCK_THREADS,
     int                 ITEMS_PER_THREAD,
-    BlockLoadAlgorithm  LOAD_POLICY,
-    BlockStorePolicy    STORE_POLICY,
+    BlockLoadAlgorithm  LOAD_ALGORITHM,
+    BlockStorePolicy    STORE_ALGORITHM,
     PtxLoadModifier     LOAD_MODIFIER,
     PtxStoreModifier    STORE_MODIFIER,
     int                 WARP_TIME_SLICING,
@@ -140,8 +140,8 @@ __global__ void KernelGuarded(
     typedef typename std::iterator_traits<InputIteratorRA>::value_type T;
 
     // Threadblock load/store abstraction types
-    typedef BlockLoad<InputIteratorRA, BLOCK_THREADS, ITEMS_PER_THREAD, LOAD_POLICY, LOAD_MODIFIER, WARP_TIME_SLICING> BlockLoad;
-    typedef BlockStore<OutputIteratorRA, BLOCK_THREADS, ITEMS_PER_THREAD, STORE_POLICY, STORE_MODIFIER, WARP_TIME_SLICING> BlockStore;
+    typedef BlockLoad<InputIteratorRA, BLOCK_THREADS, ITEMS_PER_THREAD, LOAD_ALGORITHM, LOAD_MODIFIER, WARP_TIME_SLICING> BlockLoad;
+    typedef BlockStore<OutputIteratorRA, BLOCK_THREADS, ITEMS_PER_THREAD, STORE_ALGORITHM, STORE_MODIFIER, WARP_TIME_SLICING> BlockStore;
 
     // Shared memory type for this threadblock
     union TempStorage
@@ -182,8 +182,8 @@ template <
     typename            T,
     int                 BLOCK_THREADS,
     int                 ITEMS_PER_THREAD,
-    BlockLoadAlgorithm  LOAD_POLICY,
-    BlockStorePolicy    STORE_POLICY,
+    BlockLoadAlgorithm  LOAD_ALGORITHM,
+    BlockStorePolicy    STORE_ALGORITHM,
     PtxLoadModifier     LOAD_MODIFIER,
     PtxStoreModifier    STORE_MODIFIER,
     int                 WARP_TIME_SLICING,
@@ -202,7 +202,7 @@ void TestKernel(
     int unguarded_elements = grid_size * BLOCK_THREADS * ITEMS_PER_THREAD;
 
     // Run unguarded kernel
-    Kernel<BLOCK_THREADS, ITEMS_PER_THREAD, LOAD_POLICY, STORE_POLICY, LOAD_MODIFIER, STORE_MODIFIER, WARP_TIME_SLICING>
+    Kernel<BLOCK_THREADS, ITEMS_PER_THREAD, LOAD_ALGORITHM, STORE_ALGORITHM, LOAD_MODIFIER, STORE_MODIFIER, WARP_TIME_SLICING>
         <<<grid_size, BLOCK_THREADS>>>(
             d_in,
             d_out_unguarded);
@@ -215,7 +215,7 @@ void TestKernel(
     AssertEquals(0, compare);
 
     // Run guarded kernel
-    KernelGuarded<BLOCK_THREADS, ITEMS_PER_THREAD, LOAD_POLICY, STORE_POLICY, LOAD_MODIFIER, STORE_MODIFIER, WARP_TIME_SLICING>
+    KernelGuarded<BLOCK_THREADS, ITEMS_PER_THREAD, LOAD_ALGORITHM, STORE_ALGORITHM, LOAD_MODIFIER, STORE_MODIFIER, WARP_TIME_SLICING>
         <<<grid_size, BLOCK_THREADS>>>(
             d_in,
             d_out_guarded,
@@ -237,8 +237,8 @@ template <
     typename            T,
     int                 BLOCK_THREADS,
     int                 ITEMS_PER_THREAD,
-    BlockLoadAlgorithm  LOAD_POLICY,
-    BlockStorePolicy    STORE_POLICY,
+    BlockLoadAlgorithm  LOAD_ALGORITHM,
+    BlockStorePolicy    STORE_ALGORITHM,
     PtxLoadModifier     LOAD_MODIFIER,
     PtxStoreModifier    STORE_MODIFIER,
     int                 WARP_TIME_SLICING>
@@ -275,15 +275,15 @@ void TestNative(
         "unguarded_elements(%d) "
         "BLOCK_THREADS(%d) "
         "ITEMS_PER_THREAD(%d) "
-        "LOAD_POLICY(%d) "
-        "STORE_POLICY(%d) "
+        "LOAD_ALGORITHM(%d) "
+        "STORE_ALGORITHM(%d) "
         "LOAD_MODIFIER(%d) "
         "STORE_MODIFIER(%d) "
         "WARP_TIME_SLICING(%d) "
         "sizeof(T)(%d)\n",
-            IsPointer<T*>::VALUE, grid_size, guarded_elements, unguarded_elements, BLOCK_THREADS, ITEMS_PER_THREAD, LOAD_POLICY, STORE_POLICY, LOAD_MODIFIER, STORE_MODIFIER, WARP_TIME_SLICING, (int) sizeof(T));
+            IsPointer<T*>::VALUE, grid_size, guarded_elements, unguarded_elements, BLOCK_THREADS, ITEMS_PER_THREAD, LOAD_ALGORITHM, STORE_ALGORITHM, LOAD_MODIFIER, STORE_MODIFIER, WARP_TIME_SLICING, (int) sizeof(T));
 
-    TestKernel<T, BLOCK_THREADS, ITEMS_PER_THREAD, LOAD_POLICY, STORE_POLICY, LOAD_MODIFIER, STORE_MODIFIER, WARP_TIME_SLICING>(
+    TestKernel<T, BLOCK_THREADS, ITEMS_PER_THREAD, LOAD_ALGORITHM, STORE_ALGORITHM, LOAD_MODIFIER, STORE_MODIFIER, WARP_TIME_SLICING>(
         h_in,
         d_in,
         d_out_unguarded,
@@ -306,8 +306,8 @@ template <
     typename            T,
     int                 BLOCK_THREADS,
     int                 ITEMS_PER_THREAD,
-    BlockLoadAlgorithm  LOAD_POLICY,
-    BlockStorePolicy    STORE_POLICY,
+    BlockLoadAlgorithm  LOAD_ALGORITHM,
+    BlockStorePolicy    STORE_ALGORITHM,
     int                 WARP_TIME_SLICING>
 void TestIterator(
     int                 grid_size,
@@ -323,8 +323,8 @@ template <
     typename            T,
     int                 BLOCK_THREADS,
     int                 ITEMS_PER_THREAD,
-    BlockLoadAlgorithm  LOAD_POLICY,
-    BlockStorePolicy    STORE_POLICY,
+    BlockLoadAlgorithm  LOAD_ALGORITHM,
+    BlockStorePolicy    STORE_ALGORITHM,
     int                 WARP_TIME_SLICING>
 void TestIterator(
     int                 grid_size,
@@ -360,13 +360,13 @@ void TestIterator(
         "unguarded_elements(%d) "
         "BLOCK_THREADS(%d) "
         "ITEMS_PER_THREAD(%d) "
-        "LOAD_POLICY(%d) "
-        "STORE_POLICY(%d) "
+        "LOAD_ALGORITHM(%d) "
+        "STORE_ALGORITHM(%d) "
         "WARP_TIME_SLICING(%d) "
         "sizeof(T)(%d)\n",
-            !IsPointer<Iterator>::VALUE, grid_size, guarded_elements, unguarded_elements, BLOCK_THREADS, ITEMS_PER_THREAD, LOAD_POLICY, STORE_POLICY, WARP_TIME_SLICING, (int) sizeof(T));
+            !IsPointer<Iterator>::VALUE, grid_size, guarded_elements, unguarded_elements, BLOCK_THREADS, ITEMS_PER_THREAD, LOAD_ALGORITHM, STORE_ALGORITHM, WARP_TIME_SLICING, (int) sizeof(T));
 
-    TestKernel<T, BLOCK_THREADS, ITEMS_PER_THREAD, LOAD_POLICY, STORE_POLICY, LOAD_DEFAULT, STORE_DEFAULT, WARP_TIME_SLICING>(
+    TestKernel<T, BLOCK_THREADS, ITEMS_PER_THREAD, LOAD_ALGORITHM, STORE_ALGORITHM, LOAD_DEFAULT, STORE_DEFAULT, WARP_TIME_SLICING>(
         h_in,
         counting_itr,
         d_out_unguarded,
@@ -388,16 +388,16 @@ template <
     typename                T,
     int                     BLOCK_THREADS,
     int                     ITEMS_PER_THREAD,
-    BlockLoadAlgorithm      LOAD_POLICY,
-    BlockStorePolicy        STORE_POLICY,
+    BlockLoadAlgorithm      LOAD_ALGORITHM,
+    BlockStorePolicy        STORE_ALGORITHM,
     bool                    WARP_TIME_SLICING>
 void TestPointerAccess(
     int             grid_size,
     float           fraction_valid)
 {
-    TestNative<T, BLOCK_THREADS, ITEMS_PER_THREAD, LOAD_POLICY, STORE_POLICY, LOAD_DEFAULT, STORE_DEFAULT, WARP_TIME_SLICING>(grid_size, fraction_valid);
-    TestNative<T, BLOCK_THREADS, ITEMS_PER_THREAD, LOAD_POLICY, STORE_POLICY, LOAD_CG, STORE_CG, WARP_TIME_SLICING>(grid_size, fraction_valid);
-    TestIterator<T, BLOCK_THREADS, ITEMS_PER_THREAD, LOAD_POLICY, STORE_POLICY, WARP_TIME_SLICING>(grid_size, fraction_valid, Int2Type<((Traits<T>::CATEGORY == SIGNED_INTEGER) || (Traits<T>::CATEGORY == UNSIGNED_INTEGER))>());
+    TestNative<T, BLOCK_THREADS, ITEMS_PER_THREAD, LOAD_ALGORITHM, STORE_ALGORITHM, LOAD_DEFAULT, STORE_DEFAULT, WARP_TIME_SLICING>(grid_size, fraction_valid);
+    TestNative<T, BLOCK_THREADS, ITEMS_PER_THREAD, LOAD_ALGORITHM, STORE_ALGORITHM, LOAD_CG, STORE_CG, WARP_TIME_SLICING>(grid_size, fraction_valid);
+    TestIterator<T, BLOCK_THREADS, ITEMS_PER_THREAD, LOAD_ALGORITHM, STORE_ALGORITHM, WARP_TIME_SLICING>(grid_size, fraction_valid, Int2Type<((Traits<T>::CATEGORY == SIGNED_INTEGER) || (Traits<T>::CATEGORY == UNSIGNED_INTEGER))>());
 }
 
 
@@ -408,14 +408,14 @@ template <
     typename                T,
     int                     BLOCK_THREADS,
     int                     ITEMS_PER_THREAD,
-    BlockLoadAlgorithm      LOAD_POLICY,
-    BlockStorePolicy        STORE_POLICY>
+    BlockLoadAlgorithm      LOAD_ALGORITHM,
+    BlockStorePolicy        STORE_ALGORITHM>
 void TestSlicedStrategy(
     int             grid_size,
     float           fraction_valid)
 {
-    TestPointerAccess<T, BLOCK_THREADS, ITEMS_PER_THREAD, LOAD_POLICY, STORE_POLICY, true>(grid_size, fraction_valid);
-    TestPointerAccess<T, BLOCK_THREADS, ITEMS_PER_THREAD, LOAD_POLICY, STORE_POLICY, false>(grid_size, fraction_valid);
+    TestPointerAccess<T, BLOCK_THREADS, ITEMS_PER_THREAD, LOAD_ALGORITHM, STORE_ALGORITHM, true>(grid_size, fraction_valid);
+    TestPointerAccess<T, BLOCK_THREADS, ITEMS_PER_THREAD, LOAD_ALGORITHM, STORE_ALGORITHM, false>(grid_size, fraction_valid);
 }
 
 
