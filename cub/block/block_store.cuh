@@ -109,14 +109,14 @@ template <
     typename            OutputIteratorRA>
 __device__ __forceinline__ void StoreBlocked(
     OutputIteratorRA    block_itr,                      ///< [in] The threadblock's base output iterator for storing to
-    const int           &guarded_items,                 ///< [in] Number of valid items in the tile
+    const int           &valid_items,                 ///< [in] Number of valid items in the tile
     T                   (&items)[ITEMS_PER_THREAD])     ///< [in] Data to store
 {
     // Store directly in thread-blocked order
     #pragma unroll
     for (int ITEM = 0; ITEM < ITEMS_PER_THREAD; ITEM++)
     {
-        if (ITEM + (threadIdx.x * ITEMS_PER_THREAD) < guarded_items)
+        if (ITEM + (threadIdx.x * ITEMS_PER_THREAD) < valid_items)
         {
             ThreadStore<MODIFIER>(block_itr + (threadIdx.x * ITEMS_PER_THREAD) + ITEM, items[ITEM]);
         }
@@ -183,7 +183,7 @@ template <
     typename            OutputIteratorRA>
 __device__ __forceinline__ void StoreStriped(
     OutputIteratorRA    block_itr,                      ///< [in] The threadblock's base output iterator for storing to
-    const int           &guarded_items,                 ///< [in] Number of valid items in the tile
+    const int           &valid_items,                 ///< [in] Number of valid items in the tile
     T                   (&items)[ITEMS_PER_THREAD],     ///< [in] Data to store
     int                 block_stride = blockDim.x)      ///< [in] <b>[optional]</b> Block stripe stride.  Default is the width of the threadblock.  More efficient code can be generated if a compile-time-constant (e.g., BLOCK_THREADS) is supplied.
 {
@@ -191,7 +191,7 @@ __device__ __forceinline__ void StoreStriped(
     #pragma unroll
     for (int ITEM = 0; ITEM < ITEMS_PER_THREAD; ITEM++)
     {
-        if ((ITEM * block_stride) + threadIdx.x < guarded_items)
+        if ((ITEM * block_stride) + threadIdx.x < valid_items)
         {
             ThreadStore<MODIFIER>(block_itr + (ITEM * block_stride) + threadIdx.x, items[ITEM]);
         }
@@ -271,7 +271,7 @@ template <
     typename            OutputIteratorRA>
 __device__ __forceinline__ void StoreWarpStriped(
     OutputIteratorRA    block_itr,                                                      ///< [in] The threadblock's base output iterator for storing to
-    const int           &guarded_items,                                                 ///< [in] Number of valid items in the tile
+    const int           &valid_items,                                                 ///< [in] Number of valid items in the tile
     T                   (&items)[ITEMS_PER_THREAD],                                     ///< [out] Data to load
     int                 warp_stride = PtxArchProps::WARP_THREADS)                       ///< [in] <b>[optional]</b> Warp stripe stride.  Default is the width of the warp.
 {
@@ -283,7 +283,7 @@ __device__ __forceinline__ void StoreWarpStriped(
     #pragma unroll
     for (int ITEM = 0; ITEM < ITEMS_PER_THREAD; ITEM++)
     {
-        if (warp_offset + tid + (ITEM * warp_stride) < guarded_items)
+        if (warp_offset + tid + (ITEM * warp_stride) < valid_items)
         {
             ThreadStore<MODIFIER>(block_itr + warp_offset + tid + (ITEM * warp_stride), items[ITEM]);
         }
@@ -626,10 +626,10 @@ private:
         static __device__ __forceinline__ void Store(
             TempStorage         &temp_storage,              ///< [in] Reference to shared memory allocation having layout type TempStorage
             OutputIteratorRA    block_itr,                  ///< [in] The threadblock's base output iterator for storing to
-            const int           &guarded_items,             ///< [in] Number of valid items in the tile
+            const int           &valid_items,             ///< [in] Number of valid items in the tile
             T                   (&items)[ITEMS_PER_THREAD]) ///< [in] Data to store
         {
-            StoreBlocked<MODIFIER>(block_itr, guarded_items, items);
+            StoreBlocked<MODIFIER>(block_itr, valid_items, items);
         }
     };
 
@@ -666,10 +666,10 @@ private:
         static __device__ __forceinline__ void Store(
             TempStorage         &temp_storage,              ///< [in] Reference to shared memory allocation having layout type TempStorage
             OutputIteratorRA    block_itr,                  ///< [in] The threadblock's base output iterator for storing to
-            const int           &guarded_items,             ///< [in] Number of valid items in the tile
+            const int           &valid_items,             ///< [in] Number of valid items in the tile
             T                   (&items)[ITEMS_PER_THREAD]) ///< [in] Data to store
         {
-            StoreBlocked<MODIFIER>(block_itr, guarded_items, items);
+            StoreBlocked<MODIFIER>(block_itr, valid_items, items);
         }
     };
 
@@ -700,11 +700,11 @@ private:
         static __device__ __forceinline__ void Store(
             TempStorage         &temp_storage,              ///< [in] Reference to shared memory allocation having layout type TempStorage
             OutputIteratorRA    block_itr,                  ///< [in] The threadblock's base output iterator for storing to
-            const int           &guarded_items,             ///< [in] Number of valid items in the tile
+            const int           &valid_items,             ///< [in] Number of valid items in the tile
             T                   (&items)[ITEMS_PER_THREAD]) ///< [in] Data to store
         {
             BlockExchange::BlockedToStriped(temp_storage, items);
-            StoreStriped<MODIFIER>(block_itr, guarded_items, items, BLOCK_THREADS);
+            StoreStriped<MODIFIER>(block_itr, valid_items, items, BLOCK_THREADS);
         }
     };
 
@@ -738,11 +738,11 @@ private:
         static __device__ __forceinline__ void Store(
             TempStorage         &temp_storage,              ///< [in] Reference to shared memory allocation having layout type TempStorage
             OutputIteratorRA    block_itr,                  ///< [in] The threadblock's base output iterator for storing to
-            const int           &guarded_items,             ///< [in] Number of valid items in the tile
+            const int           &valid_items,             ///< [in] Number of valid items in the tile
             T                   (&items)[ITEMS_PER_THREAD]) ///< [in] Data to store
         {
             BlockExchange::BlockedToWarpStriped(temp_storage, items);
-            StoreWarpStriped<MODIFIER>(block_itr, guarded_items, items, WARP_THREADS);
+            StoreWarpStriped<MODIFIER>(block_itr, valid_items, items, WARP_THREADS);
         }
     };
 
@@ -777,10 +777,10 @@ public:
     static __device__ __forceinline__ void Store(
         TempStorage         &temp_storage,                  ///< [in] Reference to shared memory allocation having layout type TempStorage
         OutputIteratorRA    block_itr,                      ///< [in] The threadblock's base output iterator for storing to
-        const int           &guarded_items,                 ///< [in] Number of valid items in the tile
+        const int           &valid_items,                 ///< [in] Number of valid items in the tile
         T                   (&items)[ITEMS_PER_THREAD])     ///< [in] Data to store
     {
-        StoreInternal<ALGORITHM>::Store(temp_storage, block_itr, guarded_items, items);
+        StoreInternal<ALGORITHM>::Store(temp_storage, block_itr, valid_items, items);
     }
 };
 

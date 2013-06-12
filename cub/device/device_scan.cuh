@@ -217,8 +217,8 @@ struct DeviceScan
         {
             block_threads               = PersistentBlockScanPolicy::BLOCK_THREADS;
             items_per_thread            = PersistentBlockScanPolicy::ITEMS_PER_THREAD;
-            load_policy                 = PersistentBlockScanPolicy::LOAD_POLICY;
-            store_policy                = PersistentBlockScanPolicy::STORE_POLICY;
+            load_policy                 = PersistentBlockScanPolicy::LOAD_ALGORITHM;
+            store_policy                = PersistentBlockScanPolicy::STORE_ALGORITHM;
             scan_algorithm              = PersistentBlockScanPolicy::SCAN_ALGORITHM;
 
             tile_size                   = block_threads * items_per_thread;
