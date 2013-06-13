@@ -96,9 +96,9 @@ class BlockRadixRank
 {
 private:
 
-    //---------------------------------------------------------------------
-    // Type definitions and constants
-    //---------------------------------------------------------------------
+    /******************************************************************************
+     * Type definitions and constants
+     ******************************************************************************/
 
     // Integer type for digit counters (to be packed into words of type PackedCounters)
     typedef unsigned short DigitCounter;
@@ -108,7 +108,8 @@ private:
         unsigned long long,
         unsigned int>::Type PackedCounter;
 
-    enum {
+    enum
+    {
         RADIX_DIGITS                 = 1 << RADIX_BITS,
 
         LOG_WARP_THREADS             = PtxArchProps::LOG_WARP_THREADS,
@@ -131,8 +132,10 @@ private:
         SMEM_BANKS                   = 1 << LOG_SMEM_BANKS,
     };
 
+
     /// BlockScan type
     typedef BlockScan<PackedCounter, BLOCK_THREADS, INNER_SCAN_ALGORITHM> BlockScan;
+
 
     /// Shared memory storage layout type for BlockRadixRank
     struct _TempStorage
@@ -147,105 +150,6 @@ private:
         };
     };
 
-public:
-
-    /// \smemstorage{BlockRadixRank}
-    typedef _TempStorage TempStorage;
-
-private :
-
-    //---------------------------------------------------------------------
-    // Template iteration structures.  (Regular iteration cannot always be
-    // unrolled due to conditionals or ABI procedure calls within
-    // functors).
-    //---------------------------------------------------------------------
-
-    // General template iteration
-    template <int COUNT, int MAX>
-    struct Iterate
-    {
-        /**
-         * Decode keys.  Decodes the radix digit from the current digit place
-         * and increments the thread's corresponding counter in shared
-         * memory for that digit.
-         *
-         * Saves both (1) the prior value of that counter (the key's
-         * thread-local exclusive prefix sum for that digit), and (2) the shared
-         * memory offset of the counter (for later use).
-         */
-        template <typename UnsignedBits, int KEYS_PER_THREAD>
-        static __device__ __forceinline__ void DecodeKeys(
-            TempStorage     &temp_storage,                       // Shared memory storage
-            UnsignedBits    (&keys)[KEYS_PER_THREAD],              // Key to decode
-            DigitCounter    (&thread_prefixes)[KEYS_PER_THREAD],   // Prefix counter value (out parameter)
-            DigitCounter*   (&digit_counters)[KEYS_PER_THREAD],   // Counter smem offset (out parameter)
-            unsigned int    current_bit)                           // The least-significant bit position of the current digit to extract
-        {
-            // Add in sub-counter offset
-            UnsignedBits sub_counter = BFE(keys[COUNT], current_bit + LOG_COUNTER_LANES, LOG_PACKING_RATIO);
-
-            // Add in row offset
-            UnsignedBits row_offset = BFE(keys[COUNT], current_bit, LOG_COUNTER_LANES);
-
-            // Pointer to smem digit counter
-            digit_counters[COUNT] = &temp_storage.digit_counters[row_offset][threadIdx.x][sub_counter];
-
-            // Load thread-exclusive prefix
-            thread_prefixes[COUNT] = *digit_counters[COUNT];
-
-            // Store inclusive prefix
-            *digit_counters[COUNT] = thread_prefixes[COUNT] + 1;
-
-            // Iterate next key
-            Iterate<COUNT + 1, MAX>::DecodeKeys(temp_storage, keys, thread_prefixes, digit_counters, current_bit);
-        }
-
-
-        // Termination
-        template <int KEYS_PER_THREAD>
-        static __device__ __forceinline__ void UpdateRanks(
-            TempStorage     &temp_storage,                       // Shared memory storage
-            unsigned int    (&ranks)[KEYS_PER_THREAD],             // Local ranks (out parameter)
-            DigitCounter    (&thread_prefixes)[KEYS_PER_THREAD],   // Prefix counter value
-            DigitCounter*   (&digit_counters)[KEYS_PER_THREAD])   // Counter smem offset
-        {
-            // Add in threadblock exclusive prefix
-            ranks[COUNT] = thread_prefixes[COUNT] + *digit_counters[COUNT];
-
-            // Iterate next key
-            Iterate<COUNT + 1, MAX>::UpdateRanks(temp_storage, ranks, thread_prefixes, digit_counters);
-        }
-    };
-
-
-    // Termination
-    template <int MAX>
-    struct Iterate<MAX, MAX>
-    {
-        // DecodeKeys
-        template <typename UnsignedBits, int KEYS_PER_THREAD>
-        static __device__ __forceinline__ void DecodeKeys(
-            TempStorage     &temp_storage,
-            UnsignedBits    (&keys)[KEYS_PER_THREAD],
-            DigitCounter    (&thread_prefixes)[KEYS_PER_THREAD],
-            DigitCounter*   (&digit_counters)[KEYS_PER_THREAD],
-            unsigned int    current_bit) {}
-
-
-        // UpdateRanks
-        template <int KEYS_PER_THREAD>
-        static __device__ __forceinline__ void UpdateRanks(
-            TempStorage     &temp_storage,
-            unsigned int    (&ranks)[KEYS_PER_THREAD],
-            DigitCounter    (&thread_prefixes)[KEYS_PER_THREAD],
-            DigitCounter    *(&digit_counters)[KEYS_PER_THREAD]) {}
-    };
-
-
-    //---------------------------------------------------------------------
-    // Utility methods
-    //---------------------------------------------------------------------
-
 
     /// Raking helper structure
     struct RakingHelper
@@ -254,9 +158,9 @@ private :
         PackedCounter cached_segment[RAKING_SEGMENT];
 
         // Performs upsweep raking reduction, returning the aggregate
-        __device__ __forceinline__ PackedCounter Upsweep(TempStorage &temp_storage)
+        __device__ __forceinline__ PackedCounter Upsweep(BlockRadixRank &cta)
         {
-            PackedCounter *smem_raking_ptr = temp_storage.raking_grid[threadIdx.x];
+            PackedCounter *smem_raking_ptr = cta.temp_storage.raking_grid[cta.linear_tid];
             PackedCounter *raking_ptr;
 
             if (MEMOIZE_OUTER_SCAN)
@@ -280,10 +184,10 @@ private :
 
         /// Performs exclusive downsweep raking scan
         __device__ __forceinline__ void ExclusiveDownsweep(
-            TempStorage&    temp_storage,
+            BlockRadixRank  &cta,
             PackedCounter   raking_partial)
         {
-            PackedCounter *smem_raking_ptr = temp_storage.raking_grid[threadIdx.x];
+            PackedCounter *smem_raking_ptr = cta.temp_storage.raking_grid[cta.linear_tid];
 
             PackedCounter *raking_ptr = (MEMOIZE_OUTER_SCAN) ?
                 cached_segment :
@@ -305,16 +209,125 @@ private :
     };
 
 
+    /******************************************************************************
+     * Thread fields
+     ******************************************************************************/
+
+    /// Shared storage reference
+    _TempStorage &temp_storage;
+
+    /// Linear thread-id
+    int linear_tid;
+
+
+    /******************************************************************************
+     * Templated iteration
+     ******************************************************************************/
+
+    // General template iteration
+    template <int COUNT, int MAX>
+    struct Iterate
+    {
+        /**
+         * Decode keys.  Decodes the radix digit from the current digit place
+         * and increments the thread's corresponding counter in shared
+         * memory for that digit.
+         *
+         * Saves both (1) the prior value of that counter (the key's
+         * thread-local exclusive prefix sum for that digit), and (2) the shared
+         * memory offset of the counter (for later use).
+         */
+        template <typename UnsignedBits, int KEYS_PER_THREAD>
+        static __device__ __forceinline__ void DecodeKeys(
+            BlockRadixRank  &cta,                                   // BlockRadixRank instance
+            UnsignedBits    (&keys)[KEYS_PER_THREAD],               // Key to decode
+            DigitCounter    (&thread_prefixes)[KEYS_PER_THREAD],    // Prefix counter value (out parameter)
+            DigitCounter*   (&digit_counters)[KEYS_PER_THREAD],     // Counter smem offset (out parameter)
+            int             current_bit)                            // The least-significant bit position of the current digit to extract
+        {
+            // Add in sub-counter offset
+            UnsignedBits sub_counter = BFE(keys[COUNT], current_bit + LOG_COUNTER_LANES, LOG_PACKING_RATIO);
+
+            // Add in row offset
+            UnsignedBits row_offset = BFE(keys[COUNT], current_bit, LOG_COUNTER_LANES);
+
+            // Pointer to smem digit counter
+            digit_counters[COUNT] = &cta.temp_storage.digit_counters[row_offset][cta.linear_tid][sub_counter];
+
+            // Load thread-exclusive prefix
+            thread_prefixes[COUNT] = *digit_counters[COUNT];
+
+            // Store inclusive prefix
+            *digit_counters[COUNT] = thread_prefixes[COUNT] + 1;
+
+            // Iterate next key
+            Iterate<COUNT + 1, MAX>::DecodeKeys(cta, keys, thread_prefixes, digit_counters, current_bit);
+        }
+
+
+        // Termination
+        template <int KEYS_PER_THREAD>
+        static __device__ __forceinline__ void UpdateRanks(
+            int             (&ranks)[KEYS_PER_THREAD],              // Local ranks (out parameter)
+            DigitCounter    (&thread_prefixes)[KEYS_PER_THREAD],    // Prefix counter value
+            DigitCounter*   (&digit_counters)[KEYS_PER_THREAD])     // Counter smem offset
+        {
+            // Add in threadblock exclusive prefix
+            ranks[COUNT] = thread_prefixes[COUNT] + *digit_counters[COUNT];
+
+            // Iterate next key
+            Iterate<COUNT + 1, MAX>::UpdateRanks(ranks, thread_prefixes, digit_counters);
+        }
+    };
+
+
+    // Termination
+    template <int MAX>
+    struct Iterate<MAX, MAX>
+    {
+        // DecodeKeys
+        template <typename UnsignedBits, int KEYS_PER_THREAD>
+        static __device__ __forceinline__ void DecodeKeys(
+            BlockRadixRank  &cta,
+            UnsignedBits    (&keys)[KEYS_PER_THREAD],
+            DigitCounter    (&thread_prefixes)[KEYS_PER_THREAD],
+            DigitCounter*   (&digit_counters)[KEYS_PER_THREAD],
+            int             current_bit) {}
+
+
+        // UpdateRanks
+        template <int KEYS_PER_THREAD>
+        static __device__ __forceinline__ void UpdateRanks(
+            int             (&ranks)[KEYS_PER_THREAD],
+            DigitCounter    (&thread_prefixes)[KEYS_PER_THREAD],
+            DigitCounter    *(&digit_counters)[KEYS_PER_THREAD]) {}
+    };
+
+
+    /******************************************************************************
+     * Utility methods
+     ******************************************************************************/
+
+    /**
+     * Internal storage allocator
+     */
+    __device__ __forceinline__ _TempStorage& PrivateStorage()
+    {
+        __shared__ _TempStorage private_storage;
+        return private_storage;
+    }
+
+
     /**
      * Reset shared memory digit counters
      */
-    static __device__ __forceinline__ void ResetCounters(TempStorage &temp_storage)
+    __device__ __forceinline__ void ResetCounters()
     {
         // Reset shared memory digit counters
         #pragma unroll
         for (int LANE = 0; LANE < COUNTER_LANES + 1; LANE++)
         {
-            *((PackedCounter*) temp_storage.digit_counters[LANE][threadIdx.x]) = 0;
+            *((PackedCounter*) temp_storage.digit_counters[LANE][linear_tid]) = 0;
         }
     }
 
@@ -322,16 +335,16 @@ private :
     /**
      * Scan shared memory digit counters.
      */
-    static __device__ __forceinline__ void ScanCounters(TempStorage &temp_storage)
+    __device__ __forceinline__ void ScanCounters()
     {
         // Upsweep scan
         RakingHelper helper;
-        PackedCounter raking_partial = helper.Upsweep(temp_storage);
+        PackedCounter raking_partial = helper.Upsweep(*this);
 
         // Compute inclusive sum
         PackedCounter inclusive_partial;
         PackedCounter packed_aggregate;
-        BlockScan::InclusiveSum(temp_storage.block_scan, raking_partial, inclusive_partial, packed_aggregate);
+        BlockScan(temp_storage.block_scan, linear_tid).InclusiveSum(raking_partial, inclusive_partial, packed_aggregate);
 
         // Propagate totals in packed fields
         #pragma unroll
@@ -342,76 +355,129 @@ private :
 
         // Downsweep scan with exclusive partial
         PackedCounter exclusive_partial = inclusive_partial - raking_partial;
-        helper.ExclusiveDownsweep(temp_storage, exclusive_partial);
+        helper.ExclusiveDownsweep(*this, exclusive_partial);
     }
 
 public:
 
-    //---------------------------------------------------------------------
-    // Interface
-    //---------------------------------------------------------------------
+    /// \smemstorage{BlockScan}
+    typedef _TempStorage TempStorage;
+
+
+    /******************************************************************//**
+     * \name Collective construction
+     *********************************************************************/
+    //@{
 
     /**
-     * Rank keys.
+     * \brief Collective constructor for 1D thread blocks using a private static allocation of shared memory as temporary storage.  Threads are identified using <tt>threadIdx.x</tt>.
+     */
+    __device__ __forceinline__ BlockRadixRank()
+    :
+        temp_storage(PrivateStorage()),
+        linear_tid(threadIdx.x)
+    {}
+
+
+    /**
+     * \brief Collective constructor for 1D thread blocks using the specified memory allocation as temporary storage.  Threads are identified using <tt>threadIdx.x</tt>.
+     */
+    __device__ __forceinline__ BlockRadixRank(
+        TempStorage &temp_storage)             ///< [in] Reference to memory allocation having layout type TempStorage
+    :
+        temp_storage(temp_storage),
+        linear_tid(threadIdx.x)
+    {}
+
+
+    /**
+     * \brief Collective constructor using a private static allocation of shared memory as temporary storage.  Threads are identified using the given linear thread identifier
+     */
+    __device__ __forceinline__ BlockRadixRank(
+        int linear_tid)                        ///< [in] A suitable 1D thread-identifier for the calling thread (e.g., <tt>(threadIdx.y * blockDim.x) + linear_tid</tt> for 2D thread blocks)
+    :
+        temp_storage(PrivateStorage()),
+        linear_tid(linear_tid)
+    {}
+
+
+    /**
+     * \brief Collective constructor using the specified memory allocation as temporary storage.  Threads are identified using the given linear thread identifier.
+     */
+    __device__ __forceinline__ BlockRadixRank(
+        TempStorage &temp_storage,             ///< [in] Reference to memory allocation having layout type TempStorage
+        int linear_tid)                        ///< [in] <b>[optional]</b> A suitable 1D thread-identifier for the calling thread (e.g., <tt>(threadIdx.y * blockDim.x) + linear_tid</tt> for 2D thread blocks)
+    :
+        temp_storage(temp_storage),
+        linear_tid(linear_tid)
+    {}
+
+
+
+    //@}  end member group
+    /******************************************************************//**
+     * \name Raking
+     *********************************************************************/
+    //@{
+
+    /**
+     * \brief Rank keys.
      */
     template <
         typename UnsignedBits,
         int KEYS_PER_THREAD>
-    static __device__ __forceinline__ void RankKeys(
-        TempStorage     &temp_storage,                      // Shared memory storage
+    __device__ __forceinline__ void RankKeys(
         UnsignedBits    (&keys)[KEYS_PER_THREAD],           // Keys for this tile
-        unsigned int    (&ranks)[KEYS_PER_THREAD],          // For each key, the local rank within the tile
-        unsigned int    current_bit)                        // The least-significant bit position of the current digit to extract
+        int             (&ranks)[KEYS_PER_THREAD],          // For each key, the local rank within the tile
+        int             current_bit)                        // The least-significant bit position of the current digit to extract
     {
         DigitCounter    thread_prefixes[KEYS_PER_THREAD];   // For each key, the count of previous keys in this tile having the same digit
-        DigitCounter*     digit_counters[KEYS_PER_THREAD];  // For each key, the byte-offset of its corresponding digit counter in smem
+        DigitCounter*   digit_counters[KEYS_PER_THREAD];    // For each key, the byte-offset of its corresponding digit counter in smem
 
         // Reset shared memory digit counters
-        ResetCounters(temp_storage);
+        ResetCounters();
 
         // Decode keys and update digit counters
-        Iterate<0, KEYS_PER_THREAD>::DecodeKeys(temp_storage, keys, thread_prefixes, digit_counters, current_bit);
+        Iterate<0, KEYS_PER_THREAD>::DecodeKeys(*this, keys, thread_prefixes, digit_counters, current_bit);
 
         __syncthreads();
 
         // Scan shared memory counters
-        ScanCounters(temp_storage);
+        ScanCounters();
 
         __syncthreads();
 
         // Extract the local ranks of each key
-        Iterate<0, KEYS_PER_THREAD>::UpdateRanks(temp_storage, ranks, thread_prefixes, digit_counters);
+        Iterate<0, KEYS_PER_THREAD>::UpdateRanks(ranks, thread_prefixes, digit_counters);
     }
 
 
     /**
-     * Rank keys.  For the lower RADIX_DIGITS threads, digit counts for each
-     * digit are provided for the corresponding thread-id.
+     * \brief Rank keys.  For the lower \p RADIX_DIGITS threads, digit counts for each digit are provided for the corresponding thread.
      */
     template <
         typename UnsignedBits,
         int KEYS_PER_THREAD>
-    static __device__ __forceinline__ void RankKeys(
-        TempStorage     &temp_storage,                      // Shared memory storage
+    __device__ __forceinline__ void RankKeys(
         UnsignedBits    (&keys)[KEYS_PER_THREAD],           // Keys for this tile
-        unsigned int    (&ranks)[KEYS_PER_THREAD],          // For each key, the local rank within the tile (out parameter)
-        unsigned int    digit_prefixes[RADIX_DIGITS],
-        unsigned int    current_bit)                        // The least-significant bit position of the current digit to extract
+        int             (&ranks)[KEYS_PER_THREAD],          // For each key, the local rank within the tile (out parameter)
+        int             digit_prefixes[RADIX_DIGITS],
+        int             current_bit)                        // The least-significant bit position of the current digit to extract
     {
         // Rank keys
-        RankKeys(temp_storage, keys, ranks, current_bit);
+        RankKeys(keys, ranks, current_bit);
 
         // Get the inclusive and exclusive digit totals corresponding to the calling thread.
-        if ((BLOCK_THREADS == RADIX_DIGITS) || (threadIdx.x < RADIX_DIGITS))
+        if ((BLOCK_THREADS == RADIX_DIGITS) || (linear_tid < RADIX_DIGITS))
         {
             // Initialize digit scan's identity value
-            digit_prefixes[threadIdx.x] = 0;
+            digit_prefixes[linear_tid] = 0;
 
             // Obtain ex/inclusive digit counts.  (Unfortunately these all reside in the
             // first counter column, resulting in unavoidable bank conflicts.)
-            int counter_lane = (threadIdx.x & (COUNTER_LANES - 1));
-            int sub_counter = threadIdx.x >> (LOG_COUNTER_LANES);
-            digit_prefixes[threadIdx.x + 1] = temp_storage.digit_counters[counter_lane + 1][0][sub_counter];
+            int counter_lane = (linear_tid & (COUNTER_LANES - 1));
+            int sub_counter = linear_tid >> (LOG_COUNTER_LANES);
+            digit_prefixes[linear_tid + 1] = temp_storage.digit_counters[counter_lane + 1][0][sub_counter];
         }
     }
 };

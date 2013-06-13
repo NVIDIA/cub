@@ -205,7 +205,7 @@ struct DeviceScan
         int                             block_threads;
         int                             items_per_thread;
         BlockLoadAlgorithm                 load_policy;
-        BlockStorePolicy                store_policy;
+        BlockStoreAlgorithm                store_policy;
         BlockScanAlgorithm              scan_algorithm;
 
         // Derived fields
@@ -249,28 +249,28 @@ struct DeviceScan
     template <typename T, typename SizeT>
     struct TunedPolicies<T, SizeT, 350>
     {
-        typedef PersistentBlockScanPolicy<128, 16,  BLOCK_LOAD_DIRECT, LOAD_LDG, false, BLOCK_STORE_WARP_TRANSPOSE, true, BLOCK_SCAN_RAKING_MEMOIZE> MultiBlockPolicy;
+        typedef PersistentBlockScanPolicy<128, 16,  BLOCK_LOAD_DIRECT, false, LOAD_LDG, BLOCK_STORE_WARP_TRANSPOSE, true, BLOCK_SCAN_RAKING_MEMOIZE> MultiBlockPolicy;
     };
 
     /// SM30 tune
     template <typename T, typename SizeT>
     struct TunedPolicies<T, SizeT, 300>
     {
-        typedef PersistentBlockScanPolicy<256, 9,  BLOCK_LOAD_WARP_TRANSPOSE, LOAD_DEFAULT, false, BLOCK_STORE_WARP_TRANSPOSE, false, BLOCK_SCAN_RAKING_MEMOIZE> MultiBlockPolicy;
+        typedef PersistentBlockScanPolicy<256, 9,  BLOCK_LOAD_WARP_TRANSPOSE, false, LOAD_DEFAULT, BLOCK_STORE_WARP_TRANSPOSE, false, BLOCK_SCAN_RAKING_MEMOIZE> MultiBlockPolicy;
     };
 
     /// SM20 tune
     template <typename T, typename SizeT>
     struct TunedPolicies<T, SizeT, 200>
     {
-        typedef PersistentBlockScanPolicy<128, 15,  BLOCK_LOAD_WARP_TRANSPOSE, LOAD_DEFAULT, false, BLOCK_STORE_WARP_TRANSPOSE, false, BLOCK_SCAN_RAKING_MEMOIZE> MultiBlockPolicy;
+        typedef PersistentBlockScanPolicy<128, 15,  BLOCK_LOAD_WARP_TRANSPOSE, false, LOAD_DEFAULT, BLOCK_STORE_WARP_TRANSPOSE, false, BLOCK_SCAN_RAKING_MEMOIZE> MultiBlockPolicy;
     };
 
     /// SM10 tune
     template <typename T, typename SizeT>
     struct TunedPolicies<T, SizeT, 100>
     {
-        typedef PersistentBlockScanPolicy<128, 6,  BLOCK_LOAD_TRANSPOSE, LOAD_DEFAULT, false, BLOCK_STORE_TRANSPOSE, false, BLOCK_SCAN_RAKING_MEMOIZE> MultiBlockPolicy;
+        typedef PersistentBlockScanPolicy<128, 6,  BLOCK_LOAD_TRANSPOSE, false, LOAD_DEFAULT, BLOCK_STORE_TRANSPOSE, false, BLOCK_SCAN_RAKING_MEMOIZE> MultiBlockPolicy;
     };
 
 

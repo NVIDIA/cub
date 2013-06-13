@@ -28,7 +28,7 @@
 
 /**
  * \file
- * Operations for writing global tiles of data from the threadblock (in blocked arrangement across threads).
+ * Operations for writing linear tiles of data from the CUDA thread block
  */
 
 #pragma once
@@ -60,7 +60,7 @@ namespace cub {
 //@{
 
 /**
- * \brief Store a blocked arrangement of items across a thread block using the specified cache modifier.
+ * \brief Store a blocked arrangement of items across a thread block into a linear tile of items using the specified cache modifier.
  *
  * The aggregate tile of items is assumed to be partitioned evenly across
  * threads in <em>blocked</em> arrangement with thread<sub><em>i</em></sub> owning
@@ -77,21 +77,22 @@ template <
     int                 ITEMS_PER_THREAD,
     typename            OutputIteratorRA>
 __device__ __forceinline__ void StoreBlocked(
-    OutputIteratorRA    block_itr,                      ///< [in] The threadblock's base output iterator for storing to
-    T                   (&items)[ITEMS_PER_THREAD])     ///< [in] Data to store
+    int                 linear_tid,                 ///< [in] A suitable 1D thread-identifier for the calling thread (e.g., <tt>(threadIdx.y * blockDim.x) + linear_tid</tt> for 2D thread blocks)
+    OutputIteratorRA    block_itr,                  ///< [in] The threadblock's base output iterator for storing to
+    T                   (&items)[ITEMS_PER_THREAD]) ///< [in] Data to store
 {
     // Store directly in thread-blocked order
     #pragma unroll
     for (int ITEM = 0; ITEM < ITEMS_PER_THREAD; ITEM++)
     {
-        int item_offset = (threadIdx.x * ITEMS_PER_THREAD) + ITEM;
+        int item_offset = (linear_tid * ITEMS_PER_THREAD) + ITEM;
         ThreadStore<MODIFIER>(block_itr + item_offset, items[ITEM]);
     }
 }
 
 
 /**
- * \brief Store a blocked arrangement of items across a thread block using the specified cache modifier, guarded by range
+ * \brief Store a blocked arrangement of items across a thread block into a linear tile of items using the specified cache modifier, guarded by range
  *
  * The aggregate tile of items is assumed to be partitioned evenly across
  * threads in <em>blocked</em> arrangement with thread<sub><em>i</em></sub> owning
@@ -108,17 +109,18 @@ template <
     int                 ITEMS_PER_THREAD,
     typename            OutputIteratorRA>
 __device__ __forceinline__ void StoreBlocked(
-    OutputIteratorRA    block_itr,                      ///< [in] The threadblock's base output iterator for storing to
-    const int           &valid_items,                 ///< [in] Number of valid items in the tile
-    T                   (&items)[ITEMS_PER_THREAD])     ///< [in] Data to store
+    int                 linear_tid,                 ///< [in] A suitable 1D thread-identifier for the calling thread (e.g., <tt>(threadIdx.y * blockDim.x) + linear_tid</tt> for 2D thread blocks)
+    OutputIteratorRA    block_itr,                  ///< [in] The threadblock's base output iterator for storing to
+    T                   (&items)[ITEMS_PER_THREAD], ///< [in] Data to store
+    int                 valid_items)                ///< [in] Number of valid items in the tile
 {
     // Store directly in thread-blocked order
     #pragma unroll
     for (int ITEM = 0; ITEM < ITEMS_PER_THREAD; ITEM++)
     {
-        if (ITEM + (threadIdx.x * ITEMS_PER_THREAD) < valid_items)
+        if (ITEM + (linear_tid * ITEMS_PER_THREAD) < valid_items)
         {
-            ThreadStore<MODIFIER>(block_itr + (threadIdx.x * ITEMS_PER_THREAD) + ITEM, items[ITEM]);
+            ThreadStore<MODIFIER>(block_itr + (linear_tid * ITEMS_PER_THREAD) + ITEM, items[ITEM]);
         }
     }
 }
@@ -133,67 +135,71 @@ __device__ __forceinline__ void StoreBlocked(
 
 
 /**
- * \brief Store a striped arrangement of data across the thread block using the specified cache modifier.
+ * \brief Store a striped arrangement of data across the thread block into a linear tile of items using the specified cache modifier.
  *
  * The aggregate tile of items is assumed to be partitioned across
  * threads in "striped" arrangement, i.e., the \p ITEMS_PER_THREAD
  * items owned by each thread have logical stride \p BLOCK_THREADS between them.
  *
  * \tparam MODIFIER             cub::PtxStoreModifier cache modifier.
+ * \tparam BLOCK_THREADS        The threadblock size in threads
  * \tparam T                    <b>[inferred]</b> The data type to store.
  * \tparam ITEMS_PER_THREAD     <b>[inferred]</b> The number of consecutive items partitioned onto each thread.
  * \tparam OutputIteratorRA     <b>[inferred]</b> The random-access iterator type for output (may be a simple pointer type).
  */
 template <
     PtxStoreModifier    MODIFIER,
+    int                 BLOCK_THREADS,
     typename            T,
     int                 ITEMS_PER_THREAD,
     typename            OutputIteratorRA>
 __device__ __forceinline__ void StoreStriped(
-    OutputIteratorRA    block_itr,                      ///< [in] The threadblock's base output iterator for storing to
-    T                   (&items)[ITEMS_PER_THREAD],     ///< [in] Data to store
-    int                 block_stride = blockDim.x)      ///< [in] <b>[optional]</b> Block stripe stride.  Default is the width of the threadblock.  More efficient code can be generated if a compile-time-constant (e.g., BLOCK_THREADS) is supplied.
+    int                 linear_tid,                 ///< [in] A suitable 1D thread-identifier for the calling thread (e.g., <tt>(threadIdx.y * blockDim.x) + linear_tid</tt> for 2D thread blocks)
+    OutputIteratorRA    block_itr,                  ///< [in] The threadblock's base output iterator for storing to
+    T                   (&items)[ITEMS_PER_THREAD]) ///< [in] Data to store
 {
     // Store directly in striped order
     #pragma unroll
     for (int ITEM = 0; ITEM < ITEMS_PER_THREAD; ITEM++)
     {
-        int item_offset = (ITEM * block_stride) + threadIdx.x;
+        int item_offset = (ITEM * BLOCK_THREADS) + linear_tid;
         ThreadStore<MODIFIER>(block_itr + item_offset, items[ITEM]);
     }
 }
 
 
 /**
- * \brief  Store a striped arrangement of data across the thread block using the specified cache modifier, guarded by range
+ * \brief Store a striped arrangement of data across the thread block into a linear tile of items using the specified cache modifier, guarded by range
  *
  * The aggregate tile of items is assumed to be partitioned across
  * threads in <em>striped</em> arrangement, i.e., the \p ITEMS_PER_THREAD
  * items owned by each thread have logical stride \p BLOCK_THREADS between them.
  *
  * \tparam MODIFIER             cub::PtxStoreModifier cache modifier.
+ * \tparam BLOCK_THREADS        The threadblock size in threads
  * \tparam T                    <b>[inferred]</b> The data type to store.
  * \tparam ITEMS_PER_THREAD     <b>[inferred]</b> The number of consecutive items partitioned onto each thread.
  * \tparam OutputIteratorRA     <b>[inferred]</b> The random-access iterator type for output (may be a simple pointer type).
  */
 template <
     PtxStoreModifier    MODIFIER,
+    int                 BLOCK_THREADS,
     typename            T,
     int                 ITEMS_PER_THREAD,
     typename            OutputIteratorRA>
 __device__ __forceinline__ void StoreStriped(
-    OutputIteratorRA    block_itr,                      ///< [in] The threadblock's base output iterator for storing to
-    const int           &valid_items,                 ///< [in] Number of valid items in the tile
-    T                   (&items)[ITEMS_PER_THREAD],     ///< [in] Data to store
-    int                 block_stride = blockDim.x)      ///< [in] <b>[optional]</b> Block stripe stride.  Default is the width of the threadblock.  More efficient code can be generated if a compile-time-constant (e.g., BLOCK_THREADS) is supplied.
+    int                 linear_tid,                 ///< [in] A suitable 1D thread-identifier for the calling thread (e.g., <tt>(threadIdx.y * blockDim.x) + linear_tid</tt> for 2D thread blocks)
+    OutputIteratorRA    block_itr,                  ///< [in] The threadblock's base output iterator for storing to
+    T                   (&items)[ITEMS_PER_THREAD], ///< [in] Data to store
+    int                 valid_items)                ///< [in] Number of valid items in the tile
 {
     // Store directly in striped order
     #pragma unroll
     for (int ITEM = 0; ITEM < ITEMS_PER_THREAD; ITEM++)
     {
-        if ((ITEM * block_stride) + threadIdx.x < valid_items)
+        if ((ITEM * BLOCK_THREADS) + linear_tid < valid_items)
         {
-            ThreadStore<MODIFIER>(block_itr + (ITEM * block_stride) + threadIdx.x, items[ITEM]);
+            ThreadStore<MODIFIER>(block_itr + (ITEM * BLOCK_THREADS) + linear_tid, items[ITEM]);
         }
     }
 }
@@ -208,7 +214,7 @@ __device__ __forceinline__ void StoreStriped(
 
 
 /**
- * \brief Store warp-striped tile directly using the specified cache modifier.
+ * \brief Store a warp-striped arrangement of data across the thread block into a linear tile of items using the specified cache modifier.
  *
  * The aggregate tile of items is assumed to be partitioned across threads in
  * "warp-striped" fashion, i.e., each warp owns a contiguous segment of
@@ -230,25 +236,25 @@ template <
     int                 ITEMS_PER_THREAD,
     typename            OutputIteratorRA>
 __device__ __forceinline__ void StoreWarpStriped(
-    OutputIteratorRA    block_itr,                                                      ///< [in] The threadblock's base output iterator for storing to
-    T                   (&items)[ITEMS_PER_THREAD],                                     ///< [out] Data to load
-    int                 warp_stride = PtxArchProps::WARP_THREADS)                       ///< [in] <b>[optional]</b> Warp stripe stride.  Default is the width of the warp.
+    int                 linear_tid,                 ///< [in] A suitable 1D thread-identifier for the calling thread (e.g., <tt>(threadIdx.y * blockDim.x) + linear_tid</tt> for 2D thread blocks)
+    OutputIteratorRA    block_itr,                  ///< [in] The threadblock's base output iterator for storing to
+    T                   (&items)[ITEMS_PER_THREAD]) ///< [out] Data to load
 {
-    int tid         = threadIdx.x & (PtxArchProps::WARP_THREADS - 1);
-    int wid         = threadIdx.x >> PtxArchProps::LOG_WARP_THREADS;
-    int warp_offset = wid * warp_stride * ITEMS_PER_THREAD;
+    int tid         = linear_tid & (PtxArchProps::WARP_THREADS - 1);
+    int wid         = linear_tid >> PtxArchProps::LOG_WARP_THREADS;
+    int warp_offset = wid * PtxArchProps::WARP_THREADS * ITEMS_PER_THREAD;
 
     // Store directly in warp-striped order
     #pragma unroll
     for (int ITEM = 0; ITEM < ITEMS_PER_THREAD; ITEM++)
     {
-        ThreadStore<MODIFIER>(block_itr + warp_offset + tid + (ITEM * warp_stride), items[ITEM]);
+        ThreadStore<MODIFIER>(block_itr + warp_offset + tid + (ITEM * PtxArchProps::WARP_THREADS), items[ITEM]);
     }
 }
 
 
 /**
- * \brief Store warp-striped directly tile using the specified cache modifier, guarded by range
+ * \brief Store a warp-striped arrangement of data across the thread block into a linear tile of items using the specified cache modifier, guarded by range
  *
  * The aggregate tile of items is assumed to be partitioned across threads in
  * "warp-striped" fashion, i.e., each warp owns a contiguous segment of
@@ -270,22 +276,22 @@ template <
     int                 ITEMS_PER_THREAD,
     typename            OutputIteratorRA>
 __device__ __forceinline__ void StoreWarpStriped(
-    OutputIteratorRA    block_itr,                                                      ///< [in] The threadblock's base output iterator for storing to
-    const int           &valid_items,                                                 ///< [in] Number of valid items in the tile
-    T                   (&items)[ITEMS_PER_THREAD],                                     ///< [out] Data to load
-    int                 warp_stride = PtxArchProps::WARP_THREADS)                       ///< [in] <b>[optional]</b> Warp stripe stride.  Default is the width of the warp.
+    int                 linear_tid,                 ///< [in] A suitable 1D thread-identifier for the calling thread (e.g., <tt>(threadIdx.y * blockDim.x) + linear_tid</tt> for 2D thread blocks)
+    OutputIteratorRA    block_itr,                  ///< [in] The threadblock's base output iterator for storing to
+    T                   (&items)[ITEMS_PER_THREAD], ///< [in] Data to store
+    int                 valid_items)                ///< [in] Number of valid items in the tile
 {
-    int tid         = threadIdx.x & (PtxArchProps::WARP_THREADS - 1);
-    int wid         = threadIdx.x >> PtxArchProps::LOG_WARP_THREADS;
-    int warp_offset = wid * warp_stride * ITEMS_PER_THREAD;
+    int tid         = linear_tid & (PtxArchProps::WARP_THREADS - 1);
+    int wid         = linear_tid >> PtxArchProps::LOG_WARP_THREADS;
+    int warp_offset = wid * PtxArchProps::WARP_THREADS * ITEMS_PER_THREAD;
 
     // Store directly in warp-striped order
     #pragma unroll
     for (int ITEM = 0; ITEM < ITEMS_PER_THREAD; ITEM++)
     {
-        if (warp_offset + tid + (ITEM * warp_stride) < valid_items)
+        if (warp_offset + tid + (ITEM * PtxArchProps::WARP_THREADS) < valid_items)
         {
-            ThreadStore<MODIFIER>(block_itr + warp_offset + tid + (ITEM * warp_stride), items[ITEM]);
+            ThreadStore<MODIFIER>(block_itr + warp_offset + tid + (ITEM * PtxArchProps::WARP_THREADS), items[ITEM]);
         }
     }
 }
@@ -299,7 +305,7 @@ __device__ __forceinline__ void StoreWarpStriped(
 //@{
 
 /**
- * \brief Store a blocked arrangement of items across a thread block using the specified cache modifier.
+ * \brief Store a blocked arrangement of items across a thread block into a linear tile of items using the specified cache modifier.
  *
  * The aggregate tile of items is assumed to be partitioned evenly across
  * threads in <em>blocked</em> arrangement with thread<sub><em>i</em></sub> owning
@@ -323,8 +329,9 @@ template <
     typename            T,
     int                 ITEMS_PER_THREAD>
 __device__ __forceinline__ void StoreBlockedVectorized(
-    T                   *block_ptr,                     ///< [in] Input pointer for storing from
-    T                   (&items)[ITEMS_PER_THREAD])     ///< [in] Data to store
+    int                 linear_tid,                 ///< [in] A suitable 1D thread-identifier for the calling thread (e.g., <tt>(threadIdx.y * blockDim.x) + linear_tid</tt> for 2D thread blocks)
+    T                   *block_ptr,                 ///< [in] Input pointer for storing from
+    T                   (&items)[ITEMS_PER_THREAD]) ///< [in] Data to store
 {
     enum
     {
@@ -357,7 +364,7 @@ __device__ __forceinline__ void StoreBlockedVectorized(
     }
 
     // Direct-store using vector types
-    StoreBlocked<MODIFIER>(block_ptr_vectors, raw_vector);
+    StoreBlocked<MODIFIER>(linear_tid, block_ptr_vectors, raw_vector);
 }
 
 
@@ -372,9 +379,9 @@ __device__ __forceinline__ void StoreBlockedVectorized(
 //-----------------------------------------------------------------------------
 
 /**
- * \brief cub::BlockStorePolicy enumerates alternative algorithms for cub::BlockStore to store a tile of data to memory from a blocked arrangement across a CUDA thread block.
+ * \brief cub::BlockStoreAlgorithm enumerates alternative algorithms for cub::BlockStore to store a tile of data to memory from a blocked arrangement across a CUDA thread block.
  */
-enum BlockStorePolicy
+enum BlockStoreAlgorithm
 {
     /**
      * \par Overview
@@ -459,39 +466,38 @@ enum BlockStorePolicy
 
 
 /**
- * \brief BlockStore provides data movement operations for storing a tile of data to memory from a [<em>block arrangement</em>](index.html#sec3sec3) across a CUDA thread block.  ![](block_store_logo.png)
+ * \brief BlockStore provides configurable data movement operations for storing a tile of linear items to memory from a [<em>blocked arrangement</em>](index.html#sec3sec3) across a CUDA thread block.  ![](block_store_logo.png)
  *
- * BlockStore provides a tile-storing abstraction that implements alternative
- * cub::BlockStoreAlgorithm strategies that can be used to optimize data
- * movement on different architectures for different granularity sizes (i.e.,
- * number of items per thread).
+ * The BlockStore abstraction can be configured to implement different cub::BlockStoreAlgorithm
+ * strategies.  It facilitates performance tuning by allowing the caller to specialize
+ * data movement strategies for different architectures, data types, granularity sizes, etc.
  *
  * \tparam OutputIteratorRA     The input iterator type (may be a simple pointer type).
  * \tparam BLOCK_THREADS        The threadblock size in threads.
  * \tparam ITEMS_PER_THREAD     The number of consecutive items partitioned onto each thread.
- * \tparam ALGORITHM            <b>[optional]</b> cub::BlockStorePolicy tuning policy enumeration.  Default = cub::BLOCK_STORE_DIRECT.
+ * \tparam ALGORITHM            <b>[optional]</b> cub::BlockStoreAlgorithm tuning policy enumeration.  Default = cub::BLOCK_STORE_DIRECT.
  * \tparam MODIFIER             <b>[optional]</b> cub::PtxStoreModifier cache modifier.  Default = cub::STORE_DEFAULT.
- * \tparam WARP_TIME_SLICING    <b>[optional]</b> For cooperative cub::BlockStoreAlgorithm parameterizations that utilize shared memory: When \p true, only use enough shared memory for a single warp's worth of tile data, time-slicing the block-wide exchange over multiple synchronized rounds (default = false)
+ * \tparam WARP_TIME_SLICING    <b>[optional]</b> For transposition-based cub::BlockStoreAlgorithm parameterizations that utilize shared memory: When \p true, only use enough shared memory for a single warp's worth of tile data, time-slicing the block-wide exchange over multiple synchronized rounds (default = false)
  *
  * \par Algorithm
  * BlockStore can be (optionally) configured to use one of three alternative methods:
  *   -# <b>cub::BLOCK_STORE_DIRECT</b>.  A [<em>blocked arrangement</em>](index.html#sec3sec3) of data is written
-        directly to memory. [More...](\ref cub::BlockStorePolicy)
+        directly to memory. [More...](\ref cub::BlockStoreAlgorithm)
  *   -# <b>cub::BLOCK_STORE_VECTORIZE</b>.  A [<em>blocked arrangement</em>](index.html#sec3sec3)
  *      of data is written directly to memory using CUDA's built-in vectorized stores as a
- *      coalescing optimization.  [More...](\ref cub::BlockStorePolicy)
+ *      coalescing optimization.  [More...](\ref cub::BlockStoreAlgorithm)
  *   -# <b>cub::BLOCK_STORE_TRANSPOSE</b>.  A [<em>blocked arrangement</em>](index.html#sec3sec3)
  *      is locally transposed into a [<em>striped arrangement</em>](index.html#sec3sec3) which is
- *      then written to memory.  [More...](\ref cub::BlockStorePolicy)
+ *      then written to memory.  [More...](\ref cub::BlockStoreAlgorithm)
  *   -# <b>cub::BLOCK_STORE_WARP_TRANSPOSE</b>.  A [<em>blocked arrangement</em>](index.html#sec3sec3)
  *      is locally transposed into a [<em>warp-striped arrangement</em>](index.html#sec3sec3) which is
- *      then written to memory.  [More...](\ref cub::BlockStorePolicy)
+ *      then written to memory.  [More...](\ref cub::BlockStoreAlgorithm)
  *
  * \par Usage Considerations
  * - \smemreuse{BlockStore::TempStorage}
  *
  * \par Performance Considerations
- *  - See cub::BlockStorePolicy for more performance details regarding algorithmic alternatives
+ *  - See cub::BlockStoreAlgorithm for more performance details regarding algorithmic alternatives
  *
  * \par Examples
  * <em>Example 1.</em> Have a 128-thread thread block directly store a blocked
@@ -579,28 +585,26 @@ template <
     typename            OutputIteratorRA,
     int                 BLOCK_THREADS,
     int                 ITEMS_PER_THREAD,
-    BlockStorePolicy    ALGORITHM = BLOCK_STORE_DIRECT,
-    PtxStoreModifier    MODIFIER = STORE_DEFAULT,
-    bool                WARP_TIME_SLICING = false>
+    BlockStoreAlgorithm    ALGORITHM           = BLOCK_STORE_DIRECT,
+    PtxStoreModifier    MODIFIER            = STORE_DEFAULT,
+    bool                WARP_TIME_SLICING   = false>
 class BlockStore
 {
-    //---------------------------------------------------------------------
-    // Type definitions and constants
-    //---------------------------------------------------------------------
-
 private:
-
-    enum
-    {
-        WARP_THREADS = PtxArchProps::WARP_THREADS
-    };
+    /******************************************************************************
+     * Constants and typed definitions
+     ******************************************************************************/
 
     // Data type of input iterator
     typedef typename std::iterator_traits<OutputIteratorRA>::value_type T;
 
 
+    /******************************************************************************
+     * Algorithmic variants
+     ******************************************************************************/
+
     /// Store helper
-    template <BlockStorePolicy _POLICY, int DUMMY = 0>
+    template <BlockStoreAlgorithm _POLICY, int DUMMY = 0>
     struct StoreInternal;
 
 
@@ -613,23 +617,32 @@ private:
         /// Shared memory storage layout type
         typedef NullType TempStorage;
 
+        /// Linear thread-id
+        int linear_tid;
+
+        /// Constructor
+        __device__ __forceinline__ StoreInternal(
+            TempStorage &temp_storage,
+            int linear_tid)
+        :
+            linear_tid(linear_tid)
+        {}
+
         /// Store a tile of items across a threadblock
-        static __device__ __forceinline__ void Store(
-            TempStorage         &temp_storage,              ///< [in] Reference to shared memory allocation having layout type TempStorage
+        __device__ __forceinline__ void Store(
             OutputIteratorRA    block_itr,                  ///< [in] The threadblock's base output iterator for storing to
             T                   (&items)[ITEMS_PER_THREAD]) ///< [in] Data to store
         {
-            StoreBlocked<MODIFIER>(block_itr, items);
+            StoreBlocked<MODIFIER>(linear_tid, block_itr, items);
         }
 
         /// Store a tile of items across a threadblock, guarded by range
-        static __device__ __forceinline__ void Store(
-            TempStorage         &temp_storage,              ///< [in] Reference to shared memory allocation having layout type TempStorage
+        __device__ __forceinline__ void Store(
             OutputIteratorRA    block_itr,                  ///< [in] The threadblock's base output iterator for storing to
-            const int           &valid_items,             ///< [in] Number of valid items in the tile
-            T                   (&items)[ITEMS_PER_THREAD]) ///< [in] Data to store
+            T                   (&items)[ITEMS_PER_THREAD], ///< [in] Data to store
+            int                 valid_items)                ///< [in] Number of valid items in the tile
         {
-            StoreBlocked<MODIFIER>(block_itr, valid_items, items);
+            StoreBlocked<MODIFIER>(linear_tid, block_itr, items, valid_items);
         }
     };
 
@@ -643,33 +656,45 @@ private:
         /// Shared memory storage layout type
         typedef NullType TempStorage;
 
+        /// Thread reference to shared storage
+        TempStorage &temp_storage;
+
+        /// Linear thread-id
+        int linear_tid;
+
+        /// Constructor
+        __device__ __forceinline__ StoreInternal(
+            TempStorage &temp_storage,
+            int linear_tid)
+        :
+            temp_storage(temp_storage),
+            linear_tid(linear_tid)
+        {}
+
         /// Store a tile of items across a threadblock, specialized for native pointer types (attempts vectorization)
-        static __device__ __forceinline__ void Store(
-            TempStorage         &temp_storage,              ///< [in] Reference to shared memory allocation having layout type TempStorage
+        __device__ __forceinline__ void Store(
             T                   *block_ptr,                 ///< [in] The threadblock's base output iterator for storing to
             T                   (&items)[ITEMS_PER_THREAD]) ///< [in] Data to store
         {
-            StoreBlockedVectorized<MODIFIER>(block_ptr, items);
+            StoreBlockedVectorized<MODIFIER>(linear_tid, block_ptr, items);
         }
 
         /// Store a tile of items across a threadblock, specialized for opaque input iterators (skips vectorization)
         template <typename _OutputIteratorRA>
-        static __device__ __forceinline__ void Store(
-            TempStorage         &temp_storage,              ///< [in] Reference to shared memory allocation having layout type TempStorage
+        __device__ __forceinline__ void Store(
             _OutputIteratorRA   block_itr,                  ///< [in] The threadblock's base output iterator for storing to
             T                   (&items)[ITEMS_PER_THREAD]) ///< [in] Data to store
         {
-            StoreBlocked<MODIFIER>(block_itr, items);
+            StoreBlocked<MODIFIER>(linear_tid, block_itr, items);
         }
 
         /// Store a tile of items across a threadblock, guarded by range
-        static __device__ __forceinline__ void Store(
-            TempStorage         &temp_storage,              ///< [in] Reference to shared memory allocation having layout type TempStorage
+        __device__ __forceinline__ void Store(
             OutputIteratorRA    block_itr,                  ///< [in] The threadblock's base output iterator for storing to
-            const int           &valid_items,             ///< [in] Number of valid items in the tile
-            T                   (&items)[ITEMS_PER_THREAD]) ///< [in] Data to store
+            T                   (&items)[ITEMS_PER_THREAD], ///< [in] Data to store
+            int                 valid_items)                ///< [in] Number of valid items in the tile
         {
-            StoreBlocked<MODIFIER>(block_itr, valid_items, items);
+            StoreBlocked<MODIFIER>(linear_tid, block_itr, items, valid_items);
         }
     };
 
@@ -686,25 +711,38 @@ private:
         /// Shared memory storage layout type
         typedef typename BlockExchange::TempStorage TempStorage;
 
+        /// Thread reference to shared storage
+        TempStorage &temp_storage;
+
+        /// Linear thread-id
+        int linear_tid;
+
+        /// Constructor
+        __device__ __forceinline__ StoreInternal(
+            TempStorage &temp_storage,
+            int linear_tid)
+        :
+            temp_storage(temp_storage),
+            linear_tid(linear_tid)
+        {}
+
         /// Store a tile of items across a threadblock
-        static __device__ __forceinline__ void Store(
-            TempStorage         &temp_storage,              ///< [in] Reference to shared memory allocation having layout type TempStorage
+        __device__ __forceinline__ void Store(
             OutputIteratorRA    block_itr,                  ///< [in] The threadblock's base output iterator for storing to
             T                   (&items)[ITEMS_PER_THREAD]) ///< [in] Data to store
         {
-            BlockExchange::BlockedToStriped(temp_storage, items);
-            StoreStriped<MODIFIER>(block_itr, items, BLOCK_THREADS);
+            BlockExchange(temp_storage).BlockedToStriped(items);
+            StoreStriped<MODIFIER, BLOCK_THREADS>(linear_tid, block_itr, items);
         }
 
         /// Store a tile of items across a threadblock, guarded by range
-        static __device__ __forceinline__ void Store(
-            TempStorage         &temp_storage,              ///< [in] Reference to shared memory allocation having layout type TempStorage
+        __device__ __forceinline__ void Store(
             OutputIteratorRA    block_itr,                  ///< [in] The threadblock's base output iterator for storing to
-            const int           &valid_items,             ///< [in] Number of valid items in the tile
-            T                   (&items)[ITEMS_PER_THREAD]) ///< [in] Data to store
+            T                   (&items)[ITEMS_PER_THREAD], ///< [in] Data to store
+            int                 valid_items)                ///< [in] Number of valid items in the tile
         {
-            BlockExchange::BlockedToStriped(temp_storage, items);
-            StoreStriped<MODIFIER>(block_itr, valid_items, items, BLOCK_THREADS);
+            BlockExchange(temp_storage).BlockedToStriped(items);
+            StoreStriped<MODIFIER, BLOCK_THREADS>(linear_tid, block_itr, items, valid_items);
         }
     };
 
@@ -715,6 +753,11 @@ private:
     template <int DUMMY>
     struct StoreInternal<BLOCK_STORE_WARP_TRANSPOSE, DUMMY>
     {
+        enum
+        {
+            WARP_THREADS = PtxArchProps::WARP_THREADS
+        };
+
         // Assert BLOCK_THREADS must be a multiple of WARP_THREADS
         CUB_STATIC_ASSERT((BLOCK_THREADS % WARP_THREADS == 0), "BLOCK_THREADS must be a multiple of WARP_THREADS");
 
@@ -724,63 +767,157 @@ private:
         /// Shared memory storage layout type
         typedef typename BlockExchange::TempStorage TempStorage;
 
+        /// Thread reference to shared storage
+        TempStorage &temp_storage;
+
+        /// Linear thread-id
+        int linear_tid;
+
+        /// Constructor
+        __device__ __forceinline__ StoreInternal(
+            TempStorage &temp_storage,
+            int linear_tid)
+        :
+            temp_storage(temp_storage),
+            linear_tid(linear_tid)
+        {}
+
         /// Store a tile of items across a threadblock
-        static __device__ __forceinline__ void Store(
-            TempStorage         &temp_storage,              ///< [in] Reference to shared memory allocation having layout type TempStorage
+        __device__ __forceinline__ void Store(
             OutputIteratorRA    block_itr,                  ///< [in] The threadblock's base output iterator for storing to
             T                   (&items)[ITEMS_PER_THREAD]) ///< [in] Data to store
         {
-            BlockExchange::BlockedToWarpStriped(temp_storage, items);
-            StoreWarpStriped<MODIFIER>(block_itr, items, WARP_THREADS);
+            BlockExchange(temp_storage).BlockedToWarpStriped(items);
+            StoreWarpStriped<MODIFIER>(linear_tid, block_itr, items);
         }
 
         /// Store a tile of items across a threadblock, guarded by range
-        static __device__ __forceinline__ void Store(
-            TempStorage         &temp_storage,              ///< [in] Reference to shared memory allocation having layout type TempStorage
+        __device__ __forceinline__ void Store(
             OutputIteratorRA    block_itr,                  ///< [in] The threadblock's base output iterator for storing to
-            const int           &valid_items,             ///< [in] Number of valid items in the tile
-            T                   (&items)[ITEMS_PER_THREAD]) ///< [in] Data to store
+            T                   (&items)[ITEMS_PER_THREAD], ///< [in] Data to store
+            int                 valid_items)                ///< [in] Number of valid items in the tile
         {
-            BlockExchange::BlockedToWarpStriped(temp_storage, items);
-            StoreWarpStriped<MODIFIER>(block_itr, valid_items, items, WARP_THREADS);
+            BlockExchange(temp_storage).BlockedToWarpStriped(items);
+            StoreWarpStriped<MODIFIER>(linear_tid, block_itr, items, valid_items);
         }
     };
 
+    /******************************************************************************
+     * Type definitions
+     ******************************************************************************/
+
+    /// Internal load implementation to use
+    typedef StoreInternal<ALGORITHM> InternalStore;
+
+
     /// Shared memory storage layout type
-    typedef typename StoreInternal<ALGORITHM>::TempStorage _TempStorage;
+    typedef typename InternalStore::TempStorage _TempStorage;
+
+
+    /******************************************************************************
+     * Utility methods
+     ******************************************************************************/
+
+    /// Internal storage allocator
+    __device__ __forceinline__ _TempStorage& PrivateStorage()
+    {
+        __shared__ _TempStorage private_storage;
+        return private_storage;
+    }
+
+
+    /******************************************************************************
+     * Thread fields
+     ******************************************************************************/
+
+    /// Thread reference to shared storage
+    _TempStorage &temp_storage;
+
+    /// Linear thread-id
+    int linear_tid;
 
 public:
+
 
     /// \smemstorage{BlockStore}
     typedef _TempStorage TempStorage;
 
 
+    /******************************************************************//**
+     * \name Collective construction
+     *********************************************************************/
+    //@{
 
-    //---------------------------------------------------------------------
-    // Interface
-    //---------------------------------------------------------------------
+    /**
+     * \brief Collective constructor for 1D thread blocks using a private static allocation of shared memory as temporary storage.  Threads are identified using <tt>threadIdx.x</tt>.
+     */
+    __device__ __forceinline__ BlockStore()
+    :
+        temp_storage(PrivateStorage()),
+        linear_tid(threadIdx.x)
+    {}
+
+
+    /**
+     * \brief Collective constructor for 1D thread blocks using the specified memory allocation as temporary storage.  Threads are identified using <tt>threadIdx.x</tt>.
+     */
+    __device__ __forceinline__ BlockStore(
+        TempStorage &temp_storage)             ///< [in] Reference to memory allocation having layout type TempStorage
+    :
+        temp_storage(temp_storage),
+        linear_tid(threadIdx.x)
+    {}
+
+
+    /**
+     * \brief Collective constructor using a private static allocation of shared memory as temporary storage.  Threads are identified using the given linear thread identifier
+     */
+    __device__ __forceinline__ BlockStore(
+        int linear_tid)                        ///< [in] A suitable 1D thread-identifier for the calling thread (e.g., <tt>(threadIdx.y * blockDim.x) + linear_tid</tt> for 2D thread blocks)
+    :
+        temp_storage(PrivateStorage()),
+        linear_tid(linear_tid)
+    {}
+
+
+    /**
+     * \brief Collective constructor using the specified memory allocation as temporary storage.  Threads are identified using the given linear thread identifier.
+     */
+    __device__ __forceinline__ BlockStore(
+        TempStorage &temp_storage,             ///< [in] Reference to memory allocation having layout type TempStorage
+        int linear_tid)                        ///< [in] <b>[optional]</b> A suitable 1D thread-identifier for the calling thread (e.g., <tt>(threadIdx.y * blockDim.x) + linear_tid</tt> for 2D thread blocks)
+    :
+        temp_storage(temp_storage),
+        linear_tid(linear_tid)
+    {}
+
+
+    //@}  end member group
+    /******************************************************************//**
+     * \name Data movement
+     *********************************************************************/
+    //@{
+
 
     /**
      * \brief Store a tile of items across a threadblock.
      */
-    static __device__ __forceinline__ void Store(
-        TempStorage         &temp_storage,                  ///< [in] Reference to shared memory allocation having layout type TempStorage
-        OutputIteratorRA    block_itr,                      ///< [in] The threadblock's base output iterator for storing to
-        T                   (&items)[ITEMS_PER_THREAD])     ///< [in] Data to store
+    __device__ __forceinline__ void Store(
+        OutputIteratorRA    block_itr,                  ///< [in] The threadblock's base output iterator for storing to
+        T                   (&items)[ITEMS_PER_THREAD]) ///< [in] Data to store
     {
-        StoreInternal<ALGORITHM>::Store(temp_storage, block_itr, items);
+        InternalStore(temp_storage, linear_tid).Store(block_itr, items);
     }
 
     /**
      * \brief Store a tile of items across a threadblock, guarded by range.
      */
-    static __device__ __forceinline__ void Store(
-        TempStorage         &temp_storage,                  ///< [in] Reference to shared memory allocation having layout type TempStorage
-        OutputIteratorRA    block_itr,                      ///< [in] The threadblock's base output iterator for storing to
-        const int           &valid_items,                 ///< [in] Number of valid items in the tile
-        T                   (&items)[ITEMS_PER_THREAD])     ///< [in] Data to store
+    __device__ __forceinline__ void Store(
+        OutputIteratorRA    block_itr,                  ///< [in] The threadblock's base output iterator for storing to
+        T                   (&items)[ITEMS_PER_THREAD], ///< [in] Data to store
+        int                 valid_items)                ///< [in] Number of valid items in the tile
     {
-        StoreInternal<ALGORITHM>::Store(temp_storage, block_itr, valid_items, items);
+        InternalStore(temp_storage, linear_tid).Store(block_itr, items, valid_items);
     }
 };
 
