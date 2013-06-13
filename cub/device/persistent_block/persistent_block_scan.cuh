@@ -179,7 +179,7 @@ template <
     BlockLoadAlgorithm          _LOAD_ALGORITHM,
     bool                        _LOAD_WARP_TIME_SLICING,
     PtxLoadModifier             _LOAD_MODIFIER,
-    BlockStorePolicy            _STORE_ALGORITHM,
+    BlockStoreAlgorithm         _STORE_ALGORITHM,
     bool                        _STORE_WARP_TIME_SLICING,
     BlockScanAlgorithm          _SCAN_ALGORITHM>
 struct PersistentBlockScanPolicy
@@ -194,7 +194,7 @@ struct PersistentBlockScanPolicy
 
     static const BlockLoadAlgorithm     LOAD_ALGORITHM      = _LOAD_ALGORITHM;
     static const PtxLoadModifier        LOAD_MODIFIER       = _LOAD_MODIFIER;
-    static const BlockStorePolicy       STORE_ALGORITHM     = _STORE_ALGORITHM;
+    static const BlockStoreAlgorithm    STORE_ALGORITHM     = _STORE_ALGORITHM;
     static const BlockScanAlgorithm     SCAN_ALGORITHM      = _SCAN_ALGORITHM;
 };
 
@@ -304,11 +304,8 @@ struct PersistentBlockScan
 
             // Perform a segmented reduction to get the prefix for the current window
             int flag = (predecessor_status != DEVICE_SCAN_TILE_PARTIAL);
-            window_prefix = WarpReduceT::SegmentedReduce(
-                block_scan->temp_storage.warp_reduce,
-                value,
-                flag,
-                block_scan->scan_op);
+            window_prefix = WarpReduceT(block_scan->temp_storage.warp_reduce).TailSegmentedReduce(
+                value, flag, block_scan->scan_op);
         }
 
         // Prefix functor (called by the first warp)
@@ -400,7 +397,7 @@ struct PersistentBlockScan
     __device__ __forceinline__
     void ScanBlock(T (&items)[ITEMS_PER_THREAD], _ScanOp scan_op, _Identity identity, T& block_aggregate)
     {
-        BlockScanT::ExclusiveScan(temp_storage.scan, items, items, identity, scan_op, block_aggregate);
+        BlockScanT(temp_storage.scan).ExclusiveScan(items, items, identity, scan_op, block_aggregate);
     }
 
     /**
@@ -410,7 +407,7 @@ struct PersistentBlockScan
     __device__ __forceinline__
     void ScanBlock(T (&items)[ITEMS_PER_THREAD], Sum<T> scan_op, _Identity identity, T& block_aggregate)
     {
-        BlockScanT::ExclusiveSum(temp_storage.scan, items, items, block_aggregate);
+        BlockScanT(temp_storage.scan).ExclusiveSum(items, items, block_aggregate);
     }
 
     /**
@@ -441,7 +438,7 @@ struct PersistentBlockScan
     void ScanBlock(T (&items)[ITEMS_PER_THREAD], _ScanOp scan_op, _Identity identity, T& block_aggregate, int tile_idx)
     {
         BlockPrefixOp prefix_op(this, tile_idx);
-        BlockScanT::ExclusiveScan(temp_storage.scan, items, items, identity, scan_op, block_aggregate, prefix_op);
+        BlockScanT(temp_storage.scan).ExclusiveScan(items, items, identity, scan_op, block_aggregate, prefix_op);
     }
 
     /**
@@ -452,7 +449,7 @@ struct PersistentBlockScan
     void ScanBlock(T (&items)[ITEMS_PER_THREAD], Sum<T> scan_op, _Identity identity, T& block_aggregate, int tile_idx)
     {
         BlockPrefixOp prefix_op(this, tile_idx);
-        BlockScanT::ExclusiveSum(temp_storage.scan, items, items, block_aggregate, prefix_op);
+        BlockScanT(temp_storage.scan).ExclusiveSum(items, items, block_aggregate, prefix_op);
     }
 
     /**
@@ -487,7 +484,7 @@ struct PersistentBlockScan
 
         // Load items
         T items[ITEMS_PER_THREAD];
-        BlockLoadT::Load(temp_storage.load, d_in + block_offset, items);
+        BlockLoadT(temp_storage.load).Load(d_in + block_offset, items);
 
         __syncthreads();
 
@@ -512,7 +509,7 @@ struct PersistentBlockScan
         __syncthreads();
 
         // Store items
-        BlockStoreT::Store(temp_storage.store, d_out + block_offset, items);
+        BlockStoreT(temp_storage.store).Store(d_out + block_offset, items);
     }
 
 
@@ -526,7 +523,7 @@ struct PersistentBlockScan
 
         // Load items
         T items[ITEMS_PER_THREAD];
-        BlockLoadT::Load(temp_storage.load, d_in + block_offset, num_valid, items);
+        BlockLoadT(temp_storage.load).Load(d_in + block_offset, items, num_valid);
 
         __syncthreads();
 
@@ -547,7 +544,7 @@ struct PersistentBlockScan
         __syncthreads();
 
         // Store items
-        BlockStoreT::Store(temp_storage.store, d_out + block_offset, num_valid, items);
+        BlockStoreT(temp_storage.store).Store(d_out + block_offset, items, num_valid);
     }
 
 

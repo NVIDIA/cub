@@ -62,7 +62,7 @@ template <
     int                 BLOCK_THREADS,
     int                 ITEMS_PER_THREAD,
     BlockLoadAlgorithm  LOAD_ALGORITHM,
-    BlockStorePolicy    STORE_ALGORITHM,
+    BlockStoreAlgorithm STORE_ALGORITHM,
     PtxLoadModifier     LOAD_MODIFIER,
     PtxStoreModifier    STORE_MODIFIER,
     int                 WARP_TIME_SLICING,
@@ -102,12 +102,12 @@ __global__ void Kernel(
     T data[ITEMS_PER_THREAD];
 
     // Load data
-    BlockLoad::Load(temp_storage.load, d_in + block_offset, data);
+    BlockLoad(temp_storage.load).Load(d_in + block_offset, data);
 
     __syncthreads();
 
     // Store data
-    BlockStore::Store(temp_storage.store, d_out_unguarded + block_offset, data);
+    BlockStore(temp_storage.store).Store(d_out_unguarded + block_offset, data);
 
 }
 
@@ -119,7 +119,7 @@ template <
     int                 BLOCK_THREADS,
     int                 ITEMS_PER_THREAD,
     BlockLoadAlgorithm  LOAD_ALGORITHM,
-    BlockStorePolicy    STORE_ALGORITHM,
+    BlockStoreAlgorithm STORE_ALGORITHM,
     PtxLoadModifier     LOAD_MODIFIER,
     PtxStoreModifier    STORE_MODIFIER,
     int                 WARP_TIME_SLICING,
@@ -161,12 +161,12 @@ __global__ void KernelGuarded(
     T data[ITEMS_PER_THREAD];
 
     // Load data
-    BlockLoad::Load(temp_storage.load, d_in + block_offset, guarded_elements, data);
+    BlockLoad(temp_storage.load).Load(d_in + block_offset, data, guarded_elements);
 
     __syncthreads();
 
     // Store data
-    BlockStore::Store(temp_storage.store, d_out_guarded + block_offset, guarded_elements, data);
+    BlockStore(temp_storage.store).Store(d_out_guarded + block_offset, data, guarded_elements);
 }
 
 
@@ -183,7 +183,7 @@ template <
     int                 BLOCK_THREADS,
     int                 ITEMS_PER_THREAD,
     BlockLoadAlgorithm  LOAD_ALGORITHM,
-    BlockStorePolicy    STORE_ALGORITHM,
+    BlockStoreAlgorithm STORE_ALGORITHM,
     PtxLoadModifier     LOAD_MODIFIER,
     PtxStoreModifier    STORE_MODIFIER,
     int                 WARP_TIME_SLICING,
@@ -238,7 +238,7 @@ template <
     int                 BLOCK_THREADS,
     int                 ITEMS_PER_THREAD,
     BlockLoadAlgorithm  LOAD_ALGORITHM,
-    BlockStorePolicy    STORE_ALGORITHM,
+    BlockStoreAlgorithm STORE_ALGORITHM,
     PtxLoadModifier     LOAD_MODIFIER,
     PtxStoreModifier    STORE_MODIFIER,
     int                 WARP_TIME_SLICING>
@@ -307,7 +307,7 @@ template <
     int                 BLOCK_THREADS,
     int                 ITEMS_PER_THREAD,
     BlockLoadAlgorithm  LOAD_ALGORITHM,
-    BlockStorePolicy    STORE_ALGORITHM,
+    BlockStoreAlgorithm STORE_ALGORITHM,
     int                 WARP_TIME_SLICING>
 void TestIterator(
     int                 grid_size,
@@ -324,7 +324,7 @@ template <
     int                 BLOCK_THREADS,
     int                 ITEMS_PER_THREAD,
     BlockLoadAlgorithm  LOAD_ALGORITHM,
-    BlockStorePolicy    STORE_ALGORITHM,
+    BlockStoreAlgorithm STORE_ALGORITHM,
     int                 WARP_TIME_SLICING>
 void TestIterator(
     int                 grid_size,
@@ -389,7 +389,7 @@ template <
     int                     BLOCK_THREADS,
     int                     ITEMS_PER_THREAD,
     BlockLoadAlgorithm      LOAD_ALGORITHM,
-    BlockStorePolicy        STORE_ALGORITHM,
+    BlockStoreAlgorithm     STORE_ALGORITHM,
     bool                    WARP_TIME_SLICING>
 void TestPointerAccess(
     int             grid_size,
@@ -409,7 +409,7 @@ template <
     int                     BLOCK_THREADS,
     int                     ITEMS_PER_THREAD,
     BlockLoadAlgorithm      LOAD_ALGORITHM,
-    BlockStorePolicy        STORE_ALGORITHM>
+    BlockStoreAlgorithm     STORE_ALGORITHM>
 void TestSlicedStrategy(
     int             grid_size,
     float           fraction_valid)
@@ -468,7 +468,6 @@ void TestItemsPerThread(
     TestStrategy<T, BLOCK_THREADS, 1>(grid_size, fraction_valid, Int2Type<BLOCK_THREADS % 32 == 0>());
     TestStrategy<T, BLOCK_THREADS, 3>(grid_size, fraction_valid, Int2Type<BLOCK_THREADS % 32 == 0>());
     TestStrategy<T, BLOCK_THREADS, 4>(grid_size, fraction_valid, Int2Type<BLOCK_THREADS % 32 == 0>());
-    TestStrategy<T, BLOCK_THREADS, 8>(grid_size, fraction_valid, Int2Type<BLOCK_THREADS % 32 == 0>());
     TestStrategy<T, BLOCK_THREADS, 17>(grid_size, fraction_valid, Int2Type<BLOCK_THREADS % 32 == 0>());
 }
 
@@ -512,15 +511,13 @@ int main(int argc, char** argv)
     CubDebugExit(args.DeviceInit());
 
     // Simple test
-//    TestNative<int, 64, 2, BLOCK_LOAD_WARP_TRANSPOSE, BLOCK_STORE_WARP_TRANSPOSE, LOAD_DEFAULT, STORE_DEFAULT, true>(1, 0.8);
+   TestNative<int, 64, 2, BLOCK_LOAD_WARP_TRANSPOSE, BLOCK_STORE_WARP_TRANSPOSE, LOAD_DEFAULT, STORE_DEFAULT, true>(1, 0.8);
 
     // Evaluate different data types
-/*
     TestThreads<char>(2, 0.8);
     TestThreads<int>(2, 0.8);
     TestThreads<double2>(2, 0.8);
     TestThreads<TestFoo>(2, 0.8);
-*/
     TestThreads<TestBar>(2, 0.8);
 
     return 0;

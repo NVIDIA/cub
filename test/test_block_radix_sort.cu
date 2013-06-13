@@ -68,10 +68,11 @@ template <
     typename                ValueType>
 __launch_bounds__ (BLOCK_THREADS, 1)
 __global__ void Kernel(
-    KeyType             *d_keys,
-    ValueType           *d_values,
-    unsigned int        begin_bit,
-    unsigned int        end_bit)
+    KeyType                 *d_keys,
+    ValueType               *d_values,
+    int                     begin_bit,
+    int                     end_bit,
+    clock_t                 *d_elapsed)
 {
     enum
     {
@@ -96,14 +97,24 @@ __global__ void Kernel(
     KeyType keys[ITEMS_PER_THREAD];
     ValueType values[ITEMS_PER_THREAD];
 
-    LoadStriped<LOAD_DEFAULT>(d_keys, keys, BLOCK_THREADS);
-    LoadStriped<LOAD_DEFAULT>(d_values, values, BLOCK_THREADS);
+    LoadStriped<LOAD_DEFAULT, BLOCK_THREADS>(threadIdx.x, d_keys, keys);
+    LoadStriped<LOAD_DEFAULT, BLOCK_THREADS>(threadIdx.x, d_values, values);
+
+    // Start cycle timer
+    clock_t start = clock();
 
     // Test keys-value sorting (in striped arrangement)
-    BlockRadixSort::SortStriped(temp_storage, keys, values, begin_bit, end_bit);
+    BlockRadixSort(temp_storage).SortStriped(keys, values, begin_bit, end_bit);
 
-    StoreStriped<STORE_DEFAULT>(d_keys, keys, BLOCK_THREADS);
-    StoreStriped<STORE_DEFAULT>(d_values, values, BLOCK_THREADS);
+    // Stop cycle timer
+    clock_t stop = clock();
+
+    StoreStriped<STORE_DEFAULT, BLOCK_THREADS>(threadIdx.x, d_keys, keys);
+    StoreStriped<STORE_DEFAULT, BLOCK_THREADS>(threadIdx.x, d_values, values);
+
+    // Store time
+    if (threadIdx.x == 0)
+        *d_elapsed = (start > stop) ? start - stop : stop - start;
 }
 
 
@@ -120,10 +131,11 @@ template <
     typename                KeyType>
 __launch_bounds__ (BLOCK_THREADS, 1)
 __global__ void Kernel(
-    KeyType             *d_keys,
-    NullType            *d_values,
-    unsigned int        begin_bit,
-    unsigned int        end_bit)
+    KeyType                 *d_keys,
+    NullType                *d_values,
+    int                     begin_bit,
+    int                     end_bit,
+    clock_t                 *d_elapsed)
 {
     enum
     {
@@ -147,12 +159,22 @@ __global__ void Kernel(
     // Keys per thread
     KeyType keys[ITEMS_PER_THREAD];
 
-    LoadStriped<LOAD_DEFAULT>(d_keys, keys, BLOCK_THREADS);
+    LoadStriped<LOAD_DEFAULT, BLOCK_THREADS>(threadIdx.x, d_keys, keys);
+
+    // Start cycle timer
+    clock_t start = clock();
 
     // Test keys-only sorting (in striped arrangement)
-    BlockRadixSort::SortStriped(temp_storage, keys, begin_bit, end_bit);
+    BlockRadixSort(temp_storage).SortStriped(keys, begin_bit, end_bit);
 
-    StoreStriped<STORE_DEFAULT>(d_keys, keys, BLOCK_THREADS);
+    // Stop cycle timer
+    clock_t stop = clock();
+
+    StoreStriped<STORE_DEFAULT, BLOCK_THREADS>(threadIdx.x, d_keys, keys);
+
+    // Store time
+    if (threadIdx.x == 0)
+        *d_elapsed = (start > stop) ? start - stop : stop - start;
 }
 
 
@@ -173,9 +195,9 @@ template <
     typename                KeyType,
     typename                ValueType>
 void TestDriver(
-    unsigned int            entropy_reduction,
-    unsigned int            begin_bit,
-    unsigned int            end_bit)
+    int                     entropy_reduction,
+    int                     begin_bit,
+    int                     end_bit)
 {
     enum
     {
@@ -191,8 +213,10 @@ void TestDriver(
     // Allocate device arrays
     KeyType     *d_keys     = NULL;
     ValueType   *d_values   = NULL;
+    clock_t     *d_elapsed = NULL;
     CubDebugExit(DeviceAllocate((void**)&d_keys, sizeof(KeyType) * TILE_SIZE));
     CubDebugExit(DeviceAllocate((void**)&d_values, sizeof(ValueType) * TILE_SIZE));
+    CubDebugExit(DeviceAllocate((void**)&d_elapsed, sizeof(clock_t)));
 
     // Initialize problem on host and device
     for (int i = 0; i < TILE_SIZE; ++i)
@@ -237,7 +261,7 @@ void TestDriver(
 
     // Run kernel
     Kernel<BLOCK_THREADS, ITEMS_PER_THREAD, RADIX_BITS, MEMOIZE_OUTER_SCAN, INNER_SCAN_ALGORITHM, SMEM_CONFIG><<<1, BLOCK_THREADS>>>(
-        d_keys, d_values, begin_bit, end_bit);
+        d_keys, d_values, begin_bit, end_bit, d_elapsed);
 
     // Flush kernel output / errors
     CubDebugExit(cudaDeviceSynchronize());
@@ -275,12 +299,17 @@ void TestDriver(
     }
     printf("\n");
 
+    printf("\tElapsed clocks: ");
+    DisplayDeviceResults(d_elapsed, 1);
+    printf("\n");
+
     // Cleanup
     if (h_keys)             free(h_keys);
     if (h_reference_keys)   free(h_reference_keys);
     if (h_values)           free(h_values);
     if (d_keys)             CubDebugExit(DeviceFree(d_keys));
     if (d_values)           CubDebugExit(DeviceFree(d_values));
+    if (d_elapsed)          CubDebugExit(DeviceFree(d_elapsed));
 }
 
 
@@ -303,13 +332,13 @@ struct Valid
     static void Test()
     {
         // Iterate entropy_reduction
-        for (unsigned int entropy_reduction = 0; entropy_reduction <= 9; entropy_reduction += 3)
+        for (int entropy_reduction = 0; entropy_reduction <= 9; entropy_reduction += 3)
         {
             // Iterate begin_bit
-            for (unsigned int begin_bit = 0; begin_bit <= 1; begin_bit++)
+            for (int begin_bit = 0; begin_bit <= 1; begin_bit++)
             {
                 // Iterate end bit
-                for (unsigned int end_bit = begin_bit + 1; end_bit <= sizeof(KeyType) * 8; end_bit = end_bit * 2 + begin_bit)
+                for (int end_bit = begin_bit + 1; end_bit <= sizeof(KeyType) * 8; end_bit = end_bit * 2 + begin_bit)
                 {
                     TestDriver<BLOCK_THREADS, ITEMS_PER_THREAD, RADIX_BITS, MEMOIZE_OUTER_SCAN, INNER_SCAN_ALGORITHM, SMEM_CONFIG, KeyType, ValueType>(
                         entropy_reduction,

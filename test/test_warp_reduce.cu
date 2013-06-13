@@ -720,15 +720,15 @@ int main(int argc, char** argv)
     CubDebugExit(args.DeviceInit());
 
     // Quick exclusive test
-//    TestReduce<1, 32, int>(UNIFORM, Sum<int>(), CUB_TYPE_STRING(int), 32);
+    TestReduce<1, 32, int>(UNIFORM, Sum<int>(), CUB_TYPE_STRING(int), 32);
     TestSegmentedReduce<1, 32, int>(UNIFORM, 1, Sum<int>(), CUB_TYPE_STRING(int));
-/*
+
     // Test logical warp sizes
     Test<32>();
     Test<16>();
     Test<9>();
     Test<7>();
-*/
+
     return 0;
 }
 

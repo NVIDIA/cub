@@ -138,6 +138,9 @@ private:
 
     /// Linear thread-id
     int linear_tid;
+    int warp_lane;
+    int warp_id;
+    int warp_offset;
 
 
     /******************************************************************************
@@ -162,7 +165,7 @@ private:
         #pragma unroll
         for (int ITEM = 0; ITEM < ITEMS_PER_THREAD; ITEM++)
         {
-            int item_offset = (threadIdx.x * ITEMS_PER_THREAD) + ITEM;
+            int item_offset = (linear_tid * ITEMS_PER_THREAD) + ITEM;
             if (INSERT_PADDING) item_offset += item_offset >> LOG_SMEM_BANKS;
             temp_storage[item_offset] = items[ITEM];
         }
@@ -172,7 +175,7 @@ private:
         #pragma unroll
         for (int ITEM = 0; ITEM < ITEMS_PER_THREAD; ITEM++)
         {
-            int item_offset = int(ITEM * BLOCK_THREADS) + threadIdx.x;
+            int item_offset = int(ITEM * BLOCK_THREADS) + linear_tid;
             if (INSERT_PADDING) item_offset += item_offset >> LOG_SMEM_BANKS;
             items[ITEM] = temp_storage[item_offset];
         }
@@ -187,9 +190,6 @@ private:
         Int2Type<true>  time_slicing)
     {
         T temp_items[ITEMS_PER_THREAD];
-
-        int warp_lane   = threadIdx.x & (WARP_THREADS - 1);
-        int warp_id     = threadIdx.x >> LOG_WARP_THREADS;
 
         #pragma unroll
         for (int SLICE = 0; SLICE < TIME_SLICES; SLICE++)
@@ -221,7 +221,7 @@ private:
 
                 if ((SLICE_OFFSET < STRIP_OOB) && (SLICE_OOB > STRIP_OFFSET))
                 {
-                    int item_offset = STRIP_OFFSET + threadIdx.x - SLICE_OFFSET;
+                    int item_offset = STRIP_OFFSET + linear_tid - SLICE_OFFSET;
                     if ((item_offset >= 0) && (item_offset < TIME_SLICED_ITEMS))
                     {
                         if (INSERT_PADDING) item_offset += item_offset >> LOG_SMEM_BANKS;
@@ -247,10 +247,6 @@ private:
         T               items[ITEMS_PER_THREAD],   ///< [in-out] Items to exchange, converting between <em>blocked</em> and <em>warp-striped</em> arrangements.
         Int2Type<false> time_slicing)
     {
-        int warp_lane   = threadIdx.x & (WARP_THREADS - 1);
-        int warp_id     = threadIdx.x >> LOG_WARP_THREADS;
-        int warp_offset = warp_id * WARP_TIME_SLICED_ITEMS;
-
         #pragma unroll
         for (int ITEM = 0; ITEM < ITEMS_PER_THREAD; ITEM++)
         {
@@ -278,9 +274,6 @@ private:
         T               items[ITEMS_PER_THREAD],   ///< [in-out] Items to exchange, converting between <em>blocked</em> and <em>warp-striped</em> arrangements.
         Int2Type<true>  time_slicing)
     {
-        int warp_lane   = threadIdx.x & (WARP_THREADS - 1);
-        int warp_id     = threadIdx.x >> LOG_WARP_THREADS;
-
         #pragma unroll
         for (int SLICE = 0; SLICE < TIME_SLICES; ++SLICE)
         {
@@ -321,7 +314,7 @@ private:
         #pragma unroll
         for (int ITEM = 0; ITEM < ITEMS_PER_THREAD; ITEM++)
         {
-            int item_offset = int(ITEM * BLOCK_THREADS) + threadIdx.x;
+            int item_offset = int(ITEM * BLOCK_THREADS) + linear_tid;
             if (INSERT_PADDING) item_offset += item_offset >> LOG_SMEM_BANKS;
             temp_storage[item_offset] = items[ITEM];
         }
@@ -332,7 +325,7 @@ private:
         #pragma unroll
         for (int ITEM = 0; ITEM < ITEMS_PER_THREAD; ITEM++)
         {
-            int item_offset = (threadIdx.x * ITEMS_PER_THREAD) + ITEM;
+            int item_offset = (linear_tid * ITEMS_PER_THREAD) + ITEM;
             if (INSERT_PADDING) item_offset += item_offset >> LOG_SMEM_BANKS;
             items[ITEM] = temp_storage[item_offset];
         }
@@ -348,9 +341,6 @@ private:
     {
         // Warp time-slicing
         T temp_items[ITEMS_PER_THREAD];
-
-        int warp_lane   = threadIdx.x & (WARP_THREADS - 1);
-        int warp_id     = threadIdx.x >> LOG_WARP_THREADS;
 
         #pragma unroll
         for (int SLICE = 0; SLICE < TIME_SLICES; SLICE++)
@@ -369,7 +359,7 @@ private:
 
                 if ((SLICE_OFFSET < STRIP_OOB) && (SLICE_OOB > STRIP_OFFSET))
                 {
-                    int item_offset = STRIP_OFFSET + threadIdx.x - SLICE_OFFSET;
+                    int item_offset = STRIP_OFFSET + linear_tid - SLICE_OFFSET;
                     if ((item_offset >= 0) && (item_offset < TIME_SLICED_ITEMS))
                     {
                         if (INSERT_PADDING) item_offset += item_offset >> LOG_SMEM_BANKS;
@@ -408,10 +398,6 @@ private:
         T               items[ITEMS_PER_THREAD],   ///< [in-out] Items to exchange, converting between <em>warp-striped</em> and <em>blocked</em> arrangements.
         Int2Type<false> time_slicing)
     {
-        int warp_lane   = threadIdx.x & (WARP_THREADS - 1);
-        int warp_id     = threadIdx.x >> LOG_WARP_THREADS;
-        int warp_offset = warp_id * WARP_TIME_SLICED_ITEMS;
-
         #pragma unroll
         for (int ITEM = 0; ITEM < ITEMS_PER_THREAD; ITEM++)
         {
@@ -440,9 +426,6 @@ private:
         T               items[ITEMS_PER_THREAD],   ///< [in-out] Items to exchange, converting between <em>warp-striped</em> and <em>blocked</em> arrangements.
         Int2Type<true>  time_slicing)
     {
-        int warp_lane   = threadIdx.x & (WARP_THREADS - 1);
-        int warp_id     = threadIdx.x >> LOG_WARP_THREADS;
-
         #pragma unroll
         for (int SLICE = 0; SLICE < TIME_SLICES; ++SLICE)
         {
@@ -494,7 +477,7 @@ private:
         #pragma unroll
         for (int ITEM = 0; ITEM < ITEMS_PER_THREAD; ITEM++)
         {
-            int item_offset = (threadIdx.x * ITEMS_PER_THREAD) + ITEM;
+            int item_offset = (linear_tid * ITEMS_PER_THREAD) + ITEM;
             if (INSERT_PADDING) item_offset = SHR_ADD(item_offset, LOG_SMEM_BANKS, item_offset);
             items[ITEM] = temp_storage[item_offset];
         }
@@ -508,9 +491,6 @@ private:
         int             ranks[ITEMS_PER_THREAD],    ///< [in] Corresponding scatter ranks
         Int2Type<true>  time_slicing)
     {
-        int warp_lane   = threadIdx.x & (WARP_THREADS - 1);
-        int warp_id     = threadIdx.x >> LOG_WARP_THREADS;
-
         T temp_items[ITEMS_PER_THREAD];
 
         #pragma unroll
@@ -575,7 +555,7 @@ private:
         #pragma unroll
         for (int ITEM = 0; ITEM < ITEMS_PER_THREAD; ITEM++)
         {
-            int item_offset = int(ITEM * BLOCK_THREADS) + threadIdx.x;
+            int item_offset = int(ITEM * BLOCK_THREADS) + linear_tid;
             if (INSERT_PADDING) item_offset = SHR_ADD(item_offset, LOG_SMEM_BANKS, item_offset);
             items[ITEM] = temp_storage[item_offset];
         }
@@ -622,7 +602,7 @@ private:
 
                 if ((SLICE_OFFSET < STRIP_OOB) && (SLICE_OOB > STRIP_OFFSET))
                 {
-                    int item_offset = STRIP_OFFSET + threadIdx.x - SLICE_OFFSET;
+                    int item_offset = STRIP_OFFSET + linear_tid - SLICE_OFFSET;
                     if ((item_offset >= 0) && (item_offset < TIME_SLICED_ITEMS))
                     {
                         if (INSERT_PADDING) item_offset += item_offset >> LOG_SMEM_BANKS;
@@ -654,7 +634,10 @@ public:
     __device__ __forceinline__ BlockExchange()
     :
         temp_storage(PrivateStorage()),
-        linear_tid(threadIdx.x)
+        linear_tid(threadIdx.x),
+        warp_lane(linear_tid & (WARP_THREADS - 1)),
+        warp_id(linear_tid >> LOG_WARP_THREADS),
+        warp_offset(warp_id * WARP_TIME_SLICED_ITEMS)
     {}
 
 
@@ -665,7 +648,10 @@ public:
         TempStorage &temp_storage)             ///< [in] Reference to memory allocation having layout type TempStorage
     :
         temp_storage(temp_storage),
-        linear_tid(threadIdx.x)
+        linear_tid(threadIdx.x),
+        warp_lane(linear_tid & (WARP_THREADS - 1)),
+        warp_id(linear_tid >> LOG_WARP_THREADS),
+        warp_offset(warp_id * WARP_TIME_SLICED_ITEMS)
     {}
 
 
@@ -676,7 +662,10 @@ public:
         int linear_tid)                        ///< [in] A suitable 1D thread-identifier for the calling thread (e.g., <tt>(threadIdx.y * blockDim.x) + linear_tid</tt> for 2D thread blocks)
     :
         temp_storage(PrivateStorage()),
-        linear_tid(linear_tid)
+        linear_tid(linear_tid),
+        warp_lane(linear_tid & (WARP_THREADS - 1)),
+        warp_id(linear_tid >> LOG_WARP_THREADS),
+        warp_offset(warp_id * WARP_TIME_SLICED_ITEMS)
     {}
 
 
@@ -688,7 +677,10 @@ public:
         int         linear_tid)                 ///< [in] <b>[optional]</b> A suitable 1D thread-identifier for the calling thread (e.g., <tt>(threadIdx.y * blockDim.x) + linear_tid</tt> for 2D thread blocks)
     :
         temp_storage(temp_storage),
-        linear_tid(linear_tid)
+        linear_tid(linear_tid),
+        warp_lane(linear_tid & (WARP_THREADS - 1)),
+        warp_id(linear_tid >> LOG_WARP_THREADS),
+        warp_offset(warp_id * WARP_TIME_SLICED_ITEMS)
     {}
 
 

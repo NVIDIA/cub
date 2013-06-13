@@ -298,12 +298,12 @@ private:
             else
             {
                 // Place partial into shared memory grid.
-                *BlockRakingLayout::PlacementPtr(temp_storage.raking_grid) = partial;
+                *BlockRakingLayout::PlacementPtr(temp_storage.raking_grid, linear_tid) = partial;
 
                 __syncthreads();
 
                 // Reduce parallelism to one warp
-                if (threadIdx.x < RAKING_THREADS)
+                if (linear_tid < RAKING_THREADS)
                 {
                     // Raking reduction in grid
                     T *raking_segment = BlockRakingLayout::RakingPtr(temp_storage.raking_grid, linear_tid);
@@ -313,7 +313,7 @@ private:
                     for (int ITEM = 1; ITEM < SEGMENT_LENGTH; ITEM++)
                     {
                         // Update partial if addend is in range
-                        if ((FULL_TILE && RAKING_UNGUARDED) || ((threadIdx.x * SEGMENT_LENGTH) + ITEM < num_valid))
+                        if ((FULL_TILE && RAKING_UNGUARDED) || ((linear_tid * SEGMENT_LENGTH) + ITEM < num_valid))
                         {
                             partial = reduction_op(partial, raking_segment[ITEM]);
                         }
@@ -349,12 +349,12 @@ private:
             else
             {
                 // Place partial into shared memory grid.
-                *BlockRakingLayout::PlacementPtr(temp_storage.raking_grid) = partial;
+                *BlockRakingLayout::PlacementPtr(temp_storage.raking_grid, linear_tid) = partial;
 
                 __syncthreads();
 
                 // Reduce parallelism to one warp
-                if (threadIdx.x < RAKING_THREADS)
+                if (linear_tid < RAKING_THREADS)
                 {
                     // Raking reduction in grid
                     T *raking_segment = BlockRakingLayout::RakingPtr(temp_storage.raking_grid, linear_tid);
@@ -364,7 +364,7 @@ private:
                     for (int ITEM = 1; ITEM < SEGMENT_LENGTH; ITEM++)
                     {
                         // Update partial if addend is in range
-                        if ((FULL_TILE && RAKING_UNGUARDED) || ((threadIdx.x * SEGMENT_LENGTH) + ITEM < num_valid))
+                        if ((FULL_TILE && RAKING_UNGUARDED) || ((linear_tid * SEGMENT_LENGTH) + ITEM < num_valid))
                         {
                             partial = reduction_op(partial, raking_segment[ITEM]);
                         }
@@ -458,7 +458,7 @@ private:
             __syncthreads();
 
             // Update total aggregate in warp 0, lane 0
-            if (threadIdx.x == 0)
+            if (linear_tid == 0)
             {
                 #pragma unroll
                 for (int SUCCESSOR_WARP = 1; SUCCESSOR_WARP < WARPS; SUCCESSOR_WARP++)
@@ -507,7 +507,7 @@ private:
             int                 num_valid,          ///< [in] Number of valid elements (may be less than BLOCK_THREADS)
             ReductionOp         reduction_op)       ///< [in] Binary reduction operator
         {
-            unsigned int    warp_id = (WARPS == 1) ? 0 : (threadIdx.x / LOGICAL_WARP_SIZE);
+            unsigned int    warp_id = (WARPS == 1) ? 0 : (linear_tid / LOGICAL_WARP_SIZE);
             unsigned int    warp_offset = warp_id * LOGICAL_WARP_SIZE;
             unsigned int    warp_num_valid = (FULL_TILE && EVEN_WARP_MULTIPLE) ?
                                 LOGICAL_WARP_SIZE :
