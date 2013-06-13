@@ -171,29 +171,13 @@ private:
         POW_OF_TWO = ((LOGICAL_WARP_THREADS & (LOGICAL_WARP_THREADS - 1)) == 0),
     };
 
-public:
-
     /// Internal specialization.  Use SHFL-based reduction if (architecture is >= SM30) and ((only one logical warp) or (LOGICAL_WARP_THREADS is a power-of-two))
     typedef typename If<(CUB_PTX_ARCH >= 300) && ((LOGICAL_WARPS == 1) || POW_OF_TWO),
         WarpReduceShfl<T, LOGICAL_WARPS, LOGICAL_WARP_THREADS>,
         WarpReduceSmem<T, LOGICAL_WARPS, LOGICAL_WARP_THREADS> >::Type InternalWarpReduce;
 
-    /// \smemstorage{WarpReduce}
-    typedef typename InternalWarpReduce::TempStorage TempStorage;
-
-
-private:
-
-    /******************************************************************************
-     * Utility methods
-     ******************************************************************************/
-
-    /// Internal storage allocator
-    __device__ __forceinline__ TempStorage& PrivateStorage()
-    {
-        __shared__ TempStorage private_storage;
-        return private_storage;
-    }
+    /// Shared memory storage layout type for WarpReduce
+    typedef typename InternalWarpReduce::TempStorage _TempStorage;
 
 
     /******************************************************************************
@@ -201,7 +185,7 @@ private:
      ******************************************************************************/
 
     /// Shared storage reference
-    TempStorage &temp_storage;
+    _TempStorage &temp_storage;
 
     /// Warp ID
     int warp_id;
@@ -209,7 +193,24 @@ private:
     /// Lane ID
     int lane_id;
 
+
+    /******************************************************************************
+     * Utility methods
+     ******************************************************************************/
+
+    /// Internal storage allocator
+    __device__ __forceinline__ _TempStorage& PrivateStorage()
+    {
+        __shared__ TempStorage private_storage;
+        return private_storage;
+    }
+
+
 public:
+
+    /// \smemstorage{WarpReduce}
+    typedef _TempStorage TempStorage;
+
 
     /******************************************************************//**
      * \name Collective construction

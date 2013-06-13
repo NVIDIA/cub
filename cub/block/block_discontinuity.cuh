@@ -157,7 +157,7 @@ private:
     struct ApplyOp
     {
         // Apply flag operator
-        static __device__ __forceinline__ bool Flag(FlagOp flag_op, const T &a, const T &b, unsigned int idx)
+        static __device__ __forceinline__ bool Flag(FlagOp flag_op, const T &a, const T &b, int idx)
         {
             return flag_op(a, b, idx);
         }
@@ -168,7 +168,7 @@ private:
     struct ApplyOp<FlagOp, false>
     {
         // Apply flag operator
-        static __device__ __forceinline__ bool Flag(FlagOp flag_op, const T &a, const T &b, unsigned int idx)
+        static __device__ __forceinline__ bool Flag(FlagOp flag_op, const T &a, const T &b, int idx)
         {
             return flag_op(a, b);
         }

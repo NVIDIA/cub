@@ -217,23 +217,8 @@ private:
         WarpScanShfl<T, LOGICAL_WARPS, LOGICAL_WARP_THREADS>,
         WarpScanSmem<T, LOGICAL_WARPS, LOGICAL_WARP_THREADS> >::Type InternalWarpScan;
 
-public:
-
     /// Shared memory storage layout type for WarpScan
-    typedef typename InternalWarpScan::TempStorage TempStorage;
-
-private:
-
-    /******************************************************************************
-     * Utility methods
-     ******************************************************************************/
-
-    /// Internal storage allocator
-    __device__ __forceinline__ TempStorage& PrivateStorage()
-    {
-        __shared__ TempStorage private_storage;
-        return private_storage;
-    }
+    typedef typename InternalWarpScan::TempStorage _TempStorage;
 
 
     /******************************************************************************
@@ -241,7 +226,7 @@ private:
      ******************************************************************************/
 
     /// Shared storage reference
-    TempStorage &temp_storage;
+    _TempStorage &temp_storage;
 
     /// Warp ID
     int warp_id;
@@ -249,7 +234,24 @@ private:
     /// Lane ID
     int lane_id;
 
+
+    /******************************************************************************
+     * Utility methods
+     ******************************************************************************/
+
+    /// Internal storage allocator
+    __device__ __forceinline__ _TempStorage& PrivateStorage()
+    {
+        __shared__ TempStorage private_storage;
+        return private_storage;
+    }
+
+
 public:
+
+    /// \smemstorage{WarpScan}
+    typedef _TempStorage TempStorage;
+
 
     /******************************************************************//**
      * \name Collective construction

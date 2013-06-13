@@ -1349,6 +1349,17 @@ private:
 
 
     /******************************************************************************
+     * Thread fields
+     ******************************************************************************/
+
+    /// Shared storage reference
+    _TempStorage &temp_storage;
+
+    /// Linear thread-id
+    int linear_tid;
+
+
+    /******************************************************************************
      * Utility methods
      ******************************************************************************/
 
@@ -1358,17 +1369,6 @@ private:
         __shared__ _TempStorage private_storage;
         return private_storage;
     }
-
-
-    /******************************************************************************
-     * Thread fields
-     ******************************************************************************/
-
-    /// Shared storage reference
-    _TempStorage &temp_storage;
-
-    /// Linear thread-id
-    int linear_tid;
 
 
 public:

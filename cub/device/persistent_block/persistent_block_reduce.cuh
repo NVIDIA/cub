@@ -49,6 +49,10 @@ CUB_NS_PREFIX
 namespace cub {
 
 
+/******************************************************************************
+ * Tuning policy types
+ ******************************************************************************/
+
 /**
  * Tuning policy for PersistentBlockReduce
  */
@@ -73,6 +77,11 @@ struct PersistentBlockReducePolicy
     static const PtxLoadModifier       LOAD_MODIFIER        = _LOAD_MODIFIER;
 };
 
+
+
+/******************************************************************************
+ * Thread block abstractions
+ ******************************************************************************/
 
 /**
  * \brief PersistentBlockReduce implements a stateful abstraction of CUDA thread blocks for participating in device-wide reduction.
@@ -199,14 +208,15 @@ struct PersistentBlockReduce
             if (input_aligned)
             {
                 // Alias items as an array of VectorT and load it in striped fashion
-                LoadStriped<LOAD_DEFAULT>(
+                LoadStriped<LOAD_DEFAULT, BLOCK_THREADS>(
+                    threadIdx.x,
                     reinterpret_cast<VectorT*>(d_in + block_offset),
                     reinterpret_cast<VectorT (&)[ITEMS_PER_THREAD / VECTOR_LOAD_LENGTH]>(items));
             }
             else
             {
                 // Load items in striped fashion
-                LoadStriped<LOAD_DEFAULT>(d_in + block_offset, items);
+                LoadStriped<LOAD_DEFAULT, BLOCK_THREADS>(threadIdx.x, d_in + block_offset, items);
             }
 
             // Prevent hoisting
@@ -237,8 +247,8 @@ struct PersistentBlockReduce
     {
         // Cooperative reduction across the thread block (guarded reduction if our first tile was a partial tile)
         block_aggregate = (first_tile_size < TILE_ITEMS) ?
-            BlockReduceT::Reduce(temp_storage, thread_aggregate, reduction_op, first_tile_size) :
-            BlockReduceT::Reduce(temp_storage, thread_aggregate, reduction_op);
+            BlockReduceT(temp_storage).Reduce(thread_aggregate, reduction_op, first_tile_size) :
+            BlockReduceT(temp_storage).Reduce(thread_aggregate, reduction_op);
     }
 
 };

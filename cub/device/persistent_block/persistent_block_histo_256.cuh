@@ -115,11 +115,11 @@ enum PersistentBlockHisto256Algorithm
  * Tuning policy for PersistentBlockHisto256
  */
 template <
-    int                         _BLOCK_THREADS,
-    int                         _ITEMS_PER_THREAD,
-    PersistentBlockHisto256Algorithm  _GRID_ALGORITHM,
-    GridMappingStrategy         _GRID_MAPPING,
-    int                         _SM_OCCUPANCY>
+    int                                 _BLOCK_THREADS,
+    int                                 _ITEMS_PER_THREAD,
+    PersistentBlockHisto256Algorithm    _GRID_ALGORITHM,
+    GridMappingStrategy                 _GRID_MAPPING,
+    int                                 _SM_OCCUPANCY>
 struct PersistentBlockHisto256Policy
 {
     enum
@@ -136,19 +136,19 @@ struct PersistentBlockHisto256Policy
 
 
 /******************************************************************************
- * PersistentBlockHisto256
+ * Thread block abstractions
  ******************************************************************************/
 
 /**
  * \brief implements a stateful abstraction of CUDA thread blocks for histogramming multiple tiles as part of device-wide 256-bin histogram.
  */
 template <
-    typename                PersistentBlockHisto256Policy,                                        ///< Tuning policy
-    int                     CHANNELS,                                                       ///< Number of channels interleaved in the input data (may be greater than the number of active channels being histogrammed)
-    int                     ACTIVE_CHANNELS,                                                ///< Number of channels actively being histogrammed
-    typename                InputIteratorRA,                                                ///< The input iterator type (may be a simple pointer type).  Must have a value type that is assignable to <tt>unsigned char</tt>
-    typename                HistoCounter,                                                   ///< Integral type for counting sample occurrences per histogram bin
-    typename                SizeT,                                                          ///< Integer type for offsets
+    typename    PersistentBlockHisto256Policy,  ///< Tuning policy
+    int         CHANNELS,                       ///< Number of channels interleaved in the input data (may be greater than the number of active channels being histogrammed)
+    int         ACTIVE_CHANNELS,                ///< Number of channels actively being histogrammed
+    typename    InputIteratorRA,                ///< The input iterator type (may be a simple pointer type).  Must have a value type that is assignable to <tt>unsigned char</tt>
+    typename    HistoCounter,                   ///< Integral type for counting sample occurrences per histogram bin
+    typename    SizeT,                          ///< Integer type for offsets
     PersistentBlockHisto256Algorithm  GRID_ALGORITHM = PersistentBlockHisto256Policy::GRID_ALGORITHM>
 struct PersistentBlockHisto256;
 
@@ -157,12 +157,12 @@ struct PersistentBlockHisto256;
  * Specialized for GRID_HISTO_256_GLOBAL_ATOMIC
  */
 template <
-    typename                PersistentBlockHisto256Policy,    ///< Tuning policy
-    int                     CHANNELS,                   ///< Number of channels interleaved in the input data (may be greater than the number of active channels being histogrammed)
-    int                     ACTIVE_CHANNELS,            ///< Number of channels actively being histogrammed
-    typename                InputIteratorRA,            ///< The input iterator type (may be a simple pointer type).  Must have a value type that is assignable to <tt>unsigned char</tt>
-    typename                HistoCounter,               ///< Integral type for counting sample occurrences per histogram bin
-    typename                SizeT>                      ///< Integer type for offsets
+    typename    PersistentBlockHisto256Policy,  ///< Tuning policy
+    int         CHANNELS,                       ///< Number of channels interleaved in the input data (may be greater than the number of active channels being histogrammed)
+    int         ACTIVE_CHANNELS,                ///< Number of channels actively being histogrammed
+    typename    InputIteratorRA,                ///< The input iterator type (may be a simple pointer type).  Must have a value type that is assignable to <tt>unsigned char</tt>
+    typename    HistoCounter,                   ///< Integral type for counting sample occurrences per histogram bin
+    typename    SizeT>                          ///< Integer type for offsets
 struct PersistentBlockHisto256<PersistentBlockHisto256Policy, CHANNELS, ACTIVE_CHANNELS, InputIteratorRA, HistoCounter, SizeT, GRID_HISTO_256_GLOBAL_ATOMIC>
 {
     //---------------------------------------------------------------------
@@ -304,12 +304,12 @@ struct PersistentBlockHisto256<PersistentBlockHisto256Policy, CHANNELS, ACTIVE_C
  * Specialized for GRID_HISTO_256_SHARED_ATOMIC
  */
 template <
-    typename                PersistentBlockHisto256Policy,    ///< Tuning policy
-    int                     CHANNELS,                   ///< Number of channels interleaved in the input data (may be greater than the number of active channels being histogrammed)
-    int                     ACTIVE_CHANNELS,            ///< Number of channels actively being histogrammed
-    typename                InputIteratorRA,            ///< The input iterator type (may be a simple pointer type).  Must have a value type that is assignable to <tt>unsigned char</tt>
-    typename                HistoCounter,               ///< Integral type for counting sample occurrences per histogram bin
-    typename                SizeT>                      ///< Integer type for offsets
+    typename    PersistentBlockHisto256Policy,  ///< Tuning policy
+    int         CHANNELS,                       ///< Number of channels interleaved in the input data (may be greater than the number of active channels being histogrammed)
+    int         ACTIVE_CHANNELS,                ///< Number of channels actively being histogrammed
+    typename    InputIteratorRA,                ///< The input iterator type (may be a simple pointer type).  Must have a value type that is assignable to <tt>unsigned char</tt>
+    typename    HistoCounter,                   ///< Integral type for counting sample occurrences per histogram bin
+    typename    SizeT>                          ///< Integer type for offsets
 struct PersistentBlockHisto256<PersistentBlockHisto256Policy, CHANNELS, ACTIVE_CHANNELS, InputIteratorRA, HistoCounter, SizeT, GRID_HISTO_256_SHARED_ATOMIC>
 {
     //---------------------------------------------------------------------
@@ -494,12 +494,12 @@ struct PersistentBlockHisto256<PersistentBlockHisto256Policy, CHANNELS, ACTIVE_C
  * Specialized for GRID_HISTO_256_SORT
  */
 template <
-    typename                PersistentBlockHisto256Policy,    ///< Tuning policy
-    int                     CHANNELS,                   ///< Number of channels interleaved in the input data (may be greater than the number of active channels being histogrammed)
-    int                     ACTIVE_CHANNELS,            ///< Number of channels actively being histogrammed
-    typename                InputIteratorRA,            ///< The input iterator type (may be a simple pointer type).  Must have a value type that is assignable to <tt>unsigned char</tt>
-    typename                HistoCounter,               ///< Integral type for counting sample occurrences per histogram bin
-    typename                SizeT>                      ///< Integer type for offsets
+    typename    PersistentBlockHisto256Policy,  ///< Tuning policy
+    int         CHANNELS,                       ///< Number of channels interleaved in the input data (may be greater than the number of active channels being histogrammed)
+    int         ACTIVE_CHANNELS,                ///< Number of channels actively being histogrammed
+    typename    InputIteratorRA,                ///< The input iterator type (may be a simple pointer type).  Must have a value type that is assignable to <tt>unsigned char</tt>
+    typename    HistoCounter,                   ///< Integral type for counting sample occurrences per histogram bin
+    typename    SizeT>                          ///< Integer type for offsets
 struct PersistentBlockHisto256<PersistentBlockHisto256Policy, CHANNELS, ACTIVE_CHANNELS, InputIteratorRA, HistoCounter, SizeT, GRID_HISTO_256_SORT>
 {
     //---------------------------------------------------------------------
@@ -527,16 +527,16 @@ struct PersistentBlockHisto256<PersistentBlockHisto256Policy, CHANNELS, ACTIVE_C
     union TempStorage
     {
         // Storage for sorting bin values
-        typename BlockRadixSortT::TempStorage sort_storage;
+        typename BlockRadixSortT::TempStorage sort;
 
         struct
         {
             // Storage for detecting discontinuities in the tile of sorted bin values
-            typename BlockDiscontinuityT::TempStorage discont_storage;
+            typename BlockDiscontinuityT::TempStorage flag;
 
             // Storage for noting begin/end offsets of bin runs in the tile of sorted bin values
-            unsigned int run_begin[BLOCK_THREADS * STRIPED_COUNTERS_PER_THREAD];
-            unsigned int run_end[BLOCK_THREADS * STRIPED_COUNTERS_PER_THREAD];
+            int run_begin[BLOCK_THREADS * STRIPED_COUNTERS_PER_THREAD];
+            int run_end[BLOCK_THREADS * STRIPED_COUNTERS_PER_THREAD];
         };
     };
 
@@ -551,7 +551,7 @@ struct PersistentBlockHisto256<PersistentBlockHisto256Policy, CHANNELS, ACTIVE_C
         __device__ __forceinline__ DiscontinuityOp(TempStorage &temp_storage) : temp_storage(temp_storage) {}
 
         // Discontinuity predicate
-        __device__ __forceinline__ bool operator()(const unsigned char &a, const unsigned char &b, unsigned int b_index)
+        __device__ __forceinline__ bool operator()(const unsigned char &a, const unsigned char &b, int b_index)
         {
             if (a != b)
             {
@@ -631,7 +631,7 @@ struct PersistentBlockHisto256<PersistentBlockHisto256Policy, CHANNELS, ACTIVE_C
         HistoCounter    thread_counters[STRIPED_COUNTERS_PER_THREAD])   ///< Histogram counters striped across threads
     {
         // Sort bytes in blocked arrangement
-        BlockRadixSortT::SortBlocked(temp_storage.sort_storage, items);
+        BlockRadixSortT(temp_storage.sort).SortBlocked(items);
 
         __syncthreads();
 
@@ -648,7 +648,7 @@ struct PersistentBlockHisto256<PersistentBlockHisto256Policy, CHANNELS, ACTIVE_C
         // Note the begin/end run offsets of bin runs in the sorted tile
         int flags[ITEMS_PER_THREAD];                // unused
         DiscontinuityOp flag_op(temp_storage);
-        BlockDiscontinuityT::Flag(temp_storage.discont_storage, items, flag_op, flags);
+        BlockDiscontinuityT(temp_storage.flag).Flag(items, flag_op, flags);
 
         // Update begin for first item
         if (threadIdx.x == 0) temp_storage.run_begin[items[0]] = 0;

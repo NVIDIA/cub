@@ -223,12 +223,12 @@ private:
         union TempStorage
         {
             // Storage for sorting bin values
-            typename BlockRadixSortT::TempStorage sort_storage;
+            typename BlockRadixSortT::TempStorage sort;
 
             struct
             {
                 // Storage for detecting discontinuities in the tile of sorted bin values
-                typename BlockDiscontinuityT::TempStorage discont_storage;
+                typename BlockDiscontinuityT::TempStorage flag;
 
                 // Storage for noting begin/end offsets of bin runs in the tile of sorted bin values
                 unsigned int run_begin[BINS];
@@ -290,7 +290,7 @@ private:
             enum { TILE_SIZE = BLOCK_THREADS * ITEMS_PER_THREAD };
 
             // Sort bytes in blocked arrangement
-            BlockRadixSortT::SortBlocked(temp_storage.sort_storage, items);
+            BlockRadixSortT(temp_storage.sort, linear_tid).SortBlocked(items);
 
             __syncthreads();
 
@@ -316,7 +316,7 @@ private:
 
             // Note the begin/end run offsets of bin runs in the sorted tile
             DiscontinuityOp flag_op(temp_storage);
-            BlockDiscontinuityT::Flag(temp_storage.discont_storage, items, flag_op, flags);
+            BlockDiscontinuityT(temp_storage.flag, linear_tid).Flag(items, flag_op, flags);
 
             // Update begin for first item
             if (linear_tid == 0) temp_storage.run_begin[items[0]] = 0;
@@ -480,7 +480,7 @@ public:
 
 
     /**
-     * Initialize shared histogram
+     * \brief Initialize the shared histogram counters to zero.
      */
     template <typename HistoCounter>
     __device__ __forceinline__ void InitHistogram(HistoCounter histogram[BINS])
