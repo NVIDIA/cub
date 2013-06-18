@@ -171,10 +171,19 @@ private:
         POW_OF_TWO = ((LOGICAL_WARP_THREADS & (LOGICAL_WARP_THREADS - 1)) == 0),
     };
 
+public:
+
+    #ifndef DOXYGEN_SHOULD_SKIP_THIS    // Do not document
+
     /// Internal specialization.  Use SHFL-based reduction if (architecture is >= SM30) and ((only one logical warp) or (LOGICAL_WARP_THREADS is a power-of-two))
     typedef typename If<(CUB_PTX_ARCH >= 300) && ((LOGICAL_WARPS == 1) || POW_OF_TWO),
         WarpReduceShfl<T, LOGICAL_WARPS, LOGICAL_WARP_THREADS>,
         WarpReduceSmem<T, LOGICAL_WARPS, LOGICAL_WARP_THREADS> >::Type InternalWarpReduce;
+
+    #endif // DOXYGEN_SHOULD_SKIP_THIS
+
+
+private:
 
     /// Shared memory storage layout type for WarpReduce
     typedef typename InternalWarpReduce::TempStorage _TempStorage;
