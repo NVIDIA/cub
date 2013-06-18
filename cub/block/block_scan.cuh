@@ -316,9 +316,9 @@ private:
             ALGORITHM;
 
     /// Internal specialization.
-    typedef typename If<(ALGORITHM == BLOCK_SCAN_WARP_SCANS),
+    typedef typename If<(SAFE_ALGORITHM == BLOCK_SCAN_WARP_SCANS),
         BlockScanWarpScans<T, BLOCK_THREADS>,
-        BlockScanRaking<T, BLOCK_THREADS, (ALGORITHM == BLOCK_SCAN_RAKING_MEMOIZE)> >::Type InternalBlockScan;
+        BlockScanRaking<T, BLOCK_THREADS, (SAFE_ALGORITHM == BLOCK_SCAN_RAKING_MEMOIZE)> >::Type InternalBlockScan;
 
 
     /// Shared memory storage layout type for BlockScan
