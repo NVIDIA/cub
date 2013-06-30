@@ -114,7 +114,7 @@ struct BlockReduceRaking
         T                   partial,            ///< [in] Calling thread's input partial reductions
         int                 num_valid)          ///< [in] Number of valid elements (may be less than BLOCK_THREADS)
     {
-        cub::Sum<T> reduction_op;
+        cub::Sum reduction_op;
 
         if (WARP_SYNCHRONOUS)
         {

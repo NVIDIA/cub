@@ -61,8 +61,8 @@ namespace cub {
  *
  * \par
  * For convenience, WarpReduce provides alternative entrypoints that differ by:
- * - Operator (generic reduction <em>vs.</em> summation of numeric types)
- * - Input validity (full warps <em>vs.</em> partially-full warps having some undefined elements)
+ * - Operator (generic reduction <b><em>vs.</em></b> summation of numeric types)
+ * - Input validity (full warps <b><em>vs.</em></b> partially-full warps having some undefined elements)
  *
  * \tparam T                        The reduction input/output element type
  * \tparam LOGICAL_WARPS             <b>[optional]</b> The number of entrant "logical" warps performing concurrent warp reductions.  Default is 1.
@@ -341,7 +341,7 @@ public:
         T                   input,              ///< [in] Calling thread's input
         Flag                head_flag)          ///< [in] Head flag denoting whether or not \p input is the start of a new segment
     {
-        return HeadSegmentedReduce(input, head_flag, cub::Sum<T>());
+        return HeadSegmentedReduce(input, head_flag, cub::Sum());
     }
 
 
@@ -358,7 +358,7 @@ public:
         T                   input,              ///< [in] Calling thread's input
         Flag                tail_flag)          ///< [in] Head flag denoting whether or not \p input is the start of a new segment
     {
-        return TailSegmentedReduce(input, tail_flag, cub::Sum<T>());
+        return TailSegmentedReduce(input, tail_flag, cub::Sum());
     }
 
 

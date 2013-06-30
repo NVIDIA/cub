@@ -127,9 +127,9 @@ enum BlockReduceAlgorithm
  *
  * \par
  * For convenience, BlockReduce provides alternative entrypoints that differ by:
- * - Operator (generic reduction <em>vs.</em> summation of numeric types)
- * - Granularity (single <em>vs.</em> multiple data items per thread)
- * - Input validity (full data tile <em>vs.</em> partially-full data tile having some undefined elements)
+ * - Operator (generic reduction <b><em>vs.</em></b> summation of numeric types)
+ * - Granularity (single <b><em>vs.</em></b> multiple data items per thread)
+ * - Input validity (full data tile <b><em>vs.</em></b> partially-full data tile having some undefined elements)
  *
  * \tparam T                Data type being reduced
  * \tparam BLOCK_THREADS    The threadblock size in threads
@@ -155,7 +155,7 @@ enum BlockReduceAlgorithm
  * - Computation is slightly more efficient (i.e., having lower instruction overhead) for:
  *   - \p T is a built-in C++ primitive or CUDA vector type (e.g., \p short, \p int2, \p double, \p float2, etc.)
  *   - \p BLOCK_THREADS is a multiple of the architecture's warp size
- *   - Every thread has a valid input (i.e., full <em>vs.</em> partial-tiles)
+ *   - Every thread has a valid input (i.e., full <b><em>vs.</em></b> partial-tiles)
  * - See cub::BlockReduceAlgorithm for performance details regarding algorithmic alternatives
  *
  * \par Examples
@@ -421,7 +421,7 @@ public:
         T               (&inputs)[ITEMS_PER_THREAD])    ///< [in] Calling thread's input segment
     {
         // Reduce partials
-        T partial = ThreadReduce(inputs, cub::Sum<T>());
+        T partial = ThreadReduce(inputs, cub::Sum());
         return Sum(partial);
     }
 

@@ -56,10 +56,10 @@ namespace cub {
 /**
  * \brief Default equality functor
  */
-template <typename T>
 struct Equality
 {
     /// Boolean equality operator, returns <tt>(a == b)</tt>
+    template <typename T>
     __host__ __device__ __forceinline__ bool operator()(const T &a, const T &b)
     {
         return a == b;
@@ -70,10 +70,10 @@ struct Equality
 /**
  * \brief Default sum functor
  */
-template <typename T>
 struct Sum
 {
     /// Boolean sum operator, returns <tt>a + b</tt>
+    template <typename T>
     __host__ __device__ __forceinline__ T operator()(const T &a, const T &b)
     {
         return a + b;
@@ -84,10 +84,10 @@ struct Sum
 /**
  * \brief Default max functor
  */
-template <typename T>
 struct Max
 {
     /// Boolean max operator, returns <tt>(a > b) ? a : b</tt>
+    template <typename T>
     __host__ __device__ __forceinline__ T operator()(const T &a, const T &b)
     {
         return CUB_MAX(a, b);

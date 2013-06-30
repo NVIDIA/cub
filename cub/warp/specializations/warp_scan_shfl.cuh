@@ -196,7 +196,7 @@ struct WarpScanShfl
         Int2Type<false> single_shfl)        ///< [in] Marker type indicating whether only one SHFL instruction is required
     {
         // Delegate to generic scan
-        InclusiveScan(input, output, Sum<T>(), warp_aggregate);
+        InclusiveScan(input, output, Sum(), warp_aggregate);
     }
 
 

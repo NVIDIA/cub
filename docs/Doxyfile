@@ -195,9 +195,10 @@ TAB_SIZE               = 4
 # will result in a user-defined paragraph with heading "Side Effects:".
 # You can put \n's in the value part of an alias to insert newlines.
 
-ALIASES                = smemreuse="A subsequent <tt>__syncthreads()</tt> threadblock barrier should be invoked after calling this method if the supplied \p temp_storage is to be reused or repurposed by the threadblock."
-ALIASES                += smemreuse{1}="After any operation, a subsequent <tt>__syncthreads()</tt> barrier is required if the supplied \1 is to be reused or repurposed by the threadblock"
+ALIASES                = smemreuse="A subsequent <tt>__syncthreads()</tt> threadblock barrier should be invoked after calling this method if the collective's temporary storage (e.g., \p temp_storage) is to be reused or repurposed."
+ALIASES                += smemreuse{1}="After any operation, a subsequent <tt>__syncthreads()</tt> barrier is required if the collective's \1 is to be reused or repurposed"
 ALIASES 			   += smemstorage{1}="The operations exposed by \1 require a temporary memory allocation of this type for thread communication.  This opaque storage can be allocated directly using the <tt>__shared__</tt> keyword.  Alternatively, it can be aliased to externally allocated memory (shared or global) or <tt>union</tt>'d with other storage allocation types to facilitate memory reuse."
+ALIASES 			   += devicestorage="This operation requires an allocation of temporary device storage.  If \p d_temp_storage is NULL, no work is done and the required allocation size is returned in \p temp_storage_bytes."
 
 
 # This tag can be used to specify a number of word-keyword mappings (TCL only).
@@ -687,8 +688,9 @@ INPUT                  += ../cub/block/block_radix_sort.cuh
 INPUT                  += ../cub/block/block_reduce.cuh 
 INPUT                  += ../cub/block/block_scan.cuh 
 INPUT                  += ../cub/block/block_store.cuh 
+INPUT                  += ../cub/device/device_histo.cuh 
 INPUT                  += ../cub/device/device_reduce.cuh 
-INPUT                  += ../cub/device/device_histo_256.cuh 
+INPUT                  += ../cub/device/device_scan.cuh 
 INPUT                  += ../cub/grid/grid_even_share.cuh 
 INPUT                  += ../cub/grid/grid_mapping.cuh 
 INPUT                  += ../cub/grid/grid_queue.cuh 

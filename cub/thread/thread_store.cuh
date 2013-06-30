@@ -142,12 +142,20 @@ __device__ __forceinline__ void ThreadStore(OutputIteratorRA itr, const T& val)
 template <typename OutputIteratorRA>
 struct ThreadStoreHelper
 {
-    typedef typename std::iterator_traits<OutputIteratorRA>::value_type T;
-    typedef typename WordAlignment<T>::AlignWord                        AlignWord;
-    typedef typename WordAlignment<T>::VolatileAlignWord                VolatileAlignWord;
+    typedef typename std::iterator_traits<OutputIteratorRA>::value_type     T;
+    typedef typename WordAlignment<T>::AlignWord                            AlignWord;
 
     template <PtxStoreModifier MODIFIER>
     static __device__ __forceinline__ void Store(OutputIteratorRA itr, const T& val);
+
+#if (CUB_PTX_ARCH <= 130)
+    template <>
+    static __device__ __forceinline__ void Store<STORE_CG>(OutputIteratorRA itr, const T& val)
+    {
+        // Straightforward dereference
+        *itr = val;
+    }
+#endif
 
     template <>
     static __device__ __forceinline__ void Store<STORE_DEFAULT>(OutputIteratorRA itr, const T& val)
@@ -162,34 +170,42 @@ struct ThreadStoreHelper
 template <typename T>
 struct ThreadStoreHelper<T*>
 {
-    typedef typename WordAlignment<T>::AlignWord                        AlignWord;
-    typedef typename WordAlignment<T>::VolatileAlignWord                VolatileAlignWord;
-
-    enum {
-        ALIGN_UNROLL            = sizeof(T) / sizeof(AlignWord),
-        VOLATILE_ALIGN_UNROLL   = sizeof(T) / sizeof(VolatileAlignWord),
-    };
-
     template <PtxStoreModifier MODIFIER>
     static __device__ __forceinline__ void Store(T *ptr, const T& val)
     {
-        AlignWord *alias         = reinterpret_cast<AlignWord*>(const_cast<T*>(&val));
-        AlignWord *alias_ptr     = reinterpret_cast<AlignWord*>(ptr);
+        typedef typename WordAlignment<T>::AlignWord AlignWord;
+
+        const int ALIGN_UNROLL  = sizeof(T) / sizeof(AlignWord);
+
+        AlignWord *alias        = reinterpret_cast<AlignWord*>(const_cast<T*>(&val));
+        AlignWord *alias_ptr    = reinterpret_cast<AlignWord*>(ptr);
 
         #pragma unroll
         for (int i = 0; i < ALIGN_UNROLL; ++i)
             ThreadStore<MODIFIER>(alias_ptr + i, alias[i]);
     }
 
+
+#if (CUB_PTX_ARCH <= 130)
+    template <>
+    static __device__ __forceinline__ void Store<STORE_CG>(T *ptr, const T& val)
+    {
+        // Straightforward dereference
+        *ptr = val;
+    }
+#endif
+
+
     template <>
     static __device__ __forceinline__ void Store<STORE_VOLATILE>(T *ptr, const T& val)
     {
-#if (CUB_PTX_ARCH <= 130)
 
+#if (CUB_PTX_ARCH <= 130)
         *ptr = val;
         __threadfence_block();
-
 #else
+        typedef typename WordAlignment<T>::VolatileAlignWord VolatileAlignWord;
+        const int VOLATILE_ALIGN_UNROLL = sizeof(T) / sizeof(VolatileAlignWord);
 
         VolatileAlignWord *alias                = reinterpret_cast<VolatileAlignWord*>(const_cast<T*>(&val));
         volatile VolatileAlignWord *alias_ptr   = reinterpret_cast<volatile VolatileAlignWord*>(ptr);
@@ -197,7 +213,6 @@ struct ThreadStoreHelper<T*>
         #pragma unroll
         for (int i = 0; i < VOLATILE_ALIGN_UNROLL; ++i)
             alias_ptr[i] = alias[i];
-
 #endif
     }
 

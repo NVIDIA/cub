@@ -44,8 +44,9 @@ using namespace cub;
 // Globals, constants and typedefs
 //---------------------------------------------------------------------
 
-bool    g_verbose = false;
-int     g_iterations = 100;
+bool                    g_verbose = false;
+int                     g_iterations = 100;
+CachingDeviceAllocator  g_allocator;
 
 
 //---------------------------------------------------------------------
@@ -64,16 +65,17 @@ template <
     typename SizeT>
 __host__ __device__ __forceinline__
 cudaError_t Dispatch(
+    void                        *d_temp_storage,                    ///< [in] %Device allocation of temporary storage.  When NULL, the required allocation size is returned in \p temp_storage_bytes and no work is done.
+    size_t                      &temp_storage_bytes,                ///< [in,out] Size in bytes of \t d_temp_storage allocation.
     InputIteratorRA             d_in,
     OutputIteratorRA            d_out,
     ScanOp                      scan_op,
     Identity                    identity,
     SizeT                       num_items,
     cudaStream_t                stream              = 0,
-    bool                        stream_synchronous  = false,
-    DeviceAllocator             *device_allocator   = DefaultDeviceAllocator())
+    bool                        stream_synchronous  = false)
 {
-    return DeviceScan::ExclusiveScan(d_in, d_out, scan_op, identity, num_items, stream, stream_synchronous, device_allocator);
+    return DeviceScan::ExclusiveScan(d_temp_storage, temp_storage_bytes, d_in, d_out, scan_op, identity, num_items, stream, stream_synchronous);
 }
 
 
@@ -88,16 +90,17 @@ template <
     typename SizeT>
 __host__ __device__ __forceinline__
 cudaError_t Dispatch(
+    void                        *d_temp_storage,                    ///< [in] %Device allocation of temporary storage.  When NULL, the required allocation size is returned in \p temp_storage_bytes and no work is done.
+    size_t                      &temp_storage_bytes,                ///< [in,out] Size in bytes of \t d_temp_storage allocation.
     InputIteratorRA             d_in,
     OutputIteratorRA            d_out,
-    Sum<T>                      scan_op,
+    Sum                         scan_op,
     Identity                    identity,
     SizeT                       num_items,
     cudaStream_t                stream              = 0,
-    bool                        stream_synchronous  = false,
-    DeviceAllocator             *device_allocator   = DefaultDeviceAllocator())
+    bool                        stream_synchronous  = false)
 {
-    return DeviceScan::ExclusiveSum(d_in, d_out, num_items, stream, stream_synchronous, device_allocator);
+    return DeviceScan::ExclusiveSum(d_temp_storage, temp_storage_bytes, d_in, d_out, num_items, stream, stream_synchronous);
 }
 
 
@@ -111,16 +114,17 @@ template <
     typename SizeT>
 __host__ __device__ __forceinline__
 cudaError_t Dispatch(
+    void                        *d_temp_storage,                    ///< [in] %Device allocation of temporary storage.  When NULL, the required allocation size is returned in \p temp_storage_bytes and no work is done.
+    size_t                      &temp_storage_bytes,                ///< [in,out] Size in bytes of \t d_temp_storage allocation.
     InputIteratorRA             d_in,
     OutputIteratorRA            d_out,
     ScanOp                      scan_op,
     NullType                    identity,
     SizeT                       num_items,
     cudaStream_t                stream              = 0,
-    bool                        stream_synchronous  = false,
-    DeviceAllocator             *device_allocator   = DefaultDeviceAllocator())
+    bool                        stream_synchronous  = false)
 {
-    return DeviceScan::InclusiveScan(d_in, d_out, scan_op, num_items, stream, stream_synchronous, device_allocator);
+    return DeviceScan::InclusiveScan(d_temp_storage, temp_storage_bytes, d_in, d_out, scan_op, num_items, stream, stream_synchronous);
 }
 
 
@@ -134,16 +138,17 @@ template <
     typename SizeT>
 __host__ __device__ __forceinline__
 cudaError_t Dispatch(
+    void                        *d_temp_storage,                    ///< [in] %Device allocation of temporary storage.  When NULL, the required allocation size is returned in \p temp_storage_bytes and no work is done.
+    size_t                      &temp_storage_bytes,                ///< [in,out] Size in bytes of \t d_temp_storage allocation.
     InputIteratorRA             d_in,
     OutputIteratorRA            d_out,
-    Sum<T>                      scan_op,
+    Sum                         scan_op,
     NullType                    identity,
     SizeT                       num_items,
     cudaStream_t                stream              = 0,
-    bool                        stream_synchronous  = false,
-    DeviceAllocator             *device_allocator   = DefaultDeviceAllocator())
+    bool                        stream_synchronous  = false)
 {
-    return DeviceScan::InclusiveSum(d_in, d_out, num_items, stream, stream_synchronous, device_allocator);
+    return DeviceScan::InclusiveSum(d_temp_storage, temp_storage_bytes, d_in, d_out, num_items, stream, stream_synchronous);
 }
 
 //---------------------------------------------------------------------
@@ -163,7 +168,7 @@ __global__ void CnpScan(
     InputIteratorRA     d_in,
     OutputIteratorRA    d_out,
     int                 num_items,
-    ScanOp         scan_op,
+    ScanOp              scan_op,
     int                 iterations,
     cudaError_t*        d_cnp_error)
 {
@@ -175,7 +180,7 @@ __global__ void CnpScan(
         error = DeviceScan::Scan(d_in, d_out, num_items, scan_op, 0, STREAM_SYNCHRONOUS);
     }
 #else
-    error = cudaErrorInvalidConfiguration;
+    error = cudaErrorNotSupported;
 #endif
 
     *d_cnp_error = error;
@@ -294,17 +299,24 @@ void Test(
     T*              d_in = NULL;
     T*              d_out = NULL;
     cudaError_t*    d_cnp_error = NULL;
-    CubDebugExit(DeviceAllocate((void**)&d_in,          sizeof(T) * num_items));
-    CubDebugExit(DeviceAllocate((void**)&d_out,         sizeof(T) * num_items));
-    CubDebugExit(DeviceAllocate((void**)&d_cnp_error,   sizeof(cudaError_t) * 1));
+    CubDebugExit(g_allocator.DeviceAllocate((void**)&d_in,          sizeof(T) * num_items));
+    CubDebugExit(g_allocator.DeviceAllocate((void**)&d_out,         sizeof(T) * num_items));
+    CubDebugExit(g_allocator.DeviceAllocate((void**)&d_cnp_error,   sizeof(cudaError_t) * 1));
 
     // Initialize device arrays
     CubDebugExit(cudaMemcpy(d_in, h_in, sizeof(T) * num_items, cudaMemcpyHostToDevice));
     CubDebugExit(cudaMemset(d_out, 0, sizeof(T) * num_items));
 
+    // Allocate temporary storage
+    void            *d_temporary_storage = NULL;
+    size_t          temporary_storage_bytes = 0;
+
+    CubDebugExit(Dispatch(d_temporary_storage, temporary_storage_bytes, d_in, d_out, scan_op, identity, num_items, 0, true));
+    CubDebugExit(g_allocator.DeviceAllocate(&d_temporary_storage, temporary_storage_bytes));
+
     // Run warmup/correctness iteration
     printf("Host dispatch:\n"); fflush(stdout);
-    CubDebugExit(Dispatch(d_in, d_out, scan_op, identity, num_items, 0, true));
+    CubDebugExit(Dispatch(d_temporary_storage, temporary_storage_bytes, d_in, d_out, scan_op, identity, num_items, 0, true));
 
     // Check for correctness (and display results, if specified)
     compare = CompareDeviceResults(h_reference, d_out, num_items, true, g_verbose);
@@ -321,7 +333,7 @@ void Test(
     {
         gpu_timer.Start();
 
-        CubDebugExit(Dispatch(d_in, d_out, scan_op, identity, num_items));
+        CubDebugExit(Dispatch(d_temporary_storage, temporary_storage_bytes, d_in, d_out, scan_op, identity, num_items));
 
         gpu_timer.Stop();
         elapsed_millis += gpu_timer.ElapsedMillis();
@@ -395,9 +407,10 @@ void Test(
     // Cleanup
     if (h_in) delete[] h_in;
     if (h_reference) delete[] h_reference;
-    if (d_in) CubDebugExit(DeviceFree(d_in));
-    if (d_out) CubDebugExit(DeviceFree(d_out));
-    if (d_cnp_error) CubDebugExit(DeviceFree(d_cnp_error));
+    if (d_in) CubDebugExit(g_allocator.DeviceFree(d_in));
+    if (d_out) CubDebugExit(g_allocator.DeviceFree(d_out));
+    if (d_cnp_error) CubDebugExit(g_allocator.DeviceFree(d_cnp_error));
+    if (d_temporary_storage) CubDebugExit(g_allocator.DeviceFree(d_temporary_storage));
 
     // Correctness asserts
     AssertEquals(0, compare);
@@ -444,7 +457,7 @@ int main(int argc, char** argv)
 
     // Quick test
     typedef int T;
-    Test<T>(num_items, UNIFORM, Sum<T>(), T(0), CUB_TYPE_STRING(T));
+    Test<T>(num_items, UNIFORM, Sum(), T(0), CUB_TYPE_STRING(T));
 
 
 

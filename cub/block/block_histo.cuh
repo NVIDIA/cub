@@ -117,7 +117,7 @@ enum BlockHistoAlgorithm
  * \par Performance Considerations
  * - Computation is slightly more efficient (i.e., having lower instruction overhead) for:
  *   - \p BLOCK_THREADS is a multiple of the architecture's warp size
- *   - Every thread has a valid input (i.e., full <em>vs.</em> partial-tiles)
+ *   - Every thread has a valid input (i.e., full <b><em>vs.</em></b> partial-tiles)
  * - See cub::BlockHistoAlgorithm for performance details regarding algorithmic alternatives
  *
  * \par Examples
