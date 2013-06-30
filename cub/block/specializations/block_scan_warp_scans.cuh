@@ -227,7 +227,7 @@ struct BlockScanWarpScans
         WarpScan(temp_storage.warp_scan, warp_id, lane_id).ExclusiveSum(input, output, warp_aggregate);
 
         // Update outputs and block_aggregate with warp-wide aggregates from lane-0s
-        ApplyWarpAggregates(output, Sum<T>(), warp_aggregate, block_aggregate);
+        ApplyWarpAggregates(output, Sum(), warp_aggregate, block_aggregate);
     }
 
 
@@ -250,7 +250,7 @@ struct BlockScanWarpScans
         __syncthreads();
 
         // Incorporate threadblock prefix into outputs
-        Sum<T> scan_op;
+        Sum scan_op;
         output = scan_op(temp_storage.block_prefix, output);
     }
 
@@ -308,7 +308,7 @@ struct BlockScanWarpScans
         WarpScan(temp_storage.warp_scan, warp_id, lane_id).InclusiveSum(input, output, warp_aggregate);
 
         // Update outputs and block_aggregate with warp-wide aggregates from lane-0s
-        ApplyWarpAggregates(output, Sum<T>(), warp_aggregate, block_aggregate);
+        ApplyWarpAggregates(output, Sum(), warp_aggregate, block_aggregate);
     }
 
 
@@ -331,7 +331,7 @@ struct BlockScanWarpScans
         __syncthreads();
 
         // Incorporate threadblock prefix into outputs
-        Sum<T> scan_op;
+        Sum scan_op;
         output = scan_op(temp_storage.block_prefix, output);
     }
 

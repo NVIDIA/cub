@@ -183,31 +183,20 @@ Macros</h2></td></tr>
 <tr class="memdesc:gac029dc29df3c1871ab3b8a38f50904a6"><td class="mdescLeft">&#160;</td><td class="mdescRight">Whether or not the source targeted by the active compiler pass is allowed to invoke device kernels or methods from the CUDA runtime API. <br/></td></tr>
 <tr class="separator:gac029dc29df3c1871ab3b8a38f50904a6"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:ga84c3a4c178bf6593e0fad2b763606236"><td class="memItemLeft" align="right" valign="top"><a class="anchor" id="ga84c3a4c178bf6593e0fad2b763606236"></a>
-#define&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="group___util_module.html#ga84c3a4c178bf6593e0fad2b763606236">CubDebug</a>(e)&#160;&#160;&#160;<a class="el" href="group___util_module.html#ga991477281cbf1b003b39a4af29824a1e">cub::Debug</a>((e), __FILE__, __LINE__)</td></tr>
+#define&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="group___util_module.html#ga84c3a4c178bf6593e0fad2b763606236">CubDebug</a>(e)&#160;&#160;&#160;<a class="el" href="group___util_module.html#ga5a175d2a88f63f7f1ab30e8b4f2cfa95">cub::Debug</a>((e), __FILE__, __LINE__)</td></tr>
 <tr class="memdesc:ga84c3a4c178bf6593e0fad2b763606236"><td class="mdescLeft">&#160;</td><td class="mdescRight">Debug macro. <br/></td></tr>
 <tr class="separator:ga84c3a4c178bf6593e0fad2b763606236"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:gaf5994e3dce3f85e8fb00fc175303e545"><td class="memItemLeft" align="right" valign="top"><a class="anchor" id="gaf5994e3dce3f85e8fb00fc175303e545"></a>
-#define&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="group___util_module.html#gaf5994e3dce3f85e8fb00fc175303e545">CubDebug2</a>(e, silent)&#160;&#160;&#160;<a class="el" href="group___util_module.html#ga991477281cbf1b003b39a4af29824a1e">cub::Debug</a>((e), __FILE__, __LINE__, silent)</td></tr>
-<tr class="memdesc:gaf5994e3dce3f85e8fb00fc175303e545"><td class="mdescLeft">&#160;</td><td class="mdescRight">Debug macro. <br/></td></tr>
-<tr class="separator:gaf5994e3dce3f85e8fb00fc175303e545"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:ga26211db894893b3cec946e4e537536f8"><td class="memItemLeft" align="right" valign="top"><a class="anchor" id="ga26211db894893b3cec946e4e537536f8"></a>
-#define&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="group___util_module.html#ga26211db894893b3cec946e4e537536f8">CubDebugExit</a>(e)&#160;&#160;&#160;if (<a class="el" href="group___util_module.html#ga991477281cbf1b003b39a4af29824a1e">cub::Debug</a>((e), __FILE__, __LINE__)) { exit(1); }</td></tr>
+#define&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="group___util_module.html#ga26211db894893b3cec946e4e537536f8">CubDebugExit</a>(e)&#160;&#160;&#160;if (<a class="el" href="group___util_module.html#ga5a175d2a88f63f7f1ab30e8b4f2cfa95">cub::Debug</a>((e), __FILE__, __LINE__)) { exit(1); }</td></tr>
 <tr class="memdesc:ga26211db894893b3cec946e4e537536f8"><td class="mdescLeft">&#160;</td><td class="mdescRight">Debug macro with exit. <br/></td></tr>
 <tr class="separator:ga26211db894893b3cec946e4e537536f8"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:ga6788287a780dc10c443aa1ab5ae9f0db"><td class="memItemLeft" align="right" valign="top"><a class="anchor" id="ga6788287a780dc10c443aa1ab5ae9f0db"></a>
 #define&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="group___util_module.html#ga6788287a780dc10c443aa1ab5ae9f0db">CubLog</a>(format,...)&#160;&#160;&#160;printf(format,__VA_ARGS__);</td></tr>
 <tr class="memdesc:ga6788287a780dc10c443aa1ab5ae9f0db"><td class="mdescLeft">&#160;</td><td class="mdescRight">Log macro for printf statements. <br/></td></tr>
 <tr class="separator:ga6788287a780dc10c443aa1ab5ae9f0db"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:ga289830648914c5fec58f34af96247fe0"><td class="memItemLeft" align="right" valign="top">#define&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="group___util_module.html#ga289830648914c5fec58f34af96247fe0">DefaultDeviceAllocator</a>()&#160;&#160;&#160;(&amp;host_allocator_singleton)</td></tr>
-<tr class="memdesc:ga289830648914c5fec58f34af96247fe0"><td class="mdescLeft">&#160;</td><td class="mdescRight">The default allocator for host and device usage.  <a href="#ga289830648914c5fec58f34af96247fe0">More...</a><br/></td></tr>
-<tr class="separator:ga289830648914c5fec58f34af96247fe0"><td class="memSeparator" colspan="2">&#160;</td></tr>
 </table><table class="memberdecls">
 <tr class="heading"><td colspan="2"><h2 class="groupheader"><a name="enum-members"></a>
 Enumerations</h2></td></tr>
-<tr class="memitem:gaba62b43ab3ddc260aa2d3ee42035aa4e"><td class="memItemLeft" align="right" valign="top">enum &#160;</td><td class="memItemRight" valign="bottom">{ <b>INVALID_DEVICE_ORDINAL</b> = -1
- }</td></tr>
-<tr class="memdesc:gaba62b43ab3ddc260aa2d3ee42035aa4e"><td class="mdescLeft">&#160;</td><td class="mdescRight">Invalid device ordinal. <br/></td></tr>
-<tr class="separator:gaba62b43ab3ddc260aa2d3ee42035aa4e"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:ga4733b6d40e923244502e6f5b200766ef"><td class="memItemLeft" align="right" valign="top">enum &#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="group___util_module.html#ga4733b6d40e923244502e6f5b200766ef">cub::Category</a> { <b>NOT_A_NUMBER</b>, 
 <b>SIGNED_INTEGER</b>, 
 <b>UNSIGNED_INTEGER</b>, 
@@ -218,15 +207,10 @@ Enumerations</h2></td></tr>
 </table><table class="memberdecls">
 <tr class="heading"><td colspan="2"><h2 class="groupheader"><a name="func-members"></a>
 Functions</h2></td></tr>
-<tr class="memitem:ga991477281cbf1b003b39a4af29824a1e"><td class="memItemLeft" align="right" valign="top">__host__ __device__ <br class="typebreak"/>
-__forceinline__ cudaError_t&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="group___util_module.html#ga991477281cbf1b003b39a4af29824a1e">cub::Debug</a> (cudaError_t error, const char *filename, int line, bool silent=false)</td></tr>
-<tr class="memdesc:ga991477281cbf1b003b39a4af29824a1e"><td class="mdescLeft">&#160;</td><td class="mdescRight">CUB error reporting macro (prints error messages to stderr)  <a href="#ga991477281cbf1b003b39a4af29824a1e">More...</a><br/></td></tr>
-<tr class="separator:ga991477281cbf1b003b39a4af29824a1e"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:ga5185b7021113b817ab77569a51cec1df"><td class="memTemplParams" colspan="2"><a class="anchor" id="ga5185b7021113b817ab77569a51cec1df"></a>
-template&lt;typename T &gt; </td></tr>
-<tr class="memitem:ga5185b7021113b817ab77569a51cec1df"><td class="memTemplItemLeft" align="right" valign="top">__global__ void&#160;</td><td class="memTemplItemRight" valign="bottom"><a class="el" href="group___util_module.html#ga5185b7021113b817ab77569a51cec1df">cub::EmptyKernel</a> (void)</td></tr>
-<tr class="memdesc:ga5185b7021113b817ab77569a51cec1df"><td class="mdescLeft">&#160;</td><td class="mdescRight">Empty kernel for querying PTX manifest metadata (e.g., version) for the current device. <br/></td></tr>
-<tr class="separator:ga5185b7021113b817ab77569a51cec1df"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:ga5a175d2a88f63f7f1ab30e8b4f2cfa95"><td class="memItemLeft" align="right" valign="top">__host__ __device__ <br class="typebreak"/>
+__forceinline__ cudaError_t&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="group___util_module.html#ga5a175d2a88f63f7f1ab30e8b4f2cfa95">cub::Debug</a> (cudaError_t error, const char *filename, int line)</td></tr>
+<tr class="memdesc:ga5a175d2a88f63f7f1ab30e8b4f2cfa95"><td class="mdescLeft">&#160;</td><td class="mdescRight">CUB error reporting macro (prints error messages to stderr)  <a href="#ga5a175d2a88f63f7f1ab30e8b4f2cfa95">More...</a><br/></td></tr>
+<tr class="separator:ga5a175d2a88f63f7f1ab30e8b4f2cfa95"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:gac3d86a53650d110862fe8a84fce61c2e"><td class="memItemLeft" align="right" valign="top"><a class="anchor" id="gac3d86a53650d110862fe8a84fce61c2e"></a>
 __host__ __device__ <br class="typebreak"/>
 __forceinline__ cudaError_t&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="group___util_module.html#gac3d86a53650d110862fe8a84fce61c2e">cub::PtxVersion</a> (int &amp;ptx_version)</td></tr>
@@ -234,25 +218,6 @@ __forceinline__ cudaError_t&#160;</td><td class="memItemRight" valign="bottom"><
 <tr class="separator:gac3d86a53650d110862fe8a84fce61c2e"><td class="memSeparator" colspan="2">&#160;</td></tr>
 </table>
 <h2 class="groupheader">Macro Definition Documentation</h2>
-<a class="anchor" id="ga289830648914c5fec58f34af96247fe0"></a>
-<div class="memitem">
-<div class="memproto">
-      <table class="memname">
-        <tr>
-          <td class="memname">#define DefaultDeviceAllocator</td>
-          <td>(</td>
-          <td class="paramname"></td><td>)</td>
-          <td>&#160;&#160;&#160;(&amp;host_allocator_singleton)</td>
-        </tr>
-      </table>
-</div><div class="memdoc">
-
-<p>The default allocator for host and device usage. </p>
-<p>When compiled for the host, it delegates to a single CachingDeviceAllocator instance. Returns NULL When compiled for the device.</p>
-<p>NOTE: Because CUB is implemented exclusively in header files, there will be one CachingDeviceAllocator per compilation unit. </p>
-
-</div>
-</div>
 <a class="anchor" id="ga84bf1a8ed872e12577935eb28feca420"></a>
 <div class="memitem">
 <div class="memproto">
@@ -294,7 +259,7 @@ __forceinline__ cudaError_t&#160;</td><td class="memItemRight" valign="bottom"><
 </div>
 </div>
 <h2 class="groupheader">Function Documentation</h2>
-<a class="anchor" id="ga991477281cbf1b003b39a4af29824a1e"></a>
+<a class="anchor" id="ga5a175d2a88f63f7f1ab30e8b4f2cfa95"></a>
 <div class="memitem">
 <div class="memproto">
       <table class="memname">
@@ -314,13 +279,7 @@ __forceinline__ cudaError_t&#160;</td><td class="memItemRight" valign="bottom"><
           <td class="paramkey"></td>
           <td></td>
           <td class="paramtype">int&#160;</td>
-          <td class="paramname"><em>line</em>, </td>
-        </tr>
-        <tr>
-          <td class="paramkey"></td>
-          <td></td>
-          <td class="paramtype">bool&#160;</td>
-          <td class="paramname"><em>silent</em> = <code>false</code>&#160;</td>
+          <td class="paramname"><em>line</em>&#160;</td>
         </tr>
         <tr>
           <td></td>
@@ -340,7 +299,7 @@ __forceinline__ cudaError_t&#160;</td><td class="memItemRight" valign="bottom"><
 <!-- HTML footer for doxygen 1.8.3.1-->
 <!-- start footer part -->
 <hr class="footer"/><address class="footer"><small>
-Generated on Tue May 28 2013 23:34:49 for CUB by &#160;<a href="http://www.doxygen.org/index.html">
+Generated on Sun Jun 30 2013 03:27:20 for CUB by &#160;<a href="http://www.doxygen.org/index.html">
 <img class="footer" src="doxygen.png" alt="doxygen"/>
 </a> 1.8.3.1
 <br>

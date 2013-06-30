@@ -44,8 +44,9 @@ using namespace cub;
 // Globals, constants and typedefs
 //---------------------------------------------------------------------
 
-bool    g_verbose = false;
-int     g_iterations = 100;
+bool                    g_verbose = false;
+int                     g_iterations = 100;
+CachingDeviceAllocator  g_allocator;
 
 
 //---------------------------------------------------------------------
@@ -61,6 +62,8 @@ template <
     typename            OutputIteratorRA,
     typename            ReductionOp>
 __global__ void CnpReduce(
+    void                *d_temporary_storage,
+    size_t              temporary_storage_bytes,
     InputIteratorRA     d_in,
     OutputIteratorRA    d_out,
     int                 num_items,
@@ -73,10 +76,18 @@ __global__ void CnpReduce(
 #ifdef CUB_RUNTIME_ENABLED
     for (int i = 0; i < iterations; ++i)
     {
-        error = DeviceReduce::Reduce(d_in, d_out, num_items, reduction_op, 0, STREAM_SYNCHRONOUS);
+        error = DeviceReduce::Reduce(
+            d_temporary_storage,
+            temporary_storage_bytes,
+            d_in,
+            d_out,
+            num_items,
+            reduction_op,
+            0,
+            STREAM_SYNCHRONOUS);
     }
 #else
-    error = cudaErrorInvalidConfiguration;
+    error = cudaErrorNotSupported;
 #endif
 
     *d_cnp_error = error;
@@ -132,10 +143,7 @@ void Test(
     int cnp_compare = 0;
 
     printf("cub::DeviceReduce %d items, %s %d-byte elements, gen-mode %d\n\n",
-        num_items,
-        type_string,
-        (int) sizeof(T),
-        gen_mode);
+        num_items, type_string, (int) sizeof(T), gen_mode);
     fflush(stdout);
 
     // Allocate host arrays
@@ -149,17 +157,24 @@ void Test(
     T*              d_in = NULL;
     T*              d_out = NULL;
     cudaError_t*    d_cnp_error = NULL;
-    CubDebugExit(DeviceAllocate((void**)&d_in,          sizeof(T) * num_items));
-    CubDebugExit(DeviceAllocate((void**)&d_out,         sizeof(T) * 1));
-    CubDebugExit(DeviceAllocate((void**)&d_cnp_error,   sizeof(cudaError_t) * 1));
+    CubDebugExit(g_allocator.DeviceAllocate((void**)&d_in,          sizeof(T) * num_items));
+    CubDebugExit(g_allocator.DeviceAllocate((void**)&d_out,         sizeof(T) * 1));
+    CubDebugExit(g_allocator.DeviceAllocate((void**)&d_cnp_error,   sizeof(cudaError_t) * 1));
 
     // Initialize device arrays
     CubDebugExit(cudaMemcpy(d_in, h_in, sizeof(T) * num_items, cudaMemcpyHostToDevice));
     CubDebugExit(cudaMemset(d_out, 0, sizeof(T) * 1));
 
+    // Allocate temporary storage
+    void            *d_temporary_storage = NULL;
+    size_t          temporary_storage_bytes = 0;
+
+    CubDebugExit(DeviceReduce::Reduce(d_temporary_storage, temporary_storage_bytes, d_in, d_out, num_items, reduction_op));
+    CubDebugExit(g_allocator.DeviceAllocate(&d_temporary_storage, temporary_storage_bytes));
+
     // Run warmup/correctness iteration
     printf("Host dispatch:\n"); fflush(stdout);
-    CubDebugExit(DeviceReduce::Reduce(d_in, d_out, num_items, reduction_op, 0, true));
+    CubDebugExit(DeviceReduce::Reduce(d_temporary_storage, temporary_storage_bytes, d_in, d_out, num_items, reduction_op, 0, true));
 
     // Check for correctness (and display results, if specified)
     compare = CompareDeviceResults(h_reference, d_out, 1, g_verbose, g_verbose);
@@ -176,7 +191,7 @@ void Test(
     {
         gpu_timer.Start();
 
-        CubDebugExit(DeviceReduce::Reduce(d_in, d_out, num_items, reduction_op));
+        CubDebugExit(DeviceReduce::Reduce(d_temporary_storage, temporary_storage_bytes, d_in, d_out, num_items, reduction_op));
 
         gpu_timer.Stop();
         elapsed_millis += gpu_timer.ElapsedMillis();
@@ -201,7 +216,7 @@ void Test(
 
     // Run warmup/correctness iteration
     printf("\nDevice dispatch:\n"); fflush(stdout);
-    CnpReduce<true><<<1,1>>>(d_in, d_out, num_items, reduction_op, 1, d_cnp_error);
+    CnpReduce<true><<<1,1>>>(d_temporary_storage, temporary_storage_bytes, d_in, d_out, num_items, reduction_op, 1, d_cnp_error);
 
     // Flush any stdout/stderr
     fflush(stdout);
@@ -225,7 +240,7 @@ void Test(
         // Performance
         gpu_timer.Start();
 
-        CnpReduce<false><<<1,1>>>(d_in, d_out, num_items, reduction_op, g_iterations, d_cnp_error);
+        CnpReduce<false><<<1,1>>>(d_temporary_storage, temporary_storage_bytes, d_in, d_out, num_items, reduction_op, g_iterations, d_cnp_error);
 
         gpu_timer.Stop();
         elapsed_millis = gpu_timer.ElapsedMillis();
@@ -247,9 +262,9 @@ void Test(
 
     // Cleanup
     if (h_in) delete[] h_in;
-    if (d_in) CubDebugExit(DeviceFree(d_in));
-    if (d_out) CubDebugExit(DeviceFree(d_out));
-    if (d_cnp_error) CubDebugExit(DeviceFree(d_cnp_error));
+    if (d_in) CubDebugExit(g_allocator.DeviceFree(d_in));
+    if (d_out) CubDebugExit(g_allocator.DeviceFree(d_out));
+    if (d_cnp_error) CubDebugExit(g_allocator.DeviceFree(d_cnp_error));
 
     // Correctness asserts
     AssertEquals(0, compare);
@@ -310,7 +325,7 @@ int main(int argc, char** argv)
 
     // Quick test
     typedef int T;
-    Test<T>(num_items, UNIFORM, Sum<T>(), CUB_TYPE_STRING(T));
+    Test<T>(num_items, UNIFORM, Sum(), CUB_TYPE_STRING(T));
 
 /*
     // primitives

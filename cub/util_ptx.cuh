@@ -289,6 +289,55 @@ __device__ __forceinline__ unsigned int LaneMaskGe()
     return ret;
 }
 
+/**
+ * Portable implementation of __all
+ */
+__device__ __forceinline__ int WarpAll(int cond)
+{
+#if CUB_PTX_ARCH < 120
+
+    __shared__ volatile int warp_signals[PtxArchProps::MAX_SM_THREADS / PtxArchProps::WARP_THREADS];
+
+    if (LaneId() == 0)
+        warp_signals[WarpId()] = 1;
+
+    if (cond == 0)
+        warp_signals[WarpId()] = 0;
+
+    return warp_signals[WarpId()];
+
+#else
+
+    return __all(cond);
+
+#endif
+}
+
+
+/**
+ * Portable implementation of __any
+ */
+__device__ __forceinline__ int WarpAny(int cond)
+{
+#if CUB_PTX_ARCH < 120
+
+    __shared__ volatile int warp_signals[PtxArchProps::MAX_SM_THREADS / PtxArchProps::WARP_THREADS];
+
+    if (LaneId() == 0)
+        warp_signals[WarpId()] = 0;
+
+    if (cond)
+        warp_signals[WarpId()] = 1;
+
+    return warp_signals[WarpId()];
+
+#else
+
+    return __any(cond);
+
+#endif
+}
+
 
 
 

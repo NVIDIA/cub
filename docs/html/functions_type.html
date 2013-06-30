@@ -102,34 +102,33 @@ var searchBox = new SearchBox("searchBox", "search",false,'Search');
 
 <div class="contents">
 &#160;<ul>
-<li>SmemStorage
-: <a class="el" href="classcub_1_1_block_discontinuity.html#a855c92f9c3869909913860fa11e755a4">cub::BlockDiscontinuity&lt; T, BLOCK_THREADS &gt;</a>
-, <a class="el" href="classcub_1_1_warp_reduce.html#a71f87b76f0deeaa5ba3a708374d19c8c">cub::WarpReduce&lt; T, WARPS, LOGICAL_WARP_THREADS &gt;</a>
-, <a class="el" href="classcub_1_1_warp_scan.html#a2bfa864e963cb4965139ac1b6c66d1b7">cub::WarpScan&lt; T, WARPS, LOGICAL_WARP_THREADS &gt;</a>
-, <a class="el" href="classcub_1_1_block_store.html#a421dd27beee71825a56db98cafb4ada7">cub::BlockStore&lt; OutputIteratorRA, BLOCK_THREADS, ITEMS_PER_THREAD, ALGORITHM, MODIFIER, WARP_TIME_SLICING &gt;</a>
-, <a class="el" href="classcub_1_1_block_scan.html#ae85612707bea2533173ee665183f9c82">cub::BlockScan&lt; T, BLOCK_THREADS, ALGORITHM &gt;</a>
-, <a class="el" href="classcub_1_1_block_reduce.html#a0f83f9d65de0d6d33e311bcd9e8d41b7">cub::BlockReduce&lt; T, BLOCK_THREADS, ALGORITHM &gt;</a>
-, <a class="el" href="classcub_1_1_block_radix_sort.html#ab42b81b7a6587ecaca18f232104b3f3c">cub::BlockRadixSort&lt; KeyType, BLOCK_THREADS, ITEMS_PER_THREAD, ValueType, RADIX_BITS, MEMOIZE_OUTER_SCAN, INNER_SCAN_ALGORITHM, SMEM_CONFIG &gt;</a>
-, <a class="el" href="structcub_1_1_block_raking_layout.html#a9455ea5b5ba52b8fcf26cfded59f70c9">cub::BlockRakingLayout&lt; T, BLOCK_THREADS, BLOCK_STRIPS &gt;</a>
-, <a class="el" href="classcub_1_1_block_load.html#a1118adaeb5c25662fb2ed1e18d26c2fe">cub::BlockLoad&lt; InputIteratorRA, BLOCK_THREADS, ITEMS_PER_THREAD, ALGORITHM, MODIFIER, WARP_TIME_SLICING &gt;</a>
-, <a class="el" href="classcub_1_1_block_histo256.html#a620661d7ec6ab2fc9d0d843329c901ff">cub::BlockHisto256&lt; BLOCK_THREADS, ITEMS_PER_THREAD, ALGORITHM &gt;</a>
-, <a class="el" href="classcub_1_1_block_exchange.html#aa4041ddd2dd44f66a4171ad076bbba35">cub::BlockExchange&lt; T, BLOCK_THREADS, ITEMS_PER_THREAD, WARP_TIME_SLICING &gt;</a>
+<li>TempStorage
+: <a class="el" href="classcub_1_1_block_discontinuity.html#ab6ebb197600f741b48ec6f7df055c340">cub::BlockDiscontinuity&lt; T, BLOCK_THREADS &gt;</a>
+, <a class="el" href="classcub_1_1_block_exchange.html#a02fed6f419a6b22be09a9a96b96b1bbc">cub::BlockExchange&lt; T, BLOCK_THREADS, ITEMS_PER_THREAD, WARP_TIME_SLICING &gt;</a>
+, <a class="el" href="classcub_1_1_block_load.html#a7b00b811bbc3d7a68165374e08f8857f">cub::BlockLoad&lt; InputIteratorRA, BLOCK_THREADS, ITEMS_PER_THREAD, ALGORITHM, MODIFIER, WARP_TIME_SLICING &gt;</a>
+, <a class="el" href="classcub_1_1_block_store.html#a4f38ed012223dca4f50cd6ea4cbe4953">cub::BlockStore&lt; OutputIteratorRA, BLOCK_THREADS, ITEMS_PER_THREAD, ALGORITHM, MODIFIER, WARP_TIME_SLICING &gt;</a>
+, <a class="el" href="classcub_1_1_warp_scan.html#a7e6bd578fe8c88ba7e4506d3e8b1c695">cub::WarpScan&lt; T, LOGICAL_WARPS, LOGICAL_WARP_THREADS &gt;</a>
+, <a class="el" href="classcub_1_1_block_radix_sort.html#abf873cba56d55034ec5112c95759875e">cub::BlockRadixSort&lt; KeyType, BLOCK_THREADS, ITEMS_PER_THREAD, ValueType, RADIX_BITS, MEMOIZE_OUTER_SCAN, INNER_SCAN_ALGORITHM, SMEM_CONFIG &gt;</a>
+, <a class="el" href="classcub_1_1_warp_reduce.html#a67c14c28e481299fd479b026aa753754">cub::WarpReduce&lt; T, LOGICAL_WARPS, LOGICAL_WARP_THREADS &gt;</a>
+, <a class="el" href="classcub_1_1_block_histo.html#a5ee3cd458af400ea77ca28b3da288ffd">cub::BlockHisto&lt; BLOCK_THREADS, ITEMS_PER_THREAD, BINS, ALGORITHM &gt;</a>
+, <a class="el" href="classcub_1_1_block_reduce.html#a339bb893ab1bc8100fddf475e7e25381">cub::BlockReduce&lt; T, BLOCK_THREADS, ALGORITHM &gt;</a>
+, <a class="el" href="classcub_1_1_block_scan.html#a33fa5be36faeb5f41870e48f16d19e29">cub::BlockScan&lt; T, BLOCK_THREADS, ALGORITHM &gt;</a>
 </li>
 <li>TexBindingTag
-: <a class="el" href="classcub_1_1_tex_iterator_r_a.html#a5e210ab4fc1c16ef4fadffb56eba1319">cub::TexIteratorRA&lt; T &gt;</a>
-, <a class="el" href="classcub_1_1_tex_transform_iterator_r_a.html#ad3c3a602ae30d4badc2710dfa9148d27">cub::TexTransformIteratorRA&lt; OutputType, ConversionOp, InputType &gt;</a>
+: <a class="el" href="classcub_1_1_tex_transform_iterator_r_a.html#ad3c3a602ae30d4badc2710dfa9148d27">cub::TexTransformIteratorRA&lt; OutputType, ConversionOp, InputType &gt;</a>
+, <a class="el" href="classcub_1_1_tex_iterator_r_a.html#a5e210ab4fc1c16ef4fadffb56eba1319">cub::TexIteratorRA&lt; T &gt;</a>
 </li>
 <li>Type
-: <a class="el" href="structcub_1_1_remove_qualifiers.html#a9143e196ef5e6a0176b953f677e94671">cub::RemoveQualifiers&lt; Tp, Up &gt;</a>
-, <a class="el" href="structcub_1_1_if.html#af689e9527f56372e66413b65581ded8e">cub::If&lt; IF, ThenType, ElseType &gt;</a>
+: <a class="el" href="structcub_1_1_if.html#af689e9527f56372e66413b65581ded8e">cub::If&lt; IF, ThenType, ElseType &gt;</a>
 , <a class="el" href="structcub_1_1_enable_if.html#aafd9405b5887d2a6d3553eee0202798a">cub::EnableIf&lt; Condition, T &gt;</a>
+, <a class="el" href="structcub_1_1_remove_qualifiers.html#a9143e196ef5e6a0176b953f677e94671">cub::RemoveQualifiers&lt; Tp, Up &gt;</a>
 </li>
 </ul>
 </div><!-- contents -->
 <!-- HTML footer for doxygen 1.8.3.1-->
 <!-- start footer part -->
 <hr class="footer"/><address class="footer"><small>
-Generated on Tue May 28 2013 23:34:50 for CUB by &#160;<a href="http://www.doxygen.org/index.html">
+Generated on Sun Jun 30 2013 03:27:20 for CUB by &#160;<a href="http://www.doxygen.org/index.html">
 <img class="footer" src="doxygen.png" alt="doxygen"/>
 </a> 1.8.3.1
 <br>

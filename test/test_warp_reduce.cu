@@ -111,12 +111,12 @@ struct DeviceTest
 template <
     typename    T,
     typename    WarpReduce>
-struct DeviceTest<T, Sum<T>, WarpReduce, true>
+struct DeviceTest<T, Sum, WarpReduce, true>
 {
     static __device__ __forceinline__ T Reduce(
         typename WarpReduce::TempStorage    &temp_storage,
         T                                   &data,
-        Sum<T>                              &reduction_op)
+        Sum                              &reduction_op)
     {
         return WarpReduce(temp_storage).Sum(data);
     }
@@ -124,7 +124,7 @@ struct DeviceTest<T, Sum<T>, WarpReduce, true>
     static __device__ __forceinline__ T Reduce(
         typename WarpReduce::TempStorage    &temp_storage,
         T                                   &data,
-        Sum<T>                              &reduction_op,
+        Sum                              &reduction_op,
         const int                           &valid_warp_threads)
     {
         return WarpReduce(temp_storage).Sum(data, valid_warp_threads);
@@ -135,7 +135,7 @@ struct DeviceTest<T, Sum<T>, WarpReduce, true>
         typename WarpReduce::TempStorage    &temp_storage,
         T                                   &data,
         Flag                                &flag,
-        Sum<T>                              &reduction_op)
+        Sum                              &reduction_op)
     {
         return WarpReduce(temp_storage).HeadSegmentedSum(data, flag);
     }
@@ -145,7 +145,7 @@ struct DeviceTest<T, Sum<T>, WarpReduce, true>
         typename WarpReduce::TempStorage    &temp_storage,
         T                                   &data,
         Flag                                &flag,
-        Sum<T>                              &reduction_op)
+        Sum                              &reduction_op)
     {
         return WarpReduce(temp_storage).TailSegmentedSum(data, flag);
     }

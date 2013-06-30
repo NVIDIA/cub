@@ -67,10 +67,10 @@ namespace cub {
  *
  * \par
  * For convenience, WarpScan provides alternative entrypoints that differ by:
- * - Operator (generic scan <em>vs.</em> prefix sum of numeric types)
- * - Output ordering (inclusive <em>vs.</em> exclusive)
- * - Warp-wide prefix (identity <em>vs.</em> call-back functor)
- * - What is computed (scanned elements only <em>vs.</em> scanned elements and the total aggregate)
+ * - Operator (generic scan <b><em>vs.</em></b> prefix sum of numeric types)
+ * - Output ordering (inclusive <b><em>vs.</em></b> exclusive)
+ * - Warp-wide prefix (identity <b><em>vs.</em></b> call-back functor)
+ * - What is computed (scanned elements only <b><em>vs.</em></b> scanned elements and the total aggregate)
  *
  * \tparam T                        The scan input/output element type
  * \tparam LOGICAL_WARPS                    <b>[optional]</b> The number of "logical" warps performing concurrent warp scans. Default is 1.
@@ -151,10 +151,11 @@ namespace cub {
  *          // Running prefix
  *          int running_total;
  *
- *          // Functor constructor
+ *          // Constructor
  *          __device__ WarpPrefixOp(int running_total) : running_total(running_total) {}
  *
- *          // Functor operator.  Lane-0 produces a value for seeding the warp-wide scan given
+ *          // Callback operator, called by the entire warp of threads.
+ *          // Lane-0 produces a value for seeding the warp-wide scan given
  *          // the local aggregate.
  *          __device__ int operator()(int warp_aggregate)
  *          {
@@ -403,7 +404,7 @@ private:
     {
         // Delegate to regular scan for non-primitive types (because we won't be able to use subtraction)
         T identity = T();
-        ExclusiveScan(input, output, identity, Sum<T>());
+        ExclusiveScan(input, output, identity, Sum());
     }
 
     /// Computes an exclusive prefix sum in each logical warp.  Also provides every thread with the warp-wide \p warp_aggregate of all inputs.
@@ -420,7 +421,7 @@ private:
     {
         // Delegate to regular scan for non-primitive types (because we won't be able to use subtraction)
         T identity = T();
-        ExclusiveScan(input, output, identity, Sum<T>(), warp_aggregate);
+        ExclusiveScan(input, output, identity, Sum(), warp_aggregate);
     }
 
     /// Computes an exclusive prefix sum in each logical warp.  Instead of using 0 as the warp-wide prefix, the call-back functor \p warp_prefix_op is invoked to provide the "seed" value that logically prefixes the warp's scan inputs.  Also provides every thread with the warp-wide \p warp_aggregate of all inputs.
@@ -439,7 +440,7 @@ private:
     {
         // Delegate to regular scan for non-primitive types (because we won't be able to use subtraction)
         T identity = T();
-        ExclusiveScan(input, output, identity, Sum<T>(), warp_aggregate, warp_prefix_op);
+        ExclusiveScan(input, output, identity, Sum(), warp_aggregate, warp_prefix_op);
     }
 
 public:

@@ -117,15 +117,11 @@ Namespaces</h2></td></tr>
 <tr class="heading"><td colspan="2"><h2 class="groupheader"><a name="define-members"></a>
 Macros</h2></td></tr>
 <tr class="memitem:ga84c3a4c178bf6593e0fad2b763606236"><td class="memItemLeft" align="right" valign="top"><a class="anchor" id="ga84c3a4c178bf6593e0fad2b763606236"></a>
-#define&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="group___util_module.html#ga84c3a4c178bf6593e0fad2b763606236">CubDebug</a>(e)&#160;&#160;&#160;<a class="el" href="group___util_module.html#ga991477281cbf1b003b39a4af29824a1e">cub::Debug</a>((e), __FILE__, __LINE__)</td></tr>
+#define&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="group___util_module.html#ga84c3a4c178bf6593e0fad2b763606236">CubDebug</a>(e)&#160;&#160;&#160;<a class="el" href="group___util_module.html#ga5a175d2a88f63f7f1ab30e8b4f2cfa95">cub::Debug</a>((e), __FILE__, __LINE__)</td></tr>
 <tr class="memdesc:ga84c3a4c178bf6593e0fad2b763606236"><td class="mdescLeft">&#160;</td><td class="mdescRight">Debug macro. <br/></td></tr>
 <tr class="separator:ga84c3a4c178bf6593e0fad2b763606236"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:gaf5994e3dce3f85e8fb00fc175303e545"><td class="memItemLeft" align="right" valign="top"><a class="anchor" id="gaf5994e3dce3f85e8fb00fc175303e545"></a>
-#define&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="group___util_module.html#gaf5994e3dce3f85e8fb00fc175303e545">CubDebug2</a>(e, silent)&#160;&#160;&#160;<a class="el" href="group___util_module.html#ga991477281cbf1b003b39a4af29824a1e">cub::Debug</a>((e), __FILE__, __LINE__, silent)</td></tr>
-<tr class="memdesc:gaf5994e3dce3f85e8fb00fc175303e545"><td class="mdescLeft">&#160;</td><td class="mdescRight">Debug macro. <br/></td></tr>
-<tr class="separator:gaf5994e3dce3f85e8fb00fc175303e545"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:ga26211db894893b3cec946e4e537536f8"><td class="memItemLeft" align="right" valign="top"><a class="anchor" id="ga26211db894893b3cec946e4e537536f8"></a>
-#define&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="group___util_module.html#ga26211db894893b3cec946e4e537536f8">CubDebugExit</a>(e)&#160;&#160;&#160;if (<a class="el" href="group___util_module.html#ga991477281cbf1b003b39a4af29824a1e">cub::Debug</a>((e), __FILE__, __LINE__)) { exit(1); }</td></tr>
+#define&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="group___util_module.html#ga26211db894893b3cec946e4e537536f8">CubDebugExit</a>(e)&#160;&#160;&#160;if (<a class="el" href="group___util_module.html#ga5a175d2a88f63f7f1ab30e8b4f2cfa95">cub::Debug</a>((e), __FILE__, __LINE__)) { exit(1); }</td></tr>
 <tr class="memdesc:ga26211db894893b3cec946e4e537536f8"><td class="mdescLeft">&#160;</td><td class="mdescRight">Debug macro with exit. <br/></td></tr>
 <tr class="separator:ga26211db894893b3cec946e4e537536f8"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:ga6788287a780dc10c443aa1ab5ae9f0db"><td class="memItemLeft" align="right" valign="top"><a class="anchor" id="ga6788287a780dc10c443aa1ab5ae9f0db"></a>
@@ -135,10 +131,10 @@ Macros</h2></td></tr>
 </table><table class="memberdecls">
 <tr class="heading"><td colspan="2"><h2 class="groupheader"><a name="func-members"></a>
 Functions</h2></td></tr>
-<tr class="memitem:ga991477281cbf1b003b39a4af29824a1e"><td class="memItemLeft" align="right" valign="top">__host__ __device__ <br class="typebreak"/>
-__forceinline__ cudaError_t&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="group___util_module.html#ga991477281cbf1b003b39a4af29824a1e">cub::Debug</a> (cudaError_t error, const char *filename, int line, bool silent=false)</td></tr>
-<tr class="memdesc:ga991477281cbf1b003b39a4af29824a1e"><td class="mdescLeft">&#160;</td><td class="mdescRight">CUB error reporting macro (prints error messages to stderr)  <a href="group___util_module.html#ga991477281cbf1b003b39a4af29824a1e">More...</a><br/></td></tr>
-<tr class="separator:ga991477281cbf1b003b39a4af29824a1e"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:ga5a175d2a88f63f7f1ab30e8b4f2cfa95"><td class="memItemLeft" align="right" valign="top">__host__ __device__ <br class="typebreak"/>
+__forceinline__ cudaError_t&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="group___util_module.html#ga5a175d2a88f63f7f1ab30e8b4f2cfa95">cub::Debug</a> (cudaError_t error, const char *filename, int line)</td></tr>
+<tr class="memdesc:ga5a175d2a88f63f7f1ab30e8b4f2cfa95"><td class="mdescLeft">&#160;</td><td class="mdescRight">CUB error reporting macro (prints error messages to stderr)  <a href="group___util_module.html#ga5a175d2a88f63f7f1ab30e8b4f2cfa95">More...</a><br/></td></tr>
+<tr class="separator:ga5a175d2a88f63f7f1ab30e8b4f2cfa95"><td class="memSeparator" colspan="2">&#160;</td></tr>
 </table>
 <a name="details" id="details"></a><h2 class="groupheader">Detailed Description</h2>
 <div class="textblock"><p>Error and event logging routines.</p>
@@ -150,7 +146,7 @@ __forceinline__ cudaError_t&#160;</td><td class="memItemRight" valign="bottom"><
 <!-- HTML footer for doxygen 1.8.3.1-->
 <!-- start footer part -->
 <hr class="footer"/><address class="footer"><small>
-Generated on Tue May 28 2013 23:34:49 for CUB by &#160;<a href="http://www.doxygen.org/index.html">
+Generated on Sun Jun 30 2013 03:27:19 for CUB by &#160;<a href="http://www.doxygen.org/index.html">
 <img class="footer" src="doxygen.png" alt="doxygen"/>
 </a> 1.8.3.1
 <br>

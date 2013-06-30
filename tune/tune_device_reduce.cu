@@ -763,10 +763,10 @@ int main(int argc, char** argv)
 #endif
 
     typedef unsigned int SizeT;
-    Sum<T> reduction_op;
+    Sum reduction_op;
 
     // Enumerate kernels
-    Schmoo<T, SizeT, Sum<T> > schmoo;
+    Schmoo<T, SizeT, Sum > schmoo;
     schmoo.Enumerate();
 
     // Allocate host arrays

@@ -208,7 +208,7 @@ struct WarpScanSmem
         InitIdentity(Int2Type<HAS_IDENTITY>());
 
         // Compute inclusive warp scan (has identity, don't share final)
-        output = BasicScan<HAS_IDENTITY, false>(input, Sum<T>());
+        output = BasicScan<HAS_IDENTITY, false>(input, Sum());
     }
 
 
@@ -224,7 +224,7 @@ struct WarpScanSmem
         InitIdentity(Int2Type<HAS_IDENTITY>());
 
         // Compute inclusive warp scan (has identity, share final)
-        output = BasicScan<HAS_IDENTITY, true>(input, Sum<T>());
+        output = BasicScan<HAS_IDENTITY, true>(input, Sum());
 
         // Retrieve aggregate in <em>warp-lane</em><sub>0</sub>
         warp_aggregate = ThreadLoad<LOAD_VOLATILE>(&temp_storage[warp_id][WARP_SMEM_ELEMENTS - 1]);

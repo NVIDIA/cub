@@ -46,7 +46,7 @@
 #include "block/block_store.cuh"
 
 // Device
-#include "device/device_histo_256.cuh"
+#include "device/device_histo.cuh"
 #include "device/device_reduce.cuh"
 #include "device/device_scan.cuh"
 

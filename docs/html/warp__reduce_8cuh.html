@@ -103,16 +103,16 @@ var searchBox = new SearchBox("searchBox", "search",false,'Search');
 <div class="title">warp_reduce.cuh File Reference</div>  </div>
 </div><!--header-->
 <div class="contents">
-<div class="textblock"><code>#include &quot;<a class="el" href="thread__load_8cuh.html">../thread/thread_load.cuh</a>&quot;</code><br/>
-<code>#include &quot;<a class="el" href="thread__store_8cuh.html">../thread/thread_store.cuh</a>&quot;</code><br/>
+<div class="textblock"><code>#include &quot;specializations/warp_reduce_shfl.cuh&quot;</code><br/>
+<code>#include &quot;specializations/warp_reduce_smem.cuh&quot;</code><br/>
+<code>#include &quot;<a class="el" href="thread__operators_8cuh.html">../thread/thread_operators.cuh</a>&quot;</code><br/>
 <code>#include &quot;<a class="el" href="util__device_8cuh.html">../util_device.cuh</a>&quot;</code><br/>
 <code>#include &quot;<a class="el" href="util__type_8cuh.html">../util_type.cuh</a>&quot;</code><br/>
-<code>#include &quot;<a class="el" href="thread__operators_8cuh.html">../thread/thread_operators.cuh</a>&quot;</code><br/>
 <code>#include &quot;../util_namespace.cuh&quot;</code><br/>
 </div><table class="memberdecls">
 <tr class="heading"><td colspan="2"><h2 class="groupheader"><a name="nested-classes"></a>
 Classes</h2></td></tr>
-<tr class="memitem:"><td class="memItemLeft" align="right" valign="top">class &#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classcub_1_1_warp_reduce.html">cub::WarpReduce&lt; T, WARPS, LOGICAL_WARP_THREADS &gt;</a></td></tr>
+<tr class="memitem:"><td class="memItemLeft" align="right" valign="top">class &#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classcub_1_1_warp_reduce.html">cub::WarpReduce&lt; T, LOGICAL_WARPS, LOGICAL_WARP_THREADS &gt;</a></td></tr>
 <tr class="memdesc:"><td class="mdescLeft">&#160;</td><td class="mdescRight"><a class="el" href="classcub_1_1_warp_reduce.html" title="WarpReduce provides variants of parallel reduction across CUDA warps. .">WarpReduce</a> provides variants of parallel reduction across CUDA warps. </p>
 <div class="image">
 <img src="warp_reduce_logo.png" alt="warp_reduce_logo.png"/>
@@ -133,7 +133,7 @@ Namespaces</h2></td></tr>
 <!-- HTML footer for doxygen 1.8.3.1-->
 <!-- start footer part -->
 <hr class="footer"/><address class="footer"><small>
-Generated on Tue May 28 2013 23:34:49 for CUB by &#160;<a href="http://www.doxygen.org/index.html">
+Generated on Sun Jun 30 2013 03:27:19 for CUB by &#160;<a href="http://www.doxygen.org/index.html">
 <img class="footer" src="doxygen.png" alt="doxygen"/>
 </a> 1.8.3.1
 <br>

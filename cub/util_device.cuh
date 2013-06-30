@@ -50,19 +50,70 @@ namespace cub {
  * @{
  */
 
+#ifndef DOXYGEN_SHOULD_SKIP_THIS    // Do not document
+
+
+enum
+{
+    /// Invalid device ordinal
+    INVALID_DEVICE_ORDINAL = -1,
+};
+
 
 /**
- * \brief Empty kernel for querying PTX manifest metadata (e.g., version) for the current device
+ * Empty kernel for querying PTX manifest metadata (e.g., version) for the current device
  */
 template <typename T>
 __global__ void EmptyKernel(void) { }
 
 
-/// Invalid device ordinal
-enum
+/**
+ * Alias temporaries to externally-allocated device storage (or simply return the amount of storage needed).
+ */
+template <int ALLOCATIONS>
+__host__ __device__ __forceinline__
+cudaError_t AliasTemporaries(
+    void    *d_temp_storage,                    ///< [in] %Device allocation of temporary storage.  When NULL, the required allocation size is returned in \p temp_storage_bytes and no work is done.
+    size_t  &temp_storage_bytes,                ///< [in,out] Size in bytes of \t d_temp_storage allocation
+    void*   (&allocations)[ALLOCATIONS],        ///< [in,out] Pointers to device allocations needed
+    size_t  (&allocation_sizes)[ALLOCATIONS])   ///< [in] Sizes in bytes of device allocations needed
 {
-    INVALID_DEVICE_ORDINAL = -1,
-};
+    const int ALIGN_BYTES   = 256;
+    const int ALIGN_MASK    = ~(ALIGN_BYTES - 1);
+
+    // Compute exclusive prefix sum over allocation requests
+    size_t bytes_needed = 0;
+    for (int i = 0; i < ALLOCATIONS; ++i)
+    {
+        size_t allocation_bytes = (allocation_sizes[i] + ALIGN_BYTES - 1) & ALIGN_MASK;
+        allocation_sizes[i] = bytes_needed;
+        bytes_needed += allocation_bytes;
+    }
+
+    // Check if the caller is simply requesting the size of the storage allocation
+    if (!d_temp_storage)
+    {
+        temp_storage_bytes = bytes_needed;
+        return cudaSuccess;
+    }
+
+    // Check if enough storage provided
+    if (temp_storage_bytes < bytes_needed)
+        return CubDebug(cudaErrorMemoryAllocation);
+
+    // Alias
+    for (int i = 0; i < ALLOCATIONS; ++i)
+    {
+        allocations[i] = static_cast<char*>(d_temp_storage) + allocation_sizes[i];
+    }
+
+    return cudaSuccess;
+}
+
+
+
+#endif  // DOXYGEN_SHOULD_SKIP_THIS
+
 
 
 /**
@@ -90,6 +141,9 @@ __host__ __device__ __forceinline__ cudaError_t PtxVersion(int &ptx_version)
 
 #endif
 }
+
+
+
 
 
 /**
@@ -199,6 +253,7 @@ public:
     #endif
     }
 
+
     /**
      * Initializer.  Properties are retrieved for the current GPU ordinal.
      */
@@ -224,6 +279,7 @@ public:
 
     #endif
     }
+
 
     /**
      * Computes maximum SM occupancy in thread blocks for the given kernel

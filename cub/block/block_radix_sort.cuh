@@ -68,8 +68,7 @@ namespace cub {
  *
  * \par
  * For convenience, BlockRadixSort provides alternative entrypoints that differ by:
- * - Value association (keys-only <em>vs.</em> key-value-pairs)
- * - Input/output data arrangements (combinations of [<em>blocked</em>](index.html#sec3sec3) and [<em>striped</em>](index.html#sec3sec3) arrangements)
+ * - Value association (keys-only <b><em>vs.</em></b> key-value-pairs)
  *
  * \tparam KeyType              Key type
  * \tparam BLOCK_THREADS        The threadblock size in threads
@@ -104,8 +103,9 @@ namespace cub {
  *    - cub::BlockExchange
  *
  * \par Examples
- * <em>Example 1.</em> Perform a radix sort over a tile of 512 integer keys that
- * are partitioned in a blocked arrangement across a 128-thread threadblock (where each thread holds 4 keys).
+ * <em>Example 1.</em> Perform a radix sort over a tile of 512 integer keys.
+ * The data are partitioned in a blocked arrangement across a block of 128
+ * threads where each thread holds 4 keys.
  *      \code
  *      #include <cub/cub.cuh>
  *
@@ -124,13 +124,15 @@ namespace cub {
  *          ...
  *
  *          // Sort keys in ascending order
- *          BlockRadixSort::SortBlocked(temp_storage, keys);
+ *          BlockRadixSort::Sort(temp_storage, keys);
  *
  *      \endcode
  *
  * \par
- * <em>Example 2.</em> Perform a key-value radix sort over the lower 20-bits of a tile of 32-bit integer
- * keys paired with floating-point values.  The data are partitioned in a striped arrangement across the threadblock.
+ * <em>Example 2.</em> Perform a key-value radix sort over the lower 20-bits
+ * of a tile of 32-bit integer keys paired with floating-point values.
+ * The data are partitioned in a blocked arrangement across a block of BLOCK_THREADS
+ * threads where each thread holds ITEMS_PER_THREAD keys.
  *      \code
  *      #include <cub/cub.cuh>
  *
@@ -143,15 +145,15 @@ namespace cub {
  *          // Declare shared memory for BlockRadixSort
  *          __shared__ typename BlockRadixSort::TempStorage temp_storage;
  *
- *          // Input keys and values per thread (striped across the threadblock)
+ *          // Input keys and values per thread
  *          int keys[ITEMS_PER_THREAD];
  *          float values[ITEMS_PER_THREAD];
  *
- *          // Obtain keys and values in striped order
+ *          // Obtain keys and values in blocked order
  *          ...
  *
  *          // Sort pairs in ascending order (using only the lower 20 distinguishing key bits)
- *          BlockRadixSort::SortStriped(temp_storage, keys, values, 0, 20);
+ *          BlockRadixSort::Sort(temp_storage, keys, values, 0, 20);
  *      }
  *
  *      \endcode
@@ -278,7 +280,7 @@ public:
 
     //@}  end member group
     /******************************************************************//**
-     * \name Keys-only sorting
+     * \name Sorting
      *********************************************************************/
     //@{
 
@@ -287,7 +289,7 @@ public:
      *
      * \smemreuse
      */
-    __device__ __forceinline__ void SortBlocked(
+    __device__ __forceinline__ void Sort(
         KeyType             (&keys)[ITEMS_PER_THREAD],          ///< [in-out] Keys to sort
         int                 begin_bit = 0,                      ///< [in] <b>[optional]</b> The beginning (least-significant) bit index needed for key comparison
         int                 end_bit = sizeof(KeyType) * 8)      ///< [in] <b>[optional]</b> The past-the-end (most-significant) bit index needed for key comparison
@@ -328,88 +330,6 @@ public:
             unsigned_keys[KEY] = KeyTraits::TwiddleOut(unsigned_keys[KEY]);
         }
     }
-
-
-    /**
-     * \brief Performs a radix sort across a [<em>blocked arrangement</em>](index.html#sec3sec3) of keys, leaving them in a [<em>striped arrangement</em>](index.html#sec3sec3).
-     *
-     * \smemreuse
-     */
-    __device__ __forceinline__ void SortBlockedToStriped(
-        KeyType             (&keys)[ITEMS_PER_THREAD],          ///< [in-out] Keys to sort
-        int                 begin_bit = 0,                      ///< [in] <b>[optional]</b> The beginning (least-significant) bit index needed for key comparison
-        int                 end_bit = sizeof(KeyType) * 8)      ///< [in] <b>[optional]</b> The past-the-end (most-significant) bit index needed for key comparison
-    {
-        UnsignedBits (&unsigned_keys)[ITEMS_PER_THREAD] =
-            reinterpret_cast<UnsignedBits (&)[ITEMS_PER_THREAD]>(keys);
-
-        // Twiddle bits if necessary
-        #pragma unroll
-        for (int KEY = 0; KEY < ITEMS_PER_THREAD; KEY++)
-        {
-            unsigned_keys[KEY] = KeyTraits::TwiddleIn(unsigned_keys[KEY]);
-        }
-
-        // Radix sorting passes
-        while (true)
-        {
-            // Rank the blocked keys
-            int ranks[ITEMS_PER_THREAD];
-            BlockRadixRank(temp_storage.ranking_storage, linear_tid).RankKeys(unsigned_keys, ranks, begin_bit);
-            begin_bit += RADIX_BITS;
-
-            __syncthreads();
-
-            // Check if this is the last pass
-            if (begin_bit >= end_bit)
-            {
-                // Last pass exchanges keys through shared memory in striped arrangement
-                BlockExchangeKeys(temp_storage.exchange_keys, linear_tid).ScatterToStriped(keys, ranks);
-
-                // Quit
-                break;
-            }
-
-            // Exchange keys through shared memory in blocked arrangement
-            BlockExchangeKeys(temp_storage.exchange_keys, linear_tid).ScatterToBlocked(keys, ranks);
-
-            __syncthreads();
-        }
-
-        // Untwiddle bits if necessary
-        #pragma unroll
-        for (int KEY = 0; KEY < ITEMS_PER_THREAD; KEY++)
-        {
-            unsigned_keys[KEY] = KeyTraits::TwiddleOut(unsigned_keys[KEY]);
-        }
-    }
-
-
-    /**
-     * \brief Performs a radix sort across a [<em>striped arrangement</em>](index.html#sec3sec3) of keys.
-     *
-     * \smemreuse
-     */
-    __device__ __forceinline__ void SortStriped(
-        KeyType             (&keys)[ITEMS_PER_THREAD],          ///< [in-out] Keys to sort
-        int                 begin_bit = 0,                      ///< [in] <b>[optional]</b> The beginning (least-significant) bit index needed for key comparison
-        int                 end_bit = sizeof(KeyType) * 8)      ///< [in] <b>[optional]</b> The past-the-end (most-significant) bit index needed for key comparison
-    {
-        // Transpose keys from striped to blocked arrangement
-        BlockExchangeKeys(temp_storage.exchange_keys, linear_tid).StripedToBlocked(keys);
-
-        __syncthreads();
-
-        // Sort blocked-to-striped
-        SortBlockedToStriped(keys, begin_bit, end_bit);
-    }
-
-
-    //@}  end member group
-    /******************************************************************//**
-     * \name Key-value pair sorting
-     *********************************************************************/
-    //@{
 
 
     /**
@@ -417,7 +337,7 @@ public:
      *
      * \smemreuse
      */
-    __device__ __forceinline__ void SortBlocked(
+    __device__ __forceinline__ void Sort(
         KeyType             (&keys)[ITEMS_PER_THREAD],          ///< [in-out] Keys to sort
         ValueType           (&values)[ITEMS_PER_THREAD],        ///< [in-out] Values to sort
         int                 begin_bit = 0,                      ///< [in] <b>[optional]</b> The beginning (least-significant) bit index needed for key comparison
@@ -466,99 +386,8 @@ public:
     }
 
 
-    /**
-     * \brief Performs a radix sort across a [<em>blocked arrangement</em>](index.html#sec3sec3) of keys and values, leaving them in a [<em>striped arrangement</em>](index.html#sec3sec3).
-     *
-     * \smemreuse
-     */
-    __device__ __forceinline__ void SortBlockedToStriped(
-        KeyType             (&keys)[ITEMS_PER_THREAD],          ///< [in-out] Keys to sort
-        ValueType           (&values)[ITEMS_PER_THREAD],        ///< [in-out] Values to sort
-        int                 begin_bit = 0,                      ///< [in] <b>[optional]</b> The beginning (least-significant) bit index needed for key comparison
-        int                 end_bit = sizeof(KeyType) * 8)      ///< [in] <b>[optional]</b> The past-the-end (most-significant) bit index needed for key comparison
-    {
-        UnsignedBits (&unsigned_keys)[ITEMS_PER_THREAD] =
-            reinterpret_cast<UnsignedBits (&)[ITEMS_PER_THREAD]>(keys);
 
-        // Twiddle bits if necessary
-        #pragma unroll
-        for (int KEY = 0; KEY < ITEMS_PER_THREAD; KEY++)
-        {
-            unsigned_keys[KEY] = KeyTraits::TwiddleIn(unsigned_keys[KEY]);
-        }
-
-        // Radix sorting passes
-        while (true)
-        {
-            // Rank the blocked keys
-            int ranks[ITEMS_PER_THREAD];
-            BlockRadixRank(temp_storage.ranking_storage, linear_tid).RankKeys(unsigned_keys, ranks, begin_bit);
-            begin_bit += RADIX_BITS;
-
-            __syncthreads();
-
-            // Check if this is the last pass
-            if (begin_bit >= end_bit)
-            {
-                // Last pass exchanges keys through shared memory in striped arrangement
-                BlockExchangeKeys(temp_storage.exchange_keys, linear_tid).ScatterToStriped(keys, ranks);
-
-                __syncthreads();
-
-                // Last pass exchanges through shared memory in striped arrangement
-                BlockExchangeValues(temp_storage.exchange_values, linear_tid).ScatterToStriped(values, ranks);
-
-                // Quit
-                break;
-            }
-
-            // Exchange keys through shared memory in blocked arrangement
-            BlockExchangeKeys(temp_storage.exchange_keys, linear_tid).ScatterToBlocked(keys, ranks);
-
-            __syncthreads();
-
-            // Exchange values through shared memory in blocked arrangement
-            BlockExchangeValues(temp_storage.exchange_values, linear_tid).ScatterToBlocked(values, ranks);
-
-            __syncthreads();
-        }
-
-        // Untwiddle bits if necessary
-        #pragma unroll
-        for (int KEY = 0; KEY < ITEMS_PER_THREAD; KEY++)
-        {
-            unsigned_keys[KEY] = KeyTraits::TwiddleOut(unsigned_keys[KEY]);
-        }
-    }
-
-
-    /**
-     * \brief Performs a radix sort across a [<em>striped arrangement</em>](index.html#sec3sec3) of keys and values.
-     *
-     * \smemreuse
-     */
-    __device__ __forceinline__ void SortStriped(
-        KeyType             (&keys)[ITEMS_PER_THREAD],          ///< [in-out] Keys to sort
-        ValueType           (&values)[ITEMS_PER_THREAD],        ///< [in-out] Values to sort
-        int                 begin_bit = 0,                      ///< [in] <b>[optional]</b> The beginning (least-significant) bit index needed for key comparison
-        int                 end_bit = sizeof(KeyType) * 8)      ///< [in] <b>[optional]</b> The past-the-end (most-significant) bit index needed for key comparison
-    {
-        // Transpose keys from striped to blocked arrangement
-        BlockExchangeKeys(temp_storage.exchange_keys, linear_tid).StripedToBlocked(keys);
-
-        __syncthreads();
-
-        // Transpose values from striped to blocked arrangement
-        BlockExchangeValues(temp_storage.exchange_values, linear_tid).StripedToBlocked(values);
-
-        __syncthreads();
-
-        // Sort blocked-to-striped
-        SortBlockedToStriped(keys, values, begin_bit, end_bit);
-    }
-
-
-    /** @} */   // Key-value pair sorting
+    //@}  end member group
 
 };
 

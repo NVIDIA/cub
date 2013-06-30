@@ -98,29 +98,20 @@ private:
 
 public:
 
-
-    /// Constructs an invalid GridQueue descriptor.  Does not allocate any queue resources.
-    __host__ __device__ __forceinline__ GridQueue() : d_counters(NULL) {}
-
-
-    /// Allocates the global resources necessary for this GridQueue.
-    __host__ __device__ __forceinline__ cudaError_t Allocate(
-        DeviceAllocator *device_allocator = DefaultDeviceAllocator())
+    /// Returns the device allocation size in bytes needed to construct a GridQueue instance
+    __host__ __device__ __forceinline__
+    static size_t AllocationSize()
     {
-        if (d_counters) return cudaErrorInvalidValue;
-        return CubDebug(DeviceAllocate((void**)&d_counters, sizeof(SizeT) * 2, device_allocator));
+        return sizeof(SizeT) * 2;
     }
 
 
-    /// Frees the global resources used by this GridQueue.
-    __host__ __device__ __forceinline__ cudaError_t Free(
-        DeviceAllocator *device_allocator = DefaultDeviceAllocator())
-    {
-        if (!d_counters) return cudaErrorInvalidValue;
-        cudaError_t error = CubDebug(DeviceFree(d_counters, device_allocator));
-        d_counters = NULL;
-        return error;
-    }
+    /// Constructs an invalid GridQueue descriptor around the device storage allocation
+    __host__ __device__ __forceinline__ GridQueue(
+        void *d_storage)                    ///< Device allocation to back the GridQueue.  Must be at least as big as <tt>AllocationSize()</tt>.
+    :
+        d_counters((SizeT*) d_storage)
+    {}
 
 
     /// This operation resets the drain so that it may advance to meet the existing fill-size.  To be called by the host or by a kernel prior to that which will be draining.
