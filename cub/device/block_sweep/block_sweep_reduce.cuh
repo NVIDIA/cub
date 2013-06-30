@@ -28,7 +28,7 @@
 
 /**
  * \file
- * cub::PersistentBlockReduce implements a stateful abstraction of CUDA thread blocks for participating in device-wide reduction.
+ * cub::BlockSweepReduce implements a stateful abstraction of CUDA thread blocks for participating in device-wide reduction.
  */
 
 #pragma once
@@ -38,6 +38,7 @@
 #include "../../block/block_load.cuh"
 #include "../../block/block_reduce.cuh"
 #include "../../grid/grid_mapping.cuh"
+#include "../../grid/grid_even_share.cuh"
 #include "../../util_vector.cuh"
 #include "../../util_namespace.cuh"
 
@@ -54,7 +55,7 @@ namespace cub {
  ******************************************************************************/
 
 /**
- * Tuning policy for PersistentBlockReduce
+ * Tuning policy for BlockSweepReduce
  */
 template <
     int                     _BLOCK_THREADS,
@@ -63,7 +64,7 @@ template <
     BlockReduceAlgorithm    _BLOCK_ALGORITHM,
     PtxLoadModifier         _LOAD_MODIFIER,
     GridMappingStrategy     _GRID_MAPPING>
-struct PersistentBlockReducePolicy
+struct BlockSweepReducePolicy
 {
     enum
     {
@@ -84,47 +85,47 @@ struct PersistentBlockReducePolicy
  ******************************************************************************/
 
 /**
- * \brief PersistentBlockReduce implements a stateful abstraction of CUDA thread blocks for participating in device-wide reduction.
+ * \brief BlockSweepReduce implements a stateful abstraction of CUDA thread blocks for participating in device-wide reduction.
  *
  * Each thread reduces only the values it loads. If \p FIRST_TILE, this
  * partial reduction is stored into \p thread_aggregate.  Otherwise it is
  * accumulated into \p thread_aggregate.
  */
 template <
-    typename PersistentBlockReducePolicy,
+    typename BlockSweepReducePolicy,
     typename InputIteratorRA,
     typename SizeT,
     typename ReductionOp>
-struct PersistentBlockReduce
+struct BlockSweepReduce
 {
 
     //---------------------------------------------------------------------
     // Types and constants
     //---------------------------------------------------------------------
 
-    typedef typename std::iterator_traits<InputIteratorRA>::value_type          T;              // Type of input iterator
-    typedef VectorHelper<T, PersistentBlockReducePolicy::VECTOR_LOAD_LENGTH>    VecHelper;      // Helper type for vectorizing loads of T
-    typedef typename VecHelper::Type                                            VectorT;        // Vector of T
+    typedef typename std::iterator_traits<InputIteratorRA>::value_type  T;              // Type of input iterator
+    typedef VectorHelper<T, BlockSweepReducePolicy::VECTOR_LOAD_LENGTH> VecHelper;      // Helper type for vectorizing loads of T
+    typedef typename VecHelper::Type                                    VectorT;        // Vector of T
 
     // Constants
     enum
     {
-        BLOCK_THREADS       = PersistentBlockReducePolicy::BLOCK_THREADS,
-        ITEMS_PER_THREAD    = PersistentBlockReducePolicy::ITEMS_PER_THREAD,
+        BLOCK_THREADS       = BlockSweepReducePolicy::BLOCK_THREADS,
+        ITEMS_PER_THREAD    = BlockSweepReducePolicy::ITEMS_PER_THREAD,
         TILE_ITEMS          = BLOCK_THREADS * ITEMS_PER_THREAD,
-        VECTOR_LOAD_LENGTH  = PersistentBlockReducePolicy::VECTOR_LOAD_LENGTH,
+        VECTOR_LOAD_LENGTH  = BlockSweepReducePolicy::VECTOR_LOAD_LENGTH,
 
         // Can vectorize according to the policy if the input iterator is a native pointer to a built-in primitive
-        CAN_VECTORIZE       = (PersistentBlockReducePolicy::VECTOR_LOAD_LENGTH > 1) &&
+        CAN_VECTORIZE       = (BlockSweepReducePolicy::VECTOR_LOAD_LENGTH > 1) &&
                                 (IsPointer<InputIteratorRA>::VALUE) &&
                                 (VecHelper::BUILT_IN),
 
     };
 
-    static const BlockReduceAlgorithm BLOCK_ALGORITHM = PersistentBlockReducePolicy::BLOCK_ALGORITHM;
+    static const BlockReduceAlgorithm BLOCK_ALGORITHM = BlockSweepReducePolicy::BLOCK_ALGORITHM;
 
     // Parameterized BlockReduce primitive
-    typedef BlockReduce<T, BLOCK_THREADS, PersistentBlockReducePolicy::BLOCK_ALGORITHM> BlockReduceT;
+    typedef BlockReduce<T, BLOCK_THREADS, BlockSweepReducePolicy::BLOCK_ALGORITHM> BlockReduceT;
 
     // Shared memory type required by this thread block
     typedef typename BlockReduceT::TempStorage TempStorage;
@@ -149,58 +150,27 @@ struct PersistentBlockReduce
     /**
      * Constructor
      */
-    __device__ __forceinline__ PersistentBlockReduce(
+    __device__ __forceinline__ BlockSweepReduce(
         TempStorage&            temp_storage,       ///< Reference to temp_storage
         InputIteratorRA         d_in,               ///< Input data to reduce
-        ReductionOp             reduction_op) :     ///< Binary reduction operator
-            temp_storage(temp_storage),
-            d_in(d_in),
-            reduction_op(reduction_op),
-            first_tile_size(0),
-            input_aligned(CAN_VECTORIZE && ((size_t(d_in) & (sizeof(VectorT) - 1)) == 0)){}
-
-
-    /**
-     * The number of items processed per "tile"
-     */
-    __device__ __forceinline__ int TileItems()
-    {
-        return TILE_ITEMS;
-    }
+        ReductionOp             reduction_op)       ///< Binary reduction operator
+    :
+        temp_storage(temp_storage),
+        d_in(d_in),
+        reduction_op(reduction_op),
+        first_tile_size(0),
+        input_aligned(CAN_VECTORIZE && ((size_t(d_in) & (sizeof(VectorT) - 1)) == 0)){}
 
 
     /**
      * Process a single tile of input
      */
+    template <bool FULL_TILE>
     __device__ __forceinline__ void ConsumeTile(
-        bool    &sync_after,    ///< Whether or not the caller needs to synchronize before repurposing the shared memory used by this instance
-        SizeT   block_offset,   ///< The offset the tile to consume
-        int     num_valid)      ///< The number of valid items in the tile
+        SizeT   block_offset,                   ///< The offset the tile to consume
+        int     valid_items = TILE_ITEMS)       ///< The number of valid items in the tile
     {
-        if (num_valid < TILE_ITEMS)
-        {
-            // Partial tile
-            int thread_offset = threadIdx.x;
-
-            if ((first_tile_size == 0) && (thread_offset < num_valid))
-            {
-                // Assign thread_aggregate
-                thread_aggregate = ThreadLoad<PersistentBlockReducePolicy::LOAD_MODIFIER>(d_in + block_offset + thread_offset);
-                thread_offset += BLOCK_THREADS;
-            }
-
-            while (thread_offset < num_valid)
-            {
-                // Update thread aggregate
-                T item = ThreadLoad<PersistentBlockReducePolicy::LOAD_MODIFIER>(d_in + block_offset + thread_offset);
-                thread_aggregate = reduction_op(thread_aggregate, item);
-                thread_offset += BLOCK_THREADS;
-            }
-
-            // Update first tile size
-            if (first_tile_size == 0) first_tile_size = num_valid;
-        }
-        else
+        if (FULL_TILE)
         {
             T items[ITEMS_PER_THREAD];
 
@@ -229,26 +199,134 @@ struct PersistentBlockReduce
             thread_aggregate = (first_tile_size) ?
                 reduction_op(thread_aggregate, partial) :       // Update
                 partial;                                        // Assign
+        }
+        else
+        {
+            // Partial tile
+            int thread_offset = threadIdx.x;
 
-            // Update first tile size
-            if (first_tile_size == 0) first_tile_size = num_valid;
+            if (!first_tile_size && (thread_offset < valid_items))
+            {
+                // Assign thread_aggregate
+                thread_aggregate = ThreadLoad<BlockSweepReducePolicy::LOAD_MODIFIER>(d_in + block_offset + thread_offset);
+                thread_offset += BLOCK_THREADS;
+            }
+
+            while (thread_offset < valid_items)
+            {
+                // Update thread aggregate
+                T item = ThreadLoad<BlockSweepReducePolicy::LOAD_MODIFIER>(d_in + block_offset + thread_offset);
+                thread_aggregate = reduction_op(thread_aggregate, item);
+                thread_offset += BLOCK_THREADS;
+            }
         }
 
-        // No synchronization needed after tile processing
-        sync_after = false;
+        // Set first tile size if necessary
+        if (!first_tile_size)
+            first_tile_size = valid_items;
     }
 
 
     /**
-     * Finalize the computation.
+     * \brief Reduce a consecutive segment of input tiles
      */
-    __device__ __forceinline__ void Finalize(
-        T& block_aggregate)
+    __device__ __forceinline__ void ConsumeTiles(
+        SizeT   block_offset,                       ///< [in] Threadblock begin offset (inclusive)
+        SizeT   block_oob,                          ///< [in] Threadblock end offset (exclusive)
+        T       &block_aggregate)                   ///< [out] Running total
     {
-        // Cooperative reduction across the thread block (guarded reduction if our first tile was a partial tile)
+        // Consume subsequent full tiles of input
+        while (block_offset + TILE_ITEMS <= block_oob)
+        {
+            ConsumeTile<true>(block_offset);
+            block_offset += TILE_ITEMS;
+        }
+
+        // Consume a partially-full tile
+        if (block_offset < block_oob)
+        {
+            int valid_items = block_oob - block_offset;
+            ConsumeTile<false>(block_offset, valid_items);
+        }
+
+        // Compute block-wide reduction
         block_aggregate = (first_tile_size < TILE_ITEMS) ?
             BlockReduceT(temp_storage).Reduce(thread_aggregate, reduction_op, first_tile_size) :
             BlockReduceT(temp_storage).Reduce(thread_aggregate, reduction_op);
+    }
+
+
+    /**
+     * Reduce a consecutive segment of input tiles
+     */
+    __device__ __forceinline__ void ConsumeTiles(
+        SizeT                               num_items,          ///< [in] Total number of global input items
+        GridEvenShare<SizeT>                &even_share,        ///< [in] GridEvenShare descriptor
+        GridQueue<SizeT>                    &queue,             ///< [in,out] GridQueue descriptor
+        T                                   &block_aggregate,   ///< [out] Running total
+        Int2Type<GRID_MAPPING_EVEN_SHARE>   is_even_share)      ///< [in] Marker type indicating this is an even-share mapping
+    {
+        even_share.BlockInit();
+        ConsumeTiles(even_share.block_offset, even_share.block_oob, block_aggregate);
+    }
+
+
+    /**
+     * Dequeue and reduce tiles of items as part of a inter-block scan
+     */
+    __device__ __forceinline__ void ConsumeTiles(
+        int                 num_items,          ///< Total number of input items
+        GridQueue<SizeT>    queue,              ///< Queue descriptor for assigning tiles of work to thread blocks
+        T                   &block_aggregate)   ///< [out] Running total
+    {
+        // Shared block offset
+         __shared__ SizeT shared_block_offset;
+
+        // We give each thread block at least one tile of input.
+        SizeT block_offset      = blockIdx.x * TILE_ITEMS;
+        SizeT even_share_base   = gridDim.x * TILE_ITEMS;
+
+        // Process full tiles of input
+        while (block_offset + TILE_ITEMS <= num_items)
+        {
+            ConsumeTile<true>(block_offset);
+
+            // Dequeue up to TILE_ITEMS
+            if (threadIdx.x == 0)
+                shared_block_offset = queue.Drain(TILE_ITEMS) + even_share_base;
+
+            __syncthreads();
+
+            block_offset = shared_block_offset;
+
+            __syncthreads();
+        }
+
+        // Consume a partially-full tile
+        if (block_offset < num_items)
+        {
+            int valid_items = num_items - block_offset;
+            ConsumeTile<false>(block_offset, valid_items);
+        }
+
+        // Compute block-wide reduction
+        block_aggregate = (first_tile_size < TILE_ITEMS) ?
+            BlockReduceT(temp_storage).Reduce(thread_aggregate, reduction_op, first_tile_size) :
+            BlockReduceT(temp_storage).Reduce(thread_aggregate, reduction_op);
+    }
+
+
+    /**
+     * Dequeue and reduce tiles of items as part of a inter-block scan
+     */
+    __device__ __forceinline__ void ConsumeTiles(
+        SizeT                               num_items,          ///< [in] Total number of global input items
+        GridEvenShare<SizeT>                &even_share,        ///< [in] GridEvenShare descriptor
+        GridQueue<SizeT>                    &queue,             ///< [in,out] GridQueue descriptor
+        T                                   &block_aggregate,   ///< [out] Running total
+        Int2Type<GRID_MAPPING_DYNAMIC>      is_dynamic)         ///< [in] Marker type indicating this is a dynamic mapping
+    {
+        ConsumeTiles(num_items, queue, block_aggregate);
     }
 
 };

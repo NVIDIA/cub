@@ -27,7 +27,7 @@
  ******************************************************************************/
 
 /******************************************************************************
- * Test of DeviceHisto256 utilities
+ * Test of DeviceHisto utilities
  ******************************************************************************/
 
 // Ensure printing of CUDA runtime errors to console
@@ -50,7 +50,7 @@ using namespace cub;
 bool                                g_verbose           = false;
 int                                 g_iterations        = 100;
 bool                                g_verbose_input     = false;
-PersistentBlockHisto256Algorithm    g_algorithm         = GRID_HISTO_256_SORT;
+PersistentBlockHistoAlgorithm    g_algorithm         = GRID_HISTO_SORT;
     
 
 /**
@@ -72,7 +72,7 @@ struct FloatScaleOp
 //---------------------------------------------------------------------
 
 /**
- * Simple wrapper kernel to invoke DeviceHisto256
+ * Simple wrapper kernel to invoke DeviceHisto
  */
 /*
 template <
@@ -93,7 +93,7 @@ __global__ void CnpHisto(
 #ifdef CUB_RUNTIME_ENABLED
     for (int i = 0; i < iterations; ++i)
     {
-        error = DeviceHisto256::SingleChannel(d_samples, d_out, num_samples, reduction_op, 0, STREAM_SYNCHRONOUS);
+        error = DeviceHisto::SingleChannel(d_samples, d_out, num_samples, reduction_op, 0, STREAM_SYNCHRONOUS);
     }
 #else
     error = cudaErrorInvalidConfiguration;
@@ -132,6 +132,7 @@ void Sample(int gen_mode, float &datum, int i)
  * Initialize problem (and solution)
  */
 template <
+    int             BINS,
     int             CHANNELS,
     int             ACTIVE_CHANNELS,
     typename        SampleType,
@@ -145,7 +146,7 @@ void Initialize(
     int             num_samples)
 {
     // Init bins
-    for (int bin = 0; bin < ACTIVE_CHANNELS * 256; ++bin)
+    for (int bin = 0; bin < ACTIVE_CHANNELS * BINS; ++bin)
     {
         h_histograms_linear[bin] = 0;
     }
@@ -171,7 +172,7 @@ void Initialize(
 
         if (channel < ACTIVE_CHANNELS)
         {
-            h_histograms_linear[(channel * 256) + bin]++;
+            h_histograms_linear[(channel * BINS) + bin]++;
         }
     }
 
@@ -185,7 +186,7 @@ void Initialize(
 
 
 /**
- * Test DeviceHisto256
+ * Test DeviceHisto
  */
 template <
     int             CHANNELS,
@@ -201,10 +202,10 @@ void Test(
 {
     int compare         = 0;
     int cnp_compare     = 0;
-    int total_bins      = ACTIVE_CHANNELS * 256;
+    int total_bins      = ACTIVE_CHANNELS * BINS;
 
-    printf("cub::DeviceHisto256 %s %d %s samples (%dB), %d channels, %d active channels, gen-mode %d\n\n",
-        (g_algorithm == GRID_HISTO_256_SHARED_ATOMIC) ? "satomic" : (g_algorithm == GRID_HISTO_256_GLOBAL_ATOMIC) ? "gatomic" : "sort",
+    printf("cub::DeviceHisto %s %d %s samples (%dB), %d channels, %d active channels, gen-mode %d\n\n",
+        (g_algorithm == GRID_HISTO_SHARED_ATOMIC) ? "satomic" : (g_algorithm == GRID_HISTO_GLOBAL_ATOMIC) ? "gatomic" : "sort",
         num_samples,
         type_string,
         (int) sizeof(SampleType),
@@ -236,7 +237,7 @@ void Test(
     HistoCounter *d_histograms[ACTIVE_CHANNELS];
     for (int CHANNEL = 0; CHANNEL < ACTIVE_CHANNELS; ++CHANNEL)
     {
-        d_histograms[CHANNEL] = d_histograms_linear + (CHANNEL * 256);
+        d_histograms[CHANNEL] = d_histograms_linear + (CHANNEL * BINS);
     }
 
     // Create iterator wrapper for SampleType -> unsigned char conversion
@@ -245,17 +246,17 @@ void Test(
 
     // Run warmup/correctness iteration
     printf("Host dispatch:\n"); fflush(stdout);
-    if (g_algorithm == GRID_HISTO_256_SHARED_ATOMIC)
+    if (g_algorithm == GRID_HISTO_SHARED_ATOMIC)
     {
-        CubDebugExit(DeviceHisto256::MultiChannelAtomic<CHANNELS>(d_sample_itr, d_histograms, num_samples, 0, true));
+        CubDebugExit(DeviceHisto::MultiChannelAtomic<CHANNELS>(d_sample_itr, d_histograms, num_samples, 0, true));
     }
-    else if (g_algorithm == GRID_HISTO_256_GLOBAL_ATOMIC)
+    else if (g_algorithm == GRID_HISTO_GLOBAL_ATOMIC)
     {
-        CubDebugExit(DeviceHisto256::MultiChannelGlobalAtomic<CHANNELS>(d_sample_itr, d_histograms, num_samples, 0, true));
+        CubDebugExit(DeviceHisto::MultiChannelGlobalAtomic<CHANNELS>(d_sample_itr, d_histograms, num_samples, 0, true));
     }
     else
     {
-        CubDebugExit(DeviceHisto256::MultiChannel<CHANNELS>(d_sample_itr, d_histograms, num_samples, 0, true));
+        CubDebugExit(DeviceHisto::MultiChannel<CHANNELS>(d_sample_itr, d_histograms, num_samples, 0, true));
     }
 
     // Check for correctness (and display results, if specified)
@@ -273,17 +274,17 @@ void Test(
     {
         gpu_timer.Start();
 
-        if (g_algorithm == GRID_HISTO_256_SHARED_ATOMIC)
+        if (g_algorithm == GRID_HISTO_SHARED_ATOMIC)
         {
-            CubDebugExit(DeviceHisto256::MultiChannelAtomic<CHANNELS>(d_sample_itr, d_histograms, num_samples, 0));
+            CubDebugExit(DeviceHisto::MultiChannelAtomic<CHANNELS>(d_sample_itr, d_histograms, num_samples, 0));
         }
-        else if (g_algorithm == GRID_HISTO_256_GLOBAL_ATOMIC)
+        else if (g_algorithm == GRID_HISTO_GLOBAL_ATOMIC)
         {
-            CubDebugExit(DeviceHisto256::MultiChannelGlobalAtomic<CHANNELS>(d_sample_itr, d_histograms, num_samples, 0));
+            CubDebugExit(DeviceHisto::MultiChannelGlobalAtomic<CHANNELS>(d_sample_itr, d_histograms, num_samples, 0));
         }
         else
         {
-            CubDebugExit(DeviceHisto256::MultiChannel<CHANNELS>(d_sample_itr, d_histograms, num_samples, 0));
+            CubDebugExit(DeviceHisto::MultiChannel<CHANNELS>(d_sample_itr, d_histograms, num_samples, 0));
         }
 
         gpu_timer.Stop();
@@ -396,9 +397,9 @@ int main(int argc, char** argv)
     std::string type;
     args.GetCmdLineArgument("algorithm", type);
     if (type == std::string("satomic"))
-        g_algorithm = GRID_HISTO_256_SHARED_ATOMIC;
+        g_algorithm = GRID_HISTO_SHARED_ATOMIC;
     else if (type == std::string("gatomic"))
-        g_algorithm = GRID_HISTO_256_GLOBAL_ATOMIC;
+        g_algorithm = GRID_HISTO_GLOBAL_ATOMIC;
 
     // Print usage
     if (args.CheckCmdLineFlag("help"))
@@ -419,7 +420,7 @@ int main(int argc, char** argv)
 
     // Binning operators
     Cast<unsigned char>     cast_op;        // Convert any numeric value to unsigned char via cast
-    FloatScaleOp            scale_op;       // Convert [0 .. 1.0] fp32 value to unsigned char by scaling by 256
+    FloatScaleOp            scale_op;       // Convert [0 .. 1.0] fp32 value to unsigned char by scaling by BINS
 
     // unsigned char
     printf("\n\n-- UINT8 -------------- \n"); fflush(stdout);

@@ -91,7 +91,7 @@ struct DeviceTest
  * Sum reduction (only compile for primitive, built-ins only)
  */
 template <typename T>
-struct DeviceTest<T, Sum<T>, true>
+struct DeviceTest<T, Sum, true>
 {
     template <
         typename    BlockReduce,
@@ -99,7 +99,7 @@ struct DeviceTest<T, Sum<T>, true>
     static __device__ __forceinline__ T Test(
         typename BlockReduce::TempStorage   &temp_storage,
         T                                   (&data)[ITEMS_PER_THREAD],
-        Sum<T>                              &reduction_op)
+        Sum                              &reduction_op)
     {
         if (ITEMS_PER_THREAD == 1)
             return BlockReduce(temp_storage).Sum(data[0]);
@@ -111,7 +111,7 @@ struct DeviceTest<T, Sum<T>, true>
     static __device__ __forceinline__ T Test(
         typename BlockReduce::TempStorage   &temp_storage,
         T                                   &data,
-        Sum<T>                              &reduction_op,
+        Sum                              &reduction_op,
         int                                 valid_threads)
     {
         return BlockReduce(temp_storage).Sum(data, valid_threads);
@@ -514,7 +514,7 @@ void Test(
 template <typename T>
 void Test(char* type_string)
 {
-    Test<T>(Sum<T>(), type_string);
+    Test<T>(Sum(), type_string);
     Test<T>(Max<T>(), type_string);
 }
 
@@ -544,7 +544,7 @@ int main(int argc, char** argv)
 
     // Quick test
     typedef int T;
-    TestFullTile<BLOCK_REDUCE_RAKING, 128, 4, T>(UNIFORM, 1, Sum<T>(), CUB_TYPE_STRING(T));
+    TestFullTile<BLOCK_REDUCE_RAKING, 128, 4, T>(UNIFORM, 1, Sum(), CUB_TYPE_STRING(T));
 
     // primitives
     Test<char>(CUB_TYPE_STRING(char));

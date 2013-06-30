@@ -134,7 +134,7 @@ struct DeviceTest
 template <
     typename T,
     typename IdentityT>
-struct DeviceTest<T, Sum<T>, IdentityT>
+struct DeviceTest<T, Sum, IdentityT>
 {
     template <
         TestMode TEST_MODE,
@@ -144,7 +144,7 @@ struct DeviceTest<T, Sum<T>, IdentityT>
         typename WarpScan::TempStorage  &temp_storage,
         T                               &data,
         T                               &identity,
-        Sum<T>                          &scan_op,
+        Sum                          &scan_op,
         T                               &aggregate,
         PrefixOp                        &prefix_op)
     {
@@ -210,7 +210,7 @@ struct DeviceTest<T, ScanOp, NullType>
  * Inclusive sum
  */
 template <typename T>
-struct DeviceTest<T, Sum<T>, NullType>
+struct DeviceTest<T, Sum, NullType>
 {
     template <
         TestMode TEST_MODE,
@@ -220,7 +220,7 @@ struct DeviceTest<T, Sum<T>, NullType>
         typename WarpScan::TempStorage  &temp_storage,
         T                               &data,
         NullType                        &identity,
-        Sum<T>                          &scan_op,
+        Sum                          &scan_op,
         T                               &aggregate,
         PrefixOp                        &prefix_op)
     {

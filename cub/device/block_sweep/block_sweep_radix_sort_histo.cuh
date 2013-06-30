@@ -28,7 +28,7 @@
 
 /**
  * \file
- * PersistentBlockRadixSortUpsweep implements a stateful abstraction of CUDA thread blocks for participating in device-wide radix sort upsweep.
+ * BlockSweepRadixSortUpsweep implements a stateful abstraction of CUDA thread blocks for participating in device-wide radix sort upsweep.
  */
 
 #pragma once
@@ -49,14 +49,14 @@ namespace cub {
  ******************************************************************************/
 
 /**
- * Tuning policy for PersistentBlockRadixSortUpsweep
+ * Tuning policy for BlockSweepRadixSortUpsweep
  */
 template <
     int                 _BLOCK_THREADS,     ///< The number of threads per CTA
     int                 _ITEMS_PER_THREAD,  ///< The number of items to load per thread per tile
     int                 _RADIX_BITS,        ///< The number of radix bits, i.e., log2(bins)
     PtxLoadModifier     _LOAD_MODIFIER>     ///< Load cache-modifier
-struct PersistentBlockRadixSortUpsweepPolicy
+struct BlockSweepRadixSortUpsweepPolicy
 {
     enum
     {
@@ -75,15 +75,15 @@ struct PersistentBlockRadixSortUpsweepPolicy
  ******************************************************************************/
 
 /**
- * \brief PersistentBlockRadixSortUpsweep implements a stateful abstraction of CUDA thread blocks for participating in device-wide radix sort upsweep.
+ * \brief BlockSweepRadixSortUpsweep implements a stateful abstraction of CUDA thread blocks for participating in device-wide radix sort upsweep.
  *
  * Computes radix digit histograms over a range of input tiles.
  */
 template <
-    typename PersistentBlockRadixSortUpsweepPolicy,
+    typename BlockSweepRadixSortUpsweepPolicy,
     typename KeyType,
     typename SizeT>
-struct PersistentBlockRadixSortUpsweep
+struct BlockSweepRadixSortUpsweep
 {
 
     //---------------------------------------------------------------------
@@ -98,13 +98,13 @@ struct PersistentBlockRadixSortUpsweep
     // Integer type for packing DigitCounters into columns of shared memory banks
     typedef unsigned int PackedCounter;
 
-    static const PtxLoadModifier LOAD_MODIFIER = PersistentBlockRadixSortUpsweepPolicy::LOAD_MODIFIER;
+    static const PtxLoadModifier LOAD_MODIFIER = BlockSweepRadixSortUpsweepPolicy::LOAD_MODIFIER;
 
     enum
     {
-        RADIX_BITS              = PersistentBlockRadixSortUpsweepPolicy::RADIX_BITS,
-        BLOCK_THREADS           = PersistentBlockRadixSortUpsweepPolicy::BLOCK_THREADS,
-        KEYS_PER_THREAD         = PersistentBlockRadixSortUpsweepPolicy::ITEMS_PER_THREAD,
+        RADIX_BITS              = BlockSweepRadixSortUpsweepPolicy::RADIX_BITS,
+        BLOCK_THREADS           = BlockSweepRadixSortUpsweepPolicy::BLOCK_THREADS,
+        KEYS_PER_THREAD         = BlockSweepRadixSortUpsweepPolicy::ITEMS_PER_THREAD,
 
         RADIX_DIGITS            = 1 << RADIX_BITS,
 
@@ -182,7 +182,7 @@ struct PersistentBlockRadixSortUpsweep
 
         // BucketKeys
         static __device__ __forceinline__ void BucketKeys(
-            PersistentBlockRadixSortUpsweep &cta,
+            BlockSweepRadixSortUpsweep &cta,
             UnsignedBits keys[KEYS_PER_THREAD])
         {
             cta.Bucket(keys[COUNT]);
@@ -192,7 +192,7 @@ struct PersistentBlockRadixSortUpsweep
         }
 
         // ProcessTiles
-        static __device__ __forceinline__ void ProcessTiles(PersistentBlockRadixSortUpsweep &cta, SizeT block_offset)
+        static __device__ __forceinline__ void ProcessTiles(BlockSweepRadixSortUpsweep &cta, SizeT block_offset)
         {
             // Next
             Iterate<1, HALF>::ProcessTiles(cta, block_offset);
@@ -205,10 +205,10 @@ struct PersistentBlockRadixSortUpsweep
     struct Iterate<MAX, MAX>
     {
         // BucketKeys
-        static __device__ __forceinline__ void BucketKeys(PersistentBlockRadixSortUpsweep &cta, UnsignedBits keys[KEYS_PER_THREAD]) {}
+        static __device__ __forceinline__ void BucketKeys(BlockSweepRadixSortUpsweep &cta, UnsignedBits keys[KEYS_PER_THREAD]) {}
 
         // ProcessTiles
-        static __device__ __forceinline__ void ProcessTiles(PersistentBlockRadixSortUpsweep &cta, SizeT block_offset)
+        static __device__ __forceinline__ void ProcessTiles(BlockSweepRadixSortUpsweep &cta, SizeT block_offset)
         {
             cta.ProcessFullTile(block_offset);
         }
@@ -378,7 +378,7 @@ struct PersistentBlockRadixSortUpsweep
     /**
      * Constructor
      */
-    __device__ __forceinline__ PersistentBlockRadixSortUpsweep(
+    __device__ __forceinline__ BlockSweepRadixSortUpsweep(
         TempStorage     &temp_storage,
         KeyType         *d_keys_in,
         unsigned int    current_bit)

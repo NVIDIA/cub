@@ -457,7 +457,7 @@ struct BlockScanRaking
         else
         {
             // Raking scan
-            Sum<T> scan_op;
+            Sum scan_op;
 
             // Place thread partial into shared memory raking grid
             T *placement_ptr = BlockRakingLayout::PlacementPtr(temp_storage.raking_grid, linear_tid);
@@ -513,7 +513,7 @@ struct BlockScanRaking
         else
         {
             // Raking scan
-            Sum<T> scan_op;
+            Sum scan_op;
 
             // Place thread partial into shared memory raking grid
             T *placement_ptr = BlockRakingLayout::PlacementPtr(temp_storage.raking_grid, linear_tid);
@@ -680,7 +680,7 @@ struct BlockScanRaking
         else
         {
             // Raking scan
-            Sum<T> scan_op;
+            Sum scan_op;
 
             // Place thread partial into shared memory raking grid
             T *placement_ptr = BlockRakingLayout::PlacementPtr(temp_storage.raking_grid, linear_tid);
@@ -736,7 +736,7 @@ struct BlockScanRaking
         else
         {
             // Raking scan
-            Sum<T> scan_op;
+            Sum scan_op;
 
             // Place thread partial into shared memory raking grid
             T *placement_ptr = BlockRakingLayout::PlacementPtr(temp_storage.raking_grid, linear_tid);

@@ -266,7 +266,7 @@ struct WarpReduceSmem
         T               input,                  ///< [in] Calling thread's input
         int             folded_items_per_warp)  ///< [in] Total number of valid items folded into each logical warp
     {
-        return Reduce<FULL_WARPS, FOLDED_ITEMS_PER_LANE>(input, folded_items_per_warp, cub::Sum<T>());
+        return Reduce<FULL_WARPS, FOLDED_ITEMS_PER_LANE>(input, folded_items_per_warp, cub::Sum());
     }
 
 };

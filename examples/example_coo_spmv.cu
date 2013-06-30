@@ -351,16 +351,16 @@ struct PersistentBlockSpmv
         {
             // This is a partial-tile (e.g., the last tile of input).  Extend the coordinates of the last
             // vertex for out-of-bound items, but zero-valued
-            LoadWarpStriped<LOAD_DEFAULT>(d_columns + block_offset, guarded_items, VertexId(0), columns);
-            LoadWarpStriped<LOAD_DEFAULT>(d_values + block_offset, guarded_items, Value(0), values);
-            LoadWarpStriped<LOAD_DEFAULT>(d_rows + block_offset, guarded_items, temp_storage.last_block_row, rows);
+            LoadWarpStriped<LOAD_DEFAULT>(threadIdx.x, d_columns + block_offset, guarded_items, VertexId(0), columns);
+            LoadWarpStriped<LOAD_DEFAULT>(threadIdx.x, d_values + block_offset, guarded_items, Value(0), values);
+            LoadWarpStriped<LOAD_DEFAULT>(threadIdx.x, d_rows + block_offset, guarded_items, temp_storage.last_block_row, rows);
         }
         else
         {
             // Unguarded loads
-            LoadWarpStriped<LOAD_DEFAULT>(d_columns + block_offset, columns);
-            LoadWarpStriped<LOAD_DEFAULT>(d_values + block_offset, values);
-            LoadWarpStriped<LOAD_DEFAULT>(d_rows + block_offset, rows);
+            LoadWarpStriped<LOAD_DEFAULT>(threadIdx.x, d_columns + block_offset, columns);
+            LoadWarpStriped<LOAD_DEFAULT>(threadIdx.x, d_values + block_offset, values);
+            LoadWarpStriped<LOAD_DEFAULT>(threadIdx.x, d_rows + block_offset, rows);
         }
 
         // Load the referenced values from x and compute the dot product partials sums
@@ -387,10 +387,10 @@ struct PersistentBlockSpmv
 
         // Flag row heads by looking for discontinuities
         BlockDiscontinuity(temp_storage.discontinuity).Flag(
+            head_flags,                     // (Out) Head flags
             rows,                           // Original row ids
-            prefix_op.running_prefix.row,   // Last row ID from previous tile to compare with first row ID in this tile
             NewRowOp(),                     // Functor for detecting start of new rows
-            head_flags);                    // (Out) Head flags
+            prefix_op.running_prefix.row);  // Last row ID from previous tile to compare with first row ID in this tile
 
         // Assemble partial product structures
         #pragma unroll
@@ -582,19 +582,19 @@ struct FinalizeSpmvBlock
             default_sum.row = temp_storage.last_block_row;
             default_sum.partial = Value(0);
 
-            #if CUB_PTX_ARCH >= 350
-            LoadBlocked<LOAD_LDG>(d_block_partials + block_offset, guarded_items, default_sum, partial_sums);
-            #else
-            LoadBlocked<LOAD_DEFAULT>(d_block_partials + block_offset, guarded_items, default_sum, partial_sums);
-            #endif
+#if CUB_PTX_ARCH >= 350
+            LoadBlocked<LOAD_LDG>(threadIdx.x, d_block_partials + block_offset, guarded_items, default_sum, partial_sums);
+#else
+            LoadBlocked<LOAD_DEFAULT>(threadIdx.x, d_block_partials + block_offset, guarded_items, default_sum, partial_sums);
+#endif
         }
         else
         {
-            #if CUB_PTX_ARCH >= 350
-            LoadBlocked<LOAD_LDG>(d_block_partials + block_offset, partial_sums);
-            #else
-            LoadBlocked<LOAD_DEFAULT>(d_block_partials + block_offset, partial_sums);
-            #endif
+#if CUB_PTX_ARCH >= 350
+            LoadBlocked<LOAD_LDG>(threadIdx.x, d_block_partials + block_offset, partial_sums);
+#else
+            LoadBlocked<LOAD_DEFAULT>(threadIdx.x, d_block_partials + block_offset, partial_sums);
+#endif
         }
 
         // Copy out row IDs for row-head flagging
@@ -605,11 +605,11 @@ struct FinalizeSpmvBlock
         }
 
         // Flag row heads by looking for discontinuities
-        BlockDiscontinuity(temp_storage.discontinuity).Flag(
+        BlockDiscontinuity(temp_storage.discontinuity).FlagHeads(
             rows,                           // Original row ids
-            prefix_op.running_prefix.row,   // Last row ID from previous tile to compare with first row ID in this tile
+            head_flags,                     // (Out) Head flags
             NewRowOp(),                     // Functor for detecting start of new rows
-            head_flags);                    // (Out) Head flags
+            prefix_op.running_prefix.row);   // Last row ID from previous tile to compare with first row ID in this tile
 
         // Reduce reduce-value-by-row across partial_sums using exclusive prefix scan
         PartialProduct block_aggregate;

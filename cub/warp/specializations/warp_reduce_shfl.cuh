@@ -167,7 +167,7 @@ struct WarpReduceShfl
         Int2Type<false>     single_shfl)        ///< [in] Marker type indicating whether only one SHFL instruction is required
     {
         // Delegate to generic reduce
-        return Reduce<FULL_WARPS, FOLDED_ITEMS_PER_LANE>(input, folded_items_per_warp, cub::Sum<T>());
+        return Reduce<FULL_WARPS, FOLDED_ITEMS_PER_LANE>(input, folded_items_per_warp, cub::Sum());
     }
 
 

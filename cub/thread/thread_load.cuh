@@ -144,10 +144,18 @@ struct ThreadLoadHelper
 {
     typedef typename std::iterator_traits<InputIteratorRA>::value_type  T;
     typedef typename WordAlignment<T>::AlignWord                        AlignWord;
-    typedef typename WordAlignment<T>::VolatileAlignWord                VolatileAlignWord;
 
     template <PtxLoadModifier MODIFIER>
     static __device__ __forceinline__ T Load(InputIteratorRA itr);
+
+#if (CUB_PTX_ARCH <= 130)
+    template <>
+    static __device__ __forceinline__ T Load<LOAD_CG>(InputIteratorRA itr)
+    {
+        // Straightforward dereference
+        return *itr;
+    }
+#endif
 
     template <>
     static __device__ __forceinline__ T Load<LOAD_DEFAULT>(InputIteratorRA itr)
@@ -162,20 +170,16 @@ struct ThreadLoadHelper
 template <typename T>
 struct ThreadLoadHelper<T*>
 {
-    typedef typename WordAlignment<T>::AlignWord                        AlignWord;
-    typedef typename WordAlignment<T>::VolatileAlignWord                VolatileAlignWord;
-
-    enum {
-        ALIGN_UNROLL            = sizeof(T) / sizeof(AlignWord),
-        VOLATILE_ALIGN_UNROLL   = sizeof(T) / sizeof(VolatileAlignWord),
-    };
-
     template <PtxLoadModifier MODIFIER>
     static __device__ __forceinline__ T Load(T *ptr)
     {
+        typedef typename WordAlignment<T>::AlignWord AlignWord;
+
+        const int ALIGN_UNROLL  = sizeof(T) / sizeof(AlignWord);
+
         T retval;
-        AlignWord *alias         = reinterpret_cast<AlignWord*>(&retval);
-        AlignWord *alias_ptr     = reinterpret_cast<AlignWord*>(ptr);
+        AlignWord *alias        = reinterpret_cast<AlignWord*>(&retval);
+        AlignWord *alias_ptr    = reinterpret_cast<AlignWord*>(ptr);
 
         #pragma unroll
         for (int i = 0; i < ALIGN_UNROLL; ++i)
@@ -184,18 +188,28 @@ struct ThreadLoadHelper<T*>
         return retval;
     }
 
+
+#if (CUB_PTX_ARCH <= 130)
+    template <>
+    static __device__ __forceinline__ T Load<LOAD_CG>(T *ptr)
+    {
+        // Straightforward dereference
+        return *ptr;
+    }
+#endif
+
+
     template <>
     static __device__ __forceinline__ T Load<LOAD_VOLATILE>(T *ptr)
     {
         T retval;
 
 #if (CUB_PTX_ARCH <= 130)
-
         retval = *ptr;
         __threadfence_block();
-
-
 #else
+        typedef typename WordAlignment<T>::VolatileAlignWord VolatileAlignWord;
+        const int VOLATILE_ALIGN_UNROLL = sizeof(T) / sizeof(VolatileAlignWord);
 
         VolatileAlignWord *alias                = reinterpret_cast<VolatileAlignWord*>(&retval);
         volatile VolatileAlignWord *alias_ptr   = reinterpret_cast<volatile VolatileAlignWord*>(ptr);
@@ -203,9 +217,7 @@ struct ThreadLoadHelper<T*>
         #pragma unroll
         for (int i = 0; i < VOLATILE_ALIGN_UNROLL; ++i)
             alias[i] = alias_ptr[i];
-
 #endif
-
         return retval;
     }
 

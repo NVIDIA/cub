@@ -147,7 +147,7 @@ struct BlockReduceWarpReductions
         T                   input,          ///< [in] Calling thread's input partial reductions
         int                 num_valid)      ///< [in] Number of valid elements (may be less than BLOCK_THREADS)
     {
-        cub::Sum<T>     reduction_op;
+        cub::Sum     reduction_op;
         unsigned int    warp_offset = warp_id * LOGICAL_WARP_SIZE;
         unsigned int    warp_num_valid = (FULL_TILE && EVEN_WARP_MULTIPLE) ?
                             LOGICAL_WARP_SIZE :

@@ -1,5 +1,7 @@
 var searchData=
 [
+  ['tailsegmentedreduce',['TailSegmentedReduce',['../classcub_1_1_warp_reduce.html#a074ddcaf999d4e97376b145086e78ddb',1,'cub::WarpReduce']]],
+  ['tailsegmentedsum',['TailSegmentedSum',['../classcub_1_1_warp_reduce.html#a5b0134131d03909e43d24d6b0b50beb4',1,'cub::WarpReduce']]],
   ['texiteratorra',['TexIteratorRA',['../classcub_1_1_tex_iterator_r_a.html#a3f7b0ec2266c97661379c72265e75c25',1,'cub::TexIteratorRA']]],
   ['textransformiteratorra',['TexTransformIteratorRA',['../classcub_1_1_tex_transform_iterator_r_a.html#a5521ef0385c88805c7ec4f75283d119d',1,'cub::TexTransformIteratorRA']]],
   ['threadload',['ThreadLoad',['../group___io_module.html#ga2467f2337aeeea3a3a1b39d19996d3c2',1,'cub']]],

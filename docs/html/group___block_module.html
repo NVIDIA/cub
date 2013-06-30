@@ -96,7 +96,7 @@ var searchBox = new SearchBox("searchBox", "search",false,'Search');
 <tr class="heading"><td colspan="2"><h2 class="groupheader"><a name="nested-classes"></a>
 Classes</h2></td></tr>
 <tr class="memitem:"><td class="memItemLeft" align="right" valign="top">class &#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classcub_1_1_block_discontinuity.html">cub::BlockDiscontinuity&lt; T, BLOCK_THREADS &gt;</a></td></tr>
-<tr class="memdesc:"><td class="mdescLeft">&#160;</td><td class="mdescRight"><a class="el" href="classcub_1_1_block_discontinuity.html" title="BlockDiscontinuity provides operations for flagging discontinuities within a list of data items parti...">BlockDiscontinuity</a> provides operations for flagging discontinuities within a list of data items partitioned across a CUDA threadblock. </p>
+<tr class="memdesc:"><td class="mdescLeft">&#160;</td><td class="mdescRight"><a class="el" href="classcub_1_1_block_discontinuity.html" title="BlockDiscontinuity provides operations for flagging discontinuities within a linear tile of items par...">BlockDiscontinuity</a> provides operations for flagging discontinuities within a linear tile of items partitioned across a CUDA threadblock. </p>
 <div class="image">
 <img src="discont_logo.png" alt="discont_logo.png"/>
 <div class="caption">
@@ -111,20 +111,20 @@ Classes</h2></td></tr>
 .</div></div>
   <a href="classcub_1_1_block_exchange.html#details">More...</a><br/></td></tr>
 <tr class="separator:"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:"><td class="memItemLeft" align="right" valign="top">class &#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classcub_1_1_block_histo256.html">cub::BlockHisto256&lt; BLOCK_THREADS, ITEMS_PER_THREAD, ALGORITHM &gt;</a></td></tr>
-<tr class="memdesc:"><td class="mdescLeft">&#160;</td><td class="mdescRight"><a class="el" href="classcub_1_1_block_histo256.html" title="BlockHisto256 provides methods for constructing (and compositing into) 256-bin histograms from 8b dat...">BlockHisto256</a> provides methods for constructing (and compositing into) 256-bin histograms from 8b data partitioned across threads within a CUDA thread block. </p>
+<tr class="memitem:"><td class="memItemLeft" align="right" valign="top">class &#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classcub_1_1_block_histo.html">cub::BlockHisto&lt; BLOCK_THREADS, ITEMS_PER_THREAD, BINS, ALGORITHM &gt;</a></td></tr>
+<tr class="memdesc:"><td class="mdescLeft">&#160;</td><td class="mdescRight"><a class="el" href="classcub_1_1_block_histo.html" title="BlockHisto provides methods for constructing (and compositing into) block-wide histograms from data p...">BlockHisto</a> provides methods for constructing (and compositing into) block-wide histograms from data partitioned across threads within a CUDA thread block. </p>
 <div class="image">
 <img src="histogram_logo.png" alt="histogram_logo.png"/>
 <div class="caption">
 .</div></div>
-  <a href="classcub_1_1_block_histo256.html#details">More...</a><br/></td></tr>
+  <a href="classcub_1_1_block_histo.html#details">More...</a><br/></td></tr>
 <tr class="separator:"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:"><td class="memItemLeft" align="right" valign="top">class &#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classcub_1_1_block_load.html">cub::BlockLoad&lt; InputIteratorRA, BLOCK_THREADS, ITEMS_PER_THREAD, ALGORITHM, MODIFIER, WARP_TIME_SLICING &gt;</a></td></tr>
-<tr class="memdesc:"><td class="mdescLeft">&#160;</td><td class="mdescRight"><a class="el" href="classcub_1_1_block_load.html" title="BlockLoad provides cooperative data movement operations for loading a tile of data from memory into a...">BlockLoad</a> provides cooperative data movement operations for loading a tile of data from memory into a <a href="index.html#sec3sec3"><em>block arrangement</em></a> across a CUDA thread block. </p>
+<tr class="memdesc:"><td class="mdescLeft">&#160;</td><td class="mdescRight"><a class="el" href="classcub_1_1_block_load.html" title="BlockLoad provides configurable data movement operations for loading a tile of linear items into a bl...">BlockLoad</a> provides configurable data movement operations for loading a tile of linear items into a <a href="index.html#sec3sec3"><em>blocked arrangement</em></a> across a CUDA thread block. </p>
 <div class="image">
 <img src="block_load_logo.png" alt="block_load_logo.png"/>
 </div>
-<a class="el" href="classcub_1_1_block_load.html" title="BlockLoad provides cooperative data movement operations for loading a tile of data from memory into a...">BlockLoad</a> provides a tile-loading abstraction that implements alternative <a class="el" href="namespacecub.html#a9d7e37497fdd99864c57adecda710401" title="cub::BlockLoadAlgorithm enumerates alternative algorithms for cub::BlockLoad to load a tile of data f...">cub::BlockLoadAlgorithm</a> strategies that can be used to optimize data movement on different architectures for different granularity sizes (i.e., number of items per thread).  <a href="classcub_1_1_block_load.html#details">More...</a><br/></td></tr>
+The <a class="el" href="classcub_1_1_block_load.html" title="BlockLoad provides configurable data movement operations for loading a tile of linear items into a bl...">BlockLoad</a> abstraction can be configured to implement different <a class="el" href="namespacecub.html#a9d7e37497fdd99864c57adecda710401" title="cub::BlockLoadAlgorithm enumerates alternative algorithms for cub::BlockLoad to load a tile of data f...">cub::BlockLoadAlgorithm</a> strategies. It facilitates performance tuning by allowing the caller to specialize data movement strategies for different architectures, data types, granularity sizes, etc.  <a href="classcub_1_1_block_load.html#details">More...</a><br/></td></tr>
 <tr class="separator:"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:"><td class="memItemLeft" align="right" valign="top">class &#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classcub_1_1_block_radix_sort.html">cub::BlockRadixSort&lt; KeyType, BLOCK_THREADS, ITEMS_PER_THREAD, ValueType, RADIX_BITS, MEMOIZE_OUTER_SCAN, INNER_SCAN_ALGORITHM, SMEM_CONFIG &gt;</a></td></tr>
 <tr class="memdesc:"><td class="mdescLeft">&#160;</td><td class="mdescRight"><a class="el" href="classcub_1_1_block_radix_sort.html" title="BlockRadixSort provides variants of parallel radix sorting across a CUDA threadblock. .">BlockRadixSort</a> provides variants of parallel radix sorting across a CUDA threadblock. </p>
@@ -133,14 +133,6 @@ Classes</h2></td></tr>
 <div class="caption">
 .</div></div>
   <a href="classcub_1_1_block_radix_sort.html#details">More...</a><br/></td></tr>
-<tr class="separator:"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:"><td class="memItemLeft" align="right" valign="top">struct &#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="structcub_1_1_block_raking_layout.html">cub::BlockRakingLayout&lt; T, BLOCK_THREADS, BLOCK_STRIPS &gt;</a></td></tr>
-<tr class="memdesc:"><td class="mdescLeft">&#160;</td><td class="mdescRight"><a class="el" href="structcub_1_1_block_raking_layout.html" title="BlockRakingLayout provides a conflict-free shared memory layout abstraction for raking across thread ...">BlockRakingLayout</a> provides a conflict-free shared memory layout abstraction for raking across thread block data. </p>
-<div class="image">
-<img src="raking.png" alt="raking.png"/>
-<div class="caption">
-.</div></div>
-  <a href="structcub_1_1_block_raking_layout.html#details">More...</a><br/></td></tr>
 <tr class="separator:"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:"><td class="memItemLeft" align="right" valign="top">class &#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classcub_1_1_block_reduce.html">cub::BlockReduce&lt; T, BLOCK_THREADS, ALGORITHM &gt;</a></td></tr>
 <tr class="memdesc:"><td class="mdescLeft">&#160;</td><td class="mdescRight"><a class="el" href="classcub_1_1_block_reduce.html" title="BlockReduce provides variants of parallel reduction across a CUDA threadblock. .">BlockReduce</a> provides variants of parallel reduction across a CUDA threadblock. </p>
@@ -159,7 +151,7 @@ Classes</h2></td></tr>
   <a href="classcub_1_1_block_scan.html#details">More...</a><br/></td></tr>
 <tr class="separator:"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:"><td class="memItemLeft" align="right" valign="top">class &#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classcub_1_1_block_store.html">cub::BlockStore&lt; OutputIteratorRA, BLOCK_THREADS, ITEMS_PER_THREAD, ALGORITHM, MODIFIER, WARP_TIME_SLICING &gt;</a></td></tr>
-<tr class="memdesc:"><td class="mdescLeft">&#160;</td><td class="mdescRight"><a class="el" href="classcub_1_1_block_store.html" title="BlockStore provides data movement operations for storing a tile of data to memory from a block arrang...">BlockStore</a> provides data movement operations for storing a tile of data to memory from a <a href="index.html#sec3sec3"><em>block arrangement</em></a> across a CUDA thread block. </p>
+<tr class="memdesc:"><td class="mdescLeft">&#160;</td><td class="mdescRight"><a class="el" href="classcub_1_1_block_store.html" title="BlockStore provides configurable data movement operations for storing a tile of linear items to memor...">BlockStore</a> provides configurable data movement operations for storing a tile of linear items to memory from a <a href="index.html#sec3sec3"><em>blocked arrangement</em></a> across a CUDA thread block. </p>
 <div class="image">
 <img src="block_store_logo.png" alt="block_store_logo.png"/>
 <div class="caption">
@@ -171,7 +163,7 @@ Classes</h2></td></tr>
 <!-- HTML footer for doxygen 1.8.3.1-->
 <!-- start footer part -->
 <hr class="footer"/><address class="footer"><small>
-Generated on Tue May 28 2013 23:34:49 for CUB by &#160;<a href="http://www.doxygen.org/index.html">
+Generated on Sun Jun 30 2013 03:27:20 for CUB by &#160;<a href="http://www.doxygen.org/index.html">
 <img class="footer" src="doxygen.png" alt="doxygen"/>
 </a> 1.8.3.1
 <br>
