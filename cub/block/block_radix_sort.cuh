@@ -280,7 +280,7 @@ public:
 
     //@}  end member group
     /******************************************************************//**
-     * \name Sorting
+     * \name Sorting (blocked arrangements)
      *********************************************************************/
     //@{
 
@@ -385,6 +385,133 @@ public:
         }
     }
 
+
+    //@}  end member group
+    /******************************************************************//**
+     * \name Sorting (blocked arrangement -> striped arrangement)
+     *********************************************************************/
+    //@{
+
+
+    /**
+     * \brief Performs a radix sort across a [<em>blocked arrangement</em>](index.html#sec3sec3) of keys, leaving them in a [<em>striped arrangement</em>](index.html#sec3sec3).
+     *
+     * \smemreuse
+     */
+    __device__ __forceinline__ void SortBlockedToStriped(
+        KeyType             (&keys)[ITEMS_PER_THREAD],          ///< [in-out] Keys to sort
+        int                 begin_bit = 0,                      ///< [in] <b>[optional]</b> The beginning (least-significant) bit index needed for key comparison
+        int                 end_bit = sizeof(KeyType) * 8)      ///< [in] <b>[optional]</b> The past-the-end (most-significant) bit index needed for key comparison
+    {
+        UnsignedBits (&unsigned_keys)[ITEMS_PER_THREAD] =
+            reinterpret_cast<UnsignedBits (&)[ITEMS_PER_THREAD]>(keys);
+
+        // Twiddle bits if necessary
+        #pragma unroll
+        for (int KEY = 0; KEY < ITEMS_PER_THREAD; KEY++)
+        {
+            unsigned_keys[KEY] = KeyTraits::TwiddleIn(unsigned_keys[KEY]);
+        }
+
+        // Radix sorting passes
+        while (true)
+        {
+            // Rank the blocked keys
+            int ranks[ITEMS_PER_THREAD];
+            BlockRadixRank(temp_storage.ranking_storage, linear_tid).RankKeys(unsigned_keys, ranks, begin_bit);
+            begin_bit += RADIX_BITS;
+
+            __syncthreads();
+
+            // Check if this is the last pass
+            if (begin_bit >= end_bit)
+            {
+                // Last pass exchanges keys through shared memory in striped arrangement
+                BlockExchangeKeys(temp_storage.exchange_keys, linear_tid).ScatterToStriped(keys, ranks);
+
+                // Quit
+                break;
+            }
+
+            // Exchange keys through shared memory in blocked arrangement
+            BlockExchangeKeys(temp_storage.exchange_keys, linear_tid).ScatterToBlocked(keys, ranks);
+
+            __syncthreads();
+        }
+
+        // Untwiddle bits if necessary
+        #pragma unroll
+        for (int KEY = 0; KEY < ITEMS_PER_THREAD; KEY++)
+        {
+            unsigned_keys[KEY] = KeyTraits::TwiddleOut(unsigned_keys[KEY]);
+        }
+    }
+
+
+    /**
+     * \brief Performs a radix sort across a [<em>blocked arrangement</em>](index.html#sec3sec3) of keys and values, leaving them in a [<em>striped arrangement</em>](index.html#sec3sec3).
+     *
+     * \smemreuse
+     */
+    __device__ __forceinline__ void SortBlockedToStriped(
+        KeyType             (&keys)[ITEMS_PER_THREAD],          ///< [in-out] Keys to sort
+        ValueType           (&values)[ITEMS_PER_THREAD],        ///< [in-out] Values to sort
+        int                 begin_bit = 0,                      ///< [in] <b>[optional]</b> The beginning (least-significant) bit index needed for key comparison
+        int                 end_bit = sizeof(KeyType) * 8)      ///< [in] <b>[optional]</b> The past-the-end (most-significant) bit index needed for key comparison
+    {
+        UnsignedBits (&unsigned_keys)[ITEMS_PER_THREAD] =
+            reinterpret_cast<UnsignedBits (&)[ITEMS_PER_THREAD]>(keys);
+
+        // Twiddle bits if necessary
+        #pragma unroll
+        for (int KEY = 0; KEY < ITEMS_PER_THREAD; KEY++)
+        {
+            unsigned_keys[KEY] = KeyTraits::TwiddleIn(unsigned_keys[KEY]);
+        }
+
+        // Radix sorting passes
+        while (true)
+        {
+            // Rank the blocked keys
+            int ranks[ITEMS_PER_THREAD];
+            BlockRadixRank(temp_storage.ranking_storage, linear_tid).RankKeys(unsigned_keys, ranks, begin_bit);
+            begin_bit += RADIX_BITS;
+
+            __syncthreads();
+
+            // Check if this is the last pass
+            if (begin_bit >= end_bit)
+            {
+                // Last pass exchanges keys through shared memory in striped arrangement
+                BlockExchangeKeys(temp_storage.exchange_keys, linear_tid).ScatterToStriped(keys, ranks);
+
+                __syncthreads();
+
+                // Last pass exchanges through shared memory in striped arrangement
+                BlockExchangeValues(temp_storage.exchange_values, linear_tid).ScatterToStriped(values, ranks);
+
+                // Quit
+                break;
+            }
+
+            // Exchange keys through shared memory in blocked arrangement
+            BlockExchangeKeys(temp_storage.exchange_keys, linear_tid).ScatterToBlocked(keys, ranks);
+
+            __syncthreads();
+
+            // Exchange values through shared memory in blocked arrangement
+            BlockExchangeValues(temp_storage.exchange_values, linear_tid).ScatterToBlocked(values, ranks);
+
+            __syncthreads();
+        }
+
+        // Untwiddle bits if necessary
+        #pragma unroll
+        for (int KEY = 0; KEY < ITEMS_PER_THREAD; KEY++)
+        {
+            unsigned_keys[KEY] = KeyTraits::TwiddleOut(unsigned_keys[KEY]);
+        }
+    }
 
 
     //@}  end member group

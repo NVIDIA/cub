@@ -59,17 +59,17 @@ enum
     DEVICE_SCAN_TILE_PREFIX,       // Inclusive tile prefix is available
 };
 
-
 /**
- * Data type of tile status word.  Specialized for scan types that can be
- * combined with a status flag to form a single word that can be singly
- * read/written (i.e., T can be a power-of-two-sized type less than or
- * equal to 8B that can be fused with a status variable to make a single word
- * less than or equal to 16B).
+ * Data type of tile status word.
+ *
+ * Specialized for scan status and value types that can be combined into the same
+ * machine word that can be read/written coherently in a single access.
  */
 template <
     typename T,
-    bool SINGLE_WORD = (((sizeof(T) & (sizeof(T)  - 1)) == 0) && sizeof(T) <= 8)>
+    bool SINGLE_WORD =
+        ((sizeof(T) & (sizeof(T)  - 1)) == 0) &&        // T is a power-of-two
+        (sizeof(T) <= 8)>                               // T is less than 16B (16B total is the max word size)
 struct DeviceScanTileStatus
 {
     T                                       value;
@@ -99,7 +99,6 @@ struct DeviceScanTileStatus
         DeviceScanTileStatus tile_status;
         while (true)
         {
-
             tile_status = ThreadLoad<LOAD_CG>(ptr);
             if (tile_status.status != DEVICE_SCAN_TILE_INVALID) break;
         }
@@ -112,9 +111,10 @@ struct DeviceScanTileStatus
 
 
 /**
- * Data type of tile status word.  Specialized for scan types that cannot be
- * combined with a status flag to form a single word that can be singly read/written
- * (i.e., non-power-of-two-sized data or data greater than 8B).
+ * Data type of tile status word.
+ *
+ * Specialized for scan status and value types that cannot fused into
+ * the same machine word.
  */
 template <typename T>
 struct DeviceScanTileStatus<T, false>
@@ -148,10 +148,9 @@ struct DeviceScanTileStatus<T, false>
             if (status != DEVICE_SCAN_TILE_INVALID) break;
         }
 
-        T partial   = ThreadLoad<LOAD_CG>(&ptr->partial_value);
-        T prefix    = ThreadLoad<LOAD_CG>(&ptr->prefix_value);
-
-        value = (status == DEVICE_SCAN_TILE_PARTIAL) ? partial : prefix;
+        value = (status == DEVICE_SCAN_TILE_PARTIAL) ?
+            ThreadLoad<LOAD_CG>(&ptr->partial_value) :
+            ThreadLoad<LOAD_CG>(&ptr->prefix_value);
     }
 };
 

@@ -44,7 +44,8 @@ using namespace cub;
 // Globals, constants and typedefs
 //---------------------------------------------------------------------
 
-bool g_verbose = false;
+bool                    g_verbose = false;
+CachingDeviceAllocator  g_allocator;
 
 
 //---------------------------------------------------------------------
@@ -52,71 +53,53 @@ bool g_verbose = false;
 //---------------------------------------------------------------------
 
 
-/**
- * Generic reduction
- */
-template <
-    typename    T,
-    typename    ReductionOp,
-    bool        PRIMITIVE = Traits<T>::PRIMITIVE>
-struct DeviceTest
+/// Generic reduction (full, 1)
+template <typename BlockReduce, typename T, typename ReductionOp>
+__device__ __forceinline__ T DeviceTest(
+    typename BlockReduce::TempStorage &temp_storage, T (&data)[1], ReductionOp &reduction_op)
 {
-    template <
-        typename    BlockReduce,
-        int         ITEMS_PER_THREAD>
-    static __device__ __forceinline__ T Test(
-        typename BlockReduce::TempStorage   &temp_storage,
-        T                                   (&data)[ITEMS_PER_THREAD],
-        ReductionOp                         &reduction_op)
-    {
-        if (ITEMS_PER_THREAD == 1)
-            return BlockReduce(temp_storage).Reduce(data[0], reduction_op);
-        else
-            return BlockReduce(temp_storage).Reduce(data, reduction_op);
-    }
+    return BlockReduce(temp_storage).Reduce(data[0], reduction_op);
+}
 
-    template < typename BlockReduce>
-    static __device__ __forceinline__ T Test(
-        typename BlockReduce::TempStorage   &temp_storage,
-        T                                   &data,
-        ReductionOp                         &reduction_op,
-        int                                 valid_threads)
-    {
-        return BlockReduce(temp_storage).Reduce(data, reduction_op, valid_threads);
-    }
-};
-
-
-/**
- * Sum reduction (only compile for primitive, built-ins only)
- */
-template <typename T>
-struct DeviceTest<T, Sum, true>
+/// Generic reduction (full, ITEMS_PER_THREAD)
+template <typename BlockReduce, typename T, int ITEMS_PER_THREAD, typename ReductionOp>
+__device__ __forceinline__ T DeviceTest(
+    typename BlockReduce::TempStorage &temp_storage, T (&data)[ITEMS_PER_THREAD], ReductionOp &reduction_op)
 {
-    template <
-        typename    BlockReduce,
-        int         ITEMS_PER_THREAD>
-    static __device__ __forceinline__ T Test(
-        typename BlockReduce::TempStorage   &temp_storage,
-        T                                   (&data)[ITEMS_PER_THREAD],
-        Sum                              &reduction_op)
-    {
-        if (ITEMS_PER_THREAD == 1)
-            return BlockReduce(temp_storage).Sum(data[0]);
-        else
-            return BlockReduce(temp_storage).Sum(data);
-    }
+    return BlockReduce(temp_storage).Reduce(data, reduction_op);
+}
 
-    template <typename BlockReduce>
-    static __device__ __forceinline__ T Test(
-        typename BlockReduce::TempStorage   &temp_storage,
-        T                                   &data,
-        Sum                              &reduction_op,
-        int                                 valid_threads)
-    {
-        return BlockReduce(temp_storage).Sum(data, valid_threads);
-    }
-};
+/// Generic reduction (partial, 1)
+template <typename BlockReduce, typename T, typename ReductionOp>
+__device__ __forceinline__ T DeviceTest(
+    typename BlockReduce::TempStorage &temp_storage, T &data, ReductionOp &reduction_op, int valid_threads)
+{
+    return BlockReduce(temp_storage).Reduce(data, reduction_op, valid_threads);
+}
+
+/// Sum reduction (full, 1)
+template <typename BlockReduce, typename T>
+__device__ __forceinline__ T DeviceTest(
+    typename BlockReduce::TempStorage &temp_storage, T (&data)[1], Sum &reduction_op)
+{
+    return BlockReduce(temp_storage).Sum(data[0]);
+}
+
+/// Sum reduction (full, ITEMS_PER_THREAD)
+template <typename BlockReduce, typename T, int ITEMS_PER_THREAD>
+__device__ __forceinline__ T DeviceTest(
+    typename BlockReduce::TempStorage &temp_storage, T (&data)[ITEMS_PER_THREAD], Sum &reduction_op)
+{
+    return BlockReduce(temp_storage).Sum(data);
+}
+
+/// Sum reduction (partial, 1)
+template <typename BlockReduce, typename T>
+__device__ __forceinline__ T DeviceTest(
+    typename BlockReduce::TempStorage &temp_storage, T &data, Sum &reduction_op, int valid_threads)
+{
+    return BlockReduce(temp_storage).Sum(data, valid_threads);
+}
 
 
 /**
@@ -153,7 +136,7 @@ __global__ void FullTileReduceKernel(
     block_offset += TILE_SIZE;
 
     // Cooperative reduce first tile
-    T block_aggregate = DeviceTest<T, ReductionOp>::template Test<BlockReduce>(temp_storage, data, reduction_op);
+    T block_aggregate = DeviceTest<BlockReduce>(temp_storage, data, reduction_op);
 
     // Loop over input tiles
     while (block_offset < TILE_SIZE * tiles)
@@ -166,7 +149,7 @@ __global__ void FullTileReduceKernel(
         block_offset += TILE_SIZE;
 
         // Cooperatively reduce the tile's aggregate
-        T tile_aggregate = DeviceTest<T, ReductionOp>::template Test<BlockReduce>(temp_storage, data, reduction_op);
+        T tile_aggregate = DeviceTest<BlockReduce>(temp_storage, data, reduction_op);
 
         // Reduce threadblock aggregate
         block_aggregate = reduction_op(block_aggregate, tile_aggregate);
@@ -212,7 +195,7 @@ __global__ void PartialTileReduceKernel(
     }
 
     // Cooperatively reduce the tile's aggregate
-    T tile_aggregate = DeviceTest<T, ReductionOp>::template Test<BlockReduce>(temp_storage, partial, reduction_op, num_elements);
+    T tile_aggregate = DeviceTest<BlockReduce>(temp_storage, partial, reduction_op, num_elements);
 
     // Store data
     if (threadIdx.x == 0)
@@ -230,14 +213,14 @@ __global__ void PartialTileReduceKernel(
  * Initialize problem (and solution)
  */
 template <
-    typename        T,
-    typename        ReductionOp>
+    typename    T,
+    typename    ReductionOp>
 void Initialize(
-    int             gen_mode,
-    T               *h_in,
-    T               h_reference[1],
-    ReductionOp     reduction_op,
-    int             num_elements)
+    GenMode     gen_mode,
+    T           *h_in,
+    T           h_reference[1],
+    ReductionOp reduction_op,
+    int         num_elements)
 {
     for (int i = 0; i < num_elements; ++i)
     {
@@ -265,7 +248,7 @@ template <
     typename                T,
     typename                ReductionOp>
 void TestFullTile(
-    int                     gen_mode,
+    GenMode                 gen_mode,
     int                     tiles,
     ReductionOp             reduction_op,
     char                    *type_string)
@@ -284,8 +267,8 @@ void TestFullTile(
     // Initialize device arrays
     T *d_in = NULL;
     T *d_out = NULL;
-    CubDebugExit(DeviceAllocate((void**)&d_in, sizeof(T) * num_elements));
-    CubDebugExit(DeviceAllocate((void**)&d_out, sizeof(T) * 1));
+    CubDebugExit(g_allocator.DeviceAllocate((void**)&d_in, sizeof(T) * num_elements));
+    CubDebugExit(g_allocator.DeviceAllocate((void**)&d_out, sizeof(T) * 1));
     CubDebugExit(cudaMemcpy(d_in, h_in, sizeof(T) * num_elements, cudaMemcpyHostToDevice));
     CubDebugExit(cudaMemset(d_out, 0, sizeof(T) * 1));
 
@@ -316,8 +299,8 @@ void TestFullTile(
 
     // Cleanup
     if (h_in) delete[] h_in;
-    if (d_in) CubDebugExit(DeviceFree(d_in));
-    if (d_out) CubDebugExit(DeviceFree(d_out));
+    if (d_in) CubDebugExit(g_allocator.DeviceFree(d_in));
+    if (d_out) CubDebugExit(g_allocator.DeviceFree(d_out));
 }
 
 /**
@@ -329,7 +312,7 @@ template <
     typename                T,
     typename                ReductionOp>
 void TestFullTile(
-    int                     gen_mode,
+    GenMode                 gen_mode,
     int                     tiles,
     ReductionOp             reduction_op,
     char                    *type_string)
@@ -348,7 +331,7 @@ template <
     typename                T,
     typename                ReductionOp>
 void TestFullTile(
-    int                     gen_mode,
+    GenMode                 gen_mode,
     ReductionOp             reduction_op,
     char                    *type_string)
 {
@@ -372,7 +355,7 @@ template <
     typename                T,
     typename                ReductionOp>
 void TestPartialTile(
-    int                     gen_mode,
+    GenMode                 gen_mode,
     int                     num_elements,
     ReductionOp             reduction_op,
     char                    *type_string)
@@ -389,8 +372,8 @@ void TestPartialTile(
     // Initialize device arrays
     T *d_in = NULL;
     T *d_out = NULL;
-    CubDebugExit(DeviceAllocate((void**)&d_in, sizeof(T) * TILE_SIZE));
-    CubDebugExit(DeviceAllocate((void**)&d_out, sizeof(T) * 1));
+    CubDebugExit(g_allocator.DeviceAllocate((void**)&d_in, sizeof(T) * TILE_SIZE));
+    CubDebugExit(g_allocator.DeviceAllocate((void**)&d_out, sizeof(T) * 1));
     CubDebugExit(cudaMemcpy(d_in, h_in, sizeof(T) * num_elements, cudaMemcpyHostToDevice));
     CubDebugExit(cudaMemset(d_out, 0, sizeof(T) * 1));
 
@@ -418,8 +401,8 @@ void TestPartialTile(
 
     // Cleanup
     if (h_in) delete[] h_in;
-    if (d_in) CubDebugExit(DeviceFree(d_in));
-    if (d_out) CubDebugExit(DeviceFree(d_out));
+    if (d_in) CubDebugExit(g_allocator.DeviceFree(d_in));
+    if (d_out) CubDebugExit(g_allocator.DeviceFree(d_out));
 }
 
 
@@ -432,7 +415,7 @@ template <
     typename                T,
     typename                ReductionOp>
 void TestPartialTile(
-    int                     gen_mode,
+    GenMode                 gen_mode,
     ReductionOp             reduction_op,
     char                    *type_string)
 {
@@ -515,7 +498,7 @@ template <typename T>
 void Test(char* type_string)
 {
     Test<T>(Sum(), type_string);
-    Test<T>(Max<T>(), type_string);
+    Test<T>(Max(), type_string);
 }
 
 

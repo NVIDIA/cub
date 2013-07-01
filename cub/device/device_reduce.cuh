@@ -367,7 +367,7 @@ struct DeviceReduce
         OutputIteratorRA            d_out,                              ///< [out] Output location for result
         SizeT                       num_items,                          ///< [in] Number of items to reduce
         ReductionOp                 reduction_op,                       ///< [in] Binary reduction operator
-        cudaStream_t                stream              = 0,            ///< [in] <b>[optional]</b> CUDA stream to launch kernels within.  Default is stream-0.
+        cudaStream_t                stream              = 0,            ///< [in] <b>[optional]</b> CUDA stream to launch kernels within.  Default is stream<sub>0</sub>.
         bool                        stream_synchronous  = false)        ///< [in] <b>[optional]</b> Whether or not to synchronize the stream after every kernel launch to check for errors.  Default is \p false.
     {
 #ifndef CUB_RUNTIME_ENABLED
@@ -437,7 +437,7 @@ struct DeviceReduce
         OutputIteratorRA            d_out,                              ///< [out] Output location for result
         SizeT                       num_items,                          ///< [in] Number of items to reduce
         ReductionOp                 reduction_op,                       ///< [in] Binary reduction operator
-        cudaStream_t                stream              = 0,            ///< [in] <b>[optional]</b> CUDA stream to launch kernels within.  Default is stream-0.
+        cudaStream_t                stream              = 0,            ///< [in] <b>[optional]</b> CUDA stream to launch kernels within.  Default is stream<sub>0</sub>.
         bool                        stream_synchronous  = false)        ///< [in] <b>[optional]</b> Whether or not to synchronize the stream after every kernel launch to check for errors.  Default is \p false.
     {
 #ifndef CUB_RUNTIME_ENABLED
@@ -522,11 +522,11 @@ struct DeviceReduce
             if (d_temp_storage == NULL)
                 return cudaSuccess;
 
-            // Grid queue descriptor
-            GridQueue<SizeT> queue(allocations[0]);
-
             // Privatized per-block reductions
-            T *d_block_reductions = (T*) allocations[1];
+            T *d_block_reductions = (T*) allocations[0];
+
+            // Grid queue descriptor
+            GridQueue<SizeT> queue(allocations[1]);
 
             // Return if the caller is simply requesting the size of the storage allocation
             if (d_temp_storage == NULL)
@@ -618,7 +618,7 @@ struct DeviceReduce
         OutputIteratorRA            d_out,                              ///< [out] Output location for result
         SizeT                       num_items,                          ///< [in] Number of items to reduce
         ReductionOp                 reduction_op,                       ///< [in] Binary reduction operator
-        cudaStream_t                stream              = 0,            ///< [in] <b>[optional]</b> CUDA stream to launch kernels within.  Default is stream-0.
+        cudaStream_t                stream              = 0,            ///< [in] <b>[optional]</b> CUDA stream to launch kernels within.  Default is stream<sub>0</sub>.
         bool                        stream_synchronous  = false)        ///< [in] <b>[optional]</b> Whether or not to synchronize the stream after every kernel launch to check for errors.  Default is \p false.
     {
         if (num_items > (single_block_dispatch_params.tile_size))
@@ -680,7 +680,7 @@ struct DeviceReduce
         InputIteratorRA             d_in,                               ///< [in] Input data to reduce
         OutputIteratorRA            d_out,                              ///< [out] Output location for result
         int                         num_items,                          ///< [in] Number of items to reduce
-        cudaStream_t                stream              = 0,            ///< [in] <b>[optional]</b> CUDA stream to launch kernels within.  Default is stream-0.
+        cudaStream_t                stream              = 0,            ///< [in] <b>[optional]</b> CUDA stream to launch kernels within.  Default is stream<sub>0</sub>.
         bool                        stream_synchronous  = false)        ///< [in] <b>[optional]</b> Whether or not to synchronize the stream after every kernel launch to check for errors.  Default is \p false.
     {
         return Reduce(d_temp_storage, temp_storage_bytes, d_in, d_out, num_items, cub::Sum(), stream, stream_synchronous);
@@ -708,7 +708,7 @@ struct DeviceReduce
         OutputIteratorRA            d_out,                              ///< [out] Output location for result
         int                         num_items,                          ///< [in] Number of items to reduce
         ReductionOp                 reduction_op,                       ///< [in] Binary reduction operator
-        cudaStream_t                stream              = 0,            ///< [in] <b>[optional]</b> CUDA stream to launch kernels within.  Default is stream-0.
+        cudaStream_t                stream              = 0,            ///< [in] <b>[optional]</b> CUDA stream to launch kernels within.  Default is stream<sub>0</sub>.
         bool                        stream_synchronous  = false)        ///< [in] <b>[optional]</b> Whether or not to synchronize the stream after every kernel launch to check for errors.  Default is \p false.
     {
         // Type used for array indexing

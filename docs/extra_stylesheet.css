@@ -85,9 +85,9 @@ div.headertitle {
 
 div.title {
 		color: #2B4068;
-		padding-top: 16px;
-		padding-bottom: 16px;
-		font: bold 120% "courier new",courier,monospace;
+		padding-top: 8px;
+		padding-bottom: 8px;
+		font: bold 115% "courier new",courier,monospace;
 		padding-left: 40px;
 		text-indent: -40px;
 }
@@ -214,17 +214,25 @@ p.startli, p.startdd, p.starttd {
 }
 
 .memproto, dl.reflist dt {
+		padding-top: 20px;
+		border-top: 1px solid #999;
+		border-left: 1px solid #999;
+		border-right: 1px solid #999;
 		background-image: none;
 		background-color: white;
 		text-shadow: none;
-		box-shadow: 3px 3px 3px rgba(0, 0, 0, 0.1);
-		-webkit-box-shadow: 3px 3px 3px rgba(0, 0, 0, 0.1);
+		box-shadow: 3px 3px 30px rgba(0, 0, 0, 0.1);
+		-webkit-box-shadow: 3px 3px 30px rgba(0, 0, 0, 0.1);
 }
 
 div.memdoc {
+		padding-bottom: 20px;
+		border-bottom: 1px solid #999;
+		border-left: 1px solid #999;
+		border-right: 1px solid #999;
 		background-image: none;
 		color: #666;
-		box-shadow: 3px 3px 3px rgba(0, 0, 0, 0.1);
+		box-shadow: 3px 3px 30px rgba(0, 0, 0, 0.1);
 }
 
 div.memdoc p {
@@ -246,8 +254,6 @@ div.toc {
 div.textblock h3 {
 		font: 11px/16px "courier new",courier,monospace;		
 		color: cadetblue;
-		padding-left: 40px;
-		text-indent: -40px;
 		white-space: pre-wrap
 }
 
@@ -360,8 +366,8 @@ dl.tparams, dl.params {
 }
 
 div.memitem {
-		margin-bottom: 30px;
-		margin-top: 30px;
+		margin-bottom: 40px;
+		margin-top: 40px;
 }
 
 .memTemplParams, td.memTemplItemLeft, td.memItemLeft {

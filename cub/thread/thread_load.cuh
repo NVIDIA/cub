@@ -148,15 +148,6 @@ struct ThreadLoadHelper
     template <PtxLoadModifier MODIFIER>
     static __device__ __forceinline__ T Load(InputIteratorRA itr);
 
-#if (CUB_PTX_ARCH <= 130)
-    template <>
-    static __device__ __forceinline__ T Load<LOAD_CG>(InputIteratorRA itr)
-    {
-        // Straightforward dereference
-        return *itr;
-    }
-#endif
-
     template <>
     static __device__ __forceinline__ T Load<LOAD_DEFAULT>(InputIteratorRA itr)
     {
@@ -193,32 +184,58 @@ struct ThreadLoadHelper<T*>
     template <>
     static __device__ __forceinline__ T Load<LOAD_CG>(T *ptr)
     {
-        // Straightforward dereference
-        return *ptr;
+        // Load volatile to ensure coherent reads when run on newer architectures with L1
+        return Load<LOAD_VOLATILE>(ptr);
     }
 #endif
 
-
-    template <>
-    static __device__ __forceinline__ T Load<LOAD_VOLATILE>(T *ptr)
+    template <bool PRIMITIVE>
+    static __device__ __forceinline__ T LoadVolatile(T *ptr)
     {
-        T retval;
-
-#if (CUB_PTX_ARCH <= 130)
-        retval = *ptr;
-        __threadfence_block();
-#else
         typedef typename WordAlignment<T>::VolatileAlignWord VolatileAlignWord;
+
         const int VOLATILE_ALIGN_UNROLL = sizeof(T) / sizeof(VolatileAlignWord);
 
-        VolatileAlignWord *alias                = reinterpret_cast<VolatileAlignWord*>(&retval);
-        volatile VolatileAlignWord *alias_ptr   = reinterpret_cast<volatile VolatileAlignWord*>(ptr);
+        volatile VolatileAlignWord *alias_ptr = reinterpret_cast<VolatileAlignWord*>(ptr);
+
+#if (CUB_PTX_ARCH <= 130)
+
+        VolatileAlignWord temp[VOLATILE_ALIGN_UNROLL];
+
+        #pragma unroll
+        for (int i = 0; i < VOLATILE_ALIGN_UNROLL; ++i)
+            temp[i] = alias_ptr[i];
+
+        return reinterpret_cast<T&>(temp);
+
+#else
+        T retval;
+        VolatileAlignWord *alias = reinterpret_cast<VolatileAlignWord*>(&retval);
 
         #pragma unroll
         for (int i = 0; i < VOLATILE_ALIGN_UNROLL; ++i)
             alias[i] = alias_ptr[i];
+
+        return retval;
+#endif
+
+    }
+
+    template <>
+    static __device__ __forceinline__ T LoadVolatile<true>(T *ptr)
+    {
+        volatile T *alias_ptr = ptr;
+        T retval = *alias_ptr;
+#if (CUB_PTX_ARCH <= 130)
+        __threadfence_block();
 #endif
         return retval;
+    }
+
+    template <>
+    static __device__ __forceinline__ T Load<LOAD_VOLATILE>(T *ptr)
+    {
+        return LoadVolatile<Traits<T>::PRIMITIVE>(ptr);
     }
 
     template <>

@@ -297,14 +297,14 @@ bin/test_device_reduce_$(SUFFIX) : test_device_reduce.cu $(DEPS)
 
 
 #-------------------------------------------------------------------------------
-# make test_device_histo_256
+# make test_device_histo
 #-------------------------------------------------------------------------------
 
-test_device_histo_256: bin/test_device_histo_256_$(SUFFIX)
+test_device_histo: bin/test_device_histo_$(SUFFIX)
 
-bin/test_device_histo_256_$(SUFFIX) : test_device_histo_256.cu $(DEPS)
+bin/test_device_histo_$(SUFFIX) : test_device_histo.cu $(DEPS)
 	mkdir -p bin
-	$(NVCC) $(DEFINES) $(SM_TARGETS) -o bin/test_device_histo_256_$(SUFFIX) test_device_histo_256.cu $(NVCCFLAGS) $(CPU_ARCH) $(INC) -O3
+	$(NVCC) $(DEFINES) $(SM_TARGETS) -o bin/test_device_histo_$(SUFFIX) test_device_histo.cu $(NVCCFLAGS) $(CPU_ARCH) $(INC) -O3
 
 
 #-------------------------------------------------------------------------------
