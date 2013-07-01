@@ -181,12 +181,12 @@ struct DeviceHisto
         // Policy fields
         int                         block_threads;
         int                         items_per_thread;
-        BlockSweepHistoAlgorithm  block_algorithm;
+        BlockSweepHistoAlgorithm    block_algorithm;
         GridMappingStrategy         grid_mapping;
         int                         subscription_factor;
 
         // Derived fields
-        int                         tile_size;
+        int                         channel_tile_size;
 
         template <typename BlockSweepHistoPolicy>
         __host__ __device__ __forceinline__
@@ -198,7 +198,7 @@ struct DeviceHisto
             grid_mapping                = BlockSweepHistoPolicy::GRID_MAPPING;
             this->subscription_factor   = subscription_factor;
 
-            tile_size                   = block_threads * items_per_thread;
+            channel_tile_size           = block_threads * items_per_thread;
         }
 
         __host__ __device__ __forceinline__
@@ -361,7 +361,7 @@ struct DeviceHisto
         InputIteratorRA             d_samples,                          ///< [in] Input samples to histogram
         HistoCounter                *(&d_histograms)[ACTIVE_CHANNELS],  ///< [out] Array of channel histograms, each having BINS counters of integral type \p HistoCounter.
         SizeT                       num_samples,                        ///< [in] Number of samples to process
-        cudaStream_t                stream              = 0,            ///< [in] <b>[optional]</b> CUDA stream to launch kernels within.  Default is stream-0.
+        cudaStream_t                stream              = 0,            ///< [in] <b>[optional]</b> CUDA stream to launch kernels within.  Default is stream<sub>0</sub>.
         bool                        stream_synchronous  = false)        ///< [in] <b>[optional]</b> Whether or not to synchronize the stream after every kernel launch to check for errors.  Default is \p false.
     {
 #ifndef CUB_RUNTIME_ENABLED
@@ -404,6 +404,9 @@ struct DeviceHisto
             // Even-share work distribution
             GridEvenShare<SizeT> even_share;
 
+            // Get tile size for multi_block_kernel
+            int multi_block_tile_size = multi_block_dispatch_params.channel_tile_size * CHANNELS;
+
             // Get grid size for multi_block_kernel
             int multi_block_grid_size;
             switch (multi_block_dispatch_params.grid_mapping)
@@ -414,14 +417,14 @@ struct DeviceHisto
                 even_share.GridInit(
                     num_samples,
                     multi_block_occupancy * multi_block_dispatch_params.subscription_factor,
-                    multi_block_dispatch_params.tile_size);
+                    multi_block_tile_size);
                 multi_block_grid_size = even_share.grid_size;
                 break;
 
             case GRID_MAPPING_DYNAMIC:
 
                 // Work is distributed dynamically
-                int num_tiles           = (num_samples + multi_block_dispatch_params.tile_size - 1) / multi_block_dispatch_params.tile_size;
+                int num_tiles           = (num_samples + multi_block_tile_size - 1) / multi_block_tile_size;
                 multi_block_grid_size   = (num_tiles < multi_block_occupancy) ?
                     num_tiles :                 // Not enough to fill the device with threadblocks
                     multi_block_occupancy;      // Fill the device with threadblocks
@@ -442,11 +445,11 @@ struct DeviceHisto
             if (d_temp_storage == NULL)
                 return cudaSuccess;
 
-            // Grid queue descriptor
-            GridQueue<SizeT> queue(allocations[0]);
-
             // Privatized per-block reductions
-            HistoCounter *d_block_histograms = (HistoCounter*) allocations[1];
+            HistoCounter *d_block_histograms = (HistoCounter*) allocations[0];
+
+            // Grid queue descriptor
+            GridQueue<SizeT> queue(allocations[1]);
 
             // Setup array wrapper for histogram channel output (because we can't pass static arrays as kernel parameters)
             ArrayWrapper<HistoCounter*, ACTIVE_CHANNELS> d_histo_wrapper;
@@ -476,8 +479,8 @@ struct DeviceHisto
             if (CubDebug(error = BindIteratorTexture(d_samples))) break;
 #endif
 
-            // Whether the multi-block output goes directly into the results or into the temporary
-            bool privatized_temporaries = (multi_block_grid_size == 1) || (multi_block_dispatch_params.block_algorithm == GRID_HISTO_GLOBAL_ATOMIC);
+            // Whether we need privatized histograms (i.e., non-global atomics and multi-block)
+            bool privatized_temporaries = (multi_block_grid_size > 1) && (multi_block_dispatch_params.block_algorithm != GRID_HISTO_GLOBAL_ATOMIC);
 
             // Log multi_block_kernel configuration
             if (stream_synchronous) CubLog("Invoking multi_block_kernel<<<%d, %d, 0, %lld>>>(), %d items per thread, %d SM occupancy\n",
@@ -556,7 +559,7 @@ struct DeviceHisto
         InputIteratorRA     d_samples,                          ///< [in] Input samples to histogram
         HistoCounter        *(&d_histograms)[ACTIVE_CHANNELS],  ///< [out] Array of channel histograms, each having BINS counters of integral type \p HistoCounter.
         int                 num_samples,                        ///< [in] Number of samples to process
-        cudaStream_t        stream              = 0,            ///< [in] <b>[optional]</b> CUDA stream to launch kernels within.  Default is stream-0.
+        cudaStream_t        stream              = 0,            ///< [in] <b>[optional]</b> CUDA stream to launch kernels within.  Default is stream<sub>0</sub>.
         bool                stream_synchronous  = false)        ///< [in] <b>[optional]</b> Whether or not to synchronize the stream after every kernel launch to check for errors.  Default is \p false.
     {
         // Type used for array indexing
@@ -586,7 +589,7 @@ struct DeviceHisto
 
         #endif
 
-            Dispatch<CHANNELS, ACTIVE_CHANNELS>(
+            Dispatch<BINS, CHANNELS, ACTIVE_CHANNELS>(
                 d_temp_storage,
                 temp_storage_bytes,
                 InitHistoKernel<BINS, ACTIVE_CHANNELS, SizeT, HistoCounter>,
@@ -623,7 +626,7 @@ struct DeviceHisto
      * \devicestorage
      *
      * \tparam BINS                 Number of histogram bins per channel
-     * \tparam InputIteratorRA      <b>[inferred]</b> The random-access iterator type for input (may be a simple pointer type).  Must have a value type that is assignable to <tt>unsigned char</tt>
+     * \tparam InputIteratorRA      <b>[inferred]</b> The random-access iterator type for input (may be a simple pointer type).  Must have a value type that can be cast as an integer in the range [0..BINS-1]
      * \tparam HistoCounter         <b>[inferred]</b> Integral type for counting sample occurrences per histogram bin
      */
     template <
@@ -637,11 +640,11 @@ struct DeviceHisto
         InputIteratorRA     d_samples,                          ///< [in] Input samples
         HistoCounter*       d_histogram,                        ///< [out] Array of BINS counters of integral type \p HistoCounter.
         int                 num_samples,                        ///< [in] Number of samples to process
-        cudaStream_t        stream              = 0,            ///< [in] <b>[optional]</b> CUDA stream to launch kernels within.  Default is stream-0.
+        cudaStream_t        stream              = 0,            ///< [in] <b>[optional]</b> CUDA stream to launch kernels within.  Default is stream<sub>0</sub>.
         bool                stream_synchronous  = false)        ///< [in] <b>[optional]</b> Whether or not to synchronize the stream after every kernel launch to check for errors.  Default is \p false.
     {
         return Dispatch<GRID_HISTO_SORT, BINS, 1, 1>(
-            d_samples, &d_histogram, num_samples, stream, stream_synchronous);
+            d_temp_storage, temp_storage_bytes, d_samples, &d_histogram, num_samples, stream, stream_synchronous);
     }
 
     /**
@@ -652,7 +655,7 @@ struct DeviceHisto
      * \devicestorage
      *
      * \tparam BINS                 Number of histogram bins per channel
-     * \tparam InputIteratorRA      <b>[inferred]</b> The random-access iterator type for input (may be a simple pointer type).  Must have a value type that is assignable to <tt>unsigned char</tt>
+     * \tparam InputIteratorRA      <b>[inferred]</b> The random-access iterator type for input (may be a simple pointer type).  Must have a value type that can be cast as an integer in the range [0..BINS-1]
      * \tparam HistoCounter         <b>[inferred]</b> Integral type for counting sample occurrences per histogram bin
      */
     template <
@@ -666,11 +669,11 @@ struct DeviceHisto
         InputIteratorRA     d_samples,                          ///< [in] Input samples
         HistoCounter*       d_histogram,                        ///< [out] Array of BINS counters of integral type \p HistoCounter.
         int                 num_samples,                        ///< [in] Number of samples to process
-        cudaStream_t        stream              = 0,            ///< [in] <b>[optional]</b> CUDA stream to launch kernels within.  Default is stream-0.
+        cudaStream_t        stream              = 0,            ///< [in] <b>[optional]</b> CUDA stream to launch kernels within.  Default is stream<sub>0</sub>.
         bool                stream_synchronous  = false)        ///< [in] <b>[optional]</b> Whether or not to synchronize the stream after every kernel launch to check for errors.  May cause significant slowdown.  Default is \p false.
     {
         return Dispatch<GRID_HISTO_SHARED_ATOMIC, BINS, 1, 1>(
-            d_samples, &d_histogram, num_samples, stream, stream_synchronous);
+            d_temp_storage, temp_storage_bytes, d_samples, &d_histogram, num_samples, stream, stream_synchronous);
     }
 
 
@@ -682,7 +685,7 @@ struct DeviceHisto
      * \devicestorage
      *
      * \tparam BINS                 Number of histogram bins per channel
-     * \tparam InputIteratorRA      <b>[inferred]</b> The random-access iterator type for input (may be a simple pointer type).  Must have a value type that is assignable to <tt>unsigned char</tt>
+     * \tparam InputIteratorRA      <b>[inferred]</b> The random-access iterator type for input (may be a simple pointer type).  Must have a value type that can be cast as an integer in the range [0..BINS-1]
      * \tparam HistoCounter         <b>[inferred]</b> Integral type for counting sample occurrences per histogram bin
      */
     template <
@@ -696,11 +699,11 @@ struct DeviceHisto
         InputIteratorRA     d_samples,                          ///< [in] Input samples
         HistoCounter*       d_histogram,                        ///< [out] Array of BINS counters of integral type \p HistoCounter.
         int                 num_samples,                        ///< [in] Number of samples to process
-        cudaStream_t        stream              = 0,            ///< [in] <b>[optional]</b> CUDA stream to launch kernels within.  Default is stream-0.
+        cudaStream_t        stream              = 0,            ///< [in] <b>[optional]</b> CUDA stream to launch kernels within.  Default is stream<sub>0</sub>.
         bool                stream_synchronous  = false)        ///< [in] <b>[optional]</b> Whether or not to synchronize the stream after every kernel launch to check for errors.  May cause significant slowdown.  Default is \p false.
     {
         return Dispatch<GRID_HISTO_GLOBAL_ATOMIC, BINS, 1, 1>(
-            d_samples, &d_histogram, num_samples, stream, stream_synchronous);
+            d_temp_storage, temp_storage_bytes, d_samples, &d_histogram, num_samples, stream, stream_synchronous);
     }
 
 
@@ -721,7 +724,7 @@ struct DeviceHisto
      * \tparam BINS                 Number of histogram bins per channel
      * \tparam CHANNELS             Number of channels interleaved in the input data (may be greater than the number of channels being actively histogrammed)
      * \tparam ACTIVE_CHANNELS      <b>[inferred]</b> Number of channels actively being histogrammed
-     * \tparam InputIteratorRA      <b>[inferred]</b> The random-access iterator type for input (may be a simple pointer type).  Must have a value type that is assignable to <tt>unsigned char</tt>
+     * \tparam InputIteratorRA      <b>[inferred]</b> The random-access iterator type for input (may be a simple pointer type).  Must have a value type that can be cast as an integer in the range [0..BINS-1]
      * \tparam HistoCounter         <b>[inferred]</b> Integral type for counting sample occurrences per histogram bin
      */
     template <
@@ -737,11 +740,11 @@ struct DeviceHisto
         InputIteratorRA     d_samples,                          ///< [in] Input samples. (Channels, if any, are interleaved in "AOS" format)
         HistoCounter        *(&d_histograms)[ACTIVE_CHANNELS],  ///< [out] Array of channel histogram counter arrays, each having BINS counters of integral type \p HistoCounter.
         int                 num_samples,                        ///< [in] Number of samples to process
-        cudaStream_t        stream              = 0,            ///< [in] <b>[optional]</b> CUDA stream to launch kernels within.  Default is stream-0.
+        cudaStream_t        stream              = 0,            ///< [in] <b>[optional]</b> CUDA stream to launch kernels within.  Default is stream<sub>0</sub>.
         bool                stream_synchronous  = false)        ///< [in] <b>[optional]</b> Whether or not to synchronize the stream after every kernel launch to check for errors.  May cause significant slowdown.  Default is \p false.
     {
         return Dispatch<GRID_HISTO_SORT, BINS, CHANNELS, ACTIVE_CHANNELS>(
-            d_samples, d_histograms, num_samples, stream, stream_synchronous);
+            d_temp_storage, temp_storage_bytes, d_samples, d_histograms, num_samples, stream, stream_synchronous);
     }
 
 
@@ -755,7 +758,7 @@ struct DeviceHisto
      * \tparam BINS                 Number of histogram bins per channel
      * \tparam CHANNELS             Number of channels interleaved in the input data (may be greater than the number of channels being actively histogrammed)
      * \tparam ACTIVE_CHANNELS      <b>[inferred]</b> Number of channels actively being histogrammed
-     * \tparam InputIteratorRA      <b>[inferred]</b> The random-access iterator type for input (may be a simple pointer type).  Must have a value type that is assignable to <tt>unsigned char</tt>
+     * \tparam InputIteratorRA      <b>[inferred]</b> The random-access iterator type for input (may be a simple pointer type).  Must have a value type that can be cast as an integer in the range [0..BINS-1]
      * \tparam HistoCounter         <b>[inferred]</b> Integral type for counting sample occurrences per histogram bin
      */
     template <
@@ -771,11 +774,11 @@ struct DeviceHisto
         InputIteratorRA     d_samples,                          ///< [in] Input samples. (Channels, if any, are interleaved in "AOS" format)
         HistoCounter        *(&d_histograms)[ACTIVE_CHANNELS],  ///< [out] Array of channel histogram counter arrays, each having BINS counters of integral type \p HistoCounter.
         int                 num_samples,                        ///< [in] Number of samples to process
-        cudaStream_t        stream              = 0,            ///< [in] <b>[optional]</b> CUDA stream to launch kernels within.  Default is stream-0.
+        cudaStream_t        stream              = 0,            ///< [in] <b>[optional]</b> CUDA stream to launch kernels within.  Default is stream<sub>0</sub>.
         bool                stream_synchronous  = false)        ///< [in] <b>[optional]</b> Whether or not to synchronize the stream after every kernel launch to check for errors.  May cause significant slowdown.  Default is \p false.
     {
         return Dispatch<GRID_HISTO_SHARED_ATOMIC, BINS, CHANNELS, ACTIVE_CHANNELS>(
-            d_samples, d_histograms, num_samples, stream, stream_synchronous);
+            d_temp_storage, temp_storage_bytes, d_samples, d_histograms, num_samples, stream, stream_synchronous);
     }
 
 
@@ -789,7 +792,7 @@ struct DeviceHisto
      * \tparam BINS                 Number of histogram bins per channel
      * \tparam CHANNELS             Number of channels interleaved in the input data (may be greater than the number of channels being actively histogrammed)
      * \tparam ACTIVE_CHANNELS      <b>[inferred]</b> Number of channels actively being histogrammed
-     * \tparam InputIteratorRA      <b>[inferred]</b> The random-access iterator type for input (may be a simple pointer type).  Must have a value type that is assignable to <tt>unsigned char</tt>
+     * \tparam InputIteratorRA      <b>[inferred]</b> The random-access iterator type for input (may be a simple pointer type).  Must have a value type that can be cast as an integer in the range [0..BINS-1]
      * \tparam HistoCounter         <b>[inferred]</b> Integral type for counting sample occurrences per histogram bin
      */
     template <
@@ -805,11 +808,11 @@ struct DeviceHisto
         InputIteratorRA     d_samples,                          ///< [in] Input samples. (Channels, if any, are interleaved in "AOS" format)
         HistoCounter        *(&d_histograms)[ACTIVE_CHANNELS],  ///< [out] Array of channel histogram counter arrays, each having BINS counters of integral type \p HistoCounter.
         int                 num_samples,                        ///< [in] Number of samples to process
-        cudaStream_t        stream              = 0,            ///< [in] <b>[optional]</b> CUDA stream to launch kernels within.  Default is stream-0.
+        cudaStream_t        stream              = 0,            ///< [in] <b>[optional]</b> CUDA stream to launch kernels within.  Default is stream<sub>0</sub>.
         bool                stream_synchronous  = false)        ///< [in] <b>[optional]</b> Whether or not to synchronize the stream after every kernel launch to check for errors.  May cause significant slowdown.  Default is \p false.
     {
         return Dispatch<GRID_HISTO_GLOBAL_ATOMIC, BINS, CHANNELS, ACTIVE_CHANNELS>(
-            d_samples, d_histograms, num_samples, stream, stream_synchronous);
+            d_temp_storage, temp_storage_bytes, d_samples, d_histograms, num_samples, stream, stream_synchronous);
     }
 
     //@}  end member group

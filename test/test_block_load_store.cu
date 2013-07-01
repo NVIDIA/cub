@@ -47,7 +47,8 @@ using namespace cub;
 // Globals, constants and typedefs
 //---------------------------------------------------------------------
 
-bool g_verbose = false;
+bool                    g_verbose = false;
+CachingDeviceAllocator  g_allocator;
 
 
 //---------------------------------------------------------------------
@@ -256,9 +257,9 @@ void TestNative(
     T *d_in = NULL;
     T *d_out_unguarded = NULL;
     T *d_out_guarded = NULL;
-    CubDebugExit(cudaMalloc((void**)&d_in, sizeof(T) * unguarded_elements));
-    CubDebugExit(cudaMalloc((void**)&d_out_unguarded, sizeof(T) * unguarded_elements));
-    CubDebugExit(cudaMalloc((void**)&d_out_guarded, sizeof(T) * guarded_elements));
+    CubDebugExit(g_allocator.DeviceAllocate((void**)&d_in, sizeof(T) * unguarded_elements));
+    CubDebugExit(g_allocator.DeviceAllocate((void**)&d_out_unguarded, sizeof(T) * unguarded_elements));
+    CubDebugExit(g_allocator.DeviceAllocate((void**)&d_out_guarded, sizeof(T) * guarded_elements));
     CubDebugExit(cudaMemset(d_out_unguarded, 0, sizeof(T) * unguarded_elements));
     CubDebugExit(cudaMemset(d_out_guarded, 0, sizeof(T) * guarded_elements));
 
@@ -293,9 +294,9 @@ void TestNative(
 
     // Cleanup
     if (h_in) free(h_in);
-    if (d_in) CubDebugExit(cudaFree(d_in));
-    if (d_out_unguarded) CubDebugExit(cudaFree(d_out_unguarded));
-    if (d_out_guarded) CubDebugExit(cudaFree(d_out_guarded));
+    if (d_in) CubDebugExit(g_allocator.DeviceFree(d_in));
+    if (d_out_unguarded) CubDebugExit(g_allocator.DeviceFree(d_out_unguarded));
+    if (d_out_guarded) CubDebugExit(g_allocator.DeviceFree(d_out_guarded));
 }
 
 
@@ -342,8 +343,8 @@ void TestIterator(
     // Allocate device arrays
     T *d_out_unguarded = NULL;
     T *d_out_guarded = NULL;
-    CubDebugExit(cudaMalloc((void**)&d_out_unguarded, sizeof(T) * unguarded_elements));
-    CubDebugExit(cudaMalloc((void**)&d_out_guarded, sizeof(T) * guarded_elements));
+    CubDebugExit(g_allocator.DeviceAllocate((void**)&d_out_unguarded, sizeof(T) * unguarded_elements));
+    CubDebugExit(g_allocator.DeviceAllocate((void**)&d_out_guarded, sizeof(T) * guarded_elements));
     CubDebugExit(cudaMemset(d_out_unguarded, 0, sizeof(T) * unguarded_elements));
     CubDebugExit(cudaMemset(d_out_guarded, 0, sizeof(T) * guarded_elements));
 
@@ -376,8 +377,8 @@ void TestIterator(
 
     // Cleanup
     if (h_in) free(h_in);
-    if (d_out_unguarded) CubDebugExit(cudaFree(d_out_unguarded));
-    if (d_out_guarded) CubDebugExit(cudaFree(d_out_guarded));
+    if (d_out_unguarded) CubDebugExit(g_allocator.DeviceFree(d_out_unguarded));
+    if (d_out_guarded) CubDebugExit(g_allocator.DeviceFree(d_out_guarded));
 }
 
 

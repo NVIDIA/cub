@@ -105,7 +105,7 @@ template <
     typename        T,
     typename        ReductionOp>
 void Initialize(
-    int             gen_mode,
+    GenMode         gen_mode,
     T               *h_in,
     T               h_reference[1],
     ReductionOp     reduction_op,
@@ -131,13 +131,13 @@ void Initialize(
  * Test DeviceReduce
  */
 template <
-    typename        T,
-    typename        ReductionOp>
+    typename    T,
+    typename    ReductionOp>
 void Test(
-    int             num_items,
-    int             gen_mode,
-    ReductionOp     reduction_op,
-    char*           type_string)
+    int         num_items,
+    GenMode     gen_mode,
+    ReductionOp reduction_op,
+    char*       type_string)
 {
     int compare = 0;
     int cnp_compare = 0;
@@ -165,10 +165,10 @@ void Test(
     CubDebugExit(cudaMemcpy(d_in, h_in, sizeof(T) * num_items, cudaMemcpyHostToDevice));
     CubDebugExit(cudaMemset(d_out, 0, sizeof(T) * 1));
 
-    // Allocate temporary storage
     void            *d_temporary_storage = NULL;
     size_t          temporary_storage_bytes = 0;
 
+    // Allocate temporary storage
     CubDebugExit(DeviceReduce::Reduce(d_temporary_storage, temporary_storage_bytes, d_in, d_out, num_items, reduction_op));
     CubDebugExit(g_allocator.DeviceAllocate(&d_temporary_storage, temporary_storage_bytes));
 
@@ -265,6 +265,7 @@ void Test(
     if (d_in) CubDebugExit(g_allocator.DeviceFree(d_in));
     if (d_out) CubDebugExit(g_allocator.DeviceFree(d_out));
     if (d_cnp_error) CubDebugExit(g_allocator.DeviceFree(d_cnp_error));
+    if (d_temporary_storage) CubDebugExit(g_allocator.DeviceFree(d_temporary_storage));
 
     // Correctness asserts
     AssertEquals(0, compare);
@@ -329,25 +330,25 @@ int main(int argc, char** argv)
 
 /*
     // primitives
-    Test<char>(Sum<char>(), CUB_TYPE_STRING(char));
-    Test<short>(Sum<short>(), CUB_TYPE_STRING(short));
-    Test<int>(Sum<int>(), CUB_TYPE_STRING(int));
-    Test<long long>(Sum<long long>(), CUB_TYPE_STRING(long long));
+    Test<char>(Sum(), CUB_TYPE_STRING(char));
+    Test<short>(Sum>(), CUB_TYPE_STRING(short));
+    Test<int>(Sum(), CUB_TYPE_STRING(int));
+    Test<long long>(Sum(), CUB_TYPE_STRING(long long));
 
     // vector types
-    Test<char2>(Sum<char2>(), CUB_TYPE_STRING(char2));
-    Test<short2>(Sum<short2>(), CUB_TYPE_STRING(short2));
-    Test<int2>(Sum<int2>(), CUB_TYPE_STRING(int2));
-    Test<longlong2>(Sum<longlong2>(), CUB_TYPE_STRING(longlong2));
+    Test<char2>(Sum(), CUB_TYPE_STRING(char2));
+    Test<short2>(Sum(), CUB_TYPE_STRING(short2));
+    Test<int2>(Sum(), CUB_TYPE_STRING(int2));
+    Test<longlong2>(Sum(), CUB_TYPE_STRING(longlong2));
 
-    Test<char4>(Sum<char4>(), CUB_TYPE_STRING(char4));
-    Test<short4>(Sum<short4>(), CUB_TYPE_STRING(short4));
-    Test<int4>(Sum<int4>(), CUB_TYPE_STRING(int4));
-    Test<longlong4>(Sum<longlong4>(), CUB_TYPE_STRING(longlong4));
+    Test<char4>(Sum(), CUB_TYPE_STRING(char4));
+    Test<short4>(Sum(), CUB_TYPE_STRING(short4));
+    Test<int4>(Sum(), CUB_TYPE_STRING(int4));
+    Test<longlong4>(Sum(), CUB_TYPE_STRING(longlong4));
 
     // Complex types
-    Test<TestFoo>(Sum<TestFoo>(), CUB_TYPE_STRING(TestFoo));
-    Test<TestBar>(Sum<TestBar>(), CUB_TYPE_STRING(TestBar));
+    Test<TestFoo>(Sum(), CUB_TYPE_STRING(TestFoo));
+    Test<TestBar>(Sum(), CUB_TYPE_STRING(TestBar));
 */
     return 0;
 }

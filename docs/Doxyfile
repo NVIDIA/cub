@@ -198,7 +198,7 @@ TAB_SIZE               = 4
 ALIASES                = smemreuse="A subsequent <tt>__syncthreads()</tt> threadblock barrier should be invoked after calling this method if the collective's temporary storage (e.g., \p temp_storage) is to be reused or repurposed."
 ALIASES                += smemreuse{1}="After any operation, a subsequent <tt>__syncthreads()</tt> barrier is required if the collective's \1 is to be reused or repurposed"
 ALIASES 			   += smemstorage{1}="The operations exposed by \1 require a temporary memory allocation of this type for thread communication.  This opaque storage can be allocated directly using the <tt>__shared__</tt> keyword.  Alternatively, it can be aliased to externally allocated memory (shared or global) or <tt>union</tt>'d with other storage allocation types to facilitate memory reuse."
-ALIASES 			   += devicestorage="This operation requires an allocation of temporary device storage.  If \p d_temp_storage is NULL, no work is done and the required allocation size is returned in \p temp_storage_bytes."
+ALIASES 			   += devicestorage="This operation requires an allocation of temporary device storage.  When \p d_temp_storage is NULL, no work is done and the required allocation size is returned in \p temp_storage_bytes."
 
 
 # This tag can be used to specify a number of word-keyword mappings (TCL only).
@@ -327,22 +327,6 @@ INLINE_SIMPLE_STRUCTS  = NO
 # types are typedef'ed and only the typedef is referenced, never the tag name.
 
 TYPEDEF_HIDES_STRUCT   = NO
-
-# The SYMBOL_CACHE_SIZE determines the size of the internal cache use to
-# determine which symbols to keep in memory and which to flush to disk.
-# When the cache is full, less often used symbols will be written to disk.
-# For small to medium size projects (<1000 input files) the default value is
-# probably good enough. For larger projects a too small cache size can cause
-# doxygen to be busy swapping symbols to and from disk most of the time
-# causing a significant performance penalty.
-# If the system has enough physical memory increasing the cache will improve the
-# performance by keeping more symbols in memory. Note that the value works on
-# a logarithmic scale so increasing the size by one will roughly double the
-# memory usage. The cache size is given by this formula:
-# 2^(16+SYMBOL_CACHE_SIZE). The valid range is 0..9, the default is 0,
-# corresponding to a cache size of 2^16 = 65536 symbols.
-
-SYMBOL_CACHE_SIZE      = 0
 
 # Similar to the SYMBOL_CACHE_SIZE the size of the symbol lookup cache can be
 # set using LOOKUP_CACHE_SIZE. This cache is used to resolve symbols given
