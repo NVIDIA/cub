@@ -147,7 +147,7 @@ template <
     int         BINS,                           ///< Number of histogram bins per channel
     int         CHANNELS,                       ///< Number of channels interleaved in the input data (may be greater than the number of active channels being histogrammed)
     int         ACTIVE_CHANNELS,                ///< Number of channels actively being histogrammed
-    typename    InputIteratorRA,                ///< The input iterator type (may be a simple pointer type).  Must have a value type that is assignable to <tt>unsigned char</tt>
+    typename    InputIteratorRA,                ///< The input iterator type (may be a simple pointer type).  Must have a value type that can be cast as an integer in the range [0..BINS-1]
     typename    HistoCounter,                   ///< Integral type for counting sample occurrences per histogram bin
     typename    SizeT>                          ///< Integer type for offsets
 struct BlockSweepHisto
@@ -156,20 +156,26 @@ struct BlockSweepHisto
     // Types and constants
     //---------------------------------------------------------------------
 
-    enum
-    {
-        TILE_ITEMS = BlockSweepHistoPolicy::ITEMS_PER_THREAD * BlockSweepHistoPolicy::BLOCK_THREADS,
-    };
-
     // Histogram grid algorithm
     static const BlockSweepHistoAlgorithm GRID_ALGORITHM = BlockSweepHistoPolicy::GRID_ALGORITHM;
 
+    // Alternative internal implementation types
+    typedef BlockSweepHistoSort<            BlockSweepHistoPolicy, BINS, CHANNELS, ACTIVE_CHANNELS, InputIteratorRA, HistoCounter, SizeT>   BlockSweepHistoSortT;
+    typedef BlockSweepHistoSharedAtomic<    BlockSweepHistoPolicy, BINS, CHANNELS, ACTIVE_CHANNELS, InputIteratorRA, HistoCounter, SizeT>   BlockSweepHistoSharedAtomicT;
+    typedef BlockSweepHistoGlobalAtomic<    BlockSweepHistoPolicy, BINS, CHANNELS, ACTIVE_CHANNELS, InputIteratorRA, HistoCounter, SizeT>   BlockSweepHistoGlobalAtomicT;
+
     // Internal block sweep histogram type
     typedef typename If<(GRID_ALGORITHM == GRID_HISTO_SORT),
-        BlockSweepHistoSort,
+        BlockSweepHistoSortT,
         If<(GRID_ALGORITHM == GRID_HISTO_SHARED_ATOMIC),
-            BlockSweepHistoSharedAtomic,
-            BlockSweepHistoGlobalAtomic>::Type>::Type InternalBlockDelegate;
+            BlockSweepHistoSharedAtomicT,
+            BlockSweepHistoGlobalAtomicT>::Type>::Type InternalBlockDelegate;
+
+    enum
+    {
+        TILE_ITEMS = InternalBlockDelegate::TILE_ITEMS,
+    };
+
 
     // Temporary storage type
     typedef typename InternalBlockDelegate::TempStorage TempStorage;

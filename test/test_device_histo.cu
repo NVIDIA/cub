@@ -47,21 +47,22 @@ using namespace cub;
 // Globals, constants and typedefs
 //---------------------------------------------------------------------
 
-bool                                g_verbose           = false;
-int                                 g_iterations        = 100;
-bool                                g_verbose_input     = false;
-PersistentBlockHistoAlgorithm    g_algorithm         = GRID_HISTO_SORT;
-    
+bool                        g_verbose           = false;
+int                         g_timing_iterations = 0;
+bool                        g_verbose_input     = false;
+CachingDeviceAllocator      g_allocator;
+
 
 /**
  * Scaling operator for binning f32 types
  */
+template <typename T, int BINS>
 struct FloatScaleOp
 {
-    __host__ __device__ __forceinline__ unsigned char operator()(float datum)
+    __host__ __device__ __forceinline__ T operator()(float datum)
     {
-        float datum_scale = datum * 255.9f;
-        return (unsigned char) datum_scale;
+        float datum_scale = datum * float(BINS - 1);
+        return (T) datum_scale;
     }
 };
 
@@ -108,18 +109,20 @@ __global__ void CnpHisto(
 //---------------------------------------------------------------------
 
 /**
- * Normalize sample if necessary
+ * Generate integer sample
  */
-template <typename T>
-void Sample(int gen_mode, T &datum, int i)
+template <int BINS, typename T>
+void Sample(GenMode gen_mode, T &datum, int i)
 {
     InitValue(gen_mode, datum, i);
+    datum = datum % BINS;
 }
 
 /**
- * Specialization for float
+ * Generate float sample [0..1]
  */
-void Sample(int gen_mode, float &datum, int i)
+template <int BINS>
+void Sample(GenMode gen_mode, float &datum, int i)
 {
     unsigned int bits;
     unsigned int max = (unsigned int) -1;
@@ -135,14 +138,15 @@ template <
     int             BINS,
     int             CHANNELS,
     int             ACTIVE_CHANNELS,
-    typename        SampleType,
-    typename        BinOp,
-    typename        HistoCounter>
+    typename        IteratorValueT,
+    typename        SampleT,
+    typename        HistoCounterT,
+    typename        BinOp>
 void Initialize(
-    int             gen_mode,
-    SampleType      *h_samples,
+    GenMode         gen_mode,
+    SampleT         *h_samples,
     BinOp           bin_op,
-    HistoCounter    *h_histograms_linear,
+    HistoCounterT   *h_histograms_linear,
     int             num_samples)
 {
     // Init bins
@@ -151,14 +155,15 @@ void Initialize(
         h_histograms_linear[bin] = 0;
     }
 
-    if (g_verbose) printf("Samples: \n");
+    if (g_verbose_input) printf("Samples: \n");
 
     // Initialize interleaved channel samples and histogram them correspondingly
     for (int i = 0; i < num_samples; ++i)
     {
-        Sample(gen_mode, h_samples[i], i);
+        Sample<BINS>(gen_mode, h_samples[i], i);
 
-        unsigned char bin = bin_op(h_samples[i]);
+        IteratorValueT bin = bin_op(h_samples[i]);
+
         int channel = i % CHANNELS;
 
         if (g_verbose_input)
@@ -189,129 +194,151 @@ void Initialize(
  * Test DeviceHisto
  */
 template <
+    int             BINS,
     int             CHANNELS,
     int             ACTIVE_CHANNELS,
-    typename        SampleType,
-    typename        HistoCounter,
+    typename        SampleT,
+    typename        IteratorValueT,
+    typename        HistoCounterT,
     typename        BinOp>
 void Test(
-    int             gen_mode,
-    BinOp           bin_op,
-    int             num_samples,
-    char*           type_string)
+    BlockSweepHistoAlgorithm    g_algorithm,
+    GenMode                     gen_mode,
+    BinOp                       bin_op,
+    int                         num_samples,
+    char*                       type_string)
 {
+    // Binning iterator type for loading through tex and applying a transform operator
+    typedef TexTransformIteratorRA<IteratorValueT, BinOp, SampleT> BinningIterator;
+
     int compare         = 0;
     int cnp_compare     = 0;
     int total_bins      = ACTIVE_CHANNELS * BINS;
 
-    printf("cub::DeviceHisto %s %d %s samples (%dB), %d channels, %d active channels, gen-mode %d\n\n",
+    printf("cub::DeviceHisto %s %d %s samples (%dB), %d bins, %d channels, %d active channels, gen-mode %d\n",
         (g_algorithm == GRID_HISTO_SHARED_ATOMIC) ? "satomic" : (g_algorithm == GRID_HISTO_GLOBAL_ATOMIC) ? "gatomic" : "sort",
         num_samples,
         type_string,
-        (int) sizeof(SampleType),
+        (int) sizeof(SampleT),
+        BINS,
         CHANNELS,
         ACTIVE_CHANNELS,
         gen_mode);
     fflush(stdout);
 
     // Allocate host arrays
-    SampleType      *h_samples = new SampleType[num_samples];
-    HistoCounter    *h_reference_linear = new HistoCounter[total_bins];
+    SampleT         *h_samples          = new SampleT[num_samples];
+    HistoCounterT   *h_reference_linear = new HistoCounterT[total_bins];
 
     // Initialize problem
-    Initialize<CHANNELS, ACTIVE_CHANNELS>(gen_mode, h_samples, bin_op, h_reference_linear, num_samples);
+    Initialize<BINS, CHANNELS, ACTIVE_CHANNELS, IteratorValueT>(gen_mode, h_samples, bin_op, h_reference_linear, num_samples);
 
     // Allocate device arrays
-    SampleType*     d_samples = NULL;
-    HistoCounter*   d_histograms_linear = NULL;
+    SampleT*        d_samples = NULL;
+    HistoCounterT*  d_histograms_linear = NULL;
     cudaError_t*    d_cnp_error = NULL;
-    CubDebugExit(DeviceAllocate((void**)&d_samples,             sizeof(SampleType) * num_samples));
-    CubDebugExit(DeviceAllocate((void**)&d_histograms_linear,   sizeof(HistoCounter) * total_bins));
-    CubDebugExit(DeviceAllocate((void**)&d_cnp_error,           sizeof(cudaError_t) * 1));
+    void            *d_temporary_storage = NULL;
+    size_t          temporary_storage_bytes = 0;
+    CubDebugExit(g_allocator.DeviceAllocate((void**)&d_samples,             sizeof(SampleT) * num_samples));
+    CubDebugExit(g_allocator.DeviceAllocate((void**)&d_histograms_linear,   sizeof(HistoCounterT) * total_bins));
+    CubDebugExit(g_allocator.DeviceAllocate((void**)&d_cnp_error,           sizeof(cudaError_t) * 1));
 
     // Initialize device arrays
-    CubDebugExit(cudaMemcpy(d_samples, h_samples, sizeof(SampleType) * num_samples, cudaMemcpyHostToDevice));
-    CubDebugExit(cudaMemset(d_histograms_linear, 0, sizeof(HistoCounter) * total_bins));
+    CubDebugExit(cudaMemcpy(d_samples, h_samples, sizeof(SampleT) * num_samples, cudaMemcpyHostToDevice));
+    CubDebugExit(cudaMemset(d_histograms_linear, 0, sizeof(HistoCounterT) * total_bins));
 
     // Structure of channel histograms
-    HistoCounter *d_histograms[ACTIVE_CHANNELS];
+    HistoCounterT *d_histograms[ACTIVE_CHANNELS];
     for (int CHANNEL = 0; CHANNEL < ACTIVE_CHANNELS; ++CHANNEL)
     {
         d_histograms[CHANNEL] = d_histograms_linear + (CHANNEL * BINS);
     }
 
-    // Create iterator wrapper for SampleType -> unsigned char conversion
-    typedef TexTransformIteratorRA<unsigned char, BinOp, SampleType> BinningIterator;
+    // Create iterator wrapper for SampleT -> unsigned char conversion
     BinningIterator d_sample_itr(d_samples, bin_op);
 
     // Run warmup/correctness iteration
     printf("Host dispatch:\n"); fflush(stdout);
     if (g_algorithm == GRID_HISTO_SHARED_ATOMIC)
     {
-        CubDebugExit(DeviceHisto::MultiChannelAtomic<CHANNELS>(d_sample_itr, d_histograms, num_samples, 0, true));
+        // Allocate temporary storage
+        CubDebugExit((DeviceHisto::MultiChannelAtomic<BINS, CHANNELS>(d_temporary_storage, temporary_storage_bytes, d_sample_itr, d_histograms, num_samples, 0, true)));
+        CubDebugExit(g_allocator.DeviceAllocate(&d_temporary_storage, temporary_storage_bytes));
+
+        // Run test
+        CubDebugExit((DeviceHisto::MultiChannelAtomic<BINS, CHANNELS>(d_temporary_storage, temporary_storage_bytes, d_sample_itr, d_histograms, num_samples, 0, true)));
     }
     else if (g_algorithm == GRID_HISTO_GLOBAL_ATOMIC)
     {
-        CubDebugExit(DeviceHisto::MultiChannelGlobalAtomic<CHANNELS>(d_sample_itr, d_histograms, num_samples, 0, true));
+        // Allocate temporary storage
+        CubDebugExit((DeviceHisto::MultiChannelGlobalAtomic<BINS, CHANNELS>(d_temporary_storage, temporary_storage_bytes, d_sample_itr, d_histograms, num_samples, 0, true)));
+        CubDebugExit(g_allocator.DeviceAllocate(&d_temporary_storage, temporary_storage_bytes));
+
+        // Run test
+        CubDebugExit((DeviceHisto::MultiChannelGlobalAtomic<BINS, CHANNELS>(d_temporary_storage, temporary_storage_bytes, d_sample_itr, d_histograms, num_samples, 0, true)));
     }
     else
     {
-        CubDebugExit(DeviceHisto::MultiChannel<CHANNELS>(d_sample_itr, d_histograms, num_samples, 0, true));
+        // Allocate temporary storage
+        CubDebugExit((DeviceHisto::MultiChannelSorting<BINS, CHANNELS>(d_temporary_storage, temporary_storage_bytes, d_sample_itr, d_histograms, num_samples, 0, true)));
+        CubDebugExit(g_allocator.DeviceAllocate(&d_temporary_storage, temporary_storage_bytes));
+
+        // Run test
+        CubDebugExit((DeviceHisto::MultiChannelSorting<BINS, CHANNELS>(d_temporary_storage, temporary_storage_bytes, d_sample_itr, d_histograms, num_samples, 0, true)));
     }
 
     // Check for correctness (and display results, if specified)
-    compare = CompareDeviceResults((HistoCounter*) h_reference_linear, d_histograms_linear, total_bins, g_verbose, g_verbose);
-    printf("\n%s", compare ? "FAIL" : "PASS");
+    compare = CompareDeviceResults((HistoCounterT*) h_reference_linear, d_histograms_linear, total_bins, g_verbose, g_verbose);
+    printf("%s", compare ? "FAIL" : "PASS");
 
     // Flush any stdout/stderr
+    CubDebugExit(cudaDeviceSynchronize());
     fflush(stdout);
     fflush(stderr);
 
     // Performance
     GpuTimer gpu_timer;
     float elapsed_millis = 0.0;
-    for (int i = 0; i < g_iterations; i++)
+    for (int i = 0; i < g_timing_iterations; i++)
     {
         gpu_timer.Start();
 
         if (g_algorithm == GRID_HISTO_SHARED_ATOMIC)
         {
-            CubDebugExit(DeviceHisto::MultiChannelAtomic<CHANNELS>(d_sample_itr, d_histograms, num_samples, 0));
+            CubDebugExit((DeviceHisto::MultiChannelAtomic<BINS, CHANNELS>(d_temporary_storage, temporary_storage_bytes, d_sample_itr, d_histograms, num_samples, 0)));
         }
         else if (g_algorithm == GRID_HISTO_GLOBAL_ATOMIC)
         {
-            CubDebugExit(DeviceHisto::MultiChannelGlobalAtomic<CHANNELS>(d_sample_itr, d_histograms, num_samples, 0));
+            CubDebugExit((DeviceHisto::MultiChannelGlobalAtomic<BINS, CHANNELS>(d_temporary_storage, temporary_storage_bytes, d_sample_itr, d_histograms, num_samples, 0)));
         }
         else
         {
-            CubDebugExit(DeviceHisto::MultiChannel<CHANNELS>(d_sample_itr, d_histograms, num_samples, 0));
+            CubDebugExit((DeviceHisto::MultiChannelSorting<BINS, CHANNELS>(d_temporary_storage, temporary_storage_bytes, d_sample_itr, d_histograms, num_samples, 0)));
         }
 
         gpu_timer.Stop();
         elapsed_millis += gpu_timer.ElapsedMillis();
     }
-    if (g_iterations > 0)
+    if (g_timing_iterations > 0)
     {
-        float avg_millis = elapsed_millis / g_iterations;
+        float avg_millis = elapsed_millis / g_timing_iterations;
         float grate = float(num_samples) / avg_millis / 1000.0 / 1000.0;
-        float gbandwidth = grate * sizeof(SampleType);
-        printf(", %.3f avg ms, %.3f billion samples/s, %.3f billion bins/s, %.3f billion pixels/s, %.3f GB/s\n",
+        float gbandwidth = grate * sizeof(SampleT);
+        printf(", %.3f avg ms, %.3f billion samples/s, %.3f billion bins/s, %.3f billion pixels/s, %.3f GB/s",
             avg_millis,
             grate,
             grate * ACTIVE_CHANNELS / CHANNELS,
             grate / CHANNELS,
             gbandwidth);
     }
-    else
-    {
-        printf("\n");
-    }
+
+    printf("\n\n");
 
 /*
     // Evaluate using CUDA nested parallelism
 #if (TEST_CNP == 1)
 
-    CubDebugExit(cudaMemset(d_out, 0, sizeof(SampleType) * 1));
+    CubDebugExit(cudaMemset(d_out, 0, sizeof(SampleT) * 1));
 
     // Run warmup/correctness iteration
     printf("\nDevice dispatch:\n"); fflush(stdout);
@@ -339,16 +366,16 @@ void Test(
         // Performance
         gpu_timer.Start();
 
-        CnpHisto<false><<<1,1>>>(d_samples, d_out, num_samples, reduction_op, g_iterations, d_cnp_error);
+        CnpHisto<false><<<1,1>>>(d_samples, d_out, num_samples, reduction_op, g_timing_iterations, d_cnp_error);
 
         gpu_timer.Stop();
         elapsed_millis = gpu_timer.ElapsedMillis();
 
-        if (g_iterations > 0)
+        if (g_timing_iterations > 0)
         {
-            float avg_millis = elapsed_millis / g_iterations;
+            float avg_millis = elapsed_millis / g_timing_iterations;
             float grate = float(num_samples) / avg_millis / 1000.0 / 1000.0;
-            float gbandwidth = grate * sizeof(SampleType);
+            float gbandwidth = grate * sizeof(SampleT);
             printf(", %.3f avg ms, %.3f billion items/s, %.3f GB/s\n", avg_millis, grate, gbandwidth);
         }
         else
@@ -363,15 +390,78 @@ void Test(
     // Cleanup
     if (h_samples) delete[] h_samples;
     if (h_reference_linear) delete[] h_reference_linear;
-    if (d_samples) CubDebugExit(DeviceFree(d_samples));
-    if (d_histograms_linear) CubDebugExit(DeviceFree(d_histograms_linear));
-    if (d_cnp_error) CubDebugExit(DeviceFree(d_cnp_error));
+    if (d_samples) CubDebugExit(g_allocator.DeviceFree(d_samples));
+    if (d_histograms_linear) CubDebugExit(g_allocator.DeviceFree(d_histograms_linear));
+    if (d_cnp_error) CubDebugExit(g_allocator.DeviceFree(d_cnp_error));
+    if (d_temporary_storage) CubDebugExit(g_allocator.DeviceFree(d_temporary_storage));
 
     // Correctness asserts
     AssertEquals(0, compare);
     AssertEquals(0, cnp_compare);
 }
 
+
+
+/**
+ * Iterate over different algorithms
+ */
+template <
+    int             BINS,
+    int             CHANNELS,
+    int             ACTIVE_CHANNELS,
+    typename        SampleT,
+    typename        IteratorValueT,
+    typename        HistoCounterT,
+    typename        BinOp>
+void Test(
+    GenMode         gen_mode,
+    BinOp           bin_op,
+    int             num_samples,
+    char*           type_string)
+{
+    Test<BINS, CHANNELS, ACTIVE_CHANNELS, SampleT, IteratorValueT, HistoCounterT>(GRID_HISTO_SORT,          gen_mode, bin_op, num_samples, type_string);
+    Test<BINS, CHANNELS, ACTIVE_CHANNELS, SampleT, IteratorValueT, HistoCounterT>(GRID_HISTO_SHARED_ATOMIC, gen_mode, bin_op, num_samples, type_string);
+    Test<BINS, CHANNELS, ACTIVE_CHANNELS, SampleT, IteratorValueT, HistoCounterT>(GRID_HISTO_GLOBAL_ATOMIC, gen_mode, bin_op, num_samples, type_string);
+}
+
+
+/**
+ * Iterate over different channel configurations
+ */
+template <
+    int             BINS,
+    typename        SampleT,
+    typename        IteratorValueT,
+    typename        HistoCounterT,
+    typename        BinOp>
+void Test(
+    GenMode         gen_mode,
+    BinOp           bin_op,
+    int             num_samples,
+    char*           type_string)
+{
+    Test<BINS, 1, 1, SampleT, IteratorValueT, HistoCounterT>(gen_mode, bin_op, num_samples, type_string);
+    Test<BINS, 4, 3, SampleT, IteratorValueT, HistoCounterT>(gen_mode, bin_op, num_samples, type_string);
+}
+
+
+/**
+ * Iterate over different gen modes
+ */
+template <
+    int             BINS,
+    typename        SampleT,
+    typename        IteratorValueT,
+    typename        HistoCounterT,
+    typename        BinOp>
+void Test(
+    BinOp           bin_op,
+    int             num_samples,
+    char*           type_string)
+{
+    Test<BINS, SampleT, IteratorValueT, HistoCounterT>(RANDOM, bin_op, num_samples, type_string);
+    Test<BINS, SampleT, IteratorValueT, HistoCounterT>(UNIFORM, bin_op, num_samples, type_string);
+}
 
 
 
@@ -388,18 +478,9 @@ int main(int argc, char** argv)
 
     // Initialize command line
     CommandLineArgs args(argc, argv);
-    args.GetCmdLineArgument("n", num_samples);          // Total number of samples across all channels
-    args.GetCmdLineArgument("i", g_iterations);         // Timing iterations
-    g_verbose = args.CheckCmdLineFlag("v");             // Display input/output data
-    bool uniform = args.CheckCmdLineFlag("uniform");    // Random data vs. uniform (homogeneous)
-
-    // Get algorithm type
-    std::string type;
-    args.GetCmdLineArgument("algorithm", type);
-    if (type == std::string("satomic"))
-        g_algorithm = GRID_HISTO_SHARED_ATOMIC;
-    else if (type == std::string("gatomic"))
-        g_algorithm = GRID_HISTO_GLOBAL_ATOMIC;
+    args.GetCmdLineArgument("n", num_samples);                  // Total number of samples across all channels
+    args.GetCmdLineArgument("i", g_timing_iterations);          // Timing iterations
+    g_verbose = args.CheckCmdLineFlag("v");                     // Display input/output data
 
     // Print usage
     if (args.CheckCmdLineFlag("help"))
@@ -407,8 +488,6 @@ int main(int argc, char** argv)
         printf("%s "
             "[--device=<device-id>] "
             "[--v] "
-            "[--algorithm=<sort|satomic|gatomic>] "
-            "[--uniform]"
             "[--n=<total number of samples across all channels>]"
             "[--i=<timing iterations>]"
             "\n", argv[0]);
@@ -418,77 +497,17 @@ int main(int argc, char** argv)
     // Initialize device
     CubDebugExit(args.DeviceInit());
 
-    // Binning operators
-    Cast<unsigned char>     cast_op;        // Convert any numeric value to unsigned char via cast
-    FloatScaleOp            scale_op;       // Convert [0 .. 1.0] fp32 value to unsigned char by scaling by BINS
+    // 256-bin tests
+    Test<256, unsigned char,    unsigned char, int>(Cast<unsigned char>(),              num_samples, CUB_TYPE_STRING(unsigned char));
+    Test<256, unsigned short,   unsigned char, int>(Cast<unsigned char>(),              num_samples, CUB_TYPE_STRING(unsigned short));
+    Test<256, unsigned int,     unsigned char, int>(Cast<unsigned char>(),              num_samples, CUB_TYPE_STRING(unsigned int));
+    Test<256, float,            unsigned char, int>(FloatScaleOp<unsigned char, 256>(), num_samples, CUB_TYPE_STRING(float));
 
-    // unsigned char
-    printf("\n\n-- UINT8 -------------- \n"); fflush(stdout);
-
-    printf("\nSingle-channel\n"); fflush(stdout);
-    Test<1, 1, unsigned char, int>(
-        (uniform) ? UNIFORM : RANDOM,
-        cast_op,
-        num_samples,
-        CUB_TYPE_STRING(unsigned char));
-
-    printf("\nQuad-channel (RGB channels only)\n"); fflush(stdout);
-    Test<4, 3, unsigned char, int>(
-        (uniform) ? UNIFORM : RANDOM,
-        cast_op,
-        num_samples,
-        CUB_TYPE_STRING(unsigned char));
-
-    // unsigned short
-    printf("\n\n-- UINT16 -------------- \n"); fflush(stdout);
-
-    printf("\nSingle-channel\n"); fflush(stdout);
-    Test<1, 1, unsigned short, int>(
-        (uniform) ? UNIFORM : RANDOM,
-        cast_op,
-        num_samples,
-        CUB_TYPE_STRING(unsigned short));
-
-    printf("\nQuad-channel (RGB channels only)\n"); fflush(stdout);
-    Test<4, 3, unsigned short, int>(
-        (uniform) ? UNIFORM : RANDOM,
-        cast_op,
-        num_samples,
-        CUB_TYPE_STRING(unsigned short));
-
-    // unsigned int
-    printf("\n\n-- UINT32 -------------- \n"); fflush(stdout);
-
-    printf("\nSingle-channel\n"); fflush(stdout);
-    Test<1, 1, unsigned int, int>(
-        (uniform) ? UNIFORM : RANDOM,
-        cast_op,
-        num_samples,
-        CUB_TYPE_STRING(unsigned int));
-
-    printf("\nQuad-channel (RGB channels only)\n"); fflush(stdout);
-    Test<4, 3, unsigned int, int>(
-        (uniform) ? UNIFORM : RANDOM,
-        cast_op,
-        num_samples,
-        CUB_TYPE_STRING(unsigned int));
-
-    // float
-    printf("\n\n-- FP32 -------------- \n"); fflush(stdout);
-
-    printf("\nSingle-channel\n"); fflush(stdout);
-    Test<1, 1, float, int>(
-        (uniform) ? UNIFORM : RANDOM,
-        scale_op,
-        num_samples,
-        CUB_TYPE_STRING(float));
-
-    printf("\nQuad-channel (RGB channels only)\n"); fflush(stdout);
-    Test<4, 3, float, int>(
-        (uniform) ? UNIFORM : RANDOM,
-        scale_op,
-        num_samples,
-        CUB_TYPE_STRING(float));
+    // 512-bin tests
+    Test<512, unsigned char,    unsigned short, int>(Cast<unsigned short>(),              num_samples, CUB_TYPE_STRING(unsigned char));
+    Test<512, unsigned short,   unsigned short, int>(Cast<unsigned short>(),              num_samples, CUB_TYPE_STRING(unsigned short));
+    Test<512, unsigned int,     unsigned short, int>(Cast<unsigned short>(),              num_samples, CUB_TYPE_STRING(unsigned int));
+    Test<512, float,            unsigned short, int>(FloatScaleOp<unsigned short, 512>(), num_samples, CUB_TYPE_STRING(float));
 
     return 0;
 }

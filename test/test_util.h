@@ -353,7 +353,7 @@ enum GenMode
  * Initialize value
  */
 template <typename T>
-void InitValue(int gen_mode, T &value, int index = 0)
+void InitValue(GenMode gen_mode, T &value, int index = 0)
 {
     switch (gen_mode)
     {
@@ -395,7 +395,7 @@ void InitValue(int gen_mode, T &value, int index = 0)
         return (a.x != b.x);                                \
     }                                                       \
     /* Test initialization */                               \
-    void InitValue(int gen_mode, T &value, int index = 0)   \
+    void InitValue(GenMode gen_mode, T &value, int index = 0)   \
     {                                                       \
         InitValue(gen_mode, value.x, index);                \
     }                                                       \
@@ -438,7 +438,7 @@ void InitValue(int gen_mode, T &value, int index = 0)
             (a.y != b.y);                                   \
     }                                                       \
     /* Test initialization */                               \
-    void InitValue(int gen_mode, T &value, int index = 0)   \
+    void InitValue(GenMode gen_mode, T &value, int index = 0)   \
     {                                                       \
         InitValue(gen_mode, value.x, index);                \
         InitValue(gen_mode, value.y, index);                \
@@ -487,7 +487,7 @@ void InitValue(int gen_mode, T &value, int index = 0)
             (a.z != b.z);                                   \
     }                                                       \
     /* Test initialization */                               \
-    void InitValue(int gen_mode, T &value, int index = 0)   \
+    void InitValue(GenMode gen_mode, T &value, int index = 0)   \
     {                                                       \
         InitValue(gen_mode, value.x, index);                \
         InitValue(gen_mode, value.y, index);                \
@@ -539,7 +539,7 @@ void InitValue(int gen_mode, T &value, int index = 0)
             (a.w != b.w);                                   \
     }                                                       \
     /* Test initialization */                               \
-    void InitValue(int gen_mode, T &value, int index = 0)   \
+    void InitValue(GenMode gen_mode, T &value, int index = 0)   \
     {                                                       \
         InitValue(gen_mode, value.x, index);                \
         InitValue(gen_mode, value.y, index);                \
@@ -658,7 +658,7 @@ std::ostream& operator<<(std::ostream& os, const TestFoo& val)
 /**
  * TestFoo test initialization
  */
-void InitValue(int gen_mode, TestFoo &value, int index = 0)
+void InitValue(GenMode gen_mode, TestFoo &value, int index = 0)
 {
     InitValue(gen_mode, value.x, index);
     InitValue(gen_mode, value.y, index);
@@ -752,7 +752,7 @@ std::ostream& operator<<(std::ostream& os, const TestBar& val)
 /**
  * TestBar test initialization
  */
-void InitValue(int gen_mode, TestBar &value, int index = 0)
+void InitValue(GenMode gen_mode, TestBar &value, int index = 0)
 {
     InitValue(gen_mode, value.x, index);
     InitValue(gen_mode, value.y, index);

@@ -584,6 +584,7 @@ enum BlockLoadAlgorithm
  * \brief BlockLoad provides configurable data movement operations for loading a tile of linear items into a [<em>blocked arrangement</em>](index.html#sec3sec3) across a CUDA thread block.  ![](block_load_logo.png)
  * \ingroup BlockModule
  *
+ * \par Overview
  * The BlockLoad abstraction can be configured to implement different cub::BlockLoadAlgorithm
  * strategies.  It facilitates performance tuning by allowing the caller to specialize
  * data movement strategies for different architectures, data types, granularity sizes, etc.

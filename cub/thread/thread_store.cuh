@@ -148,15 +148,6 @@ struct ThreadStoreHelper
     template <PtxStoreModifier MODIFIER>
     static __device__ __forceinline__ void Store(OutputIteratorRA itr, const T& val);
 
-#if (CUB_PTX_ARCH <= 130)
-    template <>
-    static __device__ __forceinline__ void Store<STORE_CG>(OutputIteratorRA itr, const T& val)
-    {
-        // Straightforward dereference
-        *itr = val;
-    }
-#endif
-
     template <>
     static __device__ __forceinline__ void Store<STORE_DEFAULT>(OutputIteratorRA itr, const T& val)
     {
@@ -190,8 +181,8 @@ struct ThreadStoreHelper<T*>
     template <>
     static __device__ __forceinline__ void Store<STORE_CG>(T *ptr, const T& val)
     {
-        // Straightforward dereference
-        *ptr = val;
+        // Store volatile to ensure coherent writes when run on newer architectures with L1
+        return Store<STORE_VOLATILE>(ptr, val);
     }
 #endif
 
@@ -199,20 +190,27 @@ struct ThreadStoreHelper<T*>
     template <>
     static __device__ __forceinline__ void Store<STORE_VOLATILE>(T *ptr, const T& val)
     {
-
-#if (CUB_PTX_ARCH <= 130)
-        *ptr = val;
-        __threadfence_block();
-#else
         typedef typename WordAlignment<T>::VolatileAlignWord VolatileAlignWord;
+
         const int VOLATILE_ALIGN_UNROLL = sizeof(T) / sizeof(VolatileAlignWord);
 
-        VolatileAlignWord *alias                = reinterpret_cast<VolatileAlignWord*>(const_cast<T*>(&val));
-        volatile VolatileAlignWord *alias_ptr   = reinterpret_cast<volatile VolatileAlignWord*>(ptr);
+        volatile VolatileAlignWord *alias_ptr = reinterpret_cast<VolatileAlignWord*>(ptr);
+
+#if (CUB_PTX_ARCH <= 130)
+        VolatileAlignWord temp[VOLATILE_ALIGN_UNROLL];
+        reinterpret_cast<T&>(temp) = val;
+
+        #pragma unroll
+        for (int i = 0; i < VOLATILE_ALIGN_UNROLL; ++i)
+            alias_ptr[i] = temp[i];
+
+#else
+        VolatileAlignWord *alias = reinterpret_cast<VolatileAlignWord*>(const_cast<T*>(&val));
 
         #pragma unroll
         for (int i = 0; i < VOLATILE_ALIGN_UNROLL; ++i)
             alias_ptr[i] = alias[i];
+
 #endif
     }
 

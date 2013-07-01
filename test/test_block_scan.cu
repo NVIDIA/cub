@@ -44,16 +44,8 @@ using namespace cub;
 // Globals, constants and typedefs
 //---------------------------------------------------------------------
 
-/**
- * Verbose output
- */
-bool g_verbose = false;
-
-
-/**
- * Caching device allocator
- */
-CachingDeviceAllocator g_allocator;
+bool                    g_verbose = false;
+CachingDeviceAllocator  g_allocator;
 
 
 /**
@@ -376,17 +368,17 @@ __global__ void BlockScanKernel(
  * Initialize exclusive-scan problem (and solution)
  */
 template <
-    typename     T,
-    typename     ScanOp,
-    typename     IdentityT>
+    typename    T,
+    typename    ScanOp,
+    typename    IdentityT>
 T Initialize(
-    int          gen_mode,
-    T            *h_in,
-    T            *h_reference,
-    int          num_items,
-    ScanOp       scan_op,
-    IdentityT    identity,
-    T            *prefix)
+    GenMode     gen_mode,
+    T           *h_in,
+    T           *h_reference,
+    int         num_items,
+    ScanOp      scan_op,
+    IdentityT   identity,
+    T           *prefix)
 {
     T inclusive = (prefix != NULL) ? *prefix : identity;
     T aggregate = identity;
@@ -407,16 +399,16 @@ T Initialize(
  * Initialize inclusive-scan problem (and solution)
  */
 template <
-    typename     T,
-    typename     ScanOp>
+    typename    T,
+    typename    ScanOp>
 T Initialize(
-    int          gen_mode,
-    T            *h_in,
-    T            *h_reference,
-    int          num_items,
-    ScanOp       scan_op,
+    GenMode     gen_mode,
+    T           *h_in,
+    T           *h_reference,
+    int         num_items,
+    ScanOp      scan_op,
     NullType,
-    T            *prefix)
+    T           *prefix)
 {
     T inclusive;
     T aggregate;
@@ -454,7 +446,7 @@ template <
     typename            IdentityT,        // NullType implies inclusive-scan, otherwise inclusive scan
     typename            T>
 void Test(
-    int             gen_mode,
+    GenMode         gen_mode,
     ScanOp          scan_op,
     IdentityT       identity,
     T               prefix,
@@ -575,14 +567,14 @@ void Test(
  * Run test for different policy types
  */
 template <
-    int             BLOCK_THREADS,
-    int             ITEMS_PER_THREAD,
-    TestMode        TEST_MODE,
-    typename        ScanOp,
-    typename        IdentityT,
-    typename        T>
+    int         BLOCK_THREADS,
+    int         ITEMS_PER_THREAD,
+    TestMode    TEST_MODE,
+    typename    ScanOp,
+    typename    IdentityT,
+    typename    T>
 void Test(
-    int         gen_mode,
+    GenMode     gen_mode,
     ScanOp      scan_op,
     IdentityT   identity,
     T           prefix,
@@ -603,7 +595,7 @@ template <
     typename    ScanOp,
     typename    T>
 void Test(
-    int         gen_mode,
+    GenMode     gen_mode,
     ScanOp      scan_op,
     T           identity,
     T           prefix,
@@ -627,38 +619,38 @@ void Test(
 template <
     int BLOCK_THREADS,
     int ITEMS_PER_THREAD>
-void Test(int gen_mode)
+void Test(GenMode gen_mode)
 {
     // primitive
-    Test<BLOCK_THREADS, ITEMS_PER_THREAD>(gen_mode, Sum<unsigned char>(), (unsigned char) 0, (unsigned char) 99, CUB_TYPE_STRING(Sum<unsigned char>));
-    Test<BLOCK_THREADS, ITEMS_PER_THREAD>(gen_mode, Sum<unsigned short>(), (unsigned short) 0, (unsigned short) 99, CUB_TYPE_STRING(Sum<unsigned short>));
-    Test<BLOCK_THREADS, ITEMS_PER_THREAD>(gen_mode, Sum<unsigned int>(), (unsigned int) 0, (unsigned int) 99, CUB_TYPE_STRING(Sum<unsigned int>));
-    Test<BLOCK_THREADS, ITEMS_PER_THREAD>(gen_mode, Sum<unsigned long long>(), (unsigned long long) 0, (unsigned long long) 99, CUB_TYPE_STRING(Sum<unsigned long long>));
+    Test<BLOCK_THREADS, ITEMS_PER_THREAD>(gen_mode, Sum(), (unsigned char) 0, (unsigned char) 99, CUB_TYPE_STRING(Sum<unsigned char>));
+    Test<BLOCK_THREADS, ITEMS_PER_THREAD>(gen_mode, Sum(), (unsigned short) 0, (unsigned short) 99, CUB_TYPE_STRING(Sum<unsigned short>));
+    Test<BLOCK_THREADS, ITEMS_PER_THREAD>(gen_mode, Sum(), (unsigned int) 0, (unsigned int) 99, CUB_TYPE_STRING(Sum<unsigned int>));
+    Test<BLOCK_THREADS, ITEMS_PER_THREAD>(gen_mode, Sum(), (unsigned long long) 0, (unsigned long long) 99, CUB_TYPE_STRING(Sum<unsigned long long>));
 
     // primitive (alternative scan op)
-    Test<BLOCK_THREADS, ITEMS_PER_THREAD>(gen_mode, Max<unsigned char>(), (unsigned char) 0, (unsigned char) 99, CUB_TYPE_STRING(Max<unsigned char>));
-    Test<BLOCK_THREADS, ITEMS_PER_THREAD>(gen_mode, Max<unsigned short>(), (unsigned short) 0, (unsigned short) 99, CUB_TYPE_STRING(Max<unsigned short>));
-    Test<BLOCK_THREADS, ITEMS_PER_THREAD>(gen_mode, Max<unsigned int>(), (unsigned int) 0, (unsigned int) 99, CUB_TYPE_STRING(Max<unsigned int>));
-    Test<BLOCK_THREADS, ITEMS_PER_THREAD>(gen_mode, Max<unsigned long long>(), (unsigned long long) 0, (unsigned long long) 99, CUB_TYPE_STRING(Max<unsigned long long>));
+    Test<BLOCK_THREADS, ITEMS_PER_THREAD>(gen_mode, Max(), (unsigned char) 0, (unsigned char) 99, CUB_TYPE_STRING(Max<unsigned char>));
+    Test<BLOCK_THREADS, ITEMS_PER_THREAD>(gen_mode, Max(), (unsigned short) 0, (unsigned short) 99, CUB_TYPE_STRING(Max<unsigned short>));
+    Test<BLOCK_THREADS, ITEMS_PER_THREAD>(gen_mode, Max(), (unsigned int) 0, (unsigned int) 99, CUB_TYPE_STRING(Max<unsigned int>));
+    Test<BLOCK_THREADS, ITEMS_PER_THREAD>(gen_mode, Max(), (unsigned long long) 0, (unsigned long long) 99, CUB_TYPE_STRING(Max<unsigned long long>));
 
     // vec-1
-    Test<BLOCK_THREADS, ITEMS_PER_THREAD>(gen_mode, Sum<uchar1>(), make_uchar1(0), make_uchar1(17), CUB_TYPE_STRING(Sum<uchar1>));
+    Test<BLOCK_THREADS, ITEMS_PER_THREAD>(gen_mode, Sum(), make_uchar1(0), make_uchar1(17), CUB_TYPE_STRING(Sum<uchar1>));
 
     // vec-2
-    Test<BLOCK_THREADS, ITEMS_PER_THREAD>(gen_mode, Sum<uchar2>(), make_uchar2(0, 0), make_uchar2(17, 21), CUB_TYPE_STRING(Sum<uchar2>));
-    Test<BLOCK_THREADS, ITEMS_PER_THREAD>(gen_mode, Sum<ushort2>(), make_ushort2(0, 0), make_ushort2(17, 21), CUB_TYPE_STRING(Sum<ushort2>));
-    Test<BLOCK_THREADS, ITEMS_PER_THREAD>(gen_mode, Sum<uint2>(), make_uint2(0, 0), make_uint2(17, 21), CUB_TYPE_STRING(Sum<uint2>));
-    Test<BLOCK_THREADS, ITEMS_PER_THREAD>(gen_mode, Sum<ulonglong2>(), make_ulonglong2(0, 0), make_ulonglong2(17, 21), CUB_TYPE_STRING(Sum<ulonglong2>));
+    Test<BLOCK_THREADS, ITEMS_PER_THREAD>(gen_mode, Sum(), make_uchar2(0, 0), make_uchar2(17, 21), CUB_TYPE_STRING(Sum<uchar2>));
+    Test<BLOCK_THREADS, ITEMS_PER_THREAD>(gen_mode, Sum(), make_ushort2(0, 0), make_ushort2(17, 21), CUB_TYPE_STRING(Sum<ushort2>));
+    Test<BLOCK_THREADS, ITEMS_PER_THREAD>(gen_mode, Sum(), make_uint2(0, 0), make_uint2(17, 21), CUB_TYPE_STRING(Sum<uint2>));
+    Test<BLOCK_THREADS, ITEMS_PER_THREAD>(gen_mode, Sum(), make_ulonglong2(0, 0), make_ulonglong2(17, 21), CUB_TYPE_STRING(Sum<ulonglong2>));
 
     // vec-4
-    Test<BLOCK_THREADS, ITEMS_PER_THREAD>(gen_mode, Sum<uchar4>(), make_uchar4(0, 0, 0, 0), make_uchar4(17, 21, 32, 85), CUB_TYPE_STRING(Sum<uchar4>));
-    Test<BLOCK_THREADS, ITEMS_PER_THREAD>(gen_mode, Sum<ushort4>(), make_ushort4(0, 0, 0, 0), make_ushort4(17, 21, 32, 85), CUB_TYPE_STRING(Sum<ushort4>));
-    Test<BLOCK_THREADS, ITEMS_PER_THREAD>(gen_mode, Sum<uint4>(), make_uint4(0, 0, 0, 0), make_uint4(17, 21, 32, 85), CUB_TYPE_STRING(Sum<uint4>));
-    Test<BLOCK_THREADS, ITEMS_PER_THREAD>(gen_mode, Sum<ulonglong4>(), make_ulonglong4(0, 0, 0, 0), make_ulonglong4(17, 21, 32, 85), CUB_TYPE_STRING(Sum<ulonglong4>));
+    Test<BLOCK_THREADS, ITEMS_PER_THREAD>(gen_mode, Sum(), make_uchar4(0, 0, 0, 0), make_uchar4(17, 21, 32, 85), CUB_TYPE_STRING(Sum<uchar4>));
+    Test<BLOCK_THREADS, ITEMS_PER_THREAD>(gen_mode, Sum(), make_ushort4(0, 0, 0, 0), make_ushort4(17, 21, 32, 85), CUB_TYPE_STRING(Sum<ushort4>));
+    Test<BLOCK_THREADS, ITEMS_PER_THREAD>(gen_mode, Sum(), make_uint4(0, 0, 0, 0), make_uint4(17, 21, 32, 85), CUB_TYPE_STRING(Sum<uint4>));
+    Test<BLOCK_THREADS, ITEMS_PER_THREAD>(gen_mode, Sum(), make_ulonglong4(0, 0, 0, 0), make_ulonglong4(17, 21, 32, 85), CUB_TYPE_STRING(Sum<ulonglong4>));
 
     // complex
-    Test<BLOCK_THREADS, ITEMS_PER_THREAD>(gen_mode, Sum<TestFoo>(), TestFoo::MakeTestFoo(0, 0, 0, 0), TestFoo::MakeTestFoo(17, 21, 32, 85), CUB_TYPE_STRING(Sum<TestFoo>));
-    Test<BLOCK_THREADS, ITEMS_PER_THREAD>(gen_mode, Sum<TestBar>(), TestBar::MakeTestBar(0, 0), TestBar::MakeTestBar(17, 21), CUB_TYPE_STRING(Sum<TestBar>));
+    Test<BLOCK_THREADS, ITEMS_PER_THREAD>(gen_mode, Sum(), TestFoo::MakeTestFoo(0, 0, 0, 0), TestFoo::MakeTestFoo(17, 21, 32, 85), CUB_TYPE_STRING(Sum<TestFoo>));
+    Test<BLOCK_THREADS, ITEMS_PER_THREAD>(gen_mode, Sum(), TestBar::MakeTestBar(0, 0), TestBar::MakeTestBar(17, 21), CUB_TYPE_STRING(Sum<TestBar>));
 }
 
 
@@ -709,11 +701,11 @@ int main(int argc, char** argv)
     // Initialize device
     CubDebugExit(args.DeviceInit());
 
-    Test<128, 1, AGGREGATE, BLOCK_SCAN_WARP_SCANS>(UNIFORM, Sum<int>(), int(0), int(10), CUB_TYPE_STRING(Sum<int>));
-    Test<128, 4, AGGREGATE, BLOCK_SCAN_RAKING_MEMOIZE>(UNIFORM, Sum<int>(), int(0), int(10), CUB_TYPE_STRING(Sum<int>));
+    Test<128, 1, AGGREGATE, BLOCK_SCAN_WARP_SCANS>(UNIFORM, Sum(), int(0), int(10), CUB_TYPE_STRING(Sum<int>));
+    Test<128, 4, AGGREGATE, BLOCK_SCAN_RAKING_MEMOIZE>(UNIFORM, Sum(), int(0), int(10), CUB_TYPE_STRING(Sum<int>));
 
     TestFoo prefix = TestFoo::MakeTestFoo(17, 21, 32, 85);
-    Test<128, 2, PREFIX_AGGREGATE, BLOCK_SCAN_RAKING>(SEQ_INC, Sum<TestFoo>(), NullType(), prefix, CUB_TYPE_STRING(Sum<TestFoo>));
+    Test<128, 2, PREFIX_AGGREGATE, BLOCK_SCAN_RAKING>(SEQ_INC, Sum(), NullType(), prefix, CUB_TYPE_STRING(Sum<TestFoo>));
 
     // Run battery of tests for different threadblock sizes
     Test<17>();

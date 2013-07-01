@@ -54,7 +54,7 @@ template <
     int         BINS,                           ///< Number of histogram bins
     int         CHANNELS,                       ///< Number of channels interleaved in the input data (may be greater than the number of active channels being histogrammed)
     int         ACTIVE_CHANNELS,                ///< Number of channels actively being histogrammed
-    typename    InputIteratorRA,                ///< The input iterator type (may be a simple pointer type).  Must have a value type that is assignable to <tt>unsigned char</tt>
+    typename    InputIteratorRA,                ///< The input iterator type (may be a simple pointer type).  Must have a value type that can be cast as an integer in the range [0..BINS-1]
     typename    HistoCounter,                   ///< Integral type for counting sample occurrences per histogram bin
     typename    SizeT>                          ///< Integer type for offsets
 struct BlockSweepHistoSharedAtomic
@@ -62,6 +62,9 @@ struct BlockSweepHistoSharedAtomic
     //---------------------------------------------------------------------
     // Types and constants
     //---------------------------------------------------------------------
+
+    // Sample type
+    typedef typename std::iterator_traits<InputIteratorRA>::value_type SampleT;
 
     // Constants
     enum
@@ -75,7 +78,7 @@ struct BlockSweepHistoSharedAtomic
     // Shared memory type required by this thread block
     struct TempStorage
     {
-        HistoCounter histograms[ACTIVE_CHANNELS][257];  // One word of padding between channel histograms to prevent warps working on different histograms from hammering on the same bank
+        HistoCounter histograms[ACTIVE_CHANNELS][BINS + 1];  // One word of padding between channel histograms to prevent warps working on different histograms from hammering on the same bank
     };
 
 
@@ -140,7 +143,7 @@ struct BlockSweepHistoSharedAtomic
         if (FULL_TILE)
         {
             // Full tile of samples to read and composite
-            unsigned char items[ITEMS_PER_THREAD][CHANNELS];
+            SampleT items[ITEMS_PER_THREAD][CHANNELS];
 
             #pragma unroll
             for (int ITEM = 0; ITEM < ITEMS_PER_THREAD; ITEM++)
@@ -185,7 +188,7 @@ struct BlockSweepHistoSharedAtomic
                 {
                     if (((ACTIVE_CHANNELS == CHANNELS) || (CHANNEL < ACTIVE_CHANNELS)) && ((ITEM * BLOCK_THREADS * CHANNELS) + CHANNEL < bounds))
                     {
-                        unsigned char item  = d_in[block_offset + (ITEM * BLOCK_THREADS * CHANNELS) + (threadIdx.x * CHANNELS) + CHANNEL];
+                        SampleT item  = d_in[block_offset + (ITEM * BLOCK_THREADS * CHANNELS) + (threadIdx.x * CHANNELS) + CHANNEL];
                         atomicAdd(temp_storage.histograms[CHANNEL] + item, 1);
                     }
                 }

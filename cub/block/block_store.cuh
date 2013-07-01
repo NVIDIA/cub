@@ -466,8 +466,9 @@ enum BlockStoreAlgorithm
 
 
 /**
- * \brief BlockStore provides configurable data movement operations for storing a tile of linear items to memory from a [<em>blocked arrangement</em>](index.html#sec3sec3) across a CUDA thread block.  ![](block_store_logo.png)
+ * \brief BlockStore provides configurable data movement operations for storing a [<em>blocked arrangement</em>](index.html#sec3sec3) of data across a CUDA thread block to a tile of linear items in memory.  ![](block_store_logo.png)
  *
+ * \par Overview
  * The BlockStore abstraction can be configured to implement different cub::BlockStoreAlgorithm
  * strategies.  It facilitates performance tuning by allowing the caller to specialize
  * data movement strategies for different architectures, data types, granularity sizes, etc.

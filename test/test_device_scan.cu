@@ -199,7 +199,7 @@ template <
     typename     ScanOp,
     typename     IdentityT>
 T Initialize(
-    int          gen_mode,
+    GenMode      gen_mode,
     T            *h_in,
     T            *h_reference,
     int          num_items,
@@ -272,7 +272,7 @@ template <
     typename        IdentityT>
 void Test(
     int             num_items,
-    int             gen_mode,
+    GenMode         gen_mode,
     ScanOp          scan_op,
     IdentityT       identity,
     char*           type_string)
@@ -299,6 +299,8 @@ void Test(
     T*              d_in = NULL;
     T*              d_out = NULL;
     cudaError_t*    d_cnp_error = NULL;
+    void            *d_temporary_storage = NULL;
+    size_t          temporary_storage_bytes = 0;
     CubDebugExit(g_allocator.DeviceAllocate((void**)&d_in,          sizeof(T) * num_items));
     CubDebugExit(g_allocator.DeviceAllocate((void**)&d_out,         sizeof(T) * num_items));
     CubDebugExit(g_allocator.DeviceAllocate((void**)&d_cnp_error,   sizeof(cudaError_t) * 1));
@@ -308,9 +310,6 @@ void Test(
     CubDebugExit(cudaMemset(d_out, 0, sizeof(T) * num_items));
 
     // Allocate temporary storage
-    void            *d_temporary_storage = NULL;
-    size_t          temporary_storage_bytes = 0;
-
     CubDebugExit(Dispatch(d_temporary_storage, temporary_storage_bytes, d_in, d_out, scan_op, identity, num_items, 0, true));
     CubDebugExit(g_allocator.DeviceAllocate(&d_temporary_storage, temporary_storage_bytes));
 

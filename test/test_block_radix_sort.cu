@@ -46,7 +46,8 @@ using namespace cub;
 // Globals, constants and typedefs
 //---------------------------------------------------------------------
 
-bool g_verbose = false;
+bool                    g_verbose = false;
+CachingDeviceAllocator  g_allocator;
 
 
 //---------------------------------------------------------------------
@@ -97,14 +98,14 @@ __global__ void Kernel(
     KeyType keys[ITEMS_PER_THREAD];
     ValueType values[ITEMS_PER_THREAD];
 
-    LoadStriped<LOAD_DEFAULT, BLOCK_THREADS>(threadIdx.x, d_keys, keys);
-    LoadStriped<LOAD_DEFAULT, BLOCK_THREADS>(threadIdx.x, d_values, values);
+    LoadBlocked<LOAD_DEFAULT>(threadIdx.x, d_keys, keys);
+    LoadBlocked<LOAD_DEFAULT>(threadIdx.x, d_values, values);
 
     // Start cycle timer
     clock_t start = clock();
 
     // Test keys-value sorting (in striped arrangement)
-    BlockRadixSort(temp_storage).SortStriped(keys, values, begin_bit, end_bit);
+    BlockRadixSort(temp_storage).SortBlockedToStriped(keys, values, begin_bit, end_bit);
 
     // Stop cycle timer
     clock_t stop = clock();
@@ -159,13 +160,13 @@ __global__ void Kernel(
     // Keys per thread
     KeyType keys[ITEMS_PER_THREAD];
 
-    LoadStriped<LOAD_DEFAULT, BLOCK_THREADS>(threadIdx.x, d_keys, keys);
+    LoadBlocked<LOAD_DEFAULT>(threadIdx.x, d_keys, keys);
 
     // Start cycle timer
     clock_t start = clock();
 
     // Test keys-only sorting (in striped arrangement)
-    BlockRadixSort(temp_storage).SortStriped(keys, begin_bit, end_bit);
+    BlockRadixSort(temp_storage).SortBlockedToStriped(keys, begin_bit, end_bit);
 
     // Stop cycle timer
     clock_t stop = clock();
@@ -214,9 +215,9 @@ void TestDriver(
     KeyType     *d_keys     = NULL;
     ValueType   *d_values   = NULL;
     clock_t     *d_elapsed = NULL;
-    CubDebugExit(DeviceAllocate((void**)&d_keys, sizeof(KeyType) * TILE_SIZE));
-    CubDebugExit(DeviceAllocate((void**)&d_values, sizeof(ValueType) * TILE_SIZE));
-    CubDebugExit(DeviceAllocate((void**)&d_elapsed, sizeof(clock_t)));
+    CubDebugExit(g_allocator.DeviceAllocate((void**)&d_keys, sizeof(KeyType) * TILE_SIZE));
+    CubDebugExit(g_allocator.DeviceAllocate((void**)&d_values, sizeof(ValueType) * TILE_SIZE));
+    CubDebugExit(g_allocator.DeviceAllocate((void**)&d_elapsed, sizeof(clock_t)));
 
     // Initialize problem on host and device
     for (int i = 0; i < TILE_SIZE; ++i)
@@ -307,9 +308,9 @@ void TestDriver(
     if (h_keys)             free(h_keys);
     if (h_reference_keys)   free(h_reference_keys);
     if (h_values)           free(h_values);
-    if (d_keys)             CubDebugExit(DeviceFree(d_keys));
-    if (d_values)           CubDebugExit(DeviceFree(d_values));
-    if (d_elapsed)          CubDebugExit(DeviceFree(d_elapsed));
+    if (d_keys)             CubDebugExit(g_allocator.DeviceFree(d_keys));
+    if (d_values)           CubDebugExit(g_allocator.DeviceFree(d_values));
+    if (d_elapsed)          CubDebugExit(g_allocator.DeviceFree(d_elapsed));
 }
 
 
@@ -472,8 +473,7 @@ template <
 void Test()
 {
     Test<BLOCK_THREADS, ITEMS_PER_THREAD, 1>();
-    Test<BLOCK_THREADS, ITEMS_PER_THREAD, 3>();
-    Test<BLOCK_THREADS, ITEMS_PER_THREAD, 4>();
+    Test<BLOCK_THREADS, ITEMS_PER_THREAD, 2>();
     Test<BLOCK_THREADS, ITEMS_PER_THREAD, 5>();
 }
 
@@ -486,7 +486,7 @@ void Test()
 {
     Test<BLOCK_THREADS, 1>();
     Test<BLOCK_THREADS, 8>();
-    Test<BLOCK_THREADS, 15>();
+    Test<BLOCK_THREADS, 11>();
 }
 
 
@@ -516,13 +516,13 @@ int main(int argc, char** argv)
     // Quick test
     typedef unsigned int T;
     TestDriver<64, 2, 5, true, BLOCK_SCAN_WARP_SCANS, cudaSharedMemBankSizeFourByte, T, NullType>(0, 0, sizeof(T) * 8);
-
+/*
     // Test threads
     Test<32>();
     Test<64>();
     Test<128>();
     Test<256>();
-
+*/
     return 0;
 }
 
