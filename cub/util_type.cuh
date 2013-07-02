@@ -128,6 +128,15 @@ struct Log2<N, 0, COUNT>
 #endif // DOXYGEN_SHOULD_SKIP_THIS
 
 
+/**
+ * \brief Statically determine if N is a power-of-two
+ */
+template <int N>
+struct PowerOfTwo
+{
+    enum { VALUE = ((N & (N - 1)) == 0) };
+};
+
 
 
 /******************************************************************************
@@ -195,29 +204,37 @@ struct Equals <A, A>
 template <typename T>
 struct WordAlignment
 {
-    typedef typename If<(sizeof(T) % 16 == 0),
-        int4,
-        typename If<(sizeof(T) % 8 == 0),
-            int2,
-            typename If<(sizeof(T) % 4 == 0),
-                int,
-                typename If<(sizeof(T) % 2 == 0),
-                    short,
-                    char>::Type>::Type>::Type>::Type AlignWord;
+    struct Pad
+    {
+        T       val;
+        char    pad;
+    };
 
-    typedef typename If<(sizeof(T) % 8 == 0),
-        long long,
-        typename If<(sizeof(T) % 4 == 0),
-            int,
-            typename If<(sizeof(T) % 2 == 0),
-                short,
-                char>::Type>::Type>::Type VolatileAlignWord;
+    enum
+    {
+        ALIGN_BYTES = sizeof(Pad) - sizeof(T)
+    };
 
-    typedef typename If<(sizeof(T) % 4 == 0),
+    typedef typename If<(ALIGN_BYTES % 4 == 0),
         int,
-        typename If<(sizeof(T) % 2 == 0),
+        typename If<(ALIGN_BYTES % 2 == 0),
             short,
-            char>::Type>::Type ShuffleWord;
+            char>::Type>::Type                  ShuffleWord;
+
+    typedef typename If<(ALIGN_BYTES % 8 == 0),
+        long long,
+        ShuffleWord>::Type                      VolatileAlignWord;
+
+    typedef typename If<(ALIGN_BYTES % 16 == 0),
+        int4,
+        If<(ALIGN_BYTES % 8 == 0),
+            int2,
+            ShuffleWord>::Type>::Type           AlignWord;
+
+    enum
+    {
+        ALIGN_MULTIPLE = sizeof(T) / sizeof(AlignWord)
+    };
 };
 
 #endif // DOXYGEN_SHOULD_SKIP_THIS
@@ -433,8 +450,8 @@ struct BaseTraits
     static const Category CATEGORY      = _CATEGORY;
     enum
     {
-        PRIMITIVE                       = _PRIMITIVE,
-        NULL_TYPE                       = _NULL_TYPE
+        PRIMITIVE       = _PRIMITIVE,
+        NULL_TYPE       = _NULL_TYPE,
     };
 };
 
@@ -454,8 +471,8 @@ struct BaseTraits<UNSIGNED_INTEGER, true, false, _UnsignedBits>
 
     enum
     {
-        PRIMITIVE = true,
-        NULL_TYPE = false
+        PRIMITIVE       = true,
+        NULL_TYPE       = false,
     };
 
 
@@ -486,8 +503,8 @@ struct BaseTraits<SIGNED_INTEGER, true, false, _UnsignedBits>
 
     enum
     {
-        PRIMITIVE = true,
-        NULL_TYPE = false
+        PRIMITIVE       = true,
+        NULL_TYPE       = false,
     };
 
     static __device__ __forceinline__ UnsignedBits TwiddleIn(UnsignedBits key)
@@ -530,8 +547,8 @@ struct BaseTraits<FLOATING_POINT, true, false, _UnsignedBits>
 
     enum
     {
-        PRIMITIVE = true,
-        NULL_TYPE = false
+        PRIMITIVE       = true,
+        NULL_TYPE       = false,
     };
 };
 

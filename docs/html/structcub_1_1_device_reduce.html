@@ -192,8 +192,8 @@ template&lt;typename InputIteratorRA , typename OutputIteratorRA &gt; </div>
 <p>This operation requires an allocation of temporary device storage. When <code>d_temp_storage</code> is NULL, no work is done and the required allocation size is returned in <code>temp_storage_bytes</code>.</p>
 <dl class="tparams"><dt>Template Parameters</dt><dd>
   <table class="tparams">
-    <tr><td class="paramname">InputIteratorRA</td><td><b>[inferred]</b> The random-access iterator type for input (may be a simple pointer type). </td></tr>
-    <tr><td class="paramname">OutputIteratorRA</td><td><b>[inferred]</b> The random-access iterator type for output (may be a simple pointer type). </td></tr>
+    <tr><td class="paramname">InputIteratorRA</td><td><b>[inferred]</b> Random-access iterator type for input (may be a simple pointer type) </td></tr>
+    <tr><td class="paramname">OutputIteratorRA</td><td><b>[inferred]</b> Random-access iterator type for output (may be a simple pointer type) </td></tr>
   </table>
   </dd>
 </dl>
@@ -286,8 +286,8 @@ template&lt;typename InputIteratorRA , typename OutputIteratorRA , typename Redu
 <p>This operation requires an allocation of temporary device storage. When <code>d_temp_storage</code> is NULL, no work is done and the required allocation size is returned in <code>temp_storage_bytes</code>.</p>
 <dl class="tparams"><dt>Template Parameters</dt><dd>
   <table class="tparams">
-    <tr><td class="paramname">InputIteratorRA</td><td><b>[inferred]</b> The random-access iterator type for input (may be a simple pointer type). </td></tr>
-    <tr><td class="paramname">OutputIteratorRA</td><td><b>[inferred]</b> The random-access iterator type for output (may be a simple pointer type). </td></tr>
+    <tr><td class="paramname">InputIteratorRA</td><td><b>[inferred]</b> Random-access iterator type for input (may be a simple pointer type) </td></tr>
+    <tr><td class="paramname">OutputIteratorRA</td><td><b>[inferred]</b> Random-access iterator type for output (may be a simple pointer type) </td></tr>
     <tr><td class="paramname">ReductionOp</td><td><b>[inferred]</b> Binary reduction operator type having member <code>T operator()(const T &amp;a, const T &amp;b)</code> </td></tr>
   </table>
   </dd>
