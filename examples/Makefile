@@ -157,6 +157,11 @@ SUFFIX = sm$(SM_ARCH)_$(PTX_SUFFIX)_$(NVCC_VERSION)_$(ABI_SUFFIX)_$(CNP_SUFFIX)_
 
 INC += -I. -I.. 
 
+#-------------------------------------------------------------------------------
+# Libs
+#-------------------------------------------------------------------------------
+
+LIBS += -lcudart 
 
 
 #-------------------------------------------------------------------------------
@@ -196,7 +201,7 @@ example_block_scan_sum: bin/example_block_scan_sum_$(SUFFIX)
 
 bin/example_block_scan_sum_$(SUFFIX) : example_block_scan_sum.cu $(DEPS)
 	mkdir -p bin
-	$(NVCC) $(DEFINES) $(SM_TARGETS) -o bin/example_block_scan_sum_$(SUFFIX) example_block_scan_sum.cu $(NVCCFLAGS) $(CPU_ARCH) $(INC) -O3
+	$(NVCC) $(DEFINES) $(SM_TARGETS) -o bin/example_block_scan_sum_$(SUFFIX) example_block_scan_sum.cu $(NVCCFLAGS) $(CPU_ARCH) $(INC) $(LIBS) -O3
 
 
 #-------------------------------------------------------------------------------
@@ -207,7 +212,7 @@ example_block_radix_sort: bin/example_block_radix_sort_$(SUFFIX)
 
 bin/example_block_radix_sort_$(SUFFIX) : example_block_radix_sort.cu $(DEPS)
 	mkdir -p bin
-	$(NVCC) $(DEFINES) $(SM_TARGETS) -o bin/example_block_radix_sort_$(SUFFIX) example_block_radix_sort.cu $(NVCCFLAGS) $(CPU_ARCH) $(INC) -O3
+	$(NVCC) $(DEFINES) $(SM_TARGETS) -o bin/example_block_radix_sort_$(SUFFIX) example_block_radix_sort.cu $(NVCCFLAGS) $(CPU_ARCH) $(INC) $(LIBS) -O3
 	
 	
 #-------------------------------------------------------------------------------
@@ -218,7 +223,7 @@ histo_study: bin/histo_study_$(SUFFIX)
 
 bin/histo_study_$(SUFFIX) : histo_study.cu $(DEPS)
 	mkdir -p bin
-	$(NVCC) $(DEFINES) $(SM_TARGETS) -o bin/histo_study_$(SUFFIX) histo_study.cu $(NVCCFLAGS) $(CPU_ARCH) $(INC) -O3	
+	$(NVCC) $(DEFINES) $(SM_TARGETS) -o bin/histo_study_$(SUFFIX) histo_study.cu $(NVCCFLAGS) $(CPU_ARCH) $(INC) $(LIBS) -O3	
 
 
 #-------------------------------------------------------------------------------
@@ -229,6 +234,6 @@ example_coo_spmv: bin/example_coo_spmv_$(SUFFIX)
 
 bin/example_coo_spmv_$(SUFFIX) : example_coo_spmv.cu $(DEPS)
 	mkdir -p bin
-	$(NVCC) $(DEFINES) $(SM_TARGETS) -o bin/example_coo_spmv_$(SUFFIX) example_coo_spmv.cu $(NVCCFLAGS) $(CPU_ARCH) $(INC) -O3
+	$(NVCC) $(DEFINES) $(SM_TARGETS) -o bin/example_coo_spmv_$(SUFFIX) example_coo_spmv.cu $(NVCCFLAGS) $(CPU_ARCH) $(INC) $(LIBS) -O3
 
 

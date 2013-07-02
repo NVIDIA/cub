@@ -55,7 +55,7 @@ namespace cub {
 /******************************************************************************
  * Vector type inference utilities.  For example:
  *
- *     typename VectorHelper<unsigned int, 2>::Type    // Aliases uint2
+ * typename VectorHelper<unsigned int, 2>::Type    // Aliases uint2
  *
  ******************************************************************************/
 
@@ -84,22 +84,6 @@ struct VectorHelper<T, 1>
     T x;
 
     typedef VectorHelper<T, 1> Type;
-    typedef void LoadTag;
-    typedef void StoreTag;
-
-    // Load
-    template <PtxLoadModifier MODIFIER>
-    __device__ __forceinline__     void Load(VectorHelper *ptr)
-    {
-        x = cub::ThreadLoad<MODIFIER>(&(ptr->x));
-    }
-
-     // Store
-    template <PtxStoreModifier MODIFIER>
-    __device__ __forceinline__ void Store(VectorHelper *ptr) const
-    {
-        cub::ThreadStore<MODIFIER>(&(ptr->x), x);
-    }
 };
 
 /**
@@ -114,24 +98,6 @@ struct VectorHelper<T, 2>
     T y;
 
     typedef VectorHelper<T, 2> Type;
-    typedef void LoadTag;
-    typedef void StoreTag;
-
-    // Load
-    template <PtxLoadModifier MODIFIER>
-    __device__ __forceinline__ void Load(VectorHelper *ptr)
-    {
-        x = cub::ThreadLoad<MODIFIER>(&(ptr->x));
-        y = cub::ThreadLoad<MODIFIER>(&(ptr->y));
-    }
-
-     // Store
-    template <PtxStoreModifier MODIFIER>
-    __device__ __forceinline__ void Store(VectorHelper *ptr) const
-    {
-        cub::ThreadStore<MODIFIER>(&(ptr->x), x);
-        cub::ThreadStore<MODIFIER>(&(ptr->y), y);
-    }
 };
 
 /**
@@ -147,27 +113,6 @@ struct VectorHelper<T, 3>
     T z;
 
     typedef VectorHelper<T, 3> Type;
-    typedef void LoadTag;
-    typedef void StoreTag;
-
-    // Load
-    template <PtxLoadModifier MODIFIER>
-    __device__ __forceinline__ void Load(VectorHelper *ptr)
-    {
-        x = cub::ThreadLoad<MODIFIER>(&(ptr->x));
-        y = cub::ThreadLoad<MODIFIER>(&(ptr->y));
-        z = cub::ThreadLoad<MODIFIER>(&(ptr->z));
-    }
-
-     // Store
-    template <PtxStoreModifier MODIFIER>
-    __device__ __forceinline__ void Store(VectorHelper *ptr) const
-    {
-        cub::ThreadStore<MODIFIER>(&(ptr->x), x);
-        cub::ThreadStore<MODIFIER>(&(ptr->y), y);
-        cub::ThreadStore<MODIFIER>(&(ptr->z), z);
-    }
-
 };
 
 /**
@@ -184,28 +129,6 @@ struct VectorHelper<T, 4>
     T w;
 
     typedef VectorHelper<T, 4> Type;
-    typedef void LoadTag;
-    typedef void StoreTag;
-
-    // Load
-    template <PtxLoadModifier MODIFIER>
-    __device__ __forceinline__ void Load(VectorHelper *ptr)
-    {
-        x = cub::ThreadLoad<MODIFIER>(&(ptr->x));
-        y = cub::ThreadLoad<MODIFIER>(&(ptr->y));
-        z = cub::ThreadLoad<MODIFIER>(&(ptr->z));
-        w = cub::ThreadLoad<MODIFIER>(&(ptr->w));
-    }
-
-     // Store
-    template <PtxStoreModifier MODIFIER>
-    __device__ __forceinline__ void Store(VectorHelper *ptr) const
-    {
-        cub::ThreadStore<MODIFIER>(&(ptr->x), x);
-        cub::ThreadStore<MODIFIER>(&(ptr->y), y);
-        cub::ThreadStore<MODIFIER>(&(ptr->z), z);
-        cub::ThreadStore<MODIFIER>(&(ptr->w), w);
-    }
 };
 
 /**

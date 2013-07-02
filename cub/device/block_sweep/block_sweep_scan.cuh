@@ -120,7 +120,7 @@ struct BlockSweepScan
         BlockSweepScanPolicy::ITEMS_PER_THREAD,
         BlockSweepScanPolicy::LOAD_ALGORITHM,
         BlockSweepScanPolicy::LOAD_MODIFIER,
-        BlockSweepScanPolicy::LOAD_WARP_TIME_SLICING> BlockLoadT;
+        BlockSweepScanPolicy::LOAD_WARP_TIME_SLICING>   BlockLoadT;
 
     // Block store type
     typedef BlockStore<
@@ -129,10 +129,10 @@ struct BlockSweepScan
         BlockSweepScanPolicy::ITEMS_PER_THREAD,
         BlockSweepScanPolicy::STORE_ALGORITHM,
         STORE_DEFAULT,
-        BlockSweepScanPolicy::STORE_WARP_TIME_SLICING> BlockStoreT;
+        BlockSweepScanPolicy::STORE_WARP_TIME_SLICING>  BlockStoreT;
 
-    // Device tile status type
-    typedef DeviceScanTileStatus<T> DeviceScanTileStatusT;
+    // Device tile status descriptor type
+    typedef DeviceScanTileDescriptor<T>                 DeviceScanTileDescriptorT;
 
     // Block scan type
     typedef BlockScan<
@@ -169,8 +169,8 @@ struct BlockSweepScan
             typename BlockStoreT::TempStorage           store;              // Smem needed for tile storing
             struct
             {
-                typename InterblockPrefixOp::TempStorage   prefix;             // Smem needed for cooperative prefix callback
-                typename BlockScanT::TempStorage        scan;               // Smem needed for tile scanning
+                typename InterblockPrefixOp::TempStorage    prefix;         // Smem needed for cooperative prefix callback
+                typename BlockScanT::TempStorage            scan;           // Smem needed for tile scanning
             };
         };
 
@@ -227,7 +227,6 @@ struct BlockSweepScan
     /**
      * Inclusive sum specialization
      */
-    template <typename _ScanOp>
     __device__ __forceinline__
     void ScanBlock(T (&items)[ITEMS_PER_THREAD], Sum scan_op, NullType identity, T& block_aggregate)
     {
@@ -243,9 +242,8 @@ struct BlockSweepScan
      */
     template <typename _ScanOp, typename _Identity, typename PrefixCallback>
     __device__ __forceinline__
-    void ScanBlock(T (&items)[ITEMS_PER_THREAD], _ScanOp scan_op, _Identity identity, PrefixCallback &prefix_op)
+    void ScanBlock(T (&items)[ITEMS_PER_THREAD], _ScanOp scan_op, _Identity identity, T& block_aggregate, PrefixCallback &prefix_op)
     {
-        T block_aggregate;
         BlockScanT(temp_storage.scan).ExclusiveScan(items, items, identity, scan_op, block_aggregate, prefix_op);
     }
 
@@ -254,9 +252,8 @@ struct BlockSweepScan
      */
     template <typename _Identity, typename PrefixCallback>
     __device__ __forceinline__
-    void ScanBlock(T (&items)[ITEMS_PER_THREAD], Sum scan_op, _Identity identity, PrefixCallback &prefix_op)
+    void ScanBlock(T (&items)[ITEMS_PER_THREAD], Sum scan_op, _Identity identity, T& block_aggregate, PrefixCallback &prefix_op)
     {
-        T block_aggregate;
         BlockScanT(temp_storage.scan).ExclusiveSum(items, items, block_aggregate, prefix_op);
     }
 
@@ -265,20 +262,18 @@ struct BlockSweepScan
      */
     template <typename _ScanOp, typename PrefixCallback>
     __device__ __forceinline__
-    void ScanBlock(T (&items)[ITEMS_PER_THREAD], _ScanOp scan_op, NullType identity, PrefixCallback &prefix_op)
+    void ScanBlock(T (&items)[ITEMS_PER_THREAD], _ScanOp scan_op, NullType identity, T& block_aggregate, PrefixCallback &prefix_op)
     {
-        T block_aggregate;
         BlockScanT(temp_storage.scan).InclusiveScan(items, items, scan_op, block_aggregate, prefix_op);
     }
 
     /**
      * Inclusive sum specialization (with prefix from predecessors)
      */
-    template <typename _ScanOp, typename PrefixCallback>
+    template <typename PrefixCallback>
     __device__ __forceinline__
-    void ScanBlock(T (&items)[ITEMS_PER_THREAD], Sum scan_op, NullType identity, PrefixCallback &prefix_op)
+    void ScanBlock(T (&items)[ITEMS_PER_THREAD], Sum scan_op, NullType identity, T& block_aggregate, PrefixCallback &prefix_op)
     {
-        T block_aggregate;
         BlockScanT(temp_storage.scan).InclusiveSum(items, items, block_aggregate, prefix_op);
     }
 
@@ -308,10 +303,10 @@ struct BlockSweepScan
      */
     template <bool FULL_TILE>
     __device__ __forceinline__ void ConsumeTile(
-        SizeT                   num_items,          ///< Total number of input items
-        int                     tile_idx,           ///< Tile index
-        SizeT                   block_offset,       ///< Tile offset
-        DeviceScanTileStatusT   *d_tile_status)     ///< Global list of tile status
+        SizeT                       num_items,          ///< Total number of input items
+        int                         tile_idx,           ///< Tile index
+        SizeT                       block_offset,       ///< Tile offset
+        DeviceScanTileDescriptorT   *d_tile_status)     ///< Global list of tile status
     {
         // Load items
         T items[ITEMS_PER_THREAD];
@@ -323,19 +318,19 @@ struct BlockSweepScan
 
         __syncthreads();
 
+        T block_aggregate;
         if (tile_idx == 0)
         {
-            T block_aggregate;
             ScanBlock(items, scan_op, identity, block_aggregate);
 
             // Update tile status if there are successor tiles
             if (FULL_TILE && (threadIdx.x == 0))
-                DeviceScanTileStatusT::SetPrefix(d_tile_status, block_aggregate);
+                DeviceScanTileDescriptorT::SetPrefix(d_tile_status, block_aggregate);
         }
         else
         {
             InterblockPrefixOp prefix_op(d_tile_status, temp_storage.prefix, scan_op, tile_idx);
-            ScanBlock(items, scan_op, identity, prefix_op);
+            ScanBlock(items, scan_op, identity, block_aggregate, prefix_op);
         }
 
         __syncthreads();
@@ -397,7 +392,7 @@ struct BlockSweepScan
     __device__ __forceinline__ void ConsumeTiles(
         int                     num_items,          ///< Total number of input items
         GridQueue<int>          queue,              ///< Queue descriptor for assigning tiles of work to thread blocks
-        DeviceScanTileStatusT    *d_tile_status)    ///< Global list of tile status
+        DeviceScanTileDescriptorT    *d_tile_status)    ///< Global list of tile status
     {
         // We give each thread block at least one tile of input.
         int tile_idx = blockIdx.x;

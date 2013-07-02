@@ -67,21 +67,8 @@ enum PtxLoadModifier
     LOAD_CS,            ///< Cache streaming (likely to be accessed once)
     LOAD_CV,            ///< Cache as volatile (including cached system lines)
     LOAD_LDG,           ///< Cache as texture
-    LOAD_VOLATILE,      ///< Volatile
+    LOAD_VOLATILE,      ///< Volatile (any memory space)
 };
-
-
-#ifndef DOXYGEN_SHOULD_SKIP_THIS    // Do not document
-
-/**
- * Helper structure for giving type errors when combining non-default load
- * modifiers with (a) iterators or (b) pointers to non-primitives
- */
-template <typename InputIteratorRA>
-struct ThreadLoadHelper;
-
-#endif // DOXYGEN_SHOULD_SKIP_THIS
-
 
 
 /**
@@ -122,13 +109,7 @@ struct ThreadLoadHelper;
 template <
     PtxLoadModifier MODIFIER,
     typename InputIteratorRA>
-__device__ __forceinline__ typename std::iterator_traits<InputIteratorRA>::value_type ThreadLoad(InputIteratorRA itr)
-{
-    typedef typename std::iterator_traits<InputIteratorRA>::value_type T;
-    typedef ThreadLoadHelper<InputIteratorRA> Helper;
-    return Helper::template Load<MODIFIER>(itr);
-}
-
+__device__ __forceinline__ typename std::iterator_traits<InputIteratorRA>::value_type ThreadLoad(InputIteratorRA itr);
 
 
 //@}  end member group
@@ -168,15 +149,13 @@ struct ThreadLoadHelper<T*>
 
         const int ALIGN_UNROLL  = sizeof(T) / sizeof(AlignWord);
 
-        T retval;
-        AlignWord *alias        = reinterpret_cast<AlignWord*>(&retval);
-        AlignWord *alias_ptr    = reinterpret_cast<AlignWord*>(ptr);
+        AlignWord alias[ALIGN_UNROLL];
 
         #pragma unroll
         for (int i = 0; i < ALIGN_UNROLL; ++i)
-            alias[i] = ThreadLoad<MODIFIER>(alias_ptr + i);
+            alias[i] = ThreadLoad<MODIFIER>(reinterpret_cast<AlignWord*>(ptr) + i);
 
-        return retval;
+        return reinterpret_cast<T&>(alias);
     }
 
 
@@ -184,57 +163,27 @@ struct ThreadLoadHelper<T*>
     template <>
     static __device__ __forceinline__ T Load<LOAD_CG>(T *ptr)
     {
-        // Load volatile to ensure coherent reads when run on newer architectures with L1
-        return Load<LOAD_VOLATILE>(ptr);
+        // Load CV to ensure coherent reads when run on newer architectures with L1
+        return Load<LOAD_CV>(ptr);
     }
 #endif
 
     template <bool PRIMITIVE>
     static __device__ __forceinline__ T LoadVolatile(T *ptr)
     {
-        typedef typename WordAlignment<T>::VolatileAlignWord VolatileAlignWord;
-
-        const int VOLATILE_ALIGN_UNROLL = sizeof(T) / sizeof(VolatileAlignWord);
-
-        volatile VolatileAlignWord *alias_ptr = reinterpret_cast<VolatileAlignWord*>(ptr);
-
-#if (CUB_PTX_ARCH <= 130)
-
-        VolatileAlignWord temp[VOLATILE_ALIGN_UNROLL];
-
-        #pragma unroll
-        for (int i = 0; i < VOLATILE_ALIGN_UNROLL; ++i)
-            temp[i] = alias_ptr[i];
-
-        return reinterpret_cast<T&>(temp);
-
-#else
-        T retval;
-        VolatileAlignWord *alias = reinterpret_cast<VolatileAlignWord*>(&retval);
-
-        #pragma unroll
-        for (int i = 0; i < VOLATILE_ALIGN_UNROLL; ++i)
-            alias[i] = alias_ptr[i];
-
-        return retval;
-#endif
 
     }
 
     template <>
     static __device__ __forceinline__ T LoadVolatile<true>(T *ptr)
     {
-        volatile T *alias_ptr = ptr;
-        T retval = *alias_ptr;
-#if (CUB_PTX_ARCH <= 130)
-        __threadfence_block();
-#endif
-        return retval;
     }
 
     template <>
     static __device__ __forceinline__ T Load<LOAD_VOLATILE>(T *ptr)
     {
+
+
         return LoadVolatile<Traits<T>::PRIMITIVE>(ptr);
     }
 
@@ -264,7 +213,6 @@ struct ThreadLoadHelper<T*>
         return retval;                                                                      \
     }                                                                                       \
 
-
 /**
  * Define a int2 (8B) ThreadLoad specialization for the given PTX load modifier
  */
@@ -276,6 +224,15 @@ struct ThreadLoadHelper<T*>
         asm volatile ("ld."#ptx_modifier".v2.s32 {%0, %1}, [%2];" :                         \
             "=r"(retval.x),                                                                 \
             "=r"(retval.y) :                                                                \
+            _CUB_ASM_PTR_(ptr));                                                            \
+        return retval;                                                                      \
+    }                                                                                       \
+    template<>                                                                              \
+    __device__ __forceinline__ long long ThreadLoad<cub_modifier, long long*>(long long* ptr)                 \
+    {                                                                                       \
+        long long retval;                                                                   \
+        asm volatile ("ld."#ptx_modifier".s32 %0, [%1];" :                                  \
+            "=l"(retval) :                                                                  \
             _CUB_ASM_PTR_(ptr));                                                            \
         return retval;                                                                      \
     }
@@ -329,6 +286,7 @@ struct ThreadLoadHelper<T*>
         return (char) retval;                                                               \
     }
 
+
 /**
  * Define powers-of-two ThreadLoad specializations for the given PTX load modifier
  */
@@ -339,6 +297,7 @@ struct ThreadLoadHelper<T*>
     CUB_LOAD_2(cub_modifier, ptx_modifier)                                                  \
     CUB_LOAD_1(cub_modifier, ptx_modifier)                                                  \
 
+
 /**
  * Define ThreadLoad specializations for the various PTX load modifiers
  */
@@ -347,12 +306,210 @@ struct ThreadLoadHelper<T*>
     CUB_LOAD_ALL(LOAD_CG, cg)
     CUB_LOAD_ALL(LOAD_CS, cs)
     CUB_LOAD_ALL(LOAD_CV, cv)
+#else
+    // LOAD_CV on SM10-13 uses "volatile.global" to ensure reads from last level
+    CUB_LOAD_ALL(LOAD_CV, volatile.global)
 #endif
 #if CUB_PTX_ARCH >= 350
     CUB_LOAD_ALL(LOAD_LDG, global.nc)
 #endif
 
-//CUB_LOAD_ALL(LOAD_VOLATILE, volatile)
+
+
+/**
+ * Load with LOAD_DEFAULT on iterator types
+ */
+template <typename InputIteratorRA>
+__device__ __forceinline__ typename std::iterator_traits<InputIteratorRA>::value_type ThreadLoad(
+    InputIteratorRA         itr,
+    Int2Type<LOAD_DEFAULT>  modifier,
+    Int2Type<false>         is_pointer)
+{
+    return *itr;
+}
+
+
+/**
+ * Load with LOAD_DEFAULT on pointer types
+ */
+template <typename T>
+__device__ __forceinline__ T ThreadLoad(
+    T                       *ptr,
+    Int2Type<LOAD_DEFAULT>  modifier,
+    Int2Type<true>          is_pointer)
+{
+    return *ptr;
+}
+
+
+/**
+ * Load with LOAD_VOLATILE on primitive pointer types
+ */
+template <typename T>
+__device__ __forceinline__ T ThreadLoadVolatile(
+    T                       *ptr,
+    Int2Type<true>          is_primitive)
+{
+    T retval = *reinterpret_cast<volatile T*>(ptr);
+
+#if (CUB_PTX_ARCH <= 130)
+    if (sizeof(T) == 1) __threadfence_block();
+#endif
+
+    return retval;
+}
+
+
+/**
+ * Load with LOAD_VOLATILE on non-primitive pointer types
+ */
+template <typename T>
+__device__ __forceinline__ T ThreadLoadVolatile(
+    T                       *ptr,
+    Int2Type<false>          is_primitive)
+{
+    typedef typename WordAlignment<T>::VolatileAlignWord VolatileAlignWord;
+
+    const int VOLATILE_ALIGN_UNROLL = sizeof(T) / sizeof(VolatileAlignWord);
+
+    VolatileAlignWord alias[VOLATILE_ALIGN_UNROLL];
+
+    #pragma unroll
+    for (int i = 0; i < VOLATILE_ALIGN_UNROLL; ++i)
+        alias[i] = reinterpret_cast<volatile VolatileAlignWord*>(ptr)[i];
+
+    return reinterpret_cast<T&>(alias);
+}
+
+
+/**
+ * Load with LOAD_VOLATILE on pointer types
+ */
+template <typename T>
+__device__ __forceinline__ T ThreadLoad(
+    T                       *ptr,
+    Int2Type<LOAD_VOLATILE> modifier,
+    Int2Type<true>          is_pointer)
+{
+    return ThreadLoadVolatile(ptr, Int2Type<Traits<T>::PRIMITIVE>());
+}
+
+
+#if (CUB_PTX_ARCH <= 130)
+
+/**
+ * Load with LOAD_CG uses LOAD_CV in pre-SM20 PTX to ensure coherent reads when run on newer architectures with L1
+ */
+template <typename T>
+__device__ __forceinline__ T ThreadLoad(
+    T                       *ptr,
+    Int2Type<LOAD_CG>       modifier,
+    Int2Type<true>          is_pointer)
+{
+    return ThreadLoad<LOAD_CV>(ptr);
+}
+
+#endif  // (CUB_PTX_ARCH <= 130)
+
+
+/// Helper structure for templated load iteration (inductive case)
+template <PtxLoadModifier MODIFIER, int COUNT, int MAX>
+struct IterateThreadLoad
+{
+    template <typename T>
+    static __device__ __forceinline__ void Load(T *ptr, T *vals)
+    {
+        vals[COUNT] = ThreadLoad<MODIFIER>(ptr + COUNT);
+        IterateThreadLoad<MODIFIER, COUNT + 1, MAX>::Load(ptr, vals);
+    }
+};
+
+/// Helper structure for templated load iteration (termination case)
+template <PtxLoadModifier MODIFIER, int MAX>
+struct IterateThreadLoad<MODIFIER, MAX, MAX>
+{
+    template <typename T>
+    static __device__ __forceinline__ void Load(T *ptr, T *vals) {}
+};
+
+
+
+/**
+ * Load with arbitrary MODIFIER on primitive pointer types
+ */
+template <PtxLoadModifier MODIFIER, typename T>
+__device__ __forceinline__ T ThreadLoadPointer(
+    T                       *ptr,
+    Int2Type<true>         one_word)
+{
+    typedef typename WordAlignment<T>::AlignWord AlignWord;
+
+    const int ALIGN_UNROLL = sizeof(T) / sizeof(AlignWord);
+
+    T retval;
+
+    // Templated load iteration (because some PTX compilers can't handle iteration with inlined asm)
+    IterateThreadLoad<MODIFIER, 0, ALIGN_UNROLL>::Load(
+        reinterpret_cast<AlignWord*>(ptr),
+        reinterpret_cast<AlignWord*>(&retval));
+
+    return retval;
+}
+
+
+/**
+ * Load with arbitrary MODIFIER on non-primitive pointer types
+ */
+template <PtxLoadModifier MODIFIER, typename T>
+__device__ __forceinline__ T ThreadLoadPointer(
+    T                       *ptr,
+    Int2Type<false>         one_word)
+{
+    typedef typename WordAlignment<T>::AlignWord AlignWord;
+
+    const int ALIGN_UNROLL = sizeof(T) / sizeof(AlignWord);
+
+    AlignWord alias[ALIGN_UNROLL];
+
+    // Templated load iteration (because some PTX compilers can't handle iteration with inlined asm)
+    IterateThreadLoad<MODIFIER, 0, ALIGN_UNROLL>::Load(
+        reinterpret_cast<AlignWord*>(ptr),
+        alias);
+
+    return reinterpret_cast<T&>(alias);
+
+}
+
+
+/**
+ * Load with arbitrary MODIFIER on pointer types
+ */
+template <typename T, int MODIFIER>
+__device__ __forceinline__ T ThreadLoad(
+    T                       *ptr,
+    Int2Type<MODIFIER>      modifier,
+    Int2Type<true>          is_pointer)
+{
+    return ThreadLoadPointer<PtxLoadModifier(MODIFIER)>(
+        ptr,
+        Int2Type<true>());
+}
+
+
+/**
+ * Generic ThreadLoad definition
+ */
+template <
+    PtxLoadModifier MODIFIER,
+    typename InputIteratorRA>
+__device__ __forceinline__ typename std::iterator_traits<InputIteratorRA>::value_type ThreadLoad(InputIteratorRA itr)
+{
+    return ThreadLoad(
+        itr,
+        Int2Type<MODIFIER>(),
+        Int2Type<IsPointer<InputIteratorRA>::VALUE>());
+}
+
 
 
 #endif // DOXYGEN_SHOULD_SKIP_THIS

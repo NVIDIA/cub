@@ -43,10 +43,220 @@ CUB_NS_PREFIX
 /// CUB namespace
 namespace cub {
 
+
+/******************************************************************************
+ * Texture references
+ *****************************************************************************/
+
+#ifndef DOXYGEN_SHOULD_SKIP_THIS    // Do not document
+
+// Anonymous namespace
+namespace {
+
+/// Templated Texture reference type for multiplicand vector
+template <typename T>
+struct TexIteratorRef
+{
+    // Texture reference type
+    typedef texture<T, cudaTextureType1D, cudaReadModeElementType> TexRef;
+
+    static TexRef ref;
+
+    /**
+     * Bind texture
+     */
+    static cudaError_t BindTexture(void *d_in, size_t &offset)
+    {
+        cudaChannelFormatDesc tex_desc = cudaCreateChannelDesc<T>();
+        if (d_in)
+        {
+            return (CubDebug(cudaBindTexture(&offset, ref, d_in, tex_desc)));
+        }
+        return cudaSuccess;
+    }
+
+    /**
+     * Unbind textures
+     */
+    static cudaError_t UnbindTexture()
+    {
+        return CubDebug(cudaUnbindTexture(ref));
+    }
+};
+
+// Texture reference definitions
+template <typename Value>
+typename TexIteratorRef<Value>::TexRef TexIteratorRef<Value>::ref = 0;
+
+} // Anonymous namespace
+
+
+
+/**
+ * Define HasTexBinding structure for testing the presence of nested
+ * TexBindingTag type names within data types
+ */
+CUB_DEFINE_DETECT_NESTED_TYPE(HasTexBinding, TexBindingTag)
+
+
+/// Helper for (un)binding iterator textures (specialized for iterators that can have texture bound)
+template <
+    typename InputIteratorRA,
+    bool HAS_TEX_BINDING = HasTexBinding<InputIteratorRA>::VALUE>
+struct TexIteratorBinder
+{
+    static cudaError_t Bind(InputIteratorRA d_itr)
+    {
+        return d_itr.BindTexture();
+    }
+
+    static cudaError_t Unbind(InputIteratorRA d_itr)
+    {
+        return d_itr.UnindTexture();
+    }
+};
+
+/// Helper for (un)binding iterator textures (specialized for iterators that cannot have texture bound)
+template <typename InputIteratorRA>
+struct TexIteratorBinder<InputIteratorRA, false>
+{
+    static cudaError_t Bind(InputIteratorRA d_itr)
+    {
+        return cudaSuccess;
+    }
+
+    static cudaError_t Unbind(InputIteratorRA d_itr)
+    {
+        return cudaSuccess;
+    }
+};
+
+/// Bind iterator texture if supported (otherwise do nothing)
+template <typename InputIteratorRA>
+__host__ cudaError_t BindIteratorTexture(InputIteratorRA d_itr)
+{
+    return TexIteratorBinder<InputIteratorRA>::Bind(d_itr);
+}
+
+/// Unbind iterator texture if supported (otherwise do nothing)
+template <typename InputIteratorRA>
+__host__ cudaError_t UnbindIteratorTexture(InputIteratorRA d_itr)
+{
+    return TexIteratorBinder<InputIteratorRA>::Bind(d_itr);
+}
+
+#endif // DOXYGEN_SHOULD_SKIP_THIS
+
+
+
+
+
+
+
 /**
  * \addtogroup UtilModule
  * @{
  */
+
+
+/******************************************************************************
+ * Iterators
+ *****************************************************************************/
+
+/**
+ * \brief A simple random-access iterator pointing to a range of constant values
+ *
+ * \par Overview
+ * ConstantIteratorRA is a random-access iterator that when dereferenced, always
+ * returns the supplied constant of type \p OutputType.
+ *
+ * \tparam OutputType           The value type of this iterator
+ */
+template <typename OutputType>
+class ConstantIteratorRA
+{
+public:
+
+#ifndef DOXYGEN_SHOULD_SKIP_THIS    // Do not document
+
+    typedef ConstantIteratorRA                  self_type;
+    typedef OutputType                          value_type;
+    typedef OutputType                          reference;
+    typedef OutputType*                         pointer;
+    typedef std::random_access_iterator_tag     iterator_category;
+    typedef int                                 difference_type;
+
+#endif  // DOXYGEN_SHOULD_SKIP_THIS
+
+private:
+
+    OutputType    val;
+
+public:
+
+    /// Constructor
+    __host__ __device__ __forceinline__ ConstantIteratorRA(
+        const OutputType &val)          ///< Constant value for the iterator instance to report
+    :
+        val(val)
+    {}
+
+#ifndef DOXYGEN_SHOULD_SKIP_THIS    // Do not document
+
+    __host__ __device__ __forceinline__ self_type operator++()
+    {
+        self_type i = *this;
+        return i;
+    }
+
+    __host__ __device__ __forceinline__ self_type operator++(int junk)
+    {
+        return *this;
+    }
+
+    __host__ __device__ __forceinline__ reference operator*()
+    {
+        return val;
+    }
+
+    template <typename SizeT>
+    __host__ __device__ __forceinline__ self_type operator+(SizeT n)
+    {
+        return ConstantIteratorRA(val);
+    }
+
+    template <typename SizeT>
+    __host__ __device__ __forceinline__ self_type operator-(SizeT n)
+    {
+        return ConstantIteratorRA(val);
+    }
+
+    template <typename SizeT>
+    __host__ __device__ __forceinline__ reference operator[](SizeT n)
+    {
+        return ConstantIteratorRA(val);
+    }
+
+    __host__ __device__ __forceinline__ pointer operator->()
+    {
+        return &val;
+    }
+
+    __host__ __device__ __forceinline__ bool operator==(const self_type& rhs)
+    {
+        return (val == rhs.val);
+    }
+
+    __host__ __device__ __forceinline__ bool operator!=(const self_type& rhs)
+    {
+        return (val != rhs.val);
+    }
+
+#endif // DOXYGEN_SHOULD_SKIP_THIS
+
+};
+
+
 
 /**
  * \brief A simple random-access transform iterator for applying a transformation operator.
@@ -151,111 +361,6 @@ public:
 #endif // DOXYGEN_SHOULD_SKIP_THIS
 
 };
-
-
-
-/******************************************************************************
- * Texture references
- *****************************************************************************/
-
-#ifndef DOXYGEN_SHOULD_SKIP_THIS    // Do not document
-
-// Anonymous namespace
-namespace {
-
-/// Templated Texture reference type for multiplicand vector
-template <typename T>
-struct TexIteratorRef
-{
-    // Texture reference type
-    typedef texture<T, cudaTextureType1D, cudaReadModeElementType> TexRef;
-
-    static TexRef ref;
-
-    /**
-     * Bind texture
-     */
-    static cudaError_t BindTexture(void *d_in, size_t &offset)
-    {
-        cudaChannelFormatDesc tex_desc = cudaCreateChannelDesc<T>();
-        if (d_in)
-        {
-            return (CubDebug(cudaBindTexture(&offset, ref, d_in, tex_desc)));
-        }
-        return cudaSuccess;
-    }
-
-    /**
-     * Unbind textures
-     */
-    static cudaError_t UnbindTexture()
-    {
-        return CubDebug(cudaUnbindTexture(ref));
-    }
-};
-
-// Texture reference definitions
-template <typename Value>
-typename TexIteratorRef<Value>::TexRef TexIteratorRef<Value>::ref = 0;
-
-} // Anonymous namespace
-
-
-
-/**
- * Define HasTexBinding structure for testing the presence of nested
- * TexBindingTag type names within data types
- */
-CUB_DEFINE_DETECT_NESTED_TYPE(HasTexBinding, TexBindingTag)
-
-
-/// Helper for (un)binding iterator textures (specialized for iterators that can have texture bound)
-template <
-    typename InputIteratorRA,
-    bool HAS_TEX_BINDING = HasTexBinding<InputIteratorRA>::VALUE>
-struct TexIteratorBinder
-{
-    static cudaError_t Bind(InputIteratorRA d_itr)
-    {
-        return d_itr.BindTexture();
-    }
-
-    static cudaError_t Unbind(InputIteratorRA d_itr)
-    {
-        return d_itr.UnindTexture();
-    }
-};
-
-/// Helper for (un)binding iterator textures (specialized for iterators that cannot have texture bound)
-template <typename InputIteratorRA>
-struct TexIteratorBinder<InputIteratorRA, false>
-{
-    static cudaError_t Bind(InputIteratorRA d_itr)
-    {
-        return cudaSuccess;
-    }
-
-    static cudaError_t Unbind(InputIteratorRA d_itr)
-    {
-        return cudaSuccess;
-    }
-};
-
-/// Bind iterator texture if supported (otherwise do nothing)
-template <typename InputIteratorRA>
-__host__ cudaError_t BindIteratorTexture(InputIteratorRA d_itr)
-{
-    return TexIteratorBinder<InputIteratorRA>::Bind(d_itr);
-}
-
-/// Unbind iterator texture if supported (otherwise do nothing)
-template <typename InputIteratorRA>
-__host__ cudaError_t UnbindIteratorTexture(InputIteratorRA d_itr)
-{
-    return TexIteratorBinder<InputIteratorRA>::Bind(d_itr);
-}
-
-#endif // DOXYGEN_SHOULD_SKIP_THIS
 
 
 
