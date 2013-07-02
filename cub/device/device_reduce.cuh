@@ -64,8 +64,8 @@ namespace cub {
  */
 template <
     typename                BlockSweepReducePolicy, ///< Tuning policy for cub::BlockSweepReduce abstraction
-    typename                InputIteratorRA,        ///< The random-access iterator type for input (may be a simple pointer type).
-    typename                OutputIteratorRA,       ///< The random-access iterator type for output (may be a simple pointer type).
+    typename                InputIteratorRA,        ///< Random-access iterator type for input (may be a simple pointer type)
+    typename                OutputIteratorRA,       ///< Random-access iterator type for output (may be a simple pointer type)
     typename                SizeT,                  ///< Integral type used for global array indexing
     typename                ReductionOp>            ///< Binary reduction operator type having member <tt>T operator()(const T &a, const T &b)</tt>
 __launch_bounds__ (int(BlockSweepReducePolicy::BLOCK_THREADS), 1)
@@ -110,8 +110,8 @@ __global__ void MultiBlockReduceKernel(
  */
 template <
     typename                BlockSweepReducePolicy,  ///< Tuning policy for cub::BlockSweepReduce abstraction
-    typename                InputIteratorRA,        ///< The random-access iterator type for input (may be a simple pointer type).
-    typename                OutputIteratorRA,       ///< The random-access iterator type for output (may be a simple pointer type).
+    typename                InputIteratorRA,        ///< Random-access iterator type for input (may be a simple pointer type)
+    typename                OutputIteratorRA,       ///< Random-access iterator type for output (may be a simple pointer type)
     typename                SizeT,                  ///< Integral type used for global array indexing
     typename                ReductionOp>            ///< Binary reduction operator type having member <tt>T operator()(const T &a, const T &b)</tt>
 __launch_bounds__ (int(BlockSweepReducePolicy::BLOCK_THREADS), 1)
@@ -353,8 +353,8 @@ struct DeviceReduce
      */
     template <
         typename                    ReduceSingleKernelPtr,              ///< Function type of cub::SingleBlockReduceKernel
-        typename                    InputIteratorRA,                    ///< The random-access iterator type for input (may be a simple pointer type).
-        typename                    OutputIteratorRA,                   ///< The random-access iterator type for output (may be a simple pointer type).
+        typename                    InputIteratorRA,                    ///< Random-access iterator type for input (may be a simple pointer type)
+        typename                    OutputIteratorRA,                   ///< Random-access iterator type for output (may be a simple pointer type)
         typename                    SizeT,                              ///< Integral type used for global array indexing
         typename                    ReductionOp>                        ///< Binary reduction operator type having member <tt>T operator()(const T &a, const T &b)</tt>
     __host__ __device__ __forceinline__
@@ -420,8 +420,8 @@ struct DeviceReduce
         typename                    MultiBlockReduceKernelPtr,          ///< Function type of cub::MultiBlockReduceKernel
         typename                    ReduceSingleKernelPtr,              ///< Function type of cub::SingleBlockReduceKernel
         typename                    ResetDrainKernelPtr,                ///< Function type of cub::ResetDrainKernel
-        typename                    InputIteratorRA,                    ///< The random-access iterator type for input (may be a simple pointer type).
-        typename                    OutputIteratorRA,                   ///< The random-access iterator type for output (may be a simple pointer type).
+        typename                    InputIteratorRA,                    ///< Random-access iterator type for input (may be a simple pointer type)
+        typename                    OutputIteratorRA,                   ///< Random-access iterator type for output (may be a simple pointer type)
         typename                    SizeT,                              ///< Integral type used for global array indexing
         typename                    ReductionOp>                        ///< Binary reduction operator type having member <tt>T operator()(const T &a, const T &b)</tt>
     __host__ __device__ __forceinline__
@@ -602,8 +602,8 @@ struct DeviceReduce
     template <
         typename                    MultiBlockReduceKernelPtr,          ///< Function type of cub::MultiBlockReduceKernel
         typename                    ReduceSingleKernelPtr,              ///< Function type of cub::SingleBlockReduceKernel
-        typename                    InputIteratorRA,                    ///< The random-access iterator type for input (may be a simple pointer type).
-        typename                    OutputIteratorRA,                   ///< The random-access iterator type for output (may be a simple pointer type).
+        typename                    InputIteratorRA,                    ///< Random-access iterator type for input (may be a simple pointer type)
+        typename                    OutputIteratorRA,                   ///< Random-access iterator type for output (may be a simple pointer type)
         typename                    SizeT,                              ///< Integral type used for global array indexing
         typename                    ReductionOp>                        ///< Binary reduction operator type having member <tt>T operator()(const T &a, const T &b)</tt>
     __host__ __device__ __forceinline__
@@ -667,8 +667,8 @@ struct DeviceReduce
      *
      * \devicestorage
      *
-     * \tparam InputIteratorRA      <b>[inferred]</b> The random-access iterator type for input (may be a simple pointer type).
-     * \tparam OutputIteratorRA     <b>[inferred]</b> The random-access iterator type for output (may be a simple pointer type).
+     * \tparam InputIteratorRA      <b>[inferred]</b> Random-access iterator type for input (may be a simple pointer type)
+     * \tparam OutputIteratorRA     <b>[inferred]</b> Random-access iterator type for output (may be a simple pointer type)
      */
     template <
         typename                    InputIteratorRA,
@@ -692,8 +692,8 @@ struct DeviceReduce
      *
      * \devicestorage
      *
-     * \tparam InputIteratorRA      <b>[inferred]</b> The random-access iterator type for input (may be a simple pointer type).
-     * \tparam OutputIteratorRA     <b>[inferred]</b> The random-access iterator type for output (may be a simple pointer type).
+     * \tparam InputIteratorRA      <b>[inferred]</b> Random-access iterator type for input (may be a simple pointer type)
+     * \tparam OutputIteratorRA     <b>[inferred]</b> Random-access iterator type for output (may be a simple pointer type)
      * \tparam ReductionOp          <b>[inferred]</b> Binary reduction operator type having member <tt>T operator()(const T &a, const T &b)</tt>
      */
     template <

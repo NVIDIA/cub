@@ -29,7 +29,7 @@
 
 /**
  * \file
- * cub::DeviceScan provides operations for computing a device-wide, parallel prefix scan across data items residing within global memory.
+ * cub::DeviceReduceByKey provides operations for computing a device-wide, parallel prefix scan across data items residing within global memory.
  */
 
 #pragma once
@@ -37,9 +37,11 @@
 #include <stdio.h>
 #include <iterator>
 
-#include "block_sweep/block_sweep_scan.cuh"
+#include "block_sweep/block_sweep_reduce_by_key.cuh"
+#include "device_scan.cuh"
 #include "../thread/thread_operators.cuh"
 #include "../grid/grid_queue.cuh"
+#include "../util_iterator.cuh"
 #include "../util_debug.cuh"
 #include "../util_device.cuh"
 #include "../util_namespace.cuh"
@@ -59,59 +61,22 @@ namespace cub {
 
 
 /**
- * Initialization kernel for tile status initialization (multi-block)
+ * Reduce-by-key kernel entry point (multi-block)
  */
 template <
-    typename T,                                     ///< Scan value type
-    typename SizeT>                                 ///< Integral type used for global array indexing
-__global__ void InitScanKernel(
-    GridQueue<SizeT>            grid_queue,         ///< [in] Descriptor for performing dynamic mapping of input tiles to thread blocks
-    DeviceScanTileDescriptor<T> *d_tile_status,     ///< [out] Tile status words
-    int                         num_tiles)          ///< [in] Number of tiles
-{
-    typedef DeviceScanTileDescriptor<T> DeviceScanTileDescriptorT;
-
-    enum
-    {
-        TILE_STATUS_PADDING = PtxArchProps::WARP_THREADS,
-    };
-
-    // Reset queue descriptor
-    if ((blockIdx.x == 0) && (threadIdx.x == 0)) grid_queue.ResetDrain(num_tiles);
-
-    // Initialize tile status
-    int tile_offset = (blockIdx.x * blockDim.x) + threadIdx.x;
-    if (tile_offset < num_tiles)
-    {
-        // Not-yet-set
-        d_tile_status[TILE_STATUS_PADDING + tile_offset].status = DEVICE_SCAN_TILE_INVALID;
-    }
-
-    if ((blockIdx.x == 0) && (threadIdx.x < TILE_STATUS_PADDING))
-    {
-        // Padding
-        d_tile_status[threadIdx.x].status = DEVICE_SCAN_TILE_OOB;
-    }
-}
-
-
-/**
- * Scan kernel entry point (multi-block)
- */
-template <
-    typename    BlockSweepScanPolicy,       ///< Tuning policy for cub::BlockSweepScan abstraction
+    typename    BlockSweepReduceByKeyPolicy,    ///< Tuning policy for cub::BlockSweepReduceByKey abstraction
     typename    InputIteratorRA,                ///< Random-access iterator type for input (may be a simple pointer type)
     typename    OutputIteratorRA,               ///< Random-access iterator type for output (may be a simple pointer type)
     typename    T,                              ///< The scan data type
-    typename    ScanOp,                         ///< Binary scan operator type having member <tt>T operator()(const T &a, const T &b)</tt>
+    typename    ReductionOp,                    ///< Binary scan operator type having member <tt>T operator()(const T &a, const T &b)</tt>
     typename    Identity,                       ///< Identity value type (cub::NullType for inclusive scans)
     typename    SizeT>                          ///< Integral type used for global array indexing
 __launch_bounds__ (int(BlockSweepScanPolicy::BLOCK_THREADS))
 __global__ void MultiBlockScanKernel(
     InputIteratorRA             d_in,           ///< Input data
     OutputIteratorRA            d_out,          ///< Output data
-    DeviceScanTileDescriptor<T>     *d_tile_status, ///< Global list of tile status
-    ScanOp                      scan_op,        ///< Binary scan operator
+    DeviceScanTileDescriptor<T> *d_tile_status, ///< Global list of tile status
+    ReductionOp                 reduction_op,   ///< Binary scan operator
     Identity                    identity,       ///< Identity element
     SizeT                       num_items,      ///< Total number of scan items for the entire problem
     GridQueue<int>              queue)          ///< Descriptor for performing dynamic mapping of tile data to thread blocks
@@ -126,7 +91,7 @@ __global__ void MultiBlockScanKernel(
         BlockSweepScanPolicy,
         InputIteratorRA,
         OutputIteratorRA,
-        ScanOp,
+        ReductionOp,
         Identity,
         SizeT> BlockSweepScanT;
 
@@ -134,7 +99,7 @@ __global__ void MultiBlockScanKernel(
     __shared__ typename BlockSweepScanT::TempStorage temp_storage;
 
     // Process tiles
-    BlockSweepScanT(temp_storage, d_in, d_out, scan_op, identity).ConsumeTiles(
+    BlockSweepScanT(temp_storage, d_in, d_out, reduction_op, identity).ConsumeTiles(
         num_items,
         queue,
         d_tile_status + TILE_STATUS_PADDING);
@@ -146,7 +111,7 @@ __global__ void MultiBlockScanKernel(
 
 
 /******************************************************************************
- * DeviceScan
+ * DeviceReduceByKey
  *****************************************************************************/
 
 /**
@@ -155,9 +120,9 @@ __global__ void MultiBlockScanKernel(
  */
 
 /**
- * \brief DeviceScan provides operations for computing a device-wide, parallel prefix scan across data items residing within global memory. ![](scan_logo.png)
+ * \brief DeviceReduceByKey provides operations for computing a device-wide, parallel prefix scan across data items residing within global memory. ![](scan_logo.png)
  */
-struct DeviceScan
+struct DeviceReduceByKey
 {
 #ifndef DOXYGEN_SHOULD_SKIP_THIS    // Do not document
 
@@ -221,48 +186,32 @@ struct DeviceScan
     template <typename T, typename SizeT>
     struct TunedPolicies<T, SizeT, 350>
     {
-        enum {
-            NOMINAL_ITEMS_PER_THREAD    = 16,   // 4byte items
-            ITEMS_PER_THREAD            = CUB_MAX(1, (NOMINAL_ITEMS_PER_THREAD * 4 / sizeof(T))),
-        };
-        typedef BlockSweepScanPolicy<128, ITEMS_PER_THREAD,  BLOCK_LOAD_DIRECT, false, LOAD_LDG, BLOCK_STORE_WARP_TRANSPOSE, true, BLOCK_SCAN_RAKING_MEMOIZE> MultiBlockPolicy;
+        typedef BlockSweepScanPolicy<128, 16,  BLOCK_LOAD_DIRECT, false, LOAD_LDG, BLOCK_STORE_WARP_TRANSPOSE, true, BLOCK_SCAN_RAKING_MEMOIZE> MultiBlockPolicy;
     };
 
     /// SM30 tune
     template <typename T, typename SizeT>
     struct TunedPolicies<T, SizeT, 300>
     {
-        enum {
-            NOMINAL_ITEMS_PER_THREAD    = 9,   // 4byte items
-            ITEMS_PER_THREAD            = CUB_MAX(1, (NOMINAL_ITEMS_PER_THREAD * 4 / sizeof(T))),
-        };
-        typedef BlockSweepScanPolicy<256, ITEMS_PER_THREAD,  BLOCK_LOAD_WARP_TRANSPOSE, false, LOAD_DEFAULT, BLOCK_STORE_WARP_TRANSPOSE, false, BLOCK_SCAN_RAKING_MEMOIZE> MultiBlockPolicy;
+        typedef BlockSweepScanPolicy<256, 9,  BLOCK_LOAD_WARP_TRANSPOSE, false, LOAD_DEFAULT, BLOCK_STORE_WARP_TRANSPOSE, false, BLOCK_SCAN_RAKING_MEMOIZE> MultiBlockPolicy;
     };
 
     /// SM20 tune
     template <typename T, typename SizeT>
     struct TunedPolicies<T, SizeT, 200>
     {
-        enum {
-            NOMINAL_ITEMS_PER_THREAD    = 15,   // 4byte items
-            ITEMS_PER_THREAD            = CUB_MAX(1, (NOMINAL_ITEMS_PER_THREAD * 4 / sizeof(T))),
-        };
-        typedef BlockSweepScanPolicy<128, ITEMS_PER_THREAD, BLOCK_LOAD_WARP_TRANSPOSE, false, LOAD_DEFAULT, BLOCK_STORE_WARP_TRANSPOSE, false, BLOCK_SCAN_RAKING_MEMOIZE> MultiBlockPolicy;
+        typedef BlockSweepScanPolicy<128, 15,  BLOCK_LOAD_WARP_TRANSPOSE, false, LOAD_DEFAULT, BLOCK_STORE_WARP_TRANSPOSE, false, BLOCK_SCAN_RAKING_MEMOIZE> MultiBlockPolicy;
     };
 
     /// SM10 tune
     template <typename T, typename SizeT>
     struct TunedPolicies<T, SizeT, 100>
     {
-        enum {
-            NOMINAL_ITEMS_PER_THREAD    = 7,   // 4byte items
-            ITEMS_PER_THREAD            = CUB_MAX(1, (NOMINAL_ITEMS_PER_THREAD * 4 / sizeof(T))),
-        };
-        typedef BlockSweepScanPolicy<128, ITEMS_PER_THREAD, BLOCK_LOAD_TRANSPOSE, false, LOAD_DEFAULT, BLOCK_STORE_TRANSPOSE, false, BLOCK_SCAN_RAKING> MultiBlockPolicy;
+        typedef BlockSweepScanPolicy<128, 7,  BLOCK_LOAD_TRANSPOSE, false, LOAD_DEFAULT, BLOCK_STORE_TRANSPOSE, false, BLOCK_SCAN_RAKING> MultiBlockPolicy;
     };
 
 
-    /// Tuning policy(ies) for the PTX architecture that DeviceScan operations will get dispatched to
+    /// Tuning policy(ies) for the PTX architecture that DeviceReduceByKey operations will get dispatched to
     template <typename T, typename SizeT>
     struct PtxDefaultPolicies
     {
@@ -321,7 +270,7 @@ struct DeviceScan
         typename                    MultiBlockScanKernelPtr,        ///< Function type of cub::MultiBlockScanKernel
         typename                    InputIteratorRA,                ///< Random-access iterator type for input (may be a simple pointer type)
         typename                    OutputIteratorRA,               ///< Random-access iterator type for output (may be a simple pointer type)
-        typename                    ScanOp,                         ///< Binary scan operator type having member <tt>T operator()(const T &a, const T &b)</tt>
+        typename                    ReductionOp,                         ///< Binary scan operator type having member <tt>T operator()(const T &a, const T &b)</tt>
         typename                    Identity,                       ///< Identity value type (cub::NullType for inclusive scans)
         typename                    SizeT>                          ///< Integral type used for global array indexing
     __host__ __device__ __forceinline__
@@ -333,7 +282,7 @@ struct DeviceScan
         KernelDispachParams         &multi_block_dispatch_params,   ///< [in] Dispatch parameters that match the policy that \p multi_block_kernel was compiled for
         InputIteratorRA             d_in,                           ///< [in] Iterator pointing to scan input
         OutputIteratorRA            d_out,                          ///< [in] Iterator pointing to scan output
-        ScanOp                      scan_op,                        ///< [in] Binary scan operator
+        ReductionOp                      reduction_op,                        ///< [in] Binary scan operator
         Identity                    identity,                       ///< [in] Identity element
         SizeT                       num_items,                      ///< [in] Total number of items to scan
         cudaStream_t                stream              = 0,        ///< [in] <b>[optional]</b> CUDA stream to launch kernels within.  Default is stream<sub>0</sub>.
@@ -355,9 +304,6 @@ struct DeviceScan
         // Data type
         typedef typename std::iterator_traits<InputIteratorRA>::value_type T;
 
-        // Tile status descriptor type
-        typedef DeviceScanTileDescriptor<T> DeviceScanTileDescriptorT;
-
         cudaError error = cudaSuccess;
         do
         {
@@ -368,7 +314,7 @@ struct DeviceScan
             void* allocations[2];
             size_t allocation_sizes[2] =
             {
-                (num_tiles + TILE_STATUS_PADDING) * sizeof(DeviceScanTileDescriptorT),        // bytes needed for tile status descriptors
+                (num_tiles + TILE_STATUS_PADDING) * sizeof(DeviceScanTileDescriptor<T>),        // bytes needed for tile status descriptors
                 GridQueue<int>::AllocationSize()                                            // bytes needed for grid queue descriptor
             };
 
@@ -380,7 +326,7 @@ struct DeviceScan
                 return cudaSuccess;
 
             // Global list of tile status
-            DeviceScanTileDescriptorT *d_tile_status = (DeviceScanTileDescriptorT*) allocations[0];
+            DeviceScanTileDescriptor<T> *d_tile_status = (DeviceScanTileDescriptor<T>*) allocations[0];
 
             // Grid queue descriptor
             GridQueue<int> queue(allocations[1]);
@@ -445,7 +391,7 @@ struct DeviceScan
                 d_in,
                 d_out,
                 d_tile_status,
-                scan_op,
+                reduction_op,
                 identity,
                 num_items,
                 queue);
@@ -472,7 +418,7 @@ struct DeviceScan
     template <
         typename                    InputIteratorRA,                ///< Random-access iterator type for input (may be a simple pointer type)
         typename                    OutputIteratorRA,               ///< Random-access iterator type for output (may be a simple pointer type)
-        typename                    ScanOp,                         ///< Binary scan operator type having member <tt>T operator()(const T &a, const T &b)</tt>
+        typename                    ReductionOp,                         ///< Binary scan operator type having member <tt>T operator()(const T &a, const T &b)</tt>
         typename                    Identity,                       ///< Identity value type (cub::NullType for inclusive scans)
         typename                    SizeT>                          ///< Integral type used for global array indexing
     __host__ __device__ __forceinline__
@@ -481,7 +427,7 @@ struct DeviceScan
         size_t                      &temp_storage_bytes,            ///< [in,out] Size in bytes of \p d_temp_storage allocation.
         InputIteratorRA             d_in,                           ///< [in] Iterator pointing to scan input
         OutputIteratorRA            d_out,                          ///< [in] Iterator pointing to scan output
-        ScanOp                      scan_op,                        ///< [in] Binary scan operator
+        ReductionOp                      reduction_op,                        ///< [in] Binary scan operator
         Identity                    identity,                       ///< [in] Identity element
         SizeT                       num_items,                      ///< [in] Total number of items to scan
         cudaStream_t                stream              = 0,        ///< [in] <b>[optional]</b> CUDA stream to launch kernels within.  Default is stream<sub>0</sub>.
@@ -514,11 +460,11 @@ struct DeviceScan
                 d_temp_storage,
                 temp_storage_bytes,
                 InitScanKernel<T, SizeT>,
-                MultiBlockScanKernel<MultiBlockPolicy, InputIteratorRA, OutputIteratorRA, T, ScanOp, Identity, SizeT>,
+                MultiBlockScanKernel<MultiBlockPolicy, InputIteratorRA, OutputIteratorRA, T, ReductionOp, Identity, SizeT>,
                 multi_block_dispatch_params,
                 d_in,
                 d_out,
-                scan_op,
+                reduction_op,
                 identity,
                 num_items,
                 stream,
@@ -535,125 +481,146 @@ struct DeviceScan
 
 
     /******************************************************************//**
-     * \name Exclusive
+     * Interface
      *********************************************************************/
-    //@{
+
 
     /**
-     * \brief Computes a device-wide exclusive prefix sum.
+     * \brief Computes device-wide reductions of consecutive values whose corresponding keys are equal.
+     *
+     * The resulting output lists of value-aggregates and their corresponding keys are compacted.
      *
      * \devicestorage
      *
-     * \tparam InputIteratorRA      <b>[inferred]</b> Random-access iterator type for input (may be a simple pointer type)
-     * \tparam OutputIteratorRA     <b>[inferred]</b> Random-access iterator type for output (may be a simple pointer type)
+     * \tparam KeyInputIteratorRA       <b>[inferred]</b> Random-access input iterator type for keys input (may be a simple pointer type)
+     * \tparam KeyOutputIteratorRA      <b>[inferred]</b> Random-access output iterator type for keys output (may be a simple pointer type)
+     * \tparam ValueInputIteratorRA     <b>[inferred]</b> Random-access input iterator type for values input (may be a simple pointer type)
+     * \tparam ValueOutputIteratorRA    <b>[inferred]</b> Random-access output iterator type for values output (may be a simple pointer type)
+     * \tparam ReductionOp              <b>[inferred]</b> Binary reduction operator type having member <tt>T operator()(const T &a, const T &b)</tt>, where \p T is the value type of \p ValueInputIteratorRA
      */
     template <
-        typename            InputIteratorRA,
-        typename            OutputIteratorRA>
+        typename                KeyInputIteratorRA,
+        typename                KeyOutputIteratorRA,
+        typename                ValueInputIteratorRA,
+        typename                ValueOutputIteratorRA,
+        typename                ReductionOp>
     __host__ __device__ __forceinline__
-    static cudaError_t ExclusiveSum(
-        void                *d_temp_storage,                    ///< [in] %Device allocation of temporary storage.  When NULL, the required allocation size is returned in \p temp_storage_bytes and no work is done.
-        size_t              &temp_storage_bytes,                ///< [in,out] Size in bytes of \p d_temp_storage allocation.
-        InputIteratorRA     d_in,                               ///< [in] Iterator pointing to scan input
-        OutputIteratorRA    d_out,                              ///< [in] Iterator pointing to scan output
-        int                 num_items,                          ///< [in] Total number of items to scan
-        cudaStream_t        stream              = 0,            ///< [in] <b>[optional]</b> CUDA stream to launch kernels within.  Default is stream<sub>0</sub>.
-        bool                stream_synchronous  = false)        ///< [in] <b>[optional]</b> Whether or not to synchronize the stream after every kernel launch to check for errors.  May cause significant slowdown.  Default is \p false.
+    static cudaError_t ReduceValues(
+        void                    *d_temp_storage,                ///< [in] %Device allocation of temporary storage.  When NULL, the required allocation size is returned in \p temp_storage_bytes and no work is done.
+        size_t                  &temp_storage_bytes,            ///< [in,out] Size in bytes of \p d_temp_storage allocation.
+        KeyInputIteratorRA      d_keys_in,                      ///< [in] Key input data
+        KeyOutputIteratorRA     d_keys_out,                     ///< [out] Key output data (compacted)
+        ValueInputIteratorRA    d_values_in,                    ///< [in] Value input data
+        ValueOutputIteratorRA   d_values_out,                   ///< [out] Value output data (compacted)
+        int                     num_items,                      ///< [in] Total number of input pairs
+        ReductionOp             reduction_op,                   ///< [in] Binary value reduction operator
+        cudaStream_t            stream              = 0,        ///< [in] <b>[optional]</b> CUDA stream to launch kernels within.  Default is stream<sub>0</sub>.
+        bool                    stream_synchronous  = false)    ///< [in] <b>[optional]</b> Whether or not to synchronize the stream after every kernel launch to check for errors.  May cause significant slowdown.  Default is \p false.
     {
-        typedef typename std::iterator_traits<InputIteratorRA>::value_type T;
-        return Dispatch(d_temp_storage, temp_storage_bytes, d_in, d_out, Sum(), T(), num_items, stream, stream_synchronous);
+        return Dispatch(d_temp_storage, temp_storage_bytes, d_keys_in, d_keys_out, d_values_in, d_values_out, reduction_op, num_items, stream, stream_synchronous);
     }
 
 
     /**
-     * \brief Computes a device-wide exclusive prefix scan using the specified binary \p scan_op functor.
+     * \brief Computes device-wide sums of consecutive values whose corresponding keys are equal.
+     *
+     * The resulting output lists of value-aggregates and their corresponding keys are compacted.
      *
      * \devicestorage
      *
-     * \tparam InputIteratorRA      <b>[inferred]</b> Random-access iterator type for input (may be a simple pointer type)
-     * \tparam OutputIteratorRA     <b>[inferred]</b> Random-access iterator type for output (may be a simple pointer type)
-     * \tparam ScanOp               <b>[inferred]</b> Binary scan operator type having member <tt>T operator()(const T &a, const T &b)</tt>
-     * \tparam Identity             <b>[inferred]</b> Type of the \p identity value used Binary scan operator type having member <tt>T operator()(const T &a, const T &b)</tt>
+     * \tparam KeyInputIteratorRA       <b>[inferred]</b> Random-access input iterator type for keys input (may be a simple pointer type)
+     * \tparam KeyOutputIteratorRA      <b>[inferred]</b> Random-access output iterator type for keys output (may be a simple pointer type)
+     * \tparam ValueInputIteratorRA     <b>[inferred]</b> Random-access input iterator type for values input (may be a simple pointer type)
+     * \tparam ValueOutputIteratorRA    <b>[inferred]</b> Random-access output iterator type for values output (may be a simple pointer type)
+     * \tparam ReductionOp              <b>[inferred]</b> Binary reduction operator type having member <tt>T operator()(const T &a, const T &b)</tt>, where \p T is the value type of \p ValueInputIteratorRA
      */
     template <
-        typename            InputIteratorRA,
-        typename            OutputIteratorRA,
-        typename            ScanOp,
-        typename            Identity>
+        typename                KeyInputIteratorRA,
+        typename                KeyOutputIteratorRA,
+        typename                ValueInputIteratorRA,
+        typename                ValueOutputIteratorRA>
     __host__ __device__ __forceinline__
-    static cudaError_t ExclusiveScan(
-        void                *d_temp_storage,                    ///< [in] %Device allocation of temporary storage.  When NULL, the required allocation size is returned in \p temp_storage_bytes and no work is done.
-        size_t              &temp_storage_bytes,                ///< [in,out] Size in bytes of \p d_temp_storage allocation.
-        InputIteratorRA     d_in,                               ///< [in] Iterator pointing to scan input
-        OutputIteratorRA    d_out,                              ///< [in] Iterator pointing to scan output
-        ScanOp              scan_op,                            ///< [in] Binary scan operator
-        Identity            identity,                           ///< [in] Identity element
-        int                 num_items,                          ///< [in] Total number of items to scan
-        cudaStream_t        stream              = 0,            ///< [in] <b>[optional]</b> CUDA stream to launch kernels within.  Default is stream<sub>0</sub>.
-        bool                stream_synchronous  = false)        ///< [in] <b>[optional]</b> Whether or not to synchronize the stream after every kernel launch to check for errors.  May cause significant slowdown.  Default is \p false.
+    static cudaError_t SumValues(
+        void                    *d_temp_storage,                ///< [in] %Device allocation of temporary storage.  When NULL, the required allocation size is returned in \p temp_storage_bytes and no work is done.
+        size_t                  &temp_storage_bytes,            ///< [in,out] Size in bytes of \p d_temp_storage allocation.
+        KeyInputIteratorRA      d_keys_in,                      ///< [in] Key input data
+        KeyOutputIteratorRA     d_keys_out,                     ///< [in] Key output data (compacted)
+        ValueInputIteratorRA    d_values_in,                    ///< [in] Value input data
+        ValueOutputIteratorRA   d_values_out,                   ///< [in] Value output data (compacted)
+        int                     num_items,                      ///< [in] Total number of input pairs
+        cudaStream_t            stream              = 0,        ///< [in] <b>[optional]</b> CUDA stream to launch kernels within.  Default is stream<sub>0</sub>.
+        bool                    stream_synchronous  = false)    ///< [in] <b>[optional]</b> Whether or not to synchronize the stream after every kernel launch to check for errors.  May cause significant slowdown.  Default is \p false.
     {
-        return Dispatch(d_temp_storage, temp_storage_bytes, d_in, d_out, scan_op, identity, num_items, stream, stream_synchronous);
-    }
-
-
-    //@}  end member group
-    /******************************************************************//**
-     * \name Inclusive
-     *********************************************************************/
-    //@{
-
-
-    /**
-     * \brief Computes a device-wide inclusive prefix sum.
-     *
-     * \devicestorage
-     *
-     * \tparam InputIteratorRA      <b>[inferred]</b> Random-access iterator type for input (may be a simple pointer type)
-     * \tparam OutputIteratorRA     <b>[inferred]</b> Random-access iterator type for output (may be a simple pointer type)
-     */
-    template <
-        typename            InputIteratorRA,
-        typename            OutputIteratorRA>
-    __host__ __device__ __forceinline__
-    static cudaError_t InclusiveSum(
-        void                *d_temp_storage,                    ///< [in] %Device allocation of temporary storage.  When NULL, the required allocation size is returned in \p temp_storage_bytes and no work is done.
-        size_t              &temp_storage_bytes,                ///< [in,out] Size in bytes of \p d_temp_storage allocation.
-        InputIteratorRA     d_in,                               ///< [in] Iterator pointing to scan input
-        OutputIteratorRA    d_out,                              ///< [in] Iterator pointing to scan output
-        int                 num_items,                          ///< [in] Total number of items to scan
-        cudaStream_t        stream              = 0,            ///< [in] <b>[optional]</b> CUDA stream to launch kernels within.  Default is stream<sub>0</sub>.
-        bool                stream_synchronous  = false)        ///< [in] <b>[optional]</b> Whether or not to synchronize the stream after every kernel launch to check for errors.  May cause significant slowdown.  Default is \p false.
-    {
-        return Dispatch(d_temp_storage, temp_storage_bytes, d_in, d_out, Sum(), NullType(), num_items, stream, stream_synchronous);
+        return ReduceValues(d_temp_storage, temp_storage_bytes, d_keys_in, d_keys_out, d_values_in, d_values_out, cub::Sum(), num_items, stream, stream_synchronous);
     }
 
 
     /**
-     * \brief Computes a device-wide exclusive prefix scan using the specified binary \p scan_op functor.
+     * \brief Computes the "run-length" of each group of consecutive, equal-valued keys.
+     *
+     * The resulting output lists of run-length counts and their corresponding keys are compacted.
      *
      * \devicestorage
      *
-     * \tparam InputIteratorRA      <b>[inferred]</b> Random-access iterator type for input (may be a simple pointer type)
-     * \tparam OutputIteratorRA     <b>[inferred]</b> Random-access iterator type for output (may be a simple pointer type)
-     * \tparam ScanOp               <b>[inferred]</b> Binary scan operator type having member <tt>T operator()(const T &a, const T &b)</tt>
+     * \tparam KeyInputIteratorRA       <b>[inferred]</b> Random-access input iterator type for keys input (may be a simple pointer type)
+     * \tparam KeyOutputIteratorRA      <b>[inferred]</b> Random-access output iterator type for keys output (may be a simple pointer type)
+     * \tparam CountOutputIteratorRA    <b>[inferred]</b> Random-access output iterator type for output of key-counts whose value type must be convertible to an integer type (may be a simple pointer type)
      */
     template <
-        typename            InputIteratorRA,
-        typename            OutputIteratorRA,
-        typename            ScanOp>
+        typename                KeyInputIteratorRA,
+        typename                KeyOutputIteratorRA,
+        typename                CountOutputIteratorRA>
     __host__ __device__ __forceinline__
-    static cudaError_t InclusiveScan(
-        void                *d_temp_storage,                    ///< [in] %Device allocation of temporary storage.  When NULL, the required allocation size is returned in \p temp_storage_bytes and no work is done.
-        size_t              &temp_storage_bytes,                ///< [in,out] Size in bytes of \p d_temp_storage allocation.
-        InputIteratorRA     d_in,                               ///< [in] Iterator pointing to scan input
-        OutputIteratorRA    d_out,                              ///< [in] Iterator pointing to scan output
-        ScanOp              scan_op,                            ///< [in] Binary scan operator
-        int                 num_items,                          ///< [in] Total number of items to scan
-        cudaStream_t        stream              = 0,            ///< [in] <b>[optional]</b> CUDA stream to launch kernels within.  Default is stream<sub>0</sub>.
-        bool                stream_synchronous  = false)        ///< [in] <b>[optional]</b> Whether or not to synchronize the stream after every kernel launch to check for errors.  May cause significant slowdown.  Default is \p false.
+    static cudaError_t RunLengths(
+        void                    *d_temp_storage,                ///< [in] %Device allocation of temporary storage.  When NULL, the required allocation size is returned in \p temp_storage_bytes and no work is done.
+        size_t                  &temp_storage_bytes,            ///< [in,out] Size in bytes of \p d_temp_storage allocation.
+        KeyInputIteratorRA      d_keys_in,                      ///< [in] Key input data
+        KeyOutputIteratorRA     d_keys_out,                     ///< [in] Key output data (compacted)
+        CountOutputIteratorRA   d_counts_out,                   ///< [in] Run-length counts output data (compacted)
+        int                     num_items,                      ///< [in] Total number of keys
+        cudaStream_t            stream              = 0,        ///< [in] <b>[optional]</b> CUDA stream to launch kernels within.  Default is stream<sub>0</sub>.
+        bool                    stream_synchronous  = false)    ///< [in] <b>[optional]</b> Whether or not to synchronize the stream after every kernel launch to check for errors.  May cause significant slowdown.  Default is \p false.
     {
-        return Dispatch(d_temp_storage, temp_storage_bytes, d_in, d_out, scan_op, NullType(), num_items, stream, stream_synchronous);
+        typedef typename std::iterator_traits<CountOutputIteratorRA>::value_type CountT;
+        return SumValues(d_temp_storage, temp_storage_bytes, d_keys_in, d_keys_out, ConstantIteratorRA<CountT>(1), d_counts_out, num_items, stream, stream_synchronous);
     }
+
+
+    /**
+     * \brief Removes duplicates within each group of consecutive, equal-valued keys.  Only the first key from each group (and corresponding value) is kept.
+     *
+     * The resulting keys are compacted.
+     *
+     * \devicestorage
+     *
+     * \tparam KeyInputIteratorRA       <b>[inferred]</b> Random-access input iterator type for keys input (may be a simple pointer type)
+     * \tparam KeyOutputIteratorRA      <b>[inferred]</b> Random-access output iterator type for keys output (may be a simple pointer type)
+     * \tparam ValueInputIteratorRA     <b>[inferred]</b> Random-access input iterator type for values input (may be a simple pointer type)
+     * \tparam ValueOutputIteratorRA    <b>[inferred]</b> Random-access output iterator type for values output (may be a simple pointer type)
+     * \tparam ReductionOp              <b>[inferred]</b> Binary reduction operator type having member <tt>T operator()(const T &a, const T &b)</tt>, where \p T is the value type of \p ValueInputIteratorRA
+     */
+    template <
+        typename                KeyInputIteratorRA,
+        typename                KeyOutputIteratorRA,
+        typename                ValueInputIteratorRA,
+        typename                ValueOutputIteratorRA,
+        typename                ReductionOp>
+    __host__ __device__ __forceinline__
+    static cudaError_t Unique(
+        void                    *d_temp_storage,                ///< [in] %Device allocation of temporary storage.  When NULL, the required allocation size is returned in \p temp_storage_bytes and no work is done.
+        size_t                  &temp_storage_bytes,            ///< [in,out] Size in bytes of \p d_temp_storage allocation.
+        KeyInputIteratorRA      d_keys_in,                      ///< [in] Key input data
+        KeyOutputIteratorRA     d_keys_out,                     ///< [out] Key output data (compacted)
+        ValueInputIteratorRA    d_values_in,                    ///< [in] Value input data
+        ValueOutputIteratorRA   d_values_out,                   ///< [out] Value output data (compacted)
+        int                     num_items,                      ///< [in] Total number of input pairs
+        cudaStream_t            stream              = 0,        ///< [in] <b>[optional]</b> CUDA stream to launch kernels within.  Default is stream<sub>0</sub>.
+        bool                    stream_synchronous  = false)    ///< [in] <b>[optional]</b> Whether or not to synchronize the stream after every kernel launch to check for errors.  May cause significant slowdown.  Default is \p false.
+    {
+        return Dispatch(d_temp_storage, temp_storage_bytes, d_keys_in, d_keys_out, d_values_in, d_values_out, reduction_op, num_items, stream, stream_synchronous);
+    }
+
+
 
 };
 

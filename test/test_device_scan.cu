@@ -44,8 +44,8 @@ using namespace cub;
 // Globals, constants and typedefs
 //---------------------------------------------------------------------
 
-bool                    g_verbose = false;
-int                     g_iterations = 100;
+bool                    g_verbose           = false;
+int                     g_timing_iterations = 0;
 CachingDeviceAllocator  g_allocator;
 
 
@@ -228,7 +228,7 @@ template <
     typename     T,
     typename     ScanOp>
 T Initialize(
-    int          gen_mode,
+    GenMode      gen_mode,
     T            *h_in,
     T            *h_reference,
     int          num_items,
@@ -280,8 +280,9 @@ void Test(
     int compare = 0;
     int cnp_compare = 0;
 
-    printf("%s cub::DeviceScan %d items, %s %d-byte elements, gen-mode %d\n\n",
+    printf("%s cub::DeviceScan::%s %d items, %s %d-byte elements, gen-mode %d\n",
         (Equals<IdentityT, NullType>::VALUE) ? "Inclusive" : "Exclusive",
+        (Equals<ScanOp, Sum>::VALUE) ? "Sum" : "Scan",
         num_items,
         type_string,
         (int) sizeof(T),
@@ -319,7 +320,7 @@ void Test(
 
     // Check for correctness (and display results, if specified)
     compare = CompareDeviceResults(h_reference, d_out, num_items, true, g_verbose);
-    printf("\n%s", compare ? "FAIL" : "PASS");
+    printf("%s", compare ? "FAIL" : "PASS");
 
     // Flush any stdout/stderr
     fflush(stdout);
@@ -328,7 +329,7 @@ void Test(
     // Performance
     GpuTimer gpu_timer;
     float elapsed_millis = 0.0;
-    for (int i = 0; i < g_iterations; i++)
+    for (int i = 0; i < g_timing_iterations; i++)
     {
         gpu_timer.Start();
 
@@ -337,17 +338,15 @@ void Test(
         gpu_timer.Stop();
         elapsed_millis += gpu_timer.ElapsedMillis();
     }
-    if (g_iterations > 0)
+    if (g_timing_iterations > 0)
     {
-        float avg_millis = elapsed_millis / g_iterations;
+        float avg_millis = elapsed_millis / g_timing_iterations;
         float grate = float(num_items) / avg_millis / 1000.0 / 1000.0;
         float gbandwidth = grate * sizeof(T) * 2;
-        printf(", %.3f avg ms, %.3f billion items/s, %.3f GB/s\n", avg_millis, grate, gbandwidth);
+        printf(", %.3f avg ms, %.3f billion items/s, %.3f GB/s", avg_millis, grate, gbandwidth);
     }
-    else
-    {
-        printf("\n");
-    }
+
+    printf("\n\n");
 
 
     // Evaluate using CUDA nested parallelism
@@ -382,14 +381,14 @@ void Test(
         // Performance
         gpu_timer.Start();
 
-        CnpScan<false><<<1,1>>>(d_in, d_out, num_items, scan_op, g_iterations, d_cnp_error);
+        CnpScan<false><<<1,1>>>(d_in, d_out, num_items, scan_op, g_timing_iterations, d_cnp_error);
 
         gpu_timer.Stop();
         elapsed_millis = gpu_timer.ElapsedMillis();
 
-        if (g_iterations > 0)
+        if (g_timing_iterations > 0)
         {
-            float avg_millis = elapsed_millis / g_iterations;
+            float avg_millis = elapsed_millis / g_timing_iterations;
             float grate = float(num_items) / avg_millis / 1000.0 / 1000.0;
             float gbandwidth = grate * sizeof(T) * 2;
             printf(", %.3f avg ms, %.3f billion items/s, %.3f GB/s\n", avg_millis, grate, gbandwidth);
@@ -417,6 +416,52 @@ void Test(
 }
 
 
+/**
+ * Iterative different gen modes
+ */
+template <
+    typename        T,
+    typename        ScanOp,
+    typename        Identity>
+void Test(
+    int             num_items,
+    ScanOp          scan_op,
+    Identity        identity,
+    char*           type_string)
+{
+    Test<T>(num_items, UNIFORM, scan_op, identity, type_string);
+    Test<T>(num_items, RANDOM, scan_op, identity, type_string);
+}
+
+
+/**
+ * Iterate inclusive/exclusive
+ */
+template <
+    typename        T,
+    typename        ScanOp>
+void Test(
+    int             num_items,
+    ScanOp          scan_op,
+    char*           type_string)
+{
+    Test<T>(num_items, scan_op, T(), type_string);          // exclusive
+    Test<T>(num_items, scan_op, NullType(), type_string);   // inclusive
+}
+
+
+/**
+ * Iterate sum/scan
+ */
+template <
+    typename        T>
+void Test(
+    int             num_items,
+    char*           type_string)
+{
+//    Test<T>(num_items, Sum(), type_string);
+    Test<T>(num_items, Max(), type_string);
+}
 
 
 //---------------------------------------------------------------------
@@ -436,9 +481,8 @@ int main(int argc, char** argv)
     // Initialize command line
     CommandLineArgs args(argc, argv);
     args.GetCmdLineArgument("n", num_items);
-    args.GetCmdLineArgument("i", g_iterations);
+    args.GetCmdLineArgument("i", g_timing_iterations);
     g_verbose = args.CheckCmdLineFlag("v");
-    bool quick = args.CheckCmdLineFlag("quick");
 
     // Print usage
     if (args.CheckCmdLineFlag("help"))
@@ -453,34 +497,31 @@ int main(int argc, char** argv)
 
     // Initialize device
     CubDebugExit(args.DeviceInit());
+    printf("\n");
 
     // Quick test
-    typedef int T;
-    Test<T>(num_items, UNIFORM, Sum(), T(0), CUB_TYPE_STRING(T));
-
-
-
 /*
-    // primitives
-    Test<char>(Sum<char>(), CUB_TYPE_STRING(char));
-    Test<short>(Sum<short>(), CUB_TYPE_STRING(short));
-    Test<int>(Sum<int>(), CUB_TYPE_STRING(int));
-    Test<long long>(Sum<long long>(), CUB_TYPE_STRING(long long));
+    Test<unsigned char>(num_items, UNIFORM, Sum(), int(0), CUB_TYPE_STRING(int));         // exclusive sum
+    Test<unsigned long long>(num_items, RANDOM, Sum(), (unsigned long long) (0), CUB_TYPE_STRING(unsigned long long));         // exclusive sum
+    Test<unsigned int>(num_items, RANDOM, Sum(), (unsigned int) (0), CUB_TYPE_STRING(unsigned int));         // exclusive sum
+    Test<TestFoo>(num_items, UNIFORM, Max(), NullType(), CUB_TYPE_STRING(TestFoo));         // exclusive sum
+*/
+//    Test<uchar2>(num_items, RANDOM, Max(), NullType(), CUB_TYPE_STRING(uchar2));         // exclusive sum
+/*
+    // Test different input types
+    Test<unsigned char>(num_items, CUB_TYPE_STRING(unsigned char));
+    Test<unsigned short>(num_items, CUB_TYPE_STRING(unsigned short));
+    Test<unsigned int>(num_items, CUB_TYPE_STRING(unsigned int));
+    Test<unsigned long long>(num_items, CUB_TYPE_STRING(unsigned long long));
+*/
+    Test<uchar2>(num_items, CUB_TYPE_STRING(uchar2));
+/*
+    Test<uint2>(num_items, CUB_TYPE_STRING(uint2));
+    Test<ulonglong2>(num_items, CUB_TYPE_STRING(ulonglong2));
+    Test<ulonglong4>(num_items, CUB_TYPE_STRING(ulonglong4));
 
-    // vector types
-    Test<char2>(Sum<char2>(), CUB_TYPE_STRING(char2));
-    Test<short2>(Sum<short2>(), CUB_TYPE_STRING(short2));
-    Test<int2>(Sum<int2>(), CUB_TYPE_STRING(int2));
-    Test<longlong2>(Sum<longlong2>(), CUB_TYPE_STRING(longlong2));
-
-    Test<char4>(Sum<char4>(), CUB_TYPE_STRING(char4));
-    Test<short4>(Sum<short4>(), CUB_TYPE_STRING(short4));
-    Test<int4>(Sum<int4>(), CUB_TYPE_STRING(int4));
-    Test<longlong4>(Sum<longlong4>(), CUB_TYPE_STRING(longlong4));
-
-    // Complex types
-    Test<TestFoo>(Sum<TestFoo>(), CUB_TYPE_STRING(TestFoo));
-    Test<TestBar>(Sum<TestBar>(), CUB_TYPE_STRING(TestBar));
+    Test<TestFoo>(num_items, CUB_TYPE_STRING(TestFoo));
+    Test<TestBar>(num_items, CUB_TYPE_STRING(TestBar));
 */
     return 0;
 }

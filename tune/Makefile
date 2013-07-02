@@ -48,6 +48,12 @@ OSUPPER = $(shell uname -s 2>/dev/null | tr [:lower:] [:upper:])
 INC = -I. -I.. -I../test
 
 #-------------------------------------------------------------------------------
+# Libs
+#-------------------------------------------------------------------------------
+
+LIBS += -lcudart 
+
+#-------------------------------------------------------------------------------
 # Defines
 #-------------------------------------------------------------------------------
 
@@ -183,5 +189,5 @@ tune_device_reduce: bin/tune_device_reduce_$(SUFFIX)
 
 bin/tune_device_reduce_$(SUFFIX) : tune_device_reduce.cu $(DEPS)
 	mkdir -p bin
-	$(NVCC) $(DEFINES) $(SM_TARGETS) -o bin/tune_device_reduce_$(SUFFIX) tune_device_reduce.cu $(NVCCFLAGS) $(CPU_ARCH) $(INC) -O3 -DTUNE_ARCH=$(SM_ARCH) -DTUNE_SIZE=$(TUNE_SIZE)
+	$(NVCC) $(DEFINES) $(SM_TARGETS) -o bin/tune_device_reduce_$(SUFFIX) tune_device_reduce.cu $(NVCCFLAGS) $(CPU_ARCH) $(INC) $(LIBS) -O3 -DTUNE_ARCH=$(SM_ARCH) -DTUNE_SIZE=$(TUNE_SIZE)
 

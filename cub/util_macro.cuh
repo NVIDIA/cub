@@ -47,6 +47,15 @@ namespace cub {
  */
 
 /**
+ * Align struct
+ */
+#if defined(_WIN32) || defined(_WIN64)
+    #define CUB_ALIGN(bytes) __declspec(align(32))
+#else
+    #define CUB_ALIGN(bytes) __attribute__((aligned(bytes)))
+#endif
+
+/**
  * Select maximum(a, b)
  */
 #define CUB_MAX(a, b) (((a) > (b)) ? (a) : (b))

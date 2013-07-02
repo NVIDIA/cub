@@ -174,8 +174,8 @@ struct BlockSweepReduceByKey
     // Scan tuple type
     typedef ReduceByKeyTuple<Value, SizeT>                      ScanTuple;
 
-    // Device tile status type
-    typedef DeviceScanTileStatus<ScanTuple>                     DeviceScanTileStatusT;
+    // Device tile status descriptor type
+    typedef DeviceScanTileDescriptor<ScanTuple>                 DeviceScanTileDescriptorT;
 
     // Block scan functor type
     typedef ReduceByKeyScanOp<ReductionOp>                      ScanOp;
@@ -217,7 +217,7 @@ struct BlockSweepReduceByKey
     KeyOutputIteratorRA         d_keys_out;         ///< Key output data
     ValueInputIteratorRA        d_values_in;        ///< Value input data
     ValueOutputIteratorRA       d_values_out;       ///< Value output data
-    DeviceScanTileStatusT       *d_tile_status;     ///< Global list of tile status
+    DeviceScanTileDescriptorT       *d_tile_status;     ///< Global list of tile status
     ScanOp                      scan_op;            ///< Binary scan operator
     int                         num_tiles;          ///< Total number of input tiles for the entire problem
     SizeT                       num_items;          ///< Total number of scan items for the entire problem
@@ -235,7 +235,7 @@ struct BlockSweepReduceByKey
         KeyOutputIteratorRA         d_keys_out,         ///< Key output data
         ValueInputIteratorRA        d_values_in,        ///< Value input data
         ValueOutputIteratorRA       d_values_out,       ///< Value output data
-        DeviceScanTileStatusT       *d_tile_status,     ///< Global list of tile status
+        DeviceScanTileDescriptorT       *d_tile_status,     ///< Global list of tile status
         ReductionOp                 reduction_op,       ///< Binary scan operator
         int                         num_tiles,          ///< Total number of input tiles for the entire problem
         SizeT                       num_items)          ///< Total number of scan items for the entire problem
@@ -315,7 +315,7 @@ struct BlockSweepReduceByKey
 
             // Update tile status
             if (threadIdx.x == 0)
-                DeviceScanTileStatusT::SetPrefix(d_tile_status, block_aggregate);
+                DeviceScanTileDescriptorT::SetPrefix(d_tile_status, block_aggregate);
         }
         else
         {
