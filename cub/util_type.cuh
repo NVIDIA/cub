@@ -207,35 +207,62 @@ struct WordAlignment
     struct Pad
     {
         T       val;
-        char    pad;
+        char    byte;
     };
 
     enum
     {
+        /// The alignment of T in bytes
         ALIGN_BYTES = sizeof(Pad) - sizeof(T)
     };
 
+    /// Biggest shuffle word that T is a whole multiple of and is not larger than the alignment of T
     typedef typename If<(ALIGN_BYTES % 4 == 0),
         int,
         typename If<(ALIGN_BYTES % 2 == 0),
             short,
             char>::Type>::Type                  ShuffleWord;
 
+    /// Biggest volatile word that T is a whole multiple of and is not larger than the alignment of T
     typedef typename If<(ALIGN_BYTES % 8 == 0),
         long long,
-        ShuffleWord>::Type                      VolatileAlignWord;
+        ShuffleWord>::Type                      VolatileWord;
 
+    /// Biggest memory-access word that T is a whole multiple of and is not larger than the alignment of T
     typedef typename If<(ALIGN_BYTES % 16 == 0),
-        int4,
+        longlong2,
         If<(ALIGN_BYTES % 8 == 0),
-            int2,
-            ShuffleWord>::Type>::Type           AlignWord;
+            short4,                                 // needed to get heterogenous PODs to work on all platforms
+            ShuffleWord>::Type>::Type           DeviceWord;
 
     enum
     {
-        ALIGN_MULTIPLE = sizeof(T) / sizeof(AlignWord)
+        DEVICE_MULTIPLE = sizeof(DeviceWord) / sizeof(T)
     };
+
+    struct UninitializedBytes
+    {
+        char buf[sizeof(T)];
+    };
+
+    struct UninitializedShuffleWords
+    {
+        ShuffleWord buf[sizeof(T) / sizeof(ShuffleWord)];
+    };
+
+    struct UninitializedVolatileWords
+    {
+        VolatileWord buf[sizeof(T) / sizeof(VolatileWord)];
+    };
+
+    struct UninitializedDeviceWords
+    {
+        DeviceWord buf[sizeof(T) / sizeof(DeviceWord)];
+    };
+
+
 };
+
 
 #endif // DOXYGEN_SHOULD_SKIP_THIS
 

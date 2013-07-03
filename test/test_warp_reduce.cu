@@ -44,7 +44,8 @@ using namespace cub;
 // Globals, constants and typedefs
 //---------------------------------------------------------------------
 
-bool                    g_verbose = false;
+bool                    g_verbose       = false;
+int                     g_repeat        = 0;
 CachingDeviceAllocator  g_allocator;
 
 
@@ -685,7 +686,7 @@ void Test()
 
 
 /**
- * Run battery of tests for different problem generation options
+ * Run battery of tests for different number of active warps
  */
 template <int LOGICAL_WARP_THREADS>
 void Test()
@@ -703,12 +704,16 @@ int main(int argc, char** argv)
     // Initialize command line
     CommandLineArgs args(argc, argv);
     g_verbose = args.CheckCmdLineFlag("v");
+    bool quick = args.CheckCmdLineFlag("quick");
+    args.GetCmdLineArgument("repeat", g_repeat);
 
     // Print usage
     if (args.CheckCmdLineFlag("help"))
     {
         printf("%s "
             "[--device=<device-id>] "
+            "[--repeat=<times to repeat tests>]"
+            "[--quick]"
             "[--v] "
             "\n", argv[0]);
         exit(0);
@@ -717,15 +722,24 @@ int main(int argc, char** argv)
     // Initialize device
     CubDebugExit(args.DeviceInit());
 
-    // Quick exclusive test
-    TestReduce<1, 32, int>(UNIFORM, Sum(), CUB_TYPE_STRING(int), 32);
-    TestSegmentedReduce<1, 32, int>(UNIFORM, 1, Sum(), CUB_TYPE_STRING(int));
-
-    // Test logical warp sizes
-    Test<32>();
-    Test<16>();
-    Test<9>();
-    Test<7>();
+    if (quick)
+    {
+        // Quick exclusive test
+        TestReduce<1, 32, int>(UNIFORM, Sum(), CUB_TYPE_STRING(int), 32);
+        TestSegmentedReduce<1, 32, int>(UNIFORM, 1, Sum(), CUB_TYPE_STRING(int));
+    }
+    else
+    {
+        // Repeat test sequence
+        for (int i = 0; i <= g_repeat; ++i)
+        {
+            // Test logical warp sizes
+            Test<32>();
+            Test<16>();
+            Test<9>();
+            Test<7>();
+        }
+    }
 
     return 0;
 }

@@ -46,6 +46,7 @@ using namespace cub;
 
 bool                    g_verbose           = false;
 int                     g_timing_iterations = 0;
+int                     g_repeat            = 0;
 CachingDeviceAllocator  g_allocator;
 
 
@@ -459,7 +460,7 @@ void Test(
     int             num_items,
     char*           type_string)
 {
-//    Test<T>(num_items, Sum(), type_string);
+    Test<T>(num_items, Sum(), type_string);
     Test<T>(num_items, Max(), type_string);
 }
 
@@ -480,15 +481,19 @@ int main(int argc, char** argv)
 
     // Initialize command line
     CommandLineArgs args(argc, argv);
+    g_verbose = args.CheckCmdLineFlag("v");
+    bool quick = args.CheckCmdLineFlag("quick");
     args.GetCmdLineArgument("n", num_items);
     args.GetCmdLineArgument("i", g_timing_iterations);
-    g_verbose = args.CheckCmdLineFlag("v");
+    args.GetCmdLineArgument("repeat", g_repeat);
 
     // Print usage
     if (args.CheckCmdLineFlag("help"))
     {
         printf("%s "
             "[--device=<device-id>] "
+            "[--repeat=<times to repeat tests>]"
+            "[--quick]"
             "[--v] "
             "[--cnp]"
             "\n", argv[0]);
@@ -499,30 +504,35 @@ int main(int argc, char** argv)
     CubDebugExit(args.DeviceInit());
     printf("\n");
 
-    // Quick test
-/*
-    Test<unsigned char>(num_items, UNIFORM, Sum(), int(0), CUB_TYPE_STRING(int));         // exclusive sum
-    Test<unsigned long long>(num_items, RANDOM, Sum(), (unsigned long long) (0), CUB_TYPE_STRING(unsigned long long));         // exclusive sum
-    Test<unsigned int>(num_items, RANDOM, Sum(), (unsigned int) (0), CUB_TYPE_STRING(unsigned int));         // exclusive sum
-    Test<TestFoo>(num_items, UNIFORM, Max(), NullType(), CUB_TYPE_STRING(TestFoo));         // exclusive sum
-*/
-//    Test<uchar2>(num_items, RANDOM, Max(), NullType(), CUB_TYPE_STRING(uchar2));         // exclusive sum
-/*
-    // Test different input types
-    Test<unsigned char>(num_items, CUB_TYPE_STRING(unsigned char));
-    Test<unsigned short>(num_items, CUB_TYPE_STRING(unsigned short));
-    Test<unsigned int>(num_items, CUB_TYPE_STRING(unsigned int));
-    Test<unsigned long long>(num_items, CUB_TYPE_STRING(unsigned long long));
-*/
-    Test<uchar2>(num_items, CUB_TYPE_STRING(uchar2));
-/*
-    Test<uint2>(num_items, CUB_TYPE_STRING(uint2));
-    Test<ulonglong2>(num_items, CUB_TYPE_STRING(ulonglong2));
-    Test<ulonglong4>(num_items, CUB_TYPE_STRING(ulonglong4));
+    if (quick)
+    {
+        // Quick test
+        Test<unsigned char>(num_items, RANDOM, Sum(), int(0), CUB_TYPE_STRING(int));
+        Test<unsigned long long>(num_items, RANDOM, Sum(), (unsigned long long) (0), CUB_TYPE_STRING(unsigned long long));
+        Test<unsigned int>(num_items, RANDOM, Sum(), (unsigned int) (0), CUB_TYPE_STRING(unsigned int));
+        Test<TestFoo>(num_items, RANDOM, Max(), NullType(), CUB_TYPE_STRING(TestFoo));
+    }
+    else
+    {
+        // Repeat test sequence
+        for (int i = 0; i <= g_repeat; ++i)
+        {
+            // Test different input types
+            Test<unsigned char>(num_items, CUB_TYPE_STRING(unsigned char));
+            Test<unsigned short>(num_items, CUB_TYPE_STRING(unsigned short));
+            Test<unsigned int>(num_items, CUB_TYPE_STRING(unsigned int));
+            Test<unsigned long long>(num_items, CUB_TYPE_STRING(unsigned long long));
 
-    Test<TestFoo>(num_items, CUB_TYPE_STRING(TestFoo));
-    Test<TestBar>(num_items, CUB_TYPE_STRING(TestBar));
-*/
+            Test<uchar2>(num_items, CUB_TYPE_STRING(uchar2));
+            Test<uint2>(num_items, CUB_TYPE_STRING(uint2));
+            Test<ulonglong2>(num_items, CUB_TYPE_STRING(ulonglong2));
+            Test<ulonglong4>(num_items, CUB_TYPE_STRING(ulonglong4));
+
+            Test<TestFoo>(num_items, CUB_TYPE_STRING(TestFoo));
+            Test<TestBar>(num_items, CUB_TYPE_STRING(TestBar));
+        }
+    }
+
     return 0;
 }
 

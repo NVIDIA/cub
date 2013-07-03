@@ -135,11 +135,30 @@ __device__ __forceinline__ void ThreadStore(OutputIteratorRA itr, T val);
             "r"(val.z),                                                                     \
             "r"(val.w));                                                                    \
     }                                                                                       \
+    template<>                                                                              \
+    __device__ __forceinline__ void ThreadStore<cub_modifier, longlong2*, longlong2>(longlong2* ptr, longlong2 val)              \
+    {                                                                                       \
+        asm volatile ("st."#ptx_modifier".v2.s64 [%0], {%1, %2};" : :                       \
+            _CUB_ASM_PTR_(ptr),                                                             \
+            "l"(val.x),                                                                     \
+            "l"(val.y));                                                                    \
+    }
+
 
 /**
  * Define a int2 (8B) ThreadStore specialization for the given PTX load modifier
  */
 #define CUB_STORE_8(cub_modifier, ptx_modifier)                                             \
+    template<>                                                                              \
+    __device__ __forceinline__ void ThreadStore<cub_modifier, short4*, short4>(short4* ptr, short4 val)              \
+    {                                                                                       \
+        asm volatile ("st."#ptx_modifier".v4.s16 [%0], {%1, %2, %3, %4};" : :               \
+            _CUB_ASM_PTR_(ptr),                                                             \
+            "h"(val.x),                                                                     \
+            "h"(val.y),                                                                     \
+            "h"(val.z),                                                                     \
+            "h"(val.w));                                                                    \
+    }                                                                                       \
     template<>                                                                              \
     __device__ __forceinline__ void ThreadStore<cub_modifier, int2*, int2>(int2* ptr, int2 val)              \
     {                                                                                       \
@@ -224,6 +243,30 @@ __device__ __forceinline__ void ThreadStore(OutputIteratorRA itr, T val);
 #endif
 
 
+
+/// Helper structure for templated store iteration (inductive case)
+template <PtxStoreModifier MODIFIER, int COUNT, int MAX>
+struct IterateThreadStore
+{
+    template <typename T>
+    static __device__ __forceinline__ void Store(T *ptr, T *vals)
+    {
+        ThreadStore<MODIFIER>(ptr + COUNT, vals[COUNT]);
+        IterateThreadStore<MODIFIER, COUNT + 1, MAX>::Store(ptr, vals);
+    }
+};
+
+/// Helper structure for templated store iteration (termination case)
+template <PtxStoreModifier MODIFIER, int MAX>
+struct IterateThreadStore<MODIFIER, MAX, MAX>
+{
+    template <typename T>
+    static __device__ __forceinline__ void Store(T *ptr, T *vals) {}
+};
+
+
+
+
 /**
  * Store with STORE_DEFAULT on iterator types
  */
@@ -253,6 +296,42 @@ __device__ __forceinline__ void ThreadStore(
 
 
 /**
+ * Store with STORE_VOLATILE on primitive pointer types
+ */
+template <typename T>
+__device__ __forceinline__ void ThreadStoreVolatile(
+    T                           *ptr,
+    T                           val,
+    Int2Type<true>              is_primitive)
+{
+    *reinterpret_cast<volatile T*>(ptr) = val;
+}
+
+
+/**
+ * Store with STORE_VOLATILE on non-primitive pointer types
+ */
+template <typename T>
+__device__ __forceinline__ void ThreadStoreVolatile(
+    T                           *ptr,
+    T                           val,
+    Int2Type<false>             is_primitive)
+{
+    typedef typename WordAlignment<T>::VolatileWord VolatileWord;   // Word type for memcopying
+    enum { NUM_WORDS = sizeof(T) / sizeof(VolatileWord) };
+
+    // Store into array of uninitialized words
+    typename WordAlignment<T>::UninitializedVolatileWords words;
+    *reinterpret_cast<T*>(words.buf) = val;
+
+    // Memcopy words to aliased destination
+    #pragma unroll
+    for (int i = 0; i < NUM_WORDS; ++i)
+        reinterpret_cast<volatile VolatileWord*>(ptr)[i] = words.buf[i];
+}
+
+
+/**
  * Store with STORE_VOLATILE on pointer types
  */
 template <typename T>
@@ -262,23 +341,14 @@ __device__ __forceinline__ void ThreadStore(
     Int2Type<STORE_VOLATILE>    modifier,
     Int2Type<true>              is_pointer)
 {
-    typedef typename WordAlignment<T>::VolatileAlignWord VolatileAlignWord;
-
-    const int VOLATILE_ALIGN_UNROLL = sizeof(T) / sizeof(VolatileAlignWord);
-
-    VolatileAlignWord alias[VOLATILE_ALIGN_UNROLL];
-    reinterpret_cast<T&>(alias) = val;
-
-    #pragma unroll
-    for (int i = 0; i < VOLATILE_ALIGN_UNROLL; ++i)
-        reinterpret_cast<volatile VolatileAlignWord*>(ptr)[i] = alias[i];
+    ThreadStoreVolatile(ptr, val, Int2Type<Traits<T>::PRIMITIVE>());
 }
 
 
-#if (CUB_PTX_ARCH <= 130)
+#if (CUB_PTX_ARCH <= 350)
 
 /**
- * Store with STORE_CG uses STORE_WT in pre-SM20 PTX to ensure coherent writes when run on newer architectures with L1
+ * Store with STORE_CG on pointer types (uses STORE_DEFAULT on current architectures)
  */
 template <typename T>
 __device__ __forceinline__ void ThreadStore(
@@ -287,75 +357,10 @@ __device__ __forceinline__ void ThreadStore(
     Int2Type<STORE_CG>          modifier,
     Int2Type<true>              is_pointer)
 {
-    ThreadStore<STORE_WT>(ptr, val);
+    ThreadStore<STORE_DEFAULT>(ptr, val);
 }
 
-#endif  // (CUB_PTX_ARCH <= 130)
-
-
-/// Helper structure for templated store iteration (inductive case)
-template <PtxStoreModifier MODIFIER, int COUNT, int MAX>
-struct IterateThreadStore
-{
-    template <typename T>
-    static __device__ __forceinline__ void Store(T *ptr, T *vals)
-    {
-        ThreadStore<MODIFIER>(ptr + COUNT, vals[COUNT]);
-        IterateThreadStore<MODIFIER, COUNT + 1, MAX>::Store(ptr, vals);
-    }
-};
-
-/// Helper structure for templated store iteration (termination case)
-template <PtxStoreModifier MODIFIER, int MAX>
-struct IterateThreadStore<MODIFIER, MAX, MAX>
-{
-    template <typename T>
-    static __device__ __forceinline__ void Store(T *ptr, T *vals) {}
-};
-
-
-
-/**
- * Store with arbitrary MODIFIER on primitive pointer types
- */
-template <PtxStoreModifier MODIFIER, typename T>
-__device__ __forceinline__ void ThreadStorePointer(
-    T                           *ptr,
-    T                           val,
-    Int2Type<true>              one_word)
-{
-    typedef typename WordAlignment<T>::AlignWord AlignWord;
-
-    const int ALIGN_UNROLL = sizeof(T) / sizeof(AlignWord);
-
-    // Templated store iteration (because some PTX compilers can't handle iteration with inlined asm)
-    IterateThreadStore<MODIFIER, 0, ALIGN_UNROLL>::Store(
-        reinterpret_cast<AlignWord*>(ptr),
-        reinterpret_cast<AlignWord*>(&val));
-}
-
-
-/**
- * Store with arbitrary MODIFIER on non-primitive pointer types
- */
-template <PtxStoreModifier MODIFIER, typename T>
-__device__ __forceinline__ void ThreadStorePointer(
-    T                           *ptr,
-    T                           val,
-    Int2Type<false>             one_word)
-{
-    typedef typename WordAlignment<T>::AlignWord AlignWord;
-
-    const int ALIGN_UNROLL = sizeof(T) / sizeof(AlignWord);
-
-    AlignWord alias[ALIGN_UNROLL];
-    reinterpret_cast<T&>(alias) = val;
-
-    // Templated store iteration (because some PTX compilers can't handle iteration with inlined asm)
-    IterateThreadStore<MODIFIER, 0, ALIGN_UNROLL>::Store(
-        reinterpret_cast<AlignWord*>(ptr),
-        alias);
-}
+#endif  // (CUB_PTX_ARCH <= 350)
 
 
 /**
@@ -368,10 +373,17 @@ __device__ __forceinline__ void ThreadStore(
     Int2Type<MODIFIER>          modifier,
     Int2Type<true>              is_pointer)
 {
-    ThreadStorePointer<PtxStoreModifier(MODIFIER)>(
-        ptr,
-        val,
-        Int2Type<true>());
+    typedef typename WordAlignment<T>::DeviceWord DeviceWord;   // Word type for memcopying
+    enum { NUM_WORDS = sizeof(T) / sizeof(DeviceWord) };
+
+    // Store into array of uninitialized words
+    typename WordAlignment<T>::UninitializedDeviceWords words;
+    *reinterpret_cast<T*>(words.buf) = val;
+
+    // Memcopy words to aliased destination
+    IterateThreadStore<PtxStoreModifier(MODIFIER), 0, NUM_WORDS>::Store(
+        reinterpret_cast<DeviceWord*>(ptr),
+        words.buf);
 }
 
 
@@ -387,8 +399,6 @@ __device__ __forceinline__ void ThreadStore(OutputIteratorRA itr, T val)
         Int2Type<MODIFIER>(),
         Int2Type<IsPointer<OutputIteratorRA>::VALUE>());
 }
-
-
 
 
 
