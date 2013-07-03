@@ -368,7 +368,7 @@ struct DeviceScan
             void* allocations[2];
             size_t allocation_sizes[2] =
             {
-                (num_tiles + TILE_STATUS_PADDING) * sizeof(DeviceScanTileDescriptorT),        // bytes needed for tile status descriptors
+                (num_tiles + TILE_STATUS_PADDING) * sizeof(DeviceScanTileDescriptorT),      // bytes needed for tile status descriptors
                 GridQueue<int>::AllocationSize()                                            // bytes needed for grid queue descriptor
             };
 

@@ -51,7 +51,7 @@
 #include "device/device_scan.cuh"
 
 // Grid
-#include "grid/grid_barrier.cuh"
+//#include "grid/grid_barrier.cuh"
 #include "grid/grid_even_share.cuh"
 #include "grid/grid_multi_buffer.cuh"
 #include "grid/grid_queue.cuh"

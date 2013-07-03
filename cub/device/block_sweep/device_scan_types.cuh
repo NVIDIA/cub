@@ -61,18 +61,6 @@ enum DeviceScanTileStatus
 };
 
 
-template <typename T>
-struct DeviceScanTileDescriptorHelper
-{
-    enum
-    {
-        VECTOR_LENGTH       = WordAlignment<T>::ALIGN_MULTIPLE + 1,
-        DESCRIPTOR_BYTES    = VECTOR_LENGTH * WordAlignment<T>::ALIGN_BYTES,
-        POWER_OF_TWO        = PowerOfTwo<DESCRIPTOR_BYTES>::VALUE,
-        SINGLE_WORD         = (WordAlignment<T>::ALIGN_BYTES <= 8) && POWER_OF_TWO && (DESCRIPTOR_BYTES <= 32)
-    };
-};
-
 /**
  * Data type of tile status descriptor.
  *
@@ -81,37 +69,50 @@ struct DeviceScanTileDescriptorHelper
  */
 template <
     typename    T,
-    bool        SINGLE_WORD = DeviceScanTileDescriptorHelper<T>::SINGLE_WORD>
+    bool        SINGLE_WORD = (PowerOfTwo<sizeof(T)>::VALUE && (sizeof(T) <= 8))>
 struct DeviceScanTileDescriptor
-/*
 {
-    typedef typename VectorHelper<
-        typename WordAlignment<T>::AlignWord,
-        DeviceScanTileDescriptorHelper<T>::VECTOR_LENGTH>::Type AlignVector;
+    // Status word type
+    typedef typename If<(sizeof(T) == 8),
+        long long,
+        typename If<(sizeof(T) == 4),
+            int,
+            typename If<(sizeof(T) == 2),
+                short,
+                char>::Type>::Type>::Type StatusWord;
 
-    T                                       value;
-    typename WordAlignment<T>::AlignWord    status;
+    // Vector word type
+    typedef typename If<(sizeof(T) == 8),
+        longlong2,
+        typename If<(sizeof(T) == 4),
+            int2,
+            typename If<(sizeof(T) == 2),
+                int,
+                short>::Type>::Type>::Type VectorWord;
+
+    T           value;
+    StatusWord  status;
 
     static __device__ __forceinline__ void SetPrefix(DeviceScanTileDescriptor *ptr, T prefix)
     {
-        DeviceScanTileDescriptor tile_status;
-        tile_status.status = DEVICE_SCAN_TILE_PREFIX;
-        tile_status.value = prefix;
+        DeviceScanTileDescriptor tile_descriptor;
+        tile_descriptor.status = DEVICE_SCAN_TILE_PREFIX;
+        tile_descriptor.value = prefix;
 
-        ThreadStore<STORE_CG>(
-            reinterpret_cast<AlignVector*>(ptr),
-            reinterpret_cast<AlignVector&>(tile_status));
+        VectorWord alias;
+        *reinterpret_cast<DeviceScanTileDescriptor*>(&alias) = tile_descriptor;
+        ThreadStore<STORE_CG>(reinterpret_cast<VectorWord*>(ptr), alias);
     }
 
     static __device__ __forceinline__ void SetPartial(DeviceScanTileDescriptor *ptr, T partial)
     {
-        DeviceScanTileDescriptor tile_status;
-        tile_status.status = DEVICE_SCAN_TILE_PARTIAL;
-        tile_status.value = partial;
+        DeviceScanTileDescriptor tile_descriptor;
+        tile_descriptor.status = DEVICE_SCAN_TILE_PARTIAL;
+        tile_descriptor.value = partial;
 
-        ThreadStore<STORE_CG>(
-            reinterpret_cast<AlignVector*>(ptr),
-            reinterpret_cast<AlignVector&>(tile_status));
+        VectorWord alias;
+        *reinterpret_cast<DeviceScanTileDescriptor*>(&alias) = tile_descriptor;
+        ThreadStore<STORE_CG>(reinterpret_cast<VectorWord*>(ptr), alias);
     }
 
     static __device__ __forceinline__ void WaitForValid(
@@ -119,31 +120,31 @@ struct DeviceScanTileDescriptor
         int                     &status,
         T                       &value)
     {
-        DeviceScanTileDescriptor tile_status;
+        DeviceScanTileDescriptor tile_descriptor;
         while (true)
         {
-            AlignVector alias = ThreadLoad<LOAD_CG>(reinterpret_cast<AlignVector*>(ptr));
-            tile_status = reinterpret_cast<DeviceScanTileDescriptor&>(alias);
+            VectorWord alias = ThreadLoad<LOAD_CG>(reinterpret_cast<VectorWord*>(ptr));
+            tile_descriptor = *reinterpret_cast<DeviceScanTileDescriptor*>(&alias);
 
-            if (tile_status.status != DEVICE_SCAN_TILE_INVALID) break;
+            if (WarpAll(tile_descriptor.status != DEVICE_SCAN_TILE_INVALID)) break;
         }
 
-        status = tile_status.status;
-        value = tile_status.value;
+        status = tile_descriptor.status;
+        value = tile_descriptor.value;
     }
 
 };
 
 
-/ **
+/**
  * Data type of tile status descriptor.
  *
  * Specialized for scan status and value types that cannot fused into
  * the same machine word.
- * /
+ */
 template <typename T>
 struct DeviceScanTileDescriptor<T, false>
-*/{
+{
     T       prefix_value;
     T       partial_value;
 
@@ -157,28 +158,29 @@ struct DeviceScanTileDescriptor<T, false>
     static __device__ __forceinline__ void SetPrefix(DeviceScanTileDescriptor *ptr, T prefix)
     {
         ThreadStore<STORE_CG>(&ptr->prefix_value, prefix);
-//        __threadfence_block();  // We can get away with not using a global fence because the fields will all be on the same cache line
-        __threadfence();
+        __threadfence_block();
+//        __threadfence();        // __threadfence_block seems sufficient on current architectures to prevent reordeing
         ThreadStore<STORE_CG>(&ptr->status, (int) DEVICE_SCAN_TILE_PREFIX);
+
     }
 
     static __device__ __forceinline__ void SetPartial(DeviceScanTileDescriptor *ptr, T partial)
     {
         ThreadStore<STORE_CG>(&ptr->partial_value, partial);
-//        __threadfence_block();  // We can get away with not using a global fence because the fields will all be on the same cache line
-        __threadfence();
+        __threadfence_block();
+//        __threadfence();        // __threadfence_block seems sufficient on current architectures to prevent reordeing
         ThreadStore<STORE_CG>(&ptr->status, (int) DEVICE_SCAN_TILE_PARTIAL);
     }
 
     static __device__ __forceinline__ void WaitForValid(
         DeviceScanTileDescriptor    *ptr,
-        int                     &status,
-        T                       &value)
+        int                         &status,
+        T                           &value)
     {
         while (true)
         {
             status = ThreadLoad<LOAD_CG>(&ptr->status);
-            if (status != DEVICE_SCAN_TILE_INVALID) break;
+            if (WarpAll(status != DEVICE_SCAN_TILE_INVALID)) break;
         }
 
         value = (status == DEVICE_SCAN_TILE_PARTIAL) ?

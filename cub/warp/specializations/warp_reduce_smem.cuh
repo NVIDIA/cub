@@ -74,6 +74,8 @@ struct WarpReduceSmem
         WARP_SMEM_ELEMENTS =  LOGICAL_WARP_THREADS + HALF_WARP_THREADS,
     };
 
+    /// Shared memory flag type
+    typedef unsigned char SmemFlag;
 
     /// Shared memory storage layout type (1.5 warps-worth of elements for each warp)
     typedef T TempStorage[LOGICAL_WARPS][WARP_SMEM_ELEMENTS];
@@ -198,15 +200,15 @@ struct WarpReduceSmem
 
         enum
         {
-            SET     = 0x1,
-            SEEN    = 0x2,
+            UNSET   = 0x0,  // Is initially unset
+            SET     = 0x1,  // Is initially set
+            SEEN    = 0x2,  // Has seen another head flag from a successor peer
         };
 
-        typedef unsigned char FlagStorage[LOGICAL_WARPS][WARP_SMEM_ELEMENTS];
+        // Alias flags onto shared data storage
+        volatile SmemFlag *flag_storage = reinterpret_cast<SmemFlag*>(temp_storage[warp_id]);
 
-        FlagStorage &flag_storage = reinterpret_cast<FlagStorage&>(temp_storage);
-
-        unsigned char flag_status = (unsigned char) flag;
+        SmemFlag flag_status = (flag) ? SET : UNSET;
 
         for (int STEP = 0; STEP < STEPS; STEP++)
         {
@@ -215,11 +217,14 @@ struct WarpReduceSmem
             // Share input through buffer
             ThreadStore<STORE_VOLATILE>(&temp_storage[warp_id][lane_id], input);
 
+            // Get peer from buffer
             T peer_addend = ThreadLoad<LOAD_VOLATILE>(&temp_storage[warp_id][lane_id + OFFSET]);
 
             // Share flag through buffer
-            ThreadStore<STORE_VOLATILE>(&flag_storage[warp_id][lane_id], flag_status);
-            unsigned char peer_flag_status = ThreadLoad<LOAD_VOLATILE>(&flag_storage[warp_id][lane_id + OFFSET]);
+            flag_storage[lane_id] = flag_status;
+
+            // Get peer flag from buffer
+            SmemFlag peer_flag_status = flag_storage[lane_id + OFFSET];
 
             // Update input if peer was in range
             if (lane_id < LOGICAL_WARP_THREADS - OFFSET)
@@ -229,21 +234,29 @@ struct WarpReduceSmem
                     // Head-segmented
                     if ((flag_status & SEEN) == 0)
                     {
-                        if ((peer_flag_status & SET) == 0)
-                            input = reduction_op(input, peer_addend);
-                        else
+                        // Has not seen a more distant head flag
+                        if (peer_flag_status & SET)
+                        {
+                            // Has now seen a head flag
                             flag_status |= SEEN;
+                        }
+                        else
+                        {
+                            // Peer is not a head flag: grab its count
+                            input = reduction_op(input, peer_addend);
+                        }
 
+                        // Update seen status to include that of peer
                         flag_status |= (peer_flag_status & SEEN);
                     }
                 }
                 else
                 {
-                    // Tail-segmented
+                    // Tail-segmented.  Simply propagate flag status
                     if (!flag_status)
                     {
                         input = reduction_op(input, peer_addend);
-                        flag_status = peer_flag_status;
+                        flag_status |= peer_flag_status;
                     }
 
                 }

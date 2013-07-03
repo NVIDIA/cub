@@ -38,6 +38,7 @@
 #include "../../thread/thread_store.cuh"
 #include "../../util_device.cuh"
 #include "../../util_type.cuh"
+#include "../../util_macro.cuh"
 #include "../../util_namespace.cuh"
 
 /// Optional outer namespace(s)
