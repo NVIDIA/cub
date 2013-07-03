@@ -44,10 +44,9 @@ using namespace cub;
 // Globals, constants and typedefs
 //---------------------------------------------------------------------
 
-/**
- * Verbose output
- */
-bool g_verbose = false;
+bool                    g_verbose       = false;
+int                     g_repeat        = 0;
+CachingDeviceAllocator  g_allocator;
 
 
 /**
@@ -408,10 +407,10 @@ void Test(
     T *d_out = NULL;
     T *d_aggregate = NULL;
     clock_t *d_elapsed = NULL;
-    CubDebugExit(cudaMalloc((void**)&d_in, sizeof(T) * LOGICAL_WARP_THREADS));
-    CubDebugExit(cudaMalloc((void**)&d_out, sizeof(T) * (LOGICAL_WARP_THREADS + 1)));
-    CubDebugExit(cudaMalloc((void**)&d_aggregate, sizeof(T) * LOGICAL_WARP_THREADS));
-    CubDebugExit(cudaMalloc((void**)&d_elapsed, sizeof(clock_t)));
+    CubDebugExit(g_allocator.DeviceAllocate((void**)&d_in, sizeof(T) * LOGICAL_WARP_THREADS));
+    CubDebugExit(g_allocator.DeviceAllocate((void**)&d_out, sizeof(T) * (LOGICAL_WARP_THREADS + 1)));
+    CubDebugExit(g_allocator.DeviceAllocate((void**)&d_aggregate, sizeof(T) * LOGICAL_WARP_THREADS));
+    CubDebugExit(g_allocator.DeviceAllocate((void**)&d_elapsed, sizeof(clock_t)));
     CubDebugExit(cudaMemcpy(d_in, h_in, sizeof(T) * LOGICAL_WARP_THREADS, cudaMemcpyHostToDevice));
     CubDebugExit(cudaMemset(d_out, 0, sizeof(T) * (LOGICAL_WARP_THREADS + 1)));
     CubDebugExit(cudaMemset(d_aggregate, 0, sizeof(T) * LOGICAL_WARP_THREADS));
@@ -470,10 +469,10 @@ void Test(
     if (h_in) delete[] h_in;
     if (h_reference) delete[] h_reference;
     if (h_aggregate) delete[] h_aggregate;
-    if (d_in) CubDebugExit(cudaFree(d_in));
-    if (d_out) CubDebugExit(cudaFree(d_out));
-    if (d_aggregate) CubDebugExit(cudaFree(d_aggregate));
-    if (d_elapsed) CubDebugExit(cudaFree(d_elapsed));
+    if (d_in) CubDebugExit(g_allocator.DeviceFree(d_in));
+    if (d_out) CubDebugExit(g_allocator.DeviceFree(d_out));
+    if (d_aggregate) CubDebugExit(g_allocator.DeviceFree(d_aggregate));
+    if (d_elapsed) CubDebugExit(g_allocator.DeviceFree(d_elapsed));
 }
 
 
@@ -559,12 +558,16 @@ int main(int argc, char** argv)
     // Initialize command line
     CommandLineArgs args(argc, argv);
     g_verbose = args.CheckCmdLineFlag("v");
+    bool quick = args.CheckCmdLineFlag("quick");
+    args.GetCmdLineArgument("repeat", g_repeat);
 
     // Print usage
     if (args.CheckCmdLineFlag("help"))
     {
         printf("%s "
             "[--device=<device-id>] "
+            "[--repeat=<times to repeat tests>]"
+            "[--quick]"
             "[--v] "
             "\n", argv[0]);
         exit(0);
@@ -573,14 +576,23 @@ int main(int argc, char** argv)
     // Initialize device
     CubDebugExit(args.DeviceInit());
 
-    // Quick exclusive test
-    Test<32, BASIC>(UNIFORM, Sum(), (int) 0, (int) 99, CUB_TYPE_STRING(Sum<int>));
-
-    // Test logical warp sizes
-    Test<32>();
-    Test<16>();
-    Test<9>();
-    Test<7>();
+    if (quick)
+    {
+        // Quick exclusive test
+        Test<32, BASIC>(UNIFORM, Sum(), (int) 0, (int) 99, CUB_TYPE_STRING(Sum<int>));
+    }
+    else
+    {
+        // Repeat test sequence
+        for (int i = 0; i <= g_repeat; ++i)
+        {
+            // Test logical warp sizes
+            Test<32>();
+            Test<16>();
+            Test<9>();
+            Test<7>();
+        }
+    }
 
     return 0;
 }
