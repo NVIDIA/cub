@@ -253,7 +253,7 @@ struct ThreadLoadHelper<T*>
     __device__ __forceinline__ long long ThreadLoad<cub_modifier, long long*>(long long* ptr)                 \
     {                                                                                       \
         long long retval;                                                                   \
-        asm volatile ("ld."#ptx_modifier".s32 %0, [%1];" :                                  \
+        asm volatile ("ld."#ptx_modifier".s64 %0, [%1];" :                                  \
             "=l"(retval) :                                                                  \
             _CUB_ASM_PTR_(ptr));                                                            \
         return retval;                                                                      \

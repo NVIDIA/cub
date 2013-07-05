@@ -37,7 +37,7 @@
 #include <stdio.h>
 #include <iterator>
 
-#include "block_sweep/block_sweep_scan.cuh"
+#include "block/block_scan_tiles.cuh"
 #include "../thread/thread_operators.cuh"
 #include "../grid/grid_queue.cuh"
 #include "../util_debug.cuh"
@@ -99,14 +99,14 @@ __global__ void InitScanKernel(
  * Scan kernel entry point (multi-block)
  */
 template <
-    typename    BlockSweepScanPolicy,       ///< Tuning policy for cub::BlockSweepScan abstraction
+    typename    BlockScanTilesPolicy,       ///< Tuning policy for cub::BlockScanTiles abstraction
     typename    InputIteratorRA,                ///< Random-access iterator type for input (may be a simple pointer type)
     typename    OutputIteratorRA,               ///< Random-access iterator type for output (may be a simple pointer type)
     typename    T,                              ///< The scan data type
     typename    ScanOp,                         ///< Binary scan operator type having member <tt>T operator()(const T &a, const T &b)</tt>
     typename    Identity,                       ///< Identity value type (cub::NullType for inclusive scans)
     typename    SizeT>                          ///< Integral type used for global array indexing
-__launch_bounds__ (int(BlockSweepScanPolicy::BLOCK_THREADS))
+__launch_bounds__ (int(BlockScanTilesPolicy::BLOCK_THREADS))
 __global__ void MultiBlockScanKernel(
     InputIteratorRA             d_in,           ///< Input data
     OutputIteratorRA            d_out,          ///< Output data
@@ -122,19 +122,19 @@ __global__ void MultiBlockScanKernel(
     };
 
     // Thread block type for scanning input tiles
-    typedef BlockSweepScan<
-        BlockSweepScanPolicy,
+    typedef BlockScanTiles<
+        BlockScanTilesPolicy,
         InputIteratorRA,
         OutputIteratorRA,
         ScanOp,
         Identity,
-        SizeT> BlockSweepScanT;
+        SizeT> BlockScanTilesT;
 
-    // Shared memory for BlockSweepScan
-    __shared__ typename BlockSweepScanT::TempStorage temp_storage;
+    // Shared memory for BlockScanTiles
+    __shared__ typename BlockScanTilesT::TempStorage temp_storage;
 
     // Process tiles
-    BlockSweepScanT(temp_storage, d_in, d_out, scan_op, identity).ConsumeTiles(
+    BlockScanTilesT(temp_storage, d_in, d_out, scan_op, identity).ConsumeTiles(
         num_items,
         queue,
         d_tile_status + TILE_STATUS_PADDING);
@@ -165,7 +165,7 @@ struct DeviceScan
      * Constants and typedefs
      ******************************************************************************/
 
-    /// Generic structure for encapsulating dispatch properties.  Mirrors the constants within BlockSweepScanPolicy.
+    /// Generic structure for encapsulating dispatch properties.  Mirrors the constants within BlockScanTilesPolicy.
     struct KernelDispachParams
     {
         // Policy fields
@@ -178,15 +178,15 @@ struct DeviceScan
         // Other misc
         int                     tile_size;
 
-        template <typename BlockSweepScanPolicy>
+        template <typename BlockScanTilesPolicy>
         __host__ __device__ __forceinline__
         void Init()
         {
-            block_threads               = BlockSweepScanPolicy::BLOCK_THREADS;
-            items_per_thread            = BlockSweepScanPolicy::ITEMS_PER_THREAD;
-            load_policy                 = BlockSweepScanPolicy::LOAD_ALGORITHM;
-            store_policy                = BlockSweepScanPolicy::STORE_ALGORITHM;
-            scan_algorithm              = BlockSweepScanPolicy::SCAN_ALGORITHM;
+            block_threads               = BlockScanTilesPolicy::BLOCK_THREADS;
+            items_per_thread            = BlockScanTilesPolicy::ITEMS_PER_THREAD;
+            load_policy                 = BlockScanTilesPolicy::LOAD_ALGORITHM;
+            store_policy                = BlockScanTilesPolicy::STORE_ALGORITHM;
+            scan_algorithm              = BlockScanTilesPolicy::SCAN_ALGORITHM;
 
             tile_size                   = block_threads * items_per_thread;
         }
@@ -223,9 +223,9 @@ struct DeviceScan
     {
         enum {
             NOMINAL_ITEMS_PER_THREAD    = 16,   // 4byte items
-            ITEMS_PER_THREAD            = CUB_MAX(1, (NOMINAL_ITEMS_PER_THREAD * 4 / sizeof(T))),
+            ITEMS_PER_THREAD            = CUB_MIN(NOMINAL_ITEMS_PER_THREAD, CUB_MAX(1, (NOMINAL_ITEMS_PER_THREAD * 4 / sizeof(T)))),
         };
-        typedef BlockSweepScanPolicy<128, ITEMS_PER_THREAD,  BLOCK_LOAD_DIRECT, false, LOAD_LDG, BLOCK_STORE_WARP_TRANSPOSE, true, BLOCK_SCAN_RAKING_MEMOIZE> MultiBlockPolicy;
+        typedef BlockScanTilesPolicy<128, ITEMS_PER_THREAD,  BLOCK_LOAD_DIRECT, false, LOAD_LDG, BLOCK_STORE_WARP_TRANSPOSE, true, BLOCK_SCAN_RAKING_MEMOIZE> MultiBlockPolicy;
     };
 
     /// SM30 tune
@@ -236,7 +236,7 @@ struct DeviceScan
             NOMINAL_ITEMS_PER_THREAD    = 9,   // 4byte items
             ITEMS_PER_THREAD            = CUB_MAX(1, (NOMINAL_ITEMS_PER_THREAD * 4 / sizeof(T))),
         };
-        typedef BlockSweepScanPolicy<256, ITEMS_PER_THREAD,  BLOCK_LOAD_WARP_TRANSPOSE, false, LOAD_DEFAULT, BLOCK_STORE_WARP_TRANSPOSE, false, BLOCK_SCAN_RAKING_MEMOIZE> MultiBlockPolicy;
+        typedef BlockScanTilesPolicy<256, ITEMS_PER_THREAD,  BLOCK_LOAD_WARP_TRANSPOSE, false, LOAD_DEFAULT, BLOCK_STORE_WARP_TRANSPOSE, false, BLOCK_SCAN_RAKING_MEMOIZE> MultiBlockPolicy;
     };
 
     /// SM20 tune
@@ -245,9 +245,9 @@ struct DeviceScan
     {
         enum {
             NOMINAL_ITEMS_PER_THREAD    = 15,   // 4byte items
-            ITEMS_PER_THREAD            = CUB_MAX(1, (NOMINAL_ITEMS_PER_THREAD * 4 / sizeof(T))),
+            ITEMS_PER_THREAD            = CUB_MIN(NOMINAL_ITEMS_PER_THREAD, CUB_MAX(1, (NOMINAL_ITEMS_PER_THREAD * 4 / sizeof(T)))),
         };
-        typedef BlockSweepScanPolicy<128, ITEMS_PER_THREAD, BLOCK_LOAD_WARP_TRANSPOSE, false, LOAD_DEFAULT, BLOCK_STORE_WARP_TRANSPOSE, false, BLOCK_SCAN_RAKING_MEMOIZE> MultiBlockPolicy;
+        typedef BlockScanTilesPolicy<128, ITEMS_PER_THREAD, BLOCK_LOAD_WARP_TRANSPOSE, false, LOAD_DEFAULT, BLOCK_STORE_WARP_TRANSPOSE, false, BLOCK_SCAN_RAKING_MEMOIZE> MultiBlockPolicy;
     };
 
     /// SM10 tune
@@ -258,7 +258,7 @@ struct DeviceScan
             NOMINAL_ITEMS_PER_THREAD    = 7,   // 4byte items
             ITEMS_PER_THREAD            = CUB_MAX(1, (NOMINAL_ITEMS_PER_THREAD * 4 / sizeof(T))),
         };
-        typedef BlockSweepScanPolicy<128, ITEMS_PER_THREAD, BLOCK_LOAD_TRANSPOSE, false, LOAD_DEFAULT, BLOCK_STORE_TRANSPOSE, false, BLOCK_SCAN_RAKING> MultiBlockPolicy;
+        typedef BlockScanTilesPolicy<128, ITEMS_PER_THREAD, BLOCK_LOAD_TRANSPOSE, false, LOAD_DEFAULT, BLOCK_STORE_TRANSPOSE, false, BLOCK_SCAN_RAKING> MultiBlockPolicy;
     };
 
 
@@ -343,7 +343,7 @@ struct DeviceScan
 #ifndef CUB_RUNTIME_ENABLED
 
         // Kernel launch not supported from this device
-        return CubDebug(cudaErrorNotSupported );
+        return CubDebug(cudaErrorNotSupported);
 
 #else
 
@@ -405,11 +405,7 @@ struct DeviceScan
                 num_tiles);
 
             // Sync the stream if specified
-#ifndef __CUDA_ARCH__
-            if (stream_synchronous && CubDebug(error = cudaStreamSynchronize(stream))) break;
-#else
-            if (stream_synchronous && CubDebug(error = cudaDeviceSynchronize())) break;
-#endif
+            if (stream_synchronous && (CubDebug(error = SyncStream(stream)))) break;
 
             // Get a rough estimate of multi_block_kernel SM occupancy based upon the maximum SM occupancy of the targeted PTX architecture
             int multi_sm_occupancy = CUB_MIN(
@@ -451,11 +447,7 @@ struct DeviceScan
                 queue);
 
             // Sync the stream if specified
-#ifndef __CUDA_ARCH__
-            if (stream_synchronous && CubDebug(error = cudaStreamSynchronize(stream))) break;
-#else
-            if (stream_synchronous && CubDebug(error = cudaDeviceSynchronize())) break;
-#endif
+            if (stream_synchronous && (CubDebug(error = SyncStream(stream)))) break;
         }
         while (0);
 

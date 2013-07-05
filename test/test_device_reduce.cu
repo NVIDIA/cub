@@ -44,8 +44,9 @@ using namespace cub;
 // Globals, constants and typedefs
 //---------------------------------------------------------------------
 
-bool                    g_verbose = false;
-int                     g_iterations = 100;
+bool                    g_verbose           = false;
+int                     g_timing_iterations = 0;
+int                     g_repeat            = 0;
 CachingDeviceAllocator  g_allocator;
 
 
@@ -57,40 +58,31 @@ CachingDeviceAllocator  g_allocator;
  * Simple wrapper kernel to invoke DeviceReduce
  */
 template <
-    bool                STREAM_SYNCHRONOUS,
     typename            InputIteratorRA,
     typename            OutputIteratorRA,
     typename            ReductionOp>
 __global__ void CnpReduce(
-    void                *d_temporary_storage,
-    size_t              temporary_storage_bytes,
+    void                *d_temp_storage,
+    size_t              temp_storage_bytes,
     InputIteratorRA     d_in,
     OutputIteratorRA    d_out,
     int                 num_items,
     ReductionOp         reduction_op,
-    int                 iterations,
+    bool                stream_synchronous,
+    int                 timing_iterations,
     cudaError_t*        d_cnp_error)
 {
+#ifdef CUB_CNP
     cudaError_t error = cudaSuccess;
-
-#ifdef CUB_RUNTIME_ENABLED
-    for (int i = 0; i < iterations; ++i)
+    for (int i = 0; i < timing_iterations; ++i)
     {
-        error = DeviceReduce::Reduce(
-            d_temporary_storage,
-            temporary_storage_bytes,
-            d_in,
-            d_out,
-            num_items,
-            reduction_op,
-            0,
-            STREAM_SYNCHRONOUS);
+        error = DeviceReduce::Reduce(d_temp_storage, temp_storage_bytes, d_in, d_out, num_items, reduction_op, 0, stream_synchronous);
     }
-#else
-    error = cudaErrorNotSupported;
-#endif
 
     *d_cnp_error = error;
+#else
+    *d_cnp_error = cudaErrorNotSupported;
+#endif
 }
 
 
@@ -122,15 +114,68 @@ void Initialize(
 }
 
 
-//---------------------------------------------------------------------
-// Full tile test generation
-//---------------------------------------------------------------------
+/**
+ * Dispatch from host
+ */
+template <typename InputIteratorRA, typename OutputIteratorRA, typename ReductionOp>
+__host__ __device__ __forceinline__
+cudaError_t Dispatch(
+    Int2Type<false>             use_cnp,
+    int                         timing_iterations,
+    cudaError_t                 *d_cnp_error,
+    void                        *d_temp_storage,                    ///< [in] %Device allocation of temporary storage.  When NULL, the required allocation size is returned in \p temp_storage_bytes and no work is done.
+    size_t                      &temp_storage_bytes,                ///< [in,out] Size in bytes of \p d_temp_storage allocation.
+    InputIteratorRA             d_in,                               ///< [in] Input data to reduce
+    OutputIteratorRA            d_out,                              ///< [out] Output location for result
+    int                         num_items,                          ///< [in] Number of items to reduce
+    ReductionOp                 reduction_op,                       ///< [in] Binary reduction operator
+    cudaStream_t                stream              = 0,            ///< [in] <b>[optional]</b> CUDA stream to launch kernels within.  Default is stream<sub>0</sub>.
+    bool                        stream_synchronous  = false)        ///< [in] <b>[optional]</b> Whether or not to synchronize the stream after every kernel launch to check for errors.  Default is \p false.
+{
+    // Invoke kernel to device reduction directly
+    cudaError_t error = cudaSuccess;
+    for (int i = 0; i < timing_iterations; ++i)
+    {
+        error = DeviceReduce::Reduce(d_temp_storage, temp_storage_bytes, d_in, d_out, num_items, reduction_op, 0, stream_synchronous);
+    }
+    return error;
+}
+
+
+/**
+ * Dispatch from device (CNP)
+ */
+template <typename InputIteratorRA, typename OutputIteratorRA, typename ReductionOp>
+__host__ __device__ __forceinline__
+cudaError_t Dispatch(
+    Int2Type<true>              use_cnp,
+    int                         timing_iterations,
+    cudaError_t                 *d_cnp_error,
+    void                        *d_temp_storage,                    ///< [in] %Device allocation of temporary storage.  When NULL, the required allocation size is returned in \p temp_storage_bytes and no work is done.
+    size_t                      &temp_storage_bytes,                ///< [in,out] Size in bytes of \p d_temp_storage allocation.
+    InputIteratorRA             d_in,                               ///< [in] Input data to reduce
+    OutputIteratorRA            d_out,                              ///< [out] Output location for result
+    int                         num_items,                          ///< [in] Number of items to reduce
+    ReductionOp                 reduction_op,                       ///< [in] Binary reduction operator
+    cudaStream_t                stream              = 0,            ///< [in] <b>[optional]</b> CUDA stream to launch kernels within.  Default is stream<sub>0</sub>.
+    bool                        stream_synchronous  = false)        ///< [in] <b>[optional]</b> Whether or not to synchronize the stream after every kernel launch to check for errors.  Default is \p false.
+{
+    // Invoke kernel to invoke device reduction
+    CnpReduce<<<1,1>>>(d_temp_storage, temp_storage_bytes, d_in, d_out, num_items, reduction_op, stream_synchronous, timing_iterations, d_cnp_error);
+
+    // Copy out error
+    cudaError_t retval;
+    CubDebugExit(cudaMemcpy(&retval, d_cnp_error, sizeof(cudaError_t) * 1, cudaMemcpyDeviceToHost));
+    return retval;
+}
+
 
 
 /**
  * Test DeviceReduce
  */
 template <
+    bool        CNP,
     typename    T,
     typename    ReductionOp>
 void Test(
@@ -139,11 +184,11 @@ void Test(
     ReductionOp reduction_op,
     char*       type_string)
 {
-    int compare = 0;
-    int cnp_compare = 0;
-
-    printf("cub::DeviceReduce %d items, %s %d-byte elements, gen-mode %d\n\n",
-        num_items, type_string, (int) sizeof(T), gen_mode);
+    printf("%s cub::DeviceReduce::%s %d items, %s %d-byte elements, gen-mode %s\n",
+        (CNP) ? "CNP device invoked" : "Host-invoked",
+        (Equals<ReductionOp, Sum>::VALUE) ? "Sum" : "Reduce",
+        num_items, type_string, (int) sizeof(T),
+        (gen_mode == RANDOM) ? "RANDOM" : (gen_mode == SEQ_INC) ? "SEQUENTIAL" : "HOMOGENOUS");
     fflush(stdout);
 
     // Allocate host arrays
@@ -154,31 +199,30 @@ void Test(
     Initialize(gen_mode, h_in, h_reference, reduction_op, num_items);
 
     // Allocate device arrays
-    T*              d_in = NULL;
-    T*              d_out = NULL;
-    cudaError_t*    d_cnp_error = NULL;
+    T               *d_in = NULL;
+    T               *d_out = NULL;
+    cudaError_t     *d_cnp_error = NULL;
+    void            *d_temp_storage = NULL;
+    size_t          temp_storage_bytes = 0;
     CubDebugExit(g_allocator.DeviceAllocate((void**)&d_in,          sizeof(T) * num_items));
     CubDebugExit(g_allocator.DeviceAllocate((void**)&d_out,         sizeof(T) * 1));
     CubDebugExit(g_allocator.DeviceAllocate((void**)&d_cnp_error,   sizeof(cudaError_t) * 1));
+
+    // Allocate temporary storage
+    CubDebugExit(DeviceReduce::Reduce(d_temp_storage, temp_storage_bytes, d_in, d_out, num_items, reduction_op));
+    CubDebugExit(g_allocator.DeviceAllocate(&d_temp_storage, temp_storage_bytes));
 
     // Initialize device arrays
     CubDebugExit(cudaMemcpy(d_in, h_in, sizeof(T) * num_items, cudaMemcpyHostToDevice));
     CubDebugExit(cudaMemset(d_out, 0, sizeof(T) * 1));
 
-    void            *d_temporary_storage = NULL;
-    size_t          temporary_storage_bytes = 0;
-
-    // Allocate temporary storage
-    CubDebugExit(DeviceReduce::Reduce(d_temporary_storage, temporary_storage_bytes, d_in, d_out, num_items, reduction_op));
-    CubDebugExit(g_allocator.DeviceAllocate(&d_temporary_storage, temporary_storage_bytes));
-
     // Run warmup/correctness iteration
     printf("Host dispatch:\n"); fflush(stdout);
-    CubDebugExit(DeviceReduce::Reduce(d_temporary_storage, temporary_storage_bytes, d_in, d_out, num_items, reduction_op, 0, true));
+    CubDebugExit(Dispatch(Int2Type<CNP>(), 1, d_cnp_error, d_temp_storage, temp_storage_bytes, d_in, d_out, num_items, reduction_op, 0, true));
 
     // Check for correctness (and display results, if specified)
-    compare = CompareDeviceResults(h_reference, d_out, 1, g_verbose, g_verbose);
-    printf("\n%s", compare ? "FAIL" : "PASS");
+    int compare = CompareDeviceResults(h_reference, d_out, 1, g_verbose, g_verbose);
+    printf("\t%s", compare ? "FAIL" : "PASS");
 
     // Flush any stdout/stderr
     fflush(stdout);
@@ -186,101 +230,55 @@ void Test(
 
     // Performance
     GpuTimer gpu_timer;
-    float elapsed_millis = 0.0;
-    for (int i = 0; i < g_iterations; i++)
-    {
-        gpu_timer.Start();
+    gpu_timer.Start();
+    CubDebugExit(Dispatch(Int2Type<CNP>(), g_timing_iterations, d_cnp_error, d_temp_storage, temp_storage_bytes, d_in, d_out, num_items, reduction_op));
+    gpu_timer.Stop();
+    float elapsed_millis = gpu_timer.ElapsedMillis();
 
-        CubDebugExit(DeviceReduce::Reduce(d_temporary_storage, temporary_storage_bytes, d_in, d_out, num_items, reduction_op));
-
-        gpu_timer.Stop();
-        elapsed_millis += gpu_timer.ElapsedMillis();
-    }
-    if (g_iterations > 0)
+    // Display performance
+    if (g_timing_iterations > 0)
     {
-        float avg_millis = elapsed_millis / g_iterations;
+        float avg_millis = elapsed_millis / g_timing_iterations;
         float grate = float(num_items) / avg_millis / 1000.0 / 1000.0;
         float gbandwidth = grate * sizeof(T);
-        printf(", %.3f avg ms, %.3f billion items/s, %.3f GB/s\n", avg_millis, grate, gbandwidth);
-    }
-    else
-    {
-        printf("\n");
+        printf(", %.3f avg ms, %.3f billion items/s, %.3f GB/s", avg_millis, grate, gbandwidth);
     }
 
-
-    // Evaluate using CUDA nested parallelism
-#if (TEST_CNP == 1)
-
-    CubDebugExit(cudaMemset(d_out, 0, sizeof(T) * 1));
-
-    // Run warmup/correctness iteration
-    printf("\nDevice dispatch:\n"); fflush(stdout);
-    CnpReduce<true><<<1,1>>>(d_temporary_storage, temporary_storage_bytes, d_in, d_out, num_items, reduction_op, 1, d_cnp_error);
-
-    // Flush any stdout/stderr
-    fflush(stdout);
-    fflush(stderr);
-
-    // Check if we were compiled and linked for CNP
-    cudaError_t h_cnp_error;
-    CubDebugExit(cudaMemcpy(&h_cnp_error, d_cnp_error, sizeof(cudaError_t) * 1, cudaMemcpyDeviceToHost));
-    if (h_cnp_error == cudaErrorInvalidConfiguration)
-    {
-        printf("CNP not supported");
-    }
-    else
-    {
-        CubDebugExit(h_cnp_error);
-
-        // Check for correctness (and display results, if specified)
-        cnp_compare = CompareDeviceResults(h_reference, d_out, 1, g_verbose, g_verbose);
-        printf("\n%s", cnp_compare ? "FAIL" : "PASS");
-
-        // Performance
-        gpu_timer.Start();
-
-        CnpReduce<false><<<1,1>>>(d_temporary_storage, temporary_storage_bytes, d_in, d_out, num_items, reduction_op, g_iterations, d_cnp_error);
-
-        gpu_timer.Stop();
-        elapsed_millis = gpu_timer.ElapsedMillis();
-
-        if (g_iterations > 0)
-        {
-            float avg_millis = elapsed_millis / g_iterations;
-            float grate = float(num_items) / avg_millis / 1000.0 / 1000.0;
-            float gbandwidth = grate * sizeof(T);
-            printf(", %.3f avg ms, %.3f billion items/s, %.3f GB/s\n", avg_millis, grate, gbandwidth);
-        }
-        else
-        {
-            printf("\n");
-        }
-    }
-
-#endif
+    printf("\n\n");
 
     // Cleanup
     if (h_in) delete[] h_in;
     if (d_in) CubDebugExit(g_allocator.DeviceFree(d_in));
     if (d_out) CubDebugExit(g_allocator.DeviceFree(d_out));
     if (d_cnp_error) CubDebugExit(g_allocator.DeviceFree(d_cnp_error));
-    if (d_temporary_storage) CubDebugExit(g_allocator.DeviceFree(d_temporary_storage));
+    if (d_temp_storage) CubDebugExit(g_allocator.DeviceFree(d_temp_storage));
 
     // Correctness asserts
     AssertEquals(0, compare);
-    AssertEquals(0, cnp_compare);
 }
 
 
+/**
+ * Test different dispatch
+ */
+template <
+    typename    T,
+    typename    ReductionOp>
+void TestCnp(
+    int         num_items,
+    GenMode     gen_mode,
+    ReductionOp reduction_op,
+    char*       type_string)
+{
+    Test<false, T>(num_items, gen_mode, reduction_op, type_string);
+#ifdef CUB_CNP
+    Test<true, T>(num_items, gen_mode, reduction_op, type_string);
+#endif
+}
 
-
-//---------------------------------------------------------------------
-// Main
-//---------------------------------------------------------------------
 
 /**
- * Run battery of full-tile tests for different gen modes
+ * Test different gen modes
  */
 template <
     typename        T,
@@ -290,10 +288,51 @@ void Test(
     ReductionOp     reduction_op,
     char*           type_string)
 {
-    Test<T>(num_items, UNIFORM, reduction_op, type_string);
-    Test<T>(num_items, SEQ_INC, reduction_op, type_string);
-    Test<T>(num_items, RANDOM, reduction_op, type_string);
+    TestCnp<T>(num_items, UNIFORM, reduction_op, type_string);
+    TestCnp<T>(num_items, RANDOM, reduction_op, type_string);
 }
+
+
+/**
+ * Test different operators
+ */
+template <
+    typename        T>
+void TestOp(
+    int             num_items,
+    char*           type_string)
+{
+    Test<T>(num_items, Sum(), type_string);
+    Test<T>(num_items, Max(), type_string);
+}
+
+
+/**
+ * Test different input sizes
+ */
+template <
+    typename        T>
+void Test(
+    int             num_items,
+    char*           type_string)
+{
+    if (num_items < 0)
+    {
+        TestOp<T>(1,        type_string);
+        TestOp<T>(100,      type_string);
+        TestOp<T>(10000,    type_string);
+        TestOp<T>(1000000,  type_string);
+    }
+    else
+    {
+        TestOp<T>(num_items, type_string);
+    }
+}
+
+
+//---------------------------------------------------------------------
+// Main
+//---------------------------------------------------------------------
 
 
 /**
@@ -301,20 +340,25 @@ void Test(
  */
 int main(int argc, char** argv)
 {
-    int num_items = 1 * 1024 * 1024;
+    int num_items = -1;
 
     // Initialize command line
     CommandLineArgs args(argc, argv);
-    args.GetCmdLineArgument("n", num_items);
-    args.GetCmdLineArgument("i", g_iterations);
     g_verbose = args.CheckCmdLineFlag("v");
     bool quick = args.CheckCmdLineFlag("quick");
+    args.GetCmdLineArgument("n", num_items);
+    args.GetCmdLineArgument("i", g_timing_iterations);
+    args.GetCmdLineArgument("repeat", g_repeat);
 
     // Print usage
     if (args.CheckCmdLineFlag("help"))
     {
         printf("%s "
+            "[--n=<input items> "
+            "[--i=<timing iterations> "
             "[--device=<device-id>] "
+            "[--repeat=<times to repeat tests>]"
+            "[--quick]"
             "[--v] "
             "[--cnp]"
             "\n", argv[0]);
@@ -323,33 +367,40 @@ int main(int argc, char** argv)
 
     // Initialize device
     CubDebugExit(args.DeviceInit());
+    printf("\n");
 
-    // Quick test
-    typedef int T;
-    Test<T>(num_items, UNIFORM, Sum(), CUB_TYPE_STRING(T));
+    if (quick)
+    {
+        // Quick test
+        if (num_items < 0) num_items = 32000000;
 
-/*
-    // primitives
-    Test<char>(Sum(), CUB_TYPE_STRING(char));
-    Test<short>(Sum>(), CUB_TYPE_STRING(short));
-    Test<int>(Sum(), CUB_TYPE_STRING(int));
-    Test<long long>(Sum(), CUB_TYPE_STRING(long long));
+        TestCnp<char>(     num_items * 4, UNIFORM, Sum(), CUB_TYPE_STRING(char));
+        TestCnp<short>(    num_items * 2, UNIFORM, Sum(), CUB_TYPE_STRING(short));
+        TestCnp<int>(      num_items,     UNIFORM, Sum(), CUB_TYPE_STRING(int));
+        TestCnp<long long>(num_items / 2, UNIFORM, Sum(), CUB_TYPE_STRING(long long));
+        TestCnp<TestFoo>(  num_items / 4, UNIFORM, Max(), CUB_TYPE_STRING(TestFoo));
+    }
+    else
+    {
+        // Repeat test sequence
+        for (int i = 0; i <= g_repeat; ++i)
+        {
+            // Test different input types
+            Test<unsigned char>(num_items, CUB_TYPE_STRING(unsigned char));
+            Test<unsigned short>(num_items, CUB_TYPE_STRING(unsigned short));
+            Test<unsigned int>(num_items, CUB_TYPE_STRING(unsigned int));
+            Test<unsigned long long>(num_items, CUB_TYPE_STRING(unsigned long long));
 
-    // vector types
-    Test<char2>(Sum(), CUB_TYPE_STRING(char2));
-    Test<short2>(Sum(), CUB_TYPE_STRING(short2));
-    Test<int2>(Sum(), CUB_TYPE_STRING(int2));
-    Test<longlong2>(Sum(), CUB_TYPE_STRING(longlong2));
+            Test<uchar2>(num_items, CUB_TYPE_STRING(uchar2));
+            Test<uint2>(num_items, CUB_TYPE_STRING(uint2));
+            Test<ulonglong2>(num_items, CUB_TYPE_STRING(ulonglong2));
+            Test<ulonglong4>(num_items, CUB_TYPE_STRING(ulonglong4));
 
-    Test<char4>(Sum(), CUB_TYPE_STRING(char4));
-    Test<short4>(Sum(), CUB_TYPE_STRING(short4));
-    Test<int4>(Sum(), CUB_TYPE_STRING(int4));
-    Test<longlong4>(Sum(), CUB_TYPE_STRING(longlong4));
+            Test<TestFoo>(num_items, CUB_TYPE_STRING(TestFoo));
+            Test<TestBar>(num_items, CUB_TYPE_STRING(TestBar));
+        }
+    }
 
-    // Complex types
-    Test<TestFoo>(Sum(), CUB_TYPE_STRING(TestFoo));
-    Test<TestBar>(Sum(), CUB_TYPE_STRING(TestBar));
-*/
     return 0;
 }
 

@@ -232,7 +232,7 @@ struct WordAlignment
     typedef typename If<(ALIGN_BYTES % 16 == 0),
         longlong2,
         If<(ALIGN_BYTES % 8 == 0),
-            short4,                                 // needed to get heterogenous PODs to work on all platforms
+            long long,                                 // needed to get heterogenous PODs to work on all platforms
             ShuffleWord>::Type>::Type           DeviceWord;
 
     enum

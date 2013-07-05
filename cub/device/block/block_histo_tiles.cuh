@@ -28,16 +28,16 @@
 
 /**
  * \file
- * cub::BlockSweepHisto implements a stateful abstraction of CUDA thread blocks for histogramming multiple tiles as part of device-wide histogram.
+ * cub::BlockHistoTiles implements a stateful abstraction of CUDA thread blocks for histogramming multiple tiles as part of device-wide histogram.
  */
 
 #pragma once
 
 #include <iterator>
 
-#include "specializations/block_sweep_histo_global_atomic.cuh"
-#include "specializations/block_sweep_histo_shared_atomic.cuh"
-#include "specializations/block_sweep_histo_sort.cuh"
+#include "specializations/block_histo_tiles_gatomic.cuh"
+#include "specializations/block_histo_tiles_satomic.cuh"
+#include "specializations/block_histo_tiles_sort.cuh"
 #include "../../util_type.cuh"
 #include "../../grid/grid_mapping.cuh"
 #include "../../util_namespace.cuh"
@@ -55,9 +55,9 @@ namespace cub {
 
 
 /**
- * \brief BlockSweepHistoAlgorithm enumerates alternative algorithms for the parallel construction of 8b histograms.
+ * \brief BlockHistoTilesAlgorithm enumerates alternative algorithms for BlockHistoTiles.
  */
-enum BlockSweepHistoAlgorithm
+enum BlockHistoTilesAlgorithm
 {
 
     /**
@@ -111,15 +111,15 @@ enum BlockSweepHistoAlgorithm
  ******************************************************************************/
 
 /**
- * Tuning policy for BlockSweepHisto
+ * Tuning policy for BlockHistoTiles
  */
 template <
     int                         _BLOCK_THREADS,
     int                         _ITEMS_PER_THREAD,
-    BlockSweepHistoAlgorithm    _GRID_ALGORITHM,
+    BlockHistoTilesAlgorithm    _GRID_ALGORITHM,
     GridMappingStrategy         _GRID_MAPPING,
     int                         _SM_OCCUPANCY>
-struct BlockSweepHistoPolicy
+struct BlockHistoTilesPolicy
 {
     enum
     {
@@ -128,7 +128,7 @@ struct BlockSweepHistoPolicy
         SM_OCCUPANCY        = _SM_OCCUPANCY,
     };
 
-    static const BlockSweepHistoAlgorithm   GRID_ALGORITHM      = _GRID_ALGORITHM;
+    static const BlockHistoTilesAlgorithm   GRID_ALGORITHM      = _GRID_ALGORITHM;
     static const GridMappingStrategy        GRID_MAPPING        = _GRID_MAPPING;
 };
 
@@ -143,33 +143,33 @@ struct BlockSweepHistoPolicy
  * Implements a stateful abstraction of CUDA thread blocks for histogramming multiple tiles as part of device-wide histogram using global atomics
  */
 template <
-    typename    BlockSweepHistoPolicy,          ///< Tuning policy
+    typename    BlockHistoTilesPolicy,          ///< Tuning policy
     int         BINS,                           ///< Number of histogram bins per channel
     int         CHANNELS,                       ///< Number of channels interleaved in the input data (may be greater than the number of active channels being histogrammed)
     int         ACTIVE_CHANNELS,                ///< Number of channels actively being histogrammed
     typename    InputIteratorRA,                ///< The input iterator type (may be a simple pointer type).  Must have a value type that can be cast as an integer in the range [0..BINS-1]
     typename    HistoCounter,                   ///< Integral type for counting sample occurrences per histogram bin
     typename    SizeT>                          ///< Integer type for offsets
-struct BlockSweepHisto
+struct BlockHistoTiles
 {
     //---------------------------------------------------------------------
     // Types and constants
     //---------------------------------------------------------------------
 
     // Histogram grid algorithm
-    static const BlockSweepHistoAlgorithm GRID_ALGORITHM = BlockSweepHistoPolicy::GRID_ALGORITHM;
+    static const BlockHistoTilesAlgorithm GRID_ALGORITHM = BlockHistoTilesPolicy::GRID_ALGORITHM;
 
     // Alternative internal implementation types
-    typedef BlockSweepHistoSort<            BlockSweepHistoPolicy, BINS, CHANNELS, ACTIVE_CHANNELS, InputIteratorRA, HistoCounter, SizeT>   BlockSweepHistoSortT;
-    typedef BlockSweepHistoSharedAtomic<    BlockSweepHistoPolicy, BINS, CHANNELS, ACTIVE_CHANNELS, InputIteratorRA, HistoCounter, SizeT>   BlockSweepHistoSharedAtomicT;
-    typedef BlockSweepHistoGlobalAtomic<    BlockSweepHistoPolicy, BINS, CHANNELS, ACTIVE_CHANNELS, InputIteratorRA, HistoCounter, SizeT>   BlockSweepHistoGlobalAtomicT;
+    typedef BlockHistoTilesSort<            BlockHistoTilesPolicy, BINS, CHANNELS, ACTIVE_CHANNELS, InputIteratorRA, HistoCounter, SizeT>   BlockHistoTilesSortT;
+    typedef BlockHistoTilesSharedAtomic<    BlockHistoTilesPolicy, BINS, CHANNELS, ACTIVE_CHANNELS, InputIteratorRA, HistoCounter, SizeT>   BlockHistoTilesSharedAtomicT;
+    typedef BlockHistoTilesGlobalAtomic<    BlockHistoTilesPolicy, BINS, CHANNELS, ACTIVE_CHANNELS, InputIteratorRA, HistoCounter, SizeT>   BlockHistoTilesGlobalAtomicT;
 
     // Internal block sweep histogram type
     typedef typename If<(GRID_ALGORITHM == GRID_HISTO_SORT),
-        BlockSweepHistoSortT,
+        BlockHistoTilesSortT,
         If<(GRID_ALGORITHM == GRID_HISTO_SHARED_ATOMIC),
-            BlockSweepHistoSharedAtomicT,
-            BlockSweepHistoGlobalAtomicT>::Type>::Type InternalBlockDelegate;
+            BlockHistoTilesSharedAtomicT,
+            BlockHistoTilesGlobalAtomicT>::Type>::Type InternalBlockDelegate;
 
     enum
     {
@@ -195,7 +195,7 @@ struct BlockSweepHisto
     /**
      * Constructor
      */
-    __device__ __forceinline__ BlockSweepHisto(
+    __device__ __forceinline__ BlockHistoTiles(
         TempStorage         &temp_storage,                                  ///< Reference to temp_storage
         InputIteratorRA     d_in,                                           ///< Input data to reduce
         HistoCounter*       (&d_out_histograms)[ACTIVE_CHANNELS])           ///< Reference to output histograms

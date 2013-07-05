@@ -170,7 +170,7 @@ __device__ __forceinline__ void ThreadStore(OutputIteratorRA itr, T val);
     template<>                                                                              \
     __device__ __forceinline__ void ThreadStore<cub_modifier, long long*, long long>(long long* ptr, long long val)                 \
     {                                                                                       \
-        asm volatile ("st."#ptx_modifier".s32 [%0], %1;" : :                                \
+        asm volatile ("st."#ptx_modifier".s64 [%0], %1;" : :                                \
             _CUB_ASM_PTR_(ptr),                                                             \
             "l"(val));                                                                      \
     }

@@ -37,7 +37,7 @@
 #include <stdio.h>
 #include <iterator>
 
-#include "block_sweep/block_sweep_reduce_by_key.cuh"
+#include "block/block_reduce_by_key_tiles.cuh"
 #include "device_scan.cuh"
 #include "../thread/thread_operators.cuh"
 #include "../grid/grid_queue.cuh"
@@ -64,7 +64,7 @@ namespace cub {
  * Reduce-by-key kernel entry point (multi-block)
  */
 template <
-    typename    BlockSweepReduceByKeyPolicy,    ///< Tuning policy for cub::BlockSweepReduceByKey abstraction
+    typename    BlockReduceByKeyTilesPolicy,    ///< Tuning policy for cub::BlockReduceByKeyTiles abstraction
     typename    InputIteratorRA,                ///< Random-access iterator type for input (may be a simple pointer type)
     typename    OutputIteratorRA,               ///< Random-access iterator type for output (may be a simple pointer type)
     typename    T,                              ///< The scan data type

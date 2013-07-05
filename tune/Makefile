@@ -71,7 +71,7 @@ endif
 
 # Only one arch per tuning binary
 ifeq (350, $(findstring 350, $(SM_ARCH)))
-    SM_TARGETS = -gencode=arch=compute_35,code=\"sm_35,compute_35\" -rdc=true -lcudadevrt
+    SM_TARGETS = -gencode=arch=compute_35,code=\"sm_35,compute_35\"
     SM_ARCH = 350
 endif
 ifeq (300, $(findstring 300, $(SM_ARCH)))
