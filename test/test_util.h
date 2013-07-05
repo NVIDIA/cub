@@ -926,8 +926,7 @@ int CompareDeviceDeviceResults(
 
 
 /**
- * Verify the contents of a device array match those
- * of a host array
+ * Print the contents of a host array
  */
 template <typename T>
 void DisplayResults(
@@ -944,8 +943,7 @@ void DisplayResults(
 
 
 /**
- * Verify the contents of a device array match those
- * of a host array
+ * Print the contents of a device array
  */
 template <typename T>
 void DisplayDeviceResults(

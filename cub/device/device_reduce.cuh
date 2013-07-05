@@ -37,7 +37,7 @@
 #include <stdio.h>
 #include <iterator>
 
-#include "block_sweep/block_sweep_reduce.cuh"
+#include "block/block_reduce_tiles.cuh"
 #include "../thread/thread_operators.cuh"
 #include "../grid/grid_even_share.cuh"
 #include "../grid/grid_queue.cuh"
@@ -63,12 +63,12 @@ namespace cub {
  * Reduction pass kernel entry point (multi-block).  Computes privatized reductions, one per thread block.
  */
 template <
-    typename                BlockSweepReducePolicy, ///< Tuning policy for cub::BlockSweepReduce abstraction
+    typename                BlockReduceTilesPolicy, ///< Tuning policy for cub::BlockReduceTiles abstraction
     typename                InputIteratorRA,        ///< Random-access iterator type for input (may be a simple pointer type)
     typename                OutputIteratorRA,       ///< Random-access iterator type for output (may be a simple pointer type)
     typename                SizeT,                  ///< Integral type used for global array indexing
     typename                ReductionOp>            ///< Binary reduction operator type having member <tt>T operator()(const T &a, const T &b)</tt>
-__launch_bounds__ (int(BlockSweepReducePolicy::BLOCK_THREADS), 1)
+__launch_bounds__ (int(BlockReduceTilesPolicy::BLOCK_THREADS), 1)
 __global__ void MultiBlockReduceKernel(
     InputIteratorRA         d_in,                   ///< [in] Input data to reduce
     OutputIteratorRA        d_out,                  ///< [out] Output location for result
@@ -81,21 +81,21 @@ __global__ void MultiBlockReduceKernel(
     typedef typename std::iterator_traits<InputIteratorRA>::value_type T;
 
     // Thread block type for reducing input tiles
-    typedef BlockSweepReduce<BlockSweepReducePolicy, InputIteratorRA, SizeT, ReductionOp> BlockSweepReduceT;
+    typedef BlockReduceTiles<BlockReduceTilesPolicy, InputIteratorRA, SizeT, ReductionOp> BlockReduceTilesT;
 
     // Block-wide aggregate
     T block_aggregate;
 
     // Shared memory storage
-    __shared__ typename BlockSweepReduceT::TempStorage temp_storage;
+    __shared__ typename BlockReduceTilesT::TempStorage temp_storage;
 
     // Consume input tiles
-    BlockSweepReduceT(temp_storage, d_in, reduction_op).ConsumeTiles(
+    BlockReduceTilesT(temp_storage, d_in, reduction_op).ConsumeTiles(
         num_items,
         even_share,
         queue,
         block_aggregate,
-        Int2Type<BlockSweepReducePolicy::GRID_MAPPING>());
+        Int2Type<BlockReduceTilesPolicy::GRID_MAPPING>());
 
     // Output result
     if (threadIdx.x == 0)
@@ -109,12 +109,12 @@ __global__ void MultiBlockReduceKernel(
  * Reduction pass kernel entry point (single-block).  Aggregates privatized threadblock reductions from a previous multi-block reduction pass.
  */
 template <
-    typename                BlockSweepReducePolicy,  ///< Tuning policy for cub::BlockSweepReduce abstraction
+    typename                BlockReduceTilesPolicy,  ///< Tuning policy for cub::BlockReduceTiles abstraction
     typename                InputIteratorRA,        ///< Random-access iterator type for input (may be a simple pointer type)
     typename                OutputIteratorRA,       ///< Random-access iterator type for output (may be a simple pointer type)
     typename                SizeT,                  ///< Integral type used for global array indexing
     typename                ReductionOp>            ///< Binary reduction operator type having member <tt>T operator()(const T &a, const T &b)</tt>
-__launch_bounds__ (int(BlockSweepReducePolicy::BLOCK_THREADS), 1)
+__launch_bounds__ (int(BlockReduceTilesPolicy::BLOCK_THREADS), 1)
 __global__ void SingleBlockReduceKernel(
     InputIteratorRA         d_in,                   ///< [in] Input data to reduce
     OutputIteratorRA        d_out,                  ///< [out] Output location for result
@@ -125,16 +125,16 @@ __global__ void SingleBlockReduceKernel(
     typedef typename std::iterator_traits<InputIteratorRA>::value_type T;
 
     // Thread block type for reducing input tiles
-    typedef BlockSweepReduce<BlockSweepReducePolicy, InputIteratorRA, SizeT, ReductionOp> BlockSweepReduceT;
+    typedef BlockReduceTiles<BlockReduceTilesPolicy, InputIteratorRA, SizeT, ReductionOp> BlockReduceTilesT;
 
     // Block-wide aggregate
     T block_aggregate;
 
     // Shared memory storage
-    __shared__ typename BlockSweepReduceT::TempStorage temp_storage;
+    __shared__ typename BlockReduceTilesT::TempStorage temp_storage;
 
     // Consume input tiles
-    BlockSweepReduceT(temp_storage, d_in, reduction_op).ConsumeTiles(
+    BlockReduceTilesT(temp_storage, d_in, reduction_op).ConsumeTiles(
         SizeT(0),
         SizeT(num_items),
         block_aggregate);
@@ -169,7 +169,7 @@ struct DeviceReduce
      * Constants and typedefs
      ******************************************************************************/
 
-    /// Generic structure for encapsulating dispatch properties.  Mirrors the constants within BlockSweepReducePolicy.
+    /// Generic structure for encapsulating dispatch properties.  Mirrors the constants within BlockReduceTilesPolicy.
     struct KernelDispachParams
     {
         // Policy fields
@@ -184,16 +184,16 @@ struct DeviceReduce
         // Derived fields
         int                     tile_size;
 
-        template <typename BlockSweepReducePolicy>
+        template <typename BlockReduceTilesPolicy>
         __host__ __device__ __forceinline__
         void Init(int subscription_factor = 1)
         {
-            block_threads               = BlockSweepReducePolicy::BLOCK_THREADS;
-            items_per_thread            = BlockSweepReducePolicy::ITEMS_PER_THREAD;
-            vector_load_length          = BlockSweepReducePolicy::VECTOR_LOAD_LENGTH;
-            block_algorithm             = BlockSweepReducePolicy::BLOCK_ALGORITHM;
-            load_modifier               = BlockSweepReducePolicy::LOAD_MODIFIER;
-            grid_mapping                = BlockSweepReducePolicy::GRID_MAPPING;
+            block_threads               = BlockReduceTilesPolicy::BLOCK_THREADS;
+            items_per_thread            = BlockReduceTilesPolicy::ITEMS_PER_THREAD;
+            vector_load_length          = BlockReduceTilesPolicy::VECTOR_LOAD_LENGTH;
+            block_algorithm             = BlockReduceTilesPolicy::BLOCK_ALGORITHM;
+            load_modifier               = BlockReduceTilesPolicy::LOAD_MODIFIER;
+            grid_mapping                = BlockReduceTilesPolicy::GRID_MAPPING;
             this->subscription_factor   = subscription_factor;
 
             tile_size = block_threads * items_per_thread;
@@ -202,7 +202,7 @@ struct DeviceReduce
         __host__ __device__ __forceinline__
         void Print()
         {
-            printf("%d, %d, %d, %d, %d, %d, %d",
+            printf("%d threads, %d per thread, %d veclen, %d algo, %d loadmod, %d mapping, %d subscription",
                 block_threads,
                 items_per_thread,
                 vector_load_length,
@@ -230,10 +230,22 @@ struct DeviceReduce
     template <typename T, typename SizeT>
     struct TunedPolicies<T, SizeT, 350>
     {
-        // K20C: 182.1 @ 48M 32-bit T
-        typedef BlockSweepReducePolicy<256, 8,  2, BLOCK_REDUCE_RAKING, LOAD_DEFAULT, GRID_MAPPING_EVEN_SHARE>             MultiBlockPolicy;
-        typedef BlockSweepReducePolicy<256, 16, 2, BLOCK_REDUCE_WARP_REDUCTIONS, LOAD_DEFAULT, GRID_MAPPING_EVEN_SHARE>    SingleBlockPolicy;
-        enum { SUBSCRIPTION_FACTOR = 4 };
+        // 1B Multiblock policy: GTX Titan: 206.0 GB/s @ 192M 1B items
+        typedef BlockReduceTilesPolicy<128, 12,  1, BLOCK_REDUCE_RAKING, LOAD_LDG, GRID_MAPPING_DYNAMIC>                MultiBlockPolicy1B;
+
+        // 4B Multiblock policy: GTX Titan: 254.2 GB/s @ 48M 4B items
+        typedef BlockReduceTilesPolicy<512, 20,  1, BLOCK_REDUCE_RAKING, LOAD_DEFAULT, GRID_MAPPING_EVEN_SHARE>         MultiBlockPolicy4B;
+
+        // Multiblock policy
+        typedef typename If<(sizeof(T) < 4),
+            MultiBlockPolicy1B,
+            MultiBlockPolicy4B>::Type MultiBlockPolicy;
+
+        // Singleblock policy
+        typedef BlockReduceTilesPolicy<256, 8, 1, BLOCK_REDUCE_WARP_REDUCTIONS, LOAD_DEFAULT, GRID_MAPPING_EVEN_SHARE>  SingleBlockPolicy;
+
+        enum { SUBSCRIPTION_FACTOR = 8 };
+
     };
 
     /// SM30 tune
@@ -241,8 +253,8 @@ struct DeviceReduce
     struct TunedPolicies<T, SizeT, 300>
     {
         // GTX670: 154.0 @ 48M 32-bit T
-        typedef BlockSweepReducePolicy<256, 2,  1, BLOCK_REDUCE_WARP_REDUCTIONS,  LOAD_DEFAULT, GRID_MAPPING_EVEN_SHARE>            MultiBlockPolicy;
-        typedef BlockSweepReducePolicy<256, 24, 4, BLOCK_REDUCE_WARP_REDUCTIONS,  LOAD_DEFAULT, GRID_MAPPING_EVEN_SHARE>   SingleBlockPolicy;
+        typedef BlockReduceTilesPolicy<256, 2,  1, BLOCK_REDUCE_WARP_REDUCTIONS,  LOAD_DEFAULT, GRID_MAPPING_EVEN_SHARE>    MultiBlockPolicy;
+        typedef BlockReduceTilesPolicy<256, 24, 4, BLOCK_REDUCE_WARP_REDUCTIONS,  LOAD_DEFAULT, GRID_MAPPING_EVEN_SHARE>    SingleBlockPolicy;
         enum { SUBSCRIPTION_FACTOR = 1 };
     };
 
@@ -250,18 +262,29 @@ struct DeviceReduce
     template <typename T, typename SizeT>
     struct TunedPolicies<T, SizeT, 200>
     {
-        // GTX 580: 178.9 @ 48M 32-bit T
-        typedef BlockSweepReducePolicy<128, 8,  2, BLOCK_REDUCE_RAKING, LOAD_DEFAULT, GRID_MAPPING_DYNAMIC>                MultiBlockPolicy;
-        typedef BlockSweepReducePolicy<128, 4,  1, BLOCK_REDUCE_RAKING, LOAD_DEFAULT, GRID_MAPPING_EVEN_SHARE>             SingleBlockPolicy;
-        enum { SUBSCRIPTION_FACTOR = 1 };
+        // 1B Multiblock policy: GTX 580: 158.1 GB/s @ 192M 1B items
+        typedef BlockReduceTilesPolicy<192, 24,  4, BLOCK_REDUCE_RAKING, LOAD_DEFAULT, GRID_MAPPING_EVEN_SHARE>            MultiBlockPolicy1B;
+
+        // 4B Multiblock policy: GTX 580: 178.9 GB/s @ 48M 4B items
+        typedef BlockReduceTilesPolicy<128, 8,  4, BLOCK_REDUCE_RAKING, LOAD_DEFAULT, GRID_MAPPING_DYNAMIC>                MultiBlockPolicy4B;
+
+        // Multiblock policy
+        typedef typename If<(sizeof(T) < 4),
+            MultiBlockPolicy1B,
+            MultiBlockPolicy4B>::Type MultiBlockPolicy;
+
+        // Singleblock policy
+        typedef BlockReduceTilesPolicy<192, 7,  1, BLOCK_REDUCE_RAKING, LOAD_DEFAULT, GRID_MAPPING_EVEN_SHARE>             SingleBlockPolicy;
+
+        enum { SUBSCRIPTION_FACTOR = 2 };
     };
 
     /// SM13 tune
     template <typename T, typename SizeT>
     struct TunedPolicies<T, SizeT, 130>
     {
-        typedef BlockSweepReducePolicy<128, 8,  2,  BLOCK_REDUCE_RAKING, LOAD_DEFAULT, GRID_MAPPING_EVEN_SHARE>            MultiBlockPolicy;
-        typedef BlockSweepReducePolicy<32,  4,  4,  BLOCK_REDUCE_RAKING, LOAD_DEFAULT, GRID_MAPPING_EVEN_SHARE>            SingleBlockPolicy;
+        typedef BlockReduceTilesPolicy<128, 8,  2,  BLOCK_REDUCE_RAKING, LOAD_DEFAULT, GRID_MAPPING_EVEN_SHARE>            MultiBlockPolicy;
+        typedef BlockReduceTilesPolicy<32,  4,  4,  BLOCK_REDUCE_RAKING, LOAD_DEFAULT, GRID_MAPPING_EVEN_SHARE>            SingleBlockPolicy;
         enum { SUBSCRIPTION_FACTOR = 1 };
     };
 
@@ -269,8 +292,8 @@ struct DeviceReduce
     template <typename T, typename SizeT>
     struct TunedPolicies<T, SizeT, 100>
     {
-        typedef BlockSweepReducePolicy<128, 8,  2,  BLOCK_REDUCE_RAKING, LOAD_DEFAULT, GRID_MAPPING_EVEN_SHARE>            MultiBlockPolicy;
-        typedef BlockSweepReducePolicy<32,  4,  4,  BLOCK_REDUCE_RAKING, LOAD_DEFAULT, GRID_MAPPING_EVEN_SHARE>            SingleBlockPolicy;
+        typedef BlockReduceTilesPolicy<128, 8,  2,  BLOCK_REDUCE_RAKING, LOAD_DEFAULT, GRID_MAPPING_EVEN_SHARE>            MultiBlockPolicy;
+        typedef BlockReduceTilesPolicy<32,  4,  4,  BLOCK_REDUCE_RAKING, LOAD_DEFAULT, GRID_MAPPING_EVEN_SHARE>            SingleBlockPolicy;
         enum { SUBSCRIPTION_FACTOR = 1 };
     };
 
@@ -373,14 +396,14 @@ struct DeviceReduce
 #ifndef CUB_RUNTIME_ENABLED
 
         // Kernel launch not supported from this device
-        return CubDebug(cudaErrorInvalidConfiguration);
+        return CubDebug(cudaErrorNotSupported);
 
 #else
 
         // Return if the caller is simply requesting the size of the storage allocation
         if (d_temp_storage == NULL)
         {
-            temp_storage_bytes = 0;
+            temp_storage_bytes = 1;
             return cudaSuccess;
         }
 
@@ -399,12 +422,7 @@ struct DeviceReduce
                 reduction_op);
 
             // Sync the stream if specified
-#ifndef __CUDA_ARCH__
-            if (stream_synchronous && CubDebug(error = cudaStreamSynchronize(stream))) break;
-#else
-            if (stream_synchronous && CubDebug(error = cudaDeviceSynchronize())) break;
-#endif
-
+            if (stream_synchronous && (CubDebug(error = SyncStream(stream)))) break;
         }
         while (0);
         return error;
@@ -528,26 +546,17 @@ struct DeviceReduce
             // Grid queue descriptor
             GridQueue<SizeT> queue(allocations[1]);
 
-            // Return if the caller is simply requesting the size of the storage allocation
-            if (d_temp_storage == NULL)
-                return cudaSuccess;
-
             // Prepare the dynamic queue descriptor if necessary
             if (multi_block_dispatch_params.grid_mapping == GRID_MAPPING_DYNAMIC)
             {
-#ifndef __CUDA_ARCH__
-                // We're on the host, so prepare queue on device (because its faster than if we prepare it here)
+                // Prepare queue using a kernel so we know it gets prepared once per operation
                 if (stream_synchronous) CubLog("Invoking prepare_drain_kernel<<<1, 1, 0, %lld>>>()\n", (long long) stream);
 
                 // Invoke prepare_drain_kernel
                 prepare_drain_kernel<<<1, 1, 0, stream>>>(queue, num_items);
 
                 // Sync the stream if specified
-                if (stream_synchronous && CubDebug(error = cudaStreamSynchronize(stream))) break;
-#else
-                // Prepare the queue here
-                if (CubDebug(error = queue.ResetDrain(num_items))) break;
-#endif
+                if (stream_synchronous && (CubDebug(error = SyncStream(stream)))) break;
             }
 
             // Log multi_block_kernel configuration
@@ -564,11 +573,7 @@ struct DeviceReduce
                 reduction_op);
 
             // Sync the stream if specified
-#ifndef __CUDA_ARCH__
-            if (stream_synchronous && CubDebug(error = cudaStreamSynchronize(stream))) break;
-#else
-            if (stream_synchronous && CubDebug(error = cudaDeviceSynchronize())) break;
-#endif
+            if (stream_synchronous && (CubDebug(error = SyncStream(stream)))) break;
 
             // Log single_block_kernel configuration
             if (stream_synchronous) CubLog("Invoking single_block_kernel<<<%d, %d, 0, %lld>>>(), %d items per thread\n",
@@ -582,11 +587,7 @@ struct DeviceReduce
                 reduction_op);
 
             // Sync the stream if specified
-#ifndef __CUDA_ARCH__
-            if (stream_synchronous && CubDebug(error = cudaStreamSynchronize(stream))) break;
-#else
-            if (stream_synchronous && CubDebug(error = cudaDeviceSynchronize())) break;
-#endif
+            if (stream_synchronous && (CubDebug(error = SyncStream(stream)))) break;
         }
         while (0);
 

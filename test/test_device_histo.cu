@@ -47,11 +47,11 @@ using namespace cub;
 // Globals, constants and typedefs
 //---------------------------------------------------------------------
 
-bool                        g_verbose           = false;
-int                         g_timing_iterations = 0;
-bool                        g_verbose_input     = false;
-CachingDeviceAllocator      g_allocator;
-
+bool                    g_verbose_input     = false;
+bool                    g_verbose           = false;
+int                     g_timing_iterations = 0;
+int                     g_repeat            = 0;
+CachingDeviceAllocator  g_allocator;
 
 /**
  * Scaling operator for binning f32 types
@@ -202,7 +202,7 @@ template <
     typename        HistoCounterT,
     typename        BinOp>
 void Test(
-    BlockSweepHistoAlgorithm    g_algorithm,
+    BlockHistoTilesAlgorithm    g_algorithm,
     GenMode                     gen_mode,
     BinOp                       bin_op,
     int                         num_samples,
@@ -215,7 +215,7 @@ void Test(
     int cnp_compare     = 0;
     int total_bins      = ACTIVE_CHANNELS * BINS;
 
-    printf("cub::DeviceHisto %s %d %s samples (%dB), %d bins, %d channels, %d active channels, gen-mode %d\n",
+    printf("cub::DeviceHisto %s %d %s samples (%dB), %d bins, %d channels, %d active channels, gen-mode %s\n",
         (g_algorithm == GRID_HISTO_SHARED_ATOMIC) ? "satomic" : (g_algorithm == GRID_HISTO_GLOBAL_ATOMIC) ? "gatomic" : "sort",
         num_samples,
         type_string,
@@ -223,7 +223,7 @@ void Test(
         BINS,
         CHANNELS,
         ACTIVE_CHANNELS,
-        gen_mode);
+        (gen_mode == RANDOM) ? "RANDOM" : (gen_mode == SEQ_INC) ? "SEQUENTIAL" : "HOMOGENOUS");
     fflush(stdout);
 
     // Allocate host arrays
@@ -336,7 +336,7 @@ void Test(
 
 /*
     // Evaluate using CUDA nested parallelism
-#if (TEST_CNP == 1)
+#if (CUB_CNP == 1)
 
     CubDebugExit(cudaMemset(d_out, 0, sizeof(SampleT) * 1));
 
@@ -454,13 +454,41 @@ template <
     typename        IteratorValueT,
     typename        HistoCounterT,
     typename        BinOp>
-void Test(
+void TestModes(
     BinOp           bin_op,
     int             num_samples,
     char*           type_string)
 {
     Test<BINS, SampleT, IteratorValueT, HistoCounterT>(RANDOM, bin_op, num_samples, type_string);
     Test<BINS, SampleT, IteratorValueT, HistoCounterT>(UNIFORM, bin_op, num_samples, type_string);
+}
+
+
+/**
+ * Iterate input sizes
+ */
+template <
+    int             BINS,
+    typename        SampleT,
+    typename        IteratorValueT,
+    typename        HistoCounterT,
+    typename        BinOp>
+void Test(
+    BinOp           bin_op,
+    int             num_samples,
+    char*           type_string)
+{
+    if (num_samples < 0)
+    {
+        TestModes<BINS, SampleT, IteratorValueT, HistoCounterT>(bin_op, 1,       type_string);
+        TestModes<BINS, SampleT, IteratorValueT, HistoCounterT>(bin_op, 100,     type_string);
+        TestModes<BINS, SampleT, IteratorValueT, HistoCounterT>(bin_op, 10000,   type_string);
+        TestModes<BINS, SampleT, IteratorValueT, HistoCounterT>(bin_op, 1000000, type_string);
+    }
+    else
+    {
+        TestModes<BINS, SampleT, IteratorValueT, HistoCounterT>(bin_op, num_samples, type_string);
+    }
 }
 
 
@@ -474,22 +502,27 @@ void Test(
  */
 int main(int argc, char** argv)
 {
-    int num_samples = 1 * 1024 * 1024;
+    int num_samples = -1;
 
     // Initialize command line
     CommandLineArgs args(argc, argv);
-    args.GetCmdLineArgument("n", num_samples);                  // Total number of samples across all channels
-    args.GetCmdLineArgument("i", g_timing_iterations);          // Timing iterations
-    g_verbose = args.CheckCmdLineFlag("v");                     // Display input/output data
+    g_verbose = args.CheckCmdLineFlag("v");
+    bool quick = args.CheckCmdLineFlag("quick");
+    args.GetCmdLineArgument("n", num_samples);
+    args.GetCmdLineArgument("i", g_timing_iterations);
+    args.GetCmdLineArgument("repeat", g_repeat);
 
     // Print usage
     if (args.CheckCmdLineFlag("help"))
     {
         printf("%s "
+            "[--n=<total input samples across all channels> "
+            "[--i=<timing iterations> "
             "[--device=<device-id>] "
+            "[--repeat=<times to repeat tests>]"
+            "[--quick]"
             "[--v] "
-            "[--n=<total number of samples across all channels>]"
-            "[--i=<timing iterations>]"
+            "[--cnp]"
             "\n", argv[0]);
         exit(0);
     }
@@ -497,17 +530,52 @@ int main(int argc, char** argv)
     // Initialize device
     CubDebugExit(args.DeviceInit());
 
-    // 256-bin tests
-    Test<256, unsigned char,    unsigned char, int>(Cast<unsigned char>(),              num_samples, CUB_TYPE_STRING(unsigned char));
-    Test<256, unsigned short,   unsigned char, int>(Cast<unsigned char>(),              num_samples, CUB_TYPE_STRING(unsigned short));
-    Test<256, unsigned int,     unsigned char, int>(Cast<unsigned char>(),              num_samples, CUB_TYPE_STRING(unsigned int));
-    Test<256, float,            unsigned char, int>(FloatScaleOp<unsigned char, 256>(), num_samples, CUB_TYPE_STRING(float));
+    if (quick)
+    {
+        // Quick test
+        if (num_samples < 0) num_samples = 32000000;
 
-    // 512-bin tests
-    Test<512, unsigned char,    unsigned short, int>(Cast<unsigned short>(),              num_samples, CUB_TYPE_STRING(unsigned char));
-    Test<512, unsigned short,   unsigned short, int>(Cast<unsigned short>(),              num_samples, CUB_TYPE_STRING(unsigned short));
-    Test<512, unsigned int,     unsigned short, int>(Cast<unsigned short>(),              num_samples, CUB_TYPE_STRING(unsigned int));
-    Test<512, float,            unsigned short, int>(FloatScaleOp<unsigned short, 512>(), num_samples, CUB_TYPE_STRING(float));
+        printf("SINGLE CHANNEL:\n\n");
+        Test<256, 1, 1, unsigned char, unsigned char, int>(GRID_HISTO_SORT,          RANDOM,  Cast<unsigned char>(), num_samples, CUB_TYPE_STRING(unsigned char));
+        Test<256, 1, 1, unsigned char, unsigned char, int>(GRID_HISTO_SORT,          UNIFORM, Cast<unsigned char>(), num_samples, CUB_TYPE_STRING(unsigned char));
+        printf("\n");
+        Test<256, 1, 1, unsigned char, unsigned char, int>(GRID_HISTO_SHARED_ATOMIC, RANDOM,  Cast<unsigned char>(), num_samples, CUB_TYPE_STRING(unsigned char));
+        Test<256, 1, 1, unsigned char, unsigned char, int>(GRID_HISTO_SHARED_ATOMIC, UNIFORM, Cast<unsigned char>(), num_samples, CUB_TYPE_STRING(unsigned char));
+        printf("\n");
+        Test<256, 1, 1, unsigned char, unsigned char, int>(GRID_HISTO_GLOBAL_ATOMIC, RANDOM,  Cast<unsigned char>(), num_samples, CUB_TYPE_STRING(unsigned char));
+        Test<256, 1, 1, unsigned char, unsigned char, int>(GRID_HISTO_GLOBAL_ATOMIC, UNIFORM, Cast<unsigned char>(), num_samples, CUB_TYPE_STRING(unsigned char));
+        printf("\n");
+
+        printf("3/4 CHANNEL (RGB/RGBA):\n\n");
+        Test<256, 4, 3, unsigned char, unsigned char, int>(GRID_HISTO_SORT,          RANDOM,  Cast<unsigned char>(), num_samples, CUB_TYPE_STRING(unsigned char));
+        Test<256, 4, 3, unsigned char, unsigned char, int>(GRID_HISTO_SORT,          UNIFORM, Cast<unsigned char>(), num_samples, CUB_TYPE_STRING(unsigned char));
+        printf("\n");
+        Test<256, 4, 3, unsigned char, unsigned char, int>(GRID_HISTO_SHARED_ATOMIC, RANDOM,  Cast<unsigned char>(), num_samples, CUB_TYPE_STRING(unsigned char));
+        Test<256, 4, 3, unsigned char, unsigned char, int>(GRID_HISTO_SHARED_ATOMIC, UNIFORM, Cast<unsigned char>(), num_samples, CUB_TYPE_STRING(unsigned char));
+        printf("\n");
+        Test<256, 4, 3, unsigned char, unsigned char, int>(GRID_HISTO_GLOBAL_ATOMIC, RANDOM,  Cast<unsigned char>(), num_samples, CUB_TYPE_STRING(unsigned char));
+        Test<256, 4, 3, unsigned char, unsigned char, int>(GRID_HISTO_GLOBAL_ATOMIC, UNIFORM, Cast<unsigned char>(), num_samples, CUB_TYPE_STRING(unsigned char));
+        printf("\n");
+
+    }
+    else
+    {
+        // Repeat test sequence
+        for (int i = 0; i <= g_repeat; ++i)
+        {
+            // 256-bin tests
+            Test<256, unsigned char,    unsigned char, int>(Cast<unsigned char>(),              num_samples, CUB_TYPE_STRING(unsigned char));
+            Test<256, unsigned short,   unsigned char, int>(Cast<unsigned char>(),              num_samples, CUB_TYPE_STRING(unsigned short));
+            Test<256, unsigned int,     unsigned char, int>(Cast<unsigned char>(),              num_samples, CUB_TYPE_STRING(unsigned int));
+            Test<256, float,            unsigned char, int>(FloatScaleOp<unsigned char, 256>(), num_samples, CUB_TYPE_STRING(float));
+
+            // 512-bin tests
+            Test<512, unsigned char,    unsigned short, int>(Cast<unsigned short>(),              num_samples, CUB_TYPE_STRING(unsigned char));
+            Test<512, unsigned short,   unsigned short, int>(Cast<unsigned short>(),              num_samples, CUB_TYPE_STRING(unsigned short));
+            Test<512, unsigned int,     unsigned short, int>(Cast<unsigned short>(),              num_samples, CUB_TYPE_STRING(unsigned int));
+            Test<512, float,            unsigned short, int>(FloatScaleOp<unsigned short, 512>(), num_samples, CUB_TYPE_STRING(float));
+        }
+    }
 
     return 0;
 }

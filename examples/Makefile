@@ -49,13 +49,12 @@ OSUPPER = $(shell uname -s 2>/dev/null | tr [:lower:] [:upper:])
 # Defines
 #-------------------------------------------------------------------------------
 
-# Set TEST_CNP macro for programs (default: no)
+# Set CUB_CNP macro for programs (default: no)
 ifeq ($(cnp), 1)
-	DEFINES += -DTEST_CNP=1
+	DEFINES += -DCUB_CNP
 	CNP_SUFFIX = cnp
     NVCCFLAGS += -rdc=true -lcudadevrt
 else
-	DEFINES += -DTEST_CNP=0
 	CNP_SUFFIX = nocnp
 endif
 

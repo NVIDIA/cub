@@ -28,7 +28,7 @@
 
 /**
  * \file
- * cub::BlockSweepHistoSharedAtomic implements a stateful abstraction of CUDA thread blocks for histogramming multiple tiles as part of device-wide histogram using shared atomics
+ * cub::BlockHistoTilesGlobalAtomic implements a stateful abstraction of CUDA thread blocks for histogramming multiple tiles as part of device-wide histogram.
  */
 
 #pragma once
@@ -46,18 +46,19 @@ CUB_NS_PREFIX
 namespace cub {
 
 
+
 /**
- * BlockSweepHistoSharedAtomic implements a stateful abstraction of CUDA thread blocks for histogramming multiple tiles as part of device-wide histogram using shared atomics
+ * BlockHistoTilesGlobalAtomic implements a stateful abstraction of CUDA thread blocks for histogramming multiple tiles as part of device-wide histogram using global atomics
  */
 template <
-    typename    BlockSweepHistoPolicy,          ///< Tuning policy
-    int         BINS,                           ///< Number of histogram bins
+    typename    BlockHistoTilesPolicy,          ///< Tuning policy
+    int         BINS,                           ///< Number of histogram bins per channel
     int         CHANNELS,                       ///< Number of channels interleaved in the input data (may be greater than the number of active channels being histogrammed)
     int         ACTIVE_CHANNELS,                ///< Number of channels actively being histogrammed
     typename    InputIteratorRA,                ///< The input iterator type (may be a simple pointer type).  Must have a value type that can be cast as an integer in the range [0..BINS-1]
     typename    HistoCounter,                   ///< Integral type for counting sample occurrences per histogram bin
     typename    SizeT>                          ///< Integer type for offsets
-struct BlockSweepHistoSharedAtomic
+struct BlockHistoTilesGlobalAtomic
 {
     //---------------------------------------------------------------------
     // Types and constants
@@ -69,17 +70,14 @@ struct BlockSweepHistoSharedAtomic
     // Constants
     enum
     {
-        BLOCK_THREADS       = BlockSweepHistoPolicy::BLOCK_THREADS,
-        ITEMS_PER_THREAD    = BlockSweepHistoPolicy::ITEMS_PER_THREAD,
+        BLOCK_THREADS       = BlockHistoTilesPolicy::BLOCK_THREADS,
+        ITEMS_PER_THREAD    = BlockHistoTilesPolicy::ITEMS_PER_THREAD,
         TILE_CHANNEL_ITEMS  = BLOCK_THREADS * ITEMS_PER_THREAD,
         TILE_ITEMS          = TILE_CHANNEL_ITEMS * CHANNELS,
     };
 
     // Shared memory type required by this thread block
-    struct TempStorage
-    {
-        HistoCounter histograms[ACTIVE_CHANNELS][BINS + 1];  // One word of padding between channel histograms to prevent warps working on different histograms from hammering on the same bank
-    };
+    struct TempStorage {};
 
 
     //---------------------------------------------------------------------
@@ -103,7 +101,7 @@ struct BlockSweepHistoSharedAtomic
     /**
      * Constructor
      */
-    __device__ __forceinline__ BlockSweepHistoSharedAtomic(
+    __device__ __forceinline__ BlockHistoTilesGlobalAtomic(
         TempStorage         &temp_storage,                                  ///< Reference to temp_storage
         InputIteratorRA     d_in,                                           ///< Input data to reduce
         HistoCounter*       (&d_out_histograms)[ACTIVE_CHANNELS])           ///< Reference to output histograms
@@ -111,25 +109,7 @@ struct BlockSweepHistoSharedAtomic
         temp_storage(temp_storage),
         d_in(d_in),
         d_out_histograms(d_out_histograms)
-    {
-        // Initialize histogram bin counts to zeros
-        #pragma unroll
-        for (int CHANNEL = 0; CHANNEL < ACTIVE_CHANNELS; ++CHANNEL)
-        {
-            int histo_offset = 0;
-
-            #pragma unroll
-            for(; histo_offset + BLOCK_THREADS <= BINS; histo_offset += BLOCK_THREADS)
-            {
-                temp_storage.histograms[CHANNEL][histo_offset + threadIdx.x] = 0;
-            }
-            // Finish up with guarded initialization if necessary
-            if ((histo_offset < BLOCK_THREADS) && (histo_offset + threadIdx.x < BINS))
-            {
-                temp_storage.histograms[CHANNEL][histo_offset + threadIdx.x] = 0;
-            }
-        }
-    }
+    {}
 
 
     /**
@@ -168,12 +148,10 @@ struct BlockSweepHistoSharedAtomic
                 {
                     if (CHANNEL < ACTIVE_CHANNELS)
                     {
-                        atomicAdd(temp_storage.histograms[CHANNEL] + items[ITEM][CHANNEL], 1);
+                        atomicAdd(d_out_histograms[CHANNEL] + items[ITEM][CHANNEL], 1);
                     }
                 }
             }
-
-            __threadfence_block();
         }
         else
         {
@@ -189,7 +167,7 @@ struct BlockSweepHistoSharedAtomic
                     if (((ACTIVE_CHANNELS == CHANNELS) || (CHANNEL < ACTIVE_CHANNELS)) && ((ITEM * BLOCK_THREADS * CHANNELS) + CHANNEL < bounds))
                     {
                         SampleT item  = d_in[block_offset + (ITEM * BLOCK_THREADS * CHANNELS) + (threadIdx.x * CHANNELS) + CHANNEL];
-                        atomicAdd(temp_storage.histograms[CHANNEL] + item, 1);
+                        atomicAdd(d_out_histograms[CHANNEL] + item, 1);
                     }
                 }
             }
@@ -202,31 +180,8 @@ struct BlockSweepHistoSharedAtomic
      * Aggregate results into output
      */
     __device__ __forceinline__ void AggregateOutput()
-    {
-        // Barrier to ensure shared memory histograms are coherent
-        __syncthreads();
-
-        // Copy shared memory histograms to output
-        #pragma unroll
-        for (int CHANNEL = 0; CHANNEL < ACTIVE_CHANNELS; ++CHANNEL)
-        {
-            int channel_offset  = (blockIdx.x * BINS);
-            int histo_offset    = 0;
-
-            #pragma unroll
-            for(; histo_offset + BLOCK_THREADS <= BINS; histo_offset += BLOCK_THREADS)
-            {
-                d_out_histograms[CHANNEL][channel_offset + histo_offset + threadIdx.x] = temp_storage.histograms[CHANNEL][histo_offset + threadIdx.x];
-            }
-            // Finish up with guarded initialization if necessary
-            if ((histo_offset < BLOCK_THREADS) && (histo_offset + threadIdx.x < BINS))
-            {
-                d_out_histograms[CHANNEL][channel_offset + histo_offset + threadIdx.x] = temp_storage.histograms[CHANNEL][histo_offset + threadIdx.x];
-            }
-        }
-    }
+    {}
 };
-
 
 
 }               // CUB namespace

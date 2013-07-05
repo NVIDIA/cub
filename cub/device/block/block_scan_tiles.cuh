@@ -28,14 +28,14 @@
 
 /**
  * \file
- * cub::BlockSweepScan implements a stateful abstraction of CUDA thread blocks for participating in device-wide prefix scan.
+ * cub::BlockScanTiles implements a stateful abstraction of CUDA thread blocks for participating in device-wide prefix scan.
  */
 
 #pragma once
 
 #include <iterator>
 
-#include "device_scan_types.cuh"
+#include "scan_tiles_types.cuh"
 #include "../../block/block_load.cuh"
 #include "../../block/block_store.cuh"
 #include "../../block/block_scan.cuh"
@@ -53,7 +53,7 @@ namespace cub {
  ******************************************************************************/
 
 /**
- * Tuning policy for BlockSweepScan
+ * Tuning policy for BlockScanTiles
  */
 template <
     int                         _BLOCK_THREADS,
@@ -64,7 +64,7 @@ template <
     BlockStoreAlgorithm         _STORE_ALGORITHM,
     bool                        _STORE_WARP_TIME_SLICING,
     BlockScanAlgorithm          _SCAN_ALGORITHM>
-struct BlockSweepScanPolicy
+struct BlockScanTilesPolicy
 {
     enum
     {
@@ -86,16 +86,18 @@ struct BlockSweepScanPolicy
  ******************************************************************************/
 
 /**
- * \brief BlockSweepScan implements a stateful abstraction of CUDA thread blocks for participating in device-wide prefix scan.
+ * \brief BlockScanTiles implements a stateful abstraction of CUDA thread blocks for participating in device-wide prefix scan.
+ *
+ * Implements a single-pass "domino" strategy with adaptive prefix lookback.
  */
 template <
-    typename BlockSweepScanPolicy,     ///< Tuning policy
+    typename BlockScanTilesPolicy,     ///< Tuning policy
     typename InputIteratorRA,               ///< Input iterator type
     typename OutputIteratorRA,              ///< Output iterator type
     typename ScanOp,                        ///< Scan functor type
     typename Identity,                      ///< Identity element type (cub::NullType for inclusive scan)
     typename SizeT>                         ///< Offset integer type
-struct BlockSweepScan
+struct BlockScanTiles
 {
     //---------------------------------------------------------------------
     // Types and constants
@@ -108,28 +110,28 @@ struct BlockSweepScan
     enum
     {
         INCLUSIVE           = Equals<Identity, NullType>::VALUE,            // Inclusive scan if no identity type is provided
-        BLOCK_THREADS       = BlockSweepScanPolicy::BLOCK_THREADS,
-        ITEMS_PER_THREAD    = BlockSweepScanPolicy::ITEMS_PER_THREAD,
+        BLOCK_THREADS       = BlockScanTilesPolicy::BLOCK_THREADS,
+        ITEMS_PER_THREAD    = BlockScanTilesPolicy::ITEMS_PER_THREAD,
         TILE_ITEMS          = BLOCK_THREADS * ITEMS_PER_THREAD,
     };
 
     // Block load type
     typedef BlockLoad<
         InputIteratorRA,
-        BlockSweepScanPolicy::BLOCK_THREADS,
-        BlockSweepScanPolicy::ITEMS_PER_THREAD,
-        BlockSweepScanPolicy::LOAD_ALGORITHM,
-        BlockSweepScanPolicy::LOAD_MODIFIER,
-        BlockSweepScanPolicy::LOAD_WARP_TIME_SLICING>   BlockLoadT;
+        BlockScanTilesPolicy::BLOCK_THREADS,
+        BlockScanTilesPolicy::ITEMS_PER_THREAD,
+        BlockScanTilesPolicy::LOAD_ALGORITHM,
+        BlockScanTilesPolicy::LOAD_MODIFIER,
+        BlockScanTilesPolicy::LOAD_WARP_TIME_SLICING>   BlockLoadT;
 
     // Block store type
     typedef BlockStore<
         OutputIteratorRA,
-        BlockSweepScanPolicy::BLOCK_THREADS,
-        BlockSweepScanPolicy::ITEMS_PER_THREAD,
-        BlockSweepScanPolicy::STORE_ALGORITHM,
+        BlockScanTilesPolicy::BLOCK_THREADS,
+        BlockScanTilesPolicy::ITEMS_PER_THREAD,
+        BlockScanTilesPolicy::STORE_ALGORITHM,
         STORE_DEFAULT,
-        BlockSweepScanPolicy::STORE_WARP_TIME_SLICING>  BlockStoreT;
+        BlockScanTilesPolicy::STORE_WARP_TIME_SLICING>  BlockStoreT;
 
     // Device tile status descriptor type
     typedef DeviceScanTileDescriptor<T>                 DeviceScanTileDescriptorT;
@@ -137,8 +139,8 @@ struct BlockSweepScan
     // Block scan type
     typedef BlockScan<
         T,
-        BlockSweepScanPolicy::BLOCK_THREADS,
-        BlockSweepScanPolicy::SCAN_ALGORITHM> BlockScanT;
+        BlockScanTilesPolicy::BLOCK_THREADS,
+        BlockScanTilesPolicy::SCAN_ALGORITHM> BlockScanT;
 
     // Device scan prefix callback type for inter-block scans
     typedef DeviceScanBlockPrefixOp<T, ScanOp> InterblockPrefixOp;
@@ -278,12 +280,12 @@ struct BlockSweepScan
     }
 
     //---------------------------------------------------------------------
-    // Interface
+    // Constructor
     //---------------------------------------------------------------------
 
     // Constructor
     __device__ __forceinline__
-    BlockSweepScan(
+    BlockScanTiles(
         TempStorage                 &temp_storage,      ///< Reference to temp_storage
         InputIteratorRA             d_in,               ///< Input data
         OutputIteratorRA            d_out,              ///< Output data
@@ -298,8 +300,12 @@ struct BlockSweepScan
     {}
 
 
+    //---------------------------------------------------------------------
+    // Domino scan
+    //---------------------------------------------------------------------
+
     /**
-     * Process a tile of input
+     * Process a tile of input (domino scan)
      */
     template <bool FULL_TILE>
     __device__ __forceinline__ void ConsumeTile(
@@ -342,6 +348,49 @@ struct BlockSweepScan
             BlockStoreT(temp_storage.store).Store(d_out + block_offset, items, num_items - block_offset);
     }
 
+    /**
+     * Dequeue and scan tiles of items as part of a domino scan
+     */
+    __device__ __forceinline__ void ConsumeTiles(
+        int                         num_items,          ///< Total number of input items
+        GridQueue<int>              queue,              ///< Queue descriptor for assigning tiles of work to thread blocks
+        DeviceScanTileDescriptorT   *d_tile_status)    ///< Global list of tile status
+    {
+        // We give each thread block at least one tile of input.
+        int tile_idx = blockIdx.x;
+
+        SizeT block_offset = SizeT(TILE_ITEMS) * tile_idx;
+        while (block_offset + TILE_ITEMS <= num_items)
+        {
+            ConsumeTile<true>(num_items, tile_idx, block_offset, d_tile_status);
+
+            // Get next tile
+#if CUB_PTX_ARCH < 200
+            // No concurrent kernels allowed, so just stripe tiles
+            tile_idx += gridDim.x;
+#else
+            // Concurrent kernels are allowed, so we must only use active blocks to dequeue tile indices
+            if (threadIdx.x == 0)
+                temp_storage.tile_idx = queue.Drain(1) + gridDim.x;
+
+            __syncthreads();
+
+            tile_idx = temp_storage.tile_idx;
+#endif
+            block_offset = SizeT(TILE_ITEMS) * tile_idx;
+        }
+
+        // Consume a partially-full tile
+        if (block_offset < num_items)
+        {
+            ConsumeTile<false>(num_items, tile_idx, block_offset, d_tile_status);
+        }
+    }
+
+
+    //---------------------------------------------------------------------
+    // Segment scan
+    //---------------------------------------------------------------------
 
     /**
      * Process a tile of input
@@ -383,46 +432,6 @@ struct BlockSweepScan
             BlockStoreT(temp_storage.store).Store(d_out + block_offset, items);
         else
             BlockStoreT(temp_storage.store).Store(d_out + block_offset, items, valid_items);
-    }
-
-
-    /**
-     * Dequeue and scan tiles of items as part of a inter-block scan
-     */
-    __device__ __forceinline__ void ConsumeTiles(
-        int                     num_items,          ///< Total number of input items
-        GridQueue<int>          queue,              ///< Queue descriptor for assigning tiles of work to thread blocks
-        DeviceScanTileDescriptorT    *d_tile_status)    ///< Global list of tile status
-    {
-        // We give each thread block at least one tile of input.
-        int tile_idx = blockIdx.x;
-
-        SizeT block_offset = SizeT(TILE_ITEMS) * tile_idx;
-        while (block_offset + TILE_ITEMS <= num_items)
-        {
-            ConsumeTile<true>(num_items, tile_idx, block_offset, d_tile_status);
-
-            // Get next tile
-#if CUB_PTX_ARCH < 200
-            // No concurrent kernels allowed, so just stripe tiles
-            tile_idx += gridDim.x;
-#else
-            // Concurrent kernels are allowed, so we must only use active blocks to dequeue tile indices
-            if (threadIdx.x == 0)
-                temp_storage.tile_idx = queue.Drain(1) + gridDim.x;
-
-            __syncthreads();
-
-            tile_idx = temp_storage.tile_idx;
-#endif
-            block_offset = SizeT(TILE_ITEMS) * tile_idx;
-        }
-
-        // Consume a partially-full tile
-        if (block_offset < num_items)
-        {
-            ConsumeTile<false>(num_items, tile_idx, block_offset, d_tile_status);
-        }
     }
 
 
