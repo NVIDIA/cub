@@ -37,7 +37,7 @@
 #include <stdio.h>
 #include <iterator>
 
-#include "block_sweep/block_sweep_histo.cuh"
+#include "block/block_histo_tiles.cuh"
 #include "../grid/grid_even_share.cuh"
 #include "../grid/grid_queue.cuh"
 #include "../util_debug.cuh"
@@ -81,14 +81,14 @@ __global__ void InitHistoKernel(
  * Histogram pass kernel entry point (multi-block).  Computes privatized histograms, one per thread block.
  */
 template <
-    typename                                        BlockSweepHistoPolicy,   ///< Tuning policy for cub::BlockSweepHisto abstraction
+    typename                                        BlockHistoTilesPolicy,   ///< Tuning policy for cub::BlockHistoTiles abstraction
     int                                             BINS,                       ///< Number of histogram bins per channel
     int                                             CHANNELS,                   ///< Number of channels interleaved in the input data (may be greater than the number of channels being actively histogrammed)
     int                                             ACTIVE_CHANNELS,            ///< Number of channels actively being histogrammed
     typename                                        InputIteratorRA,            ///< The input iterator type (may be a simple pointer type).  Must have a value type that is assignable to <tt>unsigned char</tt>
     typename                                        HistoCounter,               ///< Integral type for counting sample occurrences per histogram bin
     typename                                        SizeT>                      ///< Integral type used for global array indexing
-__launch_bounds__ (int(BlockSweepHistoPolicy::BLOCK_THREADS), BlockSweepHistoPolicy::SM_OCCUPANCY)
+__launch_bounds__ (int(BlockHistoTilesPolicy::BLOCK_THREADS), BlockHistoTilesPolicy::SM_OCCUPANCY)
 __global__ void MultiBlockHistoKernel(
     InputIteratorRA                                 d_samples,                  ///< [in] Array of sample data. (Channels, if any, are interleaved in "AOS" format)
     ArrayWrapper<HistoCounter*, ACTIVE_CHANNELS>    d_out_histograms,           ///< [out] Histogram counter data having logical dimensions <tt>HistoCounter[ACTIVE_CHANNELS][gridDim.x][BINS]</tt>
@@ -99,23 +99,23 @@ __global__ void MultiBlockHistoKernel(
     // Constants
     enum
     {
-        BLOCK_THREADS       = BlockSweepHistoPolicy::BLOCK_THREADS,
-        ITEMS_PER_THREAD    = BlockSweepHistoPolicy::ITEMS_PER_THREAD,
+        BLOCK_THREADS       = BlockHistoTilesPolicy::BLOCK_THREADS,
+        ITEMS_PER_THREAD    = BlockHistoTilesPolicy::ITEMS_PER_THREAD,
         TILE_SIZE           = BLOCK_THREADS * ITEMS_PER_THREAD,
     };
 
     // Thread block type for compositing input tiles
-    typedef BlockSweepHisto<BlockSweepHistoPolicy, BINS, CHANNELS, ACTIVE_CHANNELS, InputIteratorRA, HistoCounter, SizeT> BlockSweepHistoT;
+    typedef BlockHistoTiles<BlockHistoTilesPolicy, BINS, CHANNELS, ACTIVE_CHANNELS, InputIteratorRA, HistoCounter, SizeT> BlockHistoTilesT;
 
-    // Shared memory for BlockSweepHisto
-    __shared__ typename BlockSweepHistoT::TempStorage temp_storage;
+    // Shared memory for BlockHistoTiles
+    __shared__ typename BlockHistoTilesT::TempStorage temp_storage;
 
     // Consume input tiles
-    BlockSweepHistoT(temp_storage, d_samples, d_out_histograms.array).ConsumeTiles(
+    BlockHistoTilesT(temp_storage, d_samples, d_out_histograms.array).ConsumeTiles(
         num_samples,
         even_share,
         queue,
-        Int2Type<BlockSweepHistoPolicy::GRID_MAPPING>());
+        Int2Type<BlockHistoTilesPolicy::GRID_MAPPING>());
 }
 
 
@@ -175,27 +175,27 @@ struct DeviceHisto
      * Constants and typedefs
      ******************************************************************************/
 
-    /// Generic structure for encapsulating dispatch properties.  Mirrors the constants within BlockSweepHistoPolicy.
+    /// Generic structure for encapsulating dispatch properties.  Mirrors the constants within BlockHistoTilesPolicy.
     struct KernelDispachParams
     {
         // Policy fields
         int                         block_threads;
         int                         items_per_thread;
-        BlockSweepHistoAlgorithm    block_algorithm;
+        BlockHistoTilesAlgorithm    block_algorithm;
         GridMappingStrategy         grid_mapping;
         int                         subscription_factor;
 
         // Derived fields
         int                         channel_tile_size;
 
-        template <typename BlockSweepHistoPolicy>
+        template <typename BlockHistoTilesPolicy>
         __host__ __device__ __forceinline__
         void Init(int subscription_factor = 1)
         {
-            block_threads               = BlockSweepHistoPolicy::BLOCK_THREADS;
-            items_per_thread            = BlockSweepHistoPolicy::ITEMS_PER_THREAD;
-            block_algorithm             = BlockSweepHistoPolicy::GRID_ALGORITHM;
-            grid_mapping                = BlockSweepHistoPolicy::GRID_MAPPING;
+            block_threads               = BlockHistoTilesPolicy::BLOCK_THREADS;
+            items_per_thread            = BlockHistoTilesPolicy::ITEMS_PER_THREAD;
+            block_algorithm             = BlockHistoTilesPolicy::GRID_ALGORITHM;
+            grid_mapping                = BlockHistoTilesPolicy::GRID_MAPPING;
             this->subscription_factor   = subscription_factor;
 
             channel_tile_size           = block_threads * items_per_thread;
@@ -223,15 +223,15 @@ struct DeviceHisto
     template <
         int                         CHANNELS,
         int                         ACTIVE_CHANNELS,
-        BlockSweepHistoAlgorithm    GRID_ALGORITHM,
+        BlockHistoTilesAlgorithm    GRID_ALGORITHM,
         int                         ARCH>
     struct TunedPolicies;
 
     /// SM35 tune
-    template <int CHANNELS, int ACTIVE_CHANNELS, BlockSweepHistoAlgorithm GRID_ALGORITHM>
+    template <int CHANNELS, int ACTIVE_CHANNELS, BlockHistoTilesAlgorithm GRID_ALGORITHM>
     struct TunedPolicies<CHANNELS, ACTIVE_CHANNELS, GRID_ALGORITHM, 350>
     {
-        typedef BlockSweepHistoPolicy<
+        typedef BlockHistoTilesPolicy<
             (GRID_ALGORITHM == GRID_HISTO_SORT) ? 128 : 256,
             (GRID_ALGORITHM == GRID_HISTO_SORT) ? 12 : (30 / ACTIVE_CHANNELS),
             GRID_ALGORITHM,
@@ -241,10 +241,10 @@ struct DeviceHisto
     };
 
     /// SM30 tune
-    template <int CHANNELS, int ACTIVE_CHANNELS, BlockSweepHistoAlgorithm GRID_ALGORITHM>
+    template <int CHANNELS, int ACTIVE_CHANNELS, BlockHistoTilesAlgorithm GRID_ALGORITHM>
     struct TunedPolicies<CHANNELS, ACTIVE_CHANNELS, GRID_ALGORITHM, 300>
     {
-        typedef BlockSweepHistoPolicy<
+        typedef BlockHistoTilesPolicy<
             128,
             (GRID_ALGORITHM == GRID_HISTO_SORT) ? 20 : (22 / ACTIVE_CHANNELS),
             GRID_ALGORITHM,
@@ -254,10 +254,10 @@ struct DeviceHisto
     };
 
     /// SM20 tune
-    template <int CHANNELS, int ACTIVE_CHANNELS, BlockSweepHistoAlgorithm GRID_ALGORITHM>
+    template <int CHANNELS, int ACTIVE_CHANNELS, BlockHistoTilesAlgorithm GRID_ALGORITHM>
     struct TunedPolicies<CHANNELS, ACTIVE_CHANNELS, GRID_ALGORITHM, 200>
     {
-        typedef BlockSweepHistoPolicy<
+        typedef BlockHistoTilesPolicy<
             128,
             (GRID_ALGORITHM == GRID_HISTO_SORT) ? 21 : (23 / ACTIVE_CHANNELS),
             GRID_ALGORITHM,
@@ -267,10 +267,10 @@ struct DeviceHisto
     };
 
     /// SM10 tune
-    template <int CHANNELS, int ACTIVE_CHANNELS, BlockSweepHistoAlgorithm GRID_ALGORITHM>
+    template <int CHANNELS, int ACTIVE_CHANNELS, BlockHistoTilesAlgorithm GRID_ALGORITHM>
     struct TunedPolicies<CHANNELS, ACTIVE_CHANNELS, GRID_ALGORITHM, 100>
     {
-        typedef BlockSweepHistoPolicy<
+        typedef BlockHistoTilesPolicy<
             128, 
             7, 
             GRID_HISTO_SORT,        // (use sort regardless because atomics are perf-useless)
@@ -284,7 +284,7 @@ struct DeviceHisto
     template <
         int                         CHANNELS,
         int                         ACTIVE_CHANNELS,
-        BlockSweepHistoAlgorithm      GRID_ALGORITHM>
+        BlockHistoTilesAlgorithm      GRID_ALGORITHM>
     struct PtxDefaultPolicies
     {
         static const int PTX_TUNE_ARCH =   (CUB_PTX_ARCH >= 350) ?
@@ -367,7 +367,7 @@ struct DeviceHisto
 #ifndef CUB_RUNTIME_ENABLED
 
         // Kernel launch not supported from this device
-        return CubDebug(cudaErrorNotSupported );
+        return CubDebug(cudaErrorNotSupported);
 
 #else
 
@@ -539,14 +539,14 @@ struct DeviceHisto
     /**
      * \brief Computes a device-wide histogram
      *
-     * \tparam GRID_ALGORITHM      cub::BlockSweepHistoAlgorithm enumerator specifying the underlying algorithm to use
+     * \tparam GRID_ALGORITHM      cub::BlockHistoTilesAlgorithm enumerator specifying the underlying algorithm to use
      * \tparam CHANNELS             Number of channels interleaved in the input data (may be greater than the number of channels being actively histogrammed)
      * \tparam ACTIVE_CHANNELS      <b>[inferred]</b> Number of channels actively being histogrammed
      * \tparam InputIteratorRA      <b>[inferred]</b> Random-access iterator type for input (may be a simple pointer type)  Must have a value type that is assignable to <tt>unsigned char</tt>
      * \tparam HistoCounter         <b>[inferred]</b> Integral type for counting sample occurrences per histogram bin
      */
     template <
-        BlockSweepHistoAlgorithm    GRID_ALGORITHM,
+        BlockHistoTilesAlgorithm    GRID_ALGORITHM,
         int                         BINS,                       ///< Number of histogram bins per channel
         int                         CHANNELS,                   ///< Number of channels interleaved in the input data (may be greater than the number of channels being actively histogrammed)
         int                         ACTIVE_CHANNELS,            ///< Number of channels actively being histogrammed

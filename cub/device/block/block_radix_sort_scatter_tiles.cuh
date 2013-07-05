@@ -28,7 +28,7 @@
 
 /**
  * \file
- * BlockSweepRadixSortDownsweep implements a stateful abstraction of CUDA thread blocks for participating in device-wide radix sort downsweep.
+ * BlockRadixSortScatterTiles implements a stateful abstraction of CUDA thread blocks for participating in device-wide radix sort downsweep.
  */
 
 
@@ -65,7 +65,7 @@ enum RadixSortScatterAlgorithm
 
 
 /**
- * Tuning policy for BlockSweepRadixSortDownsweep
+ * Tuning policy for BlockRadixSortScatterTiles
  */
 template <
     int                         _BLOCK_THREADS,             ///< The number of threads per CTA
@@ -77,7 +77,7 @@ template <
     bool                        _MEMOIZE_OUTER_SCAN,        ///< Whether or not to buffer outer raking scan partials to incur fewer shared memory reads at the expense of higher register pressure.  See BlockScanAlgorithm::BLOCK_SCAN_RAKING_MEMOIZE for more details.
     BlockScanAlgorithm          _INNER_SCAN_ALGORITHM,      ///< The cub::BlockScanAlgorithm algorithm to use
     RadixSortScatterAlgorithm   _SCATTER_ALGORITHM>         ///< The scattering strategy to use
-struct BlockSweepRadixSortDownsweepPolicy
+struct BlockRadixSortScatterTilesPolicy
 {
     enum
     {
@@ -105,11 +105,11 @@ struct BlockSweepRadixSortDownsweepPolicy
  * a range of input tiles.
  */
 template <
-    typename BlockSweepRadixSortDownsweepPolicy,
+    typename BlockRadixSortScatterTilesPolicy,
     typename KeyType,
     typename ValueType,
     typename SizeT>
-struct BlockSweepRadixSortDownsweep
+struct BlockRadixSortScatterTiles
 {
     //---------------------------------------------------------------------
     // Type definitions and constants
@@ -121,18 +121,18 @@ struct BlockSweepRadixSortDownsweep
     static const UnsignedBits MIN_KEY = Traits<KeyType>::MIN_KEY;
     static const UnsignedBits MAX_KEY = Traits<KeyType>::MAX_KEY;
 
-    static const BlockLoadAlgorithm         LOAD_ALGORITHM          = BlockSweepRadixSortDownsweepPolicy::LOAD_ALGORITHM;
-    static const PtxLoadModifier            LOAD_MODIFIER           = BlockSweepRadixSortDownsweepPolicy::LOAD_MODIFIER;
-    static const BlockScanAlgorithm         INNER_SCAN_ALGORITHM    = BlockSweepRadixSortDownsweepPolicy::INNER_SCAN_ALGORITHM;
-    static const RadixSortScatterAlgorithm  SCATTER_ALGORITHM       = BlockSweepRadixSortDownsweepPolicy::SCATTER_ALGORITHM;
+    static const BlockLoadAlgorithm         LOAD_ALGORITHM          = BlockRadixSortScatterTilesPolicy::LOAD_ALGORITHM;
+    static const PtxLoadModifier            LOAD_MODIFIER           = BlockRadixSortScatterTilesPolicy::LOAD_MODIFIER;
+    static const BlockScanAlgorithm         INNER_SCAN_ALGORITHM    = BlockRadixSortScatterTilesPolicy::INNER_SCAN_ALGORITHM;
+    static const RadixSortScatterAlgorithm  SCATTER_ALGORITHM       = BlockRadixSortScatterTilesPolicy::SCATTER_ALGORITHM;
 
     enum
     {
-        BLOCK_THREADS           = BlockSweepRadixSortDownsweepPolicy::BLOCK_THREADS,
-        ITEMS_PER_THREAD        = BlockSweepRadixSortDownsweepPolicy::ITEMS_PER_THREAD,
-        EXCHANGE_TIME_SLICING   = BlockSweepRadixSortDownsweepPolicy::EXCHANGE_TIME_SLICING,
-        RADIX_BITS              = BlockSweepRadixSortDownsweepPolicy::RADIX_BITS,
-        MEMOIZE_OUTER_SCAN      = BlockSweepRadixSortDownsweepPolicy::MEMOIZE_OUTER_SCAN,
+        BLOCK_THREADS           = BlockRadixSortScatterTilesPolicy::BLOCK_THREADS,
+        ITEMS_PER_THREAD        = BlockRadixSortScatterTilesPolicy::ITEMS_PER_THREAD,
+        EXCHANGE_TIME_SLICING   = BlockRadixSortScatterTilesPolicy::EXCHANGE_TIME_SLICING,
+        RADIX_BITS              = BlockRadixSortScatterTilesPolicy::RADIX_BITS,
+        MEMOIZE_OUTER_SCAN      = BlockRadixSortScatterTilesPolicy::MEMOIZE_OUTER_SCAN,
         TILE_ITEMS              = BLOCK_THREADS * ITEMS_PER_THREAD,
 
         RADIX_DIGITS            = 1 << RADIX_BITS,
@@ -528,7 +528,7 @@ struct BlockSweepRadixSortDownsweep
     /**
      * Constructor
      */
-    __device__ __forceinline__ BlockSweepRadixSortDownsweep(
+    __device__ __forceinline__ BlockRadixSortScatterTiles(
         TempStorage         &temp_storage,
         SizeT               bin_prefix,
         KeyType             *d_keys_in,

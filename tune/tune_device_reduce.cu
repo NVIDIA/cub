@@ -31,12 +31,12 @@
  *
  * The best way to use this program:
  * (1) Find the best all-around single-block tune for a given arch.
- *     For example, 1000 samples [1 ..512], 10 timing iterations per config per sample:
- *         ./bin/tune_device_reduce_sm200_nvvm_5.0_abi_i386 --i=10 --s=1000 --n=512 --single --device=0
+ *     For example, 100 samples [1 ..512], 100 timing iterations per config per sample:
+ *         ./bin/tune_device_reduce_sm200_nvvm_5.0_abi_i386 --i=100 --s=100 --n=512 --single --device=0
  * (2) Update the single tune in device_reduce.cuh
  * (3) Find the best all-around multi-block tune for a given arch.
- *     For example, 1000 samples [single-block tile-size ..  50,331,648], 2 timing iterations per config per sample:
- *         ./bin/tune_device_reduce_sm200_nvvm_5.0_abi_i386 --i=2 --s=1000 --device=0
+ *     For example, 100 samples [single-block tile-size ..  50,331,648], 100 timing iterations per config per sample:
+ *         ./bin/tune_device_reduce_sm200_nvvm_5.0_abi_i386 --i=100 --s=100 --device=0
  * (4) Update the multi-block tune in device_reduce.cuh
  *
  ******************************************************************************/
@@ -68,6 +68,7 @@ int     g_iterations        = 2;
 bool    g_verbose           = false;
 bool    g_single            = false;
 bool    g_verify            = true;
+CachingDeviceAllocator  g_allocator;
 
 
 //---------------------------------------------------------------------
@@ -79,7 +80,7 @@ bool    g_verify            = true;
  */
 template <typename T>
 void Initialize(
-    int             gen_mode,
+    GenMode         gen_mode,
     T               *h_in,
     int             num_items)
 {
@@ -101,6 +102,7 @@ T Reduce(
     T retval = h_in[0];
     for (int i = 1; i < num_items; ++i)
         retval = reduction_op(retval, h_in[i]);
+
     return retval;
 }
 
@@ -154,7 +156,7 @@ struct Schmoo
     {
         float delta = a.hmean_speedup - b.hmean_speedup;
 
-        return ((delta < 0.005) && (delta > -0.005)) ?
+        return ((delta < 0.02) && (delta > -0.02)) ?
             (a.best_avg_throughput < b.best_avg_throughput) :       // Negligible average performance differences: defer to best performance
             (a.hmean_speedup < b.hmean_speedup);
     }
@@ -191,7 +193,7 @@ struct Schmoo
     {
         enum
         {
-            BYTES = sizeof(typename PersistentBlockReduce<TilesReducePolicy, T*, SizeT, ReductionOp>::TempStorage),
+            BYTES = sizeof(typename BlockReduceTiles<TilesReducePolicy, T*, SizeT, ReductionOp>::TempStorage),
             IS_OK = ((BYTES < ArchProps<TUNE_ARCH>::SMEM_BYTES) &&
                      (TilesReducePolicy::ITEMS_PER_THREAD % TilesReducePolicy::VECTOR_LOAD_LENGTH == 0))
         };
@@ -254,16 +256,16 @@ struct Schmoo
     void Enumerate()
     {
         // Multi-block kernels
-        Ok<PersistentBlockReducePolicy<BLOCK_THREADS, ITEMS_PER_THREAD, VECTOR_LOAD_LENGTH, BLOCK_ALGORITHM, LOAD_MODIFIER, GRID_MAPPING_EVEN_SHARE> >::GenerateMulti(multi_kernels, 1);
-        Ok<PersistentBlockReducePolicy<BLOCK_THREADS, ITEMS_PER_THREAD, VECTOR_LOAD_LENGTH, BLOCK_ALGORITHM, LOAD_MODIFIER, GRID_MAPPING_EVEN_SHARE> >::GenerateMulti(multi_kernels, 2);
-        Ok<PersistentBlockReducePolicy<BLOCK_THREADS, ITEMS_PER_THREAD, VECTOR_LOAD_LENGTH, BLOCK_ALGORITHM, LOAD_MODIFIER, GRID_MAPPING_EVEN_SHARE> >::GenerateMulti(multi_kernels, 4);
-        Ok<PersistentBlockReducePolicy<BLOCK_THREADS, ITEMS_PER_THREAD, VECTOR_LOAD_LENGTH, BLOCK_ALGORITHM, LOAD_MODIFIER, GRID_MAPPING_EVEN_SHARE> >::GenerateMulti(multi_kernels, 8);
+        Ok<BlockReduceTilesPolicy<BLOCK_THREADS, ITEMS_PER_THREAD, VECTOR_LOAD_LENGTH, BLOCK_ALGORITHM, LOAD_MODIFIER, GRID_MAPPING_EVEN_SHARE> >::GenerateMulti(multi_kernels, 1);
+        Ok<BlockReduceTilesPolicy<BLOCK_THREADS, ITEMS_PER_THREAD, VECTOR_LOAD_LENGTH, BLOCK_ALGORITHM, LOAD_MODIFIER, GRID_MAPPING_EVEN_SHARE> >::GenerateMulti(multi_kernels, 2);
+        Ok<BlockReduceTilesPolicy<BLOCK_THREADS, ITEMS_PER_THREAD, VECTOR_LOAD_LENGTH, BLOCK_ALGORITHM, LOAD_MODIFIER, GRID_MAPPING_EVEN_SHARE> >::GenerateMulti(multi_kernels, 4);
+        Ok<BlockReduceTilesPolicy<BLOCK_THREADS, ITEMS_PER_THREAD, VECTOR_LOAD_LENGTH, BLOCK_ALGORITHM, LOAD_MODIFIER, GRID_MAPPING_EVEN_SHARE> >::GenerateMulti(multi_kernels, 8);
 #if TUNE_ARCH >= 200
-        Ok<PersistentBlockReducePolicy<BLOCK_THREADS, ITEMS_PER_THREAD, VECTOR_LOAD_LENGTH, BLOCK_ALGORITHM, LOAD_MODIFIER, GRID_MAPPING_DYNAMIC> >::GenerateMulti(multi_kernels, 1);
+        Ok<BlockReduceTilesPolicy<BLOCK_THREADS, ITEMS_PER_THREAD, VECTOR_LOAD_LENGTH, BLOCK_ALGORITHM, LOAD_MODIFIER, GRID_MAPPING_DYNAMIC> >::GenerateMulti(multi_kernels, 1);
 #endif
 
         // Single-block kernels
-        Ok<PersistentBlockReducePolicy<BLOCK_THREADS, ITEMS_PER_THREAD, VECTOR_LOAD_LENGTH, BLOCK_ALGORITHM, LOAD_MODIFIER, GRID_MAPPING_EVEN_SHARE> >::GenerateSingle(single_kernels);
+        Ok<BlockReduceTilesPolicy<BLOCK_THREADS, ITEMS_PER_THREAD, VECTOR_LOAD_LENGTH, BLOCK_ALGORITHM, LOAD_MODIFIER, GRID_MAPPING_EVEN_SHARE> >::GenerateSingle(single_kernels);
     }
 
 
@@ -310,21 +312,22 @@ struct Schmoo
     template <int BLOCK_THREADS>
     void Enumerate()
     {
-        Enumerate<BLOCK_THREADS, 1>();
-        Enumerate<BLOCK_THREADS, 2>();
-        Enumerate<BLOCK_THREADS, 4>();
-//      Enumerate<BLOCK_THREADS, 7>();
+        Enumerate<BLOCK_THREADS, 7>();
         Enumerate<BLOCK_THREADS, 8>();
         Enumerate<BLOCK_THREADS, 9>();
+
         Enumerate<BLOCK_THREADS, 11>();
         Enumerate<BLOCK_THREADS, 12>();
-//      Enumerate<BLOCK_THREADS, 13>();
-//      Enumerate<BLOCK_THREADS, 15>();
+        Enumerate<BLOCK_THREADS, 13>();
+
+        Enumerate<BLOCK_THREADS, 15>();
         Enumerate<BLOCK_THREADS, 16>();
         Enumerate<BLOCK_THREADS, 17>();
-//      Enumerate<BLOCK_THREADS, 19>();
+
+        Enumerate<BLOCK_THREADS, 19>();
         Enumerate<BLOCK_THREADS, 20>();
-//      Enumerate<BLOCK_THREADS, 21>();
+        Enumerate<BLOCK_THREADS, 21>();
+
         Enumerate<BLOCK_THREADS, 23>();
         Enumerate<BLOCK_THREADS, 24>();
         Enumerate<BLOCK_THREADS, 25>();
@@ -366,8 +369,12 @@ struct Schmoo
         // Clear output
         if (g_verify) CubDebugExit(cudaMemset(d_out, 0, sizeof(T)));
 
-        // Warmup/correctness iteration
-        DeviceReduce::Dispatch(
+        // Allocate temporary storage
+        void            *d_temporary_storage = NULL;
+        size_t          temporary_storage_bytes = 0;
+        CubDebugExit(DeviceReduce::Dispatch(
+            d_temporary_storage,
+            temporary_storage_bytes,
             multi_dispatch.kernel_ptr,
             single_dispatch.kernel_ptr,
             multi_dispatch.params,
@@ -375,7 +382,21 @@ struct Schmoo
             d_in,
             d_out,
             num_items,
-            reduction_op);
+            reduction_op));
+        CubDebugExit(g_allocator.DeviceAllocate(&d_temporary_storage, temporary_storage_bytes));
+
+        // Warmup/correctness iteration
+        CubDebugExit(DeviceReduce::Dispatch(
+            d_temporary_storage,
+            temporary_storage_bytes,
+            multi_dispatch.kernel_ptr,
+            single_dispatch.kernel_ptr,
+            multi_dispatch.params,
+            single_dispatch.params,
+            d_in,
+            d_out,
+            num_items,
+            reduction_op));
 
         if (g_verify) CubDebugExit(cudaDeviceSynchronize());
 
@@ -391,7 +412,9 @@ struct Schmoo
         {
             gpu_timer.Start();
 
-            DeviceReduce::Dispatch(
+            CubDebugExit(DeviceReduce::Dispatch(
+                d_temporary_storage,
+                temporary_storage_bytes,
                 multi_dispatch.kernel_ptr,
                 single_dispatch.kernel_ptr,
                 multi_dispatch.params,
@@ -399,11 +422,14 @@ struct Schmoo
                 d_in,
                 d_out,
                 num_items,
-                reduction_op);
+                reduction_op));
 
             gpu_timer.Stop();
             elapsed_millis += gpu_timer.ElapsedMillis();
         }
+
+        // Mooch
+        CubDebugExit(cudaDeviceSynchronize());
 
         float avg_elapsed = elapsed_millis / g_iterations;
         float avg_throughput = float(num_items) / avg_elapsed / 1000.0 / 1000.0;
@@ -434,6 +460,9 @@ struct Schmoo
         }
 
         AssertEquals(0, compare);
+
+        // Cleanup temporaries
+        if (d_temporary_storage) CubDebugExit(g_allocator.DeviceFree(d_temporary_storage));
     }
 
 
@@ -474,17 +503,19 @@ struct Schmoo
                 RandomBits(bits);
                 double scale = double(bits) / max_int;
 
-                if (sample < (2 * g_samples) / 3)
+                if (sample < g_samples / 2)
                 {
                     // log bias
                     double exponent = ((max_exponent - min_exponent) * scale) + min_exponent;
                     num_items = pow(2.0, exponent);
+                    num_items = CUB_MIN(num_items, g_max_items);
                     printf("num_items: %d (2^%.2f)", num_items, exponent); fflush(stdout);
                 }
                 else
                 {
                     // uniform bias
                     num_items = CUB_MAX(pow(2.0, min_exponent), scale * g_max_items);
+                    num_items = CUB_MIN(num_items, g_max_items);
                     printf("num_items: %d (%.2f * %d)", num_items, scale, g_max_items); fflush(stdout);
                 }
             }
@@ -562,14 +593,30 @@ struct Schmoo
         // Clear output
         if (g_verify) CubDebugExit(cudaMemset(d_out, 0, sizeof(T)));
 
-        // Warmup/correctness iteration
-        DeviceReduce::DispatchSingle(
+        // Allocate temporary storage
+        void            *d_temporary_storage = NULL;
+        size_t          temporary_storage_bytes = 0;
+        CubDebugExit(DeviceReduce::DispatchSingle(
+            d_temporary_storage,
+            temporary_storage_bytes,
             single_dispatch.kernel_ptr,
             single_dispatch.params,
             d_in,
             d_out,
             num_items,
-            reduction_op);
+            reduction_op));
+        CubDebugExit(g_allocator.DeviceAllocate(&d_temporary_storage, temporary_storage_bytes));
+
+        // Warmup/correctness iteration
+        CubDebugExit(DeviceReduce::DispatchSingle(
+            d_temporary_storage,
+            temporary_storage_bytes,
+            single_dispatch.kernel_ptr,
+            single_dispatch.params,
+            d_in,
+            d_out,
+            num_items,
+            reduction_op));
 
         if (g_verify) CubDebugExit(cudaDeviceSynchronize());
 
@@ -585,17 +632,22 @@ struct Schmoo
         {
             gpu_timer.Start();
 
-            DeviceReduce::DispatchSingle(
+            CubDebugExit(DeviceReduce::DispatchSingle(
+                d_temporary_storage,
+                temporary_storage_bytes,
                 single_dispatch.kernel_ptr,
                 single_dispatch.params,
                 d_in,
                 d_out,
                 num_items,
-                reduction_op);
+                reduction_op));
 
             gpu_timer.Stop();
             elapsed_millis += gpu_timer.ElapsedMillis();
         }
+
+        // Mooch
+        CubDebugExit(cudaDeviceSynchronize());
 
         float avg_elapsed = elapsed_millis / g_iterations;
         float avg_throughput = float(num_items) / avg_elapsed / 1000.0 / 1000.0;
@@ -778,8 +830,8 @@ int main(int argc, char** argv)
     // Initialize device arrays
     T *d_in = NULL;
     T *d_out = NULL;
-    CubDebugExit(DeviceAllocate((void**)&d_in, sizeof(T) * g_max_items));
-    CubDebugExit(DeviceAllocate((void**)&d_out, sizeof(T) * 1));
+    CubDebugExit(g_allocator.DeviceAllocate((void**)&d_in, sizeof(T) * g_max_items));
+    CubDebugExit(g_allocator.DeviceAllocate((void**)&d_out, sizeof(T) * 1));
     CubDebugExit(cudaMemcpy(d_in, h_in, sizeof(T) * g_max_items, cudaMemcpyHostToDevice));
 
     // Test kernels
@@ -790,8 +842,8 @@ int main(int argc, char** argv)
 
     // Cleanup
     if (h_in) delete[] h_in;
-    if (d_in) CubDebugExit(DeviceFree(d_in));
-    if (d_out) CubDebugExit(DeviceFree(d_out));
+    if (d_in) CubDebugExit(g_allocator.DeviceFree(d_in));
+    if (d_out) CubDebugExit(g_allocator.DeviceFree(d_out));
 
     return 0;
 }

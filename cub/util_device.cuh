@@ -143,6 +143,19 @@ __host__ __device__ __forceinline__ cudaError_t PtxVersion(int &ptx_version)
 }
 
 
+/**
+ * Synchronize the stream if specified
+ */
+__host__ __device__ __forceinline__
+static cudaError_t SyncStream(cudaStream_t stream)
+{
+#ifndef __CUDA_ARCH__
+    return cudaStreamSynchronize(stream);
+#else
+    // Device can't yet sync on a specific stream
+    return cudaDeviceSynchronize();
+#endif
+}
 
 
 

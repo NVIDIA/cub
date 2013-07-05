@@ -28,14 +28,14 @@
 
 /**
  * \file
- * cub::BlockSweepReduceByKey implements a stateful abstraction of CUDA thread blocks for participating in device-wide reduce-value-by-key.
+ * cub::BlockReduceByKeyTiles implements a stateful abstraction of CUDA thread blocks for participating in device-wide reduce-value-by-key.
  */
 
 #pragma once
 
 #include <iterator>
 
-#include "device_scan_types.cuh"
+#include "scan_tiles_types.cuh"
 #include "../../block/block_load.cuh"
 #include "../../block/block_discontinuity.cuh"
 #include "../../block/block_scan.cuh"
@@ -92,7 +92,7 @@ struct ReduceByKeyScanOp
  ******************************************************************************/
 
 /**
- * Tuning policy for BlockSweepReduceByKey
+ * Tuning policy for BlockReduceByKeyTiles
  */
 template <
     int                         _BLOCK_THREADS,
@@ -101,7 +101,7 @@ template <
     bool                        _LOAD_WARP_TIME_SLICING,
     PtxLoadModifier             _LOAD_MODIFIER,
     BlockScanAlgorithm          _SCAN_ALGORITHM>
-struct BlockSweepReduceByKeyPolicy
+struct BlockReduceByKeyTilesPolicy
 {
     enum
     {
@@ -121,17 +121,17 @@ struct BlockSweepReduceByKeyPolicy
  ******************************************************************************/
 
 /**
- * \brief BlockSweepReduceByKey implements a stateful abstraction of CUDA thread blocks for participating in device-wide prefix scan.
+ * \brief BlockReduceByKeyTiles implements a stateful abstraction of CUDA thread blocks for participating in device-wide prefix scan.
  */
 template <
-    typename BlockSweepReduceByKeyPolicy,   ///< Tuning policy
+    typename BlockReduceByKeyTilesPolicy,   ///< Tuning policy
     typename KeyInputIteratorRA,            ///< Random-access input iterator type for keys
     typename KeyOutputIteratorRA,           ///< Random-access output iterator type for keys
     typename ValueInputIteratorRA,          ///< Random-access input iterator type for values
     typename ValueOutputIteratorRA,         ///< Random-access output iterator type for values
     typename ReductionOp,                   ///< Reduction functor type
     typename SizeT>                         ///< Offset integer type
-struct BlockSweepReduceByKey
+struct BlockReduceByKeyTiles
 {
     //---------------------------------------------------------------------
     // Types and constants
@@ -144,8 +144,8 @@ struct BlockSweepReduceByKey
     // Constants
     enum
     {
-        BLOCK_THREADS       = BlockSweepReduceByKeyPolicy::BLOCK_THREADS,
-        ITEMS_PER_THREAD    = BlockSweepReduceByKeyPolicy::ITEMS_PER_THREAD,
+        BLOCK_THREADS       = BlockReduceByKeyTilesPolicy::BLOCK_THREADS,
+        ITEMS_PER_THREAD    = BlockReduceByKeyTilesPolicy::ITEMS_PER_THREAD,
         TILE_ITEMS          = BLOCK_THREADS * ITEMS_PER_THREAD,
         STATUS_PADDING      = PtxArchProps::WARP_THREADS,
     };
@@ -153,20 +153,20 @@ struct BlockSweepReduceByKey
     // Block load type for keys
     typedef BlockLoad<
         KeyInputIteratorRA,
-        BlockSweepReduceByKeyPolicy::BLOCK_THREADS,
-        BlockSweepReduceByKeyPolicy::ITEMS_PER_THREAD,
-        BlockSweepReduceByKeyPolicy::LOAD_ALGORITHM,
-        BlockSweepReduceByKeyPolicy::LOAD_MODIFIER,
-        BlockSweepReduceByKeyPolicy::LOAD_WARP_TIME_SLICING>    BlockLoadKeys;
+        BlockReduceByKeyTilesPolicy::BLOCK_THREADS,
+        BlockReduceByKeyTilesPolicy::ITEMS_PER_THREAD,
+        BlockReduceByKeyTilesPolicy::LOAD_ALGORITHM,
+        BlockReduceByKeyTilesPolicy::LOAD_MODIFIER,
+        BlockReduceByKeyTilesPolicy::LOAD_WARP_TIME_SLICING>    BlockLoadKeys;
 
     // Block load type for values
     typedef BlockLoad<
         ValueInputIteratorRA,
-        BlockSweepReduceByKeyPolicy::BLOCK_THREADS,
-        BlockSweepReduceByKeyPolicy::ITEMS_PER_THREAD,
-        BlockSweepReduceByKeyPolicy::LOAD_ALGORITHM,
-        BlockSweepReduceByKeyPolicy::LOAD_MODIFIER,
-        BlockSweepReduceByKeyPolicy::LOAD_WARP_TIME_SLICING>    BlockLoadValues;
+        BlockReduceByKeyTilesPolicy::BLOCK_THREADS,
+        BlockReduceByKeyTilesPolicy::ITEMS_PER_THREAD,
+        BlockReduceByKeyTilesPolicy::LOAD_ALGORITHM,
+        BlockReduceByKeyTilesPolicy::LOAD_MODIFIER,
+        BlockReduceByKeyTilesPolicy::LOAD_WARP_TIME_SLICING>    BlockLoadValues;
 
     // Block discontinuity type for setting tail flags
     typedef BlockDiscontinuity<Key, BLOCK_THREADS>              BlockDiscontinuityKeys;
@@ -186,8 +186,8 @@ struct BlockSweepReduceByKey
     // Block scan type
     typedef BlockScan<
         ScanTuple,
-        BlockSweepReduceByKeyPolicy::BLOCK_THREADS,
-        BlockSweepReduceByKeyPolicy::SCAN_ALGORITHM>            BlockScanT;
+        BlockReduceByKeyTilesPolicy::BLOCK_THREADS,
+        BlockReduceByKeyTilesPolicy::SCAN_ALGORITHM>            BlockScanT;
 
     // Shared memory type for this threadblock
     struct TempStorage
@@ -229,7 +229,7 @@ struct BlockSweepReduceByKey
 
     // Constructor
     __device__ __forceinline__
-    BlockSweepReduceByKey(
+    BlockReduceByKeyTiles(
         TempStorage                 &temp_storage,      ///< Reference to temp_storage
         KeyInputIteratorRA          d_keys_in,          ///< Key input data
         KeyOutputIteratorRA         d_keys_out,         ///< Key output data

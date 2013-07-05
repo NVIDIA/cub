@@ -281,13 +281,13 @@ void Test(
     int compare = 0;
     int cnp_compare = 0;
 
-    printf("%s cub::DeviceScan::%s %d items, %s %d-byte elements, gen-mode %d\n",
+    printf("%s cub::DeviceScan::%s %d items, %s %d-byte elements, gen-mode %s\n",
         (Equals<IdentityT, NullType>::VALUE) ? "Inclusive" : "Exclusive",
         (Equals<ScanOp, Sum>::VALUE) ? "Sum" : "Scan",
         num_items,
         type_string,
         (int) sizeof(T),
-        gen_mode);
+        (gen_mode == RANDOM) ? "RANDOM" : (gen_mode == SEQ_INC) ? "SEQUENTIAL" : "HOMOGENOUS");
     fflush(stdout);
 
     // Allocate host arrays
@@ -321,7 +321,7 @@ void Test(
 
     // Check for correctness (and display results, if specified)
     compare = CompareDeviceResults(h_reference, d_out, num_items, true, g_verbose);
-    printf("%s", compare ? "FAIL" : "PASS");
+    printf("\t%s", compare ? "FAIL" : "PASS");
 
     // Flush any stdout/stderr
     fflush(stdout);
@@ -352,7 +352,7 @@ void Test(
 
     // Evaluate using CUDA nested parallelism
 /*
-#if (TEST_CNP == 1)
+#if (CUB_CNP == 1)
 
     CubDebugExit(cudaMemset(d_out, 0, sizeof(T) * 1));
 
@@ -456,7 +456,7 @@ void Test(
  */
 template <
     typename        T>
-void Test(
+void TestOp(
     int             num_items,
     char*           type_string)
 {
@@ -465,19 +465,39 @@ void Test(
 }
 
 
+/**
+ * Iterate input sizes
+ */
+template <
+    typename        T>
+void Test(
+    int             num_items,
+    char*           type_string)
+{
+    if (num_items < 0)
+    {
+        TestOp<T>(1,        type_string);
+        TestOp<T>(100,      type_string);
+        TestOp<T>(10000,    type_string);
+        TestOp<T>(1000000,  type_string);
+    }
+    else
+    {
+        TestOp<T>(num_items, type_string);
+    }
+}
+
+
 //---------------------------------------------------------------------
 // Main
 //---------------------------------------------------------------------
-
-
-
 
 /**
  * Main
  */
 int main(int argc, char** argv)
 {
-    int num_items = 1 * 1024 * 1024;
+    int num_items = -1;
 
     // Initialize command line
     CommandLineArgs args(argc, argv);
@@ -491,6 +511,8 @@ int main(int argc, char** argv)
     if (args.CheckCmdLineFlag("help"))
     {
         printf("%s "
+            "[--n=<input items> "
+            "[--i=<timing iterations> "
             "[--device=<device-id>] "
             "[--repeat=<times to repeat tests>]"
             "[--quick]"
@@ -507,10 +529,13 @@ int main(int argc, char** argv)
     if (quick)
     {
         // Quick test
-        Test<unsigned char>(num_items, RANDOM, Sum(), int(0), CUB_TYPE_STRING(int));
-        Test<unsigned long long>(num_items, RANDOM, Sum(), (unsigned long long) (0), CUB_TYPE_STRING(unsigned long long));
-        Test<unsigned int>(num_items, RANDOM, Sum(), (unsigned int) (0), CUB_TYPE_STRING(unsigned int));
-        Test<TestFoo>(num_items, RANDOM, Max(), NullType(), CUB_TYPE_STRING(TestFoo));
+        if (num_items < 0) num_items = 32000000;
+
+        Test<char>(        num_items * 4, RANDOM, Sum(), int(0), CUB_TYPE_STRING(int));
+        Test<short>(       num_items * 2, RANDOM, Sum(), short(0), CUB_TYPE_STRING(short));
+        Test<int>(         num_items    , RANDOM, Sum(), (int) (0), CUB_TYPE_STRING(int));
+        Test<long long>(   num_items / 2, RANDOM, Sum(), (long long) (0), CUB_TYPE_STRING(long long));
+        Test<TestFoo>(     num_items / 4, RANDOM, Sum(), TestFoo(), CUB_TYPE_STRING(TestFoo));
     }
     else
     {

@@ -28,7 +28,7 @@
 
 /**
  * \file
- * cub::BlockSweepHistoSort implements a stateful abstraction of CUDA thread blocks for histogramming multiple tiles as part of device-wide histogram using local sorting
+ * cub::BlockHistoTilesSort implements a stateful abstraction of CUDA thread blocks for histogramming multiple tiles as part of device-wide histogram using local sorting
  */
 
 #pragma once
@@ -49,17 +49,17 @@ namespace cub {
 
 
 /**
- * BlockSweepHistoSort implements a stateful abstraction of CUDA thread blocks for histogramming multiple tiles as part of device-wide histogram using local sorting
+ * BlockHistoTilesSort implements a stateful abstraction of CUDA thread blocks for histogramming multiple tiles as part of device-wide histogram using local sorting
  */
 template <
-    typename    BlockSweepHistoPolicy,          ///< Tuning policy
+    typename    BlockHistoTilesPolicy,          ///< Tuning policy
     int         BINS,                           ///< Number of histogram bins per channel
     int         CHANNELS,                       ///< Number of channels interleaved in the input data (may be greater than the number of active channels being histogrammed)
     int         ACTIVE_CHANNELS,                ///< Number of channels actively being histogrammed
     typename    InputIteratorRA,                ///< The input iterator type (may be a simple pointer type).  Must have a value type that can be cast as an integer in the range [0..BINS-1]
     typename    HistoCounter,                   ///< Integral type for counting sample occurrences per histogram bin
     typename    SizeT>                          ///< Integer type for offsets
-struct BlockSweepHistoSort
+struct BlockHistoTilesSort
 {
     //---------------------------------------------------------------------
     // Types and constants
@@ -71,8 +71,8 @@ struct BlockSweepHistoSort
     // Constants
     enum
     {
-        BLOCK_THREADS               = BlockSweepHistoPolicy::BLOCK_THREADS,
-        ITEMS_PER_THREAD            = BlockSweepHistoPolicy::ITEMS_PER_THREAD,
+        BLOCK_THREADS               = BlockHistoTilesPolicy::BLOCK_THREADS,
+        ITEMS_PER_THREAD            = BlockHistoTilesPolicy::ITEMS_PER_THREAD,
         TILE_CHANNEL_ITEMS          = BLOCK_THREADS * ITEMS_PER_THREAD,
         TILE_ITEMS                  = TILE_CHANNEL_ITEMS * CHANNELS,
 
@@ -155,7 +155,7 @@ struct BlockSweepHistoSort
     /**
      * Constructor
      */
-    __device__ __forceinline__ BlockSweepHistoSort(
+    __device__ __forceinline__ BlockHistoTilesSort(
         TempStorage         &temp_storage,                                  ///< Reference to temp_storage
         InputIteratorRA     d_in,                                           ///< Input data to reduce
         HistoCounter*       (&d_out_histograms)[ACTIVE_CHANNELS])           ///< Reference to output histograms
@@ -288,7 +288,7 @@ struct BlockSweepHistoSort
          * Process one channel within a tile.
          */
         static __device__ __forceinline__ void ConsumeTileChannel(
-            BlockSweepHistoSort *cta,
+            BlockHistoTilesSort *cta,
             SizeT               block_offset,
             int                 valid_items)
         {
@@ -307,7 +307,7 @@ struct BlockSweepHistoSort
     template <bool FULL_TILE, int END>
     struct IterateChannels<FULL_TILE, END, END>
     {
-        static __device__ __forceinline__ void ConsumeTileChannel(BlockSweepHistoSort *cta, SizeT block_offset, int valid_items) {}
+        static __device__ __forceinline__ void ConsumeTileChannel(BlockHistoTilesSort *cta, SizeT block_offset, int valid_items) {}
     };
 
 
