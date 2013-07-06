@@ -44,7 +44,8 @@ using namespace cub;
 // Globals, constants and typedefs
 //---------------------------------------------------------------------
 
-bool                    g_verbose = false;
+bool                    g_verbose       = false;
+int                     g_repeat        = 0;
 CachingDeviceAllocator  g_allocator;
 
 
@@ -687,12 +688,16 @@ int main(int argc, char** argv)
     // Initialize command line
     CommandLineArgs args(argc, argv);
     g_verbose = args.CheckCmdLineFlag("v");
+    bool quick = args.CheckCmdLineFlag("quick");
+    args.GetCmdLineArgument("repeat", g_repeat);
 
     // Print usage
     if (args.CheckCmdLineFlag("help"))
     {
         printf("%s "
             "[--device=<device-id>] "
+            "[--repeat=<times to repeat tests>]"
+            "[--quick]"
             "[--v] "
             "\n", argv[0]);
         exit(0);
@@ -701,19 +706,29 @@ int main(int argc, char** argv)
     // Initialize device
     CubDebugExit(args.DeviceInit());
 
-    Test<128, 1, AGGREGATE, BLOCK_SCAN_WARP_SCANS>(UNIFORM, Sum(), int(0), int(10), CUB_TYPE_STRING(Sum<int>));
-    Test<128, 4, AGGREGATE, BLOCK_SCAN_RAKING_MEMOIZE>(UNIFORM, Sum(), int(0), int(10), CUB_TYPE_STRING(Sum<int>));
+    if (quick)
+    {
+        // Quick test
+        Test<128, 1, AGGREGATE, BLOCK_SCAN_WARP_SCANS>(UNIFORM, Sum(), int(0), int(10), CUB_TYPE_STRING(Sum<int>));
+        Test<128, 4, AGGREGATE, BLOCK_SCAN_RAKING_MEMOIZE>(UNIFORM, Sum(), int(0), int(10), CUB_TYPE_STRING(Sum<int>));
 
-    TestFoo prefix = TestFoo::MakeTestFoo(17, 21, 32, 85);
-    Test<128, 2, PREFIX_AGGREGATE, BLOCK_SCAN_RAKING>(SEQ_INC, Sum(), NullType(), prefix, CUB_TYPE_STRING(Sum<TestFoo>));
-
-    // Run battery of tests for different threadblock sizes
-    Test<17>();
-    Test<32>();
-    Test<62>();
-    Test<65>();
-    Test<96>();
-    Test<128>();
+        TestFoo prefix = TestFoo::MakeTestFoo(17, 21, 32, 85);
+        Test<128, 2, PREFIX_AGGREGATE, BLOCK_SCAN_RAKING>(SEQ_INC, Sum(), NullType(), prefix, CUB_TYPE_STRING(Sum<TestFoo>));
+    }
+    else
+    {
+        // Repeat test sequence
+        for (int i = 0; i <= g_repeat; ++i)
+        {
+            // Run battery of tests for different threadblock sizes
+            Test<17>();
+            Test<32>();
+            Test<62>();
+            Test<65>();
+            Test<96>();
+            Test<128>();
+        }
+    }
 
     return 0;
 }

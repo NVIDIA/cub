@@ -371,65 +371,6 @@ struct DeviceReduce
      * Utility methods
      ******************************************************************************/
 
-    /**
-     * Internal dispatch routine for computing a device-wide reduction using a single thread block.
-     */
-    template <
-        typename                    ReduceSingleKernelPtr,              ///< Function type of cub::SingleBlockReduceKernel
-        typename                    InputIteratorRA,                    ///< Random-access iterator type for input (may be a simple pointer type)
-        typename                    OutputIteratorRA,                   ///< Random-access iterator type for output (may be a simple pointer type)
-        typename                    SizeT,                              ///< Integral type used for global array indexing
-        typename                    ReductionOp>                        ///< Binary reduction operator type having member <tt>T operator()(const T &a, const T &b)</tt>
-    __host__ __device__ __forceinline__
-    static cudaError_t DispatchSingle(
-        void                        *d_temp_storage,                    ///< [in] %Device allocation of temporary storage.  When NULL, the required allocation size is returned in \p temp_storage_bytes and no work is done.
-        size_t                      &temp_storage_bytes,                ///< [in,out] Size in bytes of \p d_temp_storage allocation.
-        ReduceSingleKernelPtr       single_block_kernel,                ///< [in] Kernel function pointer to parameterization of cub::SingleBlockReduceKernel
-        KernelDispachParams         &single_block_dispatch_params,      ///< [in] Dispatch parameters that match the policy that \p single_block_kernel was compiled for
-        InputIteratorRA             d_in,                               ///< [in] Input data to reduce
-        OutputIteratorRA            d_out,                              ///< [out] Output location for result
-        SizeT                       num_items,                          ///< [in] Number of items to reduce
-        ReductionOp                 reduction_op,                       ///< [in] Binary reduction operator
-        cudaStream_t                stream              = 0,            ///< [in] <b>[optional]</b> CUDA stream to launch kernels within.  Default is stream<sub>0</sub>.
-        bool                        stream_synchronous  = false)        ///< [in] <b>[optional]</b> Whether or not to synchronize the stream after every kernel launch to check for errors.  Default is \p false.
-    {
-#ifndef CUB_RUNTIME_ENABLED
-
-        // Kernel launch not supported from this device
-        return CubDebug(cudaErrorNotSupported);
-
-#else
-
-        // Return if the caller is simply requesting the size of the storage allocation
-        if (d_temp_storage == NULL)
-        {
-            temp_storage_bytes = 1;
-            return cudaSuccess;
-        }
-
-        cudaError error = cudaSuccess;
-        do
-        {
-            // Log single_block_kernel configuration
-            if (stream_synchronous) CubLog("Invoking ReduceSingle<<<1, %d, 0, %lld>>>(), %d items per thread\n",
-                single_block_dispatch_params.block_threads, (long long) stream, single_block_dispatch_params.items_per_thread);
-
-            // Invoke single_block_kernel
-            single_block_kernel<<<1, single_block_dispatch_params.block_threads>>>(
-                d_in,
-                d_out,
-                num_items,
-                reduction_op);
-
-            // Sync the stream if specified
-            if (stream_synchronous && (CubDebug(error = SyncStream(stream)))) break;
-        }
-        while (0);
-        return error;
-
-#endif // CUB_RUNTIME_ENABLED
-    }
-
 
     /**
      * Internal dispatch routine for computing a device-wide reduction using a two-stages of kernel invocations.
@@ -443,7 +384,7 @@ struct DeviceReduce
         typename                    SizeT,                              ///< Integral type used for global array indexing
         typename                    ReductionOp>                        ///< Binary reduction operator type having member <tt>T operator()(const T &a, const T &b)</tt>
     __host__ __device__ __forceinline__
-    static cudaError_t DispatchIterative(
+    static cudaError_t Dispatch(
         void                        *d_temp_storage,                    ///< [in] %Device allocation of temporary storage.  When NULL, the required allocation size is returned in \p temp_storage_bytes and no work is done.
         size_t                      &temp_storage_bytes,                ///< [in,out] Size in bytes of \p d_temp_storage allocation.
         MultiBlockReduceKernelPtr   multi_block_kernel,                 ///< [in] Kernel function pointer to parameterization of cub::MultiBlockReduceKernel
@@ -471,123 +412,156 @@ struct DeviceReduce
         cudaError error = cudaSuccess;
         do
         {
-            // Get device ordinal
-            int device_ordinal;
-            if (CubDebug(error = cudaGetDevice(&device_ordinal))) break;
-
-            // Get SM count
-            int sm_count;
-            if (CubDebug(error = cudaDeviceGetAttribute (&sm_count, cudaDevAttrMultiProcessorCount, device_ordinal))) break;
-
-            // Get a rough estimate of multi_block_kernel SM occupancy based upon the maximum SM occupancy of the targeted PTX architecture
-            int multi_block_sm_occupancy = CUB_MIN(
-                ArchProps<CUB_PTX_ARCH>::MAX_SM_THREADBLOCKS,
-                ArchProps<CUB_PTX_ARCH>::MAX_SM_THREADS / multi_block_dispatch_params.block_threads);
-
-#ifndef __CUDA_ARCH__
-            // We're on the host, so come up with a more accurate estimate of multi_block_kernel SM occupancy from actual device properties
-            Device device_props;
-            if (CubDebug(error = device_props.Init(device_ordinal))) break;
-
-            if (CubDebug(error = device_props.MaxSmOccupancy(
-                multi_block_sm_occupancy,
-                multi_block_kernel,
-                multi_block_dispatch_params.block_threads))) break;
-#endif
-
-            // Get device occupancy for multi_block_kernel
-            int multi_block_occupancy = multi_block_sm_occupancy * sm_count;
-
-            // Even-share work distribution
-            GridEvenShare<SizeT> even_share;
-
-            // Get grid size for multi_block_kernel
-            int multi_block_grid_size;
-            switch (multi_block_dispatch_params.grid_mapping)
+            if ((multi_block_kernel == NULL) || (num_items <= (single_block_dispatch_params.tile_size)))
             {
-            case GRID_MAPPING_EVEN_SHARE:
+                // Dispatch a single-block reduction kernel
 
-                // Work is distributed evenly
-                even_share.GridInit(
+                // Return if the caller is simply requesting the size of the storage allocation
+                if (d_temp_storage == NULL)
+                {
+                    temp_storage_bytes = 1;
+                    return cudaSuccess;
+                }
+
+                // Log single_block_kernel configuration
+                if (stream_synchronous) CubLog("Invoking ReduceSingle<<<1, %d, 0, %lld>>>(), %d items per thread\n",
+                    single_block_dispatch_params.block_threads, (long long) stream, single_block_dispatch_params.items_per_thread);
+
+                // Invoke single_block_kernel
+                single_block_kernel<<<1, single_block_dispatch_params.block_threads>>>(
+                    d_in,
+                    d_out,
                     num_items,
-                    multi_block_occupancy * multi_block_dispatch_params.subscription_factor,
-                    multi_block_dispatch_params.tile_size);
-                multi_block_grid_size = even_share.grid_size;
-                break;
+                    reduction_op);
 
-            case GRID_MAPPING_DYNAMIC:
+                // Sync the stream if specified
+                if (stream_synchronous && (CubDebug(error = SyncStream(stream)))) break;
 
-                // Work is distributed dynamically
-                int num_tiles = (num_items + multi_block_dispatch_params.tile_size - 1) / multi_block_dispatch_params.tile_size;
-                multi_block_grid_size   = (num_tiles < multi_block_occupancy) ?
-                    num_tiles :                 // Not enough to fill the device with threadblocks
-                    multi_block_occupancy;      // Fill the device with threadblocks
-                break;
-            };
-
-            // Temporary storage allocation requirements
-            void* allocations[2];
-            size_t allocation_sizes[2] =
+            }
+            else
             {
-                multi_block_grid_size * sizeof(T),      // bytes needed for privatized block reductions
-                GridQueue<int>::AllocationSize()        // bytes needed for grid queue descriptor
-            };
+                // Dispatch two kernels: a multi-block kernel to compute
+                // privatized per-block reductions, and then a single-block
+                // to reduce those
 
-            // Alias temporaries (or set the necessary size of the storage allocation)
-            if (CubDebug(error = AliasTemporaries(d_temp_storage, temp_storage_bytes, allocations, allocation_sizes))) break;
+                // Get device ordinal
+                int device_ordinal;
+                if (CubDebug(error = cudaGetDevice(&device_ordinal))) break;
 
-            // Return if the caller is simply requesting the size of the storage allocation
-            if (d_temp_storage == NULL)
-                return cudaSuccess;
+                // Get SM count
+                int sm_count;
+                if (CubDebug(error = cudaDeviceGetAttribute (&sm_count, cudaDevAttrMultiProcessorCount, device_ordinal))) break;
 
-            // Privatized per-block reductions
-            T *d_block_reductions = (T*) allocations[0];
+                // Get a rough estimate of multi_block_kernel SM occupancy based upon the maximum SM occupancy of the targeted PTX architecture
+                int multi_block_sm_occupancy = CUB_MIN(
+                    ArchProps<CUB_PTX_ARCH>::MAX_SM_THREADBLOCKS,
+                    ArchProps<CUB_PTX_ARCH>::MAX_SM_THREADS / multi_block_dispatch_params.block_threads);
 
-            // Grid queue descriptor
-            GridQueue<SizeT> queue(allocations[1]);
+    #ifndef __CUDA_ARCH__
+                // We're on the host, so come up with a more accurate estimate of multi_block_kernel SM occupancy from actual device properties
+                Device device_props;
+                if (CubDebug(error = device_props.Init(device_ordinal))) break;
 
-            // Prepare the dynamic queue descriptor if necessary
-            if (multi_block_dispatch_params.grid_mapping == GRID_MAPPING_DYNAMIC)
-            {
-                // Prepare queue using a kernel so we know it gets prepared once per operation
-                if (stream_synchronous) CubLog("Invoking prepare_drain_kernel<<<1, 1, 0, %lld>>>()\n", (long long) stream);
+                if (CubDebug(error = device_props.MaxSmOccupancy(
+                    multi_block_sm_occupancy,
+                    multi_block_kernel,
+                    multi_block_dispatch_params.block_threads))) break;
+    #endif
 
-                // Invoke prepare_drain_kernel
-                prepare_drain_kernel<<<1, 1, 0, stream>>>(queue, num_items);
+                // Get device occupancy for multi_block_kernel
+                int multi_block_occupancy = multi_block_sm_occupancy * sm_count;
+
+                // Even-share work distribution
+                GridEvenShare<SizeT> even_share;
+
+                // Get grid size for multi_block_kernel
+                int multi_block_grid_size;
+                switch (multi_block_dispatch_params.grid_mapping)
+                {
+                case GRID_MAPPING_EVEN_SHARE:
+
+                    // Work is distributed evenly
+                    even_share.GridInit(
+                        num_items,
+                        multi_block_occupancy * multi_block_dispatch_params.subscription_factor,
+                        multi_block_dispatch_params.tile_size);
+                    multi_block_grid_size = even_share.grid_size;
+                    break;
+
+                case GRID_MAPPING_DYNAMIC:
+
+                    // Work is distributed dynamically
+                    int num_tiles = (num_items + multi_block_dispatch_params.tile_size - 1) / multi_block_dispatch_params.tile_size;
+                    multi_block_grid_size   = (num_tiles < multi_block_occupancy) ?
+                        num_tiles :                 // Not enough to fill the device with threadblocks
+                        multi_block_occupancy;      // Fill the device with threadblocks
+                    break;
+                };
+
+                // Temporary storage allocation requirements
+                void* allocations[2];
+                size_t allocation_sizes[2] =
+                {
+                    multi_block_grid_size * sizeof(T),      // bytes needed for privatized block reductions
+                    GridQueue<int>::AllocationSize()        // bytes needed for grid queue descriptor
+                };
+
+                // Alias temporaries (or set the necessary size of the storage allocation)
+                if (CubDebug(error = AliasTemporaries(d_temp_storage, temp_storage_bytes, allocations, allocation_sizes))) break;
+
+                // Return if the caller is simply requesting the size of the storage allocation
+                if (d_temp_storage == NULL)
+                    return cudaSuccess;
+
+                // Privatized per-block reductions
+                T *d_block_reductions = (T*) allocations[0];
+
+                // Grid queue descriptor
+                GridQueue<SizeT> queue(allocations[1]);
+
+                // Prepare the dynamic queue descriptor if necessary
+                if (multi_block_dispatch_params.grid_mapping == GRID_MAPPING_DYNAMIC)
+                {
+                    // Prepare queue using a kernel so we know it gets prepared once per operation
+                    if (stream_synchronous) CubLog("Invoking prepare_drain_kernel<<<1, 1, 0, %lld>>>()\n", (long long) stream);
+
+                    // Invoke prepare_drain_kernel
+                    prepare_drain_kernel<<<1, 1, 0, stream>>>(queue, num_items);
+
+                    // Sync the stream if specified
+                    if (stream_synchronous && (CubDebug(error = SyncStream(stream)))) break;
+                }
+
+                // Log multi_block_kernel configuration
+                if (stream_synchronous) CubLog("Invoking multi_block_kernel<<<%d, %d, 0, %lld>>>(), %d items per thread, %d SM occupancy\n",
+                    multi_block_grid_size, multi_block_dispatch_params.block_threads, (long long) stream, multi_block_dispatch_params.items_per_thread, multi_block_sm_occupancy);
+
+                // Invoke multi_block_kernel
+                multi_block_kernel<<<multi_block_grid_size, multi_block_dispatch_params.block_threads, 0, stream>>>(
+                    d_in,
+                    d_block_reductions,
+                    num_items,
+                    even_share,
+                    queue,
+                    reduction_op);
+
+                // Sync the stream if specified
+                if (stream_synchronous && (CubDebug(error = SyncStream(stream)))) break;
+
+                // Log single_block_kernel configuration
+                if (stream_synchronous) CubLog("Invoking single_block_kernel<<<%d, %d, 0, %lld>>>(), %d items per thread\n",
+                    1, single_block_dispatch_params.block_threads, (long long) stream, single_block_dispatch_params.items_per_thread);
+
+                // Invoke single_block_kernel
+                single_block_kernel<<<1, single_block_dispatch_params.block_threads, 0, stream>>>(
+                    d_block_reductions,
+                    d_out,
+                    multi_block_grid_size,
+                    reduction_op);
 
                 // Sync the stream if specified
                 if (stream_synchronous && (CubDebug(error = SyncStream(stream)))) break;
             }
-
-            // Log multi_block_kernel configuration
-            if (stream_synchronous) CubLog("Invoking multi_block_kernel<<<%d, %d, 0, %lld>>>(), %d items per thread, %d SM occupancy\n",
-                multi_block_grid_size, multi_block_dispatch_params.block_threads, (long long) stream, multi_block_dispatch_params.items_per_thread, multi_block_sm_occupancy);
-
-            // Invoke multi_block_kernel
-            multi_block_kernel<<<multi_block_grid_size, multi_block_dispatch_params.block_threads, 0, stream>>>(
-                d_in,
-                d_block_reductions,
-                num_items,
-                even_share,
-                queue,
-                reduction_op);
-
-            // Sync the stream if specified
-            if (stream_synchronous && (CubDebug(error = SyncStream(stream)))) break;
-
-            // Log single_block_kernel configuration
-            if (stream_synchronous) CubLog("Invoking single_block_kernel<<<%d, %d, 0, %lld>>>(), %d items per thread\n",
-                1, single_block_dispatch_params.block_threads, (long long) stream, single_block_dispatch_params.items_per_thread);
-
-            // Invoke single_block_kernel
-            single_block_kernel<<<1, single_block_dispatch_params.block_threads, 0, stream>>>(
-                d_block_reductions,
-                d_out,
-                multi_block_grid_size,
-                reduction_op);
-
-            // Sync the stream if specified
-            if (stream_synchronous && (CubDebug(error = SyncStream(stream)))) break;
         }
         while (0);
 
@@ -597,65 +571,6 @@ struct DeviceReduce
     }
 
 
-    /**
-     * Internal device reduction dispatch
-     */
-    template <
-        typename                    MultiBlockReduceKernelPtr,          ///< Function type of cub::MultiBlockReduceKernel
-        typename                    ReduceSingleKernelPtr,              ///< Function type of cub::SingleBlockReduceKernel
-        typename                    InputIteratorRA,                    ///< Random-access iterator type for input (may be a simple pointer type)
-        typename                    OutputIteratorRA,                   ///< Random-access iterator type for output (may be a simple pointer type)
-        typename                    SizeT,                              ///< Integral type used for global array indexing
-        typename                    ReductionOp>                        ///< Binary reduction operator type having member <tt>T operator()(const T &a, const T &b)</tt>
-    __host__ __device__ __forceinline__
-    static cudaError_t Dispatch(
-        void                        *d_temp_storage,                    ///< [in] %Device allocation of temporary storage.  When NULL, the required allocation size is returned in \p temp_storage_bytes and no work is done.
-        size_t                      &temp_storage_bytes,                ///< [in,out] Size in bytes of \p d_temp_storage allocation.
-        MultiBlockReduceKernelPtr   multi_block_kernel,                 ///< [in] Kernel function pointer to parameterization of cub::MultiBlockReduceKernel
-        ReduceSingleKernelPtr       single_block_kernel,                ///< [in] Kernel function pointer to parameterization of cub::SingleBlockReduceKernel
-        KernelDispachParams         &multi_block_dispatch_params,       ///< [in] Dispatch parameters that match the policy that \p multi_block_kernel_ptr was compiled for
-        KernelDispachParams         &single_block_dispatch_params,      ///< [in] Dispatch parameters that match the policy that \p single_block_kernel was compiled for
-        InputIteratorRA             d_in,                               ///< [in] Input data to reduce
-        OutputIteratorRA            d_out,                              ///< [out] Output location for result
-        SizeT                       num_items,                          ///< [in] Number of items to reduce
-        ReductionOp                 reduction_op,                       ///< [in] Binary reduction operator
-        cudaStream_t                stream              = 0,            ///< [in] <b>[optional]</b> CUDA stream to launch kernels within.  Default is stream<sub>0</sub>.
-        bool                        stream_synchronous  = false)        ///< [in] <b>[optional]</b> Whether or not to synchronize the stream after every kernel launch to check for errors.  Default is \p false.
-    {
-        if (num_items > (single_block_dispatch_params.tile_size))
-        {
-            // Dispatch multiple kernels
-            return CubDebug(DispatchIterative(
-                d_temp_storage,
-                temp_storage_bytes,
-                multi_block_kernel,
-                single_block_kernel,
-                ResetDrainKernel<SizeT>,
-                multi_block_dispatch_params,
-                single_block_dispatch_params,
-                d_in,
-                d_out,
-                num_items,
-                reduction_op,
-                stream,
-                stream_synchronous));
-        }
-        else
-        {
-            // Dispatch a single thread block
-            return CubDebug(DispatchSingle(
-                d_temp_storage,
-                temp_storage_bytes,
-                single_block_kernel,
-                single_block_dispatch_params,
-                d_in,
-                d_out,
-                num_items,
-                reduction_op,
-                stream,
-                stream_synchronous));
-        }
-    }
 
 #endif // DOXYGEN_SHOULD_SKIP_THIS
 
@@ -751,6 +666,7 @@ struct DeviceReduce
                 temp_storage_bytes,
                 MultiBlockReduceKernel<MultiBlockPolicy, InputIteratorRA, T*, SizeT, ReductionOp>,
                 SingleBlockReduceKernel<SingleBlockPolicy, T*, OutputIteratorRA, SizeT, ReductionOp>,
+                ResetDrainKernel<SizeT>,
                 multi_block_dispatch_params,
                 single_block_dispatch_params,
                 d_in,
