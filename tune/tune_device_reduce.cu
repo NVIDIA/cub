@@ -142,10 +142,12 @@ struct Schmoo
 
         DispatchTuple() :
             kernel_ptr(0),
+            params(DeviceReduce::KernelDispachParams(),
             avg_throughput(0.0),
             best_avg_throughput(0.0),
             hmean_speedup(0.0),
-            best_size(0) {}
+            best_size(0))
+        {}
     };
 
     /**
@@ -351,13 +353,13 @@ struct Schmoo
 
 
     //---------------------------------------------------------------------
-    // Multi-block test methods
+    // Test methods
     //---------------------------------------------------------------------
 
     /**
-     * Test multi reduction
+     * Test a configuration
      */
-    void Test(
+    void TestConfiguration(
         MultiDispatchTuple      &multi_dispatch,
         SingleDispatchTuple     &single_dispatch,
         T*                      d_in,
@@ -377,6 +379,7 @@ struct Schmoo
             temporary_storage_bytes,
             multi_dispatch.kernel_ptr,
             single_dispatch.kernel_ptr,
+            ResetDrainKernel<SizeT>,
             multi_dispatch.params,
             single_dispatch.params,
             d_in,
@@ -391,6 +394,7 @@ struct Schmoo
             temporary_storage_bytes,
             multi_dispatch.kernel_ptr,
             single_dispatch.kernel_ptr,
+            ResetDrainKernel<SizeT>,
             multi_dispatch.params,
             single_dispatch.params,
             d_in,
@@ -417,6 +421,7 @@ struct Schmoo
                 temporary_storage_bytes,
                 multi_dispatch.kernel_ptr,
                 single_dispatch.kernel_ptr,
+                ResetDrainKernel<SizeT>,
                 multi_dispatch.params,
                 single_dispatch.params,
                 d_in,
@@ -533,7 +538,7 @@ struct Schmoo
             {
                 multi_kernels[j].avg_throughput = 0.0;
 
-                Test(multi_kernels[j], simple_single_tuple, d_in, d_out, &h_reference, num_items, reduction_op);
+                TestConfiguration(multi_kernels[j], simple_single_tuple, d_in, d_out, &h_reference, num_items, reduction_op);
 
                 best_avg_throughput = CUB_MAX(best_avg_throughput, multi_kernels[j].avg_throughput);
             }
@@ -575,103 +580,6 @@ struct Schmoo
     }
 
 
-    //---------------------------------------------------------------------
-    // Single-block test methods
-    //---------------------------------------------------------------------
-
-    /**
-     * Test single reduction
-     */
-    void Test(
-        SingleDispatchTuple     &single_dispatch,
-        T*                      d_in,
-        T*                      d_out,
-        T*                      h_reference,
-        SizeT                   num_items,
-        ReductionOp             reduction_op)
-    {
-        // Clear output
-        if (g_verify) CubDebugExit(cudaMemset(d_out, 0, sizeof(T)));
-
-        // Allocate temporary storage
-        void            *d_temporary_storage = NULL;
-        size_t          temporary_storage_bytes = 0;
-        CubDebugExit(DeviceReduce::DispatchSingle(
-            d_temporary_storage,
-            temporary_storage_bytes,
-            single_dispatch.kernel_ptr,
-            single_dispatch.params,
-            d_in,
-            d_out,
-            num_items,
-            reduction_op));
-        CubDebugExit(g_allocator.DeviceAllocate(&d_temporary_storage, temporary_storage_bytes));
-
-        // Warmup/correctness iteration
-        CubDebugExit(DeviceReduce::DispatchSingle(
-            d_temporary_storage,
-            temporary_storage_bytes,
-            single_dispatch.kernel_ptr,
-            single_dispatch.params,
-            d_in,
-            d_out,
-            num_items,
-            reduction_op));
-
-        if (g_verify) CubDebugExit(cudaDeviceSynchronize());
-
-        // Copy out and display results
-        int compare = (g_verify) ?
-            CompareDeviceResults(h_reference, d_out, 1, true, false) :
-            0;
-
-        // Performance
-        GpuTimer gpu_timer;
-        float elapsed_millis = 0.0;
-        for (int i = 0; i < g_iterations; i++)
-        {
-            gpu_timer.Start();
-
-            CubDebugExit(DeviceReduce::DispatchSingle(
-                d_temporary_storage,
-                temporary_storage_bytes,
-                single_dispatch.kernel_ptr,
-                single_dispatch.params,
-                d_in,
-                d_out,
-                num_items,
-                reduction_op));
-
-            gpu_timer.Stop();
-            elapsed_millis += gpu_timer.ElapsedMillis();
-        }
-
-        // Mooch
-        CubDebugExit(cudaDeviceSynchronize());
-
-        float avg_elapsed = elapsed_millis / g_iterations;
-        float avg_throughput = float(num_items) / avg_elapsed / 1000.0 / 1000.0;
-        float avg_bandwidth = avg_throughput * sizeof(T);
-
-        single_dispatch.avg_throughput = CUB_MAX(avg_throughput, single_dispatch.avg_throughput);
-        if (avg_throughput > single_dispatch.best_avg_throughput)
-        {
-            single_dispatch.best_avg_throughput = avg_throughput;
-            single_dispatch.best_size = num_items;
-        }
-
-        if (g_verbose)
-        {
-            printf("\t%.2f GB/s, single_dispatch( ", avg_bandwidth);
-            single_dispatch.params.Print();
-            printf(" )\n");
-            fflush(stdout);
-        }
-
-        AssertEquals(0, compare);
-    }
-
-
     /**
      * Evaluate single-block configurations
      */
@@ -681,6 +589,9 @@ struct Schmoo
         T*                      d_out,
         ReductionOp             reduction_op)
      {
+        // Construct a NULL-ptr multi-kernel tuple that forces a single-kernel pass
+        MultiDispatchTuple multi_tuple;
+
         double max_exponent     = log2(double(g_max_items));
         unsigned int max_int    = (unsigned int) -1;
 
@@ -714,13 +625,13 @@ struct Schmoo
             // Compute reference
             T h_reference = Reduce(h_in, reduction_op, num_items);
 
-            // Run test on each single-kernel configuration
+            // Run test on each single-kernel configuration (pick first multi-config to use, which shouldn't be
             float best_avg_throughput = 0.0;
             for (int j = 0; j < single_kernels.size(); ++j)
             {
                 single_kernels[j].avg_throughput = 0.0;
 
-                Test(single_kernels[j], d_in, d_out, &h_reference, num_items, reduction_op);
+                TestConfiguration(multi_tuple, single_kernels[j], d_in, d_out, &h_reference, num_items, reduction_op);
 
                 best_avg_throughput = CUB_MAX(best_avg_throughput, single_kernels[j].avg_throughput);
             }
