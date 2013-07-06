@@ -354,29 +354,42 @@ struct BlockScanTiles
     __device__ __forceinline__ void ConsumeTiles(
         int                         num_items,          ///< Total number of input items
         GridQueue<int>              queue,              ///< Queue descriptor for assigning tiles of work to thread blocks
-        DeviceScanTileDescriptorT   *d_tile_status)    ///< Global list of tile status
+        DeviceScanTileDescriptorT   *d_tile_status)     ///< Global list of tile status
     {
-        // We give each thread block at least one tile of input.
-        int tile_idx = blockIdx.x;
+#if CUB_PTX_ARCH < 200
 
+        // No concurrent kernels allowed and blocks are launched in increasing order, so just assign one tile per block (up to 65K blocks)
+        int     tile_idx        = blockIdx.x;
+        SizeT   block_offset    = SizeT(TILE_ITEMS) * tile_idx;
+
+        if (block_offset + TILE_ITEMS <= num_items)
+            ConsumeTile<true>(num_items, tile_idx, block_offset, d_tile_status);
+        else if (block_offset < num_items)
+            ConsumeTile<false>(num_items, tile_idx, block_offset, d_tile_status);
+
+#else
+
+        // Get first tile
+        if (threadIdx.x == 0)
+            temp_storage.tile_idx = queue.Drain(1);
+
+        __syncthreads();
+
+        int tile_idx = temp_storage.tile_idx;
         SizeT block_offset = SizeT(TILE_ITEMS) * tile_idx;
+
         while (block_offset + TILE_ITEMS <= num_items)
         {
+            // Consume full tile
             ConsumeTile<true>(num_items, tile_idx, block_offset, d_tile_status);
 
             // Get next tile
-#if CUB_PTX_ARCH < 200
-            // No concurrent kernels allowed, so just stripe tiles
-            tile_idx += gridDim.x;
-#else
-            // Concurrent kernels are allowed, so we must only use active blocks to dequeue tile indices
             if (threadIdx.x == 0)
-                temp_storage.tile_idx = queue.Drain(1) + gridDim.x;
+                temp_storage.tile_idx = queue.Drain(1);
 
             __syncthreads();
 
             tile_idx = temp_storage.tile_idx;
-#endif
             block_offset = SizeT(TILE_ITEMS) * tile_idx;
         }
 
@@ -385,6 +398,10 @@ struct BlockScanTiles
         {
             ConsumeTile<false>(num_items, tile_idx, block_offset, d_tile_status);
         }
+#endif
+
+
+
     }
 
 

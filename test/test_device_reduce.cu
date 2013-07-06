@@ -61,7 +61,7 @@ template <
     typename            InputIteratorRA,
     typename            OutputIteratorRA,
     typename            ReductionOp>
-__global__ void CnpReduce(
+__global__ void CnpDispatchKernel(
     void                *d_temp_storage,
     size_t              temp_storage_bytes,
     InputIteratorRA     d_in,
@@ -72,16 +72,15 @@ __global__ void CnpReduce(
     int                 timing_iterations,
     cudaError_t*        d_cnp_error)
 {
-#ifdef CUB_CNP
+#ifndef CUB_CNP
+    *d_cnp_error = cudaErrorNotSupported;
+#else
     cudaError_t error = cudaSuccess;
     for (int i = 0; i < timing_iterations; ++i)
     {
         error = DeviceReduce::Reduce(d_temp_storage, temp_storage_bytes, d_in, d_out, num_items, reduction_op, 0, stream_synchronous);
     }
-
     *d_cnp_error = error;
-#else
-    *d_cnp_error = cudaErrorNotSupported;
 #endif
 }
 
@@ -160,8 +159,8 @@ cudaError_t Dispatch(
     cudaStream_t                stream              = 0,            ///< [in] <b>[optional]</b> CUDA stream to launch kernels within.  Default is stream<sub>0</sub>.
     bool                        stream_synchronous  = false)        ///< [in] <b>[optional]</b> Whether or not to synchronize the stream after every kernel launch to check for errors.  Default is \p false.
 {
-    // Invoke kernel to invoke device reduction
-    CnpReduce<<<1,1>>>(d_temp_storage, temp_storage_bytes, d_in, d_out, num_items, reduction_op, stream_synchronous, timing_iterations, d_cnp_error);
+    // Invoke kernel to invoke device-side dispatch
+    CnpDispatchKernel<<<1,1>>>(d_temp_storage, temp_storage_bytes, d_in, d_out, num_items, reduction_op, stream_synchronous, timing_iterations, d_cnp_error);
 
     // Copy out error
     cudaError_t retval;

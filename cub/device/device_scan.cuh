@@ -326,6 +326,7 @@ struct DeviceScan
         typename                    SizeT>                          ///< Integral type used for global array indexing
     __host__ __device__ __forceinline__
     static cudaError_t Dispatch(
+        int                         ptx_version,                    ///< [in] PTX version
         void                        *d_temp_storage,                ///< [in] %Device allocation of temporary storage.  When NULL, the required allocation size is returned in \p temp_storage_bytes and no work is done.
         size_t                      &temp_storage_bytes,            ///< [in,out] Size in bytes of \p d_temp_storage allocation.
         InitScanKernelPtr           init_kernel,                    ///< [in] Kernel function pointer to parameterization of cub::InitScanKernel
@@ -385,14 +386,6 @@ struct DeviceScan
             // Grid queue descriptor
             GridQueue<int> queue(allocations[1]);
 
-            // Get GPU id
-            int device_ordinal;
-            if (CubDebug(error = cudaGetDevice(&device_ordinal))) break;
-
-            // Get SM count
-            int sm_count;
-            if (CubDebug(error = cudaDeviceGetAttribute (&sm_count, cudaDevAttrMultiProcessorCount, device_ordinal))) break;
-
             // Log init_kernel configuration
             int init_kernel_threads = 128;
             int init_grid_size = (num_tiles + init_kernel_threads - 1) / init_kernel_threads;
@@ -407,30 +400,49 @@ struct DeviceScan
             // Sync the stream if specified
             if (stream_synchronous && (CubDebug(error = SyncStream(stream)))) break;
 
-            // Get a rough estimate of multi_block_kernel SM occupancy based upon the maximum SM occupancy of the targeted PTX architecture
-            int multi_sm_occupancy = CUB_MIN(
-                ArchProps<CUB_PTX_ARCH>::MAX_SM_THREADBLOCKS,
-                ArchProps<CUB_PTX_ARCH>::MAX_SM_THREADS / multi_block_dispatch_params.block_threads);
+            // Get grid size for multi-block kernel
+            int multi_block_grid_size;
+            int multi_sm_occupancy = -1;
+            if (ptx_version < 200)
+            {
+                // We don't have atomics (or don't have fast ones), so just assign one
+                // block per tile (limited to 65K tiles)
+                multi_block_grid_size = num_tiles;
+            }
+            else
+            {
+                // We have atomics and can thus reuse blocks across multiple tiles using a queue descriptor.
+                // Get GPU id
+                int device_ordinal;
+                if (CubDebug(error = cudaGetDevice(&device_ordinal))) break;
+
+                // Get SM count
+                int sm_count;
+                if (CubDebug(error = cudaDeviceGetAttribute (&sm_count, cudaDevAttrMultiProcessorCount, device_ordinal))) break;
+
+                // Get a rough estimate of multi_block_kernel SM occupancy based upon the maximum SM occupancy of the targeted PTX architecture
+                multi_sm_occupancy = CUB_MIN(
+                    ArchProps<CUB_PTX_ARCH>::MAX_SM_THREADBLOCKS,
+                    ArchProps<CUB_PTX_ARCH>::MAX_SM_THREADS / multi_block_dispatch_params.block_threads);
 
 #ifndef __CUDA_ARCH__
+                // We're on the host, so come up with a
+                Device device_props;
+                if (CubDebug(error = device_props.Init(device_ordinal))) break;
 
-            // We're on the host, so come up with a more accurate estimate of multi_block_kernel SM occupancy from actual device properties
-            Device device_props;
-            if (CubDebug(error = device_props.Init(device_ordinal))) break;
-
-            if (CubDebug(error = device_props.MaxSmOccupancy(
-                multi_sm_occupancy,
-                multi_block_kernel,
-                multi_block_dispatch_params.block_threads))) break;
-
+                if (CubDebug(error = device_props.MaxSmOccupancy(
+                    multi_sm_occupancy,
+                    multi_block_kernel,
+                    multi_block_dispatch_params.block_threads))) break;
 #endif
-            // Get device occupancy for multi_block_kernel
-            int multi_block_occupancy = multi_sm_occupancy * sm_count;
+                // Get device occupancy for multi_block_kernel
+                int multi_block_occupancy = multi_sm_occupancy * sm_count;
 
-            // Get grid size for multi_block_kernel
-            int multi_block_grid_size = (num_tiles < multi_block_occupancy) ?
-                num_tiles :                 // Not enough to fill the device with threadblocks
-                multi_block_occupancy;            // Fill the device with threadblocks
+                // Get grid size for multi_block_kernel
+                multi_block_grid_size = (num_tiles < multi_block_occupancy) ?
+                    num_tiles :                 // Not enough to fill the device with threadblocks
+                    multi_block_occupancy;      // Fill the device with threadblocks
+            }
 
             // Log multi_block_kernel configuration
             if (stream_synchronous) CubLog("Invoking multi_block_kernel<<<%d, %d, 0, %lld>>>(), %d items per thread, %d SM occupancy\n",
@@ -492,17 +504,19 @@ struct DeviceScan
             // Declare dispatch parameters
             KernelDispachParams multi_block_dispatch_params;
 
+            int ptx_version;
 #ifdef __CUDA_ARCH__
             // We're on the device, so initialize the dispatch parameters with the PtxDefaultPolicies directly
             multi_block_dispatch_params.Init<MultiBlockPolicy>();
+            ptx_version = CUB_PTX_ARCH;
 #else
             // We're on the host, so lookup and initialize the dispatch parameters with the policies that match the device's PTX version
-            int ptx_version;
             if (CubDebug(error = PtxVersion(ptx_version))) break;
             PtxDefaultPolicies::InitDispatchParams(ptx_version, multi_block_dispatch_params);
 #endif
 
             Dispatch(
+                ptx_version,
                 d_temp_storage,
                 temp_storage_bytes,
                 InitScanKernel<T, SizeT>,

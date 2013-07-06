@@ -44,8 +44,10 @@ using namespace cub;
 // Globals, constants and typedefs
 //---------------------------------------------------------------------
 
-bool                    g_verbose = false;
+bool                    g_verbose       = false;
+int                     g_repeat        = 0;
 CachingDeviceAllocator  g_allocator;
+
 
 
 //---------------------------------------------------------------------
@@ -511,12 +513,15 @@ int main(int argc, char** argv)
     CommandLineArgs args(argc, argv);
     g_verbose = args.CheckCmdLineFlag("v");
     bool quick = args.CheckCmdLineFlag("quick");
+    args.GetCmdLineArgument("repeat", g_repeat);
 
     // Print usage
     if (args.CheckCmdLineFlag("help"))
     {
         printf("%s "
             "[--device=<device-id>] "
+            "[--repeat=<times to repeat tests>]"
+            "[--quick]"
             "[--v] "
             "\n", argv[0]);
         exit(0);
@@ -525,30 +530,39 @@ int main(int argc, char** argv)
     // Initialize device
     CubDebugExit(args.DeviceInit());
 
-    // Quick test
-    typedef int T;
-    TestFullTile<BLOCK_REDUCE_RAKING, 128, 4, T>(UNIFORM, 1, Sum(), CUB_TYPE_STRING(T));
+    if (quick)
+    {
+        // Quick test
+        typedef int T;
+        TestFullTile<BLOCK_REDUCE_RAKING, 128, 4, T>(UNIFORM, 1, Sum(), CUB_TYPE_STRING(T));
+    }
+    else
+    {
+        // Repeat test sequence
+        for (int i = 0; i <= g_repeat; ++i)
+        {
+            // primitives
+            Test<char>(CUB_TYPE_STRING(char));
+            Test<short>(CUB_TYPE_STRING(short));
+            Test<int>(CUB_TYPE_STRING(int));
+            Test<long long>(CUB_TYPE_STRING(long long));
 
-    // primitives
-    Test<char>(CUB_TYPE_STRING(char));
-    Test<short>(CUB_TYPE_STRING(short));
-    Test<int>(CUB_TYPE_STRING(int));
-    Test<long long>(CUB_TYPE_STRING(long long));
+            // vector types
+            Test<char2>(CUB_TYPE_STRING(char2));
+            Test<short2>(CUB_TYPE_STRING(short2));
+            Test<int2>(CUB_TYPE_STRING(int2));
+            Test<longlong2>(CUB_TYPE_STRING(longlong2));
 
-    // vector types
-    Test<char2>(CUB_TYPE_STRING(char2));
-    Test<short2>(CUB_TYPE_STRING(short2));
-    Test<int2>(CUB_TYPE_STRING(int2));
-    Test<longlong2>(CUB_TYPE_STRING(longlong2));
+            Test<char4>(CUB_TYPE_STRING(char4));
+            Test<short4>(CUB_TYPE_STRING(short4));
+            Test<int4>(CUB_TYPE_STRING(int4));
+            Test<longlong4>(CUB_TYPE_STRING(longlong4));
 
-    Test<char4>(CUB_TYPE_STRING(char4));
-    Test<short4>(CUB_TYPE_STRING(short4));
-    Test<int4>(CUB_TYPE_STRING(int4));
-    Test<longlong4>(CUB_TYPE_STRING(longlong4));
-
-    // Complex types
-    Test<TestFoo>(CUB_TYPE_STRING(TestFoo));
-    Test<TestBar>(CUB_TYPE_STRING(TestBar));
+            // Complex types
+            Test<TestFoo>(CUB_TYPE_STRING(TestFoo));
+            Test<TestBar>(CUB_TYPE_STRING(TestBar));
+        }
+    }
 
     return 0;
 }

@@ -56,8 +56,9 @@ using namespace std;
 typedef int         VertexId;   // uint32s as vertex ids
 typedef double      Value;      // double-precision floating point values
 
-bool                g_verbose       = false;
-int                 g_iterations    = 1;
+bool                    g_verbose       = false;
+int                     g_iterations    = 1;
+CachingDeviceAllocator  g_allocator;
 
 
 /******************************************************************************
@@ -335,8 +336,8 @@ struct PersistentBlockSpmv
     /**
      * Processes a COO input tile of edges, outputting dot products for each row
      */
-    __device__ __forceinline__
-    void ProcessTile(
+    template <bool FULL_TILE>
+    __device__ __forceinline__ void ProcessTile(
         int block_offset,
         int guarded_items = 0)
     {
@@ -347,20 +348,20 @@ struct PersistentBlockSpmv
         HeadFlag        head_flags[ITEMS_PER_THREAD];
 
         // Load a threadblock-striped tile of A (sparse row-ids, column-ids, and values)
-        if (guarded_items)
+        if (FULL_TILE)
+        {
+            // Unguarded loads
+            LoadWarpStriped<LOAD_DEFAULT>(threadIdx.x, d_columns + block_offset, columns);
+            LoadWarpStriped<LOAD_DEFAULT>(threadIdx.x, d_values + block_offset, values);
+            LoadWarpStriped<LOAD_DEFAULT>(threadIdx.x, d_rows + block_offset, rows);
+        }
+        else
         {
             // This is a partial-tile (e.g., the last tile of input).  Extend the coordinates of the last
             // vertex for out-of-bound items, but zero-valued
             LoadWarpStriped<LOAD_DEFAULT>(threadIdx.x, d_columns + block_offset, guarded_items, VertexId(0), columns);
             LoadWarpStriped<LOAD_DEFAULT>(threadIdx.x, d_values + block_offset, guarded_items, Value(0), values);
             LoadWarpStriped<LOAD_DEFAULT>(threadIdx.x, d_rows + block_offset, guarded_items, temp_storage.last_block_row, rows);
-        }
-        else
-        {
-            // Unguarded loads
-            LoadWarpStriped<LOAD_DEFAULT>(threadIdx.x, d_columns + block_offset, columns);
-            LoadWarpStriped<LOAD_DEFAULT>(threadIdx.x, d_values + block_offset, values);
-            LoadWarpStriped<LOAD_DEFAULT>(threadIdx.x, d_rows + block_offset, rows);
         }
 
         // Load the referenced values from x and compute the dot product partials sums
@@ -439,7 +440,7 @@ struct PersistentBlockSpmv
         // Process full tiles
         while (block_offset <= block_oob - TILE_ITEMS)
         {
-            ProcessTile(block_offset);
+            ProcessTile<true>(block_offset);
             block_offset += TILE_ITEMS;
         }
 
@@ -447,7 +448,7 @@ struct PersistentBlockSpmv
         int guarded_items = block_oob - block_offset;
         if (guarded_items)
         {
-            ProcessTile(block_offset, guarded_items);
+            ProcessTile<false>(block_offset, guarded_items);
         }
 
         if (threadIdx.x == 0)
@@ -565,6 +566,7 @@ struct FinalizeSpmvBlock
     /**
      * Processes a COO input tile of edges, outputting dot products for each row
      */
+    template <bool FULL_TILE>
     __device__ __forceinline__
     void ProcessTile(
         int block_offset,
@@ -575,7 +577,15 @@ struct FinalizeSpmvBlock
         HeadFlag        head_flags[ITEMS_PER_THREAD];
 
         // Load a threadblock-striped tile of A (sparse row-ids, column-ids, and values)
-        if (guarded_items)
+        if (FULL_TILE)
+        {
+#if CUB_PTX_ARCH >= 350
+            LoadBlocked<LOAD_LDG>(threadIdx.x, d_block_partials + block_offset, partial_sums);
+#else
+            LoadBlocked<LOAD_DEFAULT>(threadIdx.x, d_block_partials + block_offset, partial_sums);
+#endif
+        }
+        else
         {
             // Extend zero-valued coordinates of the last partial-product for out-of-bounds items
             PartialProduct default_sum;
@@ -586,14 +596,6 @@ struct FinalizeSpmvBlock
             LoadBlocked<LOAD_LDG>(threadIdx.x, d_block_partials + block_offset, guarded_items, default_sum, partial_sums);
 #else
             LoadBlocked<LOAD_DEFAULT>(threadIdx.x, d_block_partials + block_offset, guarded_items, default_sum, partial_sums);
-#endif
-        }
-        else
-        {
-#if CUB_PTX_ARCH >= 350
-            LoadBlocked<LOAD_LDG>(threadIdx.x, d_block_partials + block_offset, partial_sums);
-#else
-            LoadBlocked<LOAD_DEFAULT>(threadIdx.x, d_block_partials + block_offset, partial_sums);
 #endif
         }
 
@@ -642,7 +644,7 @@ struct FinalizeSpmvBlock
         int block_offset = 0;
         while (block_offset <= num_partials - TILE_ITEMS)
         {
-            ProcessTile(block_offset);
+            ProcessTile<true>(block_offset);
             block_offset += TILE_ITEMS;
         }
 
@@ -650,7 +652,7 @@ struct FinalizeSpmvBlock
         int guarded_items = num_partials - block_offset;
         if (guarded_items)
         {
-            ProcessTile(block_offset, guarded_items);
+            ProcessTile<false>(block_offset, guarded_items);
         }
 
         // Scatter the final aggregate (this kernel contains only 1 threadblock)
@@ -805,12 +807,12 @@ void TestDevice(
     int num_partials   = coo_grid_size * 2;
 
     // Allocate COO device arrays
-    CubDebugExit(DeviceAllocate((void**)&d_rows,            sizeof(VertexId) * num_edges));
-    CubDebugExit(DeviceAllocate((void**)&d_columns,         sizeof(VertexId) * num_edges));
-    CubDebugExit(DeviceAllocate((void**)&d_values,          sizeof(Value) * num_edges));
-    CubDebugExit(DeviceAllocate((void**)&d_vector,          sizeof(Value) * coo_graph.col_dim));
-    CubDebugExit(DeviceAllocate((void**)&d_result,          sizeof(Value) * coo_graph.row_dim));
-    CubDebugExit(DeviceAllocate((void**)&d_block_partials,  sizeof(PartialProduct) * num_partials));
+    CubDebugExit(g_allocator.DeviceAllocate((void**)&d_rows,            sizeof(VertexId) * num_edges));
+    CubDebugExit(g_allocator.DeviceAllocate((void**)&d_columns,         sizeof(VertexId) * num_edges));
+    CubDebugExit(g_allocator.DeviceAllocate((void**)&d_values,          sizeof(Value) * num_edges));
+    CubDebugExit(g_allocator.DeviceAllocate((void**)&d_vector,          sizeof(Value) * coo_graph.col_dim));
+    CubDebugExit(g_allocator.DeviceAllocate((void**)&d_result,          sizeof(Value) * coo_graph.row_dim));
+    CubDebugExit(g_allocator.DeviceAllocate((void**)&d_block_partials,  sizeof(PartialProduct) * num_partials));
 
     // Copy host arrays to device
     CubDebugExit(cudaMemcpy(d_rows,     h_rows,     sizeof(VertexId) * num_edges,       cudaMemcpyHostToDevice));
@@ -890,12 +892,12 @@ void TestDevice(
 
     // Cleanup
     TexVector<Value>::UnbindTexture();
-    CubDebugExit(DeviceFree(d_block_partials));
-    CubDebugExit(DeviceFree(d_rows));
-    CubDebugExit(DeviceFree(d_columns));
-    CubDebugExit(DeviceFree(d_values));
-    CubDebugExit(DeviceFree(d_vector));
-    CubDebugExit(DeviceFree(d_result));
+    CubDebugExit(g_allocator.DeviceFree(d_block_partials));
+    CubDebugExit(g_allocator.DeviceFree(d_rows));
+    CubDebugExit(g_allocator.DeviceFree(d_columns));
+    CubDebugExit(g_allocator.DeviceFree(d_values));
+    CubDebugExit(g_allocator.DeviceFree(d_vector));
+    CubDebugExit(g_allocator.DeviceFree(d_result));
     delete[] h_rows;
     delete[] h_columns;
     delete[] h_values;
