@@ -124,9 +124,11 @@ struct DeviceScanTileDescriptor
         while (true)
         {
             VectorWord alias = ThreadLoad<LOAD_CG>(reinterpret_cast<VectorWord*>(ptr));
-            tile_descriptor = *reinterpret_cast<DeviceScanTileDescriptor*>(&alias);
 
-            if (WarpAll(tile_descriptor.status != DEVICE_SCAN_TILE_INVALID)) break;
+            tile_descriptor = *reinterpret_cast<DeviceScanTileDescriptor*>(&alias);
+            if (tile_descriptor.status != DEVICE_SCAN_TILE_INVALID) break;
+
+            __threadfence_block();
         }
 
         status = tile_descriptor.status;
@@ -180,7 +182,9 @@ struct DeviceScanTileDescriptor<T, false>
         while (true)
         {
             status = ThreadLoad<LOAD_CG>(&ptr->status);
-            if (WarpAll(status != DEVICE_SCAN_TILE_INVALID)) break;
+            if (status != DEVICE_SCAN_TILE_INVALID) break;
+
+            __threadfence_block();
         }
 
         value = (status == DEVICE_SCAN_TILE_PARTIAL) ?

@@ -67,43 +67,6 @@ struct FloatScaleOp
 };
 
 
-
-//---------------------------------------------------------------------
-// CUDA Nested Parallelism Test Kernel
-//---------------------------------------------------------------------
-
-/**
- * Simple wrapper kernel to invoke DeviceHisto
- */
-/*
-template <
-    bool                STREAM_SYNCHRONOUS,
-    typename            InputIteratorRA,
-    typename            OutputIteratorRA,
-    typename            ReductionOp>
-__global__ void CnpHisto(
-    InputIteratorRA     d_samples,
-    OutputIteratorRA    d_out,
-    int                 num_samples,
-    ReductionOp         reduction_op,
-    int                 iterations,
-    cudaError_t*        d_cnp_error)
-{
-    cudaError_t error = cudaSuccess;
-
-#ifdef CUB_RUNTIME_ENABLED
-    for (int i = 0; i < iterations; ++i)
-    {
-        error = DeviceHisto::SingleChannel(d_samples, d_out, num_samples, reduction_op, 0, STREAM_SYNCHRONOUS);
-    }
-#else
-    error = cudaErrorInvalidConfiguration;
-#endif
-
-    *d_cnp_error = error;
-}
-*/
-
 //---------------------------------------------------------------------
 // Host utility subroutines
 //---------------------------------------------------------------------
@@ -186,23 +149,178 @@ void Initialize(
 
 
 //---------------------------------------------------------------------
-// Full tile test generation
+// Dispatch to different DeviceHisto entrypoints
 //---------------------------------------------------------------------
 
+/**
+ * Dispatch to shared atomic entrypoint
+ */
+template <int BINS, int CHANNELS, int ACTIVE_CHANNELS, typename InputIteratorRA, typename HistoCounter>
+__host__ __device__ __forceinline__
+cudaError_t Dispatch(
+    Int2Type<GRID_HISTO_SORT> algorithm,
+    Int2Type<false>     use_cnp,
+    int                 timing_iterations,
+    cudaError_t         *d_cnp_error,
+    size_t              *d_temp_storage_bytes,
+    void                *d_temp_storage,                    ///< [in] %Device allocation of temporary storage.  When NULL, the required allocation size is returned in \p temp_storage_bytes and no work is done.
+    size_t              &temp_storage_bytes,                ///< [in,out] Size in bytes of \p d_temp_storage allocation.
+    InputIteratorRA     d_sample_itr,                       ///< [in] Input samples. (Channels, if any, are interleaved in "AOS" format)
+    HistoCounter        *d_histograms[ACTIVE_CHANNELS],     ///< [out] Array of channel histogram counter arrays, each having BINS counters of integral type \p HistoCounter.
+    int                 num_samples,                        ///< [in] Number of samples to process
+    cudaStream_t        stream              = 0,            ///< [in] <b>[optional]</b> CUDA stream to launch kernels within.  Default is stream<sub>0</sub>.
+    bool                stream_synchronous  = false)        ///< [in] <b>[optional]</b> Whether or not to synchronize the stream after every kernel launch to check for errors.  May cause significant slowdown.  Default is \p false.
+{
+    cudaError_t error = cudaSuccess;
+    for (int i = 0; i < timing_iterations; ++i)
+    {
+        error = DeviceHisto::MultiChannelSorting<BINS, CHANNELS, ACTIVE_CHANNELS>(d_temp_storage, temp_storage_bytes, d_sample_itr, d_histograms, num_samples, stream, stream_synchronous);
+    }
+    return error;
+}
+
+
+/**
+ * Dispatch to shared atomic entrypoint
+ */
+template <int BINS, int CHANNELS, int ACTIVE_CHANNELS, typename InputIteratorRA, typename HistoCounter>
+__host__ __device__ __forceinline__
+cudaError_t Dispatch(
+    Int2Type<GRID_HISTO_SHARED_ATOMIC> algorithm,
+    Int2Type<false>     use_cnp,
+    int                 timing_iterations,
+    cudaError_t         *d_cnp_error,
+    size_t              *d_temp_storage_bytes,
+    void                *d_temp_storage,                    ///< [in] %Device allocation of temporary storage.  When NULL, the required allocation size is returned in \p temp_storage_bytes and no work is done.
+    size_t              &temp_storage_bytes,                ///< [in,out] Size in bytes of \p d_temp_storage allocation.
+    InputIteratorRA     d_sample_itr,                       ///< [in] Input samples. (Channels, if any, are interleaved in "AOS" format)
+    HistoCounter        *d_histograms[ACTIVE_CHANNELS],     ///< [out] Array of channel histogram counter arrays, each having BINS counters of integral type \p HistoCounter.
+    int                 num_samples,                        ///< [in] Number of samples to process
+    cudaStream_t        stream              = 0,            ///< [in] <b>[optional]</b> CUDA stream to launch kernels within.  Default is stream<sub>0</sub>.
+    bool                stream_synchronous  = false)        ///< [in] <b>[optional]</b> Whether or not to synchronize the stream after every kernel launch to check for errors.  May cause significant slowdown.  Default is \p false.
+{
+    cudaError_t error = cudaSuccess;
+    for (int i = 0; i < timing_iterations; ++i)
+    {
+        error = DeviceHisto::MultiChannelSharedAtomic<BINS, CHANNELS, ACTIVE_CHANNELS>(d_temp_storage, temp_storage_bytes, d_sample_itr, d_histograms, num_samples, stream, stream_synchronous);
+    }
+    return error;
+}
+
+
+/**
+ * Dispatch to global atomic entrypoint
+ */
+template <int BINS, int CHANNELS, int ACTIVE_CHANNELS, typename InputIteratorRA, typename HistoCounter>
+__host__ __device__ __forceinline__
+cudaError_t Dispatch(
+    Int2Type<GRID_HISTO_GLOBAL_ATOMIC> algorithm,
+    Int2Type<false>     use_cnp,
+    int                 timing_iterations,
+    cudaError_t         *d_cnp_error,
+    size_t              *d_temp_storage_bytes,
+    void                *d_temp_storage,                    ///< [in] %Device allocation of temporary storage.  When NULL, the required allocation size is returned in \p temp_storage_bytes and no work is done.
+    size_t              &temp_storage_bytes,                ///< [in,out] Size in bytes of \p d_temp_storage allocation.
+    InputIteratorRA     d_sample_itr,                       ///< [in] Input samples. (Channels, if any, are interleaved in "AOS" format)
+    HistoCounter        *d_histograms[ACTIVE_CHANNELS],     ///< [out] Array of channel histogram counter arrays, each having BINS counters of integral type \p HistoCounter.
+    int                 num_samples,                        ///< [in] Number of samples to process
+    cudaStream_t        stream              = 0,            ///< [in] <b>[optional]</b> CUDA stream to launch kernels within.  Default is stream<sub>0</sub>.
+    bool                stream_synchronous  = false)        ///< [in] <b>[optional]</b> Whether or not to synchronize the stream after every kernel launch to check for errors.  May cause significant slowdown.  Default is \p false.
+{
+    cudaError_t error = cudaSuccess;
+    for (int i = 0; i < timing_iterations; ++i)
+    {
+        error = DeviceHisto::MultiChannelGlobalAtomic<BINS, CHANNELS, ACTIVE_CHANNELS>(d_temp_storage, temp_storage_bytes, d_sample_itr, d_histograms, num_samples, stream, stream_synchronous);
+    }
+    return error;
+}
+
+
+//---------------------------------------------------------------------
+// CUDA Nested Parallelism Test Kernel
+//---------------------------------------------------------------------
+
+/**
+ * Simple wrapper kernel to invoke DeviceScan
+ */
+template <int BINS, int CHANNELS, int ACTIVE_CHANNELS, typename InputIteratorRA, typename HistoCounter, int ALGORITHM>
+__global__ void CnpDispatchKernel(
+    Int2Type<ALGORITHM> algorithm,
+    int                 timing_iterations,
+    cudaError_t         *d_cnp_error,
+    size_t              *d_temp_storage_bytes,
+    void                *d_temp_storage,
+    size_t              temp_storage_bytes,
+    InputIteratorRA     d_sample_itr,
+    ArrayWrapper<HistoCounter*, ACTIVE_CHANNELS> d_out_histograms,
+    int                 num_samples,
+    bool                stream_synchronous)
+{
+#ifndef CUB_CNP
+    *d_cnp_error = cudaErrorNotSupported;
+#else
+    *d_cnp_error = Dispatch<BINS, CHANNELS, ACTIVE_CHANNELS>(algorithm, Int2Type<false>(), timing_iterations, d_cnp_error, d_temp_storage_bytes, d_temp_storage, temp_storage_bytes, d_sample_itr, d_out_histograms.array, num_samples, 0, stream_synchronous);
+    *d_temp_storage_bytes = temp_storage_bytes;
+#endif
+}
+
+
+/**
+ * Dispatch to CNP kernel
+ */
+template <int BINS, int CHANNELS, int ACTIVE_CHANNELS, typename InputIteratorRA, typename HistoCounter, int ALGORITHM>
+cudaError_t Dispatch(
+    Int2Type<ALGORITHM> algorithm,
+    Int2Type<true>      use_cnp,
+    int                 timing_iterations,
+    cudaError_t         *d_cnp_error,
+    size_t              *d_temp_storage_bytes,
+    void                *d_temp_storage,                    ///< [in] %Device allocation of temporary storage.  When NULL, the required allocation size is returned in \p temp_storage_bytes and no work is done.
+    size_t              &temp_storage_bytes,                ///< [in,out] Size in bytes of \p d_temp_storage allocation.
+    InputIteratorRA     d_sample_itr,                       ///< [in] Input samples. (Channels, if any, are interleaved in "AOS" format)
+    HistoCounter        *d_histograms[ACTIVE_CHANNELS],     ///< [out] Array of channel histogram counter arrays, each having BINS counters of integral type \p HistoCounter.
+    int                 num_samples,                        ///< [in] Number of samples to process
+    cudaStream_t        stream              = 0,            ///< [in] <b>[optional]</b> CUDA stream to launch kernels within.  Default is stream<sub>0</sub>.
+    bool                stream_synchronous  = false)        ///< [in] <b>[optional]</b> Whether or not to synchronize the stream after every kernel launch to check for errors.  May cause significant slowdown.  Default is \p false.
+{
+    // Setup array wrapper for histogram channel output (because we can't pass static arrays as kernel parameters)
+    ArrayWrapper<HistoCounter*, ACTIVE_CHANNELS> d_histo_wrapper;
+    for (int CHANNEL = 0; CHANNEL < ACTIVE_CHANNELS; ++CHANNEL)
+        d_histo_wrapper.array[CHANNEL] = d_histograms[CHANNEL];
+
+    // Invoke kernel to invoke device-side dispatch
+    CnpDispatchKernel<BINS, CHANNELS, ACTIVE_CHANNELS, InputIteratorRA, HistoCounter, ALGORITHM><<<1,1>>>(algorithm, timing_iterations, d_cnp_error, d_temp_storage_bytes, d_temp_storage, temp_storage_bytes, d_sample_itr, d_histo_wrapper, num_samples, stream_synchronous);
+
+    // Copy out temp_storage_bytes
+    CubDebugExit(cudaMemcpy(&temp_storage_bytes, d_temp_storage_bytes, sizeof(size_t) * 1, cudaMemcpyDeviceToHost));
+
+    // Copy out error
+    cudaError_t retval;
+    CubDebugExit(cudaMemcpy(&retval, d_cnp_error, sizeof(cudaError_t) * 1, cudaMemcpyDeviceToHost));
+    return retval;
+}
+
+
+
+//---------------------------------------------------------------------
+// Test generation
+//---------------------------------------------------------------------
 
 /**
  * Test DeviceHisto
  */
 template <
-    int             BINS,
-    int             CHANNELS,
-    int             ACTIVE_CHANNELS,
-    typename        SampleT,
-    typename        IteratorValueT,
-    typename        HistoCounterT,
-    typename        BinOp>
+    bool                        CNP,
+    int                         BINS,
+    int                         CHANNELS,
+    int                         ACTIVE_CHANNELS,
+    typename                    SampleT,
+    typename                    IteratorValueT,
+    typename                    HistoCounterT,
+    typename                    BinOp,
+    int                         ALGORITHM>
 void Test(
-    BlockHistoTilesAlgorithm    g_algorithm,
+    Int2Type<ALGORITHM>         algorithm,
     GenMode                     gen_mode,
     BinOp                       bin_op,
     int                         num_samples,
@@ -215,8 +333,9 @@ void Test(
     int cnp_compare     = 0;
     int total_bins      = ACTIVE_CHANNELS * BINS;
 
-    printf("cub::DeviceHisto %s %d %s samples (%dB), %d bins, %d channels, %d active channels, gen-mode %s\n",
-        (g_algorithm == GRID_HISTO_SHARED_ATOMIC) ? "satomic" : (g_algorithm == GRID_HISTO_GLOBAL_ATOMIC) ? "gatomic" : "sort",
+    printf("%s cub::DeviceHisto %s %d %s samples (%dB), %d bins, %d channels, %d active channels, gen-mode %s\n",
+        (CNP) ? "CNP device invoked" : "Host-invoked",
+        (ALGORITHM == GRID_HISTO_SHARED_ATOMIC) ? "satomic" : (ALGORITHM == GRID_HISTO_GLOBAL_ATOMIC) ? "gatomic" : "sort",
         num_samples,
         type_string,
         (int) sizeof(SampleT),
@@ -237,11 +356,13 @@ void Test(
     SampleT*        d_samples = NULL;
     HistoCounterT*  d_histograms_linear = NULL;
     cudaError_t*    d_cnp_error = NULL;
-    void            *d_temporary_storage = NULL;
-    size_t          temporary_storage_bytes = 0;
+    size_t          *d_temp_storage_bytes = NULL;
+    void            *d_temp_storage = NULL;
+    size_t          temp_storage_bytes = 0;
     CubDebugExit(g_allocator.DeviceAllocate((void**)&d_samples,             sizeof(SampleT) * num_samples));
     CubDebugExit(g_allocator.DeviceAllocate((void**)&d_histograms_linear,   sizeof(HistoCounterT) * total_bins));
     CubDebugExit(g_allocator.DeviceAllocate((void**)&d_cnp_error,           sizeof(cudaError_t) * 1));
+    CubDebugExit(g_allocator.DeviceAllocate((void**)&d_temp_storage_bytes,  sizeof(size_t) * 1));
 
     // Initialize device arrays
     CubDebugExit(cudaMemcpy(d_samples, h_samples, sizeof(SampleT) * num_samples, cudaMemcpyHostToDevice));
@@ -254,38 +375,16 @@ void Test(
         d_histograms[CHANNEL] = d_histograms_linear + (CHANNEL * BINS);
     }
 
-    // Create iterator wrapper for SampleT -> unsigned char conversion
-    BinningIterator d_sample_itr(d_samples, bin_op);
+    // Create a texload+transform iterator wrapper for SampleT -> IteratorValueT conversion
+    BinningIterator d_sample_itr(bin_op);
+    CubDebugExit(d_sample_itr.BindTexture(d_samples, sizeof(SampleT) * num_samples));
+
+    // Allocate temporary storage
+    Dispatch<BINS, CHANNELS, ACTIVE_CHANNELS>(algorithm, Int2Type<CNP>(), 1, d_cnp_error, d_temp_storage_bytes, d_temp_storage, temp_storage_bytes, d_sample_itr, d_histograms, num_samples, 0, true);
+    CubDebugExit(g_allocator.DeviceAllocate(&d_temp_storage, temp_storage_bytes));
 
     // Run warmup/correctness iteration
-    printf("Host dispatch:\n"); fflush(stdout);
-    if (g_algorithm == GRID_HISTO_SHARED_ATOMIC)
-    {
-        // Allocate temporary storage
-        CubDebugExit((DeviceHisto::MultiChannelAtomic<BINS, CHANNELS>(d_temporary_storage, temporary_storage_bytes, d_sample_itr, d_histograms, num_samples, 0, true)));
-        CubDebugExit(g_allocator.DeviceAllocate(&d_temporary_storage, temporary_storage_bytes));
-
-        // Run test
-        CubDebugExit((DeviceHisto::MultiChannelAtomic<BINS, CHANNELS>(d_temporary_storage, temporary_storage_bytes, d_sample_itr, d_histograms, num_samples, 0, true)));
-    }
-    else if (g_algorithm == GRID_HISTO_GLOBAL_ATOMIC)
-    {
-        // Allocate temporary storage
-        CubDebugExit((DeviceHisto::MultiChannelGlobalAtomic<BINS, CHANNELS>(d_temporary_storage, temporary_storage_bytes, d_sample_itr, d_histograms, num_samples, 0, true)));
-        CubDebugExit(g_allocator.DeviceAllocate(&d_temporary_storage, temporary_storage_bytes));
-
-        // Run test
-        CubDebugExit((DeviceHisto::MultiChannelGlobalAtomic<BINS, CHANNELS>(d_temporary_storage, temporary_storage_bytes, d_sample_itr, d_histograms, num_samples, 0, true)));
-    }
-    else
-    {
-        // Allocate temporary storage
-        CubDebugExit((DeviceHisto::MultiChannelSorting<BINS, CHANNELS>(d_temporary_storage, temporary_storage_bytes, d_sample_itr, d_histograms, num_samples, 0, true)));
-        CubDebugExit(g_allocator.DeviceAllocate(&d_temporary_storage, temporary_storage_bytes));
-
-        // Run test
-        CubDebugExit((DeviceHisto::MultiChannelSorting<BINS, CHANNELS>(d_temporary_storage, temporary_storage_bytes, d_sample_itr, d_histograms, num_samples, 0, true)));
-    }
+    Dispatch<BINS, CHANNELS, ACTIVE_CHANNELS>(algorithm, Int2Type<CNP>(), 1, d_cnp_error, d_temp_storage_bytes, d_temp_storage, temp_storage_bytes, d_sample_itr, d_histograms, num_samples, 0, true);
 
     // Check for correctness (and display results, if specified)
     compare = CompareDeviceResults((HistoCounterT*) h_reference_linear, d_histograms_linear, total_bins, g_verbose, g_verbose);
@@ -298,27 +397,12 @@ void Test(
 
     // Performance
     GpuTimer gpu_timer;
-    float elapsed_millis = 0.0;
-    for (int i = 0; i < g_timing_iterations; i++)
-    {
-        gpu_timer.Start();
+    gpu_timer.Start();
+    Dispatch<BINS, CHANNELS, ACTIVE_CHANNELS>(algorithm, Int2Type<CNP>(), g_timing_iterations, d_cnp_error, d_temp_storage_bytes, d_temp_storage, temp_storage_bytes, d_sample_itr, d_histograms, num_samples);
+    gpu_timer.Stop();
+    float elapsed_millis = gpu_timer.ElapsedMillis();
 
-        if (g_algorithm == GRID_HISTO_SHARED_ATOMIC)
-        {
-            CubDebugExit((DeviceHisto::MultiChannelAtomic<BINS, CHANNELS>(d_temporary_storage, temporary_storage_bytes, d_sample_itr, d_histograms, num_samples, 0)));
-        }
-        else if (g_algorithm == GRID_HISTO_GLOBAL_ATOMIC)
-        {
-            CubDebugExit((DeviceHisto::MultiChannelGlobalAtomic<BINS, CHANNELS>(d_temporary_storage, temporary_storage_bytes, d_sample_itr, d_histograms, num_samples, 0)));
-        }
-        else
-        {
-            CubDebugExit((DeviceHisto::MultiChannelSorting<BINS, CHANNELS>(d_temporary_storage, temporary_storage_bytes, d_sample_itr, d_histograms, num_samples, 0)));
-        }
-
-        gpu_timer.Stop();
-        elapsed_millis += gpu_timer.ElapsedMillis();
-    }
+    // Display performance
     if (g_timing_iterations > 0)
     {
         float avg_millis = elapsed_millis / g_timing_iterations;
@@ -334,66 +418,15 @@ void Test(
 
     printf("\n\n");
 
-/*
-    // Evaluate using CUDA nested parallelism
-#if (CUB_CNP == 1)
-
-    CubDebugExit(cudaMemset(d_out, 0, sizeof(SampleT) * 1));
-
-    // Run warmup/correctness iteration
-    printf("\nDevice dispatch:\n"); fflush(stdout);
-    CnpHisto<true><<<1,1>>>(d_samples, d_out, num_samples, reduction_op, 1, d_cnp_error);
-
-    // Flush any stdout/stderr
-    fflush(stdout);
-    fflush(stderr);
-
-    // Check if we were compiled and linked for CNP
-    cudaError_t h_cnp_error;
-    CubDebugExit(cudaMemcpy(&h_cnp_error, d_cnp_error, sizeof(cudaError_t) * 1, cudaMemcpyDeviceToHost));
-    if (h_cnp_error == cudaErrorInvalidConfiguration)
-    {
-        printf("CNP not supported");
-    }
-    else
-    {
-        CubDebugExit(h_cnp_error);
-
-        // Check for correctness (and display results, if specified)
-        cnp_compare = CompareDeviceResults(h_reference_linear, d_out, 1, g_verbose, g_verbose);
-        printf("\n%s", cnp_compare ? "FAIL" : "PASS");
-
-        // Performance
-        gpu_timer.Start();
-
-        CnpHisto<false><<<1,1>>>(d_samples, d_out, num_samples, reduction_op, g_timing_iterations, d_cnp_error);
-
-        gpu_timer.Stop();
-        elapsed_millis = gpu_timer.ElapsedMillis();
-
-        if (g_timing_iterations > 0)
-        {
-            float avg_millis = elapsed_millis / g_timing_iterations;
-            float grate = float(num_samples) / avg_millis / 1000.0 / 1000.0;
-            float gbandwidth = grate * sizeof(SampleT);
-            printf(", %.3f avg ms, %.3f billion items/s, %.3f GB/s\n", avg_millis, grate, gbandwidth);
-        }
-        else
-        {
-            printf("\n");
-        }
-    }
-
-#endif
-*/
-
     // Cleanup
+    CubDebugExit(d_sample_itr.UnbindTexture());
     if (h_samples) delete[] h_samples;
     if (h_reference_linear) delete[] h_reference_linear;
     if (d_samples) CubDebugExit(g_allocator.DeviceFree(d_samples));
     if (d_histograms_linear) CubDebugExit(g_allocator.DeviceFree(d_histograms_linear));
     if (d_cnp_error) CubDebugExit(g_allocator.DeviceFree(d_cnp_error));
-    if (d_temporary_storage) CubDebugExit(g_allocator.DeviceFree(d_temporary_storage));
+    if (d_temp_storage_bytes) CubDebugExit(g_allocator.DeviceFree(d_temp_storage_bytes));
+    if (d_temp_storage) CubDebugExit(g_allocator.DeviceFree(d_temp_storage));
 
     // Correctness asserts
     AssertEquals(0, compare);
@@ -401,9 +434,34 @@ void Test(
 }
 
 
+/**
+ * Test different dispatch
+ */
+template <
+    int                         BINS,
+    int                         CHANNELS,
+    int                         ACTIVE_CHANNELS,
+    typename                    SampleT,
+    typename                    IteratorValueT,
+    typename                    HistoCounterT,
+    typename                    BinOp,
+    int                         ALGORITHM>
+void TestCnp(
+    Int2Type<ALGORITHM>         algorithm,
+    GenMode                     gen_mode,
+    BinOp                       bin_op,
+    int                         num_samples,
+    char*                       type_string)
+{
+    Test<false, BINS, CHANNELS, ACTIVE_CHANNELS, SampleT, IteratorValueT, HistoCounterT>(algorithm, gen_mode, bin_op, num_samples, type_string);
+#ifdef CUB_CNP
+    Test<true, BINS, CHANNELS, ACTIVE_CHANNELS, SampleT, IteratorValueT, HistoCounterT>(algorithm, gen_mode, bin_op, num_samples, type_string);
+#endif
+}
+
 
 /**
- * Iterate over different algorithms
+ * Test different algorithms
  */
 template <
     int             BINS,
@@ -419,9 +477,9 @@ void Test(
     int             num_samples,
     char*           type_string)
 {
-    Test<BINS, CHANNELS, ACTIVE_CHANNELS, SampleT, IteratorValueT, HistoCounterT>(GRID_HISTO_SORT,          gen_mode, bin_op, num_samples, type_string);
-    Test<BINS, CHANNELS, ACTIVE_CHANNELS, SampleT, IteratorValueT, HistoCounterT>(GRID_HISTO_SHARED_ATOMIC, gen_mode, bin_op, num_samples, type_string);
-    Test<BINS, CHANNELS, ACTIVE_CHANNELS, SampleT, IteratorValueT, HistoCounterT>(GRID_HISTO_GLOBAL_ATOMIC, gen_mode, bin_op, num_samples, type_string);
+    TestCnp<BINS, CHANNELS, ACTIVE_CHANNELS, SampleT, IteratorValueT, HistoCounterT>(Int2Type<GRID_HISTO_SORT>(),          gen_mode, bin_op, num_samples, type_string);
+//    TestCnp<BINS, CHANNELS, ACTIVE_CHANNELS, SampleT, IteratorValueT, HistoCounterT>(Int2Type<GRID_HISTO_SHARED_ATOMIC>(), gen_mode, bin_op, num_samples, type_string);
+//    TestCnp<BINS, CHANNELS, ACTIVE_CHANNELS, SampleT, IteratorValueT, HistoCounterT>(Int2Type<GRID_HISTO_GLOBAL_ATOMIC>(), gen_mode, bin_op, num_samples, type_string);
 }
 
 
@@ -441,7 +499,7 @@ void Test(
     char*           type_string)
 {
     Test<BINS, 1, 1, SampleT, IteratorValueT, HistoCounterT>(gen_mode, bin_op, num_samples, type_string);
-    Test<BINS, 4, 3, SampleT, IteratorValueT, HistoCounterT>(gen_mode, bin_op, num_samples, type_string);
+//    Test<BINS, 4, 3, SampleT, IteratorValueT, HistoCounterT>(gen_mode, bin_op, num_samples, type_string);
 }
 
 
@@ -460,7 +518,7 @@ void TestModes(
     char*           type_string)
 {
     Test<BINS, SampleT, IteratorValueT, HistoCounterT>(RANDOM, bin_op, num_samples, type_string);
-    Test<BINS, SampleT, IteratorValueT, HistoCounterT>(UNIFORM, bin_op, num_samples, type_string);
+//    Test<BINS, SampleT, IteratorValueT, HistoCounterT>(UNIFORM, bin_op, num_samples, type_string);
 }
 
 
@@ -536,33 +594,33 @@ int main(int argc, char** argv)
         if (num_samples < 0) num_samples = 32000000;
 
         printf("SINGLE CHANNEL:\n\n");
-        Test<256, 1, 1, unsigned char, unsigned char, int>(GRID_HISTO_SORT,          RANDOM,  Cast<unsigned char>(), num_samples, CUB_TYPE_STRING(unsigned char));
-        Test<256, 1, 1, unsigned char, unsigned char, int>(GRID_HISTO_SORT,          UNIFORM, Cast<unsigned char>(), num_samples, CUB_TYPE_STRING(unsigned char));
+        TestCnp<256, 1, 1, unsigned char, unsigned char, int>(Int2Type<GRID_HISTO_SORT>(),          RANDOM,  Cast<unsigned char>(), num_samples, CUB_TYPE_STRING(unsigned char));
+        TestCnp<256, 1, 1, unsigned char, unsigned char, int>(Int2Type<GRID_HISTO_SORT>(),          UNIFORM, Cast<unsigned char>(), num_samples, CUB_TYPE_STRING(unsigned char));
         printf("\n");
-        Test<256, 1, 1, unsigned char, unsigned char, int>(GRID_HISTO_SHARED_ATOMIC, RANDOM,  Cast<unsigned char>(), num_samples, CUB_TYPE_STRING(unsigned char));
-        Test<256, 1, 1, unsigned char, unsigned char, int>(GRID_HISTO_SHARED_ATOMIC, UNIFORM, Cast<unsigned char>(), num_samples, CUB_TYPE_STRING(unsigned char));
+        TestCnp<256, 1, 1, unsigned char, unsigned char, int>(Int2Type<GRID_HISTO_SHARED_ATOMIC>(), RANDOM,  Cast<unsigned char>(), num_samples, CUB_TYPE_STRING(unsigned char));
+        TestCnp<256, 1, 1, unsigned char, unsigned char, int>(Int2Type<GRID_HISTO_SHARED_ATOMIC>(), UNIFORM, Cast<unsigned char>(), num_samples, CUB_TYPE_STRING(unsigned char));
         printf("\n");
-        Test<256, 1, 1, unsigned char, unsigned char, int>(GRID_HISTO_GLOBAL_ATOMIC, RANDOM,  Cast<unsigned char>(), num_samples, CUB_TYPE_STRING(unsigned char));
-        Test<256, 1, 1, unsigned char, unsigned char, int>(GRID_HISTO_GLOBAL_ATOMIC, UNIFORM, Cast<unsigned char>(), num_samples, CUB_TYPE_STRING(unsigned char));
+        TestCnp<256, 1, 1, unsigned char, unsigned char, int>(Int2Type<GRID_HISTO_GLOBAL_ATOMIC>(), RANDOM,  Cast<unsigned char>(), num_samples, CUB_TYPE_STRING(unsigned char));
+        TestCnp<256, 1, 1, unsigned char, unsigned char, int>(Int2Type<GRID_HISTO_GLOBAL_ATOMIC>(), UNIFORM, Cast<unsigned char>(), num_samples, CUB_TYPE_STRING(unsigned char));
         printf("\n");
 
         printf("3/4 CHANNEL (RGB/RGBA):\n\n");
-        Test<256, 4, 3, unsigned char, unsigned char, int>(GRID_HISTO_SORT,          RANDOM,  Cast<unsigned char>(), num_samples, CUB_TYPE_STRING(unsigned char));
-        Test<256, 4, 3, unsigned char, unsigned char, int>(GRID_HISTO_SORT,          UNIFORM, Cast<unsigned char>(), num_samples, CUB_TYPE_STRING(unsigned char));
+        TestCnp<256, 4, 3, unsigned char, unsigned char, int>(Int2Type<GRID_HISTO_SORT>(),          RANDOM,  Cast<unsigned char>(), num_samples, CUB_TYPE_STRING(unsigned char));
+        TestCnp<256, 4, 3, unsigned char, unsigned char, int>(Int2Type<GRID_HISTO_SORT>(),          UNIFORM, Cast<unsigned char>(), num_samples, CUB_TYPE_STRING(unsigned char));
         printf("\n");
-        Test<256, 4, 3, unsigned char, unsigned char, int>(GRID_HISTO_SHARED_ATOMIC, RANDOM,  Cast<unsigned char>(), num_samples, CUB_TYPE_STRING(unsigned char));
-        Test<256, 4, 3, unsigned char, unsigned char, int>(GRID_HISTO_SHARED_ATOMIC, UNIFORM, Cast<unsigned char>(), num_samples, CUB_TYPE_STRING(unsigned char));
+        TestCnp<256, 4, 3, unsigned char, unsigned char, int>(Int2Type<GRID_HISTO_SHARED_ATOMIC>(), RANDOM,  Cast<unsigned char>(), num_samples, CUB_TYPE_STRING(unsigned char));
+        TestCnp<256, 4, 3, unsigned char, unsigned char, int>(Int2Type<GRID_HISTO_SHARED_ATOMIC>(), UNIFORM, Cast<unsigned char>(), num_samples, CUB_TYPE_STRING(unsigned char));
         printf("\n");
-        Test<256, 4, 3, unsigned char, unsigned char, int>(GRID_HISTO_GLOBAL_ATOMIC, RANDOM,  Cast<unsigned char>(), num_samples, CUB_TYPE_STRING(unsigned char));
-        Test<256, 4, 3, unsigned char, unsigned char, int>(GRID_HISTO_GLOBAL_ATOMIC, UNIFORM, Cast<unsigned char>(), num_samples, CUB_TYPE_STRING(unsigned char));
+        TestCnp<256, 4, 3, unsigned char, unsigned char, int>(Int2Type<GRID_HISTO_GLOBAL_ATOMIC>(), RANDOM,  Cast<unsigned char>(), num_samples, CUB_TYPE_STRING(unsigned char));
+        TestCnp<256, 4, 3, unsigned char, unsigned char, int>(Int2Type<GRID_HISTO_GLOBAL_ATOMIC>(), UNIFORM, Cast<unsigned char>(), num_samples, CUB_TYPE_STRING(unsigned char));
         printf("\n");
-
     }
     else
     {
         // Repeat test sequence
         for (int i = 0; i <= g_repeat; ++i)
         {
+/*
             // 256-bin tests
             Test<256, unsigned char,    unsigned char, int>(Cast<unsigned char>(),              num_samples, CUB_TYPE_STRING(unsigned char));
             Test<256, unsigned short,   unsigned char, int>(Cast<unsigned char>(),              num_samples, CUB_TYPE_STRING(unsigned short));
@@ -574,6 +632,7 @@ int main(int argc, char** argv)
             Test<512, unsigned short,   unsigned short, int>(Cast<unsigned short>(),              num_samples, CUB_TYPE_STRING(unsigned short));
             Test<512, unsigned int,     unsigned short, int>(Cast<unsigned short>(),              num_samples, CUB_TYPE_STRING(unsigned int));
             Test<512, float,            unsigned short, int>(FloatScaleOp<unsigned short, 512>(), num_samples, CUB_TYPE_STRING(float));
+*/
         }
     }
 

@@ -99,7 +99,9 @@ cudaError_t AliasTemporaries(
 
     // Check if enough storage provided
     if (temp_storage_bytes < bytes_needed)
+    {
         return CubDebug(cudaErrorMemoryAllocation);
+    }
 
     // Alias
     for (int i = 0; i < ALLOCATIONS; ++i)

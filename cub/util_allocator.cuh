@@ -57,39 +57,6 @@ namespace cub {
 
 
 /******************************************************************************
- * DeviceAllocator abstract base class
- ******************************************************************************/
-
-/**
- * \brief Abstract base allocator class for device memory allocations.
- */
-class DeviceAllocator
-{
-public:
-
-    /**
-     * Provides a suitable allocation of device memory for the given size
-     * on the current device
-     */
-    __host__ __device__ virtual cudaError_t DeviceAllocate(void** d_ptr, size_t bytes) = 0;
-
-
-    /**
-     * Frees a live allocation of device memory on the current device, returning it to the
-     * allocator
-     */
-    __host__ __device__ virtual cudaError_t DeviceFree(void* d_ptr) = 0;
-
-    /**
-     * Destructor
-     */
-    CUB_DESTRUCTOR virtual ~DeviceAllocator() {};
-
-};
-
-
-
-/******************************************************************************
  * CachingDeviceAllocator (host use)
  ******************************************************************************/
 
@@ -127,7 +94,7 @@ public:
  * and sets a maximum of 6,291,455 cached bytes per device
  *
  */
-struct CachingDeviceAllocator : DeviceAllocator
+struct CachingDeviceAllocator
 {
 #ifndef DOXYGEN_SHOULD_SKIP_THIS    // Do not document
 
@@ -139,7 +106,7 @@ struct CachingDeviceAllocator : DeviceAllocator
     /**
      * Integer pow function for unsigned base and exponent
      */
-    static __host__ __device__ __forceinline__ unsigned int IntPow(
+    static unsigned int IntPow(
         unsigned int base,
         unsigned int exp)
     {
@@ -159,7 +126,7 @@ struct CachingDeviceAllocator : DeviceAllocator
     /**
      * Round up to the nearest power-of
      */
-    static __host__ __device__ __forceinline__ void NearestPowerOf(
+    static void NearestPowerOf(
         unsigned int &power,
         size_t &rounded_bytes,
         unsigned int base,
@@ -271,7 +238,7 @@ struct CachingDeviceAllocator : DeviceAllocator
     /**
      * \brief Constructor.
      */
-    __host__ __device__ __forceinline__ CachingDeviceAllocator(
+    CachingDeviceAllocator(
         unsigned int bin_growth,    ///< Geometric growth factor for bin-sizes
         unsigned int min_bin,       ///< Minimum bin
         unsigned int max_bin,       ///< Maximum bin
@@ -305,7 +272,7 @@ struct CachingDeviceAllocator : DeviceAllocator
      * which delineates five bin-sizes: 512B, 4KB, 32KB, 256KB, and 2MB and
      * sets a maximum of 6,291,455 cached bytes per device
      */
-    __host__ __device__ __forceinline__ CachingDeviceAllocator(bool skip_cleanup = false) :
+    CachingDeviceAllocator(bool skip_cleanup = false) :
     #ifndef __CUDA_ARCH__   // Only define STL container members in host code
         cached_blocks(BlockDescriptor::SizeCompare),
         live_blocks(BlockDescriptor::PtrCompare),
@@ -325,7 +292,7 @@ struct CachingDeviceAllocator : DeviceAllocator
     /**
      * \brief Sets the limit on the number bytes this allocator is allowed to cache per device.
      */
-    __host__ __device__ __forceinline__ cudaError_t SetMaxCachedBytes(
+    cudaError_t SetMaxCachedBytes(
         size_t max_cached_bytes)
     {
     #ifdef __CUDA_ARCH__
@@ -352,7 +319,7 @@ struct CachingDeviceAllocator : DeviceAllocator
     /**
      * \brief Provides a suitable allocation of device memory for the given size on the specified device
      */
-    __host__ __device__ __forceinline__ cudaError_t DeviceAllocate(
+    cudaError_t DeviceAllocate(
         void** d_ptr,
         size_t bytes,
         int device)
@@ -462,7 +429,7 @@ struct CachingDeviceAllocator : DeviceAllocator
     /**
      * \brief Provides a suitable allocation of device memory for the given size on the current device
      */
-    __host__ __device__ __forceinline__ cudaError_t DeviceAllocate(
+    cudaError_t DeviceAllocate(
         void** d_ptr,
         size_t bytes)
     {
@@ -486,7 +453,7 @@ struct CachingDeviceAllocator : DeviceAllocator
     /**
      * \brief Frees a live allocation of device memory on the specified device, returning it to the allocator
      */
-    __host__ __device__ __forceinline__ cudaError_t DeviceFree(
+    cudaError_t DeviceFree(
         void* d_ptr,
         int device)
     {
@@ -573,7 +540,7 @@ struct CachingDeviceAllocator : DeviceAllocator
     /**
      * \brief Frees a live allocation of device memory on the current device, returning it to the allocator
      */
-    __host__ __device__ __forceinline__ cudaError_t DeviceFree(
+    cudaError_t DeviceFree(
         void* d_ptr)
     {
     #ifdef __CUDA_ARCH__
@@ -598,7 +565,7 @@ struct CachingDeviceAllocator : DeviceAllocator
     /**
      * \brief Frees all cached device allocations on all devices
      */
-    __host__ __device__ __forceinline__ cudaError_t FreeAllCached()
+    cudaError_t FreeAllCached()
     {
     #ifdef __CUDA_ARCH__
         // Caching functionality only defined on host
@@ -666,7 +633,7 @@ struct CachingDeviceAllocator : DeviceAllocator
     /**
      * \brief Destructor
      */
-    CUB_DESTRUCTOR __forceinline__ virtual ~CachingDeviceAllocator()
+    virtual ~CachingDeviceAllocator()
     {
         if (!skip_cleanup)
             FreeAllCached();
