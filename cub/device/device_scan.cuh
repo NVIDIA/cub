@@ -63,13 +63,13 @@ namespace cub {
  */
 template <
     typename T,                                     ///< Scan value type
-    typename SizeT>                                 ///< Integral type used for global array indexing
-__global__ void InitScanKernel(
+    typename SizeT>                                 ///< Integer type used for global array indexing
+__global__ void ScanInitKernel(
     GridQueue<SizeT>            grid_queue,         ///< [in] Descriptor for performing dynamic mapping of input tiles to thread blocks
-    DeviceScanTileDescriptor<T> *d_tile_status,     ///< [out] Tile status words
+    ScanTileDescriptor<T> *d_tile_status,     ///< [out] Tile status words
     int                         num_tiles)          ///< [in] Number of tiles
 {
-    typedef DeviceScanTileDescriptor<T> DeviceScanTileDescriptorT;
+    typedef ScanTileDescriptor<T> ScanTileDescriptorT;
 
     enum
     {
@@ -84,13 +84,13 @@ __global__ void InitScanKernel(
     if (tile_offset < num_tiles)
     {
         // Not-yet-set
-        d_tile_status[TILE_STATUS_PADDING + tile_offset].status = DEVICE_SCAN_TILE_INVALID;
+        d_tile_status[TILE_STATUS_PADDING + tile_offset].status = SCAN_TILE_INVALID;
     }
 
     if ((blockIdx.x == 0) && (threadIdx.x < TILE_STATUS_PADDING))
     {
         // Padding
-        d_tile_status[threadIdx.x].status = DEVICE_SCAN_TILE_OOB;
+        d_tile_status[threadIdx.x].status = SCAN_TILE_OOB;
     }
 }
 
@@ -99,18 +99,18 @@ __global__ void InitScanKernel(
  * Scan kernel entry point (multi-block)
  */
 template <
-    typename    BlockScanTilesPolicy,       ///< Tuning policy for cub::BlockScanTiles abstraction
+    typename    BlockScanTilesPolicy,           ///< Tuning policy for cub::BlockScanTiles abstraction
     typename    InputIteratorRA,                ///< Random-access iterator type for input (may be a simple pointer type)
     typename    OutputIteratorRA,               ///< Random-access iterator type for output (may be a simple pointer type)
     typename    T,                              ///< The scan data type
     typename    ScanOp,                         ///< Binary scan operator type having member <tt>T operator()(const T &a, const T &b)</tt>
     typename    Identity,                       ///< Identity value type (cub::NullType for inclusive scans)
-    typename    SizeT>                          ///< Integral type used for global array indexing
+    typename    SizeT>                          ///< Integer type used for global array indexing
 __launch_bounds__ (int(BlockScanTilesPolicy::BLOCK_THREADS))
-__global__ void MultiBlockScanKernel(
+__global__ void ScanKernel(
     InputIteratorRA             d_in,           ///< Input data
     OutputIteratorRA            d_out,          ///< Output data
-    DeviceScanTileDescriptor<T>     *d_tile_status, ///< Global list of tile status
+    ScanTileDescriptor<T> *d_tile_status, ///< Global list of tile status
     ScanOp                      scan_op,        ///< Binary scan operator
     Identity                    identity,       ///< Identity element
     SizeT                       num_items,      ///< Total number of scan items for the entire problem
@@ -225,7 +225,7 @@ struct DeviceScan
             NOMINAL_ITEMS_PER_THREAD    = 16,   // 4byte items
             ITEMS_PER_THREAD            = CUB_MIN(NOMINAL_ITEMS_PER_THREAD, CUB_MAX(1, (NOMINAL_ITEMS_PER_THREAD * 4 / sizeof(T)))),
         };
-        typedef BlockScanTilesPolicy<128, ITEMS_PER_THREAD,  BLOCK_LOAD_DIRECT, false, LOAD_LDG, BLOCK_STORE_WARP_TRANSPOSE, true, BLOCK_SCAN_RAKING_MEMOIZE> MultiBlockPolicy;
+        typedef BlockScanTilesPolicy<128, ITEMS_PER_THREAD,  BLOCK_LOAD_DIRECT, false, LOAD_LDG, BLOCK_STORE_WARP_TRANSPOSE, true, BLOCK_SCAN_RAKING_MEMOIZE> ScanPolicy;
     };
 
     /// SM30 tune
@@ -236,7 +236,7 @@ struct DeviceScan
             NOMINAL_ITEMS_PER_THREAD    = 9,   // 4byte items
             ITEMS_PER_THREAD            = CUB_MAX(1, (NOMINAL_ITEMS_PER_THREAD * 4 / sizeof(T))),
         };
-        typedef BlockScanTilesPolicy<256, ITEMS_PER_THREAD,  BLOCK_LOAD_WARP_TRANSPOSE, false, LOAD_DEFAULT, BLOCK_STORE_WARP_TRANSPOSE, false, BLOCK_SCAN_RAKING_MEMOIZE> MultiBlockPolicy;
+        typedef BlockScanTilesPolicy<256, ITEMS_PER_THREAD,  BLOCK_LOAD_WARP_TRANSPOSE, false, LOAD_DEFAULT, BLOCK_STORE_WARP_TRANSPOSE, false, BLOCK_SCAN_RAKING_MEMOIZE> ScanPolicy;
     };
 
     /// SM20 tune
@@ -247,7 +247,7 @@ struct DeviceScan
             NOMINAL_ITEMS_PER_THREAD    = 15,   // 4byte items
             ITEMS_PER_THREAD            = CUB_MIN(NOMINAL_ITEMS_PER_THREAD, CUB_MAX(1, (NOMINAL_ITEMS_PER_THREAD * 4 / sizeof(T)))),
         };
-        typedef BlockScanTilesPolicy<128, ITEMS_PER_THREAD, BLOCK_LOAD_WARP_TRANSPOSE, false, LOAD_DEFAULT, BLOCK_STORE_WARP_TRANSPOSE, false, BLOCK_SCAN_RAKING_MEMOIZE> MultiBlockPolicy;
+        typedef BlockScanTilesPolicy<128, ITEMS_PER_THREAD, BLOCK_LOAD_WARP_TRANSPOSE, false, LOAD_DEFAULT, BLOCK_STORE_WARP_TRANSPOSE, false, BLOCK_SCAN_RAKING_MEMOIZE> ScanPolicy;
     };
 
     /// SM10 tune
@@ -258,7 +258,7 @@ struct DeviceScan
             NOMINAL_ITEMS_PER_THREAD    = 7,   // 4byte items
             ITEMS_PER_THREAD            = CUB_MAX(1, (NOMINAL_ITEMS_PER_THREAD * 4 / sizeof(T))),
         };
-        typedef BlockScanTilesPolicy<128, ITEMS_PER_THREAD, BLOCK_LOAD_TRANSPOSE, false, LOAD_DEFAULT, BLOCK_STORE_TRANSPOSE, false, BLOCK_SCAN_RAKING> MultiBlockPolicy;
+        typedef BlockScanTilesPolicy<128, ITEMS_PER_THREAD, BLOCK_LOAD_TRANSPOSE, false, LOAD_DEFAULT, BLOCK_STORE_TRANSPOSE, false, BLOCK_SCAN_RAKING> ScanPolicy;
     };
 
 
@@ -275,35 +275,35 @@ struct DeviceScan
                                                         100;
 
         // Tuned policy set for the current PTX compiler pass
-        typedef TunedPolicies<T, SizeT, PTX_TUNE_ARCH> PtxPassTunedPolicies;
+        typedef TunedPolicies<T, SizeT, PTX_TUNE_ARCH> PtxTunedPolicies;
 
-        // MultiBlockPolicy that opaquely derives from the specialization corresponding to the current PTX compiler pass
-        struct MultiBlockPolicy : PtxPassTunedPolicies::MultiBlockPolicy {};
+        // ScanPolicy that opaquely derives from the specialization corresponding to the current PTX compiler pass
+        struct ScanPolicy : PtxTunedPolicies::ScanPolicy {};
 
         /**
          * Initialize dispatch params with the policies corresponding to the PTX assembly we will use
          */
-        static void InitDispatchParams(int ptx_version, KernelDispachParams &multi_block_dispatch_params)
+        static void InitDispatchParams(int ptx_version, KernelDispachParams &scan_dispatch_params)
         {
             if (ptx_version >= 350)
             {
                 typedef TunedPolicies<T, SizeT, 350> TunedPolicies;
-                multi_block_dispatch_params.Init<typename TunedPolicies::MultiBlockPolicy>();
+                scan_dispatch_params.Init<typename TunedPolicies::ScanPolicy>();
             }
             else if (ptx_version >= 300)
             {
                 typedef TunedPolicies<T, SizeT, 300> TunedPolicies;
-                multi_block_dispatch_params.Init<typename TunedPolicies::MultiBlockPolicy>();
+                scan_dispatch_params.Init<typename TunedPolicies::ScanPolicy>();
             }
             else if (ptx_version >= 200)
             {
                 typedef TunedPolicies<T, SizeT, 200> TunedPolicies;
-                multi_block_dispatch_params.Init<typename TunedPolicies::MultiBlockPolicy>();
+                scan_dispatch_params.Init<typename TunedPolicies::ScanPolicy>();
             }
             else
             {
                 typedef TunedPolicies<T, SizeT, 100> TunedPolicies;
-                multi_block_dispatch_params.Init<typename TunedPolicies::MultiBlockPolicy>();
+                scan_dispatch_params.Init<typename TunedPolicies::ScanPolicy>();
             }
         }
     };
@@ -317,21 +317,21 @@ struct DeviceScan
      * Internal dispatch routine
      */
     template <
-        typename                    InitScanKernelPtr,              ///< Function type of cub::InitScanKernel
-        typename                    MultiBlockScanKernelPtr,        ///< Function type of cub::MultiBlockScanKernel
+        typename                    ScanInitKernelPtr,              ///< Function type of cub::ScanInitKernel
+        typename                    ScanKernelPtr,                  ///< Function type of cub::ScanKernel
         typename                    InputIteratorRA,                ///< Random-access iterator type for input (may be a simple pointer type)
         typename                    OutputIteratorRA,               ///< Random-access iterator type for output (may be a simple pointer type)
         typename                    ScanOp,                         ///< Binary scan operator type having member <tt>T operator()(const T &a, const T &b)</tt>
         typename                    Identity,                       ///< Identity value type (cub::NullType for inclusive scans)
-        typename                    SizeT>                          ///< Integral type used for global array indexing
+        typename                    SizeT>                          ///< Integer type used for global array indexing
     __host__ __device__ __forceinline__
     static cudaError_t Dispatch(
         int                         ptx_version,                    ///< [in] PTX version
         void                        *d_temp_storage,                ///< [in] %Device allocation of temporary storage.  When NULL, the required allocation size is returned in \p temp_storage_bytes and no work is done.
         size_t                      &temp_storage_bytes,            ///< [in,out] Size in bytes of \p d_temp_storage allocation.
-        InitScanKernelPtr           init_kernel,                    ///< [in] Kernel function pointer to parameterization of cub::InitScanKernel
-        MultiBlockScanKernelPtr     multi_block_kernel,             ///< [in] Kernel function pointer to parameterization of cub::MultiBlockScanKernel
-        KernelDispachParams         &multi_block_dispatch_params,   ///< [in] Dispatch parameters that match the policy that \p multi_block_kernel was compiled for
+        ScanInitKernelPtr           init_kernel,                    ///< [in] Kernel function pointer to parameterization of cub::ScanInitKernel
+        ScanKernelPtr               scan_kernel,                    ///< [in] Kernel function pointer to parameterization of cub::ScanKernel
+        KernelDispachParams         &scan_dispatch_params,          ///< [in] Dispatch parameters that match the policy that \p scan_kernel was compiled for
         InputIteratorRA             d_in,                           ///< [in] Iterator pointing to scan input
         OutputIteratorRA            d_out,                          ///< [in] Iterator pointing to scan output
         ScanOp                      scan_op,                        ///< [in] Binary scan operator
@@ -357,19 +357,19 @@ struct DeviceScan
         typedef typename std::iterator_traits<InputIteratorRA>::value_type T;
 
         // Tile status descriptor type
-        typedef DeviceScanTileDescriptor<T> DeviceScanTileDescriptorT;
+        typedef ScanTileDescriptor<T> ScanTileDescriptorT;
 
         cudaError error = cudaSuccess;
         do
         {
             // Number of input tiles
-            int num_tiles = (num_items + multi_block_dispatch_params.tile_size - 1) / multi_block_dispatch_params.tile_size;
+            int num_tiles = (num_items + scan_dispatch_params.tile_size - 1) / scan_dispatch_params.tile_size;
 
             // Temporary storage allocation requirements
             void* allocations[2];
             size_t allocation_sizes[2] =
             {
-                (num_tiles + TILE_STATUS_PADDING) * sizeof(DeviceScanTileDescriptorT),      // bytes needed for tile status descriptors
+                (num_tiles + TILE_STATUS_PADDING) * sizeof(ScanTileDescriptorT),      // bytes needed for tile status descriptors
                 GridQueue<int>::AllocationSize()                                            // bytes needed for grid queue descriptor
             };
 
@@ -381,7 +381,7 @@ struct DeviceScan
                 return cudaSuccess;
 
             // Global list of tile status
-            DeviceScanTileDescriptorT *d_tile_status = (DeviceScanTileDescriptorT*) allocations[0];
+            ScanTileDescriptorT *d_tile_status = (ScanTileDescriptorT*) allocations[0];
 
             // Grid queue descriptor
             GridQueue<int> queue(allocations[1]);
@@ -401,13 +401,13 @@ struct DeviceScan
             if (stream_synchronous && (CubDebug(error = SyncStream(stream)))) break;
 
             // Get grid size for multi-block kernel
-            int multi_block_grid_size;
+            int scan_grid_size;
             int multi_sm_occupancy = -1;
             if (ptx_version < 200)
             {
                 // We don't have atomics (or don't have fast ones), so just assign one
                 // block per tile (limited to 65K tiles)
-                multi_block_grid_size = num_tiles;
+                scan_grid_size = num_tiles;
             }
             else
             {
@@ -420,10 +420,10 @@ struct DeviceScan
                 int sm_count;
                 if (CubDebug(error = cudaDeviceGetAttribute (&sm_count, cudaDevAttrMultiProcessorCount, device_ordinal))) break;
 
-                // Get a rough estimate of multi_block_kernel SM occupancy based upon the maximum SM occupancy of the targeted PTX architecture
+                // Get a rough estimate of scan_kernel SM occupancy based upon the maximum SM occupancy of the targeted PTX architecture
                 multi_sm_occupancy = CUB_MIN(
                     ArchProps<CUB_PTX_ARCH>::MAX_SM_THREADBLOCKS,
-                    ArchProps<CUB_PTX_ARCH>::MAX_SM_THREADS / multi_block_dispatch_params.block_threads);
+                    ArchProps<CUB_PTX_ARCH>::MAX_SM_THREADS / scan_dispatch_params.block_threads);
 
 #ifndef __CUDA_ARCH__
                 // We're on the host, so come up with a
@@ -432,24 +432,24 @@ struct DeviceScan
 
                 if (CubDebug(error = device_props.MaxSmOccupancy(
                     multi_sm_occupancy,
-                    multi_block_kernel,
-                    multi_block_dispatch_params.block_threads))) break;
+                    scan_kernel,
+                    scan_dispatch_params.block_threads))) break;
 #endif
-                // Get device occupancy for multi_block_kernel
-                int multi_block_occupancy = multi_sm_occupancy * sm_count;
+                // Get device occupancy for scan_kernel
+                int scan_occupancy = multi_sm_occupancy * sm_count;
 
-                // Get grid size for multi_block_kernel
-                multi_block_grid_size = (num_tiles < multi_block_occupancy) ?
+                // Get grid size for scan_kernel
+                scan_grid_size = (num_tiles < scan_occupancy) ?
                     num_tiles :                 // Not enough to fill the device with threadblocks
-                    multi_block_occupancy;      // Fill the device with threadblocks
+                    scan_occupancy;      // Fill the device with threadblocks
             }
 
-            // Log multi_block_kernel configuration
-            if (stream_synchronous) CubLog("Invoking multi_block_kernel<<<%d, %d, 0, %lld>>>(), %d items per thread, %d SM occupancy\n",
-                multi_block_grid_size, multi_block_dispatch_params.block_threads, (long long) stream, multi_block_dispatch_params.items_per_thread, multi_sm_occupancy);
+            // Log scan_kernel configuration
+            if (stream_synchronous) CubLog("Invoking scan_kernel<<<%d, %d, 0, %lld>>>(), %d items per thread, %d SM occupancy\n",
+                scan_grid_size, scan_dispatch_params.block_threads, (long long) stream, scan_dispatch_params.items_per_thread, multi_sm_occupancy);
 
-            // Invoke multi_block_kernel
-            multi_block_kernel<<<multi_block_grid_size, multi_block_dispatch_params.block_threads, 0, stream>>>(
+            // Invoke scan_kernel
+            scan_kernel<<<scan_grid_size, scan_dispatch_params.block_threads, 0, stream>>>(
                 d_in,
                 d_out,
                 d_tile_status,
@@ -478,7 +478,7 @@ struct DeviceScan
         typename                    OutputIteratorRA,               ///< Random-access iterator type for output (may be a simple pointer type)
         typename                    ScanOp,                         ///< Binary scan operator type having member <tt>T operator()(const T &a, const T &b)</tt>
         typename                    Identity,                       ///< Identity value type (cub::NullType for inclusive scans)
-        typename                    SizeT>                          ///< Integral type used for global array indexing
+        typename                    SizeT>                          ///< Integer type used for global array indexing
     __host__ __device__ __forceinline__
     static cudaError_t Dispatch(
         void                        *d_temp_storage,                ///< [in] %Device allocation of temporary storage.  When NULL, the required allocation size is returned in \p temp_storage_bytes and no work is done.
@@ -494,34 +494,34 @@ struct DeviceScan
         // Data type
         typedef typename std::iterator_traits<InputIteratorRA>::value_type T;
 
-        // Tuning polices for the PTX architecture that will get dispatched to
-        typedef PtxDefaultPolicies<T, SizeT> PtxDefaultPolicies;
-        typedef typename PtxDefaultPolicies::MultiBlockPolicy MultiBlockPolicy;
+        // Tuning polices
+        typedef PtxDefaultPolicies<T, SizeT>                    PtxDefaultPolicies;     // Wrapper of default kernel policies
+        typedef typename PtxDefaultPolicies::ScanPolicy   ScanPolicy;       // Scan kernel policy
 
         cudaError error = cudaSuccess;
         do
         {
             // Declare dispatch parameters
-            KernelDispachParams multi_block_dispatch_params;
+            KernelDispachParams scan_dispatch_params;
 
             int ptx_version;
 #ifdef __CUDA_ARCH__
             // We're on the device, so initialize the dispatch parameters with the PtxDefaultPolicies directly
-            multi_block_dispatch_params.Init<MultiBlockPolicy>();
+            scan_dispatch_params.Init<ScanPolicy>();
             ptx_version = CUB_PTX_ARCH;
 #else
             // We're on the host, so lookup and initialize the dispatch parameters with the policies that match the device's PTX version
             if (CubDebug(error = PtxVersion(ptx_version))) break;
-            PtxDefaultPolicies::InitDispatchParams(ptx_version, multi_block_dispatch_params);
+            PtxDefaultPolicies::InitDispatchParams(ptx_version, scan_dispatch_params);
 #endif
 
             Dispatch(
                 ptx_version,
                 d_temp_storage,
                 temp_storage_bytes,
-                InitScanKernel<T, SizeT>,
-                MultiBlockScanKernel<MultiBlockPolicy, InputIteratorRA, OutputIteratorRA, T, ScanOp, Identity, SizeT>,
-                multi_block_dispatch_params,
+                ScanInitKernel<T, SizeT>,
+                ScanKernel<ScanPolicy, InputIteratorRA, OutputIteratorRA, T, ScanOp, Identity, SizeT>,
+                scan_dispatch_params,
                 d_in,
                 d_out,
                 scan_op,

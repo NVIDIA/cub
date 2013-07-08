@@ -64,7 +64,7 @@ namespace cub {
 template <
     int                                             BINS,                   ///< Number of histogram bins per channel
     int                                             ACTIVE_CHANNELS,        ///< Number of channels actively being histogrammed
-    typename                                        SizeT,                  ///< Integral type used for global array indexing
+    typename                                        SizeT,                  ///< Integer type used for global array indexing
     typename                                        HistoCounter>           ///< Integral type for counting sample occurrences per histogram bin
 __launch_bounds__ (BINS, 1)
 __global__ void InitHistoKernel(
@@ -87,7 +87,7 @@ template <
     int                                             ACTIVE_CHANNELS,            ///< Number of channels actively being histogrammed
     typename                                        InputIteratorRA,            ///< The input iterator type (may be a simple pointer type).  Must have a value type that is assignable to <tt>unsigned char</tt>
     typename                                        HistoCounter,               ///< Integral type for counting sample occurrences per histogram bin
-    typename                                        SizeT>                      ///< Integral type used for global array indexing
+    typename                                        SizeT>                      ///< Integer type used for global array indexing
 __launch_bounds__ (int(BlockHistoTilesPolicy::BLOCK_THREADS), BlockHistoTilesPolicy::SM_OCCUPANCY)
 __global__ void MultiBlockHistoKernel(
     InputIteratorRA                                 d_samples,                  ///< [in] Array of sample data. (Channels, if any, are interleaved in "AOS" format)
@@ -296,13 +296,13 @@ struct DeviceHisto
                                                         100;
 
         // Tuned policy set for the current PTX compiler pass
-        typedef TunedPolicies<CHANNELS, ACTIVE_CHANNELS, GRID_ALGORITHM, PTX_TUNE_ARCH> PtxPassTunedPolicies;
+        typedef TunedPolicies<CHANNELS, ACTIVE_CHANNELS, GRID_ALGORITHM, PTX_TUNE_ARCH> PtxTunedPolicies;
 
         // Subscription factor for the current PTX compiler pass
-        static const int SUBSCRIPTION_FACTOR = PtxPassTunedPolicies::SUBSCRIPTION_FACTOR;
+        static const int SUBSCRIPTION_FACTOR = PtxTunedPolicies::SUBSCRIPTION_FACTOR;
 
         // MultiBlockPolicy that opaquely derives from the specialization corresponding to the current PTX compiler pass
-        struct MultiBlockPolicy : PtxPassTunedPolicies::MultiBlockPolicy {};
+        struct MultiBlockPolicy : PtxTunedPolicies::MultiBlockPolicy {};
 
         /**
          * Initialize dispatch params with the policies corresponding to the PTX assembly we will use
@@ -349,7 +349,7 @@ struct DeviceHisto
         typename                    AggregateHistoKernelPtr,            ///< Function type of cub::AggregateHistoKernel
         typename                    InputIteratorRA,                    ///< The input iterator type (may be a simple pointer type).  Must have a value type that is assignable to <tt>unsigned char</tt>
         typename                    HistoCounter,                       ///< Integral type for counting sample occurrences per histogram bin
-        typename                    SizeT>                              ///< Integral type used for global array indexing
+        typename                    SizeT>                              ///< Integer type used for global array indexing
     __host__ __device__ __forceinline__
     static cudaError_t Dispatch(
         void                        *d_temp_storage,                    ///< [in] %Device allocation of temporary storage.  When NULL, the required allocation size is returned in \p temp_storage_bytes and no work is done.

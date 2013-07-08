@@ -52,12 +52,12 @@ namespace cub {
 /**
  * Enumerations of tile status
  */
-enum DeviceScanTileStatus
+enum ScanTileStatus
 {
-    DEVICE_SCAN_TILE_OOB,          // Out-of-bounds (e.g., padding)
-    DEVICE_SCAN_TILE_INVALID,      // Not yet processed
-    DEVICE_SCAN_TILE_PARTIAL,      // Tile aggregate is available
-    DEVICE_SCAN_TILE_PREFIX,       // Inclusive tile prefix is available
+    SCAN_TILE_OOB,          // Out-of-bounds (e.g., padding)
+    SCAN_TILE_INVALID,      // Not yet processed
+    SCAN_TILE_PARTIAL,      // Tile aggregate is available
+    SCAN_TILE_PREFIX,       // Inclusive tile prefix is available
 };
 
 
@@ -70,7 +70,7 @@ enum DeviceScanTileStatus
 template <
     typename    T,
     bool        SINGLE_WORD = (PowerOfTwo<sizeof(T)>::VALUE && (sizeof(T) <= 8))>
-struct DeviceScanTileDescriptor
+struct ScanTileDescriptor
 {
     // Status word type
     typedef typename If<(sizeof(T) == 8),
@@ -93,40 +93,40 @@ struct DeviceScanTileDescriptor
     T           value;
     StatusWord  status;
 
-    static __device__ __forceinline__ void SetPrefix(DeviceScanTileDescriptor *ptr, T prefix)
+    static __device__ __forceinline__ void SetPrefix(ScanTileDescriptor *ptr, T prefix)
     {
-        DeviceScanTileDescriptor tile_descriptor;
-        tile_descriptor.status = DEVICE_SCAN_TILE_PREFIX;
+        ScanTileDescriptor tile_descriptor;
+        tile_descriptor.status = SCAN_TILE_PREFIX;
         tile_descriptor.value = prefix;
 
         VectorWord alias;
-        *reinterpret_cast<DeviceScanTileDescriptor*>(&alias) = tile_descriptor;
+        *reinterpret_cast<ScanTileDescriptor*>(&alias) = tile_descriptor;
         ThreadStore<STORE_CG>(reinterpret_cast<VectorWord*>(ptr), alias);
     }
 
-    static __device__ __forceinline__ void SetPartial(DeviceScanTileDescriptor *ptr, T partial)
+    static __device__ __forceinline__ void SetPartial(ScanTileDescriptor *ptr, T partial)
     {
-        DeviceScanTileDescriptor tile_descriptor;
-        tile_descriptor.status = DEVICE_SCAN_TILE_PARTIAL;
+        ScanTileDescriptor tile_descriptor;
+        tile_descriptor.status = SCAN_TILE_PARTIAL;
         tile_descriptor.value = partial;
 
         VectorWord alias;
-        *reinterpret_cast<DeviceScanTileDescriptor*>(&alias) = tile_descriptor;
+        *reinterpret_cast<ScanTileDescriptor*>(&alias) = tile_descriptor;
         ThreadStore<STORE_CG>(reinterpret_cast<VectorWord*>(ptr), alias);
     }
 
     static __device__ __forceinline__ void WaitForValid(
-        DeviceScanTileDescriptor    *ptr,
+        ScanTileDescriptor    *ptr,
         int                     &status,
         T                       &value)
     {
-        DeviceScanTileDescriptor tile_descriptor;
+        ScanTileDescriptor tile_descriptor;
         while (true)
         {
             VectorWord alias = ThreadLoad<LOAD_CG>(reinterpret_cast<VectorWord*>(ptr));
 
-            tile_descriptor = *reinterpret_cast<DeviceScanTileDescriptor*>(&alias);
-            if (tile_descriptor.status != DEVICE_SCAN_TILE_INVALID) break;
+            tile_descriptor = *reinterpret_cast<ScanTileDescriptor*>(&alias);
+            if (tile_descriptor.status != SCAN_TILE_INVALID) break;
 
             __threadfence_block();
         }
@@ -145,7 +145,7 @@ struct DeviceScanTileDescriptor
  * the same machine word.
  */
 template <typename T>
-struct DeviceScanTileDescriptor<T, false>
+struct ScanTileDescriptor<T, false>
 {
     T       prefix_value;
     T       partial_value;
@@ -157,37 +157,37 @@ struct DeviceScanTileDescriptor<T, false>
         T       padding;
     };
 
-    static __device__ __forceinline__ void SetPrefix(DeviceScanTileDescriptor *ptr, T prefix)
+    static __device__ __forceinline__ void SetPrefix(ScanTileDescriptor *ptr, T prefix)
     {
         ThreadStore<STORE_CG>(&ptr->prefix_value, prefix);
         __threadfence_block();
 //        __threadfence();        // __threadfence_block seems sufficient on current architectures to prevent reordeing
-        ThreadStore<STORE_CG>(&ptr->status, (int) DEVICE_SCAN_TILE_PREFIX);
+        ThreadStore<STORE_CG>(&ptr->status, (int) SCAN_TILE_PREFIX);
 
     }
 
-    static __device__ __forceinline__ void SetPartial(DeviceScanTileDescriptor *ptr, T partial)
+    static __device__ __forceinline__ void SetPartial(ScanTileDescriptor *ptr, T partial)
     {
         ThreadStore<STORE_CG>(&ptr->partial_value, partial);
         __threadfence_block();
 //        __threadfence();        // __threadfence_block seems sufficient on current architectures to prevent reordeing
-        ThreadStore<STORE_CG>(&ptr->status, (int) DEVICE_SCAN_TILE_PARTIAL);
+        ThreadStore<STORE_CG>(&ptr->status, (int) SCAN_TILE_PARTIAL);
     }
 
     static __device__ __forceinline__ void WaitForValid(
-        DeviceScanTileDescriptor    *ptr,
+        ScanTileDescriptor    *ptr,
         int                         &status,
         T                           &value)
     {
         while (true)
         {
             status = ThreadLoad<LOAD_CG>(&ptr->status);
-            if (status != DEVICE_SCAN_TILE_INVALID) break;
+            if (status != SCAN_TILE_INVALID) break;
 
             __threadfence_block();
         }
 
-        value = (status == DEVICE_SCAN_TILE_PARTIAL) ?
+        value = (status == SCAN_TILE_PARTIAL) ?
             ThreadLoad<LOAD_CG>(&ptr->partial_value) :
             ThreadLoad<LOAD_CG>(&ptr->prefix_value);
     }
@@ -211,10 +211,10 @@ struct DeviceScanBlockPrefixOp
     typedef WarpReduceT::TempStorage        TempStorage;
 
     // Device tile status descriptor type
-    typedef DeviceScanTileDescriptor<T>     DeviceScanTileDescriptorT;
+    typedef ScanTileDescriptor<T>     ScanTileDescriptorT;
 
     // Fields
-    DeviceScanTileDescriptorT   *d_tile_status; ///< Pointer to array of tile status
+    ScanTileDescriptorT   *d_tile_status; ///< Pointer to array of tile status
     TempStorage                 &temp_storage;  ///< Reference to a warp-reduction instance
     ScanOp                      scan_op;        ///< Binary scan operator
     int                         tile_idx;       ///< The current tile index
@@ -222,7 +222,7 @@ struct DeviceScanBlockPrefixOp
     // Constructor
     __device__ __forceinline__
     DeviceScanBlockPrefixOp(
-        DeviceScanTileDescriptorT   *d_tile_status,
+        ScanTileDescriptorT   *d_tile_status,
         TempStorage                 &temp_storage,
         ScanOp                      scan_op,
         int                         tile_idx) :
@@ -240,10 +240,10 @@ struct DeviceScanBlockPrefixOp
         T                           &window_prefix)
     {
         T value;
-        DeviceScanTileDescriptorT::WaitForValid(d_tile_status + predecessor_idx, predecessor_status, value);
+        ScanTileDescriptorT::WaitForValid(d_tile_status + predecessor_idx, predecessor_status, value);
 
         // Perform a segmented reduction to get the prefix for the current window
-        int flag = (predecessor_status != DEVICE_SCAN_TILE_PARTIAL);
+        int flag = (predecessor_status != SCAN_TILE_PARTIAL);
         window_prefix = WarpReduceT(temp_storage).TailSegmentedReduce(value, flag, scan_op);
     }
 
@@ -255,7 +255,7 @@ struct DeviceScanBlockPrefixOp
         // Update our status with our tile-aggregate
         if (threadIdx.x == 0)
         {
-            DeviceScanTileDescriptorT::SetPartial(d_tile_status + tile_idx, block_aggregate);
+            ScanTileDescriptorT::SetPartial(d_tile_status + tile_idx, block_aggregate);
         }
 
         // Wait for the window of predecessor blocks to become valid
@@ -268,7 +268,7 @@ struct DeviceScanBlockPrefixOp
         T block_prefix = window_prefix;
 
         // Keep sliding the window back until we come across a tile whose prefix (not aggregate) is known
-        while (WarpAll(predecessor_status != DEVICE_SCAN_TILE_PREFIX))
+        while (WarpAll(predecessor_status != SCAN_TILE_PREFIX))
         {
             predecessor_idx -= PtxArchProps::WARP_THREADS;
 
@@ -280,7 +280,7 @@ struct DeviceScanBlockPrefixOp
         // Update our status with our inclusive block_prefix
         if (threadIdx.x == 0)
         {
-            DeviceScanTileDescriptorT::SetPrefix(
+            ScanTileDescriptorT::SetPrefix(
                 d_tile_status + tile_idx,
                 scan_op(block_prefix, block_aggregate));
         }

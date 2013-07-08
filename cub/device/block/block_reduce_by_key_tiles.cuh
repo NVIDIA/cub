@@ -28,7 +28,7 @@
 
 /**
  * \file
- * cub::BlockReduceByKeyTiles implements a stateful abstraction of CUDA thread blocks for participating in device-wide reduce-value-by-key.
+ * cub::BlockReduceByKeyiles implements a stateful abstraction of CUDA thread blocks for participating in device-wide reduce-value-by-key.
  */
 
 #pragma once
@@ -54,7 +54,7 @@ namespace cub {
 
 /// Scan tuple data type for reduce-value-by-key
 template <typename Value, typename SizeT>
-struct ReduceByKeyTuple
+struct ReduceByKeyuple
 {
     Value   value;      // Initially set as value, contains segment aggregate after prefix scan
     SizeT   flag;       // Initially set as a tail flag, contains scatter offset after prefix scan
@@ -73,12 +73,12 @@ struct ReduceByKeyScanOp
     {}
 
     /// Binary scan operator
-    template <typename ReduceByKeyTuple>
-    __device__ __forceinline__ ReduceByKeyTuple operator()(
-        const ReduceByKeyTuple &first,
-        const ReduceByKeyTuple &second)
+    template <typename ReduceByKeyuple>
+    __device__ __forceinline__ ReduceByKeyuple operator()(
+        const ReduceByKeyuple &first,
+        const ReduceByKeyuple &second)
     {
-        ReduceByKeyTuple retval;
+        ReduceByKeyuple retval;
         retval.val = (second.flag) ? second.val : reduction_op(first.val, second.val);
         retval.flag = first.flag + second.flag;
         return retval;
@@ -92,7 +92,7 @@ struct ReduceByKeyScanOp
  ******************************************************************************/
 
 /**
- * Tuning policy for BlockReduceByKeyTiles
+ * Tuning policy for BlockReduceByKeyiles
  */
 template <
     int                         _BLOCK_THREADS,
@@ -101,7 +101,7 @@ template <
     bool                        _LOAD_WARP_TIME_SLICING,
     PtxLoadModifier             _LOAD_MODIFIER,
     BlockScanAlgorithm          _SCAN_ALGORITHM>
-struct BlockReduceByKeyTilesPolicy
+struct BlockReduceByKeyilesPolicy
 {
     enum
     {
@@ -121,17 +121,17 @@ struct BlockReduceByKeyTilesPolicy
  ******************************************************************************/
 
 /**
- * \brief BlockReduceByKeyTiles implements a stateful abstraction of CUDA thread blocks for participating in device-wide prefix scan.
+ * \brief BlockReduceByKeyiles implements a stateful abstraction of CUDA thread blocks for participating in device-wide prefix scan.
  */
 template <
-    typename BlockReduceByKeyTilesPolicy,   ///< Tuning policy
+    typename BlockReduceByKeyilesPolicy,   ///< Tuning policy
     typename KeyInputIteratorRA,            ///< Random-access input iterator type for keys
     typename KeyOutputIteratorRA,           ///< Random-access output iterator type for keys
     typename ValueInputIteratorRA,          ///< Random-access input iterator type for values
     typename ValueOutputIteratorRA,         ///< Random-access output iterator type for values
     typename ReductionOp,                   ///< Reduction functor type
     typename SizeT>                         ///< Offset integer type
-struct BlockReduceByKeyTiles
+struct BlockReduceByKeyiles
 {
     //---------------------------------------------------------------------
     // Types and constants
@@ -144,8 +144,8 @@ struct BlockReduceByKeyTiles
     // Constants
     enum
     {
-        BLOCK_THREADS       = BlockReduceByKeyTilesPolicy::BLOCK_THREADS,
-        ITEMS_PER_THREAD    = BlockReduceByKeyTilesPolicy::ITEMS_PER_THREAD,
+        BLOCK_THREADS       = BlockReduceByKeyilesPolicy::BLOCK_THREADS,
+        ITEMS_PER_THREAD    = BlockReduceByKeyilesPolicy::ITEMS_PER_THREAD,
         TILE_ITEMS          = BLOCK_THREADS * ITEMS_PER_THREAD,
         STATUS_PADDING      = PtxArchProps::WARP_THREADS,
     };
@@ -153,29 +153,29 @@ struct BlockReduceByKeyTiles
     // Block load type for keys
     typedef BlockLoad<
         KeyInputIteratorRA,
-        BlockReduceByKeyTilesPolicy::BLOCK_THREADS,
-        BlockReduceByKeyTilesPolicy::ITEMS_PER_THREAD,
-        BlockReduceByKeyTilesPolicy::LOAD_ALGORITHM,
-        BlockReduceByKeyTilesPolicy::LOAD_MODIFIER,
-        BlockReduceByKeyTilesPolicy::LOAD_WARP_TIME_SLICING>    BlockLoadKeys;
+        BlockReduceByKeyilesPolicy::BLOCK_THREADS,
+        BlockReduceByKeyilesPolicy::ITEMS_PER_THREAD,
+        BlockReduceByKeyilesPolicy::LOAD_ALGORITHM,
+        BlockReduceByKeyilesPolicy::LOAD_MODIFIER,
+        BlockReduceByKeyilesPolicy::LOAD_WARP_TIME_SLICING>    BlockLoadKeys;
 
     // Block load type for values
     typedef BlockLoad<
         ValueInputIteratorRA,
-        BlockReduceByKeyTilesPolicy::BLOCK_THREADS,
-        BlockReduceByKeyTilesPolicy::ITEMS_PER_THREAD,
-        BlockReduceByKeyTilesPolicy::LOAD_ALGORITHM,
-        BlockReduceByKeyTilesPolicy::LOAD_MODIFIER,
-        BlockReduceByKeyTilesPolicy::LOAD_WARP_TIME_SLICING>    BlockLoadValues;
+        BlockReduceByKeyilesPolicy::BLOCK_THREADS,
+        BlockReduceByKeyilesPolicy::ITEMS_PER_THREAD,
+        BlockReduceByKeyilesPolicy::LOAD_ALGORITHM,
+        BlockReduceByKeyilesPolicy::LOAD_MODIFIER,
+        BlockReduceByKeyilesPolicy::LOAD_WARP_TIME_SLICING>    BlockLoadValues;
 
     // Block discontinuity type for setting tail flags
     typedef BlockDiscontinuity<Key, BLOCK_THREADS>              BlockDiscontinuityKeys;
 
     // Scan tuple type
-    typedef ReduceByKeyTuple<Value, SizeT>                      ScanTuple;
+    typedef ReduceByKeyuple<Value, SizeT>                      ScanTuple;
 
     // Device tile status descriptor type
-    typedef DeviceScanTileDescriptor<ScanTuple>                 DeviceScanTileDescriptorT;
+    typedef ScanTileDescriptor<ScanTuple>                 ScanTileDescriptorT;
 
     // Block scan functor type
     typedef ReduceByKeyScanOp<ReductionOp>                      ScanOp;
@@ -186,8 +186,8 @@ struct BlockReduceByKeyTiles
     // Block scan type
     typedef BlockScan<
         ScanTuple,
-        BlockReduceByKeyTilesPolicy::BLOCK_THREADS,
-        BlockReduceByKeyTilesPolicy::SCAN_ALGORITHM>            BlockScanT;
+        BlockReduceByKeyilesPolicy::BLOCK_THREADS,
+        BlockReduceByKeyilesPolicy::SCAN_ALGORITHM>            BlockScanT;
 
     // Shared memory type for this threadblock
     struct TempStorage
@@ -217,7 +217,7 @@ struct BlockReduceByKeyTiles
     KeyOutputIteratorRA         d_keys_out;         ///< Key output data
     ValueInputIteratorRA        d_values_in;        ///< Value input data
     ValueOutputIteratorRA       d_values_out;       ///< Value output data
-    DeviceScanTileDescriptorT       *d_tile_status;     ///< Global list of tile status
+    ScanTileDescriptorT       *d_tile_status;     ///< Global list of tile status
     ScanOp                      scan_op;            ///< Binary scan operator
     int                         num_tiles;          ///< Total number of input tiles for the entire problem
     SizeT                       num_items;          ///< Total number of scan items for the entire problem
@@ -229,13 +229,13 @@ struct BlockReduceByKeyTiles
 
     // Constructor
     __device__ __forceinline__
-    BlockReduceByKeyTiles(
+    BlockReduceByKeyiles(
         TempStorage                 &temp_storage,      ///< Reference to temp_storage
         KeyInputIteratorRA          d_keys_in,          ///< Key input data
         KeyOutputIteratorRA         d_keys_out,         ///< Key output data
         ValueInputIteratorRA        d_values_in,        ///< Value input data
         ValueOutputIteratorRA       d_values_out,       ///< Value output data
-        DeviceScanTileDescriptorT       *d_tile_status,     ///< Global list of tile status
+        ScanTileDescriptorT       *d_tile_status,     ///< Global list of tile status
         ReductionOp                 reduction_op,       ///< Binary scan operator
         int                         num_tiles,          ///< Total number of input tiles for the entire problem
         SizeT                       num_items)          ///< Total number of scan items for the entire problem
@@ -315,7 +315,7 @@ struct BlockReduceByKeyTiles
 
             // Update tile status
             if (threadIdx.x == 0)
-                DeviceScanTileDescriptorT::SetPrefix(d_tile_status, block_aggregate);
+                ScanTileDescriptorT::SetPrefix(d_tile_status, block_aggregate);
         }
         else
         {

@@ -58,12 +58,12 @@ namespace cub {
  * Tuning policy for BlockReduceTiles
  */
 template <
-    int                     _BLOCK_THREADS,
-    int                     _ITEMS_PER_THREAD,
-    int                     _VECTOR_LOAD_LENGTH,
-    BlockReduceAlgorithm    _BLOCK_ALGORITHM,
-    PtxLoadModifier         _LOAD_MODIFIER,
-    GridMappingStrategy     _GRID_MAPPING>
+    int                     _BLOCK_THREADS,         ///< Threads per thread block
+    int                     _ITEMS_PER_THREAD,      ///< Items per thread per tile of input
+    int                     _VECTOR_LOAD_LENGTH,    ///< Number of items per vectorized load
+    BlockReduceAlgorithm    _BLOCK_ALGORITHM,       ///< Cooperative block-wide reduction algorithm to use
+    PtxLoadModifier         _LOAD_MODIFIER,         ///< PTX load modifier
+    GridMappingStrategy     _GRID_MAPPING>          ///< How to map tiles of input onto thread blocks
 struct BlockReduceTilesPolicy
 {
     enum
@@ -189,9 +189,7 @@ struct BlockReduceTiles
 
                 #pragma unroll
                 for (int i = 0; i < WORDS; ++i)
-                {
                     vec_items[i] = alias_ptr[BLOCK_THREADS * i];
-                }
 
                 // Reduce items within each thread stripe
                 stripe_partial = ThreadReduce<ITEMS_PER_THREAD>(
@@ -242,8 +240,12 @@ struct BlockReduceTiles
     }
 
 
+    //---------------------------------------------------------------------
+    // Consume a contiguous segment of tiles
+    //---------------------------------------------------------------------
+
     /**
-     * \brief Reduce a consecutive segment of input tiles
+     * \brief Reduce a contiguous segment of input tiles
      */
     __device__ __forceinline__ void ConsumeTiles(
         SizeT   block_offset,                       ///< [in] Threadblock begin offset (inclusive)
@@ -272,7 +274,7 @@ struct BlockReduceTiles
 
 
     /**
-     * Reduce a consecutive segment of input tiles
+     * Reduce a contiguous segment of input tiles
      */
     __device__ __forceinline__ void ConsumeTiles(
         SizeT                               num_items,          ///< [in] Total number of global input items
@@ -281,10 +283,17 @@ struct BlockReduceTiles
         T                                   &block_aggregate,   ///< [out] Running total
         Int2Type<GRID_MAPPING_EVEN_SHARE>   is_even_share)      ///< [in] Marker type indicating this is an even-share mapping
     {
+        // Initialize even-share descriptor for this thread block
         even_share.BlockInit();
+
+        // Consume input tiles
         ConsumeTiles(even_share.block_offset, even_share.block_oob, block_aggregate);
     }
 
+
+    //---------------------------------------------------------------------
+    // Dynamically consume tiles
+    //---------------------------------------------------------------------
 
     /**
      * Dequeue and reduce tiles of items as part of a inter-block scan

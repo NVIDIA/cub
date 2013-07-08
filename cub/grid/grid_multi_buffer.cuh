@@ -69,18 +69,18 @@ namespace cub {
  */
 template <
     int BUFFER_COUNT,
-    typename _KeyType,
-    typename _ValueType = NullType>
+    typename _Key,
+    typename _Value = NullType>
 struct MultiBuffer
 {
-    typedef _KeyType    KeyType;
-    typedef _ValueType     ValueType;
+    typedef _Key    Key;
+    typedef _Value     Value;
 
     // Set of device vector pointers for keys
-    KeyType* d_keys[BUFFER_COUNT];
+    Key* d_keys[BUFFER_COUNT];
     
     // Set of device vector pointers for values
-    ValueType* d_values[BUFFER_COUNT];
+    Value* d_values[BUFFER_COUNT];
 
     // Selector into the set of device vector pointers (i.e., where the results are)
     int selector;
@@ -105,24 +105,24 @@ struct MultiBuffer
  *
  * Many of the B40C primitives are templated upon the DoubleBuffer type: they
  * are compiled differently depending upon whether the declared type contains
- * keys-only versus key-value pairs (i.e., whether ValueType is NullType
+ * keys-only versus key-value pairs (i.e., whether Value is NullType
  * or some real type).
  *
  * Declaring keys-only storage wrapper:
  *
- *         DoubleBuffer<KeyType> key_storage;
+ *         DoubleBuffer<Key> key_storage;
  *
  * Declaring key-value storage wrapper:
  *
- *         DoubleBuffer<KeyType, ValueType> key_value_storage;
+ *         DoubleBuffer<Key, Value> key_value_storage;
  *
  */
 template <
-    typename KeyType,
-    typename ValueType = NullType>
-struct DoubleBuffer : MultiBuffer<2, KeyType, ValueType>
+    typename Key,
+    typename Value = NullType>
+struct DoubleBuffer : MultiBuffer<2, Key, Value>
 {
-    typedef MultiBuffer<2, KeyType, ValueType> ParentType;
+    typedef MultiBuffer<2, Key, Value> ParentType;
 
     // Constructor
     DoubleBuffer() : ParentType() {}
@@ -134,11 +134,11 @@ struct DoubleBuffer : MultiBuffer<2, KeyType, ValueType>
  * Triple buffer version of the multi-buffer storage abstraction above.
  */
 template <
-    typename KeyType,
-    typename ValueType = NullType>
-struct TripleBuffer : MultiBuffer<3, KeyType, ValueType>
+    typename Key,
+    typename Value = NullType>
+struct TripleBuffer : MultiBuffer<3, Key, Value>
 {
-    typedef MultiBuffer<3, KeyType, ValueType> ParentType;
+    typedef MultiBuffer<3, Key, Value> ParentType;
 
     // Constructor
     TripleBuffer() : ParentType() {}

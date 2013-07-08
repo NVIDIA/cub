@@ -70,10 +70,10 @@ namespace cub {
  * For convenience, BlockRadixSort provides alternative entrypoints that differ by:
  * - Value association (keys-only <b><em>vs.</em></b> key-value-pairs)
  *
- * \tparam KeyType              Key type
+ * \tparam Key              Key type
  * \tparam BLOCK_THREADS        The threadblock size in threads
  * \tparam ITEMS_PER_THREAD     The number of items per thread
- * \tparam ValueType            <b>[optional]</b> Value type (default: cub::NullType)
+ * \tparam Value                <b>[optional]</b> Value type (default: cub::NullType)
  * \tparam RADIX_BITS           <b>[optional]</b> The number of radix bits per digit place (default: 4 bits)
  * \tparam MEMOIZE_OUTER_SCAN   <b>[optional]</b> Whether or not to buffer outer raking scan partials to incur fewer shared memory reads at the expense of higher register pressure (default: true for architectures SM35 and newer, false otherwise).
  * \tparam INNER_SCAN_ALGORITHM <b>[optional]</b> The cub::BlockScanAlgorithm algorithm to use (default: cub::BLOCK_SCAN_WARP_SCANS)
@@ -92,7 +92,7 @@ namespace cub {
  * \par Performance Considerations
  * - The operations are most efficient (lowest instruction overhead) when:
  *      - \p BLOCK_THREADS is a multiple of the architecture's warp size
- *      - \p KeyType is an unsigned integral type
+ *      - \p Key is an unsigned integral type
  *      - Keys are partitioned across the threadblock in a [<em>blocked arrangement</em>](index.html#sec3sec3)
  *
  * \par Algorithm
@@ -159,10 +159,10 @@ namespace cub {
  *      \endcode
  */
 template <
-    typename                KeyType,
+    typename                Key,
     int                     BLOCK_THREADS,
     int                     ITEMS_PER_THREAD,
-    typename                ValueType               = NullType,
+    typename                Value                   = NullType,
     int                     RADIX_BITS              = 4,
     bool                    MEMOIZE_OUTER_SCAN      = (CUB_PTX_ARCH >= 350) ? true : false,
     BlockScanAlgorithm      INNER_SCAN_ALGORITHM    = BLOCK_SCAN_WARP_SCANS,
@@ -176,17 +176,17 @@ private:
      ******************************************************************************/
 
     // Key traits and unsigned bits type
-    typedef NumericTraits<KeyType>              KeyTraits;
-    typedef typename KeyTraits::UnsignedBits    UnsignedBits;
+    typedef NumericTraits<Key>              Keyraits;
+    typedef typename Keyraits::UnsignedBits    UnsignedBits;
 
     /// BlockRadixRank utility type
     typedef BlockRadixRank<BLOCK_THREADS, RADIX_BITS, MEMOIZE_OUTER_SCAN, INNER_SCAN_ALGORITHM, SMEM_CONFIG> BlockRadixRank;
 
     /// BlockExchange utility type for keys
-    typedef BlockExchange<KeyType, BLOCK_THREADS, ITEMS_PER_THREAD> BlockExchangeKeys;
+    typedef BlockExchange<Key, BLOCK_THREADS, ITEMS_PER_THREAD> BlockExchangeKeys;
 
     /// BlockExchange utility type for values
-    typedef BlockExchange<ValueType, BLOCK_THREADS, ITEMS_PER_THREAD> BlockExchangeValues;
+    typedef BlockExchange<Value, BLOCK_THREADS, ITEMS_PER_THREAD> BlockExchangeValues;
 
     /// Shared memory storage layout type
     struct _TempStorage
@@ -290,9 +290,9 @@ public:
      * \smemreuse
      */
     __device__ __forceinline__ void Sort(
-        KeyType             (&keys)[ITEMS_PER_THREAD],          ///< [in-out] Keys to sort
-        int                 begin_bit = 0,                      ///< [in] <b>[optional]</b> The beginning (least-significant) bit index needed for key comparison
-        int                 end_bit = sizeof(KeyType) * 8)      ///< [in] <b>[optional]</b> The past-the-end (most-significant) bit index needed for key comparison
+        Key     (&keys)[ITEMS_PER_THREAD],          ///< [in-out] Keys to sort
+        int     begin_bit   = 0,                    ///< [in] <b>[optional]</b> The beginning (least-significant) bit index needed for key comparison
+        int     end_bit     = sizeof(Key) * 8)      ///< [in] <b>[optional]</b> The past-the-end (most-significant) bit index needed for key comparison
     {
         UnsignedBits (&unsigned_keys)[ITEMS_PER_THREAD] =
             reinterpret_cast<UnsignedBits (&)[ITEMS_PER_THREAD]>(keys);
@@ -301,7 +301,7 @@ public:
         #pragma unroll
         for (int KEY = 0; KEY < ITEMS_PER_THREAD; KEY++)
         {
-            unsigned_keys[KEY] = KeyTraits::TwiddleIn(unsigned_keys[KEY]);
+            unsigned_keys[KEY] = Keyraits::TwiddleIn(unsigned_keys[KEY]);
         }
 
         // Radix sorting passes
@@ -327,7 +327,7 @@ public:
         #pragma unroll
         for (int KEY = 0; KEY < ITEMS_PER_THREAD; KEY++)
         {
-            unsigned_keys[KEY] = KeyTraits::TwiddleOut(unsigned_keys[KEY]);
+            unsigned_keys[KEY] = Keyraits::TwiddleOut(unsigned_keys[KEY]);
         }
     }
 
@@ -338,10 +338,10 @@ public:
      * \smemreuse
      */
     __device__ __forceinline__ void Sort(
-        KeyType             (&keys)[ITEMS_PER_THREAD],          ///< [in-out] Keys to sort
-        ValueType           (&values)[ITEMS_PER_THREAD],        ///< [in-out] Values to sort
-        int                 begin_bit = 0,                      ///< [in] <b>[optional]</b> The beginning (least-significant) bit index needed for key comparison
-        int                 end_bit = sizeof(KeyType) * 8)      ///< [in] <b>[optional]</b> The past-the-end (most-significant) bit index needed for key comparison
+        Key     (&keys)[ITEMS_PER_THREAD],          ///< [in-out] Keys to sort
+        Value   (&values)[ITEMS_PER_THREAD],        ///< [in-out] Values to sort
+        int     begin_bit   = 0,                    ///< [in] <b>[optional]</b> The beginning (least-significant) bit index needed for key comparison
+        int     end_bit     = sizeof(Key) * 8)      ///< [in] <b>[optional]</b> The past-the-end (most-significant) bit index needed for key comparison
     {
         UnsignedBits (&unsigned_keys)[ITEMS_PER_THREAD] =
             reinterpret_cast<UnsignedBits (&)[ITEMS_PER_THREAD]>(keys);
@@ -350,7 +350,7 @@ public:
         #pragma unroll
         for (int KEY = 0; KEY < ITEMS_PER_THREAD; KEY++)
         {
-            unsigned_keys[KEY] = KeyTraits::TwiddleIn(unsigned_keys[KEY]);
+            unsigned_keys[KEY] = Keyraits::TwiddleIn(unsigned_keys[KEY]);
         }
 
         // Radix sorting passes
@@ -381,7 +381,7 @@ public:
         #pragma unroll
         for (int KEY = 0; KEY < ITEMS_PER_THREAD; KEY++)
         {
-            unsigned_keys[KEY] = KeyTraits::TwiddleOut(unsigned_keys[KEY]);
+            unsigned_keys[KEY] = Keyraits::TwiddleOut(unsigned_keys[KEY]);
         }
     }
 
@@ -399,9 +399,9 @@ public:
      * \smemreuse
      */
     __device__ __forceinline__ void SortBlockedToStriped(
-        KeyType             (&keys)[ITEMS_PER_THREAD],          ///< [in-out] Keys to sort
-        int                 begin_bit = 0,                      ///< [in] <b>[optional]</b> The beginning (least-significant) bit index needed for key comparison
-        int                 end_bit = sizeof(KeyType) * 8)      ///< [in] <b>[optional]</b> The past-the-end (most-significant) bit index needed for key comparison
+        Key     (&keys)[ITEMS_PER_THREAD],          ///< [in-out] Keys to sort
+        int     begin_bit   = 0,                    ///< [in] <b>[optional]</b> The beginning (least-significant) bit index needed for key comparison
+        int     end_bit     = sizeof(Key) * 8)      ///< [in] <b>[optional]</b> The past-the-end (most-significant) bit index needed for key comparison
     {
         UnsignedBits (&unsigned_keys)[ITEMS_PER_THREAD] =
             reinterpret_cast<UnsignedBits (&)[ITEMS_PER_THREAD]>(keys);
@@ -410,7 +410,7 @@ public:
         #pragma unroll
         for (int KEY = 0; KEY < ITEMS_PER_THREAD; KEY++)
         {
-            unsigned_keys[KEY] = KeyTraits::TwiddleIn(unsigned_keys[KEY]);
+            unsigned_keys[KEY] = Keyraits::TwiddleIn(unsigned_keys[KEY]);
         }
 
         // Radix sorting passes
@@ -443,7 +443,7 @@ public:
         #pragma unroll
         for (int KEY = 0; KEY < ITEMS_PER_THREAD; KEY++)
         {
-            unsigned_keys[KEY] = KeyTraits::TwiddleOut(unsigned_keys[KEY]);
+            unsigned_keys[KEY] = Keyraits::TwiddleOut(unsigned_keys[KEY]);
         }
     }
 
@@ -454,10 +454,10 @@ public:
      * \smemreuse
      */
     __device__ __forceinline__ void SortBlockedToStriped(
-        KeyType             (&keys)[ITEMS_PER_THREAD],          ///< [in-out] Keys to sort
-        ValueType           (&values)[ITEMS_PER_THREAD],        ///< [in-out] Values to sort
-        int                 begin_bit = 0,                      ///< [in] <b>[optional]</b> The beginning (least-significant) bit index needed for key comparison
-        int                 end_bit = sizeof(KeyType) * 8)      ///< [in] <b>[optional]</b> The past-the-end (most-significant) bit index needed for key comparison
+        Key     (&keys)[ITEMS_PER_THREAD],          ///< [in-out] Keys to sort
+        Value   (&values)[ITEMS_PER_THREAD],        ///< [in-out] Values to sort
+        int     begin_bit   = 0,                    ///< [in] <b>[optional]</b> The beginning (least-significant) bit index needed for key comparison
+        int     end_bit     = sizeof(Key) * 8)      ///< [in] <b>[optional]</b> The past-the-end (most-significant) bit index needed for key comparison
     {
         UnsignedBits (&unsigned_keys)[ITEMS_PER_THREAD] =
             reinterpret_cast<UnsignedBits (&)[ITEMS_PER_THREAD]>(keys);
@@ -466,7 +466,7 @@ public:
         #pragma unroll
         for (int KEY = 0; KEY < ITEMS_PER_THREAD; KEY++)
         {
-            unsigned_keys[KEY] = KeyTraits::TwiddleIn(unsigned_keys[KEY]);
+            unsigned_keys[KEY] = Keyraits::TwiddleIn(unsigned_keys[KEY]);
         }
 
         // Radix sorting passes
@@ -509,7 +509,7 @@ public:
         #pragma unroll
         for (int KEY = 0; KEY < ITEMS_PER_THREAD; KEY++)
         {
-            unsigned_keys[KEY] = KeyTraits::TwiddleOut(unsigned_keys[KEY]);
+            unsigned_keys[KEY] = Keyraits::TwiddleOut(unsigned_keys[KEY]);
         }
     }
 

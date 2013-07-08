@@ -98,6 +98,38 @@ struct ArrayWrapper
 };
 
 
+/**
+ * \brief Double-buffer storage wrapper for multi-pass stream transformations that require more than one storage array for streaming intermediate results back and forth.
+ *
+ * Many multi-pass computations require a pair of "ping-pong" storage
+ * buffers (e.g., one for reading from and the other for writing to, and then
+ * vice-versa for the subsequent pass).  This structure wraps a set of device
+ * buffers and a "selector" member to track which is "current".
+ */
+template <typename T>
+struct DoubleBuffer
+{
+    /// Pair of device buffer pointers
+    T *d_buffers[2];
+
+    ///  Selector into \p d_buffers (i.e., where the results are)
+    int selector;
+
+    /// \brief Constructor
+    DoubleBuffer(
+        T *d_current,         ///< The currently valid buffer
+        T *d_alternate)       ///< Alternate storage buffer of the same size as \p current
+    {
+        selector = 0;
+        d_buffers[0] = d_current;
+        d_buffers[1] = d_alternate;
+    }
+
+    /// \brief Return pointer to the currently valid buffer
+    T* Current() { return d_buffers[selector]; }
+};
+
+
 
 /******************************************************************************
  * Static math
