@@ -101,7 +101,7 @@ template <
     int             BINS,
     int             CHANNELS,
     int             ACTIVE_CHANNELS,
-    typename        IteratorValueT,
+    typename        IteratorValue,
     typename        SampleT,
     typename        HistoCounterT,
     typename        BinOp>
@@ -125,7 +125,7 @@ void Initialize(
     {
         Sample<BINS>(gen_mode, h_samples[i], i);
 
-        IteratorValueT bin = bin_op(h_samples[i]);
+        IteratorValue bin = bin_op(h_samples[i]);
 
         int channel = i % CHANNELS;
 
@@ -315,7 +315,7 @@ template <
     int                         CHANNELS,
     int                         ACTIVE_CHANNELS,
     typename                    SampleT,
-    typename                    IteratorValueT,
+    typename                    IteratorValue,
     typename                    HistoCounterT,
     typename                    BinOp,
     int                         ALGORITHM>
@@ -327,7 +327,7 @@ void Test(
     char*                       type_string)
 {
     // Binning iterator type for loading through tex and applying a transform operator
-    typedef TexTransformIteratorRA<IteratorValueT, BinOp, SampleT> BinningIterator;
+    typedef TexTransformIteratorRA<IteratorValue, BinOp, SampleT> BinningIterator;
 
     int compare         = 0;
     int cnp_compare     = 0;
@@ -350,7 +350,7 @@ void Test(
     HistoCounterT   *h_reference_linear = new HistoCounterT[total_bins];
 
     // Initialize problem
-    Initialize<BINS, CHANNELS, ACTIVE_CHANNELS, IteratorValueT>(gen_mode, h_samples, bin_op, h_reference_linear, num_samples);
+    Initialize<BINS, CHANNELS, ACTIVE_CHANNELS, IteratorValue>(gen_mode, h_samples, bin_op, h_reference_linear, num_samples);
 
     // Allocate device arrays
     SampleT*        d_samples = NULL;
@@ -375,7 +375,7 @@ void Test(
         d_histograms[CHANNEL] = d_histograms_linear + (CHANNEL * BINS);
     }
 
-    // Create a texload+transform iterator wrapper for SampleT -> IteratorValueT conversion
+    // Create a texload+transform iterator wrapper for SampleT -> IteratorValue conversion
     BinningIterator d_sample_itr(bin_op);
     CubDebugExit(d_sample_itr.BindTexture(d_samples, sizeof(SampleT) * num_samples));
 
@@ -442,7 +442,7 @@ template <
     int                         CHANNELS,
     int                         ACTIVE_CHANNELS,
     typename                    SampleT,
-    typename                    IteratorValueT,
+    typename                    IteratorValue,
     typename                    HistoCounterT,
     typename                    BinOp,
     int                         ALGORITHM>
@@ -453,9 +453,9 @@ void TestCnp(
     int                         num_samples,
     char*                       type_string)
 {
-    Test<false, BINS, CHANNELS, ACTIVE_CHANNELS, SampleT, IteratorValueT, HistoCounterT>(algorithm, gen_mode, bin_op, num_samples, type_string);
+    Test<false, BINS, CHANNELS, ACTIVE_CHANNELS, SampleT, IteratorValue, HistoCounterT>(algorithm, gen_mode, bin_op, num_samples, type_string);
 #ifdef CUB_CNP
-    Test<true, BINS, CHANNELS, ACTIVE_CHANNELS, SampleT, IteratorValueT, HistoCounterT>(algorithm, gen_mode, bin_op, num_samples, type_string);
+    Test<true, BINS, CHANNELS, ACTIVE_CHANNELS, SampleT, IteratorValue, HistoCounterT>(algorithm, gen_mode, bin_op, num_samples, type_string);
 #endif
 }
 
@@ -468,7 +468,7 @@ template <
     int             CHANNELS,
     int             ACTIVE_CHANNELS,
     typename        SampleT,
-    typename        IteratorValueT,
+    typename        IteratorValue,
     typename        HistoCounterT,
     typename        BinOp>
 void Test(
@@ -477,9 +477,9 @@ void Test(
     int             num_samples,
     char*           type_string)
 {
-    TestCnp<BINS, CHANNELS, ACTIVE_CHANNELS, SampleT, IteratorValueT, HistoCounterT>(Int2Type<GRID_HISTO_SORT>(),          gen_mode, bin_op, num_samples, type_string);
-//    TestCnp<BINS, CHANNELS, ACTIVE_CHANNELS, SampleT, IteratorValueT, HistoCounterT>(Int2Type<GRID_HISTO_SHARED_ATOMIC>(), gen_mode, bin_op, num_samples, type_string);
-//    TestCnp<BINS, CHANNELS, ACTIVE_CHANNELS, SampleT, IteratorValueT, HistoCounterT>(Int2Type<GRID_HISTO_GLOBAL_ATOMIC>(), gen_mode, bin_op, num_samples, type_string);
+    TestCnp<BINS, CHANNELS, ACTIVE_CHANNELS, SampleT, IteratorValue, HistoCounterT>(Int2Type<GRID_HISTO_SORT>(),          gen_mode, bin_op, num_samples, type_string);
+//    TestCnp<BINS, CHANNELS, ACTIVE_CHANNELS, SampleT, IteratorValue, HistoCounterT>(Int2Type<GRID_HISTO_SHARED_ATOMIC>(), gen_mode, bin_op, num_samples, type_string);
+//    TestCnp<BINS, CHANNELS, ACTIVE_CHANNELS, SampleT, IteratorValue, HistoCounterT>(Int2Type<GRID_HISTO_GLOBAL_ATOMIC>(), gen_mode, bin_op, num_samples, type_string);
 }
 
 
@@ -489,7 +489,7 @@ void Test(
 template <
     int             BINS,
     typename        SampleT,
-    typename        IteratorValueT,
+    typename        IteratorValue,
     typename        HistoCounterT,
     typename        BinOp>
 void Test(
@@ -498,8 +498,8 @@ void Test(
     int             num_samples,
     char*           type_string)
 {
-    Test<BINS, 1, 1, SampleT, IteratorValueT, HistoCounterT>(gen_mode, bin_op, num_samples, type_string);
-//    Test<BINS, 4, 3, SampleT, IteratorValueT, HistoCounterT>(gen_mode, bin_op, num_samples, type_string);
+    Test<BINS, 1, 1, SampleT, IteratorValue, HistoCounterT>(gen_mode, bin_op, num_samples, type_string);
+//    Test<BINS, 4, 3, SampleT, IteratorValue, HistoCounterT>(gen_mode, bin_op, num_samples, type_string);
 }
 
 
@@ -509,7 +509,7 @@ void Test(
 template <
     int             BINS,
     typename        SampleT,
-    typename        IteratorValueT,
+    typename        IteratorValue,
     typename        HistoCounterT,
     typename        BinOp>
 void TestModes(
@@ -517,8 +517,8 @@ void TestModes(
     int             num_samples,
     char*           type_string)
 {
-    Test<BINS, SampleT, IteratorValueT, HistoCounterT>(RANDOM, bin_op, num_samples, type_string);
-//    Test<BINS, SampleT, IteratorValueT, HistoCounterT>(UNIFORM, bin_op, num_samples, type_string);
+    Test<BINS, SampleT, IteratorValue, HistoCounterT>(RANDOM, bin_op, num_samples, type_string);
+//    Test<BINS, SampleT, IteratorValue, HistoCounterT>(UNIFORM, bin_op, num_samples, type_string);
 }
 
 
@@ -528,7 +528,7 @@ void TestModes(
 template <
     int             BINS,
     typename        SampleT,
-    typename        IteratorValueT,
+    typename        IteratorValue,
     typename        HistoCounterT,
     typename        BinOp>
 void Test(
@@ -538,14 +538,14 @@ void Test(
 {
     if (num_samples < 0)
     {
-        TestModes<BINS, SampleT, IteratorValueT, HistoCounterT>(bin_op, 1,       type_string);
-        TestModes<BINS, SampleT, IteratorValueT, HistoCounterT>(bin_op, 100,     type_string);
-        TestModes<BINS, SampleT, IteratorValueT, HistoCounterT>(bin_op, 10000,   type_string);
-        TestModes<BINS, SampleT, IteratorValueT, HistoCounterT>(bin_op, 1000000, type_string);
+        TestModes<BINS, SampleT, IteratorValue, HistoCounterT>(bin_op, 1,       type_string);
+        TestModes<BINS, SampleT, IteratorValue, HistoCounterT>(bin_op, 100,     type_string);
+        TestModes<BINS, SampleT, IteratorValue, HistoCounterT>(bin_op, 10000,   type_string);
+        TestModes<BINS, SampleT, IteratorValue, HistoCounterT>(bin_op, 1000000, type_string);
     }
     else
     {
-        TestModes<BINS, SampleT, IteratorValueT, HistoCounterT>(bin_op, num_samples, type_string);
+        TestModes<BINS, SampleT, IteratorValue, HistoCounterT>(bin_op, num_samples, type_string);
     }
 }
 

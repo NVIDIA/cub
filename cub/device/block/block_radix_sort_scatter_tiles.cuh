@@ -106,8 +106,8 @@ struct BlockRadixSortScatterTilesPolicy
  */
 template <
     typename BlockRadixSortScatterTilesPolicy,
-    typename KeyType,
-    typename ValueType,
+    typename Key,
+    typename Value,
     typename SizeT>
 struct BlockRadixSortScatterTiles
 {
@@ -115,11 +115,11 @@ struct BlockRadixSortScatterTiles
     // Type definitions and constants
     //---------------------------------------------------------------------
 
-    // Appropriate unsigned-bits representation of KeyType
-    typedef typename Traits<KeyType>::UnsignedBits UnsignedBits;
+    // Appropriate unsigned-bits representation of Key
+    typedef typename Traits<Key>::UnsignedBits UnsignedBits;
 
-    static const UnsignedBits MIN_KEY = Traits<KeyType>::MIN_KEY;
-    static const UnsignedBits MAX_KEY = Traits<KeyType>::MAX_KEY;
+    static const UnsignedBits MIN_KEY = Traits<Key>::MIN_KEY;
+    static const UnsignedBits MAX_KEY = Traits<Key>::MAX_KEY;
 
     static const BlockLoadAlgorithm         LOAD_ALGORITHM          = BlockRadixSortScatterTilesPolicy::LOAD_ALGORITHM;
     static const PtxLoadModifier            LOAD_MODIFIER           = BlockRadixSortScatterTilesPolicy::LOAD_MODIFIER;
@@ -136,7 +136,7 @@ struct BlockRadixSortScatterTiles
         TILE_ITEMS              = BLOCK_THREADS * ITEMS_PER_THREAD,
 
         RADIX_DIGITS            = 1 << RADIX_BITS,
-        KEYS_ONLY               = Equals<ValueType, NullType>::VALUE,
+        KEYS_ONLY               = Equals<Value, NullType>::VALUE,
 
         WARP_THREADS            = PtxArchProps::LOG_WARP_THREADS,
         WARPS                   = (BLOCK_THREADS + WARP_THREADS - 1) / WARP_THREADS,
@@ -171,7 +171,7 @@ struct BlockRadixSortScatterTiles
 
     // BlockLoad type (values)
     typedef BlockLoad<
-        ValueType*,
+        Value*,
         BLOCK_THREADS,
         ITEMS_PER_THREAD,
         LOAD_ALGORITHM,
@@ -187,7 +187,7 @@ struct BlockRadixSortScatterTiles
 
     // BlockExchange type (values)
     typedef BlockExchange<
-        ValueType,
+        Value,
         BLOCK_THREADS,
         ITEMS_PER_THREAD,
         EXCHANGE_TIME_SLICING> BlockExchangeValues;
@@ -222,11 +222,11 @@ struct BlockRadixSortScatterTiles
     // Input and output device pointers
     UnsignedBits        *d_keys_in;
     UnsignedBits        *d_keys_out;
-    ValueType           *d_values_in;
-    ValueType           *d_values_out;
+    Value           *d_values_in;
+    Value           *d_values_out;
 
     // The global scatter base offset for each digit (valid in the first RADIX_DIGITS threads)
-    SizeT               bin_prefix;
+    SizeT               bin_offset;
 
     // The least-significant bit position of the current digit to extract
     const unsigned int  &current_bit;
@@ -310,7 +310,7 @@ struct BlockRadixSortScatterTiles
 
         // Untwiddle keys before outputting
         UnsignedBits keys[ITEMS_PER_THREAD];
-        TwiddleKeys(twiddled_keys, keys, Traits<KeyType>::TwiddleOut);
+        TwiddleKeys(twiddled_keys, keys, Traits<Key>::TwiddleOut);
 
         // Scatter to global
         ScatterItems<FULL_TILE>(keys, ranks, relative_bin_offsets, d_keys_out, valid_items);
@@ -353,7 +353,7 @@ struct BlockRadixSortScatterTiles
      */
     template <bool FULL_TILE>
     __device__ __forceinline__ void ScatterValues(
-        ValueType                               values[ITEMS_PER_THREAD],
+        Value                               values[ITEMS_PER_THREAD],
         SizeT                                   relative_bin_offsets[ITEMS_PER_THREAD],
         int                                     ranks[ITEMS_PER_THREAD],
         SizeT                                   valid_items,
@@ -369,7 +369,7 @@ struct BlockRadixSortScatterTiles
      */
     template <bool FULL_TILE>
     __device__ __forceinline__ void ScatterValues(
-        ValueType                               values[ITEMS_PER_THREAD],
+        Value                               values[ITEMS_PER_THREAD],
         SizeT                                   relative_bin_offsets[ITEMS_PER_THREAD],
         int                                     ranks[ITEMS_PER_THREAD],
         SizeT                                   valid_items,
@@ -428,9 +428,9 @@ struct BlockRadixSortScatterTiles
     /**
      * Truck along associated values
      */
-    template <bool FULL_TILE, typename _ValueType>
+    template <bool FULL_TILE, typename _Value>
     __device__ __forceinline__ void GatherScatterValues(
-        _ValueType  values[ITEMS_PER_THREAD],
+        _Value  values[ITEMS_PER_THREAD],
         SizeT       relative_bin_offsets[ITEMS_PER_THREAD],
         int         ranks[ITEMS_PER_THREAD],
         SizeT       block_offset,
@@ -491,7 +491,7 @@ struct BlockRadixSortScatterTiles
 //        __threadfence_block();
 
         // Twiddle key bits if necesssary
-        TwiddleKeys(keys, twiddled_keys, Traits<KeyType>::TwiddleIn);
+        TwiddleKeys(keys, twiddled_keys, Traits<Key>::TwiddleIn);
 
         // Rank the twiddled keys
         BlockRadixRank(temp_storage.ranking).RankKeys(
@@ -505,9 +505,9 @@ struct BlockRadixSortScatterTiles
         // Update global scatter base offsets for each digit
         if ((BLOCK_THREADS == RADIX_DIGITS) || (threadIdx.x < RADIX_DIGITS))
         {
-            bin_prefix -= temp_storage.digit_prefixes[threadIdx.x];
-            temp_storage.relative_bin_offsets[threadIdx.x] = bin_prefix;
-            bin_prefix += temp_storage.digit_prefixes[threadIdx.x + 1];
+            bin_offset -= temp_storage.digit_prefixes[threadIdx.x];
+            temp_storage.relative_bin_offsets[threadIdx.x] = bin_offset;
+            bin_offset += temp_storage.digit_prefixes[threadIdx.x + 1];
         }
 
         __syncthreads();
@@ -516,7 +516,7 @@ struct BlockRadixSortScatterTiles
         ScatterKeys<FULL_TILE>(twiddled_keys, relative_bin_offsets, ranks, valid_items, Int2Type<RADIX_SORT_SCATTER_DIRECT>());
 
         // Gather/scatter values
-        ValueType values[ITEMS_PER_THREAD];
+        Value values[ITEMS_PER_THREAD];
         GatherScatterValues<FULL_TILE>(values, relative_bin_offsets, ranks, block_offset, valid_items);
     }
 
@@ -530,15 +530,15 @@ struct BlockRadixSortScatterTiles
      */
     __device__ __forceinline__ BlockRadixSortScatterTiles(
         TempStorage         &temp_storage,
-        SizeT               bin_prefix,
-        KeyType             *d_keys_in,
-        KeyType             *d_keys_out,
-        ValueType           *d_values_in,
-        ValueType           *d_values_out,
+        SizeT               bin_offset,
+        Key             *d_keys_in,
+        Key             *d_keys_out,
+        Value           *d_values_in,
+        Value           *d_values_out,
         const unsigned int  &current_bit)
     :
         temp_storage(temp_storage),
-        bin_prefix(bin_prefix),
+        bin_offset(bin_offset),
         d_keys_in(reinterpret_cast<UnsignedBits*>(d_keys_in)),
         d_keys_out(reinterpret_cast<UnsignedBits*>(d_keys_out)),
         d_values_in(d_values_in),
