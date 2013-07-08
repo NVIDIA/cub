@@ -56,7 +56,7 @@ CachingDeviceAllocator  g_allocator;
 //---------------------------------------------------------------------
 
 /**
- * Dispatch to exclusive scan specialization
+ * Dispatch to exclusive scan entrypoint
  */
 template <typename InputIteratorRA, typename OutputIteratorRA, typename ScanOp, typename Identity, typename SizeT>
 __host__ __device__ __forceinline__
@@ -84,7 +84,7 @@ cudaError_t Dispatch(
 
 
 /**
- * Dispatch to exclusive sum specialization
+ * Dispatch to exclusive sum entrypoint
  */
 template <typename InputIteratorRA, typename OutputIteratorRA, typename T, typename Identity, typename SizeT>
 __host__ __device__ __forceinline__
@@ -112,7 +112,7 @@ cudaError_t Dispatch(
 
 
 /**
- * Dispatch to inclusive scan specialization
+ * Dispatch to inclusive scan entrypoint
  */
 template <typename InputIteratorRA, typename OutputIteratorRA, typename ScanOp, typename SizeT>
 __host__ __device__ __forceinline__
@@ -140,7 +140,7 @@ cudaError_t Dispatch(
 
 
 /**
- * Dispatch to inclusive sum specialization
+ * Dispatch to inclusive sum entrypoint
  */
 template <typename InputIteratorRA, typename OutputIteratorRA, typename T, typename SizeT>
 __host__ __device__ __forceinline__
@@ -323,7 +323,8 @@ void Test(
     IdentityT       identity,
     char*           type_string)
 {
-    printf("%s cub::DeviceScan::%s %d items, %s %d-byte elements, gen-mode %s\n",
+    printf("%s %s cub::DeviceScan::%s %d items, %s %d-byte elements, gen-mode %s\n",
+        (CNP) ? "CNP device invoked" : "Host-invoked",
         (Equals<IdentityT, NullType>::VALUE) ? "Inclusive" : "Exclusive",
         (Equals<ScanOp, Sum>::VALUE) ? "Sum" : "Scan",
         num_items,
@@ -358,7 +359,6 @@ void Test(
     CubDebugExit(g_allocator.DeviceAllocate(&d_temporary_storage, temporary_storage_bytes));
 
     // Run warmup/correctness iteration
-    printf("Host dispatch:\n"); fflush(stdout);
     CubDebugExit(Dispatch(Int2Type<CNP>(), 1, d_cnp_error, d_temporary_storage, temporary_storage_bytes, d_in, d_out, scan_op, identity, num_items, 0, true));
 
     // Check for correctness (and display results, if specified)
@@ -422,7 +422,7 @@ void TestCnp(
 
 
 /**
- * Iterative different gen modes
+ * Test different gen modes
  */
 template <
     typename        T,

@@ -359,7 +359,7 @@ struct DeviceHisto
         AggregateHistoKernelPtr     aggregate_kernel,                   ///< [in] Kernel function pointer to parameterization of cub::AggregateHistoKernel
         KernelDispachParams         &multi_block_dispatch_params,       ///< [in] Dispatch parameters that match the policy that \p multi_block_kernel was compiled for
         InputIteratorRA             d_samples,                          ///< [in] Input samples to histogram
-        HistoCounter                *(&d_histograms)[ACTIVE_CHANNELS],  ///< [out] Array of channel histograms, each having BINS counters of integral type \p HistoCounter.
+        HistoCounter                *d_histograms[ACTIVE_CHANNELS],     ///< [out] Array of channel histograms, each having BINS counters of integral type \p HistoCounter.
         SizeT                       num_samples,                        ///< [in] Number of samples to process
         cudaStream_t                stream              = 0,            ///< [in] <b>[optional]</b> CUDA stream to launch kernels within.  Default is stream<sub>0</sub>.
         bool                        stream_synchronous  = false)        ///< [in] <b>[optional]</b> Whether or not to synchronize the stream after every kernel launch to check for errors.  Default is \p false.
@@ -468,16 +468,7 @@ struct DeviceHisto
             init_kernel<<<ACTIVE_CHANNELS, BINS, 0, stream>>>(queue, d_histo_wrapper, num_samples);
 
             // Sync the stream if specified
-#ifndef __CUDA_ARCH__
-            if (stream_synchronous && CubDebug(error = cudaStreamSynchronize(stream))) break;
-#else
-            if (stream_synchronous && CubDebug(error = cudaDeviceSynchronize())) break;
-#endif
-
-            // Bind texture if the iterator supports it
-#ifndef __CUDA_ARCH__
-            if (CubDebug(error = BindIteratorTexture(d_samples))) break;
-#endif
+            if (stream_synchronous && (CubDebug(error = SyncStream(stream)))) break;
 
             // Whether we need privatized histograms (i.e., non-global atomics and multi-block)
             bool privatized_temporaries = (multi_block_grid_size > 1) && (multi_block_dispatch_params.block_algorithm != GRID_HISTO_GLOBAL_ATOMIC);
@@ -497,11 +488,7 @@ struct DeviceHisto
                 queue);
 
             // Sync the stream if specified
-#ifndef __CUDA_ARCH__
-            if (stream_synchronous && CubDebug(error = cudaStreamSynchronize(stream))) break;
-#else
-            if (stream_synchronous && CubDebug(error = cudaDeviceSynchronize())) break;
-#endif
+            if (stream_synchronous && (CubDebug(error = SyncStream(stream)))) break;
 
             // Aggregate privatized block histograms if necessary
             if (privatized_temporaries)
@@ -517,19 +504,10 @@ struct DeviceHisto
                     multi_block_grid_size);
 
                 // Sync the stream if specified
-#ifndef __CUDA_ARCH__
-                if (stream_synchronous && CubDebug(error = cudaStreamSynchronize(stream))) break;
-#else
-                if (stream_synchronous && CubDebug(error = cudaDeviceSynchronize())) break;
-#endif
+                if (stream_synchronous && (CubDebug(error = SyncStream(stream)))) break;
             }
         }
         while (0);
-
-        // Unbind iterator texture if bound
-#ifndef __CUDA_ARCH__
-        CubDebug(UnbindIteratorTexture(d_samples));
-#endif
 
         return error;
 #endif // CUB_RUNTIME_ENABLED
@@ -557,7 +535,7 @@ struct DeviceHisto
         void                *d_temp_storage,                    ///< [in] %Device allocation of temporary storage.  When NULL, the required allocation size is returned in \p temp_storage_bytes and no work is done.
         size_t              &temp_storage_bytes,                ///< [in,out] Size in bytes of \p d_temp_storage allocation.
         InputIteratorRA     d_samples,                          ///< [in] Input samples to histogram
-        HistoCounter        *(&d_histograms)[ACTIVE_CHANNELS],  ///< [out] Array of channel histograms, each having BINS counters of integral type \p HistoCounter.
+        HistoCounter        *d_histograms[ACTIVE_CHANNELS],     ///< [out] Array of channel histograms, each having BINS counters of integral type \p HistoCounter.
         int                 num_samples,                        ///< [in] Number of samples to process
         cudaStream_t        stream              = 0,            ///< [in] <b>[optional]</b> CUDA stream to launch kernels within.  Default is stream<sub>0</sub>.
         bool                stream_synchronous  = false)        ///< [in] <b>[optional]</b> Whether or not to synchronize the stream after every kernel launch to check for errors.  Default is \p false.
@@ -663,7 +641,7 @@ struct DeviceHisto
         typename            InputIteratorRA,
         typename            HistoCounter>
     __host__ __device__ __forceinline__
-    static cudaError_t SingleChannelAtomic(
+    static cudaError_t SingleChannelSharedAtomic(
         void                *d_temp_storage,                    ///< [in] %Device allocation of temporary storage.  When NULL, the required allocation size is returned in \p temp_storage_bytes and no work is done.
         size_t              &temp_storage_bytes,                ///< [in,out] Size in bytes of \p d_temp_storage allocation.
         InputIteratorRA     d_samples,                          ///< [in] Input samples
@@ -738,7 +716,7 @@ struct DeviceHisto
         void                *d_temp_storage,                    ///< [in] %Device allocation of temporary storage.  When NULL, the required allocation size is returned in \p temp_storage_bytes and no work is done.
         size_t              &temp_storage_bytes,                ///< [in,out] Size in bytes of \p d_temp_storage allocation.
         InputIteratorRA     d_samples,                          ///< [in] Input samples. (Channels, if any, are interleaved in "AOS" format)
-        HistoCounter        *(&d_histograms)[ACTIVE_CHANNELS],  ///< [out] Array of channel histogram counter arrays, each having BINS counters of integral type \p HistoCounter.
+        HistoCounter        *d_histograms[ACTIVE_CHANNELS],     ///< [out] Array of channel histogram counter arrays, each having BINS counters of integral type \p HistoCounter.
         int                 num_samples,                        ///< [in] Number of samples to process
         cudaStream_t        stream              = 0,            ///< [in] <b>[optional]</b> CUDA stream to launch kernels within.  Default is stream<sub>0</sub>.
         bool                stream_synchronous  = false)        ///< [in] <b>[optional]</b> Whether or not to synchronize the stream after every kernel launch to check for errors.  May cause significant slowdown.  Default is \p false.
@@ -768,11 +746,11 @@ struct DeviceHisto
         typename            InputIteratorRA,
         typename            HistoCounter>
     __host__ __device__ __forceinline__
-    static cudaError_t MultiChannelAtomic(
+    static cudaError_t MultiChannelSharedAtomic(
         void                *d_temp_storage,                    ///< [in] %Device allocation of temporary storage.  When NULL, the required allocation size is returned in \p temp_storage_bytes and no work is done.
         size_t              &temp_storage_bytes,                ///< [in,out] Size in bytes of \p d_temp_storage allocation.
         InputIteratorRA     d_samples,                          ///< [in] Input samples. (Channels, if any, are interleaved in "AOS" format)
-        HistoCounter        *(&d_histograms)[ACTIVE_CHANNELS],  ///< [out] Array of channel histogram counter arrays, each having BINS counters of integral type \p HistoCounter.
+        HistoCounter        *d_histograms[ACTIVE_CHANNELS],     ///< [out] Array of channel histogram counter arrays, each having BINS counters of integral type \p HistoCounter.
         int                 num_samples,                        ///< [in] Number of samples to process
         cudaStream_t        stream              = 0,            ///< [in] <b>[optional]</b> CUDA stream to launch kernels within.  Default is stream<sub>0</sub>.
         bool                stream_synchronous  = false)        ///< [in] <b>[optional]</b> Whether or not to synchronize the stream after every kernel launch to check for errors.  May cause significant slowdown.  Default is \p false.
@@ -806,7 +784,7 @@ struct DeviceHisto
         void                *d_temp_storage,                    ///< [in] %Device allocation of temporary storage.  When NULL, the required allocation size is returned in \p temp_storage_bytes and no work is done.
         size_t              &temp_storage_bytes,                ///< [in,out] Size in bytes of \p d_temp_storage allocation.
         InputIteratorRA     d_samples,                          ///< [in] Input samples. (Channels, if any, are interleaved in "AOS" format)
-        HistoCounter        *(&d_histograms)[ACTIVE_CHANNELS],  ///< [out] Array of channel histogram counter arrays, each having BINS counters of integral type \p HistoCounter.
+        HistoCounter        *d_histograms[ACTIVE_CHANNELS],     ///< [out] Array of channel histogram counter arrays, each having BINS counters of integral type \p HistoCounter.
         int                 num_samples,                        ///< [in] Number of samples to process
         cudaStream_t        stream              = 0,            ///< [in] <b>[optional]</b> CUDA stream to launch kernels within.  Default is stream<sub>0</sub>.
         bool                stream_synchronous  = false)        ///< [in] <b>[optional]</b> Whether or not to synchronize the stream after every kernel launch to check for errors.  May cause significant slowdown.  Default is \p false.
