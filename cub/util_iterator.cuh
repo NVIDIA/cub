@@ -34,6 +34,7 @@
 #pragma once
 
 #include "thread/thread_load.cuh"
+#include "util_device.cuh"
 #include "util_debug.cuh"
 #include "util_namespace.cuh"
 
@@ -53,7 +54,7 @@ namespace cub {
 // Anonymous namespace
 namespace {
 
-/// Templated Texture reference type for multiplicand vector
+/// Templated texture reference type
 template <typename T>
 struct TexIteratorRef
 {
@@ -65,13 +66,12 @@ struct TexIteratorRef
     /**
      * Bind texture
      */
-    static cudaError_t BindTexture(void *d_in, size_t &offset)
+    static cudaError_t BindTexture(void *d_in)
     {
         cudaChannelFormatDesc tex_desc = cudaCreateChannelDesc<T>();
         if (d_in)
-        {
-            return (CubDebug(cudaBindTexture(&offset, ref, d_in, tex_desc)));
-        }
+            return (CubDebug(cudaBindTexture(NULL, ref, d_in, tex_desc)));
+
         return cudaSuccess;
     }
 
@@ -90,60 +90,6 @@ typename TexIteratorRef<Value>::TexRef TexIteratorRef<Value>::ref = 0;
 
 } // Anonymous namespace
 
-
-
-/**
- * Define HasTexBinding structure for testing the presence of nested
- * TexBindingTag type names within data types
- */
-CUB_DEFINE_DETECT_NESTED_TYPE(HasTexBinding, TexBindingTag)
-
-
-/// Helper for (un)binding iterator textures (specialized for iterators that can have texture bound)
-template <
-    typename InputIteratorRA,
-    bool HAS_TEX_BINDING = HasTexBinding<InputIteratorRA>::VALUE>
-struct TexIteratorBinder
-{
-    static cudaError_t Bind(InputIteratorRA d_itr)
-    {
-        return d_itr.BindTexture();
-    }
-
-    static cudaError_t Unbind(InputIteratorRA d_itr)
-    {
-        return d_itr.UnindTexture();
-    }
-};
-
-/// Helper for (un)binding iterator textures (specialized for iterators that cannot have texture bound)
-template <typename InputIteratorRA>
-struct TexIteratorBinder<InputIteratorRA, false>
-{
-    static cudaError_t Bind(InputIteratorRA d_itr)
-    {
-        return cudaSuccess;
-    }
-
-    static cudaError_t Unbind(InputIteratorRA d_itr)
-    {
-        return cudaSuccess;
-    }
-};
-
-/// Bind iterator texture if supported (otherwise do nothing)
-template <typename InputIteratorRA>
-__host__ cudaError_t BindIteratorTexture(InputIteratorRA d_itr)
-{
-    return TexIteratorBinder<InputIteratorRA>::Bind(d_itr);
-}
-
-/// Unbind iterator texture if supported (otherwise do nothing)
-template <typename InputIteratorRA>
-__host__ cudaError_t UnbindIteratorTexture(InputIteratorRA d_itr)
-{
-    return TexIteratorBinder<InputIteratorRA>::Bind(d_itr);
-}
 
 #endif // DOXYGEN_SHOULD_SKIP_THIS
 
@@ -400,30 +346,72 @@ public:
 
 private:
 
-    T*      ptr;
-    size_t  offset;
+    T*                  ptr;
+    size_t              tex_align_offset;
+    cudaTextureObject_t tex_obj;
 
 public:
 
     /**
      * \brief Constructor
-     * @param ptr Native pointer to wrap
      */
-    __host__ __device__ __forceinline__ TexIteratorRA(T* ptr) :
-        ptr(ptr),
-        offset(0) {}
+    __host__ __device__ __forceinline__ TexIteratorRA()
+    :
+        ptr(NULL),
+        tex_align_offset(0),
+        tex_obj(0)
+    {}
 
     /// \brief Bind iterator to texture reference
-    cudaError_t BindTexture()
+    cudaError_t BindTexture(
+        T               *ptr,                   ///< Native pointer to wrap that is aligned to cudaDeviceProp::textureAlignment
+        size_t          bytes,                  ///< Number of items
+        size_t          tex_align_offset = 0)   ///< Offset (in items) from ptr denoting the position of the iterator
     {
-        return TexIteratorRef<T>::BindTexture(ptr, offset);
-    }
+        this->ptr = ptr;
+        this->tex_align_offset = tex_align_offset;
 
+        int ptx_version;
+        cudaError_t error = cudaSuccess;
+        if (CubDebug(error = PtxVersion(ptx_version))) return error;
+        if (ptx_version >= 300)
+        {
+            // Use texture object
+            cudaChannelFormatDesc   channel_desc = cudaCreateChannelDesc<T>();
+            cudaResourceDesc        res_desc;
+            cudaTextureDesc         tex_desc;
+            memset(&res_desc, 0, sizeof(cudaResourceDesc));
+            memset(&tex_desc, 0, sizeof(cudaTextureDesc));
+            res_desc.resType                = cudaResourceTypeLinear;
+            res_desc.res.linear.devPtr      = ptr;
+            res_desc.res.linear.desc        = channel_desc;
+            res_desc.res.linear.sizeInBytes = bytes;
+            tex_desc.readMode               = cudaReadModeElementType;
+            return cudaCreateTextureObject(&tex_obj, &res_desc, &tex_desc, NULL);
+        }
+        else
+        {
+            // Use texture reference
+            return TexIteratorRef<T>::BindTexture(ptr);
+        }
+    }
 
     /// \brief Unbind iterator to texture reference
     cudaError_t UnbindTexture()
     {
-        return TexIteratorRef<T>::UnbindTexture();
+        int ptx_version;
+        cudaError_t error = cudaSuccess;
+        if (CubDebug(error = PtxVersion(ptx_version))) return error;
+        if (ptx_version < 300)
+        {
+            // Use texture reference
+            return TexIteratorRef<T>::UnbindTexture();
+        }
+        else
+        {
+            // Use texture object
+            return cudaDestroyTextureObject(tex_obj);
+        }
     }
 
 #ifndef DOXYGEN_SHOULD_SKIP_THIS    // Do not document
@@ -432,14 +420,14 @@ public:
     {
         self_type i = *this;
         ptr++;
-        offset++;
+        tex_align_offset++;
         return i;
     }
 
     __host__ __device__ __forceinline__ self_type operator++(int junk)
     {
         ptr++;
-        offset++;
+        tex_align_offset++;
         return *this;
     }
 
@@ -448,9 +436,12 @@ public:
 #if (CUB_PTX_ARCH == 0)
         // Simply dereference the pointer on the host
         return *ptr;
-#else
+#elif (CUB_PTX_ARCH < 300)
         // Use the texture reference
-        return tex1Dfetch(TexIteratorRef<T>::ref, offset);
+        return tex1Dfetch(TexIteratorRef<T>::ref, tex_align_offset);
+#else
+        // Use the texture object
+        return conversion_op(tex1Dfetch<InputType>(tex_obj, tex_align_offset));
 #endif
     }
 
@@ -458,7 +449,7 @@ public:
     __host__ __device__ __forceinline__ self_type operator+(SizeT n)
     {
         TexIteratorRA retval(ptr + n);
-        retval.offset = offset + n;
+        retval.tex_align_offset = tex_align_offset + n;
         return retval;
     }
 
@@ -466,7 +457,7 @@ public:
     __host__ __device__ __forceinline__ self_type operator-(SizeT n)
     {
         TexIteratorRA retval(ptr - n);
-        retval.offset = offset - n;
+        retval.tex_align_offset = tex_align_offset - n;
         return retval;
     }
 
@@ -476,9 +467,12 @@ public:
 #if (CUB_PTX_ARCH == 0)
         // Simply dereference the pointer on the host
         return ptr[n];
-#else
+#elif (CUB_PTX_ARCH < 300)
         // Use the texture reference
-        return tex1Dfetch(TexIteratorRef<T>::ref, offset + n);
+        return tex1Dfetch(TexIteratorRef<T>::ref, tex_align_offset + n);
+#else
+        // Use the texture object
+        return conversion_op(tex1Dfetch<InputType>(tex_obj, tex_align_offset + n));
 #endif
     }
 
@@ -487,9 +481,12 @@ public:
 #if (CUB_PTX_ARCH == 0)
         // Simply dereference the pointer on the host
         return &(*ptr);
-#else
+#elif (CUB_PTX_ARCH < 300)
         // Use the texture reference
-        return &(tex1Dfetch(TexIteratorRef<T>::ref, offset));
+        return &(tex1Dfetch(TexIteratorRef<T>::ref, tex_align_offset));
+#else
+        // Use the texture object
+        return conversion_op(tex1Dfetch<InputType>(tex_obj, tex_align_offset));
 #endif
     }
 
@@ -547,32 +544,75 @@ public:
 
 private:
 
-    ConversionOp    conversion_op;
-    InputType*      ptr;
-    size_t          offset;
+    ConversionOp        conversion_op;
+    InputType*          ptr;
+    size_t              tex_align_offset;
+    cudaTextureObject_t tex_obj;
 
 public:
 
     /**
      * \brief Constructor
-     * @param ptr Native pointer to wrap
-     * @param conversion_op Binary transformation functor
      */
-    __host__ __device__ __forceinline__ TexTransformIteratorRA(InputType* ptr, ConversionOp conversion_op) :
+    TexTransformIteratorRA(
+        ConversionOp    conversion_op)          ///< Binary transformation functor
+    :
         conversion_op(conversion_op),
-        ptr(ptr),
-        offset(0) {}
+        ptr(NULL),
+        tex_align_offset(0),
+        tex_obj(0)
+    {}
 
     /// \brief Bind iterator to texture reference
-    cudaError_t BindTexture()
+    cudaError_t BindTexture(
+        InputType*      ptr,                    ///< Native pointer to wrap that is aligned to cudaDeviceProp::textureAlignment
+        size_t          bytes,                  ///< Number of items
+        size_t          tex_align_offset = 0)   ///< Offset (in items) from ptr denoting the position of the iterator
     {
-        return TexIteratorRef<InputType>::BindTexture(ptr, offset);
+        this->ptr = ptr;
+        this->tex_align_offset = tex_align_offset;
+
+        int ptx_version;
+        cudaError_t error = cudaSuccess;
+        if (CubDebug(error = PtxVersion(ptx_version))) return error;
+        if (ptx_version >= 300)
+        {
+            // Use texture object
+            cudaChannelFormatDesc   channel_desc = cudaCreateChannelDesc<InputType>();
+            cudaResourceDesc        res_desc;
+            cudaTextureDesc         tex_desc;
+            memset(&res_desc, 0, sizeof(cudaResourceDesc));
+            memset(&tex_desc, 0, sizeof(cudaTextureDesc));
+            res_desc.resType                = cudaResourceTypeLinear;
+            res_desc.res.linear.devPtr      = ptr;
+            res_desc.res.linear.desc        = channel_desc;
+            res_desc.res.linear.sizeInBytes = bytes;
+            tex_desc.readMode               = cudaReadModeElementType;
+            return cudaCreateTextureObject(&tex_obj, &res_desc, &tex_desc, NULL);
+        }
+        else
+        {
+            // Use texture reference
+            return TexIteratorRef<InputType>::BindTexture(ptr);
+        }
     }
 
     /// \brief Unbind iterator to texture reference
     cudaError_t UnbindTexture()
     {
-        return TexIteratorRef<InputType>::UnbindTexture();
+        int ptx_version;
+        cudaError_t error = cudaSuccess;
+        if (CubDebug(error = PtxVersion(ptx_version))) return error;
+        if (ptx_version >= 300)
+        {
+            // Use texture object
+            return cudaDestroyTextureObject(tex_obj);
+        }
+        else
+        {
+            // Use texture reference
+            return TexIteratorRef<InputType>::UnbindTexture();
+        }
     }
 
 #ifndef DOXYGEN_SHOULD_SKIP_THIS    // Do not document
@@ -581,14 +621,14 @@ public:
     {
         self_type i = *this;
         ptr++;
-        offset++;
+        tex_align_offset++;
         return i;
     }
 
     __host__ __device__ __forceinline__ self_type operator++(int junk)
     {
         ptr++;
-        offset++;
+        tex_align_offset++;
         return *this;
     }
 
@@ -597,9 +637,12 @@ public:
 #if (CUB_PTX_ARCH == 0)
         // Simply dereference the pointer on the host
         return conversion_op(*ptr);
-#else
+#elif (CUB_PTX_ARCH < 300)
         // Use the texture reference
-        return conversion_op(tex1Dfetch(TexIteratorRef<InputType>::ref, offset));
+        return conversion_op(tex1Dfetch(TexIteratorRef<InputType>::ref, tex_align_offset));
+#else
+        // Use the texture object
+        return conversion_op(tex1Dfetch<InputType>(tex_obj, tex_align_offset));
 #endif
     }
 
@@ -607,7 +650,7 @@ public:
     __host__ __device__ __forceinline__ self_type operator+(SizeT n)
     {
         TexTransformIteratorRA retval(ptr + n, conversion_op);
-        retval.offset = offset + n;
+        retval.tex_align_offset = tex_align_offset + n;
         return retval;
     }
 
@@ -615,7 +658,7 @@ public:
     __host__ __device__ __forceinline__ self_type operator-(SizeT n)
     {
         TexTransformIteratorRA retval(ptr - n, conversion_op);
-        retval.offset = offset - n;
+        retval.tex_align_offset = tex_align_offset - n;
         return retval;
     }
 
@@ -625,9 +668,12 @@ public:
 #if (CUB_PTX_ARCH == 0)
         // Simply dereference the pointer on the host
         return conversion_op(ptr[n]);
-#else
+#elif (CUB_PTX_ARCH < 300)
         // Use the texture reference
-        return conversion_op(tex1Dfetch(TexIteratorRef<InputType>::ref, offset + n));
+        return conversion_op(tex1Dfetch(TexIteratorRef<InputType>::ref, tex_align_offset + n));
+#else
+        // Use the texture object
+        return conversion_op(tex1Dfetch<InputType>(tex_obj, tex_align_offset + n));
 #endif
     }
 
@@ -636,9 +682,12 @@ public:
 #if (CUB_PTX_ARCH == 0)
         // Simply dereference the pointer on the host
         return &conversion_op(*ptr);
-#else
+#elif (CUB_PTX_ARCH < 300)
         // Use the texture reference
-        return &conversion_op(tex1Dfetch(TexIteratorRef<InputType>::ref, offset));
+        return &conversion_op(tex1Dfetch(TexIteratorRef<InputType>::ref, tex_align_offset));
+#else
+        // Use the texture object
+        return &conversion_op(tex1Dfetch<InputType>(tex_obj, tex_align_offset));
 #endif
     }
 
