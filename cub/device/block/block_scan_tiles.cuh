@@ -134,7 +134,7 @@ struct BlockScanTiles
         BlockScanTilesPolicy::STORE_WARP_TIME_SLICING>  BlockStoreT;
 
     // Device tile status descriptor type
-    typedef DeviceScanTileDescriptor<T>                 DeviceScanTileDescriptorT;
+    typedef ScanTileDescriptor<T>                 ScanTileDescriptorT;
 
     // Block scan type
     typedef BlockScan<
@@ -312,7 +312,7 @@ struct BlockScanTiles
         SizeT                       num_items,          ///< Total number of input items
         int                         tile_idx,           ///< Tile index
         SizeT                       block_offset,       ///< Tile offset
-        DeviceScanTileDescriptorT   *d_tile_status)     ///< Global list of tile status
+        ScanTileDescriptorT   *d_tile_status)     ///< Global list of tile status
     {
         // Load items
         T items[ITEMS_PER_THREAD];
@@ -331,7 +331,7 @@ struct BlockScanTiles
 
             // Update tile status if there are successor tiles
             if (FULL_TILE && (threadIdx.x == 0))
-                DeviceScanTileDescriptorT::SetPrefix(d_tile_status, block_aggregate);
+                ScanTileDescriptorT::SetPrefix(d_tile_status, block_aggregate);
         }
         else
         {
@@ -354,7 +354,7 @@ struct BlockScanTiles
     __device__ __forceinline__ void ConsumeTiles(
         int                         num_items,          ///< Total number of input items
         GridQueue<int>              queue,              ///< Queue descriptor for assigning tiles of work to thread blocks
-        DeviceScanTileDescriptorT   *d_tile_status)     ///< Global list of tile status
+        ScanTileDescriptorT   *d_tile_status)     ///< Global list of tile status
     {
 #if CUB_PTX_ARCH < 200
 

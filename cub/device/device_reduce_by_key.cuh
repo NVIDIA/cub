@@ -64,18 +64,18 @@ namespace cub {
  * Reduce-by-key kernel entry point (multi-block)
  */
 template <
-    typename    BlockReduceByKeyTilesPolicy,    ///< Tuning policy for cub::BlockReduceByKeyTiles abstraction
+    typename    BlockReduceByKeyilesPolicy,    ///< Tuning policy for cub::BlockReduceByKeyiles abstraction
     typename    InputIteratorRA,                ///< Random-access iterator type for input (may be a simple pointer type)
     typename    OutputIteratorRA,               ///< Random-access iterator type for output (may be a simple pointer type)
     typename    T,                              ///< The scan data type
     typename    ReductionOp,                    ///< Binary scan operator type having member <tt>T operator()(const T &a, const T &b)</tt>
     typename    Identity,                       ///< Identity value type (cub::NullType for inclusive scans)
-    typename    SizeT>                          ///< Integral type used for global array indexing
+    typename    SizeT>                          ///< Integer type used for global array indexing
 __launch_bounds__ (int(BlockSweepScanPolicy::BLOCK_THREADS))
 __global__ void MultiBlockScanKernel(
     InputIteratorRA             d_in,           ///< Input data
     OutputIteratorRA            d_out,          ///< Output data
-    DeviceScanTileDescriptor<T> *d_tile_status, ///< Global list of tile status
+    ScanTileDescriptor<T> *d_tile_status, ///< Global list of tile status
     ReductionOp                 reduction_op,   ///< Binary scan operator
     Identity                    identity,       ///< Identity element
     SizeT                       num_items,      ///< Total number of scan items for the entire problem
@@ -224,10 +224,10 @@ struct DeviceReduceByKey
                                                         100;
 
         // Tuned policy set for the current PTX compiler pass
-        typedef TunedPolicies<T, SizeT, PTX_TUNE_ARCH> PtxPassTunedPolicies;
+        typedef TunedPolicies<T, SizeT, PTX_TUNE_ARCH> PtxTunedPolicies;
 
         // MultiBlockPolicy that opaquely derives from the specialization corresponding to the current PTX compiler pass
-        struct MultiBlockPolicy : PtxPassTunedPolicies::MultiBlockPolicy {};
+        struct MultiBlockPolicy : PtxTunedPolicies::MultiBlockPolicy {};
 
         /**
          * Initialize dispatch params with the policies corresponding to the PTX assembly we will use
@@ -272,7 +272,7 @@ struct DeviceReduceByKey
         typename                    OutputIteratorRA,               ///< Random-access iterator type for output (may be a simple pointer type)
         typename                    ReductionOp,                         ///< Binary scan operator type having member <tt>T operator()(const T &a, const T &b)</tt>
         typename                    Identity,                       ///< Identity value type (cub::NullType for inclusive scans)
-        typename                    SizeT>                          ///< Integral type used for global array indexing
+        typename                    SizeT>                          ///< Integer type used for global array indexing
     __host__ __device__ __forceinline__
     static cudaError_t Dispatch(
         void                        *d_temp_storage,                ///< [in] %Device allocation of temporary storage.  When NULL, the required allocation size is returned in \p temp_storage_bytes and no work is done.
@@ -314,7 +314,7 @@ struct DeviceReduceByKey
             void* allocations[2];
             size_t allocation_sizes[2] =
             {
-                (num_tiles + TILE_STATUS_PADDING) * sizeof(DeviceScanTileDescriptor<T>),        // bytes needed for tile status descriptors
+                (num_tiles + TILE_STATUS_PADDING) * sizeof(ScanTileDescriptor<T>),        // bytes needed for tile status descriptors
                 GridQueue<int>::AllocationSize()                                            // bytes needed for grid queue descriptor
             };
 
@@ -326,7 +326,7 @@ struct DeviceReduceByKey
                 return cudaSuccess;
 
             // Global list of tile status
-            DeviceScanTileDescriptor<T> *d_tile_status = (DeviceScanTileDescriptor<T>*) allocations[0];
+            ScanTileDescriptor<T> *d_tile_status = (ScanTileDescriptor<T>*) allocations[0];
 
             // Grid queue descriptor
             GridQueue<int> queue(allocations[1]);
@@ -420,7 +420,7 @@ struct DeviceReduceByKey
         typename                    OutputIteratorRA,               ///< Random-access iterator type for output (may be a simple pointer type)
         typename                    ReductionOp,                         ///< Binary scan operator type having member <tt>T operator()(const T &a, const T &b)</tt>
         typename                    Identity,                       ///< Identity value type (cub::NullType for inclusive scans)
-        typename                    SizeT>                          ///< Integral type used for global array indexing
+        typename                    SizeT>                          ///< Integer type used for global array indexing
     __host__ __device__ __forceinline__
     static cudaError_t Dispatch(
         void                        *d_temp_storage,                ///< [in] %Device allocation of temporary storage.  When NULL, the required allocation size is returned in \p temp_storage_bytes and no work is done.

@@ -80,25 +80,25 @@ bool g_uniform_keys;
  * Simple kernel for performing a block-wide sorting over integers
  */
 template <
-    typename    KeyType,
+    typename    Key,
     int         BLOCK_THREADS,
     int         ITEMS_PER_THREAD>
 __launch_bounds__ (BLOCK_THREADS)
 __global__ void BlockSortKernel(
-    KeyType     *d_in,          // Tile of input
-    KeyType     *d_out,         // Tile of output
+    Key     *d_in,          // Tile of input
+    Key     *d_out,         // Tile of output
     clock_t     *d_elapsed)     // Elapsed cycle count of block scan
 {
     enum { TILE_SIZE = BLOCK_THREADS * ITEMS_PER_THREAD };
 
     // Parameterize BlockRadixSort type for our thread block
-    typedef BlockRadixSort<KeyType, BLOCK_THREADS, ITEMS_PER_THREAD> BlockRadixSortT;
+    typedef BlockRadixSort<Key, BLOCK_THREADS, ITEMS_PER_THREAD> BlockRadixSortT;
 
     // Shared memory
     __shared__ typename BlockRadixSortT::TempStorage temp_storage;
 
     // Per-thread tile items
-    KeyType items[ITEMS_PER_THREAD];
+    Key items[ITEMS_PER_THREAD];
 
     // Load items in striped fashion
     int block_offset = blockIdx.x * TILE_SIZE;
@@ -133,10 +133,10 @@ __global__ void BlockSortKernel(
 /**
  * Initialize sorting problem (and solution).
  */
-template <typename KeyType>
+template <typename Key>
 void Initialize(
-    KeyType *h_in,
-    KeyType *h_reference,
+    Key *h_in,
+    Key *h_reference,
     int num_items,
     int tile_size)
 {
@@ -162,7 +162,7 @@ void Initialize(
  * Test BlockScan
  */
 template <
-    typename    KeyType,
+    typename    Key,
     int         BLOCK_THREADS,
     int         ITEMS_PER_THREAD>
 void Test()
@@ -170,19 +170,19 @@ void Test()
     const int TILE_SIZE = BLOCK_THREADS * ITEMS_PER_THREAD;
 
     // Allocate host arrays
-    KeyType *h_in           = new KeyType[TILE_SIZE * g_grid_size];
-    KeyType *h_reference    = new KeyType[TILE_SIZE * g_grid_size];
+    Key *h_in           = new Key[TILE_SIZE * g_grid_size];
+    Key *h_reference    = new Key[TILE_SIZE * g_grid_size];
     clock_t *h_elapsed      = new clock_t[g_grid_size];
 
     // Initialize problem and reference output on host
     Initialize(h_in, h_reference, TILE_SIZE * g_grid_size, TILE_SIZE);
 
     // Initialize device arrays
-    KeyType *d_in       = NULL;
-    KeyType *d_out      = NULL;
+    Key *d_in       = NULL;
+    Key *d_out      = NULL;
     clock_t *d_elapsed  = NULL;
-    CubDebugExit(cudaMalloc((void**)&d_in,          sizeof(KeyType) * TILE_SIZE * g_grid_size));
-    CubDebugExit(cudaMalloc((void**)&d_out,         sizeof(KeyType) * TILE_SIZE * g_grid_size));
+    CubDebugExit(cudaMalloc((void**)&d_in,          sizeof(Key) * TILE_SIZE * g_grid_size));
+    CubDebugExit(cudaMalloc((void**)&d_out,         sizeof(Key) * TILE_SIZE * g_grid_size));
     CubDebugExit(cudaMalloc((void**)&d_elapsed,     sizeof(clock_t) * g_grid_size));
 
     // Display input problem data
@@ -198,17 +198,17 @@ void Test()
     Device device;
     int max_sm_occupancy;
     CubDebugExit(device.Init());
-    CubDebugExit(device.MaxSmOccupancy(max_sm_occupancy, BlockSortKernel<KeyType, BLOCK_THREADS, ITEMS_PER_THREAD>, BLOCK_THREADS));
+    CubDebugExit(device.MaxSmOccupancy(max_sm_occupancy, BlockSortKernel<Key, BLOCK_THREADS, ITEMS_PER_THREAD>, BLOCK_THREADS));
 
     // Copy problem to device
-    CubDebugExit(cudaMemcpy(d_in, h_in, sizeof(KeyType) * TILE_SIZE * g_grid_size, cudaMemcpyHostToDevice));
+    CubDebugExit(cudaMemcpy(d_in, h_in, sizeof(Key) * TILE_SIZE * g_grid_size, cudaMemcpyHostToDevice));
 
     printf("BlockRadixSort %d items (%d timing iterations, %d blocks, %d threads, %d items per thread, %d SM occupancy):\n",
         TILE_SIZE * g_grid_size, g_iterations, g_grid_size, BLOCK_THREADS, ITEMS_PER_THREAD, max_sm_occupancy);
     fflush(stdout);
 
     // Run kernel once to prime caches and check result
-    BlockSortKernel<KeyType, BLOCK_THREADS, ITEMS_PER_THREAD><<<g_grid_size, BLOCK_THREADS>>>(
+    BlockSortKernel<Key, BLOCK_THREADS, ITEMS_PER_THREAD><<<g_grid_size, BLOCK_THREADS>>>(
         d_in,
         d_out,
         d_elapsed);
@@ -233,7 +233,7 @@ void Test()
         timer.Start();
 
         // Run kernel
-        BlockSortKernel<KeyType, BLOCK_THREADS, ITEMS_PER_THREAD><<<g_grid_size, BLOCK_THREADS>>>(
+        BlockSortKernel<Key, BLOCK_THREADS, ITEMS_PER_THREAD><<<g_grid_size, BLOCK_THREADS>>>(
             d_in,
             d_out,
             d_elapsed);

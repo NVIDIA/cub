@@ -51,13 +51,16 @@ CUB_NS_PREFIX
 /// CUB namespace
 namespace cub {
 
+#ifndef DOXYGEN_SHOULD_SKIP_THIS    // Do not document
+
+
+
+
+
 
 /******************************************************************************
  * Kernel entry points
  *****************************************************************************/
-
-#ifndef DOXYGEN_SHOULD_SKIP_THIS    // Do not document
-
 
 /**
  * Reduction pass kernel entry point (multi-block).  Computes privatized reductions, one per thread block.
@@ -66,7 +69,7 @@ template <
     typename                BlockReduceTilesPolicy, ///< Tuning policy for cub::BlockReduceTiles abstraction
     typename                InputIteratorRA,        ///< Random-access iterator type for input (may be a simple pointer type)
     typename                OutputIteratorRA,       ///< Random-access iterator type for output (may be a simple pointer type)
-    typename                SizeT,                  ///< Integral type used for global array indexing
+    typename                SizeT,                  ///< Integer type used for global array indexing
     typename                ReductionOp>            ///< Binary reduction operator type having member <tt>T operator()(const T &a, const T &b)</tt>
 __launch_bounds__ (int(BlockReduceTilesPolicy::BLOCK_THREADS), 1)
 __global__ void MultiBlockReduceKernel(
@@ -112,7 +115,7 @@ template <
     typename                BlockReduceTilesPolicy,  ///< Tuning policy for cub::BlockReduceTiles abstraction
     typename                InputIteratorRA,        ///< Random-access iterator type for input (may be a simple pointer type)
     typename                OutputIteratorRA,       ///< Random-access iterator type for output (may be a simple pointer type)
-    typename                SizeT,                  ///< Integral type used for global array indexing
+    typename                SizeT,                  ///< Integer type used for global array indexing
     typename                ReductionOp>            ///< Binary reduction operator type having member <tt>T operator()(const T &a, const T &b)</tt>
 __launch_bounds__ (int(BlockReduceTilesPolicy::BLOCK_THREADS), 1)
 __global__ void SingleBlockReduceKernel(
@@ -165,14 +168,14 @@ struct DeviceReduce
 {
 #ifndef DOXYGEN_SHOULD_SKIP_THIS    // Do not document
 
+
     /******************************************************************************
      * Constants and typedefs
      ******************************************************************************/
 
-    /// Generic structure for encapsulating dispatch properties.  Mirrors the constants within BlockReduceTilesPolicy.
+    /// Generic structure for encapsulating dispatch properties codified in block policy.
     struct KernelDispachParams
     {
-        // Policy fields
         int                     block_threads;
         int                     items_per_thread;
         int                     vector_load_length;
@@ -180,23 +183,20 @@ struct DeviceReduce
         PtxLoadModifier         load_modifier;
         GridMappingStrategy     grid_mapping;
         int                     subscription_factor;
-
-        // Derived fields
         int                     tile_size;
 
-        template <typename BlockReduceTilesPolicy>
+        template <typename BlockPolicy>
         __host__ __device__ __forceinline__
         void Init(int subscription_factor = 1)
         {
-            block_threads               = BlockReduceTilesPolicy::BLOCK_THREADS;
-            items_per_thread            = BlockReduceTilesPolicy::ITEMS_PER_THREAD;
-            vector_load_length          = BlockReduceTilesPolicy::VECTOR_LOAD_LENGTH;
-            block_algorithm             = BlockReduceTilesPolicy::BLOCK_ALGORITHM;
-            load_modifier               = BlockReduceTilesPolicy::LOAD_MODIFIER;
-            grid_mapping                = BlockReduceTilesPolicy::GRID_MAPPING;
+            block_threads               = BlockPolicy::BLOCK_THREADS;
+            items_per_thread            = BlockPolicy::ITEMS_PER_THREAD;
+            vector_load_length          = BlockPolicy::VECTOR_LOAD_LENGTH;
+            block_algorithm             = BlockPolicy::BLOCK_ALGORITHM;
+            load_modifier               = BlockPolicy::LOAD_MODIFIER;
+            grid_mapping                = BlockPolicy::GRID_MAPPING;
             this->subscription_factor   = subscription_factor;
-
-            tile_size = block_threads * items_per_thread;
+            tile_size                   = block_threads * items_per_thread;
         }
 
         __host__ __device__ __forceinline__
@@ -298,6 +298,11 @@ struct DeviceReduce
     };
 
 
+
+    /******************************************************************************
+     * Default policy initializer
+     ******************************************************************************/
+
     /// Tuning policy(ies) for the PTX architecture that DeviceReduce operations will get dispatched to
     template <typename T, typename SizeT>
     struct PtxDefaultPolicies
@@ -313,16 +318,16 @@ struct DeviceReduce
                                                             100;
 
         // Tuned policy set for the current PTX compiler pass
-        typedef TunedPolicies<T, SizeT, PTX_TUNE_ARCH> PtxPassTunedPolicies;
+        typedef TunedPolicies<T, SizeT, PTX_TUNE_ARCH> PtxTunedPolicies;
 
         // Subscription factor for the current PTX compiler pass
-        static const int SUBSCRIPTION_FACTOR = PtxPassTunedPolicies::SUBSCRIPTION_FACTOR;
+        static const int SUBSCRIPTION_FACTOR = PtxTunedPolicies::SUBSCRIPTION_FACTOR;
 
         // MultiBlockPolicy that opaquely derives from the specialization corresponding to the current PTX compiler pass
-        struct MultiBlockPolicy : PtxPassTunedPolicies::MultiBlockPolicy {};
+        struct MultiBlockPolicy : PtxTunedPolicies::MultiBlockPolicy {};
 
         // SingleBlockPolicy that opaquely derives from the specialization corresponding to the current PTX compiler pass
-        struct SingleBlockPolicy : PtxPassTunedPolicies::SingleBlockPolicy {};
+        struct SingleBlockPolicy : PtxTunedPolicies::SingleBlockPolicy {};
 
 
         /**
@@ -367,10 +372,10 @@ struct DeviceReduce
     };
 
 
+
     /******************************************************************************
      * Utility methods
      ******************************************************************************/
-
 
     /**
      * Internal dispatch routine for computing a device-wide reduction using a two-stages of kernel invocations.
@@ -381,7 +386,7 @@ struct DeviceReduce
         typename                    ResetDrainKernelPtr,                ///< Function type of cub::ResetDrainKernel
         typename                    InputIteratorRA,                    ///< Random-access iterator type for input (may be a simple pointer type)
         typename                    OutputIteratorRA,                   ///< Random-access iterator type for output (may be a simple pointer type)
-        typename                    SizeT,                              ///< Integral type used for global array indexing
+        typename                    SizeT,                              ///< Integer type used for global array indexing
         typename                    ReductionOp>                        ///< Binary reduction operator type having member <tt>T operator()(const T &a, const T &b)</tt>
     __host__ __device__ __forceinline__
     static cudaError_t Dispatch(
@@ -457,7 +462,7 @@ struct DeviceReduce
                     ArchProps<CUB_PTX_ARCH>::MAX_SM_THREADBLOCKS,
                     ArchProps<CUB_PTX_ARCH>::MAX_SM_THREADS / multi_block_dispatch_params.block_threads);
 
-    #ifndef __CUDA_ARCH__
+#ifndef __CUDA_ARCH__
                 // We're on the host, so come up with a more accurate estimate of multi_block_kernel SM occupancy from actual device properties
                 Device device_props;
                 if (CubDebug(error = device_props.Init(device_ordinal))) break;
@@ -466,7 +471,7 @@ struct DeviceReduce
                     multi_block_sm_occupancy,
                     multi_block_kernel,
                     multi_block_dispatch_params.block_threads))) break;
-    #endif
+#endif
 
                 // Get device occupancy for multi_block_kernel
                 int multi_block_occupancy = multi_block_sm_occupancy * sm_count;
@@ -633,10 +638,10 @@ struct DeviceReduce
         // Data type of input iterator
         typedef typename std::iterator_traits<InputIteratorRA>::value_type T;
 
-        // Tuning polices for the PTX architecture that will get dispatched to
-        typedef PtxDefaultPolicies<T, SizeT> PtxDefaultPolicies;
-        typedef typename PtxDefaultPolicies::MultiBlockPolicy MultiBlockPolicy;       // Multi-block kernel policy
-        typedef typename PtxDefaultPolicies::SingleBlockPolicy SingleBlockPolicy;     // Single-block kernel policy
+        // Tuning polices
+        typedef PtxDefaultPolicies<T, SizeT>                    PtxDefaultPolicies;     // Wrapper of default kernel policies
+        typedef typename PtxDefaultPolicies::MultiBlockPolicy   MultiBlockPolicy;       // Multi-block kernel policy
+        typedef typename PtxDefaultPolicies::SingleBlockPolicy  SingleBlockPolicy;      // Single-block kernel policy
 
         cudaError error = cudaSuccess;
         do
@@ -645,20 +650,16 @@ struct DeviceReduce
             KernelDispachParams multi_block_dispatch_params;
             KernelDispachParams single_block_dispatch_params;
 
-        #ifdef __CUDA_ARCH__
-
+#ifdef __CUDA_ARCH__
             // We're on the device, so initialize the dispatch parameters with the PtxDefaultPolicies directly
             multi_block_dispatch_params.Init<MultiBlockPolicy>(PtxDefaultPolicies::SUBSCRIPTION_FACTOR);
             single_block_dispatch_params.Init<SingleBlockPolicy>();
-
-        #else
-
+#else
             // We're on the host, so lookup and initialize the dispatch parameters with the policies that match the device's PTX version
             int ptx_version;
             if (CubDebug(error = PtxVersion(ptx_version))) break;
             PtxDefaultPolicies::InitDispatchParams(ptx_version, multi_block_dispatch_params, single_block_dispatch_params);
-
-        #endif
+#endif
 
             // Dispatch
             if (CubDebug(error = Dispatch(

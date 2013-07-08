@@ -81,7 +81,7 @@ struct BlockRadixSortHistoTilesPolicy
  */
 template <
     typename BlockRadixSortHistoTilesPolicy,
-    typename KeyType,
+    typename Key,
     typename SizeT>
 struct BlockRadixSortHistoTiles
 {
@@ -90,7 +90,7 @@ struct BlockRadixSortHistoTiles
     // Type definitions and constants
     //---------------------------------------------------------------------
 
-    typedef typename Traits<KeyType>::UnsignedBits UnsignedBits;
+    typedef typename Traits<Key>::UnsignedBits UnsignedBits;
 
     // Integer type for digit counters (to be packed into words of PackedCounters)
     typedef unsigned char DigitCounter;
@@ -225,7 +225,7 @@ struct BlockRadixSortHistoTiles
     __device__ __forceinline__ void Bucket(UnsignedBits key)
     {
         // Perform transform op
-        UnsignedBits converted_key = Traits<KeyType>::TwiddleIn(key);
+        UnsignedBits converted_key = Traits<Key>::TwiddleIn(key);
 
         // Add in sub-counter offset
         UnsignedBits sub_counter = BFE(converted_key, current_bit, LOG_PACKING_RATIO);
@@ -345,7 +345,7 @@ struct BlockRadixSortHistoTiles
         // Tile of keys
         UnsignedBits keys[KEYS_PER_THREAD];
 
-        LoadStriped<LOAD_MODIFIER>(d_keys_in, keys);
+        LoadStriped<LOAD_MODIFIER, BLOCK_THREADS>(threadIdx.x, d_keys_in, keys);
 
         // Bucket tile of keys
         Iterate<0, KEYS_PER_THREAD>::BucketKeys(*this, keys);
@@ -380,7 +380,7 @@ struct BlockRadixSortHistoTiles
      */
     __device__ __forceinline__ BlockRadixSortHistoTiles(
         TempStorage     &temp_storage,
-        KeyType         *d_keys_in,
+        Key         *d_keys_in,
         unsigned int    current_bit)
     :
         temp_storage(temp_storage),
