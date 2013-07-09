@@ -323,3 +323,14 @@ bin/test_device_scan_$(SUFFIX) : test_device_scan.cu $(DEPS)
 	$(NVCC) $(DEFINES) $(SM_TARGETS) -o bin/test_device_scan_$(SUFFIX) test_device_scan.cu $(NVCCFLAGS) $(CPU_ARCH) $(INC) $(LIBS) -O3
 
 
+#-------------------------------------------------------------------------------
+# make test_device_radix_sort
+#-------------------------------------------------------------------------------
+
+test_device_radix_sort: bin/test_device_radix_sort_$(SUFFIX)
+
+bin/test_device_radix_sort_$(SUFFIX) : test_device_radix_sort.cu $(DEPS)
+	mkdir -p bin
+	$(NVCC) $(DEFINES) $(SM_TARGETS) -o bin/test_device_radix_sort_$(SUFFIX) test_device_radix_sort.cu $(NVCCFLAGS) $(CPU_ARCH) $(INC) $(LIBS) -O3
+
+

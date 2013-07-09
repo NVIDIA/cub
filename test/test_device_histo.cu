@@ -53,6 +53,172 @@ int                     g_timing_iterations = 0;
 int                     g_repeat            = 0;
 CachingDeviceAllocator  g_allocator;
 
+
+//---------------------------------------------------------------------
+// Dispatch to different DeviceHisto entrypoints
+//---------------------------------------------------------------------
+
+/**
+ * Dispatch to shared atomic entrypoint
+ */
+template <int BINS, int CHANNELS, int ACTIVE_CHANNELS, typename InputIteratorRA, typename HistoCounter>
+__host__ __device__ __forceinline__
+cudaError_t Dispatch(
+    Int2Type<GRID_HISTO_SORT> algorithm,
+    Int2Type<false>     use_cnp,
+    int                 timing_iterations,
+    size_t              *d_temp_storage_bytes,
+    cudaError_t         *d_cnp_error,
+
+    void                *d_temp_storage,
+    size_t              &temp_storage_bytes,
+    InputIteratorRA     d_sample_itr,
+    HistoCounter        *d_histograms[ACTIVE_CHANNELS],
+    int                 num_samples,
+    cudaStream_t        stream,
+    bool                stream_synchronous)
+{
+    cudaError_t error = cudaSuccess;
+    for (int i = 0; i < timing_iterations; ++i)
+    {
+        error = DeviceHisto::MultiChannelSorting<BINS, CHANNELS, ACTIVE_CHANNELS>(d_temp_storage, temp_storage_bytes, d_sample_itr, d_histograms, num_samples, stream, stream_synchronous);
+    }
+    return error;
+}
+
+
+/**
+ *
+ *
+ * Dispatch to shared atomic entrypoint
+ */
+template <int BINS, int CHANNELS, int ACTIVE_CHANNELS, typename InputIteratorRA, typename HistoCounter>
+__host__ __device__ __forceinline__
+cudaError_t Dispatch(
+    Int2Type<GRID_HISTO_SHARED_ATOMIC> algorithm,
+    Int2Type<false>     use_cnp,
+    int                 timing_iterations,
+    size_t              *d_temp_storage_bytes,
+    cudaError_t         *d_cnp_error,
+
+    void                *d_temp_storage,
+    size_t              &temp_storage_bytes,
+    InputIteratorRA     d_sample_itr,
+    HistoCounter        *d_histograms[ACTIVE_CHANNELS],
+    int                 num_samples,
+    cudaStream_t        stream,
+    bool                stream_synchronous)
+{
+    cudaError_t error = cudaSuccess;
+    for (int i = 0; i < timing_iterations; ++i)
+    {
+        error = DeviceHisto::MultiChannelSharedAtomic<BINS, CHANNELS, ACTIVE_CHANNELS>(d_temp_storage, temp_storage_bytes, d_sample_itr, d_histograms, num_samples, stream, stream_synchronous);
+    }
+    return error;
+}
+
+
+/**
+ * Dispatch to global atomic entrypoint
+ */
+template <int BINS, int CHANNELS, int ACTIVE_CHANNELS, typename InputIteratorRA, typename HistoCounter>
+__host__ __device__ __forceinline__
+cudaError_t Dispatch(
+    Int2Type<GRID_HISTO_GLOBAL_ATOMIC> algorithm,
+    Int2Type<false>     use_cnp,
+    int                 timing_iterations,
+    size_t              *d_temp_storage_bytes,
+    cudaError_t         *d_cnp_error,
+
+    void                *d_temp_storage,
+    size_t              &temp_storage_bytes,
+    InputIteratorRA     d_sample_itr,
+    HistoCounter        *d_histograms[ACTIVE_CHANNELS],
+    int                 num_samples,
+    cudaStream_t        stream,
+    bool                stream_synchronous)
+{
+    cudaError_t error = cudaSuccess;
+    for (int i = 0; i < timing_iterations; ++i)
+    {
+        error = DeviceHisto::MultiChannelGlobalAtomic<BINS, CHANNELS, ACTIVE_CHANNELS>(d_temp_storage, temp_storage_bytes, d_sample_itr, d_histograms, num_samples, stream, stream_synchronous);
+    }
+    return error;
+}
+
+
+//---------------------------------------------------------------------
+// CUDA nested-parallelism test kernel
+//---------------------------------------------------------------------
+
+/**
+ * Simple wrapper kernel to invoke DeviceScan
+ */
+template <int BINS, int CHANNELS, int ACTIVE_CHANNELS, typename InputIteratorRA, typename HistoCounter, int ALGORITHM>
+__global__ void CnpDispatchKernel(
+    Int2Type<ALGORITHM> algorithm,
+    int                 timing_iterations,
+    size_t              *d_temp_storage_bytes,
+    cudaError_t         *d_cnp_error,
+
+    void                *d_temp_storage,
+    size_t              temp_storage_bytes,
+    InputIteratorRA     d_sample_itr,
+    ArrayWrapper<HistoCounter*, ACTIVE_CHANNELS> d_out_histograms,
+    int                 num_samples,
+    bool                stream_synchronous)
+{
+#ifndef CUB_CNP
+    *d_cnp_error = cudaErrorNotSupported;
+#else
+    *d_cnp_error = Dispatch<BINS, CHANNELS, ACTIVE_CHANNELS>(algorithm, Int2Type<false>(), timing_iterations, d_temp_storage_bytes, d_cnp_error, d_temp_storage, temp_storage_bytes, d_sample_itr, d_out_histograms.array, num_samples, 0, stream_synchronous);
+    *d_temp_storage_bytes = temp_storage_bytes;
+#endif
+}
+
+
+/**
+ * Dispatch to CNP kernel
+ */
+template <int BINS, int CHANNELS, int ACTIVE_CHANNELS, typename InputIteratorRA, typename HistoCounter, int ALGORITHM>
+cudaError_t Dispatch(
+    Int2Type<ALGORITHM> algorithm,
+    Int2Type<true>      use_cnp,
+    int                 timing_iterations,
+    size_t              *d_temp_storage_bytes,
+    cudaError_t         *d_cnp_error,
+
+    void                *d_temp_storage,
+    size_t              &temp_storage_bytes,
+    InputIteratorRA     d_sample_itr,
+    HistoCounter        *d_histograms[ACTIVE_CHANNELS],
+    int                 num_samples,
+    cudaStream_t        stream,
+    bool                stream_synchronous)
+{
+    // Setup array wrapper for histogram channel output (because we can't pass static arrays as kernel parameters)
+    ArrayWrapper<HistoCounter*, ACTIVE_CHANNELS> d_histo_wrapper;
+    for (int CHANNEL = 0; CHANNEL < ACTIVE_CHANNELS; ++CHANNEL)
+        d_histo_wrapper.array[CHANNEL] = d_histograms[CHANNEL];
+
+    // Invoke kernel to invoke device-side dispatch
+    CnpDispatchKernel<BINS, CHANNELS, ACTIVE_CHANNELS, InputIteratorRA, HistoCounter, ALGORITHM><<<1,1>>>(algorithm, timing_iterations, d_temp_storage_bytes, d_cnp_error, d_temp_storage, temp_storage_bytes, d_sample_itr, d_histo_wrapper, num_samples, stream_synchronous);
+
+    // Copy out temp_storage_bytes
+    CubDebugExit(cudaMemcpy(&temp_storage_bytes, d_temp_storage_bytes, sizeof(size_t) * 1, cudaMemcpyDeviceToHost));
+
+    // Copy out error
+    cudaError_t retval;
+    CubDebugExit(cudaMemcpy(&retval, d_cnp_error, sizeof(cudaError_t) * 1, cudaMemcpyDeviceToHost));
+    return retval;
+}
+
+
+
+//---------------------------------------------------------------------
+// Test generation
+//---------------------------------------------------------------------
+
 /**
  * Scaling operator for binning f32 types
  */
@@ -67,10 +233,6 @@ struct FloatScaleOp
 };
 
 
-//---------------------------------------------------------------------
-// Host utility subroutines
-//---------------------------------------------------------------------
-
 /**
  * Generate integer sample
  */
@@ -80,6 +242,7 @@ void Sample(GenMode gen_mode, T &datum, int i)
     InitValue(gen_mode, datum, i);
     datum = datum % BINS;
 }
+
 
 /**
  * Generate float sample [0..1]
@@ -93,6 +256,7 @@ void Sample(GenMode gen_mode, float &datum, int i)
     InitValue(gen_mode, bits, i);
     datum = float(bits) / max;
 }
+
 
 /**
  * Initialize problem (and solution)
@@ -148,164 +312,6 @@ void Initialize(
 }
 
 
-//---------------------------------------------------------------------
-// Dispatch to different DeviceHisto entrypoints
-//---------------------------------------------------------------------
-
-/**
- * Dispatch to shared atomic entrypoint
- */
-template <int BINS, int CHANNELS, int ACTIVE_CHANNELS, typename InputIteratorRA, typename HistoCounter>
-__host__ __device__ __forceinline__
-cudaError_t Dispatch(
-    Int2Type<GRID_HISTO_SORT> algorithm,
-    Int2Type<false>     use_cnp,
-    int                 timing_iterations,
-    cudaError_t         *d_cnp_error,
-    size_t              *d_temp_storage_bytes,
-    void                *d_temp_storage,                    ///< [in] %Device allocation of temporary storage.  When NULL, the required allocation size is returned in \p temp_storage_bytes and no work is done.
-    size_t              &temp_storage_bytes,                ///< [in,out] Size in bytes of \p d_temp_storage allocation.
-    InputIteratorRA     d_sample_itr,                       ///< [in] Input samples. (Channels, if any, are interleaved in "AOS" format)
-    HistoCounter        *d_histograms[ACTIVE_CHANNELS],     ///< [out] Array of channel histogram counter arrays, each having BINS counters of integral type \p HistoCounter.
-    int                 num_samples,                        ///< [in] Number of samples to process
-    cudaStream_t        stream              = 0,            ///< [in] <b>[optional]</b> CUDA stream to launch kernels within.  Default is stream<sub>0</sub>.
-    bool                stream_synchronous  = false)        ///< [in] <b>[optional]</b> Whether or not to synchronize the stream after every kernel launch to check for errors.  May cause significant slowdown.  Default is \p false.
-{
-    cudaError_t error = cudaSuccess;
-    for (int i = 0; i < timing_iterations; ++i)
-    {
-        error = DeviceHisto::MultiChannelSorting<BINS, CHANNELS, ACTIVE_CHANNELS>(d_temp_storage, temp_storage_bytes, d_sample_itr, d_histograms, num_samples, stream, stream_synchronous);
-    }
-    return error;
-}
-
-
-/**
- * Dispatch to shared atomic entrypoint
- */
-template <int BINS, int CHANNELS, int ACTIVE_CHANNELS, typename InputIteratorRA, typename HistoCounter>
-__host__ __device__ __forceinline__
-cudaError_t Dispatch(
-    Int2Type<GRID_HISTO_SHARED_ATOMIC> algorithm,
-    Int2Type<false>     use_cnp,
-    int                 timing_iterations,
-    cudaError_t         *d_cnp_error,
-    size_t              *d_temp_storage_bytes,
-    void                *d_temp_storage,                    ///< [in] %Device allocation of temporary storage.  When NULL, the required allocation size is returned in \p temp_storage_bytes and no work is done.
-    size_t              &temp_storage_bytes,                ///< [in,out] Size in bytes of \p d_temp_storage allocation.
-    InputIteratorRA     d_sample_itr,                       ///< [in] Input samples. (Channels, if any, are interleaved in "AOS" format)
-    HistoCounter        *d_histograms[ACTIVE_CHANNELS],     ///< [out] Array of channel histogram counter arrays, each having BINS counters of integral type \p HistoCounter.
-    int                 num_samples,                        ///< [in] Number of samples to process
-    cudaStream_t        stream              = 0,            ///< [in] <b>[optional]</b> CUDA stream to launch kernels within.  Default is stream<sub>0</sub>.
-    bool                stream_synchronous  = false)        ///< [in] <b>[optional]</b> Whether or not to synchronize the stream after every kernel launch to check for errors.  May cause significant slowdown.  Default is \p false.
-{
-    cudaError_t error = cudaSuccess;
-    for (int i = 0; i < timing_iterations; ++i)
-    {
-        error = DeviceHisto::MultiChannelSharedAtomic<BINS, CHANNELS, ACTIVE_CHANNELS>(d_temp_storage, temp_storage_bytes, d_sample_itr, d_histograms, num_samples, stream, stream_synchronous);
-    }
-    return error;
-}
-
-
-/**
- * Dispatch to global atomic entrypoint
- */
-template <int BINS, int CHANNELS, int ACTIVE_CHANNELS, typename InputIteratorRA, typename HistoCounter>
-__host__ __device__ __forceinline__
-cudaError_t Dispatch(
-    Int2Type<GRID_HISTO_GLOBAL_ATOMIC> algorithm,
-    Int2Type<false>     use_cnp,
-    int                 timing_iterations,
-    cudaError_t         *d_cnp_error,
-    size_t              *d_temp_storage_bytes,
-    void                *d_temp_storage,                    ///< [in] %Device allocation of temporary storage.  When NULL, the required allocation size is returned in \p temp_storage_bytes and no work is done.
-    size_t              &temp_storage_bytes,                ///< [in,out] Size in bytes of \p d_temp_storage allocation.
-    InputIteratorRA     d_sample_itr,                       ///< [in] Input samples. (Channels, if any, are interleaved in "AOS" format)
-    HistoCounter        *d_histograms[ACTIVE_CHANNELS],     ///< [out] Array of channel histogram counter arrays, each having BINS counters of integral type \p HistoCounter.
-    int                 num_samples,                        ///< [in] Number of samples to process
-    cudaStream_t        stream              = 0,            ///< [in] <b>[optional]</b> CUDA stream to launch kernels within.  Default is stream<sub>0</sub>.
-    bool                stream_synchronous  = false)        ///< [in] <b>[optional]</b> Whether or not to synchronize the stream after every kernel launch to check for errors.  May cause significant slowdown.  Default is \p false.
-{
-    cudaError_t error = cudaSuccess;
-    for (int i = 0; i < timing_iterations; ++i)
-    {
-        error = DeviceHisto::MultiChannelGlobalAtomic<BINS, CHANNELS, ACTIVE_CHANNELS>(d_temp_storage, temp_storage_bytes, d_sample_itr, d_histograms, num_samples, stream, stream_synchronous);
-    }
-    return error;
-}
-
-
-//---------------------------------------------------------------------
-// CUDA Nested Parallelism Test Kernel
-//---------------------------------------------------------------------
-
-/**
- * Simple wrapper kernel to invoke DeviceScan
- */
-template <int BINS, int CHANNELS, int ACTIVE_CHANNELS, typename InputIteratorRA, typename HistoCounter, int ALGORITHM>
-__global__ void CnpDispatchKernel(
-    Int2Type<ALGORITHM> algorithm,
-    int                 timing_iterations,
-    cudaError_t         *d_cnp_error,
-    size_t              *d_temp_storage_bytes,
-    void                *d_temp_storage,
-    size_t              temp_storage_bytes,
-    InputIteratorRA     d_sample_itr,
-    ArrayWrapper<HistoCounter*, ACTIVE_CHANNELS> d_out_histograms,
-    int                 num_samples,
-    bool                stream_synchronous)
-{
-#ifndef CUB_CNP
-    *d_cnp_error = cudaErrorNotSupported;
-#else
-    *d_cnp_error = Dispatch<BINS, CHANNELS, ACTIVE_CHANNELS>(algorithm, Int2Type<false>(), timing_iterations, d_cnp_error, d_temp_storage_bytes, d_temp_storage, temp_storage_bytes, d_sample_itr, d_out_histograms.array, num_samples, 0, stream_synchronous);
-    *d_temp_storage_bytes = temp_storage_bytes;
-#endif
-}
-
-
-/**
- * Dispatch to CNP kernel
- */
-template <int BINS, int CHANNELS, int ACTIVE_CHANNELS, typename InputIteratorRA, typename HistoCounter, int ALGORITHM>
-cudaError_t Dispatch(
-    Int2Type<ALGORITHM> algorithm,
-    Int2Type<true>      use_cnp,
-    int                 timing_iterations,
-    cudaError_t         *d_cnp_error,
-    size_t              *d_temp_storage_bytes,
-    void                *d_temp_storage,                    ///< [in] %Device allocation of temporary storage.  When NULL, the required allocation size is returned in \p temp_storage_bytes and no work is done.
-    size_t              &temp_storage_bytes,                ///< [in,out] Size in bytes of \p d_temp_storage allocation.
-    InputIteratorRA     d_sample_itr,                       ///< [in] Input samples. (Channels, if any, are interleaved in "AOS" format)
-    HistoCounter        *d_histograms[ACTIVE_CHANNELS],     ///< [out] Array of channel histogram counter arrays, each having BINS counters of integral type \p HistoCounter.
-    int                 num_samples,                        ///< [in] Number of samples to process
-    cudaStream_t        stream              = 0,            ///< [in] <b>[optional]</b> CUDA stream to launch kernels within.  Default is stream<sub>0</sub>.
-    bool                stream_synchronous  = false)        ///< [in] <b>[optional]</b> Whether or not to synchronize the stream after every kernel launch to check for errors.  May cause significant slowdown.  Default is \p false.
-{
-    // Setup array wrapper for histogram channel output (because we can't pass static arrays as kernel parameters)
-    ArrayWrapper<HistoCounter*, ACTIVE_CHANNELS> d_histo_wrapper;
-    for (int CHANNEL = 0; CHANNEL < ACTIVE_CHANNELS; ++CHANNEL)
-        d_histo_wrapper.array[CHANNEL] = d_histograms[CHANNEL];
-
-    // Invoke kernel to invoke device-side dispatch
-    CnpDispatchKernel<BINS, CHANNELS, ACTIVE_CHANNELS, InputIteratorRA, HistoCounter, ALGORITHM><<<1,1>>>(algorithm, timing_iterations, d_cnp_error, d_temp_storage_bytes, d_temp_storage, temp_storage_bytes, d_sample_itr, d_histo_wrapper, num_samples, stream_synchronous);
-
-    // Copy out temp_storage_bytes
-    CubDebugExit(cudaMemcpy(&temp_storage_bytes, d_temp_storage_bytes, sizeof(size_t) * 1, cudaMemcpyDeviceToHost));
-
-    // Copy out error
-    cudaError_t retval;
-    CubDebugExit(cudaMemcpy(&retval, d_cnp_error, sizeof(cudaError_t) * 1, cudaMemcpyDeviceToHost));
-    return retval;
-}
-
-
-
-//---------------------------------------------------------------------
-// Test generation
-//---------------------------------------------------------------------
-
 /**
  * Test DeviceHisto
  */
@@ -352,17 +358,17 @@ void Test(
     // Initialize problem
     Initialize<BINS, CHANNELS, ACTIVE_CHANNELS, IteratorValue>(gen_mode, h_samples, bin_op, h_reference_linear, num_samples);
 
-    // Allocate device arrays
-    SampleT*        d_samples = NULL;
-    HistoCounterT*  d_histograms_linear = NULL;
-    cudaError_t*    d_cnp_error = NULL;
-    size_t          *d_temp_storage_bytes = NULL;
-    void            *d_temp_storage = NULL;
-    size_t          temp_storage_bytes = 0;
+    // Allocate problem device arrays
+    SampleT         *d_samples = NULL;
+    HistoCounterT   *d_histograms_linear = NULL;
     CubDebugExit(g_allocator.DeviceAllocate((void**)&d_samples,             sizeof(SampleT) * num_samples));
     CubDebugExit(g_allocator.DeviceAllocate((void**)&d_histograms_linear,   sizeof(HistoCounterT) * total_bins));
-    CubDebugExit(g_allocator.DeviceAllocate((void**)&d_cnp_error,           sizeof(cudaError_t) * 1));
+
+    // Allocate CNP device arrays
+    size_t          *d_temp_storage_bytes = NULL;
+    cudaError_t     *d_cnp_error = NULL;
     CubDebugExit(g_allocator.DeviceAllocate((void**)&d_temp_storage_bytes,  sizeof(size_t) * 1));
+    CubDebugExit(g_allocator.DeviceAllocate((void**)&d_cnp_error,           sizeof(cudaError_t) * 1));
 
     // Initialize device arrays
     CubDebugExit(cudaMemcpy(d_samples, h_samples, sizeof(SampleT) * num_samples, cudaMemcpyHostToDevice));
@@ -375,16 +381,18 @@ void Test(
         d_histograms[CHANNEL] = d_histograms_linear + (CHANNEL * BINS);
     }
 
-    // Create a texload+transform iterator wrapper for SampleT -> IteratorValue conversion
+    // Create a tex+transform iterator wrapper for SampleT -> IteratorValue conversion
     BinningIterator d_sample_itr(bin_op);
     CubDebugExit(d_sample_itr.BindTexture(d_samples, sizeof(SampleT) * num_samples));
 
     // Allocate temporary storage
-    Dispatch<BINS, CHANNELS, ACTIVE_CHANNELS>(algorithm, Int2Type<CNP>(), 1, d_cnp_error, d_temp_storage_bytes, d_temp_storage, temp_storage_bytes, d_sample_itr, d_histograms, num_samples, 0, true);
+    void            *d_temp_storage = NULL;
+    size_t          temp_storage_bytes = 0;
+    Dispatch<BINS, CHANNELS, ACTIVE_CHANNELS>(algorithm, Int2Type<CNP>(), 1, d_temp_storage_bytes, d_cnp_error, d_temp_storage, temp_storage_bytes, d_sample_itr, d_histograms, num_samples, 0, true);
     CubDebugExit(g_allocator.DeviceAllocate(&d_temp_storage, temp_storage_bytes));
 
     // Run warmup/correctness iteration
-    Dispatch<BINS, CHANNELS, ACTIVE_CHANNELS>(algorithm, Int2Type<CNP>(), 1, d_cnp_error, d_temp_storage_bytes, d_temp_storage, temp_storage_bytes, d_sample_itr, d_histograms, num_samples, 0, true);
+    Dispatch<BINS, CHANNELS, ACTIVE_CHANNELS>(algorithm, Int2Type<CNP>(), 1, d_temp_storage_bytes, d_cnp_error, d_temp_storage, temp_storage_bytes, d_sample_itr, d_histograms, num_samples, 0, true);
 
     // Check for correctness (and display results, if specified)
     compare = CompareDeviceResults((HistoCounterT*) h_reference_linear, d_histograms_linear, total_bins, g_verbose, g_verbose);
@@ -398,7 +406,7 @@ void Test(
     // Performance
     GpuTimer gpu_timer;
     gpu_timer.Start();
-    Dispatch<BINS, CHANNELS, ACTIVE_CHANNELS>(algorithm, Int2Type<CNP>(), g_timing_iterations, d_cnp_error, d_temp_storage_bytes, d_temp_storage, temp_storage_bytes, d_sample_itr, d_histograms, num_samples);
+    Dispatch<BINS, CHANNELS, ACTIVE_CHANNELS>(algorithm, Int2Type<CNP>(), g_timing_iterations, d_temp_storage_bytes, d_cnp_error, d_temp_storage, temp_storage_bytes, d_sample_itr, d_histograms, num_samples, 0, false);
     gpu_timer.Stop();
     float elapsed_millis = gpu_timer.ElapsedMillis();
 
@@ -408,7 +416,7 @@ void Test(
         float avg_millis = elapsed_millis / g_timing_iterations;
         float grate = float(num_samples) / avg_millis / 1000.0 / 1000.0;
         float gbandwidth = grate * sizeof(SampleT);
-        printf(", %.3f avg ms, %.3f billion samples/s, %.3f billion bins/s, %.3f billion pixels/s, %.3f GB/s",
+        printf(", %.3f avg ms, %.3f billion samples/s, %.3f billion bins/s, %.3f billion pixels/s, %.3f logical GB/s",
             avg_millis,
             grate,
             grate * ACTIVE_CHANNELS / CHANNELS,
@@ -424,8 +432,8 @@ void Test(
     if (h_reference_linear) delete[] h_reference_linear;
     if (d_samples) CubDebugExit(g_allocator.DeviceFree(d_samples));
     if (d_histograms_linear) CubDebugExit(g_allocator.DeviceFree(d_histograms_linear));
-    if (d_cnp_error) CubDebugExit(g_allocator.DeviceFree(d_cnp_error));
     if (d_temp_storage_bytes) CubDebugExit(g_allocator.DeviceFree(d_temp_storage_bytes));
+    if (d_cnp_error) CubDebugExit(g_allocator.DeviceFree(d_cnp_error));
     if (d_temp_storage) CubDebugExit(g_allocator.DeviceFree(d_temp_storage));
 
     // Correctness asserts
@@ -478,8 +486,8 @@ void Test(
     char*           type_string)
 {
     TestCnp<BINS, CHANNELS, ACTIVE_CHANNELS, SampleT, IteratorValue, HistoCounterT>(Int2Type<GRID_HISTO_SORT>(),          gen_mode, bin_op, num_samples, type_string);
-//    TestCnp<BINS, CHANNELS, ACTIVE_CHANNELS, SampleT, IteratorValue, HistoCounterT>(Int2Type<GRID_HISTO_SHARED_ATOMIC>(), gen_mode, bin_op, num_samples, type_string);
-//    TestCnp<BINS, CHANNELS, ACTIVE_CHANNELS, SampleT, IteratorValue, HistoCounterT>(Int2Type<GRID_HISTO_GLOBAL_ATOMIC>(), gen_mode, bin_op, num_samples, type_string);
+    TestCnp<BINS, CHANNELS, ACTIVE_CHANNELS, SampleT, IteratorValue, HistoCounterT>(Int2Type<GRID_HISTO_SHARED_ATOMIC>(), gen_mode, bin_op, num_samples, type_string);
+    TestCnp<BINS, CHANNELS, ACTIVE_CHANNELS, SampleT, IteratorValue, HistoCounterT>(Int2Type<GRID_HISTO_GLOBAL_ATOMIC>(), gen_mode, bin_op, num_samples, type_string);
 }
 
 
@@ -499,7 +507,7 @@ void Test(
     char*           type_string)
 {
     Test<BINS, 1, 1, SampleT, IteratorValue, HistoCounterT>(gen_mode, bin_op, num_samples, type_string);
-//    Test<BINS, 4, 3, SampleT, IteratorValue, HistoCounterT>(gen_mode, bin_op, num_samples, type_string);
+    Test<BINS, 4, 3, SampleT, IteratorValue, HistoCounterT>(gen_mode, bin_op, num_samples, type_string);
 }
 
 
@@ -620,7 +628,6 @@ int main(int argc, char** argv)
         // Repeat test sequence
         for (int i = 0; i <= g_repeat; ++i)
         {
-/*
             // 256-bin tests
             Test<256, unsigned char,    unsigned char, int>(Cast<unsigned char>(),              num_samples, CUB_TYPE_STRING(unsigned char));
             Test<256, unsigned short,   unsigned char, int>(Cast<unsigned char>(),              num_samples, CUB_TYPE_STRING(unsigned short));
@@ -632,7 +639,6 @@ int main(int argc, char** argv)
             Test<512, unsigned short,   unsigned short, int>(Cast<unsigned short>(),              num_samples, CUB_TYPE_STRING(unsigned short));
             Test<512, unsigned int,     unsigned short, int>(Cast<unsigned short>(),              num_samples, CUB_TYPE_STRING(unsigned int));
             Test<512, float,            unsigned short, int>(FloatScaleOp<unsigned short, 512>(), num_samples, CUB_TYPE_STRING(float));
-*/
         }
     }
 
