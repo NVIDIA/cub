@@ -809,6 +809,17 @@ int CompareResults(float* computed, float* reference, SizeT len, bool verbose = 
     return retval;
 }
 
+
+/**
+ * Compares the equivalence of two arrays
+ */
+template <typename SizeT>
+int CompareResults(cub::NullType* computed, cub::NullType* reference, SizeT len, bool verbose = true)
+{
+    printf("CORRECT\n");
+    return 0;
+}
+
 /**
  * Compares the equivalence of two arrays
  */

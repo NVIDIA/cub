@@ -116,6 +116,14 @@ struct DoubleBuffer
     int selector;
 
     /// \brief Constructor
+    DoubleBuffer()
+    {
+        selector = 0;
+        d_buffers[0] = NULL;
+        d_buffers[1] = NULL;
+    }
+
+    /// \brief Constructor
     DoubleBuffer(
         T *d_current,         ///< The currently valid buffer
         T *d_alternate)       ///< Alternate storage buffer of the same size as \p current
