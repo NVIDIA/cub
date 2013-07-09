@@ -638,7 +638,7 @@ struct TestFoo
 
 
 /**
- * TestFoo ostream operator
+ * TestFoo max operator
  */
 bool __host__ __device__ __forceinline__ operator>(const TestFoo& first, const TestFoo& second)
 {
@@ -733,7 +733,7 @@ __device__ __forceinline__ void ThreadStore(
 */
 
 /**
- * TestBar ostream operator
+ * TestBar max operator
  */
 bool __host__ __device__ __forceinline__ operator>(const TestBar& first, const TestBar& second)
 {

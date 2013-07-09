@@ -47,13 +47,14 @@
 
 // Device
 #include "device/device_histo.cuh"
+#include "device/device_radix_sort.cuh"
 #include "device/device_reduce.cuh"
 #include "device/device_scan.cuh"
 
 // Grid
 //#include "grid/grid_barrier.cuh"
 #include "grid/grid_even_share.cuh"
-#include "grid/grid_multi_buffer.cuh"
+#include "grid/grid_mapping.cuh"
 #include "grid/grid_queue.cuh"
 
 // Host
