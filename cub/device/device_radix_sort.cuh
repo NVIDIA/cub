@@ -80,6 +80,7 @@ __global__ void RadixSortUpsweepKernel(
     bool                    first_pass,                     ///< [in] Whether this is the first digit pass
     GridEvenShare<SizeT>    even_share)                     ///< [in] Descriptor for how to map an even-share of tiles across thread blocks
 {
+/*
     enum {
         RADIX_DIGITS = 1 << BlockRadixSortHistoTilesPolicy::RADIX_BITS,
     };
@@ -106,6 +107,7 @@ __global__ void RadixSortUpsweepKernel(
     // Write out digit counts (striped)
     if (threadIdx.x < RADIX_DIGITS)
         d_spine[(gridDim.x * threadIdx.x) + blockIdx.x] = bin_count;
+*/
 }
 
 
@@ -153,6 +155,7 @@ __global__ void RadixSortDownsweepKernel(
     bool                    last_pass,                      ///< [in] Whether this is the last digit pass
     GridEvenShare<SizeT>    even_share)                     ///< [in] Descriptor for how to map an even-share of tiles across thread blocks
 {
+/*
     enum {
         RADIX_DIGITS = 1 << BlockRadixSortHistoTilesPolicy::RADIX_BITS,
     };
@@ -194,6 +197,7 @@ __global__ void RadixSortDownsweepKernel(
     BlockRadixSortScatterTilesT(temp_storage, bin_offset, d_keys_in, d_keys_out, d_values_in, d_values_out, current_bit).ProcessTiles(
         even_share.block_offset,
         even_share.block_oob);
+*/
 }
 
 
@@ -246,10 +250,10 @@ struct DeviceRadixSort
 
         template <typename ScanBlockPolicy>
         __host__ __device__ __forceinline__
-        void InitScanPolicy() :
-            subscription_factor(0),
-            radix_bits(0)
+        void InitScanPolicy()
         {
+            subscription_factor         = 0;
+            radix_bits                  = 0;
             block_threads               = ScanBlockPolicy::BLOCK_THREADS;
             items_per_thread            = ScanBlockPolicy::ITEMS_PER_THREAD;
             tile_size                   = block_threads * items_per_thread;
@@ -575,7 +579,7 @@ struct DeviceRadixSort
         // Tuning polices
         typedef PtxDefaultPolicies<Key, Value, SizeT>           PtxDefaultPolicies; // Wrapper of default kernel policies
         typedef typename PtxDefaultPolicies::UpsweepPolicy      UpsweepPolicy;      // Upsweep kernel policy
-        typedef typename PtxDefaultPolicies::ScanPolicy         ScanPolicy;         // Upsweep kernel policy
+        typedef typename PtxDefaultPolicies::ScanPolicy         ScanPolicy;         // Scan kernel policy
         typedef typename PtxDefaultPolicies::DownsweepPolicy    DownsweepPolicy;    // Downsweep kernel policy
 
         cudaError error = cudaSuccess;

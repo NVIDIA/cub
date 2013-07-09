@@ -355,17 +355,17 @@ void Test(
     CubDebugExit(g_allocator.DeviceAllocate((void**)&d_cnp_error,   sizeof(cudaError_t) * 1));
 
     // Allocate temporary storage
-    void            *d_temporary_storage = NULL;
-    size_t          temporary_storage_bytes = 0;
-    CubDebugExit(Dispatch(Int2Type<CNP>(), 1, d_temp_storage_bytes, d_cnp_error, d_temporary_storage, temporary_storage_bytes, d_in, d_out, scan_op, identity, num_items, 0, true));
-    CubDebugExit(g_allocator.DeviceAllocate(&d_temporary_storage, temporary_storage_bytes));
+    void            *d_temp_storage = NULL;
+    size_t          temp_storage_bytes = 0;
+    CubDebugExit(Dispatch(Int2Type<CNP>(), 1, d_temp_storage_bytes, d_cnp_error, d_temp_storage, temp_storage_bytes, d_in, d_out, scan_op, identity, num_items, 0, true));
+    CubDebugExit(g_allocator.DeviceAllocate(&d_temp_storage, temp_storage_bytes));
 
     // Initialize device arrays
     CubDebugExit(cudaMemcpy(d_in, h_in, sizeof(T) * num_items, cudaMemcpyHostToDevice));
     CubDebugExit(cudaMemset(d_out, 0, sizeof(T) * num_items));
 
     // Run warmup/correctness iteration
-    CubDebugExit(Dispatch(Int2Type<CNP>(), 1, d_temp_storage_bytes, d_cnp_error, d_temporary_storage, temporary_storage_bytes, d_in, d_out, scan_op, identity, num_items, 0, true));
+    CubDebugExit(Dispatch(Int2Type<CNP>(), 1, d_temp_storage_bytes, d_cnp_error, d_temp_storage, temp_storage_bytes, d_in, d_out, scan_op, identity, num_items, 0, true));
 
     // Check for correctness (and display results, if specified)
     int compare = CompareDeviceResults(h_reference, d_out, num_items, true, g_verbose);
@@ -378,7 +378,7 @@ void Test(
     // Performance
     GpuTimer gpu_timer;
     gpu_timer.Start();
-    CubDebugExit(Dispatch(Int2Type<CNP>(), g_timing_iterations, d_temp_storage_bytes, d_cnp_error, d_temporary_storage, temporary_storage_bytes, d_in, d_out, scan_op, identity, num_items, 0, false));
+    CubDebugExit(Dispatch(Int2Type<CNP>(), g_timing_iterations, d_temp_storage_bytes, d_cnp_error, d_temp_storage, temp_storage_bytes, d_in, d_out, scan_op, identity, num_items, 0, false));
     gpu_timer.Stop();
     float elapsed_millis = gpu_timer.ElapsedMillis();
 
@@ -400,7 +400,7 @@ void Test(
     if (d_out) CubDebugExit(g_allocator.DeviceFree(d_out));
     if (d_temp_storage_bytes) CubDebugExit(g_allocator.DeviceFree(d_temp_storage_bytes));
     if (d_cnp_error) CubDebugExit(g_allocator.DeviceFree(d_cnp_error));
-    if (d_temporary_storage) CubDebugExit(g_allocator.DeviceFree(d_temporary_storage));
+    if (d_temp_storage) CubDebugExit(g_allocator.DeviceFree(d_temp_storage));
 
     // Correctness asserts
     AssertEquals(0, compare);

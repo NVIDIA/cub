@@ -372,11 +372,11 @@ struct Schmoo
         if (g_verify) CubDebugExit(cudaMemset(d_out, 0, sizeof(T)));
 
         // Allocate temporary storage
-        void            *d_temporary_storage = NULL;
-        size_t          temporary_storage_bytes = 0;
+        void            *d_temp_storage = NULL;
+        size_t          temp_storage_bytes = 0;
         CubDebugExit(DeviceReduce::Dispatch(
-            d_temporary_storage,
-            temporary_storage_bytes,
+            d_temp_storage,
+            temp_storage_bytes,
             multi_dispatch.kernel_ptr,
             single_dispatch.kernel_ptr,
             ResetDrainKernel<SizeT>,
@@ -386,12 +386,12 @@ struct Schmoo
             d_out,
             num_items,
             reduction_op));
-        CubDebugExit(g_allocator.DeviceAllocate(&d_temporary_storage, temporary_storage_bytes));
+        CubDebugExit(g_allocator.DeviceAllocate(&d_temp_storage, temp_storage_bytes));
 
         // Warmup/correctness iteration
         CubDebugExit(DeviceReduce::Dispatch(
-            d_temporary_storage,
-            temporary_storage_bytes,
+            d_temp_storage,
+            temp_storage_bytes,
             multi_dispatch.kernel_ptr,
             single_dispatch.kernel_ptr,
             ResetDrainKernel<SizeT>,
@@ -417,8 +417,8 @@ struct Schmoo
             gpu_timer.Start();
 
             CubDebugExit(DeviceReduce::Dispatch(
-                d_temporary_storage,
-                temporary_storage_bytes,
+                d_temp_storage,
+                temp_storage_bytes,
                 multi_dispatch.kernel_ptr,
                 single_dispatch.kernel_ptr,
                 ResetDrainKernel<SizeT>,
@@ -467,7 +467,7 @@ struct Schmoo
         AssertEquals(0, compare);
 
         // Cleanup temporaries
-        if (d_temporary_storage) CubDebugExit(g_allocator.DeviceFree(d_temporary_storage));
+        if (d_temp_storage) CubDebugExit(g_allocator.DeviceFree(d_temp_storage));
     }
 
 
