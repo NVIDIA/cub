@@ -98,7 +98,7 @@ cudaError_t Dispatch(
 template <typename Key, typename Value>
 __global__ void CnpDispatchKernel(
     int                 timing_iterations,
-    size_t              temp_storage_bytes,
+    size_t              *d_temp_storage_bytes,
     int                 *d_selectors,
     cudaError_t         *d_cnp_error,
 
@@ -175,9 +175,9 @@ struct Pair
     Key     key;
     Value   value;
 
-    bool operator<(const Pair &a, const Pair &b)
+    bool operator<(const Pair &b)
     {
-        return (a.key > b.key);
+        return (key < b.key);
     }
 };
 
@@ -245,57 +245,80 @@ void Initialize(
  */
 template <
     bool            CNP,
-    typename        T,
-    typename        RadixSortOp,
-    typename        IdentityT>
+    typename        Key,
+    typename        Value>
 void Test(
     int             num_items,
     GenMode         gen_mode,
-    RadixSortOp          scan_op,
-    IdentityT       identity,
+    int             begin_bit,
+    int             end_bit,
     char*           type_string)
 {
-    printf("%s %s cub::DeviceRadixSort::%s %d items, %s %d-byte elements, gen-mode %s\n",
-        (CNP) ? "CNP device invoked" : "Host-invoked",
-        (Equals<IdentityT, NullType>::VALUE) ? "Inclusive" : "Exclusive",
-        (Equals<RadixSortOp, Sum>::VALUE) ? "Sum" : "RadixSort",
-        num_items,
-        type_string,
-        (int) sizeof(T),
-        (gen_mode == RANDOM) ? "RANDOM" : (gen_mode == SEQ_INC) ? "SEQUENTIAL" : "HOMOGENOUS");
+    const bool KEYS_ONLY = Equals<Value, NullType>::VALUE;
+
+    if (KEYS_ONLY)
+        printf("%s keys-only cub::DeviceRadixSort::%s %d items, %s %d-byte keys, gen-mode %s\n",
+            (CNP) ? "CNP device invoked" : "Host-invoked", num_items, type_string, (int) sizeof(Key),
+            (gen_mode == RANDOM) ? "RANDOM" : (gen_mode == SEQ_INC) ? "SEQUENTIAL" : "HOMOGENOUS");
+    else
+        printf("%s keys-value cub::DeviceRadixSort::%s %d items, %s %d-byte keys + %d-byte values, gen-mode %s\n",
+            (CNP) ? "CNP device invoked" : "Host-invoked", num_items, type_string, (int) sizeof(Key), (int) sizeof(Value),
+            (gen_mode == RANDOM) ? "RANDOM" : (gen_mode == SEQ_INC) ? "SEQUENTIAL" : "HOMOGENOUS");
     fflush(stdout);
 
     // Allocate host arrays
-    T*  h_in = new T[num_items];
-    T*  h_reference = new T[num_items];
+    Key     *h_keys             = new Key[num_items];
+    Key     *h_sorted_keys      = new Key[num_items];
+    Value   *h_values           = (KEYS_ONLY) ? NULL : new Value[num_items];
+    Value   *h_sorted_values    = (KEYS_ONLY) ? NULL : new Value[num_items];
 
     // Initialize problem
-    Initialize(gen_mode, h_in, h_reference, num_items, scan_op, identity);
+    Initialize(gen_mode, h_keys, h_values, h_sorted_keys, h_sorted_values, num_items);
 
     // Allocate device arrays
-    T*              d_in = NULL;
-    T*              d_out = NULL;
-    cudaError_t*    d_cnp_error = NULL;
-    void            *d_temporary_storage = NULL;
-    size_t          temporary_storage_bytes = 0;
-    CubDebugExit(g_allocator.DeviceAllocate((void**)&d_in,          sizeof(T) * num_items));
-    CubDebugExit(g_allocator.DeviceAllocate((void**)&d_out,         sizeof(T) * num_items));
-    CubDebugExit(g_allocator.DeviceAllocate((void**)&d_cnp_error,   sizeof(cudaError_t) * 1));
+    DoubleBuffer<Key>   d_keys;
+    DoubleBuffer<Value> d_values;
+    size_t          *d_temp_storage_bytes;
+    int             *d_selectors;
+    cudaError_t     *d_cnp_error;
+    CubDebugExit(g_allocator.DeviceAllocate((void**)&d_keys.d_buffers[0], sizeof(Key) * num_items));
+    CubDebugExit(g_allocator.DeviceAllocate((void**)&d_keys.d_buffers[1], sizeof(Key) * num_items));
+    CubDebugExit(g_allocator.DeviceAllocate((void**)&d_temp_storage_bytes, sizeof(size_t) * 1));
+    CubDebugExit(g_allocator.DeviceAllocate((void**)&d_selectors, sizeof(int) * 2));
+    CubDebugExit(g_allocator.DeviceAllocate((void**)&d_cnp_error, sizeof(cudaError_t) * 1));
+    if (!KEYS_ONLY)
+    {
+        CubDebugExit(g_allocator.DeviceAllocate((void**)&d_values.d_buffers[0], sizeof(Value) * num_items));
+        CubDebugExit(g_allocator.DeviceAllocate((void**)&d_values.d_buffers[1], sizeof(Value) * num_items));
+    }
 
     // Initialize device arrays
-    CubDebugExit(cudaMemcpy(d_in, h_in, sizeof(T) * num_items, cudaMemcpyHostToDevice));
-    CubDebugExit(cudaMemset(d_out, 0, sizeof(T) * num_items));
+    CubDebugExit(cudaMemcpy(d_keys.d_buffers[0], h_keys, sizeof(Key) * num_items, cudaMemcpyHostToDevice));
+    CubDebugExit(cudaMemset(d_keys.d_buffers[1], 0, sizeof(Key) * num_items));
+    if (!KEYS_ONLY)
+    {
+        CubDebugExit(cudaMemcpy(d_keys.d_buffers[0], h_keys, sizeof(Key) * num_items, cudaMemcpyHostToDevice));
+        CubDebugExit(cudaMemset(d_values.d_buffers[1], 0, sizeof(Value) * num_items));
+    }
 
     // Allocate temporary storage
-    CubDebugExit(Dispatch(Int2Type<CNP>(), 1, d_cnp_error, d_temporary_storage, temporary_storage_bytes, d_in, d_out, scan_op, identity, num_items, 0, true));
-    CubDebugExit(g_allocator.DeviceAllocate(&d_temporary_storage, temporary_storage_bytes));
+    size_t  temp_storage_bytes  = 0;
+    void    *d_temp_storage     = NULL;
+    CubDebugExit(Dispatch(Int2Type<CNP>(), 1, d_temp_storage_bytes, d_selectors, d_cnp_error, d_temp_storage, temp_storage_bytes, d_keys, d_values, num_items, begin_bit, end_bit, 0, true));
+    CubDebugExit(g_allocator.DeviceAllocate(&d_temp_storage, temp_storage_bytes));
 
     // Run warmup/correctness iteration
-    CubDebugExit(Dispatch(Int2Type<CNP>(), 1, d_cnp_error, d_temporary_storage, temporary_storage_bytes, d_in, d_out, scan_op, identity, num_items, 0, true));
+    CubDebugExit(Dispatch(Int2Type<CNP>(), 1, d_temp_storage_bytes, d_selectors, d_cnp_error, d_temp_storage, temp_storage_bytes, d_keys, d_values, num_items, begin_bit, end_bit, 0, true));
 
     // Check for correctness (and display results, if specified)
-    int compare = CompareDeviceResults(h_reference, d_out, num_items, true, g_verbose);
+    int compare = CompareDeviceResults(h_sorted_keys, d_keys.Current(), num_items, true, g_verbose);
     printf("\t%s", compare ? "FAIL" : "PASS");
+    if (!KEYS_ONLY)
+    {
+        int values_compare = CompareDeviceResults(h_sorted_values, d_values.Current(), num_items, true, g_verbose);
+        compare |= values_compare;
+        printf("\t%s", values_compare ? "FAIL" : "PASS");
+    }
 
     // Flush any stdout/stderr
     fflush(stdout);
@@ -304,7 +327,7 @@ void Test(
     // Performance
     GpuTimer gpu_timer;
     gpu_timer.Start();
-    CubDebugExit(Dispatch(Int2Type<CNP>(), g_timing_iterations, d_cnp_error, d_temporary_storage, temporary_storage_bytes, d_in, d_out, scan_op, identity, num_items));
+    CubDebugExit(Dispatch(Int2Type<CNP>(), g_timing_iterations, d_temp_storage_bytes, d_selectors, d_cnp_error, d_temp_storage, temp_storage_bytes, d_keys, d_values, num_items, begin_bit, end_bit, 0, false));
     gpu_timer.Stop();
     float elapsed_millis = gpu_timer.ElapsedMillis();
 
@@ -313,19 +336,27 @@ void Test(
     {
         float avg_millis = elapsed_millis / g_timing_iterations;
         float grate = float(num_items) / avg_millis / 1000.0 / 1000.0;
-        float gbandwidth = grate * sizeof(T) * 2;
+        float gbandwidth = (KEYS_ONLY) ?
+            grate * sizeof(Key) * 2 :
+            grate * (sizeof(Key) + sizeof(Value)) * 2;
         printf(", %.3f avg ms, %.3f billion items/s, %.3f logical GB/s", avg_millis, grate, gbandwidth);
     }
 
     printf("\n\n");
 
     // Cleanup
-    if (h_in) delete[] h_in;
-    if (h_reference) delete[] h_reference;
-    if (d_in) CubDebugExit(g_allocator.DeviceFree(d_in));
-    if (d_out) CubDebugExit(g_allocator.DeviceFree(d_out));
+    if (h_keys) delete[] h_keys;
+    if (h_sorted_keys) delete[] h_sorted_keys;
+    if (h_values) delete[] h_values;
+    if (h_sorted_values) delete[] h_sorted_values;
+
+    if (d_keys.d_buffers[0]) CubDebugExit(g_allocator.DeviceFree(d_keys.d_buffers[0]));
+    if (d_keys.d_buffers[1]) CubDebugExit(g_allocator.DeviceFree(d_keys.d_buffers[1]));
+    if (d_values.d_buffers[0]) CubDebugExit(g_allocator.DeviceFree(d_values.d_buffers[0]));
+    if (d_values.d_buffers[1]) CubDebugExit(g_allocator.DeviceFree(d_values.d_buffers[1]));
+    if (d_selectors) CubDebugExit(g_allocator.DeviceFree(d_selectors));
+    if (d_temp_storage_bytes) CubDebugExit(g_allocator.DeviceFree(d_temp_storage_bytes));
     if (d_cnp_error) CubDebugExit(g_allocator.DeviceFree(d_cnp_error));
-    if (d_temporary_storage) CubDebugExit(g_allocator.DeviceFree(d_temporary_storage));
 
     // Correctness asserts
     AssertEquals(0, compare);
@@ -372,8 +403,7 @@ int main(int argc, char** argv)
     CubDebugExit(args.DeviceInit());
     printf("\n");
 
-
-
+    Test<false, unsigned int, NullType>(num_items, UNIFORM, 0, sizeof(unsigned int) * 8, CUB_TYPE_STRING(unsigned int));
 
     return 0;
 }
