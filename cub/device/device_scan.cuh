@@ -222,9 +222,11 @@ struct DeviceScan
     struct TunedPolicies<T, SizeT, 350>
     {
         enum {
-            NOMINAL_ITEMS_PER_THREAD    = 16,   // 4byte items
-            ITEMS_PER_THREAD            = CUB_MIN(NOMINAL_ITEMS_PER_THREAD, CUB_MAX(1, (NOMINAL_ITEMS_PER_THREAD * 4 / sizeof(T)))),
+            NOMINAL_4B_ITEMS_PER_THREAD = 16,
+            ITEMS_PER_THREAD            = CUB_MIN(NOMINAL_4B_ITEMS_PER_THREAD, CUB_MAX(1, (NOMINAL_4B_ITEMS_PER_THREAD * 4 / sizeof(T)))),
         };
+
+        // ScanPolicy: GTX Titan: 29.1B items/s (232.4 GB/s) @ 48M 32-bit T
         typedef BlockScanTilesPolicy<128, ITEMS_PER_THREAD,  BLOCK_LOAD_DIRECT, false, LOAD_LDG, BLOCK_STORE_WARP_TRANSPOSE, true, BLOCK_SCAN_RAKING_MEMOIZE> ScanPolicy;
     };
 
@@ -233,9 +235,10 @@ struct DeviceScan
     struct TunedPolicies<T, SizeT, 300>
     {
         enum {
-            NOMINAL_ITEMS_PER_THREAD    = 9,   // 4byte items
-            ITEMS_PER_THREAD            = CUB_MAX(1, (NOMINAL_ITEMS_PER_THREAD * 4 / sizeof(T))),
+            NOMINAL_4B_ITEMS_PER_THREAD = 9,
+            ITEMS_PER_THREAD            = CUB_MIN(NOMINAL_4B_ITEMS_PER_THREAD, CUB_MAX(1, (NOMINAL_4B_ITEMS_PER_THREAD * 4 / sizeof(T)))),
         };
+
         typedef BlockScanTilesPolicy<256, ITEMS_PER_THREAD,  BLOCK_LOAD_WARP_TRANSPOSE, false, LOAD_DEFAULT, BLOCK_STORE_WARP_TRANSPOSE, false, BLOCK_SCAN_RAKING_MEMOIZE> ScanPolicy;
     };
 
@@ -244,9 +247,11 @@ struct DeviceScan
     struct TunedPolicies<T, SizeT, 200>
     {
         enum {
-            NOMINAL_ITEMS_PER_THREAD    = 15,   // 4byte items
-            ITEMS_PER_THREAD            = CUB_MIN(NOMINAL_ITEMS_PER_THREAD, CUB_MAX(1, (NOMINAL_ITEMS_PER_THREAD * 4 / sizeof(T)))),
+            NOMINAL_4B_ITEMS_PER_THREAD = 15,
+            ITEMS_PER_THREAD            = CUB_MIN(NOMINAL_4B_ITEMS_PER_THREAD, CUB_MAX(1, (NOMINAL_4B_ITEMS_PER_THREAD * 4 / sizeof(T)))),
         };
+
+        // ScanPolicy: GTX 580: 20.3B items/s (162.3 GB/s) @ 48M 32-bit T
         typedef BlockScanTilesPolicy<128, ITEMS_PER_THREAD, BLOCK_LOAD_WARP_TRANSPOSE, false, LOAD_DEFAULT, BLOCK_STORE_WARP_TRANSPOSE, false, BLOCK_SCAN_RAKING_MEMOIZE> ScanPolicy;
     };
 
@@ -255,8 +260,8 @@ struct DeviceScan
     struct TunedPolicies<T, SizeT, 100>
     {
         enum {
-            NOMINAL_ITEMS_PER_THREAD    = 7,   // 4byte items
-            ITEMS_PER_THREAD            = CUB_MAX(1, (NOMINAL_ITEMS_PER_THREAD * 4 / sizeof(T))),
+            NOMINAL_4B_ITEMS_PER_THREAD = 7,
+            ITEMS_PER_THREAD            = CUB_MIN(NOMINAL_4B_ITEMS_PER_THREAD, CUB_MAX(1, (NOMINAL_4B_ITEMS_PER_THREAD * 4 / sizeof(T)))),
         };
         typedef BlockScanTilesPolicy<128, ITEMS_PER_THREAD, BLOCK_LOAD_TRANSPOSE, false, LOAD_DEFAULT, BLOCK_STORE_TRANSPOSE, false, BLOCK_SCAN_RAKING> ScanPolicy;
     };

@@ -281,13 +281,13 @@ struct DeviceRadixSort
     template <typename Key, typename Value, typename SizeT>
     struct TunedPolicies<Key, Value, SizeT, 200>
     {
-        // Upsweep policy
+        // UpsweepPolicy
         typedef BlockRadixSortHistoTilesPolicy <128, 17, 5, LOAD_DEFAULT> UpsweepPolicy;
 
-        // Spine scan policy
+        // SpinePolicy
         typedef BlockScanTilesPolicy <256, 4, BLOCK_LOAD_VECTORIZE, false, LOAD_DEFAULT, BLOCK_STORE_VECTORIZE, false, BLOCK_SCAN_WARP_SCANS> SpinePolicy;
 
-        // Downsweep policy
+        // DownsweepPolicy
         typedef BlockRadixSortScatterTilesPolicy <128, 17, BLOCK_LOAD_WARP_TRANSPOSE, LOAD_DEFAULT, false, 5, false, BLOCK_SCAN_WARP_SCANS, RADIX_SORT_SCATTER_TWO_PHASE> DownsweepPolicy;
 
         enum { SUBSCRIPTION_FACTOR = 4 };
