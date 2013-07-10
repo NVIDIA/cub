@@ -427,9 +427,9 @@ public:
         typename UnsignedBits,
         int KEYS_PER_THREAD>
     __device__ __forceinline__ void RankKeys(
-        UnsignedBits    (&keys)[KEYS_PER_THREAD],           // Keys for this tile
-        int             (&ranks)[KEYS_PER_THREAD],          // For each key, the local rank within the tile
-        int             current_bit)                        // The least-significant bit position of the current digit to extract
+        UnsignedBits    (&keys)[KEYS_PER_THREAD],           ///< [in] Keys for this tile
+        int             (&ranks)[KEYS_PER_THREAD],          ///< [out] For each key, the local rank within the tile
+        int             current_bit)                        ///< [in] The least-significant bit position of the current digit to extract
     {
         DigitCounter    thread_prefixes[KEYS_PER_THREAD];   // For each key, the count of previous keys in this tile having the same digit
         DigitCounter*   digit_counters[KEYS_PER_THREAD];    // For each key, the byte-offset of its corresponding digit counter in smem
@@ -459,10 +459,10 @@ public:
         typename UnsignedBits,
         int KEYS_PER_THREAD>
     __device__ __forceinline__ void RankKeys(
-        UnsignedBits    (&keys)[KEYS_PER_THREAD],           // Keys for this tile
-        int             (&ranks)[KEYS_PER_THREAD],          // For each key, the local rank within the tile (out parameter)
-        int             digit_prefixes[RADIX_DIGITS],
-        int             current_bit)                        // The least-significant bit position of the current digit to extract
+        UnsignedBits    (&keys)[KEYS_PER_THREAD],           ///< [in] Keys for this tile
+        int             (&ranks)[KEYS_PER_THREAD],          ///< [out] For each key, the local rank within the tile (out parameter)
+        int             current_bit,                        ///< [in] The least-significant bit position of the current digit to extract
+        int             (&digit_prefixes)[RADIX_DIGITS + 1])   ///< [out] Shared array containing a prefix sum of digit counts
     {
         // Rank keys
         RankKeys(keys, ranks, current_bit);

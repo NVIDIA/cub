@@ -199,7 +199,8 @@ void Initialize(
     for (int i = 0; i < num_items; ++i)
     {
 //        InitValue(gen_mode, h_keys[i], i);
-        h_keys[i]       = i % 4;
+//        h_keys[i]       = i % 4;
+        h_keys[i]       = i % 32;
         h_values[i]     = i;
         pairs[i].key    = h_keys[i];
         pairs[i].value  = h_keys[i];
@@ -232,7 +233,8 @@ void Initialize(
     for (int i = 0; i < num_items; ++i)
     {
 //        InitValue(gen_mode, h_keys[i], i);
-        h_keys[i]           = i % 4;
+//        h_keys[i]           = i % 4;
+        h_keys[i]           = i % 32;
         h_sorted_keys[i]    = h_keys[i];
     }
 
@@ -257,11 +259,11 @@ void Test(
     const bool KEYS_ONLY = Equals<Value, NullType>::VALUE;
 
     if (KEYS_ONLY)
-        printf("%s keys-only cub::DeviceRadixSort::%s %d items, %s %d-byte keys, gen-mode %s\n",
+        printf("%s keys-only cub::DeviceRadixSort %d items, %s %d-byte keys, gen-mode %s\n",
             (CNP) ? "CNP device invoked" : "Host-invoked", num_items, type_string, (int) sizeof(Key),
             (gen_mode == RANDOM) ? "RANDOM" : (gen_mode == SEQ_INC) ? "SEQUENTIAL" : "HOMOGENOUS");
     else
-        printf("%s keys-value cub::DeviceRadixSort::%s %d items, %s %d-byte keys + %d-byte values, gen-mode %s\n",
+        printf("%s keys-value cub::DeviceRadixSort %d items, %s %d-byte keys + %d-byte values, gen-mode %s\n",
             (CNP) ? "CNP device invoked" : "Host-invoked", num_items, type_string, (int) sizeof(Key), (int) sizeof(Value),
             (gen_mode == RANDOM) ? "RANDOM" : (gen_mode == SEQ_INC) ? "SEQUENTIAL" : "HOMOGENOUS");
     fflush(stdout);
@@ -403,7 +405,8 @@ int main(int argc, char** argv)
     CubDebugExit(args.DeviceInit());
     printf("\n");
 
-    Test<false, unsigned int, NullType>(num_items, UNIFORM, 0, sizeof(unsigned int) * 8, CUB_TYPE_STRING(unsigned int));
+//    Test<false, unsigned int, NullType>(num_items, UNIFORM, 0, sizeof(unsigned int) * 8, CUB_TYPE_STRING(unsigned int));
+    Test<false, unsigned int, NullType>(num_items, UNIFORM, 0, 5, CUB_TYPE_STRING(unsigned int));
 
     return 0;
 }

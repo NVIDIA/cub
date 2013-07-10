@@ -88,11 +88,12 @@ namespace cub {
      */
     __forceinline__ void YieldProcessor()
     {
+#ifndef __arm__
         asm volatile("pause\n": : :"memory");
+#endif  // __arm__
     }
 
-#endif
-
+#endif  // defined(_MSC_VER)
 
 /**
  * Return when the specified spinlock has been acquired
