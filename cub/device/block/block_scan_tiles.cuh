@@ -431,15 +431,15 @@ struct BlockScanTiles
         __syncthreads();
 
         // Block scan
+        T block_aggregate;
         if (FIRST_TILE)
         {
-            T block_aggregate;
             ScanBlock(items, scan_op, identity, block_aggregate);
             prefix_op.running_total = block_aggregate;
         }
         else
         {
-            ScanBlock(items, scan_op, identity, prefix_op);
+            ScanBlock(items, scan_op, identity, block_aggregate, prefix_op);
         }
 
         __syncthreads();
@@ -485,7 +485,7 @@ struct BlockScanTiles
         {
             // Consume the first tile of input (partially-full)
             int valid_items = block_oob - block_offset;
-            ConsumeTile<true, false>(block_offset, prefix_op, valid_items);
+            ConsumeTile<false, true>(block_offset, prefix_op, valid_items);
         }
     }
 

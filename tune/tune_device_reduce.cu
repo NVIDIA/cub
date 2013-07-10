@@ -142,11 +142,11 @@ struct Schmoo
 
         DispatchTuple() :
             kernel_ptr(0),
-            params(DeviceReduce::KernelDispachParams(),
+            params(DeviceReduce::KernelDispachParams()),
             avg_throughput(0.0),
             best_avg_throughput(0.0),
             hmean_speedup(0.0),
-            best_size(0))
+            best_size(0)
         {}
     };
 
@@ -218,7 +218,7 @@ struct Schmoo
         {
             MultiDispatchTuple tuple;
             tuple.params.template Init<TilesReducePolicy>(subscription_factor);
-            tuple.kernel_ptr = MultiBlockReduceKernel<TilesReducePolicy, T*, T*, SizeT, ReductionOp>;
+            tuple.kernel_ptr = ReducePrivatizedKernel<TilesReducePolicy, T*, T*, SizeT, ReductionOp>;
             multi_kernels.push_back(tuple);
         }
 
@@ -229,7 +229,7 @@ struct Schmoo
         {
             SingleDispatchTuple tuple;
             tuple.params.template Init<TilesReducePolicy>();
-            tuple.kernel_ptr = SingleBlockReduceKernel<TilesReducePolicy, T*, T*, SizeT, ReductionOp>;
+            tuple.kernel_ptr = ReduceSingleKernel<TilesReducePolicy, T*, T*, SizeT, ReductionOp>;
             single_kernels.push_back(tuple);
         }
     };
@@ -481,10 +481,10 @@ struct Schmoo
         ReductionOp             reduction_op)
     {
         // Simple single kernel tuple for use with multi kernel sweep
-        typedef typename DeviceReduce::TunedPolicies<T, SizeT, TUNE_ARCH>::SingleBlockPolicy SimpleSingleBlockPolicy;
+        typedef typename DeviceReduce::TunedPolicies<T, SizeT, TUNE_ARCH>::SinglePolicy SimpleSinglePolicy;
         SingleDispatchTuple simple_single_tuple;
-        simple_single_tuple.params.template Init<SimpleSingleBlockPolicy>();
-        simple_single_tuple.kernel_ptr = SingleBlockReduceKernel<SimpleSingleBlockPolicy, T*, T*, SizeT, ReductionOp>;
+        simple_single_tuple.params.template Init<SimpleSinglePolicy>();
+        simple_single_tuple.kernel_ptr = ReduceSingleKernel<SimpleSinglePolicy, T*, T*, SizeT, ReductionOp>;
 
         double max_exponent      = log2(double(g_max_items));
         double min_exponent      = log2(double(simple_single_tuple.params.tile_size));

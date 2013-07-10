@@ -71,22 +71,16 @@ template <
     typename                SizeT>                          ///< Integer type used for global array indexing
 __launch_bounds__ (int(BlockRadixSortHistoTilesPolicy::BLOCK_THREADS), 1)
 __global__ void RadixSortUpsweepKernel(
-    Key                     *d_keys0,                       ///< [in] Input keys ping buffer
-    Key                     *d_keys1,                       ///< [in] Input keys pong buffer
-    int                     *d_selector,                    ///< [in] Selector indicating which buffer to read keys from
+    Key                     *d_keys,                        ///< [in] Input keys buffer
     SizeT                   *d_spine,                       ///< [out] Privatized (per block) digit histograms (striped, i.e., 0s counts from each block, then 1s counts from each block, etc.)
     SizeT                   num_items,                      ///< [in] Total number of input data items
     int                     current_bit,                    ///< [in] Bit position of current radix digit
     bool                    first_pass,                     ///< [in] Whether this is the first digit pass
     GridEvenShare<SizeT>    even_share)                     ///< [in] Descriptor for how to map an even-share of tiles across thread blocks
 {
-/*
     enum {
         RADIX_DIGITS = 1 << BlockRadixSortHistoTilesPolicy::RADIX_BITS,
     };
-
-    // Select input buffer
-    Key *d_keys = (first_pass || *d_selector == 0) ? d_keys0 : d_keys1;
 
     // Parameterize the BlockRadixSortHistoTiles type for the current configuration
     typedef BlockRadixSortHistoTiles<BlockRadixSortHistoTilesPolicy, Key, SizeT> BlockRadixSortHistoTilesT;
@@ -106,8 +100,10 @@ __global__ void RadixSortUpsweepKernel(
 
     // Write out digit counts (striped)
     if (threadIdx.x < RADIX_DIGITS)
+    {
         d_spine[(gridDim.x * threadIdx.x) + blockIdx.x] = bin_count;
-*/
+//        CubLog("%s bin %d count %d\n", (threadIdx.x == 0) ? "\n" : "", threadIdx.x, bin_count);
+    }
 }
 
 
@@ -137,17 +133,16 @@ __global__ void RadixSortScanKernel(
  * Downsweep pass kernel entry point (multi-block).  Scatters keys (and values) into corresponding bins for the current digit place.
  */
 template <
-    typename                BlockRadixSortHistoTilesPolicy, ///< Tuning policy for cub::BlockRadixSortHistoTiles abstraction
-    typename                Key,                        ///< Key type
-    typename                Value,                      ///< Value type
-    typename                SizeT>                          ///< Integer type used for global array indexing
-__launch_bounds__ (int(BlockRadixSortHistoTilesPolicy::BLOCK_THREADS), 1)
+    typename                BlockRadixSortScatterTilesPolicy,   ///< Tuning policy for cub::BlockRadixSortHistoTiles abstraction
+    typename                Key,                                ///< Key type
+    typename                Value,                              ///< Value type
+    typename                SizeT>                              ///< Integer type used for global array indexing
+__launch_bounds__ (int(BlockRadixSortScatterTilesPolicy::BLOCK_THREADS), 1)
 __global__ void RadixSortDownsweepKernel(
-    Key                     *d_keys0,                       ///< [in] Input keys ping buffer
-    Key                     *d_keys1,                       ///< [in] Input keys pong buffer
-    Value                   *d_values0,                     ///< [in] Input values ping buffer
-    Value                   *d_values1,                     ///< [in] Input values pong buffer
-    int                     *d_selector,                    ///< [in] Selector indicating which buffer to read keys from
+    Key                     *d_keys_in,                     ///< [in] Input keys ping buffer
+    Key                     *d_keys_out,                    ///< [in] Output keys pong buffer
+    Value                   *d_values_in,                   ///< [in] Input values ping buffer
+    Value                   *d_values_out,                  ///< [in] Output values pong buffer
     SizeT                   *d_spine,                       ///< [in] Scan of privatized (per block) digit histograms (striped, i.e., 0s counts from each block, then 1s counts from each block, etc.)
     SizeT                   num_items,                      ///< [in] Total number of input data items
     int                     current_bit,                    ///< [in] Bit position of current radix digit
@@ -155,29 +150,9 @@ __global__ void RadixSortDownsweepKernel(
     bool                    last_pass,                      ///< [in] Whether this is the last digit pass
     GridEvenShare<SizeT>    even_share)                     ///< [in] Descriptor for how to map an even-share of tiles across thread blocks
 {
-/*
     enum {
-        RADIX_DIGITS = 1 << BlockRadixSortHistoTilesPolicy::RADIX_BITS,
+        RADIX_DIGITS = 1 << BlockRadixSortScatterTilesPolicy::RADIX_BITS,
     };
-
-    Key     *d_keys_in, *d_keys_out;
-    Value   *d_values_in, *d_values_out;
-
-    // Select buffers
-    if (first_pass || (*d_selector == 0))
-    {
-        d_keys_in       = d_keys0;
-        d_values_in     = d_values0;
-        d_keys_out      = d_keys1;
-        d_values_out    = d_values1;
-    }
-    else
-    {
-        d_keys_in       = d_keys1;
-        d_values_in     = d_values1;
-        d_keys_out      = d_keys0;
-        d_values_out    = d_values0;
-    }
 
     // Parameterize the BlockRadixSortScatterTiles type for the current configuration
     typedef BlockRadixSortScatterTiles<BlockRadixSortScatterTilesPolicy, Key, Value, SizeT> BlockRadixSortScatterTilesT;
@@ -191,13 +166,16 @@ __global__ void RadixSortDownsweepKernel(
     // Load digit bin offsets (each of the first RADIX_DIGITS threads will load an offset for that digit)
     SizeT bin_offset;
     if (threadIdx.x < RADIX_DIGITS)
+    {
         bin_offset = d_spine[(gridDim.x * threadIdx.x) + blockIdx.x];
+//        CubLog("%s\tdigit %d bin offset %d\n", (threadIdx.x == 0) ? "\n" : "", threadIdx.x, bin_offset);
+    }
 
     // Process input tiles
     BlockRadixSortScatterTilesT(temp_storage, bin_offset, d_keys_in, d_keys_out, d_values_in, d_values_out, current_bit).ProcessTiles(
         even_share.block_offset,
         even_share.block_oob);
-*/
+
 }
 
 
@@ -286,13 +264,16 @@ struct DeviceRadixSort
     struct TunedPolicies<Key, Value, SizeT, 200>
     {
         // UpsweepPolicy
-        typedef BlockRadixSortHistoTilesPolicy <128, 17, 5, LOAD_DEFAULT> UpsweepPolicy;
+        typedef BlockRadixSortHistoTilesPolicy <128, 17, LOAD_DEFAULT, 5> UpsweepPolicy;
+//        typedef BlockRadixSortHistoTilesPolicy <128, 3, LOAD_DEFAULT, 5> UpsweepPolicy;
 
-        // SpinePolicy
-        typedef BlockScanTilesPolicy <256, 4, BLOCK_LOAD_VECTORIZE, false, LOAD_DEFAULT, BLOCK_STORE_VECTORIZE, false, BLOCK_SCAN_WARP_SCANS> SpinePolicy;
+        // ScanPolicy
+//        typedef BlockScanTilesPolicy <256, 4, BLOCK_LOAD_VECTORIZE, false, LOAD_DEFAULT, BLOCK_STORE_VECTORIZE, false, BLOCK_SCAN_WARP_SCANS> ScanPolicy;
+        typedef BlockScanTilesPolicy <256, 4, BLOCK_LOAD_VECTORIZE, false, LOAD_DEFAULT, BLOCK_STORE_VECTORIZE, false, BLOCK_SCAN_WARP_SCANS> ScanPolicy;
 
         // DownsweepPolicy
-        typedef BlockRadixSortScatterTilesPolicy <128, 17, BLOCK_LOAD_WARP_TRANSPOSE, LOAD_DEFAULT, false, 5, false, BLOCK_SCAN_WARP_SCANS, RADIX_SORT_SCATTER_TWO_PHASE> DownsweepPolicy;
+        typedef BlockRadixSortScatterTilesPolicy <128, 17, BLOCK_LOAD_WARP_TRANSPOSE, LOAD_DEFAULT, false, false, BLOCK_SCAN_WARP_SCANS, RADIX_SORT_SCATTER_TWO_PHASE, 5> DownsweepPolicy;
+//        typedef BlockRadixSortScatterTilesPolicy <128, 3, BLOCK_LOAD_WARP_TRANSPOSE, LOAD_DEFAULT, false, false, BLOCK_SCAN_WARP_SCANS, RADIX_SORT_SCATTER_TWO_PHASE, 5> DownsweepPolicy;
 
         enum { SUBSCRIPTION_FACTOR = 4 };
     };
@@ -326,8 +307,8 @@ struct DeviceRadixSort
         // UpsweepPolicy that opaquely derives from the specialization corresponding to the current PTX compiler pass
         struct UpsweepPolicy : PtxTunedPolicies::UpsweepPolicy {};
 
-        // SpinePolicy that opaquely derives from the specialization corresponding to the current PTX compiler pass
-        struct SpinePolicy : PtxTunedPolicies::SpinePolicy {};
+        // ScanPolicy that opaquely derives from the specialization corresponding to the current PTX compiler pass
+        struct ScanPolicy : PtxTunedPolicies::ScanPolicy {};
 
         // DownsweepPolicy that opaquely derives from the specialization corresponding to the current PTX compiler pass
         struct DownsweepPolicy : PtxTunedPolicies::DownsweepPolicy {};
@@ -357,7 +338,7 @@ struct DeviceRadixSort
 */
                 typedef TunedPolicies<Key, Value, SizeT, 200> TunedPolicies;
                 upsweep_dispatch_params.InitSortPolicy<typename TunedPolicies::UpsweepPolicy>(TunedPolicies::SUBSCRIPTION_FACTOR);
-                scan_dispatch_params.InitScanPolicy<typename TunedPolicies::SpinePolicy>();
+                scan_dispatch_params.InitScanPolicy<typename TunedPolicies::ScanPolicy>();
                 downsweep_dispatch_params.InitSortPolicy<typename TunedPolicies::DownsweepPolicy>(TunedPolicies::SUBSCRIPTION_FACTOR);
 /*
             }
@@ -446,7 +427,6 @@ struct DeviceRadixSort
 #endif
             // Get device occupancies
             int downsweep_occupancy = downsweep_sm_occupancy * sm_count;
-            int upsweep_occupancy = upsweep_sm_occupancy * sm_count;
 
             // Get even-share work distribution descriptor
             GridEvenShare<SizeT> even_share;
@@ -455,12 +435,17 @@ struct DeviceRadixSort
             even_share.GridInit(num_items, max_downsweep_grid_size, downsweep_dispatch_params.tile_size);
             downsweep_grid_size = even_share.grid_size;
 
+            // Get number of spine elements (round up to nearest spine scan kernel tile size)
+            int bins = 1 << downsweep_dispatch_params.radix_bits;
+            int spine_size = downsweep_grid_size * bins;
+            int spine_tiles = (spine_size + scan_dispatch_params.tile_size - 1) / scan_dispatch_params.tile_size;
+            spine_size = spine_tiles * scan_dispatch_params.tile_size;
+
             // Temporary storage allocation requirements
-            void* allocations[2];
-            size_t allocation_sizes[2] =
+            void* allocations[1];
+            size_t allocation_sizes[1] =
             {
-                downsweep_grid_size * sizeof(SizeT),    // bytes needed for privatized block digit histograms
-                sizeof(int)                             // bytes needed double-buffer selector
+                spine_size * sizeof(SizeT),    // bytes needed for privatized block digit histograms
             };
 
             // Alias temporaries (or set the necessary size of the storage allocation)
@@ -473,23 +458,18 @@ struct DeviceRadixSort
             // Privatized per-block digit histograms
             SizeT *d_spine = (SizeT*) allocations[0];
 
-            // Double-buffer selector
-            int *d_selector = allocations[1];
-
             // Iterate over digit places
             for (int current_bit = begin_bit;
                 current_bit < end_bit;
                 current_bit += downsweep_dispatch_params.radix_bits)
             {
                 // Log upsweep_kernel configuration
-                if (stream_synchronous) CubLog("Invoking upsweep_kernel<<<%d, %d, 0, %lld>>>(), %d items per thread, %d SM occupancy\n",
-                    downsweep_grid_size, upsweep_dispatch_params.block_threads, (long long) stream, upsweep_dispatch_params.items_per_thread, upsweep_sm_occupancy);
+                if (stream_synchronous) CubLog("Invoking upsweep_kernel<<<%d, %d, 0, %lld>>>(), %d items per thread, %d SM occupancy, current bit %d\n",
+                    downsweep_grid_size, upsweep_dispatch_params.block_threads, (long long) stream, upsweep_dispatch_params.items_per_thread, upsweep_sm_occupancy, current_bit);
 
                 // Invoke upsweep_kernel with same grid size as downsweep_kernel
                 upsweep_kernel<<<downsweep_grid_size, upsweep_dispatch_params.block_threads, 0, stream>>>(
                     d_keys.d_buffers[d_keys.selector],
-                    d_keys.d_buffers[d_keys.selector ^ 1],
-                    d_selector,
                     d_spine,
                     num_items,
                     current_bit,
@@ -506,15 +486,14 @@ struct DeviceRadixSort
                 // Invoke scan_kernel
                 scan_kernel<<<1, scan_dispatch_params.block_threads, 0, stream>>>(
                     d_spine,
-                    downsweep_grid_size,
-                    reduction_op);
+                    spine_size);
 
                 // Sync the stream if specified
                 if (stream_synchronous && (CubDebug(error = SyncStream(stream)))) break;
 
                 // Log downsweep_kernel configuration
-                if (stream_synchronous) CubLog("Invoking downsweep_kernel<<<%d, %d, 0, %lld>>>(), %d items per thread, %d SM occupancy\n",
-                    downsweep_grid_size, downsweep_dispatch_params.block_threads, (long long) stream, downsweep_dispatch_params.items_per_thread, downsweep_sm_occupancy);
+                if (stream_synchronous) CubLog("Invoking downsweep_kernel<<<%d, %d, 0, %lld>>>(), %d items per thread, %d SM occupancy, %d items\n",
+                    downsweep_grid_size, downsweep_dispatch_params.block_threads, (long long) stream, downsweep_dispatch_params.items_per_thread, downsweep_sm_occupancy, spine_size);
 
                 // Invoke downsweep_kernel
                 downsweep_kernel<<<downsweep_grid_size, downsweep_dispatch_params.block_threads, 0, stream>>>(
@@ -522,7 +501,6 @@ struct DeviceRadixSort
                     d_keys.d_buffers[d_keys.selector ^ 1],
                     d_values.d_buffers[d_values.selector],
                     d_values.d_buffers[d_values.selector ^ 1],
-                    d_selector,
                     d_spine,
                     num_items,
                     current_bit,
@@ -532,6 +510,10 @@ struct DeviceRadixSort
 
                 // Sync the stream if specified
                 if (stream_synchronous && (CubDebug(error = SyncStream(stream)))) break;
+
+                // Invert selectors
+                d_keys.selector ^= 1;
+                d_values.selector ^= 1;
             }
         }
         while (0);
@@ -592,9 +574,9 @@ struct DeviceRadixSort
 
 #ifdef __CUDA_ARCH__
             // We're on the device, so initialize the dispatch parameters with the PtxDefaultPolicies directly
-            upsweep_dispatch_params.Init<UpsweepPolicy>(PtxDefaultPolicies::SUBSCRIPTION_FACTOR);
-            scan_dispatch_params.Init<ScanPolicy>();
-            downsweep_dispatch_params.Init<DownsweepPolicy>(PtxDefaultPolicies::SUBSCRIPTION_FACTOR);
+            upsweep_dispatch_params.InitSortPolicy<UpsweepPolicy>(PtxDefaultPolicies::SUBSCRIPTION_FACTOR);
+            scan_dispatch_params.InitScanPolicy<ScanPolicy>();
+            downsweep_dispatch_params.InitSortPolicy<DownsweepPolicy>(PtxDefaultPolicies::SUBSCRIPTION_FACTOR);
 #else
             // We're on the host, so lookup and initialize the dispatch parameters with the policies that match the device's PTX version
             int ptx_version;
