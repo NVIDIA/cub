@@ -54,8 +54,8 @@ namespace cub {
 template <
     int                 _BLOCK_THREADS,     ///< The number of threads per CTA
     int                 _ITEMS_PER_THREAD,  ///< The number of items to load per thread per tile
-    int                 _RADIX_BITS,        ///< The number of radix bits, i.e., log2(bins)
-    PtxLoadModifier     _LOAD_MODIFIER>     ///< Load cache-modifier
+    PtxLoadModifier     _LOAD_MODIFIER,     ///< Load cache-modifier
+    int                 _RADIX_BITS>        ///< The number of radix bits, i.e., log2(bins)
 struct BlockRadixSortHistoTilesPolicy
 {
     enum
@@ -164,7 +164,7 @@ struct BlockRadixSortHistoTiles
     UnsignedBits    *d_keys_in;
 
     // The least-significant bit position of the current digit to extract
-    unsigned int    current_bit;
+    int             current_bit;
 
 
 
@@ -332,7 +332,7 @@ struct BlockRadixSortHistoTiles
         {
             bin_count = ThreadReduce<WARP_THREADS>(
                 temp_storage.digit_partials[threadIdx.x],
-                Sum<SizeT>());
+                Sum());
         }
     }
 
@@ -379,9 +379,9 @@ struct BlockRadixSortHistoTiles
      * Constructor
      */
     __device__ __forceinline__ BlockRadixSortHistoTiles(
-        TempStorage     &temp_storage,
+        TempStorage &temp_storage,
         Key         *d_keys_in,
-        unsigned int    current_bit)
+        int         current_bit)
     :
         temp_storage(temp_storage),
         d_keys_in(reinterpret_cast<UnsignedBits*>(d_keys_in)),
@@ -404,7 +404,7 @@ struct BlockRadixSortHistoTiles
         // Unroll batches of full tiles
         while (block_offset + UNROLLED_ELEMENTS <= block_oob)
         {
-            Iterate<0, UNROLL_COUNT>::ProcessTiles(this, block_offset);
+            Iterate<0, UNROLL_COUNT>::ProcessTiles(*this, block_offset);
             block_offset += UNROLLED_ELEMENTS;
 
             __syncthreads();
