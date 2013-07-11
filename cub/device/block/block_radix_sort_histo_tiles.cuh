@@ -345,7 +345,7 @@ struct BlockRadixSortHistoTiles
         // Tile of keys
         UnsignedBits keys[KEYS_PER_THREAD];
 
-        LoadStriped<LOAD_MODIFIER, BLOCK_THREADS>(threadIdx.x, d_keys_in, keys);
+        LoadStriped<LOAD_MODIFIER, BLOCK_THREADS>(threadIdx.x, d_keys_in + block_offset, keys);
 
         // Bucket tile of keys
         Iterate<0, KEYS_PER_THREAD>::BucketKeys(*this, keys);
