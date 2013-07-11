@@ -49,6 +49,7 @@ using namespace cub;
 bool                    g_verbose           = false;
 int                     g_timing_iterations = 0;
 int                     g_repeat            = 0;
+int                     g_bits              = 5;
 CachingDeviceAllocator  g_allocator;
 
 
@@ -61,12 +62,11 @@ CachingDeviceAllocator  g_allocator;
  * Dispatch to key-value pair sorting entrypoint
  */
 template <typename Key, typename Value>
-__host__ __device__ __forceinline__
+//__host__ __device__ __forceinline__
 cudaError_t Dispatch(
     Int2Type<false>     use_cnp,
     int                 timing_iterations,
     size_t              *d_temp_storage_bytes,
-    int                 *d_selectors,
     cudaError_t         *d_cnp_error,
 
     void                *d_temp_storage,
@@ -82,6 +82,8 @@ cudaError_t Dispatch(
     cudaError_t error = cudaSuccess;
     for (int i = 0; i < timing_iterations; ++i)
     {
+        // MOOCH
+        d_keys.selector = 0;
         error = DeviceRadixSort::SortPairs(d_temp_storage, temp_storage_bytes, d_keys, d_values, num_items, begin_bit, end_bit, stream, stream_synchronous);
     }
     return error;
@@ -99,7 +101,6 @@ template <typename Key, typename Value>
 __global__ void CnpDispatchKernel(
     int                 timing_iterations,
     size_t              *d_temp_storage_bytes,
-    int                 *d_selectors,
     cudaError_t         *d_cnp_error,
 
     void                *d_temp_storage,
@@ -114,10 +115,8 @@ __global__ void CnpDispatchKernel(
 #ifndef CUB_CNP
     *d_cnp_error = cudaErrorNotSupported;
 #else
-    *d_cnp_error = Dispatch(Int2Type<false>(), timing_iterations, d_temp_storage_bytes, d_selectors, d_cnp_error, d_temp_storage, temp_storage_bytes, d_keys, d_values, num_items, begin_bit, end_bit, 0, stream_synchronous);
+    *d_cnp_error = Dispatch(Int2Type<false>(), timing_iterations, d_temp_storage_bytes, d_cnp_error, d_temp_storage, temp_storage_bytes, d_keys, d_values, num_items, begin_bit, end_bit, 0, stream_synchronous);
     *d_temp_storage_bytes = temp_storage_bytes;
-    d_selectors[0] = d_keys.selector;
-    d_selectors[1] = d_values.selector;
 #endif
 }
 
@@ -130,7 +129,6 @@ cudaError_t Dispatch(
     Int2Type<true>      use_cnp,
     int                 timing_iterations,
     size_t              *d_temp_storage_bytes,
-    int                 *d_selectors,
     cudaError_t         *d_cnp_error,
 
     void                *d_temp_storage,
@@ -144,14 +142,10 @@ cudaError_t Dispatch(
     bool                stream_synchronous)
 {
     // Invoke kernel to invoke device-side dispatch
-    CnpDispatchKernel<<<1,1>>>(timing_iterations, d_temp_storage_bytes, d_selectors, d_cnp_error, d_temp_storage, temp_storage_bytes, d_keys, d_values, num_items, begin_bit, end_bit, stream_synchronous);
+    CnpDispatchKernel<<<1,1>>>(timing_iterations, d_temp_storage_bytes, d_cnp_error, d_temp_storage, temp_storage_bytes, d_keys, d_values, num_items, begin_bit, end_bit, stream_synchronous);
 
     // Copy out temp_storage_bytes
     CubDebugExit(cudaMemcpy(&temp_storage_bytes, d_temp_storage_bytes, sizeof(size_t) * 1, cudaMemcpyDeviceToHost));
-
-    // Copy out selectors
-    CubDebugExit(cudaMemcpy(&d_keys.selector, d_selectors + 0, sizeof(int) * 1, cudaMemcpyDeviceToHost));
-    CubDebugExit(cudaMemcpy(&d_values.selector, d_selectors + 1, sizeof(int) * 1, cudaMemcpyDeviceToHost));
 
     // Copy out error
     cudaError_t retval;
@@ -198,9 +192,7 @@ void Initialize(
     Pair<Key, Value> *pairs = new Pair<Key, Value>[num_items];
     for (int i = 0; i < num_items; ++i)
     {
-//        InitValue(gen_mode, h_keys[i], i);
-//        h_keys[i]       = i % 4;
-        h_keys[i]       = i % 32;
+        InitValue(gen_mode, h_keys[i], i);
         h_values[i]     = i;
         pairs[i].key    = h_keys[i];
         pairs[i].value  = h_keys[i];
@@ -221,7 +213,7 @@ void Initialize(
 /**
  * Initialize keys-only sorting problem
  */
-template <typename Key, typename Value>
+template <typename Key>
 void Initialize(
     GenMode      gen_mode,
     Key          *h_keys,
@@ -234,7 +226,10 @@ void Initialize(
     {
 //        InitValue(gen_mode, h_keys[i], i);
 //        h_keys[i]           = i % 4;
-        h_keys[i]           = i % 32;
+//        h_keys[i]           = i % 32;
+//        h_keys[i]           = 1;
+        RandomBits(h_keys[i], 0, 0, g_bits);
+
         h_sorted_keys[i]    = h_keys[i];
     }
 
@@ -280,13 +275,11 @@ void Test(
     // Allocate device arrays
     DoubleBuffer<Key>   d_keys;
     DoubleBuffer<Value> d_values;
-    size_t          *d_temp_storage_bytes;
-    int             *d_selectors;
-    cudaError_t     *d_cnp_error;
+    size_t              *d_temp_storage_bytes;
+    cudaError_t         *d_cnp_error;
     CubDebugExit(g_allocator.DeviceAllocate((void**)&d_keys.d_buffers[0], sizeof(Key) * num_items));
     CubDebugExit(g_allocator.DeviceAllocate((void**)&d_keys.d_buffers[1], sizeof(Key) * num_items));
     CubDebugExit(g_allocator.DeviceAllocate((void**)&d_temp_storage_bytes, sizeof(size_t) * 1));
-    CubDebugExit(g_allocator.DeviceAllocate((void**)&d_selectors, sizeof(int) * 2));
     CubDebugExit(g_allocator.DeviceAllocate((void**)&d_cnp_error, sizeof(cudaError_t) * 1));
     if (!KEYS_ONLY)
     {
@@ -299,18 +292,18 @@ void Test(
     CubDebugExit(cudaMemset(d_keys.d_buffers[1], 0, sizeof(Key) * num_items));
     if (!KEYS_ONLY)
     {
-        CubDebugExit(cudaMemcpy(d_keys.d_buffers[0], h_keys, sizeof(Key) * num_items, cudaMemcpyHostToDevice));
+        CubDebugExit(cudaMemcpy(d_values.d_buffers[0], h_values, sizeof(Value) * num_items, cudaMemcpyHostToDevice));
         CubDebugExit(cudaMemset(d_values.d_buffers[1], 0, sizeof(Value) * num_items));
     }
 
     // Allocate temporary storage
     size_t  temp_storage_bytes  = 0;
     void    *d_temp_storage     = NULL;
-    CubDebugExit(Dispatch(Int2Type<CNP>(), 1, d_temp_storage_bytes, d_selectors, d_cnp_error, d_temp_storage, temp_storage_bytes, d_keys, d_values, num_items, begin_bit, end_bit, 0, true));
+    CubDebugExit(Dispatch(Int2Type<CNP>(), 1, d_temp_storage_bytes, d_cnp_error, d_temp_storage, temp_storage_bytes, d_keys, d_values, num_items, begin_bit, end_bit, 0, true));
     CubDebugExit(g_allocator.DeviceAllocate(&d_temp_storage, temp_storage_bytes));
 
     // Run warmup/correctness iteration
-    CubDebugExit(Dispatch(Int2Type<CNP>(), 1, d_temp_storage_bytes, d_selectors, d_cnp_error, d_temp_storage, temp_storage_bytes, d_keys, d_values, num_items, begin_bit, end_bit, 0, true));
+    CubDebugExit(Dispatch(Int2Type<CNP>(), 1, d_temp_storage_bytes, d_cnp_error, d_temp_storage, temp_storage_bytes, d_keys, d_values, num_items, begin_bit, end_bit, 0, true));
 
     // Check for correctness (and display results, if specified)
     int compare = CompareDeviceResults(h_sorted_keys, d_keys.Current(), num_items, true, g_verbose);
@@ -329,7 +322,7 @@ void Test(
     // Performance
     GpuTimer gpu_timer;
     gpu_timer.Start();
-    CubDebugExit(Dispatch(Int2Type<CNP>(), g_timing_iterations, d_temp_storage_bytes, d_selectors, d_cnp_error, d_temp_storage, temp_storage_bytes, d_keys, d_values, num_items, begin_bit, end_bit, 0, false));
+    CubDebugExit(Dispatch(Int2Type<CNP>(), g_timing_iterations, d_temp_storage_bytes, d_cnp_error, d_temp_storage, temp_storage_bytes, d_keys, d_values, num_items, begin_bit, end_bit, 0, false));
     gpu_timer.Stop();
     float elapsed_millis = gpu_timer.ElapsedMillis();
 
@@ -341,7 +334,7 @@ void Test(
         float gbandwidth = (KEYS_ONLY) ?
             grate * sizeof(Key) * 2 :
             grate * (sizeof(Key) + sizeof(Value)) * 2;
-        printf(", %.3f avg ms, %.3f billion items/s, %.3f logical GB/s", avg_millis, grate, gbandwidth);
+        printf(", %.3f elapsed ms, %.3f avg ms, %.3f billion items/s, %.3f logical GB/s", elapsed_millis, avg_millis, grate, gbandwidth);
     }
 
     printf("\n\n");
@@ -356,7 +349,6 @@ void Test(
     if (d_keys.d_buffers[1]) CubDebugExit(g_allocator.DeviceFree(d_keys.d_buffers[1]));
     if (d_values.d_buffers[0]) CubDebugExit(g_allocator.DeviceFree(d_values.d_buffers[0]));
     if (d_values.d_buffers[1]) CubDebugExit(g_allocator.DeviceFree(d_values.d_buffers[1]));
-    if (d_selectors) CubDebugExit(g_allocator.DeviceFree(d_selectors));
     if (d_temp_storage_bytes) CubDebugExit(g_allocator.DeviceFree(d_temp_storage_bytes));
     if (d_cnp_error) CubDebugExit(g_allocator.DeviceFree(d_cnp_error));
 
@@ -406,7 +398,7 @@ int main(int argc, char** argv)
     printf("\n");
 
 //    Test<false, unsigned int, NullType>(num_items, UNIFORM, 0, sizeof(unsigned int) * 8, CUB_TYPE_STRING(unsigned int));
-    Test<false, unsigned int, NullType>(num_items, UNIFORM, 0, 5, CUB_TYPE_STRING(unsigned int));
+    Test<false, unsigned int, NullType>(num_items, UNIFORM, 0, g_bits, CUB_TYPE_STRING(unsigned int));
 
     return 0;
 }

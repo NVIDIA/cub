@@ -158,7 +158,8 @@ struct BlockRadixSortScatterTiles
     typedef BlockRadixRank<
         BLOCK_THREADS,
         RADIX_BITS,
-        MEMOIZE_OUTER_SCAN> BlockRadixRank;
+        MEMOIZE_OUTER_SCAN,
+        INNER_SCAN_ALGORITHM> BlockRadixRank;
 
     // BlockLoad type (keys)
     typedef BlockLoad<
@@ -331,6 +332,8 @@ struct BlockRadixSortScatterTiles
         // Exchange keys through shared memory
         BlockExchangeKeys(temp_storage.exchange_keys).ScatterToStriped(twiddled_keys, ranks);
 
+        __syncthreads();
+
         // Compute striped local ranks
         int local_ranks[ITEMS_PER_THREAD];
         for (int ITEM = 0; ITEM < ITEMS_PER_THREAD; ++ITEM)
@@ -339,7 +342,7 @@ struct BlockRadixSortScatterTiles
         }
 
         // Scatter directly
-        ScatterKeys(
+        ScatterKeys<FULL_TILE>(
             twiddled_keys,
             relative_bin_offsets,
             local_ranks,
@@ -377,6 +380,8 @@ struct BlockRadixSortScatterTiles
     {
         // Exchange keys through shared memory
         BlockExchangeValues(temp_storage.exchange_values).ScatterToStriped(values, ranks);
+
+        __syncthreads();
 
         // Compute striped local ranks
         int local_ranks[ITEMS_PER_THREAD];
@@ -439,7 +444,7 @@ struct BlockRadixSortScatterTiles
         LoadItems(
             BlockLoadValues(temp_storage.load_values),
             values,
-            d_values_in,
+            d_values_in + block_offset,
             valid_items,
             Int2Type<FULL_TILE>());
 
@@ -490,11 +495,11 @@ struct BlockRadixSortScatterTiles
         LoadItems(
             BlockLoadKeys(temp_storage.load_keys),
             keys,
-            d_keys_in,
+            d_keys_in + block_offset,
             valid_items,
             Int2Type<FULL_TILE>());
 
-        // Twiddle key bits if necesssary
+        // Twiddle key bits if necessary
         TwiddleKeys(keys, twiddled_keys, Traits<Key>::TwiddleIn);
 
         __syncthreads();
@@ -519,7 +524,7 @@ struct BlockRadixSortScatterTiles
         __syncthreads();
 
         // Scatter keys
-        ScatterKeys<FULL_TILE>(twiddled_keys, relative_bin_offsets, ranks, valid_items, Int2Type<RADIX_SORT_SCATTER_DIRECT>());
+        ScatterKeys<FULL_TILE>(twiddled_keys, relative_bin_offsets, ranks, valid_items, Int2Type<SCATTER_ALGORITHM>());
 
         // Gather/scatter values
         Value values[ITEMS_PER_THREAD];
