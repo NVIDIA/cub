@@ -102,7 +102,7 @@ __global__ void RadixSortUpsweepKernel(
     if (threadIdx.x < RADIX_DIGITS)
     {
         d_spine[(gridDim.x * threadIdx.x) + blockIdx.x] = bin_count;
-//        CubLog("%s bin %d count %d\n", (threadIdx.x == 0) ? "\n" : "", threadIdx.x, bin_count);
+//        CubLog("bin %d count %d size(%d), num_items(%d)\n", threadIdx.x, bin_count, sizeof(Key), num_items);
     }
 }
 
@@ -168,7 +168,7 @@ __global__ void RadixSortDownsweepKernel(
     if (threadIdx.x < RADIX_DIGITS)
     {
         bin_offset = d_spine[(gridDim.x * threadIdx.x) + blockIdx.x];
-//        CubLog("%s\tdigit %d bin offset %d\n", (threadIdx.x == 0) ? "\n" : "", threadIdx.x, bin_offset);
+//        CubLog("\t digit %d bin offset %d\n", threadIdx.x, bin_offset);
     }
 
     // Process input tiles
@@ -264,16 +264,13 @@ struct DeviceRadixSort
     struct TunedPolicies<Key, Value, SizeT, 200>
     {
         // UpsweepPolicy
-        typedef BlockRadixSortHistoTilesPolicy <128, 17, LOAD_DEFAULT, 5> UpsweepPolicy;
-//        typedef BlockRadixSortHistoTilesPolicy <128, 3, LOAD_DEFAULT, 5> UpsweepPolicy;
+        typedef BlockRadixSortHistoTilesPolicy <64, 17, LOAD_DEFAULT, 5> UpsweepPolicy;
 
         // ScanPolicy
-//        typedef BlockScanTilesPolicy <256, 4, BLOCK_LOAD_VECTORIZE, false, LOAD_DEFAULT, BLOCK_STORE_VECTORIZE, false, BLOCK_SCAN_WARP_SCANS> ScanPolicy;
         typedef BlockScanTilesPolicy <256, 4, BLOCK_LOAD_VECTORIZE, false, LOAD_DEFAULT, BLOCK_STORE_VECTORIZE, false, BLOCK_SCAN_WARP_SCANS> ScanPolicy;
 
         // DownsweepPolicy
-        typedef BlockRadixSortScatterTilesPolicy <128, 17, BLOCK_LOAD_WARP_TRANSPOSE, LOAD_DEFAULT, false, false, BLOCK_SCAN_WARP_SCANS, RADIX_SORT_SCATTER_TWO_PHASE, 5> DownsweepPolicy;
-//        typedef BlockRadixSortScatterTilesPolicy <128, 3, BLOCK_LOAD_WARP_TRANSPOSE, LOAD_DEFAULT, false, false, BLOCK_SCAN_WARP_SCANS, RADIX_SORT_SCATTER_TWO_PHASE, 5> DownsweepPolicy;
+        typedef BlockRadixSortScatterTilesPolicy <64, 17, BLOCK_LOAD_WARP_TRANSPOSE, LOAD_DEFAULT, false, false, BLOCK_SCAN_WARP_SCANS, RADIX_SORT_SCATTER_TWO_PHASE, 5> DownsweepPolicy;
 
         enum { SUBSCRIPTION_FACTOR = 4 };
     };
@@ -464,8 +461,9 @@ struct DeviceRadixSort
                 current_bit += downsweep_dispatch_params.radix_bits)
             {
                 // Log upsweep_kernel configuration
-                if (stream_synchronous) CubLog("Invoking upsweep_kernel<<<%d, %d, 0, %lld>>>(), %d items per thread, %d SM occupancy, current bit %d\n",
-                    downsweep_grid_size, upsweep_dispatch_params.block_threads, (long long) stream, upsweep_dispatch_params.items_per_thread, upsweep_sm_occupancy, current_bit);
+                if (stream_synchronous)
+                    CubLog("Invoking upsweep_kernel<<<%d, %d, 0, %lld>>>(), %d items per thread, %d SM occupancy, selector %d, current bit %d\n",
+                    downsweep_grid_size, upsweep_dispatch_params.block_threads, (long long) stream, upsweep_dispatch_params.items_per_thread, upsweep_sm_occupancy, d_keys.selector, current_bit);
 
                 // Invoke upsweep_kernel with same grid size as downsweep_kernel
                 upsweep_kernel<<<downsweep_grid_size, upsweep_dispatch_params.block_threads, 0, stream>>>(

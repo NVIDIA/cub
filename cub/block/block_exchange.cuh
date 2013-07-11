@@ -255,9 +255,6 @@ private:
             temp_storage[item_offset] = items[ITEM];
         }
 
-        // Prevent hoisting
-        __threadfence_block();
-
         #pragma unroll
         for (int ITEM = 0; ITEM < ITEMS_PER_THREAD; ITEM++)
         {
@@ -288,9 +285,6 @@ private:
                     if (INSERT_PADDING) item_offset += item_offset >> LOG_SMEM_BANKS;
                     temp_storage[item_offset] = items[ITEM];
                 }
-
-                // Prevent hoisting
-                __threadfence_block();
 
                 #pragma unroll
                 for (int ITEM = 0; ITEM < ITEMS_PER_THREAD; ITEM++)
@@ -406,9 +400,6 @@ private:
             temp_storage[item_offset] = items[ITEM];
         }
 
-        // Prevent hoisting
-        __threadfence_block();
-
         #pragma unroll
         for (int ITEM = 0; ITEM < ITEMS_PER_THREAD; ITEM++)
         {
@@ -440,9 +431,6 @@ private:
                     if (INSERT_PADDING) item_offset += item_offset >> LOG_SMEM_BANKS;
                     temp_storage[item_offset] = items[ITEM];
                 }
-
-                // Prevent hoisting
-                __threadfence_block();
 
                 #pragma unroll
                 for (int ITEM = 0; ITEM < ITEMS_PER_THREAD; ITEM++)
