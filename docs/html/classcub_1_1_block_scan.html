@@ -176,7 +176,7 @@ class cub::BlockScan&lt; T, BLOCK_THREADS, ALGORITHM &gt;</h3>
 <div class="line">    ...</div>
 <div class="line"></div>
 <div class="line">    <span class="comment">// Compute the threadblock-wide exclusive prefix sum</span></div>
-<div class="line">    <a class="code" href="classcub_1_1_block_scan.html#acd75d5aad2d1385bcbe15517011800e8" title="Computes an exclusive threadblock-wide prefix scan using addition (+) as the scan operator...">BlockScan::ExclusiveSum</a>(data, data);</div>
+<div class="line">    <a class="code" href="classcub_1_1_block_scan.html#a982e1407d00b704c3046cd72c48acabb" title="Collective constructor for 1D thread blocks using a private static allocation of shared memory as tem...">BlockScan</a>(temp_storage).ExclusiveSum(data, data);</div>
 <div class="line"></div>
 <div class="line">    ...</div>
 </div><!-- fragment --></dd></dl>
@@ -222,7 +222,7 @@ class cub::BlockScan&lt; T, BLOCK_THREADS, ALGORITHM &gt;</h3>
 <div class="line"></div>
 <div class="line">        <span class="comment">// Scan the tile of items</span></div>
 <div class="line">        <span class="keywordtype">int</span> tile_aggregate;</div>
-<div class="line">        <a class="code" href="classcub_1_1_block_scan.html#acd75d5aad2d1385bcbe15517011800e8" title="Computes an exclusive threadblock-wide prefix scan using addition (+) as the scan operator...">BlockScan::ExclusiveSum</a>(datum, datum,</div>
+<div class="line">        <a class="code" href="classcub_1_1_block_scan.html#a982e1407d00b704c3046cd72c48acabb" title="Collective constructor for 1D thread blocks using a private static allocation of shared memory as tem...">BlockScan</a>(temp_storage).ExclusiveSum(datum, datum,</div>
 <div class="line">            tile_aggregate, prefix_op);</div>
 <div class="line"></div>
 <div class="line">        <span class="comment">// Write item</span></div>
@@ -261,12 +261,20 @@ class cub::BlockScan&lt; T, BLOCK_THREADS, ALGORITHM &gt;</h3>
 <div class="line">    <span class="comment">// Allocation request size for each thread</span></div>
 <div class="line">    <span class="keywordtype">int</span> allocation_request = ...</div>
 <div class="line"></div>
-<div class="line">    <span class="comment">// Determine a unique offset int d_out for each thread to</span></div>
-<div class="line">    <span class="comment">// write its allocation</span></div>
+<div class="line">    <span class="comment">// Determine a unique allocation offset in d_out for each thread</span></div>
+<div class="line">    <span class="comment">// to write its allocation</span></div>
+<div class="line"></div>
 <div class="line">    <span class="keywordtype">int</span> allocation_offset;</div>
-<div class="line">    <span class="keywordtype">int</span> aggregate_block_request;  <span class="comment">// Unused</span></div>
-<div class="line">    <a class="code" href="classcub_1_1_block_scan.html#acd75d5aad2d1385bcbe15517011800e8" title="Computes an exclusive threadblock-wide prefix scan using addition (+) as the scan operator...">BlockScan::ExclusiveSum</a>(allocation_request, allocation_offset,</div>
-<div class="line">        aggregate_block_request, BlockPrefix(d_global_counter));</div>
+<div class="line">    BlockPrefix prefix_callback(d_global_counter);</div>
+<div class="line">    <span class="keywordtype">int</span> total_allocated;</div>
+<div class="line"></div>
+<div class="line">    <a class="code" href="classcub_1_1_block_scan.html#a982e1407d00b704c3046cd72c48acabb" title="Collective constructor for 1D thread blocks using a private static allocation of shared memory as tem...">BlockScan</a>(temp_storage).ExclusiveSum(</div>
+<div class="line">        allocation_request,</div>
+<div class="line">        allocation_offset,</div>
+<div class="line">        total_allocated,</div>
+<div class="line">        prefix_callback);</div>
+<div class="line"></div>
+<div class="line">    <span class="comment">// allocation_offset now contains a index to begin writing items...</span></div>
 </div><!-- fragment --> </dd></dl>
 </div><table class="memberdecls">
 <tr class="heading"><td colspan="2"><h2 class="groupheader"><a name="pub-types"></a>
@@ -2536,7 +2544,7 @@ template&lt;int ITEMS_PER_THREAD, typename ScanOp , typename BlockPrefixOp &gt; 
 <!-- HTML footer for doxygen 1.8.3.1-->
 <!-- start footer part -->
 <hr class="footer"/><address class="footer"><small>
-Generated on Sun Jun 30 2013 23:35:05 for CUB by &#160;<a href="http://www.doxygen.org/index.html">
+Generated on Fri Jul 12 2013 14:34:45 for CUB by &#160;<a href="http://www.doxygen.org/index.html">
 <img class="footer" src="doxygen.png" alt="doxygen"/>
 </a> 1.8.4
 <br>

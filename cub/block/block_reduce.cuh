@@ -180,7 +180,7 @@ enum BlockReduceAlgorithm
  *      ...
  *
  *      // Compute the threadblock-wide sum for thread0
- *      int aggregate = BlockReduce::Sum(temp_storage, data);
+ *      int aggregate = BlockReduce(temp_storage).Sum(data);
  *
  *      ...
  * \endcode
@@ -206,7 +206,7 @@ enum BlockReduceAlgorithm
  *      if (threadIdx.x < num_items) data = ...;
  *
  *      // Compute the threadblock-wide sum of valid elements in thread0
- *      int aggregate = BlockReduce::Sum(temp_storage, data, num_items);
+ *      int aggregate = BlockReduce(temp_storage).Sum(data, num_items);
  *
  *      ...
  * \endcode
@@ -402,7 +402,7 @@ public:
      * \smemreuse
      */
     __device__ __forceinline__ T Sum(
-        T               input)                      ///< [in] Calling thread's input
+        T   input)                      ///< [in] Calling thread's input
     {
         return InternalBlockReduce(temp_storage, linear_tid).template Sum<true>(input, BLOCK_THREADS);
     }
@@ -418,7 +418,7 @@ public:
      */
     template <int ITEMS_PER_THREAD>
     __device__ __forceinline__ T Sum(
-        T               (&inputs)[ITEMS_PER_THREAD])    ///< [in] Calling thread's input segment
+        T   (&inputs)[ITEMS_PER_THREAD])    ///< [in] Calling thread's input segment
     {
         // Reduce partials
         T partial = ThreadReduce(inputs, cub::Sum());
@@ -434,8 +434,8 @@ public:
      * The return value is undefined in threads other than thread<sub>0</sub>.
      */
     __device__ __forceinline__ T Sum(
-        T                   input,                  ///< [in] Calling thread's input
-        int                 num_valid)              ///< [in] Number of threads containing valid elements (may be less than BLOCK_THREADS)
+        T   input,                  ///< [in] Calling thread's input
+        int num_valid)              ///< [in] Number of threads containing valid elements (may be less than BLOCK_THREADS)
     {
         // Determine if we scan skip bounds checking
         if (num_valid >= BLOCK_THREADS)

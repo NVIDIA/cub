@@ -141,7 +141,7 @@ class cub::BlockRadixSort&lt; Key, BLOCK_THREADS, ITEMS_PER_THREAD, Value, RADIX
   </dd>
 </dl>
 <dl class="section user"><dt>Usage Considerations</dt><dd><ul>
-<li>After any sorting operation, a subsequent <code>__syncthreads()</code> barrier is required if the supplied <a class="el" href="classcub_1_1_block_radix_sort.html#abf873cba56d55034ec5112c95759875e" title="The operations exposed by BlockScan require a temporary memory allocation of this type for thread com...">BlockRadixSort::TempStorage</a> is to be reused or repurposed by the threadblock.</li>
+<li>After any sorting operation, a subsequent <code>__syncthreads()</code> barrier is required if the supplied <a class="el" href="classcub_1_1_block_radix_sort.html#a60f67ea2878487ad7718f0e781624171" title="The operations exposed by BlockScan require a temporary memory allocation of this type for thread com...">BlockRadixSort::TempStorage</a> is to be reused or repurposed by the threadblock.</li>
 <li><a class="el" href="classcub_1_1_block_radix_sort.html" title="BlockRadixSort provides variants of parallel radix sorting across a CUDA threadblock. . ">BlockRadixSort</a> can only accommodate one associated tile of values. To "truck along" more than one tile of values, simply perform a key-value sort of the keys paired with a temporary value array that enumerates the key indices. The reordered indices can then be used as a gather-vector for exchanging other associated tile data through shared memory.</li>
 </ul>
 </dd></dl>
@@ -164,10 +164,10 @@ class cub::BlockRadixSort&lt; Key, BLOCK_THREADS, ITEMS_PER_THREAD, Value, RADIX
 <div class="line">__global__ <span class="keywordtype">void</span> SomeKernel(...)</div>
 <div class="line">{</div>
 <div class="line">    <span class="comment">// Parameterize BlockRadixSort for 128 threads (4 items each) on type unsigned int</span></div>
-<div class="line">    <span class="keyword">typedef</span> <a class="code" href="classcub_1_1_block_radix_sort.html" title="BlockRadixSort provides variants of parallel radix sorting across a CUDA threadblock. . ">cub::BlockRadixSort&lt;unsigned int, 128, 4&gt;</a> <a class="code" href="classcub_1_1_block_radix_sort.html#ad4d628bfe4588aae76fc8ffc5d2f1318" title="Collective constructor for 1D thread blocks using a private static allocation of shared memory as tem...">BlockRadixSort</a>;</div>
+<div class="line">    <span class="keyword">typedef</span> <a class="code" href="classcub_1_1_block_radix_sort.html" title="BlockRadixSort provides variants of parallel radix sorting across a CUDA threadblock. . ">cub::BlockRadixSort&lt;unsigned int, 128, 4&gt;</a> <a class="code" href="classcub_1_1_block_radix_sort.html#ac7c896d6549960400b7710a262532e0e" title="Collective constructor for 1D thread blocks using a private static allocation of shared memory as tem...">BlockRadixSort</a>;</div>
 <div class="line"></div>
 <div class="line">    <span class="comment">// Declare shared memory for BlockRadixSort</span></div>
-<div class="line">    __shared__ <span class="keyword">typename</span> <a class="code" href="classcub_1_1_block_radix_sort.html#abf873cba56d55034ec5112c95759875e" title="The operations exposed by BlockScan require a temporary memory allocation of this type for thread com...">BlockRadixSort::TempStorage</a> temp_storage;</div>
+<div class="line">    __shared__ <span class="keyword">typename</span> <a class="code" href="classcub_1_1_block_radix_sort.html#a60f67ea2878487ad7718f0e781624171" title="The operations exposed by BlockScan require a temporary memory allocation of this type for thread com...">BlockRadixSort::TempStorage</a> temp_storage;</div>
 <div class="line"></div>
 <div class="line">    <span class="comment">// A segment of consecutive input items per thread</span></div>
 <div class="line">    <span class="keywordtype">int</span> keys[4];</div>
@@ -176,7 +176,7 @@ class cub::BlockRadixSort&lt; Key, BLOCK_THREADS, ITEMS_PER_THREAD, Value, RADIX
 <div class="line">    ...</div>
 <div class="line"></div>
 <div class="line">    <span class="comment">// Sort keys in ascending order</span></div>
-<div class="line">    <a class="code" href="classcub_1_1_block_radix_sort.html#ab9d22a3249e7fad38920ed21bf8ac35b" title="Performs a threadblock-wide radix sort over a blocked arrangement of keys. ">BlockRadixSort::Sort</a>(temp_storage, keys);</div>
+<div class="line">    <a class="code" href="classcub_1_1_block_radix_sort.html#ac7c896d6549960400b7710a262532e0e" title="Collective constructor for 1D thread blocks using a private static allocation of shared memory as tem...">BlockRadixSort</a>(temp_storage).Sort(keys);</div>
 </div><!-- fragment --></dd></dl>
 <dl class="section user"><dt></dt><dd><em>Example 2.</em> Perform a key-value radix sort over the lower 20-bits of a tile of 32-bit integer keys paired with floating-point values. The data are partitioned in a blocked arrangement across a block of BLOCK_THREADS threads where each thread holds ITEMS_PER_THREAD keys. <div class="fragment"><div class="line"><span class="preprocessor">#include &lt;<a class="code" href="cub_8cuh.html">cub/cub.cuh</a>&gt;</span></div>
 <div class="line"></div>
@@ -184,10 +184,10 @@ class cub::BlockRadixSort&lt; Key, BLOCK_THREADS, ITEMS_PER_THREAD, Value, RADIX
 <div class="line">__global__ <span class="keywordtype">void</span> SomeKernel(...)</div>
 <div class="line">{</div>
 <div class="line">    <span class="comment">// Parameterize BlockRadixSort on key-value pairs of type unsigned int, float</span></div>
-<div class="line">    <span class="keyword">typedef</span> <a class="code" href="classcub_1_1_block_radix_sort.html" title="BlockRadixSort provides variants of parallel radix sorting across a CUDA threadblock. . ">cub::BlockRadixSort&lt;unsigned int, BLOCK_THREADS, ITEMS_PER_THREAD, float&gt;</a> <a class="code" href="classcub_1_1_block_radix_sort.html#ad4d628bfe4588aae76fc8ffc5d2f1318" title="Collective constructor for 1D thread blocks using a private static allocation of shared memory as tem...">BlockRadixSort</a>;</div>
+<div class="line">    <span class="keyword">typedef</span> <a class="code" href="classcub_1_1_block_radix_sort.html" title="BlockRadixSort provides variants of parallel radix sorting across a CUDA threadblock. . ">cub::BlockRadixSort&lt;unsigned int, BLOCK_THREADS, ITEMS_PER_THREAD, float&gt;</a> <a class="code" href="classcub_1_1_block_radix_sort.html#ac7c896d6549960400b7710a262532e0e" title="Collective constructor for 1D thread blocks using a private static allocation of shared memory as tem...">BlockRadixSort</a>;</div>
 <div class="line"></div>
 <div class="line">    <span class="comment">// Declare shared memory for BlockRadixSort</span></div>
-<div class="line">    __shared__ <span class="keyword">typename</span> <a class="code" href="classcub_1_1_block_radix_sort.html#abf873cba56d55034ec5112c95759875e" title="The operations exposed by BlockScan require a temporary memory allocation of this type for thread com...">BlockRadixSort::TempStorage</a> temp_storage;</div>
+<div class="line">    __shared__ <span class="keyword">typename</span> <a class="code" href="classcub_1_1_block_radix_sort.html#a60f67ea2878487ad7718f0e781624171" title="The operations exposed by BlockScan require a temporary memory allocation of this type for thread com...">BlockRadixSort::TempStorage</a> temp_storage;</div>
 <div class="line"></div>
 <div class="line">    <span class="comment">// Input keys and values per thread</span></div>
 <div class="line">    <span class="keywordtype">int</span> keys[ITEMS_PER_THREAD];</div>
@@ -197,43 +197,50 @@ class cub::BlockRadixSort&lt; Key, BLOCK_THREADS, ITEMS_PER_THREAD, Value, RADIX
 <div class="line">    ...</div>
 <div class="line"></div>
 <div class="line">    <span class="comment">// Sort pairs in ascending order (using only the lower 20 distinguishing key bits)</span></div>
-<div class="line">    <a class="code" href="classcub_1_1_block_radix_sort.html#ab9d22a3249e7fad38920ed21bf8ac35b" title="Performs a threadblock-wide radix sort over a blocked arrangement of keys. ">BlockRadixSort::Sort</a>(temp_storage, keys, values, 0, 20);</div>
+<div class="line">    <a class="code" href="classcub_1_1_block_radix_sort.html#ac7c896d6549960400b7710a262532e0e" title="Collective constructor for 1D thread blocks using a private static allocation of shared memory as tem...">BlockRadixSort</a>(temp_storage).Sort(keys, values, 0, 20);</div>
 <div class="line">}</div>
 </div><!-- fragment --> </dd></dl>
 </div><table class="memberdecls">
 <tr class="heading"><td colspan="2"><h2 class="groupheader"><a name="pub-types"></a>
 Public Types</h2></td></tr>
-<tr class="memitem:abf873cba56d55034ec5112c95759875e"><td class="memItemLeft" align="right" valign="top"><a class="anchor" id="abf873cba56d55034ec5112c95759875e"></a>
-typedef _TempStorage&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classcub_1_1_block_radix_sort.html#abf873cba56d55034ec5112c95759875e">TempStorage</a></td></tr>
-<tr class="memdesc:abf873cba56d55034ec5112c95759875e"><td class="mdescLeft">&#160;</td><td class="mdescRight">The operations exposed by <a class="el" href="classcub_1_1_block_scan.html" title="BlockScan provides variants of parallel prefix scan (and prefix sum) across a CUDA threadblock...">BlockScan</a> require a temporary memory allocation of this type for thread communication. This opaque storage can be allocated directly using the <code>__shared__</code> keyword. Alternatively, it can be aliased to externally allocated memory (shared or global) or <code>union</code>'d with other storage allocation types to facilitate memory reuse. <br/></td></tr>
-<tr class="separator:abf873cba56d55034ec5112c95759875e"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a60f67ea2878487ad7718f0e781624171"><td class="memItemLeft" align="right" valign="top"><a class="anchor" id="a60f67ea2878487ad7718f0e781624171"></a>
+typedef _TempStorage&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classcub_1_1_block_radix_sort.html#a60f67ea2878487ad7718f0e781624171">TempStorage</a></td></tr>
+<tr class="memdesc:a60f67ea2878487ad7718f0e781624171"><td class="mdescLeft">&#160;</td><td class="mdescRight">The operations exposed by <a class="el" href="classcub_1_1_block_scan.html" title="BlockScan provides variants of parallel prefix scan (and prefix sum) across a CUDA threadblock...">BlockScan</a> require a temporary memory allocation of this type for thread communication. This opaque storage can be allocated directly using the <code>__shared__</code> keyword. Alternatively, it can be aliased to externally allocated memory (shared or global) or <code>union</code>'d with other storage allocation types to facilitate memory reuse. <br/></td></tr>
+<tr class="separator:a60f67ea2878487ad7718f0e781624171"><td class="memSeparator" colspan="2">&#160;</td></tr>
 </table><table class="memberdecls">
 <tr class="heading"><td colspan="2"><h2 class="groupheader"><a name="pub-methods"></a>
 Public Methods</h2></td></tr>
 <tr><td colspan="2"><div class="groupHeader">Collective construction</div></td></tr>
-<tr class="memitem:ad4d628bfe4588aae76fc8ffc5d2f1318"><td class="memItemLeft" align="right" valign="top"><a class="anchor" id="ad4d628bfe4588aae76fc8ffc5d2f1318"></a>
-__device__ __forceinline__&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classcub_1_1_block_radix_sort.html#ad4d628bfe4588aae76fc8ffc5d2f1318">BlockRadixSort</a> ()</td></tr>
-<tr class="memdesc:ad4d628bfe4588aae76fc8ffc5d2f1318"><td class="mdescLeft">&#160;</td><td class="mdescRight">Collective constructor for 1D thread blocks using a private static allocation of shared memory as temporary storage. Threads are identified using <code>threadIdx.x</code>. <br/></td></tr>
-<tr class="separator:ad4d628bfe4588aae76fc8ffc5d2f1318"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:a3add558d088042e30eafd7cb420dc391"><td class="memItemLeft" align="right" valign="top">__device__ __forceinline__&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classcub_1_1_block_radix_sort.html#a3add558d088042e30eafd7cb420dc391">BlockRadixSort</a> (<a class="el" href="classcub_1_1_block_radix_sort.html#abf873cba56d55034ec5112c95759875e">TempStorage</a> &amp;temp_storage)</td></tr>
-<tr class="memdesc:a3add558d088042e30eafd7cb420dc391"><td class="mdescLeft">&#160;</td><td class="mdescRight">Collective constructor for 1D thread blocks using the specified memory allocation as temporary storage. Threads are identified using <code>threadIdx.x</code>.  <a href="#a3add558d088042e30eafd7cb420dc391">More...</a><br/></td></tr>
-<tr class="separator:a3add558d088042e30eafd7cb420dc391"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:ae77d5042a882721786cff5d6bac6165e"><td class="memItemLeft" align="right" valign="top">__device__ __forceinline__&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classcub_1_1_block_radix_sort.html#ae77d5042a882721786cff5d6bac6165e">BlockRadixSort</a> (int linear_tid)</td></tr>
-<tr class="memdesc:ae77d5042a882721786cff5d6bac6165e"><td class="mdescLeft">&#160;</td><td class="mdescRight">Collective constructor using a private static allocation of shared memory as temporary storage. Threads are identified using the given linear thread identifier.  <a href="#ae77d5042a882721786cff5d6bac6165e">More...</a><br/></td></tr>
-<tr class="separator:ae77d5042a882721786cff5d6bac6165e"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:a1a59923e04e71844d78ecc75a304882c"><td class="memItemLeft" align="right" valign="top">__device__ __forceinline__&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classcub_1_1_block_radix_sort.html#a1a59923e04e71844d78ecc75a304882c">BlockRadixSort</a> (<a class="el" href="classcub_1_1_block_radix_sort.html#abf873cba56d55034ec5112c95759875e">TempStorage</a> &amp;temp_storage, int linear_tid)</td></tr>
-<tr class="memdesc:a1a59923e04e71844d78ecc75a304882c"><td class="mdescLeft">&#160;</td><td class="mdescRight">Collective constructor using the specified memory allocation as temporary storage. Threads are identified using the given linear thread identifier.  <a href="#a1a59923e04e71844d78ecc75a304882c">More...</a><br/></td></tr>
-<tr class="separator:a1a59923e04e71844d78ecc75a304882c"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr><td colspan="2"><div class="groupHeader">Sorting</div></td></tr>
-<tr class="memitem:ab9d22a3249e7fad38920ed21bf8ac35b"><td class="memItemLeft" align="right" valign="top">__device__ __forceinline__ void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classcub_1_1_block_radix_sort.html#ab9d22a3249e7fad38920ed21bf8ac35b">Sort</a> (Key(&amp;keys)[ITEMS_PER_THREAD], int begin_bit=0, int end_bit=sizeof(Key)*8)</td></tr>
-<tr class="memdesc:ab9d22a3249e7fad38920ed21bf8ac35b"><td class="mdescLeft">&#160;</td><td class="mdescRight">Performs a threadblock-wide radix sort over a <a href="index.html#sec3sec3"><em>blocked arrangement</em></a> of keys.  <a href="#ab9d22a3249e7fad38920ed21bf8ac35b">More...</a><br/></td></tr>
-<tr class="separator:ab9d22a3249e7fad38920ed21bf8ac35b"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:a7e1674dde0f8f460b385c2257473d4cd"><td class="memItemLeft" align="right" valign="top">__device__ __forceinline__ void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classcub_1_1_block_radix_sort.html#a7e1674dde0f8f460b385c2257473d4cd">Sort</a> (Key(&amp;keys)[ITEMS_PER_THREAD], Value(&amp;values)[ITEMS_PER_THREAD], int begin_bit=0, int end_bit=sizeof(Key)*8)</td></tr>
-<tr class="memdesc:a7e1674dde0f8f460b385c2257473d4cd"><td class="mdescLeft">&#160;</td><td class="mdescRight">Performs a radix sort across a <a href="index.html#sec3sec3"><em>blocked arrangement</em></a> of keys and values.  <a href="#a7e1674dde0f8f460b385c2257473d4cd">More...</a><br/></td></tr>
-<tr class="separator:a7e1674dde0f8f460b385c2257473d4cd"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:ac7c896d6549960400b7710a262532e0e"><td class="memItemLeft" align="right" valign="top"><a class="anchor" id="ac7c896d6549960400b7710a262532e0e"></a>
+__device__ __forceinline__&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classcub_1_1_block_radix_sort.html#ac7c896d6549960400b7710a262532e0e">BlockRadixSort</a> ()</td></tr>
+<tr class="memdesc:ac7c896d6549960400b7710a262532e0e"><td class="mdescLeft">&#160;</td><td class="mdescRight">Collective constructor for 1D thread blocks using a private static allocation of shared memory as temporary storage. Threads are identified using <code>threadIdx.x</code>. <br/></td></tr>
+<tr class="separator:ac7c896d6549960400b7710a262532e0e"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:af6840b09ce6bb530fffa56ed75e4529c"><td class="memItemLeft" align="right" valign="top">__device__ __forceinline__&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classcub_1_1_block_radix_sort.html#af6840b09ce6bb530fffa56ed75e4529c">BlockRadixSort</a> (<a class="el" href="classcub_1_1_block_radix_sort.html#a60f67ea2878487ad7718f0e781624171">TempStorage</a> &amp;temp_storage)</td></tr>
+<tr class="memdesc:af6840b09ce6bb530fffa56ed75e4529c"><td class="mdescLeft">&#160;</td><td class="mdescRight">Collective constructor for 1D thread blocks using the specified memory allocation as temporary storage. Threads are identified using <code>threadIdx.x</code>.  <a href="#af6840b09ce6bb530fffa56ed75e4529c">More...</a><br/></td></tr>
+<tr class="separator:af6840b09ce6bb530fffa56ed75e4529c"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a311b6e5932dfea96e1844abaf428bfc3"><td class="memItemLeft" align="right" valign="top">__device__ __forceinline__&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classcub_1_1_block_radix_sort.html#a311b6e5932dfea96e1844abaf428bfc3">BlockRadixSort</a> (int linear_tid)</td></tr>
+<tr class="memdesc:a311b6e5932dfea96e1844abaf428bfc3"><td class="mdescLeft">&#160;</td><td class="mdescRight">Collective constructor using a private static allocation of shared memory as temporary storage. Threads are identified using the given linear thread identifier.  <a href="#a311b6e5932dfea96e1844abaf428bfc3">More...</a><br/></td></tr>
+<tr class="separator:a311b6e5932dfea96e1844abaf428bfc3"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a34b8e018887026786b02e8ac6556bd3a"><td class="memItemLeft" align="right" valign="top">__device__ __forceinline__&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classcub_1_1_block_radix_sort.html#a34b8e018887026786b02e8ac6556bd3a">BlockRadixSort</a> (<a class="el" href="classcub_1_1_block_radix_sort.html#a60f67ea2878487ad7718f0e781624171">TempStorage</a> &amp;temp_storage, int linear_tid)</td></tr>
+<tr class="memdesc:a34b8e018887026786b02e8ac6556bd3a"><td class="mdescLeft">&#160;</td><td class="mdescRight">Collective constructor using the specified memory allocation as temporary storage. Threads are identified using the given linear thread identifier.  <a href="#a34b8e018887026786b02e8ac6556bd3a">More...</a><br/></td></tr>
+<tr class="separator:a34b8e018887026786b02e8ac6556bd3a"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr><td colspan="2"><div class="groupHeader">Sorting (blocked arrangements)</div></td></tr>
+<tr class="memitem:ad04651e04e555350bd250c4681a97644"><td class="memItemLeft" align="right" valign="top">__device__ __forceinline__ void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classcub_1_1_block_radix_sort.html#ad04651e04e555350bd250c4681a97644">Sort</a> (Key(&amp;keys)[ITEMS_PER_THREAD], int begin_bit=0, int end_bit=sizeof(Key)*8)</td></tr>
+<tr class="memdesc:ad04651e04e555350bd250c4681a97644"><td class="mdescLeft">&#160;</td><td class="mdescRight">Performs a threadblock-wide radix sort over a <a href="index.html#sec3sec3"><em>blocked arrangement</em></a> of keys.  <a href="#ad04651e04e555350bd250c4681a97644">More...</a><br/></td></tr>
+<tr class="separator:ad04651e04e555350bd250c4681a97644"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:aac3d9424388b0cb6da360624e627b61e"><td class="memItemLeft" align="right" valign="top">__device__ __forceinline__ void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classcub_1_1_block_radix_sort.html#aac3d9424388b0cb6da360624e627b61e">Sort</a> (Key(&amp;keys)[ITEMS_PER_THREAD], Value(&amp;values)[ITEMS_PER_THREAD], int begin_bit=0, int end_bit=sizeof(Key)*8)</td></tr>
+<tr class="memdesc:aac3d9424388b0cb6da360624e627b61e"><td class="mdescLeft">&#160;</td><td class="mdescRight">Performs a radix sort across a <a href="index.html#sec3sec3"><em>blocked arrangement</em></a> of keys and values.  <a href="#aac3d9424388b0cb6da360624e627b61e">More...</a><br/></td></tr>
+<tr class="separator:aac3d9424388b0cb6da360624e627b61e"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr><td colspan="2"><div class="groupHeader">Sorting (blocked arrangement -&gt; striped arrangement)</div></td></tr>
+<tr class="memitem:a4be0c8d355a7fc75f8b405a776d884d3"><td class="memItemLeft" align="right" valign="top">__device__ __forceinline__ void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classcub_1_1_block_radix_sort.html#a4be0c8d355a7fc75f8b405a776d884d3">SortBlockedToStriped</a> (Key(&amp;keys)[ITEMS_PER_THREAD], int begin_bit=0, int end_bit=sizeof(Key)*8)</td></tr>
+<tr class="memdesc:a4be0c8d355a7fc75f8b405a776d884d3"><td class="mdescLeft">&#160;</td><td class="mdescRight">Performs a radix sort across a <a href="index.html#sec3sec3"><em>blocked arrangement</em></a> of keys, leaving them in a <a href="index.html#sec3sec3"><em>striped arrangement</em></a>.  <a href="#a4be0c8d355a7fc75f8b405a776d884d3">More...</a><br/></td></tr>
+<tr class="separator:a4be0c8d355a7fc75f8b405a776d884d3"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a9f707b1592f7354db0fba76a42afbc84"><td class="memItemLeft" align="right" valign="top">__device__ __forceinline__ void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classcub_1_1_block_radix_sort.html#a9f707b1592f7354db0fba76a42afbc84">SortBlockedToStriped</a> (Key(&amp;keys)[ITEMS_PER_THREAD], Value(&amp;values)[ITEMS_PER_THREAD], int begin_bit=0, int end_bit=sizeof(Key)*8)</td></tr>
+<tr class="memdesc:a9f707b1592f7354db0fba76a42afbc84"><td class="mdescLeft">&#160;</td><td class="mdescRight">Performs a radix sort across a <a href="index.html#sec3sec3"><em>blocked arrangement</em></a> of keys and values, leaving them in a <a href="index.html#sec3sec3"><em>striped arrangement</em></a>.  <a href="#a9f707b1592f7354db0fba76a42afbc84">More...</a><br/></td></tr>
+<tr class="separator:a9f707b1592f7354db0fba76a42afbc84"><td class="memSeparator" colspan="2">&#160;</td></tr>
 </table>
 <h2 class="groupheader">Constructor &amp; Destructor Documentation</h2>
-<a class="anchor" id="a3add558d088042e30eafd7cb420dc391"></a>
+<a class="anchor" id="af6840b09ce6bb530fffa56ed75e4529c"></a>
 <div class="memitem">
 <div class="memproto">
 <div class="memtemplate">
@@ -245,7 +252,7 @@ template&lt;typename Key , int BLOCK_THREADS, int ITEMS_PER_THREAD, typename Val
         <tr>
           <td class="memname">__device__ __forceinline__ <a class="el" href="classcub_1_1_block_radix_sort.html">cub::BlockRadixSort</a>&lt; Key, BLOCK_THREADS, ITEMS_PER_THREAD, Value, RADIX_BITS, MEMOIZE_OUTER_SCAN, INNER_SCAN_ALGORITHM, SMEM_CONFIG &gt;::<a class="el" href="classcub_1_1_block_radix_sort.html">BlockRadixSort</a> </td>
           <td>(</td>
-          <td class="paramtype"><a class="el" href="classcub_1_1_block_radix_sort.html#abf873cba56d55034ec5112c95759875e">TempStorage</a> &amp;&#160;</td>
+          <td class="paramtype"><a class="el" href="classcub_1_1_block_radix_sort.html#a60f67ea2878487ad7718f0e781624171">TempStorage</a> &amp;&#160;</td>
           <td class="paramname"><em>temp_storage</em>)</td><td></td>
           <td></td>
         </tr>
@@ -267,7 +274,7 @@ template&lt;typename Key , int BLOCK_THREADS, int ITEMS_PER_THREAD, typename Val
 
 </div>
 </div>
-<a class="anchor" id="ae77d5042a882721786cff5d6bac6165e"></a>
+<a class="anchor" id="a311b6e5932dfea96e1844abaf428bfc3"></a>
 <div class="memitem">
 <div class="memproto">
 <div class="memtemplate">
@@ -301,7 +308,7 @@ template&lt;typename Key , int BLOCK_THREADS, int ITEMS_PER_THREAD, typename Val
 
 </div>
 </div>
-<a class="anchor" id="a1a59923e04e71844d78ecc75a304882c"></a>
+<a class="anchor" id="a34b8e018887026786b02e8ac6556bd3a"></a>
 <div class="memitem">
 <div class="memproto">
 <div class="memtemplate">
@@ -313,7 +320,7 @@ template&lt;typename Key , int BLOCK_THREADS, int ITEMS_PER_THREAD, typename Val
         <tr>
           <td class="memname">__device__ __forceinline__ <a class="el" href="classcub_1_1_block_radix_sort.html">cub::BlockRadixSort</a>&lt; Key, BLOCK_THREADS, ITEMS_PER_THREAD, Value, RADIX_BITS, MEMOIZE_OUTER_SCAN, INNER_SCAN_ALGORITHM, SMEM_CONFIG &gt;::<a class="el" href="classcub_1_1_block_radix_sort.html">BlockRadixSort</a> </td>
           <td>(</td>
-          <td class="paramtype"><a class="el" href="classcub_1_1_block_radix_sort.html#abf873cba56d55034ec5112c95759875e">TempStorage</a> &amp;&#160;</td>
+          <td class="paramtype"><a class="el" href="classcub_1_1_block_radix_sort.html#a60f67ea2878487ad7718f0e781624171">TempStorage</a> &amp;&#160;</td>
           <td class="paramname"><em>temp_storage</em>, </td>
         </tr>
         <tr>
@@ -347,7 +354,7 @@ template&lt;typename Key , int BLOCK_THREADS, int ITEMS_PER_THREAD, typename Val
 </div>
 </div>
 <h2 class="groupheader">Member Function Documentation</h2>
-<a class="anchor" id="ab9d22a3249e7fad38920ed21bf8ac35b"></a>
+<a class="anchor" id="ad04651e04e555350bd250c4681a97644"></a>
 <div class="memitem">
 <div class="memproto">
 <div class="memtemplate">
@@ -400,7 +407,7 @@ template&lt;typename Key , int BLOCK_THREADS, int ITEMS_PER_THREAD, typename Val
 
 </div>
 </div>
-<a class="anchor" id="a7e1674dde0f8f460b385c2257473d4cd"></a>
+<a class="anchor" id="aac3d9424388b0cb6da360624e627b61e"></a>
 <div class="memitem">
 <div class="memproto">
 <div class="memtemplate">
@@ -460,6 +467,119 @@ template&lt;typename Key , int BLOCK_THREADS, int ITEMS_PER_THREAD, typename Val
 
 </div>
 </div>
+<a class="anchor" id="a4be0c8d355a7fc75f8b405a776d884d3"></a>
+<div class="memitem">
+<div class="memproto">
+<div class="memtemplate">
+template&lt;typename Key , int BLOCK_THREADS, int ITEMS_PER_THREAD, typename Value  = NullType, int RADIX_BITS = 4, bool MEMOIZE_OUTER_SCAN = (CUB_PTX_ARCH &gt;= 350) ? true : false, BlockScanAlgorithm INNER_SCAN_ALGORITHM = BLOCK_SCAN_WARP_SCANS, cudaSharedMemConfig SMEM_CONFIG = cudaSharedMemBankSizeFourByte&gt; </div>
+<table class="mlabels">
+  <tr>
+  <td class="mlabels-left">
+      <table class="memname">
+        <tr>
+          <td class="memname">__device__ __forceinline__ void <a class="el" href="classcub_1_1_block_radix_sort.html">cub::BlockRadixSort</a>&lt; Key, BLOCK_THREADS, ITEMS_PER_THREAD, Value, RADIX_BITS, MEMOIZE_OUTER_SCAN, INNER_SCAN_ALGORITHM, SMEM_CONFIG &gt;::SortBlockedToStriped </td>
+          <td>(</td>
+          <td class="paramtype">Key(&amp;)&#160;</td>
+          <td class="paramname"><em>keys</em>[ITEMS_PER_THREAD], </td>
+        </tr>
+        <tr>
+          <td class="paramkey"></td>
+          <td></td>
+          <td class="paramtype">int&#160;</td>
+          <td class="paramname"><em>begin_bit</em> = <code>0</code>, </td>
+        </tr>
+        <tr>
+          <td class="paramkey"></td>
+          <td></td>
+          <td class="paramtype">int&#160;</td>
+          <td class="paramname"><em>end_bit</em> = <code>sizeof(Key)&#160;*&#160;8</code>&#160;</td>
+        </tr>
+        <tr>
+          <td></td>
+          <td>)</td>
+          <td></td><td></td>
+        </tr>
+      </table>
+  </td>
+  <td class="mlabels-right">
+<span class="mlabels"><span class="mlabel">inline</span></span>  </td>
+  </tr>
+</table>
+</div><div class="memdoc">
+
+<p>Performs a radix sort across a <a href="index.html#sec3sec3"><em>blocked arrangement</em></a> of keys, leaving them in a <a href="index.html#sec3sec3"><em>striped arrangement</em></a>. </p>
+<p>A subsequent <code>__syncthreads()</code> threadblock barrier should be invoked after calling this method if the collective's temporary storage (e.g., <code>temp_storage</code>) is to be reused or repurposed. </p>
+<dl class="params"><dt>Parameters</dt><dd>
+  <table class="params">
+    <tr><td class="paramdir">[in,out]</td><td class="paramname">keys</td><td>Keys to sort </td></tr>
+    <tr><td class="paramdir">[in]</td><td class="paramname">begin_bit</td><td><b>[optional]</b> The beginning (least-significant) bit index needed for key comparison </td></tr>
+    <tr><td class="paramdir">[in]</td><td class="paramname">end_bit</td><td><b>[optional]</b> The past-the-end (most-significant) bit index needed for key comparison </td></tr>
+  </table>
+  </dd>
+</dl>
+
+</div>
+</div>
+<a class="anchor" id="a9f707b1592f7354db0fba76a42afbc84"></a>
+<div class="memitem">
+<div class="memproto">
+<div class="memtemplate">
+template&lt;typename Key , int BLOCK_THREADS, int ITEMS_PER_THREAD, typename Value  = NullType, int RADIX_BITS = 4, bool MEMOIZE_OUTER_SCAN = (CUB_PTX_ARCH &gt;= 350) ? true : false, BlockScanAlgorithm INNER_SCAN_ALGORITHM = BLOCK_SCAN_WARP_SCANS, cudaSharedMemConfig SMEM_CONFIG = cudaSharedMemBankSizeFourByte&gt; </div>
+<table class="mlabels">
+  <tr>
+  <td class="mlabels-left">
+      <table class="memname">
+        <tr>
+          <td class="memname">__device__ __forceinline__ void <a class="el" href="classcub_1_1_block_radix_sort.html">cub::BlockRadixSort</a>&lt; Key, BLOCK_THREADS, ITEMS_PER_THREAD, Value, RADIX_BITS, MEMOIZE_OUTER_SCAN, INNER_SCAN_ALGORITHM, SMEM_CONFIG &gt;::SortBlockedToStriped </td>
+          <td>(</td>
+          <td class="paramtype">Key(&amp;)&#160;</td>
+          <td class="paramname"><em>keys</em>[ITEMS_PER_THREAD], </td>
+        </tr>
+        <tr>
+          <td class="paramkey"></td>
+          <td></td>
+          <td class="paramtype">Value(&amp;)&#160;</td>
+          <td class="paramname"><em>values</em>[ITEMS_PER_THREAD], </td>
+        </tr>
+        <tr>
+          <td class="paramkey"></td>
+          <td></td>
+          <td class="paramtype">int&#160;</td>
+          <td class="paramname"><em>begin_bit</em> = <code>0</code>, </td>
+        </tr>
+        <tr>
+          <td class="paramkey"></td>
+          <td></td>
+          <td class="paramtype">int&#160;</td>
+          <td class="paramname"><em>end_bit</em> = <code>sizeof(Key)&#160;*&#160;8</code>&#160;</td>
+        </tr>
+        <tr>
+          <td></td>
+          <td>)</td>
+          <td></td><td></td>
+        </tr>
+      </table>
+  </td>
+  <td class="mlabels-right">
+<span class="mlabels"><span class="mlabel">inline</span></span>  </td>
+  </tr>
+</table>
+</div><div class="memdoc">
+
+<p>Performs a radix sort across a <a href="index.html#sec3sec3"><em>blocked arrangement</em></a> of keys and values, leaving them in a <a href="index.html#sec3sec3"><em>striped arrangement</em></a>. </p>
+<p>A subsequent <code>__syncthreads()</code> threadblock barrier should be invoked after calling this method if the collective's temporary storage (e.g., <code>temp_storage</code>) is to be reused or repurposed. </p>
+<dl class="params"><dt>Parameters</dt><dd>
+  <table class="params">
+    <tr><td class="paramdir">[in,out]</td><td class="paramname">keys</td><td>Keys to sort </td></tr>
+    <tr><td class="paramdir">[in,out]</td><td class="paramname">values</td><td>Values to sort </td></tr>
+    <tr><td class="paramdir">[in]</td><td class="paramname">begin_bit</td><td><b>[optional]</b> The beginning (least-significant) bit index needed for key comparison </td></tr>
+    <tr><td class="paramdir">[in]</td><td class="paramname">end_bit</td><td><b>[optional]</b> The past-the-end (most-significant) bit index needed for key comparison </td></tr>
+  </table>
+  </dd>
+</dl>
+
+</div>
+</div>
 <hr/>The documentation for this class was generated from the following file:<ul>
 <li><a class="el" href="block__radix__sort_8cuh.html">block_radix_sort.cuh</a></li>
 </ul>
@@ -467,7 +587,7 @@ template&lt;typename Key , int BLOCK_THREADS, int ITEMS_PER_THREAD, typename Val
 <!-- HTML footer for doxygen 1.8.3.1-->
 <!-- start footer part -->
 <hr class="footer"/><address class="footer"><small>
-Generated on Sun Jun 30 2013 23:35:05 for CUB by &#160;<a href="http://www.doxygen.org/index.html">
+Generated on Fri Jul 12 2013 14:34:45 for CUB by &#160;<a href="http://www.doxygen.org/index.html">
 <img class="footer" src="doxygen.png" alt="doxygen"/>
 </a> 1.8.4
 <br>

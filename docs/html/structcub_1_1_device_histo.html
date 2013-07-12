@@ -117,32 +117,32 @@ Static Public Methods</h2></td></tr>
 __forceinline__ cudaError_t&#160;</td><td class="memTemplItemRight" valign="bottom"><a class="el" href="structcub_1_1_device_histo.html#a6fef912229d2de93aade1dd685869469">SingleChannelSorting</a> (void *d_temp_storage, size_t &amp;temp_storage_bytes, InputIteratorRA d_samples, HistoCounter *d_histogram, int num_samples, cudaStream_t stream=0, bool stream_synchronous=false)</td></tr>
 <tr class="memdesc:a6fef912229d2de93aade1dd685869469"><td class="mdescLeft">&#160;</td><td class="mdescRight">Computes a device-wide histogram. Uses fast block-sorting to compute the histogram.  <a href="#a6fef912229d2de93aade1dd685869469">More...</a><br/></td></tr>
 <tr class="separator:a6fef912229d2de93aade1dd685869469"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:a83c99f3d67422e51aaf0a5bac7a4f208"><td class="memTemplParams" colspan="2">template&lt;int BINS, typename InputIteratorRA , typename HistoCounter &gt; </td></tr>
-<tr class="memitem:a83c99f3d67422e51aaf0a5bac7a4f208"><td class="memTemplItemLeft" align="right" valign="top">__host__ __device__ static <br class="typebreak"/>
-__forceinline__ cudaError_t&#160;</td><td class="memTemplItemRight" valign="bottom"><a class="el" href="structcub_1_1_device_histo.html#a83c99f3d67422e51aaf0a5bac7a4f208">SingleChannelAtomic</a> (void *d_temp_storage, size_t &amp;temp_storage_bytes, InputIteratorRA d_samples, HistoCounter *d_histogram, int num_samples, cudaStream_t stream=0, bool stream_synchronous=false)</td></tr>
-<tr class="memdesc:a83c99f3d67422e51aaf0a5bac7a4f208"><td class="mdescLeft">&#160;</td><td class="mdescRight">Computes a device-wide histogram. Uses shared-memory atomic read-modify-write operations to compute the histogram.  <a href="#a83c99f3d67422e51aaf0a5bac7a4f208">More...</a><br/></td></tr>
-<tr class="separator:a83c99f3d67422e51aaf0a5bac7a4f208"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a65d5bd1421b5e3336c574e0306752545"><td class="memTemplParams" colspan="2">template&lt;int BINS, typename InputIteratorRA , typename HistoCounter &gt; </td></tr>
+<tr class="memitem:a65d5bd1421b5e3336c574e0306752545"><td class="memTemplItemLeft" align="right" valign="top">__host__ __device__ static <br class="typebreak"/>
+__forceinline__ cudaError_t&#160;</td><td class="memTemplItemRight" valign="bottom"><a class="el" href="structcub_1_1_device_histo.html#a65d5bd1421b5e3336c574e0306752545">SingleChannelSharedAtomic</a> (void *d_temp_storage, size_t &amp;temp_storage_bytes, InputIteratorRA d_samples, HistoCounter *d_histogram, int num_samples, cudaStream_t stream=0, bool stream_synchronous=false)</td></tr>
+<tr class="memdesc:a65d5bd1421b5e3336c574e0306752545"><td class="mdescLeft">&#160;</td><td class="mdescRight">Computes a device-wide histogram. Uses shared-memory atomic read-modify-write operations to compute the histogram.  <a href="#a65d5bd1421b5e3336c574e0306752545">More...</a><br/></td></tr>
+<tr class="separator:a65d5bd1421b5e3336c574e0306752545"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:a1ac40d4adc84cefae5f53422e7ceb80f"><td class="memTemplParams" colspan="2">template&lt;int BINS, typename InputIteratorRA , typename HistoCounter &gt; </td></tr>
 <tr class="memitem:a1ac40d4adc84cefae5f53422e7ceb80f"><td class="memTemplItemLeft" align="right" valign="top">__host__ __device__ static <br class="typebreak"/>
 __forceinline__ cudaError_t&#160;</td><td class="memTemplItemRight" valign="bottom"><a class="el" href="structcub_1_1_device_histo.html#a1ac40d4adc84cefae5f53422e7ceb80f">SingleChannelGlobalAtomic</a> (void *d_temp_storage, size_t &amp;temp_storage_bytes, InputIteratorRA d_samples, HistoCounter *d_histogram, int num_samples, cudaStream_t stream=0, bool stream_synchronous=false)</td></tr>
 <tr class="memdesc:a1ac40d4adc84cefae5f53422e7ceb80f"><td class="mdescLeft">&#160;</td><td class="mdescRight">Computes a device-wide histogram. Uses global-memory atomic read-modify-write operations to compute the histogram.  <a href="#a1ac40d4adc84cefae5f53422e7ceb80f">More...</a><br/></td></tr>
 <tr class="separator:a1ac40d4adc84cefae5f53422e7ceb80f"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr><td colspan="2"><div class="groupHeader">Interleaved multi-channel samples</div></td></tr>
-<tr class="memitem:a38a8b989690fe95ba56fc8d26f4c612e"><td class="memTemplParams" colspan="2">template&lt;int BINS, int CHANNELS, int ACTIVE_CHANNELS, typename InputIteratorRA , typename HistoCounter &gt; </td></tr>
-<tr class="memitem:a38a8b989690fe95ba56fc8d26f4c612e"><td class="memTemplItemLeft" align="right" valign="top">__host__ __device__ static <br class="typebreak"/>
-__forceinline__ cudaError_t&#160;</td><td class="memTemplItemRight" valign="bottom"><a class="el" href="structcub_1_1_device_histo.html#a38a8b989690fe95ba56fc8d26f4c612e">MultiChannelSorting</a> (void *d_temp_storage, size_t &amp;temp_storage_bytes, InputIteratorRA d_samples, HistoCounter *(&amp;d_histograms)[ACTIVE_CHANNELS], int num_samples, cudaStream_t stream=0, bool stream_synchronous=false)</td></tr>
-<tr class="memdesc:a38a8b989690fe95ba56fc8d26f4c612e"><td class="mdescLeft">&#160;</td><td class="mdescRight">Computes a device-wide histogram from multi-channel data. Uses fast block-sorting to compute the histogram.  <a href="#a38a8b989690fe95ba56fc8d26f4c612e">More...</a><br/></td></tr>
-<tr class="separator:a38a8b989690fe95ba56fc8d26f4c612e"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:aa88f6e2230e2347812a123e91e614fba"><td class="memTemplParams" colspan="2">template&lt;int BINS, int CHANNELS, int ACTIVE_CHANNELS, typename InputIteratorRA , typename HistoCounter &gt; </td></tr>
-<tr class="memitem:aa88f6e2230e2347812a123e91e614fba"><td class="memTemplItemLeft" align="right" valign="top">__host__ __device__ static <br class="typebreak"/>
-__forceinline__ cudaError_t&#160;</td><td class="memTemplItemRight" valign="bottom"><a class="el" href="structcub_1_1_device_histo.html#aa88f6e2230e2347812a123e91e614fba">MultiChannelAtomic</a> (void *d_temp_storage, size_t &amp;temp_storage_bytes, InputIteratorRA d_samples, HistoCounter *(&amp;d_histograms)[ACTIVE_CHANNELS], int num_samples, cudaStream_t stream=0, bool stream_synchronous=false)</td></tr>
-<tr class="memdesc:aa88f6e2230e2347812a123e91e614fba"><td class="mdescLeft">&#160;</td><td class="mdescRight">Computes a device-wide histogram from multi-channel data. Uses shared-memory atomic read-modify-write operations to compute the histogram.  <a href="#aa88f6e2230e2347812a123e91e614fba">More...</a><br/></td></tr>
-<tr class="separator:aa88f6e2230e2347812a123e91e614fba"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:a2d80717d54bf16774bd4363a42002324"><td class="memTemplParams" colspan="2">template&lt;int BINS, int CHANNELS, int ACTIVE_CHANNELS, typename InputIteratorRA , typename HistoCounter &gt; </td></tr>
-<tr class="memitem:a2d80717d54bf16774bd4363a42002324"><td class="memTemplItemLeft" align="right" valign="top">__host__ __device__ static <br class="typebreak"/>
-__forceinline__ cudaError_t&#160;</td><td class="memTemplItemRight" valign="bottom"><a class="el" href="structcub_1_1_device_histo.html#a2d80717d54bf16774bd4363a42002324">MultiChannelGlobalAtomic</a> (void *d_temp_storage, size_t &amp;temp_storage_bytes, InputIteratorRA d_samples, HistoCounter *(&amp;d_histograms)[ACTIVE_CHANNELS], int num_samples, cudaStream_t stream=0, bool stream_synchronous=false)</td></tr>
-<tr class="memdesc:a2d80717d54bf16774bd4363a42002324"><td class="mdescLeft">&#160;</td><td class="mdescRight">Computes a device-wide histogram from multi-channel data. Uses global-memory atomic read-modify-write operations to compute the histogram.  <a href="#a2d80717d54bf16774bd4363a42002324">More...</a><br/></td></tr>
-<tr class="separator:a2d80717d54bf16774bd4363a42002324"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:af5a9bc8426b668e51f1af70df71ea999"><td class="memTemplParams" colspan="2">template&lt;int BINS, int CHANNELS, int ACTIVE_CHANNELS, typename InputIteratorRA , typename HistoCounter &gt; </td></tr>
+<tr class="memitem:af5a9bc8426b668e51f1af70df71ea999"><td class="memTemplItemLeft" align="right" valign="top">__host__ __device__ static <br class="typebreak"/>
+__forceinline__ cudaError_t&#160;</td><td class="memTemplItemRight" valign="bottom"><a class="el" href="structcub_1_1_device_histo.html#af5a9bc8426b668e51f1af70df71ea999">MultiChannelSorting</a> (void *d_temp_storage, size_t &amp;temp_storage_bytes, InputIteratorRA d_samples, HistoCounter *d_histograms[ACTIVE_CHANNELS], int num_samples, cudaStream_t stream=0, bool stream_synchronous=false)</td></tr>
+<tr class="memdesc:af5a9bc8426b668e51f1af70df71ea999"><td class="mdescLeft">&#160;</td><td class="mdescRight">Computes a device-wide histogram from multi-channel data. Uses fast block-sorting to compute the histogram.  <a href="#af5a9bc8426b668e51f1af70df71ea999">More...</a><br/></td></tr>
+<tr class="separator:af5a9bc8426b668e51f1af70df71ea999"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a177f1da8ddeb6941fc63463d2cfda5ce"><td class="memTemplParams" colspan="2">template&lt;int BINS, int CHANNELS, int ACTIVE_CHANNELS, typename InputIteratorRA , typename HistoCounter &gt; </td></tr>
+<tr class="memitem:a177f1da8ddeb6941fc63463d2cfda5ce"><td class="memTemplItemLeft" align="right" valign="top">__host__ __device__ static <br class="typebreak"/>
+__forceinline__ cudaError_t&#160;</td><td class="memTemplItemRight" valign="bottom"><a class="el" href="structcub_1_1_device_histo.html#a177f1da8ddeb6941fc63463d2cfda5ce">MultiChannelSharedAtomic</a> (void *d_temp_storage, size_t &amp;temp_storage_bytes, InputIteratorRA d_samples, HistoCounter *d_histograms[ACTIVE_CHANNELS], int num_samples, cudaStream_t stream=0, bool stream_synchronous=false)</td></tr>
+<tr class="memdesc:a177f1da8ddeb6941fc63463d2cfda5ce"><td class="mdescLeft">&#160;</td><td class="mdescRight">Computes a device-wide histogram from multi-channel data. Uses shared-memory atomic read-modify-write operations to compute the histogram.  <a href="#a177f1da8ddeb6941fc63463d2cfda5ce">More...</a><br/></td></tr>
+<tr class="separator:a177f1da8ddeb6941fc63463d2cfda5ce"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a909d5594cb5e6a5511ae9625854de169"><td class="memTemplParams" colspan="2">template&lt;int BINS, int CHANNELS, int ACTIVE_CHANNELS, typename InputIteratorRA , typename HistoCounter &gt; </td></tr>
+<tr class="memitem:a909d5594cb5e6a5511ae9625854de169"><td class="memTemplItemLeft" align="right" valign="top">__host__ __device__ static <br class="typebreak"/>
+__forceinline__ cudaError_t&#160;</td><td class="memTemplItemRight" valign="bottom"><a class="el" href="structcub_1_1_device_histo.html#a909d5594cb5e6a5511ae9625854de169">MultiChannelGlobalAtomic</a> (void *d_temp_storage, size_t &amp;temp_storage_bytes, InputIteratorRA d_samples, HistoCounter *d_histograms[ACTIVE_CHANNELS], int num_samples, cudaStream_t stream=0, bool stream_synchronous=false)</td></tr>
+<tr class="memdesc:a909d5594cb5e6a5511ae9625854de169"><td class="mdescLeft">&#160;</td><td class="mdescRight">Computes a device-wide histogram from multi-channel data. Uses global-memory atomic read-modify-write operations to compute the histogram.  <a href="#a909d5594cb5e6a5511ae9625854de169">More...</a><br/></td></tr>
+<tr class="separator:a909d5594cb5e6a5511ae9625854de169"><td class="memSeparator" colspan="2">&#160;</td></tr>
 </table>
 <h2 class="groupheader">Member Function Documentation</h2>
 <a class="anchor" id="a6fef912229d2de93aade1dd685869469"></a>
@@ -235,7 +235,7 @@ template&lt;int BINS, typename InputIteratorRA , typename HistoCounter &gt; </di
 
 </div>
 </div>
-<a class="anchor" id="a83c99f3d67422e51aaf0a5bac7a4f208"></a>
+<a class="anchor" id="a65d5bd1421b5e3336c574e0306752545"></a>
 <div class="memitem">
 <div class="memproto">
 <div class="memtemplate">
@@ -245,7 +245,7 @@ template&lt;int BINS, typename InputIteratorRA , typename HistoCounter &gt; </di
   <td class="mlabels-left">
       <table class="memname">
         <tr>
-          <td class="memname">__host__ __device__ static __forceinline__ cudaError_t cub::DeviceHisto::SingleChannelAtomic </td>
+          <td class="memname">__host__ __device__ static __forceinline__ cudaError_t cub::DeviceHisto::SingleChannelSharedAtomic </td>
           <td>(</td>
           <td class="paramtype">void *&#160;</td>
           <td class="paramname"><em>d_temp_storage</em>, </td>
@@ -415,7 +415,7 @@ template&lt;int BINS, typename InputIteratorRA , typename HistoCounter &gt; </di
 
 </div>
 </div>
-<a class="anchor" id="a38a8b989690fe95ba56fc8d26f4c612e"></a>
+<a class="anchor" id="af5a9bc8426b668e51f1af70df71ea999"></a>
 <div class="memitem">
 <div class="memproto">
 <div class="memtemplate">
@@ -445,7 +445,7 @@ template&lt;int BINS, int CHANNELS, int ACTIVE_CHANNELS, typename InputIteratorR
         <tr>
           <td class="paramkey"></td>
           <td></td>
-          <td class="paramtype">HistoCounter *(&amp;)&#160;</td>
+          <td class="paramtype">HistoCounter *&#160;</td>
           <td class="paramname"><em>d_histograms</em>[ACTIVE_CHANNELS], </td>
         </tr>
         <tr>
@@ -507,7 +507,7 @@ template&lt;int BINS, int CHANNELS, int ACTIVE_CHANNELS, typename InputIteratorR
 
 </div>
 </div>
-<a class="anchor" id="aa88f6e2230e2347812a123e91e614fba"></a>
+<a class="anchor" id="a177f1da8ddeb6941fc63463d2cfda5ce"></a>
 <div class="memitem">
 <div class="memproto">
 <div class="memtemplate">
@@ -517,7 +517,7 @@ template&lt;int BINS, int CHANNELS, int ACTIVE_CHANNELS, typename InputIteratorR
   <td class="mlabels-left">
       <table class="memname">
         <tr>
-          <td class="memname">__host__ __device__ static __forceinline__ cudaError_t cub::DeviceHisto::MultiChannelAtomic </td>
+          <td class="memname">__host__ __device__ static __forceinline__ cudaError_t cub::DeviceHisto::MultiChannelSharedAtomic </td>
           <td>(</td>
           <td class="paramtype">void *&#160;</td>
           <td class="paramname"><em>d_temp_storage</em>, </td>
@@ -537,7 +537,7 @@ template&lt;int BINS, int CHANNELS, int ACTIVE_CHANNELS, typename InputIteratorR
         <tr>
           <td class="paramkey"></td>
           <td></td>
-          <td class="paramtype">HistoCounter *(&amp;)&#160;</td>
+          <td class="paramtype">HistoCounter *&#160;</td>
           <td class="paramname"><em>d_histograms</em>[ACTIVE_CHANNELS], </td>
         </tr>
         <tr>
@@ -599,7 +599,7 @@ template&lt;int BINS, int CHANNELS, int ACTIVE_CHANNELS, typename InputIteratorR
 
 </div>
 </div>
-<a class="anchor" id="a2d80717d54bf16774bd4363a42002324"></a>
+<a class="anchor" id="a909d5594cb5e6a5511ae9625854de169"></a>
 <div class="memitem">
 <div class="memproto">
 <div class="memtemplate">
@@ -629,7 +629,7 @@ template&lt;int BINS, int CHANNELS, int ACTIVE_CHANNELS, typename InputIteratorR
         <tr>
           <td class="paramkey"></td>
           <td></td>
-          <td class="paramtype">HistoCounter *(&amp;)&#160;</td>
+          <td class="paramtype">HistoCounter *&#160;</td>
           <td class="paramname"><em>d_histograms</em>[ACTIVE_CHANNELS], </td>
         </tr>
         <tr>
@@ -698,7 +698,7 @@ template&lt;int BINS, int CHANNELS, int ACTIVE_CHANNELS, typename InputIteratorR
 <!-- HTML footer for doxygen 1.8.3.1-->
 <!-- start footer part -->
 <hr class="footer"/><address class="footer"><small>
-Generated on Sun Jun 30 2013 23:35:05 for CUB by &#160;<a href="http://www.doxygen.org/index.html">
+Generated on Fri Jul 12 2013 14:34:45 for CUB by &#160;<a href="http://www.doxygen.org/index.html">
 <img class="footer" src="doxygen.png" alt="doxygen"/>
 </a> 1.8.4
 <br>

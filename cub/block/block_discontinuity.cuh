@@ -82,7 +82,7 @@ namespace cub {
  * #include <cub/cub.cuh>
  *
  * // Non-zero matrix coordinates
- * struct NonZero
+ * struct SparseElement
  * {
  *     int row;
  *     int col;
@@ -94,8 +94,8 @@ namespace cub {
  * {
  *     // Returns true if row_b is the start of a new row
  *     __device__ __forceinline__ bool operator()(
- *         const NonZero& a,
- *         const NonZero& b)
+ *         const SparseElement& a,
+ *         const SparseElement& b)
  *     {
  *         return (a.row != b.row);
  *     }
@@ -103,20 +103,20 @@ namespace cub {
  *
  * __global__ void SomeKernel(...)
  * {
- *     // Parameterize BlockDiscontinuity for 128 threads on type NonZero
- *     typedef cub::BlockDiscontinuity<NonZero, 128> BlockDiscontinuity;
+ *     // Parameterize BlockDiscontinuity for 128 threads on type SparseElement
+ *     typedef cub::BlockDiscontinuity<SparseElement, 128> BlockDiscontinuity;
  *
  *     // Declare shared memory for BlockDiscontinuity
  *     __shared__ typename BlockDiscontinuity::TempStorage temp_storage;
  *
  *     // A segment of consecutive non-zeroes per thread
- *     NonZero coordinates[4];
+ *     SparseElement coordinates[4];
  *
  *     // Obtain items in blocked order
  *     ...
  *
  *     // Obtain the last item of the previous tile
- *     NonZero block_predecessor;
+ *     SparseElement block_predecessor;
  *     if (threadIdx.x == 0)
  *     {
  *         block_predecessor = ...
@@ -124,7 +124,7 @@ namespace cub {
  *
  *     // Set head head_flags
  *     int head_flags[4];
- *     BlockDiscontinuity::Flag(temp_storage, coordinates, block_predecessor, NewRowOp(), head_flags);
+ *     BlockDiscontinuity(temp_storage).FlagHeads(head_flags, coordinates, NewRowOp(), block_predecessor);
  *
  * \endcode
  */

@@ -145,7 +145,7 @@ enum BlockHistoAlgorithm
  *      ...
  *
  *      // Compute the threadblock-wide histogram
- *      BlockHisto::Histogram(temp_storage, data, smem_histogram);
+ *      BlockHisto(temp_storage).Histogram(data, smem_histogram);
  *
  *      ...
  * \endcode
@@ -170,7 +170,7 @@ enum BlockHistoAlgorithm
  *      if (threadIdx.x < num_items) data[0] = ...;
  *
  *      // Compute the threadblock-wide sum of valid elements in thread0
- *      BlockHisto::Composite(temp_storage, data, d_histogram);
+ *      BlockHisto(temp_storage).Composite(data, d_histogram);
  *
  *      ...
  * \endcode

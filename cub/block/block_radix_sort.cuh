@@ -124,7 +124,7 @@ namespace cub {
  *          ...
  *
  *          // Sort keys in ascending order
- *          BlockRadixSort::Sort(temp_storage, keys);
+ *          BlockRadixSort(temp_storage).Sort(keys);
  *
  *      \endcode
  *
@@ -153,7 +153,7 @@ namespace cub {
  *          ...
  *
  *          // Sort pairs in ascending order (using only the lower 20 distinguishing key bits)
- *          BlockRadixSort::Sort(temp_storage, keys, values, 0, 20);
+ *          BlockRadixSort(temp_storage).Sort(keys, values, 0, 20);
  *      }
  *
  *      \endcode

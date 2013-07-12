@@ -142,7 +142,7 @@ class cub::BlockDiscontinuity&lt; T, BLOCK_THREADS &gt;</h3>
 <dl class="section user"><dt>Examples</dt><dd><em>Example 1.</em> Given a tile of 512 non-zero matrix coordinates (ordered by row) in a blocked arrangement across a 128-thread threadblock, flag the first coordinate element of each row. <div class="fragment"><div class="line"><span class="preprocessor">#include &lt;<a class="code" href="cub_8cuh.html">cub/cub.cuh</a>&gt;</span></div>
 <div class="line"></div>
 <div class="line"><span class="comment">// Non-zero matrix coordinates</span></div>
-<div class="line"><span class="keyword">struct </span>NonZero</div>
+<div class="line"><span class="keyword">struct </span>SparseElement</div>
 <div class="line">{</div>
 <div class="line">    <span class="keywordtype">int</span> row;</div>
 <div class="line">    <span class="keywordtype">int</span> col;</div>
@@ -154,8 +154,8 @@ class cub::BlockDiscontinuity&lt; T, BLOCK_THREADS &gt;</h3>
 <div class="line">{</div>
 <div class="line">    <span class="comment">// Returns true if row_b is the start of a new row</span></div>
 <div class="line">    __device__ __forceinline__ <span class="keywordtype">bool</span> operator()(</div>
-<div class="line">        <span class="keyword">const</span> NonZero&amp; a,</div>
-<div class="line">        <span class="keyword">const</span> NonZero&amp; b)</div>
+<div class="line">        <span class="keyword">const</span> SparseElement&amp; a,</div>
+<div class="line">        <span class="keyword">const</span> SparseElement&amp; b)</div>
 <div class="line">    {</div>
 <div class="line">        <span class="keywordflow">return</span> (a.row != b.row);</div>
 <div class="line">    }</div>
@@ -163,20 +163,20 @@ class cub::BlockDiscontinuity&lt; T, BLOCK_THREADS &gt;</h3>
 <div class="line"></div>
 <div class="line">__global__ <span class="keywordtype">void</span> SomeKernel(...)</div>
 <div class="line">{</div>
-<div class="line">    <span class="comment">// Parameterize BlockDiscontinuity for 128 threads on type NonZero</span></div>
-<div class="line">    <span class="keyword">typedef</span> <a class="code" href="classcub_1_1_block_discontinuity.html" title="BlockDiscontinuity provides operations for flagging discontinuities within a linear tile of items par...">cub::BlockDiscontinuity&lt;NonZero, 128&gt;</a> <a class="code" href="classcub_1_1_block_discontinuity.html#a5bee18d5e423a26fd3fefa741832ad8c" title="Collective constructor for 1D thread blocks using a private static allocation of shared memory as tem...">BlockDiscontinuity</a>;</div>
+<div class="line">    <span class="comment">// Parameterize BlockDiscontinuity for 128 threads on type SparseElement</span></div>
+<div class="line">    <span class="keyword">typedef</span> <a class="code" href="classcub_1_1_block_discontinuity.html" title="BlockDiscontinuity provides operations for flagging discontinuities within a linear tile of items par...">cub::BlockDiscontinuity&lt;SparseElement, 128&gt;</a> <a class="code" href="classcub_1_1_block_discontinuity.html#a5bee18d5e423a26fd3fefa741832ad8c" title="Collective constructor for 1D thread blocks using a private static allocation of shared memory as tem...">BlockDiscontinuity</a>;</div>
 <div class="line"></div>
 <div class="line">    <span class="comment">// Declare shared memory for BlockDiscontinuity</span></div>
 <div class="line">    __shared__ <span class="keyword">typename</span> <a class="code" href="classcub_1_1_block_discontinuity.html#ab6ebb197600f741b48ec6f7df055c340" title="The operations exposed by BlockDiscontinuity require a temporary memory allocation of this type for t...">BlockDiscontinuity::TempStorage</a> temp_storage;</div>
 <div class="line"></div>
 <div class="line">    <span class="comment">// A segment of consecutive non-zeroes per thread</span></div>
-<div class="line">    NonZero coordinates[4];</div>
+<div class="line">    SparseElement coordinates[4];</div>
 <div class="line"></div>
 <div class="line">    <span class="comment">// Obtain items in blocked order</span></div>
 <div class="line">    ...</div>
 <div class="line"></div>
 <div class="line">    <span class="comment">// Obtain the last item of the previous tile</span></div>
-<div class="line">    NonZero block_predecessor;</div>
+<div class="line">    SparseElement block_predecessor;</div>
 <div class="line">    <span class="keywordflow">if</span> (threadIdx.x == 0)</div>
 <div class="line">    {</div>
 <div class="line">        block_predecessor = ...</div>
@@ -184,7 +184,7 @@ class cub::BlockDiscontinuity&lt; T, BLOCK_THREADS &gt;</h3>
 <div class="line"></div>
 <div class="line">    <span class="comment">// Set head head_flags</span></div>
 <div class="line">    <span class="keywordtype">int</span> head_flags[4];</div>
-<div class="line">    BlockDiscontinuity::Flag(temp_storage, coordinates, block_predecessor, NewRowOp(), head_flags);</div>
+<div class="line">    <a class="code" href="classcub_1_1_block_discontinuity.html#a5bee18d5e423a26fd3fefa741832ad8c" title="Collective constructor for 1D thread blocks using a private static allocation of shared memory as tem...">BlockDiscontinuity</a>(temp_storage).FlagHeads(head_flags, coordinates, NewRowOp(), block_predecessor);</div>
 </div><!-- fragment --> </dd></dl>
 </div><table class="memberdecls">
 <tr class="heading"><td colspan="2"><h2 class="groupheader"><a name="pub-types"></a>
@@ -621,7 +621,7 @@ template&lt;int ITEMS_PER_THREAD, typename FlagT , typename FlagOp &gt; </div>
 <!-- HTML footer for doxygen 1.8.3.1-->
 <!-- start footer part -->
 <hr class="footer"/><address class="footer"><small>
-Generated on Sun Jun 30 2013 23:35:04 for CUB by &#160;<a href="http://www.doxygen.org/index.html">
+Generated on Fri Jul 12 2013 14:34:45 for CUB by &#160;<a href="http://www.doxygen.org/index.html">
 <img class="footer" src="doxygen.png" alt="doxygen"/>
 </a> 1.8.4
 <br>

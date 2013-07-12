@@ -134,20 +134,20 @@ typedef void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" hr
 </table><table class="memberdecls">
 <tr class="heading"><td colspan="2"><h2 class="groupheader"><a name="pub-methods"></a>
 Public Methods</h2></td></tr>
-<tr class="memitem:a3f7b0ec2266c97661379c72265e75c25"><td class="memItemLeft" align="right" valign="top">__host__ __device__ __forceinline__&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classcub_1_1_tex_iterator_r_a.html#a3f7b0ec2266c97661379c72265e75c25">TexIteratorRA</a> (T *ptr)</td></tr>
-<tr class="memdesc:a3f7b0ec2266c97661379c72265e75c25"><td class="mdescLeft">&#160;</td><td class="mdescRight">Constructor.  <a href="#a3f7b0ec2266c97661379c72265e75c25">More...</a><br/></td></tr>
-<tr class="separator:a3f7b0ec2266c97661379c72265e75c25"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:a5f6750afce62e3b947dbb2c6f12b4364"><td class="memItemLeft" align="right" valign="top"><a class="anchor" id="a5f6750afce62e3b947dbb2c6f12b4364"></a>
-cudaError_t&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classcub_1_1_tex_iterator_r_a.html#a5f6750afce62e3b947dbb2c6f12b4364">BindTexture</a> ()</td></tr>
-<tr class="memdesc:a5f6750afce62e3b947dbb2c6f12b4364"><td class="mdescLeft">&#160;</td><td class="mdescRight">Bind iterator to texture reference. <br/></td></tr>
-<tr class="separator:a5f6750afce62e3b947dbb2c6f12b4364"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a1b8f21c2753cee33dd90944e4027fa36"><td class="memItemLeft" align="right" valign="top"><a class="anchor" id="a1b8f21c2753cee33dd90944e4027fa36"></a>
+__host__ __device__ __forceinline__&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classcub_1_1_tex_iterator_r_a.html#a1b8f21c2753cee33dd90944e4027fa36">TexIteratorRA</a> ()</td></tr>
+<tr class="memdesc:a1b8f21c2753cee33dd90944e4027fa36"><td class="mdescLeft">&#160;</td><td class="mdescRight">Constructor. <br/></td></tr>
+<tr class="separator:a1b8f21c2753cee33dd90944e4027fa36"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:aae5f3547c60cf33d51c65685ea9d131a"><td class="memItemLeft" align="right" valign="top">cudaError_t&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classcub_1_1_tex_iterator_r_a.html#aae5f3547c60cf33d51c65685ea9d131a">BindTexture</a> (T *ptr, size_t bytes, size_t tex_align_offset=0)</td></tr>
+<tr class="memdesc:aae5f3547c60cf33d51c65685ea9d131a"><td class="mdescLeft">&#160;</td><td class="mdescRight">Bind iterator to texture reference.  <a href="#aae5f3547c60cf33d51c65685ea9d131a">More...</a><br/></td></tr>
+<tr class="separator:aae5f3547c60cf33d51c65685ea9d131a"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:abfc8c42e2da2beffb05ac81ec89ed8b9"><td class="memItemLeft" align="right" valign="top"><a class="anchor" id="abfc8c42e2da2beffb05ac81ec89ed8b9"></a>
 cudaError_t&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classcub_1_1_tex_iterator_r_a.html#abfc8c42e2da2beffb05ac81ec89ed8b9">UnbindTexture</a> ()</td></tr>
 <tr class="memdesc:abfc8c42e2da2beffb05ac81ec89ed8b9"><td class="mdescLeft">&#160;</td><td class="mdescRight">Unbind iterator to texture reference. <br/></td></tr>
 <tr class="separator:abfc8c42e2da2beffb05ac81ec89ed8b9"><td class="memSeparator" colspan="2">&#160;</td></tr>
 </table>
-<h2 class="groupheader">Constructor &amp; Destructor Documentation</h2>
-<a class="anchor" id="a3f7b0ec2266c97661379c72265e75c25"></a>
+<h2 class="groupheader">Member Function Documentation</h2>
+<a class="anchor" id="aae5f3547c60cf33d51c65685ea9d131a"></a>
 <div class="memitem">
 <div class="memproto">
 <div class="memtemplate">
@@ -157,11 +157,27 @@ template&lt;typename T &gt; </div>
   <td class="mlabels-left">
       <table class="memname">
         <tr>
-          <td class="memname">__host__ __device__ __forceinline__ <a class="el" href="classcub_1_1_tex_iterator_r_a.html">cub::TexIteratorRA</a>&lt; T &gt;::<a class="el" href="classcub_1_1_tex_iterator_r_a.html">TexIteratorRA</a> </td>
+          <td class="memname">cudaError_t <a class="el" href="classcub_1_1_tex_iterator_r_a.html">cub::TexIteratorRA</a>&lt; T &gt;::BindTexture </td>
           <td>(</td>
           <td class="paramtype">T *&#160;</td>
-          <td class="paramname"><em>ptr</em>)</td><td></td>
+          <td class="paramname"><em>ptr</em>, </td>
+        </tr>
+        <tr>
+          <td class="paramkey"></td>
           <td></td>
+          <td class="paramtype">size_t&#160;</td>
+          <td class="paramname"><em>bytes</em>, </td>
+        </tr>
+        <tr>
+          <td class="paramkey"></td>
+          <td></td>
+          <td class="paramtype">size_t&#160;</td>
+          <td class="paramname"><em>tex_align_offset</em> = <code>0</code>&#160;</td>
+        </tr>
+        <tr>
+          <td></td>
+          <td>)</td>
+          <td></td><td></td>
         </tr>
       </table>
   </td>
@@ -171,10 +187,12 @@ template&lt;typename T &gt; </div>
 </table>
 </div><div class="memdoc">
 
-<p>Constructor. </p>
+<p>Bind iterator to texture reference. </p>
 <dl class="params"><dt>Parameters</dt><dd>
   <table class="params">
-    <tr><td class="paramname">ptr</td><td>Native pointer to wrap </td></tr>
+    <tr><td class="paramname">ptr</td><td>Native pointer to wrap that is aligned to cudaDeviceProp::textureAlignment </td></tr>
+    <tr><td class="paramname">bytes</td><td>Number of items </td></tr>
+    <tr><td class="paramname">tex_align_offset</td><td>Offset (in items) from ptr denoting the position of the iterator </td></tr>
   </table>
   </dd>
 </dl>
@@ -188,7 +206,7 @@ template&lt;typename T &gt; </div>
 <!-- HTML footer for doxygen 1.8.3.1-->
 <!-- start footer part -->
 <hr class="footer"/><address class="footer"><small>
-Generated on Sun Jun 30 2013 23:35:05 for CUB by &#160;<a href="http://www.doxygen.org/index.html">
+Generated on Fri Jul 12 2013 14:34:46 for CUB by &#160;<a href="http://www.doxygen.org/index.html">
 <img class="footer" src="doxygen.png" alt="doxygen"/>
 </a> 1.8.4
 <br>

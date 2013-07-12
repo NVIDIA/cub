@@ -189,7 +189,7 @@ enum BlockScanAlgorithm
  *     ...
  *
  *     // Compute the threadblock-wide exclusive prefix sum
- *     BlockScan::ExclusiveSum(data, data);
+ *     BlockScan(temp_storage).ExclusiveSum(data, data);
  *
  *     ...
  * \endcode
@@ -239,7 +239,7 @@ enum BlockScanAlgorithm
  *
  *              // Scan the tile of items
  *              int tile_aggregate;
- *              BlockScan::ExclusiveSum(datum, datum,
+ *              BlockScan(temp_storage).ExclusiveSum(datum, datum,
  *                  tile_aggregate, prefix_op);
  *
  *              // Write item
@@ -283,13 +283,20 @@ enum BlockScanAlgorithm
  *     // Allocation request size for each thread
  *     int allocation_request = ...
  *
- *     // Determine a unique offset int d_out for each thread to
- *     // write its allocation
- *     int allocation_offset;
- *     int aggregate_block_request;  // Unused
- *     BlockScan::ExclusiveSum(allocation_request, allocation_offset,
- *         aggregate_block_request, BlockPrefix(d_global_counter));
+ *     // Determine a unique allocation offset in d_out for each thread
+ *     // to write its allocation
  *
+ *     int allocation_offset;
+ *     BlockPrefix prefix_callback(d_global_counter);
+ *     int total_allocated;
+ *
+ *     BlockScan(temp_storage).ExclusiveSum(
+ *         allocation_request,
+ *         allocation_offset,
+ *         total_allocated,
+ *         prefix_callback);
+ *
+ *     // allocation_offset now contains a index to begin writing items...
  *
  * \endcode
  */
