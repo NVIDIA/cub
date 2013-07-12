@@ -291,6 +291,25 @@ struct DeviceScanBlockPrefixOp
 };
 
 
+// Running scan prefix callback type for single-block scans.
+// Maintains a running prefix that can be applied to consecutive
+// scan operations.
+template <typename T>
+struct RunningBlockPrefixOp
+{
+    // Running prefix
+    T running_total;
+
+    // Callback operator.
+    __device__ T operator()(T block_aggregate)
+    {
+        T old_prefix = running_total;
+        running_total += block_aggregate;
+        return old_prefix;
+    }
+};
+
+
 }               // CUB namespace
 CUB_NS_POSTFIX  // Optional outer namespace(s)
 
