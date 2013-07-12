@@ -520,7 +520,8 @@ enum BlockStoreAlgorithm
  *      int data[4];
  *
  *      // Store a tile of data at this block's offset
- *      BlockStore::Store(temp_storage, d_out + blockIdx.x * 128 * 4, data);
+ *      int block_offset = blockIdx.x * 128 * 4;
+ *      BlockStore(temp_storage).Store(d_out + block_offset, data);
  *
  *      ...
  * \endcode
@@ -547,7 +548,8 @@ enum BlockStoreAlgorithm
  *      int data[21];
  *
  *      // Store a tile of data at this block's offset
- *      BlockStore::Store(temp_storage, d_out + blockIdx.x * BLOCK_THREADS * 21, data);
+ *      int block_offset = blockIdx.x * BLOCK_THREADS * 21;
+ *      BlockStore(temp_storage).Store(d_out + block_offset, data);
  *
  *      ...
  * \endcode
@@ -576,19 +578,20 @@ enum BlockStoreAlgorithm
  *      int data[ITEMS_PER_THREAD];
  *
  *      // Store a tile of data using vector-store instructions if possible
- *      BlockStore::Store(temp_storage, d_out + blockIdx.x * BLOCK_THREADS * ITEMS_PER_THREAD, data);
+ *      int block_offset = blockIdx.x * BLOCK_THREADS * ITEMS_PER_THREAD;
+ *      BlockStore(temp_storage).Store(d_out + block_offset, data);
  *
  *      ...
  * \endcode
  * <br>
  */
 template <
-    typename            OutputIteratorRA,
-    int                 BLOCK_THREADS,
-    int                 ITEMS_PER_THREAD,
-    BlockStoreAlgorithm    ALGORITHM           = BLOCK_STORE_DIRECT,
-    PtxStoreModifier    MODIFIER            = STORE_DEFAULT,
-    bool                WARP_TIME_SLICING   = false>
+    typename                OutputIteratorRA,
+    int                     BLOCK_THREADS,
+    int                     ITEMS_PER_THREAD,
+    BlockStoreAlgorithm     ALGORITHM           = BLOCK_STORE_DIRECT,
+    PtxStoreModifier        MODIFIER            = STORE_DEFAULT,
+    bool                    WARP_TIME_SLICING   = false>
 class BlockStore
 {
 private:

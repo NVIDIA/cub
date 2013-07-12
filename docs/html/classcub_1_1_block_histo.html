@@ -171,7 +171,7 @@ class cub::BlockHisto&lt; BLOCK_THREADS, ITEMS_PER_THREAD, BINS, ALGORITHM &gt;<
 <div class="line">     ...</div>
 <div class="line"></div>
 <div class="line">     <span class="comment">// Compute the threadblock-wide histogram</span></div>
-<div class="line">     <a class="code" href="classcub_1_1_block_histo.html#a402f8d3448ee6d7e35895cd2b6dd8509" title="Constructs a threadblock-wide histogram in shared/global memory. Each thread contributes an array of ...">BlockHisto::Histogram</a>(temp_storage, data, smem_histogram);</div>
+<div class="line">     <a class="code" href="classcub_1_1_block_histo.html#a6267a667bf56a1af2169ba7bcecbd5fd" title="Collective constructor for 1D thread blocks using a private static allocation of shared memory as tem...">BlockHisto</a>(temp_storage).Histogram(data, smem_histogram);</div>
 <div class="line"></div>
 <div class="line">     ...</div>
 </div><!-- fragment --></dd></dl>
@@ -191,7 +191,7 @@ class cub::BlockHisto&lt; BLOCK_THREADS, ITEMS_PER_THREAD, BINS, ALGORITHM &gt;<
 <div class="line">     <span class="keywordflow">if</span> (threadIdx.x &lt; num_items) data[0] = ...;</div>
 <div class="line"></div>
 <div class="line">     <span class="comment">// Compute the threadblock-wide sum of valid elements in thread0</span></div>
-<div class="line">     <a class="code" href="classcub_1_1_block_histo.html#aeb198d8ec21b29d5d03fc74a61fb89dd" title="Updates an existing threadblock-wide histogram in shared/global memory. Each thread composites an arr...">BlockHisto::Composite</a>(temp_storage, data, d_histogram);</div>
+<div class="line">     <a class="code" href="classcub_1_1_block_histo.html#a6267a667bf56a1af2169ba7bcecbd5fd" title="Collective constructor for 1D thread blocks using a private static allocation of shared memory as tem...">BlockHisto</a>(temp_storage).Composite(data, d_histogram);</div>
 <div class="line"></div>
 <div class="line">     ...</div>
 </div><!-- fragment --> </dd></dl>
@@ -465,7 +465,7 @@ template&lt;typename HistoCounter &gt; </div>
 <!-- HTML footer for doxygen 1.8.3.1-->
 <!-- start footer part -->
 <hr class="footer"/><address class="footer"><small>
-Generated on Sun Jun 30 2013 23:35:04 for CUB by &#160;<a href="http://www.doxygen.org/index.html">
+Generated on Fri Jul 12 2013 14:34:45 for CUB by &#160;<a href="http://www.doxygen.org/index.html">
 <img class="footer" src="doxygen.png" alt="doxygen"/>
 </a> 1.8.4
 <br>

@@ -160,7 +160,8 @@ class cub::BlockLoad&lt; InputIteratorRA, BLOCK_THREADS, ITEMS_PER_THREAD, ALGOR
 <div class="line">    <span class="keywordtype">int</span> data[4];</div>
 <div class="line"></div>
 <div class="line">    <span class="comment">// Load a tile of data at this block&#39;s offset</span></div>
-<div class="line">    <a class="code" href="classcub_1_1_block_load.html#aa49d3ea3d7a6fcb5c2c4f376ece3a65f" title="Load a tile of linear items across a threadblock. ">BlockLoad::Load</a>(temp_storage, d_in + blockIdx.x * 128 * 4, data);</div>
+<div class="line">    <span class="keywordtype">int</span> block_offset =  blockIdx.x * (128 * 4);</div>
+<div class="line">    <a class="code" href="classcub_1_1_block_load.html#a5d282946b5009f81cb8eb030f0c88db3" title="Collective constructor for 1D thread blocks using a private static allocation of shared memory as tem...">BlockLoad</a>(temp_storage).Load(d_in + block_offset, data);</div>
 <div class="line"></div>
 <div class="line">    ...</div>
 </div><!-- fragment --></dd></dl>
@@ -179,7 +180,8 @@ class cub::BlockLoad&lt; InputIteratorRA, BLOCK_THREADS, ITEMS_PER_THREAD, ALGOR
 <div class="line">    <span class="keywordtype">int</span> data[21];</div>
 <div class="line"></div>
 <div class="line">    <span class="comment">// Load a tile of data at this block&#39;s offset</span></div>
-<div class="line">    <a class="code" href="classcub_1_1_block_load.html#aa49d3ea3d7a6fcb5c2c4f376ece3a65f" title="Load a tile of linear items across a threadblock. ">BlockLoad::Load</a>(temp_storage, d_in + blockIdx.x * BLOCK_THREADS * 21, data);</div>
+<div class="line">    <span class="keywordtype">int</span> block_offset =  blockIdx.x * (BLOCK_THREADS * 21);</div>
+<div class="line">    <a class="code" href="classcub_1_1_block_load.html#a5d282946b5009f81cb8eb030f0c88db3" title="Collective constructor for 1D thread blocks using a private static allocation of shared memory as tem...">BlockLoad</a>(temp_storage).Load(d_in + block_offset, data);</div>
 <div class="line"></div>
 <div class="line">    ...</div>
 </div><!-- fragment --></dd></dl>
@@ -200,7 +202,8 @@ class cub::BlockLoad&lt; InputIteratorRA, BLOCK_THREADS, ITEMS_PER_THREAD, ALGOR
 <div class="line">    <span class="keywordtype">int</span> data[ITEMS_PER_THREAD];</div>
 <div class="line"></div>
 <div class="line">    <span class="comment">// Load a tile of data at this block&#39;s offset</span></div>
-<div class="line">    <a class="code" href="classcub_1_1_block_load.html#aa49d3ea3d7a6fcb5c2c4f376ece3a65f" title="Load a tile of linear items across a threadblock. ">BlockLoad::Load</a>(temp_storage, d_in + blockIdx.x * BLOCK_THREADS * ITEMS_PER_THREAD, data);</div>
+<div class="line">    <span class="keywordtype">int</span> block_offset = blockIdx.x * BLOCK_THREADS * ITEMS_PER_THREAD;</div>
+<div class="line">    <a class="code" href="classcub_1_1_block_load.html#a5d282946b5009f81cb8eb030f0c88db3" title="Collective constructor for 1D thread blocks using a private static allocation of shared memory as tem...">BlockLoad</a>(temp_storage).Load(d_in + block_offset, data);</div>
 <div class="line"></div>
 <div class="line">    ...</div>
 </div><!-- fragment --> </dd></dl>
@@ -517,7 +520,7 @@ template&lt;typename InputIteratorRA , int BLOCK_THREADS, int ITEMS_PER_THREAD, 
 <!-- HTML footer for doxygen 1.8.3.1-->
 <!-- start footer part -->
 <hr class="footer"/><address class="footer"><small>
-Generated on Sun Jun 30 2013 23:35:04 for CUB by &#160;<a href="http://www.doxygen.org/index.html">
+Generated on Fri Jul 12 2013 14:34:45 for CUB by &#160;<a href="http://www.doxygen.org/index.html">
 <img class="footer" src="doxygen.png" alt="doxygen"/>
 </a> 1.8.4
 <br>

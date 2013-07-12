@@ -173,7 +173,7 @@ class cub::BlockReduce&lt; T, BLOCK_THREADS, ALGORITHM &gt;</h3>
 <div class="line">     ...</div>
 <div class="line"></div>
 <div class="line">     <span class="comment">// Compute the threadblock-wide sum for thread0</span></div>
-<div class="line">     <span class="keywordtype">int</span> aggregate = <a class="code" href="classcub_1_1_block_reduce.html#a7565f00c47dc7dfb286668bea15dad05" title="Computes a threadblock-wide reduction for thread0 using addition (+) as the reduction operator...">BlockReduce::Sum</a>(temp_storage, data);</div>
+<div class="line">     <span class="keywordtype">int</span> aggregate = <a class="code" href="classcub_1_1_block_reduce.html#a3d1fab4feec5bcca9c058c98dcc2e169" title="Collective constructor for 1D thread blocks using a private static allocation of shared memory as tem...">BlockReduce</a>(temp_storage).Sum(data);</div>
 <div class="line"></div>
 <div class="line">     ...</div>
 </div><!-- fragment --></dd></dl>
@@ -193,7 +193,7 @@ class cub::BlockReduce&lt; T, BLOCK_THREADS, ALGORITHM &gt;</h3>
 <div class="line">     <span class="keywordflow">if</span> (threadIdx.x &lt; num_items) data = ...;</div>
 <div class="line"></div>
 <div class="line">     <span class="comment">// Compute the threadblock-wide sum of valid elements in thread0</span></div>
-<div class="line">     <span class="keywordtype">int</span> aggregate = <a class="code" href="classcub_1_1_block_reduce.html#a7565f00c47dc7dfb286668bea15dad05" title="Computes a threadblock-wide reduction for thread0 using addition (+) as the reduction operator...">BlockReduce::Sum</a>(temp_storage, data, num_items);</div>
+<div class="line">     <span class="keywordtype">int</span> aggregate = <a class="code" href="classcub_1_1_block_reduce.html#a3d1fab4feec5bcca9c058c98dcc2e169" title="Collective constructor for 1D thread blocks using a private static allocation of shared memory as tem...">BlockReduce</a>(temp_storage).Sum(data, num_items);</div>
 <div class="line"></div>
 <div class="line">     ...</div>
 </div><!-- fragment --> </dd></dl>
@@ -668,7 +668,7 @@ template&lt;typename T , int BLOCK_THREADS, BlockReduceAlgorithm ALGORITHM = BLO
 <!-- HTML footer for doxygen 1.8.3.1-->
 <!-- start footer part -->
 <hr class="footer"/><address class="footer"><small>
-Generated on Sun Jun 30 2013 23:35:05 for CUB by &#160;<a href="http://www.doxygen.org/index.html">
+Generated on Fri Jul 12 2013 14:34:45 for CUB by &#160;<a href="http://www.doxygen.org/index.html">
 <img class="footer" src="doxygen.png" alt="doxygen"/>
 </a> 1.8.4
 <br>

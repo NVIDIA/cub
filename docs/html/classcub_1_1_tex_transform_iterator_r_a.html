@@ -136,20 +136,19 @@ typedef void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" hr
 </table><table class="memberdecls">
 <tr class="heading"><td colspan="2"><h2 class="groupheader"><a name="pub-methods"></a>
 Public Methods</h2></td></tr>
-<tr class="memitem:a5521ef0385c88805c7ec4f75283d119d"><td class="memItemLeft" align="right" valign="top">__host__ __device__ __forceinline__&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classcub_1_1_tex_transform_iterator_r_a.html#a5521ef0385c88805c7ec4f75283d119d">TexTransformIteratorRA</a> (InputType *ptr, ConversionOp conversion_op)</td></tr>
-<tr class="memdesc:a5521ef0385c88805c7ec4f75283d119d"><td class="mdescLeft">&#160;</td><td class="mdescRight">Constructor.  <a href="#a5521ef0385c88805c7ec4f75283d119d">More...</a><br/></td></tr>
-<tr class="separator:a5521ef0385c88805c7ec4f75283d119d"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:aaa167451624a1326a9d66b927a861c18"><td class="memItemLeft" align="right" valign="top"><a class="anchor" id="aaa167451624a1326a9d66b927a861c18"></a>
-cudaError_t&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classcub_1_1_tex_transform_iterator_r_a.html#aaa167451624a1326a9d66b927a861c18">BindTexture</a> ()</td></tr>
-<tr class="memdesc:aaa167451624a1326a9d66b927a861c18"><td class="mdescLeft">&#160;</td><td class="mdescRight">Bind iterator to texture reference. <br/></td></tr>
-<tr class="separator:aaa167451624a1326a9d66b927a861c18"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a825dd0bd64a07e8f31f646fc220edffa"><td class="memItemLeft" align="right" valign="top">&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classcub_1_1_tex_transform_iterator_r_a.html#a825dd0bd64a07e8f31f646fc220edffa">TexTransformIteratorRA</a> (ConversionOp conversion_op)</td></tr>
+<tr class="memdesc:a825dd0bd64a07e8f31f646fc220edffa"><td class="mdescLeft">&#160;</td><td class="mdescRight">Constructor.  <a href="#a825dd0bd64a07e8f31f646fc220edffa">More...</a><br/></td></tr>
+<tr class="separator:a825dd0bd64a07e8f31f646fc220edffa"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:ae354a7954b301d8eb127763eb014dd9c"><td class="memItemLeft" align="right" valign="top">cudaError_t&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classcub_1_1_tex_transform_iterator_r_a.html#ae354a7954b301d8eb127763eb014dd9c">BindTexture</a> (InputType *ptr, size_t bytes, size_t tex_align_offset=0)</td></tr>
+<tr class="memdesc:ae354a7954b301d8eb127763eb014dd9c"><td class="mdescLeft">&#160;</td><td class="mdescRight">Bind iterator to texture reference.  <a href="#ae354a7954b301d8eb127763eb014dd9c">More...</a><br/></td></tr>
+<tr class="separator:ae354a7954b301d8eb127763eb014dd9c"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:abd030991795b9c9ca31f4293486d206a"><td class="memItemLeft" align="right" valign="top"><a class="anchor" id="abd030991795b9c9ca31f4293486d206a"></a>
 cudaError_t&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classcub_1_1_tex_transform_iterator_r_a.html#abd030991795b9c9ca31f4293486d206a">UnbindTexture</a> ()</td></tr>
 <tr class="memdesc:abd030991795b9c9ca31f4293486d206a"><td class="mdescLeft">&#160;</td><td class="mdescRight">Unbind iterator to texture reference. <br/></td></tr>
 <tr class="separator:abd030991795b9c9ca31f4293486d206a"><td class="memSeparator" colspan="2">&#160;</td></tr>
 </table>
 <h2 class="groupheader">Constructor &amp; Destructor Documentation</h2>
-<a class="anchor" id="a5521ef0385c88805c7ec4f75283d119d"></a>
+<a class="anchor" id="a825dd0bd64a07e8f31f646fc220edffa"></a>
 <div class="memitem">
 <div class="memproto">
 <div class="memtemplate">
@@ -159,7 +158,42 @@ template&lt;typename OutputType , typename ConversionOp , typename InputType &gt
   <td class="mlabels-left">
       <table class="memname">
         <tr>
-          <td class="memname">__host__ __device__ __forceinline__ <a class="el" href="classcub_1_1_tex_transform_iterator_r_a.html">cub::TexTransformIteratorRA</a>&lt; OutputType, ConversionOp, InputType &gt;::<a class="el" href="classcub_1_1_tex_transform_iterator_r_a.html">TexTransformIteratorRA</a> </td>
+          <td class="memname"><a class="el" href="classcub_1_1_tex_transform_iterator_r_a.html">cub::TexTransformIteratorRA</a>&lt; OutputType, ConversionOp, InputType &gt;::<a class="el" href="classcub_1_1_tex_transform_iterator_r_a.html">TexTransformIteratorRA</a> </td>
+          <td>(</td>
+          <td class="paramtype">ConversionOp&#160;</td>
+          <td class="paramname"><em>conversion_op</em>)</td><td></td>
+          <td></td>
+        </tr>
+      </table>
+  </td>
+  <td class="mlabels-right">
+<span class="mlabels"><span class="mlabel">inline</span></span>  </td>
+  </tr>
+</table>
+</div><div class="memdoc">
+
+<p>Constructor. </p>
+<dl class="params"><dt>Parameters</dt><dd>
+  <table class="params">
+    <tr><td class="paramname">conversion_op</td><td>Binary transformation functor </td></tr>
+  </table>
+  </dd>
+</dl>
+
+</div>
+</div>
+<h2 class="groupheader">Member Function Documentation</h2>
+<a class="anchor" id="ae354a7954b301d8eb127763eb014dd9c"></a>
+<div class="memitem">
+<div class="memproto">
+<div class="memtemplate">
+template&lt;typename OutputType , typename ConversionOp , typename InputType &gt; </div>
+<table class="mlabels">
+  <tr>
+  <td class="mlabels-left">
+      <table class="memname">
+        <tr>
+          <td class="memname">cudaError_t <a class="el" href="classcub_1_1_tex_transform_iterator_r_a.html">cub::TexTransformIteratorRA</a>&lt; OutputType, ConversionOp, InputType &gt;::BindTexture </td>
           <td>(</td>
           <td class="paramtype">InputType *&#160;</td>
           <td class="paramname"><em>ptr</em>, </td>
@@ -167,8 +201,14 @@ template&lt;typename OutputType , typename ConversionOp , typename InputType &gt
         <tr>
           <td class="paramkey"></td>
           <td></td>
-          <td class="paramtype">ConversionOp&#160;</td>
-          <td class="paramname"><em>conversion_op</em>&#160;</td>
+          <td class="paramtype">size_t&#160;</td>
+          <td class="paramname"><em>bytes</em>, </td>
+        </tr>
+        <tr>
+          <td class="paramkey"></td>
+          <td></td>
+          <td class="paramtype">size_t&#160;</td>
+          <td class="paramname"><em>tex_align_offset</em> = <code>0</code>&#160;</td>
         </tr>
         <tr>
           <td></td>
@@ -183,11 +223,12 @@ template&lt;typename OutputType , typename ConversionOp , typename InputType &gt
 </table>
 </div><div class="memdoc">
 
-<p>Constructor. </p>
+<p>Bind iterator to texture reference. </p>
 <dl class="params"><dt>Parameters</dt><dd>
   <table class="params">
-    <tr><td class="paramname">ptr</td><td>Native pointer to wrap </td></tr>
-    <tr><td class="paramname">conversion_op</td><td>Binary transformation functor </td></tr>
+    <tr><td class="paramname">ptr</td><td>Native pointer to wrap that is aligned to cudaDeviceProp::textureAlignment </td></tr>
+    <tr><td class="paramname">bytes</td><td>Number of items </td></tr>
+    <tr><td class="paramname">tex_align_offset</td><td>Offset (in items) from ptr denoting the position of the iterator </td></tr>
   </table>
   </dd>
 </dl>
@@ -201,7 +242,7 @@ template&lt;typename OutputType , typename ConversionOp , typename InputType &gt
 <!-- HTML footer for doxygen 1.8.3.1-->
 <!-- start footer part -->
 <hr class="footer"/><address class="footer"><small>
-Generated on Sun Jun 30 2013 23:35:05 for CUB by &#160;<a href="http://www.doxygen.org/index.html">
+Generated on Fri Jul 12 2013 14:34:46 for CUB by &#160;<a href="http://www.doxygen.org/index.html">
 <img class="footer" src="doxygen.png" alt="doxygen"/>
 </a> 1.8.4
 <br>

@@ -188,11 +188,11 @@ Classes</h2></td></tr>
 <tr class="memitem:"><td class="memItemLeft" align="right" valign="top">struct &#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="structcub_1_1_cast.html">Cast</a></td></tr>
 <tr class="memdesc:"><td class="mdescLeft">&#160;</td><td class="mdescRight">Default cast functor.  <a href="structcub_1_1_cast.html#details">More...</a><br/></td></tr>
 <tr class="separator:"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:"><td class="memItemLeft" align="right" valign="top">class &#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classcub_1_1_constant_iterator_r_a.html">ConstantIteratorRA</a></td></tr>
+<tr class="memdesc:"><td class="mdescLeft">&#160;</td><td class="mdescRight">A simple random-access iterator pointing to a range of constant values.  <a href="classcub_1_1_constant_iterator_r_a.html#details">More...</a><br/></td></tr>
+<tr class="separator:"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:"><td class="memItemLeft" align="right" valign="top">class &#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classcub_1_1_device.html">Device</a></td></tr>
 <tr class="memdesc:"><td class="mdescLeft">&#160;</td><td class="mdescRight">Properties of a given CUDA device and the corresponding PTX bundle.  <a href="classcub_1_1_device.html#details">More...</a><br/></td></tr>
-<tr class="separator:"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:"><td class="memItemLeft" align="right" valign="top">class &#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classcub_1_1_device_allocator.html">DeviceAllocator</a></td></tr>
-<tr class="memdesc:"><td class="mdescLeft">&#160;</td><td class="mdescRight">Abstract base allocator class for device memory allocations.  <a href="classcub_1_1_device_allocator.html#details">More...</a><br/></td></tr>
 <tr class="separator:"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:"><td class="memItemLeft" align="right" valign="top">struct &#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="structcub_1_1_device_histo.html">DeviceHisto</a></td></tr>
 <tr class="memdesc:"><td class="mdescLeft">&#160;</td><td class="mdescRight"><a class="el" href="structcub_1_1_device_histo.html" title="DeviceHisto provides device-wide parallel operations for constructing histogram(s) over samples data ...">DeviceHisto</a> provides device-wide parallel operations for constructing histogram(s) over samples data residing within global memory. </p>
@@ -217,6 +217,9 @@ Classes</h2></td></tr>
 <div class="caption">
 .</div></div>
   <a href="structcub_1_1_device_scan.html#details">More...</a><br/></td></tr>
+<tr class="separator:"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:"><td class="memItemLeft" align="right" valign="top">struct &#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="structcub_1_1_double_buffer.html">DoubleBuffer</a></td></tr>
+<tr class="memdesc:"><td class="mdescLeft">&#160;</td><td class="mdescRight">Double-buffer storage wrapper for multi-pass stream transformations that require more than one storage array for streaming intermediate results back and forth.  <a href="structcub_1_1_double_buffer.html#details">More...</a><br/></td></tr>
 <tr class="separator:"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:"><td class="memItemLeft" align="right" valign="top">struct &#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="structcub_1_1_enable_if.html">EnableIf</a></td></tr>
 <tr class="memdesc:"><td class="mdescLeft">&#160;</td><td class="mdescRight">Simple enable-if (similar to Boost)  <a href="structcub_1_1_enable_if.html#details">More...</a><br/></td></tr>
@@ -256,6 +259,9 @@ Classes</h2></td></tr>
 <tr class="separator:"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:"><td class="memItemLeft" align="right" valign="top">struct &#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="structcub_1_1_numeric_traits.html">NumericTraits</a></td></tr>
 <tr class="memdesc:"><td class="mdescLeft">&#160;</td><td class="mdescRight">Numeric type traits.  <a href="structcub_1_1_numeric_traits.html#details">More...</a><br/></td></tr>
+<tr class="separator:"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:"><td class="memItemLeft" align="right" valign="top">struct &#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="structcub_1_1_power_of_two.html">PowerOfTwo</a></td></tr>
+<tr class="memdesc:"><td class="mdescLeft">&#160;</td><td class="mdescRight">Statically determine if N is a power-of-two.  <a href="structcub_1_1_power_of_two.html#details">More...</a><br/></td></tr>
 <tr class="separator:"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:"><td class="memItemLeft" align="right" valign="top">struct &#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="structcub_1_1_ptx_arch_props.html">PtxArchProps</a></td></tr>
 <tr class="memdesc:"><td class="mdescLeft">&#160;</td><td class="mdescRight">The architectural properties for the PTX version targeted by the active compiler pass.  <a href="structcub_1_1_ptx_arch_props.html#details">More...</a><br/></td></tr>
@@ -383,10 +389,10 @@ std::iterator_traits<br class="typebreak"/>
 ::value_type&#160;</td><td class="memTemplItemRight" valign="bottom"><a class="el" href="group___io_module.html#ga2467f2337aeeea3a3a1b39d19996d3c2">ThreadLoad</a> (InputIteratorRA itr)</td></tr>
 <tr class="memdesc:ga2467f2337aeeea3a3a1b39d19996d3c2"><td class="mdescLeft">&#160;</td><td class="mdescRight">Thread utility for reading memory using <a class="el" href="group___io_module.html#ga023420f30fec7d4b187fc98f4fd2a55d" title="Enumeration of PTX cache-modifiers for memory load operations. ">cub::PtxLoadModifier</a> cache modifiers.  <a href="group___io_module.html#ga2467f2337aeeea3a3a1b39d19996d3c2">More...</a><br/></td></tr>
 <tr class="separator:ga2467f2337aeeea3a3a1b39d19996d3c2"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:ga7fe79d0086a3d73c42559b73bbb5003c"><td class="memTemplParams" colspan="2">template&lt;PtxStoreModifier MODIFIER, typename OutputIteratorRA , typename T &gt; </td></tr>
-<tr class="memitem:ga7fe79d0086a3d73c42559b73bbb5003c"><td class="memTemplItemLeft" align="right" valign="top">__device__ __forceinline__ void&#160;</td><td class="memTemplItemRight" valign="bottom"><a class="el" href="group___io_module.html#ga7fe79d0086a3d73c42559b73bbb5003c">ThreadStore</a> (OutputIteratorRA itr, const T &amp;val)</td></tr>
-<tr class="memdesc:ga7fe79d0086a3d73c42559b73bbb5003c"><td class="mdescLeft">&#160;</td><td class="mdescRight">Thread utility for writing memory using <a class="el" href="group___io_module.html#gae9c7d6a6af7104f528509182ac9c9da2" title="Enumeration of PTX cache-modifiers for memory store operations. ">cub::PtxStoreModifier</a> cache modifiers.  <a href="group___io_module.html#ga7fe79d0086a3d73c42559b73bbb5003c">More...</a><br/></td></tr>
-<tr class="separator:ga7fe79d0086a3d73c42559b73bbb5003c"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:ga870b5b156d3d0a65a8c551884b18a2d6"><td class="memTemplParams" colspan="2">template&lt;PtxStoreModifier MODIFIER, typename OutputIteratorRA , typename T &gt; </td></tr>
+<tr class="memitem:ga870b5b156d3d0a65a8c551884b18a2d6"><td class="memTemplItemLeft" align="right" valign="top">__device__ __forceinline__ void&#160;</td><td class="memTemplItemRight" valign="bottom"><a class="el" href="group___io_module.html#ga870b5b156d3d0a65a8c551884b18a2d6">ThreadStore</a> (OutputIteratorRA itr, T val)</td></tr>
+<tr class="memdesc:ga870b5b156d3d0a65a8c551884b18a2d6"><td class="mdescLeft">&#160;</td><td class="mdescRight">Thread utility for writing memory using <a class="el" href="group___io_module.html#gae9c7d6a6af7104f528509182ac9c9da2" title="Enumeration of PTX cache-modifiers for memory store operations. ">cub::PtxStoreModifier</a> cache modifiers.  <a href="group___io_module.html#ga870b5b156d3d0a65a8c551884b18a2d6">More...</a><br/></td></tr>
+<tr class="separator:ga870b5b156d3d0a65a8c551884b18a2d6"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr><td colspan="2"><div class="groupHeader">Sequential reduction over statically-sized array types</div></td></tr>
 <tr class="memitem:ga48320d1f549b7931ae1f72040f9e42dc"><td class="memTemplParams" colspan="2">template&lt;int LENGTH, typename T , typename ReductionOp &gt; </td></tr>
 <tr class="memitem:ga48320d1f549b7931ae1f72040f9e42dc"><td class="memTemplItemLeft" align="right" valign="top">__device__ __forceinline__ T&#160;</td><td class="memTemplItemRight" valign="bottom"><a class="el" href="group___thread_module.html#ga48320d1f549b7931ae1f72040f9e42dc">ThreadReduce</a> (T *input, ReductionOp reduction_op, T prefix)</td></tr>
@@ -757,7 +763,7 @@ std::iterator_traits<br class="typebreak"/>
 <!-- HTML footer for doxygen 1.8.3.1-->
 <!-- start footer part -->
 <hr class="footer"/><address class="footer"><small>
-Generated on Sun Jun 30 2013 23:35:04 for CUB by &#160;<a href="http://www.doxygen.org/index.html">
+Generated on Fri Jul 12 2013 14:34:45 for CUB by &#160;<a href="http://www.doxygen.org/index.html">
 <img class="footer" src="doxygen.png" alt="doxygen"/>
 </a> 1.8.4
 <br>
