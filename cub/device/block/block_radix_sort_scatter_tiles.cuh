@@ -76,6 +76,7 @@ template <
     bool                        _MEMOIZE_OUTER_SCAN,        ///< Whether or not to buffer outer raking scan partials to incur fewer shared memory reads at the expense of higher register pressure.  See BlockScanAlgorithm::BLOCK_SCAN_RAKING_MEMOIZE for more details.
     BlockScanAlgorithm          _INNER_SCAN_ALGORITHM,      ///< The cub::BlockScanAlgorithm algorithm to use
     RadixSortScatterAlgorithm   _SCATTER_ALGORITHM,         ///< The scattering strategy to use
+    cudaSharedMemConfig         _SMEM_CONFIG,               ///< Shared memory bank mode (default: \p cudaSharedMemBankSizeFourByte)
     int                         _RADIX_BITS>                ///< The number of radix bits, i.e., log2(bins)
 struct BlockRadixSortScatterTilesPolicy
 {
@@ -93,6 +94,7 @@ struct BlockRadixSortScatterTilesPolicy
     static const PtxLoadModifier            LOAD_MODIFIER           = _LOAD_MODIFIER;
     static const BlockScanAlgorithm         INNER_SCAN_ALGORITHM    = _INNER_SCAN_ALGORITHM;
     static const RadixSortScatterAlgorithm  SCATTER_ALGORITHM       = _SCATTER_ALGORITHM;
+    static const cudaSharedMemConfig        SMEM_CONFIG             = _SMEM_CONFIG;
 };
 
 
@@ -125,6 +127,7 @@ struct BlockRadixSortScatterTiles
     static const PtxLoadModifier            LOAD_MODIFIER           = BlockRadixSortScatterTilesPolicy::LOAD_MODIFIER;
     static const BlockScanAlgorithm         INNER_SCAN_ALGORITHM    = BlockRadixSortScatterTilesPolicy::INNER_SCAN_ALGORITHM;
     static const RadixSortScatterAlgorithm  SCATTER_ALGORITHM       = BlockRadixSortScatterTilesPolicy::SCATTER_ALGORITHM;
+    static const cudaSharedMemConfig        SMEM_CONFIG             = BlockRadixSortScatterTilesPolicy::SMEM_CONFIG;
 
     enum
     {
@@ -159,7 +162,8 @@ struct BlockRadixSortScatterTiles
         BLOCK_THREADS,
         RADIX_BITS,
         MEMOIZE_OUTER_SCAN,
-        INNER_SCAN_ALGORITHM> BlockRadixRank;
+        INNER_SCAN_ALGORITHM,
+        SMEM_CONFIG> BlockRadixRank;
 
     // BlockLoad type (keys)
     typedef BlockLoad<
@@ -332,8 +336,6 @@ struct BlockRadixSortScatterTiles
         // Exchange keys through shared memory
         BlockExchangeKeys(temp_storage.exchange_keys).ScatterToStriped(twiddled_keys, ranks);
 
-        __syncthreads();
-
         // Compute striped local ranks
         int local_ranks[ITEMS_PER_THREAD];
         for (int ITEM = 0; ITEM < ITEMS_PER_THREAD; ++ITEM)
@@ -378,10 +380,10 @@ struct BlockRadixSortScatterTiles
         SizeT                                   valid_items,
         Int2Type<RADIX_SORT_SCATTER_TWO_PHASE>  scatter_algorithm)
     {
+        __syncthreads();
+
         // Exchange keys through shared memory
         BlockExchangeValues(temp_storage.exchange_values).ScatterToStriped(values, ranks);
-
-        __syncthreads();
 
         // Compute striped local ranks
         int local_ranks[ITEMS_PER_THREAD];
@@ -484,6 +486,8 @@ struct BlockRadixSortScatterTiles
         int             ranks[ITEMS_PER_THREAD];                    // For each key, the local rank within the CTA
         SizeT           relative_bin_offsets[ITEMS_PER_THREAD];     // For each key, the global scatter base offset of the corresponding digit
 
+        if (LOAD_ALGORITHM == BLOCK_LOAD_DIRECT) __syncthreads();
+
         // Assign max-key to all keys
         #pragma unroll
         for (int ITEM = 0; ITEM < ITEMS_PER_THREAD; ++ITEM)
@@ -499,10 +503,10 @@ struct BlockRadixSortScatterTiles
             valid_items,
             Int2Type<FULL_TILE>());
 
+        __syncthreads();
+
         // Twiddle key bits if necessary
         TwiddleKeys(keys, twiddled_keys, Traits<Key>::TwiddleIn);
-
-        __syncthreads();
 
         // Rank the twiddled keys
         BlockRadixRank(temp_storage.ranking).RankKeys(
@@ -577,6 +581,7 @@ struct BlockRadixSortScatterTiles
         {
             ProcessTile<false>(block_offset, block_oob - block_offset);
         }
+
     }
 };
 

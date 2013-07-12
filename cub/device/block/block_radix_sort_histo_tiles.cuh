@@ -347,6 +347,9 @@ struct BlockRadixSortHistoTiles
 
         LoadStriped<LOAD_MODIFIER, BLOCK_THREADS>(threadIdx.x, d_keys_in + block_offset, keys);
 
+        // Prevent hoisting
+//        __threadfence_block();
+
         // Bucket tile of keys
         Iterate<0, KEYS_PER_THREAD>::BucketKeys(*this, keys);
     }

@@ -462,7 +462,7 @@ public:
         UnsignedBits    (&keys)[KEYS_PER_THREAD],           ///< [in] Keys for this tile
         int             (&ranks)[KEYS_PER_THREAD],          ///< [out] For each key, the local rank within the tile (out parameter)
         int             current_bit,                        ///< [in] The least-significant bit position of the current digit to extract
-        int             (&digit_prefixes)[RADIX_DIGITS + 1])   ///< [out] Shared array containing a prefix sum of digit counts
+        int             digit_prefixes[RADIX_DIGITS + 1])   ///< [out] Shared array containing a prefix sum of digit counts
     {
         // Rank keys
         RankKeys(keys, ranks, current_bit);
