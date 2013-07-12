@@ -1,5 +1,6 @@
 var searchData=
 [
+  ['selector',['selector',['../structcub_1_1_double_buffer.html#a9641172c847169904c4054856d7c26f4',1,'cub::DoubleBuffer']]],
   ['sm_5fcount',['sm_count',['../classcub_1_1_device.html#a68885a90ea0badcffc2a3511b0b4fd5c',1,'cub::Device']]],
   ['sm_5fversion',['sm_version',['../classcub_1_1_device.html#ac9b36b3b0edb207aeee60110fbee6406',1,'cub::Device']]],
   ['smem_5falloc_5funit',['smem_alloc_unit',['../classcub_1_1_device.html#aca17efd166d916008f0fc378adc00b1f',1,'cub::Device']]],

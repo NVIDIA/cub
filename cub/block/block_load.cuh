@@ -636,7 +636,8 @@ enum BlockLoadAlgorithm
  *     int data[4];
  *
  *     // Load a tile of data at this block's offset
- *     BlockLoad::Load(temp_storage, d_in + blockIdx.x * 128 * 4, data);
+ *     int block_offset =  blockIdx.x * (128 * 4);
+ *     BlockLoad(temp_storage).Load(d_in + block_offset, data);
  *
  *     ...
  * \endcode
@@ -663,7 +664,8 @@ enum BlockLoadAlgorithm
  *     int data[21];
  *
  *     // Load a tile of data at this block's offset
- *     BlockLoad::Load(temp_storage, d_in + blockIdx.x * BLOCK_THREADS * 21, data);
+ *     int block_offset =  blockIdx.x * (BLOCK_THREADS * 21);
+ *     BlockLoad(temp_storage).Load(d_in + block_offset, data);
  *
  *     ...
  * \endcode
@@ -692,7 +694,8 @@ enum BlockLoadAlgorithm
  *     int data[ITEMS_PER_THREAD];
  *
  *     // Load a tile of data at this block's offset
- *     BlockLoad::Load(temp_storage, d_in + blockIdx.x * BLOCK_THREADS * ITEMS_PER_THREAD, data);
+ *     int block_offset = blockIdx.x * BLOCK_THREADS * ITEMS_PER_THREAD;
+ *     BlockLoad(temp_storage).Load(d_in + block_offset, data);
  *
  *     ...
  * \endcode
