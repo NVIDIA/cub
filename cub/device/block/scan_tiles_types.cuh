@@ -205,13 +205,13 @@ template <
 struct DeviceScanBlockPrefixOp
 {
     // Parameterized warp reduce
-    typedef WarpReduce<T>                   WarpReduceT;
+    typedef WarpReduce<T>                       WarpReduceT;
 
     // Storage type
-    typedef WarpReduceT::TempStorage        TempStorage;
+    typedef typename WarpReduceT::TempStorage   TempStorage;
 
     // Device tile status descriptor type
-    typedef ScanTileDescriptor<T>     ScanTileDescriptorT;
+    typedef ScanTileDescriptor<T>               ScanTileDescriptorT;
 
     // Fields
     ScanTileDescriptorT   *d_tile_status; ///< Pointer to array of tile status
