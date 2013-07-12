@@ -145,23 +145,6 @@ struct BlockScanTiles
     // Device scan prefix callback type for inter-block scans
     typedef DeviceScanBlockPrefixOp<T, ScanOp> InterblockPrefixOp;
 
-    // Running scan prefix callback type for single-block scans.
-    // Maintains a running prefix that can be applied to consecutive
-    // scan operations.
-    struct RunningBlockPrefixOp
-    {
-        // Running prefix
-        T running_total;
-
-        // Callback operator.
-        __device__ T operator()(T block_aggregate)
-        {
-            T old_prefix = running_total;
-            running_total += block_aggregate;
-            return old_prefix;
-        }
-    };
-
     // Shared memory type for this threadblock
     struct TempStorage
     {
@@ -417,7 +400,7 @@ struct BlockScanTiles
         bool FIRST_TILE>
     __device__ __forceinline__ void ConsumeTile(
         SizeT                   block_offset,               ///< Tile offset
-        RunningBlockPrefixOp    &prefix_op,                 ///< Running prefix operator
+        RunningBlockPrefixOp<T> &prefix_op,                 ///< Running prefix operator
         int                     valid_items = TILE_ITEMS)   ///< Number of valid items in the tile
     {
         // Load items
@@ -459,7 +442,7 @@ struct BlockScanTiles
         SizeT   block_offset,                       ///< [in] Threadblock begin offset (inclusive)
         SizeT   block_oob)                          ///< [in] Threadblock end offset (exclusive)
     {
-        RunningBlockPrefixOp prefix_op;
+        RunningBlockPrefixOp<T> prefix_op;
 
         if (block_offset + TILE_ITEMS <= block_oob)
         {
@@ -498,7 +481,7 @@ struct BlockScanTiles
         SizeT   block_oob,                          ///< [in] Threadblock end offset (exclusive)
         T       prefix)                             ///< [in] The prefix to apply to the scan segment
     {
-        RunningBlockPrefixOp prefix_op;
+        RunningBlockPrefixOp<T> prefix_op;
         prefix_op.running_total = prefix;
 
         // Consume full tiles of input
