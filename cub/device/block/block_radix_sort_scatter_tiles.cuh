@@ -405,12 +405,12 @@ struct BlockRadixSortScatterTiles
     /**
      * Load a tile of items (specialized for full tile)
      */
-    template <typename BlockLoadT, typename T, typename SizeT>
+    template <typename BlockLoadT, typename T>
     __device__ __forceinline__ void LoadItems(
-        BlockLoadT      &block_loader,
+        BlockLoadT      &block_loader, 
         T               (&items)[ITEMS_PER_THREAD],
-        T               *d_in,
-        SizeT           valid_items,
+        T               *d_in, 
+        SizeT           valid_items, 
         Int2Type<true>  is_full_tile)
     {
         block_loader.Load(d_in, items);
@@ -420,12 +420,12 @@ struct BlockRadixSortScatterTiles
     /**
      * Load a tile of items (specialized for partial tile)
      */
-    template <typename BlockLoadT, typename T, typename SizeT>
+    template <typename BlockLoadT, typename T>
     __device__ __forceinline__ void LoadItems(
-        BlockLoadT      &block_loader,
+        BlockLoadT      &block_loader, 
         T               (&items)[ITEMS_PER_THREAD],
-        T               *d_in,
-        SizeT           valid_items,
+        T               *d_in, 
+        SizeT           valid_items, 
         Int2Type<false> is_full_tile)
     {
         block_loader.Load(d_in, items, valid_items);
@@ -443,8 +443,9 @@ struct BlockRadixSortScatterTiles
         SizeT       block_offset,
         SizeT       valid_items)
     {
+        BlockLoadValues loader(temp_storage.load_values);
         LoadItems(
-            BlockLoadValues(temp_storage.load_values),
+            loader,
             values,
             d_values_in + block_offset,
             valid_items,
@@ -496,11 +497,12 @@ struct BlockRadixSortScatterTiles
         }
 
         // Load tile of keys
+        BlockLoadKeys loader(temp_storage.load_keys);
         LoadItems(
-            BlockLoadKeys(temp_storage.load_keys),
+            loader,
             keys,
             d_keys_in + block_offset,
-            valid_items,
+            valid_items, 
             Int2Type<FULL_TILE>());
 
         __syncthreads();

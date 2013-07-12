@@ -167,7 +167,7 @@ struct BlockHistoTiles
     // Internal block sweep histogram type
     typedef typename If<(GRID_ALGORITHM == GRID_HISTO_SORT),
         BlockHistoTilesSortT,
-        If<(GRID_ALGORITHM == GRID_HISTO_SHARED_ATOMIC),
+        typename If<(GRID_ALGORITHM == GRID_HISTO_SHARED_ATOMIC),
             BlockHistoTilesSharedAtomicT,
             BlockHistoTilesGlobalAtomicT>::Type>::Type InternalBlockDelegate;
 
