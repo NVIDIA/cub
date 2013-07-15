@@ -367,6 +367,8 @@ public:
                 CUB_MIN(max_sm_blocks, max_warp_occupancy),
                 CUB_MIN(max_smem_occupancy, max_reg_occupancy));
 
+//            printf("max_smem_occupancy(%d), max_warp_occupancy(%d), max_reg_occupancy(%d)", max_smem_occupancy, max_warp_occupancy, max_reg_occupancy);
+
         } while (0);
 
         return error;

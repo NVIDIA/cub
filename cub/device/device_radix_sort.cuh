@@ -146,7 +146,7 @@ template <
     typename                Key,                                ///< Key type
     typename                Value,                              ///< Value type
     typename                SizeT>                              ///< Integer type used for global array indexing
-__launch_bounds__ (int(BlockRadixSortScatterTilesPolicy::BLOCK_THREADS), 1)
+__launch_bounds__ (int(BlockRadixSortScatterTilesPolicy::BLOCK_THREADS))
 __global__ void RadixSortDownsweepKernel(
     Key                     *d_keys_in,                     ///< [in] Input keys ping buffer
     Key                     *d_keys_out,                    ///< [in] Output keys pong buffer
@@ -280,13 +280,13 @@ struct DeviceRadixSort
         };
 
         // UpsweepPolicy
-        typedef BlockRadixSortHistoTilesPolicy <128, 18, LOAD_LDG, RADIX_BITS> UpsweepPolicy;
+        typedef BlockRadixSortHistoTilesPolicy <64, 18, LOAD_LDG, RADIX_BITS> UpsweepPolicy;
 
         // ScanPolicy
         typedef BlockScanTilesPolicy <256, 4, BLOCK_LOAD_VECTORIZE, false, LOAD_DEFAULT, BLOCK_STORE_VECTORIZE, false, BLOCK_SCAN_WARP_SCANS> ScanPolicy;
 
         // DownsweepPolicy
-        typedef BlockRadixSortScatterTilesPolicy <128, 18, BLOCK_LOAD_DIRECT, LOAD_LDG, false, true, BLOCK_SCAN_WARP_SCANS, RADIX_SORT_SCATTER_TWO_PHASE, cudaSharedMemBankSizeEightByte, RADIX_BITS> DownsweepPolicy;
+        typedef BlockRadixSortScatterTilesPolicy <64, 18, BLOCK_LOAD_DIRECT, LOAD_LDG, false, true, BLOCK_SCAN_WARP_SCANS, RADIX_SORT_SCATTER_TWO_PHASE, cudaSharedMemBankSizeEightByte, RADIX_BITS> DownsweepPolicy;
 
         enum { SUBSCRIPTION_FACTOR = 7 };
     };

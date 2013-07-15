@@ -456,13 +456,14 @@ public:
      * \brief Rank keys.  For the lower \p RADIX_DIGITS threads, digit counts for each digit are provided for the corresponding thread.
      */
     template <
-        typename UnsignedBits,
-        int KEYS_PER_THREAD>
+        typename    UnsignedBits,
+        int         KEYS_PER_THREAD,
+        typename    SizeT>
     __device__ __forceinline__ void RankKeys(
         UnsignedBits    (&keys)[KEYS_PER_THREAD],           ///< [in] Keys for this tile
         int             (&ranks)[KEYS_PER_THREAD],          ///< [out] For each key, the local rank within the tile (out parameter)
         int             current_bit,                        ///< [in] The least-significant bit position of the current digit to extract
-        int             digit_prefixes[RADIX_DIGITS + 1])   ///< [out] Shared array containing a prefix sum of digit counts
+        SizeT           digit_prefixes[RADIX_DIGITS + 1])   ///< [out] Shared array containing a prefix sum of digit counts
     {
         // Rank keys
         RankKeys(keys, ranks, current_bit);
