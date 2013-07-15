@@ -203,8 +203,7 @@ struct BlockRadixSortScatterTiles
      */
     struct TempStorage
     {
-        int    digit_prefixes[RADIX_DIGITS + 1];
-        SizeT  relative_bin_offsets[RADIX_DIGITS];
+        SizeT relative_bin_offsets[RADIX_DIGITS + 1];
 
         union
         {
@@ -515,16 +514,17 @@ struct BlockRadixSortScatterTiles
             twiddled_keys,
             ranks,
             current_bit,
-            temp_storage.digit_prefixes);
-
-        __syncthreads();
+            temp_storage.relative_bin_offsets);
 
         // Update global scatter base offsets for each digit
         if ((BLOCK_THREADS == RADIX_DIGITS) || (threadIdx.x < RADIX_DIGITS))
         {
-            bin_offset -= temp_storage.digit_prefixes[threadIdx.x];
+            SizeT excl_bin_offset = temp_storage.relative_bin_offsets[threadIdx.x];
+            SizeT incl_bin_offset = temp_storage.relative_bin_offsets[threadIdx.x + 1];
+
+            bin_offset -= excl_bin_offset;
             temp_storage.relative_bin_offsets[threadIdx.x] = bin_offset;
-            bin_offset += temp_storage.digit_prefixes[threadIdx.x + 1];
+            bin_offset += incl_bin_offset;
         }
 
         __syncthreads();
