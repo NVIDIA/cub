@@ -214,18 +214,19 @@ struct DeviceScanBlockPrefixOp
     typedef ScanTileDescriptor<T>               ScanTileDescriptorT;
 
     // Fields
-    ScanTileDescriptorT   *d_tile_status; ///< Pointer to array of tile status
-    TempStorage                 &temp_storage;  ///< Reference to a warp-reduction instance
-    ScanOp                      scan_op;        ///< Binary scan operator
-    int                         tile_idx;       ///< The current tile index
+    ScanTileDescriptorT         *d_tile_status;     ///< Pointer to array of tile status
+    TempStorage                 &temp_storage;      ///< Reference to a warp-reduction instance
+    ScanOp                      scan_op;            ///< Binary scan operator
+    int                         tile_idx;           ///< The current tile index
+    T                           inclusive_prefix;   ///< Inclusive prefix for the tile
 
     // Constructor
     __device__ __forceinline__
     DeviceScanBlockPrefixOp(
-        ScanTileDescriptorT   *d_tile_status,
-        TempStorage                 &temp_storage,
-        ScanOp                      scan_op,
-        int                         tile_idx) :
+        ScanTileDescriptorT     *d_tile_status,
+        TempStorage             &temp_storage,
+        ScanOp                  scan_op,
+        int                     tile_idx) :
             d_tile_status(d_tile_status),
             temp_storage(temp_storage),
             scan_op(scan_op),
@@ -237,14 +238,14 @@ struct DeviceScanBlockPrefixOp
     void ProcessWindow(
         int                         predecessor_idx,
         int                         &predecessor_status,
-        T                           &window_prefix)
+        T                           &window_aggregate)
     {
         T value;
         ScanTileDescriptorT::WaitForValid(d_tile_status + predecessor_idx, predecessor_status, value);
 
         // Perform a segmented reduction to get the prefix for the current window
         int flag = (predecessor_status != SCAN_TILE_PARTIAL);
-        window_prefix = WarpReduceT(temp_storage).TailSegmentedReduce(value, flag, scan_op);
+        window_aggregate = WarpReduceT(temp_storage).TailSegmentedReduce(value, flag, scan_op);
     }
 
 
@@ -258,35 +259,36 @@ struct DeviceScanBlockPrefixOp
             ScanTileDescriptorT::SetPartial(d_tile_status + tile_idx, block_aggregate);
         }
 
-        // Wait for the window of predecessor blocks to become valid
+        // Wait for the window of predecessor tiles to become valid
         int predecessor_idx = tile_idx - threadIdx.x - 1;
         int predecessor_status;
-        T window_prefix;
-        ProcessWindow(predecessor_idx, predecessor_status, window_prefix);
+        T window_aggregate;
+        ProcessWindow(predecessor_idx, predecessor_status, window_aggregate);
 
-        // The block prefix starts out as the current window prefix
-        T block_prefix = window_prefix;
+        // The exclusive tile prefix starts out as the current window aggregate
+        T exclusive_prefix = window_aggregate;
 
-        // Keep sliding the window back until we come across a tile whose prefix (not aggregate) is known
+        // Keep sliding the window back until we come across a tile whose inclusive prefix is known
         while (WarpAll(predecessor_status != SCAN_TILE_PREFIX))
         {
             predecessor_idx -= PtxArchProps::WARP_THREADS;
 
-            // Update block prefix with the window prefix
-            ProcessWindow(predecessor_idx, predecessor_status, window_prefix);
-            block_prefix = scan_op(window_prefix, block_prefix);
+            // Update exclusive tile prefix with the window prefix
+            ProcessWindow(predecessor_idx, predecessor_status, window_aggregate);
+            exclusive_prefix = scan_op(window_aggregate, exclusive_prefix);
         }
 
-        // Update our status with our inclusive block_prefix
+        // Compute the inclusive tile prefix and update the status for this tile
         if (threadIdx.x == 0)
         {
+            inclusive_prefix = scan_op(exclusive_prefix, block_aggregate);
             ScanTileDescriptorT::SetPrefix(
                 d_tile_status + tile_idx,
-                scan_op(block_prefix, block_aggregate));
+                inclusive_prefix);
         }
 
-        // Return block-wide exclusive block_prefix
-        return block_prefix;
+        // Return exclusive_prefix
+        return exclusive_prefix;
     }
 };
 

@@ -424,8 +424,8 @@ public:
      * \brief Rank keys.
      */
     template <
-        typename UnsignedBits,
-        int KEYS_PER_THREAD>
+        typename        UnsignedBits,
+        int             KEYS_PER_THREAD>
     __device__ __forceinline__ void RankKeys(
         UnsignedBits    (&keys)[KEYS_PER_THREAD],           ///< [in] Keys for this tile
         int             (&ranks)[KEYS_PER_THREAD],          ///< [out] For each key, the local rank within the tile
@@ -456,14 +456,13 @@ public:
      * \brief Rank keys.  For the lower \p RADIX_DIGITS threads, digit counts for each digit are provided for the corresponding thread.
      */
     template <
-        typename    UnsignedBits,
-        int         KEYS_PER_THREAD,
-        typename    SizeT>
+        typename        UnsignedBits,
+        int             KEYS_PER_THREAD>
     __device__ __forceinline__ void RankKeys(
         UnsignedBits    (&keys)[KEYS_PER_THREAD],           ///< [in] Keys for this tile
         int             (&ranks)[KEYS_PER_THREAD],          ///< [out] For each key, the local rank within the tile (out parameter)
         int             current_bit,                        ///< [in] The least-significant bit position of the current digit to extract
-        SizeT           digit_prefixes[RADIX_DIGITS + 1])   ///< [out] Shared array containing a prefix sum of digit counts
+        int             &inclusive_digit_prefix)            ///< [out] The incluisve prefix sum for the digit threadIdx.x
     {
         // Rank keys
         RankKeys(keys, ranks, current_bit);
@@ -471,14 +470,11 @@ public:
         // Get the inclusive and exclusive digit totals corresponding to the calling thread.
         if ((BLOCK_THREADS == RADIX_DIGITS) || (linear_tid < RADIX_DIGITS))
         {
-            // Initialize digit scan's identity value
-            digit_prefixes[linear_tid] = 0;
-
             // Obtain ex/inclusive digit counts.  (Unfortunately these all reside in the
             // first counter column, resulting in unavoidable bank conflicts.)
             int counter_lane = (linear_tid & (COUNTER_LANES - 1));
             int sub_counter = linear_tid >> (LOG_COUNTER_LANES);
-            digit_prefixes[linear_tid + 1] = temp_storage.digit_counters[counter_lane + 1][0][sub_counter];
+            inclusive_digit_prefix = temp_storage.digit_counters[counter_lane + 1][0][sub_counter];
         }
     }
 };

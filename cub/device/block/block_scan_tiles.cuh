@@ -383,13 +383,11 @@ struct BlockScanTiles
         }
 #endif
 
-
-
     }
 
 
     //---------------------------------------------------------------------
-    // Segment scan
+    // Even-share scan
     //---------------------------------------------------------------------
 
     /**
@@ -436,7 +434,7 @@ struct BlockScanTiles
 
 
     /**
-     * Scan a consecutive segment of input tiles
+     * Scan a consecutive share of input tiles
      */
     __device__ __forceinline__ void ConsumeTiles(
         SizeT   block_offset,                       ///< [in] Threadblock begin offset (inclusive)
@@ -474,7 +472,7 @@ struct BlockScanTiles
 
 
     /**
-     * Scan a consecutive segment of input tiles, seeded with the specified prefix value
+     * Scan a consecutive share of input tiles, seeded with the specified prefix value
      */
     __device__ __forceinline__ void ConsumeTiles(
         SizeT   block_offset,                       ///< [in] Threadblock begin offset (inclusive)

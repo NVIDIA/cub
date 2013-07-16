@@ -349,6 +349,7 @@ struct BlockRadixSortHistoTiles
 
         // Prevent hoisting
 //        __threadfence_block();
+//        __syncthreads();
 
         // Bucket tile of keys
         Iterate<0, KEYS_PER_THREAD>::BucketKeys(*this, keys);
