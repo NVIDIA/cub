@@ -283,7 +283,7 @@ struct DeviceRadixSort
         typedef BlockRadixSortHistoTilesPolicy <64, 18, LOAD_LDG, RADIX_BITS> UpsweepPolicy;
 
         // ScanPolicy
-        typedef BlockScanTilesPolicy <256, 4, BLOCK_LOAD_VECTORIZE, false, LOAD_DEFAULT, BLOCK_STORE_VECTORIZE, false, BLOCK_SCAN_WARP_SCANS> ScanPolicy;
+        typedef BlockScanTilesPolicy <1024, 4, BLOCK_LOAD_VECTORIZE, false, LOAD_DEFAULT, BLOCK_STORE_VECTORIZE, false, BLOCK_SCAN_RAKING_MEMOIZE> ScanPolicy;
 
         // DownsweepPolicy
         typedef BlockRadixSortScatterTilesPolicy <64, 18, BLOCK_LOAD_DIRECT, LOAD_LDG, false, true, BLOCK_SCAN_WARP_SCANS, RADIX_SORT_SCATTER_TWO_PHASE, cudaSharedMemBankSizeEightByte, RADIX_BITS> DownsweepPolicy;
@@ -296,14 +296,18 @@ struct DeviceRadixSort
     template <typename Key, typename Value, typename SizeT>
     struct TunedPolicies<Key, Value, SizeT, 200>
     {
+        enum {
+            RADIX_BITS = 5,
+        };
+
         // UpsweepPolicy
-        typedef BlockRadixSortHistoTilesPolicy <64, 19, LOAD_DEFAULT, 5> UpsweepPolicy;
+        typedef BlockRadixSortHistoTilesPolicy <64, 18, LOAD_DEFAULT, RADIX_BITS> UpsweepPolicy;
 
         // ScanPolicy
-        typedef BlockScanTilesPolicy <256, 4, BLOCK_LOAD_VECTORIZE, false, LOAD_DEFAULT, BLOCK_STORE_VECTORIZE, false, BLOCK_SCAN_WARP_SCANS> ScanPolicy;
+        typedef BlockScanTilesPolicy <512, 4, BLOCK_LOAD_VECTORIZE, false, LOAD_DEFAULT, BLOCK_STORE_VECTORIZE, false, BLOCK_SCAN_RAKING_MEMOIZE> ScanPolicy;
 
         // DownsweepPolicy
-        typedef BlockRadixSortScatterTilesPolicy <64, 19, BLOCK_LOAD_WARP_TRANSPOSE, LOAD_DEFAULT, false, false, BLOCK_SCAN_WARP_SCANS, RADIX_SORT_SCATTER_TWO_PHASE, cudaSharedMemBankSizeFourByte, 5> DownsweepPolicy;
+        typedef BlockRadixSortScatterTilesPolicy <64, 18, BLOCK_LOAD_WARP_TRANSPOSE, LOAD_DEFAULT, false, false, BLOCK_SCAN_WARP_SCANS, RADIX_SORT_SCATTER_TWO_PHASE, cudaSharedMemBankSizeFourByte, RADIX_BITS> DownsweepPolicy;
 
         enum { SUBSCRIPTION_FACTOR = 4 };
     };
