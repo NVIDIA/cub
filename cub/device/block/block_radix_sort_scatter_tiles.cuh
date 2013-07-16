@@ -41,6 +41,7 @@
 #include "../../block/block_radix_rank.cuh"
 #include "../../block/block_exchange.cuh"
 #include "../../util_type.cuh"
+#include "../../util_ptx.cuh"
 #include "../../util_namespace.cuh"
 
 /// Optional outer namespace(s)
@@ -510,21 +511,33 @@ struct BlockRadixSortScatterTiles
         TwiddleKeys(keys, twiddled_keys, Traits<Key>::TwiddleIn);
 
         // Rank the twiddled keys
+        int inclusive_digit_prefix;
         BlockRadixRank(temp_storage.ranking).RankKeys(
             twiddled_keys,
             ranks,
             current_bit,
-            temp_storage.relative_bin_offsets);
+            inclusive_digit_prefix);
 
         // Update global scatter base offsets for each digit
         if ((BLOCK_THREADS == RADIX_DIGITS) || (threadIdx.x < RADIX_DIGITS))
         {
-            SizeT excl_bin_offset = temp_storage.relative_bin_offsets[threadIdx.x];
-            SizeT incl_bin_offset = temp_storage.relative_bin_offsets[threadIdx.x + 1];
+            int exclusive_digit_prefix;
 
-            bin_offset -= excl_bin_offset;
+            // Get exclusive digit prefix from inclusive prefix
+#if CUB_PTX_ARCH >= 300
+            exclusive_digit_prefix = ShuffleUp(inclusive_digit_prefix, 1);
+            if (threadIdx.x == 0)
+                exclusive_digit_prefix = 0;
+#else
+            volatile int* exchange = reinterpret_cast<int *>(temp_storage.relative_bin_offsets);
+            exchange[threadIdx.x] = 0;
+            exchange[threadIdx.x + 1] = inclusive_digit_prefix;
+            exclusive_digit_prefix = exchange[threadIdx.x];
+#endif
+
+            bin_offset -= exclusive_digit_prefix;
             temp_storage.relative_bin_offsets[threadIdx.x] = bin_offset;
-            bin_offset += incl_bin_offset;
+            bin_offset += inclusive_digit_prefix;
         }
 
         __syncthreads();

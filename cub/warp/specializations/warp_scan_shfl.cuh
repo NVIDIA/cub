@@ -126,32 +126,6 @@ struct WarpScanShfl
     }
 
 
-    /// Generic shuffle-up
-    __device__ __forceinline__ T ShuffleUp(
-        T               input,              ///< [in] The value to broadcast
-        int             src_offset)         ///< [in] The up-offset of the peer to read from
-    {
-        typedef typename WordAlignment<T>::ShuffleWord ShuffleWord;
-
-        const int       WORDS           = (sizeof(T) + sizeof(ShuffleWord) - 1) / sizeof(ShuffleWord);
-        T               output;
-        ShuffleWord     *output_alias   = reinterpret_cast<ShuffleWord *>(&output);
-        ShuffleWord     *input_alias    = reinterpret_cast<ShuffleWord *>(&input);
-
-        #pragma unroll
-        for (int WORD = 0; WORD < WORDS; ++WORD)
-        {
-            unsigned int shuffle_word = input_alias[WORD];
-            asm(
-                "  shfl.up.b32 %0, %1, %2, %3;"
-                : "=r"(shuffle_word) : "r"(shuffle_word), "r"(src_offset), "r"(SHFL_C));
-            output_alias[WORD] = (ShuffleWord) shuffle_word;
-        }
-
-        return output;
-    }
-
-
     //---------------------------------------------------------------------
     // Inclusive operations
     //---------------------------------------------------------------------
