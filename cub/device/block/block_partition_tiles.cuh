@@ -28,7 +28,7 @@
 
 /**
  * \file
- * cub::BlockPivotTiles implements a stateful abstraction of CUDA thread blocks for participating in device-wide pivot.
+ * cub::BlockPartitionTiles implements a stateful abstraction of CUDA thread blocks for participating in device-wide list partitioning.
  */
 
 #pragma once
@@ -36,6 +36,7 @@
 #include <iterator>
 
 #include "scan_tiles_types.cuh"
+#include "../../thread/thread_operators.cuh"
 #include "../../block/block_load.cuh"
 #include "../../block/block_store.cuh"
 #include "../../block/block_scan.cuh"
@@ -54,17 +55,19 @@ namespace cub {
  ******************************************************************************/
 
 /**
- * Tuning policy for BlockPivotTiles
+ * Tuning policy for BlockPartitionTiles
  */
 template <
+    int                         _PARTITIONS,
     int                         _BLOCK_THREADS,
     int                         _ITEMS_PER_THREAD,
     PtxLoadModifier             _LOAD_MODIFIER,
     BlockScanAlgorithm          _SCAN_ALGORITHM>
-struct BlockPivotTilesPolicy
+struct BlockPartitionTilesPolicy
 {
     enum
     {
+        PARTITIONS              = _PARTITIONS,
         BLOCK_THREADS           = _BLOCK_THREADS,
         ITEMS_PER_THREAD        = _ITEMS_PER_THREAD,
     };
@@ -74,74 +77,138 @@ struct BlockPivotTilesPolicy
 };
 
 
+
+/**
+ * Tuple type for scanning partition membership flags
+ */
+template <
+    typename    SizeT,
+    int         PARTITIONS>
+struct PartitionScanTuple;
+
+
+/**
+ * Tuple type for scanning partition membership flags (specialized for 1 output partition)
+ */
+template <typename SizeT>
+struct PartitionScanTuple<SizeT, 1> : VectorHelper<SizeT, 1>::Type
+{
+    __device__ __forceinline__ PartitionScanTuple operator+(const PartitionScanTuple &a, const PartitionScanTuple &b)
+    {
+        PartitionScanTuple retval;
+        retval.x = a.x + b.x;
+        return retval;
+    }
+
+    template <typename PredicateOp, typename T>
+    __device__ __forceinline__ void SetFlags(PredicateOp pred_op, T val)
+    {
+        this->x = pred_op(val);
+    }
+
+    template <typename PredicateOp, typename T, typename OutputIteratorRA, SizeT num_items>
+    __device__ __forceinline__ void Scatter(PredicateOp pred_op, T val, OutputIteratorRA d_out, SizeT num_items)
+    {
+        if (pred_op(val))
+            d_out[this->x - 1] = val;
+    }
+
+};
+
+
+/**
+ * Tuple type for scanning partition membership flags (specialized for 2 output partitions)
+ */
+template <typename SizeT>
+struct PartitionScanTuple<SizeT, 2> : VectorHelper<SizeT, 2>::Type
+{
+    __device__ __forceinline__ PartitionScanTuple operator+(const PartitionScanTuple &a, const PartitionScanTuple &b)
+    {
+        PartitionScanTuple retval;
+        retval.x = a.x + b.x;
+        retval.y = a.y + b.y;
+        return retval;
+    }
+
+    template <typename PredicateOp, typename T>
+    __device__ __forceinline__ void SetFlags(PredicateOp pred_op, T val)
+    {
+        bool pred = pred_op(val);
+        this->x = pred;
+        this->y = !pred;
+    }
+
+    template <typename PredicateOp, typename T, typename OutputIteratorRA, SizeT num_items>
+    __device__ __forceinline__ void Scatter(PredicateOp pred_op, T val, OutputIteratorRA d_out, SizeT num_items)
+    {
+        SizeT scatter_offset = (pred_op(val)) ?
+            this->x - 1 :
+            num_items - this->y;
+
+        d_out[scatter_offset] = val;
+    }
+};
+
+
+
+
 /******************************************************************************
  * Thread block abstractions
  ******************************************************************************/
 
 /**
- * \brief BlockPivotTiles implements a stateful abstraction of CUDA thread blocks for participating in device-wide pivot.
+ * \brief BlockPartitionTiles implements a stateful abstraction of CUDA thread blocks for participating in device-wide list partitioning.
  *
  * Implements a single-pass "domino" strategy with adaptive prefix lookback.
  */
 template <
-    typename BlockPivotTilesPolicy,     ///< Tuning policy
+    typename BlockPartitionTilesPolicy, ///< Tuning policy
     typename InputIteratorRA,           ///< Input iterator type
     typename OutputIteratorRA,          ///< Output iterator type
-    typename PredicateOp,               ///< Pivot predicate functor type
+    typename PredicateOp,               ///< Partition predicate functor type
     typename SizeT>                     ///< Offset integer type
-struct BlockPivotTiles
+struct BlockPartitionTiles
 {
     //---------------------------------------------------------------------
     // Types and constants
     //---------------------------------------------------------------------
 
-    // Data type of input iterator
-    typedef typename std::iterator_traits<InputIteratorRA>::value_type T;
-
-    // Scan data type (pair of SizeT: first is offset from beginning, second is offset from end)
-    typedef typename VectorHelper<SizeT, 2>::Type ScanTuple;
-
     // Constants
     enum
     {
-        BLOCK_THREADS       = BlockPivotTilesPolicy::BLOCK_THREADS,
-        ITEMS_PER_THREAD    = BlockPivotTilesPolicy::ITEMS_PER_THREAD,
+        PARTITIONS          = BlockPartitionTilesPolicy::PARTITIONS,
+        BLOCK_THREADS       = BlockPartitionTilesPolicy::BLOCK_THREADS,
+        ITEMS_PER_THREAD    = BlockPartitionTilesPolicy::ITEMS_PER_THREAD,
         TILE_ITEMS          = BLOCK_THREADS * ITEMS_PER_THREAD,
     };
 
     // Load modifier
-    static const PtxLoadModifier LOAD_MODIFIER = BlockPivotTilesPolicy::LOAD_MODIFIER;
+    static const PtxLoadModifier LOAD_MODIFIER = BlockPartitionTilesPolicy::LOAD_MODIFIER;
 
-    // Device tile status descriptor type
-    typedef ScanTileDescriptor<ScanTuple> ScanTileDescriptorT;
+    // Data type of input iterator
+    typedef typename std::iterator_traits<InputIteratorRA>::value_type T;
 
-    // Block scan type
+    // Tuple type for scanning partition membership flags
+    typedef PartitionScanTuple<SizeT, PARTITIONS> PartitionScanTuple;
+
+    // Tile status descriptor type
+    typedef ScanTileDescriptor<PartitionScanTuple> ScanTileDescriptorT;
+
+    // Block scan type for scanning membership flag scan_tuples
     typedef BlockScan<
-        ScanTuple,
-        BlockPivotTilesPolicy::BLOCK_THREADS,
-        BlockPivotTilesPolicy::SCAN_ALGORITHM> BlockScanT;
+        PartitionScanTuple,
+        BlockPartitionTilesPolicy::BLOCK_THREADS,
+        BlockPartitionTilesPolicy::SCAN_ALGORITHM> BlockScanT;
 
-    // Scan functor
-    struct ScanOp
-    {
-        __device__ __forceinline__ ScanTuple operator()(const ScanTuple &a, const ScanTuple &b)
-        {
-            ScanTuple retval;
-            retval.x = a.x + b.x;
-            retval.y = a.y + b.y;
-            return retval;
-        }
-    };
-
-    // Device scan prefix callback type for inter-block scans
-    typedef DeviceScanBlockPrefixOp<ScanTuple, ScanOp> InterblockPrefixOp;
+    // Callback type for obtaining inter-tile prefix during block scan
+    typedef DeviceScanBlockPrefixOp<PartitionScanTuple, Sum> InterblockPrefixOp;
 
     // Shared memory type for this threadblock
     struct TempStorage
     {
         typename InterblockPrefixOp::TempStorage    prefix;         // Smem needed for cooperative prefix callback
         typename BlockScanT::TempStorage            scan;           // Smem needed for tile scanning
-        SizeT                                       tile_idx;           // Shared tile index
+        SizeT                                       tile_idx;       // Shared tile index
     };
 
 
@@ -153,7 +220,7 @@ struct BlockPivotTiles
     InputIteratorRA             d_in;               ///< Input data
     OutputIteratorRA            d_out;              ///< Output data
     ScanTileDescriptorT         *d_tile_status;     ///< Global list of tile status
-    PredicateOp                 pred_op;            ///< Binary scan operator
+    PredicateOp                 pred_op;            ///< Unary predicate operator indicating membership in the first partition
     SizeT                       num_items;          ///< Total number of input items
 
 
@@ -163,13 +230,13 @@ struct BlockPivotTiles
 
     // Constructor
     __device__ __forceinline__
-    BlockPivotTiles(
+    BlockPartitionTiles(
         TempStorage                 &temp_storage,      ///< Reference to temp_storage
         InputIteratorRA             d_in,               ///< Input data
         OutputIteratorRA            d_out,              ///< Output data
         ScanTileDescriptorT         *d_tile_status,     ///< Global list of tile status
-        PredicateOp                 pred_op,            ///< Binary scan operator
-        SizeT                       num_items)
+        PredicateOp                 pred_op,            ///< Unary predicate operator indicating membership in the first partition
+        SizeT                       num_items)          ///< Total number of input items
     :
         temp_storage(temp_storage),
         d_in(d_in),
@@ -189,12 +256,12 @@ struct BlockPivotTiles
      */
     template <bool FULL_TILE>
     __device__ __forceinline__ void ConsumeTile(
-        int         tile_idx,           ///< Tile index
-        SizeT       block_offset,       ///< Tile offset
-        ScanTuple   &running_total)     ///< Running total
+        int                 tile_idx,           ///< Tile index
+        SizeT               block_offset,       ///< Tile offset
+        PartitionScanTuple  &partition_ends)    ///< Running total
     {
-        T           items[ITEMS_PER_THREAD];
-        ScanTuple   tuples[ITEMS_PER_THREAD];
+        T                   items[ITEMS_PER_THREAD];
+        PartitionScanTuple  scan_tuples[ITEMS_PER_THREAD];
 
         // Load items
         int valid_items = num_items - block_offset;
@@ -207,20 +274,19 @@ struct BlockPivotTiles
 //        __syncthreads();
 //        __threadfence_block();
 
-        // Apply predicate to form scan tuples
+        // Set partition membership flags in scan scan_tuples
         #pragma unroll
         for (int ITEM = 0; ITEM < ITEMS_PER_THREAD; ++ITEM)
         {
-            tuples[ITEM].x = pred_op(items[ITEM]);
-            tuples[ITEM].y = !tuples[ITEM].x;
+            scan_tuples[ITEM].SetFlags(pred_op, items[ITEM]);
         }
 
-        // Perform inclusive scan over scan tuples
-        ScanTuple block_aggregate;
+        // Perform inclusive scan over scan scan_tuples
+        PartitionScanTuple block_aggregate;
         if (tile_idx == 0)
         {
-            BlockScanT(temp_storage.scan).InclusiveScan(tuples, tuples, ScanOp(), block_aggregate);
-            running_total = block_aggregate;
+            BlockScanT(temp_storage.scan).InclusiveScan(scan_tuples, scan_tuples, Sum(), block_aggregate);
+            partition_ends = block_aggregate;
 
             // Update tile status if there are successor tiles
             if (FULL_TILE && (threadIdx.x == 0))
@@ -228,9 +294,9 @@ struct BlockPivotTiles
         }
         else
         {
-            InterblockPrefixOp prefix_op(d_tile_status, temp_storage.prefix, ScanOp(), tile_idx);
-            BlockScanT(temp_storage.scan).InclusiveScan(tuples, tuples, ScanOp(), block_aggregate, prefix_op);
-            running_total = prefix_op.inclusive_prefix;
+            InterblockPrefixOp prefix_op(d_tile_status, temp_storage.prefix, Sum(), tile_idx);
+            BlockScanT(temp_storage.scan).InclusiveScan(scan_tuples, scan_tuples, Sum(), block_aggregate, prefix_op);
+            partition_ends = prefix_op.inclusive_prefix;
         }
 
         // Scatter items
@@ -240,11 +306,7 @@ struct BlockPivotTiles
             // Scatter if not out-of-bounds
             if (FULL_TILE || (threadIdx.x + (ITEM * BLOCK_THREADS) < valid_items))
             {
-                SizeT scatter_offset = (pred_op(items[ITEM])) ?
-                    tuples[ITEM].x - 1 :
-                    num_items - tuples[ITEM];
-
-                d_out[scatter_offset] = items[ITEM];
+                scan_tuples[ITEM].Scatter(pred_op, items[ITEM], d_out, num_items);
             }
         }
     }
@@ -254,8 +316,10 @@ struct BlockPivotTiles
      * Dequeue and scan tiles of items as part of a domino scan
      */
     __device__ __forceinline__ void ConsumeTiles(
-        GridQueue<int>          queue,              ///< Queue descriptor for assigning tiles of work to thread blocks
-        ScanTuple               &running_total)     ///< Running total
+        GridQueue<int>      queue,              ///< [in] Queue descriptor for assigning tiles of work to thread blocks
+        SizeT               num_tiles,          ///< [in] Total number of input tiles
+        PartitionScanTuple  &partition_ends,    ///< [out] Running partition end offsets
+        bool                &is_last_tile)      ///< [out] Whether or not this block handled the last tile (i.e., partition_ends is valid for the entire input)
     {
 #if CUB_PTX_ARCH < 200
 
@@ -265,12 +329,13 @@ struct BlockPivotTiles
 
         if (block_offset + TILE_ITEMS <= num_items)
         {
-            ConsumeTile<true>(tile_idx, block_offset, running_total);
+            ConsumeTile<true>(tile_idx, block_offset, partition_ends);
         }
         else if (block_offset < num_items)
         {
-            ConsumeTile<false>(tile_idx, block_offset, running_total);
+            ConsumeTile<false>(tile_idx, block_offset, partition_ends);
         }
+        is_last_tile = (tile_idx == num_tiles - 1);
 
 #else
 
@@ -286,7 +351,8 @@ struct BlockPivotTiles
         while (block_offset + TILE_ITEMS <= num_items)
         {
             // Consume full tile
-            ConsumeTile<true>(tile_idx, block_offset, running_total);
+            ConsumeTile<true>(tile_idx, block_offset, partition_ends);
+            is_last_tile = (tile_idx == num_tiles - 1);
 
             // Get next tile
             if (threadIdx.x == 0)
@@ -301,7 +367,8 @@ struct BlockPivotTiles
         // Consume a partially-full tile
         if (block_offset < num_items)
         {
-            ConsumeTile<false>(tile_idx, block_offset, running_total);
+            ConsumeTile<false>(tile_idx, block_offset, partition_ends);
+            is_last_tile = (tile_idx == num_tiles - 1);
         }
 #endif
     }

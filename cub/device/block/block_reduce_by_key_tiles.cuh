@@ -174,7 +174,7 @@ struct BlockReduceByKeyiles
     // Scan tuple type
     typedef ReduceByKeyuple<Value, SizeT>                      ScanTuple;
 
-    // Device tile status descriptor type
+    // Tile status descriptor type
     typedef ScanTileDescriptor<ScanTuple>                 ScanTileDescriptorT;
 
     // Block scan functor type
@@ -217,7 +217,7 @@ struct BlockReduceByKeyiles
     KeyOutputIteratorRA         d_keys_out;         ///< Key output data
     ValueInputIteratorRA        d_values_in;        ///< Value input data
     ValueOutputIteratorRA       d_values_out;       ///< Value output data
-    ScanTileDescriptorT       *d_tile_status;     ///< Global list of tile status
+    ScanTileDescriptorT         *d_tile_status;     ///< Global list of tile status
     ScanOp                      scan_op;            ///< Binary scan operator
     int                         num_tiles;          ///< Total number of input tiles for the entire problem
     SizeT                       num_items;          ///< Total number of scan items for the entire problem
