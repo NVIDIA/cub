@@ -210,7 +210,7 @@ struct DeviceScanBlockPrefixOp
     // Storage type
     typedef typename WarpReduceT::TempStorage   TempStorage;
 
-    // Device tile status descriptor type
+    // Tile status descriptor type
     typedef ScanTileDescriptor<T>               ScanTileDescriptorT;
 
     // Fields

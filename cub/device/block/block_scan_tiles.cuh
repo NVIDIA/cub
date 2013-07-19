@@ -133,7 +133,7 @@ struct BlockScanTiles
         STORE_DEFAULT,
         BlockScanTilesPolicy::STORE_WARP_TIME_SLICING>  BlockStoreT;
 
-    // Device tile status descriptor type
+    // Tile status descriptor type
     typedef ScanTileDescriptor<T>                 ScanTileDescriptorT;
 
     // Block scan type
@@ -142,7 +142,7 @@ struct BlockScanTiles
         BlockScanTilesPolicy::BLOCK_THREADS,
         BlockScanTilesPolicy::SCAN_ALGORITHM> BlockScanT;
 
-    // Device scan prefix callback type for inter-block scans
+    // Callback type for obtaining inter-tile prefix during block scan
     typedef DeviceScanBlockPrefixOp<T, ScanOp> InterblockPrefixOp;
 
     // Shared memory type for this threadblock
