@@ -280,7 +280,7 @@ struct DeviceHisto
     };
 
 
-    /// Tuning policy(ies) for the PTX architecture that DeviceHisto operations will get dispatched to
+    /// Tuning policy for the PTX architecture that DeviceHisto operations will get dispatched to
     template <
         int                         CHANNELS,
         int                         ACTIVE_CHANNELS,

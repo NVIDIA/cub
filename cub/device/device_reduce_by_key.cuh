@@ -211,7 +211,7 @@ struct DeviceReduceByKey
     };
 
 
-    /// Tuning policy(ies) for the PTX architecture that DeviceReduceByKey operations will get dispatched to
+    /// Tuning policy for the PTX architecture that DeviceReduceByKey operations will get dispatched to
     template <typename T, typename SizeT>
     struct PtxDefaultPolicies
     {

@@ -318,7 +318,7 @@ struct DeviceRadixSort
      * Default policy initializer
      ******************************************************************************/
 
-    /// Tuning policy(ies) for the PTX architecture that DeviceRadixSort operations will get dispatched to
+    /// Tuning policy for the PTX architecture that DeviceRadixSort operations will get dispatched to
     template <typename Key, typename Value, typename SizeT>
     struct PtxDefaultPolicies
     {

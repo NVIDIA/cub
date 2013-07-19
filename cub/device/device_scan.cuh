@@ -66,7 +66,7 @@ template <
     typename SizeT>                                 ///< Integer type used for global array indexing
 __global__ void ScanInitKernel(
     GridQueue<SizeT>            grid_queue,         ///< [in] Descriptor for performing dynamic mapping of input tiles to thread blocks
-    ScanTileDescriptor<T> *d_tile_status,     ///< [out] Tile status words
+    ScanTileDescriptor<T>       *d_tile_status,     ///< [out] Tile status words
     int                         num_tiles)          ///< [in] Number of tiles
 {
     typedef ScanTileDescriptor<T> ScanTileDescriptorT;
@@ -110,7 +110,7 @@ __launch_bounds__ (int(BlockScanTilesPolicy::BLOCK_THREADS))
 __global__ void ScanKernel(
     InputIteratorRA             d_in,           ///< Input data
     OutputIteratorRA            d_out,          ///< Output data
-    ScanTileDescriptor<T> *d_tile_status, ///< Global list of tile status
+    ScanTileDescriptor<T>       *d_tile_status, ///< Global list of tile status
     ScanOp                      scan_op,        ///< Binary scan operator
     Identity                    identity,       ///< Identity element
     SizeT                       num_items,      ///< Total number of scan items for the entire problem
@@ -267,7 +267,7 @@ struct DeviceScan
     };
 
 
-    /// Tuning policy(ies) for the PTX architecture that DeviceScan operations will get dispatched to
+    /// Tuning policy for the PTX architecture that DeviceScan operations will get dispatched to
     template <typename T, typename SizeT>
     struct PtxDefaultPolicies
     {
@@ -355,7 +355,8 @@ struct DeviceScan
 
         enum
         {
-            TILE_STATUS_PADDING = 32,
+            TILE_STATUS_PADDING     = 32,
+            INIT_KERNEL_THREADS     = 128
         };
 
         // Data type
@@ -375,7 +376,7 @@ struct DeviceScan
             size_t allocation_sizes[2] =
             {
                 (num_tiles + TILE_STATUS_PADDING) * sizeof(ScanTileDescriptorT),      // bytes needed for tile status descriptors
-                GridQueue<int>::AllocationSize()                                            // bytes needed for grid queue descriptor
+                GridQueue<int>::AllocationSize()                                      // bytes needed for grid queue descriptor
             };
 
             // Alias temporaries (or set the necessary size of the storage allocation)
@@ -392,12 +393,11 @@ struct DeviceScan
             GridQueue<int> queue(allocations[1]);
 
             // Log init_kernel configuration
-            int init_kernel_threads = 128;
-            int init_grid_size = (num_tiles + init_kernel_threads - 1) / init_kernel_threads;
-            if (stream_synchronous) CubLog("Invoking init_kernel<<<%d, %d, 0, %lld>>>()\n", init_grid_size, init_kernel_threads, (long long) stream);
+            int init_grid_size = (num_tiles + INIT_KERNEL_THREADS - 1) / INIT_KERNEL_THREADS;
+            if (stream_synchronous) CubLog("Invoking init_kernel<<<%d, %d, 0, %lld>>>()\n", init_grid_size, INIT_KERNEL_THREADS, (long long) stream);
 
             // Invoke init_kernel to initialize tile descriptors and queue descriptors
-            init_kernel<<<init_grid_size, init_kernel_threads, 0, stream>>>(
+            init_kernel<<<init_grid_size, INIT_KERNEL_THREADS, 0, stream>>>(
                 queue,
                 d_tile_status,
                 num_tiles);

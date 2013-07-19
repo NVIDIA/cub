@@ -314,7 +314,7 @@ struct DeviceReduce
      * Default policy initializer
      ******************************************************************************/
 
-    /// Tuning policy(ies) for the PTX architecture that DeviceReduce operations will get dispatched to
+    /// Tuning policy for the PTX architecture that DeviceReduce operations will get dispatched to
     template <typename T, typename SizeT>
     struct PtxDefaultPolicies
     {
