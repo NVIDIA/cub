@@ -27,11 +27,11 @@
  ******************************************************************************/
 
 /******************************************************************************
- * Simple demonstration of cub::BlockScan
+ * Simple demonstration of cub::BlockReduce
  *
  * Example compilation string:
  *
- * nvcc example_block_scan_sum.cu -gencode=arch=compute_20,code=\"sm_20,compute_20\" -o example_block_scan_sum
+ * nvcc example_block_reduce.cu -gencode=arch=compute_20,code=\"sm_20,compute_20\" -o example_block_reduce
  *
  ******************************************************************************/
 
@@ -70,29 +70,29 @@ int g_grid_size = 1;
  * Simple kernel for performing a block-wide exclusive prefix sum over integers
  */
 template <
-    int         BLOCK_THREADS,
-    int         ITEMS_PER_THREAD>
-__global__ void BlockPrefixSumKernel(
+    int                     BLOCK_THREADS,
+    int                     ITEMS_PER_THREAD,
+    BlockReduceAlgorithm    ALGORITHM>
+__global__ void BlockSumKernel(
     int         *d_in,          // Tile of input
-    int         *d_out,         // Tile of output
-    clock_t     *d_elapsed)     // Elapsed cycle count of block scan
+    int         *d_out,         // Tile aggregate
+    clock_t     *d_elapsed)     // Elapsed cycle count of block reduction
 {
-    // Parameterize BlockScan type for our thread block
-    typedef BlockScan<int, BLOCK_THREADS> BlockScanT;
+    // Parameterize BlockReduce type for our thread block
+    typedef BlockReduce<int, BLOCK_THREADS, ALGORITHM> BlockReduceT;
 
     // Shared memory
-    __shared__ typename BlockScanT::TempStorage temp_storage;
+    __shared__ typename BlockReduceT::TempStorage temp_storage;
 
     // Per-thread tile data
     int data[ITEMS_PER_THREAD];
-    LoadBlockedVectorized<LOAD_DEFAULT>(threadIdx.x, d_in, data);
+    LoadStriped<LOAD_DEFAULT, BLOCK_THREADS>(threadIdx.x, d_in, data);
 
     // Start cycle timer
     clock_t start = clock();
 
-    // Compute exclusive prefix sum
-    int aggregate;
-    BlockScanT(temp_storage).ExclusiveSum(data, data, aggregate);
+    // Compute sum
+    int aggregate = BlockReduceT(temp_storage).Sum(data);
 
     // Stop cycle timer
     clock_t stop = clock();
@@ -104,7 +104,7 @@ __global__ void BlockPrefixSumKernel(
     if (threadIdx.x == 0)
     {
         *d_elapsed = (start > stop) ? start - stop : stop - start;
-        d_out[BLOCK_THREADS * ITEMS_PER_THREAD] = aggregate;
+        *d_out = aggregate;
     }
 }
 
@@ -115,21 +115,16 @@ __global__ void BlockPrefixSumKernel(
 //---------------------------------------------------------------------
 
 /**
- * Initialize exclusive prefix sum problem (and solution).
+ * Initialize reduction problem (and solution).
  * Returns the aggregate
  */
-int Initialize(
-    int *h_in,
-    int *h_reference,
-    int num_items)
+int Initialize(int *h_in, int num_items)
 {
     int inclusive = 0;
 
     for (int i = 0; i < num_items; ++i)
     {
         h_in[i] = i % 17;
-
-        h_reference[i] = inclusive;
         inclusive += h_in[i];
     }
 
@@ -138,29 +133,29 @@ int Initialize(
 
 
 /**
- * Test thread block scan
+ * Test thread block reduction
  */
 template <
-    int BLOCK_THREADS,
-    int ITEMS_PER_THREAD>
+    int                     BLOCK_THREADS,
+    int                     ITEMS_PER_THREAD,
+    BlockReduceAlgorithm    ALGORITHM>
 void Test()
 {
     const int TILE_SIZE = BLOCK_THREADS * ITEMS_PER_THREAD;
 
     // Allocate host arrays
     int *h_in           = new int[TILE_SIZE];
-    int *h_reference    = new int[TILE_SIZE];
     int *h_gpu          = new int[TILE_SIZE + 1];
 
     // Initialize problem and reference output on host
-    int h_aggregate = Initialize(h_in, h_reference, TILE_SIZE);
+    int h_aggregate = Initialize(h_in, TILE_SIZE);
 
     // Initialize device arrays
     int *d_in           = NULL;
     int *d_out          = NULL;
     clock_t *d_elapsed  = NULL;
     cudaMalloc((void**)&d_in,          sizeof(int) * TILE_SIZE);
-    cudaMalloc((void**)&d_out,         sizeof(int) * (TILE_SIZE + 1));
+    cudaMalloc((void**)&d_out,         sizeof(int) * 1);
     cudaMalloc((void**)&d_elapsed,     sizeof(clock_t));
 
     // Display input problem data
@@ -176,29 +171,23 @@ void Test()
     Device device;
     int max_sm_occupancy;
     CubDebugExit(device.Init());
-    CubDebugExit(device.MaxSmOccupancy(max_sm_occupancy, BlockPrefixSumKernel<BLOCK_THREADS, ITEMS_PER_THREAD>, BLOCK_THREADS));
+    CubDebugExit(device.MaxSmOccupancy(max_sm_occupancy, BlockSumKernel<BLOCK_THREADS, ITEMS_PER_THREAD, ALGORITHM>, BLOCK_THREADS));
 
     // Copy problem to device
     cudaMemcpy(d_in, h_in, sizeof(int) * TILE_SIZE, cudaMemcpyHostToDevice);
 
-    printf("BlockScan %d items (%d timing iterations, %d blocks, %d threads, %d items per thread, %d SM occupancy):\n",
+    printf("BlockReduce %d items (%d timing iterations, %d blocks, %d threads, %d items per thread, %d SM occupancy):\n",
         TILE_SIZE, g_iterations, g_grid_size, BLOCK_THREADS, ITEMS_PER_THREAD, max_sm_occupancy);
 
     // Run aggregate/prefix kernel
-    BlockPrefixSumKernel<BLOCK_THREADS, ITEMS_PER_THREAD><<<g_grid_size, BLOCK_THREADS>>>(
+    BlockSumKernel<BLOCK_THREADS, ITEMS_PER_THREAD, ALGORITHM><<<g_grid_size, BLOCK_THREADS>>>(
         d_in,
         d_out,
         d_elapsed);
 
-    // Check results
-    printf("\tOutput items: ");
-    int compare = CompareDeviceResults(h_reference, d_out, TILE_SIZE, g_verbose, g_verbose);
-    printf("%s\n", compare ? "FAIL" : "PASS");
-    AssertEquals(0, compare);
-
     // Check total aggregate
     printf("\tAggregate: ");
-    compare = CompareDeviceResults(&h_aggregate, d_out + TILE_SIZE, 1, g_verbose, g_verbose);
+    int compare = CompareDeviceResults(&h_aggregate, d_out, 1, g_verbose, g_verbose);
     printf("%s\n", compare ? "FAIL" : "PASS");
     AssertEquals(0, compare);
 
@@ -215,7 +204,7 @@ void Test()
         timer.Start();
 
         // Run aggregate/prefix kernel
-        BlockPrefixSumKernel<BLOCK_THREADS, ITEMS_PER_THREAD><<<g_grid_size, BLOCK_THREADS>>>(
+        BlockSumKernel<BLOCK_THREADS, ITEMS_PER_THREAD, ALGORITHM><<<g_grid_size, BLOCK_THREADS>>>(
             d_in,
             d_out,
             d_elapsed);
@@ -239,14 +228,13 @@ void Test()
     float avg_clocks            = float(elapsed_clocks) / g_iterations;
     float avg_clocks_per_item   = avg_clocks / TILE_SIZE;
 
-    printf("\tAverage BlockScan::Sum clocks: %.3f\n", avg_clocks);
-    printf("\tAverage BlockScan::Sum clocks per item: %.3f\n", avg_clocks_per_item);
+    printf("\tAverage BlockReduce::Sum clocks: %.3f\n", avg_clocks);
+    printf("\tAverage BlockReduce::Sum clocks per item: %.3f\n", avg_clocks_per_item);
     printf("\tAverage kernel millis: %.4f\n", avg_millis);
     printf("\tAverage million items / sec: %.4f\n", avg_items_per_sec);
 
     // Cleanup
     if (h_in) delete[] h_in;
-    if (h_reference) delete[] h_reference;
     if (h_gpu) delete[] h_gpu;
     if (d_in) cudaFree(d_in);
     if (d_out) cudaFree(d_out);
@@ -270,10 +258,10 @@ int main(int argc, char** argv)
     {
         printf("%s "
             "[--device=<device-id>] "
-            "[--i=<timing iterations (default:%d)>]"
-            "[--grid-size=<grid size (default:%d)>]"
+            "[--i=<timing iterations>] "
+            "[--grid-size=<grid size>] "
             "[--v] "
-            "\n", argv[0], g_iterations, g_grid_size);
+            "\n", argv[0]);
         exit(0);
     }
 
@@ -284,13 +272,13 @@ int main(int argc, char** argv)
 /** Add tests here **/
 
     // Run tests
-    Test<1024, 1>();
-    Test<512, 2>();
-    Test<256, 4>();
-    Test<128, 8>();
-    Test<64, 16>();
-    Test<32, 32>();
-    Test<16, 64>();
+    Test<1024, 1, BLOCK_REDUCE_RAKING>();
+    Test<512, 2, BLOCK_REDUCE_RAKING>();
+    Test<256, 4, BLOCK_REDUCE_RAKING>();
+    Test<128, 8, BLOCK_REDUCE_RAKING>();
+    Test<64, 16, BLOCK_REDUCE_RAKING>();
+    Test<32, 32, BLOCK_REDUCE_RAKING>();
+    Test<16, 64, BLOCK_REDUCE_RAKING>();
 
 /****/
 
