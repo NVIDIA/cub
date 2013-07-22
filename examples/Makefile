@@ -193,6 +193,17 @@ clean :
 
 
 #-------------------------------------------------------------------------------
+# make example_block_reduce
+#-------------------------------------------------------------------------------
+
+example_block_reduce: bin/example_block_reduce_$(SUFFIX)
+
+bin/example_block_reduce_$(SUFFIX) : example_block_reduce.cu $(DEPS)
+	mkdir -p bin
+	$(NVCC) $(DEFINES) $(SM_TARGETS) -o bin/example_block_reduce_$(SUFFIX) example_block_reduce.cu $(NVCCFLAGS) $(CPU_ARCH) $(INC) $(LIBS) -O3
+
+
+#-------------------------------------------------------------------------------
 # make example_block_scan_sum
 #-------------------------------------------------------------------------------
 
