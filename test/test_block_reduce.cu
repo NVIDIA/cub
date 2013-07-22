@@ -266,7 +266,7 @@ void TestFullTile(
     // Initialize problem
     Initialize(gen_mode, h_in, h_reference, reduction_op, num_elements);
 
-    // Initialize device arrays
+    // Initialize/clear device arrays
     T *d_in = NULL;
     T *d_out = NULL;
     CubDebugExit(g_allocator.DeviceAllocate((void**)&d_in, sizeof(T) * num_elements));
@@ -371,7 +371,7 @@ void TestPartialTile(
     // Initialize problem
     Initialize(gen_mode, h_in, h_reference, reduction_op, num_elements);
 
-    // Initialize device arrays
+    // Initialize/clear device arrays
     T *d_in = NULL;
     T *d_out = NULL;
     CubDebugExit(g_allocator.DeviceAllocate((void**)&d_in, sizeof(T) * TILE_SIZE));

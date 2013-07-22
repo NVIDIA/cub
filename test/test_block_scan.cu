@@ -489,7 +489,7 @@ void Test(
         (int) sizeof(T));
     fflush(stdout);
 
-    // Initialize device arrays
+    // Initialize/clear device arrays
     T       *d_in = NULL;
     T       *d_out = NULL;
     T       *d_aggregate = NULL;

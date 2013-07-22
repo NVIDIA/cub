@@ -96,6 +96,18 @@ struct BlockRadixSortScatterTilesPolicy
     static const BlockScanAlgorithm         INNER_SCAN_ALGORITHM    = _INNER_SCAN_ALGORITHM;
     static const RadixSortScatterAlgorithm  SCATTER_ALGORITHM       = _SCATTER_ALGORITHM;
     static const cudaSharedMemConfig        SMEM_CONFIG             = _SMEM_CONFIG;
+
+    typedef BlockRadixSortScatterTilesPolicy<
+        BLOCK_THREADS,
+        ITEMS_PER_THREAD,
+        LOAD_ALGORITHM,
+        LOAD_MODIFIER,
+        EXCHANGE_TIME_SLICING,
+        MEMOIZE_OUTER_SCAN,
+        INNER_SCAN_ALGORITHM,
+        SCATTER_ALGORITHM,
+        SMEM_CONFIG,
+        CUB_MAX(1, RADIX_BITS - 1)> AltPolicy;
 };
 
 
