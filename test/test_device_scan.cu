@@ -360,7 +360,7 @@ void Test(
     CubDebugExit(Dispatch(Int2Type<CNP>(), 1, d_temp_storage_bytes, d_cnp_error, d_temp_storage, temp_storage_bytes, d_in, d_out, scan_op, identity, num_items, 0, true));
     CubDebugExit(g_allocator.DeviceAllocate(&d_temp_storage, temp_storage_bytes));
 
-    // Initialize device arrays
+    // Initialize/clear device arrays
     CubDebugExit(cudaMemcpy(d_in, h_in, sizeof(T) * num_items, cudaMemcpyHostToDevice));
     CubDebugExit(cudaMemset(d_out, 0, sizeof(T) * num_items));
 

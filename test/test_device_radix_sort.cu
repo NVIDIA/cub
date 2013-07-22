@@ -65,7 +65,6 @@ template <typename Key, typename Value>
 //__host__ __device__ __forceinline__
 cudaError_t Dispatch(
     Int2Type<false>     use_cnp,
-    int                 timing_iterations,
     size_t              *d_temp_storage_bytes,
     cudaError_t         *d_cnp_error,
 
@@ -79,14 +78,7 @@ cudaError_t Dispatch(
     cudaStream_t        stream,
     bool                stream_synchronous)
 {
-    cudaError_t error = cudaSuccess;
-    for (int i = 0; i < timing_iterations; ++i)
-    {
-        // MOOCH
-        d_keys.selector = 0;
-        error = DeviceRadixSort::SortPairs(d_temp_storage, temp_storage_bytes, d_keys, d_values, num_items, begin_bit, end_bit, stream, stream_synchronous);
-    }
-    return error;
+    return DeviceRadixSort::SortPairs(d_temp_storage, temp_storage_bytes, d_keys, d_values, num_items, begin_bit, end_bit, stream, stream_synchronous);
 }
 
 
@@ -99,7 +91,6 @@ cudaError_t Dispatch(
  */
 template <typename Key, typename Value>
 __global__ void CnpDispatchKernel(
-    int                 timing_iterations,
     size_t              *d_temp_storage_bytes,
     cudaError_t         *d_cnp_error,
 
@@ -115,7 +106,7 @@ __global__ void CnpDispatchKernel(
 #ifndef CUB_CNP
     *d_cnp_error = cudaErrorNotSupported;
 #else
-    *d_cnp_error = Dispatch(Int2Type<false>(), timing_iterations, d_temp_storage_bytes, d_cnp_error, d_temp_storage, temp_storage_bytes, d_keys, d_values, num_items, begin_bit, end_bit, 0, stream_synchronous);
+    *d_cnp_error = Dispatch(Int2Type<false>(), d_temp_storage_bytes, d_cnp_error, d_temp_storage, temp_storage_bytes, d_keys, d_values, num_items, begin_bit, end_bit, 0, stream_synchronous);
     *d_temp_storage_bytes = temp_storage_bytes;
 #endif
 }
@@ -127,7 +118,6 @@ __global__ void CnpDispatchKernel(
 template <typename Key, typename Value>
 cudaError_t Dispatch(
     Int2Type<true>      use_cnp,
-    int                 timing_iterations,
     size_t              *d_temp_storage_bytes,
     cudaError_t         *d_cnp_error,
 
@@ -142,7 +132,7 @@ cudaError_t Dispatch(
     bool                stream_synchronous)
 {
     // Invoke kernel to invoke device-side dispatch
-    CnpDispatchKernel<<<1,1>>>(timing_iterations, d_temp_storage_bytes, d_cnp_error, d_temp_storage, temp_storage_bytes, d_keys, d_values, num_items, begin_bit, end_bit, stream_synchronous);
+    CnpDispatchKernel<<<1,1>>>(d_temp_storage_bytes, d_cnp_error, d_temp_storage, temp_storage_bytes, d_keys, d_values, num_items, begin_bit, end_bit, stream_synchronous);
 
     // Copy out temp_storage_bytes
     CubDebugExit(cudaMemcpy(&temp_storage_bytes, d_temp_storage_bytes, sizeof(size_t) * 1, cudaMemcpyDeviceToHost));
@@ -287,23 +277,23 @@ void Test(
         CubDebugExit(g_allocator.DeviceAllocate((void**)&d_values.d_buffers[1], sizeof(Value) * num_items));
     }
 
-    // Initialize device arrays
-    CubDebugExit(cudaMemcpy(d_keys.d_buffers[0], h_keys, sizeof(Key) * num_items, cudaMemcpyHostToDevice));
-    CubDebugExit(cudaMemset(d_keys.d_buffers[1], 0, sizeof(Key) * num_items));
-    if (!KEYS_ONLY)
-    {
-        CubDebugExit(cudaMemcpy(d_values.d_buffers[0], h_values, sizeof(Value) * num_items, cudaMemcpyHostToDevice));
-        CubDebugExit(cudaMemset(d_values.d_buffers[1], 0, sizeof(Value) * num_items));
-    }
-
     // Allocate temporary storage
     size_t  temp_storage_bytes  = 0;
     void    *d_temp_storage     = NULL;
-    CubDebugExit(Dispatch(Int2Type<CNP>(), 1, d_temp_storage_bytes, d_cnp_error, d_temp_storage, temp_storage_bytes, d_keys, d_values, num_items, begin_bit, end_bit, 0, true));
+    CubDebugExit(Dispatch(Int2Type<CNP>(), d_temp_storage_bytes, d_cnp_error, d_temp_storage, temp_storage_bytes, d_keys, d_values, num_items, begin_bit, end_bit, 0, true));
     CubDebugExit(g_allocator.DeviceAllocate(&d_temp_storage, temp_storage_bytes));
 
+    // Initialize/clear device arrays
+    CubDebugExit(cudaMemcpy(d_keys.d_buffers[d_keys.selector], h_keys, sizeof(Key) * num_items, cudaMemcpyHostToDevice));
+    CubDebugExit(cudaMemset(d_keys.d_buffers[d_keys.selector ^ 1], 0, sizeof(Key) * num_items));
+    if (!KEYS_ONLY)
+    {
+        CubDebugExit(cudaMemcpy(d_values.d_buffers[d_values.selector], h_values, sizeof(Value) * num_items, cudaMemcpyHostToDevice));
+        CubDebugExit(cudaMemset(d_values.d_buffers[d_values.selector ^ 1], 0, sizeof(Value) * num_items));
+    }
+
     // Run warmup/correctness iteration
-    CubDebugExit(Dispatch(Int2Type<CNP>(), 1, d_temp_storage_bytes, d_cnp_error, d_temp_storage, temp_storage_bytes, d_keys, d_values, num_items, begin_bit, end_bit, 0, true));
+    CubDebugExit(Dispatch(Int2Type<CNP>(), d_temp_storage_bytes, d_cnp_error, d_temp_storage, temp_storage_bytes, d_keys, d_values, num_items, begin_bit, end_bit, 0, true));
 
     // Check for correctness (and display results, if specified)
     int compare = CompareDeviceResults(h_sorted_keys, d_keys.Current(), num_items, true, g_verbose);
@@ -321,10 +311,23 @@ void Test(
 
     // Performance
     GpuTimer gpu_timer;
-    gpu_timer.Start();
-    CubDebugExit(Dispatch(Int2Type<CNP>(), g_timing_iterations, d_temp_storage_bytes, d_cnp_error, d_temp_storage, temp_storage_bytes, d_keys, d_values, num_items, begin_bit, end_bit, 0, false));
-    gpu_timer.Stop();
-    float elapsed_millis = gpu_timer.ElapsedMillis();
+    float elapsed_millis = 0.0f;
+    for (int i = 0; i < g_timing_iterations; ++i)
+    {
+        // Initialize/clear device arrays
+        CubDebugExit(cudaMemcpy(d_keys.d_buffers[d_keys.selector], h_keys, sizeof(Key) * num_items, cudaMemcpyHostToDevice));
+        CubDebugExit(cudaMemset(d_keys.d_buffers[d_keys.selector ^ 1], 0, sizeof(Key) * num_items));
+        if (!KEYS_ONLY)
+        {
+            CubDebugExit(cudaMemcpy(d_values.d_buffers[d_values.selector], h_values, sizeof(Value) * num_items, cudaMemcpyHostToDevice));
+            CubDebugExit(cudaMemset(d_values.d_buffers[d_values.selector ^ 1], 0, sizeof(Value) * num_items));
+        }
+
+        gpu_timer.Start();
+        CubDebugExit(Dispatch(Int2Type<CNP>(), d_temp_storage_bytes, d_cnp_error, d_temp_storage, temp_storage_bytes, d_keys, d_values, num_items, begin_bit, end_bit, 0, false));
+        gpu_timer.Stop();
+        elapsed_millis += gpu_timer.ElapsedMillis();
+    }
 
     // Display performance
     if (g_timing_iterations > 0)
@@ -377,11 +380,13 @@ int main(int argc, char** argv)
     args.GetCmdLineArgument("n", num_items);
     args.GetCmdLineArgument("i", g_timing_iterations);
     args.GetCmdLineArgument("repeat", g_repeat);
+    args.GetCmdLineArgument("bits", g_bits);
 
     // Print usage
     if (args.CheckCmdLineFlag("help"))
     {
         printf("%s "
+            "[--bits=<valid key bits>]"
             "[--n=<input items> "
             "[--i=<timing iterations> "
             "[--device=<device-id>] "

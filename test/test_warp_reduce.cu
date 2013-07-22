@@ -434,7 +434,7 @@ void TestReduce(
     // Initialize problem
     Initialize(gen_mode, -1, h_in, h_flags, WARPS, LOGICAL_WARP_THREADS, valid_warp_threads, reduction_op, h_out, h_tail_out);
 
-    // Initialize device arrays
+    // Initialize/clear device arrays
     T *d_in = NULL;
     T *d_out = NULL;
     clock_t *d_elapsed = NULL;
@@ -522,7 +522,7 @@ void TestSegmentedReduce(
     // Initialize problem
     Initialize(gen_mode, flag_entropy, h_in, h_flags, WARPS, LOGICAL_WARP_THREADS, LOGICAL_WARP_THREADS, reduction_op, h_head_out, h_tail_out);
 
-    // Initialize device arrays
+    // Initialize/clear device arrays
     T           *d_in = NULL;
     int         *d_flags = NULL;
     T           *d_head_out = NULL;
