@@ -100,21 +100,27 @@ __global__ void BlockSortKernel(
     // Per-thread tile items
     Key items[ITEMS_PER_THREAD];
 
-    // Load items in striped fashion
+    // Our current block's offset
     int block_offset = blockIdx.x * TILE_SIZE;
-    LoadStriped<LOAD_DEFAULT>(d_in + block_offset, items);
+
+    // Load items in blocked fashion
+#if CUB_PTX_ARCH >= 350
+    LoadBlocked<LOAD_LDG>(threadIdx.x, d_in + block_offset, items);
+#else
+    LoadBlockedVectorized<LOAD_DEFAULT>(threadIdx.x, d_in + block_offset, items);
+#endif
 
     // Start cycle timer
     clock_t start = clock();
 
     // Sort keys
-    BlockRadixSortT::SortStriped(temp_storage, items);
+    BlockRadixSortT(temp_storage).SortBlockedToStriped(items);
 
     // Stop cycle timer
     clock_t stop = clock();
 
-    // Store output
-    StoreStriped<STORE_DEFAULT>(d_out + block_offset, items);
+    // Store output in striped fashion
+    StoreStriped<STORE_DEFAULT, BLOCK_THREADS>(threadIdx.x, d_out + block_offset, items);
 
     // Store elapsed clocks
     if (threadIdx.x == 0)
@@ -170,8 +176,8 @@ void Test()
     const int TILE_SIZE = BLOCK_THREADS * ITEMS_PER_THREAD;
 
     // Allocate host arrays
-    Key *h_in           = new Key[TILE_SIZE * g_grid_size];
-    Key *h_reference    = new Key[TILE_SIZE * g_grid_size];
+    Key *h_in               = new Key[TILE_SIZE * g_grid_size];
+    Key *h_reference        = new Key[TILE_SIZE * g_grid_size];
     clock_t *h_elapsed      = new clock_t[g_grid_size];
 
     // Initialize problem and reference output on host
