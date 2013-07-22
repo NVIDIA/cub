@@ -67,6 +67,12 @@ struct BlockRadixSortHistoTilesPolicy
     };
 
     static const PtxLoadModifier LOAD_MODIFIER = _LOAD_MODIFIER;
+
+    typedef BlockRadixSortHistoTilesPolicy<
+        BLOCK_THREADS,
+        ITEMS_PER_THREAD,
+        LOAD_MODIFIER,
+        CUB_MAX(1, RADIX_BITS - 1)> AltPolicy;
 };
 
 

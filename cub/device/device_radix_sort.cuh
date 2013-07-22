@@ -67,7 +67,7 @@ namespace cub {
  */
 template <
     typename                BlockRadixSortHistoTilesPolicy, ///< Tuning policy for cub::BlockRadixSortHistoTiles abstraction
-    typename                Key,                        ///< Key type
+    typename                Key,                            ///< Key type
     typename                SizeT>                          ///< Integer type used for global array indexing
 __launch_bounds__ (int(BlockRadixSortHistoTilesPolicy::BLOCK_THREADS), 1)
 __global__ void RadixSortUpsweepKernel(
@@ -75,33 +75,66 @@ __global__ void RadixSortUpsweepKernel(
     SizeT                   *d_spine,                       ///< [out] Privatized (per block) digit histograms (striped, i.e., 0s counts from each block, then 1s counts from each block, etc.)
     SizeT                   num_items,                      ///< [in] Total number of input data items
     int                     current_bit,                    ///< [in] Bit position of current radix digit
+    bool                    use_primary_bit_granularity,    ///< [in] Whether nor not to use the primary policy (or the embedded alternate policy for smaller bit granularity)
     bool                    first_pass,                     ///< [in] Whether this is the first digit pass
     GridEvenShare<SizeT>    even_share)                     ///< [in] Descriptor for how to map an even-share of tiles across thread blocks
 {
-    enum {
-        RADIX_DIGITS = 1 << BlockRadixSortHistoTilesPolicy::RADIX_BITS,
-    };
+    // Alternate policy for when fewer bits remain
+    typedef typename BlockRadixSortHistoTilesPolicy::AltPolicy AltPolicy;
 
-    // Parameterize the BlockRadixSortHistoTiles type for the current configuration
-    typedef BlockRadixSortHistoTiles<BlockRadixSortHistoTilesPolicy, Key, SizeT> BlockRadixSortHistoTilesT;
+    // Parameterize two versions of BlockRadixSortHistoTiles type for the current configuration
+    typedef BlockRadixSortHistoTiles<BlockRadixSortHistoTilesPolicy, Key, SizeT>    BlockRadixSortHistoTilesT;          // Primary
+    typedef BlockRadixSortHistoTiles<AltPolicy, Key, SizeT>                         AltBlockRadixSortHistoTilesT;       // Alternate (smaller bit granularity)
 
     // Shared memory storage
-    __shared__ typename BlockRadixSortHistoTilesT::TempStorage temp_storage;
+    __shared__ union
+    {
+        typename BlockRadixSortHistoTilesT::TempStorage     pass_storage;
+        typename AltBlockRadixSortHistoTilesT::TempStorage  alt_pass_storage;
+    } temp_storage;
 
     // Initialize even-share descriptor for this thread block
     even_share.BlockInit();
 
-    // Process input tiles (each of the first RADIX_DIGITS threads will compute a count for that digit)
-    SizeT bin_count;
-    BlockRadixSortHistoTilesT(temp_storage, d_keys, current_bit).ProcessTiles(
-        even_share.block_offset,
-        even_share.block_oob,
-        bin_count);
-
-    // Write out digit counts (striped)
-    if (threadIdx.x < RADIX_DIGITS)
+    if (use_primary_bit_granularity)
     {
-        d_spine[(gridDim.x * threadIdx.x) + blockIdx.x] = bin_count;
+        // Primary granularity
+        enum {
+            RADIX_DIGITS = 1 << BlockRadixSortHistoTilesPolicy::RADIX_BITS,
+        };
+
+        // Process input tiles (each of the first RADIX_DIGITS threads will compute a count for that digit)
+        SizeT bin_count;
+        BlockRadixSortHistoTilesT(temp_storage.pass_storage, d_keys, current_bit).ProcessTiles(
+            even_share.block_offset,
+            even_share.block_oob,
+            bin_count);
+
+        // Write out digit counts (striped)
+        if (threadIdx.x < RADIX_DIGITS)
+        {
+            d_spine[(gridDim.x * threadIdx.x) + blockIdx.x] = bin_count;
+        }
+    }
+    else
+    {
+        // Alternate granularity
+        enum {
+            RADIX_DIGITS = 1 << AltPolicy::RADIX_BITS,
+        };
+
+        // Process input tiles (each of the first RADIX_DIGITS threads will compute a count for that digit)
+        SizeT bin_count;
+        AltBlockRadixSortHistoTilesT(temp_storage.alt_pass_storage, d_keys, current_bit).ProcessTiles(
+            even_share.block_offset,
+            even_share.block_oob,
+            bin_count);
+
+        // Write out digit counts (striped)
+        if (threadIdx.x < RADIX_DIGITS)
+        {
+            d_spine[(gridDim.x * threadIdx.x) + blockIdx.x] = bin_count;
+        }
     }
 }
 
@@ -155,35 +188,66 @@ __global__ void RadixSortDownsweepKernel(
     SizeT                   *d_spine,                       ///< [in] Scan of privatized (per block) digit histograms (striped, i.e., 0s counts from each block, then 1s counts from each block, etc.)
     SizeT                   num_items,                      ///< [in] Total number of input data items
     int                     current_bit,                    ///< [in] Bit position of current radix digit
+    bool                    use_primary_bit_granularity,    ///< [in] Whether nor not to use the primary policy (or the embedded alternate policy for smaller bit granularity)
     bool                    first_pass,                     ///< [in] Whether this is the first digit pass
     bool                    last_pass,                      ///< [in] Whether this is the last digit pass
     GridEvenShare<SizeT>    even_share)                     ///< [in] Descriptor for how to map an even-share of tiles across thread blocks
 {
-    enum {
-        RADIX_DIGITS = 1 << BlockRadixSortScatterTilesPolicy::RADIX_BITS,
-    };
+    // Alternate policy for when fewer bits remain
+    typedef typename BlockRadixSortScatterTilesPolicy::AltPolicy AltPolicy;
 
-    // Parameterize the BlockRadixSortScatterTiles type for the current configuration
-    typedef BlockRadixSortScatterTiles<BlockRadixSortScatterTilesPolicy, Key, Value, SizeT> BlockRadixSortScatterTilesT;
+    // Parameterize two versions of BlockRadixSortScatterTiles type for the current configuration
+    typedef BlockRadixSortScatterTiles<BlockRadixSortScatterTilesPolicy, Key, Value, SizeT>     BlockRadixSortScatterTilesT;
+    typedef BlockRadixSortScatterTiles<AltPolicy, Key, Value, SizeT>                            AltBlockRadixSortScatterTilesT;
 
     // Shared memory storage
-    __shared__ typename BlockRadixSortScatterTilesT::TempStorage temp_storage;
+    __shared__ union
+    {
+        typename BlockRadixSortScatterTilesT::TempStorage       pass_storage;
+        typename AltBlockRadixSortScatterTilesT::TempStorage    alt_pass_storage;
+    } temp_storage;
 
     // Initialize even-share descriptor for this thread block
     even_share.BlockInit();
 
-    // Load digit bin offsets (each of the first RADIX_DIGITS threads will load an offset for that digit)
-    SizeT bin_offset;
-    if (threadIdx.x < RADIX_DIGITS)
+    if (use_primary_bit_granularity)
     {
-        bin_offset = d_spine[(gridDim.x * threadIdx.x) + blockIdx.x];
+        // Primary granularity
+        enum {
+            RADIX_DIGITS = 1 << BlockRadixSortScatterTilesPolicy::RADIX_BITS,
+        };
+
+        // Load digit bin offsets (each of the first RADIX_DIGITS threads will load an offset for that digit)
+        SizeT bin_offset;
+        if (threadIdx.x < RADIX_DIGITS)
+        {
+            bin_offset = d_spine[(gridDim.x * threadIdx.x) + blockIdx.x];
+        }
+
+        // Process input tiles
+        BlockRadixSortScatterTilesT(temp_storage.pass_storage, bin_offset, d_keys_in, d_keys_out, d_values_in, d_values_out, current_bit).ProcessTiles(
+            even_share.block_offset,
+            even_share.block_oob);
     }
+    else
+    {
+        // Alternate granularity
+        enum {
+            RADIX_DIGITS = 1 << AltPolicy::RADIX_BITS,
+        };
 
-    // Process input tiles
-    BlockRadixSortScatterTilesT(temp_storage, bin_offset, d_keys_in, d_keys_out, d_values_in, d_values_out, current_bit).ProcessTiles(
-        even_share.block_offset,
-        even_share.block_oob);
+        // Load digit bin offsets (each of the first RADIX_DIGITS threads will load an offset for that digit)
+        SizeT bin_offset;
+        if (threadIdx.x < RADIX_DIGITS)
+        {
+            bin_offset = d_spine[(gridDim.x * threadIdx.x) + blockIdx.x];
+        }
 
+        // Process input tiles
+        AltBlockRadixSortScatterTilesT(temp_storage.alt_pass_storage, bin_offset, d_keys_in, d_keys_out, d_values_in, d_values_out, current_bit).ProcessTiles(
+            even_share.block_offset,
+            even_share.block_oob);
+    }
 }
 
 
@@ -221,6 +285,7 @@ struct DeviceRadixSort
         int                     items_per_thread;
         cudaSharedMemConfig     smem_config;
         int                     radix_bits;
+        int                     alt_radix_bits;
         int                     subscription_factor;
         int                     tile_size;
 
@@ -231,6 +296,7 @@ struct DeviceRadixSort
             block_threads               = SortBlockPolicy::BLOCK_THREADS;
             items_per_thread            = SortBlockPolicy::ITEMS_PER_THREAD;
             radix_bits                  = SortBlockPolicy::RADIX_BITS;
+            alt_radix_bits              = SortBlockPolicy::AltPolicy::RADIX_BITS;
             smem_config                 = cudaSharedMemBankSizeFourByte;
             this->subscription_factor   = subscription_factor;
             tile_size                   = block_threads * items_per_thread;
@@ -243,6 +309,7 @@ struct DeviceRadixSort
             block_threads               = ScanBlockPolicy::BLOCK_THREADS;
             items_per_thread            = ScanBlockPolicy::ITEMS_PER_THREAD;
             radix_bits                  = 0;
+            alt_radix_bits              = 0;
             smem_config                 = cudaSharedMemBankSizeFourByte;
             subscription_factor         = 0;
             tile_size                   = block_threads * items_per_thread;
@@ -255,6 +322,7 @@ struct DeviceRadixSort
             block_threads               = SortBlockPolicy::BLOCK_THREADS;
             items_per_thread            = SortBlockPolicy::ITEMS_PER_THREAD;
             radix_bits                  = SortBlockPolicy::RADIX_BITS;
+            alt_radix_bits              = SortBlockPolicy::AltPolicy::RADIX_BITS;
             smem_config                 = SortBlockPolicy::SMEM_CONFIG;
             this->subscription_factor   = subscription_factor;
             tile_size                   = block_threads * items_per_thread;
@@ -504,10 +572,16 @@ struct DeviceRadixSort
             cudaSharedMemConfig current_smem_config = original_smem_config;
 #endif
             // Iterate over digit places
-            for (int current_bit = begin_bit;
-                current_bit < end_bit;
-                current_bit += downsweep_dispatch_params.radix_bits)
+            int current_bit = begin_bit;
+            while (current_bit < end_bit)
             {
+                // Use primary bit granularity if bits remaining is a whole multiple of bit primary granularity
+                int bits_remaining = end_bit - current_bit;
+                bool use_primary_bit_granularity = (bits_remaining % downsweep_dispatch_params.radix_bits == 0);
+                int radix_bits = (use_primary_bit_granularity) ?
+                    downsweep_dispatch_params.radix_bits :
+                    downsweep_dispatch_params.alt_radix_bits;
+
 #ifndef __CUDA_ARCH__
                 // Update smem config if necessary
                 if (current_smem_config != upsweep_dispatch_params.smem_config)
@@ -519,8 +593,8 @@ struct DeviceRadixSort
 
                 // Log upsweep_kernel configuration
                 if (stream_synchronous)
-                    CubLog("Invoking upsweep_kernel<<<%d, %d, 0, %lld>>>(), %d smem config, %d items per thread, %d SM occupancy, selector %d, current bit %d\n",
-                    downsweep_grid_size, upsweep_dispatch_params.block_threads, (long long) stream, upsweep_dispatch_params.smem_config, upsweep_dispatch_params.items_per_thread, upsweep_sm_occupancy, d_keys.selector, current_bit);
+                    CubLog("Invoking upsweep_kernel<<<%d, %d, 0, %lld>>>(), %d smem config, %d items per thread, %d SM occupancy, selector %d, current bit %d, bit_grain %d\n",
+                    downsweep_grid_size, upsweep_dispatch_params.block_threads, (long long) stream, upsweep_dispatch_params.smem_config, upsweep_dispatch_params.items_per_thread, upsweep_sm_occupancy, d_keys.selector, current_bit, radix_bits);
 
                 // Invoke upsweep_kernel with same grid size as downsweep_kernel
                 upsweep_kernel<<<downsweep_grid_size, upsweep_dispatch_params.block_threads, 0, stream>>>(
@@ -528,6 +602,7 @@ struct DeviceRadixSort
                     d_spine,
                     num_items,
                     current_bit,
+                    use_primary_bit_granularity,
                     (current_bit == begin_bit),
                     even_share);
 
@@ -568,6 +643,7 @@ struct DeviceRadixSort
                     d_spine,
                     num_items,
                     current_bit,
+                    use_primary_bit_granularity,
                     (current_bit == begin_bit),
                     (current_bit + downsweep_dispatch_params.radix_bits >= end_bit),
                     even_share);
@@ -578,6 +654,9 @@ struct DeviceRadixSort
                 // Invert selectors
                 d_keys.selector ^= 1;
                 d_values.selector ^= 1;
+
+                // Update current bit position
+                current_bit += radix_bits;
             }
 
 #ifndef __CUDA_ARCH__
@@ -590,8 +669,6 @@ struct DeviceRadixSort
 
         }
         while (0);
-
-
 
         return error;
 
@@ -625,7 +702,7 @@ struct DeviceRadixSort
         DoubleBuffer<Key>   &d_keys,                                ///< [in,out] Double-buffer of keys whose current buffer contains the unsorted input keys and, upon return, is updated to point to the sorted output keys
         DoubleBuffer<Value> &d_values,                              ///< [in,out] Double-buffer of values whose current buffer contains the unsorted input values and, upon return, is updated to point to the sorted output values
         int                 num_items,                              ///< [in] Number of items to reduce
-        int                 begin_bit           = 0,                ///< [in] <b>[optional]</b> The beginning (least-significant) bit index needed for key comparison
+        int                 begin_bit           = 0,                ///< [in] <b>[optional]</b> The first (least-significant) bit index needed for key comparison
         int                 end_bit             = sizeof(Key) * 8,  ///< [in] <b>[optional]</b> The past-the-end (most-significant) bit index needed for key comparison
         cudaStream_t        stream              = 0,                ///< [in] <b>[optional]</b> CUDA stream to launch kernels within.  Default is stream<sub>0</sub>.
         bool                stream_synchronous  = false)            ///< [in] <b>[optional]</b> Whether or not to synchronize the stream after every kernel launch to check for errors.  Default is \p false.
