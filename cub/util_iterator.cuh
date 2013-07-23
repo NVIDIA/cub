@@ -448,7 +448,8 @@ public:
     template <typename SizeT>
     __host__ __device__ __forceinline__ self_type operator+(SizeT n)
     {
-        TexIteratorRA retval(ptr + n);
+        TexIteratorRA retval;
+        retval.ptr = ptr + n;
         retval.tex_align_offset = tex_align_offset + n;
         return retval;
     }
@@ -456,7 +457,8 @@ public:
     template <typename SizeT>
     __host__ __device__ __forceinline__ self_type operator-(SizeT n)
     {
-        TexIteratorRA retval(ptr - n);
+        TexIteratorRA retval;
+        retval.ptr = ptr - n;
         retval.tex_align_offset = tex_align_offset - n;
         return retval;
     }
@@ -649,7 +651,8 @@ public:
     template <typename SizeT>
     __host__ __device__ __forceinline__ self_type operator+(SizeT n)
     {
-        TexTransformIteratorRA retval(ptr + n, conversion_op);
+        TexTransformIteratorRA retval(conversion_op);
+        retval.ptr = ptr + n;
         retval.tex_align_offset = tex_align_offset + n;
         return retval;
     }
@@ -657,7 +660,8 @@ public:
     template <typename SizeT>
     __host__ __device__ __forceinline__ self_type operator-(SizeT n)
     {
-        TexTransformIteratorRA retval(ptr - n, conversion_op);
+        TexTransformIteratorRA retval(conversion_op);
+        retval.ptr = ptr - n;
         retval.tex_align_offset = tex_align_offset - n;
         return retval;
     }
