@@ -96,14 +96,10 @@ __global__ void RadixSortUpsweepKernel(
     // Initialize even-share descriptor for this thread block
     even_share.BlockInit();
 
+    // Process input tiles (each of the first RADIX_DIGITS threads will compute a count for that digit)
     if (use_primary_bit_granularity)
     {
         // Primary granularity
-        enum {
-            RADIX_DIGITS = 1 << BlockRadixSortHistoTilesPolicy::RADIX_BITS,
-        };
-
-        // Process input tiles (each of the first RADIX_DIGITS threads will compute a count for that digit)
         SizeT bin_count;
         BlockRadixSortHistoTilesT(temp_storage.pass_storage, d_keys, current_bit).ProcessTiles(
             even_share.block_offset,
@@ -111,7 +107,7 @@ __global__ void RadixSortUpsweepKernel(
             bin_count);
 
         // Write out digit counts (striped)
-        if (threadIdx.x < RADIX_DIGITS)
+        if (threadIdx.x < BlockRadixSortHistoTilesT::RADIX_DIGITS)
         {
             d_spine[(gridDim.x * threadIdx.x) + blockIdx.x] = bin_count;
         }
@@ -119,10 +115,6 @@ __global__ void RadixSortUpsweepKernel(
     else
     {
         // Alternate granularity
-        enum {
-            RADIX_DIGITS = 1 << AltPolicy::RADIX_BITS,
-        };
-
         // Process input tiles (each of the first RADIX_DIGITS threads will compute a count for that digit)
         SizeT bin_count;
         AltBlockRadixSortHistoTilesT(temp_storage.alt_pass_storage, d_keys, current_bit).ProcessTiles(
@@ -131,7 +123,7 @@ __global__ void RadixSortUpsweepKernel(
             bin_count);
 
         // Write out digit counts (striped)
-        if (threadIdx.x < RADIX_DIGITS)
+        if (threadIdx.x < AltBlockRadixSortHistoTilesT::RADIX_DIGITS)
         {
             d_spine[(gridDim.x * threadIdx.x) + blockIdx.x] = bin_count;
         }
@@ -205,6 +197,7 @@ __global__ void RadixSortDownsweepKernel(
     {
         typename BlockRadixSortScatterTilesT::TempStorage       pass_storage;
         typename AltBlockRadixSortScatterTilesT::TempStorage    alt_pass_storage;
+
     } temp_storage;
 
     // Initialize even-share descriptor for this thread block
@@ -212,39 +205,15 @@ __global__ void RadixSortDownsweepKernel(
 
     if (use_primary_bit_granularity)
     {
-        // Primary granularity
-        enum {
-            RADIX_DIGITS = 1 << BlockRadixSortScatterTilesPolicy::RADIX_BITS,
-        };
-
-        // Load digit bin offsets (each of the first RADIX_DIGITS threads will load an offset for that digit)
-        SizeT bin_offset;
-        if (threadIdx.x < RADIX_DIGITS)
-        {
-            bin_offset = d_spine[(gridDim.x * threadIdx.x) + blockIdx.x];
-        }
-
         // Process input tiles
-        BlockRadixSortScatterTilesT(temp_storage.pass_storage, bin_offset, d_keys_in, d_keys_out, d_values_in, d_values_out, current_bit).ProcessTiles(
+        BlockRadixSortScatterTilesT(temp_storage.pass_storage, num_items, d_spine, d_keys_in, d_keys_out, d_values_in, d_values_out, current_bit).ProcessTiles(
             even_share.block_offset,
             even_share.block_oob);
     }
     else
     {
-        // Alternate granularity
-        enum {
-            RADIX_DIGITS = 1 << AltPolicy::RADIX_BITS,
-        };
-
-        // Load digit bin offsets (each of the first RADIX_DIGITS threads will load an offset for that digit)
-        SizeT bin_offset;
-        if (threadIdx.x < RADIX_DIGITS)
-        {
-            bin_offset = d_spine[(gridDim.x * threadIdx.x) + blockIdx.x];
-        }
-
         // Process input tiles
-        AltBlockRadixSortScatterTilesT(temp_storage.alt_pass_storage, bin_offset, d_keys_in, d_keys_out, d_values_in, d_values_out, current_bit).ProcessTiles(
+        AltBlockRadixSortScatterTilesT(temp_storage.alt_pass_storage, num_items, d_spine, d_keys_in, d_keys_out, d_values_in, d_values_out, current_bit).ProcessTiles(
             even_share.block_offset,
             even_share.block_oob);
     }
@@ -369,15 +338,15 @@ struct DeviceRadixSort
         };
 
         // UpsweepPolicy
-        typedef BlockRadixSortHistoTilesPolicy <64, 18, LOAD_DEFAULT, RADIX_BITS> UpsweepPolicy;
+        typedef BlockRadixSortHistoTilesPolicy <64, 17, LOAD_DEFAULT, RADIX_BITS> UpsweepPolicy;
 
         // ScanPolicy
         typedef BlockScanTilesPolicy <512, 4, BLOCK_LOAD_VECTORIZE, false, LOAD_DEFAULT, BLOCK_STORE_VECTORIZE, false, BLOCK_SCAN_RAKING_MEMOIZE> ScanPolicy;
 
         // DownsweepPolicy
-        typedef BlockRadixSortScatterTilesPolicy <64, 18, BLOCK_LOAD_WARP_TRANSPOSE, LOAD_DEFAULT, false, false, BLOCK_SCAN_WARP_SCANS, RADIX_SORT_SCATTER_TWO_PHASE, cudaSharedMemBankSizeFourByte, RADIX_BITS> DownsweepPolicy;
+        typedef BlockRadixSortScatterTilesPolicy <64, 17, BLOCK_LOAD_WARP_TRANSPOSE, LOAD_DEFAULT, false, false, BLOCK_SCAN_WARP_SCANS, RADIX_SORT_SCATTER_TWO_PHASE, cudaSharedMemBankSizeFourByte, RADIX_BITS> DownsweepPolicy;
 
-        enum { SUBSCRIPTION_FACTOR = 4 };
+        enum { SUBSCRIPTION_FACTOR = 3 };
     };
 
 
@@ -543,10 +512,15 @@ struct DeviceRadixSort
             downsweep_grid_size = even_share.grid_size;
 
             // Get number of spine elements (round up to nearest spine scan kernel tile size)
-            int bins = 1 << downsweep_dispatch_params.radix_bits;
-            int spine_size = downsweep_grid_size * bins;
-            int spine_tiles = (spine_size + scan_dispatch_params.tile_size - 1) / scan_dispatch_params.tile_size;
-            spine_size = spine_tiles * scan_dispatch_params.tile_size;
+            int bins            = 1 << downsweep_dispatch_params.radix_bits;
+            int spine_size      = downsweep_grid_size * bins;
+            int spine_tiles     = (spine_size + scan_dispatch_params.tile_size - 1) / scan_dispatch_params.tile_size;
+            spine_size          = spine_tiles * scan_dispatch_params.tile_size;
+
+            int alt_bins            = 1 << downsweep_dispatch_params.alt_radix_bits;
+            int alt_spine_size      = downsweep_grid_size * alt_bins;
+            int alt_spine_tiles     = (alt_spine_size + scan_dispatch_params.tile_size - 1) / scan_dispatch_params.tile_size;
+            alt_spine_size          = alt_spine_tiles * scan_dispatch_params.tile_size;
 
             // Temporary storage allocation requirements
             void* allocations[1];
@@ -616,7 +590,7 @@ struct DeviceRadixSort
                 // Invoke scan_kernel
                 scan_kernel<<<1, scan_dispatch_params.block_threads, 0, stream>>>(
                     d_spine,
-                    spine_size);
+                    (use_primary_bit_granularity) ? spine_size : alt_spine_size);
 
                 // Sync the stream if specified
                 if (stream_synchronous && (CubDebug(error = SyncStream(stream)))) break;

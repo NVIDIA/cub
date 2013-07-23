@@ -203,6 +203,41 @@ struct WarpScanShfl
     }
 
 
+    /// Inclusive prefix sum with aggregate (specialized for unsigned long long)
+    __device__ __forceinline__ void InclusiveSum(
+        unsigned long long  input,              ///< [in] Calling thread's input item.
+        unsigned long long  &output,            ///< [out] Calling thread's output item.  May be aliased with \p input.
+        unsigned long long  &warp_aggregate)    ///< [out] Warp-wide aggregate reduction of input items.
+    {
+        output = input;
+
+        // Iterate scan steps
+        #pragma unroll
+        for (int STEP = 0; STEP < STEPS; STEP++)
+        {
+            // Use predicate set from SHFL to guard against invalid peers
+            asm(
+                "{"
+                "  .reg .u32 r0;"
+                "  .reg .u32 r1;"
+                "  .reg .u32 lo;"
+                "  .reg .u32 hi;"
+                "  .reg .pred p;"
+                "  mov.b64 {lo, hi}, %1;"
+                "  shfl.up.b32 r0|p, lo, %2, %3;"
+                "  shfl.up.b32 r1|p, hi, %2, %3;"
+                "  @p add.cc.u32 r0, r0, lo;"
+                "  @p addc.u32 r1, r1, hi;"
+                "  mov.b64 %0, {r0, r1};"
+                "}"
+                : "=l"(output) : "l"(output), "r"(1 << STEP), "r"(SHFL_C));
+        }
+
+        // Grab aggregate from last warp lane
+        warp_aggregate = Broadcast(output, LOGICAL_WARP_THREADS - 1);
+    }
+
+
     /// Inclusive prefix sum with aggregate (generic)
     template <typename _T>
     __device__ __forceinline__ void InclusiveSum(
