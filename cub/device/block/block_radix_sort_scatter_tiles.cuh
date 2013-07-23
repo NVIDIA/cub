@@ -503,7 +503,7 @@ struct BlockRadixSortScatterTiles
         int             ranks[ITEMS_PER_THREAD];                    // For each key, the local rank within the CTA
         SizeT           relative_bin_offsets[ITEMS_PER_THREAD];     // For each key, the global scatter base offset of the corresponding digit
 
-        if (LOAD_ALGORITHM == BLOCK_LOAD_DIRECT) __syncthreads();
+        if (LOAD_ALGORITHM != BLOCK_LOAD_DIRECT) __syncthreads();
 
         // Assign max-key to all keys
         #pragma unroll

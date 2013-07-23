@@ -85,8 +85,7 @@ __device__ __forceinline__ void StoreBlocked(
     #pragma unroll
     for (int ITEM = 0; ITEM < ITEMS_PER_THREAD; ITEM++)
     {
-        int item_offset = (linear_tid * ITEMS_PER_THREAD) + ITEM;
-        ThreadStore<MODIFIER>(block_itr + item_offset, items[ITEM]);
+        ThreadStore<MODIFIER>(block_itr + (linear_tid * ITEMS_PER_THREAD) + ITEM, items[ITEM]);
     }
 }
 
@@ -162,8 +161,7 @@ __device__ __forceinline__ void StoreStriped(
     #pragma unroll
     for (int ITEM = 0; ITEM < ITEMS_PER_THREAD; ITEM++)
     {
-        int item_offset = (ITEM * BLOCK_THREADS) + linear_tid;
-        ThreadStore<MODIFIER>(block_itr + item_offset, items[ITEM]);
+        ThreadStore<MODIFIER>(block_itr + (ITEM * BLOCK_THREADS) + linear_tid, items[ITEM]);
     }
 }
 

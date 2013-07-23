@@ -86,8 +86,7 @@ __device__ __forceinline__ void LoadBlocked(
     #pragma unroll
     for (int ITEM = 0; ITEM < ITEMS_PER_THREAD; ITEM++)
     {
-        int item_offset = (linear_tid * ITEMS_PER_THREAD) + ITEM;
-        items[ITEM] = ThreadLoad<MODIFIER>(block_itr + item_offset);
+        items[ITEM] = ThreadLoad<MODIFIER>(block_itr + (linear_tid * ITEMS_PER_THREAD) + ITEM);
     }
 }
 
@@ -199,8 +198,7 @@ __device__ __forceinline__ void LoadStriped(
     #pragma unroll
     for (int ITEM = 0; ITEM < ITEMS_PER_THREAD; ITEM++)
     {
-        int item_offset = (ITEM * BLOCK_THREADS) + linear_tid;
-        items[ITEM] = ThreadLoad<MODIFIER>(block_itr + item_offset);
+        items[ITEM] = ThreadLoad<MODIFIER>(block_itr + (ITEM * BLOCK_THREADS) + linear_tid);
     }
 }
 
