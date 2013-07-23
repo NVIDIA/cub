@@ -402,7 +402,6 @@ int main(int argc, char** argv)
     CubDebugExit(args.DeviceInit());
     printf("\n");
 
-//    Test<false, unsigned int, NullType>(num_items, UNIFORM, 0, sizeof(unsigned int) * 8, CUB_TYPE_STRING(unsigned int));
     Test<false, unsigned int, NullType>(num_items, UNIFORM, 0, g_bits, CUB_TYPE_STRING(unsigned int));
 
     return 0;

@@ -216,7 +216,8 @@ struct BlockRadixSortScatterTiles
      */
     struct TempStorage
     {
-        SizeT relative_bin_offsets[RADIX_DIGITS + 1];
+        SizeT   relative_bin_offsets[RADIX_DIGITS + 1];
+        bool    short_circuit;
 
         union
         {
@@ -247,6 +248,9 @@ struct BlockRadixSortScatterTiles
 
     // The least-significant bit position of the current digit to extract
     int             current_bit;
+
+    // Whether to short-ciruit
+    bool            short_circuit;
 
 
 
@@ -563,6 +567,53 @@ struct BlockRadixSortScatterTiles
     }
 
 
+    /**
+     * Copy tiles within the range of input
+     */
+    template <typename T>
+    __device__ __forceinline__ void Copy(
+        T       *d_in,
+        T       *d_out,
+        SizeT   block_offset,
+        SizeT   block_oob)
+    {
+        // Simply copy the input
+        while (block_offset + TILE_ITEMS <= block_oob)
+        {
+            T items[ITEMS_PER_THREAD];
+
+            LoadStriped<LOAD_DEFAULT, BLOCK_THREADS>(threadIdx.x, d_in + block_offset, items);
+            __syncthreads();
+            StoreStriped<STORE_DEFAULT, BLOCK_THREADS>(threadIdx.x, d_out + block_offset, items);
+
+            block_offset += TILE_ITEMS;
+        }
+
+        // Clean up last partial tile with guarded-I/O
+        if (block_offset < block_oob)
+        {
+            SizeT valid_items = block_oob - block_offset;
+
+            T items[ITEMS_PER_THREAD];
+
+            LoadStriped<LOAD_DEFAULT, BLOCK_THREADS>(threadIdx.x, d_in + block_offset, items, valid_items);
+            __syncthreads();
+            StoreStriped<STORE_DEFAULT, BLOCK_THREADS>(threadIdx.x, d_out + block_offset, items, valid_items);
+        }
+    }
+
+
+    /**
+     * Copy tiles within the range of input (specialized for NullType)
+     */
+    __device__ __forceinline__ void Copy(
+        NullType    *d_in,
+        NullType    *d_out,
+        SizeT       block_offset,
+        SizeT       block_oob)
+    {}
+
+
     //---------------------------------------------------------------------
     // Interface
     //---------------------------------------------------------------------
@@ -585,8 +636,47 @@ struct BlockRadixSortScatterTiles
         d_keys_out(reinterpret_cast<UnsignedBits*>(d_keys_out)),
         d_values_in(d_values_in),
         d_values_out(d_values_out),
-        current_bit(current_bit)
+        current_bit(current_bit),
+        short_circuit(false)
     {}
+
+
+    /**
+     * Constructor
+     */
+    __device__ __forceinline__ BlockRadixSortScatterTiles(
+        TempStorage &temp_storage,
+        SizeT       num_items,
+        SizeT       *d_spine,
+        Key         *d_keys_in,
+        Key         *d_keys_out,
+        Value       *d_values_in,
+        Value       *d_values_out,
+        int         current_bit)
+    :
+        temp_storage(temp_storage),
+        d_keys_in(reinterpret_cast<UnsignedBits*>(d_keys_in)),
+        d_keys_out(reinterpret_cast<UnsignedBits*>(d_keys_out)),
+        d_values_in(d_values_in),
+        d_values_out(d_values_out),
+        current_bit(current_bit)
+    {
+        // Load digit bin offsets (each of the first RADIX_DIGITS threads will load an offset for that digit)
+        if (threadIdx.x < RADIX_DIGITS)
+        {
+            // Short circuit if the first block's histogram has only bin counts of only zeros or problem-size
+            SizeT first_block_bin_offset = d_spine[gridDim.x * threadIdx.x];
+            int predicate = ((first_block_bin_offset == 0) || (first_block_bin_offset == num_items));
+            temp_storage.short_circuit = WarpAll(predicate);
+
+            // Load my block's bin offset for my bin
+            bin_offset = d_spine[(gridDim.x * threadIdx.x) + blockIdx.x];
+        }
+
+        __syncthreads();
+
+        short_circuit = temp_storage.short_circuit;
+    }
 
 
     /**
@@ -596,19 +686,29 @@ struct BlockRadixSortScatterTiles
         SizeT           block_offset,
         const SizeT     &block_oob)
     {
-        // Process full tiles of tile_items
-        while (block_offset + TILE_ITEMS <= block_oob)
+        if (short_circuit)
         {
-            ProcessTile<true>(block_offset);
-            block_offset += TILE_ITEMS;
-        }
+            // Copy keys
+            Copy(d_keys_in, d_keys_out, block_offset, block_oob);
 
-        // Clean up last partial tile with guarded-I/O
-        if (block_offset < block_oob)
+            // Copy values
+            Copy(d_values_in, d_values_out, block_offset, block_oob);
+        }
+        else
         {
-            ProcessTile<false>(block_offset, block_oob - block_offset);
-        }
+            // Process full tiles of tile_items
+            while (block_offset + TILE_ITEMS <= block_oob)
+            {
+                ProcessTile<true>(block_offset);
+                block_offset += TILE_ITEMS;
+            }
 
+            // Clean up last partial tile with guarded-I/O
+            if (block_offset < block_oob)
+            {
+                ProcessTile<false>(block_offset, block_oob - block_offset);
+            }
+        }
     }
 };
 
