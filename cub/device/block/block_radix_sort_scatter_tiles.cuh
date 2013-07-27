@@ -259,23 +259,6 @@ struct BlockRadixSortScatterTiles
     //---------------------------------------------------------------------
 
     /**
-     * Perform a bit-wise twiddling transformation on keys
-     */
-    template <typename TwiddleOp>
-    __device__ __forceinline__ void TwiddleKeys(
-        UnsignedBits    (&keys)[ITEMS_PER_THREAD],
-        UnsignedBits    (&twiddled_keys)[ITEMS_PER_THREAD],
-        TwiddleOp       twiddle_op)
-    {
-        #pragma unroll
-        for (int KEY = 0; KEY < ITEMS_PER_THREAD; KEY++)
-        {
-            twiddled_keys[KEY] = twiddle_op(keys[KEY]);
-        }
-    }
-
-
-    /**
      * Decodes given keys to lookup digit offsets in shared memory
      */
     __device__ __forceinline__ void DecodeRelativeBinOffsets(
@@ -331,7 +314,12 @@ struct BlockRadixSortScatterTiles
 
         // Untwiddle keys before outputting
         UnsignedBits keys[ITEMS_PER_THREAD];
-        TwiddleKeys(twiddled_keys, keys, Traits<Key>::TwiddleOut);
+
+        #pragma unroll
+        for (int KEY = 0; KEY < ITEMS_PER_THREAD; KEY++)
+        {
+            keys[KEY] = Traits<Key>::TwiddleOut(twiddled_keys[KEY]);
+        }
 
         // Scatter to global
         ScatterItems<FULL_TILE>(keys, ranks, relative_bin_offsets, d_keys_out, valid_items);
@@ -381,7 +369,7 @@ struct BlockRadixSortScatterTiles
         Int2Type<RADIX_SORT_SCATTER_DIRECT>     scatter_algorithm)
     {
         // Scatter to global
-        ScatterItems<FULL_TILE>(values, ranks, relative_bin_offsets, d_keys_out, valid_items);
+        ScatterItems<FULL_TILE>(values, ranks, relative_bin_offsets, d_values_out, valid_items);
     }
 
 
@@ -409,7 +397,7 @@ struct BlockRadixSortScatterTiles
         }
 
         // Scatter directly
-        ScatterValues(
+        ScatterValues<FULL_TILE>(
             values,
             relative_bin_offsets,
             local_ranks,
@@ -524,7 +512,11 @@ struct BlockRadixSortScatterTiles
         __syncthreads();
 
         // Twiddle key bits if necessary
-        TwiddleKeys(keys, twiddled_keys, Traits<Key>::TwiddleIn);
+        #pragma unroll
+        for (int KEY = 0; KEY < ITEMS_PER_THREAD; KEY++)
+        {
+            twiddled_keys[KEY] = Traits<Key>::TwiddleIn(keys[KEY]);
+        }
 
         // Rank the twiddled keys
         int inclusive_digit_prefix;

@@ -79,6 +79,7 @@ __global__ void RadixSortUpsweepKernel(
     bool                    first_pass,                     ///< [in] Whether this is the first digit pass
     GridEvenShare<SizeT>    even_share)                     ///< [in] Descriptor for how to map an even-share of tiles across thread blocks
 {
+
     // Alternate policy for when fewer bits remain
     typedef typename BlockRadixSortHistoTilesPolicy::AltPolicy AltPolicy;
 
@@ -185,6 +186,7 @@ __global__ void RadixSortDownsweepKernel(
     bool                    last_pass,                      ///< [in] Whether this is the last digit pass
     GridEvenShare<SizeT>    even_share)                     ///< [in] Descriptor for how to map an even-share of tiles across thread blocks
 {
+
     // Alternate policy for when fewer bits remain
     typedef typename BlockRadixSortScatterTilesPolicy::AltPolicy AltPolicy;
 
@@ -313,18 +315,33 @@ struct DeviceRadixSort
     struct TunedPolicies<Key, Value, SizeT, 350>
     {
         enum {
-            RADIX_BITS = 5,
+            KEYS_ONLY       = (Equals<Value, NullType>::VALUE),
+            SCALE_FACTOR    = (CUB_MAX(sizeof(Key), sizeof(Value)) + 3) / 4,
+            RADIX_BITS      = 5,
         };
 
         // UpsweepPolicy
-        typedef BlockRadixSortHistoTilesPolicy <64, 18, LOAD_LDG, RADIX_BITS> UpsweepPolicy;
-
+        typedef BlockRadixSortHistoTilesPolicy <64,     CUB_MAX(1, 18 / SCALE_FACTOR), LOAD_LDG, RADIX_BITS> UpsweepPolicyKeys;
+        typedef BlockRadixSortHistoTilesPolicy <128,    CUB_MAX(1, 15 / SCALE_FACTOR), LOAD_LDG, RADIX_BITS> UpsweepPolicyPairs;
+        typedef typename If<KEYS_ONLY, UpsweepPolicyKeys, UpsweepPolicyPairs>::Type UpsweepPolicy;
+/*
+        // 4bit
+        typedef BlockRadixSortHistoTilesPolicy <128, 15, LOAD_LDG, RADIX_BITS> UpsweepPolicyKeys;
+        typedef BlockRadixSortHistoTilesPolicy <256, 13, LOAD_LDG, RADIX_BITS> UpsweepPolicyPairs;
+*/
         // ScanPolicy
         typedef BlockScanTilesPolicy <1024, 4, BLOCK_LOAD_VECTORIZE, false, LOAD_DEFAULT, BLOCK_STORE_VECTORIZE, false, BLOCK_SCAN_RAKING_MEMOIZE> ScanPolicy;
 
         // DownsweepPolicy
-        typedef BlockRadixSortScatterTilesPolicy <64, 18, BLOCK_LOAD_DIRECT, LOAD_LDG, false, true, BLOCK_SCAN_WARP_SCANS, RADIX_SORT_SCATTER_TWO_PHASE, cudaSharedMemBankSizeEightByte, RADIX_BITS> DownsweepPolicy;
+        typedef BlockRadixSortScatterTilesPolicy <64,   CUB_MAX(1, 18 / SCALE_FACTOR), BLOCK_LOAD_DIRECT, LOAD_LDG, false, true, BLOCK_SCAN_WARP_SCANS, RADIX_SORT_SCATTER_TWO_PHASE, cudaSharedMemBankSizeEightByte, RADIX_BITS> DownsweepPolicyKeys;
+        typedef BlockRadixSortScatterTilesPolicy <128,  CUB_MAX(1, 15 / SCALE_FACTOR), BLOCK_LOAD_DIRECT, LOAD_LDG, false, true, BLOCK_SCAN_WARP_SCANS, RADIX_SORT_SCATTER_TWO_PHASE, cudaSharedMemBankSizeEightByte, RADIX_BITS> DownsweepPolicyPairs;
+        typedef typename If<KEYS_ONLY, DownsweepPolicyKeys, DownsweepPolicyPairs>::Type DownsweepPolicy;
 
+/*
+        // 4bit
+        typedef BlockRadixSortScatterTilesPolicy <128, 15, BLOCK_LOAD_DIRECT, LOAD_LDG, false, true, BLOCK_SCAN_WARP_SCANS, RADIX_SORT_SCATTER_TWO_PHASE, cudaSharedMemBankSizeEightByte, RADIX_BITS> DownsweepPolicyKeys;
+        typedef BlockRadixSortScatterTilesPolicy <256, 13, BLOCK_LOAD_DIRECT, LOAD_LDG, false, true, BLOCK_SCAN_WARP_SCANS, RADIX_SORT_SCATTER_TWO_PHASE, cudaSharedMemBankSizeEightByte, RADIX_BITS> DownsweepPolicyPairs;
+*/
         enum { SUBSCRIPTION_FACTOR = 7 };
     };
 
@@ -334,17 +351,44 @@ struct DeviceRadixSort
     struct TunedPolicies<Key, Value, SizeT, 200>
     {
         enum {
-            RADIX_BITS = 5,
+            KEYS_ONLY       = (Equals<Value, NullType>::VALUE),
+            SCALE_FACTOR    = (CUB_MAX(sizeof(Key), sizeof(Value)) + 3) / 4,
+            RADIX_BITS      = 5,
         };
 
         // UpsweepPolicy
-        typedef BlockRadixSortHistoTilesPolicy <64, 17, LOAD_DEFAULT, RADIX_BITS> UpsweepPolicy;
+        typedef BlockRadixSortHistoTilesPolicy <64, CUB_MAX(1, 18 / SCALE_FACTOR), LOAD_DEFAULT, RADIX_BITS> UpsweepPolicyKeys;
+        typedef BlockRadixSortHistoTilesPolicy <128, CUB_MAX(1, 13 / SCALE_FACTOR), LOAD_DEFAULT, RADIX_BITS> UpsweepPolicyPairs;
+        typedef typename If<KEYS_ONLY, UpsweepPolicyKeys, UpsweepPolicyPairs>::Type UpsweepPolicy;
 
         // ScanPolicy
         typedef BlockScanTilesPolicy <512, 4, BLOCK_LOAD_VECTORIZE, false, LOAD_DEFAULT, BLOCK_STORE_VECTORIZE, false, BLOCK_SCAN_RAKING_MEMOIZE> ScanPolicy;
 
         // DownsweepPolicy
-        typedef BlockRadixSortScatterTilesPolicy <64, 17, BLOCK_LOAD_WARP_TRANSPOSE, LOAD_DEFAULT, false, false, BLOCK_SCAN_WARP_SCANS, RADIX_SORT_SCATTER_TWO_PHASE, cudaSharedMemBankSizeFourByte, RADIX_BITS> DownsweepPolicy;
+        typedef BlockRadixSortScatterTilesPolicy <64, CUB_MAX(1, 18 / SCALE_FACTOR), BLOCK_LOAD_WARP_TRANSPOSE, LOAD_DEFAULT, false, false, BLOCK_SCAN_WARP_SCANS, RADIX_SORT_SCATTER_TWO_PHASE, cudaSharedMemBankSizeFourByte, RADIX_BITS> DownsweepPolicyKeys;
+        typedef BlockRadixSortScatterTilesPolicy <128, CUB_MAX(1, 13 / SCALE_FACTOR), BLOCK_LOAD_WARP_TRANSPOSE, LOAD_DEFAULT, false, false, BLOCK_SCAN_WARP_SCANS, RADIX_SORT_SCATTER_TWO_PHASE, cudaSharedMemBankSizeFourByte, RADIX_BITS> DownsweepPolicyPairs;
+        typedef typename If<KEYS_ONLY, DownsweepPolicyKeys, DownsweepPolicyPairs>::Type DownsweepPolicy;
+
+        enum { SUBSCRIPTION_FACTOR = 3 };
+    };
+
+
+    /// SM10 tune
+    template <typename Key, typename Value, typename SizeT>
+    struct TunedPolicies<Key, Value, SizeT, 100>
+    {
+        enum {
+            RADIX_BITS = 4,
+        };
+
+        // UpsweepPolicy
+        typedef BlockRadixSortHistoTilesPolicy <64, 9, LOAD_DEFAULT, RADIX_BITS> UpsweepPolicy;
+
+        // ScanPolicy
+        typedef BlockScanTilesPolicy <256, 4, BLOCK_LOAD_VECTORIZE, false, LOAD_DEFAULT, BLOCK_STORE_VECTORIZE, false, BLOCK_SCAN_RAKING_MEMOIZE> ScanPolicy;
+
+        // DownsweepPolicy
+        typedef BlockRadixSortScatterTilesPolicy <64, 9, BLOCK_LOAD_WARP_TRANSPOSE, LOAD_DEFAULT, false, false, BLOCK_SCAN_WARP_SCANS, RADIX_SORT_SCATTER_TWO_PHASE, cudaSharedMemBankSizeFourByte, RADIX_BITS> DownsweepPolicy;
 
         enum { SUBSCRIPTION_FACTOR = 3 };
     };
@@ -362,16 +406,9 @@ struct DeviceRadixSort
 
         static const int PTX_TUNE_ARCH =   (CUB_PTX_ARCH >= 350) ?
                                                 350 :
-                                                200;
-/*
-                                                (CUB_PTX_ARCH >= 300) ?
-                                                    300 :
-                                                    (CUB_PTX_ARCH >= 200) ?
-                                                        200 :
-                                                        (CUB_PTX_ARCH >= 130) ?
-                                                            130 :
-                                                            100;
-*/
+                                                (CUB_PTX_ARCH >= 200) ?
+                                                    200 :
+                                                    100;
 
         // Tuned policy set for the current PTX compiler pass
         typedef TunedPolicies<Key, Value, SizeT, PTX_TUNE_ARCH> PtxTunedPolicies;
@@ -405,11 +442,6 @@ struct DeviceRadixSort
                 scan_dispatch_params.InitScanPolicy<typename TunedPolicies::ScanPolicy>();
                 downsweep_dispatch_params.InitDownsweepPolicy<typename TunedPolicies::DownsweepPolicy>(TunedPolicies::SUBSCRIPTION_FACTOR);
             }
-/*
-            else if (ptx_version >= 300)
-            {
-            }
-*/
             else if (ptx_version >= 200)
             {
                 typedef TunedPolicies<Key, Value, SizeT, 200> TunedPolicies;
@@ -417,14 +449,13 @@ struct DeviceRadixSort
                 scan_dispatch_params.InitScanPolicy<typename TunedPolicies::ScanPolicy>();
                 downsweep_dispatch_params.InitDownsweepPolicy<typename TunedPolicies::DownsweepPolicy>(TunedPolicies::SUBSCRIPTION_FACTOR);
             }
-/*
-            else if (ptx_version >= 130)
-            {
-            }
             else
             {
+                typedef TunedPolicies<Key, Value, SizeT, 100> TunedPolicies;
+                upsweep_dispatch_params.InitUpsweepPolicy<typename TunedPolicies::UpsweepPolicy>(TunedPolicies::SUBSCRIPTION_FACTOR);
+                scan_dispatch_params.InitScanPolicy<typename TunedPolicies::ScanPolicy>();
+                downsweep_dispatch_params.InitDownsweepPolicy<typename TunedPolicies::DownsweepPolicy>(TunedPolicies::SUBSCRIPTION_FACTOR);
             }
-*/
         }
     };
 
@@ -736,6 +767,29 @@ struct DeviceRadixSort
         return error;
     }
 
+
+    /**
+     * \brief Sorts keys
+     *
+     * \devicestorage
+     *
+     * \tparam Key      <b>[inferred]</b> Key type
+     */
+    template <typename Key>
+    __host__ __device__ __forceinline__
+    static cudaError_t SortKeys(
+        void                *d_temp_storage,                        ///< [in] %Device allocation of temporary storage.  When NULL, the required allocation size is returned in \p temp_storage_bytes and no work is done.
+        size_t              &temp_storage_bytes,                    ///< [in,out] Size in bytes of \p d_temp_storage allocation.
+        DoubleBuffer<Key>   &d_keys,                                ///< [in,out] Double-buffer of keys whose current buffer contains the unsorted input keys and, upon return, is updated to point to the sorted output keys
+        int                 num_items,                              ///< [in] Number of items to reduce
+        int                 begin_bit           = 0,                ///< [in] <b>[optional]</b> The first (least-significant) bit index needed for key comparison
+        int                 end_bit             = sizeof(Key) * 8,  ///< [in] <b>[optional]</b> The past-the-end (most-significant) bit index needed for key comparison
+        cudaStream_t        stream              = 0,                ///< [in] <b>[optional]</b> CUDA stream to launch kernels within.  Default is stream<sub>0</sub>.
+        bool                stream_synchronous  = false)            ///< [in] <b>[optional]</b> Whether or not to synchronize the stream after every kernel launch to check for errors.  Default is \p false.
+    {
+        DoubleBuffer<NullType> d_values;
+        return SortPairs(d_temp_storage, temp_storage_bytes, d_keys, d_values, num_items, begin_bit, end_bit, stream, stream_synchronous);
+    }
 
 };
 
