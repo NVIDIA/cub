@@ -221,6 +221,90 @@ private:
 
 
     /******************************************************************************
+     * Templated iteration
+     ******************************************************************************/
+
+    // General template iteration
+    template <int COUNT, int MAX>
+    struct Iterate
+    {
+        /**
+         * Decode keys.  Decodes the radix digit from the current digit place
+         * and increments the thread's corresponding counter in shared
+         * memory for that digit.
+         *
+         * Saves both (1) the prior value of that counter (the key's
+         * thread-local exclusive prefix sum for that digit), and (2) the shared
+         * memory offset of the counter (for later use).
+         */
+        template <typename UnsignedBits, int KEYS_PER_THREAD>
+        static __device__ __forceinline__ void DecodeKeys(
+            BlockRadixRank  &cta,                                   // BlockRadixRank instance
+            UnsignedBits    (&keys)[KEYS_PER_THREAD],               // Key to decode
+            DigitCounter    (&thread_prefixes)[KEYS_PER_THREAD],    // Prefix counter value (out parameter)
+            DigitCounter*   (&digit_counters)[KEYS_PER_THREAD],     // Counter smem offset (out parameter)
+            int             current_bit)                            // The least-significant bit position of the current digit to extract
+        {
+            // Add in sub-counter offset
+            UnsignedBits sub_counter = BFE(keys[COUNT], current_bit + LOG_COUNTER_LANES, LOG_PACKING_RATIO);
+
+            // Add in row offset
+            UnsignedBits row_offset = BFE(keys[COUNT], current_bit, LOG_COUNTER_LANES);
+
+            // Pointer to smem digit counter
+            digit_counters[COUNT] = &cta.temp_storage.digit_counters[row_offset][cta.linear_tid][sub_counter];
+
+            // Load thread-exclusive prefix
+            thread_prefixes[COUNT] = *digit_counters[COUNT];
+
+            // Store inclusive prefix
+            *digit_counters[COUNT] = thread_prefixes[COUNT] + 1;
+
+            // Iterate next key
+            Iterate<COUNT + 1, MAX>::DecodeKeys(cta, keys, thread_prefixes, digit_counters, current_bit);
+        }
+
+
+        // Termination
+        template <int KEYS_PER_THREAD>
+        static __device__ __forceinline__ void UpdateRanks(
+            int             (&ranks)[KEYS_PER_THREAD],              // Local ranks (out parameter)
+            DigitCounter    (&thread_prefixes)[KEYS_PER_THREAD],    // Prefix counter value
+            DigitCounter*   (&digit_counters)[KEYS_PER_THREAD])     // Counter smem offset
+        {
+            // Add in threadblock exclusive prefix
+            ranks[COUNT] = thread_prefixes[COUNT] + *digit_counters[COUNT];
+
+            // Iterate next key
+            Iterate<COUNT + 1, MAX>::UpdateRanks(ranks, thread_prefixes, digit_counters);
+        }
+    };
+
+
+    // Termination
+    template <int MAX>
+    struct Iterate<MAX, MAX>
+    {
+        // DecodeKeys
+        template <typename UnsignedBits, int KEYS_PER_THREAD>
+        static __device__ __forceinline__ void DecodeKeys(
+            BlockRadixRank  &cta,
+            UnsignedBits    (&keys)[KEYS_PER_THREAD],
+            DigitCounter    (&thread_prefixes)[KEYS_PER_THREAD],
+            DigitCounter*   (&digit_counters)[KEYS_PER_THREAD],
+            int             current_bit) {}
+
+
+        // UpdateRanks
+        template <int KEYS_PER_THREAD>
+        static __device__ __forceinline__ void UpdateRanks(
+            int             (&ranks)[KEYS_PER_THREAD],
+            DigitCounter    (&thread_prefixes)[KEYS_PER_THREAD],
+            DigitCounter    *(&digit_counters)[KEYS_PER_THREAD]) {}
+    };
+
+
+    /******************************************************************************
      * Utility methods
      ******************************************************************************/
 
@@ -354,23 +438,7 @@ public:
         ResetCounters();
 
         // Decode keys and update digit counters
-        for (int KEY = 0; KEY < KEYS_PER_THREAD; ++KEY)
-        {
-            // Add in sub-counter offset
-            UnsignedBits sub_counter = BFE(keys[KEY], current_bit + LOG_COUNTER_LANES, LOG_PACKING_RATIO);
-
-            // Add in row offset
-            UnsignedBits row_offset = BFE(keys[KEY], current_bit, LOG_COUNTER_LANES);
-
-            // Pointer to smem digit counter
-            digit_counters[KEY] = &temp_storage.digit_counters[row_offset][linear_tid][sub_counter];
-
-            // Load thread-exclusive prefix
-            thread_prefixes[KEY] = *digit_counters[KEY];
-
-            // Store inclusive prefix
-            *digit_counters[KEY] = thread_prefixes[KEY] + 1;
-        }
+        Iterate<0, KEYS_PER_THREAD>::DecodeKeys(*this, keys, thread_prefixes, digit_counters, current_bit);
 
         __syncthreads();
 
@@ -380,12 +448,7 @@ public:
         __syncthreads();
 
         // Extract the local ranks of each key
-
-        // Add in threadblock exclusive prefix
-        for (int KEY = 0; KEY < KEYS_PER_THREAD; ++KEY)
-        {
-            ranks[KEY] = thread_prefixes[KEY] + *digit_counters[KEY];
-        }
+        Iterate<0, KEYS_PER_THREAD>::UpdateRanks(ranks, thread_prefixes, digit_counters);
     }
 
 
