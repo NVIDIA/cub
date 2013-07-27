@@ -302,14 +302,14 @@ bin/test_device_reduce_$(SUFFIX) : test_device_reduce.cu $(DEPS)
 
 
 #-------------------------------------------------------------------------------
-# make test_device_histo
+# make test_device_histogram
 #-------------------------------------------------------------------------------
 
-test_device_histo: bin/test_device_histo_$(SUFFIX)
+test_device_histogram: bin/test_device_histogram_$(SUFFIX)
 
-bin/test_device_histo_$(SUFFIX) : test_device_histo.cu $(DEPS)
+bin/test_device_histogram_$(SUFFIX) : test_device_histogram.cu $(DEPS)
 	mkdir -p bin
-	$(NVCC) $(DEFINES) $(SM_TARGETS) -o bin/test_device_histo_$(SUFFIX) test_device_histo.cu $(NVCCFLAGS) $(CPU_ARCH) $(INC) $(LIBS) -O3
+	$(NVCC) $(DEFINES) $(SM_TARGETS) -o bin/test_device_histogram_$(SUFFIX) test_device_histogram.cu $(NVCCFLAGS) $(CPU_ARCH) $(INC) $(LIBS) -O3
 
 
 #-------------------------------------------------------------------------------

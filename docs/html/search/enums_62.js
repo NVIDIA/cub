@@ -1,6 +1,6 @@
 var searchData=
 [
-  ['blockhistoalgorithm',['BlockHistoAlgorithm',['../namespacecub.html#ae42bd38c420aabfcb016ff38ceccba5f',1,'cub']]],
+  ['blockhistogramalgorithm',['BlockHistogramAlgorithm',['../namespacecub.html#a845ca81ef9b346ef7429a35d4fdc80d2',1,'cub']]],
   ['blockloadalgorithm',['BlockLoadAlgorithm',['../namespacecub.html#a9d7e37497fdd99864c57adecda710401',1,'cub']]],
   ['blockreducealgorithm',['BlockReduceAlgorithm',['../namespacecub.html#add0251c713859b8974806079e498d10a',1,'cub']]],
   ['blockscanalgorithm',['BlockScanAlgorithm',['../namespacecub.html#abec44bba36037c547e7e84906d0d23ab',1,'cub']]],

@@ -93,12 +93,10 @@ var searchBox = new SearchBox("searchBox", "search",false,'Search');
       <li><a href="functions_0x64.html#index_d"><span>d</span></a></li>
       <li><a href="functions_0x65.html#index_e"><span>e</span></a></li>
       <li><a href="functions_0x66.html#index_f"><span>f</span></a></li>
-      <li><a href="functions_0x67.html#index_g"><span>g</span></a></li>
       <li><a href="functions_0x68.html#index_h"><span>h</span></a></li>
       <li><a href="functions_0x69.html#index_i"><span>i</span></a></li>
       <li><a href="functions_0x6c.html#index_l"><span>l</span></a></li>
       <li><a href="functions_0x6d.html#index_m"><span>m</span></a></li>
-      <li><a href="functions_0x6e.html#index_n"><span>n</span></a></li>
       <li><a href="functions_0x6f.html#index_o"><span>o</span></a></li>
       <li><a href="functions_0x70.html#index_p"><span>p</span></a></li>
       <li><a href="functions_0x72.html#index_r"><span>r</span></a></li>
@@ -141,13 +139,13 @@ var searchBox = new SearchBox("searchBox", "search",false,'Search');
 : <a class="el" href="structcub_1_1_caching_device_allocator.html#a2216ab13fdeb11ce61f04f69899fff33">cub::CachingDeviceAllocator</a>
 </li>
 <li>SingleChannelGlobalAtomic()
-: <a class="el" href="structcub_1_1_device_histo.html#a1ac40d4adc84cefae5f53422e7ceb80f">cub::DeviceHisto</a>
+: <a class="el" href="structcub_1_1_device_histogram.html#a6659e9723fda5e5c0ac587aa66fb54c3">cub::DeviceHistogram</a>
 </li>
 <li>SingleChannelSharedAtomic()
-: <a class="el" href="structcub_1_1_device_histo.html#a65d5bd1421b5e3336c574e0306752545">cub::DeviceHisto</a>
+: <a class="el" href="structcub_1_1_device_histogram.html#a425559a4dc730f55f46e0faa5080e266">cub::DeviceHistogram</a>
 </li>
 <li>SingleChannelSorting()
-: <a class="el" href="structcub_1_1_device_histo.html#a6fef912229d2de93aade1dd685869469">cub::DeviceHisto</a>
+: <a class="el" href="structcub_1_1_device_histogram.html#ad0cc7bacd6022916cb228437eeb9c82a">cub::DeviceHistogram</a>
 </li>
 <li>sm_count
 : <a class="el" href="classcub_1_1_device.html#a68885a90ea0badcffc2a3511b0b4fd5c">cub::Device</a>
@@ -185,25 +183,31 @@ var searchBox = new SearchBox("searchBox", "search",false,'Search');
 <li>SortBlockedToStriped()
 : <a class="el" href="classcub_1_1_block_radix_sort.html#a4be0c8d355a7fc75f8b405a776d884d3">cub::BlockRadixSort&lt; Key, BLOCK_THREADS, ITEMS_PER_THREAD, Value, RADIX_BITS, MEMOIZE_OUTER_SCAN, INNER_SCAN_ALGORITHM, SMEM_CONFIG &gt;</a>
 </li>
+<li>SortKeys()
+: <a class="el" href="structcub_1_1_device_radix_sort.html#aafc81e527c3fe142b482ed59835fd0d3">cub::DeviceRadixSort</a>
+</li>
+<li>SortPairs()
+: <a class="el" href="structcub_1_1_device_radix_sort.html#ad42b50b38c4296c371572efdedd49fed">cub::DeviceRadixSort</a>
+</li>
 <li>Store()
-: <a class="el" href="classcub_1_1_block_store.html#ac849ae26014bff7c5fb76295c435c73c">cub::BlockStore&lt; OutputIteratorRA, BLOCK_THREADS, ITEMS_PER_THREAD, ALGORITHM, MODIFIER, WARP_TIME_SLICING &gt;</a>
+: <a class="el" href="classcub_1_1_block_store.html#ac02678cf9b327e095376f443bc4feda2">cub::BlockStore&lt; OutputIteratorRA, BLOCK_THREADS, ITEMS_PER_THREAD, ALGORITHM, MODIFIER, WARP_TIME_SLICING &gt;</a>
 </li>
 <li>StripedToBlocked()
 : <a class="el" href="classcub_1_1_block_exchange.html#a063505380e68bb5744d12fa7e1f16145">cub::BlockExchange&lt; T, BLOCK_THREADS, ITEMS_PER_THREAD, WARP_TIME_SLICING &gt;</a>
 </li>
 <li>Sum()
-: <a class="el" href="classcub_1_1_warp_reduce.html#a3327a2b8c9bdce58f7af1e2485489eed">cub::WarpReduce&lt; T, LOGICAL_WARPS, LOGICAL_WARP_THREADS &gt;</a>
-, <a class="el" href="classcub_1_1_block_reduce.html#a7565f00c47dc7dfb286668bea15dad05">cub::BlockReduce&lt; T, BLOCK_THREADS, ALGORITHM &gt;</a>
-, <a class="el" href="structcub_1_1_device_reduce.html#ae927a1815745ceed75ff677ffd3b0701">cub::DeviceReduce</a>
-, <a class="el" href="classcub_1_1_block_reduce.html#aa52adf836e96dee812f456283cac13f7">cub::BlockReduce&lt; T, BLOCK_THREADS, ALGORITHM &gt;</a>
+: <a class="el" href="structcub_1_1_device_reduce.html#ae927a1815745ceed75ff677ffd3b0701">cub::DeviceReduce</a>
 , <a class="el" href="classcub_1_1_warp_reduce.html#a2ccc6eb62a1e6caf145eb94a8cd58f0f">cub::WarpReduce&lt; T, LOGICAL_WARPS, LOGICAL_WARP_THREADS &gt;</a>
+, <a class="el" href="classcub_1_1_block_reduce.html#a2611610d09bb8daca91e414a77c1e937">cub::BlockReduce&lt; T, BLOCK_THREADS, ALGORITHM &gt;</a>
+, <a class="el" href="classcub_1_1_warp_reduce.html#a3327a2b8c9bdce58f7af1e2485489eed">cub::WarpReduce&lt; T, LOGICAL_WARPS, LOGICAL_WARP_THREADS &gt;</a>
+, <a class="el" href="classcub_1_1_block_reduce.html#aa52adf836e96dee812f456283cac13f7">cub::BlockReduce&lt; T, BLOCK_THREADS, ALGORITHM &gt;</a>
 </li>
 </ul>
 </div><!-- contents -->
 <!-- HTML footer for doxygen 1.8.3.1-->
 <!-- start footer part -->
 <hr class="footer"/><address class="footer"><small>
-Generated on Fri Jul 12 2013 14:34:46 for CUB by &#160;<a href="http://www.doxygen.org/index.html">
+Generated on Sat Jul 27 2013 00:06:23 for CUB by &#160;<a href="http://www.doxygen.org/index.html">
 <img class="footer" src="doxygen.png" alt="doxygen"/>
 </a> 1.8.4
 <br>

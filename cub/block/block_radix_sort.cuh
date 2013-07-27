@@ -176,8 +176,8 @@ private:
      ******************************************************************************/
 
     // Key traits and unsigned bits type
-    typedef NumericTraits<Key>              Keyraits;
-    typedef typename Keyraits::UnsignedBits    UnsignedBits;
+    typedef NumericTraits<Key>                  KeyTraits;
+    typedef typename KeyTraits::UnsignedBits    UnsignedBits;
 
     /// BlockRadixRank utility type
     typedef BlockRadixRank<BLOCK_THREADS, RADIX_BITS, MEMOIZE_OUTER_SCAN, INNER_SCAN_ALGORITHM, SMEM_CONFIG> BlockRadixRank;
@@ -301,7 +301,7 @@ public:
         #pragma unroll
         for (int KEY = 0; KEY < ITEMS_PER_THREAD; KEY++)
         {
-            unsigned_keys[KEY] = Keyraits::TwiddleIn(unsigned_keys[KEY]);
+            unsigned_keys[KEY] = KeyTraits::TwiddleIn(unsigned_keys[KEY]);
         }
 
         // Radix sorting passes
@@ -327,7 +327,7 @@ public:
         #pragma unroll
         for (int KEY = 0; KEY < ITEMS_PER_THREAD; KEY++)
         {
-            unsigned_keys[KEY] = Keyraits::TwiddleOut(unsigned_keys[KEY]);
+            unsigned_keys[KEY] = KeyTraits::TwiddleOut(unsigned_keys[KEY]);
         }
     }
 
@@ -350,7 +350,7 @@ public:
         #pragma unroll
         for (int KEY = 0; KEY < ITEMS_PER_THREAD; KEY++)
         {
-            unsigned_keys[KEY] = Keyraits::TwiddleIn(unsigned_keys[KEY]);
+            unsigned_keys[KEY] = KeyTraits::TwiddleIn(unsigned_keys[KEY]);
         }
 
         // Radix sorting passes
@@ -381,7 +381,7 @@ public:
         #pragma unroll
         for (int KEY = 0; KEY < ITEMS_PER_THREAD; KEY++)
         {
-            unsigned_keys[KEY] = Keyraits::TwiddleOut(unsigned_keys[KEY]);
+            unsigned_keys[KEY] = KeyTraits::TwiddleOut(unsigned_keys[KEY]);
         }
     }
 
@@ -410,7 +410,7 @@ public:
         #pragma unroll
         for (int KEY = 0; KEY < ITEMS_PER_THREAD; KEY++)
         {
-            unsigned_keys[KEY] = Keyraits::TwiddleIn(unsigned_keys[KEY]);
+            unsigned_keys[KEY] = KeyTraits::TwiddleIn(unsigned_keys[KEY]);
         }
 
         // Radix sorting passes
@@ -443,7 +443,7 @@ public:
         #pragma unroll
         for (int KEY = 0; KEY < ITEMS_PER_THREAD; KEY++)
         {
-            unsigned_keys[KEY] = Keyraits::TwiddleOut(unsigned_keys[KEY]);
+            unsigned_keys[KEY] = KeyTraits::TwiddleOut(unsigned_keys[KEY]);
         }
     }
 
@@ -466,7 +466,7 @@ public:
         #pragma unroll
         for (int KEY = 0; KEY < ITEMS_PER_THREAD; KEY++)
         {
-            unsigned_keys[KEY] = Keyraits::TwiddleIn(unsigned_keys[KEY]);
+            unsigned_keys[KEY] = KeyTraits::TwiddleIn(unsigned_keys[KEY]);
         }
 
         // Radix sorting passes
@@ -509,7 +509,7 @@ public:
         #pragma unroll
         for (int KEY = 0; KEY < ITEMS_PER_THREAD; KEY++)
         {
-            unsigned_keys[KEY] = Keyraits::TwiddleOut(unsigned_keys[KEY]);
+            unsigned_keys[KEY] = KeyTraits::TwiddleOut(unsigned_keys[KEY]);
         }
     }
 

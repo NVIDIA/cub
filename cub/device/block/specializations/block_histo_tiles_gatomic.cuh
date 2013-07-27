@@ -28,7 +28,7 @@
 
 /**
  * \file
- * cub::BlockHistoTilesGlobalAtomic implements a stateful abstraction of CUDA thread blocks for histogramming multiple tiles as part of device-wide histogram.
+ * cub::BlockHistogramTilesGlobalAtomic implements a stateful abstraction of CUDA thread blocks for histogramming multiple tiles as part of device-wide histogram.
  */
 
 #pragma once
@@ -48,17 +48,17 @@ namespace cub {
 
 
 /**
- * BlockHistoTilesGlobalAtomic implements a stateful abstraction of CUDA thread blocks for histogramming multiple tiles as part of device-wide histogram using global atomics
+ * BlockHistogramTilesGlobalAtomic implements a stateful abstraction of CUDA thread blocks for histogramming multiple tiles as part of device-wide histogram using global atomics
  */
 template <
-    typename    BlockHistoTilesPolicy,          ///< Tuning policy
+    typename    BlockHistogramTilesPolicy,          ///< Tuning policy
     int         BINS,                           ///< Number of histogram bins per channel
     int         CHANNELS,                       ///< Number of channels interleaved in the input data (may be greater than the number of active channels being histogrammed)
     int         ACTIVE_CHANNELS,                ///< Number of channels actively being histogrammed
     typename    InputIteratorRA,                ///< The input iterator type (may be a simple pointer type).  Must have a value type that can be cast as an integer in the range [0..BINS-1]
     typename    HistoCounter,                   ///< Integral type for counting sample occurrences per histogram bin
     typename    SizeT>                          ///< Integer type for offsets
-struct BlockHistoTilesGlobalAtomic
+struct BlockHistogramTilesGlobalAtomic
 {
     //---------------------------------------------------------------------
     // Types and constants
@@ -70,8 +70,8 @@ struct BlockHistoTilesGlobalAtomic
     // Constants
     enum
     {
-        BLOCK_THREADS       = BlockHistoTilesPolicy::BLOCK_THREADS,
-        ITEMS_PER_THREAD    = BlockHistoTilesPolicy::ITEMS_PER_THREAD,
+        BLOCK_THREADS       = BlockHistogramTilesPolicy::BLOCK_THREADS,
+        ITEMS_PER_THREAD    = BlockHistogramTilesPolicy::ITEMS_PER_THREAD,
         TILE_CHANNEL_ITEMS  = BLOCK_THREADS * ITEMS_PER_THREAD,
         TILE_ITEMS          = TILE_CHANNEL_ITEMS * CHANNELS,
     };
@@ -101,7 +101,7 @@ struct BlockHistoTilesGlobalAtomic
     /**
      * Constructor
      */
-    __device__ __forceinline__ BlockHistoTilesGlobalAtomic(
+    __device__ __forceinline__ BlockHistogramTilesGlobalAtomic(
         TempStorage         &temp_storage,                                  ///< Reference to temp_storage
         InputIteratorRA     d_in,                                           ///< Input data to reduce
         HistoCounter*       (&d_out_histograms)[ACTIVE_CHANNELS])           ///< Reference to output histograms

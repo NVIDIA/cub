@@ -29,7 +29,7 @@
 
 /**
  * \file
- * cub::DeviceHisto provides parallel, device-wide operations for constructing histogram(s) over data samples residing within global memory.
+ * cub::DeviceHistogram provides parallel, device-wide operations for constructing histogram(s) over data samples residing within global memory.
  */
 
 #pragma once
@@ -81,15 +81,15 @@ __global__ void InitHistoKernel(
  * Histogram pass kernel entry point (multi-block).  Computes privatized histograms, one per thread block.
  */
 template <
-    typename                                        BlockHistoTilesPolicy,   ///< Tuning policy for cub::BlockHistoTiles abstraction
+    typename                                        BlockHistogramTilesPolicy,   ///< Tuning policy for cub::BlockHistogramTiles abstraction
     int                                             BINS,                       ///< Number of histogram bins per channel
     int                                             CHANNELS,                   ///< Number of channels interleaved in the input data (may be greater than the number of channels being actively histogrammed)
     int                                             ACTIVE_CHANNELS,            ///< Number of channels actively being histogrammed
     typename                                        InputIteratorRA,            ///< The input iterator type (may be a simple pointer type).  Must have a value type that is assignable to <tt>unsigned char</tt>
     typename                                        HistoCounter,               ///< Integral type for counting sample occurrences per histogram bin
     typename                                        SizeT>                      ///< Integer type used for global array indexing
-__launch_bounds__ (int(BlockHistoTilesPolicy::BLOCK_THREADS), BlockHistoTilesPolicy::SM_OCCUPANCY)
-__global__ void MultiBlockHistoKernel(
+__launch_bounds__ (int(BlockHistogramTilesPolicy::BLOCK_THREADS), BlockHistogramTilesPolicy::SM_OCCUPANCY)
+__global__ void MultiBlockHistogramKernel(
     InputIteratorRA                                 d_samples,                  ///< [in] Array of sample data. (Channels, if any, are interleaved in "AOS" format)
     ArrayWrapper<HistoCounter*, ACTIVE_CHANNELS>    d_out_histograms,           ///< [out] Histogram counter data having logical dimensions <tt>HistoCounter[ACTIVE_CHANNELS][gridDim.x][BINS]</tt>
     SizeT                                           num_samples,                ///< [in] Total number of samples \p d_samples for all channels
@@ -99,23 +99,23 @@ __global__ void MultiBlockHistoKernel(
     // Constants
     enum
     {
-        BLOCK_THREADS       = BlockHistoTilesPolicy::BLOCK_THREADS,
-        ITEMS_PER_THREAD    = BlockHistoTilesPolicy::ITEMS_PER_THREAD,
+        BLOCK_THREADS       = BlockHistogramTilesPolicy::BLOCK_THREADS,
+        ITEMS_PER_THREAD    = BlockHistogramTilesPolicy::ITEMS_PER_THREAD,
         TILE_SIZE           = BLOCK_THREADS * ITEMS_PER_THREAD,
     };
 
     // Thread block type for compositing input tiles
-    typedef BlockHistoTiles<BlockHistoTilesPolicy, BINS, CHANNELS, ACTIVE_CHANNELS, InputIteratorRA, HistoCounter, SizeT> BlockHistoTilesT;
+    typedef BlockHistogramTiles<BlockHistogramTilesPolicy, BINS, CHANNELS, ACTIVE_CHANNELS, InputIteratorRA, HistoCounter, SizeT> BlockHistogramTilesT;
 
-    // Shared memory for BlockHistoTiles
-    __shared__ typename BlockHistoTilesT::TempStorage temp_storage;
+    // Shared memory for BlockHistogramTiles
+    __shared__ typename BlockHistogramTilesT::TempStorage temp_storage;
 
     // Consume input tiles
-    BlockHistoTilesT(temp_storage, d_samples, d_out_histograms.array).ConsumeTiles(
+    BlockHistogramTilesT(temp_storage, d_samples, d_out_histograms.array).ConsumeTiles(
         num_samples,
         even_share,
         queue,
-        Int2Type<BlockHistoTilesPolicy::GRID_MAPPING>());
+        Int2Type<BlockHistogramTilesPolicy::GRID_MAPPING>());
 }
 
 
@@ -156,7 +156,7 @@ __global__ void AggregateHistoKernel(
 
 
 /******************************************************************************
- * DeviceHisto
+ * DeviceHistogram
  *****************************************************************************/
 
 /**
@@ -165,9 +165,17 @@ __global__ void AggregateHistoKernel(
  */
 
 /**
- * \brief DeviceHisto provides device-wide parallel operations for constructing histogram(s) over samples data residing within global memory. ![](histogram_logo.png)
+ * \brief DeviceHistogram provides device-wide parallel operations for constructing histogram(s) over samples data residing within global memory. ![](histogram_logo.png)
+ *
+ * \par Overview
+ * A <a href="http://en.wikipedia.org/wiki/Histogram"><em>histogram</em></a>
+ * counts the number of observations that fall into each of the disjoint categories (known as <em>bins</em>).
+ *
+ * \par Usage Considerations
+ * \cdp_class
+ *
  */
-struct DeviceHisto
+struct DeviceHistogram
 {
 #ifndef DOXYGEN_SHOULD_SKIP_THIS    // Do not document
 
@@ -175,27 +183,27 @@ struct DeviceHisto
      * Constants and typedefs
      ******************************************************************************/
 
-    /// Generic structure for encapsulating dispatch properties.  Mirrors the constants within BlockHistoTilesPolicy.
+    /// Generic structure for encapsulating dispatch properties.  Mirrors the constants within BlockHistogramTilesPolicy.
     struct KernelDispachParams
     {
         // Policy fields
         int                         block_threads;
         int                         items_per_thread;
-        BlockHistoTilesAlgorithm    block_algorithm;
+        BlockHistogramTilesAlgorithm    block_algorithm;
         GridMappingStrategy         grid_mapping;
         int                         subscription_factor;
 
         // Derived fields
         int                         channel_tile_size;
 
-        template <typename BlockHistoTilesPolicy>
+        template <typename BlockHistogramTilesPolicy>
         __host__ __device__ __forceinline__
         void Init(int subscription_factor = 1)
         {
-            block_threads               = BlockHistoTilesPolicy::BLOCK_THREADS;
-            items_per_thread            = BlockHistoTilesPolicy::ITEMS_PER_THREAD;
-            block_algorithm             = BlockHistoTilesPolicy::GRID_ALGORITHM;
-            grid_mapping                = BlockHistoTilesPolicy::GRID_MAPPING;
+            block_threads               = BlockHistogramTilesPolicy::BLOCK_THREADS;
+            items_per_thread            = BlockHistogramTilesPolicy::ITEMS_PER_THREAD;
+            block_algorithm             = BlockHistogramTilesPolicy::GRID_ALGORITHM;
+            grid_mapping                = BlockHistogramTilesPolicy::GRID_MAPPING;
             this->subscription_factor   = subscription_factor;
 
             channel_tile_size           = block_threads * items_per_thread;
@@ -223,15 +231,15 @@ struct DeviceHisto
     template <
         int                         CHANNELS,
         int                         ACTIVE_CHANNELS,
-        BlockHistoTilesAlgorithm    GRID_ALGORITHM,
+        BlockHistogramTilesAlgorithm    GRID_ALGORITHM,
         int                         ARCH>
     struct TunedPolicies;
 
     /// SM35 tune
-    template <int CHANNELS, int ACTIVE_CHANNELS, BlockHistoTilesAlgorithm GRID_ALGORITHM>
+    template <int CHANNELS, int ACTIVE_CHANNELS, BlockHistogramTilesAlgorithm GRID_ALGORITHM>
     struct TunedPolicies<CHANNELS, ACTIVE_CHANNELS, GRID_ALGORITHM, 350>
     {
-        typedef BlockHistoTilesPolicy<
+        typedef BlockHistogramTilesPolicy<
             (GRID_ALGORITHM == GRID_HISTO_SORT) ? 128 : 256,
             (GRID_ALGORITHM == GRID_HISTO_SORT) ? 12 : (30 / ACTIVE_CHANNELS),
             GRID_ALGORITHM,
@@ -241,10 +249,10 @@ struct DeviceHisto
     };
 
     /// SM30 tune
-    template <int CHANNELS, int ACTIVE_CHANNELS, BlockHistoTilesAlgorithm GRID_ALGORITHM>
+    template <int CHANNELS, int ACTIVE_CHANNELS, BlockHistogramTilesAlgorithm GRID_ALGORITHM>
     struct TunedPolicies<CHANNELS, ACTIVE_CHANNELS, GRID_ALGORITHM, 300>
     {
-        typedef BlockHistoTilesPolicy<
+        typedef BlockHistogramTilesPolicy<
             128,
             (GRID_ALGORITHM == GRID_HISTO_SORT) ? 20 : (22 / ACTIVE_CHANNELS),
             GRID_ALGORITHM,
@@ -254,10 +262,10 @@ struct DeviceHisto
     };
 
     /// SM20 tune
-    template <int CHANNELS, int ACTIVE_CHANNELS, BlockHistoTilesAlgorithm GRID_ALGORITHM>
+    template <int CHANNELS, int ACTIVE_CHANNELS, BlockHistogramTilesAlgorithm GRID_ALGORITHM>
     struct TunedPolicies<CHANNELS, ACTIVE_CHANNELS, GRID_ALGORITHM, 200>
     {
-        typedef BlockHistoTilesPolicy<
+        typedef BlockHistogramTilesPolicy<
             128,
             (GRID_ALGORITHM == GRID_HISTO_SORT) ? 21 : (23 / ACTIVE_CHANNELS),
             GRID_ALGORITHM,
@@ -267,10 +275,10 @@ struct DeviceHisto
     };
 
     /// SM10 tune
-    template <int CHANNELS, int ACTIVE_CHANNELS, BlockHistoTilesAlgorithm GRID_ALGORITHM>
+    template <int CHANNELS, int ACTIVE_CHANNELS, BlockHistogramTilesAlgorithm GRID_ALGORITHM>
     struct TunedPolicies<CHANNELS, ACTIVE_CHANNELS, GRID_ALGORITHM, 100>
     {
-        typedef BlockHistoTilesPolicy<
+        typedef BlockHistogramTilesPolicy<
             128, 
             7, 
             GRID_HISTO_SORT,        // (use sort regardless because atomics are perf-useless)
@@ -280,11 +288,11 @@ struct DeviceHisto
     };
 
 
-    /// Tuning policy for the PTX architecture that DeviceHisto operations will get dispatched to
+    /// Tuning policy for the PTX architecture that DeviceHistogram operations will get dispatched to
     template <
         int                         CHANNELS,
         int                         ACTIVE_CHANNELS,
-        BlockHistoTilesAlgorithm      GRID_ALGORITHM>
+        BlockHistogramTilesAlgorithm      GRID_ALGORITHM>
     struct PtxDefaultPolicies
     {
         static const int PTX_TUNE_ARCH =   (CUB_PTX_ARCH >= 350) ?
@@ -345,7 +353,7 @@ struct DeviceHisto
         int                         CHANNELS,                           ///< Number of channels interleaved in the input data (may be greater than the number of channels being actively histogrammed)
         int                         ACTIVE_CHANNELS,                    ///< Number of channels actively being histogrammed
         typename                    InitHistoKernelPtr,                 ///< Function type of cub::InitHistoKernel
-        typename                    MultiBlockHistoKernelPtr,           ///< Function type of cub::MultiBlockHistoKernel
+        typename                    MultiBlockHistogramKernelPtr,           ///< Function type of cub::MultiBlockHistogramKernel
         typename                    AggregateHistoKernelPtr,            ///< Function type of cub::AggregateHistoKernel
         typename                    InputIteratorRA,                    ///< The input iterator type (may be a simple pointer type).  Must have a value type that is assignable to <tt>unsigned char</tt>
         typename                    HistoCounter,                       ///< Integral type for counting sample occurrences per histogram bin
@@ -355,7 +363,7 @@ struct DeviceHisto
         void                        *d_temp_storage,                    ///< [in] %Device allocation of temporary storage.  When NULL, the required allocation size is returned in \p temp_storage_bytes and no work is done.
         size_t                      &temp_storage_bytes,                ///< [in,out] Size in bytes of \p d_temp_storage allocation.
         InitHistoKernelPtr          init_kernel,                        ///< [in] Kernel function pointer to parameterization of cub::InitHistoKernel
-        MultiBlockHistoKernelPtr    multi_block_kernel,                 ///< [in] Kernel function pointer to parameterization of cub::MultiBlockHistoKernel
+        MultiBlockHistogramKernelPtr    multi_block_kernel,                 ///< [in] Kernel function pointer to parameterization of cub::MultiBlockHistogramKernel
         AggregateHistoKernelPtr     aggregate_kernel,                   ///< [in] Kernel function pointer to parameterization of cub::AggregateHistoKernel
         KernelDispachParams         &multi_block_dispatch_params,       ///< [in] Dispatch parameters that match the policy that \p multi_block_kernel was compiled for
         InputIteratorRA             d_samples,                          ///< [in] Input samples to histogram
@@ -517,14 +525,14 @@ struct DeviceHisto
     /**
      * \brief Computes a device-wide histogram
      *
-     * \tparam GRID_ALGORITHM      cub::BlockHistoTilesAlgorithm enumerator specifying the underlying algorithm to use
+     * \tparam GRID_ALGORITHM      cub::BlockHistogramTilesAlgorithm enumerator specifying the underlying algorithm to use
      * \tparam CHANNELS             Number of channels interleaved in the input data (may be greater than the number of channels being actively histogrammed)
      * \tparam ACTIVE_CHANNELS      <b>[inferred]</b> Number of channels actively being histogrammed
      * \tparam InputIteratorRA      <b>[inferred]</b> Random-access iterator type for input (may be a simple pointer type)  Must have a value type that is assignable to <tt>unsigned char</tt>
      * \tparam HistoCounter         <b>[inferred]</b> Integral type for counting sample occurrences per histogram bin
      */
     template <
-        BlockHistoTilesAlgorithm    GRID_ALGORITHM,
+        BlockHistogramTilesAlgorithm    GRID_ALGORITHM,
         int                         BINS,                       ///< Number of histogram bins per channel
         int                         CHANNELS,                   ///< Number of channels interleaved in the input data (may be greater than the number of channels being actively histogrammed)
         int                         ACTIVE_CHANNELS,            ///< Number of channels actively being histogrammed
@@ -571,7 +579,7 @@ struct DeviceHisto
                 d_temp_storage,
                 temp_storage_bytes,
                 InitHistoKernel<BINS, ACTIVE_CHANNELS, SizeT, HistoCounter>,
-                MultiBlockHistoKernel<MultiBlockPolicy, BINS, CHANNELS, ACTIVE_CHANNELS, InputIteratorRA, HistoCounter, SizeT>,
+                MultiBlockHistogramKernel<MultiBlockPolicy, BINS, CHANNELS, ACTIVE_CHANNELS, InputIteratorRA, HistoCounter, SizeT>,
                 AggregateHistoKernel<BINS, ACTIVE_CHANNELS, HistoCounter>,
                 multi_block_dispatch_params,
                 d_samples,
@@ -599,9 +607,14 @@ struct DeviceHisto
     /**
      * \brief Computes a device-wide histogram.  Uses fast block-sorting to compute the histogram.
      *
+     * \par
      * Delivers consistent throughput regardless of sample diversity.
      *
      * \devicestorage
+     *
+     * \cdp
+     *
+     * \iterator
      *
      * \tparam BINS                 Number of histogram bins per channel
      * \tparam InputIteratorRA      <b>[inferred]</b> Random-access iterator type for input (may be a simple pointer type)  Must have a value type that can be cast as an integer in the range [0..BINS-1]
@@ -628,9 +641,14 @@ struct DeviceHisto
     /**
      * \brief Computes a device-wide histogram.  Uses shared-memory atomic read-modify-write operations to compute the histogram.
      *
+     * \par
      * Input samples having lower diversity can cause performance to be degraded.
      *
      * \devicestorage
+     *
+     * \cdp
+     *
+     * \iterator
      *
      * \tparam BINS                 Number of histogram bins per channel
      * \tparam InputIteratorRA      <b>[inferred]</b> Random-access iterator type for input (may be a simple pointer type)  Must have a value type that can be cast as an integer in the range [0..BINS-1]
@@ -658,9 +676,14 @@ struct DeviceHisto
     /**
      * \brief Computes a device-wide histogram.  Uses global-memory atomic read-modify-write operations to compute the histogram.
      *
+     * \par
      * Input samples having lower diversity can cause performance to be degraded.
      *
      * \devicestorage
+     *
+     * \cdp
+     *
+     * \iterator
      *
      * \tparam BINS                 Number of histogram bins per channel
      * \tparam InputIteratorRA      <b>[inferred]</b> Random-access iterator type for input (may be a simple pointer type)  Must have a value type that can be cast as an integer in the range [0..BINS-1]
@@ -695,9 +718,14 @@ struct DeviceHisto
     /**
      * \brief Computes a device-wide histogram from multi-channel data.  Uses fast block-sorting to compute the histogram.
      *
+     * \par
      * Delivers consistent throughput regardless of sample diversity.
      *
      * \devicestorage
+     *
+     * \cdp
+     *
+     * \iterator
      *
      * \tparam BINS                 Number of histogram bins per channel
      * \tparam CHANNELS             Number of channels interleaved in the input data (may be greater than the number of channels being actively histogrammed)
@@ -729,9 +757,14 @@ struct DeviceHisto
     /**
      * \brief Computes a device-wide histogram from multi-channel data.  Uses shared-memory atomic read-modify-write operations to compute the histogram.
      *
+     * \par
      * Input samples having lower diversity can cause performance to be degraded.
      *
      * \devicestorage
+     *
+     * \cdp
+     *
+     * \iterator
      *
      * \tparam BINS                 Number of histogram bins per channel
      * \tparam CHANNELS             Number of channels interleaved in the input data (may be greater than the number of channels being actively histogrammed)
@@ -763,9 +796,14 @@ struct DeviceHisto
     /**
      * \brief Computes a device-wide histogram from multi-channel data.  Uses global-memory atomic read-modify-write operations to compute the histogram.
      *
+     * \par
      * Input samples having lower diversity can cause performance to be degraded.
      *
      * \devicestorage
+     *
+     * \cdp
+     *
+     * \iterator
      *
      * \tparam BINS                 Number of histogram bins per channel
      * \tparam CHANNELS             Number of channels interleaved in the input data (may be greater than the number of channels being actively histogrammed)

@@ -28,7 +28,7 @@
 
 /**
  * \file
- * cub::BlockHisto provides methods for constructing (and compositing into) block-wide histograms from data partitioned across threads within a CUDA thread block.
+ * cub::BlockHistogram provides methods for constructing (and compositing into) block-wide histograms from data partitioned across threads within a CUDA thread block.
  */
 
 #pragma once
@@ -50,9 +50,9 @@ namespace cub {
  ******************************************************************************/
 
 /**
- * \brief BlockHistoAlgorithm enumerates alternative algorithms for the parallel construction of block-wide histograms.
+ * \brief BlockHistogramAlgorithm enumerates alternative algorithms for the parallel construction of block-wide histograms.
  */
-enum BlockHistoAlgorithm
+enum BlockHistogramAlgorithm
 {
 
     /**
@@ -88,7 +88,7 @@ enum BlockHistoAlgorithm
 
 
 /**
- * \brief BlockHisto provides methods for constructing (and compositing into) block-wide histograms from data partitioned across threads within a CUDA thread block. ![](histogram_logo.png)
+ * \brief BlockHistogram provides methods for constructing (and compositing into) block-wide histograms from data partitioned across threads within a CUDA thread block. ![](histogram_logo.png)
  * \ingroup BlockModule
  *
  * \par Overview
@@ -96,29 +96,29 @@ enum BlockHistoAlgorithm
  * counts the number of observations that fall into each of the disjoint categories (known as <em>bins</em>).
  *
  * \par
- * For convenience, BlockHisto provides alternative entrypoints that differ by:
+ * For convenience, BlockHistogram provides alternative entrypoints that differ by:
  * - Complete/incremental composition (compute a new histogram vs. update existing histogram data)
  *
  * \tparam BLOCK_THREADS        The threadblock size in threads
  * \tparam ITEMS_PER_THREAD     The number of items per thread
  * \tparam BINS                 The number bins within the histogram
- * \tparam ALGORITHM            <b>[optional]</b> cub::BlockHistoAlgorithm enumerator specifying the underlying algorithm to use (default = cub::BLOCK_HISTO_SORT)
+ * \tparam ALGORITHM            <b>[optional]</b> cub::BlockHistogramAlgorithm enumerator specifying the underlying algorithm to use (default = cub::BLOCK_HISTO_SORT)
  *
  * \par Algorithm
- * BlockHisto can be (optionally) configured to use different algorithms:
- *   -# <b>cub::BLOCK_HISTO_SORT</b>.  Sorting followed by differentiation. [More...](\ref cub::BlockHistoAlgorithm)
- *   -# <b>cub::BLOCK_HISTO_ATOMIC</b>.  Use atomic addition to update byte counts directly. [More...](\ref cub::BlockHistoAlgorithm)
+ * BlockHistogram can be (optionally) configured to use different algorithms:
+ *   -# <b>cub::BLOCK_HISTO_SORT</b>.  Sorting followed by differentiation. [More...](\ref cub::BlockHistogramAlgorithm)
+ *   -# <b>cub::BLOCK_HISTO_ATOMIC</b>.  Use atomic addition to update byte counts directly. [More...](\ref cub::BlockHistogramAlgorithm)
  *
  * \par Usage Considerations
  * - The histogram output can be constructed in shared or global memory
  * - Supports partially-full threadblocks (i.e., the most-significant thread ranks having undefined values).
- * - \smemreuse{BlockHisto::TempStorage}
+ * - \smemreuse{BlockHistogram::TempStorage}
  *
  * \par Performance Considerations
  * - Computation is slightly more efficient (i.e., having lower instruction overhead) for:
  *   - \p BLOCK_THREADS is a multiple of the architecture's warp size
  *   - Every thread has a valid input (i.e., full <b><em>vs.</em></b> partial-tiles)
- * - See cub::BlockHistoAlgorithm for performance details regarding algorithmic alternatives
+ * - See cub::BlockHistogramAlgorithm for performance details regarding algorithmic alternatives
  *
  * \par Examples
  * \par
@@ -129,11 +129,11 @@ enum BlockHistoAlgorithm
  *
  * __global__ void SomeKernel(...)
  * {
- *      // Parameterize a 256-bin BlockHisto type for 128 threads having 4 samples each
- *      typedef cub::BlockHisto<128, 4, 256> BlockHisto;
+ *      // Parameterize a 256-bin BlockHistogram type for 128 threads having 4 samples each
+ *      typedef cub::BlockHistogram<128, 4, 256> BlockHistogram;
  *
- *      // Declare shared memory for BlockHisto
- *      __shared__ typename BlockHisto::TempStorage temp_storage;
+ *      // Declare shared memory for BlockHistogram
+ *      __shared__ typename BlockHistogram::TempStorage temp_storage;
  *
  *      // Declare shared memory for histogram bins
  *      __shared__ unsigned int smem_histogram[256];
@@ -145,7 +145,7 @@ enum BlockHistoAlgorithm
  *      ...
  *
  *      // Compute the threadblock-wide histogram
- *      BlockHisto(temp_storage).Histogram(data, smem_histogram);
+ *      BlockHistogram(temp_storage).Histogram(data, smem_histogram);
  *
  *      ...
  * \endcode
@@ -159,18 +159,18 @@ enum BlockHistoAlgorithm
  * template <int BLOCK_THREADS>
  * __global__ void SomeKernel(..., int *d_histogram)
  * {
- *      // Parameterize a 256-bin BlockHisto type where each thread composites one sample item
- *      typedef cub::BlockHisto<BLOCK_THREADS, 1, 256> BlockHisto;
+ *      // Parameterize a 256-bin BlockHistogram type where each thread composites one sample item
+ *      typedef cub::BlockHistogram<BLOCK_THREADS, 1, 256> BlockHistogram;
  *
- *      // Declare shared memory for BlockHisto
- *      __shared__ typename BlockHisto::TempStorage temp_storage;
+ *      // Declare shared memory for BlockHistogram
+ *      __shared__ typename BlockHistogram::TempStorage temp_storage;
  *
  *      // Guarded load of input item
  *      int data[1];
  *      if (threadIdx.x < num_items) data[0] = ...;
  *
  *      // Compute the threadblock-wide sum of valid elements in thread0
- *      BlockHisto(temp_storage).Composite(data, d_histogram);
+ *      BlockHistogram(temp_storage).Composite(data, d_histogram);
  *
  *      ...
  * \endcode
@@ -180,13 +180,13 @@ template <
     int                     BLOCK_THREADS,
     int                     ITEMS_PER_THREAD,
     int                     BINS,
-    BlockHistoAlgorithm     ALGORITHM = BLOCK_HISTO_SORT>
-class BlockHisto
+    BlockHistogramAlgorithm     ALGORITHM = BLOCK_HISTO_SORT>
+class BlockHistogram
 {
 private:
 
     /******************************************************************************
-     * Constants
+     * Constants and type definitions
      ******************************************************************************/
 
     /**
@@ -195,7 +195,7 @@ private:
      * on version SM120 or later.  Otherwise BLOCK_HISTO_SORT is used
      * regardless.
      */
-    static const BlockHistoAlgorithm SAFE_ALGORITHM =
+    static const BlockHistogramAlgorithm SAFE_ALGORITHM =
         ((ALGORITHM == BLOCK_HISTO_ATOMIC) && (CUB_PTX_ARCH < 120)) ?
             BLOCK_HISTO_SORT :
             ALGORITHM;
@@ -210,8 +210,8 @@ private:
     /**
      * BLOCK_HISTO_SORT algorithmic variant
      */
-    template <BlockHistoAlgorithm _ALGORITHM, int DUMMY = 0>
-    struct BlockHistoInternal
+    template <BlockHistogramAlgorithm _ALGORITHM, int DUMMY = 0>
+    struct BlockHistogramInternal
     {
         // Parameterize BlockRadixSort type for our thread block
         typedef BlockRadixSort<unsigned char, BLOCK_THREADS, ITEMS_PER_THREAD> BlockRadixSortT;
@@ -243,7 +243,7 @@ private:
 
 
         /// Constructor
-        __device__ __forceinline__ BlockHistoInternal(
+        __device__ __forceinline__ BlockHistogramInternal(
             TempStorage &temp_storage,
             int linear_tid)
         :
@@ -290,7 +290,7 @@ private:
             enum { TILE_SIZE = BLOCK_THREADS * ITEMS_PER_THREAD };
 
             // Sort bytes in blocked arrangement
-            BlockRadixSortT(temp_storage.sort, linear_tid).SortBlocked(items);
+            BlockRadixSortT(temp_storage.sort, linear_tid).Sort(items);
 
             __syncthreads();
 
@@ -349,14 +349,14 @@ private:
      * BLOCK_HISTO_ATOMIC algorithmic variant
      */
     template <int DUMMY>
-    struct BlockHistoInternal<BLOCK_HISTO_ATOMIC, DUMMY>
+    struct BlockHistogramInternal<BLOCK_HISTO_ATOMIC, DUMMY>
     {
         /// Shared memory storage layout type
         struct TempStorage {};
 
 
         /// Constructor
-        __device__ __forceinline__ BlockHistoInternal(
+        __device__ __forceinline__ BlockHistogramInternal(
             TempStorage &temp_storage,
             int linear_tid)
         {}
@@ -388,9 +388,9 @@ private:
      ******************************************************************************/
 
     /// Internal histogram implementation to use
-    typedef BlockHistoInternal<SAFE_ALGORITHM> InternalHistogram;
+    typedef BlockHistogramInternal<SAFE_ALGORITHM> InternalHistogram;
 
-    /// Shared memory storage layout type for BlockHisto
+    /// Shared memory storage layout type for BlockHistogram
     typedef typename InternalHistogram::TempStorage _TempStorage;
 
 
@@ -419,7 +419,7 @@ private:
 
 public:
 
-    /// \smemstorage{BlockHisto}
+    /// \smemstorage{BlockHistogram}
     typedef _TempStorage TempStorage;
 
 
@@ -431,7 +431,7 @@ public:
     /**
      * \brief Collective constructor for 1D thread blocks using a private static allocation of shared memory as temporary storage.  Threads are identified using <tt>threadIdx.x</tt>.
      */
-    __device__ __forceinline__ BlockHisto()
+    __device__ __forceinline__ BlockHistogram()
     :
         temp_storage(PrivateStorage()),
         linear_tid(threadIdx.x)
@@ -441,7 +441,7 @@ public:
     /**
      * \brief Collective constructor for 1D thread blocks using the specified memory allocation as temporary storage.  Threads are identified using <tt>threadIdx.x</tt>.
      */
-    __device__ __forceinline__ BlockHisto(
+    __device__ __forceinline__ BlockHistogram(
         TempStorage &temp_storage)             ///< [in] Reference to memory allocation having layout type TempStorage
     :
         temp_storage(temp_storage),
@@ -452,7 +452,7 @@ public:
     /**
      * \brief Collective constructor using a private static allocation of shared memory as temporary storage.  Threads are identified using the given linear thread identifier
      */
-    __device__ __forceinline__ BlockHisto(
+    __device__ __forceinline__ BlockHistogram(
         int linear_tid)                        ///< [in] A suitable 1D thread-identifier for the calling thread (e.g., <tt>(threadIdx.y * blockDim.x) + linear_tid</tt> for 2D thread blocks)
     :
         temp_storage(PrivateStorage()),
@@ -463,7 +463,7 @@ public:
     /**
      * \brief Collective constructor using the specified memory allocation as temporary storage.  Threads are identified using the given linear thread identifier.
      */
-    __device__ __forceinline__ BlockHisto(
+    __device__ __forceinline__ BlockHistogram(
         TempStorage &temp_storage,             ///< [in] Reference to memory allocation having layout type TempStorage
         int linear_tid)                        ///< [in] <b>[optional]</b> A suitable 1D thread-identifier for the calling thread (e.g., <tt>(threadIdx.y * blockDim.x) + linear_tid</tt> for 2D thread blocks)
     :
@@ -474,7 +474,7 @@ public:
 
     //@}  end member group
     /******************************************************************//**
-     * \name Discontinuity flagging
+     * \name Histogram operations
      *********************************************************************/
     //@{
 
@@ -513,7 +513,7 @@ public:
         typename            HistoCounter>
     __device__ __forceinline__ void Histogram(
         unsigned char       (&items)[ITEMS_PER_THREAD],     ///< [in] Calling thread's input values to histogram
-        HistoCounter        histogram[BINS])                 ///< [out] Reference to shared/global memory histogram
+        HistoCounter        histogram[BINS])                ///< [out] Reference to shared/global memory histogram
     {
         // Initialize histogram bin counts to zeros
         InitHistogram(histogram);
