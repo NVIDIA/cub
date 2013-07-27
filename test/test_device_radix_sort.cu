@@ -159,7 +159,7 @@ struct Pair
     Key     key;
     Value   value;
 
-    bool operator<(const Pair &b)
+    bool operator<(const Pair &b) const
     {
         return (key < b.key);
     }
@@ -182,13 +182,14 @@ void Initialize(
     Pair<Key, Value> *pairs = new Pair<Key, Value>[num_items];
     for (int i = 0; i < num_items; ++i)
     {
-        InitValue(gen_mode, h_keys[i], i);
+        RandomBits(h_keys[i], 0, 0, g_bits);
         h_values[i]     = i;
+
         pairs[i].key    = h_keys[i];
-        pairs[i].value  = h_keys[i];
+        pairs[i].value  = h_values[i];
     }
 
-    std::sort(pairs, pairs + num_items);
+    std::stable_sort(pairs, pairs + num_items);
 
     for (int i = 0; i < num_items; ++i)
     {
@@ -214,16 +215,11 @@ void Initialize(
 {
     for (int i = 0; i < num_items; ++i)
     {
-//        InitValue(gen_mode, h_keys[i], i);
-//        h_keys[i]           = i % 4;
-//        h_keys[i]           = i % 32;
-//        h_keys[i]           = 1;
         RandomBits(h_keys[i], 0, 0, g_bits);
-
         h_sorted_keys[i]    = h_keys[i];
     }
 
-    std::sort(h_sorted_keys, h_sorted_keys + num_items);
+    std::stable_sort(h_sorted_keys, h_sorted_keys + num_items);
 }
 
 
@@ -297,12 +293,12 @@ void Test(
 
     // Check for correctness (and display results, if specified)
     int compare = CompareDeviceResults(h_sorted_keys, d_keys.Current(), num_items, true, g_verbose);
-    printf("\t%s", compare ? "FAIL" : "PASS");
+    printf("\t Compare keys (selector %d): %s ", d_keys.selector, compare ? "FAIL" : "PASS");
     if (!KEYS_ONLY)
     {
         int values_compare = CompareDeviceResults(h_sorted_values, d_values.Current(), num_items, true, g_verbose);
         compare |= values_compare;
-        printf("\t%s", values_compare ? "FAIL" : "PASS");
+        printf("\t Compare values (selector %d): %s ", d_values.selector, values_compare ? "FAIL" : "PASS");
     }
 
     // Flush any stdout/stderr
@@ -337,7 +333,7 @@ void Test(
         float gbandwidth = (KEYS_ONLY) ?
             grate * sizeof(Key) * 2 :
             grate * (sizeof(Key) + sizeof(Value)) * 2;
-        printf(", %.3f elapsed ms, %.3f avg ms, %.3f billion items/s, %.3f logical GB/s", elapsed_millis, avg_millis, grate, gbandwidth);
+        printf("\n%.3f elapsed ms, %.3f avg ms, %.3f billion items/s, %.3f logical GB/s", elapsed_millis, avg_millis, grate, gbandwidth);
     }
 
     printf("\n\n");
@@ -402,7 +398,11 @@ int main(int argc, char** argv)
     CubDebugExit(args.DeviceInit());
     printf("\n");
 
-    Test<false, unsigned int, NullType>(num_items, UNIFORM, 0, g_bits, CUB_TYPE_STRING(unsigned int));
+    Test<false, unsigned int, NullType>(num_items, RANDOM, 0, g_bits, CUB_TYPE_STRING(unsigned int));
+
+    Test<false, unsigned long long, NullType>(num_items, RANDOM, 0, g_bits, CUB_TYPE_STRING(unsigned int));
+
+    Test<false, unsigned int, unsigned int>(num_items, RANDOM, 0, g_bits, CUB_TYPE_STRING(unsigned int));
 
     return 0;
 }
