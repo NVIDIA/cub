@@ -27,7 +27,7 @@
  ******************************************************************************/
 
 /******************************************************************************
- * Test of DeviceHisto utilities
+ * Test of DeviceHistogram utilities
  ******************************************************************************/
 
 // Ensure printing of CUDA runtime errors to console
@@ -55,7 +55,7 @@ CachingDeviceAllocator  g_allocator;
 
 
 //---------------------------------------------------------------------
-// Dispatch to different DeviceHisto entrypoints
+// Dispatch to different DeviceHistogram entrypoints
 //---------------------------------------------------------------------
 
 /**
@@ -81,7 +81,7 @@ cudaError_t Dispatch(
     cudaError_t error = cudaSuccess;
     for (int i = 0; i < timing_iterations; ++i)
     {
-        error = DeviceHisto::MultiChannelSorting<BINS, CHANNELS, ACTIVE_CHANNELS>(d_temp_storage, temp_storage_bytes, d_sample_itr, d_histograms, num_samples, stream, stream_synchronous);
+        error = DeviceHistogram::MultiChannelSorting<BINS, CHANNELS, ACTIVE_CHANNELS>(d_temp_storage, temp_storage_bytes, d_sample_itr, d_histograms, num_samples, stream, stream_synchronous);
     }
     return error;
 }
@@ -112,7 +112,7 @@ cudaError_t Dispatch(
     cudaError_t error = cudaSuccess;
     for (int i = 0; i < timing_iterations; ++i)
     {
-        error = DeviceHisto::MultiChannelSharedAtomic<BINS, CHANNELS, ACTIVE_CHANNELS>(d_temp_storage, temp_storage_bytes, d_sample_itr, d_histograms, num_samples, stream, stream_synchronous);
+        error = DeviceHistogram::MultiChannelSharedAtomic<BINS, CHANNELS, ACTIVE_CHANNELS>(d_temp_storage, temp_storage_bytes, d_sample_itr, d_histograms, num_samples, stream, stream_synchronous);
     }
     return error;
 }
@@ -141,7 +141,7 @@ cudaError_t Dispatch(
     cudaError_t error = cudaSuccess;
     for (int i = 0; i < timing_iterations; ++i)
     {
-        error = DeviceHisto::MultiChannelGlobalAtomic<BINS, CHANNELS, ACTIVE_CHANNELS>(d_temp_storage, temp_storage_bytes, d_sample_itr, d_histograms, num_samples, stream, stream_synchronous);
+        error = DeviceHistogram::MultiChannelGlobalAtomic<BINS, CHANNELS, ACTIVE_CHANNELS>(d_temp_storage, temp_storage_bytes, d_sample_itr, d_histograms, num_samples, stream, stream_synchronous);
     }
     return error;
 }
@@ -313,7 +313,7 @@ void Initialize(
 
 
 /**
- * Test DeviceHisto
+ * Test DeviceHistogram
  */
 template <
     bool                        CNP,
@@ -339,7 +339,7 @@ void Test(
     int cnp_compare     = 0;
     int total_bins      = ACTIVE_CHANNELS * BINS;
 
-    printf("%s cub::DeviceHisto %s %d %s samples (%dB), %d bins, %d channels, %d active channels, gen-mode %s\n",
+    printf("%s cub::DeviceHistogram %s %d %s samples (%dB), %d bins, %d channels, %d active channels, gen-mode %s\n",
         (CNP) ? "CNP device invoked" : "Host-invoked",
         (ALGORITHM == GRID_HISTO_SHARED_ATOMIC) ? "satomic" : (ALGORITHM == GRID_HISTO_GLOBAL_ATOMIC) ? "gatomic" : "sort",
         num_samples,

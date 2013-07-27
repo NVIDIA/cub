@@ -28,7 +28,7 @@
 
 /**
  * \file
- * cub::BlockHistoTilesSharedAtomic implements a stateful abstraction of CUDA thread blocks for histogramming multiple tiles as part of device-wide histogram using shared atomics
+ * cub::BlockHistogramTilesSharedAtomic implements a stateful abstraction of CUDA thread blocks for histogramming multiple tiles as part of device-wide histogram using shared atomics
  */
 
 #pragma once
@@ -47,17 +47,17 @@ namespace cub {
 
 
 /**
- * BlockHistoTilesSharedAtomic implements a stateful abstraction of CUDA thread blocks for histogramming multiple tiles as part of device-wide histogram using shared atomics
+ * BlockHistogramTilesSharedAtomic implements a stateful abstraction of CUDA thread blocks for histogramming multiple tiles as part of device-wide histogram using shared atomics
  */
 template <
-    typename    BlockHistoTilesPolicy,          ///< Tuning policy
+    typename    BlockHistogramTilesPolicy,          ///< Tuning policy
     int         BINS,                           ///< Number of histogram bins
     int         CHANNELS,                       ///< Number of channels interleaved in the input data (may be greater than the number of active channels being histogrammed)
     int         ACTIVE_CHANNELS,                ///< Number of channels actively being histogrammed
     typename    InputIteratorRA,                ///< The input iterator type (may be a simple pointer type).  Must have a value type that can be cast as an integer in the range [0..BINS-1]
     typename    HistoCounter,                   ///< Integral type for counting sample occurrences per histogram bin
     typename    SizeT>                          ///< Integer type for offsets
-struct BlockHistoTilesSharedAtomic
+struct BlockHistogramTilesSharedAtomic
 {
     //---------------------------------------------------------------------
     // Types and constants
@@ -69,8 +69,8 @@ struct BlockHistoTilesSharedAtomic
     // Constants
     enum
     {
-        BLOCK_THREADS       = BlockHistoTilesPolicy::BLOCK_THREADS,
-        ITEMS_PER_THREAD    = BlockHistoTilesPolicy::ITEMS_PER_THREAD,
+        BLOCK_THREADS       = BlockHistogramTilesPolicy::BLOCK_THREADS,
+        ITEMS_PER_THREAD    = BlockHistogramTilesPolicy::ITEMS_PER_THREAD,
         TILE_CHANNEL_ITEMS  = BLOCK_THREADS * ITEMS_PER_THREAD,
         TILE_ITEMS          = TILE_CHANNEL_ITEMS * CHANNELS,
     };
@@ -103,7 +103,7 @@ struct BlockHistoTilesSharedAtomic
     /**
      * Constructor
      */
-    __device__ __forceinline__ BlockHistoTilesSharedAtomic(
+    __device__ __forceinline__ BlockHistogramTilesSharedAtomic(
         TempStorage         &temp_storage,                                  ///< Reference to temp_storage
         InputIteratorRA     d_in,                                           ///< Input data to reduce
         HistoCounter*       (&d_out_histograms)[ACTIVE_CHANNELS])           ///< Reference to output histograms

@@ -199,7 +199,9 @@ ALIASES                = smemreuse="A subsequent <tt>__syncthreads()</tt> thread
 ALIASES                += smemreuse{1}="After any operation, a subsequent <tt>__syncthreads()</tt> barrier is required if the collective's \1 is to be reused or repurposed"
 ALIASES 			   += smemstorage{1}="The operations exposed by \1 require a temporary memory allocation of this type for thread communication.  This opaque storage can be allocated directly using the <tt>__shared__</tt> keyword.  Alternatively, it can be aliased to externally allocated memory (shared or global) or <tt>union</tt>'d with other storage allocation types to facilitate memory reuse."
 ALIASES 			   += devicestorage="This operation requires an allocation of temporary device storage.  When \p d_temp_storage is NULL, no work is done and the required allocation size is returned in \p temp_storage_bytes."
-
+ALIASES 			   += cdp_class=" - These methods can be called within kernel code (via CUDA dynamic/nested parallelism)."
+ALIASES 			   += cdp="When using this method within kernel code (via CUDA dynamic/nested parallelism), be sure to define the \p CUB_CNP macro in your compiler's macro definitions."
+ALIASES				   += iterator="Random-access input/output iterators can be used instead of naked device pointers (e.g., a zip-iterator for fusing multiple inputs)."
 
 # This tag can be used to specify a number of word-keyword mappings (TCL only).
 # A mapping has the form "name=value". For example adding
@@ -664,7 +666,7 @@ INPUT                  += ../cub/thread/thread_scan.cuh
 INPUT                  += ../cub/thread/thread_store.cuh  
 INPUT                  += ../cub/block/block_discontinuity.cuh 
 INPUT                  += ../cub/block/block_exchange.cuh 
-INPUT                  += ../cub/block/block_histo.cuh 
+INPUT                  += ../cub/block/block_histogram.cuh 
 INPUT                  += ../cub/block/block_load.cuh 
 # INPUT                  += ../cub/block/block_radix_rank.cuh 
 INPUT                  += ../cub/block/block_radix_sort.cuh 
@@ -672,12 +674,13 @@ INPUT                  += ../cub/block/block_radix_sort.cuh
 INPUT                  += ../cub/block/block_reduce.cuh 
 INPUT                  += ../cub/block/block_scan.cuh 
 INPUT                  += ../cub/block/block_store.cuh 
-INPUT                  += ../cub/device/device_histo.cuh 
+INPUT                  += ../cub/device/device_histogram.cuh 
+INPUT                  += ../cub/device/device_radix_sort.cuh 
 INPUT                  += ../cub/device/device_reduce.cuh 
 INPUT                  += ../cub/device/device_scan.cuh 
-INPUT                  += ../cub/grid/grid_even_share.cuh 
-INPUT                  += ../cub/grid/grid_mapping.cuh 
-INPUT                  += ../cub/grid/grid_queue.cuh 
+# INPUT                  += ../cub/grid/grid_even_share.cuh 
+# INPUT                  += ../cub/grid/grid_mapping.cuh 
+# INPUT                  += ../cub/grid/grid_queue.cuh 
 INPUT                  += ../cub/warp/warp_scan.cuh 
 INPUT                  += ../cub/warp/warp_reduce.cuh 
 

@@ -112,7 +112,7 @@ struct DoubleBuffer
     /// Pair of device buffer pointers
     T *d_buffers[2];
 
-    ///  Selector into \p d_buffers (i.e., where the results are)
+    ///  Selector into \p d_buffers (i.e., the active/valid buffer)
     int selector;
 
     /// \brief Constructor
@@ -126,7 +126,7 @@ struct DoubleBuffer
     /// \brief Constructor
     DoubleBuffer(
         T *d_current,         ///< The currently valid buffer
-        T *d_alternate)       ///< Alternate storage buffer of the same size as \p current
+        T *d_alternate)       ///< Alternate storage buffer of the same size as \p d_current
     {
         selector = 0;
         d_buffers[0] = d_current;

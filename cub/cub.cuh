@@ -35,7 +35,7 @@
 
 
 // Block
-#include "block/block_histo.cuh"
+#include "block/block_histogram.cuh"
 #include "block/block_discontinuity.cuh"
 #include "block/block_exchange.cuh"
 #include "block/block_load.cuh"
@@ -46,7 +46,7 @@
 #include "block/block_store.cuh"
 
 // Device
-#include "device/device_histo.cuh"
+#include "device/device_histogram.cuh"
 #include "device/device_radix_sort.cuh"
 #include "device/device_reduce.cuh"
 #include "device/device_scan.cuh"
