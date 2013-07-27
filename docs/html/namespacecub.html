@@ -134,13 +134,13 @@ Classes</h2></td></tr>
 .</div></div>
   <a href="classcub_1_1_block_exchange.html#details">More...</a><br/></td></tr>
 <tr class="separator:"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:"><td class="memItemLeft" align="right" valign="top">class &#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classcub_1_1_block_histo.html">BlockHisto</a></td></tr>
-<tr class="memdesc:"><td class="mdescLeft">&#160;</td><td class="mdescRight"><a class="el" href="classcub_1_1_block_histo.html" title="BlockHisto provides methods for constructing (and compositing into) block-wide histograms from data p...">BlockHisto</a> provides methods for constructing (and compositing into) block-wide histograms from data partitioned across threads within a CUDA thread block. </p>
+<tr class="memitem:"><td class="memItemLeft" align="right" valign="top">class &#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classcub_1_1_block_histogram.html">BlockHistogram</a></td></tr>
+<tr class="memdesc:"><td class="mdescLeft">&#160;</td><td class="mdescRight"><a class="el" href="classcub_1_1_block_histogram.html" title="BlockHistogram provides methods for constructing (and compositing into) block-wide histograms from da...">BlockHistogram</a> provides methods for constructing (and compositing into) block-wide histograms from data partitioned across threads within a CUDA thread block. </p>
 <div class="image">
 <img src="histogram_logo.png" alt="histogram_logo.png"/>
 <div class="caption">
 .</div></div>
-  <a href="classcub_1_1_block_histo.html#details">More...</a><br/></td></tr>
+  <a href="classcub_1_1_block_histogram.html#details">More...</a><br/></td></tr>
 <tr class="separator:"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:"><td class="memItemLeft" align="right" valign="top">class &#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classcub_1_1_block_load.html">BlockLoad</a></td></tr>
 <tr class="memdesc:"><td class="mdescLeft">&#160;</td><td class="mdescRight"><a class="el" href="classcub_1_1_block_load.html" title="BlockLoad provides configurable data movement operations for loading a tile of linear items into a bl...">BlockLoad</a> provides configurable data movement operations for loading a tile of linear items into a <a href="index.html#sec3sec3"><em>blocked arrangement</em></a> across a CUDA thread block. </p>
@@ -194,13 +194,21 @@ Classes</h2></td></tr>
 <tr class="memitem:"><td class="memItemLeft" align="right" valign="top">class &#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classcub_1_1_device.html">Device</a></td></tr>
 <tr class="memdesc:"><td class="mdescLeft">&#160;</td><td class="mdescRight">Properties of a given CUDA device and the corresponding PTX bundle.  <a href="classcub_1_1_device.html#details">More...</a><br/></td></tr>
 <tr class="separator:"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:"><td class="memItemLeft" align="right" valign="top">struct &#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="structcub_1_1_device_histo.html">DeviceHisto</a></td></tr>
-<tr class="memdesc:"><td class="mdescLeft">&#160;</td><td class="mdescRight"><a class="el" href="structcub_1_1_device_histo.html" title="DeviceHisto provides device-wide parallel operations for constructing histogram(s) over samples data ...">DeviceHisto</a> provides device-wide parallel operations for constructing histogram(s) over samples data residing within global memory. </p>
+<tr class="memitem:"><td class="memItemLeft" align="right" valign="top">struct &#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="structcub_1_1_device_histogram.html">DeviceHistogram</a></td></tr>
+<tr class="memdesc:"><td class="mdescLeft">&#160;</td><td class="mdescRight"><a class="el" href="structcub_1_1_device_histogram.html" title="DeviceHistogram provides device-wide parallel operations for constructing histogram(s) over samples d...">DeviceHistogram</a> provides device-wide parallel operations for constructing histogram(s) over samples data residing within global memory. </p>
 <div class="image">
 <img src="histogram_logo.png" alt="histogram_logo.png"/>
 <div class="caption">
 .</div></div>
-  <a href="structcub_1_1_device_histo.html#details">More...</a><br/></td></tr>
+  <a href="structcub_1_1_device_histogram.html#details">More...</a><br/></td></tr>
+<tr class="separator:"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:"><td class="memItemLeft" align="right" valign="top">struct &#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="structcub_1_1_device_radix_sort.html">DeviceRadixSort</a></td></tr>
+<tr class="memdesc:"><td class="mdescLeft">&#160;</td><td class="mdescRight"><a class="el" href="structcub_1_1_device_radix_sort.html" title="DeviceRadixSort provides operations for computing a device-wide, parallel radix sort across data item...">DeviceRadixSort</a> provides operations for computing a device-wide, parallel radix sort across data items residing within global memory. </p>
+<div class="image">
+<img src="sorting_logo.png" alt="sorting_logo.png"/>
+<div class="caption">
+.</div></div>
+  <a href="structcub_1_1_device_radix_sort.html#details">More...</a><br/></td></tr>
 <tr class="separator:"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:"><td class="memItemLeft" align="right" valign="top">struct &#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="structcub_1_1_device_reduce.html">DeviceReduce</a></td></tr>
 <tr class="memdesc:"><td class="mdescLeft">&#160;</td><td class="mdescRight"><a class="el" href="structcub_1_1_device_reduce.html" title="DeviceReduce provides operations for computing a device-wide, parallel reduction across data items re...">DeviceReduce</a> provides operations for computing a device-wide, parallel reduction across data items residing within global memory. </p>
@@ -229,12 +237,6 @@ Classes</h2></td></tr>
 <tr class="separator:"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:"><td class="memItemLeft" align="right" valign="top">struct &#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="structcub_1_1_equals.html">Equals</a></td></tr>
 <tr class="memdesc:"><td class="mdescLeft">&#160;</td><td class="mdescRight">Type equality test.  <a href="structcub_1_1_equals.html#details">More...</a><br/></td></tr>
-<tr class="separator:"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:"><td class="memItemLeft" align="right" valign="top">class &#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classcub_1_1_grid_even_share.html">GridEvenShare</a></td></tr>
-<tr class="memdesc:"><td class="mdescLeft">&#160;</td><td class="mdescRight"><a class="el" href="classcub_1_1_grid_even_share.html" title="GridEvenShare is a descriptor utility for distributing input among CUDA threadblocks in an &quot;even-shar...">GridEvenShare</a> is a descriptor utility for distributing input among CUDA threadblocks in an "even-share" fashion. Each threadblock gets roughly the same number of fixed-size work units (grains).  <a href="classcub_1_1_grid_even_share.html#details">More...</a><br/></td></tr>
-<tr class="separator:"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:"><td class="memItemLeft" align="right" valign="top">class &#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classcub_1_1_grid_queue.html">GridQueue</a></td></tr>
-<tr class="memdesc:"><td class="mdescLeft">&#160;</td><td class="mdescRight"><a class="el" href="classcub_1_1_grid_queue.html" title="GridQueue is a descriptor utility for dynamic queue management. ">GridQueue</a> is a descriptor utility for dynamic queue management.  <a href="classcub_1_1_grid_queue.html#details">More...</a><br/></td></tr>
 <tr class="separator:"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:"><td class="memItemLeft" align="right" valign="top">struct &#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="structcub_1_1_if.html">If</a></td></tr>
 <tr class="memdesc:"><td class="mdescLeft">&#160;</td><td class="mdescRight">Type selection (<code>IF ? ThenType : ElseType</code>)  <a href="structcub_1_1_if.html#details">More...</a><br/></td></tr>
@@ -303,11 +305,11 @@ Classes</h2></td></tr>
 </table><table class="memberdecls">
 <tr class="heading"><td colspan="2"><h2 class="groupheader"><a name="enum-members"></a>
 Enumerations</h2></td></tr>
-<tr class="memitem:ae42bd38c420aabfcb016ff38ceccba5f"><td class="memItemLeft" align="right" valign="top">enum &#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="namespacecub.html#ae42bd38c420aabfcb016ff38ceccba5f">BlockHistoAlgorithm</a> { <a class="el" href="namespacecub.html#ae42bd38c420aabfcb016ff38ceccba5fac14962247ae5693de2de53a8db40ca54">BLOCK_HISTO_SORT</a>, 
-<a class="el" href="namespacecub.html#ae42bd38c420aabfcb016ff38ceccba5fabfc89fce43fcda396d18a4b2801025aa">BLOCK_HISTO_ATOMIC</a>
+<tr class="memitem:a845ca81ef9b346ef7429a35d4fdc80d2"><td class="memItemLeft" align="right" valign="top">enum &#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="namespacecub.html#a845ca81ef9b346ef7429a35d4fdc80d2">BlockHistogramAlgorithm</a> { <a class="el" href="namespacecub.html#a845ca81ef9b346ef7429a35d4fdc80d2ac14962247ae5693de2de53a8db40ca54">BLOCK_HISTO_SORT</a>, 
+<a class="el" href="namespacecub.html#a845ca81ef9b346ef7429a35d4fdc80d2abfc89fce43fcda396d18a4b2801025aa">BLOCK_HISTO_ATOMIC</a>
  }</td></tr>
-<tr class="memdesc:ae42bd38c420aabfcb016ff38ceccba5f"><td class="mdescLeft">&#160;</td><td class="mdescRight">BlockHistoAlgorithm enumerates alternative algorithms for the parallel construction of block-wide histograms.  <a href="namespacecub.html#ae42bd38c420aabfcb016ff38ceccba5f">More...</a><br/></td></tr>
-<tr class="separator:ae42bd38c420aabfcb016ff38ceccba5f"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memdesc:a845ca81ef9b346ef7429a35d4fdc80d2"><td class="mdescLeft">&#160;</td><td class="mdescRight">BlockHistogramAlgorithm enumerates alternative algorithms for the parallel construction of block-wide histograms.  <a href="namespacecub.html#a845ca81ef9b346ef7429a35d4fdc80d2">More...</a><br/></td></tr>
+<tr class="separator:a845ca81ef9b346ef7429a35d4fdc80d2"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:a9d7e37497fdd99864c57adecda710401"><td class="memItemLeft" align="right" valign="top">enum &#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="namespacecub.html#a9d7e37497fdd99864c57adecda710401">BlockLoadAlgorithm</a> { <a class="el" href="namespacecub.html#a9d7e37497fdd99864c57adecda710401a2d4d8900d7e697e9dac4062e97d3d835">BLOCK_LOAD_DIRECT</a>, 
 <a class="el" href="namespacecub.html#a9d7e37497fdd99864c57adecda710401a826be9d4df1c44c0e5c00a9c9c136965">BLOCK_LOAD_VECTORIZE</a>, 
 <a class="el" href="namespacecub.html#a9d7e37497fdd99864c57adecda710401acd94f285472e8f7c883a7407f6f4efc4">BLOCK_LOAD_TRANSPOSE</a>, 
@@ -339,11 +341,6 @@ Enumerations</h2></td></tr>
  }</td></tr>
 <tr class="memdesc:ga4733b6d40e923244502e6f5b200766ef"><td class="mdescLeft">&#160;</td><td class="mdescRight">Basic type traits categories. <br/></td></tr>
 <tr class="separator:ga4733b6d40e923244502e6f5b200766ef"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:gab0872c68bb2f2deba92ae650a9aa3e97"><td class="memItemLeft" align="right" valign="top">enum &#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="group___grid_module.html#gab0872c68bb2f2deba92ae650a9aa3e97">GridMappingStrategy</a> { <a class="el" href="group___grid_module.html#ggab0872c68bb2f2deba92ae650a9aa3e97a8f282fc1684924a8503850b8b302d3a5">GRID_MAPPING_EVEN_SHARE</a>, 
-<a class="el" href="group___grid_module.html#ggab0872c68bb2f2deba92ae650a9aa3e97a6857b21076c6af5e9b1f4a55c0bdc971">GRID_MAPPING_DYNAMIC</a>
- }</td></tr>
-<tr class="memdesc:gab0872c68bb2f2deba92ae650a9aa3e97"><td class="mdescLeft">&#160;</td><td class="mdescRight"><a class="el" href="group___grid_module.html#gab0872c68bb2f2deba92ae650a9aa3e97" title="cub::GridMappingStrategy enumerates alternative strategies for mapping constant-sized tiles of device...">cub::GridMappingStrategy</a> enumerates alternative strategies for mapping constant-sized tiles of device-wide data onto a grid of CUDA thread blocks.  <a href="group___grid_module.html#gab0872c68bb2f2deba92ae650a9aa3e97">More...</a><br/></td></tr>
-<tr class="separator:gab0872c68bb2f2deba92ae650a9aa3e97"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:ga023420f30fec7d4b187fc98f4fd2a55d"><td class="memItemLeft" align="right" valign="top">enum &#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="group___io_module.html#ga023420f30fec7d4b187fc98f4fd2a55d">PtxLoadModifier</a> { <br/>
 &#160;&#160;<a class="el" href="group___io_module.html#gga023420f30fec7d4b187fc98f4fd2a55daee682a9988eceaefd9a53a7ef92fe6e2">LOAD_DEFAULT</a>, 
 <a class="el" href="group___io_module.html#gga023420f30fec7d4b187fc98f4fd2a55dacec87ab52dfb122d1555bfdfe44c23ae">LOAD_CA</a>, 
@@ -512,19 +509,19 @@ std::iterator_traits<br class="typebreak"/>
 <div class="textblock"><p>Optional outer namespace(s) </p>
 <p>CUB namespace </p>
 </div><h2 class="groupheader">Enumeration Type Documentation</h2>
-<a class="anchor" id="ae42bd38c420aabfcb016ff38ceccba5f"></a>
+<a class="anchor" id="a845ca81ef9b346ef7429a35d4fdc80d2"></a>
 <div class="memitem">
 <div class="memproto">
       <table class="memname">
         <tr>
-          <td class="memname">enum <a class="el" href="namespacecub.html#ae42bd38c420aabfcb016ff38ceccba5f">cub::BlockHistoAlgorithm</a></td>
+          <td class="memname">enum <a class="el" href="namespacecub.html#a845ca81ef9b346ef7429a35d4fdc80d2">cub::BlockHistogramAlgorithm</a></td>
         </tr>
       </table>
 </div><div class="memdoc">
 
-<p>BlockHistoAlgorithm enumerates alternative algorithms for the parallel construction of block-wide histograms. </p>
+<p>BlockHistogramAlgorithm enumerates alternative algorithms for the parallel construction of block-wide histograms. </p>
 <table class="fieldtable">
-<tr><th colspan="2">Enumerator</th></tr><tr><td class="fieldname"><em><a class="anchor" id="ae42bd38c420aabfcb016ff38ceccba5fac14962247ae5693de2de53a8db40ca54"></a>BLOCK_HISTO_SORT</em>&nbsp;</td><td class="fielddoc">
+<tr><th colspan="2">Enumerator</th></tr><tr><td class="fieldname"><em><a class="anchor" id="a845ca81ef9b346ef7429a35d4fdc80d2ac14962247ae5693de2de53a8db40ca54"></a>BLOCK_HISTO_SORT</em>&nbsp;</td><td class="fielddoc">
 <dl class="section user"><dt>Overview</dt><dd>Sorting followed by differentiation. Execution is comprised of two phases:<ol type="1">
 <li>Sort the data using efficient radix sort</li>
 <li>Look for "runs" of same-valued keys by detecting discontinuities; the run-lengths are histogram bin counts.</li>
@@ -532,7 +529,7 @@ std::iterator_traits<br class="typebreak"/>
 </dd></dl>
 <dl class="section user"><dt>Performance Considerations</dt><dd>Delivers consistent throughput regardless of sample bin distribution. </dd></dl>
 </td></tr>
-<tr><td class="fieldname"><em><a class="anchor" id="ae42bd38c420aabfcb016ff38ceccba5fabfc89fce43fcda396d18a4b2801025aa"></a>BLOCK_HISTO_ATOMIC</em>&nbsp;</td><td class="fielddoc">
+<tr><td class="fieldname"><em><a class="anchor" id="a845ca81ef9b346ef7429a35d4fdc80d2abfc89fce43fcda396d18a4b2801025aa"></a>BLOCK_HISTO_ATOMIC</em>&nbsp;</td><td class="fielddoc">
 <dl class="section user"><dt>Overview</dt><dd>Use atomic addition to update byte counts directly</dd></dl>
 <dl class="section user"><dt>Performance Considerations</dt><dd>Performance is strongly tied to the hardware implementation of atomic addition, and may be significantly degraded for non uniformly-random input distributions where many concurrent updates are likely to be made to the same bin counter. </dd></dl>
 </td></tr>
@@ -763,7 +760,7 @@ std::iterator_traits<br class="typebreak"/>
 <!-- HTML footer for doxygen 1.8.3.1-->
 <!-- start footer part -->
 <hr class="footer"/><address class="footer"><small>
-Generated on Fri Jul 12 2013 14:34:45 for CUB by &#160;<a href="http://www.doxygen.org/index.html">
+Generated on Sat Jul 27 2013 00:06:21 for CUB by &#160;<a href="http://www.doxygen.org/index.html">
 <img class="footer" src="doxygen.png" alt="doxygen"/>
 </a> 1.8.4
 <br>

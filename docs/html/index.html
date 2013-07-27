@@ -186,7 +186,7 @@ var searchBox = new SearchBox("searchBox", "search",false,'Search');
 <div class="line">     <span class="keyword">typedef</span> <a class="code" href="classcub_1_1_block_radix_sort.html" title="BlockRadixSort provides variants of parallel radix sorting across a CUDA threadblock. . ">BlockRadixSort&lt;T, BLOCK_THREADS&gt;</a> BlockRadixSort;</div>
 <div class="line"></div>
 <div class="line">     <span class="comment">// Declare the shared memory needed by BlockRadixSort</span></div>
-<div class="line">     __shared__ <span class="keyword">typename</span> <a class="code" href="classcub_1_1_block_radix_sort.html#abf873cba56d55034ec5112c95759875e" title="The operations exposed by BlockScan require a temporary memory allocation of this type for thread com...">BlockRadixSort::TempStorage</a> temp_storage;</div>
+<div class="line">     __shared__ <span class="keyword">typename</span> <a class="code" href="classcub_1_1_block_radix_sort.html#a60f67ea2878487ad7718f0e781624171" title="The operations exposed by BlockScan require a temporary memory allocation of this type for thread com...">BlockRadixSort::TempStorage</a> temp_storage;</div>
 <div class="line"></div>
 <div class="line">     <span class="comment">// A segment of data items per thread</span></div>
 <div class="line">     T data[ITEMS_PER_THREAD];</div>
@@ -202,7 +202,7 @@ var searchBox = new SearchBox("searchBox", "search",false,'Search');
 <div class="line">}</div>
 </div><!-- fragment --></dd></dl>
 <dl class="section user"><dt></dt><dd>The <a class="el" href="classcub_1_1_block_radix_sort.html" title="BlockRadixSort provides variants of parallel radix sorting across a CUDA threadblock. . ">cub::BlockRadixSort</a> type performs a cooperative radix sort across the thread block's data items. Its implementation is parameterized by the number of threads per block and the aggregate data type <code>T</code> and is specialized for the underlying architecture.</dd></dl>
-<dl class="section user"><dt></dt><dd>Once instantiated, the <a class="el" href="classcub_1_1_block_radix_sort.html" title="BlockRadixSort provides variants of parallel radix sorting across a CUDA threadblock. . ">cub::BlockRadixSort</a> type exposes an opaque <a class="el" href="classcub_1_1_block_radix_sort.html#abf873cba56d55034ec5112c95759875e" title="The operations exposed by BlockScan require a temporary memory allocation of this type for thread com...">cub::BlockRadixSort::TempStorage</a> member type. The thread block uses this storage type to allocate the shared memory needed by the primitive. This storage type can be aliased or <code>union</code>'d with other types so that the shared memory can be reused for other purposes.</dd></dl>
+<dl class="section user"><dt></dt><dd>Once instantiated, the <a class="el" href="classcub_1_1_block_radix_sort.html" title="BlockRadixSort provides variants of parallel radix sorting across a CUDA threadblock. . ">cub::BlockRadixSort</a> type exposes an opaque <a class="el" href="classcub_1_1_block_radix_sort.html#a60f67ea2878487ad7718f0e781624171" title="The operations exposed by BlockScan require a temporary memory allocation of this type for thread com...">cub::BlockRadixSort::TempStorage</a> member type. The thread block uses this storage type to allocate the shared memory needed by the primitive. This storage type can be aliased or <code>union</code>'d with other types so that the shared memory can be reused for other purposes.</dd></dl>
 <dl class="section user"><dt></dt><dd>Furthermore, the kernel uses CUB's primitives for vectorizing global loads and stores. For example, lower-level <code>ld.global.v4.s32</code> <a href="http://docs.nvidia.com/cuda/parallel-thread-execution">PTX instructions</a> will be generated when <code>T</code> = <code>int</code> and <code>ITEMS_PER_THREAD</code> is a multiple of 4.</dd></dl>
 <h1><a class="anchor" id="sec4"></a>
 (4) Why do you need CUB?</h1>
@@ -376,7 +376,7 @@ var searchBox = new SearchBox("searchBox", "search",false,'Search');
 <!-- HTML footer for doxygen 1.8.3.1-->
 <!-- start footer part -->
 <hr class="footer"/><address class="footer"><small>
-Generated on Sun Jun 30 2013 23:35:05 for CUB by &#160;<a href="http://www.doxygen.org/index.html">
+Generated on Sat Jul 27 2013 00:06:23 for CUB by &#160;<a href="http://www.doxygen.org/index.html">
 <img class="footer" src="doxygen.png" alt="doxygen"/>
 </a> 1.8.4
 <br>

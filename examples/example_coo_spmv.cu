@@ -359,9 +359,9 @@ struct PersistentBlockSpmv
         {
             // This is a partial-tile (e.g., the last tile of input).  Extend the coordinates of the last
             // vertex for out-of-bound items, but zero-valued
-            LoadWarpStriped<LOAD_DEFAULT>(threadIdx.x, d_columns + block_offset, guarded_items, VertexId(0), columns);
-            LoadWarpStriped<LOAD_DEFAULT>(threadIdx.x, d_values + block_offset, guarded_items, Value(0), values);
-            LoadWarpStriped<LOAD_DEFAULT>(threadIdx.x, d_rows + block_offset, guarded_items, temp_storage.last_block_row, rows);
+            LoadWarpStriped<LOAD_DEFAULT>(threadIdx.x, d_columns + block_offset, columns, guarded_items, VertexId(0));
+            LoadWarpStriped<LOAD_DEFAULT>(threadIdx.x, d_values + block_offset, values, guarded_items, Value(0));
+            LoadWarpStriped<LOAD_DEFAULT>(threadIdx.x, d_rows + block_offset, rows, guarded_items, temp_storage.last_block_row);
         }
 
         // Load the referenced values from x and compute the dot product partials sums
@@ -387,7 +387,7 @@ struct PersistentBlockSpmv
         __syncthreads();
 
         // Flag row heads by looking for discontinuities
-        BlockDiscontinuity(temp_storage.discontinuity).Flag(
+        BlockDiscontinuity(temp_storage.discontinuity).FlagHeads(
             head_flags,                     // (Out) Head flags
             rows,                           // Original row ids
             NewRowOp(),                     // Functor for detecting start of new rows
@@ -576,9 +576,10 @@ struct FinalizeSpmvBlock
         PartialProduct  partial_sums[ITEMS_PER_THREAD];
         HeadFlag        head_flags[ITEMS_PER_THREAD];
 
-        // Load a threadblock-striped tile of A (sparse row-ids, column-ids, and values)
+        // Load a tile of block partials from previous kernel
         if (FULL_TILE)
         {
+            // Full tile
 #if CUB_PTX_ARCH >= 350
             LoadBlocked<LOAD_LDG>(threadIdx.x, d_block_partials + block_offset, partial_sums);
 #else
@@ -587,15 +588,15 @@ struct FinalizeSpmvBlock
         }
         else
         {
-            // Extend zero-valued coordinates of the last partial-product for out-of-bounds items
+            // Partial tile (extend zero-valued coordinates of the last partial-product for out-of-bounds items)
             PartialProduct default_sum;
             default_sum.row = temp_storage.last_block_row;
             default_sum.partial = Value(0);
 
 #if CUB_PTX_ARCH >= 350
-            LoadBlocked<LOAD_LDG>(threadIdx.x, d_block_partials + block_offset, guarded_items, default_sum, partial_sums);
+            LoadBlocked<LOAD_LDG>(threadIdx.x, d_block_partials + block_offset, partial_sums, guarded_items, default_sum);
 #else
-            LoadBlocked<LOAD_DEFAULT>(threadIdx.x, d_block_partials + block_offset, guarded_items, default_sum, partial_sums);
+            LoadBlocked<LOAD_DEFAULT>(threadIdx.x, d_block_partials + block_offset, partial_sums, guarded_items, default_sum);
 #endif
         }
 

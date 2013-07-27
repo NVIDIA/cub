@@ -8,8 +8,8 @@
 
     - Fixed compilation errors for SM10-SM13
     - Fixed compilation errors for some WarpScan entrypoints on SM30+
-    - Added block-wide histogram (BlockHisto256)
-    - Added device-wide histogram (DeviceHisto256)
+    - Added block-wide histogram (BlockHistogram256)
+    - Added device-wide histogram (DeviceHistogram256)
     - Added new BlockScan algorithm variant BLOCK_SCAN_RAKING_MEMOIZE, which 
       trades more register consumption for less shared memory I/O)
     - Updates to BlockRadixRank to use BlockScan (which improves performance

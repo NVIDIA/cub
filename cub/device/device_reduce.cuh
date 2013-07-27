@@ -163,6 +163,14 @@ __global__ void ReduceSingleKernel(
 
 /**
  * \brief DeviceReduce provides operations for computing a device-wide, parallel reduction across data items residing within global memory. ![](reduce_logo.png)
+ *
+ * \par Overview
+ * A <a href="http://en.wikipedia.org/wiki/Reduce_(higher-order_function)"><em>reduction</em></a> (or <em>fold</em>)
+ * uses a binary combining operator to compute a single aggregate from a list of input elements.
+ *
+ * \par Usage Considerations
+ * \cdp_class
+ *
  */
 struct DeviceReduce
 {
@@ -595,34 +603,41 @@ struct DeviceReduce
      ******************************************************************************/
 
     /**
-     * \brief Computes a device-wide sum using the addition ('+') operator.
-     *
-     * \devicestorage
-     *
-     * \tparam InputIteratorRA      <b>[inferred]</b> Random-access iterator type for input (may be a simple pointer type)
-     * \tparam OutputIteratorRA     <b>[inferred]</b> Random-access iterator type for output (may be a simple pointer type)
-     */
-    template <
-        typename                    InputIteratorRA,
-        typename                    OutputIteratorRA>
-    __host__ __device__ __forceinline__
-    static cudaError_t Sum(
-        void                        *d_temp_storage,                    ///< [in] %Device allocation of temporary storage.  When NULL, the required allocation size is returned in \p temp_storage_bytes and no work is done.
-        size_t                      &temp_storage_bytes,                ///< [in,out] Size in bytes of \p d_temp_storage allocation.
-        InputIteratorRA             d_in,                               ///< [in] Input data to reduce
-        OutputIteratorRA            d_out,                              ///< [out] Output location for result
-        int                         num_items,                          ///< [in] Number of items to reduce
-        cudaStream_t                stream              = 0,            ///< [in] <b>[optional]</b> CUDA stream to launch kernels within.  Default is stream<sub>0</sub>.
-        bool                        stream_synchronous  = false)        ///< [in] <b>[optional]</b> Whether or not to synchronize the stream after every kernel launch to check for errors.  Default is \p false.
-    {
-        return Reduce(d_temp_storage, temp_storage_bytes, d_in, d_out, num_items, cub::Sum(), stream, stream_synchronous);
-    }
-
-
-    /**
      * \brief Computes a device-wide reduction using the specified binary \p reduction_op functor.
      *
+     * \par
+     * Does not support non-commutative reduction operators.
+     *
      * \devicestorage
+     *
+     * \cdp
+     *
+     * \iterator
+     *
+     * \par Example
+     * \code
+     * #include <cub/cub.cuh>
+     *
+     *     ...
+     *
+     *     // Declare and initialize device pointers for input and output
+     *     int *d_reduce_input, *d_aggregate;
+     *     int num_items = ...
+     *
+     *     ...
+     *
+     *     // Determine temporary device storage requirements for reduction
+     *     void *d_temp_storage = NULL;
+     *     size_t temp_storage_bytes = 0;
+     *     cub::DeviceReduce::Reduce(d_temp_storage, temp_storage_bytes, d_reduce_input, d_aggregate, num_items, cub::Max());
+     *
+     *     // Allocate temporary storage for reduction
+     *     cudaMalloc(&d_temp_storage, temp_storage_bytes);
+     *
+     *     // Run reduction (max)
+     *     cub::DeviceReduce::Reduce(d_temp_storage, temp_storage_bytes, d_reduce_input, d_aggregate, num_items, cub::Max());
+     *
+     * \endcode
      *
      * \tparam InputIteratorRA      <b>[inferred]</b> Random-access iterator type for input (may be a simple pointer type)
      * \tparam OutputIteratorRA     <b>[inferred]</b> Random-access iterator type for output (may be a simple pointer type)
@@ -691,6 +706,63 @@ struct DeviceReduce
         while (0);
 
         return error;
+    }
+
+
+    /**
+     * \brief Computes a device-wide sum using the addition ('+') operator.
+     *
+     * \par
+     * Does not support non-commutative reduction operators.
+     *
+     * \devicestorage
+     *
+     * \cdp
+     *
+     * \iterator
+     *
+     * \par Example
+     * \code
+     * #include <cub/cub.cuh>
+     *
+     *     ...
+     *
+     *     // Declare and initialize device pointers for input and output
+     *     int *d_reduce_input, *d_aggregate;
+     *     int num_items = ...
+     *
+     *     ...
+     *
+     *     // Determine temporary device storage requirements for summation
+     *     void *d_temp_storage = NULL;
+     *     size_t temp_storage_bytes = 0;
+     *     cub::DeviceReduce::Sum(d_temp_storage, temp_storage_bytes, d_reduce_input, d_aggregate, num_items);
+     *
+     *     // Allocate temporary storage for summation
+     *     cudaMalloc(&d_temp_storage, temp_storage_bytes);
+     *
+     *     // Run reduction summation
+     *     cub::DeviceReduce::Sum(d_temp_storage, temp_storage_bytes, d_reduce_input, d_aggregate, num_items);
+     *
+     * \endcode
+     *
+     * \tparam InputIteratorRA      <b>[inferred]</b> Random-access iterator type for input (may be a simple pointer type)
+     * \tparam OutputIteratorRA     <b>[inferred]</b> Random-access iterator type for output (may be a simple pointer type)
+     */
+    template <
+        typename                    InputIteratorRA,
+        typename                    OutputIteratorRA>
+    __host__ __device__ __forceinline__
+    static cudaError_t Sum(
+        void                        *d_temp_storage,                    ///< [in] %Device allocation of temporary storage.  When NULL, the required allocation size is returned in \p temp_storage_bytes and no work is done.
+        size_t                      &temp_storage_bytes,                ///< [in,out] Size in bytes of \p d_temp_storage allocation.
+        InputIteratorRA             d_in,                               ///< [in] Input data to reduce
+        OutputIteratorRA            d_out,                              ///< [out] Output location for result
+        int                         num_items,                          ///< [in] Number of items to reduce
+        cudaStream_t                stream              = 0,            ///< [in] <b>[optional]</b> CUDA stream to launch kernels within.  Default is stream<sub>0</sub>.
+        bool                        stream_synchronous  = false)        ///< [in] <b>[optional]</b> Whether or not to synchronize the stream after every kernel launch to check for errors.  Default is \p false.
+    {
+        return Reduce(d_temp_storage, temp_storage_bytes, d_in, d_out, num_items, cub::Sum(), stream, stream_synchronous);
     }
 
 
