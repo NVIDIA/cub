@@ -153,16 +153,14 @@ enum BlockScanAlgorithm
  *
  * __global__ void SomeKernel(...)
  * {
- *     // Parameterize BlockScan for 128 threads on type int
+ *     // Specialize BlockScan for 128 threads on type int
  *     typedef cub::BlockScan<int, 128> BlockScan;
  *
  *     // Declare shared memory for BlockScan
  *     __shared__ typename BlockScan::TempStorage temp_storage;
  *
- *     // A segment of consecutive input items per thread
+ *     // Obtain a segment of consecutive input items per thread
  *     int data[4];
- *
- *     // Obtain items in blocked order
  *     ...
  *
  *     // Compute the threadblock-wide exclusive prefix sum
@@ -170,6 +168,11 @@ enum BlockScanAlgorithm
  *
  *     ...
  * \endcode
+ *
+ * \par
+ * Suppose the input \p data[] in the first three threads is <tt>{0,1,1,0}, {1,0,1,0}, and {0,0,1,1}</tt>.  The
+ * corresponding output \p data[] in those threads will be <tt>{0,0,1,2}, {2,3,3,4}, and {4,4,4,5}</tt>.
+ *
  *
  * \par Performance Considerations
  * - Uses special instructions when applicable (e.g., warp \p SHFL)
@@ -247,7 +250,7 @@ public:
 
 
     /******************************************************************//**
-     * \name Collective construction
+     * \name Instance construction
      *********************************************************************/
     //@{
 
@@ -273,7 +276,7 @@ public:
 
 
     /**
-     * \brief Collective constructor using a private static allocation of shared memory as temporary storage.  Threads are identified using the given linear thread identifier
+     * \brief Collective constructor using a private static allocation of shared memory as temporary storage.  Each thread is identified using the supplied linear thread identifier
      */
     __device__ __forceinline__ BlockScan(
         int linear_tid)                        ///< [in] A suitable 1D thread-identifier for the calling thread (e.g., <tt>(threadIdx.y * blockDim.x) + linear_tid</tt> for 2D thread blocks)
@@ -284,7 +287,7 @@ public:
 
 
     /**
-     * \brief Collective constructor using the specified memory allocation as temporary storage.  Threads are identified using the given linear thread identifier.
+     * \brief Collective constructor using the specified memory allocation as temporary storage.  Each thread is identified using the supplied linear thread identifier.
      */
     __device__ __forceinline__ BlockScan(
         TempStorage &temp_storage,             ///< [in] Reference to memory allocation having layout type TempStorage
@@ -384,10 +387,10 @@ public:
      *
      * __global__ void SomeKernel(...)
      * {
-     *     // Parameterize BlockScan for 128 threads on type int
+     *     // Specialize BlockScan for 128 threads on type int
      *     typedef cub::BlockScan<int, 128> BlockScan;
      *
-     *     // Declare shared memory for BlockScan
+     *     // Declare a shared memory allocation for BlockScan
      *     __shared__ typename BlockScan::TempStorage temp_storage;
      *
      *     // A segment of consecutive input items per thread
@@ -494,16 +497,16 @@ public:
      *
      * __global__ void SomeKernel(int *d_data, int num_elements)
      * {
-     *     // Parameterize BlockScan for 1 warp on type int
+     *     // Specialize BlockScan for 1 warp on type int
      *     typedef cub::BlockScan<int> BlockScan;
      *
-     *     // Opaque shared memory for BlockScan
+     *     // Declare a shared memory allocation for BlockScan
      *     __shared__ typename BlockScan::TempStorage temp_storage;
      *
-     *     // Running total
+     *     // Initialize running total
      *     BlockPrefixOp prefix_op(0);
      *
-     *     // Iterate in strips of BLOCK_THREADS items
+     *     // Have the block iterate over tiles of BLOCK_THREADS items
      *     for (int block_offset = 0; block_offset < num_elements; block_offset += BLOCK_THREADS)
      *     {
      *         // Read item
