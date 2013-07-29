@@ -644,7 +644,7 @@ public:
 
 
     /**
-     * \brief Collective constructor using a private static allocation of shared memory as temporary storage.  Threads are identified using the given linear thread identifier
+     * \brief Collective constructor using a private static allocation of shared memory as temporary storage.  Each thread is identified using the supplied linear thread identifier
      */
     __device__ __forceinline__ BlockExchange(
         int linear_tid)                        ///< [in] A suitable 1D thread-identifier for the calling thread (e.g., <tt>(threadIdx.y * blockDim.x) + linear_tid</tt> for 2D thread blocks)
@@ -658,7 +658,7 @@ public:
 
 
     /**
-     * \brief Collective constructor using the specified memory allocation as temporary storage.  Threads are identified using the given linear thread identifier.
+     * \brief Collective constructor using the specified memory allocation as temporary storage.  Each thread is identified using the supplied linear thread identifier.
      */
     __device__ __forceinline__ BlockExchange(
         TempStorage &temp_storage,              ///< [in] Reference to memory allocation having layout type TempStorage

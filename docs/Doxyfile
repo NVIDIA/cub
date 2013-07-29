@@ -199,8 +199,8 @@ ALIASES                = smemreuse="A subsequent <tt>__syncthreads()</tt> thread
 ALIASES                += smemreuse{1}="After any operation, a subsequent <tt>__syncthreads()</tt> barrier is required if the collective's \1 is to be reused or repurposed"
 ALIASES                += smemstorage{1}="The operations exposed by \1 require a temporary memory allocation of this type for thread communication.  This opaque storage can be allocated directly using the <tt>__shared__</tt> keyword.  Alternatively, it can be aliased to externally allocated memory (shared or global) or <tt>union</tt>'d with other storage allocation types to facilitate memory reuse."
 
-ALIASES                += blockcollective{1}="\1 requires a shared memory allocation of type \1::TempStorage.  It is used by all block threads in three statements: (1) parameterization with static types, (2), instantiation with communication details, (3) and member function invocation."
-ALIASES                += warpcollective{1}="\1 requires a shared memory allocation of type \1::TempStorage.  It is used by all warp threads in three statements: (1) parameterization with static types, (2), instantiation with communication details, (3) and member function invocation."
+ALIASES                += blockcollective{1}="Every thread in the thread block will: (1) specialize the \1 type; (2) instantiate a specialized instance with parameters for communication; and (3) invoke member functions to perform collective operations."
+ALIASES                += warpcollective{1}="Every thread in the warp block will: (1) specialize the \1 type; (2) instantiate a specialized instance with parameters for communication; and (3) invoke member functions to perform collective operations."
 
 ALIASES                += devicestorage="This operation requires an allocation of temporary device storage.  When \p d_temp_storage is NULL, no work is done and the required allocation size is returned in \p temp_storage_bytes."
 ALIASES                += cdp_class=" - These methods can be called within kernel code (via CUDA dynamic/nested parallelism)."
