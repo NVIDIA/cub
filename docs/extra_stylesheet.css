@@ -213,6 +213,10 @@ p.startli, p.startdd, p.starttd {
 		text-align: center;
 }
 
+dt {
+		font-style: italic;
+}
+
 .memproto, dl.reflist dt {
 		padding-top: 20px;
 		border-top: 1px solid #999;
