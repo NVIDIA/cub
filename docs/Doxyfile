@@ -197,11 +197,17 @@ TAB_SIZE               = 4
 
 ALIASES                = smemreuse="A subsequent <tt>__syncthreads()</tt> threadblock barrier should be invoked after calling this method if the collective's temporary storage (e.g., \p temp_storage) is to be reused or repurposed."
 ALIASES                += smemreuse{1}="After any operation, a subsequent <tt>__syncthreads()</tt> barrier is required if the collective's \1 is to be reused or repurposed"
-ALIASES 			   += smemstorage{1}="The operations exposed by \1 require a temporary memory allocation of this type for thread communication.  This opaque storage can be allocated directly using the <tt>__shared__</tt> keyword.  Alternatively, it can be aliased to externally allocated memory (shared or global) or <tt>union</tt>'d with other storage allocation types to facilitate memory reuse."
-ALIASES 			   += devicestorage="This operation requires an allocation of temporary device storage.  When \p d_temp_storage is NULL, no work is done and the required allocation size is returned in \p temp_storage_bytes."
-ALIASES 			   += cdp_class=" - These methods can be called within kernel code (via CUDA dynamic/nested parallelism)."
-ALIASES 			   += cdp="When using this method within kernel code (via CUDA dynamic/nested parallelism), be sure to define the \p CUB_CNP macro in your compiler's macro definitions."
-ALIASES				   += iterator="Random-access input/output iterators can be used instead of naked device pointers (e.g., a zip-iterator for fusing multiple inputs)."
+ALIASES                += smemstorage{1}="The operations exposed by \1 require a temporary memory allocation of this type for thread communication.  This opaque storage can be allocated directly using the <tt>__shared__</tt> keyword.  Alternatively, it can be aliased to externally allocated memory (shared or global) or <tt>union</tt>'d with other storage allocation types to facilitate memory reuse."
+
+ALIASES                += blockcollective{1}="\1 requires a shared memory allocation of type \1::TempStorage.  It is used by all block threads in three steps: (1) parameterization with static types, (2), instantiation with communication details, (3) and member function invocation."
+ALIASES                += warpcollective{1}="\1 requires a shared memory allocation of type \1::TempStorage.  It is used by all warp threads in three steps: (1) parameterization with static types, (2), instantiation with communication details, (3) and member function invocation."
+
+ALIASES                += devicestorage="This operation requires an allocation of temporary device storage.  When \p d_temp_storage is NULL, no work is done and the required allocation size is returned in \p temp_storage_bytes."
+ALIASES                += cdp_class=" - These methods can be called within kernel code (via CUDA dynamic/nested parallelism)."
+ALIASES                += cdp="When using this method within kernel code (via CUDA dynamic/nested parallelism), be sure to define the \p CUB_CNP macro in your compiler's macro definitions."
+ALIASES                += iterator="Random-access input/output iterators can be used instead of naked device pointers (e.g., a zip-iterator for fusing multiple inputs)."
+ALIASES                += blocked="Assumes a [<em>blocked arrangement</em>](index.html#sec3sec3) of elements across threads."
+
 
 # This tag can be used to specify a number of word-keyword mappings (TCL only).
 # A mapping has the form "name=value". For example adding
