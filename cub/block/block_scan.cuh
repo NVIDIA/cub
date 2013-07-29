@@ -374,9 +374,11 @@ public:
      *
      * \smemreuse
      *
-     * The code snippet below illustrates a simple exclusive prefix sum of 512 integer keys that
-     * are partitioned in a [<em>blocked arrangement</em>](index.html#sec3sec3) across 128 threads (where each thread holds 4 keys).
+     * The code snippet below illustrates a simple exclusive prefix sum of 512
+     * integer keys that are partitioned in a [<em>blocked arrangement</em>](index.html#sec3sec3)
+     * across 128 threads (where each thread holds 4 keys).
      *
+     * \par
      * \code
      * #include <cub/cub.cuh>
      *
@@ -460,8 +462,11 @@ public:
      *
      * \smemreuse
      *
-     * The code snippet below illustrates a single thread block that iteratively computes an exclusive prefix sum over multiple "tiles" of input using a prefix functor to maintain a running total between scans.
+     * The code snippet below illustrates a single thread block that iteratively
+     * computes an exclusive prefix sum over multiple "tiles" of input using a
+     * prefix functor to maintain a running total between scans.
      *
+     * \par
      * \code
      * #include <cub/cub.cuh>
      *
