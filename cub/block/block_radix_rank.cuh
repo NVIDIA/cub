@@ -56,7 +56,7 @@ namespace cub {
  * \par Overview
  * Blah...
  *
- * \tparam BLOCK_THREADS        The threadblock size in threads
+ * \tparam BLOCK_THREADS        The thread block size in threads
  * \tparam RADIX_BITS           <b>[optional]</b> The number of radix bits per digit place (default: 5 bits)
  * \tparam MEMOIZE_OUTER_SCAN   <b>[optional]</b> Whether or not to buffer outer raking scan partials to incur fewer shared memory reads at the expense of higher register pressure (default: true for architectures SM35 and newer, false otherwise).  See BlockScanAlgorithm::BLOCK_SCAN_RAKING_MEMOIZE for more details.
  * \tparam INNER_SCAN_ALGORITHM <b>[optional]</b> The cub::BlockScanAlgorithm algorithm to use (default: cub::BLOCK_SCAN_WARP_SCANS)
@@ -365,7 +365,7 @@ public:
 
 
     /******************************************************************//**
-     * \name Collective construction
+     * \name Collective constructors
      *********************************************************************/
     //@{
 

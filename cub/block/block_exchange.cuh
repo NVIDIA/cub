@@ -60,9 +60,9 @@ namespace cub {
  * - Scattering to a [<em>striped arrangement</em>](index.html#sec3sec3)
  *
  * \tparam T                    The data type to be exchanged.
- * \tparam BLOCK_THREADS        The threadblock size in threads.
+ * \tparam BLOCK_THREADS        The thread block size in threads.
  * \tparam ITEMS_PER_THREAD     The number of items partitioned onto each thread.
- * \tparam WARP_TIME_SLICING    <b>[optional]</b> When \p true, only use enough shared memory for a single warp's worth of tile data, time-slicing the block-wide exchange over multiple synchronized rounds (default = false)
+ * \tparam WARP_TIME_SLICING    <b>[optional]</b> When \p true, only use enough shared memory for a single warp's worth of tile data, time-slicing the block-wide exchange over multiple synchronized rounds (default: false)
  *
  * \par Algorithm
  * Threads scatter items by item-order into shared memory, allowing one item of padding
@@ -612,7 +612,7 @@ private:
 public:
 
     /******************************************************************//**
-     * \name Collective construction
+     * \name Collective constructors
      *********************************************************************/
     //@{
 

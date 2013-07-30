@@ -49,9 +49,9 @@ OSUPPER = $(shell uname -s 2>/dev/null | tr [:lower:] [:upper:])
 # Defines
 #-------------------------------------------------------------------------------
 
-# Set CUB_CNP macro for programs (default: no)
+# Set CUB_CDP macro for programs (default: no)
 ifeq ($(cnp), 1)
-	DEFINES += -DCUB_CNP
+	DEFINES += -DCUB_CDP
 	CNP_SUFFIX = cnp
     NVCCFLAGS += -rdc=true -lcudadevrt
 else

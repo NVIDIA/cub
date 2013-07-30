@@ -223,7 +223,7 @@ dt {
 		border-left: 1px solid #999;
 		border-right: 1px solid #999;
 		background-image: none;
-		background-color: white;
+		background-color: #FAFAFA;
 		text-shadow: none;
 		box-shadow: 3px 3px 30px rgba(0, 0, 0, 0.1);
 		-webkit-box-shadow: 3px 3px 30px rgba(0, 0, 0, 0.1);
@@ -258,7 +258,8 @@ div.toc {
 div.textblock h3 {
 		font: 11px/16px "courier new",courier,monospace;		
 		color: cadetblue;
-		white-space: pre-wrap
+		white-space: pre-wrap;
+		margin-bottom: 40px;
 }
 
 table.memname tbody tr:first-child td:nth-child(2) {
@@ -335,13 +336,13 @@ a.code, a.code:visited {
 
 div.fragment {
 		color: black;
-		border-color: #AAA;
+		border-color: #DDD;
 		padding: 14px 14px 14px 14px;
 		margin-top: 20px;
 		margin-bottom: 20px;
 		background-color: white;
 		border-radius: 8px 8px 8px 8px;
-		box-shadow: 3px 3px 3px rgba(0, 0, 0, 0.1);
+		box-shadow: 3px 3px 20px rgba(0, 0, 0, 0.04);
 		border-style: dashed;
 }
 

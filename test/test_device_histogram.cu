@@ -168,7 +168,7 @@ __global__ void CnpDispatchKernel(
     int                 num_samples,
     bool                stream_synchronous)
 {
-#ifndef CUB_CNP
+#ifndef CUB_CDP
     *d_cnp_error = cudaErrorNotSupported;
 #else
     *d_cnp_error = Dispatch<BINS, CHANNELS, ACTIVE_CHANNELS>(algorithm, Int2Type<false>(), timing_iterations, d_temp_storage_bytes, d_cnp_error, d_temp_storage, temp_storage_bytes, d_sample_itr, d_out_histograms.array, num_samples, 0, stream_synchronous);
@@ -462,7 +462,7 @@ void TestCnp(
     char*                       type_string)
 {
     Test<false, BINS, CHANNELS, ACTIVE_CHANNELS, SampleT, IteratorValue, HistoCounterT>(algorithm, gen_mode, bin_op, num_samples, type_string);
-#ifdef CUB_CNP
+#ifdef CUB_CDP
     Test<true, BINS, CHANNELS, ACTIVE_CHANNELS, SampleT, IteratorValue, HistoCounterT>(algorithm, gen_mode, bin_op, num_samples, type_string);
 #endif
 }

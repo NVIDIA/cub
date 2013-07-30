@@ -55,7 +55,7 @@ namespace cub {
  */
 template <
     typename            T,              ///< Data type being scanned
-    int                 BLOCK_THREADS,  ///< The threadblock size in threads
+    int                 BLOCK_THREADS,  ///< The thread block size in threads
     bool                MEMOIZE>        ///< Whether or not to buffer outer raking scan partials to incur fewer shared memory reads at the expense of higher register pressure
 struct BlockScanRaking
 {
