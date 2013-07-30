@@ -110,7 +110,7 @@ namespace cub {
  * \code
  * #include <cub/cub.cuh>
  *
- * __global__ void SomeKernel(...)
+ * __global__ void ExampleKernel(...)
  * {
  *     // Parameterize WarpScan for 1 warp on type int
  *     typedef cub::WarpScan<int> WarpScan;
@@ -165,7 +165,7 @@ namespace cub {
  *          }
  *      }
  *
- *      __global__ void SomeKernel(int *d_data, int num_elements)
+ *      __global__ void ExampleKernel(int *d_data, int num_elements)
  *      {
  *          // Parameterize WarpScan for 1 warp on type int
  *          typedef cub::WarpScan<int> WarpScan;

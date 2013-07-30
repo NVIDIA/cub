@@ -622,7 +622,7 @@ enum BlockLoadAlgorithm
  * \code
  * #include <cub/cub.cuh>
  *
- * __global__ void SomeKernel(int *d_in, ...)
+ * __global__ void ExampleKernel(int *d_in, ...)
  * {
  *     // Parameterize BlockLoad for 128 threads (4 items each) on type int
  *     typedef cub::BlockLoad<int*, 128, 4> BlockLoad;
@@ -650,7 +650,7 @@ enum BlockLoadAlgorithm
  * #include <cub/cub.cuh>
  *
  * template <int BLOCK_THREADS>
- * __global__ void SomeKernel(int *d_in, ...)
+ * __global__ void ExampleKernel(int *d_in, ...)
  * {
  *     // Parameterize BlockLoad on type int
  *     typedef cub::BlockLoad<int*, BLOCK_THREADS, 21, BLOCK_LOAD_TRANSPOSE> BlockLoad;
@@ -680,7 +680,7 @@ enum BlockLoadAlgorithm
  * template <
  *     int BLOCK_THREADS,
  *     int ITEMS_PER_THREAD>
- * __global__ void SomeKernel(int *d_in, ...)
+ * __global__ void ExampleKernel(int *d_in, ...)
  * {
  *     // Parameterize BlockLoad on type int
  *     typedef cub::BlockLoad<int*, BLOCK_THREADS, ITEMS_PER_THREAD, BLOCK_LOAD_VECTORIZE, LOAD_CG> BlockLoad;

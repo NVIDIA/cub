@@ -28,7 +28,7 @@
 
 /**
  * \file
- * cub::BlockHistogram provides methods for constructing (and compositing into) block-wide histograms from data partitioned across threads within a CUDA thread block.
+ * The cub::BlockHistogram class provides [<em>collective</em>](index.html#sec0) methods for constructing (and compositing into) block-wide histograms from data partitioned across a CUDA thread block.
  */
 
 #pragma once
@@ -88,7 +88,7 @@ enum BlockHistogramAlgorithm
 
 
 /**
- * \brief BlockHistogram provides methods for constructing (and compositing into) block-wide histograms from data partitioned across threads within a CUDA thread block. ![](histogram_logo.png)
+ * \brief The BlockHistogram class provides [<em>collective</em>](index.html#sec0) methods for constructing (and compositing into) block-wide histograms from data partitioned across a CUDA thread block. ![](histogram_logo.png)
  * \ingroup BlockModule
  *
  * \par Overview
@@ -96,91 +96,56 @@ enum BlockHistogramAlgorithm
  * counts the number of observations that fall into each of the disjoint categories (known as <em>bins</em>).
  *
  * \par
- * For convenience, BlockHistogram provides alternative entrypoints that differ by:
- * - Complete/incremental composition (compute a new histogram vs. update existing histogram data)
+ * Optionally, BlockHistogram can be configured to use different algorithms:
+ *   -# <b>cub::BLOCK_HISTO_SORT</b>.  Sorting followed by differentiation. [More...](\ref cub::BlockHistogramAlgorithm)
+ *   -# <b>cub::BLOCK_HISTO_ATOMIC</b>.  Use atomic addition to update byte counts directly. [More...](\ref cub::BlockHistogramAlgorithm)
  *
+ * \tparam T                    The sample type being histogrammed (must be castable to an integer bin identifier)
  * \tparam BLOCK_THREADS        The thread block size in threads
  * \tparam ITEMS_PER_THREAD     The number of items per thread
  * \tparam BINS                 The number bins within the histogram
  * \tparam ALGORITHM            <b>[optional]</b> cub::BlockHistogramAlgorithm enumerator specifying the underlying algorithm to use (default: cub::BLOCK_HISTO_SORT)
  *
- * \par Algorithm
- * BlockHistogram can be (optionally) configured to use different algorithms:
- *   -# <b>cub::BLOCK_HISTO_SORT</b>.  Sorting followed by differentiation. [More...](\ref cub::BlockHistogramAlgorithm)
- *   -# <b>cub::BLOCK_HISTO_ATOMIC</b>.  Use atomic addition to update byte counts directly. [More...](\ref cub::BlockHistogramAlgorithm)
+ * \par A Simple Example
+ * \blockcollective{BlockHistogram}
+ * \par
+ * The code snippet below illustrates a 256-bin histogram of 512 integer samples that
+ * are partitioned across 128 threads where each thread owns 4 samples.
+ * \par
+ * \code
+ * #include <cub/cub.cuh>
  *
- * \par Usage Considerations
+ * __global__ void ExampleKernel(...)
+ * {
+ *     // Specialize a 256-bin BlockHistogram type for 128 threads having 4 character samples each
+ *     typedef cub::BlockHistogram<unsigned char, 128, 4, 256> BlockHistogram;
+ *
+ *     // Allocate shared memory for BlockHistogram
+ *     __shared__ typename BlockHistogram::TempStorage temp_storage;
+ *
+ *     // Allocate shared memory for block-wide histogram bin counts
+ *     __shared__ unsigned int smem_histogram[256];
+ *
+ *     // Obtain input items per thread
+ *     unsigned char data[4];
+ *     ...
+ *
+ *     // Compute the block-wide histogram
+ *     BlockHistogram(temp_storage).Histogram(data, smem_histogram);
+ *
+ * \endcode
+ *
+ * \par Performance and Usage Considerations
  * - The histogram output can be constructed in shared or global memory
- * - Supports partially-full threadblocks (i.e., the most-significant thread ranks having undefined values).
- * - \smemreuse{BlockHistogram::TempStorage}
- *
- * \par Performance Considerations
- * - Computation is slightly more efficient (i.e., having lower instruction overhead) for:
- *   - \p BLOCK_THREADS is a multiple of the architecture's warp size
- *   - Every thread has a valid input (i.e., full <b><em>vs.</em></b> partial-tiles)
  * - See cub::BlockHistogramAlgorithm for performance details regarding algorithmic alternatives
- *
- * \par Examples
- * \par
- * <em>Example 1.</em> Compute a simple histogram in shared memory from 512 byte values that
- * are partitioned across a 128-thread threadblock (where each thread holds 4 values).
- * \code
- * #include <cub/cub.cuh>
- *
- * __global__ void SomeKernel(...)
- * {
- *      // Parameterize a 256-bin BlockHistogram type for 128 threads having 4 samples each
- *      typedef cub::BlockHistogram<128, 4, 256> BlockHistogram;
- *
- *      // Declare shared memory for BlockHistogram
- *      __shared__ typename BlockHistogram::TempStorage temp_storage;
- *
- *      // Declare shared memory for histogram bins
- *      __shared__ unsigned int smem_histogram[256];
- *
- *      // Input items per thread
- *      unsigned char data[4];
- *
- *      // Obtain items
- *      ...
- *
- *      // Compute the threadblock-wide histogram
- *      BlockHistogram(temp_storage).Histogram(data, smem_histogram);
- *
- *      ...
- * \endcode
- *
- * \par
- * <em>Example 2:</em> Composite an incremental round of histogram data onto
- * an existing histogram in global memory.
- * \code
- * #include <cub/cub.cuh>
- *
- * template <int BLOCK_THREADS>
- * __global__ void SomeKernel(..., int *d_histogram)
- * {
- *      // Parameterize a 256-bin BlockHistogram type where each thread composites one sample item
- *      typedef cub::BlockHistogram<BLOCK_THREADS, 1, 256> BlockHistogram;
- *
- *      // Declare shared memory for BlockHistogram
- *      __shared__ typename BlockHistogram::TempStorage temp_storage;
- *
- *      // Guarded load of input item
- *      int data[1];
- *      if (threadIdx.x < num_items) data[0] = ...;
- *
- *      // Compute the threadblock-wide sum of valid elements in thread0
- *      BlockHistogram(temp_storage).Composite(data, d_histogram);
- *
- *      ...
- * \endcode
  *
  */
 template <
+    typename                T,
     int                     BLOCK_THREADS,
     int                     ITEMS_PER_THREAD,
     int                     BINS,
-    BlockHistogramAlgorithm     ALGORITHM = BLOCK_HISTO_SORT>
+    BlockHistogramAlgorithm ALGORITHM = BLOCK_HISTO_SORT>
 class BlockHistogram
 {
 private:
@@ -214,10 +179,10 @@ private:
     struct BlockHistogramInternal
     {
         // Parameterize BlockRadixSort type for our thread block
-        typedef BlockRadixSort<unsigned char, BLOCK_THREADS, ITEMS_PER_THREAD> BlockRadixSortT;
+        typedef BlockRadixSort<T, BLOCK_THREADS, ITEMS_PER_THREAD> BlockRadixSortT;
 
         // Parameterize BlockDiscontinuity type for our thread block
-        typedef BlockDiscontinuity<unsigned char, BLOCK_THREADS> BlockDiscontinuityT;
+        typedef BlockDiscontinuity<T, BLOCK_THREADS> BlockDiscontinuityT;
 
         // Shared memory
         union TempStorage
@@ -244,8 +209,8 @@ private:
 
         /// Constructor
         __device__ __forceinline__ BlockHistogramInternal(
-            TempStorage &temp_storage,
-            int linear_tid)
+            TempStorage     &temp_storage,
+            int             linear_tid)
         :
             temp_storage(temp_storage),
             linear_tid(linear_tid)
@@ -262,7 +227,7 @@ private:
             __device__ __forceinline__ DiscontinuityOp(TempStorage &temp_storage) : temp_storage(temp_storage) {}
 
             // Discontinuity predicate
-            __device__ __forceinline__ bool operator()(const unsigned char &a, const unsigned char &b, unsigned int b_index)
+            __device__ __forceinline__ bool operator()(const T &a, const T &b, unsigned int b_index)
             {
                 if (a != b)
                 {
@@ -284,7 +249,7 @@ private:
         template <
             typename            HistoCounter>
         __device__ __forceinline__ void Composite(
-            unsigned char       (&items)[ITEMS_PER_THREAD],     ///< [in] Calling thread's input values to histogram
+            T                   (&items)[ITEMS_PER_THREAD],     ///< [in] Calling thread's input values to histogram
             HistoCounter        histogram[BINS])                 ///< [out] Reference to shared/global memory histogram
         {
             enum { TILE_SIZE = BLOCK_THREADS * ITEMS_PER_THREAD };
@@ -357,8 +322,8 @@ private:
 
         /// Constructor
         __device__ __forceinline__ BlockHistogramInternal(
-            TempStorage &temp_storage,
-            int linear_tid)
+            TempStorage     &temp_storage,
+            int             linear_tid)
         {}
 
 
@@ -366,7 +331,7 @@ private:
         template <
             typename            HistoCounter>
         __device__ __forceinline__ void Composite(
-            unsigned char       (&items)[ITEMS_PER_THREAD],     ///< [in] Calling thread's input values to histogram
+            T                   (&items)[ITEMS_PER_THREAD],     ///< [in] Calling thread's input values to histogram
             HistoCounter        histogram[BINS])                 ///< [out] Reference to shared/global memory histogram
         {
             // Update histogram
@@ -481,6 +446,38 @@ public:
 
     /**
      * \brief Initialize the shared histogram counters to zero.
+     *
+     * The code snippet below illustrates a the initialization and update of a
+     * histogram of 512 integer samples that are partitioned across 128 threads
+     * where each thread owns 4 samples.
+     * \par
+     * \code
+     * #include <cub/cub.cuh>
+     *
+     * __global__ void ExampleKernel(...)
+     * {
+     *     // Specialize a 256-bin BlockHistogram type for 128 threads having 4 character samples each
+     *     typedef cub::BlockHistogram<unsigned char, 128, 4, 256> BlockHistogram;
+     *
+     *     // Allocate shared memory for BlockHistogram
+     *     __shared__ typename BlockHistogram::TempStorage temp_storage;
+     *
+     *     // Allocate shared memory for block-wide histogram bin counts
+     *     __shared__ unsigned int smem_histogram[256];
+     *
+     *     // Obtain input samples per thread
+     *     unsigned char thread_samples[4];
+     *     ...
+     *
+     *     // Initialize the block-wide histogram
+     *     BlockHistogram(temp_storage).InitHistogram(smem_histogram);
+     *
+     *     // Update the block-wide histogram
+     *     BlockHistogram(temp_storage).Composite(thread_samples, smem_histogram);
+     *
+     * \endcode
+     *
+     * \tparam HistoCounter         <b>[inferred]</b> Histogram counter type
      */
     template <typename HistoCounter>
     __device__ __forceinline__ void InitHistogram(HistoCounter histogram[BINS])
@@ -502,17 +499,42 @@ public:
 
 
     /**
-     * \brief Constructs a threadblock-wide histogram in shared/global memory.  Each thread contributes an array of input elements.
+     * \brief Constructs a block-wide histogram in shared/global memory.  Each thread contributes an array of input elements.
      *
      * \smemreuse
      *
-     * \tparam ITEMS_PER_THREAD     <b>[inferred]</b> The number of values per thread
+     * The code snippet below illustrates a 256-bin histogram of 512 integer samples that
+     * are partitioned across 128 threads where each thread owns 4 samples.
+     * \par
+     * \code
+     * #include <cub/cub.cuh>
+     *
+     * __global__ void ExampleKernel(...)
+     * {
+     *     // Specialize a 256-bin BlockHistogram type for 128 threads having 4 character samples each
+     *     typedef cub::BlockHistogram<unsigned char, 128, 4, 256> BlockHistogram;
+     *
+     *     // Allocate shared memory for BlockHistogram
+     *     __shared__ typename BlockHistogram::TempStorage temp_storage;
+     *
+     *     // Allocate shared memory for block-wide histogram bin counts
+     *     __shared__ unsigned int smem_histogram[256];
+     *
+     *     // Obtain input samples per thread
+     *     unsigned char thread_samples[4];
+     *     ...
+     *
+     *     // Compute the block-wide histogram
+     *     BlockHistogram(temp_storage).Histogram(thread_samples, smem_histogram);
+     *
+     * \endcode
+     *
      * \tparam HistoCounter         <b>[inferred]</b> Histogram counter type
      */
     template <
         typename            HistoCounter>
     __device__ __forceinline__ void Histogram(
-        unsigned char       (&items)[ITEMS_PER_THREAD],     ///< [in] Calling thread's input values to histogram
+        T                   (&items)[ITEMS_PER_THREAD],     ///< [in] Calling thread's input values to histogram
         HistoCounter        histogram[BINS])                ///< [out] Reference to shared/global memory histogram
     {
         // Initialize histogram bin counts to zeros
@@ -525,16 +547,46 @@ public:
 
 
     /**
-     * \brief Updates an existing threadblock-wide histogram in shared/global memory.  Each thread composites an array of input elements.
+     * \brief Updates an existing block-wide histogram in shared/global memory.  Each thread composites an array of input elements.
      *
      * \smemreuse
+     *
+     * The code snippet below illustrates a the initialization and update of a
+     * histogram of 512 integer samples that are partitioned across 128 threads
+     * where each thread owns 4 samples.
+     * \par
+     * \code
+     * #include <cub/cub.cuh>
+     *
+     * __global__ void ExampleKernel(...)
+     * {
+     *     // Specialize a 256-bin BlockHistogram type for 128 threads having 4 character samples each
+     *     typedef cub::BlockHistogram<unsigned char, 128, 4, 256> BlockHistogram;
+     *
+     *     // Allocate shared memory for BlockHistogram
+     *     __shared__ typename BlockHistogram::TempStorage temp_storage;
+     *
+     *     // Allocate shared memory for block-wide histogram bin counts
+     *     __shared__ unsigned int smem_histogram[256];
+     *
+     *     // Obtain input samples per thread
+     *     unsigned char thread_samples[4];
+     *     ...
+     *
+     *     // Initialize the block-wide histogram
+     *     BlockHistogram(temp_storage).InitHistogram(smem_histogram);
+     *
+     *     // Update the block-wide histogram
+     *     BlockHistogram(temp_storage).Composite(thread_samples, smem_histogram);
+     *
+     * \endcode
      *
      * \tparam HistoCounter         <b>[inferred]</b> Histogram counter type
      */
     template <
         typename            HistoCounter>
     __device__ __forceinline__ void Composite(
-        unsigned char       (&items)[ITEMS_PER_THREAD],     ///< [in] Calling thread's input values to histogram
+        T                   (&items)[ITEMS_PER_THREAD],     ///< [in] Calling thread's input values to histogram
         HistoCounter        histogram[BINS])                 ///< [out] Reference to shared/global memory histogram
     {
         InternalHistogram(temp_storage, linear_tid).Composite(items, histogram);

@@ -506,7 +506,7 @@ enum BlockStoreAlgorithm
  * \code
  * #include <cub/cub.cuh>
  *
- * __global__ void SomeKernel(int *d_out, ...)
+ * __global__ void ExampleKernel(int *d_out, ...)
  * {
  *      // Parameterize BlockStore for 128 threads (4 items each) on type int
  *      typedef cub::BlockStore<int*, 128, 4> BlockStore;
@@ -534,7 +534,7 @@ enum BlockStoreAlgorithm
  * #include <cub/cub.cuh>
  *
  * template <int BLOCK_THREADS>
- * __global__ void SomeKernel(int *d_out, ...)
+ * __global__ void ExampleKernel(int *d_out, ...)
  * {
  *      // Parameterize BlockStore on type int
  *      typedef cub::BlockStore<int*, BLOCK_THREADS, 21, BLOCK_STORE_TRANSPOSE> BlockStore;
@@ -564,7 +564,7 @@ enum BlockStoreAlgorithm
  * template <
  *     int BLOCK_THREADS,
  *     int ITEMS_PER_THREAD>
- * __global__ void SomeKernel(int *d_out, ...)
+ * __global__ void ExampleKernel(int *d_out, ...)
  * {
  *      // Parameterize BlockStore on type int
  *      typedef cub::BlockStore<int*, BLOCK_THREADS, ITEMS_PER_THREAD, BLOCK_STORE_VECTORIZE, STORE_CG> BlockStore;

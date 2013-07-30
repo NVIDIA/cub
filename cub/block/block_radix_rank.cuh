@@ -81,7 +81,7 @@ namespace cub {
  *      #include <cub/cub.cuh>
  *
  *      template <int BLOCK_THREADS>
- *      __global__ void SomeKernel(...)
+ *      __global__ void ExampleKernel(...)
  *      {
  *
  *      \endcode
