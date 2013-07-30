@@ -28,7 +28,7 @@
 
 /**
  * \file
- * cub::BlockDiscontinuity provides operations for flagging discontinuities within a linear tile of items partitioned across a CUDA threadblock.
+ * The cub::BlockDiscontinuity class provides [<em>collective</em>](index.html#sec0) methods for flagging discontinuities within a linear tile of items partitioned across a CUDA threadblock. ![](discont_logo.png)
  */
 
 #pragma once
@@ -40,93 +40,57 @@
 #include "../util_namespace.cuh"
 
 /// Optional outer namespace(s)
-CUB_NS_PREFIX
+CUB_NS_predecessor
 
 /// CUB namespace
 namespace cub {
 
 /**
- * \brief BlockDiscontinuity provides operations for flagging discontinuities within a linear tile of items partitioned across a CUDA threadblock. ![](discont_logo.png)
+ * \brief The BlockDiscontinuity class provides [<em>collective</em>](index.html#sec0) methods for flagging discontinuities within a linear tile of items partitioned across a CUDA threadblock. ![](discont_logo.png)
  * \ingroup BlockModule
  *
  * \par Overview
- * The operations exposed by BlockDiscontinuity allow threadblocks to set
- * "head flags" (or "tail flags") corresponding to items
- * that differ from their predecessors (or successors).  The caller specifies
- * a binary boolean operator to perform the comparison.  Computing a set of head
- * (or tail) flags across a blocked arrangement of items is often useful
- * for orchestrating block-wide segmented scans and reductions.
- *
- * \par
- * For convenience, BlockDiscontinuity provides alternative entrypoints that differ by:
- * - The item that gets flagged when a discontinuity is detected (head flagging <b><em>vs.</em></b> tail flagging)
- * - Flagging of the first/last item in the tile (always-flagged <b><em>vs.</em></b> compared to a specific block-wide predecessor/successor)
+ * It is often useful to construct a set of "head flags" (or "tail flags") corresponding to items
+ * that differ from their predecessors (or successors).  For example, head flags are convenient
+ * for demarcating segments as part of a segmented scan or reduction.
  *
  * \tparam T                    The data type to be flagged.
- * \tparam BLOCK_THREADS        The threadblock size in threads.
+ * \tparam BLOCK_THREADS        The thread block size in threads.
  *
- * \par Usage Considerations
- * - Assumes a [<em>blocked arrangement</em>](index.html#sec3sec3) of tile items across the thread block
- * - \p tile_prefix_item is only considered valid in <em>thread</em><sub>0</sub>
- * - \p tile_suffix_item is only considered valid in <em>thread</em><sub><tt>BLOCK_THREADS</tt>-1</sub>
- * - \smemreuse{BlockDiscontinuity::TempStorage}
+ * \par A Simple Example
+ * \blockcollective{BlockDiscontinuity}
+ * \par
+ * The code snippet below illustrates the head flagging of 512 integer keys that
+ * are partitioned in a [<em>blocked arrangement</em>](index.html#sec3sec3) across 128 threads
+ * where each thread owns 4 consecutive items.
+ * \par
+ * \code
+ * #include <cub/cub.cuh>
+ *
+ * __global__ void SomeKernel(...)
+ * {
+ *     // Specialize BlockDiscontinuity for 128 threads on type int
+ *     typedef cub::BlockDiscontinuity<int, 128> BlockDiscontinuity;
+ *
+ *     // Allocate shared memory for BlockDiscontinuity
+ *     __shared__ typename BlockDiscontinuity::TempStorage temp_storage;
+ *
+ *     // Obtain a segment of consecutive input items per thread
+ *     int thread_data[4];
+ *     ...
+ *
+ *     // Collectively compute head flags for discontinuities in the linear tile
+ *     int head_flags[4];
+ *     BlockDiscontinuity(temp_storage).FlagHeads(head_flags, thread_data, cub::Equality());
+ *
+ * \endcode
+ * \par
+ * Suppose the set of input \p thread_data across the block of threads is <tt>{0,0,1,1}, {1,1,1,1}, {2,3,3,3}, {3,4,4,4}, ...</tt>.  The
+ * corresponding output \p head_flags in those threads will be <tt>{1,0,1,0}, {0,0,0,0}, {1,1,0,0}, {0,1,0,0}, ...</tt>.
  *
  * \par Performance Considerations
  * - Zero bank conflicts for most types.
  *
- * \par Examples
- * <em>Example 1.</em> Given a tile of 512 non-zero matrix coordinates (ordered by row) in
- * a blocked arrangement across a 128-thread threadblock, flag the first coordinate
- * element of each row.
- * \code
- * #include <cub/cub.cuh>
- *
- * // Non-zero matrix coordinates
- * struct SparseElement
- * {
- *     int row;
- *     int col;
- *     float val;
- * };
- *
- * // Functor for detecting row discontinuities.
- * struct NewRowOp
- * {
- *     // Returns true if row_b is the start of a new row
- *     __device__ __forceinline__ bool operator()(
- *         const SparseElement& a,
- *         const SparseElement& b)
- *     {
- *         return (a.row != b.row);
- *     }
- * };
- *
- * __global__ void SomeKernel(...)
- * {
- *     // Parameterize BlockDiscontinuity for 128 threads on type SparseElement
- *     typedef cub::BlockDiscontinuity<SparseElement, 128> BlockDiscontinuity;
- *
- *     // Declare shared memory for BlockDiscontinuity
- *     __shared__ typename BlockDiscontinuity::TempStorage temp_storage;
- *
- *     // A segment of consecutive non-zeroes per thread
- *     SparseElement coordinates[4];
- *
- *     // Obtain items in blocked order
- *     ...
- *
- *     // Obtain the last item of the previous tile
- *     SparseElement block_predecessor;
- *     if (threadIdx.x == 0)
- *     {
- *         block_predecessor = ...
- *     }
- *
- *     // Set head head_flags
- *     int head_flags[4];
- *     BlockDiscontinuity(temp_storage).FlagHeads(head_flags, coordinates, NewRowOp(), block_predecessor);
- *
- * \endcode
  */
 template <
     typename    T,
@@ -196,7 +160,7 @@ public:
 
 
     /******************************************************************//**
-     * \name Collective construction
+     * \name Collective constructors
      *********************************************************************/
     //@{
 
@@ -247,13 +211,13 @@ public:
 
     //@}  end member group
     /******************************************************************//**
-     * \name Head flags
+     * \name Head flag operations
      *********************************************************************/
     //@{
 
 
     /**
-     * \brief Sets head flags for a [<em>blocked arrangement</em>](index.html#sec3sec3) of tile items across the thread block, for which the first item has no reference and is always flagged.
+     * \brief Sets head flags indicating discontinuities between items partitioned across the thread block, for which the first item has no reference and is always flagged.
      *
      * The flag <tt>head_flags<sub><em>i</em></sub></tt> is set for item
      * <tt>input<sub><em>i</em></sub></tt> when
@@ -263,7 +227,37 @@ public:
      * Furthermore, <tt>head_flags<sub><em>i</em></sub></tt> is always set for
      * <tt>input><sub>0</sub></tt> in <em>thread</em><sub>0</sub>.
      *
+     * \blocked
+     *
      * \smemreuse
+     *
+     * The code snippet below illustrates the head-flagging of 512 integer keys that
+     * are partitioned in a [<em>blocked arrangement</em>](index.html#sec3sec3) across 128 threads
+     * where each thread owns 4 consecutive items.
+     * \par
+     * \code
+     * #include <cub/cub.cuh>
+     *
+     * __global__ void SomeKernel(...)
+     * {
+     *     // Specialize BlockDiscontinuity for 128 threads on type int
+     *     typedef cub::BlockDiscontinuity<int, 128> BlockDiscontinuity;
+     *
+     *     // Allocate shared memory for BlockDiscontinuity
+     *     __shared__ typename BlockDiscontinuity::TempStorage temp_storage;
+     *
+     *     // Obtain a segment of consecutive input items per thread
+     *     int thread_data[4];
+     *     ...
+     *
+     *     // Collectively compute head flags for discontinuities in the linear tile
+     *     int head_flags[4];
+     *     BlockDiscontinuity(temp_storage).FlagHeads(head_flags, thread_data, cub::Equality());
+     *
+     * \endcode
+     * \par
+     * Suppose the set of input \p thread_data across the block of threads is <tt>{0,0,1,1}, {1,1,1,1}, {2,3,3,3}, {3,4,4,4}, ...</tt>.  The
+     * corresponding output \p head_flags in those threads will be <tt>{1,0,1,0}, {0,0,0,0}, {1,1,0,0}, {0,1,0,0}, ...</tt>.
      *
      * \tparam ITEMS_PER_THREAD     <b>[inferred]</b> The number of consecutive items partitioned onto each thread.
      * \tparam FlagT                <b>[inferred]</b> The flag type (must be an integer type)
@@ -306,7 +300,7 @@ public:
 
 
     /**
-     * \brief Sets head flags for a [<em>blocked arrangement</em>](index.html#sec3sec3) of tile items across the thread block
+     * \brief Sets head flags indicating discontinuities between items partitioned across the thread block.
      *
      * The flag <tt>head_flags<sub><em>i</em></sub></tt> is set for item
      * <tt>input<sub><em>i</em></sub></tt> when
@@ -314,9 +308,44 @@ public:
      * returns \p true (where <em>previous-item</em> is either the preceding item
      * in the same thread or the last item in the previous thread).
      * For <em>thread</em><sub>0</sub>, item <tt>input<sub>0</sub></tt> is compared
-     * against \p tile_prefix_item.
+     * against \p tile_predecessor_item.
+     *
+     * \blocked
      *
      * \smemreuse
+     *
+     * The code snippet below illustrates the head-flagging of 512 integer keys that
+     * are partitioned in a [<em>blocked arrangement</em>](index.html#sec3sec3) across 128 threads
+     * where each thread owns 4 consecutive items.
+     * \par
+     * \code
+     * #include <cub/cub.cuh>
+     *
+     * __global__ void SomeKernel(...)
+     * {
+     *     // Specialize BlockDiscontinuity for 128 threads on type int
+     *     typedef cub::BlockDiscontinuity<int, 128> BlockDiscontinuity;
+     *
+     *     // Allocate shared memory for BlockDiscontinuity
+     *     __shared__ typename BlockDiscontinuity::TempStorage temp_storage;
+     *
+     *     // Obtain a segment of consecutive input items per thread
+     *     int thread_data[4];
+     *     ...
+     *
+     *     // Have thread0 obtain the predecessor item for the entire tile
+     *     int tile_predecessor_item;
+     *     if (threadIdx.x == 0) tile_predecessor_item == ...
+     *
+     *     // Collectively compute head flags for discontinuities in the linear tile
+     *     int head_flags[4];
+     *     BlockDiscontinuity(temp_storage).FlagHeads(head_flags, thread_data, cub::Equality(), tile_predecessor_item);
+     *
+     * \endcode
+     * \par
+     * Suppose the set of input \p thread_data across the block of threads is <tt>{0,0,1,1}, {1,1,1,1}, {2,3,3,3}, {3,4,4,4}, ...</tt>,
+     * and that \p tile_predecessor_item is \p 0.  The corresponding output \p head_flags in those threads will
+     * be <tt>{0,0,1,0}, {0,0,0,0}, {1,1,0,0}, {0,1,0,0}, ...</tt>.
      *
      * \tparam ITEMS_PER_THREAD     <b>[inferred]</b> The number of consecutive items partitioned onto each thread.
      * \tparam FlagT                <b>[inferred]</b> The flag type (must be an integer type)
@@ -330,7 +359,7 @@ public:
         FlagT           (&head_flags)[ITEMS_PER_THREAD],    ///< [out] Calling thread's discontinuity head_flags
         T               (&input)[ITEMS_PER_THREAD],         ///< [in] Calling thread's input items
         FlagOp          flag_op,                            ///< [in] Binary boolean flag predicate
-        T               tile_prefix_item)                   ///< [in] <b>[<em>thread</em><sub>0</sub> only]</b> Item with which to compare the first tile item (<tt>input<sub>0</sub></tt> from <em>thread</em><sub>0</sub>).
+        T               tile_predecessor_item)                   ///< [in] <b>[<em>thread</em><sub>0</sub> only]</b> Item with which to compare the first tile item (<tt>input<sub>0</sub></tt> from <em>thread</em><sub>0</sub>).
     {
         // Share last item
         temp_storage[linear_tid] = input[ITEMS_PER_THREAD - 1];
@@ -338,13 +367,13 @@ public:
         __syncthreads();
 
         // Set flag for first item
-        int prefix = (linear_tid == 0) ?
-            tile_prefix_item :              // First thread
+        int predecessor = (linear_tid == 0) ?
+            tile_predecessor_item :              // First thread
             temp_storage[linear_tid - 1];
 
         head_flags[0] = ApplyOp<FlagOp>::Flag(
             flag_op,
-            prefix,
+            predecessor,
             input[0],
             linear_tid * ITEMS_PER_THREAD);
 
@@ -363,13 +392,13 @@ public:
 
     //@}  end member group
     /******************************************************************//**
-     * \name Tail flags
+     * \name Tail flag operations
      *********************************************************************/
     //@{
 
 
     /**
-     * \brief Sets tail flags for a [<em>blocked arrangement</em>](index.html#sec3sec3) of tile items across the thread block, for which the last item has no reference and is always flagged.
+     * \brief Sets tail flags indicating discontinuities between items partitioned across the thread block, for which the last item has no reference and is always flagged.
      *
      * The flag <tt>tail_flags<sub><em>i</em></sub></tt> is set for item
      * <tt>input<sub><em>i</em></sub></tt> when
@@ -379,7 +408,37 @@ public:
      * Furthermore, <tt>tail_flags<sub>ITEMS_PER_THREAD-1</sub></tt> is always
      * set for <em>thread</em><sub><tt>BLOCK_THREADS</tt>-1</sub>.
      *
+     * \blocked
+     *
      * \smemreuse
+     *
+     * The code snippet below illustrates the tail-flagging of 512 integer keys that
+     * are partitioned in a [<em>blocked arrangement</em>](index.html#sec3sec3) across 128 threads
+     * where each thread owns 4 consecutive items.
+     * \par
+     * \code
+     * #include <cub/cub.cuh>
+     *
+     * __global__ void SomeKernel(...)
+     * {
+     *     // Specialize BlockDiscontinuity for 128 threads on type int
+     *     typedef cub::BlockDiscontinuity<int, 128> BlockDiscontinuity;
+     *
+     *     // Allocate shared memory for BlockDiscontinuity
+     *     __shared__ typename BlockDiscontinuity::TempStorage temp_storage;
+     *
+     *     // Obtain a segment of consecutive input items per thread
+     *     int thread_data[4];
+     *     ...
+     *
+     *     // Collectively compute tail flags for discontinuities in the linear tile
+     *     int tail_flags[4];
+     *     BlockDiscontinuity(temp_storage).FlagTails(tail_flags, thread_data, cub::Equality());
+     *
+     * \endcode
+     * \par
+     * Suppose the set of input \p thread_data across the block of threads is <tt>{0,0,1,1}, {1,1,1,1}, {2,3,3,3}, ..., {124,125,125,125}</tt>.  The
+     * corresponding output \p tail_flags in those threads will be <tt>{0,1,0,0}, {0,0,0,1}, {1,0,0,...}, ..., {1,0,0,1}</tt>.
      *
      * \tparam ITEMS_PER_THREAD     <b>[inferred]</b> The number of consecutive items partitioned onto each thread.
      * \tparam FlagT                <b>[inferred]</b> The flag type (must be an integer type)
@@ -422,7 +481,7 @@ public:
 
 
     /**
-     * \brief Sets tail flags for a [<em>blocked arrangement</em>](index.html#sec3sec3) of tile items across the thread block.
+     * \brief Sets tail flags indicating discontinuities between items partitioned across the thread block.
      *
      * The flag <tt>tail_flags<sub><em>i</em></sub></tt> is set for item
      * <tt>input<sub><em>i</em></sub></tt> when
@@ -431,9 +490,44 @@ public:
      * in the same thread or the first item in the next thread).
      * For <em>thread</em><sub><em>BLOCK_THREADS</em>-1</sub>, item
      * <tt>input</tt><sub><em>ITEMS_PER_THREAD</em>-1</sub> is compared
-     * against \p tile_prefix_item.
+     * against \p tile_predecessor_item.
+     *
+     * \blocked
      *
      * \smemreuse
+     *
+     * The code snippet below illustrates the tail-flagging of 512 integer keys that
+     * are partitioned in a [<em>blocked arrangement</em>](index.html#sec3sec3) across 128 threads
+     * where each thread owns 4 consecutive items.
+     * \par
+     * \code
+     * #include <cub/cub.cuh>
+     *
+     * __global__ void SomeKernel(...)
+     * {
+     *     // Specialize BlockDiscontinuity for 128 threads on type int
+     *     typedef cub::BlockDiscontinuity<int, 128> BlockDiscontinuity;
+     *
+     *     // Allocate shared memory for BlockDiscontinuity
+     *     __shared__ typename BlockDiscontinuity::TempStorage temp_storage;
+     *
+     *     // Obtain a segment of consecutive input items per thread
+     *     int thread_data[4];
+     *     ...
+     *
+     *     // Have thread127 obtain the successor item for the entire tile
+     *     int tile_successor_item;
+     *     if (threadIdx.x == 127) tile_successor_item == ...
+     *
+     *     // Collectively compute tail flags for discontinuities in the linear tile
+     *     int tail_flags[4];
+     *     BlockDiscontinuity(temp_storage).FlagTails(tail_flags, thread_data, cub::Equality(), tile_successor_item);
+     *
+     * \endcode
+     * \par
+     * Suppose the set of input \p thread_data across the block of threads is <tt>{0,0,1,1}, {1,1,1,1}, {2,3,3,3}, ..., {124,125,125,125}</tt>
+     * and that \p tile_successor_item is \p 125.  The corresponding output \p tail_flags in those threads will be
+     * <tt>{0,1,0,0}, {0,0,0,1}, {1,0,0,...}, ..., {1,0,0,0}</tt>.
      *
      * \tparam ITEMS_PER_THREAD     <b>[inferred]</b> The number of consecutive items partitioned onto each thread.
      * \tparam FlagT                <b>[inferred]</b> The flag type (must be an integer type)
@@ -447,7 +541,7 @@ public:
         FlagT           (&tail_flags)[ITEMS_PER_THREAD],    ///< [out] Calling thread's discontinuity tail_flags
         T               (&input)[ITEMS_PER_THREAD],         ///< [in] Calling thread's input items
         FlagOp          flag_op,                            ///< [in] Binary boolean flag predicate
-        T               tile_suffix_item)                   ///< [in] <b>[<em>thread</em><sub><tt>BLOCK_THREADS</tt>-1</sub> only]</b> Item with which to compare the last tile item (<tt>input</tt><sub><em>ITEMS_PER_THREAD</em>-1</sub> from <em>thread</em><sub><em>BLOCK_THREADS</em>-1</sub>).
+        T               tile_successor_item)                   ///< [in] <b>[<em>thread</em><sub><tt>BLOCK_THREADS</tt>-1</sub> only]</b> Item with which to compare the last tile item (<tt>input</tt><sub><em>ITEMS_PER_THREAD</em>-1</sub> from <em>thread</em><sub><em>BLOCK_THREADS</em>-1</sub>).
     {
         // Share first item
         temp_storage[linear_tid] = input[0];
@@ -455,14 +549,14 @@ public:
         __syncthreads();
 
         // Set flag for last item
-        int suffix_item = (linear_tid == BLOCK_THREADS - 1) ?
-            tile_suffix_item :              // Last thread
+        int successor_item = (linear_tid == BLOCK_THREADS - 1) ?
+            tile_successor_item :              // Last thread
             temp_storage[linear_tid + 1];
 
         tail_flags[ITEMS_PER_THREAD - 1] = ApplyOp<FlagOp>::Flag(
             flag_op,
             input[ITEMS_PER_THREAD - 1],
-            suffix_item,
+            successor_item,
             (linear_tid * ITEMS_PER_THREAD) + (ITEMS_PER_THREAD - 1));
 
         // Set flags for remaining items

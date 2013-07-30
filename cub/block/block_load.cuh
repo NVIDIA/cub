@@ -179,7 +179,7 @@ __device__ __forceinline__ void LoadBlocked(
  * items owned by each thread have logical stride \p BLOCK_THREADS between them.
  *
  * \tparam MODIFIER             cub::PtxLoadModifier cache modifier.
- * \tparam BLOCK_THREADS        The threadblock size in threads
+ * \tparam BLOCK_THREADS        The thread block size in threads
  * \tparam T                    <b>[inferred]</b> The data type to load.
  * \tparam ITEMS_PER_THREAD     <b>[inferred]</b> The number of consecutive items partitioned onto each thread.
  * \tparam InputIteratorRA      <b>[inferred]</b> The random-access iterator type for input (may be a simple pointer type).
@@ -211,7 +211,7 @@ __device__ __forceinline__ void LoadStriped(
  * items owned by each thread have logical stride \p BLOCK_THREADS between them.
  *
  * \tparam MODIFIER             cub::PtxLoadModifier cache modifier.
- * \tparam BLOCK_THREADS        The threadblock size in threads
+ * \tparam BLOCK_THREADS        The thread block size in threads
  * \tparam T                    <b>[inferred]</b> The data type to load.
  * \tparam ITEMS_PER_THREAD     <b>[inferred]</b> The number of consecutive items partitioned onto each thread.
  * \tparam InputIteratorRA      <b>[inferred]</b> The random-access iterator type for input (may be a simple pointer type).
@@ -249,7 +249,7 @@ __device__ __forceinline__ void LoadStriped(
  * items owned by each thread have logical stride \p BLOCK_THREADS between them.
  *
  * \tparam MODIFIER             cub::PtxLoadModifier cache modifier.
- * \tparam BLOCK_THREADS        The threadblock size in threads
+ * \tparam BLOCK_THREADS        The thread block size in threads
  * \tparam T                    <b>[inferred]</b> The data type to load.
  * \tparam ITEMS_PER_THREAD     <b>[inferred]</b> The number of consecutive items partitioned onto each thread.
  * \tparam InputIteratorRA      <b>[inferred]</b> The random-access iterator type for input (may be a simple pointer type).
@@ -588,11 +588,11 @@ enum BlockLoadAlgorithm
  * data movement strategies for different architectures, data types, granularity sizes, etc.
  *
  * \tparam InputIteratorRA      The input iterator type (may be a simple pointer type).
- * \tparam BLOCK_THREADS        The threadblock size in threads.
+ * \tparam BLOCK_THREADS        The thread block size in threads.
  * \tparam ITEMS_PER_THREAD     The number of consecutive items partitioned onto each thread.
- * \tparam ALGORITHM            <b>[optional]</b> cub::BlockLoadAlgorithm tuning policy.  Default = cub::BLOCK_LOAD_DIRECT.
- * \tparam MODIFIER             <b>[optional]</b> cub::PtxLoadModifier cache modifier.  Default = cub::LOAD_DEFAULT.
- * \tparam WARP_TIME_SLICING    <b>[optional]</b> For transposition-based cub::BlockLoadAlgorithm parameterizations that utilize shared memory: When \p true, only use enough shared memory for a single warp's worth of tile data, time-slicing the block-wide exchange over multiple synchronized rounds (default = false)
+ * \tparam ALGORITHM            <b>[optional]</b> cub::BlockLoadAlgorithm tuning policy.  default: cub::BLOCK_LOAD_DIRECT.
+ * \tparam MODIFIER             <b>[optional]</b> cub::PtxLoadModifier cache modifier.  default: cub::LOAD_DEFAULT.
+ * \tparam WARP_TIME_SLICING    <b>[optional]</b> For transposition-based cub::BlockLoadAlgorithm parameterizations that utilize shared memory: When \p true, only use enough shared memory for a single warp's worth of tile data, time-slicing the block-wide exchange over multiple synchronized rounds (default: false)
  *
  * \par Algorithm
  * BlockLoad can be (optionally) configured to use one of three alternative methods:
@@ -1006,7 +1006,7 @@ public:
 
 
     /******************************************************************//**
-     * \name Collective construction
+     * \name Collective constructors
      *********************************************************************/
     //@{
 

@@ -197,7 +197,7 @@ __global__ void CnpDispatchKernel(
     SizeT               num_items,
     bool                stream_synchronous)
 {
-#ifndef CUB_CNP
+#ifndef CUB_CDP
     *d_cnp_error = cudaErrorNotSupported;
 #else
     *d_cnp_error = Dispatch(Int2Type<false>(), timing_iterations, d_temp_storage_bytes, d_cnp_error, d_temp_storage, temp_storage_bytes, d_in, d_out, scan_op, identity, num_items, 0, stream_synchronous);
@@ -422,7 +422,7 @@ void TestCnp(
     char*           type_string)
 {
     Test<false, T>(num_items, gen_mode, scan_op, identity, type_string);
-#ifdef CUB_CNP
+#ifdef CUB_CDP
     Test<true, T>(num_items, gen_mode, scan_op, identity, type_string);
 #endif
 }

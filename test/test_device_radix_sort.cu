@@ -103,7 +103,7 @@ __global__ void CnpDispatchKernel(
     int                 end_bit,
     bool                stream_synchronous)
 {
-#ifndef CUB_CNP
+#ifndef CUB_CDP
     *d_cnp_error = cudaErrorNotSupported;
 #else
     *d_cnp_error = Dispatch(Int2Type<false>(), d_temp_storage_bytes, d_cnp_error, d_temp_storage, temp_storage_bytes, d_keys, d_values, num_items, begin_bit, end_bit, 0, stream_synchronous);

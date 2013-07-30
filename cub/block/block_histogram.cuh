@@ -99,10 +99,10 @@ enum BlockHistogramAlgorithm
  * For convenience, BlockHistogram provides alternative entrypoints that differ by:
  * - Complete/incremental composition (compute a new histogram vs. update existing histogram data)
  *
- * \tparam BLOCK_THREADS        The threadblock size in threads
+ * \tparam BLOCK_THREADS        The thread block size in threads
  * \tparam ITEMS_PER_THREAD     The number of items per thread
  * \tparam BINS                 The number bins within the histogram
- * \tparam ALGORITHM            <b>[optional]</b> cub::BlockHistogramAlgorithm enumerator specifying the underlying algorithm to use (default = cub::BLOCK_HISTO_SORT)
+ * \tparam ALGORITHM            <b>[optional]</b> cub::BlockHistogramAlgorithm enumerator specifying the underlying algorithm to use (default: cub::BLOCK_HISTO_SORT)
  *
  * \par Algorithm
  * BlockHistogram can be (optionally) configured to use different algorithms:
@@ -424,7 +424,7 @@ public:
 
 
     /******************************************************************//**
-     * \name Collective construction
+     * \name Collective constructors
      *********************************************************************/
     //@{
 

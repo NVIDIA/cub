@@ -132,8 +132,8 @@ enum BlockReduceAlgorithm
  * - Input validity (full data tile <b><em>vs.</em></b> partially-full data tile having some undefined elements)
  *
  * \tparam T                Data type being reduced
- * \tparam BLOCK_THREADS    The threadblock size in threads
- * \tparam ALGORITHM        <b>[optional]</b> cub::BlockReduceAlgorithm enumerator specifying the underlying algorithm to use (default = cub::BLOCK_REDUCE_RAKING)
+ * \tparam BLOCK_THREADS    The thread block size in threads
+ * \tparam ALGORITHM        <b>[optional]</b> cub::BlockReduceAlgorithm enumerator specifying the underlying algorithm to use (default: cub::BLOCK_REDUCE_RAKING)
  *
  * \par Algorithm
  * BlockReduce provides a single prefix scan abstraction whose performance behavior can be tuned
@@ -263,7 +263,7 @@ public:
 
 
     /******************************************************************//**
-     * \name Collective construction
+     * \name Collective constructors
      *********************************************************************/
     //@{
 
