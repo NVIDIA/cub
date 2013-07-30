@@ -28,7 +28,7 @@
 
 /**
  * \file
- * The cub::BlockScan class provides [<em>collective</em>](index.html#sec0) methods for parallel prefix sum/scan across the CUDA threadblock. ![](block_scan_logo.png)
+ * The cub::BlockScan class provides [<em>collective</em>](index.html#sec0) methods for computing a parallel prefix sum/scan of items partitioned across a CUDA thread block.
  */
 
 #pragma once
@@ -118,7 +118,7 @@ enum BlockScanAlgorithm
  ******************************************************************************/
 
 /**
- * \brief The BlockScan class provides [<em>collective</em>](index.html#sec0) methods for parallel prefix sum/scan across the CUDA threadblock. ![](block_scan_logo.png)
+ * \brief The BlockScan class provides [<em>collective</em>](index.html#sec0) methods for computing a parallel prefix sum/scan of items partitioned across a CUDA thread block. ![](block_scan_logo.png)
  * \ingroup BlockModule
  *
  * \par Overview
@@ -142,14 +142,14 @@ enum BlockScanAlgorithm
  * \par A Simple Example
  * \blockcollective{BlockScan}
  * \par
- * The code snippet below illustrates a simple exclusive prefix sum of 512 integer keys that
+ * The code snippet below illustrates an exclusive prefix sum of 512 integer items that
  * are partitioned in a [<em>blocked arrangement</em>](index.html#sec3sec3) across 128 threads
  * where each thread owns 4 consecutive items.
  * \par
  * \code
  * #include <cub/cub.cuh>
  *
- * __global__ void SomeKernel(...)
+ * __global__ void ExampleKernel(...)
  * {
  *     // Specialize BlockScan for 128 threads on type int
  *     typedef cub::BlockScan<int, 128> BlockScan;
@@ -164,7 +164,6 @@ enum BlockScanAlgorithm
  *     // Collectively compute the block-wide exclusive prefix sum
  *     BlockScan(temp_storage).ExclusiveSum(thread_data, thread_data);
  *
- *     ...
  * \endcode
  * \par
  * Suppose the set of input \p thread_data across the block of threads is <tt>{1,1,1,1}, {1,1,1,1}, ..., {1,1,1,1}</tt>.  The
@@ -309,13 +308,13 @@ public:
      *
      * \smemreuse
      *
-     * The code snippet below illustrates a simple exclusive prefix sum of 128 integer keys that
+     * The code snippet below illustrates an exclusive prefix sum of 128 integer items that
      * are partitioned across 128 threads.
      * \par
      * \code
      * #include <cub/cub.cuh>
      *
-     * __global__ void SomeKernel(...)
+     * __global__ void ExampleKernel(...)
      * {
      *     // Specialize BlockScan for 128 threads on type int
      *     typedef cub::BlockScan<int, 128> BlockScan;
@@ -330,7 +329,6 @@ public:
      *     // Collectively compute the block-wide exclusive prefix sum
      *     BlockScan(temp_storage).ExclusiveSum(thread_data, thread_data);
      *
-     *     ...
      * \endcode
      * \par
      * Suppose the set of input \p thread_data across the block of threads is <tt>1, 1, ..., 1</tt>.  The
@@ -353,13 +351,13 @@ public:
      *
      * \smemreuse
      *
-     * The code snippet below illustrates a simple exclusive prefix sum of 128 integer keys that
+     * The code snippet below illustrates an exclusive prefix sum of 128 integer items that
      * are partitioned across 128 threads.
      * \par
      * \code
      * #include <cub/cub.cuh>
      *
-     * __global__ void SomeKernel(...)
+     * __global__ void ExampleKernel(...)
      * {
      *     // Specialize BlockScan for 128 threads on type int
      *     typedef cub::BlockScan<int, 128> BlockScan;
@@ -375,7 +373,6 @@ public:
      *     int block_aggregate;
      *     BlockScan(temp_storage).ExclusiveSum(thread_data, thread_data, block_aggregate);
      *
-     *     ...
      * \endcode
      * \par
      * Suppose the set of input \p thread_data across the block of threads is <tt>1, 1, ..., 1</tt>.  The
@@ -407,7 +404,7 @@ public:
      * The code snippet below illustrates a single thread block that progressively
      * computes an exclusive prefix sum over multiple "tiles" of input using a
      * prefix functor to maintain a running total between block-wide scans.  Each tile consists
-     * of 128 integer keys that are partitioned across 128 threads.
+     * of 128 integer items that are partitioned across 128 threads.
      * \par
      * \code
      * #include <cub/cub.cuh>
@@ -432,7 +429,7 @@ public:
      *     }
      * };
      *
-     * __global__ void SomeKernel(int *d_data, int num_elements, ...)
+     * __global__ void ExampleKernel(int *d_data, int num_elements, ...)
      * {
      *     // Specialize BlockLoad, BlockStore, and BlockScan for 128 threads
      *     typedef cub::BlockScan<int, 128> BlockScan;
@@ -492,14 +489,14 @@ public:
      *
      * \smemreuse
      *
-     * The code snippet below illustrates a simple exclusive prefix sum of 512 integer keys that
+     * The code snippet below illustrates an exclusive prefix sum of 512 integer items that
      * are partitioned in a [<em>blocked arrangement</em>](index.html#sec3sec3) across 128 threads
      * where each thread owns 4 consecutive items.
      * \par
      * \code
      * #include <cub/cub.cuh>
      *
-     * __global__ void SomeKernel(...)
+     * __global__ void ExampleKernel(...)
      * {
      *     // Specialize BlockScan for 128 threads on type int
      *     typedef cub::BlockScan<int, 128> BlockScan;
@@ -514,7 +511,6 @@ public:
      *     // Collectively compute the block-wide exclusive prefix sum
      *     BlockScan(temp_storage).ExclusiveSum(thread_data, thread_data);
      *
-     *     ...
      * \endcode
      * \par
      * Suppose the set of input \p thread_data across the block of threads is <tt>{1,1,1,1}, {1,1,1,1}, ..., {1,1,1,1}</tt>.  The
@@ -546,14 +542,14 @@ public:
      *
      * \smemreuse
      *
-     * The code snippet below illustrates a simple exclusive prefix sum of 512 integer keys that
+     * The code snippet below illustrates an exclusive prefix sum of 512 integer items that
      * are partitioned in a [<em>blocked arrangement</em>](index.html#sec3sec3) across 128 threads
      * where each thread owns 4 consecutive items.
      * \par
      * \code
      * #include <cub/cub.cuh>
      *
-     * __global__ void SomeKernel(...)
+     * __global__ void ExampleKernel(...)
      * {
      *     // Specialize BlockScan for 128 threads on type int
      *     typedef cub::BlockScan<int, 128> BlockScan;
@@ -569,7 +565,6 @@ public:
      *     int block_aggregate;
      *     BlockScan(temp_storage).ExclusiveSum(thread_data, thread_data, block_aggregate);
      *
-     *     ...
      * \endcode
      * \par
      * Suppose the set of input \p thread_data across the block of threads is <tt>{1,1,1,1}, {1,1,1,1}, ..., {1,1,1,1}</tt>.  The
@@ -611,7 +606,7 @@ public:
      * The code snippet below illustrates a single thread block that progressively
      * computes an exclusive prefix sum over multiple "tiles" of input using a
      * prefix functor to maintain a running total between block-wide scans.  Each tile consists
-     * of 512 integer keys that are partitioned in a [<em>blocked arrangement</em>](index.html#sec3sec3)
+     * of 512 integer items that are partitioned in a [<em>blocked arrangement</em>](index.html#sec3sec3)
      * across 128 threads where each thread owns 4 consecutive items.
      * \par
      * \code
@@ -637,7 +632,7 @@ public:
      *     }
      * };
      *
-     * __global__ void SomeKernel(int *d_data, int num_elements, ...)
+     * __global__ void ExampleKernel(int *d_data, int num_elements, ...)
      * {
      *     // Specialize BlockLoad, BlockStore, and BlockScan for 128 threads, 4 ints per thread
      *     typedef cub::BlockLoad<int*, 128, 4, BLOCK_LOAD_TRANSPOSE>   BlockLoad;
@@ -720,13 +715,13 @@ public:
      *
      * \smemreuse
      *
-     * The code snippet below illustrates a simple exclusive prefix max scan of 128 integer keys that
+     * The code snippet below illustrates an exclusive prefix max scan of 128 integer items that
      * are partitioned across 128 threads.
      * \par
      * \code
      * #include <cub/cub.cuh>
      *
-     * __global__ void SomeKernel(...)
+     * __global__ void ExampleKernel(...)
      * {
      *     // Specialize BlockScan for 128 threads on type int
      *     typedef cub::BlockScan<int, 128> BlockScan;
@@ -741,7 +736,6 @@ public:
      *     // Collectively compute the block-wide exclusive prefix max scan
      *     BlockScan(temp_storage).ExclusiveScan(thread_data, thread_data, INT_MIN, cub::Max());
      *
-     *     ...
      * \endcode
      * \par
      * Suppose the set of input \p thread_data across the block of threads is <tt>0, -1, 2, -3, ..., 126, -127</tt>.  The
@@ -770,13 +764,13 @@ public:
      *
      * \smemreuse
      *
-     * The code snippet below illustrates a simple exclusive prefix max scan of 128 integer keys that
+     * The code snippet below illustrates an exclusive prefix max scan of 128 integer items that
      * are partitioned across 128 threads.
      * \par
      * \code
      * #include <cub/cub.cuh>
      *
-     * __global__ void SomeKernel(...)
+     * __global__ void ExampleKernel(...)
      * {
      *     // Specialize BlockScan for 128 threads on type int
      *     typedef cub::BlockScan<int, 128> BlockScan;
@@ -792,7 +786,6 @@ public:
      *     int block_aggregate;
      *     BlockScan(temp_storage).ExclusiveScan(thread_data, thread_data, INT_MIN, cub::Max(), block_aggregate);
      *
-     *     ...
      * \endcode
      * \par
      * Suppose the set of input \p thread_data across the block of threads is <tt>0, -1, 2, -3, ..., 126, -127</tt>.  The
@@ -830,7 +823,7 @@ public:
      * The code snippet below illustrates a single thread block that progressively
      * computes an exclusive prefix max scan over multiple "tiles" of input using a
      * prefix functor to maintain a running total between block-wide scans.  Each tile consists
-     * of 128 integer keys that are partitioned across 128 threads.
+     * of 128 integer items that are partitioned across 128 threads.
      * \par
      * \code
      * #include <cub/cub.cuh>
@@ -855,7 +848,7 @@ public:
      *     }
      * };
      *
-     * __global__ void SomeKernel(int *d_data, int num_elements, ...)
+     * __global__ void ExampleKernel(int *d_data, int num_elements, ...)
      * {
      *     // Specialize BlockLoad, BlockStore, and BlockScan for 128 threads
      *     typedef cub::BlockScan<int, 128> BlockScan;
@@ -922,14 +915,14 @@ public:
      *
      * \smemreuse
      *
-     * The code snippet below illustrates a simple exclusive prefix max scan of 512 integer keys that
+     * The code snippet below illustrates an exclusive prefix max scan of 512 integer items that
      * are partitioned in a [<em>blocked arrangement</em>](index.html#sec3sec3) across 128 threads
      * where each thread owns 4 consecutive items.
      * \par
      * \code
      * #include <cub/cub.cuh>
      *
-     * __global__ void SomeKernel(...)
+     * __global__ void ExampleKernel(...)
      * {
      *     // Specialize BlockScan for 128 threads on type int
      *     typedef cub::BlockScan<int, 128> BlockScan;
@@ -944,7 +937,6 @@ public:
      *     // Collectively compute the block-wide exclusive prefix max scan
      *     BlockScan(temp_storage).ExclusiveScan(thread_data, thread_data, INT_MIN, cub::Max());
      *
-     *     ...
      * \endcode
      * \par
      * Suppose the set of input \p thread_data across the block of threads is <tt>{0,-1,2,-3}, {4,-5,6,-7}, ..., {508,-509,510,-511}</tt>.  The
@@ -982,14 +974,14 @@ public:
      *
      * \smemreuse
      *
-     * The code snippet below illustrates a simple exclusive prefix max scan of 512 integer keys that
+     * The code snippet below illustrates an exclusive prefix max scan of 512 integer items that
      * are partitioned in a [<em>blocked arrangement</em>](index.html#sec3sec3) across 128 threads
      * where each thread owns 4 consecutive items.
      * \par
      * \code
      * #include <cub/cub.cuh>
      *
-     * __global__ void SomeKernel(...)
+     * __global__ void ExampleKernel(...)
      * {
      *     // Specialize BlockScan for 128 threads on type int
      *     typedef cub::BlockScan<int, 128> BlockScan;
@@ -1005,7 +997,6 @@ public:
      *     int block_aggregate;
      *     BlockScan(temp_storage).ExclusiveScan(thread_data, thread_data, INT_MIN, cub::Max(), block_aggregate);
      *
-     *     ...
      * \endcode
      * \par
      * Suppose the set of input \p thread_data across the block of threads is <tt>{0,-1,2,-3}, {4,-5,6,-7}, ..., {508,-509,510,-511}</tt>.  The
@@ -1053,7 +1044,7 @@ public:
      * The code snippet below illustrates a single thread block that progressively
      * computes an exclusive prefix max scan over multiple "tiles" of input using a
      * prefix functor to maintain a running total between block-wide scans.  Each tile consists
-     * of 128 integer keys that are partitioned across 128 threads.
+     * of 128 integer items that are partitioned across 128 threads.
      * \par
      * \code
      * #include <cub/cub.cuh>
@@ -1078,7 +1069,7 @@ public:
      *     }
      * };
      *
-     * __global__ void SomeKernel(int *d_data, int num_elements, ...)
+     * __global__ void ExampleKernel(int *d_data, int num_elements, ...)
      * {
      *     // Specialize BlockLoad, BlockStore, and BlockScan for 128 threads, 4 ints per thread
      *     typedef cub::BlockLoad<int*, 128, 4, BLOCK_LOAD_TRANSPOSE>   BlockLoad;
@@ -1361,13 +1352,13 @@ public:
      *
      * \smemreuse
      *
-     * The code snippet below illustrates a simple inclusive prefix sum of 128 integer keys that
+     * The code snippet below illustrates an inclusive prefix sum of 128 integer items that
      * are partitioned across 128 threads.
      * \par
      * \code
      * #include <cub/cub.cuh>
      *
-     * __global__ void SomeKernel(...)
+     * __global__ void ExampleKernel(...)
      * {
      *     // Specialize BlockScan for 128 threads on type int
      *     typedef cub::BlockScan<int, 128> BlockScan;
@@ -1382,7 +1373,6 @@ public:
      *     // Collectively compute the block-wide inclusive prefix sum
      *     BlockScan(temp_storage).InclusiveSum(thread_data, thread_data);
      *
-     *     ...
      * \endcode
      * \par
      * Suppose the set of input \p thread_data across the block of threads is <tt>1, 1, ..., 1</tt>.  The
@@ -1405,13 +1395,13 @@ public:
      *
      * \smemreuse
      *
-     * The code snippet below illustrates a simple inclusive prefix sum of 128 integer keys that
+     * The code snippet below illustrates an inclusive prefix sum of 128 integer items that
      * are partitioned across 128 threads.
      * \par
      * \code
      * #include <cub/cub.cuh>
      *
-     * __global__ void SomeKernel(...)
+     * __global__ void ExampleKernel(...)
      * {
      *     // Specialize BlockScan for 128 threads on type int
      *     typedef cub::BlockScan<int, 128> BlockScan;
@@ -1427,7 +1417,6 @@ public:
      *     int block_aggregate;
      *     BlockScan(temp_storage).InclusiveSum(thread_data, thread_data, block_aggregate);
      *
-     *     ...
      * \endcode
      * \par
      * Suppose the set of input \p thread_data across the block of threads is <tt>1, 1, ..., 1</tt>.  The
@@ -1460,7 +1449,7 @@ public:
      * The code snippet below illustrates a single thread block that progressively
      * computes an inclusive prefix sum over multiple "tiles" of input using a
      * prefix functor to maintain a running total between block-wide scans.  Each tile consists
-     * of 128 integer keys that are partitioned across 128 threads.
+     * of 128 integer items that are partitioned across 128 threads.
      * \par
      * \code
      * #include <cub/cub.cuh>
@@ -1485,7 +1474,7 @@ public:
      *     }
      * };
      *
-     * __global__ void SomeKernel(int *d_data, int num_elements, ...)
+     * __global__ void ExampleKernel(int *d_data, int num_elements, ...)
      * {
      *     // Specialize BlockLoad, BlockStore, and BlockScan for 128 threads
      *     typedef cub::BlockScan<int, 128> BlockScan;
@@ -1545,14 +1534,14 @@ public:
      *
      * \smemreuse
      *
-     * The code snippet below illustrates a simple inclusive prefix sum of 512 integer keys that
+     * The code snippet below illustrates an inclusive prefix sum of 512 integer items that
      * are partitioned in a [<em>blocked arrangement</em>](index.html#sec3sec3) across 128 threads
      * where each thread owns 4 consecutive items.
      * \par
      * \code
      * #include <cub/cub.cuh>
      *
-     * __global__ void SomeKernel(...)
+     * __global__ void ExampleKernel(...)
      * {
      *     // Specialize BlockScan for 128 threads on type int
      *     typedef cub::BlockScan<int, 128> BlockScan;
@@ -1567,7 +1556,6 @@ public:
      *     // Collectively compute the block-wide inclusive prefix sum
      *     BlockScan(temp_storage).InclusiveSum(thread_data, thread_data);
      *
-     *     ...
      * \endcode
      * \par
      * Suppose the set of input \p thread_data across the block of threads is <tt>{1,1,1,1}, {1,1,1,1}, ..., {1,1,1,1}</tt>.  The
@@ -1606,14 +1594,14 @@ public:
      *
      * \smemreuse
      *
-     * The code snippet below illustrates a simple inclusive prefix sum of 512 integer keys that
+     * The code snippet below illustrates an inclusive prefix sum of 512 integer items that
      * are partitioned in a [<em>blocked arrangement</em>](index.html#sec3sec3) across 128 threads
      * where each thread owns 4 consecutive items.
      * \par
      * \code
      * #include <cub/cub.cuh>
      *
-     * __global__ void SomeKernel(...)
+     * __global__ void ExampleKernel(...)
      * {
      *     // Specialize BlockScan for 128 threads on type int
      *     typedef cub::BlockScan<int, 128> BlockScan;
@@ -1629,7 +1617,6 @@ public:
      *     int block_aggregate;
      *     BlockScan(temp_storage).InclusiveSum(thread_data, thread_data, block_aggregate);
      *
-     *     ...
      * \endcode
      * \par
      * Suppose the set of input \p thread_data across the block of threads is <tt>{1,1,1,1}, {1,1,1,1}, ..., {1,1,1,1}</tt>.  The
@@ -1679,7 +1666,7 @@ public:
      * The code snippet below illustrates a single thread block that progressively
      * computes an inclusive prefix sum over multiple "tiles" of input using a
      * prefix functor to maintain a running total between block-wide scans.  Each tile consists
-     * of 512 integer keys that are partitioned in a [<em>blocked arrangement</em>](index.html#sec3sec3)
+     * of 512 integer items that are partitioned in a [<em>blocked arrangement</em>](index.html#sec3sec3)
      * across 128 threads where each thread owns 4 consecutive items.
      * \par
      * \code
@@ -1705,7 +1692,7 @@ public:
      *     }
      * };
      *
-     * __global__ void SomeKernel(int *d_data, int num_elements, ...)
+     * __global__ void ExampleKernel(int *d_data, int num_elements, ...)
      * {
      *     // Specialize BlockLoad, BlockStore, and BlockScan for 128 threads, 4 ints per thread
      *     typedef cub::BlockLoad<int*, 128, 4, BLOCK_LOAD_TRANSPOSE>   BlockLoad;
@@ -1794,13 +1781,13 @@ public:
      *
      * \smemreuse
      *
-     * The code snippet below illustrates a simple inclusive prefix max scan of 128 integer keys that
+     * The code snippet below illustrates an inclusive prefix max scan of 128 integer items that
      * are partitioned across 128 threads.
      * \par
      * \code
      * #include <cub/cub.cuh>
      *
-     * __global__ void SomeKernel(...)
+     * __global__ void ExampleKernel(...)
      * {
      *     // Specialize BlockScan for 128 threads on type int
      *     typedef cub::BlockScan<int, 128> BlockScan;
@@ -1815,7 +1802,6 @@ public:
      *     // Collectively compute the block-wide inclusive prefix max scan
      *     BlockScan(temp_storage).InclusiveScan(thread_data, thread_data, cub::Max());
      *
-     *     ...
      * \endcode
      * \par
      * Suppose the set of input \p thread_data across the block of threads is <tt>0, -1, 2, -3, ..., 126, -127</tt>.  The
@@ -1843,13 +1829,13 @@ public:
      *
      * \smemreuse
      *
-     * The code snippet below illustrates a simple inclusive prefix max scan of 128 integer keys that
+     * The code snippet below illustrates an inclusive prefix max scan of 128 integer items that
      * are partitioned across 128 threads.
      * \par
      * \code
      * #include <cub/cub.cuh>
      *
-     * __global__ void SomeKernel(...)
+     * __global__ void ExampleKernel(...)
      * {
      *     // Specialize BlockScan for 128 threads on type int
      *     typedef cub::BlockScan<int, 128> BlockScan;
@@ -1865,7 +1851,6 @@ public:
      *     int block_aggregate;
      *     BlockScan(temp_storage).InclusiveScan(thread_data, thread_data, cub::Max(), block_aggregate);
      *
-     *     ...
      * \endcode
      * \par
      * Suppose the set of input \p thread_data across the block of threads is <tt>0, -1, 2, -3, ..., 126, -127</tt>.  The
@@ -1902,7 +1887,7 @@ public:
      * The code snippet below illustrates a single thread block that progressively
      * computes an inclusive prefix max scan over multiple "tiles" of input using a
      * prefix functor to maintain a running total between block-wide scans.  Each tile consists
-     * of 128 integer keys that are partitioned across 128 threads.
+     * of 128 integer items that are partitioned across 128 threads.
      * \par
      * \code
      * #include <cub/cub.cuh>
@@ -1927,7 +1912,7 @@ public:
      *     }
      * };
      *
-     * __global__ void SomeKernel(int *d_data, int num_elements, ...)
+     * __global__ void ExampleKernel(int *d_data, int num_elements, ...)
      * {
      *     // Specialize BlockLoad, BlockStore, and BlockScan for 128 threads
      *     typedef cub::BlockScan<int, 128> BlockScan;
@@ -1993,14 +1978,14 @@ public:
      *
      * \smemreuse
      *
-     * The code snippet below illustrates a simple inclusive prefix max scan of 512 integer keys that
+     * The code snippet below illustrates an inclusive prefix max scan of 512 integer items that
      * are partitioned in a [<em>blocked arrangement</em>](index.html#sec3sec3) across 128 threads
      * where each thread owns 4 consecutive items.
      * \par
      * \code
      * #include <cub/cub.cuh>
      *
-     * __global__ void SomeKernel(...)
+     * __global__ void ExampleKernel(...)
      * {
      *     // Specialize BlockScan for 128 threads on type int
      *     typedef cub::BlockScan<int, 128> BlockScan;
@@ -2015,7 +2000,6 @@ public:
      *     // Collectively compute the block-wide inclusive prefix max scan
      *     BlockScan(temp_storage).InclusiveScan(thread_data, thread_data, cub::Max());
      *
-     *     ...
      * \endcode
      * \par
      * Suppose the set of input \p thread_data across the block of threads is <tt>{0,-1,2,-3}, {4,-5,6,-7}, ..., {508,-509,510,-511}</tt>.  The
@@ -2059,14 +2043,14 @@ public:
      *
      * \smemreuse
      *
-     * The code snippet below illustrates a simple inclusive prefix max scan of 512 integer keys that
+     * The code snippet below illustrates an inclusive prefix max scan of 512 integer items that
      * are partitioned in a [<em>blocked arrangement</em>](index.html#sec3sec3) across 128 threads
      * where each thread owns 4 consecutive items.
      * \par
      * \code
      * #include <cub/cub.cuh>
      *
-     * __global__ void SomeKernel(...)
+     * __global__ void ExampleKernel(...)
      * {
      *     // Specialize BlockScan for 128 threads on type int
      *     typedef cub::BlockScan<int, 128> BlockScan;
@@ -2082,7 +2066,6 @@ public:
      *     int block_aggregate;
      *     BlockScan(temp_storage).InclusiveScan(thread_data, thread_data, cub::Max(), block_aggregate);
      *
-     *     ...
      * \endcode
      * \par
      * Suppose the set of input \p thread_data across the block of threads is <tt>{0,-1,2,-3}, {4,-5,6,-7}, ..., {508,-509,510,-511}</tt>.  The
@@ -2136,7 +2119,7 @@ public:
      * The code snippet below illustrates a single thread block that progressively
      * computes an inclusive prefix max scan over multiple "tiles" of input using a
      * prefix functor to maintain a running total between block-wide scans.  Each tile consists
-     * of 128 integer keys that are partitioned across 128 threads.
+     * of 128 integer items that are partitioned across 128 threads.
      * \par
      * \code
      * #include <cub/cub.cuh>
@@ -2161,7 +2144,7 @@ public:
      *     }
      * };
      *
-     * __global__ void SomeKernel(int *d_data, int num_elements, ...)
+     * __global__ void ExampleKernel(int *d_data, int num_elements, ...)
      * {
      *     // Specialize BlockLoad, BlockStore, and BlockScan for 128 threads, 4 ints per thread
      *     typedef cub::BlockLoad<int*, 128, 4, BLOCK_LOAD_TRANSPOSE>   BlockLoad;

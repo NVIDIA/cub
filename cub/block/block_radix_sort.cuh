@@ -28,7 +28,7 @@
 
 /**
  * \file
- * cub::BlockRadixSort provides variants of parallel radix sorting across a CUDA threadblock.
+ * The cub::BlockRadixSort class provides [<em>collective</em>](index.html#sec0) methods for radix sorting of items partitioned across a CUDA thread block.
  */
 
 
@@ -47,7 +47,7 @@ CUB_NS_PREFIX
 namespace cub {
 
 /**
- * \brief BlockRadixSort provides variants of parallel radix sorting across a CUDA threadblock.  ![](sorting_logo.png)
+ * \brief The cub::BlockRadixSort class provides [<em>collective</em>](index.html#sec0) methods of parallel radix sorting of items partitioned across a CUDA thread block.  ![](sorting_logo.png)
  * \ingroup BlockModule
  *
  * \par Overview
@@ -66,11 +66,7 @@ namespace cub {
  * is able to sort signed and floating-point types via simple bit-wise transformations
  * that ensure lexicographic key ordering.
  *
- * \par
- * For convenience, BlockRadixSort provides alternative entrypoints that differ by:
- * - Value association (keys-only <b><em>vs.</em></b> key-value-pairs)
- *
- * \tparam Key              Key type
+ * \tparam Key                  Key type
  * \tparam BLOCK_THREADS        The thread block size in threads
  * \tparam ITEMS_PER_THREAD     The number of items per thread
  * \tparam Value                <b>[optional]</b> Value type (default: cub::NullType)
@@ -79,84 +75,39 @@ namespace cub {
  * \tparam INNER_SCAN_ALGORITHM <b>[optional]</b> The cub::BlockScanAlgorithm algorithm to use (default: cub::BLOCK_SCAN_WARP_SCANS)
  * \tparam SMEM_CONFIG          <b>[optional]</b> Shared memory bank mode (default: \p cudaSharedMemBankSizeFourByte)
  *
- * \par Usage Considerations
- * - After any sorting operation, a subsequent <tt>__syncthreads()</tt> barrier
- *   is required if the supplied BlockRadixSort::TempStorage is to be reused or repurposed
- *   by the threadblock.
- * - BlockRadixSort can only accommodate one associated tile of values. To "truck along"
- *   more than one tile of values, simply perform a key-value sort of the keys paired
- *   with a temporary value array that enumerates the key indices.  The reordered indices
- *   can then be used as a gather-vector for exchanging other associated tile data through
- *   shared memory.
- *
- * \par Performance Considerations
- * - The operations are most efficient (lowest instruction overhead) when:
- *      - \p BLOCK_THREADS is a multiple of the architecture's warp size
- *      - \p Key is an unsigned integral type
- *      - Keys are partitioned across the threadblock in a [<em>blocked arrangement</em>](index.html#sec3sec3)
- *
- * \par Algorithm
- * BlockRadixSort is based on the method presented by Merrill et al. \cite merrill_high_2011.
- * The implementation has <em>O</em>(<em>n</em>) work complexity and iterates over digit places
- * using rounds constructed of
- *    - cub::BlockRadixRank (itself constructed from cub::BlockScan)
- *    - cub::BlockExchange
- *
- * \par Examples
- * <em>Example 1.</em> Perform a radix sort over a tile of 512 integer keys.
- * The data are partitioned in a blocked arrangement across a block of 128
- * threads where each thread holds 4 keys.
- *      \code
- *      #include <cub/cub.cuh>
- *
- *      __global__ void SomeKernel(...)
- *      {
- *          // Parameterize BlockRadixSort for 128 threads (4 items each) on type unsigned int
- *          typedef cub::BlockRadixSort<unsigned int, 128, 4> BlockRadixSort;
- *
- *          // Declare shared memory for BlockRadixSort
- *          __shared__ typename BlockRadixSort::TempStorage temp_storage;
- *
- *          // A segment of consecutive input items per thread
- *          int keys[4];
- *
- *          // Obtain keys in blocked order
- *          ...
- *
- *          // Sort keys in ascending order
- *          BlockRadixSort(temp_storage).Sort(keys);
- *
- *      \endcode
- *
+ * \par A Simple Example
+ * \blockcollective{BlockRadixSort}
  * \par
- * <em>Example 2.</em> Perform a key-value radix sort over the lower 20-bits
- * of a tile of 32-bit integer keys paired with floating-point values.
- * The data are partitioned in a blocked arrangement across a block of BLOCK_THREADS
- * threads where each thread holds ITEMS_PER_THREAD keys.
- *      \code
- *      #include <cub/cub.cuh>
+ * The code snippet below illustrates a sort of 512 integer keys that
+ * are partitioned in a [<em>blocked arrangement</em>](index.html#sec3sec3) across 128 threads
+ * where each thread owns 4 consecutive items.
+ * \par
+ * \code
+ * #include <cub/cub.cuh>
  *
- *      template <int BLOCK_THREADS, int ITEMS_PER_THREAD>
- *      __global__ void SomeKernel(...)
- *      {
- *          // Parameterize BlockRadixSort on key-value pairs of type unsigned int, float
- *          typedef cub::BlockRadixSort<unsigned int, BLOCK_THREADS, ITEMS_PER_THREAD, float> BlockRadixSort;
+ * __global__ void ExampleKernel(...)
+ * {
+ *     // Specialize BlockRadixSort for 128 threads owning 4 integer items each
+ *     typedef cub::BlockRadixSort<int, 128, 4> BlockRadixSort;
  *
- *          // Declare shared memory for BlockRadixSort
- *          __shared__ typename BlockRadixSort::TempStorage temp_storage;
+ *     // Allocate shared memory for BlockRadixSort
+ *     __shared__ typename BlockRadixSort::TempStorage temp_storage;
  *
- *          // Input keys and values per thread
- *          int keys[ITEMS_PER_THREAD];
- *          float values[ITEMS_PER_THREAD];
+ *     // Obtain a segment of consecutive input items per thread
+ *     int thread_keys[4];
+ *     ...
  *
- *          // Obtain keys and values in blocked order
- *          ...
+ *     // Collectively sort the keys among block threads
+ *     BlockRadixSort(temp_storage).Sort(thread_keys);
  *
- *          // Sort pairs in ascending order (using only the lower 20 distinguishing key bits)
- *          BlockRadixSort(temp_storage).Sort(keys, values, 0, 20);
- *      }
+ *     ...
+ * \endcode
+ * \par
+ * Suppose the set of input \p thread_keys across the block of threads is
+ * <tt>{0,511,1,510}, {2,509,3,508}, {4,507,5,506}, ..., {254,257,255,256}</tt>.  The
+ * corresponding output \p thread_keys in those threads will be
+ * <tt>{0,1,2,3}, {4,5,6,7}, {8,9,10,11}, ... {508,509,510,511}</tt>.
  *
- *      \endcode
  */
 template <
     typename                Key,
@@ -285,9 +236,38 @@ public:
     //@{
 
     /**
-     * \brief Performs a threadblock-wide radix sort over a [<em>blocked arrangement</em>](index.html#sec3sec3) of keys.
+     * \brief Performs a block-wide radix sort over a [<em>blocked arrangement</em>](index.html#sec3sec3) of keys.
      *
      * \smemreuse
+     *
+     * The code snippet below illustrates a sort of 512 integer keys that
+     * are partitioned in a [<em>blocked arrangement</em>](index.html#sec3sec3) across 128 threads
+     * where each thread owns 4 consecutive keys.
+     * \par
+     * \code
+     * #include <cub/cub.cuh>
+     *
+     * __global__ void ExampleKernel(...)
+     * {
+     *     // Specialize BlockRadixSort for 128 threads owning 4 integer keys each
+     *     typedef cub::BlockRadixSort<int, 128, 4> BlockRadixSort;
+     *
+     *     // Allocate shared memory for BlockRadixSort
+     *     __shared__ typename BlockRadixSort::TempStorage temp_storage;
+     *
+     *     // Obtain a segment of consecutive input keys per thread
+     *     int thread_keys[4];
+     *     ...
+     *
+     *     // Collectively sort the keys among block threads
+     *     BlockRadixSort(temp_storage).Sort(thread_keys);
+     *
+     * \endcode
+     * \par
+     * Suppose the set of input \p thread_keys across the block of threads is
+     * <tt>{0,511,1,510}, {2,509,3,508}, {4,507,5,506}, ..., {254,257,255,256}</tt>.  The
+     * corresponding output \p thread_keys in those threads will be
+     * <tt>{0,1,2,3}, {4,5,6,7}, {8,9,10,11}, ... {508,509,510,511}</tt>.
      */
     __device__ __forceinline__ void Sort(
         Key     (&keys)[ITEMS_PER_THREAD],          ///< [in-out] Keys to sort
@@ -333,9 +313,46 @@ public:
 
 
     /**
-     * \brief Performs a radix sort across a [<em>blocked arrangement</em>](index.html#sec3sec3) of keys and values.
+     * \brief Performs a block-wide radix sort across a [<em>blocked arrangement</em>](index.html#sec3sec3) of keys and values.
+     *
+     * BlockRadixSort can only accommodate one associated tile of values. To "truck along"
+     * more than one tile of values, simply perform a key-value sort of the keys paired
+     * with a temporary value array that enumerates the key indices.  The reordered indices
+     * can then be used as a gather-vector for exchanging other associated tile data through
+     * shared memory.
      *
      * \smemreuse
+     *
+     * The code snippet below illustrates a sort of 512 integer keys and values that
+     * are partitioned in a [<em>blocked arrangement</em>](index.html#sec3sec3) across 128 threads
+     * where each thread owns 4 consecutive pairs.
+     * \par
+     * \code
+     * #include <cub/cub.cuh>
+     *
+     * __global__ void ExampleKernel(...)
+     * {
+     *     // Specialize BlockRadixSort for 128 threads owning 4 integer keys and values each
+     *     typedef cub::BlockRadixSort<int, 128, 4, int> BlockRadixSort;
+     *
+     *     // Allocate shared memory for BlockRadixSort
+     *     __shared__ typename BlockRadixSort::TempStorage temp_storage;
+     *
+     *     // Obtain a segment of consecutive input keys and values per thread
+     *     int thread_keys[4];
+     *     int thread_values[4];
+     *     ...
+     *
+     *     // Collectively sort the keys among block threads
+     *     BlockRadixSort(temp_storage).Sort(thread_keys, thread_values);
+     *
+     * \endcode
+     * \par
+     * Suppose the set of input \p thread_keys across the block of threads is
+     * <tt>{0,511,1,510}, {2,509,3,508}, {4,507,5,506}, ..., {254,257,255,256}</tt>.  The
+     * corresponding output \p thread_keys in those threads will be
+     * <tt>{0,1,2,3}, {4,5,6,7}, {8,9,10,11}, ... {508,509,510,511}</tt>.
+     *
      */
     __device__ __forceinline__ void Sort(
         Key     (&keys)[ITEMS_PER_THREAD],          ///< [in-out] Keys to sort
@@ -397,6 +414,36 @@ public:
      * \brief Performs a radix sort across a [<em>blocked arrangement</em>](index.html#sec3sec3) of keys, leaving them in a [<em>striped arrangement</em>](index.html#sec3sec3).
      *
      * \smemreuse
+     *
+     * The code snippet below illustrates a sort of 512 integer keys that
+     * are initially partitioned in a [<em>blocked arrangement</em>](index.html#sec3sec3) across 128 threads
+     * where each thread owns 4 consecutive keys.  The final partitioning is striped.
+     * \par
+     * \code
+     * #include <cub/cub.cuh>
+     *
+     * __global__ void ExampleKernel(...)
+     * {
+     *     // Specialize BlockRadixSort for 128 threads owning 4 integer keys each
+     *     typedef cub::BlockRadixSort<int, 128, 4> BlockRadixSort;
+     *
+     *     // Allocate shared memory for BlockRadixSort
+     *     __shared__ typename BlockRadixSort::TempStorage temp_storage;
+     *
+     *     // Obtain a segment of consecutive input keys per thread
+     *     int thread_keys[4];
+     *     ...
+     *
+     *     // Collectively sort the keys among block threads
+     *     BlockRadixSort(temp_storage).SortBlockedToStriped(thread_keys);
+     *
+     * \endcode
+     * \par
+     * Suppose the set of input \p thread_keys across the block of threads is
+     * <tt>{0,511,1,510}, {2,509,3,508}, {4,507,5,506}, ..., {254,257,255,256}</tt>.  The
+     * corresponding output \p thread_keys in those threads will be
+     * <tt>{0,128,256,384}, {1,129,257,385}, {2,130,258,386}, ... {127,255,383,511}</tt>.
+     *
      */
     __device__ __forceinline__ void SortBlockedToStriped(
         Key     (&keys)[ITEMS_PER_THREAD],          ///< [in-out] Keys to sort
@@ -451,7 +498,44 @@ public:
     /**
      * \brief Performs a radix sort across a [<em>blocked arrangement</em>](index.html#sec3sec3) of keys and values, leaving them in a [<em>striped arrangement</em>](index.html#sec3sec3).
      *
+     * BlockRadixSort can only accommodate one associated tile of values. To "truck along"
+     * more than one tile of values, simply perform a key-value sort of the keys paired
+     * with a temporary value array that enumerates the key indices.  The reordered indices
+     * can then be used as a gather-vector for exchanging other associated tile data through
+     * shared memory.
+     *
      * \smemreuse
+     *
+     * The code snippet below illustrates a sort of 512 integer keys and values that
+     * are initially partitioned in a [<em>blocked arrangement</em>](index.html#sec3sec3) across 128 threads
+     * where each thread owns 4 consecutive pairs.  The final partitioning is striped.
+     * \par
+     * \code
+     * #include <cub/cub.cuh>
+     *
+     * __global__ void ExampleKernel(...)
+     * {
+     *     // Specialize BlockRadixSort for 128 threads owning 4 integer keys and values each
+     *     typedef cub::BlockRadixSort<int, 128, 4, int> BlockRadixSort;
+     *
+     *     // Allocate shared memory for BlockRadixSort
+     *     __shared__ typename BlockRadixSort::TempStorage temp_storage;
+     *
+     *     // Obtain a segment of consecutive input keys and values per thread
+     *     int thread_keys[4];
+     *     int thread_values[4];
+     *     ...
+     *
+     *     // Collectively sort the keys among block threads
+     *     BlockRadixSort(temp_storage).SortBlockedToStriped(thread_keys, thread_values);
+     *
+     * \endcode
+     * \par
+     * Suppose the set of input \p thread_keys across the block of threads is
+     * <tt>{0,511,1,510}, {2,509,3,508}, {4,507,5,506}, ..., {254,257,255,256}</tt>.  The
+     * corresponding output \p thread_keys in those threads will be
+     * <tt>{0,128,256,384}, {1,129,257,385}, {2,130,258,386}, ... {127,255,383,511}</tt>.
+     *
      */
     __device__ __forceinline__ void SortBlockedToStriped(
         Key     (&keys)[ITEMS_PER_THREAD],          ///< [in-out] Keys to sort
