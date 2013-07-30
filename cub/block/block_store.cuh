@@ -141,7 +141,7 @@ __device__ __forceinline__ void StoreBlocked(
  * items owned by each thread have logical stride \p BLOCK_THREADS between them.
  *
  * \tparam MODIFIER             cub::PtxStoreModifier cache modifier.
- * \tparam BLOCK_THREADS        The threadblock size in threads
+ * \tparam BLOCK_THREADS        The thread block size in threads
  * \tparam T                    <b>[inferred]</b> The data type to store.
  * \tparam ITEMS_PER_THREAD     <b>[inferred]</b> The number of consecutive items partitioned onto each thread.
  * \tparam OutputIteratorRA     <b>[inferred]</b> The random-access iterator type for output (may be a simple pointer type).
@@ -174,7 +174,7 @@ __device__ __forceinline__ void StoreStriped(
  * items owned by each thread have logical stride \p BLOCK_THREADS between them.
  *
  * \tparam MODIFIER             cub::PtxStoreModifier cache modifier.
- * \tparam BLOCK_THREADS        The threadblock size in threads
+ * \tparam BLOCK_THREADS        The thread block size in threads
  * \tparam T                    <b>[inferred]</b> The data type to store.
  * \tparam ITEMS_PER_THREAD     <b>[inferred]</b> The number of consecutive items partitioned onto each thread.
  * \tparam OutputIteratorRA     <b>[inferred]</b> The random-access iterator type for output (may be a simple pointer type).
@@ -472,11 +472,11 @@ enum BlockStoreAlgorithm
  * data movement strategies for different architectures, data types, granularity sizes, etc.
  *
  * \tparam OutputIteratorRA     The input iterator type (may be a simple pointer type).
- * \tparam BLOCK_THREADS        The threadblock size in threads.
+ * \tparam BLOCK_THREADS        The thread block size in threads.
  * \tparam ITEMS_PER_THREAD     The number of consecutive items partitioned onto each thread.
- * \tparam ALGORITHM            <b>[optional]</b> cub::BlockStoreAlgorithm tuning policy enumeration.  Default = cub::BLOCK_STORE_DIRECT.
- * \tparam MODIFIER             <b>[optional]</b> cub::PtxStoreModifier cache modifier.  Default = cub::STORE_DEFAULT.
- * \tparam WARP_TIME_SLICING    <b>[optional]</b> For transposition-based cub::BlockStoreAlgorithm parameterizations that utilize shared memory: When \p true, only use enough shared memory for a single warp's worth of tile data, time-slicing the block-wide exchange over multiple synchronized rounds (default = false)
+ * \tparam ALGORITHM            <b>[optional]</b> cub::BlockStoreAlgorithm tuning policy enumeration.  default: cub::BLOCK_STORE_DIRECT.
+ * \tparam MODIFIER             <b>[optional]</b> cub::PtxStoreModifier cache modifier.  default: cub::STORE_DEFAULT.
+ * \tparam WARP_TIME_SLICING    <b>[optional]</b> For transposition-based cub::BlockStoreAlgorithm parameterizations that utilize shared memory: When \p true, only use enough shared memory for a single warp's worth of tile data, time-slicing the block-wide exchange over multiple synchronized rounds (default: false)
  *
  * \par Algorithm
  * BlockStore can be (optionally) configured to use one of three alternative methods:
@@ -846,7 +846,7 @@ public:
 
 
     /******************************************************************//**
-     * \name Collective construction
+     * \name Collective constructors
      *********************************************************************/
     //@{
 

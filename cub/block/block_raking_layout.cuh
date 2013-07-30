@@ -57,7 +57,7 @@ namespace cub {
  * (for most data types).
  *
  * \tparam T                    The data type to be exchanged.
- * \tparam BLOCK_THREADS        The threadblock size in threads.
+ * \tparam BLOCK_THREADS        The thread block size in threads.
  * \tparam BLOCK_STRIPS         When strip-mining, the number of threadblock-strips per tile
  */
 template <

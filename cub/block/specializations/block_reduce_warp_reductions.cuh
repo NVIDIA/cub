@@ -55,7 +55,7 @@ namespace cub {
  */
 template <
     typename    T,              ///< Data type being reduced
-    int         BLOCK_THREADS>  ///< The threadblock size in threads
+    int         BLOCK_THREADS>  ///< The thread block size in threads
 struct BlockReduceWarpReductions
 {
     /// Constants

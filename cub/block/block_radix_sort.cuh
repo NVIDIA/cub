@@ -71,7 +71,7 @@ namespace cub {
  * - Value association (keys-only <b><em>vs.</em></b> key-value-pairs)
  *
  * \tparam Key              Key type
- * \tparam BLOCK_THREADS        The threadblock size in threads
+ * \tparam BLOCK_THREADS        The thread block size in threads
  * \tparam ITEMS_PER_THREAD     The number of items per thread
  * \tparam Value                <b>[optional]</b> Value type (default: cub::NullType)
  * \tparam RADIX_BITS           <b>[optional]</b> The number of radix bits per digit place (default: 4 bits)
@@ -229,7 +229,7 @@ public:
 
 
     /******************************************************************//**
-     * \name Collective construction
+     * \name Collective constructors
      *********************************************************************/
     //@{
 
