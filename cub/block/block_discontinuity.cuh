@@ -28,7 +28,7 @@
 
 /**
  * \file
- * The cub::BlockDiscontinuity class provides [<em>collective</em>](index.html#sec0) methods for flagging discontinuities within a linear tile of items partitioned across a CUDA threadblock. ![](discont_logo.png)
+ * The cub::BlockDiscontinuity class provides [<em>collective</em>](index.html#sec0) methods for flagging discontinuities within a linear tile of items partitioned across a CUDA thread block.
  */
 
 #pragma once
@@ -46,7 +46,7 @@ CUB_NS_predecessor
 namespace cub {
 
 /**
- * \brief The BlockDiscontinuity class provides [<em>collective</em>](index.html#sec0) methods for flagging discontinuities within a linear tile of items partitioned across a CUDA threadblock. ![](discont_logo.png)
+ * \brief The BlockDiscontinuity class provides [<em>collective</em>](index.html#sec0) methods for flagging discontinuities within a linear tile of items partitioned across a CUDA thread block. ![](discont_logo.png)
  * \ingroup BlockModule
  *
  * \par Overview
@@ -60,14 +60,14 @@ namespace cub {
  * \par A Simple Example
  * \blockcollective{BlockDiscontinuity}
  * \par
- * The code snippet below illustrates the head flagging of 512 integer keys that
+ * The code snippet below illustrates the head flagging of 512 integer items that
  * are partitioned in a [<em>blocked arrangement</em>](index.html#sec3sec3) across 128 threads
  * where each thread owns 4 consecutive items.
  * \par
  * \code
  * #include <cub/cub.cuh>
  *
- * __global__ void SomeKernel(...)
+ * __global__ void ExampleKernel(...)
  * {
  *     // Specialize BlockDiscontinuity for 128 threads on type int
  *     typedef cub::BlockDiscontinuity<int, 128> BlockDiscontinuity;
@@ -231,14 +231,14 @@ public:
      *
      * \smemreuse
      *
-     * The code snippet below illustrates the head-flagging of 512 integer keys that
+     * The code snippet below illustrates the head-flagging of 512 integer items that
      * are partitioned in a [<em>blocked arrangement</em>](index.html#sec3sec3) across 128 threads
      * where each thread owns 4 consecutive items.
      * \par
      * \code
      * #include <cub/cub.cuh>
      *
-     * __global__ void SomeKernel(...)
+     * __global__ void ExampleKernel(...)
      * {
      *     // Specialize BlockDiscontinuity for 128 threads on type int
      *     typedef cub::BlockDiscontinuity<int, 128> BlockDiscontinuity;
@@ -314,14 +314,14 @@ public:
      *
      * \smemreuse
      *
-     * The code snippet below illustrates the head-flagging of 512 integer keys that
+     * The code snippet below illustrates the head-flagging of 512 integer items that
      * are partitioned in a [<em>blocked arrangement</em>](index.html#sec3sec3) across 128 threads
      * where each thread owns 4 consecutive items.
      * \par
      * \code
      * #include <cub/cub.cuh>
      *
-     * __global__ void SomeKernel(...)
+     * __global__ void ExampleKernel(...)
      * {
      *     // Specialize BlockDiscontinuity for 128 threads on type int
      *     typedef cub::BlockDiscontinuity<int, 128> BlockDiscontinuity;
@@ -412,14 +412,14 @@ public:
      *
      * \smemreuse
      *
-     * The code snippet below illustrates the tail-flagging of 512 integer keys that
+     * The code snippet below illustrates the tail-flagging of 512 integer items that
      * are partitioned in a [<em>blocked arrangement</em>](index.html#sec3sec3) across 128 threads
      * where each thread owns 4 consecutive items.
      * \par
      * \code
      * #include <cub/cub.cuh>
      *
-     * __global__ void SomeKernel(...)
+     * __global__ void ExampleKernel(...)
      * {
      *     // Specialize BlockDiscontinuity for 128 threads on type int
      *     typedef cub::BlockDiscontinuity<int, 128> BlockDiscontinuity;
@@ -496,14 +496,14 @@ public:
      *
      * \smemreuse
      *
-     * The code snippet below illustrates the tail-flagging of 512 integer keys that
+     * The code snippet below illustrates the tail-flagging of 512 integer items that
      * are partitioned in a [<em>blocked arrangement</em>](index.html#sec3sec3) across 128 threads
      * where each thread owns 4 consecutive items.
      * \par
      * \code
      * #include <cub/cub.cuh>
      *
-     * __global__ void SomeKernel(...)
+     * __global__ void ExampleKernel(...)
      * {
      *     // Specialize BlockDiscontinuity for 128 threads on type int
      *     typedef cub::BlockDiscontinuity<int, 128> BlockDiscontinuity;

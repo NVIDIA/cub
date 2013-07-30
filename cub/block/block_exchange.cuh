@@ -28,7 +28,7 @@
 
 /**
  * \file
- * cub::BlockExchange provides operations for reorganizing the partitioning of ordered data across a CUDA threadblock.
+ * The cub::BlockExchange class provides [<em>collective</em>](index.html#sec0) methods for reorganizing the partitioning of ordered data across a CUDA thread block.
  */
 
 #pragma once
@@ -47,13 +47,17 @@ CUB_NS_PREFIX
 namespace cub {
 
 /**
- * \brief BlockExchange provides operations for reorganizing the partitioning of ordered data across a CUDA threadblock. ![](transpose_logo.png)
+ * \brief The BlockExchange class provides [<em>collective</em>](index.html#sec0) methods for reorganizing the partitioning of ordered data across a CUDA thread block. ![](transpose_logo.png)
  * \ingroup BlockModule
  *
  * \par Overview
- * BlockExchange allows threadblocks to reorganize data items between
- * threads. More specifically, BlockExchange supports the following types of data
- * exchanges:
+ * It is often useful for blocks of threads to reorganize data items between
+ * threads.  For example, global memory accesses are often coalesced when data items
+ * are "striped" across threads, yet most block-wide operations require a
+ * "blocked" partitioning of items across threads.
+ *
+ * \par
+ * BlockExchange supports the following types of data exchanges:
  * - Transposing between [<em>blocked</em>](index.html#sec3sec3) and [<em>striped</em>](index.html#sec3sec3) arrangements
  * - Transposing between [<em>blocked</em>](index.html#sec3sec3) and [<em>warp-striped</em>](index.html#sec3sec3) arrangements
  * - Scattering to a [<em>blocked arrangement</em>](index.html#sec3sec3)
@@ -62,16 +66,38 @@ namespace cub {
  * \tparam T                    The data type to be exchanged.
  * \tparam BLOCK_THREADS        The thread block size in threads.
  * \tparam ITEMS_PER_THREAD     The number of items partitioned onto each thread.
- * \tparam WARP_TIME_SLICING    <b>[optional]</b> When \p true, only use enough shared memory for a single warp's worth of tile data, time-slicing the block-wide exchange over multiple synchronized rounds (default: false)
+ * \tparam WARP_TIME_SLICING    <b>[optional]</b> When \p true, only use enough shared memory for a single warp's worth of tile data, time-slicing the block-wide exchange over multiple synchronized rounds.  Yields a smaller memory footprint at the expense of decreased parallelism.  (Default: false)
  *
- * \par Algorithm
- * Threads scatter items by item-order into shared memory, allowing one item of padding
- * for every memory bank's worth of items.  After a barrier, items are gathered in the desired arrangement.
- * \image html raking.png
- * <div class="centercaption">A threadblock of 16 threads reading a blocked arrangement of 64 items in a parallel "raking" fashion.</div>
+ * \par A Simple Example
+ * \blockcollective{BlockExchange}
+ * \par
+ * The code snippet below illustrates the conversion from a "blocked" to a "striped" arrangement
+ * of 512 integer items partitioned across 128 threads where each thread owns 4 items.
+ * \par
+ * \code
+ * #include <cub/cub.cuh>
  *
- * \par Usage Considerations
- * - \smemreuse{BlockExchange::TempStorage}
+ * __global__ void ExampleKernel(int *d_data, ...)
+ * {
+ *     // Specialize BlockExchange for 128 threads owning 4 integer items each
+ *     typedef cub::BlockExchange<int, 128, 4> BlockExchange;
+ *
+ *     // Allocate shared memory for BlockExchange
+ *     __shared__ typename BlockExchange::TempStorage temp_storage;
+ *
+ *     // Load a tile of data striped across threads
+ *     int thread_data[4];
+ *     cub::LoadStriped<LOAD_DEFAULT, 128>(threadIdx.x, d_data, thread_data);
+ *
+ *     // Collectively exchange data into a blocked arrangement across threads
+ *     BlockExchange(temp_storage).StripedToBlocked(thread_data);
+ *
+ * \endcode
+ * \par
+ * Suppose the set of striped input \p thread_data across the block of threads is
+ * <tt>{0,128,256,384}, {1,129,257,385}, ..., {127,255,383,511}</tt>.
+ * The corresponding output \p thread_data in those threads will be
+ * <tt>{0,1,2,3}, {4,5,6,7}, {8,9,10,11}, ..., {508,509,510,511}</tt>.
  *
  * \par Performance Considerations
  * - Proper device-specific padding ensures zero bank conflicts for most types.
@@ -674,14 +700,87 @@ public:
 
     //@}  end member group
     /******************************************************************//**
-     * \name Blocked exchanges
+     * \name Structured exchanges
      *********************************************************************/
     //@{
+
+    /**
+     * \brief Transposes data items from <em>striped</em> arrangement to <em>blocked</em> arrangement.
+     *
+     * \smemreuse
+     *
+     * The code snippet below illustrates the conversion from a "striped" to a "blocked" arrangement
+     * of 512 integer items partitioned across 128 threads where each thread owns 4 items.
+     * \par
+     * \code
+     * #include <cub/cub.cuh>
+     *
+     * __global__ void ExampleKernel(int *d_data, ...)
+     * {
+     *     // Specialize BlockExchange for 128 threads owning 4 integer items each
+     *     typedef cub::BlockExchange<int, 128, 4> BlockExchange;
+     *
+     *     // Allocate shared memory for BlockExchange
+     *     __shared__ typename BlockExchange::TempStorage temp_storage;
+     *
+     *     // Load a tile of ordered data into a striped arrangement across block threads
+     *     int thread_data[4];
+     *     cub::LoadStriped<LOAD_DEFAULT, 128>(threadIdx.x, d_data, thread_data);
+     *
+     *     // Collectively exchange data into a blocked arrangement across threads
+     *     BlockExchange(temp_storage).StripedToBlocked(thread_data);
+     *
+     * \endcode
+     * \par
+     * Suppose the set of striped input \p thread_data across the block of threads is
+     * <tt>{0,128,256,384}, {1,129,257,385}, ..., {127,255,383,511}</tt> after loading from global memory.
+     * The corresponding output \p thread_data in those threads will be
+     * <tt>{0,1,2,3}, {4,5,6,7}, {8,9,10,11}, ..., {508,509,510,511}</tt>.
+     *
+     */
+    __device__ __forceinline__ void StripedToBlocked(
+        T                items[ITEMS_PER_THREAD])   ///< [in-out] Items to exchange, converting between <em>striped</em> and <em>blocked</em> arrangements.
+    {
+        StripedToBlocked(items, Int2Type<WARP_TIME_SLICING>());
+    }
 
     /**
      * \brief Transposes data items from <em>blocked</em> arrangement to <em>striped</em> arrangement.
      *
      * \smemreuse
+     *
+     * The code snippet below illustrates the conversion from a "blocked" to a "striped" arrangement
+     * of 512 integer items partitioned across 128 threads where each thread owns 4 items.
+     * \par
+     * \code
+     * #include <cub/cub.cuh>
+     *
+     * __global__ void ExampleKernel(int *d_data, ...)
+     * {
+     *     // Specialize BlockExchange for 128 threads owning 4 integer items each
+     *     typedef cub::BlockExchange<int, 128, 4> BlockExchange;
+     *
+     *     // Allocate shared memory for BlockExchange
+     *     __shared__ typename BlockExchange::TempStorage temp_storage;
+     *
+     *     // Obtain a tile of data blocked across threads
+     *     int thread_data[4];
+     *     ...
+     *
+     *     // Collectively exchange data into a striped arrangement across threads
+     *     BlockExchange(temp_storage).BlockedToStriped(thread_data);
+     *
+     *     // Store data striped across block threads into an ordered tile
+     *     cub::StoreStriped<STORE_DEFAULT, 128>(threadIdx.x, d_data, thread_data);
+     *
+     * \endcode
+     * \par
+     * Suppose the set of blocked input \p thread_data across the block of threads is
+     * <tt>{0,1,2,3}, {4,5,6,7}, {8,9,10,11}, ..., {508,509,510,511}</tt>.
+     * The corresponding output \p thread_data in those threads will be
+     * <tt>{0,128,256,384}, {1,129,257,385}, ..., {127,255,383,511}</tt> in
+     * preparation for storing to global memory.
+     *
      */
     __device__ __forceinline__ void BlockedToStriped(
         T               items[ITEMS_PER_THREAD])    ///< [in-out] Items to exchange, converting between <em>blocked</em> and <em>striped</em> arrangements.
@@ -691,52 +790,88 @@ public:
 
 
     /**
-     * \brief Transposes data items from <em>blocked</em> arrangement to <em>warp-striped</em> arrangement.
-     *
-     * \smemreuse
-     */
-    __device__ __forceinline__ void BlockedToWarpStriped(
-        T                items[ITEMS_PER_THREAD])   ///< [in-out] Items to exchange, converting between <em>blocked</em> and <em>warp-striped</em> arrangements.
-    {
-        BlockedToWarpStriped(items, Int2Type<WARP_TIME_SLICING>());
-    }
-
-
-    //@}  end member group
-    /******************************************************************//**
-     * \name Striped exchanges
-     *********************************************************************/
-    //@{
-
-
-    /**
-     * \brief Transposes data items from <em>striped</em> arrangement to <em>blocked</em> arrangement.
-     *
-     * \smemreuse
-     */
-    __device__ __forceinline__ void StripedToBlocked(
-        T                items[ITEMS_PER_THREAD])   ///< [in-out] Items to exchange, converting between <em>striped</em> and <em>blocked</em> arrangements.
-    {
-        StripedToBlocked(items, Int2Type<WARP_TIME_SLICING>());
-    }
-
-
-    //@}  end member group
-    /******************************************************************//**
-     * \name Warp-striped exchanges
-     *********************************************************************/
-    //@{
-
-
-    /**
      * \brief Transposes data items from <em>warp-striped</em> arrangement to <em>blocked</em> arrangement.
      *
      * \smemreuse
+     *
+     * The code snippet below illustrates the conversion from a "warp-striped" to a "blocked" arrangement
+     * of 512 integer items partitioned across 128 threads where each thread owns 4 items.
+     * \par
+     * \code
+     * #include <cub/cub.cuh>
+     *
+     * __global__ void ExampleKernel(int *d_data, ...)
+     * {
+     *     // Specialize BlockExchange for 128 threads owning 4 integer items each
+     *     typedef cub::BlockExchange<int, 128, 4> BlockExchange;
+     *
+     *     // Allocate shared memory for BlockExchange
+     *     __shared__ typename BlockExchange::TempStorage temp_storage;
+     *
+     *     // Load a tile of ordered data into a striped arrangement across warp threads
+     *     int thread_data[4];
+     *     cub::LoadStriped<LOAD_DEFAULT, 128>(threadIdx.x, d_data, thread_data);
+     *
+     *     // Collectively exchange data into a blocked arrangement across threads
+     *     BlockExchange(temp_storage).WarpStripedToBlocked(thread_data);
+     *
+     * \endcode
+     * \par
+     * Suppose the set of striped input \p thread_data across the block of threads is
+     * <tt>{0,128,256,384}, {1,129,257,385}, ..., {127,255,383,511}</tt> after loading from global memory.
+     * The corresponding output \p thread_data in those threads will be
+     * <tt>{0,1,2,3}, {4,5,6,7}, {8,9,10,11}, ..., {508,509,510,511}</tt>.
+     *
      */
     __device__ __forceinline__ void WarpStripedToBlocked(
         T                items[ITEMS_PER_THREAD])   ///< [in-out] Items to exchange, converting between <em>warp-striped</em> and <em>blocked</em> arrangements.
     {
         WarpStripedToBlocked(items, Int2Type<WARP_TIME_SLICING>());
+    }
+
+    /**
+     * \brief Transposes data items from <em>blocked</em> arrangement to <em>warp-striped</em> arrangement.
+     *
+     * \smemreuse
+     *
+     * The code snippet below illustrates the conversion from a "blocked" to a "warp-striped" arrangement
+     * of 512 integer items partitioned across 128 threads where each thread owns 4 items.
+     * \par
+     * \code
+     * #include <cub/cub.cuh>
+     *
+     * __global__ void ExampleKernel(int *d_data, ...)
+     * {
+     *     // Specialize BlockExchange for 128 threads owning 4 integer items each
+     *     typedef cub::BlockExchange<int, 128, 4> BlockExchange;
+     *
+     *     // Allocate shared memory for BlockExchange
+     *     __shared__ typename BlockExchange::TempStorage temp_storage;
+     *
+     *     // Obtain a tile of data blocked across threads
+     *     int thread_data[4];
+     *     ...
+     *
+     *     // Collectively exchange data into a warp-striped arrangement across threads
+     *     BlockExchange(temp_storage).BlockedToWarpStriped(thread_data);
+     *
+     *     // Store data striped across warp threads into an ordered tile
+     *     cub::StoreStriped<STORE_DEFAULT, 128>(threadIdx.x, d_data, thread_data);
+     *
+     * \endcode
+     * \par
+     * Suppose the set of blocked input \p thread_data across the block of threads is
+     * <tt>{0,1,2,3}, {4,5,6,7}, {8,9,10,11}, ..., {508,509,510,511}</tt>.
+     * The corresponding output \p thread_data in those threads will be
+     * <tt>{0,128,256,384}, {1,129,257,385}, ..., {127,255,383,511}</tt> in
+     * preparation for storing to global memory. (The first 128 items are striped across
+     * the first warp of 32 threads, the second 128 items are striped across the second warp, etc.)
+     *
+     */
+    __device__ __forceinline__ void BlockedToWarpStriped(
+        T                items[ITEMS_PER_THREAD])   ///< [in-out] Items to exchange, converting between <em>blocked</em> and <em>warp-striped</em> arrangements.
+    {
+        BlockedToWarpStriped(items, Int2Type<WARP_TIME_SLICING>());
     }
 
 

@@ -103,7 +103,7 @@ namespace cub {
  * \code
  * #include <cub/cub.cuh>
  *
- * __global__ void SomeKernel(...)
+ * __global__ void ExampleKernel(...)
  * {
  *     // Parameterize WarpReduce for 1 warp on type int
  *     typedef cub::WarpReduce<int, 1> WarpReduce;
@@ -136,7 +136,7 @@ namespace cub {
  * };
  *
  * template <int BLOCK_THREADS>
- * __global__ void SomeKernel(...)
+ * __global__ void ExampleKernel(...)
  * {
  *     const int WARPS = BLOCK_THREADS / 32;
  *
