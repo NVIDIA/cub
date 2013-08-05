@@ -126,7 +126,7 @@ enum BlockReduceAlgorithm
  * uses a binary combining operator to compute a single aggregate from a list of input elements.
  *
  * \par
- * Optionally, BlockReduce can be configured by algorithm to accommodate different latency/throughput needs:
+ * Optionally, BlockReduce can be specialized by algorithm to accommodate different latency/throughput workload profiles:
  *   -# <b>cub::BLOCK_REDUCE_RAKING</b>.  An efficient "raking" reduction algorithm. [More...](\ref cub::BlockReduceAlgorithm)
  *   -# <b>cub::BLOCK_REDUCE_WARP_REDUCTIONS</b>.  A quick "tiled warp-reductions" reduction algorithm. [More...](\ref cub::BlockReduceAlgorithm)
  *
@@ -138,7 +138,7 @@ enum BlockReduceAlgorithm
  * - Very efficient (only one synchronization barrier).
  * - Zero bank conflicts for most types.
  * - Computation is slightly more efficient (i.e., having lower instruction overhead) for:
- *   - Sum variants (<b><em>vs.</em></b> generic reduction)
+ *   - Summation (<b><em>vs.</em></b> generic reduction)
  *   - \p BLOCK_THREADS is a multiple of the architecture's warp size
  *   - Every thread has a valid input (i.e., full <b><em>vs.</em></b> partial-tiles)
  * - See cub::BlockReduceAlgorithm for performance details regarding algorithmic alternatives
@@ -389,7 +389,7 @@ public:
      * \code
      * #include <cub/cub.cuh>
      *
-     * __global__ void ExampleKernel(in num_valid, ...)
+     * __global__ void ExampleKernel(int num_valid, ...)
      * {
      *     // Specialize BlockReduce for 128 threads on type int
      *     typedef cub::BlockReduce<int, 128> BlockReduce;

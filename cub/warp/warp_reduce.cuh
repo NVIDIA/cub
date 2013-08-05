@@ -28,7 +28,7 @@
 
 /**
  * \file
- * cub::WarpReduce provides variants of parallel reduction across CUDA warps.
+ * The cub::WarpReduce class provides [<em>collective</em>](index.html#sec0) methods for computing a parallel reduction of items partitioned across CUDA warp threads.
  */
 
 #pragma once
@@ -53,106 +53,55 @@ namespace cub {
  */
 
 /**
- * \brief WarpReduce provides variants of parallel reduction across CUDA warps.  ![](warp_reduce_logo.png)
+ * \brief The WarpReduce class provides [<em>collective</em>](index.html#sec0) methods for computing a parallel reduction of items partitioned across CUDA warp threads. ![](warp_reduce_logo.png)
  *
  * \par Overview
  * A <a href="http://en.wikipedia.org/wiki/Reduce_(higher-order_function)"><em>reduction</em></a> (or <em>fold</em>)
  * uses a binary combining operator to compute a single aggregate from a list of input elements.
  *
- * \par
- * For convenience, WarpReduce provides alternative entrypoints that differ by:
- * - Operator (generic reduction <b><em>vs.</em></b> summation of numeric types)
- * - Input validity (full warps <b><em>vs.</em></b> partially-full warps having some undefined elements)
- *
  * \tparam T                        The reduction input/output element type
- * \tparam LOGICAL_WARPS             <b>[optional]</b> The number of entrant "logical" warps performing concurrent warp reductions.  Default is 1.
+ * \tparam LOGICAL_WARPS            <b>[optional]</b> The number of entrant "logical" warps performing concurrent warp reductions.  Default is 1.
  * \tparam LOGICAL_WARP_THREADS     <b>[optional]</b> The number of threads per "logical" warp (may be less than the number of hardware warp threads).  Default is the warp size of the targeted CUDA compute-capability (e.g., 32 threads for SM20).
  *
- * \par Usage Considerations
- * - Supports non-commutative reduction operators
- * - Supports "logical" warps smaller than the physical warp size (e.g., a logical warp of 8 threads)
+ * \par Usage and Performance Considerations
+ * - Supports "logical" warps smaller than the physical warp size (e.g., logical warps of 8 threads)
  * - The number of entrant threads must be an multiple of \p LOGICAL_WARP_THREADS
- * - Warp reductions are concurrent if more than one warp is participating
- * - The warp-wide scalar reduction output is only considered valid in warp <em>lane</em><sub>0</sub>
- * - \smemreuse{WarpReduce::TempStorage}
-
- * \par Performance Considerations
- * - Uses special instructions when applicable (e.g., warp \p SHFL)
+ * - Warp reductions are concurrent if more than one logical warp is participating
+ * - Uses special instructions when applicable (e.g., warp \p SHFL instructions)
  * - Uses synchronization-free communication between warp lanes when applicable
- * - Zero bank conflicts for most types.
+ * - Zero bank conflicts for most types
  * - Computation is slightly more efficient (i.e., having lower instruction overhead) for:
- *     - Reduction parameterizations where \p T is a built-in C++ primitive or CUDA vector type (e.g.,
- *       \p short, \p int2, \p double, \p float2, etc.)
- *     - Reduction parameterizations where \p LOGICAL_WARP_THREADS is a multiple of the architecture's warp size
+ *     - Summation (<b><em>vs.</em></b> generic reduction)
+ *     - The architecture's warp size is a whole multiple of \p LOGICAL_WARP_THREADS
  *
- * \par Algorithm
- * These parallel reduction variants implement a warp-synchronous
- * Kogge-Stone algorithm having <em>O</em>(log<em>n</em>)
- * steps and <em>O</em>(<em>n</em>log<em>n</em>) work complexity,
- * where <em>n</em> = \p LOGICAL_WARP_THREADS (which defaults to the warp
- * size associated with the CUDA Compute Capability targeted by the compiler).
- * <br><br>
- * \image html kogge_stone_reduction.png
- * <div class="centercaption">Data flow within a 16-thread Kogge-Stone reduction construction.  Junctions represent binary operators.</div>
- * <br>
- *
- * \par Examples
- *
+ * \par A Simple Example
+ * \warpcollective{WarpReduce}
  * \par
- * <em><b>Example 1</b></em>. Perform a simple sum reduction for one warp
+ * The code snippet below illustrates four concurrent warp sum reductions within a block of
+ * 128 threads (one per each of the 32-thread warps).
+ * \par
  * \code
  * #include <cub/cub.cuh>
  *
  * __global__ void ExampleKernel(...)
  * {
- *     // Parameterize WarpReduce for 1 warp on type int
- *     typedef cub::WarpReduce<int, 1> WarpReduce;
+ *     // Specialize WarpReduce for 4 warps on type int
+ *     typedef cub::WarpReduce<int, 4> WarpReduce;
  *
- *     // Opaque shared memory for WarpReduce
+ *     // Allocate shared memory for WarpReduce
  *     __shared__ typename WarpReduce::TempStorage temp_storage;
  *
- *     // Compute sum of thread ranks in first warp
- *     if (threadIdx.x < 32)
- *     {
- *         int input = threadIdx.x;
- *         int output = WarpReduce(temp_storage).Sum(input);
+ *     // Obtain one input item per thread
+ *     int thread_data = ...
  *
- *         ...
+ *     // Return the warp-wide sums to each lane0 (threads 0, 32, 64, and 96)
+ *     int aggregate = WarpReduce(temp_storage).Sum(thread_data);
  *
  * \endcode
- *
  * \par
- * <em><b>Example 2</b></em>. Perform a simple max in every warp
- * \code
- * #include <cub/cub.cuh>
- *
- * // Max functor
- * struct Max
- * {
- *     __host__ __device__ __forceinline__ T operator()(const int &a, const int &b)
- *     {
- *         return (b > a) ? b : a;
- *     }
- * };
- *
- * template <int BLOCK_THREADS>
- * __global__ void ExampleKernel(...)
- * {
- *     const int WARPS = BLOCK_THREADS / 32;
- *
- *     // Parameterize WarpReduce for all active warp on type int
- *     typedef cub::WarpReduce<int, WARPS> WarpReduce;
- *
- *     // Opaque shared memory for WarpReduce
- *     __shared__ typename WarpReduce::TempStorage temp_storage;
- *
- *     // Compute max thread rank every warp
- *     int input = threadIdx.x;
- *     int output = WarpReduce(temp_storage).Reduce(input, Max());
- *
- *     ...
- *
- * \endcode
+ * Suppose the set of input \p thread_data across the block of threads is <tt>0, 1, 2, 3, ..., 127</tt>.
+ * The corresponding output \p aggregate in threads 0, 32, 64, and 96 will \p 496, \p 1520,
+ * \p 2544, and \p 3568, respectively (and is undefined in other threads).
  */
 template <
     typename    T,
@@ -298,6 +247,34 @@ public:
      * \brief Computes a warp-wide sum in each active warp.  The output is valid in warp <em>lane</em><sub>0</sub>.
      *
      * \smemreuse
+     *
+     * \par
+     * The code snippet below illustrates four concurrent warp sum reductions within a block of
+     * 128 threads (one per each of the 32-thread warps).
+     * \par
+     * \code
+     * #include <cub/cub.cuh>
+     *
+     * __global__ void ExampleKernel(...)
+     * {
+     *     // Specialize WarpReduce for 4 warps on type int
+     *     typedef cub::WarpReduce<int, 4> WarpReduce;
+     *
+     *     // Allocate shared memory for WarpReduce
+     *     __shared__ typename WarpReduce::TempStorage temp_storage;
+     *
+     *     // Obtain one input item per thread
+     *     int thread_data = ...
+     *
+     *     // Return the warp-wide sums to each lane0
+     *     int aggregate = WarpReduce(temp_storage).Sum(thread_data);
+     *
+     * \endcode
+     * \par
+     * Suppose the set of input \p thread_data across the block of threads is <tt>0, 1, 2, 3, ..., 127</tt>.
+     * The corresponding output \p aggregate in threads 0, 32, 64, and 96 will \p 496, \p 1520,
+     * \p 2544, and \p 3568, respectively (and is undefined in other threads).
+     *
      */
     __device__ __forceinline__ T Sum(
         T                   input)              ///< [in] Calling thread's input
@@ -311,6 +288,36 @@ public:
      * All threads in each logical warp must agree on the same value for \p valid_items.  Otherwise the result is undefined.
      *
      * \smemreuse
+     *
+     * The code snippet below illustrates a sum reduction within a single, partially-full
+     * block of 32 threads (one warp).
+     * \par
+     * \code
+     * #include <cub/cub.cuh>
+     *
+     * __global__ void ExampleKernel(int *d_data, int valid_items)
+     * {
+     *     // Specialize WarpReduce for a single warp on type int
+     *     typedef cub::WarpReduce<int, 1> WarpReduce;
+     *
+     *     // Allocate shared memory for WarpReduce
+     *     __shared__ typename WarpReduce::TempStorage temp_storage;
+     *
+     *     // Obtain one input item per thread if in range
+     *     int thread_data;
+     *     if (threadIdx.x < valid_items)
+     *         thread_data = d_data[threadIdx.x];
+     *
+     *     // Return the warp-wide sums to each lane0
+     *     int aggregate = WarpReduce(temp_storage).Sum(
+     *         thread_data, valid_items);
+     *
+     * \endcode
+     * \par
+     * Suppose the input \p d_data is <tt>0, 1, 2, 3, 4, ...</tt> and \p valid_items
+     * is \p 4.  The corresponding output \p aggregate in thread0 is \p 6 (and is
+     * undefined in other threads).
+     *
      */
     __device__ __forceinline__ T Sum(
         T                   input,              ///< [in] Calling thread's input
@@ -333,7 +340,38 @@ public:
      *
      * \smemreuse
      *
-     * \tparam ReductionOp     <b>[inferred]</b> Binary scan operator type having member <tt>T operator()(const T &a, const T &b)</tt>
+     * \par
+     * The code snippet below illustrates a head-segmented warp sum
+     * reduction within a block of 32 threads (one warp).
+     * \par
+     * \code
+     * #include <cub/cub.cuh>
+     *
+     * __global__ void ExampleKernel(...)
+     * {
+     *     // Specialize WarpReduce for a single warp on type int
+     *     typedef cub::WarpReduce<int, 1> WarpReduce;
+     *
+     *     // Allocate shared memory for WarpReduce
+     *     __shared__ typename WarpReduce::TempStorage temp_storage;
+     *
+     *     // Obtain one input item and flag per thread
+     *     int thread_data = ...
+     *     int head_flag = ...
+     *
+     *     // Return the warp-wide sums to each lane0
+     *     int aggregate = WarpReduce(temp_storage).HeadSegmentedSum(
+     *         thread_data, head_flag);
+     *
+     * \endcode
+     * \par
+     * Suppose the set of input \p thread_data and \p head_flag across the block of threads
+     * is <tt>0, 1, 2, 3, ..., 31</tt> and is <tt>1, 0, 0, 0, 1, 0, 0, 0, ..., 1, 0, 0, 0</tt>,
+     * respectively.  The corresponding output \p aggregate in threads 0, 4, 8, 12, etc. will be
+     * \p 6, \p 22, \p 38, etc. (and is undefined in other threads).
+     *
+     * \tparam ReductionOp     <b>[inferred]</b> Binary reduction operator type having member <tt>T operator()(const T &a, const T &b)</tt>
+     *
      */
     template <
         typename            Flag>
@@ -350,7 +388,37 @@ public:
      *
      * \smemreuse
      *
-     * \tparam ReductionOp     <b>[inferred]</b> Binary scan operator type having member <tt>T operator()(const T &a, const T &b)</tt>
+     * \par
+     * The code snippet below illustrates a tail-segmented warp sum
+     * reduction within a block of 32 threads (one warp).
+     * \par
+     * \code
+     * #include <cub/cub.cuh>
+     *
+     * __global__ void ExampleKernel(...)
+     * {
+     *     // Specialize WarpReduce for a single warp on type int
+     *     typedef cub::WarpReduce<int, 1> WarpReduce;
+     *
+     *     // Allocate shared memory for WarpReduce
+     *     __shared__ typename WarpReduce::TempStorage temp_storage;
+     *
+     *     // Obtain one input item and flag per thread
+     *     int thread_data = ...
+     *     int tail_flag = ...
+     *
+     *     // Return the warp-wide sums to each lane0
+     *     int aggregate = WarpReduce(temp_storage).TailSegmentedSum(
+     *         thread_data, tail_flag);
+     *
+     * \endcode
+     * \par
+     * Suppose the set of input \p thread_data and \p tail_flag across the block of threads
+     * is <tt>0, 1, 2, 3, ..., 31</tt> and is <tt>0, 0, 0, 1, 0, 0, 0, 1, ..., 0, 0, 0, 1</tt>,
+     * respectively.  The corresponding output \p aggregate in threads 0, 4, 8, 12, etc. will be
+     * \p 6, \p 22, \p 38, etc. (and is undefined in other threads).
+     *
+     * \tparam ReductionOp     <b>[inferred]</b> Binary reduction operator type having member <tt>T operator()(const T &a, const T &b)</tt>
      */
     template <
         typename            Flag>
@@ -372,9 +440,39 @@ public:
     /**
      * \brief Computes a warp-wide reduction in each active warp using the specified binary reduction functor.  The output is valid in warp <em>lane</em><sub>0</sub>.
      *
+     * Supports non-commutative reduction operators
+     *
      * \smemreuse
      *
-     * \tparam ReductionOp     <b>[inferred]</b> Binary scan operator type having member <tt>T operator()(const T &a, const T &b)</tt>
+     * \par
+     * The code snippet below illustrates four concurrent warp max reductions within a block of
+     * 128 threads (one per each of the 32-thread warps).
+     * \par
+     * \code
+     * #include <cub/cub.cuh>
+     *
+     * __global__ void ExampleKernel(...)
+     * {
+     *     // Specialize WarpReduce for 4 warps on type int
+     *     typedef cub::WarpReduce<int, 4> WarpReduce;
+     *
+     *     // Allocate shared memory for WarpReduce
+     *     __shared__ typename WarpReduce::TempStorage temp_storage;
+     *
+     *     // Obtain one input item per thread
+     *     int thread_data = ...
+     *
+     *     // Return the warp-wide reductions to each lane0
+     *     int aggregate = WarpReduce(temp_storage).Reduce(
+     *         thread_data, cub::Max());
+     *
+     * \endcode
+     * \par
+     * Suppose the set of input \p thread_data across the block of threads is <tt>0, 1, 2, 3, ..., 127</tt>.
+     * The corresponding output \p aggregate in threads 0, 32, 64, and 96 will \p 31, \p 63,
+     * \p 95, and \p 127, respectively  (and is undefined in other threads).
+     *
+     * \tparam ReductionOp     <b>[inferred]</b> Binary reduction operator type having member <tt>T operator()(const T &a, const T &b)</tt>
      */
     template <typename ReductionOp>
     __device__ __forceinline__ T Reduce(
@@ -389,9 +487,40 @@ public:
      *
      * All threads in each logical warp must agree on the same value for \p valid_items.  Otherwise the result is undefined.
      *
+     * Supports non-commutative reduction operators
+     *
      * \smemreuse
      *
-     * \tparam ReductionOp     <b>[inferred]</b> Binary scan operator type having member <tt>T operator()(const T &a, const T &b)</tt>
+     * The code snippet below illustrates a max reduction within a single, partially-full
+     * block of 32 threads (one warp).
+     * \par
+     * \code
+     * #include <cub/cub.cuh>
+     *
+     * __global__ void ExampleKernel(int *d_data, int valid_items)
+     * {
+     *     // Specialize WarpReduce for a single warp on type int
+     *     typedef cub::WarpReduce<int, 1> WarpReduce;
+     *
+     *     // Allocate shared memory for WarpReduce
+     *     __shared__ typename WarpReduce::TempStorage temp_storage;
+     *
+     *     // Obtain one input item per thread if in range
+     *     int thread_data;
+     *     if (threadIdx.x < valid_items)
+     *         thread_data = d_data[threadIdx.x];
+     *
+     *     // Return the warp-wide reductions to each lane0
+     *     int aggregate = WarpReduce(temp_storage).Reduce(
+     *         thread_data, cub::Max(), valid_items);
+     *
+     * \endcode
+     * \par
+     * Suppose the input \p d_data is <tt>0, 1, 2, 3, 4, ...</tt> and \p valid_items
+     * is \p 4.  The corresponding output \p aggregate in thread0 is \p 3 (and is
+     * undefined in other threads).
+     *
+     * \tparam ReductionOp     <b>[inferred]</b> Binary reduction operator type having member <tt>T operator()(const T &a, const T &b)</tt>
      */
     template <typename ReductionOp>
     __device__ __forceinline__ T Reduce(
@@ -414,9 +543,41 @@ public:
     /**
      * \brief Computes a segmented reduction in each active warp where segments are defined by head-flags.  The reduction of each segment is returned to the first lane in that segment (which always includes <em>lane</em><sub>0</sub>).
      *
+     * Supports non-commutative reduction operators
+     *
      * \smemreuse
      *
-     * \tparam ReductionOp     <b>[inferred]</b> Binary scan operator type having member <tt>T operator()(const T &a, const T &b)</tt>
+     * \par
+     * The code snippet below illustrates a head-segmented warp max
+     * reduction within a block of 32 threads (one warp).
+     * \par
+     * \code
+     * #include <cub/cub.cuh>
+     *
+     * __global__ void ExampleKernel(...)
+     * {
+     *     // Specialize WarpReduce for a single warp on type int
+     *     typedef cub::WarpReduce<int, 1> WarpReduce;
+     *
+     *     // Allocate shared memory for WarpReduce
+     *     __shared__ typename WarpReduce::TempStorage temp_storage;
+     *
+     *     // Obtain one input item and flag per thread
+     *     int thread_data = ...
+     *     int head_flag = ...
+     *
+     *     // Return the warp-wide reductions to each lane0
+     *     int aggregate = WarpReduce(temp_storage).HeadSegmentedReduce(
+     *         thread_data, head_flag, cub::Max());
+     *
+     * \endcode
+     * \par
+     * Suppose the set of input \p thread_data and \p head_flag across the block of threads
+     * is <tt>0, 1, 2, 3, ..., 31</tt> and is <tt>1, 0, 0, 0, 1, 0, 0, 0, ..., 1, 0, 0, 0</tt>,
+     * respectively.  The corresponding output \p aggregate in threads 0, 4, 8, 12, etc. will be
+     * \p 3, \p 7, \p 11, etc. (and is undefined in other threads).
+     *
+     * \tparam ReductionOp     <b>[inferred]</b> Binary reduction operator type having member <tt>T operator()(const T &a, const T &b)</tt>
      */
     template <
         typename            ReductionOp,
@@ -433,9 +594,41 @@ public:
     /**
      * \brief Computes a segmented reduction in each active warp where segments are defined by tail-flags.  The reduction of each segment is returned to the first lane in that segment (which always includes <em>lane</em><sub>0</sub>).
      *
+     * Supports non-commutative reduction operators
+     *
      * \smemreuse
      *
-     * \tparam ReductionOp     <b>[inferred]</b> Binary scan operator type having member <tt>T operator()(const T &a, const T &b)</tt>
+     * \par
+     * The code snippet below illustrates a tail-segmented warp max
+     * reduction within a block of 32 threads (one warp).
+     * \par
+     * \code
+     * #include <cub/cub.cuh>
+     *
+     * __global__ void ExampleKernel(...)
+     * {
+     *     // Specialize WarpReduce for a single warp on type int
+     *     typedef cub::WarpReduce<int, 1> WarpReduce;
+     *
+     *     // Allocate shared memory for WarpReduce
+     *     __shared__ typename WarpReduce::TempStorage temp_storage;
+     *
+     *     // Obtain one input item and flag per thread
+     *     int thread_data = ...
+     *     int tail_flag = ...
+     *
+     *     // Return the warp-wide reductions to each lane0
+     *     int aggregate = WarpReduce(temp_storage).TailSegmentedReduce(
+     *         thread_data, tail_flag, cub::Max());
+     *
+     * \endcode
+     * \par
+     * Suppose the set of input \p thread_data and \p tail_flag across the block of threads
+     * is <tt>0, 1, 2, 3, ..., 31</tt> and is <tt>0, 0, 0, 1, 0, 0, 0, 1, ..., 0, 0, 0, 1</tt>,
+     * respectively.  The corresponding output \p aggregate in threads 0, 4, 8, 12, etc. will be
+     * \p 3, \p 7, \p 11, etc. (and is undefined in other threads).
+     *
+     * \tparam ReductionOp     <b>[inferred]</b> Binary reduction operator type having member <tt>T operator()(const T &a, const T &b)</tt>
      */
     template <
         typename            ReductionOp,
