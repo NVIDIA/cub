@@ -96,7 +96,7 @@ enum BlockHistogramAlgorithm
  * counts the number of observations that fall into each of the disjoint categories (known as <em>bins</em>).
  *
  * \par
- * Optionally, BlockHistogram can be configured to use different algorithms:
+ * Optionally, BlockHistogram can be specialized to use different algorithms:
  *   -# <b>cub::BLOCK_HISTO_SORT</b>.  Sorting followed by differentiation. [More...](\ref cub::BlockHistogramAlgorithm)
  *   -# <b>cub::BLOCK_HISTO_ATOMIC</b>.  Use atomic addition to update byte counts directly. [More...](\ref cub::BlockHistogramAlgorithm)
  *

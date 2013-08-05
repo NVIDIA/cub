@@ -165,7 +165,7 @@ namespace cub {
  *          }
  *      }
  *
- *      __global__ void ExampleKernel(int *d_data, int num_elements)
+ *      __global__ void ExampleKernel(int *d_data, int num_items)
  *      {
  *          // Parameterize WarpScan for 1 warp on type int
  *          typedef cub::WarpScan<int> WarpScan;
@@ -180,7 +180,7 @@ namespace cub {
  *              WarpPrefixOp prefix_op(0);
  *
  *              // Iterate in strips of 32 items
- *              for (int warp_offset = 0; warp_offset < num_elements; warp_offset += 32)
+ *              for (int warp_offset = 0; warp_offset < num_items; warp_offset += 32)
  *              {
  *                  // Read item
  *                  int datum = d_data[warp_offset + linear_tid];
