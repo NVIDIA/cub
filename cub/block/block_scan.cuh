@@ -131,7 +131,7 @@ enum BlockScanAlgorithm
  * the <em>i</em><sup>th</sup> output reduction.
  *
  * \par
- * Optionally, BlockScan can be configured by algorithm to accommodate different latency/throughput needs:
+ * Optionally, BlockScan can be specialized by algorithm to accommodate different latency/throughput workload profiles:
  *   -# <b>cub::BLOCK_SCAN_RAKING</b>.  An efficient "raking reduce-then-scan" prefix scan algorithm. [More...](\ref cub::BlockScanAlgorithm)
  *   -# <b>cub::BLOCK_SCAN_WARP_SCANS</b>.  A quick "tiled warpscans" prefix scan algorithm. [More...](\ref cub::BlockScanAlgorithm)
  *
@@ -429,7 +429,7 @@ public:
      *     }
      * };
      *
-     * __global__ void ExampleKernel(int *d_data, int num_elements, ...)
+     * __global__ void ExampleKernel(int *d_data, int num_items, ...)
      * {
      *     // Specialize BlockLoad, BlockStore, and BlockScan for 128 threads
      *     typedef cub::BlockScan<int, 128> BlockScan;
@@ -441,7 +441,7 @@ public:
      *     BlockPrefixOp prefix_op(0);
      *
      *     // Have the block iterate over tiles of items
-     *     for (int block_offset = 0; block_offset < num_elements; block_offset += 128)
+     *     for (int block_offset = 0; block_offset < num_items; block_offset += 128)
      *     {
      *         // Read tile of items
      *         int thread_data = d_data[block_offset];
@@ -632,7 +632,7 @@ public:
      *     }
      * };
      *
-     * __global__ void ExampleKernel(int *d_data, int num_elements, ...)
+     * __global__ void ExampleKernel(int *d_data, int num_items, ...)
      * {
      *     // Specialize BlockLoad, BlockStore, and BlockScan for 128 threads, 4 ints per thread
      *     typedef cub::BlockLoad<int*, 128, 4, BLOCK_LOAD_TRANSPOSE>   BlockLoad;
@@ -650,7 +650,7 @@ public:
      *     BlockPrefixOp prefix_op(0);
      *
      *     // Have the block iterate over tiles of items
-     *     for (int block_offset = 0; block_offset < num_elements; block_offset += 128 * 4)
+     *     for (int block_offset = 0; block_offset < num_items; block_offset += 128 * 4)
      *     {
      *         // Read tile of items (consecutive input items per thread)
      *         int thread_data[4];
@@ -848,7 +848,7 @@ public:
      *     }
      * };
      *
-     * __global__ void ExampleKernel(int *d_data, int num_elements, ...)
+     * __global__ void ExampleKernel(int *d_data, int num_items, ...)
      * {
      *     // Specialize BlockLoad, BlockStore, and BlockScan for 128 threads
      *     typedef cub::BlockScan<int, 128> BlockScan;
@@ -860,7 +860,7 @@ public:
      *     BlockPrefixOp prefix_op(INT_MIN);
      *
      *     // Have the block iterate over tiles of items
-     *     for (int block_offset = 0; block_offset < num_elements; block_offset += 128)
+     *     for (int block_offset = 0; block_offset < num_items; block_offset += 128)
      *     {
      *         // Read tile of items
      *         int thread_data = d_data[block_offset];
@@ -1069,7 +1069,7 @@ public:
      *     }
      * };
      *
-     * __global__ void ExampleKernel(int *d_data, int num_elements, ...)
+     * __global__ void ExampleKernel(int *d_data, int num_items, ...)
      * {
      *     // Specialize BlockLoad, BlockStore, and BlockScan for 128 threads, 4 ints per thread
      *     typedef cub::BlockLoad<int*, 128, 4, BLOCK_LOAD_TRANSPOSE>   BlockLoad;
@@ -1087,7 +1087,7 @@ public:
      *     BlockPrefixOp prefix_op(0);
      *
      *     // Have the block iterate over tiles of items
-     *     for (int block_offset = 0; block_offset < num_elements; block_offset += 128 * 4)
+     *     for (int block_offset = 0; block_offset < num_items; block_offset += 128 * 4)
      *     {
      *         // Read tile of items (consecutive input items per thread)
      *         int thread_data[4];
@@ -1474,7 +1474,7 @@ public:
      *     }
      * };
      *
-     * __global__ void ExampleKernel(int *d_data, int num_elements, ...)
+     * __global__ void ExampleKernel(int *d_data, int num_items, ...)
      * {
      *     // Specialize BlockLoad, BlockStore, and BlockScan for 128 threads
      *     typedef cub::BlockScan<int, 128> BlockScan;
@@ -1486,7 +1486,7 @@ public:
      *     BlockPrefixOp prefix_op(0);
      *
      *     // Have the block iterate over tiles of items
-     *     for (int block_offset = 0; block_offset < num_elements; block_offset += 128)
+     *     for (int block_offset = 0; block_offset < num_items; block_offset += 128)
      *     {
      *         // Read tile of items
      *         int thread_data = d_data[block_offset];
@@ -1692,7 +1692,7 @@ public:
      *     }
      * };
      *
-     * __global__ void ExampleKernel(int *d_data, int num_elements, ...)
+     * __global__ void ExampleKernel(int *d_data, int num_items, ...)
      * {
      *     // Specialize BlockLoad, BlockStore, and BlockScan for 128 threads, 4 ints per thread
      *     typedef cub::BlockLoad<int*, 128, 4, BLOCK_LOAD_TRANSPOSE>   BlockLoad;
@@ -1710,7 +1710,7 @@ public:
      *     BlockPrefixOp prefix_op(0);
      *
      *     // Have the block iterate over tiles of items
-     *     for (int block_offset = 0; block_offset < num_elements; block_offset += 128 * 4)
+     *     for (int block_offset = 0; block_offset < num_items; block_offset += 128 * 4)
      *     {
      *         // Read tile of items (consecutive input items per thread)
      *         int thread_data[4];
@@ -1912,7 +1912,7 @@ public:
      *     }
      * };
      *
-     * __global__ void ExampleKernel(int *d_data, int num_elements, ...)
+     * __global__ void ExampleKernel(int *d_data, int num_items, ...)
      * {
      *     // Specialize BlockLoad, BlockStore, and BlockScan for 128 threads
      *     typedef cub::BlockScan<int, 128> BlockScan;
@@ -1924,7 +1924,7 @@ public:
      *     BlockPrefixOp prefix_op(INT_MIN);
      *
      *     // Have the block iterate over tiles of items
-     *     for (int block_offset = 0; block_offset < num_elements; block_offset += 128)
+     *     for (int block_offset = 0; block_offset < num_items; block_offset += 128)
      *     {
      *         // Read tile of items
      *         int thread_data = d_data[block_offset];
@@ -2144,7 +2144,7 @@ public:
      *     }
      * };
      *
-     * __global__ void ExampleKernel(int *d_data, int num_elements, ...)
+     * __global__ void ExampleKernel(int *d_data, int num_items, ...)
      * {
      *     // Specialize BlockLoad, BlockStore, and BlockScan for 128 threads, 4 ints per thread
      *     typedef cub::BlockLoad<int*, 128, 4, BLOCK_LOAD_TRANSPOSE>   BlockLoad;
@@ -2162,7 +2162,7 @@ public:
      *     BlockPrefixOp prefix_op(0);
      *
      *     // Have the block iterate over tiles of items
-     *     for (int block_offset = 0; block_offset < num_elements; block_offset += 128 * 4)
+     *     for (int block_offset = 0; block_offset < num_items; block_offset += 128 * 4)
      *     {
      *         // Read tile of items (consecutive input items per thread)
      *         int thread_data[4];

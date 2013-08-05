@@ -105,7 +105,7 @@ __device__ __forceinline__ T DeviceTest(
 
 
 /**
- * Test full-tile reduction kernel (where num_elements is an even
+ * Test full-tile reduction kernel (where num_items is an even
  * multiple of BLOCK_THREADS)
  */
 template <
@@ -167,7 +167,7 @@ __global__ void FullTileReduceKernel(
 
 
 /**
- * Test partial-tile reduction kernel (where num_elements < BLOCK_THREADS)
+ * Test partial-tile reduction kernel (where num_items < BLOCK_THREADS)
  */
 template <
     BlockReduceAlgorithm    ALGORITHM,
@@ -178,7 +178,7 @@ __launch_bounds__ (BLOCK_THREADS, 1)
 __global__ void PartialTileReduceKernel(
     T                       *d_in,
     T                       *d_out,
-    int                     num_elements,
+    int                     num_items,
     ReductionOp             reduction_op)
 {
     // Cooperative threadblock reduction utility type (returns aggregate only in thread-0)
@@ -191,13 +191,13 @@ __global__ void PartialTileReduceKernel(
     T partial;
 
     // Load partial tile data
-    if (threadIdx.x < num_elements)
+    if (threadIdx.x < num_items)
     {
         partial = d_in[threadIdx.x];
     }
 
     // Cooperatively reduce the tile's aggregate
-    T tile_aggregate = DeviceTest<BlockReduce>(temp_storage, partial, reduction_op, num_elements);
+    T tile_aggregate = DeviceTest<BlockReduce>(temp_storage, partial, reduction_op, num_items);
 
     // Store data
     if (threadIdx.x == 0)
@@ -222,9 +222,9 @@ void Initialize(
     T           *h_in,
     T           h_reference[1],
     ReductionOp reduction_op,
-    int         num_elements)
+    int         num_items)
 {
-    for (int i = 0; i < num_elements; ++i)
+    for (int i = 0; i < num_items; ++i)
     {
         InitValue(gen_mode, h_in[i], i);
         if (i == 0)
@@ -257,27 +257,27 @@ void TestFullTile(
 {
     const int TILE_SIZE = BLOCK_THREADS * ITEMS_PER_THREAD;
 
-    int num_elements = TILE_SIZE * tiles;
+    int num_items = TILE_SIZE * tiles;
 
     // Allocate host arrays
-    T *h_in = new T[num_elements];
+    T *h_in = new T[num_items];
     T h_reference[1];
 
     // Initialize problem
-    Initialize(gen_mode, h_in, h_reference, reduction_op, num_elements);
+    Initialize(gen_mode, h_in, h_reference, reduction_op, num_items);
 
     // Initialize/clear device arrays
     T *d_in = NULL;
     T *d_out = NULL;
-    CubDebugExit(g_allocator.DeviceAllocate((void**)&d_in, sizeof(T) * num_elements));
+    CubDebugExit(g_allocator.DeviceAllocate((void**)&d_in, sizeof(T) * num_items));
     CubDebugExit(g_allocator.DeviceAllocate((void**)&d_out, sizeof(T) * 1));
-    CubDebugExit(cudaMemcpy(d_in, h_in, sizeof(T) * num_elements, cudaMemcpyHostToDevice));
+    CubDebugExit(cudaMemcpy(d_in, h_in, sizeof(T) * num_items, cudaMemcpyHostToDevice));
     CubDebugExit(cudaMemset(d_out, 0, sizeof(T) * 1));
 
     // Test multi-tile (unguarded)
-    printf("TestFullTile, gen-mode %d, num_elements(%d), BLOCK_THREADS(%d), ITEMS_PER_THREAD(%d), tiles(%d), %s (%d bytes) elements:\n",
+    printf("TestFullTile, gen-mode %d, num_items(%d), BLOCK_THREADS(%d), ITEMS_PER_THREAD(%d), tiles(%d), %s (%d bytes) elements:\n",
         gen_mode,
-        num_elements,
+        num_items,
         BLOCK_THREADS,
         ITEMS_PER_THREAD,
         tiles,
@@ -358,30 +358,30 @@ template <
     typename                ReductionOp>
 void TestPartialTile(
     GenMode                 gen_mode,
-    int                     num_elements,
+    int                     num_items,
     ReductionOp             reduction_op,
     char                    *type_string)
 {
     const int TILE_SIZE = BLOCK_THREADS;
 
     // Allocate host arrays
-    T *h_in = new T[num_elements];
+    T *h_in = new T[num_items];
     T h_reference[1];
 
     // Initialize problem
-    Initialize(gen_mode, h_in, h_reference, reduction_op, num_elements);
+    Initialize(gen_mode, h_in, h_reference, reduction_op, num_items);
 
     // Initialize/clear device arrays
     T *d_in = NULL;
     T *d_out = NULL;
     CubDebugExit(g_allocator.DeviceAllocate((void**)&d_in, sizeof(T) * TILE_SIZE));
     CubDebugExit(g_allocator.DeviceAllocate((void**)&d_out, sizeof(T) * 1));
-    CubDebugExit(cudaMemcpy(d_in, h_in, sizeof(T) * num_elements, cudaMemcpyHostToDevice));
+    CubDebugExit(cudaMemcpy(d_in, h_in, sizeof(T) * num_items, cudaMemcpyHostToDevice));
     CubDebugExit(cudaMemset(d_out, 0, sizeof(T) * 1));
 
-    printf("TestPartialTile, gen-mode %d, num_elements(%d), BLOCK_THREADS(%d), %s (%d bytes) elements:\n",
+    printf("TestPartialTile, gen-mode %d, num_items(%d), BLOCK_THREADS(%d), %s (%d bytes) elements:\n",
         gen_mode,
-        num_elements,
+        num_items,
         BLOCK_THREADS,
         type_string,
         (int) sizeof(T));
@@ -390,7 +390,7 @@ void TestPartialTile(
     PartialTileReduceKernel<ALGORITHM, BLOCK_THREADS><<<1, BLOCK_THREADS>>>(
         d_in,
         d_out,
-        num_elements,
+        num_items,
         reduction_op);
 
     CubDebugExit(cudaDeviceSynchronize());
@@ -422,11 +422,11 @@ void TestPartialTile(
     char                    *type_string)
 {
     for (
-        int num_elements = 1;
-        num_elements < BLOCK_THREADS;
-        num_elements += CUB_MAX(1, BLOCK_THREADS / 5))
+        int num_items = 1;
+        num_items < BLOCK_THREADS;
+        num_items += CUB_MAX(1, BLOCK_THREADS / 5))
     {
-        TestPartialTile<ALGORITHM, BLOCK_THREADS, T>(gen_mode, num_elements, reduction_op, type_string);
+        TestPartialTile<ALGORITHM, BLOCK_THREADS, T>(gen_mode, num_items, reduction_op, type_string);
     }
 }
 
