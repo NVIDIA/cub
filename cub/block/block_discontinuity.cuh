@@ -28,7 +28,7 @@
 
 /**
  * \file
- * The cub::BlockDiscontinuity class provides [<em>collective</em>](index.html#sec0) methods for flagging discontinuities within a linear tile of items partitioned across a CUDA thread block.
+ * The cub::BlockDiscontinuity class provides [<em>collective</em>](index.html#sec0) methods for flagging discontinuities within an ordered set of items partitioned across a CUDA thread block.
  */
 
 #pragma once
@@ -46,13 +46,13 @@ CUB_NS_PREFIX
 namespace cub {
 
 /**
- * \brief The BlockDiscontinuity class provides [<em>collective</em>](index.html#sec0) methods for flagging discontinuities within a linear tile of items partitioned across a CUDA thread block. ![](discont_logo.png)
+ * \brief The BlockDiscontinuity class provides [<em>collective</em>](index.html#sec0) methods for flagging discontinuities within an ordered set of items partitioned across a CUDA thread block. ![](discont_logo.png)
  * \ingroup BlockModule
  *
  * \par Overview
- * It is often useful to construct a set of "head flags" (or "tail flags") corresponding to items
+ * A set of "head flags" (or "tail flags") is often used to indicate corresponding items
  * that differ from their predecessors (or successors).  For example, head flags are convenient
- * for demarcating segments as part of a segmented scan or reduction.
+ * for demarcating disjoint data segments as part of a segmented scan or reduction.
  *
  * \tparam T                    The data type to be flagged.
  * \tparam BLOCK_THREADS        The thread block size in threads.
