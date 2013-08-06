@@ -199,15 +199,16 @@ ALIASES                = smemreuse="A subsequent <tt>__syncthreads()</tt> thread
 ALIASES                += smemreuse{1}="After any operation, a subsequent <tt>__syncthreads()</tt> barrier is required if the collective's \1 is to be reused or repurposed"
 ALIASES                += smemstorage{1}="The operations exposed by \1 require a temporary memory allocation of this type for thread communication.  This opaque storage can be allocated directly using the <tt>__shared__</tt> keyword.  Alternatively, it can be aliased to externally allocated memory (shared or global) or <tt>union</tt>'d with other storage allocation types to facilitate memory reuse."
 
-ALIASES                += blockcollective{1}="Every thread in the thread block will: (1) specialize the \1 type; (2) instantiate a specialized instance with parameters for communication; and (3) invoke member functions to perform collective operations."
-ALIASES                += warpcollective{1}="Every thread in the warp block will: (1) specialize the \1 type; (2) instantiate a specialized instance with parameters for communication; and (3) invoke member functions to perform collective operations."
+ALIASES                += blockcollective{1}="Every thread in the block uses the \1 class by: (1) specializing the \1 type; (2) instantiating an instance with parameters for communication; and (3) invoking member functions to perform collective operations."
+ALIASES                += warpcollective{1}="Every thread in the warp block uses the \1 class by: (1) specializing the \1 type; (2) instantiating an instance with parameters for communication; and (3) invoking member functions to perform collective operations."
 
 ALIASES                += devicestorage="This operation requires an allocation of temporary device storage.  When \p d_temp_storage is NULL, no work is done and the required allocation size is returned in \p temp_storage_bytes."
 ALIASES                += cdp_class=" - These methods can be called within kernel code (via CUDA dynamic/nested parallelism)."
 ALIASES                += cdp="When using this method within kernel code (via CUDA dynamic/nested parallelism), be sure to define the \p CUB_CDP macro in your compiler's macro definitions."
 ALIASES                += iterator="Random-access input/output iterators can be used instead of naked device pointers (e.g., a zip-iterator for fusing multiple inputs)."
-ALIASES                += blocked="Assumes a [<em>blocked arrangement</em>](index.html#sec3sec3) of elements across threads."
-
+ALIASES                += blocked="Assumes a [<em>blocked arrangement</em>](index.html#sec3sec3) of elements across threads, where thread<sub><em>i</em></sub> owns the <em>i</em><sup>th</sup> segment of consecutively ranked items."
+ALIASES                += striped="Assumes a [<em>striped arrangement</em>](index.html#sec3sec3) of elements across threads, where the items owned by each thread have a ranked distance of \p BLOCK_THREADS between them."
+ALIASES                += warpstriped="Assumes a <em>warp-striped arrangement</em> of elements across threads, where each warp owns a segment of (\p WARP_THREADS * \p ITEMS_PER_THREAD) consecutively ranked items, and the items owned by each thread have a ranked distance of \p WARP_THREADS between them."
 
 # This tag can be used to specify a number of word-keyword mappings (TCL only).
 # A mapping has the form "name=value". For example adding

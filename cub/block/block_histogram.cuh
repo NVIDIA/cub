@@ -28,7 +28,7 @@
 
 /**
  * \file
- * The cub::BlockHistogram class provides [<em>collective</em>](index.html#sec0) methods for constructing (and compositing into) block-wide histograms from data partitioned across a CUDA thread block.
+ * The cub::BlockHistogram class provides [<em>collective</em>](index.html#sec0) methods for constructing block-wide histograms from data samples partitioned across a CUDA thread block.
  */
 
 #pragma once
@@ -88,7 +88,7 @@ enum BlockHistogramAlgorithm
 
 
 /**
- * \brief The BlockHistogram class provides [<em>collective</em>](index.html#sec0) methods for constructing (and compositing into) block-wide histograms from data partitioned across a CUDA thread block. ![](histogram_logo.png)
+ * \brief The BlockHistogram class provides [<em>collective</em>](index.html#sec0) methods for constructing block-wide histograms from data samples partitioned across a CUDA thread block. ![](histogram_logo.png)
  * \ingroup BlockModule
  *
  * \par Overview
