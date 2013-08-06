@@ -93,7 +93,7 @@ namespace cub {
  *     // Allocate shared memory for BlockRadixSort
  *     __shared__ typename BlockRadixSort::TempStorage temp_storage;
  *
- *     // Obtain a segment of consecutive input items per thread
+ *     // Obtain a segment of consecutive items that are blocked across threads
  *     int thread_keys[4];
  *     ...
  *
@@ -104,9 +104,9 @@ namespace cub {
  * \endcode
  * \par
  * Suppose the set of input \p thread_keys across the block of threads is
- * <tt>{0,511,1,510}, {2,509,3,508}, {4,507,5,506}, ..., {254,257,255,256}</tt>.  The
+ * <tt>{ [0,511,1,510], [2,509,3,508], [4,507,5,506], ..., [254,257,255,256] }</tt>.  The
  * corresponding output \p thread_keys in those threads will be
- * <tt>{0,1,2,3}, {4,5,6,7}, {8,9,10,11}, ... {508,509,510,511}</tt>.
+ * <tt>{ [0,1,2,3], [4,5,6,7], [8,9,10,11], ..., [508,509,510,511] }</tt>.
  *
  */
 template <
@@ -255,7 +255,7 @@ public:
      *     // Allocate shared memory for BlockRadixSort
      *     __shared__ typename BlockRadixSort::TempStorage temp_storage;
      *
-     *     // Obtain a segment of consecutive input keys per thread
+     *     // Obtain a segment of consecutive items that are blocked across threads
      *     int thread_keys[4];
      *     ...
      *
@@ -265,9 +265,9 @@ public:
      * \endcode
      * \par
      * Suppose the set of input \p thread_keys across the block of threads is
-     * <tt>{0,511,1,510}, {2,509,3,508}, {4,507,5,506}, ..., {254,257,255,256}</tt>.  The
-     * corresponding output \p thread_keys in those threads will be
-     * <tt>{0,1,2,3}, {4,5,6,7}, {8,9,10,11}, ... {508,509,510,511}</tt>.
+     * <tt>{ [0,511,1,510], [2,509,3,508], [4,507,5,506], ..., [254,257,255,256] }</tt>.
+     * The corresponding output \p thread_keys in those threads will be
+     * <tt>{ [0,1,2,3], [4,5,6,7], [8,9,10,11], ..., [508,509,510,511] }</tt>.
      */
     __device__ __forceinline__ void Sort(
         Key     (&keys)[ITEMS_PER_THREAD],          ///< [in-out] Keys to sort
@@ -338,20 +338,20 @@ public:
      *     // Allocate shared memory for BlockRadixSort
      *     __shared__ typename BlockRadixSort::TempStorage temp_storage;
      *
-     *     // Obtain a segment of consecutive input keys and values per thread
+     *     // Obtain a segment of consecutive items that are blocked across threads
      *     int thread_keys[4];
      *     int thread_values[4];
      *     ...
      *
-     *     // Collectively sort the keys among block threads
+     *     // Collectively sort the keys and values among block threads
      *     BlockRadixSort(temp_storage).Sort(thread_keys, thread_values);
      *
      * \endcode
      * \par
      * Suppose the set of input \p thread_keys across the block of threads is
-     * <tt>{0,511,1,510}, {2,509,3,508}, {4,507,5,506}, ..., {254,257,255,256}</tt>.  The
+     * <tt>{ [0,511,1,510], [2,509,3,508], [4,507,5,506], ..., [254,257,255,256] }</tt>.  The
      * corresponding output \p thread_keys in those threads will be
-     * <tt>{0,1,2,3}, {4,5,6,7}, {8,9,10,11}, ... {508,509,510,511}</tt>.
+     * <tt>{ [0,1,2,3], [4,5,6,7], [8,9,10,11], ..., [508,509,510,511] }</tt>.
      *
      */
     __device__ __forceinline__ void Sort(
@@ -430,7 +430,7 @@ public:
      *     // Allocate shared memory for BlockRadixSort
      *     __shared__ typename BlockRadixSort::TempStorage temp_storage;
      *
-     *     // Obtain a segment of consecutive input keys per thread
+     *     // Obtain a segment of consecutive items that are blocked across threads
      *     int thread_keys[4];
      *     ...
      *
@@ -440,9 +440,9 @@ public:
      * \endcode
      * \par
      * Suppose the set of input \p thread_keys across the block of threads is
-     * <tt>{0,511,1,510}, {2,509,3,508}, {4,507,5,506}, ..., {254,257,255,256}</tt>.  The
+     * <tt>{ [0,511,1,510], [2,509,3,508], [4,507,5,506], ..., [254,257,255,256] }</tt>.  The
      * corresponding output \p thread_keys in those threads will be
-     * <tt>{0,128,256,384}, {1,129,257,385}, {2,130,258,386}, ... {127,255,383,511}</tt>.
+     * <tt>{ [0,128,256,384], [1,129,257,385], [2,130,258,386], ..., [127,255,383,511] }</tt>.
      *
      */
     __device__ __forceinline__ void SortBlockedToStriped(
@@ -521,20 +521,20 @@ public:
      *     // Allocate shared memory for BlockRadixSort
      *     __shared__ typename BlockRadixSort::TempStorage temp_storage;
      *
-     *     // Obtain a segment of consecutive input keys and values per thread
+     *     // Obtain a segment of consecutive items that are blocked across threads
      *     int thread_keys[4];
      *     int thread_values[4];
      *     ...
      *
-     *     // Collectively sort the keys among block threads
+     *     // Collectively sort the keys and values among block threads
      *     BlockRadixSort(temp_storage).SortBlockedToStriped(thread_keys, thread_values);
      *
      * \endcode
      * \par
      * Suppose the set of input \p thread_keys across the block of threads is
-     * <tt>{0,511,1,510}, {2,509,3,508}, {4,507,5,506}, ..., {254,257,255,256}</tt>.  The
+     * <tt>{ [0,511,1,510], [2,509,3,508], [4,507,5,506], ..., [254,257,255,256] }</tt>.  The
      * corresponding output \p thread_keys in those threads will be
-     * <tt>{0,128,256,384}, {1,129,257,385}, {2,130,258,386}, ... {127,255,383,511}</tt>.
+     * <tt>{ [0,128,256,384], [1,129,257,385], [2,130,258,386], ..., [127,255,383,511] }</tt>.
      *
      */
     __device__ __forceinline__ void SortBlockedToStriped(

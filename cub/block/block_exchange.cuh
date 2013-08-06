@@ -28,7 +28,7 @@
 
 /**
  * \file
- * The cub::BlockExchange class provides [<em>collective</em>](index.html#sec0) methods for rearranging ordered data across a CUDA thread block.
+ * The cub::BlockExchange class provides [<em>collective</em>](index.html#sec0) methods for rearranging data partitioned across a CUDA thread block.
  */
 
 #pragma once
@@ -47,7 +47,7 @@ CUB_NS_PREFIX
 namespace cub {
 
 /**
- * \brief The BlockExchange class provides [<em>collective</em>](index.html#sec0) methods for rearranging ordered data across a CUDA thread block. ![](transpose_logo.png)
+ * \brief The BlockExchange class provides [<em>collective</em>](index.html#sec0) methods for rearranging data partitioned across a CUDA thread block. ![](transpose_logo.png)
  * \ingroup BlockModule
  *
  * \par Overview
@@ -61,8 +61,8 @@ namespace cub {
  * BlockExchange supports the following types of data exchanges:
  * - Transposing between [<em>blocked</em>](index.html#sec3sec3) and [<em>striped</em>](index.html#sec3sec3) arrangements
  * - Transposing between [<em>blocked</em>](index.html#sec3sec3) and [<em>warp-striped</em>](index.html#sec3sec3) arrangements
- * - Scattering to a [<em>blocked arrangement</em>](index.html#sec3sec3)
- * - Scattering to a [<em>striped arrangement</em>](index.html#sec3sec3)
+ * - Scattering ranked items to a [<em>blocked arrangement</em>](index.html#sec3sec3)
+ * - Scattering ranked items to a [<em>striped arrangement</em>](index.html#sec3sec3)
  *
  * \tparam T                    The data type to be exchanged.
  * \tparam BLOCK_THREADS        The thread block size in threads.
@@ -96,9 +96,9 @@ namespace cub {
  * \endcode
  * \par
  * Suppose the set of striped input \p thread_data across the block of threads is
- * <tt>{0,128,256,384}, {1,129,257,385}, ..., {127,255,383,511}</tt>.
+ * <tt>{ [0,128,256,384], [1,129,257,385], ..., [127,255,383,511] }</tt>.
  * The corresponding output \p thread_data in those threads will be
- * <tt>{0,1,2,3}, {4,5,6,7}, {8,9,10,11}, ..., {508,509,510,511}</tt>.
+ * <tt>{ [0,1,2,3], [4,5,6,7], [8,9,10,11], ..., [508,509,510,511] }</tt>.
  *
  * \par Performance Considerations
  * - Proper device-specific padding ensures zero bank conflicts for most types.
@@ -734,9 +734,9 @@ public:
      * \endcode
      * \par
      * Suppose the set of striped input \p thread_data across the block of threads is
-     * <tt>{0,128,256,384}, {1,129,257,385}, ..., {127,255,383,511}</tt> after loading from global memory.
+     * <tt>{ [0,128,256,384], [1,129,257,385], ..., [127,255,383,511] }</tt> after loading from global memory.
      * The corresponding output \p thread_data in those threads will be
-     * <tt>{0,1,2,3}, {4,5,6,7}, {8,9,10,11}, ..., {508,509,510,511}</tt>.
+     * <tt>{ [0,1,2,3], [4,5,6,7], [8,9,10,11], ..., [508,509,510,511] }</tt>.
      *
      */
     __device__ __forceinline__ void StripedToBlocked(
@@ -764,7 +764,7 @@ public:
      *     // Allocate shared memory for BlockExchange
      *     __shared__ typename BlockExchange::TempStorage temp_storage;
      *
-     *     // Obtain a tile of data blocked across threads
+     *     // Obtain a segment of consecutive items that are blocked across threads
      *     int thread_data[4];
      *     ...
      *
@@ -777,9 +777,9 @@ public:
      * \endcode
      * \par
      * Suppose the set of blocked input \p thread_data across the block of threads is
-     * <tt>{0,1,2,3}, {4,5,6,7}, {8,9,10,11}, ..., {508,509,510,511}</tt>.
+     * <tt>{ [0,1,2,3], [4,5,6,7], [8,9,10,11], ..., [508,509,510,511] }</tt>.
      * The corresponding output \p thread_data in those threads will be
-     * <tt>{0,128,256,384}, {1,129,257,385}, ..., {127,255,383,511}</tt> in
+     * <tt>{ [0,128,256,384], [1,129,257,385], ..., [127,255,383,511] }</tt> in
      * preparation for storing to global memory.
      *
      */
@@ -809,19 +809,21 @@ public:
      *     // Allocate shared memory for BlockExchange
      *     __shared__ typename BlockExchange::TempStorage temp_storage;
      *
-     *     // Load a tile of ordered data into a striped arrangement across warp threads
+     *     // Load a tile of ordered data into a warp-striped arrangement across warp threads
      *     int thread_data[4];
-     *     cub::LoadStriped<LOAD_DEFAULT, 128>(threadIdx.x, d_data, thread_data);
+     *     cub::LoadSWarptriped<LOAD_DEFAULT>(threadIdx.x, d_data, thread_data);
      *
      *     // Collectively exchange data into a blocked arrangement across threads
      *     BlockExchange(temp_storage).WarpStripedToBlocked(thread_data);
      *
      * \endcode
      * \par
-     * Suppose the set of striped input \p thread_data across the block of threads is
-     * <tt>{0,128,256,384}, {1,129,257,385}, ..., {127,255,383,511}</tt> after loading from global memory.
+     * Suppose the set of warp-striped input \p thread_data across the block of threads is
+     * <tt>{ [0,32,64,96], [1,33,65,97], [2,34,66,98], ..., [415,447,479,511] }</tt>
+     * after loading from global memory.  (The first 128 items are striped across
+     * the first warp of 32 threads, the second 128 items are striped across the second warp, etc.)
      * The corresponding output \p thread_data in those threads will be
-     * <tt>{0,1,2,3}, {4,5,6,7}, {8,9,10,11}, ..., {508,509,510,511}</tt>.
+     * <tt>{ [0,1,2,3], [4,5,6,7], [8,9,10,11], ..., [508,509,510,511] }</tt>.
      *
      */
     __device__ __forceinline__ void WarpStripedToBlocked(
@@ -849,7 +851,7 @@ public:
      *     // Allocate shared memory for BlockExchange
      *     __shared__ typename BlockExchange::TempStorage temp_storage;
      *
-     *     // Obtain a tile of data blocked across threads
+     *     // Obtain a segment of consecutive items that are blocked across threads
      *     int thread_data[4];
      *     ...
      *
@@ -862,10 +864,10 @@ public:
      * \endcode
      * \par
      * Suppose the set of blocked input \p thread_data across the block of threads is
-     * <tt>{0,1,2,3}, {4,5,6,7}, {8,9,10,11}, ..., {508,509,510,511}</tt>.
+     * <tt>{ [0,1,2,3], [4,5,6,7], [8,9,10,11], ..., [508,509,510,511] }</tt>.
      * The corresponding output \p thread_data in those threads will be
-     * <tt>{0,128,256,384}, {1,129,257,385}, ..., {127,255,383,511}</tt> in
-     * preparation for storing to global memory. (The first 128 items are striped across
+     * <tt>{ [0,32,64,96], [1,33,65,97], [2,34,66,98], ..., [415,447,479,511] }</tt>
+     * in preparation for storing to global memory. (The first 128 items are striped across
      * the first warp of 32 threads, the second 128 items are striped across the second warp, etc.)
      *
      */

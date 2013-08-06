@@ -714,31 +714,32 @@ struct DeviceRadixSort
      *
      * \cdp
      *
-     * \par Example
+     * \par
+     * The code snippet below illustrates the sorting of a device vector of \p int keys
+     * with associated vector of \p int values.
+     * \par
      * \code
      * #include <cub/cub.cuh>
+     * ...
      *
-     *     ...
+     * // Create a set of DoubleBuffers to wrap pairs of device pointers for
+     * // sorting data (keys, values, and equivalently-sized alternate buffers)
+     * int num_items = ...
+     * cub::DoubleBuffer<int> d_keys(d_key_buf, d_key_alt_buf);
+     * cub::DoubleBuffer<int> d_values(d_value_buf, d_value_alt_buf);
      *
-     *     // Create a set of DoubleBuffers to wrap pairs of device pointers for
-     *     // sorting data (keys, values, and equivalently-sized alternate buffers)
-     *     int num_items = ...
-     *     cub::DoubleBuffer<int> d_keys(d_key_buf, d_key_alt_buf);
-     *     cub::DoubleBuffer<int> d_values(d_value_buf, d_value_alt_buf);
+     * // Determine temporary device storage requirements for sorting operation
+     * void *d_temp_storage = NULL;
+     * size_t temp_storage_bytes = 0;
+     * cub::DeviceRadixSort::SortKeys(d_temp_storage, temp_storage_bytes, d_keys, num_items);
      *
-     *     // Determine temporary device storage requirements for sorting operation
-     *     void *d_temp_storage = NULL;
-     *     size_t temp_storage_bytes = 0;
-     *     cub::DeviceRadixSort::SortKeys(d_temp_storage, temp_storage_bytes, d_keys, num_items);
+     * // Allocate temporary storage for sorting operation
+     * cudaMalloc(&d_temp_storage, temp_storage_bytes);
      *
-     *     // Allocate temporary storage for sorting operation
-     *     cudaMalloc(&d_temp_storage, temp_storage_bytes);
+     * // Run sorting operation
+     * cub::DeviceRadixSort::SortKeys(d_temp_storage, temp_storage_bytes, d_keys, num_items);
      *
-     *     // Run sorting operation
-     *     cub::DeviceRadixSort::SortKeys(d_temp_storage, temp_storage_bytes, d_keys, num_items);
-     *
-     *     // Sorted keys and values are referenced by d_keys.Current() and d_values.Current()
-     *
+     * // Sorted keys and values are referenced by d_keys.Current() and d_values.Current()
      *
      * \endcode
      *
@@ -829,29 +830,30 @@ struct DeviceRadixSort
      *
      * \cdp
      *
-     * \par Example
+     * \par
+     * The code snippet below illustrates the sorting of a device vector of \p int keys.
+     * \par
      * \code
      * #include <cub/cub.cuh>
+     * ...
      *
-     *     ...
+     * // Create a set of DoubleBuffers to wrap pairs of device pointers for
+     * // sorting data (keys and equivalently-sized alternate buffer)
+     * int num_items = ...
+     * cub::DoubleBuffer<int> d_keys(d_key_buf, d_key_alt_buf);
      *
-     *     // Create a set of DoubleBuffers to wrap pairs of device pointers for
-     *     // sorting data (keys and equivalently-sized alternate buffer)
-     *     int num_items = ...
-     *     cub::DoubleBuffer<int> d_keys(d_key_buf, d_key_alt_buf);
+     * // Determine temporary device storage requirements for sorting operation
+     * void *d_temp_storage = NULL;
+     * size_t temp_storage_bytes = 0;
+     * cub::DeviceRadixSort::SortKeys(d_temp_storage, temp_storage_bytes, d_keys, num_items);
      *
-     *     // Determine temporary device storage requirements for sorting operation
-     *     void *d_temp_storage = NULL;
-     *     size_t temp_storage_bytes = 0;
-     *     cub::DeviceRadixSort::SortKeys(d_temp_storage, temp_storage_bytes, d_keys, num_items);
+     * // Allocate temporary storage for sorting operation
+     * cudaMalloc(&d_temp_storage, temp_storage_bytes);
      *
-     *     // Allocate temporary storage for sorting operation
-     *     cudaMalloc(&d_temp_storage, temp_storage_bytes);
+     * // Run sorting operation
+     * cub::DeviceRadixSort::SortKeys(d_temp_storage, temp_storage_bytes, d_keys, num_items);
      *
-     *     // Run sorting operation
-     *     cub::DeviceRadixSort::SortKeys(d_temp_storage, temp_storage_bytes, d_keys, num_items);
-     *
-     *     // Sorted keys are referenced by d_keys.Current()
+     * // Sorted keys are referenced by d_keys.Current()
      *
      * \endcode
      *
