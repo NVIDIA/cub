@@ -157,7 +157,7 @@ enum BlockScanAlgorithm
  *     // Allocate shared memory for BlockScan
  *     __shared__ typename BlockScan::TempStorage temp_storage;
  *
- *     // Obtain a segment of consecutive input items per thread
+ *     // Obtain a segment of consecutive items that are blocked across threads
  *     int thread_data[4];
  *     ...
  *
@@ -166,8 +166,10 @@ enum BlockScanAlgorithm
  *
  * \endcode
  * \par
- * Suppose the set of input \p thread_data across the block of threads is <tt>{1,1,1,1}, {1,1,1,1}, ..., {1,1,1,1}</tt>.  The
- * corresponding output \p thread_data in those threads will be <tt>{0,1,2,3}, {4,5,6,7}, ... {508,509,510,511}</tt>.
+ * Suppose the set of input \p thread_data across the block of threads is
+ * <tt>{ [1,1,1,1], [1,1,1,1], ..., [1,1,1,1] }</tt>.
+ * The corresponding output \p thread_data in those threads will be
+ * <tt>{ [0,1,2,3], [4,5,6,7], ..., [508,509,510,511] }</tt>.
  *
  * \par Performance Considerations
  * - Uses special instructions when applicable (e.g., warp \p SHFL)
@@ -431,7 +433,7 @@ public:
      *
      * __global__ void ExampleKernel(int *d_data, int num_items, ...)
      * {
-     *     // Specialize BlockLoad, BlockStore, and BlockScan for 128 threads
+     *     // Specialize BlockScan for 128 threads
      *     typedef cub::BlockScan<int, 128> BlockScan;
      *
      *     // Allocate shared memory for BlockScan
@@ -440,26 +442,26 @@ public:
      *     // Initialize running total
      *     BlockPrefixOp prefix_op(0);
      *
-     *     // Have the block iterate over tiles of items
+     *     // Have the block iterate over segments of items
      *     for (int block_offset = 0; block_offset < num_items; block_offset += 128)
      *     {
-     *         // Read tile of items
+     *         // Load a segment of consecutive items that are blocked across threads
      *         int thread_data = d_data[block_offset];
      *
      *         // Collectively compute the block-wide exclusive prefix sum
      *         int block_aggregate;
-     *         BlockScan(temp_storage.scan).ExclusiveSum(
+     *         BlockScan(temp_storage).ExclusiveSum(
      *             thread_data, thread_data, block_aggregate, prefix_op);
      *         __syncthreads();
      *
-     *         // Write tile of items
+     *         // Store scanned items to output segment
      *         d_data[block_offset] = thread_data;
      *     }
      * \endcode
      * \par
      * Suppose the input \p d_data is <tt>1, 1, 1, 1, 1, 1, 1, 1, ...</tt>.
-     * The corresponding output for the first tile will be <tt>0, 1, ..., 127</tt>.
-     * The output for the second tile will be <tt>128, 129, ... 255</tt>.  Furthermore,
+     * The corresponding output for the first segment will be <tt>0, 1, ..., 127</tt>.
+     * The output for the second segment will be <tt>128, 129, ..., 255</tt>.  Furthermore,
      * the value \p 128 will be stored in \p block_aggregate for all threads after each scan.
      *
      * \tparam BlockPrefixOp        <b>[inferred]</b> Call-back functor type having member <tt>T operator()(T block_aggregate)</tt>
@@ -504,7 +506,7 @@ public:
      *     // Allocate shared memory for BlockScan
      *     __shared__ typename BlockScan::TempStorage temp_storage;
      *
-     *     // Obtain a segment of consecutive input items per thread
+     *     // Obtain a segment of consecutive items that are blocked across threads
      *     int thread_data[4];
      *     ...
      *
@@ -513,8 +515,8 @@ public:
      *
      * \endcode
      * \par
-     * Suppose the set of input \p thread_data across the block of threads is <tt>{1,1,1,1}, {1,1,1,1}, ..., {1,1,1,1}</tt>.  The
-     * corresponding output \p thread_data in those threads will be <tt>{0,1,2,3}, {4,5,6,7}, ... {508,509,510,511}</tt>.
+     * Suppose the set of input \p thread_data across the block of threads is <tt>{ [1,1,1,1], [1,1,1,1], ..., [1,1,1,1] }</tt>.  The
+     * corresponding output \p thread_data in those threads will be <tt>{ [0,1,2,3], [4,5,6,7], ..., [508,509,510,511] }</tt>.
      *
      * \tparam ITEMS_PER_THREAD     <b>[inferred]</b> The number of consecutive items partitioned onto each thread.
      */
@@ -557,7 +559,7 @@ public:
      *     // Allocate shared memory for BlockScan
      *     __shared__ typename BlockScan::TempStorage temp_storage;
      *
-     *     // Obtain a segment of consecutive input items per thread
+     *     // Obtain a segment of consecutive items that are blocked across threads
      *     int thread_data[4];
      *     ...
      *
@@ -567,8 +569,8 @@ public:
      *
      * \endcode
      * \par
-     * Suppose the set of input \p thread_data across the block of threads is <tt>{1,1,1,1}, {1,1,1,1}, ..., {1,1,1,1}</tt>.  The
-     * corresponding output \p thread_data in those threads will be <tt>{0,1,2,3}, {4,5,6,7}, ... {508,509,510,511}</tt>.
+     * Suppose the set of input \p thread_data across the block of threads is <tt>{ [1,1,1,1], [1,1,1,1], ..., [1,1,1,1] }</tt>.  The
+     * corresponding output \p thread_data in those threads will be <tt>{ [0,1,2,3], [4,5,6,7], ..., [508,509,510,511] }</tt>.
      * Furthermore the value \p 512 will be stored in \p block_aggregate for all threads.
      *
      * \tparam ITEMS_PER_THREAD     <b>[inferred]</b> The number of consecutive items partitioned onto each thread.
@@ -649,10 +651,10 @@ public:
      *     // Initialize running total
      *     BlockPrefixOp prefix_op(0);
      *
-     *     // Have the block iterate over tiles of items
+     *     // Have the block iterate over segments of items
      *     for (int block_offset = 0; block_offset < num_items; block_offset += 128 * 4)
      *     {
-     *         // Read tile of items (consecutive input items per thread)
+     *         // Load a segment of consecutive items that are blocked across threads
      *         int thread_data[4];
      *         BlockLoad(temp_storage.load).Load(d_data + block_offset, thread_data);
      *         __syncthreads();
@@ -663,15 +665,15 @@ public:
      *             thread_data, thread_data, block_aggregate, prefix_op);
      *         __syncthreads();
      *
-     *         // Write tile of items (consecutive input items per thread)
+     *         // Store scanned items to output segment
      *         BlockStore(temp_storage.store).Store(d_data + block_offset, thread_data);
      *         __syncthreads();
      *     }
      * \endcode
      * \par
      * Suppose the input \p d_data is <tt>1, 1, 1, 1, 1, 1, 1, 1, ...</tt>.
-     * The corresponding output for the first tile will be <tt>0, 1, 2, 3, ..., 510, 511</tt>.
-     * The output for the second tile will be <tt>512, 513, 514, 515, ..., 1022, 1023</tt>.  Furthermore,
+     * The corresponding output for the first segment will be <tt>0, 1, 2, 3, ..., 510, 511</tt>.
+     * The output for the second segment will be <tt>512, 513, 514, 515, ..., 1022, 1023</tt>.  Furthermore,
      * the value \p 512 will be stored in \p block_aggregate for all threads after each scan.
      *
      * \tparam ITEMS_PER_THREAD     <b>[inferred]</b> The number of consecutive items partitioned onto each thread.
@@ -850,7 +852,7 @@ public:
      *
      * __global__ void ExampleKernel(int *d_data, int num_items, ...)
      * {
-     *     // Specialize BlockLoad, BlockStore, and BlockScan for 128 threads
+     *     // Specialize BlockScan for 128 threads
      *     typedef cub::BlockScan<int, 128> BlockScan;
      *
      *     // Allocate shared memory for BlockScan
@@ -859,27 +861,28 @@ public:
      *     // Initialize running total
      *     BlockPrefixOp prefix_op(INT_MIN);
      *
-     *     // Have the block iterate over tiles of items
+     *     // Have the block iterate over segments of items
      *     for (int block_offset = 0; block_offset < num_items; block_offset += 128)
      *     {
-     *         // Read tile of items
+     *         // Load a segment of consecutive items that are blocked across threads
      *         int thread_data = d_data[block_offset];
      *
      *         // Collectively compute the block-wide exclusive prefix max scan
      *         int block_aggregate;
-     *         BlockScan(temp_storage.scan).ExclusiveScan(
+     *         BlockScan(temp_storage).ExclusiveScan(
      *             thread_data, thread_data, INT_MIN, cub::Max(), block_aggregate, prefix_op);
      *         __syncthreads();
      *
-     *         // Write tile of items
+     *         // Store scanned items to output segment
      *         d_data[block_offset] = thread_data;
      *     }
      * \endcode
      * \par
      * Suppose the input \p d_data is <tt>0, -1, 2, -3, 4, -5, ...</tt>.
-     * The corresponding output for the first tile will be <tt>INT_MIN, 0, 0, 2, ..., 124, 126</tt>.
-     * The output for the second tile will be <tt>126, 128, 128, 130, ..., 252, 254</tt>.  Furthermore,
-     * the value \p 126 will be stored in \p block_aggregate for all threads after each scan.
+     * The corresponding output for the first segment will be <tt>INT_MIN, 0, 0, 2, ..., 124, 126</tt>.
+     * The output for the second segment will be <tt>126, 128, 128, 130, ..., 252, 254</tt>.  Furthermore,
+     * \p block_aggregate will be assigned \p 126 in all threads after the first scan, assigned \p 254 after the second
+     * scan, etc.
      *
      * \tparam ScanOp               <b>[inferred]</b> Binary scan operator type having member <tt>T operator()(const T &a, const T &b)</tt>
      * \tparam BlockPrefixOp        <b>[inferred]</b> Call-back functor type having member <tt>T operator()(T block_aggregate)</tt>
@@ -930,7 +933,7 @@ public:
      *     // Allocate shared memory for BlockScan
      *     __shared__ typename BlockScan::TempStorage temp_storage;
      *
-     *     // Obtain a segment of consecutive input items per thread
+     *     // Obtain a segment of consecutive items that are blocked across threads
      *     int thread_data[4];
      *     ...
      *
@@ -939,8 +942,10 @@ public:
      *
      * \endcode
      * \par
-     * Suppose the set of input \p thread_data across the block of threads is <tt>{0,-1,2,-3}, {4,-5,6,-7}, ..., {508,-509,510,-511}</tt>.  The
-     * corresponding output \p thread_data in those threads will be <tt>{INT_MIN,0,0,2}, {2,4,4,6}, ... {506,508,508,510}</tt>.
+     * Suppose the set of input \p thread_data across the block of threads is
+     * <tt>{ [0,-1,2,-3], [4,-5,6,-7], ..., [508,-509,510,-511] }</tt>.
+     * The corresponding output \p thread_data in those threads will be
+     * <tt>{ [INT_MIN,0,0,2], [2,4,4,6], ..., [506,508,508,510] }</tt>.
      *
      * \tparam ITEMS_PER_THREAD     <b>[inferred]</b> The number of consecutive items partitioned onto each thread.
      * \tparam ScanOp               <b>[inferred]</b> Binary scan operator type having member <tt>T operator()(const T &a, const T &b)</tt>
@@ -989,7 +994,7 @@ public:
      *     // Allocate shared memory for BlockScan
      *     __shared__ typename BlockScan::TempStorage temp_storage;
      *
-     *     // Obtain a segment of consecutive input items per thread
+     *     // Obtain a segment of consecutive items that are blocked across threads
      *     int thread_data[4];
      *     ...
      *
@@ -999,8 +1004,8 @@ public:
      *
      * \endcode
      * \par
-     * Suppose the set of input \p thread_data across the block of threads is <tt>{0,-1,2,-3}, {4,-5,6,-7}, ..., {508,-509,510,-511}</tt>.  The
-     * corresponding output \p thread_data in those threads will be <tt>{INT_MIN,0,0,2}, {2,4,4,6}, ... {506,508,508,510}</tt>.
+     * Suppose the set of input \p thread_data across the block of threads is <tt>{ [0,-1,2,-3], [4,-5,6,-7], ..., [508,-509,510,-511] }</tt>.  The
+     * corresponding output \p thread_data in those threads will be <tt>{ [INT_MIN,0,0,2], [2,4,4,6], ..., [506,508,508,510] }</tt>.
      * Furthermore the value \p 510 will be stored in \p block_aggregate for all threads.
      *
      * \tparam ITEMS_PER_THREAD     <b>[inferred]</b> The number of consecutive items partitioned onto each thread.
@@ -1086,10 +1091,10 @@ public:
      *     // Initialize running total
      *     BlockPrefixOp prefix_op(0);
      *
-     *     // Have the block iterate over tiles of items
+     *     // Have the block iterate over segments of items
      *     for (int block_offset = 0; block_offset < num_items; block_offset += 128 * 4)
      *     {
-     *         // Read tile of items (consecutive input items per thread)
+     *         // Load a segment of consecutive items that are blocked across threads
      *         int thread_data[4];
      *         BlockLoad(temp_storage.load).Load(d_data + block_offset, thread_data);
      *         __syncthreads();
@@ -1100,16 +1105,17 @@ public:
      *             thread_data, thread_data, INT_MIN, cub::Max(), block_aggregate, prefix_op);
      *         __syncthreads();
      *
-     *         // Write tile of items (consecutive input items per thread)
+     *         // Store scanned items to output segment
      *         BlockStore(temp_storage.store).Store(d_data + block_offset, thread_data);
      *         __syncthreads();
      *     }
      * \endcode
      * \par
      * Suppose the input \p d_data is <tt>0, -1, 2, -3, 4, -5, ...</tt>.
-     * The corresponding output for the first tile will be <tt>INT_MIN, 0, 0, 2, 2, 4, ..., 508, 510</tt>.
-     * The output for the second tile will be <tt>510, 512, 512, 514, 514, 516, ..., 1020, 1022</tt>.  Furthermore,
-     * the value \p 510 will be stored in \p block_aggregate for all threads after each scan.
+     * The corresponding output for the first segment will be <tt>INT_MIN, 0, 0, 2, 2, 4, ..., 508, 510</tt>.
+     * The output for the second segment will be <tt>510, 512, 512, 514, 514, 516, ..., 1020, 1022</tt>.  Furthermore,
+     * \p block_aggregate will be assigned \p 510 in all threads after the first scan, assigned \p 1022 after the second
+     * scan, etc.
      *
      * \tparam ITEMS_PER_THREAD     <b>[inferred]</b> The number of consecutive items partitioned onto each thread.
      * \tparam ScanOp               <b>[inferred]</b> Binary scan operator type having member <tt>T operator()(const T &a, const T &b)</tt>
@@ -1263,8 +1269,6 @@ public:
 
     /**
      * \brief Computes an exclusive block-wide prefix scan using the specified binary \p scan_op functor.  Each thread contributes an array of consecutive input elements.  Also provides every thread with the block-wide \p block_aggregate of all inputs.  With no identity value, the output computed for <em>thread</em><sub>0</sub> is undefined.
-     *
-     * The scalar \p block_aggregate is undefined in threads other than <em>thread</em><sub>0</sub>.
      *
      * Supports non-commutative scan operators.
      *
@@ -1476,7 +1480,7 @@ public:
      *
      * __global__ void ExampleKernel(int *d_data, int num_items, ...)
      * {
-     *     // Specialize BlockLoad, BlockStore, and BlockScan for 128 threads
+     *     // Specialize BlockScan for 128 threads
      *     typedef cub::BlockScan<int, 128> BlockScan;
      *
      *     // Allocate shared memory for BlockScan
@@ -1485,26 +1489,26 @@ public:
      *     // Initialize running total
      *     BlockPrefixOp prefix_op(0);
      *
-     *     // Have the block iterate over tiles of items
+     *     // Have the block iterate over segments of items
      *     for (int block_offset = 0; block_offset < num_items; block_offset += 128)
      *     {
-     *         // Read tile of items
+     *         // Load a segment of consecutive items that are blocked across threads
      *         int thread_data = d_data[block_offset];
      *
      *         // Collectively compute the block-wide inclusive prefix sum
      *         int block_aggregate;
-     *         BlockScan(temp_storage.scan).InclusiveSum(
+     *         BlockScan(temp_storage).InclusiveSum(
      *             thread_data, thread_data, block_aggregate, prefix_op);
      *         __syncthreads();
      *
-     *         // Write tile of items
+     *         // Store scanned items to output segment
      *         d_data[block_offset] = thread_data;
      *     }
      * \endcode
      * \par
      * Suppose the input \p d_data is <tt>1, 1, 1, 1, 1, 1, 1, 1, ...</tt>.
-     * The corresponding output for the first tile will be <tt>1, 2, ..., 128</tt>.
-     * The output for the second tile will be <tt>129, 130, ... 256</tt>.  Furthermore,
+     * The corresponding output for the first segment will be <tt>1, 2, ..., 128</tt>.
+     * The output for the second segment will be <tt>129, 130, ..., 256</tt>.  Furthermore,
      * the value \p 128 will be stored in \p block_aggregate for all threads after each scan.
      *
      * \tparam BlockPrefixOp          <b>[inferred]</b> Call-back functor type having member <tt>T operator()(T block_aggregate)</tt>
@@ -1549,7 +1553,7 @@ public:
      *     // Allocate shared memory for BlockScan
      *     __shared__ typename BlockScan::TempStorage temp_storage;
      *
-     *     // Obtain a segment of consecutive input items per thread
+     *     // Obtain a segment of consecutive items that are blocked across threads
      *     int thread_data[4];
      *     ...
      *
@@ -1558,8 +1562,8 @@ public:
      *
      * \endcode
      * \par
-     * Suppose the set of input \p thread_data across the block of threads is <tt>{1,1,1,1}, {1,1,1,1}, ..., {1,1,1,1}</tt>.  The
-     * corresponding output \p thread_data in those threads will be <tt>{1,2,3,4}, {5,6,7,8}, ... {509,510,511,512}</tt>.
+     * Suppose the set of input \p thread_data across the block of threads is <tt>{ [1,1,1,1], [1,1,1,1], ..., [1,1,1,1] }</tt>.  The
+     * corresponding output \p thread_data in those threads will be <tt>{ [1,2,3,4], [5,6,7,8], ..., [509,510,511,512] }</tt>.
      *
      * \tparam ITEMS_PER_THREAD     <b>[inferred]</b> The number of consecutive items partitioned onto each thread.
      */
@@ -1609,7 +1613,7 @@ public:
      *     // Allocate shared memory for BlockScan
      *     __shared__ typename BlockScan::TempStorage temp_storage;
      *
-     *     // Obtain a segment of consecutive input items per thread
+     *     // Obtain a segment of consecutive items that are blocked across threads
      *     int thread_data[4];
      *     ...
      *
@@ -1619,8 +1623,10 @@ public:
      *
      * \endcode
      * \par
-     * Suppose the set of input \p thread_data across the block of threads is <tt>{1,1,1,1}, {1,1,1,1}, ..., {1,1,1,1}</tt>.  The
-     * corresponding output \p thread_data in those threads will be <tt>{1,2,3,4}, {5,6,7,8}, ... {509,510,511,512}</tt>.
+     * Suppose the set of input \p thread_data across the block of threads is
+     * <tt>{ [1,1,1,1], [1,1,1,1], ..., [1,1,1,1] }</tt>.  The
+     * corresponding output \p thread_data in those threads will be
+     * <tt>{ [1,2,3,4], [5,6,7,8], ..., [509,510,511,512] }</tt>.
      * Furthermore the value \p 512 will be stored in \p block_aggregate for all threads.
      *
      * \tparam ITEMS_PER_THREAD     <b>[inferred]</b> The number of consecutive items partitioned onto each thread.
@@ -1709,10 +1715,10 @@ public:
      *     // Initialize running total
      *     BlockPrefixOp prefix_op(0);
      *
-     *     // Have the block iterate over tiles of items
+     *     // Have the block iterate over segments of items
      *     for (int block_offset = 0; block_offset < num_items; block_offset += 128 * 4)
      *     {
-     *         // Read tile of items (consecutive input items per thread)
+     *         // Load a segment of consecutive items that are blocked across threads
      *         int thread_data[4];
      *         BlockLoad(temp_storage.load).Load(d_data + block_offset, thread_data);
      *         __syncthreads();
@@ -1723,15 +1729,15 @@ public:
      *             thread_data, thread_data, block_aggregate, prefix_op);
      *         __syncthreads();
      *
-     *         // Write tile of items (consecutive input items per thread)
+     *         // Store scanned items to output segment
      *         BlockStore(temp_storage.store).Store(d_data + block_offset, thread_data);
      *         __syncthreads();
      *     }
      * \endcode
      * \par
      * Suppose the input \p d_data is <tt>1, 1, 1, 1, 1, 1, 1, 1, ...</tt>.
-     * The corresponding output for the first tile will be <tt>1, 2, 3, 4, ..., 511, 512</tt>.
-     * The output for the second tile will be <tt>513, 514, 515, 516, ..., 1023, 1024</tt>.  Furthermore,
+     * The corresponding output for the first segment will be <tt>1, 2, 3, 4, ..., 511, 512</tt>.
+     * The output for the second segment will be <tt>513, 514, 515, 516, ..., 1023, 1024</tt>.  Furthermore,
      * the value \p 512 will be stored in \p block_aggregate for all threads after each scan.
      *
      * \tparam ITEMS_PER_THREAD     <b>[inferred]</b> The number of consecutive items partitioned onto each thread.
@@ -1914,7 +1920,7 @@ public:
      *
      * __global__ void ExampleKernel(int *d_data, int num_items, ...)
      * {
-     *     // Specialize BlockLoad, BlockStore, and BlockScan for 128 threads
+     *     // Specialize BlockScan for 128 threads
      *     typedef cub::BlockScan<int, 128> BlockScan;
      *
      *     // Allocate shared memory for BlockScan
@@ -1923,27 +1929,28 @@ public:
      *     // Initialize running total
      *     BlockPrefixOp prefix_op(INT_MIN);
      *
-     *     // Have the block iterate over tiles of items
+     *     // Have the block iterate over segments of items
      *     for (int block_offset = 0; block_offset < num_items; block_offset += 128)
      *     {
-     *         // Read tile of items
+     *         // Load a segment of consecutive items that are blocked across threads
      *         int thread_data = d_data[block_offset];
      *
      *         // Collectively compute the block-wide inclusive prefix max scan
      *         int block_aggregate;
-     *         BlockScan(temp_storage.scan).InclusiveScan(
+     *         BlockScan(temp_storage).InclusiveScan(
      *             thread_data, thread_data, cub::Max(), block_aggregate, prefix_op);
      *         __syncthreads();
      *
-     *         // Write tile of items
+     *         // Store scanned items to output segment
      *         d_data[block_offset] = thread_data;
      *     }
      * \endcode
      * \par
      * Suppose the input \p d_data is <tt>0, -1, 2, -3, 4, -5, ...</tt>.
-     * The corresponding output for the first tile will be <tt>0, 0, 2, 2, ..., 126, 126</tt>.
-     * The output for the second tile will be <tt>128, 128, 130, 130, ..., 254, 254</tt>.  Furthermore,
-     * the value \p 126 will be stored in \p block_aggregate for all threads after each scan.
+     * The corresponding output for the first segment will be <tt>0, 0, 2, 2, ..., 126, 126</tt>.
+     * The output for the second segment will be <tt>128, 128, 130, 130, ..., 254, 254</tt>.  Furthermore,
+     * \p block_aggregate will be assigned \p 126 in all threads after the first scan, assigned \p 254 after the second
+     * scan, etc.
      *
      * \tparam ScanOp               <b>[inferred]</b> Binary scan operator type having member <tt>T operator()(const T &a, const T &b)</tt>
      * \tparam BlockPrefixOp        <b>[inferred]</b> Call-back functor type having member <tt>T operator()(T block_aggregate)</tt>
@@ -1993,7 +2000,7 @@ public:
      *     // Allocate shared memory for BlockScan
      *     __shared__ typename BlockScan::TempStorage temp_storage;
      *
-     *     // Obtain a segment of consecutive input items per thread
+     *     // Obtain a segment of consecutive items that are blocked across threads
      *     int thread_data[4];
      *     ...
      *
@@ -2002,8 +2009,8 @@ public:
      *
      * \endcode
      * \par
-     * Suppose the set of input \p thread_data across the block of threads is <tt>{0,-1,2,-3}, {4,-5,6,-7}, ..., {508,-509,510,-511}</tt>.  The
-     * corresponding output \p thread_data in those threads will be <tt>{0,0,2,2}, {4,4,6,6}, ... {508,508,510,510}</tt>.
+     * Suppose the set of input \p thread_data across the block of threads is <tt>{ [0,-1,2,-3], [4,-5,6,-7], ..., [508,-509,510,-511] }</tt>.  The
+     * corresponding output \p thread_data in those threads will be <tt>{ [0,0,2,2], [4,4,6,6], ..., [508,508,510,510] }</tt>.
      *
      * \tparam ITEMS_PER_THREAD     <b>[inferred]</b> The number of consecutive items partitioned onto each thread.
      * \tparam ScanOp               <b>[inferred]</b> Binary scan operator type having member <tt>T operator()(const T &a, const T &b)</tt>
@@ -2058,7 +2065,7 @@ public:
      *     // Allocate shared memory for BlockScan
      *     __shared__ typename BlockScan::TempStorage temp_storage;
      *
-     *     // Obtain a segment of consecutive input items per thread
+     *     // Obtain a segment of consecutive items that are blocked across threads
      *     int thread_data[4];
      *     ...
      *
@@ -2068,8 +2075,10 @@ public:
      *
      * \endcode
      * \par
-     * Suppose the set of input \p thread_data across the block of threads is <tt>{0,-1,2,-3}, {4,-5,6,-7}, ..., {508,-509,510,-511}</tt>.  The
-     * corresponding output \p thread_data in those threads will be <tt>{0,0,2,2}, {4,4,6,6}, ... {508,508,510,510}</tt>.
+     * Suppose the set of input \p thread_data across the block of threads is
+     * <tt>{ [0,-1,2,-3], [4,-5,6,-7], ..., [508,-509,510,-511] }</tt>.
+     * The corresponding output \p thread_data in those threads will be
+     * <tt>{ [0,0,2,2], [4,4,6,6], ..., [508,508,510,510] }</tt>.
      * Furthermore the value \p 510 will be stored in \p block_aggregate for all threads.
      *
      * \tparam ITEMS_PER_THREAD     <b>[inferred]</b> The number of consecutive items partitioned onto each thread.
@@ -2161,10 +2170,10 @@ public:
      *     // Initialize running total
      *     BlockPrefixOp prefix_op(0);
      *
-     *     // Have the block iterate over tiles of items
+     *     // Have the block iterate over segments of items
      *     for (int block_offset = 0; block_offset < num_items; block_offset += 128 * 4)
      *     {
-     *         // Read tile of items (consecutive input items per thread)
+     *         // Load a segment of consecutive items that are blocked across threads
      *         int thread_data[4];
      *         BlockLoad(temp_storage.load).Load(d_data + block_offset, thread_data);
      *         __syncthreads();
@@ -2175,16 +2184,17 @@ public:
      *             thread_data, thread_data, cub::Max(), block_aggregate, prefix_op);
      *         __syncthreads();
      *
-     *         // Write tile of items (consecutive input items per thread)
+     *         // Store scanned items to output segment
      *         BlockStore(temp_storage.store).Store(d_data + block_offset, thread_data);
      *         __syncthreads();
      *     }
      * \endcode
      * \par
      * Suppose the input \p d_data is <tt>0, -1, 2, -3, 4, -5, ...</tt>.
-     * The corresponding output for the first tile will be <tt>0, 0, 2, 2, 4, 4, ..., 510, 510</tt>.
-     * The output for the second tile will be <tt>512, 512, 514, 514, 516, 516, ..., 1022, 1022</tt>.  Furthermore,
-     * the value \p 510 will be stored in \p block_aggregate for all threads after each scan.
+     * The corresponding output for the first segment will be <tt>0, 0, 2, 2, 4, 4, ..., 510, 510</tt>.
+     * The output for the second segment will be <tt>512, 512, 514, 514, 516, 516, ..., 1022, 1022</tt>.  Furthermore,
+     * \p block_aggregate will be assigned \p 510 in all threads after the first scan, assigned \p 1022 after the second
+     * scan, etc.
      *
      * \tparam ITEMS_PER_THREAD     <b>[inferred]</b> The number of consecutive items partitioned onto each thread.
      * \tparam ScanOp               <b>[inferred]</b> Binary scan operator type having member <tt>T operator()(const T &a, const T &b)</tt>

@@ -446,7 +446,7 @@ enum BlockStoreAlgorithm
 
 
 /**
- * \brief The BlockStore class provides [<em>collective</em>](index.html#sec0) data movement methods for storing a [<em>blocked arrangement</em>](index.html#sec3sec3) across a CUDA thread block to a linear segment of memory.  ![](block_store_logo.png)
+ * \brief The BlockStore class provides [<em>collective</em>](index.html#sec0) data movement methods for writing a [<em>blocked arrangement</em>](index.html#sec3sec3) of items partitioned across a CUDA thread block to a linear segment of memory.  ![](block_store_logo.png)
  *
  * \par Overview
  * The BlockStore class provides a single data movement abstraction that can be specialized
@@ -493,7 +493,7 @@ enum BlockStoreAlgorithm
  *     // Allocate shared memory for BlockStore
  *     __shared__ typename BlockStore::TempStorage temp_storage;
  *
- *     // Obtain data items that are blocked across threads
+ *     // Obtain a segment of consecutive items that are blocked across threads
  *     int thread_data[4];
  *     ...
  *
@@ -504,7 +504,7 @@ enum BlockStoreAlgorithm
  * \endcode
  * \par
  * Suppose the set of \p thread_data across the block of threads is
- * <tt>{0,1,2,3}, {4,5,6,7}, ... {508,509,510,511}</tt>.
+ * <tt>{ [0,1,2,3], [4,5,6,7], ..., [508,509,510,511] }</tt>.
  * The output \p d_data will be <tt>0, 1, 2, 3, 4, 5, ...</tt>.
  *
  */
@@ -848,7 +848,7 @@ public:
      *     // Allocate shared memory for BlockStore
      *     __shared__ typename BlockStore::TempStorage temp_storage;
      *
-     *     // Obtain data items that are blocked across threads
+     *     // Obtain a segment of consecutive items that are blocked across threads
      *     int thread_data[4];
      *     ...
      *
@@ -859,7 +859,7 @@ public:
      * \endcode
      * \par
      * Suppose the set of \p thread_data across the block of threads is
-     * <tt>{0,1,2,3}, {4,5,6,7}, ... {508,509,510,511}</tt>.
+     * <tt>{ [0,1,2,3], [4,5,6,7], ..., [508,509,510,511] }</tt>.
      * The output \p d_data will be <tt>0, 1, 2, 3, 4, 5, ...</tt>.
      *
      */
@@ -892,7 +892,7 @@ public:
      *     // Allocate shared memory for BlockStore
      *     __shared__ typename BlockStore::TempStorage temp_storage;
      *
-     *     // Obtain data items that are blocked across threads
+     *     // Obtain a segment of consecutive items that are blocked across threads
      *     int thread_data[4];
      *     ...
      *
@@ -903,7 +903,7 @@ public:
      * \endcode
      * \par
      * Suppose the set of \p thread_data across the block of threads is
-     * <tt>{0,1,2,3}, {4,5,6,7}, ... {508,509,510,511}</tt> and \p valid_items is \p 5.
+     * <tt>{ [0,1,2,3], [4,5,6,7], ..., [508,509,510,511] }</tt> and \p valid_items is \p 5.
      * The output \p d_data will be <tt>0, 1, 2, 3, 4, ?, ?, ?, ...</tt>, with
      * only the first two threads being unmasked to store portions of valid data.
      *

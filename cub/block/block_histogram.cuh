@@ -126,7 +126,7 @@ enum BlockHistogramAlgorithm
  *     // Allocate shared memory for block-wide histogram bin counts
  *     __shared__ unsigned int smem_histogram[256];
  *
- *     // Obtain input items per thread
+ *     // Obtain input samples per thread
  *     unsigned char data[4];
  *     ...
  *
