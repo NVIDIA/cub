@@ -28,7 +28,7 @@
 
 /**
  * \file
- * The cub::BlockExchange class provides [<em>collective</em>](index.html#sec0) methods for reorganizing the partitioning of ordered data across a CUDA thread block.
+ * The cub::BlockExchange class provides [<em>collective</em>](index.html#sec0) methods for rearranging ordered data across a CUDA thread block.
  */
 
 #pragma once
@@ -47,14 +47,15 @@ CUB_NS_PREFIX
 namespace cub {
 
 /**
- * \brief The BlockExchange class provides [<em>collective</em>](index.html#sec0) methods for reorganizing the partitioning of ordered data across a CUDA thread block. ![](transpose_logo.png)
+ * \brief The BlockExchange class provides [<em>collective</em>](index.html#sec0) methods for rearranging ordered data across a CUDA thread block. ![](transpose_logo.png)
  * \ingroup BlockModule
  *
  * \par Overview
- * It is often useful for blocks of threads to reorganize data items between
- * threads.  For example, global memory accesses are often coalesced when data items
- * are "striped" across threads, yet most block-wide operations require a
- * "blocked" partitioning of items across threads.
+ * It is commonplace for blocks of threads to rearrange data items between
+ * threads.  For example, the global memory subsystem prefers access patterns
+ * where data items are "striped" across threads (where consecutive threads access consecutive items),
+ * yet most block-wide operations prefer a "blocked" partitioning of items across threads
+ * (where consecutive items belong to a single thread).
  *
  * \par
  * BlockExchange supports the following types of data exchanges:
