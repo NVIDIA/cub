@@ -63,18 +63,7 @@ namespace cub {
  * \tparam LOGICAL_WARPS            <b>[optional]</b> The number of entrant "logical" warps performing concurrent warp reductions.  Default is 1.
  * \tparam LOGICAL_WARP_THREADS     <b>[optional]</b> The number of threads per "logical" warp (may be less than the number of hardware warp threads).  Default is the warp size of the targeted CUDA compute-capability (e.g., 32 threads for SM20).
  *
- * \par Usage and Performance Considerations
- * - Supports "logical" warps smaller than the physical warp size (e.g., logical warps of 8 threads)
- * - The number of entrant threads must be an multiple of \p LOGICAL_WARP_THREADS
- * - Warp reductions are concurrent if more than one logical warp is participating
- * - Uses special instructions when applicable (e.g., warp \p SHFL instructions)
- * - Uses synchronization-free communication between warp lanes when applicable
- * - Zero bank conflicts for most types
- * - Computation is slightly more efficient (i.e., having lower instruction overhead) for:
- *     - Summation (<b><em>vs.</em></b> generic reduction)
- *     - The architecture's warp size is a whole multiple of \p LOGICAL_WARP_THREADS
- *
- * \par A Simple Example
+ * \par Simple Examples
  * \warpcollective{WarpReduce}
  * \par
  * The code snippet below illustrates four concurrent warp sum reductions within a block of
@@ -102,6 +91,48 @@ namespace cub {
  * Suppose the set of input \p thread_data across the block of threads is <tt>0, 1, 2, 3, ..., 127</tt>.
  * The corresponding output \p aggregate in threads 0, 32, 64, and 96 will \p 496, \p 1520,
  * \p 2544, and \p 3568, respectively (and is undefined in other threads).
+ *
+ * \par
+ * The code snippet below illustrates a single warp sum reduction within a block of
+ * 128 threads.
+ * \par
+ * \code
+ * #include <cub/cub.cuh>
+ *
+ * __global__ void ExampleKernel(...)
+ * {
+ *     // Specialize WarpReduce for one warp on type int
+ *     typedef cub::WarpReduce<int, 1> WarpReduce;
+ *
+ *     // Allocate shared memory for WarpReduce
+ *     __shared__ typename WarpReduce::TempStorage temp_storage;
+ *     ...
+ *
+ *     // Only the first warp performs a reduction
+ *     if (threadIdx.x < 32)
+ *     {
+ *         // Obtain one input item per thread
+ *         int thread_data = ...
+ *
+ *         // Return the warp-wide sum to lane0
+ *         int aggregate = WarpReduce(temp_storage).Sum(thread_data);
+ *
+ * \endcode
+ * \par
+ * Suppose the set of input \p thread_data across the warp of threads is <tt>0, 1, 2, 3, ..., 31</tt>.
+ * The corresponding output \p aggregate in thread0 will be \p 496 (and is undefined in other threads).
+ *
+ * \par Usage and Performance Considerations
+ * - Supports "logical" warps smaller than the physical warp size (e.g., logical warps of 8 threads)
+ * - The number of entrant threads must be an multiple of \p LOGICAL_WARP_THREADS
+ * - Warp reductions are concurrent if more than one logical warp is participating
+ * - Uses special instructions when applicable (e.g., warp \p SHFL instructions)
+ * - Uses synchronization-free communication between warp lanes when applicable
+ * - Zero bank conflicts for most types
+ * - Computation is slightly more efficient (i.e., having lower instruction overhead) for:
+ *     - Summation (<b><em>vs.</em></b> generic reduction)
+ *     - The architecture's warp size is a whole multiple of \p LOGICAL_WARP_THREADS
+ *
  */
 template <
     typename    T,
@@ -248,7 +279,6 @@ public:
      *
      * \smemreuse
      *
-     * \par
      * The code snippet below illustrates four concurrent warp sum reductions within a block of
      * 128 threads (one per each of the 32-thread warps).
      * \par
@@ -340,7 +370,6 @@ public:
      *
      * \smemreuse
      *
-     * \par
      * The code snippet below illustrates a head-segmented warp sum
      * reduction within a block of 32 threads (one warp).
      * \par
@@ -367,7 +396,7 @@ public:
      * \par
      * Suppose the set of input \p thread_data and \p head_flag across the block of threads
      * is <tt>0, 1, 2, 3, ..., 31</tt> and is <tt>1, 0, 0, 0, 1, 0, 0, 0, ..., 1, 0, 0, 0</tt>,
-     * respectively.  The corresponding output \p aggregate in threads 0, 4, 8, 12, etc. will be
+     * respectively.  The corresponding output \p aggregate in threads 0, 4, 8, etc. will be
      * \p 6, \p 22, \p 38, etc. (and is undefined in other threads).
      *
      * \tparam ReductionOp     <b>[inferred]</b> Binary reduction operator type having member <tt>T operator()(const T &a, const T &b)</tt>
@@ -388,7 +417,6 @@ public:
      *
      * \smemreuse
      *
-     * \par
      * The code snippet below illustrates a tail-segmented warp sum
      * reduction within a block of 32 threads (one warp).
      * \par
@@ -415,7 +443,7 @@ public:
      * \par
      * Suppose the set of input \p thread_data and \p tail_flag across the block of threads
      * is <tt>0, 1, 2, 3, ..., 31</tt> and is <tt>0, 0, 0, 1, 0, 0, 0, 1, ..., 0, 0, 0, 1</tt>,
-     * respectively.  The corresponding output \p aggregate in threads 0, 4, 8, 12, etc. will be
+     * respectively.  The corresponding output \p aggregate in threads 0, 4, 8, etc. will be
      * \p 6, \p 22, \p 38, etc. (and is undefined in other threads).
      *
      * \tparam ReductionOp     <b>[inferred]</b> Binary reduction operator type having member <tt>T operator()(const T &a, const T &b)</tt>
@@ -444,7 +472,6 @@ public:
      *
      * \smemreuse
      *
-     * \par
      * The code snippet below illustrates four concurrent warp max reductions within a block of
      * 128 threads (one per each of the 32-thread warps).
      * \par
@@ -547,7 +574,6 @@ public:
      *
      * \smemreuse
      *
-     * \par
      * The code snippet below illustrates a head-segmented warp max
      * reduction within a block of 32 threads (one warp).
      * \par
@@ -574,7 +600,7 @@ public:
      * \par
      * Suppose the set of input \p thread_data and \p head_flag across the block of threads
      * is <tt>0, 1, 2, 3, ..., 31</tt> and is <tt>1, 0, 0, 0, 1, 0, 0, 0, ..., 1, 0, 0, 0</tt>,
-     * respectively.  The corresponding output \p aggregate in threads 0, 4, 8, 12, etc. will be
+     * respectively.  The corresponding output \p aggregate in threads 0, 4, 8, etc. will be
      * \p 3, \p 7, \p 11, etc. (and is undefined in other threads).
      *
      * \tparam ReductionOp     <b>[inferred]</b> Binary reduction operator type having member <tt>T operator()(const T &a, const T &b)</tt>
@@ -598,7 +624,6 @@ public:
      *
      * \smemreuse
      *
-     * \par
      * The code snippet below illustrates a tail-segmented warp max
      * reduction within a block of 32 threads (one warp).
      * \par
@@ -625,7 +650,7 @@ public:
      * \par
      * Suppose the set of input \p thread_data and \p tail_flag across the block of threads
      * is <tt>0, 1, 2, 3, ..., 31</tt> and is <tt>0, 0, 0, 1, 0, 0, 0, 1, ..., 0, 0, 0, 1</tt>,
-     * respectively.  The corresponding output \p aggregate in threads 0, 4, 8, 12, etc. will be
+     * respectively.  The corresponding output \p aggregate in threads 0, 4, 8, etc. will be
      * \p 3, \p 7, \p 11, etc. (and is undefined in other threads).
      *
      * \tparam ReductionOp     <b>[inferred]</b> Binary reduction operator type having member <tt>T operator()(const T &a, const T &b)</tt>

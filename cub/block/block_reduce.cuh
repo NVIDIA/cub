@@ -161,7 +161,7 @@ enum BlockReduceAlgorithm
  *     // Allocate shared memory for BlockReduce
  *     __shared__ typename BlockReduce::TempStorage temp_storage;
  *
- *     // Obtain a segment of consecutive input items per thread
+ *     // Obtain a segment of consecutive items that are blocked across threads
  *     int thread_data[4];
  *     ...
  *
@@ -347,7 +347,7 @@ public:
      *     // Allocate shared memory for BlockReduce
      *     __shared__ typename BlockReduce::TempStorage temp_storage;
      *
-     *     // Obtain a segment of consecutive input items per thread
+     *     // Obtain a segment of consecutive items that are blocked across threads
      *     int thread_data[4];
      *     ...
      *
@@ -492,7 +492,7 @@ public:
      *     // Allocate shared memory for BlockReduce
      *     __shared__ typename BlockReduce::TempStorage temp_storage;
      *
-     *     // Obtain a segment of consecutive input items per thread
+     *     // Obtain a segment of consecutive items that are blocked across threads
      *     int thread_data[4];
      *     ...
      *

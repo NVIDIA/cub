@@ -602,7 +602,7 @@ enum BlockLoadAlgorithm
  *     // Allocate shared memory for BlockLoad
  *     __shared__ typename BlockLoad::TempStorage temp_storage;
  *
- *     // Load a segment of data blocked across threads
+ *     // Load a segment of consecutive items that are blocked across threads
  *     int thread_data[4];
  *     BlockLoad(temp_storage).Load(d_data, d_data, thread_data);
  *
@@ -610,7 +610,7 @@ enum BlockLoadAlgorithm
  * \par
  * Suppose the input \p d_data is <tt>0, 1, 2, 3, 4, 5, ...</tt>.
  * The set of \p thread_data across the block of threads in those threads will be
- * <tt>{0,1,2,3}, {4,5,6,7}, ... {508,509,510,511}</tt>.
+ * <tt>{ [0,1,2,3], [4,5,6,7], ..., [508,509,510,511] }</tt>.
  *
  */
 template <
@@ -999,7 +999,7 @@ public:
      *     // Allocate shared memory for BlockLoad
      *     __shared__ typename BlockLoad::TempStorage temp_storage;
      *
-     *     // Load a segment of data blocked across threads
+     *     // Load a segment of consecutive items that are blocked across threads
      *     int thread_data[4];
      *     BlockLoad(temp_storage).Load(d_data, d_data, thread_data);
      *
@@ -1007,7 +1007,7 @@ public:
      * \par
      * Suppose the input \p d_data is <tt>0, 1, 2, 3, 4, 5, ...</tt>.
      * The set of \p thread_data across the block of threads in those threads will be
-     * <tt>{0,1,2,3}, {4,5,6,7}, ... {508,509,510,511}</tt>.
+     * <tt>{ [0,1,2,3], [4,5,6,7], ..., [508,509,510,511] }</tt>.
      *
      */
     __device__ __forceinline__ void Load(
@@ -1040,7 +1040,7 @@ public:
      *     // Allocate shared memory for BlockLoad
      *     __shared__ typename BlockLoad::TempStorage temp_storage;
      *
-     *     // Load a segment of data blocked across threads
+     *     // Load a segment of consecutive items that are blocked across threads
      *     int thread_data[4];
      *     BlockLoad(temp_storage).Load(d_data, d_data, thread_data, valid_items);
      *
@@ -1048,7 +1048,7 @@ public:
      * \par
      * Suppose the input \p d_data is <tt>0, 1, 2, 3, 4, 5, 6...</tt> and \p valid_items is \p 5.
      * The set of \p thread_data across the block of threads in those threads will be
-     * <tt>{0,1,2,3}, {4,?,?,?}, ... {?,?,?,?}</tt>, with only the first two threads
+     * <tt>{ [0,1,2,3], [4,?,?,?], ..., [?,?,?,?] }</tt>, with only the first two threads
      * being unmasked to load portions of valid data (and other items remaining unassigned).
      *
      */
@@ -1083,7 +1083,7 @@ public:
      *     // Allocate shared memory for BlockLoad
      *     __shared__ typename BlockLoad::TempStorage temp_storage;
      *
-     *     // Load a segment of data blocked across threads
+     *     // Load a segment of consecutive items that are blocked across threads
      *     int thread_data[4];
      *     BlockLoad(temp_storage).Load(d_data, d_data, thread_data, valid_items, -1);
      *
@@ -1092,7 +1092,7 @@ public:
      * Suppose the input \p d_data is <tt>0, 1, 2, 3, 4, 5, 6...</tt>,
      * \p valid_items is \p 5, and the out-of-bounds default is \p -1.
      * The set of \p thread_data across the block of threads in those threads will be
-     * <tt>{0,1,2,3}, {4,-1,-1,-1}, ... {-1,-1,-1,-1}</tt>, with only the first two threads
+     * <tt>{ [0,1,2,3], [4,-1,-1,-1], ..., [-1,-1,-1,-1] }</tt>, with only the first two threads
      * being unmasked to load portions of valid data (and other items are assigned \p -1)
      *
      */

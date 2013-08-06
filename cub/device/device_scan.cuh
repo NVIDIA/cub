@@ -572,28 +572,29 @@ struct DeviceScan
      *
      * \iterator
      *
-     * \par Example
+     * \par
+     * The code snippet below illustrates the exclusive prefix sum of a device vector of \p int items.
+     * \par
      * \code
      * #include <cub/cub.cuh>
+     * ...
      *
-     *     ...
+     * // Declare and initialize device pointers for input and output
+     * int *d_scan_input, *d_scan_output;
+     * int num_items = ...
      *
-     *     // Declare and initialize device pointers for input and output
-     *     int *d_scan_input, *d_scan_output;
-     *     int num_items = ...
+     * ...
      *
-     *     ...
+     * // Determine temporary device storage requirements for exclusive prefix sum
+     * void *d_temp_storage = NULL;
+     * size_t temp_storage_bytes = 0;
+     * cub::DeviceScan::ExclusiveSum(d_temp_storage, temp_storage_bytes, d_scan_input, d_scan_output, num_items);
      *
-     *     // Determine temporary device storage requirements for exclusive prefix sum
-     *     void *d_temp_storage = NULL;
-     *     size_t temp_storage_bytes = 0;
-     *     cub::DeviceScan::ExclusiveSum(d_temp_storage, temp_storage_bytes, d_scan_input, d_scan_output, num_items);
+     * // Allocate temporary storage for exclusive prefix sum
+     * cudaMalloc(&d_temp_storage, temp_storage_bytes);
      *
-     *     // Allocate temporary storage for exclusive prefix sum
-     *     cudaMalloc(&d_temp_storage, temp_storage_bytes);
-     *
-     *     // Run exclusive prefix sum
-     *     cub::DeviceScan::ExclusiveSum(d_temp_storage, temp_storage_bytes, d_scan_input, d_scan_output, num_items);
+     * // Run exclusive prefix sum
+     * cub::DeviceScan::ExclusiveSum(d_temp_storage, temp_storage_bytes, d_scan_input, d_scan_output, num_items);
      *
      * \endcode
      *
@@ -630,28 +631,29 @@ struct DeviceScan
      *
      * \iterator
      *
-     * \par Example
+     * \par
+     * The code snippet below illustrates the exclusive prefix scan of a device vector of \p int items.
+     * \par
      * \code
      * #include <cub/cub.cuh>
+     * ...
      *
-     *     ...
+     * // Declare and initialize device pointers for input and output
+     * int *d_scan_input, *d_scan_output;
+     * int num_items = ...
      *
-     *     // Declare and initialize device pointers for input and output
-     *     int *d_scan_input, *d_scan_output;
-     *     int num_items = ...
+     * ...
      *
-     *     ...
+     * // Determine temporary device storage requirements for exclusive prefix scan
+     * void *d_temp_storage = NULL;
+     * size_t temp_storage_bytes = 0;
+     * cub::DeviceScan::ExclusiveScan(d_temp_storage, temp_storage_bytes, d_scan_input, d_scan_output, cub::Max(), (int) MIN_INT, num_items);
      *
-     *     // Determine temporary device storage requirements for exclusive prefix scan
-     *     void *d_temp_storage = NULL;
-     *     size_t temp_storage_bytes = 0;
-     *     cub::DeviceScan::ExclusiveScan(d_temp_storage, temp_storage_bytes, d_scan_input, d_scan_output, cub::Max(), (int) MIN_INT, num_items);
+     * // Allocate temporary storage for exclusive prefix scan
+     * cudaMalloc(&d_temp_storage, temp_storage_bytes);
      *
-     *     // Allocate temporary storage for exclusive prefix scan
-     *     cudaMalloc(&d_temp_storage, temp_storage_bytes);
-     *
-     *     // Run exclusive prefix scan (max)
-     *     cub::DeviceScan::ExclusiveScan(d_temp_storage, temp_storage_bytes, d_scan_input, d_scan_output, cub::Max(), (int) MIN_INT, num_items);
+     * // Run exclusive prefix scan (max)
+     * cub::DeviceScan::ExclusiveScan(d_temp_storage, temp_storage_bytes, d_scan_input, d_scan_output, cub::Max(), (int) MIN_INT, num_items);
      *
      * \endcode
      *
@@ -697,28 +699,28 @@ struct DeviceScan
      *
      * \iterator
      *
-     * \par Example
+     * \par
+     * The code snippet below illustrates the inclusive prefix sum of a device vector of \p int items.
+     * \par
      * \code
      * #include <cub/cub.cuh>
+     * ...
      *
-     *     ...
+     * // Declare and initialize device pointers for input and output
+     * int *d_scan_input, *d_scan_output;
+     * int num_items = ...
+     * ...
      *
-     *     // Declare and initialize device pointers for input and output
-     *     int *d_scan_input, *d_scan_output;
-     *     int num_items = ...
+     * // Determine temporary device storage requirements for inclusive prefix sum
+     * void *d_temp_storage = NULL;
+     * size_t temp_storage_bytes = 0;
+     * cub::DeviceScan::InclusiveSum(d_temp_storage, temp_storage_bytes, d_scan_input, d_scan_output, num_items);
      *
-     *     ...
+     * // Allocate temporary storage for inclusive prefix sum
+     * cudaMalloc(&d_temp_storage, temp_storage_bytes);
      *
-     *     // Determine temporary device storage requirements for inclusive prefix sum
-     *     void *d_temp_storage = NULL;
-     *     size_t temp_storage_bytes = 0;
-     *     cub::DeviceScan::InclusiveSum(d_temp_storage, temp_storage_bytes, d_scan_input, d_scan_output, num_items);
-     *
-     *     // Allocate temporary storage for inclusive prefix sum
-     *     cudaMalloc(&d_temp_storage, temp_storage_bytes);
-     *
-     *     // Run inclusive prefix sum
-     *     cub::DeviceScan::InclusiveSum(d_temp_storage, temp_storage_bytes, d_scan_input, d_scan_output, num_items);
+     * // Run inclusive prefix sum
+     * cub::DeviceScan::InclusiveSum(d_temp_storage, temp_storage_bytes, d_scan_input, d_scan_output, num_items);
      *
      * \endcode
      *
@@ -754,28 +756,28 @@ struct DeviceScan
      *
      * \iterator
      *
-     * \par Example
+     * \par
+     * The code snippet below illustrates the inclusive prefix scan of a device vector of \p int items.
+     * \par
      * \code
      * #include <cub/cub.cuh>
+     * ...
      *
-     *     ...
+     * // Declare and initialize device pointers for input and output
+     * int *d_scan_input, *d_scan_output;
+     * int num_items = ...
+     * ...
      *
-     *     // Declare and initialize device pointers for input and output
-     *     int *d_scan_input, *d_scan_output;
-     *     int num_items = ...
+     * // Determine temporary device storage requirements for inclusive prefix scan
+     * void *d_temp_storage = NULL;
+     * size_t temp_storage_bytes = 0;
+     * cub::DeviceScan::InclusiveScan(d_temp_storage, temp_storage_bytes, d_scan_input, d_scan_output, cub::Max(), num_items);
      *
-     *     ...
+     * // Allocate temporary storage for inclusive prefix scan
+     * cudaMalloc(&d_temp_storage, temp_storage_bytes);
      *
-     *     // Determine temporary device storage requirements for inclusive prefix scan
-     *     void *d_temp_storage = NULL;
-     *     size_t temp_storage_bytes = 0;
-     *     cub::DeviceScan::InclusiveScan(d_temp_storage, temp_storage_bytes, d_scan_input, d_scan_output, cub::Max(), num_items);
-     *
-     *     // Allocate temporary storage for inclusive prefix scan
-     *     cudaMalloc(&d_temp_storage, temp_storage_bytes);
-     *
-     *     // Run inclusive prefix scan (max)
-     *     cub::DeviceScan::InclusiveScan(d_temp_storage, temp_storage_bytes, d_scan_input, d_scan_output, cub::Max(), num_items);
+     * // Run inclusive prefix scan (max)
+     * cub::DeviceScan::InclusiveScan(d_temp_storage, temp_storage_bytes, d_scan_input, d_scan_output, cub::Max(), num_items);
      *
      * \endcode
      *

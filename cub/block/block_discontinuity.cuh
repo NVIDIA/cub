@@ -75,18 +75,20 @@ namespace cub {
  *     // Allocate shared memory for BlockDiscontinuity
  *     __shared__ typename BlockDiscontinuity::TempStorage temp_storage;
  *
- *     // Obtain a segment of consecutive input items per thread
+ *     // Obtain a segment of consecutive items that are blocked across threads
  *     int thread_data[4];
  *     ...
  *
- *     // Collectively compute head flags for discontinuities in the linear tile
+ *     // Collectively compute head flags for discontinuities in the segment
  *     int head_flags[4];
  *     BlockDiscontinuity(temp_storage).FlagHeads(head_flags, thread_data, cub::Equality());
  *
  * \endcode
  * \par
- * Suppose the set of input \p thread_data across the block of threads is <tt>{0,0,1,1}, {1,1,1,1}, {2,3,3,3}, {3,4,4,4}, ...</tt>.  The
- * corresponding output \p head_flags in those threads will be <tt>{1,0,1,0}, {0,0,0,0}, {1,1,0,0}, {0,1,0,0}, ...</tt>.
+ * Suppose the set of input \p thread_data across the block of threads is
+ * <tt>{ [0,0,1,1], [1,1,1,1], [2,3,3,3], [3,4,4,4], ... }</tt>.
+ * The corresponding output \p head_flags in those threads will be
+ * <tt>{ [1,0,1,0], [0,0,0,0], [1,1,0,0], [0,1,0,0], ... }</tt>.
  *
  * \par Performance Considerations
  * - Zero bank conflicts for most types.
@@ -246,18 +248,20 @@ public:
      *     // Allocate shared memory for BlockDiscontinuity
      *     __shared__ typename BlockDiscontinuity::TempStorage temp_storage;
      *
-     *     // Obtain a segment of consecutive input items per thread
+     *     // Obtain a segment of consecutive items that are blocked across threads
      *     int thread_data[4];
      *     ...
      *
-     *     // Collectively compute head flags for discontinuities in the linear tile
+     *     // Collectively compute head flags for discontinuities in the segment
      *     int head_flags[4];
      *     BlockDiscontinuity(temp_storage).FlagHeads(head_flags, thread_data, cub::Equality());
      *
      * \endcode
      * \par
-     * Suppose the set of input \p thread_data across the block of threads is <tt>{0,0,1,1}, {1,1,1,1}, {2,3,3,3}, {3,4,4,4}, ...</tt>.  The
-     * corresponding output \p head_flags in those threads will be <tt>{1,0,1,0}, {0,0,0,0}, {1,1,0,0}, {0,1,0,0}, ...</tt>.
+     * Suppose the set of input \p thread_data across the block of threads is
+     * <tt>{ [0,0,1,1], [1,1,1,1], [2,3,3,3], [3,4,4,4], ... }</tt>.
+     * The corresponding output \p head_flags in those threads will be
+     * <tt>{ [1,0,1,0], [0,0,0,0], [1,1,0,0], [0,1,0,0], ... }</tt>.
      *
      * \tparam ITEMS_PER_THREAD     <b>[inferred]</b> The number of consecutive items partitioned onto each thread.
      * \tparam FlagT                <b>[inferred]</b> The flag type (must be an integer type)
@@ -329,7 +333,7 @@ public:
      *     // Allocate shared memory for BlockDiscontinuity
      *     __shared__ typename BlockDiscontinuity::TempStorage temp_storage;
      *
-     *     // Obtain a segment of consecutive input items per thread
+     *     // Obtain a segment of consecutive items that are blocked across threads
      *     int thread_data[4];
      *     ...
      *
@@ -337,15 +341,17 @@ public:
      *     int tile_predecessor_item;
      *     if (threadIdx.x == 0) tile_predecessor_item == ...
      *
-     *     // Collectively compute head flags for discontinuities in the linear tile
+     *     // Collectively compute head flags for discontinuities in the segment
      *     int head_flags[4];
-     *     BlockDiscontinuity(temp_storage).FlagHeads(head_flags, thread_data, cub::Equality(), tile_predecessor_item);
+     *     BlockDiscontinuity(temp_storage).FlagHeads(
+     *         head_flags, thread_data, cub::Equality(), tile_predecessor_item);
      *
      * \endcode
      * \par
-     * Suppose the set of input \p thread_data across the block of threads is <tt>{0,0,1,1}, {1,1,1,1}, {2,3,3,3}, {3,4,4,4}, ...</tt>,
-     * and that \p tile_predecessor_item is \p 0.  The corresponding output \p head_flags in those threads will
-     * be <tt>{0,0,1,0}, {0,0,0,0}, {1,1,0,0}, {0,1,0,0}, ...</tt>.
+     * Suppose the set of input \p thread_data across the block of threads is
+     * <tt>{ [0,0,1,1], [1,1,1,1], [2,3,3,3], [3,4,4,4], ... }</tt>,
+     * and that \p tile_predecessor_item is \p 0.  The corresponding output \p head_flags in those threads will be
+     * <tt>{ [0,0,1,0], [0,0,0,0], [1,1,0,0], [0,1,0,0], ... }</tt>.
      *
      * \tparam ITEMS_PER_THREAD     <b>[inferred]</b> The number of consecutive items partitioned onto each thread.
      * \tparam FlagT                <b>[inferred]</b> The flag type (must be an integer type)
@@ -427,18 +433,20 @@ public:
      *     // Allocate shared memory for BlockDiscontinuity
      *     __shared__ typename BlockDiscontinuity::TempStorage temp_storage;
      *
-     *     // Obtain a segment of consecutive input items per thread
+     *     // Obtain a segment of consecutive items that are blocked across threads
      *     int thread_data[4];
      *     ...
      *
-     *     // Collectively compute tail flags for discontinuities in the linear tile
+     *     // Collectively compute tail flags for discontinuities in the segment
      *     int tail_flags[4];
      *     BlockDiscontinuity(temp_storage).FlagTails(tail_flags, thread_data, cub::Equality());
      *
      * \endcode
      * \par
-     * Suppose the set of input \p thread_data across the block of threads is <tt>{0,0,1,1}, {1,1,1,1}, {2,3,3,3}, ..., {124,125,125,125}</tt>.  The
-     * corresponding output \p tail_flags in those threads will be <tt>{0,1,0,0}, {0,0,0,1}, {1,0,0,...}, ..., {1,0,0,1}</tt>.
+     * Suppose the set of input \p thread_data across the block of threads is
+     * <tt>{ [0,0,1,1], [1,1,1,1], [2,3,3,3], ..., [124,125,125,125] }</tt>.
+     * The corresponding output \p tail_flags in those threads will be
+     * <tt>{ [0,1,0,0], [0,0,0,1], [1,0,0,...], ..., [1,0,0,1] }</tt>.
      *
      * \tparam ITEMS_PER_THREAD     <b>[inferred]</b> The number of consecutive items partitioned onto each thread.
      * \tparam FlagT                <b>[inferred]</b> The flag type (must be an integer type)
@@ -511,7 +519,7 @@ public:
      *     // Allocate shared memory for BlockDiscontinuity
      *     __shared__ typename BlockDiscontinuity::TempStorage temp_storage;
      *
-     *     // Obtain a segment of consecutive input items per thread
+     *     // Obtain a segment of consecutive items that are blocked across threads
      *     int thread_data[4];
      *     ...
      *
@@ -519,15 +527,17 @@ public:
      *     int tile_successor_item;
      *     if (threadIdx.x == 127) tile_successor_item == ...
      *
-     *     // Collectively compute tail flags for discontinuities in the linear tile
+     *     // Collectively compute tail flags for discontinuities in the segment
      *     int tail_flags[4];
-     *     BlockDiscontinuity(temp_storage).FlagTails(tail_flags, thread_data, cub::Equality(), tile_successor_item);
+     *     BlockDiscontinuity(temp_storage).FlagTails(
+     *         tail_flags, thread_data, cub::Equality(), tile_successor_item);
      *
      * \endcode
      * \par
-     * Suppose the set of input \p thread_data across the block of threads is <tt>{0,0,1,1}, {1,1,1,1}, {2,3,3,3}, ..., {124,125,125,125}</tt>
+     * Suppose the set of input \p thread_data across the block of threads is
+     * <tt>{ [0,0,1,1], [1,1,1,1], [2,3,3,3], ..., [124,125,125,125] }</tt>
      * and that \p tile_successor_item is \p 125.  The corresponding output \p tail_flags in those threads will be
-     * <tt>{0,1,0,0}, {0,0,0,1}, {1,0,0,...}, ..., {1,0,0,0}</tt>.
+     * <tt>{ [0,1,0,0], [0,0,0,1], [1,0,0,...], ..., [1,0,0,0] }</tt>.
      *
      * \tparam ITEMS_PER_THREAD     <b>[inferred]</b> The number of consecutive items partitioned onto each thread.
      * \tparam FlagT                <b>[inferred]</b> The flag type (must be an integer type)

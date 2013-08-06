@@ -28,7 +28,7 @@
 
 /**
  * \file
- * cub::WarpScan provides variants of parallel prefix scan across CUDA warps.
+ * The cub::WarpScan class provides [<em>collective</em>](index.html#sec0) methods for computing a parallel prefix scan of items partitioned across CUDA warp threads.
  */
 
 #pragma once
@@ -54,7 +54,7 @@ namespace cub {
  */
 
 /**
- * \brief WarpScan provides variants of parallel prefix scan across CUDA warps.  ![](warp_scan_logo.png)
+ * \brief The WarpScan class provides [<em>collective</em>](index.html#sec0) methods for computing a parallel prefix scan of items partitioned across CUDA warp threads.  ![](warp_scan_logo.png)
  *
  * \par Overview
  * Given a list of input elements and a binary reduction operator, a [<em>prefix scan</em>](http://en.wikipedia.org/wiki/Prefix_sum)
@@ -65,136 +65,80 @@ namespace cub {
  * The term \em exclusive indicates the <em>i</em><sup>th</sup> input is not incorporated into
  * the <em>i</em><sup>th</sup> output reduction.
  *
- * \par
- * For convenience, WarpScan provides alternative entrypoints that differ by:
- * - Operator (generic scan <b><em>vs.</em></b> prefix sum of numeric types)
- * - Output ordering (inclusive <b><em>vs.</em></b> exclusive)
- * - Warp-wide prefix (identity <b><em>vs.</em></b> call-back functor)
- * - What is computed (scanned elements only <b><em>vs.</em></b> scanned elements and the total aggregate)
- *
  * \tparam T                        The scan input/output element type
- * \tparam LOGICAL_WARPS                    <b>[optional]</b> The number of "logical" warps performing concurrent warp scans. Default is 1.
+ * \tparam LOGICAL_WARPS            <b>[optional]</b> The number of "logical" warps performing concurrent warp scans. Default is 1.
  * \tparam LOGICAL_WARP_THREADS     <b>[optional]</b> The number of threads per "logical" warp (may be less than the number of hardware warp threads).  Default is the warp size associated with the CUDA Compute Capability targeted by the compiler (e.g., 32 threads for SM20).
  *
- * \par Usage Considerations
- * - Supports non-commutative scan operators
- * - Supports "logical" warps smaller than the physical warp size (e.g., a logical warp of 8 threads)
- * - Warp scans are concurrent if more than one warp is participating
- * - \smemreuse{WarpScan::TempStorage}
-
- * \par Performance Considerations
- * - Uses special instructions when applicable (e.g., warp \p SHFL)
- * - Uses synchronization-free communication between warp lanes when applicable
- * - Zero bank conflicts for most types.
- * - Computation is slightly more efficient (i.e., having lower instruction overhead) for:
- *     - Prefix sum variants (vs. generic scan)
- *     - Exclusive variants (vs. inclusive)
- *     - Basic scan variants that don't require scalar inputs and outputs (e.g., \p warp_prefix_op and \p warp_aggregate)
- *     - Scan parameterizations where \p T is a built-in C++ primitive or CUDA vector type (e.g.,
- *       \p short, \p int2, \p double, \p float2, etc.)
- *     - Scan parameterizations where \p LOGICAL_WARP_THREADS is a multiple of the architecture's warp size
- *
- * \par Algorithm
- * These parallel prefix scan variants implement a warp-synchronous
- * Kogge-Stone algorithm having <em>O</em>(log<em>n</em>)
- * steps and <em>O</em>(<em>n</em>log<em>n</em>) work complexity,
- * where <em>n</em> = \p LOGICAL_WARP_THREADS (which defaults to the warp
- * size associated with the CUDA Compute Capability targeted by the compiler).
- * <br><br>
- * \image html kogge_stone_scan.png
- * <div class="centercaption">Data flow within a 16-thread Kogge-Stone scan construction.  Junctions represent binary operators.</div>
- * <br>
- *
- * \par Examples
- * <em>Example 1.</em> Perform a simple exclusive prefix sum for one warp
+ * \par Simple Examples
+ * \warpcollective{WarpScan}
+ * \par
+ * The code snippet below illustrates four concurrent warp prefix sums within a block of
+ * 128 threads (one per each of the 32-thread warps).
+ * \par
  * \code
  * #include <cub/cub.cuh>
  *
  * __global__ void ExampleKernel(...)
  * {
- *     // Parameterize WarpScan for 1 warp on type int
- *     typedef cub::WarpScan<int> WarpScan;
+ *     // Specialize WarpScan for 4 warps on type int
+ *     typedef cub::WarpScan<int, 4> WarpScan;
  *
- *     // Opaque shared memory for WarpScan
+ *     // Allocate shared memory for WarpScan
  *     __shared__ typename WarpScan::TempStorage temp_storage;
  *
- *     // Perform prefix sum of threadIds in first warp
- *     if (linear_tid < 32)
- *     {
- *         int input = linear_tid;
- *         int output;
- *         WarpScan::ExclusiveSum(temp_storage, input, output);
+ *     // Obtain one input item per thread
+ *     int thread_data = ...
  *
- *         printf("tid(%d) output(%d)\n\n", linear_tid, output);
- *     }
+ *     // Compute warp-wide prefix sums
+ *     WarpScan(temp_storage).ExclusiveSum(thread_data, thread_data);
+ *
  * \endcode
- * Printed output:
- * \code
- * tid(0) output(0)
- * tid(1) output(0)
- * tid(2) output(1)
- * tid(3) output(3)
- * tid(4) output(6)
- * ...
- * tid(31) output(465)
- * \endcode
+ * \par
+ * Suppose the set of input \p thread_data across the block of threads is <tt>1, 1, 1, 1, ...</tt>.
+ * The corresponding output \p thread_data in each of the four warps of threads will be
+ * <tt>0, 1, 2, 3, ..., 31</tt>.
  *
  * \par
- * <em>Example 2.</em> Use a single warp to iteratively compute an exclusive prefix sum over a larger input using a prefix functor to maintain a running total between scans.
- *      \code
- *      #include <cub/cub.cuh>
+ * The code snippet below illustrates a single warp prefix sum within a block of
+ * 128 threads.
+ * \par
+ * \code
+ * #include <cub/cub.cuh>
  *
- *      // Stateful functor that maintains a running prefix that can be applied to
- *      // consecutive scan operations.
- *      struct WarpPrefixOp
- *      {
- *          // Running prefix
- *          int running_total;
+ * __global__ void ExampleKernel(...)
+ * {
+ *     // Specialize WarpScan for one warp on type int
+ *     typedef cub::WarpScan<int, 1> WarpScan;
  *
- *          // Constructor
- *          __device__ WarpPrefixOp(int running_total) : running_total(running_total) {}
+ *     // Allocate shared memory for WarpScan
+ *     __shared__ typename WarpScan::TempStorage temp_storage;
+ *     ...
  *
- *          // Callback operator, called by the entire warp of threads.
- *          // Lane-0 produces a value for seeding the warp-wide scan given
- *          // the local aggregate.
- *          __device__ int operator()(int warp_aggregate)
- *          {
- *              int old_prefix = running_total;
- *              running_total += warp_aggregate;
- *              return old_prefix;
- *          }
- *      }
+ *     // Only the first warp performs a prefix sum
+ *     if (threadIdx.x < 32)
+ *     {
+ *         // Obtain one input item per thread
+ *         int thread_data = ...
  *
- *      __global__ void ExampleKernel(int *d_data, int num_items)
- *      {
- *          // Parameterize WarpScan for 1 warp on type int
- *          typedef cub::WarpScan<int> WarpScan;
+ *         // Compute warp-wide prefix sums
+ *         WarpScan(temp_storage).ExclusiveSum(thread_data, thread_data);
  *
- *          // Opaque shared memory for WarpScan
- *          __shared__ typename WarpScan::TempStorage temp_storage;
+ * \endcode
+ * \par
+ * Suppose the set of input \p thread_data across the warp of threads is <tt>1, 1, 1, 1, ...</tt>.
+ * The corresponding output \p thread_data will be <tt>0, 1, 2, 3, ..., 31</tt>.
  *
- *          // The first warp iteratively computes a prefix sum over d_data
- *          if (linear_tid < 32)
- *          {
- *              // Running total
- *              WarpPrefixOp prefix_op(0);
+ * \par Usage and Performance Considerations
+ * - Supports "logical" warps smaller than the physical warp size (e.g., a logical warp of 8 threads)
+ * - The number of entrant threads must be an multiple of \p LOGICAL_WARP_THREADS
+ * - Warp scans are concurrent if more than one warp is participating
+ * - Uses special instructions when applicable (e.g., warp \p SHFL)
+ * - Uses synchronization-free communication between warp lanes when applicable
+ * - Zero bank conflicts for most types.
+ * - Computation is slightly more efficient (i.e., having lower instruction overhead) for:
+ *     - Summation (<b><em>vs.</em></b> generic scan)
+ *     - The architecture's warp size is a whole multiple of \p LOGICAL_WARP_THREADS
  *
- *              // Iterate in strips of 32 items
- *              for (int warp_offset = 0; warp_offset < num_items; warp_offset += 32)
- *              {
- *                  // Read item
- *                  int datum = d_data[warp_offset + linear_tid];
- *
- *                  // Scan the tile of items
- *                  int tile_aggregate;
- *                  WarpScan::ExclusiveSum(temp_storage, datum, datum,
- *                      tile_aggregate, prefix_op);
- *
- *                  // Write item
- *                  d_data[warp_offset + linear_tid] = datum;
- *              }
- *          }
- *      \endcode
  */
 template <
     typename    T,
@@ -328,6 +272,32 @@ public:
      * \brief Computes an inclusive prefix sum in each logical warp.
      *
      * \smemreuse
+     *
+     * The code snippet below illustrates four concurrent warp-wide inclusive prefix sums within a block of
+     * 128 threads (one per each of the 32-thread warps).
+     * \par
+     * \code
+     * #include <cub/cub.cuh>
+     *
+     * __global__ void ExampleKernel(...)
+     * {
+     *     // Specialize WarpScan for 4 warps on type int
+     *     typedef cub::WarpScan<int, 4> WarpScan;
+     *
+     *     // Allocate shared memory for WarpScan
+     *     __shared__ typename WarpScan::TempStorage temp_storage;
+     *
+     *     // Obtain one input item per thread
+     *     int thread_data = ...
+     *
+     *     // Compute inclusive warp-wide prefix sums
+     *     WarpScan(temp_storage).InclusiveSum(thread_data, thread_data);
+     *
+     * \endcode
+     * \par
+     * Suppose the set of input \p thread_data across the block of threads is <tt>1, 1, 1, 1, ...</tt>.
+     * The corresponding output \p thread_data in each of the four warps of threads will be
+     * <tt>1, 2, 3, ..., 32</tt>.
      */
     __device__ __forceinline__ void InclusiveSum(
         T               input,              ///< [in] Calling thread's input item.
@@ -343,6 +313,33 @@ public:
      * The \p warp_aggregate is undefined in threads other than <em>warp-lane</em><sub>0</sub>.
      *
      * \smemreuse
+     *
+     * The code snippet below illustrates four concurrent warp-wide inclusive prefix sums within a block of
+     * 128 threads (one per each of the 32-thread warps).
+     * \par
+     * \code
+     * #include <cub/cub.cuh>
+     *
+     * __global__ void ExampleKernel(...)
+     * {
+     *     // Specialize WarpScan for 4 warps on type int
+     *     typedef cub::WarpScan<int, 4> WarpScan;
+     *
+     *     // Allocate shared memory for WarpScan
+     *     __shared__ typename WarpScan::TempStorage temp_storage;
+     *
+     *     // Obtain one input item per thread
+     *     int thread_data = ...
+     *
+     *     // Compute inclusive warp-wide prefix sums
+     *     int warp_aggregate;
+     *     WarpScan(temp_storage).InclusiveSum(thread_data, thread_data, warp_aggregate);
+     *
+     * \endcode
+     * \par
+     * Suppose the set of input \p thread_data across the block of threads is <tt>1, 1, 1, 1, ...</tt>.
+     * The corresponding output \p thread_data in each of the four warps of threads will be
+     * <tt>1, 2, 3, ..., 32</tt>.  Furthermore, \p warp_aggregate for all threads in all warps will be \p 32.
      */
     __device__ __forceinline__ void InclusiveSum(
         T               input,              ///< [in] Calling thread's input item.
@@ -364,6 +361,66 @@ public:
      * <em>lane</em><sub>0</sub> is applied as the threadblock-wide prefix.  Can be stateful.
      *
      * \smemreuse
+     *
+     * The code snippet below illustrates a single thread block of 32 threads (one warp) that progressively
+     * computes an inclusive prefix sum over multiple "tiles" of input using a
+     * prefix functor to maintain a running total between block-wide scans.  Each tile consists
+     * of 32 integer items that are partitioned across the warp.
+     * \par
+     * \code
+     * #include <cub/cub.cuh>
+     *
+     * // A stateful callback functor that maintains a running prefix to be applied
+     * // during consecutive scan operations.
+     * struct WarpPrefixOp
+     * {
+     *     // Running prefix
+     *     int running_total;
+     *
+     *     // Constructor
+     *     __device__ WarpPrefixOp(int running_total) : running_total(running_total) {}
+     *
+     *     // Callback operator to be entered by the entire warp. Lane-0 is responsible
+     *     // for returning a value for seeding the warp-wide scan.
+     *     __device__ int operator()(int warp_aggregate)
+     *     {
+     *         int old_prefix = running_total;
+     *         running_total += warp_aggregate;
+     *         return old_prefix;
+     *     }
+     * };
+     *
+     * __global__ void ExampleKernel(int *d_data, int num_items, ...)
+     * {
+     *     // Specialize WarpScan for one warp
+     *     typedef cub::WarpScan<int, 1> WarpScan;
+     *
+     *     // Allocate shared memory for WarpScan
+     *     __shared__ typename WarpScan::TempStorage temp_storage;
+     *
+     *     // Initialize running total
+     *     WarpPrefixOp prefix_op(0);
+     *
+     *     // Have the warp iterate over segments of items
+     *     for (int block_offset = 0; block_offset < num_items; block_offset += 32)
+     *     {
+     *         // Load a segment of consecutive items
+     *         int thread_data = d_data[block_offset];
+     *
+     *         // Collectively compute the warp-wide inclusive prefix sum
+     *         int warp_aggregate;
+     *         WarpScan(temp_storage).InclusiveSum(
+     *             thread_data, thread_data, warp_aggregate, prefix_op);
+     *
+     *         // Store scanned items to output segment
+     *         d_data[block_offset] = thread_data;
+     *     }
+     * \endcode
+     * \par
+     * Suppose the input \p d_data is <tt>1, 1, 1, 1, 1, 1, 1, 1, ...</tt>.
+     * The corresponding output for the first segment will be <tt>1, 2, 3, ..., 32</tt>.
+     * The output for the second segment will be <tt>33, 34, 35, ..., 64</tt>.  Furthermore,
+     * the value \p 32 will be stored in \p warp_aggregate for all threads after each scan.
      *
      * \tparam WarpPrefixOp                 <b>[inferred]</b> Call-back functor type having member <tt>T operator()(T warp_aggregate)</tt>
      */
@@ -461,6 +518,33 @@ public:
      * addition.
      *
      * \smemreuse
+     *
+     * The code snippet below illustrates four concurrent warp-wide exclusive prefix sums within a block of
+     * 128 threads (one per each of the 32-thread warps).
+     * \par
+     * \code
+     * #include <cub/cub.cuh>
+     *
+     * __global__ void ExampleKernel(...)
+     * {
+     *     // Specialize WarpScan for 4 warps on type int
+     *     typedef cub::WarpScan<int, 4> WarpScan;
+     *
+     *     // Allocate shared memory for WarpScan
+     *     __shared__ typename WarpScan::TempStorage temp_storage;
+     *
+     *     // Obtain one input item per thread
+     *     int thread_data = ...
+     *
+     *     // Compute exclusive warp-wide prefix sums
+     *     WarpScan(temp_storage).ExclusiveSum(thread_data, thread_data);
+     *
+     * \endcode
+     * \par
+     * Suppose the set of input \p thread_data across the block of threads is <tt>1, 1, 1, 1, ...</tt>.
+     * The corresponding output \p thread_data in each of the four warps of threads will be
+     * <tt>0, 1, 2, ..., 31</tt>.
+     *
      */
     __device__ __forceinline__ void ExclusiveSum(
         T               input,              ///< [in] Calling thread's input item.
@@ -479,6 +563,33 @@ public:
      * addition.
      *
      * \smemreuse
+     *
+     * The code snippet below illustrates four concurrent warp-wide exclusive prefix sums within a block of
+     * 128 threads (one per each of the 32-thread warps).
+     * \par
+     * \code
+     * #include <cub/cub.cuh>
+     *
+     * __global__ void ExampleKernel(...)
+     * {
+     *     // Specialize WarpScan for 4 warps on type int
+     *     typedef cub::WarpScan<int, 4> WarpScan;
+     *
+     *     // Allocate shared memory for WarpScan
+     *     __shared__ typename WarpScan::TempStorage temp_storage;
+     *
+     *     // Obtain one input item per thread
+     *     int thread_data = ...
+     *
+     *     // Compute exclusive warp-wide prefix sums
+     *     int warp_aggregate;
+     *     WarpScan(temp_storage).ExclusiveSum(thread_data, thread_data, warp_aggregate);
+     *
+     * \endcode
+     * \par
+     * Suppose the set of input \p thread_data across the block of threads is <tt>1, 1, 1, 1, ...</tt>.
+     * The corresponding output \p thread_data in each of the four warps of threads will be
+     * <tt>0, 1, 2, ..., 31</tt>.  Furthermore, \p warp_aggregate for all threads in all warps will be \p 32.
      */
     __device__ __forceinline__ void ExclusiveSum(
         T               input,              ///< [in] Calling thread's input item.
@@ -504,6 +615,66 @@ public:
      *
      * \smemreuse
      *
+     * The code snippet below illustrates a single thread block of 32 threads (one warp) that progressively
+     * computes an exclusive prefix sum over multiple "tiles" of input using a
+     * prefix functor to maintain a running total between block-wide scans.  Each tile consists
+     * of 32 integer items that are partitioned across the warp.
+     * \par
+     * \code
+     * #include <cub/cub.cuh>
+     *
+     * // A stateful callback functor that maintains a running prefix to be applied
+     * // during consecutive scan operations.
+     * struct WarpPrefixOp
+     * {
+     *     // Running prefix
+     *     int running_total;
+     *
+     *     // Constructor
+     *     __device__ WarpPrefixOp(int running_total) : running_total(running_total) {}
+     *
+     *     // Callback operator to be entered by the entire warp. Lane-0 is responsible
+     *     // for returning a value for seeding the warp-wide scan.
+     *     __device__ int operator()(int warp_aggregate)
+     *     {
+     *         int old_prefix = running_total;
+     *         running_total += warp_aggregate;
+     *         return old_prefix;
+     *     }
+     * };
+     *
+     * __global__ void ExampleKernel(int *d_data, int num_items, ...)
+     * {
+     *     // Specialize WarpScan for one warp
+     *     typedef cub::WarpScan<int, 1> WarpScan;
+     *
+     *     // Allocate shared memory for WarpScan
+     *     __shared__ typename WarpScan::TempStorage temp_storage;
+     *
+     *     // Initialize running total
+     *     WarpPrefixOp prefix_op(0);
+     *
+     *     // Have the warp iterate over segments of items
+     *     for (int block_offset = 0; block_offset < num_items; block_offset += 32)
+     *     {
+     *         // Load a segment of consecutive items
+     *         int thread_data = d_data[block_offset];
+     *
+     *         // Collectively compute the warp-wide exclusive prefix sum
+     *         int warp_aggregate;
+     *         WarpScan(temp_storage).ExclusiveSum(
+     *             thread_data, thread_data, warp_aggregate, prefix_op);
+     *
+     *         // Store scanned items to output segment
+     *         d_data[block_offset] = thread_data;
+     *     }
+     * \endcode
+     * \par
+     * Suppose the input \p d_data is <tt>1, 1, 1, 1, 1, 1, 1, 1, ...</tt>.
+     * The corresponding output for the first segment will be <tt>0, 1, 2, ..., 31</tt>.
+     * The output for the second segment will be <tt>32, 33, 34, ..., 63</tt>.  Furthermore,
+     * the value \p 32 will be stored in \p warp_aggregate for all threads after each scan.
+     *
      * \tparam WarpPrefixOp                 <b>[inferred]</b> Call-back functor type having member <tt>T operator()(T warp_aggregate)</tt>
      */
     template <typename WarpPrefixOp>
@@ -526,7 +697,35 @@ public:
     /**
      * \brief Computes an inclusive prefix sum using the specified binary scan functor in each logical warp.
      *
+     * Supports non-commutative scan operators.
+     *
      * \smemreuse
+     *
+     * The code snippet below illustrates four concurrent warp-wide inclusive prefix max scans within a block of
+     * 128 threads (one per each of the 32-thread warps).
+     * \par
+     * \code
+     * #include <cub/cub.cuh>
+     *
+     * __global__ void ExampleKernel(...)
+     * {
+     *     // Specialize WarpScan for 4 warps on type int
+     *     typedef cub::WarpScan<int, 4> WarpScan;
+     *
+     *     // Allocate shared memory for WarpScan
+     *     __shared__ typename WarpScan::TempStorage temp_storage;
+     *
+     *     // Obtain one input item per thread
+     *     int thread_data = ...
+     *
+     *     // Compute inclusive warp-wide prefix max scans
+     *     WarpScan(temp_storage).InclusiveScan(thread_data, thread_data, cub::Max());
+     *
+     * \endcode
+     * \par
+     * Suppose the set of input \p thread_data across the block of threads is <tt>0, -1, 2, -3, ..., 126, -127</tt>.
+     * The corresponding output \p thread_data in the first warp would be
+     * <tt>0, 0, 2, 2, ..., 30, 30</tt>, the output for the second warp would be <tt>32, 32, 34, 34, ..., 62, 62</tt>, etc.
      *
      * \tparam ScanOp     <b>[inferred]</b> Binary scan operator type having member <tt>T operator()(const T &a, const T &b)</tt>
      */
@@ -543,9 +742,39 @@ public:
     /**
      * \brief Computes an inclusive prefix sum using the specified binary scan functor in each logical warp.  Also provides every thread with the warp-wide \p warp_aggregate of all inputs.
      *
-     * The \p warp_aggregate is undefined in threads other than <em>warp-lane</em><sub>0</sub>.
+     * Supports non-commutative scan operators.
      *
      * \smemreuse
+     *
+     * The code snippet below illustrates four concurrent warp-wide inclusive prefix max scans within a block of
+     * 128 threads (one per each of the 32-thread warps).
+     * \par
+     * \code
+     * #include <cub/cub.cuh>
+     *
+     * __global__ void ExampleKernel(...)
+     * {
+     *     // Specialize WarpScan for 4 warps on type int
+     *     typedef cub::WarpScan<int, 4> WarpScan;
+     *
+     *     // Allocate shared memory for WarpScan
+     *     __shared__ typename WarpScan::TempStorage temp_storage;
+     *
+     *     // Obtain one input item per thread
+     *     int thread_data = ...
+     *
+     *     // Compute inclusive warp-wide prefix max scans
+     *     int warp_aggregate;
+     *     WarpScan(temp_storage).InclusiveScan(
+     *         thread_data, thread_data, cub::Max(), warp_aggregate);
+     *
+     * \endcode
+     * \par
+     * Suppose the set of input \p thread_data across the block of threads is <tt>0, -1, 2, -3, ..., 126, -127</tt>.
+     * The corresponding output \p thread_data in the first warp would be
+     * <tt>0, 0, 2, 2, ..., 30, 30</tt>, the output for the second warp would be <tt>32, 32, 34, 34, ..., 62, 62</tt>, etc.
+     * Furthermore, \p warp_aggregate would be assigned \p 30 for threads in the first warp, \p 62 for threads
+     * in the second warp, etc.
      *
      * \tparam ScanOp     <b>[inferred]</b> Binary scan operator type having member <tt>T operator()(const T &a, const T &b)</tt>
      */
@@ -563,14 +792,75 @@ public:
     /**
      * \brief Computes an inclusive prefix sum using the specified binary scan functor in each logical warp.  The call-back functor \p warp_prefix_op is invoked to provide the "seed" value that logically prefixes the warp's scan inputs.  Also provides every thread with the warp-wide \p warp_aggregate of all inputs.
      *
-     * The \p warp_aggregate is undefined in threads other than <em>warp-lane</em><sub>0</sub>.
-     *
      * The \p warp_prefix_op functor must implement a member function <tt>T operator()(T warp_aggregate)</tt>.
      * The functor's input parameter \p warp_aggregate is the same value also returned by the scan operation.
      * The functor will be invoked by the entire warp of threads, however only the return value from
      * <em>lane</em><sub>0</sub> is applied as the threadblock-wide prefix.  Can be stateful.
      *
+     * Supports non-commutative scan operators.
+     *
      * \smemreuse
+     *
+     * The code snippet below illustrates a single thread block of 32 threads (one warp) that progressively
+     * computes an inclusive prefix max scan over multiple "tiles" of input using a
+     * prefix functor to maintain a running total between block-wide scans.  Each tile consists
+     * of 32 integer items that are partitioned across the warp.
+     * \par
+     * \code
+     * #include <cub/cub.cuh>
+     *
+     * // A stateful callback functor that maintains a running prefix to be applied
+     * // during consecutive scan operations.
+     * struct WarpPrefixOp
+     * {
+     *     // Running prefix
+     *     int running_total;
+     *
+     *     // Constructor
+     *     __device__ WarpPrefixOp(int running_total) : running_total(running_total) {}
+     *
+     *     // Callback operator to be entered by the entire warp. Lane-0 is responsible
+     *     // for returning a value for seeding the warp-wide scan.
+     *     __device__ int operator()(int warp_aggregate)
+     *     {
+     *         int old_prefix = running_total;
+     *         running_total = (warp_aggregate > old_prefix) ? warp_aggregate : old_prefix;
+     *         return old_prefix;
+     *     }
+     * };
+     *
+     * __global__ void ExampleKernel(int *d_data, int num_items, ...)
+     * {
+     *     // Specialize WarpScan for one warp
+     *     typedef cub::WarpScan<int, 1> WarpScan;
+     *
+     *     // Allocate shared memory for WarpScan
+     *     __shared__ typename WarpScan::TempStorage temp_storage;
+     *
+     *     // Initialize running total
+     *     WarpPrefixOp prefix_op(0);
+     *
+     *     // Have the warp iterate over segments of items
+     *     for (int block_offset = 0; block_offset < num_items; block_offset += 32)
+     *     {
+     *         // Load a segment of consecutive items
+     *         int thread_data = d_data[block_offset];
+     *
+     *         // Collectively compute the warp-wide inclusive prefix max scan
+     *         int warp_aggregate;
+     *         WarpScan(temp_storage).InclusiveScan(
+     *             thread_data, thread_data, cub::Max(), warp_aggregate, prefix_op);
+     *
+     *         // Store scanned items to output segment
+     *         d_data[block_offset] = thread_data;
+     *     }
+     * \endcode
+     * \par
+     * Suppose the input \p d_data is <tt>0, -1, 2, -3, 4, -5, ...</tt>.
+     * The corresponding output for the first segment will be <tt>0, 0, 2, 2, ..., 30, 30</tt>.
+     * The output for the second segment will be <tt>32, 32, 34, 34, ..., 62, 62</tt>.  Furthermore,
+     * \p block_aggregate will be assigned \p 30 in all threads after the first scan, assigned \p 62 after the second
+     * scan, etc.
      *
      * \tparam ScanOp                       <b>[inferred]</b> Binary scan operator type having member <tt>T operator()(const T &a, const T &b)</tt>
      * \tparam WarpPrefixOp                 <b>[inferred]</b> Call-back functor type having member <tt>T operator()(T warp_aggregate)</tt>
@@ -607,7 +897,35 @@ public:
     /**
      * \brief Computes an exclusive prefix scan using the specified binary scan functor in each logical warp.
      *
+     * Supports non-commutative scan operators.
+     *
      * \smemreuse
+     *
+     * The code snippet below illustrates four concurrent warp-wide exclusive prefix max scans within a block of
+     * 128 threads (one per each of the 32-thread warps).
+     * \par
+     * \code
+     * #include <cub/cub.cuh>
+     *
+     * __global__ void ExampleKernel(...)
+     * {
+     *     // Specialize WarpScan for 4 warps on type int
+     *     typedef cub::WarpScan<int, 4> WarpScan;
+     *
+     *     // Allocate shared memory for WarpScan
+     *     __shared__ typename WarpScan::TempStorage temp_storage;
+     *
+     *     // Obtain one input item per thread
+     *     int thread_data = ...
+     *
+     *     // Compute exclusive warp-wide prefix max scans
+     *     WarpScan(temp_storage).ExclusiveScan(thread_data, thread_data, INT_MIN, cub::Max());
+     *
+     * \endcode
+     * \par
+     * Suppose the set of input \p thread_data across the block of threads is <tt>0, -1, 2, -3, ..., 126, -127</tt>.
+     * The corresponding output \p thread_data in the first warp would be
+     * <tt>INT_MIN, 0, 0, 2, ..., 28, 30</tt>, the output for the second warp would be <tt>30, 32, 32, 34, ..., 60, 62</tt>, etc.
      *
      * \tparam ScanOp     <b>[inferred]</b> Binary scan operator type having member <tt>T operator()(const T &a, const T &b)</tt>
      */
@@ -625,9 +943,37 @@ public:
     /**
      * \brief Computes an exclusive prefix scan using the specified binary scan functor in each logical warp.  Also provides every thread with the warp-wide \p warp_aggregate of all inputs.
      *
-     * The \p warp_aggregate is undefined in threads other than <em>warp-lane</em><sub>0</sub>.
+     * Supports non-commutative scan operators.
      *
      * \smemreuse
+     *
+     * The code snippet below illustrates four concurrent warp-wide exclusive prefix max scans within a block of
+     * 128 threads (one per each of the 32-thread warps).
+     * \par
+     * \code
+     * #include <cub/cub.cuh>
+     *
+     * __global__ void ExampleKernel(...)
+     * {
+     *     // Specialize WarpScan for 4 warps on type int
+     *     typedef cub::WarpScan<int, 4> WarpScan;
+     *
+     *     // Allocate shared memory for WarpScan
+     *     __shared__ typename WarpScan::TempStorage temp_storage;
+     *
+     *     // Obtain one input item per thread
+     *     int thread_data = ...
+     *
+     *     // Compute exclusive warp-wide prefix max scans
+     *     WarpScan(temp_storage).ExclusiveScan(thread_data, thread_data, INT_MIN, cub::Max());
+     *
+     * \endcode
+     * \par
+     * Suppose the set of input \p thread_data across the block of threads is <tt>0, -1, 2, -3, ..., 126, -127</tt>.
+     * The corresponding output \p thread_data in the first warp would be
+     * <tt>INT_MIN, 0, 0, 2, ..., 28, 30</tt>, the output for the second warp would be <tt>30, 32, 32, 34, ..., 60, 62</tt>, etc.
+     * Furthermore, \p warp_aggregate would be assigned \p 30 for threads in the first warp, \p 62 for threads
+     * in the second warp, etc.
      *
      * \tparam ScanOp     <b>[inferred]</b> Binary scan operator type having member <tt>T operator()(const T &a, const T &b)</tt>
      */
@@ -646,14 +992,75 @@ public:
     /**
      * \brief Computes an exclusive prefix scan using the specified binary scan functor in each logical warp.  The call-back functor \p warp_prefix_op is invoked to provide the "seed" value that logically prefixes the warp's scan inputs.  Also provides every thread with the warp-wide \p warp_aggregate of all inputs.
      *
-     * The \p warp_aggregate is undefined in threads other than <em>warp-lane</em><sub>0</sub>.
-     *
      * The \p warp_prefix_op functor must implement a member function <tt>T operator()(T warp_aggregate)</tt>.
      * The functor's input parameter \p warp_aggregate is the same value also returned by the scan operation.
      * The functor will be invoked by the entire warp of threads, however only the return value from
      * <em>lane</em><sub>0</sub> is applied as the threadblock-wide prefix.  Can be stateful.
      *
+     * Supports non-commutative scan operators.
+     *
      * \smemreuse
+     *
+     * The code snippet below illustrates a single thread block of 32 threads (one warp) that progressively
+     * computes an exclusive prefix max scan over multiple "tiles" of input using a
+     * prefix functor to maintain a running total between block-wide scans.  Each tile consists
+     * of 32 integer items that are partitioned across the warp.
+     * \par
+     * \code
+     * #include <cub/cub.cuh>
+     *
+     * // A stateful callback functor that maintains a running prefix to be applied
+     * // during consecutive scan operations.
+     * struct WarpPrefixOp
+     * {
+     *     // Running prefix
+     *     int running_total;
+     *
+     *     // Constructor
+     *     __device__ WarpPrefixOp(int running_total) : running_total(running_total) {}
+     *
+     *     // Callback operator to be entered by the entire warp. Lane-0 is responsible
+     *     // for returning a value for seeding the warp-wide scan.
+     *     __device__ int operator()(int warp_aggregate)
+     *     {
+     *         int old_prefix = running_total;
+     *         running_total = (warp_aggregate > old_prefix) ? warp_aggregate : old_prefix;
+     *         return old_prefix;
+     *     }
+     * };
+     *
+     * __global__ void ExampleKernel(int *d_data, int num_items, ...)
+     * {
+     *     // Specialize WarpScan for one warp
+     *     typedef cub::WarpScan<int, 1> WarpScan;
+     *
+     *     // Allocate shared memory for WarpScan
+     *     __shared__ typename WarpScan::TempStorage temp_storage;
+     *
+     *     // Initialize running total
+     *     WarpPrefixOp prefix_op(INT_MIN);
+     *
+     *     // Have the warp iterate over segments of items
+     *     for (int block_offset = 0; block_offset < num_items; block_offset += 32)
+     *     {
+     *         // Load a segment of consecutive items
+     *         int thread_data = d_data[block_offset];
+     *
+     *         // Collectively compute the warp-wide exclusive prefix max scan
+     *         int warp_aggregate;
+     *         WarpScan(temp_storage).ExclusiveScan(
+     *             thread_data, thread_data, INT_MIN, cub::Max(), warp_aggregate, prefix_op);
+     *
+     *         // Store scanned items to output segment
+     *         d_data[block_offset] = thread_data;
+     *     }
+     * \endcode
+     * \par
+     * Suppose the input \p d_data is <tt>0, -1, 2, -3, 4, -5, ...</tt>.
+     * The corresponding output for the first segment will be <tt>INT_MIN, 0, 0, 2, ..., 28, 30</tt>.
+     * The output for the second segment will be <tt>30, 32, 32, 34, ..., 60, 62</tt>.  Furthermore,
+     * \p block_aggregate will be assigned \p 30 in all threads after the first scan, assigned \p 62 after the second
+     * scan, etc.
      *
      * \tparam ScanOp                       <b>[inferred]</b> Binary scan operator type having member <tt>T operator()(const T &a, const T &b)</tt>
      * \tparam WarpPrefixOp                 <b>[inferred]</b> Call-back functor type having member <tt>T operator()(T warp_aggregate)</tt>
@@ -693,7 +1100,36 @@ public:
     /**
      * \brief Computes an exclusive prefix scan using the specified binary scan functor in each logical warp.  Because no identity value is supplied, the \p output computed for <em>warp-lane</em><sub>0</sub> is undefined.
      *
+     * Supports non-commutative scan operators.
+     *
      * \smemreuse
+     *
+     * The code snippet below illustrates four concurrent warp-wide exclusive prefix max scans within a block of
+     * 128 threads (one per each of the 32-thread warps).
+     * \par
+     * \code
+     * #include <cub/cub.cuh>
+     *
+     * __global__ void ExampleKernel(...)
+     * {
+     *     // Specialize WarpScan for 4 warps on type int
+     *     typedef cub::WarpScan<int, 4> WarpScan;
+     *
+     *     // Allocate shared memory for WarpScan
+     *     __shared__ typename WarpScan::TempStorage temp_storage;
+     *
+     *     // Obtain one input item per thread
+     *     int thread_data = ...
+     *
+     *     // Compute exclusive warp-wide prefix max scans
+     *     WarpScan(temp_storage).ExclusiveScan(thread_data, thread_data, cub::Max());
+     *
+     * \endcode
+     * \par
+     * Suppose the set of input \p thread_data across the block of threads is <tt>0, -1, 2, -3, ..., 126, -127</tt>.
+     * The corresponding output \p thread_data in the first warp would be
+     * <tt>?, 0, 0, 2, ..., 28, 30</tt>, the output for the second warp would be <tt>?, 32, 32, 34, ..., 60, 62</tt>, etc.
+     * (The output \p thread_data in each warp lane0 is undefined.)
      *
      * \tparam ScanOp     <b>[inferred]</b> Binary scan operator type having member <tt>T operator()(const T &a, const T &b)</tt>
      */
@@ -710,9 +1146,37 @@ public:
     /**
      * \brief Computes an exclusive prefix scan using the specified binary scan functor in each logical warp.  Because no identity value is supplied, the \p output computed for <em>warp-lane</em><sub>0</sub> is undefined.  Also provides every thread with the warp-wide \p warp_aggregate of all inputs.
      *
-     * The \p warp_aggregate is undefined in threads other than <em>warp-lane</em><sub>0</sub>.
+     * Supports non-commutative scan operators.
      *
      * \smemreuse
+     *
+     * The code snippet below illustrates four concurrent warp-wide exclusive prefix max scans within a block of
+     * 128 threads (one per each of the 32-thread warps).
+     * \par
+     * \code
+     * #include <cub/cub.cuh>
+     *
+     * __global__ void ExampleKernel(...)
+     * {
+     *     // Specialize WarpScan for 4 warps on type int
+     *     typedef cub::WarpScan<int, 4> WarpScan;
+     *
+     *     // Allocate shared memory for WarpScan
+     *     __shared__ typename WarpScan::TempStorage temp_storage;
+     *
+     *     // Obtain one input item per thread
+     *     int thread_data = ...
+     *
+     *     // Compute exclusive warp-wide prefix max scans
+     *     WarpScan(temp_storage).ExclusiveScan(thread_data, thread_data, cub::Max());
+     *
+     * \endcode
+     * \par
+     * Suppose the set of input \p thread_data across the block of threads is <tt>0, -1, 2, -3, ..., 126, -127</tt>.
+     * The corresponding output \p thread_data in the first warp would be
+     * <tt>?, 0, 0, 2, ..., 28, 30</tt>, the output for the second warp would be <tt>?, 32, 32, 34, ..., 60, 62</tt>, etc.
+     * (The output \p thread_data in each warp lane0 is undefined.)  Furthermore, \p warp_aggregate would be assigned \p 30 for threads in the first warp, \p 62 for threads
+     * in the second warp, etc.
      *
      * \tparam ScanOp     <b>[inferred]</b> Binary scan operator type having member <tt>T operator()(const T &a, const T &b)</tt>
      */
@@ -730,14 +1194,75 @@ public:
     /**
      * \brief Computes an exclusive prefix scan using the specified binary scan functor in each logical warp.  The \p warp_prefix_op value from thread-thread-lane<sub>0</sub> is applied to all scan outputs.  Also computes the warp-wide \p warp_aggregate of all inputs for thread-thread-lane<sub>0</sub>.
      *
-     * The \p warp_aggregate is undefined in threads other than <em>warp-lane</em><sub>0</sub>.
-     *
      * The \p warp_prefix_op functor must implement a member function <tt>T operator()(T warp_aggregate)</tt>.
      * The functor's input parameter \p warp_aggregate is the same value also returned by the scan operation.
      * The functor will be invoked by the entire warp of threads, however only the return value from
      * <em>lane</em><sub>0</sub> is applied as the threadblock-wide prefix.  Can be stateful.
      *
+     * Supports non-commutative scan operators.
+     *
      * \smemreuse
+     *
+     * The code snippet below illustrates a single thread block of 32 threads (one warp) that progressively
+     * computes an exclusive prefix max scan over multiple "tiles" of input using a
+     * prefix functor to maintain a running total between block-wide scans.  Each tile consists
+     * of 32 integer items that are partitioned across the warp.
+     * \par
+     * \code
+     * #include <cub/cub.cuh>
+     *
+     * // A stateful callback functor that maintains a running prefix to be applied
+     * // during consecutive scan operations.
+     * struct WarpPrefixOp
+     * {
+     *     // Running prefix
+     *     int running_total;
+     *
+     *     // Constructor
+     *     __device__ WarpPrefixOp(int running_total) : running_total(running_total) {}
+     *
+     *     // Callback operator to be entered by the entire warp. Lane-0 is responsible
+     *     // for returning a value for seeding the warp-wide scan.
+     *     __device__ int operator()(int warp_aggregate)
+     *     {
+     *         int old_prefix = running_total;
+     *         running_total = (warp_aggregate > old_prefix) ? warp_aggregate : old_prefix;
+     *         return old_prefix;
+     *     }
+     * };
+     *
+     * __global__ void ExampleKernel(int *d_data, int num_items, ...)
+     * {
+     *     // Specialize WarpScan for one warp
+     *     typedef cub::WarpScan<int, 1> WarpScan;
+     *
+     *     // Allocate shared memory for WarpScan
+     *     __shared__ typename WarpScan::TempStorage temp_storage;
+     *
+     *     // Initialize running total
+     *     WarpPrefixOp prefix_op(INT_MIN);
+     *
+     *     // Have the warp iterate over segments of items
+     *     for (int block_offset = 0; block_offset < num_items; block_offset += 32)
+     *     {
+     *         // Load a segment of consecutive items
+     *         int thread_data = d_data[block_offset];
+     *
+     *         // Collectively compute the warp-wide exclusive prefix max scan
+     *         int warp_aggregate;
+     *         WarpScan(temp_storage).ExclusiveScan(
+     *             thread_data, thread_data, INT_MIN, cub::Max(), warp_aggregate, prefix_op);
+     *
+     *         // Store scanned items to output segment
+     *         d_data[block_offset] = thread_data;
+     *     }
+     * \endcode
+     * \par
+     * Suppose the input \p d_data is <tt>0, -1, 2, -3, 4, -5, ...</tt>.
+     * The corresponding output for the first segment will be <tt>INT_MIN, 0, 0, 2, ..., 28, 30</tt>.
+     * The output for the second segment will be <tt>30, 32, 32, 34, ..., 60, 62</tt>.  Furthermore,
+     * \p block_aggregate will be assigned \p 30 in all threads after the first scan, assigned \p 62 after the second
+     * scan, etc.
      *
      * \tparam ScanOp                       <b>[inferred]</b> Binary scan operator type having member <tt>T operator()(const T &a, const T &b)</tt>
      * \tparam WarpPrefixOp                 <b>[inferred]</b> Call-back functor type having member <tt>T operator()(T warp_aggregate)</tt>
