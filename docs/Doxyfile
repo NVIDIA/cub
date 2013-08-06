@@ -203,7 +203,7 @@ ALIASES                += blockcollective{1}="Every thread in the block uses the
 ALIASES                += warpcollective{1}="Every thread in the warp uses the \1 class by first specializing the \1 type, then instantiating an instance with parameters for communication, and finally invoking collective member functions."
 
 ALIASES                += devicestorage="This operation requires an allocation of temporary device storage.  When \p d_temp_storage is NULL, no work is done and the required allocation size is returned in \p temp_storage_bytes."
-ALIASES                += cdp_class=" - <em><b>Dynamic parallelism</b></em>.  These methods can be called within kernel code on devices in which CUDA dynamic parallelism is supported.  When calling these methods from kernel code, be sure to define the \p CUB_CDP macro in your compiler's macro definitions."
+ALIASES                += cdp_class{1}=" - <em>Dynamic parallelism</em>.  \1 methods can be called within kernel code on devices in which CUDA dynamic parallelism is supported.  When calling these methods from kernel code, be sure to define the \p CUB_CDP macro in your compiler's macro definitions."
 ALIASES                += cdp="When calling this method from kernel code, be sure to define the \p CUB_CDP macro in your compiler's macro definitions."
 ALIASES                += iterator="Random-access input/output iterators can be used instead of naked device pointers (e.g., a zip-iterator for fusing multiple inputs)."
 ALIASES                += blocked="Assumes a [<em>blocked arrangement</em>](index.html#sec3sec3) of elements across threads, where thread<sub><em>i</em></sub> owns the <em>i</em><sup>th</sup> segment of consecutively ranked items."
