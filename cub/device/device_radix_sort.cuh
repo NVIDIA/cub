@@ -249,7 +249,10 @@ __global__ void RadixSortDownsweepKernel(
  * ordering of those keys.
  *
  * \par Usage Considerations
- * \cdp_class
+ * \cdp_class{DeviceRadixSort}
+ *
+ * \par Performance
+ * \image html lsd_sort_perf.png
  *
  */
 struct DeviceRadixSort

@@ -169,7 +169,10 @@ __global__ void ReduceSingleKernel(
  * uses a binary combining operator to compute a single aggregate from a list of input elements.
  *
  * \par Usage Considerations
- * \cdp_class
+ * \cdp_class{DeviceReduce}
+ *
+ * \par Performance
+ * \image html reduction_perf.png
  *
  */
 struct DeviceReduce
