@@ -61,10 +61,10 @@ CachingDeviceAllocator  g_allocator;
 template <typename InputIteratorRA, typename OutputIteratorRA, typename ScanOp, typename Identity, typename SizeT>
 __host__ __device__ __forceinline__
 cudaError_t Dispatch(
-    Int2Type<false>     use_cnp,
+    Int2Type<false>     use_cdp,
     int                 timing_iterations,
     size_t              *d_temp_storage_bytes,
-    cudaError_t         *d_cnp_error,
+    cudaError_t         *d_cdp_error,
 
     void                *d_temp_storage,
     size_t              &temp_storage_bytes,
@@ -91,10 +91,10 @@ cudaError_t Dispatch(
 template <typename InputIteratorRA, typename OutputIteratorRA, typename T, typename Identity, typename SizeT>
 __host__ __device__ __forceinline__
 cudaError_t Dispatch(
-    Int2Type<false>     use_cnp,
+    Int2Type<false>     use_cdp,
     int                 timing_iterations,
     size_t              *d_temp_storage_bytes,
-    cudaError_t         *d_cnp_error,
+    cudaError_t         *d_cdp_error,
 
     void                *d_temp_storage,
     size_t              &temp_storage_bytes,
@@ -121,10 +121,10 @@ cudaError_t Dispatch(
 template <typename InputIteratorRA, typename OutputIteratorRA, typename ScanOp, typename SizeT>
 __host__ __device__ __forceinline__
 cudaError_t Dispatch(
-    Int2Type<false>     use_cnp,
+    Int2Type<false>     use_cdp,
     int                 timing_iterations,
     size_t              *d_temp_storage_bytes,
-    cudaError_t         *d_cnp_error,
+    cudaError_t         *d_cdp_error,
 
     void                *d_temp_storage,
     size_t              &temp_storage_bytes,
@@ -151,10 +151,10 @@ cudaError_t Dispatch(
 template <typename InputIteratorRA, typename OutputIteratorRA, typename T, typename SizeT>
 __host__ __device__ __forceinline__
 cudaError_t Dispatch(
-    Int2Type<false>     use_cnp,
+    Int2Type<false>     use_cdp,
     int                 timing_iterations,
     size_t              *d_temp_storage_bytes,
-    cudaError_t         *d_cnp_error,
+    cudaError_t         *d_cdp_error,
 
     void                *d_temp_storage,
     size_t              &temp_storage_bytes,
@@ -186,7 +186,7 @@ template <typename InputIteratorRA, typename OutputIteratorRA, typename ScanOp, 
 __global__ void CnpDispatchKernel(
     int                 timing_iterations,
     size_t              *d_temp_storage_bytes,
-    cudaError_t         *d_cnp_error,
+    cudaError_t         *d_cdp_error,
 
     void                *d_temp_storage,
     size_t              temp_storage_bytes,
@@ -198,23 +198,23 @@ __global__ void CnpDispatchKernel(
     bool                stream_synchronous)
 {
 #ifndef CUB_CDP
-    *d_cnp_error = cudaErrorNotSupported;
+    *d_cdp_error = cudaErrorNotSupported;
 #else
-    *d_cnp_error = Dispatch(Int2Type<false>(), timing_iterations, d_temp_storage_bytes, d_cnp_error, d_temp_storage, temp_storage_bytes, d_in, d_out, scan_op, identity, num_items, 0, stream_synchronous);
+    *d_cdp_error = Dispatch(Int2Type<false>(), timing_iterations, d_temp_storage_bytes, d_cdp_error, d_temp_storage, temp_storage_bytes, d_in, d_out, scan_op, identity, num_items, 0, stream_synchronous);
     *d_temp_storage_bytes = temp_storage_bytes;
 #endif
 }
 
 
 /**
- * Dispatch to CNP kernel
+ * Dispatch to CDP kernel
  */
 template <typename InputIteratorRA, typename OutputIteratorRA, typename ScanOp, typename Identity, typename SizeT>
 cudaError_t Dispatch(
-    Int2Type<true>      use_cnp,
+    Int2Type<true>      use_cdp,
     int                 timing_iterations,
     size_t              *d_temp_storage_bytes,
-    cudaError_t         *d_cnp_error,
+    cudaError_t         *d_cdp_error,
 
     void                *d_temp_storage,
     size_t              &temp_storage_bytes,
@@ -227,14 +227,14 @@ cudaError_t Dispatch(
     bool                stream_synchronous)
 {
     // Invoke kernel to invoke device-side dispatch
-    CnpDispatchKernel<<<1,1>>>(timing_iterations, d_temp_storage_bytes, d_cnp_error, d_temp_storage, temp_storage_bytes, d_in, d_out, scan_op, identity, num_items, stream_synchronous);
+    CnpDispatchKernel<<<1,1>>>(timing_iterations, d_temp_storage_bytes, d_cdp_error, d_temp_storage, temp_storage_bytes, d_in, d_out, scan_op, identity, num_items, stream_synchronous);
 
     // Copy out temp_storage_bytes
     CubDebugExit(cudaMemcpy(&temp_storage_bytes, d_temp_storage_bytes, sizeof(size_t) * 1, cudaMemcpyDeviceToHost));
 
     // Copy out error
     cudaError_t retval;
-    CubDebugExit(cudaMemcpy(&retval, d_cnp_error, sizeof(cudaError_t) * 1, cudaMemcpyDeviceToHost));
+    CubDebugExit(cudaMemcpy(&retval, d_cdp_error, sizeof(cudaError_t) * 1, cudaMemcpyDeviceToHost));
     return retval;
 }
 
@@ -314,7 +314,7 @@ T Initialize(
  * Test DeviceScan
  */
 template <
-    bool            CNP,
+    bool            CDP,
     typename        T,
     typename        ScanOp,
     typename        IdentityT>
@@ -326,7 +326,7 @@ void Test(
     char*           type_string)
 {
     printf("%s %s cub::DeviceScan::%s %d items, %s %d-byte elements, gen-mode %s\n",
-        (CNP) ? "CNP device invoked" : "Host-invoked",
+        (CDP) ? "CDP device invoked" : "Host-invoked",
         (Equals<IdentityT, NullType>::VALUE) ? "Inclusive" : "Exclusive",
         (Equals<ScanOp, Sum>::VALUE) ? "Sum" : "Scan",
         num_items,
@@ -348,16 +348,16 @@ void Test(
     CubDebugExit(g_allocator.DeviceAllocate((void**)&d_in,          sizeof(T) * num_items));
     CubDebugExit(g_allocator.DeviceAllocate((void**)&d_out,         sizeof(T) * num_items));
 
-    // Allocate CNP device arrays
+    // Allocate CDP device arrays
     size_t          *d_temp_storage_bytes = NULL;
-    cudaError_t     *d_cnp_error = NULL;
+    cudaError_t     *d_cdp_error = NULL;
     CubDebugExit(g_allocator.DeviceAllocate((void**)&d_temp_storage_bytes,  sizeof(size_t) * 1));
-    CubDebugExit(g_allocator.DeviceAllocate((void**)&d_cnp_error,   sizeof(cudaError_t) * 1));
+    CubDebugExit(g_allocator.DeviceAllocate((void**)&d_cdp_error,   sizeof(cudaError_t) * 1));
 
     // Allocate temporary storage
     void            *d_temp_storage = NULL;
     size_t          temp_storage_bytes = 0;
-    CubDebugExit(Dispatch(Int2Type<CNP>(), 1, d_temp_storage_bytes, d_cnp_error, d_temp_storage, temp_storage_bytes, d_in, d_out, scan_op, identity, num_items, 0, true));
+    CubDebugExit(Dispatch(Int2Type<CDP>(), 1, d_temp_storage_bytes, d_cdp_error, d_temp_storage, temp_storage_bytes, d_in, d_out, scan_op, identity, num_items, 0, true));
     CubDebugExit(g_allocator.DeviceAllocate(&d_temp_storage, temp_storage_bytes));
 
     // Initialize/clear device arrays
@@ -365,7 +365,7 @@ void Test(
     CubDebugExit(cudaMemset(d_out, 0, sizeof(T) * num_items));
 
     // Run warmup/correctness iteration
-    CubDebugExit(Dispatch(Int2Type<CNP>(), 1, d_temp_storage_bytes, d_cnp_error, d_temp_storage, temp_storage_bytes, d_in, d_out, scan_op, identity, num_items, 0, true));
+    CubDebugExit(Dispatch(Int2Type<CDP>(), 1, d_temp_storage_bytes, d_cdp_error, d_temp_storage, temp_storage_bytes, d_in, d_out, scan_op, identity, num_items, 0, true));
 
     // Check for correctness (and display results, if specified)
     int compare = CompareDeviceResults(h_reference, d_out, num_items, true, g_verbose);
@@ -378,7 +378,7 @@ void Test(
     // Performance
     GpuTimer gpu_timer;
     gpu_timer.Start();
-    CubDebugExit(Dispatch(Int2Type<CNP>(), g_timing_iterations, d_temp_storage_bytes, d_cnp_error, d_temp_storage, temp_storage_bytes, d_in, d_out, scan_op, identity, num_items, 0, false));
+    CubDebugExit(Dispatch(Int2Type<CDP>(), g_timing_iterations, d_temp_storage_bytes, d_cdp_error, d_temp_storage, temp_storage_bytes, d_in, d_out, scan_op, identity, num_items, 0, false));
     gpu_timer.Stop();
     float elapsed_millis = gpu_timer.ElapsedMillis();
 
@@ -399,7 +399,7 @@ void Test(
     if (d_in) CubDebugExit(g_allocator.DeviceFree(d_in));
     if (d_out) CubDebugExit(g_allocator.DeviceFree(d_out));
     if (d_temp_storage_bytes) CubDebugExit(g_allocator.DeviceFree(d_temp_storage_bytes));
-    if (d_cnp_error) CubDebugExit(g_allocator.DeviceFree(d_cnp_error));
+    if (d_cdp_error) CubDebugExit(g_allocator.DeviceFree(d_cdp_error));
     if (d_temp_storage) CubDebugExit(g_allocator.DeviceFree(d_temp_storage));
 
     // Correctness asserts
@@ -529,7 +529,7 @@ int main(int argc, char** argv)
             "[--repeat=<times to repeat tests>]"
             "[--quick]"
             "[--v] "
-            "[--cnp]"
+            "[--cdp]"
             "\n", argv[0]);
         exit(0);
     }

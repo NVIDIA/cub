@@ -65,10 +65,10 @@ template <int BINS, int CHANNELS, int ACTIVE_CHANNELS, typename InputIteratorRA,
 __host__ __device__ __forceinline__
 cudaError_t Dispatch(
     Int2Type<GRID_HISTO_SORT> algorithm,
-    Int2Type<false>     use_cnp,
+    Int2Type<false>     use_cdp,
     int                 timing_iterations,
     size_t              *d_temp_storage_bytes,
-    cudaError_t         *d_cnp_error,
+    cudaError_t         *d_cdp_error,
 
     void                *d_temp_storage,
     size_t              &temp_storage_bytes,
@@ -96,10 +96,10 @@ template <int BINS, int CHANNELS, int ACTIVE_CHANNELS, typename InputIteratorRA,
 __host__ __device__ __forceinline__
 cudaError_t Dispatch(
     Int2Type<GRID_HISTO_SHARED_ATOMIC> algorithm,
-    Int2Type<false>     use_cnp,
+    Int2Type<false>     use_cdp,
     int                 timing_iterations,
     size_t              *d_temp_storage_bytes,
-    cudaError_t         *d_cnp_error,
+    cudaError_t         *d_cdp_error,
 
     void                *d_temp_storage,
     size_t              &temp_storage_bytes,
@@ -125,10 +125,10 @@ template <int BINS, int CHANNELS, int ACTIVE_CHANNELS, typename InputIteratorRA,
 __host__ __device__ __forceinline__
 cudaError_t Dispatch(
     Int2Type<GRID_HISTO_GLOBAL_ATOMIC> algorithm,
-    Int2Type<false>     use_cnp,
+    Int2Type<false>     use_cdp,
     int                 timing_iterations,
     size_t              *d_temp_storage_bytes,
-    cudaError_t         *d_cnp_error,
+    cudaError_t         *d_cdp_error,
 
     void                *d_temp_storage,
     size_t              &temp_storage_bytes,
@@ -159,7 +159,7 @@ __global__ void CnpDispatchKernel(
     Int2Type<ALGORITHM> algorithm,
     int                 timing_iterations,
     size_t              *d_temp_storage_bytes,
-    cudaError_t         *d_cnp_error,
+    cudaError_t         *d_cdp_error,
 
     void                *d_temp_storage,
     size_t              temp_storage_bytes,
@@ -169,24 +169,24 @@ __global__ void CnpDispatchKernel(
     bool                stream_synchronous)
 {
 #ifndef CUB_CDP
-    *d_cnp_error = cudaErrorNotSupported;
+    *d_cdp_error = cudaErrorNotSupported;
 #else
-    *d_cnp_error = Dispatch<BINS, CHANNELS, ACTIVE_CHANNELS>(algorithm, Int2Type<false>(), timing_iterations, d_temp_storage_bytes, d_cnp_error, d_temp_storage, temp_storage_bytes, d_sample_itr, d_out_histograms.array, num_samples, 0, stream_synchronous);
+    *d_cdp_error = Dispatch<BINS, CHANNELS, ACTIVE_CHANNELS>(algorithm, Int2Type<false>(), timing_iterations, d_temp_storage_bytes, d_cdp_error, d_temp_storage, temp_storage_bytes, d_sample_itr, d_out_histograms.array, num_samples, 0, stream_synchronous);
     *d_temp_storage_bytes = temp_storage_bytes;
 #endif
 }
 
 
 /**
- * Dispatch to CNP kernel
+ * Dispatch to CDP kernel
  */
 template <int BINS, int CHANNELS, int ACTIVE_CHANNELS, typename InputIteratorRA, typename HistoCounter, int ALGORITHM>
 cudaError_t Dispatch(
     Int2Type<ALGORITHM> algorithm,
-    Int2Type<true>      use_cnp,
+    Int2Type<true>      use_cdp,
     int                 timing_iterations,
     size_t              *d_temp_storage_bytes,
-    cudaError_t         *d_cnp_error,
+    cudaError_t         *d_cdp_error,
 
     void                *d_temp_storage,
     size_t              &temp_storage_bytes,
@@ -202,14 +202,14 @@ cudaError_t Dispatch(
         d_histo_wrapper.array[CHANNEL] = d_histograms[CHANNEL];
 
     // Invoke kernel to invoke device-side dispatch
-    CnpDispatchKernel<BINS, CHANNELS, ACTIVE_CHANNELS, InputIteratorRA, HistoCounter, ALGORITHM><<<1,1>>>(algorithm, timing_iterations, d_temp_storage_bytes, d_cnp_error, d_temp_storage, temp_storage_bytes, d_sample_itr, d_histo_wrapper, num_samples, stream_synchronous);
+    CnpDispatchKernel<BINS, CHANNELS, ACTIVE_CHANNELS, InputIteratorRA, HistoCounter, ALGORITHM><<<1,1>>>(algorithm, timing_iterations, d_temp_storage_bytes, d_cdp_error, d_temp_storage, temp_storage_bytes, d_sample_itr, d_histo_wrapper, num_samples, stream_synchronous);
 
     // Copy out temp_storage_bytes
     CubDebugExit(cudaMemcpy(&temp_storage_bytes, d_temp_storage_bytes, sizeof(size_t) * 1, cudaMemcpyDeviceToHost));
 
     // Copy out error
     cudaError_t retval;
-    CubDebugExit(cudaMemcpy(&retval, d_cnp_error, sizeof(cudaError_t) * 1, cudaMemcpyDeviceToHost));
+    CubDebugExit(cudaMemcpy(&retval, d_cdp_error, sizeof(cudaError_t) * 1, cudaMemcpyDeviceToHost));
     return retval;
 }
 
@@ -316,7 +316,7 @@ void Initialize(
  * Test DeviceHistogram
  */
 template <
-    bool                        CNP,
+    bool                        CDP,
     int                         BINS,
     int                         CHANNELS,
     int                         ACTIVE_CHANNELS,
@@ -336,11 +336,11 @@ void Test(
     typedef TexTransformIteratorRA<IteratorValue, BinOp, SampleT> BinningIterator;
 
     int compare         = 0;
-    int cnp_compare     = 0;
+    int cdp_compare     = 0;
     int total_bins      = ACTIVE_CHANNELS * BINS;
 
     printf("%s cub::DeviceHistogram %s %d %s samples (%dB), %d bins, %d channels, %d active channels, gen-mode %s\n",
-        (CNP) ? "CNP device invoked" : "Host-invoked",
+        (CDP) ? "CDP device invoked" : "Host-invoked",
         (ALGORITHM == GRID_HISTO_SHARED_ATOMIC) ? "satomic" : (ALGORITHM == GRID_HISTO_GLOBAL_ATOMIC) ? "gatomic" : "sort",
         num_samples,
         type_string,
@@ -364,11 +364,11 @@ void Test(
     CubDebugExit(g_allocator.DeviceAllocate((void**)&d_samples,             sizeof(SampleT) * num_samples));
     CubDebugExit(g_allocator.DeviceAllocate((void**)&d_histograms_linear,   sizeof(HistoCounterT) * total_bins));
 
-    // Allocate CNP device arrays
+    // Allocate CDP device arrays
     size_t          *d_temp_storage_bytes = NULL;
-    cudaError_t     *d_cnp_error = NULL;
+    cudaError_t     *d_cdp_error = NULL;
     CubDebugExit(g_allocator.DeviceAllocate((void**)&d_temp_storage_bytes,  sizeof(size_t) * 1));
-    CubDebugExit(g_allocator.DeviceAllocate((void**)&d_cnp_error,           sizeof(cudaError_t) * 1));
+    CubDebugExit(g_allocator.DeviceAllocate((void**)&d_cdp_error,           sizeof(cudaError_t) * 1));
 
     // Initialize/clear device arrays
     CubDebugExit(cudaMemcpy(d_samples, h_samples, sizeof(SampleT) * num_samples, cudaMemcpyHostToDevice));
@@ -388,11 +388,11 @@ void Test(
     // Allocate temporary storage
     void            *d_temp_storage = NULL;
     size_t          temp_storage_bytes = 0;
-    Dispatch<BINS, CHANNELS, ACTIVE_CHANNELS>(algorithm, Int2Type<CNP>(), 1, d_temp_storage_bytes, d_cnp_error, d_temp_storage, temp_storage_bytes, d_sample_itr, d_histograms, num_samples, 0, true);
+    Dispatch<BINS, CHANNELS, ACTIVE_CHANNELS>(algorithm, Int2Type<CDP>(), 1, d_temp_storage_bytes, d_cdp_error, d_temp_storage, temp_storage_bytes, d_sample_itr, d_histograms, num_samples, 0, true);
     CubDebugExit(g_allocator.DeviceAllocate(&d_temp_storage, temp_storage_bytes));
 
     // Run warmup/correctness iteration
-    Dispatch<BINS, CHANNELS, ACTIVE_CHANNELS>(algorithm, Int2Type<CNP>(), 1, d_temp_storage_bytes, d_cnp_error, d_temp_storage, temp_storage_bytes, d_sample_itr, d_histograms, num_samples, 0, true);
+    Dispatch<BINS, CHANNELS, ACTIVE_CHANNELS>(algorithm, Int2Type<CDP>(), 1, d_temp_storage_bytes, d_cdp_error, d_temp_storage, temp_storage_bytes, d_sample_itr, d_histograms, num_samples, 0, true);
 
     // Check for correctness (and display results, if specified)
     compare = CompareDeviceResults((HistoCounterT*) h_reference_linear, d_histograms_linear, total_bins, g_verbose, g_verbose);
@@ -406,7 +406,7 @@ void Test(
     // Performance
     GpuTimer gpu_timer;
     gpu_timer.Start();
-    Dispatch<BINS, CHANNELS, ACTIVE_CHANNELS>(algorithm, Int2Type<CNP>(), g_timing_iterations, d_temp_storage_bytes, d_cnp_error, d_temp_storage, temp_storage_bytes, d_sample_itr, d_histograms, num_samples, 0, false);
+    Dispatch<BINS, CHANNELS, ACTIVE_CHANNELS>(algorithm, Int2Type<CDP>(), g_timing_iterations, d_temp_storage_bytes, d_cdp_error, d_temp_storage, temp_storage_bytes, d_sample_itr, d_histograms, num_samples, 0, false);
     gpu_timer.Stop();
     float elapsed_millis = gpu_timer.ElapsedMillis();
 
@@ -433,12 +433,12 @@ void Test(
     if (d_samples) CubDebugExit(g_allocator.DeviceFree(d_samples));
     if (d_histograms_linear) CubDebugExit(g_allocator.DeviceFree(d_histograms_linear));
     if (d_temp_storage_bytes) CubDebugExit(g_allocator.DeviceFree(d_temp_storage_bytes));
-    if (d_cnp_error) CubDebugExit(g_allocator.DeviceFree(d_cnp_error));
+    if (d_cdp_error) CubDebugExit(g_allocator.DeviceFree(d_cdp_error));
     if (d_temp_storage) CubDebugExit(g_allocator.DeviceFree(d_temp_storage));
 
     // Correctness asserts
     AssertEquals(0, compare);
-    AssertEquals(0, cnp_compare);
+    AssertEquals(0, cdp_compare);
 }
 
 
@@ -588,7 +588,7 @@ int main(int argc, char** argv)
             "[--repeat=<times to repeat tests>]"
             "[--quick]"
             "[--v] "
-            "[--cnp]"
+            "[--cdp]"
             "\n", argv[0]);
         exit(0);
     }

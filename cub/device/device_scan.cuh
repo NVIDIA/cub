@@ -155,7 +155,7 @@ __global__ void ScanKernel(
  */
 
 /**
- * \brief DeviceScan provides operations for computing a device-wide, parallel prefix scan across data items residing within global memory. ![](scan_logo.png)
+ * \brief DeviceScan provides operations for computing a device-wide, parallel prefix scan across data items residing within global memory. ![](device_scan.png)
  *
  * \par Overview
  * Given a list of input elements and a binary reduction operator, a [<em>prefix scan</em>](http://en.wikipedia.org/wiki/Prefix_sum)
@@ -167,7 +167,10 @@ __global__ void ScanKernel(
  * the <em>i</em><sup>th</sup> output reduction.
  *
  * \par Usage Considerations
- * \cdp_class
+ * \cdp_class{DeviceScan}
+ *
+ * \par Performance
+ * \image html scan_perf.png
  *
  */
 struct DeviceScan

@@ -172,7 +172,7 @@ __global__ void AggregateHistoKernel(
  * counts the number of observations that fall into each of the disjoint categories (known as <em>bins</em>).
  *
  * \par Usage Considerations
- * \cdp_class
+ * \cdp_class{DeviceHistogram}
  *
  */
 struct DeviceHistogram
@@ -605,16 +605,47 @@ struct DeviceHistogram
 
 
     /**
-     * \brief Computes a device-wide histogram.  Uses fast block-sorting to compute the histogram.
-     *
-     * \par
-     * Delivers consistent throughput regardless of sample diversity.
+     * \brief Computes a device-wide histogram.  Uses fast block-sorting to compute the histogram. Delivers consistent throughput regardless of sample diversity.
      *
      * \devicestorage
      *
      * \cdp
      *
      * \iterator
+     *
+     * \par
+     * The code snippet below illustrates the computation of a 256-bin histogram of
+     * single-channel <tt>unsigned char</tt> samples.
+     * \par
+     * \code
+     * #include <cub/cub.cuh>
+     * ...
+     *
+     * // Declare and initialize device pointers for input samples and 256-bin output histogram
+     * unsigned char *d_samples;
+     * unsigned int *d_histogram;
+     * int num_items = ...
+     * ...
+     *
+     * // Wrap d_samples device pointer in a random-access texture iterator
+     * cub::TexIteratorRA<unsigned int> d_samples_tex_itr;
+     * d_samples_tex_itr.BindTexture(d_samples, num_items * sizeof(unsigned char));
+     *
+     * // Determine temporary device storage requirements for histogram computation
+     * void *d_temp_storage = NULL;
+     * size_t temp_storage_bytes = 0;
+     * cub::DeviceHistogram::SingleChannelSorting<256>(d_temp_storage, temp_storage_bytes, d_samples_tex_itr, d_histogram, num_items);
+     *
+     * // Allocate temporary storage for histogram computation
+     * cudaMalloc(&d_temp_storage, temp_storage_bytes);
+     *
+     * // Compute histogram
+     * cub::DeviceHistogram::SingleChannelSorting<256>(d_temp_storage, temp_storage_bytes, d_samples_tex_itr, d_histogram, num_items);
+     *
+     * // Unbind texture iterator
+     * d_samples_tex_itr.UnbindTexture();
+     *
+     * \endcode
      *
      * \tparam BINS                 Number of histogram bins per channel
      * \tparam InputIteratorRA      <b>[inferred]</b> Random-access iterator type for input (may be a simple pointer type)  Must have a value type that can be cast as an integer in the range [0..BINS-1]
@@ -638,17 +669,49 @@ struct DeviceHistogram
             d_temp_storage, temp_storage_bytes, d_samples, &d_histogram, num_samples, stream, stream_synchronous);
     }
 
+
     /**
-     * \brief Computes a device-wide histogram.  Uses shared-memory atomic read-modify-write operations to compute the histogram.
-     *
-     * \par
-     * Input samples having lower diversity can cause performance to be degraded.
+     * \brief Computes a device-wide histogram.  Uses shared-memory atomic read-modify-write operations to compute the histogram.  Input samples having lower diversity can cause performance to be degraded.
      *
      * \devicestorage
      *
      * \cdp
      *
      * \iterator
+     *
+     * \par
+     * The code snippet below illustrates the computation of a 256-bin histogram of
+     * single-channel <tt>unsigned char</tt> samples.
+     * \par
+     * \code
+     * #include <cub/cub.cuh>
+     * ...
+     *
+     * // Declare and initialize device pointers for input samples and 256-bin output histogram
+     * unsigned char *d_samples;
+     * unsigned int *d_histogram;
+     * int num_items = ...
+     * ...
+     *
+     * // Wrap d_samples device pointer in a random-access texture iterator
+     * cub::TexIteratorRA<unsigned int> d_samples_tex_itr;
+     * d_samples_tex_itr.BindTexture(d_samples, num_items * sizeof(unsigned char));
+     *
+     * // Determine temporary device storage requirements for histogram computation
+     * void *d_temp_storage = NULL;
+     * size_t temp_storage_bytes = 0;
+     * cub::DeviceHistogram::SingleChannelSorting<256>(d_temp_storage, temp_storage_bytes, d_samples_tex_itr, d_histogram, num_items);
+     *
+     * // Allocate temporary storage for histogram computation
+     * cudaMalloc(&d_temp_storage, temp_storage_bytes);
+     *
+     * // Compute histogram
+     * cub::DeviceHistogram::SingleChannelSharedAtomic<256>(d_temp_storage, temp_storage_bytes, d_samples_tex_itr, d_histogram, num_items);
+     *
+     * // Unbind texture iterator
+     * d_samples_tex_itr.UnbindTexture();
+     *
+     * \endcode
      *
      * \tparam BINS                 Number of histogram bins per channel
      * \tparam InputIteratorRA      <b>[inferred]</b> Random-access iterator type for input (may be a simple pointer type)  Must have a value type that can be cast as an integer in the range [0..BINS-1]
@@ -674,16 +737,47 @@ struct DeviceHistogram
 
 
     /**
-     * \brief Computes a device-wide histogram.  Uses global-memory atomic read-modify-write operations to compute the histogram.
-     *
-     * \par
-     * Input samples having lower diversity can cause performance to be degraded.
+     * \brief Computes a device-wide histogram.  Uses global-memory atomic read-modify-write operations to compute the histogram.  Input samples having lower diversity can cause performance to be degraded.
      *
      * \devicestorage
      *
      * \cdp
      *
      * \iterator
+     *
+     * \par
+     * The code snippet below illustrates the computation of a 256-bin histogram of
+     * single-channel <tt>unsigned char</tt> samples.
+     * \par
+     * \code
+     * #include <cub/cub.cuh>
+     * ...
+     *
+     * // Declare and initialize device pointers for input samples and 256-bin output histogram
+     * unsigned char *d_samples;
+     * unsigned int *d_histogram;
+     * int num_items = ...
+     * ...
+     *
+     * // Wrap d_samples device pointer in a random-access texture iterator
+     * cub::TexIteratorRA<unsigned int> d_samples_tex_itr;
+     * d_samples_tex_itr.BindTexture(d_samples, num_items * sizeof(unsigned char));
+     *
+     * // Determine temporary device storage requirements for histogram computation
+     * void *d_temp_storage = NULL;
+     * size_t temp_storage_bytes = 0;
+     * cub::DeviceHistogram::SingleChannelSorting<256>(d_temp_storage, temp_storage_bytes, d_samples_tex_itr, d_histogram, num_items);
+     *
+     * // Allocate temporary storage for histogram computation
+     * cudaMalloc(&d_temp_storage, temp_storage_bytes);
+     *
+     * // Compute histogram
+     * cub::DeviceHistogram::SingleChannelGlobalAtomic<256>(d_temp_storage, temp_storage_bytes, d_samples_tex_itr, d_histogram, num_items);
+     *
+     * // Unbind texture iterator
+     * d_samples_tex_itr.UnbindTexture();
+     *
+     * \endcode
      *
      * \tparam BINS                 Number of histogram bins per channel
      * \tparam InputIteratorRA      <b>[inferred]</b> Random-access iterator type for input (may be a simple pointer type)  Must have a value type that can be cast as an integer in the range [0..BINS-1]
@@ -716,16 +810,48 @@ struct DeviceHistogram
 
 
     /**
-     * \brief Computes a device-wide histogram from multi-channel data.  Uses fast block-sorting to compute the histogram.
-     *
-     * \par
-     * Delivers consistent throughput regardless of sample diversity.
+     * \brief Computes a device-wide histogram from multi-channel data.  Uses fast block-sorting to compute the histogram.  Delivers consistent throughput regardless of sample diversity.
      *
      * \devicestorage
      *
      * \cdp
      *
      * \iterator
+     *
+     * \par
+     * The code snippet below illustrates the computation of three 256-bin histograms from
+     * interleaved quad-channel <tt>unsigned char</tt> samples (e.g., RGB histograms from RGBA samples).
+     * \par
+     * \code
+     * #include <cub/cub.cuh>
+     * ...
+     *
+     * // Declare and initialize device pointers for input samples and
+     * // three 256-bin output histograms
+     * unsigned char *d_samples;
+     * unsigned int *d_histograms[3];
+     * int num_items = ...
+     * ...
+     *
+     * // Wrap d_samples device pointer in a random-access texture iterator
+     * cub::TexIteratorRA<unsigned int> d_samples_tex_itr;
+     * d_samples_tex_itr.BindTexture(d_samples, num_items * sizeof(unsigned char));
+     *
+     * // Determine temporary device storage requirements for histogram computation
+     * void *d_temp_storage = NULL;
+     * size_t temp_storage_bytes = 0;
+     * cub::DeviceHistogram::MultiChannelSorting<256>(d_temp_storage, temp_storage_bytes, d_samples_tex_itr, d_histograms, num_items);
+     *
+     * // Allocate temporary storage for histogram computation
+     * cudaMalloc(&d_temp_storage, temp_storage_bytes);
+     *
+     * // Compute histograms
+     * cub::DeviceHistogram::MultiChannelSorting<256>(d_temp_storage, temp_storage_bytes, d_samples_tex_itr, d_histograms, num_items);
+     *
+     * // Unbind texture iterator
+     * d_samples_tex_itr.UnbindTexture();
+     *
+     * \endcode
      *
      * \tparam BINS                 Number of histogram bins per channel
      * \tparam CHANNELS             Number of channels interleaved in the input data (may be greater than the number of channels being actively histogrammed)
@@ -745,7 +871,7 @@ struct DeviceHistogram
         size_t              &temp_storage_bytes,                ///< [in,out] Size in bytes of \p d_temp_storage allocation.
         InputIteratorRA     d_samples,                          ///< [in] Input samples. (Channels, if any, are interleaved in "AOS" format)
         HistoCounter        *d_histograms[ACTIVE_CHANNELS],     ///< [out] Array of channel histogram counter arrays, each having BINS counters of integral type \p HistoCounter.
-        int                 num_samples,                        ///< [in] Number of samples to process
+        int                 num_samples,                        ///< [in] Total number of samples to process in all channels, including non-active channels
         cudaStream_t        stream              = 0,            ///< [in] <b>[optional]</b> CUDA stream to launch kernels within.  Default is stream<sub>0</sub>.
         bool                stream_synchronous  = false)        ///< [in] <b>[optional]</b> Whether or not to synchronize the stream after every kernel launch to check for errors.  May cause significant slowdown.  Default is \p false.
     {
@@ -755,16 +881,48 @@ struct DeviceHistogram
 
 
     /**
-     * \brief Computes a device-wide histogram from multi-channel data.  Uses shared-memory atomic read-modify-write operations to compute the histogram.
-     *
-     * \par
-     * Input samples having lower diversity can cause performance to be degraded.
+     * \brief Computes a device-wide histogram from multi-channel data.  Uses shared-memory atomic read-modify-write operations to compute the histogram.  Input samples having lower diversity can cause performance to be degraded.
      *
      * \devicestorage
      *
      * \cdp
      *
      * \iterator
+     *
+     * \par
+     * The code snippet below illustrates the computation of three 256-bin histograms from
+     * interleaved quad-channel <tt>unsigned char</tt> samples (e.g., RGB histograms from RGBA samples).
+     * \par
+     * \code
+     * #include <cub/cub.cuh>
+     * ...
+     *
+     * // Declare and initialize device pointers for input samples and
+     * // three 256-bin output histograms
+     * unsigned char *d_samples;
+     * unsigned int *d_histograms[3];
+     * int num_items = ...
+     * ...
+     *
+     * // Wrap d_samples device pointer in a random-access texture iterator
+     * cub::TexIteratorRA<unsigned int> d_samples_tex_itr;
+     * d_samples_tex_itr.BindTexture(d_samples, num_items * sizeof(unsigned char));
+     *
+     * // Determine temporary device storage requirements for histogram computation
+     * void *d_temp_storage = NULL;
+     * size_t temp_storage_bytes = 0;
+     * cub::DeviceHistogram::MultiChannelSharedAtomic<256>(d_temp_storage, temp_storage_bytes, d_samples_tex_itr, d_histograms, num_items);
+     *
+     * // Allocate temporary storage for histogram computation
+     * cudaMalloc(&d_temp_storage, temp_storage_bytes);
+     *
+     * // Compute histograms
+     * cub::DeviceHistogram::MultiChannelSharedAtomic<256>(d_temp_storage, temp_storage_bytes, d_samples_tex_itr, d_histograms, num_items);
+     *
+     * // Unbind texture iterator
+     * d_samples_tex_itr.UnbindTexture();
+     *
+     * \endcode
      *
      * \tparam BINS                 Number of histogram bins per channel
      * \tparam CHANNELS             Number of channels interleaved in the input data (may be greater than the number of channels being actively histogrammed)
@@ -784,7 +942,7 @@ struct DeviceHistogram
         size_t              &temp_storage_bytes,                ///< [in,out] Size in bytes of \p d_temp_storage allocation.
         InputIteratorRA     d_samples,                          ///< [in] Input samples. (Channels, if any, are interleaved in "AOS" format)
         HistoCounter        *d_histograms[ACTIVE_CHANNELS],     ///< [out] Array of channel histogram counter arrays, each having BINS counters of integral type \p HistoCounter.
-        int                 num_samples,                        ///< [in] Number of samples to process
+        int                 num_samples,                        ///< [in] Total number of samples to process in all channels, including non-active channels
         cudaStream_t        stream              = 0,            ///< [in] <b>[optional]</b> CUDA stream to launch kernels within.  Default is stream<sub>0</sub>.
         bool                stream_synchronous  = false)        ///< [in] <b>[optional]</b> Whether or not to synchronize the stream after every kernel launch to check for errors.  May cause significant slowdown.  Default is \p false.
     {
@@ -794,16 +952,48 @@ struct DeviceHistogram
 
 
     /**
-     * \brief Computes a device-wide histogram from multi-channel data.  Uses global-memory atomic read-modify-write operations to compute the histogram.
-     *
-     * \par
-     * Input samples having lower diversity can cause performance to be degraded.
+     * \brief Computes a device-wide histogram from multi-channel data.  Uses global-memory atomic read-modify-write operations to compute the histogram.  Input samples having lower diversity can cause performance to be degraded.
      *
      * \devicestorage
      *
      * \cdp
      *
      * \iterator
+     *
+     * \par
+     * The code snippet below illustrates the computation of three 256-bin histograms from
+     * interleaved quad-channel <tt>unsigned char</tt> samples (e.g., RGB histograms from RGBA samples).
+     * \par
+     * \code
+     * #include <cub/cub.cuh>
+     * ...
+     *
+     * // Declare and initialize device pointers for input samples and
+     * // three 256-bin output histograms
+     * unsigned char *d_samples;
+     * unsigned int *d_histograms[3];
+     * int num_items = ...
+     * ...
+     *
+     * // Wrap d_samples device pointer in a random-access texture iterator
+     * cub::TexIteratorRA<unsigned int> d_samples_tex_itr;
+     * d_samples_tex_itr.BindTexture(d_samples, num_items * sizeof(unsigned char));
+     *
+     * // Determine temporary device storage requirements for histogram computation
+     * void *d_temp_storage = NULL;
+     * size_t temp_storage_bytes = 0;
+     * cub::DeviceHistogram::MultiChannelGlobalAtomic<256>(d_temp_storage, temp_storage_bytes, d_samples_tex_itr, d_histograms, num_items);
+     *
+     * // Allocate temporary storage for histogram computation
+     * cudaMalloc(&d_temp_storage, temp_storage_bytes);
+     *
+     * // Compute histograms
+     * cub::DeviceHistogram::MultiChannelGlobalAtomic<256>(d_temp_storage, temp_storage_bytes, d_samples_tex_itr, d_histograms, num_items);
+     *
+     * // Unbind texture iterator
+     * d_samples_tex_itr.UnbindTexture();
+     *
+     * \endcode
      *
      * \tparam BINS                 Number of histogram bins per channel
      * \tparam CHANNELS             Number of channels interleaved in the input data (may be greater than the number of channels being actively histogrammed)
@@ -823,7 +1013,7 @@ struct DeviceHistogram
         size_t              &temp_storage_bytes,                ///< [in,out] Size in bytes of \p d_temp_storage allocation.
         InputIteratorRA     d_samples,                          ///< [in] Input samples. (Channels, if any, are interleaved in "AOS" format)
         HistoCounter        *d_histograms[ACTIVE_CHANNELS],     ///< [out] Array of channel histogram counter arrays, each having BINS counters of integral type \p HistoCounter.
-        int                 num_samples,                        ///< [in] Number of samples to process
+        int                 num_samples,                        ///< [in] Total number of samples to process in all channels, including non-active channels
         cudaStream_t        stream              = 0,            ///< [in] <b>[optional]</b> CUDA stream to launch kernels within.  Default is stream<sub>0</sub>.
         bool                stream_synchronous  = false)        ///< [in] <b>[optional]</b> Whether or not to synchronize the stream after every kernel launch to check for errors.  May cause significant slowdown.  Default is \p false.
     {

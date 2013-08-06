@@ -30,7 +30,7 @@
 #
 # Makefile usage
 #
-# make <target> [sm=<XXX,...>] [cnp=<0|1>] [force64=<0|1>] [abi=<0|1>] [open64=<0|1>] [verbose=<0|1>] [keep=<0|1>]
+# make <target> [sm=<XXX,...>] [cdp=<0|1>] [force64=<0|1>] [abi=<0|1>] [open64=<0|1>] [verbose=<0|1>] [keep=<0|1>]
 #
 #-------------------------------------------------------------------------------
  
@@ -50,12 +50,12 @@ OSUPPER = $(shell uname -s 2>/dev/null | tr [:lower:] [:upper:])
 #-------------------------------------------------------------------------------
 
 # Set CUB_CDP macro for programs (default: no)
-ifeq ($(cnp), 1)
+ifeq ($(cdp), 1)
 	DEFINES += -DCUB_CDP
-	CNP_SUFFIX = cnp
+	CDP_SUFFIX = cdp
     NVCCFLAGS += -rdc=true -lcudadevrt
 else
-	CNP_SUFFIX = nocnp
+	CDP_SUFFIX = nocdp
 endif
 
 #-------------------------------------------------------------------------------
@@ -146,7 +146,7 @@ ifeq ($(keep), 1)
 endif
 
 # Suffix to append to each binary
-SUFFIX = sm$(SM_ARCH)_$(PTX_SUFFIX)_$(NVCC_VERSION)_$(ABI_SUFFIX)_$(CNP_SUFFIX)_$(CPU_ARCH_SUFFIX)
+SUFFIX = sm$(SM_ARCH)_$(PTX_SUFFIX)_$(NVCC_VERSION)_$(ABI_SUFFIX)_$(CDP_SUFFIX)_$(CPU_ARCH_SUFFIX)
 
 
 

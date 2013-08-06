@@ -62,11 +62,12 @@ CachingDeviceAllocator  g_allocator;
  * Dispatch to key-value pair sorting entrypoint
  */
 template <typename Key, typename Value>
-//__host__ __device__ __forceinline__
+__host__ __device__ __forceinline__
 cudaError_t Dispatch(
-    Int2Type<false>     use_cnp,
+    Int2Type<false>     use_cdp,
+    int                 *d_selector,
     size_t              *d_temp_storage_bytes,
-    cudaError_t         *d_cnp_error,
+    cudaError_t         *d_cdp_error,
 
     void                *d_temp_storage,
     size_t              &temp_storage_bytes,
@@ -91,8 +92,9 @@ cudaError_t Dispatch(
  */
 template <typename Key, typename Value>
 __global__ void CnpDispatchKernel(
+    int                 *d_selector,
     size_t              *d_temp_storage_bytes,
-    cudaError_t         *d_cnp_error,
+    cudaError_t         *d_cdp_error,
 
     void                *d_temp_storage,
     size_t              temp_storage_bytes,
@@ -104,22 +106,24 @@ __global__ void CnpDispatchKernel(
     bool                stream_synchronous)
 {
 #ifndef CUB_CDP
-    *d_cnp_error = cudaErrorNotSupported;
+    *d_cdp_error = cudaErrorNotSupported;
 #else
-    *d_cnp_error = Dispatch(Int2Type<false>(), d_temp_storage_bytes, d_cnp_error, d_temp_storage, temp_storage_bytes, d_keys, d_values, num_items, begin_bit, end_bit, 0, stream_synchronous);
-    *d_temp_storage_bytes = temp_storage_bytes;
+    *d_cdp_error            = Dispatch(Int2Type<false>(), d_selector, d_temp_storage_bytes, d_cdp_error, d_temp_storage, temp_storage_bytes, d_keys, d_values, num_items, begin_bit, end_bit, 0, stream_synchronous);
+    *d_temp_storage_bytes   = temp_storage_bytes;
+    *d_selector             = d_keys.selector;
 #endif
 }
 
 
 /**
- * Dispatch to CNP kernel
+ * Dispatch to CDP kernel
  */
 template <typename Key, typename Value>
 cudaError_t Dispatch(
-    Int2Type<true>      use_cnp,
+    Int2Type<true>      use_cdp,
+    int                 *d_selector,
     size_t              *d_temp_storage_bytes,
-    cudaError_t         *d_cnp_error,
+    cudaError_t         *d_cdp_error,
 
     void                *d_temp_storage,
     size_t              &temp_storage_bytes,
@@ -132,14 +136,18 @@ cudaError_t Dispatch(
     bool                stream_synchronous)
 {
     // Invoke kernel to invoke device-side dispatch
-    CnpDispatchKernel<<<1,1>>>(d_temp_storage_bytes, d_cnp_error, d_temp_storage, temp_storage_bytes, d_keys, d_values, num_items, begin_bit, end_bit, stream_synchronous);
+    CnpDispatchKernel<<<1,1>>>(d_selector, d_temp_storage_bytes, d_cdp_error, d_temp_storage, temp_storage_bytes, d_keys, d_values, num_items, begin_bit, end_bit, stream_synchronous);
+
+    // Copy out selector
+    CubDebugExit(cudaMemcpy(&d_keys.selector, d_selector, sizeof(int) * 1, cudaMemcpyDeviceToHost));
+    d_values.selector = d_keys.selector;
 
     // Copy out temp_storage_bytes
     CubDebugExit(cudaMemcpy(&temp_storage_bytes, d_temp_storage_bytes, sizeof(size_t) * 1, cudaMemcpyDeviceToHost));
 
     // Copy out error
     cudaError_t retval;
-    CubDebugExit(cudaMemcpy(&retval, d_cnp_error, sizeof(cudaError_t) * 1, cudaMemcpyDeviceToHost));
+    CubDebugExit(cudaMemcpy(&retval, d_cdp_error, sizeof(cudaError_t) * 1, cudaMemcpyDeviceToHost));
     return retval;
 }
 
@@ -227,7 +235,7 @@ void Initialize(
  * Test DeviceRadixSort
  */
 template <
-    bool            CNP,
+    bool            CDP,
     typename        Key,
     typename        Value>
 void Test(
@@ -241,11 +249,11 @@ void Test(
 
     if (KEYS_ONLY)
         printf("%s keys-only cub::DeviceRadixSort %d items, %s %d-byte keys, gen-mode %s\n",
-            (CNP) ? "CNP device invoked" : "Host-invoked", num_items, type_string, (int) sizeof(Key),
+            (CDP) ? "CDP device invoked" : "Host-invoked", num_items, type_string, (int) sizeof(Key),
             (gen_mode == RANDOM) ? "RANDOM" : (gen_mode == SEQ_INC) ? "SEQUENTIAL" : "HOMOGENOUS");
     else
         printf("%s keys-value cub::DeviceRadixSort %d items, %s %d-byte keys + %d-byte values, gen-mode %s\n",
-            (CNP) ? "CNP device invoked" : "Host-invoked", num_items, type_string, (int) sizeof(Key), (int) sizeof(Value),
+            (CDP) ? "CDP device invoked" : "Host-invoked", num_items, type_string, (int) sizeof(Key), (int) sizeof(Value),
             (gen_mode == RANDOM) ? "RANDOM" : (gen_mode == SEQ_INC) ? "SEQUENTIAL" : "HOMOGENOUS");
     fflush(stdout);
 
@@ -261,12 +269,14 @@ void Test(
     // Allocate device arrays
     DoubleBuffer<Key>   d_keys;
     DoubleBuffer<Value> d_values;
+    int                 *d_selector;
     size_t              *d_temp_storage_bytes;
-    cudaError_t         *d_cnp_error;
+    cudaError_t         *d_cdp_error;
     CubDebugExit(g_allocator.DeviceAllocate((void**)&d_keys.d_buffers[0], sizeof(Key) * num_items));
     CubDebugExit(g_allocator.DeviceAllocate((void**)&d_keys.d_buffers[1], sizeof(Key) * num_items));
+    CubDebugExit(g_allocator.DeviceAllocate((void**)&d_selector, sizeof(int) * 1));
     CubDebugExit(g_allocator.DeviceAllocate((void**)&d_temp_storage_bytes, sizeof(size_t) * 1));
-    CubDebugExit(g_allocator.DeviceAllocate((void**)&d_cnp_error, sizeof(cudaError_t) * 1));
+    CubDebugExit(g_allocator.DeviceAllocate((void**)&d_cdp_error, sizeof(cudaError_t) * 1));
     if (!KEYS_ONLY)
     {
         CubDebugExit(g_allocator.DeviceAllocate((void**)&d_values.d_buffers[0], sizeof(Value) * num_items));
@@ -276,7 +286,7 @@ void Test(
     // Allocate temporary storage
     size_t  temp_storage_bytes  = 0;
     void    *d_temp_storage     = NULL;
-    CubDebugExit(Dispatch(Int2Type<CNP>(), d_temp_storage_bytes, d_cnp_error, d_temp_storage, temp_storage_bytes, d_keys, d_values, num_items, begin_bit, end_bit, 0, true));
+    CubDebugExit(Dispatch(Int2Type<CDP>(), d_selector, d_temp_storage_bytes, d_cdp_error, d_temp_storage, temp_storage_bytes, d_keys, d_values, num_items, begin_bit, end_bit, 0, true));
     CubDebugExit(g_allocator.DeviceAllocate(&d_temp_storage, temp_storage_bytes));
 
     // Initialize/clear device arrays
@@ -289,7 +299,7 @@ void Test(
     }
 
     // Run warmup/correctness iteration
-    CubDebugExit(Dispatch(Int2Type<CNP>(), d_temp_storage_bytes, d_cnp_error, d_temp_storage, temp_storage_bytes, d_keys, d_values, num_items, begin_bit, end_bit, 0, true));
+    CubDebugExit(Dispatch(Int2Type<CDP>(), d_selector, d_temp_storage_bytes, d_cdp_error, d_temp_storage, temp_storage_bytes, d_keys, d_values, num_items, begin_bit, end_bit, 0, true));
 
     // Check for correctness (and display results, if specified)
     int compare = CompareDeviceResults(h_sorted_keys, d_keys.Current(), num_items, true, g_verbose);
@@ -320,7 +330,7 @@ void Test(
         }
 
         gpu_timer.Start();
-        CubDebugExit(Dispatch(Int2Type<CNP>(), d_temp_storage_bytes, d_cnp_error, d_temp_storage, temp_storage_bytes, d_keys, d_values, num_items, begin_bit, end_bit, 0, false));
+        CubDebugExit(Dispatch(Int2Type<CDP>(), d_selector, d_temp_storage_bytes, d_cdp_error, d_temp_storage, temp_storage_bytes, d_keys, d_values, num_items, begin_bit, end_bit, 0, false));
         gpu_timer.Stop();
         elapsed_millis += gpu_timer.ElapsedMillis();
     }
@@ -349,7 +359,7 @@ void Test(
     if (d_values.d_buffers[0]) CubDebugExit(g_allocator.DeviceFree(d_values.d_buffers[0]));
     if (d_values.d_buffers[1]) CubDebugExit(g_allocator.DeviceFree(d_values.d_buffers[1]));
     if (d_temp_storage_bytes) CubDebugExit(g_allocator.DeviceFree(d_temp_storage_bytes));
-    if (d_cnp_error) CubDebugExit(g_allocator.DeviceFree(d_cnp_error));
+    if (d_cdp_error) CubDebugExit(g_allocator.DeviceFree(d_cdp_error));
 
     // Correctness asserts
     AssertEquals(0, compare);
@@ -389,7 +399,7 @@ int main(int argc, char** argv)
             "[--repeat=<times to repeat tests>]"
             "[--quick]"
             "[--v] "
-            "[--cnp]"
+            "[--cdp]"
             "\n", argv[0]);
         exit(0);
     }
@@ -398,11 +408,15 @@ int main(int argc, char** argv)
     CubDebugExit(args.DeviceInit());
     printf("\n");
 
-    Test<false, unsigned int, NullType>(num_items, RANDOM, 0, g_bits, CUB_TYPE_STRING(unsigned int));
+    Test<false, unsigned int, NullType>         (num_items, RANDOM, 0, g_bits, CUB_TYPE_STRING(unsigned int));
+    Test<false, unsigned long long, NullType>   (num_items, RANDOM, 0, g_bits, CUB_TYPE_STRING(unsigned int));
+    Test<false, unsigned int, unsigned int> (num_items, RANDOM, 0, g_bits, CUB_TYPE_STRING(unsigned int));
 
-    Test<false, unsigned long long, NullType>(num_items, RANDOM, 0, g_bits, CUB_TYPE_STRING(unsigned int));
-
-    Test<false, unsigned int, unsigned int>(num_items, RANDOM, 0, g_bits, CUB_TYPE_STRING(unsigned int));
+#ifdef CUB_CDP
+    Test<true, unsigned int, NullType>         (num_items, RANDOM, 0, g_bits, CUB_TYPE_STRING(unsigned int));
+    Test<true, unsigned long long, NullType>   (num_items, RANDOM, 0, g_bits, CUB_TYPE_STRING(unsigned int));
+    Test<true, unsigned int, unsigned int>     (num_items, RANDOM, 0, g_bits, CUB_TYPE_STRING(unsigned int));
+#endif
 
     return 0;
 }
