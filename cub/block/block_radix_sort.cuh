@@ -51,7 +51,8 @@ namespace cub {
  * \ingroup BlockModule
  *
  * \par Overview
- * The [<em>radix sorting method</em>](http://en.wikipedia.org/wiki/Radix_sort) relies upon a positional representation for
+ * The [<em>radix sorting method</em>](http://en.wikipedia.org/wiki/Radix_sort) arranges
+ * items into ascending order.  It relies upon a positional representation for
  * keys, i.e., each key is comprised of an ordered sequence of symbols (e.g., digits,
  * characters, etc.) specified from least-significant to most-significant.  For a
  * given input sequence of keys and a set of rules specifying a total ordering
