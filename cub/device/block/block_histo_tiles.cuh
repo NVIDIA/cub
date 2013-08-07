@@ -69,6 +69,10 @@ enum BlockHistogramTilesAlgorithm
      *
      * \par Performance Considerations
      * Delivers consistent throughput regardless of sample bin distribution.
+     *
+     * However, because histograms are privatized in shared memory, a large
+     * number of bins (e.g., thousands) may adversely affect occupancy and
+     * performance (or even the ability to launch).
      */
     GRID_HISTO_SORT,
 
@@ -86,6 +90,10 @@ enum BlockHistogramTilesAlgorithm
      * addition, and may be significantly degraded for non uniformly-random
      * input distributions where many concurrent updates are likely to be
      * made to the same bin counter.
+     *
+     * However, because histograms are privatized in shared memory, a large
+     * number of bins (e.g., thousands) may adversely affect occupancy and
+     * performance (or even the ability to launch).
      */
     GRID_HISTO_SHARED_ATOMIC,
 
@@ -100,6 +108,9 @@ enum BlockHistogramTilesAlgorithm
      * addition, and may be significantly degraded for non uniformly-random
      * input distributions where many concurrent updates are likely to be
      * made to the same bin counter.
+     *
+     * Performance is not significantly impacted when computing histograms having large
+     * numbers of bins (e.g., thousands).
      */
     GRID_HISTO_GLOBAL_ATOMIC,
 

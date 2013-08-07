@@ -29,7 +29,7 @@
 
 /**
  * \file
- * cub::DeviceHistogram provides parallel, device-wide operations for constructing histogram(s) over data samples residing within global memory.
+ * cub::DeviceHistogram provides device-wide parallel operations for constructing histogram(s) from samples data residing within global memory.
  */
 
 #pragma once
@@ -165,7 +165,7 @@ __global__ void AggregateHistoKernel(
  */
 
 /**
- * \brief DeviceHistogram provides device-wide parallel operations for constructing histogram(s) over samples data residing within global memory. ![](histogram_logo.png)
+ * \brief DeviceHistogram provides device-wide parallel operations for constructing histogram(s) from samples data residing within global memory. ![](histogram_logo.png)
  *
  * \par Overview
  * A <a href="http://en.wikipedia.org/wiki/Histogram"><em>histogram</em></a>
@@ -173,6 +173,10 @@ __global__ void AggregateHistoKernel(
  *
  * \par Usage Considerations
  * \cdp_class{DeviceHistogram}
+ *
+ * \par Performance
+ *
+ * \image html histo_perf.png
  *
  */
 struct DeviceHistogram
@@ -605,7 +609,11 @@ struct DeviceHistogram
 
 
     /**
-     * \brief Computes a device-wide histogram.  Uses fast block-sorting to compute the histogram. Delivers consistent throughput regardless of sample diversity.
+     * \brief Computes a device-wide histogram.  Uses fast block-sorting to compute the histogram. Delivers consistent throughput regardless of sample diversity, but occupancy may be limited by histogram bin count.
+     *
+     * However, because histograms are privatized in shared memory, a large
+     * number of bins (e.g., thousands) may adversely affect occupancy and
+     * performance (or even the ability to launch).
      *
      * \devicestorage
      *
@@ -671,7 +679,11 @@ struct DeviceHistogram
 
 
     /**
-     * \brief Computes a device-wide histogram.  Uses shared-memory atomic read-modify-write operations to compute the histogram.  Input samples having lower diversity can cause performance to be degraded.
+     * \brief Computes a device-wide histogram.  Uses shared-memory atomic read-modify-write operations to compute the histogram.  Input samples having lower diversity can cause performance to be degraded, and occupancy may be limited by histogram bin count.
+     *
+     * However, because histograms are privatized in shared memory, a large
+     * number of bins (e.g., thousands) may adversely affect occupancy and
+     * performance (or even the ability to launch).
      *
      * \devicestorage
      *
@@ -738,6 +750,9 @@ struct DeviceHistogram
 
     /**
      * \brief Computes a device-wide histogram.  Uses global-memory atomic read-modify-write operations to compute the histogram.  Input samples having lower diversity can cause performance to be degraded.
+     *
+     * Performance is not significantly impacted when computing histograms having large
+     * numbers of bins (e.g., thousands).
      *
      * \devicestorage
      *
@@ -810,7 +825,11 @@ struct DeviceHistogram
 
 
     /**
-     * \brief Computes a device-wide histogram from multi-channel data.  Uses fast block-sorting to compute the histogram.  Delivers consistent throughput regardless of sample diversity.
+     * \brief Computes a device-wide histogram from multi-channel data.  Uses fast block-sorting to compute the histogram.  Delivers consistent throughput regardless of sample diversity, but occupancy may be limited by histogram bin count.
+     *
+     * However, because histograms are privatized in shared memory, a large
+     * number of bins (e.g., thousands) may adversely affect occupancy and
+     * performance (or even the ability to launch).
      *
      * \devicestorage
      *
@@ -881,7 +900,11 @@ struct DeviceHistogram
 
 
     /**
-     * \brief Computes a device-wide histogram from multi-channel data.  Uses shared-memory atomic read-modify-write operations to compute the histogram.  Input samples having lower diversity can cause performance to be degraded.
+     * \brief Computes a device-wide histogram from multi-channel data.  Uses shared-memory atomic read-modify-write operations to compute the histogram.  Input samples having lower diversity can cause performance to be degraded, and occupancy may be limited by histogram bin count.
+     *
+     * However, because histograms are privatized in shared memory, a large
+     * number of bins (e.g., thousands) may adversely affect occupancy and
+     * performance (or even the ability to launch).
      *
      * \devicestorage
      *
@@ -953,6 +976,9 @@ struct DeviceHistogram
 
     /**
      * \brief Computes a device-wide histogram from multi-channel data.  Uses global-memory atomic read-modify-write operations to compute the histogram.  Input samples having lower diversity can cause performance to be degraded.
+     *
+     * Performance is not significantly impacted when computing histograms having large
+     * numbers of bins (e.g., thousands).
      *
      * \devicestorage
      *

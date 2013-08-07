@@ -172,6 +172,7 @@ __global__ void ReduceSingleKernel(
  * \cdp_class{DeviceReduce}
  *
  * \par Performance
+ *
  * \image html reduction_perf.png
  *
  */
@@ -255,7 +256,7 @@ struct DeviceReduce
         // SinglePolicy
         typedef BlockReduceTilesPolicy<256, 8, 1, BLOCK_REDUCE_WARP_REDUCTIONS, LOAD_DEFAULT, GRID_MAPPING_EVEN_SHARE>  SinglePolicy;
 
-        enum { SUBSCRIPTION_FACTOR = 8 };
+        enum { SUBSCRIPTION_FACTOR = 7 };
 
     };
 
