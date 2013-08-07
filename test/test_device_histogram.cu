@@ -613,14 +613,14 @@ int main(int argc, char** argv)
         printf("\n");
 
         printf("3/4 CHANNEL (RGB/RGBA):\n\n");
-        TestCnp<256, 4, 3, unsigned char, unsigned char, int>(Int2Type<GRID_HISTO_SORT>(),          RANDOM,  Cast<unsigned char>(), num_samples, CUB_TYPE_STRING(unsigned char));
-        TestCnp<256, 4, 3, unsigned char, unsigned char, int>(Int2Type<GRID_HISTO_SORT>(),          UNIFORM, Cast<unsigned char>(), num_samples, CUB_TYPE_STRING(unsigned char));
+        TestCnp<256, 4, 3, unsigned char, unsigned char, int>(Int2Type<GRID_HISTO_SORT>(),          RANDOM,  Cast<unsigned char>(), num_samples * 4, CUB_TYPE_STRING(unsigned char));
+        TestCnp<256, 4, 3, unsigned char, unsigned char, int>(Int2Type<GRID_HISTO_SORT>(),          UNIFORM, Cast<unsigned char>(), num_samples * 4, CUB_TYPE_STRING(unsigned char));
         printf("\n");
-        TestCnp<256, 4, 3, unsigned char, unsigned char, int>(Int2Type<GRID_HISTO_SHARED_ATOMIC>(), RANDOM,  Cast<unsigned char>(), num_samples, CUB_TYPE_STRING(unsigned char));
-        TestCnp<256, 4, 3, unsigned char, unsigned char, int>(Int2Type<GRID_HISTO_SHARED_ATOMIC>(), UNIFORM, Cast<unsigned char>(), num_samples, CUB_TYPE_STRING(unsigned char));
+        TestCnp<256, 4, 3, unsigned char, unsigned char, int>(Int2Type<GRID_HISTO_SHARED_ATOMIC>(), RANDOM,  Cast<unsigned char>(), num_samples * 4, CUB_TYPE_STRING(unsigned char));
+        TestCnp<256, 4, 3, unsigned char, unsigned char, int>(Int2Type<GRID_HISTO_SHARED_ATOMIC>(), UNIFORM, Cast<unsigned char>(), num_samples * 4, CUB_TYPE_STRING(unsigned char));
         printf("\n");
-        TestCnp<256, 4, 3, unsigned char, unsigned char, int>(Int2Type<GRID_HISTO_GLOBAL_ATOMIC>(), RANDOM,  Cast<unsigned char>(), num_samples, CUB_TYPE_STRING(unsigned char));
-        TestCnp<256, 4, 3, unsigned char, unsigned char, int>(Int2Type<GRID_HISTO_GLOBAL_ATOMIC>(), UNIFORM, Cast<unsigned char>(), num_samples, CUB_TYPE_STRING(unsigned char));
+        TestCnp<256, 4, 3, unsigned char, unsigned char, int>(Int2Type<GRID_HISTO_GLOBAL_ATOMIC>(), RANDOM,  Cast<unsigned char>(), num_samples * 4, CUB_TYPE_STRING(unsigned char));
+        TestCnp<256, 4, 3, unsigned char, unsigned char, int>(Int2Type<GRID_HISTO_GLOBAL_ATOMIC>(), UNIFORM, Cast<unsigned char>(), num_samples * 4, CUB_TYPE_STRING(unsigned char));
         printf("\n");
     }
     else
