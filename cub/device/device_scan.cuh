@@ -170,6 +170,7 @@ __global__ void ScanKernel(
  * \cdp_class{DeviceScan}
  *
  * \par Performance
+ *
  * \image html scan_perf.png
  *
  */
