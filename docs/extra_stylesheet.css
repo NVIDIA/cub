@@ -3,7 +3,7 @@
  *****************************************************************************/
 
 body, table, div, p, dl {
-		font: 13px/22px arial,sans-serif;
+		font: 12px/22px arial,sans-serif;
 }
 
 body {
@@ -412,8 +412,8 @@ td.memSeparator {
 }
 
 td.mdescLeft, td.mdescRight {
-		padding-top: 6px;
-		padding-bottom: 6px;
+		padding-top: 10px;
+		padding-bottom: 20px;
 		color: #666;
 }
 
