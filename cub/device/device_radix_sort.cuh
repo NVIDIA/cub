@@ -652,8 +652,8 @@ struct DeviceRadixSort
 #endif
 
                 // Log downsweep_kernel configuration
-                if (stream_synchronous) CubLog("Invoking downsweep_kernel<<<%d, %d, 0, %lld>>>(), %d smem config, %d items per thread, %d SM occupancy, %d items\n",
-                    downsweep_grid_size, downsweep_dispatch_params.block_threads, (long long) stream, downsweep_dispatch_params.smem_config, downsweep_dispatch_params.items_per_thread, downsweep_sm_occupancy, spine_size);
+                if (stream_synchronous) CubLog("Invoking downsweep_kernel<<<%d, %d, 0, %lld>>>(), %d smem config, %d items per thread, %d SM occupancy\n",
+                    downsweep_grid_size, downsweep_dispatch_params.block_threads, (long long) stream, downsweep_dispatch_params.smem_config, downsweep_dispatch_params.items_per_thread, downsweep_sm_occupancy);
 
                 // Invoke downsweep_kernel
                 downsweep_kernel<<<downsweep_grid_size, downsweep_dispatch_params.block_threads, 0, stream>>>(
