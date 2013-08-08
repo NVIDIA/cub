@@ -51,133 +51,6 @@ namespace cub {
  */
 
 
-/******************************************************************************
- * Marker types
- ******************************************************************************/
-
-/**
- * \brief A simple "NULL" marker type
- */
-struct NullType
-{
-#ifndef DOXYGEN_SHOULD_SKIP_THIS    // Do not document
-    template <typename T>
-    __host__ __device__ __forceinline__ NullType& operator =(const T& b) { return *this; }
-#endif // DOXYGEN_SHOULD_SKIP_THIS
-};
-
-#ifndef DOXYGEN_SHOULD_SKIP_THIS    // Do not document
-
-std::ostream& operator<< (std::ostream& stream, const NullType& val) { return stream; }
-
-#endif // DOXYGEN_SHOULD_SKIP_THIS
-
-
-/**
- * \brief Allows for the treatment of an integral constant as a type at compile-time (e.g., to achieve static call dispatch based on constant integral values)
- */
-template <int A>
-struct Int2Type
-{
-   enum {VALUE = A};
-};
-
-
-/******************************************************************************
- * Wrapper types
- ******************************************************************************/
-
-/**
- * \brief A wrapper for passing simple static arrays as kernel parameters
- */
-template <typename T, int COUNT>
-struct ArrayWrapper
-{
-    /// Static array of type \p T
-    T array[COUNT];
-};
-
-
-/**
- * \brief Double-buffer storage wrapper for multi-pass stream transformations that require more than one storage array for streaming intermediate results back and forth.
- *
- * Many multi-pass computations require a pair of "ping-pong" storage
- * buffers (e.g., one for reading from and the other for writing to, and then
- * vice-versa for the subsequent pass).  This structure wraps a set of device
- * buffers and a "selector" member to track which is "current".
- */
-template <typename T>
-struct DoubleBuffer
-{
-    /// Pair of device buffer pointers
-    T *d_buffers[2];
-
-    ///  Selector into \p d_buffers (i.e., the active/valid buffer)
-    int selector;
-
-    /// \brief Constructor
-    DoubleBuffer()
-    {
-        selector = 0;
-        d_buffers[0] = NULL;
-        d_buffers[1] = NULL;
-    }
-
-    /// \brief Constructor
-    DoubleBuffer(
-        T *d_current,         ///< The currently valid buffer
-        T *d_alternate)       ///< Alternate storage buffer of the same size as \p d_current
-    {
-        selector = 0;
-        d_buffers[0] = d_current;
-        d_buffers[1] = d_alternate;
-    }
-
-    /// \brief Return pointer to the currently valid buffer
-    T* Current() { return d_buffers[selector]; }
-};
-
-
-
-/******************************************************************************
- * Static math
- ******************************************************************************/
-
-/**
- * \brief Statically determine log2(N), rounded up.
- *
- * For example:
- *     Log2<8>::VALUE   // 3
- *     Log2<3>::VALUE   // 2
- */
-template <int N, int CURRENT_VAL = N, int COUNT = 0>
-struct Log2
-{
-    /// Static logarithm value
-    enum { VALUE = Log2<N, (CURRENT_VAL >> 1), COUNT + 1>::VALUE };         // Inductive case
-};
-
-#ifndef DOXYGEN_SHOULD_SKIP_THIS    // Do not document
-template <int N, int COUNT>
-struct Log2<N, 0, COUNT>
-{
-    enum {VALUE = (1 << (COUNT - 1) < N) ?                                  // Base case
-        COUNT :
-        COUNT - 1 };
-};
-#endif // DOXYGEN_SHOULD_SKIP_THIS
-
-
-/**
- * \brief Statically determine if N is a power-of-two
- */
-template <int N>
-struct PowerOfTwo
-{
-    enum { VALUE = ((N & (N - 1)) == 0) };
-};
-
-
 
 /******************************************************************************
  * Type equality
@@ -233,6 +106,38 @@ struct Equals <A, A>
 };
 
 #endif // DOXYGEN_SHOULD_SKIP_THIS
+
+
+/******************************************************************************
+ * Marker types
+ ******************************************************************************/
+
+/**
+ * \brief A simple "NULL" marker type
+ */
+struct NullType
+{
+#ifndef DOXYGEN_SHOULD_SKIP_THIS    // Do not document
+    template <typename T>
+    __host__ __device__ __forceinline__ NullType& operator =(const T& b) { return *this; }
+#endif // DOXYGEN_SHOULD_SKIP_THIS
+};
+
+#ifndef DOXYGEN_SHOULD_SKIP_THIS    // Do not document
+
+std::ostream& operator<< (std::ostream& stream, const NullType& val) { return stream; }
+
+#endif // DOXYGEN_SHOULD_SKIP_THIS
+
+
+/**
+ * \brief Allows for the treatment of an integral constant as a type at compile-time (e.g., to achieve static call dispatch based on constant integral values)
+ */
+template <int A>
+struct Int2Type
+{
+   enum {VALUE = A};
+};
 
 
 /******************************************************************************
@@ -305,6 +210,128 @@ struct WordAlignment
 
 
 #endif // DOXYGEN_SHOULD_SKIP_THIS
+
+
+/******************************************************************************
+ * Wrapper types
+ ******************************************************************************/
+
+/**
+ * \brief A storage-backing wrapper that allows types with non-trivial constructors to be aliased in unions
+ */
+template <typename T>
+struct Uninitialized
+{
+    /// Biggest memory-access word that T is a whole multiple of and is not larger than the alignment of T
+    typedef typename WordAlignment<T>::DeviceWord DeviceWord;
+
+    enum
+    {
+        WORDS = sizeof(T) / sizeof(DeviceWord)
+    };
+
+    /// Backing storage
+    DeviceWord storage[WORDS];
+
+    /// Alias
+    __host__ __device__ __forceinline__ T& Alias()
+    {
+        return reinterpret_cast<T&>(*this);
+    }
+};
+
+
+/**
+ * \brief A wrapper for passing simple static arrays as kernel parameters
+ */
+template <typename T, int COUNT>
+struct ArrayWrapper
+{
+    /// Static array of type \p T
+    T array[COUNT];
+};
+
+
+/**
+ * \brief Double-buffer storage wrapper for multi-pass stream transformations that require more than one storage array for streaming intermediate results back and forth.
+ *
+ * Many multi-pass computations require a pair of "ping-pong" storage
+ * buffers (e.g., one for reading from and the other for writing to, and then
+ * vice-versa for the subsequent pass).  This structure wraps a set of device
+ * buffers and a "selector" member to track which is "current".
+ */
+template <typename T>
+struct DoubleBuffer
+{
+    /// Pair of device buffer pointers
+    T *d_buffers[2];
+
+    ///  Selector into \p d_buffers (i.e., the active/valid buffer)
+    int selector;
+
+    /// \brief Constructor
+    __host__ __device__ __forceinline__ DoubleBuffer()
+    {
+        selector = 0;
+        d_buffers[0] = NULL;
+        d_buffers[1] = NULL;
+    }
+
+    /// \brief Constructor
+    __host__ __device__ __forceinline__ DoubleBuffer(
+        T *d_current,         ///< The currently valid buffer
+        T *d_alternate)       ///< Alternate storage buffer of the same size as \p d_current
+    {
+        selector = 0;
+        d_buffers[0] = d_current;
+        d_buffers[1] = d_alternate;
+    }
+
+    /// \brief Return pointer to the currently valid buffer
+    __host__ __device__ __forceinline__ T* Current() { return d_buffers[selector]; }
+};
+
+
+
+/******************************************************************************
+ * Static math
+ ******************************************************************************/
+
+/**
+ * \brief Statically determine log2(N), rounded up.
+ *
+ * For example:
+ *     Log2<8>::VALUE   // 3
+ *     Log2<3>::VALUE   // 2
+ */
+template <int N, int CURRENT_VAL = N, int COUNT = 0>
+struct Log2
+{
+    /// Static logarithm value
+    enum { VALUE = Log2<N, (CURRENT_VAL >> 1), COUNT + 1>::VALUE };         // Inductive case
+};
+
+#ifndef DOXYGEN_SHOULD_SKIP_THIS    // Do not document
+template <int N, int COUNT>
+struct Log2<N, 0, COUNT>
+{
+    enum {VALUE = (1 << (COUNT - 1) < N) ?                                  // Base case
+        COUNT :
+        COUNT - 1 };
+};
+#endif // DOXYGEN_SHOULD_SKIP_THIS
+
+
+/**
+ * \brief Statically determine if N is a power-of-two
+ */
+template <int N>
+struct PowerOfTwo
+{
+    enum { VALUE = ((N & (N - 1)) == 0) };
+};
+
+
 
 /******************************************************************************
  * Pointer vs. iterator detection

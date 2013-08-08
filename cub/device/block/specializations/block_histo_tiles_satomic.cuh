@@ -75,11 +75,15 @@ struct BlockHistogramTilesSharedAtomic
         TILE_ITEMS          = TILE_CHANNEL_ITEMS * CHANNELS,
     };
 
-    // Shared memory type required by this thread block
-    struct TempStorage
+    /// Shared memory type required by this thread block
+    struct _TempStorage
     {
         HistoCounter histograms[ACTIVE_CHANNELS][BINS + 1];  // One word of padding between channel histograms to prevent warps working on different histograms from hammering on the same bank
     };
+
+
+    /// Alias wrapper allowing storage to be unioned
+    typedef Uninitialized<_TempStorage> TempStorage;
 
 
     //---------------------------------------------------------------------
@@ -87,7 +91,7 @@ struct BlockHistogramTilesSharedAtomic
     //---------------------------------------------------------------------
 
     /// Reference to temp_storage
-    TempStorage &temp_storage;
+    _TempStorage &temp_storage;
 
     /// Reference to output histograms
     HistoCounter* (&d_out_histograms)[ACTIVE_CHANNELS];
@@ -108,7 +112,7 @@ struct BlockHistogramTilesSharedAtomic
         InputIteratorRA     d_in,                                           ///< Input data to reduce
         HistoCounter*       (&d_out_histograms)[ACTIVE_CHANNELS])           ///< Reference to output histograms
     :
-        temp_storage(temp_storage),
+        temp_storage(temp_storage.Alias()),
         d_in(d_in),
         d_out_histograms(d_out_histograms)
     {
@@ -121,12 +125,12 @@ struct BlockHistogramTilesSharedAtomic
             #pragma unroll
             for(; histo_offset + BLOCK_THREADS <= BINS; histo_offset += BLOCK_THREADS)
             {
-                temp_storage.histograms[CHANNEL][histo_offset + threadIdx.x] = 0;
+                this->temp_storage.histograms[CHANNEL][histo_offset + threadIdx.x] = 0;
             }
             // Finish up with guarded initialization if necessary
             if ((histo_offset < BLOCK_THREADS) && (histo_offset + threadIdx.x < BINS))
             {
-                temp_storage.histograms[CHANNEL][histo_offset + threadIdx.x] = 0;
+                this->temp_storage.histograms[CHANNEL][histo_offset + threadIdx.x] = 0;
             }
         }
     }

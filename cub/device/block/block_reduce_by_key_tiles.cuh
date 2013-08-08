@@ -189,8 +189,8 @@ struct BlockReduceByKeyiles
         BlockReduceByKeyilesPolicy::BLOCK_THREADS,
         BlockReduceByKeyilesPolicy::SCAN_ALGORITHM>            BlockScanT;
 
-    // Shared memory type for this threadblock
-    struct TempStorage
+    /// Shared memory type for this threadblock
+    struct _TempStorage
     {
         union
         {
@@ -207,12 +207,16 @@ struct BlockReduceByKeyiles
         SizeT                                           tile_idx;       // Shared tile index
     };
 
+    /// Alias wrapper allowing storage to be unioned
+    typedef Uninitialized<_TempStorage> TempStorage;
+
+
 
     //---------------------------------------------------------------------
     // Per-thread fields
     //---------------------------------------------------------------------
 
-    TempStorage                 &temp_storage;      ///< Reference to temp_storage
+    _TempStorage                &temp_storage;      ///< Reference to temp_storage
     KeyInputIteratorRA          d_keys_in;          ///< Key input data
     KeyOutputIteratorRA         d_keys_out;         ///< Key output data
     ValueInputIteratorRA        d_values_in;        ///< Value input data
@@ -240,7 +244,7 @@ struct BlockReduceByKeyiles
         int                         num_tiles,          ///< Total number of input tiles for the entire problem
         SizeT                       num_items)          ///< Total number of scan items for the entire problem
     :
-        temp_storage(temp_storage),
+        temp_storage(temp_storage.Alias()),
         d_keys_in(d_keys_in),
         d_keys_out(d_keys_out),
         d_values_in(d_values_in),

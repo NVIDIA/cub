@@ -153,8 +153,8 @@ struct ScanTileDescriptor<T, false>
     /// Workaround for the fact that win32 doesn't guarantee 16B alignment 16B values of T
     union
     {
-        int     status;
-        T       padding;
+        int                     status;
+        Uninitialized<T>        padding;
     };
 
     static __device__ __forceinline__ void SetPrefix(ScanTileDescriptor *ptr, T prefix)
@@ -208,14 +208,17 @@ struct DeviceScanBlockPrefixOp
     typedef WarpReduce<T>                       WarpReduceT;
 
     // Storage type
-    typedef typename WarpReduceT::TempStorage   TempStorage;
+    typedef typename WarpReduceT::TempStorage   _TempStorage;
+
+    // Alias wrapper allowing storage to be unioned
+    typedef Uninitialized<_TempStorage>         TempStorage;
 
     // Tile status descriptor type
     typedef ScanTileDescriptor<T>               ScanTileDescriptorT;
 
     // Fields
     ScanTileDescriptorT         *d_tile_status;     ///< Pointer to array of tile status
-    TempStorage                 &temp_storage;      ///< Reference to a warp-reduction instance
+    _TempStorage                &temp_storage;      ///< Reference to a warp-reduction instance
     ScanOp                      scan_op;            ///< Binary scan operator
     int                         tile_idx;           ///< The current tile index
     T                           inclusive_prefix;   ///< Inclusive prefix for the tile
@@ -228,7 +231,7 @@ struct DeviceScanBlockPrefixOp
         ScanOp                  scan_op,
         int                     tile_idx) :
             d_tile_status(d_tile_status),
-            temp_storage(temp_storage),
+            temp_storage(temp_storage.Alias()),
             scan_op(scan_op),
             tile_idx(tile_idx) {}
 

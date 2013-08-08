@@ -82,7 +82,7 @@ struct BlockScanRaking
     typedef WarpScan<T, 1, RAKING_THREADS> WarpScan;
 
     /// Shared memory storage layout type
-    struct TempStorage
+    struct _TempStorage
     {
         typename WarpScan::TempStorage              warp_scan;          ///< Buffer for warp-synchronous scan
         typename BlockRakingLayout::TempStorage     raking_grid;        ///< Padded threadblock raking grid
@@ -90,9 +90,14 @@ struct BlockScanRaking
     };
 
 
+    /// Alias wrapper allowing storage to be unioned
+    typedef Uninitialized<_TempStorage> TempStorage;
+
+
     // Thread fields
-    TempStorage &temp_storage;
-    int linear_tid;
+    _TempStorage    &temp_storage;
+    int             linear_tid;
+    T               cached_segment[SEGMENT_LENGTH];
 
 
     /// Constructor
@@ -100,113 +105,101 @@ struct BlockScanRaking
         TempStorage &temp_storage,
         int linear_tid)
     :
-        temp_storage(temp_storage),
+        temp_storage(temp_storage.Alias()),
         linear_tid(linear_tid)
     {}
 
-    /// Raking helper structure
-    struct RakingHelper
+    /// Performs upsweep raking reduction, returning the aggregate
+    template <typename ScanOp>
+    __device__ __forceinline__ T Upsweep(
+        ScanOp scan_op)
     {
-        /// Copy of raking segment, promoted to registers
-        T cached_segment[SEGMENT_LENGTH];
+        T *smem_raking_ptr = BlockRakingLayout::RakingPtr(temp_storage.raking_grid, linear_tid);
+        T *raking_ptr;
 
-        // Performs upsweep raking reduction, returning the aggregate
-        template <typename ScanOp>
-        __device__ __forceinline__ T Upsweep(
-            TempStorage&    temp_storage,
-            int             linear_tid,
-            ScanOp          scan_op)
+        if (MEMOIZE)
         {
-            T *smem_raking_ptr = BlockRakingLayout::RakingPtr(temp_storage.raking_grid, linear_tid);
-            T *raking_ptr;
-
-            if (MEMOIZE)
-            {
-                // Copy data into registers
-                #pragma unroll
-                for (int i = 0; i < SEGMENT_LENGTH; i++)
-                {
-                    cached_segment[i] = smem_raking_ptr[i];
-                }
-                raking_ptr = cached_segment;
-            }
-            else
-            {
-                raking_ptr = smem_raking_ptr;
-            }
-
-            T raking_partial = raking_ptr[0];
-
+            // Copy data into registers
             #pragma unroll
-            for (int i = 1; i < SEGMENT_LENGTH; i++)
+            for (int i = 0; i < SEGMENT_LENGTH; i++)
             {
-                if ((BlockRakingLayout::UNGUARDED) || (((linear_tid * SEGMENT_LENGTH) + i) < BLOCK_THREADS))
-                {
-                    raking_partial = scan_op(raking_partial, raking_ptr[i]);
-                }
+                cached_segment[i] = smem_raking_ptr[i];
             }
-
-            return raking_partial;
+            raking_ptr = cached_segment;
         }
-
-
-        /// Performs exclusive downsweep raking scan
-        template <typename ScanOp>
-        __device__ __forceinline__ void ExclusiveDownsweep(
-            TempStorage&    temp_storage,
-            int             linear_tid,
-            ScanOp          scan_op,
-            T               raking_partial,
-            bool            apply_prefix = true)
+        else
         {
-            T *smem_raking_ptr = BlockRakingLayout::RakingPtr(temp_storage.raking_grid, linear_tid);
-
-            T *raking_ptr = (MEMOIZE) ?
-                cached_segment :
-                smem_raking_ptr;
-
-            ThreadScanExclusive<SEGMENT_LENGTH>(raking_ptr, raking_ptr, scan_op, raking_partial, apply_prefix);
-
-            if (MEMOIZE)
-            {
-                // Copy data back to smem
-                #pragma unroll
-                for (int i = 0; i < SEGMENT_LENGTH; i++)
-                {
-                    smem_raking_ptr[i] = cached_segment[i];
-                }
-            }
+            raking_ptr = smem_raking_ptr;
         }
 
+        T raking_partial = raking_ptr[0];
 
-        /// Performs inclusive downsweep raking scan
-        template <typename ScanOp>
-        __device__ __forceinline__ void InclusiveDownsweep(
-            TempStorage&    temp_storage,
-            int             linear_tid,
-            ScanOp          scan_op,
-            T               raking_partial,
-            bool            apply_prefix = true)
+        #pragma unroll
+        for (int i = 1; i < SEGMENT_LENGTH; i++)
         {
-            T *smem_raking_ptr = BlockRakingLayout::RakingPtr(temp_storage.raking_grid, linear_tid);
-
-            T *raking_ptr = (MEMOIZE) ?
-                cached_segment :
-                smem_raking_ptr;
-
-            ThreadScanInclusive<SEGMENT_LENGTH>(raking_ptr, raking_ptr, scan_op, raking_partial, apply_prefix);
-
-            if (MEMOIZE)
+            if ((BlockRakingLayout::UNGUARDED) || (((linear_tid * SEGMENT_LENGTH) + i) < BLOCK_THREADS))
             {
-                // Copy data back to smem
-                #pragma unroll
-                for (int i = 0; i < SEGMENT_LENGTH; i++)
-                {
-                    smem_raking_ptr[i] = cached_segment[i];
-                }
+                raking_partial = scan_op(raking_partial, raking_ptr[i]);
             }
         }
-    };
+
+        return raking_partial;
+    }
+
+
+    /// Performs exclusive downsweep raking scan
+    template <typename ScanOp>
+    __device__ __forceinline__ void ExclusiveDownsweep(
+        ScanOp          scan_op,
+        T               raking_partial,
+        bool            apply_prefix = true)
+    {
+        T *smem_raking_ptr = BlockRakingLayout::RakingPtr(temp_storage.raking_grid, linear_tid);
+
+        T *raking_ptr = (MEMOIZE) ?
+            cached_segment :
+            smem_raking_ptr;
+
+        ThreadScanExclusive<SEGMENT_LENGTH>(raking_ptr, raking_ptr, scan_op, raking_partial, apply_prefix);
+
+        if (MEMOIZE)
+        {
+            // Copy data back to smem
+            #pragma unroll
+            for (int i = 0; i < SEGMENT_LENGTH; i++)
+            {
+                smem_raking_ptr[i] = cached_segment[i];
+            }
+        }
+    }
+
+
+    /// Performs inclusive downsweep raking scan
+    template <typename ScanOp>
+    __device__ __forceinline__ void InclusiveDownsweep(
+        ScanOp          scan_op,
+        T               raking_partial,
+        bool            apply_prefix = true)
+    {
+        T *smem_raking_ptr = BlockRakingLayout::RakingPtr(temp_storage.raking_grid, linear_tid);
+
+        T *raking_ptr = (MEMOIZE) ?
+            cached_segment :
+            smem_raking_ptr;
+
+        ThreadScanInclusive<SEGMENT_LENGTH>(raking_ptr, raking_ptr, scan_op, raking_partial, apply_prefix);
+
+        if (MEMOIZE)
+        {
+            // Copy data back to smem
+            #pragma unroll
+            for (int i = 0; i < SEGMENT_LENGTH; i++)
+            {
+                smem_raking_ptr[i] = cached_segment[i];
+            }
+        }
+    }
+
 
     /// Computes an exclusive threadblock-wide prefix scan using the specified binary \p scan_op functor.  Each thread contributes one input element.  Also provides every thread with the block-wide \p block_aggregate of all inputs.
     template <typename ScanOp>
@@ -239,8 +232,7 @@ struct BlockScanRaking
             if (linear_tid < RAKING_THREADS)
             {
                 // Raking upsweep reduction in grid
-                RakingHelper helper;
-                T raking_partial = helper.Upsweep(temp_storage, linear_tid, scan_op);
+                T raking_partial = Upsweep(scan_op);
 
                 // Exclusive warp synchronous scan
                 WarpScan(temp_storage.warp_scan, 0, linear_tid).ExclusiveScan(
@@ -251,7 +243,7 @@ struct BlockScanRaking
                     temp_storage.block_aggregate);
 
                 // Exclusive raking downsweep scan
-                helper.ExclusiveDownsweep(temp_storage, linear_tid, scan_op, raking_partial);
+                ExclusiveDownsweep(scan_op, raking_partial);
             }
 
             __syncthreads();
@@ -300,8 +292,7 @@ struct BlockScanRaking
             if (linear_tid < RAKING_THREADS)
             {
                 // Raking upsweep reduction in grid
-                RakingHelper helper;
-                T raking_partial = helper.Upsweep(temp_storage, linear_tid, scan_op);
+                T raking_partial = Upsweep(scan_op);
 
                 // Exclusive warp synchronous scan
                 WarpScan(temp_storage.warp_scan, 0, linear_tid).ExclusiveScan(
@@ -313,7 +304,7 @@ struct BlockScanRaking
                     block_prefix_op);
 
                 // Exclusive raking downsweep scan
-                helper.ExclusiveDownsweep(temp_storage, linear_tid, scan_op, raking_partial);
+                ExclusiveDownsweep(scan_op, raking_partial);
             }
 
             __syncthreads();
@@ -356,8 +347,7 @@ struct BlockScanRaking
             if (linear_tid < RAKING_THREADS)
             {
                 // Raking upsweep reduction in grid
-                RakingHelper helper;
-                T raking_partial = helper.Upsweep(temp_storage, linear_tid, scan_op);
+                T raking_partial = Upsweep(scan_op);
 
                 // Exclusive warp synchronous scan
                 WarpScan(temp_storage.warp_scan, 0, linear_tid).ExclusiveScan(
@@ -367,7 +357,7 @@ struct BlockScanRaking
                     temp_storage.block_aggregate);
 
                 // Exclusive raking downsweep scan
-                helper.ExclusiveDownsweep(temp_storage, linear_tid, scan_op, raking_partial, (linear_tid != 0));
+                ExclusiveDownsweep(scan_op, raking_partial, (linear_tid != 0));
             }
 
             __syncthreads();
@@ -414,8 +404,7 @@ struct BlockScanRaking
             if (linear_tid < RAKING_THREADS)
             {
                 // Raking upsweep reduction in grid
-                RakingHelper helper;
-                T raking_partial = helper.Upsweep(temp_storage, linear_tid, scan_op);
+                T raking_partial = Upsweep(scan_op);
 
                 // Exclusive warp synchronous scan
                 WarpScan(temp_storage.warp_scan, 0, linear_tid).ExclusiveScan(
@@ -426,7 +415,7 @@ struct BlockScanRaking
                     block_prefix_op);
 
                 // Exclusive raking downsweep scan
-                helper.ExclusiveDownsweep(temp_storage, linear_tid, scan_op, raking_partial);
+                ExclusiveDownsweep(scan_op, raking_partial);
             }
 
             __syncthreads();
@@ -469,8 +458,7 @@ struct BlockScanRaking
             if (linear_tid < RAKING_THREADS)
             {
                 // Raking upsweep reduction in grid
-                RakingHelper helper;
-                T raking_partial = helper.Upsweep(temp_storage, linear_tid, scan_op);
+                T raking_partial = Upsweep(scan_op);
 
                 // Exclusive warp synchronous scan
                 WarpScan(temp_storage.warp_scan, 0, linear_tid).ExclusiveSum(
@@ -479,7 +467,7 @@ struct BlockScanRaking
                     temp_storage.block_aggregate);
 
                 // Exclusive raking downsweep scan
-                helper.ExclusiveDownsweep(temp_storage, linear_tid, scan_op, raking_partial);
+                ExclusiveDownsweep(scan_op, raking_partial);
             }
 
             __syncthreads();
@@ -525,8 +513,7 @@ struct BlockScanRaking
             if (linear_tid < RAKING_THREADS)
             {
                 // Raking upsweep reduction in grid
-                RakingHelper helper;
-                T raking_partial = helper.Upsweep(temp_storage, linear_tid, scan_op);
+                T raking_partial = Upsweep(scan_op);
 
                 // Exclusive warp synchronous scan
                 WarpScan(temp_storage.warp_scan, 0, linear_tid).ExclusiveSum(
@@ -536,7 +523,7 @@ struct BlockScanRaking
                     block_prefix_op);
 
                 // Exclusive raking downsweep scan
-                helper.ExclusiveDownsweep(temp_storage, linear_tid, scan_op, raking_partial);
+                ExclusiveDownsweep(scan_op, raking_partial);
             }
 
             __syncthreads();
@@ -579,8 +566,7 @@ struct BlockScanRaking
             if (linear_tid < RAKING_THREADS)
             {
                 // Raking upsweep reduction in grid
-                RakingHelper helper;
-                T raking_partial = helper.Upsweep(temp_storage, linear_tid, scan_op);
+                T raking_partial = Upsweep(scan_op);
 
                 // Exclusive warp synchronous scan
                 WarpScan(temp_storage.warp_scan, 0, linear_tid).ExclusiveScan(
@@ -590,7 +576,7 @@ struct BlockScanRaking
                     temp_storage.block_aggregate);
 
                 // Inclusive raking downsweep scan
-                helper.InclusiveDownsweep(temp_storage, linear_tid, scan_op, raking_partial, (linear_tid != 0));
+                InclusiveDownsweep(scan_op, raking_partial, (linear_tid != 0));
             }
 
             __syncthreads();
@@ -637,8 +623,7 @@ struct BlockScanRaking
             if (linear_tid < RAKING_THREADS)
             {
                 // Raking upsweep reduction in grid
-                RakingHelper helper;
-                T raking_partial = helper.Upsweep(temp_storage, linear_tid, scan_op);
+                T raking_partial = Upsweep(scan_op);
 
                 // Warp synchronous scan
                 WarpScan(temp_storage.warp_scan, 0, linear_tid).ExclusiveScan(
@@ -649,7 +634,7 @@ struct BlockScanRaking
                     block_prefix_op);
 
                 // Inclusive raking downsweep scan
-                helper.InclusiveDownsweep(temp_storage, linear_tid, scan_op, raking_partial);
+                InclusiveDownsweep(scan_op, raking_partial);
             }
 
             __syncthreads();
@@ -692,8 +677,7 @@ struct BlockScanRaking
             if (linear_tid < RAKING_THREADS)
             {
                 // Raking upsweep reduction in grid
-                RakingHelper helper;
-                T raking_partial = helper.Upsweep(temp_storage, linear_tid, scan_op);
+                T raking_partial = Upsweep(scan_op);
 
                 // Exclusive warp synchronous scan
                 WarpScan(temp_storage.warp_scan, 0, linear_tid).ExclusiveSum(
@@ -702,7 +686,7 @@ struct BlockScanRaking
                     temp_storage.block_aggregate);
 
                 // Inclusive raking downsweep scan
-                helper.InclusiveDownsweep(temp_storage, linear_tid, scan_op, raking_partial, (linear_tid != 0));
+                InclusiveDownsweep(scan_op, raking_partial, (linear_tid != 0));
             }
 
             __syncthreads();
@@ -748,8 +732,7 @@ struct BlockScanRaking
             if (linear_tid < RAKING_THREADS)
             {
                 // Raking upsweep reduction in grid
-                RakingHelper helper;
-                T raking_partial = helper.Upsweep(temp_storage, linear_tid, scan_op);
+                T raking_partial = Upsweep(scan_op);
 
                 // Warp synchronous scan
                 WarpScan(temp_storage.warp_scan, 0, linear_tid).ExclusiveSum(
@@ -759,7 +742,7 @@ struct BlockScanRaking
                     block_prefix_op);
 
                 // Inclusive raking downsweep scan
-                helper.InclusiveDownsweep(temp_storage, linear_tid, scan_op, raking_partial);
+                InclusiveDownsweep(scan_op, raking_partial);
             }
 
             __syncthreads();
