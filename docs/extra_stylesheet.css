@@ -30,11 +30,11 @@ div.contents {
 }
 
 div.contents p:first-of-type {
-		color: #666;
+		color: #555;
 }
 
 div.textblock p:first-of-type {
-		color: #666;
+		color: #555;
 }
 
 div.header {
@@ -235,7 +235,7 @@ div.memdoc {
 		border-left: 1px solid #999;
 		border-right: 1px solid #999;
 		background-image: none;
-		color: #666;
+		color: #555;
 		box-shadow: 3px 3px 30px rgba(0, 0, 0, 0.1);
 }
 
@@ -293,7 +293,7 @@ dl.section.user a:visited b {
 
 dl.section.user dd {
 		margin-right: 40px;
-		color: #666;
+		color: #555;
 }
 
 /******************************************************************************
@@ -414,7 +414,7 @@ td.memSeparator {
 td.mdescLeft, td.mdescRight {
 		padding-top: 10px;
 		padding-bottom: 20px;
-		color: #666;
+		color: #555;
 }
 
 td.memname, td.paramtype, div.memtemplate {
