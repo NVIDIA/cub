@@ -122,47 +122,6 @@ struct WarpScanSmem
     __device__ __forceinline__ void InitIdentity(Int2Type<false> has_identity)
     {}
 
-/* mooch
-    /// Basic inclusive scan iteration (template unrolled, inductive-case specialization)
-    template <
-        bool HAS_IDENTITY,
-        int STEP>
-    struct Iteration
-    {
-        template <typename ScanOp>
-        static __device__ __forceinline__ void ScanStep(
-            TempStorage     &temp_storage,
-            unsigned int    warp_id,
-            unsigned int    lane_id,
-            T               &partial,
-            ScanOp          scan_op)
-        {
-            const int OFFSET = 1 << STEP;
-
-            // Share partial into buffer
-            ThreadStore<STORE_VOLATILE>(&temp_storage[warp_id][HALF_WARP_THREADS + lane_id], partial);
-
-            // Update partial if addend is in range
-            if (HAS_IDENTITY || (lane_id >= OFFSET))
-            {
-                T addend = ThreadLoad<LOAD_VOLATILE>(&temp_storage[warp_id][HALF_WARP_THREADS + lane_id - OFFSET]);
-                partial = scan_op(addend, partial);
-            }
-
-            Iteration<HAS_IDENTITY, STEP + 1>::ScanStep(temp_storage, warp_id, lane_id, partial, scan_op);
-        }
-    };
-
-
-    /// Basic inclusive scan iteration(template unrolled, base-case specialization)
-    template <
-        bool HAS_IDENTITY>
-    struct Iteration<HAS_IDENTITY, STEPS>
-    {
-        template <typename ScanOp>
-        static __device__ __forceinline__ void ScanStep(TempStorage &temp_storage, unsigned int warp_id, unsigned int lane_id, T &partial, ScanOp scan_op) {}
-    };
-*/
 
     /// Basic inclusive scan iteration(template unrolled, base-case specialization)
     template <
