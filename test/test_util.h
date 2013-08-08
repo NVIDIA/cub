@@ -679,12 +679,13 @@ struct TestBar
     long long       x;
     int             y;
 
-    // Factory
-    static __host__ __device__ __forceinline__ TestBar MakeTestBar(long long x, int y)
-    {
-        TestBar retval = {x, y};
-        return retval;
-    }
+    // Constructor
+    __host__ __device__ __forceinline__ TestBar() : x(0), y(0)
+    {}
+
+    // Constructor
+    __host__ __device__ __forceinline__ TestBar(long long x, int y) : x(x), y(y)
+    {}
 
     // Assignment from int operator
     __host__ __device__ __forceinline__ TestBar operator =(int b)
@@ -697,7 +698,7 @@ struct TestBar
     // Summation operator
     __host__ __device__ __forceinline__ TestBar operator+(const TestBar &b) const
     {
-        return MakeTestBar(x + b.x, y + b.y);
+        return TestBar(x + b.x, y + b.y);
     }
 
     // Inequality operator

@@ -238,7 +238,7 @@ struct BlockPartitionTiles
         PredicateOp                 pred_op,            ///< Unary predicate operator indicating membership in the first partition
         SizeT                       num_items)          ///< Total number of input items
     :
-        temp_storage(temp_storage),
+        temp_storage(temp_storage.Alias()),
         d_in(d_in),
         d_out(d_out),
         d_tile_status(d_tile_status),

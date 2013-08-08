@@ -49,7 +49,7 @@ using namespace cub;
 bool                    g_verbose           = false;
 int                     g_timing_iterations = 0;
 int                     g_repeat            = 0;
-int                     g_bits              = 5;
+int                     g_bits              = -1;
 CachingDeviceAllocator  g_allocator;
 
 
@@ -408,14 +408,14 @@ int main(int argc, char** argv)
     CubDebugExit(args.DeviceInit());
     printf("\n");
 
-    Test<false, unsigned int, NullType>         (num_items, RANDOM, 0, g_bits, CUB_TYPE_STRING(unsigned int));
-    Test<false, unsigned long long, NullType>   (num_items, RANDOM, 0, g_bits, CUB_TYPE_STRING(unsigned int));
-    Test<false, unsigned int, unsigned int> (num_items, RANDOM, 0, g_bits, CUB_TYPE_STRING(unsigned int));
+    Test<false, unsigned int, NullType>         (num_items, RANDOM, 0, CUB_MAX(sizeof(unsigned int) * 8, g_bits),       CUB_TYPE_STRING(unsigned int));
+    Test<false, unsigned long long, NullType>   (num_items, RANDOM, 0, CUB_MAX(sizeof(unsigned long long) * 8, g_bits), CUB_TYPE_STRING(unsigned long long));
+    Test<false, unsigned int, unsigned int>     (num_items, RANDOM, 0, CUB_MAX(sizeof(unsigned int) * 8, g_bits),       CUB_TYPE_STRING(unsigned int));
 
 #ifdef CUB_CDP
-    Test<true, unsigned int, NullType>         (num_items, RANDOM, 0, g_bits, CUB_TYPE_STRING(unsigned int));
-    Test<true, unsigned long long, NullType>   (num_items, RANDOM, 0, g_bits, CUB_TYPE_STRING(unsigned int));
-    Test<true, unsigned int, unsigned int>     (num_items, RANDOM, 0, g_bits, CUB_TYPE_STRING(unsigned int));
+    Test<true, unsigned int, NullType>         (num_items, RANDOM, 0, CUB_MAX(sizeof(unsigned int) * 8, g_bits),       CUB_TYPE_STRING(unsigned int));
+    Test<true, unsigned long long, NullType>   (num_items, RANDOM, 0, CUB_MAX(sizeof(unsigned long long) * 8, g_bits), CUB_TYPE_STRING(unsigned long long));
+    Test<true, unsigned int, unsigned int>     (num_items, RANDOM, 0, CUB_MAX(sizeof(unsigned int) * 8, g_bits),       CUB_TYPE_STRING(unsigned int));
 #endif
 
     return 0;

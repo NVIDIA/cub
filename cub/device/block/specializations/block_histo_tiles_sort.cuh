@@ -85,8 +85,8 @@ struct BlockHistogramTilesSort
     // Parameterize BlockDiscontinuity type for our thread block
     typedef BlockDiscontinuity<SampleT, BLOCK_THREADS> BlockDiscontinuityT;
 
-    // Shared memory type required by this thread block
-    union TempStorage
+    /// Shared memory type required by this thread block
+    union _TempStorage
     {
         // Storage for sorting bin values
         typename BlockRadixSortT::TempStorage sort;
@@ -103,14 +103,20 @@ struct BlockHistogramTilesSort
     };
 
 
+    /// Alias wrapper allowing storage to be unioned
+    typedef Uninitialized<_TempStorage> TempStorage;
+
+
     // Discontinuity functor
     struct DiscontinuityOp
     {
         // Reference to temp_storage
-        TempStorage &temp_storage;
+        _TempStorage &temp_storage;
 
         // Constructor
-        __device__ __forceinline__ DiscontinuityOp(TempStorage &temp_storage) : temp_storage(temp_storage) {}
+        __device__ __forceinline__ DiscontinuityOp(_TempStorage &temp_storage) :
+            temp_storage(temp_storage)
+        {}
 
         // Discontinuity predicate
         __device__ __forceinline__ bool operator()(const SampleT &a, const SampleT &b, int b_index)
@@ -136,7 +142,7 @@ struct BlockHistogramTilesSort
     //---------------------------------------------------------------------
 
     /// Reference to temp_storage
-    TempStorage &temp_storage;
+    _TempStorage &temp_storage;
 
     /// Histogram counters striped across threads
     HistoCounter thread_counters[ACTIVE_CHANNELS][STRIPED_COUNTERS_PER_THREAD];
@@ -160,7 +166,7 @@ struct BlockHistogramTilesSort
         InputIteratorRA     d_in,                                           ///< Input data to reduce
         HistoCounter*       (&d_out_histograms)[ACTIVE_CHANNELS])           ///< Reference to output histograms
     :
-        temp_storage(temp_storage),
+        temp_storage(temp_storage.Alias()),
         d_in(d_in),
         d_out_histograms(d_out_histograms)
     {

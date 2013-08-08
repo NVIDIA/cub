@@ -212,7 +212,7 @@ private:
             TempStorage     &temp_storage,
             int             linear_tid)
         :
-            temp_storage(temp_storage),
+            temp_storage(temp_storage.Alias()),
             linear_tid(linear_tid)
         {}
 
@@ -224,7 +224,7 @@ private:
             TempStorage &temp_storage;
 
             // Constructor
-            __device__ __forceinline__ DiscontinuityOp(TempStorage &temp_storage) : temp_storage(temp_storage) {}
+            __device__ __forceinline__ DiscontinuityOp(TempStorage &temp_storage) : temp_storage(temp_storage.Alias()) {}
 
             // Discontinuity predicate
             __device__ __forceinline__ bool operator()(const T &a, const T &b, unsigned int b_index)
@@ -385,7 +385,7 @@ private:
 public:
 
     /// \smemstorage{BlockHistogram}
-    typedef _TempStorage TempStorage;
+    typedef Uninitialized<_TempStorage> TempStorage;
 
 
     /******************************************************************//**
@@ -409,7 +409,7 @@ public:
     __device__ __forceinline__ BlockHistogram(
         TempStorage &temp_storage)             ///< [in] Reference to memory allocation having layout type TempStorage
     :
-        temp_storage(temp_storage),
+        temp_storage(temp_storage.Alias()),
         linear_tid(threadIdx.x)
     {}
 
@@ -432,7 +432,7 @@ public:
         TempStorage &temp_storage,             ///< [in] Reference to memory allocation having layout type TempStorage
         int linear_tid)                        ///< [in] <b>[optional]</b> A suitable 1D thread-identifier for the calling thread (e.g., <tt>(threadIdx.y * blockDim.x) + linear_tid</tt> for 2D thread blocks)
     :
-        temp_storage(temp_storage),
+        temp_storage(temp_storage.Alias()),
         linear_tid(linear_tid)
     {}
 

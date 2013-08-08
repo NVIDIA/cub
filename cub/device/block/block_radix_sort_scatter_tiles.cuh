@@ -214,7 +214,7 @@ struct BlockRadixSortScatterTiles
     /**
      * Shared memory storage layout
      */
-    struct TempStorage
+    struct _TempStorage
     {
         SizeT   relative_bin_offsets[RADIX_DIGITS + 1];
         bool    short_circuit;
@@ -230,12 +230,16 @@ struct BlockRadixSortScatterTiles
     };
 
 
+    /// Alias wrapper allowing storage to be unioned
+    typedef Uninitialized<_TempStorage> TempStorage;
+
+
     //---------------------------------------------------------------------
     // Thread fields
     //---------------------------------------------------------------------
 
     // Shared storage for this CTA
-    TempStorage     &temp_storage;
+    _TempStorage    &temp_storage;
 
     // Input and output device pointers
     UnsignedBits    *d_keys_in;
@@ -622,7 +626,7 @@ struct BlockRadixSortScatterTiles
         Value       *d_values_out,
         int         current_bit)
     :
-        temp_storage(temp_storage),
+        temp_storage(temp_storage.Alias()),
         bin_offset(bin_offset),
         d_keys_in(reinterpret_cast<UnsignedBits*>(d_keys_in)),
         d_keys_out(reinterpret_cast<UnsignedBits*>(d_keys_out)),
@@ -646,7 +650,7 @@ struct BlockRadixSortScatterTiles
         Value       *d_values_out,
         int         current_bit)
     :
-        temp_storage(temp_storage),
+        temp_storage(temp_storage.Alias()),
         d_keys_in(reinterpret_cast<UnsignedBits*>(d_keys_in)),
         d_keys_out(reinterpret_cast<UnsignedBits*>(d_keys_out)),
         d_values_in(d_values_in),
@@ -659,7 +663,7 @@ struct BlockRadixSortScatterTiles
             // Short circuit if the first block's histogram has only bin counts of only zeros or problem-size
             SizeT first_block_bin_offset = d_spine[gridDim.x * threadIdx.x];
             int predicate = ((first_block_bin_offset == 0) || (first_block_bin_offset == num_items));
-            temp_storage.short_circuit = WarpAll(predicate);
+            this->temp_storage.short_circuit = WarpAll(predicate);
 
             // Load my block's bin offset for my bin
             bin_offset = d_spine[(gridDim.x * threadIdx.x) + blockIdx.x];
@@ -667,7 +671,7 @@ struct BlockRadixSortScatterTiles
 
         __syncthreads();
 
-        short_circuit = temp_storage.short_circuit;
+        short_circuit = this->temp_storage.short_circuit;
     }
 
 

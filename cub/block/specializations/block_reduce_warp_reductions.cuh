@@ -77,15 +77,19 @@ struct BlockReduceWarpReductions
 
 
     /// Shared memory storage layout type
-    struct TempStorage
+    struct _TempStorage
     {
         typename WarpReduce::TempStorage    warp_reduce;                ///< Buffer for warp-synchronous scan
         T                                   warp_aggregates[WARPS];     ///< Shared totals from each warp-synchronous scan
         T                                   block_prefix;               ///< Shared prefix for the entire threadblock
     };
 
+    /// Alias wrapper allowing storage to be unioned
+    typedef Uninitialized<_TempStorage> TempStorage;
+
+
     // Thread fields
-    TempStorage &temp_storage;
+    _TempStorage &temp_storage;
     int linear_tid;
     int warp_id;
     int lane_id;
@@ -96,7 +100,7 @@ struct BlockReduceWarpReductions
         TempStorage &temp_storage,
         int linear_tid)
     :
-        temp_storage(temp_storage),
+        temp_storage(temp_storage.Alias()),
         linear_tid(linear_tid),
         warp_id((BLOCK_THREADS <= PtxArchProps::WARP_THREADS) ?
             0 :

@@ -151,64 +151,6 @@ private:
     };
 
 
-    /// Raking helper structure
-    struct RakingHelper
-    {
-        /// Copy of raking segment, promoted to registers
-        PackedCounter cached_segment[RAKING_SEGMENT];
-
-        // Performs upsweep raking reduction, returning the aggregate
-        __device__ __forceinline__ PackedCounter Upsweep(BlockRadixRank &cta)
-        {
-            PackedCounter *smem_raking_ptr = cta.temp_storage.raking_grid[cta.linear_tid];
-            PackedCounter *raking_ptr;
-
-            if (MEMOIZE_OUTER_SCAN)
-            {
-                // Copy data into registers
-                #pragma unroll
-                for (int i = 0; i < RAKING_SEGMENT; i++)
-                {
-                    cached_segment[i] = smem_raking_ptr[i];
-                }
-                raking_ptr = cached_segment;
-            }
-            else
-            {
-                raking_ptr = smem_raking_ptr;
-            }
-
-            return ThreadReduce<RAKING_SEGMENT>(raking_ptr, Sum());
-        }
-
-
-        /// Performs exclusive downsweep raking scan
-        __device__ __forceinline__ void ExclusiveDownsweep(
-            BlockRadixRank  &cta,
-            PackedCounter   raking_partial)
-        {
-            PackedCounter *smem_raking_ptr = cta.temp_storage.raking_grid[cta.linear_tid];
-
-            PackedCounter *raking_ptr = (MEMOIZE_OUTER_SCAN) ?
-                cached_segment :
-                smem_raking_ptr;
-
-            // Exclusive raking downsweep scan
-            ThreadScanExclusive<RAKING_SEGMENT>(raking_ptr, raking_ptr, Sum(), raking_partial);
-
-            if (MEMOIZE_OUTER_SCAN)
-            {
-                // Copy data back to smem
-                #pragma unroll
-                for (int i = 0; i < RAKING_SEGMENT; i++)
-                {
-                    smem_raking_ptr[i] = cached_segment[i];
-                }
-            }
-        }
-    };
-
-
     /******************************************************************************
      * Thread fields
      ******************************************************************************/
@@ -218,6 +160,9 @@ private:
 
     /// Linear thread-id
     int linear_tid;
+
+    /// Copy of raking segment, promoted to registers
+    PackedCounter cached_segment[RAKING_SEGMENT];
 
 
     /******************************************************************************
@@ -319,6 +264,58 @@ private:
 
 
     /**
+     * Performs upsweep raking reduction, returning the aggregate
+     */
+    __device__ __forceinline__ PackedCounter Upsweep()
+    {
+        PackedCounter *smem_raking_ptr = temp_storage.raking_grid[linear_tid];
+        PackedCounter *raking_ptr;
+
+        if (MEMOIZE_OUTER_SCAN)
+        {
+            // Copy data into registers
+            #pragma unroll
+            for (int i = 0; i < RAKING_SEGMENT; i++)
+            {
+                cached_segment[i] = smem_raking_ptr[i];
+            }
+            raking_ptr = cached_segment;
+        }
+        else
+        {
+            raking_ptr = smem_raking_ptr;
+        }
+
+        return ThreadReduce<RAKING_SEGMENT>(raking_ptr, Sum());
+    }
+
+
+    /// Performs exclusive downsweep raking scan
+    __device__ __forceinline__ void ExclusiveDownsweep(
+        PackedCounter raking_partial)
+    {
+        PackedCounter *smem_raking_ptr = temp_storage.raking_grid[linear_tid];
+
+        PackedCounter *raking_ptr = (MEMOIZE_OUTER_SCAN) ?
+            cached_segment :
+            smem_raking_ptr;
+
+        // Exclusive raking downsweep scan
+        ThreadScanExclusive<RAKING_SEGMENT>(raking_ptr, raking_ptr, Sum(), raking_partial);
+
+        if (MEMOIZE_OUTER_SCAN)
+        {
+            // Copy data back to smem
+            #pragma unroll
+            for (int i = 0; i < RAKING_SEGMENT; i++)
+            {
+                smem_raking_ptr[i] = cached_segment[i];
+            }
+        }
+    }
+
+
+    /**
      * Reset shared memory digit counters
      */
     __device__ __forceinline__ void ResetCounters()
@@ -338,8 +335,7 @@ private:
     __device__ __forceinline__ void ScanCounters()
     {
         // Upsweep scan
-        RakingHelper helper;
-        PackedCounter raking_partial = helper.Upsweep(*this);
+        PackedCounter raking_partial = Upsweep();
 
         // Compute inclusive sum
         PackedCounter inclusive_partial;
@@ -355,13 +351,13 @@ private:
 
         // Downsweep scan with exclusive partial
         PackedCounter exclusive_partial = inclusive_partial - raking_partial;
-        helper.ExclusiveDownsweep(*this, exclusive_partial);
+        ExclusiveDownsweep(exclusive_partial);
     }
 
 public:
 
     /// \smemstorage{BlockScan}
-    typedef _TempStorage TempStorage;
+    typedef Uninitialized<_TempStorage> TempStorage;
 
 
     /******************************************************************//**
@@ -385,7 +381,7 @@ public:
     __device__ __forceinline__ BlockRadixRank(
         TempStorage &temp_storage)             ///< [in] Reference to memory allocation having layout type TempStorage
     :
-        temp_storage(temp_storage),
+        temp_storage(temp_storage.Alias()),
         linear_tid(threadIdx.x)
     {}
 
@@ -408,7 +404,7 @@ public:
         TempStorage &temp_storage,             ///< [in] Reference to memory allocation having layout type TempStorage
         int linear_tid)                        ///< [in] <b>[optional]</b> A suitable 1D thread-identifier for the calling thread (e.g., <tt>(threadIdx.y * blockDim.x) + linear_tid</tt> for 2D thread blocks)
     :
-        temp_storage(temp_storage),
+        temp_storage(temp_storage.Alias()),
         linear_tid(linear_tid)
     {}
 
