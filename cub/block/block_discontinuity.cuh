@@ -33,7 +33,6 @@
 
 #pragma once
 
-#include <cuda_runtime.h>
 #include "../util_arch.cuh"
 #include "../util_type.cuh"
 #include "../thread/thread_operators.cuh"

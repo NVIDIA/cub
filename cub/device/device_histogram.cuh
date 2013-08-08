@@ -90,7 +90,7 @@ template <
     typename                                        SizeT>                      ///< Integer type used for global array indexing
 __launch_bounds__ (int(BlockHistogramTilesPolicy::BLOCK_THREADS), BlockHistogramTilesPolicy::SM_OCCUPANCY)
 __global__ void MultiBlockHistogramKernel(
-    InputIteratorRA                                 d_samples,                  ///< [in] Array of sample data. (Channels, if any, are interleaved in "AOS" format)
+    InputIteratorRA                                 d_samples,                  ///< [in] Array of sample data. The samples from different channels are assumed to be interleaved (e.g., an array of 32b pixels where each pixel consists of four RGBA 8b samples).
     ArrayWrapper<HistoCounter*, ACTIVE_CHANNELS>    d_out_histograms,           ///< [out] Histogram counter data having logical dimensions <tt>HistoCounter[ACTIVE_CHANNELS][gridDim.x][BINS]</tt>
     SizeT                                           num_samples,                ///< [in] Total number of samples \p d_samples for all channels
     GridEvenShare<SizeT>                            even_share,                 ///< [in] Descriptor for how to map an even-share of tiles across thread blocks
@@ -831,6 +831,8 @@ struct DeviceHistogram
      * number of bins (e.g., thousands) may adversely affect occupancy and
      * performance (or even the ability to launch).
      *
+     * The total number of samples across all channels (\p num_samples) must be a whole multiple of \p CHANNELS.
+     *
      * \devicestorage
      *
      * \cdp
@@ -888,7 +890,7 @@ struct DeviceHistogram
     static cudaError_t MultiChannelSorting(
         void                *d_temp_storage,                    ///< [in] %Device allocation of temporary storage.  When NULL, the required allocation size is returned in \p temp_storage_bytes and no work is done.
         size_t              &temp_storage_bytes,                ///< [in,out] Size in bytes of \p d_temp_storage allocation.
-        InputIteratorRA     d_samples,                          ///< [in] Input samples. (Channels, if any, are interleaved in "AOS" format)
+        InputIteratorRA     d_samples,                          ///< [in] Input samples. The samples from different channels are assumed to be interleaved (e.g., an array of 32b pixels where each pixel consists of four RGBA 8b samples).
         HistoCounter        *d_histograms[ACTIVE_CHANNELS],     ///< [out] Array of channel histogram counter arrays, each having BINS counters of integral type \p HistoCounter.
         int                 num_samples,                        ///< [in] Total number of samples to process in all channels, including non-active channels
         cudaStream_t        stream              = 0,            ///< [in] <b>[optional]</b> CUDA stream to launch kernels within.  Default is stream<sub>0</sub>.
@@ -905,6 +907,8 @@ struct DeviceHistogram
      * However, because histograms are privatized in shared memory, a large
      * number of bins (e.g., thousands) may adversely affect occupancy and
      * performance (or even the ability to launch).
+     *
+     * The total number of samples across all channels (\p num_samples) must be a whole multiple of \p CHANNELS.
      *
      * \devicestorage
      *
@@ -963,7 +967,7 @@ struct DeviceHistogram
     static cudaError_t MultiChannelSharedAtomic(
         void                *d_temp_storage,                    ///< [in] %Device allocation of temporary storage.  When NULL, the required allocation size is returned in \p temp_storage_bytes and no work is done.
         size_t              &temp_storage_bytes,                ///< [in,out] Size in bytes of \p d_temp_storage allocation.
-        InputIteratorRA     d_samples,                          ///< [in] Input samples. (Channels, if any, are interleaved in "AOS" format)
+        InputIteratorRA     d_samples,                          ///< [in] Input samples. The samples from different channels are assumed to be interleaved (e.g., an array of 32b pixels where each pixel consists of four RGBA 8b samples).
         HistoCounter        *d_histograms[ACTIVE_CHANNELS],     ///< [out] Array of channel histogram counter arrays, each having BINS counters of integral type \p HistoCounter.
         int                 num_samples,                        ///< [in] Total number of samples to process in all channels, including non-active channels
         cudaStream_t        stream              = 0,            ///< [in] <b>[optional]</b> CUDA stream to launch kernels within.  Default is stream<sub>0</sub>.
@@ -980,11 +984,15 @@ struct DeviceHistogram
      * Performance is not significantly impacted when computing histograms having large
      * numbers of bins (e.g., thousands).
      *
+     * The total number of samples across all channels (\p num_samples) must be a whole multiple of \p CHANNELS.
+     *
      * \devicestorage
      *
      * \cdp
      *
      * \iterator
+     *
+     * Performance is often improved when referencing input samples through a texture-caching iterator, e.g., cub::TexIteratorRA or cub::TexTransformIteratorRA.
      *
      * \par
      * The code snippet below illustrates the computation of three 256-bin histograms from
@@ -1037,7 +1045,7 @@ struct DeviceHistogram
     static cudaError_t MultiChannelGlobalAtomic(
         void                *d_temp_storage,                    ///< [in] %Device allocation of temporary storage.  When NULL, the required allocation size is returned in \p temp_storage_bytes and no work is done.
         size_t              &temp_storage_bytes,                ///< [in,out] Size in bytes of \p d_temp_storage allocation.
-        InputIteratorRA     d_samples,                          ///< [in] Input samples. (Channels, if any, are interleaved in "AOS" format)
+        InputIteratorRA     d_samples,                          ///< [in] Input samples. The samples from different channels are assumed to be interleaved (e.g., an array of 32b pixels where each pixel consists of four RGBA 8b samples).
         HistoCounter        *d_histograms[ACTIVE_CHANNELS],     ///< [out] Array of channel histogram counter arrays, each having BINS counters of integral type \p HistoCounter.
         int                 num_samples,                        ///< [in] Total number of samples to process in all channels, including non-active channels
         cudaStream_t        stream              = 0,            ///< [in] <b>[optional]</b> CUDA stream to launch kernels within.  Default is stream<sub>0</sub>.

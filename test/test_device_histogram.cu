@@ -485,9 +485,9 @@ void Test(
     int             num_samples,
     char*           type_string)
 {
-    TestCnp<BINS, CHANNELS, ACTIVE_CHANNELS, SampleT, IteratorValue, HistoCounterT>(Int2Type<GRID_HISTO_SORT>(),          gen_mode, bin_op, num_samples, type_string);
-    TestCnp<BINS, CHANNELS, ACTIVE_CHANNELS, SampleT, IteratorValue, HistoCounterT>(Int2Type<GRID_HISTO_SHARED_ATOMIC>(), gen_mode, bin_op, num_samples, type_string);
-    TestCnp<BINS, CHANNELS, ACTIVE_CHANNELS, SampleT, IteratorValue, HistoCounterT>(Int2Type<GRID_HISTO_GLOBAL_ATOMIC>(), gen_mode, bin_op, num_samples, type_string);
+    TestCnp<BINS, CHANNELS, ACTIVE_CHANNELS, SampleT, IteratorValue, HistoCounterT>(Int2Type<GRID_HISTO_SORT>(),          gen_mode, bin_op, num_samples * CHANNELS, type_string);
+    TestCnp<BINS, CHANNELS, ACTIVE_CHANNELS, SampleT, IteratorValue, HistoCounterT>(Int2Type<GRID_HISTO_SHARED_ATOMIC>(), gen_mode, bin_op, num_samples * CHANNELS, type_string);
+    TestCnp<BINS, CHANNELS, ACTIVE_CHANNELS, SampleT, IteratorValue, HistoCounterT>(Int2Type<GRID_HISTO_GLOBAL_ATOMIC>(), gen_mode, bin_op, num_samples * CHANNELS, type_string);
 }
 
 
@@ -526,7 +526,7 @@ void TestModes(
     char*           type_string)
 {
     Test<BINS, SampleT, IteratorValue, HistoCounterT>(RANDOM, bin_op, num_samples, type_string);
-//    Test<BINS, SampleT, IteratorValue, HistoCounterT>(UNIFORM, bin_op, num_samples, type_string);
+    Test<BINS, SampleT, IteratorValue, HistoCounterT>(UNIFORM, bin_op, num_samples, type_string);
 }
 
 
