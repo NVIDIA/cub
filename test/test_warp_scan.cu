@@ -534,7 +534,7 @@ void Test(GenMode gen_mode)
 
     // complex
     Test<LOGICAL_WARP_THREADS>(gen_mode, Sum(), TestFoo::MakeTestFoo(0, 0, 0, 0), TestFoo::MakeTestFoo(17, 21, 32, 85), CUB_TYPE_STRING(Sum<TestFoo>));
-    Test<LOGICAL_WARP_THREADS>(gen_mode, Sum(), TestBar::MakeTestBar(0, 0), TestBar::MakeTestBar(17, 21), CUB_TYPE_STRING(Sum<TestBar>));
+    Test<LOGICAL_WARP_THREADS>(gen_mode, Sum(), TestBar(0, 0), TestBar(17, 21), CUB_TYPE_STRING(Sum<TestBar>));
 }
 
 

@@ -128,8 +128,11 @@ struct BlockReduceTiles
     // Parameterized BlockReduce primitive
     typedef BlockReduce<T, BLOCK_THREADS, BlockReduceTilesPolicy::BLOCK_ALGORITHM> BlockReduceT;
 
-    // Shared memory type required by this thread block
-    typedef typename BlockReduceT::TempStorage TempStorage;
+    /// Shared memory type required by this thread block
+    typedef typename BlockReduceT::TempStorage _TempStorage;
+
+    /// Alias wrapper allowing storage to be unioned
+    typedef Uninitialized<_TempStorage> TempStorage;
 
 
     //---------------------------------------------------------------------
@@ -137,7 +140,7 @@ struct BlockReduceTiles
     //---------------------------------------------------------------------
 
     T                       thread_aggregate;   ///< Each thread's partial reduction
-    TempStorage&            temp_storage;       ///< Reference to temp_storage
+    _TempStorage&           temp_storage;       ///< Reference to temp_storage
     InputIteratorRA         d_in;               ///< Input data to reduce
     ReductionOp             reduction_op;       ///< Binary reduction operator
     int                     first_tile_size;    ///< Size of first tile consumed
@@ -156,7 +159,7 @@ struct BlockReduceTiles
         InputIteratorRA         d_in,               ///< Input data to reduce
         ReductionOp             reduction_op)       ///< Binary reduction operator
     :
-        temp_storage(temp_storage),
+        temp_storage(temp_storage.Alias()),
         d_in(d_in),
         reduction_op(reduction_op),
         first_tile_size(0),

@@ -151,7 +151,7 @@ private:
 public:
 
     /// \smemstorage{BlockExchange}
-    typedef _TempStorage TempStorage;
+    typedef Uninitialized<_TempStorage> TempStorage;
 
 private:
 
@@ -662,7 +662,7 @@ public:
     __device__ __forceinline__ BlockExchange(
         TempStorage &temp_storage)             ///< [in] Reference to memory allocation having layout type TempStorage
     :
-        temp_storage(temp_storage),
+        temp_storage(temp_storage.Alias()),
         linear_tid(threadIdx.x),
         warp_lane(linear_tid & (WARP_THREADS - 1)),
         warp_id(linear_tid >> LOG_WARP_THREADS),
@@ -691,7 +691,7 @@ public:
         TempStorage &temp_storage,              ///< [in] Reference to memory allocation having layout type TempStorage
         int         linear_tid)                 ///< [in] <b>[optional]</b> A suitable 1D thread-identifier for the calling thread (e.g., <tt>(threadIdx.y * blockDim.x) + linear_tid</tt> for 2D thread blocks)
     :
-        temp_storage(temp_storage),
+        temp_storage(temp_storage.Alias()),
         linear_tid(linear_tid),
         warp_lane(linear_tid & (WARP_THREADS - 1)),
         warp_id(linear_tid >> LOG_WARP_THREADS),

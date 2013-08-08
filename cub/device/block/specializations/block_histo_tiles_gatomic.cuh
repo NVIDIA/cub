@@ -77,15 +77,12 @@ struct BlockHistogramTilesGlobalAtomic
     };
 
     // Shared memory type required by this thread block
-    struct TempStorage {};
+    typedef NullType TempStorage;
 
 
     //---------------------------------------------------------------------
     // Per-thread fields
     //---------------------------------------------------------------------
-
-    /// Reference to temp_storage
-    TempStorage &temp_storage;
 
     /// Reference to output histograms
     HistoCounter* (&d_out_histograms)[ACTIVE_CHANNELS];
@@ -106,7 +103,6 @@ struct BlockHistogramTilesGlobalAtomic
         InputIteratorRA     d_in,                                           ///< Input data to reduce
         HistoCounter*       (&d_out_histograms)[ACTIVE_CHANNELS])           ///< Reference to output histograms
     :
-        temp_storage(temp_storage),
         d_in(d_in),
         d_out_histograms(d_out_histograms)
     {}

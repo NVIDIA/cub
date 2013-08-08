@@ -146,7 +146,7 @@ struct BlockScanTiles
     typedef DeviceScanBlockPrefixOp<T, ScanOp> InterblockPrefixOp;
 
     // Shared memory type for this threadblock
-    struct TempStorage
+    struct _TempStorage
     {
         union
         {
@@ -162,12 +162,15 @@ struct BlockScanTiles
         SizeT                                           tile_idx;           // Shared tile index
     };
 
+    // Alias wrapper allowing storage to be unioned
+    typedef Uninitialized<_TempStorage> TempStorage;
+
 
     //---------------------------------------------------------------------
     // Per-thread fields
     //---------------------------------------------------------------------
 
-    TempStorage                 &temp_storage;      ///< Reference to temp_storage
+    _TempStorage                &temp_storage;      ///< Reference to temp_storage
     InputIteratorRA             d_in;               ///< Input data
     OutputIteratorRA            d_out;              ///< Output data
     ScanOp                      scan_op;            ///< Binary scan operator
@@ -275,7 +278,7 @@ struct BlockScanTiles
         ScanOp                      scan_op,            ///< Binary scan operator
         Identity                    identity)           ///< Identity element
     :
-        temp_storage(temp_storage),
+        temp_storage(temp_storage.Alias()),
         d_in(d_in),
         d_out(d_out),
         scan_op(scan_op),

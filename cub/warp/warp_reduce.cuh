@@ -198,7 +198,7 @@ private:
 public:
 
     /// \smemstorage{WarpReduce}
-    typedef _TempStorage TempStorage;
+    typedef Uninitialized<_TempStorage> TempStorage;
 
 
     /******************************************************************//**
@@ -229,7 +229,7 @@ public:
     __device__ __forceinline__ WarpReduce(
         TempStorage &temp_storage)             ///< [in] Reference to memory allocation having layout type TempStorage
     :
-        temp_storage(temp_storage),
+        temp_storage(temp_storage.Alias()),
         warp_id((LOGICAL_WARPS == 1) ?
             0 :
             threadIdx.x / LOGICAL_WARP_THREADS),
@@ -260,7 +260,7 @@ public:
         int warp_id,                           ///< [in] A suitable warp membership identifier
         int lane_id)                           ///< [in] A lane identifier within the warp
     :
-        temp_storage(temp_storage),
+        temp_storage(temp_storage.Alias()),
         warp_id(warp_id),
         lane_id(lane_id)
     {}

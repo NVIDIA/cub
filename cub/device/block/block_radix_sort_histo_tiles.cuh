@@ -145,7 +145,7 @@ struct BlockRadixSortHistoTiles
     /**
      * Shared memory storage layout
      */
-    struct TempStorage
+    struct _TempStorage
     {
         union
         {
@@ -156,12 +156,16 @@ struct BlockRadixSortHistoTiles
     };
 
 
+    /// Alias wrapper allowing storage to be unioned
+    typedef Uninitialized<_TempStorage> TempStorage;
+
+
     //---------------------------------------------------------------------
     // Thread fields (aggregate state bundle)
     //---------------------------------------------------------------------
 
     // Shared storage for this CTA
-    TempStorage     &temp_storage;
+    _TempStorage    &temp_storage;
 
     // Thread-local counters for periodically aggregating composite-counter lanes
     SizeT           local_counts[LANES_PER_WARP][PACKING_RATIO];
@@ -393,7 +397,7 @@ struct BlockRadixSortHistoTiles
         Key         *d_keys_in,
         int         current_bit)
     :
-        temp_storage(temp_storage),
+        temp_storage(temp_storage.Alias()),
         d_keys_in(reinterpret_cast<UnsignedBits*>(d_keys_in)),
         current_bit(current_bit)
     {}

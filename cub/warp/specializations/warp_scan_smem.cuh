@@ -75,14 +75,17 @@ struct WarpScanSmem
 
 
     /// Shared memory storage layout type (1.5 warps-worth of elements for each warp)
-    typedef T TempStorage[LOGICAL_WARPS][WARP_SMEM_ELEMENTS];
+    typedef T _TempStorage[LOGICAL_WARPS][WARP_SMEM_ELEMENTS];
+
+    // Alias wrapper allowing storage to be unioned
+    typedef Uninitialized<_TempStorage> TempStorage;
 
 
     /******************************************************************************
      * Thread fields
      ******************************************************************************/
 
-    TempStorage     &temp_storage;
+    _TempStorage     &temp_storage;
     unsigned int    warp_id;
     unsigned int    lane_id;
 
@@ -97,7 +100,7 @@ struct WarpScanSmem
         int             warp_id,
         int             lane_id)
     :
-        temp_storage(temp_storage),
+        temp_storage(temp_storage.Alias()),
         warp_id(warp_id),
         lane_id(lane_id)
     {}
@@ -119,7 +122,7 @@ struct WarpScanSmem
     __device__ __forceinline__ void InitIdentity(Int2Type<false> has_identity)
     {}
 
-
+/* mooch
     /// Basic inclusive scan iteration (template unrolled, inductive-case specialization)
     template <
         bool HAS_IDENTITY,
@@ -159,6 +162,43 @@ struct WarpScanSmem
         template <typename ScanOp>
         static __device__ __forceinline__ void ScanStep(TempStorage &temp_storage, unsigned int warp_id, unsigned int lane_id, T &partial, ScanOp scan_op) {}
     };
+*/
+
+    /// Basic inclusive scan iteration(template unrolled, base-case specialization)
+    template <
+        bool HAS_IDENTITY,
+        typename ScanOp>
+    __device__ __forceinline__ void ScanStep(
+        T               &partial,
+        ScanOp          scan_op,
+        Int2Type<STEPS>  step)
+    {}
+
+
+    /// Basic inclusive scan iteration (template unrolled, inductive-case specialization)
+    template <
+        bool        HAS_IDENTITY,
+        int         STEP,
+        typename    ScanOp>
+    __device__ __forceinline__ void ScanStep(
+        T               &partial,
+        ScanOp          scan_op,
+        Int2Type<STEP>  step)
+    {
+        const int OFFSET = 1 << STEP;
+
+        // Share partial into buffer
+        ThreadStore<STORE_VOLATILE>(&temp_storage[warp_id][HALF_WARP_THREADS + lane_id], partial);
+
+        // Update partial if addend is in range
+        if (HAS_IDENTITY || (lane_id >= OFFSET))
+        {
+            T addend = ThreadLoad<LOAD_VOLATILE>(&temp_storage[warp_id][HALF_WARP_THREADS + lane_id - OFFSET]);
+            partial = scan_op(addend, partial);
+        }
+
+        ScanStep<HAS_IDENTITY>(partial, scan_op, Int2Type<STEP + 1>());
+    }
 
 
     /// Broadcast
@@ -185,7 +225,7 @@ struct WarpScanSmem
         ScanOp          scan_op)            ///< Binary associative scan functor
     {
         // Iterate scan steps
-        Iteration<HAS_IDENTITY, 0>::ScanStep(temp_storage, warp_id, lane_id, partial, scan_op);
+        ScanStep<HAS_IDENTITY>(partial, scan_op, Int2Type<0>());
 
         if (SHARE_FINAL)
         {

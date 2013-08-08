@@ -304,7 +304,7 @@ struct PersistentBlockSpmv
         int                         block_offset,
         int                         block_oob)
     :
-        temp_storage(temp_storage),
+        temp_storage(temp_storage.Alias()),
         d_rows(d_rows),
         d_columns(d_columns),
         d_values(d_values),
@@ -542,7 +542,7 @@ struct FinalizeSpmvBlock
         PartialProduct              *d_block_partials,
         int                         num_partials)
     :
-        temp_storage(temp_storage),
+        temp_storage(temp_storage.Alias()),
         d_result(d_result),
         d_block_partials(d_block_partials),
         num_partials(num_partials)

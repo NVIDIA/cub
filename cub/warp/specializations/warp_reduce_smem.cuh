@@ -78,14 +78,17 @@ struct WarpReduceSmem
     typedef unsigned char SmemFlag;
 
     /// Shared memory storage layout type (1.5 warps-worth of elements for each warp)
-    typedef T TempStorage[LOGICAL_WARPS][WARP_SMEM_ELEMENTS];
+    typedef T _TempStorage[LOGICAL_WARPS][WARP_SMEM_ELEMENTS];
+
+    // Alias wrapper allowing storage to be unioned
+    typedef Uninitialized<_TempStorage> TempStorage;
 
 
     /******************************************************************************
      * Thread fields
      ******************************************************************************/
 
-    TempStorage     &temp_storage;
+    _TempStorage     &temp_storage;
     int             warp_id;
     int             lane_id;
 
@@ -100,7 +103,7 @@ struct WarpReduceSmem
         int             warp_id,
         int             lane_id)
     :
-        temp_storage(temp_storage),
+        temp_storage(temp_storage.Alias()),
         warp_id(warp_id),
         lane_id(lane_id)
     {}
