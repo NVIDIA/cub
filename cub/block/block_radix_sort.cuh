@@ -98,7 +98,7 @@ namespace cub {
  *     int thread_keys[4];
  *     ...
  *
- *     // Collectively sort the keys among block threads
+ *     // Collectively sort the keys
  *     BlockRadixSort(temp_storage).Sort(thread_keys);
  *
  *     ...
@@ -260,7 +260,7 @@ public:
      *     int thread_keys[4];
      *     ...
      *
-     *     // Collectively sort the keys among block threads
+     *     // Collectively sort the keys
      *     BlockRadixSort(temp_storage).Sort(thread_keys);
      *
      * \endcode
@@ -435,7 +435,7 @@ public:
      *     int thread_keys[4];
      *     ...
      *
-     *     // Collectively sort the keys among block threads
+     *     // Collectively sort the keys
      *     BlockRadixSort(temp_storage).SortBlockedToStriped(thread_keys);
      *
      * \endcode
