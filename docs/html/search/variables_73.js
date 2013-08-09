@@ -6,5 +6,6 @@ var searchData=
   ['smem_5falloc_5funit',['smem_alloc_unit',['../classcub_1_1_device.html#aca17efd166d916008f0fc378adc00b1f',1,'cub::Device']]],
   ['smem_5fbank_5fbytes',['smem_bank_bytes',['../classcub_1_1_device.html#a909d34dd31bdb6f754a603e8eb2b10ab',1,'cub::Device']]],
   ['smem_5fbanks',['smem_banks',['../classcub_1_1_device.html#a2e835add85abdf0eb640c551abec2a0b',1,'cub::Device']]],
-  ['smem_5fbytes',['smem_bytes',['../classcub_1_1_device.html#a838c9a2e207c38ef24e79a40bccdd1ac',1,'cub::Device']]]
+  ['smem_5fbytes',['smem_bytes',['../classcub_1_1_device.html#a838c9a2e207c38ef24e79a40bccdd1ac',1,'cub::Device']]],
+  ['storage',['storage',['../structcub_1_1_uninitialized.html#a5fa7311d943222333e8c87497ff8e782',1,'cub::Uninitialized']]]
 ];
