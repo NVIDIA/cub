@@ -72,7 +72,7 @@ configured to access memory using a striped access pattern (where consecutive th
 simultaneously access consecutive items) and then <em>transpose</em> the keys into 
 a [<em>blocked arrangement</em>](index.html#sec4sec4) of elements across threads. 
 
-Once specialized, these classes expose opaque \p TempStorage member types.  
+Once specialized, these classes expose opaque TempStorage member types.  
 The thread block uses these storage types to statically allocate the union of 
 shared memory needed by the thread block.  (Alternatively these storage types 
 could be aliased to global memory allocations).
