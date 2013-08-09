@@ -1,36 +1,25 @@
 <hr>
 <h3>About CUB</h3>
 
+Current release: v1.0.1 (August 8, 2013)
+
 We recommend the [CUB Project Website](http://nvlabs.github.com/cub) and the [cub-users discussion forum](http://groups.google.com/group/cub-users) for further information and examples.
 
 CUB provides state-of-the-art, reusable software components for every layer 
 of the CUDA programming model:
-- [<b><em>Device-wide primitives</em></b>] (https://github.com/NVlabs/cub/group___device_module.html) 
+- [<b><em>Device-wide primitives</em></b>] (https://nvlabs.github.com/cub/group___device_module.html) 
   - Sort, prefix scan, reduction, histogram, etc.  
   - Compatible with CUDA dynamic parallelism
-- [<b><em>Block-wide "collective" primitives</em></b>] (https://github.com/NVlabs/cub/group___block_module.html)
+- [<b><em>Block-wide "collective" primitives</em></b>] (https://nvlabs.github.com/cub/group___block_module.html)
   - I/O, sort, prefix scan, reduction, histogram, etc.  
   - Compatible with arbitrary thread block sizes and types 
-- [<b><em>Warp-wide "collective" primitives</em></b>] (https://github.com/NVlabs/cub/group___warp_module.html)
+- [<b><em>Warp-wide "collective" primitives</em></b>] (https://nvlabs.github.com/cub/group___warp_module.html)
   - Warp-wide prefix scan, reduction, etc.
   - Safe and architecture-specific
-- [<b><em>Thread and resource utilities</em></b>](https://github.com/NVlabs/cub/group___thread_module.html)
+- [<b><em>Thread and resource utilities</em></b>](https://nvlabs.github.com/cub/group___thread_module.html)
   - PTX intrinsics, device reflection, texture-caching iterators, caching memory allocators, etc. 
 
 ![Orientation of collective primitives within the CUDA software stack](http://nvlabs.github.com/cub/cub_overview.png)
-
-<br><hr>
-<h3>Releases</h3>
-
-See [CUB Project Website](http://nvlabs.github.com/cub) for more information.
- 
-| Date | Version |
-| ---- | ------- |
-| 08/08/2013 | [CUB v1.0.1 Primary Release](https://github.com/NVlabs/cub/archive/1.0.1.zip) |
-| 05/07/2013 | [CUB v0.9.4 Update Release](https://github.com/NVlabs/cub/archive/0.9.4.zip) |
-| 04/04/2013 | [CUB v0.9.2 Update Release](https://github.com/NVlabs/cub/archive/0.9.2.zip) |
-| 03/09/2013 | [CUB v0.9.1 Update Release](https://github.com/NVlabs/cub/archive/0.9.1.zip) |
-| 03/07/2013 | [CUB v0.9.0 Preview Release](https://github.com/NVlabs/cub/archive/0.9.zip) |
 
 <br><hr>
 <h3>A Simple Example</h3>
@@ -71,6 +60,36 @@ __global__ void BlockSortKernel(int *d_in, int *d_out)
      BlockStore(temp_storage.store).Store(d_out + block_offset, thread_keys);
 }
 ```
+
+Each thread block uses cub::BlockRadixSort to collectively sort 
+its own input segment.  The class is specialized by the 
+data type being sorted, by the number of threads per block, by the number of 
+keys per thread, and implicitly by the targeted compilation architecture.  
+
+The cub::BlockLoad and cub::BlockStore classes are similarly specialized.    
+Furthermore, to provide coalesced accesses to device memory, these primitives are 
+configured to access memory using a striped access pattern (where consecutive threads 
+simultaneously access consecutive items) and then <em>transpose</em> the keys into 
+a [<em>blocked arrangement</em>](index.html#sec4sec4) of elements across threads. 
+
+Once specialized, these classes expose opaque \p TempStorage member types.  
+The thread block uses these storage types to statically allocate the union of 
+shared memory needed by the thread block.  (Alternatively these storage types 
+could be aliased to global memory allocations).
+
+<br><hr>
+<h3>Releases</h3>
+
+See [CUB Project Website](http://nvlabs.github.com/cub) for more information.
+ 
+| Date | Version |
+| ---- | ------- |
+| 08/08/2013 | [CUB v1.0.1 Primary Release](https://github.com/NVlabs/cub/archive/1.0.1.zip) |
+| 05/07/2013 | [CUB v0.9.4 Update Release](https://github.com/NVlabs/cub/archive/0.9.4.zip) |
+| 04/04/2013 | [CUB v0.9.2 Update Release](https://github.com/NVlabs/cub/archive/0.9.2.zip) |
+| 03/09/2013 | [CUB v0.9.1 Update Release](https://github.com/NVlabs/cub/archive/0.9.1.zip) |
+| 03/07/2013 | [CUB v0.9.0 Preview Release](https://github.com/NVlabs/cub/archive/0.9.zip) |
+
 
 <br><hr>
 <h3>Contributors</h3>
