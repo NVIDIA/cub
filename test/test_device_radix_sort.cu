@@ -190,7 +190,14 @@ void Initialize(
     Pair<Key, Value> *pairs = new Pair<Key, Value>[num_items];
     for (int i = 0; i < num_items; ++i)
     {
-        RandomBits(h_keys[i], 0, 0, g_bits);
+        if (gen_mode == RANDOM) {
+            RandomBits(h_keys[i], 0, 0, g_bits);
+        } else if (gen_mode == UNIFORM) {
+            h_keys[i] = 2;
+        } else {
+            h_keys[i] = i;
+        }
+
         h_values[i]     = i;
 
         pairs[i].key    = h_keys[i];
@@ -223,8 +230,15 @@ void Initialize(
 {
     for (int i = 0; i < num_items; ++i)
     {
-        RandomBits(h_keys[i], 0, 0, g_bits);
-        h_sorted_keys[i]    = h_keys[i];
+        if (gen_mode == RANDOM) {
+            RandomBits(h_keys[i], 0, 0, g_bits);
+        } else if (gen_mode == UNIFORM) {
+            h_keys[i] = 2;
+        } else {
+            h_keys[i] = i;
+        }
+
+        h_sorted_keys[i] = h_keys[i];
     }
 
     std::stable_sort(h_sorted_keys, h_sorted_keys + num_items);
@@ -246,6 +260,8 @@ void Test(
     char*           type_string)
 {
     const bool KEYS_ONLY = Equals<Value, NullType>::VALUE;
+
+    if (end_bit < 0) end_bit = sizeof(Key) * 8;
 
     if (KEYS_ONLY)
         printf("%s keys-only cub::DeviceRadixSort %d items, %s %d-byte keys, gen-mode %s\n",
@@ -366,6 +382,68 @@ void Test(
 }
 
 
+/**
+ * Test problem generation
+ */
+template <
+    bool            CDP,
+    typename        Key,
+    typename        Value>
+void Test(
+    int             num_items,
+    int             begin_bit,
+    int             end_bit,
+    char*           type_string)
+{
+    Test<CDP, Key, Value>(num_items, RANDOM, begin_bit, end_bit, type_string);
+    Test<CDP, Key, Value>(num_items, UNIFORM, begin_bit, end_bit, type_string);
+    Test<CDP, Key, Value>(num_items, SEQ_INC, begin_bit, end_bit, type_string);
+}
+
+/**
+ * Test CDP and num items
+ */
+template <
+    typename        Key,
+    typename        Value>
+void Test(
+    int             num_items,
+    int             begin_bit,
+    int             end_bit,
+    char*           type_string)
+{
+    Test<false, Key, Value>(num_items, begin_bit, end_bit, type_string);
+#ifdef CUB_CDP
+    Test<true, Key, Value>(num_items, begin_bit, end_bit, type_string);
+#endif
+}
+
+
+/**
+ * Test CDP and num items
+ */
+template <
+    typename        Key,
+    typename        Value>
+void TestItems(
+    int             num_items,
+    int             begin_bit,
+    int             end_bit,
+    char*           type_string)
+{
+    if (num_items < 0)
+    {
+        Test<Key, Value>(1, begin_bit, end_bit, type_string);
+        Test<Key, Value>(32, begin_bit, end_bit, type_string);
+        Test<Key, Value>(3200, begin_bit, end_bit, type_string);
+        Test<Key, Value>(320000, begin_bit, end_bit, type_string);
+        Test<Key, Value>(32000000, begin_bit, end_bit, type_string);
+    }
+    else
+    {
+        Test<Key, Value>(num_items, begin_bit, end_bit, type_string);
+    }
+}
 
 
 //---------------------------------------------------------------------
@@ -408,15 +486,20 @@ int main(int argc, char** argv)
     CubDebugExit(args.DeviceInit());
     printf("\n");
 
-    Test<false, unsigned int, NullType>         (num_items, RANDOM, 0, CUB_MAX(sizeof(unsigned int) * 8, g_bits),       CUB_TYPE_STRING(unsigned int));
-    Test<false, unsigned long long, NullType>   (num_items, RANDOM, 0, CUB_MAX(sizeof(unsigned long long) * 8, g_bits), CUB_TYPE_STRING(unsigned long long));
-    Test<false, unsigned int, unsigned int>     (num_items, RANDOM, 0, CUB_MAX(sizeof(unsigned int) * 8, g_bits),       CUB_TYPE_STRING(unsigned int));
-
-#ifdef CUB_CDP
-    Test<true, unsigned int, NullType>         (num_items, RANDOM, 0, CUB_MAX(sizeof(unsigned int) * 8, g_bits),       CUB_TYPE_STRING(unsigned int));
-    Test<true, unsigned long long, NullType>   (num_items, RANDOM, 0, CUB_MAX(sizeof(unsigned long long) * 8, g_bits), CUB_TYPE_STRING(unsigned long long));
-    Test<true, unsigned int, unsigned int>     (num_items, RANDOM, 0, CUB_MAX(sizeof(unsigned int) * 8, g_bits),       CUB_TYPE_STRING(unsigned int));
-#endif
+    if (quick)
+    {
+        if (num_items < 0) num_items = 32000000;
+        Test<false, unsigned int, NullType> (num_items, RANDOM, 0, g_bits, CUB_TYPE_STRING(unsigned int));
+    }
+    else
+    {
+        TestItems<unsigned int, NullType>        (num_items, 0, g_bits, CUB_TYPE_STRING(unsigned int));
+        TestItems<unsigned long long, NullType>  (num_items, 0, g_bits, CUB_TYPE_STRING(unsigned long long));
+        TestItems<unsigned int, unsigned int>    (num_items, 0, g_bits, CUB_TYPE_STRING(unsigned int));
+        TestItems<int, NullType>                 (num_items, 0, g_bits, CUB_TYPE_STRING(int));
+        TestItems<double, NullType>              (num_items, 0, g_bits, CUB_TYPE_STRING(double));
+        TestItems<float, NullType>               (num_items, 0, g_bits, CUB_TYPE_STRING(unsigned int));
+    }
 
     return 0;
 }
