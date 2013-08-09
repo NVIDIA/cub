@@ -28,7 +28,7 @@
 
 /**
  * \file
- * BlockRadixSortScatterTiles implements a stateful abstraction of CUDA thread blocks for participating in device-wide radix sort downsweep.
+ * BlockRadixSortDownsweepTiles implements a stateful abstraction of CUDA thread blocks for participating in device-wide radix sort downsweep.
  */
 
 
@@ -66,7 +66,7 @@ enum RadixSortScatterAlgorithm
 
 
 /**
- * Tuning policy for BlockRadixSortScatterTiles
+ * Tuning policy for BlockRadixSortDownsweepTiles
  */
 template <
     int                         _BLOCK_THREADS,             ///< The number of threads per CTA
@@ -79,7 +79,7 @@ template <
     RadixSortScatterAlgorithm   _SCATTER_ALGORITHM,         ///< The scattering strategy to use
     cudaSharedMemConfig         _SMEM_CONFIG,               ///< Shared memory bank mode (default: \p cudaSharedMemBankSizeFourByte)
     int                         _RADIX_BITS>                ///< The number of radix bits, i.e., log2(bins)
-struct BlockRadixSortScatterTilesPolicy
+struct BlockRadixSortDownsweepTilesPolicy
 {
     enum
     {
@@ -97,7 +97,7 @@ struct BlockRadixSortScatterTilesPolicy
     static const RadixSortScatterAlgorithm  SCATTER_ALGORITHM       = _SCATTER_ALGORITHM;
     static const cudaSharedMemConfig        SMEM_CONFIG             = _SMEM_CONFIG;
 
-    typedef BlockRadixSortScatterTilesPolicy<
+    typedef BlockRadixSortDownsweepTilesPolicy<
         BLOCK_THREADS,
         ITEMS_PER_THREAD,
         LOAD_ALGORITHM,
@@ -120,11 +120,11 @@ struct BlockRadixSortScatterTilesPolicy
  * a range of input tiles.
  */
 template <
-    typename BlockRadixSortScatterTilesPolicy,
+    typename BlockRadixSortDownsweepTilesPolicy,
     typename Key,
     typename Value,
     typename SizeT>
-struct BlockRadixSortScatterTiles
+struct BlockRadixSortDownsweepTiles
 {
     //---------------------------------------------------------------------
     // Type definitions and constants
@@ -136,19 +136,19 @@ struct BlockRadixSortScatterTiles
     static const UnsignedBits MIN_KEY = Traits<Key>::MIN_KEY;
     static const UnsignedBits MAX_KEY = Traits<Key>::MAX_KEY;
 
-    static const BlockLoadAlgorithm         LOAD_ALGORITHM          = BlockRadixSortScatterTilesPolicy::LOAD_ALGORITHM;
-    static const PtxLoadModifier            LOAD_MODIFIER           = BlockRadixSortScatterTilesPolicy::LOAD_MODIFIER;
-    static const BlockScanAlgorithm         INNER_SCAN_ALGORITHM    = BlockRadixSortScatterTilesPolicy::INNER_SCAN_ALGORITHM;
-    static const RadixSortScatterAlgorithm  SCATTER_ALGORITHM       = BlockRadixSortScatterTilesPolicy::SCATTER_ALGORITHM;
-    static const cudaSharedMemConfig        SMEM_CONFIG             = BlockRadixSortScatterTilesPolicy::SMEM_CONFIG;
+    static const BlockLoadAlgorithm         LOAD_ALGORITHM          = BlockRadixSortDownsweepTilesPolicy::LOAD_ALGORITHM;
+    static const PtxLoadModifier            LOAD_MODIFIER           = BlockRadixSortDownsweepTilesPolicy::LOAD_MODIFIER;
+    static const BlockScanAlgorithm         INNER_SCAN_ALGORITHM    = BlockRadixSortDownsweepTilesPolicy::INNER_SCAN_ALGORITHM;
+    static const RadixSortScatterAlgorithm  SCATTER_ALGORITHM       = BlockRadixSortDownsweepTilesPolicy::SCATTER_ALGORITHM;
+    static const cudaSharedMemConfig        SMEM_CONFIG             = BlockRadixSortDownsweepTilesPolicy::SMEM_CONFIG;
 
     enum
     {
-        BLOCK_THREADS           = BlockRadixSortScatterTilesPolicy::BLOCK_THREADS,
-        ITEMS_PER_THREAD        = BlockRadixSortScatterTilesPolicy::ITEMS_PER_THREAD,
-        EXCHANGE_TIME_SLICING   = BlockRadixSortScatterTilesPolicy::EXCHANGE_TIME_SLICING,
-        RADIX_BITS              = BlockRadixSortScatterTilesPolicy::RADIX_BITS,
-        MEMOIZE_OUTER_SCAN      = BlockRadixSortScatterTilesPolicy::MEMOIZE_OUTER_SCAN,
+        BLOCK_THREADS           = BlockRadixSortDownsweepTilesPolicy::BLOCK_THREADS,
+        ITEMS_PER_THREAD        = BlockRadixSortDownsweepTilesPolicy::ITEMS_PER_THREAD,
+        EXCHANGE_TIME_SLICING   = BlockRadixSortDownsweepTilesPolicy::EXCHANGE_TIME_SLICING,
+        RADIX_BITS              = BlockRadixSortDownsweepTilesPolicy::RADIX_BITS,
+        MEMOIZE_OUTER_SCAN      = BlockRadixSortDownsweepTilesPolicy::MEMOIZE_OUTER_SCAN,
         TILE_ITEMS              = BLOCK_THREADS * ITEMS_PER_THREAD,
 
         RADIX_DIGITS            = 1 << RADIX_BITS,
@@ -617,7 +617,7 @@ struct BlockRadixSortScatterTiles
     /**
      * Constructor
      */
-    __device__ __forceinline__ BlockRadixSortScatterTiles(
+    __device__ __forceinline__ BlockRadixSortDownsweepTiles(
         TempStorage &temp_storage,
         SizeT       bin_offset,
         Key         *d_keys_in,
@@ -640,7 +640,7 @@ struct BlockRadixSortScatterTiles
     /**
      * Constructor
      */
-    __device__ __forceinline__ BlockRadixSortScatterTiles(
+    __device__ __forceinline__ BlockRadixSortDownsweepTiles(
         TempStorage &temp_storage,
         SizeT       num_items,
         SizeT       *d_spine,

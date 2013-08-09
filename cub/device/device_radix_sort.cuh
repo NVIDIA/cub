@@ -38,8 +38,8 @@
 #include <iterator>
 
 #include "../block/block_radix_sort.cuh"
-#include "block/block_radix_sort_histo_tiles.cuh"
-#include "block/block_radix_sort_scatter_tiles.cuh"
+#include "block/block_radix_sort_upsweep_tiles.cuh"
+#include "block/block_radix_sort_downsweep_tiles.cuh"
 #include "block/block_scan_tiles.cuh"
 #include "../thread/thread_operators.cuh"
 #include "../grid/grid_even_share.cuh"
@@ -66,10 +66,10 @@ namespace cub {
  * Upsweep pass kernel entry point (multi-block).  Computes privatized digit histograms, one per block.
  */
 template <
-    typename                BlockRadixSortHistoTilesPolicy, ///< Tuning policy for cub::BlockRadixSortHistoTiles abstraction
+    typename                BlockRadixSortUpsweepTilesPolicy, ///< Tuning policy for cub::BlockRadixSortUpsweepTiles abstraction
     typename                Key,                            ///< Key type
     typename                SizeT>                          ///< Integer type used for global array indexing
-__launch_bounds__ (int(BlockRadixSortHistoTilesPolicy::BLOCK_THREADS), 1)
+__launch_bounds__ (int(BlockRadixSortUpsweepTilesPolicy::BLOCK_THREADS), 1)
 __global__ void RadixSortUpsweepKernel(
     Key                     *d_keys,                        ///< [in] Input keys buffer
     SizeT                   *d_spine,                       ///< [out] Privatized (per block) digit histograms (striped, i.e., 0s counts from each block, then 1s counts from each block, etc.)
@@ -81,17 +81,17 @@ __global__ void RadixSortUpsweepKernel(
 {
 
     // Alternate policy for when fewer bits remain
-    typedef typename BlockRadixSortHistoTilesPolicy::AltPolicy AltPolicy;
+    typedef typename BlockRadixSortUpsweepTilesPolicy::AltPolicy AltPolicy;
 
-    // Parameterize two versions of BlockRadixSortHistoTiles type for the current configuration
-    typedef BlockRadixSortHistoTiles<BlockRadixSortHistoTilesPolicy, Key, SizeT>    BlockRadixSortHistoTilesT;          // Primary
-    typedef BlockRadixSortHistoTiles<AltPolicy, Key, SizeT>                         AltBlockRadixSortHistoTilesT;       // Alternate (smaller bit granularity)
+    // Parameterize two versions of BlockRadixSortUpsweepTiles type for the current configuration
+    typedef BlockRadixSortUpsweepTiles<BlockRadixSortUpsweepTilesPolicy, Key, SizeT>    BlockRadixSortUpsweepTilesT;          // Primary
+    typedef BlockRadixSortUpsweepTiles<AltPolicy, Key, SizeT>                         AltBlockRadixSortUpsweepTilesT;       // Alternate (smaller bit granularity)
 
     // Shared memory storage
     __shared__ union
     {
-        typename BlockRadixSortHistoTilesT::TempStorage     pass_storage;
-        typename AltBlockRadixSortHistoTilesT::TempStorage  alt_pass_storage;
+        typename BlockRadixSortUpsweepTilesT::TempStorage     pass_storage;
+        typename AltBlockRadixSortUpsweepTilesT::TempStorage  alt_pass_storage;
     } temp_storage;
 
     // Initialize even-share descriptor for this thread block
@@ -102,13 +102,13 @@ __global__ void RadixSortUpsweepKernel(
     {
         // Primary granularity
         SizeT bin_count;
-        BlockRadixSortHistoTilesT(temp_storage.pass_storage, d_keys, current_bit).ProcessTiles(
+        BlockRadixSortUpsweepTilesT(temp_storage.pass_storage, d_keys, current_bit).ProcessTiles(
             even_share.block_offset,
             even_share.block_oob,
             bin_count);
 
         // Write out digit counts (striped)
-        if (threadIdx.x < BlockRadixSortHistoTilesT::RADIX_DIGITS)
+        if (threadIdx.x < BlockRadixSortUpsweepTilesT::RADIX_DIGITS)
         {
             d_spine[(gridDim.x * threadIdx.x) + blockIdx.x] = bin_count;
         }
@@ -118,13 +118,13 @@ __global__ void RadixSortUpsweepKernel(
         // Alternate granularity
         // Process input tiles (each of the first RADIX_DIGITS threads will compute a count for that digit)
         SizeT bin_count;
-        AltBlockRadixSortHistoTilesT(temp_storage.alt_pass_storage, d_keys, current_bit).ProcessTiles(
+        AltBlockRadixSortUpsweepTilesT(temp_storage.alt_pass_storage, d_keys, current_bit).ProcessTiles(
             even_share.block_offset,
             even_share.block_oob,
             bin_count);
 
         // Write out digit counts (striped)
-        if (threadIdx.x < AltBlockRadixSortHistoTilesT::RADIX_DIGITS)
+        if (threadIdx.x < AltBlockRadixSortUpsweepTilesT::RADIX_DIGITS)
         {
             d_spine[(gridDim.x * threadIdx.x) + blockIdx.x] = bin_count;
         }
@@ -168,11 +168,11 @@ __global__ void RadixSortScanKernel(
  * Downsweep pass kernel entry point (multi-block).  Scatters keys (and values) into corresponding bins for the current digit place.
  */
 template <
-    typename                BlockRadixSortScatterTilesPolicy,   ///< Tuning policy for cub::BlockRadixSortHistoTiles abstraction
+    typename                BlockRadixSortDownsweepTilesPolicy,   ///< Tuning policy for cub::BlockRadixSortUpsweepTiles abstraction
     typename                Key,                                ///< Key type
     typename                Value,                              ///< Value type
     typename                SizeT>                              ///< Integer type used for global array indexing
-__launch_bounds__ (int(BlockRadixSortScatterTilesPolicy::BLOCK_THREADS))
+__launch_bounds__ (int(BlockRadixSortDownsweepTilesPolicy::BLOCK_THREADS))
 __global__ void RadixSortDownsweepKernel(
     Key                     *d_keys_in,                     ///< [in] Input keys ping buffer
     Key                     *d_keys_out,                    ///< [in] Output keys pong buffer
@@ -188,17 +188,17 @@ __global__ void RadixSortDownsweepKernel(
 {
 
     // Alternate policy for when fewer bits remain
-    typedef typename BlockRadixSortScatterTilesPolicy::AltPolicy AltPolicy;
+    typedef typename BlockRadixSortDownsweepTilesPolicy::AltPolicy AltPolicy;
 
-    // Parameterize two versions of BlockRadixSortScatterTiles type for the current configuration
-    typedef BlockRadixSortScatterTiles<BlockRadixSortScatterTilesPolicy, Key, Value, SizeT>     BlockRadixSortScatterTilesT;
-    typedef BlockRadixSortScatterTiles<AltPolicy, Key, Value, SizeT>                            AltBlockRadixSortScatterTilesT;
+    // Parameterize two versions of BlockRadixSortDownsweepTiles type for the current configuration
+    typedef BlockRadixSortDownsweepTiles<BlockRadixSortDownsweepTilesPolicy, Key, Value, SizeT>     BlockRadixSortDownsweepTilesT;
+    typedef BlockRadixSortDownsweepTiles<AltPolicy, Key, Value, SizeT>                            AltBlockRadixSortDownsweepTilesT;
 
     // Shared memory storage
     __shared__ union
     {
-        typename BlockRadixSortScatterTilesT::TempStorage       pass_storage;
-        typename AltBlockRadixSortScatterTilesT::TempStorage    alt_pass_storage;
+        typename BlockRadixSortDownsweepTilesT::TempStorage       pass_storage;
+        typename AltBlockRadixSortDownsweepTilesT::TempStorage    alt_pass_storage;
 
     } temp_storage;
 
@@ -208,14 +208,14 @@ __global__ void RadixSortDownsweepKernel(
     if (use_primary_bit_granularity)
     {
         // Process input tiles
-        BlockRadixSortScatterTilesT(temp_storage.pass_storage, num_items, d_spine, d_keys_in, d_keys_out, d_values_in, d_values_out, current_bit).ProcessTiles(
+        BlockRadixSortDownsweepTilesT(temp_storage.pass_storage, num_items, d_spine, d_keys_in, d_keys_out, d_values_in, d_values_out, current_bit).ProcessTiles(
             even_share.block_offset,
             even_share.block_oob);
     }
     else
     {
         // Process input tiles
-        AltBlockRadixSortScatterTilesT(temp_storage.alt_pass_storage, num_items, d_spine, d_keys_in, d_keys_out, d_values_in, d_values_out, current_bit).ProcessTiles(
+        AltBlockRadixSortDownsweepTilesT(temp_storage.alt_pass_storage, num_items, d_spine, d_keys_in, d_keys_out, d_values_in, d_values_out, current_bit).ProcessTiles(
             even_share.block_offset,
             even_share.block_oob);
     }
@@ -248,6 +248,13 @@ __global__ void RadixSortDownsweepKernel(
  * given input sequence of keys and a set of rules specifying a total ordering
  * of the symbolic alphabet, the radix sorting method produces a lexicographic
  * ordering of those keys.
+ *
+ * \par
+ * DeviceRadixSort can sort all of the built-in C++ numeric primitive types, e.g.:
+ * <tt>unsigned char</tt>, \p int, \p double, etc.  Although the direct radix sorting
+ * method can only be applied to unsigned integral types, BlockRadixSort
+ * is able to sort signed and floating-point types via simple bit-wise transformations
+ * that ensure lexicographic key ordering.
  *
  * \par Usage Considerations
  * \cdp_class{DeviceRadixSort}
@@ -338,26 +345,26 @@ struct DeviceRadixSort
         };
 
         // UpsweepPolicy
-        typedef BlockRadixSortHistoTilesPolicy <64,     CUB_MAX(1, 18 / SCALE_FACTOR), LOAD_LDG, RADIX_BITS> UpsweepPolicyKeys;
-        typedef BlockRadixSortHistoTilesPolicy <128,    CUB_MAX(1, 15 / SCALE_FACTOR), LOAD_LDG, RADIX_BITS> UpsweepPolicyPairs;
+        typedef BlockRadixSortUpsweepTilesPolicy <64,     CUB_MAX(1, 18 / SCALE_FACTOR), LOAD_LDG, RADIX_BITS> UpsweepPolicyKeys;
+        typedef BlockRadixSortUpsweepTilesPolicy <128,    CUB_MAX(1, 15 / SCALE_FACTOR), LOAD_LDG, RADIX_BITS> UpsweepPolicyPairs;
         typedef typename If<KEYS_ONLY, UpsweepPolicyKeys, UpsweepPolicyPairs>::Type UpsweepPolicy;
 /*
         // 4bit
-        typedef BlockRadixSortHistoTilesPolicy <128, 15, LOAD_LDG, RADIX_BITS> UpsweepPolicyKeys;
-        typedef BlockRadixSortHistoTilesPolicy <256, 13, LOAD_LDG, RADIX_BITS> UpsweepPolicyPairs;
+        typedef BlockRadixSortUpsweepTilesPolicy <128, 15, LOAD_LDG, RADIX_BITS> UpsweepPolicyKeys;
+        typedef BlockRadixSortUpsweepTilesPolicy <256, 13, LOAD_LDG, RADIX_BITS> UpsweepPolicyPairs;
 */
         // ScanPolicy
         typedef BlockScanTilesPolicy <1024, 4, BLOCK_LOAD_VECTORIZE, false, LOAD_DEFAULT, BLOCK_STORE_VECTORIZE, false, BLOCK_SCAN_RAKING_MEMOIZE> ScanPolicy;
 
         // DownsweepPolicy
-        typedef BlockRadixSortScatterTilesPolicy <64,   CUB_MAX(1, 18 / SCALE_FACTOR), BLOCK_LOAD_DIRECT, LOAD_LDG, false, true, BLOCK_SCAN_WARP_SCANS, RADIX_SORT_SCATTER_TWO_PHASE, cudaSharedMemBankSizeEightByte, RADIX_BITS> DownsweepPolicyKeys;
-        typedef BlockRadixSortScatterTilesPolicy <128,  CUB_MAX(1, 15 / SCALE_FACTOR), BLOCK_LOAD_DIRECT, LOAD_LDG, false, true, BLOCK_SCAN_WARP_SCANS, RADIX_SORT_SCATTER_TWO_PHASE, cudaSharedMemBankSizeEightByte, RADIX_BITS> DownsweepPolicyPairs;
+        typedef BlockRadixSortDownsweepTilesPolicy <64,   CUB_MAX(1, 18 / SCALE_FACTOR), BLOCK_LOAD_DIRECT, LOAD_LDG, false, true, BLOCK_SCAN_WARP_SCANS, RADIX_SORT_SCATTER_TWO_PHASE, cudaSharedMemBankSizeEightByte, RADIX_BITS> DownsweepPolicyKeys;
+        typedef BlockRadixSortDownsweepTilesPolicy <128,  CUB_MAX(1, 15 / SCALE_FACTOR), BLOCK_LOAD_DIRECT, LOAD_LDG, false, true, BLOCK_SCAN_WARP_SCANS, RADIX_SORT_SCATTER_TWO_PHASE, cudaSharedMemBankSizeEightByte, RADIX_BITS> DownsweepPolicyPairs;
         typedef typename If<KEYS_ONLY, DownsweepPolicyKeys, DownsweepPolicyPairs>::Type DownsweepPolicy;
 
 /*
         // 4bit
-        typedef BlockRadixSortScatterTilesPolicy <128, 15, BLOCK_LOAD_DIRECT, LOAD_LDG, false, true, BLOCK_SCAN_WARP_SCANS, RADIX_SORT_SCATTER_TWO_PHASE, cudaSharedMemBankSizeEightByte, RADIX_BITS> DownsweepPolicyKeys;
-        typedef BlockRadixSortScatterTilesPolicy <256, 13, BLOCK_LOAD_DIRECT, LOAD_LDG, false, true, BLOCK_SCAN_WARP_SCANS, RADIX_SORT_SCATTER_TWO_PHASE, cudaSharedMemBankSizeEightByte, RADIX_BITS> DownsweepPolicyPairs;
+        typedef BlockRadixSortDownsweepTilesPolicy <128, 15, BLOCK_LOAD_DIRECT, LOAD_LDG, false, true, BLOCK_SCAN_WARP_SCANS, RADIX_SORT_SCATTER_TWO_PHASE, cudaSharedMemBankSizeEightByte, RADIX_BITS> DownsweepPolicyKeys;
+        typedef BlockRadixSortDownsweepTilesPolicy <256, 13, BLOCK_LOAD_DIRECT, LOAD_LDG, false, true, BLOCK_SCAN_WARP_SCANS, RADIX_SORT_SCATTER_TWO_PHASE, cudaSharedMemBankSizeEightByte, RADIX_BITS> DownsweepPolicyPairs;
 */
         enum { SUBSCRIPTION_FACTOR = 7 };
     };
@@ -374,16 +381,16 @@ struct DeviceRadixSort
         };
 
         // UpsweepPolicy
-        typedef BlockRadixSortHistoTilesPolicy <64, CUB_MAX(1, 18 / SCALE_FACTOR), LOAD_DEFAULT, RADIX_BITS> UpsweepPolicyKeys;
-        typedef BlockRadixSortHistoTilesPolicy <128, CUB_MAX(1, 13 / SCALE_FACTOR), LOAD_DEFAULT, RADIX_BITS> UpsweepPolicyPairs;
+        typedef BlockRadixSortUpsweepTilesPolicy <64, CUB_MAX(1, 18 / SCALE_FACTOR), LOAD_DEFAULT, RADIX_BITS> UpsweepPolicyKeys;
+        typedef BlockRadixSortUpsweepTilesPolicy <128, CUB_MAX(1, 13 / SCALE_FACTOR), LOAD_DEFAULT, RADIX_BITS> UpsweepPolicyPairs;
         typedef typename If<KEYS_ONLY, UpsweepPolicyKeys, UpsweepPolicyPairs>::Type UpsweepPolicy;
 
         // ScanPolicy
         typedef BlockScanTilesPolicy <512, 4, BLOCK_LOAD_VECTORIZE, false, LOAD_DEFAULT, BLOCK_STORE_VECTORIZE, false, BLOCK_SCAN_RAKING_MEMOIZE> ScanPolicy;
 
         // DownsweepPolicy
-        typedef BlockRadixSortScatterTilesPolicy <64, CUB_MAX(1, 18 / SCALE_FACTOR), BLOCK_LOAD_WARP_TRANSPOSE, LOAD_DEFAULT, false, false, BLOCK_SCAN_WARP_SCANS, RADIX_SORT_SCATTER_TWO_PHASE, cudaSharedMemBankSizeFourByte, RADIX_BITS> DownsweepPolicyKeys;
-        typedef BlockRadixSortScatterTilesPolicy <128, CUB_MAX(1, 13 / SCALE_FACTOR), BLOCK_LOAD_WARP_TRANSPOSE, LOAD_DEFAULT, false, false, BLOCK_SCAN_WARP_SCANS, RADIX_SORT_SCATTER_TWO_PHASE, cudaSharedMemBankSizeFourByte, RADIX_BITS> DownsweepPolicyPairs;
+        typedef BlockRadixSortDownsweepTilesPolicy <64, CUB_MAX(1, 18 / SCALE_FACTOR), BLOCK_LOAD_WARP_TRANSPOSE, LOAD_DEFAULT, false, false, BLOCK_SCAN_WARP_SCANS, RADIX_SORT_SCATTER_TWO_PHASE, cudaSharedMemBankSizeFourByte, RADIX_BITS> DownsweepPolicyKeys;
+        typedef BlockRadixSortDownsweepTilesPolicy <128, CUB_MAX(1, 13 / SCALE_FACTOR), BLOCK_LOAD_WARP_TRANSPOSE, LOAD_DEFAULT, false, false, BLOCK_SCAN_WARP_SCANS, RADIX_SORT_SCATTER_TWO_PHASE, cudaSharedMemBankSizeFourByte, RADIX_BITS> DownsweepPolicyPairs;
         typedef typename If<KEYS_ONLY, DownsweepPolicyKeys, DownsweepPolicyPairs>::Type DownsweepPolicy;
 
         enum { SUBSCRIPTION_FACTOR = 3 };
@@ -399,13 +406,13 @@ struct DeviceRadixSort
         };
 
         // UpsweepPolicy
-        typedef BlockRadixSortHistoTilesPolicy <64, 9, LOAD_DEFAULT, RADIX_BITS> UpsweepPolicy;
+        typedef BlockRadixSortUpsweepTilesPolicy <64, 9, LOAD_DEFAULT, RADIX_BITS> UpsweepPolicy;
 
         // ScanPolicy
         typedef BlockScanTilesPolicy <256, 4, BLOCK_LOAD_VECTORIZE, false, LOAD_DEFAULT, BLOCK_STORE_VECTORIZE, false, BLOCK_SCAN_RAKING_MEMOIZE> ScanPolicy;
 
         // DownsweepPolicy
-        typedef BlockRadixSortScatterTilesPolicy <64, 9, BLOCK_LOAD_WARP_TRANSPOSE, LOAD_DEFAULT, false, false, BLOCK_SCAN_WARP_SCANS, RADIX_SORT_SCATTER_TWO_PHASE, cudaSharedMemBankSizeFourByte, RADIX_BITS> DownsweepPolicy;
+        typedef BlockRadixSortDownsweepTilesPolicy <64, 9, BLOCK_LOAD_WARP_TRANSPOSE, LOAD_DEFAULT, false, false, BLOCK_SCAN_WARP_SCANS, RADIX_SORT_SCATTER_TWO_PHASE, cudaSharedMemBankSizeFourByte, RADIX_BITS> DownsweepPolicy;
 
         enum { SUBSCRIPTION_FACTOR = 3 };
     };

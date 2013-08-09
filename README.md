@@ -7,15 +7,20 @@ CUB is a library of cooperative threadblock primitives and other high performanc
 utilities for CUDA kernel programming.  CUB enhances productivity, performance, and portability by
 providing an abstraction layer over complex threadblock, warp, and thread-level operations.
 
-![SIMT abstraction layer](http://nvlabs.github.com/cub/simt_abstraction.png)
+![Orientation of collective primitives within the CUDA software stack](http://nvlabs.github.com/cub/cub_overview.png)
 
 <br><hr>
-<h3>Recent news</h3>
+<h3>Releases</h3>
 
-| Date | &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;Topic&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;  | Description |
-| ---- | ------- | ----------- |
-| 04/04/2013 | [CUB v0.9.2 Update Release](https://github.com/NVlabs/cub/archive/0.9.2.zip) | Minor cosmetic, feature, and compilation updates.  See the [change-log](https://github.com/NVlabs/cub/blob/master/CHANGE_LOG.TXT) for further details. |
-| 03/06/2013 | [CUB v0.9 Preview Release](https://github.com/NVlabs/cub/archive/0.9.zip) | CUB is the first durable, high-performance library of cooperative threadblock, warp, and thread primitives for CUDA kernel programming. More primitives and examples coming soon! |
+See [CUB Project Website](http://nvlabs.github.com/cub) for more information.
+ 
+| Date | Version |
+| ---- | ------- |
+| 08/08/2013 | [CUB v1.0.1 Primary Release](https://github.com/NVlabs/cub/archive/1.0.1.zip) |
+| 05/07/2013 | [CUB v0.9.4 Update Release](https://github.com/NVlabs/cub/archive/0.9.4.zip) |
+| 04/04/2013 | [CUB v0.9.2 Update Release](https://github.com/NVlabs/cub/archive/0.9.2.zip) |
+| 03/09/2013 | [CUB v0.9.1 Update Release](https://github.com/NVlabs/cub/archive/0.9.1.zip) |
+| 03/07/2013 | [CUB v0.9.0 Preview Release](https://github.com/NVlabs/cub/archive/0.9.zip) |
 
 <br><hr>
 <h3>A Simple Example</h3>
@@ -23,32 +28,37 @@ providing an abstraction layer over complex threadblock, warp, and thread-level 
 ```C++
 #include <cub/cub.cuh>
  
-// An exclusive prefix sum CUDA kernel (for a single-threadblock grid)
-template <
-    int         BLOCK_THREADS,              // Threads per threadblock
-    int         ITEMS_PER_THREAD,           // Items per thread
-    typename    T>                          // Data type
-__global__ void PrefixSumKernel(T *d_in, T *d_out)
+// Block-sorting CUDA kernel
+__global__ void BlockSortKernel(int *d_in, int *d_out)
 {
-    using namespace cub;
- 
-    // Parameterize BlockScan for the current execution context
-    typedef BlockScan<T, BLOCK_THREADS> BlockScan;
- 
-    // The shared memory needed by BlockScan
-    __shared__ typename BlockScan::TempStorage temp_storage;
- 
-    // A segment of data items per thread
-    T data[ITEMS_PER_THREAD];
- 
-    // Load a tile of data using vector-load instructions
-    LoadBlockedVectorized(data, d_in, 0);
- 
-    // Perform an exclusive prefix sum across the tile of data
-    BlockScan::ExclusiveSum(temp_storage, data, data);
+     using namespace cub;
 
-    // Store a tile of data using vector-load instructions
-    StoreBlockedVectorized(data, d_out, 0);
+     // Specialize BlockRadixSort, BlockLoad, and BlockStore for 128 threads 
+     // owning 16 integer items each
+     typedef BlockRadixSort<int, 128, 16>                     BlockRadixSort;
+     typedef BlockLoad<int*, 128, 16, BLOCK_LOAD_TRANSPOSE>   BlockLoad;
+     typedef BlockStore<int*, 128, 16, BLOCK_STORE_TRANSPOSE> BlockStore;
+ 
+     // Allocate shared memory
+     __shared__ union {
+         typename BlockRadixSort::TempStorage  sort;
+         typename BlockLoad::TempStorage       load; 
+         typename BlockStore::TempStorage      store; 
+     } temp_storage; 
+
+     int block_offset = blockIdx.x * (128 * 16);	  // Offset for this block's ment
+
+     // Obtain a segment of 2048 consecutive keys that are blocked across threads
+     int thread_keys[16];
+     BlockLoad(temp_storage.load).Load(d_in + block_offset, thread_keys);
+     __syncthreads();
+
+     // Collectively sort the keys
+     BlockRadixSort(temp_storage.sort).Sort(thread_keys);
+     __syncthreads();
+
+     // Store the sorted segment 
+     BlockStore(temp_storage.store).Store(d_out + block_offset, thread_keys);
 }
 ```
 
