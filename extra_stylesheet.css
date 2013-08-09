@@ -3,7 +3,7 @@
  *****************************************************************************/
 
 body, table, div, p, dl {
-		font: 13px/22px arial,sans-serif;
+		font: 12px/22px arial,sans-serif;
 }
 
 body {
@@ -30,11 +30,11 @@ div.contents {
 }
 
 div.contents p:first-of-type {
-		color: #666;
+		color: #555;
 }
 
 div.textblock p:first-of-type {
-		color: #666;
+		color: #555;
 }
 
 div.header {
@@ -85,9 +85,9 @@ div.headertitle {
 
 div.title {
 		color: #2B4068;
-		padding-top: 16px;
-		padding-bottom: 16px;
-		font: bold 120% "courier new",courier,monospace;
+		padding-top: 8px;
+		padding-bottom: 8px;
+		font: bold 115% "courier new",courier,monospace;
 		padding-left: 40px;
 		text-indent: -40px;
 }
@@ -213,23 +213,39 @@ p.startli, p.startdd, p.starttd {
 		text-align: center;
 }
 
+dt {
+		font-style: italic;
+}
+
 .memproto, dl.reflist dt {
+		padding-top: 20px;
+		border-top: 1px solid #999;
+		border-left: 1px solid #999;
+		border-right: 1px solid #999;
 		background-image: none;
-		background-color: white;
+		background-color: #FAFAFA;
 		text-shadow: none;
-		box-shadow: 3px 3px 3px rgba(0, 0, 0, 0.1);
-		-webkit-box-shadow: 3px 3px 3px rgba(0, 0, 0, 0.1);
+		box-shadow: 3px 3px 30px rgba(0, 0, 0, 0.1);
+		-webkit-box-shadow: 3px 3px 30px rgba(0, 0, 0, 0.1);
 }
 
 div.memdoc {
+		padding-bottom: 20px;
+		border-bottom: 1px solid #999;
+		border-left: 1px solid #999;
+		border-right: 1px solid #999;
 		background-image: none;
-		color: #666;
-		box-shadow: 3px 3px 3px rgba(0, 0, 0, 0.1);
+		color: #555;
+		box-shadow: 3px 3px 30px rgba(0, 0, 0, 0.1);
 }
 
 div.memdoc p {
 		line-height: normal;
 		margin-left: 40px;
+}
+
+div.memdoc dt {
+		color: black;
 }
 
 div.toc {
@@ -242,9 +258,8 @@ div.toc {
 div.textblock h3 {
 		font: 11px/16px "courier new",courier,monospace;		
 		color: cadetblue;
-		padding-left: 40px;
-		text-indent: -40px;
-		white-space: pre-wrap
+		white-space: pre-wrap;
+		margin-bottom: 40px;
 }
 
 table.memname tbody tr:first-child td:nth-child(2) {
@@ -278,7 +293,7 @@ dl.section.user a:visited b {
 
 dl.section.user dd {
 		margin-right: 40px;
-		color: #666;
+		color: #555;
 }
 
 /******************************************************************************
@@ -321,13 +336,13 @@ a.code, a.code:visited {
 
 div.fragment {
 		color: black;
-		border-color: #AAA;
+		border-color: #DDD;
 		padding: 14px 14px 14px 14px;
 		margin-top: 20px;
 		margin-bottom: 20px;
 		background-color: white;
 		border-radius: 8px 8px 8px 8px;
-		box-shadow: 3px 3px 3px rgba(0, 0, 0, 0.1);
+		box-shadow: 3px 3px 20px rgba(0, 0, 0, 0.04);
 		border-style: dashed;
 }
 
@@ -356,8 +371,8 @@ dl.tparams, dl.params {
 }
 
 div.memitem {
-		margin-bottom: 30px;
-		margin-top: 30px;
+		margin-bottom: 40px;
+		margin-top: 40px;
 }
 
 .memTemplParams, td.memTemplItemLeft, td.memItemLeft {
@@ -387,6 +402,7 @@ td.memTemplItemLeft, td.memItemLeft {
 div.groupHeader {
 		margin-left: 10px;
 		margin-bottom: 12px;
+		font-style:italic;
 }
 
 td.memSeparator {
@@ -396,9 +412,9 @@ td.memSeparator {
 }
 
 td.mdescLeft, td.mdescRight {
-		padding-top: 6px;
-		padding-bottom: 6px;
-		color: #666;
+		padding-top: 10px;
+		padding-bottom: 20px;
+		color: #555;
 }
 
 td.memname, td.paramtype, div.memtemplate {

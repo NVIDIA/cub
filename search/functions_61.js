@@ -1,4 +1,4 @@
 var searchData=
 [
-  ['allocate',['Allocate',['../classcub_1_1_grid_queue.html#a8e3b217f201534c3056b564e0961aa2f',1,'cub::GridQueue']]]
+  ['alias',['Alias',['../structcub_1_1_uninitialized.html#a790b865325f19ac45cc84d3fed0d3038',1,'cub::Uninitialized']]]
 ];
