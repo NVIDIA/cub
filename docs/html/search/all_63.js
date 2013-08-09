@@ -5,7 +5,7 @@ var searchData=
   ['callback',['Callback',['../classcub_1_1_device.html#a3c986a6aa2d3b69fe8a7ab14c85a6477',1,'cub::Device']]],
   ['cast',['Cast',['../structcub_1_1_cast.html',1,'cub']]],
   ['category',['CATEGORY',['../structcub_1_1_base_traits.html#a25ff6477c84dc3bd5f4b5e70cd600f09',1,'cub::BaseTraits::CATEGORY()'],['../group___util_module.html#ga4733b6d40e923244502e6f5b200766ef',1,'cub::Category()']]],
-  ['composite',['Composite',['../classcub_1_1_block_histogram.html#ae3c0bf7f71ecc2ed33ca50c2fa2cc11f',1,'cub::BlockHistogram']]],
+  ['composite',['Composite',['../classcub_1_1_block_histogram.html#a86aca800e8a8e886b5d328e7aa3c5582',1,'cub::BlockHistogram']]],
   ['constantiteratorra',['ConstantIteratorRA',['../classcub_1_1_constant_iterator_r_a.html#aa2e8da63f412840cadb94578a0f36348',1,'cub::ConstantIteratorRA']]],
   ['constantiteratorra',['ConstantIteratorRA',['../classcub_1_1_constant_iterator_r_a.html',1,'cub']]],
   ['cub',['cub',['../namespacecub.html',1,'']]],
@@ -17,5 +17,5 @@ var searchData=
   ['cubdebug',['CubDebug',['../group___util_module.html#ga84c3a4c178bf6593e0fad2b763606236',1,'util_debug.cuh']]],
   ['cubdebugexit',['CubDebugExit',['../group___util_module.html#ga26211db894893b3cec946e4e537536f8',1,'util_debug.cuh']]],
   ['cublog',['CubLog',['../group___util_module.html#ga6788287a780dc10c443aa1ab5ae9f0db',1,'util_debug.cuh']]],
-  ['current',['Current',['../structcub_1_1_double_buffer.html#a5614294169d3b6393173c8add575df1b',1,'cub::DoubleBuffer']]]
+  ['current',['Current',['../structcub_1_1_double_buffer.html#a861d3dff1a70d5e5926057a44d9b8724',1,'cub::DoubleBuffer']]]
 ];

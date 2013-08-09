@@ -476,7 +476,7 @@ enum BlockLoadAlgorithm
     /**
      * \par Overview
      *
-     * A [<em>blocked arrangement</em>](index.html#sec3sec3) of data is read
+     * A [<em>blocked arrangement</em>](index.html#sec4sec4) of data is read
      * directly from memory.  The thread block reads items in a parallel "raking" fashion: thread<sub><em>i</em></sub>
      * reads the <em>i</em><sup>th</sup> segment of consecutive elements.
      *
@@ -489,7 +489,7 @@ enum BlockLoadAlgorithm
     /**
      * \par Overview
      *
-     * A [<em>blocked arrangement</em>](index.html#sec3sec3) of data is read directly
+     * A [<em>blocked arrangement</em>](index.html#sec4sec4) of data is read directly
      * from memory using CUDA's built-in vectorized loads as a coalescing optimization.
      * The thread block reads items in a parallel "raking" fashion: thread<sub><em>i</em></sub> uses vector loads to
      * read the <em>i</em><sup>th</sup> segment of consecutive elements.
@@ -511,13 +511,13 @@ enum BlockLoadAlgorithm
     /**
      * \par Overview
      *
-     * A [<em>striped arrangement</em>](index.html#sec3sec3) of data is read
+     * A [<em>striped arrangement</em>](index.html#sec4sec4) of data is read
      * directly from memory and then is locally transposed into a
-     * [<em>blocked arrangement</em>](index.html#sec3sec3). The thread block
+     * [<em>blocked arrangement</em>](index.html#sec4sec4). The thread block
      * reads items in a parallel "strip-mining" fashion:
      * thread<sub><em>i</em></sub> reads items having stride \p BLOCK_THREADS
      * between them. cub::BlockExchange is then used to locally reorder the items
-     * into a [<em>blocked arrangement</em>](index.html#sec3sec3).
+     * into a [<em>blocked arrangement</em>](index.html#sec4sec4).
      *
      * \par Performance Considerations
      * - The utilization of memory transactions (coalescing) remains high regardless
@@ -531,13 +531,13 @@ enum BlockLoadAlgorithm
     /**
      * \par Overview
      *
-     * A [<em>warp-striped arrangement</em>](index.html#sec3sec3) of data is read
+     * A [<em>warp-striped arrangement</em>](index.html#sec4sec4) of data is read
      * directly from memory and then is locally transposed into a
-     * [<em>blocked arrangement</em>](index.html#sec3sec3). Each warp reads its own
+     * [<em>blocked arrangement</em>](index.html#sec4sec4). Each warp reads its own
      * contiguous segment in a parallel "strip-mining" fashion: lane<sub><em>i</em></sub>
      * reads items having stride \p WARP_THREADS between them. cub::BlockExchange
      * is then used to locally reorder the items into a
-     * [<em>blocked arrangement</em>](index.html#sec3sec3).
+     * [<em>blocked arrangement</em>](index.html#sec4sec4).
      *
      * \par Usage Considerations
      * - BLOCK_THREADS must be a multiple of WARP_THREADS
@@ -553,7 +553,7 @@ enum BlockLoadAlgorithm
 
 
 /**
- * \brief The BlockLoad class provides [<em>collective</em>](index.html#sec0) data movement methods for loading a linear segment of items from memory into a [<em>blocked arrangement</em>](index.html#sec3sec3) across a CUDA thread block.  ![](block_load_logo.png)
+ * \brief The BlockLoad class provides [<em>collective</em>](index.html#sec0) data movement methods for loading a linear segment of items from memory into a [<em>blocked arrangement</em>](index.html#sec4sec4) across a CUDA thread block.  ![](block_load_logo.png)
  * \ingroup BlockModule
  *
  * \par Overview
@@ -563,17 +563,17 @@ enum BlockLoadAlgorithm
  *
  * \par
  * Optionally, BlockLoad can be specialized by different data movement strategies:
- *   -# <b>cub::BLOCK_LOAD_DIRECT</b>.  A [<em>blocked arrangement</em>](index.html#sec3sec3)
+ *   -# <b>cub::BLOCK_LOAD_DIRECT</b>.  A [<em>blocked arrangement</em>](index.html#sec4sec4)
  *      of data is read directly from memory.  [More...](\ref cub::BlockLoadAlgorithm)
- *   -# <b>cub::BLOCK_LOAD_VECTORIZE</b>.  A [<em>blocked arrangement</em>](index.html#sec3sec3)
+ *   -# <b>cub::BLOCK_LOAD_VECTORIZE</b>.  A [<em>blocked arrangement</em>](index.html#sec4sec4)
  *      of data is read directly from memory using CUDA's built-in vectorized loads as a
  *      coalescing optimization.    [More...](\ref cub::BlockLoadAlgorithm)
- *   -# <b>cub::BLOCK_LOAD_TRANSPOSE</b>.  A [<em>striped arrangement</em>](index.html#sec3sec3)
+ *   -# <b>cub::BLOCK_LOAD_TRANSPOSE</b>.  A [<em>striped arrangement</em>](index.html#sec4sec4)
  *      of data is read directly from memory and is then locally transposed into a
- *      [<em>blocked arrangement</em>](index.html#sec3sec3).  [More...](\ref cub::BlockLoadAlgorithm)
- *   -# <b>cub::BLOCK_LOAD_WARP_TRANSPOSE</b>.  A [<em>warp-striped arrangement</em>](index.html#sec3sec3)
+ *      [<em>blocked arrangement</em>](index.html#sec4sec4).  [More...](\ref cub::BlockLoadAlgorithm)
+ *   -# <b>cub::BLOCK_LOAD_WARP_TRANSPOSE</b>.  A [<em>warp-striped arrangement</em>](index.html#sec4sec4)
  *      of data is read directly from memory and is then locally transposed into a
- *      [<em>blocked arrangement</em>](index.html#sec3sec3).  [More...](\ref cub::BlockLoadAlgorithm)
+ *      [<em>blocked arrangement</em>](index.html#sec4sec4).  [More...](\ref cub::BlockLoadAlgorithm)
  *
  * \tparam InputIteratorRA      The input iterator type (may be a simple pointer type).
  * \tparam BLOCK_THREADS        The thread block size in threads.

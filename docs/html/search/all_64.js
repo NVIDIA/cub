@@ -14,6 +14,7 @@ var searchData=
   ['deviceradixsort',['DeviceRadixSort',['../structcub_1_1_device_radix_sort.html',1,'cub']]],
   ['devicereduce',['DeviceReduce',['../structcub_1_1_device_reduce.html',1,'cub']]],
   ['devicescan',['DeviceScan',['../structcub_1_1_device_scan.html',1,'cub']]],
+  ['deviceword',['DeviceWord',['../structcub_1_1_uninitialized.html#ab100c102e4368f8c9038f8a2e80d3fc9',1,'cub::Uninitialized']]],
   ['doublebuffer',['DoubleBuffer',['../structcub_1_1_double_buffer.html',1,'cub']]],
-  ['doublebuffer',['DoubleBuffer',['../structcub_1_1_double_buffer.html#aac3423cb3ee4d7edeeea7fbed70889e8',1,'cub::DoubleBuffer::DoubleBuffer()'],['../structcub_1_1_double_buffer.html#a509283947e25a5da929553834113b346',1,'cub::DoubleBuffer::DoubleBuffer(T *d_current, T *d_alternate)']]]
+  ['doublebuffer',['DoubleBuffer',['../structcub_1_1_double_buffer.html#a8d51dcd30484a1f186e056eb7ab09979',1,'cub::DoubleBuffer::DoubleBuffer()'],['../structcub_1_1_double_buffer.html#a100c51f0e1aefdff4cdfe6480c89f59e',1,'cub::DoubleBuffer::DoubleBuffer(T *d_current, T *d_alternate)']]]
 ];
