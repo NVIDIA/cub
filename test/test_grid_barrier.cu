@@ -37,6 +37,7 @@
 
 #include <stdio.h>
 #include <cub/cub.cuh>
+#include <cub/grid/grid_barrier.cuh>
 #include "test_util.h"
 
 using namespace cub;

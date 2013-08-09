@@ -103,15 +103,27 @@ ifeq (WIN_NT, $(findstring WIN_NT, $(OSUPPER)))
     NVCCFLAGS += -Xcompiler /fp:strict
     # Help the compiler/linker work with huge numbers of kernels on Windows
 	NVCCFLAGS += -Xcompiler /bigobj -Xcompiler /Zm500
+	CC = cl
+ifneq ($(force64), 1)
+	CUDART_CYG = "$(shell dirname $(NVCC))/../lib/Win32/cudart.lib"
+else
+	CUDART_CYG = "$(shell dirname $(NVCC))/../lib/x64/cudart.lib"
+endif
+	CUDART = "$(shell cygpath -w $(CUDART_CYG))"
 else
     # For g++
     # Disable excess x86 floating point precision that can lead to results being labeled incorrectly
     NVCCFLAGS += -Xcompiler -ffloat-store
+    CC = g++
+ifneq ($(force64), 1)
+    CUDART = "$(shell dirname $(NVCC))/../lib/lib/libcudart_static.a"
+else
+    CUDART = "$(shell dirname $(NVCC))/../lib/lib64/libcudart_static.a"
+endif
 endif
 
 # 32/64-bit (32-bit device pointers by default) 
 ifneq ($(force64), 1)
-	# 
 	CPU_ARCH = -m32
 	CPU_ARCH_SUFFIX = i386
 else
@@ -190,6 +202,18 @@ clean :
 	rm -f bin/*$(CPU_ARCH_SUFFIX)* 
 	rm -f *.i* *.cubin *.cu.c *.cudafe* *.fatbin.c *.ptx *.hash *.cu.cpp *.o
 
+
+#-------------------------------------------------------------------------------
+# make link
+#-------------------------------------------------------------------------------
+
+link: bin/link
+
+bin/link : link_a.cu link_b.cu link_main.cpp $(DEPS)
+	mkdir -p bin
+	$(NVCC) $(CPU_ARCH) $(INC) $(DEFINES) $(SM_TARGETS) link_a.cu -c -o bin/link_a.obj
+	$(NVCC) $(CPU_ARCH) $(INC) $(DEFINES) $(SM_TARGETS) link_b.cu -c -o bin/link_b.obj
+	$(CC) link_main.cpp bin/link_a.obj bin/link_b.obj $(CUDART) -o bin/link 
 
 #-------------------------------------------------------------------------------
 # make test_allocator 
