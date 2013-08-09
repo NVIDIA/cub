@@ -110,6 +110,7 @@ var searchBox = new SearchBox("searchBox", "search",false,'Search');
 <div class="caption">
 .</div></div>
  <dl class="section user"><dt>Overview</dt><dd>The <a href="http://en.wikipedia.org/wiki/Radix_sort"><em>radix sorting method</em></a> arranges items into ascending order. It relies upon a positional representation for keys, i.e., each key is comprised of an ordered sequence of symbols (e.g., digits, characters, etc.) specified from least-significant to most-significant. For a given input sequence of keys and a set of rules specifying a total ordering of the symbolic alphabet, the radix sorting method produces a lexicographic ordering of those keys.</dd></dl>
+<dl class="section user"><dt></dt><dd><a class="el" href="structcub_1_1_device_radix_sort.html" title="DeviceRadixSort provides operations for computing a device-wide, parallel radix sort across data item...">DeviceRadixSort</a> can sort all of the built-in C++ numeric primitive types, e.g.: <code>unsigned char</code>, <code>int</code>, <code>double</code>, etc. Although the direct radix sorting method can only be applied to unsigned integral types, <a class="el" href="classcub_1_1_block_radix_sort.html" title="The cub::BlockRadixSort class provides collective methods for sorting items partitioned across a CUDA...">BlockRadixSort</a> is able to sort signed and floating-point types via simple bit-wise transformations that ensure lexicographic key ordering.</dd></dl>
 <dl class="section user"><dt>Usage Considerations</dt><dd><ul>
 <li><em>Dynamic parallelism</em>. <a class="el" href="structcub_1_1_device_radix_sort.html" title="DeviceRadixSort provides operations for computing a device-wide, parallel radix sort across data item...">DeviceRadixSort</a> methods can be called within kernel code on devices in which CUDA dynamic parallelism is supported. When calling these methods from kernel code, be sure to define the <code>CUB_CDP</code> macro in your compiler's macro definitions.</li>
 </ul>
@@ -385,7 +386,7 @@ template&lt;typename Key &gt; </div>
 <!-- HTML footer for doxygen 1.8.3.1-->
 <!-- start footer part -->
 <hr class="footer"/><address class="footer"><small>
-Generated on Fri Aug 9 2013 08:37:17 for CUB by &#160;<a href="http://www.doxygen.org/index.html">
+Generated on Fri Aug 9 2013 10:56:44 for CUB by &#160;<a href="http://www.doxygen.org/index.html">
 <img class="footer" src="doxygen.png" alt="doxygen"/>
 </a> 1.8.4
 <br>
