@@ -125,7 +125,9 @@ struct NullType
 
 #ifndef DOXYGEN_SHOULD_SKIP_THIS    // Do not document
 
-std::ostream& operator<< (std::ostream& stream, const NullType& val) { return stream; }
+namespace {
+    std::ostream& operator<< (std::ostream& stream, const NullType& val) { return stream; }
+}
 
 #endif // DOXYGEN_SHOULD_SKIP_THIS
 
