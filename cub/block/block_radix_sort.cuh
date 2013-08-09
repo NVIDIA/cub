@@ -80,7 +80,7 @@ namespace cub {
  * \blockcollective{BlockRadixSort}
  * \par
  * The code snippet below illustrates a sort of 512 integer keys that
- * are partitioned in a [<em>blocked arrangement</em>](index.html#sec3sec3) across 128 threads
+ * are partitioned in a [<em>blocked arrangement</em>](index.html#sec4sec4) across 128 threads
  * where each thread owns 4 consecutive items.
  * \par
  * \code
@@ -237,12 +237,12 @@ public:
     //@{
 
     /**
-     * \brief Performs a block-wide radix sort over a [<em>blocked arrangement</em>](index.html#sec3sec3) of keys.
+     * \brief Performs a block-wide radix sort over a [<em>blocked arrangement</em>](index.html#sec4sec4) of keys.
      *
      * \smemreuse
      *
      * The code snippet below illustrates a sort of 512 integer keys that
-     * are partitioned in a [<em>blocked arrangement</em>](index.html#sec3sec3) across 128 threads
+     * are partitioned in a [<em>blocked arrangement</em>](index.html#sec4sec4) across 128 threads
      * where each thread owns 4 consecutive keys.
      * \par
      * \code
@@ -314,7 +314,7 @@ public:
 
 
     /**
-     * \brief Performs a block-wide radix sort across a [<em>blocked arrangement</em>](index.html#sec3sec3) of keys and values.
+     * \brief Performs a block-wide radix sort across a [<em>blocked arrangement</em>](index.html#sec4sec4) of keys and values.
      *
      * BlockRadixSort can only accommodate one associated tile of values. To "truck along"
      * more than one tile of values, simply perform a key-value sort of the keys paired
@@ -325,7 +325,7 @@ public:
      * \smemreuse
      *
      * The code snippet below illustrates a sort of 512 integer keys and values that
-     * are partitioned in a [<em>blocked arrangement</em>](index.html#sec3sec3) across 128 threads
+     * are partitioned in a [<em>blocked arrangement</em>](index.html#sec4sec4) across 128 threads
      * where each thread owns 4 consecutive pairs.
      * \par
      * \code
@@ -412,12 +412,12 @@ public:
 
 
     /**
-     * \brief Performs a radix sort across a [<em>blocked arrangement</em>](index.html#sec3sec3) of keys, leaving them in a [<em>striped arrangement</em>](index.html#sec3sec3).
+     * \brief Performs a radix sort across a [<em>blocked arrangement</em>](index.html#sec4sec4) of keys, leaving them in a [<em>striped arrangement</em>](index.html#sec4sec4).
      *
      * \smemreuse
      *
      * The code snippet below illustrates a sort of 512 integer keys that
-     * are initially partitioned in a [<em>blocked arrangement</em>](index.html#sec3sec3) across 128 threads
+     * are initially partitioned in a [<em>blocked arrangement</em>](index.html#sec4sec4) across 128 threads
      * where each thread owns 4 consecutive keys.  The final partitioning is striped.
      * \par
      * \code
@@ -497,7 +497,7 @@ public:
 
 
     /**
-     * \brief Performs a radix sort across a [<em>blocked arrangement</em>](index.html#sec3sec3) of keys and values, leaving them in a [<em>striped arrangement</em>](index.html#sec3sec3).
+     * \brief Performs a radix sort across a [<em>blocked arrangement</em>](index.html#sec4sec4) of keys and values, leaving them in a [<em>striped arrangement</em>](index.html#sec4sec4).
      *
      * BlockRadixSort can only accommodate one associated tile of values. To "truck along"
      * more than one tile of values, simply perform a key-value sort of the keys paired
@@ -508,7 +508,7 @@ public:
      * \smemreuse
      *
      * The code snippet below illustrates a sort of 512 integer keys and values that
-     * are initially partitioned in a [<em>blocked arrangement</em>](index.html#sec3sec3) across 128 threads
+     * are initially partitioned in a [<em>blocked arrangement</em>](index.html#sec4sec4) across 128 threads
      * where each thread owns 4 consecutive pairs.  The final partitioning is striped.
      * \par
      * \code

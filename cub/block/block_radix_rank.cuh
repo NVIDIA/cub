@@ -64,7 +64,7 @@ namespace cub {
  *
  * \par Usage Considerations
  * - Keys must be in a form suitable for radix ranking (i.e., unsigned bits).
- * - Assumes a [<em>blocked arrangement</em>](index.html#sec3sec3) of elements across threads
+ * - Assumes a [<em>blocked arrangement</em>](index.html#sec4sec4) of elements across threads
  * - \smemreuse{BlockRadixRank::TempStorage}
  *
  * \par Performance Considerations

@@ -81,7 +81,7 @@ var searchBox = new SearchBox("searchBox", "search",false,'Search');
      onmouseover="return searchBox.OnSearchSelectShow()"
      onmouseout="return searchBox.OnSearchSelectHide()"
      onkeydown="return searchBox.OnSearchSelectKey(event)">
-<a class="SelectItem" href="javascript:void(0)" onclick="searchBox.OnSelectItem(0)"><span class="SelectionMark">&#160;</span>All</a><a class="SelectItem" href="javascript:void(0)" onclick="searchBox.OnSelectItem(1)"><span class="SelectionMark">&#160;</span>Classes</a><a class="SelectItem" href="javascript:void(0)" onclick="searchBox.OnSelectItem(2)"><span class="SelectionMark">&#160;</span>Namespaces</a><a class="SelectItem" href="javascript:void(0)" onclick="searchBox.OnSelectItem(3)"><span class="SelectionMark">&#160;</span>Files</a><a class="SelectItem" href="javascript:void(0)" onclick="searchBox.OnSelectItem(4)"><span class="SelectionMark">&#160;</span>Functions</a><a class="SelectItem" href="javascript:void(0)" onclick="searchBox.OnSelectItem(5)"><span class="SelectionMark">&#160;</span>Variables</a><a class="SelectItem" href="javascript:void(0)" onclick="searchBox.OnSelectItem(6)"><span class="SelectionMark">&#160;</span>Typedefs</a><a class="SelectItem" href="javascript:void(0)" onclick="searchBox.OnSelectItem(7)"><span class="SelectionMark">&#160;</span>Enumerations</a><a class="SelectItem" href="javascript:void(0)" onclick="searchBox.OnSelectItem(8)"><span class="SelectionMark">&#160;</span>Enumerator</a><a class="SelectItem" href="javascript:void(0)" onclick="searchBox.OnSelectItem(9)"><span class="SelectionMark">&#160;</span>Groups</a><a class="SelectItem" href="javascript:void(0)" onclick="searchBox.OnSelectItem(10)"><span class="SelectionMark">&#160;</span>Pages</a></div>
+<a class="SelectItem" href="javascript:void(0)" onclick="searchBox.OnSelectItem(0)"><span class="SelectionMark">&#160;</span>All</a><a class="SelectItem" href="javascript:void(0)" onclick="searchBox.OnSelectItem(1)"><span class="SelectionMark">&#160;</span>Classes</a><a class="SelectItem" href="javascript:void(0)" onclick="searchBox.OnSelectItem(2)"><span class="SelectionMark">&#160;</span>Namespaces</a><a class="SelectItem" href="javascript:void(0)" onclick="searchBox.OnSelectItem(3)"><span class="SelectionMark">&#160;</span>Files</a><a class="SelectItem" href="javascript:void(0)" onclick="searchBox.OnSelectItem(4)"><span class="SelectionMark">&#160;</span>Functions</a><a class="SelectItem" href="javascript:void(0)" onclick="searchBox.OnSelectItem(5)"><span class="SelectionMark">&#160;</span>Variables</a><a class="SelectItem" href="javascript:void(0)" onclick="searchBox.OnSelectItem(6)"><span class="SelectionMark">&#160;</span>Typedefs</a><a class="SelectItem" href="javascript:void(0)" onclick="searchBox.OnSelectItem(7)"><span class="SelectionMark">&#160;</span>Enumerations</a><a class="SelectItem" href="javascript:void(0)" onclick="searchBox.OnSelectItem(8)"><span class="SelectionMark">&#160;</span>Enumerator</a><a class="SelectItem" href="javascript:void(0)" onclick="searchBox.OnSelectItem(9)"><span class="SelectionMark">&#160;</span>Groups</a></div>
 
 <!-- iframe showing the search results (closed by default) -->
 <div id="MSearchResultsWindow">
@@ -118,9 +118,9 @@ var searchBox = new SearchBox("searchBox", "search",false,'Search');
 <tr class="heading"><td colspan="2"><h2 class="groupheader"><a name="nested-classes"></a>
 Classes</h2></td></tr>
 <tr class="memitem:"><td class="memItemLeft" align="right" valign="top">class &#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classcub_1_1_block_scan.html">cub::BlockScan&lt; T, BLOCK_THREADS, ALGORITHM &gt;</a></td></tr>
-<tr class="memdesc:"><td class="mdescLeft">&#160;</td><td class="mdescRight"><a class="el" href="classcub_1_1_block_scan.html" title="BlockScan provides variants of parallel prefix scan (and prefix sum) across a CUDA threadblock...">BlockScan</a> provides variants of parallel prefix scan (and prefix sum) across a CUDA threadblock. </p>
+<tr class="memdesc:"><td class="mdescLeft">&#160;</td><td class="mdescRight">The <a class="el" href="classcub_1_1_block_scan.html" title="The BlockScan class provides collective methods for computing a parallel prefix sum/scan of items par...">BlockScan</a> class provides <a href="index.html#sec0"><em>collective</em></a> methods for computing a parallel prefix sum/scan of items partitioned across a CUDA thread block. </p>
 <div class="image">
-<img src="scan_logo.png" alt="scan_logo.png"/>
+<img src="block_scan_logo.png" alt="block_scan_logo.png"/>
 <div class="caption">
 .</div></div>
   <a href="classcub_1_1_block_scan.html#details">More...</a><br/></td></tr>
@@ -138,16 +138,16 @@ Enumerations</h2></td></tr>
 <a class="el" href="namespacecub.html#abec44bba36037c547e7e84906d0d23abadc8dfe7760ac97ddde467ecf1070674f">cub::BLOCK_SCAN_RAKING_MEMOIZE</a>, 
 <a class="el" href="namespacecub.html#abec44bba36037c547e7e84906d0d23aba7f51e58246eb53f1a97bd1bc8c0f400f">cub::BLOCK_SCAN_WARP_SCANS</a>
  }</td></tr>
-<tr class="memdesc:abec44bba36037c547e7e84906d0d23ab"><td class="mdescLeft">&#160;</td><td class="mdescRight">BlockScanAlgorithm enumerates alternative algorithms for <a class="el" href="classcub_1_1_block_scan.html" title="BlockScan provides variants of parallel prefix scan (and prefix sum) across a CUDA threadblock...">cub::BlockScan</a> to compute a parallel prefix scan across a CUDA thread block.  <a href="namespacecub.html#abec44bba36037c547e7e84906d0d23ab">More...</a><br/></td></tr>
+<tr class="memdesc:abec44bba36037c547e7e84906d0d23ab"><td class="mdescLeft">&#160;</td><td class="mdescRight">BlockScanAlgorithm enumerates alternative algorithms for <a class="el" href="classcub_1_1_block_scan.html" title="The BlockScan class provides collective methods for computing a parallel prefix sum/scan of items par...">cub::BlockScan</a> to compute a parallel prefix scan across a CUDA thread block.  <a href="namespacecub.html#abec44bba36037c547e7e84906d0d23ab">More...</a><br/></td></tr>
 <tr class="separator:abec44bba36037c547e7e84906d0d23ab"><td class="memSeparator" colspan="2">&#160;</td></tr>
 </table>
 <a name="details" id="details"></a><h2 class="groupheader">Detailed Description</h2>
-<div class="textblock"><p><a class="el" href="classcub_1_1_block_scan.html" title="BlockScan provides variants of parallel prefix scan (and prefix sum) across a CUDA threadblock...">cub::BlockScan</a> provides variants of parallel prefix scan across a CUDA threadblock. </p>
+<div class="textblock"><p>The <a class="el" href="classcub_1_1_block_scan.html" title="The BlockScan class provides collective methods for computing a parallel prefix sum/scan of items par...">cub::BlockScan</a> class provides <a href="index.html#sec0"><em>collective</em></a> methods for computing a parallel prefix sum/scan of items partitioned across a CUDA thread block. </p>
 </div></div><!-- contents -->
 <!-- HTML footer for doxygen 1.8.3.1-->
 <!-- start footer part -->
 <hr class="footer"/><address class="footer"><small>
-Generated on Sat Jul 27 2013 00:06:21 for CUB by &#160;<a href="http://www.doxygen.org/index.html">
+Generated on Fri Aug 9 2013 08:37:15 for CUB by &#160;<a href="http://www.doxygen.org/index.html">
 <img class="footer" src="doxygen.png" alt="doxygen"/>
 </a> 1.8.4
 <br>

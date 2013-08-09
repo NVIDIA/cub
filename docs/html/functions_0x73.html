@@ -113,7 +113,7 @@ var searchBox = new SearchBox("searchBox", "search",false,'Search');
      onmouseover="return searchBox.OnSearchSelectShow()"
      onmouseout="return searchBox.OnSearchSelectHide()"
      onkeydown="return searchBox.OnSearchSelectKey(event)">
-<a class="SelectItem" href="javascript:void(0)" onclick="searchBox.OnSelectItem(0)"><span class="SelectionMark">&#160;</span>All</a><a class="SelectItem" href="javascript:void(0)" onclick="searchBox.OnSelectItem(1)"><span class="SelectionMark">&#160;</span>Classes</a><a class="SelectItem" href="javascript:void(0)" onclick="searchBox.OnSelectItem(2)"><span class="SelectionMark">&#160;</span>Namespaces</a><a class="SelectItem" href="javascript:void(0)" onclick="searchBox.OnSelectItem(3)"><span class="SelectionMark">&#160;</span>Files</a><a class="SelectItem" href="javascript:void(0)" onclick="searchBox.OnSelectItem(4)"><span class="SelectionMark">&#160;</span>Functions</a><a class="SelectItem" href="javascript:void(0)" onclick="searchBox.OnSelectItem(5)"><span class="SelectionMark">&#160;</span>Variables</a><a class="SelectItem" href="javascript:void(0)" onclick="searchBox.OnSelectItem(6)"><span class="SelectionMark">&#160;</span>Typedefs</a><a class="SelectItem" href="javascript:void(0)" onclick="searchBox.OnSelectItem(7)"><span class="SelectionMark">&#160;</span>Enumerations</a><a class="SelectItem" href="javascript:void(0)" onclick="searchBox.OnSelectItem(8)"><span class="SelectionMark">&#160;</span>Enumerator</a><a class="SelectItem" href="javascript:void(0)" onclick="searchBox.OnSelectItem(9)"><span class="SelectionMark">&#160;</span>Groups</a><a class="SelectItem" href="javascript:void(0)" onclick="searchBox.OnSelectItem(10)"><span class="SelectionMark">&#160;</span>Pages</a></div>
+<a class="SelectItem" href="javascript:void(0)" onclick="searchBox.OnSelectItem(0)"><span class="SelectionMark">&#160;</span>All</a><a class="SelectItem" href="javascript:void(0)" onclick="searchBox.OnSelectItem(1)"><span class="SelectionMark">&#160;</span>Classes</a><a class="SelectItem" href="javascript:void(0)" onclick="searchBox.OnSelectItem(2)"><span class="SelectionMark">&#160;</span>Namespaces</a><a class="SelectItem" href="javascript:void(0)" onclick="searchBox.OnSelectItem(3)"><span class="SelectionMark">&#160;</span>Files</a><a class="SelectItem" href="javascript:void(0)" onclick="searchBox.OnSelectItem(4)"><span class="SelectionMark">&#160;</span>Functions</a><a class="SelectItem" href="javascript:void(0)" onclick="searchBox.OnSelectItem(5)"><span class="SelectionMark">&#160;</span>Variables</a><a class="SelectItem" href="javascript:void(0)" onclick="searchBox.OnSelectItem(6)"><span class="SelectionMark">&#160;</span>Typedefs</a><a class="SelectItem" href="javascript:void(0)" onclick="searchBox.OnSelectItem(7)"><span class="SelectionMark">&#160;</span>Enumerations</a><a class="SelectItem" href="javascript:void(0)" onclick="searchBox.OnSelectItem(8)"><span class="SelectionMark">&#160;</span>Enumerator</a><a class="SelectItem" href="javascript:void(0)" onclick="searchBox.OnSelectItem(9)"><span class="SelectionMark">&#160;</span>Groups</a></div>
 
 <!-- iframe showing the search results (closed by default) -->
 <div id="MSearchResultsWindow">
@@ -178,7 +178,7 @@ var searchBox = new SearchBox("searchBox", "search",false,'Search');
 : <a class="el" href="classcub_1_1_device.html#a838c9a2e207c38ef24e79a40bccdd1ac">cub::Device</a>
 </li>
 <li>Sort()
-: <a class="el" href="classcub_1_1_block_radix_sort.html#ad04651e04e555350bd250c4681a97644">cub::BlockRadixSort&lt; Key, BLOCK_THREADS, ITEMS_PER_THREAD, Value, RADIX_BITS, MEMOIZE_OUTER_SCAN, INNER_SCAN_ALGORITHM, SMEM_CONFIG &gt;</a>
+: <a class="el" href="classcub_1_1_block_radix_sort.html#aac3d9424388b0cb6da360624e627b61e">cub::BlockRadixSort&lt; Key, BLOCK_THREADS, ITEMS_PER_THREAD, Value, RADIX_BITS, MEMOIZE_OUTER_SCAN, INNER_SCAN_ALGORITHM, SMEM_CONFIG &gt;</a>
 </li>
 <li>SortBlockedToStriped()
 : <a class="el" href="classcub_1_1_block_radix_sort.html#a4be0c8d355a7fc75f8b405a776d884d3">cub::BlockRadixSort&lt; Key, BLOCK_THREADS, ITEMS_PER_THREAD, Value, RADIX_BITS, MEMOIZE_OUTER_SCAN, INNER_SCAN_ALGORITHM, SMEM_CONFIG &gt;</a>
@@ -189,6 +189,9 @@ var searchBox = new SearchBox("searchBox", "search",false,'Search');
 <li>SortPairs()
 : <a class="el" href="structcub_1_1_device_radix_sort.html#ad42b50b38c4296c371572efdedd49fed">cub::DeviceRadixSort</a>
 </li>
+<li>storage
+: <a class="el" href="structcub_1_1_uninitialized.html#a5fa7311d943222333e8c87497ff8e782">cub::Uninitialized&lt; T &gt;</a>
+</li>
 <li>Store()
 : <a class="el" href="classcub_1_1_block_store.html#ac02678cf9b327e095376f443bc4feda2">cub::BlockStore&lt; OutputIteratorRA, BLOCK_THREADS, ITEMS_PER_THREAD, ALGORITHM, MODIFIER, WARP_TIME_SLICING &gt;</a>
 </li>
@@ -196,18 +199,19 @@ var searchBox = new SearchBox("searchBox", "search",false,'Search');
 : <a class="el" href="classcub_1_1_block_exchange.html#a063505380e68bb5744d12fa7e1f16145">cub::BlockExchange&lt; T, BLOCK_THREADS, ITEMS_PER_THREAD, WARP_TIME_SLICING &gt;</a>
 </li>
 <li>Sum()
-: <a class="el" href="structcub_1_1_device_reduce.html#ae927a1815745ceed75ff677ffd3b0701">cub::DeviceReduce</a>
-, <a class="el" href="classcub_1_1_warp_reduce.html#a2ccc6eb62a1e6caf145eb94a8cd58f0f">cub::WarpReduce&lt; T, LOGICAL_WARPS, LOGICAL_WARP_THREADS &gt;</a>
+: <a class="el" href="classcub_1_1_block_reduce.html#a7565f00c47dc7dfb286668bea15dad05">cub::BlockReduce&lt; T, BLOCK_THREADS, ALGORITHM &gt;</a>
+, <a class="el" href="structcub_1_1_device_reduce.html#ae927a1815745ceed75ff677ffd3b0701">cub::DeviceReduce</a>
 , <a class="el" href="classcub_1_1_block_reduce.html#a2611610d09bb8daca91e414a77c1e937">cub::BlockReduce&lt; T, BLOCK_THREADS, ALGORITHM &gt;</a>
-, <a class="el" href="classcub_1_1_warp_reduce.html#a3327a2b8c9bdce58f7af1e2485489eed">cub::WarpReduce&lt; T, LOGICAL_WARPS, LOGICAL_WARP_THREADS &gt;</a>
+, <a class="el" href="classcub_1_1_warp_reduce.html#a2ccc6eb62a1e6caf145eb94a8cd58f0f">cub::WarpReduce&lt; T, LOGICAL_WARPS, LOGICAL_WARP_THREADS &gt;</a>
 , <a class="el" href="classcub_1_1_block_reduce.html#aa52adf836e96dee812f456283cac13f7">cub::BlockReduce&lt; T, BLOCK_THREADS, ALGORITHM &gt;</a>
+, <a class="el" href="classcub_1_1_warp_reduce.html#a3327a2b8c9bdce58f7af1e2485489eed">cub::WarpReduce&lt; T, LOGICAL_WARPS, LOGICAL_WARP_THREADS &gt;</a>
 </li>
 </ul>
 </div><!-- contents -->
 <!-- HTML footer for doxygen 1.8.3.1-->
 <!-- start footer part -->
 <hr class="footer"/><address class="footer"><small>
-Generated on Sat Jul 27 2013 00:06:23 for CUB by &#160;<a href="http://www.doxygen.org/index.html">
+Generated on Fri Aug 9 2013 08:37:17 for CUB by &#160;<a href="http://www.doxygen.org/index.html">
 <img class="footer" src="doxygen.png" alt="doxygen"/>
 </a> 1.8.4
 <br>

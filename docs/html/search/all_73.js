@@ -17,6 +17,7 @@ var searchData=
   ['sortblockedtostriped',['SortBlockedToStriped',['../classcub_1_1_block_radix_sort.html#a4be0c8d355a7fc75f8b405a776d884d3',1,'cub::BlockRadixSort::SortBlockedToStriped(Key(&amp;keys)[ITEMS_PER_THREAD], int begin_bit=0, int end_bit=sizeof(Key)*8)'],['../classcub_1_1_block_radix_sort.html#a9f707b1592f7354db0fba76a42afbc84',1,'cub::BlockRadixSort::SortBlockedToStriped(Key(&amp;keys)[ITEMS_PER_THREAD], Value(&amp;values)[ITEMS_PER_THREAD], int begin_bit=0, int end_bit=sizeof(Key)*8)']]],
   ['sortkeys',['SortKeys',['../structcub_1_1_device_radix_sort.html#aafc81e527c3fe142b482ed59835fd0d3',1,'cub::DeviceRadixSort']]],
   ['sortpairs',['SortPairs',['../structcub_1_1_device_radix_sort.html#ad42b50b38c4296c371572efdedd49fed',1,'cub::DeviceRadixSort']]],
+  ['storage',['storage',['../structcub_1_1_uninitialized.html#a5fa7311d943222333e8c87497ff8e782',1,'cub::Uninitialized']]],
   ['store',['Store',['../classcub_1_1_block_store.html#ac849ae26014bff7c5fb76295c435c73c',1,'cub::BlockStore::Store(OutputIteratorRA block_itr, T(&amp;items)[ITEMS_PER_THREAD])'],['../classcub_1_1_block_store.html#ac02678cf9b327e095376f443bc4feda2',1,'cub::BlockStore::Store(OutputIteratorRA block_itr, T(&amp;items)[ITEMS_PER_THREAD], int valid_items)']]],
   ['store_5fcg',['STORE_CG',['../group___io_module.html#ggae9c7d6a6af7104f528509182ac9c9da2aacea07ea298b89dd1962a40b4823652d',1,'cub']]],
   ['store_5fcs',['STORE_CS',['../group___io_module.html#ggae9c7d6a6af7104f528509182ac9c9da2a00ae8891d1acad179d134fdd60d7839b',1,'cub']]],

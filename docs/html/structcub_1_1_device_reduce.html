@@ -81,7 +81,7 @@ var searchBox = new SearchBox("searchBox", "search",false,'Search');
      onmouseover="return searchBox.OnSearchSelectShow()"
      onmouseout="return searchBox.OnSearchSelectHide()"
      onkeydown="return searchBox.OnSearchSelectKey(event)">
-<a class="SelectItem" href="javascript:void(0)" onclick="searchBox.OnSelectItem(0)"><span class="SelectionMark">&#160;</span>All</a><a class="SelectItem" href="javascript:void(0)" onclick="searchBox.OnSelectItem(1)"><span class="SelectionMark">&#160;</span>Classes</a><a class="SelectItem" href="javascript:void(0)" onclick="searchBox.OnSelectItem(2)"><span class="SelectionMark">&#160;</span>Namespaces</a><a class="SelectItem" href="javascript:void(0)" onclick="searchBox.OnSelectItem(3)"><span class="SelectionMark">&#160;</span>Files</a><a class="SelectItem" href="javascript:void(0)" onclick="searchBox.OnSelectItem(4)"><span class="SelectionMark">&#160;</span>Functions</a><a class="SelectItem" href="javascript:void(0)" onclick="searchBox.OnSelectItem(5)"><span class="SelectionMark">&#160;</span>Variables</a><a class="SelectItem" href="javascript:void(0)" onclick="searchBox.OnSelectItem(6)"><span class="SelectionMark">&#160;</span>Typedefs</a><a class="SelectItem" href="javascript:void(0)" onclick="searchBox.OnSelectItem(7)"><span class="SelectionMark">&#160;</span>Enumerations</a><a class="SelectItem" href="javascript:void(0)" onclick="searchBox.OnSelectItem(8)"><span class="SelectionMark">&#160;</span>Enumerator</a><a class="SelectItem" href="javascript:void(0)" onclick="searchBox.OnSelectItem(9)"><span class="SelectionMark">&#160;</span>Groups</a><a class="SelectItem" href="javascript:void(0)" onclick="searchBox.OnSelectItem(10)"><span class="SelectionMark">&#160;</span>Pages</a></div>
+<a class="SelectItem" href="javascript:void(0)" onclick="searchBox.OnSelectItem(0)"><span class="SelectionMark">&#160;</span>All</a><a class="SelectItem" href="javascript:void(0)" onclick="searchBox.OnSelectItem(1)"><span class="SelectionMark">&#160;</span>Classes</a><a class="SelectItem" href="javascript:void(0)" onclick="searchBox.OnSelectItem(2)"><span class="SelectionMark">&#160;</span>Namespaces</a><a class="SelectItem" href="javascript:void(0)" onclick="searchBox.OnSelectItem(3)"><span class="SelectionMark">&#160;</span>Files</a><a class="SelectItem" href="javascript:void(0)" onclick="searchBox.OnSelectItem(4)"><span class="SelectionMark">&#160;</span>Functions</a><a class="SelectItem" href="javascript:void(0)" onclick="searchBox.OnSelectItem(5)"><span class="SelectionMark">&#160;</span>Variables</a><a class="SelectItem" href="javascript:void(0)" onclick="searchBox.OnSelectItem(6)"><span class="SelectionMark">&#160;</span>Typedefs</a><a class="SelectItem" href="javascript:void(0)" onclick="searchBox.OnSelectItem(7)"><span class="SelectionMark">&#160;</span>Enumerations</a><a class="SelectItem" href="javascript:void(0)" onclick="searchBox.OnSelectItem(8)"><span class="SelectionMark">&#160;</span>Enumerator</a><a class="SelectItem" href="javascript:void(0)" onclick="searchBox.OnSelectItem(9)"><span class="SelectionMark">&#160;</span>Groups</a></div>
 
 <!-- iframe showing the search results (closed by default) -->
 <div id="MSearchResultsWindow">
@@ -111,10 +111,14 @@ var searchBox = new SearchBox("searchBox", "search",false,'Search');
 .</div></div>
  <dl class="section user"><dt>Overview</dt><dd>A <a href="http://en.wikipedia.org/wiki/Reduce_(higher-order_function)"><em>reduction</em></a> (or <em>fold</em>) uses a binary combining operator to compute a single aggregate from a list of input elements.</dd></dl>
 <dl class="section user"><dt>Usage Considerations</dt><dd><ul>
-<li>These methods can be called within kernel code (via CUDA dynamic/nested parallelism). </li>
+<li><em>Dynamic parallelism</em>. <a class="el" href="structcub_1_1_device_reduce.html" title="DeviceReduce provides operations for computing a device-wide, parallel reduction across data items re...">DeviceReduce</a> methods can be called within kernel code on devices in which CUDA dynamic parallelism is supported. When calling these methods from kernel code, be sure to define the <code>CUB_CDP</code> macro in your compiler's macro definitions.</li>
 </ul>
 </dd></dl>
-</div><table class="memberdecls">
+<dl class="section user"><dt>Performance</dt><dd></dd></dl>
+<div class="image">
+<img src="reduction_perf.png" alt="reduction_perf.png"/>
+</div>
+ </div><table class="memberdecls">
 <tr class="heading"><td colspan="2"><h2 class="groupheader"><a name="pub-static-methods"></a>
 Static Public Methods</h2></td></tr>
 <tr class="memitem:ae7d87f3c83dd336e77b2ae900f74e092"><td class="memTemplParams" colspan="2">template&lt;typename InputIteratorRA , typename OutputIteratorRA , typename ReductionOp &gt; </td></tr>
@@ -202,28 +206,27 @@ template&lt;typename InputIteratorRA , typename OutputIteratorRA , typename Redu
 <p>Computes a device-wide reduction using the specified binary <code>reduction_op</code> functor. </p>
 <dl class="section user"><dt></dt><dd>Does not support non-commutative reduction operators.</dd></dl>
 <p>This operation requires an allocation of temporary device storage. When <code>d_temp_storage</code> is NULL, no work is done and the required allocation size is returned in <code>temp_storage_bytes</code>.</p>
-<p>When using this method within kernel code (via CUDA dynamic/nested parallelism), be sure to define the <code>CUB_CNP</code> macro in your compiler's macro definitions.</p>
+<p>When calling this method from kernel code, be sure to define the <code>CUB_CDP</code> macro in your compiler's macro definitions.</p>
 <p>Random-access input/output iterators can be used instead of naked device pointers (e.g., a zip-iterator for fusing multiple inputs).</p>
-<dl class="section user"><dt>Example</dt><dd><div class="fragment"><div class="line"><span class="preprocessor">#include &lt;<a class="code" href="cub_8cuh.html">cub/cub.cuh</a>&gt;</span></div>
+<dl class="section user"><dt></dt><dd>The code snippet below illustrates the max reduction of a device vector of <code>int</code> items. </dd></dl>
+<dl class="section user"><dt></dt><dd><div class="fragment"><div class="line"><span class="preprocessor">#include &lt;<a class="code" href="cub_8cuh.html">cub/cub.cuh</a>&gt;</span></div>
+<div class="line">...</div>
 <div class="line"></div>
-<div class="line">    ...</div>
+<div class="line"><span class="comment">// Declare and initialize device pointers for input and output</span></div>
+<div class="line">int *d_reduce_input, *d_aggregate;</div>
+<div class="line"><span class="keywordtype">int</span> num_items = ...</div>
+<div class="line">...</div>
 <div class="line"></div>
-<div class="line">    <span class="comment">// Declare and initialize device pointers for input and output</span></div>
-<div class="line">    <span class="keywordtype">int</span> *d_reduce_input, *d_aggregate;</div>
-<div class="line">    <span class="keywordtype">int</span> num_items = ...</div>
+<div class="line"><span class="comment">// Determine temporary device storage requirements for reduction</span></div>
+<div class="line"><span class="keywordtype">void</span> *d_temp_storage = NULL;</div>
+<div class="line"><span class="keywordtype">size_t</span> temp_storage_bytes = 0;</div>
+<div class="line"><a class="code" href="structcub_1_1_device_reduce.html#ae7d87f3c83dd336e77b2ae900f74e092" title="Computes a device-wide reduction using the specified binary reduction_op functor. ...">cub::DeviceReduce::Reduce</a>(d_temp_storage, temp_storage_bytes, d_reduce_input, d_aggregate, num_items, <a class="code" href="structcub_1_1_max.html" title="Default max functor. ">cub::Max</a>());</div>
 <div class="line"></div>
-<div class="line">    ...</div>
+<div class="line"><span class="comment">// Allocate temporary storage for reduction</span></div>
+<div class="line">cudaMalloc(&amp;d_temp_storage, temp_storage_bytes);</div>
 <div class="line"></div>
-<div class="line">    <span class="comment">// Determine temporary device storage requirements for reduction</span></div>
-<div class="line">    <span class="keywordtype">void</span> *d_temp_storage = NULL;</div>
-<div class="line">    <span class="keywordtype">size_t</span> temp_storage_bytes = 0;</div>
-<div class="line">    <a class="code" href="structcub_1_1_device_reduce.html#ae7d87f3c83dd336e77b2ae900f74e092" title="Computes a device-wide reduction using the specified binary reduction_op functor. ...">cub::DeviceReduce::Reduce</a>(d_temp_storage, temp_storage_bytes, d_reduce_input, d_aggregate, num_items, <a class="code" href="structcub_1_1_max.html" title="Default max functor. ">cub::Max</a>());</div>
-<div class="line"></div>
-<div class="line">    <span class="comment">// Allocate temporary storage for reduction</span></div>
-<div class="line">    cudaMalloc(&amp;d_temp_storage, temp_storage_bytes);</div>
-<div class="line"></div>
-<div class="line">    <span class="comment">// Run reduction (max)</span></div>
-<div class="line">    <a class="code" href="structcub_1_1_device_reduce.html#ae7d87f3c83dd336e77b2ae900f74e092" title="Computes a device-wide reduction using the specified binary reduction_op functor. ...">cub::DeviceReduce::Reduce</a>(d_temp_storage, temp_storage_bytes, d_reduce_input, d_aggregate, num_items, <a class="code" href="structcub_1_1_max.html" title="Default max functor. ">cub::Max</a>());</div>
+<div class="line"><span class="comment">// Run reduction (max)</span></div>
+<div class="line"><a class="code" href="structcub_1_1_device_reduce.html#ae7d87f3c83dd336e77b2ae900f74e092" title="Computes a device-wide reduction using the specified binary reduction_op functor. ...">cub::DeviceReduce::Reduce</a>(d_temp_storage, temp_storage_bytes, d_reduce_input, d_aggregate, num_items, <a class="code" href="structcub_1_1_max.html" title="Default max functor. ">cub::Max</a>());</div>
 </div><!-- fragment --></dd></dl>
 <dl class="tparams"><dt>Template Parameters</dt><dd>
   <table class="tparams">
@@ -316,28 +319,27 @@ template&lt;typename InputIteratorRA , typename OutputIteratorRA &gt; </div>
 <p>Computes a device-wide sum using the addition ('+') operator. </p>
 <dl class="section user"><dt></dt><dd>Does not support non-commutative reduction operators.</dd></dl>
 <p>This operation requires an allocation of temporary device storage. When <code>d_temp_storage</code> is NULL, no work is done and the required allocation size is returned in <code>temp_storage_bytes</code>.</p>
-<p>When using this method within kernel code (via CUDA dynamic/nested parallelism), be sure to define the <code>CUB_CNP</code> macro in your compiler's macro definitions.</p>
+<p>When calling this method from kernel code, be sure to define the <code>CUB_CDP</code> macro in your compiler's macro definitions.</p>
 <p>Random-access input/output iterators can be used instead of naked device pointers (e.g., a zip-iterator for fusing multiple inputs).</p>
-<dl class="section user"><dt>Example</dt><dd><div class="fragment"><div class="line"><span class="preprocessor">#include &lt;<a class="code" href="cub_8cuh.html">cub/cub.cuh</a>&gt;</span></div>
+<dl class="section user"><dt></dt><dd>The code snippet below illustrates the sum reduction of a device vector of <code>int</code> items. </dd></dl>
+<dl class="section user"><dt></dt><dd><div class="fragment"><div class="line"><span class="preprocessor">#include &lt;<a class="code" href="cub_8cuh.html">cub/cub.cuh</a>&gt;</span></div>
+<div class="line">...</div>
 <div class="line"></div>
-<div class="line">    ...</div>
+<div class="line"><span class="comment">// Declare and initialize device pointers for input and output</span></div>
+<div class="line">int *d_reduce_input, *d_aggregate;</div>
+<div class="line"><span class="keywordtype">int</span> num_items = ...</div>
+<div class="line">...</div>
 <div class="line"></div>
-<div class="line">    <span class="comment">// Declare and initialize device pointers for input and output</span></div>
-<div class="line">    <span class="keywordtype">int</span> *d_reduce_input, *d_aggregate;</div>
-<div class="line">    <span class="keywordtype">int</span> num_items = ...</div>
+<div class="line"><span class="comment">// Determine temporary device storage requirements for summation</span></div>
+<div class="line"><span class="keywordtype">void</span> *d_temp_storage = NULL;</div>
+<div class="line"><span class="keywordtype">size_t</span> temp_storage_bytes = 0;</div>
+<div class="line"><a class="code" href="structcub_1_1_device_reduce.html#ae927a1815745ceed75ff677ffd3b0701" title="Computes a device-wide sum using the addition (&#39;+&#39;) operator. ">cub::DeviceReduce::Sum</a>(d_temp_storage, temp_storage_bytes, d_reduce_input, d_aggregate, num_items);</div>
 <div class="line"></div>
-<div class="line">    ...</div>
+<div class="line"><span class="comment">// Allocate temporary storage for summation</span></div>
+<div class="line">cudaMalloc(&amp;d_temp_storage, temp_storage_bytes);</div>
 <div class="line"></div>
-<div class="line">    <span class="comment">// Determine temporary device storage requirements for summation</span></div>
-<div class="line">    <span class="keywordtype">void</span> *d_temp_storage = NULL;</div>
-<div class="line">    <span class="keywordtype">size_t</span> temp_storage_bytes = 0;</div>
-<div class="line">    <a class="code" href="structcub_1_1_device_reduce.html#ae927a1815745ceed75ff677ffd3b0701" title="Computes a device-wide sum using the addition (&#39;+&#39;) operator. ">cub::DeviceReduce::Sum</a>(d_temp_storage, temp_storage_bytes, d_reduce_input, d_aggregate, num_items);</div>
-<div class="line"></div>
-<div class="line">    <span class="comment">// Allocate temporary storage for summation</span></div>
-<div class="line">    cudaMalloc(&amp;d_temp_storage, temp_storage_bytes);</div>
-<div class="line"></div>
-<div class="line">    <span class="comment">// Run reduction summation</span></div>
-<div class="line">    <a class="code" href="structcub_1_1_device_reduce.html#ae927a1815745ceed75ff677ffd3b0701" title="Computes a device-wide sum using the addition (&#39;+&#39;) operator. ">cub::DeviceReduce::Sum</a>(d_temp_storage, temp_storage_bytes, d_reduce_input, d_aggregate, num_items);</div>
+<div class="line"><span class="comment">// Run reduction summation</span></div>
+<div class="line"><a class="code" href="structcub_1_1_device_reduce.html#ae927a1815745ceed75ff677ffd3b0701" title="Computes a device-wide sum using the addition (&#39;+&#39;) operator. ">cub::DeviceReduce::Sum</a>(d_temp_storage, temp_storage_bytes, d_reduce_input, d_aggregate, num_items);</div>
 </div><!-- fragment --></dd></dl>
 <dl class="tparams"><dt>Template Parameters</dt><dd>
   <table class="tparams">
@@ -368,7 +370,7 @@ template&lt;typename InputIteratorRA , typename OutputIteratorRA &gt; </div>
 <!-- HTML footer for doxygen 1.8.3.1-->
 <!-- start footer part -->
 <hr class="footer"/><address class="footer"><small>
-Generated on Sat Jul 27 2013 00:06:22 for CUB by &#160;<a href="http://www.doxygen.org/index.html">
+Generated on Fri Aug 9 2013 08:37:17 for CUB by &#160;<a href="http://www.doxygen.org/index.html">
 <img class="footer" src="doxygen.png" alt="doxygen"/>
 </a> 1.8.4
 <br>
