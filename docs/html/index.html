@@ -123,7 +123,7 @@ var searchBox = new SearchBox("searchBox", "search",false,'Search');
 <br>
 <a href="download_cub.html"><img src="download-icon.png" style="position:relative; bottom:-10px; border:0px;"/></a>
 &nbsp;&nbsp;
-<a href="download_cub.html"><em>Download the current CUB release (v1.0.1)</em></a>
+<a href="download_cub.html"><em>CUB release v1.0.1 (August 08, 2013)</em></a>
 <h1><a class="anchor" id="sec1"></a>
 (1) What is CUB?</h1>
 <dl class="section user"><dt></dt><dd>CUB provides state-of-the-art, reusable software components for every layer of the CUDA programming model:<ul>
@@ -150,18 +150,23 @@ var searchBox = new SearchBox("searchBox", "search",false,'Search');
 </dd></dl>
 <h2><a class="anchor" id="sec1sec1"></a>
 1.1 Collective Primitives</h2>
-<dl class="section user"><dt></dt><dd>As a SIMT programming model, CUDA engenders both (1) <em><b>scalar</b></em> and (2) <em><b>collective</b></em> software interfaces. Traditional software interfaces are <em>scalar</em> : a single thread invokes a library routine to perform some operation (which may include spawning parallel subtasks). Alternatively, a <em>collective</em> interface is entered simultaneously by a group of parallel threads to perform some cooperative operation.</dd></dl>
+<dl class="section user"><dt></dt><dd>As a SIMT programming model, CUDA engenders both (1) <em><b>scalar</b></em> and (2) <em><b>collective</b></em> software interfaces. Traditional software interfaces are <em>scalar</em> : a single thread invokes a library routine to perform some operation (which may include spawning parallel subtasks). Alternatively, a <em>collective</em> interface is entered simultaneously by a group of parallel threads to perform some cooperative operation. Collective SIMT primitives are essential for constructing performance-portabable kernels for use in higher level software abstractions, libraries, domain-specific languages, etc.</dd></dl>
 <dl class="section user"><dt></dt><dd><div class="image">
 <img src="cub_overview.png" alt="cub_overview.png"/>
 </div>
  <div class="centercaption">Orientation of <em>collective</em> primitives within the CUDA software stack</div></dd></dl>
-<dl class="section user"><dt></dt><dd>Collective SIMT primitives are essential for constructing performance-portabable kernels for use in higher level software abstractions, libraries, domain-specific languages, etc.</dd></dl>
-<dl class="section user"><dt></dt><dd>CUB's collective primitives are not bound to any particular width of parallelism or to any particular data type. This allows them to be flexible and tunable to fit the needs of the enclosing kernel computation. Thus CUB is <a href="index.html"><em>CUDA Unbound</em></a>.</dd></dl>
+<dl class="section user"><dt></dt><dd>CUB's collective primitives are not bound to any particular width of parallelism or to any particular data type. This allows them to be:<ul>
+<li><b><em>Adaptable</em></b> to fit the needs of the enclosing kernel computation</li>
+<li><b><em>Trivially tunable</em></b> to different grain sizes (threads per block, items per thread, etc.)</li>
+</ul>
+</dd></dl>
+<dl class="section user"><dt></dt><dd>Thus CUB is <a href="index.html"><em>CUDA Unbound</em></a>.</dd></dl>
 <h2><a class="anchor" id="sec1sec2"></a>
 1.2 Design Motivation</h2>
 <dl class="section user"><dt></dt><dd>CUB is inspired by the following goals:<ul>
 <li><em><b>Absolute performance</b></em>. CUB primitives are specialized and tuned to best match the features and capabilities of each CUDA architecture.</li>
 <li><em><b>Enhanced programmer productivity</b></em>. CUB primitives allow developers to quickly compose sequences of complex parallel operations in both CUDA kernel code and CUDA host code.</li>
+<li><em><b>Enhanced tunability</b></em>. CUB primitives allow developers to quickly change grain sizes (threads per block, items per thread, etc.).</li>
 <li><em><b>Reduced maintenance burden</b></em>. CUB provides a SIMT software abstraction layer over the diversity of CUDA hardware. With CUB, applications can enjoy performance-portability without intensive and costly rewriting or porting efforts.</li>
 </ul>
 </dd></dl>
@@ -383,7 +388,7 @@ var searchBox = new SearchBox("searchBox", "search",false,'Search');
 <!-- HTML footer for doxygen 1.8.3.1-->
 <!-- start footer part -->
 <hr class="footer"/><address class="footer"><small>
-Generated on Fri Aug 9 2013 10:56:45 for CUB by &#160;<a href="http://www.doxygen.org/index.html">
+Generated on Fri Aug 9 2013 11:22:31 for CUB by &#160;<a href="http://www.doxygen.org/index.html">
 <img class="footer" src="doxygen.png" alt="doxygen"/>
 </a> 1.8.4
 <br>
