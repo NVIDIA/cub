@@ -48,7 +48,7 @@
  * <br>
  * <a href="download_cub.html"><img src="download-icon.png" style="position:relative; bottom:-10px; border:0px;"/></a>
  * &nbsp;&nbsp;
- * <a href="download_cub.html"><em>Download the current CUB release (v1.0.1)</em></a>
+ * <a href="download_cub.html"><em>CUB release v1.0.1 (August 08, 2013)</em></a>
  * \endhtmlonly
  *
  * \section sec1 (1) What is CUB?
@@ -75,22 +75,23 @@
  * interfaces are <em>scalar</em> : a single thread invokes a library routine to perform some 
  * operation (which may include spawning parallel subtasks).  Alternatively, a <em>collective</em> 
  * interface is entered simultaneously by a group of parallel threads to perform 
- * some cooperative operation.  
+ * some cooperative operation.  Collective SIMT primitives are essential for constructing 
+ * performance-portabable kernels for use in higher level software abstractions, libraries, 
+ * domain-specific languages, etc.  
  *
  * \par
  * \image html cub_overview.png
  * <div class="centercaption">Orientation of <em>collective</em> primitives within the CUDA software stack</div>
  * 
- * \par 
- * Collective SIMT primitives are essential for constructing performance-portabable 
- * kernels for use in higher level software abstractions, libraries, 
- * domain-specific languages, etc.  
+ * \par
+ * CUB's collective primitives are not bound to any particular width of parallelism 
+ * or to any particular data type.  This allows them to be:
+ * - <b><em>Adaptable</em></b> to fit the needs of the enclosing kernel computation
+ * - <b><em>Trivially tunable</em></b> to different grain sizes (threads per block, 
+ *   items per thread, etc.)
  * 
  * \par
- * CUB's collective primitives are not bound 
- * to any particular width of parallelism or to any particular data type.  
- * This allows them to be flexible and tunable to fit the needs of the enclosing 
- * kernel computation. Thus CUB is [<em>CUDA Unbound</em>](index.html).
+ * Thus CUB is [<em>CUDA Unbound</em>](index.html).
  *
  * \subsection sec1sec2 1.2 Design Motivation 
  * \par 
@@ -99,6 +100,8 @@
  *   best match the features and capabilities of each CUDA architecture.
  * - <em><b>Enhanced programmer productivity</b></em>.  CUB primitives allow developers to quickly 
  *   compose sequences of complex parallel operations in both CUDA kernel code and CUDA host code.       
+ * - <em><b>Enhanced tunability</b></em>.  CUB primitives allow developers to quickly 
+ *   change grain sizes (threads per block, items per thread, etc.).       
  * - <em><b>Reduced maintenance burden</b></em>.  CUB provides a SIMT software abstraction layer 
  *   over the diversity of CUDA hardware.  With CUB, applications can enjoy 
  *   performance-portability without intensive and costly rewriting or porting efforts.  
