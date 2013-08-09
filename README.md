@@ -3,9 +3,19 @@
 
 We recommend the [CUB Project Website](http://nvlabs.github.com/cub) and the [cub-users discussion forum](http://groups.google.com/group/cub-users) for further information and examples.
 
-CUB is a library of cooperative threadblock primitives and other high performance
-utilities for CUDA kernel programming.  CUB enhances productivity, performance, and portability by
-providing an abstraction layer over complex threadblock, warp, and thread-level operations.
+CUB provides state-of-the-art, reusable software components for every layer 
+of the CUDA programming model:
+- [<b><em>Device-wide primitives</em></b>] (https://github.com/NVlabs/cub/group___device_module.html) 
+  - Sort, prefix scan, reduction, histogram, etc.  
+  - Compatible with CUDA dynamic parallelism
+- [<b><em>Block-wide "collective" primitives</em></b>] (https://github.com/NVlabs/cub/group___block_module.html)
+  - I/O, sort, prefix scan, reduction, histogram, etc.  
+  - Compatible with arbitrary thread block sizes and types 
+- [<b><em>Warp-wide "collective" primitives</em></b>] (https://github.com/NVlabs/cub/group___warp_module.html)
+  - Warp-wide prefix scan, reduction, etc.
+  - Safe and architecture-specific
+- [<b><em>Thread and resource utilities</em></b>](https://github.com/NVlabs/cub/group___thread_module.html)
+  - PTX intrinsics, device reflection, texture-caching iterators, caching memory allocators, etc. 
 
 ![Orientation of collective primitives within the CUDA software stack](http://nvlabs.github.com/cub/cub_overview.png)
 
