@@ -218,7 +218,7 @@ private:
 public:
 
     /// \smemstorage{BlockReduce}
-    typedef Uninitialized<_TempStorage> TempStorage;
+    struct TempStorage : Uninitialized<_TempStorage> {};
 
 
     /******************************************************************//**

@@ -97,7 +97,7 @@ var searchBox = new SearchBox("searchBox", "search",false,'Search');
 </div><!-- top -->
 <div class="header">
   <div class="summary">
-<a href="#pub-types">Public Types</a> &#124;
+<a href="#nested-classes">Classes</a> &#124;
 <a href="classcub_1_1_block_scan-members.html">List of all members</a>  </div>
   <div class="headertitle">
 <div class="title">cub::BlockScan&lt; T, BLOCK_THREADS, ALGORITHM &gt; Class Template Reference<div class="ingroups"><a class="el" href="group___block_module.html">Block-wide</a></div></div>  </div>
@@ -139,7 +139,7 @@ class cub::BlockScan&lt; T, BLOCK_THREADS, ALGORITHM &gt;</h3>
 <div class="line">    <span class="keyword">typedef</span> <a class="code" href="classcub_1_1_block_scan.html" title="The BlockScan class provides collective methods for computing a parallel prefix sum/scan of items par...">cub::BlockScan&lt;int, 128&gt;</a> <a class="code" href="classcub_1_1_block_scan.html#a982e1407d00b704c3046cd72c48acabb" title="Collective constructor for 1D thread blocks using a private static allocation of shared memory as tem...">BlockScan</a>;</div>
 <div class="line"></div>
 <div class="line">    <span class="comment">// Allocate shared memory for BlockScan</span></div>
-<div class="line">    __shared__ <span class="keyword">typename</span> <a class="code" href="classcub_1_1_block_scan.html#aeba9d264bbbd0713380131f296dd142e" title="The operations exposed by BlockScan require a temporary memory allocation of this type for thread com...">BlockScan::TempStorage</a> temp_storage;</div>
+<div class="line">    __shared__ <span class="keyword">typename</span> BlockScan::TempStorage temp_storage;</div>
 <div class="line"></div>
 <div class="line">    <span class="comment">// Obtain a segment of consecutive items that are blocked across threads</span></div>
 <div class="line">    <span class="keywordtype">int</span> thread_data[4];</div>
@@ -164,13 +164,11 @@ class cub::BlockScan&lt; T, BLOCK_THREADS, ALGORITHM &gt;</h3>
 </ul>
 </dd></dl>
 </div><table class="memberdecls">
-<tr class="heading"><td colspan="2"><h2 class="groupheader"><a name="pub-types"></a>
-Public Types</h2></td></tr>
-<tr class="memitem:aeba9d264bbbd0713380131f296dd142e"><td class="memItemLeft" align="right" valign="top"><a class="anchor" id="aeba9d264bbbd0713380131f296dd142e"></a>
-typedef <a class="el" href="structcub_1_1_uninitialized.html">Uninitialized</a><br class="typebreak"/>
-&lt; _TempStorage &gt;&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classcub_1_1_block_scan.html#aeba9d264bbbd0713380131f296dd142e">TempStorage</a></td></tr>
-<tr class="memdesc:aeba9d264bbbd0713380131f296dd142e"><td class="mdescLeft">&#160;</td><td class="mdescRight">The operations exposed by <a class="el" href="classcub_1_1_block_scan.html" title="The BlockScan class provides collective methods for computing a parallel prefix sum/scan of items par...">BlockScan</a> require a temporary memory allocation of this type for thread communication. This opaque storage can be allocated directly using the <code>__shared__</code> keyword. Alternatively, it can be aliased to externally allocated memory (shared or global) or <code>union</code>'d with other storage allocation types to facilitate memory reuse. <br/></td></tr>
-<tr class="separator:aeba9d264bbbd0713380131f296dd142e"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="heading"><td colspan="2"><h2 class="groupheader"><a name="nested-classes"></a>
+Classes</h2></td></tr>
+<tr class="memitem:"><td class="memItemLeft" align="right" valign="top">struct &#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="structcub_1_1_block_scan_1_1_temp_storage.html">TempStorage</a></td></tr>
+<tr class="memdesc:"><td class="mdescLeft">&#160;</td><td class="mdescRight">The operations exposed by <a class="el" href="classcub_1_1_block_scan.html" title="The BlockScan class provides collective methods for computing a parallel prefix sum/scan of items par...">BlockScan</a> require a temporary memory allocation of this type for thread communication. This opaque storage can be allocated directly using the <code>__shared__</code> keyword. Alternatively, it can be aliased to externally allocated memory (shared or global) or <code>union</code>'d with other storage allocation types to facilitate memory reuse.  <a href="structcub_1_1_block_scan_1_1_temp_storage.html#details">More...</a><br/></td></tr>
+<tr class="separator:"><td class="memSeparator" colspan="2">&#160;</td></tr>
 </table><table class="memberdecls">
 <tr class="heading"><td colspan="2"><h2 class="groupheader"><a name="pub-methods"></a>
 Public Methods</h2></td></tr>
@@ -179,13 +177,13 @@ Public Methods</h2></td></tr>
 __device__ __forceinline__&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classcub_1_1_block_scan.html#a982e1407d00b704c3046cd72c48acabb">BlockScan</a> ()</td></tr>
 <tr class="memdesc:a982e1407d00b704c3046cd72c48acabb"><td class="mdescLeft">&#160;</td><td class="mdescRight">Collective constructor for 1D thread blocks using a private static allocation of shared memory as temporary storage. Threads are identified using <code>threadIdx.x</code>. <br/></td></tr>
 <tr class="separator:a982e1407d00b704c3046cd72c48acabb"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:ad0decc1ea510cd9c7df4cd380a26b1b1"><td class="memItemLeft" align="right" valign="top">__device__ __forceinline__&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classcub_1_1_block_scan.html#ad0decc1ea510cd9c7df4cd380a26b1b1">BlockScan</a> (<a class="el" href="classcub_1_1_block_scan.html#aeba9d264bbbd0713380131f296dd142e">TempStorage</a> &amp;temp_storage)</td></tr>
+<tr class="memitem:ad0decc1ea510cd9c7df4cd380a26b1b1"><td class="memItemLeft" align="right" valign="top">__device__ __forceinline__&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classcub_1_1_block_scan.html#ad0decc1ea510cd9c7df4cd380a26b1b1">BlockScan</a> (<a class="el" href="structcub_1_1_block_scan_1_1_temp_storage.html">TempStorage</a> &amp;temp_storage)</td></tr>
 <tr class="memdesc:ad0decc1ea510cd9c7df4cd380a26b1b1"><td class="mdescLeft">&#160;</td><td class="mdescRight">Collective constructor for 1D thread blocks using the specified memory allocation as temporary storage. Threads are identified using <code>threadIdx.x</code>.  <a href="#ad0decc1ea510cd9c7df4cd380a26b1b1">More...</a><br/></td></tr>
 <tr class="separator:ad0decc1ea510cd9c7df4cd380a26b1b1"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:ab364204badf83769f9140d799cc188a7"><td class="memItemLeft" align="right" valign="top">__device__ __forceinline__&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classcub_1_1_block_scan.html#ab364204badf83769f9140d799cc188a7">BlockScan</a> (int linear_tid)</td></tr>
 <tr class="memdesc:ab364204badf83769f9140d799cc188a7"><td class="mdescLeft">&#160;</td><td class="mdescRight">Collective constructor using a private static allocation of shared memory as temporary storage. Each thread is identified using the supplied linear thread identifier.  <a href="#ab364204badf83769f9140d799cc188a7">More...</a><br/></td></tr>
 <tr class="separator:ab364204badf83769f9140d799cc188a7"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:a6264c3383db3384184cb13f5f282f73d"><td class="memItemLeft" align="right" valign="top">__device__ __forceinline__&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classcub_1_1_block_scan.html#a6264c3383db3384184cb13f5f282f73d">BlockScan</a> (<a class="el" href="classcub_1_1_block_scan.html#aeba9d264bbbd0713380131f296dd142e">TempStorage</a> &amp;temp_storage, int linear_tid)</td></tr>
+<tr class="memitem:a6264c3383db3384184cb13f5f282f73d"><td class="memItemLeft" align="right" valign="top">__device__ __forceinline__&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classcub_1_1_block_scan.html#a6264c3383db3384184cb13f5f282f73d">BlockScan</a> (<a class="el" href="structcub_1_1_block_scan_1_1_temp_storage.html">TempStorage</a> &amp;temp_storage, int linear_tid)</td></tr>
 <tr class="memdesc:a6264c3383db3384184cb13f5f282f73d"><td class="mdescLeft">&#160;</td><td class="mdescRight">Collective constructor using the specified memory allocation as temporary storage. Each thread is identified using the supplied linear thread identifier.  <a href="#a6264c3383db3384184cb13f5f282f73d">More...</a><br/></td></tr>
 <tr class="separator:a6264c3383db3384184cb13f5f282f73d"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr><td colspan="2"><div class="groupHeader">Exclusive prefix sum operations</div></td></tr>
@@ -302,7 +300,7 @@ template&lt;typename T , int BLOCK_THREADS, BlockScanAlgorithm ALGORITHM = BLOCK
         <tr>
           <td class="memname">__device__ __forceinline__ <a class="el" href="classcub_1_1_block_scan.html">cub::BlockScan</a>&lt; T, BLOCK_THREADS, ALGORITHM &gt;::<a class="el" href="classcub_1_1_block_scan.html">BlockScan</a> </td>
           <td>(</td>
-          <td class="paramtype"><a class="el" href="classcub_1_1_block_scan.html#aeba9d264bbbd0713380131f296dd142e">TempStorage</a> &amp;&#160;</td>
+          <td class="paramtype"><a class="el" href="structcub_1_1_block_scan_1_1_temp_storage.html">TempStorage</a> &amp;&#160;</td>
           <td class="paramname"><em>temp_storage</em>)</td><td></td>
           <td></td>
         </tr>
@@ -317,7 +315,7 @@ template&lt;typename T , int BLOCK_THREADS, BlockScanAlgorithm ALGORITHM = BLOCK
 <p>Collective constructor for 1D thread blocks using the specified memory allocation as temporary storage. Threads are identified using <code>threadIdx.x</code>. </p>
 <dl class="params"><dt>Parameters</dt><dd>
   <table class="params">
-    <tr><td class="paramdir">[in]</td><td class="paramname">temp_storage</td><td>Reference to memory allocation having layout type TempStorage </td></tr>
+    <tr><td class="paramdir">[in]</td><td class="paramname">temp_storage</td><td>Reference to memory allocation having layout type <a class="el" href="structcub_1_1_block_scan_1_1_temp_storage.html" title="The operations exposed by BlockScan require a temporary memory allocation of this type for thread com...">TempStorage</a> </td></tr>
   </table>
   </dd>
 </dl>
@@ -370,7 +368,7 @@ template&lt;typename T , int BLOCK_THREADS, BlockScanAlgorithm ALGORITHM = BLOCK
         <tr>
           <td class="memname">__device__ __forceinline__ <a class="el" href="classcub_1_1_block_scan.html">cub::BlockScan</a>&lt; T, BLOCK_THREADS, ALGORITHM &gt;::<a class="el" href="classcub_1_1_block_scan.html">BlockScan</a> </td>
           <td>(</td>
-          <td class="paramtype"><a class="el" href="classcub_1_1_block_scan.html#aeba9d264bbbd0713380131f296dd142e">TempStorage</a> &amp;&#160;</td>
+          <td class="paramtype"><a class="el" href="structcub_1_1_block_scan_1_1_temp_storage.html">TempStorage</a> &amp;&#160;</td>
           <td class="paramname"><em>temp_storage</em>, </td>
         </tr>
         <tr>
@@ -395,7 +393,7 @@ template&lt;typename T , int BLOCK_THREADS, BlockScanAlgorithm ALGORITHM = BLOCK
 <p>Collective constructor using the specified memory allocation as temporary storage. Each thread is identified using the supplied linear thread identifier. </p>
 <dl class="params"><dt>Parameters</dt><dd>
   <table class="params">
-    <tr><td class="paramdir">[in]</td><td class="paramname">temp_storage</td><td>Reference to memory allocation having layout type TempStorage </td></tr>
+    <tr><td class="paramdir">[in]</td><td class="paramname">temp_storage</td><td>Reference to memory allocation having layout type <a class="el" href="structcub_1_1_block_scan_1_1_temp_storage.html" title="The operations exposed by BlockScan require a temporary memory allocation of this type for thread com...">TempStorage</a> </td></tr>
     <tr><td class="paramdir">[in]</td><td class="paramname">linear_tid</td><td><b>[optional]</b> A suitable 1D thread-identifier for the calling thread (e.g., <code>(threadIdx.y * blockDim.x) + linear_tid</code> for 2D thread blocks) </td></tr>
   </table>
   </dd>
@@ -450,7 +448,7 @@ template&lt;typename T , int BLOCK_THREADS, BlockScanAlgorithm ALGORITHM = BLOCK
 <div class="line">    <span class="keyword">typedef</span> <a class="code" href="classcub_1_1_block_scan.html" title="The BlockScan class provides collective methods for computing a parallel prefix sum/scan of items par...">cub::BlockScan&lt;int, 128&gt;</a> <a class="code" href="classcub_1_1_block_scan.html#a982e1407d00b704c3046cd72c48acabb" title="Collective constructor for 1D thread blocks using a private static allocation of shared memory as tem...">BlockScan</a>;</div>
 <div class="line"></div>
 <div class="line">    <span class="comment">// Allocate shared memory for BlockScan</span></div>
-<div class="line">    __shared__ <span class="keyword">typename</span> <a class="code" href="classcub_1_1_block_scan.html#aeba9d264bbbd0713380131f296dd142e" title="The operations exposed by BlockScan require a temporary memory allocation of this type for thread com...">BlockScan::TempStorage</a> temp_storage;</div>
+<div class="line">    __shared__ <span class="keyword">typename</span> BlockScan::TempStorage temp_storage;</div>
 <div class="line"></div>
 <div class="line">    <span class="comment">// Obtain input item for each thread</span></div>
 <div class="line">    <span class="keywordtype">int</span> thread_data;</div>
@@ -522,7 +520,7 @@ template&lt;typename T , int BLOCK_THREADS, BlockScanAlgorithm ALGORITHM = BLOCK
 <div class="line">    <span class="keyword">typedef</span> <a class="code" href="classcub_1_1_block_scan.html" title="The BlockScan class provides collective methods for computing a parallel prefix sum/scan of items par...">cub::BlockScan&lt;int, 128&gt;</a> <a class="code" href="classcub_1_1_block_scan.html#a982e1407d00b704c3046cd72c48acabb" title="Collective constructor for 1D thread blocks using a private static allocation of shared memory as tem...">BlockScan</a>;</div>
 <div class="line"></div>
 <div class="line">    <span class="comment">// Allocate shared memory for BlockScan</span></div>
-<div class="line">    __shared__ <span class="keyword">typename</span> <a class="code" href="classcub_1_1_block_scan.html#aeba9d264bbbd0713380131f296dd142e" title="The operations exposed by BlockScan require a temporary memory allocation of this type for thread com...">BlockScan::TempStorage</a> temp_storage;</div>
+<div class="line">    __shared__ <span class="keyword">typename</span> BlockScan::TempStorage temp_storage;</div>
 <div class="line"></div>
 <div class="line">    <span class="comment">// Obtain input item for each thread</span></div>
 <div class="line">    <span class="keywordtype">int</span> thread_data;</div>
@@ -625,7 +623,7 @@ template&lt;typename BlockPrefixOp &gt; </div>
 <div class="line">    <span class="keyword">typedef</span> <a class="code" href="classcub_1_1_block_scan.html" title="The BlockScan class provides collective methods for computing a parallel prefix sum/scan of items par...">cub::BlockScan&lt;int, 128&gt;</a> <a class="code" href="classcub_1_1_block_scan.html#a982e1407d00b704c3046cd72c48acabb" title="Collective constructor for 1D thread blocks using a private static allocation of shared memory as tem...">BlockScan</a>;</div>
 <div class="line"></div>
 <div class="line">    <span class="comment">// Allocate shared memory for BlockScan</span></div>
-<div class="line">    __shared__ <span class="keyword">typename</span> <a class="code" href="classcub_1_1_block_scan.html#aeba9d264bbbd0713380131f296dd142e" title="The operations exposed by BlockScan require a temporary memory allocation of this type for thread com...">BlockScan::TempStorage</a> temp_storage;</div>
+<div class="line">    __shared__ <span class="keyword">typename</span> BlockScan::TempStorage temp_storage;</div>
 <div class="line"></div>
 <div class="line">    <span class="comment">// Initialize running total</span></div>
 <div class="line">    BlockPrefixOp prefix_op(0);</div>
@@ -713,7 +711,7 @@ template&lt;int ITEMS_PER_THREAD&gt; </div>
 <div class="line">    <span class="keyword">typedef</span> <a class="code" href="classcub_1_1_block_scan.html" title="The BlockScan class provides collective methods for computing a parallel prefix sum/scan of items par...">cub::BlockScan&lt;int, 128&gt;</a> <a class="code" href="classcub_1_1_block_scan.html#a982e1407d00b704c3046cd72c48acabb" title="Collective constructor for 1D thread blocks using a private static allocation of shared memory as tem...">BlockScan</a>;</div>
 <div class="line"></div>
 <div class="line">    <span class="comment">// Allocate shared memory for BlockScan</span></div>
-<div class="line">    __shared__ <span class="keyword">typename</span> <a class="code" href="classcub_1_1_block_scan.html#aeba9d264bbbd0713380131f296dd142e" title="The operations exposed by BlockScan require a temporary memory allocation of this type for thread com...">BlockScan::TempStorage</a> temp_storage;</div>
+<div class="line">    __shared__ <span class="keyword">typename</span> BlockScan::TempStorage temp_storage;</div>
 <div class="line"></div>
 <div class="line">    <span class="comment">// Obtain a segment of consecutive items that are blocked across threads</span></div>
 <div class="line">    <span class="keywordtype">int</span> thread_data[4];</div>
@@ -793,7 +791,7 @@ template&lt;int ITEMS_PER_THREAD&gt; </div>
 <div class="line">    <span class="keyword">typedef</span> <a class="code" href="classcub_1_1_block_scan.html" title="The BlockScan class provides collective methods for computing a parallel prefix sum/scan of items par...">cub::BlockScan&lt;int, 128&gt;</a> <a class="code" href="classcub_1_1_block_scan.html#a982e1407d00b704c3046cd72c48acabb" title="Collective constructor for 1D thread blocks using a private static allocation of shared memory as tem...">BlockScan</a>;</div>
 <div class="line"></div>
 <div class="line">    <span class="comment">// Allocate shared memory for BlockScan</span></div>
-<div class="line">    __shared__ <span class="keyword">typename</span> <a class="code" href="classcub_1_1_block_scan.html#aeba9d264bbbd0713380131f296dd142e" title="The operations exposed by BlockScan require a temporary memory allocation of this type for thread com...">BlockScan::TempStorage</a> temp_storage;</div>
+<div class="line">    __shared__ <span class="keyword">typename</span> BlockScan::TempStorage temp_storage;</div>
 <div class="line"></div>
 <div class="line">    <span class="comment">// Obtain a segment of consecutive items that are blocked across threads</span></div>
 <div class="line">    <span class="keywordtype">int</span> thread_data[4];</div>
@@ -905,9 +903,9 @@ template&lt;int ITEMS_PER_THREAD, typename BlockPrefixOp &gt; </div>
 <div class="line"></div>
 <div class="line">    <span class="comment">// Allocate aliased shared memory for BlockLoad, BlockStore, and BlockScan</span></div>
 <div class="line">    __shared__ <span class="keyword">union </span>{</div>
-<div class="line">        <span class="keyword">typename</span> <a class="code" href="classcub_1_1_block_load.html#a638423d4891ea255da5ba7bbd8dd1331" title="The operations exposed by BlockLoad require a temporary memory allocation of this type for thread com...">BlockLoad::TempStorage</a>     load;</div>
-<div class="line">        <span class="keyword">typename</span> <a class="code" href="classcub_1_1_block_scan.html#aeba9d264bbbd0713380131f296dd142e" title="The operations exposed by BlockScan require a temporary memory allocation of this type for thread com...">BlockScan::TempStorage</a>     scan;</div>
-<div class="line">        <span class="keyword">typename</span> <a class="code" href="classcub_1_1_block_store.html#a641accdb0668dc76ea3ec618494ae4cc" title="The operations exposed by BlockStore require a temporary memory allocation of this type for thread co...">BlockStore::TempStorage</a>    store;</div>
+<div class="line">        <span class="keyword">typename</span> BlockLoad::TempStorage     load;</div>
+<div class="line">        <span class="keyword">typename</span> BlockScan::TempStorage     scan;</div>
+<div class="line">        <span class="keyword">typename</span> BlockStore::TempStorage    store;</div>
 <div class="line">    } temp_storage;</div>
 <div class="line"></div>
 <div class="line">    <span class="comment">// Initialize running total</span></div>
@@ -1013,7 +1011,7 @@ template&lt;typename ScanOp &gt; </div>
 <div class="line">    <span class="keyword">typedef</span> <a class="code" href="classcub_1_1_block_scan.html" title="The BlockScan class provides collective methods for computing a parallel prefix sum/scan of items par...">cub::BlockScan&lt;int, 128&gt;</a> <a class="code" href="classcub_1_1_block_scan.html#a982e1407d00b704c3046cd72c48acabb" title="Collective constructor for 1D thread blocks using a private static allocation of shared memory as tem...">BlockScan</a>;</div>
 <div class="line"></div>
 <div class="line">    <span class="comment">// Allocate shared memory for BlockScan</span></div>
-<div class="line">    __shared__ <span class="keyword">typename</span> <a class="code" href="classcub_1_1_block_scan.html#aeba9d264bbbd0713380131f296dd142e" title="The operations exposed by BlockScan require a temporary memory allocation of this type for thread com...">BlockScan::TempStorage</a> temp_storage;</div>
+<div class="line">    __shared__ <span class="keyword">typename</span> BlockScan::TempStorage temp_storage;</div>
 <div class="line"></div>
 <div class="line">    <span class="comment">// Obtain input item for each thread</span></div>
 <div class="line">    <span class="keywordtype">int</span> thread_data;</div>
@@ -1108,7 +1106,7 @@ template&lt;typename ScanOp &gt; </div>
 <div class="line">    <span class="keyword">typedef</span> <a class="code" href="classcub_1_1_block_scan.html" title="The BlockScan class provides collective methods for computing a parallel prefix sum/scan of items par...">cub::BlockScan&lt;int, 128&gt;</a> <a class="code" href="classcub_1_1_block_scan.html#a982e1407d00b704c3046cd72c48acabb" title="Collective constructor for 1D thread blocks using a private static allocation of shared memory as tem...">BlockScan</a>;</div>
 <div class="line"></div>
 <div class="line">    <span class="comment">// Allocate shared memory for BlockScan</span></div>
-<div class="line">    __shared__ <span class="keyword">typename</span> <a class="code" href="classcub_1_1_block_scan.html#aeba9d264bbbd0713380131f296dd142e" title="The operations exposed by BlockScan require a temporary memory allocation of this type for thread com...">BlockScan::TempStorage</a> temp_storage;</div>
+<div class="line">    __shared__ <span class="keyword">typename</span> BlockScan::TempStorage temp_storage;</div>
 <div class="line"></div>
 <div class="line">    <span class="comment">// Obtain input item for each thread</span></div>
 <div class="line">    <span class="keywordtype">int</span> thread_data;</div>
@@ -1232,7 +1230,7 @@ template&lt;typename ScanOp , typename BlockPrefixOp &gt; </div>
 <div class="line">    <span class="keyword">typedef</span> <a class="code" href="classcub_1_1_block_scan.html" title="The BlockScan class provides collective methods for computing a parallel prefix sum/scan of items par...">cub::BlockScan&lt;int, 128&gt;</a> <a class="code" href="classcub_1_1_block_scan.html#a982e1407d00b704c3046cd72c48acabb" title="Collective constructor for 1D thread blocks using a private static allocation of shared memory as tem...">BlockScan</a>;</div>
 <div class="line"></div>
 <div class="line">    <span class="comment">// Allocate shared memory for BlockScan</span></div>
-<div class="line">    __shared__ <span class="keyword">typename</span> <a class="code" href="classcub_1_1_block_scan.html#aeba9d264bbbd0713380131f296dd142e" title="The operations exposed by BlockScan require a temporary memory allocation of this type for thread com...">BlockScan::TempStorage</a> temp_storage;</div>
+<div class="line">    __shared__ <span class="keyword">typename</span> BlockScan::TempStorage temp_storage;</div>
 <div class="line"></div>
 <div class="line">    <span class="comment">// Initialize running total</span></div>
 <div class="line">    BlockPrefixOp prefix_op(INT_MIN);</div>
@@ -1336,7 +1334,7 @@ template&lt;int ITEMS_PER_THREAD, typename ScanOp &gt; </div>
 <div class="line">    <span class="keyword">typedef</span> <a class="code" href="classcub_1_1_block_scan.html" title="The BlockScan class provides collective methods for computing a parallel prefix sum/scan of items par...">cub::BlockScan&lt;int, 128&gt;</a> <a class="code" href="classcub_1_1_block_scan.html#a982e1407d00b704c3046cd72c48acabb" title="Collective constructor for 1D thread blocks using a private static allocation of shared memory as tem...">BlockScan</a>;</div>
 <div class="line"></div>
 <div class="line">    <span class="comment">// Allocate shared memory for BlockScan</span></div>
-<div class="line">    __shared__ <span class="keyword">typename</span> <a class="code" href="classcub_1_1_block_scan.html#aeba9d264bbbd0713380131f296dd142e" title="The operations exposed by BlockScan require a temporary memory allocation of this type for thread com...">BlockScan::TempStorage</a> temp_storage;</div>
+<div class="line">    __shared__ <span class="keyword">typename</span> BlockScan::TempStorage temp_storage;</div>
 <div class="line"></div>
 <div class="line">    <span class="comment">// Obtain a segment of consecutive items that are blocked across threads</span></div>
 <div class="line">    <span class="keywordtype">int</span> thread_data[4];</div>
@@ -1432,7 +1430,7 @@ template&lt;int ITEMS_PER_THREAD, typename ScanOp &gt; </div>
 <div class="line">    <span class="keyword">typedef</span> <a class="code" href="classcub_1_1_block_scan.html" title="The BlockScan class provides collective methods for computing a parallel prefix sum/scan of items par...">cub::BlockScan&lt;int, 128&gt;</a> <a class="code" href="classcub_1_1_block_scan.html#a982e1407d00b704c3046cd72c48acabb" title="Collective constructor for 1D thread blocks using a private static allocation of shared memory as tem...">BlockScan</a>;</div>
 <div class="line"></div>
 <div class="line">    <span class="comment">// Allocate shared memory for BlockScan</span></div>
-<div class="line">    __shared__ <span class="keyword">typename</span> <a class="code" href="classcub_1_1_block_scan.html#aeba9d264bbbd0713380131f296dd142e" title="The operations exposed by BlockScan require a temporary memory allocation of this type for thread com...">BlockScan::TempStorage</a> temp_storage;</div>
+<div class="line">    __shared__ <span class="keyword">typename</span> BlockScan::TempStorage temp_storage;</div>
 <div class="line"></div>
 <div class="line">    <span class="comment">// Obtain a segment of consecutive items that are blocked across threads</span></div>
 <div class="line">    <span class="keywordtype">int</span> thread_data[4];</div>
@@ -1560,9 +1558,9 @@ template&lt;int ITEMS_PER_THREAD, typename ScanOp , typename BlockPrefixOp &gt; 
 <div class="line"></div>
 <div class="line">    <span class="comment">// Allocate aliased shared memory for BlockLoad, BlockStore, and BlockScan</span></div>
 <div class="line">    __shared__ <span class="keyword">union </span>{</div>
-<div class="line">        <span class="keyword">typename</span> <a class="code" href="classcub_1_1_block_load.html#a638423d4891ea255da5ba7bbd8dd1331" title="The operations exposed by BlockLoad require a temporary memory allocation of this type for thread com...">BlockLoad::TempStorage</a>     load;</div>
-<div class="line">        <span class="keyword">typename</span> <a class="code" href="classcub_1_1_block_scan.html#aeba9d264bbbd0713380131f296dd142e" title="The operations exposed by BlockScan require a temporary memory allocation of this type for thread com...">BlockScan::TempStorage</a>     scan;</div>
-<div class="line">        <span class="keyword">typename</span> <a class="code" href="classcub_1_1_block_store.html#a641accdb0668dc76ea3ec618494ae4cc" title="The operations exposed by BlockStore require a temporary memory allocation of this type for thread co...">BlockStore::TempStorage</a>    store;</div>
+<div class="line">        <span class="keyword">typename</span> BlockLoad::TempStorage     load;</div>
+<div class="line">        <span class="keyword">typename</span> BlockScan::TempStorage     scan;</div>
+<div class="line">        <span class="keyword">typename</span> BlockStore::TempStorage    store;</div>
 <div class="line">    } temp_storage;</div>
 <div class="line"></div>
 <div class="line">    <span class="comment">// Initialize running total</span></div>
@@ -1656,7 +1654,7 @@ template&lt;typename T , int BLOCK_THREADS, BlockScanAlgorithm ALGORITHM = BLOCK
 <div class="line">    <span class="keyword">typedef</span> <a class="code" href="classcub_1_1_block_scan.html" title="The BlockScan class provides collective methods for computing a parallel prefix sum/scan of items par...">cub::BlockScan&lt;int, 128&gt;</a> <a class="code" href="classcub_1_1_block_scan.html#a982e1407d00b704c3046cd72c48acabb" title="Collective constructor for 1D thread blocks using a private static allocation of shared memory as tem...">BlockScan</a>;</div>
 <div class="line"></div>
 <div class="line">    <span class="comment">// Allocate shared memory for BlockScan</span></div>
-<div class="line">    __shared__ <span class="keyword">typename</span> <a class="code" href="classcub_1_1_block_scan.html#aeba9d264bbbd0713380131f296dd142e" title="The operations exposed by BlockScan require a temporary memory allocation of this type for thread com...">BlockScan::TempStorage</a> temp_storage;</div>
+<div class="line">    __shared__ <span class="keyword">typename</span> BlockScan::TempStorage temp_storage;</div>
 <div class="line"></div>
 <div class="line">    <span class="comment">// Obtain input item for each thread</span></div>
 <div class="line">    <span class="keywordtype">int</span> thread_data;</div>
@@ -1728,7 +1726,7 @@ template&lt;typename T , int BLOCK_THREADS, BlockScanAlgorithm ALGORITHM = BLOCK
 <div class="line">    <span class="keyword">typedef</span> <a class="code" href="classcub_1_1_block_scan.html" title="The BlockScan class provides collective methods for computing a parallel prefix sum/scan of items par...">cub::BlockScan&lt;int, 128&gt;</a> <a class="code" href="classcub_1_1_block_scan.html#a982e1407d00b704c3046cd72c48acabb" title="Collective constructor for 1D thread blocks using a private static allocation of shared memory as tem...">BlockScan</a>;</div>
 <div class="line"></div>
 <div class="line">    <span class="comment">// Allocate shared memory for BlockScan</span></div>
-<div class="line">    __shared__ <span class="keyword">typename</span> <a class="code" href="classcub_1_1_block_scan.html#aeba9d264bbbd0713380131f296dd142e" title="The operations exposed by BlockScan require a temporary memory allocation of this type for thread com...">BlockScan::TempStorage</a> temp_storage;</div>
+<div class="line">    __shared__ <span class="keyword">typename</span> BlockScan::TempStorage temp_storage;</div>
 <div class="line"></div>
 <div class="line">    <span class="comment">// Obtain input item for each thread</span></div>
 <div class="line">    <span class="keywordtype">int</span> thread_data;</div>
@@ -1831,7 +1829,7 @@ template&lt;typename BlockPrefixOp &gt; </div>
 <div class="line">    <span class="keyword">typedef</span> <a class="code" href="classcub_1_1_block_scan.html" title="The BlockScan class provides collective methods for computing a parallel prefix sum/scan of items par...">cub::BlockScan&lt;int, 128&gt;</a> <a class="code" href="classcub_1_1_block_scan.html#a982e1407d00b704c3046cd72c48acabb" title="Collective constructor for 1D thread blocks using a private static allocation of shared memory as tem...">BlockScan</a>;</div>
 <div class="line"></div>
 <div class="line">    <span class="comment">// Allocate shared memory for BlockScan</span></div>
-<div class="line">    __shared__ <span class="keyword">typename</span> <a class="code" href="classcub_1_1_block_scan.html#aeba9d264bbbd0713380131f296dd142e" title="The operations exposed by BlockScan require a temporary memory allocation of this type for thread com...">BlockScan::TempStorage</a> temp_storage;</div>
+<div class="line">    __shared__ <span class="keyword">typename</span> BlockScan::TempStorage temp_storage;</div>
 <div class="line"></div>
 <div class="line">    <span class="comment">// Initialize running total</span></div>
 <div class="line">    BlockPrefixOp prefix_op(0);</div>
@@ -1919,7 +1917,7 @@ template&lt;int ITEMS_PER_THREAD&gt; </div>
 <div class="line">    <span class="keyword">typedef</span> <a class="code" href="classcub_1_1_block_scan.html" title="The BlockScan class provides collective methods for computing a parallel prefix sum/scan of items par...">cub::BlockScan&lt;int, 128&gt;</a> <a class="code" href="classcub_1_1_block_scan.html#a982e1407d00b704c3046cd72c48acabb" title="Collective constructor for 1D thread blocks using a private static allocation of shared memory as tem...">BlockScan</a>;</div>
 <div class="line"></div>
 <div class="line">    <span class="comment">// Allocate shared memory for BlockScan</span></div>
-<div class="line">    __shared__ <span class="keyword">typename</span> <a class="code" href="classcub_1_1_block_scan.html#aeba9d264bbbd0713380131f296dd142e" title="The operations exposed by BlockScan require a temporary memory allocation of this type for thread com...">BlockScan::TempStorage</a> temp_storage;</div>
+<div class="line">    __shared__ <span class="keyword">typename</span> BlockScan::TempStorage temp_storage;</div>
 <div class="line"></div>
 <div class="line">    <span class="comment">// Obtain a segment of consecutive items that are blocked across threads</span></div>
 <div class="line">    <span class="keywordtype">int</span> thread_data[4];</div>
@@ -1999,7 +1997,7 @@ template&lt;int ITEMS_PER_THREAD&gt; </div>
 <div class="line">    <span class="keyword">typedef</span> <a class="code" href="classcub_1_1_block_scan.html" title="The BlockScan class provides collective methods for computing a parallel prefix sum/scan of items par...">cub::BlockScan&lt;int, 128&gt;</a> <a class="code" href="classcub_1_1_block_scan.html#a982e1407d00b704c3046cd72c48acabb" title="Collective constructor for 1D thread blocks using a private static allocation of shared memory as tem...">BlockScan</a>;</div>
 <div class="line"></div>
 <div class="line">    <span class="comment">// Allocate shared memory for BlockScan</span></div>
-<div class="line">    __shared__ <span class="keyword">typename</span> <a class="code" href="classcub_1_1_block_scan.html#aeba9d264bbbd0713380131f296dd142e" title="The operations exposed by BlockScan require a temporary memory allocation of this type for thread com...">BlockScan::TempStorage</a> temp_storage;</div>
+<div class="line">    __shared__ <span class="keyword">typename</span> BlockScan::TempStorage temp_storage;</div>
 <div class="line"></div>
 <div class="line">    <span class="comment">// Obtain a segment of consecutive items that are blocked across threads</span></div>
 <div class="line">    <span class="keywordtype">int</span> thread_data[4];</div>
@@ -2112,9 +2110,9 @@ template&lt;int ITEMS_PER_THREAD, typename BlockPrefixOp &gt; </div>
 <div class="line"></div>
 <div class="line">    <span class="comment">// Allocate aliased shared memory for BlockLoad, BlockStore, and BlockScan</span></div>
 <div class="line">    __shared__ <span class="keyword">union </span>{</div>
-<div class="line">        <span class="keyword">typename</span> <a class="code" href="classcub_1_1_block_load.html#a638423d4891ea255da5ba7bbd8dd1331" title="The operations exposed by BlockLoad require a temporary memory allocation of this type for thread com...">BlockLoad::TempStorage</a>     load;</div>
-<div class="line">        <span class="keyword">typename</span> <a class="code" href="classcub_1_1_block_scan.html#aeba9d264bbbd0713380131f296dd142e" title="The operations exposed by BlockScan require a temporary memory allocation of this type for thread com...">BlockScan::TempStorage</a>     scan;</div>
-<div class="line">        <span class="keyword">typename</span> <a class="code" href="classcub_1_1_block_store.html#a641accdb0668dc76ea3ec618494ae4cc" title="The operations exposed by BlockStore require a temporary memory allocation of this type for thread co...">BlockStore::TempStorage</a>    store;</div>
+<div class="line">        <span class="keyword">typename</span> BlockLoad::TempStorage     load;</div>
+<div class="line">        <span class="keyword">typename</span> BlockScan::TempStorage     scan;</div>
+<div class="line">        <span class="keyword">typename</span> BlockStore::TempStorage    store;</div>
 <div class="line">    } temp_storage;</div>
 <div class="line"></div>
 <div class="line">    <span class="comment">// Initialize running total</span></div>
@@ -2214,7 +2212,7 @@ template&lt;typename ScanOp &gt; </div>
 <div class="line">    <span class="keyword">typedef</span> <a class="code" href="classcub_1_1_block_scan.html" title="The BlockScan class provides collective methods for computing a parallel prefix sum/scan of items par...">cub::BlockScan&lt;int, 128&gt;</a> <a class="code" href="classcub_1_1_block_scan.html#a982e1407d00b704c3046cd72c48acabb" title="Collective constructor for 1D thread blocks using a private static allocation of shared memory as tem...">BlockScan</a>;</div>
 <div class="line"></div>
 <div class="line">    <span class="comment">// Allocate shared memory for BlockScan</span></div>
-<div class="line">    __shared__ <span class="keyword">typename</span> <a class="code" href="classcub_1_1_block_scan.html#aeba9d264bbbd0713380131f296dd142e" title="The operations exposed by BlockScan require a temporary memory allocation of this type for thread com...">BlockScan::TempStorage</a> temp_storage;</div>
+<div class="line">    __shared__ <span class="keyword">typename</span> BlockScan::TempStorage temp_storage;</div>
 <div class="line"></div>
 <div class="line">    <span class="comment">// Obtain input item for each thread</span></div>
 <div class="line">    <span class="keywordtype">int</span> thread_data;</div>
@@ -2302,7 +2300,7 @@ template&lt;typename ScanOp &gt; </div>
 <div class="line">    <span class="keyword">typedef</span> <a class="code" href="classcub_1_1_block_scan.html" title="The BlockScan class provides collective methods for computing a parallel prefix sum/scan of items par...">cub::BlockScan&lt;int, 128&gt;</a> <a class="code" href="classcub_1_1_block_scan.html#a982e1407d00b704c3046cd72c48acabb" title="Collective constructor for 1D thread blocks using a private static allocation of shared memory as tem...">BlockScan</a>;</div>
 <div class="line"></div>
 <div class="line">    <span class="comment">// Allocate shared memory for BlockScan</span></div>
-<div class="line">    __shared__ <span class="keyword">typename</span> <a class="code" href="classcub_1_1_block_scan.html#aeba9d264bbbd0713380131f296dd142e" title="The operations exposed by BlockScan require a temporary memory allocation of this type for thread com...">BlockScan::TempStorage</a> temp_storage;</div>
+<div class="line">    __shared__ <span class="keyword">typename</span> BlockScan::TempStorage temp_storage;</div>
 <div class="line"></div>
 <div class="line">    <span class="comment">// Obtain input item for each thread</span></div>
 <div class="line">    <span class="keywordtype">int</span> thread_data;</div>
@@ -2419,7 +2417,7 @@ template&lt;typename ScanOp , typename BlockPrefixOp &gt; </div>
 <div class="line">    <span class="keyword">typedef</span> <a class="code" href="classcub_1_1_block_scan.html" title="The BlockScan class provides collective methods for computing a parallel prefix sum/scan of items par...">cub::BlockScan&lt;int, 128&gt;</a> <a class="code" href="classcub_1_1_block_scan.html#a982e1407d00b704c3046cd72c48acabb" title="Collective constructor for 1D thread blocks using a private static allocation of shared memory as tem...">BlockScan</a>;</div>
 <div class="line"></div>
 <div class="line">    <span class="comment">// Allocate shared memory for BlockScan</span></div>
-<div class="line">    __shared__ <span class="keyword">typename</span> <a class="code" href="classcub_1_1_block_scan.html#aeba9d264bbbd0713380131f296dd142e" title="The operations exposed by BlockScan require a temporary memory allocation of this type for thread com...">BlockScan::TempStorage</a> temp_storage;</div>
+<div class="line">    __shared__ <span class="keyword">typename</span> BlockScan::TempStorage temp_storage;</div>
 <div class="line"></div>
 <div class="line">    <span class="comment">// Initialize running total</span></div>
 <div class="line">    BlockPrefixOp prefix_op(INT_MIN);</div>
@@ -2516,7 +2514,7 @@ template&lt;int ITEMS_PER_THREAD, typename ScanOp &gt; </div>
 <div class="line">    <span class="keyword">typedef</span> <a class="code" href="classcub_1_1_block_scan.html" title="The BlockScan class provides collective methods for computing a parallel prefix sum/scan of items par...">cub::BlockScan&lt;int, 128&gt;</a> <a class="code" href="classcub_1_1_block_scan.html#a982e1407d00b704c3046cd72c48acabb" title="Collective constructor for 1D thread blocks using a private static allocation of shared memory as tem...">BlockScan</a>;</div>
 <div class="line"></div>
 <div class="line">    <span class="comment">// Allocate shared memory for BlockScan</span></div>
-<div class="line">    __shared__ <span class="keyword">typename</span> <a class="code" href="classcub_1_1_block_scan.html#aeba9d264bbbd0713380131f296dd142e" title="The operations exposed by BlockScan require a temporary memory allocation of this type for thread com...">BlockScan::TempStorage</a> temp_storage;</div>
+<div class="line">    __shared__ <span class="keyword">typename</span> BlockScan::TempStorage temp_storage;</div>
 <div class="line"></div>
 <div class="line">    <span class="comment">// Obtain a segment of consecutive items that are blocked across threads</span></div>
 <div class="line">    <span class="keywordtype">int</span> thread_data[4];</div>
@@ -2605,7 +2603,7 @@ template&lt;int ITEMS_PER_THREAD, typename ScanOp &gt; </div>
 <div class="line">    <span class="keyword">typedef</span> <a class="code" href="classcub_1_1_block_scan.html" title="The BlockScan class provides collective methods for computing a parallel prefix sum/scan of items par...">cub::BlockScan&lt;int, 128&gt;</a> <a class="code" href="classcub_1_1_block_scan.html#a982e1407d00b704c3046cd72c48acabb" title="Collective constructor for 1D thread blocks using a private static allocation of shared memory as tem...">BlockScan</a>;</div>
 <div class="line"></div>
 <div class="line">    <span class="comment">// Allocate shared memory for BlockScan</span></div>
-<div class="line">    __shared__ <span class="keyword">typename</span> <a class="code" href="classcub_1_1_block_scan.html#aeba9d264bbbd0713380131f296dd142e" title="The operations exposed by BlockScan require a temporary memory allocation of this type for thread com...">BlockScan::TempStorage</a> temp_storage;</div>
+<div class="line">    __shared__ <span class="keyword">typename</span> BlockScan::TempStorage temp_storage;</div>
 <div class="line"></div>
 <div class="line">    <span class="comment">// Obtain a segment of consecutive items that are blocked across threads</span></div>
 <div class="line">    <span class="keywordtype">int</span> thread_data[4];</div>
@@ -2726,9 +2724,9 @@ template&lt;int ITEMS_PER_THREAD, typename ScanOp , typename BlockPrefixOp &gt; 
 <div class="line"></div>
 <div class="line">    <span class="comment">// Allocate aliased shared memory for BlockLoad, BlockStore, and BlockScan</span></div>
 <div class="line">    __shared__ <span class="keyword">union </span>{</div>
-<div class="line">        <span class="keyword">typename</span> <a class="code" href="classcub_1_1_block_load.html#a638423d4891ea255da5ba7bbd8dd1331" title="The operations exposed by BlockLoad require a temporary memory allocation of this type for thread com...">BlockLoad::TempStorage</a>     load;</div>
-<div class="line">        <span class="keyword">typename</span> <a class="code" href="classcub_1_1_block_scan.html#aeba9d264bbbd0713380131f296dd142e" title="The operations exposed by BlockScan require a temporary memory allocation of this type for thread com...">BlockScan::TempStorage</a>     scan;</div>
-<div class="line">        <span class="keyword">typename</span> <a class="code" href="classcub_1_1_block_store.html#a641accdb0668dc76ea3ec618494ae4cc" title="The operations exposed by BlockStore require a temporary memory allocation of this type for thread co...">BlockStore::TempStorage</a>    store;</div>
+<div class="line">        <span class="keyword">typename</span> BlockLoad::TempStorage     load;</div>
+<div class="line">        <span class="keyword">typename</span> BlockScan::TempStorage     scan;</div>
+<div class="line">        <span class="keyword">typename</span> BlockStore::TempStorage    store;</div>
 <div class="line">    } temp_storage;</div>
 <div class="line"></div>
 <div class="line">    <span class="comment">// Initialize running total</span></div>
@@ -2782,7 +2780,7 @@ template&lt;int ITEMS_PER_THREAD, typename ScanOp , typename BlockPrefixOp &gt; 
 <!-- HTML footer for doxygen 1.8.3.1-->
 <!-- start footer part -->
 <hr class="footer"/><address class="footer"><small>
-Generated on Sat Aug 10 2013 02:18:11 for CUB by &#160;<a href="http://www.doxygen.org/index.html">
+Generated on Sat Aug 10 2013 02:31:01 for CUB by &#160;<a href="http://www.doxygen.org/index.html">
 <img class="footer" src="doxygen.png" alt="doxygen"/>
 </a> 1.8.4
 <br>

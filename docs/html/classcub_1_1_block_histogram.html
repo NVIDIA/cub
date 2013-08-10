@@ -97,7 +97,7 @@ var searchBox = new SearchBox("searchBox", "search",false,'Search');
 </div><!-- top -->
 <div class="header">
   <div class="summary">
-<a href="#pub-types">Public Types</a> &#124;
+<a href="#nested-classes">Classes</a> &#124;
 <a href="classcub_1_1_block_histogram-members.html">List of all members</a>  </div>
   <div class="headertitle">
 <div class="title">cub::BlockHistogram&lt; T, BLOCK_THREADS, ITEMS_PER_THREAD, BINS, ALGORITHM &gt; Class Template Reference<div class="ingroups"><a class="el" href="group___block_module.html">Block-wide</a></div></div>  </div>
@@ -143,7 +143,7 @@ class cub::BlockHistogram&lt; T, BLOCK_THREADS, ITEMS_PER_THREAD, BINS, ALGORITH
 <div class="line">    <span class="keyword">typedef</span> <a class="code" href="classcub_1_1_block_histogram.html" title="The BlockHistogram class provides collective methods for constructing block-wide histograms from data...">cub::BlockHistogram&lt;unsigned char, 128, 4, 256&gt;</a> <a class="code" href="classcub_1_1_block_histogram.html#a60061b56700655655b83a1c5921ae026" title="Collective constructor for 1D thread blocks using a private static allocation of shared memory as tem...">BlockHistogram</a>;</div>
 <div class="line"></div>
 <div class="line">    <span class="comment">// Allocate shared memory for BlockHistogram</span></div>
-<div class="line">    __shared__ <span class="keyword">typename</span> <a class="code" href="classcub_1_1_block_histogram.html#af77728049591cbbe16262dcbff31f152" title="The operations exposed by BlockHistogram require a temporary memory allocation of this type for threa...">BlockHistogram::TempStorage</a> temp_storage;</div>
+<div class="line">    __shared__ <span class="keyword">typename</span> BlockHistogram::TempStorage temp_storage;</div>
 <div class="line"></div>
 <div class="line">    <span class="comment">// Allocate shared memory for block-wide histogram bin counts</span></div>
 <div class="line">    __shared__ <span class="keywordtype">unsigned</span> <span class="keywordtype">int</span> smem_histogram[256];</div>
@@ -161,13 +161,11 @@ class cub::BlockHistogram&lt; T, BLOCK_THREADS, ITEMS_PER_THREAD, BINS, ALGORITH
 </ul>
 </dd></dl>
 </div><table class="memberdecls">
-<tr class="heading"><td colspan="2"><h2 class="groupheader"><a name="pub-types"></a>
-Public Types</h2></td></tr>
-<tr class="memitem:af77728049591cbbe16262dcbff31f152"><td class="memItemLeft" align="right" valign="top"><a class="anchor" id="af77728049591cbbe16262dcbff31f152"></a>
-typedef <a class="el" href="structcub_1_1_uninitialized.html">Uninitialized</a><br class="typebreak"/>
-&lt; _TempStorage &gt;&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classcub_1_1_block_histogram.html#af77728049591cbbe16262dcbff31f152">TempStorage</a></td></tr>
-<tr class="memdesc:af77728049591cbbe16262dcbff31f152"><td class="mdescLeft">&#160;</td><td class="mdescRight">The operations exposed by <a class="el" href="classcub_1_1_block_histogram.html" title="The BlockHistogram class provides collective methods for constructing block-wide histograms from data...">BlockHistogram</a> require a temporary memory allocation of this type for thread communication. This opaque storage can be allocated directly using the <code>__shared__</code> keyword. Alternatively, it can be aliased to externally allocated memory (shared or global) or <code>union</code>'d with other storage allocation types to facilitate memory reuse. <br/></td></tr>
-<tr class="separator:af77728049591cbbe16262dcbff31f152"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="heading"><td colspan="2"><h2 class="groupheader"><a name="nested-classes"></a>
+Classes</h2></td></tr>
+<tr class="memitem:"><td class="memItemLeft" align="right" valign="top">struct &#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="structcub_1_1_block_histogram_1_1_temp_storage.html">TempStorage</a></td></tr>
+<tr class="memdesc:"><td class="mdescLeft">&#160;</td><td class="mdescRight">The operations exposed by <a class="el" href="classcub_1_1_block_histogram.html" title="The BlockHistogram class provides collective methods for constructing block-wide histograms from data...">BlockHistogram</a> require a temporary memory allocation of this type for thread communication. This opaque storage can be allocated directly using the <code>__shared__</code> keyword. Alternatively, it can be aliased to externally allocated memory (shared or global) or <code>union</code>'d with other storage allocation types to facilitate memory reuse.  <a href="structcub_1_1_block_histogram_1_1_temp_storage.html#details">More...</a><br/></td></tr>
+<tr class="separator:"><td class="memSeparator" colspan="2">&#160;</td></tr>
 </table><table class="memberdecls">
 <tr class="heading"><td colspan="2"><h2 class="groupheader"><a name="pub-methods"></a>
 Public Methods</h2></td></tr>
@@ -176,13 +174,13 @@ Public Methods</h2></td></tr>
 __device__ __forceinline__&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classcub_1_1_block_histogram.html#a60061b56700655655b83a1c5921ae026">BlockHistogram</a> ()</td></tr>
 <tr class="memdesc:a60061b56700655655b83a1c5921ae026"><td class="mdescLeft">&#160;</td><td class="mdescRight">Collective constructor for 1D thread blocks using a private static allocation of shared memory as temporary storage. Threads are identified using <code>threadIdx.x</code>. <br/></td></tr>
 <tr class="separator:a60061b56700655655b83a1c5921ae026"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:aceed4d42c6ed10e14a707ab9a35a10c6"><td class="memItemLeft" align="right" valign="top">__device__ __forceinline__&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classcub_1_1_block_histogram.html#aceed4d42c6ed10e14a707ab9a35a10c6">BlockHistogram</a> (<a class="el" href="classcub_1_1_block_histogram.html#af77728049591cbbe16262dcbff31f152">TempStorage</a> &amp;temp_storage)</td></tr>
+<tr class="memitem:aceed4d42c6ed10e14a707ab9a35a10c6"><td class="memItemLeft" align="right" valign="top">__device__ __forceinline__&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classcub_1_1_block_histogram.html#aceed4d42c6ed10e14a707ab9a35a10c6">BlockHistogram</a> (<a class="el" href="structcub_1_1_block_histogram_1_1_temp_storage.html">TempStorage</a> &amp;temp_storage)</td></tr>
 <tr class="memdesc:aceed4d42c6ed10e14a707ab9a35a10c6"><td class="mdescLeft">&#160;</td><td class="mdescRight">Collective constructor for 1D thread blocks using the specified memory allocation as temporary storage. Threads are identified using <code>threadIdx.x</code>.  <a href="#aceed4d42c6ed10e14a707ab9a35a10c6">More...</a><br/></td></tr>
 <tr class="separator:aceed4d42c6ed10e14a707ab9a35a10c6"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:a7ba4e9f53945968ed47227376ea3caa1"><td class="memItemLeft" align="right" valign="top">__device__ __forceinline__&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classcub_1_1_block_histogram.html#a7ba4e9f53945968ed47227376ea3caa1">BlockHistogram</a> (int linear_tid)</td></tr>
 <tr class="memdesc:a7ba4e9f53945968ed47227376ea3caa1"><td class="mdescLeft">&#160;</td><td class="mdescRight">Collective constructor using a private static allocation of shared memory as temporary storage. Each thread is identified using the supplied linear thread identifier.  <a href="#a7ba4e9f53945968ed47227376ea3caa1">More...</a><br/></td></tr>
 <tr class="separator:a7ba4e9f53945968ed47227376ea3caa1"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:ae87c89f1175ce34f0c60f1cf9719d5f0"><td class="memItemLeft" align="right" valign="top">__device__ __forceinline__&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classcub_1_1_block_histogram.html#ae87c89f1175ce34f0c60f1cf9719d5f0">BlockHistogram</a> (<a class="el" href="classcub_1_1_block_histogram.html#af77728049591cbbe16262dcbff31f152">TempStorage</a> &amp;temp_storage, int linear_tid)</td></tr>
+<tr class="memitem:ae87c89f1175ce34f0c60f1cf9719d5f0"><td class="memItemLeft" align="right" valign="top">__device__ __forceinline__&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classcub_1_1_block_histogram.html#ae87c89f1175ce34f0c60f1cf9719d5f0">BlockHistogram</a> (<a class="el" href="structcub_1_1_block_histogram_1_1_temp_storage.html">TempStorage</a> &amp;temp_storage, int linear_tid)</td></tr>
 <tr class="memdesc:ae87c89f1175ce34f0c60f1cf9719d5f0"><td class="mdescLeft">&#160;</td><td class="mdescRight">Collective constructor using the specified memory allocation as temporary storage. Each thread is identified using the supplied linear thread identifier.  <a href="#ae87c89f1175ce34f0c60f1cf9719d5f0">More...</a><br/></td></tr>
 <tr class="separator:ae87c89f1175ce34f0c60f1cf9719d5f0"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr><td colspan="2"><div class="groupHeader">Histogram operations</div></td></tr>
@@ -212,7 +210,7 @@ template&lt;typename T , int BLOCK_THREADS, int ITEMS_PER_THREAD, int BINS, Bloc
         <tr>
           <td class="memname">__device__ __forceinline__ <a class="el" href="classcub_1_1_block_histogram.html">cub::BlockHistogram</a>&lt; T, BLOCK_THREADS, ITEMS_PER_THREAD, BINS, ALGORITHM &gt;::<a class="el" href="classcub_1_1_block_histogram.html">BlockHistogram</a> </td>
           <td>(</td>
-          <td class="paramtype"><a class="el" href="classcub_1_1_block_histogram.html#af77728049591cbbe16262dcbff31f152">TempStorage</a> &amp;&#160;</td>
+          <td class="paramtype"><a class="el" href="structcub_1_1_block_histogram_1_1_temp_storage.html">TempStorage</a> &amp;&#160;</td>
           <td class="paramname"><em>temp_storage</em>)</td><td></td>
           <td></td>
         </tr>
@@ -227,7 +225,7 @@ template&lt;typename T , int BLOCK_THREADS, int ITEMS_PER_THREAD, int BINS, Bloc
 <p>Collective constructor for 1D thread blocks using the specified memory allocation as temporary storage. Threads are identified using <code>threadIdx.x</code>. </p>
 <dl class="params"><dt>Parameters</dt><dd>
   <table class="params">
-    <tr><td class="paramdir">[in]</td><td class="paramname">temp_storage</td><td>Reference to memory allocation having layout type TempStorage </td></tr>
+    <tr><td class="paramdir">[in]</td><td class="paramname">temp_storage</td><td>Reference to memory allocation having layout type <a class="el" href="structcub_1_1_block_histogram_1_1_temp_storage.html" title="The operations exposed by BlockHistogram require a temporary memory allocation of this type for threa...">TempStorage</a> </td></tr>
   </table>
   </dd>
 </dl>
@@ -280,7 +278,7 @@ template&lt;typename T , int BLOCK_THREADS, int ITEMS_PER_THREAD, int BINS, Bloc
         <tr>
           <td class="memname">__device__ __forceinline__ <a class="el" href="classcub_1_1_block_histogram.html">cub::BlockHistogram</a>&lt; T, BLOCK_THREADS, ITEMS_PER_THREAD, BINS, ALGORITHM &gt;::<a class="el" href="classcub_1_1_block_histogram.html">BlockHistogram</a> </td>
           <td>(</td>
-          <td class="paramtype"><a class="el" href="classcub_1_1_block_histogram.html#af77728049591cbbe16262dcbff31f152">TempStorage</a> &amp;&#160;</td>
+          <td class="paramtype"><a class="el" href="structcub_1_1_block_histogram_1_1_temp_storage.html">TempStorage</a> &amp;&#160;</td>
           <td class="paramname"><em>temp_storage</em>, </td>
         </tr>
         <tr>
@@ -305,7 +303,7 @@ template&lt;typename T , int BLOCK_THREADS, int ITEMS_PER_THREAD, int BINS, Bloc
 <p>Collective constructor using the specified memory allocation as temporary storage. Each thread is identified using the supplied linear thread identifier. </p>
 <dl class="params"><dt>Parameters</dt><dd>
   <table class="params">
-    <tr><td class="paramdir">[in]</td><td class="paramname">temp_storage</td><td>Reference to memory allocation having layout type TempStorage </td></tr>
+    <tr><td class="paramdir">[in]</td><td class="paramname">temp_storage</td><td>Reference to memory allocation having layout type <a class="el" href="structcub_1_1_block_histogram_1_1_temp_storage.html" title="The operations exposed by BlockHistogram require a temporary memory allocation of this type for threa...">TempStorage</a> </td></tr>
     <tr><td class="paramdir">[in]</td><td class="paramname">linear_tid</td><td><b>[optional]</b> A suitable 1D thread-identifier for the calling thread (e.g., <code>(threadIdx.y * blockDim.x) + linear_tid</code> for 2D thread blocks) </td></tr>
   </table>
   </dd>
@@ -350,7 +348,7 @@ template&lt;typename HistoCounter &gt; </div>
 <div class="line">    <span class="keyword">typedef</span> <a class="code" href="classcub_1_1_block_histogram.html" title="The BlockHistogram class provides collective methods for constructing block-wide histograms from data...">cub::BlockHistogram&lt;unsigned char, 128, 4, 256&gt;</a> <a class="code" href="classcub_1_1_block_histogram.html#a60061b56700655655b83a1c5921ae026" title="Collective constructor for 1D thread blocks using a private static allocation of shared memory as tem...">BlockHistogram</a>;</div>
 <div class="line"></div>
 <div class="line">    <span class="comment">// Allocate shared memory for BlockHistogram</span></div>
-<div class="line">    __shared__ <span class="keyword">typename</span> <a class="code" href="classcub_1_1_block_histogram.html#af77728049591cbbe16262dcbff31f152" title="The operations exposed by BlockHistogram require a temporary memory allocation of this type for threa...">BlockHistogram::TempStorage</a> temp_storage;</div>
+<div class="line">    __shared__ <span class="keyword">typename</span> BlockHistogram::TempStorage temp_storage;</div>
 <div class="line"></div>
 <div class="line">    <span class="comment">// Allocate shared memory for block-wide histogram bin counts</span></div>
 <div class="line">    __shared__ <span class="keywordtype">unsigned</span> <span class="keywordtype">int</span> smem_histogram[256];</div>
@@ -421,7 +419,7 @@ template&lt;typename HistoCounter &gt; </div>
 <div class="line">    <span class="keyword">typedef</span> <a class="code" href="classcub_1_1_block_histogram.html" title="The BlockHistogram class provides collective methods for constructing block-wide histograms from data...">cub::BlockHistogram&lt;unsigned char, 128, 4, 256&gt;</a> <a class="code" href="classcub_1_1_block_histogram.html#a60061b56700655655b83a1c5921ae026" title="Collective constructor for 1D thread blocks using a private static allocation of shared memory as tem...">BlockHistogram</a>;</div>
 <div class="line"></div>
 <div class="line">    <span class="comment">// Allocate shared memory for BlockHistogram</span></div>
-<div class="line">    __shared__ <span class="keyword">typename</span> <a class="code" href="classcub_1_1_block_histogram.html#af77728049591cbbe16262dcbff31f152" title="The operations exposed by BlockHistogram require a temporary memory allocation of this type for threa...">BlockHistogram::TempStorage</a> temp_storage;</div>
+<div class="line">    __shared__ <span class="keyword">typename</span> BlockHistogram::TempStorage temp_storage;</div>
 <div class="line"></div>
 <div class="line">    <span class="comment">// Allocate shared memory for block-wide histogram bin counts</span></div>
 <div class="line">    __shared__ <span class="keywordtype">unsigned</span> <span class="keywordtype">int</span> smem_histogram[256];</div>
@@ -496,7 +494,7 @@ template&lt;typename HistoCounter &gt; </div>
 <div class="line">    <span class="keyword">typedef</span> <a class="code" href="classcub_1_1_block_histogram.html" title="The BlockHistogram class provides collective methods for constructing block-wide histograms from data...">cub::BlockHistogram&lt;unsigned char, 128, 4, 256&gt;</a> <a class="code" href="classcub_1_1_block_histogram.html#a60061b56700655655b83a1c5921ae026" title="Collective constructor for 1D thread blocks using a private static allocation of shared memory as tem...">BlockHistogram</a>;</div>
 <div class="line"></div>
 <div class="line">    <span class="comment">// Allocate shared memory for BlockHistogram</span></div>
-<div class="line">    __shared__ <span class="keyword">typename</span> <a class="code" href="classcub_1_1_block_histogram.html#af77728049591cbbe16262dcbff31f152" title="The operations exposed by BlockHistogram require a temporary memory allocation of this type for threa...">BlockHistogram::TempStorage</a> temp_storage;</div>
+<div class="line">    __shared__ <span class="keyword">typename</span> BlockHistogram::TempStorage temp_storage;</div>
 <div class="line"></div>
 <div class="line">    <span class="comment">// Allocate shared memory for block-wide histogram bin counts</span></div>
 <div class="line">    __shared__ <span class="keywordtype">unsigned</span> <span class="keywordtype">int</span> smem_histogram[256];</div>
@@ -534,7 +532,7 @@ template&lt;typename HistoCounter &gt; </div>
 <!-- HTML footer for doxygen 1.8.3.1-->
 <!-- start footer part -->
 <hr class="footer"/><address class="footer"><small>
-Generated on Sat Aug 10 2013 02:18:10 for CUB by &#160;<a href="http://www.doxygen.org/index.html">
+Generated on Sat Aug 10 2013 02:31:01 for CUB by &#160;<a href="http://www.doxygen.org/index.html">
 <img class="footer" src="doxygen.png" alt="doxygen"/>
 </a> 1.8.4
 <br>

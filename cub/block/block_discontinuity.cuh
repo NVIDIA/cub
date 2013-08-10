@@ -157,7 +157,7 @@ private:
 public:
 
     /// \smemstorage{BlockDiscontinuity}
-    typedef Uninitialized<_TempStorage> TempStorage;
+    struct TempStorage : Uninitialized<_TempStorage> {};
 
 
     /******************************************************************//**
