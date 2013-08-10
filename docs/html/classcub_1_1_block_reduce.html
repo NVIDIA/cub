@@ -142,7 +142,7 @@ class cub::BlockReduce&lt; T, BLOCK_THREADS, ALGORITHM &gt;</h3>
 </ul>
 </dd></dl>
 <dl class="section user"><dt>A Simple Example</dt><dd>Every thread in the block uses the <a class="el" href="classcub_1_1_block_reduce.html" title="The BlockReduce class provides collective methods for computing a parallel reduction of items partiti...">BlockReduce</a> class by first specializing the <a class="el" href="classcub_1_1_block_reduce.html" title="The BlockReduce class provides collective methods for computing a parallel reduction of items partiti...">BlockReduce</a> type, then instantiating an instance with parameters for communication, and finally invoking collective member functions. </dd></dl>
-<dl class="section user"><dt></dt><dd>The code snippet below illustrates a sum reduction of 512 integer items that are partitioned in a <a href="index.html#sec4sec4"><em>blocked arrangement</em></a> across 128 threads where each thread owns 4 consecutive items. </dd></dl>
+<dl class="section user"><dt></dt><dd>The code snippet below illustrates a sum reduction of 512 integer items that are partitioned in a <a href="index.html#sec5sec4"><em>blocked arrangement</em></a> across 128 threads where each thread owns 4 consecutive items. </dd></dl>
 <dl class="section user"><dt></dt><dd><div class="fragment"><div class="line"><span class="preprocessor">#include &lt;<a class="code" href="cub_8cuh.html">cub/cub.cuh</a>&gt;</span></div>
 <div class="line"></div>
 <div class="line">__global__ <span class="keywordtype">void</span> ExampleKernel(...)</div>
@@ -438,9 +438,9 @@ template&lt;int ITEMS_PER_THREAD, typename ReductionOp &gt; </div>
 <p>Computes a block-wide reduction for thread<sub>0</sub> using the specified binary reduction functor. Each thread contributes an array of consecutive input elements. </p>
 <p>The return value is undefined in threads other than thread<sub>0</sub>.</p>
 <p>Supports non-commutative reduction operators.</p>
-<p>Assumes a <a href="index.html#sec4sec4"><em>blocked arrangement</em></a> of elements across threads, where thread<sub><em>i</em></sub> owns the <em>i</em><sup>th</sup> segment of consecutively ranked items.</p>
+<p>Assumes a <a href="index.html#sec5sec4"><em>blocked arrangement</em></a> of elements across threads, where thread<sub><em>i</em></sub> owns the <em>i</em><sup>th</sup> segment of consecutively ranked items.</p>
 <p>A subsequent <code>__syncthreads()</code> threadblock barrier should be invoked after calling this method if the collective's temporary storage (e.g., <code>temp_storage</code>) is to be reused or repurposed.</p>
-<p>The code snippet below illustrates a max reduction of 512 integer items that are partitioned in a <a href="index.html#sec4sec4"><em>blocked arrangement</em></a> across 128 threads where each thread owns 4 consecutive items. </p>
+<p>The code snippet below illustrates a max reduction of 512 integer items that are partitioned in a <a href="index.html#sec5sec4"><em>blocked arrangement</em></a> across 128 threads where each thread owns 4 consecutive items. </p>
 <dl class="section user"><dt></dt><dd><div class="fragment"><div class="line"><span class="preprocessor">#include &lt;<a class="code" href="cub_8cuh.html">cub/cub.cuh</a>&gt;</span></div>
 <div class="line"></div>
 <div class="line">__global__ <span class="keywordtype">void</span> ExampleKernel(...)</div>
@@ -520,7 +520,7 @@ template&lt;typename ReductionOp &gt; </div>
 <p>Computes a block-wide reduction for thread<sub>0</sub> using the specified binary reduction functor. The first <code>num_valid</code> threads each contribute one input element. </p>
 <p>The return value is undefined in threads other than thread<sub>0</sub>.</p>
 <p>Supports non-commutative reduction operators.</p>
-<p>Assumes a <a href="index.html#sec4sec4"><em>blocked arrangement</em></a> of elements across threads, where thread<sub><em>i</em></sub> owns the <em>i</em><sup>th</sup> segment of consecutively ranked items.</p>
+<p>Assumes a <a href="index.html#sec5sec4"><em>blocked arrangement</em></a> of elements across threads, where thread<sub><em>i</em></sub> owns the <em>i</em><sup>th</sup> segment of consecutively ranked items.</p>
 <p>A subsequent <code>__syncthreads()</code> threadblock barrier should be invoked after calling this method if the collective's temporary storage (e.g., <code>temp_storage</code>) is to be reused or repurposed.</p>
 <p>The code snippet below illustrates a max reduction of a partially-full tile of integer items that are partitioned across 128 threads. </p>
 <dl class="section user"><dt></dt><dd><div class="fragment"><div class="line"><span class="preprocessor">#include &lt;<a class="code" href="cub_8cuh.html">cub/cub.cuh</a>&gt;</span></div>
@@ -640,7 +640,7 @@ template&lt;int ITEMS_PER_THREAD&gt; </div>
 <p>Computes a block-wide reduction for thread<sub>0</sub> using addition (+) as the reduction operator. Each thread contributes an array of consecutive input elements. </p>
 <p>The return value is undefined in threads other than thread<sub>0</sub>.</p>
 <p>A subsequent <code>__syncthreads()</code> threadblock barrier should be invoked after calling this method if the collective's temporary storage (e.g., <code>temp_storage</code>) is to be reused or repurposed.</p>
-<p>The code snippet below illustrates a sum reduction of 512 integer items that are partitioned in a <a href="index.html#sec4sec4"><em>blocked arrangement</em></a> across 128 threads where each thread owns 4 consecutive items. </p>
+<p>The code snippet below illustrates a sum reduction of 512 integer items that are partitioned in a <a href="index.html#sec5sec4"><em>blocked arrangement</em></a> across 128 threads where each thread owns 4 consecutive items. </p>
 <dl class="section user"><dt></dt><dd><div class="fragment"><div class="line"><span class="preprocessor">#include &lt;<a class="code" href="cub_8cuh.html">cub/cub.cuh</a>&gt;</span></div>
 <div class="line"></div>
 <div class="line">__global__ <span class="keywordtype">void</span> ExampleKernel(...)</div>
@@ -746,7 +746,7 @@ template&lt;typename T , int BLOCK_THREADS, BlockReduceAlgorithm ALGORITHM = BLO
 <!-- HTML footer for doxygen 1.8.3.1-->
 <!-- start footer part -->
 <hr class="footer"/><address class="footer"><small>
-Generated on Fri Aug 9 2013 11:22:30 for CUB by &#160;<a href="http://www.doxygen.org/index.html">
+Generated on Fri Aug 9 2013 23:42:11 for CUB by &#160;<a href="http://www.doxygen.org/index.html">
 <img class="footer" src="doxygen.png" alt="doxygen"/>
 </a> 1.8.4
 <br>

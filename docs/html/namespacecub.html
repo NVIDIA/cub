@@ -143,7 +143,7 @@ Classes</h2></td></tr>
   <a href="classcub_1_1_block_histogram.html#details">More...</a><br/></td></tr>
 <tr class="separator:"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:"><td class="memItemLeft" align="right" valign="top">class &#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classcub_1_1_block_load.html">BlockLoad</a></td></tr>
-<tr class="memdesc:"><td class="mdescLeft">&#160;</td><td class="mdescRight">The <a class="el" href="classcub_1_1_block_load.html" title="The BlockLoad class provides collective data movement methods for loading a linear segment of items f...">BlockLoad</a> class provides <a href="index.html#sec0"><em>collective</em></a> data movement methods for loading a linear segment of items from memory into a <a href="index.html#sec4sec4"><em>blocked arrangement</em></a> across a CUDA thread block. </p>
+<tr class="memdesc:"><td class="mdescLeft">&#160;</td><td class="mdescRight">The <a class="el" href="classcub_1_1_block_load.html" title="The BlockLoad class provides collective data movement methods for loading a linear segment of items f...">BlockLoad</a> class provides <a href="index.html#sec0"><em>collective</em></a> data movement methods for loading a linear segment of items from memory into a <a href="index.html#sec5sec4"><em>blocked arrangement</em></a> across a CUDA thread block. </p>
 <div class="image">
 <img src="block_load_logo.png" alt="block_load_logo.png"/>
 <div class="caption">
@@ -175,7 +175,7 @@ Classes</h2></td></tr>
   <a href="classcub_1_1_block_scan.html#details">More...</a><br/></td></tr>
 <tr class="separator:"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:"><td class="memItemLeft" align="right" valign="top">class &#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classcub_1_1_block_store.html">BlockStore</a></td></tr>
-<tr class="memdesc:"><td class="mdescLeft">&#160;</td><td class="mdescRight">The <a class="el" href="classcub_1_1_block_store.html" title="The BlockStore class provides collective data movement methods for writing a blocked arrangement of i...">BlockStore</a> class provides <a href="index.html#sec0"><em>collective</em></a> data movement methods for writing a <a href="index.html#sec4sec4"><em>blocked arrangement</em></a> of items partitioned across a CUDA thread block to a linear segment of memory. </p>
+<tr class="memdesc:"><td class="mdescLeft">&#160;</td><td class="mdescRight">The <a class="el" href="classcub_1_1_block_store.html" title="The BlockStore class provides collective data movement methods for writing a blocked arrangement of i...">BlockStore</a> class provides <a href="index.html#sec0"><em>collective</em></a> data movement methods for writing a <a href="index.html#sec5sec4"><em>blocked arrangement</em></a> of items partitioned across a CUDA thread block to a linear segment of memory. </p>
 <div class="image">
 <img src="block_store_logo.png" alt="block_store_logo.png"/>
 <div class="caption">
@@ -554,7 +554,7 @@ std::iterator_traits<br class="typebreak"/>
 <table class="fieldtable">
 <tr><th colspan="2">Enumerator</th></tr><tr><td class="fieldname"><em><a class="anchor" id="a9d7e37497fdd99864c57adecda710401a2d4d8900d7e697e9dac4062e97d3d835"></a>BLOCK_LOAD_DIRECT</em>&nbsp;</td><td class="fielddoc">
 <dl class="section user"><dt>Overview</dt><dd></dd></dl>
-<p>A <a href="index.html#sec4sec4"><em>blocked arrangement</em></a> of data is read directly from memory. The thread block reads items in a parallel "raking" fashion: thread<sub><em>i</em></sub> reads the <em>i</em><sup>th</sup> segment of consecutive elements.</p>
+<p>A <a href="index.html#sec5sec4"><em>blocked arrangement</em></a> of data is read directly from memory. The thread block reads items in a parallel "raking" fashion: thread<sub><em>i</em></sub> reads the <em>i</em><sup>th</sup> segment of consecutive elements.</p>
 <dl class="section user"><dt>Performance Considerations</dt><dd><ul>
 <li>The utilization of memory transactions (coalescing) decreases as the access stride between threads increases (i.e., the number items per thread). </li>
 </ul>
@@ -562,7 +562,7 @@ std::iterator_traits<br class="typebreak"/>
 </td></tr>
 <tr><td class="fieldname"><em><a class="anchor" id="a9d7e37497fdd99864c57adecda710401a826be9d4df1c44c0e5c00a9c9c136965"></a>BLOCK_LOAD_VECTORIZE</em>&nbsp;</td><td class="fielddoc">
 <dl class="section user"><dt>Overview</dt><dd></dd></dl>
-<p>A <a href="index.html#sec4sec4"><em>blocked arrangement</em></a> of data is read directly from memory using CUDA's built-in vectorized loads as a coalescing optimization. The thread block reads items in a parallel "raking" fashion: thread<sub><em>i</em></sub> uses vector loads to read the <em>i</em><sup>th</sup> segment of consecutive elements.</p>
+<p>A <a href="index.html#sec5sec4"><em>blocked arrangement</em></a> of data is read directly from memory using CUDA's built-in vectorized loads as a coalescing optimization. The thread block reads items in a parallel "raking" fashion: thread<sub><em>i</em></sub> uses vector loads to read the <em>i</em><sup>th</sup> segment of consecutive elements.</p>
 <p>For example, <code>ld.global.v4.s32</code> instructions will be generated when <code>T</code> = <code>int</code> and <code>ITEMS_PER_THREAD</code> &gt; 4.</p>
 <dl class="section user"><dt>Performance Considerations</dt><dd><ul>
 <li>The utilization of memory transactions (coalescing) remains high until the the access stride between threads (i.e., the number items per thread) exceeds the maximum vector load width (typically 4 items or 64B, whichever is lower).</li>
@@ -578,7 +578,7 @@ std::iterator_traits<br class="typebreak"/>
 </td></tr>
 <tr><td class="fieldname"><em><a class="anchor" id="a9d7e37497fdd99864c57adecda710401acd94f285472e8f7c883a7407f6f4efc4"></a>BLOCK_LOAD_TRANSPOSE</em>&nbsp;</td><td class="fielddoc">
 <dl class="section user"><dt>Overview</dt><dd></dd></dl>
-<p>A <a href="index.html#sec4sec4"><em>striped arrangement</em></a> of data is read directly from memory and then is locally transposed into a <a href="index.html#sec4sec4"><em>blocked arrangement</em></a>. The thread block reads items in a parallel "strip-mining" fashion: thread<sub><em>i</em></sub> reads items having stride <code>BLOCK_THREADS</code> between them. <a class="el" href="classcub_1_1_block_exchange.html" title="The BlockExchange class provides collective methods for rearranging data partitioned across a CUDA th...">cub::BlockExchange</a> is then used to locally reorder the items into a <a href="index.html#sec4sec4"><em>blocked arrangement</em></a>.</p>
+<p>A <a href="index.html#sec5sec4"><em>striped arrangement</em></a> of data is read directly from memory and then is locally transposed into a <a href="index.html#sec5sec4"><em>blocked arrangement</em></a>. The thread block reads items in a parallel "strip-mining" fashion: thread<sub><em>i</em></sub> reads items having stride <code>BLOCK_THREADS</code> between them. <a class="el" href="classcub_1_1_block_exchange.html" title="The BlockExchange class provides collective methods for rearranging data partitioned across a CUDA th...">cub::BlockExchange</a> is then used to locally reorder the items into a <a href="index.html#sec5sec4"><em>blocked arrangement</em></a>.</p>
 <dl class="section user"><dt>Performance Considerations</dt><dd><ul>
 <li>The utilization of memory transactions (coalescing) remains high regardless of items loaded per thread.</li>
 <li>The local reordering incurs slightly longer latencies and throughput than the direct <a class="el" href="namespacecub.html#a9d7e37497fdd99864c57adecda710401a2d4d8900d7e697e9dac4062e97d3d835">cub::BLOCK_LOAD_DIRECT</a> and <a class="el" href="namespacecub.html#a9d7e37497fdd99864c57adecda710401a826be9d4df1c44c0e5c00a9c9c136965">cub::BLOCK_LOAD_VECTORIZE</a> alternatives. </li>
@@ -587,7 +587,7 @@ std::iterator_traits<br class="typebreak"/>
 </td></tr>
 <tr><td class="fieldname"><em><a class="anchor" id="a9d7e37497fdd99864c57adecda710401aba21066c09e6c6ebcf08c7e86216eb1f"></a>BLOCK_LOAD_WARP_TRANSPOSE</em>&nbsp;</td><td class="fielddoc">
 <dl class="section user"><dt>Overview</dt><dd></dd></dl>
-<p>A <a href="index.html#sec4sec4"><em>warp-striped arrangement</em></a> of data is read directly from memory and then is locally transposed into a <a href="index.html#sec4sec4"><em>blocked arrangement</em></a>. Each warp reads its own contiguous segment in a parallel "strip-mining" fashion: lane<sub><em>i</em></sub> reads items having stride <code>WARP_THREADS</code> between them. <a class="el" href="classcub_1_1_block_exchange.html" title="The BlockExchange class provides collective methods for rearranging data partitioned across a CUDA th...">cub::BlockExchange</a> is then used to locally reorder the items into a <a href="index.html#sec4sec4"><em>blocked arrangement</em></a>.</p>
+<p>A <a href="index.html#sec5sec4"><em>warp-striped arrangement</em></a> of data is read directly from memory and then is locally transposed into a <a href="index.html#sec5sec4"><em>blocked arrangement</em></a>. Each warp reads its own contiguous segment in a parallel "strip-mining" fashion: lane<sub><em>i</em></sub> reads items having stride <code>WARP_THREADS</code> between them. <a class="el" href="classcub_1_1_block_exchange.html" title="The BlockExchange class provides collective methods for rearranging data partitioned across a CUDA th...">cub::BlockExchange</a> is then used to locally reorder the items into a <a href="index.html#sec5sec4"><em>blocked arrangement</em></a>.</p>
 <dl class="section user"><dt>Usage Considerations</dt><dd><ul>
 <li>BLOCK_THREADS must be a multiple of WARP_THREADS</li>
 </ul>
@@ -717,7 +717,7 @@ std::iterator_traits<br class="typebreak"/>
 <table class="fieldtable">
 <tr><th colspan="2">Enumerator</th></tr><tr><td class="fieldname"><em><a class="anchor" id="a839b145451e9eec3d44172e3c3619700a9b8dcc7b6b06bcfc24af4f499523b880"></a>BLOCK_STORE_DIRECT</em>&nbsp;</td><td class="fielddoc">
 <dl class="section user"><dt>Overview</dt><dd></dd></dl>
-<p>A <a href="index.html#sec4sec4"><em>blocked arrangement</em></a> of data is written directly to memory. The thread block writes items in a parallel "raking" fashion: thread<sub><em>i</em></sub> writes the <em>i</em><sup>th</sup> segment of consecutive elements.</p>
+<p>A <a href="index.html#sec5sec4"><em>blocked arrangement</em></a> of data is written directly to memory. The thread block writes items in a parallel "raking" fashion: thread<sub><em>i</em></sub> writes the <em>i</em><sup>th</sup> segment of consecutive elements.</p>
 <dl class="section user"><dt>Performance Considerations</dt><dd><ul>
 <li>The utilization of memory transactions (coalescing) decreases as the access stride between threads increases (i.e., the number items per thread). </li>
 </ul>
@@ -725,7 +725,7 @@ std::iterator_traits<br class="typebreak"/>
 </td></tr>
 <tr><td class="fieldname"><em><a class="anchor" id="a839b145451e9eec3d44172e3c3619700a0ccd625a7f2f3649155cbd5a27adfb41"></a>BLOCK_STORE_VECTORIZE</em>&nbsp;</td><td class="fielddoc">
 <dl class="section user"><dt>Overview</dt><dd></dd></dl>
-<p>A <a href="index.html#sec4sec4"><em>blocked arrangement</em></a> of data is written directly to memory using CUDA's built-in vectorized stores as a coalescing optimization. The thread block writes items in a parallel "raking" fashion: thread<sub><em>i</em></sub> uses vector stores to write the <em>i</em><sup>th</sup> segment of consecutive elements.</p>
+<p>A <a href="index.html#sec5sec4"><em>blocked arrangement</em></a> of data is written directly to memory using CUDA's built-in vectorized stores as a coalescing optimization. The thread block writes items in a parallel "raking" fashion: thread<sub><em>i</em></sub> uses vector stores to write the <em>i</em><sup>th</sup> segment of consecutive elements.</p>
 <p>For example, <code>st.global.v4.s32</code> instructions will be generated when <code>T</code> = <code>int</code> and <code>ITEMS_PER_THREAD</code> &gt; 4.</p>
 <dl class="section user"><dt>Performance Considerations</dt><dd><ul>
 <li>The utilization of memory transactions (coalescing) remains high until the the access stride between threads (i.e., the number items per thread) exceeds the maximum vector store width (typically 4 items or 64B, whichever is lower).</li>
@@ -740,7 +740,7 @@ std::iterator_traits<br class="typebreak"/>
 </dd></dl>
 </td></tr>
 <tr><td class="fieldname"><em><a class="anchor" id="a839b145451e9eec3d44172e3c3619700ab0bbe20613466c3cedfcfea33a97d69c"></a>BLOCK_STORE_TRANSPOSE</em>&nbsp;</td><td class="fielddoc">
-<dl class="section user"><dt>Overview</dt><dd>A <a href="index.html#sec4sec4"><em>blocked arrangement</em></a> is locally transposed into a <a href="index.html#sec4sec4"><em>striped arrangement</em></a> which is then written to memory. More specifically, <a class="el" href="classcub_1_1_block_exchange.html" title="The BlockExchange class provides collective methods for rearranging data partitioned across a CUDA th...">cub::BlockExchange</a> used to locally reorder the items into a <a href="index.html#sec4sec4"><em>striped arrangement</em></a>, after which the thread block writes items in a parallel "strip-mining" fashion: consecutive items owned by thread<sub><em>i</em></sub> are written to memory with stride <code>BLOCK_THREADS</code> between them.</dd></dl>
+<dl class="section user"><dt>Overview</dt><dd>A <a href="index.html#sec5sec4"><em>blocked arrangement</em></a> is locally transposed into a <a href="index.html#sec5sec4"><em>striped arrangement</em></a> which is then written to memory. More specifically, <a class="el" href="classcub_1_1_block_exchange.html" title="The BlockExchange class provides collective methods for rearranging data partitioned across a CUDA th...">cub::BlockExchange</a> used to locally reorder the items into a <a href="index.html#sec5sec4"><em>striped arrangement</em></a>, after which the thread block writes items in a parallel "strip-mining" fashion: consecutive items owned by thread<sub><em>i</em></sub> are written to memory with stride <code>BLOCK_THREADS</code> between them.</dd></dl>
 <dl class="section user"><dt>Performance Considerations</dt><dd><ul>
 <li>The utilization of memory transactions (coalescing) remains high regardless of items written per thread.</li>
 <li>The local reordering incurs slightly longer latencies and throughput than the direct <a class="el" href="namespacecub.html#a839b145451e9eec3d44172e3c3619700a9b8dcc7b6b06bcfc24af4f499523b880">cub::BLOCK_STORE_DIRECT</a> and <a class="el" href="namespacecub.html#a839b145451e9eec3d44172e3c3619700a0ccd625a7f2f3649155cbd5a27adfb41">cub::BLOCK_STORE_VECTORIZE</a> alternatives. </li>
@@ -748,7 +748,7 @@ std::iterator_traits<br class="typebreak"/>
 </dd></dl>
 </td></tr>
 <tr><td class="fieldname"><em><a class="anchor" id="a839b145451e9eec3d44172e3c3619700a9178e3be2332f84a66761cee4ee6f3e3"></a>BLOCK_STORE_WARP_TRANSPOSE</em>&nbsp;</td><td class="fielddoc">
-<dl class="section user"><dt>Overview</dt><dd>A <a href="index.html#sec4sec4"><em>blocked arrangement</em></a> is locally transposed into a <a href="index.html#sec4sec4"><em>warp-striped arrangement</em></a> which is then written to memory. More specifically, <a class="el" href="classcub_1_1_block_exchange.html" title="The BlockExchange class provides collective methods for rearranging data partitioned across a CUDA th...">cub::BlockExchange</a> used to locally reorder the items into a <a href="index.html#sec4sec4"><em>warp-striped arrangement</em></a>, after which each warp writes its own contiguous segment in a parallel "strip-mining" fashion: consecutive items owned by lane<sub><em>i</em></sub> are written to memory with stride <code>WARP_THREADS</code> between them.</dd></dl>
+<dl class="section user"><dt>Overview</dt><dd>A <a href="index.html#sec5sec4"><em>blocked arrangement</em></a> is locally transposed into a <a href="index.html#sec5sec4"><em>warp-striped arrangement</em></a> which is then written to memory. More specifically, <a class="el" href="classcub_1_1_block_exchange.html" title="The BlockExchange class provides collective methods for rearranging data partitioned across a CUDA th...">cub::BlockExchange</a> used to locally reorder the items into a <a href="index.html#sec5sec4"><em>warp-striped arrangement</em></a>, after which each warp writes its own contiguous segment in a parallel "strip-mining" fashion: consecutive items owned by lane<sub><em>i</em></sub> are written to memory with stride <code>WARP_THREADS</code> between them.</dd></dl>
 <dl class="section user"><dt>Performance Considerations</dt><dd><ul>
 <li>The utilization of memory transactions (coalescing) remains high regardless of items written per thread.</li>
 <li>The local reordering incurs slightly longer latencies and throughput than the direct <a class="el" href="namespacecub.html#a839b145451e9eec3d44172e3c3619700a9b8dcc7b6b06bcfc24af4f499523b880">cub::BLOCK_STORE_DIRECT</a> and <a class="el" href="namespacecub.html#a839b145451e9eec3d44172e3c3619700a0ccd625a7f2f3649155cbd5a27adfb41">cub::BLOCK_STORE_VECTORIZE</a> alternatives. </li>
@@ -763,7 +763,7 @@ std::iterator_traits<br class="typebreak"/>
 <!-- HTML footer for doxygen 1.8.3.1-->
 <!-- start footer part -->
 <hr class="footer"/><address class="footer"><small>
-Generated on Fri Aug 9 2013 11:22:29 for CUB by &#160;<a href="http://www.doxygen.org/index.html">
+Generated on Fri Aug 9 2013 23:42:10 for CUB by &#160;<a href="http://www.doxygen.org/index.html">
 <img class="footer" src="doxygen.png" alt="doxygen"/>
 </a> 1.8.4
 <br>

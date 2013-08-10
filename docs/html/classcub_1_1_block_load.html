@@ -114,17 +114,17 @@ var searchBox = new SearchBox("searchBox", "search",false,'Search');
     bool WARP_TIME_SLICING = false&gt;<br/>
 class cub::BlockLoad&lt; InputIteratorRA, BLOCK_THREADS, ITEMS_PER_THREAD, ALGORITHM, MODIFIER, WARP_TIME_SLICING &gt;</h3>
 
-<p>The <a class="el" href="classcub_1_1_block_load.html" title="The BlockLoad class provides collective data movement methods for loading a linear segment of items f...">BlockLoad</a> class provides <a href="index.html#sec0"><em>collective</em></a> data movement methods for loading a linear segment of items from memory into a <a href="index.html#sec4sec4"><em>blocked arrangement</em></a> across a CUDA thread block. </p>
+<p>The <a class="el" href="classcub_1_1_block_load.html" title="The BlockLoad class provides collective data movement methods for loading a linear segment of items f...">BlockLoad</a> class provides <a href="index.html#sec0"><em>collective</em></a> data movement methods for loading a linear segment of items from memory into a <a href="index.html#sec5sec4"><em>blocked arrangement</em></a> across a CUDA thread block. </p>
 <div class="image">
 <img src="block_load_logo.png" alt="block_load_logo.png"/>
 <div class="caption">
 .</div></div>
  <dl class="section user"><dt>Overview</dt><dd>The <a class="el" href="classcub_1_1_block_load.html" title="The BlockLoad class provides collective data movement methods for loading a linear segment of items f...">BlockLoad</a> class provides a single data movement abstraction that can be specialized to implement different <a class="el" href="namespacecub.html#a9d7e37497fdd99864c57adecda710401" title="cub::BlockLoadAlgorithm enumerates alternative algorithms for cub::BlockLoad to read a linear segment...">cub::BlockLoadAlgorithm</a> strategies. This facilitates different performance policies for different architectures, data types, granularity sizes, etc.</dd></dl>
 <dl class="section user"><dt></dt><dd>Optionally, <a class="el" href="classcub_1_1_block_load.html" title="The BlockLoad class provides collective data movement methods for loading a linear segment of items f...">BlockLoad</a> can be specialized by different data movement strategies:<ol type="1">
-<li><b><a class="el" href="namespacecub.html#a9d7e37497fdd99864c57adecda710401a2d4d8900d7e697e9dac4062e97d3d835">cub::BLOCK_LOAD_DIRECT</a></b>. A <a href="index.html#sec4sec4"><em>blocked arrangement</em></a> of data is read directly from memory. <a class="el" href="namespacecub.html#a9d7e37497fdd99864c57adecda710401">More...</a></li>
-<li><b><a class="el" href="namespacecub.html#a9d7e37497fdd99864c57adecda710401a826be9d4df1c44c0e5c00a9c9c136965">cub::BLOCK_LOAD_VECTORIZE</a></b>. A <a href="index.html#sec4sec4"><em>blocked arrangement</em></a> of data is read directly from memory using CUDA's built-in vectorized loads as a coalescing optimization. <a class="el" href="namespacecub.html#a9d7e37497fdd99864c57adecda710401">More...</a></li>
-<li><b><a class="el" href="namespacecub.html#a9d7e37497fdd99864c57adecda710401acd94f285472e8f7c883a7407f6f4efc4">cub::BLOCK_LOAD_TRANSPOSE</a></b>. A <a href="index.html#sec4sec4"><em>striped arrangement</em></a> of data is read directly from memory and is then locally transposed into a <a href="index.html#sec4sec4"><em>blocked arrangement</em></a>. <a class="el" href="namespacecub.html#a9d7e37497fdd99864c57adecda710401">More...</a></li>
-<li><b><a class="el" href="namespacecub.html#a9d7e37497fdd99864c57adecda710401aba21066c09e6c6ebcf08c7e86216eb1f">cub::BLOCK_LOAD_WARP_TRANSPOSE</a></b>. A <a href="index.html#sec4sec4"><em>warp-striped arrangement</em></a> of data is read directly from memory and is then locally transposed into a <a href="index.html#sec4sec4"><em>blocked arrangement</em></a>. <a class="el" href="namespacecub.html#a9d7e37497fdd99864c57adecda710401">More...</a></li>
+<li><b><a class="el" href="namespacecub.html#a9d7e37497fdd99864c57adecda710401a2d4d8900d7e697e9dac4062e97d3d835">cub::BLOCK_LOAD_DIRECT</a></b>. A <a href="index.html#sec5sec4"><em>blocked arrangement</em></a> of data is read directly from memory. <a class="el" href="namespacecub.html#a9d7e37497fdd99864c57adecda710401">More...</a></li>
+<li><b><a class="el" href="namespacecub.html#a9d7e37497fdd99864c57adecda710401a826be9d4df1c44c0e5c00a9c9c136965">cub::BLOCK_LOAD_VECTORIZE</a></b>. A <a href="index.html#sec5sec4"><em>blocked arrangement</em></a> of data is read directly from memory using CUDA's built-in vectorized loads as a coalescing optimization. <a class="el" href="namespacecub.html#a9d7e37497fdd99864c57adecda710401">More...</a></li>
+<li><b><a class="el" href="namespacecub.html#a9d7e37497fdd99864c57adecda710401acd94f285472e8f7c883a7407f6f4efc4">cub::BLOCK_LOAD_TRANSPOSE</a></b>. A <a href="index.html#sec5sec4"><em>striped arrangement</em></a> of data is read directly from memory and is then locally transposed into a <a href="index.html#sec5sec4"><em>blocked arrangement</em></a>. <a class="el" href="namespacecub.html#a9d7e37497fdd99864c57adecda710401">More...</a></li>
+<li><b><a class="el" href="namespacecub.html#a9d7e37497fdd99864c57adecda710401aba21066c09e6c6ebcf08c7e86216eb1f">cub::BLOCK_LOAD_WARP_TRANSPOSE</a></b>. A <a href="index.html#sec5sec4"><em>warp-striped arrangement</em></a> of data is read directly from memory and is then locally transposed into a <a href="index.html#sec5sec4"><em>blocked arrangement</em></a>. <a class="el" href="namespacecub.html#a9d7e37497fdd99864c57adecda710401">More...</a></li>
 </ol>
 </dd></dl>
 <dl class="tparams"><dt>Template Parameters</dt><dd>
@@ -341,7 +341,7 @@ template&lt;typename InputIteratorRA , int BLOCK_THREADS, int ITEMS_PER_THREAD, 
 </div><div class="memdoc">
 
 <p>Load a linear segment of items from memory. </p>
-<p>Assumes a <a href="index.html#sec4sec4"><em>blocked arrangement</em></a> of elements across threads, where thread<sub><em>i</em></sub> owns the <em>i</em><sup>th</sup> segment of consecutively ranked items.</p>
+<p>Assumes a <a href="index.html#sec5sec4"><em>blocked arrangement</em></a> of elements across threads, where thread<sub><em>i</em></sub> owns the <em>i</em><sup>th</sup> segment of consecutively ranked items.</p>
 <p>The code snippet below illustrates the loading of a linear segment of 512 integers into a "blocked" arrangement across 128 threads where each thread owns 4 consecutive items. The load is specialized for <code>BLOCK_LOAD_WARP_TRANSPOSE</code>, meaning memory references are efficiently coalesced using a warp-striped access pattern (after which items are locally reordered among threads). </p>
 <dl class="section user"><dt></dt><dd><div class="fragment"><div class="line"><span class="preprocessor">#include &lt;<a class="code" href="cub_8cuh.html">cub/cub.cuh</a>&gt;</span></div>
 <div class="line"></div>
@@ -409,7 +409,7 @@ template&lt;typename InputIteratorRA , int BLOCK_THREADS, int ITEMS_PER_THREAD, 
 </div><div class="memdoc">
 
 <p>Load a linear segment of items from memory, guarded by range. </p>
-<p>Assumes a <a href="index.html#sec4sec4"><em>blocked arrangement</em></a> of elements across threads, where thread<sub><em>i</em></sub> owns the <em>i</em><sup>th</sup> segment of consecutively ranked items.</p>
+<p>Assumes a <a href="index.html#sec5sec4"><em>blocked arrangement</em></a> of elements across threads, where thread<sub><em>i</em></sub> owns the <em>i</em><sup>th</sup> segment of consecutively ranked items.</p>
 <p>The code snippet below illustrates the guarded loading of a linear segment of 512 integers into a "blocked" arrangement across 128 threads where each thread owns 4 consecutive items. The load is specialized for <code>BLOCK_LOAD_WARP_TRANSPOSE</code>, meaning memory references are efficiently coalesced using a warp-striped access pattern (after which items are locally reordered among threads). </p>
 <dl class="section user"><dt></dt><dd><div class="fragment"><div class="line"><span class="preprocessor">#include &lt;<a class="code" href="cub_8cuh.html">cub/cub.cuh</a>&gt;</span></div>
 <div class="line"></div>
@@ -484,7 +484,7 @@ template&lt;typename InputIteratorRA , int BLOCK_THREADS, int ITEMS_PER_THREAD, 
 </div><div class="memdoc">
 
 <p>Load a linear segment of items from memory, guarded by range, with a fall-back assignment of out-of-bound elements. </p>
-<p>Assumes a <a href="index.html#sec4sec4"><em>blocked arrangement</em></a> of elements across threads, where thread<sub><em>i</em></sub> owns the <em>i</em><sup>th</sup> segment of consecutively ranked items.</p>
+<p>Assumes a <a href="index.html#sec5sec4"><em>blocked arrangement</em></a> of elements across threads, where thread<sub><em>i</em></sub> owns the <em>i</em><sup>th</sup> segment of consecutively ranked items.</p>
 <p>The code snippet below illustrates the guarded loading of a linear segment of 512 integers into a "blocked" arrangement across 128 threads where each thread owns 4 consecutive items. The load is specialized for <code>BLOCK_LOAD_WARP_TRANSPOSE</code>, meaning memory references are efficiently coalesced using a warp-striped access pattern (after which items are locally reordered among threads). </p>
 <dl class="section user"><dt></dt><dd><div class="fragment"><div class="line"><span class="preprocessor">#include &lt;<a class="code" href="cub_8cuh.html">cub/cub.cuh</a>&gt;</span></div>
 <div class="line"></div>
@@ -520,7 +520,7 @@ template&lt;typename InputIteratorRA , int BLOCK_THREADS, int ITEMS_PER_THREAD, 
 <!-- HTML footer for doxygen 1.8.3.1-->
 <!-- start footer part -->
 <hr class="footer"/><address class="footer"><small>
-Generated on Fri Aug 9 2013 11:22:29 for CUB by &#160;<a href="http://www.doxygen.org/index.html">
+Generated on Fri Aug 9 2013 23:42:11 for CUB by &#160;<a href="http://www.doxygen.org/index.html">
 <img class="footer" src="doxygen.png" alt="doxygen"/>
 </a> 1.8.4
 <br>

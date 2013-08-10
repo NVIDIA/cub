@@ -59,10 +59,10 @@ namespace cub {
  *
  * \par
  * BlockExchange supports the following types of data exchanges:
- * - Transposing between [<em>blocked</em>](index.html#sec4sec4) and [<em>striped</em>](index.html#sec4sec4) arrangements
- * - Transposing between [<em>blocked</em>](index.html#sec4sec4) and [<em>warp-striped</em>](index.html#sec4sec4) arrangements
- * - Scattering ranked items to a [<em>blocked arrangement</em>](index.html#sec4sec4)
- * - Scattering ranked items to a [<em>striped arrangement</em>](index.html#sec4sec4)
+ * - Transposing between [<em>blocked</em>](index.html#sec5sec4) and [<em>striped</em>](index.html#sec5sec4) arrangements
+ * - Transposing between [<em>blocked</em>](index.html#sec5sec4) and [<em>warp-striped</em>](index.html#sec5sec4) arrangements
+ * - Scattering ranked items to a [<em>blocked arrangement</em>](index.html#sec5sec4)
+ * - Scattering ranked items to a [<em>striped arrangement</em>](index.html#sec5sec4)
  *
  * \tparam T                    The data type to be exchanged.
  * \tparam BLOCK_THREADS        The thread block size in threads.
