@@ -173,12 +173,12 @@ could be aliased to global memory allocations).
 \section sec3 (3) How is CUB different than Thrust?
 
 \par
-CUB and [Thrust](http://thrust.github.com/) have some similarities in that they 
+CUB and [<b><em>Thrust</em></b>](http://thrust.github.com/) have some similarities in that they 
 both provide device-wide primitives for CUDA.  However, the Thrust abstractions are 
 agnostic of any particular implementation (e.g., CUDA, TBB, OpenMP, sequential 
-CPU, etc.).  While Thrust has a "backend" for CUDA devices, it is not CUDA-specific.
-Thrust interfaces will never explicitly expose CUDA-specific details (e.g., 
-\p cudaStream_t parameters).
+CPU, etc.).  While Thrust has a "backend" for CUDA devices, Thrust interfaces 
+themselves are not CUDA-specific and do not explicitly expose CUDA-specific 
+details (e.g., \p cudaStream_t parameters).
   
 \par
 CUB, on the other hand, is slightly lower-level than Thrust.  CUB is CUDA-specific

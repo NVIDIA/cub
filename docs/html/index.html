@@ -214,7 +214,7 @@ var searchBox = new SearchBox("searchBox", "search",false,'Search');
 <dl class="section user"><dt></dt><dd>Once specialized, these classes expose opaque <code>TempStorage</code> member types. The thread block uses these storage types to statically allocate the union of shared memory needed by the thread block. (Alternatively these storage types could be aliased to global memory allocations).</dd></dl>
 <h1><a class="anchor" id="sec3"></a>
 (3) How is CUB different than Thrust?</h1>
-<dl class="section user"><dt></dt><dd>CUB and <a href="http://thrust.github.com/">Thrust</a> have some similarities in that they both provide device-wide primitives for CUDA. However, the Thrust abstractions are agnostic of any particular implementation (e.g., CUDA, TBB, OpenMP, sequential CPU, etc.). While Thrust has a "backend" for CUDA devices, it is not CUDA-specific. Thrust interfaces will never explicitly expose CUDA-specific details (e.g., <code>cudaStream_t</code> parameters).</dd></dl>
+<dl class="section user"><dt></dt><dd>CUB and <a href="http://thrust.github.com/"><b><em>Thrust</em></b></a> have some similarities in that they both provide device-wide primitives for CUDA. However, the Thrust abstractions are agnostic of any particular implementation (e.g., CUDA, TBB, OpenMP, sequential CPU, etc.). While Thrust has a "backend" for CUDA devices, Thrust interfaces themselves are not CUDA-specific and do not explicitly expose CUDA-specific details (e.g., <code>cudaStream_t</code> parameters).</dd></dl>
 <dl class="section user"><dt></dt><dd>CUB, on the other hand, is slightly lower-level than Thrust. CUB is CUDA-specific and its interfaces explicitly accommodate CUDA-specific features. Furthermore, CUB is also a library of SIMT collective primitives for block-wide and warp-wide kernel programming. CUB is complimentary to Thrust in that it can be used to implement portions of Thrust's CUDA backend. In fact, the CUB project arose out of a maintenance need for easier performance-portability within Thrust.</dd></dl>
 <h1><a class="anchor" id="sec4"></a>
 (4) Why do you need CUB?</h1>
@@ -398,7 +398,7 @@ var searchBox = new SearchBox("searchBox", "search",false,'Search');
 <!-- HTML footer for doxygen 1.8.3.1-->
 <!-- start footer part -->
 <hr class="footer"/><address class="footer"><small>
-Generated on Fri Aug 9 2013 23:42:12 for CUB by &#160;<a href="http://www.doxygen.org/index.html">
+Generated on Sat Aug 10 2013 02:18:12 for CUB by &#160;<a href="http://www.doxygen.org/index.html">
 <img class="footer" src="doxygen.png" alt="doxygen"/>
 </a> 1.8.4
 <br>
