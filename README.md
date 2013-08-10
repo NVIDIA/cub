@@ -70,7 +70,7 @@ The cub::BlockLoad and cub::BlockStore classes are similarly specialized.
 Furthermore, to provide coalesced accesses to device memory, these primitives are 
 configured to access memory using a striped access pattern (where consecutive threads 
 simultaneously access consecutive items) and then <em>transpose</em> the keys into 
-a [<em>blocked arrangement</em>](index.html#sec4sec4) of elements across threads. 
+a [<em>blocked arrangement</em>](index.html#sec5sec4) of elements across threads. 
 
 Once specialized, these classes expose opaque TempStorage member types.  
 The thread block uses these storage types to statically allocate the union of 
