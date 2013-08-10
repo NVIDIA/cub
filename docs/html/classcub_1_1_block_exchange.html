@@ -118,10 +118,10 @@ class cub::BlockExchange&lt; T, BLOCK_THREADS, ITEMS_PER_THREAD, WARP_TIME_SLICI
 .</div></div>
  <dl class="section user"><dt>Overview</dt><dd>It is commonplace for blocks of threads to rearrange data items between threads. For example, the global memory subsystem prefers access patterns where data items are "striped" across threads (where consecutive threads access consecutive items), yet most block-wide operations prefer a "blocked" partitioning of items across threads (where consecutive items belong to a single thread).</dd></dl>
 <dl class="section user"><dt></dt><dd><a class="el" href="classcub_1_1_block_exchange.html" title="The BlockExchange class provides collective methods for rearranging data partitioned across a CUDA th...">BlockExchange</a> supports the following types of data exchanges:<ul>
-<li>Transposing between <a href="index.html#sec4sec4"><em>blocked</em></a> and <a href="index.html#sec4sec4"><em>striped</em></a> arrangements</li>
-<li>Transposing between <a href="index.html#sec4sec4"><em>blocked</em></a> and <a href="index.html#sec4sec4"><em>warp-striped</em></a> arrangements</li>
-<li>Scattering ranked items to a <a href="index.html#sec4sec4"><em>blocked arrangement</em></a></li>
-<li>Scattering ranked items to a <a href="index.html#sec4sec4"><em>striped arrangement</em></a></li>
+<li>Transposing between <a href="index.html#sec5sec4"><em>blocked</em></a> and <a href="index.html#sec5sec4"><em>striped</em></a> arrangements</li>
+<li>Transposing between <a href="index.html#sec5sec4"><em>blocked</em></a> and <a href="index.html#sec5sec4"><em>warp-striped</em></a> arrangements</li>
+<li>Scattering ranked items to a <a href="index.html#sec5sec4"><em>blocked arrangement</em></a></li>
+<li>Scattering ranked items to a <a href="index.html#sec5sec4"><em>striped arrangement</em></a></li>
 </ul>
 </dd></dl>
 <dl class="tparams"><dt>Template Parameters</dt><dd>
@@ -639,7 +639,7 @@ template&lt;typename T , int BLOCK_THREADS, int ITEMS_PER_THREAD, bool WARP_TIME
 <!-- HTML footer for doxygen 1.8.3.1-->
 <!-- start footer part -->
 <hr class="footer"/><address class="footer"><small>
-Generated on Fri Aug 9 2013 11:22:29 for CUB by &#160;<a href="http://www.doxygen.org/index.html">
+Generated on Fri Aug 9 2013 23:19:56 for CUB by &#160;<a href="http://www.doxygen.org/index.html">
 <img class="footer" src="doxygen.png" alt="doxygen"/>
 </a> 1.8.4
 <br>
