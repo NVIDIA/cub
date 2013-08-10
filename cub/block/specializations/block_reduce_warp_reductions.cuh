@@ -85,7 +85,7 @@ struct BlockReduceWarpReductions
     };
 
     /// Alias wrapper allowing storage to be unioned
-    typedef Uninitialized<_TempStorage> TempStorage;
+    struct TempStorage : Uninitialized<_TempStorage> {};
 
 
     // Thread fields

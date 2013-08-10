@@ -98,7 +98,6 @@ var searchBox = new SearchBox("searchBox", "search",false,'Search');
 <div class="header">
   <div class="summary">
 <a href="#nested-classes">Classes</a> &#124;
-<a href="#pub-types">Public Types</a> &#124;
 <a href="classcub_1_1_block_load-members.html">List of all members</a>  </div>
   <div class="headertitle">
 <div class="title">cub::BlockLoad&lt; InputIteratorRA, BLOCK_THREADS, ITEMS_PER_THREAD, ALGORITHM, MODIFIER, WARP_TIME_SLICING &gt; Class Template Reference<div class="ingroups"><a class="el" href="group___block_module.html">Block-wide</a></div></div>  </div>
@@ -148,7 +147,7 @@ class cub::BlockLoad&lt; InputIteratorRA, BLOCK_THREADS, ITEMS_PER_THREAD, ALGOR
 <div class="line">    <span class="keyword">typedef</span> <a class="code" href="classcub_1_1_block_load.html" title="The BlockLoad class provides collective data movement methods for loading a linear segment of items f...">cub::BlockLoad&lt;int*, 128, 4, BLOCK_LOAD_WARP_TRANSPOSE&gt;</a> <a class="code" href="classcub_1_1_block_load.html#a5d282946b5009f81cb8eb030f0c88db3" title="Collective constructor for 1D thread blocks using a private static allocation of shared memory as tem...">BlockLoad</a>;</div>
 <div class="line"></div>
 <div class="line">    <span class="comment">// Allocate shared memory for BlockLoad</span></div>
-<div class="line">    __shared__ <span class="keyword">typename</span> <a class="code" href="classcub_1_1_block_load.html#a638423d4891ea255da5ba7bbd8dd1331" title="The operations exposed by BlockLoad require a temporary memory allocation of this type for thread com...">BlockLoad::TempStorage</a> temp_storage;</div>
+<div class="line">    __shared__ <span class="keyword">typename</span> BlockLoad::TempStorage temp_storage;</div>
 <div class="line"></div>
 <div class="line">    <span class="comment">// Load a segment of consecutive items that are blocked across threads</span></div>
 <div class="line">    <span class="keywordtype">int</span> thread_data[4];</div>
@@ -156,13 +155,11 @@ class cub::BlockLoad&lt; InputIteratorRA, BLOCK_THREADS, ITEMS_PER_THREAD, ALGOR
 </div><!-- fragment --> </dd></dl>
 <dl class="section user"><dt></dt><dd>Suppose the input <code>d_data</code> is <code>0, 1, 2, 3, 4, 5, ...</code>. The set of <code>thread_data</code> across the block of threads in those threads will be <code>{ [0,1,2,3], [4,5,6,7], ..., [508,509,510,511] }</code>. </dd></dl>
 </div><table class="memberdecls">
-<tr class="heading"><td colspan="2"><h2 class="groupheader"><a name="pub-types"></a>
-Public Types</h2></td></tr>
-<tr class="memitem:a638423d4891ea255da5ba7bbd8dd1331"><td class="memItemLeft" align="right" valign="top"><a class="anchor" id="a638423d4891ea255da5ba7bbd8dd1331"></a>
-typedef <a class="el" href="structcub_1_1_uninitialized.html">Uninitialized</a><br class="typebreak"/>
-&lt; _TempStorage &gt;&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classcub_1_1_block_load.html#a638423d4891ea255da5ba7bbd8dd1331">TempStorage</a></td></tr>
-<tr class="memdesc:a638423d4891ea255da5ba7bbd8dd1331"><td class="mdescLeft">&#160;</td><td class="mdescRight">The operations exposed by <a class="el" href="classcub_1_1_block_load.html" title="The BlockLoad class provides collective data movement methods for loading a linear segment of items f...">BlockLoad</a> require a temporary memory allocation of this type for thread communication. This opaque storage can be allocated directly using the <code>__shared__</code> keyword. Alternatively, it can be aliased to externally allocated memory (shared or global) or <code>union</code>'d with other storage allocation types to facilitate memory reuse. <br/></td></tr>
-<tr class="separator:a638423d4891ea255da5ba7bbd8dd1331"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="heading"><td colspan="2"><h2 class="groupheader"><a name="nested-classes"></a>
+Classes</h2></td></tr>
+<tr class="memitem:"><td class="memItemLeft" align="right" valign="top">struct &#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="structcub_1_1_block_load_1_1_temp_storage.html">TempStorage</a></td></tr>
+<tr class="memdesc:"><td class="mdescLeft">&#160;</td><td class="mdescRight">The operations exposed by <a class="el" href="classcub_1_1_block_load.html" title="The BlockLoad class provides collective data movement methods for loading a linear segment of items f...">BlockLoad</a> require a temporary memory allocation of this nested type for thread communication. This opaque storage can be allocated directly using the <code>__shared__</code> keyword. Alternatively, it can be aliased to externally allocated memory (shared or global) or <code>union</code>'d with other storage allocation types to facilitate memory reuse.  <a href="structcub_1_1_block_load_1_1_temp_storage.html#details">More...</a><br/></td></tr>
+<tr class="separator:"><td class="memSeparator" colspan="2">&#160;</td></tr>
 </table><table class="memberdecls">
 <tr class="heading"><td colspan="2"><h2 class="groupheader"><a name="pub-methods"></a>
 Public Methods</h2></td></tr>
@@ -171,13 +168,13 @@ Public Methods</h2></td></tr>
 __device__ __forceinline__&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classcub_1_1_block_load.html#a5d282946b5009f81cb8eb030f0c88db3">BlockLoad</a> ()</td></tr>
 <tr class="memdesc:a5d282946b5009f81cb8eb030f0c88db3"><td class="mdescLeft">&#160;</td><td class="mdescRight">Collective constructor for 1D thread blocks using a private static allocation of shared memory as temporary storage. Threads are identified using <code>threadIdx.x</code>. <br/></td></tr>
 <tr class="separator:a5d282946b5009f81cb8eb030f0c88db3"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:a6375b8826e555da16d39ab15343f05a5"><td class="memItemLeft" align="right" valign="top">__device__ __forceinline__&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classcub_1_1_block_load.html#a6375b8826e555da16d39ab15343f05a5">BlockLoad</a> (<a class="el" href="classcub_1_1_block_load.html#a638423d4891ea255da5ba7bbd8dd1331">TempStorage</a> &amp;temp_storage)</td></tr>
+<tr class="memitem:a6375b8826e555da16d39ab15343f05a5"><td class="memItemLeft" align="right" valign="top">__device__ __forceinline__&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classcub_1_1_block_load.html#a6375b8826e555da16d39ab15343f05a5">BlockLoad</a> (<a class="el" href="structcub_1_1_block_load_1_1_temp_storage.html">TempStorage</a> &amp;temp_storage)</td></tr>
 <tr class="memdesc:a6375b8826e555da16d39ab15343f05a5"><td class="mdescLeft">&#160;</td><td class="mdescRight">Collective constructor for 1D thread blocks using the specified memory allocation as temporary storage. Threads are identified using <code>threadIdx.x</code>.  <a href="#a6375b8826e555da16d39ab15343f05a5">More...</a><br/></td></tr>
 <tr class="separator:a6375b8826e555da16d39ab15343f05a5"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:ac14a9dd87b2ca252a4fb319f2d616d71"><td class="memItemLeft" align="right" valign="top">__device__ __forceinline__&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classcub_1_1_block_load.html#ac14a9dd87b2ca252a4fb319f2d616d71">BlockLoad</a> (int linear_tid)</td></tr>
 <tr class="memdesc:ac14a9dd87b2ca252a4fb319f2d616d71"><td class="mdescLeft">&#160;</td><td class="mdescRight">Collective constructor using a private static allocation of shared memory as temporary storage. Each thread is identified using the supplied linear thread identifier.  <a href="#ac14a9dd87b2ca252a4fb319f2d616d71">More...</a><br/></td></tr>
 <tr class="separator:ac14a9dd87b2ca252a4fb319f2d616d71"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:a05b5615fbcb8453d663248700e3b17c3"><td class="memItemLeft" align="right" valign="top">__device__ __forceinline__&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classcub_1_1_block_load.html#a05b5615fbcb8453d663248700e3b17c3">BlockLoad</a> (<a class="el" href="classcub_1_1_block_load.html#a638423d4891ea255da5ba7bbd8dd1331">TempStorage</a> &amp;temp_storage, int linear_tid)</td></tr>
+<tr class="memitem:a05b5615fbcb8453d663248700e3b17c3"><td class="memItemLeft" align="right" valign="top">__device__ __forceinline__&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classcub_1_1_block_load.html#a05b5615fbcb8453d663248700e3b17c3">BlockLoad</a> (<a class="el" href="structcub_1_1_block_load_1_1_temp_storage.html">TempStorage</a> &amp;temp_storage, int linear_tid)</td></tr>
 <tr class="memdesc:a05b5615fbcb8453d663248700e3b17c3"><td class="mdescLeft">&#160;</td><td class="mdescRight">Collective constructor using the specified memory allocation as temporary storage. Each thread is identified using the supplied linear thread identifier.  <a href="#a05b5615fbcb8453d663248700e3b17c3">More...</a><br/></td></tr>
 <tr class="separator:a05b5615fbcb8453d663248700e3b17c3"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr><td colspan="2"><div class="groupHeader">Data movement</div></td></tr>
@@ -204,7 +201,7 @@ template&lt;typename InputIteratorRA , int BLOCK_THREADS, int ITEMS_PER_THREAD, 
         <tr>
           <td class="memname">__device__ __forceinline__ <a class="el" href="classcub_1_1_block_load.html">cub::BlockLoad</a>&lt; InputIteratorRA, BLOCK_THREADS, ITEMS_PER_THREAD, ALGORITHM, MODIFIER, WARP_TIME_SLICING &gt;::<a class="el" href="classcub_1_1_block_load.html">BlockLoad</a> </td>
           <td>(</td>
-          <td class="paramtype"><a class="el" href="classcub_1_1_block_load.html#a638423d4891ea255da5ba7bbd8dd1331">TempStorage</a> &amp;&#160;</td>
+          <td class="paramtype"><a class="el" href="structcub_1_1_block_load_1_1_temp_storage.html">TempStorage</a> &amp;&#160;</td>
           <td class="paramname"><em>temp_storage</em>)</td><td></td>
           <td></td>
         </tr>
@@ -219,7 +216,7 @@ template&lt;typename InputIteratorRA , int BLOCK_THREADS, int ITEMS_PER_THREAD, 
 <p>Collective constructor for 1D thread blocks using the specified memory allocation as temporary storage. Threads are identified using <code>threadIdx.x</code>. </p>
 <dl class="params"><dt>Parameters</dt><dd>
   <table class="params">
-    <tr><td class="paramdir">[in]</td><td class="paramname">temp_storage</td><td>Reference to memory allocation having layout type TempStorage </td></tr>
+    <tr><td class="paramdir">[in]</td><td class="paramname">temp_storage</td><td>Reference to memory allocation having layout type <a class="el" href="structcub_1_1_block_load_1_1_temp_storage.html" title="The operations exposed by BlockLoad require a temporary memory allocation of this nested type for thr...">TempStorage</a> </td></tr>
   </table>
   </dd>
 </dl>
@@ -272,7 +269,7 @@ template&lt;typename InputIteratorRA , int BLOCK_THREADS, int ITEMS_PER_THREAD, 
         <tr>
           <td class="memname">__device__ __forceinline__ <a class="el" href="classcub_1_1_block_load.html">cub::BlockLoad</a>&lt; InputIteratorRA, BLOCK_THREADS, ITEMS_PER_THREAD, ALGORITHM, MODIFIER, WARP_TIME_SLICING &gt;::<a class="el" href="classcub_1_1_block_load.html">BlockLoad</a> </td>
           <td>(</td>
-          <td class="paramtype"><a class="el" href="classcub_1_1_block_load.html#a638423d4891ea255da5ba7bbd8dd1331">TempStorage</a> &amp;&#160;</td>
+          <td class="paramtype"><a class="el" href="structcub_1_1_block_load_1_1_temp_storage.html">TempStorage</a> &amp;&#160;</td>
           <td class="paramname"><em>temp_storage</em>, </td>
         </tr>
         <tr>
@@ -297,7 +294,7 @@ template&lt;typename InputIteratorRA , int BLOCK_THREADS, int ITEMS_PER_THREAD, 
 <p>Collective constructor using the specified memory allocation as temporary storage. Each thread is identified using the supplied linear thread identifier. </p>
 <dl class="params"><dt>Parameters</dt><dd>
   <table class="params">
-    <tr><td class="paramdir">[in]</td><td class="paramname">temp_storage</td><td>Reference to memory allocation having layout type TempStorage </td></tr>
+    <tr><td class="paramdir">[in]</td><td class="paramname">temp_storage</td><td>Reference to memory allocation having layout type <a class="el" href="structcub_1_1_block_load_1_1_temp_storage.html" title="The operations exposed by BlockLoad require a temporary memory allocation of this nested type for thr...">TempStorage</a> </td></tr>
     <tr><td class="paramdir">[in]</td><td class="paramname">linear_tid</td><td><b>[optional]</b> A suitable 1D thread-identifier for the calling thread (e.g., <code>(threadIdx.y * blockDim.x) + linear_tid</code> for 2D thread blocks) </td></tr>
   </table>
   </dd>
@@ -351,7 +348,7 @@ template&lt;typename InputIteratorRA , int BLOCK_THREADS, int ITEMS_PER_THREAD, 
 <div class="line">    <span class="keyword">typedef</span> <a class="code" href="classcub_1_1_block_load.html" title="The BlockLoad class provides collective data movement methods for loading a linear segment of items f...">cub::BlockLoad&lt;int*, 128, 4, BLOCK_LOAD_WARP_TRANSPOSE&gt;</a> <a class="code" href="classcub_1_1_block_load.html#a5d282946b5009f81cb8eb030f0c88db3" title="Collective constructor for 1D thread blocks using a private static allocation of shared memory as tem...">BlockLoad</a>;</div>
 <div class="line"></div>
 <div class="line">    <span class="comment">// Allocate shared memory for BlockLoad</span></div>
-<div class="line">    __shared__ <span class="keyword">typename</span> <a class="code" href="classcub_1_1_block_load.html#a638423d4891ea255da5ba7bbd8dd1331" title="The operations exposed by BlockLoad require a temporary memory allocation of this type for thread com...">BlockLoad::TempStorage</a> temp_storage;</div>
+<div class="line">    __shared__ <span class="keyword">typename</span> BlockLoad::TempStorage temp_storage;</div>
 <div class="line"></div>
 <div class="line">    <span class="comment">// Load a segment of consecutive items that are blocked across threads</span></div>
 <div class="line">    <span class="keywordtype">int</span> thread_data[4];</div>
@@ -419,7 +416,7 @@ template&lt;typename InputIteratorRA , int BLOCK_THREADS, int ITEMS_PER_THREAD, 
 <div class="line">    <span class="keyword">typedef</span> <a class="code" href="classcub_1_1_block_load.html" title="The BlockLoad class provides collective data movement methods for loading a linear segment of items f...">cub::BlockLoad&lt;int*, 128, 4, BLOCK_LOAD_WARP_TRANSPOSE&gt;</a> <a class="code" href="classcub_1_1_block_load.html#a5d282946b5009f81cb8eb030f0c88db3" title="Collective constructor for 1D thread blocks using a private static allocation of shared memory as tem...">BlockLoad</a>;</div>
 <div class="line"></div>
 <div class="line">    <span class="comment">// Allocate shared memory for BlockLoad</span></div>
-<div class="line">    __shared__ <span class="keyword">typename</span> <a class="code" href="classcub_1_1_block_load.html#a638423d4891ea255da5ba7bbd8dd1331" title="The operations exposed by BlockLoad require a temporary memory allocation of this type for thread com...">BlockLoad::TempStorage</a> temp_storage;</div>
+<div class="line">    __shared__ <span class="keyword">typename</span> BlockLoad::TempStorage temp_storage;</div>
 <div class="line"></div>
 <div class="line">    <span class="comment">// Load a segment of consecutive items that are blocked across threads</span></div>
 <div class="line">    <span class="keywordtype">int</span> thread_data[4];</div>
@@ -494,7 +491,7 @@ template&lt;typename InputIteratorRA , int BLOCK_THREADS, int ITEMS_PER_THREAD, 
 <div class="line">    <span class="keyword">typedef</span> <a class="code" href="classcub_1_1_block_load.html" title="The BlockLoad class provides collective data movement methods for loading a linear segment of items f...">cub::BlockLoad&lt;int*, 128, 4, BLOCK_LOAD_WARP_TRANSPOSE&gt;</a> <a class="code" href="classcub_1_1_block_load.html#a5d282946b5009f81cb8eb030f0c88db3" title="Collective constructor for 1D thread blocks using a private static allocation of shared memory as tem...">BlockLoad</a>;</div>
 <div class="line"></div>
 <div class="line">    <span class="comment">// Allocate shared memory for BlockLoad</span></div>
-<div class="line">    __shared__ <span class="keyword">typename</span> <a class="code" href="classcub_1_1_block_load.html#a638423d4891ea255da5ba7bbd8dd1331" title="The operations exposed by BlockLoad require a temporary memory allocation of this type for thread com...">BlockLoad::TempStorage</a> temp_storage;</div>
+<div class="line">    __shared__ <span class="keyword">typename</span> BlockLoad::TempStorage temp_storage;</div>
 <div class="line"></div>
 <div class="line">    <span class="comment">// Load a segment of consecutive items that are blocked across threads</span></div>
 <div class="line">    <span class="keywordtype">int</span> thread_data[4];</div>
@@ -520,7 +517,7 @@ template&lt;typename InputIteratorRA , int BLOCK_THREADS, int ITEMS_PER_THREAD, 
 <!-- HTML footer for doxygen 1.8.3.1-->
 <!-- start footer part -->
 <hr class="footer"/><address class="footer"><small>
-Generated on Sat Aug 10 2013 02:18:10 for CUB by &#160;<a href="http://www.doxygen.org/index.html">
+Generated on Sat Aug 10 2013 02:43:26 for CUB by &#160;<a href="http://www.doxygen.org/index.html">
 <img class="footer" src="doxygen.png" alt="doxygen"/>
 </a> 1.8.4
 <br>

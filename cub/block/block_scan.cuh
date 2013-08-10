@@ -243,7 +243,7 @@ private:
 public:
 
     /// \smemstorage{BlockScan}
-    typedef Uninitialized<_TempStorage> TempStorage;
+    struct TempStorage : Uninitialized<_TempStorage> {};
 
 
     /******************************************************************//**
