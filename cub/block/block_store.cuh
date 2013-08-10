@@ -635,7 +635,7 @@ private:
         typedef typename BlockExchange::TempStorage _TempStorage;
 
         /// Alias wrapper allowing storage to be unioned
-        typedef Uninitialized<_TempStorage> TempStorage;
+        struct TempStorage : Uninitialized<_TempStorage> {};
 
         /// Thread reference to shared storage
         _TempStorage &temp_storage;
@@ -694,7 +694,7 @@ private:
         typedef typename BlockExchange::TempStorage _TempStorage;
 
         /// Alias wrapper allowing storage to be unioned
-        typedef Uninitialized<_TempStorage> TempStorage;
+        struct TempStorage : Uninitialized<_TempStorage> {};
 
         /// Thread reference to shared storage
         _TempStorage &temp_storage;
@@ -769,7 +769,7 @@ public:
 
 
     /// \smemstorage{BlockStore}
-    typedef Uninitialized<_TempStorage> TempStorage;
+    struct TempStorage : Uninitialized<_TempStorage> {};
 
 
     /******************************************************************//**

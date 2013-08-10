@@ -385,7 +385,7 @@ private:
 public:
 
     /// \smemstorage{BlockHistogram}
-    typedef Uninitialized<_TempStorage> TempStorage;
+    struct TempStorage : Uninitialized<_TempStorage> {};
 
 
     /******************************************************************//**
