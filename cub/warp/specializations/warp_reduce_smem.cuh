@@ -81,7 +81,7 @@ struct WarpReduceSmem
     typedef T _TempStorage[LOGICAL_WARPS][WARP_SMEM_ELEMENTS];
 
     // Alias wrapper allowing storage to be unioned
-    typedef Uninitialized<_TempStorage> TempStorage;
+    struct TempStorage : Uninitialized<_TempStorage> {};
 
 
     /******************************************************************************

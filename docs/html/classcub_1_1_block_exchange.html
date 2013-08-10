@@ -97,7 +97,7 @@ var searchBox = new SearchBox("searchBox", "search",false,'Search');
 </div><!-- top -->
 <div class="header">
   <div class="summary">
-<a href="#pub-types">Public Types</a> &#124;
+<a href="#nested-classes">Classes</a> &#124;
 <a href="classcub_1_1_block_exchange-members.html">List of all members</a>  </div>
   <div class="headertitle">
 <div class="title">cub::BlockExchange&lt; T, BLOCK_THREADS, ITEMS_PER_THREAD, WARP_TIME_SLICING &gt; Class Template Reference<div class="ingroups"><a class="el" href="group___block_module.html">Block-wide</a></div></div>  </div>
@@ -143,7 +143,7 @@ class cub::BlockExchange&lt; T, BLOCK_THREADS, ITEMS_PER_THREAD, WARP_TIME_SLICI
 <div class="line">    <span class="keyword">typedef</span> <a class="code" href="classcub_1_1_block_exchange.html" title="The BlockExchange class provides collective methods for rearranging data partitioned across a CUDA th...">cub::BlockExchange&lt;int, 128, 4&gt;</a> <a class="code" href="classcub_1_1_block_exchange.html#a31f5a889713220dfe21669a4865f3f4e" title="Collective constructor for 1D thread blocks using a private static allocation of shared memory as tem...">BlockExchange</a>;</div>
 <div class="line"></div>
 <div class="line">    <span class="comment">// Allocate shared memory for BlockExchange</span></div>
-<div class="line">    __shared__ <span class="keyword">typename</span> <a class="code" href="classcub_1_1_block_exchange.html#aa241086b8471a5b0317072798e9ef276" title="The operations exposed by BlockExchange require a temporary memory allocation of this type for thread...">BlockExchange::TempStorage</a> temp_storage;</div>
+<div class="line">    __shared__ <span class="keyword">typename</span> BlockExchange::TempStorage temp_storage;</div>
 <div class="line"></div>
 <div class="line">    <span class="comment">// Load a tile of data striped across threads</span></div>
 <div class="line">    <span class="keywordtype">int</span> thread_data[4];</div>
@@ -158,13 +158,11 @@ class cub::BlockExchange&lt; T, BLOCK_THREADS, ITEMS_PER_THREAD, WARP_TIME_SLICI
 </ul>
 </dd></dl>
 </div><table class="memberdecls">
-<tr class="heading"><td colspan="2"><h2 class="groupheader"><a name="pub-types"></a>
-Public Types</h2></td></tr>
-<tr class="memitem:aa241086b8471a5b0317072798e9ef276"><td class="memItemLeft" align="right" valign="top"><a class="anchor" id="aa241086b8471a5b0317072798e9ef276"></a>
-typedef <a class="el" href="structcub_1_1_uninitialized.html">Uninitialized</a><br class="typebreak"/>
-&lt; _TempStorage &gt;&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classcub_1_1_block_exchange.html#aa241086b8471a5b0317072798e9ef276">TempStorage</a></td></tr>
-<tr class="memdesc:aa241086b8471a5b0317072798e9ef276"><td class="mdescLeft">&#160;</td><td class="mdescRight">The operations exposed by <a class="el" href="classcub_1_1_block_exchange.html" title="The BlockExchange class provides collective methods for rearranging data partitioned across a CUDA th...">BlockExchange</a> require a temporary memory allocation of this type for thread communication. This opaque storage can be allocated directly using the <code>__shared__</code> keyword. Alternatively, it can be aliased to externally allocated memory (shared or global) or <code>union</code>'d with other storage allocation types to facilitate memory reuse. <br/></td></tr>
-<tr class="separator:aa241086b8471a5b0317072798e9ef276"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="heading"><td colspan="2"><h2 class="groupheader"><a name="nested-classes"></a>
+Classes</h2></td></tr>
+<tr class="memitem:"><td class="memItemLeft" align="right" valign="top">struct &#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="structcub_1_1_block_exchange_1_1_temp_storage.html">TempStorage</a></td></tr>
+<tr class="memdesc:"><td class="mdescLeft">&#160;</td><td class="mdescRight">The operations exposed by <a class="el" href="classcub_1_1_block_exchange.html" title="The BlockExchange class provides collective methods for rearranging data partitioned across a CUDA th...">BlockExchange</a> require a temporary memory allocation of this nested type for thread communication. This opaque storage can be allocated directly using the <code>__shared__</code> keyword. Alternatively, it can be aliased to externally allocated memory (shared or global) or <code>union</code>'d with other storage allocation types to facilitate memory reuse.  <a href="structcub_1_1_block_exchange_1_1_temp_storage.html#details">More...</a><br/></td></tr>
+<tr class="separator:"><td class="memSeparator" colspan="2">&#160;</td></tr>
 </table><table class="memberdecls">
 <tr class="heading"><td colspan="2"><h2 class="groupheader"><a name="pub-methods"></a>
 Public Methods</h2></td></tr>
@@ -173,13 +171,13 @@ Public Methods</h2></td></tr>
 __device__ __forceinline__&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classcub_1_1_block_exchange.html#a31f5a889713220dfe21669a4865f3f4e">BlockExchange</a> ()</td></tr>
 <tr class="memdesc:a31f5a889713220dfe21669a4865f3f4e"><td class="mdescLeft">&#160;</td><td class="mdescRight">Collective constructor for 1D thread blocks using a private static allocation of shared memory as temporary storage. Threads are identified using <code>threadIdx.x</code>. <br/></td></tr>
 <tr class="separator:a31f5a889713220dfe21669a4865f3f4e"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:aff7137dd257eeec8d7628b4f9f4e1457"><td class="memItemLeft" align="right" valign="top">__device__ __forceinline__&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classcub_1_1_block_exchange.html#aff7137dd257eeec8d7628b4f9f4e1457">BlockExchange</a> (<a class="el" href="classcub_1_1_block_exchange.html#aa241086b8471a5b0317072798e9ef276">TempStorage</a> &amp;temp_storage)</td></tr>
+<tr class="memitem:aff7137dd257eeec8d7628b4f9f4e1457"><td class="memItemLeft" align="right" valign="top">__device__ __forceinline__&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classcub_1_1_block_exchange.html#aff7137dd257eeec8d7628b4f9f4e1457">BlockExchange</a> (<a class="el" href="structcub_1_1_block_exchange_1_1_temp_storage.html">TempStorage</a> &amp;temp_storage)</td></tr>
 <tr class="memdesc:aff7137dd257eeec8d7628b4f9f4e1457"><td class="mdescLeft">&#160;</td><td class="mdescRight">Collective constructor for 1D thread blocks using the specified memory allocation as temporary storage. Threads are identified using <code>threadIdx.x</code>.  <a href="#aff7137dd257eeec8d7628b4f9f4e1457">More...</a><br/></td></tr>
 <tr class="separator:aff7137dd257eeec8d7628b4f9f4e1457"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:aa0689007bc51632404a1893e52a0e6e9"><td class="memItemLeft" align="right" valign="top">__device__ __forceinline__&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classcub_1_1_block_exchange.html#aa0689007bc51632404a1893e52a0e6e9">BlockExchange</a> (int linear_tid)</td></tr>
 <tr class="memdesc:aa0689007bc51632404a1893e52a0e6e9"><td class="mdescLeft">&#160;</td><td class="mdescRight">Collective constructor using a private static allocation of shared memory as temporary storage. Each thread is identified using the supplied linear thread identifier.  <a href="#aa0689007bc51632404a1893e52a0e6e9">More...</a><br/></td></tr>
 <tr class="separator:aa0689007bc51632404a1893e52a0e6e9"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:a166150541730a842f1af039e34131ea9"><td class="memItemLeft" align="right" valign="top">__device__ __forceinline__&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classcub_1_1_block_exchange.html#a166150541730a842f1af039e34131ea9">BlockExchange</a> (<a class="el" href="classcub_1_1_block_exchange.html#aa241086b8471a5b0317072798e9ef276">TempStorage</a> &amp;temp_storage, int linear_tid)</td></tr>
+<tr class="memitem:a166150541730a842f1af039e34131ea9"><td class="memItemLeft" align="right" valign="top">__device__ __forceinline__&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classcub_1_1_block_exchange.html#a166150541730a842f1af039e34131ea9">BlockExchange</a> (<a class="el" href="structcub_1_1_block_exchange_1_1_temp_storage.html">TempStorage</a> &amp;temp_storage, int linear_tid)</td></tr>
 <tr class="memdesc:a166150541730a842f1af039e34131ea9"><td class="mdescLeft">&#160;</td><td class="mdescRight">Collective constructor using the specified memory allocation as temporary storage. Each thread is identified using the supplied linear thread identifier.  <a href="#a166150541730a842f1af039e34131ea9">More...</a><br/></td></tr>
 <tr class="separator:a166150541730a842f1af039e34131ea9"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr><td colspan="2"><div class="groupHeader">Structured exchanges</div></td></tr>
@@ -216,7 +214,7 @@ template&lt;typename T , int BLOCK_THREADS, int ITEMS_PER_THREAD, bool WARP_TIME
         <tr>
           <td class="memname">__device__ __forceinline__ <a class="el" href="classcub_1_1_block_exchange.html">cub::BlockExchange</a>&lt; T, BLOCK_THREADS, ITEMS_PER_THREAD, WARP_TIME_SLICING &gt;::<a class="el" href="classcub_1_1_block_exchange.html">BlockExchange</a> </td>
           <td>(</td>
-          <td class="paramtype"><a class="el" href="classcub_1_1_block_exchange.html#aa241086b8471a5b0317072798e9ef276">TempStorage</a> &amp;&#160;</td>
+          <td class="paramtype"><a class="el" href="structcub_1_1_block_exchange_1_1_temp_storage.html">TempStorage</a> &amp;&#160;</td>
           <td class="paramname"><em>temp_storage</em>)</td><td></td>
           <td></td>
         </tr>
@@ -231,7 +229,7 @@ template&lt;typename T , int BLOCK_THREADS, int ITEMS_PER_THREAD, bool WARP_TIME
 <p>Collective constructor for 1D thread blocks using the specified memory allocation as temporary storage. Threads are identified using <code>threadIdx.x</code>. </p>
 <dl class="params"><dt>Parameters</dt><dd>
   <table class="params">
-    <tr><td class="paramdir">[in]</td><td class="paramname">temp_storage</td><td>Reference to memory allocation having layout type TempStorage </td></tr>
+    <tr><td class="paramdir">[in]</td><td class="paramname">temp_storage</td><td>Reference to memory allocation having layout type <a class="el" href="structcub_1_1_block_exchange_1_1_temp_storage.html" title="The operations exposed by BlockExchange require a temporary memory allocation of this nested type for...">TempStorage</a> </td></tr>
   </table>
   </dd>
 </dl>
@@ -284,7 +282,7 @@ template&lt;typename T , int BLOCK_THREADS, int ITEMS_PER_THREAD, bool WARP_TIME
         <tr>
           <td class="memname">__device__ __forceinline__ <a class="el" href="classcub_1_1_block_exchange.html">cub::BlockExchange</a>&lt; T, BLOCK_THREADS, ITEMS_PER_THREAD, WARP_TIME_SLICING &gt;::<a class="el" href="classcub_1_1_block_exchange.html">BlockExchange</a> </td>
           <td>(</td>
-          <td class="paramtype"><a class="el" href="classcub_1_1_block_exchange.html#aa241086b8471a5b0317072798e9ef276">TempStorage</a> &amp;&#160;</td>
+          <td class="paramtype"><a class="el" href="structcub_1_1_block_exchange_1_1_temp_storage.html">TempStorage</a> &amp;&#160;</td>
           <td class="paramname"><em>temp_storage</em>, </td>
         </tr>
         <tr>
@@ -309,7 +307,7 @@ template&lt;typename T , int BLOCK_THREADS, int ITEMS_PER_THREAD, bool WARP_TIME
 <p>Collective constructor using the specified memory allocation as temporary storage. Each thread is identified using the supplied linear thread identifier. </p>
 <dl class="params"><dt>Parameters</dt><dd>
   <table class="params">
-    <tr><td class="paramdir">[in]</td><td class="paramname">temp_storage</td><td>Reference to memory allocation having layout type TempStorage </td></tr>
+    <tr><td class="paramdir">[in]</td><td class="paramname">temp_storage</td><td>Reference to memory allocation having layout type <a class="el" href="structcub_1_1_block_exchange_1_1_temp_storage.html" title="The operations exposed by BlockExchange require a temporary memory allocation of this nested type for...">TempStorage</a> </td></tr>
     <tr><td class="paramdir">[in]</td><td class="paramname">linear_tid</td><td><b>[optional]</b> A suitable 1D thread-identifier for the calling thread (e.g., <code>(threadIdx.y * blockDim.x) + linear_tid</code> for 2D thread blocks) </td></tr>
   </table>
   </dd>
@@ -353,7 +351,7 @@ template&lt;typename T , int BLOCK_THREADS, int ITEMS_PER_THREAD, bool WARP_TIME
 <div class="line">    <span class="keyword">typedef</span> <a class="code" href="classcub_1_1_block_exchange.html" title="The BlockExchange class provides collective methods for rearranging data partitioned across a CUDA th...">cub::BlockExchange&lt;int, 128, 4&gt;</a> <a class="code" href="classcub_1_1_block_exchange.html#a31f5a889713220dfe21669a4865f3f4e" title="Collective constructor for 1D thread blocks using a private static allocation of shared memory as tem...">BlockExchange</a>;</div>
 <div class="line"></div>
 <div class="line">    <span class="comment">// Allocate shared memory for BlockExchange</span></div>
-<div class="line">    __shared__ <span class="keyword">typename</span> <a class="code" href="classcub_1_1_block_exchange.html#aa241086b8471a5b0317072798e9ef276" title="The operations exposed by BlockExchange require a temporary memory allocation of this type for thread...">BlockExchange::TempStorage</a> temp_storage;</div>
+<div class="line">    __shared__ <span class="keyword">typename</span> BlockExchange::TempStorage temp_storage;</div>
 <div class="line"></div>
 <div class="line">    <span class="comment">// Load a tile of ordered data into a striped arrangement across block threads</span></div>
 <div class="line">    <span class="keywordtype">int</span> thread_data[4];</div>
@@ -407,7 +405,7 @@ template&lt;typename T , int BLOCK_THREADS, int ITEMS_PER_THREAD, bool WARP_TIME
 <div class="line">    <span class="keyword">typedef</span> <a class="code" href="classcub_1_1_block_exchange.html" title="The BlockExchange class provides collective methods for rearranging data partitioned across a CUDA th...">cub::BlockExchange&lt;int, 128, 4&gt;</a> <a class="code" href="classcub_1_1_block_exchange.html#a31f5a889713220dfe21669a4865f3f4e" title="Collective constructor for 1D thread blocks using a private static allocation of shared memory as tem...">BlockExchange</a>;</div>
 <div class="line"></div>
 <div class="line">    <span class="comment">// Allocate shared memory for BlockExchange</span></div>
-<div class="line">    __shared__ <span class="keyword">typename</span> <a class="code" href="classcub_1_1_block_exchange.html#aa241086b8471a5b0317072798e9ef276" title="The operations exposed by BlockExchange require a temporary memory allocation of this type for thread...">BlockExchange::TempStorage</a> temp_storage;</div>
+<div class="line">    __shared__ <span class="keyword">typename</span> BlockExchange::TempStorage temp_storage;</div>
 <div class="line"></div>
 <div class="line">    <span class="comment">// Obtain a segment of consecutive items that are blocked across threads</span></div>
 <div class="line">    <span class="keywordtype">int</span> thread_data[4];</div>
@@ -464,7 +462,7 @@ template&lt;typename T , int BLOCK_THREADS, int ITEMS_PER_THREAD, bool WARP_TIME
 <div class="line">    <span class="keyword">typedef</span> <a class="code" href="classcub_1_1_block_exchange.html" title="The BlockExchange class provides collective methods for rearranging data partitioned across a CUDA th...">cub::BlockExchange&lt;int, 128, 4&gt;</a> <a class="code" href="classcub_1_1_block_exchange.html#a31f5a889713220dfe21669a4865f3f4e" title="Collective constructor for 1D thread blocks using a private static allocation of shared memory as tem...">BlockExchange</a>;</div>
 <div class="line"></div>
 <div class="line">    <span class="comment">// Allocate shared memory for BlockExchange</span></div>
-<div class="line">    __shared__ <span class="keyword">typename</span> <a class="code" href="classcub_1_1_block_exchange.html#aa241086b8471a5b0317072798e9ef276" title="The operations exposed by BlockExchange require a temporary memory allocation of this type for thread...">BlockExchange::TempStorage</a> temp_storage;</div>
+<div class="line">    __shared__ <span class="keyword">typename</span> BlockExchange::TempStorage temp_storage;</div>
 <div class="line"></div>
 <div class="line">    <span class="comment">// Load a tile of ordered data into a warp-striped arrangement across warp threads</span></div>
 <div class="line">    <span class="keywordtype">int</span> thread_data[4];</div>
@@ -518,7 +516,7 @@ template&lt;typename T , int BLOCK_THREADS, int ITEMS_PER_THREAD, bool WARP_TIME
 <div class="line">    <span class="keyword">typedef</span> <a class="code" href="classcub_1_1_block_exchange.html" title="The BlockExchange class provides collective methods for rearranging data partitioned across a CUDA th...">cub::BlockExchange&lt;int, 128, 4&gt;</a> <a class="code" href="classcub_1_1_block_exchange.html#a31f5a889713220dfe21669a4865f3f4e" title="Collective constructor for 1D thread blocks using a private static allocation of shared memory as tem...">BlockExchange</a>;</div>
 <div class="line"></div>
 <div class="line">    <span class="comment">// Allocate shared memory for BlockExchange</span></div>
-<div class="line">    __shared__ <span class="keyword">typename</span> <a class="code" href="classcub_1_1_block_exchange.html#aa241086b8471a5b0317072798e9ef276" title="The operations exposed by BlockExchange require a temporary memory allocation of this type for thread...">BlockExchange::TempStorage</a> temp_storage;</div>
+<div class="line">    __shared__ <span class="keyword">typename</span> BlockExchange::TempStorage temp_storage;</div>
 <div class="line"></div>
 <div class="line">    <span class="comment">// Obtain a segment of consecutive items that are blocked across threads</span></div>
 <div class="line">    <span class="keywordtype">int</span> thread_data[4];</div>
@@ -639,7 +637,7 @@ template&lt;typename T , int BLOCK_THREADS, int ITEMS_PER_THREAD, bool WARP_TIME
 <!-- HTML footer for doxygen 1.8.3.1-->
 <!-- start footer part -->
 <hr class="footer"/><address class="footer"><small>
-Generated on Sat Aug 10 2013 02:18:10 for CUB by &#160;<a href="http://www.doxygen.org/index.html">
+Generated on Sat Aug 10 2013 02:43:26 for CUB by &#160;<a href="http://www.doxygen.org/index.html">
 <img class="footer" src="doxygen.png" alt="doxygen"/>
 </a> 1.8.4
 <br>

@@ -195,7 +195,7 @@ private:
 public:
 
     /// \smemstorage{WarpScan}
-    typedef Uninitialized<_TempStorage> TempStorage;
+    struct TempStorage : Uninitialized<_TempStorage> {};
 
 
     /******************************************************************//**

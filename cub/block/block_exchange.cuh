@@ -151,7 +151,7 @@ private:
 public:
 
     /// \smemstorage{BlockExchange}
-    typedef Uninitialized<_TempStorage> TempStorage;
+    struct TempStorage : Uninitialized<_TempStorage> {};
 
 private:
 
