@@ -417,7 +417,7 @@ template&lt;PtxLoadModifier MODIFIER, typename T , int ITEMS_PER_THREAD, typenam
 </div><div class="memdoc">
 
 <p>Load a linear segment of items into a blocked arrangement across the thread block using the specified cache modifier. </p>
-<p>Assumes a <a href="index.html#sec4sec4"><em>blocked arrangement</em></a> of elements across threads, where thread<sub><em>i</em></sub> owns the <em>i</em><sup>th</sup> segment of consecutively ranked items.</p>
+<p>Assumes a <a href="index.html#sec5sec4"><em>blocked arrangement</em></a> of elements across threads, where thread<sub><em>i</em></sub> owns the <em>i</em><sup>th</sup> segment of consecutively ranked items.</p>
 <dl class="tparams"><dt>Template Parameters</dt><dd>
   <table class="tparams">
     <tr><td class="paramname">MODIFIER</td><td><a class="el" href="group___io_module.html#ga023420f30fec7d4b187fc98f4fd2a55d" title="Enumeration of PTX cache-modifiers for memory load operations. ">cub::PtxLoadModifier</a> cache modifier. </td></tr>
@@ -477,7 +477,7 @@ template&lt;PtxLoadModifier MODIFIER, typename T , int ITEMS_PER_THREAD, typenam
 </div><div class="memdoc">
 
 <p>Load a linear segment of items into a blocked arrangement across the thread block using the specified cache modifier, guarded by range. </p>
-<p>Assumes a <a href="index.html#sec4sec4"><em>blocked arrangement</em></a> of elements across threads, where thread<sub><em>i</em></sub> owns the <em>i</em><sup>th</sup> segment of consecutively ranked items.</p>
+<p>Assumes a <a href="index.html#sec5sec4"><em>blocked arrangement</em></a> of elements across threads, where thread<sub><em>i</em></sub> owns the <em>i</em><sup>th</sup> segment of consecutively ranked items.</p>
 <dl class="tparams"><dt>Template Parameters</dt><dd>
   <table class="tparams">
     <tr><td class="paramname">MODIFIER</td><td><a class="el" href="group___io_module.html#ga023420f30fec7d4b187fc98f4fd2a55d" title="Enumeration of PTX cache-modifiers for memory load operations. ">cub::PtxLoadModifier</a> cache modifier. </td></tr>
@@ -544,7 +544,7 @@ template&lt;PtxLoadModifier MODIFIER, typename T , int ITEMS_PER_THREAD, typenam
 </div><div class="memdoc">
 
 <p>Load a linear segment of items into a blocked arrangement across the thread block using the specified cache modifier, guarded by range, with a fall-back assignment of out-of-bound elements.. </p>
-<p>Assumes a <a href="index.html#sec4sec4"><em>blocked arrangement</em></a> of elements across threads, where thread<sub><em>i</em></sub> owns the <em>i</em><sup>th</sup> segment of consecutively ranked items.</p>
+<p>Assumes a <a href="index.html#sec5sec4"><em>blocked arrangement</em></a> of elements across threads, where thread<sub><em>i</em></sub> owns the <em>i</em><sup>th</sup> segment of consecutively ranked items.</p>
 <dl class="tparams"><dt>Template Parameters</dt><dd>
   <table class="tparams">
     <tr><td class="paramname">MODIFIER</td><td><a class="el" href="group___io_module.html#ga023420f30fec7d4b187fc98f4fd2a55d" title="Enumeration of PTX cache-modifiers for memory load operations. ">cub::PtxLoadModifier</a> cache modifier. </td></tr>
@@ -600,7 +600,7 @@ template&lt;PtxLoadModifier MODIFIER, int BLOCK_THREADS, typename T , int ITEMS_
 </div><div class="memdoc">
 
 <p>Load a linear segment of items into a striped arrangement across the thread block using the specified cache modifier. </p>
-<p>Assumes a <a href="index.html#sec4sec4"><em>striped arrangement</em></a> of elements across threads, where the items owned by each thread have a ranked distance of <code>BLOCK_THREADS</code> between them.</p>
+<p>Assumes a <a href="index.html#sec5sec4"><em>striped arrangement</em></a> of elements across threads, where the items owned by each thread have a ranked distance of <code>BLOCK_THREADS</code> between them.</p>
 <dl class="tparams"><dt>Template Parameters</dt><dd>
   <table class="tparams">
     <tr><td class="paramname">MODIFIER</td><td><a class="el" href="group___io_module.html#ga023420f30fec7d4b187fc98f4fd2a55d" title="Enumeration of PTX cache-modifiers for memory load operations. ">cub::PtxLoadModifier</a> cache modifier. </td></tr>
@@ -661,7 +661,7 @@ template&lt;PtxLoadModifier MODIFIER, int BLOCK_THREADS, typename T , int ITEMS_
 </div><div class="memdoc">
 
 <p>Load a linear segment of items into a striped arrangement across the thread block using the specified cache modifier, guarded by range. </p>
-<p>Assumes a <a href="index.html#sec4sec4"><em>striped arrangement</em></a> of elements across threads, where the items owned by each thread have a ranked distance of <code>BLOCK_THREADS</code> between them.</p>
+<p>Assumes a <a href="index.html#sec5sec4"><em>striped arrangement</em></a> of elements across threads, where the items owned by each thread have a ranked distance of <code>BLOCK_THREADS</code> between them.</p>
 <dl class="tparams"><dt>Template Parameters</dt><dd>
   <table class="tparams">
     <tr><td class="paramname">MODIFIER</td><td><a class="el" href="group___io_module.html#ga023420f30fec7d4b187fc98f4fd2a55d" title="Enumeration of PTX cache-modifiers for memory load operations. ">cub::PtxLoadModifier</a> cache modifier. </td></tr>
@@ -729,7 +729,7 @@ template&lt;PtxLoadModifier MODIFIER, int BLOCK_THREADS, typename T , int ITEMS_
 </div><div class="memdoc">
 
 <p>Load a linear segment of items into a striped arrangement across the thread block using the specified cache modifier, guarded by range, with a fall-back assignment of out-of-bound elements. </p>
-<p>Assumes a <a href="index.html#sec4sec4"><em>striped arrangement</em></a> of elements across threads, where the items owned by each thread have a ranked distance of <code>BLOCK_THREADS</code> between them.</p>
+<p>Assumes a <a href="index.html#sec5sec4"><em>striped arrangement</em></a> of elements across threads, where the items owned by each thread have a ranked distance of <code>BLOCK_THREADS</code> between them.</p>
 <dl class="tparams"><dt>Template Parameters</dt><dd>
   <table class="tparams">
     <tr><td class="paramname">MODIFIER</td><td><a class="el" href="group___io_module.html#ga023420f30fec7d4b187fc98f4fd2a55d" title="Enumeration of PTX cache-modifiers for memory load operations. ">cub::PtxLoadModifier</a> cache modifier. </td></tr>
@@ -972,7 +972,7 @@ template&lt;PtxLoadModifier MODIFIER, typename T , int ITEMS_PER_THREAD&gt; </di
 </div><div class="memdoc">
 
 <p>Load a linear segment of items into a blocked arrangement across the thread block using the specified cache modifier. </p>
-<p>Assumes a <a href="index.html#sec4sec4"><em>blocked arrangement</em></a> of elements across threads, where thread<sub><em>i</em></sub> owns the <em>i</em><sup>th</sup> segment of consecutively ranked items.</p>
+<p>Assumes a <a href="index.html#sec5sec4"><em>blocked arrangement</em></a> of elements across threads, where thread<sub><em>i</em></sub> owns the <em>i</em><sup>th</sup> segment of consecutively ranked items.</p>
 <p>The input offset (<code>block_ptr</code> + <code>block_offset</code>) must be quad-item aligned</p>
 <p>The following conditions will prevent vectorization and loading will fall back to <a class="el" href="namespacecub.html#a9d7e37497fdd99864c57adecda710401a2d4d8900d7e697e9dac4062e97d3d835">cub::BLOCK_LOAD_DIRECT</a>:</p>
 <ul>
@@ -1031,7 +1031,7 @@ template&lt;PtxStoreModifier MODIFIER, typename T , int ITEMS_PER_THREAD, typena
 </div><div class="memdoc">
 
 <p>Store a blocked arrangement of items across a thread block into a linear segment of items using the specified cache modifier. </p>
-<p>Assumes a <a href="index.html#sec4sec4"><em>blocked arrangement</em></a> of elements across threads, where thread<sub><em>i</em></sub> owns the <em>i</em><sup>th</sup> segment of consecutively ranked items.</p>
+<p>Assumes a <a href="index.html#sec5sec4"><em>blocked arrangement</em></a> of elements across threads, where thread<sub><em>i</em></sub> owns the <em>i</em><sup>th</sup> segment of consecutively ranked items.</p>
 <dl class="tparams"><dt>Template Parameters</dt><dd>
   <table class="tparams">
     <tr><td class="paramname">MODIFIER</td><td><a class="el" href="group___io_module.html#gae9c7d6a6af7104f528509182ac9c9da2" title="Enumeration of PTX cache-modifiers for memory store operations. ">cub::PtxStoreModifier</a> cache modifier. </td></tr>
@@ -1091,7 +1091,7 @@ template&lt;PtxStoreModifier MODIFIER, typename T , int ITEMS_PER_THREAD, typena
 </div><div class="memdoc">
 
 <p>Store a blocked arrangement of items across a thread block into a linear segment of items using the specified cache modifier, guarded by range. </p>
-<p>Assumes a <a href="index.html#sec4sec4"><em>blocked arrangement</em></a> of elements across threads, where thread<sub><em>i</em></sub> owns the <em>i</em><sup>th</sup> segment of consecutively ranked items.</p>
+<p>Assumes a <a href="index.html#sec5sec4"><em>blocked arrangement</em></a> of elements across threads, where thread<sub><em>i</em></sub> owns the <em>i</em><sup>th</sup> segment of consecutively ranked items.</p>
 <dl class="tparams"><dt>Template Parameters</dt><dd>
   <table class="tparams">
     <tr><td class="paramname">MODIFIER</td><td><a class="el" href="group___io_module.html#gae9c7d6a6af7104f528509182ac9c9da2" title="Enumeration of PTX cache-modifiers for memory store operations. ">cub::PtxStoreModifier</a> cache modifier. </td></tr>
@@ -1146,7 +1146,7 @@ template&lt;PtxStoreModifier MODIFIER, int BLOCK_THREADS, typename T , int ITEMS
 </div><div class="memdoc">
 
 <p>Store a striped arrangement of data across the thread block into a linear segment of items using the specified cache modifier. </p>
-<p>Assumes a <a href="index.html#sec4sec4"><em>striped arrangement</em></a> of elements across threads, where the items owned by each thread have a ranked distance of <code>BLOCK_THREADS</code> between them.</p>
+<p>Assumes a <a href="index.html#sec5sec4"><em>striped arrangement</em></a> of elements across threads, where the items owned by each thread have a ranked distance of <code>BLOCK_THREADS</code> between them.</p>
 <dl class="tparams"><dt>Template Parameters</dt><dd>
   <table class="tparams">
     <tr><td class="paramname">MODIFIER</td><td><a class="el" href="group___io_module.html#gae9c7d6a6af7104f528509182ac9c9da2" title="Enumeration of PTX cache-modifiers for memory store operations. ">cub::PtxStoreModifier</a> cache modifier. </td></tr>
@@ -1207,7 +1207,7 @@ template&lt;PtxStoreModifier MODIFIER, int BLOCK_THREADS, typename T , int ITEMS
 </div><div class="memdoc">
 
 <p>Store a striped arrangement of data across the thread block into a linear segment of items using the specified cache modifier, guarded by range. </p>
-<p>Assumes a <a href="index.html#sec4sec4"><em>striped arrangement</em></a> of elements across threads, where the items owned by each thread have a ranked distance of <code>BLOCK_THREADS</code> between them.</p>
+<p>Assumes a <a href="index.html#sec5sec4"><em>striped arrangement</em></a> of elements across threads, where the items owned by each thread have a ranked distance of <code>BLOCK_THREADS</code> between them.</p>
 <dl class="tparams"><dt>Template Parameters</dt><dd>
   <table class="tparams">
     <tr><td class="paramname">MODIFIER</td><td><a class="el" href="group___io_module.html#gae9c7d6a6af7104f528509182ac9c9da2" title="Enumeration of PTX cache-modifiers for memory store operations. ">cub::PtxStoreModifier</a> cache modifier. </td></tr>
@@ -1380,7 +1380,7 @@ template&lt;PtxStoreModifier MODIFIER, typename T , int ITEMS_PER_THREAD&gt; </d
 </div><div class="memdoc">
 
 <p>Store a blocked arrangement of items across a thread block into a linear segment of items using the specified cache modifier. </p>
-<p>Assumes a <a href="index.html#sec4sec4"><em>blocked arrangement</em></a> of elements across threads, where thread<sub><em>i</em></sub> owns the <em>i</em><sup>th</sup> segment of consecutively ranked items.</p>
+<p>Assumes a <a href="index.html#sec5sec4"><em>blocked arrangement</em></a> of elements across threads, where thread<sub><em>i</em></sub> owns the <em>i</em><sup>th</sup> segment of consecutively ranked items.</p>
 <p>The output offset (<code>block_ptr</code> + <code>block_offset</code>) must be quad-item aligned, which is the default starting offset returned by <code>cudaMalloc()</code> </p>
 <dl class="section user"><dt></dt><dd>The following conditions will prevent vectorization and storing will fall back to <a class="el" href="namespacecub.html#a839b145451e9eec3d44172e3c3619700a9b8dcc7b6b06bcfc24af4f499523b880">cub::BLOCK_STORE_DIRECT</a>:<ul>
 <li><code>ITEMS_PER_THREAD</code> is odd</li>
@@ -1410,7 +1410,7 @@ template&lt;PtxStoreModifier MODIFIER, typename T , int ITEMS_PER_THREAD&gt; </d
 <!-- HTML footer for doxygen 1.8.3.1-->
 <!-- start footer part -->
 <hr class="footer"/><address class="footer"><small>
-Generated on Fri Aug 9 2013 11:22:29 for CUB by &#160;<a href="http://www.doxygen.org/index.html">
+Generated on Fri Aug 9 2013 23:19:55 for CUB by &#160;<a href="http://www.doxygen.org/index.html">
 <img class="footer" src="doxygen.png" alt="doxygen"/>
 </a> 1.8.4
 <br>
