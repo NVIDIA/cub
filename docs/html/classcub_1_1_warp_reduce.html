@@ -97,7 +97,7 @@ var searchBox = new SearchBox("searchBox", "search",false,'Search');
 </div><!-- top -->
 <div class="header">
   <div class="summary">
-<a href="#pub-types">Public Types</a> &#124;
+<a href="#nested-classes">Classes</a> &#124;
 <a href="classcub_1_1_warp_reduce-members.html">List of all members</a>  </div>
   <div class="headertitle">
 <div class="title">cub::WarpReduce&lt; T, LOGICAL_WARPS, LOGICAL_WARP_THREADS &gt; Class Template Reference<div class="ingroups"><a class="el" href="group___warp_module.html">Warp-wide</a></div></div>  </div>
@@ -134,7 +134,7 @@ class cub::WarpReduce&lt; T, LOGICAL_WARPS, LOGICAL_WARP_THREADS &gt;</h3>
 <div class="line">    <span class="keyword">typedef</span> <a class="code" href="classcub_1_1_warp_reduce.html" title="The WarpReduce class provides collective methods for computing a parallel reduction of items partitio...">cub::WarpReduce&lt;int, 4&gt;</a> <a class="code" href="classcub_1_1_warp_reduce.html#aed6c8ead3a4c2fa56ae1d5851fb36848" title="Collective constructor for 1D thread blocks using a private static allocation of shared memory as tem...">WarpReduce</a>;</div>
 <div class="line"></div>
 <div class="line">    <span class="comment">// Allocate shared memory for WarpReduce</span></div>
-<div class="line">    __shared__ <span class="keyword">typename</span> <a class="code" href="classcub_1_1_warp_reduce.html#a65bf3aa0b8c50e7128c957e4d75dad24" title="The operations exposed by WarpReduce require a temporary memory allocation of this type for thread co...">WarpReduce::TempStorage</a> temp_storage;</div>
+<div class="line">    __shared__ <span class="keyword">typename</span> WarpReduce::TempStorage temp_storage;</div>
 <div class="line"></div>
 <div class="line">    <span class="comment">// Obtain one input item per thread</span></div>
 <div class="line">    <span class="keywordtype">int</span> thread_data = ...</div>
@@ -152,7 +152,7 @@ class cub::WarpReduce&lt; T, LOGICAL_WARPS, LOGICAL_WARP_THREADS &gt;</h3>
 <div class="line">    <span class="keyword">typedef</span> <a class="code" href="classcub_1_1_warp_reduce.html" title="The WarpReduce class provides collective methods for computing a parallel reduction of items partitio...">cub::WarpReduce&lt;int, 1&gt;</a> <a class="code" href="classcub_1_1_warp_reduce.html#aed6c8ead3a4c2fa56ae1d5851fb36848" title="Collective constructor for 1D thread blocks using a private static allocation of shared memory as tem...">WarpReduce</a>;</div>
 <div class="line"></div>
 <div class="line">    <span class="comment">// Allocate shared memory for WarpReduce</span></div>
-<div class="line">    __shared__ <span class="keyword">typename</span> <a class="code" href="classcub_1_1_warp_reduce.html#a65bf3aa0b8c50e7128c957e4d75dad24" title="The operations exposed by WarpReduce require a temporary memory allocation of this type for thread co...">WarpReduce::TempStorage</a> temp_storage;</div>
+<div class="line">    __shared__ <span class="keyword">typename</span> WarpReduce::TempStorage temp_storage;</div>
 <div class="line">    ...</div>
 <div class="line"></div>
 <div class="line">    <span class="comment">// Only the first warp performs a reduction</span></div>
@@ -180,13 +180,11 @@ class cub::WarpReduce&lt; T, LOGICAL_WARPS, LOGICAL_WARP_THREADS &gt;</h3>
 </ul>
 </dd></dl>
 </div><table class="memberdecls">
-<tr class="heading"><td colspan="2"><h2 class="groupheader"><a name="pub-types"></a>
-Public Types</h2></td></tr>
-<tr class="memitem:a65bf3aa0b8c50e7128c957e4d75dad24"><td class="memItemLeft" align="right" valign="top"><a class="anchor" id="a65bf3aa0b8c50e7128c957e4d75dad24"></a>
-typedef <a class="el" href="structcub_1_1_uninitialized.html">Uninitialized</a><br class="typebreak"/>
-&lt; _TempStorage &gt;&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classcub_1_1_warp_reduce.html#a65bf3aa0b8c50e7128c957e4d75dad24">TempStorage</a></td></tr>
-<tr class="memdesc:a65bf3aa0b8c50e7128c957e4d75dad24"><td class="mdescLeft">&#160;</td><td class="mdescRight">The operations exposed by <a class="el" href="classcub_1_1_warp_reduce.html" title="The WarpReduce class provides collective methods for computing a parallel reduction of items partitio...">WarpReduce</a> require a temporary memory allocation of this type for thread communication. This opaque storage can be allocated directly using the <code>__shared__</code> keyword. Alternatively, it can be aliased to externally allocated memory (shared or global) or <code>union</code>'d with other storage allocation types to facilitate memory reuse. <br/></td></tr>
-<tr class="separator:a65bf3aa0b8c50e7128c957e4d75dad24"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="heading"><td colspan="2"><h2 class="groupheader"><a name="nested-classes"></a>
+Classes</h2></td></tr>
+<tr class="memitem:"><td class="memItemLeft" align="right" valign="top">struct &#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="structcub_1_1_warp_reduce_1_1_temp_storage.html">TempStorage</a></td></tr>
+<tr class="memdesc:"><td class="mdescLeft">&#160;</td><td class="mdescRight">The operations exposed by <a class="el" href="classcub_1_1_warp_reduce.html" title="The WarpReduce class provides collective methods for computing a parallel reduction of items partitio...">WarpReduce</a> require a temporary memory allocation of this type for thread communication. This opaque storage can be allocated directly using the <code>__shared__</code> keyword. Alternatively, it can be aliased to externally allocated memory (shared or global) or <code>union</code>'d with other storage allocation types to facilitate memory reuse.  <a href="structcub_1_1_warp_reduce_1_1_temp_storage.html#details">More...</a><br/></td></tr>
+<tr class="separator:"><td class="memSeparator" colspan="2">&#160;</td></tr>
 </table><table class="memberdecls">
 <tr class="heading"><td colspan="2"><h2 class="groupheader"><a name="pub-methods"></a>
 Public Methods</h2></td></tr>
@@ -195,13 +193,13 @@ Public Methods</h2></td></tr>
 __device__ __forceinline__&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classcub_1_1_warp_reduce.html#aed6c8ead3a4c2fa56ae1d5851fb36848">WarpReduce</a> ()</td></tr>
 <tr class="memdesc:aed6c8ead3a4c2fa56ae1d5851fb36848"><td class="mdescLeft">&#160;</td><td class="mdescRight">Collective constructor for 1D thread blocks using a private static allocation of shared memory as temporary storage. Logical warp and lane identifiers are constructed from <code>threadIdx.x</code>. <br/></td></tr>
 <tr class="separator:aed6c8ead3a4c2fa56ae1d5851fb36848"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:a7e026682e53d5af519912ab9a9215e3b"><td class="memItemLeft" align="right" valign="top">__device__ __forceinline__&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classcub_1_1_warp_reduce.html#a7e026682e53d5af519912ab9a9215e3b">WarpReduce</a> (<a class="el" href="classcub_1_1_warp_reduce.html#a65bf3aa0b8c50e7128c957e4d75dad24">TempStorage</a> &amp;temp_storage)</td></tr>
+<tr class="memitem:a7e026682e53d5af519912ab9a9215e3b"><td class="memItemLeft" align="right" valign="top">__device__ __forceinline__&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classcub_1_1_warp_reduce.html#a7e026682e53d5af519912ab9a9215e3b">WarpReduce</a> (<a class="el" href="structcub_1_1_warp_reduce_1_1_temp_storage.html">TempStorage</a> &amp;temp_storage)</td></tr>
 <tr class="memdesc:a7e026682e53d5af519912ab9a9215e3b"><td class="mdescLeft">&#160;</td><td class="mdescRight">Collective constructor for 1D thread blocks using the specified memory allocation as temporary storage. Logical warp and lane identifiers are constructed from <code>threadIdx.x</code>.  <a href="#a7e026682e53d5af519912ab9a9215e3b">More...</a><br/></td></tr>
 <tr class="separator:a7e026682e53d5af519912ab9a9215e3b"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:aef629abf014a0f1f9646d3b9123fcaa6"><td class="memItemLeft" align="right" valign="top">__device__ __forceinline__&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classcub_1_1_warp_reduce.html#aef629abf014a0f1f9646d3b9123fcaa6">WarpReduce</a> (int warp_id, int lane_id)</td></tr>
 <tr class="memdesc:aef629abf014a0f1f9646d3b9123fcaa6"><td class="mdescLeft">&#160;</td><td class="mdescRight">Collective constructor using a private static allocation of shared memory as temporary storage. Threads are identified using the given warp and lane identifiers.  <a href="#aef629abf014a0f1f9646d3b9123fcaa6">More...</a><br/></td></tr>
 <tr class="separator:aef629abf014a0f1f9646d3b9123fcaa6"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:aac44f5e8003911f074156366969947e4"><td class="memItemLeft" align="right" valign="top">__device__ __forceinline__&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classcub_1_1_warp_reduce.html#aac44f5e8003911f074156366969947e4">WarpReduce</a> (<a class="el" href="classcub_1_1_warp_reduce.html#a65bf3aa0b8c50e7128c957e4d75dad24">TempStorage</a> &amp;temp_storage, int warp_id, int lane_id)</td></tr>
+<tr class="memitem:aac44f5e8003911f074156366969947e4"><td class="memItemLeft" align="right" valign="top">__device__ __forceinline__&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classcub_1_1_warp_reduce.html#aac44f5e8003911f074156366969947e4">WarpReduce</a> (<a class="el" href="structcub_1_1_warp_reduce_1_1_temp_storage.html">TempStorage</a> &amp;temp_storage, int warp_id, int lane_id)</td></tr>
 <tr class="memdesc:aac44f5e8003911f074156366969947e4"><td class="mdescLeft">&#160;</td><td class="mdescRight">Collective constructor using the specified memory allocation as temporary storage. Threads are identified using the given warp and lane identifiers.  <a href="#aac44f5e8003911f074156366969947e4">More...</a><br/></td></tr>
 <tr class="separator:aac44f5e8003911f074156366969947e4"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr><td colspan="2"><div class="groupHeader">Summation reductions</div></td></tr>
@@ -250,7 +248,7 @@ template&lt;typename T , int LOGICAL_WARPS = 1, int LOGICAL_WARP_THREADS = PtxAr
         <tr>
           <td class="memname">__device__ __forceinline__ <a class="el" href="classcub_1_1_warp_reduce.html">cub::WarpReduce</a>&lt; T, LOGICAL_WARPS, LOGICAL_WARP_THREADS &gt;::<a class="el" href="classcub_1_1_warp_reduce.html">WarpReduce</a> </td>
           <td>(</td>
-          <td class="paramtype"><a class="el" href="classcub_1_1_warp_reduce.html#a65bf3aa0b8c50e7128c957e4d75dad24">TempStorage</a> &amp;&#160;</td>
+          <td class="paramtype"><a class="el" href="structcub_1_1_warp_reduce_1_1_temp_storage.html">TempStorage</a> &amp;&#160;</td>
           <td class="paramname"><em>temp_storage</em>)</td><td></td>
           <td></td>
         </tr>
@@ -265,7 +263,7 @@ template&lt;typename T , int LOGICAL_WARPS = 1, int LOGICAL_WARP_THREADS = PtxAr
 <p>Collective constructor for 1D thread blocks using the specified memory allocation as temporary storage. Logical warp and lane identifiers are constructed from <code>threadIdx.x</code>. </p>
 <dl class="params"><dt>Parameters</dt><dd>
   <table class="params">
-    <tr><td class="paramdir">[in]</td><td class="paramname">temp_storage</td><td>Reference to memory allocation having layout type TempStorage </td></tr>
+    <tr><td class="paramdir">[in]</td><td class="paramname">temp_storage</td><td>Reference to memory allocation having layout type <a class="el" href="structcub_1_1_warp_reduce_1_1_temp_storage.html" title="The operations exposed by WarpReduce require a temporary memory allocation of this type for thread co...">TempStorage</a> </td></tr>
   </table>
   </dd>
 </dl>
@@ -329,7 +327,7 @@ template&lt;typename T , int LOGICAL_WARPS = 1, int LOGICAL_WARP_THREADS = PtxAr
         <tr>
           <td class="memname">__device__ __forceinline__ <a class="el" href="classcub_1_1_warp_reduce.html">cub::WarpReduce</a>&lt; T, LOGICAL_WARPS, LOGICAL_WARP_THREADS &gt;::<a class="el" href="classcub_1_1_warp_reduce.html">WarpReduce</a> </td>
           <td>(</td>
-          <td class="paramtype"><a class="el" href="classcub_1_1_warp_reduce.html#a65bf3aa0b8c50e7128c957e4d75dad24">TempStorage</a> &amp;&#160;</td>
+          <td class="paramtype"><a class="el" href="structcub_1_1_warp_reduce_1_1_temp_storage.html">TempStorage</a> &amp;&#160;</td>
           <td class="paramname"><em>temp_storage</em>, </td>
         </tr>
         <tr>
@@ -360,7 +358,7 @@ template&lt;typename T , int LOGICAL_WARPS = 1, int LOGICAL_WARP_THREADS = PtxAr
 <p>Collective constructor using the specified memory allocation as temporary storage. Threads are identified using the given warp and lane identifiers. </p>
 <dl class="params"><dt>Parameters</dt><dd>
   <table class="params">
-    <tr><td class="paramdir">[in]</td><td class="paramname">temp_storage</td><td>Reference to memory allocation having layout type TempStorage </td></tr>
+    <tr><td class="paramdir">[in]</td><td class="paramname">temp_storage</td><td>Reference to memory allocation having layout type <a class="el" href="structcub_1_1_warp_reduce_1_1_temp_storage.html" title="The operations exposed by WarpReduce require a temporary memory allocation of this type for thread co...">TempStorage</a> </td></tr>
     <tr><td class="paramdir">[in]</td><td class="paramname">warp_id</td><td>A suitable warp membership identifier </td></tr>
     <tr><td class="paramdir">[in]</td><td class="paramname">lane_id</td><td>A lane identifier within the warp </td></tr>
   </table>
@@ -405,7 +403,7 @@ template&lt;typename T , int LOGICAL_WARPS = 1, int LOGICAL_WARP_THREADS = PtxAr
 <div class="line">    <span class="keyword">typedef</span> <a class="code" href="classcub_1_1_warp_reduce.html" title="The WarpReduce class provides collective methods for computing a parallel reduction of items partitio...">cub::WarpReduce&lt;int, 4&gt;</a> <a class="code" href="classcub_1_1_warp_reduce.html#aed6c8ead3a4c2fa56ae1d5851fb36848" title="Collective constructor for 1D thread blocks using a private static allocation of shared memory as tem...">WarpReduce</a>;</div>
 <div class="line"></div>
 <div class="line">    <span class="comment">// Allocate shared memory for WarpReduce</span></div>
-<div class="line">    __shared__ <span class="keyword">typename</span> <a class="code" href="classcub_1_1_warp_reduce.html#a65bf3aa0b8c50e7128c957e4d75dad24" title="The operations exposed by WarpReduce require a temporary memory allocation of this type for thread co...">WarpReduce::TempStorage</a> temp_storage;</div>
+<div class="line">    __shared__ <span class="keyword">typename</span> WarpReduce::TempStorage temp_storage;</div>
 <div class="line"></div>
 <div class="line">    <span class="comment">// Obtain one input item per thread</span></div>
 <div class="line">    <span class="keywordtype">int</span> thread_data = ...</div>
@@ -469,7 +467,7 @@ template&lt;typename T , int LOGICAL_WARPS = 1, int LOGICAL_WARP_THREADS = PtxAr
 <div class="line">    <span class="keyword">typedef</span> <a class="code" href="classcub_1_1_warp_reduce.html" title="The WarpReduce class provides collective methods for computing a parallel reduction of items partitio...">cub::WarpReduce&lt;int, 1&gt;</a> <a class="code" href="classcub_1_1_warp_reduce.html#aed6c8ead3a4c2fa56ae1d5851fb36848" title="Collective constructor for 1D thread blocks using a private static allocation of shared memory as tem...">WarpReduce</a>;</div>
 <div class="line"></div>
 <div class="line">    <span class="comment">// Allocate shared memory for WarpReduce</span></div>
-<div class="line">    __shared__ <span class="keyword">typename</span> <a class="code" href="classcub_1_1_warp_reduce.html#a65bf3aa0b8c50e7128c957e4d75dad24" title="The operations exposed by WarpReduce require a temporary memory allocation of this type for thread co...">WarpReduce::TempStorage</a> temp_storage;</div>
+<div class="line">    __shared__ <span class="keyword">typename</span> WarpReduce::TempStorage temp_storage;</div>
 <div class="line"></div>
 <div class="line">    <span class="comment">// Obtain one input item per thread if in range</span></div>
 <div class="line">    <span class="keywordtype">int</span> thread_data;</div>
@@ -538,7 +536,7 @@ template&lt;typename Flag &gt; </div>
 <div class="line">    <span class="keyword">typedef</span> <a class="code" href="classcub_1_1_warp_reduce.html" title="The WarpReduce class provides collective methods for computing a parallel reduction of items partitio...">cub::WarpReduce&lt;int, 1&gt;</a> <a class="code" href="classcub_1_1_warp_reduce.html#aed6c8ead3a4c2fa56ae1d5851fb36848" title="Collective constructor for 1D thread blocks using a private static allocation of shared memory as tem...">WarpReduce</a>;</div>
 <div class="line"></div>
 <div class="line">    <span class="comment">// Allocate shared memory for WarpReduce</span></div>
-<div class="line">    __shared__ <span class="keyword">typename</span> <a class="code" href="classcub_1_1_warp_reduce.html#a65bf3aa0b8c50e7128c957e4d75dad24" title="The operations exposed by WarpReduce require a temporary memory allocation of this type for thread co...">WarpReduce::TempStorage</a> temp_storage;</div>
+<div class="line">    __shared__ <span class="keyword">typename</span> WarpReduce::TempStorage temp_storage;</div>
 <div class="line"></div>
 <div class="line">    <span class="comment">// Obtain one input item and flag per thread</span></div>
 <div class="line">    <span class="keywordtype">int</span> thread_data = ...</div>
@@ -612,7 +610,7 @@ template&lt;typename Flag &gt; </div>
 <div class="line">    <span class="keyword">typedef</span> <a class="code" href="classcub_1_1_warp_reduce.html" title="The WarpReduce class provides collective methods for computing a parallel reduction of items partitio...">cub::WarpReduce&lt;int, 1&gt;</a> <a class="code" href="classcub_1_1_warp_reduce.html#aed6c8ead3a4c2fa56ae1d5851fb36848" title="Collective constructor for 1D thread blocks using a private static allocation of shared memory as tem...">WarpReduce</a>;</div>
 <div class="line"></div>
 <div class="line">    <span class="comment">// Allocate shared memory for WarpReduce</span></div>
-<div class="line">    __shared__ <span class="keyword">typename</span> <a class="code" href="classcub_1_1_warp_reduce.html#a65bf3aa0b8c50e7128c957e4d75dad24" title="The operations exposed by WarpReduce require a temporary memory allocation of this type for thread co...">WarpReduce::TempStorage</a> temp_storage;</div>
+<div class="line">    __shared__ <span class="keyword">typename</span> WarpReduce::TempStorage temp_storage;</div>
 <div class="line"></div>
 <div class="line">    <span class="comment">// Obtain one input item and flag per thread</span></div>
 <div class="line">    <span class="keywordtype">int</span> thread_data = ...</div>
@@ -687,7 +685,7 @@ template&lt;typename ReductionOp &gt; </div>
 <div class="line">    <span class="keyword">typedef</span> <a class="code" href="classcub_1_1_warp_reduce.html" title="The WarpReduce class provides collective methods for computing a parallel reduction of items partitio...">cub::WarpReduce&lt;int, 4&gt;</a> <a class="code" href="classcub_1_1_warp_reduce.html#aed6c8ead3a4c2fa56ae1d5851fb36848" title="Collective constructor for 1D thread blocks using a private static allocation of shared memory as tem...">WarpReduce</a>;</div>
 <div class="line"></div>
 <div class="line">    <span class="comment">// Allocate shared memory for WarpReduce</span></div>
-<div class="line">    __shared__ <span class="keyword">typename</span> <a class="code" href="classcub_1_1_warp_reduce.html#a65bf3aa0b8c50e7128c957e4d75dad24" title="The operations exposed by WarpReduce require a temporary memory allocation of this type for thread co...">WarpReduce::TempStorage</a> temp_storage;</div>
+<div class="line">    __shared__ <span class="keyword">typename</span> WarpReduce::TempStorage temp_storage;</div>
 <div class="line"></div>
 <div class="line">    <span class="comment">// Obtain one input item per thread</span></div>
 <div class="line">    <span class="keywordtype">int</span> thread_data = ...</div>
@@ -768,7 +766,7 @@ template&lt;typename ReductionOp &gt; </div>
 <div class="line">    <span class="keyword">typedef</span> <a class="code" href="classcub_1_1_warp_reduce.html" title="The WarpReduce class provides collective methods for computing a parallel reduction of items partitio...">cub::WarpReduce&lt;int, 1&gt;</a> <a class="code" href="classcub_1_1_warp_reduce.html#aed6c8ead3a4c2fa56ae1d5851fb36848" title="Collective constructor for 1D thread blocks using a private static allocation of shared memory as tem...">WarpReduce</a>;</div>
 <div class="line"></div>
 <div class="line">    <span class="comment">// Allocate shared memory for WarpReduce</span></div>
-<div class="line">    __shared__ <span class="keyword">typename</span> <a class="code" href="classcub_1_1_warp_reduce.html#a65bf3aa0b8c50e7128c957e4d75dad24" title="The operations exposed by WarpReduce require a temporary memory allocation of this type for thread co...">WarpReduce::TempStorage</a> temp_storage;</div>
+<div class="line">    __shared__ <span class="keyword">typename</span> WarpReduce::TempStorage temp_storage;</div>
 <div class="line"></div>
 <div class="line">    <span class="comment">// Obtain one input item per thread if in range</span></div>
 <div class="line">    <span class="keywordtype">int</span> thread_data;</div>
@@ -851,7 +849,7 @@ template&lt;typename ReductionOp , typename Flag &gt; </div>
 <div class="line">    <span class="keyword">typedef</span> <a class="code" href="classcub_1_1_warp_reduce.html" title="The WarpReduce class provides collective methods for computing a parallel reduction of items partitio...">cub::WarpReduce&lt;int, 1&gt;</a> <a class="code" href="classcub_1_1_warp_reduce.html#aed6c8ead3a4c2fa56ae1d5851fb36848" title="Collective constructor for 1D thread blocks using a private static allocation of shared memory as tem...">WarpReduce</a>;</div>
 <div class="line"></div>
 <div class="line">    <span class="comment">// Allocate shared memory for WarpReduce</span></div>
-<div class="line">    __shared__ <span class="keyword">typename</span> <a class="code" href="classcub_1_1_warp_reduce.html#a65bf3aa0b8c50e7128c957e4d75dad24" title="The operations exposed by WarpReduce require a temporary memory allocation of this type for thread co...">WarpReduce::TempStorage</a> temp_storage;</div>
+<div class="line">    __shared__ <span class="keyword">typename</span> WarpReduce::TempStorage temp_storage;</div>
 <div class="line"></div>
 <div class="line">    <span class="comment">// Obtain one input item and flag per thread</span></div>
 <div class="line">    <span class="keywordtype">int</span> thread_data = ...</div>
@@ -933,7 +931,7 @@ template&lt;typename ReductionOp , typename Flag &gt; </div>
 <div class="line">    <span class="keyword">typedef</span> <a class="code" href="classcub_1_1_warp_reduce.html" title="The WarpReduce class provides collective methods for computing a parallel reduction of items partitio...">cub::WarpReduce&lt;int, 1&gt;</a> <a class="code" href="classcub_1_1_warp_reduce.html#aed6c8ead3a4c2fa56ae1d5851fb36848" title="Collective constructor for 1D thread blocks using a private static allocation of shared memory as tem...">WarpReduce</a>;</div>
 <div class="line"></div>
 <div class="line">    <span class="comment">// Allocate shared memory for WarpReduce</span></div>
-<div class="line">    __shared__ <span class="keyword">typename</span> <a class="code" href="classcub_1_1_warp_reduce.html#a65bf3aa0b8c50e7128c957e4d75dad24" title="The operations exposed by WarpReduce require a temporary memory allocation of this type for thread co...">WarpReduce::TempStorage</a> temp_storage;</div>
+<div class="line">    __shared__ <span class="keyword">typename</span> WarpReduce::TempStorage temp_storage;</div>
 <div class="line"></div>
 <div class="line">    <span class="comment">// Obtain one input item and flag per thread</span></div>
 <div class="line">    <span class="keywordtype">int</span> thread_data = ...</div>
@@ -968,7 +966,7 @@ template&lt;typename ReductionOp , typename Flag &gt; </div>
 <!-- HTML footer for doxygen 1.8.3.1-->
 <!-- start footer part -->
 <hr class="footer"/><address class="footer"><small>
-Generated on Sat Aug 10 2013 02:18:11 for CUB by &#160;<a href="http://www.doxygen.org/index.html">
+Generated on Sat Aug 10 2013 02:31:02 for CUB by &#160;<a href="http://www.doxygen.org/index.html">
 <img class="footer" src="doxygen.png" alt="doxygen"/>
 </a> 1.8.4
 <br>

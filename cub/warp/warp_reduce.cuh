@@ -198,7 +198,7 @@ private:
 public:
 
     /// \smemstorage{WarpReduce}
-    typedef Uninitialized<_TempStorage> TempStorage;
+    struct TempStorage : Uninitialized<_TempStorage> {};
 
 
     /******************************************************************//**
