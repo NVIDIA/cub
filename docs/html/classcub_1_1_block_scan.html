@@ -130,7 +130,7 @@ class cub::BlockScan&lt; T, BLOCK_THREADS, ALGORITHM &gt;</h3>
   </dd>
 </dl>
 <dl class="section user"><dt>A Simple Example</dt><dd>Every thread in the block uses the <a class="el" href="classcub_1_1_block_scan.html" title="The BlockScan class provides collective methods for computing a parallel prefix sum/scan of items par...">BlockScan</a> class by first specializing the <a class="el" href="classcub_1_1_block_scan.html" title="The BlockScan class provides collective methods for computing a parallel prefix sum/scan of items par...">BlockScan</a> type, then instantiating an instance with parameters for communication, and finally invoking collective member functions. </dd></dl>
-<dl class="section user"><dt></dt><dd>The code snippet below illustrates an exclusive prefix sum of 512 integer items that are partitioned in a <a href="index.html#sec4sec4"><em>blocked arrangement</em></a> across 128 threads where each thread owns 4 consecutive items. </dd></dl>
+<dl class="section user"><dt></dt><dd>The code snippet below illustrates an exclusive prefix sum of 512 integer items that are partitioned in a <a href="index.html#sec5sec4"><em>blocked arrangement</em></a> across 128 threads where each thread owns 4 consecutive items. </dd></dl>
 <dl class="section user"><dt></dt><dd><div class="fragment"><div class="line"><span class="preprocessor">#include &lt;<a class="code" href="cub_8cuh.html">cub/cub.cuh</a>&gt;</span></div>
 <div class="line"></div>
 <div class="line">__global__ <span class="keywordtype">void</span> ExampleKernel(...)</div>
@@ -439,7 +439,7 @@ template&lt;typename T , int BLOCK_THREADS, BlockScanAlgorithm ALGORITHM = BLOCK
 </div><div class="memdoc">
 
 <p>Computes an exclusive block-wide prefix scan using addition (+) as the scan operator. Each thread contributes one input element. </p>
-<p>Assumes a <a href="index.html#sec4sec4"><em>blocked arrangement</em></a> of elements across threads, where thread<sub><em>i</em></sub> owns the <em>i</em><sup>th</sup> segment of consecutively ranked items.</p>
+<p>Assumes a <a href="index.html#sec5sec4"><em>blocked arrangement</em></a> of elements across threads, where thread<sub><em>i</em></sub> owns the <em>i</em><sup>th</sup> segment of consecutively ranked items.</p>
 <p>A subsequent <code>__syncthreads()</code> threadblock barrier should be invoked after calling this method if the collective's temporary storage (e.g., <code>temp_storage</code>) is to be reused or repurposed.</p>
 <p>The code snippet below illustrates an exclusive prefix sum of 128 integer items that are partitioned across 128 threads. </p>
 <dl class="section user"><dt></dt><dd><div class="fragment"><div class="line"><span class="preprocessor">#include &lt;<a class="code" href="cub_8cuh.html">cub/cub.cuh</a>&gt;</span></div>
@@ -511,7 +511,7 @@ template&lt;typename T , int BLOCK_THREADS, BlockScanAlgorithm ALGORITHM = BLOCK
 </div><div class="memdoc">
 
 <p>Computes an exclusive block-wide prefix scan using addition (+) as the scan operator. Each thread contributes one input element. Also provides every thread with the block-wide <code>block_aggregate</code> of all inputs. </p>
-<p>Assumes a <a href="index.html#sec4sec4"><em>blocked arrangement</em></a> of elements across threads, where thread<sub><em>i</em></sub> owns the <em>i</em><sup>th</sup> segment of consecutively ranked items.</p>
+<p>Assumes a <a href="index.html#sec5sec4"><em>blocked arrangement</em></a> of elements across threads, where thread<sub><em>i</em></sub> owns the <em>i</em><sup>th</sup> segment of consecutively ranked items.</p>
 <p>A subsequent <code>__syncthreads()</code> threadblock barrier should be invoked after calling this method if the collective's temporary storage (e.g., <code>temp_storage</code>) is to be reused or repurposed.</p>
 <p>The code snippet below illustrates an exclusive prefix sum of 128 integer items that are partitioned across 128 threads. </p>
 <dl class="section user"><dt></dt><dd><div class="fragment"><div class="line"><span class="preprocessor">#include &lt;<a class="code" href="cub_8cuh.html">cub/cub.cuh</a>&gt;</span></div>
@@ -594,7 +594,7 @@ template&lt;typename BlockPrefixOp &gt; </div>
 
 <p>Computes an exclusive block-wide prefix scan using addition (+) as the scan operator. Each thread contributes one input element. Instead of using 0 as the block-wide prefix, the call-back functor <code>block_prefix_op</code> is invoked by the first warp in the block, and the value returned by <em>lane</em><sub>0</sub> in that warp is used as the "seed" value that logically prefixes the threadblock's scan inputs. Also provides every thread with the block-wide <code>block_aggregate</code> of all inputs. </p>
 <p>The <code>block_prefix_op</code> functor must implement a member function <code>T operator()(T block_aggregate)</code>. The functor's input parameter <code>block_aggregate</code> is the same value also returned by the scan operation. The functor will be invoked by the first warp of threads in the block, however only the return value from <em>lane</em><sub>0</sub> is applied as the block-wide prefix. Can be stateful.</p>
-<p>Assumes a <a href="index.html#sec4sec4"><em>blocked arrangement</em></a> of elements across threads, where thread<sub><em>i</em></sub> owns the <em>i</em><sup>th</sup> segment of consecutively ranked items.</p>
+<p>Assumes a <a href="index.html#sec5sec4"><em>blocked arrangement</em></a> of elements across threads, where thread<sub><em>i</em></sub> owns the <em>i</em><sup>th</sup> segment of consecutively ranked items.</p>
 <p>A subsequent <code>__syncthreads()</code> threadblock barrier should be invoked after calling this method if the collective's temporary storage (e.g., <code>temp_storage</code>) is to be reused or repurposed.</p>
 <p>The code snippet below illustrates a single thread block that progressively computes an exclusive prefix sum over multiple "tiles" of input using a prefix functor to maintain a running total between block-wide scans. Each tile consists of 128 integer items that are partitioned across 128 threads. </p>
 <dl class="section user"><dt></dt><dd><div class="fragment"><div class="line"><span class="preprocessor">#include &lt;<a class="code" href="cub_8cuh.html">cub/cub.cuh</a>&gt;</span></div>
@@ -702,9 +702,9 @@ template&lt;int ITEMS_PER_THREAD&gt; </div>
 </div><div class="memdoc">
 
 <p>Computes an exclusive block-wide prefix scan using addition (+) as the scan operator. Each thread contributes an array of consecutive input elements. </p>
-<p>Assumes a <a href="index.html#sec4sec4"><em>blocked arrangement</em></a> of elements across threads, where thread<sub><em>i</em></sub> owns the <em>i</em><sup>th</sup> segment of consecutively ranked items.</p>
+<p>Assumes a <a href="index.html#sec5sec4"><em>blocked arrangement</em></a> of elements across threads, where thread<sub><em>i</em></sub> owns the <em>i</em><sup>th</sup> segment of consecutively ranked items.</p>
 <p>A subsequent <code>__syncthreads()</code> threadblock barrier should be invoked after calling this method if the collective's temporary storage (e.g., <code>temp_storage</code>) is to be reused or repurposed.</p>
-<p>The code snippet below illustrates an exclusive prefix sum of 512 integer items that are partitioned in a <a href="index.html#sec4sec4"><em>blocked arrangement</em></a> across 128 threads where each thread owns 4 consecutive items. </p>
+<p>The code snippet below illustrates an exclusive prefix sum of 512 integer items that are partitioned in a <a href="index.html#sec5sec4"><em>blocked arrangement</em></a> across 128 threads where each thread owns 4 consecutive items. </p>
 <dl class="section user"><dt></dt><dd><div class="fragment"><div class="line"><span class="preprocessor">#include &lt;<a class="code" href="cub_8cuh.html">cub/cub.cuh</a>&gt;</span></div>
 <div class="line"></div>
 <div class="line">__global__ <span class="keywordtype">void</span> ExampleKernel(...)</div>
@@ -782,9 +782,9 @@ template&lt;int ITEMS_PER_THREAD&gt; </div>
 </div><div class="memdoc">
 
 <p>Computes an exclusive block-wide prefix scan using addition (+) as the scan operator. Each thread contributes an array of consecutive input elements. Also provides every thread with the block-wide <code>block_aggregate</code> of all inputs. </p>
-<p>Assumes a <a href="index.html#sec4sec4"><em>blocked arrangement</em></a> of elements across threads, where thread<sub><em>i</em></sub> owns the <em>i</em><sup>th</sup> segment of consecutively ranked items.</p>
+<p>Assumes a <a href="index.html#sec5sec4"><em>blocked arrangement</em></a> of elements across threads, where thread<sub><em>i</em></sub> owns the <em>i</em><sup>th</sup> segment of consecutively ranked items.</p>
 <p>A subsequent <code>__syncthreads()</code> threadblock barrier should be invoked after calling this method if the collective's temporary storage (e.g., <code>temp_storage</code>) is to be reused or repurposed.</p>
-<p>The code snippet below illustrates an exclusive prefix sum of 512 integer items that are partitioned in a <a href="index.html#sec4sec4"><em>blocked arrangement</em></a> across 128 threads where each thread owns 4 consecutive items. </p>
+<p>The code snippet below illustrates an exclusive prefix sum of 512 integer items that are partitioned in a <a href="index.html#sec5sec4"><em>blocked arrangement</em></a> across 128 threads where each thread owns 4 consecutive items. </p>
 <dl class="section user"><dt></dt><dd><div class="fragment"><div class="line"><span class="preprocessor">#include &lt;<a class="code" href="cub_8cuh.html">cub/cub.cuh</a>&gt;</span></div>
 <div class="line"></div>
 <div class="line">__global__ <span class="keywordtype">void</span> ExampleKernel(...)</div>
@@ -871,9 +871,9 @@ template&lt;int ITEMS_PER_THREAD, typename BlockPrefixOp &gt; </div>
 
 <p>Computes an exclusive block-wide prefix scan using addition (+) as the scan operator. Each thread contributes an array of consecutive input elements. Instead of using 0 as the block-wide prefix, the call-back functor <code>block_prefix_op</code> is invoked by the first warp in the block, and the value returned by <em>lane</em><sub>0</sub> in that warp is used as the "seed" value that logically prefixes the threadblock's scan inputs. Also provides every thread with the block-wide <code>block_aggregate</code> of all inputs. </p>
 <p>The <code>block_prefix_op</code> functor must implement a member function <code>T operator()(T block_aggregate)</code>. The functor's input parameter <code>block_aggregate</code> is the same value also returned by the scan operation. The functor will be invoked by the first warp of threads in the block, however only the return value from <em>lane</em><sub>0</sub> is applied as the block-wide prefix. Can be stateful.</p>
-<p>Assumes a <a href="index.html#sec4sec4"><em>blocked arrangement</em></a> of elements across threads, where thread<sub><em>i</em></sub> owns the <em>i</em><sup>th</sup> segment of consecutively ranked items.</p>
+<p>Assumes a <a href="index.html#sec5sec4"><em>blocked arrangement</em></a> of elements across threads, where thread<sub><em>i</em></sub> owns the <em>i</em><sup>th</sup> segment of consecutively ranked items.</p>
 <p>A subsequent <code>__syncthreads()</code> threadblock barrier should be invoked after calling this method if the collective's temporary storage (e.g., <code>temp_storage</code>) is to be reused or repurposed.</p>
-<p>The code snippet below illustrates a single thread block that progressively computes an exclusive prefix sum over multiple "tiles" of input using a prefix functor to maintain a running total between block-wide scans. Each tile consists of 512 integer items that are partitioned in a <a href="index.html#sec4sec4"><em>blocked arrangement</em></a> across 128 threads where each thread owns 4 consecutive items. </p>
+<p>The code snippet below illustrates a single thread block that progressively computes an exclusive prefix sum over multiple "tiles" of input using a prefix functor to maintain a running total between block-wide scans. Each tile consists of 512 integer items that are partitioned in a <a href="index.html#sec5sec4"><em>blocked arrangement</em></a> across 128 threads where each thread owns 4 consecutive items. </p>
 <dl class="section user"><dt></dt><dd><div class="fragment"><div class="line"><span class="preprocessor">#include &lt;<a class="code" href="cub_8cuh.html">cub/cub.cuh</a>&gt;</span></div>
 <div class="line"></div>
 <div class="line"><span class="comment">// A stateful callback functor that maintains a running prefix to be applied</span></div>
@@ -1002,7 +1002,7 @@ template&lt;typename ScanOp &gt; </div>
 
 <p>Computes an exclusive block-wide prefix scan using the specified binary <code>scan_op</code> functor. Each thread contributes one input element. </p>
 <p>Supports non-commutative scan operators.</p>
-<p>Assumes a <a href="index.html#sec4sec4"><em>blocked arrangement</em></a> of elements across threads, where thread<sub><em>i</em></sub> owns the <em>i</em><sup>th</sup> segment of consecutively ranked items.</p>
+<p>Assumes a <a href="index.html#sec5sec4"><em>blocked arrangement</em></a> of elements across threads, where thread<sub><em>i</em></sub> owns the <em>i</em><sup>th</sup> segment of consecutively ranked items.</p>
 <p>A subsequent <code>__syncthreads()</code> threadblock barrier should be invoked after calling this method if the collective's temporary storage (e.g., <code>temp_storage</code>) is to be reused or repurposed.</p>
 <p>The code snippet below illustrates an exclusive prefix max scan of 128 integer items that are partitioned across 128 threads. </p>
 <dl class="section user"><dt></dt><dd><div class="fragment"><div class="line"><span class="preprocessor">#include &lt;<a class="code" href="cub_8cuh.html">cub/cub.cuh</a>&gt;</span></div>
@@ -1097,7 +1097,7 @@ template&lt;typename ScanOp &gt; </div>
 
 <p>Computes an exclusive block-wide prefix scan using the specified binary <code>scan_op</code> functor. Each thread contributes one input element. Also provides every thread with the block-wide <code>block_aggregate</code> of all inputs. </p>
 <p>Supports non-commutative scan operators.</p>
-<p>Assumes a <a href="index.html#sec4sec4"><em>blocked arrangement</em></a> of elements across threads, where thread<sub><em>i</em></sub> owns the <em>i</em><sup>th</sup> segment of consecutively ranked items.</p>
+<p>Assumes a <a href="index.html#sec5sec4"><em>blocked arrangement</em></a> of elements across threads, where thread<sub><em>i</em></sub> owns the <em>i</em><sup>th</sup> segment of consecutively ranked items.</p>
 <p>A subsequent <code>__syncthreads()</code> threadblock barrier should be invoked after calling this method if the collective's temporary storage (e.g., <code>temp_storage</code>) is to be reused or repurposed.</p>
 <p>The code snippet below illustrates an exclusive prefix max scan of 128 integer items that are partitioned across 128 threads. </p>
 <dl class="section user"><dt></dt><dd><div class="fragment"><div class="line"><span class="preprocessor">#include &lt;<a class="code" href="cub_8cuh.html">cub/cub.cuh</a>&gt;</span></div>
@@ -1201,7 +1201,7 @@ template&lt;typename ScanOp , typename BlockPrefixOp &gt; </div>
 <p>Computes an exclusive block-wide prefix scan using the specified binary <code>scan_op</code> functor. Each thread contributes one input element. the call-back functor <code>block_prefix_op</code> is invoked by the first warp in the block, and the value returned by <em>lane</em><sub>0</sub> in that warp is used as the "seed" value that logically prefixes the threadblock's scan inputs. Also provides every thread with the block-wide <code>block_aggregate</code> of all inputs. </p>
 <p>The <code>block_prefix_op</code> functor must implement a member function <code>T operator()(T block_aggregate)</code>. The functor's input parameter <code>block_aggregate</code> is the same value also returned by the scan operation. The functor will be invoked by the first warp of threads in the block, however only the return value from <em>lane</em><sub>0</sub> is applied as the block-wide prefix. Can be stateful.</p>
 <p>Supports non-commutative scan operators.</p>
-<p>Assumes a <a href="index.html#sec4sec4"><em>blocked arrangement</em></a> of elements across threads, where thread<sub><em>i</em></sub> owns the <em>i</em><sup>th</sup> segment of consecutively ranked items.</p>
+<p>Assumes a <a href="index.html#sec5sec4"><em>blocked arrangement</em></a> of elements across threads, where thread<sub><em>i</em></sub> owns the <em>i</em><sup>th</sup> segment of consecutively ranked items.</p>
 <p>A subsequent <code>__syncthreads()</code> threadblock barrier should be invoked after calling this method if the collective's temporary storage (e.g., <code>temp_storage</code>) is to be reused or repurposed.</p>
 <p>The code snippet below illustrates a single thread block that progressively computes an exclusive prefix max scan over multiple "tiles" of input using a prefix functor to maintain a running total between block-wide scans. Each tile consists of 128 integer items that are partitioned across 128 threads. </p>
 <dl class="section user"><dt></dt><dd><div class="fragment"><div class="line"><span class="preprocessor">#include &lt;<a class="code" href="cub_8cuh.html">cub/cub.cuh</a>&gt;</span></div>
@@ -1325,9 +1325,9 @@ template&lt;int ITEMS_PER_THREAD, typename ScanOp &gt; </div>
 
 <p>Computes an exclusive block-wide prefix scan using the specified binary <code>scan_op</code> functor. Each thread contributes an array of consecutive input elements. </p>
 <p>Supports non-commutative scan operators.</p>
-<p>Assumes a <a href="index.html#sec4sec4"><em>blocked arrangement</em></a> of elements across threads, where thread<sub><em>i</em></sub> owns the <em>i</em><sup>th</sup> segment of consecutively ranked items.</p>
+<p>Assumes a <a href="index.html#sec5sec4"><em>blocked arrangement</em></a> of elements across threads, where thread<sub><em>i</em></sub> owns the <em>i</em><sup>th</sup> segment of consecutively ranked items.</p>
 <p>A subsequent <code>__syncthreads()</code> threadblock barrier should be invoked after calling this method if the collective's temporary storage (e.g., <code>temp_storage</code>) is to be reused or repurposed.</p>
-<p>The code snippet below illustrates an exclusive prefix max scan of 512 integer items that are partitioned in a <a href="index.html#sec4sec4"><em>blocked arrangement</em></a> across 128 threads where each thread owns 4 consecutive items. </p>
+<p>The code snippet below illustrates an exclusive prefix max scan of 512 integer items that are partitioned in a <a href="index.html#sec5sec4"><em>blocked arrangement</em></a> across 128 threads where each thread owns 4 consecutive items. </p>
 <dl class="section user"><dt></dt><dd><div class="fragment"><div class="line"><span class="preprocessor">#include &lt;<a class="code" href="cub_8cuh.html">cub/cub.cuh</a>&gt;</span></div>
 <div class="line"></div>
 <div class="line">__global__ <span class="keywordtype">void</span> ExampleKernel(...)</div>
@@ -1421,9 +1421,9 @@ template&lt;int ITEMS_PER_THREAD, typename ScanOp &gt; </div>
 
 <p>Computes an exclusive block-wide prefix scan using the specified binary <code>scan_op</code> functor. Each thread contributes an array of consecutive input elements. Also provides every thread with the block-wide <code>block_aggregate</code> of all inputs. </p>
 <p>Supports non-commutative scan operators.</p>
-<p>Assumes a <a href="index.html#sec4sec4"><em>blocked arrangement</em></a> of elements across threads, where thread<sub><em>i</em></sub> owns the <em>i</em><sup>th</sup> segment of consecutively ranked items.</p>
+<p>Assumes a <a href="index.html#sec5sec4"><em>blocked arrangement</em></a> of elements across threads, where thread<sub><em>i</em></sub> owns the <em>i</em><sup>th</sup> segment of consecutively ranked items.</p>
 <p>A subsequent <code>__syncthreads()</code> threadblock barrier should be invoked after calling this method if the collective's temporary storage (e.g., <code>temp_storage</code>) is to be reused or repurposed.</p>
-<p>The code snippet below illustrates an exclusive prefix max scan of 512 integer items that are partitioned in a <a href="index.html#sec4sec4"><em>blocked arrangement</em></a> across 128 threads where each thread owns 4 consecutive items. </p>
+<p>The code snippet below illustrates an exclusive prefix max scan of 512 integer items that are partitioned in a <a href="index.html#sec5sec4"><em>blocked arrangement</em></a> across 128 threads where each thread owns 4 consecutive items. </p>
 <dl class="section user"><dt></dt><dd><div class="fragment"><div class="line"><span class="preprocessor">#include &lt;<a class="code" href="cub_8cuh.html">cub/cub.cuh</a>&gt;</span></div>
 <div class="line"></div>
 <div class="line">__global__ <span class="keywordtype">void</span> ExampleKernel(...)</div>
@@ -1526,7 +1526,7 @@ template&lt;int ITEMS_PER_THREAD, typename ScanOp , typename BlockPrefixOp &gt; 
 <p>Computes an exclusive block-wide prefix scan using the specified binary <code>scan_op</code> functor. Each thread contributes an array of consecutive input elements. the call-back functor <code>block_prefix_op</code> is invoked by the first warp in the block, and the value returned by <em>lane</em><sub>0</sub> in that warp is used as the "seed" value that logically prefixes the threadblock's scan inputs. Also provides every thread with the block-wide <code>block_aggregate</code> of all inputs. </p>
 <p>The <code>block_prefix_op</code> functor must implement a member function <code>T operator()(T block_aggregate)</code>. The functor's input parameter <code>block_aggregate</code> is the same value also returned by the scan operation. The functor will be invoked by the first warp of threads in the block, however only the return value from <em>lane</em><sub>0</sub> is applied as the block-wide prefix. Can be stateful.</p>
 <p>Supports non-commutative scan operators.</p>
-<p>Assumes a <a href="index.html#sec4sec4"><em>blocked arrangement</em></a> of elements across threads, where thread<sub><em>i</em></sub> owns the <em>i</em><sup>th</sup> segment of consecutively ranked items.</p>
+<p>Assumes a <a href="index.html#sec5sec4"><em>blocked arrangement</em></a> of elements across threads, where thread<sub><em>i</em></sub> owns the <em>i</em><sup>th</sup> segment of consecutively ranked items.</p>
 <p>A subsequent <code>__syncthreads()</code> threadblock barrier should be invoked after calling this method if the collective's temporary storage (e.g., <code>temp_storage</code>) is to be reused or repurposed.</p>
 <p>The code snippet below illustrates a single thread block that progressively computes an exclusive prefix max scan over multiple "tiles" of input using a prefix functor to maintain a running total between block-wide scans. Each tile consists of 128 integer items that are partitioned across 128 threads. </p>
 <dl class="section user"><dt></dt><dd><div class="fragment"><div class="line"><span class="preprocessor">#include &lt;<a class="code" href="cub_8cuh.html">cub/cub.cuh</a>&gt;</span></div>
@@ -1645,7 +1645,7 @@ template&lt;typename T , int BLOCK_THREADS, BlockScanAlgorithm ALGORITHM = BLOCK
 </div><div class="memdoc">
 
 <p>Computes an inclusive block-wide prefix scan using addition (+) as the scan operator. Each thread contributes one input element. </p>
-<p>Assumes a <a href="index.html#sec4sec4"><em>blocked arrangement</em></a> of elements across threads, where thread<sub><em>i</em></sub> owns the <em>i</em><sup>th</sup> segment of consecutively ranked items.</p>
+<p>Assumes a <a href="index.html#sec5sec4"><em>blocked arrangement</em></a> of elements across threads, where thread<sub><em>i</em></sub> owns the <em>i</em><sup>th</sup> segment of consecutively ranked items.</p>
 <p>A subsequent <code>__syncthreads()</code> threadblock barrier should be invoked after calling this method if the collective's temporary storage (e.g., <code>temp_storage</code>) is to be reused or repurposed.</p>
 <p>The code snippet below illustrates an inclusive prefix sum of 128 integer items that are partitioned across 128 threads. </p>
 <dl class="section user"><dt></dt><dd><div class="fragment"><div class="line"><span class="preprocessor">#include &lt;<a class="code" href="cub_8cuh.html">cub/cub.cuh</a>&gt;</span></div>
@@ -1717,7 +1717,7 @@ template&lt;typename T , int BLOCK_THREADS, BlockScanAlgorithm ALGORITHM = BLOCK
 </div><div class="memdoc">
 
 <p>Computes an inclusive block-wide prefix scan using addition (+) as the scan operator. Each thread contributes one input element. Also provides every thread with the block-wide <code>block_aggregate</code> of all inputs. </p>
-<p>Assumes a <a href="index.html#sec4sec4"><em>blocked arrangement</em></a> of elements across threads, where thread<sub><em>i</em></sub> owns the <em>i</em><sup>th</sup> segment of consecutively ranked items.</p>
+<p>Assumes a <a href="index.html#sec5sec4"><em>blocked arrangement</em></a> of elements across threads, where thread<sub><em>i</em></sub> owns the <em>i</em><sup>th</sup> segment of consecutively ranked items.</p>
 <p>A subsequent <code>__syncthreads()</code> threadblock barrier should be invoked after calling this method if the collective's temporary storage (e.g., <code>temp_storage</code>) is to be reused or repurposed.</p>
 <p>The code snippet below illustrates an inclusive prefix sum of 128 integer items that are partitioned across 128 threads. </p>
 <dl class="section user"><dt></dt><dd><div class="fragment"><div class="line"><span class="preprocessor">#include &lt;<a class="code" href="cub_8cuh.html">cub/cub.cuh</a>&gt;</span></div>
@@ -1800,7 +1800,7 @@ template&lt;typename BlockPrefixOp &gt; </div>
 
 <p>Computes an inclusive block-wide prefix scan using addition (+) as the scan operator. Each thread contributes one input element. Instead of using 0 as the block-wide prefix, the call-back functor <code>block_prefix_op</code> is invoked by the first warp in the block, and the value returned by <em>lane</em><sub>0</sub> in that warp is used as the "seed" value that logically prefixes the threadblock's scan inputs. Also provides every thread with the block-wide <code>block_aggregate</code> of all inputs. </p>
 <p>The <code>block_prefix_op</code> functor must implement a member function <code>T operator()(T block_aggregate)</code>. The functor's input parameter <code>block_aggregate</code> is the same value also returned by the scan operation. The functor will be invoked by the first warp of threads in the block, however only the return value from <em>lane</em><sub>0</sub> is applied as the block-wide prefix. Can be stateful.</p>
-<p>Assumes a <a href="index.html#sec4sec4"><em>blocked arrangement</em></a> of elements across threads, where thread<sub><em>i</em></sub> owns the <em>i</em><sup>th</sup> segment of consecutively ranked items.</p>
+<p>Assumes a <a href="index.html#sec5sec4"><em>blocked arrangement</em></a> of elements across threads, where thread<sub><em>i</em></sub> owns the <em>i</em><sup>th</sup> segment of consecutively ranked items.</p>
 <p>A subsequent <code>__syncthreads()</code> threadblock barrier should be invoked after calling this method if the collective's temporary storage (e.g., <code>temp_storage</code>) is to be reused or repurposed.</p>
 <p>The code snippet below illustrates a single thread block that progressively computes an inclusive prefix sum over multiple "tiles" of input using a prefix functor to maintain a running total between block-wide scans. Each tile consists of 128 integer items that are partitioned across 128 threads. </p>
 <dl class="section user"><dt></dt><dd><div class="fragment"><div class="line"><span class="preprocessor">#include &lt;<a class="code" href="cub_8cuh.html">cub/cub.cuh</a>&gt;</span></div>
@@ -1908,9 +1908,9 @@ template&lt;int ITEMS_PER_THREAD&gt; </div>
 </div><div class="memdoc">
 
 <p>Computes an inclusive block-wide prefix scan using addition (+) as the scan operator. Each thread contributes an array of consecutive input elements. </p>
-<p>Assumes a <a href="index.html#sec4sec4"><em>blocked arrangement</em></a> of elements across threads, where thread<sub><em>i</em></sub> owns the <em>i</em><sup>th</sup> segment of consecutively ranked items.</p>
+<p>Assumes a <a href="index.html#sec5sec4"><em>blocked arrangement</em></a> of elements across threads, where thread<sub><em>i</em></sub> owns the <em>i</em><sup>th</sup> segment of consecutively ranked items.</p>
 <p>A subsequent <code>__syncthreads()</code> threadblock barrier should be invoked after calling this method if the collective's temporary storage (e.g., <code>temp_storage</code>) is to be reused or repurposed.</p>
-<p>The code snippet below illustrates an inclusive prefix sum of 512 integer items that are partitioned in a <a href="index.html#sec4sec4"><em>blocked arrangement</em></a> across 128 threads where each thread owns 4 consecutive items. </p>
+<p>The code snippet below illustrates an inclusive prefix sum of 512 integer items that are partitioned in a <a href="index.html#sec5sec4"><em>blocked arrangement</em></a> across 128 threads where each thread owns 4 consecutive items. </p>
 <dl class="section user"><dt></dt><dd><div class="fragment"><div class="line"><span class="preprocessor">#include &lt;<a class="code" href="cub_8cuh.html">cub/cub.cuh</a>&gt;</span></div>
 <div class="line"></div>
 <div class="line">__global__ <span class="keywordtype">void</span> ExampleKernel(...)</div>
@@ -1988,9 +1988,9 @@ template&lt;int ITEMS_PER_THREAD&gt; </div>
 </div><div class="memdoc">
 
 <p>Computes an inclusive block-wide prefix scan using addition (+) as the scan operator. Each thread contributes an array of consecutive input elements. Also provides every thread with the block-wide <code>block_aggregate</code> of all inputs. </p>
-<p>Assumes a <a href="index.html#sec4sec4"><em>blocked arrangement</em></a> of elements across threads, where thread<sub><em>i</em></sub> owns the <em>i</em><sup>th</sup> segment of consecutively ranked items.</p>
+<p>Assumes a <a href="index.html#sec5sec4"><em>blocked arrangement</em></a> of elements across threads, where thread<sub><em>i</em></sub> owns the <em>i</em><sup>th</sup> segment of consecutively ranked items.</p>
 <p>A subsequent <code>__syncthreads()</code> threadblock barrier should be invoked after calling this method if the collective's temporary storage (e.g., <code>temp_storage</code>) is to be reused or repurposed.</p>
-<p>The code snippet below illustrates an inclusive prefix sum of 512 integer items that are partitioned in a <a href="index.html#sec4sec4"><em>blocked arrangement</em></a> across 128 threads where each thread owns 4 consecutive items. </p>
+<p>The code snippet below illustrates an inclusive prefix sum of 512 integer items that are partitioned in a <a href="index.html#sec5sec4"><em>blocked arrangement</em></a> across 128 threads where each thread owns 4 consecutive items. </p>
 <dl class="section user"><dt></dt><dd><div class="fragment"><div class="line"><span class="preprocessor">#include &lt;<a class="code" href="cub_8cuh.html">cub/cub.cuh</a>&gt;</span></div>
 <div class="line"></div>
 <div class="line">__global__ <span class="keywordtype">void</span> ExampleKernel(...)</div>
@@ -2078,9 +2078,9 @@ template&lt;int ITEMS_PER_THREAD, typename BlockPrefixOp &gt; </div>
 
 <p>Computes an inclusive block-wide prefix scan using addition (+) as the scan operator. Each thread contributes an array of consecutive input elements. Instead of using 0 as the block-wide prefix, the call-back functor <code>block_prefix_op</code> is invoked by the first warp in the block, and the value returned by <em>lane</em><sub>0</sub> in that warp is used as the "seed" value that logically prefixes the threadblock's scan inputs. Also provides every thread with the block-wide <code>block_aggregate</code> of all inputs. </p>
 <p>The <code>block_prefix_op</code> functor must implement a member function <code>T operator()(T block_aggregate)</code>. The functor's input parameter <code>block_aggregate</code> is the same value also returned by the scan operation. The functor will be invoked by the first warp of threads in the block, however only the return value from <em>lane</em><sub>0</sub> is applied as the block-wide prefix. Can be stateful.</p>
-<p>Assumes a <a href="index.html#sec4sec4"><em>blocked arrangement</em></a> of elements across threads, where thread<sub><em>i</em></sub> owns the <em>i</em><sup>th</sup> segment of consecutively ranked items.</p>
+<p>Assumes a <a href="index.html#sec5sec4"><em>blocked arrangement</em></a> of elements across threads, where thread<sub><em>i</em></sub> owns the <em>i</em><sup>th</sup> segment of consecutively ranked items.</p>
 <p>A subsequent <code>__syncthreads()</code> threadblock barrier should be invoked after calling this method if the collective's temporary storage (e.g., <code>temp_storage</code>) is to be reused or repurposed.</p>
-<p>The code snippet below illustrates a single thread block that progressively computes an inclusive prefix sum over multiple "tiles" of input using a prefix functor to maintain a running total between block-wide scans. Each tile consists of 512 integer items that are partitioned in a <a href="index.html#sec4sec4"><em>blocked arrangement</em></a> across 128 threads where each thread owns 4 consecutive items. </p>
+<p>The code snippet below illustrates a single thread block that progressively computes an inclusive prefix sum over multiple "tiles" of input using a prefix functor to maintain a running total between block-wide scans. Each tile consists of 512 integer items that are partitioned in a <a href="index.html#sec5sec4"><em>blocked arrangement</em></a> across 128 threads where each thread owns 4 consecutive items. </p>
 <dl class="section user"><dt></dt><dd><div class="fragment"><div class="line"><span class="preprocessor">#include &lt;<a class="code" href="cub_8cuh.html">cub/cub.cuh</a>&gt;</span></div>
 <div class="line"></div>
 <div class="line"><span class="comment">// A stateful callback functor that maintains a running prefix to be applied</span></div>
@@ -2203,7 +2203,7 @@ template&lt;typename ScanOp &gt; </div>
 
 <p>Computes an inclusive block-wide prefix scan using the specified binary <code>scan_op</code> functor. Each thread contributes one input element. </p>
 <p>Supports non-commutative scan operators.</p>
-<p>Assumes a <a href="index.html#sec4sec4"><em>blocked arrangement</em></a> of elements across threads, where thread<sub><em>i</em></sub> owns the <em>i</em><sup>th</sup> segment of consecutively ranked items.</p>
+<p>Assumes a <a href="index.html#sec5sec4"><em>blocked arrangement</em></a> of elements across threads, where thread<sub><em>i</em></sub> owns the <em>i</em><sup>th</sup> segment of consecutively ranked items.</p>
 <p>A subsequent <code>__syncthreads()</code> threadblock barrier should be invoked after calling this method if the collective's temporary storage (e.g., <code>temp_storage</code>) is to be reused or repurposed.</p>
 <p>The code snippet below illustrates an inclusive prefix max scan of 128 integer items that are partitioned across 128 threads. </p>
 <dl class="section user"><dt></dt><dd><div class="fragment"><div class="line"><span class="preprocessor">#include &lt;<a class="code" href="cub_8cuh.html">cub/cub.cuh</a>&gt;</span></div>
@@ -2291,7 +2291,7 @@ template&lt;typename ScanOp &gt; </div>
 
 <p>Computes an inclusive block-wide prefix scan using the specified binary <code>scan_op</code> functor. Each thread contributes one input element. Also provides every thread with the block-wide <code>block_aggregate</code> of all inputs. </p>
 <p>Supports non-commutative scan operators.</p>
-<p>Assumes a <a href="index.html#sec4sec4"><em>blocked arrangement</em></a> of elements across threads, where thread<sub><em>i</em></sub> owns the <em>i</em><sup>th</sup> segment of consecutively ranked items.</p>
+<p>Assumes a <a href="index.html#sec5sec4"><em>blocked arrangement</em></a> of elements across threads, where thread<sub><em>i</em></sub> owns the <em>i</em><sup>th</sup> segment of consecutively ranked items.</p>
 <p>A subsequent <code>__syncthreads()</code> threadblock barrier should be invoked after calling this method if the collective's temporary storage (e.g., <code>temp_storage</code>) is to be reused or repurposed.</p>
 <p>The code snippet below illustrates an inclusive prefix max scan of 128 integer items that are partitioned across 128 threads. </p>
 <dl class="section user"><dt></dt><dd><div class="fragment"><div class="line"><span class="preprocessor">#include &lt;<a class="code" href="cub_8cuh.html">cub/cub.cuh</a>&gt;</span></div>
@@ -2388,7 +2388,7 @@ template&lt;typename ScanOp , typename BlockPrefixOp &gt; </div>
 <p>Computes an inclusive block-wide prefix scan using the specified binary <code>scan_op</code> functor. Each thread contributes one input element. the call-back functor <code>block_prefix_op</code> is invoked by the first warp in the block, and the value returned by <em>lane</em><sub>0</sub> in that warp is used as the "seed" value that logically prefixes the threadblock's scan inputs. Also provides every thread with the block-wide <code>block_aggregate</code> of all inputs. </p>
 <p>The <code>block_prefix_op</code> functor must implement a member function <code>T operator()(T block_aggregate)</code>. The functor's input parameter <code>block_aggregate</code> is the same value also returned by the scan operation. The functor will be invoked by the first warp of threads in the block, however only the return value from <em>lane</em><sub>0</sub> is applied as the block-wide prefix. Can be stateful.</p>
 <p>Supports non-commutative scan operators.</p>
-<p>Assumes a <a href="index.html#sec4sec4"><em>blocked arrangement</em></a> of elements across threads, where thread<sub><em>i</em></sub> owns the <em>i</em><sup>th</sup> segment of consecutively ranked items.</p>
+<p>Assumes a <a href="index.html#sec5sec4"><em>blocked arrangement</em></a> of elements across threads, where thread<sub><em>i</em></sub> owns the <em>i</em><sup>th</sup> segment of consecutively ranked items.</p>
 <p>A subsequent <code>__syncthreads()</code> threadblock barrier should be invoked after calling this method if the collective's temporary storage (e.g., <code>temp_storage</code>) is to be reused or repurposed.</p>
 <p>The code snippet below illustrates a single thread block that progressively computes an inclusive prefix max scan over multiple "tiles" of input using a prefix functor to maintain a running total between block-wide scans. Each tile consists of 128 integer items that are partitioned across 128 threads. </p>
 <dl class="section user"><dt></dt><dd><div class="fragment"><div class="line"><span class="preprocessor">#include &lt;<a class="code" href="cub_8cuh.html">cub/cub.cuh</a>&gt;</span></div>
@@ -2505,9 +2505,9 @@ template&lt;int ITEMS_PER_THREAD, typename ScanOp &gt; </div>
 
 <p>Computes an inclusive block-wide prefix scan using the specified binary <code>scan_op</code> functor. Each thread contributes an array of consecutive input elements. </p>
 <p>Supports non-commutative scan operators.</p>
-<p>Assumes a <a href="index.html#sec4sec4"><em>blocked arrangement</em></a> of elements across threads, where thread<sub><em>i</em></sub> owns the <em>i</em><sup>th</sup> segment of consecutively ranked items.</p>
+<p>Assumes a <a href="index.html#sec5sec4"><em>blocked arrangement</em></a> of elements across threads, where thread<sub><em>i</em></sub> owns the <em>i</em><sup>th</sup> segment of consecutively ranked items.</p>
 <p>A subsequent <code>__syncthreads()</code> threadblock barrier should be invoked after calling this method if the collective's temporary storage (e.g., <code>temp_storage</code>) is to be reused or repurposed.</p>
-<p>The code snippet below illustrates an inclusive prefix max scan of 512 integer items that are partitioned in a <a href="index.html#sec4sec4"><em>blocked arrangement</em></a> across 128 threads where each thread owns 4 consecutive items. </p>
+<p>The code snippet below illustrates an inclusive prefix max scan of 512 integer items that are partitioned in a <a href="index.html#sec5sec4"><em>blocked arrangement</em></a> across 128 threads where each thread owns 4 consecutive items. </p>
 <dl class="section user"><dt></dt><dd><div class="fragment"><div class="line"><span class="preprocessor">#include &lt;<a class="code" href="cub_8cuh.html">cub/cub.cuh</a>&gt;</span></div>
 <div class="line"></div>
 <div class="line">__global__ <span class="keywordtype">void</span> ExampleKernel(...)</div>
@@ -2594,9 +2594,9 @@ template&lt;int ITEMS_PER_THREAD, typename ScanOp &gt; </div>
 
 <p>Computes an inclusive block-wide prefix scan using the specified binary <code>scan_op</code> functor. Each thread contributes an array of consecutive input elements. Also provides every thread with the block-wide <code>block_aggregate</code> of all inputs. </p>
 <p>Supports non-commutative scan operators.</p>
-<p>Assumes a <a href="index.html#sec4sec4"><em>blocked arrangement</em></a> of elements across threads, where thread<sub><em>i</em></sub> owns the <em>i</em><sup>th</sup> segment of consecutively ranked items.</p>
+<p>Assumes a <a href="index.html#sec5sec4"><em>blocked arrangement</em></a> of elements across threads, where thread<sub><em>i</em></sub> owns the <em>i</em><sup>th</sup> segment of consecutively ranked items.</p>
 <p>A subsequent <code>__syncthreads()</code> threadblock barrier should be invoked after calling this method if the collective's temporary storage (e.g., <code>temp_storage</code>) is to be reused or repurposed.</p>
-<p>The code snippet below illustrates an inclusive prefix max scan of 512 integer items that are partitioned in a <a href="index.html#sec4sec4"><em>blocked arrangement</em></a> across 128 threads where each thread owns 4 consecutive items. </p>
+<p>The code snippet below illustrates an inclusive prefix max scan of 512 integer items that are partitioned in a <a href="index.html#sec5sec4"><em>blocked arrangement</em></a> across 128 threads where each thread owns 4 consecutive items. </p>
 <dl class="section user"><dt></dt><dd><div class="fragment"><div class="line"><span class="preprocessor">#include &lt;<a class="code" href="cub_8cuh.html">cub/cub.cuh</a>&gt;</span></div>
 <div class="line"></div>
 <div class="line">__global__ <span class="keywordtype">void</span> ExampleKernel(...)</div>
@@ -2692,7 +2692,7 @@ template&lt;int ITEMS_PER_THREAD, typename ScanOp , typename BlockPrefixOp &gt; 
 <p>Computes an inclusive block-wide prefix scan using the specified binary <code>scan_op</code> functor. Each thread contributes an array of consecutive input elements. the call-back functor <code>block_prefix_op</code> is invoked by the first warp in the block, and the value returned by <em>lane</em><sub>0</sub> in that warp is used as the "seed" value that logically prefixes the threadblock's scan inputs. Also provides every thread with the block-wide <code>block_aggregate</code> of all inputs. </p>
 <p>The <code>block_prefix_op</code> functor must implement a member function <code>T operator()(T block_aggregate)</code>. The functor's input parameter <code>block_aggregate</code> is the same value also returned by the scan operation. The functor will be invoked by the first warp of threads in the block, however only the return value from <em>lane</em><sub>0</sub> is applied as the block-wide prefix. Can be stateful.</p>
 <p>Supports non-commutative scan operators.</p>
-<p>Assumes a <a href="index.html#sec4sec4"><em>blocked arrangement</em></a> of elements across threads, where thread<sub><em>i</em></sub> owns the <em>i</em><sup>th</sup> segment of consecutively ranked items.</p>
+<p>Assumes a <a href="index.html#sec5sec4"><em>blocked arrangement</em></a> of elements across threads, where thread<sub><em>i</em></sub> owns the <em>i</em><sup>th</sup> segment of consecutively ranked items.</p>
 <p>A subsequent <code>__syncthreads()</code> threadblock barrier should be invoked after calling this method if the collective's temporary storage (e.g., <code>temp_storage</code>) is to be reused or repurposed.</p>
 <p>The code snippet below illustrates a single thread block that progressively computes an inclusive prefix max scan over multiple "tiles" of input using a prefix functor to maintain a running total between block-wide scans. Each tile consists of 128 integer items that are partitioned across 128 threads. </p>
 <dl class="section user"><dt></dt><dd><div class="fragment"><div class="line"><span class="preprocessor">#include &lt;<a class="code" href="cub_8cuh.html">cub/cub.cuh</a>&gt;</span></div>
@@ -2782,7 +2782,7 @@ template&lt;int ITEMS_PER_THREAD, typename ScanOp , typename BlockPrefixOp &gt; 
 <!-- HTML footer for doxygen 1.8.3.1-->
 <!-- start footer part -->
 <hr class="footer"/><address class="footer"><small>
-Generated on Fri Aug 9 2013 11:22:30 for CUB by &#160;<a href="http://www.doxygen.org/index.html">
+Generated on Fri Aug 9 2013 23:19:56 for CUB by &#160;<a href="http://www.doxygen.org/index.html">
 <img class="footer" src="doxygen.png" alt="doxygen"/>
 </a> 1.8.4
 <br>

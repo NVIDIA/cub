@@ -124,7 +124,7 @@ class cub::BlockDiscontinuity&lt; T, BLOCK_THREADS &gt;</h3>
   </dd>
 </dl>
 <dl class="section user"><dt>A Simple Example</dt><dd>Every thread in the block uses the <a class="el" href="classcub_1_1_block_discontinuity.html" title="The BlockDiscontinuity class provides collective methods for flagging discontinuities within an order...">BlockDiscontinuity</a> class by first specializing the <a class="el" href="classcub_1_1_block_discontinuity.html" title="The BlockDiscontinuity class provides collective methods for flagging discontinuities within an order...">BlockDiscontinuity</a> type, then instantiating an instance with parameters for communication, and finally invoking collective member functions. </dd></dl>
-<dl class="section user"><dt></dt><dd>The code snippet below illustrates the head flagging of 512 integer items that are partitioned in a <a href="index.html#sec4sec4"><em>blocked arrangement</em></a> across 128 threads where each thread owns 4 consecutive items. </dd></dl>
+<dl class="section user"><dt></dt><dd>The code snippet below illustrates the head flagging of 512 integer items that are partitioned in a <a href="index.html#sec5sec4"><em>blocked arrangement</em></a> across 128 threads where each thread owns 4 consecutive items. </dd></dl>
 <dl class="section user"><dt></dt><dd><div class="fragment"><div class="line"><span class="preprocessor">#include &lt;<a class="code" href="cub_8cuh.html">cub/cub.cuh</a>&gt;</span></div>
 <div class="line"></div>
 <div class="line">__global__ <span class="keywordtype">void</span> ExampleKernel(...)</div>
@@ -351,9 +351,9 @@ template&lt;int ITEMS_PER_THREAD, typename FlagT , typename FlagOp &gt; </div>
 
 <p>Sets head flags indicating discontinuities between items partitioned across the thread block, for which the first item has no reference and is always flagged. </p>
 <p>The flag <code>head_flags<sub><em>i</em></sub></code> is set for item <code>input<sub><em>i</em></sub></code> when <code>flag_op(</code><em>previous-item</em><code>, input<sub><em>i</em></sub>)</code> returns <code>true</code> (where <em>previous-item</em> is either the preceding item in the same thread or the last item in the previous thread). Furthermore, <code>head_flags<sub><em>i</em></sub></code> is always set for <code>input&gt;<sub>0</sub></code> in <em>thread</em><sub>0</sub>.</p>
-<p>Assumes a <a href="index.html#sec4sec4"><em>blocked arrangement</em></a> of elements across threads, where thread<sub><em>i</em></sub> owns the <em>i</em><sup>th</sup> segment of consecutively ranked items.</p>
+<p>Assumes a <a href="index.html#sec5sec4"><em>blocked arrangement</em></a> of elements across threads, where thread<sub><em>i</em></sub> owns the <em>i</em><sup>th</sup> segment of consecutively ranked items.</p>
 <p>A subsequent <code>__syncthreads()</code> threadblock barrier should be invoked after calling this method if the collective's temporary storage (e.g., <code>temp_storage</code>) is to be reused or repurposed.</p>
-<p>The code snippet below illustrates the head-flagging of 512 integer items that are partitioned in a <a href="index.html#sec4sec4"><em>blocked arrangement</em></a> across 128 threads where each thread owns 4 consecutive items. </p>
+<p>The code snippet below illustrates the head-flagging of 512 integer items that are partitioned in a <a href="index.html#sec5sec4"><em>blocked arrangement</em></a> across 128 threads where each thread owns 4 consecutive items. </p>
 <dl class="section user"><dt></dt><dd><div class="fragment"><div class="line"><span class="preprocessor">#include &lt;<a class="code" href="cub_8cuh.html">cub/cub.cuh</a>&gt;</span></div>
 <div class="line"></div>
 <div class="line">__global__ <span class="keywordtype">void</span> ExampleKernel(...)</div>
@@ -442,9 +442,9 @@ template&lt;int ITEMS_PER_THREAD, typename FlagT , typename FlagOp &gt; </div>
 
 <p>Sets head flags indicating discontinuities between items partitioned across the thread block. </p>
 <p>The flag <code>head_flags<sub><em>i</em></sub></code> is set for item <code>input<sub><em>i</em></sub></code> when <code>flag_op(</code><em>previous-item</em><code>, input<sub><em>i</em></sub>)</code> returns <code>true</code> (where <em>previous-item</em> is either the preceding item in the same thread or the last item in the previous thread). For <em>thread</em><sub>0</sub>, item <code>input<sub>0</sub></code> is compared against <code>tile_predecessor_item</code>.</p>
-<p>Assumes a <a href="index.html#sec4sec4"><em>blocked arrangement</em></a> of elements across threads, where thread<sub><em>i</em></sub> owns the <em>i</em><sup>th</sup> segment of consecutively ranked items.</p>
+<p>Assumes a <a href="index.html#sec5sec4"><em>blocked arrangement</em></a> of elements across threads, where thread<sub><em>i</em></sub> owns the <em>i</em><sup>th</sup> segment of consecutively ranked items.</p>
 <p>A subsequent <code>__syncthreads()</code> threadblock barrier should be invoked after calling this method if the collective's temporary storage (e.g., <code>temp_storage</code>) is to be reused or repurposed.</p>
-<p>The code snippet below illustrates the head-flagging of 512 integer items that are partitioned in a <a href="index.html#sec4sec4"><em>blocked arrangement</em></a> across 128 threads where each thread owns 4 consecutive items. </p>
+<p>The code snippet below illustrates the head-flagging of 512 integer items that are partitioned in a <a href="index.html#sec5sec4"><em>blocked arrangement</em></a> across 128 threads where each thread owns 4 consecutive items. </p>
 <dl class="section user"><dt></dt><dd><div class="fragment"><div class="line"><span class="preprocessor">#include &lt;<a class="code" href="cub_8cuh.html">cub/cub.cuh</a>&gt;</span></div>
 <div class="line"></div>
 <div class="line">__global__ <span class="keywordtype">void</span> ExampleKernel(...)</div>
@@ -533,9 +533,9 @@ template&lt;int ITEMS_PER_THREAD, typename FlagT , typename FlagOp &gt; </div>
 
 <p>Sets tail flags indicating discontinuities between items partitioned across the thread block, for which the last item has no reference and is always flagged. </p>
 <p>The flag <code>tail_flags<sub><em>i</em></sub></code> is set for item <code>input<sub><em>i</em></sub></code> when <code>flag_op(input<sub><em>i</em></sub>, </code><em>next-item</em><code>)</code> returns <code>true</code> (where <em>next-item</em> is either the next item in the same thread or the first item in the next thread). Furthermore, <code>tail_flags<sub>ITEMS_PER_THREAD-1</sub></code> is always set for <em>thread</em><sub><code>BLOCK_THREADS</code>-1</sub>.</p>
-<p>Assumes a <a href="index.html#sec4sec4"><em>blocked arrangement</em></a> of elements across threads, where thread<sub><em>i</em></sub> owns the <em>i</em><sup>th</sup> segment of consecutively ranked items.</p>
+<p>Assumes a <a href="index.html#sec5sec4"><em>blocked arrangement</em></a> of elements across threads, where thread<sub><em>i</em></sub> owns the <em>i</em><sup>th</sup> segment of consecutively ranked items.</p>
 <p>A subsequent <code>__syncthreads()</code> threadblock barrier should be invoked after calling this method if the collective's temporary storage (e.g., <code>temp_storage</code>) is to be reused or repurposed.</p>
-<p>The code snippet below illustrates the tail-flagging of 512 integer items that are partitioned in a <a href="index.html#sec4sec4"><em>blocked arrangement</em></a> across 128 threads where each thread owns 4 consecutive items. </p>
+<p>The code snippet below illustrates the tail-flagging of 512 integer items that are partitioned in a <a href="index.html#sec5sec4"><em>blocked arrangement</em></a> across 128 threads where each thread owns 4 consecutive items. </p>
 <dl class="section user"><dt></dt><dd><div class="fragment"><div class="line"><span class="preprocessor">#include &lt;<a class="code" href="cub_8cuh.html">cub/cub.cuh</a>&gt;</span></div>
 <div class="line"></div>
 <div class="line">__global__ <span class="keywordtype">void</span> ExampleKernel(...)</div>
@@ -624,9 +624,9 @@ template&lt;int ITEMS_PER_THREAD, typename FlagT , typename FlagOp &gt; </div>
 
 <p>Sets tail flags indicating discontinuities between items partitioned across the thread block. </p>
 <p>The flag <code>tail_flags<sub><em>i</em></sub></code> is set for item <code>input<sub><em>i</em></sub></code> when <code>flag_op(input<sub><em>i</em></sub>, </code><em>next-item</em><code>)</code> returns <code>true</code> (where <em>next-item</em> is either the next item in the same thread or the first item in the next thread). For <em>thread</em><sub><em>BLOCK_THREADS</em>-1</sub>, item <code>input</code><sub><em>ITEMS_PER_THREAD</em>-1</sub> is compared against <code>tile_predecessor_item</code>.</p>
-<p>Assumes a <a href="index.html#sec4sec4"><em>blocked arrangement</em></a> of elements across threads, where thread<sub><em>i</em></sub> owns the <em>i</em><sup>th</sup> segment of consecutively ranked items.</p>
+<p>Assumes a <a href="index.html#sec5sec4"><em>blocked arrangement</em></a> of elements across threads, where thread<sub><em>i</em></sub> owns the <em>i</em><sup>th</sup> segment of consecutively ranked items.</p>
 <p>A subsequent <code>__syncthreads()</code> threadblock barrier should be invoked after calling this method if the collective's temporary storage (e.g., <code>temp_storage</code>) is to be reused or repurposed.</p>
-<p>The code snippet below illustrates the tail-flagging of 512 integer items that are partitioned in a <a href="index.html#sec4sec4"><em>blocked arrangement</em></a> across 128 threads where each thread owns 4 consecutive items. </p>
+<p>The code snippet below illustrates the tail-flagging of 512 integer items that are partitioned in a <a href="index.html#sec5sec4"><em>blocked arrangement</em></a> across 128 threads where each thread owns 4 consecutive items. </p>
 <dl class="section user"><dt></dt><dd><div class="fragment"><div class="line"><span class="preprocessor">#include &lt;<a class="code" href="cub_8cuh.html">cub/cub.cuh</a>&gt;</span></div>
 <div class="line"></div>
 <div class="line">__global__ <span class="keywordtype">void</span> ExampleKernel(...)</div>
@@ -678,7 +678,7 @@ template&lt;int ITEMS_PER_THREAD, typename FlagT , typename FlagOp &gt; </div>
 <!-- HTML footer for doxygen 1.8.3.1-->
 <!-- start footer part -->
 <hr class="footer"/><address class="footer"><small>
-Generated on Fri Aug 9 2013 11:22:29 for CUB by &#160;<a href="http://www.doxygen.org/index.html">
+Generated on Fri Aug 9 2013 23:19:56 for CUB by &#160;<a href="http://www.doxygen.org/index.html">
 <img class="footer" src="doxygen.png" alt="doxygen"/>
 </a> 1.8.4
 <br>
