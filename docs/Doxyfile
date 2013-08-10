@@ -197,7 +197,7 @@ TAB_SIZE               = 4
 
 ALIASES                = smemreuse="A subsequent <tt>__syncthreads()</tt> threadblock barrier should be invoked after calling this method if the collective's temporary storage (e.g., \p temp_storage) is to be reused or repurposed."
 ALIASES                += smemreuse{1}="After any operation, a subsequent <tt>__syncthreads()</tt> barrier is required if the collective's \1 is to be reused or repurposed"
-ALIASES                += smemstorage{1}="The operations exposed by \1 require a temporary memory allocation of this type for thread communication.  This opaque storage can be allocated directly using the <tt>__shared__</tt> keyword.  Alternatively, it can be aliased to externally allocated memory (shared or global) or <tt>union</tt>'d with other storage allocation types to facilitate memory reuse."
+ALIASES                += smemstorage{1}="The operations exposed by \1 require a temporary memory allocation of this nested type for thread communication.  This opaque storage can be allocated directly using the <tt>__shared__</tt> keyword.  Alternatively, it can be aliased to externally allocated memory (shared or global) or <tt>union</tt>'d with other storage allocation types to facilitate memory reuse."
 
 ALIASES                += blockcollective{1}="Every thread in the block uses the \1 class by first specializing the \1 type, then instantiating an instance with parameters for communication, and finally invoking collective member functions."
 ALIASES                += warpcollective{1}="Every thread in the warp uses the \1 class by first specializing the \1 type, then instantiating an instance with parameters for communication, and finally invoking collective member functions."
