@@ -110,22 +110,22 @@ var searchBox = new SearchBox("searchBox", "search",false,'Search');
 </ul>
 </div>
 <div class="textblock"> 
-   <a href="http://research.nvidia.com"><img src="nvresearch.png" style="position:relative; bottom:-10px; border:0px;"/></a>
-   &nbsp;&nbsp;
-   <a href="http://research.nvidia.com"><em>NVIDIA Research</em></a>
-   <br>
-   <a href="https://github.com/NVlabs/cub"><img src="github-icon-747d8b799a48162434b2c0595ba1317e.png" style="position:relative; bottom:-10px; border:0px;"/></a>
-   &nbsp;&nbsp;
-   <a href="https://github.com/NVlabs/cub"><em>Browse or fork CUB at GitHub</em></a>
-   <br>
-   <a href="http://groups.google.com/group/cub-users"><img src="groups-icon.png" style="position:relative; bottom:-10px; border:0px;"/></a>
-   &nbsp;&nbsp;
-   <a href="http://groups.google.com/group/cub-users"><em>Join the cub-users discussion forum</em></a>
-   <br>
-   <a href="download_cub.html"><img src="download-icon.png" style="position:relative; bottom:-10px; border:0px;"/></a>
-   &nbsp;&nbsp;
-   <a href="download_cub.html"><em>CUB release v1.0.1 (August 08, 2013)</em></a>
-   <h1><a class="anchor" id="sec1"></a>
+<a href="http://research.nvidia.com"><img src="nvresearch.png" style="position:relative; bottom:-10px; border:0px;"/></a>
+&nbsp;&nbsp;
+<a href="http://research.nvidia.com"><em>NVIDIA Research</em></a>
+<br>
+<a href="https://github.com/NVlabs/cub"><img src="github-icon-747d8b799a48162434b2c0595ba1317e.png" style="position:relative; bottom:-10px; border:0px;"/></a>
+&nbsp;&nbsp;
+<a href="https://github.com/NVlabs/cub"><em>Browse or fork CUB at GitHub</em></a>
+<br>
+<a href="http://groups.google.com/group/cub-users"><img src="groups-icon.png" style="position:relative; bottom:-10px; border:0px;"/></a>
+&nbsp;&nbsp;
+<a href="http://groups.google.com/group/cub-users"><em>Join the cub-users discussion forum</em></a>
+<br>
+<a href="download_cub.html"><img src="download-icon.png" style="position:relative; bottom:-10px; border:0px;"/></a>
+&nbsp;&nbsp;
+<a href="download_cub.html"><em>CUB release v1.0.1 (August 08, 2013)</em></a>
+<h1><a class="anchor" id="sec1"></a>
 (1) What is CUB?</h1>
 <dl class="section user"><dt></dt><dd>CUB provides state-of-the-art, reusable software components for every layer of the CUDA programming model:<ul>
 <li><a href="group___device_module.html"><b><em>Device-wide primitives</em></b></a><ul>
@@ -179,34 +179,34 @@ var searchBox = new SearchBox("searchBox", "search",false,'Search');
 <div class="line"><span class="comment">// Block-sorting CUDA kernel</span></div>
 <div class="line">__global__ <span class="keywordtype">void</span> BlockSortKernel(<span class="keywordtype">int</span> *d_in, <span class="keywordtype">int</span> *d_out)</div>
 <div class="line">{</div>
-<div class="line">     <span class="keyword">using namespace </span>cub;</div>
+<div class="line">    <span class="keyword">using namespace </span>cub;</div>
 <div class="line"></div>
-<div class="line">     <span class="comment">// Specialize BlockRadixSort, BlockLoad, and BlockStore for 128 threads </span></div>
-<div class="line">     <span class="comment">// owning 16 integer items each</span></div>
-<div class="line">     <span class="keyword">typedef</span> <a class="code" href="classcub_1_1_block_radix_sort.html" title="The cub::BlockRadixSort class provides collective methods for sorting items partitioned across a CUDA...">BlockRadixSort&lt;int, 128, 16&gt;</a>                     BlockRadixSort;</div>
-<div class="line">     <span class="keyword">typedef</span> <a class="code" href="classcub_1_1_block_load.html" title="The BlockLoad class provides collective data movement methods for loading a linear segment of items f...">BlockLoad&lt;int*, 128, 16, BLOCK_LOAD_TRANSPOSE&gt;</a>   BlockLoad;</div>
-<div class="line">     <span class="keyword">typedef</span> <a class="code" href="classcub_1_1_block_store.html" title="The BlockStore class provides collective data movement methods for writing a blocked arrangement of i...">BlockStore&lt;int*, 128, 16, BLOCK_STORE_TRANSPOSE&gt;</a> BlockStore;</div>
+<div class="line">    <span class="comment">// Specialize BlockRadixSort, BlockLoad, and BlockStore for 128 threads </span></div>
+<div class="line">    <span class="comment">// owning 16 integer items each</span></div>
+<div class="line">    <span class="keyword">typedef</span> <a class="code" href="classcub_1_1_block_radix_sort.html" title="The cub::BlockRadixSort class provides collective methods for sorting items partitioned across a CUDA...">BlockRadixSort&lt;int, 128, 16&gt;</a>                     BlockRadixSort;</div>
+<div class="line">    <span class="keyword">typedef</span> <a class="code" href="classcub_1_1_block_load.html" title="The BlockLoad class provides collective data movement methods for loading a linear segment of items f...">BlockLoad&lt;int*, 128, 16, BLOCK_LOAD_TRANSPOSE&gt;</a>   BlockLoad;</div>
+<div class="line">    <span class="keyword">typedef</span> <a class="code" href="classcub_1_1_block_store.html" title="The BlockStore class provides collective data movement methods for writing a blocked arrangement of i...">BlockStore&lt;int*, 128, 16, BLOCK_STORE_TRANSPOSE&gt;</a> BlockStore;</div>
 <div class="line"></div>
-<div class="line">     <span class="comment">// Allocate shared memory</span></div>
-<div class="line">     __shared__ <span class="keyword">union </span>{</div>
-<div class="line">         <span class="keyword">typename</span> <a class="code" href="structcub_1_1_uninitialized.html" title="A storage-backing wrapper that allows types with non-trivial constructors to be aliased in unions...">BlockRadixSort::TempStorage</a>  sort;</div>
-<div class="line">         <span class="keyword">typename</span> <a class="code" href="structcub_1_1_uninitialized.html" title="A storage-backing wrapper that allows types with non-trivial constructors to be aliased in unions...">BlockLoad::TempStorage</a>       load; </div>
-<div class="line">         <span class="keyword">typename</span> <a class="code" href="structcub_1_1_uninitialized.html" title="A storage-backing wrapper that allows types with non-trivial constructors to be aliased in unions...">BlockStore::TempStorage</a>      store; </div>
-<div class="line">     } temp_storage; </div>
+<div class="line">    <span class="comment">// Allocate shared memory</span></div>
+<div class="line">    __shared__ <span class="keyword">union </span>{</div>
+<div class="line">        <span class="keyword">typename</span> <a class="code" href="structcub_1_1_uninitialized.html" title="A storage-backing wrapper that allows types with non-trivial constructors to be aliased in unions...">BlockRadixSort::TempStorage</a>  sort;</div>
+<div class="line">        <span class="keyword">typename</span> <a class="code" href="structcub_1_1_uninitialized.html" title="A storage-backing wrapper that allows types with non-trivial constructors to be aliased in unions...">BlockLoad::TempStorage</a>       load; </div>
+<div class="line">        <span class="keyword">typename</span> <a class="code" href="structcub_1_1_uninitialized.html" title="A storage-backing wrapper that allows types with non-trivial constructors to be aliased in unions...">BlockStore::TempStorage</a>      store; </div>
+<div class="line">    } temp_storage; </div>
 <div class="line"></div>
-<div class="line">     <span class="keywordtype">int</span> block_offset = blockIdx.x * (128 * 16);   <span class="comment">// Offset for this block&#39;s segment</span></div>
+<div class="line">    <span class="keywordtype">int</span> block_offset = blockIdx.x * (128 * 16);   <span class="comment">// Offset for this block&#39;s segment</span></div>
 <div class="line"></div>
-<div class="line">     <span class="comment">// Obtain a segment of 2048 consecutive keys that are blocked across threads</span></div>
-<div class="line">     <span class="keywordtype">int</span> thread_keys[16];</div>
-<div class="line">     BlockLoad(temp_storage.load).Load(d_in + block_offset, thread_keys);</div>
-<div class="line">     __syncthreads();</div>
+<div class="line">    <span class="comment">// Obtain a segment of 2048 consecutive keys that are blocked across threads</span></div>
+<div class="line">    <span class="keywordtype">int</span> thread_keys[16];</div>
+<div class="line">    BlockLoad(temp_storage.load).Load(d_in + blocffset, thread_keys);</div>
+<div class="line">    __syncthreads();</div>
 <div class="line"></div>
-<div class="line">     <span class="comment">// Collectively sort the keys</span></div>
-<div class="line">     BlockRadixSort(temp_storage.sort).Sort(thread_keys);</div>
-<div class="line">     __syncthreads();</div>
+<div class="line">    <span class="comment">// Collectively sort the keys</span></div>
+<div class="line">    BlockRadixSort(temp_storage.sort).Sort(thread_keys);</div>
+<div class="line">    __syncthreads();</div>
 <div class="line"></div>
-<div class="line">     <span class="comment">// Store the sorted segment </span></div>
-<div class="line">     BlockStore(temp_storage.store).Store(d_out + block_offset, thread_keys);</div>
+<div class="line">    <span class="comment">// Store the sorted segment </span></div>
+<div class="line">    BlockStore(temp_storage.store).Store(d_out + block_offset, thread_keys);</div>
 <div class="line">}</div>
 </div><!-- fragment --></dd></dl>
 <dl class="section user"><dt></dt><dd>Each thread block uses <a class="el" href="classcub_1_1_block_radix_sort.html" title="The cub::BlockRadixSort class provides collective methods for sorting items partitioned across a CUDA...">cub::BlockRadixSort</a> to collectively sort its own input segment. The class is specialized by the data type being sorted, by the number of threads per block, by the number of keys per thread, and implicitly by the targeted compilation architecture.</dd></dl>
@@ -331,8 +331,10 @@ var searchBox = new SearchBox("searchBox", "search",false,'Search');
 <p>This release also contains significant updates to CUB's suite of block-wide and warp-wide primitives, including:</p>
 <ul>
 <li>Improved support for the Kepler instruction set (e.g., <code>SHFL</code> is used for warp-wide exchanges of all types, including those larger than 32b)</li>
-<li>An updated interface design for collective primitives (specialize::construct::invoke) that avoids a combinatorial product of library entry-points </li>
+<li>An updated interface design for collective primitives (specialize::construct::invoke) that avoids a combinatorial product of library entry-points</li>
 </ul>
+<p>See the <a href="https://github.com/NVlabs/cub/blob/master/CHANGE_LOG.TXT">change-log</a> for further details.</p>
+<p></p>
 <p class="endtd"></p>
 </td></tr>
 <tr>
@@ -372,12 +374,12 @@ var searchBox = new SearchBox("searchBox", "search",false,'Search');
 <div class="line"></div>
 <div class="line">Redistribution and use in source and binary forms, with or without</div>
 <div class="line">modification, are permitted provided that the following conditions are met:</div>
-<div class="line">    * Redistributions of source code must retain the above copyright</div>
+<div class="line">   Redistributions of source code must retain the above copyright</div>
 <div class="line">      notice, <span class="keyword">this</span> list of conditions and the following disclaimer.</div>
-<div class="line">    * Redistributions in binary form must reproduce the above copyright</div>
+<div class="line">   Redistributions in binary form must reproduce the above copyright</div>
 <div class="line">      notice, <span class="keyword">this</span> list of conditions and the following disclaimer in the</div>
 <div class="line">      documentation and/or other materials provided with the distribution.</div>
-<div class="line">    * Neither the name of the NVIDIA CORPORATION nor the</div>
+<div class="line">   Neither the name of the NVIDIA CORPORATION nor the</div>
 <div class="line">      names of its contributors may be used to endorse or promote products</div>
 <div class="line">      derived from <span class="keyword">this</span> software without specific prior written permission.</div>
 <div class="line"></div>
@@ -396,7 +398,7 @@ var searchBox = new SearchBox("searchBox", "search",false,'Search');
 <!-- HTML footer for doxygen 1.8.3.1-->
 <!-- start footer part -->
 <hr class="footer"/><address class="footer"><small>
-Generated on Fri Aug 9 2013 23:19:57 for CUB by &#160;<a href="http://www.doxygen.org/index.html">
+Generated on Fri Aug 9 2013 23:42:12 for CUB by &#160;<a href="http://www.doxygen.org/index.html">
 <img class="footer" src="doxygen.png" alt="doxygen"/>
 </a> 1.8.4
 <br>
