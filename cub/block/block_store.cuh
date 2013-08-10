@@ -366,7 +366,7 @@ enum BlockStoreAlgorithm
     /**
      * \par Overview
      *
-     * A [<em>blocked arrangement</em>](index.html#sec4sec4) of data is written
+     * A [<em>blocked arrangement</em>](index.html#sec5sec4) of data is written
      * directly to memory.  The thread block writes items in a parallel "raking" fashion:
      * thread<sub><em>i</em></sub> writes the <em>i</em><sup>th</sup> segment of consecutive elements.
      *
@@ -379,7 +379,7 @@ enum BlockStoreAlgorithm
     /**
      * \par Overview
      *
-     * A [<em>blocked arrangement</em>](index.html#sec4sec4) of data is written directly
+     * A [<em>blocked arrangement</em>](index.html#sec5sec4) of data is written directly
      * to memory using CUDA's built-in vectorized stores as a coalescing optimization.
      * The thread block writes items in a parallel "raking" fashion: thread<sub><em>i</em></sub> uses vector stores to
      * write the <em>i</em><sup>th</sup> segment of consecutive elements.
@@ -400,11 +400,11 @@ enum BlockStoreAlgorithm
 
     /**
      * \par Overview
-     * A [<em>blocked arrangement</em>](index.html#sec4sec4) is locally
-     * transposed into a [<em>striped arrangement</em>](index.html#sec4sec4)
+     * A [<em>blocked arrangement</em>](index.html#sec5sec4) is locally
+     * transposed into a [<em>striped arrangement</em>](index.html#sec5sec4)
      * which is then written to memory.  More specifically, cub::BlockExchange
      * used to locally reorder the items into a
-     * [<em>striped arrangement</em>](index.html#sec4sec4), after which the
+     * [<em>striped arrangement</em>](index.html#sec5sec4), after which the
      * thread block writes items in a parallel "strip-mining" fashion: consecutive
      * items owned by thread<sub><em>i</em></sub> are written to memory with
      * stride \p BLOCK_THREADS between them.
@@ -419,11 +419,11 @@ enum BlockStoreAlgorithm
 
     /**
      * \par Overview
-     * A [<em>blocked arrangement</em>](index.html#sec4sec4) is locally
-     * transposed into a [<em>warp-striped arrangement</em>](index.html#sec4sec4)
+     * A [<em>blocked arrangement</em>](index.html#sec5sec4) is locally
+     * transposed into a [<em>warp-striped arrangement</em>](index.html#sec5sec4)
      * which is then written to memory.  More specifically, cub::BlockExchange used
      * to locally reorder the items into a
-     * [<em>warp-striped arrangement</em>](index.html#sec4sec4), after which
+     * [<em>warp-striped arrangement</em>](index.html#sec5sec4), after which
      * each warp writes its own contiguous segment in a parallel "strip-mining" fashion:
      * consecutive items owned by lane<sub><em>i</em></sub> are written to memory
      * with stride \p WARP_THREADS between them.
@@ -446,7 +446,7 @@ enum BlockStoreAlgorithm
 
 
 /**
- * \brief The BlockStore class provides [<em>collective</em>](index.html#sec0) data movement methods for writing a [<em>blocked arrangement</em>](index.html#sec4sec4) of items partitioned across a CUDA thread block to a linear segment of memory.  ![](block_store_logo.png)
+ * \brief The BlockStore class provides [<em>collective</em>](index.html#sec0) data movement methods for writing a [<em>blocked arrangement</em>](index.html#sec5sec4) of items partitioned across a CUDA thread block to a linear segment of memory.  ![](block_store_logo.png)
  *
  * \par Overview
  * The BlockStore class provides a single data movement abstraction that can be specialized
@@ -454,16 +454,16 @@ enum BlockStoreAlgorithm
  * performance policies for different architectures, data types, granularity sizes, etc.
  *
  * \par Optionally, BlockStore can be specialized by different data movement strategies:
- *   -# <b>cub::BLOCK_STORE_DIRECT</b>.  A [<em>blocked arrangement</em>](index.html#sec4sec4) of data is written
+ *   -# <b>cub::BLOCK_STORE_DIRECT</b>.  A [<em>blocked arrangement</em>](index.html#sec5sec4) of data is written
  *      directly to memory. [More...](\ref cub::BlockStoreAlgorithm)
- *   -# <b>cub::BLOCK_STORE_VECTORIZE</b>.  A [<em>blocked arrangement</em>](index.html#sec4sec4)
+ *   -# <b>cub::BLOCK_STORE_VECTORIZE</b>.  A [<em>blocked arrangement</em>](index.html#sec5sec4)
  *      of data is written directly to memory using CUDA's built-in vectorized stores as a
  *      coalescing optimization.  [More...](\ref cub::BlockStoreAlgorithm)
- *   -# <b>cub::BLOCK_STORE_TRANSPOSE</b>.  A [<em>blocked arrangement</em>](index.html#sec4sec4)
- *      is locally transposed into a [<em>striped arrangement</em>](index.html#sec4sec4) which is
+ *   -# <b>cub::BLOCK_STORE_TRANSPOSE</b>.  A [<em>blocked arrangement</em>](index.html#sec5sec4)
+ *      is locally transposed into a [<em>striped arrangement</em>](index.html#sec5sec4) which is
  *      then written to memory.  [More...](\ref cub::BlockStoreAlgorithm)
- *   -# <b>cub::BLOCK_STORE_WARP_TRANSPOSE</b>.  A [<em>blocked arrangement</em>](index.html#sec4sec4)
- *      is locally transposed into a [<em>warp-striped arrangement</em>](index.html#sec4sec4) which is
+ *   -# <b>cub::BLOCK_STORE_WARP_TRANSPOSE</b>.  A [<em>blocked arrangement</em>](index.html#sec5sec4)
+ *      is locally transposed into a [<em>warp-striped arrangement</em>](index.html#sec5sec4) which is
  *      then written to memory.  [More...](\ref cub::BlockStoreAlgorithm)
  *
  * \tparam OutputIteratorRA     The input iterator type (may be a simple pointer type).
