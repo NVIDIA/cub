@@ -189,9 +189,9 @@ var searchBox = new SearchBox("searchBox", "search",false,'Search');
 <div class="line"></div>
 <div class="line">    <span class="comment">// Allocate shared memory</span></div>
 <div class="line">    __shared__ <span class="keyword">union </span>{</div>
-<div class="line">        <span class="keyword">typename</span> <a class="code" href="structcub_1_1_block_radix_sort_1_1_temp_storage.html" title="The operations exposed by BlockScan require a temporary memory allocation of this type for thread com...">BlockRadixSort::TempStorage</a>  sort;</div>
-<div class="line">        <span class="keyword">typename</span> <a class="code" href="structcub_1_1_block_load_1_1_temp_storage.html" title="The operations exposed by BlockLoad require a temporary memory allocation of this type for thread com...">BlockLoad::TempStorage</a>       load; </div>
-<div class="line">        <span class="keyword">typename</span> <a class="code" href="structcub_1_1_block_store_1_1_temp_storage.html" title="The operations exposed by BlockStore require a temporary memory allocation of this type for thread co...">BlockStore::TempStorage</a>      store; </div>
+<div class="line">        <span class="keyword">typename</span> <a class="code" href="structcub_1_1_block_radix_sort_1_1_temp_storage.html" title="The operations exposed by BlockScan require a temporary memory allocation of this nested type for thr...">BlockRadixSort::TempStorage</a>  sort;</div>
+<div class="line">        <span class="keyword">typename</span> <a class="code" href="structcub_1_1_block_load_1_1_temp_storage.html" title="The operations exposed by BlockLoad require a temporary memory allocation of this nested type for thr...">BlockLoad::TempStorage</a>       load; </div>
+<div class="line">        <span class="keyword">typename</span> <a class="code" href="structcub_1_1_block_store_1_1_temp_storage.html" title="The operations exposed by BlockStore require a temporary memory allocation of this nested type for th...">BlockStore::TempStorage</a>      store; </div>
 <div class="line">    } temp_storage; </div>
 <div class="line"></div>
 <div class="line">    <span class="keywordtype">int</span> block_offset = blockIdx.x * (128 * 16);   <span class="comment">// Offset for this block&#39;s segment</span></div>
@@ -398,7 +398,7 @@ var searchBox = new SearchBox("searchBox", "search",false,'Search');
 <!-- HTML footer for doxygen 1.8.3.1-->
 <!-- start footer part -->
 <hr class="footer"/><address class="footer"><small>
-Generated on Sat Aug 10 2013 02:31:02 for CUB by &#160;<a href="http://www.doxygen.org/index.html">
+Generated on Sat Aug 10 2013 02:43:28 for CUB by &#160;<a href="http://www.doxygen.org/index.html">
 <img class="footer" src="doxygen.png" alt="doxygen"/>
 </a> 1.8.4
 <br>
