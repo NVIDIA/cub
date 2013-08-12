@@ -323,7 +323,7 @@ var searchBox = new SearchBox("searchBox", "search",false,'Search');
 <dl class="section user"><dt></dt><dd><table class="doxtable">
 <tr>
 <td style="white-space: nowrap; vertical-align:text-top;">08/08/2013<br/>
- <a href="https://github.com/NVlabs/cub/archive/1.0.1.zip">CUB v1.0.1 (primary)</a> </td><td style="vertical-align:text-top;"><p class="starttd">This release agenda focuses on (1) new and updated primitives, (2) extensive API documentation, and (3) aggressive regression testing. Notable additions inlcude:</p>
+ <a href="https://github.com/NVlabs/cub/archive/1.0.1.zip">CUB v1.0.1 (primary)</a> </td><td style="vertical-align:text-top;"><p class="starttd">This release focuses on (1) new and updated primitives, (2) extensive API documentation, and (3) aggressive regression testing. Notable additions inlcude:</p>
 <ul>
 <li><a class="el" href="structcub_1_1_device_radix_sort.html" title="DeviceRadixSort provides operations for computing a device-wide, parallel radix sort across data item...">cub::DeviceRadixSort</a>. This implementation is an overhaul of our previous efforts in the B40C and MGPU projects. It is constructed from tunable CUB block-level primitives and is up to 1.7x faster than Thrust v1.7 on GTX Titan (up to 2.15 billion 32b keys/s)</li>
 <li><a class="el" href="structcub_1_1_device_scan.html" title="DeviceScan provides operations for computing a device-wide, parallel prefix scan across data items re...">cub::DeviceScan</a>. This implementation is a new 1-pass decomposition featuring <em>"adaptive look-back"</em> for mitigating the latencies of otherwise serial dependences between thread blocks. It is up to 3.2x faster than Thrust v1.7 on GTX Titan (up to 28.9 billion 32b items/s)</li>
