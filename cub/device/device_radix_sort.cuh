@@ -233,12 +233,8 @@ __global__ void RadixSortDownsweepKernel(
  *****************************************************************************/
 
 /**
- * \addtogroup DeviceModule
- * @{
- */
-
-/**
  * \brief DeviceRadixSort provides operations for computing a device-wide, parallel radix sort across data items residing within global memory. ![](sorting_logo.png)
+ * \ingroup DeviceModule
  *
  * \par Overview
  * The [<em>radix sorting method</em>](http://en.wikipedia.org/wiki/Radix_sort) arranges
@@ -889,8 +885,6 @@ struct DeviceRadixSort
 
 };
 
-
-/** @} */       // DeviceModule
 
 }               // CUB namespace
 CUB_NS_POSTFIX  // Optional outer namespace(s)

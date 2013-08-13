@@ -150,12 +150,8 @@ __global__ void ScanKernel(
  *****************************************************************************/
 
 /**
- * \addtogroup DeviceModule
- * @{
- */
-
-/**
  * \brief DeviceScan provides operations for computing a device-wide, parallel prefix scan across data items residing within global memory. ![](device_scan.png)
+ * \ingroup DeviceModule
  *
  * \par Overview
  * Given a list of input elements and a binary reduction operator, a [<em>prefix scan</em>](http://en.wikipedia.org/wiki/Prefix_sum)
@@ -809,8 +805,6 @@ struct DeviceScan
 
 };
 
-
-/** @} */       // DeviceModule
 
 }               // CUB namespace
 CUB_NS_POSTFIX  // Optional outer namespace(s)
