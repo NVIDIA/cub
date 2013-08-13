@@ -30,6 +30,14 @@
 
 /**
 
+\defgroup DeviceModule Device-wide
+\defgroup BlockModule Block-wide
+\defgroup WarpModule Warp-wide
+\defgroup ThreadModule Thread
+\defgroup IoModule Kernel I/O
+\defgroup GridModule Grid utilities
+\defgroup UtilModule Generic CUB utilities
+
 \mainpage
 
 \tableofcontents
@@ -480,12 +488,6 @@ ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
 SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 \endcode
 
-\defgroup DeviceModule Device-wide
-\defgroup BlockModule Block-wide
-\defgroup WarpModule Warp-wide
-\defgroup ThreadModule Thread
-\defgroup IoModule Kernel I/O
-\defgroup GridModule Grid utilities
-\defgroup UtilModule Generic CUB utilities
+
 
 */
