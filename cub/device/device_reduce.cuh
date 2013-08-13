@@ -157,12 +157,8 @@ __global__ void ReduceSingleKernel(
  *****************************************************************************/
 
 /**
- * \addtogroup DeviceModule
- * @{
- */
-
-/**
  * \brief DeviceReduce provides operations for computing a device-wide, parallel reduction across data items residing within global memory. ![](reduce_logo.png)
+ * \ingroup DeviceModule
  *
  * \par Overview
  * A <a href="http://en.wikipedia.org/wiki/Reduce_(higher-order_function)"><em>reduction</em></a> (or <em>fold</em>)
@@ -772,8 +768,6 @@ struct DeviceReduce
 
 };
 
-
-/** @} */       // DeviceModule
 
 }               // CUB namespace
 CUB_NS_POSTFIX  // Optional outer namespace(s)
