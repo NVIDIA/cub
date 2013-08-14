@@ -178,7 +178,7 @@ struct DeviceReduce
 
 
     /******************************************************************************
-     * Constants and typedefs
+     * Constants and type definitions
      ******************************************************************************/
 
     /// Generic structure for encapsulating dispatch properties codified in block policy.
