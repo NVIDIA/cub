@@ -851,6 +851,20 @@ int CompareResults(double* computed, double* reference, SizeT len, bool verbose 
  * Verify the contents of a device array match those
  * of a host array
  */
+int CompareDeviceResults(
+    cub::NullType *h_reference,
+    cub::NullType *d_data,
+    size_t num_items,
+    bool verbose = true,
+    bool display_data = false)
+{
+    return 0;
+}
+
+    /**
+ * Verify the contents of a device array match those
+ * of a host array
+ */
 template <typename S, typename T>
 int CompareDeviceResults(
     S *h_reference,
