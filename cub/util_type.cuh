@@ -123,14 +123,6 @@ struct NullType
 #endif // DOXYGEN_SHOULD_SKIP_THIS
 };
 
-#ifndef DOXYGEN_SHOULD_SKIP_THIS    // Do not document
-
-namespace {
-    std::ostream& operator<< (std::ostream& stream, const NullType& val) { return stream; }
-}
-
-#endif // DOXYGEN_SHOULD_SKIP_THIS
-
 
 /**
  * \brief Allows for the treatment of an integral constant as a type at compile-time (e.g., to achieve static call dispatch based on constant integral values)
