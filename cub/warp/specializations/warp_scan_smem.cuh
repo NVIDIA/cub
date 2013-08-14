@@ -58,7 +58,7 @@ template <
 struct WarpScanSmem
 {
     /******************************************************************************
-     * Constants and typedefs
+     * Constants and type definitions
      ******************************************************************************/
 
     enum

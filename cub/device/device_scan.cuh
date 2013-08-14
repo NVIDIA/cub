@@ -175,7 +175,7 @@ struct DeviceScan
 #ifndef DOXYGEN_SHOULD_SKIP_THIS    // Do not document
 
     /******************************************************************************
-     * Constants and typedefs
+     * Constants and type definitions
      ******************************************************************************/
 
     /// Generic structure for encapsulating dispatch properties.  Mirrors the constants within BlockScanTilesPolicy.

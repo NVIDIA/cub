@@ -67,7 +67,7 @@ template <
 struct BlockRakingLayout
 {
     //---------------------------------------------------------------------
-    // Constants and typedefs
+    // Constants and type definitions
     //---------------------------------------------------------------------
 
     enum

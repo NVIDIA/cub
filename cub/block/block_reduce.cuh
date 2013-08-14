@@ -180,7 +180,7 @@ class BlockReduce
 private:
 
     /******************************************************************************
-     * Constants and typedefs
+     * Constants and type definitions
      ******************************************************************************/
 
     /// Internal specialization.
