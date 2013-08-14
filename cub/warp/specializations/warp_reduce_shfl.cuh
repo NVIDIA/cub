@@ -58,7 +58,7 @@ template <
 struct WarpReduceShfl
 {
     /******************************************************************************
-     * Constants and typedefs
+     * Constants and type definitions
      ******************************************************************************/
 
     enum
