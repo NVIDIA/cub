@@ -27,12 +27,7 @@
  ******************************************************************************/
 
 /******************************************************************************
- * Simple demonstration of cub::BlockSort
- *
- * Example compilation string:
- *
- * nvcc example_block_radix_sort.cu -gencode=arch=compute_20,code=\"sm_20,compute_20\" -o example_block_radix_sort -m32 -Xptxas -v -I../cub
- *
+ * Simple demonstration of cub::BlockRadixSort
  ******************************************************************************/
 
 // Ensure printing of CUDA runtime errors to console (define before including cub.h)
@@ -91,7 +86,7 @@ __global__ void BlockSortKernel(
 {
     enum { TILE_SIZE = BLOCK_THREADS * ITEMS_PER_THREAD };
 
-    // Parameterize BlockRadixSort type for our thread block
+    // Specialize BlockRadixSort type for our thread block
     typedef BlockRadixSort<Key, BLOCK_THREADS, ITEMS_PER_THREAD> BlockRadixSortT;
 
     // Shared memory

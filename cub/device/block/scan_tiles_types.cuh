@@ -204,16 +204,16 @@ template <
     typename ScanOp>
 struct DeviceScanBlockPrefixOp
 {
-    // Parameterized warp reduce
+    /// Parameterized warp reduce
     typedef WarpReduce<T>                       WarpReduceT;
 
-    // Storage type
+    /// Storage type
     typedef typename WarpReduceT::TempStorage   _TempStorage;
 
-    // Alias wrapper allowing storage to be unioned
+    /// Alias wrapper allowing storage to be unioned
     typedef Uninitialized<_TempStorage>         TempStorage;
 
-    // Tile status descriptor type
+    /// Tile status descriptor type
     typedef ScanTileDescriptor<T>               ScanTileDescriptorT;
 
     // Fields
@@ -223,7 +223,7 @@ struct DeviceScanBlockPrefixOp
     int                         tile_idx;           ///< The current tile index
     T                           inclusive_prefix;   ///< Inclusive prefix for the tile
 
-    // Constructor
+    /// Constructor
     __device__ __forceinline__
     DeviceScanBlockPrefixOp(
         ScanTileDescriptorT     *d_tile_status,
@@ -236,7 +236,7 @@ struct DeviceScanBlockPrefixOp
             tile_idx(tile_idx) {}
 
 
-    // Block until all predecessors within the specified window have non-invalid status
+    /// Block until all predecessors within the specified window have non-invalid status
     __device__ __forceinline__
     void ProcessWindow(
         int                         predecessor_idx,
@@ -252,7 +252,7 @@ struct DeviceScanBlockPrefixOp
     }
 
 
-    // Prefix functor (called by the first warp)
+    /// Prefix functor for BlockScan (to be called by the first warp)
     __device__ __forceinline__
     T operator()(T block_aggregate)
     {
@@ -296,16 +296,18 @@ struct DeviceScanBlockPrefixOp
 };
 
 
-// Running scan prefix callback type for single-block scans.
-// Maintains a running prefix that can be applied to consecutive
-// scan operations.
+/**
+ * Running-total prefix callback type for BlockScan.
+ * Maintains and updates a running prefix that is to be applied
+ * to consecutive scan operations.
+ */
 template <typename T>
 struct RunningBlockPrefixOp
 {
     // Running prefix
     T running_total;
 
-    // Callback operator.
+    /// Prefix functor for BlockScan (to be called by the first warp)
     __device__ T operator()(T block_aggregate)
     {
         T old_prefix = running_total;
