@@ -119,7 +119,7 @@ CUB is inspired by the following goals:
 
 \par
 The following code snippet presents a CUDA kernel in which each block of 128 threads 
-will collectively load, sort, and store its own segment of 2048 integer keys:
+peforms a collective, block-wide sort of 2048 integer keys:
 
 \par
 \code

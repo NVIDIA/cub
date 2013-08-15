@@ -204,14 +204,14 @@ bin/example_block_reduce_$(SUFFIX) : example_block_reduce.cu $(DEPS)
 
 
 #-------------------------------------------------------------------------------
-# make example_block_scan_sum
+# make example_block_scan
 #-------------------------------------------------------------------------------
 
-example_block_scan_sum: bin/example_block_scan_sum_$(SUFFIX)
+example_block_scan: bin/example_block_scan_$(SUFFIX)
 
-bin/example_block_scan_sum_$(SUFFIX) : example_block_scan_sum.cu $(DEPS)
+bin/example_block_scan_$(SUFFIX) : example_block_scan.cu $(DEPS)
 	mkdir -p bin
-	$(NVCC) $(DEFINES) $(SM_TARGETS) -o bin/example_block_scan_sum_$(SUFFIX) example_block_scan_sum.cu $(NVCCFLAGS) $(CPU_ARCH) $(INC) $(LIBS) -O3
+	$(NVCC) $(DEFINES) $(SM_TARGETS) -o bin/example_block_scan_$(SUFFIX) example_block_scan.cu $(NVCCFLAGS) $(CPU_ARCH) $(INC) $(LIBS) -O3
 
 
 #-------------------------------------------------------------------------------
@@ -226,14 +226,14 @@ bin/example_block_radix_sort_$(SUFFIX) : example_block_radix_sort.cu $(DEPS)
 	
 	
 #-------------------------------------------------------------------------------
-# make histo_study
+# make example_block_tridiagonal_solve
 #-------------------------------------------------------------------------------
 
-histo_study: bin/histo_study_$(SUFFIX)
+example_block_tridiagonal_solve: bin/example_block_tridiagonal_solve_$(SUFFIX)
 
-bin/histo_study_$(SUFFIX) : histo_study.cu $(DEPS)
+bin/example_block_tridiagonal_solve_$(SUFFIX) : example_block_tridiagonal_solve.cu $(DEPS)
 	mkdir -p bin
-	$(NVCC) $(DEFINES) $(SM_TARGETS) -o bin/histo_study_$(SUFFIX) histo_study.cu $(NVCCFLAGS) $(CPU_ARCH) $(INC) $(LIBS) -O3	
+	$(NVCC) $(DEFINES) $(SM_TARGETS) -o bin/example_block_tridiagonal_solve_$(SUFFIX) example_block_tridiagonal_solve.cu $(NVCCFLAGS) $(CPU_ARCH) $(INC) $(LIBS) -O3	
 
 
 #-------------------------------------------------------------------------------

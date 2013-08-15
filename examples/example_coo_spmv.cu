@@ -304,7 +304,7 @@ struct PersistentBlockSpmv
         int                         block_offset,
         int                         block_oob)
     :
-        temp_storage(temp_storage.Alias()),
+        temp_storage(temp_storage),
         d_rows(d_rows),
         d_columns(d_columns),
         d_values(d_values),
@@ -542,7 +542,7 @@ struct FinalizeSpmvBlock
         PartialProduct              *d_block_partials,
         int                         num_partials)
     :
-        temp_storage(temp_storage.Alias()),
+        temp_storage(temp_storage),
         d_result(d_result),
         d_block_partials(d_block_partials),
         num_partials(num_partials)
@@ -689,7 +689,7 @@ __global__ void CooKernel(
     Value                           *d_vector,
     Value                           *d_result)
 {
-    // Parameterize SpMV threadblock abstraction type
+    // Specialize SpMV threadblock abstraction type
     typedef PersistentBlockSpmv<BLOCK_THREADS, ITEMS_PER_THREAD, VertexId, Value> PersistentBlockSpmv;
 
     // Shared memory allocation
@@ -729,7 +729,7 @@ __global__ void CooFinalizeKernel(
     int                             num_partials,
     Value                           *d_result)
 {
-    // Parameterize "fix-up" threadblock abstraction type
+    // Specialize "fix-up" threadblock abstraction type
     typedef FinalizeSpmvBlock<BLOCK_THREADS, ITEMS_PER_THREAD, VertexId, Value> FinalizeSpmvBlock;
 
     // Shared memory allocation

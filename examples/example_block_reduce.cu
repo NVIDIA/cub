@@ -28,11 +28,6 @@
 
 /******************************************************************************
  * Simple demonstration of cub::BlockReduce
- *
- * Example compilation string:
- *
- * nvcc example_block_reduce.cu -gencode=arch=compute_20,code=\"sm_20,compute_20\" -o example_block_reduce
- *
  ******************************************************************************/
 
 // Ensure printing of CUDA runtime errors to console (define before including cub.h)
@@ -78,7 +73,7 @@ __global__ void BlockSumKernel(
     int         *d_out,         // Tile aggregate
     clock_t     *d_elapsed)     // Elapsed cycle count of block reduction
 {
-    // Parameterize BlockReduce type for our thread block
+    // Specialize BlockReduce type for our thread block
     typedef BlockReduce<int, BLOCK_THREADS, ALGORITHM> BlockReduceT;
 
     // Shared memory
