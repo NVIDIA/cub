@@ -77,7 +77,7 @@ __global__ void BlockPrefixSumKernel(
     int         *d_out,         // Tile of output
     clock_t     *d_elapsed)     // Elapsed cycle count of block scan
 {
-    // Parameterize BlockScan type for our thread block
+    // Specialize BlockScan type for our thread block
     typedef BlockScan<int, BLOCK_THREADS> BlockScanT;
 
     // Shared memory

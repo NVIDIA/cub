@@ -112,38 +112,54 @@ private:
      * Constants and type definitions
      ******************************************************************************/
 
-    /// Scan data type
-    struct ScanTuple
+    /**
+     * The scan data type is a 3x3 matrix of which we only need to represent
+     * the first two rows (the third row is always {0,0,1} )
+     */
+    struct ScanMatrix
     {
-        // First two rows of the 3x3 matrix used by scan
         T g[2][3];
     };
 
-    /// Scan functor
+
+    /// Block scan functor
     struct ScanOp
     {
-        __device__ __forceinline__ ScanTuple operator()(const ScanTuple &first, const ScanTuple &second)
+        /**
+         * Multiplies two scan matrices as part of the scan operation.  Matrix
+         * multiplication is not commutative, and this application requires the
+         * factors be ordered in reverse (the \p second parameter is always the
+         * the first factor in the product), i.e., the scan total is
+         * bN * bN-1 * ... * b1 * b0.
+         */
+        __device__ __forceinline__ ScanMatrix operator()(const ScanMatrix &first, const ScanMatrix &second)
         {
-            ScanTuple retval;
+            ScanMatrix retval;
 
-            // first row
-            retval[0][0] = (first.g[0][0] * second.g[0][0]) + (first.g[0][1] * second.g[1][0]);
-            retval[0][1] = (first.g[0][0] * second.g[0][1]) + (first.g[0][1] * second.g[1][1]);
-            retval[0][2] = (first.g[0][0] * second.g[0][2]) + (first.g[0][1] * second.g[1][2]) + first.g[0][2];
+            // Row 0
+            retval.g[0][0] = (second.g[0][0] * first.g[0][0]) + (second.g[0][1] * first.g[1][0]);
+            retval.g[0][1] = (second.g[0][0] * first.g[0][1]) + (second.g[0][1] * first.g[1][1]);
+            retval.g[0][2] = (second.g[0][0] * first.g[0][2]) + (second.g[0][1] * first.g[1][2]) + second.g[0][2];
 
-            // second row
-            retval[1][0] = (first.g[1][0] * second.g[0][0]) + (first.g[1][1] * second.g[1][0]);
-            retval[1][1] = (first.g[1][0] * second.g[0][1]) + (first.g[1][1] * second.g[1][1]);
-            retval[1][2] = (first.g[1][0] * second.g[0][2]) + (first.g[1][1] * second.g[1][2]) + first.g[1][2];
+            // Row 1
+            retval.g[1][0] = (second.g[1][0] * first.g[0][0]) + (second.g[1][1] * first.g[1][0]);
+            retval.g[1][1] = (second.g[1][0] * first.g[0][1]) + (second.g[1][1] * first.g[1][1]);
+            retval.g[1][2] = (second.g[1][0] * first.g[0][2]) + (second.g[1][1] * first.g[1][2]) + second.g[1][2];
 
+            return retval;
         }
     };
 
+
     /// Prefix scan implementation to use
-    typedef typename BlockScan<ScanTuple, BLOCK_THREADS, SCAN_ALGORITHM> BlockScan;
+    typedef typename BlockScan<ScanMatrix, BLOCK_THREADS, SCAN_ALGORITHM> BlockScan;
+
 
     /// Shared memory storage layout type for BlockTridiagonalSolve
-    typedef typename BlockScan::TempStorage _TempStorage;
+    struct _TempStorage
+    {
+        typename BlockScan::TempStorage scan;
+    };
 
 
     /******************************************************************************
@@ -233,7 +249,12 @@ public:
 
 
     /**
-     * \brief Solves a tridiagonal linear system <b>A</b> <b>x</b> = <b>d</b> of size \p N where \p N is \p BLOCK_THREADS * \p ITEMS_PER_THREAD.
+     * \brief Solves a tridiagonal linear system <b>A</b> <b>x</b> = <b>d</b> of size \p N (where \p N is \p BLOCK_THREADS * \p ITEMS_PER_THREAD).
+     *
+     * Because they are out-of-range within <b>A</b>, the inputs <tt>a[0]</tt> in
+     * <em>thread</em><sub>0</sub> and \p <tt>c[ITEMS_PER_THREAD - 1]</tt> in
+     * <em>thread</em><sub><tt>THREADS_PER_BLOCK</tt>-1</sub> need not be defined.
+     * (They are treated as \p 1 and \p 0, respectively).
      *
      * \blocked
      *
@@ -244,12 +265,50 @@ public:
      */
     template <int ITEMS_PER_THREAD>
     __device__ __forceinline__ void Solve(
-        T   (&a)[ITEMS_PER_THREAD],     ///< [in] Calling thread's segment of coefficients within the first diagonal.
-        T   (&b)[ITEMS_PER_THREAD],     ///< [in] Calling thread's segment of coefficients within the second diagonal.
-        T   (&c)[ITEMS_PER_THREAD],     ///< [in] Calling thread's segment of coefficients within the thrid diagonal.
-        T   (&d)[ITEMS_PER_THREAD],     ///< [in] Calling thread's segment of the product vector
-        T   (&x)[ITEMS_PER_THREAD])     ///< [out] Calling thread's segment of solution vector
+        T   (&a)[ITEMS_PER_THREAD],     ///< [in] Calling thread's segment of coefficients within the subdiagonal of the matrix multipicand <b>A</b>.
+        T   (&b)[ITEMS_PER_THREAD],     ///< [in] Calling thread's segment of coefficients within the main diagonal of the matrix multipicand <b>A</b>.
+        T   (&c)[ITEMS_PER_THREAD],     ///< [in] Calling thread's segment of coefficients within the superdiagonal of the matrix multipicand <b>A</b>.
+        T   (&d)[ITEMS_PER_THREAD],     ///< [in] Calling thread's segment of the vector product
+        T   (&x)[ITEMS_PER_THREAD])     ///< [out] Calling thread's segment of the vector multiplier (solution)
     {
+        // Construct scan matrices
+        ScanMatrix items[ITEMS_PER_THREAD];
+
+        #pragma unroll
+        for (int ITEM = 0; ITEM < ITEMS_PER_THREAD; ++ITEM)
+        {
+            // a0 is out of range (0)
+            if ((ITEM == 0) && (linear_tid == 0))
+                a[ITEM] = T(0.0);
+
+            // cN-1 is out of range (1)
+            if ((ITEM == ITEMS_PER_THREAD - 1) && (linear_tid == BLOCK_THREADS - 1))
+                c[ITEM] = T(1.0);
+
+            items[ITEM].g[0][0] = (b[ITEM] * T(-1.0)) / c[ITEM];
+            items[ITEM].g[0][1] = (a[ITEM] * T(-1.0)) / c[ITEM];
+            items[ITEM].g[0][2] = (d[ITEM]) / c[ITEM];
+
+            items[ITEM].g[1][0] = T(1.0);
+            items[ITEM].g[1][1] = T(0.0);
+            items[ITEM].g[1][2] = T(0.0);
+
+        }
+
+        // Perform inclusive prefix scan
+        ScanMatrix block_aggregate;
+
+        BlockScan(temp_storage.scan).InclusiveScan(items, items, ScanOp(), block_aggregate);
+
+        // Extract the first unknown x0 from the aggregate
+        T x0 = (block_aggregate.g[0][2] * T(-1.0)) / block_aggregate.g[0][0];
+
+        // Extract unknowns
+        #pragma unroll
+        for (int ITEM = 0; ITEM < ITEMS_PER_THREAD; ++ITEM)
+        {
+            x[ITEM] = items[ITEM].g[1][0] * x0 + items[ITEM].g[1][2];
+        }
     }
 
     //@}  end member group
