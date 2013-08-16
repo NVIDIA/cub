@@ -81,10 +81,12 @@ __global__ void BlockSolveKernel(
     typedef BlockTridiagonalSolve<T, BLOCK_THREADS, SCAN_ALGORITHM> BlockTridiagonalSolveT;
 
     // Specialize BlockLoad type for our thread block
-    typedef BlockLoad<T*, BLOCK_THREADS, ITEMS_PER_THREAD, BLOCK_LOAD_WARP_TRANSPOSE> BlockLoadT;
+//    typedef BlockLoad<T*, BLOCK_THREADS, ITEMS_PER_THREAD, BLOCK_LOAD_WARP_TRANSPOSE> BlockLoadT;
+    typedef BlockLoad<T*, BLOCK_THREADS, ITEMS_PER_THREAD, BLOCK_LOAD_DIRECT> BlockLoadT;
 
     // Specialize BlockStore type for our thread block
-    typedef BlockStore<T*, BLOCK_THREADS, ITEMS_PER_THREAD, BLOCK_STORE_WARP_TRANSPOSE> BlockStoreT;
+//    typedef BlockStore<T*, BLOCK_THREADS, ITEMS_PER_THREAD, BLOCK_STORE_WARP_TRANSPOSE> BlockStoreT;
+    typedef BlockStore<T*, BLOCK_THREADS, ITEMS_PER_THREAD, BLOCK_STORE_DIRECT> BlockStoreT;
 
     // Allocate shared memory
     __shared__ union
