@@ -116,7 +116,7 @@ private:
      * The scan data type is a 3x3 matrix of which we only need to represent
      * the first two rows (the third row is always {0,0,1} )
      */
-    struct ScanMatrix
+    __declspec(align(8)) struct ScanMatrix
     {
         T g[2][3];
     };
