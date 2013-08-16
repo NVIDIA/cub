@@ -119,12 +119,6 @@ private:
     struct ScanMatrix
     {
         T g[2][3];
-
-        __device__ __forceinline__ void Display(char *str)
-        {
-            CubLog("%s [ [%.5f, %.5f, %.5f], [%.5f, %.5f, %.5f], [0, 0, 1] ]\n",
-                str, g[0][0], g[0][1], g[0][2], g[1][0], g[1][1], g[1][2]);
-        }
     };
 
 
@@ -298,8 +292,6 @@ public:
             items[ITEM].g[1][0] = T(1.0);
             items[ITEM].g[1][1] = T(0.0);
             items[ITEM].g[1][2] = T(0.0);
-
-            items[ITEM].Display("\t\t Input");
 
         }
 
