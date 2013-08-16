@@ -35,6 +35,7 @@
 
 #include <stdio.h>
 #include <iostream>
+#include <algorithm>
 
 #include <cub/cub.cuh>
 
@@ -139,6 +140,70 @@ __global__ void BlockSolveKernel(
 //---------------------------------------------------------------------
 
 /**
+ * Simple tridiagonal matrix equation tuple
+ */
+template <typename T>
+struct MatrixEquation
+{
+    T a;
+    T b;
+    T c;
+    T d;
+    T x;
+
+    T f;
+    T e;
+    T y;
+
+    static T Abs(T val)
+    {
+        return (val > 0) ? val : val * -1.0;
+    }
+
+    void Init(T abs_max)
+    {
+
+        // Select non-zero coefficients
+        int x, y, z, w;
+        do
+        {
+            RandomBits(x);
+            RandomBits(y);
+            RandomBits(z);
+
+        } while ((x == 0) || (y == 0) || (z == 0));
+        RandomBits(w);
+
+        // Scale
+        a = T(x) / T(INT_MAX) * abs_max;
+        b = T(y) / T(INT_MAX) * abs_max;
+        c = T(z) / T(INT_MAX) * abs_max;
+        d = T(w) / T(INT_MAX) * abs_max;
+
+        // Make diagonally dominant
+        if (Abs(a) > Abs(b))
+        {
+            T temp = a;
+            a = b;
+            b = temp;
+        }
+        if (Abs(c) > Abs(b))
+        {
+            T temp = c;
+            c = b;
+            b = temp;
+        }
+    }
+
+    // Less than operator for diagonal pivoting (actually greater-than for sorting by descending order)
+    bool operator<(const MatrixEquation &other) const
+    {
+        return (Abs(b) > Abs(other.b));
+    }
+};
+
+
+/**
  * Initialize tridiagonal system (and solution).
  */
 template <typename T>
@@ -151,79 +216,81 @@ void Initialize(
     int system_size,
     int num_systems)
 {
-    T *f = new T[system_size * num_systems];
-    T *e = new T[system_size * num_systems];
-    T *y = new T[system_size * num_systems];
+    float abs_max = 9.0;        // somewhat arbitrary maximum coefficient
 
     // Loop over systems
     for (int j = 0; j < num_systems; ++j)
     {
-        int base = j * system_size;
-
         // Initialize system
-        for (int i = base; i < base + system_size; ++i)
-        {
-            int r;
-            RandomBits(r, 0, 0, 3);
-            a[i] = r + 1;
-            RandomBits(r, 0, 0, 3);
-            b[i] = r + 1;
-            RandomBits(r, 0, 0, 3);
-            c[i] = r + 1;
-            RandomBits(r, 0, 0, 3);
-            d[i] = r + 1;
-        }
-        a[base] = 0;                      // first item in subdiagonal out of bounds (0)
-        c[base + system_size - 1] = 1;    // last item in superdiagonal is out of bounds (1)
+        MatrixEquation<T> *rows = new MatrixEquation<T>[system_size];
+        for (int i = 0; i < system_size; ++i)
+            rows[i].Init(abs_max);
+
+        // Pivot system (so main diagonal is ordered largest to smallest)
+        std::stable_sort(rows, rows + system_size);
+
+        // Fix "out-of-bounds" coefficients
+        rows[0].a                   = 0;    // first item in subdiagonal out of bounds (0)
+        rows[system_size - 1].c     = 1;    // last item in superdiagonal is out of bounds (1)
 
         // Solve system using LU decomposition
-        f[base] = b[base];
-        for (int i = base + 1; i < base + system_size; ++i)
+        rows[0].f = rows[0].b;
+        for (int i = 1; i < system_size; ++i)
         {
-            e[i] = a[i] / f[i - 1];
-            f[i] = b[i] - e[i] * c[i - 1];
+            rows[i].e = rows[i].a / rows[i - 1].f;
+            rows[i].f = rows[i].b - rows[i].e * rows[i - 1].c;
         }
 
-        y[base] = d[base];
-        for (int i = base + 1; i < base + system_size; ++i)
+        rows[0].y = rows[0].d;
+        for (int i = 1; i < system_size; ++i)
         {
-            y[i] = d[i] - e[i] * y[i - 1];
+            rows[i].y = rows[i].d - rows[i].e * rows[i - 1].y;
         }
 
-        x[base + system_size - 1] = y[base + system_size - 1] / f[base + system_size - 1];
-        for (int i = base + system_size - 2; i >= base; --i)
+        rows[system_size - 1].x = rows[system_size - 1].y / rows[system_size - 1].f;
+        for (int i = system_size - 2; i >= 0; --i)
         {
-            x[i] = (y[i] - c[i] * x[i + 1]) / f[i];
+            rows[i].x = (rows[i].y - rows[i].c * rows[i + 1].x) / rows[i].f;
         }
 
-        // Display
+        // Display solved system
         if (g_verbose)
         {
             printf("x[%d]: %.3f \t\t(%.3f*%.3f + %.3f*%.3f = %.3f)\n",
-                0, x[base],
-                b[base], x[base],
-                c[base], x[base + 1],
-                d[base]);
+                0, rows[0].x,
+                rows[0].b, rows[0].x,
+                rows[0].c, rows[1].x,
+                rows[0].d);
 
-            for (int i = base + 1; i < base + system_size - 1; ++i)
+            for (int i = 1; i < system_size - 1; ++i)
                 printf("x[%d]: %.3f \t\t(%.3f*%.3f + %.3f*%.3f + %.3f*%.3f = %.3f)\n",
-                    i - base, x[i],
-                    a[i], x[i - 1],
-                    b[i], x[i],
-                    c[i], x[i + 1],
-                    d[i]);
+                    i, rows[i].x,
+                    rows[i].a, rows[i - 1].x,
+                    rows[i].b, rows[i].x,
+                    rows[i].c, rows[i + 1].x,
+                    rows[i].d);
 
             printf("x[%d]: %.3f \t\t(%.3f*%.3f + %.3f*%.3f = %.3f)\n",
-                system_size - 1, x[system_size - 1],
-                a[base + system_size - 1], x[base + system_size - 2],
-                b[base + system_size - 1], x[base + system_size - 1],
-                d[base + system_size - 1]);
+                system_size - 1, rows[system_size - 1].x,
+                rows[system_size - 1].a, rows[system_size - 2].x,
+                rows[system_size - 1].b, rows[system_size - 1].x,
+                rows[system_size - 1].d);
         }
-    }
 
-    delete[] f;
-    delete[] e;
-    delete[] y;
+        // Copy system
+        int base = j * system_size;
+        for (int i = 0; i < system_size; ++i)
+        {
+            a[base + i] = rows[i].a;
+            b[base + i] = rows[i].b;
+            c[base + i] = rows[i].c;
+            d[base + i] = rows[i].d;
+            x[base + i] = rows[i].x;
+        }
+
+        // Cleanup
+        delete[] rows;
+    }
 }
 
 
@@ -390,7 +457,7 @@ int main(int argc, char** argv)
 /** Add tests here **/
 
     // Run tests
-    Test<float, 32, 4, BLOCK_SCAN_RAKING>();
+    Test<float, 32, 1, BLOCK_SCAN_RAKING>();
 
 /****/
 
