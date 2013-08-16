@@ -133,11 +133,17 @@ __device__ __forceinline__ T ThreadScanInclusive(
     T inclusive = input[0];
     output[0] = inclusive;
 
+    inclusive.Display("inclusive");
+
     // Continue scan
     #pragma unroll
     for (int i = 0; i < LENGTH; ++i)
     {
         inclusive = scan_op(inclusive, input[i]);
+
+        inclusive.Display("inclusive");
+        input[i].Display("input");
+
         output[i] = inclusive;
     }
 
@@ -186,15 +192,26 @@ __device__ __forceinline__ T ThreadScanInclusive(
     T inclusive = input[0];
     if (apply_prefix)
     {
+        prefix.Display("\t PREFIX ");
         inclusive = scan_op(prefix, inclusive);
     }
+    else
+    {
+        prefix.Display("\t NOPREFIX ");
+    }
     output[0] = inclusive;
+
+    inclusive.Display("inclusive ");
 
     // Continue scan
     #pragma unroll
     for (int i = 1; i < LENGTH; ++i)
     {
         inclusive = scan_op(inclusive, input[i]);
+
+        inclusive.Display("inclusive ");
+        input[i].Display("input");
+
         output[i] = inclusive;
     }
 
