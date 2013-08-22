@@ -28,19 +28,14 @@
 
 /**
  * \file
- * cub::BlockReduceRaking provides variants of raking-based parallel reduction across a CUDA threadblock
+ * cub::BlockReduceRaking provides raking-based methods of parallel reduction across a CUDA threadblock
  */
 
 #pragma once
 
 #include "../../block/block_raking_layout.cuh"
 #include "../../warp/warp_reduce.cuh"
-#include "../../util_arch.cuh"
-#include "../../util_type.cuh"
-#include "../../thread/thread_operators.cuh"
 #include "../../thread/thread_reduce.cuh"
-#include "../../thread/thread_load.cuh"
-#include "../../thread/thread_store.cuh"
 #include "../../util_namespace.cuh"
 
 /// Optional outer namespace(s)
@@ -51,7 +46,7 @@ namespace cub {
 
 
 /**
- * \brief BlockReduceRaking provides variants of raking-based parallel reduction across a CUDA threadblock
+ * \brief BlockReduceRaking provides raking-based methods of parallel reduction across a CUDA threadblock
  */
 template <
     typename    T,              ///< Data type being reduced

@@ -35,8 +35,7 @@
 
 #include <iterator>
 
-#include "../../../util_arch.cuh"
-#include "../../../block/block_load.cuh"
+#include "../../../util_type.cuh"
 #include "../../../util_namespace.cuh"
 
 /// Optional outer namespace(s)

@@ -53,13 +53,6 @@ namespace cub {
 #ifndef DOXYGEN_SHOULD_SKIP_THIS    // Do not document
 
 
-enum
-{
-    /// Invalid device ordinal
-    INVALID_DEVICE_ORDINAL = -1,
-};
-
-
 /**
  * Empty kernel for querying PTX manifest metadata (e.g., version) for the current device
  */

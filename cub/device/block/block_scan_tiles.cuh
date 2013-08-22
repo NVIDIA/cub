@@ -39,6 +39,7 @@
 #include "../../block/block_load.cuh"
 #include "../../block/block_store.cuh"
 #include "../../block/block_scan.cuh"
+#include "../../grid/grid_queue.cuh"
 #include "../../util_namespace.cuh"
 
 /// Optional outer namespace(s)
@@ -295,9 +296,9 @@ struct BlockScanTiles
      */
     template <bool FULL_TILE>
     __device__ __forceinline__ void ConsumeTile(
-        SizeT                       num_items,          ///< Total number of input items
-        int                         tile_idx,           ///< Tile index
-        SizeT                       block_offset,       ///< Tile offset
+        SizeT                 num_items,          ///< Total number of input items
+        int                   tile_idx,           ///< Tile index
+        SizeT                 block_offset,       ///< Tile offset
         ScanTileDescriptorT   *d_tile_status)     ///< Global list of tile status
     {
         // Load items
@@ -338,8 +339,8 @@ struct BlockScanTiles
      * Dequeue and scan tiles of items as part of a domino scan
      */
     __device__ __forceinline__ void ConsumeTiles(
-        int                         num_items,          ///< Total number of input items
-        GridQueue<int>              queue,              ///< Queue descriptor for assigning tiles of work to thread blocks
+        int                   num_items,          ///< Total number of input items
+        GridQueue<int>        queue,              ///< Queue descriptor for assigning tiles of work to thread blocks
         ScanTileDescriptorT   *d_tile_status)     ///< Global list of tile status
     {
 #if CUB_PTX_ARCH < 200

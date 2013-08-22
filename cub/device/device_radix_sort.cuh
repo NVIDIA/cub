@@ -37,11 +37,9 @@
 #include <stdio.h>
 #include <iterator>
 
-#include "../block/block_radix_sort.cuh"
 #include "block/block_radix_sort_upsweep_tiles.cuh"
 #include "block/block_radix_sort_downsweep_tiles.cuh"
 #include "block/block_scan_tiles.cuh"
-#include "../thread/thread_operators.cuh"
 #include "../grid/grid_even_share.cuh"
 #include "../util_debug.cuh"
 #include "../util_device.cuh"
@@ -85,7 +83,7 @@ __global__ void RadixSortUpsweepKernel(
 
     // Parameterize two versions of BlockRadixSortUpsweepTiles type for the current configuration
     typedef BlockRadixSortUpsweepTiles<BlockRadixSortUpsweepTilesPolicy, Key, SizeT>    BlockRadixSortUpsweepTilesT;          // Primary
-    typedef BlockRadixSortUpsweepTiles<AltPolicy, Key, SizeT>                         AltBlockRadixSortUpsweepTilesT;       // Alternate (smaller bit granularity)
+    typedef BlockRadixSortUpsweepTiles<AltPolicy, Key, SizeT>                           AltBlockRadixSortUpsweepTilesT;       // Alternate (smaller bit granularity)
 
     // Shared memory storage
     __shared__ union

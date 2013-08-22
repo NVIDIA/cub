@@ -34,9 +34,11 @@
 #define CUB_STDERR
 
 #include <stdio.h>
-#include <iostream>
+
+#include <cub/util_allocator.cuh>
+#include <cub/warp/warp_scan.cuh>
+
 #include "test_util.h"
-#include <cub/cub.cuh>
 
 using namespace cub;
 

@@ -40,14 +40,15 @@
 #include <math.h>
 #include <float.h>
 
-#include <map>
 #include <string>
 #include <vector>
 #include <sstream>
 #include <iostream>
 #include <limits>
 
-#include <cub/cub.cuh>
+#include <cub/util_debug.cuh>
+#include <cub/util_device.cuh>
+#include <cub/util_type.cuh>
 
 /******************************************************************************
  * Assertion macros
@@ -70,14 +71,17 @@ class CommandLineArgs
 {
 protected:
 
-    std::map<std::string, std::string> pairs;
+    std::vector<std::string> keys;
+    std::vector<std::string> values;
 
 public:
 
     /**
      * Constructor
      */
-    CommandLineArgs(int argc, char **argv)
+    CommandLineArgs(int argc, char **argv) :
+        keys(10),
+        values(10)
     {
         using namespace std;
 
@@ -99,7 +103,9 @@ public:
                 key = string(arg, 2, pos - 2);
                 val = string(arg, pos + 1, arg.length() - 1);
             }
-            pairs[key] = val;
+
+            keys.push_back(key);
+            values.push_back(val);
         }
     }
 
@@ -110,9 +116,11 @@ public:
     bool CheckCmdLineFlag(const char* arg_name)
     {
         using namespace std;
-        map<string, string>::iterator itr;
-        if ((itr = pairs.find(arg_name)) != pairs.end()) {
-            return true;
+
+        for (int i = 0; i < keys.size(); ++i)
+        {
+            if (keys[i] == string(arg_name))
+                return true;
         }
         return false;
     }
@@ -125,10 +133,14 @@ public:
     void GetCmdLineArgument(const char *arg_name, T &val)
     {
         using namespace std;
-        map<string, string>::iterator itr;
-        if ((itr = pairs.find(arg_name)) != pairs.end()) {
-            istringstream str_stream(itr->second);
-            str_stream >> val;
+
+        for (int i = 0; i < keys.size(); ++i)
+        {
+            if (keys[i] == string(arg_name))
+            {
+                istringstream str_stream(values[i]);
+                str_stream >> val;
+            }
         }
     }
 
@@ -141,36 +153,42 @@ public:
     {
         using namespace std;
 
-        // Recover multi-value string
-        map<string, string>::iterator itr;
-        if ((itr = pairs.find(arg_name)) != pairs.end()) {
-
+        if (CheckCmdLineFlag(arg_name))
+        {
             // Clear any default values
             vals.clear();
 
-            string val_string = itr->second;
-            istringstream str_stream(val_string);
-            string::size_type old_pos = 0;
-            string::size_type new_pos = 0;
+            // Recover from multi-value string
+            for (int i = 0; i < keys.size(); ++i)
+            {
+                if (keys[i] == string(arg_name))
+                {
+                    string val_string(values[i]);
+                    istringstream str_stream(val_string);
+                    string::size_type old_pos = 0;
+                    string::size_type new_pos = 0;
 
-            // Iterate comma-separated values
-            T val;
-            while ((new_pos = val_string.find(',', old_pos)) != string::npos) {
+                    // Iterate comma-separated values
+                    T val;
+                    while ((new_pos = val_string.find(',', old_pos)) != string::npos)
+                    {
+                        if (new_pos != old_pos)
+                        {
+                            str_stream.width(new_pos - old_pos);
+                            str_stream >> val;
+                            vals.push_back(val);
+                        }
 
-                if (new_pos != old_pos) {
-                    str_stream.width(new_pos - old_pos);
+                        // skip over comma
+                        str_stream.ignore(1);
+                        old_pos = new_pos + 1;
+                    }
+
+                    // Read last value
                     str_stream >> val;
                     vals.push_back(val);
                 }
-
-                // skip over comma
-                str_stream.ignore(1);
-                old_pos = new_pos + 1;
             }
-
-            // Read last value
-            str_stream >> val;
-            vals.push_back(val);
         }
     }
 
@@ -180,7 +198,7 @@ public:
      */
     int ParsedArgc()
     {
-        return pairs.size();
+        return keys.size();
     }
 
     /**
@@ -949,6 +967,15 @@ int CompareDeviceDeviceResults(
 
     return retval;
 }
+
+
+/**
+ * Print the contents of a host array
+ */
+void DisplayResults(
+    cub::NullType   *h_data,
+    size_t          num_items)
+{}
 
 
 /**
