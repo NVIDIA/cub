@@ -34,9 +34,7 @@
 #pragma once
 
 #include "../../thread/thread_operators.cuh"
-#include "../../thread/thread_load.cuh"
-#include "../../thread/thread_store.cuh"
-#include "../../util_device.cuh"
+#include "../../util_ptx.cuh"
 #include "../../util_type.cuh"
 #include "../../util_macro.cuh"
 #include "../../util_namespace.cuh"
@@ -338,10 +336,12 @@ struct WarpReduceShfl
             for (int WORD = 0; WORD < WORDS; ++WORD)
             {
                 unsigned int shuffle_word = output_alias[WORD];
+
                 asm(
                     "  shfl.down.b32 %0, %1, %2, %3;"
                     : "=r"(shuffle_word) : "r"(shuffle_word), "r"(OFFSET), "r"(SHFL_C));
                 temp_alias[WORD] = (ShuffleWord) shuffle_word;
+
             }
 
             // Perform reduction op if valid

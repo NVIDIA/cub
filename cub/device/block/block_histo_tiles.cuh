@@ -40,6 +40,8 @@
 #include "specializations/block_histo_tiles_sort.cuh"
 #include "../../util_type.cuh"
 #include "../../grid/grid_mapping.cuh"
+#include "../../grid/grid_even_share.cuh"
+#include "../../grid/grid_queue.cuh"
 #include "../../util_namespace.cuh"
 
 /// Optional outer namespace(s)
@@ -125,11 +127,11 @@ enum BlockHistogramTilesAlgorithm
  * Tuning policy for BlockHistogramTiles
  */
 template <
-    int                         _BLOCK_THREADS,
-    int                         _ITEMS_PER_THREAD,
+    int                             _BLOCK_THREADS,
+    int                             _ITEMS_PER_THREAD,
     BlockHistogramTilesAlgorithm    _GRID_ALGORITHM,
-    GridMappingStrategy         _GRID_MAPPING,
-    int                         _SM_OCCUPANCY>
+    GridMappingStrategy             _GRID_MAPPING,
+    int                             _SM_OCCUPANCY>
 struct BlockHistogramTilesPolicy
 {
     enum
@@ -140,7 +142,7 @@ struct BlockHistogramTilesPolicy
     };
 
     static const BlockHistogramTilesAlgorithm   GRID_ALGORITHM      = _GRID_ALGORITHM;
-    static const GridMappingStrategy        GRID_MAPPING        = _GRID_MAPPING;
+    static const GridMappingStrategy            GRID_MAPPING        = _GRID_MAPPING;
 };
 
 

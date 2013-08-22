@@ -34,7 +34,11 @@
 #define CUB_STDERR
 
 #include <stdio.h>
-#include <cub/cub.cuh>
+
+#include <cub/util_allocator.cuh>
+#include <cub/block/block_load.cuh>
+#include <cub/block/block_reduce.cuh>
+
 #include "test_util.h"
 
 using namespace cub;

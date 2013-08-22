@@ -604,7 +604,7 @@ enum BlockLoadAlgorithm
  *
  *     // Load a segment of consecutive items that are blocked across threads
  *     int thread_data[4];
- *     BlockLoad(temp_storage).Load(d_data, d_data, thread_data);
+ *     BlockLoad(temp_storage).Load(d_data, thread_data);
  *
  * \endcode
  * \par
@@ -1007,7 +1007,7 @@ public:
      *
      *     // Load a segment of consecutive items that are blocked across threads
      *     int thread_data[4];
-     *     BlockLoad(temp_storage).Load(d_data, d_data, thread_data);
+     *     BlockLoad(temp_storage).Load(d_data, thread_data);
      *
      * \endcode
      * \par
@@ -1048,7 +1048,7 @@ public:
      *
      *     // Load a segment of consecutive items that are blocked across threads
      *     int thread_data[4];
-     *     BlockLoad(temp_storage).Load(d_data, d_data, thread_data, valid_items);
+     *     BlockLoad(temp_storage).Load(d_data, thread_data, valid_items);
      *
      * \endcode
      * \par
@@ -1091,7 +1091,7 @@ public:
      *
      *     // Load a segment of consecutive items that are blocked across threads
      *     int thread_data[4];
-     *     BlockLoad(temp_storage).Load(d_data, d_data, thread_data, valid_items, -1);
+     *     BlockLoad(temp_storage).Load(d_data, thread_data, valid_items, -1);
      *
      * \endcode
      * \par

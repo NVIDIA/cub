@@ -35,11 +35,14 @@
 
 #include <iterator>
 #include <stdio.h>
-#include "test_util.h"
 
 #include <thrust/iterator/counting_iterator.h>
 
-#include <cub/cub.cuh>
+#include <cub/util_allocator.cuh>
+#include <cub/block/block_load.cuh>
+#include <cub/block/block_store.cuh>
+
+#include "test_util.h"
 
 using namespace cub;
 

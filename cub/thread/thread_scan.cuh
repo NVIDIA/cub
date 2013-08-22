@@ -34,8 +34,6 @@
 #pragma once
 
 #include "../thread/thread_operators.cuh"
-#include "../util_ptx.cuh"
-#include "../util_type.cuh"
 #include "../util_namespace.cuh"
 
 /// Optional outer namespace(s)

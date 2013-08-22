@@ -1,7 +1,7 @@
 /******************************************************************************
  * Copyright (c) 2011, Duane Merrill.  All rights reserved.
  * Copyright (c) 2011-2013, NVIDIA CORPORATION.  All rights reserved.
- *
+ * 
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions are met:
  *     * Redistributions of source code must retain the above copyright
@@ -12,7 +12,7 @@
  *     * Neither the name of the NVIDIA CORPORATION nor the
  *       names of its contributors may be used to endorse or promote products
  *       derived from this software without specific prior written permission.
- *
+ * 
  * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS" AND
  * ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED
  * WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE
@@ -28,12 +28,12 @@
 
 /**
  * \file
- * cub::GridMappingStrategy enumerates alternative strategies for mapping constant-sized tiles of device-wide data onto a grid of CUDA thread blocks.
+ * The cub::BlockHistogramAtomic class provides atomic-based methods for constructing block-wide histograms from data samples partitioned across a CUDA thread block.
  */
 
 #pragma once
 
-#include "../util_namespace.cuh"
+#include "../../util_namespace.cuh"
 
 /// Optional outer namespace(s)
 CUB_NS_PREFIX
@@ -43,52 +43,42 @@ namespace cub {
 
 
 /**
- * \addtogroup GridModule
- * @{
+ * \brief The BlockHistogramAtomic class provides atomic-based methods for constructing block-wide histograms from data samples partitioned across a CUDA thread block.
  */
-
-
-/******************************************************************************
- * Mapping policies
- *****************************************************************************/
-
-
-/**
- * \brief cub::GridMappingStrategy enumerates alternative strategies for mapping constant-sized tiles of device-wide data onto a grid of CUDA thread blocks.
- */
-enum GridMappingStrategy
+template <
+    typename                T,
+    int                     BLOCK_THREADS,
+    int                     ITEMS_PER_THREAD,
+    int                     BINS>
+struct BlockHistogramAtomic
 {
-    /**
-     * \brief An "even-share" strategy for assigning input tiles to thread blocks.
-     *
-     * \par Overview
-     * The input is evenly partitioned into \p p segments, where \p p is
-     * constant and corresponds loosely to the number of thread blocks that may
-     * actively reside on the target device. Each segment is comprised of
-     * consecutive tiles, where a tile is a small, constant-sized unit of input
-     * to be processed to completion before the thread block terminates or
-     * obtains more work.  The kernel invokes \p p thread blocks, each
-     * of which iteratively consumes a segment of <em>n</em>/<em>p</em> elements
-     * in tile-size increments.
-     */
-    GRID_MAPPING_EVEN_SHARE,
+    /// Shared memory storage layout type
+    struct TempStorage {};
 
-    /**
-     * \brief A dynamic "queue-based" strategy for assigning input tiles to thread blocks.
-     *
-     * \par Overview
-     * The input is treated as a queue to be dynamically consumed by a grid of
-     * thread blocks.  Work is atomically dequeued in tiles, where a tile is a
-     * unit of input to be processed to completion before the thread block
-     * terminates or obtains more work.  The grid size \p p is constant,
-     * loosely corresponding to the number of thread blocks that may actively
-     * reside on the target device.
-     */
-    GRID_MAPPING_DYNAMIC,
+
+    /// Constructor
+    __device__ __forceinline__ BlockHistogramAtomic(
+        TempStorage     &temp_storage,
+        int             linear_tid)
+    {}
+
+
+    /// Composite data onto an existing histogram
+    template <
+        typename            HistoCounter>
+    __device__ __forceinline__ void Composite(
+        T                   (&items)[ITEMS_PER_THREAD],     ///< [in] Calling thread's input values to histogram
+        HistoCounter        histogram[BINS])                 ///< [out] Reference to shared/global memory histogram
+    {
+        // Update histogram
+        #pragma unroll
+        for (int i = 0; i < ITEMS_PER_THREAD; ++i)
+        {
+              atomicAdd(histogram + items[i], 1);
+        }
+    }
+
 };
-
-
-/** @} */       // end group GridModule
 
 }               // CUB namespace
 CUB_NS_POSTFIX  // Optional outer namespace(s)

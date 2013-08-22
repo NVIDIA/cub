@@ -40,6 +40,7 @@
 #include "../../block/block_load.cuh"
 #include "../../block/block_store.cuh"
 #include "../../block/block_scan.cuh"
+#include "../../grid/grid_queue.cuh"
 #include "../../util_vector.cuh"
 #include "../../util_namespace.cuh"
 
@@ -93,10 +94,10 @@ struct PartitionScanTuple;
 template <typename SizeT>
 struct PartitionScanTuple<SizeT, 1> : VectorHelper<SizeT, 1>::Type
 {
-    __device__ __forceinline__ PartitionScanTuple operator+(const PartitionScanTuple &a, const PartitionScanTuple &b)
+    __device__ __forceinline__ PartitionScanTuple operator+(const PartitionScanTuple &other)
     {
         PartitionScanTuple retval;
-        retval.x = a.x + b.x;
+        retval.x = x + other.x;
         return retval;
     }
 
@@ -122,11 +123,11 @@ struct PartitionScanTuple<SizeT, 1> : VectorHelper<SizeT, 1>::Type
 template <typename SizeT>
 struct PartitionScanTuple<SizeT, 2> : VectorHelper<SizeT, 2>::Type
 {
-    __device__ __forceinline__ PartitionScanTuple operator+(const PartitionScanTuple &a, const PartitionScanTuple &b)
+    __device__ __forceinline__ PartitionScanTuple operator+(const PartitionScanTuple &other)
     {
         PartitionScanTuple retval;
-        retval.x = a.x + b.x;
-        retval.y = a.y + b.y;
+        retval.x = x + other.x;
+        retval.y = y + other.y;
         return retval;
     }
 

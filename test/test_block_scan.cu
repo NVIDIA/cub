@@ -35,8 +35,14 @@
 
 #include <stdio.h>
 #include <iostream>
+
+#include <cub/util_allocator.cuh>
+#include <cub/block/block_load.cuh>
+#include <cub/block/block_store.cuh>
+#include <cub/block/block_scan.cuh>
+
 #include "test_util.h"
-#include <cub/cub.cuh>
+
 
 using namespace cub;
 

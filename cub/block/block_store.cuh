@@ -499,7 +499,7 @@ enum BlockStoreAlgorithm
  *
  *     // Store items to linear memory
  *     int thread_data[4];
- *     BlockStore(temp_storage).Store(d_data, d_data, thread_data);
+ *     BlockStore(temp_storage).Store(d_data, thread_data);
  *
  * \endcode
  * \par
@@ -856,7 +856,7 @@ public:
      *
      *     // Store items to linear memory
      *     int thread_data[4];
-     *     BlockStore(temp_storage).Store(d_data, d_data, thread_data);
+     *     BlockStore(temp_storage).Store(d_data, thread_data);
      *
      * \endcode
      * \par
@@ -900,7 +900,7 @@ public:
      *
      *     // Store items to linear memory
      *     int thread_data[4];
-     *     BlockStore(temp_storage).Store(d_data, d_data, thread_data, valid_items);
+     *     BlockStore(temp_storage).Store(d_data, thread_data, valid_items);
      *
      * \endcode
      * \par

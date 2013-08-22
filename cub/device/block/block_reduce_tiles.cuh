@@ -38,6 +38,7 @@
 #include "../../block/block_load.cuh"
 #include "../../block/block_reduce.cuh"
 #include "../../grid/grid_mapping.cuh"
+#include "../../grid/grid_queue.cuh"
 #include "../../grid/grid_even_share.cuh"
 #include "../../util_vector.cuh"
 #include "../../util_namespace.cuh"

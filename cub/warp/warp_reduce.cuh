@@ -36,7 +36,7 @@
 #include "specializations/warp_reduce_shfl.cuh"
 #include "specializations/warp_reduce_smem.cuh"
 #include "../thread/thread_operators.cuh"
-#include "../util_device.cuh"
+#include "../util_arch.cuh"
 #include "../util_type.cuh"
 #include "../util_namespace.cuh"
 
