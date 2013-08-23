@@ -152,7 +152,7 @@ struct BlockHistogramSort
             temp_storage.run_end[histo_offset + linear_tid] = TILE_SIZE;
         }
         // Finish up with guarded initialization if necessary
-        if ((histo_offset < BLOCK_THREADS) && (histo_offset + linear_tid < BINS))
+        if ((BINS % BLOCK_THREADS != 0) && (histo_offset + linear_tid < BINS))
         {
             temp_storage.run_begin[histo_offset + linear_tid] = TILE_SIZE;
             temp_storage.run_end[histo_offset + linear_tid] = TILE_SIZE;
@@ -182,7 +182,7 @@ struct BlockHistogramSort
             histogram[thread_offset] += count;
         }
         // Finish up with guarded composition if necessary
-        if ((histo_offset < BLOCK_THREADS) && (histo_offset + linear_tid < BINS))
+        if ((BINS % BLOCK_THREADS != 0) && (histo_offset + linear_tid < BINS))
         {
             int thread_offset = histo_offset + linear_tid;
             HistoCounter count = temp_storage.run_end[thread_offset] - temp_storage.run_begin[thread_offset];

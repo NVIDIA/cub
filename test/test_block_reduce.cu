@@ -130,7 +130,7 @@ __global__ void FullTileReduceKernel(
     // Cooperative threadblock reduction utility type (returns aggregate in thread 0)
     typedef BlockReduce<T, BLOCK_THREADS, ALGORITHM> BlockReduce;
 
-    // Shared memory
+    // Allocate temp storage in shared memory
     __shared__ typename BlockReduce::TempStorage temp_storage;
 
     // Per-thread tile data
@@ -188,7 +188,7 @@ __global__ void PartialTileReduceKernel(
     // Cooperative threadblock reduction utility type (returns aggregate only in thread-0)
     typedef BlockReduce<T, BLOCK_THREADS, ALGORITHM> BlockReduce;
 
-    // Shared memory
+    // Allocate temp storage in shared memory
     __shared__ typename BlockReduce::TempStorage temp_storage;
 
     // Per-thread tile data

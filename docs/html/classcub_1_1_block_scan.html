@@ -163,6 +163,8 @@ class cub::BlockScan&lt; T, BLOCK_THREADS, ALGORITHM &gt;</h3>
 <li>See <a class="el" href="namespacecub.html#abec44bba36037c547e7e84906d0d23ab" title="BlockScanAlgorithm enumerates alternative algorithms for cub::BlockScan to compute a parallel prefix ...">cub::BlockScanAlgorithm</a> for performance details regarding algorithmic alternatives </li>
 </ul>
 </dd></dl>
+
+<p>Definition at line <a class="el" href="block__scan_8cuh_source.html#l00186">186</a> of file <a class="el" href="block__scan_8cuh_source.html">block_scan.cuh</a>.</p>
 </div><table class="memberdecls">
 <tr class="heading"><td colspan="2"><h2 class="groupheader"><a name="nested-classes"></a>
 Classes</h2></td></tr>
@@ -320,6 +322,8 @@ template&lt;typename T , int BLOCK_THREADS, BlockScanAlgorithm ALGORITHM = BLOCK
   </dd>
 </dl>
 
+<p>Definition at line <a class="el" href="block__scan_8cuh_source.html#l00262">262</a> of file <a class="el" href="block__scan_8cuh_source.html">block_scan.cuh</a>.</p>
+
 </div>
 </div>
 <a class="anchor" id="ab364204badf83769f9140d799cc188a7"></a>
@@ -353,6 +357,8 @@ template&lt;typename T , int BLOCK_THREADS, BlockScanAlgorithm ALGORITHM = BLOCK
   </table>
   </dd>
 </dl>
+
+<p>Definition at line <a class="el" href="block__scan_8cuh_source.html#l00273">273</a> of file <a class="el" href="block__scan_8cuh_source.html">block_scan.cuh</a>.</p>
 
 </div>
 </div>
@@ -399,557 +405,11 @@ template&lt;typename T , int BLOCK_THREADS, BlockScanAlgorithm ALGORITHM = BLOCK
   </dd>
 </dl>
 
+<p>Definition at line <a class="el" href="block__scan_8cuh_source.html#l00284">284</a> of file <a class="el" href="block__scan_8cuh_source.html">block_scan.cuh</a>.</p>
+
 </div>
 </div>
 <h2 class="groupheader">Member Function Documentation</h2>
-<a class="anchor" id="acd75d5aad2d1385bcbe15517011800e8"></a>
-<div class="memitem">
-<div class="memproto">
-<div class="memtemplate">
-template&lt;typename T , int BLOCK_THREADS, BlockScanAlgorithm ALGORITHM = BLOCK_SCAN_RAKING&gt; </div>
-<table class="mlabels">
-  <tr>
-  <td class="mlabels-left">
-      <table class="memname">
-        <tr>
-          <td class="memname">__device__ __forceinline__ void <a class="el" href="classcub_1_1_block_scan.html">cub::BlockScan</a>&lt; T, BLOCK_THREADS, ALGORITHM &gt;::ExclusiveSum </td>
-          <td>(</td>
-          <td class="paramtype">T&#160;</td>
-          <td class="paramname"><em>input</em>, </td>
-        </tr>
-        <tr>
-          <td class="paramkey"></td>
-          <td></td>
-          <td class="paramtype">T &amp;&#160;</td>
-          <td class="paramname"><em>output</em>&#160;</td>
-        </tr>
-        <tr>
-          <td></td>
-          <td>)</td>
-          <td></td><td></td>
-        </tr>
-      </table>
-  </td>
-  <td class="mlabels-right">
-<span class="mlabels"><span class="mlabel">inline</span></span>  </td>
-  </tr>
-</table>
-</div><div class="memdoc">
-
-<p>Computes an exclusive block-wide prefix scan using addition (+) as the scan operator. Each thread contributes one input element. </p>
-<p>Assumes a <a href="index.html#sec5sec4"><em>blocked arrangement</em></a> of elements across threads, where thread<sub><em>i</em></sub> owns the <em>i</em><sup>th</sup> segment of consecutively ranked items.</p>
-<p>A subsequent <code>__syncthreads()</code> threadblock barrier should be invoked after calling this method if the collective's temporary storage (e.g., <code>temp_storage</code>) is to be reused or repurposed.</p>
-<p>The code snippet below illustrates an exclusive prefix sum of 128 integer items that are partitioned across 128 threads. </p>
-<dl class="section user"><dt></dt><dd><div class="fragment"><div class="line"><span class="preprocessor">#include &lt;<a class="code" href="cub_8cuh.html">cub/cub.cuh</a>&gt;</span></div>
-<div class="line"></div>
-<div class="line">__global__ <span class="keywordtype">void</span> ExampleKernel(...)</div>
-<div class="line">{</div>
-<div class="line">    <span class="comment">// Specialize BlockScan for 128 threads on type int</span></div>
-<div class="line">    <span class="keyword">typedef</span> <a class="code" href="classcub_1_1_block_scan.html" title="The BlockScan class provides collective methods for computing a parallel prefix sum/scan of items par...">cub::BlockScan&lt;int, 128&gt;</a> <a class="code" href="classcub_1_1_block_scan.html#a982e1407d00b704c3046cd72c48acabb" title="Collective constructor for 1D thread blocks using a private static allocation of shared memory as tem...">BlockScan</a>;</div>
-<div class="line"></div>
-<div class="line">    <span class="comment">// Allocate shared memory for BlockScan</span></div>
-<div class="line">    __shared__ <span class="keyword">typename</span> BlockScan::TempStorage temp_storage;</div>
-<div class="line"></div>
-<div class="line">    <span class="comment">// Obtain input item for each thread</span></div>
-<div class="line">    <span class="keywordtype">int</span> thread_data;</div>
-<div class="line">    ...</div>
-<div class="line"></div>
-<div class="line">    <span class="comment">// Collectively compute the block-wide exclusive prefix sum</span></div>
-<div class="line">    <a class="code" href="classcub_1_1_block_scan.html#a982e1407d00b704c3046cd72c48acabb" title="Collective constructor for 1D thread blocks using a private static allocation of shared memory as tem...">BlockScan</a>(temp_storage).ExclusiveSum(thread_data, thread_data);</div>
-</div><!-- fragment --> </dd></dl>
-<dl class="section user"><dt></dt><dd>Suppose the set of input <code>thread_data</code> across the block of threads is <code>1, 1, ..., 1</code>. The corresponding output <code>thread_data</code> in those threads will be <code>0, 1, ..., 127</code>. </dd></dl>
-<dl class="params"><dt>Parameters</dt><dd>
-  <table class="params">
-    <tr><td class="paramdir">[in]</td><td class="paramname">input</td><td>Calling thread's input item </td></tr>
-    <tr><td class="paramdir">[out]</td><td class="paramname">output</td><td>Calling thread's output item (may be aliased to <code>input</code>) </td></tr>
-  </table>
-  </dd>
-</dl>
-
-</div>
-</div>
-<a class="anchor" id="a1fd276abbe08f7031a0333bf5c98c2f5"></a>
-<div class="memitem">
-<div class="memproto">
-<div class="memtemplate">
-template&lt;typename T , int BLOCK_THREADS, BlockScanAlgorithm ALGORITHM = BLOCK_SCAN_RAKING&gt; </div>
-<table class="mlabels">
-  <tr>
-  <td class="mlabels-left">
-      <table class="memname">
-        <tr>
-          <td class="memname">__device__ __forceinline__ void <a class="el" href="classcub_1_1_block_scan.html">cub::BlockScan</a>&lt; T, BLOCK_THREADS, ALGORITHM &gt;::ExclusiveSum </td>
-          <td>(</td>
-          <td class="paramtype">T&#160;</td>
-          <td class="paramname"><em>input</em>, </td>
-        </tr>
-        <tr>
-          <td class="paramkey"></td>
-          <td></td>
-          <td class="paramtype">T &amp;&#160;</td>
-          <td class="paramname"><em>output</em>, </td>
-        </tr>
-        <tr>
-          <td class="paramkey"></td>
-          <td></td>
-          <td class="paramtype">T &amp;&#160;</td>
-          <td class="paramname"><em>block_aggregate</em>&#160;</td>
-        </tr>
-        <tr>
-          <td></td>
-          <td>)</td>
-          <td></td><td></td>
-        </tr>
-      </table>
-  </td>
-  <td class="mlabels-right">
-<span class="mlabels"><span class="mlabel">inline</span></span>  </td>
-  </tr>
-</table>
-</div><div class="memdoc">
-
-<p>Computes an exclusive block-wide prefix scan using addition (+) as the scan operator. Each thread contributes one input element. Also provides every thread with the block-wide <code>block_aggregate</code> of all inputs. </p>
-<p>Assumes a <a href="index.html#sec5sec4"><em>blocked arrangement</em></a> of elements across threads, where thread<sub><em>i</em></sub> owns the <em>i</em><sup>th</sup> segment of consecutively ranked items.</p>
-<p>A subsequent <code>__syncthreads()</code> threadblock barrier should be invoked after calling this method if the collective's temporary storage (e.g., <code>temp_storage</code>) is to be reused or repurposed.</p>
-<p>The code snippet below illustrates an exclusive prefix sum of 128 integer items that are partitioned across 128 threads. </p>
-<dl class="section user"><dt></dt><dd><div class="fragment"><div class="line"><span class="preprocessor">#include &lt;<a class="code" href="cub_8cuh.html">cub/cub.cuh</a>&gt;</span></div>
-<div class="line"></div>
-<div class="line">__global__ <span class="keywordtype">void</span> ExampleKernel(...)</div>
-<div class="line">{</div>
-<div class="line">    <span class="comment">// Specialize BlockScan for 128 threads on type int</span></div>
-<div class="line">    <span class="keyword">typedef</span> <a class="code" href="classcub_1_1_block_scan.html" title="The BlockScan class provides collective methods for computing a parallel prefix sum/scan of items par...">cub::BlockScan&lt;int, 128&gt;</a> <a class="code" href="classcub_1_1_block_scan.html#a982e1407d00b704c3046cd72c48acabb" title="Collective constructor for 1D thread blocks using a private static allocation of shared memory as tem...">BlockScan</a>;</div>
-<div class="line"></div>
-<div class="line">    <span class="comment">// Allocate shared memory for BlockScan</span></div>
-<div class="line">    __shared__ <span class="keyword">typename</span> BlockScan::TempStorage temp_storage;</div>
-<div class="line"></div>
-<div class="line">    <span class="comment">// Obtain input item for each thread</span></div>
-<div class="line">    <span class="keywordtype">int</span> thread_data;</div>
-<div class="line">    ...</div>
-<div class="line"></div>
-<div class="line">    <span class="comment">// Collectively compute the block-wide exclusive prefix sum</span></div>
-<div class="line">    <span class="keywordtype">int</span> block_aggregate;</div>
-<div class="line">    <a class="code" href="classcub_1_1_block_scan.html#a982e1407d00b704c3046cd72c48acabb" title="Collective constructor for 1D thread blocks using a private static allocation of shared memory as tem...">BlockScan</a>(temp_storage).ExclusiveSum(thread_data, thread_data, block_aggregate);</div>
-</div><!-- fragment --> </dd></dl>
-<dl class="section user"><dt></dt><dd>Suppose the set of input <code>thread_data</code> across the block of threads is <code>1, 1, ..., 1</code>. The corresponding output <code>thread_data</code> in those threads will be <code>0, 1, ..., 127</code>. Furthermore the value <code>128</code> will be stored in <code>block_aggregate</code> for all threads. </dd></dl>
-<dl class="params"><dt>Parameters</dt><dd>
-  <table class="params">
-    <tr><td class="paramdir">[in]</td><td class="paramname">input</td><td>Calling thread's input item </td></tr>
-    <tr><td class="paramdir">[out]</td><td class="paramname">output</td><td>Calling thread's output item (may be aliased to <code>input</code>) </td></tr>
-    <tr><td class="paramdir">[out]</td><td class="paramname">block_aggregate</td><td>block-wide aggregate reduction of input items </td></tr>
-  </table>
-  </dd>
-</dl>
-
-</div>
-</div>
-<a class="anchor" id="a97e041cbdfdb4005ffc65b45c9276403"></a>
-<div class="memitem">
-<div class="memproto">
-<div class="memtemplate">
-template&lt;typename T , int BLOCK_THREADS, BlockScanAlgorithm ALGORITHM = BLOCK_SCAN_RAKING&gt; </div>
-<div class="memtemplate">
-template&lt;typename BlockPrefixOp &gt; </div>
-<table class="mlabels">
-  <tr>
-  <td class="mlabels-left">
-      <table class="memname">
-        <tr>
-          <td class="memname">__device__ __forceinline__ void <a class="el" href="classcub_1_1_block_scan.html">cub::BlockScan</a>&lt; T, BLOCK_THREADS, ALGORITHM &gt;::ExclusiveSum </td>
-          <td>(</td>
-          <td class="paramtype">T&#160;</td>
-          <td class="paramname"><em>input</em>, </td>
-        </tr>
-        <tr>
-          <td class="paramkey"></td>
-          <td></td>
-          <td class="paramtype">T &amp;&#160;</td>
-          <td class="paramname"><em>output</em>, </td>
-        </tr>
-        <tr>
-          <td class="paramkey"></td>
-          <td></td>
-          <td class="paramtype">T &amp;&#160;</td>
-          <td class="paramname"><em>block_aggregate</em>, </td>
-        </tr>
-        <tr>
-          <td class="paramkey"></td>
-          <td></td>
-          <td class="paramtype">BlockPrefixOp &amp;&#160;</td>
-          <td class="paramname"><em>block_prefix_op</em>&#160;</td>
-        </tr>
-        <tr>
-          <td></td>
-          <td>)</td>
-          <td></td><td></td>
-        </tr>
-      </table>
-  </td>
-  <td class="mlabels-right">
-<span class="mlabels"><span class="mlabel">inline</span></span>  </td>
-  </tr>
-</table>
-</div><div class="memdoc">
-
-<p>Computes an exclusive block-wide prefix scan using addition (+) as the scan operator. Each thread contributes one input element. Instead of using 0 as the block-wide prefix, the call-back functor <code>block_prefix_op</code> is invoked by the first warp in the block, and the value returned by <em>lane</em><sub>0</sub> in that warp is used as the "seed" value that logically prefixes the threadblock's scan inputs. Also provides every thread with the block-wide <code>block_aggregate</code> of all inputs. </p>
-<p>The <code>block_prefix_op</code> functor must implement a member function <code>T operator()(T block_aggregate)</code>. The functor's input parameter <code>block_aggregate</code> is the same value also returned by the scan operation. The functor will be invoked by the first warp of threads in the block, however only the return value from <em>lane</em><sub>0</sub> is applied as the block-wide prefix. Can be stateful.</p>
-<p>Assumes a <a href="index.html#sec5sec4"><em>blocked arrangement</em></a> of elements across threads, where thread<sub><em>i</em></sub> owns the <em>i</em><sup>th</sup> segment of consecutively ranked items.</p>
-<p>A subsequent <code>__syncthreads()</code> threadblock barrier should be invoked after calling this method if the collective's temporary storage (e.g., <code>temp_storage</code>) is to be reused or repurposed.</p>
-<p>The code snippet below illustrates a single thread block that progressively computes an exclusive prefix sum over multiple "tiles" of input using a prefix functor to maintain a running total between block-wide scans. Each tile consists of 128 integer items that are partitioned across 128 threads. </p>
-<dl class="section user"><dt></dt><dd><div class="fragment"><div class="line"><span class="preprocessor">#include &lt;<a class="code" href="cub_8cuh.html">cub/cub.cuh</a>&gt;</span></div>
-<div class="line"></div>
-<div class="line"><span class="comment">// A stateful callback functor that maintains a running prefix to be applied</span></div>
-<div class="line"><span class="comment">// during consecutive scan operations.</span></div>
-<div class="line"><span class="keyword">struct </span>BlockPrefixOp</div>
-<div class="line">{</div>
-<div class="line">    <span class="comment">// Running prefix</span></div>
-<div class="line">    <span class="keywordtype">int</span> running_total;</div>
-<div class="line"></div>
-<div class="line">    <span class="comment">// Constructor</span></div>
-<div class="line">    __device__ BlockPrefixOp(<span class="keywordtype">int</span> running_total) : running_total(running_total) {}</div>
-<div class="line"></div>
-<div class="line">    <span class="comment">// Callback operator to be entered by the first warp of threads in the block.</span></div>
-<div class="line">    <span class="comment">// Thread-0 is responsible for returning a value for seeding the block-wide scan.</span></div>
-<div class="line">    __device__ <span class="keywordtype">int</span> operator()(<span class="keywordtype">int</span> block_aggregate)</div>
-<div class="line">    {</div>
-<div class="line">        <span class="keywordtype">int</span> old_prefix = running_total;</div>
-<div class="line">        running_total += block_aggregate;</div>
-<div class="line">        <span class="keywordflow">return</span> old_prefix;</div>
-<div class="line">    }</div>
-<div class="line">};</div>
-<div class="line"></div>
-<div class="line">__global__ <span class="keywordtype">void</span> ExampleKernel(<span class="keywordtype">int</span> *d_data, <span class="keywordtype">int</span> num_items, ...)</div>
-<div class="line">{</div>
-<div class="line">    <span class="comment">// Specialize BlockScan for 128 threads</span></div>
-<div class="line">    <span class="keyword">typedef</span> <a class="code" href="classcub_1_1_block_scan.html" title="The BlockScan class provides collective methods for computing a parallel prefix sum/scan of items par...">cub::BlockScan&lt;int, 128&gt;</a> <a class="code" href="classcub_1_1_block_scan.html#a982e1407d00b704c3046cd72c48acabb" title="Collective constructor for 1D thread blocks using a private static allocation of shared memory as tem...">BlockScan</a>;</div>
-<div class="line"></div>
-<div class="line">    <span class="comment">// Allocate shared memory for BlockScan</span></div>
-<div class="line">    __shared__ <span class="keyword">typename</span> BlockScan::TempStorage temp_storage;</div>
-<div class="line"></div>
-<div class="line">    <span class="comment">// Initialize running total</span></div>
-<div class="line">    BlockPrefixOp prefix_op(0);</div>
-<div class="line"></div>
-<div class="line">    <span class="comment">// Have the block iterate over segments of items</span></div>
-<div class="line">    <span class="keywordflow">for</span> (<span class="keywordtype">int</span> block_offset = 0; block_offset &lt; num_items; block_offset += 128)</div>
-<div class="line">    {</div>
-<div class="line">        <span class="comment">// Load a segment of consecutive items that are blocked across threads</span></div>
-<div class="line">        <span class="keywordtype">int</span> thread_data = d_data[block_offset];</div>
-<div class="line"></div>
-<div class="line">        <span class="comment">// Collectively compute the block-wide exclusive prefix sum</span></div>
-<div class="line">        <span class="keywordtype">int</span> block_aggregate;</div>
-<div class="line">        <a class="code" href="classcub_1_1_block_scan.html#a982e1407d00b704c3046cd72c48acabb" title="Collective constructor for 1D thread blocks using a private static allocation of shared memory as tem...">BlockScan</a>(temp_storage).ExclusiveSum(</div>
-<div class="line">            thread_data, thread_data, block_aggregate, prefix_op);</div>
-<div class="line">        __syncthreads();</div>
-<div class="line"></div>
-<div class="line">        <span class="comment">// Store scanned items to output segment</span></div>
-<div class="line">        d_data[block_offset] = thread_data;</div>
-<div class="line">    }</div>
-</div><!-- fragment --> </dd></dl>
-<dl class="section user"><dt></dt><dd>Suppose the input <code>d_data</code> is <code>1, 1, 1, 1, 1, 1, 1, 1, ...</code>. The corresponding output for the first segment will be <code>0, 1, ..., 127</code>. The output for the second segment will be <code>128, 129, ..., 255</code>. Furthermore, the value <code>128</code> will be stored in <code>block_aggregate</code> for all threads after each scan.</dd></dl>
-<dl class="tparams"><dt>Template Parameters</dt><dd>
-  <table class="tparams">
-    <tr><td class="paramname">BlockPrefixOp</td><td><b>[inferred]</b> Call-back functor type having member <code>T operator()(T block_aggregate)</code> </td></tr>
-  </table>
-  </dd>
-</dl>
-<dl class="params"><dt>Parameters</dt><dd>
-  <table class="params">
-    <tr><td class="paramdir">[in]</td><td class="paramname">input</td><td>Calling thread's input item </td></tr>
-    <tr><td class="paramdir">[out]</td><td class="paramname">output</td><td>Calling thread's output item (may be aliased to <code>input</code>) </td></tr>
-    <tr><td class="paramdir">[out]</td><td class="paramname">block_aggregate</td><td>block-wide aggregate reduction of input items (exclusive of the <code>block_prefix_op</code> value) </td></tr>
-    <tr><td class="paramdir">[in,out]</td><td class="paramname">block_prefix_op</td><td><b>[<em>warp</em><sub>0</sub> only]</b> Call-back functor for specifying a block-wide prefix to be applied to all inputs. </td></tr>
-  </table>
-  </dd>
-</dl>
-
-</div>
-</div>
-<a class="anchor" id="ab8122c00c833f17c78af3d99dc76c5e8"></a>
-<div class="memitem">
-<div class="memproto">
-<div class="memtemplate">
-template&lt;typename T , int BLOCK_THREADS, BlockScanAlgorithm ALGORITHM = BLOCK_SCAN_RAKING&gt; </div>
-<div class="memtemplate">
-template&lt;int ITEMS_PER_THREAD&gt; </div>
-<table class="mlabels">
-  <tr>
-  <td class="mlabels-left">
-      <table class="memname">
-        <tr>
-          <td class="memname">__device__ __forceinline__ void <a class="el" href="classcub_1_1_block_scan.html">cub::BlockScan</a>&lt; T, BLOCK_THREADS, ALGORITHM &gt;::ExclusiveSum </td>
-          <td>(</td>
-          <td class="paramtype">T(&amp;)&#160;</td>
-          <td class="paramname"><em>input</em>[ITEMS_PER_THREAD], </td>
-        </tr>
-        <tr>
-          <td class="paramkey"></td>
-          <td></td>
-          <td class="paramtype">T(&amp;)&#160;</td>
-          <td class="paramname"><em>output</em>[ITEMS_PER_THREAD]&#160;</td>
-        </tr>
-        <tr>
-          <td></td>
-          <td>)</td>
-          <td></td><td></td>
-        </tr>
-      </table>
-  </td>
-  <td class="mlabels-right">
-<span class="mlabels"><span class="mlabel">inline</span></span>  </td>
-  </tr>
-</table>
-</div><div class="memdoc">
-
-<p>Computes an exclusive block-wide prefix scan using addition (+) as the scan operator. Each thread contributes an array of consecutive input elements. </p>
-<p>Assumes a <a href="index.html#sec5sec4"><em>blocked arrangement</em></a> of elements across threads, where thread<sub><em>i</em></sub> owns the <em>i</em><sup>th</sup> segment of consecutively ranked items.</p>
-<p>A subsequent <code>__syncthreads()</code> threadblock barrier should be invoked after calling this method if the collective's temporary storage (e.g., <code>temp_storage</code>) is to be reused or repurposed.</p>
-<p>The code snippet below illustrates an exclusive prefix sum of 512 integer items that are partitioned in a <a href="index.html#sec5sec4"><em>blocked arrangement</em></a> across 128 threads where each thread owns 4 consecutive items. </p>
-<dl class="section user"><dt></dt><dd><div class="fragment"><div class="line"><span class="preprocessor">#include &lt;<a class="code" href="cub_8cuh.html">cub/cub.cuh</a>&gt;</span></div>
-<div class="line"></div>
-<div class="line">__global__ <span class="keywordtype">void</span> ExampleKernel(...)</div>
-<div class="line">{</div>
-<div class="line">    <span class="comment">// Specialize BlockScan for 128 threads on type int</span></div>
-<div class="line">    <span class="keyword">typedef</span> <a class="code" href="classcub_1_1_block_scan.html" title="The BlockScan class provides collective methods for computing a parallel prefix sum/scan of items par...">cub::BlockScan&lt;int, 128&gt;</a> <a class="code" href="classcub_1_1_block_scan.html#a982e1407d00b704c3046cd72c48acabb" title="Collective constructor for 1D thread blocks using a private static allocation of shared memory as tem...">BlockScan</a>;</div>
-<div class="line"></div>
-<div class="line">    <span class="comment">// Allocate shared memory for BlockScan</span></div>
-<div class="line">    __shared__ <span class="keyword">typename</span> BlockScan::TempStorage temp_storage;</div>
-<div class="line"></div>
-<div class="line">    <span class="comment">// Obtain a segment of consecutive items that are blocked across threads</span></div>
-<div class="line">    <span class="keywordtype">int</span> thread_data[4];</div>
-<div class="line">    ...</div>
-<div class="line"></div>
-<div class="line">    <span class="comment">// Collectively compute the block-wide exclusive prefix sum</span></div>
-<div class="line">    <a class="code" href="classcub_1_1_block_scan.html#a982e1407d00b704c3046cd72c48acabb" title="Collective constructor for 1D thread blocks using a private static allocation of shared memory as tem...">BlockScan</a>(temp_storage).ExclusiveSum(thread_data, thread_data);</div>
-</div><!-- fragment --> </dd></dl>
-<dl class="section user"><dt></dt><dd>Suppose the set of input <code>thread_data</code> across the block of threads is <code>{ [1,1,1,1], [1,1,1,1], ..., [1,1,1,1] }</code>. The corresponding output <code>thread_data</code> in those threads will be <code>{ [0,1,2,3], [4,5,6,7], ..., [508,509,510,511] }</code>.</dd></dl>
-<dl class="tparams"><dt>Template Parameters</dt><dd>
-  <table class="tparams">
-    <tr><td class="paramname">ITEMS_PER_THREAD</td><td><b>[inferred]</b> The number of consecutive items partitioned onto each thread. </td></tr>
-  </table>
-  </dd>
-</dl>
-<dl class="params"><dt>Parameters</dt><dd>
-  <table class="params">
-    <tr><td class="paramdir">[in]</td><td class="paramname">input</td><td>Calling thread's input items </td></tr>
-    <tr><td class="paramdir">[out]</td><td class="paramname">output</td><td>Calling thread's output items (may be aliased to <code>input</code>) </td></tr>
-  </table>
-  </dd>
-</dl>
-
-</div>
-</div>
-<a class="anchor" id="aa92950e9b763459fb7e63c8d047c94c2"></a>
-<div class="memitem">
-<div class="memproto">
-<div class="memtemplate">
-template&lt;typename T , int BLOCK_THREADS, BlockScanAlgorithm ALGORITHM = BLOCK_SCAN_RAKING&gt; </div>
-<div class="memtemplate">
-template&lt;int ITEMS_PER_THREAD&gt; </div>
-<table class="mlabels">
-  <tr>
-  <td class="mlabels-left">
-      <table class="memname">
-        <tr>
-          <td class="memname">__device__ __forceinline__ void <a class="el" href="classcub_1_1_block_scan.html">cub::BlockScan</a>&lt; T, BLOCK_THREADS, ALGORITHM &gt;::ExclusiveSum </td>
-          <td>(</td>
-          <td class="paramtype">T(&amp;)&#160;</td>
-          <td class="paramname"><em>input</em>[ITEMS_PER_THREAD], </td>
-        </tr>
-        <tr>
-          <td class="paramkey"></td>
-          <td></td>
-          <td class="paramtype">T(&amp;)&#160;</td>
-          <td class="paramname"><em>output</em>[ITEMS_PER_THREAD], </td>
-        </tr>
-        <tr>
-          <td class="paramkey"></td>
-          <td></td>
-          <td class="paramtype">T &amp;&#160;</td>
-          <td class="paramname"><em>block_aggregate</em>&#160;</td>
-        </tr>
-        <tr>
-          <td></td>
-          <td>)</td>
-          <td></td><td></td>
-        </tr>
-      </table>
-  </td>
-  <td class="mlabels-right">
-<span class="mlabels"><span class="mlabel">inline</span></span>  </td>
-  </tr>
-</table>
-</div><div class="memdoc">
-
-<p>Computes an exclusive block-wide prefix scan using addition (+) as the scan operator. Each thread contributes an array of consecutive input elements. Also provides every thread with the block-wide <code>block_aggregate</code> of all inputs. </p>
-<p>Assumes a <a href="index.html#sec5sec4"><em>blocked arrangement</em></a> of elements across threads, where thread<sub><em>i</em></sub> owns the <em>i</em><sup>th</sup> segment of consecutively ranked items.</p>
-<p>A subsequent <code>__syncthreads()</code> threadblock barrier should be invoked after calling this method if the collective's temporary storage (e.g., <code>temp_storage</code>) is to be reused or repurposed.</p>
-<p>The code snippet below illustrates an exclusive prefix sum of 512 integer items that are partitioned in a <a href="index.html#sec5sec4"><em>blocked arrangement</em></a> across 128 threads where each thread owns 4 consecutive items. </p>
-<dl class="section user"><dt></dt><dd><div class="fragment"><div class="line"><span class="preprocessor">#include &lt;<a class="code" href="cub_8cuh.html">cub/cub.cuh</a>&gt;</span></div>
-<div class="line"></div>
-<div class="line">__global__ <span class="keywordtype">void</span> ExampleKernel(...)</div>
-<div class="line">{</div>
-<div class="line">    <span class="comment">// Specialize BlockScan for 128 threads on type int</span></div>
-<div class="line">    <span class="keyword">typedef</span> <a class="code" href="classcub_1_1_block_scan.html" title="The BlockScan class provides collective methods for computing a parallel prefix sum/scan of items par...">cub::BlockScan&lt;int, 128&gt;</a> <a class="code" href="classcub_1_1_block_scan.html#a982e1407d00b704c3046cd72c48acabb" title="Collective constructor for 1D thread blocks using a private static allocation of shared memory as tem...">BlockScan</a>;</div>
-<div class="line"></div>
-<div class="line">    <span class="comment">// Allocate shared memory for BlockScan</span></div>
-<div class="line">    __shared__ <span class="keyword">typename</span> BlockScan::TempStorage temp_storage;</div>
-<div class="line"></div>
-<div class="line">    <span class="comment">// Obtain a segment of consecutive items that are blocked across threads</span></div>
-<div class="line">    <span class="keywordtype">int</span> thread_data[4];</div>
-<div class="line">    ...</div>
-<div class="line"></div>
-<div class="line">    <span class="comment">// Collectively compute the block-wide exclusive prefix sum</span></div>
-<div class="line">    <span class="keywordtype">int</span> block_aggregate;</div>
-<div class="line">    <a class="code" href="classcub_1_1_block_scan.html#a982e1407d00b704c3046cd72c48acabb" title="Collective constructor for 1D thread blocks using a private static allocation of shared memory as tem...">BlockScan</a>(temp_storage).ExclusiveSum(thread_data, thread_data, block_aggregate);</div>
-</div><!-- fragment --> </dd></dl>
-<dl class="section user"><dt></dt><dd>Suppose the set of input <code>thread_data</code> across the block of threads is <code>{ [1,1,1,1], [1,1,1,1], ..., [1,1,1,1] }</code>. The corresponding output <code>thread_data</code> in those threads will be <code>{ [0,1,2,3], [4,5,6,7], ..., [508,509,510,511] }</code>. Furthermore the value <code>512</code> will be stored in <code>block_aggregate</code> for all threads.</dd></dl>
-<dl class="tparams"><dt>Template Parameters</dt><dd>
-  <table class="tparams">
-    <tr><td class="paramname">ITEMS_PER_THREAD</td><td><b>[inferred]</b> The number of consecutive items partitioned onto each thread. </td></tr>
-  </table>
-  </dd>
-</dl>
-<dl class="params"><dt>Parameters</dt><dd>
-  <table class="params">
-    <tr><td class="paramdir">[in]</td><td class="paramname">input</td><td>Calling thread's input items </td></tr>
-    <tr><td class="paramdir">[out]</td><td class="paramname">output</td><td>Calling thread's output items (may be aliased to <code>input</code>) </td></tr>
-    <tr><td class="paramdir">[out]</td><td class="paramname">block_aggregate</td><td>block-wide aggregate reduction of input items </td></tr>
-  </table>
-  </dd>
-</dl>
-
-</div>
-</div>
-<a class="anchor" id="ab6f9a0fa1ac832dcfb31bfacd7f1e22b"></a>
-<div class="memitem">
-<div class="memproto">
-<div class="memtemplate">
-template&lt;typename T , int BLOCK_THREADS, BlockScanAlgorithm ALGORITHM = BLOCK_SCAN_RAKING&gt; </div>
-<div class="memtemplate">
-template&lt;int ITEMS_PER_THREAD, typename BlockPrefixOp &gt; </div>
-<table class="mlabels">
-  <tr>
-  <td class="mlabels-left">
-      <table class="memname">
-        <tr>
-          <td class="memname">__device__ __forceinline__ void <a class="el" href="classcub_1_1_block_scan.html">cub::BlockScan</a>&lt; T, BLOCK_THREADS, ALGORITHM &gt;::ExclusiveSum </td>
-          <td>(</td>
-          <td class="paramtype">T(&amp;)&#160;</td>
-          <td class="paramname"><em>input</em>[ITEMS_PER_THREAD], </td>
-        </tr>
-        <tr>
-          <td class="paramkey"></td>
-          <td></td>
-          <td class="paramtype">T(&amp;)&#160;</td>
-          <td class="paramname"><em>output</em>[ITEMS_PER_THREAD], </td>
-        </tr>
-        <tr>
-          <td class="paramkey"></td>
-          <td></td>
-          <td class="paramtype">T &amp;&#160;</td>
-          <td class="paramname"><em>block_aggregate</em>, </td>
-        </tr>
-        <tr>
-          <td class="paramkey"></td>
-          <td></td>
-          <td class="paramtype">BlockPrefixOp &amp;&#160;</td>
-          <td class="paramname"><em>block_prefix_op</em>&#160;</td>
-        </tr>
-        <tr>
-          <td></td>
-          <td>)</td>
-          <td></td><td></td>
-        </tr>
-      </table>
-  </td>
-  <td class="mlabels-right">
-<span class="mlabels"><span class="mlabel">inline</span></span>  </td>
-  </tr>
-</table>
-</div><div class="memdoc">
-
-<p>Computes an exclusive block-wide prefix scan using addition (+) as the scan operator. Each thread contributes an array of consecutive input elements. Instead of using 0 as the block-wide prefix, the call-back functor <code>block_prefix_op</code> is invoked by the first warp in the block, and the value returned by <em>lane</em><sub>0</sub> in that warp is used as the "seed" value that logically prefixes the threadblock's scan inputs. Also provides every thread with the block-wide <code>block_aggregate</code> of all inputs. </p>
-<p>The <code>block_prefix_op</code> functor must implement a member function <code>T operator()(T block_aggregate)</code>. The functor's input parameter <code>block_aggregate</code> is the same value also returned by the scan operation. The functor will be invoked by the first warp of threads in the block, however only the return value from <em>lane</em><sub>0</sub> is applied as the block-wide prefix. Can be stateful.</p>
-<p>Assumes a <a href="index.html#sec5sec4"><em>blocked arrangement</em></a> of elements across threads, where thread<sub><em>i</em></sub> owns the <em>i</em><sup>th</sup> segment of consecutively ranked items.</p>
-<p>A subsequent <code>__syncthreads()</code> threadblock barrier should be invoked after calling this method if the collective's temporary storage (e.g., <code>temp_storage</code>) is to be reused or repurposed.</p>
-<p>The code snippet below illustrates a single thread block that progressively computes an exclusive prefix sum over multiple "tiles" of input using a prefix functor to maintain a running total between block-wide scans. Each tile consists of 512 integer items that are partitioned in a <a href="index.html#sec5sec4"><em>blocked arrangement</em></a> across 128 threads where each thread owns 4 consecutive items. </p>
-<dl class="section user"><dt></dt><dd><div class="fragment"><div class="line"><span class="preprocessor">#include &lt;<a class="code" href="cub_8cuh.html">cub/cub.cuh</a>&gt;</span></div>
-<div class="line"></div>
-<div class="line"><span class="comment">// A stateful callback functor that maintains a running prefix to be applied</span></div>
-<div class="line"><span class="comment">// during consecutive scan operations.</span></div>
-<div class="line"><span class="keyword">struct </span>BlockPrefixOp</div>
-<div class="line">{</div>
-<div class="line">    <span class="comment">// Running prefix</span></div>
-<div class="line">    <span class="keywordtype">int</span> running_total;</div>
-<div class="line"></div>
-<div class="line">    <span class="comment">// Constructor</span></div>
-<div class="line">    __device__ BlockPrefixOp(<span class="keywordtype">int</span> running_total) : running_total(running_total) {}</div>
-<div class="line"></div>
-<div class="line">    <span class="comment">// Callback operator to be entered by the first warp of threads in the block.</span></div>
-<div class="line">    <span class="comment">// Thread-0 is responsible for returning a value for seeding the block-wide scan.</span></div>
-<div class="line">    __device__ <span class="keywordtype">int</span> operator()(<span class="keywordtype">int</span> block_aggregate)</div>
-<div class="line">    {</div>
-<div class="line">        <span class="keywordtype">int</span> old_prefix = running_total;</div>
-<div class="line">        running_total += block_aggregate;</div>
-<div class="line">        <span class="keywordflow">return</span> old_prefix;</div>
-<div class="line">    }</div>
-<div class="line">};</div>
-<div class="line"></div>
-<div class="line">__global__ <span class="keywordtype">void</span> ExampleKernel(<span class="keywordtype">int</span> *d_data, <span class="keywordtype">int</span> num_items, ...)</div>
-<div class="line">{</div>
-<div class="line">    <span class="comment">// Specialize BlockLoad, BlockStore, and BlockScan for 128 threads, 4 ints per thread</span></div>
-<div class="line">    <span class="keyword">typedef</span> <a class="code" href="classcub_1_1_block_load.html" title="The BlockLoad class provides collective data movement methods for loading a linear segment of items f...">cub::BlockLoad&lt;int*, 128, 4, BLOCK_LOAD_TRANSPOSE&gt;</a>   BlockLoad;</div>
-<div class="line">    <span class="keyword">typedef</span> <a class="code" href="classcub_1_1_block_store.html" title="The BlockStore class provides collective data movement methods for writing a blocked arrangement of i...">cub::BlockStore&lt;int*, 128, 4, BLOCK_STORE_TRANSPOSE&gt;</a> BlockStore;</div>
-<div class="line">    <span class="keyword">typedef</span> <a class="code" href="classcub_1_1_block_scan.html" title="The BlockScan class provides collective methods for computing a parallel prefix sum/scan of items par...">cub::BlockScan&lt;int, 128&gt;</a>                             <a class="code" href="classcub_1_1_block_scan.html#a982e1407d00b704c3046cd72c48acabb" title="Collective constructor for 1D thread blocks using a private static allocation of shared memory as tem...">BlockScan</a>;</div>
-<div class="line"></div>
-<div class="line">    <span class="comment">// Allocate aliased shared memory for BlockLoad, BlockStore, and BlockScan</span></div>
-<div class="line">    __shared__ <span class="keyword">union </span>{</div>
-<div class="line">        <span class="keyword">typename</span> BlockLoad::TempStorage     load;</div>
-<div class="line">        <span class="keyword">typename</span> BlockScan::TempStorage     scan;</div>
-<div class="line">        <span class="keyword">typename</span> BlockStore::TempStorage    store;</div>
-<div class="line">    } temp_storage;</div>
-<div class="line"></div>
-<div class="line">    <span class="comment">// Initialize running total</span></div>
-<div class="line">    BlockPrefixOp prefix_op(0);</div>
-<div class="line"></div>
-<div class="line">    <span class="comment">// Have the block iterate over segments of items</span></div>
-<div class="line">    <span class="keywordflow">for</span> (<span class="keywordtype">int</span> block_offset = 0; block_offset &lt; num_items; block_offset += 128 * 4)</div>
-<div class="line">    {</div>
-<div class="line">        <span class="comment">// Load a segment of consecutive items that are blocked across threads</span></div>
-<div class="line">        <span class="keywordtype">int</span> thread_data[4];</div>
-<div class="line">        BlockLoad(temp_storage.load).Load(d_data + block_offset, thread_data);</div>
-<div class="line">        __syncthreads();</div>
-<div class="line"></div>
-<div class="line">        <span class="comment">// Collectively compute the block-wide exclusive prefix sum</span></div>
-<div class="line">        <span class="keywordtype">int</span> block_aggregate;</div>
-<div class="line">        <a class="code" href="classcub_1_1_block_scan.html#a982e1407d00b704c3046cd72c48acabb" title="Collective constructor for 1D thread blocks using a private static allocation of shared memory as tem...">BlockScan</a>(temp_storage.scan).ExclusiveSum(</div>
-<div class="line">            thread_data, thread_data, block_aggregate, prefix_op);</div>
-<div class="line">        __syncthreads();</div>
-<div class="line"></div>
-<div class="line">        <span class="comment">// Store scanned items to output segment</span></div>
-<div class="line">        BlockStore(temp_storage.store).Store(d_data + block_offset, thread_data);</div>
-<div class="line">        __syncthreads();</div>
-<div class="line">    }</div>
-</div><!-- fragment --> </dd></dl>
-<dl class="section user"><dt></dt><dd>Suppose the input <code>d_data</code> is <code>1, 1, 1, 1, 1, 1, 1, 1, ...</code>. The corresponding output for the first segment will be <code>0, 1, 2, 3, ..., 510, 511</code>. The output for the second segment will be <code>512, 513, 514, 515, ..., 1022, 1023</code>. Furthermore, the value <code>512</code> will be stored in <code>block_aggregate</code> for all threads after each scan.</dd></dl>
-<dl class="tparams"><dt>Template Parameters</dt><dd>
-  <table class="tparams">
-    <tr><td class="paramname">ITEMS_PER_THREAD</td><td><b>[inferred]</b> The number of consecutive items partitioned onto each thread. </td></tr>
-    <tr><td class="paramname">BlockPrefixOp</td><td><b>[inferred]</b> Call-back functor type having member <code>T operator()(T block_aggregate)</code> </td></tr>
-  </table>
-  </dd>
-</dl>
-<dl class="params"><dt>Parameters</dt><dd>
-  <table class="params">
-    <tr><td class="paramdir">[in]</td><td class="paramname">input</td><td>Calling thread's input items </td></tr>
-    <tr><td class="paramdir">[out]</td><td class="paramname">output</td><td>Calling thread's output items (may be aliased to <code>input</code>) </td></tr>
-    <tr><td class="paramdir">[out]</td><td class="paramname">block_aggregate</td><td>block-wide aggregate reduction of input items (exclusive of the <code>block_prefix_op</code> value) </td></tr>
-    <tr><td class="paramdir">[in,out]</td><td class="paramname">block_prefix_op</td><td><b>[<em>warp</em><sub>0</sub> only]</b> Call-back functor for specifying a block-wide prefix to be applied to all inputs. </td></tr>
-  </table>
-  </dd>
-</dl>
-
-</div>
-</div>
 <a class="anchor" id="a2cd6dc7b523db630f4719b1b77df4db7"></a>
 <div class="memitem">
 <div class="memproto">
@@ -1036,6 +496,8 @@ template&lt;typename ScanOp &gt; </div>
   </table>
   </dd>
 </dl>
+
+<p>Definition at line <a class="el" href="block__scan_8cuh_source.html#l00744">744</a> of file <a class="el" href="block__scan_8cuh_source.html">block_scan.cuh</a>.</p>
 
 </div>
 </div>
@@ -1133,6 +595,8 @@ template&lt;typename ScanOp &gt; </div>
   </table>
   </dd>
 </dl>
+
+<p>Definition at line <a class="el" href="block__scan_8cuh_source.html#l00795">795</a> of file <a class="el" href="block__scan_8cuh_source.html">block_scan.cuh</a>.</p>
 
 </div>
 </div>
@@ -1271,6 +735,8 @@ template&lt;typename ScanOp , typename BlockPrefixOp &gt; </div>
   </dd>
 </dl>
 
+<p>Definition at line <a class="el" href="block__scan_8cuh_source.html#l00888">888</a> of file <a class="el" href="block__scan_8cuh_source.html">block_scan.cuh</a>.</p>
+
 </div>
 </div>
 <a class="anchor" id="a5b21dfebcaf900cb516a06746dcb48b1"></a>
@@ -1360,6 +826,8 @@ template&lt;int ITEMS_PER_THREAD, typename ScanOp &gt; </div>
   </table>
   </dd>
 </dl>
+
+<p>Definition at line <a class="el" href="block__scan_8cuh_source.html#l00951">951</a> of file <a class="el" href="block__scan_8cuh_source.html">block_scan.cuh</a>.</p>
 
 </div>
 </div>
@@ -1458,6 +926,8 @@ template&lt;int ITEMS_PER_THREAD, typename ScanOp &gt; </div>
   </table>
   </dd>
 </dl>
+
+<p>Definition at line <a class="el" href="block__scan_8cuh_source.html#l01012">1012</a> of file <a class="el" href="block__scan_8cuh_source.html">block_scan.cuh</a>.</p>
 
 </div>
 </div>
@@ -1606,9 +1076,11 @@ template&lt;int ITEMS_PER_THREAD, typename ScanOp , typename BlockPrefixOp &gt; 
   </dd>
 </dl>
 
+<p>Definition at line <a class="el" href="block__scan_8cuh_source.html#l01123">1123</a> of file <a class="el" href="block__scan_8cuh_source.html">block_scan.cuh</a>.</p>
+
 </div>
 </div>
-<a class="anchor" id="a570505ebdc51e2e47373fcb87e9a7d62"></a>
+<a class="anchor" id="acd75d5aad2d1385bcbe15517011800e8"></a>
 <div class="memitem">
 <div class="memproto">
 <div class="memtemplate">
@@ -1618,7 +1090,7 @@ template&lt;typename T , int BLOCK_THREADS, BlockScanAlgorithm ALGORITHM = BLOCK
   <td class="mlabels-left">
       <table class="memname">
         <tr>
-          <td class="memname">__device__ __forceinline__ void <a class="el" href="classcub_1_1_block_scan.html">cub::BlockScan</a>&lt; T, BLOCK_THREADS, ALGORITHM &gt;::InclusiveSum </td>
+          <td class="memname">__device__ __forceinline__ void <a class="el" href="classcub_1_1_block_scan.html">cub::BlockScan</a>&lt; T, BLOCK_THREADS, ALGORITHM &gt;::ExclusiveSum </td>
           <td>(</td>
           <td class="paramtype">T&#160;</td>
           <td class="paramname"><em>input</em>, </td>
@@ -1642,10 +1114,10 @@ template&lt;typename T , int BLOCK_THREADS, BlockScanAlgorithm ALGORITHM = BLOCK
 </table>
 </div><div class="memdoc">
 
-<p>Computes an inclusive block-wide prefix scan using addition (+) as the scan operator. Each thread contributes one input element. </p>
+<p>Computes an exclusive block-wide prefix scan using addition (+) as the scan operator. Each thread contributes one input element. </p>
 <p>Assumes a <a href="index.html#sec5sec4"><em>blocked arrangement</em></a> of elements across threads, where thread<sub><em>i</em></sub> owns the <em>i</em><sup>th</sup> segment of consecutively ranked items.</p>
 <p>A subsequent <code>__syncthreads()</code> threadblock barrier should be invoked after calling this method if the collective's temporary storage (e.g., <code>temp_storage</code>) is to be reused or repurposed.</p>
-<p>The code snippet below illustrates an inclusive prefix sum of 128 integer items that are partitioned across 128 threads. </p>
+<p>The code snippet below illustrates an exclusive prefix sum of 128 integer items that are partitioned across 128 threads. </p>
 <dl class="section user"><dt></dt><dd><div class="fragment"><div class="line"><span class="preprocessor">#include &lt;<a class="code" href="cub_8cuh.html">cub/cub.cuh</a>&gt;</span></div>
 <div class="line"></div>
 <div class="line">__global__ <span class="keywordtype">void</span> ExampleKernel(...)</div>
@@ -1660,10 +1132,10 @@ template&lt;typename T , int BLOCK_THREADS, BlockScanAlgorithm ALGORITHM = BLOCK
 <div class="line">    <span class="keywordtype">int</span> thread_data;</div>
 <div class="line">    ...</div>
 <div class="line"></div>
-<div class="line">    <span class="comment">// Collectively compute the block-wide inclusive prefix sum</span></div>
-<div class="line">    <a class="code" href="classcub_1_1_block_scan.html#a982e1407d00b704c3046cd72c48acabb" title="Collective constructor for 1D thread blocks using a private static allocation of shared memory as tem...">BlockScan</a>(temp_storage).InclusiveSum(thread_data, thread_data);</div>
+<div class="line">    <span class="comment">// Collectively compute the block-wide exclusive prefix sum</span></div>
+<div class="line">    <a class="code" href="classcub_1_1_block_scan.html#a982e1407d00b704c3046cd72c48acabb" title="Collective constructor for 1D thread blocks using a private static allocation of shared memory as tem...">BlockScan</a>(temp_storage).ExclusiveSum(thread_data, thread_data);</div>
 </div><!-- fragment --> </dd></dl>
-<dl class="section user"><dt></dt><dd>Suppose the set of input <code>thread_data</code> across the block of threads is <code>1, 1, ..., 1</code>. The corresponding output <code>thread_data</code> in those threads will be <code>1, 2, ..., 128</code>. </dd></dl>
+<dl class="section user"><dt></dt><dd>Suppose the set of input <code>thread_data</code> across the block of threads is <code>1, 1, ..., 1</code>. The corresponding output <code>thread_data</code> in those threads will be <code>0, 1, ..., 127</code>. </dd></dl>
 <dl class="params"><dt>Parameters</dt><dd>
   <table class="params">
     <tr><td class="paramdir">[in]</td><td class="paramname">input</td><td>Calling thread's input item </td></tr>
@@ -1672,9 +1144,11 @@ template&lt;typename T , int BLOCK_THREADS, BlockScanAlgorithm ALGORITHM = BLOCK
   </dd>
 </dl>
 
+<p>Definition at line <a class="el" href="block__scan_8cuh_source.html#l00335">335</a> of file <a class="el" href="block__scan_8cuh_source.html">block_scan.cuh</a>.</p>
+
 </div>
 </div>
-<a class="anchor" id="a0de622762b27b095583770c66b905358"></a>
+<a class="anchor" id="a1fd276abbe08f7031a0333bf5c98c2f5"></a>
 <div class="memitem">
 <div class="memproto">
 <div class="memtemplate">
@@ -1684,7 +1158,7 @@ template&lt;typename T , int BLOCK_THREADS, BlockScanAlgorithm ALGORITHM = BLOCK
   <td class="mlabels-left">
       <table class="memname">
         <tr>
-          <td class="memname">__device__ __forceinline__ void <a class="el" href="classcub_1_1_block_scan.html">cub::BlockScan</a>&lt; T, BLOCK_THREADS, ALGORITHM &gt;::InclusiveSum </td>
+          <td class="memname">__device__ __forceinline__ void <a class="el" href="classcub_1_1_block_scan.html">cub::BlockScan</a>&lt; T, BLOCK_THREADS, ALGORITHM &gt;::ExclusiveSum </td>
           <td>(</td>
           <td class="paramtype">T&#160;</td>
           <td class="paramname"><em>input</em>, </td>
@@ -1714,10 +1188,10 @@ template&lt;typename T , int BLOCK_THREADS, BlockScanAlgorithm ALGORITHM = BLOCK
 </table>
 </div><div class="memdoc">
 
-<p>Computes an inclusive block-wide prefix scan using addition (+) as the scan operator. Each thread contributes one input element. Also provides every thread with the block-wide <code>block_aggregate</code> of all inputs. </p>
+<p>Computes an exclusive block-wide prefix scan using addition (+) as the scan operator. Each thread contributes one input element. Also provides every thread with the block-wide <code>block_aggregate</code> of all inputs. </p>
 <p>Assumes a <a href="index.html#sec5sec4"><em>blocked arrangement</em></a> of elements across threads, where thread<sub><em>i</em></sub> owns the <em>i</em><sup>th</sup> segment of consecutively ranked items.</p>
 <p>A subsequent <code>__syncthreads()</code> threadblock barrier should be invoked after calling this method if the collective's temporary storage (e.g., <code>temp_storage</code>) is to be reused or repurposed.</p>
-<p>The code snippet below illustrates an inclusive prefix sum of 128 integer items that are partitioned across 128 threads. </p>
+<p>The code snippet below illustrates an exclusive prefix sum of 128 integer items that are partitioned across 128 threads. </p>
 <dl class="section user"><dt></dt><dd><div class="fragment"><div class="line"><span class="preprocessor">#include &lt;<a class="code" href="cub_8cuh.html">cub/cub.cuh</a>&gt;</span></div>
 <div class="line"></div>
 <div class="line">__global__ <span class="keywordtype">void</span> ExampleKernel(...)</div>
@@ -1732,11 +1206,11 @@ template&lt;typename T , int BLOCK_THREADS, BlockScanAlgorithm ALGORITHM = BLOCK
 <div class="line">    <span class="keywordtype">int</span> thread_data;</div>
 <div class="line">    ...</div>
 <div class="line"></div>
-<div class="line">    <span class="comment">// Collectively compute the block-wide inclusive prefix sum</span></div>
+<div class="line">    <span class="comment">// Collectively compute the block-wide exclusive prefix sum</span></div>
 <div class="line">    <span class="keywordtype">int</span> block_aggregate;</div>
-<div class="line">    <a class="code" href="classcub_1_1_block_scan.html#a982e1407d00b704c3046cd72c48acabb" title="Collective constructor for 1D thread blocks using a private static allocation of shared memory as tem...">BlockScan</a>(temp_storage).InclusiveSum(thread_data, thread_data, block_aggregate);</div>
+<div class="line">    <a class="code" href="classcub_1_1_block_scan.html#a982e1407d00b704c3046cd72c48acabb" title="Collective constructor for 1D thread blocks using a private static allocation of shared memory as tem...">BlockScan</a>(temp_storage).ExclusiveSum(thread_data, thread_data, block_aggregate);</div>
 </div><!-- fragment --> </dd></dl>
-<dl class="section user"><dt></dt><dd>Suppose the set of input <code>thread_data</code> across the block of threads is <code>1, 1, ..., 1</code>. The corresponding output <code>thread_data</code> in those threads will be <code>1, 2, ..., 128</code>. Furthermore the value <code>128</code> will be stored in <code>block_aggregate</code> for all threads. </dd></dl>
+<dl class="section user"><dt></dt><dd>Suppose the set of input <code>thread_data</code> across the block of threads is <code>1, 1, ..., 1</code>. The corresponding output <code>thread_data</code> in those threads will be <code>0, 1, ..., 127</code>. Furthermore the value <code>128</code> will be stored in <code>block_aggregate</code> for all threads. </dd></dl>
 <dl class="params"><dt>Parameters</dt><dd>
   <table class="params">
     <tr><td class="paramdir">[in]</td><td class="paramname">input</td><td>Calling thread's input item </td></tr>
@@ -1746,9 +1220,11 @@ template&lt;typename T , int BLOCK_THREADS, BlockScanAlgorithm ALGORITHM = BLOCK
   </dd>
 </dl>
 
+<p>Definition at line <a class="el" href="block__scan_8cuh_source.html#l00380">380</a> of file <a class="el" href="block__scan_8cuh_source.html">block_scan.cuh</a>.</p>
+
 </div>
 </div>
-<a class="anchor" id="a39c481101dfa78b09374cab355712de9"></a>
+<a class="anchor" id="a97e041cbdfdb4005ffc65b45c9276403"></a>
 <div class="memitem">
 <div class="memproto">
 <div class="memtemplate">
@@ -1760,7 +1236,7 @@ template&lt;typename BlockPrefixOp &gt; </div>
   <td class="mlabels-left">
       <table class="memname">
         <tr>
-          <td class="memname">__device__ __forceinline__ void <a class="el" href="classcub_1_1_block_scan.html">cub::BlockScan</a>&lt; T, BLOCK_THREADS, ALGORITHM &gt;::InclusiveSum </td>
+          <td class="memname">__device__ __forceinline__ void <a class="el" href="classcub_1_1_block_scan.html">cub::BlockScan</a>&lt; T, BLOCK_THREADS, ALGORITHM &gt;::ExclusiveSum </td>
           <td>(</td>
           <td class="paramtype">T&#160;</td>
           <td class="paramname"><em>input</em>, </td>
@@ -1796,11 +1272,11 @@ template&lt;typename BlockPrefixOp &gt; </div>
 </table>
 </div><div class="memdoc">
 
-<p>Computes an inclusive block-wide prefix scan using addition (+) as the scan operator. Each thread contributes one input element. Instead of using 0 as the block-wide prefix, the call-back functor <code>block_prefix_op</code> is invoked by the first warp in the block, and the value returned by <em>lane</em><sub>0</sub> in that warp is used as the "seed" value that logically prefixes the threadblock's scan inputs. Also provides every thread with the block-wide <code>block_aggregate</code> of all inputs. </p>
+<p>Computes an exclusive block-wide prefix scan using addition (+) as the scan operator. Each thread contributes one input element. Instead of using 0 as the block-wide prefix, the call-back functor <code>block_prefix_op</code> is invoked by the first warp in the block, and the value returned by <em>lane</em><sub>0</sub> in that warp is used as the "seed" value that logically prefixes the threadblock's scan inputs. Also provides every thread with the block-wide <code>block_aggregate</code> of all inputs. </p>
 <p>The <code>block_prefix_op</code> functor must implement a member function <code>T operator()(T block_aggregate)</code>. The functor's input parameter <code>block_aggregate</code> is the same value also returned by the scan operation. The functor will be invoked by the first warp of threads in the block, however only the return value from <em>lane</em><sub>0</sub> is applied as the block-wide prefix. Can be stateful.</p>
 <p>Assumes a <a href="index.html#sec5sec4"><em>blocked arrangement</em></a> of elements across threads, where thread<sub><em>i</em></sub> owns the <em>i</em><sup>th</sup> segment of consecutively ranked items.</p>
 <p>A subsequent <code>__syncthreads()</code> threadblock barrier should be invoked after calling this method if the collective's temporary storage (e.g., <code>temp_storage</code>) is to be reused or repurposed.</p>
-<p>The code snippet below illustrates a single thread block that progressively computes an inclusive prefix sum over multiple "tiles" of input using a prefix functor to maintain a running total between block-wide scans. Each tile consists of 128 integer items that are partitioned across 128 threads. </p>
+<p>The code snippet below illustrates a single thread block that progressively computes an exclusive prefix sum over multiple "tiles" of input using a prefix functor to maintain a running total between block-wide scans. Each tile consists of 128 integer items that are partitioned across 128 threads. </p>
 <dl class="section user"><dt></dt><dd><div class="fragment"><div class="line"><span class="preprocessor">#include &lt;<a class="code" href="cub_8cuh.html">cub/cub.cuh</a>&gt;</span></div>
 <div class="line"></div>
 <div class="line"><span class="comment">// A stateful callback functor that maintains a running prefix to be applied</span></div>
@@ -1840,9 +1316,9 @@ template&lt;typename BlockPrefixOp &gt; </div>
 <div class="line">        <span class="comment">// Load a segment of consecutive items that are blocked across threads</span></div>
 <div class="line">        <span class="keywordtype">int</span> thread_data = d_data[block_offset];</div>
 <div class="line"></div>
-<div class="line">        <span class="comment">// Collectively compute the block-wide inclusive prefix sum</span></div>
+<div class="line">        <span class="comment">// Collectively compute the block-wide exclusive prefix sum</span></div>
 <div class="line">        <span class="keywordtype">int</span> block_aggregate;</div>
-<div class="line">        <a class="code" href="classcub_1_1_block_scan.html#a982e1407d00b704c3046cd72c48acabb" title="Collective constructor for 1D thread blocks using a private static allocation of shared memory as tem...">BlockScan</a>(temp_storage).InclusiveSum(</div>
+<div class="line">        <a class="code" href="classcub_1_1_block_scan.html#a982e1407d00b704c3046cd72c48acabb" title="Collective constructor for 1D thread blocks using a private static allocation of shared memory as tem...">BlockScan</a>(temp_storage).ExclusiveSum(</div>
 <div class="line">            thread_data, thread_data, block_aggregate, prefix_op);</div>
 <div class="line">        __syncthreads();</div>
 <div class="line"></div>
@@ -1850,7 +1326,7 @@ template&lt;typename BlockPrefixOp &gt; </div>
 <div class="line">        d_data[block_offset] = thread_data;</div>
 <div class="line">    }</div>
 </div><!-- fragment --> </dd></dl>
-<dl class="section user"><dt></dt><dd>Suppose the input <code>d_data</code> is <code>1, 1, 1, 1, 1, 1, 1, 1, ...</code>. The corresponding output for the first segment will be <code>1, 2, ..., 128</code>. The output for the second segment will be <code>129, 130, ..., 256</code>. Furthermore, the value <code>128</code> will be stored in <code>block_aggregate</code> for all threads after each scan.</dd></dl>
+<dl class="section user"><dt></dt><dd>Suppose the input <code>d_data</code> is <code>1, 1, 1, 1, 1, 1, 1, 1, ...</code>. The corresponding output for the first segment will be <code>0, 1, ..., 127</code>. The output for the second segment will be <code>128, 129, ..., 255</code>. Furthermore, the value <code>128</code> will be stored in <code>block_aggregate</code> for all threads after each scan.</dd></dl>
 <dl class="tparams"><dt>Template Parameters</dt><dd>
   <table class="tparams">
     <tr><td class="paramname">BlockPrefixOp</td><td><b>[inferred]</b> Call-back functor type having member <code>T operator()(T block_aggregate)</code> </td></tr>
@@ -1867,9 +1343,11 @@ template&lt;typename BlockPrefixOp &gt; </div>
   </dd>
 </dl>
 
+<p>Definition at line <a class="el" href="block__scan_8cuh_source.html#l00465">465</a> of file <a class="el" href="block__scan_8cuh_source.html">block_scan.cuh</a>.</p>
+
 </div>
 </div>
-<a class="anchor" id="a88ffea45e2a8b5e3abb6e4c4777e66ef"></a>
+<a class="anchor" id="ab8122c00c833f17c78af3d99dc76c5e8"></a>
 <div class="memitem">
 <div class="memproto">
 <div class="memtemplate">
@@ -1881,7 +1359,7 @@ template&lt;int ITEMS_PER_THREAD&gt; </div>
   <td class="mlabels-left">
       <table class="memname">
         <tr>
-          <td class="memname">__device__ __forceinline__ void <a class="el" href="classcub_1_1_block_scan.html">cub::BlockScan</a>&lt; T, BLOCK_THREADS, ALGORITHM &gt;::InclusiveSum </td>
+          <td class="memname">__device__ __forceinline__ void <a class="el" href="classcub_1_1_block_scan.html">cub::BlockScan</a>&lt; T, BLOCK_THREADS, ALGORITHM &gt;::ExclusiveSum </td>
           <td>(</td>
           <td class="paramtype">T(&amp;)&#160;</td>
           <td class="paramname"><em>input</em>[ITEMS_PER_THREAD], </td>
@@ -1905,10 +1383,10 @@ template&lt;int ITEMS_PER_THREAD&gt; </div>
 </table>
 </div><div class="memdoc">
 
-<p>Computes an inclusive block-wide prefix scan using addition (+) as the scan operator. Each thread contributes an array of consecutive input elements. </p>
+<p>Computes an exclusive block-wide prefix scan using addition (+) as the scan operator. Each thread contributes an array of consecutive input elements. </p>
 <p>Assumes a <a href="index.html#sec5sec4"><em>blocked arrangement</em></a> of elements across threads, where thread<sub><em>i</em></sub> owns the <em>i</em><sup>th</sup> segment of consecutively ranked items.</p>
 <p>A subsequent <code>__syncthreads()</code> threadblock barrier should be invoked after calling this method if the collective's temporary storage (e.g., <code>temp_storage</code>) is to be reused or repurposed.</p>
-<p>The code snippet below illustrates an inclusive prefix sum of 512 integer items that are partitioned in a <a href="index.html#sec5sec4"><em>blocked arrangement</em></a> across 128 threads where each thread owns 4 consecutive items. </p>
+<p>The code snippet below illustrates an exclusive prefix sum of 512 integer items that are partitioned in a <a href="index.html#sec5sec4"><em>blocked arrangement</em></a> across 128 threads where each thread owns 4 consecutive items. </p>
 <dl class="section user"><dt></dt><dd><div class="fragment"><div class="line"><span class="preprocessor">#include &lt;<a class="code" href="cub_8cuh.html">cub/cub.cuh</a>&gt;</span></div>
 <div class="line"></div>
 <div class="line">__global__ <span class="keywordtype">void</span> ExampleKernel(...)</div>
@@ -1923,10 +1401,10 @@ template&lt;int ITEMS_PER_THREAD&gt; </div>
 <div class="line">    <span class="keywordtype">int</span> thread_data[4];</div>
 <div class="line">    ...</div>
 <div class="line"></div>
-<div class="line">    <span class="comment">// Collectively compute the block-wide inclusive prefix sum</span></div>
-<div class="line">    <a class="code" href="classcub_1_1_block_scan.html#a982e1407d00b704c3046cd72c48acabb" title="Collective constructor for 1D thread blocks using a private static allocation of shared memory as tem...">BlockScan</a>(temp_storage).InclusiveSum(thread_data, thread_data);</div>
+<div class="line">    <span class="comment">// Collectively compute the block-wide exclusive prefix sum</span></div>
+<div class="line">    <a class="code" href="classcub_1_1_block_scan.html#a982e1407d00b704c3046cd72c48acabb" title="Collective constructor for 1D thread blocks using a private static allocation of shared memory as tem...">BlockScan</a>(temp_storage).ExclusiveSum(thread_data, thread_data);</div>
 </div><!-- fragment --> </dd></dl>
-<dl class="section user"><dt></dt><dd>Suppose the set of input <code>thread_data</code> across the block of threads is <code>{ [1,1,1,1], [1,1,1,1], ..., [1,1,1,1] }</code>. The corresponding output <code>thread_data</code> in those threads will be <code>{ [1,2,3,4], [5,6,7,8], ..., [509,510,511,512] }</code>.</dd></dl>
+<dl class="section user"><dt></dt><dd>Suppose the set of input <code>thread_data</code> across the block of threads is <code>{ [1,1,1,1], [1,1,1,1], ..., [1,1,1,1] }</code>. The corresponding output <code>thread_data</code> in those threads will be <code>{ [0,1,2,3], [4,5,6,7], ..., [508,509,510,511] }</code>.</dd></dl>
 <dl class="tparams"><dt>Template Parameters</dt><dd>
   <table class="tparams">
     <tr><td class="paramname">ITEMS_PER_THREAD</td><td><b>[inferred]</b> The number of consecutive items partitioned onto each thread. </td></tr>
@@ -1941,9 +1419,11 @@ template&lt;int ITEMS_PER_THREAD&gt; </div>
   </dd>
 </dl>
 
+<p>Definition at line <a class="el" href="block__scan_8cuh_source.html#l00519">519</a> of file <a class="el" href="block__scan_8cuh_source.html">block_scan.cuh</a>.</p>
+
 </div>
 </div>
-<a class="anchor" id="a553e70dd3e177545837438ded03b3bfd"></a>
+<a class="anchor" id="aa92950e9b763459fb7e63c8d047c94c2"></a>
 <div class="memitem">
 <div class="memproto">
 <div class="memtemplate">
@@ -1955,7 +1435,7 @@ template&lt;int ITEMS_PER_THREAD&gt; </div>
   <td class="mlabels-left">
       <table class="memname">
         <tr>
-          <td class="memname">__device__ __forceinline__ void <a class="el" href="classcub_1_1_block_scan.html">cub::BlockScan</a>&lt; T, BLOCK_THREADS, ALGORITHM &gt;::InclusiveSum </td>
+          <td class="memname">__device__ __forceinline__ void <a class="el" href="classcub_1_1_block_scan.html">cub::BlockScan</a>&lt; T, BLOCK_THREADS, ALGORITHM &gt;::ExclusiveSum </td>
           <td>(</td>
           <td class="paramtype">T(&amp;)&#160;</td>
           <td class="paramname"><em>input</em>[ITEMS_PER_THREAD], </td>
@@ -1985,10 +1465,10 @@ template&lt;int ITEMS_PER_THREAD&gt; </div>
 </table>
 </div><div class="memdoc">
 
-<p>Computes an inclusive block-wide prefix scan using addition (+) as the scan operator. Each thread contributes an array of consecutive input elements. Also provides every thread with the block-wide <code>block_aggregate</code> of all inputs. </p>
+<p>Computes an exclusive block-wide prefix scan using addition (+) as the scan operator. Each thread contributes an array of consecutive input elements. Also provides every thread with the block-wide <code>block_aggregate</code> of all inputs. </p>
 <p>Assumes a <a href="index.html#sec5sec4"><em>blocked arrangement</em></a> of elements across threads, where thread<sub><em>i</em></sub> owns the <em>i</em><sup>th</sup> segment of consecutively ranked items.</p>
 <p>A subsequent <code>__syncthreads()</code> threadblock barrier should be invoked after calling this method if the collective's temporary storage (e.g., <code>temp_storage</code>) is to be reused or repurposed.</p>
-<p>The code snippet below illustrates an inclusive prefix sum of 512 integer items that are partitioned in a <a href="index.html#sec5sec4"><em>blocked arrangement</em></a> across 128 threads where each thread owns 4 consecutive items. </p>
+<p>The code snippet below illustrates an exclusive prefix sum of 512 integer items that are partitioned in a <a href="index.html#sec5sec4"><em>blocked arrangement</em></a> across 128 threads where each thread owns 4 consecutive items. </p>
 <dl class="section user"><dt></dt><dd><div class="fragment"><div class="line"><span class="preprocessor">#include &lt;<a class="code" href="cub_8cuh.html">cub/cub.cuh</a>&gt;</span></div>
 <div class="line"></div>
 <div class="line">__global__ <span class="keywordtype">void</span> ExampleKernel(...)</div>
@@ -2003,15 +1483,14 @@ template&lt;int ITEMS_PER_THREAD&gt; </div>
 <div class="line">    <span class="keywordtype">int</span> thread_data[4];</div>
 <div class="line">    ...</div>
 <div class="line"></div>
-<div class="line">    <span class="comment">// Collectively compute the block-wide inclusive prefix sum</span></div>
+<div class="line">    <span class="comment">// Collectively compute the block-wide exclusive prefix sum</span></div>
 <div class="line">    <span class="keywordtype">int</span> block_aggregate;</div>
-<div class="line">    <a class="code" href="classcub_1_1_block_scan.html#a982e1407d00b704c3046cd72c48acabb" title="Collective constructor for 1D thread blocks using a private static allocation of shared memory as tem...">BlockScan</a>(temp_storage).InclusiveSum(thread_data, thread_data, block_aggregate);</div>
+<div class="line">    <a class="code" href="classcub_1_1_block_scan.html#a982e1407d00b704c3046cd72c48acabb" title="Collective constructor for 1D thread blocks using a private static allocation of shared memory as tem...">BlockScan</a>(temp_storage).ExclusiveSum(thread_data, thread_data, block_aggregate);</div>
 </div><!-- fragment --> </dd></dl>
-<dl class="section user"><dt></dt><dd>Suppose the set of input <code>thread_data</code> across the block of threads is <code>{ [1,1,1,1], [1,1,1,1], ..., [1,1,1,1] }</code>. The corresponding output <code>thread_data</code> in those threads will be <code>{ [1,2,3,4], [5,6,7,8], ..., [509,510,511,512] }</code>. Furthermore the value <code>512</code> will be stored in <code>block_aggregate</code> for all threads.</dd></dl>
+<dl class="section user"><dt></dt><dd>Suppose the set of input <code>thread_data</code> across the block of threads is <code>{ [1,1,1,1], [1,1,1,1], ..., [1,1,1,1] }</code>. The corresponding output <code>thread_data</code> in those threads will be <code>{ [0,1,2,3], [4,5,6,7], ..., [508,509,510,511] }</code>. Furthermore the value <code>512</code> will be stored in <code>block_aggregate</code> for all threads.</dd></dl>
 <dl class="tparams"><dt>Template Parameters</dt><dd>
   <table class="tparams">
     <tr><td class="paramname">ITEMS_PER_THREAD</td><td><b>[inferred]</b> The number of consecutive items partitioned onto each thread. </td></tr>
-    <tr><td class="paramname">ScanOp</td><td><b>[inferred]</b> Binary scan operator type having member <code>T operator()(const T &amp;a, const T &amp;b)</code> </td></tr>
   </table>
   </dd>
 </dl>
@@ -2024,9 +1503,11 @@ template&lt;int ITEMS_PER_THREAD&gt; </div>
   </dd>
 </dl>
 
+<p>Definition at line <a class="el" href="block__scan_8cuh_source.html#l00574">574</a> of file <a class="el" href="block__scan_8cuh_source.html">block_scan.cuh</a>.</p>
+
 </div>
 </div>
-<a class="anchor" id="ae1a4a4dfbec4ec029dd6a8cce8b6c0a1"></a>
+<a class="anchor" id="ab6f9a0fa1ac832dcfb31bfacd7f1e22b"></a>
 <div class="memitem">
 <div class="memproto">
 <div class="memtemplate">
@@ -2038,7 +1519,7 @@ template&lt;int ITEMS_PER_THREAD, typename BlockPrefixOp &gt; </div>
   <td class="mlabels-left">
       <table class="memname">
         <tr>
-          <td class="memname">__device__ __forceinline__ void <a class="el" href="classcub_1_1_block_scan.html">cub::BlockScan</a>&lt; T, BLOCK_THREADS, ALGORITHM &gt;::InclusiveSum </td>
+          <td class="memname">__device__ __forceinline__ void <a class="el" href="classcub_1_1_block_scan.html">cub::BlockScan</a>&lt; T, BLOCK_THREADS, ALGORITHM &gt;::ExclusiveSum </td>
           <td>(</td>
           <td class="paramtype">T(&amp;)&#160;</td>
           <td class="paramname"><em>input</em>[ITEMS_PER_THREAD], </td>
@@ -2074,11 +1555,11 @@ template&lt;int ITEMS_PER_THREAD, typename BlockPrefixOp &gt; </div>
 </table>
 </div><div class="memdoc">
 
-<p>Computes an inclusive block-wide prefix scan using addition (+) as the scan operator. Each thread contributes an array of consecutive input elements. Instead of using 0 as the block-wide prefix, the call-back functor <code>block_prefix_op</code> is invoked by the first warp in the block, and the value returned by <em>lane</em><sub>0</sub> in that warp is used as the "seed" value that logically prefixes the threadblock's scan inputs. Also provides every thread with the block-wide <code>block_aggregate</code> of all inputs. </p>
+<p>Computes an exclusive block-wide prefix scan using addition (+) as the scan operator. Each thread contributes an array of consecutive input elements. Instead of using 0 as the block-wide prefix, the call-back functor <code>block_prefix_op</code> is invoked by the first warp in the block, and the value returned by <em>lane</em><sub>0</sub> in that warp is used as the "seed" value that logically prefixes the threadblock's scan inputs. Also provides every thread with the block-wide <code>block_aggregate</code> of all inputs. </p>
 <p>The <code>block_prefix_op</code> functor must implement a member function <code>T operator()(T block_aggregate)</code>. The functor's input parameter <code>block_aggregate</code> is the same value also returned by the scan operation. The functor will be invoked by the first warp of threads in the block, however only the return value from <em>lane</em><sub>0</sub> is applied as the block-wide prefix. Can be stateful.</p>
 <p>Assumes a <a href="index.html#sec5sec4"><em>blocked arrangement</em></a> of elements across threads, where thread<sub><em>i</em></sub> owns the <em>i</em><sup>th</sup> segment of consecutively ranked items.</p>
 <p>A subsequent <code>__syncthreads()</code> threadblock barrier should be invoked after calling this method if the collective's temporary storage (e.g., <code>temp_storage</code>) is to be reused or repurposed.</p>
-<p>The code snippet below illustrates a single thread block that progressively computes an inclusive prefix sum over multiple "tiles" of input using a prefix functor to maintain a running total between block-wide scans. Each tile consists of 512 integer items that are partitioned in a <a href="index.html#sec5sec4"><em>blocked arrangement</em></a> across 128 threads where each thread owns 4 consecutive items. </p>
+<p>The code snippet below illustrates a single thread block that progressively computes an exclusive prefix sum over multiple "tiles" of input using a prefix functor to maintain a running total between block-wide scans. Each tile consists of 512 integer items that are partitioned in a <a href="index.html#sec5sec4"><em>blocked arrangement</em></a> across 128 threads where each thread owns 4 consecutive items. </p>
 <dl class="section user"><dt></dt><dd><div class="fragment"><div class="line"><span class="preprocessor">#include &lt;<a class="code" href="cub_8cuh.html">cub/cub.cuh</a>&gt;</span></div>
 <div class="line"></div>
 <div class="line"><span class="comment">// A stateful callback functor that maintains a running prefix to be applied</span></div>
@@ -2126,9 +1607,9 @@ template&lt;int ITEMS_PER_THREAD, typename BlockPrefixOp &gt; </div>
 <div class="line">        BlockLoad(temp_storage.load).Load(d_data + block_offset, thread_data);</div>
 <div class="line">        __syncthreads();</div>
 <div class="line"></div>
-<div class="line">        <span class="comment">// Collectively compute the block-wide inclusive prefix sum</span></div>
+<div class="line">        <span class="comment">// Collectively compute the block-wide exclusive prefix sum</span></div>
 <div class="line">        <span class="keywordtype">int</span> block_aggregate;</div>
-<div class="line">        <a class="code" href="classcub_1_1_block_scan.html#a982e1407d00b704c3046cd72c48acabb" title="Collective constructor for 1D thread blocks using a private static allocation of shared memory as tem...">BlockScan</a>(temp_storage.scan).IncluisveSum(</div>
+<div class="line">        <a class="code" href="classcub_1_1_block_scan.html#a982e1407d00b704c3046cd72c48acabb" title="Collective constructor for 1D thread blocks using a private static allocation of shared memory as tem...">BlockScan</a>(temp_storage.scan).ExclusiveSum(</div>
 <div class="line">            thread_data, thread_data, block_aggregate, prefix_op);</div>
 <div class="line">        __syncthreads();</div>
 <div class="line"></div>
@@ -2137,7 +1618,7 @@ template&lt;int ITEMS_PER_THREAD, typename BlockPrefixOp &gt; </div>
 <div class="line">        __syncthreads();</div>
 <div class="line">    }</div>
 </div><!-- fragment --> </dd></dl>
-<dl class="section user"><dt></dt><dd>Suppose the input <code>d_data</code> is <code>1, 1, 1, 1, 1, 1, 1, 1, ...</code>. The corresponding output for the first segment will be <code>1, 2, 3, 4, ..., 511, 512</code>. The output for the second segment will be <code>513, 514, 515, 516, ..., 1023, 1024</code>. Furthermore, the value <code>512</code> will be stored in <code>block_aggregate</code> for all threads after each scan.</dd></dl>
+<dl class="section user"><dt></dt><dd>Suppose the input <code>d_data</code> is <code>1, 1, 1, 1, 1, 1, 1, 1, ...</code>. The corresponding output for the first segment will be <code>0, 1, 2, 3, ..., 510, 511</code>. The output for the second segment will be <code>512, 513, 514, 515, ..., 1022, 1023</code>. Furthermore, the value <code>512</code> will be stored in <code>block_aggregate</code> for all threads after each scan.</dd></dl>
 <dl class="tparams"><dt>Template Parameters</dt><dd>
   <table class="tparams">
     <tr><td class="paramname">ITEMS_PER_THREAD</td><td><b>[inferred]</b> The number of consecutive items partitioned onto each thread. </td></tr>
@@ -2154,6 +1635,8 @@ template&lt;int ITEMS_PER_THREAD, typename BlockPrefixOp &gt; </div>
   </table>
   </dd>
 </dl>
+
+<p>Definition at line <a class="el" href="block__scan_8cuh_source.html#l00680">680</a> of file <a class="el" href="block__scan_8cuh_source.html">block_scan.cuh</a>.</p>
 
 </div>
 </div>
@@ -2236,6 +1719,8 @@ template&lt;typename ScanOp &gt; </div>
   </table>
   </dd>
 </dl>
+
+<p>Definition at line <a class="el" href="block__scan_8cuh_source.html#l01814">1814</a> of file <a class="el" href="block__scan_8cuh_source.html">block_scan.cuh</a>.</p>
 
 </div>
 </div>
@@ -2326,6 +1811,8 @@ template&lt;typename ScanOp &gt; </div>
   </table>
   </dd>
 </dl>
+
+<p>Definition at line <a class="el" href="block__scan_8cuh_source.html#l01864">1864</a> of file <a class="el" href="block__scan_8cuh_source.html">block_scan.cuh</a>.</p>
 
 </div>
 </div>
@@ -2457,6 +1944,8 @@ template&lt;typename ScanOp , typename BlockPrefixOp &gt; </div>
   </dd>
 </dl>
 
+<p>Definition at line <a class="el" href="block__scan_8cuh_source.html#l01956">1956</a> of file <a class="el" href="block__scan_8cuh_source.html">block_scan.cuh</a>.</p>
+
 </div>
 </div>
 <a class="anchor" id="afac59f8a498efb6a97f6c4a3b239576f"></a>
@@ -2539,6 +2028,8 @@ template&lt;int ITEMS_PER_THREAD, typename ScanOp &gt; </div>
   </table>
   </dd>
 </dl>
+
+<p>Definition at line <a class="el" href="block__scan_8cuh_source.html#l02016">2016</a> of file <a class="el" href="block__scan_8cuh_source.html">block_scan.cuh</a>.</p>
 
 </div>
 </div>
@@ -2630,6 +2121,8 @@ template&lt;int ITEMS_PER_THREAD, typename ScanOp &gt; </div>
   </table>
   </dd>
 </dl>
+
+<p>Definition at line <a class="el" href="block__scan_8cuh_source.html#l02085">2085</a> of file <a class="el" href="block__scan_8cuh_source.html">block_scan.cuh</a>.</p>
 
 </div>
 </div>
@@ -2771,16 +2264,579 @@ template&lt;int ITEMS_PER_THREAD, typename ScanOp , typename BlockPrefixOp &gt; 
   </dd>
 </dl>
 
+<p>Definition at line <a class="el" href="block__scan_8cuh_source.html#l02202">2202</a> of file <a class="el" href="block__scan_8cuh_source.html">block_scan.cuh</a>.</p>
+
+</div>
+</div>
+<a class="anchor" id="a570505ebdc51e2e47373fcb87e9a7d62"></a>
+<div class="memitem">
+<div class="memproto">
+<div class="memtemplate">
+template&lt;typename T , int BLOCK_THREADS, BlockScanAlgorithm ALGORITHM = BLOCK_SCAN_RAKING&gt; </div>
+<table class="mlabels">
+  <tr>
+  <td class="mlabels-left">
+      <table class="memname">
+        <tr>
+          <td class="memname">__device__ __forceinline__ void <a class="el" href="classcub_1_1_block_scan.html">cub::BlockScan</a>&lt; T, BLOCK_THREADS, ALGORITHM &gt;::InclusiveSum </td>
+          <td>(</td>
+          <td class="paramtype">T&#160;</td>
+          <td class="paramname"><em>input</em>, </td>
+        </tr>
+        <tr>
+          <td class="paramkey"></td>
+          <td></td>
+          <td class="paramtype">T &amp;&#160;</td>
+          <td class="paramname"><em>output</em>&#160;</td>
+        </tr>
+        <tr>
+          <td></td>
+          <td>)</td>
+          <td></td><td></td>
+        </tr>
+      </table>
+  </td>
+  <td class="mlabels-right">
+<span class="mlabels"><span class="mlabel">inline</span></span>  </td>
+  </tr>
+</table>
+</div><div class="memdoc">
+
+<p>Computes an inclusive block-wide prefix scan using addition (+) as the scan operator. Each thread contributes one input element. </p>
+<p>Assumes a <a href="index.html#sec5sec4"><em>blocked arrangement</em></a> of elements across threads, where thread<sub><em>i</em></sub> owns the <em>i</em><sup>th</sup> segment of consecutively ranked items.</p>
+<p>A subsequent <code>__syncthreads()</code> threadblock barrier should be invoked after calling this method if the collective's temporary storage (e.g., <code>temp_storage</code>) is to be reused or repurposed.</p>
+<p>The code snippet below illustrates an inclusive prefix sum of 128 integer items that are partitioned across 128 threads. </p>
+<dl class="section user"><dt></dt><dd><div class="fragment"><div class="line"><span class="preprocessor">#include &lt;<a class="code" href="cub_8cuh.html">cub/cub.cuh</a>&gt;</span></div>
+<div class="line"></div>
+<div class="line">__global__ <span class="keywordtype">void</span> ExampleKernel(...)</div>
+<div class="line">{</div>
+<div class="line">    <span class="comment">// Specialize BlockScan for 128 threads on type int</span></div>
+<div class="line">    <span class="keyword">typedef</span> <a class="code" href="classcub_1_1_block_scan.html" title="The BlockScan class provides collective methods for computing a parallel prefix sum/scan of items par...">cub::BlockScan&lt;int, 128&gt;</a> <a class="code" href="classcub_1_1_block_scan.html#a982e1407d00b704c3046cd72c48acabb" title="Collective constructor for 1D thread blocks using a private static allocation of shared memory as tem...">BlockScan</a>;</div>
+<div class="line"></div>
+<div class="line">    <span class="comment">// Allocate shared memory for BlockScan</span></div>
+<div class="line">    __shared__ <span class="keyword">typename</span> BlockScan::TempStorage temp_storage;</div>
+<div class="line"></div>
+<div class="line">    <span class="comment">// Obtain input item for each thread</span></div>
+<div class="line">    <span class="keywordtype">int</span> thread_data;</div>
+<div class="line">    ...</div>
+<div class="line"></div>
+<div class="line">    <span class="comment">// Collectively compute the block-wide inclusive prefix sum</span></div>
+<div class="line">    <a class="code" href="classcub_1_1_block_scan.html#a982e1407d00b704c3046cd72c48acabb" title="Collective constructor for 1D thread blocks using a private static allocation of shared memory as tem...">BlockScan</a>(temp_storage).InclusiveSum(thread_data, thread_data);</div>
+</div><!-- fragment --> </dd></dl>
+<dl class="section user"><dt></dt><dd>Suppose the set of input <code>thread_data</code> across the block of threads is <code>1, 1, ..., 1</code>. The corresponding output <code>thread_data</code> in those threads will be <code>1, 2, ..., 128</code>. </dd></dl>
+<dl class="params"><dt>Parameters</dt><dd>
+  <table class="params">
+    <tr><td class="paramdir">[in]</td><td class="paramname">input</td><td>Calling thread's input item </td></tr>
+    <tr><td class="paramdir">[out]</td><td class="paramname">output</td><td>Calling thread's output item (may be aliased to <code>input</code>) </td></tr>
+  </table>
+  </dd>
+</dl>
+
+<p>Definition at line <a class="el" href="block__scan_8cuh_source.html#l01381">1381</a> of file <a class="el" href="block__scan_8cuh_source.html">block_scan.cuh</a>.</p>
+
+</div>
+</div>
+<a class="anchor" id="a0de622762b27b095583770c66b905358"></a>
+<div class="memitem">
+<div class="memproto">
+<div class="memtemplate">
+template&lt;typename T , int BLOCK_THREADS, BlockScanAlgorithm ALGORITHM = BLOCK_SCAN_RAKING&gt; </div>
+<table class="mlabels">
+  <tr>
+  <td class="mlabels-left">
+      <table class="memname">
+        <tr>
+          <td class="memname">__device__ __forceinline__ void <a class="el" href="classcub_1_1_block_scan.html">cub::BlockScan</a>&lt; T, BLOCK_THREADS, ALGORITHM &gt;::InclusiveSum </td>
+          <td>(</td>
+          <td class="paramtype">T&#160;</td>
+          <td class="paramname"><em>input</em>, </td>
+        </tr>
+        <tr>
+          <td class="paramkey"></td>
+          <td></td>
+          <td class="paramtype">T &amp;&#160;</td>
+          <td class="paramname"><em>output</em>, </td>
+        </tr>
+        <tr>
+          <td class="paramkey"></td>
+          <td></td>
+          <td class="paramtype">T &amp;&#160;</td>
+          <td class="paramname"><em>block_aggregate</em>&#160;</td>
+        </tr>
+        <tr>
+          <td></td>
+          <td>)</td>
+          <td></td><td></td>
+        </tr>
+      </table>
+  </td>
+  <td class="mlabels-right">
+<span class="mlabels"><span class="mlabel">inline</span></span>  </td>
+  </tr>
+</table>
+</div><div class="memdoc">
+
+<p>Computes an inclusive block-wide prefix scan using addition (+) as the scan operator. Each thread contributes one input element. Also provides every thread with the block-wide <code>block_aggregate</code> of all inputs. </p>
+<p>Assumes a <a href="index.html#sec5sec4"><em>blocked arrangement</em></a> of elements across threads, where thread<sub><em>i</em></sub> owns the <em>i</em><sup>th</sup> segment of consecutively ranked items.</p>
+<p>A subsequent <code>__syncthreads()</code> threadblock barrier should be invoked after calling this method if the collective's temporary storage (e.g., <code>temp_storage</code>) is to be reused or repurposed.</p>
+<p>The code snippet below illustrates an inclusive prefix sum of 128 integer items that are partitioned across 128 threads. </p>
+<dl class="section user"><dt></dt><dd><div class="fragment"><div class="line"><span class="preprocessor">#include &lt;<a class="code" href="cub_8cuh.html">cub/cub.cuh</a>&gt;</span></div>
+<div class="line"></div>
+<div class="line">__global__ <span class="keywordtype">void</span> ExampleKernel(...)</div>
+<div class="line">{</div>
+<div class="line">    <span class="comment">// Specialize BlockScan for 128 threads on type int</span></div>
+<div class="line">    <span class="keyword">typedef</span> <a class="code" href="classcub_1_1_block_scan.html" title="The BlockScan class provides collective methods for computing a parallel prefix sum/scan of items par...">cub::BlockScan&lt;int, 128&gt;</a> <a class="code" href="classcub_1_1_block_scan.html#a982e1407d00b704c3046cd72c48acabb" title="Collective constructor for 1D thread blocks using a private static allocation of shared memory as tem...">BlockScan</a>;</div>
+<div class="line"></div>
+<div class="line">    <span class="comment">// Allocate shared memory for BlockScan</span></div>
+<div class="line">    __shared__ <span class="keyword">typename</span> BlockScan::TempStorage temp_storage;</div>
+<div class="line"></div>
+<div class="line">    <span class="comment">// Obtain input item for each thread</span></div>
+<div class="line">    <span class="keywordtype">int</span> thread_data;</div>
+<div class="line">    ...</div>
+<div class="line"></div>
+<div class="line">    <span class="comment">// Collectively compute the block-wide inclusive prefix sum</span></div>
+<div class="line">    <span class="keywordtype">int</span> block_aggregate;</div>
+<div class="line">    <a class="code" href="classcub_1_1_block_scan.html#a982e1407d00b704c3046cd72c48acabb" title="Collective constructor for 1D thread blocks using a private static allocation of shared memory as tem...">BlockScan</a>(temp_storage).InclusiveSum(thread_data, thread_data, block_aggregate);</div>
+</div><!-- fragment --> </dd></dl>
+<dl class="section user"><dt></dt><dd>Suppose the set of input <code>thread_data</code> across the block of threads is <code>1, 1, ..., 1</code>. The corresponding output <code>thread_data</code> in those threads will be <code>1, 2, ..., 128</code>. Furthermore the value <code>128</code> will be stored in <code>block_aggregate</code> for all threads. </dd></dl>
+<dl class="params"><dt>Parameters</dt><dd>
+  <table class="params">
+    <tr><td class="paramdir">[in]</td><td class="paramname">input</td><td>Calling thread's input item </td></tr>
+    <tr><td class="paramdir">[out]</td><td class="paramname">output</td><td>Calling thread's output item (may be aliased to <code>input</code>) </td></tr>
+    <tr><td class="paramdir">[out]</td><td class="paramname">block_aggregate</td><td>block-wide aggregate reduction of input items </td></tr>
+  </table>
+  </dd>
+</dl>
+
+<p>Definition at line <a class="el" href="block__scan_8cuh_source.html#l01426">1426</a> of file <a class="el" href="block__scan_8cuh_source.html">block_scan.cuh</a>.</p>
+
+</div>
+</div>
+<a class="anchor" id="a39c481101dfa78b09374cab355712de9"></a>
+<div class="memitem">
+<div class="memproto">
+<div class="memtemplate">
+template&lt;typename T , int BLOCK_THREADS, BlockScanAlgorithm ALGORITHM = BLOCK_SCAN_RAKING&gt; </div>
+<div class="memtemplate">
+template&lt;typename BlockPrefixOp &gt; </div>
+<table class="mlabels">
+  <tr>
+  <td class="mlabels-left">
+      <table class="memname">
+        <tr>
+          <td class="memname">__device__ __forceinline__ void <a class="el" href="classcub_1_1_block_scan.html">cub::BlockScan</a>&lt; T, BLOCK_THREADS, ALGORITHM &gt;::InclusiveSum </td>
+          <td>(</td>
+          <td class="paramtype">T&#160;</td>
+          <td class="paramname"><em>input</em>, </td>
+        </tr>
+        <tr>
+          <td class="paramkey"></td>
+          <td></td>
+          <td class="paramtype">T &amp;&#160;</td>
+          <td class="paramname"><em>output</em>, </td>
+        </tr>
+        <tr>
+          <td class="paramkey"></td>
+          <td></td>
+          <td class="paramtype">T &amp;&#160;</td>
+          <td class="paramname"><em>block_aggregate</em>, </td>
+        </tr>
+        <tr>
+          <td class="paramkey"></td>
+          <td></td>
+          <td class="paramtype">BlockPrefixOp &amp;&#160;</td>
+          <td class="paramname"><em>block_prefix_op</em>&#160;</td>
+        </tr>
+        <tr>
+          <td></td>
+          <td>)</td>
+          <td></td><td></td>
+        </tr>
+      </table>
+  </td>
+  <td class="mlabels-right">
+<span class="mlabels"><span class="mlabel">inline</span></span>  </td>
+  </tr>
+</table>
+</div><div class="memdoc">
+
+<p>Computes an inclusive block-wide prefix scan using addition (+) as the scan operator. Each thread contributes one input element. Instead of using 0 as the block-wide prefix, the call-back functor <code>block_prefix_op</code> is invoked by the first warp in the block, and the value returned by <em>lane</em><sub>0</sub> in that warp is used as the "seed" value that logically prefixes the threadblock's scan inputs. Also provides every thread with the block-wide <code>block_aggregate</code> of all inputs. </p>
+<p>The <code>block_prefix_op</code> functor must implement a member function <code>T operator()(T block_aggregate)</code>. The functor's input parameter <code>block_aggregate</code> is the same value also returned by the scan operation. The functor will be invoked by the first warp of threads in the block, however only the return value from <em>lane</em><sub>0</sub> is applied as the block-wide prefix. Can be stateful.</p>
+<p>Assumes a <a href="index.html#sec5sec4"><em>blocked arrangement</em></a> of elements across threads, where thread<sub><em>i</em></sub> owns the <em>i</em><sup>th</sup> segment of consecutively ranked items.</p>
+<p>A subsequent <code>__syncthreads()</code> threadblock barrier should be invoked after calling this method if the collective's temporary storage (e.g., <code>temp_storage</code>) is to be reused or repurposed.</p>
+<p>The code snippet below illustrates a single thread block that progressively computes an inclusive prefix sum over multiple "tiles" of input using a prefix functor to maintain a running total between block-wide scans. Each tile consists of 128 integer items that are partitioned across 128 threads. </p>
+<dl class="section user"><dt></dt><dd><div class="fragment"><div class="line"><span class="preprocessor">#include &lt;<a class="code" href="cub_8cuh.html">cub/cub.cuh</a>&gt;</span></div>
+<div class="line"></div>
+<div class="line"><span class="comment">// A stateful callback functor that maintains a running prefix to be applied</span></div>
+<div class="line"><span class="comment">// during consecutive scan operations.</span></div>
+<div class="line"><span class="keyword">struct </span>BlockPrefixOp</div>
+<div class="line">{</div>
+<div class="line">    <span class="comment">// Running prefix</span></div>
+<div class="line">    <span class="keywordtype">int</span> running_total;</div>
+<div class="line"></div>
+<div class="line">    <span class="comment">// Constructor</span></div>
+<div class="line">    __device__ BlockPrefixOp(<span class="keywordtype">int</span> running_total) : running_total(running_total) {}</div>
+<div class="line"></div>
+<div class="line">    <span class="comment">// Callback operator to be entered by the first warp of threads in the block.</span></div>
+<div class="line">    <span class="comment">// Thread-0 is responsible for returning a value for seeding the block-wide scan.</span></div>
+<div class="line">    __device__ <span class="keywordtype">int</span> operator()(<span class="keywordtype">int</span> block_aggregate)</div>
+<div class="line">    {</div>
+<div class="line">        <span class="keywordtype">int</span> old_prefix = running_total;</div>
+<div class="line">        running_total += block_aggregate;</div>
+<div class="line">        <span class="keywordflow">return</span> old_prefix;</div>
+<div class="line">    }</div>
+<div class="line">};</div>
+<div class="line"></div>
+<div class="line">__global__ <span class="keywordtype">void</span> ExampleKernel(<span class="keywordtype">int</span> *d_data, <span class="keywordtype">int</span> num_items, ...)</div>
+<div class="line">{</div>
+<div class="line">    <span class="comment">// Specialize BlockScan for 128 threads</span></div>
+<div class="line">    <span class="keyword">typedef</span> <a class="code" href="classcub_1_1_block_scan.html" title="The BlockScan class provides collective methods for computing a parallel prefix sum/scan of items par...">cub::BlockScan&lt;int, 128&gt;</a> <a class="code" href="classcub_1_1_block_scan.html#a982e1407d00b704c3046cd72c48acabb" title="Collective constructor for 1D thread blocks using a private static allocation of shared memory as tem...">BlockScan</a>;</div>
+<div class="line"></div>
+<div class="line">    <span class="comment">// Allocate shared memory for BlockScan</span></div>
+<div class="line">    __shared__ <span class="keyword">typename</span> BlockScan::TempStorage temp_storage;</div>
+<div class="line"></div>
+<div class="line">    <span class="comment">// Initialize running total</span></div>
+<div class="line">    BlockPrefixOp prefix_op(0);</div>
+<div class="line"></div>
+<div class="line">    <span class="comment">// Have the block iterate over segments of items</span></div>
+<div class="line">    <span class="keywordflow">for</span> (<span class="keywordtype">int</span> block_offset = 0; block_offset &lt; num_items; block_offset += 128)</div>
+<div class="line">    {</div>
+<div class="line">        <span class="comment">// Load a segment of consecutive items that are blocked across threads</span></div>
+<div class="line">        <span class="keywordtype">int</span> thread_data = d_data[block_offset];</div>
+<div class="line"></div>
+<div class="line">        <span class="comment">// Collectively compute the block-wide inclusive prefix sum</span></div>
+<div class="line">        <span class="keywordtype">int</span> block_aggregate;</div>
+<div class="line">        <a class="code" href="classcub_1_1_block_scan.html#a982e1407d00b704c3046cd72c48acabb" title="Collective constructor for 1D thread blocks using a private static allocation of shared memory as tem...">BlockScan</a>(temp_storage).InclusiveSum(</div>
+<div class="line">            thread_data, thread_data, block_aggregate, prefix_op);</div>
+<div class="line">        __syncthreads();</div>
+<div class="line"></div>
+<div class="line">        <span class="comment">// Store scanned items to output segment</span></div>
+<div class="line">        d_data[block_offset] = thread_data;</div>
+<div class="line">    }</div>
+</div><!-- fragment --> </dd></dl>
+<dl class="section user"><dt></dt><dd>Suppose the input <code>d_data</code> is <code>1, 1, 1, 1, 1, 1, 1, 1, ...</code>. The corresponding output for the first segment will be <code>1, 2, ..., 128</code>. The output for the second segment will be <code>129, 130, ..., 256</code>. Furthermore, the value <code>128</code> will be stored in <code>block_aggregate</code> for all threads after each scan.</dd></dl>
+<dl class="tparams"><dt>Template Parameters</dt><dd>
+  <table class="tparams">
+    <tr><td class="paramname">BlockPrefixOp</td><td><b>[inferred]</b> Call-back functor type having member <code>T operator()(T block_aggregate)</code> </td></tr>
+  </table>
+  </dd>
+</dl>
+<dl class="params"><dt>Parameters</dt><dd>
+  <table class="params">
+    <tr><td class="paramdir">[in]</td><td class="paramname">input</td><td>Calling thread's input item </td></tr>
+    <tr><td class="paramdir">[out]</td><td class="paramname">output</td><td>Calling thread's output item (may be aliased to <code>input</code>) </td></tr>
+    <tr><td class="paramdir">[out]</td><td class="paramname">block_aggregate</td><td>block-wide aggregate reduction of input items (exclusive of the <code>block_prefix_op</code> value) </td></tr>
+    <tr><td class="paramdir">[in,out]</td><td class="paramname">block_prefix_op</td><td><b>[<em>warp</em><sub>0</sub> only]</b> Call-back functor for specifying a block-wide prefix to be applied to all inputs. </td></tr>
+  </table>
+  </dd>
+</dl>
+
+<p>Definition at line <a class="el" href="block__scan_8cuh_source.html#l01512">1512</a> of file <a class="el" href="block__scan_8cuh_source.html">block_scan.cuh</a>.</p>
+
+</div>
+</div>
+<a class="anchor" id="a88ffea45e2a8b5e3abb6e4c4777e66ef"></a>
+<div class="memitem">
+<div class="memproto">
+<div class="memtemplate">
+template&lt;typename T , int BLOCK_THREADS, BlockScanAlgorithm ALGORITHM = BLOCK_SCAN_RAKING&gt; </div>
+<div class="memtemplate">
+template&lt;int ITEMS_PER_THREAD&gt; </div>
+<table class="mlabels">
+  <tr>
+  <td class="mlabels-left">
+      <table class="memname">
+        <tr>
+          <td class="memname">__device__ __forceinline__ void <a class="el" href="classcub_1_1_block_scan.html">cub::BlockScan</a>&lt; T, BLOCK_THREADS, ALGORITHM &gt;::InclusiveSum </td>
+          <td>(</td>
+          <td class="paramtype">T(&amp;)&#160;</td>
+          <td class="paramname"><em>input</em>[ITEMS_PER_THREAD], </td>
+        </tr>
+        <tr>
+          <td class="paramkey"></td>
+          <td></td>
+          <td class="paramtype">T(&amp;)&#160;</td>
+          <td class="paramname"><em>output</em>[ITEMS_PER_THREAD]&#160;</td>
+        </tr>
+        <tr>
+          <td></td>
+          <td>)</td>
+          <td></td><td></td>
+        </tr>
+      </table>
+  </td>
+  <td class="mlabels-right">
+<span class="mlabels"><span class="mlabel">inline</span></span>  </td>
+  </tr>
+</table>
+</div><div class="memdoc">
+
+<p>Computes an inclusive block-wide prefix scan using addition (+) as the scan operator. Each thread contributes an array of consecutive input elements. </p>
+<p>Assumes a <a href="index.html#sec5sec4"><em>blocked arrangement</em></a> of elements across threads, where thread<sub><em>i</em></sub> owns the <em>i</em><sup>th</sup> segment of consecutively ranked items.</p>
+<p>A subsequent <code>__syncthreads()</code> threadblock barrier should be invoked after calling this method if the collective's temporary storage (e.g., <code>temp_storage</code>) is to be reused or repurposed.</p>
+<p>The code snippet below illustrates an inclusive prefix sum of 512 integer items that are partitioned in a <a href="index.html#sec5sec4"><em>blocked arrangement</em></a> across 128 threads where each thread owns 4 consecutive items. </p>
+<dl class="section user"><dt></dt><dd><div class="fragment"><div class="line"><span class="preprocessor">#include &lt;<a class="code" href="cub_8cuh.html">cub/cub.cuh</a>&gt;</span></div>
+<div class="line"></div>
+<div class="line">__global__ <span class="keywordtype">void</span> ExampleKernel(...)</div>
+<div class="line">{</div>
+<div class="line">    <span class="comment">// Specialize BlockScan for 128 threads on type int</span></div>
+<div class="line">    <span class="keyword">typedef</span> <a class="code" href="classcub_1_1_block_scan.html" title="The BlockScan class provides collective methods for computing a parallel prefix sum/scan of items par...">cub::BlockScan&lt;int, 128&gt;</a> <a class="code" href="classcub_1_1_block_scan.html#a982e1407d00b704c3046cd72c48acabb" title="Collective constructor for 1D thread blocks using a private static allocation of shared memory as tem...">BlockScan</a>;</div>
+<div class="line"></div>
+<div class="line">    <span class="comment">// Allocate shared memory for BlockScan</span></div>
+<div class="line">    __shared__ <span class="keyword">typename</span> BlockScan::TempStorage temp_storage;</div>
+<div class="line"></div>
+<div class="line">    <span class="comment">// Obtain a segment of consecutive items that are blocked across threads</span></div>
+<div class="line">    <span class="keywordtype">int</span> thread_data[4];</div>
+<div class="line">    ...</div>
+<div class="line"></div>
+<div class="line">    <span class="comment">// Collectively compute the block-wide inclusive prefix sum</span></div>
+<div class="line">    <a class="code" href="classcub_1_1_block_scan.html#a982e1407d00b704c3046cd72c48acabb" title="Collective constructor for 1D thread blocks using a private static allocation of shared memory as tem...">BlockScan</a>(temp_storage).InclusiveSum(thread_data, thread_data);</div>
+</div><!-- fragment --> </dd></dl>
+<dl class="section user"><dt></dt><dd>Suppose the set of input <code>thread_data</code> across the block of threads is <code>{ [1,1,1,1], [1,1,1,1], ..., [1,1,1,1] }</code>. The corresponding output <code>thread_data</code> in those threads will be <code>{ [1,2,3,4], [5,6,7,8], ..., [509,510,511,512] }</code>.</dd></dl>
+<dl class="tparams"><dt>Template Parameters</dt><dd>
+  <table class="tparams">
+    <tr><td class="paramname">ITEMS_PER_THREAD</td><td><b>[inferred]</b> The number of consecutive items partitioned onto each thread. </td></tr>
+  </table>
+  </dd>
+</dl>
+<dl class="params"><dt>Parameters</dt><dd>
+  <table class="params">
+    <tr><td class="paramdir">[in]</td><td class="paramname">input</td><td>Calling thread's input items </td></tr>
+    <tr><td class="paramdir">[out]</td><td class="paramname">output</td><td>Calling thread's output items (may be aliased to <code>input</code>) </td></tr>
+  </table>
+  </dd>
+</dl>
+
+<p>Definition at line <a class="el" href="block__scan_8cuh_source.html#l01566">1566</a> of file <a class="el" href="block__scan_8cuh_source.html">block_scan.cuh</a>.</p>
+
+</div>
+</div>
+<a class="anchor" id="a553e70dd3e177545837438ded03b3bfd"></a>
+<div class="memitem">
+<div class="memproto">
+<div class="memtemplate">
+template&lt;typename T , int BLOCK_THREADS, BlockScanAlgorithm ALGORITHM = BLOCK_SCAN_RAKING&gt; </div>
+<div class="memtemplate">
+template&lt;int ITEMS_PER_THREAD&gt; </div>
+<table class="mlabels">
+  <tr>
+  <td class="mlabels-left">
+      <table class="memname">
+        <tr>
+          <td class="memname">__device__ __forceinline__ void <a class="el" href="classcub_1_1_block_scan.html">cub::BlockScan</a>&lt; T, BLOCK_THREADS, ALGORITHM &gt;::InclusiveSum </td>
+          <td>(</td>
+          <td class="paramtype">T(&amp;)&#160;</td>
+          <td class="paramname"><em>input</em>[ITEMS_PER_THREAD], </td>
+        </tr>
+        <tr>
+          <td class="paramkey"></td>
+          <td></td>
+          <td class="paramtype">T(&amp;)&#160;</td>
+          <td class="paramname"><em>output</em>[ITEMS_PER_THREAD], </td>
+        </tr>
+        <tr>
+          <td class="paramkey"></td>
+          <td></td>
+          <td class="paramtype">T &amp;&#160;</td>
+          <td class="paramname"><em>block_aggregate</em>&#160;</td>
+        </tr>
+        <tr>
+          <td></td>
+          <td>)</td>
+          <td></td><td></td>
+        </tr>
+      </table>
+  </td>
+  <td class="mlabels-right">
+<span class="mlabels"><span class="mlabel">inline</span></span>  </td>
+  </tr>
+</table>
+</div><div class="memdoc">
+
+<p>Computes an inclusive block-wide prefix scan using addition (+) as the scan operator. Each thread contributes an array of consecutive input elements. Also provides every thread with the block-wide <code>block_aggregate</code> of all inputs. </p>
+<p>Assumes a <a href="index.html#sec5sec4"><em>blocked arrangement</em></a> of elements across threads, where thread<sub><em>i</em></sub> owns the <em>i</em><sup>th</sup> segment of consecutively ranked items.</p>
+<p>A subsequent <code>__syncthreads()</code> threadblock barrier should be invoked after calling this method if the collective's temporary storage (e.g., <code>temp_storage</code>) is to be reused or repurposed.</p>
+<p>The code snippet below illustrates an inclusive prefix sum of 512 integer items that are partitioned in a <a href="index.html#sec5sec4"><em>blocked arrangement</em></a> across 128 threads where each thread owns 4 consecutive items. </p>
+<dl class="section user"><dt></dt><dd><div class="fragment"><div class="line"><span class="preprocessor">#include &lt;<a class="code" href="cub_8cuh.html">cub/cub.cuh</a>&gt;</span></div>
+<div class="line"></div>
+<div class="line">__global__ <span class="keywordtype">void</span> ExampleKernel(...)</div>
+<div class="line">{</div>
+<div class="line">    <span class="comment">// Specialize BlockScan for 128 threads on type int</span></div>
+<div class="line">    <span class="keyword">typedef</span> <a class="code" href="classcub_1_1_block_scan.html" title="The BlockScan class provides collective methods for computing a parallel prefix sum/scan of items par...">cub::BlockScan&lt;int, 128&gt;</a> <a class="code" href="classcub_1_1_block_scan.html#a982e1407d00b704c3046cd72c48acabb" title="Collective constructor for 1D thread blocks using a private static allocation of shared memory as tem...">BlockScan</a>;</div>
+<div class="line"></div>
+<div class="line">    <span class="comment">// Allocate shared memory for BlockScan</span></div>
+<div class="line">    __shared__ <span class="keyword">typename</span> BlockScan::TempStorage temp_storage;</div>
+<div class="line"></div>
+<div class="line">    <span class="comment">// Obtain a segment of consecutive items that are blocked across threads</span></div>
+<div class="line">    <span class="keywordtype">int</span> thread_data[4];</div>
+<div class="line">    ...</div>
+<div class="line"></div>
+<div class="line">    <span class="comment">// Collectively compute the block-wide inclusive prefix sum</span></div>
+<div class="line">    <span class="keywordtype">int</span> block_aggregate;</div>
+<div class="line">    <a class="code" href="classcub_1_1_block_scan.html#a982e1407d00b704c3046cd72c48acabb" title="Collective constructor for 1D thread blocks using a private static allocation of shared memory as tem...">BlockScan</a>(temp_storage).InclusiveSum(thread_data, thread_data, block_aggregate);</div>
+</div><!-- fragment --> </dd></dl>
+<dl class="section user"><dt></dt><dd>Suppose the set of input <code>thread_data</code> across the block of threads is <code>{ [1,1,1,1], [1,1,1,1], ..., [1,1,1,1] }</code>. The corresponding output <code>thread_data</code> in those threads will be <code>{ [1,2,3,4], [5,6,7,8], ..., [509,510,511,512] }</code>. Furthermore the value <code>512</code> will be stored in <code>block_aggregate</code> for all threads.</dd></dl>
+<dl class="tparams"><dt>Template Parameters</dt><dd>
+  <table class="tparams">
+    <tr><td class="paramname">ITEMS_PER_THREAD</td><td><b>[inferred]</b> The number of consecutive items partitioned onto each thread. </td></tr>
+    <tr><td class="paramname">ScanOp</td><td><b>[inferred]</b> Binary scan operator type having member <code>T operator()(const T &amp;a, const T &amp;b)</code> </td></tr>
+  </table>
+  </dd>
+</dl>
+<dl class="params"><dt>Parameters</dt><dd>
+  <table class="params">
+    <tr><td class="paramdir">[in]</td><td class="paramname">input</td><td>Calling thread's input items </td></tr>
+    <tr><td class="paramdir">[out]</td><td class="paramname">output</td><td>Calling thread's output items (may be aliased to <code>input</code>) </td></tr>
+    <tr><td class="paramdir">[out]</td><td class="paramname">block_aggregate</td><td>block-wide aggregate reduction of input items </td></tr>
+  </table>
+  </dd>
+</dl>
+
+<p>Definition at line <a class="el" href="block__scan_8cuh_source.html#l01631">1631</a> of file <a class="el" href="block__scan_8cuh_source.html">block_scan.cuh</a>.</p>
+
+</div>
+</div>
+<a class="anchor" id="ae1a4a4dfbec4ec029dd6a8cce8b6c0a1"></a>
+<div class="memitem">
+<div class="memproto">
+<div class="memtemplate">
+template&lt;typename T , int BLOCK_THREADS, BlockScanAlgorithm ALGORITHM = BLOCK_SCAN_RAKING&gt; </div>
+<div class="memtemplate">
+template&lt;int ITEMS_PER_THREAD, typename BlockPrefixOp &gt; </div>
+<table class="mlabels">
+  <tr>
+  <td class="mlabels-left">
+      <table class="memname">
+        <tr>
+          <td class="memname">__device__ __forceinline__ void <a class="el" href="classcub_1_1_block_scan.html">cub::BlockScan</a>&lt; T, BLOCK_THREADS, ALGORITHM &gt;::InclusiveSum </td>
+          <td>(</td>
+          <td class="paramtype">T(&amp;)&#160;</td>
+          <td class="paramname"><em>input</em>[ITEMS_PER_THREAD], </td>
+        </tr>
+        <tr>
+          <td class="paramkey"></td>
+          <td></td>
+          <td class="paramtype">T(&amp;)&#160;</td>
+          <td class="paramname"><em>output</em>[ITEMS_PER_THREAD], </td>
+        </tr>
+        <tr>
+          <td class="paramkey"></td>
+          <td></td>
+          <td class="paramtype">T &amp;&#160;</td>
+          <td class="paramname"><em>block_aggregate</em>, </td>
+        </tr>
+        <tr>
+          <td class="paramkey"></td>
+          <td></td>
+          <td class="paramtype">BlockPrefixOp &amp;&#160;</td>
+          <td class="paramname"><em>block_prefix_op</em>&#160;</td>
+        </tr>
+        <tr>
+          <td></td>
+          <td>)</td>
+          <td></td><td></td>
+        </tr>
+      </table>
+  </td>
+  <td class="mlabels-right">
+<span class="mlabels"><span class="mlabel">inline</span></span>  </td>
+  </tr>
+</table>
+</div><div class="memdoc">
+
+<p>Computes an inclusive block-wide prefix scan using addition (+) as the scan operator. Each thread contributes an array of consecutive input elements. Instead of using 0 as the block-wide prefix, the call-back functor <code>block_prefix_op</code> is invoked by the first warp in the block, and the value returned by <em>lane</em><sub>0</sub> in that warp is used as the "seed" value that logically prefixes the threadblock's scan inputs. Also provides every thread with the block-wide <code>block_aggregate</code> of all inputs. </p>
+<p>The <code>block_prefix_op</code> functor must implement a member function <code>T operator()(T block_aggregate)</code>. The functor's input parameter <code>block_aggregate</code> is the same value also returned by the scan operation. The functor will be invoked by the first warp of threads in the block, however only the return value from <em>lane</em><sub>0</sub> is applied as the block-wide prefix. Can be stateful.</p>
+<p>Assumes a <a href="index.html#sec5sec4"><em>blocked arrangement</em></a> of elements across threads, where thread<sub><em>i</em></sub> owns the <em>i</em><sup>th</sup> segment of consecutively ranked items.</p>
+<p>A subsequent <code>__syncthreads()</code> threadblock barrier should be invoked after calling this method if the collective's temporary storage (e.g., <code>temp_storage</code>) is to be reused or repurposed.</p>
+<p>The code snippet below illustrates a single thread block that progressively computes an inclusive prefix sum over multiple "tiles" of input using a prefix functor to maintain a running total between block-wide scans. Each tile consists of 512 integer items that are partitioned in a <a href="index.html#sec5sec4"><em>blocked arrangement</em></a> across 128 threads where each thread owns 4 consecutive items. </p>
+<dl class="section user"><dt></dt><dd><div class="fragment"><div class="line"><span class="preprocessor">#include &lt;<a class="code" href="cub_8cuh.html">cub/cub.cuh</a>&gt;</span></div>
+<div class="line"></div>
+<div class="line"><span class="comment">// A stateful callback functor that maintains a running prefix to be applied</span></div>
+<div class="line"><span class="comment">// during consecutive scan operations.</span></div>
+<div class="line"><span class="keyword">struct </span>BlockPrefixOp</div>
+<div class="line">{</div>
+<div class="line">    <span class="comment">// Running prefix</span></div>
+<div class="line">    <span class="keywordtype">int</span> running_total;</div>
+<div class="line"></div>
+<div class="line">    <span class="comment">// Constructor</span></div>
+<div class="line">    __device__ BlockPrefixOp(<span class="keywordtype">int</span> running_total) : running_total(running_total) {}</div>
+<div class="line"></div>
+<div class="line">    <span class="comment">// Callback operator to be entered by the first warp of threads in the block.</span></div>
+<div class="line">    <span class="comment">// Thread-0 is responsible for returning a value for seeding the block-wide scan.</span></div>
+<div class="line">    __device__ <span class="keywordtype">int</span> operator()(<span class="keywordtype">int</span> block_aggregate)</div>
+<div class="line">    {</div>
+<div class="line">        <span class="keywordtype">int</span> old_prefix = running_total;</div>
+<div class="line">        running_total += block_aggregate;</div>
+<div class="line">        <span class="keywordflow">return</span> old_prefix;</div>
+<div class="line">    }</div>
+<div class="line">};</div>
+<div class="line"></div>
+<div class="line">__global__ <span class="keywordtype">void</span> ExampleKernel(<span class="keywordtype">int</span> *d_data, <span class="keywordtype">int</span> num_items, ...)</div>
+<div class="line">{</div>
+<div class="line">    <span class="comment">// Specialize BlockLoad, BlockStore, and BlockScan for 128 threads, 4 ints per thread</span></div>
+<div class="line">    <span class="keyword">typedef</span> <a class="code" href="classcub_1_1_block_load.html" title="The BlockLoad class provides collective data movement methods for loading a linear segment of items f...">cub::BlockLoad&lt;int*, 128, 4, BLOCK_LOAD_TRANSPOSE&gt;</a>   BlockLoad;</div>
+<div class="line">    <span class="keyword">typedef</span> <a class="code" href="classcub_1_1_block_store.html" title="The BlockStore class provides collective data movement methods for writing a blocked arrangement of i...">cub::BlockStore&lt;int*, 128, 4, BLOCK_STORE_TRANSPOSE&gt;</a> BlockStore;</div>
+<div class="line">    <span class="keyword">typedef</span> <a class="code" href="classcub_1_1_block_scan.html" title="The BlockScan class provides collective methods for computing a parallel prefix sum/scan of items par...">cub::BlockScan&lt;int, 128&gt;</a>                             <a class="code" href="classcub_1_1_block_scan.html#a982e1407d00b704c3046cd72c48acabb" title="Collective constructor for 1D thread blocks using a private static allocation of shared memory as tem...">BlockScan</a>;</div>
+<div class="line"></div>
+<div class="line">    <span class="comment">// Allocate aliased shared memory for BlockLoad, BlockStore, and BlockScan</span></div>
+<div class="line">    __shared__ <span class="keyword">union </span>{</div>
+<div class="line">        <span class="keyword">typename</span> BlockLoad::TempStorage     load;</div>
+<div class="line">        <span class="keyword">typename</span> BlockScan::TempStorage     scan;</div>
+<div class="line">        <span class="keyword">typename</span> BlockStore::TempStorage    store;</div>
+<div class="line">    } temp_storage;</div>
+<div class="line"></div>
+<div class="line">    <span class="comment">// Initialize running total</span></div>
+<div class="line">    BlockPrefixOp prefix_op(0);</div>
+<div class="line"></div>
+<div class="line">    <span class="comment">// Have the block iterate over segments of items</span></div>
+<div class="line">    <span class="keywordflow">for</span> (<span class="keywordtype">int</span> block_offset = 0; block_offset &lt; num_items; block_offset += 128 * 4)</div>
+<div class="line">    {</div>
+<div class="line">        <span class="comment">// Load a segment of consecutive items that are blocked across threads</span></div>
+<div class="line">        <span class="keywordtype">int</span> thread_data[4];</div>
+<div class="line">        BlockLoad(temp_storage.load).Load(d_data + block_offset, thread_data);</div>
+<div class="line">        __syncthreads();</div>
+<div class="line"></div>
+<div class="line">        <span class="comment">// Collectively compute the block-wide inclusive prefix sum</span></div>
+<div class="line">        <span class="keywordtype">int</span> block_aggregate;</div>
+<div class="line">        <a class="code" href="classcub_1_1_block_scan.html#a982e1407d00b704c3046cd72c48acabb" title="Collective constructor for 1D thread blocks using a private static allocation of shared memory as tem...">BlockScan</a>(temp_storage.scan).IncluisveSum(</div>
+<div class="line">            thread_data, thread_data, block_aggregate, prefix_op);</div>
+<div class="line">        __syncthreads();</div>
+<div class="line"></div>
+<div class="line">        <span class="comment">// Store scanned items to output segment</span></div>
+<div class="line">        BlockStore(temp_storage.store).Store(d_data + block_offset, thread_data);</div>
+<div class="line">        __syncthreads();</div>
+<div class="line">    }</div>
+</div><!-- fragment --> </dd></dl>
+<dl class="section user"><dt></dt><dd>Suppose the input <code>d_data</code> is <code>1, 1, 1, 1, 1, 1, 1, 1, ...</code>. The corresponding output for the first segment will be <code>1, 2, 3, 4, ..., 511, 512</code>. The output for the second segment will be <code>513, 514, 515, 516, ..., 1023, 1024</code>. Furthermore, the value <code>512</code> will be stored in <code>block_aggregate</code> for all threads after each scan.</dd></dl>
+<dl class="tparams"><dt>Template Parameters</dt><dd>
+  <table class="tparams">
+    <tr><td class="paramname">ITEMS_PER_THREAD</td><td><b>[inferred]</b> The number of consecutive items partitioned onto each thread. </td></tr>
+    <tr><td class="paramname">BlockPrefixOp</td><td><b>[inferred]</b> Call-back functor type having member <code>T operator()(T block_aggregate)</code> </td></tr>
+  </table>
+  </dd>
+</dl>
+<dl class="params"><dt>Parameters</dt><dd>
+  <table class="params">
+    <tr><td class="paramdir">[in]</td><td class="paramname">input</td><td>Calling thread's input items </td></tr>
+    <tr><td class="paramdir">[out]</td><td class="paramname">output</td><td>Calling thread's output items (may be aliased to <code>input</code>) </td></tr>
+    <tr><td class="paramdir">[out]</td><td class="paramname">block_aggregate</td><td>block-wide aggregate reduction of input items (exclusive of the <code>block_prefix_op</code> value) </td></tr>
+    <tr><td class="paramdir">[in,out]</td><td class="paramname">block_prefix_op</td><td><b>[<em>warp</em><sub>0</sub> only]</b> Call-back functor for specifying a block-wide prefix to be applied to all inputs. </td></tr>
+  </table>
+  </dd>
+</dl>
+
+<p>Definition at line <a class="el" href="block__scan_8cuh_source.html#l01744">1744</a> of file <a class="el" href="block__scan_8cuh_source.html">block_scan.cuh</a>.</p>
+
 </div>
 </div>
 <hr/>The documentation for this class was generated from the following file:<ul>
-<li><a class="el" href="block__scan_8cuh.html">block_scan.cuh</a></li>
+<li><a class="el" href="block__scan_8cuh_source.html">block_scan.cuh</a></li>
 </ul>
 </div><!-- contents -->
 <!-- HTML footer for doxygen 1.8.3.1-->
 <!-- start footer part -->
 <hr class="footer"/><address class="footer"><small>
-Generated on Wed Aug 14 2013 12:56:06 for CUB by &#160;<a href="http://www.doxygen.org/index.html">
+Generated on Fri Aug 23 2013 17:22:45 for CUB by &#160;<a href="http://www.doxygen.org/index.html">
 <img class="footer" src="doxygen.png" alt="doxygen"/>
 </a> 1.8.4
 <br>

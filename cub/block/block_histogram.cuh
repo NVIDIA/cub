@@ -306,7 +306,7 @@ public:
             histogram[histo_offset + linear_tid] = 0;
         }
         // Finish up with guarded initialization if necessary
-        if ((histo_offset < BLOCK_THREADS) && (histo_offset + linear_tid < BINS))
+        if ((BINS % BLOCK_THREADS != 0) && (histo_offset + linear_tid < BINS))
         {
             histogram[histo_offset + linear_tid] = 0;
         }

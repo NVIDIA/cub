@@ -312,28 +312,28 @@ __device__ __forceinline__ void DeviceTest(
  * BlockScan test kernel.
  */
 template <
-    int             BLOCK_THREADS,
-    int             ITEMS_PER_THREAD,
-    TestMode        TEST_MODE,
-    BlockScanAlgorithm POLICY,
-    typename        T,
-    typename        ScanOp,
-    typename        IdentityT>
+    int                 BLOCK_THREADS,
+    int                 ITEMS_PER_THREAD,
+    TestMode            TEST_MODE,
+    BlockScanAlgorithm  ALGORITHM,
+    typename            T,
+    typename            ScanOp,
+    typename            IdentityT>
 __global__ void BlockScanKernel(
-    T               *d_in,
-    T               *d_out,
-    T               *d_aggregate,
-    ScanOp          scan_op,
-    IdentityT       identity,
-    T               prefix,
-    clock_t         *d_elapsed)
+    T                   *d_in,
+    T                   *d_out,
+    T                   *d_aggregate,
+    ScanOp              scan_op,
+    IdentityT           identity,
+    T                   prefix,
+    clock_t             *d_elapsed)
 {
     const int TILE_SIZE = BLOCK_THREADS * ITEMS_PER_THREAD;
 
     // Parameterize BlockScan type for our thread block
-    typedef BlockScan<T, BLOCK_THREADS, POLICY> BlockScan;
+    typedef BlockScan<T, BLOCK_THREADS, ALGORITHM> BlockScan;
 
-    // Shared memory
+    // Allocate temp storage in shared memory
     __shared__ typename BlockScan::TempStorage temp_storage;
 
     // Per-thread tile data
@@ -448,7 +448,7 @@ template <
     int                 BLOCK_THREADS,
     int                 ITEMS_PER_THREAD,
     TestMode            TEST_MODE,
-    BlockScanAlgorithm  POLICY,
+    BlockScanAlgorithm  ALGORITHM,
     typename            ScanOp,
     typename            IdentityT,        // NullType implies inclusive-scan, otherwise inclusive scan
     typename            T>
@@ -486,7 +486,7 @@ void Test(
     printf("Test-mode %d, gen-mode %d, policy %d, %s BlockScan, %d threadblock threads, %d items per thread, %d tile size, %s (%d bytes) elements:\n",
         TEST_MODE,
         gen_mode,
-        POLICY,
+        ALGORITHM,
         (Equals<IdentityT, NullType>::VALUE) ? "Inclusive" : "Exclusive",
         BLOCK_THREADS,
         ITEMS_PER_THREAD,
@@ -520,7 +520,7 @@ void Test(
     }
 
     // Run aggregate/prefix kernel
-    BlockScanKernel<BLOCK_THREADS, ITEMS_PER_THREAD, TEST_MODE, POLICY><<<1, BLOCK_THREADS>>>(
+    BlockScanKernel<BLOCK_THREADS, ITEMS_PER_THREAD, TEST_MODE, ALGORITHM><<<1, BLOCK_THREADS>>>(
         d_in,
         d_out,
         d_aggregate,

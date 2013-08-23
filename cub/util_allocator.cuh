@@ -33,9 +33,12 @@
 
 #pragma once
 
+#ifndef __CUDA_ARCH__
+    #include <set>              // NVCC (EDG, really) takes FOREVER to compile std::map
+    #include <map>
+#endif
+
 #include <math.h>
-#include <set>
-#include <map>
 
 #include "util_namespace.cuh"
 #include "util_debug.cuh"
@@ -199,6 +202,8 @@ struct CachingDeviceAllocator
     /// BlockDescriptor comparator function interface
     typedef bool (*Compare)(const BlockDescriptor &, const BlockDescriptor &);
 
+#ifndef __CUDA_ARCH__   // Only define STL container members in host code
+
     /// Set type for cached blocks (ordered by size)
     typedef std::multiset<BlockDescriptor, Compare> CachedBlocks;
 
@@ -208,6 +213,7 @@ struct CachingDeviceAllocator
     /// Map type of device ordinals to the number of cached bytes cached by each device
     typedef std::map<int, size_t> GpuCachedBytes;
 
+#endif // __CUDA_ARCH__
 
     //---------------------------------------------------------------------
     // Fields

@@ -151,9 +151,11 @@ class cub::BlockLoad&lt; InputIteratorRA, BLOCK_THREADS, ITEMS_PER_THREAD, ALGOR
 <div class="line"></div>
 <div class="line">    <span class="comment">// Load a segment of consecutive items that are blocked across threads</span></div>
 <div class="line">    <span class="keywordtype">int</span> thread_data[4];</div>
-<div class="line">    <a class="code" href="classcub_1_1_block_load.html#a5d282946b5009f81cb8eb030f0c88db3" title="Collective constructor for 1D thread blocks using a private static allocation of shared memory as tem...">BlockLoad</a>(temp_storage).Load(d_data, d_data, thread_data);</div>
+<div class="line">    <a class="code" href="classcub_1_1_block_load.html#a5d282946b5009f81cb8eb030f0c88db3" title="Collective constructor for 1D thread blocks using a private static allocation of shared memory as tem...">BlockLoad</a>(temp_storage).Load(d_data, thread_data);</div>
 </div><!-- fragment --> </dd></dl>
 <dl class="section user"><dt></dt><dd>Suppose the input <code>d_data</code> is <code>0, 1, 2, 3, 4, 5, ...</code>. The set of <code>thread_data</code> across the block of threads in those threads will be <code>{ [0,1,2,3], [4,5,6,7], ..., [508,509,510,511] }</code>. </dd></dl>
+
+<p>Definition at line <a class="el" href="block__load_8cuh_source.html#l00623">623</a> of file <a class="el" href="block__load_8cuh_source.html">block_load.cuh</a>.</p>
 </div><table class="memberdecls">
 <tr class="heading"><td colspan="2"><h2 class="groupheader"><a name="nested-classes"></a>
 Classes</h2></td></tr>
@@ -221,6 +223,8 @@ template&lt;typename InputIteratorRA , int BLOCK_THREADS, int ITEMS_PER_THREAD, 
   </dd>
 </dl>
 
+<p>Definition at line <a class="el" href="block__load_8cuh_source.html#l00947">947</a> of file <a class="el" href="block__load_8cuh_source.html">block_load.cuh</a>.</p>
+
 </div>
 </div>
 <a class="anchor" id="ac14a9dd87b2ca252a4fb319f2d616d71"></a>
@@ -254,6 +258,8 @@ template&lt;typename InputIteratorRA , int BLOCK_THREADS, int ITEMS_PER_THREAD, 
   </table>
   </dd>
 </dl>
+
+<p>Definition at line <a class="el" href="block__load_8cuh_source.html#l00958">958</a> of file <a class="el" href="block__load_8cuh_source.html">block_load.cuh</a>.</p>
 
 </div>
 </div>
@@ -299,6 +305,8 @@ template&lt;typename InputIteratorRA , int BLOCK_THREADS, int ITEMS_PER_THREAD, 
   </table>
   </dd>
 </dl>
+
+<p>Definition at line <a class="el" href="block__load_8cuh_source.html#l00969">969</a> of file <a class="el" href="block__load_8cuh_source.html">block_load.cuh</a>.</p>
 
 </div>
 </div>
@@ -352,7 +360,7 @@ template&lt;typename InputIteratorRA , int BLOCK_THREADS, int ITEMS_PER_THREAD, 
 <div class="line"></div>
 <div class="line">    <span class="comment">// Load a segment of consecutive items that are blocked across threads</span></div>
 <div class="line">    <span class="keywordtype">int</span> thread_data[4];</div>
-<div class="line">    <a class="code" href="classcub_1_1_block_load.html#a5d282946b5009f81cb8eb030f0c88db3" title="Collective constructor for 1D thread blocks using a private static allocation of shared memory as tem...">BlockLoad</a>(temp_storage).Load(d_data, d_data, thread_data);</div>
+<div class="line">    <a class="code" href="classcub_1_1_block_load.html#a5d282946b5009f81cb8eb030f0c88db3" title="Collective constructor for 1D thread blocks using a private static allocation of shared memory as tem...">BlockLoad</a>(temp_storage).Load(d_data, thread_data);</div>
 </div><!-- fragment --> </dd></dl>
 <dl class="section user"><dt></dt><dd>Suppose the input <code>d_data</code> is <code>0, 1, 2, 3, 4, 5, ...</code>. The set of <code>thread_data</code> across the block of threads in those threads will be <code>{ [0,1,2,3], [4,5,6,7], ..., [508,509,510,511] }</code>. </dd></dl>
 <dl class="params"><dt>Parameters</dt><dd>
@@ -362,6 +370,8 @@ template&lt;typename InputIteratorRA , int BLOCK_THREADS, int ITEMS_PER_THREAD, 
   </table>
   </dd>
 </dl>
+
+<p>Definition at line <a class="el" href="block__load_8cuh_source.html#l01019">1019</a> of file <a class="el" href="block__load_8cuh_source.html">block_load.cuh</a>.</p>
 
 </div>
 </div>
@@ -420,7 +430,7 @@ template&lt;typename InputIteratorRA , int BLOCK_THREADS, int ITEMS_PER_THREAD, 
 <div class="line"></div>
 <div class="line">    <span class="comment">// Load a segment of consecutive items that are blocked across threads</span></div>
 <div class="line">    <span class="keywordtype">int</span> thread_data[4];</div>
-<div class="line">    <a class="code" href="classcub_1_1_block_load.html#a5d282946b5009f81cb8eb030f0c88db3" title="Collective constructor for 1D thread blocks using a private static allocation of shared memory as tem...">BlockLoad</a>(temp_storage).Load(d_data, d_data, thread_data, valid_items);</div>
+<div class="line">    <a class="code" href="classcub_1_1_block_load.html#a5d282946b5009f81cb8eb030f0c88db3" title="Collective constructor for 1D thread blocks using a private static allocation of shared memory as tem...">BlockLoad</a>(temp_storage).Load(d_data, thread_data, valid_items);</div>
 </div><!-- fragment --> </dd></dl>
 <dl class="section user"><dt></dt><dd>Suppose the input <code>d_data</code> is <code>0, 1, 2, 3, 4, 5, 6...</code> and <code>valid_items</code> is <code>5</code>. The set of <code>thread_data</code> across the block of threads in those threads will be <code>{ [0,1,2,3], [4,?,?,?], ..., [?,?,?,?] }</code>, with only the first two threads being unmasked to load portions of valid data (and other items remaining unassigned). </dd></dl>
 <dl class="params"><dt>Parameters</dt><dd>
@@ -431,6 +441,8 @@ template&lt;typename InputIteratorRA , int BLOCK_THREADS, int ITEMS_PER_THREAD, 
   </table>
   </dd>
 </dl>
+
+<p>Definition at line <a class="el" href="block__load_8cuh_source.html#l01061">1061</a> of file <a class="el" href="block__load_8cuh_source.html">block_load.cuh</a>.</p>
 
 </div>
 </div>
@@ -495,7 +507,7 @@ template&lt;typename InputIteratorRA , int BLOCK_THREADS, int ITEMS_PER_THREAD, 
 <div class="line"></div>
 <div class="line">    <span class="comment">// Load a segment of consecutive items that are blocked across threads</span></div>
 <div class="line">    <span class="keywordtype">int</span> thread_data[4];</div>
-<div class="line">    <a class="code" href="classcub_1_1_block_load.html#a5d282946b5009f81cb8eb030f0c88db3" title="Collective constructor for 1D thread blocks using a private static allocation of shared memory as tem...">BlockLoad</a>(temp_storage).Load(d_data, d_data, thread_data, valid_items, -1);</div>
+<div class="line">    <a class="code" href="classcub_1_1_block_load.html#a5d282946b5009f81cb8eb030f0c88db3" title="Collective constructor for 1D thread blocks using a private static allocation of shared memory as tem...">BlockLoad</a>(temp_storage).Load(d_data, thread_data, valid_items, -1);</div>
 </div><!-- fragment --> </dd></dl>
 <dl class="section user"><dt></dt><dd>Suppose the input <code>d_data</code> is <code>0, 1, 2, 3, 4, 5, 6...</code>, <code>valid_items</code> is <code>5</code>, and the out-of-bounds default is <code>-1</code>. The set of <code>thread_data</code> across the block of threads in those threads will be <code>{ [0,1,2,3], [4,-1,-1,-1], ..., [-1,-1,-1,-1] }</code>, with only the first two threads being unmasked to load portions of valid data (and other items are assigned <code>-1</code>) </dd></dl>
 <dl class="params"><dt>Parameters</dt><dd>
@@ -508,16 +520,18 @@ template&lt;typename InputIteratorRA , int BLOCK_THREADS, int ITEMS_PER_THREAD, 
   </dd>
 </dl>
 
+<p>Definition at line <a class="el" href="block__load_8cuh_source.html#l01105">1105</a> of file <a class="el" href="block__load_8cuh_source.html">block_load.cuh</a>.</p>
+
 </div>
 </div>
 <hr/>The documentation for this class was generated from the following file:<ul>
-<li><a class="el" href="block__load_8cuh.html">block_load.cuh</a></li>
+<li><a class="el" href="block__load_8cuh_source.html">block_load.cuh</a></li>
 </ul>
 </div><!-- contents -->
 <!-- HTML footer for doxygen 1.8.3.1-->
 <!-- start footer part -->
 <hr class="footer"/><address class="footer"><small>
-Generated on Wed Aug 14 2013 12:56:05 for CUB by &#160;<a href="http://www.doxygen.org/index.html">
+Generated on Fri Aug 23 2013 17:22:44 for CUB by &#160;<a href="http://www.doxygen.org/index.html">
 <img class="footer" src="doxygen.png" alt="doxygen"/>
 </a> 1.8.4
 <br>

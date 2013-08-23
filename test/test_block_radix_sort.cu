@@ -95,7 +95,7 @@ __global__ void Kernel(
         INNER_SCAN_ALGORITHM,
         SMEM_CONFIG> BlockRadixSort;
 
-    // Shared memory
+    // Allocate temp storage in shared memory
     __shared__ typename BlockRadixSort::TempStorage temp_storage;
 
     // Keys per thread
@@ -158,7 +158,7 @@ __global__ void Kernel(
         INNER_SCAN_ALGORITHM,
         SMEM_CONFIG> BlockRadixSort;
 
-    // Shared memory
+    // Allocate temp storage in shared memory
     __shared__ typename BlockRadixSort::TempStorage temp_storage;
 
     // Keys per thread
