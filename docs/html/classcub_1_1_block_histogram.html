@@ -160,6 +160,8 @@ class cub::BlockHistogram&lt; T, BLOCK_THREADS, ITEMS_PER_THREAD, BINS, ALGORITH
 <li>See <a class="el" href="namespacecub.html#a845ca81ef9b346ef7429a35d4fdc80d2" title="BlockHistogramAlgorithm enumerates alternative algorithms for the parallel construction of block-wide...">cub::BlockHistogramAlgorithm</a> for performance details regarding algorithmic alternatives </li>
 </ul>
 </dd></dl>
+
+<p>Definition at line <a class="el" href="block__histogram_8cuh_source.html#l00149">149</a> of file <a class="el" href="block__histogram_8cuh_source.html">block_histogram.cuh</a>.</p>
 </div><table class="memberdecls">
 <tr class="heading"><td colspan="2"><h2 class="groupheader"><a name="nested-classes"></a>
 Classes</h2></td></tr>
@@ -230,6 +232,8 @@ template&lt;typename T , int BLOCK_THREADS, int ITEMS_PER_THREAD, int BINS, Bloc
   </dd>
 </dl>
 
+<p>Definition at line <a class="el" href="block__histogram_8cuh_source.html#l00224">224</a> of file <a class="el" href="block__histogram_8cuh_source.html">block_histogram.cuh</a>.</p>
+
 </div>
 </div>
 <a class="anchor" id="a7ba4e9f53945968ed47227376ea3caa1"></a>
@@ -263,6 +267,8 @@ template&lt;typename T , int BLOCK_THREADS, int ITEMS_PER_THREAD, int BINS, Bloc
   </table>
   </dd>
 </dl>
+
+<p>Definition at line <a class="el" href="block__histogram_8cuh_source.html#l00235">235</a> of file <a class="el" href="block__histogram_8cuh_source.html">block_histogram.cuh</a>.</p>
 
 </div>
 </div>
@@ -309,144 +315,11 @@ template&lt;typename T , int BLOCK_THREADS, int ITEMS_PER_THREAD, int BINS, Bloc
   </dd>
 </dl>
 
+<p>Definition at line <a class="el" href="block__histogram_8cuh_source.html#l00246">246</a> of file <a class="el" href="block__histogram_8cuh_source.html">block_histogram.cuh</a>.</p>
+
 </div>
 </div>
 <h2 class="groupheader">Member Function Documentation</h2>
-<a class="anchor" id="a3cae3cfe2ca8388fb2e3a18c0822db3a"></a>
-<div class="memitem">
-<div class="memproto">
-<div class="memtemplate">
-template&lt;typename T , int BLOCK_THREADS, int ITEMS_PER_THREAD, int BINS, BlockHistogramAlgorithm ALGORITHM = BLOCK_HISTO_SORT&gt; </div>
-<div class="memtemplate">
-template&lt;typename HistoCounter &gt; </div>
-<table class="mlabels">
-  <tr>
-  <td class="mlabels-left">
-      <table class="memname">
-        <tr>
-          <td class="memname">__device__ __forceinline__ void <a class="el" href="classcub_1_1_block_histogram.html">cub::BlockHistogram</a>&lt; T, BLOCK_THREADS, ITEMS_PER_THREAD, BINS, ALGORITHM &gt;::InitHistogram </td>
-          <td>(</td>
-          <td class="paramtype">HistoCounter&#160;</td>
-          <td class="paramname"><em>histogram</em>[BINS])</td><td></td>
-          <td></td>
-        </tr>
-      </table>
-  </td>
-  <td class="mlabels-right">
-<span class="mlabels"><span class="mlabel">inline</span></span>  </td>
-  </tr>
-</table>
-</div><div class="memdoc">
-
-<p>Initialize the shared histogram counters to zero. </p>
-<p>The code snippet below illustrates a the initialization and update of a histogram of 512 integer samples that are partitioned across 128 threads where each thread owns 4 samples. </p>
-<dl class="section user"><dt></dt><dd><div class="fragment"><div class="line"><span class="preprocessor">#include &lt;<a class="code" href="cub_8cuh.html">cub/cub.cuh</a>&gt;</span></div>
-<div class="line"></div>
-<div class="line">__global__ <span class="keywordtype">void</span> ExampleKernel(...)</div>
-<div class="line">{</div>
-<div class="line">    <span class="comment">// Specialize a 256-bin BlockHistogram type for 128 threads having 4 character samples each</span></div>
-<div class="line">    <span class="keyword">typedef</span> <a class="code" href="classcub_1_1_block_histogram.html" title="The BlockHistogram class provides collective methods for constructing block-wide histograms from data...">cub::BlockHistogram&lt;unsigned char, 128, 4, 256&gt;</a> <a class="code" href="classcub_1_1_block_histogram.html#a60061b56700655655b83a1c5921ae026" title="Collective constructor for 1D thread blocks using a private static allocation of shared memory as tem...">BlockHistogram</a>;</div>
-<div class="line"></div>
-<div class="line">    <span class="comment">// Allocate shared memory for BlockHistogram</span></div>
-<div class="line">    __shared__ <span class="keyword">typename</span> BlockHistogram::TempStorage temp_storage;</div>
-<div class="line"></div>
-<div class="line">    <span class="comment">// Allocate shared memory for block-wide histogram bin counts</span></div>
-<div class="line">    __shared__ <span class="keywordtype">unsigned</span> <span class="keywordtype">int</span> smem_histogram[256];</div>
-<div class="line"></div>
-<div class="line">    <span class="comment">// Obtain input samples per thread</span></div>
-<div class="line">    <span class="keywordtype">unsigned</span> <span class="keywordtype">char</span> thread_samples[4];</div>
-<div class="line">    ...</div>
-<div class="line"></div>
-<div class="line">    <span class="comment">// Initialize the block-wide histogram</span></div>
-<div class="line">    <a class="code" href="classcub_1_1_block_histogram.html#a60061b56700655655b83a1c5921ae026" title="Collective constructor for 1D thread blocks using a private static allocation of shared memory as tem...">BlockHistogram</a>(temp_storage).InitHistogram(smem_histogram);</div>
-<div class="line"></div>
-<div class="line">    <span class="comment">// Update the block-wide histogram</span></div>
-<div class="line">    <a class="code" href="classcub_1_1_block_histogram.html#a60061b56700655655b83a1c5921ae026" title="Collective constructor for 1D thread blocks using a private static allocation of shared memory as tem...">BlockHistogram</a>(temp_storage).Composite(thread_samples, smem_histogram);</div>
-</div><!-- fragment --></dd></dl>
-<dl class="tparams"><dt>Template Parameters</dt><dd>
-  <table class="tparams">
-    <tr><td class="paramname">HistoCounter</td><td><b>[inferred]</b> Histogram counter type </td></tr>
-  </table>
-  </dd>
-</dl>
-
-</div>
-</div>
-<a class="anchor" id="a53ca73d018639c89b4e0b1ed3e0f67f0"></a>
-<div class="memitem">
-<div class="memproto">
-<div class="memtemplate">
-template&lt;typename T , int BLOCK_THREADS, int ITEMS_PER_THREAD, int BINS, BlockHistogramAlgorithm ALGORITHM = BLOCK_HISTO_SORT&gt; </div>
-<div class="memtemplate">
-template&lt;typename HistoCounter &gt; </div>
-<table class="mlabels">
-  <tr>
-  <td class="mlabels-left">
-      <table class="memname">
-        <tr>
-          <td class="memname">__device__ __forceinline__ void <a class="el" href="classcub_1_1_block_histogram.html">cub::BlockHistogram</a>&lt; T, BLOCK_THREADS, ITEMS_PER_THREAD, BINS, ALGORITHM &gt;::Histogram </td>
-          <td>(</td>
-          <td class="paramtype">T(&amp;)&#160;</td>
-          <td class="paramname"><em>items</em>[ITEMS_PER_THREAD], </td>
-        </tr>
-        <tr>
-          <td class="paramkey"></td>
-          <td></td>
-          <td class="paramtype">HistoCounter&#160;</td>
-          <td class="paramname"><em>histogram</em>[BINS]&#160;</td>
-        </tr>
-        <tr>
-          <td></td>
-          <td>)</td>
-          <td></td><td></td>
-        </tr>
-      </table>
-  </td>
-  <td class="mlabels-right">
-<span class="mlabels"><span class="mlabel">inline</span></span>  </td>
-  </tr>
-</table>
-</div><div class="memdoc">
-
-<p>Constructs a block-wide histogram in shared/global memory. Each thread contributes an array of input elements. </p>
-<p>A subsequent <code>__syncthreads()</code> threadblock barrier should be invoked after calling this method if the collective's temporary storage (e.g., <code>temp_storage</code>) is to be reused or repurposed.</p>
-<p>The code snippet below illustrates a 256-bin histogram of 512 integer samples that are partitioned across 128 threads where each thread owns 4 samples. </p>
-<dl class="section user"><dt></dt><dd><div class="fragment"><div class="line"><span class="preprocessor">#include &lt;<a class="code" href="cub_8cuh.html">cub/cub.cuh</a>&gt;</span></div>
-<div class="line"></div>
-<div class="line">__global__ <span class="keywordtype">void</span> ExampleKernel(...)</div>
-<div class="line">{</div>
-<div class="line">    <span class="comment">// Specialize a 256-bin BlockHistogram type for 128 threads having 4 character samples each</span></div>
-<div class="line">    <span class="keyword">typedef</span> <a class="code" href="classcub_1_1_block_histogram.html" title="The BlockHistogram class provides collective methods for constructing block-wide histograms from data...">cub::BlockHistogram&lt;unsigned char, 128, 4, 256&gt;</a> <a class="code" href="classcub_1_1_block_histogram.html#a60061b56700655655b83a1c5921ae026" title="Collective constructor for 1D thread blocks using a private static allocation of shared memory as tem...">BlockHistogram</a>;</div>
-<div class="line"></div>
-<div class="line">    <span class="comment">// Allocate shared memory for BlockHistogram</span></div>
-<div class="line">    __shared__ <span class="keyword">typename</span> BlockHistogram::TempStorage temp_storage;</div>
-<div class="line"></div>
-<div class="line">    <span class="comment">// Allocate shared memory for block-wide histogram bin counts</span></div>
-<div class="line">    __shared__ <span class="keywordtype">unsigned</span> <span class="keywordtype">int</span> smem_histogram[256];</div>
-<div class="line"></div>
-<div class="line">    <span class="comment">// Obtain input samples per thread</span></div>
-<div class="line">    <span class="keywordtype">unsigned</span> <span class="keywordtype">char</span> thread_samples[4];</div>
-<div class="line">    ...</div>
-<div class="line"></div>
-<div class="line">    <span class="comment">// Compute the block-wide histogram</span></div>
-<div class="line">    <a class="code" href="classcub_1_1_block_histogram.html#a60061b56700655655b83a1c5921ae026" title="Collective constructor for 1D thread blocks using a private static allocation of shared memory as tem...">BlockHistogram</a>(temp_storage).Histogram(thread_samples, smem_histogram);</div>
-</div><!-- fragment --></dd></dl>
-<dl class="tparams"><dt>Template Parameters</dt><dd>
-  <table class="tparams">
-    <tr><td class="paramname">HistoCounter</td><td><b>[inferred]</b> Histogram counter type </td></tr>
-  </table>
-  </dd>
-</dl>
-<dl class="params"><dt>Parameters</dt><dd>
-  <table class="params">
-    <tr><td class="paramdir">[in]</td><td class="paramname">items</td><td>Calling thread's input values to histogram </td></tr>
-    <tr><td class="paramdir">[out]</td><td class="paramname">histogram</td><td>Reference to shared/global memory histogram </td></tr>
-  </table>
-  </dd>
-</dl>
-
-</div>
-</div>
 <a class="anchor" id="a86aca800e8a8e886b5d328e7aa3c5582"></a>
 <div class="memitem">
 <div class="memproto">
@@ -523,16 +396,157 @@ template&lt;typename HistoCounter &gt; </div>
   </dd>
 </dl>
 
+<p>Definition at line <a class="el" href="block__histogram_8cuh_source.html#l00403">403</a> of file <a class="el" href="block__histogram_8cuh_source.html">block_histogram.cuh</a>.</p>
+
+</div>
+</div>
+<a class="anchor" id="a53ca73d018639c89b4e0b1ed3e0f67f0"></a>
+<div class="memitem">
+<div class="memproto">
+<div class="memtemplate">
+template&lt;typename T , int BLOCK_THREADS, int ITEMS_PER_THREAD, int BINS, BlockHistogramAlgorithm ALGORITHM = BLOCK_HISTO_SORT&gt; </div>
+<div class="memtemplate">
+template&lt;typename HistoCounter &gt; </div>
+<table class="mlabels">
+  <tr>
+  <td class="mlabels-left">
+      <table class="memname">
+        <tr>
+          <td class="memname">__device__ __forceinline__ void <a class="el" href="classcub_1_1_block_histogram.html">cub::BlockHistogram</a>&lt; T, BLOCK_THREADS, ITEMS_PER_THREAD, BINS, ALGORITHM &gt;::Histogram </td>
+          <td>(</td>
+          <td class="paramtype">T(&amp;)&#160;</td>
+          <td class="paramname"><em>items</em>[ITEMS_PER_THREAD], </td>
+        </tr>
+        <tr>
+          <td class="paramkey"></td>
+          <td></td>
+          <td class="paramtype">HistoCounter&#160;</td>
+          <td class="paramname"><em>histogram</em>[BINS]&#160;</td>
+        </tr>
+        <tr>
+          <td></td>
+          <td>)</td>
+          <td></td><td></td>
+        </tr>
+      </table>
+  </td>
+  <td class="mlabels-right">
+<span class="mlabels"><span class="mlabel">inline</span></span>  </td>
+  </tr>
+</table>
+</div><div class="memdoc">
+
+<p>Constructs a block-wide histogram in shared/global memory. Each thread contributes an array of input elements. </p>
+<p>A subsequent <code>__syncthreads()</code> threadblock barrier should be invoked after calling this method if the collective's temporary storage (e.g., <code>temp_storage</code>) is to be reused or repurposed.</p>
+<p>The code snippet below illustrates a 256-bin histogram of 512 integer samples that are partitioned across 128 threads where each thread owns 4 samples. </p>
+<dl class="section user"><dt></dt><dd><div class="fragment"><div class="line"><span class="preprocessor">#include &lt;<a class="code" href="cub_8cuh.html">cub/cub.cuh</a>&gt;</span></div>
+<div class="line"></div>
+<div class="line">__global__ <span class="keywordtype">void</span> ExampleKernel(...)</div>
+<div class="line">{</div>
+<div class="line">    <span class="comment">// Specialize a 256-bin BlockHistogram type for 128 threads having 4 character samples each</span></div>
+<div class="line">    <span class="keyword">typedef</span> <a class="code" href="classcub_1_1_block_histogram.html" title="The BlockHistogram class provides collective methods for constructing block-wide histograms from data...">cub::BlockHistogram&lt;unsigned char, 128, 4, 256&gt;</a> <a class="code" href="classcub_1_1_block_histogram.html#a60061b56700655655b83a1c5921ae026" title="Collective constructor for 1D thread blocks using a private static allocation of shared memory as tem...">BlockHistogram</a>;</div>
+<div class="line"></div>
+<div class="line">    <span class="comment">// Allocate shared memory for BlockHistogram</span></div>
+<div class="line">    __shared__ <span class="keyword">typename</span> BlockHistogram::TempStorage temp_storage;</div>
+<div class="line"></div>
+<div class="line">    <span class="comment">// Allocate shared memory for block-wide histogram bin counts</span></div>
+<div class="line">    __shared__ <span class="keywordtype">unsigned</span> <span class="keywordtype">int</span> smem_histogram[256];</div>
+<div class="line"></div>
+<div class="line">    <span class="comment">// Obtain input samples per thread</span></div>
+<div class="line">    <span class="keywordtype">unsigned</span> <span class="keywordtype">char</span> thread_samples[4];</div>
+<div class="line">    ...</div>
+<div class="line"></div>
+<div class="line">    <span class="comment">// Compute the block-wide histogram</span></div>
+<div class="line">    <a class="code" href="classcub_1_1_block_histogram.html#a60061b56700655655b83a1c5921ae026" title="Collective constructor for 1D thread blocks using a private static allocation of shared memory as tem...">BlockHistogram</a>(temp_storage).Histogram(thread_samples, smem_histogram);</div>
+</div><!-- fragment --></dd></dl>
+<dl class="tparams"><dt>Template Parameters</dt><dd>
+  <table class="tparams">
+    <tr><td class="paramname">HistoCounter</td><td><b>[inferred]</b> Histogram counter type </td></tr>
+  </table>
+  </dd>
+</dl>
+<dl class="params"><dt>Parameters</dt><dd>
+  <table class="params">
+    <tr><td class="paramdir">[in]</td><td class="paramname">items</td><td>Calling thread's input values to histogram </td></tr>
+    <tr><td class="paramdir">[out]</td><td class="paramname">histogram</td><td>Reference to shared/global memory histogram </td></tr>
+  </table>
+  </dd>
+</dl>
+
+<p>Definition at line <a class="el" href="block__histogram_8cuh_source.html#l00351">351</a> of file <a class="el" href="block__histogram_8cuh_source.html">block_histogram.cuh</a>.</p>
+
+</div>
+</div>
+<a class="anchor" id="a3cae3cfe2ca8388fb2e3a18c0822db3a"></a>
+<div class="memitem">
+<div class="memproto">
+<div class="memtemplate">
+template&lt;typename T , int BLOCK_THREADS, int ITEMS_PER_THREAD, int BINS, BlockHistogramAlgorithm ALGORITHM = BLOCK_HISTO_SORT&gt; </div>
+<div class="memtemplate">
+template&lt;typename HistoCounter &gt; </div>
+<table class="mlabels">
+  <tr>
+  <td class="mlabels-left">
+      <table class="memname">
+        <tr>
+          <td class="memname">__device__ __forceinline__ void <a class="el" href="classcub_1_1_block_histogram.html">cub::BlockHistogram</a>&lt; T, BLOCK_THREADS, ITEMS_PER_THREAD, BINS, ALGORITHM &gt;::InitHistogram </td>
+          <td>(</td>
+          <td class="paramtype">HistoCounter&#160;</td>
+          <td class="paramname"><em>histogram</em>[BINS])</td><td></td>
+          <td></td>
+        </tr>
+      </table>
+  </td>
+  <td class="mlabels-right">
+<span class="mlabels"><span class="mlabel">inline</span></span>  </td>
+  </tr>
+</table>
+</div><div class="memdoc">
+
+<p>Initialize the shared histogram counters to zero. </p>
+<p>The code snippet below illustrates a the initialization and update of a histogram of 512 integer samples that are partitioned across 128 threads where each thread owns 4 samples. </p>
+<dl class="section user"><dt></dt><dd><div class="fragment"><div class="line"><span class="preprocessor">#include &lt;<a class="code" href="cub_8cuh.html">cub/cub.cuh</a>&gt;</span></div>
+<div class="line"></div>
+<div class="line">__global__ <span class="keywordtype">void</span> ExampleKernel(...)</div>
+<div class="line">{</div>
+<div class="line">    <span class="comment">// Specialize a 256-bin BlockHistogram type for 128 threads having 4 character samples each</span></div>
+<div class="line">    <span class="keyword">typedef</span> <a class="code" href="classcub_1_1_block_histogram.html" title="The BlockHistogram class provides collective methods for constructing block-wide histograms from data...">cub::BlockHistogram&lt;unsigned char, 128, 4, 256&gt;</a> <a class="code" href="classcub_1_1_block_histogram.html#a60061b56700655655b83a1c5921ae026" title="Collective constructor for 1D thread blocks using a private static allocation of shared memory as tem...">BlockHistogram</a>;</div>
+<div class="line"></div>
+<div class="line">    <span class="comment">// Allocate shared memory for BlockHistogram</span></div>
+<div class="line">    __shared__ <span class="keyword">typename</span> BlockHistogram::TempStorage temp_storage;</div>
+<div class="line"></div>
+<div class="line">    <span class="comment">// Allocate shared memory for block-wide histogram bin counts</span></div>
+<div class="line">    __shared__ <span class="keywordtype">unsigned</span> <span class="keywordtype">int</span> smem_histogram[256];</div>
+<div class="line"></div>
+<div class="line">    <span class="comment">// Obtain input samples per thread</span></div>
+<div class="line">    <span class="keywordtype">unsigned</span> <span class="keywordtype">char</span> thread_samples[4];</div>
+<div class="line">    ...</div>
+<div class="line"></div>
+<div class="line">    <span class="comment">// Initialize the block-wide histogram</span></div>
+<div class="line">    <a class="code" href="classcub_1_1_block_histogram.html#a60061b56700655655b83a1c5921ae026" title="Collective constructor for 1D thread blocks using a private static allocation of shared memory as tem...">BlockHistogram</a>(temp_storage).InitHistogram(smem_histogram);</div>
+<div class="line"></div>
+<div class="line">    <span class="comment">// Update the block-wide histogram</span></div>
+<div class="line">    <a class="code" href="classcub_1_1_block_histogram.html#a60061b56700655655b83a1c5921ae026" title="Collective constructor for 1D thread blocks using a private static allocation of shared memory as tem...">BlockHistogram</a>(temp_storage).Composite(thread_samples, smem_histogram);</div>
+</div><!-- fragment --></dd></dl>
+<dl class="tparams"><dt>Template Parameters</dt><dd>
+  <table class="tparams">
+    <tr><td class="paramname">HistoCounter</td><td><b>[inferred]</b> Histogram counter type </td></tr>
+  </table>
+  </dd>
+</dl>
+
+<p>Definition at line <a class="el" href="block__histogram_8cuh_source.html#l00298">298</a> of file <a class="el" href="block__histogram_8cuh_source.html">block_histogram.cuh</a>.</p>
+
 </div>
 </div>
 <hr/>The documentation for this class was generated from the following file:<ul>
-<li><a class="el" href="block__histogram_8cuh.html">block_histogram.cuh</a></li>
+<li><a class="el" href="block__histogram_8cuh_source.html">block_histogram.cuh</a></li>
 </ul>
 </div><!-- contents -->
 <!-- HTML footer for doxygen 1.8.3.1-->
 <!-- start footer part -->
 <hr class="footer"/><address class="footer"><small>
-Generated on Wed Aug 14 2013 12:56:05 for CUB by &#160;<a href="http://www.doxygen.org/index.html">
+Generated on Fri Aug 23 2013 17:22:44 for CUB by &#160;<a href="http://www.doxygen.org/index.html">
 <img class="footer" src="doxygen.png" alt="doxygen"/>
 </a> 1.8.4
 <br>

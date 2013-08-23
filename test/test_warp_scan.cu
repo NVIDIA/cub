@@ -266,7 +266,7 @@ __global__ void WarpScanKernel(
     // Cooperative warp-scan utility type (1 warp)
     typedef WarpScan<T, 1, LOGICAL_WARP_THREADS> WarpScan;
 
-    // Shared memory
+    // Allocate temp storage in shared memory
     __shared__ typename WarpScan::TempStorage temp_storage;
 
     // Per-thread tile data

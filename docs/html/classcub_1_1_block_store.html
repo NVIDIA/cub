@@ -155,9 +155,11 @@ class cub::BlockStore&lt; OutputIteratorRA, BLOCK_THREADS, ITEMS_PER_THREAD, ALG
 <div class="line"></div>
 <div class="line">    <span class="comment">// Store items to linear memory</span></div>
 <div class="line">    <span class="keywordtype">int</span> thread_data[4];</div>
-<div class="line">    <a class="code" href="classcub_1_1_block_store.html#a5c3c79c8e460594624e0347f5b44ecf7" title="Collective constructor for 1D thread blocks using a private static allocation of shared memory as tem...">BlockStore</a>(temp_storage).Store(d_data, d_data, thread_data);</div>
+<div class="line">    <a class="code" href="classcub_1_1_block_store.html#a5c3c79c8e460594624e0347f5b44ecf7" title="Collective constructor for 1D thread blocks using a private static allocation of shared memory as tem...">BlockStore</a>(temp_storage).Store(d_data, thread_data);</div>
 </div><!-- fragment --> </dd></dl>
 <dl class="section user"><dt></dt><dd>Suppose the set of <code>thread_data</code> across the block of threads is <code>{ [0,1,2,3], [4,5,6,7], ..., [508,509,510,511] }</code>. The output <code>d_data</code> will be <code>0, 1, 2, 3, 4, 5, ...</code>. </dd></dl>
+
+<p>Definition at line <a class="el" href="block__store_8cuh_source.html#l00518">518</a> of file <a class="el" href="block__store_8cuh_source.html">block_store.cuh</a>.</p>
 </div><table class="memberdecls">
 <tr class="heading"><td colspan="2"><h2 class="groupheader"><a name="nested-classes"></a>
 Classes</h2></td></tr>
@@ -222,6 +224,8 @@ template&lt;typename OutputIteratorRA , int BLOCK_THREADS, int ITEMS_PER_THREAD,
   </dd>
 </dl>
 
+<p>Definition at line <a class="el" href="block__store_8cuh_source.html#l00793">793</a> of file <a class="el" href="block__store_8cuh_source.html">block_store.cuh</a>.</p>
+
 </div>
 </div>
 <a class="anchor" id="ad772f7f8a121b62d0c8d752f545110a3"></a>
@@ -255,6 +259,8 @@ template&lt;typename OutputIteratorRA , int BLOCK_THREADS, int ITEMS_PER_THREAD,
   </table>
   </dd>
 </dl>
+
+<p>Definition at line <a class="el" href="block__store_8cuh_source.html#l00804">804</a> of file <a class="el" href="block__store_8cuh_source.html">block_store.cuh</a>.</p>
 
 </div>
 </div>
@@ -300,6 +306,8 @@ template&lt;typename OutputIteratorRA , int BLOCK_THREADS, int ITEMS_PER_THREAD,
   </table>
   </dd>
 </dl>
+
+<p>Definition at line <a class="el" href="block__store_8cuh_source.html#l00815">815</a> of file <a class="el" href="block__store_8cuh_source.html">block_store.cuh</a>.</p>
 
 </div>
 </div>
@@ -357,7 +365,7 @@ template&lt;typename OutputIteratorRA , int BLOCK_THREADS, int ITEMS_PER_THREAD,
 <div class="line"></div>
 <div class="line">    <span class="comment">// Store items to linear memory</span></div>
 <div class="line">    <span class="keywordtype">int</span> thread_data[4];</div>
-<div class="line">    <a class="code" href="classcub_1_1_block_store.html#a5c3c79c8e460594624e0347f5b44ecf7" title="Collective constructor for 1D thread blocks using a private static allocation of shared memory as tem...">BlockStore</a>(temp_storage).Store(d_data, d_data, thread_data);</div>
+<div class="line">    <a class="code" href="classcub_1_1_block_store.html#a5c3c79c8e460594624e0347f5b44ecf7" title="Collective constructor for 1D thread blocks using a private static allocation of shared memory as tem...">BlockStore</a>(temp_storage).Store(d_data, thread_data);</div>
 </div><!-- fragment --> </dd></dl>
 <dl class="section user"><dt></dt><dd>Suppose the set of <code>thread_data</code> across the block of threads is <code>{ [0,1,2,3], [4,5,6,7], ..., [508,509,510,511] }</code>. The output <code>d_data</code> will be <code>0, 1, 2, 3, 4, 5, ...</code>. </dd></dl>
 <dl class="params"><dt>Parameters</dt><dd>
@@ -367,6 +375,8 @@ template&lt;typename OutputIteratorRA , int BLOCK_THREADS, int ITEMS_PER_THREAD,
   </table>
   </dd>
 </dl>
+
+<p>Definition at line <a class="el" href="block__store_8cuh_source.html#l00868">868</a> of file <a class="el" href="block__store_8cuh_source.html">block_store.cuh</a>.</p>
 
 </div>
 </div>
@@ -429,7 +439,7 @@ template&lt;typename OutputIteratorRA , int BLOCK_THREADS, int ITEMS_PER_THREAD,
 <div class="line"></div>
 <div class="line">    <span class="comment">// Store items to linear memory</span></div>
 <div class="line">    <span class="keywordtype">int</span> thread_data[4];</div>
-<div class="line">    <a class="code" href="classcub_1_1_block_store.html#a5c3c79c8e460594624e0347f5b44ecf7" title="Collective constructor for 1D thread blocks using a private static allocation of shared memory as tem...">BlockStore</a>(temp_storage).Store(d_data, d_data, thread_data, valid_items);</div>
+<div class="line">    <a class="code" href="classcub_1_1_block_store.html#a5c3c79c8e460594624e0347f5b44ecf7" title="Collective constructor for 1D thread blocks using a private static allocation of shared memory as tem...">BlockStore</a>(temp_storage).Store(d_data, thread_data, valid_items);</div>
 </div><!-- fragment --> </dd></dl>
 <dl class="section user"><dt></dt><dd>Suppose the set of <code>thread_data</code> across the block of threads is <code>{ [0,1,2,3], [4,5,6,7], ..., [508,509,510,511] }</code> and <code>valid_items</code> is <code>5</code>. The output <code>d_data</code> will be <code>0, 1, 2, 3, 4, ?, ?, ?, ...</code>, with only the first two threads being unmasked to store portions of valid data. </dd></dl>
 <dl class="params"><dt>Parameters</dt><dd>
@@ -441,16 +451,18 @@ template&lt;typename OutputIteratorRA , int BLOCK_THREADS, int ITEMS_PER_THREAD,
   </dd>
 </dl>
 
+<p>Definition at line <a class="el" href="block__store_8cuh_source.html#l00913">913</a> of file <a class="el" href="block__store_8cuh_source.html">block_store.cuh</a>.</p>
+
 </div>
 </div>
 <hr/>The documentation for this class was generated from the following file:<ul>
-<li><a class="el" href="block__store_8cuh.html">block_store.cuh</a></li>
+<li><a class="el" href="block__store_8cuh_source.html">block_store.cuh</a></li>
 </ul>
 </div><!-- contents -->
 <!-- HTML footer for doxygen 1.8.3.1-->
 <!-- start footer part -->
 <hr class="footer"/><address class="footer"><small>
-Generated on Wed Aug 14 2013 12:56:06 for CUB by &#160;<a href="http://www.doxygen.org/index.html">
+Generated on Fri Aug 23 2013 17:22:45 for CUB by &#160;<a href="http://www.doxygen.org/index.html">
 <img class="footer" src="doxygen.png" alt="doxygen"/>
 </a> 1.8.4
 <br>

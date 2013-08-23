@@ -96,7 +96,7 @@ __global__ void Kernel(
         typename BlockStore::TempStorage    store;
     };
 
-    // Shared memory
+    // Allocate temp storage in shared memory
     __shared__ TempStorage temp_storage;
 
     // Threadblock work bounds
@@ -154,7 +154,7 @@ __global__ void KernelGuarded(
         typename BlockStore::TempStorage    store;
     };
 
-    // Shared memory
+    // Allocate temp storage in shared memory
     __shared__ TempStorage temp_storage;
 
     // Threadblock work bounds

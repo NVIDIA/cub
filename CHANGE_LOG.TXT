@@ -1,5 +1,12 @@
 //-----------------------------------------------------------------------------
 
+1.0.2    08/23/2013
+    - Corrections to code snippet examples for BlockLoad, BlockStore, and BlockDiscontinuity
+    - Cleaned up unnecessary/missing header includes.  You can now safely #inlude a specific .cuh (instead of cub.cuh)
+    - Bug/compilation fixes for BlockHistogram 
+
+//-----------------------------------------------------------------------------
+
 1.0.1    08/08/2013
     - New collective interface idiom (specialize::construct::invoke).
     - Added best-in-class DeviceRadixSort.  Implements short-circuiting for homogenous digit passes.
