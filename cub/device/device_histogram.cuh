@@ -68,12 +68,12 @@ template <
     typename                                        HistoCounter>           ///< Integral type for counting sample occurrences per histogram bin
 __launch_bounds__ (BINS, 1)
 __global__ void InitHistoKernel(
-    GridQueue<SizeT>                                grid_queue,             ///< [in] Descriptor for performing dynamic mapping of tile data to thread blocks
+    GridQueue<SizeT>                                grid_queue,             ///< [in] Drain queue descriptor for dynamically mapping tile data onto thread blocks
     ArrayWrapper<HistoCounter*, ACTIVE_CHANNELS>    d_out_histograms,       ///< [out] Histogram counter data having logical dimensions <tt>HistoCounter[ACTIVE_CHANNELS][BINS]</tt>
     SizeT                                           num_samples)            ///< [in] Total number of samples \p d_samples for all channels
 {
     d_out_histograms.array[blockIdx.x][threadIdx.x] = 0;
-    if (threadIdx.x == 0) grid_queue.ResetDrain(num_samples);
+    if (threadIdx.x == 0) grid_queue.FillAndResetDrain(num_samples);
 }
 
 
@@ -93,8 +93,8 @@ __global__ void MultiBlockHistogramKernel(
     InputIteratorRA                                 d_samples,                  ///< [in] Array of sample data. The samples from different channels are assumed to be interleaved (e.g., an array of 32b pixels where each pixel consists of four RGBA 8b samples).
     ArrayWrapper<HistoCounter*, ACTIVE_CHANNELS>    d_out_histograms,           ///< [out] Histogram counter data having logical dimensions <tt>HistoCounter[ACTIVE_CHANNELS][gridDim.x][BINS]</tt>
     SizeT                                           num_samples,                ///< [in] Total number of samples \p d_samples for all channels
-    GridEvenShare<SizeT>                            even_share,                 ///< [in] Descriptor for how to map an even-share of tiles across thread blocks
-    GridQueue<SizeT>                                queue)                      ///< [in] Descriptor for performing dynamic mapping of tile data to thread blocks
+    GridEvenShare<SizeT>                            even_share,                 ///< [in] Even-share descriptor for mapping an equal number of tiles onto each thread block
+    GridQueue<SizeT>                                queue)                      ///< [in] Drain queue descriptor for dynamically mapping tile data onto thread blocks
 {
     // Constants
     enum
@@ -136,12 +136,12 @@ __global__ void AggregateHistoKernel(
     HistoCounter bin_aggregate = 0;
 
     int block_offset = blockIdx.x * (num_threadblocks * BINS);
-    int block_oob = block_offset + (num_threadblocks * BINS);
+    int block_end = block_offset + (num_threadblocks * BINS);
 
 #if CUB_PTX_ARCH >= 200
     #pragma unroll 32
 #endif
-    while (block_offset < block_oob)
+    while (block_offset < block_end)
     {
         bin_aggregate += d_block_histograms[block_offset + threadIdx.x];
         block_offset += BINS;
@@ -409,11 +409,14 @@ struct DeviceHistogram
             // Get device occupancy for multi_block_kernel
             int multi_block_occupancy = multi_block_sm_occupancy * sm_count;
 
-            // Even-share work distribution
-            GridEvenShare<SizeT> even_share;
-
             // Get tile size for multi_block_kernel
             int multi_block_tile_size = multi_block_dispatch_params.channel_tile_size * CHANNELS;
+
+            // Even-share work distribution
+            GridEvenShare<SizeT> even_share(
+                num_samples,
+                multi_block_occupancy * multi_block_dispatch_params.subscription_factor,
+                multi_block_tile_size);
 
             // Get grid size for multi_block_kernel
             int multi_block_grid_size;
@@ -422,10 +425,6 @@ struct DeviceHistogram
             case GRID_MAPPING_EVEN_SHARE:
 
                 // Work is distributed evenly
-                even_share.GridInit(
-                    num_samples,
-                    multi_block_occupancy * multi_block_dispatch_params.subscription_factor,
-                    multi_block_tile_size);
                 multi_block_grid_size = even_share.grid_size;
                 break;
 

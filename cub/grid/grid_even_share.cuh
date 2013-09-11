@@ -61,25 +61,20 @@ namespace cub {
  * the scheduling grain size.
  *
  * \par
- * Before invoking a child grid, a parent thread will typically construct and initialize an instance of
- * GridEvenShare using \p GridInit().  The instance can be passed to child threadblocks which can
+ * Before invoking a child grid, a parent thread will typically construct an instance of
+ * GridEvenShare.  The instance can be passed to child threadblocks which can
  * initialize their per-threadblock offsets using \p BlockInit().
  *
  * \tparam SizeT Integer type for array indexing
  */
 template <typename SizeT>
-class GridEvenShare
+struct GridEvenShare
 {
-private:
-
     SizeT   total_grains;
     int     big_blocks;
     SizeT   big_share;
     SizeT   normal_share;
     SizeT   normal_base_offset;
-
-
-public:
 
     /// Total number of input items
     SizeT   num_items;
@@ -91,17 +86,7 @@ public:
     SizeT   block_offset;
 
     /// Offset into input of marking the end (one-past) of the owning thread block's segment of input tiles
-    SizeT   block_oob;
-
-    /**
-     * \brief Block-based constructor for single-block grids.
-     */
-    __device__ __forceinline__ GridEvenShare(SizeT num_items) :
-        num_items(num_items),
-        grid_size(1),
-        block_offset(0),
-        block_oob(num_items) {}
-
+    SizeT   block_end;
 
     /**
      * \brief Default constructor.  Zero-initializes block-specific fields.
@@ -110,20 +95,19 @@ public:
         num_items(0),
         grid_size(0),
         block_offset(0),
-        block_oob(0) {}
-
+        block_end(0) {}
 
     /**
-     * \brief Initializes the grid-specific members \p num_items and \p grid_size. To be called prior prior to kernel launch)
+     * \brief Constructor.  Initializes the grid-specific members \p num_items and \p grid_size. To be called prior prior to kernel launch)
      */
-    __host__ __device__ __forceinline__ void GridInit(
+    __host__ __device__ __forceinline__ GridEvenShare(
         SizeT   num_items,                  ///< Total number of input items
         int     max_grid_size,              ///< Maximum grid size allowable (actual grid size may be less if not warranted by the the number of input items)
         int     schedule_granularity)       ///< Granularity by which the input can be parcelled into and distributed among threablocks.  Usually the thread block's native tile size (or a multiple thereof.
     {
         this->num_items             = num_items;
         this->block_offset          = 0;
-        this->block_oob             = 0;
+        this->block_end             = 0;
         this->total_grains          = (num_items + schedule_granularity - 1) / schedule_granularity;
         this->grid_size             = CUB_MIN(total_grains, max_grid_size);
         SizeT grains_per_block      = total_grains / grid_size;
@@ -143,19 +127,19 @@ public:
         {
             // This threadblock gets a big share of grains (grains_per_block + 1)
             block_offset = (blockIdx.x * big_share);
-            block_oob = block_offset + big_share;
+            block_end = block_offset + big_share;
         }
         else if (blockIdx.x < total_grains)
         {
             // This threadblock gets a normal share of grains (grains_per_block)
             block_offset = normal_base_offset + (blockIdx.x * normal_share);
-            block_oob = block_offset + normal_share;
+            block_end = block_offset + normal_share;
         }
 
         // Last threadblock
         if (blockIdx.x == grid_size - 1)
         {
-            block_oob = num_items;
+            block_end = num_items;
         }
     }
 
@@ -169,7 +153,7 @@ public:
 #ifdef __CUDA_ARCH__
             "\tthreadblock(%d) "
             "block_offset(%lu) "
-            "block_oob(%lu) "
+            "block_end(%lu) "
 #endif
             "num_items(%lu)  "
             "total_grains(%lu)  "
@@ -179,7 +163,7 @@ public:
 #ifdef __CUDA_ARCH__
                 blockIdx.x,
                 (unsigned long) block_offset,
-                (unsigned long) block_oob,
+                (unsigned long) block_end,
 #endif
                 (unsigned long) num_items,
                 (unsigned long) total_grains,

@@ -64,11 +64,11 @@ namespace cub {
  * will be filling.
  *
  * \par
- * Similarly a "draining" GridQueue works by works by atomically-incrementing a
+ * Similarly, a "draining" GridQueue works by works by atomically-incrementing a
  * zero-initialized counter, returning a unique offset for the calling thread to
  * read its items. Threads can safely drain until the array's logical fill-size is
  * exceeded.  The drain counter must be reset using GridQueue::ResetDrain or
- * GridQueue::ResetDrainAfterFill by the host or kernel instance prior to the kernel instance that
+ * GridQueue::FillAndResetDrain by the host or kernel instance prior to the kernel instance that
  * will be filling.  (For dynamic work distribution of existing data, the corresponding fill-size
  * is simply the number of elements in the array.)
  *
@@ -103,7 +103,14 @@ public:
     }
 
 
-    /// Constructs an invalid GridQueue descriptor around the device storage allocation
+    /// Constructs an invalid GridQueue descriptor
+    __host__ __device__ __forceinline__ GridQueue()
+    :
+        d_counters(NULL)
+    {}
+
+
+    /// Constructs a GridQueue descriptor around the device storage allocation
     __host__ __device__ __forceinline__ GridQueue(
         void *d_storage)                    ///< Device allocation to back the GridQueue.  Must be at least as big as <tt>AllocationSize()</tt>.
     :
@@ -111,19 +118,8 @@ public:
     {}
 
 
-    /// This operation resets the drain so that it may advance to meet the existing fill-size.  To be called by the host or by a kernel prior to that which will be draining.
-    __host__ __device__ __forceinline__ cudaError_t ResetDrainAfterFill(cudaStream_t stream = 0)
-    {
-#ifdef __CUDA_ARCH__
-        d_counters[DRAIN] = 0;
-        return cudaSuccess;
-#else
-        return ResetDrain(0, stream);
-#endif
-    }
-
     /// This operation sets the fill-size and resets the drain counter, preparing the GridQueue for draining in the next kernel instance.  To be called by the host or by a kernel prior to that which will be draining.
-    __host__ __device__ __forceinline__ cudaError_t ResetDrain(
+    __host__ __device__ __forceinline__ cudaError_t FillAndResetDrain(
         SizeT fill_size,
         cudaStream_t stream = 0)
     {
@@ -136,6 +132,18 @@ public:
         counters[FILL] = fill_size;
         counters[DRAIN] = 0;
         return CubDebug(cudaMemcpyAsync(d_counters, counters, sizeof(SizeT) * 2, cudaMemcpyHostToDevice, stream));
+#endif
+    }
+
+
+    /// This operation resets the drain so that it may advance to meet the existing fill-size.  To be called by the host or by a kernel prior to that which will be draining.
+    __host__ __device__ __forceinline__ cudaError_t ResetDrain(cudaStream_t stream = 0)
+    {
+#ifdef __CUDA_ARCH__
+        d_counters[DRAIN] = 0;
+        return cudaSuccess;
+#else
+        return FillAndResetDrain(0, stream);
 #endif
     }
 
@@ -159,6 +167,7 @@ public:
     {
 #ifdef __CUDA_ARCH__
         fill_size = d_counters[FILL];
+        return cudaSuccess;
 #else
         return CubDebug(cudaMemcpyAsync(&fill_size, d_counters + FILL, sizeof(SizeT), cudaMemcpyDeviceToHost, stream));
 #endif
@@ -187,11 +196,11 @@ public:
  * Reset grid queue (call with 1 block of 1 thread)
  */
 template <typename SizeT>
-__global__ void ResetDrainKernel(
+__global__ void FillAndResetDrainKernel(
     GridQueue<SizeT>    grid_queue,
     SizeT               num_items)
 {
-    grid_queue.ResetDrain(num_items);
+    grid_queue.FillAndResetDrain(num_items);
 }
 
 

@@ -372,11 +372,11 @@ struct BlockRadixSortUpsweepTiles
      */
     __device__ __forceinline__ void ProcessPartialTile(
         SizeT block_offset,
-        const SizeT &block_oob)
+        const SizeT &block_end)
     {
         // Process partial tile if necessary using single loads
         block_offset += threadIdx.x;
-        while (block_offset < block_oob)
+        while (block_offset < block_end)
         {
             // Load and bucket key
             UnsignedBits key = ThreadLoad<LOAD_MODIFIER>(d_keys_in + block_offset);
@@ -409,7 +409,7 @@ struct BlockRadixSortUpsweepTiles
      */
     __device__ __forceinline__ void ProcessTiles(
         SizeT           block_offset,
-        const SizeT     &block_oob,
+        const SizeT     &block_end,
         SizeT           &bin_count)                ///< [out] The digit count for tid'th bin (output param, valid in the first RADIX_DIGITS threads)
     {
         // Reset digit counters in smem and unpacked counters in registers
@@ -417,7 +417,7 @@ struct BlockRadixSortUpsweepTiles
         ResetUnpackedCounters();
 
         // Unroll batches of full tiles
-        while (block_offset + UNROLLED_ELEMENTS <= block_oob)
+        while (block_offset + UNROLLED_ELEMENTS <= block_end)
         {
             Iterate<0, UNROLL_COUNT>::ProcessTiles(*this, block_offset);
             block_offset += UNROLLED_ELEMENTS;
@@ -434,7 +434,7 @@ struct BlockRadixSortUpsweepTiles
         }
 
         // Unroll single full tiles
-        while (block_offset + TILE_ITEMS <= block_oob)
+        while (block_offset + TILE_ITEMS <= block_end)
         {
             ProcessFullTile(block_offset);
             block_offset += TILE_ITEMS;
@@ -443,7 +443,7 @@ struct BlockRadixSortUpsweepTiles
         // Process partial tile if necessary
         ProcessPartialTile(
             block_offset,
-            block_oob);
+            block_end);
 
         __syncthreads();
 
