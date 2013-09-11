@@ -33,12 +33,14 @@
 
 #pragma once
 
+#ifndef __CUDA_ARCH__
+    #include <set>              // NVCC (EDG, really) takes FOREVER to compile std::map
+    #include <map>
+#endif
+
 #include <math.h>
-#include <set>
-#include <map>
 
 #include "util_namespace.cuh"
-#include "util_arch.cuh"
 #include "util_debug.cuh"
 
 #include "host/spinlock.cuh"
@@ -102,6 +104,12 @@ struct CachingDeviceAllocator
     //---------------------------------------------------------------------
     // Type definitions and constants
     //---------------------------------------------------------------------
+
+    enum
+    {
+        /// Invalid device ordinal
+        INVALID_DEVICE_ORDINAL = -1,
+    };
 
     /**
      * Integer pow function for unsigned base and exponent
@@ -194,6 +202,8 @@ struct CachingDeviceAllocator
     /// BlockDescriptor comparator function interface
     typedef bool (*Compare)(const BlockDescriptor &, const BlockDescriptor &);
 
+#ifndef __CUDA_ARCH__   // Only define STL container members in host code
+
     /// Set type for cached blocks (ordered by size)
     typedef std::multiset<BlockDescriptor, Compare> CachedBlocks;
 
@@ -203,6 +213,7 @@ struct CachingDeviceAllocator
     /// Map type of device ordinals to the number of cached bytes cached by each device
     typedef std::map<int, size_t> GpuCachedBytes;
 
+#endif // __CUDA_ARCH__
 
     //---------------------------------------------------------------------
     // Fields
@@ -305,7 +316,7 @@ struct CachingDeviceAllocator
 
         this->max_cached_bytes = max_cached_bytes;
 
-        if (debug) printf("New max_cached_bytes(%lld)\n", (long long) max_cached_bytes);
+        if (debug) CubLog("New max_cached_bytes(%lld)\n", (long long) max_cached_bytes);
 
         // Unlock
         Unlock(&spin_lock);
@@ -330,7 +341,7 @@ struct CachingDeviceAllocator
     #else
 
         bool locked                     = false;
-        int entrypoint_device = INVALID_DEVICE_ORDINAL;
+        int entrypoint_device           = INVALID_DEVICE_ORDINAL;
         cudaError_t error               = cudaSuccess;
 
         // Round up to nearest bin size
@@ -373,7 +384,7 @@ struct CachingDeviceAllocator
                 cached_blocks.erase(block_itr);
                 cached_bytes[device] -= search_key.bytes;
 
-                if (debug) printf("\tdevice %d reused cached block (%lld bytes). %lld available blocks cached (%lld bytes), %lld live blocks outstanding.\n",
+                if (debug) CubLog("\tdevice %d reused cached block (%lld bytes). %lld available blocks cached (%lld bytes), %lld live blocks outstanding.\n",
                     device, (long long) search_key.bytes, (long long) cached_blocks.size(), (long long) cached_bytes[device], (long long) live_blocks.size());
             }
             else
@@ -400,7 +411,7 @@ struct CachingDeviceAllocator
                 // Insert into live blocks
                 live_blocks.insert(search_key);
 
-                if (debug) printf("\tdevice %d allocating new device block %lld bytes. %lld available blocks cached (%lld bytes), %lld live blocks outstanding.\n",
+                if (debug) CubLog("\tdevice %d allocating new device block %lld bytes. %lld available blocks cached (%lld bytes), %lld live blocks outstanding.\n",
                     device, (long long) search_key.bytes, (long long) cached_blocks.size(), (long long) cached_bytes[device], (long long) live_blocks.size());
             }
         } while(0);
@@ -463,7 +474,7 @@ struct CachingDeviceAllocator
     #else
 
         bool locked                     = false;
-        int entrypoint_device = INVALID_DEVICE_ORDINAL;
+        int entrypoint_device           = INVALID_DEVICE_ORDINAL;
         cudaError_t error               = cudaSuccess;
 
         BlockDescriptor search_key(d_ptr, device);
@@ -495,7 +506,7 @@ struct CachingDeviceAllocator
                     cached_blocks.insert(search_key);
                     cached_bytes[device] += search_key.bytes;
 
-                    if (debug) printf("\tdevice %d returned %lld bytes. %lld available blocks cached (%lld bytes), %lld live blocks outstanding.\n",
+                    if (debug) CubLog("\tdevice %d returned %lld bytes. %lld available blocks cached (%lld bytes), %lld live blocks outstanding.\n",
                         device, (long long) search_key.bytes, (long long) cached_blocks.size(), (long long) cached_bytes[device], (long long) live_blocks.size());
                 }
                 else
@@ -513,7 +524,7 @@ struct CachingDeviceAllocator
                     // Free device memory
                     if (CubDebug(error = cudaFree(d_ptr))) break;
 
-                    if (debug) printf("\tdevice %d freed %lld bytes.  %lld available blocks cached (%lld bytes), %lld live blocks outstanding.\n",
+                    if (debug) CubLog("\tdevice %d freed %lld bytes.  %lld available blocks cached (%lld bytes), %lld live blocks outstanding.\n",
                         device, (long long) search_key.bytes, (long long) cached_blocks.size(), (long long) cached_bytes[device], (long long) live_blocks.size());
                 }
             }
@@ -572,8 +583,8 @@ struct CachingDeviceAllocator
         return CubDebug(cudaErrorInvalidConfiguration);
     #else
 
-        cudaError_t error                   = cudaSuccess;
-        bool locked                         = false;
+        cudaError_t error         = cudaSuccess;
+        bool locked               = false;
         int entrypoint_device     = INVALID_DEVICE_ORDINAL;
         int current_device        = INVALID_DEVICE_ORDINAL;
 
@@ -608,7 +619,7 @@ struct CachingDeviceAllocator
             cached_bytes[current_device] -= begin->bytes;
             cached_blocks.erase(begin);
 
-            if (debug) printf("\tdevice %d freed %lld bytes.  %lld available blocks cached (%lld bytes), %lld live blocks outstanding.\n",
+            if (debug) CubLog("\tdevice %d freed %lld bytes.  %lld available blocks cached (%lld bytes), %lld live blocks outstanding.\n",
                 current_device, (long long) begin->bytes, (long long) cached_blocks.size(), (long long) cached_bytes[current_device], (long long) live_blocks.size());
         }
 

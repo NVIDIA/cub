@@ -37,7 +37,10 @@
 #include <limits>
 #include <string>
 
-#include <cub/cub.cuh>
+#include <cub/util_allocator.cuh>
+#include <cub/device/device_histogram.cuh>
+#include <cub/util_iterator.cuh>
+
 #include "test_util.h"
 
 using namespace cub;

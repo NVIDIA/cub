@@ -117,7 +117,9 @@ var searchBox = new SearchBox("searchBox", "search",false,'Search');
 <div class="image">
 <img src="histo_perf.png" alt="histo_perf.png"/>
 </div>
- </div><table class="memberdecls">
+ 
+<p>Definition at line <a class="el" href="device__histogram_8cuh_source.html#l00178">178</a> of file <a class="el" href="device__histogram_8cuh_source.html">device_histogram.cuh</a>.</p>
+</div><table class="memberdecls">
 <tr class="heading"><td colspan="2"><h2 class="groupheader"><a name="pub-static-methods"></a>
 Static Public Methods</h2></td></tr>
 <tr><td colspan="2"><div class="groupHeader">Single-channel samples</div></td></tr>
@@ -154,367 +156,7 @@ __forceinline__ cudaError_t&#160;</td><td class="memTemplItemRight" valign="bott
 <tr class="separator:a0e6bee2938ad70ab128ed1a1c5f6d083"><td class="memSeparator" colspan="2">&#160;</td></tr>
 </table>
 <h2 class="groupheader">Member Function Documentation</h2>
-<a class="anchor" id="ad0cc7bacd6022916cb228437eeb9c82a"></a>
-<div class="memitem">
-<div class="memproto">
-<div class="memtemplate">
-template&lt;int BINS, typename InputIteratorRA , typename HistoCounter &gt; </div>
-<table class="mlabels">
-  <tr>
-  <td class="mlabels-left">
-      <table class="memname">
-        <tr>
-          <td class="memname">__host__ __device__ static __forceinline__ cudaError_t cub::DeviceHistogram::SingleChannelSorting </td>
-          <td>(</td>
-          <td class="paramtype">void *&#160;</td>
-          <td class="paramname"><em>d_temp_storage</em>, </td>
-        </tr>
-        <tr>
-          <td class="paramkey"></td>
-          <td></td>
-          <td class="paramtype">size_t &amp;&#160;</td>
-          <td class="paramname"><em>temp_storage_bytes</em>, </td>
-        </tr>
-        <tr>
-          <td class="paramkey"></td>
-          <td></td>
-          <td class="paramtype">InputIteratorRA&#160;</td>
-          <td class="paramname"><em>d_samples</em>, </td>
-        </tr>
-        <tr>
-          <td class="paramkey"></td>
-          <td></td>
-          <td class="paramtype">HistoCounter *&#160;</td>
-          <td class="paramname"><em>d_histogram</em>, </td>
-        </tr>
-        <tr>
-          <td class="paramkey"></td>
-          <td></td>
-          <td class="paramtype">int&#160;</td>
-          <td class="paramname"><em>num_samples</em>, </td>
-        </tr>
-        <tr>
-          <td class="paramkey"></td>
-          <td></td>
-          <td class="paramtype">cudaStream_t&#160;</td>
-          <td class="paramname"><em>stream</em> = <code>0</code>, </td>
-        </tr>
-        <tr>
-          <td class="paramkey"></td>
-          <td></td>
-          <td class="paramtype">bool&#160;</td>
-          <td class="paramname"><em>stream_synchronous</em> = <code>false</code>&#160;</td>
-        </tr>
-        <tr>
-          <td></td>
-          <td>)</td>
-          <td></td><td></td>
-        </tr>
-      </table>
-  </td>
-  <td class="mlabels-right">
-<span class="mlabels"><span class="mlabel">inline</span><span class="mlabel">static</span></span>  </td>
-  </tr>
-</table>
-</div><div class="memdoc">
-
-<p>Computes a device-wide histogram. Uses fast block-sorting to compute the histogram. Delivers consistent throughput regardless of sample diversity, but occupancy may be limited by histogram bin count. </p>
-<p>However, because histograms are privatized in shared memory, a large number of bins (e.g., thousands) may adversely affect occupancy and performance (or even the ability to launch).</p>
-<p>This operation requires an allocation of temporary device storage. When <code>d_temp_storage</code> is NULL, no work is done and the required allocation size is returned in <code>temp_storage_bytes</code>.</p>
-<p>When calling this method from kernel code, be sure to define the <code>CUB_CDP</code> macro in your compiler's macro definitions.</p>
-<p>Random-access input/output iterators can be used instead of naked device pointers (e.g., a zip-iterator for fusing multiple inputs).</p>
-<dl class="section user"><dt></dt><dd>The code snippet below illustrates the computation of a 256-bin histogram of single-channel <code>unsigned char</code> samples. </dd></dl>
-<dl class="section user"><dt></dt><dd><div class="fragment"><div class="line"><span class="preprocessor">#include &lt;<a class="code" href="cub_8cuh.html">cub/cub.cuh</a>&gt;</span></div>
-<div class="line">...</div>
-<div class="line"></div>
-<div class="line"><span class="comment">// Declare and initialize device pointers for input samples and 256-bin output histogram</span></div>
-<div class="line">unsigned <span class="keywordtype">char</span> *d_samples;</div>
-<div class="line"><span class="keywordtype">unsigned</span> <span class="keywordtype">int</span> *d_histogram;</div>
-<div class="line"><span class="keywordtype">int</span> num_items = ...</div>
-<div class="line">...</div>
-<div class="line"></div>
-<div class="line"><span class="comment">// Wrap d_samples device pointer in a random-access texture iterator</span></div>
-<div class="line"><a class="code" href="classcub_1_1_tex_iterator_r_a.html" title="A simple random-access iterator for loading primitive values through texture cache. ">cub::TexIteratorRA&lt;unsigned int&gt;</a> d_samples_tex_itr;</div>
-<div class="line">d_samples_tex_itr.<a class="code" href="classcub_1_1_tex_iterator_r_a.html#aae5f3547c60cf33d51c65685ea9d131a" title="Bind iterator to texture reference. ">BindTexture</a>(d_samples, num_items * <span class="keyword">sizeof</span>(<span class="keywordtype">unsigned</span> <span class="keywordtype">char</span>));</div>
-<div class="line"></div>
-<div class="line"><span class="comment">// Determine temporary device storage requirements for histogram computation</span></div>
-<div class="line"><span class="keywordtype">void</span> *d_temp_storage = NULL;</div>
-<div class="line"><span class="keywordtype">size_t</span> temp_storage_bytes = 0;</div>
-<div class="line">cub::DeviceHistogram::SingleChannelSorting&lt;256&gt;(d_temp_storage, temp_storage_bytes, d_samples_tex_itr, d_histogram, num_items);</div>
-<div class="line"></div>
-<div class="line"><span class="comment">// Allocate temporary storage for histogram computation</span></div>
-<div class="line">cudaMalloc(&amp;d_temp_storage, temp_storage_bytes);</div>
-<div class="line"></div>
-<div class="line"><span class="comment">// Compute histogram</span></div>
-<div class="line">cub::DeviceHistogram::SingleChannelSorting&lt;256&gt;(d_temp_storage, temp_storage_bytes, d_samples_tex_itr, d_histogram, num_items);</div>
-<div class="line"></div>
-<div class="line"><span class="comment">// Unbind texture iterator</span></div>
-<div class="line">d_samples_tex_itr.UnbindTexture();</div>
-</div><!-- fragment --></dd></dl>
-<dl class="tparams"><dt>Template Parameters</dt><dd>
-  <table class="tparams">
-    <tr><td class="paramname">BINS</td><td>Number of histogram bins per channel </td></tr>
-    <tr><td class="paramname">InputIteratorRA</td><td><b>[inferred]</b> Random-access iterator type for input (may be a simple pointer type) Must have a value type that can be cast as an integer in the range [0..BINS-1] </td></tr>
-    <tr><td class="paramname">HistoCounter</td><td><b>[inferred]</b> Integral type for counting sample occurrences per histogram bin </td></tr>
-  </table>
-  </dd>
-</dl>
-<dl class="params"><dt>Parameters</dt><dd>
-  <table class="params">
-    <tr><td class="paramdir">[in]</td><td class="paramname">d_temp_storage</td><td>Device allocation of temporary storage. When NULL, the required allocation size is returned in <code>temp_storage_bytes</code> and no work is done. </td></tr>
-    <tr><td class="paramdir">[in,out]</td><td class="paramname">temp_storage_bytes</td><td>Size in bytes of <code>d_temp_storage</code> allocation. </td></tr>
-    <tr><td class="paramdir">[in]</td><td class="paramname">d_samples</td><td>Input samples </td></tr>
-    <tr><td class="paramdir">[out]</td><td class="paramname">d_histogram</td><td>Array of BINS counters of integral type <code>HistoCounter</code>. </td></tr>
-    <tr><td class="paramdir">[in]</td><td class="paramname">num_samples</td><td>Number of samples to process </td></tr>
-    <tr><td class="paramdir">[in]</td><td class="paramname">stream</td><td><b>[optional]</b> CUDA stream to launch kernels within. Default is stream<sub>0</sub>. </td></tr>
-    <tr><td class="paramdir">[in]</td><td class="paramname">stream_synchronous</td><td><b>[optional]</b> Whether or not to synchronize the stream after every kernel launch to check for errors. Default is <code>false</code>. </td></tr>
-  </table>
-  </dd>
-</dl>
-
-</div>
-</div>
-<a class="anchor" id="a425559a4dc730f55f46e0faa5080e266"></a>
-<div class="memitem">
-<div class="memproto">
-<div class="memtemplate">
-template&lt;int BINS, typename InputIteratorRA , typename HistoCounter &gt; </div>
-<table class="mlabels">
-  <tr>
-  <td class="mlabels-left">
-      <table class="memname">
-        <tr>
-          <td class="memname">__host__ __device__ static __forceinline__ cudaError_t cub::DeviceHistogram::SingleChannelSharedAtomic </td>
-          <td>(</td>
-          <td class="paramtype">void *&#160;</td>
-          <td class="paramname"><em>d_temp_storage</em>, </td>
-        </tr>
-        <tr>
-          <td class="paramkey"></td>
-          <td></td>
-          <td class="paramtype">size_t &amp;&#160;</td>
-          <td class="paramname"><em>temp_storage_bytes</em>, </td>
-        </tr>
-        <tr>
-          <td class="paramkey"></td>
-          <td></td>
-          <td class="paramtype">InputIteratorRA&#160;</td>
-          <td class="paramname"><em>d_samples</em>, </td>
-        </tr>
-        <tr>
-          <td class="paramkey"></td>
-          <td></td>
-          <td class="paramtype">HistoCounter *&#160;</td>
-          <td class="paramname"><em>d_histogram</em>, </td>
-        </tr>
-        <tr>
-          <td class="paramkey"></td>
-          <td></td>
-          <td class="paramtype">int&#160;</td>
-          <td class="paramname"><em>num_samples</em>, </td>
-        </tr>
-        <tr>
-          <td class="paramkey"></td>
-          <td></td>
-          <td class="paramtype">cudaStream_t&#160;</td>
-          <td class="paramname"><em>stream</em> = <code>0</code>, </td>
-        </tr>
-        <tr>
-          <td class="paramkey"></td>
-          <td></td>
-          <td class="paramtype">bool&#160;</td>
-          <td class="paramname"><em>stream_synchronous</em> = <code>false</code>&#160;</td>
-        </tr>
-        <tr>
-          <td></td>
-          <td>)</td>
-          <td></td><td></td>
-        </tr>
-      </table>
-  </td>
-  <td class="mlabels-right">
-<span class="mlabels"><span class="mlabel">inline</span><span class="mlabel">static</span></span>  </td>
-  </tr>
-</table>
-</div><div class="memdoc">
-
-<p>Computes a device-wide histogram. Uses shared-memory atomic read-modify-write operations to compute the histogram. Input samples having lower diversity can cause performance to be degraded, and occupancy may be limited by histogram bin count. </p>
-<p>However, because histograms are privatized in shared memory, a large number of bins (e.g., thousands) may adversely affect occupancy and performance (or even the ability to launch).</p>
-<p>This operation requires an allocation of temporary device storage. When <code>d_temp_storage</code> is NULL, no work is done and the required allocation size is returned in <code>temp_storage_bytes</code>.</p>
-<p>When calling this method from kernel code, be sure to define the <code>CUB_CDP</code> macro in your compiler's macro definitions.</p>
-<p>Random-access input/output iterators can be used instead of naked device pointers (e.g., a zip-iterator for fusing multiple inputs).</p>
-<dl class="section user"><dt></dt><dd>The code snippet below illustrates the computation of a 256-bin histogram of single-channel <code>unsigned char</code> samples. </dd></dl>
-<dl class="section user"><dt></dt><dd><div class="fragment"><div class="line"><span class="preprocessor">#include &lt;<a class="code" href="cub_8cuh.html">cub/cub.cuh</a>&gt;</span></div>
-<div class="line">...</div>
-<div class="line"></div>
-<div class="line"><span class="comment">// Declare and initialize device pointers for input samples and 256-bin output histogram</span></div>
-<div class="line">unsigned <span class="keywordtype">char</span> *d_samples;</div>
-<div class="line"><span class="keywordtype">unsigned</span> <span class="keywordtype">int</span> *d_histogram;</div>
-<div class="line"><span class="keywordtype">int</span> num_items = ...</div>
-<div class="line">...</div>
-<div class="line"></div>
-<div class="line"><span class="comment">// Wrap d_samples device pointer in a random-access texture iterator</span></div>
-<div class="line"><a class="code" href="classcub_1_1_tex_iterator_r_a.html" title="A simple random-access iterator for loading primitive values through texture cache. ">cub::TexIteratorRA&lt;unsigned int&gt;</a> d_samples_tex_itr;</div>
-<div class="line">d_samples_tex_itr.<a class="code" href="classcub_1_1_tex_iterator_r_a.html#aae5f3547c60cf33d51c65685ea9d131a" title="Bind iterator to texture reference. ">BindTexture</a>(d_samples, num_items * <span class="keyword">sizeof</span>(<span class="keywordtype">unsigned</span> <span class="keywordtype">char</span>));</div>
-<div class="line"></div>
-<div class="line"><span class="comment">// Determine temporary device storage requirements for histogram computation</span></div>
-<div class="line"><span class="keywordtype">void</span> *d_temp_storage = NULL;</div>
-<div class="line"><span class="keywordtype">size_t</span> temp_storage_bytes = 0;</div>
-<div class="line">cub::DeviceHistogram::SingleChannelSorting&lt;256&gt;(d_temp_storage, temp_storage_bytes, d_samples_tex_itr, d_histogram, num_items);</div>
-<div class="line"></div>
-<div class="line"><span class="comment">// Allocate temporary storage for histogram computation</span></div>
-<div class="line">cudaMalloc(&amp;d_temp_storage, temp_storage_bytes);</div>
-<div class="line"></div>
-<div class="line"><span class="comment">// Compute histogram</span></div>
-<div class="line">cub::DeviceHistogram::SingleChannelSharedAtomic&lt;256&gt;(d_temp_storage, temp_storage_bytes, d_samples_tex_itr, d_histogram, num_items);</div>
-<div class="line"></div>
-<div class="line"><span class="comment">// Unbind texture iterator</span></div>
-<div class="line">d_samples_tex_itr.UnbindTexture();</div>
-</div><!-- fragment --></dd></dl>
-<dl class="tparams"><dt>Template Parameters</dt><dd>
-  <table class="tparams">
-    <tr><td class="paramname">BINS</td><td>Number of histogram bins per channel </td></tr>
-    <tr><td class="paramname">InputIteratorRA</td><td><b>[inferred]</b> Random-access iterator type for input (may be a simple pointer type) Must have a value type that can be cast as an integer in the range [0..BINS-1] </td></tr>
-    <tr><td class="paramname">HistoCounter</td><td><b>[inferred]</b> Integral type for counting sample occurrences per histogram bin </td></tr>
-  </table>
-  </dd>
-</dl>
-<dl class="params"><dt>Parameters</dt><dd>
-  <table class="params">
-    <tr><td class="paramdir">[in]</td><td class="paramname">d_temp_storage</td><td>Device allocation of temporary storage. When NULL, the required allocation size is returned in <code>temp_storage_bytes</code> and no work is done. </td></tr>
-    <tr><td class="paramdir">[in,out]</td><td class="paramname">temp_storage_bytes</td><td>Size in bytes of <code>d_temp_storage</code> allocation. </td></tr>
-    <tr><td class="paramdir">[in]</td><td class="paramname">d_samples</td><td>Input samples </td></tr>
-    <tr><td class="paramdir">[out]</td><td class="paramname">d_histogram</td><td>Array of BINS counters of integral type <code>HistoCounter</code>. </td></tr>
-    <tr><td class="paramdir">[in]</td><td class="paramname">num_samples</td><td>Number of samples to process </td></tr>
-    <tr><td class="paramdir">[in]</td><td class="paramname">stream</td><td><b>[optional]</b> CUDA stream to launch kernels within. Default is stream<sub>0</sub>. </td></tr>
-    <tr><td class="paramdir">[in]</td><td class="paramname">stream_synchronous</td><td><b>[optional]</b> Whether or not to synchronize the stream after every kernel launch to check for errors. May cause significant slowdown. Default is <code>false</code>. </td></tr>
-  </table>
-  </dd>
-</dl>
-
-</div>
-</div>
-<a class="anchor" id="a6659e9723fda5e5c0ac587aa66fb54c3"></a>
-<div class="memitem">
-<div class="memproto">
-<div class="memtemplate">
-template&lt;int BINS, typename InputIteratorRA , typename HistoCounter &gt; </div>
-<table class="mlabels">
-  <tr>
-  <td class="mlabels-left">
-      <table class="memname">
-        <tr>
-          <td class="memname">__host__ __device__ static __forceinline__ cudaError_t cub::DeviceHistogram::SingleChannelGlobalAtomic </td>
-          <td>(</td>
-          <td class="paramtype">void *&#160;</td>
-          <td class="paramname"><em>d_temp_storage</em>, </td>
-        </tr>
-        <tr>
-          <td class="paramkey"></td>
-          <td></td>
-          <td class="paramtype">size_t &amp;&#160;</td>
-          <td class="paramname"><em>temp_storage_bytes</em>, </td>
-        </tr>
-        <tr>
-          <td class="paramkey"></td>
-          <td></td>
-          <td class="paramtype">InputIteratorRA&#160;</td>
-          <td class="paramname"><em>d_samples</em>, </td>
-        </tr>
-        <tr>
-          <td class="paramkey"></td>
-          <td></td>
-          <td class="paramtype">HistoCounter *&#160;</td>
-          <td class="paramname"><em>d_histogram</em>, </td>
-        </tr>
-        <tr>
-          <td class="paramkey"></td>
-          <td></td>
-          <td class="paramtype">int&#160;</td>
-          <td class="paramname"><em>num_samples</em>, </td>
-        </tr>
-        <tr>
-          <td class="paramkey"></td>
-          <td></td>
-          <td class="paramtype">cudaStream_t&#160;</td>
-          <td class="paramname"><em>stream</em> = <code>0</code>, </td>
-        </tr>
-        <tr>
-          <td class="paramkey"></td>
-          <td></td>
-          <td class="paramtype">bool&#160;</td>
-          <td class="paramname"><em>stream_synchronous</em> = <code>false</code>&#160;</td>
-        </tr>
-        <tr>
-          <td></td>
-          <td>)</td>
-          <td></td><td></td>
-        </tr>
-      </table>
-  </td>
-  <td class="mlabels-right">
-<span class="mlabels"><span class="mlabel">inline</span><span class="mlabel">static</span></span>  </td>
-  </tr>
-</table>
-</div><div class="memdoc">
-
-<p>Computes a device-wide histogram. Uses global-memory atomic read-modify-write operations to compute the histogram. Input samples having lower diversity can cause performance to be degraded. </p>
-<p>Performance is not significantly impacted when computing histograms having large numbers of bins (e.g., thousands).</p>
-<p>This operation requires an allocation of temporary device storage. When <code>d_temp_storage</code> is NULL, no work is done and the required allocation size is returned in <code>temp_storage_bytes</code>.</p>
-<p>When calling this method from kernel code, be sure to define the <code>CUB_CDP</code> macro in your compiler's macro definitions.</p>
-<p>Random-access input/output iterators can be used instead of naked device pointers (e.g., a zip-iterator for fusing multiple inputs).</p>
-<dl class="section user"><dt></dt><dd>The code snippet below illustrates the computation of a 256-bin histogram of single-channel <code>unsigned char</code> samples. </dd></dl>
-<dl class="section user"><dt></dt><dd><div class="fragment"><div class="line"><span class="preprocessor">#include &lt;<a class="code" href="cub_8cuh.html">cub/cub.cuh</a>&gt;</span></div>
-<div class="line">...</div>
-<div class="line"></div>
-<div class="line"><span class="comment">// Declare and initialize device pointers for input samples and 256-bin output histogram</span></div>
-<div class="line">unsigned <span class="keywordtype">char</span> *d_samples;</div>
-<div class="line"><span class="keywordtype">unsigned</span> <span class="keywordtype">int</span> *d_histogram;</div>
-<div class="line"><span class="keywordtype">int</span> num_items = ...</div>
-<div class="line">...</div>
-<div class="line"></div>
-<div class="line"><span class="comment">// Wrap d_samples device pointer in a random-access texture iterator</span></div>
-<div class="line"><a class="code" href="classcub_1_1_tex_iterator_r_a.html" title="A simple random-access iterator for loading primitive values through texture cache. ">cub::TexIteratorRA&lt;unsigned int&gt;</a> d_samples_tex_itr;</div>
-<div class="line">d_samples_tex_itr.<a class="code" href="classcub_1_1_tex_iterator_r_a.html#aae5f3547c60cf33d51c65685ea9d131a" title="Bind iterator to texture reference. ">BindTexture</a>(d_samples, num_items * <span class="keyword">sizeof</span>(<span class="keywordtype">unsigned</span> <span class="keywordtype">char</span>));</div>
-<div class="line"></div>
-<div class="line"><span class="comment">// Determine temporary device storage requirements for histogram computation</span></div>
-<div class="line"><span class="keywordtype">void</span> *d_temp_storage = NULL;</div>
-<div class="line"><span class="keywordtype">size_t</span> temp_storage_bytes = 0;</div>
-<div class="line">cub::DeviceHistogram::SingleChannelSorting&lt;256&gt;(d_temp_storage, temp_storage_bytes, d_samples_tex_itr, d_histogram, num_items);</div>
-<div class="line"></div>
-<div class="line"><span class="comment">// Allocate temporary storage for histogram computation</span></div>
-<div class="line">cudaMalloc(&amp;d_temp_storage, temp_storage_bytes);</div>
-<div class="line"></div>
-<div class="line"><span class="comment">// Compute histogram</span></div>
-<div class="line">cub::DeviceHistogram::SingleChannelGlobalAtomic&lt;256&gt;(d_temp_storage, temp_storage_bytes, d_samples_tex_itr, d_histogram, num_items);</div>
-<div class="line"></div>
-<div class="line"><span class="comment">// Unbind texture iterator</span></div>
-<div class="line">d_samples_tex_itr.UnbindTexture();</div>
-</div><!-- fragment --></dd></dl>
-<dl class="tparams"><dt>Template Parameters</dt><dd>
-  <table class="tparams">
-    <tr><td class="paramname">BINS</td><td>Number of histogram bins per channel </td></tr>
-    <tr><td class="paramname">InputIteratorRA</td><td><b>[inferred]</b> Random-access iterator type for input (may be a simple pointer type) Must have a value type that can be cast as an integer in the range [0..BINS-1] </td></tr>
-    <tr><td class="paramname">HistoCounter</td><td><b>[inferred]</b> Integral type for counting sample occurrences per histogram bin </td></tr>
-  </table>
-  </dd>
-</dl>
-<dl class="params"><dt>Parameters</dt><dd>
-  <table class="params">
-    <tr><td class="paramdir">[in]</td><td class="paramname">d_temp_storage</td><td>Device allocation of temporary storage. When NULL, the required allocation size is returned in <code>temp_storage_bytes</code> and no work is done. </td></tr>
-    <tr><td class="paramdir">[in,out]</td><td class="paramname">temp_storage_bytes</td><td>Size in bytes of <code>d_temp_storage</code> allocation. </td></tr>
-    <tr><td class="paramdir">[in]</td><td class="paramname">d_samples</td><td>Input samples </td></tr>
-    <tr><td class="paramdir">[out]</td><td class="paramname">d_histogram</td><td>Array of BINS counters of integral type <code>HistoCounter</code>. </td></tr>
-    <tr><td class="paramdir">[in]</td><td class="paramname">num_samples</td><td>Number of samples to process </td></tr>
-    <tr><td class="paramdir">[in]</td><td class="paramname">stream</td><td><b>[optional]</b> CUDA stream to launch kernels within. Default is stream<sub>0</sub>. </td></tr>
-    <tr><td class="paramdir">[in]</td><td class="paramname">stream_synchronous</td><td><b>[optional]</b> Whether or not to synchronize the stream after every kernel launch to check for errors. May cause significant slowdown. Default is <code>false</code>. </td></tr>
-  </table>
-  </dd>
-</dl>
-
-</div>
-</div>
-<a class="anchor" id="a7f9a00987e98b828823f062d563aaa8c"></a>
+<a class="anchor" id="a0e6bee2938ad70ab128ed1a1c5f6d083"></a>
 <div class="memitem">
 <div class="memproto">
 <div class="memtemplate">
@@ -524,7 +166,7 @@ template&lt;int BINS, int CHANNELS, int ACTIVE_CHANNELS, typename InputIteratorR
   <td class="mlabels-left">
       <table class="memname">
         <tr>
-          <td class="memname">__host__ __device__ static __forceinline__ cudaError_t cub::DeviceHistogram::MultiChannelSorting </td>
+          <td class="memname">__host__ __device__ static __forceinline__ cudaError_t cub::DeviceHistogram::MultiChannelGlobalAtomic </td>
           <td>(</td>
           <td class="paramtype">void *&#160;</td>
           <td class="paramname"><em>d_temp_storage</em>, </td>
@@ -578,12 +220,13 @@ template&lt;int BINS, int CHANNELS, int ACTIVE_CHANNELS, typename InputIteratorR
 </table>
 </div><div class="memdoc">
 
-<p>Computes a device-wide histogram from multi-channel data. Uses fast block-sorting to compute the histogram. Delivers consistent throughput regardless of sample diversity, but occupancy may be limited by histogram bin count. </p>
-<p>However, because histograms are privatized in shared memory, a large number of bins (e.g., thousands) may adversely affect occupancy and performance (or even the ability to launch).</p>
+<p>Computes a device-wide histogram from multi-channel data. Uses global-memory atomic read-modify-write operations to compute the histogram. Input samples having lower diversity can cause performance to be degraded. </p>
+<p>Performance is not significantly impacted when computing histograms having large numbers of bins (e.g., thousands).</p>
 <p>The total number of samples across all channels (<code>num_samples</code>) must be a whole multiple of <code>CHANNELS</code>.</p>
 <p>This operation requires an allocation of temporary device storage. When <code>d_temp_storage</code> is NULL, no work is done and the required allocation size is returned in <code>temp_storage_bytes</code>.</p>
 <p>When calling this method from kernel code, be sure to define the <code>CUB_CDP</code> macro in your compiler's macro definitions.</p>
 <p>Random-access input/output iterators can be used instead of naked device pointers (e.g., a zip-iterator for fusing multiple inputs).</p>
+<p>Performance is often improved when referencing input samples through a texture-caching iterator, e.g., <a class="el" href="classcub_1_1_tex_iterator_r_a.html" title="A simple random-access iterator for loading primitive values through texture cache. ">cub::TexIteratorRA</a> or <a class="el" href="classcub_1_1_tex_transform_iterator_r_a.html" title="A simple random-access transform iterator for loading primitive values through texture cache and and ...">cub::TexTransformIteratorRA</a>.</p>
 <dl class="section user"><dt></dt><dd>The code snippet below illustrates the computation of three 256-bin histograms from interleaved quad-channel <code>unsigned char</code> samples (e.g., RGB histograms from RGBA samples). </dd></dl>
 <dl class="section user"><dt></dt><dd><div class="fragment"><div class="line"><span class="preprocessor">#include &lt;<a class="code" href="cub_8cuh.html">cub/cub.cuh</a>&gt;</span></div>
 <div class="line">...</div>
@@ -602,13 +245,13 @@ template&lt;int BINS, int CHANNELS, int ACTIVE_CHANNELS, typename InputIteratorR
 <div class="line"><span class="comment">// Determine temporary device storage requirements for histogram computation</span></div>
 <div class="line"><span class="keywordtype">void</span> *d_temp_storage = NULL;</div>
 <div class="line"><span class="keywordtype">size_t</span> temp_storage_bytes = 0;</div>
-<div class="line">cub::DeviceHistogram::MultiChannelSorting&lt;256&gt;(d_temp_storage, temp_storage_bytes, d_samples_tex_itr, d_histograms, num_items);</div>
+<div class="line">cub::DeviceHistogram::MultiChannelGlobalAtomic&lt;256&gt;(d_temp_storage, temp_storage_bytes, d_samples_tex_itr, d_histograms, num_items);</div>
 <div class="line"></div>
 <div class="line"><span class="comment">// Allocate temporary storage for histogram computation</span></div>
 <div class="line">cudaMalloc(&amp;d_temp_storage, temp_storage_bytes);</div>
 <div class="line"></div>
 <div class="line"><span class="comment">// Compute histograms</span></div>
-<div class="line">cub::DeviceHistogram::MultiChannelSorting&lt;256&gt;(d_temp_storage, temp_storage_bytes, d_samples_tex_itr, d_histograms, num_items);</div>
+<div class="line">cub::DeviceHistogram::MultiChannelGlobalAtomic&lt;256&gt;(d_temp_storage, temp_storage_bytes, d_samples_tex_itr, d_histograms, num_items);</div>
 <div class="line"></div>
 <div class="line"><span class="comment">// Unbind texture iterator</span></div>
 <div class="line">d_samples_tex_itr.UnbindTexture();</div>
@@ -635,6 +278,8 @@ template&lt;int BINS, int CHANNELS, int ACTIVE_CHANNELS, typename InputIteratorR
   </table>
   </dd>
 </dl>
+
+<p>Definition at line <a class="el" href="device__histogram_8cuh_source.html#l01041">1041</a> of file <a class="el" href="device__histogram_8cuh_source.html">device_histogram.cuh</a>.</p>
 
 </div>
 </div>
@@ -760,9 +405,11 @@ template&lt;int BINS, int CHANNELS, int ACTIVE_CHANNELS, typename InputIteratorR
   </dd>
 </dl>
 
+<p>Definition at line <a class="el" href="device__histogram_8cuh_source.html#l00963">963</a> of file <a class="el" href="device__histogram_8cuh_source.html">device_histogram.cuh</a>.</p>
+
 </div>
 </div>
-<a class="anchor" id="a0e6bee2938ad70ab128ed1a1c5f6d083"></a>
+<a class="anchor" id="a7f9a00987e98b828823f062d563aaa8c"></a>
 <div class="memitem">
 <div class="memproto">
 <div class="memtemplate">
@@ -772,7 +419,7 @@ template&lt;int BINS, int CHANNELS, int ACTIVE_CHANNELS, typename InputIteratorR
   <td class="mlabels-left">
       <table class="memname">
         <tr>
-          <td class="memname">__host__ __device__ static __forceinline__ cudaError_t cub::DeviceHistogram::MultiChannelGlobalAtomic </td>
+          <td class="memname">__host__ __device__ static __forceinline__ cudaError_t cub::DeviceHistogram::MultiChannelSorting </td>
           <td>(</td>
           <td class="paramtype">void *&#160;</td>
           <td class="paramname"><em>d_temp_storage</em>, </td>
@@ -826,13 +473,12 @@ template&lt;int BINS, int CHANNELS, int ACTIVE_CHANNELS, typename InputIteratorR
 </table>
 </div><div class="memdoc">
 
-<p>Computes a device-wide histogram from multi-channel data. Uses global-memory atomic read-modify-write operations to compute the histogram. Input samples having lower diversity can cause performance to be degraded. </p>
-<p>Performance is not significantly impacted when computing histograms having large numbers of bins (e.g., thousands).</p>
+<p>Computes a device-wide histogram from multi-channel data. Uses fast block-sorting to compute the histogram. Delivers consistent throughput regardless of sample diversity, but occupancy may be limited by histogram bin count. </p>
+<p>However, because histograms are privatized in shared memory, a large number of bins (e.g., thousands) may adversely affect occupancy and performance (or even the ability to launch).</p>
 <p>The total number of samples across all channels (<code>num_samples</code>) must be a whole multiple of <code>CHANNELS</code>.</p>
 <p>This operation requires an allocation of temporary device storage. When <code>d_temp_storage</code> is NULL, no work is done and the required allocation size is returned in <code>temp_storage_bytes</code>.</p>
 <p>When calling this method from kernel code, be sure to define the <code>CUB_CDP</code> macro in your compiler's macro definitions.</p>
 <p>Random-access input/output iterators can be used instead of naked device pointers (e.g., a zip-iterator for fusing multiple inputs).</p>
-<p>Performance is often improved when referencing input samples through a texture-caching iterator, e.g., <a class="el" href="classcub_1_1_tex_iterator_r_a.html" title="A simple random-access iterator for loading primitive values through texture cache. ">cub::TexIteratorRA</a> or <a class="el" href="classcub_1_1_tex_transform_iterator_r_a.html" title="A simple random-access transform iterator for loading primitive values through texture cache and and ...">cub::TexTransformIteratorRA</a>.</p>
 <dl class="section user"><dt></dt><dd>The code snippet below illustrates the computation of three 256-bin histograms from interleaved quad-channel <code>unsigned char</code> samples (e.g., RGB histograms from RGBA samples). </dd></dl>
 <dl class="section user"><dt></dt><dd><div class="fragment"><div class="line"><span class="preprocessor">#include &lt;<a class="code" href="cub_8cuh.html">cub/cub.cuh</a>&gt;</span></div>
 <div class="line">...</div>
@@ -851,13 +497,13 @@ template&lt;int BINS, int CHANNELS, int ACTIVE_CHANNELS, typename InputIteratorR
 <div class="line"><span class="comment">// Determine temporary device storage requirements for histogram computation</span></div>
 <div class="line"><span class="keywordtype">void</span> *d_temp_storage = NULL;</div>
 <div class="line"><span class="keywordtype">size_t</span> temp_storage_bytes = 0;</div>
-<div class="line">cub::DeviceHistogram::MultiChannelGlobalAtomic&lt;256&gt;(d_temp_storage, temp_storage_bytes, d_samples_tex_itr, d_histograms, num_items);</div>
+<div class="line">cub::DeviceHistogram::MultiChannelSorting&lt;256&gt;(d_temp_storage, temp_storage_bytes, d_samples_tex_itr, d_histograms, num_items);</div>
 <div class="line"></div>
 <div class="line"><span class="comment">// Allocate temporary storage for histogram computation</span></div>
 <div class="line">cudaMalloc(&amp;d_temp_storage, temp_storage_bytes);</div>
 <div class="line"></div>
 <div class="line"><span class="comment">// Compute histograms</span></div>
-<div class="line">cub::DeviceHistogram::MultiChannelGlobalAtomic&lt;256&gt;(d_temp_storage, temp_storage_bytes, d_samples_tex_itr, d_histograms, num_items);</div>
+<div class="line">cub::DeviceHistogram::MultiChannelSorting&lt;256&gt;(d_temp_storage, temp_storage_bytes, d_samples_tex_itr, d_histograms, num_items);</div>
 <div class="line"></div>
 <div class="line"><span class="comment">// Unbind texture iterator</span></div>
 <div class="line">d_samples_tex_itr.UnbindTexture();</div>
@@ -885,16 +531,384 @@ template&lt;int BINS, int CHANNELS, int ACTIVE_CHANNELS, typename InputIteratorR
   </dd>
 </dl>
 
+<p>Definition at line <a class="el" href="device__histogram_8cuh_source.html#l00886">886</a> of file <a class="el" href="device__histogram_8cuh_source.html">device_histogram.cuh</a>.</p>
+
+</div>
+</div>
+<a class="anchor" id="a6659e9723fda5e5c0ac587aa66fb54c3"></a>
+<div class="memitem">
+<div class="memproto">
+<div class="memtemplate">
+template&lt;int BINS, typename InputIteratorRA , typename HistoCounter &gt; </div>
+<table class="mlabels">
+  <tr>
+  <td class="mlabels-left">
+      <table class="memname">
+        <tr>
+          <td class="memname">__host__ __device__ static __forceinline__ cudaError_t cub::DeviceHistogram::SingleChannelGlobalAtomic </td>
+          <td>(</td>
+          <td class="paramtype">void *&#160;</td>
+          <td class="paramname"><em>d_temp_storage</em>, </td>
+        </tr>
+        <tr>
+          <td class="paramkey"></td>
+          <td></td>
+          <td class="paramtype">size_t &amp;&#160;</td>
+          <td class="paramname"><em>temp_storage_bytes</em>, </td>
+        </tr>
+        <tr>
+          <td class="paramkey"></td>
+          <td></td>
+          <td class="paramtype">InputIteratorRA&#160;</td>
+          <td class="paramname"><em>d_samples</em>, </td>
+        </tr>
+        <tr>
+          <td class="paramkey"></td>
+          <td></td>
+          <td class="paramtype">HistoCounter *&#160;</td>
+          <td class="paramname"><em>d_histogram</em>, </td>
+        </tr>
+        <tr>
+          <td class="paramkey"></td>
+          <td></td>
+          <td class="paramtype">int&#160;</td>
+          <td class="paramname"><em>num_samples</em>, </td>
+        </tr>
+        <tr>
+          <td class="paramkey"></td>
+          <td></td>
+          <td class="paramtype">cudaStream_t&#160;</td>
+          <td class="paramname"><em>stream</em> = <code>0</code>, </td>
+        </tr>
+        <tr>
+          <td class="paramkey"></td>
+          <td></td>
+          <td class="paramtype">bool&#160;</td>
+          <td class="paramname"><em>stream_synchronous</em> = <code>false</code>&#160;</td>
+        </tr>
+        <tr>
+          <td></td>
+          <td>)</td>
+          <td></td><td></td>
+        </tr>
+      </table>
+  </td>
+  <td class="mlabels-right">
+<span class="mlabels"><span class="mlabel">inline</span><span class="mlabel">static</span></span>  </td>
+  </tr>
+</table>
+</div><div class="memdoc">
+
+<p>Computes a device-wide histogram. Uses global-memory atomic read-modify-write operations to compute the histogram. Input samples having lower diversity can cause performance to be degraded. </p>
+<p>Performance is not significantly impacted when computing histograms having large numbers of bins (e.g., thousands).</p>
+<p>This operation requires an allocation of temporary device storage. When <code>d_temp_storage</code> is NULL, no work is done and the required allocation size is returned in <code>temp_storage_bytes</code>.</p>
+<p>When calling this method from kernel code, be sure to define the <code>CUB_CDP</code> macro in your compiler's macro definitions.</p>
+<p>Random-access input/output iterators can be used instead of naked device pointers (e.g., a zip-iterator for fusing multiple inputs).</p>
+<dl class="section user"><dt></dt><dd>The code snippet below illustrates the computation of a 256-bin histogram of single-channel <code>unsigned char</code> samples. </dd></dl>
+<dl class="section user"><dt></dt><dd><div class="fragment"><div class="line"><span class="preprocessor">#include &lt;<a class="code" href="cub_8cuh.html">cub/cub.cuh</a>&gt;</span></div>
+<div class="line">...</div>
+<div class="line"></div>
+<div class="line"><span class="comment">// Declare and initialize device pointers for input samples and 256-bin output histogram</span></div>
+<div class="line">unsigned <span class="keywordtype">char</span> *d_samples;</div>
+<div class="line"><span class="keywordtype">unsigned</span> <span class="keywordtype">int</span> *d_histogram;</div>
+<div class="line"><span class="keywordtype">int</span> num_items = ...</div>
+<div class="line">...</div>
+<div class="line"></div>
+<div class="line"><span class="comment">// Wrap d_samples device pointer in a random-access texture iterator</span></div>
+<div class="line"><a class="code" href="classcub_1_1_tex_iterator_r_a.html" title="A simple random-access iterator for loading primitive values through texture cache. ">cub::TexIteratorRA&lt;unsigned int&gt;</a> d_samples_tex_itr;</div>
+<div class="line">d_samples_tex_itr.<a class="code" href="classcub_1_1_tex_iterator_r_a.html#aae5f3547c60cf33d51c65685ea9d131a" title="Bind iterator to texture reference. ">BindTexture</a>(d_samples, num_items * <span class="keyword">sizeof</span>(<span class="keywordtype">unsigned</span> <span class="keywordtype">char</span>));</div>
+<div class="line"></div>
+<div class="line"><span class="comment">// Determine temporary device storage requirements for histogram computation</span></div>
+<div class="line"><span class="keywordtype">void</span> *d_temp_storage = NULL;</div>
+<div class="line"><span class="keywordtype">size_t</span> temp_storage_bytes = 0;</div>
+<div class="line">cub::DeviceHistogram::SingleChannelSorting&lt;256&gt;(d_temp_storage, temp_storage_bytes, d_samples_tex_itr, d_histogram, num_items);</div>
+<div class="line"></div>
+<div class="line"><span class="comment">// Allocate temporary storage for histogram computation</span></div>
+<div class="line">cudaMalloc(&amp;d_temp_storage, temp_storage_bytes);</div>
+<div class="line"></div>
+<div class="line"><span class="comment">// Compute histogram</span></div>
+<div class="line">cub::DeviceHistogram::SingleChannelGlobalAtomic&lt;256&gt;(d_temp_storage, temp_storage_bytes, d_samples_tex_itr, d_histogram, num_items);</div>
+<div class="line"></div>
+<div class="line"><span class="comment">// Unbind texture iterator</span></div>
+<div class="line">d_samples_tex_itr.UnbindTexture();</div>
+</div><!-- fragment --></dd></dl>
+<dl class="tparams"><dt>Template Parameters</dt><dd>
+  <table class="tparams">
+    <tr><td class="paramname">BINS</td><td>Number of histogram bins per channel </td></tr>
+    <tr><td class="paramname">InputIteratorRA</td><td><b>[inferred]</b> Random-access iterator type for input (may be a simple pointer type) Must have a value type that can be cast as an integer in the range [0..BINS-1] </td></tr>
+    <tr><td class="paramname">HistoCounter</td><td><b>[inferred]</b> Integral type for counting sample occurrences per histogram bin </td></tr>
+  </table>
+  </dd>
+</dl>
+<dl class="params"><dt>Parameters</dt><dd>
+  <table class="params">
+    <tr><td class="paramdir">[in]</td><td class="paramname">d_temp_storage</td><td>Device allocation of temporary storage. When NULL, the required allocation size is returned in <code>temp_storage_bytes</code> and no work is done. </td></tr>
+    <tr><td class="paramdir">[in,out]</td><td class="paramname">temp_storage_bytes</td><td>Size in bytes of <code>d_temp_storage</code> allocation. </td></tr>
+    <tr><td class="paramdir">[in]</td><td class="paramname">d_samples</td><td>Input samples </td></tr>
+    <tr><td class="paramdir">[out]</td><td class="paramname">d_histogram</td><td>Array of BINS counters of integral type <code>HistoCounter</code>. </td></tr>
+    <tr><td class="paramdir">[in]</td><td class="paramname">num_samples</td><td>Number of samples to process </td></tr>
+    <tr><td class="paramdir">[in]</td><td class="paramname">stream</td><td><b>[optional]</b> CUDA stream to launch kernels within. Default is stream<sub>0</sub>. </td></tr>
+    <tr><td class="paramdir">[in]</td><td class="paramname">stream_synchronous</td><td><b>[optional]</b> Whether or not to synchronize the stream after every kernel launch to check for errors. May cause significant slowdown. Default is <code>false</code>. </td></tr>
+  </table>
+  </dd>
+</dl>
+
+<p>Definition at line <a class="el" href="device__histogram_8cuh_source.html#l00802">802</a> of file <a class="el" href="device__histogram_8cuh_source.html">device_histogram.cuh</a>.</p>
+
+</div>
+</div>
+<a class="anchor" id="a425559a4dc730f55f46e0faa5080e266"></a>
+<div class="memitem">
+<div class="memproto">
+<div class="memtemplate">
+template&lt;int BINS, typename InputIteratorRA , typename HistoCounter &gt; </div>
+<table class="mlabels">
+  <tr>
+  <td class="mlabels-left">
+      <table class="memname">
+        <tr>
+          <td class="memname">__host__ __device__ static __forceinline__ cudaError_t cub::DeviceHistogram::SingleChannelSharedAtomic </td>
+          <td>(</td>
+          <td class="paramtype">void *&#160;</td>
+          <td class="paramname"><em>d_temp_storage</em>, </td>
+        </tr>
+        <tr>
+          <td class="paramkey"></td>
+          <td></td>
+          <td class="paramtype">size_t &amp;&#160;</td>
+          <td class="paramname"><em>temp_storage_bytes</em>, </td>
+        </tr>
+        <tr>
+          <td class="paramkey"></td>
+          <td></td>
+          <td class="paramtype">InputIteratorRA&#160;</td>
+          <td class="paramname"><em>d_samples</em>, </td>
+        </tr>
+        <tr>
+          <td class="paramkey"></td>
+          <td></td>
+          <td class="paramtype">HistoCounter *&#160;</td>
+          <td class="paramname"><em>d_histogram</em>, </td>
+        </tr>
+        <tr>
+          <td class="paramkey"></td>
+          <td></td>
+          <td class="paramtype">int&#160;</td>
+          <td class="paramname"><em>num_samples</em>, </td>
+        </tr>
+        <tr>
+          <td class="paramkey"></td>
+          <td></td>
+          <td class="paramtype">cudaStream_t&#160;</td>
+          <td class="paramname"><em>stream</em> = <code>0</code>, </td>
+        </tr>
+        <tr>
+          <td class="paramkey"></td>
+          <td></td>
+          <td class="paramtype">bool&#160;</td>
+          <td class="paramname"><em>stream_synchronous</em> = <code>false</code>&#160;</td>
+        </tr>
+        <tr>
+          <td></td>
+          <td>)</td>
+          <td></td><td></td>
+        </tr>
+      </table>
+  </td>
+  <td class="mlabels-right">
+<span class="mlabels"><span class="mlabel">inline</span><span class="mlabel">static</span></span>  </td>
+  </tr>
+</table>
+</div><div class="memdoc">
+
+<p>Computes a device-wide histogram. Uses shared-memory atomic read-modify-write operations to compute the histogram. Input samples having lower diversity can cause performance to be degraded, and occupancy may be limited by histogram bin count. </p>
+<p>However, because histograms are privatized in shared memory, a large number of bins (e.g., thousands) may adversely affect occupancy and performance (or even the ability to launch).</p>
+<p>This operation requires an allocation of temporary device storage. When <code>d_temp_storage</code> is NULL, no work is done and the required allocation size is returned in <code>temp_storage_bytes</code>.</p>
+<p>When calling this method from kernel code, be sure to define the <code>CUB_CDP</code> macro in your compiler's macro definitions.</p>
+<p>Random-access input/output iterators can be used instead of naked device pointers (e.g., a zip-iterator for fusing multiple inputs).</p>
+<dl class="section user"><dt></dt><dd>The code snippet below illustrates the computation of a 256-bin histogram of single-channel <code>unsigned char</code> samples. </dd></dl>
+<dl class="section user"><dt></dt><dd><div class="fragment"><div class="line"><span class="preprocessor">#include &lt;<a class="code" href="cub_8cuh.html">cub/cub.cuh</a>&gt;</span></div>
+<div class="line">...</div>
+<div class="line"></div>
+<div class="line"><span class="comment">// Declare and initialize device pointers for input samples and 256-bin output histogram</span></div>
+<div class="line">unsigned <span class="keywordtype">char</span> *d_samples;</div>
+<div class="line"><span class="keywordtype">unsigned</span> <span class="keywordtype">int</span> *d_histogram;</div>
+<div class="line"><span class="keywordtype">int</span> num_items = ...</div>
+<div class="line">...</div>
+<div class="line"></div>
+<div class="line"><span class="comment">// Wrap d_samples device pointer in a random-access texture iterator</span></div>
+<div class="line"><a class="code" href="classcub_1_1_tex_iterator_r_a.html" title="A simple random-access iterator for loading primitive values through texture cache. ">cub::TexIteratorRA&lt;unsigned int&gt;</a> d_samples_tex_itr;</div>
+<div class="line">d_samples_tex_itr.<a class="code" href="classcub_1_1_tex_iterator_r_a.html#aae5f3547c60cf33d51c65685ea9d131a" title="Bind iterator to texture reference. ">BindTexture</a>(d_samples, num_items * <span class="keyword">sizeof</span>(<span class="keywordtype">unsigned</span> <span class="keywordtype">char</span>));</div>
+<div class="line"></div>
+<div class="line"><span class="comment">// Determine temporary device storage requirements for histogram computation</span></div>
+<div class="line"><span class="keywordtype">void</span> *d_temp_storage = NULL;</div>
+<div class="line"><span class="keywordtype">size_t</span> temp_storage_bytes = 0;</div>
+<div class="line">cub::DeviceHistogram::SingleChannelSorting&lt;256&gt;(d_temp_storage, temp_storage_bytes, d_samples_tex_itr, d_histogram, num_items);</div>
+<div class="line"></div>
+<div class="line"><span class="comment">// Allocate temporary storage for histogram computation</span></div>
+<div class="line">cudaMalloc(&amp;d_temp_storage, temp_storage_bytes);</div>
+<div class="line"></div>
+<div class="line"><span class="comment">// Compute histogram</span></div>
+<div class="line">cub::DeviceHistogram::SingleChannelSharedAtomic&lt;256&gt;(d_temp_storage, temp_storage_bytes, d_samples_tex_itr, d_histogram, num_items);</div>
+<div class="line"></div>
+<div class="line"><span class="comment">// Unbind texture iterator</span></div>
+<div class="line">d_samples_tex_itr.UnbindTexture();</div>
+</div><!-- fragment --></dd></dl>
+<dl class="tparams"><dt>Template Parameters</dt><dd>
+  <table class="tparams">
+    <tr><td class="paramname">BINS</td><td>Number of histogram bins per channel </td></tr>
+    <tr><td class="paramname">InputIteratorRA</td><td><b>[inferred]</b> Random-access iterator type for input (may be a simple pointer type) Must have a value type that can be cast as an integer in the range [0..BINS-1] </td></tr>
+    <tr><td class="paramname">HistoCounter</td><td><b>[inferred]</b> Integral type for counting sample occurrences per histogram bin </td></tr>
+  </table>
+  </dd>
+</dl>
+<dl class="params"><dt>Parameters</dt><dd>
+  <table class="params">
+    <tr><td class="paramdir">[in]</td><td class="paramname">d_temp_storage</td><td>Device allocation of temporary storage. When NULL, the required allocation size is returned in <code>temp_storage_bytes</code> and no work is done. </td></tr>
+    <tr><td class="paramdir">[in,out]</td><td class="paramname">temp_storage_bytes</td><td>Size in bytes of <code>d_temp_storage</code> allocation. </td></tr>
+    <tr><td class="paramdir">[in]</td><td class="paramname">d_samples</td><td>Input samples </td></tr>
+    <tr><td class="paramdir">[out]</td><td class="paramname">d_histogram</td><td>Array of BINS counters of integral type <code>HistoCounter</code>. </td></tr>
+    <tr><td class="paramdir">[in]</td><td class="paramname">num_samples</td><td>Number of samples to process </td></tr>
+    <tr><td class="paramdir">[in]</td><td class="paramname">stream</td><td><b>[optional]</b> CUDA stream to launch kernels within. Default is stream<sub>0</sub>. </td></tr>
+    <tr><td class="paramdir">[in]</td><td class="paramname">stream_synchronous</td><td><b>[optional]</b> Whether or not to synchronize the stream after every kernel launch to check for errors. May cause significant slowdown. Default is <code>false</code>. </td></tr>
+  </table>
+  </dd>
+</dl>
+
+<p>Definition at line <a class="el" href="device__histogram_8cuh_source.html#l00733">733</a> of file <a class="el" href="device__histogram_8cuh_source.html">device_histogram.cuh</a>.</p>
+
+</div>
+</div>
+<a class="anchor" id="ad0cc7bacd6022916cb228437eeb9c82a"></a>
+<div class="memitem">
+<div class="memproto">
+<div class="memtemplate">
+template&lt;int BINS, typename InputIteratorRA , typename HistoCounter &gt; </div>
+<table class="mlabels">
+  <tr>
+  <td class="mlabels-left">
+      <table class="memname">
+        <tr>
+          <td class="memname">__host__ __device__ static __forceinline__ cudaError_t cub::DeviceHistogram::SingleChannelSorting </td>
+          <td>(</td>
+          <td class="paramtype">void *&#160;</td>
+          <td class="paramname"><em>d_temp_storage</em>, </td>
+        </tr>
+        <tr>
+          <td class="paramkey"></td>
+          <td></td>
+          <td class="paramtype">size_t &amp;&#160;</td>
+          <td class="paramname"><em>temp_storage_bytes</em>, </td>
+        </tr>
+        <tr>
+          <td class="paramkey"></td>
+          <td></td>
+          <td class="paramtype">InputIteratorRA&#160;</td>
+          <td class="paramname"><em>d_samples</em>, </td>
+        </tr>
+        <tr>
+          <td class="paramkey"></td>
+          <td></td>
+          <td class="paramtype">HistoCounter *&#160;</td>
+          <td class="paramname"><em>d_histogram</em>, </td>
+        </tr>
+        <tr>
+          <td class="paramkey"></td>
+          <td></td>
+          <td class="paramtype">int&#160;</td>
+          <td class="paramname"><em>num_samples</em>, </td>
+        </tr>
+        <tr>
+          <td class="paramkey"></td>
+          <td></td>
+          <td class="paramtype">cudaStream_t&#160;</td>
+          <td class="paramname"><em>stream</em> = <code>0</code>, </td>
+        </tr>
+        <tr>
+          <td class="paramkey"></td>
+          <td></td>
+          <td class="paramtype">bool&#160;</td>
+          <td class="paramname"><em>stream_synchronous</em> = <code>false</code>&#160;</td>
+        </tr>
+        <tr>
+          <td></td>
+          <td>)</td>
+          <td></td><td></td>
+        </tr>
+      </table>
+  </td>
+  <td class="mlabels-right">
+<span class="mlabels"><span class="mlabel">inline</span><span class="mlabel">static</span></span>  </td>
+  </tr>
+</table>
+</div><div class="memdoc">
+
+<p>Computes a device-wide histogram. Uses fast block-sorting to compute the histogram. Delivers consistent throughput regardless of sample diversity, but occupancy may be limited by histogram bin count. </p>
+<p>However, because histograms are privatized in shared memory, a large number of bins (e.g., thousands) may adversely affect occupancy and performance (or even the ability to launch).</p>
+<p>This operation requires an allocation of temporary device storage. When <code>d_temp_storage</code> is NULL, no work is done and the required allocation size is returned in <code>temp_storage_bytes</code>.</p>
+<p>When calling this method from kernel code, be sure to define the <code>CUB_CDP</code> macro in your compiler's macro definitions.</p>
+<p>Random-access input/output iterators can be used instead of naked device pointers (e.g., a zip-iterator for fusing multiple inputs).</p>
+<dl class="section user"><dt></dt><dd>The code snippet below illustrates the computation of a 256-bin histogram of single-channel <code>unsigned char</code> samples. </dd></dl>
+<dl class="section user"><dt></dt><dd><div class="fragment"><div class="line"><span class="preprocessor">#include &lt;<a class="code" href="cub_8cuh.html">cub/cub.cuh</a>&gt;</span></div>
+<div class="line">...</div>
+<div class="line"></div>
+<div class="line"><span class="comment">// Declare and initialize device pointers for input samples and 256-bin output histogram</span></div>
+<div class="line">unsigned <span class="keywordtype">char</span> *d_samples;</div>
+<div class="line"><span class="keywordtype">unsigned</span> <span class="keywordtype">int</span> *d_histogram;</div>
+<div class="line"><span class="keywordtype">int</span> num_items = ...</div>
+<div class="line">...</div>
+<div class="line"></div>
+<div class="line"><span class="comment">// Wrap d_samples device pointer in a random-access texture iterator</span></div>
+<div class="line"><a class="code" href="classcub_1_1_tex_iterator_r_a.html" title="A simple random-access iterator for loading primitive values through texture cache. ">cub::TexIteratorRA&lt;unsigned int&gt;</a> d_samples_tex_itr;</div>
+<div class="line">d_samples_tex_itr.<a class="code" href="classcub_1_1_tex_iterator_r_a.html#aae5f3547c60cf33d51c65685ea9d131a" title="Bind iterator to texture reference. ">BindTexture</a>(d_samples, num_items * <span class="keyword">sizeof</span>(<span class="keywordtype">unsigned</span> <span class="keywordtype">char</span>));</div>
+<div class="line"></div>
+<div class="line"><span class="comment">// Determine temporary device storage requirements for histogram computation</span></div>
+<div class="line"><span class="keywordtype">void</span> *d_temp_storage = NULL;</div>
+<div class="line"><span class="keywordtype">size_t</span> temp_storage_bytes = 0;</div>
+<div class="line">cub::DeviceHistogram::SingleChannelSorting&lt;256&gt;(d_temp_storage, temp_storage_bytes, d_samples_tex_itr, d_histogram, num_items);</div>
+<div class="line"></div>
+<div class="line"><span class="comment">// Allocate temporary storage for histogram computation</span></div>
+<div class="line">cudaMalloc(&amp;d_temp_storage, temp_storage_bytes);</div>
+<div class="line"></div>
+<div class="line"><span class="comment">// Compute histogram</span></div>
+<div class="line">cub::DeviceHistogram::SingleChannelSorting&lt;256&gt;(d_temp_storage, temp_storage_bytes, d_samples_tex_itr, d_histogram, num_items);</div>
+<div class="line"></div>
+<div class="line"><span class="comment">// Unbind texture iterator</span></div>
+<div class="line">d_samples_tex_itr.UnbindTexture();</div>
+</div><!-- fragment --></dd></dl>
+<dl class="tparams"><dt>Template Parameters</dt><dd>
+  <table class="tparams">
+    <tr><td class="paramname">BINS</td><td>Number of histogram bins per channel </td></tr>
+    <tr><td class="paramname">InputIteratorRA</td><td><b>[inferred]</b> Random-access iterator type for input (may be a simple pointer type) Must have a value type that can be cast as an integer in the range [0..BINS-1] </td></tr>
+    <tr><td class="paramname">HistoCounter</td><td><b>[inferred]</b> Integral type for counting sample occurrences per histogram bin </td></tr>
+  </table>
+  </dd>
+</dl>
+<dl class="params"><dt>Parameters</dt><dd>
+  <table class="params">
+    <tr><td class="paramdir">[in]</td><td class="paramname">d_temp_storage</td><td>Device allocation of temporary storage. When NULL, the required allocation size is returned in <code>temp_storage_bytes</code> and no work is done. </td></tr>
+    <tr><td class="paramdir">[in,out]</td><td class="paramname">temp_storage_bytes</td><td>Size in bytes of <code>d_temp_storage</code> allocation. </td></tr>
+    <tr><td class="paramdir">[in]</td><td class="paramname">d_samples</td><td>Input samples </td></tr>
+    <tr><td class="paramdir">[out]</td><td class="paramname">d_histogram</td><td>Array of BINS counters of integral type <code>HistoCounter</code>. </td></tr>
+    <tr><td class="paramdir">[in]</td><td class="paramname">num_samples</td><td>Number of samples to process </td></tr>
+    <tr><td class="paramdir">[in]</td><td class="paramname">stream</td><td><b>[optional]</b> CUDA stream to launch kernels within. Default is stream<sub>0</sub>. </td></tr>
+    <tr><td class="paramdir">[in]</td><td class="paramname">stream_synchronous</td><td><b>[optional]</b> Whether or not to synchronize the stream after every kernel launch to check for errors. Default is <code>false</code>. </td></tr>
+  </table>
+  </dd>
+</dl>
+
+<p>Definition at line <a class="el" href="device__histogram_8cuh_source.html#l00663">663</a> of file <a class="el" href="device__histogram_8cuh_source.html">device_histogram.cuh</a>.</p>
+
 </div>
 </div>
 <hr/>The documentation for this struct was generated from the following file:<ul>
-<li><a class="el" href="device__histogram_8cuh.html">device_histogram.cuh</a></li>
+<li><a class="el" href="device__histogram_8cuh_source.html">device_histogram.cuh</a></li>
 </ul>
 </div><!-- contents -->
 <!-- HTML footer for doxygen 1.8.3.1-->
 <!-- start footer part -->
 <hr class="footer"/><address class="footer"><small>
-Generated on Wed Aug 14 2013 12:56:06 for CUB by &#160;<a href="http://www.doxygen.org/index.html">
+Generated on Fri Aug 23 2013 17:31:12 for CUB by &#160;<a href="http://www.doxygen.org/index.html">
 <img class="footer" src="doxygen.png" alt="doxygen"/>
 </a> 1.8.4
 <br>

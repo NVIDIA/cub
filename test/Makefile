@@ -304,14 +304,14 @@ bin/test_block_radix_sort_$(SUFFIX) : test_block_radix_sort.cu $(DEPS)
 
 
 #-------------------------------------------------------------------------------
-# make test_block_serialize
+# make test_block_histogram 
 #-------------------------------------------------------------------------------
 
-test_block_serialize: bin/test_block_serialize_$(SUFFIX)
+test_block_histogram: bin/test_block_histogram_$(SUFFIX)
 
-bin/test_block_serialize_$(SUFFIX) : test_block_serialize.cu $(DEPS)
+bin/test_block_histogram_$(SUFFIX) : test_block_histogram.cu $(DEPS)
 	mkdir -p bin
-	$(NVCC) $(DEFINES) $(SM_TARGETS) -o bin/test_block_serialize_$(SUFFIX) test_block_serialize.cu $(NVCCFLAGS) $(CPU_ARCH) $(INC) $(LIBS) -O3
+	$(NVCC) $(DEFINES) $(SM_TARGETS) -o bin/test_block_histogram_$(SUFFIX) test_block_histogram.cu $(NVCCFLAGS) $(CPU_ARCH) $(INC) $(LIBS) -O3
 
 
 #-------------------------------------------------------------------------------

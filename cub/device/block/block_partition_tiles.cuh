@@ -35,12 +35,11 @@
 
 #include <iterator>
 
-#include "scan_tiles_types.cuh"
-#include "../../thread/thread_operators.cuh"
+#include "device_scan_types.cuh"
 #include "../../block/block_load.cuh"
 #include "../../block/block_store.cuh"
 #include "../../block/block_scan.cuh"
-#include "../../util_vector.cuh"
+#include "../../grid/grid_queue.cuh"
 #include "../../util_namespace.cuh"
 
 /// Optional outer namespace(s)
@@ -58,96 +57,32 @@ namespace cub {
  * Tuning policy for BlockPartitionTiles
  */
 template <
-    int                         _PARTITIONS,
     int                         _BLOCK_THREADS,
     int                         _ITEMS_PER_THREAD,
+    BlockLoadAlgorithm          _LOAD_ALGORITHM,
+    bool                        _LOAD_WARP_TIME_SLICING,
     PtxLoadModifier             _LOAD_MODIFIER,
-    BlockScanAlgorithm          _SCAN_ALGORITHM>
+    BlockStoreAlgorithm         _STORE_ALGORITHM,
+    bool                        _STORE_WARP_TIME_SLICING,
+    BlockScanAlgorithm          _SCAN_ALGORITHM,
+    bool                        _BACKFILL_SECOND_PARTITION>
 struct BlockPartitionTilesPolicy
 {
     enum
     {
-        PARTITIONS              = _PARTITIONS,
-        BLOCK_THREADS           = _BLOCK_THREADS,
-        ITEMS_PER_THREAD        = _ITEMS_PER_THREAD,
+        BLOCK_THREADS               = _BLOCK_THREADS,
+        ITEMS_PER_THREAD            = _ITEMS_PER_THREAD,
+        LOAD_WARP_TIME_SLICING      = _LOAD_WARP_TIME_SLICING,
+        STORE_WARP_TIME_SLICING     = _STORE_WARP_TIME_SLICING,
+        BACKFILL_SECOND_PARTITION   = _BACKFILL_SECOND_PARTITION,
     };
 
+    static const BlockLoadAlgorithm     LOAD_ALGORITHM      = _LOAD_ALGORITHM;
     static const PtxLoadModifier        LOAD_MODIFIER       = _LOAD_MODIFIER;
+    static const BlockStoreAlgorithm    STORE_ALGORITHM     = _STORE_ALGORITHM;
     static const BlockScanAlgorithm     SCAN_ALGORITHM      = _SCAN_ALGORITHM;
 };
 
-
-
-/**
- * Tuple type for scanning partition membership flags
- */
-template <
-    typename    SizeT,
-    int         PARTITIONS>
-struct PartitionScanTuple;
-
-
-/**
- * Tuple type for scanning partition membership flags (specialized for 1 output partition)
- */
-template <typename SizeT>
-struct PartitionScanTuple<SizeT, 1> : VectorHelper<SizeT, 1>::Type
-{
-    __device__ __forceinline__ PartitionScanTuple operator+(const PartitionScanTuple &a, const PartitionScanTuple &b)
-    {
-        PartitionScanTuple retval;
-        retval.x = a.x + b.x;
-        return retval;
-    }
-
-    template <typename PredicateOp, typename T>
-    __device__ __forceinline__ void SetFlags(PredicateOp pred_op, T val)
-    {
-        this->x = pred_op(val);
-    }
-
-    template <typename PredicateOp, typename T, typename OutputIteratorRA, SizeT num_items>
-    __device__ __forceinline__ void Scatter(PredicateOp pred_op, T val, OutputIteratorRA d_out, SizeT num_items)
-    {
-        if (pred_op(val))
-            d_out[this->x - 1] = val;
-    }
-
-};
-
-
-/**
- * Tuple type for scanning partition membership flags (specialized for 2 output partitions)
- */
-template <typename SizeT>
-struct PartitionScanTuple<SizeT, 2> : VectorHelper<SizeT, 2>::Type
-{
-    __device__ __forceinline__ PartitionScanTuple operator+(const PartitionScanTuple &a, const PartitionScanTuple &b)
-    {
-        PartitionScanTuple retval;
-        retval.x = a.x + b.x;
-        retval.y = a.y + b.y;
-        return retval;
-    }
-
-    template <typename PredicateOp, typename T>
-    __device__ __forceinline__ void SetFlags(PredicateOp pred_op, T val)
-    {
-        bool pred = pred_op(val);
-        this->x = pred;
-        this->y = !pred;
-    }
-
-    template <typename PredicateOp, typename T, typename OutputIteratorRA, SizeT num_items>
-    __device__ __forceinline__ void Scatter(PredicateOp pred_op, T val, OutputIteratorRA d_out, SizeT num_items)
-    {
-        SizeT scatter_offset = (pred_op(val)) ?
-            this->x - 1 :
-            num_items - this->y;
-
-        d_out[scatter_offset] = val;
-    }
-};
 
 
 
@@ -159,73 +94,93 @@ struct PartitionScanTuple<SizeT, 2> : VectorHelper<SizeT, 2>::Type
 /**
  * \brief BlockPartitionTiles implements a stateful abstraction of CUDA thread blocks for participating in device-wide list partitioning.
  *
- * Implements a single-pass "domino" strategy with adaptive prefix lookback.
+ * Implements a single-pass "domino" strategy with variable predecessor look-back.
  */
 template <
-    typename BlockPartitionTilesPolicy, ///< Tuning policy
-    typename InputIteratorRA,           ///< Input iterator type
-    typename OutputIteratorRA,          ///< Output iterator type
-    typename PredicateOp,               ///< Partition predicate functor type
-    typename SizeT>                     ///< Offset integer type
+    typename BlockPartitionTilesPolicy,     ///< Tuning policy
+    typename InputIteratorRA,               ///< Input iterator type
+    typename FirstOutputIteratorRA,         ///< Output iterator type for first partition
+    typename SecondOutputIteratorRA,        ///< Output iterator type for second partition
+    typename SelectOp,                      ///< Unary partition selection functor type specifying whether an input item goes into the first partition
+    typename SizeT>                         ///< Offset integer type
 struct BlockPartitionTiles
 {
     //---------------------------------------------------------------------
     // Types and constants
     //---------------------------------------------------------------------
 
-    // Constants
-    enum
-    {
-        PARTITIONS          = BlockPartitionTilesPolicy::PARTITIONS,
-        BLOCK_THREADS       = BlockPartitionTilesPolicy::BLOCK_THREADS,
-        ITEMS_PER_THREAD    = BlockPartitionTilesPolicy::ITEMS_PER_THREAD,
-        TILE_ITEMS          = BLOCK_THREADS * ITEMS_PER_THREAD,
-    };
-
-    // Load modifier
-    static const PtxLoadModifier LOAD_MODIFIER = BlockPartitionTilesPolicy::LOAD_MODIFIER;
-
     // Data type of input iterator
     typedef typename std::iterator_traits<InputIteratorRA>::value_type T;
 
-    // Tuple type for scanning partition membership flags
-    typedef PartitionScanTuple<SizeT, PARTITIONS> PartitionScanTuple;
+    // Constants
+    enum
+    {
+        BLOCK_THREADS               = BlockPartitionTilesPolicy::BLOCK_THREADS,
+        ITEMS_PER_THREAD            = BlockPartitionTilesPolicy::ITEMS_PER_THREAD,
+        TILE_ITEMS                  = BLOCK_THREADS * ITEMS_PER_THREAD,
+
+        BACKFILL_SECOND_PARTITION   = BlockPartitionTilesPolicy::BACKFILL_SECOND_PARTITION,
+        COMPACT_ONLY                = Int2Type<Equals<SecondOutputIteratorRA, NullType>::VALUE,
+    };
+
+    // Block load type
+    typedef BlockLoad<
+        InputIteratorRA,
+        BlockPartitionTilesPolicy::BLOCK_THREADS,
+        BlockPartitionTilesPolicy::ITEMS_PER_THREAD,
+        BlockPartitionTilesPolicy::LOAD_ALGORITHM,
+        BlockPartitionTilesPolicy::LOAD_MODIFIER,
+        BlockPartitionTilesPolicy::LOAD_WARP_TIME_SLICING> BlockLoadT;
+
+    // Scan data type
+    typedef DevicePartitionScanTuple<SizeT> ScanTuple;
 
     // Tile status descriptor type
-    typedef ScanTileDescriptor<PartitionScanTuple> ScanTileDescriptorT;
+    typedef DeviceScanTileDescriptor<ScanTuple> TileDescriptor;
 
-    // Block scan type for scanning membership flag scan_tuples
+    // Callback type for obtaining inter-tile prefix during block scan
+    typedef DeviceScanBlockPrefixOp<ScanTuple, cub::Sum> PrefixOp;
+
+    // Block scan type
     typedef BlockScan<
-        PartitionScanTuple,
+        ScanTuple,
         BlockPartitionTilesPolicy::BLOCK_THREADS,
         BlockPartitionTilesPolicy::SCAN_ALGORITHM> BlockScanT;
 
-    // Callback type for obtaining inter-tile prefix during block scan
-    typedef DeviceScanBlockPrefixOp<PartitionScanTuple, Sum> InterblockPrefixOp;
-
     // Shared memory type for this threadblock
-    struct TempStorage
+    struct _TempStorage
     {
-        typename InterblockPrefixOp::TempStorage    prefix;         // Smem needed for cooperative prefix callback
-        typename BlockScanT::TempStorage            scan;           // Smem needed for tile scanning
-        SizeT                                       tile_idx;       // Shared tile index
+        union
+        {
+            typename BlockLoadT::TempStorage            load;       // Smem needed for tile loading
+            struct
+            {
+                typename PrefixOp::TempStorage          prefix;     // Smem needed for cooperative prefix callback
+                typename BlockScanT::TempStorage        scan;       // Smem needed for tile scanning
+            };
+        };
+
+        SizeT                                           tile_idx;   // Shared tile index
     };
+
+    // Alias wrapper allowing storage to be unioned
+    struct TempStorage : Uninitialized<_TempStorage> {};
 
 
     //---------------------------------------------------------------------
     // Per-thread fields
     //---------------------------------------------------------------------
 
-    TempStorage                 &temp_storage;      ///< Reference to temp_storage
+    _TempStorage                &temp_storage;      ///< Reference to temp_storage
     InputIteratorRA             d_in;               ///< Input data
-    OutputIteratorRA            d_out;              ///< Output data
-    ScanTileDescriptorT         *d_tile_status;     ///< Global list of tile status
-    PredicateOp                 pred_op;            ///< Unary predicate operator indicating membership in the first partition
-    SizeT                       num_items;          ///< Total number of input items
+    FirstOutputIteratorRA       d_out_a;            ///< First partition output data
+    SecondOutputIteratorRA      d_out_b;            ///< Second partition output data
+    SelectOp                    select_op;          ///< Unary partition selection operator
+
 
 
     //---------------------------------------------------------------------
-    // Constructor
+    // Methods
     //---------------------------------------------------------------------
 
     // Constructor
@@ -233,82 +188,145 @@ struct BlockPartitionTiles
     BlockPartitionTiles(
         TempStorage                 &temp_storage,      ///< Reference to temp_storage
         InputIteratorRA             d_in,               ///< Input data
-        OutputIteratorRA            d_out,              ///< Output data
-        ScanTileDescriptorT         *d_tile_status,     ///< Global list of tile status
-        PredicateOp                 pred_op,            ///< Unary predicate operator indicating membership in the first partition
-        SizeT                       num_items)          ///< Total number of input items
+        FirstOutputIteratorRA       d_out_a,            ///< First partition output data
+        SecondOutputIteratorRA      d_out_b,            ///< Second partition output data
+        SelectOp                    select_op)          ///< Unary partition selection operator
     :
         temp_storage(temp_storage.Alias()),
         d_in(d_in),
-        d_out(d_out),
-        d_tile_status(d_tile_status),
-        pred_op(pred_op),
-        num_items(num_items)
+        d_out_a(d_out_a),
+        d_out_b(d_out_b),
+        select_op(select_op)
     {}
 
 
-    //---------------------------------------------------------------------
-    // Domino scan
-    //---------------------------------------------------------------------
+    /**
+     * Scatter a tile of output.  Specialized for compaction (only keep first partition)
+     */
+    template <bool FULL_TILE>
+    __device__ __forceinline__ void ScatterTile(
+        T               items[ITEMS_PER_THREAD],
+        bool            selectors[ITEMS_PER_THREAD],
+        ScanTuple       tuples[ITEMS_PER_THREAD],
+        int             valid_items,
+        Int2Type<true>  compact_only)
+    {
+        #pragma unroll
+        for (int ITEM = 0; ITEM < ITEMS_PER_THREAD; ++ITEM)
+        {
+            if (FULL_TILE || ((ITEM < valid_items - threadIdx.x * ITEMS_PER_THREAD)))
+            {
+                if (selectors[ITEM])
+                {
+                    // Scatter to first partition
+                    d_out_a[tuples[ITEM].first_count] = items[ITEM];
+                }
+            }
+        }
+    }
+
 
     /**
-     * Process a tile of input
+     * Scatter a tile of output.  Specialized for 2-partition pivoting
+     */
+    template <bool FULL_TILE>
+    __device__ __forceinline__ void ScatterTile(
+        T               items[ITEMS_PER_THREAD],
+        bool            selectors[ITEMS_PER_THREAD],
+        ScanTuple       tuples[ITEMS_PER_THREAD],
+        int             valid_items,
+        Int2Type<false> compact_only)
+    {
+        #pragma unroll
+        for (int ITEM = 0; ITEM < ITEMS_PER_THREAD; ++ITEM)
+        {
+            if (FULL_TILE || ((ITEM < valid_items - threadIdx.x * ITEMS_PER_THREAD)))
+            {
+                if (selectors[ITEM])
+                {
+                    // Scatter to first partition
+                    d_out_a[tuples[ITEM].first_count] = items[ITEM];
+                }
+                else
+                {
+                    // Store second partition items if the second partition is valid
+                    if (BACKFILL_SECOND_PARTITION)
+                    {
+                        // Offset from second iterator is negative
+                        *(d_out_b - tuples[ITEM].second_count - 1) = items[ITEM];
+                    }
+                    else
+                    {
+                        // Offset from second iterator is positive
+                        d_out_b[tuples[ITEM].second_count] = items[ITEM];
+                    }
+                }
+            }
+        }
+    }
+
+
+    /**
+     * Process a tile of input (domino scan)
      */
     template <bool FULL_TILE>
     __device__ __forceinline__ void ConsumeTile(
-        int                 tile_idx,           ///< Tile index
-        SizeT               block_offset,       ///< Tile offset
-        PartitionScanTuple  &partition_ends)    ///< Running total
+        SizeT                       num_items,          ///< Total number of input items
+        int                         tile_idx,           ///< Tile index
+        SizeT                       block_offset,       ///< Tile offset
+        TileDescriptor              *d_tile_status)     ///< Global list of tile status
     {
-        T                   items[ITEMS_PER_THREAD];
-        PartitionScanTuple  scan_tuples[ITEMS_PER_THREAD];
+        int valid_items = num_items - block_offset;
 
         // Load items
-        int valid_items = num_items - block_offset;
+        T items[ITEMS_PER_THREAD];
+
         if (FULL_TILE)
-            LoadStriped<LOAD_MODIFIER, BLOCK_THREADS>(threadIdx.x, d_in + block_offset, items);
+            BlockLoadT(temp_storage.load).Load(d_in + block_offset, items);
         else
-            LoadStriped<LOAD_MODIFIER, BLOCK_THREADS>(threadIdx.x, d_in + block_offset, items, valid_items);
+            BlockLoadT(temp_storage.load).Load(d_in + block_offset, items, valid_items);
 
-        // Prevent hoisting
-//        __syncthreads();
-//        __threadfence_block();
+        __syncthreads();
 
-        // Set partition membership flags in scan scan_tuples
+        // Initialize partition selectors and scan tuples
+        bool        selectors[ITEMS_PER_THREAD];
+        ScanTuple   tuples[ITEMS_PER_THREAD];
+
         #pragma unroll
         for (int ITEM = 0; ITEM < ITEMS_PER_THREAD; ++ITEM)
         {
-            scan_tuples[ITEM].SetFlags(pred_op, items[ITEM]);
-        }
+            tuples[ITEM].first_count = 0;
+            tuples[ITEM].first_count = 0;
 
-        // Perform inclusive scan over scan scan_tuples
-        PartitionScanTuple block_aggregate;
-        if (tile_idx == 0)
-        {
-            BlockScanT(temp_storage.scan).InclusiveScan(scan_tuples, scan_tuples, Sum(), block_aggregate);
-            partition_ends = block_aggregate;
-
-            // Update tile status if there are successor tiles
-            if (FULL_TILE && (threadIdx.x == 0))
-                ScanTileDescriptorT::SetPrefix(d_tile_status, block_aggregate);
-        }
-        else
-        {
-            InterblockPrefixOp prefix_op(d_tile_status, temp_storage.prefix, Sum(), tile_idx);
-            BlockScanT(temp_storage.scan).InclusiveScan(scan_tuples, scan_tuples, Sum(), block_aggregate, prefix_op);
-            partition_ends = prefix_op.inclusive_prefix;
-        }
-
-        // Scatter items
-        #pragma unroll
-        for (int ITEM = 0; ITEM < ITEMS_PER_THREAD; ++ITEM)
-        {
-            // Scatter if not out-of-bounds
-            if (FULL_TILE || (threadIdx.x + (ITEM * BLOCK_THREADS) < valid_items))
+            if (FULL_TILE || ((ITEM < valid_items - threadIdx.x * ITEMS_PER_THREAD)))
             {
-                scan_tuples[ITEM].Scatter(pred_op, items[ITEM], d_out, num_items);
+                selectors[ITEM] = select_op(items[ITEM]);
+                tuples[ITEM].first_count = selectors[ITEM];
+                tuples[ITEM].second_count = !selectors[ITEM];
             }
         }
+
+        // Perform tile scan
+        ScanTuple block_aggregate;
+        if (tile_idx == 0)
+        {
+            // Scan first tile
+            BlockScanT(temp_storage.scan).ExclusiveSum(tuples, tuples, block_aggregate);
+
+            // Update tile status if this tile is full (i.e., there may be successor tiles)
+            if (FULL_TILE && (threadIdx.x == 0))
+                TileDescriptor::SetPrefix(d_tile_status, block_aggregate);
+        }
+        else
+        {
+            PrefixOp prefix_op(d_tile_status, temp_storage.prefix, cub::Sum, tile_idx);
+            BlockScanT(temp_storage.scan).ExclusiveSum(items, items, block_aggregate, prefix_op);
+        }
+
+        __syncthreads();
+
+        // Store items
+        ScatterTile<FULL_TILE>(items, selectors, tuples, valid_items, Int2Type<COMPACT_ONLY>());
     }
 
 
@@ -316,10 +334,9 @@ struct BlockPartitionTiles
      * Dequeue and scan tiles of items as part of a domino scan
      */
     __device__ __forceinline__ void ConsumeTiles(
-        GridQueue<int>      queue,              ///< [in] Queue descriptor for assigning tiles of work to thread blocks
-        SizeT               num_tiles,          ///< [in] Total number of input tiles
-        PartitionScanTuple  &partition_ends,    ///< [out] Running partition end offsets
-        bool                &is_last_tile)      ///< [out] Whether or not this block handled the last tile (i.e., partition_ends is valid for the entire input)
+        int                         num_items,          ///< Total number of input items
+        GridQueue<int>              queue,              ///< Queue descriptor for assigning tiles of work to thread blocks
+        TileDescriptor              *d_tile_status)     ///< Global list of tile status
     {
 #if CUB_PTX_ARCH < 200
 
@@ -328,14 +345,9 @@ struct BlockPartitionTiles
         SizeT   block_offset    = SizeT(TILE_ITEMS) * tile_idx;
 
         if (block_offset + TILE_ITEMS <= num_items)
-        {
-            ConsumeTile<true>(tile_idx, block_offset, partition_ends);
-        }
+            ConsumeTile<true>(num_items, tile_idx, block_offset, d_tile_status);
         else if (block_offset < num_items)
-        {
-            ConsumeTile<false>(tile_idx, block_offset, partition_ends);
-        }
-        is_last_tile = (tile_idx == num_tiles - 1);
+            ConsumeTile<false>(num_items, tile_idx, block_offset, d_tile_status);
 
 #else
 
@@ -351,8 +363,7 @@ struct BlockPartitionTiles
         while (block_offset + TILE_ITEMS <= num_items)
         {
             // Consume full tile
-            ConsumeTile<true>(tile_idx, block_offset, partition_ends);
-            is_last_tile = (tile_idx == num_tiles - 1);
+            ConsumeTile<true>(num_items, tile_idx, block_offset, d_tile_status);
 
             // Get next tile
             if (threadIdx.x == 0)
@@ -367,11 +378,13 @@ struct BlockPartitionTiles
         // Consume a partially-full tile
         if (block_offset < num_items)
         {
-            ConsumeTile<false>(tile_idx, block_offset, partition_ends);
-            is_last_tile = (tile_idx == num_tiles - 1);
+            ConsumeTile<false>(num_items, tile_idx, block_offset, d_tile_status);
         }
 #endif
+
     }
+
+
 };
 
 

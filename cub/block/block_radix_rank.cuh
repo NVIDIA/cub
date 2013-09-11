@@ -35,8 +35,6 @@
 
 #include "../util_arch.cuh"
 #include "../util_type.cuh"
-#include "../util_ptx.cuh"
-#include "../util_debug.cuh"
 #include "../thread/thread_reduce.cuh"
 #include "../thread/thread_scan.cuh"
 #include "../block/block_scan.cuh"

@@ -33,9 +33,9 @@
 
 #pragma once
 
+#include "specializations/block_histogram_sort.cuh"
+#include "specializations/block_histogram_atomic.cuh"
 #include "../util_arch.cuh"
-#include "../block/block_radix_sort.cuh"
-#include "../block/block_discontinuity.cuh"
 #include "../util_namespace.cuh"
 
 /// Optional outer namespace(s)
@@ -165,198 +165,24 @@ private:
             BLOCK_HISTO_SORT :
             ALGORITHM;
 
-    #ifndef DOXYGEN_SHOULD_SKIP_THIS    // Do not document
-
-
-    /******************************************************************************
-     * Algorithmic variants
-     ******************************************************************************/
-
-    /**
-     * BLOCK_HISTO_SORT algorithmic variant
-     */
-    template <BlockHistogramAlgorithm _ALGORITHM, int DUMMY = 0>
-    struct BlockHistogramInternal
-    {
-        // Parameterize BlockRadixSort type for our thread block
-        typedef BlockRadixSort<T, BLOCK_THREADS, ITEMS_PER_THREAD> BlockRadixSortT;
-
-        // Parameterize BlockDiscontinuity type for our thread block
-        typedef BlockDiscontinuity<T, BLOCK_THREADS> BlockDiscontinuityT;
-
-        // Shared memory
-        union TempStorage
-        {
-            // Storage for sorting bin values
-            typename BlockRadixSortT::TempStorage sort;
-
-            struct
-            {
-                // Storage for detecting discontinuities in the tile of sorted bin values
-                typename BlockDiscontinuityT::TempStorage flag;
-
-                // Storage for noting begin/end offsets of bin runs in the tile of sorted bin values
-                unsigned int run_begin[BINS];
-                unsigned int run_end[BINS];
-            };
-        };
-
-
-        // Thread fields
-        TempStorage &temp_storage;
-        int linear_tid;
-
-
-        /// Constructor
-        __device__ __forceinline__ BlockHistogramInternal(
-            TempStorage     &temp_storage,
-            int             linear_tid)
-        :
-            temp_storage(temp_storage.Alias()),
-            linear_tid(linear_tid)
-        {}
-
-
-        // Discontinuity functor
-        struct DiscontinuityOp
-        {
-            // Reference to temp_storage
-            TempStorage &temp_storage;
-
-            // Constructor
-            __device__ __forceinline__ DiscontinuityOp(TempStorage &temp_storage) : temp_storage(temp_storage.Alias()) {}
-
-            // Discontinuity predicate
-            __device__ __forceinline__ bool operator()(const T &a, const T &b, unsigned int b_index)
-            {
-                if (a != b)
-                {
-                    // Note the begin/end offsets in shared storage
-                    temp_storage.run_begin[b] = b_index;
-                    temp_storage.run_end[a] = b_index;
-
-                    return true;
-                }
-                else
-                {
-                    return false;
-                }
-            }
-        };
-
-
-        // Composite data onto an existing histogram
-        template <
-            typename            HistoCounter>
-        __device__ __forceinline__ void Composite(
-            T                   (&items)[ITEMS_PER_THREAD],     ///< [in] Calling thread's input values to histogram
-            HistoCounter        histogram[BINS])                 ///< [out] Reference to shared/global memory histogram
-        {
-            enum { TILE_SIZE = BLOCK_THREADS * ITEMS_PER_THREAD };
-
-            // Sort bytes in blocked arrangement
-            BlockRadixSortT(temp_storage.sort, linear_tid).Sort(items);
-
-            __syncthreads();
-
-            // Initialize the shared memory's run_begin and run_end for each bin
-            int histo_offset = 0;
-
-            #pragma unroll
-            for(; histo_offset + BLOCK_THREADS <= BINS; histo_offset += BLOCK_THREADS)
-            {
-                temp_storage.run_begin[histo_offset + linear_tid] = TILE_SIZE;
-                temp_storage.run_end[histo_offset + linear_tid] = TILE_SIZE;
-            }
-            // Finish up with guarded initialization if necessary
-            if ((histo_offset < BLOCK_THREADS) && (histo_offset + linear_tid < BINS))
-            {
-                temp_storage.run_begin[histo_offset + linear_tid] = TILE_SIZE;
-                temp_storage.run_end[histo_offset + linear_tid] = TILE_SIZE;
-            }
-
-            __syncthreads();
-
-            int flags[ITEMS_PER_THREAD];    // unused
-
-            // Note the begin/end run offsets of bin runs in the sorted tile
-            DiscontinuityOp flag_op(temp_storage);
-            BlockDiscontinuityT(temp_storage.flag, linear_tid).Flag(items, flag_op, flags);
-
-            // Update begin for first item
-            if (linear_tid == 0) temp_storage.run_begin[items[0]] = 0;
-
-            __syncthreads();
-
-            // Composite into histogram
-            histo_offset = 0;
-
-            #pragma unroll
-            for(; histo_offset + BLOCK_THREADS <= BINS; histo_offset += BLOCK_THREADS)
-            {
-                int thread_offset = histo_offset + linear_tid;
-                HistoCounter count = temp_storage.run_end[thread_offset] - temp_storage.run_begin[thread_offset];
-                histogram[thread_offset] += count;
-            }
-            // Finish up with guarded composition if necessary
-            if ((histo_offset < BLOCK_THREADS) && (histo_offset + linear_tid < BINS))
-            {
-                int thread_offset = histo_offset + linear_tid;
-                HistoCounter count = temp_storage.run_end[thread_offset] - temp_storage.run_begin[thread_offset];
-                histogram[thread_offset] += count;
-            }
-        }
-
-    };
-
-
-    /**
-     * BLOCK_HISTO_ATOMIC algorithmic variant
-     */
-    template <int DUMMY>
-    struct BlockHistogramInternal<BLOCK_HISTO_ATOMIC, DUMMY>
-    {
-        /// Shared memory storage layout type
-        struct TempStorage {};
-
-
-        /// Constructor
-        __device__ __forceinline__ BlockHistogramInternal(
-            TempStorage     &temp_storage,
-            int             linear_tid)
-        {}
-
-
-        /// Composite data onto an existing histogram
-        template <
-            typename            HistoCounter>
-        __device__ __forceinline__ void Composite(
-            T                   (&items)[ITEMS_PER_THREAD],     ///< [in] Calling thread's input values to histogram
-            HistoCounter        histogram[BINS])                 ///< [out] Reference to shared/global memory histogram
-        {
-            // Update histogram
-            #pragma unroll
-            for (int i = 0; i < ITEMS_PER_THREAD; ++i)
-            {
-                  atomicAdd(histogram + items[i], 1);
-            }
-        }
-
-    };
-
-
-    #endif // DOXYGEN_SHOULD_SKIP_THIS
-
-
-    /******************************************************************************
-     * Type definitions
-     ******************************************************************************/
-
-    /// Internal histogram implementation to use
-    typedef BlockHistogramInternal<SAFE_ALGORITHM> InternalHistogram;
+    /// Internal specialization.
+    typedef typename If<(SAFE_ALGORITHM == BLOCK_HISTO_SORT),
+        BlockHistogramSort<T, BLOCK_THREADS, ITEMS_PER_THREAD, BINS>,
+        BlockHistogramAtomic<T, BLOCK_THREADS, ITEMS_PER_THREAD, BINS> >::Type InternalBlockHistogram;
 
     /// Shared memory storage layout type for BlockHistogram
-    typedef typename InternalHistogram::TempStorage _TempStorage;
+    typedef typename InternalBlockHistogram::TempStorage _TempStorage;
+
+
+    /******************************************************************************
+     * Thread fields
+     ******************************************************************************/
+
+    /// Shared storage reference
+    _TempStorage &temp_storage;
+
+    /// Linear thread-id
+    int linear_tid;
 
 
     /******************************************************************************
@@ -369,17 +195,6 @@ private:
         __shared__ _TempStorage private_storage;
         return private_storage;
     }
-
-
-    /******************************************************************************
-     * Thread fields
-     ******************************************************************************/
-
-    /// Shared storage reference
-    _TempStorage &temp_storage;
-
-    /// Linear thread-id
-    int linear_tid;
 
 
 public:
@@ -491,7 +306,7 @@ public:
             histogram[histo_offset + linear_tid] = 0;
         }
         // Finish up with guarded initialization if necessary
-        if ((histo_offset < BLOCK_THREADS) && (histo_offset + linear_tid < BINS))
+        if ((BINS % BLOCK_THREADS != 0) && (histo_offset + linear_tid < BINS))
         {
             histogram[histo_offset + linear_tid] = 0;
         }
@@ -541,7 +356,7 @@ public:
         InitHistogram(histogram);
 
         // Composite the histogram
-        InternalHistogram(temp_storage, linear_tid).Composite(items, histogram);
+        InternalBlockHistogram(temp_storage, linear_tid).Composite(items, histogram);
     }
 
 
@@ -589,7 +404,7 @@ public:
         T                   (&items)[ITEMS_PER_THREAD],     ///< [in] Calling thread's input values to histogram
         HistoCounter        histogram[BINS])                 ///< [out] Reference to shared/global memory histogram
     {
-        InternalHistogram(temp_storage, linear_tid).Composite(items, histogram);
+        InternalBlockHistogram(temp_storage, linear_tid).Composite(items, histogram);
     }
 
 };

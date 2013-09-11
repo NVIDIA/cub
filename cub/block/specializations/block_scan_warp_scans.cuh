@@ -34,11 +34,6 @@
 #pragma once
 
 #include "../../util_arch.cuh"
-#include "../../util_type.cuh"
-#include "../../block/block_raking_layout.cuh"
-#include "../../thread/thread_operators.cuh"
-#include "../../thread/thread_reduce.cuh"
-#include "../../thread/thread_scan.cuh"
 #include "../../warp/warp_scan.cuh"
 #include "../../util_namespace.cuh"
 

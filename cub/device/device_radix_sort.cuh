@@ -37,11 +37,9 @@
 #include <stdio.h>
 #include <iterator>
 
-#include "../block/block_radix_sort.cuh"
 #include "block/block_radix_sort_upsweep_tiles.cuh"
 #include "block/block_radix_sort_downsweep_tiles.cuh"
 #include "block/block_scan_tiles.cuh"
-#include "../thread/thread_operators.cuh"
 #include "../grid/grid_even_share.cuh"
 #include "../util_debug.cuh"
 #include "../util_device.cuh"
@@ -85,7 +83,7 @@ __global__ void RadixSortUpsweepKernel(
 
     // Parameterize two versions of BlockRadixSortUpsweepTiles type for the current configuration
     typedef BlockRadixSortUpsweepTiles<BlockRadixSortUpsweepTilesPolicy, Key, SizeT>    BlockRadixSortUpsweepTilesT;          // Primary
-    typedef BlockRadixSortUpsweepTiles<AltPolicy, Key, SizeT>                         AltBlockRadixSortUpsweepTilesT;       // Alternate (smaller bit granularity)
+    typedef BlockRadixSortUpsweepTiles<AltPolicy, Key, SizeT>                           AltBlockRadixSortUpsweepTilesT;       // Alternate (smaller bit granularity)
 
     // Shared memory storage
     __shared__ union
@@ -148,6 +146,8 @@ __global__ void RadixSortScanKernel(
 
     // Shared memory storage
     __shared__ typename BlockScanTilesT::TempStorage temp_storage;
+
+    if (blockIdx.x > 0) return;
 
     // Block scan instance
     BlockScanTilesT block_scan(temp_storage, d_spine, d_spine, cub::Sum(), SizeT(0)) ;
@@ -393,6 +393,33 @@ struct DeviceRadixSort
     };
 
 
+    /// SM13 tune
+    template <typename Key, typename Value, typename SizeT>
+    struct TunedPolicies<Key, Value, SizeT, 130>
+    {
+        enum {
+            KEYS_ONLY       = (Equals<Value, NullType>::VALUE),
+            SCALE_FACTOR    = (CUB_MAX(sizeof(Key), sizeof(Value)) + 3) / 4,
+            RADIX_BITS      = 5,
+        };
+
+        // UpsweepPolicy
+        typedef BlockRadixSortUpsweepTilesPolicy <128, CUB_MAX(1, 15 / SCALE_FACTOR), LOAD_DEFAULT, RADIX_BITS> UpsweepPolicyKeys;
+        typedef BlockRadixSortUpsweepTilesPolicy <128, CUB_MAX(1, 15 / SCALE_FACTOR), LOAD_DEFAULT, RADIX_BITS> UpsweepPolicyPairs;
+        typedef typename If<KEYS_ONLY, UpsweepPolicyKeys, UpsweepPolicyPairs>::Type UpsweepPolicy;
+
+        // ScanPolicy
+        typedef BlockScanTilesPolicy <256, 4, BLOCK_LOAD_VECTORIZE, false, LOAD_DEFAULT, BLOCK_STORE_VECTORIZE, false, BLOCK_SCAN_RAKING_MEMOIZE> ScanPolicy;
+
+        // DownsweepPolicy
+        typedef BlockRadixSortDownsweepTilesPolicy <64, CUB_MAX(1, 15 / SCALE_FACTOR), BLOCK_LOAD_WARP_TRANSPOSE, LOAD_DEFAULT, false, true, BLOCK_SCAN_WARP_SCANS, RADIX_SORT_SCATTER_TWO_PHASE, cudaSharedMemBankSizeFourByte, RADIX_BITS> DownsweepPolicyKeys;
+        typedef BlockRadixSortDownsweepTilesPolicy <64, CUB_MAX(1, 15 / SCALE_FACTOR), BLOCK_LOAD_WARP_TRANSPOSE, LOAD_DEFAULT, false, true, BLOCK_SCAN_WARP_SCANS, RADIX_SORT_SCATTER_TWO_PHASE, cudaSharedMemBankSizeFourByte, RADIX_BITS> DownsweepPolicyPairs;
+        typedef typename If<KEYS_ONLY, DownsweepPolicyKeys, DownsweepPolicyPairs>::Type DownsweepPolicy;
+
+        enum { SUBSCRIPTION_FACTOR = 7 };
+    };
+
+
     /// SM10 tune
     template <typename Key, typename Value, typename SizeT>
     struct TunedPolicies<Key, Value, SizeT, 100>
@@ -428,7 +455,9 @@ struct DeviceRadixSort
                                                 350 :
                                                 (CUB_PTX_ARCH >= 200) ?
                                                     200 :
-                                                    100;
+                                                    (CUB_PTX_ARCH >= 130) ?
+                                                        130 :
+                                                        100;
 
         // Tuned policy set for the current PTX compiler pass
         typedef TunedPolicies<Key, Value, SizeT, PTX_TUNE_ARCH> PtxTunedPolicies;
@@ -465,6 +494,13 @@ struct DeviceRadixSort
             else if (ptx_version >= 200)
             {
                 typedef TunedPolicies<Key, Value, SizeT, 200> TunedPolicies;
+                upsweep_dispatch_params.InitUpsweepPolicy<typename TunedPolicies::UpsweepPolicy>(TunedPolicies::SUBSCRIPTION_FACTOR);
+                scan_dispatch_params.InitScanPolicy<typename TunedPolicies::ScanPolicy>();
+                downsweep_dispatch_params.InitDownsweepPolicy<typename TunedPolicies::DownsweepPolicy>(TunedPolicies::SUBSCRIPTION_FACTOR);
+            }
+            else if (ptx_version >= 130)
+            {
+                typedef TunedPolicies<Key, Value, SizeT, 130> TunedPolicies;
                 upsweep_dispatch_params.InitUpsweepPolicy<typename TunedPolicies::UpsweepPolicy>(TunedPolicies::SUBSCRIPTION_FACTOR);
                 scan_dispatch_params.InitScanPolicy<typename TunedPolicies::ScanPolicy>();
                 downsweep_dispatch_params.InitDownsweepPolicy<typename TunedPolicies::DownsweepPolicy>(TunedPolicies::SUBSCRIPTION_FACTOR);
