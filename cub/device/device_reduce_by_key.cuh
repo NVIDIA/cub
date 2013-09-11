@@ -79,7 +79,7 @@ __global__ void MultiBlockScanKernel(
     ReductionOp                 reduction_op,   ///< Binary scan operator
     Identity                    identity,       ///< Identity element
     SizeT                       num_items,      ///< Total number of scan items for the entire problem
-    GridQueue<int>              queue)          ///< Descriptor for performing dynamic mapping of tile data to thread blocks
+    GridQueue<int>              queue)          ///< Drain queue descriptor for dynamically mapping tile data onto thread blocks
 {
     enum
     {

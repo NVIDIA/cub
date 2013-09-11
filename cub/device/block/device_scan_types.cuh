@@ -335,12 +335,11 @@ struct DevicePartitionScanTuple
     SizeT   second_count;
 
     __device__ __host__ __forceinline__ DevicePartitionScanTuple operator+(
-        const DevicePartitionScanTuple &a,
-        const DevicePartitionScanTuple &b)
+        const DevicePartitionScanTuple &other)
     {
         DevicePartitionScanTuple retval;
-        retval.first_count = a.first_count + b.first_count;
-        retval.second_count = a.second_count + b.second_count;
+        retval.first_count = first_count + other.first_count;
+        retval.second_count = second_count + other.second_count;
         return retval;
     }
 };

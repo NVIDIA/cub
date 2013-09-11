@@ -76,8 +76,8 @@ __global__ void ReducePrivatizedKernel(
     InputIteratorRA         d_in,                   ///< [in] Input data to reduce
     OutputIteratorRA        d_out,                  ///< [out] Output location for result
     SizeT                   num_items,              ///< [in] Total number of input data items
-    GridEvenShare<SizeT>    even_share,             ///< [in] Descriptor for how to map an even-share of tiles across thread blocks
-    GridQueue<SizeT>        queue,                  ///< [in] Descriptor for performing dynamic mapping of tile data to thread blocks
+    GridEvenShare<SizeT>    even_share,             ///< [in] Even-share descriptor for mapping an equal number of tiles onto each thread block
+    GridQueue<SizeT>        queue,                  ///< [in] Drain queue descriptor for dynamically mapping tile data onto thread blocks
     ReductionOp             reduction_op)           ///< [in] Binary reduction operator
 {
     // Data type
@@ -402,7 +402,7 @@ struct DeviceReduce
     template <
         typename                    ReducePrivatizedKernelPtr,          ///< Function type of cub::ReducePrivatizedKernel
         typename                    ReduceSingleKernelPtr,              ///< Function type of cub::ReduceSingleKernel
-        typename                    ResetDrainKernelPtr,                ///< Function type of cub::ResetDrainKernel
+        typename                    FillAndResetDrainKernelPtr,         ///< Function type of cub::FillAndResetDrainKernel
         typename                    InputIteratorRA,                    ///< Random-access iterator type for input (may be a simple pointer type)
         typename                    OutputIteratorRA,                   ///< Random-access iterator type for output (may be a simple pointer type)
         typename                    SizeT,                              ///< Integer type used for global array indexing
@@ -413,7 +413,7 @@ struct DeviceReduce
         size_t                      &temp_storage_bytes,                ///< [in,out] Size in bytes of \p d_temp_storage allocation.
         ReducePrivatizedKernelPtr   privatized_kernel,                  ///< [in] Kernel function pointer to parameterization of cub::ReducePrivatizedKernel
         ReduceSingleKernelPtr       single_kernel,                      ///< [in] Kernel function pointer to parameterization of cub::ReduceSingleKernel
-        ResetDrainKernelPtr         prepare_drain_kernel,               ///< [in] Kernel function pointer to parameterization of cub::ResetDrainKernel
+        FillAndResetDrainKernelPtr  prepare_drain_kernel,               ///< [in] Kernel function pointer to parameterization of cub::FillAndResetDrainKernel
         KernelDispachParams         &privatized_dispatch_params,        ///< [in] Dispatch parameters that match the policy that \p privatized_kernel_ptr was compiled for
         KernelDispachParams         &single_dispatch_params,            ///< [in] Dispatch parameters that match the policy that \p single_kernel was compiled for
         InputIteratorRA             d_in,                               ///< [in] Input data to reduce
@@ -496,7 +496,10 @@ struct DeviceReduce
                 int privatized_occupancy = privatized_sm_occupancy * sm_count;
 
                 // Even-share work distribution
-                GridEvenShare<SizeT> even_share;
+                GridEvenShare<SizeT> even_share(
+                    num_items,
+                    privatized_occupancy * privatized_dispatch_params.subscription_factor,
+                    privatized_dispatch_params.tile_size);
 
                 // Get grid size for privatized_kernel
                 int privatized_grid_size;
@@ -505,10 +508,6 @@ struct DeviceReduce
                 case GRID_MAPPING_EVEN_SHARE:
 
                     // Work is distributed evenly
-                    even_share.GridInit(
-                        num_items,
-                        privatized_occupancy * privatized_dispatch_params.subscription_factor,
-                        privatized_dispatch_params.tile_size);
                     privatized_grid_size = even_share.grid_size;
                     break;
 
@@ -693,7 +692,7 @@ struct DeviceReduce
                 temp_storage_bytes,
                 ReducePrivatizedKernel<PrivatizedPolicy, InputIteratorRA, T*, SizeT, ReductionOp>,
                 ReduceSingleKernel<SinglePolicy, T*, OutputIteratorRA, SizeT, ReductionOp>,
-                ResetDrainKernel<SizeT>,
+                FillAndResetDrainKernel<SizeT>,
                 privatized_dispatch_params,
                 single_dispatch_params,
                 d_in,

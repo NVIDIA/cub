@@ -35,6 +35,8 @@
 
 #include <stdio.h>
 
+#include <device_functions.h>
+
 #include <cub/util_allocator.cuh>
 #include <cub/block/block_load.cuh>
 #include <cub/block/block_reduce.cuh>

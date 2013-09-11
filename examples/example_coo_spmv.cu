@@ -282,7 +282,7 @@ struct PersistentBlockSpmv
     Value                           *d_result;
     PartialProduct                  *d_block_partials;
     int                             block_offset;
-    int                             block_oob;
+    int                             block_end;
 
 
     //---------------------------------------------------------------------
@@ -302,7 +302,7 @@ struct PersistentBlockSpmv
         Value                       *d_result,
         PartialProduct              *d_block_partials,
         int                         block_offset,
-        int                         block_oob)
+        int                         block_end)
     :
         temp_storage(temp_storage),
         d_rows(d_rows),
@@ -312,13 +312,13 @@ struct PersistentBlockSpmv
         d_result(d_result),
         d_block_partials(d_block_partials),
         block_offset(block_offset),
-        block_oob(block_oob)
+        block_end(block_end)
     {
         // Initialize scalar shared memory values
         if (threadIdx.x == 0)
         {
             VertexId first_block_row            = d_rows[block_offset];
-            VertexId last_block_row             = d_rows[block_oob - 1];
+            VertexId last_block_row             = d_rows[block_end - 1];
 
             temp_storage.first_block_row        = first_block_row;
             temp_storage.last_block_row         = last_block_row;
@@ -438,14 +438,14 @@ struct PersistentBlockSpmv
     void ProcessTiles()
     {
         // Process full tiles
-        while (block_offset <= block_oob - TILE_ITEMS)
+        while (block_offset <= block_end - TILE_ITEMS)
         {
             ProcessTile<true>(block_offset);
             block_offset += TILE_ITEMS;
         }
 
         // Process the last, partially-full tile (if present)
-        int guarded_items = block_oob - block_offset;
+        int guarded_items = block_end - block_offset;
         if (guarded_items)
         {
             ProcessTile<false>(block_offset, guarded_items);
@@ -708,7 +708,7 @@ __global__ void CooKernel(
         d_result,
         d_block_partials,
         even_share.block_offset,
-        even_share.block_oob);
+        even_share.block_end);
 
     // Process input tiles
     persistent_block.ProcessTiles();
@@ -802,8 +802,7 @@ void TestDevice(
     int max_coo_grid_size   = device_props.sm_count * coo_sm_occupancy * COO_SUBSCRIPTION_FACTOR;
 
     // Construct an even-share work distribution
-    GridEvenShare<int> even_share;
-    even_share.GridInit(num_edges, max_coo_grid_size, COO_TILE_SIZE);
+    GridEvenShare<int> even_share(num_edges, max_coo_grid_size, COO_TILE_SIZE);
     int coo_grid_size  = even_share.grid_size;
     int num_partials   = coo_grid_size * 2;
 

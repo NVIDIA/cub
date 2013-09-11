@@ -222,19 +222,19 @@ struct BlockHistogramTiles
      */
     __device__ __forceinline__ void ConsumeTiles(
         SizeT   block_offset,                       ///< [in] Threadblock begin offset (inclusive)
-        SizeT   block_oob)                          ///< [in] Threadblock end offset (exclusive)
+        SizeT   block_end)                          ///< [in] Threadblock end offset (exclusive)
     {
         // Consume subsequent full tiles of input
-        while (block_offset + TILE_ITEMS <= block_oob)
+        while (block_offset + TILE_ITEMS <= block_end)
         {
             internal_delegate.ConsumeTile<true>(block_offset);
             block_offset += TILE_ITEMS;
         }
 
         // Consume a partially-full tile
-        if (block_offset < block_oob)
+        if (block_offset < block_end)
         {
-            int valid_items = block_oob - block_offset;
+            int valid_items = block_end - block_offset;
             internal_delegate.ConsumeTile<false>(block_offset, valid_items);
         }
 
@@ -253,7 +253,7 @@ struct BlockHistogramTiles
         Int2Type<GRID_MAPPING_EVEN_SHARE>   is_even_share)      ///< [in] Marker type indicating this is an even-share mapping
     {
         even_share.BlockInit();
-        ConsumeTiles(even_share.block_offset, even_share.block_oob);
+        ConsumeTiles(even_share.block_offset, even_share.block_end);
     }
 
 

@@ -569,10 +569,10 @@ struct BlockRadixSortDownsweepTiles
         T       *d_in,
         T       *d_out,
         SizeT   block_offset,
-        SizeT   block_oob)
+        SizeT   block_end)
     {
         // Simply copy the input
-        while (block_offset + TILE_ITEMS <= block_oob)
+        while (block_offset + TILE_ITEMS <= block_end)
         {
             T items[ITEMS_PER_THREAD];
 
@@ -584,9 +584,9 @@ struct BlockRadixSortDownsweepTiles
         }
 
         // Clean up last partial tile with guarded-I/O
-        if (block_offset < block_oob)
+        if (block_offset < block_end)
         {
-            SizeT valid_items = block_oob - block_offset;
+            SizeT valid_items = block_end - block_offset;
 
             T items[ITEMS_PER_THREAD];
 
@@ -604,7 +604,7 @@ struct BlockRadixSortDownsweepTiles
         NullType    *d_in,
         NullType    *d_out,
         SizeT       block_offset,
-        SizeT       block_oob)
+        SizeT       block_end)
     {}
 
 
@@ -678,29 +678,29 @@ struct BlockRadixSortDownsweepTiles
      */
     __device__ __forceinline__ void ProcessTiles(
         SizeT           block_offset,
-        const SizeT     &block_oob)
+        const SizeT     &block_end)
     {
         if (short_circuit)
         {
             // Copy keys
-            Copy(d_keys_in, d_keys_out, block_offset, block_oob);
+            Copy(d_keys_in, d_keys_out, block_offset, block_end);
 
             // Copy values
-            Copy(d_values_in, d_values_out, block_offset, block_oob);
+            Copy(d_values_in, d_values_out, block_offset, block_end);
         }
         else
         {
             // Process full tiles of tile_items
-            while (block_offset + TILE_ITEMS <= block_oob)
+            while (block_offset + TILE_ITEMS <= block_end)
             {
                 ProcessTile<true>(block_offset);
                 block_offset += TILE_ITEMS;
             }
 
             // Clean up last partial tile with guarded-I/O
-            if (block_offset < block_oob)
+            if (block_offset < block_end)
             {
-                ProcessTile<false>(block_offset, block_oob - block_offset);
+                ProcessTile<false>(block_offset, block_end - block_offset);
             }
         }
     }

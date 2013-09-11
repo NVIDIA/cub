@@ -446,34 +446,34 @@ struct BlockScanTiles
      */
     __device__ __forceinline__ void ConsumeTiles(
         SizeT   block_offset,                       ///< [in] Threadblock begin offset (inclusive)
-        SizeT   block_oob)                          ///< [in] Threadblock end offset (exclusive)
+        SizeT   block_end)                          ///< [in] Threadblock end offset (exclusive)
     {
         RunningBlockPrefixOp<T> prefix_op;
 
-        if (block_offset + TILE_ITEMS <= block_oob)
+        if (block_offset + TILE_ITEMS <= block_end)
         {
             // Consume first tile of input (full)
             ConsumeTile<true, true>(block_offset, prefix_op);
             block_offset += TILE_ITEMS;
 
             // Consume subsequent full tiles of input
-            while (block_offset + TILE_ITEMS <= block_oob)
+            while (block_offset + TILE_ITEMS <= block_end)
             {
                 ConsumeTile<true, false>(block_offset, prefix_op);
                 block_offset += TILE_ITEMS;
             }
 
             // Consume a partially-full tile
-            if (block_offset < block_oob)
+            if (block_offset < block_end)
             {
-                int valid_items = block_oob - block_offset;
+                int valid_items = block_end - block_offset;
                 ConsumeTile<false, false>(block_offset, prefix_op, valid_items);
             }
         }
         else
         {
             // Consume the first tile of input (partially-full)
-            int valid_items = block_oob - block_offset;
+            int valid_items = block_end - block_offset;
             ConsumeTile<false, true>(block_offset, prefix_op, valid_items);
         }
     }
@@ -484,23 +484,23 @@ struct BlockScanTiles
      */
     __device__ __forceinline__ void ConsumeTiles(
         SizeT   block_offset,                       ///< [in] Threadblock begin offset (inclusive)
-        SizeT   block_oob,                          ///< [in] Threadblock end offset (exclusive)
+        SizeT   block_end,                          ///< [in] Threadblock end offset (exclusive)
         T       prefix)                             ///< [in] The prefix to apply to the scan segment
     {
         RunningBlockPrefixOp<T> prefix_op;
         prefix_op.running_total = prefix;
 
         // Consume full tiles of input
-        while (block_offset + TILE_ITEMS <= block_oob)
+        while (block_offset + TILE_ITEMS <= block_end)
         {
             ConsumeTile<true, false>(block_offset, prefix_op);
             block_offset += TILE_ITEMS;
         }
 
         // Consume a partially-full tile
-        if (block_offset < block_oob)
+        if (block_offset < block_end)
         {
-            int valid_items = block_oob - block_offset;
+            int valid_items = block_end - block_offset;
             ConsumeTile<false, false>(block_offset, prefix_op, valid_items);
         }
     }
