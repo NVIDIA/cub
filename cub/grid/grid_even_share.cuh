@@ -36,7 +36,6 @@
 
 #include "../util_namespace.cuh"
 #include "../util_macro.cuh"
-#include "../util_allocator.cuh"
 
 /// Optional outer namespace(s)
 CUB_NS_PREFIX

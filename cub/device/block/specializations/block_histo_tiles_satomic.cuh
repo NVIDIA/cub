@@ -35,8 +35,7 @@
 
 #include <iterator>
 
-#include "../../../util_arch.cuh"
-#include "../../../block/block_load.cuh"
+#include "../../../util_type.cuh"
 #include "../../../util_namespace.cuh"
 
 /// Optional outer namespace(s)
@@ -128,7 +127,7 @@ struct BlockHistogramTilesSharedAtomic
                 this->temp_storage.histograms[CHANNEL][histo_offset + threadIdx.x] = 0;
             }
             // Finish up with guarded initialization if necessary
-            if ((histo_offset < BLOCK_THREADS) && (histo_offset + threadIdx.x < BINS))
+            if ((BINS % BLOCK_THREADS != 0) && (histo_offset + threadIdx.x < BINS))
             {
                 this->temp_storage.histograms[CHANNEL][histo_offset + threadIdx.x] = 0;
             }
@@ -223,7 +222,7 @@ struct BlockHistogramTilesSharedAtomic
                 d_out_histograms[CHANNEL][channel_offset + histo_offset + threadIdx.x] = temp_storage.histograms[CHANNEL][histo_offset + threadIdx.x];
             }
             // Finish up with guarded initialization if necessary
-            if ((histo_offset < BLOCK_THREADS) && (histo_offset + threadIdx.x < BINS))
+            if ((BINS % BLOCK_THREADS != 0) && (histo_offset + threadIdx.x < BINS))
             {
                 d_out_histograms[CHANNEL][channel_offset + histo_offset + threadIdx.x] = temp_storage.histograms[CHANNEL][histo_offset + threadIdx.x];
             }

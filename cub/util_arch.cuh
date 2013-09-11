@@ -190,7 +190,7 @@ struct ArchProps<200>
     template <typename T>
     static __host__ __device__ __forceinline__ void Callback(T &target, int sm_version)
     {
-        if (sm_version > 200) {
+        if (sm_version >= 300) {
             ArchProps<300>::Callback(target, sm_version);
         } else {
             target.template Callback<ArchProps>();
@@ -227,7 +227,7 @@ struct ArchProps<120>
     template <typename T>
     static __host__ __device__ __forceinline__ void Callback(T &target, int sm_version)
     {
-        if (sm_version > 120) {
+        if (sm_version >= 200) {
             ArchProps<200>::Callback(target, sm_version);
         } else {
             target.template Callback<ArchProps>();
@@ -246,7 +246,7 @@ struct ArchProps<100> : ArchProps<0>
     template <typename T>
     static __host__ __device__ __forceinline__ void Callback(T &target, int sm_version)
     {
-        if (sm_version > 100) {
+        if (sm_version >= 120) {
             ArchProps<120>::Callback(target, sm_version);
         } else {
             target.template Callback<ArchProps>();

@@ -29,7 +29,7 @@
 
 /**
  * \file
- * cub::DeviceReorder provides device-wide operations for partitioning and filtering lists of items residing within global memory.
+ * cub::DevicePartition provides device-wide operations for partitioning and compacting lists of items residing within global memory.
  */
 
 #pragma once
@@ -42,7 +42,6 @@
 #include "../grid/grid_queue.cuh"
 #include "../util_debug.cuh"
 #include "../util_device.cuh"
-#include "../util_vector.cuh"
 #include "../util_namespace.cuh"
 
 /// Optional outer namespace(s)
@@ -58,59 +57,50 @@ namespace cub {
 
 #ifndef DOXYGEN_SHOULD_SKIP_THIS    // Do not document
 
+
 /**
- * Partition kernel entry point (multi-block)
+ * Scan kernel entry point (multi-block)
  */
 template <
-    typename    BlockPartitionTilesPolicy,  ///< Tuning policy for cub::BlockPartitionTiles abstraction
-    typename    InputIteratorRA,            ///< Random-access iterator type for input (may be a simple pointer type)
-    typename    OutputIteratorRA,           ///< Random-access iterator type for output (may be a simple pointer type)
-    typename    LengthOutputIterator,       ///< Output iterator type for recording the length of the first partition (may be a simple pointer type)
-    typename    PredicateOp,                ///< Unary predicate operator indicating membership in the first partition type having member <tt>bool operator()(const T &val)</tt>
-    typename    SizeT>                      ///< Integer type used for global array indexing
+    typename    BlockPartitionTilesPolicy,           ///< Tuning policy for cub::BlockPartitionTiles abstraction
+    typename    InputIteratorRA,                ///< Random-access iterator type for input (may be a simple pointer type)
+    typename    OutputIteratorRA,               ///< Random-access iterator type for output (may be a simple pointer type)
+    typename    T,                              ///< The scan data type
+    typename    ScanOp,                         ///< Binary scan operator type having member <tt>T operator()(const T &a, const T &b)</tt>
+    typename    Identity,                       ///< Identity value type (cub::NullType for inclusive scans)
+    typename    SizeT>                          ///< Integer type used for global array indexing
 __launch_bounds__ (int(BlockPartitionTilesPolicy::BLOCK_THREADS))
-__global__ void PartitionKernel(
-    InputIteratorRA                                                                         d_in,               ///< Input data
-    OutputIteratorRA                                                                        d_out,              ///< Output data
-    LengthOutputIterator                                                                    d_partition_length, ///< Number of items in the first partition
-    ScanTileDescriptor<PartitionScanTuple<SizeT, BlockPartitionTilesPolicy::PARTITOINS> >   *d_tile_status,     ///< Global list of tile status
-    PredicateOp                                                                             pred_op,            ///< Unary predicate operator indicating membership in the first partition
-    SizeT                                                                                   num_items,          ///< Total number of input items for the entire problem
-    int                                                                                     num_tiles,          ///< Totla number of intut tiles for the entire problem
-    GridQueue<int>                                                                          queue)              ///< Descriptor for performing dynamic mapping of tile data to thread blocks
+__global__ void ScanKernel(
+    InputIteratorRA             d_in,           ///< Input data
+    OutputIteratorRA            d_out,          ///< Output data
+    DevicePartitionTileDescriptor<T>       *d_tile_status, ///< Global list of tile status
+    ScanOp                      scan_op,        ///< Binary scan operator
+    Identity                    identity,       ///< Identity element
+    SizeT                       num_items,      ///< Total number of scan items for the entire problem
+    GridQueue<int>              queue)          ///< Descriptor for performing dynamic mapping of tile data to thread blocks
 {
     enum
     {
         TILE_STATUS_PADDING = PtxArchProps::WARP_THREADS,
     };
 
-    typedef PartitionScanTuple<SizeT, BlockPartitionTilesPolicy::PARTITOINS> PartitionScanTuple;
-
     // Thread block type for scanning input tiles
     typedef BlockPartitionTiles<
         BlockPartitionTilesPolicy,
         InputIteratorRA,
         OutputIteratorRA,
-        PredicateOp,
+        ScanOp,
+        Identity,
         SizeT> BlockPartitionTilesT;
 
     // Shared memory for BlockPartitionTiles
     __shared__ typename BlockPartitionTilesT::TempStorage temp_storage;
 
     // Process tiles
-    PartitionScanTuple  partition_ends;     // Ending offsets for partitions (one-after)
-    bool                is_last_tile;       // Whether or not this block handled the last tile (i.e., partition_ends is valid for the entire input)
-    BlockPartitionTilesT(temp_storage, d_in, d_out, d_tile_status + TILE_STATUS_PADDING, pred_op, num_items).ConsumeTiles(
+    BlockPartitionTilesT(temp_storage, d_in, d_out, scan_op, identity).ConsumeTiles(
+        num_items,
         queue,
-        num_tiles,
-        partition_ends,
-        is_last_tile);
-
-    // Record the length of the first partition
-    if (is_last_tile && (threadIdx.x == 0))
-    {
-        *d_partition_length = partition_ends.x;
-    }
+        d_tile_status + TILE_STATUS_PADDING);
 }
 
 
@@ -119,31 +109,49 @@ __global__ void PartitionKernel(
 
 
 /******************************************************************************
- * DeviceReorder
+ * DevicePartition
  *****************************************************************************/
 
 /**
- * \addtogroup DeviceModule
- * @{
+ * \brief DevicePartition provides operations for computing a device-wide, parallel prefix scan across data items residing within global memory. ![](device_scan.png)
+ * \ingroup DeviceModule
+ *
+ * \par Overview
+ * Given a list of input elements and a binary reduction operator, a [<em>prefix scan</em>](http://en.wikipedia.org/wiki/Prefix_sum)
+ * produces an output list where each element is computed to be the reduction
+ * of the elements occurring earlier in the input list.  <em>Prefix sum</em>
+ * connotes a prefix scan with the addition operator. The term \em inclusive indicates
+ * that the <em>i</em><sup>th</sup> output reduction incorporates the <em>i</em><sup>th</sup> input.
+ * The term \em exclusive indicates the <em>i</em><sup>th</sup> input is not incorporated into
+ * the <em>i</em><sup>th</sup> output reduction.
+ *
+ * \par Usage Considerations
+ * \cdp_class{DevicePartition}
+ *
+ * \par Performance
+ *
+ * \image html scan_perf.png
+ *
  */
-
-/**
- * \brief DeviceReorder provides device-wide operations for partitioning and filtering lists of items residing within global memory
- */
-struct DeviceReorder
+struct DevicePartition
 {
 #ifndef DOXYGEN_SHOULD_SKIP_THIS    // Do not document
 
     /******************************************************************************
-     * Constants and type definitions
+     * Constants and typedefs
      ******************************************************************************/
 
     /// Generic structure for encapsulating dispatch properties.  Mirrors the constants within BlockPartitionTilesPolicy.
     struct KernelDispachParams
     {
+        // Policy fields
         int                     block_threads;
         int                     items_per_thread;
+        BlockLoadAlgorithm      load_policy;
+        BlockStoreAlgorithm     store_policy;
         BlockScanAlgorithm      scan_algorithm;
+
+        // Other misc
         int                     tile_size;
 
         template <typename BlockPartitionTilesPolicy>
@@ -152,9 +160,24 @@ struct DeviceReorder
         {
             block_threads               = BlockPartitionTilesPolicy::BLOCK_THREADS;
             items_per_thread            = BlockPartitionTilesPolicy::ITEMS_PER_THREAD;
+            load_policy                 = BlockPartitionTilesPolicy::LOAD_ALGORITHM;
+            store_policy                = BlockPartitionTilesPolicy::STORE_ALGORITHM;
             scan_algorithm              = BlockPartitionTilesPolicy::SCAN_ALGORITHM;
+
             tile_size                   = block_threads * items_per_thread;
         }
+
+        __host__ __device__ __forceinline__
+        void Print()
+        {
+            printf("%d, %d, %d, %d, %d",
+                block_threads,
+                items_per_thread,
+                load_policy,
+                store_policy,
+                scan_algorithm);
+        }
+
     };
 
 
@@ -165,62 +188,63 @@ struct DeviceReorder
 
     /// Specializations of tuned policy types for different PTX architectures
     template <
-        int         PARTITIONS,
         typename    T,
         typename    SizeT,
         int         ARCH>
     struct TunedPolicies;
 
     /// SM35 tune
-    template <int PARTITIONS, typename T, typename SizeT>
-    struct TunedPolicies<PARTITIONS, T, SizeT, 350>
+    template <typename T, typename SizeT>
+    struct TunedPolicies<T, SizeT, 350>
     {
         enum {
             NOMINAL_4B_ITEMS_PER_THREAD = 16,
             ITEMS_PER_THREAD            = CUB_MIN(NOMINAL_4B_ITEMS_PER_THREAD, CUB_MAX(1, (NOMINAL_4B_ITEMS_PER_THREAD * 4 / sizeof(T)))),
         };
 
-        typedef BlockPartitionTilesPolicy<PARTITIONS, 128, ITEMS_PER_THREAD, LOAD_LDG, BLOCK_SCAN_RAKING_MEMOIZE> PartitionPolicy;
+        // ScanPolicy: GTX Titan: 29.1B items/s (232.4 GB/s) @ 48M 32-bit T
+        typedef BlockPartitionTilesPolicy<128, ITEMS_PER_THREAD,  BLOCK_LOAD_DIRECT, false, LOAD_LDG, BLOCK_STORE_WARP_TRANSPOSE, true, BLOCK_SCAN_RAKING_MEMOIZE> ScanPolicy;
     };
 
     /// SM30 tune
-    template <int PARTITIONS, typename T, typename SizeT>
-    struct TunedPolicies<PARTITIONS, T, SizeT, 300>
+    template <typename T, typename SizeT>
+    struct TunedPolicies<T, SizeT, 300>
     {
         enum {
             NOMINAL_4B_ITEMS_PER_THREAD = 9,
             ITEMS_PER_THREAD            = CUB_MIN(NOMINAL_4B_ITEMS_PER_THREAD, CUB_MAX(1, (NOMINAL_4B_ITEMS_PER_THREAD * 4 / sizeof(T)))),
         };
 
-        typedef BlockPartitionTilesPolicy<PARTITIONS, 256, ITEMS_PER_THREAD, LOAD_DEFAULT, BLOCK_SCAN_RAKING_MEMOIZE> PartitionPolicy;
+        typedef BlockPartitionTilesPolicy<256, ITEMS_PER_THREAD,  BLOCK_LOAD_WARP_TRANSPOSE, false, LOAD_DEFAULT, BLOCK_STORE_WARP_TRANSPOSE, false, BLOCK_SCAN_RAKING_MEMOIZE> ScanPolicy;
     };
 
     /// SM20 tune
-    template <int PARTITIONS, typename T, typename SizeT>
-    struct TunedPolicies<PARTITIONS, T, SizeT, 200>
+    template <typename T, typename SizeT>
+    struct TunedPolicies<T, SizeT, 200>
     {
         enum {
             NOMINAL_4B_ITEMS_PER_THREAD = 15,
             ITEMS_PER_THREAD            = CUB_MIN(NOMINAL_4B_ITEMS_PER_THREAD, CUB_MAX(1, (NOMINAL_4B_ITEMS_PER_THREAD * 4 / sizeof(T)))),
         };
 
-        typedef BlockPartitionTilesPolicy<PARTITIONS, 128, ITEMS_PER_THREAD, LOAD_DEFAULT, BLOCK_SCAN_RAKING_MEMOIZE> PartitionPolicy;
+        // ScanPolicy: GTX 580: 20.3B items/s (162.3 GB/s) @ 48M 32-bit T
+        typedef BlockPartitionTilesPolicy<128, ITEMS_PER_THREAD, BLOCK_LOAD_WARP_TRANSPOSE, false, LOAD_DEFAULT, BLOCK_STORE_WARP_TRANSPOSE, false, BLOCK_SCAN_RAKING_MEMOIZE> ScanPolicy;
     };
 
     /// SM10 tune
-    template <int PARTITIONS, typename T, typename SizeT>
-    struct TunedPolicies<PARTITIONS, T, SizeT, 100>
+    template <typename T, typename SizeT>
+    struct TunedPolicies<T, SizeT, 100>
     {
         enum {
             NOMINAL_4B_ITEMS_PER_THREAD = 7,
             ITEMS_PER_THREAD            = CUB_MIN(NOMINAL_4B_ITEMS_PER_THREAD, CUB_MAX(1, (NOMINAL_4B_ITEMS_PER_THREAD * 4 / sizeof(T)))),
         };
-        typedef BlockPartitionTilesPolicy<PARTITIONS, 128, ITEMS_PER_THREAD, LOAD_DEFAULT, BLOCK_SCAN_RAKING> PartitionPolicy;
+        typedef BlockPartitionTilesPolicy<128, ITEMS_PER_THREAD, BLOCK_LOAD_TRANSPOSE, false, LOAD_DEFAULT, BLOCK_STORE_TRANSPOSE, false, BLOCK_SCAN_RAKING> ScanPolicy;
     };
 
 
     /// Tuning policy for the PTX architecture that DevicePartition operations will get dispatched to
-    template <int PARTITIONS, typename T, typename SizeT>
+    template <typename T, typename SizeT>
     struct PtxDefaultPolicies
     {
         static const int PTX_TUNE_ARCH =   (CUB_PTX_ARCH >= 350) ?
@@ -232,10 +256,10 @@ struct DeviceReorder
                                                         100;
 
         // Tuned policy set for the current PTX compiler pass
-        typedef TunedPolicies<PARTITIONS, T, SizeT, PTX_TUNE_ARCH> PtxTunedPolicies;
+        typedef TunedPolicies<T, SizeT, PTX_TUNE_ARCH> PtxTunedPolicies;
 
-        // PartitionPolicy that opaquely derives from the specialization corresponding to the current PTX compiler pass
-        struct PartitionPolicy : PtxTunedPolicies::PartitionPolicy {};
+        // ScanPolicy that opaquely derives from the specialization corresponding to the current PTX compiler pass
+        struct ScanPolicy : PtxTunedPolicies::ScanPolicy {};
 
         /**
          * Initialize dispatch params with the policies corresponding to the PTX assembly we will use
@@ -244,23 +268,23 @@ struct DeviceReorder
         {
             if (ptx_version >= 350)
             {
-                typedef TunedPolicies<PARTITIONS, T, SizeT, 350> TunedPolicies;
-                scan_dispatch_params.Init<typename TunedPolicies::PartitionPolicy>();
+                typedef TunedPolicies<T, SizeT, 350> TunedPolicies;
+                scan_dispatch_params.Init<typename TunedPolicies::ScanPolicy>();
             }
             else if (ptx_version >= 300)
             {
-                typedef TunedPolicies<PARTITIONS, T, SizeT, 300> TunedPolicies;
-                scan_dispatch_params.Init<typename TunedPolicies::PartitionPolicy>();
+                typedef TunedPolicies<T, SizeT, 300> TunedPolicies;
+                scan_dispatch_params.Init<typename TunedPolicies::ScanPolicy>();
             }
             else if (ptx_version >= 200)
             {
-                typedef TunedPolicies<PARTITIONS, T, SizeT, 200> TunedPolicies;
-                scan_dispatch_params.Init<typename TunedPolicies::PartitionPolicy>();
+                typedef TunedPolicies<T, SizeT, 200> TunedPolicies;
+                scan_dispatch_params.Init<typename TunedPolicies::ScanPolicy>();
             }
             else
             {
-                typedef TunedPolicies<PARTITIONS, T, SizeT, 100> TunedPolicies;
-                scan_dispatch_params.Init<typename TunedPolicies::PartitionPolicy>();
+                typedef TunedPolicies<T, SizeT, 100> TunedPolicies;
+                scan_dispatch_params.Init<typename TunedPolicies::ScanPolicy>();
             }
         }
     };
@@ -275,25 +299,25 @@ struct DeviceReorder
      */
     template <
         typename                    ScanInitKernelPtr,              ///< Function type of cub::ScanInitKernel
-        typename                    PartitionKernelPtr,             ///< Function type of cub::PartitionKernel
+        typename                    ScanKernelPtr,                  ///< Function type of cub::ScanKernel
         typename                    InputIteratorRA,                ///< Random-access iterator type for input (may be a simple pointer type)
         typename                    OutputIteratorRA,               ///< Random-access iterator type for output (may be a simple pointer type)
-        typename                    LengthOutputIterator,           ///< Output iterator type for recording the length of the first partition (may be a simple pointer type)
-        typename                    PredicateOp,                    ///< Unary predicate operator indicating membership in the first partition type having member <tt>bool operator()(const T &val)</tt>
+        typename                    ScanOp,                         ///< Binary scan operator type having member <tt>T operator()(const T &a, const T &b)</tt>
+        typename                    Identity,                       ///< Identity value type (cub::NullType for inclusive scans)
         typename                    SizeT>                          ///< Integer type used for global array indexing
     __host__ __device__ __forceinline__
     static cudaError_t Dispatch(
         int                         ptx_version,                    ///< [in] PTX version
         void                        *d_temp_storage,                ///< [in] %Device allocation of temporary storage.  When NULL, the required allocation size is returned in \p temp_storage_bytes and no work is done.
         size_t                      &temp_storage_bytes,            ///< [in,out] Size in bytes of \p d_temp_storage allocation.
-        ScanInitKernelPtr           init_kernel,                    ///< [in] Kernel function pointer to parameterization of cub::PartitionInitKernel
-        PartitionKernelPtr          partition_kernel,               ///< [in] Kernel function pointer to parameterization of cub::PartitionKernel
-        KernelDispachParams         &scan_dispatch_params,          ///< [in] Dispatch parameters that match the policy that \p partition_kernel was compiled for
+        ScanInitKernelPtr           init_kernel,                    ///< [in] Kernel function pointer to parameterization of cub::ScanInitKernel
+        ScanKernelPtr               scan_kernel,                    ///< [in] Kernel function pointer to parameterization of cub::ScanKernel
+        KernelDispachParams         &scan_dispatch_params,          ///< [in] Dispatch parameters that match the policy that \p scan_kernel was compiled for
         InputIteratorRA             d_in,                           ///< [in] Iterator pointing to scan input
         OutputIteratorRA            d_out,                          ///< [in] Iterator pointing to scan output
-        LengthOutputIterator        d_partition_length,                 ///< [out] Output iterator referencing the location where the pivot offset (i.e., the length of the first partition) is to be recorded
-        PredicateOp                 pred_op,                        ///< [in] Unary predicate operator indicating membership in the first partition
-        SizeT                       num_items,                      ///< [in] Total number of items to partition
+        ScanOp                      scan_op,                        ///< [in] Binary scan operator
+        Identity                    identity,                       ///< [in] Identity element
+        SizeT                       num_items,                      ///< [in] Total number of items to scan
         cudaStream_t                stream              = 0,        ///< [in] <b>[optional]</b> CUDA stream to launch kernels within.  Default is stream<sub>0</sub>.
         bool                        stream_synchronous  = false)    ///< [in] <b>[optional]</b> Whether or not to synchronize the stream after every kernel launch to check for errors.  Default is \p false.
     {
@@ -307,15 +331,15 @@ struct DeviceReorder
 
         enum
         {
-            TILE_STATUS_PADDING = 32,
+            TILE_STATUS_PADDING     = 32,
+            INIT_KERNEL_THREADS     = 128
         };
 
         // Data type
         typedef typename std::iterator_traits<InputIteratorRA>::value_type T;
 
-        // Scan tuple type and tile status descriptor type
-        typedef typename VectorHelper<SizeT, 2>::Type ScanTuple;
-        typedef ScanTileDescriptor<ScanTuple> ScanTileDescriptorT;
+        // Tile status descriptor type
+        typedef DevicePartitionTileDescriptor<T> DevicePartitionTileDescriptorT;
 
         cudaError error = cudaSuccess;
         do
@@ -327,8 +351,8 @@ struct DeviceReorder
             void* allocations[2];
             size_t allocation_sizes[2] =
             {
-                (num_tiles + TILE_STATUS_PADDING) * sizeof(ScanTileDescriptorT),      // bytes needed for tile status descriptors
-                GridQueue<int>::AllocationSize()                                            // bytes needed for grid queue descriptor
+                (num_tiles + TILE_STATUS_PADDING) * sizeof(DevicePartitionTileDescriptorT),      // bytes needed for tile status descriptors
+                GridQueue<int>::AllocationSize()                                      // bytes needed for grid queue descriptor
             };
 
             // Alias temporaries (or set the necessary size of the storage allocation)
@@ -339,18 +363,17 @@ struct DeviceReorder
                 return cudaSuccess;
 
             // Global list of tile status
-            ScanTileDescriptorT *d_tile_status = (ScanTileDescriptorT*) allocations[0];
+            DevicePartitionTileDescriptorT *d_tile_status = (DevicePartitionTileDescriptorT*) allocations[0];
 
             // Grid queue descriptor
             GridQueue<int> queue(allocations[1]);
 
             // Log init_kernel configuration
-            int init_kernel_threads = 128;
-            int init_grid_size = (num_tiles + init_kernel_threads - 1) / init_kernel_threads;
-            if (stream_synchronous) CubLog("Invoking init_kernel<<<%d, %d, 0, %lld>>>()\n", init_grid_size, init_kernel_threads, (long long) stream);
+            int init_grid_size = (num_tiles + INIT_KERNEL_THREADS - 1) / INIT_KERNEL_THREADS;
+            if (stream_synchronous) CubLog("Invoking init_kernel<<<%d, %d, 0, %lld>>>()\n", init_grid_size, INIT_KERNEL_THREADS, (long long) stream);
 
             // Invoke init_kernel to initialize tile descriptors and queue descriptors
-            init_kernel<<<init_grid_size, init_kernel_threads, 0, stream>>>(
+            init_kernel<<<init_grid_size, INIT_KERNEL_THREADS, 0, stream>>>(
                 queue,
                 d_tile_status,
                 num_tiles);
@@ -378,7 +401,7 @@ struct DeviceReorder
                 int sm_count;
                 if (CubDebug(error = cudaDeviceGetAttribute (&sm_count, cudaDevAttrMultiProcessorCount, device_ordinal))) break;
 
-                // Get a rough estimate of partition_kernel SM occupancy based upon the maximum SM occupancy of the targeted PTX architecture
+                // Get a rough estimate of scan_kernel SM occupancy based upon the maximum SM occupancy of the targeted PTX architecture
                 multi_sm_occupancy = CUB_MIN(
                     ArchProps<CUB_PTX_ARCH>::MAX_SM_THREADBLOCKS,
                     ArchProps<CUB_PTX_ARCH>::MAX_SM_THREADS / scan_dispatch_params.block_threads);
@@ -390,31 +413,30 @@ struct DeviceReorder
 
                 if (CubDebug(error = device_props.MaxSmOccupancy(
                     multi_sm_occupancy,
-                    partition_kernel,
+                    scan_kernel,
                     scan_dispatch_params.block_threads))) break;
 #endif
-                // Get device occupancy for partition_kernel
+                // Get device occupancy for scan_kernel
                 int scan_occupancy = multi_sm_occupancy * sm_count;
 
-                // Get grid size for partition_kernel
+                // Get grid size for scan_kernel
                 scan_grid_size = (num_tiles < scan_occupancy) ?
                     num_tiles :                 // Not enough to fill the device with threadblocks
                     scan_occupancy;      // Fill the device with threadblocks
             }
 
-            // Log partition_kernel configuration
-            if (stream_synchronous) CubLog("Invoking partition_kernel<<<%d, %d, 0, %lld>>>(), %d items per thread, %d SM occupancy\n",
+            // Log scan_kernel configuration
+            if (stream_synchronous) CubLog("Invoking scan_kernel<<<%d, %d, 0, %lld>>>(), %d items per thread, %d SM occupancy\n",
                 scan_grid_size, scan_dispatch_params.block_threads, (long long) stream, scan_dispatch_params.items_per_thread, multi_sm_occupancy);
 
-            // Invoke partition_kernel
-            partition_kernel<<<scan_grid_size, scan_dispatch_params.block_threads, 0, stream>>>(
+            // Invoke scan_kernel
+            scan_kernel<<<scan_grid_size, scan_dispatch_params.block_threads, 0, stream>>>(
                 d_in,
                 d_out,
-                d_partition_length,
                 d_tile_status,
-                pred_op,
+                scan_op,
+                identity,
                 num_items,
-                num_tiles,
                 queue);
 
             // Sync the stream if specified
@@ -430,24 +452,23 @@ struct DeviceReorder
 
 
     /**
-     * Internal partition dispatch routine for using default tuning policies
+     * Internal scan dispatch routine for using default tuning policies
      */
     template <
-        typename                    PARTITIONS,                     ///< Number of partitions we are keeping
         typename                    InputIteratorRA,                ///< Random-access iterator type for input (may be a simple pointer type)
         typename                    OutputIteratorRA,               ///< Random-access iterator type for output (may be a simple pointer type)
-        typename                    LengthOutputIterator,           ///< Output iterator type for recording the length of the first partition (may be a simple pointer type)
-        typename                    PredicateOp,                    ///< Unary predicate operator indicating membership in the first partition type having member <tt>bool operator()(const T &val)</tt>
+        typename                    ScanOp,                         ///< Binary scan operator type having member <tt>T operator()(const T &a, const T &b)</tt>
+        typename                    Identity,                       ///< Identity value type (cub::NullType for inclusive scans)
         typename                    SizeT>                          ///< Integer type used for global array indexing
     __host__ __device__ __forceinline__
     static cudaError_t Dispatch(
         void                        *d_temp_storage,                ///< [in] %Device allocation of temporary storage.  When NULL, the required allocation size is returned in \p temp_storage_bytes and no work is done.
         size_t                      &temp_storage_bytes,            ///< [in,out] Size in bytes of \p d_temp_storage allocation.
-        InputIteratorRA             d_in,                           ///< [in] Iterator pointing to input items
-        OutputIteratorRA            d_out,                          ///< [in] Iterator pointing to output items
-        LengthOutputIterator        d_partition_length,             ///< [out] Output iterator referencing the location where the pivot offset (i.e., the length of the first partition) is to be recorded
-        PredicateOp                 pred_op,                        ///< [in] Unary predicate operator indicating membership in the first partition
-        SizeT                       num_items,                      ///< [in] Total number of items to partition
+        InputIteratorRA             d_in,                           ///< [in] Iterator pointing to scan input
+        OutputIteratorRA            d_out,                          ///< [in] Iterator pointing to scan output
+        ScanOp                      scan_op,                        ///< [in] Binary scan operator
+        Identity                    identity,                       ///< [in] Identity element
+        SizeT                       num_items,                      ///< [in] Total number of items to scan
         cudaStream_t                stream              = 0,        ///< [in] <b>[optional]</b> CUDA stream to launch kernels within.  Default is stream<sub>0</sub>.
         bool                        stream_synchronous  = false)    ///< [in] <b>[optional]</b> Whether or not to synchronize the stream after every kernel launch to check for errors.  Default is \p false.
     {
@@ -455,8 +476,8 @@ struct DeviceReorder
         typedef typename std::iterator_traits<InputIteratorRA>::value_type T;
 
         // Tuning polices
-        typedef PtxDefaultPolicies<PARTITIONS, T, SizeT>        PtxDefaultPolicies;     // Wrapper of default kernel policies
-        typedef typename PtxDefaultPolicies::PartitionPolicy    PartitionPolicy;        // Partition kernel policy
+        typedef PtxDefaultPolicies<T, SizeT>                    PtxDefaultPolicies;     // Wrapper of default kernel policies
+        typedef typename PtxDefaultPolicies::ScanPolicy   ScanPolicy;       // Scan kernel policy
 
         cudaError error = cudaSuccess;
         do
@@ -467,7 +488,7 @@ struct DeviceReorder
             int ptx_version;
 #ifdef __CUDA_ARCH__
             // We're on the device, so initialize the dispatch parameters with the PtxDefaultPolicies directly
-            scan_dispatch_params.Init<PartitionPolicy>();
+            scan_dispatch_params.Init<ScanPolicy>();
             ptx_version = CUB_PTX_ARCH;
 #else
             // We're on the host, so lookup and initialize the dispatch parameters with the policies that match the device's PTX version
@@ -480,12 +501,12 @@ struct DeviceReorder
                 d_temp_storage,
                 temp_storage_bytes,
                 ScanInitKernel<T, SizeT>,
-                PartitionKernel<PartitionPolicy, InputIteratorRA, OutputIteratorRA, LengthOutputIterator, PredicateOp, SizeT>,
+                ScanKernel<ScanPolicy, InputIteratorRA, OutputIteratorRA, T, ScanOp, Identity, SizeT>,
                 scan_dispatch_params,
                 d_in,
                 d_out,
-                d_partition_length,
-                pred_op,
+                scan_op,
+                identity,
                 num_items,
                 stream,
                 stream_synchronous);
@@ -500,49 +521,68 @@ struct DeviceReorder
     #endif // DOXYGEN_SHOULD_SKIP_THIS
 
 
+    /******************************************************************//**
+     * \name Exclusive scans
+     *********************************************************************/
+    //@{
+
     /**
-     * \brief Splits a list of input items into two partitions within the given output list using the specified predicate.  The relative ordering of inputs is not necessarily preserved.
-     *
-     * An item \p val is placed in the first partition if <tt>pred_op(val) == true</tt>, otherwise
-     * it is placed in the second partition.  The offset of the partitioning pivot (equivalent to
-     * the total length of the first partition as well as the starting offset of the second), is
-     * recorded to \p d_partition_length.
-     *
-     * The length of the output referenced by \p d_out is assumed to be the same as that of \p d_in.
+     * \brief Computes a device-wide exclusive prefix sum.
      *
      * \devicestorage
      *
+     * \cdp
+     *
+     * \iterator
+     *
+     * \par
+     * The code snippet below illustrates the exclusive prefix sum of a device vector of \p int items.
+     * \par
+     * \code
+     * #include <cub/cub.cuh>
+     * ...
+     *
+     * // Declare and initialize device pointers for input and output
+     * int *d_scan_input, *d_scan_output;
+     * int num_items = ...
+     *
+     * ...
+     *
+     * // Determine temporary device storage requirements for exclusive prefix sum
+     * void *d_temp_storage = NULL;
+     * size_t temp_storage_bytes = 0;
+     * cub::DevicePartition::ExclusiveSum(d_temp_storage, temp_storage_bytes, d_scan_input, d_scan_output, num_items);
+     *
+     * // Allocate temporary storage for exclusive prefix sum
+     * cudaMalloc(&d_temp_storage, temp_storage_bytes);
+     *
+     * // Run exclusive prefix sum
+     * cub::DevicePartition::ExclusiveSum(d_temp_storage, temp_storage_bytes, d_scan_input, d_scan_output, num_items);
+     *
+     * \endcode
+     *
      * \tparam InputIteratorRA      <b>[inferred]</b> Random-access iterator type for input (may be a simple pointer type)
      * \tparam OutputIteratorRA     <b>[inferred]</b> Random-access iterator type for output (may be a simple pointer type)
-     * \tparam LengthOutputIterator <b>[inferred]</b> Random-access iterator type for output (may be a simple pointer type)
-     * \tparam PredicateOp          <b>[inferred]</b> Unary predicate operator indicating membership in the first partition type having member <tt>bool operator()(const T &val)</tt>
      */
     template <
-        typename                InputIteratorRA,
-        typename                OutputIteratorRA,
-        typename                LengthOutputIterator,
-        typename                PredicateOp>
+        typename            InputIteratorRA,
+        typename            OutputIteratorRA>
     __host__ __device__ __forceinline__
-    static cudaError_t Partition(
-        void                    *d_temp_storage,                ///< [in] %Device allocation of temporary storage.  When NULL, the required allocation size is returned in \p temp_storage_bytes and no work is done.
-        size_t                  &temp_storage_bytes,            ///< [in,out] Size in bytes of \p d_temp_storage allocation.
-        InputIteratorRA         d_in,                           ///< [in] Iterator pointing to input items
-        OutputIteratorRA        d_out,                          ///< [in] Iterator pointing to output items
-        LengthOutputIterator    d_pivot_offset,                 ///< [out] Output iterator referencing the location where the pivot offset is to be recorded
-        PredicateOp             pred_op,                        ///< [in] Unary predicate operator indicating membership in the first partition
-        int                     num_items,                      ///< [in] Total number of items to partition
-        cudaStream_t            stream              = 0,        ///< [in] <b>[optional]</b> CUDA stream to launch kernels within.  Default is stream<sub>0</sub>.
-        bool                    stream_synchronous  = false)    ///< [in] <b>[optional]</b> Whether or not to synchronize the stream after every kernel launch to check for errors.  May cause significant slowdown.  Default is \p false.
+    static cudaError_t ExclusiveSum(
+        void                *d_temp_storage,                    ///< [in] %Device allocation of temporary storage.  When NULL, the required allocation size is returned in \p temp_storage_bytes and no work is done.
+        size_t              &temp_storage_bytes,                ///< [in,out] Size in bytes of \p d_temp_storage allocation.
+        InputIteratorRA     d_in,                               ///< [in] Iterator pointing to scan input
+        OutputIteratorRA    d_out,                              ///< [in] Iterator pointing to scan output
+        int                 num_items,                          ///< [in] Total number of items to scan
+        cudaStream_t        stream              = 0,            ///< [in] <b>[optional]</b> CUDA stream to launch kernels within.  Default is stream<sub>0</sub>.
+        bool                stream_synchronous  = false)        ///< [in] <b>[optional]</b> Whether or not to synchronize the stream after every kernel launch to check for errors.  May cause significant slowdown.  Default is \p false.
     {
         typedef typename std::iterator_traits<InputIteratorRA>::value_type T;
         return Dispatch(d_temp_storage, temp_storage_bytes, d_in, d_out, Sum(), T(), num_items, stream, stream_synchronous);
     }
 
-
 };
 
-
-/** @} */       // DeviceModule
 
 }               // CUB namespace
 CUB_NS_POSTFIX  // Optional outer namespace(s)

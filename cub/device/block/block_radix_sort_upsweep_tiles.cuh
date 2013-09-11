@@ -33,6 +33,7 @@
 
 #pragma once
 
+#include "../../thread/thread_reduce.cuh"
 #include "../../thread/thread_load.cuh"
 #include "../../block/block_load.cuh"
 #include "../../util_type.cuh"

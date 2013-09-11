@@ -34,9 +34,11 @@
 #define CUB_STDERR
 
 #include <stdio.h>
-#include <iostream>
+
+#include <cub/util_allocator.cuh>
+#include <cub/warp/warp_reduce.cuh>
+
 #include "test_util.h"
-#include <cub/cub.cuh>
 
 using namespace cub;
 
@@ -169,7 +171,7 @@ __global__ void FullWarpReduceKernel(
     // Cooperative warp-reduce utility type (1 warp)
     typedef WarpReduce<T, WARPS, LOGICAL_WARP_THREADS> WarpReduce;
 
-    // Shared memory
+    // Allocate temp storage in shared memory
     __shared__ typename WarpReduce::TempStorage temp_storage;
 
     // Per-thread tile data
@@ -209,7 +211,7 @@ __global__ void PartialWarpReduceKernel(
     // Cooperative warp-reduce utility type (1 warp)
     typedef WarpReduce<T, WARPS, LOGICAL_WARP_THREADS> WarpReduce;
 
-    // Shared memory
+    // Allocate temp storage in shared memory
     __shared__ typename WarpReduce::TempStorage temp_storage;
 
     // Per-thread tile data
@@ -251,7 +253,7 @@ __global__ void WarpHeadSegmentedReduceKernel(
     // Cooperative warp-reduce utility type (1 warp)
     typedef WarpReduce<T, WARPS, LOGICAL_WARP_THREADS> WarpReduce;
 
-    // Shared memory
+    // Allocate temp storage in shared memory
     __shared__ typename WarpReduce::TempStorage temp_storage;
 
     // Per-thread tile data
@@ -296,7 +298,7 @@ __global__ void WarpTailSegmentedReduceKernel(
     // Cooperative warp-reduce utility type (1 warp)
     typedef WarpReduce<T, WARPS, LOGICAL_WARP_THREADS> WarpReduce;
 
-    // Shared memory
+    // Allocate temp storage in shared memory
     __shared__ typename WarpReduce::TempStorage temp_storage;
 
     // Per-thread tile data

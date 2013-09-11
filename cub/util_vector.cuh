@@ -36,8 +36,6 @@
 #include <iostream>
 
 #include "util_namespace.cuh"
-#include "thread/thread_load.cuh"
-#include "thread/thread_store.cuh"
 
 /// Optional outer namespace(s)
 CUB_NS_PREFIX

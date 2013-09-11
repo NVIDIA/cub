@@ -37,8 +37,12 @@
 #include <algorithm>
 #include <iostream>
 
+#include <cub/util_allocator.cuh>
+#include <cub/block/block_load.cuh>
+#include <cub/block/block_store.cuh>
+#include <cub/block/block_radix_sort.cuh>
+
 #include "test_util.h"
-#include <cub/cub.cuh>
 
 using namespace cub;
 
@@ -91,7 +95,7 @@ __global__ void Kernel(
         INNER_SCAN_ALGORITHM,
         SMEM_CONFIG> BlockRadixSort;
 
-    // Shared memory
+    // Allocate temp storage in shared memory
     __shared__ typename BlockRadixSort::TempStorage temp_storage;
 
     // Keys per thread
@@ -154,7 +158,7 @@ __global__ void Kernel(
         INNER_SCAN_ALGORITHM,
         SMEM_CONFIG> BlockRadixSort;
 
-    // Shared memory
+    // Allocate temp storage in shared memory
     __shared__ typename BlockRadixSort::TempStorage temp_storage;
 
     // Keys per thread

@@ -35,11 +35,14 @@
 
 #include <iterator>
 #include <stdio.h>
-#include "test_util.h"
 
 #include <thrust/iterator/counting_iterator.h>
 
-#include <cub/cub.cuh>
+#include <cub/util_allocator.cuh>
+#include <cub/block/block_load.cuh>
+#include <cub/block/block_store.cuh>
+
+#include "test_util.h"
 
 using namespace cub;
 
@@ -93,7 +96,7 @@ __global__ void Kernel(
         typename BlockStore::TempStorage    store;
     };
 
-    // Shared memory
+    // Allocate temp storage in shared memory
     __shared__ TempStorage temp_storage;
 
     // Threadblock work bounds
@@ -151,7 +154,7 @@ __global__ void KernelGuarded(
         typename BlockStore::TempStorage    store;
     };
 
-    // Shared memory
+    // Allocate temp storage in shared memory
     __shared__ TempStorage temp_storage;
 
     // Threadblock work bounds

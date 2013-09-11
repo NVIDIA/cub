@@ -36,7 +36,12 @@
 #include <stdio.h>
 #include <algorithm>
 
-#include <cub/cub.cuh>
+#include <cub/util_allocator.cuh>
+#include <cub/device/device_radix_sort.cuh>
+
+#include <thrust/device_ptr.h>
+#include <thrust/sort.h>
+
 #include "test_util.h"
 
 using namespace cub;
@@ -52,19 +57,25 @@ int                     g_repeat            = 0;
 int                     g_bits              = -1;
 CachingDeviceAllocator  g_allocator;
 
-
+// Dispatch types
+enum Backend
+{
+    CUB,
+    THRUST,
+    CDP,
+};
 
 //---------------------------------------------------------------------
 // Dispatch to different DeviceRadixSort entrypoints
 //---------------------------------------------------------------------
 
 /**
- * Dispatch to key-value pair sorting entrypoint
+ * Dispatch to CUB sorting entrypoint
  */
 template <typename Key, typename Value>
 __host__ __device__ __forceinline__
 cudaError_t Dispatch(
-    Int2Type<false>     use_cdp,
+    Int2Type<CUB>       dispatch_to,
     int                 *d_selector,
     size_t              *d_temp_storage_bytes,
     cudaError_t         *d_cdp_error,
@@ -80,6 +91,73 @@ cudaError_t Dispatch(
     bool                stream_synchronous)
 {
     return DeviceRadixSort::SortPairs(d_temp_storage, temp_storage_bytes, d_keys, d_values, num_items, begin_bit, end_bit, stream, stream_synchronous);
+}
+
+
+/**
+ * Dispatch keys-only to Thrust sorting entrypoint
+ */
+template <typename Key>
+cudaError_t Dispatch(
+    Int2Type<THRUST>        dispatch_to,
+    int                     *d_selector,
+    size_t                  *d_temp_storage_bytes,
+    cudaError_t             *d_cdp_error,
+    void                    *d_temp_storage,
+    size_t                  &temp_storage_bytes,
+    DoubleBuffer<Key>       &d_keys,
+    DoubleBuffer<NullType>  &d_values,
+    int                     num_items,
+    int                     begin_bit,
+    int                     end_bit,
+    cudaStream_t            stream,
+    bool                    stream_synchronous)
+{
+    if (d_temp_storage == 0)
+    {
+        temp_storage_bytes = 1;
+    }
+    else
+    {
+        thrust::device_ptr<Key>     d_keys_wrapper(d_keys.Current());
+        thrust::sort(d_keys_wrapper, d_keys_wrapper + num_items);
+    }
+
+    return cudaSuccess;
+}
+
+
+/**
+ * Dispatch key-value pairs to Thrust sorting entrypoint
+ */
+template <typename Key, typename Value>
+cudaError_t Dispatch(
+    Int2Type<THRUST>    dispatch_to,
+    int                 *d_selector,
+    size_t              *d_temp_storage_bytes,
+    cudaError_t         *d_cdp_error,
+    void                *d_temp_storage,
+    size_t              &temp_storage_bytes,
+    DoubleBuffer<Key>   &d_keys,
+    DoubleBuffer<Value> &d_values,
+    int                 num_items,
+    int                 begin_bit,
+    int                 end_bit,
+    cudaStream_t        stream,
+    bool                stream_synchronous)
+{
+    if (d_temp_storage == 0)
+    {
+        temp_storage_bytes = 1;
+    }
+    else
+    {
+        thrust::device_ptr<Key>     d_keys_wrapper(d_keys.Current());
+        thrust::device_ptr<Value>   d_values_wrapper(d_values.Current());
+        thrust::sort(d_keys_wrapper, d_keys_wrapper + num_items, d_values_wrapper);
+    }
+
+    return cudaSuccess;
 }
 
 
@@ -108,7 +186,7 @@ __global__ void CnpDispatchKernel(
 #ifndef CUB_CDP
     *d_cdp_error = cudaErrorNotSupported;
 #else
-    *d_cdp_error            = Dispatch(Int2Type<false>(), d_selector, d_temp_storage_bytes, d_cdp_error, d_temp_storage, temp_storage_bytes, d_keys, d_values, num_items, begin_bit, end_bit, 0, stream_synchronous);
+    *d_cdp_error            = Dispatch(Int2Type<CUB>(), d_selector, d_temp_storage_bytes, d_cdp_error, d_temp_storage, temp_storage_bytes, d_keys, d_values, num_items, begin_bit, end_bit, 0, stream_synchronous);
     *d_temp_storage_bytes   = temp_storage_bytes;
     *d_selector             = d_keys.selector;
 #endif
@@ -120,7 +198,7 @@ __global__ void CnpDispatchKernel(
  */
 template <typename Key, typename Value>
 cudaError_t Dispatch(
-    Int2Type<true>      use_cdp,
+    Int2Type<CDP>       dispatch_to,
     int                 *d_selector,
     size_t              *d_temp_storage_bytes,
     cudaError_t         *d_cdp_error,
@@ -249,7 +327,7 @@ void Initialize(
  * Test DeviceRadixSort
  */
 template <
-    bool            CDP,
+    Backend         BACKEND,
     typename        Key,
     typename        Value>
 void Test(
@@ -265,11 +343,13 @@ void Test(
 
     if (KEYS_ONLY)
         printf("%s keys-only cub::DeviceRadixSort %d items, %s %d-byte keys, gen-mode %s\n",
-            (CDP) ? "CDP device invoked" : "Host-invoked", num_items, type_string, (int) sizeof(Key),
+            (BACKEND == CDP) ? "CDP CUB" : (BACKEND == THRUST) ? "Thrust" : "CUB",
+            num_items, type_string, (int) sizeof(Key),
             (gen_mode == RANDOM) ? "RANDOM" : (gen_mode == SEQ_INC) ? "SEQUENTIAL" : "HOMOGENOUS");
     else
         printf("%s keys-value cub::DeviceRadixSort %d items, %s %d-byte keys + %d-byte values, gen-mode %s\n",
-            (CDP) ? "CDP device invoked" : "Host-invoked", num_items, type_string, (int) sizeof(Key), (int) sizeof(Value),
+            (BACKEND == CDP) ? "CDP CUB" : (BACKEND == THRUST) ? "Thrust" : "CUB",
+            num_items, type_string, (int) sizeof(Key), (int) sizeof(Value),
             (gen_mode == RANDOM) ? "RANDOM" : (gen_mode == SEQ_INC) ? "SEQUENTIAL" : "HOMOGENOUS");
     fflush(stdout);
 
@@ -302,7 +382,7 @@ void Test(
     // Allocate temporary storage
     size_t  temp_storage_bytes  = 0;
     void    *d_temp_storage     = NULL;
-    CubDebugExit(Dispatch(Int2Type<CDP>(), d_selector, d_temp_storage_bytes, d_cdp_error, d_temp_storage, temp_storage_bytes, d_keys, d_values, num_items, begin_bit, end_bit, 0, true));
+    CubDebugExit(Dispatch(Int2Type<BACKEND>(), d_selector, d_temp_storage_bytes, d_cdp_error, d_temp_storage, temp_storage_bytes, d_keys, d_values, num_items, begin_bit, end_bit, 0, true));
     CubDebugExit(g_allocator.DeviceAllocate(&d_temp_storage, temp_storage_bytes));
 
     // Initialize/clear device arrays
@@ -315,7 +395,7 @@ void Test(
     }
 
     // Run warmup/correctness iteration
-    CubDebugExit(Dispatch(Int2Type<CDP>(), d_selector, d_temp_storage_bytes, d_cdp_error, d_temp_storage, temp_storage_bytes, d_keys, d_values, num_items, begin_bit, end_bit, 0, true));
+    CubDebugExit(Dispatch(Int2Type<BACKEND>(), d_selector, d_temp_storage_bytes, d_cdp_error, d_temp_storage, temp_storage_bytes, d_keys, d_values, num_items, begin_bit, end_bit, 0, true));
 
     // Check for correctness (and display results, if specified)
     int compare = CompareDeviceResults(h_sorted_keys, d_keys.Current(), num_items, true, g_verbose);
@@ -346,7 +426,7 @@ void Test(
         }
 
         gpu_timer.Start();
-        CubDebugExit(Dispatch(Int2Type<CDP>(), d_selector, d_temp_storage_bytes, d_cdp_error, d_temp_storage, temp_storage_bytes, d_keys, d_values, num_items, begin_bit, end_bit, 0, false));
+        CubDebugExit(Dispatch(Int2Type<BACKEND>(), d_selector, d_temp_storage_bytes, d_cdp_error, d_temp_storage, temp_storage_bytes, d_keys, d_values, num_items, begin_bit, end_bit, 0, false));
         gpu_timer.Stop();
         elapsed_millis += gpu_timer.ElapsedMillis();
     }
@@ -386,7 +466,7 @@ void Test(
  * Test problem generation
  */
 template <
-    bool            CDP,
+    Backend         BACKEND,
     typename        Key,
     typename        Value>
 void Test(
@@ -395,9 +475,9 @@ void Test(
     int             end_bit,
     char*           type_string)
 {
-    Test<CDP, Key, Value>(num_items, RANDOM, begin_bit, end_bit, type_string);
-    Test<CDP, Key, Value>(num_items, UNIFORM, begin_bit, end_bit, type_string);
-    Test<CDP, Key, Value>(num_items, SEQ_INC, begin_bit, end_bit, type_string);
+    Test<BACKEND, Key, Value>(num_items, RANDOM, begin_bit, end_bit, type_string);
+    Test<BACKEND, Key, Value>(num_items, UNIFORM, begin_bit, end_bit, type_string);
+    Test<BACKEND, Key, Value>(num_items, SEQ_INC, begin_bit, end_bit, type_string);
 }
 
 /**
@@ -412,9 +492,10 @@ void Test(
     int             end_bit,
     char*           type_string)
 {
-    Test<false, Key, Value>(num_items, begin_bit, end_bit, type_string);
+    Test<CUB, Key, Value>(num_items, begin_bit, end_bit, type_string);
+
 #ifdef CUB_CDP
-    Test<true, Key, Value>(num_items, begin_bit, end_bit, type_string);
+    Test<CDP, Key, Value>(num_items, begin_bit, end_bit, type_string);
 #endif
 }
 
@@ -489,7 +570,9 @@ int main(int argc, char** argv)
     if (quick)
     {
         if (num_items < 0) num_items = 32000000;
-        Test<false, unsigned int, NullType> (num_items, RANDOM, 0, g_bits, CUB_TYPE_STRING(unsigned int));
+
+        Test<CUB, unsigned int, NullType> (num_items, RANDOM, 0, g_bits, CUB_TYPE_STRING(unsigned int));
+        Test<THRUST, unsigned int, NullType> (num_items, RANDOM, 0, g_bits, CUB_TYPE_STRING(unsigned int));
     }
     else
     {

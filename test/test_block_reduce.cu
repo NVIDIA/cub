@@ -34,7 +34,11 @@
 #define CUB_STDERR
 
 #include <stdio.h>
-#include <cub/cub.cuh>
+
+#include <cub/util_allocator.cuh>
+#include <cub/block/block_load.cuh>
+#include <cub/block/block_reduce.cuh>
+
 #include "test_util.h"
 
 using namespace cub;
@@ -126,7 +130,7 @@ __global__ void FullTileReduceKernel(
     // Cooperative threadblock reduction utility type (returns aggregate in thread 0)
     typedef BlockReduce<T, BLOCK_THREADS, ALGORITHM> BlockReduce;
 
-    // Shared memory
+    // Allocate temp storage in shared memory
     __shared__ typename BlockReduce::TempStorage temp_storage;
 
     // Per-thread tile data
@@ -184,7 +188,7 @@ __global__ void PartialTileReduceKernel(
     // Cooperative threadblock reduction utility type (returns aggregate only in thread-0)
     typedef BlockReduce<T, BLOCK_THREADS, ALGORITHM> BlockReduce;
 
-    // Shared memory
+    // Allocate temp storage in shared memory
     __shared__ typename BlockReduce::TempStorage temp_storage;
 
     // Per-thread tile data
