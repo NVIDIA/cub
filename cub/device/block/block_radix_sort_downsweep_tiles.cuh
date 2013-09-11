@@ -35,13 +35,11 @@
 #pragma once
 
 #include "../../thread/thread_load.cuh"
-#include "../../thread/thread_store.cuh"
 #include "../../block/block_load.cuh"
 #include "../../block/block_store.cuh"
 #include "../../block/block_radix_rank.cuh"
 #include "../../block/block_exchange.cuh"
 #include "../../util_type.cuh"
-#include "../../util_ptx.cuh"
 #include "../../util_namespace.cuh"
 
 /// Optional outer namespace(s)

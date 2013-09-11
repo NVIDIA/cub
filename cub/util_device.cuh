@@ -53,13 +53,6 @@ namespace cub {
 #ifndef DOXYGEN_SHOULD_SKIP_THIS    // Do not document
 
 
-enum
-{
-    /// Invalid device ordinal
-    INVALID_DEVICE_ORDINAL = -1,
-};
-
-
 /**
  * Empty kernel for querying PTX manifest metadata (e.g., version) for the current device
  */
@@ -367,7 +360,7 @@ public:
                 CUB_MIN(max_sm_blocks, max_warp_occupancy),
                 CUB_MIN(max_smem_occupancy, max_reg_occupancy));
 
-//            printf("max_smem_occupancy(%d), max_warp_occupancy(%d), max_reg_occupancy(%d)", max_smem_occupancy, max_warp_occupancy, max_reg_occupancy);
+//            printf("max_smem_occupancy(%d), max_warp_occupancy(%d), max_reg_occupancy(%d) \n", max_smem_occupancy, max_warp_occupancy, max_reg_occupancy);
 
         } while (0);
 

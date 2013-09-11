@@ -35,8 +35,6 @@
 
 #include <iterator>
 
-#include "../../../util_arch.cuh"
-#include "../../../block/block_load.cuh"
 #include "../../../block/block_radix_sort.cuh"
 #include "../../../block/block_discontinuity.cuh"
 #include "../../../util_namespace.cuh"

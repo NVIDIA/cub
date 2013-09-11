@@ -33,8 +33,6 @@
 
 #pragma once
 
-#include "grid_even_share.cuh"
-#include "grid_queue.cuh"
 #include "../util_namespace.cuh"
 
 /// Optional outer namespace(s)

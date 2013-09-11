@@ -33,14 +33,8 @@
 
 #pragma once
 
-#include "../../block/block_raking_layout.cuh"
 #include "../../warp/warp_reduce.cuh"
 #include "../../util_arch.cuh"
-#include "../../util_type.cuh"
-#include "../../thread/thread_operators.cuh"
-#include "../../thread/thread_reduce.cuh"
-#include "../../thread/thread_load.cuh"
-#include "../../thread/thread_store.cuh"
 #include "../../util_namespace.cuh"
 
 /// Optional outer namespace(s)

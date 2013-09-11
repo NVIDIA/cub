@@ -33,9 +33,7 @@
 
 #pragma once
 
-#include "../util_arch.cuh"
 #include "../util_type.cuh"
-#include "../thread/thread_operators.cuh"
 #include "../util_namespace.cuh"
 
 /// Optional outer namespace(s)
@@ -80,7 +78,7 @@ namespace cub {
  *
  *     // Collectively compute head flags for discontinuities in the segment
  *     int head_flags[4];
- *     BlockDiscontinuity(temp_storage).FlagHeads(head_flags, thread_data, cub::Equality());
+ *     BlockDiscontinuity(temp_storage).FlagHeads(head_flags, thread_data, cub::Inequality());
  *
  * \endcode
  * \par
@@ -253,7 +251,7 @@ public:
      *
      *     // Collectively compute head flags for discontinuities in the segment
      *     int head_flags[4];
-     *     BlockDiscontinuity(temp_storage).FlagHeads(head_flags, thread_data, cub::Equality());
+     *     BlockDiscontinuity(temp_storage).FlagHeads(head_flags, thread_data, cub::Inequality());
      *
      * \endcode
      * \par
@@ -343,7 +341,7 @@ public:
      *     // Collectively compute head flags for discontinuities in the segment
      *     int head_flags[4];
      *     BlockDiscontinuity(temp_storage).FlagHeads(
-     *         head_flags, thread_data, cub::Equality(), tile_predecessor_item);
+     *         head_flags, thread_data, cub::Inequality(), tile_predecessor_item);
      *
      * \endcode
      * \par
@@ -438,7 +436,7 @@ public:
      *
      *     // Collectively compute tail flags for discontinuities in the segment
      *     int tail_flags[4];
-     *     BlockDiscontinuity(temp_storage).FlagTails(tail_flags, thread_data, cub::Equality());
+     *     BlockDiscontinuity(temp_storage).FlagTails(tail_flags, thread_data, cub::Inequality());
      *
      * \endcode
      * \par
@@ -529,7 +527,7 @@ public:
      *     // Collectively compute tail flags for discontinuities in the segment
      *     int tail_flags[4];
      *     BlockDiscontinuity(temp_storage).FlagTails(
-     *         tail_flags, thread_data, cub::Equality(), tile_successor_item);
+     *         tail_flags, thread_data, cub::Inequality(), tile_successor_item);
      *
      * \endcode
      * \par

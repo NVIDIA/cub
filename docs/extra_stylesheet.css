@@ -267,7 +267,6 @@ table.memname tbody tr:first-child td:nth-child(2) {
 }
 
 table.memname tbody tr td {
-		line-height: normal;
 }
 
 table.memname tbody tr td.paramtype {
@@ -422,6 +421,8 @@ td.memname, td.paramtype, div.memtemplate {
 }
 
 .memtemplate {
+		padding-bottom: 10px;
+		line-height: 180%;
 		font-size: 85%;
 		color: cadetblue;
 }

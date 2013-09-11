@@ -57,7 +57,7 @@
 <br>
 <a href="download_cub.html"><img src="download-icon.png" style="position:relative; bottom:-10px; border:0px;"/></a>
 &nbsp;&nbsp;
-<a href="download_cub.html"><em>Download CUB v1.0.1 (August 08, 2013)</em></a>
+<a href="download_cub.html"><em>Download CUB v1.0.2 (August 23, 2013)</em></a>
 \endhtmlonly
 
 \section sec1 (1) What is CUB?
@@ -119,7 +119,7 @@ CUB is inspired by the following goals:
 
 \par
 The following code snippet presents a CUDA kernel in which each block of 128 threads 
-peforms a collective, block-wide sort of 2048 integer keys:
+will collectively load, sort, and store its own segment of 2048 integer keys:
 
 \par
 \code
@@ -397,10 +397,21 @@ and striped arrangements.
 <table>
  
 <tr><td style="white-space: nowrap; vertical-align:text-top;">
+08/23/2013<br>
+[CUB v1.0.2 (update)](https://github.com/NVlabs/cub/archive/1.0.2.zip)
+</td><td style="vertical-align:text-top;">
+- Cleaned up unnecessary and/or missing include statements from .cuh files.  You 
+  can now safely include specific .cuh files (instead of the umbrella cub/cub.cuh)
+- Documentation corrections
+- Minor bugfixes for cub::BlockHistogram
+- See the [change-log](https://github.com/NVlabs/cub/blob/master/CHANGE_LOG.TXT) for further details.
+</td></tr>
+
+<tr><td style="white-space: nowrap; vertical-align:text-top;">
 08/08/2013<br>
 [CUB v1.0.1 (primary)](https://github.com/NVlabs/cub/archive/1.0.1.zip)
 </td><td style="vertical-align:text-top;">
-This release agenda focuses on (1) new and updated primitives, (2) extensive API documentation, 
+This release focuses on (1) new and updated primitives, (2) extensive API documentation, 
 and (3) aggressive regression testing.  Notable additions inlcude:
 - cub::DeviceRadixSort.  This implementation is an overhaul of our previous 
   efforts in the B40C and MGPU projects.  It is constructed from tunable CUB 
@@ -419,7 +430,6 @@ warp-wide primitives, including:
   that avoids a combinatorial product of library entry-points
   
 See the [change-log](https://github.com/NVlabs/cub/blob/master/CHANGE_LOG.TXT) for further details.
-  
 </td></tr>
 
 <tr><td style="white-space: nowrap; vertical-align:text-top;">

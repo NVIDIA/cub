@@ -175,7 +175,7 @@ struct BlockReduceByKeyiles
     typedef ReduceByKeyuple<Value, SizeT>                      ScanTuple;
 
     // Tile status descriptor type
-    typedef ScanTileDescriptor<ScanTuple>                 ScanTileDescriptorT;
+    typedef DeviceScanTileDescriptor<ScanTuple>                 DeviceScanTileDescriptorT;
 
     // Block scan functor type
     typedef ReduceByKeyScanOp<ReductionOp>                      ScanOp;
@@ -221,7 +221,7 @@ struct BlockReduceByKeyiles
     KeyOutputIteratorRA         d_keys_out;         ///< Key output data
     ValueInputIteratorRA        d_values_in;        ///< Value input data
     ValueOutputIteratorRA       d_values_out;       ///< Value output data
-    ScanTileDescriptorT         *d_tile_status;     ///< Global list of tile status
+    DeviceScanTileDescriptorT         *d_tile_status;     ///< Global list of tile status
     ScanOp                      scan_op;            ///< Binary scan operator
     int                         num_tiles;          ///< Total number of input tiles for the entire problem
     SizeT                       num_items;          ///< Total number of scan items for the entire problem
@@ -239,7 +239,7 @@ struct BlockReduceByKeyiles
         KeyOutputIteratorRA         d_keys_out,         ///< Key output data
         ValueInputIteratorRA        d_values_in,        ///< Value input data
         ValueOutputIteratorRA       d_values_out,       ///< Value output data
-        ScanTileDescriptorT       *d_tile_status,     ///< Global list of tile status
+        DeviceScanTileDescriptorT       *d_tile_status,     ///< Global list of tile status
         ReductionOp                 reduction_op,       ///< Binary scan operator
         int                         num_tiles,          ///< Total number of input tiles for the entire problem
         SizeT                       num_items)          ///< Total number of scan items for the entire problem
@@ -319,7 +319,7 @@ struct BlockReduceByKeyiles
 
             // Update tile status
             if (threadIdx.x == 0)
-                ScanTileDescriptorT::SetPrefix(d_tile_status, block_aggregate);
+                DeviceScanTileDescriptorT::SetPrefix(d_tile_status, block_aggregate);
         }
         else
         {

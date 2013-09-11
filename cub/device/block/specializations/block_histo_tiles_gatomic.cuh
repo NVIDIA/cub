@@ -35,8 +35,7 @@
 
 #include <iterator>
 
-#include "../../../util_arch.cuh"
-#include "../../../block/block_load.cuh"
+#include "../../../util_type.cuh"
 #include "../../../util_namespace.cuh"
 
 /// Optional outer namespace(s)
@@ -51,7 +50,7 @@ namespace cub {
  * BlockHistogramTilesGlobalAtomic implements a stateful abstraction of CUDA thread blocks for histogramming multiple tiles as part of device-wide histogram using global atomics
  */
 template <
-    typename    BlockHistogramTilesPolicy,          ///< Tuning policy
+    typename    BlockHistogramTilesPolicy,      ///< Tuning policy
     int         BINS,                           ///< Number of histogram bins per channel
     int         CHANNELS,                       ///< Number of channels interleaved in the input data (may be greater than the number of active channels being histogrammed)
     int         ACTIVE_CHANNELS,                ///< Number of channels actively being histogrammed

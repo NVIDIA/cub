@@ -35,10 +35,11 @@
 
 #include <iterator>
 
-#include "scan_tiles_types.cuh"
+#include "device_scan_types.cuh"
 #include "../../block/block_load.cuh"
 #include "../../block/block_store.cuh"
 #include "../../block/block_scan.cuh"
+#include "../../grid/grid_queue.cuh"
 #include "../../util_namespace.cuh"
 
 /// Optional outer namespace(s)
@@ -88,7 +89,7 @@ struct BlockScanTilesPolicy
 /**
  * \brief BlockScanTiles implements a stateful abstraction of CUDA thread blocks for participating in device-wide prefix scan.
  *
- * Implements a single-pass "domino" strategy with adaptive prefix lookback.
+ * Implements a single-pass "domino" strategy with variable predecessor look-back.
  */
 template <
     typename BlockScanTilesPolicy,     ///< Tuning policy
@@ -122,7 +123,7 @@ struct BlockScanTiles
         BlockScanTilesPolicy::ITEMS_PER_THREAD,
         BlockScanTilesPolicy::LOAD_ALGORITHM,
         BlockScanTilesPolicy::LOAD_MODIFIER,
-        BlockScanTilesPolicy::LOAD_WARP_TIME_SLICING>   BlockLoadT;
+        BlockScanTilesPolicy::LOAD_WARP_TIME_SLICING> BlockLoadT;
 
     // Block store type
     typedef BlockStore<
@@ -131,10 +132,10 @@ struct BlockScanTiles
         BlockScanTilesPolicy::ITEMS_PER_THREAD,
         BlockScanTilesPolicy::STORE_ALGORITHM,
         STORE_DEFAULT,
-        BlockScanTilesPolicy::STORE_WARP_TIME_SLICING>  BlockStoreT;
+        BlockScanTilesPolicy::STORE_WARP_TIME_SLICING> BlockStoreT;
 
     // Tile status descriptor type
-    typedef ScanTileDescriptor<T>                 ScanTileDescriptorT;
+    typedef DeviceScanTileDescriptor<T> TileDescriptor;
 
     // Block scan type
     typedef BlockScan<
@@ -143,23 +144,23 @@ struct BlockScanTiles
         BlockScanTilesPolicy::SCAN_ALGORITHM> BlockScanT;
 
     // Callback type for obtaining inter-tile prefix during block scan
-    typedef DeviceScanBlockPrefixOp<T, ScanOp> InterblockPrefixOp;
+    typedef DeviceScanBlockPrefixOp<T, ScanOp> PrefixOp;
 
     // Shared memory type for this threadblock
     struct _TempStorage
     {
         union
         {
-            typename BlockLoadT::TempStorage            load;               // Smem needed for tile loading
-            typename BlockStoreT::TempStorage           store;              // Smem needed for tile storing
+            typename BlockLoadT::TempStorage            load;       // Smem needed for tile loading
+            typename BlockStoreT::TempStorage           store;      // Smem needed for tile storing
             struct
             {
-                typename InterblockPrefixOp::TempStorage    prefix;         // Smem needed for cooperative prefix callback
-                typename BlockScanT::TempStorage            scan;           // Smem needed for tile scanning
+                typename PrefixOp::TempStorage          prefix;     // Smem needed for cooperative prefix callback
+                typename BlockScanT::TempStorage        scan;       // Smem needed for tile scanning
             };
         };
 
-        SizeT                                           tile_idx;           // Shared tile index
+        SizeT                                           tile_idx;   // Shared tile index
     };
 
     // Alias wrapper allowing storage to be unioned
@@ -265,6 +266,7 @@ struct BlockScanTiles
         BlockScanT(temp_storage.scan).InclusiveSum(items, items, block_aggregate, prefix_op);
     }
 
+
     //---------------------------------------------------------------------
     // Constructor
     //---------------------------------------------------------------------
@@ -298,7 +300,7 @@ struct BlockScanTiles
         SizeT                       num_items,          ///< Total number of input items
         int                         tile_idx,           ///< Tile index
         SizeT                       block_offset,       ///< Tile offset
-        ScanTileDescriptorT   *d_tile_status)     ///< Global list of tile status
+        TileDescriptor              *d_tile_status)     ///< Global list of tile status
     {
         // Load items
         T items[ITEMS_PER_THREAD];
@@ -310,18 +312,20 @@ struct BlockScanTiles
 
         __syncthreads();
 
+        // Perform tile scan
         T block_aggregate;
         if (tile_idx == 0)
         {
+            // Scan first tile
             ScanBlock(items, scan_op, identity, block_aggregate);
 
-            // Update tile status if there are successor tiles
+            // Update tile status if this tile is full (i.e., there may be successor tiles)
             if (FULL_TILE && (threadIdx.x == 0))
-                ScanTileDescriptorT::SetPrefix(d_tile_status, block_aggregate);
+                TileDescriptor::SetPrefix(d_tile_status, block_aggregate);
         }
         else
         {
-            InterblockPrefixOp prefix_op(d_tile_status, temp_storage.prefix, scan_op, tile_idx);
+            PrefixOp prefix_op(d_tile_status, temp_storage.prefix, scan_op, tile_idx);
             ScanBlock(items, scan_op, identity, block_aggregate, prefix_op);
         }
 
@@ -334,13 +338,14 @@ struct BlockScanTiles
             BlockStoreT(temp_storage.store).Store(d_out + block_offset, items, num_items - block_offset);
     }
 
+
     /**
      * Dequeue and scan tiles of items as part of a domino scan
      */
     __device__ __forceinline__ void ConsumeTiles(
-        int                         num_items,          ///< Total number of input items
-        GridQueue<int>              queue,              ///< Queue descriptor for assigning tiles of work to thread blocks
-        ScanTileDescriptorT   *d_tile_status)     ///< Global list of tile status
+        int                   num_items,                ///< Total number of input items
+        GridQueue<int>        queue,                    ///< Queue descriptor for assigning tiles of work to thread blocks
+        TileDescriptor   *d_tile_status)     ///< Global list of tile status
     {
 #if CUB_PTX_ARCH < 200
 

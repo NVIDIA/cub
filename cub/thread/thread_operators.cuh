@@ -37,7 +37,6 @@
 
 #pragma once
 
-#include "../util_type.cuh"
 #include "../util_macro.cuh"
 #include "../util_namespace.cuh"
 
@@ -68,6 +67,20 @@ struct Equality
 
 
 /**
+ * \brief Default inequality functor
+ */
+struct Inequality
+{
+    /// Boolean inequality operator, returns <tt>(a != b)</tt>
+    template <typename T>
+    __host__ __device__ __forceinline__ bool operator()(const T &a, const T &b)
+    {
+        return a != b;
+    }
+};
+
+
+/**
  * \brief Default sum functor
  */
 struct Sum
@@ -91,6 +104,20 @@ struct Max
     __host__ __device__ __forceinline__ T operator()(const T &a, const T &b)
     {
         return CUB_MAX(a, b);
+    }
+};
+
+
+/**
+ * \brief Default min functor
+ */
+struct Min
+{
+    /// Boolean min operator, returns <tt>(a < b) ? a : b</tt>
+    template <typename T>
+    __host__ __device__ __forceinline__ T operator()(const T &a, const T &b)
+    {
+        return CUB_MIN(a, b);
     }
 };
 

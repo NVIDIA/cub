@@ -36,10 +36,8 @@
 #include "specializations/warp_scan_shfl.cuh"
 #include "specializations/warp_scan_smem.cuh"
 #include "../thread/thread_operators.cuh"
-#include "../util_debug.cuh"
 #include "../util_arch.cuh"
 #include "../util_type.cuh"
-#include "../util_ptx.cuh"
 #include "../util_namespace.cuh"
 
 /// Optional outer namespace(s)

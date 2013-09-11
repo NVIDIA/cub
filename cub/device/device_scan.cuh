@@ -66,10 +66,10 @@ template <
     typename SizeT>                                 ///< Integer type used for global array indexing
 __global__ void ScanInitKernel(
     GridQueue<SizeT>            grid_queue,         ///< [in] Descriptor for performing dynamic mapping of input tiles to thread blocks
-    ScanTileDescriptor<T>       *d_tile_status,     ///< [out] Tile status words
+    DeviceScanTileDescriptor<T>       *d_tile_status,     ///< [out] Tile status words
     int                         num_tiles)          ///< [in] Number of tiles
 {
-    typedef ScanTileDescriptor<T> ScanTileDescriptorT;
+    typedef DeviceScanTileDescriptor<T> DeviceScanTileDescriptorT;
 
     enum
     {
@@ -110,7 +110,7 @@ __launch_bounds__ (int(BlockScanTilesPolicy::BLOCK_THREADS))
 __global__ void ScanKernel(
     InputIteratorRA             d_in,           ///< Input data
     OutputIteratorRA            d_out,          ///< Output data
-    ScanTileDescriptor<T>       *d_tile_status, ///< Global list of tile status
+    DeviceScanTileDescriptor<T>       *d_tile_status, ///< Global list of tile status
     ScanOp                      scan_op,        ///< Binary scan operator
     Identity                    identity,       ///< Identity element
     SizeT                       num_items,      ///< Total number of scan items for the entire problem
@@ -273,10 +273,10 @@ struct DeviceScan
     struct TunedPolicies<T, SizeT, 100>
     {
         enum {
-            NOMINAL_4B_ITEMS_PER_THREAD = 7,
+            NOMINAL_4B_ITEMS_PER_THREAD = 19,
             ITEMS_PER_THREAD            = CUB_MIN(NOMINAL_4B_ITEMS_PER_THREAD, CUB_MAX(1, (NOMINAL_4B_ITEMS_PER_THREAD * 4 / sizeof(T)))),
         };
-        typedef BlockScanTilesPolicy<128, ITEMS_PER_THREAD, BLOCK_LOAD_TRANSPOSE, false, LOAD_DEFAULT, BLOCK_STORE_TRANSPOSE, false, BLOCK_SCAN_RAKING> ScanPolicy;
+        typedef BlockScanTilesPolicy<128, ITEMS_PER_THREAD, BLOCK_LOAD_WARP_TRANSPOSE, true, LOAD_DEFAULT, BLOCK_STORE_WARP_TRANSPOSE, true, BLOCK_SCAN_RAKING> ScanPolicy;
     };
 
 
@@ -376,7 +376,7 @@ struct DeviceScan
         typedef typename std::iterator_traits<InputIteratorRA>::value_type T;
 
         // Tile status descriptor type
-        typedef ScanTileDescriptor<T> ScanTileDescriptorT;
+        typedef DeviceScanTileDescriptor<T> DeviceScanTileDescriptorT;
 
         cudaError error = cudaSuccess;
         do
@@ -388,7 +388,7 @@ struct DeviceScan
             void* allocations[2];
             size_t allocation_sizes[2] =
             {
-                (num_tiles + TILE_STATUS_PADDING) * sizeof(ScanTileDescriptorT),      // bytes needed for tile status descriptors
+                (num_tiles + TILE_STATUS_PADDING) * sizeof(DeviceScanTileDescriptorT),      // bytes needed for tile status descriptors
                 GridQueue<int>::AllocationSize()                                      // bytes needed for grid queue descriptor
             };
 
@@ -400,7 +400,7 @@ struct DeviceScan
                 return cudaSuccess;
 
             // Global list of tile status
-            ScanTileDescriptorT *d_tile_status = (ScanTileDescriptorT*) allocations[0];
+            DeviceScanTileDescriptorT *d_tile_status = (DeviceScanTileDescriptorT*) allocations[0];
 
             // Grid queue descriptor
             GridQueue<int> queue(allocations[1]);
@@ -421,6 +421,34 @@ struct DeviceScan
             // Get grid size for multi-block kernel
             int scan_grid_size;
             int multi_sm_occupancy = -1;
+
+            // We have atomics and can thus reuse blocks across multiple tiles using a queue descriptor.
+            // Get GPU id
+            int device_ordinal;
+            if (CubDebug(error = cudaGetDevice(&device_ordinal))) break;
+
+            // Get SM count
+            int sm_count;
+            if (CubDebug(error = cudaDeviceGetAttribute (&sm_count, cudaDevAttrMultiProcessorCount, device_ordinal))) break;
+
+            // Get a rough estimate of scan_kernel SM occupancy based upon the maximum SM occupancy of the targeted PTX architecture
+            multi_sm_occupancy = CUB_MIN(
+                ArchProps<CUB_PTX_ARCH>::MAX_SM_THREADBLOCKS,
+                ArchProps<CUB_PTX_ARCH>::MAX_SM_THREADS / scan_dispatch_params.block_threads);
+
+#ifndef __CUDA_ARCH__
+            // We're on the host, so come up with a
+            Device device_props;
+            if (CubDebug(error = device_props.Init(device_ordinal))) break;
+
+            if (CubDebug(error = device_props.MaxSmOccupancy(
+                multi_sm_occupancy,
+                scan_kernel,
+                scan_dispatch_params.block_threads))) break;
+#endif
+            // Get device occupancy for scan_kernel
+            int scan_occupancy = multi_sm_occupancy * sm_count;
+
             if (ptx_version < 200)
             {
                 // We don't have atomics (or don't have fast ones), so just assign one
@@ -429,36 +457,9 @@ struct DeviceScan
             }
             else
             {
-                // We have atomics and can thus reuse blocks across multiple tiles using a queue descriptor.
-                // Get GPU id
-                int device_ordinal;
-                if (CubDebug(error = cudaGetDevice(&device_ordinal))) break;
-
-                // Get SM count
-                int sm_count;
-                if (CubDebug(error = cudaDeviceGetAttribute (&sm_count, cudaDevAttrMultiProcessorCount, device_ordinal))) break;
-
-                // Get a rough estimate of scan_kernel SM occupancy based upon the maximum SM occupancy of the targeted PTX architecture
-                multi_sm_occupancy = CUB_MIN(
-                    ArchProps<CUB_PTX_ARCH>::MAX_SM_THREADBLOCKS,
-                    ArchProps<CUB_PTX_ARCH>::MAX_SM_THREADS / scan_dispatch_params.block_threads);
-
-#ifndef __CUDA_ARCH__
-                // We're on the host, so come up with a
-                Device device_props;
-                if (CubDebug(error = device_props.Init(device_ordinal))) break;
-
-                if (CubDebug(error = device_props.MaxSmOccupancy(
-                    multi_sm_occupancy,
-                    scan_kernel,
-                    scan_dispatch_params.block_threads))) break;
-#endif
-                // Get device occupancy for scan_kernel
-                int scan_occupancy = multi_sm_occupancy * sm_count;
-
                 // Get grid size for scan_kernel
                 scan_grid_size = (num_tiles < scan_occupancy) ?
-                    num_tiles :                 // Not enough to fill the device with threadblocks
+                    num_tiles :          // Not enough to fill the device with threadblocks
                     scan_occupancy;      // Fill the device with threadblocks
             }
 
