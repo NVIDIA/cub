@@ -75,7 +75,7 @@ __global__ void RadixSortUpsweepKernel(
     int                     current_bit,                    ///< [in] Bit position of current radix digit
     bool                    use_primary_bit_granularity,    ///< [in] Whether nor not to use the primary policy (or the embedded alternate policy for smaller bit granularity)
     bool                    first_pass,                     ///< [in] Whether this is the first digit pass
-    GridEvenShare<SizeT>    even_share)                     ///< [in] Descriptor for how to map an even-share of tiles across thread blocks
+    GridEvenShare<SizeT>    even_share)                     ///< [in] Even-share descriptor for mapping an equal number of tiles onto each thread block
 {
 
     // Alternate policy for when fewer bits remain
@@ -102,7 +102,7 @@ __global__ void RadixSortUpsweepKernel(
         SizeT bin_count;
         BlockRadixSortUpsweepTilesT(temp_storage.pass_storage, d_keys, current_bit).ProcessTiles(
             even_share.block_offset,
-            even_share.block_oob,
+            even_share.block_end,
             bin_count);
 
         // Write out digit counts (striped)
@@ -118,7 +118,7 @@ __global__ void RadixSortUpsweepKernel(
         SizeT bin_count;
         AltBlockRadixSortUpsweepTilesT(temp_storage.alt_pass_storage, d_keys, current_bit).ProcessTiles(
             even_share.block_offset,
-            even_share.block_oob,
+            even_share.block_end,
             bin_count);
 
         // Write out digit counts (striped)
@@ -184,7 +184,7 @@ __global__ void RadixSortDownsweepKernel(
     bool                    use_primary_bit_granularity,    ///< [in] Whether nor not to use the primary policy (or the embedded alternate policy for smaller bit granularity)
     bool                    first_pass,                     ///< [in] Whether this is the first digit pass
     bool                    last_pass,                      ///< [in] Whether this is the last digit pass
-    GridEvenShare<SizeT>    even_share)                     ///< [in] Descriptor for how to map an even-share of tiles across thread blocks
+    GridEvenShare<SizeT>    even_share)                     ///< [in] Even-share descriptor for mapping an equal number of tiles onto each thread block
 {
 
     // Alternate policy for when fewer bits remain
@@ -210,14 +210,14 @@ __global__ void RadixSortDownsweepKernel(
         // Process input tiles
         BlockRadixSortDownsweepTilesT(temp_storage.pass_storage, num_items, d_spine, d_keys_in, d_keys_out, d_values_in, d_values_out, current_bit).ProcessTiles(
             even_share.block_offset,
-            even_share.block_oob);
+            even_share.block_end);
     }
     else
     {
         // Process input tiles
         AltBlockRadixSortDownsweepTilesT(temp_storage.alt_pass_storage, num_items, d_spine, d_keys_in, d_keys_out, d_values_in, d_values_out, current_bit).ProcessTiles(
             even_share.block_offset,
-            even_share.block_oob);
+            even_share.block_end);
     }
 }
 
@@ -592,10 +592,9 @@ struct DeviceRadixSort
             int downsweep_occupancy = downsweep_sm_occupancy * sm_count;
 
             // Get even-share work distribution descriptor
-            GridEvenShare<SizeT> even_share;
             int max_downsweep_grid_size = downsweep_occupancy * downsweep_dispatch_params.subscription_factor;
             int downsweep_grid_size;
-            even_share.GridInit(num_items, max_downsweep_grid_size, downsweep_dispatch_params.tile_size);
+            GridEvenShare<SizeT> even_share(num_items, max_downsweep_grid_size, downsweep_dispatch_params.tile_size);
             downsweep_grid_size = even_share.grid_size;
 
             // Get number of spine elements (round up to nearest spine scan kernel tile size)
