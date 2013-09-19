@@ -145,15 +145,13 @@ __device__ __forceinline__ void LoadBlocked(
     int             valid_items,                ///< [in] Number of valid items to load
     T               oob_default)                ///< [in] Default value to assign out-of-bound items
 {
-    int bounds = valid_items - (linear_tid * ITEMS_PER_THREAD);
-
     #pragma unroll
     for (int ITEM = 0; ITEM < ITEMS_PER_THREAD; ITEM++)
     {
-        items[ITEM] = (ITEM < bounds) ?
-            ThreadLoad<MODIFIER>(block_itr + (linear_tid * ITEMS_PER_THREAD) + ITEM) :
-            oob_default;
+        items[ITEM] = oob_default;
     }
+
+    LoadBlocked<MODIFIER>(linear_tid, block_itr, items, valid_items);
 }
 
 
@@ -255,15 +253,13 @@ __device__ __forceinline__ void LoadStriped(
     int             valid_items,                ///< [in] Number of valid items to load
     T               oob_default)                ///< [in] Default value to assign out-of-bound items
 {
-    int bounds = valid_items - linear_tid;
-
     #pragma unroll
     for (int ITEM = 0; ITEM < ITEMS_PER_THREAD; ITEM++)
     {
-        items[ITEM] = (ITEM * BLOCK_THREADS < bounds) ?
-             ThreadLoad<MODIFIER>(block_itr + linear_tid + (ITEM * BLOCK_THREADS)) :
-             oob_default;
+        items[ITEM] = oob_default;
     }
+
+    LoadStriped<MODIFIER>(linear_tid, block_itr, items, valid_items);
 }
 
 
@@ -377,19 +373,13 @@ __device__ __forceinline__ void LoadWarpStriped(
     int             valid_items,               ///< [in] Number of valid items to load
     T               oob_default)                ///< [in] Default value to assign out-of-bound items
 {
-    int tid         = linear_tid & (PtxArchProps::WARP_THREADS - 1);
-    int wid         = linear_tid >> PtxArchProps::LOG_WARP_THREADS;
-    int warp_offset = wid * PtxArchProps::WARP_THREADS * ITEMS_PER_THREAD;
-    int bounds      = valid_items - warp_offset - tid;
-
-    // Load directly in warp-striped order
     #pragma unroll
     for (int ITEM = 0; ITEM < ITEMS_PER_THREAD; ITEM++)
     {
-        items[ITEM] = ((ITEM * PtxArchProps::WARP_THREADS) < bounds) ?
-            ThreadLoad<MODIFIER>(block_itr + warp_offset + tid + (ITEM * PtxArchProps::WARP_THREADS)) :
-            oob_default;
+        items[ITEM] = oob_default;
     }
+
+    LoadWarpStriped<MODIFIER>(linear_tid, block_itr, items, valid_items);
 }
 
 

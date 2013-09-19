@@ -110,15 +110,15 @@ typename TexIteratorRef<Value>::TexRef TexIteratorRef<Value>::ref = 0;
  *****************************************************************************/
 
 /**
- * \brief A simple random-access iterator pointing to a range of constant values
+ * \brief A simple random-access input iterator pointing to a range of constant values
  *
  * \par Overview
- * ConstantIteratorRA is a random-access iterator that when dereferenced, always
- * returns the supplied constant of type \p OutputType.
+ * ConstantIteratorRA is a random-access input iterator that when dereferenced, always
+ * returns the supplied constant of type \p ValueType.
  *
- * \tparam OutputType           The value type of this iterator
+ * \tparam ValueType           The value type of this iterator
  */
-template <typename OutputType>
+template <typename ValueType>
 class ConstantIteratorRA
 {
 public:
@@ -126,9 +126,9 @@ public:
 #ifndef DOXYGEN_SHOULD_SKIP_THIS    // Do not document
 
     typedef ConstantIteratorRA                  self_type;
-    typedef OutputType                          value_type;
-    typedef OutputType                          reference;
-    typedef OutputType*                         pointer;
+    typedef ValueType                          value_type;
+    typedef ValueType                          reference;
+    typedef ValueType*                         pointer;
     typedef std::random_access_iterator_tag     iterator_category;
     typedef int                                 difference_type;
 
@@ -136,13 +136,13 @@ public:
 
 private:
 
-    OutputType    val;
+    ValueType    val;
 
 public:
 
     /// Constructor
     __host__ __device__ __forceinline__ ConstantIteratorRA(
-        const OutputType &val)          ///< Constant value for the iterator instance to report
+        const ValueType &val)          ///< Constant value for the iterator instance to report
     :
         val(val)
     {}
@@ -153,11 +153,6 @@ public:
     {
         self_type i = *this;
         return i;
-    }
-
-    __host__ __device__ __forceinline__ self_type operator++(int junk)
-    {
-        return *this;
     }
 
     __host__ __device__ __forceinline__ reference operator*()
@@ -202,6 +197,192 @@ public:
 
 };
 
+
+
+/**
+ * \brief A simple random-access iterator pointing into a range of sequentially changing values
+ *
+ * \par Overview
+ * CountingIteratorRA is a random-access iterator that when dereferenced at a certain
+ * offset from \p base will return the value \p base + \p offset.
+ *
+ * \tparam ValueType           The value type of this iterator
+ */
+template <typename ValueType>
+class CountingIteratorRA
+{
+public:
+
+#ifndef DOXYGEN_SHOULD_SKIP_THIS    // Do not document
+
+    typedef CountingIteratorRA                  self_type;
+    typedef ValueType                          value_type;
+    typedef ValueType                          reference;
+    typedef ValueType*                         pointer;
+    typedef std::random_access_iterator_tag     iterator_category;
+    typedef int                                 difference_type;
+
+#endif  // DOXYGEN_SHOULD_SKIP_THIS
+
+private:
+
+    ValueType    val;
+
+public:
+
+    /// Constructor
+    __host__ __device__ __forceinline__ CountingIteratorRA(
+        const ValueType &val)          ///< Constant value for the iterator instance to report
+    :
+        val(val)
+    {}
+
+#ifndef DOXYGEN_SHOULD_SKIP_THIS    // Do not document
+
+    __host__ __device__ __forceinline__ self_type operator++()
+    {
+        self_type i = *this;
+        val++;
+        return i;
+    }
+
+    __host__ __device__ __forceinline__ reference operator*()
+    {
+        return val;
+    }
+
+    template <typename SizeT>
+    __host__ __device__ __forceinline__ self_type operator+(SizeT n)
+    {
+        CountingIteratorRA retval(val + n);
+        return retval;
+    }
+
+    template <typename SizeT>
+    __host__ __device__ __forceinline__ self_type operator-(SizeT n)
+    {
+        CountingIteratorRA retval(val - n);
+        return retval;
+    }
+
+    template <typename SizeT>
+    __host__ __device__ __forceinline__ reference operator[](SizeT n)
+    {
+        return val + n;
+    }
+
+    __host__ __device__ __forceinline__ pointer operator->()
+    {
+        return &val;
+    }
+
+    __host__ __device__ __forceinline__ bool operator==(const self_type& rhs)
+    {
+        return (val == rhs.val);
+    }
+
+    __host__ __device__ __forceinline__ bool operator!=(const self_type& rhs)
+    {
+        return (val != rhs.val);
+    }
+
+#endif // DOXYGEN_SHOULD_SKIP_THIS
+
+};
+
+
+/**
+ * \brief A simple random-access input iterator for applying a cache modifier
+ *
+ * \par Overview
+ * CacheModifiedIteratorRA is a random-access iterator that wraps a native
+ * device pointer of type <tt>ValueType*</tt>. \p ValueType references are
+ * made by reading \p ValueType values through loads modified by \p MODIFIER.
+ *
+ * \tparam ValueType           The value type of this iterator
+ */
+template <PtxLoadModifier MODIFIER, typename ValueType>
+class CacheModifiedIteratorRA
+{
+public:
+
+#ifndef DOXYGEN_SHOULD_SKIP_THIS    // Do not document
+
+    typedef CacheModifiedIteratorRA             self_type;
+    typedef ValueType                           value_type;
+    typedef ValueType                           reference;
+    typedef ValueType*                          pointer;
+    typedef std::random_access_iterator_tag     iterator_category;
+    typedef int                                 difference_type;
+
+#endif  // DOXYGEN_SHOULD_SKIP_THIS
+
+private:
+
+    ValueType* ptr;
+
+public:
+
+    /**
+     * \brief Constructor
+     * @param ptr Native pointer to wrap
+     * @param conversion_op Binary transformation functor
+     */
+    __host__ __device__ __forceinline__ CacheModifiedIteratorRA(ValueType* ptr) :
+        ptr(ptr) {}
+
+#ifndef DOXYGEN_SHOULD_SKIP_THIS    // Do not document
+
+    __host__ __device__ __forceinline__ self_type operator++()
+    {
+        self_type i = *this;
+        ptr++;
+        return i;
+    }
+
+    __host__ __device__ __forceinline__ reference operator*()
+    {
+        return ThreadLoad<MODIFIER>(ptr);
+    }
+
+    template <typename SizeT>
+    __host__ __device__ __forceinline__ self_type operator+(SizeT n)
+    {
+        CacheModifiedIteratorRA retval(ptr + n);
+        return retval;
+    }
+
+    template <typename SizeT>
+    __host__ __device__ __forceinline__ self_type operator-(SizeT n)
+    {
+        CacheModifiedIteratorRA retval(ptr - n);
+        return retval;
+    }
+
+    template <typename SizeT>
+    __host__ __device__ __forceinline__ reference operator[](SizeT n)
+    {
+        return ThreadLoad<MODIFIER>(ptr + n);
+    }
+
+    __host__ __device__ __forceinline__ pointer operator->()
+    {
+        return &ThreadLoad<MODIFIER>(ptr);
+    }
+
+    __host__ __device__ __forceinline__ bool operator==(const self_type& rhs)
+    {
+        return (ptr == rhs.ptr);
+    }
+
+    __host__ __device__ __forceinline__ bool operator!=(const self_type& rhs)
+    {
+        return (ptr != rhs.ptr);
+    }
+
+#endif // DOXYGEN_SHOULD_SKIP_THIS
+
+};
 
 
 /**
@@ -256,12 +437,6 @@ public:
         self_type i = *this;
         ptr++;
         return i;
-    }
-
-    __host__ __device__ __forceinline__ self_type operator++(int junk)
-    {
-        ptr++;
-        return *this;
     }
 
     __host__ __device__ __forceinline__ reference operator*()
@@ -422,13 +597,6 @@ public:
         ptr++;
         tex_align_offset++;
         return i;
-    }
-
-    __host__ __device__ __forceinline__ self_type operator++(int junk)
-    {
-        ptr++;
-        tex_align_offset++;
-        return *this;
     }
 
     __host__ __device__ __forceinline__ reference operator*()
@@ -625,13 +793,6 @@ public:
         ptr++;
         tex_align_offset++;
         return i;
-    }
-
-    __host__ __device__ __forceinline__ self_type operator++(int junk)
-    {
-        ptr++;
-        tex_align_offset++;
-        return *this;
     }
 
     __host__ __device__ __forceinline__ reference operator*()
