@@ -154,7 +154,7 @@ cudaError_t Dispatch(
     {
         thrust::device_ptr<Key>     d_keys_wrapper(d_keys.Current());
         thrust::device_ptr<Value>   d_values_wrapper(d_values.Current());
-        thrust::sort(d_keys_wrapper, d_keys_wrapper + num_items, d_values_wrapper);
+        thrust::sort_by_key(d_keys_wrapper, d_keys_wrapper + num_items, d_values_wrapper);
     }
 
     return cudaSuccess;
@@ -573,6 +573,9 @@ int main(int argc, char** argv)
 
         Test<CUB, unsigned int, NullType> (num_items, RANDOM, 0, g_bits, CUB_TYPE_STRING(unsigned int));
         Test<THRUST, unsigned int, NullType> (num_items, RANDOM, 0, g_bits, CUB_TYPE_STRING(unsigned int));
+
+        Test<CUB, unsigned int, unsigned int> (num_items, RANDOM, 0, g_bits, CUB_TYPE_STRING(unsigned int));
+        Test<THRUST, unsigned int, unsigned int> (num_items, RANDOM, 0, g_bits, CUB_TYPE_STRING(unsigned int));
     }
     else
     {
