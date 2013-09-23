@@ -230,13 +230,6 @@ struct BlockSegmentedReduceTiles
     // Parameterized BlockScan type for reduce-value-by-segment scan
     typedef BlockScan<PartialReduction, BLOCK_THREADS, SCAN_ALGORITHM> BlockScan;
 
-    // A cache item that can either be a value or a segment-ID
-    union CacheItem
-    {
-        SizeT segment_idx;
-        Value value;            // TODO: fix for non-default-constructible value types
-    };
-
     // Shared memory type for this threadblock
     struct TempStorage
     {
@@ -257,7 +250,7 @@ struct BlockSegmentedReduceTiles
         };
 
         // The first partial reduction scattered by this thread block
-        SizeT first_partial;
+        PartialReduction first_partial;
     };
 
     //---------------------------------------------------------------------
@@ -320,12 +313,18 @@ struct BlockSegmentedReduceTiles
         SizeT next_block_segment_idx,
         SizeT next_block_value_idx)
     {
+        // Remember the first segment index
+        SizeT first_segment_idx = block_segment_idx;
+
+        // Initialize the block's region prefix
+        prefix_op.running_prefix.segment_idx = first_segment_idx;
+        prefix_op.running_prefix.partial = identity;
+
+        // Initialize the first scattered partial to the prefix (in case we don't scatter one)
         if (threadIdx.x == 0)
         {
-            temp_storage.first_partial = identity;
+            temp_storage.first_partial = prefix_op.running_prefix;
         }
-
-        SizeT first_segment_idx = block_segment_idx;
 
         // Have the thread block iterate over the region
         while (block_diagonal < next_block_diagonal)
@@ -398,10 +397,8 @@ struct BlockSegmentedReduceTiles
                     tail_flags[ITEM] = 1;
                     thread_segment_idx++;
 
-                    valid_segment = (thread_segment_idx < next_thread_segment_idx);
-                    segment_end_offset = (valid_segment) ?
-                        d_segment_end_offsets[thread_segment_idx] :
-                        num_values;                                                         // Out of range
+                    if ((valid_segment = (thread_segment_idx < next_thread_segment_idx)))
+                        segment_end_offset = d_segment_end_offsets[thread_segment_idx];
                 }
                 else if (valid_value && !prefer_segment)
                 {
@@ -409,17 +406,16 @@ struct BlockSegmentedReduceTiles
                     partial_reductions[ITEM].partial = d_values[thread_value_idx];
                     thread_value_idx++;
 
-                    valid_value = (thread_value_idx < next_thread_value_idx);
-                    value_offset = (valid_value) ?
-                        d_value_offsets[thread_value_idx] :
-                        num_values;                                                         // Out of range
+                    if ((valid_value = (thread_value_idx < next_thread_value_idx)))
+                        d_value_offsets[thread_value_idx];
                 }
             }
 
-            // Update tile starting indices
+            // Update tile starting indices to the last thread's end indices
             block_segment_idx = temp_storage.segment_idx[BLOCK_THREADS];
             block_value_idx = temp_storage.value_idx[BLOCK_THREADS];
 
+            // Barrier for smem reuse
             __syncthreads();
 
             // Use prefix scan to reduce values by segment-id.  The segment-reductions end up in items flagged as segment-tails.
@@ -446,12 +442,12 @@ struct BlockSegmentedReduceTiles
                     // Save off the first partial product that this thread block will scatter
                     if (segment_idx == first_segment_idx)
                     {
-                        temp_storage.first_partial = partial;
+                        temp_storage.first_partial.partial = partial;
                     }
                 }
             }
 
-            // Barrier for smem reuse and coherence
+            // Barrier for smem reuse
             __syncthreads();
 
             block_diagonal += TILE_ITEMS;
