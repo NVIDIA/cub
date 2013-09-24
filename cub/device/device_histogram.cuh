@@ -395,8 +395,37 @@ struct DeviceHistogram
                 ArchProps<CUB_PTX_ARCH>::MAX_SM_THREADBLOCKS,
                 ArchProps<CUB_PTX_ARCH>::MAX_SM_THREADS / multi_block_dispatch_params.block_threads);
 
+            // Get a rough estimate of device occupancy for multi_block_kernel
+            int multi_block_occupancy = multi_block_sm_occupancy * sm_count;
+
+            // Get a rough estimate of maximum grid size
+            int multi_block_grid_size = multi_block_occupancy * multi_block_dispatch_params.subscription_factor;
+
+            // Temporary storage allocation requirements
+            void* allocations[2];
+            size_t allocation_sizes[2] =
+            {
+                ACTIVE_CHANNELS * multi_block_grid_size * sizeof(HistoCounter) * BINS,      // bytes needed for privatized histograms
+                GridQueue<int>::AllocationSize()                                            // bytes needed for grid queue descriptor
+            };
+
+            // Alias the temporary allocations from the single storage blob (or set the necessary size of the blob)
+            if (CubDebug(error = AliasTemporaries(d_temp_storage, temp_storage_bytes, allocations, allocation_sizes))) break;
+            if (d_temp_storage == NULL)
+            {
+                // Return if the caller is simply requesting the size of the storage allocation
+                return cudaSuccess;
+            }
+
+            // Alias the allocation for the privatized per-block reductions
+            HistoCounter *d_block_histograms = (HistoCounter*) allocations[0];
+
+            // Alias the allocation for the grid queue descriptor
+            GridQueue<SizeT> queue(allocations[1]);
+
+
 #ifndef __CUDA_ARCH__
-            // We're on the host, so come up with a more accurate estimate of multi_block_kernel SM occupancy from actual device properties
+            // We're on the host, so update multi_block_kernel SM occupancy from actual device properties
             Device device_props;
             if (CubDebug(error = device_props.Init(device_ordinal))) break;
 
@@ -406,8 +435,8 @@ struct DeviceHistogram
                 multi_block_dispatch_params.block_threads))) break;
 #endif
 
-            // Get device occupancy for multi_block_kernel
-            int multi_block_occupancy = multi_block_sm_occupancy * sm_count;
+            // Update device occupancy for multi_block_kernel
+            multi_block_occupancy = multi_block_sm_occupancy * sm_count;
 
             // Get tile size for multi_block_kernel
             int multi_block_tile_size = multi_block_dispatch_params.channel_tile_size * CHANNELS;
@@ -418,8 +447,7 @@ struct DeviceHistogram
                 multi_block_occupancy * multi_block_dispatch_params.subscription_factor,
                 multi_block_tile_size);
 
-            // Get grid size for multi_block_kernel
-            int multi_block_grid_size;
+            // Update grid size for multi_block_kernel
             switch (multi_block_dispatch_params.grid_mapping)
             {
             case GRID_MAPPING_EVEN_SHARE:
@@ -437,26 +465,6 @@ struct DeviceHistogram
                     multi_block_occupancy;      // Fill the device with threadblocks
                 break;
             };
-
-            // Temporary storage allocation requirements
-            void* allocations[2];
-            size_t allocation_sizes[2] =
-            {
-                ACTIVE_CHANNELS * multi_block_grid_size * sizeof(HistoCounter) * BINS,      // bytes needed for privatized histograms
-                GridQueue<int>::AllocationSize()                                            // bytes needed for grid queue descriptor
-            };
-
-            if (CubDebug(error = AliasTemporaries(d_temp_storage, temp_storage_bytes, allocations, allocation_sizes))) break;
-
-            // Return if the caller is simply requesting the size of the storage allocation
-            if (d_temp_storage == NULL)
-                return cudaSuccess;
-
-            // Privatized per-block reductions
-            HistoCounter *d_block_histograms = (HistoCounter*) allocations[0];
-
-            // Grid queue descriptor
-            GridQueue<SizeT> queue(allocations[1]);
 
             // Setup array wrapper for histogram channel output (because we can't pass static arrays as kernel parameters)
             ArrayWrapper<HistoCounter*, ACTIVE_CHANNELS> d_histo_wrapper;
