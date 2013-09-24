@@ -55,7 +55,7 @@ bool                    g_verbose           = false;
 int                     g_timing_iterations = 0;
 int                     g_repeat            = 0;
 int                     g_bits              = -1;
-CachingDeviceAllocator  g_allocator;
+CachingDeviceAllocator  g_allocator(true);
 
 // Dispatch types
 enum Backend
@@ -527,6 +527,23 @@ void TestItems(
 }
 
 
+/**
+ * Test value type
+ */
+template <typename Key>
+void TestItems(
+    int             num_items,
+    int             begin_bit,
+    int             end_bit,
+    char*           type_string)
+{
+    TestItems<Key, NullType>(num_items, begin_bit, end_bit, type_string);
+    TestItems<Key, unsigned int>(num_items, begin_bit, end_bit, type_string);
+    TestItems<Key, unsigned long long>(num_items, begin_bit, end_bit, type_string);
+    TestItems<Key, TestFoo>(num_items, begin_bit, end_bit, type_string);
+}
+
+
 //---------------------------------------------------------------------
 // Main
 //---------------------------------------------------------------------
@@ -579,12 +596,26 @@ int main(int argc, char** argv)
     }
     else
     {
-        TestItems<unsigned int, NullType>        (num_items, 0, g_bits, CUB_TYPE_STRING(unsigned int));
-        TestItems<unsigned long long, NullType>  (num_items, 0, g_bits, CUB_TYPE_STRING(unsigned long long));
-        TestItems<unsigned int, unsigned int>    (num_items, 0, g_bits, CUB_TYPE_STRING(unsigned int));
-        TestItems<int, NullType>                 (num_items, 0, g_bits, CUB_TYPE_STRING(int));
-        TestItems<double, NullType>              (num_items, 0, g_bits, CUB_TYPE_STRING(double));
-        TestItems<float, NullType>               (num_items, 0, g_bits, CUB_TYPE_STRING(unsigned int));
+
+        TestItems<char>                 (num_items, 0, g_bits, CUB_TYPE_STRING(char));
+        TestItems<signed char>          (num_items, 0, g_bits, CUB_TYPE_STRING(signed char));
+        TestItems<unsigned char>        (num_items, 0, g_bits, CUB_TYPE_STRING(unsigned char));
+
+        TestItems<short>                (num_items, 0, g_bits, CUB_TYPE_STRING(short));
+        TestItems<unsigned short>       (num_items, 0, g_bits, CUB_TYPE_STRING(unsigned short));
+
+        TestItems<int>                  (num_items, 0, g_bits, CUB_TYPE_STRING(int));
+        TestItems<unsigned int>         (num_items, 0, g_bits, CUB_TYPE_STRING(unsigned int));
+
+        TestItems<long>                 (num_items, 0, g_bits, CUB_TYPE_STRING(long));
+        TestItems<unsigned long>        (num_items, 0, g_bits, CUB_TYPE_STRING(unsigned long));
+
+        TestItems<long long>            (num_items, 0, g_bits, CUB_TYPE_STRING(long long));
+        TestItems<unsigned long long>   (num_items, 0, g_bits, CUB_TYPE_STRING(unsigned long long));
+
+        TestItems<float>                (num_items, 0, g_bits, CUB_TYPE_STRING(float));
+        TestItems<double>               (num_items, 0, g_bits, CUB_TYPE_STRING(double));
+
     }
 
     return 0;
