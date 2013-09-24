@@ -156,7 +156,7 @@ __global__ void RadixSortScanKernel(
     int block_offset = 0;
     RunningBlockPrefixOp<SizeT> prefix_op;
     prefix_op.running_total = 0;
-    while (block_offset < num_counts)
+    while (block_offset + BlockScanTilesT::TILE_ITEMS <= num_counts)
     {
         block_scan.ConsumeTile<true, false>(block_offset, prefix_op);
         block_offset += BlockScanTilesT::TILE_ITEMS;
@@ -595,6 +595,8 @@ struct DeviceRadixSort
         cudaError error = cudaSuccess;
         do
         {
+            int bins = 1 << downsweep_dispatch_params.radix_bits;
+
             // Get device ordinal
             int device_ordinal;
             if (CubDebug(error = cudaGetDevice(&device_ordinal))) break;
@@ -609,8 +611,35 @@ struct DeviceRadixSort
                 ArchProps<CUB_PTX_ARCH>::MAX_SM_THREADS / downsweep_dispatch_params.block_threads);
             int upsweep_sm_occupancy = downsweep_sm_occupancy;
 
+            // Get a rough estimate of device occupancy for downsweep_kernel
+            int downsweep_occupancy = downsweep_sm_occupancy * sm_count;
+
+            // Get a rough estimate of downsweep_grid_size
+            int downsweep_grid_size = downsweep_occupancy * downsweep_dispatch_params.subscription_factor;
+
+            // Get a rough estimate of spine size
+            int spine_size = (downsweep_grid_size * bins) + scan_dispatch_params.tile_size;
+
+            // Temporary storage allocation requirements
+            void* allocations[1];
+            size_t allocation_sizes[1] =
+            {
+                spine_size * sizeof(SizeT),    // bytes needed for privatized block digit histograms
+            };
+
+            // Alias the temporary allocations from the single storage blob (or set the necessary size of the blob)
+            if (CubDebug(error = AliasTemporaries(d_temp_storage, temp_storage_bytes, allocations, allocation_sizes))) break;
+            if (d_temp_storage == NULL)
+            {
+                // Return if the caller is simply requesting the size of the storage allocation
+                return cudaSuccess;
+            }
+
+            // Alias the allocation for the privatized per-block digit histograms
+            SizeT *d_spine = (SizeT*) allocations[0];
+
 #ifndef __CUDA_ARCH__
-            // We're on the host, so come up with more accurate estimates of SM occupancy from actual device properties
+            // We're on the host, so update SM occupancy from actual device properties
             Device device_props;
             if (CubDebug(error = device_props.Init(device_ordinal))) break;
 
@@ -624,42 +653,20 @@ struct DeviceRadixSort
                 upsweep_kernel,
                 upsweep_dispatch_params.block_threads))) break;
 #endif
-            // Get device occupancies
-            int downsweep_occupancy = downsweep_sm_occupancy * sm_count;
+            // Update device occupancy
+            downsweep_occupancy = downsweep_sm_occupancy * sm_count;
 
             // Get even-share work distribution descriptor
-            int max_downsweep_grid_size = downsweep_occupancy * downsweep_dispatch_params.subscription_factor;
-            int downsweep_grid_size;
-            GridEvenShare<SizeT> even_share(num_items, max_downsweep_grid_size, downsweep_dispatch_params.tile_size);
+            GridEvenShare<SizeT> even_share(
+                num_items,
+                downsweep_occupancy * downsweep_dispatch_params.subscription_factor,
+                downsweep_dispatch_params.tile_size);
+
+            // Update downsweep grid size
             downsweep_grid_size = even_share.grid_size;
 
-            // Get number of spine elements (round up to nearest spine scan kernel tile size)
-            int bins            = 1 << downsweep_dispatch_params.radix_bits;
-            int spine_size      = downsweep_grid_size * bins;
-            int spine_tiles     = (spine_size + scan_dispatch_params.tile_size - 1) / scan_dispatch_params.tile_size;
-            spine_size          = spine_tiles * scan_dispatch_params.tile_size;
-
-            int alt_bins            = 1 << downsweep_dispatch_params.alt_radix_bits;
-            int alt_spine_size      = downsweep_grid_size * alt_bins;
-            int alt_spine_tiles     = (alt_spine_size + scan_dispatch_params.tile_size - 1) / scan_dispatch_params.tile_size;
-            alt_spine_size          = alt_spine_tiles * scan_dispatch_params.tile_size;
-
-            // Temporary storage allocation requirements
-            void* allocations[1];
-            size_t allocation_sizes[1] =
-            {
-                spine_size * sizeof(SizeT),    // bytes needed for privatized block digit histograms
-            };
-
-            // Alias temporaries (or set the necessary size of the storage allocation)
-            if (CubDebug(error = AliasTemporaries(d_temp_storage, temp_storage_bytes, allocations, allocation_sizes))) break;
-
-            // Return if the caller is simply requesting the size of the storage allocation
-            if (d_temp_storage == NULL)
-                return cudaSuccess;
-
-            // Privatized per-block digit histograms
-            SizeT *d_spine = (SizeT*) allocations[0];
+            // Update spine size
+            spine_size = (downsweep_grid_size * bins) + scan_dispatch_params.tile_size;
 
 #ifndef __CUDA_ARCH__
             // Get current smem bank configuration
@@ -712,7 +719,7 @@ struct DeviceRadixSort
                 // Invoke scan_kernel
                 scan_kernel<<<1, scan_dispatch_params.block_threads, 0, stream>>>(
                     d_spine,
-                    (use_primary_bit_granularity) ? spine_size : alt_spine_size);
+                    spine_size);
 
                 // Sync the stream if specified
                 if (stream_synchronous && (CubDebug(error = SyncStream(stream)))) break;

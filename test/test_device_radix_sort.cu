@@ -243,7 +243,7 @@ template <typename Key, typename Value>
 struct Pair
 {
     Key     key;
-    Value   value;
+    Value   index;
 
     bool operator<(const Pair &b) const
     {
@@ -255,56 +255,12 @@ struct Pair
 /**
  * Initialize key-value sorting problem
  */
-template <typename Key, typename Value>
-void Initialize(
-    GenMode      gen_mode,
-    Key          *h_keys,
-    Value        *h_values,
-    Key          *h_sorted_keys,
-    Value        *h_sorted_values,
-    int          num_items)
-{
-
-    Pair<Key, Value> *pairs = new Pair<Key, Value>[num_items];
-    for (int i = 0; i < num_items; ++i)
-    {
-        if (gen_mode == RANDOM) {
-            RandomBits(h_keys[i], 0, 0, g_bits);
-        } else if (gen_mode == UNIFORM) {
-            h_keys[i] = 2;
-        } else {
-            h_keys[i] = i;
-        }
-
-        h_values[i]     = i;
-
-        pairs[i].key    = h_keys[i];
-        pairs[i].value  = h_values[i];
-    }
-
-    std::stable_sort(pairs, pairs + num_items);
-
-    for (int i = 0; i < num_items; ++i)
-    {
-        h_sorted_keys[i]    = pairs[i].key;
-        h_sorted_values[i]  = pairs[i].value;
-    }
-
-    delete[] pairs;
-}
-
-
-/**
- * Initialize keys-only sorting problem
- */
 template <typename Key>
 void Initialize(
-    GenMode      gen_mode,
-    Key          *h_keys,
-    NullType     *h_values,
-    Key          *h_sorted_keys,
-    NullType     *h_sorted_values,
-    int          num_items)
+    GenMode         gen_mode,
+    Key             *h_keys,
+    Pair<Key, int>  *h_pairs,
+    int             num_items)
 {
     for (int i = 0; i < num_items; ++i)
     {
@@ -316,11 +272,14 @@ void Initialize(
             h_keys[i] = i;
         }
 
-        h_sorted_keys[i] = h_keys[i];
+        h_pairs[i].key    = h_keys[i];
+        h_pairs[i].index  = i;
     }
 
-    std::stable_sort(h_sorted_keys, h_sorted_keys + num_items);
+    std::stable_sort(h_pairs, h_pairs + num_items);
 }
+
+
 
 
 /**
@@ -354,13 +313,29 @@ void Test(
     fflush(stdout);
 
     // Allocate host arrays
-    Key     *h_keys             = new Key[num_items];
+    Key             *h_keys     = new Key[num_items];
+    Pair<Key, int>  *h_pairs    = new Pair<Key, int>[num_items];
+
+    // Initialize problem
+    Initialize(gen_mode, h_keys, h_pairs, num_items);
+
+    // Update sorted keys and values
     Key     *h_sorted_keys      = new Key[num_items];
     Value   *h_values           = (KEYS_ONLY) ? NULL : new Value[num_items];
     Value   *h_sorted_values    = (KEYS_ONLY) ? NULL : new Value[num_items];
 
-    // Initialize problem
-    Initialize(gen_mode, h_keys, h_values, h_sorted_keys, h_sorted_values, num_items);
+    for (int i = 0; i < num_items; ++i)
+    {
+        h_sorted_keys[i] = h_pairs[i].key;
+        if (!KEYS_ONLY)
+            h_values[i] = i;
+    }
+
+    if (!KEYS_ONLY)
+        for (int i = 0; i < num_items; ++i)
+            h_sorted_values[i] = h_values[h_pairs[i].index];
+
+    delete[] h_pairs;
 
     // Allocate device arrays
     DoubleBuffer<Key>   d_keys;
@@ -454,8 +429,10 @@ void Test(
     if (d_keys.d_buffers[1]) CubDebugExit(g_allocator.DeviceFree(d_keys.d_buffers[1]));
     if (d_values.d_buffers[0]) CubDebugExit(g_allocator.DeviceFree(d_values.d_buffers[0]));
     if (d_values.d_buffers[1]) CubDebugExit(g_allocator.DeviceFree(d_values.d_buffers[1]));
-    if (d_temp_storage_bytes) CubDebugExit(g_allocator.DeviceFree(d_temp_storage_bytes));
+    if (d_temp_storage) CubDebugExit(g_allocator.DeviceFree(d_temp_storage));
     if (d_cdp_error) CubDebugExit(g_allocator.DeviceFree(d_cdp_error));
+    if (d_selector) CubDebugExit(g_allocator.DeviceFree(d_selector));
+    if (d_temp_storage_bytes) CubDebugExit(g_allocator.DeviceFree(d_temp_storage_bytes));
 
     // Correctness asserts
     AssertEquals(0, compare);
@@ -518,7 +495,9 @@ void TestItems(
         Test<Key, Value>(32, begin_bit, end_bit, type_string);
         Test<Key, Value>(3200, begin_bit, end_bit, type_string);
         Test<Key, Value>(320000, begin_bit, end_bit, type_string);
-        Test<Key, Value>(32000000, begin_bit, end_bit, type_string);
+
+        if ((sizeof(void*) > 4) || (sizeof(Value) <= 8))
+            Test<Key, Value>(32000000, begin_bit, end_bit, type_string);
     }
     else
     {

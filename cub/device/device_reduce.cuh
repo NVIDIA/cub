@@ -481,8 +481,37 @@ struct DeviceReduce
                     ArchProps<CUB_PTX_ARCH>::MAX_SM_THREADBLOCKS,
                     ArchProps<CUB_PTX_ARCH>::MAX_SM_THREADS / privatized_dispatch_params.block_threads);
 
+                // Get a rough estimate of device occupancy for privatized_kernel
+                int privatized_occupancy = privatized_sm_occupancy * sm_count;
+
+                // Get a rough estimate of maximum grid size
+                int privatized_grid_size = privatized_occupancy * privatized_dispatch_params.subscription_factor;
+
+                // Temporary storage allocation requirements
+                void* allocations[2];
+                size_t allocation_sizes[2] =
+                {
+                    privatized_grid_size * sizeof(T),   // bytes needed for privatized block reductions
+                    GridQueue<int>::AllocationSize()    // bytes needed for grid queue descriptor
+                };
+
+                // Alias the temporary allocations from the single storage blob (or set the necessary size of the blob)
+                if (CubDebug(error = AliasTemporaries(d_temp_storage, temp_storage_bytes, allocations, allocation_sizes))) break;
+                if (d_temp_storage == NULL)
+                {
+                    // Return if the caller is simply requesting the size of the storage allocation
+                    return cudaSuccess;
+                }
+
+                // Alias the allocation for the privatized per-block reductions
+                T *d_block_reductions = (T*) allocations[0];
+
+                // Alias the allocation for the grid queue descriptor
+                GridQueue<SizeT> queue(allocations[1]);
+
+
 #ifndef __CUDA_ARCH__
-                // We're on the host, so come up with a more accurate estimate of privatized_kernel SM occupancy from actual device properties
+                // We're on the host, so update privatized_kernel SM occupancy from actual device properties
                 Device device_props;
                 if (CubDebug(error = device_props.Init(device_ordinal))) break;
 
@@ -492,8 +521,8 @@ struct DeviceReduce
                     privatized_dispatch_params.block_threads))) break;
 #endif
 
-                // Get device occupancy for privatized_kernel
-                int privatized_occupancy = privatized_sm_occupancy * sm_count;
+                // Update device occupancy for privatized_kernel
+                privatized_occupancy = privatized_sm_occupancy * sm_count;
 
                 // Even-share work distribution
                 GridEvenShare<SizeT> even_share(
@@ -501,8 +530,7 @@ struct DeviceReduce
                     privatized_occupancy * privatized_dispatch_params.subscription_factor,
                     privatized_dispatch_params.tile_size);
 
-                // Get grid size for privatized_kernel
-                int privatized_grid_size;
+                // Update grid size for privatized_kernel
                 switch (privatized_dispatch_params.grid_mapping)
                 {
                 case GRID_MAPPING_EVEN_SHARE:
@@ -520,27 +548,6 @@ struct DeviceReduce
                         privatized_occupancy;      // Fill the device with threadblocks
                     break;
                 };
-
-                // Temporary storage allocation requirements
-                void* allocations[2];
-                size_t allocation_sizes[2] =
-                {
-                    privatized_grid_size * sizeof(T),      // bytes needed for privatized block reductions
-                    GridQueue<int>::AllocationSize()        // bytes needed for grid queue descriptor
-                };
-
-                // Alias temporaries (or set the necessary size of the storage allocation)
-                if (CubDebug(error = AliasTemporaries(d_temp_storage, temp_storage_bytes, allocations, allocation_sizes))) break;
-
-                // Return if the caller is simply requesting the size of the storage allocation
-                if (d_temp_storage == NULL)
-                    return cudaSuccess;
-
-                // Privatized per-block reductions
-                T *d_block_reductions = (T*) allocations[0];
-
-                // Grid queue descriptor
-                GridQueue<SizeT> queue(allocations[1]);
 
                 // Prepare the dynamic queue descriptor if necessary
                 if (privatized_dispatch_params.grid_mapping == GRID_MAPPING_DYNAMIC)

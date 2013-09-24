@@ -392,17 +392,18 @@ struct DeviceScan
                 GridQueue<int>::AllocationSize()                                      // bytes needed for grid queue descriptor
             };
 
-            // Alias temporaries (or set the necessary size of the storage allocation)
+            // Alias the temporary allocations from the single storage blob (or set the necessary size of the blob)
             if (CubDebug(error = AliasTemporaries(d_temp_storage, temp_storage_bytes, allocations, allocation_sizes))) break;
-
-            // Return if the caller is simply requesting the size of the storage allocation
             if (d_temp_storage == NULL)
+            {
+                // Return if the caller is simply requesting the size of the storage allocation
                 return cudaSuccess;
+            }
 
-            // Global list of tile status
+            // Alias the allocation for the global list of tile status
             DeviceScanTileDescriptorT *d_tile_status = (DeviceScanTileDescriptorT*) allocations[0];
 
-            // Grid queue descriptor
+            // Alias the allocation for the grid queue descriptor
             GridQueue<int> queue(allocations[1]);
 
             // Log init_kernel configuration
