@@ -116,11 +116,12 @@ __device__ __forceinline__ unsigned int SHL_ADD(
 /**
  * Bitfield-extract.
  */
-template <typename UnsignedBits>
+template <typename UnsignedBits, int BYTE_LEN>
 __device__ __forceinline__ unsigned int BFE(
-    UnsignedBits source,
-    unsigned int bit_start,
-    unsigned int num_bits)
+    UnsignedBits            source,
+    unsigned int            bit_start,
+    unsigned int            num_bits,
+    Int2Type<BYTE_LEN>      byte_len)
 {
     unsigned int bits;
 #if __CUDA_ARCH__ >= 200
@@ -136,13 +137,28 @@ __device__ __forceinline__ unsigned int BFE(
 /**
  * Bitfield-extract for 64-bit types.
  */
+template <typename UnsignedBits>
 __device__ __forceinline__ unsigned int BFE(
-    unsigned long long source,
-    unsigned int bit_start,
-    unsigned int num_bits)
+    UnsignedBits            source,
+    unsigned int            bit_start,
+    unsigned int            num_bits,
+    Int2Type<8>             byte_len)
 {
     const unsigned long long MASK = (1ull << num_bits) - 1;
     return (source >> bit_start) & MASK;
+}
+
+
+/**
+ * Bitfield-extract.
+ */
+template <typename UnsignedBits>
+__device__ __forceinline__ unsigned int BFE(
+    UnsignedBits source,
+    unsigned int bit_start,
+    unsigned int num_bits)
+{
+    return BFE(source, bit_start, num_bits, Int2Type<sizeof(UnsignedBits)>());
 }
 
 
