@@ -48,7 +48,7 @@ using namespace cub;
 
 bool                    g_verbose       = false;
 int                     g_repeat        = 0;
-CachingDeviceAllocator  g_allocator;
+CachingDeviceAllocator  g_allocator(true);
 
 
 /**

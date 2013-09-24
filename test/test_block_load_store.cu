@@ -51,7 +51,7 @@ using namespace cub;
 //---------------------------------------------------------------------
 
 bool                    g_verbose = false;
-CachingDeviceAllocator  g_allocator;
+CachingDeviceAllocator  g_allocator(true);
 
 
 //---------------------------------------------------------------------

@@ -231,10 +231,20 @@ bin/example_block_radix_sort_$(SUFFIX) : example_block_radix_sort.cu $(DEPS)
 
 example_block_tridiagonal_solve: bin/example_block_tridiagonal_solve_$(SUFFIX)
 
-bin/example_block_tridiagonal_solve_$(SUFFIX) : example_block_tridiagonal_solve.cu $(DEPS)
+bin/example_block_tridiagonal_solve_$(SUFFIX) : experimental/example_block_tridiagonal_solve.cu $(DEPS)
 	mkdir -p bin
-	$(NVCC) $(DEFINES) $(SM_TARGETS) -o bin/example_block_tridiagonal_solve_$(SUFFIX) example_block_tridiagonal_solve.cu $(NVCCFLAGS) $(CPU_ARCH) $(INC) $(LIBS) -O3	
+	$(NVCC) $(DEFINES) $(SM_TARGETS) -o bin/example_block_tridiagonal_solve_$(SUFFIX) experimental/example_block_tridiagonal_solve.cu $(NVCCFLAGS) $(CPU_ARCH) $(INC) $(LIBS) -O3	
 
+
+#-------------------------------------------------------------------------------
+# make example_seg_reduce
+#-------------------------------------------------------------------------------
+
+example_seg_reduce: bin/example_seg_reduce_$(SUFFIX)
+
+bin/example_seg_reduce_$(SUFFIX) : experimental/example_seg_reduce.cu $(DEPS)
+	mkdir -p bin
+	$(NVCC) $(DEFINES) $(SM_TARGETS) -o bin/example_seg_reduce_$(SUFFIX) experimental/example_seg_reduce.cu $(NVCCFLAGS) $(CPU_ARCH) $(INC) $(LIBS) -O3	
 
 #-------------------------------------------------------------------------------
 # make example_coo_spmv
