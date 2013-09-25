@@ -143,13 +143,20 @@ __global__ void AggregateHistoKernel(
 #endif
     while (block_offset < block_end)
     {
-        bin_aggregate += d_block_histograms[block_offset + threadIdx.x];
+        HistoCounter block_bin_count = d_block_histograms[block_offset + threadIdx.x];
+
+        if (block_bin_count > 100) CubLog("counter %d block_bin_count(%d)\n",
+            int (&d_block_histograms[block_offset + threadIdx.x]),
+            block_bin_count);
+
+        bin_aggregate += block_bin_count;
         block_offset += BINS;
     }
 
     // Output
     d_out_histograms.array[blockIdx.x][threadIdx.x] = bin_aggregate;
 }
+
 
 #endif // DOXYGEN_SHOULD_SKIP_THIS
 
@@ -183,30 +190,193 @@ struct DeviceHistogram
      * Constants and type definitions
      ******************************************************************************/
 
+    /******************************************************************************
+     * Tuning policies
+     ******************************************************************************/
+
+    /// Specializations of tuned policy types for different PTX architectures
+    template <
+        int                             CHANNELS,
+        int                             ACTIVE_CHANNELS,
+        BlockHistogramTilesAlgorithm    HISTO_ALGORITHM,
+        int                             ARCH>
+    struct TunedPolicies;
+
+    /// SM35 tune
+    template <int CHANNELS, int ACTIVE_CHANNELS, BlockHistogramTilesAlgorithm HISTO_ALGORITHM>
+    struct TunedPolicies<CHANNELS, ACTIVE_CHANNELS, HISTO_ALGORITHM, 350>
+    {
+        typedef BlockHistogramTilesPolicy<
+            (HISTO_ALGORITHM == HISTO_TILES_SORT) ? 128 : 256,
+            (HISTO_ALGORITHM == HISTO_TILES_SORT) ? 12 : (30 / ACTIVE_CHANNELS),
+            HISTO_ALGORITHM,
+            (HISTO_ALGORITHM == HISTO_TILES_SORT) ? GRID_MAPPING_DYNAMIC : GRID_MAPPING_EVEN_SHARE,
+            (HISTO_ALGORITHM == HISTO_TILES_SORT) ? 8 : 1> MultiBlockPolicy;
+
+        enum { SUBSCRIPTION_FACTOR = 7 };
+    };
+
+    /// SM30 tune
+    template <int CHANNELS, int ACTIVE_CHANNELS, BlockHistogramTilesAlgorithm HISTO_ALGORITHM>
+    struct TunedPolicies<CHANNELS, ACTIVE_CHANNELS, HISTO_ALGORITHM, 300>
+    {
+        typedef BlockHistogramTilesPolicy<
+            128,
+            (HISTO_ALGORITHM == HISTO_TILES_SORT) ? 20 : (22 / ACTIVE_CHANNELS),
+            HISTO_ALGORITHM,
+            (HISTO_ALGORITHM == HISTO_TILES_SORT) ? GRID_MAPPING_DYNAMIC : GRID_MAPPING_EVEN_SHARE,
+            1> MultiBlockPolicy;
+
+        enum { SUBSCRIPTION_FACTOR = 1 };
+    };
+
+    /// SM20 tune
+    template <int CHANNELS, int ACTIVE_CHANNELS, BlockHistogramTilesAlgorithm HISTO_ALGORITHM>
+    struct TunedPolicies<CHANNELS, ACTIVE_CHANNELS, HISTO_ALGORITHM, 200>
+    {
+        typedef BlockHistogramTilesPolicy<
+            128,
+            (HISTO_ALGORITHM == HISTO_TILES_SORT) ? 21 : (23 / ACTIVE_CHANNELS),
+            HISTO_ALGORITHM,
+            GRID_MAPPING_DYNAMIC,
+            1> MultiBlockPolicy;
+
+        enum { SUBSCRIPTION_FACTOR = 1 };
+    };
+
+    /// SM10 tune
+    template <int CHANNELS, int ACTIVE_CHANNELS, BlockHistogramTilesAlgorithm HISTO_ALGORITHM>
+    struct TunedPolicies<CHANNELS, ACTIVE_CHANNELS, HISTO_ALGORITHM, 100>
+    {
+        typedef BlockHistogramTilesPolicy<
+            128,
+            7,
+            HISTO_TILES_SORT,        // (use sort regardless because atomics are perf-useless)
+            GRID_MAPPING_EVEN_SHARE,
+            1> MultiBlockPolicy;
+
+        enum { SUBSCRIPTION_FACTOR = 1 };
+    };
+
+
+
+
+
+
+    /// Tuning policy for the PTX architecture that DeviceHistogram operations will get dispatched to
+    template <
+        int                             CHANNELS,
+        int                             ACTIVE_CHANNELS,
+        BlockHistogramTilesAlgorithm    HISTO_ALGORITHM>
+    struct PtxDefaultPolicies
+    {
+        static const int PTX_TUNE_ARCH =   (CUB_PTX_ARCH >= 350) ?
+                                                350 :
+                                                (CUB_PTX_ARCH >= 300) ?
+                                                    300 :
+                                                    (CUB_PTX_ARCH >= 200) ?
+                                                        200 :
+                                                        100;
+
+        // Tuned policy set for the current PTX compiler pass
+        typedef TunedPolicies<CHANNELS, ACTIVE_CHANNELS, HISTO_ALGORITHM, PTX_TUNE_ARCH> PtxTunedPolicies;
+
+        // Subscription factor for the current PTX compiler pass
+        static const int SUBSCRIPTION_FACTOR = PtxTunedPolicies::SUBSCRIPTION_FACTOR;
+
+        // MultiBlockPolicy that opaquely derives from the specialization corresponding to the current PTX compiler pass
+        struct MultiBlockPolicy : PtxTunedPolicies::MultiBlockPolicy {};
+
+
+        /**
+         * Initialize dispatch params with the policies corresponding to the PTX assembly we will use
+         */
+        template <
+            int                             CHANNELS,
+            int                             ACTIVE_CHANNELS,
+            BlockHistogramTilesAlgorithm    HISTO_ALGORITHM>
+        static cudaError_t InitDispatchParams(KernelDispachParams &multi_block_dispatch_params)
+        {
+        #ifdef __CUDA_ARCH__
+
+            // We're on the device, so initialize the dispatch parameters with the PtxDefaultPolicies directly
+            return multi_block_dispatch_params.Init<MultiBlockPolicy>(PtxDefaultPolicies::SUBSCRIPTION_FACTOR);
+
+        #else
+
+            // We're on the host, so lookup and initialize the dispatch parameters with the policies that match the device's PTX version
+            cudaError error = cudaSuccess;
+            int ptx_version;
+            if (CubDebug(error = PtxVersion(ptx_version))) return error;
+
+            if (ptx_version >= 350)
+            {
+                typedef TunedPolicies<CHANNELS, ACTIVE_CHANNELS, HISTO_ALGORITHM, 350> TunedPolicies;
+                return multi_block_dispatch_params.Init<typename TunedPolicies::MultiBlockPolicy>(TunedPolicies::SUBSCRIPTION_FACTOR);
+            }
+            else if (ptx_version >= 300)
+            {
+                typedef TunedPolicies<CHANNELS, ACTIVE_CHANNELS, HISTO_ALGORITHM, 300> TunedPolicies;
+                return multi_block_dispatch_params.Init<typename TunedPolicies::MultiBlockPolicy>(TunedPolicies::SUBSCRIPTION_FACTOR);
+            }
+            else if (ptx_version >= 200)
+            {
+                typedef TunedPolicies<CHANNELS, ACTIVE_CHANNELS, HISTO_ALGORITHM, 200> TunedPolicies;
+                return multi_block_dispatch_params.Init<typename TunedPolicies::MultiBlockPolicy>(TunedPolicies::SUBSCRIPTION_FACTOR);
+            }
+            else
+            {
+                typedef TunedPolicies<CHANNELS, ACTIVE_CHANNELS, HISTO_ALGORITHM, 100> TunedPolicies;
+                return multi_block_dispatch_params.Init<typename TunedPolicies::MultiBlockPolicy>(TunedPolicies::SUBSCRIPTION_FACTOR);
+            }
+
+        #endif
+        }
+    };
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
     /// Generic structure for encapsulating dispatch properties.  Mirrors the constants within BlockHistogramTilesPolicy.
     struct KernelDispachParams
     {
         // Policy fields
-        int                         block_threads;
-        int                         items_per_thread;
+        int                             block_threads;
+        int                             items_per_thread;
         BlockHistogramTilesAlgorithm    block_algorithm;
-        GridMappingStrategy         grid_mapping;
-        int                         subscription_factor;
+        GridMappingStrategy             grid_mapping;
+        int                             subscription_factor;
 
         // Derived fields
-        int                         channel_tile_size;
+        int                             channel_tile_size;
 
         template <typename BlockHistogramTilesPolicy>
         __host__ __device__ __forceinline__
-        void Init(int subscription_factor = 1)
+        cudaError_t Init(int subscription_factor)
         {
             block_threads               = BlockHistogramTilesPolicy::BLOCK_THREADS;
             items_per_thread            = BlockHistogramTilesPolicy::ITEMS_PER_THREAD;
-            block_algorithm             = BlockHistogramTilesPolicy::GRID_ALGORITHM;
+            block_algorithm             = BlockHistogramTilesPolicy::HISTO_ALGORITHM;
             grid_mapping                = BlockHistogramTilesPolicy::GRID_MAPPING;
             this->subscription_factor   = subscription_factor;
-
             channel_tile_size           = block_threads * items_per_thread;
+
+            return cudaSuccess;
         }
 
         __host__ __device__ __forceinline__
@@ -223,122 +393,10 @@ struct DeviceHistogram
     };
 
 
-    /******************************************************************************
-     * Tuning policies
-     ******************************************************************************/
-
-    /// Specializations of tuned policy types for different PTX architectures
-    template <
-        int                         CHANNELS,
-        int                         ACTIVE_CHANNELS,
-        BlockHistogramTilesAlgorithm    GRID_ALGORITHM,
-        int                         ARCH>
-    struct TunedPolicies;
-
-    /// SM35 tune
-    template <int CHANNELS, int ACTIVE_CHANNELS, BlockHistogramTilesAlgorithm GRID_ALGORITHM>
-    struct TunedPolicies<CHANNELS, ACTIVE_CHANNELS, GRID_ALGORITHM, 350>
-    {
-        typedef BlockHistogramTilesPolicy<
-            (GRID_ALGORITHM == GRID_HISTO_SORT) ? 128 : 256,
-            (GRID_ALGORITHM == GRID_HISTO_SORT) ? 12 : (30 / ACTIVE_CHANNELS),
-            GRID_ALGORITHM,
-            (GRID_ALGORITHM == GRID_HISTO_SORT) ? GRID_MAPPING_DYNAMIC : GRID_MAPPING_EVEN_SHARE,
-            (GRID_ALGORITHM == GRID_HISTO_SORT) ? 8 : 1> MultiBlockPolicy;
-        enum { SUBSCRIPTION_FACTOR = 7 };
-    };
-
-    /// SM30 tune
-    template <int CHANNELS, int ACTIVE_CHANNELS, BlockHistogramTilesAlgorithm GRID_ALGORITHM>
-    struct TunedPolicies<CHANNELS, ACTIVE_CHANNELS, GRID_ALGORITHM, 300>
-    {
-        typedef BlockHistogramTilesPolicy<
-            128,
-            (GRID_ALGORITHM == GRID_HISTO_SORT) ? 20 : (22 / ACTIVE_CHANNELS),
-            GRID_ALGORITHM,
-            (GRID_ALGORITHM == GRID_HISTO_SORT) ? GRID_MAPPING_DYNAMIC : GRID_MAPPING_EVEN_SHARE,
-            1> MultiBlockPolicy;
-        enum { SUBSCRIPTION_FACTOR = 1 };
-    };
-
-    /// SM20 tune
-    template <int CHANNELS, int ACTIVE_CHANNELS, BlockHistogramTilesAlgorithm GRID_ALGORITHM>
-    struct TunedPolicies<CHANNELS, ACTIVE_CHANNELS, GRID_ALGORITHM, 200>
-    {
-        typedef BlockHistogramTilesPolicy<
-            128,
-            (GRID_ALGORITHM == GRID_HISTO_SORT) ? 21 : (23 / ACTIVE_CHANNELS),
-            GRID_ALGORITHM,
-            GRID_MAPPING_DYNAMIC,
-            1> MultiBlockPolicy;
-        enum { SUBSCRIPTION_FACTOR = 1 };
-    };
-
-    /// SM10 tune
-    template <int CHANNELS, int ACTIVE_CHANNELS, BlockHistogramTilesAlgorithm GRID_ALGORITHM>
-    struct TunedPolicies<CHANNELS, ACTIVE_CHANNELS, GRID_ALGORITHM, 100>
-    {
-        typedef BlockHistogramTilesPolicy<
-            128, 
-            7, 
-            GRID_HISTO_SORT,        // (use sort regardless because atomics are perf-useless)
-            GRID_MAPPING_EVEN_SHARE,
-            1> MultiBlockPolicy;
-        enum { SUBSCRIPTION_FACTOR = 1 };
-    };
 
 
-    /// Tuning policy for the PTX architecture that DeviceHistogram operations will get dispatched to
-    template <
-        int                         CHANNELS,
-        int                         ACTIVE_CHANNELS,
-        BlockHistogramTilesAlgorithm      GRID_ALGORITHM>
-    struct PtxDefaultPolicies
-    {
-        static const int PTX_TUNE_ARCH =   (CUB_PTX_ARCH >= 350) ?
-                                                350 :
-                                                (CUB_PTX_ARCH >= 300) ?
-                                                    300 :
-                                                    (CUB_PTX_ARCH >= 200) ?
-                                                        200 :
-                                                        100;
 
-        // Tuned policy set for the current PTX compiler pass
-        typedef TunedPolicies<CHANNELS, ACTIVE_CHANNELS, GRID_ALGORITHM, PTX_TUNE_ARCH> PtxTunedPolicies;
 
-        // Subscription factor for the current PTX compiler pass
-        static const int SUBSCRIPTION_FACTOR = PtxTunedPolicies::SUBSCRIPTION_FACTOR;
-
-        // MultiBlockPolicy that opaquely derives from the specialization corresponding to the current PTX compiler pass
-        struct MultiBlockPolicy : PtxTunedPolicies::MultiBlockPolicy {};
-
-        /**
-         * Initialize dispatch params with the policies corresponding to the PTX assembly we will use
-         */
-        static void InitDispatchParams(int ptx_version, KernelDispachParams &multi_block_dispatch_params)
-        {
-            if (ptx_version >= 350)
-            {
-                typedef TunedPolicies<CHANNELS, ACTIVE_CHANNELS, GRID_ALGORITHM, 350> TunedPolicies;
-                multi_block_dispatch_params.Init<typename TunedPolicies::MultiBlockPolicy>(TunedPolicies::SUBSCRIPTION_FACTOR);
-            }
-            else if (ptx_version >= 300)
-            {
-                typedef TunedPolicies<CHANNELS, ACTIVE_CHANNELS, GRID_ALGORITHM, 300> TunedPolicies;
-                multi_block_dispatch_params.Init<typename TunedPolicies::MultiBlockPolicy>(TunedPolicies::SUBSCRIPTION_FACTOR);
-            }
-            else if (ptx_version >= 200)
-            {
-                typedef TunedPolicies<CHANNELS, ACTIVE_CHANNELS, GRID_ALGORITHM, 200> TunedPolicies;
-                multi_block_dispatch_params.Init<typename TunedPolicies::MultiBlockPolicy>(TunedPolicies::SUBSCRIPTION_FACTOR);
-            }
-            else
-            {
-                typedef TunedPolicies<CHANNELS, ACTIVE_CHANNELS, GRID_ALGORITHM, 100> TunedPolicies;
-                multi_block_dispatch_params.Init<typename TunedPolicies::MultiBlockPolicy>(TunedPolicies::SUBSCRIPTION_FACTOR);
-            }
-        }
-    };
 
 
     /******************************************************************************
@@ -349,28 +407,28 @@ struct DeviceHistogram
      * Internal dispatch routine for invoking device-wide, multi-channel, histogram
      */
     template <
-        int                         BINS,                               ///< Number of histogram bins per channel
-        int                         CHANNELS,                           ///< Number of channels interleaved in the input data (may be greater than the number of channels being actively histogrammed)
-        int                         ACTIVE_CHANNELS,                    ///< Number of channels actively being histogrammed
-        typename                    InitHistoKernelPtr,                 ///< Function type of cub::InitHistoKernel
-        typename                    MultiBlockHistogramKernelPtr,           ///< Function type of cub::MultiBlockHistogramKernel
-        typename                    AggregateHistoKernelPtr,            ///< Function type of cub::AggregateHistoKernel
-        typename                    InputIteratorRA,                    ///< The input iterator type (may be a simple pointer type).  Must have a value type that is assignable to <tt>unsigned char</tt>
-        typename                    HistoCounter,                       ///< Integral type for counting sample occurrences per histogram bin
-        typename                    SizeT>                              ///< Integer type used for global array indexing
+        int                             BINS,                               ///< Number of histogram bins per channel
+        int                             CHANNELS,                           ///< Number of channels interleaved in the input data (may be greater than the number of channels being actively histogrammed)
+        int                             ACTIVE_CHANNELS,                    ///< Number of channels actively being histogrammed
+        typename                        InitHistoKernelPtr,                 ///< Function type of cub::InitHistoKernel
+        typename                        MultiBlockHistogramKernelPtr,       ///< Function type of cub::MultiBlockHistogramKernel
+        typename                        AggregateHistoKernelPtr,            ///< Function type of cub::AggregateHistoKernel
+        typename                        InputIteratorRA,                    ///< The input iterator type (may be a simple pointer type).  Must have a value type that is assignable to <tt>unsigned char</tt>
+        typename                        HistoCounter,                       ///< Integral type for counting sample occurrences per histogram bin
+        typename                        SizeT>                              ///< Integer type used for global array indexing
     __host__ __device__ __forceinline__
     static cudaError_t Dispatch(
-        void                        *d_temp_storage,                    ///< [in] %Device allocation of temporary storage.  When NULL, the required allocation size is returned in \p temp_storage_bytes and no work is done.
-        size_t                      &temp_storage_bytes,                ///< [in,out] Size in bytes of \p d_temp_storage allocation.
-        InitHistoKernelPtr          init_kernel,                        ///< [in] Kernel function pointer to parameterization of cub::InitHistoKernel
+        void                            *d_temp_storage,                    ///< [in] %Device allocation of temporary storage.  When NULL, the required allocation size is returned in \p temp_storage_bytes and no work is done.
+        size_t                          &temp_storage_bytes,                ///< [in,out] Size in bytes of \p d_temp_storage allocation.
+        InitHistoKernelPtr              init_kernel,                        ///< [in] Kernel function pointer to parameterization of cub::InitHistoKernel
         MultiBlockHistogramKernelPtr    multi_block_kernel,                 ///< [in] Kernel function pointer to parameterization of cub::MultiBlockHistogramKernel
-        AggregateHistoKernelPtr     aggregate_kernel,                   ///< [in] Kernel function pointer to parameterization of cub::AggregateHistoKernel
-        KernelDispachParams         &multi_block_dispatch_params,       ///< [in] Dispatch parameters that match the policy that \p multi_block_kernel was compiled for
-        InputIteratorRA             d_samples,                          ///< [in] Input samples to histogram
-        HistoCounter                *d_histograms[ACTIVE_CHANNELS],     ///< [out] Array of channel histograms, each having BINS counters of integral type \p HistoCounter.
-        SizeT                       num_samples,                        ///< [in] Number of samples to process
-        cudaStream_t                stream              = 0,            ///< [in] <b>[optional]</b> CUDA stream to launch kernels within.  Default is stream<sub>0</sub>.
-        bool                        stream_synchronous  = false)        ///< [in] <b>[optional]</b> Whether or not to synchronize the stream after every kernel launch to check for errors.  Default is \p false.
+        AggregateHistoKernelPtr         aggregate_kernel,                   ///< [in] Kernel function pointer to parameterization of cub::AggregateHistoKernel
+        KernelDispachParams             &multi_block_dispatch_params,       ///< [in] Dispatch parameters that match the policy that \p multi_block_kernel was compiled for
+        InputIteratorRA                 d_samples,                          ///< [in] Input samples to histogram
+        HistoCounter                    *d_histograms[ACTIVE_CHANNELS],     ///< [out] Array of channel histograms, each having BINS counters of integral type \p HistoCounter.
+        SizeT                           num_samples,                        ///< [in] Number of samples to process
+        cudaStream_t                    stream              = 0,            ///< [in] <b>[optional]</b> CUDA stream to launch kernels within.  Default is stream<sub>0</sub>.
+        bool                            stream_synchronous  = false)        ///< [in] <b>[optional]</b> Whether or not to synchronize the stream after every kernel launch to check for errors.  Default is \p false.
     {
 #ifndef CUB_RUNTIME_ENABLED
 
@@ -390,6 +448,9 @@ struct DeviceHistogram
             int sm_count;
             if (CubDebug(error = cudaDeviceGetAttribute (&sm_count, cudaDevAttrMultiProcessorCount, device_ordinal))) break;
 
+            printf("ArchProps<CUB_PTX_ARCH>::MAX_SM_THREADBLOCKS(%d) ArchProps<CUB_PTX_ARCH>::MAX_SM_THREADS(%d) multi_block_dispatch_params.block_threads(%d)\n",
+                ArchProps<CUB_PTX_ARCH>::MAX_SM_THREADBLOCKS, ArchProps<CUB_PTX_ARCH>::MAX_SM_THREADS, multi_block_dispatch_params.block_threads);
+
             // Get a rough estimate of multi_block_kernel SM occupancy based upon the maximum SM occupancy of the targeted PTX architecture
             int multi_block_sm_occupancy = CUB_MIN(
                 ArchProps<CUB_PTX_ARCH>::MAX_SM_THREADBLOCKS,
@@ -401,6 +462,9 @@ struct DeviceHistogram
             // Get a rough estimate of maximum grid size
             int multi_block_grid_size = multi_block_occupancy * multi_block_dispatch_params.subscription_factor;
 
+            printf("multi_block_sm_occupancy(%d) multi_block_occupancy(%d) multi_block_grid_size(%d)\n",
+                multi_block_sm_occupancy, multi_block_occupancy, multi_block_grid_size);
+
             // Temporary storage allocation requirements
             void* allocations[2];
             size_t allocation_sizes[2] =
@@ -408,6 +472,10 @@ struct DeviceHistogram
                 ACTIVE_CHANNELS * multi_block_grid_size * sizeof(HistoCounter) * BINS,      // bytes needed for privatized histograms
                 GridQueue<int>::AllocationSize()                                            // bytes needed for grid queue descriptor
             };
+
+            printf("Allocating %d * %d * %d * %d = %d bytes for compositing\n",
+                ACTIVE_CHANNELS,multi_block_grid_size,sizeof(HistoCounter),BINS,
+                ACTIVE_CHANNELS * multi_block_grid_size * sizeof(HistoCounter) * BINS);
 
             // Alias the temporary allocations from the single storage blob (or set the necessary size of the blob)
             if (CubDebug(error = AliasTemporaries(d_temp_storage, temp_storage_bytes, allocations, allocation_sizes))) break;
@@ -486,7 +554,7 @@ struct DeviceHistogram
             if (stream_synchronous && (CubDebug(error = SyncStream(stream)))) break;
 
             // Whether we need privatized histograms (i.e., non-global atomics and multi-block)
-            bool privatized_temporaries = (multi_block_grid_size > 1) && (multi_block_dispatch_params.block_algorithm != GRID_HISTO_GLOBAL_ATOMIC);
+            bool privatized_temporaries = (multi_block_grid_size > 1) && (multi_block_dispatch_params.block_algorithm != HISTO_TILES_GLOBAL_ATOMIC);
 
             // Log multi_block_kernel configuration
             if (stream_synchronous) CubLog("Invoking multi_block_kernel<<<%d, %d, 0, %lld>>>(), %d items per thread, %d SM occupancy\n",
@@ -532,14 +600,14 @@ struct DeviceHistogram
     /**
      * \brief Computes a device-wide histogram
      *
-     * \tparam GRID_ALGORITHM      cub::BlockHistogramTilesAlgorithm enumerator specifying the underlying algorithm to use
+     * \tparam HISTO_ALGORITHM      cub::BlockHistogramTilesAlgorithm enumerator specifying the underlying algorithm to use
      * \tparam CHANNELS             Number of channels interleaved in the input data (may be greater than the number of channels being actively histogrammed)
      * \tparam ACTIVE_CHANNELS      <b>[inferred]</b> Number of channels actively being histogrammed
      * \tparam InputIteratorRA      <b>[inferred]</b> Random-access iterator type for input (may be a simple pointer type)  Must have a value type that is assignable to <tt>unsigned char</tt>
      * \tparam HistoCounter         <b>[inferred]</b> Integral type for counting sample occurrences per histogram bin
      */
     template <
-        BlockHistogramTilesAlgorithm    GRID_ALGORITHM,
+        BlockHistogramTilesAlgorithm    HISTO_ALGORITHM,
         int                         BINS,                       ///< Number of histogram bins per channel
         int                         CHANNELS,                   ///< Number of channels interleaved in the input data (may be greater than the number of channels being actively histogrammed)
         int                         ACTIVE_CHANNELS,            ///< Number of channels actively being histogrammed
@@ -559,28 +627,15 @@ struct DeviceHistogram
         typedef int SizeT;
 
         // Tuning polices for the PTX architecture that will get dispatched to
-        typedef PtxDefaultPolicies<CHANNELS, ACTIVE_CHANNELS, GRID_ALGORITHM> PtxDefaultPolicies;
+        typedef PtxDefaultPolicies<CHANNELS, ACTIVE_CHANNELS, HISTO_ALGORITHM> PtxDefaultPolicies;
         typedef typename PtxDefaultPolicies::MultiBlockPolicy MultiBlockPolicy;
 
         cudaError error = cudaSuccess;
         do
         {
-            // Declare dispatch parameters
+            // Declare and initialize dispatch parameters
             KernelDispachParams multi_block_dispatch_params;
-
-        #ifdef __CUDA_ARCH__
-
-            // We're on the device, so initialize the dispatch parameters with the PtxDefaultPolicies directly
-            multi_block_dispatch_params.Init<MultiBlockPolicy>(PtxDefaultPolicies::SUBSCRIPTION_FACTOR);
-
-        #else
-
-            // We're on the host, so lookup and initialize the dispatch parameters with the policies that match the device's PTX version
-            int ptx_version;
-            if (CubDebug(error = PtxVersion(ptx_version))) break;
-            PtxDefaultPolicies::InitDispatchParams(ptx_version, multi_block_dispatch_params);
-
-        #endif
+            PtxDefaultPolicies::InitDispatchParams(multi_block_dispatch_params);
 
             Dispatch<BINS, CHANNELS, ACTIVE_CHANNELS>(
                 d_temp_storage,
@@ -676,7 +731,7 @@ struct DeviceHistogram
         cudaStream_t        stream              = 0,            ///< [in] <b>[optional]</b> CUDA stream to launch kernels within.  Default is stream<sub>0</sub>.
         bool                stream_synchronous  = false)        ///< [in] <b>[optional]</b> Whether or not to synchronize the stream after every kernel launch to check for errors.  Default is \p false.
     {
-        return Dispatch<GRID_HISTO_SORT, BINS, 1, 1>(
+        return Dispatch<HISTO_TILES_SORT, BINS, 1, 1>(
             d_temp_storage, temp_storage_bytes, d_samples, &d_histogram, num_samples, stream, stream_synchronous);
     }
 
@@ -746,7 +801,7 @@ struct DeviceHistogram
         cudaStream_t        stream              = 0,            ///< [in] <b>[optional]</b> CUDA stream to launch kernels within.  Default is stream<sub>0</sub>.
         bool                stream_synchronous  = false)        ///< [in] <b>[optional]</b> Whether or not to synchronize the stream after every kernel launch to check for errors.  May cause significant slowdown.  Default is \p false.
     {
-        return Dispatch<GRID_HISTO_SHARED_ATOMIC, BINS, 1, 1>(
+        return Dispatch<HISTO_TILES_SHARED_ATOMIC, BINS, 1, 1>(
             d_temp_storage, temp_storage_bytes, d_samples, &d_histogram, num_samples, stream, stream_synchronous);
     }
 
@@ -815,7 +870,7 @@ struct DeviceHistogram
         cudaStream_t        stream              = 0,            ///< [in] <b>[optional]</b> CUDA stream to launch kernels within.  Default is stream<sub>0</sub>.
         bool                stream_synchronous  = false)        ///< [in] <b>[optional]</b> Whether or not to synchronize the stream after every kernel launch to check for errors.  May cause significant slowdown.  Default is \p false.
     {
-        return Dispatch<GRID_HISTO_GLOBAL_ATOMIC, BINS, 1, 1>(
+        return Dispatch<HISTO_TILES_GLOBAL_ATOMIC, BINS, 1, 1>(
             d_temp_storage, temp_storage_bytes, d_samples, &d_histogram, num_samples, stream, stream_synchronous);
     }
 
@@ -899,7 +954,7 @@ struct DeviceHistogram
         cudaStream_t        stream              = 0,            ///< [in] <b>[optional]</b> CUDA stream to launch kernels within.  Default is stream<sub>0</sub>.
         bool                stream_synchronous  = false)        ///< [in] <b>[optional]</b> Whether or not to synchronize the stream after every kernel launch to check for errors.  May cause significant slowdown.  Default is \p false.
     {
-        return Dispatch<GRID_HISTO_SORT, BINS, CHANNELS, ACTIVE_CHANNELS>(
+        return Dispatch<HISTO_TILES_SORT, BINS, CHANNELS, ACTIVE_CHANNELS>(
             d_temp_storage, temp_storage_bytes, d_samples, d_histograms, num_samples, stream, stream_synchronous);
     }
 
@@ -976,7 +1031,7 @@ struct DeviceHistogram
         cudaStream_t        stream              = 0,            ///< [in] <b>[optional]</b> CUDA stream to launch kernels within.  Default is stream<sub>0</sub>.
         bool                stream_synchronous  = false)        ///< [in] <b>[optional]</b> Whether or not to synchronize the stream after every kernel launch to check for errors.  May cause significant slowdown.  Default is \p false.
     {
-        return Dispatch<GRID_HISTO_SHARED_ATOMIC, BINS, CHANNELS, ACTIVE_CHANNELS>(
+        return Dispatch<HISTO_TILES_SHARED_ATOMIC, BINS, CHANNELS, ACTIVE_CHANNELS>(
             d_temp_storage, temp_storage_bytes, d_samples, d_histograms, num_samples, stream, stream_synchronous);
     }
 
@@ -1054,7 +1109,7 @@ struct DeviceHistogram
         cudaStream_t        stream              = 0,            ///< [in] <b>[optional]</b> CUDA stream to launch kernels within.  Default is stream<sub>0</sub>.
         bool                stream_synchronous  = false)        ///< [in] <b>[optional]</b> Whether or not to synchronize the stream after every kernel launch to check for errors.  May cause significant slowdown.  Default is \p false.
     {
-        return Dispatch<GRID_HISTO_GLOBAL_ATOMIC, BINS, CHANNELS, ACTIVE_CHANNELS>(
+        return Dispatch<HISTO_TILES_GLOBAL_ATOMIC, BINS, CHANNELS, ACTIVE_CHANNELS>(
             d_temp_storage, temp_storage_bytes, d_samples, d_histograms, num_samples, stream, stream_synchronous);
     }
 

@@ -38,6 +38,9 @@
 #include "../../../util_type.cuh"
 #include "../../../util_namespace.cuh"
 
+// Mooch
+#include "../../../util_debug.cuh"
+
 /// Optional outer namespace(s)
 CUB_NS_PREFIX
 
@@ -132,6 +135,8 @@ struct BlockHistogramTilesSharedAtomic
                 this->temp_storage.histograms[CHANNEL][histo_offset + threadIdx.x] = 0;
             }
         }
+
+        __syncthreads();
     }
 
 
@@ -191,7 +196,7 @@ struct BlockHistogramTilesSharedAtomic
                 {
                     if (((ACTIVE_CHANNELS == CHANNELS) || (CHANNEL < ACTIVE_CHANNELS)) && ((ITEM * BLOCK_THREADS * CHANNELS) + CHANNEL < bounds))
                     {
-                        SampleT item  = d_in[block_offset + (ITEM * BLOCK_THREADS * CHANNELS) + (threadIdx.x * CHANNELS) + CHANNEL];
+                        SampleT item = d_in[block_offset + (ITEM * BLOCK_THREADS * CHANNELS) + (threadIdx.x * CHANNELS) + CHANNEL];
                         atomicAdd(temp_storage.histograms[CHANNEL] + item, 1);
                     }
                 }
@@ -209,24 +214,61 @@ struct BlockHistogramTilesSharedAtomic
         // Barrier to ensure shared memory histograms are coherent
         __syncthreads();
 
+        // Mooch
+        HistoCounter save_count = temp_storage.histograms[2][threadIdx.x];
+
         // Copy shared memory histograms to output
+        int channel_offset  = (blockIdx.x * BINS);
+
         #pragma unroll
         for (int CHANNEL = 0; CHANNEL < ACTIVE_CHANNELS; ++CHANNEL)
         {
-            int channel_offset  = (blockIdx.x * BINS);
             int histo_offset    = 0;
 
             #pragma unroll
             for(; histo_offset + BLOCK_THREADS <= BINS; histo_offset += BLOCK_THREADS)
             {
-                d_out_histograms[CHANNEL][channel_offset + histo_offset + threadIdx.x] = temp_storage.histograms[CHANNEL][histo_offset + threadIdx.x];
+                HistoCounter count = temp_storage.histograms[CHANNEL][histo_offset + threadIdx.x];
+
+                d_out_histograms[CHANNEL][channel_offset + histo_offset + threadIdx.x] = count;
             }
+/*
             // Finish up with guarded initialization if necessary
             if ((BINS % BLOCK_THREADS != 0) && (histo_offset + threadIdx.x < BINS))
             {
-                d_out_histograms[CHANNEL][channel_offset + histo_offset + threadIdx.x] = temp_storage.histograms[CHANNEL][histo_offset + threadIdx.x];
+                HistoCounter count = temp_storage.histograms[CHANNEL][histo_offset + threadIdx.x];
+
+                d_out_histograms[CHANNEL][channel_offset + histo_offset + threadIdx.x] = count;
+            }
+*/
+        }
+
+        __threadfence();
+        __syncthreads();
+
+        if ((blockIdx.x == 46) && (threadIdx.x == 1))
+        {
+            HistoCounter reread = reinterpret_cast<volatile HistoCounter *>(d_out_histograms[2])[channel_offset + 0 + threadIdx.x];
+
+            CubLog("output %d count %d re-read %d\n",
+                int(&d_out_histograms[2][channel_offset + 0 + threadIdx.x]),
+                save_count,
+                reread);
+        }
+
+        #pragma unroll
+        for (int CHANNEL = 0; CHANNEL < ACTIVE_CHANNELS; ++CHANNEL)
+        {
+            int histo_offset    = 0;
+
+            #pragma unroll
+            for(; histo_offset + BLOCK_THREADS <= BINS; histo_offset += BLOCK_THREADS)
+            {
+                if (int(&d_out_histograms[CHANNEL][channel_offset + histo_offset + threadIdx.x]) == 94648324)
+                    CubLog("COLLISION %d\n!!\n", 9);
             }
         }
+
     }
 };
 
