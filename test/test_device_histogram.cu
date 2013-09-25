@@ -67,7 +67,7 @@ CachingDeviceAllocator  g_allocator(true);
 template <int BINS, int CHANNELS, int ACTIVE_CHANNELS, typename InputIteratorRA, typename HistoCounter>
 __host__ __device__ __forceinline__
 cudaError_t Dispatch(
-    Int2Type<GRID_HISTO_SORT> algorithm,
+    Int2Type<HISTO_TILES_SORT> algorithm,
     Int2Type<false>     use_cdp,
     int                 timing_iterations,
     size_t              *d_temp_storage_bytes,
@@ -98,7 +98,7 @@ cudaError_t Dispatch(
 template <int BINS, int CHANNELS, int ACTIVE_CHANNELS, typename InputIteratorRA, typename HistoCounter>
 __host__ __device__ __forceinline__
 cudaError_t Dispatch(
-    Int2Type<GRID_HISTO_SHARED_ATOMIC> algorithm,
+    Int2Type<HISTO_TILES_SHARED_ATOMIC> algorithm,
     Int2Type<false>     use_cdp,
     int                 timing_iterations,
     size_t              *d_temp_storage_bytes,
@@ -127,7 +127,7 @@ cudaError_t Dispatch(
 template <int BINS, int CHANNELS, int ACTIVE_CHANNELS, typename InputIteratorRA, typename HistoCounter>
 __host__ __device__ __forceinline__
 cudaError_t Dispatch(
-    Int2Type<GRID_HISTO_GLOBAL_ATOMIC> algorithm,
+    Int2Type<HISTO_TILES_GLOBAL_ATOMIC> algorithm,
     Int2Type<false>     use_cdp,
     int                 timing_iterations,
     size_t              *d_temp_storage_bytes,
@@ -344,7 +344,7 @@ void Test(
 
     printf("%s cub::DeviceHistogram %s %d %s samples (%dB), %d bins, %d channels, %d active channels, gen-mode %s\n",
         (CDP) ? "CDP device invoked" : "Host-invoked",
-        (ALGORITHM == GRID_HISTO_SHARED_ATOMIC) ? "satomic" : (ALGORITHM == GRID_HISTO_GLOBAL_ATOMIC) ? "gatomic" : "sort",
+        (ALGORITHM == HISTO_TILES_SHARED_ATOMIC) ? "satomic" : (ALGORITHM == HISTO_TILES_GLOBAL_ATOMIC) ? "gatomic" : "sort",
         num_samples,
         type_string,
         (int) sizeof(SampleT),
@@ -488,9 +488,9 @@ void Test(
     int             num_samples,
     char*           type_string)
 {
-    TestCnp<BINS, CHANNELS, ACTIVE_CHANNELS, SampleT, IteratorValue, HistoCounterT>(Int2Type<GRID_HISTO_SORT>(),          gen_mode, bin_op, num_samples * CHANNELS, type_string);
-    TestCnp<BINS, CHANNELS, ACTIVE_CHANNELS, SampleT, IteratorValue, HistoCounterT>(Int2Type<GRID_HISTO_SHARED_ATOMIC>(), gen_mode, bin_op, num_samples * CHANNELS, type_string);
-    TestCnp<BINS, CHANNELS, ACTIVE_CHANNELS, SampleT, IteratorValue, HistoCounterT>(Int2Type<GRID_HISTO_GLOBAL_ATOMIC>(), gen_mode, bin_op, num_samples * CHANNELS, type_string);
+    TestCnp<BINS, CHANNELS, ACTIVE_CHANNELS, SampleT, IteratorValue, HistoCounterT>(Int2Type<HISTO_TILES_SORT>(),          gen_mode, bin_op, num_samples * CHANNELS, type_string);
+    TestCnp<BINS, CHANNELS, ACTIVE_CHANNELS, SampleT, IteratorValue, HistoCounterT>(Int2Type<HISTO_TILES_SHARED_ATOMIC>(), gen_mode, bin_op, num_samples * CHANNELS, type_string);
+    TestCnp<BINS, CHANNELS, ACTIVE_CHANNELS, SampleT, IteratorValue, HistoCounterT>(Int2Type<HISTO_TILES_GLOBAL_ATOMIC>(), gen_mode, bin_op, num_samples * CHANNELS, type_string);
 }
 
 
@@ -599,31 +599,35 @@ int main(int argc, char** argv)
     // Initialize device
     CubDebugExit(args.DeviceInit());
 
+    TestCnp<256, 4, 3, unsigned char, unsigned char, int>(
+        Int2Type<HISTO_TILES_SHARED_ATOMIC>(), RANDOM, Cast<unsigned char>(), 400000, CUB_TYPE_STRING(unsigned char));
+
+/*
     if (quick)
     {
         // Quick test
         if (num_samples < 0) num_samples = 32000000;
 
         printf("SINGLE CHANNEL:\n\n");
-        TestCnp<256, 1, 1, unsigned char, unsigned char, int>(Int2Type<GRID_HISTO_SORT>(),          RANDOM,  Cast<unsigned char>(), num_samples, CUB_TYPE_STRING(unsigned char));
-        TestCnp<256, 1, 1, unsigned char, unsigned char, int>(Int2Type<GRID_HISTO_SORT>(),          UNIFORM, Cast<unsigned char>(), num_samples, CUB_TYPE_STRING(unsigned char));
+        TestCnp<256, 1, 1, unsigned char, unsigned char, int>(Int2Type<HISTO_TILES_SORT>(),          RANDOM,  Cast<unsigned char>(), num_samples, CUB_TYPE_STRING(unsigned char));
+        TestCnp<256, 1, 1, unsigned char, unsigned char, int>(Int2Type<HISTO_TILES_SORT>(),          UNIFORM, Cast<unsigned char>(), num_samples, CUB_TYPE_STRING(unsigned char));
         printf("\n");
-        TestCnp<256, 1, 1, unsigned char, unsigned char, int>(Int2Type<GRID_HISTO_SHARED_ATOMIC>(), RANDOM,  Cast<unsigned char>(), num_samples, CUB_TYPE_STRING(unsigned char));
-        TestCnp<256, 1, 1, unsigned char, unsigned char, int>(Int2Type<GRID_HISTO_SHARED_ATOMIC>(), UNIFORM, Cast<unsigned char>(), num_samples, CUB_TYPE_STRING(unsigned char));
+        TestCnp<256, 1, 1, unsigned char, unsigned char, int>(Int2Type<HISTO_TILES_SHARED_ATOMIC>(), RANDOM,  Cast<unsigned char>(), num_samples, CUB_TYPE_STRING(unsigned char));
+        TestCnp<256, 1, 1, unsigned char, unsigned char, int>(Int2Type<HISTO_TILES_SHARED_ATOMIC>(), UNIFORM, Cast<unsigned char>(), num_samples, CUB_TYPE_STRING(unsigned char));
         printf("\n");
-        TestCnp<256, 1, 1, unsigned char, unsigned char, int>(Int2Type<GRID_HISTO_GLOBAL_ATOMIC>(), RANDOM,  Cast<unsigned char>(), num_samples, CUB_TYPE_STRING(unsigned char));
-        TestCnp<256, 1, 1, unsigned char, unsigned char, int>(Int2Type<GRID_HISTO_GLOBAL_ATOMIC>(), UNIFORM, Cast<unsigned char>(), num_samples, CUB_TYPE_STRING(unsigned char));
+        TestCnp<256, 1, 1, unsigned char, unsigned char, int>(Int2Type<HISTO_TILES_GLOBAL_ATOMIC>(), RANDOM,  Cast<unsigned char>(), num_samples, CUB_TYPE_STRING(unsigned char));
+        TestCnp<256, 1, 1, unsigned char, unsigned char, int>(Int2Type<HISTO_TILES_GLOBAL_ATOMIC>(), UNIFORM, Cast<unsigned char>(), num_samples, CUB_TYPE_STRING(unsigned char));
         printf("\n");
 
         printf("3/4 CHANNEL (RGB/RGBA):\n\n");
-        TestCnp<256, 4, 3, unsigned char, unsigned char, int>(Int2Type<GRID_HISTO_SORT>(),          RANDOM,  Cast<unsigned char>(), num_samples * 4, CUB_TYPE_STRING(unsigned char));
-        TestCnp<256, 4, 3, unsigned char, unsigned char, int>(Int2Type<GRID_HISTO_SORT>(),          UNIFORM, Cast<unsigned char>(), num_samples * 4, CUB_TYPE_STRING(unsigned char));
+        TestCnp<256, 4, 3, unsigned char, unsigned char, int>(Int2Type<HISTO_TILES_SORT>(),          RANDOM,  Cast<unsigned char>(), num_samples * 4, CUB_TYPE_STRING(unsigned char));
+        TestCnp<256, 4, 3, unsigned char, unsigned char, int>(Int2Type<HISTO_TILES_SORT>(),          UNIFORM, Cast<unsigned char>(), num_samples * 4, CUB_TYPE_STRING(unsigned char));
         printf("\n");
-        TestCnp<256, 4, 3, unsigned char, unsigned char, int>(Int2Type<GRID_HISTO_SHARED_ATOMIC>(), RANDOM,  Cast<unsigned char>(), num_samples * 4, CUB_TYPE_STRING(unsigned char));
-        TestCnp<256, 4, 3, unsigned char, unsigned char, int>(Int2Type<GRID_HISTO_SHARED_ATOMIC>(), UNIFORM, Cast<unsigned char>(), num_samples * 4, CUB_TYPE_STRING(unsigned char));
+        TestCnp<256, 4, 3, unsigned char, unsigned char, int>(Int2Type<HISTO_TILES_SHARED_ATOMIC>(), RANDOM,  Cast<unsigned char>(), num_samples * 4, CUB_TYPE_STRING(unsigned char));
+        TestCnp<256, 4, 3, unsigned char, unsigned char, int>(Int2Type<HISTO_TILES_SHARED_ATOMIC>(), UNIFORM, Cast<unsigned char>(), num_samples * 4, CUB_TYPE_STRING(unsigned char));
         printf("\n");
-        TestCnp<256, 4, 3, unsigned char, unsigned char, int>(Int2Type<GRID_HISTO_GLOBAL_ATOMIC>(), RANDOM,  Cast<unsigned char>(), num_samples * 4, CUB_TYPE_STRING(unsigned char));
-        TestCnp<256, 4, 3, unsigned char, unsigned char, int>(Int2Type<GRID_HISTO_GLOBAL_ATOMIC>(), UNIFORM, Cast<unsigned char>(), num_samples * 4, CUB_TYPE_STRING(unsigned char));
+        TestCnp<256, 4, 3, unsigned char, unsigned char, int>(Int2Type<HISTO_TILES_GLOBAL_ATOMIC>(), RANDOM,  Cast<unsigned char>(), num_samples * 4, CUB_TYPE_STRING(unsigned char));
+        TestCnp<256, 4, 3, unsigned char, unsigned char, int>(Int2Type<HISTO_TILES_GLOBAL_ATOMIC>(), UNIFORM, Cast<unsigned char>(), num_samples * 4, CUB_TYPE_STRING(unsigned char));
         printf("\n");
     }
     else
@@ -644,7 +648,7 @@ int main(int argc, char** argv)
             Test<512, float,            unsigned short, int>(FloatScaleOp<unsigned short, 512>(), num_samples, CUB_TYPE_STRING(float));
         }
     }
-
+*/
     return 0;
 }
 
