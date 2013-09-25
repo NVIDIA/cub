@@ -76,7 +76,7 @@ enum BlockHistogramTilesAlgorithm
      * number of bins (e.g., thousands) may adversely affect occupancy and
      * performance (or even the ability to launch).
      */
-    GRID_HISTO_SORT,
+    HISTO_TILES_SORT,
 
 
     /**
@@ -97,7 +97,7 @@ enum BlockHistogramTilesAlgorithm
      * number of bins (e.g., thousands) may adversely affect occupancy and
      * performance (or even the ability to launch).
      */
-    GRID_HISTO_SHARED_ATOMIC,
+    HISTO_TILES_SHARED_ATOMIC,
 
 
     /**
@@ -114,7 +114,7 @@ enum BlockHistogramTilesAlgorithm
      * Performance is not significantly impacted when computing histograms having large
      * numbers of bins (e.g., thousands).
      */
-    GRID_HISTO_GLOBAL_ATOMIC,
+    HISTO_TILES_GLOBAL_ATOMIC,
 
 };
 
@@ -129,7 +129,7 @@ enum BlockHistogramTilesAlgorithm
 template <
     int                             _BLOCK_THREADS,
     int                             _ITEMS_PER_THREAD,
-    BlockHistogramTilesAlgorithm    _GRID_ALGORITHM,
+    BlockHistogramTilesAlgorithm    _HISTO_ALGORITHM,
     GridMappingStrategy             _GRID_MAPPING,
     int                             _SM_OCCUPANCY>
 struct BlockHistogramTilesPolicy
@@ -141,7 +141,7 @@ struct BlockHistogramTilesPolicy
         SM_OCCUPANCY        = _SM_OCCUPANCY,
     };
 
-    static const BlockHistogramTilesAlgorithm   GRID_ALGORITHM      = _GRID_ALGORITHM;
+    static const BlockHistogramTilesAlgorithm   HISTO_ALGORITHM     = _HISTO_ALGORITHM;
     static const GridMappingStrategy            GRID_MAPPING        = _GRID_MAPPING;
 };
 
@@ -170,7 +170,7 @@ struct BlockHistogramTiles
     //---------------------------------------------------------------------
 
     // Histogram grid algorithm
-    static const BlockHistogramTilesAlgorithm GRID_ALGORITHM = BlockHistogramTilesPolicy::GRID_ALGORITHM;
+    static const BlockHistogramTilesAlgorithm HISTO_ALGORITHM = BlockHistogramTilesPolicy::HISTO_ALGORITHM;
 
     // Alternative internal implementation types
     typedef BlockHistogramTilesSort<            BlockHistogramTilesPolicy, BINS, CHANNELS, ACTIVE_CHANNELS, InputIteratorRA, HistoCounter, SizeT>   BlockHistogramTilesSortT;
@@ -178,9 +178,9 @@ struct BlockHistogramTiles
     typedef BlockHistogramTilesGlobalAtomic<    BlockHistogramTilesPolicy, BINS, CHANNELS, ACTIVE_CHANNELS, InputIteratorRA, HistoCounter, SizeT>   BlockHistogramTilesGlobalAtomicT;
 
     // Internal block sweep histogram type
-    typedef typename If<(GRID_ALGORITHM == GRID_HISTO_SORT),
+    typedef typename If<(HISTO_ALGORITHM == HISTO_TILES_SORT),
         BlockHistogramTilesSortT,
-        typename If<(GRID_ALGORITHM == GRID_HISTO_SHARED_ATOMIC),
+        typename If<(HISTO_ALGORITHM == HISTO_TILES_SHARED_ATOMIC),
             BlockHistogramTilesSharedAtomicT,
             BlockHistogramTilesGlobalAtomicT>::Type>::Type InternalBlockDelegate;
 
