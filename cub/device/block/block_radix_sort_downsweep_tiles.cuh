@@ -152,13 +152,13 @@ struct BlockRadixSortDownsweepTiles
         RADIX_DIGITS            = 1 << RADIX_BITS,
         KEYS_ONLY               = Equals<Value, NullType>::VALUE,
 
-        WARP_THREADS            = PtxArchProps::LOG_WARP_THREADS,
+        WARP_THREADS            = CUB_PTX_LOG_WARP_THREADS,
         WARPS                   = (BLOCK_THREADS + WARP_THREADS - 1) / WARP_THREADS,
 
         BYTES_PER_SIZET         = sizeof(SizeT),
         LOG_BYTES_PER_SIZET     = Log2<BYTES_PER_SIZET>::VALUE,
 
-        LOG_SMEM_BANKS          = PtxArchProps::LOG_SMEM_BANKS,
+        LOG_SMEM_BANKS          = CUB_PTX_LOG_SMEM_BANKS,
         SMEM_BANKS              = 1 << LOG_SMEM_BANKS,
 
         DIGITS_PER_SCATTER_PASS = BLOCK_THREADS / SMEM_BANKS,
@@ -534,7 +534,7 @@ struct BlockRadixSortDownsweepTiles
             int exclusive_digit_prefix;
 
             // Get exclusive digit prefix from inclusive prefix
-#if CUB_PTX_ARCH >= 300
+#if CUB_PTX_VERSION >= 300
             exclusive_digit_prefix = ShuffleUp(inclusive_digit_prefix, 1);
             if (threadIdx.x == 0)
                 exclusive_digit_prefix = 0;

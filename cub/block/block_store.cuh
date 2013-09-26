@@ -226,15 +226,15 @@ __device__ __forceinline__ void StoreWarpStriped(
     OutputIteratorRA    block_itr,                  ///< [in] The thread block's base output iterator for storing to
     T                   (&items)[ITEMS_PER_THREAD]) ///< [out] Data to load
 {
-    int tid         = linear_tid & (PtxArchProps::WARP_THREADS - 1);
-    int wid         = linear_tid >> PtxArchProps::LOG_WARP_THREADS;
-    int warp_offset = wid * PtxArchProps::WARP_THREADS * ITEMS_PER_THREAD;
+    int tid         = linear_tid & (CUB_PTX_WARP_THREADS - 1);
+    int wid         = linear_tid >> CUB_PTX_LOG_WARP_THREADS;
+    int warp_offset = wid * CUB_PTX_WARP_THREADS * ITEMS_PER_THREAD;
 
     // Store directly in warp-striped order
     #pragma unroll
     for (int ITEM = 0; ITEM < ITEMS_PER_THREAD; ITEM++)
     {
-        ThreadStore<MODIFIER>(block_itr + warp_offset + tid + (ITEM * PtxArchProps::WARP_THREADS), items[ITEM]);
+        ThreadStore<MODIFIER>(block_itr + warp_offset + tid + (ITEM * CUB_PTX_WARP_THREADS), items[ITEM]);
     }
 }
 
@@ -263,17 +263,17 @@ __device__ __forceinline__ void StoreWarpStriped(
     T                   (&items)[ITEMS_PER_THREAD], ///< [in] Data to store
     int                 valid_items)                ///< [in] Number of valid items to write
 {
-    int tid         = linear_tid & (PtxArchProps::WARP_THREADS - 1);
-    int wid         = linear_tid >> PtxArchProps::LOG_WARP_THREADS;
-    int warp_offset = wid * PtxArchProps::WARP_THREADS * ITEMS_PER_THREAD;
+    int tid         = linear_tid & (CUB_PTX_WARP_THREADS - 1);
+    int wid         = linear_tid >> CUB_PTX_LOG_WARP_THREADS;
+    int warp_offset = wid * CUB_PTX_WARP_THREADS * ITEMS_PER_THREAD;
 
     // Store directly in warp-striped order
     #pragma unroll
     for (int ITEM = 0; ITEM < ITEMS_PER_THREAD; ITEM++)
     {
-        if (warp_offset + tid + (ITEM * PtxArchProps::WARP_THREADS) < valid_items)
+        if (warp_offset + tid + (ITEM * CUB_PTX_WARP_THREADS) < valid_items)
         {
-            ThreadStore<MODIFIER>(block_itr + warp_offset + tid + (ITEM * PtxArchProps::WARP_THREADS), items[ITEM]);
+            ThreadStore<MODIFIER>(block_itr + warp_offset + tid + (ITEM * CUB_PTX_WARP_THREADS), items[ITEM]);
         }
     }
 }
@@ -681,7 +681,7 @@ private:
     {
         enum
         {
-            WARP_THREADS = PtxArchProps::WARP_THREADS
+            WARP_THREADS = CUB_PTX_WARP_THREADS
         };
 
         // Assert BLOCK_THREADS must be a multiple of WARP_THREADS

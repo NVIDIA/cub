@@ -326,13 +326,13 @@ struct DeviceReduce
     template <typename T, typename SizeT>
     struct PtxDefaultPolicies
     {
-        static const int PTX_TUNE_ARCH =   (CUB_PTX_ARCH >= 350) ?
+        static const int PTX_TUNE_ARCH =   (CUB_PTX_VERSION >= 350) ?
                                                 350 :
-                                                (CUB_PTX_ARCH >= 300) ?
+                                                (CUB_PTX_VERSION >= 300) ?
                                                     300 :
-                                                    (CUB_PTX_ARCH >= 200) ?
+                                                    (CUB_PTX_VERSION >= 200) ?
                                                         200 :
-                                                        (CUB_PTX_ARCH >= 130) ?
+                                                        (CUB_PTX_VERSION >= 130) ?
                                                             130 :
                                                             100;
 
@@ -478,8 +478,8 @@ struct DeviceReduce
 
                 // Get a rough estimate of privatized_kernel SM occupancy based upon the maximum SM occupancy of the targeted PTX architecture
                 int privatized_sm_occupancy = CUB_MIN(
-                    ArchProps<CUB_PTX_ARCH>::MAX_SM_THREADBLOCKS,
-                    ArchProps<CUB_PTX_ARCH>::MAX_SM_THREADS / privatized_dispatch_params.block_threads);
+                    ArchProps<CUB_PTX_VERSION>::MAX_SM_THREADBLOCKS,
+                    ArchProps<CUB_PTX_VERSION>::MAX_SM_THREADS / privatized_dispatch_params.block_threads);
 
                 // Get a rough estimate of device occupancy for privatized_kernel
                 int privatized_occupancy = privatized_sm_occupancy * sm_count;

@@ -77,7 +77,7 @@ struct BlockRakingLayout
 
         /// Maximum number of warp-synchronous raking threads
         MAX_RAKING_THREADS =
-            CUB_MIN(BLOCK_THREADS, PtxArchProps::WARP_THREADS),
+            CUB_MIN(BLOCK_THREADS, CUB_PTX_WARP_THREADS),
 
         /// Number of raking elements per warp-synchronous raking thread (rounded up)
         SEGMENT_LENGTH =
@@ -89,7 +89,7 @@ struct BlockRakingLayout
 
         /// Pad each segment length with one element if it evenly divides the number of banks
         SEGMENT_PADDING =
-            (PtxArchProps::SMEM_BANKS % SEGMENT_LENGTH == 0) ? 1 : 0,
+            (CUB_PTX_SMEM_BANKS % SEGMENT_LENGTH == 0) ? 1 : 0,
 
         /// Total number of elements in the raking grid
         GRID_ELEMENTS =

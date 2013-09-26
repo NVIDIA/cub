@@ -161,7 +161,7 @@ private:
      * regardless.
      */
     static const BlockHistogramAlgorithm SAFE_ALGORITHM =
-        ((ALGORITHM == BLOCK_HISTO_ATOMIC) && (CUB_PTX_ARCH < 120)) ?
+        ((ALGORITHM == BLOCK_HISTO_ATOMIC) && (CUB_PTX_VERSION < 120)) ?
             BLOCK_HISTO_SORT :
             ALGORITHM;
 

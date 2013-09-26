@@ -147,7 +147,7 @@ struct BlockReduceByKeyiles
         BLOCK_THREADS       = BlockReduceByKeyilesPolicy::BLOCK_THREADS,
         ITEMS_PER_THREAD    = BlockReduceByKeyilesPolicy::ITEMS_PER_THREAD,
         TILE_ITEMS          = BLOCK_THREADS * ITEMS_PER_THREAD,
-        STATUS_PADDING      = PtxArchProps::WARP_THREADS,
+        STATUS_PADDING      = CUB_PTX_WARP_THREADS,
     };
 
     // Block load type for keys
@@ -367,7 +367,7 @@ struct BlockReduceByKeyiles
             ConsumeTile<true>(tile_idx, block_offset);
 
             // Get next tile
-#if CUB_PTX_ARCH < 200
+#if CUB_PTX_VERSION < 200
             // No concurrent kernels allowed, so just stripe tiles
             tile_idx += gridDim.x;
 #else

@@ -87,7 +87,7 @@ namespace cub {
 template <
     int                     BLOCK_THREADS,
     int                     RADIX_BITS,
-    bool                    MEMOIZE_OUTER_SCAN      = (CUB_PTX_ARCH >= 350) ? true : false,
+    bool                    MEMOIZE_OUTER_SCAN      = (CUB_PTX_VERSION >= 350) ? true : false,
     BlockScanAlgorithm      INNER_SCAN_ALGORITHM    = BLOCK_SCAN_WARP_SCANS,
     cudaSharedMemConfig     SMEM_CONFIG             = cudaSharedMemBankSizeFourByte>
 class BlockRadixRank
@@ -110,7 +110,7 @@ private:
     {
         RADIX_DIGITS                 = 1 << RADIX_BITS,
 
-        LOG_WARP_THREADS             = PtxArchProps::LOG_WARP_THREADS,
+        LOG_WARP_THREADS             = CUB_PTX_LOG_WARP_THREADS,
         WARP_THREADS                 = 1 << LOG_WARP_THREADS,
         WARPS                        = (BLOCK_THREADS + WARP_THREADS - 1) / WARP_THREADS,
 
@@ -126,7 +126,7 @@ private:
         // The number of packed counters per thread (plus one for padding)
         RAKING_SEGMENT               = COUNTER_LANES + 1,
 
-        LOG_SMEM_BANKS               = PtxArchProps::LOG_SMEM_BANKS,
+        LOG_SMEM_BANKS               = CUB_PTX_LOG_SMEM_BANKS,
         SMEM_BANKS                   = 1 << LOG_SMEM_BANKS,
     };
 

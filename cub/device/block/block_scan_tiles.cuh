@@ -347,7 +347,7 @@ struct BlockScanTiles
         GridQueue<int>        queue,                    ///< Queue descriptor for assigning tiles of work to thread blocks
         TileDescriptor   *d_tile_status)     ///< Global list of tile status
     {
-#if CUB_PTX_ARCH < 200
+#if CUB_PTX_VERSION < 200
 
         // No concurrent kernels allowed and blocks are launched in increasing order, so just assign one tile per block (up to 65K blocks)
         int     tile_idx        = blockIdx.x;
