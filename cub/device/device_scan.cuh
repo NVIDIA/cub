@@ -73,7 +73,7 @@ __global__ void ScanInitKernel(
 
     enum
     {
-        TILE_STATUS_PADDING = PtxArchProps::WARP_THREADS,
+        TILE_STATUS_PADDING = CUB_PTX_WARP_THREADS,
     };
 
     // Reset queue descriptor
@@ -118,7 +118,7 @@ __global__ void ScanKernel(
 {
     enum
     {
-        TILE_STATUS_PADDING = PtxArchProps::WARP_THREADS,
+        TILE_STATUS_PADDING = CUB_PTX_WARP_THREADS,
     };
 
     // Thread block type for scanning input tiles
@@ -284,11 +284,11 @@ struct DeviceScan
     template <typename T, typename SizeT>
     struct PtxDefaultPolicies
     {
-        static const int PTX_TUNE_ARCH =   (CUB_PTX_ARCH >= 350) ?
+        static const int PTX_TUNE_ARCH =   (CUB_PTX_VERSION >= 350) ?
                                                 350 :
-                                                (CUB_PTX_ARCH >= 300) ?
+                                                (CUB_PTX_VERSION >= 300) ?
                                                     300 :
-                                                    (CUB_PTX_ARCH >= 200) ?
+                                                    (CUB_PTX_VERSION >= 200) ?
                                                         200 :
                                                         100;
 
@@ -434,8 +434,8 @@ struct DeviceScan
 
             // Get a rough estimate of scan_kernel SM occupancy based upon the maximum SM occupancy of the targeted PTX architecture
             multi_sm_occupancy = CUB_MIN(
-                ArchProps<CUB_PTX_ARCH>::MAX_SM_THREADBLOCKS,
-                ArchProps<CUB_PTX_ARCH>::MAX_SM_THREADS / scan_dispatch_params.block_threads);
+                ArchProps<CUB_PTX_VERSION>::MAX_SM_THREADBLOCKS,
+                ArchProps<CUB_PTX_VERSION>::MAX_SM_THREADS / scan_dispatch_params.block_threads);
 
 #ifndef __CUDA_ARCH__
             // We're on the host, so come up with a
@@ -528,7 +528,7 @@ struct DeviceScan
 #ifdef __CUDA_ARCH__
             // We're on the device, so initialize the dispatch parameters with the PtxDefaultPolicies directly
             scan_dispatch_params.Init<ScanPolicy>();
-            ptx_version = CUB_PTX_ARCH;
+            ptx_version = CUB_PTX_VERSION;
 #else
             // We're on the host, so lookup and initialize the dispatch parameters with the policies that match the device's PTX version
             if (CubDebug(error = PtxVersion(ptx_version))) break;

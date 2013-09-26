@@ -257,7 +257,7 @@ var searchBox = new SearchBox("searchBox", "search",false,'Search');
 <div class="line"><a name="l00229"></a><span class="lineno">  229</span>&#160;<span class="preprocessor">    CUB_STORE_1(cub_modifier, ptx_modifier)                                                 \</span></div>
 <div class="line"><a name="l00230"></a><span class="lineno">  230</span>&#160;<span class="preprocessor"></span></div>
 <div class="line"><a name="l00231"></a><span class="lineno">  231</span>&#160;<span class="preprocessor"></span></div>
-<div class="line"><a name="l00235"></a><span class="lineno">  235</span>&#160;<span class="preprocessor">#if CUB_PTX_ARCH &gt;= 200</span></div>
+<div class="line"><a name="l00235"></a><span class="lineno">  235</span>&#160;<span class="preprocessor">#if CUB_PTX_VERSION &gt;= 200</span></div>
 <div class="line"><a name="l00236"></a><span class="lineno">  236</span>&#160;<span class="preprocessor"></span>    CUB_STORE_ALL(<a class="code" href="group___io_module.html#ggae9c7d6a6af7104f528509182ac9c9da2afd29f1e82f0a9dc8258fb7977b0a8237" title="Cache write-back all coherent levels. ">STORE_WB</a>, ca)</div>
 <div class="line"><a name="l00237"></a><span class="lineno">  237</span>&#160;    CUB_STORE_ALL(<a class="code" href="group___io_module.html#ggae9c7d6a6af7104f528509182ac9c9da2aacea07ea298b89dd1962a40b4823652d" title="Cache at global level. ">STORE_CG</a>, cg)</div>
 <div class="line"><a name="l00238"></a><span class="lineno">  238</span>&#160;    CUB_STORE_ALL(<a class="code" href="group___io_module.html#ggae9c7d6a6af7104f528509182ac9c9da2a00ae8891d1acad179d134fdd60d7839b" title="Cache streaming (likely to be accessed once) ">STORE_CS</a>, cs)</div>
@@ -353,7 +353,7 @@ var searchBox = new SearchBox("searchBox", "search",false,'Search');
 <div class="line"><a name="l00345"></a><span class="lineno">  345</span>&#160;}</div>
 <div class="line"><a name="l00346"></a><span class="lineno">  346</span>&#160;</div>
 <div class="line"><a name="l00347"></a><span class="lineno">  347</span>&#160;</div>
-<div class="line"><a name="l00348"></a><span class="lineno">  348</span>&#160;<span class="preprocessor">#if (CUB_PTX_ARCH &lt;= 350)</span></div>
+<div class="line"><a name="l00348"></a><span class="lineno">  348</span>&#160;<span class="preprocessor">#if (CUB_PTX_VERSION &lt;= 350)</span></div>
 <div class="line"><a name="l00349"></a><span class="lineno">  349</span>&#160;<span class="preprocessor"></span></div>
 <div class="line"><a name="l00353"></a><span class="lineno">  353</span>&#160;<span class="keyword">template</span> &lt;<span class="keyword">typename</span> T&gt;</div>
 <div class="line"><a name="l00354"></a><span class="lineno">  354</span>&#160;__device__ __forceinline__ <span class="keywordtype">void</span> <a class="code" href="group___io_module.html#ga870b5b156d3d0a65a8c551884b18a2d6" title="Thread utility for writing memory using cub::PtxStoreModifier cache modifiers. ">ThreadStore</a>(</div>
@@ -365,7 +365,7 @@ var searchBox = new SearchBox("searchBox", "search",false,'Search');
 <div class="line"><a name="l00360"></a><span class="lineno">  360</span>&#160;    ThreadStore&lt;STORE_DEFAULT&gt;(ptr, val);</div>
 <div class="line"><a name="l00361"></a><span class="lineno">  361</span>&#160;}</div>
 <div class="line"><a name="l00362"></a><span class="lineno">  362</span>&#160;</div>
-<div class="line"><a name="l00363"></a><span class="lineno">  363</span>&#160;<span class="preprocessor">#endif  // (CUB_PTX_ARCH &lt;= 350)</span></div>
+<div class="line"><a name="l00363"></a><span class="lineno">  363</span>&#160;<span class="preprocessor">#endif  // (CUB_PTX_VERSION &lt;= 350)</span></div>
 <div class="line"><a name="l00364"></a><span class="lineno">  364</span>&#160;<span class="preprocessor"></span></div>
 <div class="line"><a name="l00365"></a><span class="lineno">  365</span>&#160;</div>
 <div class="line"><a name="l00369"></a><span class="lineno">  369</span>&#160;<span class="keyword">template</span> &lt;<span class="keyword">typename</span> T, <span class="keywordtype">int</span> MODIFIER&gt;</div>

@@ -601,10 +601,10 @@ public:
 
     __host__ __device__ __forceinline__ reference operator*()
     {
-#if (CUB_PTX_ARCH == 0)
+#if (CUB_PTX_VERSION == 0)
         // Simply dereference the pointer on the host
         return *ptr;
-#elif (CUB_PTX_ARCH < 300)
+#elif (CUB_PTX_VERSION < 300)
         // Use the texture reference
         return tex1Dfetch(TexIteratorRef<T>::ref, tex_align_offset);
 #else
@@ -634,10 +634,10 @@ public:
     template <typename SizeT>
     __host__ __device__ __forceinline__ reference operator[](SizeT n)
     {
-#if (CUB_PTX_ARCH == 0)
+#if (CUB_PTX_VERSION == 0)
         // Simply dereference the pointer on the host
         return ptr[n];
-#elif (CUB_PTX_ARCH < 300)
+#elif (CUB_PTX_VERSION < 300)
         // Use the texture reference
         return tex1Dfetch(TexIteratorRef<T>::ref, tex_align_offset + n);
 #else
@@ -648,10 +648,10 @@ public:
 
     __host__ __device__ __forceinline__ pointer operator->()
     {
-#if (CUB_PTX_ARCH == 0)
+#if (CUB_PTX_VERSION == 0)
         // Simply dereference the pointer on the host
         return &(*ptr);
-#elif (CUB_PTX_ARCH < 300)
+#elif (CUB_PTX_VERSION < 300)
         // Use the texture reference
         return &(tex1Dfetch(TexIteratorRef<T>::ref, tex_align_offset));
 #else
@@ -797,10 +797,10 @@ public:
 
     __host__ __device__ __forceinline__ reference operator*()
     {
-#if (CUB_PTX_ARCH == 0)
+#if (CUB_PTX_VERSION == 0)
         // Simply dereference the pointer on the host
         return conversion_op(*ptr);
-#elif (CUB_PTX_ARCH < 300)
+#elif (CUB_PTX_VERSION < 300)
         // Use the texture reference
         return conversion_op(tex1Dfetch(TexIteratorRef<InputType>::ref, tex_align_offset));
 #else
@@ -830,10 +830,10 @@ public:
     template <typename SizeT>
     __host__ __device__ __forceinline__ reference operator[](SizeT n)
     {
-#if (CUB_PTX_ARCH == 0)
+#if (CUB_PTX_VERSION == 0)
         // Simply dereference the pointer on the host
         return conversion_op(ptr[n]);
-#elif (CUB_PTX_ARCH < 300)
+#elif (CUB_PTX_VERSION < 300)
         // Use the texture reference
         return conversion_op(tex1Dfetch(TexIteratorRef<InputType>::ref, tex_align_offset + n));
 #else
@@ -844,10 +844,10 @@ public:
 
     __host__ __device__ __forceinline__ pointer operator->()
     {
-#if (CUB_PTX_ARCH == 0)
+#if (CUB_PTX_VERSION == 0)
         // Simply dereference the pointer on the host
         return &conversion_op(*ptr);
-#elif (CUB_PTX_ARCH < 300)
+#elif (CUB_PTX_VERSION < 300)
         // Use the texture reference
         return &conversion_op(tex1Dfetch(TexIteratorRef<InputType>::ref, tex_align_offset));
 #else

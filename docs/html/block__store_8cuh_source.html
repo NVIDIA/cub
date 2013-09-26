@@ -249,15 +249,15 @@ var searchBox = new SearchBox("searchBox", "search",false,'Search');
 <div class="line"><a name="l00226"></a><span class="lineno">  226</span>&#160;    OutputIteratorRA    block_itr,                  </div>
 <div class="line"><a name="l00227"></a><span class="lineno">  227</span>&#160;    T                   (&amp;items)[ITEMS_PER_THREAD]) </div>
 <div class="line"><a name="l00228"></a><span class="lineno">  228</span>&#160;{</div>
-<div class="line"><a name="l00229"></a><span class="lineno">  229</span>&#160;    <span class="keywordtype">int</span> tid         = linear_tid &amp; (<a class="code" href="structcub_1_1_arch_props.html#a378def3dee75e77eb135efcf6f0ca063ac5a2eb5b9e3b50dd43ad67c1ff020d9c" title="Log of the number of threads per warp. ">PtxArchProps::WARP_THREADS</a> - 1);</div>
-<div class="line"><a name="l00230"></a><span class="lineno">  230</span>&#160;    <span class="keywordtype">int</span> wid         = linear_tid &gt;&gt; PtxArchProps::LOG_WARP_THREADS;</div>
-<div class="line"><a name="l00231"></a><span class="lineno">  231</span>&#160;    <span class="keywordtype">int</span> warp_offset = wid * <a class="code" href="structcub_1_1_arch_props.html#a378def3dee75e77eb135efcf6f0ca063ac5a2eb5b9e3b50dd43ad67c1ff020d9c" title="Log of the number of threads per warp. ">PtxArchProps::WARP_THREADS</a> * ITEMS_PER_THREAD;</div>
+<div class="line"><a name="l00229"></a><span class="lineno">  229</span>&#160;    <span class="keywordtype">int</span> tid         = linear_tid &amp; (<a class="code" href="structcub_1_1_arch_props.html#a378def3dee75e77eb135efcf6f0ca063ac5a2eb5b9e3b50dd43ad67c1ff020d9c" title="Log of the number of threads per warp. ">CUB_PTX_WARP_THREADS</a> - 1);</div>
+<div class="line"><a name="l00230"></a><span class="lineno">  230</span>&#160;    <span class="keywordtype">int</span> wid         = linear_tid &gt;&gt; CUB_PTX_LOG_WARP_THREADS;</div>
+<div class="line"><a name="l00231"></a><span class="lineno">  231</span>&#160;    <span class="keywordtype">int</span> warp_offset = wid * <a class="code" href="structcub_1_1_arch_props.html#a378def3dee75e77eb135efcf6f0ca063ac5a2eb5b9e3b50dd43ad67c1ff020d9c" title="Log of the number of threads per warp. ">CUB_PTX_WARP_THREADS</a> * ITEMS_PER_THREAD;</div>
 <div class="line"><a name="l00232"></a><span class="lineno">  232</span>&#160;</div>
 <div class="line"><a name="l00233"></a><span class="lineno">  233</span>&#160;    <span class="comment">// Store directly in warp-striped order</span></div>
 <div class="line"><a name="l00234"></a><span class="lineno">  234</span>&#160;<span class="preprocessor">    #pragma unroll</span></div>
 <div class="line"><a name="l00235"></a><span class="lineno">  235</span>&#160;<span class="preprocessor"></span>    <span class="keywordflow">for</span> (<span class="keywordtype">int</span> ITEM = 0; ITEM &lt; ITEMS_PER_THREAD; ITEM++)</div>
 <div class="line"><a name="l00236"></a><span class="lineno">  236</span>&#160;    {</div>
-<div class="line"><a name="l00237"></a><span class="lineno">  237</span>&#160;        ThreadStore&lt;MODIFIER&gt;(block_itr + warp_offset + tid + (ITEM * <a class="code" href="structcub_1_1_arch_props.html#a378def3dee75e77eb135efcf6f0ca063ac5a2eb5b9e3b50dd43ad67c1ff020d9c" title="Log of the number of threads per warp. ">PtxArchProps::WARP_THREADS</a>), items[ITEM]);</div>
+<div class="line"><a name="l00237"></a><span class="lineno">  237</span>&#160;        ThreadStore&lt;MODIFIER&gt;(block_itr + warp_offset + tid + (ITEM * <a class="code" href="structcub_1_1_arch_props.html#a378def3dee75e77eb135efcf6f0ca063ac5a2eb5b9e3b50dd43ad67c1ff020d9c" title="Log of the number of threads per warp. ">CUB_PTX_WARP_THREADS</a>), items[ITEM]);</div>
 <div class="line"><a name="l00238"></a><span class="lineno">  238</span>&#160;    }</div>
 <div class="line"><a name="l00239"></a><span class="lineno">  239</span>&#160;}</div>
 <div class="line"><a name="l00240"></a><span class="lineno">  240</span>&#160;</div>
@@ -273,17 +273,17 @@ var searchBox = new SearchBox("searchBox", "search",false,'Search');
 <div class="line"><a name="l00263"></a><span class="lineno">  263</span>&#160;    T                   (&amp;items)[ITEMS_PER_THREAD], </div>
 <div class="line"><a name="l00264"></a><span class="lineno">  264</span>&#160;    <span class="keywordtype">int</span>                 valid_items)                </div>
 <div class="line"><a name="l00265"></a><span class="lineno">  265</span>&#160;{</div>
-<div class="line"><a name="l00266"></a><span class="lineno">  266</span>&#160;    <span class="keywordtype">int</span> tid         = linear_tid &amp; (<a class="code" href="structcub_1_1_arch_props.html#a378def3dee75e77eb135efcf6f0ca063ac5a2eb5b9e3b50dd43ad67c1ff020d9c" title="Log of the number of threads per warp. ">PtxArchProps::WARP_THREADS</a> - 1);</div>
-<div class="line"><a name="l00267"></a><span class="lineno">  267</span>&#160;    <span class="keywordtype">int</span> wid         = linear_tid &gt;&gt; PtxArchProps::LOG_WARP_THREADS;</div>
-<div class="line"><a name="l00268"></a><span class="lineno">  268</span>&#160;    <span class="keywordtype">int</span> warp_offset = wid * <a class="code" href="structcub_1_1_arch_props.html#a378def3dee75e77eb135efcf6f0ca063ac5a2eb5b9e3b50dd43ad67c1ff020d9c" title="Log of the number of threads per warp. ">PtxArchProps::WARP_THREADS</a> * ITEMS_PER_THREAD;</div>
+<div class="line"><a name="l00266"></a><span class="lineno">  266</span>&#160;    <span class="keywordtype">int</span> tid         = linear_tid &amp; (<a class="code" href="structcub_1_1_arch_props.html#a378def3dee75e77eb135efcf6f0ca063ac5a2eb5b9e3b50dd43ad67c1ff020d9c" title="Log of the number of threads per warp. ">CUB_PTX_WARP_THREADS</a> - 1);</div>
+<div class="line"><a name="l00267"></a><span class="lineno">  267</span>&#160;    <span class="keywordtype">int</span> wid         = linear_tid &gt;&gt; CUB_PTX_LOG_WARP_THREADS;</div>
+<div class="line"><a name="l00268"></a><span class="lineno">  268</span>&#160;    <span class="keywordtype">int</span> warp_offset = wid * <a class="code" href="structcub_1_1_arch_props.html#a378def3dee75e77eb135efcf6f0ca063ac5a2eb5b9e3b50dd43ad67c1ff020d9c" title="Log of the number of threads per warp. ">CUB_PTX_WARP_THREADS</a> * ITEMS_PER_THREAD;</div>
 <div class="line"><a name="l00269"></a><span class="lineno">  269</span>&#160;</div>
 <div class="line"><a name="l00270"></a><span class="lineno">  270</span>&#160;    <span class="comment">// Store directly in warp-striped order</span></div>
 <div class="line"><a name="l00271"></a><span class="lineno">  271</span>&#160;<span class="preprocessor">    #pragma unroll</span></div>
 <div class="line"><a name="l00272"></a><span class="lineno">  272</span>&#160;<span class="preprocessor"></span>    <span class="keywordflow">for</span> (<span class="keywordtype">int</span> ITEM = 0; ITEM &lt; ITEMS_PER_THREAD; ITEM++)</div>
 <div class="line"><a name="l00273"></a><span class="lineno">  273</span>&#160;    {</div>
-<div class="line"><a name="l00274"></a><span class="lineno">  274</span>&#160;        <span class="keywordflow">if</span> (warp_offset + tid + (ITEM * <a class="code" href="structcub_1_1_arch_props.html#a378def3dee75e77eb135efcf6f0ca063ac5a2eb5b9e3b50dd43ad67c1ff020d9c" title="Log of the number of threads per warp. ">PtxArchProps::WARP_THREADS</a>) &lt; valid_items)</div>
+<div class="line"><a name="l00274"></a><span class="lineno">  274</span>&#160;        <span class="keywordflow">if</span> (warp_offset + tid + (ITEM * <a class="code" href="structcub_1_1_arch_props.html#a378def3dee75e77eb135efcf6f0ca063ac5a2eb5b9e3b50dd43ad67c1ff020d9c" title="Log of the number of threads per warp. ">CUB_PTX_WARP_THREADS</a>) &lt; valid_items)</div>
 <div class="line"><a name="l00275"></a><span class="lineno">  275</span>&#160;        {</div>
-<div class="line"><a name="l00276"></a><span class="lineno">  276</span>&#160;            ThreadStore&lt;MODIFIER&gt;(block_itr + warp_offset + tid + (ITEM * <a class="code" href="structcub_1_1_arch_props.html#a378def3dee75e77eb135efcf6f0ca063ac5a2eb5b9e3b50dd43ad67c1ff020d9c" title="Log of the number of threads per warp. ">PtxArchProps::WARP_THREADS</a>), items[ITEM]);</div>
+<div class="line"><a name="l00276"></a><span class="lineno">  276</span>&#160;            ThreadStore&lt;MODIFIER&gt;(block_itr + warp_offset + tid + (ITEM * <a class="code" href="structcub_1_1_arch_props.html#a378def3dee75e77eb135efcf6f0ca063ac5a2eb5b9e3b50dd43ad67c1ff020d9c" title="Log of the number of threads per warp. ">CUB_PTX_WARP_THREADS</a>), items[ITEM]);</div>
 <div class="line"><a name="l00277"></a><span class="lineno">  277</span>&#160;        }</div>
 <div class="line"><a name="l00278"></a><span class="lineno">  278</span>&#160;    }</div>
 <div class="line"><a name="l00279"></a><span class="lineno">  279</span>&#160;}</div>
@@ -499,7 +499,7 @@ var searchBox = new SearchBox("searchBox", "search",false,'Search');
 <div class="line"><a name="l00681"></a><span class="lineno">  681</span>&#160;    {</div>
 <div class="line"><a name="l00682"></a><span class="lineno">  682</span>&#160;        <span class="keyword">enum</span></div>
 <div class="line"><a name="l00683"></a><span class="lineno">  683</span>&#160;        {</div>
-<div class="line"><a name="l00684"></a><span class="lineno">  684</span>&#160;            WARP_THREADS = <a class="code" href="structcub_1_1_arch_props.html#a378def3dee75e77eb135efcf6f0ca063ac5a2eb5b9e3b50dd43ad67c1ff020d9c" title="Log of the number of threads per warp. ">PtxArchProps::WARP_THREADS</a></div>
+<div class="line"><a name="l00684"></a><span class="lineno">  684</span>&#160;            WARP_THREADS = <a class="code" href="structcub_1_1_arch_props.html#a378def3dee75e77eb135efcf6f0ca063ac5a2eb5b9e3b50dd43ad67c1ff020d9c" title="Log of the number of threads per warp. ">CUB_PTX_WARP_THREADS</a></div>
 <div class="line"><a name="l00685"></a><span class="lineno">  685</span>&#160;        };</div>
 <div class="line"><a name="l00686"></a><span class="lineno">  686</span>&#160;</div>
 <div class="line"><a name="l00687"></a><span class="lineno">  687</span>&#160;        <span class="comment">// Assert BLOCK_THREADS must be a multiple of WARP_THREADS</span></div>

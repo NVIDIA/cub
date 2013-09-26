@@ -478,13 +478,13 @@ struct DeviceRadixSort
     struct PtxDefaultPolicies
     {
 
-        static const int PTX_TUNE_ARCH =   (CUB_PTX_ARCH >= 350) ?
+        static const int PTX_TUNE_ARCH =   (CUB_PTX_VERSION >= 350) ?
                                                 350 :
-                                                (CUB_PTX_ARCH >= 300) ?
+                                                (CUB_PTX_VERSION >= 300) ?
                                                     300 :
-                                                    (CUB_PTX_ARCH >= 200) ?
+                                                    (CUB_PTX_VERSION >= 200) ?
                                                         200 :
-                                                        (CUB_PTX_ARCH >= 130) ?
+                                                        (CUB_PTX_VERSION >= 130) ?
                                                             130 :
                                                             100;
 
@@ -607,8 +607,8 @@ struct DeviceRadixSort
 
             // Get a rough estimate of downsweep_kernel SM occupancy based upon the maximum SM occupancy of the targeted PTX architecture
             int downsweep_sm_occupancy = CUB_MIN(
-                ArchProps<CUB_PTX_ARCH>::MAX_SM_THREADBLOCKS,
-                ArchProps<CUB_PTX_ARCH>::MAX_SM_THREADS / downsweep_dispatch_params.block_threads);
+                ArchProps<CUB_PTX_VERSION>::MAX_SM_THREADBLOCKS,
+                ArchProps<CUB_PTX_VERSION>::MAX_SM_THREADS / downsweep_dispatch_params.block_threads);
             int upsweep_sm_occupancy = downsweep_sm_occupancy;
 
             // Get a rough estimate of device occupancy for downsweep_kernel

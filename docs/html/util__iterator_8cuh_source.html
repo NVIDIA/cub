@@ -465,10 +465,10 @@ var searchBox = new SearchBox("searchBox", "search",false,'Search');
 <div class="line"><a name="l00433"></a><span class="lineno">  433</span>&#160;</div>
 <div class="line"><a name="l00434"></a><span class="lineno">  434</span>&#160;    __host__ __device__ __forceinline__ reference operator*()</div>
 <div class="line"><a name="l00435"></a><span class="lineno">  435</span>&#160;    {</div>
-<div class="line"><a name="l00436"></a><span class="lineno">  436</span>&#160;<span class="preprocessor">#if (CUB_PTX_ARCH == 0)</span></div>
+<div class="line"><a name="l00436"></a><span class="lineno">  436</span>&#160;<span class="preprocessor">#if (CUB_PTX_VERSION == 0)</span></div>
 <div class="line"><a name="l00437"></a><span class="lineno">  437</span>&#160;<span class="preprocessor"></span>        <span class="comment">// Simply dereference the pointer on the host</span></div>
 <div class="line"><a name="l00438"></a><span class="lineno">  438</span>&#160;        <span class="keywordflow">return</span> *ptr;</div>
-<div class="line"><a name="l00439"></a><span class="lineno">  439</span>&#160;<span class="preprocessor">#elif (CUB_PTX_ARCH &lt; 300)</span></div>
+<div class="line"><a name="l00439"></a><span class="lineno">  439</span>&#160;<span class="preprocessor">#elif (CUB_PTX_VERSION &lt; 300)</span></div>
 <div class="line"><a name="l00440"></a><span class="lineno">  440</span>&#160;<span class="preprocessor"></span>        <span class="comment">// Use the texture reference</span></div>
 <div class="line"><a name="l00441"></a><span class="lineno">  441</span>&#160;        <span class="keywordflow">return</span> tex1Dfetch(TexIteratorRef&lt;T&gt;::ref, tex_align_offset);</div>
 <div class="line"><a name="l00442"></a><span class="lineno">  442</span>&#160;<span class="preprocessor">#else</span></div>
@@ -498,10 +498,10 @@ var searchBox = new SearchBox("searchBox", "search",false,'Search');
 <div class="line"><a name="l00466"></a><span class="lineno">  466</span>&#160;    <span class="keyword">template</span> &lt;<span class="keyword">typename</span> SizeT&gt;</div>
 <div class="line"><a name="l00467"></a><span class="lineno">  467</span>&#160;    __host__ __device__ __forceinline__ reference operator[](SizeT n)</div>
 <div class="line"><a name="l00468"></a><span class="lineno">  468</span>&#160;    {</div>
-<div class="line"><a name="l00469"></a><span class="lineno">  469</span>&#160;<span class="preprocessor">#if (CUB_PTX_ARCH == 0)</span></div>
+<div class="line"><a name="l00469"></a><span class="lineno">  469</span>&#160;<span class="preprocessor">#if (CUB_PTX_VERSION == 0)</span></div>
 <div class="line"><a name="l00470"></a><span class="lineno">  470</span>&#160;<span class="preprocessor"></span>        <span class="comment">// Simply dereference the pointer on the host</span></div>
 <div class="line"><a name="l00471"></a><span class="lineno">  471</span>&#160;        <span class="keywordflow">return</span> ptr[n];</div>
-<div class="line"><a name="l00472"></a><span class="lineno">  472</span>&#160;<span class="preprocessor">#elif (CUB_PTX_ARCH &lt; 300)</span></div>
+<div class="line"><a name="l00472"></a><span class="lineno">  472</span>&#160;<span class="preprocessor">#elif (CUB_PTX_VERSION &lt; 300)</span></div>
 <div class="line"><a name="l00473"></a><span class="lineno">  473</span>&#160;<span class="preprocessor"></span>        <span class="comment">// Use the texture reference</span></div>
 <div class="line"><a name="l00474"></a><span class="lineno">  474</span>&#160;        <span class="keywordflow">return</span> tex1Dfetch(TexIteratorRef&lt;T&gt;::ref, tex_align_offset + n);</div>
 <div class="line"><a name="l00475"></a><span class="lineno">  475</span>&#160;<span class="preprocessor">#else</span></div>
@@ -512,10 +512,10 @@ var searchBox = new SearchBox("searchBox", "search",false,'Search');
 <div class="line"><a name="l00480"></a><span class="lineno">  480</span>&#160;</div>
 <div class="line"><a name="l00481"></a><span class="lineno">  481</span>&#160;    __host__ __device__ __forceinline__ pointer operator-&gt;()</div>
 <div class="line"><a name="l00482"></a><span class="lineno">  482</span>&#160;    {</div>
-<div class="line"><a name="l00483"></a><span class="lineno">  483</span>&#160;<span class="preprocessor">#if (CUB_PTX_ARCH == 0)</span></div>
+<div class="line"><a name="l00483"></a><span class="lineno">  483</span>&#160;<span class="preprocessor">#if (CUB_PTX_VERSION == 0)</span></div>
 <div class="line"><a name="l00484"></a><span class="lineno">  484</span>&#160;<span class="preprocessor"></span>        <span class="comment">// Simply dereference the pointer on the host</span></div>
 <div class="line"><a name="l00485"></a><span class="lineno">  485</span>&#160;        <span class="keywordflow">return</span> &amp;(*ptr);</div>
-<div class="line"><a name="l00486"></a><span class="lineno">  486</span>&#160;<span class="preprocessor">#elif (CUB_PTX_ARCH &lt; 300)</span></div>
+<div class="line"><a name="l00486"></a><span class="lineno">  486</span>&#160;<span class="preprocessor">#elif (CUB_PTX_VERSION &lt; 300)</span></div>
 <div class="line"><a name="l00487"></a><span class="lineno">  487</span>&#160;<span class="preprocessor"></span>        <span class="comment">// Use the texture reference</span></div>
 <div class="line"><a name="l00488"></a><span class="lineno">  488</span>&#160;        <span class="keywordflow">return</span> &amp;(tex1Dfetch(TexIteratorRef&lt;T&gt;::ref, tex_align_offset));</div>
 <div class="line"><a name="l00489"></a><span class="lineno">  489</span>&#160;<span class="preprocessor">#else</span></div>
@@ -644,10 +644,10 @@ var searchBox = new SearchBox("searchBox", "search",false,'Search');
 <div class="line"><a name="l00636"></a><span class="lineno">  636</span>&#160;</div>
 <div class="line"><a name="l00637"></a><span class="lineno">  637</span>&#160;    __host__ __device__ __forceinline__ reference operator*()</div>
 <div class="line"><a name="l00638"></a><span class="lineno">  638</span>&#160;    {</div>
-<div class="line"><a name="l00639"></a><span class="lineno">  639</span>&#160;<span class="preprocessor">#if (CUB_PTX_ARCH == 0)</span></div>
+<div class="line"><a name="l00639"></a><span class="lineno">  639</span>&#160;<span class="preprocessor">#if (CUB_PTX_VERSION == 0)</span></div>
 <div class="line"><a name="l00640"></a><span class="lineno">  640</span>&#160;<span class="preprocessor"></span>        <span class="comment">// Simply dereference the pointer on the host</span></div>
 <div class="line"><a name="l00641"></a><span class="lineno">  641</span>&#160;        <span class="keywordflow">return</span> conversion_op(*ptr);</div>
-<div class="line"><a name="l00642"></a><span class="lineno">  642</span>&#160;<span class="preprocessor">#elif (CUB_PTX_ARCH &lt; 300)</span></div>
+<div class="line"><a name="l00642"></a><span class="lineno">  642</span>&#160;<span class="preprocessor">#elif (CUB_PTX_VERSION &lt; 300)</span></div>
 <div class="line"><a name="l00643"></a><span class="lineno">  643</span>&#160;<span class="preprocessor"></span>        <span class="comment">// Use the texture reference</span></div>
 <div class="line"><a name="l00644"></a><span class="lineno">  644</span>&#160;        <span class="keywordflow">return</span> conversion_op(tex1Dfetch(TexIteratorRef&lt;InputType&gt;::ref, tex_align_offset));</div>
 <div class="line"><a name="l00645"></a><span class="lineno">  645</span>&#160;<span class="preprocessor">#else</span></div>
@@ -677,10 +677,10 @@ var searchBox = new SearchBox("searchBox", "search",false,'Search');
 <div class="line"><a name="l00669"></a><span class="lineno">  669</span>&#160;    <span class="keyword">template</span> &lt;<span class="keyword">typename</span> SizeT&gt;</div>
 <div class="line"><a name="l00670"></a><span class="lineno">  670</span>&#160;    __host__ __device__ __forceinline__ reference operator[](SizeT n)</div>
 <div class="line"><a name="l00671"></a><span class="lineno">  671</span>&#160;    {</div>
-<div class="line"><a name="l00672"></a><span class="lineno">  672</span>&#160;<span class="preprocessor">#if (CUB_PTX_ARCH == 0)</span></div>
+<div class="line"><a name="l00672"></a><span class="lineno">  672</span>&#160;<span class="preprocessor">#if (CUB_PTX_VERSION == 0)</span></div>
 <div class="line"><a name="l00673"></a><span class="lineno">  673</span>&#160;<span class="preprocessor"></span>        <span class="comment">// Simply dereference the pointer on the host</span></div>
 <div class="line"><a name="l00674"></a><span class="lineno">  674</span>&#160;        <span class="keywordflow">return</span> conversion_op(ptr[n]);</div>
-<div class="line"><a name="l00675"></a><span class="lineno">  675</span>&#160;<span class="preprocessor">#elif (CUB_PTX_ARCH &lt; 300)</span></div>
+<div class="line"><a name="l00675"></a><span class="lineno">  675</span>&#160;<span class="preprocessor">#elif (CUB_PTX_VERSION &lt; 300)</span></div>
 <div class="line"><a name="l00676"></a><span class="lineno">  676</span>&#160;<span class="preprocessor"></span>        <span class="comment">// Use the texture reference</span></div>
 <div class="line"><a name="l00677"></a><span class="lineno">  677</span>&#160;        <span class="keywordflow">return</span> conversion_op(tex1Dfetch(TexIteratorRef&lt;InputType&gt;::ref, tex_align_offset + n));</div>
 <div class="line"><a name="l00678"></a><span class="lineno">  678</span>&#160;<span class="preprocessor">#else</span></div>
@@ -691,10 +691,10 @@ var searchBox = new SearchBox("searchBox", "search",false,'Search');
 <div class="line"><a name="l00683"></a><span class="lineno">  683</span>&#160;</div>
 <div class="line"><a name="l00684"></a><span class="lineno">  684</span>&#160;    __host__ __device__ __forceinline__ pointer operator-&gt;()</div>
 <div class="line"><a name="l00685"></a><span class="lineno">  685</span>&#160;    {</div>
-<div class="line"><a name="l00686"></a><span class="lineno">  686</span>&#160;<span class="preprocessor">#if (CUB_PTX_ARCH == 0)</span></div>
+<div class="line"><a name="l00686"></a><span class="lineno">  686</span>&#160;<span class="preprocessor">#if (CUB_PTX_VERSION == 0)</span></div>
 <div class="line"><a name="l00687"></a><span class="lineno">  687</span>&#160;<span class="preprocessor"></span>        <span class="comment">// Simply dereference the pointer on the host</span></div>
 <div class="line"><a name="l00688"></a><span class="lineno">  688</span>&#160;        <span class="keywordflow">return</span> &amp;conversion_op(*ptr);</div>
-<div class="line"><a name="l00689"></a><span class="lineno">  689</span>&#160;<span class="preprocessor">#elif (CUB_PTX_ARCH &lt; 300)</span></div>
+<div class="line"><a name="l00689"></a><span class="lineno">  689</span>&#160;<span class="preprocessor">#elif (CUB_PTX_VERSION &lt; 300)</span></div>
 <div class="line"><a name="l00690"></a><span class="lineno">  690</span>&#160;<span class="preprocessor"></span>        <span class="comment">// Use the texture reference</span></div>
 <div class="line"><a name="l00691"></a><span class="lineno">  691</span>&#160;        <span class="keywordflow">return</span> &amp;conversion_op(tex1Dfetch(TexIteratorRef&lt;InputType&gt;::ref, tex_align_offset));</div>
 <div class="line"><a name="l00692"></a><span class="lineno">  692</span>&#160;<span class="preprocessor">#else</span></div>

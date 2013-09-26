@@ -116,7 +116,7 @@ template <
     int                     ITEMS_PER_THREAD,
     typename                Value                   = NullType,
     int                     RADIX_BITS              = 4,
-    bool                    MEMOIZE_OUTER_SCAN      = (CUB_PTX_ARCH >= 350) ? true : false,
+    bool                    MEMOIZE_OUTER_SCAN      = (CUB_PTX_VERSION >= 350) ? true : false,
     BlockScanAlgorithm      INNER_SCAN_ALGORITHM    = BLOCK_SCAN_WARP_SCANS,
     cudaSharedMemConfig     SMEM_CONFIG             = cudaSharedMemBankSizeFourByte>
 class BlockRadixSort

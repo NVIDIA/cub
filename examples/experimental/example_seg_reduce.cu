@@ -621,7 +621,7 @@ struct FinalizeSpmvBlock
         if (FULL_TILE)
         {
             // Full tile
-#if CUB_PTX_ARCH >= 350
+#if CUB_PTX_VERSION >= 350
             LoadBlocked<LOAD_LDG>(threadIdx.x, d_block_partials + block_offset, partial_sums);
 #else
             LoadBlocked<LOAD_DEFAULT>(threadIdx.x, d_block_partials + block_offset, partial_sums);
@@ -634,7 +634,7 @@ struct FinalizeSpmvBlock
             default_sum.segment = temp_storage.last_block_row;
             default_sum.partial = Value(0);
 
-#if CUB_PTX_ARCH >= 350
+#if CUB_PTX_VERSION >= 350
             LoadBlocked<LOAD_LDG>(threadIdx.x, d_block_partials + block_offset, partial_sums, guarded_items, default_sum);
 #else
             LoadBlocked<LOAD_DEFAULT>(threadIdx.x, d_block_partials + block_offset, partial_sums, guarded_items, default_sum);

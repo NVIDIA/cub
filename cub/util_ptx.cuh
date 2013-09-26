@@ -312,9 +312,9 @@ __device__ __forceinline__ unsigned int LaneMaskGe()
  */
 __device__ __forceinline__ int WarpAll(int cond)
 {
-#if CUB_PTX_ARCH < 120
+#if CUB_PTX_VERSION < 120
 
-    __shared__ volatile int warp_signals[PtxArchProps::MAX_SM_THREADS / PtxArchProps::WARP_THREADS];
+    __shared__ volatile int warp_signals[CUB_PTX_MAX_SM_THREADS / CUB_PTX_WARP_THREADS];
 
     if (LaneId() == 0)
         warp_signals[WarpId()] = 1;
@@ -337,9 +337,9 @@ __device__ __forceinline__ int WarpAll(int cond)
  */
 __device__ __forceinline__ int WarpAny(int cond)
 {
-#if CUB_PTX_ARCH < 120
+#if CUB_PTX_VERSION < 120
 
-    __shared__ volatile int warp_signals[PtxArchProps::MAX_SM_THREADS / PtxArchProps::WARP_THREADS];
+    __shared__ volatile int warp_signals[CUB_PTX_MAX_SM_THREADS / CUB_PTX_WARP_THREADS];
 
     if (LaneId() == 0)
         warp_signals[WarpId()] = 0;
@@ -397,7 +397,7 @@ __device__ __forceinline__ T ShuffleDown(
 {
     enum
     {
-        SHFL_C = PtxArchProps::WARP_THREADS - 1,
+        SHFL_C = CUB_PTX_WARP_THREADS - 1,
     };
 
     typedef typename WordAlignment<T>::ShuffleWord ShuffleWord;
@@ -429,7 +429,7 @@ __device__ __forceinline__ T ShuffleBroadcast(
 {
     enum
     {
-        SHFL_C = PtxArchProps::WARP_THREADS - 1,
+        SHFL_C = CUB_PTX_WARP_THREADS - 1,
     };
 
     typedef typename WordAlignment<T>::ShuffleWord ShuffleWord;

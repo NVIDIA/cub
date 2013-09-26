@@ -31,19 +31,6 @@
  * Static architectural properties by SM version.
  */
 
-
-/******************************************************************************
- * Static architectural properties by SM version.
- *
- * "Device" reflects the PTX architecture targeted by the active compiler
- * pass.  It provides useful compile-time statics within device code.  E.g.,:
- *
- *     __shared__ int[Device::WARP_THREADS];
- *
- *     int padded_offset = threadIdx.x + (threadIdx.x >> Device::LOG_SMEM_BANKS);
- *
- ******************************************************************************/
-
 #pragma once
 
 #include "util_namespace.cuh"
@@ -61,11 +48,11 @@ namespace cub {
  */
 
 
-/// CUB_PTX_ARCH reflects the PTX version targeted by the active compiler pass (or zero during the host pass).
+/// CUB_PTX_VERSION reflects the PTX version targeted by the active compiler pass (or zero during the host pass).
 #ifndef __CUDA_ARCH__
-    #define CUB_PTX_ARCH 0
+    #define CUB_PTX_VERSION 0
 #else
-    #define CUB_PTX_ARCH __CUDA_ARCH__
+    #define CUB_PTX_VERSION __CUDA_ARCH__
 #endif
 
 
@@ -75,218 +62,106 @@ namespace cub {
 #endif
 
 
-/// Execution space for destructors
-#if ((CUB_PTX_ARCH > 0) && (CUB_PTX_ARCH < 200))
-    #define CUB_DESTRUCTOR __host__
-#else
-    #define CUB_DESTRUCTOR __host__ __device__
-#endif
+
+/// Number of threads per warp
+#define CUB_LOG_WARP_THREADS(arch)                      \
+	(5)
+
+/// Number of smem banks
+#define CUB_LOG_SMEM_BANKS(arch)                        \
+    ((arch >= 200) ?                                    \
+        (5) :                                           \
+        (4))
+
+/// Number of bytes per smem bank
+#define CUB_SMEM_BANK_BYTES(arch)                       \
+    (4)
+
+/// Number of smem bytes provisioned per SM
+#define CUB_SMEM_BYTES(arch)                            \
+    ((arch >= 200) ?                                    \
+		(48 * 1024) :                                   \
+		(16 * 1024))
+
+/// Smem allocation size in bytes
+#define CUB_SMEM_ALLOC_UNIT(arch)                       \
+    ((arch >= 300) ?                                    \
+    	(256) :                                         \
+		((arch >= 200) ?                                \
+		    (128) :                                     \
+		    (512)))
+
+/// Whether or not the architecture allocates registers by block (or by warp)
+#define CUB_REGS_BY_BLOCK(arch)                         \
+    ((arch >= 200) ?                                    \
+    	(false) :                                       \
+    	(true))
+
+/// Number of registers allocated at a time per block (or by warp)
+#define CUB_REG_ALLOC_UNIT(arch)                        \
+    ((arch >= 300) ?                                    \
+    	(256) :                                         \
+        ((arch >= 200) ?                                \
+        	(64) :                                      \
+            ((arch >= 120) ?                            \
+            	(512) :                                 \
+            	(256))))
+
+/// Granularity of warps for which registers are allocated
+#define CUB_WARP_ALLOC_UNIT(arch)                       \
+    ((arch >= 300) ?                                    \
+        (4) :                                           \
+        (2))
+
+/// Maximum number of threads per SM
+#define CUB_MAX_SM_THREADS(arch)                        \
+    ((arch >= 300) ?                                    \
+    	(2048) :                                        \
+        ((arch >= 200) ?                                \
+        	(1536) :                                    \
+            ((arch >= 120) ?                            \
+           		(1024) :                                \
+           		(768))))
+
+/// Maximum number of thread blocks per SM
+#define CUB_MAX_SM_BLOCKS(arch)                         \
+    ((arch >= 300) ?                                    \
+        (16) :                                          \
+        (8))
+
+/// Maximum number of threads per thread block
+#define CUB_MAX_BLOCK_THREADS(arch)                     \
+    ((arch >= 200) ?                                    \
+        (1024) :                                        \
+        (512))
+
+/// Maximum number of registers per SM
+#define CUB_MAX_SM_REGISTERS(arch)                      \
+    ((arch >= 300) ?                                    \
+        (64 * 1024) :                                   \
+        ((arch >= 200) ?                                \
+            (32 * 1024) :                               \
+            ((arch >= 120) ?                            \
+                (16 * 1024) :                           \
+                (8 * 1024))))
 
 
-/**
- * \brief Structure for statically reporting CUDA device properties, parameterized by SM architecture.
- *
- * The default specialization is for SM10.
- */
-template <int SM_ARCH>
-struct ArchProps
-{
-    enum
-    {
-        LOG_WARP_THREADS    =
-                                        5,                        /// Log of the number of threads per warp
-        WARP_THREADS        =
-                                        1 << LOG_WARP_THREADS,    /// Number of threads per warp
-        LOG_SMEM_BANKS      =
-                                        4,                        /// Log of the number of smem banks
-        SMEM_BANKS          =
-                                        1 << LOG_SMEM_BANKS,      /// The number of smem banks
-        SMEM_BANK_BYTES     =
-                                        4,                        /// Size of smem bank words
-        SMEM_BYTES          =
-                                        16 * 1024,                /// Maximum SM shared memory
-        SMEM_ALLOC_UNIT     =
-                                        512,                      /// Smem allocation size in bytes
-        REGS_BY_BLOCK       =
-                                        true,                     /// Whether or not the architecture allocates registers by block (or by warp)
-        REG_ALLOC_UNIT      =
-                                        256,                      /// Number of registers allocated at a time per block (or by warp)
-        WARP_ALLOC_UNIT     =
-                                        2,                        /// Granularity of warps for which registers are allocated
-        MAX_SM_THREADS      =
-                                        768,                      /// Maximum number of threads per SM
-        MAX_SM_THREADBLOCKS =
-                                        8,                        /// Maximum number of thread blocks per SM
-        MAX_BLOCK_THREADS   =
-                                        512,                      /// Maximum number of thread per thread block
-        MAX_SM_REGISTERS    =
-                                        8 * 1024,                 /// Maximum number of registers per SM
-    };
-};
+#define CUB_PTX_LOG_WARP_THREADS    CUB_LOG_WARP_THREADS(CUB_PTX_VERSION)
+#define CUB_PTX_WARP_THREADS        (1 << CUB_PTX_LOG_WARP_THREADS)
+#define CUB_PTX_LOG_SMEM_BANKS      CUB_LOG_SMEM_BANKS(CUB_PTX_VERSION)
+#define CUB_PTX_SMEM_BANKS          (1 << CUB_PTX_LOG_SMEM_BANKS)
+#define CUB_PTX_SMEM_BANK_BYTES     CUB_SMEM_BANK_BYTES(CUB_PTX_VERSION)
+#define CUB_PTX_SMEM_BYTES          CUB_SMEM_BYTES(CUB_PTX_VERSION)
+#define CUB_PTX_SMEM_ALLOC_UNIT     CUB_SMEM_ALLOC_UNIT(CUB_PTX_VERSION)
+#define CUB_PTX_REGS_BY_BLOCK       CUB_REGS_BY_BLOCK(CUB_PTX_VERSION)
+#define CUB_PTX_REG_ALLOC_UNIT      CUB_REG_ALLOC_UNIT(CUB_PTX_VERSION)
+#define CUB_PTX_WARP_ALLOC_UNIT     CUB_WARP_ALLOC_UNIT(CUB_PTX_VERSION)
+#define CUB_PTX_MAX_SM_THREADS      CUB_MAX_SM_THREADS(CUB_PTX_VERSION)
+#define CUB_PTX_MAX_SM_BLOCKS       CUB_MAX_SM_BLOCKS(CUB_PTX_VERSION)
+#define CUB_PTX_MAX_BLOCK_THREADS   CUB_MAX_BLOCK_THREADS(CUB_PTX_VERSION)
+#define CUB_PTX_MAX_SM_REGISTERS    CUB_MAX_SM_REGISTERS(CUB_PTX_VERSION)
 
 
-
-
-#ifndef DOXYGEN_SHOULD_SKIP_THIS    // Do not document
-
-/**
- * Architecture properties for SM30
- */
-template <>
-struct ArchProps<300>
-{
-    enum
-    {
-        LOG_WARP_THREADS    = 5,                        // 32 threads per warp
-        WARP_THREADS        = 1 << LOG_WARP_THREADS,
-        LOG_SMEM_BANKS      = 5,                        // 32 banks
-        SMEM_BANKS          = 1 << LOG_SMEM_BANKS,
-        SMEM_BANK_BYTES     = 4,                        // 4 byte bank words
-        SMEM_BYTES          = 48 * 1024,                // 48KB shared memory
-        SMEM_ALLOC_UNIT     = 256,                      // 256B smem allocation segment size
-        REGS_BY_BLOCK       = false,                    // Allocates registers by warp
-        REG_ALLOC_UNIT      = 256,                      // 256 registers allocated at a time per warp
-        WARP_ALLOC_UNIT     = 4,                        // Registers are allocated at a granularity of every 4 warps per threadblock
-        MAX_SM_THREADS      = 2048,                     // 2K max threads per SM
-        MAX_SM_THREADBLOCKS = 16,                       // 16 max threadblocks per SM
-        MAX_BLOCK_THREADS   = 1024,                     // 1024 max threads per threadblock
-        MAX_SM_REGISTERS    = 64 * 1024,                // 64K max registers per SM
-    };
-
-    // Callback utility
-    template <typename T>
-    static __host__ __device__ __forceinline__ void Callback(T &target, int sm_version)
-    {
-        target.template Callback<ArchProps>();
-    }
-};
-
-
-/**
- * Architecture properties for SM20
- */
-template <>
-struct ArchProps<200>
-{
-    enum
-    {
-        LOG_WARP_THREADS    = 5,                        // 32 threads per warp
-        WARP_THREADS        = 1 << LOG_WARP_THREADS,
-        LOG_SMEM_BANKS      = 5,                        // 32 banks
-        SMEM_BANKS          = 1 << LOG_SMEM_BANKS,
-        SMEM_BANK_BYTES     = 4,                        // 4 byte bank words
-        SMEM_BYTES          = 48 * 1024,                // 48KB shared memory
-        SMEM_ALLOC_UNIT     = 128,                      // 128B smem allocation segment size
-        REGS_BY_BLOCK       = false,                    // Allocates registers by warp
-        REG_ALLOC_UNIT      = 64,                       // 64 registers allocated at a time per warp
-        WARP_ALLOC_UNIT     = 2,                        // Registers are allocated at a granularity of every 2 warps per threadblock
-        MAX_SM_THREADS      = 1536,                     // 1536 max threads per SM
-        MAX_SM_THREADBLOCKS = 8,                        // 8 max threadblocks per SM
-        MAX_BLOCK_THREADS   = 1024,                     // 1024 max threads per threadblock
-        MAX_SM_REGISTERS    = 32 * 1024,                // 32K max registers per SM
-    };
-
-    // Callback utility
-    template <typename T>
-    static __host__ __device__ __forceinline__ void Callback(T &target, int sm_version)
-    {
-        if (sm_version >= 300) {
-            ArchProps<300>::Callback(target, sm_version);
-        } else {
-            target.template Callback<ArchProps>();
-        }
-    }
-};
-
-
-/**
- * Architecture properties for SM12
- */
-template <>
-struct ArchProps<120>
-{
-    enum
-    {
-        LOG_WARP_THREADS    = 5,                        // 32 threads per warp
-        WARP_THREADS        = 1 << LOG_WARP_THREADS,
-        LOG_SMEM_BANKS      = 4,                        // 16 banks
-        SMEM_BANKS          = 1 << LOG_SMEM_BANKS,
-        SMEM_BANK_BYTES     = 4,                        // 4 byte bank words
-        SMEM_BYTES          = 16 * 1024,                // 16KB shared memory
-        SMEM_ALLOC_UNIT     = 512,                      // 512B smem allocation segment size
-        REGS_BY_BLOCK       = true,                     // Allocates registers by threadblock
-        REG_ALLOC_UNIT      = 512,                      // 512 registers allocated at time per threadblock
-        WARP_ALLOC_UNIT     = 2,                        // Registers are allocated at a granularity of every 2 warps per threadblock
-        MAX_SM_THREADS      = 1024,                     // 1024 max threads per SM
-        MAX_SM_THREADBLOCKS = 8,                        // 8 max threadblocks per SM
-        MAX_BLOCK_THREADS   = 512,                      // 512 max threads per threadblock
-        MAX_SM_REGISTERS    = 16 * 1024,                // 16K max registers per SM
-    };
-
-    // Callback utility
-    template <typename T>
-    static __host__ __device__ __forceinline__ void Callback(T &target, int sm_version)
-    {
-        if (sm_version >= 200) {
-            ArchProps<200>::Callback(target, sm_version);
-        } else {
-            target.template Callback<ArchProps>();
-        }
-    }
-};
-
-
-/**
- * Architecture properties for SM10.  Derives from the default ArchProps specialization.
- */
-template <>
-struct ArchProps<100> : ArchProps<0>
-{
-    // Callback utility
-    template <typename T>
-    static __host__ __device__ __forceinline__ void Callback(T &target, int sm_version)
-    {
-        if (sm_version >= 120) {
-            ArchProps<120>::Callback(target, sm_version);
-        } else {
-            target.template Callback<ArchProps>();
-        }
-    }
-};
-
-
-/**
- * Architecture properties for SM35
- */
-template <>
-struct ArchProps<350> : ArchProps<300> {};        // Derives from SM30
-
-/**
- * Architecture properties for SM21
- */
-template <>
-struct ArchProps<210> : ArchProps<200> {};        // Derives from SM20
-
-/**
- * Architecture properties for SM13
- */
-template <>
-struct ArchProps<130> : ArchProps<120> {};        // Derives from SM12
-
-/**
- * Architecture properties for SM11
- */
-template <>
-struct ArchProps<110> : ArchProps<100> {};        // Derives from SM10
-
-
-#endif // DOXYGEN_SHOULD_SKIP_THIS
-
-
-/**
- * \brief The architectural properties for the PTX version targeted by the active compiler pass.
- */
-struct PtxArchProps : ArchProps<CUB_PTX_ARCH> {};
 
 
 /** @} */       // end group UtilModule

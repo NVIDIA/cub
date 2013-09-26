@@ -99,7 +99,7 @@ __global__ void BlockSortKernel(
     int block_offset = blockIdx.x * TILE_SIZE;
 
     // Load items in blocked fashion
-#if CUB_PTX_ARCH >= 350
+#if CUB_PTX_VERSION >= 350
     LoadBlocked<LOAD_LDG>(threadIdx.x, d_in + block_offset, items);
 #else
     LoadBlockedVectorized<LOAD_DEFAULT>(threadIdx.x, d_in + block_offset, items);
