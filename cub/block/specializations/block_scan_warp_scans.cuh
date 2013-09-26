@@ -55,11 +55,11 @@ struct BlockScanWarpScans
     enum
     {
         /// Number of active warps
-        WARPS = (BLOCK_THREADS + PtxArchProps::WARP_THREADS - 1) / PtxArchProps::WARP_THREADS,
+        WARPS = (BLOCK_THREADS + CUB_PTX_WARP_THREADS - 1) / CUB_PTX_WARP_THREADS,
     };
 
     ///  WarpScan utility type
-    typedef WarpScan<T, WARPS, PtxArchProps::WARP_THREADS> WarpScan;
+    typedef WarpScan<T, WARPS, CUB_PTX_WARP_THREADS> WarpScan;
 
     /// Shared memory storage layout type
     struct _TempStorage
@@ -88,12 +88,12 @@ struct BlockScanWarpScans
     :
         temp_storage(temp_storage.Alias()),
         linear_tid(linear_tid),
-        warp_id((BLOCK_THREADS <= PtxArchProps::WARP_THREADS) ?
+        warp_id((BLOCK_THREADS <= CUB_PTX_WARP_THREADS) ?
             0 :
-            linear_tid / PtxArchProps::WARP_THREADS),
-        lane_id((BLOCK_THREADS <= PtxArchProps::WARP_THREADS) ?
+            linear_tid / CUB_PTX_WARP_THREADS),
+        lane_id((BLOCK_THREADS <= CUB_PTX_WARP_THREADS) ?
             linear_tid :
-            linear_tid % PtxArchProps::WARP_THREADS)
+            linear_tid % CUB_PTX_WARP_THREADS)
     {}
 
 

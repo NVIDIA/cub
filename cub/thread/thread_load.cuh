@@ -246,7 +246,7 @@ __device__ __forceinline__ typename std::iterator_traits<InputIteratorRA>::value
 /**
  * Define ThreadLoad specializations for the various PTX load modifiers
  */
-#if CUB_PTX_ARCH >= 200
+#if CUB_PTX_VERSION >= 200
     CUB_LOAD_ALL(LOAD_CA, ca)
     CUB_LOAD_ALL(LOAD_CG, cg)
     CUB_LOAD_ALL(LOAD_CS, cs)
@@ -255,7 +255,7 @@ __device__ __forceinline__ typename std::iterator_traits<InputIteratorRA>::value
     // LOAD_CV on SM10-13 uses "volatile.global" to ensure reads from last level
     CUB_LOAD_ALL(LOAD_CV, volatile.global)
 #endif
-#if CUB_PTX_ARCH >= 350
+#if CUB_PTX_VERSION >= 350
     CUB_LOAD_ALL(LOAD_LDG, global.nc)
 #endif
 
@@ -318,7 +318,7 @@ __device__ __forceinline__ T ThreadLoadVolatile(
 {
     T retval = *reinterpret_cast<volatile T*>(ptr);
 
-#if (CUB_PTX_ARCH <= 130)
+#if (CUB_PTX_VERSION <= 130)
     if (sizeof(T) == 1) __threadfence_block();
 #endif
 
@@ -362,7 +362,7 @@ __device__ __forceinline__ T ThreadLoad(
 }
 
 
-#if (CUB_PTX_ARCH <= 130)
+#if (CUB_PTX_VERSION <= 130)
 
 /**
  * Load with LOAD_CG uses LOAD_CV in pre-SM20 PTX to ensure coherent reads when run on newer architectures with L1
@@ -376,7 +376,7 @@ __device__ __forceinline__ T ThreadLoad(
     return ThreadLoad<LOAD_CV>(ptr);
 }
 
-#endif  // (CUB_PTX_ARCH <= 130)
+#endif  // (CUB_PTX_VERSION <= 130)
 
 
 /**

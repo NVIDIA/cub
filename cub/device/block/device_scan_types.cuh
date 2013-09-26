@@ -278,7 +278,7 @@ struct DeviceScanBlockPrefixOp
         // Keep sliding the window back until we come across a tile whose inclusive prefix is known
         while (WarpAll(predecessor_status != SCAN_TILE_PREFIX))
         {
-            predecessor_idx -= PtxArchProps::WARP_THREADS;
+            predecessor_idx -= CUB_PTX_WARP_THREADS;
 
             // Update exclusive tile prefix with the window prefix
             ProcessWindow(predecessor_idx, predecessor_status, window_aggregate);

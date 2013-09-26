@@ -232,7 +232,7 @@ __device__ __forceinline__ void ThreadStore(OutputIteratorRA itr, T val);
 /**
  * Define ThreadStore specializations for the various PTX load modifiers
  */
-#if CUB_PTX_ARCH >= 200
+#if CUB_PTX_VERSION >= 200
     CUB_STORE_ALL(STORE_WB, ca)
     CUB_STORE_ALL(STORE_CG, cg)
     CUB_STORE_ALL(STORE_CS, cs)
@@ -345,7 +345,7 @@ __device__ __forceinline__ void ThreadStore(
 }
 
 
-#if (CUB_PTX_ARCH <= 350)
+#if (CUB_PTX_VERSION <= 350)
 
 /**
  * Store with STORE_CG on pointer types (uses STORE_DEFAULT on current architectures)
@@ -360,7 +360,7 @@ __device__ __forceinline__ void ThreadStore(
     ThreadStore<STORE_DEFAULT>(ptr, val);
 }
 
-#endif  // (CUB_PTX_ARCH <= 350)
+#endif  // (CUB_PTX_VERSION <= 350)
 
 
 /**

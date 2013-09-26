@@ -117,11 +117,11 @@ private:
 
     enum
     {
-        LOG_WARP_THREADS            = PtxArchProps::LOG_WARP_THREADS,
+        LOG_WARP_THREADS            = CUB_PTX_LOG_WARP_THREADS,
         WARP_THREADS                = 1 << LOG_WARP_THREADS,
-        WARPS                       = (BLOCK_THREADS + PtxArchProps::WARP_THREADS - 1) / PtxArchProps::WARP_THREADS,
+        WARPS                       = (BLOCK_THREADS + CUB_PTX_WARP_THREADS - 1) / CUB_PTX_WARP_THREADS,
 
-        LOG_SMEM_BANKS              = PtxArchProps::LOG_SMEM_BANKS,
+        LOG_SMEM_BANKS              = CUB_PTX_LOG_SMEM_BANKS,
         SMEM_BANKS                  = 1 << LOG_SMEM_BANKS,
 
         TILE_ITEMS                  = BLOCK_THREADS * ITEMS_PER_THREAD,

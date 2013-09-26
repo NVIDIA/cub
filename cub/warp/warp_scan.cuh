@@ -141,7 +141,7 @@ namespace cub {
 template <
     typename    T,
     int         LOGICAL_WARPS           = 1,
-    int         LOGICAL_WARP_THREADS    = PtxArchProps::WARP_THREADS>
+    int         LOGICAL_WARP_THREADS    = CUB_PTX_WARP_THREADS>
 class WarpScan
 {
 private:
@@ -156,7 +156,7 @@ private:
     };
 
     /// Internal specialization.  Use SHFL-based reduction if (architecture is >= SM30) and ((only one logical warp) or (LOGICAL_WARP_THREADS is a power-of-two))
-    typedef typename If<(CUB_PTX_ARCH >= 300) && ((LOGICAL_WARPS == 1) || POW_OF_TWO),
+    typedef typename If<(CUB_PTX_VERSION >= 300) && ((LOGICAL_WARPS == 1) || POW_OF_TWO),
         WarpScanShfl<T, LOGICAL_WARPS, LOGICAL_WARP_THREADS>,
         WarpScanSmem<T, LOGICAL_WARPS, LOGICAL_WARP_THREADS> >::Type InternalWarpScan;
 
@@ -210,7 +210,7 @@ public:
         warp_id((LOGICAL_WARPS == 1) ?
             0 :
             threadIdx.x / LOGICAL_WARP_THREADS),
-        lane_id(((LOGICAL_WARPS == 1) || (LOGICAL_WARP_THREADS == PtxArchProps::WARP_THREADS)) ?
+        lane_id(((LOGICAL_WARPS == 1) || (LOGICAL_WARP_THREADS == CUB_PTX_WARP_THREADS)) ?
             LaneId() :
             threadIdx.x % LOGICAL_WARP_THREADS)
     {}
@@ -226,7 +226,7 @@ public:
         warp_id((LOGICAL_WARPS == 1) ?
             0 :
             threadIdx.x / LOGICAL_WARP_THREADS),
-        lane_id(((LOGICAL_WARPS == 1) || (LOGICAL_WARP_THREADS == PtxArchProps::WARP_THREADS)) ?
+        lane_id(((LOGICAL_WARPS == 1) || (LOGICAL_WARP_THREADS == CUB_PTX_WARP_THREADS)) ?
             LaneId() :
             threadIdx.x % LOGICAL_WARP_THREADS)
     {}

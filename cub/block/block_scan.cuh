@@ -198,7 +198,7 @@ private:
      * architectural warp size.
      */
     static const BlockScanAlgorithm SAFE_ALGORITHM =
-        ((ALGORITHM == BLOCK_SCAN_WARP_SCANS) && (BLOCK_THREADS % PtxArchProps::WARP_THREADS != 0)) ?
+        ((ALGORITHM == BLOCK_SCAN_WARP_SCANS) && (BLOCK_THREADS % CUB_PTX_WARP_THREADS != 0)) ?
             BLOCK_SCAN_RAKING :
             ALGORITHM;
 

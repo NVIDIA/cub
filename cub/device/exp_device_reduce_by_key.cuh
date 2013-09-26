@@ -83,7 +83,7 @@ __global__ void MultiBlockScanKernel(
 {
     enum
     {
-        TILE_STATUS_PADDING = PtxArchProps::WARP_THREADS,
+        TILE_STATUS_PADDING = CUB_PTX_WARP_THREADS,
     };
 
     // Thread block type for scanning input tiles
@@ -215,11 +215,11 @@ struct DeviceReduceByKey
     template <typename T, typename SizeT>
     struct PtxDefaultPolicies
     {
-        static const int PTX_TUNE_ARCH =   (CUB_PTX_ARCH >= 350) ?
+        static const int PTX_TUNE_ARCH =   (CUB_PTX_VERSION >= 350) ?
                                                 350 :
-                                                (CUB_PTX_ARCH >= 300) ?
+                                                (CUB_PTX_VERSION >= 300) ?
                                                     300 :
-                                                    (CUB_PTX_ARCH >= 200) ?
+                                                    (CUB_PTX_VERSION >= 200) ?
                                                         200 :
                                                         100;
 
@@ -359,8 +359,8 @@ struct DeviceReduceByKey
 
             // Get a rough estimate of multi_block_kernel SM occupancy based upon the maximum SM occupancy of the targeted PTX architecture
             int multi_sm_occupancy = CUB_MIN(
-                ArchProps<CUB_PTX_ARCH>::MAX_SM_THREADBLOCKS,
-                ArchProps<CUB_PTX_ARCH>::MAX_SM_THREADS / multi_block_dispatch_params.block_threads);
+                ArchProps<CUB_PTX_VERSION>::MAX_SM_THREADBLOCKS,
+                ArchProps<CUB_PTX_VERSION>::MAX_SM_THREADS / multi_block_dispatch_params.block_threads);
 
 #ifndef __CUDA_ARCH__
 

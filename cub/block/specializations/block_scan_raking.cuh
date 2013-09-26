@@ -64,7 +64,7 @@ struct BlockScanRaking
     enum
     {
         /// Number of active warps
-        WARPS = (BLOCK_THREADS + PtxArchProps::WARP_THREADS - 1) / PtxArchProps::WARP_THREADS,
+        WARPS = (BLOCK_THREADS + CUB_PTX_WARP_THREADS - 1) / CUB_PTX_WARP_THREADS,
 
         /// Number of raking threads
         RAKING_THREADS = BlockRakingLayout::RAKING_THREADS,

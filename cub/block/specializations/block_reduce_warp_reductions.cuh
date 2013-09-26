@@ -56,10 +56,10 @@ struct BlockReduceWarpReductions
     enum
     {
         /// Number of active warps
-        WARPS = (BLOCK_THREADS + PtxArchProps::WARP_THREADS - 1) / PtxArchProps::WARP_THREADS,
+        WARPS = (BLOCK_THREADS + CUB_PTX_WARP_THREADS - 1) / CUB_PTX_WARP_THREADS,
 
         /// The logical warp size for warp reductions
-        LOGICAL_WARP_SIZE = CUB_MIN(BLOCK_THREADS, PtxArchProps::WARP_THREADS),
+        LOGICAL_WARP_SIZE = CUB_MIN(BLOCK_THREADS, CUB_PTX_WARP_THREADS),
 
         /// Whether or not the logical warp size evenly divides the threadblock size
         EVEN_WARP_MULTIPLE = (BLOCK_THREADS % LOGICAL_WARP_SIZE == 0)
@@ -96,12 +96,12 @@ struct BlockReduceWarpReductions
     :
         temp_storage(temp_storage.Alias()),
         linear_tid(linear_tid),
-        warp_id((BLOCK_THREADS <= PtxArchProps::WARP_THREADS) ?
+        warp_id((BLOCK_THREADS <= CUB_PTX_WARP_THREADS) ?
             0 :
-            linear_tid / PtxArchProps::WARP_THREADS),
-        lane_id((BLOCK_THREADS <= PtxArchProps::WARP_THREADS) ?
+            linear_tid / CUB_PTX_WARP_THREADS),
+        lane_id((BLOCK_THREADS <= CUB_PTX_WARP_THREADS) ?
             linear_tid :
-            linear_tid % PtxArchProps::WARP_THREADS)
+            linear_tid % CUB_PTX_WARP_THREADS)
     {}
 
 

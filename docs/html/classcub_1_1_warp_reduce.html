@@ -107,7 +107,7 @@ var searchBox = new SearchBox("searchBox", "search",false,'Search');
 <div class="textblock"><h3>template&lt;
     typename T, 
     int LOGICAL_WARPS = 1, 
-    int LOGICAL_WARP_THREADS = PtxArchProps::WARP_THREADS&gt;<br/>
+    int LOGICAL_WARP_THREADS = CUB_PTX_WARP_THREADS&gt;<br/>
 class cub::WarpReduce&lt; T, LOGICAL_WARPS, LOGICAL_WARP_THREADS &gt;</h3>
 
 <p>The <a class="el" href="classcub_1_1_warp_reduce.html" title="The WarpReduce class provides collective methods for computing a parallel reduction of items partitio...">WarpReduce</a> class provides <a href="index.html#sec0"><em>collective</em></a> methods for computing a parallel reduction of items partitioned across CUDA warp threads. </p>
@@ -242,7 +242,7 @@ __device__ __forceinline__&#160;</td><td class="memItemRight" valign="bottom"><a
 <div class="memitem">
 <div class="memproto">
 <div class="memtemplate">
-template&lt;typename T , int LOGICAL_WARPS = 1, int LOGICAL_WARP_THREADS = PtxArchProps::WARP_THREADS&gt; </div>
+template&lt;typename T , int LOGICAL_WARPS = 1, int LOGICAL_WARP_THREADS = CUB_PTX_WARP_THREADS&gt; </div>
 <table class="mlabels">
   <tr>
   <td class="mlabels-left">
@@ -278,7 +278,7 @@ template&lt;typename T , int LOGICAL_WARPS = 1, int LOGICAL_WARP_THREADS = PtxAr
 <div class="memitem">
 <div class="memproto">
 <div class="memtemplate">
-template&lt;typename T , int LOGICAL_WARPS = 1, int LOGICAL_WARP_THREADS = PtxArchProps::WARP_THREADS&gt; </div>
+template&lt;typename T , int LOGICAL_WARPS = 1, int LOGICAL_WARP_THREADS = CUB_PTX_WARP_THREADS&gt; </div>
 <table class="mlabels">
   <tr>
   <td class="mlabels-left">
@@ -325,7 +325,7 @@ template&lt;typename T , int LOGICAL_WARPS = 1, int LOGICAL_WARP_THREADS = PtxAr
 <div class="memitem">
 <div class="memproto">
 <div class="memtemplate">
-template&lt;typename T , int LOGICAL_WARPS = 1, int LOGICAL_WARP_THREADS = PtxArchProps::WARP_THREADS&gt; </div>
+template&lt;typename T , int LOGICAL_WARPS = 1, int LOGICAL_WARP_THREADS = CUB_PTX_WARP_THREADS&gt; </div>
 <table class="mlabels">
   <tr>
   <td class="mlabels-left">
@@ -380,7 +380,7 @@ template&lt;typename T , int LOGICAL_WARPS = 1, int LOGICAL_WARP_THREADS = PtxAr
 <div class="memitem">
 <div class="memproto">
 <div class="memtemplate">
-template&lt;typename T , int LOGICAL_WARPS = 1, int LOGICAL_WARP_THREADS = PtxArchProps::WARP_THREADS&gt; </div>
+template&lt;typename T , int LOGICAL_WARPS = 1, int LOGICAL_WARP_THREADS = CUB_PTX_WARP_THREADS&gt; </div>
 <div class="memtemplate">
 template&lt;typename ReductionOp , typename Flag &gt; </div>
 <table class="mlabels">
@@ -464,7 +464,7 @@ template&lt;typename ReductionOp , typename Flag &gt; </div>
 <div class="memitem">
 <div class="memproto">
 <div class="memtemplate">
-template&lt;typename T , int LOGICAL_WARPS = 1, int LOGICAL_WARP_THREADS = PtxArchProps::WARP_THREADS&gt; </div>
+template&lt;typename T , int LOGICAL_WARPS = 1, int LOGICAL_WARP_THREADS = CUB_PTX_WARP_THREADS&gt; </div>
 <div class="memtemplate">
 template&lt;typename Flag &gt; </div>
 <table class="mlabels">
@@ -540,7 +540,7 @@ template&lt;typename Flag &gt; </div>
 <div class="memitem">
 <div class="memproto">
 <div class="memtemplate">
-template&lt;typename T , int LOGICAL_WARPS = 1, int LOGICAL_WARP_THREADS = PtxArchProps::WARP_THREADS&gt; </div>
+template&lt;typename T , int LOGICAL_WARPS = 1, int LOGICAL_WARP_THREADS = CUB_PTX_WARP_THREADS&gt; </div>
 <div class="memtemplate">
 template&lt;typename ReductionOp &gt; </div>
 <table class="mlabels">
@@ -616,7 +616,7 @@ template&lt;typename ReductionOp &gt; </div>
 <div class="memitem">
 <div class="memproto">
 <div class="memtemplate">
-template&lt;typename T , int LOGICAL_WARPS = 1, int LOGICAL_WARP_THREADS = PtxArchProps::WARP_THREADS&gt; </div>
+template&lt;typename T , int LOGICAL_WARPS = 1, int LOGICAL_WARP_THREADS = CUB_PTX_WARP_THREADS&gt; </div>
 <div class="memtemplate">
 template&lt;typename ReductionOp &gt; </div>
 <table class="mlabels">
@@ -702,7 +702,7 @@ template&lt;typename ReductionOp &gt; </div>
 <div class="memitem">
 <div class="memproto">
 <div class="memtemplate">
-template&lt;typename T , int LOGICAL_WARPS = 1, int LOGICAL_WARP_THREADS = PtxArchProps::WARP_THREADS&gt; </div>
+template&lt;typename T , int LOGICAL_WARPS = 1, int LOGICAL_WARP_THREADS = CUB_PTX_WARP_THREADS&gt; </div>
 <table class="mlabels">
   <tr>
   <td class="mlabels-left">
@@ -757,7 +757,7 @@ template&lt;typename T , int LOGICAL_WARPS = 1, int LOGICAL_WARP_THREADS = PtxAr
 <div class="memitem">
 <div class="memproto">
 <div class="memtemplate">
-template&lt;typename T , int LOGICAL_WARPS = 1, int LOGICAL_WARP_THREADS = PtxArchProps::WARP_THREADS&gt; </div>
+template&lt;typename T , int LOGICAL_WARPS = 1, int LOGICAL_WARP_THREADS = CUB_PTX_WARP_THREADS&gt; </div>
 <table class="mlabels">
   <tr>
   <td class="mlabels-left">
@@ -827,7 +827,7 @@ template&lt;typename T , int LOGICAL_WARPS = 1, int LOGICAL_WARP_THREADS = PtxAr
 <div class="memitem">
 <div class="memproto">
 <div class="memtemplate">
-template&lt;typename T , int LOGICAL_WARPS = 1, int LOGICAL_WARP_THREADS = PtxArchProps::WARP_THREADS&gt; </div>
+template&lt;typename T , int LOGICAL_WARPS = 1, int LOGICAL_WARP_THREADS = CUB_PTX_WARP_THREADS&gt; </div>
 <div class="memtemplate">
 template&lt;typename ReductionOp , typename Flag &gt; </div>
 <table class="mlabels">
@@ -911,7 +911,7 @@ template&lt;typename ReductionOp , typename Flag &gt; </div>
 <div class="memitem">
 <div class="memproto">
 <div class="memtemplate">
-template&lt;typename T , int LOGICAL_WARPS = 1, int LOGICAL_WARP_THREADS = PtxArchProps::WARP_THREADS&gt; </div>
+template&lt;typename T , int LOGICAL_WARPS = 1, int LOGICAL_WARP_THREADS = CUB_PTX_WARP_THREADS&gt; </div>
 <div class="memtemplate">
 template&lt;typename Flag &gt; </div>
 <table class="mlabels">

@@ -150,9 +150,9 @@ var searchBox = new SearchBox("searchBox", "search",false,'Search');
 <div class="line"><a name="l00056"></a><span class="lineno">   56</span>&#160;</div>
 <div class="line"><a name="l00057"></a><span class="lineno">   57</span>&#160;</div>
 <div class="line"><a name="l00064"></a><span class="lineno">   64</span>&#160;<span class="preprocessor">#ifndef __CUDA_ARCH__</span></div>
-<div class="line"><a name="l00066"></a><span class="lineno"><a class="code" href="group___util_module.html#ga76769ce380739b38e0bd00f57e0dbe4f">   66</a></span>&#160;<span class="preprocessor"></span><span class="preprocessor">    #define CUB_PTX_ARCH 0</span></div>
+<div class="line"><a name="l00066"></a><span class="lineno"><a class="code" href="group___util_module.html#ga76769ce380739b38e0bd00f57e0dbe4f">   66</a></span>&#160;<span class="preprocessor"></span><span class="preprocessor">    #define CUB_PTX_VERSION 0</span></div>
 <div class="line"><a name="l00067"></a><span class="lineno">   67</span>&#160;<span class="preprocessor"></span><span class="preprocessor">#else</span></div>
-<div class="line"><a name="l00068"></a><span class="lineno">   68</span>&#160;<span class="preprocessor"></span><span class="preprocessor">    #define CUB_PTX_ARCH __CUDA_ARCH__</span></div>
+<div class="line"><a name="l00068"></a><span class="lineno">   68</span>&#160;<span class="preprocessor"></span><span class="preprocessor">    #define CUB_PTX_VERSION __CUDA_ARCH__</span></div>
 <div class="line"><a name="l00069"></a><span class="lineno">   69</span>&#160;<span class="preprocessor"></span><span class="preprocessor">#endif</span></div>
 <div class="line"><a name="l00070"></a><span class="lineno">   70</span>&#160;<span class="preprocessor"></span></div>
 <div class="line"><a name="l00071"></a><span class="lineno">   71</span>&#160;</div>
@@ -161,7 +161,7 @@ var searchBox = new SearchBox("searchBox", "search",false,'Search');
 <div class="line"><a name="l00075"></a><span class="lineno">   75</span>&#160;<span class="preprocessor"></span><span class="preprocessor">#endif</span></div>
 <div class="line"><a name="l00076"></a><span class="lineno">   76</span>&#160;<span class="preprocessor"></span></div>
 <div class="line"><a name="l00077"></a><span class="lineno">   77</span>&#160;</div>
-<div class="line"><a name="l00079"></a><span class="lineno">   79</span>&#160;<span class="preprocessor">#if ((CUB_PTX_ARCH &gt; 0) &amp;&amp; (CUB_PTX_ARCH &lt; 200))</span></div>
+<div class="line"><a name="l00079"></a><span class="lineno">   79</span>&#160;<span class="preprocessor">#if ((CUB_PTX_VERSION &gt; 0) &amp;&amp; (CUB_PTX_VERSION &lt; 200))</span></div>
 <div class="line"><a name="l00080"></a><span class="lineno">   80</span>&#160;<span class="preprocessor"></span><span class="preprocessor">    #define CUB_DESTRUCTOR __host__</span></div>
 <div class="line"><a name="l00081"></a><span class="lineno">   81</span>&#160;<span class="preprocessor"></span><span class="preprocessor">#else</span></div>
 <div class="line"><a name="l00082"></a><span class="lineno"><a class="code" href="group___util_module.html#ga756ebe2b0566abfdfcd3c13fe7d1e9c6">   82</a></span>&#160;<span class="preprocessor"></span><span class="preprocessor">    #define CUB_DESTRUCTOR __host__ __device__</span></div>
@@ -339,7 +339,7 @@ var searchBox = new SearchBox("searchBox", "search",false,'Search');
 <div class="line"><a name="l00283"></a><span class="lineno">  283</span>&#160;<span class="preprocessor">#endif // DOXYGEN_SHOULD_SKIP_THIS</span></div>
 <div class="line"><a name="l00284"></a><span class="lineno">  284</span>&#160;<span class="preprocessor"></span></div>
 <div class="line"><a name="l00285"></a><span class="lineno">  285</span>&#160;</div>
-<div class="line"><a name="l00289"></a><span class="lineno"><a class="code" href="structcub_1_1_ptx_arch_props.html">  289</a></span>&#160;<span class="keyword">struct </span><a class="code" href="structcub_1_1_ptx_arch_props.html" title="The architectural properties for the PTX version targeted by the active compiler pass. ">PtxArchProps</a> : <a class="code" href="structcub_1_1_arch_props.html" title="Structure for statically reporting CUDA device properties, parameterized by SM architecture. ">ArchProps</a>&lt;CUB_PTX_ARCH&gt; {};</div>
+<div class="line"><a name="l00289"></a><span class="lineno"><a class="code" href="structcub_1_1_ptx_arch_props.html">  289</a></span>&#160;<span class="keyword">struct </span><a class="code" href="structcub_1_1_ptx_arch_props.html" title="The architectural properties for the PTX version targeted by the active compiler pass. ">PtxArchProps</a> : <a class="code" href="structcub_1_1_arch_props.html" title="Structure for statically reporting CUDA device properties, parameterized by SM architecture. ">ArchProps</a>&lt;CUB_PTX_VERSION&gt; {};</div>
 <div class="line"><a name="l00290"></a><span class="lineno">  290</span>&#160;</div>
 <div class="line"><a name="l00291"></a><span class="lineno">  291</span>&#160;       <span class="comment">// end group UtilModule</span></div>
 <div class="line"><a name="l00293"></a><span class="lineno">  293</span>&#160;</div>
