@@ -335,20 +335,19 @@ private:
         // Upsweep scan
         PackedCounter raking_partial = Upsweep();
 
-        // Compute inclusive sum
-        PackedCounter inclusive_partial;
+        // Compute exclusive sum
+        PackedCounter exclusive_partial;
         PackedCounter packed_aggregate;
-        BlockScan(temp_storage.block_scan, linear_tid).InclusiveSum(raking_partial, inclusive_partial, packed_aggregate);
+        BlockScan(temp_storage.block_scan, linear_tid).ExclusiveSum(raking_partial, exclusive_partial, packed_aggregate);
 
         // Propagate totals in packed fields
         #pragma unroll
         for (int PACKED = 1; PACKED < PACKING_RATIO; PACKED++)
         {
-            inclusive_partial += packed_aggregate << (sizeof(DigitCounter) * 8 * PACKED);
+            exclusive_partial += packed_aggregate << (sizeof(DigitCounter) * 8 * PACKED);
         }
 
         // Downsweep scan with exclusive partial
-        PackedCounter exclusive_partial = inclusive_partial - raking_partial;
         ExclusiveDownsweep(exclusive_partial);
     }
 
