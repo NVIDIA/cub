@@ -176,6 +176,7 @@ struct DeviceHistogramDispatch
      * Tuning policies
      ******************************************************************************/
 
+    /// SM35
     struct Policy350
     {
         typedef BlockHistogramTilesPolicy<
@@ -189,6 +190,7 @@ struct DeviceHistogramDispatch
         enum { SUBSCRIPTION_FACTOR = 7 };
     };
 
+    /// SM30
     struct Policy300
     {
         typedef BlockHistogramTilesPolicy<
@@ -202,6 +204,7 @@ struct DeviceHistogramDispatch
         enum { SUBSCRIPTION_FACTOR = 1 };
     };
 
+    /// SM20
     struct Policy200
     {
         typedef BlockHistogramTilesPolicy<
@@ -215,6 +218,7 @@ struct DeviceHistogramDispatch
         enum { SUBSCRIPTION_FACTOR = 1 };
     };
 
+    /// SM10
     struct Policy100
     {
         typedef BlockHistogramTilesPolicy<
@@ -247,7 +251,7 @@ struct DeviceHistogramDispatch
 
 #endif
 
-    struct HistogramTilesPolicy : PtxPolicy::HistogramTilesPolicy {};
+    struct PtxHistogramTilesPolicy : PtxPolicy::HistogramTilesPolicy {};
 
 
     /******************************************************************************
@@ -267,8 +271,8 @@ struct DeviceHistogramDispatch
     #ifdef __CUDA_ARCH__
 
         // We're on the device, so initialize the dispatch configurations with the PtxDefaultPolicies directly
+        histogram_tiles_config.Init<PtxHistogramTilesPolicy>();
         subscription_factor = PtxPolicy::SUBSCRIPTION_FACTOR;
-        histogram_tiles_config.Init<HistogramTilesPolicy>();
 
     #else
 
@@ -348,7 +352,6 @@ struct DeviceHistogramDispatch
         SizeT                           num_samples,                        ///< [in] Number of samples to process
         cudaStream_t                    stream,                             ///< [in] <b>[optional]</b> CUDA stream to launch kernels within.  Default is stream<sub>0</sub>.
         bool                            stream_synchronous,                 ///< [in] <b>[optional]</b> Whether or not to synchronize the stream after every kernel launch to check for errors.  Default is \p false.
-        int                             device_ordinal,
         int                             sm_version,
         InitHistoKernelPtr              init_kernel,                        ///< [in] Kernel function pointer to parameterization of cub::InitHistoKernel
         HistogramTilesKernelPtr         histogram_tiles_kernel,             ///< [in] Kernel function pointer to parameterization of cub::MultiBlockHistoKernel
@@ -366,6 +369,10 @@ struct DeviceHistogramDispatch
         cudaError error = cudaSuccess;
         do
         {
+            // Get device ordinal
+            int device_ordinal;
+            if (CubDebug(error = cudaGetDevice(&device_ordinal))) break;
+
             // Get SM count
             int sm_count;
             if (CubDebug(error = cudaDeviceGetAttribute (&sm_count, cudaDevAttrMultiProcessorCount, device_ordinal))) break;
@@ -513,10 +520,6 @@ struct DeviceHistogramDispatch
         cudaError error = cudaSuccess;
         do
         {
-            // Get device ordinal
-            int device_ordinal;
-            if (CubDebug(error = cudaGetDevice(&device_ordinal))) break;
-
             // Get PTX version
             int ptx_version;
     #ifndef __CUDA_ARCH__
@@ -539,10 +542,9 @@ struct DeviceHistogramDispatch
                 num_samples,
                 stream,
                 stream_synchronous,
-                device_ordinal,
                 ptx_version,            // Use PTX version instead of SM version because, as a statically known quantity, this improves device-side launch dramatically but at the risk of imprecise occupancy calculation for mismatches
                 InitHistoKernel<BINS, ACTIVE_CHANNELS, SizeT, HistoCounter>,
-                MultiBlockHistoKernel<HistogramTilesPolicy, BINS, CHANNELS, ACTIVE_CHANNELS, InputIteratorRA, HistoCounter, SizeT>,
+                MultiBlockHistoKernel<PtxHistogramTilesPolicy, BINS, CHANNELS, ACTIVE_CHANNELS, InputIteratorRA, HistoCounter, SizeT>,
                 AggregateHistoKernel<BINS, ACTIVE_CHANNELS, HistoCounter>,
                 histogram_tiles_config,
                 subscription_factor))) break;
