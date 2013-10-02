@@ -216,6 +216,16 @@ bin/link : link_a.cu link_b.cu link_main.cpp $(DEPS)
 	$(CC) link_main.cpp bin/link_a.obj bin/link_b.obj $(CUDART) -o bin/link 
 
 #-------------------------------------------------------------------------------
+# make test_iterator 
+#-------------------------------------------------------------------------------
+
+test_iterator: bin/test_iterator_$(SUFFIX)
+
+bin/test_iterator_$(SUFFIX) : test_iterator.cu $(DEPS)
+	mkdir -p bin
+	$(NVCC) $(DEFINES) $(SM_TARGETS) -o bin/test_iterator_$(SUFFIX) test_iterator.cu $(NVCCFLAGS) $(CPU_ARCH) $(INC) $(LIBS) -O3
+
+#-------------------------------------------------------------------------------
 # make test_allocator 
 #-------------------------------------------------------------------------------
 
