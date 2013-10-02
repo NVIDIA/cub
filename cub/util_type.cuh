@@ -170,35 +170,48 @@ struct WordAlignment
     /// Biggest memory-access word that T is a whole multiple of and is not larger than the alignment of T
     typedef typename If<(ALIGN_BYTES % 16 == 0),
         longlong2,
+        VolatileWord>::Type                     DeviceWord;
+
+    /// Biggest texture reference word that T is a whole multiple of and is not larger than the alignment of T
+    typedef typename If<(ALIGN_BYTES % 16 == 0),
+        uint4,
         typename If<(ALIGN_BYTES % 8 == 0),
-            long long,                                 // needed to get heterogenous PODs to work on all platforms
-            ShuffleWord>::Type>::Type           DeviceWord;
+            uint2,
+            ShuffleWord>::Type>::Type           TextureWord;
 
     enum
     {
-        DEVICE_MULTIPLE = sizeof(DeviceWord) / sizeof(T)
+        BYTE_MULTIPLE       = sizeof(T),
+        SHUFFLE_MULTIPLE    = sizeof(T) / sizeof(ShuffleWord),
+        VOLATILE_MULTIPLE   = sizeof(T) / sizeof(VolatileWord),
+        DEVICE_MULTIPLE     = sizeof(T) / sizeof(DeviceWord),
+        TEXTURE_MULTIPLE    = sizeof(T) / sizeof(TextureWord),
     };
 
     struct UninitializedBytes
     {
-        char buf[sizeof(T)];
+        char buf[BYTE_MULTIPLE];
     };
 
     struct UninitializedShuffleWords
     {
-        ShuffleWord buf[sizeof(T) / sizeof(ShuffleWord)];
+        ShuffleWord buf[SHUFFLE_MULTIPLE];
     };
 
     struct UninitializedVolatileWords
     {
-        VolatileWord buf[sizeof(T) / sizeof(VolatileWord)];
+        VolatileWord buf[VOLATILE_MULTIPLE];
     };
 
     struct UninitializedDeviceWords
     {
-        DeviceWord buf[sizeof(T) / sizeof(DeviceWord)];
+        DeviceWord buf[DEVICE_MULTIPLE];
     };
 
+    struct UninitializedTextureWords
+    {
+        TextureWord buf[TEXTURE_MULTIPLE];
+    };
 
 };
 

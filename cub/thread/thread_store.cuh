@@ -318,7 +318,6 @@ __device__ __forceinline__ void ThreadStoreVolatile(
     Int2Type<false>             is_primitive)
 {
     typedef typename WordAlignment<T>::VolatileWord VolatileWord;   // Word type for memcopying
-    enum { NUM_WORDS = sizeof(T) / sizeof(VolatileWord) };
 
     // Store into array of uninitialized words
     typename WordAlignment<T>::UninitializedVolatileWords words;
@@ -326,7 +325,7 @@ __device__ __forceinline__ void ThreadStoreVolatile(
 
     // Memcopy words to aliased destination
     #pragma unroll
-    for (int i = 0; i < NUM_WORDS; ++i)
+    for (int i = 0; i < WordAlignment<T>::VOLATILE_MULTIPLE; ++i)
         reinterpret_cast<volatile VolatileWord*>(ptr)[i] = words.buf[i];
 }
 
@@ -374,14 +373,13 @@ __device__ __forceinline__ void ThreadStore(
     Int2Type<true>              is_pointer)
 {
     typedef typename WordAlignment<T>::DeviceWord DeviceWord;   // Word type for memcopying
-    enum { NUM_WORDS = sizeof(T) / sizeof(DeviceWord) };
 
     // Store into array of uninitialized words
     typename WordAlignment<T>::UninitializedDeviceWords words;
     *reinterpret_cast<T*>(words.buf) = val;
 
     // Memcopy words to aliased destination
-    IterateThreadStore<PtxStoreModifier(MODIFIER), 0, NUM_WORDS>::Store(
+    IterateThreadStore<PtxStoreModifier(MODIFIER), 0, WordAlignment<T>::DEVICE_MULTIPLE>::Store(
         reinterpret_cast<DeviceWord*>(ptr),
         words.buf);
 }
