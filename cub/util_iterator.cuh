@@ -33,6 +33,9 @@
 
 #pragma once
 
+#include <iterator>
+#include <iostream>
+
 #include "thread/thread_load.cuh"
 #include "util_device.cuh"
 #include "util_debug.cuh"
@@ -55,11 +58,11 @@ namespace cub {
 namespace {
 
 /// Templated texture reference type
-template <typename T>
+template <typename TextureWord>
 struct TexIteratorRef
 {
     // Texture reference type
-    typedef texture<T, cudaTextureType1D, cudaReadModeElementType> TexRef;
+    typedef texture<TextureWord, cudaTextureType1D, cudaReadModeElementType> TexRef;
 
     static TexRef ref;
 
@@ -68,7 +71,7 @@ struct TexIteratorRef
      */
     static cudaError_t BindTexture(void *d_in)
     {
-        cudaChannelFormatDesc tex_desc = cudaCreateChannelDesc<T>();
+        cudaChannelFormatDesc tex_desc = cudaCreateChannelDesc<TextureWord>();
         if (d_in)
             return (CubDebug(cudaBindTexture(NULL, ref, d_in, tex_desc)));
 
@@ -110,33 +113,33 @@ typename TexIteratorRef<Value>::TexRef TexIteratorRef<Value>::ref = 0;
  *****************************************************************************/
 
 /**
- * \brief A simple random-access input iterator pointing to a range of constant values
+ * \brief A random-access input iterator for referencing a range of constant values
  *
  * \par Overview
- * ConstantIteratorRA is a random-access input iterator that when dereferenced, always
- * returns the supplied constant of type \p ValueType.
+ * Read references to a ConstantIteratorRA iterator always return the supplied constant
+ * of type \p ValueType.
  *
- * \tparam ValueType           The value type of this iterator
+ * \tparam ValueType            The value type of this iterator
+ * \tparam difference_type      The difference type of this iterator (Default: \p ptrdiff_t)
  */
-template <typename ValueType>
+template <
+    typename ValueType,
+    typename difference_type = ptrdiff_t>
 class ConstantIteratorRA
 {
 public:
 
-#ifndef DOXYGEN_SHOULD_SKIP_THIS    // Do not document
-
-    typedef ConstantIteratorRA                  self_type;
-    typedef ValueType                          value_type;
-    typedef ValueType                          reference;
-    typedef ValueType*                         pointer;
-    typedef std::random_access_iterator_tag     iterator_category;
-    typedef int                                 difference_type;
-
-#endif  // DOXYGEN_SHOULD_SKIP_THIS
+    // Required iterator traits
+    typedef ConstantIteratorRA                  self_type;              ///< My own type
+    typedef difference_type                     difference_type;        ///< Type to express the result of subtracting one iterator from another
+    typedef ValueType                           value_type;             ///< The type of the element the iterator can point to
+    typedef ValueType*                          pointer;                ///< The type of a pointer to an element the iterator can point to
+    typedef ValueType                           reference;              ///< The type of a reference to an element the iterator can point to
+    typedef std::random_access_iterator_tag     iterator_category;      ///< The iterator category
 
 private:
 
-    ValueType    val;
+    ValueType val;
 
 public:
 
@@ -147,175 +150,197 @@ public:
         val(val)
     {}
 
-#ifndef DOXYGEN_SHOULD_SKIP_THIS    // Do not document
-
-    __host__ __device__ __forceinline__ self_type operator++()
+    /// Postfix increment
+    __host__ __device__ __forceinline__ self_type operator++(int)
     {
         self_type i = *this;
         return i;
     }
 
+    /// Indirection
     __host__ __device__ __forceinline__ reference operator*()
     {
         return val;
     }
 
-    template <typename SizeT>
-    __host__ __device__ __forceinline__ self_type operator+(SizeT n)
+    /// Addition
+    template <typename Distance>
+    __host__ __device__ __forceinline__ self_type operator+(Distance n)
     {
-        return ConstantIteratorRA(val);
+        return self_type(val);
     }
 
-    template <typename SizeT>
-    __host__ __device__ __forceinline__ self_type operator-(SizeT n)
+    /// Subtraction
+    template <typename Distance>
+    __host__ __device__ __forceinline__ self_type operator-(Distance n)
     {
-        return ConstantIteratorRA(val);
+        return self_type(val);
     }
 
-    template <typename SizeT>
-    __host__ __device__ __forceinline__ reference operator[](SizeT n)
+    /// Array subscript
+    template <typename Distance>
+    __host__ __device__ __forceinline__ reference operator[](Distance n)
     {
-        return ConstantIteratorRA(val);
+        return val;
     }
 
+    /// Structure dereference
     __host__ __device__ __forceinline__ pointer operator->()
     {
         return &val;
     }
 
+    /// Equal to
     __host__ __device__ __forceinline__ bool operator==(const self_type& rhs)
     {
         return (val == rhs.val);
     }
 
+    /// Not equal to
     __host__ __device__ __forceinline__ bool operator!=(const self_type& rhs)
     {
         return (val != rhs.val);
     }
 
-#endif // DOXYGEN_SHOULD_SKIP_THIS
+    /// ostream operator
+    friend std::ostream& operator<<(std::ostream& os, const ConstantIteratorRA& itr)
+    {
+        return os;
+    }
 
 };
 
 
 
 /**
- * \brief A simple random-access iterator pointing into a range of sequentially changing values
+ * \brief A random-access input iterator for referencing a range of sequential integer values.
  *
  * \par Overview
- * CountingIteratorRA is a random-access iterator that when dereferenced at a certain
- * offset from \p base will return the value \p base + \p offset.
+ * After initializing a CountingIteratorRA to a certain integer \p base, read references
+ * at \p offset will return the value \p base + \p offset.
  *
- * \tparam ValueType           The value type of this iterator
+ * \tparam ValueType            The value type of this iterator
+ * \tparam difference_type      The difference type of this iterator (Default: \p ptrdiff_t)
  */
-template <typename ValueType>
+template <
+    typename ValueType,
+    typename difference_type = ptrdiff_t>
 class CountingIteratorRA
 {
 public:
 
-#ifndef DOXYGEN_SHOULD_SKIP_THIS    // Do not document
-
-    typedef CountingIteratorRA                  self_type;
-    typedef ValueType                          value_type;
-    typedef ValueType                          reference;
-    typedef ValueType*                         pointer;
-    typedef std::random_access_iterator_tag     iterator_category;
-    typedef int                                 difference_type;
-
-#endif  // DOXYGEN_SHOULD_SKIP_THIS
+    // Required iterator traits
+    typedef CountingIteratorRA                  self_type;              ///< My own type
+    typedef difference_type                     difference_type;        ///< Type to express the result of subtracting one iterator from another
+    typedef ValueType                           value_type;             ///< The type of the element the iterator can point to
+    typedef ValueType*                          pointer;                ///< The type of a pointer to an element the iterator can point to
+    typedef ValueType                           reference;              ///< The type of a reference to an element the iterator can point to
+    typedef std::random_access_iterator_tag     iterator_category;      ///< The iterator category
 
 private:
 
-    ValueType    val;
+    ValueType val;
 
 public:
 
     /// Constructor
     __host__ __device__ __forceinline__ CountingIteratorRA(
-        const ValueType &val)          ///< Constant value for the iterator instance to report
+        const ValueType &val)          ///< Starting value for the iterator instance to report
     :
         val(val)
     {}
 
-#ifndef DOXYGEN_SHOULD_SKIP_THIS    // Do not document
-
-    __host__ __device__ __forceinline__ self_type operator++()
+    /// Postfix increment
+    __host__ __device__ __forceinline__ self_type operator++(int)
     {
         self_type i = *this;
         val++;
         return i;
     }
 
+    /// Indirection
     __host__ __device__ __forceinline__ reference operator*()
     {
         return val;
     }
 
-    template <typename SizeT>
-    __host__ __device__ __forceinline__ self_type operator+(SizeT n)
+    /// Addition
+    template <typename Distance>
+    __host__ __device__ __forceinline__ self_type operator+(Distance n)
     {
-        CountingIteratorRA retval(val + n);
+        self_type retval(val + n);
         return retval;
     }
 
-    template <typename SizeT>
-    __host__ __device__ __forceinline__ self_type operator-(SizeT n)
+    /// Subtraction
+    template <typename Distance>
+    __host__ __device__ __forceinline__ self_type operator-(Distance n)
     {
-        CountingIteratorRA retval(val - n);
+        self_type retval(val - n);
         return retval;
     }
 
-    template <typename SizeT>
-    __host__ __device__ __forceinline__ reference operator[](SizeT n)
+    /// Array subscript
+    template <typename Distance>
+    __host__ __device__ __forceinline__ reference operator[](Distance n)
     {
         return val + n;
     }
 
+    /// Structure dereference
     __host__ __device__ __forceinline__ pointer operator->()
     {
         return &val;
     }
 
+    /// Equal to
     __host__ __device__ __forceinline__ bool operator==(const self_type& rhs)
     {
         return (val == rhs.val);
     }
 
+    /// Not equal to
     __host__ __device__ __forceinline__ bool operator!=(const self_type& rhs)
     {
         return (val != rhs.val);
     }
 
-#endif // DOXYGEN_SHOULD_SKIP_THIS
+    /// ostream operator
+    friend std::ostream& operator<<(std::ostream& os, const ConstantIteratorRA& itr)
+    {
+        return os;
+    }
 
 };
 
 
 /**
- * \brief A simple random-access input iterator for applying a cache modifier
+ * \brief A random-access input iterator for referencing array elements through a PTX cache modifier.
  *
  * \par Overview
- * CacheModifiedIteratorRA is a random-access iterator that wraps a native
+ * CacheModifiedIteratorRA is a random-access input iterator that wraps a native
  * device pointer of type <tt>ValueType*</tt>. \p ValueType references are
  * made by reading \p ValueType values through loads modified by \p MODIFIER.
  *
- * \tparam ValueType           The value type of this iterator
+ * \tparam PtxLoadModifier      The cub::PtxLoadModifier to use when accessing data
+ * \tparam ValueType            The value type of this iterator
+ * \tparam difference_type      The difference type of this iterator (Default: \p ptrdiff_t)
  */
-template <PtxLoadModifier MODIFIER, typename ValueType>
+template <
+    PtxLoadModifier     MODIFIER,
+    typename            ValueType,
+    typename            difference_type = ptrdiff_t>
 class CacheModifiedIteratorRA
 {
 public:
 
-#ifndef DOXYGEN_SHOULD_SKIP_THIS    // Do not document
-
-    typedef CacheModifiedIteratorRA             self_type;
-    typedef ValueType                           value_type;
-    typedef ValueType                           reference;
-    typedef ValueType*                          pointer;
-    typedef std::random_access_iterator_tag     iterator_category;
-    typedef int                                 difference_type;
-
-#endif  // DOXYGEN_SHOULD_SKIP_THIS
+    // Required iterator traits
+    typedef CacheModifiedIteratorRA             self_type;              ///< My own type
+    typedef difference_type                     difference_type;        ///< Type to express the result of subtracting one iterator from another
+    typedef ValueType                           value_type;             ///< The type of the element the iterator can point to
+    typedef ValueType*                          pointer;                ///< The type of a pointer to an element the iterator can point to
+    typedef ValueType                           reference;              ///< The type of a reference to an element the iterator can point to
+    typedef std::random_access_iterator_tag     iterator_category;      ///< The iterator category
 
 private:
 
@@ -323,213 +348,232 @@ private:
 
 public:
 
-    /**
-     * \brief Constructor
-     * @param ptr Native pointer to wrap
-     * @param conversion_op Binary transformation functor
-     */
-    __host__ __device__ __forceinline__ CacheModifiedIteratorRA(ValueType* ptr) :
-        ptr(ptr) {}
+    /// Constructor
+    __host__ __device__ __forceinline__ CacheModifiedIteratorRA(
+        ValueType* ptr)     ///< Native pointer to wrap
+    :
+        ptr(ptr)
+    {}
 
-#ifndef DOXYGEN_SHOULD_SKIP_THIS    // Do not document
-
-    __host__ __device__ __forceinline__ self_type operator++()
+    /// Postfix increment
+    __host__ __device__ __forceinline__ self_type operator++(int)
     {
         self_type i = *this;
         ptr++;
         return i;
     }
 
+    /// Indirection
     __host__ __device__ __forceinline__ reference operator*()
     {
         return ThreadLoad<MODIFIER>(ptr);
     }
 
-    template <typename SizeT>
-    __host__ __device__ __forceinline__ self_type operator+(SizeT n)
+    /// Addition
+    template <typename Distance>
+    __host__ __device__ __forceinline__ self_type operator+(Distance n)
     {
-        CacheModifiedIteratorRA retval(ptr + n);
+        self_type retval(ptr + n);
         return retval;
     }
 
-    template <typename SizeT>
-    __host__ __device__ __forceinline__ self_type operator-(SizeT n)
+    /// Subtraction
+    template <typename Distance>
+    __host__ __device__ __forceinline__ self_type operator-(Distance n)
     {
-        CacheModifiedIteratorRA retval(ptr - n);
+        self_type retval(ptr - n);
         return retval;
     }
 
-    template <typename SizeT>
-    __host__ __device__ __forceinline__ reference operator[](SizeT n)
+    /// Array subscript
+    template <typename Distance>
+    __host__ __device__ __forceinline__ reference operator[](Distance n)
     {
         return ThreadLoad<MODIFIER>(ptr + n);
     }
 
+    /// Structure dereference
     __host__ __device__ __forceinline__ pointer operator->()
     {
         return &ThreadLoad<MODIFIER>(ptr);
     }
 
+    /// Equal to
     __host__ __device__ __forceinline__ bool operator==(const self_type& rhs)
     {
         return (ptr == rhs.ptr);
     }
 
+    /// Not equal to
     __host__ __device__ __forceinline__ bool operator!=(const self_type& rhs)
     {
         return (ptr != rhs.ptr);
     }
 
-#endif // DOXYGEN_SHOULD_SKIP_THIS
+    /// ostream operator
+    friend std::ostream& operator<<(std::ostream& os, const ConstantIteratorRA& itr)
+    {
+        return os;
+    }
 
 };
 
 
 /**
- * \brief A simple random-access transform iterator for applying a transformation operator.
+ * \brief A random-access input iterator for applying a transformation operator to another random-access input iterator.
  *
  * \par Overview
- * TransformIteratorRA is a random-access iterator that wraps both a native
- * device pointer of type <tt>InputType*</tt> and a unary conversion functor of
- * type \p ConversionOp. \p OutputType references are made by pulling \p InputType
- * values through the \p ConversionOp instance.
+ * TransformIteratorRA wraps a unary conversion functor of type \p ConversionOp and a random-access
+ * input iterator of type <tt>InputIteratorRA</tt>, using the former to produce
+ * references of type \p ValueType from the latter.
  *
- * \tparam InputType            The value type of the pointer being wrapped
- * \tparam ConversionOp         Unary functor type for mapping objects of type \p InputType to type \p OutputType.  Must have member <tt>OutputType operator()(const InputType &datum)</tt>.
- * \tparam OutputType           The value type of this iterator
+ * \tparam ValueType            The value type of this iterator
+ * \tparam ConversionOp         Unary functor type for mapping objects of type \p InputType to type \p ValueType.  Must have member <tt>ValueType operator()(const InputType &datum)</tt>.
+ * \tparam difference_type      The difference type of this iterator (Default: \p ptrdiff_t)
+ *
  */
-template <typename OutputType, typename ConversionOp, typename InputType>
+template <
+    typename ValueType,
+    typename ConversionOp,
+    typename InputIteratorRA,
+    typename difference_type = ptrdiff_t>
 class TransformIteratorRA
 {
 public:
 
-#ifndef DOXYGEN_SHOULD_SKIP_THIS    // Do not document
-
-    typedef TransformIteratorRA                 self_type;
-    typedef OutputType                          value_type;
-    typedef OutputType                          reference;
-    typedef OutputType*                         pointer;
-    typedef std::random_access_iterator_tag     iterator_category;
-    typedef int                                 difference_type;
-
-#endif  // DOXYGEN_SHOULD_SKIP_THIS
+    // Required iterator traits
+    typedef TransformIteratorRA                 self_type;              ///< My own type
+    typedef difference_type                     difference_type;        ///< Type to express the result of subtracting one iterator from another
+    typedef ValueType                           value_type;             ///< The type of the element the iterator can point to
+    typedef ValueType*                          pointer;                ///< The type of a pointer to an element the iterator can point to
+    typedef ValueType                           reference;              ///< The type of a reference to an element the iterator can point to
+    typedef std::random_access_iterator_tag     iterator_category;      ///< The iterator category
 
 private:
 
     ConversionOp    conversion_op;
-    InputType*      ptr;
+    InputIteratorRA input_itr;
 
 public:
 
-    /**
-     * \brief Constructor
-     * @param ptr Native pointer to wrap
-     * @param conversion_op Binary transformation functor
-     */
-    __host__ __device__ __forceinline__ TransformIteratorRA(InputType* ptr, ConversionOp conversion_op) :
+    /// Constructor
+    __host__ __device__ __forceinline__ TransformIteratorRA(
+        InputIteratorRA     input_itr,          ///< Input iterator to wrap
+        ConversionOp        conversion_op)      ///< Conversion functor to wrap
+    :
         conversion_op(conversion_op),
-        ptr(ptr) {}
+        input_itr(input_itr)
+    {}
 
-#ifndef DOXYGEN_SHOULD_SKIP_THIS    // Do not document
-
-    __host__ __device__ __forceinline__ self_type operator++()
+    /// Postfix increment
+    __host__ __device__ __forceinline__ self_type operator++(int)
     {
         self_type i = *this;
-        ptr++;
+        input_itr++;
         return i;
     }
 
+    /// Indirection
     __host__ __device__ __forceinline__ reference operator*()
     {
-        return conversion_op(*ptr);
+        return conversion_op(*input_itr);
     }
 
-    template <typename SizeT>
-    __host__ __device__ __forceinline__ self_type operator+(SizeT n)
+    /// Addition
+    template <typename Distance>
+    __host__ __device__ __forceinline__ self_type operator+(Distance n)
     {
-        TransformIteratorRA retval(ptr + n, conversion_op);
+        self_type retval(input_itr + n, conversion_op);
         return retval;
     }
 
-    template <typename SizeT>
-    __host__ __device__ __forceinline__ self_type operator-(SizeT n)
+    /// Subtraction
+    template <typename Distance>
+    __host__ __device__ __forceinline__ self_type operator-(Distance n)
     {
-        TransformIteratorRA retval(ptr - n, conversion_op);
+        self_type retval(input_itr - n, conversion_op);
         return retval;
     }
 
-    template <typename SizeT>
-    __host__ __device__ __forceinline__ reference operator[](SizeT n)
+    /// Array subscript
+    template <typename Distance>
+    __host__ __device__ __forceinline__ reference operator[](Distance n)
     {
-        return conversion_op(ptr[n]);
+        return conversion_op(input_itr[n]);
     }
 
+    /// Structure dereference
     __host__ __device__ __forceinline__ pointer operator->()
     {
-        return &conversion_op(*ptr);
+        return &conversion_op(*input_itr);
     }
 
+    /// Equal to
     __host__ __device__ __forceinline__ bool operator==(const self_type& rhs)
     {
-        return (ptr == rhs.ptr);
+        return (input_itr == rhs.input_itr);
     }
 
+    /// Not equal to
     __host__ __device__ __forceinline__ bool operator!=(const self_type& rhs)
     {
-        return (ptr != rhs.ptr);
+        return (input_itr != rhs.input_itr);
     }
 
-#endif // DOXYGEN_SHOULD_SKIP_THIS
-
+    /// ostream operator
+    friend std::ostream& operator<<(std::ostream& os, const ConstantIteratorRA& itr)
+    {
+        return os;
+    }
 };
 
 
 
 /**
- * \brief A simple random-access iterator for loading primitive values through texture cache.
+ * \brief A random-access input iterator for referencing primitive array elements through texture cache.
  *
  * \par Overview
- * TexIteratorRA is a random-access iterator that wraps a native
- * device pointer of type <tt>T*</tt>. References made through TexIteratorRA
- * causes values to be pulled through texture cache.
+ * TexIteratorRA wraps a native device pointer of type <tt>ValueType*</tt>. References
+ * to elements are to be pulled through texture cache.  Works with any \p ValueType.
  *
  * \par Usage Considerations
- * - Can only be used with primitive types (e.g., \p char, \p int, \p float), with the exception of \p double
- * - Only one TexIteratorRA or TexIteratorRA of a certain \p InputType can be bound at any given time (per host thread)
+ * - Only one TexIteratorRA or TexIteratorRA of a certain \p ValueType can be bound at any given time (per host thread)
  *
- * \tparam InputType            The value type of the pointer being wrapped
- * \tparam ConversionOp         Unary functor type for mapping objects of type \p InputType to type \p OutputType.  Must have member <tt>OutputType operator()(const InputType &datum)</tt>.
- * \tparam OutputType           The value type of this iterator
+ * \tparam T            The value type of this iterator
+ * \tparam difference_type      The difference type of this iterator (Default: \p ptrdiff_t)
  */
-template <typename T>
+template <
+    typename T,
+    typename difference_type = ptrdiff_t>
 class TexIteratorRA
 {
 public:
-#ifndef DOXYGEN_SHOULD_SKIP_THIS    // Do not document
 
-    typedef TexIteratorRA                       self_type;
-    typedef T                                   value_type;
-    typedef T                                   reference;
-    typedef T*                                  pointer;
-    typedef std::random_access_iterator_tag     iterator_category;
-    typedef int                                 difference_type;
-
-#endif // DOXYGEN_SHOULD_SKIP_THIS
-
-    /// Tag identifying iterator type as being texture-bindable
-    typedef void TexBindingTag;
+    // Required iterator traits
+    typedef TexIteratorRA                       self_type;              ///< My own type
+    typedef difference_type                     difference_type;        ///< Type to express the result of subtracting one iterator from another
+    typedef T                           value_type;             ///< The type of the element the iterator can point to
+    typedef T*                          pointer;                ///< The type of a pointer to an element the iterator can point to
+    typedef T                           reference;              ///< The type of a reference to an element the iterator can point to
+    typedef std::random_access_iterator_tag     iterator_category;      ///< The iterator category
 
 private:
 
-    T*                  ptr;
+    // Largest texture word we can use
+    typedef typename WordAlignment<T>::TextureWord TextureWord;
+
+    // Number of texture words per T
+    enum {
+        TEXTURE_MULTIPLE = WordAlignment<T>::TEXTURE_MULTIPLE
+    };
+
+    T*          ptr;
     size_t              tex_align_offset;
     cudaTextureObject_t tex_obj;
 
 public:
 
-    /**
-     * \brief Constructor
-     */
+    /// Constructor
     __host__ __device__ __forceinline__ TexIteratorRA()
     :
         ptr(NULL),
@@ -537,14 +581,18 @@ public:
         tex_obj(0)
     {}
 
-    /// \brief Bind iterator to texture reference
+
+    /// Use this iterator to bind \p ptr with a texture reference
     cudaError_t BindTexture(
-        T               *ptr,                   ///< Native pointer to wrap that is aligned to cudaDeviceProp::textureAlignment
-        size_t          bytes,                  ///< Number of items
-        size_t          tex_align_offset = 0)   ///< Offset (in items) from ptr denoting the position of the iterator
+        T       *ptr,                   ///< Native pointer to wrap that is aligned to cudaDeviceProp::textureAlignment
+        size_t          bytes,                  ///< Number of bytes in the range
+        size_t          tex_align_offset = 0)   ///< Offset (in items) from \p ptr denoting the position of the iterator
     {
+
         this->ptr = ptr;
-        this->tex_align_offset = tex_align_offset;
+        this->tex_align_offset = tex_align_offset * TEXTURE_MULTIPLE;
+
+        TextureWord *tex_ptr = reinterpret_cast<TextureWord*>(ptr);
 
         int ptx_version;
         cudaError_t error = cudaSuccess;
@@ -552,13 +600,13 @@ public:
         if (ptx_version >= 300)
         {
             // Use texture object
-            cudaChannelFormatDesc   channel_desc = cudaCreateChannelDesc<T>();
+            cudaChannelFormatDesc   channel_desc = cudaCreateChannelDesc<TextureWord>();
             cudaResourceDesc        res_desc;
             cudaTextureDesc         tex_desc;
             memset(&res_desc, 0, sizeof(cudaResourceDesc));
             memset(&tex_desc, 0, sizeof(cudaTextureDesc));
             res_desc.resType                = cudaResourceTypeLinear;
-            res_desc.res.linear.devPtr      = ptr;
+            res_desc.res.linear.devPtr      = tex_ptr;
             res_desc.res.linear.desc        = channel_desc;
             res_desc.res.linear.sizeInBytes = bytes;
             tex_desc.readMode               = cudaReadModeElementType;
@@ -567,11 +615,12 @@ public:
         else
         {
             // Use texture reference
-            return TexIteratorRef<T>::BindTexture(ptr);
+            return TexIteratorRef<TextureWord>::BindTexture(tex_ptr);
         }
     }
 
-    /// \brief Unbind iterator to texture reference
+
+    /// Unbind this iterator from its texture reference
     cudaError_t UnbindTexture()
     {
         int ptx_version;
@@ -580,7 +629,7 @@ public:
         if (ptx_version < 300)
         {
             // Use texture reference
-            return TexIteratorRef<T>::UnbindTexture();
+            return TexIteratorRef<TextureWord>::UnbindTexture();
         }
         else
         {
@@ -589,101 +638,103 @@ public:
         }
     }
 
-#ifndef DOXYGEN_SHOULD_SKIP_THIS    // Do not document
 
-    __host__ __device__ __forceinline__ self_type operator++()
+    /// Postfix increment
+    __host__ __device__ __forceinline__ self_type operator++(int)
     {
         self_type i = *this;
         ptr++;
-        tex_align_offset++;
+        tex_align_offset += TEXTURE_MULTIPLE;
         return i;
     }
 
+    /// Indirection
     __host__ __device__ __forceinline__ reference operator*()
     {
 #if (CUB_PTX_VERSION == 0)
+
         // Simply dereference the pointer on the host
         return *ptr;
-#elif (CUB_PTX_VERSION < 300)
-        // Use the texture reference
-        return tex1Dfetch(TexIteratorRef<T>::ref, tex_align_offset);
+
 #else
-        // Use the texture object
-        return conversion_op(tex1Dfetch<InputType>(tex_obj, tex_align_offset));
+
+        // Move array of uninitialized words, then alias and assign to return value
+        typename WordAlignment<T>::UninitializedTextureWords words;
+
+        #pragma unroll
+        for (int i = 0; i < TEXTURE_MULTIPLE; ++i)
+#if (CUB_PTX_VERSION < 300)
+            words.buf[i] = tex1Dfetch(TexIteratorRef<TextureWord>::ref, tex_align_offset + i);
+#else
+            words.buf[i] = tex1Dfetch<TextureWord>(tex_obj, tex_align_offset + i);
+#endif
+
+        // Load from words
+        return *reinterpret_cast<T*>(words.buf);
 #endif
     }
 
-    template <typename SizeT>
-    __host__ __device__ __forceinline__ self_type operator+(SizeT n)
+    /// Addition
+    template <typename Distance>
+    __host__ __device__ __forceinline__ self_type operator+(Distance n)
     {
-        TexIteratorRA retval;
+        self_type retval;
         retval.ptr = ptr + n;
-        retval.tex_align_offset = tex_align_offset + n;
+        retval.tex_align_offset = tex_align_offset + (n * TEXTURE_MULTIPLE);
         return retval;
     }
 
-    template <typename SizeT>
-    __host__ __device__ __forceinline__ self_type operator-(SizeT n)
+    /// Subtraction
+    template <typename Distance>
+    __host__ __device__ __forceinline__ self_type operator-(Distance n)
     {
-        TexIteratorRA retval;
+        self_type retval;
         retval.ptr = ptr - n;
-        retval.tex_align_offset = tex_align_offset - n;
+        retval.tex_align_offset = tex_align_offset - (n * TEXTURE_MULTIPLE);
         return retval;
     }
 
-    template <typename SizeT>
-    __host__ __device__ __forceinline__ reference operator[](SizeT n)
+    /// Array subscript
+    template <typename Distance>
+    __host__ __device__ __forceinline__ reference operator[](Distance n)
     {
-#if (CUB_PTX_VERSION == 0)
-        // Simply dereference the pointer on the host
-        return ptr[n];
-#elif (CUB_PTX_VERSION < 300)
-        // Use the texture reference
-        return tex1Dfetch(TexIteratorRef<T>::ref, tex_align_offset + n);
-#else
-        // Use the texture object
-        return conversion_op(tex1Dfetch<InputType>(tex_obj, tex_align_offset + n));
-#endif
+        return *(*this + n);
     }
 
+    /// Structure dereference
     __host__ __device__ __forceinline__ pointer operator->()
     {
-#if (CUB_PTX_VERSION == 0)
-        // Simply dereference the pointer on the host
-        return &(*ptr);
-#elif (CUB_PTX_VERSION < 300)
-        // Use the texture reference
-        return &(tex1Dfetch(TexIteratorRef<T>::ref, tex_align_offset));
-#else
-        // Use the texture object
-        return conversion_op(tex1Dfetch<InputType>(tex_obj, tex_align_offset));
-#endif
+        return &(*(*this));
     }
 
+    /// Equal to
     __host__ __device__ __forceinline__ bool operator==(const self_type& rhs)
     {
         return (ptr == rhs.ptr);
     }
 
+    /// Not equal to
     __host__ __device__ __forceinline__ bool operator!=(const self_type& rhs)
     {
         return (ptr != rhs.ptr);
     }
 
-#endif // DOXYGEN_SHOULD_SKIP_THIS
+    /// ostream operator
+    friend std::ostream& operator<<(std::ostream& os, const ConstantIteratorRA& itr)
+    {
+        return os;
+    }
 
 };
 
 
 /**
- * \brief A simple random-access transform iterator for loading primitive values through texture cache and and subsequently applying a transformation operator.
+ * \brief A random-access input iterator for applying a transformation operator to primitive array elements referenced through texture cache.
  *
  * \par Overview
- * TexTransformIteratorRA is a random-access iterator that wraps both a native
- * device pointer of type <tt>InputType*</tt> and a unary conversion functor of
- * type \p ConversionOp. \p OutputType references are made by pulling \p InputType
- * values through the texture cache and then transformed them using the
- * \p ConversionOp instance.
+ * TransformIteratorRA wraps a unary conversion functor of type \p ConversionOp and a
+ * native device pointer of type <tt>T*</tt>.  \p ValueType references are produced by
+ * applying the former to elements of the latter read through texture cache.
  *
  * \par Usage Considerations
  * - Can only be used with primitive types (e.g., \p char, \p int, \p float), with the exception of \p double
@@ -693,180 +744,114 @@ public:
  * \tparam ConversionOp         Unary functor type for mapping objects of type \p InputType to type \p OutputType.  Must have member <tt>OutputType operator()(const InputType &datum)</tt>.
  * \tparam OutputType           The value type of this iterator
  */
-template <typename OutputType, typename ConversionOp, typename InputType>
+template <
+    typename ValueType,
+    typename ConversionOp,
+    typename T,
+    typename difference_type = ptrdiff_t>
 class TexTransformIteratorRA
 {
 public:
 
-#ifndef DOXYGEN_SHOULD_SKIP_THIS    // Do not document
-
-    typedef TexTransformIteratorRA              self_type;
-    typedef OutputType                          value_type;
-    typedef OutputType                          reference;
-    typedef OutputType*                         pointer;
-    typedef std::random_access_iterator_tag     iterator_category;
-    typedef int                                 difference_type;
-
-#endif  // DOXYGEN_SHOULD_SKIP_THIS
-
-    /// Tag identifying iterator type as being texture-bindable
-    typedef void TexBindingTag;
+    // Required iterator traits
+    typedef TexTransformIteratorRA              self_type;              ///< My own type
+    typedef difference_type                     difference_type;        ///< Type to express the result of subtracting one iterator from another
+    typedef ValueType                           value_type;             ///< The type of the element the iterator can point to
+    typedef ValueType*                          pointer;                ///< The type of a pointer to an element the iterator can point to
+    typedef ValueType                           reference;              ///< The type of a reference to an element the iterator can point to
+    typedef std::random_access_iterator_tag     iterator_category;      ///< The iterator category
 
 private:
 
-    ConversionOp        conversion_op;
-    InputType*          ptr;
-    size_t              tex_align_offset;
-    cudaTextureObject_t tex_obj;
+    TexIteratorRA<T, difference_type>   tex_itr;
+    ConversionOp                        conversion_op;
 
 public:
 
-    /**
-     * \brief Constructor
-     */
+    /// Constructor
     TexTransformIteratorRA(
-        ConversionOp    conversion_op)          ///< Binary transformation functor
+        ConversionOp conversion_op)          ///< Binary transformation functor
     :
-        conversion_op(conversion_op),
-        ptr(NULL),
-        tex_align_offset(0),
-        tex_obj(0)
+        conversion_op(conversion_op)
     {}
 
-    /// \brief Bind iterator to texture reference
+    /// Use this iterator to bind \p ptr with a texture reference
     cudaError_t BindTexture(
-        InputType*      ptr,                    ///< Native pointer to wrap that is aligned to cudaDeviceProp::textureAlignment
-        size_t          bytes,                  ///< Number of items
-        size_t          tex_align_offset = 0)   ///< Offset (in items) from ptr denoting the position of the iterator
+        T       *ptr,                   ///< Native pointer to wrap that is aligned to cudaDeviceProp::textureAlignment
+        size_t  bytes,                  ///< Number of bytes in the range
+        size_t  tex_align_offset = 0)   ///< Offset (in items) from \p ptr denoting the position of the iterator
     {
-        this->ptr = ptr;
-        this->tex_align_offset = tex_align_offset;
-
-        int ptx_version;
-        cudaError_t error = cudaSuccess;
-        if (CubDebug(error = PtxVersion(ptx_version))) return error;
-        if (ptx_version >= 300)
-        {
-            // Use texture object
-            cudaChannelFormatDesc   channel_desc = cudaCreateChannelDesc<InputType>();
-            cudaResourceDesc        res_desc;
-            cudaTextureDesc         tex_desc;
-            memset(&res_desc, 0, sizeof(cudaResourceDesc));
-            memset(&tex_desc, 0, sizeof(cudaTextureDesc));
-            res_desc.resType                = cudaResourceTypeLinear;
-            res_desc.res.linear.devPtr      = ptr;
-            res_desc.res.linear.desc        = channel_desc;
-            res_desc.res.linear.sizeInBytes = bytes;
-            tex_desc.readMode               = cudaReadModeElementType;
-            return cudaCreateTextureObject(&tex_obj, &res_desc, &tex_desc, NULL);
-        }
-        else
-        {
-            // Use texture reference
-            return TexIteratorRef<InputType>::BindTexture(ptr);
-        }
+        return tex_itr.BindTexture(ptr, bytes, tex_align_offset);
     }
 
-    /// \brief Unbind iterator to texture reference
+
+    /// Unbind this iterator from its texture reference
     cudaError_t UnbindTexture()
     {
-        int ptx_version;
-        cudaError_t error = cudaSuccess;
-        if (CubDebug(error = PtxVersion(ptx_version))) return error;
-        if (ptx_version >= 300)
-        {
-            // Use texture object
-            return cudaDestroyTextureObject(tex_obj);
-        }
-        else
-        {
-            // Use texture reference
-            return TexIteratorRef<InputType>::UnbindTexture();
-        }
+        return tex_itr.UnbindTexture();
     }
 
-#ifndef DOXYGEN_SHOULD_SKIP_THIS    // Do not document
 
-    __host__ __device__ __forceinline__ self_type operator++()
+    /// Postfix increment
+    __host__ __device__ __forceinline__ self_type operator++(int)
     {
-        self_type i = *this;
-        ptr++;
-        tex_align_offset++;
-        return i;
+        return tex_itr++;
     }
 
+    /// Indirection
     __host__ __device__ __forceinline__ reference operator*()
     {
-#if (CUB_PTX_VERSION == 0)
-        // Simply dereference the pointer on the host
-        return conversion_op(*ptr);
-#elif (CUB_PTX_VERSION < 300)
-        // Use the texture reference
-        return conversion_op(tex1Dfetch(TexIteratorRef<InputType>::ref, tex_align_offset));
-#else
-        // Use the texture object
-        return conversion_op(tex1Dfetch<InputType>(tex_obj, tex_align_offset));
-#endif
+        return conversion_op(*tex_itr);
     }
 
-    template <typename SizeT>
-    __host__ __device__ __forceinline__ self_type operator+(SizeT n)
+    /// Addition
+    template <typename Distance>
+    __host__ __device__ __forceinline__ self_type operator+(Distance n)
     {
-        TexTransformIteratorRA retval(conversion_op);
-        retval.ptr = ptr + n;
-        retval.tex_align_offset = tex_align_offset + n;
+        self_type retval(conversion_op);
+        retval.tex_itr = tex_itr + n;
         return retval;
     }
 
-    template <typename SizeT>
-    __host__ __device__ __forceinline__ self_type operator-(SizeT n)
+    /// Subtraction
+    template <typename Distance>
+    __host__ __device__ __forceinline__ self_type operator-(Distance n)
     {
-        TexTransformIteratorRA retval(conversion_op);
-        retval.ptr = ptr - n;
-        retval.tex_align_offset = tex_align_offset - n;
+        self_type retval(conversion_op);
+        retval.tex_itr = tex_itr - n;
         return retval;
     }
 
-    template <typename SizeT>
-    __host__ __device__ __forceinline__ reference operator[](SizeT n)
+    /// Array subscript
+    template <typename Distance>
+    __host__ __device__ __forceinline__ reference operator[](Distance n)
     {
-#if (CUB_PTX_VERSION == 0)
-        // Simply dereference the pointer on the host
-        return conversion_op(ptr[n]);
-#elif (CUB_PTX_VERSION < 300)
-        // Use the texture reference
-        return conversion_op(tex1Dfetch(TexIteratorRef<InputType>::ref, tex_align_offset + n));
-#else
-        // Use the texture object
-        return conversion_op(tex1Dfetch<InputType>(tex_obj, tex_align_offset + n));
-#endif
+        return conversion_op(tex_itr[n]);
     }
 
+    /// Structure dereference
     __host__ __device__ __forceinline__ pointer operator->()
     {
-#if (CUB_PTX_VERSION == 0)
-        // Simply dereference the pointer on the host
-        return &conversion_op(*ptr);
-#elif (CUB_PTX_VERSION < 300)
-        // Use the texture reference
-        return &conversion_op(tex1Dfetch(TexIteratorRef<InputType>::ref, tex_align_offset));
-#else
-        // Use the texture object
-        return &conversion_op(tex1Dfetch<InputType>(tex_obj, tex_align_offset));
-#endif
+        return &conversion_op(*tex_itr);
     }
 
+    /// Equal to
     __host__ __device__ __forceinline__ bool operator==(const self_type& rhs)
     {
-        return (ptr == rhs.ptr);
+        return (tex_itr == rhs.tex_itr);
     }
 
+    /// Not equal to
     __host__ __device__ __forceinline__ bool operator!=(const self_type& rhs)
     {
-        return (ptr != rhs.ptr);
+        return (tex_itr != rhs.tex_itr);
     }
 
-#endif // DOXYGEN_SHOULD_SKIP_THIS
+    /// ostream operator
+    friend std::ostream& operator<<(std::ostream& os, const ConstantIteratorRA& itr)
+    {
+        return os;
+    }
 
 };
 

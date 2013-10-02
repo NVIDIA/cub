@@ -335,13 +335,12 @@ __device__ __forceinline__ T ThreadLoadVolatile(
     Int2Type<false>          is_primitive)
 {
     typedef typename WordAlignment<T>::VolatileWord VolatileWord;   // Word type for memcopying
-    enum { NUM_WORDS = sizeof(T) / sizeof(VolatileWord) };
 
     // Memcopy from aliased source into array of uninitialized words
     typename WordAlignment<T>::UninitializedVolatileWords words;
 
     #pragma unroll
-    for (int i = 0; i < NUM_WORDS; ++i)
+    for (int i = 0; i < WordAlignment<T>::VOLATILE_MULTIPLE; ++i)
         words.buf[i] = reinterpret_cast<volatile VolatileWord*>(ptr)[i];
 
     // Load from words
@@ -389,12 +388,11 @@ __device__ __forceinline__ T ThreadLoad(
     Int2Type<true>          is_pointer)
 {
     typedef typename WordAlignment<T>::DeviceWord DeviceWord;
-    enum { NUM_WORDS = sizeof(T) / sizeof(DeviceWord) };
 
     // Memcopy from aliased source into array of uninitialized words
     typename WordAlignment<T>::UninitializedDeviceWords words;
 
-    IterateThreadLoad<PtxLoadModifier(MODIFIER), 0, NUM_WORDS>::Load(
+    IterateThreadLoad<PtxLoadModifier(MODIFIER), 0, WordAlignment<T>::DEVICE_MULTIPLE>::Load(
         reinterpret_cast<DeviceWord*>(ptr),
         words.buf);
 

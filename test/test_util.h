@@ -879,7 +879,8 @@ int CompareDeviceResults(
     return 0;
 }
 
-    /**
+
+/**
  * Verify the contents of a device array match those
  * of a host array
  */

@@ -42,7 +42,7 @@
 
 #include <cub/cub.cuh>
 
-#include "../test/test_util.h"
+#include "../../test/test_util.h"
 
 using namespace cub;
 using namespace std;
@@ -198,7 +198,6 @@ template <
     typename                ValueIteratorRA,
     typename                SegmentOffsetIteratorRA,
     typename                OutputIteratorRA,
-    typename                SizeT,
     typename                ReductionOp>
 struct BlockSegmentedReduceTiles
 {
@@ -211,6 +210,9 @@ struct BlockSegmentedReduceTiles
     {
         TILE_ITEMS = BLOCK_THREADS * ITEMS_PER_THREAD,
     };
+
+    // Offset type
+    typedef typename std::iterator_traits<SegmentOffsetIteratorRA>::value_type SizeT;
 
     // Value type
     typedef typename std::iterator_traits<ValueIteratorRA>::value_type Value;
@@ -244,6 +246,9 @@ struct BlockSegmentedReduceTiles
             // Smem needed for communicating indices
             struct
             {
+                SizeT block_segment_idx[2];        // The starting and ending indices of segment offsets for the region
+                SizeT block_value_idx[2];          // The starting and ending indices of values for the region
+
                 SizeT   segment_idx[BLOCK_THREADS + 1];
                 Value   value_idx[BLOCK_THREADS + 1];
             };
@@ -303,39 +308,66 @@ struct BlockSegmentedReduceTiles
 
 
     /**
-     * Processes region
+     * Processes the block's region
      */
     __device__ __forceinline__ void ProcessRegion(
         SizeT block_diagonal,
-        SizeT block_segment_idx,       // The starting index of segment offsets for the region
-        SizeT block_value_idx,         // The starting index of values in the region
-        SizeT next_block_diagonal,
-        SizeT next_block_segment_idx,
-        SizeT next_block_value_idx)
+        SizeT next_block_diagonal)
     {
+        // Initialization
+        if (threadIdx.x < 2)
+        {
+            // Select starting/ending diagonal
+            int diagonal = (threadIdx.x == 0) ?
+                block_diagonal :        // First thread searches for start indices
+                next_block_diagonal;    // Second thread searches for end indices
+
+            // Search for block starting and ending indices
+            SizeT block_segment_idx;
+            SizeT block_value_idx;
+
+            MergePathSearch(
+                diagonal,               // Diagonal
+                d_segment_end_offsets,  // A (segment end-offsets)
+                0,                      // Start index into A
+                num_segments,           // End index into A
+                block_segment_idx,      // [out] Block index into A
+                d_value_offsets,        // B (value offsets)
+                0,                      // Start index into B
+                num_values,             // End index into B
+                block_value_idx);       // [out] Block index into B
+
+            // Share block starting and ending indices
+            temp_storage.block_segment_idx[threadIdx.x] = block_segment_idx;
+            temp_storage.block_value_idx[threadIdx.x] = block_value_idx;
+
+            // Initialize the block's running prefix operator
+            if (threadIdx.x == 0)
+            {
+                prefix_op.running_prefix.segment_idx = block_segment_idx;
+                prefix_op.running_prefix.partial = identity;
+
+                // Initialize the first scattered partial to the prefix (in case we don't scatter one)
+                temp_storage.first_partial = prefix_op.running_prefix;
+            }
+        }
+
+        // Ensure coherence of tile-starting indices
+        __syncthreads();
+
+        // Read block's range
+        SizeT block_segment_idx         = temp_storage.block_segment_idx[0];
+        SizeT block_value_idx           = temp_storage.block_value_idx[0];
+        SizeT next_block_segment_idx    = temp_storage.block_segment_idx[1];
+        SizeT next_block_value_idx      = temp_storage.block_value_idx[1];
+
         // Remember the first segment index
         SizeT first_segment_idx = block_segment_idx;
-
-        // Initialize the block's region prefix
-        prefix_op.running_prefix.segment_idx = first_segment_idx;
-        prefix_op.running_prefix.partial = identity;
-
-        // Initialize the first scattered partial to the prefix (in case we don't scatter one)
-        if (threadIdx.x == 0)
-        {
-            temp_storage.first_partial = prefix_op.running_prefix;
-        }
 
         // Have the thread block iterate over the region
         while (block_diagonal < next_block_diagonal)
         {
-            // Share tile starting indices
-            if (threadIdx.x == 0)
-            {
-                temp_storage.segment_idx[0] = block_segment_idx;
-                temp_storage.value_idx[0] = block_value_idx;
-            }
-
+            // Clamp the per-thread search range to a tile's window of the current indices
             SizeT next_tile_segment_idx     = CUB_MIN(next_block_segment_idx, block_segment_idx + TILE_ITEMS);
             SizeT next_tile_value_idx       = CUB_MIN(next_block_value_idx, block_value_idx + TILE_ITEMS);
 
@@ -346,18 +378,18 @@ struct BlockSegmentedReduceTiles
 
             MergePathSearch(
                 next_thread_diagonal,           // Next thread diagonal
-                d_segment_end_offsets,
-                block_segment_idx,
-                next_tile_segment_idx,
-                next_thread_segment_idx,        // (out) Thread index into segment end offsets
-                d_value_offsets,
-                block_value_idx,
-                next_tile_value_idx,
-                next_thread_value_idx);         // (out) Thread index into value offsets
+                d_segment_end_offsets,          // A (segment end-offsets)
+                block_segment_idx,              // Start index into A
+                next_tile_segment_idx,          // End index into A
+                next_thread_segment_idx,        // [out] Thread index into A
+                d_value_offsets,                // B (value offsets)
+                block_value_idx,                // Start index into B
+                next_tile_value_idx,            // End index into B
+                next_thread_value_idx);         // [out] Thread index into B
 
             // Share thread-end indices
-            temp_storage.segment_idx[threadIdx.x + 1] = next_thread_segment_idx;
-            temp_storage.value_idx[threadIdx.x + 1] = next_thread_value_idx;
+            temp_storage.segment_idx[threadIdx.x + 1]   = next_thread_segment_idx;
+            temp_storage.value_idx[threadIdx.x + 1]     = next_thread_value_idx;
 
             // Ensure coherence of search indices
             __syncthreads();
@@ -411,7 +443,7 @@ struct BlockSegmentedReduceTiles
                 }
             }
 
-            // Update tile starting indices to the last thread's end indices
+            // Update tile-starting indices (from last thread's end-indices)
             block_segment_idx = temp_storage.segment_idx[BLOCK_THREADS];
             block_value_idx = temp_storage.value_idx[BLOCK_THREADS];
 
@@ -454,77 +486,21 @@ struct BlockSegmentedReduceTiles
         }
     }
 
-
-    /**
-     * Iterate over input tiles belonging to this thread block
-     */
-    __device__ __forceinline__
-    void ProcessTiles()
-    {
-        // Initialize scalar shared memory values
-        if (threadIdx.x == 0)
-        {
-            SizeT first_block_row            = d_rows[block_offset];
-            SizeT last_block_row             = d_rows[block_end - 1];
-
-            temp_storage.first_block_row        = first_block_row;
-            temp_storage.last_block_row         = last_block_row;
-            temp_storage.first_product          = Value(0);
-
-            // Initialize prefix_op to identity
-            prefix_op.running_prefix.segment        = first_block_row;
-            prefix_op.running_prefix.partial    = Value(0);
-        }
-
-        __syncthreads();
-
-        // Process full tiles
-        while (block_offset <= block_end - TILE_ITEMS)
-        {
-            ProcessTile<true>(block_offset);
-            block_offset += TILE_ITEMS;
-        }
-
-        // Process the last, partially-full tile (if present)
-        int guarded_items = block_end - block_offset;
-        if (guarded_items)
-        {
-            ProcessTile<false>(block_offset, guarded_items);
-        }
-
-        if (threadIdx.x == 0)
-        {
-            if (gridDim.x == 1)
-            {
-                // Scatter the final aggregate (this kernel contains only 1 threadblock)
-                d_result[prefix_op.running_prefix.segment] = prefix_op.running_prefix.partial;
-            }
-            else
-            {
-                // Write the first and last partial products from this thread block so
-                // that they can be subsequently "fixed up" in the next kernel.
-
-                PartialReduction first_product;
-                first_product.segment       = temp_storage.first_block_row;
-                first_product.partial   = temp_storage.first_product;
-
-                d_block_partials[blockIdx.x * 2]          = first_product;
-                d_block_partials[(blockIdx.x * 2) + 1]    = prefix_op.running_prefix;
-            }
-        }
-    }
 };
 
 
 /**
- * Threadblock abstraction for "fixing up" an array of interblock SpMV partial products.
+ * Threadblock abstraction for "fixing up" partial sums from segments spanning multiple block regions.
  */
 template <
-    int             BLOCK_THREADS,
-    int             ITEMS_PER_THREAD,
-    typename        SizeT,
-    typename        Value>
-struct FinalizeSpmvBlock
+    int                 BLOCK_THREADS,
+    int                 ITEMS_PER_THREAD,
+    BlockScanAlgorithm  SCAN_ALGORITHM,
+    typename            PartialReductionIteratorRA,
+    typename            OutputIteratorRA,
+    typename            ReductionOp,
+    typename            SizeT>
+struct BlockSegmentedReducePartials
 {
     //---------------------------------------------------------------------
     // Types and constants
@@ -536,17 +512,23 @@ struct FinalizeSpmvBlock
         TILE_ITEMS = BLOCK_THREADS * ITEMS_PER_THREAD,
     };
 
-    // Head flag type
-    typedef int HeadFlag;
+    // Tail flag type
+    typedef int TailFlag;
 
     // Partial reduction type
-    typedef PartialReduction<SizeT, Value> PartialReduction;
+    typedef typename std::iterator_traits<PartialReductionIteratorRA>::value_type PartialReduction;
+
+    // Value type
+    typedef typename std::iterator_traits<OutputIteratorRA>::value_type Value;
+
+    // Stateful prefix op type
+    typedef BlockPrefixOp<PartialReduction> PrefixOp;
 
     // Parameterized BlockScan type for reduce-value-by-segment scan
     typedef BlockScan<PartialReduction, BLOCK_THREADS, BLOCK_SCAN_RAKING_MEMOIZE> BlockScan;
 
-    // Parameterized BlockDiscontinuity type for setting head-flags for each new segment segment
-    typedef BlockDiscontinuity<HeadFlag, BLOCK_THREADS> BlockDiscontinuity;
+    // Parameterized BlockDiscontinuity type for tail-flagging discontinuities in the segment indices of PartialReductions
+    typedef BlockDiscontinuity<SizeT, BLOCK_THREADS> BlockDiscontinuity;
 
     // Shared memory type for this threadblock
     struct TempStorage
@@ -562,11 +544,13 @@ struct FinalizeSpmvBlock
     // Thread fields
     //---------------------------------------------------------------------
 
-    TempStorage                     &temp_storage;
-    BlockPrefixOp<PartialReduction>   prefix_op;
-    Value                           *d_result;
-    PartialReduction                  *d_block_partials;
-    int                             num_partials;
+    TempStorage                 &temp_storage;
+    int                         num_partials;
+    PartialReductionIteratorRA  d_block_partials;
+    OutputIteratorRA            d_output;
+    Value                       identity;               ///< Identity value (for zero-length segments)
+    ReductionOp                 reduction_op;           ///< Reduction operator
+    PrefixOp                    prefix_op;              ///< Stateful thread block prefix
 
 
     //---------------------------------------------------------------------
@@ -577,35 +561,36 @@ struct FinalizeSpmvBlock
      * Constructor
      */
     __device__ __forceinline__
-    FinalizeSpmvBlock(
+    BlockSegmentedReducePartials(
         TempStorage                 &temp_storage,
-        Value                       *d_result,
-        PartialReduction              *d_block_partials,
-        int                         num_partials)
+        int                         num_partials,
+        PartialReductionIteratorRA  d_block_partials,
+        OutputIteratorRA            d_output,
+        Value                       identity,               ///< Identity value (for zero-length segments)
+        ReductionOp                 reduction_op)
     :
         temp_storage(temp_storage),
-        d_result(d_result),
+        num_partials(num_partials),
         d_block_partials(d_block_partials),
-        num_partials(num_partials)
+        d_output(d_output),
+        identity(identity),
+        reduction_op(reduction_op)
     {
         // Initialize scalar shared memory values
         if (threadIdx.x == 0)
         {
-            SizeT first_block_row            = d_block_partials[0].segment;
-            SizeT last_block_row             = d_block_partials[num_partials - 1].segment;
-            temp_storage.last_block_row         = last_block_row;
-
             // Initialize prefix_op to identity
-            prefix_op.running_prefix.segment        = first_block_row;
-            prefix_op.running_prefix.partial    = Value(0);
+            prefix_op.running_prefix.segment_idx    = d_block_partials[0].segment_idx;
+            prefix_op.running_prefix.partial        = identity;
         }
 
         __syncthreads();
     }
 
 
+
     /**
-     * Processes a COO input tile of edges, outputting reductions for each segment
+     * Processes a reduce-value-by-key input tile, outputting reductions for each segment
      */
     template <bool FULL_TILE>
     __device__ __forceinline__
@@ -768,13 +753,13 @@ __global__ void CooFinalizeKernel(
     Value                           *d_result)
 {
     // Specialize "fix-up" threadblock abstraction type
-    typedef FinalizeSpmvBlock<BLOCK_THREADS, ITEMS_PER_THREAD, SizeT, Value> FinalizeSpmvBlock;
+    typedef BlockSegmentedReducePartials<BLOCK_THREADS, ITEMS_PER_THREAD, SizeT, Value> BlockSegmentedReducePartials;
 
     // Shared memory allocation
-    __shared__ typename FinalizeSpmvBlock::TempStorage temp_storage;
+    __shared__ typename BlockSegmentedReducePartials::TempStorage temp_storage;
 
     // Construct persistent thread block
-    FinalizeSpmvBlock persistent_block(temp_storage, d_result, d_block_partials, num_partials);
+    BlockSegmentedReducePartials persistent_block(temp_storage, d_result, d_block_partials, num_partials);
 
     // Process input tiles
     persistent_block.ProcessTiles();
