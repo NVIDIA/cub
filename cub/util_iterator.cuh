@@ -153,8 +153,8 @@ public:
     /// Postfix increment
     __host__ __device__ __forceinline__ self_type operator++(int)
     {
-        self_type i = *this;
-        return i;
+        self_type retval = *this;
+        return retval;
     }
 
     /// Indirection
@@ -170,11 +170,25 @@ public:
         return self_type(val);
     }
 
+    /// Addition assignment
+    template <typename Distance>
+    __host__ __device__ __forceinline__ self_type& operator+=(Distance n)
+    {
+        return *this;
+    }
+
     /// Subtraction
     template <typename Distance>
     __host__ __device__ __forceinline__ self_type operator-(Distance n)
     {
         return self_type(val);
+    }
+
+    /// Subtraction assignment
+    template <typename Distance>
+    __host__ __device__ __forceinline__ self_type& operator-=(Distance n)
+    {
+        return *this;
     }
 
     /// Array subscript
@@ -203,7 +217,7 @@ public:
     }
 
     /// ostream operator
-    friend std::ostream& operator<<(std::ostream& os, const ConstantIteratorRA& itr)
+    friend std::ostream& operator<<(std::ostream& os, const self_type& itr)
     {
         return os;
     }
@@ -253,9 +267,9 @@ public:
     /// Postfix increment
     __host__ __device__ __forceinline__ self_type operator++(int)
     {
-        self_type i = *this;
+        self_type retval = *this;
         val++;
-        return i;
+        return retval;
     }
 
     /// Indirection
@@ -272,12 +286,28 @@ public:
         return retval;
     }
 
+    /// Addition assignment
+    template <typename Distance>
+    __host__ __device__ __forceinline__ self_type& operator+=(Distance n)
+    {
+        val += n;
+        return *this;
+    }
+
     /// Subtraction
     template <typename Distance>
     __host__ __device__ __forceinline__ self_type operator-(Distance n)
     {
         self_type retval(val - n);
         return retval;
+    }
+
+    /// Subtraction assignment
+    template <typename Distance>
+    __host__ __device__ __forceinline__ self_type& operator-=(Distance n)
+    {
+        val -= n;
+        return *this;
     }
 
     /// Array subscript
@@ -306,7 +336,7 @@ public:
     }
 
     /// ostream operator
-    friend std::ostream& operator<<(std::ostream& os, const ConstantIteratorRA& itr)
+    friend std::ostream& operator<<(std::ostream& os, const self_type& itr)
     {
         return os;
     }
@@ -358,9 +388,9 @@ public:
     /// Postfix increment
     __host__ __device__ __forceinline__ self_type operator++(int)
     {
-        self_type i = *this;
+        self_type retval = *this;
         ptr++;
-        return i;
+        return retval;
     }
 
     /// Indirection
@@ -377,12 +407,28 @@ public:
         return retval;
     }
 
+    /// Addition assignment
+    template <typename Distance>
+    __host__ __device__ __forceinline__ self_type& operator+=(Distance n)
+    {
+        ptr += n;
+        return *this;
+    }
+
     /// Subtraction
     template <typename Distance>
     __host__ __device__ __forceinline__ self_type operator-(Distance n)
     {
         self_type retval(ptr - n);
         return retval;
+    }
+
+    /// Subtraction assignment
+    template <typename Distance>
+    __host__ __device__ __forceinline__ self_type& operator-=(Distance n)
+    {
+        ptr -= n;
+        return *this;
     }
 
     /// Array subscript
@@ -411,7 +457,7 @@ public:
     }
 
     /// ostream operator
-    friend std::ostream& operator<<(std::ostream& os, const ConstantIteratorRA& itr)
+    friend std::ostream& operator<<(std::ostream& os, const self_type& itr)
     {
         return os;
     }
@@ -468,9 +514,9 @@ public:
     /// Postfix increment
     __host__ __device__ __forceinline__ self_type operator++(int)
     {
-        self_type i = *this;
+        self_type retval = *this;
         input_itr++;
-        return i;
+        return retval;
     }
 
     /// Indirection
@@ -487,12 +533,28 @@ public:
         return retval;
     }
 
+    /// Addition assignment
+    template <typename Distance>
+    __host__ __device__ __forceinline__ self_type& operator+=(Distance n)
+    {
+        input_itr += n;
+        return *this;
+    }
+
     /// Subtraction
     template <typename Distance>
     __host__ __device__ __forceinline__ self_type operator-(Distance n)
     {
         self_type retval(input_itr - n, conversion_op);
         return retval;
+    }
+
+    /// Subtraction assignment
+    template <typename Distance>
+    __host__ __device__ __forceinline__ self_type& operator-=(Distance n)
+    {
+        input_itr -= n;
+        return *this;
     }
 
     /// Array subscript
@@ -521,7 +583,7 @@ public:
     }
 
     /// ostream operator
-    friend std::ostream& operator<<(std::ostream& os, const ConstantIteratorRA& itr)
+    friend std::ostream& operator<<(std::ostream& os, const self_type& itr)
     {
         return os;
     }
@@ -552,9 +614,9 @@ public:
     // Required iterator traits
     typedef TexIteratorRA                       self_type;              ///< My own type
     typedef difference_type                     difference_type;        ///< Type to express the result of subtracting one iterator from another
-    typedef T                           value_type;             ///< The type of the element the iterator can point to
-    typedef T*                          pointer;                ///< The type of a pointer to an element the iterator can point to
-    typedef T                           reference;              ///< The type of a reference to an element the iterator can point to
+    typedef T                                   value_type;             ///< The type of the element the iterator can point to
+    typedef T*                                  pointer;                ///< The type of a pointer to an element the iterator can point to
+    typedef T                                   reference;              ///< The type of a reference to an element the iterator can point to
     typedef std::random_access_iterator_tag     iterator_category;      ///< The iterator category
 
 private:
@@ -567,7 +629,7 @@ private:
         TEXTURE_MULTIPLE = WordAlignment<T>::TEXTURE_MULTIPLE
     };
 
-    T*          ptr;
+    T*                  ptr;
     size_t              tex_align_offset;
     cudaTextureObject_t tex_obj;
 
@@ -581,10 +643,9 @@ public:
         tex_obj(0)
     {}
 
-
     /// Use this iterator to bind \p ptr with a texture reference
     cudaError_t BindTexture(
-        T       *ptr,                   ///< Native pointer to wrap that is aligned to cudaDeviceProp::textureAlignment
+        T               *ptr,                   ///< Native pointer to wrap that is aligned to cudaDeviceProp::textureAlignment
         size_t          bytes,                  ///< Number of bytes in the range
         size_t          tex_align_offset = 0)   ///< Offset (in items) from \p ptr denoting the position of the iterator
     {
@@ -619,7 +680,6 @@ public:
         }
     }
 
-
     /// Unbind this iterator from its texture reference
     cudaError_t UnbindTexture()
     {
@@ -638,14 +698,13 @@ public:
         }
     }
 
-
     /// Postfix increment
     __host__ __device__ __forceinline__ self_type operator++(int)
     {
-        self_type i = *this;
+        self_type retval = *this;
         ptr++;
         tex_align_offset += TEXTURE_MULTIPLE;
-        return i;
+        return retval;
     }
 
     /// Indirection
@@ -684,6 +743,15 @@ public:
         return retval;
     }
 
+    /// Addition assignment
+    template <typename Distance>
+    __host__ __device__ __forceinline__ self_type& operator+=(Distance n)
+    {
+        ptr += n;
+        tex_align_offset += (n * TEXTURE_MULTIPLE);
+        return *this;
+    }
+
     /// Subtraction
     template <typename Distance>
     __host__ __device__ __forceinline__ self_type operator-(Distance n)
@@ -692,6 +760,15 @@ public:
         retval.ptr = ptr - n;
         retval.tex_align_offset = tex_align_offset - (n * TEXTURE_MULTIPLE);
         return retval;
+    }
+
+    /// Subtraction assignment
+    template <typename Distance>
+    __host__ __device__ __forceinline__ self_type& operator-=(Distance n)
+    {
+        ptr -= n;
+        tex_align_offset -= (n * TEXTURE_MULTIPLE);
+        return *this;
     }
 
     /// Array subscript
@@ -720,7 +797,7 @@ public:
     }
 
     /// ostream operator
-    friend std::ostream& operator<<(std::ostream& os, const ConstantIteratorRA& itr)
+    friend std::ostream& operator<<(std::ostream& os, const self_type& itr)
     {
         return os;
     }
@@ -769,7 +846,7 @@ private:
 public:
 
     /// Constructor
-    TexTransformIteratorRA(
+    __host__ __device__ __forceinline__ TexTransformIteratorRA(
         ConversionOp conversion_op)          ///< Binary transformation functor
     :
         conversion_op(conversion_op)
@@ -784,18 +861,18 @@ public:
         return tex_itr.BindTexture(ptr, bytes, tex_align_offset);
     }
 
-
     /// Unbind this iterator from its texture reference
     cudaError_t UnbindTexture()
     {
         return tex_itr.UnbindTexture();
     }
 
-
     /// Postfix increment
     __host__ __device__ __forceinline__ self_type operator++(int)
     {
-        return tex_itr++;
+        self_type retval = *this;
+        tex_itr++;
+        return retval;
     }
 
     /// Indirection
@@ -813,6 +890,14 @@ public:
         return retval;
     }
 
+    /// Addition assignment
+    template <typename Distance>
+    __host__ __device__ __forceinline__ self_type& operator+=(Distance n)
+    {
+        tex_itr += n;
+        return *this;
+    }
+
     /// Subtraction
     template <typename Distance>
     __host__ __device__ __forceinline__ self_type operator-(Distance n)
@@ -820,6 +905,14 @@ public:
         self_type retval(conversion_op);
         retval.tex_itr = tex_itr - n;
         return retval;
+    }
+
+    /// Subtraction assignment
+    template <typename Distance>
+    __host__ __device__ __forceinline__ self_type& operator-=(Distance n)
+    {
+        tex_itr -= n;
+        return *this;
     }
 
     /// Array subscript
@@ -848,7 +941,7 @@ public:
     }
 
     /// ostream operator
-    friend std::ostream& operator<<(std::ostream& os, const ConstantIteratorRA& itr)
+    friend std::ostream& operator<<(std::ostream& os, const self_type& itr)
     {
         return os;
     }
