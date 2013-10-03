@@ -52,6 +52,17 @@ using namespace cub;
 bool                    g_verbose = false;
 CachingDeviceAllocator  g_allocator(true);
 
+template <typename T>
+struct TransformOp
+{
+    // Increment transform
+    __host__ __device__ __forceinline__ T operator()(const T input)
+    {
+        T addend = 1;
+        return input + addend;
+    }
+};
+
 
 //---------------------------------------------------------------------
 // Test kernels
@@ -65,13 +76,13 @@ template <
     typename T>
 __global__ void Kernel(
     InputIteratorRA     d_in,
-    T                   d_out,
+    T                   *d_out,
     InputIteratorRA     *d_itrs)
 {
     d_out[0] = *d_in;               // Value at offset 0
     d_out[1] = d_in[100];           // Value at offset 100
     d_out[2] = *(d_in + 1000);      // Value at offset 1000
-    d_out[3] = *(&(d_in[10000]));   // Value at offset 10000
+    d_out[3] = *(d_in + 10000);   // Value at offset 10000
 
     d_in++;
     d_out[4] = d_in[0];             // Value at offset 1
@@ -144,8 +155,10 @@ void Test(
  * Test constant iterator
  */
 template <typename T>
-void TestConstant(T base)
+void TestConstant(T base, char *type_string)
 {
+    printf("\nTesting constant iterator on type %s (base: %d)\n", type_string, base);
+
     T h_reference[8] = {base, base, base, base, base, base, base, base};
 
     Test(ConstantIteratorRA<T>(base), h_reference);
@@ -156,8 +169,10 @@ void TestConstant(T base)
  * Test counting iterator
  */
 template <typename T>
-void TestCounting(T base)
+void TestCounting(T base, char *type_string)
 {
+    printf("\nTesting counting iterator on type %s (base: %d) \n", type_string, base);
+
     // Initialize reference data
     T h_reference[8];
     h_reference[0] = base + 0;          // Value at offset 0
@@ -169,7 +184,7 @@ void TestCounting(T base)
     h_reference[6] = base + 11;         // Value at offset 11
     h_reference[7] = base + 0;          // Value at offset 0;
 
-    Test(ConstantIteratorRA<T>(base), h_reference);
+    Test(CountingIteratorRA<T>(base), h_reference);
 }
 
 
@@ -177,11 +192,13 @@ void TestCounting(T base)
  * Test modified iterator
  */
 template <typename T>
-void TestModified()
+void TestModified(char *type_string)
 {
+    printf("\nTesting cache-modified iterator on type %s\n", type_string);
+
     const unsigned int TEST_VALUES = 11000;
 
-    T *h_data = malloc(sizeof(T) * TEST_VALUES);
+    T *h_data = new T[TEST_VALUES];
     for (int i = 0; i < TEST_VALUES; ++i)
     {
         RandomBits(h_data[i]);
@@ -212,6 +229,7 @@ void TestModified()
     Test(CacheModifiedIteratorRA<LOAD_VOLATILE, T>(d_data), h_reference);
 
     // Cleanup
+    if (h_data) delete[] h_data;
     if (d_data) CubDebugExit(g_allocator.DeviceFree(d_data));
 }
 
@@ -220,21 +238,13 @@ void TestModified()
  * Test transform iterator
  */
 template <typename T>
-void TestTransform()
+void TestTransform(char *type_string)
 {
-    struct TransformOp
-    {
-        // Increment transform
-        __host__ __device__ __forceinline__ T operator()(const T input)
-        {
-            T addend = 1;
-            return input + addend;
-        }
-    };
+    printf("\nTesting transform iterator on type %s\n", type_string);
 
     const unsigned int TEST_VALUES = 11000;
 
-    T *h_data = malloc(sizeof(T) * TEST_VALUES);
+    T *h_data = new T[TEST_VALUES];
     for (int i = 0; i < TEST_VALUES; ++i)
     {
         RandomBits(h_data[i]);
@@ -245,7 +255,7 @@ void TestTransform()
     CubDebugExit(g_allocator.DeviceAllocate((void**)&d_data, sizeof(T) * TEST_VALUES));
     CubDebugExit(cudaMemcpy(d_data, h_data, sizeof(T) * TEST_VALUES, cudaMemcpyHostToDevice));
 
-    TransformOp op;
+    TransformOp<T> op;
 
     // Initialize reference data
     T h_reference[8];
@@ -258,9 +268,10 @@ void TestTransform()
     h_reference[6] = op(h_data[11]);         // Value at offset 11
     h_reference[7] = op(h_data[0]);          // Value at offset 0;
 
-    Test(TransformIteratorRA<T, TransformOp, T*>(d_data, op), h_reference);
+    Test(TransformIteratorRA<T, TransformOp<T>, T*>(d_data, op), h_reference);
 
     // Cleanup
+    if (h_data) delete[] h_data;
     if (d_data) CubDebugExit(g_allocator.DeviceFree(d_data));
 }
 
@@ -269,11 +280,13 @@ void TestTransform()
  * Test texture iterator
  */
 template <typename T>
-void TestTexture()
+void TestTexture(char *type_string)
 {
+    printf("\nTesting texture iterator on type %s\n", type_string);
+
     const unsigned int TEST_VALUES = 11000;
 
-    T *h_data = malloc(sizeof(T) * TEST_VALUES);
+    T *h_data = new T[TEST_VALUES];
     for (int i = 0; i < TEST_VALUES; ++i)
     {
         RandomBits(h_data[i]);
@@ -303,6 +316,7 @@ void TestTexture()
 
     // Cleanup
     CubDebugExit(d_itr.UnbindTexture());
+    if (h_data) delete[] h_data;
     if (d_data) CubDebugExit(g_allocator.DeviceFree(d_data));
 }
 
@@ -311,21 +325,13 @@ void TestTexture()
  * Test texture transform iterator
  */
 template <typename T>
-void TestTexTransform()
+void TestTexTransform(char *type_string)
 {
-    struct TransformOp
-    {
-        // Increment transform
-        __host__ __device__ __forceinline__ T operator()(const T input)
-        {
-            T addend = 1;
-            return input + addend;
-        }
-    };
+    printf("\nTesting tex-transform iterator on type %s\n", type_string);
 
     const unsigned int TEST_VALUES = 11000;
 
-    T *h_data = malloc(sizeof(T) * TEST_VALUES);
+    T *h_data = new T[TEST_VALUES];
     for (int i = 0; i < TEST_VALUES; ++i)
     {
         RandomBits(h_data[i]);
@@ -336,7 +342,7 @@ void TestTexTransform()
     CubDebugExit(g_allocator.DeviceAllocate((void**)&d_data, sizeof(T) * TEST_VALUES));
     CubDebugExit(cudaMemcpy(d_data, h_data, sizeof(T) * TEST_VALUES, cudaMemcpyHostToDevice));
 
-    TransformOp op;
+    TransformOp<T> op;
 
     // Initialize reference data
     T h_reference[8];
@@ -350,13 +356,14 @@ void TestTexTransform()
     h_reference[7] = op(h_data[0]);          // Value at offset 0;
 
     // Create and bind iterator
-    TexTransformIteratorRA<T, TransformOp, T> d_itr;
+    TexTransformIteratorRA<T, TransformOp<T>, T> d_itr(op);
     CubDebugExit(d_itr.BindTexture(d_data, sizeof(T) * TEST_VALUES));
 
     Test(d_itr, h_reference);
 
     // Cleanup
     CubDebugExit(d_itr.UnbindTexture());
+    if (h_data) delete[] h_data;
     if (d_data) CubDebugExit(g_allocator.DeviceFree(d_data));
 }
 
@@ -366,39 +373,40 @@ void TestTexTransform()
  * Run non-integer tests
  */
 template <typename T>
-void TestInteger(Int2Type<false> is_integer)
+void TestInteger(Int2Type<false> is_integer, char *type_string)
 {
-    TestTransform<T>();
-    TestTexture<T>();
-    TestTexTransform<T>();
+    TestModified<T>(type_string);
+    TestTransform<T>(type_string);
+    TestTexture<T>(type_string);
+    TestTexTransform<T>(type_string);
 }
 
 /**
  * Run integer tests
  */
 template <typename T>
-void TestInteger(Int2Type<true> is_integer)
+void TestInteger(Int2Type<true> is_integer, char *type_string)
 {
-    TestConstant<T>(0);
-    TestConstant<T>(99);
+    TestConstant<T>(0, type_string);
+    TestConstant<T>(99, type_string);
 
-    TestCounting<T>(0);
-    TestCounting<T>(99);
+    TestCounting<T>(0, type_string);
+    TestCounting<T>(99, type_string);
 
     // Run non-integer tests
-    TestInteger<T>(Int2Type<false>());
+    TestInteger<T>(Int2Type<false>(), type_string);
 }
 
 /**
  * Run tests
  */
 template <typename T>
-void Test()
+void Test(char *type_string)
 {
     enum {
         IS_INTEGER = (Traits<T>::CATEGORY == SIGNED_INTEGER) || (Traits<T>::CATEGORY == UNSIGNED_INTEGER)
     };
-    TestInteger<T>(Int2Type<IS_INTEGER>());
+    TestInteger<T>(Int2Type<IS_INTEGER>(), type_string);
 }
 
 
@@ -429,7 +437,7 @@ int main(int argc, char** argv)
     Test<char>();
     Test<short>();
 */
-    Test<int>();
+    Test<int>(CUB_TYPE_STRING(int));
 /*
     Test<long>();
     Test<long long>();

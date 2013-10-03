@@ -115,8 +115,28 @@ __device__ __forceinline__ typename std::iterator_traits<InputIteratorRA>::value
 //@}  end member group
 
 
-
 #ifndef DOXYGEN_SHOULD_SKIP_THIS    // Do not document
+
+
+/// Helper structure for templated load iteration (inductive case)
+template <PtxLoadModifier MODIFIER, int COUNT, int MAX>
+struct IterateThreadLoad
+{
+    template <typename T>
+    static __device__ __forceinline__ void Load(T *ptr, T *vals)
+    {
+        vals[COUNT] = ThreadLoad<MODIFIER>(ptr + COUNT);
+        IterateThreadLoad<MODIFIER, COUNT + 1, MAX>::Load(ptr, vals);
+    }
+};
+
+/// Helper structure for templated load iteration (termination case)
+template <PtxLoadModifier MODIFIER, int MAX>
+struct IterateThreadLoad<MODIFIER, MAX, MAX>
+{
+    template <typename T>
+    static __device__ __forceinline__ void Load(T *ptr, T *vals) {}
+};
 
 
 /**
@@ -244,7 +264,7 @@ __device__ __forceinline__ typename std::iterator_traits<InputIteratorRA>::value
 
 
 /**
- * Define ThreadLoad specializations for the various PTX load modifiers
+ * Define powers-of-two ThreadLoad specializations for the various PTX load modifiers
  */
 #if CUB_PTX_VERSION >= 200
     CUB_LOAD_ALL(LOAD_CA, ca)
@@ -260,30 +280,8 @@ __device__ __forceinline__ typename std::iterator_traits<InputIteratorRA>::value
 #endif
 
 
-/// Helper structure for templated load iteration (inductive case)
-template <PtxLoadModifier MODIFIER, int COUNT, int MAX>
-struct IterateThreadLoad
-{
-    template <typename T>
-    static __device__ __forceinline__ void Load(T *ptr, T *vals)
-    {
-        vals[COUNT] = ThreadLoad<MODIFIER>(ptr + COUNT);
-        IterateThreadLoad<MODIFIER, COUNT + 1, MAX>::Load(ptr, vals);
-    }
-};
-
-/// Helper structure for templated load iteration (termination case)
-template <PtxLoadModifier MODIFIER, int MAX>
-struct IterateThreadLoad<MODIFIER, MAX, MAX>
-{
-    template <typename T>
-    static __device__ __forceinline__ void Load(T *ptr, T *vals) {}
-};
-
-
-
 /**
- * Load with LOAD_DEFAULT on iterator types
+ * ThreadLoad definition for LOAD_DEFAULT modifier on iterator types
  */
 template <typename InputIteratorRA>
 __device__ __forceinline__ typename std::iterator_traits<InputIteratorRA>::value_type ThreadLoad(
@@ -296,7 +294,7 @@ __device__ __forceinline__ typename std::iterator_traits<InputIteratorRA>::value
 
 
 /**
- * Load with LOAD_DEFAULT on pointer types
+ * ThreadLoad definition for LOAD_DEFAULT modifier on pointer types
  */
 template <typename T>
 __device__ __forceinline__ T ThreadLoad(
@@ -309,7 +307,7 @@ __device__ __forceinline__ T ThreadLoad(
 
 
 /**
- * Load with LOAD_VOLATILE on primitive pointer types
+ * ThreadLoad definition for LOAD_VOLATILE modifier on primitive pointer types
  */
 template <typename T>
 __device__ __forceinline__ T ThreadLoadVolatile(
@@ -327,7 +325,7 @@ __device__ __forceinline__ T ThreadLoadVolatile(
 
 
 /**
- * Load with LOAD_VOLATILE on non-primitive pointer types
+ * ThreadLoad definition for LOAD_VOLATILE modifier on non-primitive pointer types
  */
 template <typename T>
 __device__ __forceinline__ T ThreadLoadVolatile(
@@ -349,7 +347,7 @@ __device__ __forceinline__ T ThreadLoadVolatile(
 
 
 /**
- * Load with LOAD_VOLATILE on pointer types
+ * ThreadLoad definition for LOAD_VOLATILE modifier on pointer types
  */
 template <typename T>
 __device__ __forceinline__ T ThreadLoad(
@@ -357,29 +355,49 @@ __device__ __forceinline__ T ThreadLoad(
     Int2Type<LOAD_VOLATILE> modifier,
     Int2Type<true>          is_pointer)
 {
+    // Apply tags for partial-specialization
     return ThreadLoadVolatile(ptr, Int2Type<Traits<T>::PRIMITIVE>());
 }
 
 
 #if (CUB_PTX_VERSION <= 130)
 
-/**
- * Load with LOAD_CG uses LOAD_CV in pre-SM20 PTX to ensure coherent reads when run on newer architectures with L1
- */
-template <typename T>
-__device__ __forceinline__ T ThreadLoad(
-    T                       *ptr,
-    Int2Type<LOAD_CG>       modifier,
-    Int2Type<true>          is_pointer)
-{
-    return ThreadLoad<LOAD_CV>(ptr);
-}
+    /**
+     * ThreadLoad definition for LOAD_CG modifier on pointer types (SM13 and earlier)
+     */
+    template <typename T>
+    __device__ __forceinline__ T ThreadLoad(
+        T                       *ptr,
+        Int2Type<LOAD_CG>       modifier,
+        Int2Type<true>          is_pointer)
+    {
+        // Use LOAD_CV to ensure coherent reads when actually run on newer architectures with L1
+        return ThreadLoad<LOAD_CV>(ptr);
+    }
+
+#endif  // (CUB_PTX_VERSION <= 130)
+
+
+#if (CUB_PTX_VERSION <= 200)
+
+    /**
+     * ThreadLoad definition for LOAD_LDG modifier on pointer types (SM20 and earlier)
+     */
+    template <typename T>
+    __device__ __forceinline__ T ThreadLoad(
+        T                       *ptr,
+        Int2Type<LOAD_LDG>       modifier,
+        Int2Type<true>          is_pointer)
+    {
+        // LOAD_LDG is unavailable.  Use LOAD_DEFAULT.
+        return ThreadLoad<LOAD_DEFAULT>(ptr);
+    }
 
 #endif  // (CUB_PTX_VERSION <= 130)
 
 
 /**
- * Load with arbitrary MODIFIER on pointer types
+ * ThreadLoad definition for generic modifiers on pointer types
  */
 template <typename T, int MODIFIER>
 __device__ __forceinline__ T ThreadLoad(
@@ -387,6 +405,13 @@ __device__ __forceinline__ T ThreadLoad(
     Int2Type<MODIFIER>      modifier,
     Int2Type<true>          is_pointer)
 {
+#if (CUB_PTX_VERSION <= 130)
+
+    // Cache modifiers are unavailable.  Use LOAD_DEFAULT.
+    return ThreadLoad<LOAD_DEFAULT>(ptr);
+
+#else
+
     typedef typename WordAlignment<T>::DeviceWord DeviceWord;
 
     // Memcopy from aliased source into array of uninitialized words
@@ -398,17 +423,20 @@ __device__ __forceinline__ T ThreadLoad(
 
     // Load from words
     return *reinterpret_cast<T*>(words.buf);
+
+#endif  // (CUB_PTX_VERSION <= 130)
 }
 
 
 /**
- * Generic ThreadLoad definition
+ * ThreadLoad definition for generic modifiers
  */
 template <
     PtxLoadModifier MODIFIER,
     typename InputIteratorRA>
 __device__ __forceinline__ typename std::iterator_traits<InputIteratorRA>::value_type ThreadLoad(InputIteratorRA itr)
 {
+    // Apply tags for partial-specialization
     return ThreadLoad(
         itr,
         Int2Type<MODIFIER>(),
