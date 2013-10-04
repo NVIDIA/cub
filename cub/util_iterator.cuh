@@ -58,38 +58,35 @@ namespace cub {
 namespace {
 
 /// Templated texture reference type
-template <typename TextureWord>
-struct TexIteratorRef
+
+template <int UNIQUE_ID>
+struct Foo
 {
-    // Texture reference type
-    typedef texture<TextureWord, cudaTextureType1D, cudaReadModeElementType> TexRef;
-
-    static TexRef ref;
-
-    /**
-     * Bind texture
-     */
-    static cudaError_t BindTexture(void *d_in)
+    template <typename TextureWord>
+    struct TexIteratorRef
     {
-        cudaChannelFormatDesc tex_desc = cudaCreateChannelDesc<TextureWord>();
-        if (d_in)
-            return (CubDebug(cudaBindTexture(NULL, ref, d_in, tex_desc)));
+        static texture<TextureWord> ref;
 
-        return cudaSuccess;
-    }
+        static cudaError_t BindTexture(void *d_in)
+        {
+            cudaChannelFormatDesc tex_desc = cudaCreateChannelDesc<TextureWord>();
+            if (d_in)
+                return (CubDebug(cudaBindTexture(NULL, ref, d_in, tex_desc)));
 
-    /**
-     * Unbind textures
-     */
-    static cudaError_t UnbindTexture()
-    {
-        return CubDebug(cudaUnbindTexture(ref));
-    }
+            return cudaSuccess;
+        }
+
+        static cudaError_t UnbindTexture()
+        {
+            return CubDebug(cudaUnbindTexture(ref));
+        }
+    };
 };
 
 // Texture reference definitions
-template <typename Value>
-typename TexIteratorRef<Value>::TexRef TexIteratorRef<Value>::ref = 0;
+template <int UNIQUE_ID>
+template <typename TextureWord>
+texture<TextureWord> Foo<UNIQUE_ID>::TexIteratorRef<TextureWord>::ref = 0;
 
 } // Anonymous namespace
 
@@ -605,8 +602,9 @@ public:
  * \tparam difference_type      The difference type of this iterator (Default: \p ptrdiff_t)
  */
 template <
-    typename T,
-    typename difference_type = ptrdiff_t>
+    typename    T,
+    int         UNIQUE_ID,
+    typename    difference_type = ptrdiff_t>
 class TexIteratorRA
 {
 public:
@@ -623,6 +621,10 @@ private:
 
     // Largest texture word we can use
     typedef typename WordAlignment<T>::TextureWord TextureWord;
+
+    // Texture reference wrapper
+    typedef typename Foo<UNIQUE_ID>::template TexIteratorRef<TextureWord> TexIteratorRef;
+
 
     // Number of texture words per T
     enum {
@@ -676,7 +678,7 @@ public:
         else
         {
             // Use texture reference
-            return TexIteratorRef<TextureWord>::BindTexture(tex_ptr);
+            return TexIteratorRef::BindTexture(tex_ptr);
         }
     }
 
@@ -689,7 +691,7 @@ public:
         if (ptx_version < 300)
         {
             // Use texture reference
-            return TexIteratorRef<TextureWord>::UnbindTexture();
+            return TexIteratorRef::UnbindTexture();
         }
         else
         {
@@ -723,7 +725,7 @@ public:
         #pragma unroll
         for (int i = 0; i < TEXTURE_MULTIPLE; ++i)
 #if (CUB_PTX_VERSION < 300)
-            words.buf[i] = tex1Dfetch(TexIteratorRef<TextureWord>::ref, tex_align_offset + i);
+            words.buf[i] = tex1Dfetch(TexIteratorRef::ref, tex_align_offset + i);
 #else
             words.buf[i] = tex1Dfetch<TextureWord>(tex_obj, tex_align_offset + i);
 #endif
@@ -822,10 +824,11 @@ public:
  * \tparam OutputType           The value type of this iterator
  */
 template <
-    typename ValueType,
-    typename ConversionOp,
-    typename T,
-    typename difference_type = ptrdiff_t>
+    typename    ValueType,
+    typename    ConversionOp,
+    typename    T,
+    int         UNIQUE_ID,
+    typename    difference_type = ptrdiff_t>
 class TexTransformIteratorRA
 {
 public:
@@ -840,7 +843,7 @@ public:
 
 private:
 
-    TexIteratorRA<T, difference_type>   tex_itr;
+    TexIteratorRA<T, UNIQUE_ID, difference_type>   tex_itr;
     ConversionOp                        conversion_op;
 
 public:

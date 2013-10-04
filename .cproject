@@ -7,12 +7,12 @@
 					<externalSetting languages="cdt.managedbuild.tool.gnu.c.compiler.input.cygwin.1945715073"/>
 				</externalSettings>
 				<extensions>
-					<extension id="org.eclipse.cdt.core.Cygwin_PE" point="org.eclipse.cdt.core.BinaryParser"/>
 					<extension id="org.eclipse.cdt.core.GCCErrorParser" point="org.eclipse.cdt.core.ErrorParser"/>
 					<extension id="org.eclipse.cdt.core.GASErrorParser" point="org.eclipse.cdt.core.ErrorParser"/>
 					<extension id="org.eclipse.cdt.core.GLDErrorParser" point="org.eclipse.cdt.core.ErrorParser"/>
 					<extension id="org.eclipse.cdt.core.GmakeErrorParser" point="org.eclipse.cdt.core.ErrorParser"/>
 					<extension id="org.eclipse.cdt.core.CWDLocator" point="org.eclipse.cdt.core.ErrorParser"/>
+					<extension id="org.eclipse.cdt.core.Cygwin_PE" point="org.eclipse.cdt.core.BinaryParser"/>
 				</extensions>
 			</storageModule>
 			<storageModule moduleId="cdtBuildSystem" version="4.0.0">
@@ -36,6 +36,7 @@
 									<listOptionValue builtIn="false" value="__launch_bounds__(a,b)"/>
 									<listOptionValue builtIn="false" value="__CUDACC__"/>
 									<listOptionValue builtIn="false" value="__device_builtin__"/>
+									<listOptionValue builtIn="false" value="__device_builtin_texture_type__"/>
 								</option>
 								<option id="gnu.cpp.compiler.option.include.paths.1669461844" name="Include paths (-I)" superClass="gnu.cpp.compiler.option.include.paths" valueType="includePath">
 									<listOptionValue builtIn="false" value="&quot;${CUDA_PATH}/include&quot;"/>
@@ -52,6 +53,7 @@
 									<listOptionValue builtIn="false" value="__launch_bounds__(a,b)"/>
 									<listOptionValue builtIn="false" value="__CUDACC__"/>
 									<listOptionValue builtIn="false" value="__device_builtin__"/>
+									<listOptionValue builtIn="false" value="__device_builtin_texture_type__"/>
 								</option>
 								<option id="gnu.c.compiler.option.include.paths.1989591164" name="Include paths (-I)" superClass="gnu.c.compiler.option.include.paths" valueType="includePath">
 									<listOptionValue builtIn="false" value="&quot;${CUDA_PATH}/include&quot;"/>
