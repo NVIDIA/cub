@@ -298,8 +298,10 @@ void RandomBits(
     int begin_bit = 0,
     int end_bit = sizeof(K) * 8)
 {
-    const unsigned int NUM_UCHARS = (sizeof(K) + sizeof(unsigned char) - 1) / sizeof(unsigned char);
-    unsigned char key_bits[NUM_UCHARS];
+    const int NUM_BYTES = sizeof(K);
+    const int NUM_BITS = NUM_BYTES * 8;
+
+    unsigned char byte_buff[NUM_BYTES];
 
     if (entropy_reduction == -1)
     {
@@ -308,28 +310,23 @@ void RandomBits(
     }
 
     do {
-        // Generate random bits
-        for (int j = 0; j < NUM_UCHARS; j++)
+        // Generate random byte_buff
+        for (int j = 0; j < NUM_BYTES; j++)
         {
-            unsigned char quarterword = 0xff;
+            const int BYTES_REMAINING = NUM_BYTES - j - 1;
+            unsigned char byte = 0xff;
+
+            byte <<= CUB_MAX(0, begin_bit - (j * 8));
+            byte >>= CUB_MAX(0, NUM_BITS - end_bit - (BYTES_REMAINING * 8));
+
             for (int i = 0; i <= entropy_reduction; i++)
             {
-                quarterword &= (rand() >> 7);
+                byte &= (rand() >> 7);
             }
-            key_bits[j] = quarterword;
+            byte_buff[j] = byte;
         }
 
-        // Mask off unwanted portions
-        int num_bits = end_bit - begin_bit;
-        if ((begin_bit > 0) || (end_bit < sizeof(K) * 8))
-        {
-            unsigned long long base = 0;
-            memcpy(&base, key_bits, sizeof(K));
-            base &= ((1ull << num_bits) - 1) << begin_bit;
-            memcpy(key_bits, &base, sizeof(K));
-        }
-
-        memcpy(&key, key_bits, sizeof(K));
+        memcpy(&key, byte_buff, sizeof(K));
 
     } while (key != key);        // avoids NaNs when generating random floating point numbers
 }
@@ -371,19 +368,21 @@ enum GenMode
  * Initialize value
  */
 template <typename T>
-void InitValue(GenMode gen_mode, T &value, int index = 0)
+__host__ __device__ __forceinline__ void InitValue(GenMode gen_mode, T &value, int index = 0)
 {
     switch (gen_mode)
     {
-    case UNIFORM:
+#ifndef __CUDA_ARCH__
+    case RANDOM:
+         RandomBits(value);
+         break;
+#endif
+     case UNIFORM:
         value = 2;
         break;
     case SEQ_INC:
-        value = index;
-        break;
-    case RANDOM:
     default:
-        RandomBits(value);
+         value = index;
         break;
     }
 }
@@ -413,7 +412,7 @@ void InitValue(GenMode gen_mode, T &value, int index = 0)
         return (a.x != b.x);                                \
     }                                                       \
     /* Test initialization */                               \
-    void InitValue(GenMode gen_mode, T &value, int index = 0)   \
+    __host__ __device__ __forceinline__ void InitValue(GenMode gen_mode, T &value, int index = 0)   \
     {                                                       \
         InitValue(gen_mode, value.x, index);                \
     }                                                       \
@@ -456,7 +455,7 @@ void InitValue(GenMode gen_mode, T &value, int index = 0)
             (a.y != b.y);                                   \
     }                                                       \
     /* Test initialization */                               \
-    void InitValue(GenMode gen_mode, T &value, int index = 0)   \
+    __host__ __device__ __forceinline__ void InitValue(GenMode gen_mode, T &value, int index = 0)   \
     {                                                       \
         InitValue(gen_mode, value.x, index);                \
         InitValue(gen_mode, value.y, index);                \
@@ -505,7 +504,7 @@ void InitValue(GenMode gen_mode, T &value, int index = 0)
             (a.z != b.z);                                   \
     }                                                       \
     /* Test initialization */                               \
-    void InitValue(GenMode gen_mode, T &value, int index = 0)   \
+    __host__ __device__ __forceinline__ void InitValue(GenMode gen_mode, T &value, int index = 0)   \
     {                                                       \
         InitValue(gen_mode, value.x, index);                \
         InitValue(gen_mode, value.y, index);                \
@@ -557,7 +556,7 @@ void InitValue(GenMode gen_mode, T &value, int index = 0)
             (a.w != b.w);                                   \
     }                                                       \
     /* Test initialization */                               \
-    void InitValue(GenMode gen_mode, T &value, int index = 0)   \
+    __host__ __device__ __forceinline__ void InitValue(GenMode gen_mode, T &value, int index = 0)   \
     {                                                       \
         InitValue(gen_mode, value.x, index);                \
         InitValue(gen_mode, value.y, index);                \
@@ -676,7 +675,7 @@ std::ostream& operator<<(std::ostream& os, const TestFoo& val)
 /**
  * TestFoo test initialization
  */
-void InitValue(GenMode gen_mode, TestFoo &value, int index = 0)
+__host__ __device__ __forceinline__ void InitValue(GenMode gen_mode, TestFoo &value, int index = 0)
 {
     InitValue(gen_mode, value.x, index);
     InitValue(gen_mode, value.y, index);
@@ -771,7 +770,7 @@ std::ostream& operator<<(std::ostream& os, const TestBar& val)
 /**
  * TestBar test initialization
  */
-void InitValue(GenMode gen_mode, TestBar &value, int index = 0)
+__host__ __device__ __forceinline__ void InitValue(GenMode gen_mode, TestBar &value, int index = 0)
 {
     InitValue(gen_mode, value.x, index);
     InitValue(gen_mode, value.y, index);

@@ -58,7 +58,8 @@ struct TransformOp
     // Increment transform
     __host__ __device__ __forceinline__ T operator()(const T input)
     {
-        T addend = 1;
+        T addend;
+        InitValue(SEQ_INC, addend, 1);
         return input + addend;
     }
 };
@@ -284,7 +285,9 @@ void TestTexture(char *type_string)
 {
     printf("\nTesting texture iterator on type %s\n", type_string);
 
-    const unsigned int TEST_VALUES = 11000;
+    const unsigned int TEST_VALUES          = 11000;
+    const unsigned int DUMMY_OFFSET         = 500;
+    const unsigned int DUMMY_TEST_VALUES    = TEST_VALUES - DUMMY_OFFSET;
 
     T *h_data = new T[TEST_VALUES];
     for (int i = 0; i < TEST_VALUES; ++i)
@@ -293,9 +296,13 @@ void TestTexture(char *type_string)
     }
 
     // Allocate device arrays
-    T *d_data = NULL;
+    T *d_data   = NULL;
+    T *d_dummy  = NULL;
     CubDebugExit(g_allocator.DeviceAllocate((void**)&d_data, sizeof(T) * TEST_VALUES));
     CubDebugExit(cudaMemcpy(d_data, h_data, sizeof(T) * TEST_VALUES, cudaMemcpyHostToDevice));
+
+    CubDebugExit(g_allocator.DeviceAllocate((void**)&d_dummy, sizeof(T) * DUMMY_TEST_VALUES));
+    CubDebugExit(cudaMemcpy(d_dummy, h_data + DUMMY_OFFSET, sizeof(T) * DUMMY_TEST_VALUES, cudaMemcpyHostToDevice));
 
     // Initialize reference data
     T h_reference[8];
@@ -308,16 +315,22 @@ void TestTexture(char *type_string)
     h_reference[6] = h_data[11];         // Value at offset 11
     h_reference[7] = h_data[0];          // Value at offset 0;
 
-    // Create and bind iterator
-    TexIteratorRA<T> d_itr;
+    // Create and bind test iterator
+    TexIteratorRA<T, __LINE__> d_itr;
     CubDebugExit(d_itr.BindTexture(d_data, sizeof(T) * TEST_VALUES));
-
+/*
+    // Create and bind dummy iterator of same type to check with interferance
+    TexIteratorRA<T, __LINE__> d_dummy_itr;
+    CubDebugExit(d_dummy_itr.BindTexture(d_dummy, sizeof(T) * DUMMY_TEST_VALUES));
+*/
     Test(d_itr, h_reference);
 
     // Cleanup
     CubDebugExit(d_itr.UnbindTexture());
+//  CubDebugExit(d_dummy_itr.UnbindTexture());
     if (h_data) delete[] h_data;
     if (d_data) CubDebugExit(g_allocator.DeviceFree(d_data));
+//    if (d_dummy) CubDebugExit(g_allocator.DeviceFree(d_dummy));
 }
 
 
@@ -356,7 +369,7 @@ void TestTexTransform(char *type_string)
     h_reference[7] = op(h_data[0]);          // Value at offset 0;
 
     // Create and bind iterator
-    TexTransformIteratorRA<T, TransformOp<T>, T> d_itr(op);
+    TexTransformIteratorRA<T, TransformOp<T>, T, __LINE__> d_itr(op);
     CubDebugExit(d_itr.BindTexture(d_data, sizeof(T) * TEST_VALUES));
 
     Test(d_itr, h_reference);
@@ -433,28 +446,26 @@ int main(int argc, char** argv)
     CubDebugExit(args.DeviceInit());
 
     // Evaluate different data types
-/*
-    Test<char>();
-    Test<short>();
-*/
+    Test<char>(CUB_TYPE_STRING(char));
+    Test<short>(CUB_TYPE_STRING(short));
     Test<int>(CUB_TYPE_STRING(int));
-/*
-    Test<long>();
-    Test<long long>();
-    Test<float>();
-    Test<double>();
+    Test<long>(CUB_TYPE_STRING(long));
+    Test<long long>(CUB_TYPE_STRING(long long));
+    Test<float>(CUB_TYPE_STRING(float));
+    Test<double>(CUB_TYPE_STRING(double));
 
-    Test<char2>();
-    Test<short2>();
-    Test<int2>();
-    Test<long2>();
-    Test<longlong2>();
-    Test<float2>();
-    Test<double2>();
+    Test<char2>(CUB_TYPE_STRING(char2));
+    Test<short2>(CUB_TYPE_STRING(short2));
+    Test<int2>(CUB_TYPE_STRING(int2));
+    Test<long2>(CUB_TYPE_STRING(long2));
+    Test<longlong2>(CUB_TYPE_STRING(longlong2));
 
-    Test<TestFoo>();
-    Test<TestBar>();
-*/
+    Test<float2>(CUB_TYPE_STRING(float2));
+    Test<double2>(CUB_TYPE_STRING(double2));
+
+    Test<TestFoo>(CUB_TYPE_STRING(TestFoo));
+    Test<TestBar>(CUB_TYPE_STRING(TestBar));
+
     return 0;
 }
 

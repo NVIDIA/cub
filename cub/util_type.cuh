@@ -174,7 +174,7 @@ struct WordAlignment
 
     /// Biggest texture reference word that T is a whole multiple of and is not larger than the alignment of T
     typedef typename If<(ALIGN_BYTES % 16 == 0),
-        uint4,
+        uint2,
         typename If<(ALIGN_BYTES % 8 == 0),
             uint2,
             ShuffleWord>::Type>::Type           TextureWord;
