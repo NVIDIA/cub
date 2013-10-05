@@ -328,11 +328,11 @@ var searchBox = new SearchBox("searchBox", "search",false,'Search');
 <div class="line"><a name="l00317"></a><span class="lineno">  317</span>&#160;    T                           val,</div>
 <div class="line"><a name="l00318"></a><span class="lineno">  318</span>&#160;    Int2Type&lt;false&gt;             is_primitive)</div>
 <div class="line"><a name="l00319"></a><span class="lineno">  319</span>&#160;{</div>
-<div class="line"><a name="l00320"></a><span class="lineno">  320</span>&#160;    <span class="keyword">typedef</span> <span class="keyword">typename</span> WordAlignment&lt;T&gt;::VolatileWord VolatileWord;   <span class="comment">// Word type for memcopying</span></div>
+<div class="line"><a name="l00320"></a><span class="lineno">  320</span>&#160;    <span class="keyword">typedef</span> <span class="keyword">typename</span> UnitWord&lt;T&gt;::VolatileWord VolatileWord;   <span class="comment">// Word type for memcopying</span></div>
 <div class="line"><a name="l00321"></a><span class="lineno">  321</span>&#160;    <span class="keyword">enum</span> { NUM_WORDS = <span class="keyword">sizeof</span>(T) / <span class="keyword">sizeof</span>(VolatileWord) };</div>
 <div class="line"><a name="l00322"></a><span class="lineno">  322</span>&#160;</div>
 <div class="line"><a name="l00323"></a><span class="lineno">  323</span>&#160;    <span class="comment">// Store into array of uninitialized words</span></div>
-<div class="line"><a name="l00324"></a><span class="lineno">  324</span>&#160;    <span class="keyword">typename</span> WordAlignment&lt;T&gt;::UninitializedVolatileWords words;</div>
+<div class="line"><a name="l00324"></a><span class="lineno">  324</span>&#160;    <span class="keyword">typename</span> UnitWord&lt;T&gt;::UninitializedVolatileWords words;</div>
 <div class="line"><a name="l00325"></a><span class="lineno">  325</span>&#160;    *<span class="keyword">reinterpret_cast&lt;</span>T*<span class="keyword">&gt;</span>(words.buf) = val;</div>
 <div class="line"><a name="l00326"></a><span class="lineno">  326</span>&#160;</div>
 <div class="line"><a name="l00327"></a><span class="lineno">  327</span>&#160;    <span class="comment">// Memcopy words to aliased destination</span></div>
@@ -375,11 +375,11 @@ var searchBox = new SearchBox("searchBox", "search",false,'Search');
 <div class="line"><a name="l00373"></a><span class="lineno">  373</span>&#160;    Int2Type&lt;MODIFIER&gt;          modifier,</div>
 <div class="line"><a name="l00374"></a><span class="lineno">  374</span>&#160;    Int2Type&lt;true&gt;              is_pointer)</div>
 <div class="line"><a name="l00375"></a><span class="lineno">  375</span>&#160;{</div>
-<div class="line"><a name="l00376"></a><span class="lineno">  376</span>&#160;    <span class="keyword">typedef</span> <span class="keyword">typename</span> WordAlignment&lt;T&gt;::DeviceWord DeviceWord;   <span class="comment">// Word type for memcopying</span></div>
+<div class="line"><a name="l00376"></a><span class="lineno">  376</span>&#160;    <span class="keyword">typedef</span> <span class="keyword">typename</span> UnitWord&lt;T&gt;::DeviceWord DeviceWord;   <span class="comment">// Word type for memcopying</span></div>
 <div class="line"><a name="l00377"></a><span class="lineno">  377</span>&#160;    <span class="keyword">enum</span> { NUM_WORDS = <span class="keyword">sizeof</span>(T) / <span class="keyword">sizeof</span>(DeviceWord) };</div>
 <div class="line"><a name="l00378"></a><span class="lineno">  378</span>&#160;</div>
 <div class="line"><a name="l00379"></a><span class="lineno">  379</span>&#160;    <span class="comment">// Store into array of uninitialized words</span></div>
-<div class="line"><a name="l00380"></a><span class="lineno">  380</span>&#160;    <span class="keyword">typename</span> WordAlignment&lt;T&gt;::UninitializedDeviceWords words;</div>
+<div class="line"><a name="l00380"></a><span class="lineno">  380</span>&#160;    <span class="keyword">typename</span> UnitWord&lt;T&gt;::UninitializedDeviceWords words;</div>
 <div class="line"><a name="l00381"></a><span class="lineno">  381</span>&#160;    *<span class="keyword">reinterpret_cast&lt;</span>T*<span class="keyword">&gt;</span>(words.buf) = val;</div>
 <div class="line"><a name="l00382"></a><span class="lineno">  382</span>&#160;</div>
 <div class="line"><a name="l00383"></a><span class="lineno">  383</span>&#160;    <span class="comment">// Memcopy words to aliased destination</span></div>

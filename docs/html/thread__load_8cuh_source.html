@@ -350,11 +350,11 @@ var searchBox = new SearchBox("searchBox", "search",false,'Search');
 <div class="line"><a name="l00334"></a><span class="lineno">  334</span>&#160;    T                       *ptr,</div>
 <div class="line"><a name="l00335"></a><span class="lineno">  335</span>&#160;    Int2Type&lt;false&gt;          is_primitive)</div>
 <div class="line"><a name="l00336"></a><span class="lineno">  336</span>&#160;{</div>
-<div class="line"><a name="l00337"></a><span class="lineno">  337</span>&#160;    <span class="keyword">typedef</span> <span class="keyword">typename</span> WordAlignment&lt;T&gt;::VolatileWord VolatileWord;   <span class="comment">// Word type for memcopying</span></div>
+<div class="line"><a name="l00337"></a><span class="lineno">  337</span>&#160;    <span class="keyword">typedef</span> <span class="keyword">typename</span> UnitWord&lt;T&gt;::VolatileWord VolatileWord;   <span class="comment">// Word type for memcopying</span></div>
 <div class="line"><a name="l00338"></a><span class="lineno">  338</span>&#160;    <span class="keyword">enum</span> { NUM_WORDS = <span class="keyword">sizeof</span>(T) / <span class="keyword">sizeof</span>(VolatileWord) };</div>
 <div class="line"><a name="l00339"></a><span class="lineno">  339</span>&#160;</div>
 <div class="line"><a name="l00340"></a><span class="lineno">  340</span>&#160;    <span class="comment">// Memcopy from aliased source into array of uninitialized words</span></div>
-<div class="line"><a name="l00341"></a><span class="lineno">  341</span>&#160;    <span class="keyword">typename</span> WordAlignment&lt;T&gt;::UninitializedVolatileWords words;</div>
+<div class="line"><a name="l00341"></a><span class="lineno">  341</span>&#160;    <span class="keyword">typename</span> UnitWord&lt;T&gt;::UninitializedVolatileWords words;</div>
 <div class="line"><a name="l00342"></a><span class="lineno">  342</span>&#160;</div>
 <div class="line"><a name="l00343"></a><span class="lineno">  343</span>&#160;<span class="preprocessor">    #pragma unroll</span></div>
 <div class="line"><a name="l00344"></a><span class="lineno">  344</span>&#160;<span class="preprocessor"></span>    <span class="keywordflow">for</span> (<span class="keywordtype">int</span> i = 0; i &lt; NUM_WORDS; ++i)</div>
@@ -395,11 +395,11 @@ var searchBox = new SearchBox("searchBox", "search",false,'Search');
 <div class="line"><a name="l00388"></a><span class="lineno">  388</span>&#160;    Int2Type&lt;MODIFIER&gt;      modifier,</div>
 <div class="line"><a name="l00389"></a><span class="lineno">  389</span>&#160;    Int2Type&lt;true&gt;          is_pointer)</div>
 <div class="line"><a name="l00390"></a><span class="lineno">  390</span>&#160;{</div>
-<div class="line"><a name="l00391"></a><span class="lineno">  391</span>&#160;    <span class="keyword">typedef</span> <span class="keyword">typename</span> WordAlignment&lt;T&gt;::DeviceWord DeviceWord;</div>
+<div class="line"><a name="l00391"></a><span class="lineno">  391</span>&#160;    <span class="keyword">typedef</span> <span class="keyword">typename</span> UnitWord&lt;T&gt;::DeviceWord DeviceWord;</div>
 <div class="line"><a name="l00392"></a><span class="lineno">  392</span>&#160;    <span class="keyword">enum</span> { NUM_WORDS = <span class="keyword">sizeof</span>(T) / <span class="keyword">sizeof</span>(DeviceWord) };</div>
 <div class="line"><a name="l00393"></a><span class="lineno">  393</span>&#160;</div>
 <div class="line"><a name="l00394"></a><span class="lineno">  394</span>&#160;    <span class="comment">// Memcopy from aliased source into array of uninitialized words</span></div>
-<div class="line"><a name="l00395"></a><span class="lineno">  395</span>&#160;    <span class="keyword">typename</span> WordAlignment&lt;T&gt;::UninitializedDeviceWords words;</div>
+<div class="line"><a name="l00395"></a><span class="lineno">  395</span>&#160;    <span class="keyword">typename</span> UnitWord&lt;T&gt;::UninitializedDeviceWords words;</div>
 <div class="line"><a name="l00396"></a><span class="lineno">  396</span>&#160;</div>
 <div class="line"><a name="l00397"></a><span class="lineno">  397</span>&#160;    IterateThreadLoad&lt;PtxLoadModifier(MODIFIER), 0, NUM_WORDS&gt;::Load(</div>
 <div class="line"><a name="l00398"></a><span class="lineno">  398</span>&#160;        <span class="keyword">reinterpret_cast&lt;</span>DeviceWord*<span class="keyword">&gt;</span>(ptr),</div>

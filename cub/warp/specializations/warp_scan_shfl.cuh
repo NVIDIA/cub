@@ -102,7 +102,7 @@ struct WarpScanShfl
         T               input,              ///< [in] The value to broadcast
         int             src_lane)           ///< [in] Which warp lane is to do the broadcasting
     {
-        typedef typename WordAlignment<T>::ShuffleWord ShuffleWord;
+        typedef typename UnitWord<T>::ShuffleWord ShuffleWord;
 
         const int       WORDS           = (sizeof(T) + sizeof(ShuffleWord) - 1) / sizeof(ShuffleWord);
         T               output;
