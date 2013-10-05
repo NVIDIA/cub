@@ -244,7 +244,7 @@ struct WarpReduceShfl
         int             folded_items_per_warp,  ///< [in] Total number of valid items folded into each logical warp
         ReductionOp     reduction_op)           ///< [in] Binary reduction operator
     {
-        typedef typename WordAlignment<T>::ShuffleWord ShuffleWord;
+        typedef typename UnitWord<T>::ShuffleWord ShuffleWord;
 
         const int       WORDS           = (sizeof(T) + sizeof(ShuffleWord) - 1) / sizeof(ShuffleWord);
         T               output          = input;
@@ -296,7 +296,7 @@ struct WarpReduceShfl
         Flag            flag,               ///< [in] Whether or not the current lane is a segment head/tail
         ReductionOp     reduction_op)       ///< [in] Binary reduction operator
     {
-        typedef typename WordAlignment<T>::ShuffleWord ShuffleWord;
+        typedef typename UnitWord<T>::ShuffleWord ShuffleWord;
 
         T output = input;
 

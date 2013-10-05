@@ -36,6 +36,7 @@
 #include <iostream>
 #include <limits>
 
+#include "util_macro.cuh"
 #include "util_namespace.cuh"
 
 /// Optional outer namespace(s)
@@ -140,8 +141,9 @@ struct Int2Type
 
 #ifndef DOXYGEN_SHOULD_SKIP_THIS    // Do not document
 
+/// Structure alignment
 template <typename T>
-struct WordAlignment
+struct AlignBytes
 {
     struct Pad
     {
@@ -154,30 +156,82 @@ struct WordAlignment
         /// The alignment of T in bytes
         ALIGN_BYTES = sizeof(Pad) - sizeof(T)
     };
+};
+
+// Specializations where host C++ compilers (e.g., Windows) may disagree with device C++ compilers (EDG)
+
+template <> struct AlignBytes<short4>               { enum { ALIGN_BYTES = 8 }; };
+template <> struct AlignBytes<ushort4>              { enum { ALIGN_BYTES = 8 }; };
+template <> struct AlignBytes<int2>                 { enum { ALIGN_BYTES = 8 }; };
+template <> struct AlignBytes<uint2>                { enum { ALIGN_BYTES = 8 }; };
+#ifdef _WIN32
+    template <> struct AlignBytes<long2>            { enum { ALIGN_BYTES = 8 }; };
+    template <> struct AlignBytes<ulong2>           { enum { ALIGN_BYTES = 8 }; };
+#endif
+template <> struct AlignBytes<long long>            { enum { ALIGN_BYTES = 8 }; };
+template <> struct AlignBytes<unsigned long long>   { enum { ALIGN_BYTES = 8 }; };
+template <> struct AlignBytes<float2>               { enum { ALIGN_BYTES = 8 }; };
+template <> struct AlignBytes<double>               { enum { ALIGN_BYTES = 8 }; };
+
+template <> struct AlignBytes<int4>                 { enum { ALIGN_BYTES = 16 }; };
+template <> struct AlignBytes<uint4>                { enum { ALIGN_BYTES = 16 }; };
+template <> struct AlignBytes<float4>               { enum { ALIGN_BYTES = 16 }; };
+#ifndef _WIN32
+    template <> struct AlignBytes<long2>            { enum { ALIGN_BYTES = 16 }; };
+    template <> struct AlignBytes<ulong2>           { enum { ALIGN_BYTES = 16 }; };
+#endif
+template <> struct AlignBytes<long4>                { enum { ALIGN_BYTES = 16 }; };
+template <> struct AlignBytes<ulong4>               { enum { ALIGN_BYTES = 16 }; };
+template <> struct AlignBytes<longlong2>            { enum { ALIGN_BYTES = 16 }; };
+template <> struct AlignBytes<ulonglong2>           { enum { ALIGN_BYTES = 16 }; };
+template <> struct AlignBytes<double2>              { enum { ALIGN_BYTES = 16 }; };
+template <> struct AlignBytes<longlong4>            { enum { ALIGN_BYTES = 16 }; };
+template <> struct AlignBytes<ulonglong4>           { enum { ALIGN_BYTES = 16 }; };
+template <> struct AlignBytes<double4>              { enum { ALIGN_BYTES = 16 }; };
+
+
+/// Unit-words of data movement
+template <typename T>
+struct UnitWord
+{
+    enum {
+        ALIGN_BYTES = AlignBytes<T>::ALIGN_BYTES
+    };
+
+    template <typename Unit>
+    struct IsMultiple
+    {
+        enum {
+            UNIT_ALIGN_BYTES    = AlignBytes<Unit>::ALIGN_BYTES,
+            IS_MULTIPLE         = (sizeof(T) % sizeof(Unit) == 0) && (ALIGN_BYTES % UNIT_ALIGN_BYTES == 0)
+        };
+    };
 
     /// Biggest shuffle word that T is a whole multiple of and is not larger than the alignment of T
-    typedef typename If<(ALIGN_BYTES % 4 == 0),
+    typedef typename If<IsMultiple<int>::IS_MULTIPLE,
         int,
-        typename If<(ALIGN_BYTES % 2 == 0),
+        typename If<IsMultiple<short>::IS_MULTIPLE,
             short,
             char>::Type>::Type                  ShuffleWord;
 
     /// Biggest volatile word that T is a whole multiple of and is not larger than the alignment of T
-    typedef typename If<(ALIGN_BYTES % 8 == 0),
+    typedef typename If<IsMultiple<long long>::IS_MULTIPLE,
         long long,
         ShuffleWord>::Type                      VolatileWord;
 
     /// Biggest memory-access word that T is a whole multiple of and is not larger than the alignment of T
-    typedef typename If<(ALIGN_BYTES % 16 == 0),
+    typedef typename If<IsMultiple<longlong2>::IS_MULTIPLE,
         longlong2,
         VolatileWord>::Type                     DeviceWord;
 
     /// Biggest texture reference word that T is a whole multiple of and is not larger than the alignment of T
-    typedef typename If<(ALIGN_BYTES % 16 == 0),
-        uint2,
-        typename If<(ALIGN_BYTES % 8 == 0),
-            uint2,
+    typedef typename If<IsMultiple<int4>::IS_MULTIPLE,
+        int4,
+        typename If<IsMultiple<int2>::IS_MULTIPLE,
+            int2,
             ShuffleWord>::Type>::Type           TextureWord;
+
+    typedef int4 Baz;
 
     enum
     {
@@ -230,7 +284,7 @@ template <typename T>
 struct Uninitialized
 {
     /// Biggest memory-access word that T is a whole multiple of and is not larger than the alignment of T
-    typedef typename WordAlignment<T>::DeviceWord DeviceWord;
+    typedef typename UnitWord<T>::DeviceWord DeviceWord;
 
     enum
     {
