@@ -241,32 +241,6 @@ struct UnitWord
         DEVICE_MULTIPLE     = sizeof(T) / sizeof(DeviceWord),
         TEXTURE_MULTIPLE    = sizeof(T) / sizeof(TextureWord),
     };
-
-    struct UninitializedBytes
-    {
-        char buf[BYTE_MULTIPLE];
-    };
-
-    struct UninitializedShuffleWords
-    {
-        ShuffleWord buf[SHUFFLE_MULTIPLE];
-    };
-
-    struct UninitializedVolatileWords
-    {
-        VolatileWord buf[VOLATILE_MULTIPLE];
-    };
-
-    struct UninitializedDeviceWords
-    {
-        DeviceWord buf[DEVICE_MULTIPLE];
-    };
-
-    struct UninitializedTextureWords
-    {
-        TextureWord buf[TEXTURE_MULTIPLE];
-    };
-
 };
 
 
