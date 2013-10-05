@@ -318,19 +318,19 @@ void TestTexture(char *type_string)
     // Create and bind test iterator
     TexIteratorRA<T, __LINE__> d_itr;
     CubDebugExit(d_itr.BindTexture(d_data, sizeof(T) * TEST_VALUES));
-/*
+
     // Create and bind dummy iterator of same type to check with interferance
     TexIteratorRA<T, __LINE__> d_dummy_itr;
     CubDebugExit(d_dummy_itr.BindTexture(d_dummy, sizeof(T) * DUMMY_TEST_VALUES));
-*/
+
     Test(d_itr, h_reference);
 
     // Cleanup
     CubDebugExit(d_itr.UnbindTexture());
-//  CubDebugExit(d_dummy_itr.UnbindTexture());
+    CubDebugExit(d_dummy_itr.UnbindTexture());
     if (h_data) delete[] h_data;
     if (d_data) CubDebugExit(g_allocator.DeviceFree(d_data));
-//    if (d_dummy) CubDebugExit(g_allocator.DeviceFree(d_dummy));
+    if (d_dummy) CubDebugExit(g_allocator.DeviceFree(d_dummy));
 }
 
 
@@ -448,7 +448,6 @@ int main(int argc, char** argv)
     // Evaluate different data types
     Test<char>(CUB_TYPE_STRING(char));
     Test<short>(CUB_TYPE_STRING(short));
-    Test<int>(CUB_TYPE_STRING(int));
     Test<long>(CUB_TYPE_STRING(long));
     Test<long long>(CUB_TYPE_STRING(long long));
     Test<float>(CUB_TYPE_STRING(float));
@@ -459,9 +458,24 @@ int main(int argc, char** argv)
     Test<int2>(CUB_TYPE_STRING(int2));
     Test<long2>(CUB_TYPE_STRING(long2));
     Test<longlong2>(CUB_TYPE_STRING(longlong2));
-
     Test<float2>(CUB_TYPE_STRING(float2));
     Test<double2>(CUB_TYPE_STRING(double2));
+
+    Test<char3>(CUB_TYPE_STRING(char3));
+    Test<short3>(CUB_TYPE_STRING(short3));
+    Test<int3>(CUB_TYPE_STRING(int3));
+    Test<long3>(CUB_TYPE_STRING(long3));
+    Test<longlong3>(CUB_TYPE_STRING(longlong3));
+    Test<float3>(CUB_TYPE_STRING(float3));
+    Test<double3>(CUB_TYPE_STRING(double3));
+
+    Test<char4>(CUB_TYPE_STRING(char4));
+    Test<short4>(CUB_TYPE_STRING(short4));
+    Test<int4>(CUB_TYPE_STRING(int4));
+    Test<long4>(CUB_TYPE_STRING(long4));
+    Test<longlong4>(CUB_TYPE_STRING(longlong4));
+    Test<float4>(CUB_TYPE_STRING(float4));
+    Test<double4>(CUB_TYPE_STRING(double4));
 
     Test<TestFoo>(CUB_TYPE_STRING(TestFoo));
     Test<TestBar>(CUB_TYPE_STRING(TestBar));

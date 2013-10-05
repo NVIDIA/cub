@@ -62,23 +62,58 @@ namespace {
 template <int UNIQUE_ID>
 struct Foo
 {
-    template <typename TextureWord>
+    template <typename T>
     struct TexIteratorRef
     {
-        static texture<TextureWord> ref;
+        // Largest texture word we can use in device
+        typedef typename UnitWord<T>::TextureWord TextureWord;
 
+        // Number of texture words per T
+        enum {
+            TEXTURE_MULTIPLE = UnitWord<T>::TEXTURE_MULTIPLE
+        };
+
+        // Texture reference type
+        typedef texture<TextureWord> TexRef;
+
+        // Texture reference
+        static TexRef ref;
+
+        /// Bind texture
         static cudaError_t BindTexture(void *d_in)
         {
-            cudaChannelFormatDesc tex_desc = cudaCreateChannelDesc<TextureWord>();
             if (d_in)
+            {
+                cudaChannelFormatDesc tex_desc = cudaCreateChannelDesc<TextureWord>();
                 return (CubDebug(cudaBindTexture(NULL, ref, d_in, tex_desc)));
+            }
 
             return cudaSuccess;
         }
 
+        /// Unbind texture
         static cudaError_t UnbindTexture()
         {
             return CubDebug(cudaUnbindTexture(ref));
+        }
+
+        /// Fetch element
+        template <typename Distance>
+        static __device__ __forceinline__ T Fetch(Distance offset)
+        {
+            // Move array of uninitialized words, then alias and assign to return value
+            typename UnitWord<T>::UninitializedTextureWords words;
+
+            #pragma unroll
+            for (int i = 0; i < TEXTURE_MULTIPLE; ++i)
+            {
+                words.buf[i] = tex1Dfetch(
+                    ref,
+                    (offset * TEXTURE_MULTIPLE) + i);
+            }
+
+            // Load from words
+            return *reinterpret_cast<T*>(words.buf);
         }
     };
 };
@@ -86,7 +121,7 @@ struct Foo
 // Texture reference definitions
 template <int UNIQUE_ID>
 template <typename TextureWord>
-texture<TextureWord> Foo<UNIQUE_ID>::TexIteratorRef<TextureWord>::ref = 0;
+typename Foo<UNIQUE_ID>::TexIteratorRef<TextureWord>::TexRef Foo<UNIQUE_ID>::TexIteratorRef<TextureWord>::ref = 0;
 
 } // Anonymous namespace
 
@@ -619,20 +654,11 @@ public:
 
 private:
 
-    // Largest texture word we can use
-    typedef typename WordAlignment<T>::TextureWord TextureWord;
-
     // Texture reference wrapper
-    typedef typename Foo<UNIQUE_ID>::template TexIteratorRef<TextureWord> TexIteratorRef;
-
-
-    // Number of texture words per T
-    enum {
-        TEXTURE_MULTIPLE = WordAlignment<T>::TEXTURE_MULTIPLE
-    };
+    typedef typename Foo<UNIQUE_ID>::template TexIteratorRef<T> TexIteratorRef;
 
     T*                  ptr;
-    size_t              tex_align_offset;
+    size_t              tex_offset;
     cudaTextureObject_t tex_obj;
 
 public:
@@ -641,7 +667,7 @@ public:
     __host__ __device__ __forceinline__ TexIteratorRA()
     :
         ptr(NULL),
-        tex_align_offset(0),
+        tex_offset(0),
         tex_obj(0)
     {}
 
@@ -649,37 +675,11 @@ public:
     cudaError_t BindTexture(
         T               *ptr,                   ///< Native pointer to wrap that is aligned to cudaDeviceProp::textureAlignment
         size_t          bytes,                  ///< Number of bytes in the range
-        size_t          tex_align_offset = 0)   ///< Offset (in items) from \p ptr denoting the position of the iterator
+        size_t          tex_offset = 0)   ///< Offset (in items) from \p ptr denoting the position of the iterator
     {
-
         this->ptr = ptr;
-        this->tex_align_offset = tex_align_offset * TEXTURE_MULTIPLE;
-
-        TextureWord *tex_ptr = reinterpret_cast<TextureWord*>(ptr);
-
-        int ptx_version;
-        cudaError_t error = cudaSuccess;
-        if (CubDebug(error = PtxVersion(ptx_version))) return error;
-        if (ptx_version >= 300)
-        {
-            // Use texture object
-            cudaChannelFormatDesc   channel_desc = cudaCreateChannelDesc<TextureWord>();
-            cudaResourceDesc        res_desc;
-            cudaTextureDesc         tex_desc;
-            memset(&res_desc, 0, sizeof(cudaResourceDesc));
-            memset(&tex_desc, 0, sizeof(cudaTextureDesc));
-            res_desc.resType                = cudaResourceTypeLinear;
-            res_desc.res.linear.devPtr      = tex_ptr;
-            res_desc.res.linear.desc        = channel_desc;
-            res_desc.res.linear.sizeInBytes = bytes;
-            tex_desc.readMode               = cudaReadModeElementType;
-            return cudaCreateTextureObject(&tex_obj, &res_desc, &tex_desc, NULL);
-        }
-        else
-        {
-            // Use texture reference
-            return TexIteratorRef::BindTexture(tex_ptr);
-        }
+        this->tex_offset = tex_offset;
+        return TexIteratorRef::BindTexture(ptr);
     }
 
     /// Unbind this iterator from its texture reference
@@ -688,24 +688,14 @@ public:
         int ptx_version;
         cudaError_t error = cudaSuccess;
         if (CubDebug(error = PtxVersion(ptx_version))) return error;
-        if (ptx_version < 300)
-        {
-            // Use texture reference
-            return TexIteratorRef::UnbindTexture();
-        }
-        else
-        {
-            // Use texture object
-            return cudaDestroyTextureObject(tex_obj);
-        }
+        return TexIteratorRef::UnbindTexture();
     }
 
     /// Postfix increment
     __host__ __device__ __forceinline__ self_type operator++(int)
     {
         self_type retval = *this;
-        ptr++;
-        tex_align_offset += TEXTURE_MULTIPLE;
+        tex_offset++;
         return retval;
     }
 
@@ -713,25 +703,10 @@ public:
     __host__ __device__ __forceinline__ reference operator*()
     {
 #if (CUB_PTX_VERSION == 0)
-
         // Simply dereference the pointer on the host
-        return *ptr;
-
+        return ptr[tex_offset];
 #else
-
-        // Move array of uninitialized words, then alias and assign to return value
-        typename WordAlignment<T>::UninitializedTextureWords words;
-
-        #pragma unroll
-        for (int i = 0; i < TEXTURE_MULTIPLE; ++i)
-#if (CUB_PTX_VERSION < 300)
-            words.buf[i] = tex1Dfetch(TexIteratorRef::ref, tex_align_offset + i);
-#else
-            words.buf[i] = tex1Dfetch<TextureWord>(tex_obj, tex_align_offset + i);
-#endif
-
-        // Load from words
-        return *reinterpret_cast<T*>(words.buf);
+        return TexIteratorRef::Fetch(tex_offset);
 #endif
     }
 
@@ -740,8 +715,8 @@ public:
     __host__ __device__ __forceinline__ self_type operator+(Distance n)
     {
         self_type retval;
-        retval.ptr = ptr + n;
-        retval.tex_align_offset = tex_align_offset + (n * TEXTURE_MULTIPLE);
+        retval.ptr = ptr;
+        retval.tex_offset = tex_offset + n;
         return retval;
     }
 
@@ -749,8 +724,7 @@ public:
     template <typename Distance>
     __host__ __device__ __forceinline__ self_type& operator+=(Distance n)
     {
-        ptr += n;
-        tex_align_offset += (n * TEXTURE_MULTIPLE);
+        tex_offset += n;
         return *this;
     }
 
@@ -759,8 +733,8 @@ public:
     __host__ __device__ __forceinline__ self_type operator-(Distance n)
     {
         self_type retval;
-        retval.ptr = ptr - n;
-        retval.tex_align_offset = tex_align_offset - (n * TEXTURE_MULTIPLE);
+        retval.ptr = ptr;
+        retval.tex_offset = tex_offset - n;
         return retval;
     }
 
@@ -768,8 +742,7 @@ public:
     template <typename Distance>
     __host__ __device__ __forceinline__ self_type& operator-=(Distance n)
     {
-        ptr -= n;
-        tex_align_offset -= (n * TEXTURE_MULTIPLE);
+        tex_offset -= n;
         return *this;
     }
 
@@ -789,13 +762,13 @@ public:
     /// Equal to
     __host__ __device__ __forceinline__ bool operator==(const self_type& rhs)
     {
-        return (ptr == rhs.ptr);
+        return ((ptr == rhs.ptr) && (tex_offset == rhs.tex_offset));
     }
 
     /// Not equal to
     __host__ __device__ __forceinline__ bool operator!=(const self_type& rhs)
     {
-        return (ptr != rhs.ptr);
+        return ((ptr != rhs.ptr) || (tex_offset != rhs.tex_offset));
     }
 
     /// ostream operator
@@ -859,9 +832,9 @@ public:
     cudaError_t BindTexture(
         T       *ptr,                   ///< Native pointer to wrap that is aligned to cudaDeviceProp::textureAlignment
         size_t  bytes,                  ///< Number of bytes in the range
-        size_t  tex_align_offset = 0)   ///< Offset (in items) from \p ptr denoting the position of the iterator
+        size_t  tex_offset = 0)   ///< Offset (in items) from \p ptr denoting the position of the iterator
     {
-        return tex_itr.BindTexture(ptr, bytes, tex_align_offset);
+        return tex_itr.BindTexture(ptr, bytes, tex_offset);
     }
 
     /// Unbind this iterator from its texture reference

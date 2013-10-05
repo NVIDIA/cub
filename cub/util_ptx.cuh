@@ -368,7 +368,7 @@ __device__ __forceinline__ T ShuffleUp(
         SHFL_C = 0,
     };
 
-    typedef typename WordAlignment<T>::ShuffleWord ShuffleWord;
+    typedef typename UnitWord<T>::ShuffleWord ShuffleWord;
 
     const int       WORDS           = (sizeof(T) + sizeof(ShuffleWord) - 1) / sizeof(ShuffleWord);
     T               output;
@@ -400,7 +400,7 @@ __device__ __forceinline__ T ShuffleDown(
         SHFL_C = CUB_PTX_WARP_THREADS - 1,
     };
 
-    typedef typename WordAlignment<T>::ShuffleWord ShuffleWord;
+    typedef typename UnitWord<T>::ShuffleWord ShuffleWord;
 
     const int       WORDS           = (sizeof(T) + sizeof(ShuffleWord) - 1) / sizeof(ShuffleWord);
     T               output;
@@ -432,7 +432,7 @@ __device__ __forceinline__ T ShuffleBroadcast(
         SHFL_C = CUB_PTX_WARP_THREADS - 1,
     };
 
-    typedef typename WordAlignment<T>::ShuffleWord ShuffleWord;
+    typedef typename UnitWord<T>::ShuffleWord ShuffleWord;
 
     const int       WORDS           = (sizeof(T) + sizeof(ShuffleWord) - 1) / sizeof(ShuffleWord);
     T               output;
