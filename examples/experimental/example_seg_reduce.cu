@@ -314,10 +314,10 @@ struct BlockSegmentedReduceTiles
         SizeT block_diagonal,
         SizeT next_block_diagonal)
     {
-        // Initialization
+        // Thread block initialization
         if (threadIdx.x < 2)
         {
-            // Select starting/ending diagonal
+            // Select whether to search for starting/ending diagonal
             int diagonal = (threadIdx.x == 0) ?
                 block_diagonal :        // First thread searches for start indices
                 next_block_diagonal;    // Second thread searches for end indices

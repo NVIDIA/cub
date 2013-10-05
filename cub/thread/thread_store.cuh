@@ -319,14 +319,16 @@ __device__ __forceinline__ void ThreadStoreVolatile(
 {
     typedef typename UnitWord<T>::VolatileWord VolatileWord;   // Word type for memcopying
 
+    const int VOLATILE_MULTIPLE = UnitWord<T>::VOLATILE_MULTIPLE;
+
     // Store into array of uninitialized words
-    typename UnitWord<T>::UninitializedVolatileWords words;
-    *reinterpret_cast<T*>(words.buf) = val;
+    VolatileWord words[VOLATILE_MULTIPLE];
+    *reinterpret_cast<T*>(words) = val;
 
     // Memcopy words to aliased destination
     #pragma unroll
-    for (int i = 0; i < UnitWord<T>::VOLATILE_MULTIPLE; ++i)
-        reinterpret_cast<volatile VolatileWord*>(ptr)[i] = words.buf[i];
+    for (int i = 0; i < VOLATILE_MULTIPLE; ++i)
+        reinterpret_cast<volatile VolatileWord*>(ptr)[i] = words[i];
 }
 
 
@@ -374,14 +376,17 @@ __device__ __forceinline__ void ThreadStore(
 {
     typedef typename UnitWord<T>::DeviceWord DeviceWord;   // Word type for memcopying
 
+    const int DEVICE_MULTIPLE = UnitWord<T>::DEVICE_MULTIPLE;
+
     // Store into array of uninitialized words
-    typename UnitWord<T>::UninitializedDeviceWords words;
-    *reinterpret_cast<T*>(words.buf) = val;
+    DeviceWord words[DEVICE_MULTIPLE];
+
+    *reinterpret_cast<T*>(words) = val;
 
     // Memcopy words to aliased destination
-    IterateThreadStore<PtxStoreModifier(MODIFIER), 0, UnitWord<T>::DEVICE_MULTIPLE>::Store(
+    IterateThreadStore<PtxStoreModifier(MODIFIER), 0, DEVICE_MULTIPLE>::Store(
         reinterpret_cast<DeviceWord*>(ptr),
-        words.buf);
+        words);
 }
 
 
