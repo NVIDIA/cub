@@ -334,15 +334,17 @@ __device__ __forceinline__ T ThreadLoadVolatile(
 {
     typedef typename UnitWord<T>::VolatileWord VolatileWord;   // Word type for memcopying
 
+    const int VOLATILE_MULTIPLE = UnitWord<T>::VOLATILE_MULTIPLE;
+
     // Memcopy from aliased source into array of uninitialized words
-    typename UnitWord<T>::UninitializedVolatileWords words;
+    VolatileWord words[VOLATILE_MULTIPLE];
 
     #pragma unroll
-    for (int i = 0; i < UnitWord<T>::VOLATILE_MULTIPLE; ++i)
-        words.buf[i] = reinterpret_cast<volatile VolatileWord*>(ptr)[i];
+    for (int i = 0; i < VOLATILE_MULTIPLE; ++i)
+        words[i] = reinterpret_cast<volatile VolatileWord*>(ptr)[i];
 
     // Load from words
-    return *reinterpret_cast<T*>(words.buf);
+    return *reinterpret_cast<T*>(words);
 }
 
 
@@ -414,15 +416,17 @@ __device__ __forceinline__ T ThreadLoad(
 
     typedef typename UnitWord<T>::DeviceWord DeviceWord;
 
-    // Memcopy from aliased source into array of uninitialized words
-    typename UnitWord<T>::UninitializedDeviceWords words;
+    const int DEVICE_MULTIPLE = UnitWord<T>::DEVICE_MULTIPLE;
 
-    IterateThreadLoad<PtxLoadModifier(MODIFIER), 0, UnitWord<T>::DEVICE_MULTIPLE>::Load(
+    // Memcopy from aliased source into array of uninitialized words
+    DeviceWord words[DEVICE_MULTIPLE];
+
+    IterateThreadLoad<PtxLoadModifier(MODIFIER), 0, DEVICE_MULTIPLE>::Load(
         reinterpret_cast<DeviceWord*>(ptr),
-        words.buf);
+        words);
 
     // Load from words
-    return *reinterpret_cast<T*>(words.buf);
+    return *reinterpret_cast<T*>(words);
 
 #endif  // (CUB_PTX_VERSION <= 130)
 }

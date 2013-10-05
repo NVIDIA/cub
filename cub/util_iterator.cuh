@@ -57,13 +57,13 @@ namespace cub {
 // Anonymous namespace
 namespace {
 
-/// Templated texture reference type
-
-template <int UNIQUE_ID>
-struct Foo
+/// Global texture reference specialized by type
+template <typename T>
+struct IteratorTexRef
 {
-    template <typename T>
-    struct TexIteratorRef
+    /// And by unique ID
+    template <int UNIQUE_ID>
+    struct Id
     {
         // Largest texture word we can use in device
         typedef typename UnitWord<T>::TextureWord TextureWord;
@@ -102,26 +102,26 @@ struct Foo
         static __device__ __forceinline__ T Fetch(Distance offset)
         {
             // Move array of uninitialized words, then alias and assign to return value
-            typename UnitWord<T>::UninitializedTextureWords words;
+            TextureWord words[TEXTURE_MULTIPLE];;
 
             #pragma unroll
             for (int i = 0; i < TEXTURE_MULTIPLE; ++i)
             {
-                words.buf[i] = tex1Dfetch(
+                words[i] = tex1Dfetch(
                     ref,
                     (offset * TEXTURE_MULTIPLE) + i);
             }
 
             // Load from words
-            return *reinterpret_cast<T*>(words.buf);
+            return *reinterpret_cast<T*>(words);
         }
     };
 };
 
 // Texture reference definitions
-template <int UNIQUE_ID>
-template <typename TextureWord>
-typename Foo<UNIQUE_ID>::TexIteratorRef<TextureWord>::TexRef Foo<UNIQUE_ID>::TexIteratorRef<TextureWord>::ref = 0;
+template <typename  TextureWord>
+template <int       UNIQUE_ID>
+typename IteratorTexRef<TextureWord>::Id<UNIQUE_ID>::TexRef IteratorTexRef<TextureWord>::Id<UNIQUE_ID>::ref = 0;
 
 } // Anonymous namespace
 
@@ -655,7 +655,7 @@ public:
 private:
 
     // Texture reference wrapper
-    typedef typename Foo<UNIQUE_ID>::template TexIteratorRef<T> TexIteratorRef;
+    typedef typename IteratorTexRef<T>::template Id<UNIQUE_ID> Id;
 
     T*                  ptr;
     size_t              tex_offset;
@@ -679,7 +679,7 @@ public:
     {
         this->ptr = ptr;
         this->tex_offset = tex_offset;
-        return TexIteratorRef::BindTexture(ptr);
+        return Id::BindTexture(ptr);
     }
 
     /// Unbind this iterator from its texture reference
@@ -688,7 +688,7 @@ public:
         int ptx_version;
         cudaError_t error = cudaSuccess;
         if (CubDebug(error = PtxVersion(ptx_version))) return error;
-        return TexIteratorRef::UnbindTexture();
+        return Id::UnbindTexture();
     }
 
     /// Postfix increment
@@ -706,7 +706,7 @@ public:
         // Simply dereference the pointer on the host
         return ptr[tex_offset];
 #else
-        return TexIteratorRef::Fetch(tex_offset);
+        return Id::Fetch(tex_offset);
 #endif
     }
 
