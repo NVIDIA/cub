@@ -37,6 +37,7 @@
 #include "../../thread/thread_load.cuh"
 #include "../../block/block_load.cuh"
 #include "../../util_type.cuh"
+#include "../../util_iterator.cuh"
 #include "../../util_namespace.cuh"
 
 /// Optional outer namespace(s)
@@ -142,6 +143,8 @@ struct BlockRadixSortUpsweepTiles
     };
 
 
+    // Input iterator wrapper types
+    typedef CacheModifiedInputIterator<LOAD_MODIFIER, UnsignedBits, SizeT>  KeysItr;
 
     /**
      * Shared memory storage layout
@@ -172,7 +175,7 @@ struct BlockRadixSortUpsweepTiles
     SizeT           local_counts[LANES_PER_WARP][PACKING_RATIO];
 
     // Input and output device pointers
-    UnsignedBits    *d_keys_in;
+    KeysItr         d_keys_in;
 
     // The least-significant bit position of the current digit to extract
     int             current_bit;
@@ -356,7 +359,7 @@ struct BlockRadixSortUpsweepTiles
         // Tile of keys
         UnsignedBits keys[KEYS_PER_THREAD];
 
-        LoadStriped<LOAD_MODIFIER, BLOCK_THREADS>(threadIdx.x, d_keys_in + block_offset, keys);
+        LoadStriped<BLOCK_THREADS>(threadIdx.x, d_keys_in + block_offset, keys);
 
         // Prevent hoisting
 //        __threadfence_block();
@@ -379,7 +382,7 @@ struct BlockRadixSortUpsweepTiles
         while (block_offset < block_end)
         {
             // Load and bucket key
-            UnsignedBits key = ThreadLoad<LOAD_MODIFIER>(d_keys_in + block_offset);
+            UnsignedBits key = d_keys_in[block_offset];
             Bucket(key);
             block_offset += BLOCK_THREADS;
         }

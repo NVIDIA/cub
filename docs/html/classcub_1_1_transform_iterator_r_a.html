@@ -5,7 +5,7 @@
 <meta http-equiv="Content-Type" content="text/xhtml;charset=UTF-8"/>
 <meta http-equiv="X-UA-Compatible" content="IE=9"/>
 <meta name="generator" content="Doxygen 1.8.4"/>
-<title>CUB: cub::TransformIteratorRA&lt; OutputType, ConversionOp, InputType &gt; Class Template Reference</title>
+<title>CUB: cub::TransformInputIterator&lt; OutputType, ConversionOp, InputType &gt; Class Template Reference</title>
 <link href="tabs.css" rel="stylesheet" type="text/css"/>
 <script type="text/javascript" src="jquery.js"></script>
 <script type="text/javascript" src="dynsections.js"></script>
@@ -92,7 +92,7 @@ var searchBox = new SearchBox("searchBox", "search",false,'Search');
 
 <div id="nav-path" class="navpath">
   <ul>
-<li class="navelem"><a class="el" href="namespacecub.html">cub</a></li><li class="navelem"><a class="el" href="classcub_1_1_transform_iterator_r_a.html">TransformIteratorRA</a></li>  </ul>
+<li class="navelem"><a class="el" href="namespacecub.html">cub</a></li><li class="navelem"><a class="el" href="classcub_1_1_transform_iterator_r_a.html">TransformInputIterator</a></li>  </ul>
 </div>
 </div><!-- top -->
 <div class="header">
@@ -100,7 +100,7 @@ var searchBox = new SearchBox("searchBox", "search",false,'Search');
 <a href="#pub-methods">Public Methods</a> &#124;
 <a href="classcub_1_1_transform_iterator_r_a-members.html">List of all members</a>  </div>
   <div class="headertitle">
-<div class="title">cub::TransformIteratorRA&lt; OutputType, ConversionOp, InputType &gt; Class Template Reference<div class="ingroups"><a class="el" href="group___util_module.html">Generic CUB utilities</a></div></div>  </div>
+<div class="title">cub::TransformInputIterator&lt; OutputType, ConversionOp, InputType &gt; Class Template Reference<div class="ingroups"><a class="el" href="group___util_module.html">Generic CUB utilities</a></div></div>  </div>
 </div><!--header-->
 <div class="contents">
 <a name="details" id="details"></a><h2 class="groupheader">Detailed description</h2>
@@ -108,10 +108,10 @@ var searchBox = new SearchBox("searchBox", "search",false,'Search');
     typename OutputType, 
     typename ConversionOp, 
     typename InputType&gt;<br/>
-class cub::TransformIteratorRA&lt; OutputType, ConversionOp, InputType &gt;</h3>
+class cub::TransformInputIterator&lt; OutputType, ConversionOp, InputType &gt;</h3>
 
 <p>A simple random-access transform iterator for applying a transformation operator. </p>
-<dl class="section user"><dt>Overview</dt><dd><a class="el" href="classcub_1_1_transform_iterator_r_a.html" title="A simple random-access transform iterator for applying a transformation operator. ...">TransformIteratorRA</a> is a random-access iterator that wraps both a native device pointer of type <code>InputType*</code> and a unary conversion functor of type <code>ConversionOp</code>. <code>OutputType</code> references are made by pulling <code>InputType</code> values through the <code>ConversionOp</code> instance.</dd></dl>
+<dl class="section user"><dt>Overview</dt><dd><a class="el" href="classcub_1_1_transform_iterator_r_a.html" title="A simple random-access transform iterator for applying a transformation operator. ...">TransformInputIterator</a> is a random-access iterator that wraps both a native device pointer of type <code>InputType*</code> and a unary conversion functor of type <code>ConversionOp</code>. <code>OutputType</code> references are made by pulling <code>InputType</code> values through the <code>ConversionOp</code> instance.</dd></dl>
 <dl class="tparams"><dt>Template Parameters</dt><dd>
   <table class="tparams">
     <tr><td class="paramname">InputType</td><td>The value type of the pointer being wrapped </td></tr>
@@ -125,7 +125,7 @@ class cub::TransformIteratorRA&lt; OutputType, ConversionOp, InputType &gt;</h3>
 </div><table class="memberdecls">
 <tr class="heading"><td colspan="2"><h2 class="groupheader"><a name="pub-methods"></a>
 Public Methods</h2></td></tr>
-<tr class="memitem:abac05c9208f609ac1b2f1b94241cdcec"><td class="memItemLeft" align="right" valign="top">__host__ __device__ __forceinline__&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classcub_1_1_transform_iterator_r_a.html#abac05c9208f609ac1b2f1b94241cdcec">TransformIteratorRA</a> (InputType *ptr, ConversionOp conversion_op)</td></tr>
+<tr class="memitem:abac05c9208f609ac1b2f1b94241cdcec"><td class="memItemLeft" align="right" valign="top">__host__ __device__ __forceinline__&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classcub_1_1_transform_iterator_r_a.html#abac05c9208f609ac1b2f1b94241cdcec">TransformInputIterator</a> (InputType *ptr, ConversionOp conversion_op)</td></tr>
 <tr class="memdesc:abac05c9208f609ac1b2f1b94241cdcec"><td class="mdescLeft">&#160;</td><td class="mdescRight">Constructor.  <a href="#abac05c9208f609ac1b2f1b94241cdcec">More...</a><br/></td></tr>
 <tr class="separator:abac05c9208f609ac1b2f1b94241cdcec"><td class="memSeparator" colspan="2">&#160;</td></tr>
 </table>
@@ -140,7 +140,7 @@ template&lt;typename OutputType , typename ConversionOp , typename InputType &gt
   <td class="mlabels-left">
       <table class="memname">
         <tr>
-          <td class="memname">__host__ __device__ __forceinline__ <a class="el" href="classcub_1_1_transform_iterator_r_a.html">cub::TransformIteratorRA</a>&lt; OutputType, ConversionOp, InputType &gt;::<a class="el" href="classcub_1_1_transform_iterator_r_a.html">TransformIteratorRA</a> </td>
+          <td class="memname">__host__ __device__ __forceinline__ <a class="el" href="classcub_1_1_transform_iterator_r_a.html">cub::TransformInputIterator</a>&lt; OutputType, ConversionOp, InputType &gt;::<a class="el" href="classcub_1_1_transform_iterator_r_a.html">TransformInputIterator</a> </td>
           <td>(</td>
           <td class="paramtype">InputType *&#160;</td>
           <td class="paramname"><em>ptr</em>, </td>

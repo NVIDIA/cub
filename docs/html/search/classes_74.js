@@ -14,8 +14,8 @@ var searchData=
   ['tempstorage',['TempStorage',['../structcub_1_1_block_scan_1_1_temp_storage.html',1,'cub::BlockScan']]],
   ['tempstorage',['TempStorage',['../structcub_1_1_warp_reduce_1_1_temp_storage.html',1,'cub::WarpReduce']]],
   ['tempstorage',['TempStorage',['../structcub_1_1_block_discontinuity_1_1_temp_storage.html',1,'cub::BlockDiscontinuity']]],
-  ['texiteratorra',['TexIteratorRA',['../classcub_1_1_tex_iterator_r_a.html',1,'cub']]],
-  ['textransformiteratorra',['TexTransformIteratorRA',['../classcub_1_1_tex_transform_iterator_r_a.html',1,'cub']]],
+  ['texiteratorra',['TexInputIterator',['../classcub_1_1_tex_iterator_r_a.html',1,'cub']]],
+  ['textransformiteratorra',['TexTransformInputIterator',['../classcub_1_1_tex_transform_iterator_r_a.html',1,'cub']]],
   ['traits',['Traits',['../structcub_1_1_traits.html',1,'cub']]],
-  ['transformiteratorra',['TransformIteratorRA',['../classcub_1_1_transform_iterator_r_a.html',1,'cub']]]
+  ['transformiteratorra',['TransformInputIterator',['../classcub_1_1_transform_iterator_r_a.html',1,'cub']]]
 ];

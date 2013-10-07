@@ -4,7 +4,7 @@ var searchData=
   ['basetraits_3c_20not_5fa_5fnumber_2c_20false_2c_20false_2c_20removequalifiers_3c_20t_20_3e_3a_3atype_20_3e',['BaseTraits&lt; NOT_A_NUMBER, false, false, RemoveQualifiers&lt; T &gt;::Type &gt;',['../structcub_1_1_base_traits.html',1,'cub']]],
   ['basetraits_3c_20not_5fa_5fnumber_2c_20false_2c_20false_2c_20t_20_3e',['BaseTraits&lt; NOT_A_NUMBER, false, false, T &gt;',['../structcub_1_1_base_traits.html',1,'cub']]],
   ['binaryophasidxparam',['BinaryOpHasIdxParam',['../structcub_1_1_binary_op_has_idx_param.html',1,'cub']]],
-  ['bindtexture',['BindTexture',['../classcub_1_1_tex_iterator_r_a.html#aae5f3547c60cf33d51c65685ea9d131a',1,'cub::TexIteratorRA::BindTexture()'],['../classcub_1_1_tex_transform_iterator_r_a.html#ae354a7954b301d8eb127763eb014dd9c',1,'cub::TexTransformIteratorRA::BindTexture()']]],
+  ['bindtexture',['BindTexture',['../classcub_1_1_tex_iterator_r_a.html#aae5f3547c60cf33d51c65685ea9d131a',1,'cub::TexInputIterator::BindTexture()'],['../classcub_1_1_tex_transform_iterator_r_a.html#ae354a7954b301d8eb127763eb014dd9c',1,'cub::TexTransformInputIterator::BindTexture()']]],
   ['block_5fdiscontinuity_2ecuh',['block_discontinuity.cuh',['../block__discontinuity_8cuh.html',1,'']]],
   ['block_5fexchange_2ecuh',['block_exchange.cuh',['../block__exchange_8cuh.html',1,'']]],
   ['block_5fhisto_5fatomic',['BLOCK_HISTO_ATOMIC',['../namespacecub.html#a845ca81ef9b346ef7429a35d4fdc80d2abfc89fce43fcda396d18a4b2801025aa',1,'cub']]],

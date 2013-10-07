@@ -125,10 +125,10 @@ struct BlockReduceByKeyilesPolicy
  */
 template <
     typename BlockReduceByKeyilesPolicy,   ///< Tuning policy
-    typename KeyInputIteratorRA,            ///< Random-access input iterator type for keys
-    typename KeyOutputIteratorRA,           ///< Random-access output iterator type for keys
-    typename ValueInputIteratorRA,          ///< Random-access input iterator type for values
-    typename ValueOutputIteratorRA,         ///< Random-access output iterator type for values
+    typename KeyInputIterator,            ///< Random-access input iterator type for keys
+    typename KeyOutputIterator,           ///< Random-access output iterator type for keys
+    typename ValueInputIterator,          ///< Random-access input iterator type for values
+    typename ValueOutputIterator,         ///< Random-access output iterator type for values
     typename ReductionOp,                   ///< Reduction functor type
     typename SizeT>                         ///< Offset integer type
 struct BlockReduceByKeyiles
@@ -138,8 +138,8 @@ struct BlockReduceByKeyiles
     //---------------------------------------------------------------------
 
     // Data types of input iterators
-    typedef typename std::iterator_traits<KeyInputIteratorRA>::value_type   Key;    // Key data type
-    typedef typename std::iterator_traits<ValueInputIteratorRA>::value_type Value;  // Value data type
+    typedef typename std::iterator_traits<KeyInputIterator>::value_type   Key;    // Key data type
+    typedef typename std::iterator_traits<ValueInputIterator>::value_type Value;  // Value data type
 
     // Constants
     enum
@@ -152,7 +152,7 @@ struct BlockReduceByKeyiles
 
     // Block load type for keys
     typedef BlockLoad<
-        KeyInputIteratorRA,
+        KeyInputIterator,
         BlockReduceByKeyilesPolicy::BLOCK_THREADS,
         BlockReduceByKeyilesPolicy::ITEMS_PER_THREAD,
         BlockReduceByKeyilesPolicy::LOAD_ALGORITHM,
@@ -161,7 +161,7 @@ struct BlockReduceByKeyiles
 
     // Block load type for values
     typedef BlockLoad<
-        ValueInputIteratorRA,
+        ValueInputIterator,
         BlockReduceByKeyilesPolicy::BLOCK_THREADS,
         BlockReduceByKeyilesPolicy::ITEMS_PER_THREAD,
         BlockReduceByKeyilesPolicy::LOAD_ALGORITHM,
@@ -217,10 +217,10 @@ struct BlockReduceByKeyiles
     //---------------------------------------------------------------------
 
     _TempStorage                &temp_storage;      ///< Reference to temp_storage
-    KeyInputIteratorRA          d_keys_in;          ///< Key input data
-    KeyOutputIteratorRA         d_keys_out;         ///< Key output data
-    ValueInputIteratorRA        d_values_in;        ///< Value input data
-    ValueOutputIteratorRA       d_values_out;       ///< Value output data
+    KeyInputIterator          d_keys_in;          ///< Key input data
+    KeyOutputIterator         d_keys_out;         ///< Key output data
+    ValueInputIterator        d_values_in;        ///< Value input data
+    ValueOutputIterator       d_values_out;       ///< Value output data
     DeviceScanTileDescriptorT         *d_tile_status;     ///< Global list of tile status
     ScanOp                      scan_op;            ///< Binary scan operator
     int                         num_tiles;          ///< Total number of input tiles for the entire problem
@@ -235,10 +235,10 @@ struct BlockReduceByKeyiles
     __device__ __forceinline__
     BlockReduceByKeyiles(
         TempStorage                 &temp_storage,      ///< Reference to temp_storage
-        KeyInputIteratorRA          d_keys_in,          ///< Key input data
-        KeyOutputIteratorRA         d_keys_out,         ///< Key output data
-        ValueInputIteratorRA        d_values_in,        ///< Value input data
-        ValueOutputIteratorRA       d_values_out,       ///< Value output data
+        KeyInputIterator          d_keys_in,          ///< Key input data
+        KeyOutputIterator         d_keys_out,         ///< Key output data
+        ValueInputIterator        d_values_in,        ///< Value input data
+        ValueOutputIterator       d_values_out,       ///< Value output data
         DeviceScanTileDescriptorT       *d_tile_status,     ///< Global list of tile status
         ReductionOp                 reduction_op,       ///< Binary scan operator
         int                         num_tiles,          ///< Total number of input tiles for the entire problem

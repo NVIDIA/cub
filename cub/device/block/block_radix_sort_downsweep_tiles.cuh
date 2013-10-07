@@ -40,6 +40,7 @@
 #include "../../block/block_radix_rank.cuh"
 #include "../../block/block_exchange.cuh"
 #include "../../util_type.cuh"
+#include "../../util_iterator.cuh"
 #include "../../util_namespace.cuh"
 
 /// Optional outer namespace(s)
@@ -168,6 +169,10 @@ struct BlockRadixSortDownsweepTiles
         STORE_TXN_THREADS       = 1 << LOG_STORE_TXN_THREADS,
     };
 
+    // Input iterator wrapper types
+    typedef CacheModifiedInputIterator<LOAD_MODIFIER, UnsignedBits, SizeT>  KeysItr;
+    typedef CacheModifiedInputIterator<LOAD_MODIFIER, Value, SizeT>         ValuesItr;
+
     // BlockRadixRank type
     typedef BlockRadixRank<
         BLOCK_THREADS,
@@ -178,20 +183,18 @@ struct BlockRadixSortDownsweepTiles
 
     // BlockLoad type (keys)
     typedef BlockLoad<
-        UnsignedBits*,
+        KeysItr,
         BLOCK_THREADS,
         ITEMS_PER_THREAD,
         LOAD_ALGORITHM,
-        LOAD_MODIFIER,
         EXCHANGE_TIME_SLICING> BlockLoadKeys;
 
     // BlockLoad type (values)
     typedef BlockLoad<
-        Value*,
+        ValuesItr,
         BLOCK_THREADS,
         ITEMS_PER_THREAD,
         LOAD_ALGORITHM,
-        LOAD_MODIFIER,
         EXCHANGE_TIME_SLICING> BlockLoadValues;
 
     // BlockExchange type (keys)
@@ -240,9 +243,9 @@ struct BlockRadixSortDownsweepTiles
     _TempStorage    &temp_storage;
 
     // Input and output device pointers
-    UnsignedBits    *d_keys_in;
+    KeysItr         d_keys_in;
+    ValuesItr       d_values_in;
     UnsignedBits    *d_keys_out;
-    Value           *d_values_in;
     Value           *d_values_out;
 
     // The global scatter base offset for each digit (valid in the first RADIX_DIGITS threads)
@@ -411,11 +414,11 @@ struct BlockRadixSortDownsweepTiles
     /**
      * Load a tile of items (specialized for full tile)
      */
-    template <typename BlockLoadT, typename T>
+    template <typename BlockLoadT, typename T, typename InputIterator>
     __device__ __forceinline__ void LoadItems(
         BlockLoadT      &block_loader, 
         T               (&items)[ITEMS_PER_THREAD],
-        T               *d_in, 
+        InputIterator   d_in,
         SizeT           valid_items, 
         Int2Type<true>  is_full_tile)
     {
@@ -426,11 +429,11 @@ struct BlockRadixSortDownsweepTiles
     /**
      * Load a tile of items (specialized for partial tile)
      */
-    template <typename BlockLoadT, typename T>
+    template <typename BlockLoadT, typename T, typename InputIterator>
     __device__ __forceinline__ void LoadItems(
         BlockLoadT      &block_loader, 
         T               (&items)[ITEMS_PER_THREAD],
-        T               *d_in, 
+        InputIterator   d_in,
         SizeT           valid_items, 
         Int2Type<false> is_full_tile)
     {
@@ -564,21 +567,23 @@ struct BlockRadixSortDownsweepTiles
     /**
      * Copy tiles within the range of input
      */
-    template <typename T>
+    template <
+        typename InputIterator,
+        typename T>
     __device__ __forceinline__ void Copy(
-        T       *d_in,
-        T       *d_out,
-        SizeT   block_offset,
-        SizeT   block_end)
+        InputIterator   d_in,
+        T               *d_out,
+        SizeT           block_offset,
+        SizeT           block_end)
     {
         // Simply copy the input
         while (block_offset + TILE_ITEMS <= block_end)
         {
             T items[ITEMS_PER_THREAD];
 
-            LoadStriped<LOAD_DEFAULT, BLOCK_THREADS>(threadIdx.x, d_in + block_offset, items);
+            LoadStriped<BLOCK_THREADS>(threadIdx.x, d_in + block_offset, items);
             __syncthreads();
-            StoreStriped<STORE_DEFAULT, BLOCK_THREADS>(threadIdx.x, d_out + block_offset, items);
+            StoreStriped<BLOCK_THREADS>(threadIdx.x, d_out + block_offset, items);
 
             block_offset += TILE_ITEMS;
         }
@@ -590,9 +595,9 @@ struct BlockRadixSortDownsweepTiles
 
             T items[ITEMS_PER_THREAD];
 
-            LoadStriped<LOAD_DEFAULT, BLOCK_THREADS>(threadIdx.x, d_in + block_offset, items, valid_items);
+            LoadStriped<BLOCK_THREADS>(threadIdx.x, d_in + block_offset, items, valid_items);
             __syncthreads();
-            StoreStriped<STORE_DEFAULT, BLOCK_THREADS>(threadIdx.x, d_out + block_offset, items, valid_items);
+            StoreStriped<BLOCK_THREADS>(threadIdx.x, d_out + block_offset, items, valid_items);
         }
     }
 
@@ -600,11 +605,12 @@ struct BlockRadixSortDownsweepTiles
     /**
      * Copy tiles within the range of input (specialized for NullType)
      */
+    template <typename InputIterator>
     __device__ __forceinline__ void Copy(
-        NullType    *d_in,
-        NullType    *d_out,
-        SizeT       block_offset,
-        SizeT       block_end)
+        InputIterator   d_in,
+        NullType        *d_out,
+        SizeT           block_offset,
+        SizeT           block_end)
     {}
 
 

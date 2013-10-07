@@ -71,7 +71,7 @@ CachingDeviceAllocator  g_allocator;
 template <typename SizeT, typename Value>
 struct PartialReduction
 {
-    SizeT   segment_idx;         /// Segment-ID
+    SizeT   segment_idx;        /// Segment-ID
     Value   partial;            /// PartialReduction sum
 };
 
@@ -82,7 +82,7 @@ struct PartialReduction
 template <typename SizeT>
 struct PartialReduction<SizeT, double>
 {
-    long long   segment_idx;     /// Segment-ID
+    long long   segment_idx;    /// Segment-ID
     double      partial;        /// PartialReduction sum
 };
 
@@ -195,9 +195,9 @@ template <
     bool                    CACHE_ITEMS,
     BlockReduceAlgorithm    REDUCE_ALGORITHM,
     BlockScanAlgorithm      SCAN_ALGORITHM,
-    typename                ValueIteratorRA,
-    typename                SegmentOffsetIteratorRA,
-    typename                OutputIteratorRA,
+    typename                ValueIterator,
+    typename                SegmentOffsetIterator,
+    typename                OutputIterator,
     typename                ReductionOp>
 struct BlockSegmentedReduceTiles
 {
@@ -212,10 +212,10 @@ struct BlockSegmentedReduceTiles
     };
 
     // Offset type
-    typedef typename std::iterator_traits<SegmentOffsetIteratorRA>::value_type SizeT;
+    typedef typename std::iterator_traits<SegmentOffsetIterator>::value_type SizeT;
 
     // Value type
-    typedef typename std::iterator_traits<ValueIteratorRA>::value_type Value;
+    typedef typename std::iterator_traits<ValueIterator>::value_type Value;
 
     // Tail flag type
     typedef int TailFlag;
@@ -265,10 +265,10 @@ struct BlockSegmentedReduceTiles
     TempStorage                 &temp_storage;          ///< Reference to temporary storage
     SizeT                       num_values;
     SizeT                       num_segments;
-    ValueIteratorRA             d_values;
-    SegmentOffsetIteratorRA     d_segment_end_offsets;
-    CountingIteratorRA<SizeT>   d_value_offsets;
-    OutputIteratorRA            d_output;
+    ValueIterator             d_values;
+    SegmentOffsetIterator     d_segment_end_offsets;
+    CountingInputIterator<SizeT>   d_value_offsets;
+    OutputIterator            d_output;
     PartialReduction            *d_block_partials;
     Value                       identity;               ///< Identity value (for zero-length segments)
     ReductionOp                 reduction_op;           ///< Reduction operator
@@ -287,9 +287,9 @@ struct BlockSegmentedReduceTiles
         TempStorage             &temp_storage,
         SizeT                   num_values,
         SizeT                   num_segments,
-        ValueIteratorRA         d_values,
-        SegmentOffsetIteratorRA d_segment_end_offsets,
-        OutputIteratorRA        d_output,
+        ValueIterator         d_values,
+        SegmentOffsetIterator d_segment_end_offsets,
+        OutputIterator        d_output,
         PartialReduction        *d_block_partials,
         Value                   identity,
         ReductionOp             reduction_op)
@@ -410,7 +410,7 @@ struct BlockSegmentedReduceTiles
                 d_value_offsets[thread_value_idx] :
                 num_values;                                                         // Out of range
 
-            // Assemble segment head flags and COO tuples
+            // Assemble segment tail flags and COO tuples
             TailFlag            tail_flags[ITEMS_PER_THREAD];
             PartialReduction    partial_reductions[ITEMS_PER_THREAD];
 
@@ -426,9 +426,12 @@ struct BlockSegmentedReduceTiles
                 if (valid_segment && prefer_segment)
                 {
                     // I need to consume this segment
-                    tail_flags[ITEM] = 1;
-                    thread_segment_idx++;
 
+                    // Set tail flag noting the end of the segment
+                    tail_flags[ITEM] = 1;
+
+                    // Increment segment index and read next segment end-offset (if valid)
+                    thread_segment_idx++;
                     if ((valid_segment = (thread_segment_idx < next_thread_segment_idx)))
                         segment_end_offset = d_segment_end_offsets[thread_segment_idx];
                 }
@@ -436,8 +439,9 @@ struct BlockSegmentedReduceTiles
                 {
                     // I need to consume this value
                     partial_reductions[ITEM].partial = d_values[thread_value_idx];
-                    thread_value_idx++;
 
+                    // Increment value index and read next value offset (if valid)
+                    thread_value_idx++;
                     if ((valid_value = (thread_value_idx < next_thread_value_idx)))
                         d_value_offsets[thread_value_idx];
                 }
@@ -496,8 +500,8 @@ template <
     int                 BLOCK_THREADS,
     int                 ITEMS_PER_THREAD,
     BlockScanAlgorithm  SCAN_ALGORITHM,
-    typename            PartialReductionIteratorRA,
-    typename            OutputIteratorRA,
+    typename            PartialReductionIterator,
+    typename            OutputIterator,
     typename            ReductionOp,
     typename            SizeT>
 struct BlockSegmentedReducePartials
@@ -516,10 +520,10 @@ struct BlockSegmentedReducePartials
     typedef int TailFlag;
 
     // Partial reduction type
-    typedef typename std::iterator_traits<PartialReductionIteratorRA>::value_type PartialReduction;
+    typedef typename std::iterator_traits<PartialReductionIterator>::value_type PartialReduction;
 
     // Value type
-    typedef typename std::iterator_traits<OutputIteratorRA>::value_type Value;
+    typedef typename std::iterator_traits<OutputIterator>::value_type Value;
 
     // Stateful prefix op type
     typedef BlockPrefixOp<PartialReduction> PrefixOp;
@@ -546,8 +550,8 @@ struct BlockSegmentedReducePartials
 
     TempStorage                 &temp_storage;
     int                         num_partials;
-    PartialReductionIteratorRA  d_block_partials;
-    OutputIteratorRA            d_output;
+    PartialReductionIterator  d_block_partials;
+    OutputIterator            d_output;
     Value                       identity;               ///< Identity value (for zero-length segments)
     ReductionOp                 reduction_op;           ///< Reduction operator
     PrefixOp                    prefix_op;              ///< Stateful thread block prefix
@@ -564,8 +568,8 @@ struct BlockSegmentedReducePartials
     BlockSegmentedReducePartials(
         TempStorage                 &temp_storage,
         int                         num_partials,
-        PartialReductionIteratorRA  d_block_partials,
-        OutputIteratorRA            d_output,
+        PartialReductionIterator  d_block_partials,
+        OutputIterator            d_output,
         Value                       identity,               ///< Identity value (for zero-length segments)
         ReductionOp                 reduction_op)
     :
@@ -576,10 +580,9 @@ struct BlockSegmentedReducePartials
         identity(identity),
         reduction_op(reduction_op)
     {
-        // Initialize scalar shared memory values
         if (threadIdx.x == 0)
         {
-            // Initialize prefix_op to identity
+            // Initialize running prefix to the first segment index paired with identity
             prefix_op.running_prefix.segment_idx    = d_block_partials[0].segment_idx;
             prefix_op.running_prefix.partial        = identity;
         }
@@ -598,9 +601,9 @@ struct BlockSegmentedReducePartials
         int block_offset,
         int guarded_items = 0)
     {
-        SizeT        rows[ITEMS_PER_THREAD];
-        PartialReduction  partial_sums[ITEMS_PER_THREAD];
-        HeadFlag        head_flags[ITEMS_PER_THREAD];
+        SizeT               rows[ITEMS_PER_THREAD];
+        PartialReduction    partial_sums[ITEMS_PER_THREAD];
+        TailFlag            tail_flags[ITEMS_PER_THREAD];
 
         // Load a tile of block partials from previous kernel
         if (FULL_TILE)
@@ -636,7 +639,7 @@ struct BlockSegmentedReducePartials
         // Flag segment heads by looking for discontinuities
         BlockDiscontinuity(temp_storage.discontinuity).FlagHeads(
             rows,                           // Original segment ids
-            head_flags,                     // (Out) Head flags
+            tail_flags,                     // (Out) Head flags
             NewRowOp(),                     // Functor for detecting start of new rows
             prefix_op.running_prefix.segment);   // Last segment ID from previous tile to compare with first segment ID in this tile
 
@@ -653,7 +656,7 @@ struct BlockSegmentedReducePartials
         #pragma unroll
         for (int ITEM = 0; ITEM < ITEMS_PER_THREAD; ITEM++)
         {
-            if (head_flags[ITEM])
+            if (tail_flags[ITEM])
             {
                 d_result[partial_sums[ITEM].segment] = partial_sums[ITEM].partial;
             }

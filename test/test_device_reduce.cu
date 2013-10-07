@@ -60,7 +60,7 @@ CachingDeviceAllocator  g_allocator(true);
 /**
  * Dispatch to reduce entrypoint
  */
-template <typename InputIteratorRA, typename OutputIteratorRA, typename ReductionOp>
+template <typename InputIterator, typename OutputIterator, typename ReductionOp>
 __host__ __device__ __forceinline__
 cudaError_t Dispatch(
     Int2Type<false>     use_cdp,
@@ -70,8 +70,8 @@ cudaError_t Dispatch(
 
     void                *d_temp_storage,
     size_t              &temp_storage_bytes,
-    InputIteratorRA     d_in,
-    OutputIteratorRA    d_out,
+    InputIterator     d_in,
+    OutputIterator    d_out,
     int                 num_items,
     ReductionOp         reduction_op,
     cudaStream_t        stream,
@@ -95,8 +95,8 @@ cudaError_t Dispatch(
  * Simple wrapper kernel to invoke DeviceReduce
  */
 template <
-    typename            InputIteratorRA,
-    typename            OutputIteratorRA,
+    typename            InputIterator,
+    typename            OutputIterator,
     typename            ReductionOp>
 __global__ void CnpDispatchKernel(
     int                 timing_iterations,
@@ -105,8 +105,8 @@ __global__ void CnpDispatchKernel(
 
     void                *d_temp_storage,
     size_t              temp_storage_bytes,
-    InputIteratorRA     d_in,
-    OutputIteratorRA    d_out,
+    InputIterator     d_in,
+    OutputIterator    d_out,
     int                 num_items,
     ReductionOp         reduction_op,
     bool                stream_synchronous)
@@ -123,7 +123,7 @@ __global__ void CnpDispatchKernel(
 /**
  * Dispatch to CDP kernel
  */
-template <typename InputIteratorRA, typename OutputIteratorRA, typename ReductionOp>
+template <typename InputIterator, typename OutputIterator, typename ReductionOp>
 __host__ __device__ __forceinline__
 cudaError_t Dispatch(
     Int2Type<true>      use_cdp,
@@ -133,8 +133,8 @@ cudaError_t Dispatch(
 
     void                *d_temp_storage,
     size_t              &temp_storage_bytes,
-    InputIteratorRA     d_in,
-    OutputIteratorRA    d_out,
+    InputIterator     d_in,
+    OutputIterator    d_out,
     int                 num_items,
     ReductionOp         reduction_op,
     cudaStream_t        stream,

@@ -73,12 +73,12 @@ struct TransformOp
  * Test random access input iterator
  */
 template <
-    typename InputIteratorRA,
+    typename InputIterator,
     typename T>
 __global__ void Kernel(
-    InputIteratorRA     d_in,
+    InputIterator     d_in,
     T                   *d_out,
-    InputIteratorRA     *d_itrs)
+    InputIterator     *d_itrs)
 {
     d_out[0] = *d_in;               // Value at offset 0
     d_out[1] = d_in[100];           // Value at offset 100
@@ -111,18 +111,18 @@ __global__ void Kernel(
  * Run iterator test on device
  */
 template <
-    typename    InputIteratorRA,
+    typename    InputIterator,
     typename    T,
     int         TEST_VALUES>
 void Test(
-    InputIteratorRA     d_in,
+    InputIterator     d_in,
     T                   (&h_reference)[TEST_VALUES])
 {
     // Allocate device arrays
     T                   *d_out = NULL;
-    InputIteratorRA     *d_itrs = NULL;
+    InputIterator     *d_itrs = NULL;
     CubDebugExit(g_allocator.DeviceAllocate((void**)&d_out, sizeof(T) * TEST_VALUES));
-    CubDebugExit(g_allocator.DeviceAllocate((void**)&d_itrs, sizeof(InputIteratorRA) * 2));
+    CubDebugExit(g_allocator.DeviceAllocate((void**)&d_itrs, sizeof(InputIterator) * 2));
 
     int compare;
 
@@ -136,7 +136,7 @@ void Test(
     AssertEquals(0, compare);
 
     // Check iterator at offset 21
-    InputIteratorRA h_itr = d_in + 21;
+    InputIterator h_itr = d_in + 21;
     compare = CompareDeviceResults(&h_itr, d_itrs, 1, g_verbose, g_verbose);
     printf("\tIterators: %s\n", (compare) ? "FAIL" : "PASS");
     AssertEquals(0, compare);
@@ -162,7 +162,7 @@ void TestConstant(T base, char *type_string)
 
     T h_reference[8] = {base, base, base, base, base, base, base, base};
 
-    Test(ConstantIteratorRA<T>(base), h_reference);
+    Test(ConstantInputIterator<T>(base), h_reference);
 }
 
 
@@ -185,7 +185,7 @@ void TestCounting(T base, char *type_string)
     h_reference[6] = base + 11;         // Value at offset 11
     h_reference[7] = base + 0;          // Value at offset 0;
 
-    Test(CountingIteratorRA<T>(base), h_reference);
+    Test(CountingInputIterator<T>(base), h_reference);
 }
 
 
@@ -221,13 +221,13 @@ void TestModified(char *type_string)
     h_reference[6] = h_data[11];         // Value at offset 11
     h_reference[7] = h_data[0];          // Value at offset 0;
 
-    Test(CacheModifiedIteratorRA<LOAD_DEFAULT, T>(d_data), h_reference);
-    Test(CacheModifiedIteratorRA<LOAD_CA, T>(d_data), h_reference);
-    Test(CacheModifiedIteratorRA<LOAD_CG, T>(d_data), h_reference);
-    Test(CacheModifiedIteratorRA<LOAD_CS, T>(d_data), h_reference);
-    Test(CacheModifiedIteratorRA<LOAD_CV, T>(d_data), h_reference);
-    Test(CacheModifiedIteratorRA<LOAD_LDG, T>(d_data), h_reference);
-    Test(CacheModifiedIteratorRA<LOAD_VOLATILE, T>(d_data), h_reference);
+    Test(CacheModifiedInputIterator<LOAD_DEFAULT, T>(d_data), h_reference);
+    Test(CacheModifiedInputIterator<LOAD_CA, T>(d_data), h_reference);
+    Test(CacheModifiedInputIterator<LOAD_CG, T>(d_data), h_reference);
+    Test(CacheModifiedInputIterator<LOAD_CS, T>(d_data), h_reference);
+    Test(CacheModifiedInputIterator<LOAD_CV, T>(d_data), h_reference);
+    Test(CacheModifiedInputIterator<LOAD_LDG, T>(d_data), h_reference);
+    Test(CacheModifiedInputIterator<LOAD_VOLATILE, T>(d_data), h_reference);
 
     // Cleanup
     if (h_data) delete[] h_data;
@@ -269,7 +269,7 @@ void TestTransform(char *type_string)
     h_reference[6] = op(h_data[11]);         // Value at offset 11
     h_reference[7] = op(h_data[0]);          // Value at offset 0;
 
-    Test(TransformIteratorRA<T, TransformOp<T>, T*>(d_data, op), h_reference);
+    Test(TransformInputIterator<T, TransformOp<T>, T*>(d_data, op), h_reference);
 
     // Cleanup
     if (h_data) delete[] h_data;
@@ -316,11 +316,11 @@ void TestTexture(char *type_string)
     h_reference[7] = h_data[0];          // Value at offset 0;
 
     // Create and bind test iterator
-    TexIteratorRA<T, __LINE__> d_itr;
+    TexInputIterator<T, __LINE__> d_itr;
     CubDebugExit(d_itr.BindTexture(d_data, sizeof(T) * TEST_VALUES));
 
     // Create and bind dummy iterator of same type to check with interferance
-    TexIteratorRA<T, __LINE__> d_dummy_itr;
+    TexInputIterator<T, __LINE__> d_dummy_itr;
     CubDebugExit(d_dummy_itr.BindTexture(d_dummy, sizeof(T) * DUMMY_TEST_VALUES));
 
     Test(d_itr, h_reference);
@@ -369,7 +369,7 @@ void TestTexTransform(char *type_string)
     h_reference[7] = op(h_data[0]);          // Value at offset 0;
 
     // Create and bind iterator
-    TexTransformIteratorRA<T, TransformOp<T>, T, __LINE__> d_itr(op);
+    TexTransformInputIterator<T, TransformOp<T>, T, __LINE__> d_itr(op);
     CubDebugExit(d_itr.BindTexture(d_data, sizeof(T) * TEST_VALUES));
 
     Test(d_itr, h_reference);

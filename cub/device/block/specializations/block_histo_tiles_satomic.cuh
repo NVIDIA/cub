@@ -56,7 +56,7 @@ template <
     int         BINS,                           ///< Number of histogram bins
     int         CHANNELS,                       ///< Number of channels interleaved in the input data (may be greater than the number of active channels being histogrammed)
     int         ACTIVE_CHANNELS,                ///< Number of channels actively being histogrammed
-    typename    InputIteratorRA,                ///< The input iterator type (may be a simple pointer type).  Must have a value type that can be cast as an integer in the range [0..BINS-1]
+    typename    InputIterator,                ///< The input iterator type (may be a simple pointer type).  Must have a value type that can be cast as an integer in the range [0..BINS-1]
     typename    HistoCounter,                   ///< Integral type for counting sample occurrences per histogram bin
     typename    SizeT>                          ///< Integer type for offsets
 struct BlockHistogramTilesSharedAtomic
@@ -66,7 +66,7 @@ struct BlockHistogramTilesSharedAtomic
     //---------------------------------------------------------------------
 
     // Sample type
-    typedef typename std::iterator_traits<InputIteratorRA>::value_type SampleT;
+    typedef typename std::iterator_traits<InputIterator>::value_type SampleT;
 
     // Constants
     enum
@@ -99,7 +99,7 @@ struct BlockHistogramTilesSharedAtomic
     HistoCounter* (&d_out_histograms)[ACTIVE_CHANNELS];
 
     /// Input data to reduce
-    InputIteratorRA d_in;
+    InputIterator d_in;
 
 
     //---------------------------------------------------------------------
@@ -111,7 +111,7 @@ struct BlockHistogramTilesSharedAtomic
      */
     __device__ __forceinline__ BlockHistogramTilesSharedAtomic(
         TempStorage         &temp_storage,                                  ///< Reference to temp_storage
-        InputIteratorRA     d_in,                                           ///< Input data to reduce
+        InputIterator     d_in,                                           ///< Input data to reduce
         HistoCounter*       (&d_out_histograms)[ACTIVE_CHANNELS])           ///< Reference to output histograms
     :
         temp_storage(temp_storage.Alias()),

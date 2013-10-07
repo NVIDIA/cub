@@ -133,8 +133,8 @@ var searchBox = new SearchBox("searchBox", "search",false,'Search');
 
 <h3><a class="anchor" id="index_b"></a>- b -</h3><ul>
 <li>BindTexture()
-: <a class="el" href="classcub_1_1_tex_iterator_r_a.html#aae5f3547c60cf33d51c65685ea9d131a">cub::TexIteratorRA&lt; T &gt;</a>
-, <a class="el" href="classcub_1_1_tex_transform_iterator_r_a.html#ae354a7954b301d8eb127763eb014dd9c">cub::TexTransformIteratorRA&lt; OutputType, ConversionOp, InputType &gt;</a>
+: <a class="el" href="classcub_1_1_tex_iterator_r_a.html#aae5f3547c60cf33d51c65685ea9d131a">cub::TexInputIterator&lt; T &gt;</a>
+, <a class="el" href="classcub_1_1_tex_transform_iterator_r_a.html#ae354a7954b301d8eb127763eb014dd9c">cub::TexTransformInputIterator&lt; OutputType, ConversionOp, InputType &gt;</a>
 </li>
 <li>BlockDiscontinuity()
 : <a class="el" href="classcub_1_1_block_discontinuity.html#a3f5c69462af0c9609f845e474842cfb2">cub::BlockDiscontinuity&lt; T, BLOCK_THREADS &gt;</a>
@@ -152,7 +152,7 @@ var searchBox = new SearchBox("searchBox", "search",false,'Search');
 : <a class="el" href="classcub_1_1_block_histogram.html#ae87c89f1175ce34f0c60f1cf9719d5f0">cub::BlockHistogram&lt; T, BLOCK_THREADS, ITEMS_PER_THREAD, BINS, ALGORITHM &gt;</a>
 </li>
 <li>BlockLoad()
-: <a class="el" href="classcub_1_1_block_load.html#a5d282946b5009f81cb8eb030f0c88db3">cub::BlockLoad&lt; InputIteratorRA, BLOCK_THREADS, ITEMS_PER_THREAD, ALGORITHM, MODIFIER, WARP_TIME_SLICING &gt;</a>
+: <a class="el" href="classcub_1_1_block_load.html#a5d282946b5009f81cb8eb030f0c88db3">cub::BlockLoad&lt; InputIterator, BLOCK_THREADS, ITEMS_PER_THREAD, ALGORITHM, MODIFIER, WARP_TIME_SLICING &gt;</a>
 </li>
 <li>BlockRadixSort()
 : <a class="el" href="classcub_1_1_block_radix_sort.html#ac7c896d6549960400b7710a262532e0e">cub::BlockRadixSort&lt; Key, BLOCK_THREADS, ITEMS_PER_THREAD, Value, RADIX_BITS, MEMOIZE_OUTER_SCAN, INNER_SCAN_ALGORITHM, SMEM_CONFIG &gt;</a>
@@ -164,7 +164,7 @@ var searchBox = new SearchBox("searchBox", "search",false,'Search');
 : <a class="el" href="classcub_1_1_block_scan.html#a6264c3383db3384184cb13f5f282f73d">cub::BlockScan&lt; T, BLOCK_THREADS, ALGORITHM &gt;</a>
 </li>
 <li>BlockStore()
-: <a class="el" href="classcub_1_1_block_store.html#ad772f7f8a121b62d0c8d752f545110a3">cub::BlockStore&lt; OutputIteratorRA, BLOCK_THREADS, ITEMS_PER_THREAD, ALGORITHM, MODIFIER, WARP_TIME_SLICING &gt;</a>
+: <a class="el" href="classcub_1_1_block_store.html#ad772f7f8a121b62d0c8d752f545110a3">cub::BlockStore&lt; OutputIterator, BLOCK_THREADS, ITEMS_PER_THREAD, ALGORITHM, MODIFIER, WARP_TIME_SLICING &gt;</a>
 </li>
 </ul>
 
@@ -179,8 +179,8 @@ var searchBox = new SearchBox("searchBox", "search",false,'Search');
 <li>Composite()
 : <a class="el" href="classcub_1_1_block_histogram.html#a86aca800e8a8e886b5d328e7aa3c5582">cub::BlockHistogram&lt; T, BLOCK_THREADS, ITEMS_PER_THREAD, BINS, ALGORITHM &gt;</a>
 </li>
-<li>ConstantIteratorRA()
-: <a class="el" href="classcub_1_1_constant_iterator_r_a.html#aa2e8da63f412840cadb94578a0f36348">cub::ConstantIteratorRA&lt; OutputType &gt;</a>
+<li>ConstantInputIterator()
+: <a class="el" href="classcub_1_1_constant_iterator_r_a.html#aa2e8da63f412840cadb94578a0f36348">cub::ConstantInputIterator&lt; OutputType &gt;</a>
 </li>
 <li>Current()
 : <a class="el" href="structcub_1_1_double_buffer.html#a861d3dff1a70d5e5926057a44d9b8724">cub::DoubleBuffer&lt; T &gt;</a>
@@ -275,7 +275,7 @@ var searchBox = new SearchBox("searchBox", "search",false,'Search');
 
 <h3><a class="anchor" id="index_l"></a>- l -</h3><ul>
 <li>Load()
-: <a class="el" href="classcub_1_1_block_load.html#aa49d3ea3d7a6fcb5c2c4f376ece3a65f">cub::BlockLoad&lt; InputIteratorRA, BLOCK_THREADS, ITEMS_PER_THREAD, ALGORITHM, MODIFIER, WARP_TIME_SLICING &gt;</a>
+: <a class="el" href="classcub_1_1_block_load.html#aa49d3ea3d7a6fcb5c2c4f376ece3a65f">cub::BlockLoad&lt; InputIterator, BLOCK_THREADS, ITEMS_PER_THREAD, ALGORITHM, MODIFIER, WARP_TIME_SLICING &gt;</a>
 </li>
 </ul>
 
@@ -350,7 +350,7 @@ var searchBox = new SearchBox("searchBox", "search",false,'Search');
 : <a class="el" href="structcub_1_1_device_radix_sort.html#ad42b50b38c4296c371572efdedd49fed">cub::DeviceRadixSort</a>
 </li>
 <li>Store()
-: <a class="el" href="classcub_1_1_block_store.html#ac849ae26014bff7c5fb76295c435c73c">cub::BlockStore&lt; OutputIteratorRA, BLOCK_THREADS, ITEMS_PER_THREAD, ALGORITHM, MODIFIER, WARP_TIME_SLICING &gt;</a>
+: <a class="el" href="classcub_1_1_block_store.html#ac849ae26014bff7c5fb76295c435c73c">cub::BlockStore&lt; OutputIterator, BLOCK_THREADS, ITEMS_PER_THREAD, ALGORITHM, MODIFIER, WARP_TIME_SLICING &gt;</a>
 </li>
 <li>StripedToBlocked()
 : <a class="el" href="classcub_1_1_block_exchange.html#a063505380e68bb5744d12fa7e1f16145">cub::BlockExchange&lt; T, BLOCK_THREADS, ITEMS_PER_THREAD, WARP_TIME_SLICING &gt;</a>
@@ -372,22 +372,22 @@ var searchBox = new SearchBox("searchBox", "search",false,'Search');
 <li>TailSegmentedSum()
 : <a class="el" href="classcub_1_1_warp_reduce.html#a5b0134131d03909e43d24d6b0b50beb4">cub::WarpReduce&lt; T, LOGICAL_WARPS, LOGICAL_WARP_THREADS &gt;</a>
 </li>
-<li>TexIteratorRA()
-: <a class="el" href="classcub_1_1_tex_iterator_r_a.html#a1b8f21c2753cee33dd90944e4027fa36">cub::TexIteratorRA&lt; T &gt;</a>
+<li>TexInputIterator()
+: <a class="el" href="classcub_1_1_tex_iterator_r_a.html#a1b8f21c2753cee33dd90944e4027fa36">cub::TexInputIterator&lt; T &gt;</a>
 </li>
-<li>TexTransformIteratorRA()
-: <a class="el" href="classcub_1_1_tex_transform_iterator_r_a.html#a825dd0bd64a07e8f31f646fc220edffa">cub::TexTransformIteratorRA&lt; OutputType, ConversionOp, InputType &gt;</a>
+<li>TexTransformInputIterator()
+: <a class="el" href="classcub_1_1_tex_transform_iterator_r_a.html#a825dd0bd64a07e8f31f646fc220edffa">cub::TexTransformInputIterator&lt; OutputType, ConversionOp, InputType &gt;</a>
 </li>
-<li>TransformIteratorRA()
-: <a class="el" href="classcub_1_1_transform_iterator_r_a.html#abac05c9208f609ac1b2f1b94241cdcec">cub::TransformIteratorRA&lt; OutputType, ConversionOp, InputType &gt;</a>
+<li>TransformInputIterator()
+: <a class="el" href="classcub_1_1_transform_iterator_r_a.html#abac05c9208f609ac1b2f1b94241cdcec">cub::TransformInputIterator&lt; OutputType, ConversionOp, InputType &gt;</a>
 </li>
 </ul>
 
 
 <h3><a class="anchor" id="index_u"></a>- u -</h3><ul>
 <li>UnbindTexture()
-: <a class="el" href="classcub_1_1_tex_iterator_r_a.html#abfc8c42e2da2beffb05ac81ec89ed8b9">cub::TexIteratorRA&lt; T &gt;</a>
-, <a class="el" href="classcub_1_1_tex_transform_iterator_r_a.html#abd030991795b9c9ca31f4293486d206a">cub::TexTransformIteratorRA&lt; OutputType, ConversionOp, InputType &gt;</a>
+: <a class="el" href="classcub_1_1_tex_iterator_r_a.html#abfc8c42e2da2beffb05ac81ec89ed8b9">cub::TexInputIterator&lt; T &gt;</a>
+, <a class="el" href="classcub_1_1_tex_transform_iterator_r_a.html#abd030991795b9c9ca31f4293486d206a">cub::TexTransformInputIterator&lt; OutputType, ConversionOp, InputType &gt;</a>
 </li>
 </ul>
 

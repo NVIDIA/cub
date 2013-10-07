@@ -94,7 +94,7 @@ struct BlockReduceTilesPolicy
  */
 template <
     typename BlockReduceTilesPolicy,
-    typename InputIteratorRA,
+    typename InputIterator,
     typename SizeT,
     typename ReductionOp>
 struct BlockReduceTiles
@@ -104,7 +104,7 @@ struct BlockReduceTiles
     // Types and constants
     //---------------------------------------------------------------------
 
-    typedef typename std::iterator_traits<InputIteratorRA>::value_type  T;              // Type of input iterator
+    typedef typename std::iterator_traits<InputIterator>::value_type  T;              // Type of input iterator
     typedef VectorHelper<T, BlockReduceTilesPolicy::VECTOR_LOAD_LENGTH> VecHelper;      // Helper type for vectorizing loads of T
     typedef typename VecHelper::Type                                    VectorT;        // Vector of T
 
@@ -118,7 +118,7 @@ struct BlockReduceTiles
 
         // Can vectorize according to the policy if the input iterator is a native pointer to a built-in primitive
         CAN_VECTORIZE       = (BlockReduceTilesPolicy::VECTOR_LOAD_LENGTH > 1) &&
-                                (IsPointer<InputIteratorRA>::VALUE) &&
+                                (IsPointer<InputIterator>::VALUE) &&
                                 (VecHelper::BUILT_IN),
 
     };
@@ -142,7 +142,7 @@ struct BlockReduceTiles
 
     T                       thread_aggregate;   ///< Each thread's partial reduction
     _TempStorage&           temp_storage;       ///< Reference to temp_storage
-    InputIteratorRA         d_in;               ///< Input data to reduce
+    InputIterator         d_in;               ///< Input data to reduce
     ReductionOp             reduction_op;       ///< Binary reduction operator
     int                     first_tile_size;    ///< Size of first tile consumed
     bool                    input_aligned;      ///< Whether or not input is vector-aligned
@@ -157,7 +157,7 @@ struct BlockReduceTiles
      */
     __device__ __forceinline__ BlockReduceTiles(
         TempStorage&            temp_storage,       ///< Reference to temp_storage
-        InputIteratorRA         d_in,               ///< Input data to reduce
+        InputIterator         d_in,               ///< Input data to reduce
         ReductionOp             reduction_op)       ///< Binary reduction operator
     :
         temp_storage(temp_storage.Alias()),

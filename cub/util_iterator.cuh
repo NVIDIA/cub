@@ -37,6 +37,7 @@
 #include <iostream>
 
 #include "thread/thread_load.cuh"
+#include "thread/thread_store.cuh"
 #include "util_device.cuh"
 #include "util_debug.cuh"
 #include "util_namespace.cuh"
@@ -145,10 +146,10 @@ typename IteratorTexRef<TextureWord>::Id<UNIQUE_ID>::TexRef IteratorTexRef<Textu
  *****************************************************************************/
 
 /**
- * \brief A random-access input iterator for referencing a range of constant values
+ * \brief A random-access input iterator for loading a range of constant values
  *
  * \par Overview
- * Read references to a ConstantIteratorRA iterator always return the supplied constant
+ * Read references to a ConstantInputIterator iterator always return the supplied constant
  * of type \p ValueType.
  *
  * \tparam ValueType            The value type of this iterator
@@ -157,12 +158,12 @@ typename IteratorTexRef<TextureWord>::Id<UNIQUE_ID>::TexRef IteratorTexRef<Textu
 template <
     typename ValueType,
     typename difference_type = ptrdiff_t>
-class ConstantIteratorRA
+class ConstantInputIterator
 {
 public:
 
     // Required iterator traits
-    typedef ConstantIteratorRA                  self_type;              ///< My own type
+    typedef ConstantInputIterator               self_type;              ///< My own type
     typedef difference_type                     difference_type;        ///< Type to express the result of subtracting one iterator from another
     typedef ValueType                           value_type;             ///< The type of the element the iterator can point to
     typedef ValueType*                          pointer;                ///< The type of a pointer to an element the iterator can point to
@@ -176,7 +177,7 @@ private:
 public:
 
     /// Constructor
-    __host__ __device__ __forceinline__ ConstantIteratorRA(
+    __host__ __device__ __forceinline__ ConstantInputIterator(
         const ValueType &val)          ///< Constant value for the iterator instance to report
     :
         val(val)
@@ -259,10 +260,10 @@ public:
 
 
 /**
- * \brief A random-access input iterator for referencing a range of sequential integer values.
+ * \brief A random-access input iterator for loading a range of sequential integer values.
  *
  * \par Overview
- * After initializing a CountingIteratorRA to a certain integer \p base, read references
+ * After initializing a CountingInputIterator to a certain integer \p base, read references
  * at \p offset will return the value \p base + \p offset.
  *
  * \tparam ValueType            The value type of this iterator
@@ -271,12 +272,12 @@ public:
 template <
     typename ValueType,
     typename difference_type = ptrdiff_t>
-class CountingIteratorRA
+class CountingInputIterator
 {
 public:
 
     // Required iterator traits
-    typedef CountingIteratorRA                  self_type;              ///< My own type
+    typedef CountingInputIterator               self_type;              ///< My own type
     typedef difference_type                     difference_type;        ///< Type to express the result of subtracting one iterator from another
     typedef ValueType                           value_type;             ///< The type of the element the iterator can point to
     typedef ValueType*                          pointer;                ///< The type of a pointer to an element the iterator can point to
@@ -290,7 +291,7 @@ private:
 public:
 
     /// Constructor
-    __host__ __device__ __forceinline__ CountingIteratorRA(
+    __host__ __device__ __forceinline__ CountingInputIterator(
         const ValueType &val)          ///< Starting value for the iterator instance to report
     :
         val(val)
@@ -377,10 +378,10 @@ public:
 
 
 /**
- * \brief A random-access input iterator for referencing array elements through a PTX cache modifier.
+ * \brief A random-access input iterator for loading array elements through a PTX cache modifier.
  *
  * \par Overview
- * CacheModifiedIteratorRA is a random-access input iterator that wraps a native
+ * CacheModifiedInputIterator is a random-access input iterator that wraps a native
  * device pointer of type <tt>ValueType*</tt>. \p ValueType references are
  * made by reading \p ValueType values through loads modified by \p MODIFIER.
  *
@@ -392,12 +393,12 @@ template <
     PtxLoadModifier     MODIFIER,
     typename            ValueType,
     typename            difference_type = ptrdiff_t>
-class CacheModifiedIteratorRA
+class CacheModifiedInputIterator
 {
 public:
 
     // Required iterator traits
-    typedef CacheModifiedIteratorRA             self_type;              ///< My own type
+    typedef CacheModifiedInputIterator          self_type;              ///< My own type
     typedef difference_type                     difference_type;        ///< Type to express the result of subtracting one iterator from another
     typedef ValueType                           value_type;             ///< The type of the element the iterator can point to
     typedef ValueType*                          pointer;                ///< The type of a pointer to an element the iterator can point to
@@ -411,7 +412,7 @@ private:
 public:
 
     /// Constructor
-    __host__ __device__ __forceinline__ CacheModifiedIteratorRA(
+    __host__ __device__ __forceinline__ CacheModifiedInputIterator(
         ValueType* ptr)     ///< Native pointer to wrap
     :
         ptr(ptr)
@@ -493,7 +494,141 @@ public:
     {
         return os;
     }
+};
 
+
+/**
+ * \brief A random-access output iterator for storing array elements through a PTX cache modifier.
+ *
+ * \par Overview
+ * CacheModifiedOutputIterator is a random-access output iterator that wraps a native
+ * device pointer of type <tt>ValueType*</tt>. \p ValueType references are
+ * made by writing \p ValueType values through stores modified by \p MODIFIER.
+ *
+ * \par Usage Considerations
+ * - Can only be dereferenced within device code
+ *
+ * \tparam PtxStoreModifier     The cub::PtxStoreModifier to use when accessing data
+ * \tparam ValueType            The value type of this iterator
+ * \tparam difference_type      The difference type of this iterator (Default: \p ptrdiff_t)
+ */
+template <
+    PtxStoreModifier    MODIFIER,
+    typename            ValueType,
+    typename            difference_type = ptrdiff_t>
+class CacheModifiedOutputIterator
+{
+private:
+
+    // Proxy object
+    struct Reference
+    {
+        ValueType* ptr;
+
+        /// Constructor
+        __host__ __device__ __forceinline__ Reference(ValueType* ptr) : ptr(ptr) {}
+
+        /// Assignment
+        __host__ __device__ __forceinline__ ValueType operator =(ValueType val)
+        {
+            ThreadStore<MODIFIER>(ptr, val);
+            return val;
+        }
+    };
+
+public:
+
+    // Required iterator traits
+    typedef CacheModifiedOutputIterator         self_type;              ///< My own type
+    typedef difference_type                     difference_type;        ///< Type to express the result of subtracting one iterator from another
+    typedef ValueType                           value_type;             ///< The type of the element the iterator can point to
+    typedef ValueType*                          pointer;                ///< The type of a pointer to an element the iterator can point to
+    typedef Reference                           reference;              ///< The type of a reference to an element the iterator can point to
+    typedef std::random_access_iterator_tag     iterator_category;      ///< The iterator category
+
+private:
+
+    ValueType* ptr;
+
+public:
+
+    /// Constructor
+    __host__ __device__ __forceinline__ CacheModifiedOutputIterator(
+        ValueType* ptr)     ///< Native pointer to wrap
+    :
+        ptr(ptr)
+    {}
+
+    /// Postfix increment
+    __host__ __device__ __forceinline__ self_type operator++(int)
+    {
+        self_type retval = *this;
+        ptr++;
+        return retval;
+    }
+
+    /// Indirection
+    __host__ __device__ __forceinline__ reference operator*()
+    {
+        return Reference(ptr);
+    }
+
+    /// Addition
+    template <typename Distance>
+    __host__ __device__ __forceinline__ self_type operator+(Distance n)
+    {
+        self_type retval(ptr + n);
+        return retval;
+    }
+
+    /// Addition assignment
+    template <typename Distance>
+    __host__ __device__ __forceinline__ self_type& operator+=(Distance n)
+    {
+        ptr += n;
+        return *this;
+    }
+
+    /// Subtraction
+    template <typename Distance>
+    __host__ __device__ __forceinline__ self_type operator-(Distance n)
+    {
+        self_type retval(ptr - n);
+        return retval;
+    }
+
+    /// Subtraction assignment
+    template <typename Distance>
+    __host__ __device__ __forceinline__ self_type& operator-=(Distance n)
+    {
+        ptr -= n;
+        return *this;
+    }
+
+    /// Array subscript
+    template <typename Distance>
+    __host__ __device__ __forceinline__ reference operator[](Distance n)
+    {
+        return Reference(ptr + n);
+    }
+
+    /// Equal to
+    __host__ __device__ __forceinline__ bool operator==(const self_type& rhs)
+    {
+        return (ptr == rhs.ptr);
+    }
+
+    /// Not equal to
+    __host__ __device__ __forceinline__ bool operator!=(const self_type& rhs)
+    {
+        return (ptr != rhs.ptr);
+    }
+
+    /// ostream operator
+    friend std::ostream& operator<<(std::ostream& os, const self_type& itr)
+    {
+        return os;
+    }
 };
 
 
@@ -501,8 +636,8 @@ public:
  * \brief A random-access input iterator for applying a transformation operator to another random-access input iterator.
  *
  * \par Overview
- * TransformIteratorRA wraps a unary conversion functor of type \p ConversionOp and a random-access
- * input iterator of type <tt>InputIteratorRA</tt>, using the former to produce
+ * TransformInputIterator wraps a unary conversion functor of type \p ConversionOp and a random-access
+ * input iterator of type <tt>InputIterator</tt>, using the former to produce
  * references of type \p ValueType from the latter.
  *
  * \tparam ValueType            The value type of this iterator
@@ -513,14 +648,14 @@ public:
 template <
     typename ValueType,
     typename ConversionOp,
-    typename InputIteratorRA,
+    typename InputIterator,
     typename difference_type = ptrdiff_t>
-class TransformIteratorRA
+class TransformInputIterator
 {
 public:
 
     // Required iterator traits
-    typedef TransformIteratorRA                 self_type;              ///< My own type
+    typedef TransformInputIterator              self_type;              ///< My own type
     typedef difference_type                     difference_type;        ///< Type to express the result of subtracting one iterator from another
     typedef ValueType                           value_type;             ///< The type of the element the iterator can point to
     typedef ValueType*                          pointer;                ///< The type of a pointer to an element the iterator can point to
@@ -530,13 +665,13 @@ public:
 private:
 
     ConversionOp    conversion_op;
-    InputIteratorRA input_itr;
+    InputIterator input_itr;
 
 public:
 
     /// Constructor
-    __host__ __device__ __forceinline__ TransformIteratorRA(
-        InputIteratorRA     input_itr,          ///< Input iterator to wrap
+    __host__ __device__ __forceinline__ TransformInputIterator(
+        InputIterator     input_itr,          ///< Input iterator to wrap
         ConversionOp        conversion_op)      ///< Conversion functor to wrap
     :
         conversion_op(conversion_op),
@@ -624,14 +759,14 @@ public:
 
 
 /**
- * \brief A random-access input iterator for referencing primitive array elements through texture cache.
+ * \brief A random-access input iterator for loading primitive array elements through texture cache.
  *
  * \par Overview
- * TexIteratorRA wraps a native device pointer of type <tt>ValueType*</tt>. References
+ * TexInputIterator wraps a native device pointer of type <tt>ValueType*</tt>. References
  * to elements are to be pulled through texture cache.  Works with any \p ValueType.
  *
  * \par Usage Considerations
- * - Only one TexIteratorRA or TexIteratorRA of a certain \p ValueType can be bound at any given time (per host thread)
+ * - Only one TexInputIterator or TexInputIterator of a certain \p ValueType can be bound at any given time (per host thread)
  *
  * \tparam T            The value type of this iterator
  * \tparam difference_type      The difference type of this iterator (Default: \p ptrdiff_t)
@@ -640,12 +775,12 @@ template <
     typename    T,
     int         UNIQUE_ID,
     typename    difference_type = ptrdiff_t>
-class TexIteratorRA
+class TexInputIterator
 {
 public:
 
     // Required iterator traits
-    typedef TexIteratorRA                       self_type;              ///< My own type
+    typedef TexInputIterator                       self_type;           ///< My own type
     typedef difference_type                     difference_type;        ///< Type to express the result of subtracting one iterator from another
     typedef T                                   value_type;             ///< The type of the element the iterator can point to
     typedef T*                                  pointer;                ///< The type of a pointer to an element the iterator can point to
@@ -664,7 +799,7 @@ private:
 public:
 
     /// Constructor
-    __host__ __device__ __forceinline__ TexIteratorRA()
+    __host__ __device__ __forceinline__ TexInputIterator()
     :
         ptr(NULL),
         tex_offset(0),
@@ -781,16 +916,16 @@ public:
 
 
 /**
- * \brief A random-access input iterator for applying a transformation operator to primitive array elements referenced through texture cache.
+ * \brief A random-access input iterator for applying a transformation operator to primitive array elements loaded through texture cache.
  *
  * \par Overview
- * TransformIteratorRA wraps a unary conversion functor of type \p ConversionOp and a
+ * TransformInputIterator wraps a unary conversion functor of type \p ConversionOp and a
  * native device pointer of type <tt>T*</tt>.  \p ValueType references are produced by
  * applying the former to elements of the latter read through texture cache.
  *
  * \par Usage Considerations
  * - Can only be used with primitive types (e.g., \p char, \p int, \p float), with the exception of \p double
- * - Only one TexIteratorRA or TexTransformIteratorRA of a certain \p InputType can be bound at any given time (per host thread)
+ * - Only one TexInputIterator or TexTransformInputIterator of a certain \p InputType can be bound at any given time (per host thread)
  *
  * \tparam InputType            The value type of the pointer being wrapped
  * \tparam ConversionOp         Unary functor type for mapping objects of type \p InputType to type \p OutputType.  Must have member <tt>OutputType operator()(const InputType &datum)</tt>.
@@ -802,12 +937,12 @@ template <
     typename    T,
     int         UNIQUE_ID,
     typename    difference_type = ptrdiff_t>
-class TexTransformIteratorRA
+class TexTransformInputIterator
 {
 public:
 
     // Required iterator traits
-    typedef TexTransformIteratorRA              self_type;              ///< My own type
+    typedef TexTransformInputIterator              self_type;              ///< My own type
     typedef difference_type                     difference_type;        ///< Type to express the result of subtracting one iterator from another
     typedef ValueType                           value_type;             ///< The type of the element the iterator can point to
     typedef ValueType*                          pointer;                ///< The type of a pointer to an element the iterator can point to
@@ -816,13 +951,13 @@ public:
 
 private:
 
-    TexIteratorRA<T, UNIQUE_ID, difference_type>   tex_itr;
+    TexInputIterator<T, UNIQUE_ID, difference_type>   tex_itr;
     ConversionOp                        conversion_op;
 
 public:
 
     /// Constructor
-    __host__ __device__ __forceinline__ TexTransformIteratorRA(
+    __host__ __device__ __forceinline__ TexTransformInputIterator(
         ConversionOp conversion_op)          ///< Binary transformation functor
     :
         conversion_op(conversion_op)
