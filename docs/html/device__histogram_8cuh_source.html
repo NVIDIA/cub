@@ -174,12 +174,12 @@ var searchBox = new SearchBox("searchBox", "search",false,'Search');
 <div class="line"><a name="l00085"></a><span class="lineno">   85</span>&#160;    <span class="keywordtype">int</span>                                             BINS,                       </div>
 <div class="line"><a name="l00086"></a><span class="lineno">   86</span>&#160;    <span class="keywordtype">int</span>                                             CHANNELS,                   </div>
 <div class="line"><a name="l00087"></a><span class="lineno">   87</span>&#160;    <span class="keywordtype">int</span>                                             ACTIVE_CHANNELS,            </div>
-<div class="line"><a name="l00088"></a><span class="lineno">   88</span>&#160;    <span class="keyword">typename</span>                                        InputIteratorRA,            </div>
+<div class="line"><a name="l00088"></a><span class="lineno">   88</span>&#160;    <span class="keyword">typename</span>                                        InputIterator,            </div>
 <div class="line"><a name="l00089"></a><span class="lineno">   89</span>&#160;    <span class="keyword">typename</span>                                        HistoCounter,               </div>
 <div class="line"><a name="l00090"></a><span class="lineno">   90</span>&#160;    <span class="keyword">typename</span>                                        SizeT&gt;                      </div>
 <div class="line"><a name="l00091"></a><span class="lineno">   91</span>&#160;__launch_bounds__ (<span class="keywordtype">int</span>(BlockHistogramTilesPolicy::BLOCK_THREADS), BlockHistogramTilesPolicy::SM_OCCUPANCY)</div>
 <div class="line"><a name="l00092"></a><span class="lineno">   92</span>&#160;__global__ <span class="keywordtype">void</span> MultiBlockHistogramKernel(</div>
-<div class="line"><a name="l00093"></a><span class="lineno">   93</span>&#160;    InputIteratorRA                                 d_samples,                  </div>
+<div class="line"><a name="l00093"></a><span class="lineno">   93</span>&#160;    InputIterator                                 d_samples,                  </div>
 <div class="line"><a name="l00094"></a><span class="lineno">   94</span>&#160;    ArrayWrapper&lt;HistoCounter*, ACTIVE_CHANNELS&gt;    d_out_histograms,           </div>
 <div class="line"><a name="l00095"></a><span class="lineno">   95</span>&#160;    SizeT                                           num_samples,                </div>
 <div class="line"><a name="l00096"></a><span class="lineno">   96</span>&#160;    GridEvenShare&lt;SizeT&gt;                            even_share,                 </div>
@@ -194,7 +194,7 @@ var searchBox = new SearchBox("searchBox", "search",false,'Search');
 <div class="line"><a name="l00105"></a><span class="lineno">  105</span>&#160;    };</div>
 <div class="line"><a name="l00106"></a><span class="lineno">  106</span>&#160;</div>
 <div class="line"><a name="l00107"></a><span class="lineno">  107</span>&#160;    <span class="comment">// Thread block type for compositing input tiles</span></div>
-<div class="line"><a name="l00108"></a><span class="lineno">  108</span>&#160;    <span class="keyword">typedef</span> BlockHistogramTiles&lt;BlockHistogramTilesPolicy, BINS, CHANNELS, ACTIVE_CHANNELS, InputIteratorRA, HistoCounter, SizeT&gt; BlockHistogramTilesT;</div>
+<div class="line"><a name="l00108"></a><span class="lineno">  108</span>&#160;    <span class="keyword">typedef</span> BlockHistogramTiles&lt;BlockHistogramTilesPolicy, BINS, CHANNELS, ACTIVE_CHANNELS, InputIterator, HistoCounter, SizeT&gt; BlockHistogramTilesT;</div>
 <div class="line"><a name="l00109"></a><span class="lineno">  109</span>&#160;</div>
 <div class="line"><a name="l00110"></a><span class="lineno">  110</span>&#160;    <span class="comment">// Shared memory for BlockHistogramTiles</span></div>
 <div class="line"><a name="l00111"></a><span class="lineno">  111</span>&#160;    __shared__ <span class="keyword">typename</span> BlockHistogramTilesT::TempStorage temp_storage;</div>
@@ -412,7 +412,7 @@ var searchBox = new SearchBox("searchBox", "search",false,'Search');
 <div class="line"><a name="l00355"></a><span class="lineno">  355</span>&#160;        <span class="keyword">typename</span>                    InitHistoKernelPtr,                 </div>
 <div class="line"><a name="l00356"></a><span class="lineno">  356</span>&#160;        <span class="keyword">typename</span>                    MultiBlockHistogramKernelPtr,           </div>
 <div class="line"><a name="l00357"></a><span class="lineno">  357</span>&#160;        <span class="keyword">typename</span>                    AggregateHistoKernelPtr,            </div>
-<div class="line"><a name="l00358"></a><span class="lineno">  358</span>&#160;        <span class="keyword">typename</span>                    InputIteratorRA,                    </div>
+<div class="line"><a name="l00358"></a><span class="lineno">  358</span>&#160;        <span class="keyword">typename</span>                    InputIterator,                    </div>
 <div class="line"><a name="l00359"></a><span class="lineno">  359</span>&#160;        <span class="keyword">typename</span>                    HistoCounter,                       </div>
 <div class="line"><a name="l00360"></a><span class="lineno">  360</span>&#160;        <span class="keyword">typename</span>                    SizeT&gt;                              </div>
 <div class="line"><a name="l00361"></a><span class="lineno">  361</span>&#160;    __host__ __device__ __forceinline__</div>
@@ -423,7 +423,7 @@ var searchBox = new SearchBox("searchBox", "search",false,'Search');
 <div class="line"><a name="l00366"></a><span class="lineno">  366</span>&#160;        MultiBlockHistogramKernelPtr    multi_block_kernel,                 </div>
 <div class="line"><a name="l00367"></a><span class="lineno">  367</span>&#160;        AggregateHistoKernelPtr     aggregate_kernel,                   </div>
 <div class="line"><a name="l00368"></a><span class="lineno">  368</span>&#160;        KernelDispachParams         &amp;multi_block_dispatch_params,       </div>
-<div class="line"><a name="l00369"></a><span class="lineno">  369</span>&#160;        InputIteratorRA             d_samples,                          </div>
+<div class="line"><a name="l00369"></a><span class="lineno">  369</span>&#160;        InputIterator             d_samples,                          </div>
 <div class="line"><a name="l00370"></a><span class="lineno">  370</span>&#160;        HistoCounter                *d_histograms[ACTIVE_CHANNELS],     </div>
 <div class="line"><a name="l00371"></a><span class="lineno">  371</span>&#160;        SizeT                       num_samples,                        </div>
 <div class="line"><a name="l00372"></a><span class="lineno">  372</span>&#160;        cudaStream_t                stream              = 0,            </div>
@@ -584,13 +584,13 @@ var searchBox = new SearchBox("searchBox", "search",false,'Search');
 <div class="line"><a name="l00536"></a><span class="lineno">  536</span>&#160;        <span class="keywordtype">int</span>                         BINS,                       </div>
 <div class="line"><a name="l00537"></a><span class="lineno">  537</span>&#160;        <span class="keywordtype">int</span>                         CHANNELS,                   </div>
 <div class="line"><a name="l00538"></a><span class="lineno">  538</span>&#160;        <span class="keywordtype">int</span>                         ACTIVE_CHANNELS,            </div>
-<div class="line"><a name="l00539"></a><span class="lineno">  539</span>&#160;        <span class="keyword">typename</span>                    InputIteratorRA,            </div>
+<div class="line"><a name="l00539"></a><span class="lineno">  539</span>&#160;        <span class="keyword">typename</span>                    InputIterator,            </div>
 <div class="line"><a name="l00540"></a><span class="lineno">  540</span>&#160;        <span class="keyword">typename</span>                    HistoCounter&gt;               </div>
 <div class="line"><a name="l00541"></a><span class="lineno">  541</span>&#160;    __host__ __device__ __forceinline__</div>
 <div class="line"><a name="l00542"></a><span class="lineno">  542</span>&#160;    <span class="keyword">static</span> cudaError_t Dispatch(</div>
 <div class="line"><a name="l00543"></a><span class="lineno">  543</span>&#160;        <span class="keywordtype">void</span>                *d_temp_storage,                    </div>
 <div class="line"><a name="l00544"></a><span class="lineno">  544</span>&#160;        <span class="keywordtype">size_t</span>              &amp;temp_storage_bytes,                </div>
-<div class="line"><a name="l00545"></a><span class="lineno">  545</span>&#160;        InputIteratorRA     d_samples,                          </div>
+<div class="line"><a name="l00545"></a><span class="lineno">  545</span>&#160;        InputIterator     d_samples,                          </div>
 <div class="line"><a name="l00546"></a><span class="lineno">  546</span>&#160;        HistoCounter        *d_histograms[ACTIVE_CHANNELS],     </div>
 <div class="line"><a name="l00547"></a><span class="lineno">  547</span>&#160;        <span class="keywordtype">int</span>                 num_samples,                        </div>
 <div class="line"><a name="l00548"></a><span class="lineno">  548</span>&#160;        cudaStream_t        stream              = 0,            </div>
@@ -627,7 +627,7 @@ var searchBox = new SearchBox("searchBox", "search",false,'Search');
 <div class="line"><a name="l00579"></a><span class="lineno">  579</span>&#160;                d_temp_storage,</div>
 <div class="line"><a name="l00580"></a><span class="lineno">  580</span>&#160;                temp_storage_bytes,</div>
 <div class="line"><a name="l00581"></a><span class="lineno">  581</span>&#160;                InitHistoKernel&lt;BINS, ACTIVE_CHANNELS, SizeT, HistoCounter&gt;,</div>
-<div class="line"><a name="l00582"></a><span class="lineno">  582</span>&#160;                MultiBlockHistogramKernel&lt;MultiBlockPolicy, BINS, CHANNELS, ACTIVE_CHANNELS, InputIteratorRA, HistoCounter, SizeT&gt;,</div>
+<div class="line"><a name="l00582"></a><span class="lineno">  582</span>&#160;                MultiBlockHistogramKernel&lt;MultiBlockPolicy, BINS, CHANNELS, ACTIVE_CHANNELS, InputIterator, HistoCounter, SizeT&gt;,</div>
 <div class="line"><a name="l00583"></a><span class="lineno">  583</span>&#160;                AggregateHistoKernel&lt;BINS, ACTIVE_CHANNELS, HistoCounter&gt;,</div>
 <div class="line"><a name="l00584"></a><span class="lineno">  584</span>&#160;                multi_block_dispatch_params,</div>
 <div class="line"><a name="l00585"></a><span class="lineno">  585</span>&#160;                d_samples,</div>
@@ -651,13 +651,13 @@ var searchBox = new SearchBox("searchBox", "search",false,'Search');
 <div class="line"><a name="l00606"></a><span class="lineno">  606</span>&#160;</div>
 <div class="line"><a name="l00658"></a><span class="lineno">  658</span>&#160;    <span class="keyword">template</span> &lt;</div>
 <div class="line"><a name="l00659"></a><span class="lineno">  659</span>&#160;        <span class="keywordtype">int</span>                 BINS,</div>
-<div class="line"><a name="l00660"></a><span class="lineno">  660</span>&#160;        <span class="keyword">typename</span>            InputIteratorRA,</div>
+<div class="line"><a name="l00660"></a><span class="lineno">  660</span>&#160;        <span class="keyword">typename</span>            InputIterator,</div>
 <div class="line"><a name="l00661"></a><span class="lineno">  661</span>&#160;        <span class="keyword">typename</span>            HistoCounter&gt;</div>
 <div class="line"><a name="l00662"></a><span class="lineno">  662</span>&#160;    __host__ __device__ __forceinline__</div>
 <div class="line"><a name="l00663"></a><span class="lineno"><a class="code" href="structcub_1_1_device_histogram.html#ad0cc7bacd6022916cb228437eeb9c82a">  663</a></span>&#160;    <span class="keyword">static</span> cudaError_t <a class="code" href="structcub_1_1_device_histogram.html#ad0cc7bacd6022916cb228437eeb9c82a" title="Computes a device-wide histogram. Uses fast block-sorting to compute the histogram. Delivers consistent throughput regardless of sample diversity, but occupancy may be limited by histogram bin count. ">SingleChannelSorting</a>(</div>
 <div class="line"><a name="l00664"></a><span class="lineno">  664</span>&#160;        <span class="keywordtype">void</span>                *d_temp_storage,                    </div>
 <div class="line"><a name="l00665"></a><span class="lineno">  665</span>&#160;        <span class="keywordtype">size_t</span>              &amp;temp_storage_bytes,                </div>
-<div class="line"><a name="l00666"></a><span class="lineno">  666</span>&#160;        InputIteratorRA     d_samples,                          </div>
+<div class="line"><a name="l00666"></a><span class="lineno">  666</span>&#160;        InputIterator     d_samples,                          </div>
 <div class="line"><a name="l00667"></a><span class="lineno">  667</span>&#160;        HistoCounter*       d_histogram,                        </div>
 <div class="line"><a name="l00668"></a><span class="lineno">  668</span>&#160;        <span class="keywordtype">int</span>                 num_samples,                        </div>
 <div class="line"><a name="l00669"></a><span class="lineno">  669</span>&#160;        cudaStream_t        stream              = 0,            </div>
@@ -670,13 +670,13 @@ var searchBox = new SearchBox("searchBox", "search",false,'Search');
 <div class="line"><a name="l00676"></a><span class="lineno">  676</span>&#160;</div>
 <div class="line"><a name="l00728"></a><span class="lineno">  728</span>&#160;    <span class="keyword">template</span> &lt;</div>
 <div class="line"><a name="l00729"></a><span class="lineno">  729</span>&#160;        <span class="keywordtype">int</span>                 BINS,</div>
-<div class="line"><a name="l00730"></a><span class="lineno">  730</span>&#160;        <span class="keyword">typename</span>            InputIteratorRA,</div>
+<div class="line"><a name="l00730"></a><span class="lineno">  730</span>&#160;        <span class="keyword">typename</span>            InputIterator,</div>
 <div class="line"><a name="l00731"></a><span class="lineno">  731</span>&#160;        <span class="keyword">typename</span>            HistoCounter&gt;</div>
 <div class="line"><a name="l00732"></a><span class="lineno">  732</span>&#160;    __host__ __device__ __forceinline__</div>
 <div class="line"><a name="l00733"></a><span class="lineno"><a class="code" href="structcub_1_1_device_histogram.html#a425559a4dc730f55f46e0faa5080e266">  733</a></span>&#160;    <span class="keyword">static</span> cudaError_t <a class="code" href="structcub_1_1_device_histogram.html#a425559a4dc730f55f46e0faa5080e266" title="Computes a device-wide histogram. Uses shared-memory atomic read-modify-write operations to compute t...">SingleChannelSharedAtomic</a>(</div>
 <div class="line"><a name="l00734"></a><span class="lineno">  734</span>&#160;        <span class="keywordtype">void</span>                *d_temp_storage,                    </div>
 <div class="line"><a name="l00735"></a><span class="lineno">  735</span>&#160;        <span class="keywordtype">size_t</span>              &amp;temp_storage_bytes,                </div>
-<div class="line"><a name="l00736"></a><span class="lineno">  736</span>&#160;        InputIteratorRA     d_samples,                          </div>
+<div class="line"><a name="l00736"></a><span class="lineno">  736</span>&#160;        InputIterator     d_samples,                          </div>
 <div class="line"><a name="l00737"></a><span class="lineno">  737</span>&#160;        HistoCounter*       d_histogram,                        </div>
 <div class="line"><a name="l00738"></a><span class="lineno">  738</span>&#160;        <span class="keywordtype">int</span>                 num_samples,                        </div>
 <div class="line"><a name="l00739"></a><span class="lineno">  739</span>&#160;        cudaStream_t        stream              = 0,            </div>
@@ -689,13 +689,13 @@ var searchBox = new SearchBox("searchBox", "search",false,'Search');
 <div class="line"><a name="l00746"></a><span class="lineno">  746</span>&#160;</div>
 <div class="line"><a name="l00797"></a><span class="lineno">  797</span>&#160;    <span class="keyword">template</span> &lt;</div>
 <div class="line"><a name="l00798"></a><span class="lineno">  798</span>&#160;        <span class="keywordtype">int</span>                 BINS,</div>
-<div class="line"><a name="l00799"></a><span class="lineno">  799</span>&#160;        <span class="keyword">typename</span>            InputIteratorRA,</div>
+<div class="line"><a name="l00799"></a><span class="lineno">  799</span>&#160;        <span class="keyword">typename</span>            InputIterator,</div>
 <div class="line"><a name="l00800"></a><span class="lineno">  800</span>&#160;        <span class="keyword">typename</span>            HistoCounter&gt;</div>
 <div class="line"><a name="l00801"></a><span class="lineno">  801</span>&#160;    __host__ __device__ __forceinline__</div>
 <div class="line"><a name="l00802"></a><span class="lineno"><a class="code" href="structcub_1_1_device_histogram.html#a6659e9723fda5e5c0ac587aa66fb54c3">  802</a></span>&#160;    <span class="keyword">static</span> cudaError_t <a class="code" href="structcub_1_1_device_histogram.html#a6659e9723fda5e5c0ac587aa66fb54c3" title="Computes a device-wide histogram. Uses global-memory atomic read-modify-write operations to compute t...">SingleChannelGlobalAtomic</a>(</div>
 <div class="line"><a name="l00803"></a><span class="lineno">  803</span>&#160;        <span class="keywordtype">void</span>                *d_temp_storage,                    </div>
 <div class="line"><a name="l00804"></a><span class="lineno">  804</span>&#160;        <span class="keywordtype">size_t</span>              &amp;temp_storage_bytes,                </div>
-<div class="line"><a name="l00805"></a><span class="lineno">  805</span>&#160;        InputIteratorRA     d_samples,                          </div>
+<div class="line"><a name="l00805"></a><span class="lineno">  805</span>&#160;        InputIterator     d_samples,                          </div>
 <div class="line"><a name="l00806"></a><span class="lineno">  806</span>&#160;        HistoCounter*       d_histogram,                        </div>
 <div class="line"><a name="l00807"></a><span class="lineno">  807</span>&#160;        <span class="keywordtype">int</span>                 num_samples,                        </div>
 <div class="line"><a name="l00808"></a><span class="lineno">  808</span>&#160;        cudaStream_t        stream              = 0,            </div>
@@ -713,13 +713,13 @@ var searchBox = new SearchBox("searchBox", "search",false,'Search');
 <div class="line"><a name="l00880"></a><span class="lineno">  880</span>&#160;        <span class="keywordtype">int</span>                 BINS,</div>
 <div class="line"><a name="l00881"></a><span class="lineno">  881</span>&#160;        <span class="keywordtype">int</span>                 CHANNELS,</div>
 <div class="line"><a name="l00882"></a><span class="lineno">  882</span>&#160;        <span class="keywordtype">int</span>                 ACTIVE_CHANNELS,</div>
-<div class="line"><a name="l00883"></a><span class="lineno">  883</span>&#160;        <span class="keyword">typename</span>            InputIteratorRA,</div>
+<div class="line"><a name="l00883"></a><span class="lineno">  883</span>&#160;        <span class="keyword">typename</span>            InputIterator,</div>
 <div class="line"><a name="l00884"></a><span class="lineno">  884</span>&#160;        <span class="keyword">typename</span>            HistoCounter&gt;</div>
 <div class="line"><a name="l00885"></a><span class="lineno">  885</span>&#160;    __host__ __device__ __forceinline__</div>
 <div class="line"><a name="l00886"></a><span class="lineno"><a class="code" href="structcub_1_1_device_histogram.html#a7f9a00987e98b828823f062d563aaa8c">  886</a></span>&#160;    <span class="keyword">static</span> cudaError_t <a class="code" href="structcub_1_1_device_histogram.html#a7f9a00987e98b828823f062d563aaa8c" title="Computes a device-wide histogram from multi-channel data. Uses fast block-sorting to compute the hist...">MultiChannelSorting</a>(</div>
 <div class="line"><a name="l00887"></a><span class="lineno">  887</span>&#160;        <span class="keywordtype">void</span>                *d_temp_storage,                    </div>
 <div class="line"><a name="l00888"></a><span class="lineno">  888</span>&#160;        <span class="keywordtype">size_t</span>              &amp;temp_storage_bytes,                </div>
-<div class="line"><a name="l00889"></a><span class="lineno">  889</span>&#160;        InputIteratorRA     d_samples,                          </div>
+<div class="line"><a name="l00889"></a><span class="lineno">  889</span>&#160;        InputIterator     d_samples,                          </div>
 <div class="line"><a name="l00890"></a><span class="lineno">  890</span>&#160;        HistoCounter        *d_histograms[ACTIVE_CHANNELS],     </div>
 <div class="line"><a name="l00891"></a><span class="lineno">  891</span>&#160;        <span class="keywordtype">int</span>                 num_samples,                        </div>
 <div class="line"><a name="l00892"></a><span class="lineno">  892</span>&#160;        cudaStream_t        stream              = 0,            </div>
@@ -734,13 +734,13 @@ var searchBox = new SearchBox("searchBox", "search",false,'Search');
 <div class="line"><a name="l00957"></a><span class="lineno">  957</span>&#160;        <span class="keywordtype">int</span>                 BINS,</div>
 <div class="line"><a name="l00958"></a><span class="lineno">  958</span>&#160;        <span class="keywordtype">int</span>                 CHANNELS,</div>
 <div class="line"><a name="l00959"></a><span class="lineno">  959</span>&#160;        <span class="keywordtype">int</span>                 ACTIVE_CHANNELS,</div>
-<div class="line"><a name="l00960"></a><span class="lineno">  960</span>&#160;        <span class="keyword">typename</span>            InputIteratorRA,</div>
+<div class="line"><a name="l00960"></a><span class="lineno">  960</span>&#160;        <span class="keyword">typename</span>            InputIterator,</div>
 <div class="line"><a name="l00961"></a><span class="lineno">  961</span>&#160;        <span class="keyword">typename</span>            HistoCounter&gt;</div>
 <div class="line"><a name="l00962"></a><span class="lineno">  962</span>&#160;    __host__ __device__ __forceinline__</div>
 <div class="line"><a name="l00963"></a><span class="lineno"><a class="code" href="structcub_1_1_device_histogram.html#a9744fa6ed9761986c6c13afdcb20909d">  963</a></span>&#160;    <span class="keyword">static</span> cudaError_t <a class="code" href="structcub_1_1_device_histogram.html#a9744fa6ed9761986c6c13afdcb20909d" title="Computes a device-wide histogram from multi-channel data. Uses shared-memory atomic read-modify-write...">MultiChannelSharedAtomic</a>(</div>
 <div class="line"><a name="l00964"></a><span class="lineno">  964</span>&#160;        <span class="keywordtype">void</span>                *d_temp_storage,                    </div>
 <div class="line"><a name="l00965"></a><span class="lineno">  965</span>&#160;        <span class="keywordtype">size_t</span>              &amp;temp_storage_bytes,                </div>
-<div class="line"><a name="l00966"></a><span class="lineno">  966</span>&#160;        InputIteratorRA     d_samples,                          </div>
+<div class="line"><a name="l00966"></a><span class="lineno">  966</span>&#160;        InputIterator     d_samples,                          </div>
 <div class="line"><a name="l00967"></a><span class="lineno">  967</span>&#160;        HistoCounter        *d_histograms[ACTIVE_CHANNELS],     </div>
 <div class="line"><a name="l00968"></a><span class="lineno">  968</span>&#160;        <span class="keywordtype">int</span>                 num_samples,                        </div>
 <div class="line"><a name="l00969"></a><span class="lineno">  969</span>&#160;        cudaStream_t        stream              = 0,            </div>
@@ -755,13 +755,13 @@ var searchBox = new SearchBox("searchBox", "search",false,'Search');
 <div class="line"><a name="l01035"></a><span class="lineno"> 1035</span>&#160;        <span class="keywordtype">int</span>                 BINS,</div>
 <div class="line"><a name="l01036"></a><span class="lineno"> 1036</span>&#160;        <span class="keywordtype">int</span>                 CHANNELS,</div>
 <div class="line"><a name="l01037"></a><span class="lineno"> 1037</span>&#160;        <span class="keywordtype">int</span>                 ACTIVE_CHANNELS,</div>
-<div class="line"><a name="l01038"></a><span class="lineno"> 1038</span>&#160;        <span class="keyword">typename</span>            InputIteratorRA,</div>
+<div class="line"><a name="l01038"></a><span class="lineno"> 1038</span>&#160;        <span class="keyword">typename</span>            InputIterator,</div>
 <div class="line"><a name="l01039"></a><span class="lineno"> 1039</span>&#160;        <span class="keyword">typename</span>            HistoCounter&gt;</div>
 <div class="line"><a name="l01040"></a><span class="lineno"> 1040</span>&#160;    __host__ __device__ __forceinline__</div>
 <div class="line"><a name="l01041"></a><span class="lineno"><a class="code" href="structcub_1_1_device_histogram.html#a0e6bee2938ad70ab128ed1a1c5f6d083"> 1041</a></span>&#160;    <span class="keyword">static</span> cudaError_t <a class="code" href="structcub_1_1_device_histogram.html#a0e6bee2938ad70ab128ed1a1c5f6d083" title="Computes a device-wide histogram from multi-channel data. Uses global-memory atomic read-modify-write...">MultiChannelGlobalAtomic</a>(</div>
 <div class="line"><a name="l01042"></a><span class="lineno"> 1042</span>&#160;        <span class="keywordtype">void</span>                *d_temp_storage,                    </div>
 <div class="line"><a name="l01043"></a><span class="lineno"> 1043</span>&#160;        <span class="keywordtype">size_t</span>              &amp;temp_storage_bytes,                </div>
-<div class="line"><a name="l01044"></a><span class="lineno"> 1044</span>&#160;        InputIteratorRA     d_samples,                          </div>
+<div class="line"><a name="l01044"></a><span class="lineno"> 1044</span>&#160;        InputIterator     d_samples,                          </div>
 <div class="line"><a name="l01045"></a><span class="lineno"> 1045</span>&#160;        HistoCounter        *d_histograms[ACTIVE_CHANNELS],     </div>
 <div class="line"><a name="l01046"></a><span class="lineno"> 1046</span>&#160;        <span class="keywordtype">int</span>                 num_samples,                        </div>
 <div class="line"><a name="l01047"></a><span class="lineno"> 1047</span>&#160;        cudaStream_t        stream              = 0,            </div>

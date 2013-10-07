@@ -301,7 +301,6 @@ void RandomBits(
     int end_bit = sizeof(K) * 8)
 {
     const int NUM_BYTES = sizeof(K);
-    const int NUM_BITS = NUM_BYTES * 8;
 
     unsigned char byte_buff[NUM_BYTES];
 
@@ -311,18 +310,21 @@ void RandomBits(
         return;
     }
 
+    if (end_bit < 0) end_bit = sizeof(K) * 8;
     do {
         // Generate random byte_buff
         for (int j = 0; j < NUM_BYTES; j++)
         {
-            const int BYTES_REMAINING = NUM_BYTES - j - 1;
             unsigned char byte = 0xff;
 
-            byte <<= CUB_MAX(0, begin_bit - (j * 8));
-            byte >>= CUB_MAX(0, NUM_BITS - end_bit - (BYTES_REMAINING * 8));
+            int current_bit = j * 8;
+
+            byte <<= CUB_MAX(0, begin_bit - current_bit);
+            byte >>= CUB_MAX(0, (current_bit + 8) - end_bit);
 
             for (int i = 0; i <= entropy_reduction; i++)
             {
+                // Grab some of the higher bits from rand (better entropy, supposedly)
                 byte &= (rand() >> 7);
             }
             byte_buff[j] = byte;
@@ -332,7 +334,6 @@ void RandomBits(
 
     } while (key != key);        // avoids NaNs when generating random floating point numbers
 }
-
 
 
 /******************************************************************************

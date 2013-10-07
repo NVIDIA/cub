@@ -123,84 +123,84 @@ Enumerations</h2></td></tr>
 </table><table class="memberdecls">
 <tr class="heading"><td colspan="2"><h2 class="groupheader"><a name="member-group"></a>
 Simple I/O</h2></td></tr>
-<tr class="memitem:ga2467f2337aeeea3a3a1b39d19996d3c2"><td class="memTemplParams" colspan="2">template&lt;PtxLoadModifier MODIFIER, typename InputIteratorRA &gt; </td></tr>
+<tr class="memitem:ga2467f2337aeeea3a3a1b39d19996d3c2"><td class="memTemplParams" colspan="2">template&lt;PtxLoadModifier MODIFIER, typename InputIterator &gt; </td></tr>
 <tr class="memitem:ga2467f2337aeeea3a3a1b39d19996d3c2"><td class="memTemplItemLeft" align="right" valign="top">__device__ __forceinline__ <br class="typebreak"/>
 std::iterator_traits<br class="typebreak"/>
-&lt; InputIteratorRA &gt;<br class="typebreak"/>
-::value_type&#160;</td><td class="memTemplItemRight" valign="bottom"><a class="el" href="group___io_module.html#ga2467f2337aeeea3a3a1b39d19996d3c2">cub::ThreadLoad</a> (InputIteratorRA itr)</td></tr>
+&lt; InputIterator &gt;<br class="typebreak"/>
+::value_type&#160;</td><td class="memTemplItemRight" valign="bottom"><a class="el" href="group___io_module.html#ga2467f2337aeeea3a3a1b39d19996d3c2">cub::ThreadLoad</a> (InputIterator itr)</td></tr>
 <tr class="memdesc:ga2467f2337aeeea3a3a1b39d19996d3c2"><td class="mdescLeft">&#160;</td><td class="mdescRight">Thread utility for reading memory using <a class="el" href="group___io_module.html#ga023420f30fec7d4b187fc98f4fd2a55d" title="Enumeration of PTX cache-modifiers for memory load operations. ">cub::PtxLoadModifier</a> cache modifiers.  <a href="#ga2467f2337aeeea3a3a1b39d19996d3c2">More...</a><br/></td></tr>
 <tr class="separator:ga2467f2337aeeea3a3a1b39d19996d3c2"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:ga870b5b156d3d0a65a8c551884b18a2d6"><td class="memTemplParams" colspan="2">template&lt;PtxStoreModifier MODIFIER, typename OutputIteratorRA , typename T &gt; </td></tr>
-<tr class="memitem:ga870b5b156d3d0a65a8c551884b18a2d6"><td class="memTemplItemLeft" align="right" valign="top">__device__ __forceinline__ void&#160;</td><td class="memTemplItemRight" valign="bottom"><a class="el" href="group___io_module.html#ga870b5b156d3d0a65a8c551884b18a2d6">cub::ThreadStore</a> (OutputIteratorRA itr, T val)</td></tr>
+<tr class="memitem:ga870b5b156d3d0a65a8c551884b18a2d6"><td class="memTemplParams" colspan="2">template&lt;PtxStoreModifier MODIFIER, typename OutputIterator , typename T &gt; </td></tr>
+<tr class="memitem:ga870b5b156d3d0a65a8c551884b18a2d6"><td class="memTemplItemLeft" align="right" valign="top">__device__ __forceinline__ void&#160;</td><td class="memTemplItemRight" valign="bottom"><a class="el" href="group___io_module.html#ga870b5b156d3d0a65a8c551884b18a2d6">cub::ThreadStore</a> (OutputIterator itr, T val)</td></tr>
 <tr class="memdesc:ga870b5b156d3d0a65a8c551884b18a2d6"><td class="mdescLeft">&#160;</td><td class="mdescRight">Thread utility for writing memory using <a class="el" href="group___io_module.html#gae9c7d6a6af7104f528509182ac9c9da2" title="Enumeration of PTX cache-modifiers for memory store operations. ">cub::PtxStoreModifier</a> cache modifiers.  <a href="#ga870b5b156d3d0a65a8c551884b18a2d6">More...</a><br/></td></tr>
 <tr class="separator:ga870b5b156d3d0a65a8c551884b18a2d6"><td class="memSeparator" colspan="2">&#160;</td></tr>
 </table><table class="memberdecls">
 <tr class="heading"><td colspan="2"><h2 class="groupheader"><a name="member-group"></a>
 Blocked I/O</h2></td></tr>
-<tr class="memitem:ga0f245535ce8c023d6d85bcfc0bf9907e"><td class="memTemplParams" colspan="2">template&lt;PtxLoadModifier MODIFIER, typename T , int ITEMS_PER_THREAD, typename InputIteratorRA &gt; </td></tr>
-<tr class="memitem:ga0f245535ce8c023d6d85bcfc0bf9907e"><td class="memTemplItemLeft" align="right" valign="top">__device__ __forceinline__ void&#160;</td><td class="memTemplItemRight" valign="bottom"><a class="el" href="group___io_module.html#ga0f245535ce8c023d6d85bcfc0bf9907e">cub::LoadBlocked</a> (int linear_tid, InputIteratorRA block_itr, T(&amp;items)[ITEMS_PER_THREAD])</td></tr>
+<tr class="memitem:ga0f245535ce8c023d6d85bcfc0bf9907e"><td class="memTemplParams" colspan="2">template&lt;PtxLoadModifier MODIFIER, typename T , int ITEMS_PER_THREAD, typename InputIterator &gt; </td></tr>
+<tr class="memitem:ga0f245535ce8c023d6d85bcfc0bf9907e"><td class="memTemplItemLeft" align="right" valign="top">__device__ __forceinline__ void&#160;</td><td class="memTemplItemRight" valign="bottom"><a class="el" href="group___io_module.html#ga0f245535ce8c023d6d85bcfc0bf9907e">cub::LoadBlocked</a> (int linear_tid, InputIterator block_itr, T(&amp;items)[ITEMS_PER_THREAD])</td></tr>
 <tr class="memdesc:ga0f245535ce8c023d6d85bcfc0bf9907e"><td class="mdescLeft">&#160;</td><td class="mdescRight">Load a linear segment of items into a blocked arrangement across the thread block using the specified cache modifier.  <a href="#ga0f245535ce8c023d6d85bcfc0bf9907e">More...</a><br/></td></tr>
 <tr class="separator:ga0f245535ce8c023d6d85bcfc0bf9907e"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:gae694d6fa9abb0ef67802d12d2c19516c"><td class="memTemplParams" colspan="2">template&lt;PtxLoadModifier MODIFIER, typename T , int ITEMS_PER_THREAD, typename InputIteratorRA &gt; </td></tr>
-<tr class="memitem:gae694d6fa9abb0ef67802d12d2c19516c"><td class="memTemplItemLeft" align="right" valign="top">__device__ __forceinline__ void&#160;</td><td class="memTemplItemRight" valign="bottom"><a class="el" href="group___io_module.html#gae694d6fa9abb0ef67802d12d2c19516c">cub::LoadBlocked</a> (int linear_tid, InputIteratorRA block_itr, T(&amp;items)[ITEMS_PER_THREAD], int valid_items)</td></tr>
+<tr class="memitem:gae694d6fa9abb0ef67802d12d2c19516c"><td class="memTemplParams" colspan="2">template&lt;PtxLoadModifier MODIFIER, typename T , int ITEMS_PER_THREAD, typename InputIterator &gt; </td></tr>
+<tr class="memitem:gae694d6fa9abb0ef67802d12d2c19516c"><td class="memTemplItemLeft" align="right" valign="top">__device__ __forceinline__ void&#160;</td><td class="memTemplItemRight" valign="bottom"><a class="el" href="group___io_module.html#gae694d6fa9abb0ef67802d12d2c19516c">cub::LoadBlocked</a> (int linear_tid, InputIterator block_itr, T(&amp;items)[ITEMS_PER_THREAD], int valid_items)</td></tr>
 <tr class="memdesc:gae694d6fa9abb0ef67802d12d2c19516c"><td class="mdescLeft">&#160;</td><td class="mdescRight">Load a linear segment of items into a blocked arrangement across the thread block using the specified cache modifier, guarded by range.  <a href="#gae694d6fa9abb0ef67802d12d2c19516c">More...</a><br/></td></tr>
 <tr class="separator:gae694d6fa9abb0ef67802d12d2c19516c"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:ga4aa27e3c558ba1ba7c306c834ad67b0f"><td class="memTemplParams" colspan="2">template&lt;PtxLoadModifier MODIFIER, typename T , int ITEMS_PER_THREAD, typename InputIteratorRA &gt; </td></tr>
-<tr class="memitem:ga4aa27e3c558ba1ba7c306c834ad67b0f"><td class="memTemplItemLeft" align="right" valign="top">__device__ __forceinline__ void&#160;</td><td class="memTemplItemRight" valign="bottom"><a class="el" href="group___io_module.html#ga4aa27e3c558ba1ba7c306c834ad67b0f">cub::LoadBlocked</a> (int linear_tid, InputIteratorRA block_itr, T(&amp;items)[ITEMS_PER_THREAD], int valid_items, T oob_default)</td></tr>
+<tr class="memitem:ga4aa27e3c558ba1ba7c306c834ad67b0f"><td class="memTemplParams" colspan="2">template&lt;PtxLoadModifier MODIFIER, typename T , int ITEMS_PER_THREAD, typename InputIterator &gt; </td></tr>
+<tr class="memitem:ga4aa27e3c558ba1ba7c306c834ad67b0f"><td class="memTemplItemLeft" align="right" valign="top">__device__ __forceinline__ void&#160;</td><td class="memTemplItemRight" valign="bottom"><a class="el" href="group___io_module.html#ga4aa27e3c558ba1ba7c306c834ad67b0f">cub::LoadBlocked</a> (int linear_tid, InputIterator block_itr, T(&amp;items)[ITEMS_PER_THREAD], int valid_items, T oob_default)</td></tr>
 <tr class="memdesc:ga4aa27e3c558ba1ba7c306c834ad67b0f"><td class="mdescLeft">&#160;</td><td class="mdescRight">Load a linear segment of items into a blocked arrangement across the thread block using the specified cache modifier, guarded by range, with a fall-back assignment of out-of-bound elements..  <a href="#ga4aa27e3c558ba1ba7c306c834ad67b0f">More...</a><br/></td></tr>
 <tr class="separator:ga4aa27e3c558ba1ba7c306c834ad67b0f"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:ga0e69bdc5b96bad62c9501af85532fc7b"><td class="memTemplParams" colspan="2">template&lt;PtxStoreModifier MODIFIER, typename T , int ITEMS_PER_THREAD, typename OutputIteratorRA &gt; </td></tr>
-<tr class="memitem:ga0e69bdc5b96bad62c9501af85532fc7b"><td class="memTemplItemLeft" align="right" valign="top">__device__ __forceinline__ void&#160;</td><td class="memTemplItemRight" valign="bottom"><a class="el" href="group___io_module.html#ga0e69bdc5b96bad62c9501af85532fc7b">cub::StoreBlocked</a> (int linear_tid, OutputIteratorRA block_itr, T(&amp;items)[ITEMS_PER_THREAD])</td></tr>
+<tr class="memitem:ga0e69bdc5b96bad62c9501af85532fc7b"><td class="memTemplParams" colspan="2">template&lt;PtxStoreModifier MODIFIER, typename T , int ITEMS_PER_THREAD, typename OutputIterator &gt; </td></tr>
+<tr class="memitem:ga0e69bdc5b96bad62c9501af85532fc7b"><td class="memTemplItemLeft" align="right" valign="top">__device__ __forceinline__ void&#160;</td><td class="memTemplItemRight" valign="bottom"><a class="el" href="group___io_module.html#ga0e69bdc5b96bad62c9501af85532fc7b">cub::StoreBlocked</a> (int linear_tid, OutputIterator block_itr, T(&amp;items)[ITEMS_PER_THREAD])</td></tr>
 <tr class="memdesc:ga0e69bdc5b96bad62c9501af85532fc7b"><td class="mdescLeft">&#160;</td><td class="mdescRight">Store a blocked arrangement of items across a thread block into a linear segment of items using the specified cache modifier.  <a href="#ga0e69bdc5b96bad62c9501af85532fc7b">More...</a><br/></td></tr>
 <tr class="separator:ga0e69bdc5b96bad62c9501af85532fc7b"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:gac84f07cf1f61e45b26290515e9b4d3ae"><td class="memTemplParams" colspan="2">template&lt;PtxStoreModifier MODIFIER, typename T , int ITEMS_PER_THREAD, typename OutputIteratorRA &gt; </td></tr>
-<tr class="memitem:gac84f07cf1f61e45b26290515e9b4d3ae"><td class="memTemplItemLeft" align="right" valign="top">__device__ __forceinline__ void&#160;</td><td class="memTemplItemRight" valign="bottom"><a class="el" href="group___io_module.html#gac84f07cf1f61e45b26290515e9b4d3ae">cub::StoreBlocked</a> (int linear_tid, OutputIteratorRA block_itr, T(&amp;items)[ITEMS_PER_THREAD], int valid_items)</td></tr>
+<tr class="memitem:gac84f07cf1f61e45b26290515e9b4d3ae"><td class="memTemplParams" colspan="2">template&lt;PtxStoreModifier MODIFIER, typename T , int ITEMS_PER_THREAD, typename OutputIterator &gt; </td></tr>
+<tr class="memitem:gac84f07cf1f61e45b26290515e9b4d3ae"><td class="memTemplItemLeft" align="right" valign="top">__device__ __forceinline__ void&#160;</td><td class="memTemplItemRight" valign="bottom"><a class="el" href="group___io_module.html#gac84f07cf1f61e45b26290515e9b4d3ae">cub::StoreBlocked</a> (int linear_tid, OutputIterator block_itr, T(&amp;items)[ITEMS_PER_THREAD], int valid_items)</td></tr>
 <tr class="memdesc:gac84f07cf1f61e45b26290515e9b4d3ae"><td class="mdescLeft">&#160;</td><td class="mdescRight">Store a blocked arrangement of items across a thread block into a linear segment of items using the specified cache modifier, guarded by range.  <a href="#gac84f07cf1f61e45b26290515e9b4d3ae">More...</a><br/></td></tr>
 <tr class="separator:gac84f07cf1f61e45b26290515e9b4d3ae"><td class="memSeparator" colspan="2">&#160;</td></tr>
 </table><table class="memberdecls">
 <tr class="heading"><td colspan="2"><h2 class="groupheader"><a name="member-group"></a>
 Striped I/O</h2></td></tr>
-<tr class="memitem:gaa32b5c960e511b67901f4a5ba423048e"><td class="memTemplParams" colspan="2">template&lt;PtxLoadModifier MODIFIER, int BLOCK_THREADS, typename T , int ITEMS_PER_THREAD, typename InputIteratorRA &gt; </td></tr>
-<tr class="memitem:gaa32b5c960e511b67901f4a5ba423048e"><td class="memTemplItemLeft" align="right" valign="top">__device__ __forceinline__ void&#160;</td><td class="memTemplItemRight" valign="bottom"><a class="el" href="group___io_module.html#gaa32b5c960e511b67901f4a5ba423048e">cub::LoadStriped</a> (int linear_tid, InputIteratorRA block_itr, T(&amp;items)[ITEMS_PER_THREAD])</td></tr>
+<tr class="memitem:gaa32b5c960e511b67901f4a5ba423048e"><td class="memTemplParams" colspan="2">template&lt;PtxLoadModifier MODIFIER, int BLOCK_THREADS, typename T , int ITEMS_PER_THREAD, typename InputIterator &gt; </td></tr>
+<tr class="memitem:gaa32b5c960e511b67901f4a5ba423048e"><td class="memTemplItemLeft" align="right" valign="top">__device__ __forceinline__ void&#160;</td><td class="memTemplItemRight" valign="bottom"><a class="el" href="group___io_module.html#gaa32b5c960e511b67901f4a5ba423048e">cub::LoadStriped</a> (int linear_tid, InputIterator block_itr, T(&amp;items)[ITEMS_PER_THREAD])</td></tr>
 <tr class="memdesc:gaa32b5c960e511b67901f4a5ba423048e"><td class="mdescLeft">&#160;</td><td class="mdescRight">Load a linear segment of items into a striped arrangement across the thread block using the specified cache modifier.  <a href="#gaa32b5c960e511b67901f4a5ba423048e">More...</a><br/></td></tr>
 <tr class="separator:gaa32b5c960e511b67901f4a5ba423048e"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:ga5a9c12543d3c373375c0bf03e9385a1f"><td class="memTemplParams" colspan="2">template&lt;PtxLoadModifier MODIFIER, int BLOCK_THREADS, typename T , int ITEMS_PER_THREAD, typename InputIteratorRA &gt; </td></tr>
-<tr class="memitem:ga5a9c12543d3c373375c0bf03e9385a1f"><td class="memTemplItemLeft" align="right" valign="top">__device__ __forceinline__ void&#160;</td><td class="memTemplItemRight" valign="bottom"><a class="el" href="group___io_module.html#ga5a9c12543d3c373375c0bf03e9385a1f">cub::LoadStriped</a> (int linear_tid, InputIteratorRA block_itr, T(&amp;items)[ITEMS_PER_THREAD], int valid_items)</td></tr>
+<tr class="memitem:ga5a9c12543d3c373375c0bf03e9385a1f"><td class="memTemplParams" colspan="2">template&lt;PtxLoadModifier MODIFIER, int BLOCK_THREADS, typename T , int ITEMS_PER_THREAD, typename InputIterator &gt; </td></tr>
+<tr class="memitem:ga5a9c12543d3c373375c0bf03e9385a1f"><td class="memTemplItemLeft" align="right" valign="top">__device__ __forceinline__ void&#160;</td><td class="memTemplItemRight" valign="bottom"><a class="el" href="group___io_module.html#ga5a9c12543d3c373375c0bf03e9385a1f">cub::LoadStriped</a> (int linear_tid, InputIterator block_itr, T(&amp;items)[ITEMS_PER_THREAD], int valid_items)</td></tr>
 <tr class="memdesc:ga5a9c12543d3c373375c0bf03e9385a1f"><td class="mdescLeft">&#160;</td><td class="mdescRight">Load a linear segment of items into a striped arrangement across the thread block using the specified cache modifier, guarded by range.  <a href="#ga5a9c12543d3c373375c0bf03e9385a1f">More...</a><br/></td></tr>
 <tr class="separator:ga5a9c12543d3c373375c0bf03e9385a1f"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:ga020063c6e3b8ffb09a87a00fe6823381"><td class="memTemplParams" colspan="2">template&lt;PtxLoadModifier MODIFIER, int BLOCK_THREADS, typename T , int ITEMS_PER_THREAD, typename InputIteratorRA &gt; </td></tr>
-<tr class="memitem:ga020063c6e3b8ffb09a87a00fe6823381"><td class="memTemplItemLeft" align="right" valign="top">__device__ __forceinline__ void&#160;</td><td class="memTemplItemRight" valign="bottom"><a class="el" href="group___io_module.html#ga020063c6e3b8ffb09a87a00fe6823381">cub::LoadStriped</a> (int linear_tid, InputIteratorRA block_itr, T(&amp;items)[ITEMS_PER_THREAD], int valid_items, T oob_default)</td></tr>
+<tr class="memitem:ga020063c6e3b8ffb09a87a00fe6823381"><td class="memTemplParams" colspan="2">template&lt;PtxLoadModifier MODIFIER, int BLOCK_THREADS, typename T , int ITEMS_PER_THREAD, typename InputIterator &gt; </td></tr>
+<tr class="memitem:ga020063c6e3b8ffb09a87a00fe6823381"><td class="memTemplItemLeft" align="right" valign="top">__device__ __forceinline__ void&#160;</td><td class="memTemplItemRight" valign="bottom"><a class="el" href="group___io_module.html#ga020063c6e3b8ffb09a87a00fe6823381">cub::LoadStriped</a> (int linear_tid, InputIterator block_itr, T(&amp;items)[ITEMS_PER_THREAD], int valid_items, T oob_default)</td></tr>
 <tr class="memdesc:ga020063c6e3b8ffb09a87a00fe6823381"><td class="mdescLeft">&#160;</td><td class="mdescRight">Load a linear segment of items into a striped arrangement across the thread block using the specified cache modifier, guarded by range, with a fall-back assignment of out-of-bound elements.  <a href="#ga020063c6e3b8ffb09a87a00fe6823381">More...</a><br/></td></tr>
 <tr class="separator:ga020063c6e3b8ffb09a87a00fe6823381"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:gadce0282ac2ac679aa9d046e534da6af2"><td class="memTemplParams" colspan="2">template&lt;PtxStoreModifier MODIFIER, int BLOCK_THREADS, typename T , int ITEMS_PER_THREAD, typename OutputIteratorRA &gt; </td></tr>
-<tr class="memitem:gadce0282ac2ac679aa9d046e534da6af2"><td class="memTemplItemLeft" align="right" valign="top">__device__ __forceinline__ void&#160;</td><td class="memTemplItemRight" valign="bottom"><a class="el" href="group___io_module.html#gadce0282ac2ac679aa9d046e534da6af2">cub::StoreStriped</a> (int linear_tid, OutputIteratorRA block_itr, T(&amp;items)[ITEMS_PER_THREAD])</td></tr>
+<tr class="memitem:gadce0282ac2ac679aa9d046e534da6af2"><td class="memTemplParams" colspan="2">template&lt;PtxStoreModifier MODIFIER, int BLOCK_THREADS, typename T , int ITEMS_PER_THREAD, typename OutputIterator &gt; </td></tr>
+<tr class="memitem:gadce0282ac2ac679aa9d046e534da6af2"><td class="memTemplItemLeft" align="right" valign="top">__device__ __forceinline__ void&#160;</td><td class="memTemplItemRight" valign="bottom"><a class="el" href="group___io_module.html#gadce0282ac2ac679aa9d046e534da6af2">cub::StoreStriped</a> (int linear_tid, OutputIterator block_itr, T(&amp;items)[ITEMS_PER_THREAD])</td></tr>
 <tr class="memdesc:gadce0282ac2ac679aa9d046e534da6af2"><td class="mdescLeft">&#160;</td><td class="mdescRight">Store a striped arrangement of data across the thread block into a linear segment of items using the specified cache modifier.  <a href="#gadce0282ac2ac679aa9d046e534da6af2">More...</a><br/></td></tr>
 <tr class="separator:gadce0282ac2ac679aa9d046e534da6af2"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:ga5d9cc4924d2bd640be9cb86e4754ce8c"><td class="memTemplParams" colspan="2">template&lt;PtxStoreModifier MODIFIER, int BLOCK_THREADS, typename T , int ITEMS_PER_THREAD, typename OutputIteratorRA &gt; </td></tr>
-<tr class="memitem:ga5d9cc4924d2bd640be9cb86e4754ce8c"><td class="memTemplItemLeft" align="right" valign="top">__device__ __forceinline__ void&#160;</td><td class="memTemplItemRight" valign="bottom"><a class="el" href="group___io_module.html#ga5d9cc4924d2bd640be9cb86e4754ce8c">cub::StoreStriped</a> (int linear_tid, OutputIteratorRA block_itr, T(&amp;items)[ITEMS_PER_THREAD], int valid_items)</td></tr>
+<tr class="memitem:ga5d9cc4924d2bd640be9cb86e4754ce8c"><td class="memTemplParams" colspan="2">template&lt;PtxStoreModifier MODIFIER, int BLOCK_THREADS, typename T , int ITEMS_PER_THREAD, typename OutputIterator &gt; </td></tr>
+<tr class="memitem:ga5d9cc4924d2bd640be9cb86e4754ce8c"><td class="memTemplItemLeft" align="right" valign="top">__device__ __forceinline__ void&#160;</td><td class="memTemplItemRight" valign="bottom"><a class="el" href="group___io_module.html#ga5d9cc4924d2bd640be9cb86e4754ce8c">cub::StoreStriped</a> (int linear_tid, OutputIterator block_itr, T(&amp;items)[ITEMS_PER_THREAD], int valid_items)</td></tr>
 <tr class="memdesc:ga5d9cc4924d2bd640be9cb86e4754ce8c"><td class="mdescLeft">&#160;</td><td class="mdescRight">Store a striped arrangement of data across the thread block into a linear segment of items using the specified cache modifier, guarded by range.  <a href="#ga5d9cc4924d2bd640be9cb86e4754ce8c">More...</a><br/></td></tr>
 <tr class="separator:ga5d9cc4924d2bd640be9cb86e4754ce8c"><td class="memSeparator" colspan="2">&#160;</td></tr>
 </table><table class="memberdecls">
 <tr class="heading"><td colspan="2"><h2 class="groupheader"><a name="member-group"></a>
 Warp-striped I/O</h2></td></tr>
-<tr class="memitem:gaea39c52d05d5f8d078ff76b154fad26d"><td class="memTemplParams" colspan="2">template&lt;PtxLoadModifier MODIFIER, typename T , int ITEMS_PER_THREAD, typename InputIteratorRA &gt; </td></tr>
-<tr class="memitem:gaea39c52d05d5f8d078ff76b154fad26d"><td class="memTemplItemLeft" align="right" valign="top">__device__ __forceinline__ void&#160;</td><td class="memTemplItemRight" valign="bottom"><a class="el" href="group___io_module.html#gaea39c52d05d5f8d078ff76b154fad26d">cub::LoadWarpStriped</a> (int linear_tid, InputIteratorRA block_itr, T(&amp;items)[ITEMS_PER_THREAD])</td></tr>
+<tr class="memitem:gaea39c52d05d5f8d078ff76b154fad26d"><td class="memTemplParams" colspan="2">template&lt;PtxLoadModifier MODIFIER, typename T , int ITEMS_PER_THREAD, typename InputIterator &gt; </td></tr>
+<tr class="memitem:gaea39c52d05d5f8d078ff76b154fad26d"><td class="memTemplItemLeft" align="right" valign="top">__device__ __forceinline__ void&#160;</td><td class="memTemplItemRight" valign="bottom"><a class="el" href="group___io_module.html#gaea39c52d05d5f8d078ff76b154fad26d">cub::LoadWarpStriped</a> (int linear_tid, InputIterator block_itr, T(&amp;items)[ITEMS_PER_THREAD])</td></tr>
 <tr class="memdesc:gaea39c52d05d5f8d078ff76b154fad26d"><td class="mdescLeft">&#160;</td><td class="mdescRight">Load a linear segment of items into a warp-striped arrangement across the thread block using the specified cache modifier.  <a href="#gaea39c52d05d5f8d078ff76b154fad26d">More...</a><br/></td></tr>
 <tr class="separator:gaea39c52d05d5f8d078ff76b154fad26d"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:ga4486da2d836785d42f48ae379e8dd85a"><td class="memTemplParams" colspan="2">template&lt;PtxLoadModifier MODIFIER, typename T , int ITEMS_PER_THREAD, typename InputIteratorRA &gt; </td></tr>
-<tr class="memitem:ga4486da2d836785d42f48ae379e8dd85a"><td class="memTemplItemLeft" align="right" valign="top">__device__ __forceinline__ void&#160;</td><td class="memTemplItemRight" valign="bottom"><a class="el" href="group___io_module.html#ga4486da2d836785d42f48ae379e8dd85a">cub::LoadWarpStriped</a> (int linear_tid, InputIteratorRA block_itr, T(&amp;items)[ITEMS_PER_THREAD], int valid_items)</td></tr>
+<tr class="memitem:ga4486da2d836785d42f48ae379e8dd85a"><td class="memTemplParams" colspan="2">template&lt;PtxLoadModifier MODIFIER, typename T , int ITEMS_PER_THREAD, typename InputIterator &gt; </td></tr>
+<tr class="memitem:ga4486da2d836785d42f48ae379e8dd85a"><td class="memTemplItemLeft" align="right" valign="top">__device__ __forceinline__ void&#160;</td><td class="memTemplItemRight" valign="bottom"><a class="el" href="group___io_module.html#ga4486da2d836785d42f48ae379e8dd85a">cub::LoadWarpStriped</a> (int linear_tid, InputIterator block_itr, T(&amp;items)[ITEMS_PER_THREAD], int valid_items)</td></tr>
 <tr class="memdesc:ga4486da2d836785d42f48ae379e8dd85a"><td class="mdescLeft">&#160;</td><td class="mdescRight">Load a linear segment of items into a warp-striped arrangement across the thread block using the specified cache modifier, guarded by range.  <a href="#ga4486da2d836785d42f48ae379e8dd85a">More...</a><br/></td></tr>
 <tr class="separator:ga4486da2d836785d42f48ae379e8dd85a"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:ga92a5618a110d7963bbc6f54637b904b1"><td class="memTemplParams" colspan="2">template&lt;PtxLoadModifier MODIFIER, typename T , int ITEMS_PER_THREAD, typename InputIteratorRA &gt; </td></tr>
-<tr class="memitem:ga92a5618a110d7963bbc6f54637b904b1"><td class="memTemplItemLeft" align="right" valign="top">__device__ __forceinline__ void&#160;</td><td class="memTemplItemRight" valign="bottom"><a class="el" href="group___io_module.html#ga92a5618a110d7963bbc6f54637b904b1">cub::LoadWarpStriped</a> (int linear_tid, InputIteratorRA block_itr, T(&amp;items)[ITEMS_PER_THREAD], int valid_items, T oob_default)</td></tr>
+<tr class="memitem:ga92a5618a110d7963bbc6f54637b904b1"><td class="memTemplParams" colspan="2">template&lt;PtxLoadModifier MODIFIER, typename T , int ITEMS_PER_THREAD, typename InputIterator &gt; </td></tr>
+<tr class="memitem:ga92a5618a110d7963bbc6f54637b904b1"><td class="memTemplItemLeft" align="right" valign="top">__device__ __forceinline__ void&#160;</td><td class="memTemplItemRight" valign="bottom"><a class="el" href="group___io_module.html#ga92a5618a110d7963bbc6f54637b904b1">cub::LoadWarpStriped</a> (int linear_tid, InputIterator block_itr, T(&amp;items)[ITEMS_PER_THREAD], int valid_items, T oob_default)</td></tr>
 <tr class="memdesc:ga92a5618a110d7963bbc6f54637b904b1"><td class="mdescLeft">&#160;</td><td class="mdescRight">Load a linear segment of items into a warp-striped arrangement across the thread block using the specified cache modifier, guarded by range, with a fall-back assignment of out-of-bound elements.  <a href="#ga92a5618a110d7963bbc6f54637b904b1">More...</a><br/></td></tr>
 <tr class="separator:ga92a5618a110d7963bbc6f54637b904b1"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:ga07c4d38e195128da47fb9a8c582072d7"><td class="memTemplParams" colspan="2">template&lt;PtxStoreModifier MODIFIER, typename T , int ITEMS_PER_THREAD, typename OutputIteratorRA &gt; </td></tr>
-<tr class="memitem:ga07c4d38e195128da47fb9a8c582072d7"><td class="memTemplItemLeft" align="right" valign="top">__device__ __forceinline__ void&#160;</td><td class="memTemplItemRight" valign="bottom"><a class="el" href="group___io_module.html#ga07c4d38e195128da47fb9a8c582072d7">cub::StoreWarpStriped</a> (int linear_tid, OutputIteratorRA block_itr, T(&amp;items)[ITEMS_PER_THREAD])</td></tr>
+<tr class="memitem:ga07c4d38e195128da47fb9a8c582072d7"><td class="memTemplParams" colspan="2">template&lt;PtxStoreModifier MODIFIER, typename T , int ITEMS_PER_THREAD, typename OutputIterator &gt; </td></tr>
+<tr class="memitem:ga07c4d38e195128da47fb9a8c582072d7"><td class="memTemplItemLeft" align="right" valign="top">__device__ __forceinline__ void&#160;</td><td class="memTemplItemRight" valign="bottom"><a class="el" href="group___io_module.html#ga07c4d38e195128da47fb9a8c582072d7">cub::StoreWarpStriped</a> (int linear_tid, OutputIterator block_itr, T(&amp;items)[ITEMS_PER_THREAD])</td></tr>
 <tr class="memdesc:ga07c4d38e195128da47fb9a8c582072d7"><td class="mdescLeft">&#160;</td><td class="mdescRight">Store a warp-striped arrangement of data across the thread block into a linear segment of items using the specified cache modifier.  <a href="#ga07c4d38e195128da47fb9a8c582072d7">More...</a><br/></td></tr>
 <tr class="separator:ga07c4d38e195128da47fb9a8c582072d7"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:ga7b3a3b0c99fbfb1afc76b5fde54ba3dc"><td class="memTemplParams" colspan="2">template&lt;PtxStoreModifier MODIFIER, typename T , int ITEMS_PER_THREAD, typename OutputIteratorRA &gt; </td></tr>
-<tr class="memitem:ga7b3a3b0c99fbfb1afc76b5fde54ba3dc"><td class="memTemplItemLeft" align="right" valign="top">__device__ __forceinline__ void&#160;</td><td class="memTemplItemRight" valign="bottom"><a class="el" href="group___io_module.html#ga7b3a3b0c99fbfb1afc76b5fde54ba3dc">cub::StoreWarpStriped</a> (int linear_tid, OutputIteratorRA block_itr, T(&amp;items)[ITEMS_PER_THREAD], int valid_items)</td></tr>
+<tr class="memitem:ga7b3a3b0c99fbfb1afc76b5fde54ba3dc"><td class="memTemplParams" colspan="2">template&lt;PtxStoreModifier MODIFIER, typename T , int ITEMS_PER_THREAD, typename OutputIterator &gt; </td></tr>
+<tr class="memitem:ga7b3a3b0c99fbfb1afc76b5fde54ba3dc"><td class="memTemplItemLeft" align="right" valign="top">__device__ __forceinline__ void&#160;</td><td class="memTemplItemRight" valign="bottom"><a class="el" href="group___io_module.html#ga7b3a3b0c99fbfb1afc76b5fde54ba3dc">cub::StoreWarpStriped</a> (int linear_tid, OutputIterator block_itr, T(&amp;items)[ITEMS_PER_THREAD], int valid_items)</td></tr>
 <tr class="memdesc:ga7b3a3b0c99fbfb1afc76b5fde54ba3dc"><td class="mdescLeft">&#160;</td><td class="mdescRight">Store a warp-striped arrangement of data across the thread block into a linear segment of items using the specified cache modifier, guarded by range.  <a href="#ga7b3a3b0c99fbfb1afc76b5fde54ba3dc">More...</a><br/></td></tr>
 <tr class="separator:ga7b3a3b0c99fbfb1afc76b5fde54ba3dc"><td class="memSeparator" colspan="2">&#160;</td></tr>
 </table><table class="memberdecls">
@@ -296,7 +296,7 @@ Blocked, vectorized I/O</h2></td></tr>
 <div class="memitem">
 <div class="memproto">
 <div class="memtemplate">
-template&lt;PtxLoadModifier MODIFIER, typename T , int ITEMS_PER_THREAD, typename InputIteratorRA &gt; </div>
+template&lt;PtxLoadModifier MODIFIER, typename T , int ITEMS_PER_THREAD, typename InputIterator &gt; </div>
       <table class="memname">
         <tr>
           <td class="memname">__device__ __forceinline__ void cub::LoadBlocked </td>
@@ -307,7 +307,7 @@ template&lt;PtxLoadModifier MODIFIER, typename T , int ITEMS_PER_THREAD, typenam
         <tr>
           <td class="paramkey"></td>
           <td></td>
-          <td class="paramtype">InputIteratorRA&#160;</td>
+          <td class="paramtype">InputIterator&#160;</td>
           <td class="paramname"><em>block_itr</em>, </td>
         </tr>
         <tr>
@@ -331,7 +331,7 @@ template&lt;PtxLoadModifier MODIFIER, typename T , int ITEMS_PER_THREAD, typenam
     <tr><td class="paramname">MODIFIER</td><td><a class="el" href="group___io_module.html#ga023420f30fec7d4b187fc98f4fd2a55d" title="Enumeration of PTX cache-modifiers for memory load operations. ">cub::PtxLoadModifier</a> cache modifier. </td></tr>
     <tr><td class="paramname">T</td><td><b>[inferred]</b> The data type to load. </td></tr>
     <tr><td class="paramname">ITEMS_PER_THREAD</td><td><b>[inferred]</b> The number of consecutive items partitioned onto each thread. </td></tr>
-    <tr><td class="paramname">InputIteratorRA</td><td><b>[inferred]</b> The random-access iterator type for input (may be a simple pointer type). </td></tr>
+    <tr><td class="paramname">InputIterator</td><td><b>[inferred]</b> The random-access iterator type for input (may be a simple pointer type). </td></tr>
   </table>
   </dd>
 </dl>
@@ -352,7 +352,7 @@ template&lt;PtxLoadModifier MODIFIER, typename T , int ITEMS_PER_THREAD, typenam
 <div class="memitem">
 <div class="memproto">
 <div class="memtemplate">
-template&lt;PtxLoadModifier MODIFIER, typename T , int ITEMS_PER_THREAD, typename InputIteratorRA &gt; </div>
+template&lt;PtxLoadModifier MODIFIER, typename T , int ITEMS_PER_THREAD, typename InputIterator &gt; </div>
       <table class="memname">
         <tr>
           <td class="memname">__device__ __forceinline__ void cub::LoadBlocked </td>
@@ -363,7 +363,7 @@ template&lt;PtxLoadModifier MODIFIER, typename T , int ITEMS_PER_THREAD, typenam
         <tr>
           <td class="paramkey"></td>
           <td></td>
-          <td class="paramtype">InputIteratorRA&#160;</td>
+          <td class="paramtype">InputIterator&#160;</td>
           <td class="paramname"><em>block_itr</em>, </td>
         </tr>
         <tr>
@@ -393,7 +393,7 @@ template&lt;PtxLoadModifier MODIFIER, typename T , int ITEMS_PER_THREAD, typenam
     <tr><td class="paramname">MODIFIER</td><td><a class="el" href="group___io_module.html#ga023420f30fec7d4b187fc98f4fd2a55d" title="Enumeration of PTX cache-modifiers for memory load operations. ">cub::PtxLoadModifier</a> cache modifier. </td></tr>
     <tr><td class="paramname">T</td><td><b>[inferred]</b> The data type to load. </td></tr>
     <tr><td class="paramname">ITEMS_PER_THREAD</td><td><b>[inferred]</b> The number of consecutive items partitioned onto each thread. </td></tr>
-    <tr><td class="paramname">InputIteratorRA</td><td><b>[inferred]</b> The random-access iterator type for input (may be a simple pointer type). </td></tr>
+    <tr><td class="paramname">InputIterator</td><td><b>[inferred]</b> The random-access iterator type for input (may be a simple pointer type). </td></tr>
   </table>
   </dd>
 </dl>
@@ -415,7 +415,7 @@ template&lt;PtxLoadModifier MODIFIER, typename T , int ITEMS_PER_THREAD, typenam
 <div class="memitem">
 <div class="memproto">
 <div class="memtemplate">
-template&lt;PtxLoadModifier MODIFIER, typename T , int ITEMS_PER_THREAD, typename InputIteratorRA &gt; </div>
+template&lt;PtxLoadModifier MODIFIER, typename T , int ITEMS_PER_THREAD, typename InputIterator &gt; </div>
       <table class="memname">
         <tr>
           <td class="memname">__device__ __forceinline__ void cub::LoadBlocked </td>
@@ -426,7 +426,7 @@ template&lt;PtxLoadModifier MODIFIER, typename T , int ITEMS_PER_THREAD, typenam
         <tr>
           <td class="paramkey"></td>
           <td></td>
-          <td class="paramtype">InputIteratorRA&#160;</td>
+          <td class="paramtype">InputIterator&#160;</td>
           <td class="paramname"><em>block_itr</em>, </td>
         </tr>
         <tr>
@@ -462,7 +462,7 @@ template&lt;PtxLoadModifier MODIFIER, typename T , int ITEMS_PER_THREAD, typenam
     <tr><td class="paramname">MODIFIER</td><td><a class="el" href="group___io_module.html#ga023420f30fec7d4b187fc98f4fd2a55d" title="Enumeration of PTX cache-modifiers for memory load operations. ">cub::PtxLoadModifier</a> cache modifier. </td></tr>
     <tr><td class="paramname">T</td><td><b>[inferred]</b> The data type to load. </td></tr>
     <tr><td class="paramname">ITEMS_PER_THREAD</td><td><b>[inferred]</b> The number of consecutive items partitioned onto each thread. </td></tr>
-    <tr><td class="paramname">InputIteratorRA</td><td><b>[inferred]</b> The random-access iterator type for input (may be a simple pointer type). </td></tr>
+    <tr><td class="paramname">InputIterator</td><td><b>[inferred]</b> The random-access iterator type for input (may be a simple pointer type). </td></tr>
   </table>
   </dd>
 </dl>
@@ -546,7 +546,7 @@ template&lt;PtxLoadModifier MODIFIER, typename T , int ITEMS_PER_THREAD&gt; </di
 <div class="memitem">
 <div class="memproto">
 <div class="memtemplate">
-template&lt;PtxLoadModifier MODIFIER, int BLOCK_THREADS, typename T , int ITEMS_PER_THREAD, typename InputIteratorRA &gt; </div>
+template&lt;PtxLoadModifier MODIFIER, int BLOCK_THREADS, typename T , int ITEMS_PER_THREAD, typename InputIterator &gt; </div>
       <table class="memname">
         <tr>
           <td class="memname">__device__ __forceinline__ void cub::LoadStriped </td>
@@ -557,7 +557,7 @@ template&lt;PtxLoadModifier MODIFIER, int BLOCK_THREADS, typename T , int ITEMS_
         <tr>
           <td class="paramkey"></td>
           <td></td>
-          <td class="paramtype">InputIteratorRA&#160;</td>
+          <td class="paramtype">InputIterator&#160;</td>
           <td class="paramname"><em>block_itr</em>, </td>
         </tr>
         <tr>
@@ -582,7 +582,7 @@ template&lt;PtxLoadModifier MODIFIER, int BLOCK_THREADS, typename T , int ITEMS_
     <tr><td class="paramname">BLOCK_THREADS</td><td>The thread block size in threads </td></tr>
     <tr><td class="paramname">T</td><td><b>[inferred]</b> The data type to load. </td></tr>
     <tr><td class="paramname">ITEMS_PER_THREAD</td><td><b>[inferred]</b> The number of consecutive items partitioned onto each thread. </td></tr>
-    <tr><td class="paramname">InputIteratorRA</td><td><b>[inferred]</b> The random-access iterator type for input (may be a simple pointer type). </td></tr>
+    <tr><td class="paramname">InputIterator</td><td><b>[inferred]</b> The random-access iterator type for input (may be a simple pointer type). </td></tr>
   </table>
   </dd>
 </dl>
@@ -603,7 +603,7 @@ template&lt;PtxLoadModifier MODIFIER, int BLOCK_THREADS, typename T , int ITEMS_
 <div class="memitem">
 <div class="memproto">
 <div class="memtemplate">
-template&lt;PtxLoadModifier MODIFIER, int BLOCK_THREADS, typename T , int ITEMS_PER_THREAD, typename InputIteratorRA &gt; </div>
+template&lt;PtxLoadModifier MODIFIER, int BLOCK_THREADS, typename T , int ITEMS_PER_THREAD, typename InputIterator &gt; </div>
       <table class="memname">
         <tr>
           <td class="memname">__device__ __forceinline__ void cub::LoadStriped </td>
@@ -614,7 +614,7 @@ template&lt;PtxLoadModifier MODIFIER, int BLOCK_THREADS, typename T , int ITEMS_
         <tr>
           <td class="paramkey"></td>
           <td></td>
-          <td class="paramtype">InputIteratorRA&#160;</td>
+          <td class="paramtype">InputIterator&#160;</td>
           <td class="paramname"><em>block_itr</em>, </td>
         </tr>
         <tr>
@@ -645,7 +645,7 @@ template&lt;PtxLoadModifier MODIFIER, int BLOCK_THREADS, typename T , int ITEMS_
     <tr><td class="paramname">BLOCK_THREADS</td><td>The thread block size in threads </td></tr>
     <tr><td class="paramname">T</td><td><b>[inferred]</b> The data type to load. </td></tr>
     <tr><td class="paramname">ITEMS_PER_THREAD</td><td><b>[inferred]</b> The number of consecutive items partitioned onto each thread. </td></tr>
-    <tr><td class="paramname">InputIteratorRA</td><td><b>[inferred]</b> The random-access iterator type for input (may be a simple pointer type). </td></tr>
+    <tr><td class="paramname">InputIterator</td><td><b>[inferred]</b> The random-access iterator type for input (may be a simple pointer type). </td></tr>
   </table>
   </dd>
 </dl>
@@ -667,7 +667,7 @@ template&lt;PtxLoadModifier MODIFIER, int BLOCK_THREADS, typename T , int ITEMS_
 <div class="memitem">
 <div class="memproto">
 <div class="memtemplate">
-template&lt;PtxLoadModifier MODIFIER, int BLOCK_THREADS, typename T , int ITEMS_PER_THREAD, typename InputIteratorRA &gt; </div>
+template&lt;PtxLoadModifier MODIFIER, int BLOCK_THREADS, typename T , int ITEMS_PER_THREAD, typename InputIterator &gt; </div>
       <table class="memname">
         <tr>
           <td class="memname">__device__ __forceinline__ void cub::LoadStriped </td>
@@ -678,7 +678,7 @@ template&lt;PtxLoadModifier MODIFIER, int BLOCK_THREADS, typename T , int ITEMS_
         <tr>
           <td class="paramkey"></td>
           <td></td>
-          <td class="paramtype">InputIteratorRA&#160;</td>
+          <td class="paramtype">InputIterator&#160;</td>
           <td class="paramname"><em>block_itr</em>, </td>
         </tr>
         <tr>
@@ -715,7 +715,7 @@ template&lt;PtxLoadModifier MODIFIER, int BLOCK_THREADS, typename T , int ITEMS_
     <tr><td class="paramname">BLOCK_THREADS</td><td>The thread block size in threads </td></tr>
     <tr><td class="paramname">T</td><td><b>[inferred]</b> The data type to load. </td></tr>
     <tr><td class="paramname">ITEMS_PER_THREAD</td><td><b>[inferred]</b> The number of consecutive items partitioned onto each thread. </td></tr>
-    <tr><td class="paramname">InputIteratorRA</td><td><b>[inferred]</b> The random-access iterator type for input (may be a simple pointer type). </td></tr>
+    <tr><td class="paramname">InputIterator</td><td><b>[inferred]</b> The random-access iterator type for input (may be a simple pointer type). </td></tr>
   </table>
   </dd>
 </dl>
@@ -738,7 +738,7 @@ template&lt;PtxLoadModifier MODIFIER, int BLOCK_THREADS, typename T , int ITEMS_
 <div class="memitem">
 <div class="memproto">
 <div class="memtemplate">
-template&lt;PtxLoadModifier MODIFIER, typename T , int ITEMS_PER_THREAD, typename InputIteratorRA &gt; </div>
+template&lt;PtxLoadModifier MODIFIER, typename T , int ITEMS_PER_THREAD, typename InputIterator &gt; </div>
       <table class="memname">
         <tr>
           <td class="memname">__device__ __forceinline__ void cub::LoadWarpStriped </td>
@@ -749,7 +749,7 @@ template&lt;PtxLoadModifier MODIFIER, typename T , int ITEMS_PER_THREAD, typenam
         <tr>
           <td class="paramkey"></td>
           <td></td>
-          <td class="paramtype">InputIteratorRA&#160;</td>
+          <td class="paramtype">InputIterator&#160;</td>
           <td class="paramname"><em>block_itr</em>, </td>
         </tr>
         <tr>
@@ -774,7 +774,7 @@ template&lt;PtxLoadModifier MODIFIER, typename T , int ITEMS_PER_THREAD, typenam
     <tr><td class="paramname">MODIFIER</td><td><a class="el" href="group___io_module.html#ga023420f30fec7d4b187fc98f4fd2a55d" title="Enumeration of PTX cache-modifiers for memory load operations. ">cub::PtxLoadModifier</a> cache modifier. </td></tr>
     <tr><td class="paramname">T</td><td><b>[inferred]</b> The data type to load. </td></tr>
     <tr><td class="paramname">ITEMS_PER_THREAD</td><td><b>[inferred]</b> The number of consecutive items partitioned onto each thread. </td></tr>
-    <tr><td class="paramname">InputIteratorRA</td><td><b>[inferred]</b> The random-access iterator type for input (may be a simple pointer type). </td></tr>
+    <tr><td class="paramname">InputIterator</td><td><b>[inferred]</b> The random-access iterator type for input (may be a simple pointer type). </td></tr>
   </table>
   </dd>
 </dl>
@@ -795,7 +795,7 @@ template&lt;PtxLoadModifier MODIFIER, typename T , int ITEMS_PER_THREAD, typenam
 <div class="memitem">
 <div class="memproto">
 <div class="memtemplate">
-template&lt;PtxLoadModifier MODIFIER, typename T , int ITEMS_PER_THREAD, typename InputIteratorRA &gt; </div>
+template&lt;PtxLoadModifier MODIFIER, typename T , int ITEMS_PER_THREAD, typename InputIterator &gt; </div>
       <table class="memname">
         <tr>
           <td class="memname">__device__ __forceinline__ void cub::LoadWarpStriped </td>
@@ -806,7 +806,7 @@ template&lt;PtxLoadModifier MODIFIER, typename T , int ITEMS_PER_THREAD, typenam
         <tr>
           <td class="paramkey"></td>
           <td></td>
-          <td class="paramtype">InputIteratorRA&#160;</td>
+          <td class="paramtype">InputIterator&#160;</td>
           <td class="paramname"><em>block_itr</em>, </td>
         </tr>
         <tr>
@@ -837,7 +837,7 @@ template&lt;PtxLoadModifier MODIFIER, typename T , int ITEMS_PER_THREAD, typenam
     <tr><td class="paramname">MODIFIER</td><td><a class="el" href="group___io_module.html#ga023420f30fec7d4b187fc98f4fd2a55d" title="Enumeration of PTX cache-modifiers for memory load operations. ">cub::PtxLoadModifier</a> cache modifier. </td></tr>
     <tr><td class="paramname">T</td><td><b>[inferred]</b> The data type to load. </td></tr>
     <tr><td class="paramname">ITEMS_PER_THREAD</td><td><b>[inferred]</b> The number of consecutive items partitioned onto each thread. </td></tr>
-    <tr><td class="paramname">InputIteratorRA</td><td><b>[inferred]</b> The random-access iterator type for input (may be a simple pointer type). </td></tr>
+    <tr><td class="paramname">InputIterator</td><td><b>[inferred]</b> The random-access iterator type for input (may be a simple pointer type). </td></tr>
   </table>
   </dd>
 </dl>
@@ -859,7 +859,7 @@ template&lt;PtxLoadModifier MODIFIER, typename T , int ITEMS_PER_THREAD, typenam
 <div class="memitem">
 <div class="memproto">
 <div class="memtemplate">
-template&lt;PtxLoadModifier MODIFIER, typename T , int ITEMS_PER_THREAD, typename InputIteratorRA &gt; </div>
+template&lt;PtxLoadModifier MODIFIER, typename T , int ITEMS_PER_THREAD, typename InputIterator &gt; </div>
       <table class="memname">
         <tr>
           <td class="memname">__device__ __forceinline__ void cub::LoadWarpStriped </td>
@@ -870,7 +870,7 @@ template&lt;PtxLoadModifier MODIFIER, typename T , int ITEMS_PER_THREAD, typenam
         <tr>
           <td class="paramkey"></td>
           <td></td>
-          <td class="paramtype">InputIteratorRA&#160;</td>
+          <td class="paramtype">InputIterator&#160;</td>
           <td class="paramname"><em>block_itr</em>, </td>
         </tr>
         <tr>
@@ -907,7 +907,7 @@ template&lt;PtxLoadModifier MODIFIER, typename T , int ITEMS_PER_THREAD, typenam
     <tr><td class="paramname">MODIFIER</td><td><a class="el" href="group___io_module.html#ga023420f30fec7d4b187fc98f4fd2a55d" title="Enumeration of PTX cache-modifiers for memory load operations. ">cub::PtxLoadModifier</a> cache modifier. </td></tr>
     <tr><td class="paramname">T</td><td><b>[inferred]</b> The data type to load. </td></tr>
     <tr><td class="paramname">ITEMS_PER_THREAD</td><td><b>[inferred]</b> The number of consecutive items partitioned onto each thread. </td></tr>
-    <tr><td class="paramname">InputIteratorRA</td><td><b>[inferred]</b> The random-access iterator type for input (may be a simple pointer type). </td></tr>
+    <tr><td class="paramname">InputIterator</td><td><b>[inferred]</b> The random-access iterator type for input (may be a simple pointer type). </td></tr>
   </table>
   </dd>
 </dl>
@@ -930,7 +930,7 @@ template&lt;PtxLoadModifier MODIFIER, typename T , int ITEMS_PER_THREAD, typenam
 <div class="memitem">
 <div class="memproto">
 <div class="memtemplate">
-template&lt;PtxStoreModifier MODIFIER, typename T , int ITEMS_PER_THREAD, typename OutputIteratorRA &gt; </div>
+template&lt;PtxStoreModifier MODIFIER, typename T , int ITEMS_PER_THREAD, typename OutputIterator &gt; </div>
       <table class="memname">
         <tr>
           <td class="memname">__device__ __forceinline__ void cub::StoreBlocked </td>
@@ -941,7 +941,7 @@ template&lt;PtxStoreModifier MODIFIER, typename T , int ITEMS_PER_THREAD, typena
         <tr>
           <td class="paramkey"></td>
           <td></td>
-          <td class="paramtype">OutputIteratorRA&#160;</td>
+          <td class="paramtype">OutputIterator&#160;</td>
           <td class="paramname"><em>block_itr</em>, </td>
         </tr>
         <tr>
@@ -965,7 +965,7 @@ template&lt;PtxStoreModifier MODIFIER, typename T , int ITEMS_PER_THREAD, typena
     <tr><td class="paramname">MODIFIER</td><td><a class="el" href="group___io_module.html#gae9c7d6a6af7104f528509182ac9c9da2" title="Enumeration of PTX cache-modifiers for memory store operations. ">cub::PtxStoreModifier</a> cache modifier. </td></tr>
     <tr><td class="paramname">T</td><td><b>[inferred]</b> The data type to store. </td></tr>
     <tr><td class="paramname">ITEMS_PER_THREAD</td><td><b>[inferred]</b> The number of consecutive items partitioned onto each thread. </td></tr>
-    <tr><td class="paramname">OutputIteratorRA</td><td><b>[inferred]</b> The random-access iterator type for output (may be a simple pointer type). </td></tr>
+    <tr><td class="paramname">OutputIterator</td><td><b>[inferred]</b> The random-access iterator type for output (may be a simple pointer type). </td></tr>
   </table>
   </dd>
 </dl>
@@ -986,7 +986,7 @@ template&lt;PtxStoreModifier MODIFIER, typename T , int ITEMS_PER_THREAD, typena
 <div class="memitem">
 <div class="memproto">
 <div class="memtemplate">
-template&lt;PtxStoreModifier MODIFIER, typename T , int ITEMS_PER_THREAD, typename OutputIteratorRA &gt; </div>
+template&lt;PtxStoreModifier MODIFIER, typename T , int ITEMS_PER_THREAD, typename OutputIterator &gt; </div>
       <table class="memname">
         <tr>
           <td class="memname">__device__ __forceinline__ void cub::StoreBlocked </td>
@@ -997,7 +997,7 @@ template&lt;PtxStoreModifier MODIFIER, typename T , int ITEMS_PER_THREAD, typena
         <tr>
           <td class="paramkey"></td>
           <td></td>
-          <td class="paramtype">OutputIteratorRA&#160;</td>
+          <td class="paramtype">OutputIterator&#160;</td>
           <td class="paramname"><em>block_itr</em>, </td>
         </tr>
         <tr>
@@ -1027,7 +1027,7 @@ template&lt;PtxStoreModifier MODIFIER, typename T , int ITEMS_PER_THREAD, typena
     <tr><td class="paramname">MODIFIER</td><td><a class="el" href="group___io_module.html#gae9c7d6a6af7104f528509182ac9c9da2" title="Enumeration of PTX cache-modifiers for memory store operations. ">cub::PtxStoreModifier</a> cache modifier. </td></tr>
     <tr><td class="paramname">T</td><td><b>[inferred]</b> The data type to store. </td></tr>
     <tr><td class="paramname">ITEMS_PER_THREAD</td><td><b>[inferred]</b> The number of consecutive items partitioned onto each thread. </td></tr>
-    <tr><td class="paramname">OutputIteratorRA</td><td><b>[inferred]</b> The random-access iterator type for output (may be a simple pointer type). </td></tr>
+    <tr><td class="paramname">OutputIterator</td><td><b>[inferred]</b> The random-access iterator type for output (may be a simple pointer type). </td></tr>
   </table>
   </dd>
 </dl>
@@ -1110,7 +1110,7 @@ template&lt;PtxStoreModifier MODIFIER, typename T , int ITEMS_PER_THREAD&gt; </d
 <div class="memitem">
 <div class="memproto">
 <div class="memtemplate">
-template&lt;PtxStoreModifier MODIFIER, int BLOCK_THREADS, typename T , int ITEMS_PER_THREAD, typename OutputIteratorRA &gt; </div>
+template&lt;PtxStoreModifier MODIFIER, int BLOCK_THREADS, typename T , int ITEMS_PER_THREAD, typename OutputIterator &gt; </div>
       <table class="memname">
         <tr>
           <td class="memname">__device__ __forceinline__ void cub::StoreStriped </td>
@@ -1121,7 +1121,7 @@ template&lt;PtxStoreModifier MODIFIER, int BLOCK_THREADS, typename T , int ITEMS
         <tr>
           <td class="paramkey"></td>
           <td></td>
-          <td class="paramtype">OutputIteratorRA&#160;</td>
+          <td class="paramtype">OutputIterator&#160;</td>
           <td class="paramname"><em>block_itr</em>, </td>
         </tr>
         <tr>
@@ -1146,7 +1146,7 @@ template&lt;PtxStoreModifier MODIFIER, int BLOCK_THREADS, typename T , int ITEMS
     <tr><td class="paramname">BLOCK_THREADS</td><td>The thread block size in threads </td></tr>
     <tr><td class="paramname">T</td><td><b>[inferred]</b> The data type to store. </td></tr>
     <tr><td class="paramname">ITEMS_PER_THREAD</td><td><b>[inferred]</b> The number of consecutive items partitioned onto each thread. </td></tr>
-    <tr><td class="paramname">OutputIteratorRA</td><td><b>[inferred]</b> The random-access iterator type for output (may be a simple pointer type). </td></tr>
+    <tr><td class="paramname">OutputIterator</td><td><b>[inferred]</b> The random-access iterator type for output (may be a simple pointer type). </td></tr>
   </table>
   </dd>
 </dl>
@@ -1167,7 +1167,7 @@ template&lt;PtxStoreModifier MODIFIER, int BLOCK_THREADS, typename T , int ITEMS
 <div class="memitem">
 <div class="memproto">
 <div class="memtemplate">
-template&lt;PtxStoreModifier MODIFIER, int BLOCK_THREADS, typename T , int ITEMS_PER_THREAD, typename OutputIteratorRA &gt; </div>
+template&lt;PtxStoreModifier MODIFIER, int BLOCK_THREADS, typename T , int ITEMS_PER_THREAD, typename OutputIterator &gt; </div>
       <table class="memname">
         <tr>
           <td class="memname">__device__ __forceinline__ void cub::StoreStriped </td>
@@ -1178,7 +1178,7 @@ template&lt;PtxStoreModifier MODIFIER, int BLOCK_THREADS, typename T , int ITEMS
         <tr>
           <td class="paramkey"></td>
           <td></td>
-          <td class="paramtype">OutputIteratorRA&#160;</td>
+          <td class="paramtype">OutputIterator&#160;</td>
           <td class="paramname"><em>block_itr</em>, </td>
         </tr>
         <tr>
@@ -1209,7 +1209,7 @@ template&lt;PtxStoreModifier MODIFIER, int BLOCK_THREADS, typename T , int ITEMS
     <tr><td class="paramname">BLOCK_THREADS</td><td>The thread block size in threads </td></tr>
     <tr><td class="paramname">T</td><td><b>[inferred]</b> The data type to store. </td></tr>
     <tr><td class="paramname">ITEMS_PER_THREAD</td><td><b>[inferred]</b> The number of consecutive items partitioned onto each thread. </td></tr>
-    <tr><td class="paramname">OutputIteratorRA</td><td><b>[inferred]</b> The random-access iterator type for output (may be a simple pointer type). </td></tr>
+    <tr><td class="paramname">OutputIterator</td><td><b>[inferred]</b> The random-access iterator type for output (may be a simple pointer type). </td></tr>
   </table>
   </dd>
 </dl>
@@ -1231,7 +1231,7 @@ template&lt;PtxStoreModifier MODIFIER, int BLOCK_THREADS, typename T , int ITEMS
 <div class="memitem">
 <div class="memproto">
 <div class="memtemplate">
-template&lt;PtxStoreModifier MODIFIER, typename T , int ITEMS_PER_THREAD, typename OutputIteratorRA &gt; </div>
+template&lt;PtxStoreModifier MODIFIER, typename T , int ITEMS_PER_THREAD, typename OutputIterator &gt; </div>
       <table class="memname">
         <tr>
           <td class="memname">__device__ __forceinline__ void cub::StoreWarpStriped </td>
@@ -1242,7 +1242,7 @@ template&lt;PtxStoreModifier MODIFIER, typename T , int ITEMS_PER_THREAD, typena
         <tr>
           <td class="paramkey"></td>
           <td></td>
-          <td class="paramtype">OutputIteratorRA&#160;</td>
+          <td class="paramtype">OutputIterator&#160;</td>
           <td class="paramname"><em>block_itr</em>, </td>
         </tr>
         <tr>
@@ -1267,7 +1267,7 @@ template&lt;PtxStoreModifier MODIFIER, typename T , int ITEMS_PER_THREAD, typena
     <tr><td class="paramname">MODIFIER</td><td><a class="el" href="group___io_module.html#gae9c7d6a6af7104f528509182ac9c9da2" title="Enumeration of PTX cache-modifiers for memory store operations. ">cub::PtxStoreModifier</a> cache modifier. </td></tr>
     <tr><td class="paramname">T</td><td><b>[inferred]</b> The data type to store. </td></tr>
     <tr><td class="paramname">ITEMS_PER_THREAD</td><td><b>[inferred]</b> The number of consecutive items partitioned onto each thread. </td></tr>
-    <tr><td class="paramname">OutputIteratorRA</td><td><b>[inferred]</b> The random-access iterator type for output (may be a simple pointer type). </td></tr>
+    <tr><td class="paramname">OutputIterator</td><td><b>[inferred]</b> The random-access iterator type for output (may be a simple pointer type). </td></tr>
   </table>
   </dd>
 </dl>
@@ -1288,7 +1288,7 @@ template&lt;PtxStoreModifier MODIFIER, typename T , int ITEMS_PER_THREAD, typena
 <div class="memitem">
 <div class="memproto">
 <div class="memtemplate">
-template&lt;PtxStoreModifier MODIFIER, typename T , int ITEMS_PER_THREAD, typename OutputIteratorRA &gt; </div>
+template&lt;PtxStoreModifier MODIFIER, typename T , int ITEMS_PER_THREAD, typename OutputIterator &gt; </div>
       <table class="memname">
         <tr>
           <td class="memname">__device__ __forceinline__ void cub::StoreWarpStriped </td>
@@ -1299,7 +1299,7 @@ template&lt;PtxStoreModifier MODIFIER, typename T , int ITEMS_PER_THREAD, typena
         <tr>
           <td class="paramkey"></td>
           <td></td>
-          <td class="paramtype">OutputIteratorRA&#160;</td>
+          <td class="paramtype">OutputIterator&#160;</td>
           <td class="paramname"><em>block_itr</em>, </td>
         </tr>
         <tr>
@@ -1330,7 +1330,7 @@ template&lt;PtxStoreModifier MODIFIER, typename T , int ITEMS_PER_THREAD, typena
     <tr><td class="paramname">MODIFIER</td><td><a class="el" href="group___io_module.html#gae9c7d6a6af7104f528509182ac9c9da2" title="Enumeration of PTX cache-modifiers for memory store operations. ">cub::PtxStoreModifier</a> cache modifier. </td></tr>
     <tr><td class="paramname">T</td><td><b>[inferred]</b> The data type to store. </td></tr>
     <tr><td class="paramname">ITEMS_PER_THREAD</td><td><b>[inferred]</b> The number of consecutive items partitioned onto each thread. </td></tr>
-    <tr><td class="paramname">OutputIteratorRA</td><td><b>[inferred]</b> The random-access iterator type for output (may be a simple pointer type). </td></tr>
+    <tr><td class="paramname">OutputIterator</td><td><b>[inferred]</b> The random-access iterator type for output (may be a simple pointer type). </td></tr>
   </table>
   </dd>
 </dl>
@@ -1352,12 +1352,12 @@ template&lt;PtxStoreModifier MODIFIER, typename T , int ITEMS_PER_THREAD, typena
 <div class="memitem">
 <div class="memproto">
 <div class="memtemplate">
-template&lt;PtxLoadModifier MODIFIER, typename InputIteratorRA &gt; </div>
+template&lt;PtxLoadModifier MODIFIER, typename InputIterator &gt; </div>
       <table class="memname">
         <tr>
-          <td class="memname">__device__ __forceinline__ std::iterator_traits&lt;InputIteratorRA&gt;::value_type cub::ThreadLoad </td>
+          <td class="memname">__device__ __forceinline__ std::iterator_traits&lt;InputIterator&gt;::value_type cub::ThreadLoad </td>
           <td>(</td>
-          <td class="paramtype">InputIteratorRA&#160;</td>
+          <td class="paramtype">InputIterator&#160;</td>
           <td class="paramname"><em>itr</em>)</td><td></td>
           <td></td>
         </tr>
@@ -1393,12 +1393,12 @@ template&lt;PtxLoadModifier MODIFIER, typename InputIteratorRA &gt; </div>
 <div class="memitem">
 <div class="memproto">
 <div class="memtemplate">
-template&lt;PtxStoreModifier MODIFIER, typename OutputIteratorRA , typename T &gt; </div>
+template&lt;PtxStoreModifier MODIFIER, typename OutputIterator , typename T &gt; </div>
       <table class="memname">
         <tr>
           <td class="memname">__device__ __forceinline__ void cub::ThreadStore </td>
           <td>(</td>
-          <td class="paramtype">OutputIteratorRA&#160;</td>
+          <td class="paramtype">OutputIterator&#160;</td>
           <td class="paramname"><em>itr</em>, </td>
         </tr>
         <tr>

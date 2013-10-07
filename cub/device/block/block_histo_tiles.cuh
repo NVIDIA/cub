@@ -160,7 +160,7 @@ template <
     int         BINS,                           ///< Number of histogram bins per channel
     int         CHANNELS,                       ///< Number of channels interleaved in the input data (may be greater than the number of active channels being histogrammed)
     int         ACTIVE_CHANNELS,                ///< Number of channels actively being histogrammed
-    typename    InputIteratorRA,                ///< The input iterator type (may be a simple pointer type).  Must have a value type that can be cast as an integer in the range [0..BINS-1]
+    typename    InputIterator,                ///< The input iterator type (may be a simple pointer type).  Must have a value type that can be cast as an integer in the range [0..BINS-1]
     typename    HistoCounter,                   ///< Integral type for counting sample occurrences per histogram bin
     typename    SizeT>                          ///< Integer type for offsets
 struct BlockHistogramTiles
@@ -173,9 +173,9 @@ struct BlockHistogramTiles
     static const BlockHistogramTilesAlgorithm HISTO_ALGORITHM = BlockHistogramTilesPolicy::HISTO_ALGORITHM;
 
     // Alternative internal implementation types
-    typedef BlockHistogramTilesSort<            BlockHistogramTilesPolicy, BINS, CHANNELS, ACTIVE_CHANNELS, InputIteratorRA, HistoCounter, SizeT>   BlockHistogramTilesSortT;
-    typedef BlockHistogramTilesSharedAtomic<    BlockHistogramTilesPolicy, BINS, CHANNELS, ACTIVE_CHANNELS, InputIteratorRA, HistoCounter, SizeT>   BlockHistogramTilesSharedAtomicT;
-    typedef BlockHistogramTilesGlobalAtomic<    BlockHistogramTilesPolicy, BINS, CHANNELS, ACTIVE_CHANNELS, InputIteratorRA, HistoCounter, SizeT>   BlockHistogramTilesGlobalAtomicT;
+    typedef BlockHistogramTilesSort<            BlockHistogramTilesPolicy, BINS, CHANNELS, ACTIVE_CHANNELS, InputIterator, HistoCounter, SizeT>   BlockHistogramTilesSortT;
+    typedef BlockHistogramTilesSharedAtomic<    BlockHistogramTilesPolicy, BINS, CHANNELS, ACTIVE_CHANNELS, InputIterator, HistoCounter, SizeT>   BlockHistogramTilesSharedAtomicT;
+    typedef BlockHistogramTilesGlobalAtomic<    BlockHistogramTilesPolicy, BINS, CHANNELS, ACTIVE_CHANNELS, InputIterator, HistoCounter, SizeT>   BlockHistogramTilesGlobalAtomicT;
 
     // Internal block sweep histogram type
     typedef typename If<(HISTO_ALGORITHM == HISTO_TILES_SORT),
@@ -210,7 +210,7 @@ struct BlockHistogramTiles
      */
     __device__ __forceinline__ BlockHistogramTiles(
         TempStorage         &temp_storage,                                  ///< Reference to temp_storage
-        InputIteratorRA     d_in,                                           ///< Input data to reduce
+        InputIterator     d_in,                                           ///< Input data to reduce
         HistoCounter*       (&d_out_histograms)[ACTIVE_CHANNELS])           ///< Reference to output histograms
     :
         internal_delegate(temp_storage, d_in, d_out_histograms)

@@ -36,9 +36,8 @@
 #include <iterator>
 #include <stdio.h>
 
-#include <thrust/iterator/counting_iterator.h>
-
 #include <cub/util_allocator.cuh>
+#include <cub/util_iterator.cuh>
 #include <cub/block/block_load.cuh>
 #include <cub/block/block_store.cuh>
 
@@ -67,15 +66,13 @@ template <
     int                 ITEMS_PER_THREAD,
     BlockLoadAlgorithm  LOAD_ALGORITHM,
     BlockStoreAlgorithm STORE_ALGORITHM,
-    PtxLoadModifier     LOAD_MODIFIER,
-    PtxStoreModifier    STORE_MODIFIER,
     int                 WARP_TIME_SLICING,
-    typename            InputIteratorRA,
-    typename            OutputIteratorRA>
+    typename            InputIterator,
+    typename            OutputIterator>
 __launch_bounds__ (BLOCK_THREADS, 1)
 __global__ void Kernel(
-    InputIteratorRA     d_in,
-    OutputIteratorRA    d_out_unguarded)
+    InputIterator     d_in,
+    OutputIterator    d_out_unguarded)
 {
     enum
     {
@@ -83,11 +80,11 @@ __global__ void Kernel(
     };
 
     // Data type of input/output iterators
-    typedef typename std::iterator_traits<InputIteratorRA>::value_type T;
+    typedef typename std::iterator_traits<InputIterator>::value_type T;
 
     // Threadblock load/store abstraction types
-    typedef BlockLoad<InputIteratorRA, BLOCK_THREADS, ITEMS_PER_THREAD, LOAD_ALGORITHM, LOAD_MODIFIER, WARP_TIME_SLICING> BlockLoad;
-    typedef BlockStore<OutputIteratorRA, BLOCK_THREADS, ITEMS_PER_THREAD, STORE_ALGORITHM, STORE_MODIFIER, WARP_TIME_SLICING> BlockStore;
+    typedef BlockLoad<InputIterator, BLOCK_THREADS, ITEMS_PER_THREAD, LOAD_ALGORITHM, WARP_TIME_SLICING> BlockLoad;
+    typedef BlockStore<OutputIterator, BLOCK_THREADS, ITEMS_PER_THREAD, STORE_ALGORITHM, WARP_TIME_SLICING> BlockStore;
 
     // Shared memory type for this threadblock
     union TempStorage
@@ -124,15 +121,13 @@ template <
     int                 ITEMS_PER_THREAD,
     BlockLoadAlgorithm  LOAD_ALGORITHM,
     BlockStoreAlgorithm STORE_ALGORITHM,
-    PtxLoadModifier     LOAD_MODIFIER,
-    PtxStoreModifier    STORE_MODIFIER,
     int                 WARP_TIME_SLICING,
-    typename            InputIteratorRA,
-    typename            OutputIteratorRA>
+    typename            InputIterator,
+    typename            OutputIterator>
 __launch_bounds__ (BLOCK_THREADS, 1)
 __global__ void KernelGuarded(
-    InputIteratorRA     d_in,
-    OutputIteratorRA    d_out_guarded,
+    InputIterator     d_in,
+    OutputIterator    d_out_guarded,
     int                 num_items)
 {
     enum
@@ -141,11 +136,11 @@ __global__ void KernelGuarded(
     };
 
     // Data type of input/output iterators
-    typedef typename std::iterator_traits<InputIteratorRA>::value_type T;
+    typedef typename std::iterator_traits<InputIterator>::value_type T;
 
     // Threadblock load/store abstraction types
-    typedef BlockLoad<InputIteratorRA, BLOCK_THREADS, ITEMS_PER_THREAD, LOAD_ALGORITHM, LOAD_MODIFIER, WARP_TIME_SLICING> BlockLoad;
-    typedef BlockStore<OutputIteratorRA, BLOCK_THREADS, ITEMS_PER_THREAD, STORE_ALGORITHM, STORE_MODIFIER, WARP_TIME_SLICING> BlockStore;
+    typedef BlockLoad<InputIterator, BLOCK_THREADS, ITEMS_PER_THREAD, LOAD_ALGORITHM, WARP_TIME_SLICING> BlockLoad;
+    typedef BlockStore<OutputIterator, BLOCK_THREADS, ITEMS_PER_THREAD, STORE_ALGORITHM, WARP_TIME_SLICING> BlockStore;
 
     // Shared memory type for this threadblock
     union TempStorage
@@ -188,16 +183,16 @@ template <
     int                 ITEMS_PER_THREAD,
     BlockLoadAlgorithm  LOAD_ALGORITHM,
     BlockStoreAlgorithm STORE_ALGORITHM,
-    PtxLoadModifier     LOAD_MODIFIER,
-    PtxStoreModifier    STORE_MODIFIER,
     int                 WARP_TIME_SLICING,
-    typename            InputIteratorRA,
-    typename            OutputIteratorRA>
+    typename            InputIterator,
+    typename            OutputIterator>
 void TestKernel(
     T                   *h_in,
-    InputIteratorRA     d_in,
-    OutputIteratorRA    d_out_unguarded,
-    OutputIteratorRA    d_out_guarded,
+    InputIterator     d_in,
+    OutputIterator    d_out_unguarded_itr,
+    OutputIterator    d_out_guarded_itr,
+    T                   *d_out_unguarded_ptr,
+    T                   *d_out_guarded_ptr,
     int                 grid_size,
     int                 guarded_elements)
 {
@@ -206,29 +201,29 @@ void TestKernel(
     int unguarded_elements = grid_size * BLOCK_THREADS * ITEMS_PER_THREAD;
 
     // Run unguarded kernel
-    Kernel<BLOCK_THREADS, ITEMS_PER_THREAD, LOAD_ALGORITHM, STORE_ALGORITHM, LOAD_MODIFIER, STORE_MODIFIER, WARP_TIME_SLICING>
+    Kernel<BLOCK_THREADS, ITEMS_PER_THREAD, LOAD_ALGORITHM, STORE_ALGORITHM, WARP_TIME_SLICING>
         <<<grid_size, BLOCK_THREADS>>>(
             d_in,
-            d_out_unguarded);
+            d_out_unguarded_itr);
 
     CubDebugExit(cudaDeviceSynchronize());
 
     // Check results
-    compare = CompareDeviceResults(h_in, d_out_unguarded, unguarded_elements, g_verbose, g_verbose);
+    compare = CompareDeviceResults(h_in, d_out_unguarded_ptr, unguarded_elements, g_verbose, g_verbose);
     printf("\tUnguarded: %s\n", (compare) ? "FAIL" : "PASS");
     AssertEquals(0, compare);
 
     // Run guarded kernel
-    KernelGuarded<BLOCK_THREADS, ITEMS_PER_THREAD, LOAD_ALGORITHM, STORE_ALGORITHM, LOAD_MODIFIER, STORE_MODIFIER, WARP_TIME_SLICING>
+    KernelGuarded<BLOCK_THREADS, ITEMS_PER_THREAD, LOAD_ALGORITHM, STORE_ALGORITHM, WARP_TIME_SLICING>
         <<<grid_size, BLOCK_THREADS>>>(
             d_in,
-            d_out_guarded,
+            d_out_guarded_itr,
             guarded_elements);
 
     CubDebugExit(cudaDeviceSynchronize());
 
     // Check results
-    compare = CompareDeviceResults(h_in, d_out_guarded, guarded_elements, g_verbose, g_verbose);
+    compare = CompareDeviceResults(h_in, d_out_guarded_ptr, guarded_elements, g_verbose, g_verbose);
     printf("\tGuarded: %s\n", (compare) ? "FAIL" : "PASS");
     AssertEquals(0, compare);
 }
@@ -243,8 +238,6 @@ template <
     int                 ITEMS_PER_THREAD,
     BlockLoadAlgorithm  LOAD_ALGORITHM,
     BlockStoreAlgorithm STORE_ALGORITHM,
-    PtxLoadModifier     LOAD_MODIFIER,
-    PtxStoreModifier    STORE_MODIFIER,
     int                 WARP_TIME_SLICING>
 void TestNative(
     int                 grid_size,
@@ -273,7 +266,7 @@ void TestNative(
     }
     CubDebugExit(cudaMemcpy(d_in, h_in, sizeof(T) * unguarded_elements, cudaMemcpyHostToDevice));
 
-    printf("TestNative(%d) "
+    printf("TestNative "
         "grid_size(%d) "
         "guarded_elements(%d) "
         "unguarded_elements(%d) "
@@ -281,15 +274,15 @@ void TestNative(
         "ITEMS_PER_THREAD(%d) "
         "LOAD_ALGORITHM(%d) "
         "STORE_ALGORITHM(%d) "
-        "LOAD_MODIFIER(%d) "
-        "STORE_MODIFIER(%d) "
         "WARP_TIME_SLICING(%d) "
         "sizeof(T)(%d)\n",
-            IsPointer<T*>::VALUE, grid_size, guarded_elements, unguarded_elements, BLOCK_THREADS, ITEMS_PER_THREAD, LOAD_ALGORITHM, STORE_ALGORITHM, LOAD_MODIFIER, STORE_MODIFIER, WARP_TIME_SLICING, (int) sizeof(T));
+            grid_size, guarded_elements, unguarded_elements, BLOCK_THREADS, ITEMS_PER_THREAD, LOAD_ALGORITHM, STORE_ALGORITHM, WARP_TIME_SLICING, (int) sizeof(T));
 
-    TestKernel<T, BLOCK_THREADS, ITEMS_PER_THREAD, LOAD_ALGORITHM, STORE_ALGORITHM, LOAD_MODIFIER, STORE_MODIFIER, WARP_TIME_SLICING>(
+    TestKernel<T, BLOCK_THREADS, ITEMS_PER_THREAD, LOAD_ALGORITHM, STORE_ALGORITHM, WARP_TIME_SLICING>(
         h_in,
         d_in,
+        d_out_unguarded,
+        d_out_guarded,
         d_out_unguarded,
         d_out_guarded,
         grid_size,
@@ -304,7 +297,7 @@ void TestNative(
 
 
 /**
- * Test iterator (uses thrust counting iterator)
+ * Test iterator
  */
 template <
     typename            T,
@@ -312,31 +305,13 @@ template <
     int                 ITEMS_PER_THREAD,
     BlockLoadAlgorithm  LOAD_ALGORITHM,
     BlockStoreAlgorithm STORE_ALGORITHM,
+    PtxLoadModifier     LOAD_MODIFIER,
+    PtxStoreModifier    STORE_MODIFIER,
     int                 WARP_TIME_SLICING>
 void TestIterator(
     int                 grid_size,
-    float               fraction_valid,
-    Int2Type<false>     is_integer)
-{}
-
-
-/**
- * Test iterator (uses thrust counting iterator)
- */
-template <
-    typename            T,
-    int                 BLOCK_THREADS,
-    int                 ITEMS_PER_THREAD,
-    BlockLoadAlgorithm  LOAD_ALGORITHM,
-    BlockStoreAlgorithm STORE_ALGORITHM,
-    int                 WARP_TIME_SLICING>
-void TestIterator(
-    int                 grid_size,
-    float               fraction_valid,
-    Int2Type<true>      is_integer)
+    float               fraction_valid)
 {
-    typedef thrust::counting_iterator<T> Iterator;
-
     int unguarded_elements = grid_size * BLOCK_THREADS * ITEMS_PER_THREAD;
     int guarded_elements = int(fraction_valid * float(unguarded_elements));
 
@@ -344,21 +319,23 @@ void TestIterator(
     T *h_in = (T*) malloc(unguarded_elements * sizeof(T));
 
     // Allocate device arrays
+    T *d_in = NULL;
     T *d_out_unguarded = NULL;
     T *d_out_guarded = NULL;
+    CubDebugExit(g_allocator.DeviceAllocate((void**)&d_in, sizeof(T) * unguarded_elements));
     CubDebugExit(g_allocator.DeviceAllocate((void**)&d_out_unguarded, sizeof(T) * unguarded_elements));
     CubDebugExit(g_allocator.DeviceAllocate((void**)&d_out_guarded, sizeof(T) * guarded_elements));
     CubDebugExit(cudaMemset(d_out_unguarded, 0, sizeof(T) * unguarded_elements));
     CubDebugExit(cudaMemset(d_out_guarded, 0, sizeof(T) * guarded_elements));
 
     // Initialize problem on host and device
-    Iterator counting_itr(0);
     for (int i = 0; i < unguarded_elements; ++i)
     {
-        h_in[i] = counting_itr[i];
+        InitValue(SEQ_INC, h_in[i], i);
     }
+    CubDebugExit(cudaMemcpy(d_in, h_in, sizeof(T) * unguarded_elements, cudaMemcpyHostToDevice));
 
-    printf("TestIterator(%d) "
+    printf("TestIterator "
         "grid_size(%d) "
         "guarded_elements(%d) "
         "unguarded_elements(%d) "
@@ -366,13 +343,17 @@ void TestIterator(
         "ITEMS_PER_THREAD(%d) "
         "LOAD_ALGORITHM(%d) "
         "STORE_ALGORITHM(%d) "
+        "LOAD_MODIFIER(%d) "
+        "STORE_MODIFIER(%d) "
         "WARP_TIME_SLICING(%d) "
         "sizeof(T)(%d)\n",
-            !IsPointer<Iterator>::VALUE, grid_size, guarded_elements, unguarded_elements, BLOCK_THREADS, ITEMS_PER_THREAD, LOAD_ALGORITHM, STORE_ALGORITHM, WARP_TIME_SLICING, (int) sizeof(T));
+            grid_size, guarded_elements, unguarded_elements, BLOCK_THREADS, ITEMS_PER_THREAD, LOAD_ALGORITHM, STORE_ALGORITHM, LOAD_MODIFIER, STORE_MODIFIER, WARP_TIME_SLICING, (int) sizeof(T));
 
-    TestKernel<T, BLOCK_THREADS, ITEMS_PER_THREAD, LOAD_ALGORITHM, STORE_ALGORITHM, LOAD_DEFAULT, STORE_DEFAULT, WARP_TIME_SLICING>(
+    TestKernel<T, BLOCK_THREADS, ITEMS_PER_THREAD, LOAD_ALGORITHM, STORE_ALGORITHM, WARP_TIME_SLICING>(
         h_in,
-        counting_itr,
+        CacheModifiedInputIterator<LOAD_MODIFIER, T>(d_in),
+        CacheModifiedOutputIterator<STORE_MODIFIER, T>(d_out_unguarded),
+        CacheModifiedOutputIterator<STORE_MODIFIER, T>(d_out_guarded),
         d_out_unguarded,
         d_out_guarded,
         grid_size,
@@ -380,6 +361,7 @@ void TestIterator(
 
     // Cleanup
     if (h_in) free(h_in);
+    if (d_in) CubDebugExit(g_allocator.DeviceFree(d_in));
     if (d_out_unguarded) CubDebugExit(g_allocator.DeviceFree(d_out_unguarded));
     if (d_out_guarded) CubDebugExit(g_allocator.DeviceFree(d_out_guarded));
 }
@@ -399,9 +381,8 @@ void TestPointerAccess(
     int             grid_size,
     float           fraction_valid)
 {
-    TestNative<T, BLOCK_THREADS, ITEMS_PER_THREAD, LOAD_ALGORITHM, STORE_ALGORITHM, LOAD_DEFAULT, STORE_DEFAULT, WARP_TIME_SLICING>(grid_size, fraction_valid);
-    TestNative<T, BLOCK_THREADS, ITEMS_PER_THREAD, LOAD_ALGORITHM, STORE_ALGORITHM, LOAD_CG, STORE_CG, WARP_TIME_SLICING>(grid_size, fraction_valid);
-    TestIterator<T, BLOCK_THREADS, ITEMS_PER_THREAD, LOAD_ALGORITHM, STORE_ALGORITHM, WARP_TIME_SLICING>(grid_size, fraction_valid, Int2Type<((Traits<T>::CATEGORY == SIGNED_INTEGER) || (Traits<T>::CATEGORY == UNSIGNED_INTEGER))>());
+    TestNative<T, BLOCK_THREADS, ITEMS_PER_THREAD, LOAD_ALGORITHM, STORE_ALGORITHM, WARP_TIME_SLICING>(grid_size, fraction_valid);
+    TestIterator<T, BLOCK_THREADS, ITEMS_PER_THREAD, LOAD_ALGORITHM, STORE_ALGORITHM, LOAD_CG, STORE_CG, WARP_TIME_SLICING>(grid_size, fraction_valid);
 }
 
 
@@ -515,11 +496,14 @@ int main(int argc, char** argv)
     CubDebugExit(args.DeviceInit());
 
     // Simple test
-   TestNative<int, 64, 2, BLOCK_LOAD_WARP_TRANSPOSE, BLOCK_STORE_WARP_TRANSPOSE, LOAD_DEFAULT, STORE_DEFAULT, true>(1, 0.8);
+    TestNative<int, 64, 2, BLOCK_LOAD_WARP_TRANSPOSE, BLOCK_STORE_WARP_TRANSPOSE, true>(1, 0.8);
+    TestIterator<int, 64, 2, BLOCK_LOAD_WARP_TRANSPOSE, BLOCK_STORE_WARP_TRANSPOSE, LOAD_CG, STORE_CG, true>(1, 0.8);
 
     // Evaluate different data types
     TestThreads<char>(2, 0.8);
     TestThreads<int>(2, 0.8);
+    TestThreads<long>(2, 0.8);
+    TestThreads<long2>(2, 0.8);
     TestThreads<double2>(2, 0.8);
     TestThreads<TestFoo>(2, 0.8);
     TestThreads<TestBar>(2, 0.8);

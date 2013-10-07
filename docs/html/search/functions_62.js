@@ -1,6 +1,6 @@
 var searchData=
 [
-  ['bindtexture',['BindTexture',['../classcub_1_1_tex_iterator_r_a.html#aae5f3547c60cf33d51c65685ea9d131a',1,'cub::TexIteratorRA::BindTexture()'],['../classcub_1_1_tex_transform_iterator_r_a.html#ae354a7954b301d8eb127763eb014dd9c',1,'cub::TexTransformIteratorRA::BindTexture()']]],
+  ['bindtexture',['BindTexture',['../classcub_1_1_tex_iterator_r_a.html#aae5f3547c60cf33d51c65685ea9d131a',1,'cub::TexInputIterator::BindTexture()'],['../classcub_1_1_tex_transform_iterator_r_a.html#ae354a7954b301d8eb127763eb014dd9c',1,'cub::TexTransformInputIterator::BindTexture()']]],
   ['blockdiscontinuity',['BlockDiscontinuity',['../classcub_1_1_block_discontinuity.html#a5bee18d5e423a26fd3fefa741832ad8c',1,'cub::BlockDiscontinuity::BlockDiscontinuity()'],['../classcub_1_1_block_discontinuity.html#a3f5c69462af0c9609f845e474842cfb2',1,'cub::BlockDiscontinuity::BlockDiscontinuity(TempStorage &amp;temp_storage)'],['../classcub_1_1_block_discontinuity.html#a4c99f418ce99535494ae1c309f58f0ac',1,'cub::BlockDiscontinuity::BlockDiscontinuity(int linear_tid)'],['../classcub_1_1_block_discontinuity.html#a0edc454bf6d30810b3b086ec77ed4e11',1,'cub::BlockDiscontinuity::BlockDiscontinuity(TempStorage &amp;temp_storage, int linear_tid)']]],
   ['blockedtostriped',['BlockedToStriped',['../classcub_1_1_block_exchange.html#a5e487b2f594fa0ae466bf1c7b6b9c06d',1,'cub::BlockExchange']]],
   ['blockedtowarpstriped',['BlockedToWarpStriped',['../classcub_1_1_block_exchange.html#a74fc1a62cac21f54289bb7092250a868',1,'cub::BlockExchange']]],

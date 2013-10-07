@@ -5,7 +5,7 @@
 <meta http-equiv="Content-Type" content="text/xhtml;charset=UTF-8"/>
 <meta http-equiv="X-UA-Compatible" content="IE=9"/>
 <meta name="generator" content="Doxygen 1.8.4"/>
-<title>CUB: cub::TexTransformIteratorRA&lt; OutputType, ConversionOp, InputType &gt; Class Template Reference</title>
+<title>CUB: cub::TexTransformInputIterator&lt; OutputType, ConversionOp, InputType &gt; Class Template Reference</title>
 <link href="tabs.css" rel="stylesheet" type="text/css"/>
 <script type="text/javascript" src="jquery.js"></script>
 <script type="text/javascript" src="dynsections.js"></script>
@@ -92,7 +92,7 @@ var searchBox = new SearchBox("searchBox", "search",false,'Search');
 
 <div id="nav-path" class="navpath">
   <ul>
-<li class="navelem"><a class="el" href="namespacecub.html">cub</a></li><li class="navelem"><a class="el" href="classcub_1_1_tex_transform_iterator_r_a.html">TexTransformIteratorRA</a></li>  </ul>
+<li class="navelem"><a class="el" href="namespacecub.html">cub</a></li><li class="navelem"><a class="el" href="classcub_1_1_tex_transform_iterator_r_a.html">TexTransformInputIterator</a></li>  </ul>
 </div>
 </div><!-- top -->
 <div class="header">
@@ -101,7 +101,7 @@ var searchBox = new SearchBox("searchBox", "search",false,'Search');
 <a href="#pub-methods">Public Methods</a> &#124;
 <a href="classcub_1_1_tex_transform_iterator_r_a-members.html">List of all members</a>  </div>
   <div class="headertitle">
-<div class="title">cub::TexTransformIteratorRA&lt; OutputType, ConversionOp, InputType &gt; Class Template Reference<div class="ingroups"><a class="el" href="group___util_module.html">Generic CUB utilities</a></div></div>  </div>
+<div class="title">cub::TexTransformInputIterator&lt; OutputType, ConversionOp, InputType &gt; Class Template Reference<div class="ingroups"><a class="el" href="group___util_module.html">Generic CUB utilities</a></div></div>  </div>
 </div><!--header-->
 <div class="contents">
 <a name="details" id="details"></a><h2 class="groupheader">Detailed description</h2>
@@ -109,13 +109,13 @@ var searchBox = new SearchBox("searchBox", "search",false,'Search');
     typename OutputType, 
     typename ConversionOp, 
     typename InputType&gt;<br/>
-class cub::TexTransformIteratorRA&lt; OutputType, ConversionOp, InputType &gt;</h3>
+class cub::TexTransformInputIterator&lt; OutputType, ConversionOp, InputType &gt;</h3>
 
 <p>A simple random-access transform iterator for loading primitive values through texture cache and and subsequently applying a transformation operator. </p>
-<dl class="section user"><dt>Overview</dt><dd><a class="el" href="classcub_1_1_tex_transform_iterator_r_a.html" title="A simple random-access transform iterator for loading primitive values through texture cache and and ...">TexTransformIteratorRA</a> is a random-access iterator that wraps both a native device pointer of type <code>InputType*</code> and a unary conversion functor of type <code>ConversionOp</code>. <code>OutputType</code> references are made by pulling <code>InputType</code> values through the texture cache and then transformed them using the <code>ConversionOp</code> instance.</dd></dl>
+<dl class="section user"><dt>Overview</dt><dd><a class="el" href="classcub_1_1_tex_transform_iterator_r_a.html" title="A simple random-access transform iterator for loading primitive values through texture cache and and ...">TexTransformInputIterator</a> is a random-access iterator that wraps both a native device pointer of type <code>InputType*</code> and a unary conversion functor of type <code>ConversionOp</code>. <code>OutputType</code> references are made by pulling <code>InputType</code> values through the texture cache and then transformed them using the <code>ConversionOp</code> instance.</dd></dl>
 <dl class="section user"><dt>Usage Considerations</dt><dd><ul>
 <li>Can only be used with primitive types (e.g., <code>char</code>, <code>int</code>, <code>float</code>), with the exception of <code>double</code> </li>
-<li>Only one <a class="el" href="classcub_1_1_tex_iterator_r_a.html" title="A simple random-access iterator for loading primitive values through texture cache. ">TexIteratorRA</a> or <a class="el" href="classcub_1_1_tex_transform_iterator_r_a.html" title="A simple random-access transform iterator for loading primitive values through texture cache and and ...">TexTransformIteratorRA</a> of a certain <code>InputType</code> can be bound at any given time (per host thread)</li>
+<li>Only one <a class="el" href="classcub_1_1_tex_iterator_r_a.html" title="A simple random-access iterator for loading primitive values through texture cache. ">TexInputIterator</a> or <a class="el" href="classcub_1_1_tex_transform_iterator_r_a.html" title="A simple random-access transform iterator for loading primitive values through texture cache and and ...">TexTransformInputIterator</a> of a certain <code>InputType</code> can be bound at any given time (per host thread)</li>
 </ul>
 </dd></dl>
 <dl class="tparams"><dt>Template Parameters</dt><dd>
@@ -138,7 +138,7 @@ typedef void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" hr
 </table><table class="memberdecls">
 <tr class="heading"><td colspan="2"><h2 class="groupheader"><a name="pub-methods"></a>
 Public Methods</h2></td></tr>
-<tr class="memitem:a825dd0bd64a07e8f31f646fc220edffa"><td class="memItemLeft" align="right" valign="top">&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classcub_1_1_tex_transform_iterator_r_a.html#a825dd0bd64a07e8f31f646fc220edffa">TexTransformIteratorRA</a> (ConversionOp conversion_op)</td></tr>
+<tr class="memitem:a825dd0bd64a07e8f31f646fc220edffa"><td class="memItemLeft" align="right" valign="top">&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classcub_1_1_tex_transform_iterator_r_a.html#a825dd0bd64a07e8f31f646fc220edffa">TexTransformInputIterator</a> (ConversionOp conversion_op)</td></tr>
 <tr class="memdesc:a825dd0bd64a07e8f31f646fc220edffa"><td class="mdescLeft">&#160;</td><td class="mdescRight">Constructor.  <a href="#a825dd0bd64a07e8f31f646fc220edffa">More...</a><br/></td></tr>
 <tr class="separator:a825dd0bd64a07e8f31f646fc220edffa"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:ae354a7954b301d8eb127763eb014dd9c"><td class="memItemLeft" align="right" valign="top">cudaError_t&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classcub_1_1_tex_transform_iterator_r_a.html#ae354a7954b301d8eb127763eb014dd9c">BindTexture</a> (InputType *ptr, size_t bytes, size_t tex_align_offset=0)</td></tr>
@@ -160,7 +160,7 @@ template&lt;typename OutputType , typename ConversionOp , typename InputType &gt
   <td class="mlabels-left">
       <table class="memname">
         <tr>
-          <td class="memname"><a class="el" href="classcub_1_1_tex_transform_iterator_r_a.html">cub::TexTransformIteratorRA</a>&lt; OutputType, ConversionOp, InputType &gt;::<a class="el" href="classcub_1_1_tex_transform_iterator_r_a.html">TexTransformIteratorRA</a> </td>
+          <td class="memname"><a class="el" href="classcub_1_1_tex_transform_iterator_r_a.html">cub::TexTransformInputIterator</a>&lt; OutputType, ConversionOp, InputType &gt;::<a class="el" href="classcub_1_1_tex_transform_iterator_r_a.html">TexTransformInputIterator</a> </td>
           <td>(</td>
           <td class="paramtype">ConversionOp&#160;</td>
           <td class="paramname"><em>conversion_op</em>)</td><td></td>
@@ -197,7 +197,7 @@ template&lt;typename OutputType , typename ConversionOp , typename InputType &gt
   <td class="mlabels-left">
       <table class="memname">
         <tr>
-          <td class="memname">cudaError_t <a class="el" href="classcub_1_1_tex_transform_iterator_r_a.html">cub::TexTransformIteratorRA</a>&lt; OutputType, ConversionOp, InputType &gt;::BindTexture </td>
+          <td class="memname">cudaError_t <a class="el" href="classcub_1_1_tex_transform_iterator_r_a.html">cub::TexTransformInputIterator</a>&lt; OutputType, ConversionOp, InputType &gt;::BindTexture </td>
           <td>(</td>
           <td class="paramtype">InputType *&#160;</td>
           <td class="paramname"><em>ptr</em>, </td>

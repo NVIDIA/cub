@@ -189,16 +189,16 @@ var searchBox = new SearchBox("searchBox", "search",false,'Search');
 <div class="line"><a name="l00097"></a><span class="lineno">   97</span>&#160;</div>
 <div class="line"><a name="l00101"></a><span class="lineno">  101</span>&#160;<span class="keyword">template</span> &lt;</div>
 <div class="line"><a name="l00102"></a><span class="lineno">  102</span>&#160;    <span class="keyword">typename</span>    BlockScanTilesPolicy,           </div>
-<div class="line"><a name="l00103"></a><span class="lineno">  103</span>&#160;    <span class="keyword">typename</span>    InputIteratorRA,                </div>
-<div class="line"><a name="l00104"></a><span class="lineno">  104</span>&#160;    <span class="keyword">typename</span>    OutputIteratorRA,               </div>
+<div class="line"><a name="l00103"></a><span class="lineno">  103</span>&#160;    <span class="keyword">typename</span>    InputIterator,                </div>
+<div class="line"><a name="l00104"></a><span class="lineno">  104</span>&#160;    <span class="keyword">typename</span>    OutputIterator,               </div>
 <div class="line"><a name="l00105"></a><span class="lineno">  105</span>&#160;    <span class="keyword">typename</span>    T,                              </div>
 <div class="line"><a name="l00106"></a><span class="lineno">  106</span>&#160;    <span class="keyword">typename</span>    ScanOp,                         </div>
 <div class="line"><a name="l00107"></a><span class="lineno">  107</span>&#160;    <span class="keyword">typename</span>    Identity,                       </div>
 <div class="line"><a name="l00108"></a><span class="lineno">  108</span>&#160;    <span class="keyword">typename</span>    SizeT&gt;                          </div>
 <div class="line"><a name="l00109"></a><span class="lineno">  109</span>&#160;__launch_bounds__ (<span class="keywordtype">int</span>(BlockScanTilesPolicy::BLOCK_THREADS))</div>
 <div class="line"><a name="l00110"></a><span class="lineno">  110</span>&#160;__global__ <span class="keywordtype">void</span> ScanKernel(</div>
-<div class="line"><a name="l00111"></a><span class="lineno">  111</span>&#160;    InputIteratorRA             d_in,           </div>
-<div class="line"><a name="l00112"></a><span class="lineno">  112</span>&#160;    OutputIteratorRA            d_out,          </div>
+<div class="line"><a name="l00111"></a><span class="lineno">  111</span>&#160;    InputIterator             d_in,           </div>
+<div class="line"><a name="l00112"></a><span class="lineno">  112</span>&#160;    OutputIterator            d_out,          </div>
 <div class="line"><a name="l00113"></a><span class="lineno">  113</span>&#160;    ScanTileDescriptor&lt;T&gt;       *d_tile_status, </div>
 <div class="line"><a name="l00114"></a><span class="lineno">  114</span>&#160;    ScanOp                      scan_op,        </div>
 <div class="line"><a name="l00115"></a><span class="lineno">  115</span>&#160;    Identity                    identity,       </div>
@@ -213,8 +213,8 @@ var searchBox = new SearchBox("searchBox", "search",false,'Search');
 <div class="line"><a name="l00124"></a><span class="lineno">  124</span>&#160;    <span class="comment">// Thread block type for scanning input tiles</span></div>
 <div class="line"><a name="l00125"></a><span class="lineno">  125</span>&#160;    <span class="keyword">typedef</span> BlockScanTiles&lt;</div>
 <div class="line"><a name="l00126"></a><span class="lineno">  126</span>&#160;        BlockScanTilesPolicy,</div>
-<div class="line"><a name="l00127"></a><span class="lineno">  127</span>&#160;        InputIteratorRA,</div>
-<div class="line"><a name="l00128"></a><span class="lineno">  128</span>&#160;        OutputIteratorRA,</div>
+<div class="line"><a name="l00127"></a><span class="lineno">  127</span>&#160;        InputIterator,</div>
+<div class="line"><a name="l00128"></a><span class="lineno">  128</span>&#160;        OutputIterator,</div>
 <div class="line"><a name="l00129"></a><span class="lineno">  129</span>&#160;        ScanOp,</div>
 <div class="line"><a name="l00130"></a><span class="lineno">  130</span>&#160;        Identity,</div>
 <div class="line"><a name="l00131"></a><span class="lineno">  131</span>&#160;        SizeT&gt; BlockScanTilesT;</div>
@@ -392,8 +392,8 @@ var searchBox = new SearchBox("searchBox", "search",false,'Search');
 <div class="line"><a name="l00337"></a><span class="lineno">  337</span>&#160;    <span class="keyword">template</span> &lt;</div>
 <div class="line"><a name="l00338"></a><span class="lineno">  338</span>&#160;        <span class="keyword">typename</span>                    ScanInitKernelPtr,              </div>
 <div class="line"><a name="l00339"></a><span class="lineno">  339</span>&#160;        <span class="keyword">typename</span>                    ScanKernelPtr,                  </div>
-<div class="line"><a name="l00340"></a><span class="lineno">  340</span>&#160;        <span class="keyword">typename</span>                    InputIteratorRA,                </div>
-<div class="line"><a name="l00341"></a><span class="lineno">  341</span>&#160;        <span class="keyword">typename</span>                    OutputIteratorRA,               </div>
+<div class="line"><a name="l00340"></a><span class="lineno">  340</span>&#160;        <span class="keyword">typename</span>                    InputIterator,                </div>
+<div class="line"><a name="l00341"></a><span class="lineno">  341</span>&#160;        <span class="keyword">typename</span>                    OutputIterator,               </div>
 <div class="line"><a name="l00342"></a><span class="lineno">  342</span>&#160;        <span class="keyword">typename</span>                    ScanOp,                         </div>
 <div class="line"><a name="l00343"></a><span class="lineno">  343</span>&#160;        <span class="keyword">typename</span>                    Identity,                       </div>
 <div class="line"><a name="l00344"></a><span class="lineno">  344</span>&#160;        <span class="keyword">typename</span>                    SizeT&gt;                          </div>
@@ -405,8 +405,8 @@ var searchBox = new SearchBox("searchBox", "search",false,'Search');
 <div class="line"><a name="l00350"></a><span class="lineno">  350</span>&#160;        ScanInitKernelPtr           init_kernel,                    </div>
 <div class="line"><a name="l00351"></a><span class="lineno">  351</span>&#160;        ScanKernelPtr               scan_kernel,                    </div>
 <div class="line"><a name="l00352"></a><span class="lineno">  352</span>&#160;        KernelDispachParams         &amp;scan_dispatch_params,          </div>
-<div class="line"><a name="l00353"></a><span class="lineno">  353</span>&#160;        InputIteratorRA             d_in,                           </div>
-<div class="line"><a name="l00354"></a><span class="lineno">  354</span>&#160;        OutputIteratorRA            d_out,                          </div>
+<div class="line"><a name="l00353"></a><span class="lineno">  353</span>&#160;        InputIterator             d_in,                           </div>
+<div class="line"><a name="l00354"></a><span class="lineno">  354</span>&#160;        OutputIterator            d_out,                          </div>
 <div class="line"><a name="l00355"></a><span class="lineno">  355</span>&#160;        ScanOp                      scan_op,                        </div>
 <div class="line"><a name="l00356"></a><span class="lineno">  356</span>&#160;        Identity                    identity,                       </div>
 <div class="line"><a name="l00357"></a><span class="lineno">  357</span>&#160;        SizeT                       num_items,                      </div>
@@ -428,7 +428,7 @@ var searchBox = new SearchBox("searchBox", "search",false,'Search');
 <div class="line"><a name="l00373"></a><span class="lineno">  373</span>&#160;        };</div>
 <div class="line"><a name="l00374"></a><span class="lineno">  374</span>&#160;</div>
 <div class="line"><a name="l00375"></a><span class="lineno">  375</span>&#160;        <span class="comment">// Data type</span></div>
-<div class="line"><a name="l00376"></a><span class="lineno">  376</span>&#160;        <span class="keyword">typedef</span> <span class="keyword">typename</span> std::iterator_traits&lt;InputIteratorRA&gt;::value_type T;</div>
+<div class="line"><a name="l00376"></a><span class="lineno">  376</span>&#160;        <span class="keyword">typedef</span> <span class="keyword">typename</span> std::iterator_traits&lt;InputIterator&gt;::value_type T;</div>
 <div class="line"><a name="l00377"></a><span class="lineno">  377</span>&#160;</div>
 <div class="line"><a name="l00378"></a><span class="lineno">  378</span>&#160;        <span class="comment">// Tile status descriptor type</span></div>
 <div class="line"><a name="l00379"></a><span class="lineno">  379</span>&#160;        <span class="keyword">typedef</span> ScanTileDescriptor&lt;T&gt; ScanTileDescriptorT;</div>
@@ -544,8 +544,8 @@ var searchBox = new SearchBox("searchBox", "search",false,'Search');
 <div class="line"><a name="l00489"></a><span class="lineno">  489</span>&#160;</div>
 <div class="line"><a name="l00490"></a><span class="lineno">  490</span>&#160;</div>
 <div class="line"><a name="l00494"></a><span class="lineno">  494</span>&#160;    <span class="keyword">template</span> &lt;</div>
-<div class="line"><a name="l00495"></a><span class="lineno">  495</span>&#160;        <span class="keyword">typename</span>                    InputIteratorRA,                </div>
-<div class="line"><a name="l00496"></a><span class="lineno">  496</span>&#160;        <span class="keyword">typename</span>                    OutputIteratorRA,               </div>
+<div class="line"><a name="l00495"></a><span class="lineno">  495</span>&#160;        <span class="keyword">typename</span>                    InputIterator,                </div>
+<div class="line"><a name="l00496"></a><span class="lineno">  496</span>&#160;        <span class="keyword">typename</span>                    OutputIterator,               </div>
 <div class="line"><a name="l00497"></a><span class="lineno">  497</span>&#160;        <span class="keyword">typename</span>                    ScanOp,                         </div>
 <div class="line"><a name="l00498"></a><span class="lineno">  498</span>&#160;        <span class="keyword">typename</span>                    Identity,                       </div>
 <div class="line"><a name="l00499"></a><span class="lineno">  499</span>&#160;        <span class="keyword">typename</span>                    SizeT&gt;                          </div>
@@ -553,8 +553,8 @@ var searchBox = new SearchBox("searchBox", "search",false,'Search');
 <div class="line"><a name="l00501"></a><span class="lineno">  501</span>&#160;    <span class="keyword">static</span> cudaError_t Dispatch(</div>
 <div class="line"><a name="l00502"></a><span class="lineno">  502</span>&#160;        <span class="keywordtype">void</span>                        *d_temp_storage,                </div>
 <div class="line"><a name="l00503"></a><span class="lineno">  503</span>&#160;        <span class="keywordtype">size_t</span>                      &amp;temp_storage_bytes,            </div>
-<div class="line"><a name="l00504"></a><span class="lineno">  504</span>&#160;        InputIteratorRA             d_in,                           </div>
-<div class="line"><a name="l00505"></a><span class="lineno">  505</span>&#160;        OutputIteratorRA            d_out,                          </div>
+<div class="line"><a name="l00504"></a><span class="lineno">  504</span>&#160;        InputIterator             d_in,                           </div>
+<div class="line"><a name="l00505"></a><span class="lineno">  505</span>&#160;        OutputIterator            d_out,                          </div>
 <div class="line"><a name="l00506"></a><span class="lineno">  506</span>&#160;        ScanOp                      scan_op,                        </div>
 <div class="line"><a name="l00507"></a><span class="lineno">  507</span>&#160;        Identity                    identity,                       </div>
 <div class="line"><a name="l00508"></a><span class="lineno">  508</span>&#160;        SizeT                       num_items,                      </div>
@@ -562,7 +562,7 @@ var searchBox = new SearchBox("searchBox", "search",false,'Search');
 <div class="line"><a name="l00510"></a><span class="lineno">  510</span>&#160;        <span class="keywordtype">bool</span>                        stream_synchronous  = <span class="keyword">false</span>)    </div>
 <div class="line"><a name="l00511"></a><span class="lineno">  511</span>&#160;    {</div>
 <div class="line"><a name="l00512"></a><span class="lineno">  512</span>&#160;        <span class="comment">// Data type</span></div>
-<div class="line"><a name="l00513"></a><span class="lineno">  513</span>&#160;        <span class="keyword">typedef</span> <span class="keyword">typename</span> std::iterator_traits&lt;InputIteratorRA&gt;::value_type T;</div>
+<div class="line"><a name="l00513"></a><span class="lineno">  513</span>&#160;        <span class="keyword">typedef</span> <span class="keyword">typename</span> std::iterator_traits&lt;InputIterator&gt;::value_type T;</div>
 <div class="line"><a name="l00514"></a><span class="lineno">  514</span>&#160;</div>
 <div class="line"><a name="l00515"></a><span class="lineno">  515</span>&#160;        <span class="comment">// Tuning polices</span></div>
 <div class="line"><a name="l00516"></a><span class="lineno">  516</span>&#160;        <span class="keyword">typedef</span> PtxDefaultPolicies&lt;T, SizeT&gt;                    PtxDefaultPolicies;     <span class="comment">// Wrapper of default kernel policies</span></div>
@@ -590,7 +590,7 @@ var searchBox = new SearchBox("searchBox", "search",false,'Search');
 <div class="line"><a name="l00538"></a><span class="lineno">  538</span>&#160;                d_temp_storage,</div>
 <div class="line"><a name="l00539"></a><span class="lineno">  539</span>&#160;                temp_storage_bytes,</div>
 <div class="line"><a name="l00540"></a><span class="lineno">  540</span>&#160;                ScanInitKernel&lt;T, SizeT&gt;,</div>
-<div class="line"><a name="l00541"></a><span class="lineno">  541</span>&#160;                ScanKernel&lt;ScanPolicy, InputIteratorRA, OutputIteratorRA, T, ScanOp, Identity, SizeT&gt;,</div>
+<div class="line"><a name="l00541"></a><span class="lineno">  541</span>&#160;                ScanKernel&lt;ScanPolicy, InputIterator, OutputIterator, T, ScanOp, Identity, SizeT&gt;,</div>
 <div class="line"><a name="l00542"></a><span class="lineno">  542</span>&#160;                scan_dispatch_params,</div>
 <div class="line"><a name="l00543"></a><span class="lineno">  543</span>&#160;                d_in,</div>
 <div class="line"><a name="l00544"></a><span class="lineno">  544</span>&#160;                d_out,</div>
@@ -613,34 +613,34 @@ var searchBox = new SearchBox("searchBox", "search",false,'Search');
 <div class="line"><a name="l00561"></a><span class="lineno">  561</span>&#160;    <span class="comment">/******************************************************************/</span></div>
 <div class="line"><a name="l00565"></a><span class="lineno">  565</span>&#160;</div>
 <div class="line"><a name="l00604"></a><span class="lineno">  604</span>&#160;    <span class="keyword">template</span> &lt;</div>
-<div class="line"><a name="l00605"></a><span class="lineno">  605</span>&#160;        <span class="keyword">typename</span>            InputIteratorRA,</div>
-<div class="line"><a name="l00606"></a><span class="lineno">  606</span>&#160;        <span class="keyword">typename</span>            OutputIteratorRA&gt;</div>
+<div class="line"><a name="l00605"></a><span class="lineno">  605</span>&#160;        <span class="keyword">typename</span>            InputIterator,</div>
+<div class="line"><a name="l00606"></a><span class="lineno">  606</span>&#160;        <span class="keyword">typename</span>            OutputIterator&gt;</div>
 <div class="line"><a name="l00607"></a><span class="lineno">  607</span>&#160;    __host__ __device__ __forceinline__</div>
 <div class="line"><a name="l00608"></a><span class="lineno"><a class="code" href="structcub_1_1_device_scan.html#ac49b99df1f6b561b477d4fd797fe0ea8">  608</a></span>&#160;    <span class="keyword">static</span> cudaError_t <a class="code" href="structcub_1_1_device_scan.html#ac49b99df1f6b561b477d4fd797fe0ea8" title="Computes a device-wide exclusive prefix sum. ">ExclusiveSum</a>(</div>
 <div class="line"><a name="l00609"></a><span class="lineno">  609</span>&#160;        <span class="keywordtype">void</span>                *d_temp_storage,                    </div>
 <div class="line"><a name="l00610"></a><span class="lineno">  610</span>&#160;        <span class="keywordtype">size_t</span>              &amp;temp_storage_bytes,                </div>
-<div class="line"><a name="l00611"></a><span class="lineno">  611</span>&#160;        InputIteratorRA     d_in,                               </div>
-<div class="line"><a name="l00612"></a><span class="lineno">  612</span>&#160;        OutputIteratorRA    d_out,                              </div>
+<div class="line"><a name="l00611"></a><span class="lineno">  611</span>&#160;        InputIterator     d_in,                               </div>
+<div class="line"><a name="l00612"></a><span class="lineno">  612</span>&#160;        OutputIterator    d_out,                              </div>
 <div class="line"><a name="l00613"></a><span class="lineno">  613</span>&#160;        <span class="keywordtype">int</span>                 num_items,                          </div>
 <div class="line"><a name="l00614"></a><span class="lineno">  614</span>&#160;        cudaStream_t        stream              = 0,            </div>
 <div class="line"><a name="l00615"></a><span class="lineno">  615</span>&#160;        <span class="keywordtype">bool</span>                stream_synchronous  = <span class="keyword">false</span>)        </div>
 <div class="line"><a name="l00616"></a><span class="lineno">  616</span>&#160;    {</div>
-<div class="line"><a name="l00617"></a><span class="lineno">  617</span>&#160;        <span class="keyword">typedef</span> <span class="keyword">typename</span> std::iterator_traits&lt;InputIteratorRA&gt;::value_type T;</div>
+<div class="line"><a name="l00617"></a><span class="lineno">  617</span>&#160;        <span class="keyword">typedef</span> <span class="keyword">typename</span> std::iterator_traits&lt;InputIterator&gt;::value_type T;</div>
 <div class="line"><a name="l00618"></a><span class="lineno">  618</span>&#160;        <span class="keywordflow">return</span> Dispatch(d_temp_storage, temp_storage_bytes, d_in, d_out, <a class="code" href="structcub_1_1_sum.html" title="Default sum functor. ">Sum</a>(), T(), num_items, stream, stream_synchronous);</div>
 <div class="line"><a name="l00619"></a><span class="lineno">  619</span>&#160;    }</div>
 <div class="line"><a name="l00620"></a><span class="lineno">  620</span>&#160;</div>
 <div class="line"><a name="l00621"></a><span class="lineno">  621</span>&#160;</div>
 <div class="line"><a name="l00665"></a><span class="lineno">  665</span>&#160;    <span class="keyword">template</span> &lt;</div>
-<div class="line"><a name="l00666"></a><span class="lineno">  666</span>&#160;        <span class="keyword">typename</span>            InputIteratorRA,</div>
-<div class="line"><a name="l00667"></a><span class="lineno">  667</span>&#160;        <span class="keyword">typename</span>            OutputIteratorRA,</div>
+<div class="line"><a name="l00666"></a><span class="lineno">  666</span>&#160;        <span class="keyword">typename</span>            InputIterator,</div>
+<div class="line"><a name="l00667"></a><span class="lineno">  667</span>&#160;        <span class="keyword">typename</span>            OutputIterator,</div>
 <div class="line"><a name="l00668"></a><span class="lineno">  668</span>&#160;        <span class="keyword">typename</span>            ScanOp,</div>
 <div class="line"><a name="l00669"></a><span class="lineno">  669</span>&#160;        <span class="keyword">typename</span>            Identity&gt;</div>
 <div class="line"><a name="l00670"></a><span class="lineno">  670</span>&#160;    __host__ __device__ __forceinline__</div>
 <div class="line"><a name="l00671"></a><span class="lineno"><a class="code" href="structcub_1_1_device_scan.html#a5fb74735fdd88202a9310432c77a4a3a">  671</a></span>&#160;    <span class="keyword">static</span> cudaError_t <a class="code" href="structcub_1_1_device_scan.html#a5fb74735fdd88202a9310432c77a4a3a" title="Computes a device-wide exclusive prefix scan using the specified binary scan_op functor. ">ExclusiveScan</a>(</div>
 <div class="line"><a name="l00672"></a><span class="lineno">  672</span>&#160;        <span class="keywordtype">void</span>                *d_temp_storage,                    </div>
 <div class="line"><a name="l00673"></a><span class="lineno">  673</span>&#160;        <span class="keywordtype">size_t</span>              &amp;temp_storage_bytes,                </div>
-<div class="line"><a name="l00674"></a><span class="lineno">  674</span>&#160;        InputIteratorRA     d_in,                               </div>
-<div class="line"><a name="l00675"></a><span class="lineno">  675</span>&#160;        OutputIteratorRA    d_out,                              </div>
+<div class="line"><a name="l00674"></a><span class="lineno">  674</span>&#160;        InputIterator     d_in,                               </div>
+<div class="line"><a name="l00675"></a><span class="lineno">  675</span>&#160;        OutputIterator    d_out,                              </div>
 <div class="line"><a name="l00676"></a><span class="lineno">  676</span>&#160;        ScanOp              scan_op,                            </div>
 <div class="line"><a name="l00677"></a><span class="lineno">  677</span>&#160;        Identity            identity,                           </div>
 <div class="line"><a name="l00678"></a><span class="lineno">  678</span>&#160;        <span class="keywordtype">int</span>                 num_items,                          </div>
@@ -655,14 +655,14 @@ var searchBox = new SearchBox("searchBox", "search",false,'Search');
 <div class="line"><a name="l00691"></a><span class="lineno">  691</span>&#160;</div>
 <div class="line"><a name="l00692"></a><span class="lineno">  692</span>&#160;</div>
 <div class="line"><a name="l00730"></a><span class="lineno">  730</span>&#160;    <span class="keyword">template</span> &lt;</div>
-<div class="line"><a name="l00731"></a><span class="lineno">  731</span>&#160;        <span class="keyword">typename</span>            InputIteratorRA,</div>
-<div class="line"><a name="l00732"></a><span class="lineno">  732</span>&#160;        <span class="keyword">typename</span>            OutputIteratorRA&gt;</div>
+<div class="line"><a name="l00731"></a><span class="lineno">  731</span>&#160;        <span class="keyword">typename</span>            InputIterator,</div>
+<div class="line"><a name="l00732"></a><span class="lineno">  732</span>&#160;        <span class="keyword">typename</span>            OutputIterator&gt;</div>
 <div class="line"><a name="l00733"></a><span class="lineno">  733</span>&#160;    __host__ __device__ __forceinline__</div>
 <div class="line"><a name="l00734"></a><span class="lineno"><a class="code" href="structcub_1_1_device_scan.html#a7c8471b7508fca37dfd3198b9111911a">  734</a></span>&#160;    <span class="keyword">static</span> cudaError_t <a class="code" href="structcub_1_1_device_scan.html#a7c8471b7508fca37dfd3198b9111911a" title="Computes a device-wide inclusive prefix sum. ">InclusiveSum</a>(</div>
 <div class="line"><a name="l00735"></a><span class="lineno">  735</span>&#160;        <span class="keywordtype">void</span>                *d_temp_storage,                    </div>
 <div class="line"><a name="l00736"></a><span class="lineno">  736</span>&#160;        <span class="keywordtype">size_t</span>              &amp;temp_storage_bytes,                </div>
-<div class="line"><a name="l00737"></a><span class="lineno">  737</span>&#160;        InputIteratorRA     d_in,                               </div>
-<div class="line"><a name="l00738"></a><span class="lineno">  738</span>&#160;        OutputIteratorRA    d_out,                              </div>
+<div class="line"><a name="l00737"></a><span class="lineno">  737</span>&#160;        InputIterator     d_in,                               </div>
+<div class="line"><a name="l00738"></a><span class="lineno">  738</span>&#160;        OutputIterator    d_out,                              </div>
 <div class="line"><a name="l00739"></a><span class="lineno">  739</span>&#160;        <span class="keywordtype">int</span>                 num_items,                          </div>
 <div class="line"><a name="l00740"></a><span class="lineno">  740</span>&#160;        cudaStream_t        stream              = 0,            </div>
 <div class="line"><a name="l00741"></a><span class="lineno">  741</span>&#160;        <span class="keywordtype">bool</span>                stream_synchronous  = <span class="keyword">false</span>)        </div>
@@ -672,15 +672,15 @@ var searchBox = new SearchBox("searchBox", "search",false,'Search');
 <div class="line"><a name="l00745"></a><span class="lineno">  745</span>&#160;</div>
 <div class="line"><a name="l00746"></a><span class="lineno">  746</span>&#160;</div>
 <div class="line"><a name="l00788"></a><span class="lineno">  788</span>&#160;    <span class="keyword">template</span> &lt;</div>
-<div class="line"><a name="l00789"></a><span class="lineno">  789</span>&#160;        <span class="keyword">typename</span>            InputIteratorRA,</div>
-<div class="line"><a name="l00790"></a><span class="lineno">  790</span>&#160;        <span class="keyword">typename</span>            OutputIteratorRA,</div>
+<div class="line"><a name="l00789"></a><span class="lineno">  789</span>&#160;        <span class="keyword">typename</span>            InputIterator,</div>
+<div class="line"><a name="l00790"></a><span class="lineno">  790</span>&#160;        <span class="keyword">typename</span>            OutputIterator,</div>
 <div class="line"><a name="l00791"></a><span class="lineno">  791</span>&#160;        <span class="keyword">typename</span>            ScanOp&gt;</div>
 <div class="line"><a name="l00792"></a><span class="lineno">  792</span>&#160;    __host__ __device__ __forceinline__</div>
 <div class="line"><a name="l00793"></a><span class="lineno"><a class="code" href="structcub_1_1_device_scan.html#a2f6de564140e06b391ad0d987142762f">  793</a></span>&#160;    <span class="keyword">static</span> cudaError_t <a class="code" href="structcub_1_1_device_scan.html#a2f6de564140e06b391ad0d987142762f" title="Computes a device-wide inclusive prefix scan using the specified binary scan_op functor. ">InclusiveScan</a>(</div>
 <div class="line"><a name="l00794"></a><span class="lineno">  794</span>&#160;        <span class="keywordtype">void</span>                *d_temp_storage,                    </div>
 <div class="line"><a name="l00795"></a><span class="lineno">  795</span>&#160;        <span class="keywordtype">size_t</span>              &amp;temp_storage_bytes,                </div>
-<div class="line"><a name="l00796"></a><span class="lineno">  796</span>&#160;        InputIteratorRA     d_in,                               </div>
-<div class="line"><a name="l00797"></a><span class="lineno">  797</span>&#160;        OutputIteratorRA    d_out,                              </div>
+<div class="line"><a name="l00796"></a><span class="lineno">  796</span>&#160;        InputIterator     d_in,                               </div>
+<div class="line"><a name="l00797"></a><span class="lineno">  797</span>&#160;        OutputIterator    d_out,                              </div>
 <div class="line"><a name="l00798"></a><span class="lineno">  798</span>&#160;        ScanOp              scan_op,                            </div>
 <div class="line"><a name="l00799"></a><span class="lineno">  799</span>&#160;        <span class="keywordtype">int</span>                 num_items,                          </div>
 <div class="line"><a name="l00800"></a><span class="lineno">  800</span>&#160;        cudaStream_t        stream              = 0,            </div>

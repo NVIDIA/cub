@@ -67,24 +67,24 @@ namespace cub {
  */
 template <
     typename                BlockReduceTilesPolicy, ///< Tuning policy for cub::BlockReduceTiles abstraction
-    typename                InputIteratorRA,        ///< Random-access iterator type for input (may be a simple pointer type)
-    typename                OutputIteratorRA,       ///< Random-access iterator type for output (may be a simple pointer type)
+    typename                InputIterator,        ///< Random-access iterator type for input (may be a simple pointer type)
+    typename                OutputIterator,       ///< Random-access iterator type for output (may be a simple pointer type)
     typename                SizeT,                  ///< Integer type used for global array indexing
     typename                ReductionOp>            ///< Binary reduction operator type having member <tt>T operator()(const T &a, const T &b)</tt>
 __launch_bounds__ (int(BlockReduceTilesPolicy::BLOCK_THREADS), 1)
 __global__ void ReducePrivatizedKernel(
-    InputIteratorRA         d_in,                   ///< [in] Input data to reduce
-    OutputIteratorRA        d_out,                  ///< [out] Output location for result
+    InputIterator         d_in,                   ///< [in] Input data to reduce
+    OutputIterator        d_out,                  ///< [out] Output location for result
     SizeT                   num_items,              ///< [in] Total number of input data items
     GridEvenShare<SizeT>    even_share,             ///< [in] Even-share descriptor for mapping an equal number of tiles onto each thread block
     GridQueue<SizeT>        queue,                  ///< [in] Drain queue descriptor for dynamically mapping tile data onto thread blocks
     ReductionOp             reduction_op)           ///< [in] Binary reduction operator
 {
     // Data type
-    typedef typename std::iterator_traits<InputIteratorRA>::value_type T;
+    typedef typename std::iterator_traits<InputIterator>::value_type T;
 
     // Thread block type for reducing input tiles
-    typedef BlockReduceTiles<BlockReduceTilesPolicy, InputIteratorRA, SizeT, ReductionOp> BlockReduceTilesT;
+    typedef BlockReduceTiles<BlockReduceTilesPolicy, InputIterator, SizeT, ReductionOp> BlockReduceTilesT;
 
     // Block-wide aggregate
     T block_aggregate;
@@ -113,22 +113,22 @@ __global__ void ReducePrivatizedKernel(
  */
 template <
     typename                BlockReduceTilesPolicy,  ///< Tuning policy for cub::BlockReduceTiles abstraction
-    typename                InputIteratorRA,        ///< Random-access iterator type for input (may be a simple pointer type)
-    typename                OutputIteratorRA,       ///< Random-access iterator type for output (may be a simple pointer type)
+    typename                InputIterator,        ///< Random-access iterator type for input (may be a simple pointer type)
+    typename                OutputIterator,       ///< Random-access iterator type for output (may be a simple pointer type)
     typename                SizeT,                  ///< Integer type used for global array indexing
     typename                ReductionOp>            ///< Binary reduction operator type having member <tt>T operator()(const T &a, const T &b)</tt>
 __launch_bounds__ (int(BlockReduceTilesPolicy::BLOCK_THREADS), 1)
 __global__ void ReduceSingleKernel(
-    InputIteratorRA         d_in,                   ///< [in] Input data to reduce
-    OutputIteratorRA        d_out,                  ///< [out] Output location for result
+    InputIterator         d_in,                   ///< [in] Input data to reduce
+    OutputIterator        d_out,                  ///< [out] Output location for result
     SizeT                   num_items,              ///< [in] Total number of input data items
     ReductionOp             reduction_op)           ///< [in] Binary reduction operator
 {
     // Data type
-    typedef typename std::iterator_traits<InputIteratorRA>::value_type T;
+    typedef typename std::iterator_traits<InputIterator>::value_type T;
 
     // Thread block type for reducing input tiles
-    typedef BlockReduceTiles<BlockReduceTilesPolicy, InputIteratorRA, SizeT, ReductionOp> BlockReduceTilesT;
+    typedef BlockReduceTiles<BlockReduceTilesPolicy, InputIterator, SizeT, ReductionOp> BlockReduceTilesT;
 
     // Block-wide aggregate
     T block_aggregate;
@@ -403,8 +403,8 @@ struct DeviceReduce
         typename                    ReducePrivatizedKernelPtr,          ///< Function type of cub::ReducePrivatizedKernel
         typename                    ReduceSingleKernelPtr,              ///< Function type of cub::ReduceSingleKernel
         typename                    FillAndResetDrainKernelPtr,         ///< Function type of cub::FillAndResetDrainKernel
-        typename                    InputIteratorRA,                    ///< Random-access iterator type for input (may be a simple pointer type)
-        typename                    OutputIteratorRA,                   ///< Random-access iterator type for output (may be a simple pointer type)
+        typename                    InputIterator,                    ///< Random-access iterator type for input (may be a simple pointer type)
+        typename                    OutputIterator,                   ///< Random-access iterator type for output (may be a simple pointer type)
         typename                    SizeT,                              ///< Integer type used for global array indexing
         typename                    ReductionOp>                        ///< Binary reduction operator type having member <tt>T operator()(const T &a, const T &b)</tt>
     __host__ __device__ __forceinline__
@@ -416,8 +416,8 @@ struct DeviceReduce
         FillAndResetDrainKernelPtr  prepare_drain_kernel,               ///< [in] Kernel function pointer to parameterization of cub::FillAndResetDrainKernel
         KernelDispachParams         &privatized_dispatch_params,        ///< [in] Dispatch parameters that match the policy that \p privatized_kernel_ptr was compiled for
         KernelDispachParams         &single_dispatch_params,            ///< [in] Dispatch parameters that match the policy that \p single_kernel was compiled for
-        InputIteratorRA             d_in,                               ///< [in] Input data to reduce
-        OutputIteratorRA            d_out,                              ///< [out] Output location for result
+        InputIterator             d_in,                               ///< [in] Input data to reduce
+        OutputIterator            d_out,                              ///< [out] Output location for result
         SizeT                       num_items,                          ///< [in] Number of items to reduce
         ReductionOp                 reduction_op,                       ///< [in] Binary reduction operator
         cudaStream_t                stream              = 0,            ///< [in] <b>[optional]</b> CUDA stream to launch kernels within.  Default is stream<sub>0</sub>.
@@ -431,7 +431,7 @@ struct DeviceReduce
 #else
 
         // Data type of input iterator
-        typedef typename std::iterator_traits<InputIteratorRA>::value_type T;
+        typedef typename std::iterator_traits<InputIterator>::value_type T;
 
         cudaError error = cudaSuccess;
         do
@@ -645,20 +645,20 @@ struct DeviceReduce
      *
      * \endcode
      *
-     * \tparam InputIteratorRA      <b>[inferred]</b> Random-access iterator type for input (may be a simple pointer type)
-     * \tparam OutputIteratorRA     <b>[inferred]</b> Random-access iterator type for output (may be a simple pointer type)
+     * \tparam InputIterator      <b>[inferred]</b> Random-access iterator type for input (may be a simple pointer type)
+     * \tparam OutputIterator     <b>[inferred]</b> Random-access iterator type for output (may be a simple pointer type)
      * \tparam ReductionOp          <b>[inferred]</b> Binary reduction operator type having member <tt>T operator()(const T &a, const T &b)</tt>
      */
     template <
-        typename                    InputIteratorRA,
-        typename                    OutputIteratorRA,
+        typename                    InputIterator,
+        typename                    OutputIterator,
         typename                    ReductionOp>
     __host__ __device__ __forceinline__
     static cudaError_t Reduce(
         void                        *d_temp_storage,                    ///< [in] %Device allocation of temporary storage.  When NULL, the required allocation size is returned in \p temp_storage_bytes and no work is done.
         size_t                      &temp_storage_bytes,                ///< [in,out] Size in bytes of \p d_temp_storage allocation.
-        InputIteratorRA             d_in,                               ///< [in] Input data to reduce
-        OutputIteratorRA            d_out,                              ///< [out] Output location for result
+        InputIterator             d_in,                               ///< [in] Input data to reduce
+        OutputIterator            d_out,                              ///< [out] Output location for result
         int                         num_items,                          ///< [in] Number of items to reduce
         ReductionOp                 reduction_op,                       ///< [in] Binary reduction operator
         cudaStream_t                stream              = 0,            ///< [in] <b>[optional]</b> CUDA stream to launch kernels within.  Default is stream<sub>0</sub>.
@@ -668,7 +668,7 @@ struct DeviceReduce
         typedef int SizeT;
 
         // Data type of input iterator
-        typedef typename std::iterator_traits<InputIteratorRA>::value_type T;
+        typedef typename std::iterator_traits<InputIterator>::value_type T;
 
         // Tuning polices
         typedef PtxDefaultPolicies<T, SizeT>                    PtxDefaultPolicies;     // Wrapper of default kernel policies
@@ -697,8 +697,8 @@ struct DeviceReduce
             if (CubDebug(error = Dispatch(
                 d_temp_storage,
                 temp_storage_bytes,
-                ReducePrivatizedKernel<PrivatizedPolicy, InputIteratorRA, T*, SizeT, ReductionOp>,
-                ReduceSingleKernel<SinglePolicy, T*, OutputIteratorRA, SizeT, ReductionOp>,
+                ReducePrivatizedKernel<PrivatizedPolicy, InputIterator, T*, SizeT, ReductionOp>,
+                ReduceSingleKernel<SinglePolicy, T*, OutputIterator, SizeT, ReductionOp>,
                 FillAndResetDrainKernel<SizeT>,
                 privatized_dispatch_params,
                 single_dispatch_params,
@@ -752,18 +752,18 @@ struct DeviceReduce
      *
      * \endcode
      *
-     * \tparam InputIteratorRA      <b>[inferred]</b> Random-access iterator type for input (may be a simple pointer type)
-     * \tparam OutputIteratorRA     <b>[inferred]</b> Random-access iterator type for output (may be a simple pointer type)
+     * \tparam InputIterator      <b>[inferred]</b> Random-access iterator type for input (may be a simple pointer type)
+     * \tparam OutputIterator     <b>[inferred]</b> Random-access iterator type for output (may be a simple pointer type)
      */
     template <
-        typename                    InputIteratorRA,
-        typename                    OutputIteratorRA>
+        typename                    InputIterator,
+        typename                    OutputIterator>
     __host__ __device__ __forceinline__
     static cudaError_t Sum(
         void                        *d_temp_storage,                    ///< [in] %Device allocation of temporary storage.  When NULL, the required allocation size is returned in \p temp_storage_bytes and no work is done.
         size_t                      &temp_storage_bytes,                ///< [in,out] Size in bytes of \p d_temp_storage allocation.
-        InputIteratorRA             d_in,                               ///< [in] Input data to reduce
-        OutputIteratorRA            d_out,                              ///< [out] Output location for result
+        InputIterator             d_in,                               ///< [in] Input data to reduce
+        OutputIterator            d_out,                              ///< [out] Output location for result
         int                         num_items,                          ///< [in] Number of items to reduce
         cudaStream_t                stream              = 0,            ///< [in] <b>[optional]</b> CUDA stream to launch kernels within.  Default is stream<sub>0</sub>.
         bool                        stream_synchronous  = false)        ///< [in] <b>[optional]</b> Whether or not to synchronize the stream after every kernel launch to check for errors.  Default is \p false.

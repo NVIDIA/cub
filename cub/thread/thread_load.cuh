@@ -108,8 +108,8 @@ enum PtxLoadModifier
  */
 template <
     PtxLoadModifier MODIFIER,
-    typename InputIteratorRA>
-__device__ __forceinline__ typename std::iterator_traits<InputIteratorRA>::value_type ThreadLoad(InputIteratorRA itr);
+    typename InputIterator>
+__device__ __forceinline__ typename std::iterator_traits<InputIterator>::value_type ThreadLoad(InputIterator itr);
 
 
 //@}  end member group
@@ -283,9 +283,9 @@ struct IterateThreadLoad<MODIFIER, MAX, MAX>
 /**
  * ThreadLoad definition for LOAD_DEFAULT modifier on iterator types
  */
-template <typename InputIteratorRA>
-__device__ __forceinline__ typename std::iterator_traits<InputIteratorRA>::value_type ThreadLoad(
-    InputIteratorRA         itr,
+template <typename InputIterator>
+__device__ __forceinline__ typename std::iterator_traits<InputIterator>::value_type ThreadLoad(
+    InputIterator         itr,
     Int2Type<LOAD_DEFAULT>  modifier,
     Int2Type<false>         is_pointer)
 {
@@ -373,7 +373,7 @@ __device__ __forceinline__ T ThreadLoad(
         Int2Type<LOAD_CG>       modifier,
         Int2Type<true>          is_pointer)
     {
-        // Use LOAD_CV to ensure coherent reads when actually run on newer architectures with L1
+        // Use LOAD_CV to ensure coherent reads when this PTX is JIT'd to run on newer architectures with L1
         return ThreadLoad<LOAD_CV>(ptr);
     }
 
@@ -437,14 +437,14 @@ __device__ __forceinline__ T ThreadLoad(
  */
 template <
     PtxLoadModifier MODIFIER,
-    typename InputIteratorRA>
-__device__ __forceinline__ typename std::iterator_traits<InputIteratorRA>::value_type ThreadLoad(InputIteratorRA itr)
+    typename InputIterator>
+__device__ __forceinline__ typename std::iterator_traits<InputIterator>::value_type ThreadLoad(InputIterator itr)
 {
     // Apply tags for partial-specialization
     return ThreadLoad(
         itr,
         Int2Type<MODIFIER>(),
-        Int2Type<IsPointer<InputIteratorRA>::VALUE>());
+        Int2Type<IsPointer<InputIterator>::VALUE>());
 }
 
 

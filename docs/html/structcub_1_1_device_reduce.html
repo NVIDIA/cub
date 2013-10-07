@@ -123,14 +123,14 @@ var searchBox = new SearchBox("searchBox", "search",false,'Search');
 </div><table class="memberdecls">
 <tr class="heading"><td colspan="2"><h2 class="groupheader"><a name="pub-static-methods"></a>
 Static Public Methods</h2></td></tr>
-<tr class="memitem:ae7d87f3c83dd336e77b2ae900f74e092"><td class="memTemplParams" colspan="2">template&lt;typename InputIteratorRA , typename OutputIteratorRA , typename ReductionOp &gt; </td></tr>
+<tr class="memitem:ae7d87f3c83dd336e77b2ae900f74e092"><td class="memTemplParams" colspan="2">template&lt;typename InputIterator , typename OutputIterator , typename ReductionOp &gt; </td></tr>
 <tr class="memitem:ae7d87f3c83dd336e77b2ae900f74e092"><td class="memTemplItemLeft" align="right" valign="top">__host__ __device__ static <br class="typebreak"/>
-__forceinline__ cudaError_t&#160;</td><td class="memTemplItemRight" valign="bottom"><a class="el" href="structcub_1_1_device_reduce.html#ae7d87f3c83dd336e77b2ae900f74e092">Reduce</a> (void *d_temp_storage, size_t &amp;temp_storage_bytes, InputIteratorRA d_in, OutputIteratorRA d_out, int num_items, ReductionOp reduction_op, cudaStream_t stream=0, bool stream_synchronous=false)</td></tr>
+__forceinline__ cudaError_t&#160;</td><td class="memTemplItemRight" valign="bottom"><a class="el" href="structcub_1_1_device_reduce.html#ae7d87f3c83dd336e77b2ae900f74e092">Reduce</a> (void *d_temp_storage, size_t &amp;temp_storage_bytes, InputIterator d_in, OutputIterator d_out, int num_items, ReductionOp reduction_op, cudaStream_t stream=0, bool stream_synchronous=false)</td></tr>
 <tr class="memdesc:ae7d87f3c83dd336e77b2ae900f74e092"><td class="mdescLeft">&#160;</td><td class="mdescRight">Computes a device-wide reduction using the specified binary <code>reduction_op</code> functor.  <a href="#ae7d87f3c83dd336e77b2ae900f74e092">More...</a><br/></td></tr>
 <tr class="separator:ae7d87f3c83dd336e77b2ae900f74e092"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:ae927a1815745ceed75ff677ffd3b0701"><td class="memTemplParams" colspan="2">template&lt;typename InputIteratorRA , typename OutputIteratorRA &gt; </td></tr>
+<tr class="memitem:ae927a1815745ceed75ff677ffd3b0701"><td class="memTemplParams" colspan="2">template&lt;typename InputIterator , typename OutputIterator &gt; </td></tr>
 <tr class="memitem:ae927a1815745ceed75ff677ffd3b0701"><td class="memTemplItemLeft" align="right" valign="top">__host__ __device__ static <br class="typebreak"/>
-__forceinline__ cudaError_t&#160;</td><td class="memTemplItemRight" valign="bottom"><a class="el" href="structcub_1_1_device_reduce.html#ae927a1815745ceed75ff677ffd3b0701">Sum</a> (void *d_temp_storage, size_t &amp;temp_storage_bytes, InputIteratorRA d_in, OutputIteratorRA d_out, int num_items, cudaStream_t stream=0, bool stream_synchronous=false)</td></tr>
+__forceinline__ cudaError_t&#160;</td><td class="memTemplItemRight" valign="bottom"><a class="el" href="structcub_1_1_device_reduce.html#ae927a1815745ceed75ff677ffd3b0701">Sum</a> (void *d_temp_storage, size_t &amp;temp_storage_bytes, InputIterator d_in, OutputIterator d_out, int num_items, cudaStream_t stream=0, bool stream_synchronous=false)</td></tr>
 <tr class="memdesc:ae927a1815745ceed75ff677ffd3b0701"><td class="mdescLeft">&#160;</td><td class="mdescRight">Computes a device-wide sum using the addition ('+') operator.  <a href="#ae927a1815745ceed75ff677ffd3b0701">More...</a><br/></td></tr>
 <tr class="separator:ae927a1815745ceed75ff677ffd3b0701"><td class="memSeparator" colspan="2">&#160;</td></tr>
 </table>
@@ -139,7 +139,7 @@ __forceinline__ cudaError_t&#160;</td><td class="memTemplItemRight" valign="bott
 <div class="memitem">
 <div class="memproto">
 <div class="memtemplate">
-template&lt;typename InputIteratorRA , typename OutputIteratorRA , typename ReductionOp &gt; </div>
+template&lt;typename InputIterator , typename OutputIterator , typename ReductionOp &gt; </div>
 <table class="mlabels">
   <tr>
   <td class="mlabels-left">
@@ -159,13 +159,13 @@ template&lt;typename InputIteratorRA , typename OutputIteratorRA , typename Redu
         <tr>
           <td class="paramkey"></td>
           <td></td>
-          <td class="paramtype">InputIteratorRA&#160;</td>
+          <td class="paramtype">InputIterator&#160;</td>
           <td class="paramname"><em>d_in</em>, </td>
         </tr>
         <tr>
           <td class="paramkey"></td>
           <td></td>
-          <td class="paramtype">OutputIteratorRA&#160;</td>
+          <td class="paramtype">OutputIterator&#160;</td>
           <td class="paramname"><em>d_out</em>, </td>
         </tr>
         <tr>
@@ -232,8 +232,8 @@ template&lt;typename InputIteratorRA , typename OutputIteratorRA , typename Redu
 </div><!-- fragment --></dd></dl>
 <dl class="tparams"><dt>Template Parameters</dt><dd>
   <table class="tparams">
-    <tr><td class="paramname">InputIteratorRA</td><td><b>[inferred]</b> Random-access iterator type for input (may be a simple pointer type) </td></tr>
-    <tr><td class="paramname">OutputIteratorRA</td><td><b>[inferred]</b> Random-access iterator type for output (may be a simple pointer type) </td></tr>
+    <tr><td class="paramname">InputIterator</td><td><b>[inferred]</b> Random-access iterator type for input (may be a simple pointer type) </td></tr>
+    <tr><td class="paramname">OutputIterator</td><td><b>[inferred]</b> Random-access iterator type for output (may be a simple pointer type) </td></tr>
     <tr><td class="paramname">ReductionOp</td><td><b>[inferred]</b> Binary reduction operator type having member <code>T operator()(const T &amp;a, const T &amp;b)</code> </td></tr>
   </table>
   </dd>
@@ -260,7 +260,7 @@ template&lt;typename InputIteratorRA , typename OutputIteratorRA , typename Redu
 <div class="memitem">
 <div class="memproto">
 <div class="memtemplate">
-template&lt;typename InputIteratorRA , typename OutputIteratorRA &gt; </div>
+template&lt;typename InputIterator , typename OutputIterator &gt; </div>
 <table class="mlabels">
   <tr>
   <td class="mlabels-left">
@@ -280,13 +280,13 @@ template&lt;typename InputIteratorRA , typename OutputIteratorRA &gt; </div>
         <tr>
           <td class="paramkey"></td>
           <td></td>
-          <td class="paramtype">InputIteratorRA&#160;</td>
+          <td class="paramtype">InputIterator&#160;</td>
           <td class="paramname"><em>d_in</em>, </td>
         </tr>
         <tr>
           <td class="paramkey"></td>
           <td></td>
-          <td class="paramtype">OutputIteratorRA&#160;</td>
+          <td class="paramtype">OutputIterator&#160;</td>
           <td class="paramname"><em>d_out</em>, </td>
         </tr>
         <tr>
@@ -347,8 +347,8 @@ template&lt;typename InputIteratorRA , typename OutputIteratorRA &gt; </div>
 </div><!-- fragment --></dd></dl>
 <dl class="tparams"><dt>Template Parameters</dt><dd>
   <table class="tparams">
-    <tr><td class="paramname">InputIteratorRA</td><td><b>[inferred]</b> Random-access iterator type for input (may be a simple pointer type) </td></tr>
-    <tr><td class="paramname">OutputIteratorRA</td><td><b>[inferred]</b> Random-access iterator type for output (may be a simple pointer type) </td></tr>
+    <tr><td class="paramname">InputIterator</td><td><b>[inferred]</b> Random-access iterator type for input (may be a simple pointer type) </td></tr>
+    <tr><td class="paramname">OutputIterator</td><td><b>[inferred]</b> Random-access iterator type for output (may be a simple pointer type) </td></tr>
   </table>
   </dd>
 </dl>

@@ -159,24 +159,24 @@ var searchBox = new SearchBox("searchBox", "search",false,'Search');
 <div class="line"><a name="l00064"></a><span class="lineno">   64</span>&#160;</div>
 <div class="line"><a name="l00068"></a><span class="lineno">   68</span>&#160;<span class="keyword">template</span> &lt;</div>
 <div class="line"><a name="l00069"></a><span class="lineno">   69</span>&#160;    <span class="keyword">typename</span>                BlockReduceTilesPolicy, </div>
-<div class="line"><a name="l00070"></a><span class="lineno">   70</span>&#160;    <span class="keyword">typename</span>                InputIteratorRA,        </div>
-<div class="line"><a name="l00071"></a><span class="lineno">   71</span>&#160;    <span class="keyword">typename</span>                OutputIteratorRA,       </div>
+<div class="line"><a name="l00070"></a><span class="lineno">   70</span>&#160;    <span class="keyword">typename</span>                InputIterator,        </div>
+<div class="line"><a name="l00071"></a><span class="lineno">   71</span>&#160;    <span class="keyword">typename</span>                OutputIterator,       </div>
 <div class="line"><a name="l00072"></a><span class="lineno">   72</span>&#160;    <span class="keyword">typename</span>                SizeT,                  </div>
 <div class="line"><a name="l00073"></a><span class="lineno">   73</span>&#160;    <span class="keyword">typename</span>                ReductionOp&gt;            </div>
 <div class="line"><a name="l00074"></a><span class="lineno">   74</span>&#160;__launch_bounds__ (<span class="keywordtype">int</span>(BlockReduceTilesPolicy::BLOCK_THREADS), 1)</div>
 <div class="line"><a name="l00075"></a><span class="lineno">   75</span>&#160;__global__ <span class="keywordtype">void</span> ReducePrivatizedKernel(</div>
-<div class="line"><a name="l00076"></a><span class="lineno">   76</span>&#160;    InputIteratorRA         d_in,                   </div>
-<div class="line"><a name="l00077"></a><span class="lineno">   77</span>&#160;    OutputIteratorRA        d_out,                  </div>
+<div class="line"><a name="l00076"></a><span class="lineno">   76</span>&#160;    InputIterator         d_in,                   </div>
+<div class="line"><a name="l00077"></a><span class="lineno">   77</span>&#160;    OutputIterator        d_out,                  </div>
 <div class="line"><a name="l00078"></a><span class="lineno">   78</span>&#160;    SizeT                   num_items,              </div>
 <div class="line"><a name="l00079"></a><span class="lineno">   79</span>&#160;    GridEvenShare&lt;SizeT&gt;    even_share,             </div>
 <div class="line"><a name="l00080"></a><span class="lineno">   80</span>&#160;    GridQueue&lt;SizeT&gt;        queue,                  </div>
 <div class="line"><a name="l00081"></a><span class="lineno">   81</span>&#160;    ReductionOp             reduction_op)           </div>
 <div class="line"><a name="l00082"></a><span class="lineno">   82</span>&#160;{</div>
 <div class="line"><a name="l00083"></a><span class="lineno">   83</span>&#160;    <span class="comment">// Data type</span></div>
-<div class="line"><a name="l00084"></a><span class="lineno">   84</span>&#160;    <span class="keyword">typedef</span> <span class="keyword">typename</span> std::iterator_traits&lt;InputIteratorRA&gt;::value_type T;</div>
+<div class="line"><a name="l00084"></a><span class="lineno">   84</span>&#160;    <span class="keyword">typedef</span> <span class="keyword">typename</span> std::iterator_traits&lt;InputIterator&gt;::value_type T;</div>
 <div class="line"><a name="l00085"></a><span class="lineno">   85</span>&#160;</div>
 <div class="line"><a name="l00086"></a><span class="lineno">   86</span>&#160;    <span class="comment">// Thread block type for reducing input tiles</span></div>
-<div class="line"><a name="l00087"></a><span class="lineno">   87</span>&#160;    <span class="keyword">typedef</span> BlockReduceTiles&lt;BlockReduceTilesPolicy, InputIteratorRA, SizeT, ReductionOp&gt; BlockReduceTilesT;</div>
+<div class="line"><a name="l00087"></a><span class="lineno">   87</span>&#160;    <span class="keyword">typedef</span> BlockReduceTiles&lt;BlockReduceTilesPolicy, InputIterator, SizeT, ReductionOp&gt; BlockReduceTilesT;</div>
 <div class="line"><a name="l00088"></a><span class="lineno">   88</span>&#160;</div>
 <div class="line"><a name="l00089"></a><span class="lineno">   89</span>&#160;    <span class="comment">// Block-wide aggregate</span></div>
 <div class="line"><a name="l00090"></a><span class="lineno">   90</span>&#160;    T block_aggregate;</div>
@@ -202,22 +202,22 @@ var searchBox = new SearchBox("searchBox", "search",false,'Search');
 <div class="line"><a name="l00110"></a><span class="lineno">  110</span>&#160;</div>
 <div class="line"><a name="l00114"></a><span class="lineno">  114</span>&#160;<span class="keyword">template</span> &lt;</div>
 <div class="line"><a name="l00115"></a><span class="lineno">  115</span>&#160;    <span class="keyword">typename</span>                BlockReduceTilesPolicy,  </div>
-<div class="line"><a name="l00116"></a><span class="lineno">  116</span>&#160;    <span class="keyword">typename</span>                InputIteratorRA,        </div>
-<div class="line"><a name="l00117"></a><span class="lineno">  117</span>&#160;    <span class="keyword">typename</span>                OutputIteratorRA,       </div>
+<div class="line"><a name="l00116"></a><span class="lineno">  116</span>&#160;    <span class="keyword">typename</span>                InputIterator,        </div>
+<div class="line"><a name="l00117"></a><span class="lineno">  117</span>&#160;    <span class="keyword">typename</span>                OutputIterator,       </div>
 <div class="line"><a name="l00118"></a><span class="lineno">  118</span>&#160;    <span class="keyword">typename</span>                SizeT,                  </div>
 <div class="line"><a name="l00119"></a><span class="lineno">  119</span>&#160;    <span class="keyword">typename</span>                ReductionOp&gt;            </div>
 <div class="line"><a name="l00120"></a><span class="lineno">  120</span>&#160;__launch_bounds__ (<span class="keywordtype">int</span>(BlockReduceTilesPolicy::BLOCK_THREADS), 1)</div>
 <div class="line"><a name="l00121"></a><span class="lineno">  121</span>&#160;__global__ <span class="keywordtype">void</span> ReduceSingleKernel(</div>
-<div class="line"><a name="l00122"></a><span class="lineno">  122</span>&#160;    InputIteratorRA         d_in,                   </div>
-<div class="line"><a name="l00123"></a><span class="lineno">  123</span>&#160;    OutputIteratorRA        d_out,                  </div>
+<div class="line"><a name="l00122"></a><span class="lineno">  122</span>&#160;    InputIterator         d_in,                   </div>
+<div class="line"><a name="l00123"></a><span class="lineno">  123</span>&#160;    OutputIterator        d_out,                  </div>
 <div class="line"><a name="l00124"></a><span class="lineno">  124</span>&#160;    SizeT                   num_items,              </div>
 <div class="line"><a name="l00125"></a><span class="lineno">  125</span>&#160;    ReductionOp             reduction_op)           </div>
 <div class="line"><a name="l00126"></a><span class="lineno">  126</span>&#160;{</div>
 <div class="line"><a name="l00127"></a><span class="lineno">  127</span>&#160;    <span class="comment">// Data type</span></div>
-<div class="line"><a name="l00128"></a><span class="lineno">  128</span>&#160;    <span class="keyword">typedef</span> <span class="keyword">typename</span> std::iterator_traits&lt;InputIteratorRA&gt;::value_type T;</div>
+<div class="line"><a name="l00128"></a><span class="lineno">  128</span>&#160;    <span class="keyword">typedef</span> <span class="keyword">typename</span> std::iterator_traits&lt;InputIterator&gt;::value_type T;</div>
 <div class="line"><a name="l00129"></a><span class="lineno">  129</span>&#160;</div>
 <div class="line"><a name="l00130"></a><span class="lineno">  130</span>&#160;    <span class="comment">// Thread block type for reducing input tiles</span></div>
-<div class="line"><a name="l00131"></a><span class="lineno">  131</span>&#160;    <span class="keyword">typedef</span> BlockReduceTiles&lt;BlockReduceTilesPolicy, InputIteratorRA, SizeT, ReductionOp&gt; BlockReduceTilesT;</div>
+<div class="line"><a name="l00131"></a><span class="lineno">  131</span>&#160;    <span class="keyword">typedef</span> BlockReduceTiles&lt;BlockReduceTilesPolicy, InputIterator, SizeT, ReductionOp&gt; BlockReduceTilesT;</div>
 <div class="line"><a name="l00132"></a><span class="lineno">  132</span>&#160;</div>
 <div class="line"><a name="l00133"></a><span class="lineno">  133</span>&#160;    <span class="comment">// Block-wide aggregate</span></div>
 <div class="line"><a name="l00134"></a><span class="lineno">  134</span>&#160;    T block_aggregate;</div>
@@ -462,8 +462,8 @@ var searchBox = new SearchBox("searchBox", "search",false,'Search');
 <div class="line"><a name="l00403"></a><span class="lineno">  403</span>&#160;        <span class="keyword">typename</span>                    ReducePrivatizedKernelPtr,          </div>
 <div class="line"><a name="l00404"></a><span class="lineno">  404</span>&#160;        <span class="keyword">typename</span>                    ReduceSingleKernelPtr,              </div>
 <div class="line"><a name="l00405"></a><span class="lineno">  405</span>&#160;        <span class="keyword">typename</span>                    ResetDrainKernelPtr,                </div>
-<div class="line"><a name="l00406"></a><span class="lineno">  406</span>&#160;        <span class="keyword">typename</span>                    InputIteratorRA,                    </div>
-<div class="line"><a name="l00407"></a><span class="lineno">  407</span>&#160;        <span class="keyword">typename</span>                    OutputIteratorRA,                   </div>
+<div class="line"><a name="l00406"></a><span class="lineno">  406</span>&#160;        <span class="keyword">typename</span>                    InputIterator,                    </div>
+<div class="line"><a name="l00407"></a><span class="lineno">  407</span>&#160;        <span class="keyword">typename</span>                    OutputIterator,                   </div>
 <div class="line"><a name="l00408"></a><span class="lineno">  408</span>&#160;        <span class="keyword">typename</span>                    SizeT,                              </div>
 <div class="line"><a name="l00409"></a><span class="lineno">  409</span>&#160;        <span class="keyword">typename</span>                    ReductionOp&gt;                        </div>
 <div class="line"><a name="l00410"></a><span class="lineno">  410</span>&#160;    __host__ __device__ __forceinline__</div>
@@ -475,8 +475,8 @@ var searchBox = new SearchBox("searchBox", "search",false,'Search');
 <div class="line"><a name="l00416"></a><span class="lineno">  416</span>&#160;        ResetDrainKernelPtr         prepare_drain_kernel,               </div>
 <div class="line"><a name="l00417"></a><span class="lineno">  417</span>&#160;        KernelDispachParams         &amp;privatized_dispatch_params,        </div>
 <div class="line"><a name="l00418"></a><span class="lineno">  418</span>&#160;        KernelDispachParams         &amp;single_dispatch_params,            </div>
-<div class="line"><a name="l00419"></a><span class="lineno">  419</span>&#160;        InputIteratorRA             d_in,                               </div>
-<div class="line"><a name="l00420"></a><span class="lineno">  420</span>&#160;        OutputIteratorRA            d_out,                              </div>
+<div class="line"><a name="l00419"></a><span class="lineno">  419</span>&#160;        InputIterator             d_in,                               </div>
+<div class="line"><a name="l00420"></a><span class="lineno">  420</span>&#160;        OutputIterator            d_out,                              </div>
 <div class="line"><a name="l00421"></a><span class="lineno">  421</span>&#160;        SizeT                       num_items,                          </div>
 <div class="line"><a name="l00422"></a><span class="lineno">  422</span>&#160;        ReductionOp                 reduction_op,                       </div>
 <div class="line"><a name="l00423"></a><span class="lineno">  423</span>&#160;        cudaStream_t                stream              = 0,            </div>
@@ -490,7 +490,7 @@ var searchBox = new SearchBox("searchBox", "search",false,'Search');
 <div class="line"><a name="l00431"></a><span class="lineno">  431</span>&#160;<span class="preprocessor">#else</span></div>
 <div class="line"><a name="l00432"></a><span class="lineno">  432</span>&#160;<span class="preprocessor"></span></div>
 <div class="line"><a name="l00433"></a><span class="lineno">  433</span>&#160;        <span class="comment">// Data type of input iterator</span></div>
-<div class="line"><a name="l00434"></a><span class="lineno">  434</span>&#160;        <span class="keyword">typedef</span> <span class="keyword">typename</span> std::iterator_traits&lt;InputIteratorRA&gt;::value_type T;</div>
+<div class="line"><a name="l00434"></a><span class="lineno">  434</span>&#160;        <span class="keyword">typedef</span> <span class="keyword">typename</span> std::iterator_traits&lt;InputIterator&gt;::value_type T;</div>
 <div class="line"><a name="l00435"></a><span class="lineno">  435</span>&#160;</div>
 <div class="line"><a name="l00436"></a><span class="lineno">  436</span>&#160;        cudaError error = cudaSuccess;</div>
 <div class="line"><a name="l00437"></a><span class="lineno">  437</span>&#160;        <span class="keywordflow">do</span></div>
@@ -662,15 +662,15 @@ var searchBox = new SearchBox("searchBox", "search",false,'Search');
 <div class="line"><a name="l00603"></a><span class="lineno">  603</span>&#160;<span class="comment">     ******************************************************************************/</span></div>
 <div class="line"><a name="l00604"></a><span class="lineno">  604</span>&#160;</div>
 <div class="line"><a name="l00646"></a><span class="lineno">  646</span>&#160;    <span class="keyword">template</span> &lt;</div>
-<div class="line"><a name="l00647"></a><span class="lineno">  647</span>&#160;        <span class="keyword">typename</span>                    InputIteratorRA,</div>
-<div class="line"><a name="l00648"></a><span class="lineno">  648</span>&#160;        <span class="keyword">typename</span>                    OutputIteratorRA,</div>
+<div class="line"><a name="l00647"></a><span class="lineno">  647</span>&#160;        <span class="keyword">typename</span>                    InputIterator,</div>
+<div class="line"><a name="l00648"></a><span class="lineno">  648</span>&#160;        <span class="keyword">typename</span>                    OutputIterator,</div>
 <div class="line"><a name="l00649"></a><span class="lineno">  649</span>&#160;        <span class="keyword">typename</span>                    ReductionOp&gt;</div>
 <div class="line"><a name="l00650"></a><span class="lineno">  650</span>&#160;    __host__ __device__ __forceinline__</div>
 <div class="line"><a name="l00651"></a><span class="lineno"><a class="code" href="structcub_1_1_device_reduce.html#ae7d87f3c83dd336e77b2ae900f74e092">  651</a></span>&#160;    <span class="keyword">static</span> cudaError_t <a class="code" href="structcub_1_1_device_reduce.html#ae7d87f3c83dd336e77b2ae900f74e092" title="Computes a device-wide reduction using the specified binary reduction_op functor. ...">Reduce</a>(</div>
 <div class="line"><a name="l00652"></a><span class="lineno">  652</span>&#160;        <span class="keywordtype">void</span>                        *d_temp_storage,                    </div>
 <div class="line"><a name="l00653"></a><span class="lineno">  653</span>&#160;        <span class="keywordtype">size_t</span>                      &amp;temp_storage_bytes,                </div>
-<div class="line"><a name="l00654"></a><span class="lineno">  654</span>&#160;        InputIteratorRA             d_in,                               </div>
-<div class="line"><a name="l00655"></a><span class="lineno">  655</span>&#160;        OutputIteratorRA            d_out,                              </div>
+<div class="line"><a name="l00654"></a><span class="lineno">  654</span>&#160;        InputIterator             d_in,                               </div>
+<div class="line"><a name="l00655"></a><span class="lineno">  655</span>&#160;        OutputIterator            d_out,                              </div>
 <div class="line"><a name="l00656"></a><span class="lineno">  656</span>&#160;        <span class="keywordtype">int</span>                         num_items,                          </div>
 <div class="line"><a name="l00657"></a><span class="lineno">  657</span>&#160;        ReductionOp                 reduction_op,                       </div>
 <div class="line"><a name="l00658"></a><span class="lineno">  658</span>&#160;        cudaStream_t                stream              = 0,            </div>
@@ -680,7 +680,7 @@ var searchBox = new SearchBox("searchBox", "search",false,'Search');
 <div class="line"><a name="l00662"></a><span class="lineno">  662</span>&#160;        <span class="keyword">typedef</span> <span class="keywordtype">int</span> SizeT;</div>
 <div class="line"><a name="l00663"></a><span class="lineno">  663</span>&#160;</div>
 <div class="line"><a name="l00664"></a><span class="lineno">  664</span>&#160;        <span class="comment">// Data type of input iterator</span></div>
-<div class="line"><a name="l00665"></a><span class="lineno">  665</span>&#160;        <span class="keyword">typedef</span> <span class="keyword">typename</span> std::iterator_traits&lt;InputIteratorRA&gt;::value_type T;</div>
+<div class="line"><a name="l00665"></a><span class="lineno">  665</span>&#160;        <span class="keyword">typedef</span> <span class="keyword">typename</span> std::iterator_traits&lt;InputIterator&gt;::value_type T;</div>
 <div class="line"><a name="l00666"></a><span class="lineno">  666</span>&#160;</div>
 <div class="line"><a name="l00667"></a><span class="lineno">  667</span>&#160;        <span class="comment">// Tuning polices</span></div>
 <div class="line"><a name="l00668"></a><span class="lineno">  668</span>&#160;        <span class="keyword">typedef</span> PtxDefaultPolicies&lt;T, SizeT&gt;                    PtxDefaultPolicies;     <span class="comment">// Wrapper of default kernel policies</span></div>
@@ -709,8 +709,8 @@ var searchBox = new SearchBox("searchBox", "search",false,'Search');
 <div class="line"><a name="l00691"></a><span class="lineno">  691</span>&#160;            <span class="keywordflow">if</span> (<a class="code" href="group___util_module.html#ga84c3a4c178bf6593e0fad2b763606236" title="Debug macro. ">CubDebug</a>(error = Dispatch(</div>
 <div class="line"><a name="l00692"></a><span class="lineno">  692</span>&#160;                d_temp_storage,</div>
 <div class="line"><a name="l00693"></a><span class="lineno">  693</span>&#160;                temp_storage_bytes,</div>
-<div class="line"><a name="l00694"></a><span class="lineno">  694</span>&#160;                ReducePrivatizedKernel&lt;PrivatizedPolicy, InputIteratorRA, T*, SizeT, ReductionOp&gt;,</div>
-<div class="line"><a name="l00695"></a><span class="lineno">  695</span>&#160;                ReduceSingleKernel&lt;SinglePolicy, T*, OutputIteratorRA, SizeT, ReductionOp&gt;,</div>
+<div class="line"><a name="l00694"></a><span class="lineno">  694</span>&#160;                ReducePrivatizedKernel&lt;PrivatizedPolicy, InputIterator, T*, SizeT, ReductionOp&gt;,</div>
+<div class="line"><a name="l00695"></a><span class="lineno">  695</span>&#160;                ReduceSingleKernel&lt;SinglePolicy, T*, OutputIterator, SizeT, ReductionOp&gt;,</div>
 <div class="line"><a name="l00696"></a><span class="lineno">  696</span>&#160;                ResetDrainKernel&lt;SizeT&gt;,</div>
 <div class="line"><a name="l00697"></a><span class="lineno">  697</span>&#160;                privatized_dispatch_params,</div>
 <div class="line"><a name="l00698"></a><span class="lineno">  698</span>&#160;                single_dispatch_params,</div>
@@ -728,14 +728,14 @@ var searchBox = new SearchBox("searchBox", "search",false,'Search');
 <div class="line"><a name="l00710"></a><span class="lineno">  710</span>&#160;</div>
 <div class="line"><a name="l00711"></a><span class="lineno">  711</span>&#160;</div>
 <div class="line"><a name="l00752"></a><span class="lineno">  752</span>&#160;    <span class="keyword">template</span> &lt;</div>
-<div class="line"><a name="l00753"></a><span class="lineno">  753</span>&#160;        <span class="keyword">typename</span>                    InputIteratorRA,</div>
-<div class="line"><a name="l00754"></a><span class="lineno">  754</span>&#160;        <span class="keyword">typename</span>                    OutputIteratorRA&gt;</div>
+<div class="line"><a name="l00753"></a><span class="lineno">  753</span>&#160;        <span class="keyword">typename</span>                    InputIterator,</div>
+<div class="line"><a name="l00754"></a><span class="lineno">  754</span>&#160;        <span class="keyword">typename</span>                    OutputIterator&gt;</div>
 <div class="line"><a name="l00755"></a><span class="lineno">  755</span>&#160;    __host__ __device__ __forceinline__</div>
 <div class="line"><a name="l00756"></a><span class="lineno"><a class="code" href="structcub_1_1_device_reduce.html#ae927a1815745ceed75ff677ffd3b0701">  756</a></span>&#160;    <span class="keyword">static</span> cudaError_t <a class="code" href="structcub_1_1_device_reduce.html#ae927a1815745ceed75ff677ffd3b0701" title="Computes a device-wide sum using the addition (&#39;+&#39;) operator. ">Sum</a>(</div>
 <div class="line"><a name="l00757"></a><span class="lineno">  757</span>&#160;        <span class="keywordtype">void</span>                        *d_temp_storage,                    </div>
 <div class="line"><a name="l00758"></a><span class="lineno">  758</span>&#160;        <span class="keywordtype">size_t</span>                      &amp;temp_storage_bytes,                </div>
-<div class="line"><a name="l00759"></a><span class="lineno">  759</span>&#160;        InputIteratorRA             d_in,                               </div>
-<div class="line"><a name="l00760"></a><span class="lineno">  760</span>&#160;        OutputIteratorRA            d_out,                              </div>
+<div class="line"><a name="l00759"></a><span class="lineno">  759</span>&#160;        InputIterator             d_in,                               </div>
+<div class="line"><a name="l00760"></a><span class="lineno">  760</span>&#160;        OutputIterator            d_out,                              </div>
 <div class="line"><a name="l00761"></a><span class="lineno">  761</span>&#160;        <span class="keywordtype">int</span>                         num_items,                          </div>
 <div class="line"><a name="l00762"></a><span class="lineno">  762</span>&#160;        cudaStream_t                stream              = 0,            </div>
 <div class="line"><a name="l00763"></a><span class="lineno">  763</span>&#160;        <span class="keywordtype">bool</span>                        stream_synchronous  = <span class="keyword">false</span>)        </div>

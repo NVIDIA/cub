@@ -98,9 +98,9 @@ struct BlockPartitionTilesPolicy
  */
 template <
     typename BlockPartitionTilesPolicy,     ///< Tuning policy
-    typename InputIteratorRA,               ///< Input iterator type
-    typename FirstOutputIteratorRA,         ///< Output iterator type for first partition
-    typename SecondOutputIteratorRA,        ///< Output iterator type for second partition
+    typename InputIterator,               ///< Input iterator type
+    typename FirstOutputIterator,         ///< Output iterator type for first partition
+    typename SecondOutputIterator,        ///< Output iterator type for second partition
     typename SelectOp,                      ///< Unary partition selection functor type specifying whether an input item goes into the first partition
     typename SizeT>                         ///< Offset integer type
 struct BlockPartitionTiles
@@ -110,7 +110,7 @@ struct BlockPartitionTiles
     //---------------------------------------------------------------------
 
     // Data type of input iterator
-    typedef typename std::iterator_traits<InputIteratorRA>::value_type T;
+    typedef typename std::iterator_traits<InputIterator>::value_type T;
 
     // Constants
     enum
@@ -120,12 +120,12 @@ struct BlockPartitionTiles
         TILE_ITEMS                  = BLOCK_THREADS * ITEMS_PER_THREAD,
 
         BACKFILL_SECOND_PARTITION   = BlockPartitionTilesPolicy::BACKFILL_SECOND_PARTITION,
-        COMPACT_ONLY                = Int2Type<Equals<SecondOutputIteratorRA, NullType>::VALUE,
+        COMPACT_ONLY                = Int2Type<Equals<SecondOutputIterator, NullType>::VALUE,
     };
 
     // Block load type
     typedef BlockLoad<
-        InputIteratorRA,
+        InputIterator,
         BlockPartitionTilesPolicy::BLOCK_THREADS,
         BlockPartitionTilesPolicy::ITEMS_PER_THREAD,
         BlockPartitionTilesPolicy::LOAD_ALGORITHM,
@@ -172,9 +172,9 @@ struct BlockPartitionTiles
     //---------------------------------------------------------------------
 
     _TempStorage                &temp_storage;      ///< Reference to temp_storage
-    InputIteratorRA             d_in;               ///< Input data
-    FirstOutputIteratorRA       d_out_a;            ///< First partition output data
-    SecondOutputIteratorRA      d_out_b;            ///< Second partition output data
+    InputIterator             d_in;               ///< Input data
+    FirstOutputIterator       d_out_a;            ///< First partition output data
+    SecondOutputIterator      d_out_b;            ///< Second partition output data
     SelectOp                    select_op;          ///< Unary partition selection operator
 
 
@@ -187,9 +187,9 @@ struct BlockPartitionTiles
     __device__ __forceinline__
     BlockPartitionTiles(
         TempStorage                 &temp_storage,      ///< Reference to temp_storage
-        InputIteratorRA             d_in,               ///< Input data
-        FirstOutputIteratorRA       d_out_a,            ///< First partition output data
-        SecondOutputIteratorRA      d_out_b,            ///< Second partition output data
+        InputIterator             d_in,               ///< Input data
+        FirstOutputIterator       d_out_a,            ///< First partition output data
+        SecondOutputIterator      d_out_b,            ///< Second partition output data
         SelectOp                    select_op)          ///< Unary partition selection operator
     :
         temp_storage(temp_storage.Alias()),

@@ -63,16 +63,16 @@ namespace cub {
  */
 template <
     typename    BlockPartitionTilesPolicy,           ///< Tuning policy for cub::BlockPartitionTiles abstraction
-    typename    InputIteratorRA,                ///< Random-access iterator type for input (may be a simple pointer type)
-    typename    OutputIteratorRA,               ///< Random-access iterator type for output (may be a simple pointer type)
+    typename    InputIterator,                ///< Random-access iterator type for input (may be a simple pointer type)
+    typename    OutputIterator,               ///< Random-access iterator type for output (may be a simple pointer type)
     typename    T,                              ///< The scan data type
     typename    ScanOp,                         ///< Binary scan operator type having member <tt>T operator()(const T &a, const T &b)</tt>
     typename    Identity,                       ///< Identity value type (cub::NullType for inclusive scans)
     typename    SizeT>                          ///< Integer type used for global array indexing
 __launch_bounds__ (int(BlockPartitionTilesPolicy::BLOCK_THREADS))
 __global__ void ScanKernel(
-    InputIteratorRA             d_in,           ///< Input data
-    OutputIteratorRA            d_out,          ///< Output data
+    InputIterator             d_in,           ///< Input data
+    OutputIterator            d_out,          ///< Output data
     DevicePartitionTileDescriptor<T>       *d_tile_status, ///< Global list of tile status
     ScanOp                      scan_op,        ///< Binary scan operator
     Identity                    identity,       ///< Identity element
@@ -87,8 +87,8 @@ __global__ void ScanKernel(
     // Thread block type for scanning input tiles
     typedef BlockPartitionTiles<
         BlockPartitionTilesPolicy,
-        InputIteratorRA,
-        OutputIteratorRA,
+        InputIterator,
+        OutputIterator,
         ScanOp,
         Identity,
         SizeT> BlockPartitionTilesT;
@@ -300,8 +300,8 @@ struct DevicePartition
     template <
         typename                    ScanInitKernelPtr,              ///< Function type of cub::ScanInitKernel
         typename                    ScanKernelPtr,                  ///< Function type of cub::ScanKernel
-        typename                    InputIteratorRA,                ///< Random-access iterator type for input (may be a simple pointer type)
-        typename                    OutputIteratorRA,               ///< Random-access iterator type for output (may be a simple pointer type)
+        typename                    InputIterator,                ///< Random-access iterator type for input (may be a simple pointer type)
+        typename                    OutputIterator,               ///< Random-access iterator type for output (may be a simple pointer type)
         typename                    ScanOp,                         ///< Binary scan operator type having member <tt>T operator()(const T &a, const T &b)</tt>
         typename                    Identity,                       ///< Identity value type (cub::NullType for inclusive scans)
         typename                    SizeT>                          ///< Integer type used for global array indexing
@@ -313,8 +313,8 @@ struct DevicePartition
         ScanInitKernelPtr           init_kernel,                    ///< [in] Kernel function pointer to parameterization of cub::ScanInitKernel
         ScanKernelPtr               scan_kernel,                    ///< [in] Kernel function pointer to parameterization of cub::ScanKernel
         KernelDispachParams         &scan_dispatch_params,          ///< [in] Dispatch parameters that match the policy that \p scan_kernel was compiled for
-        InputIteratorRA             d_in,                           ///< [in] Iterator pointing to scan input
-        OutputIteratorRA            d_out,                          ///< [in] Iterator pointing to scan output
+        InputIterator             d_in,                           ///< [in] Iterator pointing to scan input
+        OutputIterator            d_out,                          ///< [in] Iterator pointing to scan output
         ScanOp                      scan_op,                        ///< [in] Binary scan operator
         Identity                    identity,                       ///< [in] Identity element
         SizeT                       num_items,                      ///< [in] Total number of items to scan
@@ -336,7 +336,7 @@ struct DevicePartition
         };
 
         // Data type
-        typedef typename std::iterator_traits<InputIteratorRA>::value_type T;
+        typedef typename std::iterator_traits<InputIterator>::value_type T;
 
         // Tile status descriptor type
         typedef DevicePartitionTileDescriptor<T> DevicePartitionTileDescriptorT;
@@ -455,8 +455,8 @@ struct DevicePartition
      * Internal scan dispatch routine for using default tuning policies
      */
     template <
-        typename                    InputIteratorRA,                ///< Random-access iterator type for input (may be a simple pointer type)
-        typename                    OutputIteratorRA,               ///< Random-access iterator type for output (may be a simple pointer type)
+        typename                    InputIterator,                ///< Random-access iterator type for input (may be a simple pointer type)
+        typename                    OutputIterator,               ///< Random-access iterator type for output (may be a simple pointer type)
         typename                    ScanOp,                         ///< Binary scan operator type having member <tt>T operator()(const T &a, const T &b)</tt>
         typename                    Identity,                       ///< Identity value type (cub::NullType for inclusive scans)
         typename                    SizeT>                          ///< Integer type used for global array indexing
@@ -464,8 +464,8 @@ struct DevicePartition
     static cudaError_t Dispatch(
         void                        *d_temp_storage,                ///< [in] %Device allocation of temporary storage.  When NULL, the required allocation size is returned in \p temp_storage_bytes and no work is done.
         size_t                      &temp_storage_bytes,            ///< [in,out] Size in bytes of \p d_temp_storage allocation.
-        InputIteratorRA             d_in,                           ///< [in] Iterator pointing to scan input
-        OutputIteratorRA            d_out,                          ///< [in] Iterator pointing to scan output
+        InputIterator             d_in,                           ///< [in] Iterator pointing to scan input
+        OutputIterator            d_out,                          ///< [in] Iterator pointing to scan output
         ScanOp                      scan_op,                        ///< [in] Binary scan operator
         Identity                    identity,                       ///< [in] Identity element
         SizeT                       num_items,                      ///< [in] Total number of items to scan
@@ -473,7 +473,7 @@ struct DevicePartition
         bool                        stream_synchronous  = false)    ///< [in] <b>[optional]</b> Whether or not to synchronize the stream after every kernel launch to check for errors.  Default is \p false.
     {
         // Data type
-        typedef typename std::iterator_traits<InputIteratorRA>::value_type T;
+        typedef typename std::iterator_traits<InputIterator>::value_type T;
 
         // Tuning polices
         typedef PtxDefaultPolicies<T, SizeT>                    PtxDefaultPolicies;     // Wrapper of default kernel policies
@@ -501,7 +501,7 @@ struct DevicePartition
                 d_temp_storage,
                 temp_storage_bytes,
                 ScanInitKernel<T, SizeT>,
-                ScanKernel<ScanPolicy, InputIteratorRA, OutputIteratorRA, T, ScanOp, Identity, SizeT>,
+                ScanKernel<ScanPolicy, InputIterator, OutputIterator, T, ScanOp, Identity, SizeT>,
                 scan_dispatch_params,
                 d_in,
                 d_out,
@@ -561,23 +561,23 @@ struct DevicePartition
      *
      * \endcode
      *
-     * \tparam InputIteratorRA      <b>[inferred]</b> Random-access iterator type for input (may be a simple pointer type)
-     * \tparam OutputIteratorRA     <b>[inferred]</b> Random-access iterator type for output (may be a simple pointer type)
+     * \tparam InputIterator      <b>[inferred]</b> Random-access iterator type for input (may be a simple pointer type)
+     * \tparam OutputIterator     <b>[inferred]</b> Random-access iterator type for output (may be a simple pointer type)
      */
     template <
-        typename            InputIteratorRA,
-        typename            OutputIteratorRA>
+        typename            InputIterator,
+        typename            OutputIterator>
     __host__ __device__ __forceinline__
     static cudaError_t ExclusiveSum(
         void                *d_temp_storage,                    ///< [in] %Device allocation of temporary storage.  When NULL, the required allocation size is returned in \p temp_storage_bytes and no work is done.
         size_t              &temp_storage_bytes,                ///< [in,out] Size in bytes of \p d_temp_storage allocation.
-        InputIteratorRA     d_in,                               ///< [in] Iterator pointing to scan input
-        OutputIteratorRA    d_out,                              ///< [in] Iterator pointing to scan output
+        InputIterator     d_in,                               ///< [in] Iterator pointing to scan input
+        OutputIterator    d_out,                              ///< [in] Iterator pointing to scan output
         int                 num_items,                          ///< [in] Total number of items to scan
         cudaStream_t        stream              = 0,            ///< [in] <b>[optional]</b> CUDA stream to launch kernels within.  Default is stream<sub>0</sub>.
         bool                stream_synchronous  = false)        ///< [in] <b>[optional]</b> Whether or not to synchronize the stream after every kernel launch to check for errors.  May cause significant slowdown.  Default is \p false.
     {
-        typedef typename std::iterator_traits<InputIteratorRA>::value_type T;
+        typedef typename std::iterator_traits<InputIterator>::value_type T;
         return Dispatch(d_temp_storage, temp_storage_bytes, d_in, d_out, Sum(), T(), num_items, stream, stream_synchronous);
     }
 

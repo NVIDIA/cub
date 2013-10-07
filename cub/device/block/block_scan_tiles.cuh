@@ -40,6 +40,7 @@
 #include "../../block/block_store.cuh"
 #include "../../block/block_scan.cuh"
 #include "../../grid/grid_queue.cuh"
+#include "../../util_iterator.cuh"
 #include "../../util_namespace.cuh"
 
 /// Optional outer namespace(s)
@@ -92,12 +93,12 @@ struct BlockScanTilesPolicy
  * Implements a single-pass "domino" strategy with variable predecessor look-back.
  */
 template <
-    typename BlockScanTilesPolicy,     ///< Tuning policy
-    typename InputIteratorRA,               ///< Input iterator type
-    typename OutputIteratorRA,              ///< Output iterator type
-    typename ScanOp,                        ///< Scan functor type
-    typename Identity,                      ///< Identity element type (cub::NullType for inclusive scan)
-    typename SizeT>                         ///< Offset integer type
+    typename BlockScanTilesPolicy,      ///< Tuning policy
+    typename InputIterator,             ///< Input iterator type
+    typename OutputIterator,            ///< Output iterator type
+    typename ScanOp,                    ///< Scan functor type
+    typename Identity,                  ///< Identity element type (cub::NullType for inclusive scan)
+    typename SizeT>                     ///< Offset integer type
 struct BlockScanTiles
 {
     //---------------------------------------------------------------------
@@ -105,7 +106,12 @@ struct BlockScanTiles
     //---------------------------------------------------------------------
 
     // Data type of input iterator
-    typedef typename std::iterator_traits<InputIteratorRA>::value_type T;
+    typedef typename std::iterator_traits<InputIterator>::value_type T;
+
+    // Input iterator wrapper type
+    typedef typename If<IsPointer<InputIterator>::VALUE,
+        CacheModifiedInputIterator<BlockScanTilesPolicy::LOAD_MODIFIER, T, SizeT>,      // Wrap the native input pointer with CacheModifiedInputIterator
+        InputIterator>::Type WrappedInputIterator;                                      // Directly use the supplied input iterator type
 
     // Constants
     enum
@@ -118,20 +124,18 @@ struct BlockScanTiles
 
     // Block load type
     typedef BlockLoad<
-        InputIteratorRA,
+        WrappedInputIterator,
         BlockScanTilesPolicy::BLOCK_THREADS,
         BlockScanTilesPolicy::ITEMS_PER_THREAD,
         BlockScanTilesPolicy::LOAD_ALGORITHM,
-        BlockScanTilesPolicy::LOAD_MODIFIER,
         BlockScanTilesPolicy::LOAD_WARP_TIME_SLICING> BlockLoadT;
 
     // Block store type
     typedef BlockStore<
-        OutputIteratorRA,
+        OutputIterator,
         BlockScanTilesPolicy::BLOCK_THREADS,
         BlockScanTilesPolicy::ITEMS_PER_THREAD,
         BlockScanTilesPolicy::STORE_ALGORITHM,
-        STORE_DEFAULT,
         BlockScanTilesPolicy::STORE_WARP_TIME_SLICING> BlockStoreT;
 
     // Tile status descriptor type
@@ -172,8 +176,8 @@ struct BlockScanTiles
     //---------------------------------------------------------------------
 
     _TempStorage                &temp_storage;      ///< Reference to temp_storage
-    InputIteratorRA             d_in;               ///< Input data
-    OutputIteratorRA            d_out;              ///< Output data
+    WrappedInputIterator        d_in;               ///< Input data
+    OutputIterator              d_out;              ///< Output data
     ScanOp                      scan_op;            ///< Binary scan operator
     Identity                    identity;           ///< Identity element
 
@@ -275,8 +279,8 @@ struct BlockScanTiles
     __device__ __forceinline__
     BlockScanTiles(
         TempStorage                 &temp_storage,      ///< Reference to temp_storage
-        InputIteratorRA             d_in,               ///< Input data
-        OutputIteratorRA            d_out,              ///< Output data
+        InputIterator               d_in,               ///< Input data
+        OutputIterator              d_out,              ///< Output data
         ScanOp                      scan_op,            ///< Binary scan operator
         Identity                    identity)           ///< Identity element
     :
