@@ -61,7 +61,7 @@ CachingDeviceAllocator  g_allocator(true);
 /**
  * Dispatch to exclusive scan entrypoint
  */
-template <typename InputIteratorRA, typename OutputIteratorRA, typename ScanOp, typename Identity, typename SizeT>
+template <typename InputIterator, typename OutputIterator, typename ScanOp, typename Identity, typename SizeT>
 __host__ __device__ __forceinline__
 cudaError_t Dispatch(
     Int2Type<false>     use_cdp,
@@ -71,8 +71,8 @@ cudaError_t Dispatch(
 
     void                *d_temp_storage,
     size_t              &temp_storage_bytes,
-    InputIteratorRA     d_in,
-    OutputIteratorRA    d_out,
+    InputIterator     d_in,
+    OutputIterator    d_out,
     ScanOp              scan_op,
     Identity            identity,
     SizeT               num_items,
@@ -91,7 +91,7 @@ cudaError_t Dispatch(
 /**
  * Dispatch to exclusive sum entrypoint
  */
-template <typename InputIteratorRA, typename OutputIteratorRA, typename T, typename Identity, typename SizeT>
+template <typename InputIterator, typename OutputIterator, typename T, typename Identity, typename SizeT>
 __host__ __device__ __forceinline__
 cudaError_t Dispatch(
     Int2Type<false>     use_cdp,
@@ -101,8 +101,8 @@ cudaError_t Dispatch(
 
     void                *d_temp_storage,
     size_t              &temp_storage_bytes,
-    InputIteratorRA     d_in,
-    OutputIteratorRA    d_out,
+    InputIterator     d_in,
+    OutputIterator    d_out,
     Sum                 scan_op,
     Identity            identity,
     SizeT               num_items,
@@ -121,7 +121,7 @@ cudaError_t Dispatch(
 /**
  * Dispatch to inclusive scan entrypoint
  */
-template <typename InputIteratorRA, typename OutputIteratorRA, typename ScanOp, typename SizeT>
+template <typename InputIterator, typename OutputIterator, typename ScanOp, typename SizeT>
 __host__ __device__ __forceinline__
 cudaError_t Dispatch(
     Int2Type<false>     use_cdp,
@@ -131,8 +131,8 @@ cudaError_t Dispatch(
 
     void                *d_temp_storage,
     size_t              &temp_storage_bytes,
-    InputIteratorRA     d_in,
-    OutputIteratorRA    d_out,
+    InputIterator     d_in,
+    OutputIterator    d_out,
     ScanOp              scan_op,
     NullType            identity,
     SizeT               num_items,
@@ -151,7 +151,7 @@ cudaError_t Dispatch(
 /**
  * Dispatch to inclusive sum entrypoint
  */
-template <typename InputIteratorRA, typename OutputIteratorRA, typename T, typename SizeT>
+template <typename InputIterator, typename OutputIterator, typename T, typename SizeT>
 __host__ __device__ __forceinline__
 cudaError_t Dispatch(
     Int2Type<false>     use_cdp,
@@ -161,8 +161,8 @@ cudaError_t Dispatch(
 
     void                *d_temp_storage,
     size_t              &temp_storage_bytes,
-    InputIteratorRA     d_in,
-    OutputIteratorRA    d_out,
+    InputIterator     d_in,
+    OutputIterator    d_out,
     Sum                 scan_op,
     NullType            identity,
     SizeT               num_items,
@@ -185,7 +185,7 @@ cudaError_t Dispatch(
 /**
  * Simple wrapper kernel to invoke DeviceScan
  */
-template <typename InputIteratorRA, typename OutputIteratorRA, typename ScanOp, typename Identity, typename SizeT>
+template <typename InputIterator, typename OutputIterator, typename ScanOp, typename Identity, typename SizeT>
 __global__ void CnpDispatchKernel(
     int                 timing_iterations,
     size_t              *d_temp_storage_bytes,
@@ -193,8 +193,8 @@ __global__ void CnpDispatchKernel(
 
     void                *d_temp_storage,
     size_t              temp_storage_bytes,
-    InputIteratorRA     d_in,
-    OutputIteratorRA    d_out,
+    InputIterator     d_in,
+    OutputIterator    d_out,
     ScanOp              scan_op,
     Identity            identity,
     SizeT               num_items,
@@ -212,7 +212,7 @@ __global__ void CnpDispatchKernel(
 /**
  * Dispatch to CDP kernel
  */
-template <typename InputIteratorRA, typename OutputIteratorRA, typename ScanOp, typename Identity, typename SizeT>
+template <typename InputIterator, typename OutputIterator, typename ScanOp, typename Identity, typename SizeT>
 cudaError_t Dispatch(
     Int2Type<true>      use_cdp,
     int                 timing_iterations,
@@ -221,8 +221,8 @@ cudaError_t Dispatch(
 
     void                *d_temp_storage,
     size_t              &temp_storage_bytes,
-    InputIteratorRA     d_in,
-    OutputIteratorRA    d_out,
+    InputIterator     d_in,
+    OutputIterator    d_out,
     ScanOp              scan_op,
     Identity            identity,
     SizeT               num_items,

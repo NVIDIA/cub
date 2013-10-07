@@ -1,6 +1,6 @@
 var searchData=
 [
-  ['unbindtexture',['UnbindTexture',['../classcub_1_1_tex_iterator_r_a.html#abfc8c42e2da2beffb05ac81ec89ed8b9',1,'cub::TexIteratorRA::UnbindTexture()'],['../classcub_1_1_tex_transform_iterator_r_a.html#abd030991795b9c9ca31f4293486d206a',1,'cub::TexTransformIteratorRA::UnbindTexture()']]],
+  ['unbindtexture',['UnbindTexture',['../classcub_1_1_tex_iterator_r_a.html#abfc8c42e2da2beffb05ac81ec89ed8b9',1,'cub::TexInputIterator::UnbindTexture()'],['../classcub_1_1_tex_transform_iterator_r_a.html#abd030991795b9c9ca31f4293486d206a',1,'cub::TexTransformInputIterator::UnbindTexture()']]],
   ['uninitialized',['Uninitialized',['../structcub_1_1_uninitialized.html',1,'cub']]],
   ['uninitialized_3c_20_5ftempstorage_20_3e',['Uninitialized&lt; _TempStorage &gt;',['../structcub_1_1_uninitialized.html',1,'cub']]],
   ['util_5farch_2ecuh',['util_arch.cuh',['../util__arch_8cuh.html',1,'']]],

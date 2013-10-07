@@ -273,7 +273,6 @@ struct DeviceRadixSortDispatch
         typedef BlockRadixSortDownsweepTilesPolicy <128, 15, BLOCK_LOAD_DIRECT, LOAD_LDG, false, true, BLOCK_SCAN_WARP_SCANS, RADIX_SORT_SCATTER_TWO_PHASE, cudaSharedMemBankSizeEightByte, RADIX_BITS> DownsweepPolicyKeys;
         typedef BlockRadixSortDownsweepTilesPolicy <256, 13, BLOCK_LOAD_DIRECT, LOAD_LDG, false, true, BLOCK_SCAN_WARP_SCANS, RADIX_SORT_SCATTER_TWO_PHASE, cudaSharedMemBankSizeEightByte, RADIX_BITS> DownsweepPolicyPairs;
 */
-        enum { SUBSCRIPTION_FACTOR = 7 };
     };
 
 
@@ -298,8 +297,6 @@ struct DeviceRadixSortDispatch
         typedef BlockRadixSortDownsweepTilesPolicy <128, CUB_MAX(1, 14 / SCALE_FACTOR), BLOCK_LOAD_WARP_TRANSPOSE, LOAD_DEFAULT, false, false, BLOCK_SCAN_WARP_SCANS, RADIX_SORT_SCATTER_TWO_PHASE, cudaSharedMemBankSizeEightByte, RADIX_BITS> DownsweepPolicyKeys;
         typedef BlockRadixSortDownsweepTilesPolicy <128, CUB_MAX(1, 10 / SCALE_FACTOR), BLOCK_LOAD_TRANSPOSE, LOAD_DEFAULT, false, false, BLOCK_SCAN_WARP_SCANS, RADIX_SORT_SCATTER_TWO_PHASE, cudaSharedMemBankSizeEightByte, RADIX_BITS> DownsweepPolicyPairs;
         typedef typename If<KEYS_ONLY, DownsweepPolicyKeys, DownsweepPolicyPairs>::Type DownsweepPolicy;
-
-        enum { SUBSCRIPTION_FACTOR = 8 };
     };
 
 
@@ -324,8 +321,6 @@ struct DeviceRadixSortDispatch
         typedef BlockRadixSortDownsweepTilesPolicy <64, CUB_MAX(1, 18 / SCALE_FACTOR), BLOCK_LOAD_WARP_TRANSPOSE, LOAD_DEFAULT, false, false, BLOCK_SCAN_WARP_SCANS, RADIX_SORT_SCATTER_TWO_PHASE, cudaSharedMemBankSizeFourByte, RADIX_BITS> DownsweepPolicyKeys;
         typedef BlockRadixSortDownsweepTilesPolicy <128, CUB_MAX(1, 13 / SCALE_FACTOR), BLOCK_LOAD_WARP_TRANSPOSE, LOAD_DEFAULT, false, false, BLOCK_SCAN_WARP_SCANS, RADIX_SORT_SCATTER_TWO_PHASE, cudaSharedMemBankSizeFourByte, RADIX_BITS> DownsweepPolicyPairs;
         typedef typename If<KEYS_ONLY, DownsweepPolicyKeys, DownsweepPolicyPairs>::Type DownsweepPolicy;
-
-        enum { SUBSCRIPTION_FACTOR = 3 };
     };
 
 
@@ -350,8 +345,6 @@ struct DeviceRadixSortDispatch
         typedef BlockRadixSortDownsweepTilesPolicy <64, CUB_MAX(1, 15 / SCALE_FACTOR), BLOCK_LOAD_WARP_TRANSPOSE, LOAD_DEFAULT, false, true, BLOCK_SCAN_WARP_SCANS, RADIX_SORT_SCATTER_TWO_PHASE, cudaSharedMemBankSizeFourByte, RADIX_BITS> DownsweepPolicyKeys;
         typedef BlockRadixSortDownsweepTilesPolicy <64, CUB_MAX(1, 15 / SCALE_FACTOR), BLOCK_LOAD_WARP_TRANSPOSE, LOAD_DEFAULT, false, true, BLOCK_SCAN_WARP_SCANS, RADIX_SORT_SCATTER_TWO_PHASE, cudaSharedMemBankSizeFourByte, RADIX_BITS> DownsweepPolicyPairs;
         typedef typename If<KEYS_ONLY, DownsweepPolicyKeys, DownsweepPolicyPairs>::Type DownsweepPolicy;
-
-        enum { SUBSCRIPTION_FACTOR = 7 };
     };
 
 
@@ -370,8 +363,6 @@ struct DeviceRadixSortDispatch
 
         // DownsweepPolicy
         typedef BlockRadixSortDownsweepTilesPolicy <64, 9, BLOCK_LOAD_WARP_TRANSPOSE, LOAD_DEFAULT, false, false, BLOCK_SCAN_WARP_SCANS, RADIX_SORT_SCATTER_TWO_PHASE, cudaSharedMemBankSizeFourByte, RADIX_BITS> DownsweepPolicy;
-
-        enum { SUBSCRIPTION_FACTOR = 3 };
     };
 
 
@@ -415,14 +406,11 @@ struct DeviceRadixSortDispatch
     static void InitDispatchConfigs(
         KernelDispatchConfig    &upsweep_config,
         KernelDispatchConfig    &scan_config,
-        KernelDispatchConfig    &downsweep_config,
-        int                     &subscription_factor)
+        KernelDispatchConfig    &downsweep_config)
     {
         upsweep_config.template     InitUpsweepPolicy<typename Policy::UpsweepPolicy>();
         scan_config.template        InitScanPolicy<typename Policy::ScanPolicy>();
         downsweep_config.template   InitDownsweepPolicy<typename Policy::DownsweepPolicy>();
-
-        subscription_factor = Policy::SUBSCRIPTION_FACTOR;
     }
 
 
@@ -435,8 +423,7 @@ struct DeviceRadixSortDispatch
         int                     ptx_version,
         KernelDispatchConfig    &upsweep_config,
         KernelDispatchConfig    &scan_config,
-        KernelDispatchConfig    &downsweep_config,
-        int                     &subscription_factor)
+        KernelDispatchConfig    &downsweep_config)
     {
     #ifdef __CUDA_ARCH__
 
@@ -445,30 +432,28 @@ struct DeviceRadixSortDispatch
         scan_config.InitScanPolicy<PtxScanPolicy>();
         downsweep_config.InitDownsweepPolicy<PtxDownsweepPolicy>();
 
-        subscription_factor = PtxPolicy::SUBSCRIPTION_FACTOR;
-
     #else
 
         // We're on the host, so lookup and initialize the dispatch configurations with the policies that match the device's PTX version
         if (ptx_version >= 350)
         {
-            InitDispatchConfigs<Policy350>(upsweep_config, scan_config, downsweep_config, subscription_factor);
+            InitDispatchConfigs<Policy350>(upsweep_config, scan_config, downsweep_config);
         }
         else if (ptx_version >= 300)
         {
-            InitDispatchConfigs<Policy300>(upsweep_config, scan_config, downsweep_config, subscription_factor);
+            InitDispatchConfigs<Policy300>(upsweep_config, scan_config, downsweep_config);
         }
         else if (ptx_version >= 200)
         {
-            InitDispatchConfigs<Policy200>(upsweep_config, scan_config, downsweep_config, subscription_factor);
+            InitDispatchConfigs<Policy200>(upsweep_config, scan_config, downsweep_config);
         }
         else if (ptx_version >= 130)
         {
-            InitDispatchConfigs<Policy130>(upsweep_config, scan_config, downsweep_config, subscription_factor);
+            InitDispatchConfigs<Policy130>(upsweep_config, scan_config, downsweep_config);
         }
         else
         {
-            InitDispatchConfigs<Policy100>(upsweep_config, scan_config, downsweep_config, subscription_factor);
+            InitDispatchConfigs<Policy100>(upsweep_config, scan_config, downsweep_config);
         }
 
     #endif
@@ -547,8 +532,7 @@ struct DeviceRadixSortDispatch
         DownsweepKernelPtr      downsweep_kernel,               ///< [in] Kernel function pointer to parameterization of cub::RadixSortUpsweepKernel
         KernelDispatchConfig    &upsweep_config,       ///< [in] Dispatch parameters that match the policy that \p upsweep_kernel was compiled for
         KernelDispatchConfig    &scan_config,          ///< [in] Dispatch parameters that match the policy that \p scan_kernel was compiled for
-        KernelDispatchConfig    &downsweep_config,     ///< [in] Dispatch parameters that match the policy that \p downsweep_kernel was compiled for
-        int                     subscription_factor)
+        KernelDispatchConfig    &downsweep_config)     ///< [in] Dispatch parameters that match the policy that \p downsweep_kernel was compiled for
     {
 #ifndef CUB_RUNTIME_ENABLED
 
@@ -593,6 +577,7 @@ struct DeviceRadixSortDispatch
             int scan_tile_size = scan_config.block_threads * scan_config.items_per_thread;
 
             // Get even-share work distribution descriptor
+            int subscription_factor = downsweep_sm_occupancy;     // Amount of CTAs to oversubscribe the device beyond actively-resident (heuristic)
             GridEvenShare<SizeT> even_share(
                 num_items,
                 downsweep_occupancy * subscription_factor,
@@ -760,11 +745,10 @@ struct DeviceRadixSortDispatch
     #endif
 
             // Get kernel dispatch configurations
-            int                     subscription_factor;
             KernelDispatchConfig    upsweep_config;
             KernelDispatchConfig    scan_config;
             KernelDispatchConfig    downsweep_config;
-            InitDispatchConfigs(ptx_version, upsweep_config, scan_config, downsweep_config, subscription_factor);
+            InitDispatchConfigs(ptx_version, upsweep_config, scan_config, downsweep_config);
 
             // Dispatch
             if (CubDebug(error = Dispatch(
@@ -783,8 +767,7 @@ struct DeviceRadixSortDispatch
                 RadixSortDownsweepKernel<PtxDownsweepPolicy, Key, Value, SizeT>,
                 upsweep_config,
                 scan_config,
-                downsweep_config,
-                subscription_factor))) break;
+                downsweep_config))) break;
         }
         while (0);
 
