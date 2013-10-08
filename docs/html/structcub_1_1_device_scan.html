@@ -125,23 +125,23 @@ Static Public Methods</h2></td></tr>
 <tr><td colspan="2"><div class="groupHeader">Exclusive scans</div></td></tr>
 <tr class="memitem:ac49b99df1f6b561b477d4fd797fe0ea8"><td class="memTemplParams" colspan="2">template&lt;typename InputIterator , typename OutputIterator &gt; </td></tr>
 <tr class="memitem:ac49b99df1f6b561b477d4fd797fe0ea8"><td class="memTemplItemLeft" align="right" valign="top">__host__ __device__ static <br class="typebreak"/>
-__forceinline__ cudaError_t&#160;</td><td class="memTemplItemRight" valign="bottom"><a class="el" href="structcub_1_1_device_scan.html#ac49b99df1f6b561b477d4fd797fe0ea8">ExclusiveSum</a> (void *d_temp_storage, size_t &amp;temp_storage_bytes, InputIterator d_in, OutputIterator d_out, int num_items, cudaStream_t stream=0, bool stream_synchronous=false)</td></tr>
+__forceinline__ cudaError_t&#160;</td><td class="memTemplItemRight" valign="bottom"><a class="el" href="structcub_1_1_device_scan.html#ac49b99df1f6b561b477d4fd797fe0ea8">ExclusiveSum</a> (void *d_temp_storage, size_t &amp;temp_storage_bytes, InputIterator d_in, OutputIterator d_out, int num_items, cudaStream_t stream=0, bool debug_synchronous=false)</td></tr>
 <tr class="memdesc:ac49b99df1f6b561b477d4fd797fe0ea8"><td class="mdescLeft">&#160;</td><td class="mdescRight">Computes a device-wide exclusive prefix sum.  <a href="#ac49b99df1f6b561b477d4fd797fe0ea8">More...</a><br/></td></tr>
 <tr class="separator:ac49b99df1f6b561b477d4fd797fe0ea8"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:a5fb74735fdd88202a9310432c77a4a3a"><td class="memTemplParams" colspan="2">template&lt;typename InputIterator , typename OutputIterator , typename ScanOp , typename Identity &gt; </td></tr>
 <tr class="memitem:a5fb74735fdd88202a9310432c77a4a3a"><td class="memTemplItemLeft" align="right" valign="top">__host__ __device__ static <br class="typebreak"/>
-__forceinline__ cudaError_t&#160;</td><td class="memTemplItemRight" valign="bottom"><a class="el" href="structcub_1_1_device_scan.html#a5fb74735fdd88202a9310432c77a4a3a">ExclusiveScan</a> (void *d_temp_storage, size_t &amp;temp_storage_bytes, InputIterator d_in, OutputIterator d_out, ScanOp scan_op, Identity identity, int num_items, cudaStream_t stream=0, bool stream_synchronous=false)</td></tr>
+__forceinline__ cudaError_t&#160;</td><td class="memTemplItemRight" valign="bottom"><a class="el" href="structcub_1_1_device_scan.html#a5fb74735fdd88202a9310432c77a4a3a">ExclusiveScan</a> (void *d_temp_storage, size_t &amp;temp_storage_bytes, InputIterator d_in, OutputIterator d_out, ScanOp scan_op, Identity identity, int num_items, cudaStream_t stream=0, bool debug_synchronous=false)</td></tr>
 <tr class="memdesc:a5fb74735fdd88202a9310432c77a4a3a"><td class="mdescLeft">&#160;</td><td class="mdescRight">Computes a device-wide exclusive prefix scan using the specified binary <code>scan_op</code> functor.  <a href="#a5fb74735fdd88202a9310432c77a4a3a">More...</a><br/></td></tr>
 <tr class="separator:a5fb74735fdd88202a9310432c77a4a3a"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr><td colspan="2"><div class="groupHeader">Inclusive scans</div></td></tr>
 <tr class="memitem:a7c8471b7508fca37dfd3198b9111911a"><td class="memTemplParams" colspan="2">template&lt;typename InputIterator , typename OutputIterator &gt; </td></tr>
 <tr class="memitem:a7c8471b7508fca37dfd3198b9111911a"><td class="memTemplItemLeft" align="right" valign="top">__host__ __device__ static <br class="typebreak"/>
-__forceinline__ cudaError_t&#160;</td><td class="memTemplItemRight" valign="bottom"><a class="el" href="structcub_1_1_device_scan.html#a7c8471b7508fca37dfd3198b9111911a">InclusiveSum</a> (void *d_temp_storage, size_t &amp;temp_storage_bytes, InputIterator d_in, OutputIterator d_out, int num_items, cudaStream_t stream=0, bool stream_synchronous=false)</td></tr>
+__forceinline__ cudaError_t&#160;</td><td class="memTemplItemRight" valign="bottom"><a class="el" href="structcub_1_1_device_scan.html#a7c8471b7508fca37dfd3198b9111911a">InclusiveSum</a> (void *d_temp_storage, size_t &amp;temp_storage_bytes, InputIterator d_in, OutputIterator d_out, int num_items, cudaStream_t stream=0, bool debug_synchronous=false)</td></tr>
 <tr class="memdesc:a7c8471b7508fca37dfd3198b9111911a"><td class="mdescLeft">&#160;</td><td class="mdescRight">Computes a device-wide inclusive prefix sum.  <a href="#a7c8471b7508fca37dfd3198b9111911a">More...</a><br/></td></tr>
 <tr class="separator:a7c8471b7508fca37dfd3198b9111911a"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:a2f6de564140e06b391ad0d987142762f"><td class="memTemplParams" colspan="2">template&lt;typename InputIterator , typename OutputIterator , typename ScanOp &gt; </td></tr>
 <tr class="memitem:a2f6de564140e06b391ad0d987142762f"><td class="memTemplItemLeft" align="right" valign="top">__host__ __device__ static <br class="typebreak"/>
-__forceinline__ cudaError_t&#160;</td><td class="memTemplItemRight" valign="bottom"><a class="el" href="structcub_1_1_device_scan.html#a2f6de564140e06b391ad0d987142762f">InclusiveScan</a> (void *d_temp_storage, size_t &amp;temp_storage_bytes, InputIterator d_in, OutputIterator d_out, ScanOp scan_op, int num_items, cudaStream_t stream=0, bool stream_synchronous=false)</td></tr>
+__forceinline__ cudaError_t&#160;</td><td class="memTemplItemRight" valign="bottom"><a class="el" href="structcub_1_1_device_scan.html#a2f6de564140e06b391ad0d987142762f">InclusiveScan</a> (void *d_temp_storage, size_t &amp;temp_storage_bytes, InputIterator d_in, OutputIterator d_out, ScanOp scan_op, int num_items, cudaStream_t stream=0, bool debug_synchronous=false)</td></tr>
 <tr class="memdesc:a2f6de564140e06b391ad0d987142762f"><td class="mdescLeft">&#160;</td><td class="mdescRight">Computes a device-wide inclusive prefix scan using the specified binary <code>scan_op</code> functor.  <a href="#a2f6de564140e06b391ad0d987142762f">More...</a><br/></td></tr>
 <tr class="separator:a2f6de564140e06b391ad0d987142762f"><td class="memSeparator" colspan="2">&#160;</td></tr>
 </table>
@@ -207,7 +207,7 @@ template&lt;typename InputIterator , typename OutputIterator , typename ScanOp ,
           <td class="paramkey"></td>
           <td></td>
           <td class="paramtype">bool&#160;</td>
-          <td class="paramname"><em>stream_synchronous</em> = <code>false</code>&#160;</td>
+          <td class="paramname"><em>debug_synchronous</em> = <code>false</code>&#160;</td>
         </tr>
         <tr>
           <td></td>
@@ -267,7 +267,7 @@ template&lt;typename InputIterator , typename OutputIterator , typename ScanOp ,
     <tr><td class="paramdir">[in]</td><td class="paramname">identity</td><td>Identity element </td></tr>
     <tr><td class="paramdir">[in]</td><td class="paramname">num_items</td><td>Total number of items to scan </td></tr>
     <tr><td class="paramdir">[in]</td><td class="paramname">stream</td><td><b>[optional]</b> CUDA stream to launch kernels within. Default is stream<sub>0</sub>. </td></tr>
-    <tr><td class="paramdir">[in]</td><td class="paramname">stream_synchronous</td><td><b>[optional]</b> Whether or not to synchronize the stream after every kernel launch to check for errors. May cause significant slowdown. Default is <code>false</code>. </td></tr>
+    <tr><td class="paramdir">[in]</td><td class="paramname">debug_synchronous</td><td><b>[optional]</b> Whether or not to synchronize the stream after every kernel launch to check for errors. May cause significant slowdown. Default is <code>false</code>. </td></tr>
   </table>
   </dd>
 </dl>
@@ -325,7 +325,7 @@ template&lt;typename InputIterator , typename OutputIterator &gt; </div>
           <td class="paramkey"></td>
           <td></td>
           <td class="paramtype">bool&#160;</td>
-          <td class="paramname"><em>stream_synchronous</em> = <code>false</code>&#160;</td>
+          <td class="paramname"><em>debug_synchronous</em> = <code>false</code>&#160;</td>
         </tr>
         <tr>
           <td></td>
@@ -380,7 +380,7 @@ template&lt;typename InputIterator , typename OutputIterator &gt; </div>
     <tr><td class="paramdir">[in]</td><td class="paramname">d_out</td><td>Iterator pointing to scan output </td></tr>
     <tr><td class="paramdir">[in]</td><td class="paramname">num_items</td><td>Total number of items to scan </td></tr>
     <tr><td class="paramdir">[in]</td><td class="paramname">stream</td><td><b>[optional]</b> CUDA stream to launch kernels within. Default is stream<sub>0</sub>. </td></tr>
-    <tr><td class="paramdir">[in]</td><td class="paramname">stream_synchronous</td><td><b>[optional]</b> Whether or not to synchronize the stream after every kernel launch to check for errors. May cause significant slowdown. Default is <code>false</code>. </td></tr>
+    <tr><td class="paramdir">[in]</td><td class="paramname">debug_synchronous</td><td><b>[optional]</b> Whether or not to synchronize the stream after every kernel launch to check for errors. May cause significant slowdown. Default is <code>false</code>. </td></tr>
   </table>
   </dd>
 </dl>
@@ -444,7 +444,7 @@ template&lt;typename InputIterator , typename OutputIterator , typename ScanOp &
           <td class="paramkey"></td>
           <td></td>
           <td class="paramtype">bool&#160;</td>
-          <td class="paramname"><em>stream_synchronous</em> = <code>false</code>&#160;</td>
+          <td class="paramname"><em>debug_synchronous</em> = <code>false</code>&#160;</td>
         </tr>
         <tr>
           <td></td>
@@ -501,7 +501,7 @@ template&lt;typename InputIterator , typename OutputIterator , typename ScanOp &
     <tr><td class="paramdir">[in]</td><td class="paramname">scan_op</td><td>Binary scan operator </td></tr>
     <tr><td class="paramdir">[in]</td><td class="paramname">num_items</td><td>Total number of items to scan </td></tr>
     <tr><td class="paramdir">[in]</td><td class="paramname">stream</td><td><b>[optional]</b> CUDA stream to launch kernels within. Default is stream<sub>0</sub>. </td></tr>
-    <tr><td class="paramdir">[in]</td><td class="paramname">stream_synchronous</td><td><b>[optional]</b> Whether or not to synchronize the stream after every kernel launch to check for errors. May cause significant slowdown. Default is <code>false</code>. </td></tr>
+    <tr><td class="paramdir">[in]</td><td class="paramname">debug_synchronous</td><td><b>[optional]</b> Whether or not to synchronize the stream after every kernel launch to check for errors. May cause significant slowdown. Default is <code>false</code>. </td></tr>
   </table>
   </dd>
 </dl>
@@ -559,7 +559,7 @@ template&lt;typename InputIterator , typename OutputIterator &gt; </div>
           <td class="paramkey"></td>
           <td></td>
           <td class="paramtype">bool&#160;</td>
-          <td class="paramname"><em>stream_synchronous</em> = <code>false</code>&#160;</td>
+          <td class="paramname"><em>debug_synchronous</em> = <code>false</code>&#160;</td>
         </tr>
         <tr>
           <td></td>
@@ -613,7 +613,7 @@ template&lt;typename InputIterator , typename OutputIterator &gt; </div>
     <tr><td class="paramdir">[in]</td><td class="paramname">d_out</td><td>Iterator pointing to scan output </td></tr>
     <tr><td class="paramdir">[in]</td><td class="paramname">num_items</td><td>Total number of items to scan </td></tr>
     <tr><td class="paramdir">[in]</td><td class="paramname">stream</td><td><b>[optional]</b> CUDA stream to launch kernels within. Default is stream<sub>0</sub>. </td></tr>
-    <tr><td class="paramdir">[in]</td><td class="paramname">stream_synchronous</td><td><b>[optional]</b> Whether or not to synchronize the stream after every kernel launch to check for errors. May cause significant slowdown. Default is <code>false</code>. </td></tr>
+    <tr><td class="paramdir">[in]</td><td class="paramname">debug_synchronous</td><td><b>[optional]</b> Whether or not to synchronize the stream after every kernel launch to check for errors. May cause significant slowdown. Default is <code>false</code>. </td></tr>
   </table>
   </dd>
 </dl>

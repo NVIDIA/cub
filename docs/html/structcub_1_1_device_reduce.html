@@ -125,12 +125,12 @@ var searchBox = new SearchBox("searchBox", "search",false,'Search');
 Static Public Methods</h2></td></tr>
 <tr class="memitem:ae7d87f3c83dd336e77b2ae900f74e092"><td class="memTemplParams" colspan="2">template&lt;typename InputIterator , typename OutputIterator , typename ReductionOp &gt; </td></tr>
 <tr class="memitem:ae7d87f3c83dd336e77b2ae900f74e092"><td class="memTemplItemLeft" align="right" valign="top">__host__ __device__ static <br class="typebreak"/>
-__forceinline__ cudaError_t&#160;</td><td class="memTemplItemRight" valign="bottom"><a class="el" href="structcub_1_1_device_reduce.html#ae7d87f3c83dd336e77b2ae900f74e092">Reduce</a> (void *d_temp_storage, size_t &amp;temp_storage_bytes, InputIterator d_in, OutputIterator d_out, int num_items, ReductionOp reduction_op, cudaStream_t stream=0, bool stream_synchronous=false)</td></tr>
+__forceinline__ cudaError_t&#160;</td><td class="memTemplItemRight" valign="bottom"><a class="el" href="structcub_1_1_device_reduce.html#ae7d87f3c83dd336e77b2ae900f74e092">Reduce</a> (void *d_temp_storage, size_t &amp;temp_storage_bytes, InputIterator d_in, OutputIterator d_out, int num_items, ReductionOp reduction_op, cudaStream_t stream=0, bool debug_synchronous=false)</td></tr>
 <tr class="memdesc:ae7d87f3c83dd336e77b2ae900f74e092"><td class="mdescLeft">&#160;</td><td class="mdescRight">Computes a device-wide reduction using the specified binary <code>reduction_op</code> functor.  <a href="#ae7d87f3c83dd336e77b2ae900f74e092">More...</a><br/></td></tr>
 <tr class="separator:ae7d87f3c83dd336e77b2ae900f74e092"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:ae927a1815745ceed75ff677ffd3b0701"><td class="memTemplParams" colspan="2">template&lt;typename InputIterator , typename OutputIterator &gt; </td></tr>
 <tr class="memitem:ae927a1815745ceed75ff677ffd3b0701"><td class="memTemplItemLeft" align="right" valign="top">__host__ __device__ static <br class="typebreak"/>
-__forceinline__ cudaError_t&#160;</td><td class="memTemplItemRight" valign="bottom"><a class="el" href="structcub_1_1_device_reduce.html#ae927a1815745ceed75ff677ffd3b0701">Sum</a> (void *d_temp_storage, size_t &amp;temp_storage_bytes, InputIterator d_in, OutputIterator d_out, int num_items, cudaStream_t stream=0, bool stream_synchronous=false)</td></tr>
+__forceinline__ cudaError_t&#160;</td><td class="memTemplItemRight" valign="bottom"><a class="el" href="structcub_1_1_device_reduce.html#ae927a1815745ceed75ff677ffd3b0701">Sum</a> (void *d_temp_storage, size_t &amp;temp_storage_bytes, InputIterator d_in, OutputIterator d_out, int num_items, cudaStream_t stream=0, bool debug_synchronous=false)</td></tr>
 <tr class="memdesc:ae927a1815745ceed75ff677ffd3b0701"><td class="mdescLeft">&#160;</td><td class="mdescRight">Computes a device-wide sum using the addition ('+') operator.  <a href="#ae927a1815745ceed75ff677ffd3b0701">More...</a><br/></td></tr>
 <tr class="separator:ae927a1815745ceed75ff677ffd3b0701"><td class="memSeparator" colspan="2">&#160;</td></tr>
 </table>
@@ -190,7 +190,7 @@ template&lt;typename InputIterator , typename OutputIterator , typename Reductio
           <td class="paramkey"></td>
           <td></td>
           <td class="paramtype">bool&#160;</td>
-          <td class="paramname"><em>stream_synchronous</em> = <code>false</code>&#160;</td>
+          <td class="paramname"><em>debug_synchronous</em> = <code>false</code>&#160;</td>
         </tr>
         <tr>
           <td></td>
@@ -247,7 +247,7 @@ template&lt;typename InputIterator , typename OutputIterator , typename Reductio
     <tr><td class="paramdir">[in]</td><td class="paramname">num_items</td><td>Number of items to reduce </td></tr>
     <tr><td class="paramdir">[in]</td><td class="paramname">reduction_op</td><td>Binary reduction operator </td></tr>
     <tr><td class="paramdir">[in]</td><td class="paramname">stream</td><td><b>[optional]</b> CUDA stream to launch kernels within. Default is stream<sub>0</sub>. </td></tr>
-    <tr><td class="paramdir">[in]</td><td class="paramname">stream_synchronous</td><td><b>[optional]</b> Whether or not to synchronize the stream after every kernel launch to check for errors. Default is <code>false</code>. </td></tr>
+    <tr><td class="paramdir">[in]</td><td class="paramname">debug_synchronous</td><td><b>[optional]</b> Whether or not to synchronize the stream after every kernel launch to check for errors. Default is <code>false</code>. </td></tr>
   </table>
   </dd>
 </dl>
@@ -305,7 +305,7 @@ template&lt;typename InputIterator , typename OutputIterator &gt; </div>
           <td class="paramkey"></td>
           <td></td>
           <td class="paramtype">bool&#160;</td>
-          <td class="paramname"><em>stream_synchronous</em> = <code>false</code>&#160;</td>
+          <td class="paramname"><em>debug_synchronous</em> = <code>false</code>&#160;</td>
         </tr>
         <tr>
           <td></td>
@@ -360,7 +360,7 @@ template&lt;typename InputIterator , typename OutputIterator &gt; </div>
     <tr><td class="paramdir">[out]</td><td class="paramname">d_out</td><td>Output location for result </td></tr>
     <tr><td class="paramdir">[in]</td><td class="paramname">num_items</td><td>Number of items to reduce </td></tr>
     <tr><td class="paramdir">[in]</td><td class="paramname">stream</td><td><b>[optional]</b> CUDA stream to launch kernels within. Default is stream<sub>0</sub>. </td></tr>
-    <tr><td class="paramdir">[in]</td><td class="paramname">stream_synchronous</td><td><b>[optional]</b> Whether or not to synchronize the stream after every kernel launch to check for errors. Default is <code>false</code>. </td></tr>
+    <tr><td class="paramdir">[in]</td><td class="paramname">debug_synchronous</td><td><b>[optional]</b> Whether or not to synchronize the stream after every kernel launch to check for errors. Default is <code>false</code>. </td></tr>
   </table>
   </dd>
 </dl>

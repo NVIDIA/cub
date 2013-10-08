@@ -276,6 +276,7 @@ struct DeviceScanDispatch
 
 #endif
 
+    // "Opaque" policies (whose parameterizations aren't reflected in the type signature)
     struct PtxScanTilesPolicy : PtxPolicy::ScanTilesPolicy {};
 
 
@@ -360,6 +361,10 @@ struct DeviceScanDispatch
      * Dispatch entrypoints
      ******************************************************************************/
 
+    /**
+     * Internal dispatch routine for computing a device-wide prefix scan using the
+     * specified kernel functions.
+     */
     template <
         typename                    ScanInitKernelPtr,              ///< Function type of cub::ScanInitKernel
         typename                    ScanTilesKernelPtr>             ///< Function type of cub::ScanTilesKernelPtr
@@ -367,13 +372,13 @@ struct DeviceScanDispatch
     static cudaError_t Dispatch(
         void                        *d_temp_storage,                ///< [in] %Device allocation of temporary storage.  When NULL, the required allocation size is returned in \p temp_storage_bytes and no work is done.
         size_t                      &temp_storage_bytes,            ///< [in,out] Size in bytes of \p d_temp_storage allocation.
-        InputIterator             d_in,                           ///< [in] Iterator pointing to scan input
-        OutputIterator            d_out,                          ///< [in] Iterator pointing to scan output
+        InputIterator               d_in,                           ///< [in] Iterator pointing to scan input
+        OutputIterator              d_out,                          ///< [in] Iterator pointing to scan output
         ScanOp                      scan_op,                        ///< [in] Binary scan operator
         Identity                    identity,                       ///< [in] Identity element
         SizeT                       num_items,                      ///< [in] Total number of items to scan
         cudaStream_t                stream,                         ///< [in] <b>[optional]</b> CUDA stream to launch kernels within.  Default is stream<sub>0</sub>.
-        bool                        stream_synchronous,             ///< [in] <b>[optional]</b> Whether or not to synchronize the stream after every kernel launch to check for errors.  Default is \p false.
+        bool                        debug_synchronous,              ///< [in] <b>[optional]</b> Whether or not to synchronize the stream after every kernel launch to check for errors.  Also causes launch configurations to be printed to the console.  Default is \p false.
         int                         ptx_version,                    ///< [in] PTX version of dispatch kernels
         int                         sm_version,                     ///< [in] SM version of target device to use when computing SM occupancy
         ScanInitKernelPtr           init_kernel,                    ///< [in] Kernel function pointer to parameterization of cub::ScanInitKernel
@@ -427,7 +432,7 @@ struct DeviceScanDispatch
 
             // Log init_kernel configuration
             int init_grid_size = (num_tiles + INIT_KERNEL_THREADS - 1) / INIT_KERNEL_THREADS;
-            if (stream_synchronous) CubLog("Invoking init_kernel<<<%d, %d, 0, %lld>>>()\n", init_grid_size, INIT_KERNEL_THREADS, (long long) stream);
+            if (debug_synchronous) CubLog("Invoking init_kernel<<<%d, %d, 0, %lld>>>()\n", init_grid_size, INIT_KERNEL_THREADS, (long long) stream);
 
             // Invoke init_kernel to initialize tile descriptors and queue descriptors
             init_kernel<<<init_grid_size, INIT_KERNEL_THREADS, 0, stream>>>(
@@ -436,7 +441,7 @@ struct DeviceScanDispatch
                 num_tiles);
 
             // Sync the stream if specified
-            if (stream_synchronous && (CubDebug(error = SyncStream(stream)))) break;
+            if (debug_synchronous && (CubDebug(error = SyncStream(stream)))) break;
 
             // Get SM occupancy for scan_tiles_kernel
             int scan_tiles_sm_occupancy;
@@ -457,7 +462,7 @@ struct DeviceScanDispatch
                     scan_tiles_occupancy;       // Fill the device with threadblocks
 
             // Log scan_tiles_kernel configuration
-            if (stream_synchronous) CubLog("Invoking scan_tiles_kernel<<<%d, %d, 0, %lld>>>(), %d items per thread, %d SM occupancy\n",
+            if (debug_synchronous) CubLog("Invoking scan_tiles_kernel<<<%d, %d, 0, %lld>>>(), %d items per thread, %d SM occupancy\n",
                 scan_grid_size, scan_tiles_config.block_threads, (long long) stream, scan_tiles_config.items_per_thread, scan_tiles_sm_occupancy);
 
             // Invoke scan_tiles_kernel
@@ -471,7 +476,7 @@ struct DeviceScanDispatch
                 queue);
 
             // Sync the stream if specified
-            if (stream_synchronous && (CubDebug(error = SyncStream(stream)))) break;
+            if (debug_synchronous && (CubDebug(error = SyncStream(stream)))) break;
         }
         while (0);
 
@@ -494,7 +499,7 @@ struct DeviceScanDispatch
         Identity                    identity,                       ///< [in] Identity element
         SizeT                       num_items,                      ///< [in] Total number of items to scan
         cudaStream_t                stream,                         ///< [in] <b>[optional]</b> CUDA stream to launch kernels within.  Default is stream<sub>0</sub>.
-        bool                        stream_synchronous)             ///< [in] <b>[optional]</b> Whether or not to synchronize the stream after every kernel launch to check for errors.  Default is \p false.
+        bool                        debug_synchronous)              ///< [in] <b>[optional]</b> Whether or not to synchronize the stream after every kernel launch to check for errors.  Also causes launch configurations to be printed to the console.  Default is \p false.
     {
         cudaError error = cudaSuccess;
         do
@@ -521,7 +526,7 @@ struct DeviceScanDispatch
                 identity,
                 num_items,
                 stream,
-                stream_synchronous,
+                debug_synchronous,
                 ptx_version,
                 ptx_version,            // Use PTX version instead of SM version because, as a statically known quantity, this improves device-side launch dramatically but at the risk of imprecise occupancy calculation for mismatches
                 ScanInitKernel<T, SizeT>,
@@ -621,13 +626,13 @@ struct DeviceScan
         OutputIterator    d_out,                              ///< [in] Iterator pointing to scan output
         int                 num_items,                          ///< [in] Total number of items to scan
         cudaStream_t        stream              = 0,            ///< [in] <b>[optional]</b> CUDA stream to launch kernels within.  Default is stream<sub>0</sub>.
-        bool                stream_synchronous  = false)        ///< [in] <b>[optional]</b> Whether or not to synchronize the stream after every kernel launch to check for errors.  May cause significant slowdown.  Default is \p false.
+        bool                debug_synchronous  = false)        ///< [in] <b>[optional]</b> Whether or not to synchronize the stream after every kernel launch to check for errors.  May cause significant slowdown.  Default is \p false.
     {
         typedef int SizeT;
         typedef typename std::iterator_traits<InputIterator>::value_type T;
 
         return DeviceScanDispatch<InputIterator, OutputIterator, Sum, T, SizeT>::Dispatch(
-            d_temp_storage, temp_storage_bytes, d_in, d_out, Sum(), T(), num_items, stream, stream_synchronous);
+            d_temp_storage, temp_storage_bytes, d_in, d_out, Sum(), T(), num_items, stream, debug_synchronous);
     }
 
 
@@ -689,13 +694,13 @@ struct DeviceScan
         Identity            identity,                           ///< [in] Identity element
         int                 num_items,                          ///< [in] Total number of items to scan
         cudaStream_t        stream              = 0,            ///< [in] <b>[optional]</b> CUDA stream to launch kernels within.  Default is stream<sub>0</sub>.
-        bool                stream_synchronous  = false)        ///< [in] <b>[optional]</b> Whether or not to synchronize the stream after every kernel launch to check for errors.  May cause significant slowdown.  Default is \p false.
+        bool                debug_synchronous  = false)        ///< [in] <b>[optional]</b> Whether or not to synchronize the stream after every kernel launch to check for errors.  May cause significant slowdown.  Default is \p false.
     {
         typedef int SizeT;
         typedef typename std::iterator_traits<InputIterator>::value_type T;
 
         return DeviceScanDispatch<InputIterator, OutputIterator, ScanOp, Identity, SizeT>::Dispatch(
-            d_temp_storage, temp_storage_bytes, d_in, d_out, scan_op, identity, num_items, stream, stream_synchronous);
+            d_temp_storage, temp_storage_bytes, d_in, d_out, scan_op, identity, num_items, stream, debug_synchronous);
     }
 
 
@@ -754,13 +759,13 @@ struct DeviceScan
         OutputIterator    d_out,                              ///< [in] Iterator pointing to scan output
         int                 num_items,                          ///< [in] Total number of items to scan
         cudaStream_t        stream              = 0,            ///< [in] <b>[optional]</b> CUDA stream to launch kernels within.  Default is stream<sub>0</sub>.
-        bool                stream_synchronous  = false)        ///< [in] <b>[optional]</b> Whether or not to synchronize the stream after every kernel launch to check for errors.  May cause significant slowdown.  Default is \p false.
+        bool                debug_synchronous  = false)        ///< [in] <b>[optional]</b> Whether or not to synchronize the stream after every kernel launch to check for errors.  May cause significant slowdown.  Default is \p false.
     {
         typedef int SizeT;
         typedef typename std::iterator_traits<InputIterator>::value_type T;
 
         return DeviceScanDispatch<InputIterator, OutputIterator, Sum, NullType, SizeT>::Dispatch(
-            d_temp_storage, temp_storage_bytes, d_in, d_out, Sum(), NullType(), num_items, stream, stream_synchronous);
+            d_temp_storage, temp_storage_bytes, d_in, d_out, Sum(), NullType(), num_items, stream, debug_synchronous);
     }
 
 
@@ -818,13 +823,13 @@ struct DeviceScan
         ScanOp              scan_op,                            ///< [in] Binary scan operator
         int                 num_items,                          ///< [in] Total number of items to scan
         cudaStream_t        stream              = 0,            ///< [in] <b>[optional]</b> CUDA stream to launch kernels within.  Default is stream<sub>0</sub>.
-        bool                stream_synchronous  = false)        ///< [in] <b>[optional]</b> Whether or not to synchronize the stream after every kernel launch to check for errors.  May cause significant slowdown.  Default is \p false.
+        bool                debug_synchronous  = false)        ///< [in] <b>[optional]</b> Whether or not to synchronize the stream after every kernel launch to check for errors.  May cause significant slowdown.  Default is \p false.
     {
         typedef int SizeT;
         typedef typename std::iterator_traits<InputIterator>::value_type T;
 
         return DeviceScanDispatch<InputIterator, OutputIterator, ScanOp, NullType, SizeT>::Dispatch(
-            d_temp_storage, temp_storage_bytes, d_in, d_out, scan_op, NullType(), num_items, stream, stream_synchronous);
+            d_temp_storage, temp_storage_bytes, d_in, d_out, scan_op, NullType(), num_items, stream, debug_synchronous);
     }
 
 };

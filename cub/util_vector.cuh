@@ -77,8 +77,6 @@ enum
 template <typename T>
 struct VectorHelper<T, 1>
 {
-    enum { BUILT_IN = false };
-
     T x;
 
     typedef VectorHelper<T, 1> Type;
@@ -90,8 +88,6 @@ struct VectorHelper<T, 1>
 template <typename T>
 struct VectorHelper<T, 2>
 {
-    enum { BUILT_IN = false };
-
     T x;
     T y;
 
@@ -104,8 +100,6 @@ struct VectorHelper<T, 2>
 template <typename T>
 struct VectorHelper<T, 3>
 {
-    enum { BUILT_IN = false };
-
     T x;
     T y;
     T z;
@@ -119,8 +113,6 @@ struct VectorHelper<T, 3>
 template <typename T>
 struct VectorHelper<T, 4>
 {
-    enum { BUILT_IN = false };
-
     T x;
     T y;
     T z;
@@ -133,10 +125,10 @@ struct VectorHelper<T, 4>
  * Macro for expanding partially-specialized built-in vector types
  */
 #define CUB_DEFINE_VECTOR_TYPE(base_type,short_type)                                                            \
-  template<> struct VectorHelper<base_type, 1> { typedef short_type##1 Type; enum { BUILT_IN = true }; };         \
-  template<> struct VectorHelper<base_type, 2> { typedef short_type##2 Type; enum { BUILT_IN = true }; };         \
-  template<> struct VectorHelper<base_type, 3> { typedef short_type##3 Type; enum { BUILT_IN = true }; };         \
-  template<> struct VectorHelper<base_type, 4> { typedef short_type##4 Type; enum { BUILT_IN = true }; };
+  template<> struct VectorHelper<base_type, 1> { typedef short_type##1 Type; };         \
+  template<> struct VectorHelper<base_type, 2> { typedef short_type##2 Type; };         \
+  template<> struct VectorHelper<base_type, 3> { typedef short_type##3 Type; };         \
+  template<> struct VectorHelper<base_type, 4> { typedef short_type##4 Type; };
 
 // Expand CUDA vector types for built-in primitives
 CUB_DEFINE_VECTOR_TYPE(char,               char)

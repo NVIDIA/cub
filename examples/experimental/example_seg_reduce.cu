@@ -612,7 +612,7 @@ struct BlockSegmentedReducePartials
 #if CUB_PTX_VERSION >= 350
             LoadBlocked<LOAD_LDG>(threadIdx.x, d_block_partials + block_offset, partial_sums);
 #else
-            LoadBlocked<LOAD_DEFAULT>(threadIdx.x, d_block_partials + block_offset, partial_sums);
+            LoadBlocked(threadIdx.x, d_block_partials + block_offset, partial_sums);
 #endif
         }
         else
@@ -625,7 +625,7 @@ struct BlockSegmentedReducePartials
 #if CUB_PTX_VERSION >= 350
             LoadBlocked<LOAD_LDG>(threadIdx.x, d_block_partials + block_offset, partial_sums, guarded_items, default_sum);
 #else
-            LoadBlocked<LOAD_DEFAULT>(threadIdx.x, d_block_partials + block_offset, partial_sums, guarded_items, default_sum);
+            LoadBlocked(threadIdx.x, d_block_partials + block_offset, partial_sums, guarded_items, default_sum);
 #endif
         }
 

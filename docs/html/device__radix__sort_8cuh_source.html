@@ -555,7 +555,7 @@ var searchBox = new SearchBox("searchBox", "search",false,'Search');
 <div class="line"><a name="l00509"></a><span class="lineno">  509</span>&#160;        <span class="keywordtype">int</span>                 begin_bit           = 0,                </div>
 <div class="line"><a name="l00510"></a><span class="lineno">  510</span>&#160;        <span class="keywordtype">int</span>                 end_bit             = <span class="keyword">sizeof</span>(Key) * 8,  </div>
 <div class="line"><a name="l00511"></a><span class="lineno">  511</span>&#160;        cudaStream_t        stream              = 0,                </div>
-<div class="line"><a name="l00512"></a><span class="lineno">  512</span>&#160;        <span class="keywordtype">bool</span>                stream_synchronous  = <span class="keyword">false</span>)            </div>
+<div class="line"><a name="l00512"></a><span class="lineno">  512</span>&#160;        <span class="keywordtype">bool</span>                debug_synchronous  = <span class="keyword">false</span>)            </div>
 <div class="line"><a name="l00513"></a><span class="lineno">  513</span>&#160;    {</div>
 <div class="line"><a name="l00514"></a><span class="lineno">  514</span>&#160;<span class="preprocessor">#ifndef CUB_RUNTIME_ENABLED</span></div>
 <div class="line"><a name="l00515"></a><span class="lineno">  515</span>&#160;<span class="preprocessor"></span></div>
@@ -661,7 +661,7 @@ var searchBox = new SearchBox("searchBox", "search",false,'Search');
 <div class="line"><a name="l00615"></a><span class="lineno">  615</span>&#160;<span class="preprocessor">#endif</span></div>
 <div class="line"><a name="l00616"></a><span class="lineno">  616</span>&#160;<span class="preprocessor"></span></div>
 <div class="line"><a name="l00617"></a><span class="lineno">  617</span>&#160;                <span class="comment">// Log upsweep_kernel configuration</span></div>
-<div class="line"><a name="l00618"></a><span class="lineno">  618</span>&#160;                <span class="keywordflow">if</span> (stream_synchronous)</div>
+<div class="line"><a name="l00618"></a><span class="lineno">  618</span>&#160;                <span class="keywordflow">if</span> (debug_synchronous)</div>
 <div class="line"><a name="l00619"></a><span class="lineno">  619</span>&#160;                    <a class="code" href="group___util_module.html#ga6788287a780dc10c443aa1ab5ae9f0db" title="Log macro for printf statements. ">CubLog</a>(<span class="stringliteral">&quot;Invoking upsweep_kernel&lt;&lt;&lt;%d, %d, 0, %lld&gt;&gt;&gt;(), %d smem config, %d items per thread, %d SM occupancy, selector %d, current bit %d, bit_grain %d\n&quot;</span>,</div>
 <div class="line"><a name="l00620"></a><span class="lineno">  620</span>&#160;                    downsweep_grid_size, upsweep_dispatch_params.block_threads, (<span class="keywordtype">long</span> <span class="keywordtype">long</span>) stream, upsweep_dispatch_params.smem_config, upsweep_dispatch_params.items_per_thread, upsweep_sm_occupancy, d_keys.<a class="code" href="structcub_1_1_double_buffer.html#a9641172c847169904c4054856d7c26f4" title="Selector into d_buffers (i.e., the active/valid buffer) ">selector</a>, current_bit, radix_bits);</div>
 <div class="line"><a name="l00621"></a><span class="lineno">  621</span>&#160;</div>
@@ -676,10 +676,10 @@ var searchBox = new SearchBox("searchBox", "search",false,'Search');
 <div class="line"><a name="l00630"></a><span class="lineno">  630</span>&#160;                    even_share);</div>
 <div class="line"><a name="l00631"></a><span class="lineno">  631</span>&#160;</div>
 <div class="line"><a name="l00632"></a><span class="lineno">  632</span>&#160;                <span class="comment">// Sync the stream if specified</span></div>
-<div class="line"><a name="l00633"></a><span class="lineno">  633</span>&#160;                <span class="keywordflow">if</span> (stream_synchronous &amp;&amp; (<a class="code" href="group___util_module.html#ga84c3a4c178bf6593e0fad2b763606236" title="Debug macro. ">CubDebug</a>(error = SyncStream(stream)))) <span class="keywordflow">break</span>;</div>
+<div class="line"><a name="l00633"></a><span class="lineno">  633</span>&#160;                <span class="keywordflow">if</span> (debug_synchronous &amp;&amp; (<a class="code" href="group___util_module.html#ga84c3a4c178bf6593e0fad2b763606236" title="Debug macro. ">CubDebug</a>(error = SyncStream(stream)))) <span class="keywordflow">break</span>;</div>
 <div class="line"><a name="l00634"></a><span class="lineno">  634</span>&#160;</div>
 <div class="line"><a name="l00635"></a><span class="lineno">  635</span>&#160;                <span class="comment">// Log scan_kernel configuration</span></div>
-<div class="line"><a name="l00636"></a><span class="lineno">  636</span>&#160;                <span class="keywordflow">if</span> (stream_synchronous) <a class="code" href="group___util_module.html#ga6788287a780dc10c443aa1ab5ae9f0db" title="Log macro for printf statements. ">CubLog</a>(<span class="stringliteral">&quot;Invoking scan_kernel&lt;&lt;&lt;%d, %d, 0, %lld&gt;&gt;&gt;(), %d items per thread\n&quot;</span>,</div>
+<div class="line"><a name="l00636"></a><span class="lineno">  636</span>&#160;                <span class="keywordflow">if</span> (debug_synchronous) <a class="code" href="group___util_module.html#ga6788287a780dc10c443aa1ab5ae9f0db" title="Log macro for printf statements. ">CubLog</a>(<span class="stringliteral">&quot;Invoking scan_kernel&lt;&lt;&lt;%d, %d, 0, %lld&gt;&gt;&gt;(), %d items per thread\n&quot;</span>,</div>
 <div class="line"><a name="l00637"></a><span class="lineno">  637</span>&#160;                    1, scan_dispatch_params.block_threads, (<span class="keywordtype">long</span> <span class="keywordtype">long</span>) stream, scan_dispatch_params.items_per_thread);</div>
 <div class="line"><a name="l00638"></a><span class="lineno">  638</span>&#160;</div>
 <div class="line"><a name="l00639"></a><span class="lineno">  639</span>&#160;                <span class="comment">// Invoke scan_kernel</span></div>
@@ -688,7 +688,7 @@ var searchBox = new SearchBox("searchBox", "search",false,'Search');
 <div class="line"><a name="l00642"></a><span class="lineno">  642</span>&#160;                    (use_primary_bit_granularity) ? spine_size : alt_spine_size);</div>
 <div class="line"><a name="l00643"></a><span class="lineno">  643</span>&#160;</div>
 <div class="line"><a name="l00644"></a><span class="lineno">  644</span>&#160;                <span class="comment">// Sync the stream if specified</span></div>
-<div class="line"><a name="l00645"></a><span class="lineno">  645</span>&#160;                <span class="keywordflow">if</span> (stream_synchronous &amp;&amp; (<a class="code" href="group___util_module.html#ga84c3a4c178bf6593e0fad2b763606236" title="Debug macro. ">CubDebug</a>(error = SyncStream(stream)))) <span class="keywordflow">break</span>;</div>
+<div class="line"><a name="l00645"></a><span class="lineno">  645</span>&#160;                <span class="keywordflow">if</span> (debug_synchronous &amp;&amp; (<a class="code" href="group___util_module.html#ga84c3a4c178bf6593e0fad2b763606236" title="Debug macro. ">CubDebug</a>(error = SyncStream(stream)))) <span class="keywordflow">break</span>;</div>
 <div class="line"><a name="l00646"></a><span class="lineno">  646</span>&#160;</div>
 <div class="line"><a name="l00647"></a><span class="lineno">  647</span>&#160;<span class="preprocessor">#ifndef __CUDA_ARCH__</span></div>
 <div class="line"><a name="l00648"></a><span class="lineno">  648</span>&#160;<span class="preprocessor"></span>                <span class="comment">// Update smem config if necessary</span></div>
@@ -700,7 +700,7 @@ var searchBox = new SearchBox("searchBox", "search",false,'Search');
 <div class="line"><a name="l00654"></a><span class="lineno">  654</span>&#160;<span class="preprocessor">#endif</span></div>
 <div class="line"><a name="l00655"></a><span class="lineno">  655</span>&#160;<span class="preprocessor"></span></div>
 <div class="line"><a name="l00656"></a><span class="lineno">  656</span>&#160;                <span class="comment">// Log downsweep_kernel configuration</span></div>
-<div class="line"><a name="l00657"></a><span class="lineno">  657</span>&#160;                <span class="keywordflow">if</span> (stream_synchronous) <a class="code" href="group___util_module.html#ga6788287a780dc10c443aa1ab5ae9f0db" title="Log macro for printf statements. ">CubLog</a>(<span class="stringliteral">&quot;Invoking downsweep_kernel&lt;&lt;&lt;%d, %d, 0, %lld&gt;&gt;&gt;(), %d smem config, %d items per thread, %d SM occupancy\n&quot;</span>,</div>
+<div class="line"><a name="l00657"></a><span class="lineno">  657</span>&#160;                <span class="keywordflow">if</span> (debug_synchronous) <a class="code" href="group___util_module.html#ga6788287a780dc10c443aa1ab5ae9f0db" title="Log macro for printf statements. ">CubLog</a>(<span class="stringliteral">&quot;Invoking downsweep_kernel&lt;&lt;&lt;%d, %d, 0, %lld&gt;&gt;&gt;(), %d smem config, %d items per thread, %d SM occupancy\n&quot;</span>,</div>
 <div class="line"><a name="l00658"></a><span class="lineno">  658</span>&#160;                    downsweep_grid_size, downsweep_dispatch_params.block_threads, (<span class="keywordtype">long</span> <span class="keywordtype">long</span>) stream, downsweep_dispatch_params.smem_config, downsweep_dispatch_params.items_per_thread, downsweep_sm_occupancy);</div>
 <div class="line"><a name="l00659"></a><span class="lineno">  659</span>&#160;</div>
 <div class="line"><a name="l00660"></a><span class="lineno">  660</span>&#160;                <span class="comment">// Invoke downsweep_kernel</span></div>
@@ -718,7 +718,7 @@ var searchBox = new SearchBox("searchBox", "search",false,'Search');
 <div class="line"><a name="l00672"></a><span class="lineno">  672</span>&#160;                    even_share);</div>
 <div class="line"><a name="l00673"></a><span class="lineno">  673</span>&#160;</div>
 <div class="line"><a name="l00674"></a><span class="lineno">  674</span>&#160;                <span class="comment">// Sync the stream if specified</span></div>
-<div class="line"><a name="l00675"></a><span class="lineno">  675</span>&#160;                <span class="keywordflow">if</span> (stream_synchronous &amp;&amp; (<a class="code" href="group___util_module.html#ga84c3a4c178bf6593e0fad2b763606236" title="Debug macro. ">CubDebug</a>(error = SyncStream(stream)))) <span class="keywordflow">break</span>;</div>
+<div class="line"><a name="l00675"></a><span class="lineno">  675</span>&#160;                <span class="keywordflow">if</span> (debug_synchronous &amp;&amp; (<a class="code" href="group___util_module.html#ga84c3a4c178bf6593e0fad2b763606236" title="Debug macro. ">CubDebug</a>(error = SyncStream(stream)))) <span class="keywordflow">break</span>;</div>
 <div class="line"><a name="l00676"></a><span class="lineno">  676</span>&#160;</div>
 <div class="line"><a name="l00677"></a><span class="lineno">  677</span>&#160;                <span class="comment">// Invert selectors</span></div>
 <div class="line"><a name="l00678"></a><span class="lineno">  678</span>&#160;                d_keys.<a class="code" href="structcub_1_1_double_buffer.html#a9641172c847169904c4054856d7c26f4" title="Selector into d_buffers (i.e., the active/valid buffer) ">selector</a> ^= 1;</div>
@@ -766,7 +766,7 @@ var searchBox = new SearchBox("searchBox", "search",false,'Search');
 <div class="line"><a name="l00765"></a><span class="lineno">  765</span>&#160;        <span class="keywordtype">int</span>                 begin_bit           = 0,                </div>
 <div class="line"><a name="l00766"></a><span class="lineno">  766</span>&#160;        <span class="keywordtype">int</span>                 end_bit             = <span class="keyword">sizeof</span>(Key) * 8,  </div>
 <div class="line"><a name="l00767"></a><span class="lineno">  767</span>&#160;        cudaStream_t        stream              = 0,                </div>
-<div class="line"><a name="l00768"></a><span class="lineno">  768</span>&#160;        <span class="keywordtype">bool</span>                stream_synchronous  = <span class="keyword">false</span>)            </div>
+<div class="line"><a name="l00768"></a><span class="lineno">  768</span>&#160;        <span class="keywordtype">bool</span>                debug_synchronous  = <span class="keyword">false</span>)            </div>
 <div class="line"><a name="l00769"></a><span class="lineno">  769</span>&#160;    {</div>
 <div class="line"><a name="l00770"></a><span class="lineno">  770</span>&#160;        <span class="comment">// Type used for array indexing</span></div>
 <div class="line"><a name="l00771"></a><span class="lineno">  771</span>&#160;        <span class="keyword">typedef</span> <span class="keywordtype">int</span> SizeT;</div>
@@ -816,7 +816,7 @@ var searchBox = new SearchBox("searchBox", "search",false,'Search');
 <div class="line"><a name="l00815"></a><span class="lineno">  815</span>&#160;                begin_bit,</div>
 <div class="line"><a name="l00816"></a><span class="lineno">  816</span>&#160;                end_bit,</div>
 <div class="line"><a name="l00817"></a><span class="lineno">  817</span>&#160;                stream,</div>
-<div class="line"><a name="l00818"></a><span class="lineno">  818</span>&#160;                stream_synchronous))) <span class="keywordflow">break</span>;</div>
+<div class="line"><a name="l00818"></a><span class="lineno">  818</span>&#160;                debug_synchronous))) <span class="keywordflow">break</span>;</div>
 <div class="line"><a name="l00819"></a><span class="lineno">  819</span>&#160;        }</div>
 <div class="line"><a name="l00820"></a><span class="lineno">  820</span>&#160;        <span class="keywordflow">while</span> (0);</div>
 <div class="line"><a name="l00821"></a><span class="lineno">  821</span>&#160;</div>
@@ -834,10 +834,10 @@ var searchBox = new SearchBox("searchBox", "search",false,'Search');
 <div class="line"><a name="l00875"></a><span class="lineno">  875</span>&#160;        <span class="keywordtype">int</span>                 begin_bit           = 0,                </div>
 <div class="line"><a name="l00876"></a><span class="lineno">  876</span>&#160;        <span class="keywordtype">int</span>                 end_bit             = <span class="keyword">sizeof</span>(Key) * 8,  </div>
 <div class="line"><a name="l00877"></a><span class="lineno">  877</span>&#160;        cudaStream_t        stream              = 0,                </div>
-<div class="line"><a name="l00878"></a><span class="lineno">  878</span>&#160;        <span class="keywordtype">bool</span>                stream_synchronous  = <span class="keyword">false</span>)            </div>
+<div class="line"><a name="l00878"></a><span class="lineno">  878</span>&#160;        <span class="keywordtype">bool</span>                debug_synchronous  = <span class="keyword">false</span>)            </div>
 <div class="line"><a name="l00879"></a><span class="lineno">  879</span>&#160;    {</div>
 <div class="line"><a name="l00880"></a><span class="lineno">  880</span>&#160;        <a class="code" href="structcub_1_1_double_buffer.html" title="Double-buffer storage wrapper for multi-pass stream transformations that require more than one storag...">DoubleBuffer&lt;NullType&gt;</a> d_values;</div>
-<div class="line"><a name="l00881"></a><span class="lineno">  881</span>&#160;        <span class="keywordflow">return</span> <a class="code" href="structcub_1_1_device_radix_sort.html#ad42b50b38c4296c371572efdedd49fed" title="Sorts key-value pairs. ">SortPairs</a>(d_temp_storage, temp_storage_bytes, d_keys, d_values, num_items, begin_bit, end_bit, stream, stream_synchronous);</div>
+<div class="line"><a name="l00881"></a><span class="lineno">  881</span>&#160;        <span class="keywordflow">return</span> <a class="code" href="structcub_1_1_device_radix_sort.html#ad42b50b38c4296c371572efdedd49fed" title="Sorts key-value pairs. ">SortPairs</a>(d_temp_storage, temp_storage_bytes, d_keys, d_values, num_items, begin_bit, end_bit, stream, debug_synchronous);</div>
 <div class="line"><a name="l00882"></a><span class="lineno">  882</span>&#160;    }</div>
 <div class="line"><a name="l00883"></a><span class="lineno">  883</span>&#160;</div>
 <div class="line"><a name="l00884"></a><span class="lineno">  884</span>&#160;};</div>

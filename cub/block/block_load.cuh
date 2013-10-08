@@ -74,7 +74,7 @@ template <
     typename        InputIterator>
 __device__ __forceinline__ void LoadBlocked(
     int             linear_tid,                 ///< [in] A suitable 1D thread-identifier for the calling thread (e.g., <tt>(threadIdx.y * blockDim.x) + linear_tid</tt> for 2D thread blocks)
-    InputIterator block_itr,                  ///< [in] The thread block's base input iterator for loading from
+    InputIterator   block_itr,                  ///< [in] The thread block's base input iterator for loading from
     T               (&items)[ITEMS_PER_THREAD]) ///< [out] Data to load
 {
     // Load directly in thread-blocked order
@@ -101,7 +101,7 @@ template <
     typename        InputIterator>
 __device__ __forceinline__ void LoadBlocked(
     int             linear_tid,                 ///< [in] A suitable 1D thread-identifier for the calling thread (e.g., <tt>(threadIdx.y * blockDim.x) + linear_tid</tt> for 2D thread blocks)
-    InputIterator block_itr,                  ///< [in] The thread block's base input iterator for loading from
+    InputIterator   block_itr,                  ///< [in] The thread block's base input iterator for loading from
     T               (&items)[ITEMS_PER_THREAD], ///< [out] Data to load
     int             valid_items)                ///< [in] Number of valid items to load
 {
@@ -133,7 +133,7 @@ template <
     typename        InputIterator>
 __device__ __forceinline__ void LoadBlocked(
     int             linear_tid,                 ///< [in] A suitable 1D thread-identifier for the calling thread (e.g., <tt>(threadIdx.y * blockDim.x) + linear_tid</tt> for 2D thread blocks)
-    InputIterator block_itr,                  ///< [in] The thread block's base input iterator for loading from
+    InputIterator   block_itr,                  ///< [in] The thread block's base input iterator for loading from
     T               (&items)[ITEMS_PER_THREAD], ///< [out] Data to load
     int             valid_items,                ///< [in] Number of valid items to load
     T               oob_default)                ///< [in] Default value to assign out-of-bound items
@@ -173,7 +173,7 @@ template <
     typename        InputIterator>
 __device__ __forceinline__ void LoadStriped(
     int             linear_tid,                 ///< [in] A suitable 1D thread-identifier for the calling thread (e.g., <tt>(threadIdx.y * blockDim.x) + linear_tid</tt> for 2D thread blocks)
-    InputIterator block_itr,                  ///< [in] The thread block's base input iterator for loading from
+    InputIterator   block_itr,                  ///< [in] The thread block's base input iterator for loading from
     T               (&items)[ITEMS_PER_THREAD]) ///< [out] Data to load
 {
     #pragma unroll
@@ -192,7 +192,7 @@ __device__ __forceinline__ void LoadStriped(
  * \tparam BLOCK_THREADS        The thread block size in threads
  * \tparam T                    <b>[inferred]</b> The data type to load.
  * \tparam ITEMS_PER_THREAD     <b>[inferred]</b> The number of consecutive items partitioned onto each thread.
- * \tparam InputIterator      <b>[inferred]</b> The random-access iterator type for input (may be a simple pointer type).
+ * \tparam InputIterator        <b>[inferred]</b> The random-access iterator type for input (may be a simple pointer type).
  */
 template <
     int             BLOCK_THREADS,
@@ -201,7 +201,7 @@ template <
     typename        InputIterator>
 __device__ __forceinline__ void LoadStriped(
     int             linear_tid,                 ///< [in] A suitable 1D thread-identifier for the calling thread (e.g., <tt>(threadIdx.y * blockDim.x) + linear_tid</tt> for 2D thread blocks)
-    InputIterator block_itr,                  ///< [in] The thread block's base input iterator for loading from
+    InputIterator   block_itr,                  ///< [in] The thread block's base input iterator for loading from
     T               (&items)[ITEMS_PER_THREAD], ///< [out] Data to load
     int             valid_items)                ///< [in] Number of valid items to load
 {
@@ -226,7 +226,7 @@ __device__ __forceinline__ void LoadStriped(
  * \tparam BLOCK_THREADS        The thread block size in threads
  * \tparam T                    <b>[inferred]</b> The data type to load.
  * \tparam ITEMS_PER_THREAD     <b>[inferred]</b> The number of consecutive items partitioned onto each thread.
- * \tparam InputIterator      <b>[inferred]</b> The random-access iterator type for input (may be a simple pointer type).
+ * \tparam InputIterator        <b>[inferred]</b> The random-access iterator type for input (may be a simple pointer type).
  */
 template <
     int             BLOCK_THREADS,
@@ -235,7 +235,7 @@ template <
     typename        InputIterator>
 __device__ __forceinline__ void LoadStriped(
     int             linear_tid,                 ///< [in] A suitable 1D thread-identifier for the calling thread (e.g., <tt>(threadIdx.y * blockDim.x) + linear_tid</tt> for 2D thread blocks)
-    InputIterator block_itr,                  ///< [in] The thread block's base input iterator for loading from
+    InputIterator   block_itr,                  ///< [in] The thread block's base input iterator for loading from
     T               (&items)[ITEMS_PER_THREAD], ///< [out] Data to load
     int             valid_items,                ///< [in] Number of valid items to load
     T               oob_default)                ///< [in] Default value to assign out-of-bound items
@@ -276,7 +276,7 @@ template <
     typename        InputIterator>
 __device__ __forceinline__ void LoadWarpStriped(
     int             linear_tid,                 ///< [in] A suitable 1D thread-identifier for the calling thread (e.g., <tt>(threadIdx.y * blockDim.x) + linear_tid</tt> for 2D thread blocks)
-    InputIterator block_itr,                  ///< [in] The thread block's base input iterator for loading from
+    InputIterator   block_itr,                  ///< [in] The thread block's base input iterator for loading from
     T               (&items)[ITEMS_PER_THREAD]) ///< [out] Data to load
 {
     int tid         = linear_tid & (CUB_PTX_WARP_THREADS - 1);
@@ -310,9 +310,9 @@ template <
     typename        InputIterator>
 __device__ __forceinline__ void LoadWarpStriped(
     int             linear_tid,                 ///< [in] A suitable 1D thread-identifier for the calling thread (e.g., <tt>(threadIdx.y * blockDim.x) + linear_tid</tt> for 2D thread blocks)
-    InputIterator block_itr,                  ///< [in] The thread block's base input iterator for loading from
+    InputIterator   block_itr,                  ///< [in] The thread block's base input iterator for loading from
     T               (&items)[ITEMS_PER_THREAD], ///< [out] Data to load
-    int             valid_items)               ///< [in] Number of valid items to load
+    int             valid_items)                ///< [in] Number of valid items to load
 {
     int tid                 = linear_tid & (CUB_PTX_WARP_THREADS - 1);
     int wid                 = linear_tid >> CUB_PTX_LOG_WARP_THREADS;
@@ -341,7 +341,7 @@ __device__ __forceinline__ void LoadWarpStriped(
  *
  * \tparam T                    <b>[inferred]</b> The data type to load.
  * \tparam ITEMS_PER_THREAD     <b>[inferred]</b> The number of consecutive items partitioned onto each thread.
- * \tparam InputIterator      <b>[inferred]</b> The random-access iterator type for input (may be a simple pointer type).
+ * \tparam InputIterator        <b>[inferred]</b> The random-access iterator type for input (may be a simple pointer type).
  */
 template <
     typename        T,
@@ -349,7 +349,7 @@ template <
     typename        InputIterator>
 __device__ __forceinline__ void LoadWarpStriped(
     int             linear_tid,                 ///< [in] A suitable 1D thread-identifier for the calling thread (e.g., <tt>(threadIdx.y * blockDim.x) + linear_tid</tt> for 2D thread blocks)
-    InputIterator block_itr,                  ///< [in] The thread block's base input iterator for loading from
+    InputIterator   block_itr,                  ///< [in] The thread block's base input iterator for loading from
     T               (&items)[ITEMS_PER_THREAD], ///< [out] Data to load
     int             valid_items,               ///< [in] Number of valid items to load
     T               oob_default)                ///< [in] Default value to assign out-of-bound items
@@ -409,20 +409,24 @@ __device__ __forceinline__ void LoadBlockedVectorized(
     // Vector type
     typedef typename VectorHelper<T, VEC_SIZE>::Type Vector;
 
-    // Alias local data (use raw_items array here which should get optimized away to prevent conservative PTXAS lmem spilling)
-    T raw_items[ITEMS_PER_THREAD];
+    // Vector items
+    Vector vec_items[VECTORS_PER_THREAD];
 
-    // Direct-load using vector types
-    LoadBlocked(
-        linear_tid,
-        reinterpret_cast<Vector *>(block_ptr),
-        reinterpret_cast<Vector (&)[VECTORS_PER_THREAD]>(raw_items));
+    // Aliased input ptr
+    Vector *ptr = reinterpret_cast<Vector*>(block_ptr + (linear_tid * VEC_SIZE * VECTORS_PER_THREAD));
+
+    // Load directly in thread-blocked order
+    #pragma unroll
+    for (int ITEM = 0; ITEM < VECTORS_PER_THREAD; ITEM++)
+    {
+        vec_items[ITEM] = ptr[ITEM];
+    }
 
     // Copy
     #pragma unroll
     for (int ITEM = 0; ITEM < ITEMS_PER_THREAD; ITEM++)
     {
-        items[ITEM] = raw_items[ITEM];
+        items[ITEM] = reinterpret_cast<T*>(vec_items)[ITEM];
     }
 }
 
@@ -630,7 +634,7 @@ private:
 
         /// Load a linear segment of items from memory
         __device__ __forceinline__ void Load(
-            InputIterator block_itr,                      ///< [in] The thread block's base input iterator for loading from
+            InputIterator   block_itr,                      ///< [in] The thread block's base input iterator for loading from
             T               (&items)[ITEMS_PER_THREAD])     ///< [out] Data to load
         {
             LoadBlocked(linear_tid, block_itr, items);
@@ -638,7 +642,7 @@ private:
 
         /// Load a linear segment of items from memory, guarded by range
         __device__ __forceinline__ void Load(
-            InputIterator block_itr,                      ///< [in] The thread block's base input iterator for loading from
+            InputIterator   block_itr,                      ///< [in] The thread block's base input iterator for loading from
             T               (&items)[ITEMS_PER_THREAD],     ///< [out] Data to load
             int             valid_items)                    ///< [in] Number of valid items to load
         {
@@ -647,7 +651,7 @@ private:
 
         /// Load a linear segment of items from memory, guarded by range, with a fall-back assignment of out-of-bound elements
         __device__ __forceinline__ void Load(
-            InputIterator block_itr,                      ///< [in] The thread block's base input iterator for loading from
+            InputIterator   block_itr,                      ///< [in] The thread block's base input iterator for loading from
             T               (&items)[ITEMS_PER_THREAD],     ///< [out] Data to load
             int             valid_items,                    ///< [in] Number of valid items to load
             T               oob_default)                    ///< [in] Default value to assign out-of-bound items
@@ -699,7 +703,7 @@ private:
 
         /// Load a linear segment of items from memory, guarded by range (skips vectorization)
         __device__ __forceinline__ void Load(
-            InputIterator block_itr,                      ///< [in] The thread block's base input iterator for loading from
+            InputIterator   block_itr,                      ///< [in] The thread block's base input iterator for loading from
             T               (&items)[ITEMS_PER_THREAD],     ///< [out] Data to load
             int             valid_items)                    ///< [in] Number of valid items to load
         {
@@ -708,7 +712,7 @@ private:
 
         /// Load a linear segment of items from memory, guarded by range, with a fall-back assignment of out-of-bound elements (skips vectorization)
         __device__ __forceinline__ void Load(
-            InputIterator block_itr,                      ///< [in] The thread block's base input iterator for loading from
+            InputIterator   block_itr,                      ///< [in] The thread block's base input iterator for loading from
             T               (&items)[ITEMS_PER_THREAD],     ///< [out] Data to load
             int             valid_items,                    ///< [in] Number of valid items to load
             T               oob_default)                    ///< [in] Default value to assign out-of-bound items
@@ -751,7 +755,7 @@ private:
 
         /// Load a linear segment of items from memory
         __device__ __forceinline__ void Load(
-            InputIterator block_itr,                      ///< [in] The thread block's base input iterator for loading from
+            InputIterator   block_itr,                      ///< [in] The thread block's base input iterator for loading from
             T               (&items)[ITEMS_PER_THREAD])     ///< [out] Data to load{
         {
             LoadStriped<BLOCK_THREADS>(linear_tid, block_itr, items);
@@ -760,7 +764,7 @@ private:
 
         /// Load a linear segment of items from memory, guarded by range
         __device__ __forceinline__ void Load(
-            InputIterator block_itr,                      ///< [in] The thread block's base input iterator for loading from
+            InputIterator   block_itr,                      ///< [in] The thread block's base input iterator for loading from
             T               (&items)[ITEMS_PER_THREAD],     ///< [out] Data to load
             int             valid_items)                    ///< [in] Number of valid items to load
         {
@@ -770,7 +774,7 @@ private:
 
         /// Load a linear segment of items from memory, guarded by range, with a fall-back assignment of out-of-bound elements
         __device__ __forceinline__ void Load(
-            InputIterator block_itr,                      ///< [in] The thread block's base input iterator for loading from
+            InputIterator   block_itr,                      ///< [in] The thread block's base input iterator for loading from
             T               (&items)[ITEMS_PER_THREAD],     ///< [out] Data to load
             int             valid_items,                    ///< [in] Number of valid items to load
             T               oob_default)                    ///< [in] Default value to assign out-of-bound items
@@ -822,7 +826,7 @@ private:
 
         /// Load a linear segment of items from memory
         __device__ __forceinline__ void Load(
-            InputIterator block_itr,                      ///< [in] The thread block's base input iterator for loading from
+            InputIterator   block_itr,                      ///< [in] The thread block's base input iterator for loading from
             T               (&items)[ITEMS_PER_THREAD])     ///< [out] Data to load{
         {
             LoadWarpStriped(linear_tid, block_itr, items);
@@ -831,7 +835,7 @@ private:
 
         /// Load a linear segment of items from memory, guarded by range
         __device__ __forceinline__ void Load(
-            InputIterator block_itr,                      ///< [in] The thread block's base input iterator for loading from
+            InputIterator   block_itr,                      ///< [in] The thread block's base input iterator for loading from
             T               (&items)[ITEMS_PER_THREAD],     ///< [out] Data to load
             int             valid_items)                    ///< [in] Number of valid items to load
         {
@@ -842,7 +846,7 @@ private:
 
         /// Load a linear segment of items from memory, guarded by range, with a fall-back assignment of out-of-bound elements
         __device__ __forceinline__ void Load(
-            InputIterator block_itr,                      ///< [in] The thread block's base input iterator for loading from
+            InputIterator   block_itr,                      ///< [in] The thread block's base input iterator for loading from
             T               (&items)[ITEMS_PER_THREAD],     ///< [out] Data to load
             int             valid_items,                    ///< [in] Number of valid items to load
             T               oob_default)                    ///< [in] Default value to assign out-of-bound items
@@ -984,7 +988,7 @@ public:
      *
      */
     __device__ __forceinline__ void Load(
-        InputIterator block_itr,                  ///< [in] The thread block's base input iterator for loading from
+        InputIterator   block_itr,                  ///< [in] The thread block's base input iterator for loading from
         T               (&items)[ITEMS_PER_THREAD]) ///< [out] Data to load
     {
         InternalLoad(temp_storage, linear_tid).Load(block_itr, items);
@@ -1026,7 +1030,7 @@ public:
      *
      */
     __device__ __forceinline__ void Load(
-        InputIterator block_itr,                  ///< [in] The thread block's base input iterator for loading from
+        InputIterator   block_itr,                  ///< [in] The thread block's base input iterator for loading from
         T               (&items)[ITEMS_PER_THREAD], ///< [out] Data to load
         int             valid_items)                ///< [in] Number of valid items to load
     {
@@ -1070,7 +1074,7 @@ public:
      *
      */
     __device__ __forceinline__ void Load(
-        InputIterator block_itr,                  ///< [in] The thread block's base input iterator for loading from
+        InputIterator   block_itr,                  ///< [in] The thread block's base input iterator for loading from
         T               (&items)[ITEMS_PER_THREAD], ///< [out] Data to load
         int             valid_items,                ///< [in] Number of valid items to load
         T               oob_default)                ///< [in] Default value to assign out-of-bound items
