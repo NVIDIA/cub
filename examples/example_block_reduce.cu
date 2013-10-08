@@ -81,7 +81,7 @@ __global__ void BlockSumKernel(
 
     // Per-thread tile data
     int data[ITEMS_PER_THREAD];
-    LoadStriped<LOAD_DEFAULT, BLOCK_THREADS>(threadIdx.x, d_in, data);
+    LoadStriped<BLOCK_THREADS>(threadIdx.x, d_in, data);
 
     // Start cycle timer
     clock_t start = clock();

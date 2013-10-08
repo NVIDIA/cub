@@ -144,10 +144,6 @@ __global__ void HistoAggregateKernel(
     {
         HistoCounter block_bin_count = d_block_histograms[block_offset + threadIdx.x];
 
-        if (block_bin_count > 100) CubLog("counter %d block_bin_count(%d)\n",
-            int (&d_block_histograms[block_offset + threadIdx.x]),
-            block_bin_count);
-
         bin_aggregate += block_bin_count;
         block_offset += BINS;
     }
@@ -162,6 +158,9 @@ __global__ void HistoAggregateKernel(
  * Dispatch
  ******************************************************************************/
 
+/**
+ * Utility class for dispatching the appropriately-tuned kernels for DeviceHistogram
+ */
 template <
     BlockHistogramTilesAlgorithm    HISTO_ALGORITHM,
     int                             BINS,                       ///< Number of histogram bins per channel
@@ -243,6 +242,7 @@ struct DeviceHistogramDispatch
 
 #endif
 
+    // "Opaque" policies (whose parameterizations aren't reflected in the type signature)
     struct PtxHistogramTilesPolicy : PtxPolicy::HistogramTilesPolicy {};
 
 
@@ -337,7 +337,7 @@ struct DeviceHistogramDispatch
         HistoCounter                *d_histograms[ACTIVE_CHANNELS],     ///< [out] Array of channel histograms, each having BINS counters of integral type \p HistoCounter.
         SizeT                       num_samples,                        ///< [in] Number of samples to process
         cudaStream_t                stream,                             ///< [in] CUDA stream to launch kernels within.  Default is stream<sub>0</sub>.
-        bool                        stream_synchronous,                 ///< [in] Whether or not to synchronize the stream after every kernel launch to check for errors.  Default is \p false.
+        bool                        debug_synchronous,                 ///< [in] Whether or not to synchronize the stream after every kernel launch to check for errors.  Default is \p false.
         int                         sm_version,                         ///< [in] SM version of target device to use when computing SM occupancy
         InitHistoKernelPtr          init_kernel,                        ///< [in] Kernel function pointer to parameterization of cub::HistoInitKernel
         HistogramTilesKernelPtr     histogram_tiles_kernel,             ///< [in] Kernel function pointer to parameterization of cub::HistoTilesKernel
@@ -437,19 +437,19 @@ struct DeviceHistogramDispatch
                 d_temp_histo_wrapper.array[CHANNEL] = d_block_histograms + (CHANNEL * histogram_tiles_grid_size * BINS);
 
             // Log init_kernel configuration
-            if (stream_synchronous) CubLog("Invoking init_kernel<<<%d, %d, 0, %lld>>>()\n", ACTIVE_CHANNELS, BINS, (long long) stream);
+            if (debug_synchronous) CubLog("Invoking init_kernel<<<%d, %d, 0, %lld>>>()\n", ACTIVE_CHANNELS, BINS, (long long) stream);
 
             // Invoke init_kernel to initialize counters and queue descriptor
             init_kernel<<<ACTIVE_CHANNELS, BINS, 0, stream>>>(queue, d_histo_wrapper, num_samples);
 
             // Sync the stream if specified
-            if (stream_synchronous && (CubDebug(error = SyncStream(stream)))) break;
+            if (debug_synchronous && (CubDebug(error = SyncStream(stream)))) break;
 
             // Whether we need privatized histograms (i.e., non-global atomics and multi-block)
             bool privatized_temporaries = (histogram_tiles_grid_size > 1) && (histogram_tiles_config.block_algorithm != HISTO_TILES_GLOBAL_ATOMIC);
 
             // Log histogram_tiles_kernel configuration
-            if (stream_synchronous) CubLog("Invoking histogram_tiles_kernel<<<%d, %d, 0, %lld>>>(), %d items per thread, %d SM occupancy\n",
+            if (debug_synchronous) CubLog("Invoking histogram_tiles_kernel<<<%d, %d, 0, %lld>>>(), %d items per thread, %d SM occupancy\n",
                 histogram_tiles_grid_size, histogram_tiles_config.block_threads, (long long) stream, histogram_tiles_config.items_per_thread, histogram_tiles_sm_occupancy);
 
             // Invoke histogram_tiles_kernel
@@ -463,13 +463,13 @@ struct DeviceHistogramDispatch
                 queue);
 
             // Sync the stream if specified
-            if (stream_synchronous && (CubDebug(error = SyncStream(stream)))) break;
+            if (debug_synchronous && (CubDebug(error = SyncStream(stream)))) break;
 
             // Aggregate privatized block histograms if necessary
             if (privatized_temporaries)
             {
                 // Log aggregate_kernel configuration
-                if (stream_synchronous) CubLog("Invoking aggregate_kernel<<<%d, %d, 0, %lld>>>()\n",
+                if (debug_synchronous) CubLog("Invoking aggregate_kernel<<<%d, %d, 0, %lld>>>()\n",
                     ACTIVE_CHANNELS, BINS, (long long) stream);
 
                 // Invoke aggregate_kernel
@@ -479,7 +479,7 @@ struct DeviceHistogramDispatch
                     histogram_tiles_grid_size);
 
                 // Sync the stream if specified
-                if (stream_synchronous && (CubDebug(error = SyncStream(stream)))) break;
+                if (debug_synchronous && (CubDebug(error = SyncStream(stream)))) break;
             }
         }
         while (0);
@@ -501,7 +501,7 @@ struct DeviceHistogramDispatch
         HistoCounter        *d_histograms[ACTIVE_CHANNELS],     ///< [out] Array of channel histograms, each having BINS counters of integral type \p HistoCounter.
         int                 num_samples,                        ///< [in] Number of samples to process
         cudaStream_t        stream,                             ///< [in] <b>[optional]</b> CUDA stream to launch kernels within.  Default is stream<sub>0</sub>.
-        bool                stream_synchronous)                 ///< [in] <b>[optional]</b> Whether or not to synchronize the stream after every kernel launch to check for errors.  Default is \p false.
+        bool                debug_synchronous)                  ///< [in] <b>[optional]</b> Whether or not to synchronize the stream after every kernel launch to check for errors.  Also causes launch configurations to be printed to the console.  Default is \p false.
     {
         cudaError error = cudaSuccess;
         do
@@ -526,7 +526,7 @@ struct DeviceHistogramDispatch
                 d_histograms,
                 num_samples,
                 stream,
-                stream_synchronous,
+                debug_synchronous,
                 ptx_version,            // Use PTX version instead of SM version because, as a statically known quantity, this improves device-side launch dramatically but at the risk of imprecise occupancy calculation for mismatches
                 HistoInitKernel<BINS, ACTIVE_CHANNELS, SizeT, HistoCounter>,
                 HistoTilesKernel<PtxHistogramTilesPolicy, BINS, CHANNELS, ACTIVE_CHANNELS, InputIterator, HistoCounter, SizeT>,
@@ -635,11 +635,11 @@ struct DeviceHistogram
         HistoCounter*       d_histogram,                        ///< [out] Array of BINS counters of integral type \p HistoCounter.
         int                 num_samples,                        ///< [in] Number of samples to process
         cudaStream_t        stream              = 0,            ///< [in] <b>[optional]</b> CUDA stream to launch kernels within.  Default is stream<sub>0</sub>.
-        bool                stream_synchronous  = false)        ///< [in] <b>[optional]</b> Whether or not to synchronize the stream after every kernel launch to check for errors.  Default is \p false.
+        bool                debug_synchronous  = false)         ///< [in] <b>[optional]</b> Whether or not to synchronize the stream after every kernel launch to check for errors.  Also causes launch configurations to be printed to the console.  Default is \p false.
     {
         typedef int SizeT;
         return DeviceHistogramDispatch<HISTO_TILES_SORT, BINS, 1, 1, InputIterator, HistoCounter, SizeT>::Dispatch(
-            d_temp_storage, temp_storage_bytes, d_samples, &d_histogram, num_samples, stream, stream_synchronous);
+            d_temp_storage, temp_storage_bytes, d_samples, &d_histogram, num_samples, stream, debug_synchronous);
     }
 
 
@@ -706,11 +706,11 @@ struct DeviceHistogram
         HistoCounter*       d_histogram,                        ///< [out] Array of BINS counters of integral type \p HistoCounter.
         int                 num_samples,                        ///< [in] Number of samples to process
         cudaStream_t        stream              = 0,            ///< [in] <b>[optional]</b> CUDA stream to launch kernels within.  Default is stream<sub>0</sub>.
-        bool                stream_synchronous  = false)        ///< [in] <b>[optional]</b> Whether or not to synchronize the stream after every kernel launch to check for errors.  May cause significant slowdown.  Default is \p false.
+        bool                debug_synchronous  = false)        ///< [in] <b>[optional]</b> Whether or not to synchronize the stream after every kernel launch to check for errors.  May cause significant slowdown.  Default is \p false.
     {
         typedef int SizeT;
         return DeviceHistogramDispatch<HISTO_TILES_SHARED_ATOMIC, BINS, 1, 1, InputIterator, HistoCounter, SizeT>::Dispatch(
-            d_temp_storage, temp_storage_bytes, d_samples, &d_histogram, num_samples, stream, stream_synchronous);
+            d_temp_storage, temp_storage_bytes, d_samples, &d_histogram, num_samples, stream, debug_synchronous);
     }
 
 
@@ -776,11 +776,11 @@ struct DeviceHistogram
         HistoCounter*       d_histogram,                        ///< [out] Array of BINS counters of integral type \p HistoCounter.
         int                 num_samples,                        ///< [in] Number of samples to process
         cudaStream_t        stream              = 0,            ///< [in] <b>[optional]</b> CUDA stream to launch kernels within.  Default is stream<sub>0</sub>.
-        bool                stream_synchronous  = false)        ///< [in] <b>[optional]</b> Whether or not to synchronize the stream after every kernel launch to check for errors.  May cause significant slowdown.  Default is \p false.
+        bool                debug_synchronous  = false)        ///< [in] <b>[optional]</b> Whether or not to synchronize the stream after every kernel launch to check for errors.  May cause significant slowdown.  Default is \p false.
     {
         typedef int SizeT;
         return DeviceHistogramDispatch<HISTO_TILES_GLOBAL_ATOMIC, BINS, 1, 1, InputIterator, HistoCounter, SizeT>::Dispatch(
-            d_temp_storage, temp_storage_bytes, d_samples, &d_histogram, num_samples, stream, stream_synchronous);
+            d_temp_storage, temp_storage_bytes, d_samples, &d_histogram, num_samples, stream, debug_synchronous);
     }
 
 
@@ -861,11 +861,11 @@ struct DeviceHistogram
         HistoCounter        *d_histograms[ACTIVE_CHANNELS],     ///< [out] Array of channel histogram counter arrays, each having BINS counters of integral type \p HistoCounter.
         int                 num_samples,                        ///< [in] Total number of samples to process in all channels, including non-active channels
         cudaStream_t        stream              = 0,            ///< [in] <b>[optional]</b> CUDA stream to launch kernels within.  Default is stream<sub>0</sub>.
-        bool                stream_synchronous  = false)        ///< [in] <b>[optional]</b> Whether or not to synchronize the stream after every kernel launch to check for errors.  May cause significant slowdown.  Default is \p false.
+        bool                debug_synchronous  = false)        ///< [in] <b>[optional]</b> Whether or not to synchronize the stream after every kernel launch to check for errors.  May cause significant slowdown.  Default is \p false.
     {
         typedef int SizeT;
         return DeviceHistogramDispatch<HISTO_TILES_SORT, BINS, CHANNELS, ACTIVE_CHANNELS, InputIterator, HistoCounter, SizeT>::Dispatch(
-            d_temp_storage, temp_storage_bytes, d_samples, d_histograms, num_samples, stream, stream_synchronous);
+            d_temp_storage, temp_storage_bytes, d_samples, d_histograms, num_samples, stream, debug_synchronous);
     }
 
 
@@ -939,7 +939,7 @@ struct DeviceHistogram
         HistoCounter        *d_histograms[ACTIVE_CHANNELS],     ///< [out] Array of channel histogram counter arrays, each having BINS counters of integral type \p HistoCounter.
         int                 num_samples,                        ///< [in] Total number of samples to process in all channels, including non-active channels
         cudaStream_t        stream              = 0,            ///< [in] <b>[optional]</b> CUDA stream to launch kernels within.  Default is stream<sub>0</sub>.
-        bool                stream_synchronous  = false)        ///< [in] <b>[optional]</b> Whether or not to synchronize the stream after every kernel launch to check for errors.  May cause significant slowdown.  Default is \p false.
+        bool                debug_synchronous  = false)        ///< [in] <b>[optional]</b> Whether or not to synchronize the stream after every kernel launch to check for errors.  May cause significant slowdown.  Default is \p false.
     {
         typedef int SizeT;
 
@@ -950,7 +950,7 @@ struct DeviceHistogram
             d_histograms,
             num_samples,
             stream,
-            stream_synchronous);
+            debug_synchronous);
     }
 
 
@@ -1025,11 +1025,11 @@ struct DeviceHistogram
         HistoCounter        *d_histograms[ACTIVE_CHANNELS],     ///< [out] Array of channel histogram counter arrays, each having BINS counters of integral type \p HistoCounter.
         int                 num_samples,                        ///< [in] Total number of samples to process in all channels, including non-active channels
         cudaStream_t        stream              = 0,            ///< [in] <b>[optional]</b> CUDA stream to launch kernels within.  Default is stream<sub>0</sub>.
-        bool                stream_synchronous  = false)        ///< [in] <b>[optional]</b> Whether or not to synchronize the stream after every kernel launch to check for errors.  May cause significant slowdown.  Default is \p false.
+        bool                debug_synchronous  = false)        ///< [in] <b>[optional]</b> Whether or not to synchronize the stream after every kernel launch to check for errors.  May cause significant slowdown.  Default is \p false.
     {
         typedef int SizeT;
         return DeviceHistogramDispatch<HISTO_TILES_GLOBAL_ATOMIC, BINS, CHANNELS, ACTIVE_CHANNELS, InputIterator, HistoCounter, SizeT>::Dispatch(
-            d_temp_storage, temp_storage_bytes, d_samples, d_histograms, num_samples, stream, stream_synchronous);
+            d_temp_storage, temp_storage_bytes, d_samples, d_histograms, num_samples, stream, debug_synchronous);
     }
 
     //@}  end member group

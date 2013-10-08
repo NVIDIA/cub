@@ -64,7 +64,7 @@ struct IteratorTexRef
 {
     /// And by unique ID
     template <int UNIQUE_ID>
-    struct Id
+    struct TexId
     {
         // Largest texture word we can use in device
         typedef typename UnitWord<T>::TextureWord TextureWord;
@@ -122,7 +122,7 @@ struct IteratorTexRef
 // Texture reference definitions
 template <typename  TextureWord>
 template <int       UNIQUE_ID>
-typename IteratorTexRef<TextureWord>::Id<UNIQUE_ID>::TexRef IteratorTexRef<TextureWord>::Id<UNIQUE_ID>::ref = 0;
+typename IteratorTexRef<TextureWord>::TexId<UNIQUE_ID>::TexRef IteratorTexRef<TextureWord>::TexId<UNIQUE_ID>::ref = 0;
 
 } // Anonymous namespace
 
@@ -671,7 +671,7 @@ public:
 
     /// Constructor
     __host__ __device__ __forceinline__ TransformInputIterator(
-        InputIterator     input_itr,          ///< Input iterator to wrap
+        InputIterator       input_itr,          ///< Input iterator to wrap
         ConversionOp        conversion_op)      ///< Conversion functor to wrap
     :
         conversion_op(conversion_op),
@@ -759,28 +759,38 @@ public:
 
 
 /**
- * \brief A random-access input iterator for loading primitive array elements through texture cache.
+ * \brief A random-access input iterator for loading primitive array elements through texture cache.  Uses older Tesla/Fermi-style texture references.
  *
  * \par Overview
- * TexInputIterator wraps a native device pointer of type <tt>ValueType*</tt>. References
+ * TexRefInputIterator wraps a native device pointer of type <tt>ValueType*</tt>. References
  * to elements are to be pulled through texture cache.  Works with any \p ValueType.
  *
  * \par Usage Considerations
- * - Only one TexInputIterator or TexInputIterator of a certain \p ValueType can be bound at any given time (per host thread)
+ * - The \p UNIQUE_ID template parameter is used to name the underlying texture
+ *   reference.  For a given data type \p T and \p UNIQUE_ID, only one TexRefInputIterator
+ *   instance can be bound at any given time (per host thread, per compilation .o unit)
+ * - With regard to nested/dynamic parallelism, TexRefInputIterator iterators may only be
+ *   created by the host thread and used by a top-level kernel (i.e. the one which is launched
+ *   from the host).
  *
- * \tparam T            The value type of this iterator
+ * \p UNIQUE_ID template parameter is used to name the underlying texture
+ *   reference.  For a given \p UNIQUE_ID, only one TexRefInputIterator instance can be
+ *   bound at any given time (per host thread, per compilation .o unit)
+ *
+ * \tparam T                    The value type of this iterator
+ * \tparam UNIQUE_ID            A globally-unique identifier (within the compilation unit) to name the underlying texture reference
  * \tparam difference_type      The difference type of this iterator (Default: \p ptrdiff_t)
  */
 template <
     typename    T,
     int         UNIQUE_ID,
     typename    difference_type = ptrdiff_t>
-class TexInputIterator
+class TexRefInputIterator
 {
 public:
 
     // Required iterator traits
-    typedef TexInputIterator                       self_type;           ///< My own type
+    typedef TexRefInputIterator                    self_type;              ///< My own type
     typedef difference_type                     difference_type;        ///< Type to express the result of subtracting one iterator from another
     typedef T                                   value_type;             ///< The type of the element the iterator can point to
     typedef T*                                  pointer;                ///< The type of a pointer to an element the iterator can point to
@@ -789,41 +799,36 @@ public:
 
 private:
 
-    // Texture reference wrapper
-    typedef typename IteratorTexRef<T>::template Id<UNIQUE_ID> Id;
+    T*      ptr;
+    size_t  tex_offset;
 
-    T*                  ptr;
-    size_t              tex_offset;
-    cudaTextureObject_t tex_obj;
+    // Texture reference wrapper (old Tesla/Fermi-style textures)
+    typedef typename IteratorTexRef<T>::template TexId<UNIQUE_ID> TexId;
 
 public:
 
     /// Constructor
-    __host__ __device__ __forceinline__ TexInputIterator()
+    __host__ __device__ __forceinline__ TexRefInputIterator()
     :
         ptr(NULL),
-        tex_offset(0),
-        tex_obj(0)
+        tex_offset(0)
     {}
 
     /// Use this iterator to bind \p ptr with a texture reference
     cudaError_t BindTexture(
         T               *ptr,                   ///< Native pointer to wrap that is aligned to cudaDeviceProp::textureAlignment
         size_t          bytes,                  ///< Number of bytes in the range
-        size_t          tex_offset = 0)   ///< Offset (in items) from \p ptr denoting the position of the iterator
+        size_t          tex_offset = 0)         ///< Offset (in items) from \p ptr denoting the position of the iterator
     {
         this->ptr = ptr;
         this->tex_offset = tex_offset;
-        return Id::BindTexture(ptr);
+        return TexId::BindTexture(ptr);
     }
 
     /// Unbind this iterator from its texture reference
     cudaError_t UnbindTexture()
     {
-        int ptx_version;
-        cudaError_t error = cudaSuccess;
-        if (CubDebug(error = PtxVersion(ptx_version))) return error;
-        return Id::UnbindTexture();
+        return TexId::UnbindTexture();
     }
 
     /// Postfix increment
@@ -841,7 +846,8 @@ public:
         // Simply dereference the pointer on the host
         return ptr[tex_offset];
 #else
-        return Id::Fetch(tex_offset);
+        // Use the texture reference
+        return TexId::Fetch(tex_offset);
 #endif
     }
 
@@ -916,88 +922,127 @@ public:
 
 
 /**
- * \brief A random-access input iterator for applying a transformation operator to primitive array elements loaded through texture cache.
+ * \brief A random-access input iterator for loading primitive array elements through texture cache.  Uses newer Kepler-style texture objects.
  *
  * \par Overview
- * TransformInputIterator wraps a unary conversion functor of type \p ConversionOp and a
- * native device pointer of type <tt>T*</tt>.  \p ValueType references are produced by
- * applying the former to elements of the latter read through texture cache.
+ * TexObjInputIterator wraps a native device pointer of type <tt>ValueType*</tt>. References
+ * to elements are to be pulled through texture cache.  Works with any \p ValueType.
  *
  * \par Usage Considerations
- * - Can only be used with primitive types (e.g., \p char, \p int, \p float), with the exception of \p double
- * - Only one TexInputIterator or TexTransformInputIterator of a certain \p InputType can be bound at any given time (per host thread)
+ * - With regard to nested/dynamic parallelism, TexObjInputIterator iterators may only be
+ *   created by the host thread, but can be used by any descendant kernel.
  *
- * \tparam InputType            The value type of the pointer being wrapped
- * \tparam ConversionOp         Unary functor type for mapping objects of type \p InputType to type \p OutputType.  Must have member <tt>OutputType operator()(const InputType &datum)</tt>.
- * \tparam OutputType           The value type of this iterator
+ * \tparam T                    The value type of this iterator
+ * \tparam difference_type      The difference type of this iterator (Default: \p ptrdiff_t)
  */
 template <
-    typename    ValueType,
-    typename    ConversionOp,
     typename    T,
-    int         UNIQUE_ID,
     typename    difference_type = ptrdiff_t>
-class TexTransformInputIterator
+class TexObjInputIterator
 {
 public:
 
     // Required iterator traits
-    typedef TexTransformInputIterator              self_type;              ///< My own type
+    typedef TexObjInputIterator                 self_type;              ///< My own type
     typedef difference_type                     difference_type;        ///< Type to express the result of subtracting one iterator from another
-    typedef ValueType                           value_type;             ///< The type of the element the iterator can point to
-    typedef ValueType*                          pointer;                ///< The type of a pointer to an element the iterator can point to
-    typedef ValueType                           reference;              ///< The type of a reference to an element the iterator can point to
+    typedef T                                   value_type;             ///< The type of the element the iterator can point to
+    typedef T*                                  pointer;                ///< The type of a pointer to an element the iterator can point to
+    typedef T                                   reference;              ///< The type of a reference to an element the iterator can point to
     typedef std::random_access_iterator_tag     iterator_category;      ///< The iterator category
 
 private:
 
-    TexInputIterator<T, UNIQUE_ID, difference_type>   tex_itr;
-    ConversionOp                        conversion_op;
+    // Largest texture word we can use in device
+    typedef typename UnitWord<T>::TextureWord TextureWord;
+
+    // Number of texture words per T
+    enum {
+        TEXTURE_MULTIPLE = UnitWord<T>::TEXTURE_MULTIPLE
+    };
+
+private:
+
+    T*                  ptr;
+    size_t              tex_offset;
+    cudaTextureObject_t tex_obj;
 
 public:
 
     /// Constructor
-    __host__ __device__ __forceinline__ TexTransformInputIterator(
-        ConversionOp conversion_op)          ///< Binary transformation functor
+    __host__ __device__ __forceinline__ TexObjInputIterator()
     :
-        conversion_op(conversion_op)
+        ptr(NULL),
+        tex_offset(0),
+        tex_obj(0)
     {}
 
     /// Use this iterator to bind \p ptr with a texture reference
     cudaError_t BindTexture(
-        T       *ptr,                   ///< Native pointer to wrap that is aligned to cudaDeviceProp::textureAlignment
-        size_t  bytes,                  ///< Number of bytes in the range
-        size_t  tex_offset = 0)   ///< Offset (in items) from \p ptr denoting the position of the iterator
+        T               *ptr,               ///< Native pointer to wrap that is aligned to cudaDeviceProp::textureAlignment
+        size_t          bytes,              ///< Number of bytes in the range
+        size_t          tex_offset = 0)     ///< Offset (in items) from \p ptr denoting the position of the iterator
     {
-        return tex_itr.BindTexture(ptr, bytes, tex_offset);
+        this->ptr = ptr;
+        this->tex_offset = tex_offset;
+
+        cudaChannelFormatDesc   channel_desc = cudaCreateChannelDesc<TextureWord>();
+        cudaResourceDesc        res_desc;
+        cudaTextureDesc         tex_desc;
+        memset(&res_desc, 0, sizeof(cudaResourceDesc));
+        memset(&tex_desc, 0, sizeof(cudaTextureDesc));
+        res_desc.resType                = cudaResourceTypeLinear;
+        res_desc.res.linear.devPtr      = ptr;
+        res_desc.res.linear.desc        = channel_desc;
+        res_desc.res.linear.sizeInBytes = bytes;
+        tex_desc.readMode               = cudaReadModeElementType;
+        return cudaCreateTextureObject(&tex_obj, &res_desc, &tex_desc, NULL);
     }
 
     /// Unbind this iterator from its texture reference
     cudaError_t UnbindTexture()
     {
-        return tex_itr.UnbindTexture();
+        return cudaDestroyTextureObject(tex_obj);
     }
 
     /// Postfix increment
     __host__ __device__ __forceinline__ self_type operator++(int)
     {
         self_type retval = *this;
-        tex_itr++;
+        tex_offset++;
         return retval;
     }
 
     /// Indirection
     __host__ __device__ __forceinline__ reference operator*()
     {
-        return conversion_op(*tex_itr);
+#if (CUB_PTX_VERSION == 0)
+        // Simply dereference the pointer on the host
+        return ptr[tex_offset];
+#else
+        // Move array of uninitialized words, then alias and assign to return value
+        TextureWord words[TEXTURE_MULTIPLE];
+
+        #pragma unroll
+        for (int i = 0; i < TEXTURE_MULTIPLE; ++i)
+        {
+            words[i] = tex1Dfetch<TextureWord>(
+                tex_obj,
+                (tex_offset * TEXTURE_MULTIPLE) + i);
+        }
+
+        // Load from words
+        return *reinterpret_cast<T*>(words);
+#endif
     }
 
     /// Addition
     template <typename Distance>
     __host__ __device__ __forceinline__ self_type operator+(Distance n)
     {
-        self_type retval(conversion_op);
-        retval.tex_itr = tex_itr + n;
+        self_type retval;
+        retval.ptr          = ptr;
+        retval.tex_obj      = tex_obj;
+        retval.tex_offset   = tex_offset + n;
         return retval;
     }
 
@@ -1005,7 +1050,7 @@ public:
     template <typename Distance>
     __host__ __device__ __forceinline__ self_type& operator+=(Distance n)
     {
-        tex_itr += n;
+        tex_offset += n;
         return *this;
     }
 
@@ -1013,8 +1058,10 @@ public:
     template <typename Distance>
     __host__ __device__ __forceinline__ self_type operator-(Distance n)
     {
-        self_type retval(conversion_op);
-        retval.tex_itr = tex_itr - n;
+        self_type retval;
+        retval.ptr          = ptr;
+        retval.tex_obj      = tex_obj;
+        retval.tex_offset   = tex_offset - n;
         return retval;
     }
 
@@ -1022,7 +1069,7 @@ public:
     template <typename Distance>
     __host__ __device__ __forceinline__ self_type& operator-=(Distance n)
     {
-        tex_itr -= n;
+        tex_offset -= n;
         return *this;
     }
 
@@ -1030,25 +1077,25 @@ public:
     template <typename Distance>
     __host__ __device__ __forceinline__ reference operator[](Distance n)
     {
-        return conversion_op(tex_itr[n]);
+        return *(*this + n);
     }
 
     /// Structure dereference
     __host__ __device__ __forceinline__ pointer operator->()
     {
-        return &conversion_op(*tex_itr);
+        return &(*(*this));
     }
 
     /// Equal to
     __host__ __device__ __forceinline__ bool operator==(const self_type& rhs)
     {
-        return (tex_itr == rhs.tex_itr);
+        return ((ptr == rhs.ptr) && (tex_offset == rhs.tex_offset) && (tex_obj == rhs.tex_obj));
     }
 
     /// Not equal to
     __host__ __device__ __forceinline__ bool operator!=(const self_type& rhs)
     {
-        return (tex_itr != rhs.tex_itr);
+        return ((ptr != rhs.ptr) || (tex_offset != rhs.tex_offset) || (tex_obj != rhs.tex_obj));
     }
 
     /// ostream operator
@@ -1058,7 +1105,6 @@ public:
     }
 
 };
-
 
 
 

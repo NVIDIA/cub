@@ -38,9 +38,6 @@
 #include "../../../util_type.cuh"
 #include "../../../util_namespace.cuh"
 
-// Mooch
-#include "../../../util_debug.cuh"
-
 /// Optional outer namespace(s)
 CUB_NS_PREFIX
 
@@ -52,11 +49,11 @@ namespace cub {
  * BlockHistogramTilesSharedAtomic implements a stateful abstraction of CUDA thread blocks for histogramming multiple tiles as part of device-wide histogram using shared atomics
  */
 template <
-    typename    BlockHistogramTilesPolicy,          ///< Tuning policy
+    typename    BlockHistogramTilesPolicy,		///< Tuning policy
     int         BINS,                           ///< Number of histogram bins
     int         CHANNELS,                       ///< Number of channels interleaved in the input data (may be greater than the number of active channels being histogrammed)
     int         ACTIVE_CHANNELS,                ///< Number of channels actively being histogrammed
-    typename    InputIterator,                ///< The input iterator type (may be a simple pointer type).  Must have a value type that can be cast as an integer in the range [0..BINS-1]
+    typename    InputIterator,                	///< The input iterator type (may be a simple pointer type).  Must have a value type that can be cast as an integer in the range [0..BINS-1]
     typename    HistoCounter,                   ///< Integral type for counting sample occurrences per histogram bin
     typename    SizeT>                          ///< Integer type for offsets
 struct BlockHistogramTilesSharedAtomic
@@ -214,16 +211,13 @@ struct BlockHistogramTilesSharedAtomic
         // Barrier to ensure shared memory histograms are coherent
         __syncthreads();
 
-        // Mooch
-        HistoCounter save_count = temp_storage.histograms[2][threadIdx.x];
-
         // Copy shared memory histograms to output
-        int channel_offset  = (blockIdx.x * BINS);
+        int channel_offset = (blockIdx.x * BINS);
 
         #pragma unroll
         for (int CHANNEL = 0; CHANNEL < ACTIVE_CHANNELS; ++CHANNEL)
         {
-            int histo_offset    = 0;
+            int histo_offset = 0;
 
             #pragma unroll
             for(; histo_offset + BLOCK_THREADS <= BINS; histo_offset += BLOCK_THREADS)
@@ -232,7 +226,7 @@ struct BlockHistogramTilesSharedAtomic
 
                 d_out_histograms[CHANNEL][channel_offset + histo_offset + threadIdx.x] = count;
             }
-/*
+
             // Finish up with guarded initialization if necessary
             if ((BINS % BLOCK_THREADS != 0) && (histo_offset + threadIdx.x < BINS))
             {
@@ -240,35 +234,7 @@ struct BlockHistogramTilesSharedAtomic
 
                 d_out_histograms[CHANNEL][channel_offset + histo_offset + threadIdx.x] = count;
             }
-*/
         }
-
-        __threadfence();
-        __syncthreads();
-
-        if ((blockIdx.x == 46) && (threadIdx.x == 1))
-        {
-            HistoCounter reread = reinterpret_cast<volatile HistoCounter *>(d_out_histograms[2])[channel_offset + 0 + threadIdx.x];
-
-            CubLog("output %d count %d re-read %d\n",
-                int(&d_out_histograms[2][channel_offset + 0 + threadIdx.x]),
-                save_count,
-                reread);
-        }
-
-        #pragma unroll
-        for (int CHANNEL = 0; CHANNEL < ACTIVE_CHANNELS; ++CHANNEL)
-        {
-            int histo_offset    = 0;
-
-            #pragma unroll
-            for(; histo_offset + BLOCK_THREADS <= BINS; histo_offset += BLOCK_THREADS)
-            {
-                if (int(&d_out_histograms[CHANNEL][channel_offset + histo_offset + threadIdx.x]) == 94648324)
-                    CubLog("COLLISION %d\n!!\n", 9);
-            }
-        }
-
     }
 };
 

@@ -110,8 +110,9 @@ struct BlockScanTiles
 
     // Input iterator wrapper type
     typedef typename If<IsPointer<InputIterator>::VALUE,
-        CacheModifiedInputIterator<BlockScanTilesPolicy::LOAD_MODIFIER, T, SizeT>,      // Wrap the native input pointer with CacheModifiedInputIterator
-        InputIterator>::Type WrappedInputIterator;                                      // Directly use the supplied input iterator type
+            CacheModifiedInputIterator<BlockScanTilesPolicy::LOAD_MODIFIER, T, SizeT>,      // Wrap the native input pointer with CacheModifiedInputIterator
+            InputIterator>::Type                                                            // Directly use the supplied input iterator type
+        WrappedInputIterator;
 
     // Constants
     enum

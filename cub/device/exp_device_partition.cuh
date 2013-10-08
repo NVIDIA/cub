@@ -319,7 +319,7 @@ struct DevicePartition
         Identity                    identity,                       ///< [in] Identity element
         SizeT                       num_items,                      ///< [in] Total number of items to scan
         cudaStream_t                stream              = 0,        ///< [in] <b>[optional]</b> CUDA stream to launch kernels within.  Default is stream<sub>0</sub>.
-        bool                        stream_synchronous  = false)    ///< [in] <b>[optional]</b> Whether or not to synchronize the stream after every kernel launch to check for errors.  Default is \p false.
+        bool                        debug_synchronous  = false)     ///< [in] <b>[optional]</b> Whether or not to synchronize the stream after every kernel launch to check for errors.  Also causes launch configurations to be printed to the console.  Default is \p false.
     {
 
 #ifndef CUB_RUNTIME_ENABLED
@@ -370,7 +370,7 @@ struct DevicePartition
 
             // Log init_kernel configuration
             int init_grid_size = (num_tiles + INIT_KERNEL_THREADS - 1) / INIT_KERNEL_THREADS;
-            if (stream_synchronous) CubLog("Invoking init_kernel<<<%d, %d, 0, %lld>>>()\n", init_grid_size, INIT_KERNEL_THREADS, (long long) stream);
+            if (debug_synchronous) CubLog("Invoking init_kernel<<<%d, %d, 0, %lld>>>()\n", init_grid_size, INIT_KERNEL_THREADS, (long long) stream);
 
             // Invoke init_kernel to initialize tile descriptors and queue descriptors
             init_kernel<<<init_grid_size, INIT_KERNEL_THREADS, 0, stream>>>(
@@ -379,7 +379,7 @@ struct DevicePartition
                 num_tiles);
 
             // Sync the stream if specified
-            if (stream_synchronous && (CubDebug(error = SyncStream(stream)))) break;
+            if (debug_synchronous && (CubDebug(error = SyncStream(stream)))) break;
 
             // Get grid size for multi-block kernel
             int scan_grid_size;
@@ -426,7 +426,7 @@ struct DevicePartition
             }
 
             // Log scan_kernel configuration
-            if (stream_synchronous) CubLog("Invoking scan_kernel<<<%d, %d, 0, %lld>>>(), %d items per thread, %d SM occupancy\n",
+            if (debug_synchronous) CubLog("Invoking scan_kernel<<<%d, %d, 0, %lld>>>(), %d items per thread, %d SM occupancy\n",
                 scan_grid_size, scan_dispatch_params.block_threads, (long long) stream, scan_dispatch_params.items_per_thread, multi_sm_occupancy);
 
             // Invoke scan_kernel
@@ -440,7 +440,7 @@ struct DevicePartition
                 queue);
 
             // Sync the stream if specified
-            if (stream_synchronous && (CubDebug(error = SyncStream(stream)))) break;
+            if (debug_synchronous && (CubDebug(error = SyncStream(stream)))) break;
         }
         while (0);
 
@@ -470,7 +470,7 @@ struct DevicePartition
         Identity                    identity,                       ///< [in] Identity element
         SizeT                       num_items,                      ///< [in] Total number of items to scan
         cudaStream_t                stream              = 0,        ///< [in] <b>[optional]</b> CUDA stream to launch kernels within.  Default is stream<sub>0</sub>.
-        bool                        stream_synchronous  = false)    ///< [in] <b>[optional]</b> Whether or not to synchronize the stream after every kernel launch to check for errors.  Default is \p false.
+        bool                        debug_synchronous  = false)     ///< [in] <b>[optional]</b> Whether or not to synchronize the stream after every kernel launch to check for errors.  Also causes launch configurations to be printed to the console.  Default is \p false.
     {
         // Data type
         typedef typename std::iterator_traits<InputIterator>::value_type T;
@@ -509,7 +509,7 @@ struct DevicePartition
                 identity,
                 num_items,
                 stream,
-                stream_synchronous);
+                debug_synchronous);
 
             if (CubDebug(error)) break;
         }
@@ -575,10 +575,10 @@ struct DevicePartition
         OutputIterator    d_out,                              ///< [in] Iterator pointing to scan output
         int                 num_items,                          ///< [in] Total number of items to scan
         cudaStream_t        stream              = 0,            ///< [in] <b>[optional]</b> CUDA stream to launch kernels within.  Default is stream<sub>0</sub>.
-        bool                stream_synchronous  = false)        ///< [in] <b>[optional]</b> Whether or not to synchronize the stream after every kernel launch to check for errors.  May cause significant slowdown.  Default is \p false.
+        bool                debug_synchronous  = false)        ///< [in] <b>[optional]</b> Whether or not to synchronize the stream after every kernel launch to check for errors.  May cause significant slowdown.  Default is \p false.
     {
         typedef typename std::iterator_traits<InputIterator>::value_type T;
-        return Dispatch(d_temp_storage, temp_storage_bytes, d_in, d_out, Sum(), T(), num_items, stream, stream_synchronous);
+        return Dispatch(d_temp_storage, temp_storage_bytes, d_in, d_out, Sum(), T(), num_items, stream, debug_synchronous);
     }
 
 };

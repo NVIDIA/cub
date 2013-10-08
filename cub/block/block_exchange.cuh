@@ -86,7 +86,7 @@ namespace cub {
  *
  *     // Load a tile of data striped across threads
  *     int thread_data[4];
- *     cub::LoadStriped<LOAD_DEFAULT, 128>(threadIdx.x, d_data, thread_data);
+ *     cub::LoadStriped<128>(threadIdx.x, d_data, thread_data);
  *
  *     // Collectively exchange data into a blocked arrangement across threads
  *     BlockExchange(temp_storage).StripedToBlocked(thread_data);
@@ -724,7 +724,7 @@ public:
      *
      *     // Load a tile of ordered data into a striped arrangement across block threads
      *     int thread_data[4];
-     *     cub::LoadStriped<LOAD_DEFAULT, 128>(threadIdx.x, d_data, thread_data);
+     *     cub::LoadStriped<128>(threadIdx.x, d_data, thread_data);
      *
      *     // Collectively exchange data into a blocked arrangement across threads
      *     BlockExchange(temp_storage).StripedToBlocked(thread_data);

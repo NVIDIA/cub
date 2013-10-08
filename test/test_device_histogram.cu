@@ -79,12 +79,12 @@ cudaError_t Dispatch(
     HistoCounter        *d_histograms[ACTIVE_CHANNELS],
     int                 num_samples,
     cudaStream_t        stream,
-    bool                stream_synchronous)
+    bool                debug_synchronous)
 {
     cudaError_t error = cudaSuccess;
     for (int i = 0; i < timing_iterations; ++i)
     {
-        error = DeviceHistogram::MultiChannelSorting<BINS, CHANNELS, ACTIVE_CHANNELS>(d_temp_storage, temp_storage_bytes, d_sample_itr, d_histograms, num_samples, stream, stream_synchronous);
+        error = DeviceHistogram::MultiChannelSorting<BINS, CHANNELS, ACTIVE_CHANNELS>(d_temp_storage, temp_storage_bytes, d_sample_itr, d_histograms, num_samples, stream, debug_synchronous);
     }
     return error;
 }
@@ -110,12 +110,12 @@ cudaError_t Dispatch(
     HistoCounter        *d_histograms[ACTIVE_CHANNELS],
     int                 num_samples,
     cudaStream_t        stream,
-    bool                stream_synchronous)
+    bool                debug_synchronous)
 {
     cudaError_t error = cudaSuccess;
     for (int i = 0; i < timing_iterations; ++i)
     {
-        error = DeviceHistogram::MultiChannelSharedAtomic<BINS, CHANNELS, ACTIVE_CHANNELS>(d_temp_storage, temp_storage_bytes, d_sample_itr, d_histograms, num_samples, stream, stream_synchronous);
+        error = DeviceHistogram::MultiChannelSharedAtomic<BINS, CHANNELS, ACTIVE_CHANNELS>(d_temp_storage, temp_storage_bytes, d_sample_itr, d_histograms, num_samples, stream, debug_synchronous);
     }
     return error;
 }
@@ -139,12 +139,12 @@ cudaError_t Dispatch(
     HistoCounter        *d_histograms[ACTIVE_CHANNELS],
     int                 num_samples,
     cudaStream_t        stream,
-    bool                stream_synchronous)
+    bool                debug_synchronous)
 {
     cudaError_t error = cudaSuccess;
     for (int i = 0; i < timing_iterations; ++i)
     {
-        error = DeviceHistogram::MultiChannelGlobalAtomic<BINS, CHANNELS, ACTIVE_CHANNELS>(d_temp_storage, temp_storage_bytes, d_sample_itr, d_histograms, num_samples, stream, stream_synchronous);
+        error = DeviceHistogram::MultiChannelGlobalAtomic<BINS, CHANNELS, ACTIVE_CHANNELS>(d_temp_storage, temp_storage_bytes, d_sample_itr, d_histograms, num_samples, stream, debug_synchronous);
     }
     return error;
 }
@@ -169,12 +169,12 @@ __global__ void CnpDispatchKernel(
     InputIterator     d_sample_itr,
     ArrayWrapper<HistoCounter*, ACTIVE_CHANNELS> d_out_histograms,
     int                 num_samples,
-    bool                stream_synchronous)
+    bool                debug_synchronous)
 {
 #ifndef CUB_CDP
     *d_cdp_error = cudaErrorNotSupported;
 #else
-    *d_cdp_error = Dispatch<BINS, CHANNELS, ACTIVE_CHANNELS>(algorithm, Int2Type<false>(), timing_iterations, d_temp_storage_bytes, d_cdp_error, d_temp_storage, temp_storage_bytes, d_sample_itr, d_out_histograms.array, num_samples, 0, stream_synchronous);
+    *d_cdp_error = Dispatch<BINS, CHANNELS, ACTIVE_CHANNELS>(algorithm, Int2Type<false>(), timing_iterations, d_temp_storage_bytes, d_cdp_error, d_temp_storage, temp_storage_bytes, d_sample_itr, d_out_histograms.array, num_samples, 0, debug_synchronous);
     *d_temp_storage_bytes = temp_storage_bytes;
 #endif
 }
@@ -197,7 +197,7 @@ cudaError_t Dispatch(
     HistoCounter        *d_histograms[ACTIVE_CHANNELS],
     int                 num_samples,
     cudaStream_t        stream,
-    bool                stream_synchronous)
+    bool                debug_synchronous)
 {
     // Setup array wrapper for histogram channel output (because we can't pass static arrays as kernel parameters)
     ArrayWrapper<HistoCounter*, ACTIVE_CHANNELS> d_histo_wrapper;
@@ -205,7 +205,7 @@ cudaError_t Dispatch(
         d_histo_wrapper.array[CHANNEL] = d_histograms[CHANNEL];
 
     // Invoke kernel to invoke device-side dispatch
-    CnpDispatchKernel<BINS, CHANNELS, ACTIVE_CHANNELS, InputIterator, HistoCounter, ALGORITHM><<<1,1>>>(algorithm, timing_iterations, d_temp_storage_bytes, d_cdp_error, d_temp_storage, temp_storage_bytes, d_sample_itr, d_histo_wrapper, num_samples, stream_synchronous);
+    CnpDispatchKernel<BINS, CHANNELS, ACTIVE_CHANNELS, InputIterator, HistoCounter, ALGORITHM><<<1,1>>>(algorithm, timing_iterations, d_temp_storage_bytes, d_cdp_error, d_temp_storage, temp_storage_bytes, d_sample_itr, d_histo_wrapper, num_samples, debug_synchronous);
 
     // Copy out temp_storage_bytes
     CubDebugExit(cudaMemcpy(&temp_storage_bytes, d_temp_storage_bytes, sizeof(size_t) * 1, cudaMemcpyDeviceToHost));
@@ -335,8 +335,12 @@ void Test(
     int                         num_samples,
     char*                       type_string)
 {
-    // Binning iterator type for loading through tex and applying a transform operator
-    typedef TexTransformInputIterator<IteratorValue, BinOp, SampleT> BinningIterator;
+    // Texture iterator type for loading samples through tex
+#ifdef CUB_CDP
+    typedef TexObjInputIterator<SampleT, int> TexIterator;
+#else
+    typedef TexRefInputIterator<SampleT, __LINE__, int> TexIterator;
+#endif
 
     int compare         = 0;
     int cdp_compare     = 0;
@@ -384,9 +388,12 @@ void Test(
         d_histograms[CHANNEL] = d_histograms_linear + (CHANNEL * BINS);
     }
 
-    // Create a tex+transform iterator wrapper for SampleT -> IteratorValue conversion
-    BinningIterator d_sample_itr(bin_op);
-    CubDebugExit(d_sample_itr.BindTexture(d_samples, sizeof(SampleT) * num_samples));
+    // Create a texture iterator wrapper
+    TexIterator tex_itr;
+    CubDebugExit(tex_itr.BindTexture(d_samples, sizeof(SampleT) * num_samples))
+
+    // Create a transform iterator wrapper for SampleT -> IteratorValue conversion
+    TransformInputIterator<IteratorValue, BinOp, TexIterator, int> d_sample_itr(tex_itr, bin_op);
 
     // Allocate temporary storage
     void            *d_temp_storage = NULL;
@@ -430,7 +437,7 @@ void Test(
     printf("\n\n");
 
     // Cleanup
-    CubDebugExit(d_sample_itr.UnbindTexture());
+    CubDebugExit(tex_itr.UnbindTexture());
     if (h_samples) delete[] h_samples;
     if (h_reference_linear) delete[] h_reference_linear;
     if (d_samples) CubDebugExit(g_allocator.DeviceFree(d_samples));
@@ -599,10 +606,6 @@ int main(int argc, char** argv)
     // Initialize device
     CubDebugExit(args.DeviceInit());
 
-    TestCnp<256, 4, 3, unsigned char, unsigned char, int>(
-        Int2Type<HISTO_TILES_SHARED_ATOMIC>(), RANDOM, Cast<unsigned char>(), 400000, CUB_TYPE_STRING(unsigned char));
-
-/*
     if (quick)
     {
         // Quick test
@@ -648,7 +651,7 @@ int main(int argc, char** argv)
             Test<512, float,            unsigned short, int>(FloatScaleOp<unsigned short, 512>(), num_samples, CUB_TYPE_STRING(float));
         }
     }
-*/
+
     return 0;
 }
 

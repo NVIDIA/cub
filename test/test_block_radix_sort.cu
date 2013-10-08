@@ -102,8 +102,8 @@ __global__ void Kernel(
     Key keys[ITEMS_PER_THREAD];
     Value values[ITEMS_PER_THREAD];
 
-    LoadBlocked<LOAD_DEFAULT>(threadIdx.x, d_keys, keys);
-    LoadBlocked<LOAD_DEFAULT>(threadIdx.x, d_values, values);
+    LoadBlocked(threadIdx.x, d_keys, keys);
+    LoadBlocked(threadIdx.x, d_values, values);
 
     // Start cycle timer
     clock_t start = clock();
@@ -114,8 +114,8 @@ __global__ void Kernel(
     // Stop cycle timer
     clock_t stop = clock();
 
-    StoreStriped<STORE_DEFAULT, BLOCK_THREADS>(threadIdx.x, d_keys, keys);
-    StoreStriped<STORE_DEFAULT, BLOCK_THREADS>(threadIdx.x, d_values, values);
+    StoreStriped<BLOCK_THREADS>(threadIdx.x, d_keys, keys);
+    StoreStriped<BLOCK_THREADS>(threadIdx.x, d_values, values);
 
     // Store time
     if (threadIdx.x == 0)
@@ -164,7 +164,7 @@ __global__ void Kernel(
     // Keys per thread
     Key keys[ITEMS_PER_THREAD];
 
-    LoadBlocked<LOAD_DEFAULT>(threadIdx.x, d_keys, keys);
+    LoadBlocked(threadIdx.x, d_keys, keys);
 
     // Start cycle timer
     clock_t start = clock();
@@ -175,7 +175,7 @@ __global__ void Kernel(
     // Stop cycle timer
     clock_t stop = clock();
 
-    StoreStriped<STORE_DEFAULT, BLOCK_THREADS>(threadIdx.x, d_keys, keys);
+    StoreStriped<BLOCK_THREADS>(threadIdx.x, d_keys, keys);
 
     // Store time
     if (threadIdx.x == 0)
@@ -390,11 +390,7 @@ template <
 void Test()
 {
     Valid<BLOCK_THREADS, ITEMS_PER_THREAD, RADIX_BITS, MEMOIZE_OUTER_SCAN, INNER_SCAN_ALGORITHM, SMEM_CONFIG, Key, NullType>::Test();         // Keys-only
-
-    Valid<BLOCK_THREADS, ITEMS_PER_THREAD, RADIX_BITS, MEMOIZE_OUTER_SCAN, INNER_SCAN_ALGORITHM, SMEM_CONFIG, Key, unsigned char>::Test();
-    Valid<BLOCK_THREADS, ITEMS_PER_THREAD, RADIX_BITS, MEMOIZE_OUTER_SCAN, INNER_SCAN_ALGORITHM, SMEM_CONFIG, Key, unsigned short>::Test();
-    Valid<BLOCK_THREADS, ITEMS_PER_THREAD, RADIX_BITS, MEMOIZE_OUTER_SCAN, INNER_SCAN_ALGORITHM, SMEM_CONFIG, Key, unsigned int>::Test();
-    Valid<BLOCK_THREADS, ITEMS_PER_THREAD, RADIX_BITS, MEMOIZE_OUTER_SCAN, INNER_SCAN_ALGORITHM, SMEM_CONFIG, Key, unsigned long long>::Test();
+    Valid<BLOCK_THREADS, ITEMS_PER_THREAD, RADIX_BITS, MEMOIZE_OUTER_SCAN, INNER_SCAN_ALGORITHM, SMEM_CONFIG, Key, Key>::Test();         // Keys-only
 }
 
 
@@ -413,11 +409,15 @@ void Test()
     Test<BLOCK_THREADS, ITEMS_PER_THREAD, RADIX_BITS, MEMOIZE_OUTER_SCAN, INNER_SCAN_ALGORITHM, SMEM_CONFIG, unsigned char>();
     Test<BLOCK_THREADS, ITEMS_PER_THREAD, RADIX_BITS, MEMOIZE_OUTER_SCAN, INNER_SCAN_ALGORITHM, SMEM_CONFIG, unsigned short>();
     Test<BLOCK_THREADS, ITEMS_PER_THREAD, RADIX_BITS, MEMOIZE_OUTER_SCAN, INNER_SCAN_ALGORITHM, SMEM_CONFIG, unsigned int>();
+    Test<BLOCK_THREADS, ITEMS_PER_THREAD, RADIX_BITS, MEMOIZE_OUTER_SCAN, INNER_SCAN_ALGORITHM, SMEM_CONFIG, unsigned long>();
     Test<BLOCK_THREADS, ITEMS_PER_THREAD, RADIX_BITS, MEMOIZE_OUTER_SCAN, INNER_SCAN_ALGORITHM, SMEM_CONFIG, unsigned long long>();
 
     Test<BLOCK_THREADS, ITEMS_PER_THREAD, RADIX_BITS, MEMOIZE_OUTER_SCAN, INNER_SCAN_ALGORITHM, SMEM_CONFIG, char>();
     Test<BLOCK_THREADS, ITEMS_PER_THREAD, RADIX_BITS, MEMOIZE_OUTER_SCAN, INNER_SCAN_ALGORITHM, SMEM_CONFIG, short>();
     Test<BLOCK_THREADS, ITEMS_PER_THREAD, RADIX_BITS, MEMOIZE_OUTER_SCAN, INNER_SCAN_ALGORITHM, SMEM_CONFIG, int>();
+    Test<BLOCK_THREADS, ITEMS_PER_THREAD, RADIX_BITS, MEMOIZE_OUTER_SCAN, INNER_SCAN_ALGORITHM, SMEM_CONFIG, long>();
+    Test<BLOCK_THREADS, ITEMS_PER_THREAD, RADIX_BITS, MEMOIZE_OUTER_SCAN, INNER_SCAN_ALGORITHM, SMEM_CONFIG, long long>();
+
     Test<BLOCK_THREADS, ITEMS_PER_THREAD, RADIX_BITS, MEMOIZE_OUTER_SCAN, INNER_SCAN_ALGORITHM, SMEM_CONFIG, float>();
     Test<BLOCK_THREADS, ITEMS_PER_THREAD, RADIX_BITS, MEMOIZE_OUTER_SCAN, INNER_SCAN_ALGORITHM, SMEM_CONFIG, double>();
 }
@@ -489,7 +489,7 @@ template <int BLOCK_THREADS>
 void Test()
 {
     Test<BLOCK_THREADS, 1>();
-    Test<BLOCK_THREADS, 8>();
+//    Test<BLOCK_THREADS, 8>();     // unnecessary
     Test<BLOCK_THREADS, 11>();
 }
 
@@ -520,13 +520,13 @@ int main(int argc, char** argv)
     // Quick test
     typedef unsigned int T;
     TestDriver<64, 2, 5, true, BLOCK_SCAN_WARP_SCANS, cudaSharedMemBankSizeFourByte, T, NullType>(0, 0, sizeof(T) * 8);
-/*
+
     // Test threads
     Test<32>();
-    Test<64>();
+//    Test<64>();                   // unnecessary
     Test<128>();
     Test<256>();
-*/
+
     return 0;
 }
 
