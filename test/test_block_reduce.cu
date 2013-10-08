@@ -140,7 +140,7 @@ __global__ void FullTileReduceKernel(
 
     // Load first tile of data
     int block_offset = 0;
-    LoadBlocked<LOAD_DEFAULT>(threadIdx.x, d_in + block_offset, data);
+    LoadBlocked(threadIdx.x, d_in + block_offset, data);
     block_offset += TILE_SIZE;
 
     // Cooperative reduce first tile
@@ -153,7 +153,7 @@ __global__ void FullTileReduceKernel(
         __syncthreads();
 
         // Load tile of data
-        LoadBlocked<LOAD_DEFAULT>(threadIdx.x, d_in + block_offset, data);
+        LoadBlocked(threadIdx.x, d_in + block_offset, data);
         block_offset += TILE_SIZE;
 
         // Cooperatively reduce the tile's aggregate

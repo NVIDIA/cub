@@ -222,20 +222,18 @@ __global__ void RadixSortDownsweepKernel(
 }
 
 
-#endif // DOXYGEN_SHOULD_SKIP_THIS
-
-
-
-
 
 /******************************************************************************
  * Dispatch
  ******************************************************************************/
 
+/**
+ * Utility class for dispatching the appropriately-tuned kernels for DeviceRadixSort
+ */
 template <
-    typename            Key,            ///< Key type
-    typename            Value,          ///< Value type
-    typename            SizeT>          ///< Integer type used for global array indexing
+    typename Key,            ///< Key type
+    typename Value,          ///< Value type
+    typename SizeT>          ///< Integer type used for global array indexing
 struct DeviceRadixSortDispatch
 {
     /******************************************************************************
@@ -255,11 +253,7 @@ struct DeviceRadixSortDispatch
         typedef BlockRadixSortUpsweepTilesPolicy <64,     CUB_MAX(1, 18 / SCALE_FACTOR), LOAD_LDG, RADIX_BITS> UpsweepPolicyKeys;
         typedef BlockRadixSortUpsweepTilesPolicy <128,    CUB_MAX(1, 15 / SCALE_FACTOR), LOAD_LDG, RADIX_BITS> UpsweepPolicyPairs;
         typedef typename If<KEYS_ONLY, UpsweepPolicyKeys, UpsweepPolicyPairs>::Type UpsweepPolicy;
-/*
-        // 4bit
-        typedef BlockRadixSortUpsweepTilesPolicy <128, 15, LOAD_LDG, RADIX_BITS> UpsweepPolicyKeys;
-        typedef BlockRadixSortUpsweepTilesPolicy <256, 13, LOAD_LDG, RADIX_BITS> UpsweepPolicyPairs;
-*/
+
         // ScanPolicy
         typedef BlockScanTilesPolicy <1024, 4, BLOCK_LOAD_VECTORIZE, false, LOAD_DEFAULT, BLOCK_STORE_VECTORIZE, false, BLOCK_SCAN_RAKING_MEMOIZE> ScanPolicy;
 
@@ -270,6 +264,10 @@ struct DeviceRadixSortDispatch
 
 /*
         // 4bit
+
+        typedef BlockRadixSortUpsweepTilesPolicy <128, 15, LOAD_LDG, RADIX_BITS> UpsweepPolicyKeys;
+        typedef BlockRadixSortUpsweepTilesPolicy <256, 13, LOAD_LDG, RADIX_BITS> UpsweepPolicyPairs;
+
         typedef BlockRadixSortDownsweepTilesPolicy <128, 15, BLOCK_LOAD_DIRECT, LOAD_LDG, false, true, BLOCK_SCAN_WARP_SCANS, RADIX_SORT_SCATTER_TWO_PHASE, cudaSharedMemBankSizeEightByte, RADIX_BITS> DownsweepPolicyKeys;
         typedef BlockRadixSortDownsweepTilesPolicy <256, 13, BLOCK_LOAD_DIRECT, LOAD_LDG, false, true, BLOCK_SCAN_WARP_SCANS, RADIX_SORT_SCATTER_TWO_PHASE, cudaSharedMemBankSizeEightByte, RADIX_BITS> DownsweepPolicyPairs;
 */
@@ -387,6 +385,7 @@ struct DeviceRadixSortDispatch
 
 #endif
 
+    // "Opaque" policies (whose parameterizations aren't reflected in the type signature)
     struct PtxUpsweepPolicy    : PtxPolicy::UpsweepPolicy {};
     struct PtxScanPolicy       : PtxPolicy::ScanPolicy {};
     struct PtxDownsweepPolicy  : PtxPolicy::DownsweepPolicy {};
@@ -509,9 +508,9 @@ struct DeviceRadixSortDispatch
      ******************************************************************************/
 
     /**
-     * Internal dispatch routine
-     */
-    template <
+     * Internal dispatch routine for computing a device-wide radix sort using the
+     * specified kernel functions.
+     */    template <
         typename            UpsweepKernelPtr,                   ///< Function type of cub::RadixSortUpsweepKernel
         typename            SpineKernelPtr,                     ///< Function type of cub::SpineScanKernel
         typename            DownsweepKernelPtr>                 ///< Function type of cub::RadixSortUpsweepKernel
@@ -525,14 +524,14 @@ struct DeviceRadixSortDispatch
         int                     begin_bit,                      ///< [in] <b>[optional]</b> The beginning (least-significant) bit index needed for key comparison
         int                     end_bit,                        ///< [in] <b>[optional]</b> The past-the-end (most-significant) bit index needed for key comparison
         cudaStream_t            stream,                         ///< [in] <b>[optional]</b> CUDA stream to launch kernels within.  Default is stream<sub>0</sub>.
-        bool                    stream_synchronous,             ///< [in] <b>[optional]</b> Whether or not to synchronize the stream after every kernel launch to check for errors.  Default is \p false.
-        int                     sm_version,
+        bool                    debug_synchronous,              ///< [in] <b>[optional]</b> Whether or not to synchronize the stream after every kernel launch to check for errors.  Also causes launch configurations to be printed to the console.  Default is \p false.
+        int                     sm_version,                     ///< [in] SM version of target device to use when computing SM occupancy
         UpsweepKernelPtr        upsweep_kernel,                 ///< [in] Kernel function pointer to parameterization of cub::RadixSortUpsweepKernel
         SpineKernelPtr          scan_kernel,                    ///< [in] Kernel function pointer to parameterization of cub::SpineScanKernel
         DownsweepKernelPtr      downsweep_kernel,               ///< [in] Kernel function pointer to parameterization of cub::RadixSortUpsweepKernel
-        KernelDispatchConfig    &upsweep_config,       ///< [in] Dispatch parameters that match the policy that \p upsweep_kernel was compiled for
-        KernelDispatchConfig    &scan_config,          ///< [in] Dispatch parameters that match the policy that \p scan_kernel was compiled for
-        KernelDispatchConfig    &downsweep_config)     ///< [in] Dispatch parameters that match the policy that \p downsweep_kernel was compiled for
+        KernelDispatchConfig    &upsweep_config,                ///< [in] Dispatch parameters that match the policy that \p upsweep_kernel was compiled for
+        KernelDispatchConfig    &scan_config,                   ///< [in] Dispatch parameters that match the policy that \p scan_kernel was compiled for
+        KernelDispatchConfig    &downsweep_config)              ///< [in] Dispatch parameters that match the policy that \p downsweep_kernel was compiled for
     {
 #ifndef CUB_RUNTIME_ENABLED
 
@@ -634,7 +633,7 @@ struct DeviceRadixSortDispatch
 #endif
 
                 // Log upsweep_kernel configuration
-                if (stream_synchronous)
+                if (debug_synchronous)
                     CubLog("Invoking upsweep_kernel<<<%d, %d, 0, %lld>>>(), %d smem config, %d items per thread, %d SM occupancy, selector %d, current bit %d, bit_grain %d\n",
                     downsweep_grid_size, upsweep_config.block_threads, (long long) stream, upsweep_config.smem_config, upsweep_config.items_per_thread, upsweep_sm_occupancy, d_keys.selector, current_bit, radix_bits);
 
@@ -649,10 +648,10 @@ struct DeviceRadixSortDispatch
                     even_share);
 
                 // Sync the stream if specified
-                if (stream_synchronous && (CubDebug(error = SyncStream(stream)))) break;
+                if (debug_synchronous && (CubDebug(error = SyncStream(stream)))) break;
 
                 // Log scan_kernel configuration
-                if (stream_synchronous) CubLog("Invoking scan_kernel<<<%d, %d, 0, %lld>>>(), %d items per thread\n",
+                if (debug_synchronous) CubLog("Invoking scan_kernel<<<%d, %d, 0, %lld>>>(), %d items per thread\n",
                     1, scan_config.block_threads, (long long) stream, scan_config.items_per_thread);
 
                 // Invoke scan_kernel
@@ -661,7 +660,7 @@ struct DeviceRadixSortDispatch
                     spine_size);
 
                 // Sync the stream if specified
-                if (stream_synchronous && (CubDebug(error = SyncStream(stream)))) break;
+                if (debug_synchronous && (CubDebug(error = SyncStream(stream)))) break;
 
 #ifndef __CUDA_ARCH__
                 // Update smem config if necessary
@@ -673,7 +672,7 @@ struct DeviceRadixSortDispatch
 #endif
 
                 // Log downsweep_kernel configuration
-                if (stream_synchronous) CubLog("Invoking downsweep_kernel<<<%d, %d, 0, %lld>>>(), %d smem config, %d items per thread, %d SM occupancy\n",
+                if (debug_synchronous) CubLog("Invoking downsweep_kernel<<<%d, %d, 0, %lld>>>(), %d smem config, %d items per thread, %d SM occupancy\n",
                     downsweep_grid_size, downsweep_config.block_threads, (long long) stream, downsweep_config.smem_config, downsweep_config.items_per_thread, downsweep_sm_occupancy);
 
                 // Invoke downsweep_kernel
@@ -691,7 +690,7 @@ struct DeviceRadixSortDispatch
                     even_share);
 
                 // Sync the stream if specified
-                if (stream_synchronous && (CubDebug(error = SyncStream(stream)))) break;
+                if (debug_synchronous && (CubDebug(error = SyncStream(stream)))) break;
 
                 // Invert selectors
                 d_keys.selector ^= 1;
@@ -731,7 +730,7 @@ struct DeviceRadixSortDispatch
         int                     begin_bit,                      ///< [in] <b>[optional]</b> The beginning (least-significant) bit index needed for key comparison
         int                     end_bit,                        ///< [in] <b>[optional]</b> The past-the-end (most-significant) bit index needed for key comparison
         cudaStream_t            stream,                         ///< [in] <b>[optional]</b> CUDA stream to launch kernels within.  Default is stream<sub>0</sub>.
-        bool                    stream_synchronous)             ///< [in] <b>[optional]</b> Whether or not to synchronize the stream after every kernel launch to check for errors.  Default is \p false.
+        bool                    debug_synchronous)              ///< [in] <b>[optional]</b> Whether or not to synchronize the stream after every kernel launch to check for errors.  Also causes launch configurations to be printed to the console.  Default is \p false.
     {
         cudaError error = cudaSuccess;
         do
@@ -760,7 +759,7 @@ struct DeviceRadixSortDispatch
                 begin_bit,
                 end_bit,
                 stream,
-                stream_synchronous,
+                debug_synchronous,
                 ptx_version,            // Use PTX version instead of SM version because, as a statically known quantity, this improves device-side launch dramatically but at the risk of imprecise occupancy calculation for mismatches
                 RadixSortUpsweepKernel<PtxUpsweepPolicy, Key, SizeT>,
                 RadixSortScanKernel<PtxScanPolicy, SizeT>,
@@ -777,6 +776,7 @@ struct DeviceRadixSortDispatch
 };
 
 
+#endif // DOXYGEN_SHOULD_SKIP_THIS
 
 
 
@@ -872,7 +872,7 @@ struct DeviceRadixSort
         int                 begin_bit           = 0,                ///< [in] <b>[optional]</b> The first (least-significant) bit index needed for key comparison
         int                 end_bit             = sizeof(Key) * 8,  ///< [in] <b>[optional]</b> The past-the-end (most-significant) bit index needed for key comparison
         cudaStream_t        stream              = 0,                ///< [in] <b>[optional]</b> CUDA stream to launch kernels within.  Default is stream<sub>0</sub>.
-        bool                stream_synchronous  = false)            ///< [in] <b>[optional]</b> Whether or not to synchronize the stream after every kernel launch to check for errors.  Default is \p false.
+        bool                debug_synchronous  = false)             ///< [in] <b>[optional]</b> Whether or not to synchronize the stream after every kernel launch to check for errors.  Also causes launch configurations to be printed to the console.  Default is \p false.
     {
         typedef int SizeT;
         return DeviceRadixSortDispatch<Key, Value, SizeT>::Dispatch(
@@ -884,7 +884,7 @@ struct DeviceRadixSort
             begin_bit,
             end_bit,
             stream,
-            stream_synchronous);
+            debug_synchronous);
     }
 
 
@@ -940,10 +940,10 @@ struct DeviceRadixSort
         int                 begin_bit           = 0,                ///< [in] <b>[optional]</b> The first (least-significant) bit index needed for key comparison
         int                 end_bit             = sizeof(Key) * 8,  ///< [in] <b>[optional]</b> The past-the-end (most-significant) bit index needed for key comparison
         cudaStream_t        stream              = 0,                ///< [in] <b>[optional]</b> CUDA stream to launch kernels within.  Default is stream<sub>0</sub>.
-        bool                stream_synchronous  = false)            ///< [in] <b>[optional]</b> Whether or not to synchronize the stream after every kernel launch to check for errors.  Default is \p false.
+        bool                debug_synchronous  = false)             ///< [in] <b>[optional]</b> Whether or not to synchronize the stream after every kernel launch to check for errors.  Also causes launch configurations to be printed to the console.  Default is \p false.
     {
         DoubleBuffer<NullType> d_values;
-        return SortPairs(d_temp_storage, temp_storage_bytes, d_keys, d_values, num_items, begin_bit, end_bit, stream, stream_synchronous);
+        return SortPairs(d_temp_storage, temp_storage_bytes, d_keys, d_values, num_items, begin_bit, end_bit, stream, debug_synchronous);
     }
 
 };

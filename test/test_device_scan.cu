@@ -77,12 +77,12 @@ cudaError_t Dispatch(
     Identity            identity,
     SizeT               num_items,
     cudaStream_t        stream,
-    bool                stream_synchronous)
+    bool                debug_synchronous)
 {
     cudaError_t error = cudaSuccess;
     for (int i = 0; i < timing_iterations; ++i)
     {
-        error = DeviceScan::ExclusiveScan(d_temp_storage, temp_storage_bytes, d_in, d_out, scan_op, identity, num_items, stream, stream_synchronous);
+        error = DeviceScan::ExclusiveScan(d_temp_storage, temp_storage_bytes, d_in, d_out, scan_op, identity, num_items, stream, debug_synchronous);
     }
     return error;
 }
@@ -107,12 +107,12 @@ cudaError_t Dispatch(
     Identity            identity,
     SizeT               num_items,
     cudaStream_t        stream,
-    bool                stream_synchronous)
+    bool                debug_synchronous)
 {
     cudaError_t error = cudaSuccess;
     for (int i = 0; i < timing_iterations; ++i)
     {
-        error = DeviceScan::ExclusiveSum(d_temp_storage, temp_storage_bytes, d_in, d_out, num_items, stream, stream_synchronous);
+        error = DeviceScan::ExclusiveSum(d_temp_storage, temp_storage_bytes, d_in, d_out, num_items, stream, debug_synchronous);
     }
     return error;
 }
@@ -137,12 +137,12 @@ cudaError_t Dispatch(
     NullType            identity,
     SizeT               num_items,
     cudaStream_t        stream,
-    bool                stream_synchronous)
+    bool                debug_synchronous)
 {
     cudaError_t error = cudaSuccess;
     for (int i = 0; i < timing_iterations; ++i)
     {
-        error = DeviceScan::InclusiveScan(d_temp_storage, temp_storage_bytes, d_in, d_out, scan_op, num_items, stream, stream_synchronous);
+        error = DeviceScan::InclusiveScan(d_temp_storage, temp_storage_bytes, d_in, d_out, scan_op, num_items, stream, debug_synchronous);
     }
     return error;
 }
@@ -167,12 +167,12 @@ cudaError_t Dispatch(
     NullType            identity,
     SizeT               num_items,
     cudaStream_t        stream,
-    bool                stream_synchronous)
+    bool                debug_synchronous)
 {
     cudaError_t error = cudaSuccess;
     for (int i = 0; i < timing_iterations; ++i)
     {
-        error = DeviceScan::InclusiveSum(d_temp_storage, temp_storage_bytes, d_in, d_out, num_items, stream, stream_synchronous);
+        error = DeviceScan::InclusiveSum(d_temp_storage, temp_storage_bytes, d_in, d_out, num_items, stream, debug_synchronous);
     }
     return error;
 }
@@ -198,12 +198,12 @@ __global__ void CnpDispatchKernel(
     ScanOp              scan_op,
     Identity            identity,
     SizeT               num_items,
-    bool                stream_synchronous)
+    bool                debug_synchronous)
 {
 #ifndef CUB_CDP
     *d_cdp_error = cudaErrorNotSupported;
 #else
-    *d_cdp_error = Dispatch(Int2Type<false>(), timing_iterations, d_temp_storage_bytes, d_cdp_error, d_temp_storage, temp_storage_bytes, d_in, d_out, scan_op, identity, num_items, 0, stream_synchronous);
+    *d_cdp_error = Dispatch(Int2Type<false>(), timing_iterations, d_temp_storage_bytes, d_cdp_error, d_temp_storage, temp_storage_bytes, d_in, d_out, scan_op, identity, num_items, 0, debug_synchronous);
     *d_temp_storage_bytes = temp_storage_bytes;
 #endif
 }
@@ -227,10 +227,10 @@ cudaError_t Dispatch(
     Identity            identity,
     SizeT               num_items,
     cudaStream_t        stream,
-    bool                stream_synchronous)
+    bool                debug_synchronous)
 {
     // Invoke kernel to invoke device-side dispatch
-    CnpDispatchKernel<<<1,1>>>(timing_iterations, d_temp_storage_bytes, d_cdp_error, d_temp_storage, temp_storage_bytes, d_in, d_out, scan_op, identity, num_items, stream_synchronous);
+    CnpDispatchKernel<<<1,1>>>(timing_iterations, d_temp_storage_bytes, d_cdp_error, d_temp_storage, temp_storage_bytes, d_in, d_out, scan_op, identity, num_items, debug_synchronous);
 
     // Copy out temp_storage_bytes
     CubDebugExit(cudaMemcpy(&temp_storage_bytes, d_temp_storage_bytes, sizeof(size_t) * 1, cudaMemcpyDeviceToHost));

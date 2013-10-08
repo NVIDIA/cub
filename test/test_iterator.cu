@@ -158,7 +158,7 @@ void Test(
 template <typename T>
 void TestConstant(T base, char *type_string)
 {
-    printf("\nTesting constant iterator on type %s (base: %d)\n", type_string, base);
+    printf("\nTesting constant iterator on type %s (base: %d)\n", type_string, base); fflush(stdout);
 
     T h_reference[8] = {base, base, base, base, base, base, base, base};
 
@@ -172,7 +172,7 @@ void TestConstant(T base, char *type_string)
 template <typename T>
 void TestCounting(T base, char *type_string)
 {
-    printf("\nTesting counting iterator on type %s (base: %d) \n", type_string, base);
+    printf("\nTesting counting iterator on type %s (base: %d) \n", type_string, base); fflush(stdout);
 
     // Initialize reference data
     T h_reference[8];
@@ -195,7 +195,7 @@ void TestCounting(T base, char *type_string)
 template <typename T>
 void TestModified(char *type_string)
 {
-    printf("\nTesting cache-modified iterator on type %s\n", type_string);
+    printf("\nTesting cache-modified iterator on type %s\n", type_string); fflush(stdout);
 
     const unsigned int TEST_VALUES = 11000;
 
@@ -241,7 +241,7 @@ void TestModified(char *type_string)
 template <typename T>
 void TestTransform(char *type_string)
 {
-    printf("\nTesting transform iterator on type %s\n", type_string);
+    printf("\nTesting transform iterator on type %s\n", type_string); fflush(stdout);
 
     const unsigned int TEST_VALUES = 11000;
 
@@ -283,7 +283,7 @@ void TestTransform(char *type_string)
 template <typename T>
 void TestTexture(char *type_string)
 {
-    printf("\nTesting texture iterator on type %s\n", type_string);
+    printf("\nTesting texture iterator on type %s\n", type_string); fflush(stdout);
 
     const unsigned int TEST_VALUES          = 11000;
     const unsigned int DUMMY_OFFSET         = 500;
@@ -315,19 +315,35 @@ void TestTexture(char *type_string)
     h_reference[6] = h_data[11];         // Value at offset 11
     h_reference[7] = h_data[0];          // Value at offset 0;
 
-    // Create and bind test iterator
-    TexInputIterator<T, __LINE__> d_itr;
-    CubDebugExit(d_itr.BindTexture(d_data, sizeof(T) * TEST_VALUES));
+    // Create and bind ref-based test iterator
+    TexRefInputIterator<T, __LINE__> d_ref_itr;
+    CubDebugExit(d_ref_itr.BindTexture(d_data, sizeof(T) * TEST_VALUES));
 
     // Create and bind dummy iterator of same type to check with interferance
-    TexInputIterator<T, __LINE__> d_dummy_itr;
-    CubDebugExit(d_dummy_itr.BindTexture(d_dummy, sizeof(T) * DUMMY_TEST_VALUES));
+    TexRefInputIterator<T, __LINE__> d_ref_itr2;
+    CubDebugExit(d_ref_itr2.BindTexture(d_dummy, sizeof(T) * DUMMY_TEST_VALUES));
 
-    Test(d_itr, h_reference);
+    Test(d_ref_itr, h_reference);
 
     // Cleanup
-    CubDebugExit(d_itr.UnbindTexture());
-    CubDebugExit(d_dummy_itr.UnbindTexture());
+    CubDebugExit(d_ref_itr.UnbindTexture());
+    CubDebugExit(d_ref_itr2.UnbindTexture());
+
+#ifdef CUB_CDP
+
+    // Create and bind obj-based test iterator
+    TexObjInputIterator<T> d_obj_itr;
+    CubDebugExit(d_obj_itr.BindTexture(d_data, sizeof(T) * TEST_VALUES));
+
+    Test(d_obj_itr, h_reference);
+
+    // Cleanup
+    CubDebugExit(d_obj_itr.UnbindTexture());
+
+#endif
+
+
+    // Cleanup
     if (h_data) delete[] h_data;
     if (d_data) CubDebugExit(g_allocator.DeviceFree(d_data));
     if (d_dummy) CubDebugExit(g_allocator.DeviceFree(d_dummy));
@@ -340,7 +356,7 @@ void TestTexture(char *type_string)
 template <typename T>
 void TestTexTransform(char *type_string)
 {
-    printf("\nTesting tex-transform iterator on type %s\n", type_string);
+    printf("\nTesting tex-transform iterator on type %s\n", type_string); fflush(stdout);
 
     const unsigned int TEST_VALUES = 11000;
 
@@ -368,14 +384,19 @@ void TestTexTransform(char *type_string)
     h_reference[6] = op(h_data[11]);         // Value at offset 11
     h_reference[7] = op(h_data[0]);          // Value at offset 0;
 
-    // Create and bind iterator
-    TexTransformInputIterator<T, TransformOp<T>, T, __LINE__> d_itr(op);
-    CubDebugExit(d_itr.BindTexture(d_data, sizeof(T) * TEST_VALUES));
+    // Create and bind texture iterator
+    typedef TexRefInputIterator<T, __LINE__> TextureIterator;
 
-    Test(d_itr, h_reference);
+    TextureIterator d_tex_itr;
+    CubDebugExit(d_tex_itr.BindTexture(d_data, sizeof(T) * TEST_VALUES));
+
+    // Create transform iterator
+    TransformInputIterator<T, TransformOp<T>, TextureIterator> xform_itr(d_tex_itr, op);
+
+    Test(xform_itr, h_reference);
 
     // Cleanup
-    CubDebugExit(d_itr.UnbindTexture());
+    CubDebugExit(d_tex_itr.UnbindTexture());
     if (h_data) delete[] h_data;
     if (d_data) CubDebugExit(g_allocator.DeviceFree(d_data));
 }
@@ -479,6 +500,8 @@ int main(int argc, char** argv)
 
     Test<TestFoo>(CUB_TYPE_STRING(TestFoo));
     Test<TestBar>(CUB_TYPE_STRING(TestBar));
+
+    printf("\nTest complete\n"); fflush(stdout);
 
     return 0;
 }

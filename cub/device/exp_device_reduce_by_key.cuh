@@ -286,7 +286,7 @@ struct DeviceReduceByKey
         Identity                    identity,                       ///< [in] Identity element
         SizeT                       num_items,                      ///< [in] Total number of items to scan
         cudaStream_t                stream              = 0,        ///< [in] <b>[optional]</b> CUDA stream to launch kernels within.  Default is stream<sub>0</sub>.
-        bool                        stream_synchronous  = false)    ///< [in] <b>[optional]</b> Whether or not to synchronize the stream after every kernel launch to check for errors.  Default is \p false.
+        bool                        debug_synchronous  = false)     ///< [in] <b>[optional]</b> Whether or not to synchronize the stream after every kernel launch to check for errors.  Also causes launch configurations to be printed to the console.  Default is \p false.
     {
 
 #ifndef CUB_RUNTIME_ENABLED
@@ -342,7 +342,7 @@ struct DeviceReduceByKey
             // Log init_kernel configuration
             int init_kernel_threads = 128;
             int init_grid_size = (num_tiles + init_kernel_threads - 1) / init_kernel_threads;
-            if (stream_synchronous) CubLog("Invoking init_kernel<<<%d, %d, 0, %lld>>>()\n", init_grid_size, init_kernel_threads, (long long) stream);
+            if (debug_synchronous) CubLog("Invoking init_kernel<<<%d, %d, 0, %lld>>>()\n", init_grid_size, init_kernel_threads, (long long) stream);
 
             // Invoke init_kernel to initialize tile descriptors and queue descriptors
             init_kernel<<<init_grid_size, init_kernel_threads, 0, stream>>>(
@@ -352,9 +352,9 @@ struct DeviceReduceByKey
 
             // Sync the stream if specified
 #ifndef __CUDA_ARCH__
-            if (stream_synchronous && CubDebug(error = cudaStreamSynchronize(stream))) break;
+            if (debug_synchronous && CubDebug(error = cudaStreamSynchronize(stream))) break;
 #else
-            if (stream_synchronous && CubDebug(error = cudaDeviceSynchronize())) break;
+            if (debug_synchronous && CubDebug(error = cudaDeviceSynchronize())) break;
 #endif
 
             // Get a rough estimate of multi_block_kernel SM occupancy based upon the maximum SM occupancy of the targeted PTX architecture
@@ -383,7 +383,7 @@ struct DeviceReduceByKey
                 multi_block_occupancy;            // Fill the device with threadblocks
 
             // Log multi_block_kernel configuration
-            if (stream_synchronous) CubLog("Invoking multi_block_kernel<<<%d, %d, 0, %lld>>>(), %d items per thread, %d SM occupancy\n",
+            if (debug_synchronous) CubLog("Invoking multi_block_kernel<<<%d, %d, 0, %lld>>>(), %d items per thread, %d SM occupancy\n",
                 multi_block_grid_size, multi_block_dispatch_params.block_threads, (long long) stream, multi_block_dispatch_params.items_per_thread, multi_sm_occupancy);
 
             // Invoke multi_block_kernel
@@ -398,9 +398,9 @@ struct DeviceReduceByKey
 
             // Sync the stream if specified
 #ifndef __CUDA_ARCH__
-            if (stream_synchronous && CubDebug(error = cudaStreamSynchronize(stream))) break;
+            if (debug_synchronous && CubDebug(error = cudaStreamSynchronize(stream))) break;
 #else
-            if (stream_synchronous && CubDebug(error = cudaDeviceSynchronize())) break;
+            if (debug_synchronous && CubDebug(error = cudaDeviceSynchronize())) break;
 #endif
         }
         while (0);
@@ -431,7 +431,7 @@ struct DeviceReduceByKey
         Identity                    identity,                       ///< [in] Identity element
         SizeT                       num_items,                      ///< [in] Total number of items to scan
         cudaStream_t                stream              = 0,        ///< [in] <b>[optional]</b> CUDA stream to launch kernels within.  Default is stream<sub>0</sub>.
-        bool                        stream_synchronous  = false)    ///< [in] <b>[optional]</b> Whether or not to synchronize the stream after every kernel launch to check for errors.  Default is \p false.
+        bool                        debug_synchronous  = false)     ///< [in] <b>[optional]</b> Whether or not to synchronize the stream after every kernel launch to check for errors.  Also causes launch configurations to be printed to the console.  Default is \p false.
     {
         // Data type
         typedef typename std::iterator_traits<InputIterator>::value_type T;
@@ -468,7 +468,7 @@ struct DeviceReduceByKey
                 identity,
                 num_items,
                 stream,
-                stream_synchronous);
+                debug_synchronous);
 
             if (CubDebug(error)) break;
         }
@@ -515,9 +515,9 @@ struct DeviceReduceByKey
         int                     num_items,                      ///< [in] Total number of input pairs
         ReductionOp             reduction_op,                   ///< [in] Binary value reduction operator
         cudaStream_t            stream              = 0,        ///< [in] <b>[optional]</b> CUDA stream to launch kernels within.  Default is stream<sub>0</sub>.
-        bool                    stream_synchronous  = false)    ///< [in] <b>[optional]</b> Whether or not to synchronize the stream after every kernel launch to check for errors.  May cause significant slowdown.  Default is \p false.
+        bool                    debug_synchronous  = false)    ///< [in] <b>[optional]</b> Whether or not to synchronize the stream after every kernel launch to check for errors.  May cause significant slowdown.  Default is \p false.
     {
-        return Dispatch(d_temp_storage, temp_storage_bytes, d_keys_in, d_keys_out, d_values_in, d_values_out, reduction_op, num_items, stream, stream_synchronous);
+        return Dispatch(d_temp_storage, temp_storage_bytes, d_keys_in, d_keys_out, d_values_in, d_values_out, reduction_op, num_items, stream, debug_synchronous);
     }
 
 
@@ -549,9 +549,9 @@ struct DeviceReduceByKey
         ValueOutputIterator   d_values_out,                   ///< [in] Value output data (compacted)
         int                     num_items,                      ///< [in] Total number of input pairs
         cudaStream_t            stream              = 0,        ///< [in] <b>[optional]</b> CUDA stream to launch kernels within.  Default is stream<sub>0</sub>.
-        bool                    stream_synchronous  = false)    ///< [in] <b>[optional]</b> Whether or not to synchronize the stream after every kernel launch to check for errors.  May cause significant slowdown.  Default is \p false.
+        bool                    debug_synchronous  = false)    ///< [in] <b>[optional]</b> Whether or not to synchronize the stream after every kernel launch to check for errors.  May cause significant slowdown.  Default is \p false.
     {
-        return ReduceValues(d_temp_storage, temp_storage_bytes, d_keys_in, d_keys_out, d_values_in, d_values_out, cub::Sum(), num_items, stream, stream_synchronous);
+        return ReduceValues(d_temp_storage, temp_storage_bytes, d_keys_in, d_keys_out, d_values_in, d_values_out, cub::Sum(), num_items, stream, debug_synchronous);
     }
 
 
@@ -579,10 +579,10 @@ struct DeviceReduceByKey
         CountOutputIterator   d_counts_out,                   ///< [in] Run-length counts output data (compacted)
         int                     num_items,                      ///< [in] Total number of keys
         cudaStream_t            stream              = 0,        ///< [in] <b>[optional]</b> CUDA stream to launch kernels within.  Default is stream<sub>0</sub>.
-        bool                    stream_synchronous  = false)    ///< [in] <b>[optional]</b> Whether or not to synchronize the stream after every kernel launch to check for errors.  May cause significant slowdown.  Default is \p false.
+        bool                    debug_synchronous  = false)    ///< [in] <b>[optional]</b> Whether or not to synchronize the stream after every kernel launch to check for errors.  May cause significant slowdown.  Default is \p false.
     {
         typedef typename std::iterator_traits<CountOutputIterator>::value_type CountT;
-        return SumValues(d_temp_storage, temp_storage_bytes, d_keys_in, d_keys_out, ConstantInputIterator<CountT>(1), d_counts_out, num_items, stream, stream_synchronous);
+        return SumValues(d_temp_storage, temp_storage_bytes, d_keys_in, d_keys_out, ConstantInputIterator<CountT>(1), d_counts_out, num_items, stream, debug_synchronous);
     }
 
 
@@ -615,9 +615,9 @@ struct DeviceReduceByKey
         ValueOutputIterator   d_values_out,                   ///< [out] Value output data (compacted)
         int                     num_items,                      ///< [in] Total number of input pairs
         cudaStream_t            stream              = 0,        ///< [in] <b>[optional]</b> CUDA stream to launch kernels within.  Default is stream<sub>0</sub>.
-        bool                    stream_synchronous  = false)    ///< [in] <b>[optional]</b> Whether or not to synchronize the stream after every kernel launch to check for errors.  May cause significant slowdown.  Default is \p false.
+        bool                    debug_synchronous  = false)    ///< [in] <b>[optional]</b> Whether or not to synchronize the stream after every kernel launch to check for errors.  May cause significant slowdown.  Default is \p false.
     {
-        return Dispatch(d_temp_storage, temp_storage_bytes, d_keys_in, d_keys_out, d_values_in, d_values_out, reduction_op, num_items, stream, stream_synchronous);
+        return Dispatch(d_temp_storage, temp_storage_bytes, d_keys_in, d_keys_out, d_values_in, d_values_out, reduction_op, num_items, stream, debug_synchronous);
     }
 
 

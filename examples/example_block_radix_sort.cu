@@ -115,7 +115,7 @@ __global__ void BlockSortKernel(
     clock_t stop = clock();
 
     // Store output in striped fashion
-    StoreStriped<STORE_DEFAULT, BLOCK_THREADS>(threadIdx.x, d_out + block_offset, items);
+    StoreStriped<BLOCK_THREADS>(threadIdx.x, d_out + block_offset, items);
 
     // Store elapsed clocks
     if (threadIdx.x == 0)

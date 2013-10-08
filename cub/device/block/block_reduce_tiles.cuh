@@ -41,6 +41,7 @@
 #include "../../grid/grid_queue.cuh"
 #include "../../grid/grid_even_share.cuh"
 #include "../../util_vector.cuh"
+#include "../../util_iterator.cuh"
 #include "../../util_namespace.cuh"
 
 
@@ -104,22 +105,33 @@ struct BlockReduceTiles
     // Types and constants
     //---------------------------------------------------------------------
 
-    typedef typename std::iterator_traits<InputIterator>::value_type  T;              // Type of input iterator
-    typedef VectorHelper<T, BlockReduceTilesPolicy::VECTOR_LOAD_LENGTH> VecHelper;      // Helper type for vectorizing loads of T
-    typedef typename VecHelper::Type                                    VectorT;        // Vector of T
+    // Type of input iterator
+    typedef typename std::iterator_traits<InputIterator>::value_type T;
+
+    // Helper type for vectorizing loads of T
+    typedef VectorHelper<T, BlockReduceTilesPolicy::VECTOR_LOAD_LENGTH> VecHelper;
+
+    // Vector of T
+    typedef typename VecHelper::Type VectorT;
+
+    // Input iterator wrapper type
+    typedef typename If<IsPointer<InputIterator>::VALUE,
+            CacheModifiedInputIterator<BlockReduceTilesPolicy::LOAD_MODIFIER, T, SizeT>,    // Wrap the native input pointer with CacheModifiedInputIterator
+            InputIterator>::Type                                                            // Directly use the supplied input iterator type
+        WrappedInputIterator;
 
     // Constants
     enum
     {
         BLOCK_THREADS       = BlockReduceTilesPolicy::BLOCK_THREADS,
         ITEMS_PER_THREAD    = BlockReduceTilesPolicy::ITEMS_PER_THREAD,
-        TILE_ITEMS          = BLOCK_THREADS * ITEMS_PER_THREAD,
         VECTOR_LOAD_LENGTH  = BlockReduceTilesPolicy::VECTOR_LOAD_LENGTH,
+        TILE_ITEMS          = BLOCK_THREADS * ITEMS_PER_THREAD,
 
-        // Can vectorize according to the policy if the input iterator is a native pointer to a built-in primitive
+        // Can vectorize according to the policy if the input iterator is a native pointer to a primitive type
         CAN_VECTORIZE       = (BlockReduceTilesPolicy::VECTOR_LOAD_LENGTH > 1) &&
                                 (IsPointer<InputIterator>::VALUE) &&
-                                (VecHelper::BUILT_IN),
+                                Traits<T>::PRIMITIVE,
 
     };
 
@@ -142,30 +154,107 @@ struct BlockReduceTiles
 
     T                       thread_aggregate;   ///< Each thread's partial reduction
     _TempStorage&           temp_storage;       ///< Reference to temp_storage
-    InputIterator         d_in;               ///< Input data to reduce
+    InputIterator           d_in;               ///< Input data to reduce
+    WrappedInputIterator    d_wrapped_in;       ///< Wrapped input data to reduce
     ReductionOp             reduction_op;       ///< Binary reduction operator
     int                     first_tile_size;    ///< Size of first tile consumed
-    bool                    input_aligned;      ///< Whether or not input is vector-aligned
+    bool                    is_aligned;         ///< Whether or not input is vector-aligned
 
 
     //---------------------------------------------------------------------
     // Interface
     //---------------------------------------------------------------------
 
+
+    // Whether or not the input is aligned with the vector type (specialized for types we can vectorize)
+    template <typename Iterator>
+    static __device__ __forceinline__ bool IsAligned(
+        Iterator        d_in,
+        Int2Type<true>  can_vectorize)
+    {
+        return (size_t(d_in) & (sizeof(VectorT) - 1)) == 0;
+    }
+
+    // Whether or not the input is aligned with the vector type (specialized for types we cannot vectorize)
+    template <typename Iterator>
+    static __device__ __forceinline__ bool IsAligned(
+        Iterator        d_in,
+        Int2Type<false> can_vectorize)
+    {
+        return false;
+    }
+
+
     /**
      * Constructor
      */
     __device__ __forceinline__ BlockReduceTiles(
         TempStorage&            temp_storage,       ///< Reference to temp_storage
-        InputIterator         d_in,               ///< Input data to reduce
+        InputIterator           d_in,               ///< Input data to reduce
         ReductionOp             reduction_op)       ///< Binary reduction operator
     :
         temp_storage(temp_storage.Alias()),
         d_in(d_in),
+        d_wrapped_in(d_in),
         reduction_op(reduction_op),
         first_tile_size(0),
-        input_aligned(CAN_VECTORIZE && ((size_t(d_in) & (sizeof(VectorT) - 1)) == 0))
+        is_aligned(IsAligned(d_in, Int2Type<CAN_VECTORIZE>()))
     {}
+
+
+    /**
+     * Consume a full tile of input (specialized for cases where we cannot vectorize)
+     */
+    template <typename _SizeT>
+    __device__ __forceinline__ T ConsumeFullTile(
+        _SizeT   block_offset,                   ///< The offset the tile to consume
+        Int2Type<false> can_vectorize)           ///< Whether or not we can vectorize loads
+    {
+        T items[ITEMS_PER_THREAD];
+
+        // Load items in striped fashion
+        LoadStriped<BLOCK_THREADS>(threadIdx.x, d_wrapped_in + block_offset, items);
+
+        // Reduce items within each thread stripe
+        return ThreadReduce(items, reduction_op);
+    }
+
+
+    /**
+     * Consume a full tile of input (specialized for cases where we can vectorize)
+     */
+    template <typename _SizeT>
+    __device__ __forceinline__ T ConsumeFullTile(
+        _SizeT   block_offset,                   ///< The offset the tile to consume
+        Int2Type<true> can_vectorize)           ///< Whether or not we can vectorize loads
+    {
+        if (is_aligned)
+        {
+            // Alias items as an array of VectorT and load it in striped fashion
+            enum { WORDS =  ITEMS_PER_THREAD / VECTOR_LOAD_LENGTH };
+
+            VectorT vec_items[WORDS];
+
+            // Vector input iterator wrapper type
+            CacheModifiedInputIterator<BlockReduceTilesPolicy::LOAD_MODIFIER, VectorT, SizeT> d_vec_in(
+                reinterpret_cast<VectorT*>(d_in + block_offset + (threadIdx.x * VECTOR_LOAD_LENGTH)));
+
+            #pragma unroll
+            for (int i = 0; i < WORDS; ++i)
+                vec_items[i] = d_vec_in[BLOCK_THREADS * i];
+
+            // Reduce items within each thread stripe
+            return ThreadReduce<ITEMS_PER_THREAD>(
+                reinterpret_cast<T*>(vec_items),
+                reduction_op);
+        }
+        else
+        {
+            // Not aligned
+            return ConsumeFullTile(block_offset, Int2Type<false>());
+        }
+    }
+
 
 
     /**
@@ -178,61 +267,30 @@ struct BlockReduceTiles
     {
         if (FULL_TILE)
         {
-            T stripe_partial;
-
-            // Load full tile
-            if (input_aligned)
-            {
-                // Alias items as an array of VectorT and load it in striped fashion
-                enum { WORDS =  ITEMS_PER_THREAD / VECTOR_LOAD_LENGTH };
-
-                VectorT vec_items[WORDS];
-
-                // Load striped into vec items
-                VectorT* alias_ptr = reinterpret_cast<VectorT*>(d_in + block_offset + (threadIdx.x * VECTOR_LOAD_LENGTH));
-
-                #pragma unroll
-                for (int i = 0; i < WORDS; ++i)
-                    vec_items[i] = alias_ptr[BLOCK_THREADS * i];
-
-                // Reduce items within each thread stripe
-                stripe_partial = ThreadReduce<ITEMS_PER_THREAD>(
-                    reinterpret_cast<T*>(vec_items),
-                    reduction_op);
-            }
-            else
-            {
-                T items[ITEMS_PER_THREAD];
-
-                // Load items in striped fashion
-                LoadStriped<LOAD_MODIFIER, BLOCK_THREADS>(threadIdx.x, d_in + block_offset, items);
-
-                // Reduce items within each thread stripe
-                stripe_partial = ThreadReduce(items, reduction_op);
-            }
+            // Full tile
+            T partial = ConsumeFullTile(block_offset, Int2Type<CAN_VECTORIZE>());
 
             // Update running thread aggregate
             thread_aggregate = (first_tile_size) ?
-                reduction_op(thread_aggregate, stripe_partial) :       // Update
-                stripe_partial;                                        // Assign
+                reduction_op(thread_aggregate, partial) :       // Update
+                partial;                                        // Assign
         }
         else
         {
-
             // Partial tile
             int thread_offset = threadIdx.x;
 
             if (!first_tile_size && (thread_offset < valid_items))
             {
                 // Assign thread_aggregate
-                thread_aggregate = ThreadLoad<LOAD_MODIFIER>(d_in + block_offset + thread_offset);
+                thread_aggregate = d_wrapped_in[block_offset + thread_offset];
                 thread_offset += BLOCK_THREADS;
             }
 
             while (thread_offset < valid_items)
             {
                 // Update thread aggregate
-                T item = ThreadLoad<LOAD_MODIFIER>(d_in + block_offset + thread_offset);
+                T item = d_wrapped_in[block_offset + thread_offset];
                 thread_aggregate = reduction_op(thread_aggregate, item);
                 thread_offset += BLOCK_THREADS;
             }
@@ -244,7 +302,7 @@ struct BlockReduceTiles
     }
 
 
-    //---------------------------------------------------------------------
+    //---------------------------------------------------------------
     // Consume a contiguous segment of tiles
     //---------------------------------------------------------------------
 

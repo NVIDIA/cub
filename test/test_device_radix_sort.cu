@@ -88,9 +88,9 @@ cudaError_t Dispatch(
     int                 begin_bit,
     int                 end_bit,
     cudaStream_t        stream,
-    bool                stream_synchronous)
+    bool                debug_synchronous)
 {
-    return DeviceRadixSort::SortPairs(d_temp_storage, temp_storage_bytes, d_keys, d_values, num_items, begin_bit, end_bit, stream, stream_synchronous);
+    return DeviceRadixSort::SortPairs(d_temp_storage, temp_storage_bytes, d_keys, d_values, num_items, begin_bit, end_bit, stream, debug_synchronous);
 }
 
 
@@ -111,7 +111,7 @@ cudaError_t Dispatch(
     int                     begin_bit,
     int                     end_bit,
     cudaStream_t            stream,
-    bool                    stream_synchronous)
+    bool                    debug_synchronous)
 {
     if (d_temp_storage == 0)
     {
@@ -144,7 +144,7 @@ cudaError_t Dispatch(
     int                 begin_bit,
     int                 end_bit,
     cudaStream_t        stream,
-    bool                stream_synchronous)
+    bool                debug_synchronous)
 {
     if (d_temp_storage == 0)
     {
@@ -181,12 +181,12 @@ __global__ void CnpDispatchKernel(
     int                 num_items,
     int                 begin_bit,
     int                 end_bit,
-    bool                stream_synchronous)
+    bool                debug_synchronous)
 {
 #ifndef CUB_CDP
     *d_cdp_error = cudaErrorNotSupported;
 #else
-    *d_cdp_error            = Dispatch(Int2Type<CUB>(), d_selector, d_temp_storage_bytes, d_cdp_error, d_temp_storage, temp_storage_bytes, d_keys, d_values, num_items, begin_bit, end_bit, 0, stream_synchronous);
+    *d_cdp_error            = Dispatch(Int2Type<CUB>(), d_selector, d_temp_storage_bytes, d_cdp_error, d_temp_storage, temp_storage_bytes, d_keys, d_values, num_items, begin_bit, end_bit, 0, debug_synchronous);
     *d_temp_storage_bytes   = temp_storage_bytes;
     *d_selector             = d_keys.selector;
 #endif
@@ -211,10 +211,10 @@ cudaError_t Dispatch(
     int                 begin_bit,
     int                 end_bit,
     cudaStream_t        stream,
-    bool                stream_synchronous)
+    bool                debug_synchronous)
 {
     // Invoke kernel to invoke device-side dispatch
-    CnpDispatchKernel<<<1,1>>>(d_selector, d_temp_storage_bytes, d_cdp_error, d_temp_storage, temp_storage_bytes, d_keys, d_values, num_items, begin_bit, end_bit, stream_synchronous);
+    CnpDispatchKernel<<<1,1>>>(d_selector, d_temp_storage_bytes, d_cdp_error, d_temp_storage, temp_storage_bytes, d_keys, d_values, num_items, begin_bit, end_bit, debug_synchronous);
 
     // Copy out selector
     CubDebugExit(cudaMemcpy(&d_keys.selector, d_selector, sizeof(int) * 1, cudaMemcpyDeviceToHost));
