@@ -370,13 +370,13 @@ public:
      *
      * // A stateful callback functor that maintains a running prefix to be applied
      * // during consecutive scan operations.
-     * struct WarpPrefixOp
+     * struct WarpPrefixCallbackOp
      * {
      *     // Running prefix
      *     int running_total;
      *
      *     // Constructor
-     *     __device__ WarpPrefixOp(int running_total) : running_total(running_total) {}
+     *     __device__ WarpPrefixCallbackOp(int running_total) : running_total(running_total) {}
      *
      *     // Callback operator to be entered by the entire warp. Lane-0 is responsible
      *     // for returning a value for seeding the warp-wide scan.
@@ -397,7 +397,7 @@ public:
      *     __shared__ typename WarpScan::TempStorage temp_storage;
      *
      *     // Initialize running total
-     *     WarpPrefixOp prefix_op(0);
+     *     WarpPrefixCallbackOp prefix_op(0);
      *
      *     // Have the warp iterate over segments of items
      *     for (int block_offset = 0; block_offset < num_items; block_offset += 32)
@@ -420,14 +420,14 @@ public:
      * The output for the second segment will be <tt>33, 34, 35, ..., 64</tt>.  Furthermore,
      * the value \p 32 will be stored in \p warp_aggregate for all threads after each scan.
      *
-     * \tparam WarpPrefixOp                 <b>[inferred]</b> Call-back functor type having member <tt>T operator()(T warp_aggregate)</tt>
+     * \tparam WarpPrefixCallbackOp                 <b>[inferred]</b> Call-back functor type having member <tt>T operator()(T warp_aggregate)</tt>
      */
-    template <typename WarpPrefixOp>
+    template <typename WarpPrefixCallbackOp>
     __device__ __forceinline__ void InclusiveSum(
         T               input,              ///< [in] Calling thread's input item.
         T               &output,            ///< [out] Calling thread's output item.  May be aliased with \p input.
         T               &warp_aggregate,    ///< [out] <b>[<em>warp-lane</em><sub>0</sub> only]</b> Warp-wide aggregate reduction of input items, exclusive of the \p warp_prefix_op value
-        WarpPrefixOp    &warp_prefix_op)    ///< [in-out] <b>[<em>warp-lane</em><sub>0</sub> only]</b> Call-back functor for specifying a warp-wide prefix to be applied to all inputs.
+        WarpPrefixCallbackOp    &warp_prefix_op)    ///< [in-out] <b>[<em>warp-lane</em><sub>0</sub> only]</b> Call-back functor for specifying a warp-wide prefix to be applied to all inputs.
     {
         // Compute inclusive warp scan
         InclusiveSum(input, output, warp_aggregate);
@@ -480,8 +480,8 @@ private:
     }
 
     /// Computes an exclusive prefix sum in each logical warp.  Instead of using 0 as the warp-wide prefix, the call-back functor \p warp_prefix_op is invoked to provide the "seed" value that logically prefixes the warp's scan inputs.  Also provides every thread with the warp-wide \p warp_aggregate of all inputs.
-    template <typename WarpPrefixOp>
-    __device__ __forceinline__ void ExclusiveSum(T input, T &output, T &warp_aggregate, WarpPrefixOp &warp_prefix_op, Int2Type<true> is_primitive)
+    template <typename WarpPrefixCallbackOp>
+    __device__ __forceinline__ void ExclusiveSum(T input, T &output, T &warp_aggregate, WarpPrefixCallbackOp &warp_prefix_op, Int2Type<true> is_primitive)
     {
         // Compute exclusive warp scan from inclusive warp scan
         T inclusive;
@@ -490,8 +490,8 @@ private:
     }
 
     /// Computes an exclusive prefix sum in each logical warp.  Instead of using 0 as the warp-wide prefix, the call-back functor \p warp_prefix_op is invoked to provide the "seed" value that logically prefixes the warp's scan inputs.  Also provides every thread with the warp-wide \p warp_aggregate of all inputs.  Specialized for non-primitive types.
-    template <typename WarpPrefixOp>
-    __device__ __forceinline__ void ExclusiveSum(T input, T &output, T &warp_aggregate, WarpPrefixOp &warp_prefix_op, Int2Type<false> is_primitive)
+    template <typename WarpPrefixCallbackOp>
+    __device__ __forceinline__ void ExclusiveSum(T input, T &output, T &warp_aggregate, WarpPrefixCallbackOp &warp_prefix_op, Int2Type<false> is_primitive)
     {
         // Delegate to regular scan for non-primitive types (because we won't be able to use subtraction)
         T identity = T();
@@ -623,13 +623,13 @@ public:
      *
      * // A stateful callback functor that maintains a running prefix to be applied
      * // during consecutive scan operations.
-     * struct WarpPrefixOp
+     * struct WarpPrefixCallbackOp
      * {
      *     // Running prefix
      *     int running_total;
      *
      *     // Constructor
-     *     __device__ WarpPrefixOp(int running_total) : running_total(running_total) {}
+     *     __device__ WarpPrefixCallbackOp(int running_total) : running_total(running_total) {}
      *
      *     // Callback operator to be entered by the entire warp. Lane-0 is responsible
      *     // for returning a value for seeding the warp-wide scan.
@@ -650,7 +650,7 @@ public:
      *     __shared__ typename WarpScan::TempStorage temp_storage;
      *
      *     // Initialize running total
-     *     WarpPrefixOp prefix_op(0);
+     *     WarpPrefixCallbackOp prefix_op(0);
      *
      *     // Have the warp iterate over segments of items
      *     for (int block_offset = 0; block_offset < num_items; block_offset += 32)
@@ -673,14 +673,14 @@ public:
      * The output for the second segment will be <tt>32, 33, 34, ..., 63</tt>.  Furthermore,
      * the value \p 32 will be stored in \p warp_aggregate for all threads after each scan.
      *
-     * \tparam WarpPrefixOp                 <b>[inferred]</b> Call-back functor type having member <tt>T operator()(T warp_aggregate)</tt>
+     * \tparam WarpPrefixCallbackOp                 <b>[inferred]</b> Call-back functor type having member <tt>T operator()(T warp_aggregate)</tt>
      */
-    template <typename WarpPrefixOp>
+    template <typename WarpPrefixCallbackOp>
     __device__ __forceinline__ void ExclusiveSum(
         T               input,              ///< [in] Calling thread's input item.
         T               &output,            ///< [out] Calling thread's output item.  May be aliased with \p input.
         T               &warp_aggregate,    ///< [out] <b>[<em>warp-lane</em><sub>0</sub> only]</b> Warp-wide aggregate reduction of input items (exclusive of the \p warp_prefix_op value).
-        WarpPrefixOp    &warp_prefix_op)    ///< [in-out] <b>[<em>warp-lane</em><sub>0</sub> only]</b> Call-back functor for specifying a warp-wide prefix to be applied to all inputs.
+        WarpPrefixCallbackOp    &warp_prefix_op)    ///< [in-out] <b>[<em>warp-lane</em><sub>0</sub> only]</b> Call-back functor for specifying a warp-wide prefix to be applied to all inputs.
     {
         ExclusiveSum(input, output, warp_aggregate, warp_prefix_op, Int2Type<Traits<T>::PRIMITIVE>());
     }
@@ -809,13 +809,13 @@ public:
      *
      * // A stateful callback functor that maintains a running prefix to be applied
      * // during consecutive scan operations.
-     * struct WarpPrefixOp
+     * struct WarpPrefixCallbackOp
      * {
      *     // Running prefix
      *     int running_total;
      *
      *     // Constructor
-     *     __device__ WarpPrefixOp(int running_total) : running_total(running_total) {}
+     *     __device__ WarpPrefixCallbackOp(int running_total) : running_total(running_total) {}
      *
      *     // Callback operator to be entered by the entire warp. Lane-0 is responsible
      *     // for returning a value for seeding the warp-wide scan.
@@ -836,7 +836,7 @@ public:
      *     __shared__ typename WarpScan::TempStorage temp_storage;
      *
      *     // Initialize running total
-     *     WarpPrefixOp prefix_op(0);
+     *     WarpPrefixCallbackOp prefix_op(0);
      *
      *     // Have the warp iterate over segments of items
      *     for (int block_offset = 0; block_offset < num_items; block_offset += 32)
@@ -861,17 +861,17 @@ public:
      * scan, etc.
      *
      * \tparam ScanOp                       <b>[inferred]</b> Binary scan operator type having member <tt>T operator()(const T &a, const T &b)</tt>
-     * \tparam WarpPrefixOp                 <b>[inferred]</b> Call-back functor type having member <tt>T operator()(T warp_aggregate)</tt>
+     * \tparam WarpPrefixCallbackOp                 <b>[inferred]</b> Call-back functor type having member <tt>T operator()(T warp_aggregate)</tt>
      */
     template <
         typename ScanOp,
-        typename WarpPrefixOp>
+        typename WarpPrefixCallbackOp>
     __device__ __forceinline__ void InclusiveScan(
         T               input,              ///< [in] Calling thread's input item.
         T               &output,            ///< [out] Calling thread's output item.  May be aliased with \p input.
         ScanOp          scan_op,            ///< [in] Binary scan operator
         T               &warp_aggregate,    ///< [out] <b>[<em>warp-lane</em><sub>0</sub> only]</b> Warp-wide aggregate reduction of input items (exclusive of the \p warp_prefix_op value).
-        WarpPrefixOp    &warp_prefix_op)    ///< [in-out] <b>[<em>warp-lane</em><sub>0</sub> only]</b> Call-back functor for specifying a warp-wide prefix to be applied to all inputs.
+        WarpPrefixCallbackOp    &warp_prefix_op)    ///< [in-out] <b>[<em>warp-lane</em><sub>0</sub> only]</b> Call-back functor for specifying a warp-wide prefix to be applied to all inputs.
     {
         // Compute inclusive warp scan
         InclusiveScan(input, output, scan_op, warp_aggregate);
@@ -1009,13 +1009,13 @@ public:
      *
      * // A stateful callback functor that maintains a running prefix to be applied
      * // during consecutive scan operations.
-     * struct WarpPrefixOp
+     * struct WarpPrefixCallbackOp
      * {
      *     // Running prefix
      *     int running_total;
      *
      *     // Constructor
-     *     __device__ WarpPrefixOp(int running_total) : running_total(running_total) {}
+     *     __device__ WarpPrefixCallbackOp(int running_total) : running_total(running_total) {}
      *
      *     // Callback operator to be entered by the entire warp. Lane-0 is responsible
      *     // for returning a value for seeding the warp-wide scan.
@@ -1036,7 +1036,7 @@ public:
      *     __shared__ typename WarpScan::TempStorage temp_storage;
      *
      *     // Initialize running total
-     *     WarpPrefixOp prefix_op(INT_MIN);
+     *     WarpPrefixCallbackOp prefix_op(INT_MIN);
      *
      *     // Have the warp iterate over segments of items
      *     for (int block_offset = 0; block_offset < num_items; block_offset += 32)
@@ -1061,18 +1061,18 @@ public:
      * scan, etc.
      *
      * \tparam ScanOp                       <b>[inferred]</b> Binary scan operator type having member <tt>T operator()(const T &a, const T &b)</tt>
-     * \tparam WarpPrefixOp                 <b>[inferred]</b> Call-back functor type having member <tt>T operator()(T warp_aggregate)</tt>
+     * \tparam WarpPrefixCallbackOp                 <b>[inferred]</b> Call-back functor type having member <tt>T operator()(T warp_aggregate)</tt>
      */
     template <
         typename ScanOp,
-        typename WarpPrefixOp>
+        typename WarpPrefixCallbackOp>
     __device__ __forceinline__ void ExclusiveScan(
         T               input,              ///< [in] Calling thread's input item.
         T               &output,            ///< [out] Calling thread's output item.  May be aliased with \p input.
         T               identity,           ///< [in] Identity value
         ScanOp          scan_op,            ///< [in] Binary scan operator
         T               &warp_aggregate,    ///< [out] <b>[<em>warp-lane</em><sub>0</sub> only]</b> Warp-wide aggregate reduction of input items (exclusive of the \p warp_prefix_op value).
-        WarpPrefixOp    &warp_prefix_op)    ///< [in-out] <b>[<em>warp-lane</em><sub>0</sub> only]</b> Call-back functor for specifying a warp-wide prefix to be applied to all inputs.
+        WarpPrefixCallbackOp    &warp_prefix_op)    ///< [in-out] <b>[<em>warp-lane</em><sub>0</sub> only]</b> Call-back functor for specifying a warp-wide prefix to be applied to all inputs.
     {
         // Exclusive warp scan
         ExclusiveScan(input, output, identity, scan_op, warp_aggregate);
@@ -1211,13 +1211,13 @@ public:
      *
      * // A stateful callback functor that maintains a running prefix to be applied
      * // during consecutive scan operations.
-     * struct WarpPrefixOp
+     * struct WarpPrefixCallbackOp
      * {
      *     // Running prefix
      *     int running_total;
      *
      *     // Constructor
-     *     __device__ WarpPrefixOp(int running_total) : running_total(running_total) {}
+     *     __device__ WarpPrefixCallbackOp(int running_total) : running_total(running_total) {}
      *
      *     // Callback operator to be entered by the entire warp. Lane-0 is responsible
      *     // for returning a value for seeding the warp-wide scan.
@@ -1238,7 +1238,7 @@ public:
      *     __shared__ typename WarpScan::TempStorage temp_storage;
      *
      *     // Initialize running total
-     *     WarpPrefixOp prefix_op(INT_MIN);
+     *     WarpPrefixCallbackOp prefix_op(INT_MIN);
      *
      *     // Have the warp iterate over segments of items
      *     for (int block_offset = 0; block_offset < num_items; block_offset += 32)
@@ -1263,17 +1263,17 @@ public:
      * scan, etc.
      *
      * \tparam ScanOp                       <b>[inferred]</b> Binary scan operator type having member <tt>T operator()(const T &a, const T &b)</tt>
-     * \tparam WarpPrefixOp                 <b>[inferred]</b> Call-back functor type having member <tt>T operator()(T warp_aggregate)</tt>
+     * \tparam WarpPrefixCallbackOp                 <b>[inferred]</b> Call-back functor type having member <tt>T operator()(T warp_aggregate)</tt>
      */
     template <
         typename ScanOp,
-        typename WarpPrefixOp>
+        typename WarpPrefixCallbackOp>
     __device__ __forceinline__ void ExclusiveScan(
         T               input,              ///< [in] Calling thread's input item.
         T               &output,            ///< [out] Calling thread's output item.  May be aliased with \p input.
         ScanOp          scan_op,            ///< [in] Binary scan operator
         T               &warp_aggregate,    ///< [out] <b>[<em>warp-lane</em><sub>0</sub> only]</b> Warp-wide aggregate reduction of input items (exclusive of the \p warp_prefix_op value).
-        WarpPrefixOp    &warp_prefix_op)    ///< [in-out] <b>[<em>warp-lane</em><sub>0</sub> only]</b> Call-back functor for specifying a warp-wide prefix to be applied to all inputs.
+        WarpPrefixCallbackOp    &warp_prefix_op)    ///< [in-out] <b>[<em>warp-lane</em><sub>0</sub> only]</b> Call-back functor for specifying a warp-wide prefix to be applied to all inputs.
     {
         // Exclusive warp scan
         ExclusiveScan(input, output, scan_op, warp_aggregate);

@@ -256,10 +256,10 @@ void Test(
         printf(", %.3f avg ms, %.3f billion items/s, %.3f logical GB/s", avg_millis, grate, gbandwidth);
     }
 
+    if (d_out) CubDebugExit(g_allocator.DeviceFree(d_out));
     if (d_temp_storage_bytes) CubDebugExit(g_allocator.DeviceFree(d_temp_storage_bytes));
     if (d_cdp_error) CubDebugExit(g_allocator.DeviceFree(d_cdp_error));
     if (d_temp_storage) CubDebugExit(g_allocator.DeviceFree(d_temp_storage));
-    if (d_out) CubDebugExit(g_allocator.DeviceFree(d_out));
 
     // Correctness asserts
     AssertEquals(0, compare);

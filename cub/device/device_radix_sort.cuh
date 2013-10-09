@@ -154,8 +154,7 @@ __global__ void RadixSortScanKernel(
 
     // Process full input tiles
     int block_offset = 0;
-    RunningBlockPrefixOp<SizeT> prefix_op;
-    prefix_op.running_total = 0;
+    RunningBlockPrefixCallbackOp<SizeT, Sum> prefix_op(0, Sum());
     while (block_offset + BlockScanTilesT::TILE_ITEMS <= num_counts)
     {
         block_scan.ConsumeTile<true, false>(block_offset, prefix_op);

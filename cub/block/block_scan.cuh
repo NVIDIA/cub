@@ -46,6 +46,67 @@ CUB_NS_PREFIX
 namespace cub {
 
 
+
+/******************************************************************************
+ * Scan utility types
+ ******************************************************************************/
+
+#ifndef DOXYGEN_SHOULD_SKIP_THIS    // Do not document
+
+/**
+ * An key identifier paired with a corresponding value reduction
+ */
+template <typename Key, typename Value>
+struct KeyValuePair
+{
+    Key     key;            ///< Key identifier
+    Value   value;          ///< Reduction value
+};
+
+
+/**
+ * An key identifier paired with a corresponding value reduction (specialized for int-double pairings)
+ */
+template <>
+struct KeyValuePair<int, double>
+{
+    long long   key;        ///< Key identifier
+    double      value;      ///< Reduction value
+};
+
+
+/**
+ * Reduce-value-by-ID scan operator
+ */
+template <typename ReductionOp>     ///< Wrapped reduction operator type
+struct ReduceByKeyOp
+{
+    ReductionOp op;                 ///< Wrapped reduction operator
+
+    /// Constructor
+    ReduceByKeyOp(ReductionOp op) : op(op) {}
+
+    /// Scan operator
+    template <typename KeyValuePair>
+    __device__ __forceinline__ KeyValuePair operator()(
+        const KeyValuePair &first,
+        const KeyValuePair &second)
+    {
+        KeyValuePair retval;
+
+        retval.value = (second.key != first.key) ?
+                second.value :                      // The second value is for a different ID, return only that value
+                op(first.value, second.value);      // The values are for the same ID so reduce them
+
+        retval.key = second.key;
+        return retval;
+    }
+};
+
+#endif // DOXYGEN_SHOULD_SKIP_THIS
+
+
+
 /******************************************************************************
  * Algorithmic variants
  ******************************************************************************/
@@ -387,9 +448,9 @@ public:
 
 
     /**
-     * \brief Computes an exclusive block-wide prefix scan using addition (+) as the scan operator.  Each thread contributes one input element.  Instead of using 0 as the block-wide prefix, the call-back functor \p block_prefix_op is invoked by the first warp in the block, and the value returned by <em>lane</em><sub>0</sub> in that warp is used as the "seed" value that logically prefixes the threadblock's scan inputs.  Also provides every thread with the block-wide \p block_aggregate of all inputs.
+     * \brief Computes an exclusive block-wide prefix scan using addition (+) as the scan operator.  Each thread contributes one input element.  Instead of using 0 as the block-wide prefix, the call-back functor \p block_prefix_callback_op is invoked by the first warp in the block, and the value returned by <em>lane</em><sub>0</sub> in that warp is used as the "seed" value that logically prefixes the threadblock's scan inputs.  Also provides every thread with the block-wide \p block_aggregate of all inputs.
      *
-     * The \p block_prefix_op functor must implement a member function <tt>T operator()(T block_aggregate)</tt>.
+     * The \p block_prefix_callback_op functor must implement a member function <tt>T operator()(T block_aggregate)</tt>.
      * The functor's input parameter \p block_aggregate is the same value also returned by the scan operation.
      * The functor will be invoked by the first warp of threads in the block, however only the return value from
      * <em>lane</em><sub>0</sub> is applied as the block-wide prefix.  Can be stateful.
@@ -408,13 +469,13 @@ public:
      *
      * // A stateful callback functor that maintains a running prefix to be applied
      * // during consecutive scan operations.
-     * struct BlockPrefixOp
+     * struct BlockPrefixCallbackOp
      * {
      *     // Running prefix
      *     int running_total;
      *
      *     // Constructor
-     *     __device__ BlockPrefixOp(int running_total) : running_total(running_total) {}
+     *     __device__ BlockPrefixCallbackOp(int running_total) : running_total(running_total) {}
      *
      *     // Callback operator to be entered by the first warp of threads in the block.
      *     // Thread-0 is responsible for returning a value for seeding the block-wide scan.
@@ -435,7 +496,7 @@ public:
      *     __shared__ typename BlockScan::TempStorage temp_storage;
      *
      *     // Initialize running total
-     *     BlockPrefixOp prefix_op(0);
+     *     BlockPrefixCallbackOp prefix_op(0);
      *
      *     // Have the block iterate over segments of items
      *     for (int block_offset = 0; block_offset < num_items; block_offset += 128)
@@ -459,16 +520,16 @@ public:
      * The output for the second segment will be <tt>128, 129, ..., 255</tt>.  Furthermore,
      * the value \p 128 will be stored in \p block_aggregate for all threads after each scan.
      *
-     * \tparam BlockPrefixOp        <b>[inferred]</b> Call-back functor type having member <tt>T operator()(T block_aggregate)</tt>
+     * \tparam BlockPrefixCallbackOp        <b>[inferred]</b> Call-back functor type having member <tt>T operator()(T block_aggregate)</tt>
      */
-    template <typename BlockPrefixOp>
+    template <typename BlockPrefixCallbackOp>
     __device__ __forceinline__ void ExclusiveSum(
-        T               input,                          ///< [in] Calling thread's input item
-        T               &output,                        ///< [out] Calling thread's output item (may be aliased to \p input)
-        T               &block_aggregate,               ///< [out] block-wide aggregate reduction of input items (exclusive of the \p block_prefix_op value)
-        BlockPrefixOp   &block_prefix_op)               ///< [in-out] <b>[<em>warp</em><sub>0</sub> only]</b> Call-back functor for specifying a block-wide prefix to be applied to all inputs.
+        T                       input,                          ///< [in] Calling thread's input item
+        T                       &output,                        ///< [out] Calling thread's output item (may be aliased to \p input)
+        T                       &block_aggregate,               ///< [out] block-wide aggregate reduction of input items (exclusive of the \p block_prefix_callback_op value)
+        BlockPrefixCallbackOp   &block_prefix_callback_op)      ///< [in-out] <b>[<em>warp</em><sub>0</sub> only]</b> Call-back functor for specifying a block-wide prefix to be applied to all inputs.
     {
-        InternalBlockScan(temp_storage, linear_tid).ExclusiveSum(input, output, block_aggregate, block_prefix_op);
+        InternalBlockScan(temp_storage, linear_tid).ExclusiveSum(input, output, block_aggregate, block_prefix_callback_op);
     }
 
 
@@ -589,9 +650,9 @@ public:
 
 
     /**
-     * \brief Computes an exclusive block-wide prefix scan using addition (+) as the scan operator.  Each thread contributes an array of consecutive input elements.  Instead of using 0 as the block-wide prefix, the call-back functor \p block_prefix_op is invoked by the first warp in the block, and the value returned by <em>lane</em><sub>0</sub> in that warp is used as the "seed" value that logically prefixes the threadblock's scan inputs.  Also provides every thread with the block-wide \p block_aggregate of all inputs.
+     * \brief Computes an exclusive block-wide prefix scan using addition (+) as the scan operator.  Each thread contributes an array of consecutive input elements.  Instead of using 0 as the block-wide prefix, the call-back functor \p block_prefix_callback_op is invoked by the first warp in the block, and the value returned by <em>lane</em><sub>0</sub> in that warp is used as the "seed" value that logically prefixes the threadblock's scan inputs.  Also provides every thread with the block-wide \p block_aggregate of all inputs.
      *
-     * The \p block_prefix_op functor must implement a member function <tt>T operator()(T block_aggregate)</tt>.
+     * The \p block_prefix_callback_op functor must implement a member function <tt>T operator()(T block_aggregate)</tt>.
      * The functor's input parameter \p block_aggregate is the same value also returned by the scan operation.
      * The functor will be invoked by the first warp of threads in the block, however only the return value from
      * <em>lane</em><sub>0</sub> is applied as the block-wide prefix.  Can be stateful.
@@ -611,13 +672,13 @@ public:
      *
      * // A stateful callback functor that maintains a running prefix to be applied
      * // during consecutive scan operations.
-     * struct BlockPrefixOp
+     * struct BlockPrefixCallbackOp
      * {
      *     // Running prefix
      *     int running_total;
      *
      *     // Constructor
-     *     __device__ BlockPrefixOp(int running_total) : running_total(running_total) {}
+     *     __device__ BlockPrefixCallbackOp(int running_total) : running_total(running_total) {}
      *
      *     // Callback operator to be entered by the first warp of threads in the block.
      *     // Thread-0 is responsible for returning a value for seeding the block-wide scan.
@@ -644,7 +705,7 @@ public:
      *     } temp_storage;
      *
      *     // Initialize running total
-     *     BlockPrefixOp prefix_op(0);
+     *     BlockPrefixCallbackOp prefix_op(0);
      *
      *     // Have the block iterate over segments of items
      *     for (int block_offset = 0; block_offset < num_items; block_offset += 128 * 4)
@@ -672,23 +733,23 @@ public:
      * the value \p 512 will be stored in \p block_aggregate for all threads after each scan.
      *
      * \tparam ITEMS_PER_THREAD     <b>[inferred]</b> The number of consecutive items partitioned onto each thread.
-     * \tparam BlockPrefixOp        <b>[inferred]</b> Call-back functor type having member <tt>T operator()(T block_aggregate)</tt>
+     * \tparam BlockPrefixCallbackOp        <b>[inferred]</b> Call-back functor type having member <tt>T operator()(T block_aggregate)</tt>
      */
     template <
         int ITEMS_PER_THREAD,
-        typename BlockPrefixOp>
+        typename BlockPrefixCallbackOp>
     __device__ __forceinline__ void ExclusiveSum(
-        T                 (&input)[ITEMS_PER_THREAD],   ///< [in] Calling thread's input items
-        T                 (&output)[ITEMS_PER_THREAD],  ///< [out] Calling thread's output items (may be aliased to \p input)
-        T                 &block_aggregate,             ///< [out] block-wide aggregate reduction of input items (exclusive of the \p block_prefix_op value)
-        BlockPrefixOp     &block_prefix_op)             ///< [in-out] <b>[<em>warp</em><sub>0</sub> only]</b> Call-back functor for specifying a block-wide prefix to be applied to all inputs.
+        T                       (&input)[ITEMS_PER_THREAD],   ///< [in] Calling thread's input items
+        T                       (&output)[ITEMS_PER_THREAD],  ///< [out] Calling thread's output items (may be aliased to \p input)
+        T                       &block_aggregate,             ///< [out] block-wide aggregate reduction of input items (exclusive of the \p block_prefix_callback_op value)
+        BlockPrefixCallbackOp   &block_prefix_callback_op)    ///< [in-out] <b>[<em>warp</em><sub>0</sub> only]</b> Call-back functor for specifying a block-wide prefix to be applied to all inputs.
     {
         // Reduce consecutive thread items in registers
         Sum scan_op;
         T thread_partial = ThreadReduce(input, scan_op);
 
         // Exclusive threadblock-scan
-        ExclusiveSum(thread_partial, thread_partial, block_aggregate, block_prefix_op);
+        ExclusiveSum(thread_partial, thread_partial, block_aggregate, block_prefix_callback_op);
 
         // Exclusive scan in registers with prefix
         ThreadScanExclusive(input, output, scan_op, thread_partial);
@@ -804,9 +865,9 @@ public:
 
 
     /**
-     * \brief Computes an exclusive block-wide prefix scan using the specified binary \p scan_op functor.  Each thread contributes one input element.  the call-back functor \p block_prefix_op is invoked by the first warp in the block, and the value returned by <em>lane</em><sub>0</sub> in that warp is used as the "seed" value that logically prefixes the threadblock's scan inputs.  Also provides every thread with the block-wide \p block_aggregate of all inputs.
+     * \brief Computes an exclusive block-wide prefix scan using the specified binary \p scan_op functor.  Each thread contributes one input element.  the call-back functor \p block_prefix_callback_op is invoked by the first warp in the block, and the value returned by <em>lane</em><sub>0</sub> in that warp is used as the "seed" value that logically prefixes the threadblock's scan inputs.  Also provides every thread with the block-wide \p block_aggregate of all inputs.
      *
-     * The \p block_prefix_op functor must implement a member function <tt>T operator()(T block_aggregate)</tt>.
+     * The \p block_prefix_callback_op functor must implement a member function <tt>T operator()(T block_aggregate)</tt>.
      * The functor's input parameter \p block_aggregate is the same value also returned by the scan operation.
      * The functor will be invoked by the first warp of threads in the block, however only the return value from
      * <em>lane</em><sub>0</sub> is applied as the block-wide prefix.  Can be stateful.
@@ -827,13 +888,13 @@ public:
      *
      * // A stateful callback functor that maintains a running prefix to be applied
      * // during consecutive scan operations.
-     * struct BlockPrefixOp
+     * struct BlockPrefixCallbackOp
      * {
      *     // Running prefix
      *     int running_total;
      *
      *     // Constructor
-     *     __device__ BlockPrefixOp(int running_total) : running_total(running_total) {}
+     *     __device__ BlockPrefixCallbackOp(int running_total) : running_total(running_total) {}
      *
      *     // Callback operator to be entered by the first warp of threads in the block.
      *     // Thread-0 is responsible for returning a value for seeding the block-wide scan.
@@ -854,7 +915,7 @@ public:
      *     __shared__ typename BlockScan::TempStorage temp_storage;
      *
      *     // Initialize running total
-     *     BlockPrefixOp prefix_op(INT_MIN);
+     *     BlockPrefixCallbackOp prefix_op(INT_MIN);
      *
      *     // Have the block iterate over segments of items
      *     for (int block_offset = 0; block_offset < num_items; block_offset += 128)
@@ -880,20 +941,20 @@ public:
      * scan, etc.
      *
      * \tparam ScanOp               <b>[inferred]</b> Binary scan operator type having member <tt>T operator()(const T &a, const T &b)</tt>
-     * \tparam BlockPrefixOp        <b>[inferred]</b> Call-back functor type having member <tt>T operator()(T block_aggregate)</tt>
+     * \tparam BlockPrefixCallbackOp        <b>[inferred]</b> Call-back functor type having member <tt>T operator()(T block_aggregate)</tt>
      */
     template <
         typename ScanOp,
-        typename BlockPrefixOp>
+        typename BlockPrefixCallbackOp>
     __device__ __forceinline__ void ExclusiveScan(
-        T               input,                          ///< [in] Calling thread's input item
-        T               &output,                        ///< [out] Calling thread's output item (may be aliased to \p input)
-        T               identity,                       ///< [in] Identity value
-        ScanOp          scan_op,                        ///< [in] Binary scan operator
-        T               &block_aggregate,               ///< [out] block-wide aggregate reduction of input items (exclusive of the \p block_prefix_op value)
-        BlockPrefixOp   &block_prefix_op)               ///< [in-out] <b>[<em>warp</em><sub>0</sub> only]</b> Call-back functor for specifying a block-wide prefix to be applied to all inputs.
+        T                       input,                          ///< [in] Calling thread's input item
+        T                       &output,                        ///< [out] Calling thread's output item (may be aliased to \p input)
+        T                       identity,                       ///< [in] Identity value
+        ScanOp                  scan_op,                        ///< [in] Binary scan operator
+        T                       &block_aggregate,               ///< [out] block-wide aggregate reduction of input items (exclusive of the \p block_prefix_callback_op value)
+        BlockPrefixCallbackOp   &block_prefix_callback_op)      ///< [in-out] <b>[<em>warp</em><sub>0</sub> only]</b> Call-back functor for specifying a block-wide prefix to be applied to all inputs.
     {
-        InternalBlockScan(temp_storage, linear_tid).ExclusiveScan(input, output, identity, scan_op, block_aggregate, block_prefix_op);
+        InternalBlockScan(temp_storage, linear_tid).ExclusiveScan(input, output, identity, scan_op, block_aggregate, block_prefix_callback_op);
     }
 
 
@@ -1028,9 +1089,9 @@ public:
 
 
     /**
-     * \brief Computes an exclusive block-wide prefix scan using the specified binary \p scan_op functor.  Each thread contributes an array of consecutive input elements.  the call-back functor \p block_prefix_op is invoked by the first warp in the block, and the value returned by <em>lane</em><sub>0</sub> in that warp is used as the "seed" value that logically prefixes the threadblock's scan inputs.  Also provides every thread with the block-wide \p block_aggregate of all inputs.
+     * \brief Computes an exclusive block-wide prefix scan using the specified binary \p scan_op functor.  Each thread contributes an array of consecutive input elements.  the call-back functor \p block_prefix_callback_op is invoked by the first warp in the block, and the value returned by <em>lane</em><sub>0</sub> in that warp is used as the "seed" value that logically prefixes the threadblock's scan inputs.  Also provides every thread with the block-wide \p block_aggregate of all inputs.
      *
-     * The \p block_prefix_op functor must implement a member function <tt>T operator()(T block_aggregate)</tt>.
+     * The \p block_prefix_callback_op functor must implement a member function <tt>T operator()(T block_aggregate)</tt>.
      * The functor's input parameter \p block_aggregate is the same value also returned by the scan operation.
      * The functor will be invoked by the first warp of threads in the block, however only the return value from
      * <em>lane</em><sub>0</sub> is applied as the block-wide prefix.  Can be stateful.
@@ -1051,13 +1112,13 @@ public:
      *
      * // A stateful callback functor that maintains a running prefix to be applied
      * // during consecutive scan operations.
-     * struct BlockPrefixOp
+     * struct BlockPrefixCallbackOp
      * {
      *     // Running prefix
      *     int running_total;
      *
      *     // Constructor
-     *     __device__ BlockPrefixOp(int running_total) : running_total(running_total) {}
+     *     __device__ BlockPrefixCallbackOp(int running_total) : running_total(running_total) {}
      *
      *     // Callback operator to be entered by the first warp of threads in the block.
      *     // Thread-0 is responsible for returning a value for seeding the block-wide scan.
@@ -1084,7 +1145,7 @@ public:
      *     } temp_storage;
      *
      *     // Initialize running total
-     *     BlockPrefixOp prefix_op(0);
+     *     BlockPrefixCallbackOp prefix_op(0);
      *
      *     // Have the block iterate over segments of items
      *     for (int block_offset = 0; block_offset < num_items; block_offset += 128 * 4)
@@ -1114,25 +1175,25 @@ public:
      *
      * \tparam ITEMS_PER_THREAD     <b>[inferred]</b> The number of consecutive items partitioned onto each thread.
      * \tparam ScanOp               <b>[inferred]</b> Binary scan operator type having member <tt>T operator()(const T &a, const T &b)</tt>
-     * \tparam BlockPrefixOp        <b>[inferred]</b> Call-back functor type having member <tt>T operator()(T block_aggregate)</tt>
+     * \tparam BlockPrefixCallbackOp        <b>[inferred]</b> Call-back functor type having member <tt>T operator()(T block_aggregate)</tt>
      */
     template <
         int             ITEMS_PER_THREAD,
         typename        ScanOp,
-        typename        BlockPrefixOp>
+        typename        BlockPrefixCallbackOp>
     __device__ __forceinline__ void ExclusiveScan(
-        T               (&input)[ITEMS_PER_THREAD],     ///< [in] Calling thread's input items
-        T               (&output)[ITEMS_PER_THREAD],    ///< [out] Calling thread's output items (may be aliased to \p input)
-        T               identity,                       ///< [in] Identity value
-        ScanOp          scan_op,                        ///< [in] Binary scan operator
-        T               &block_aggregate,               ///< [out] block-wide aggregate reduction of input items (exclusive of the \p block_prefix_op value)
-        BlockPrefixOp   &block_prefix_op)               ///< [in-out] <b>[<em>warp</em><sub>0</sub> only]</b> Call-back functor for specifying a block-wide prefix to be applied to all inputs.
+        T                       (&input)[ITEMS_PER_THREAD],     ///< [in] Calling thread's input items
+        T                       (&output)[ITEMS_PER_THREAD],    ///< [out] Calling thread's output items (may be aliased to \p input)
+        T                       identity,                       ///< [in] Identity value
+        ScanOp                  scan_op,                        ///< [in] Binary scan operator
+        T                       &block_aggregate,               ///< [out] block-wide aggregate reduction of input items (exclusive of the \p block_prefix_callback_op value)
+        BlockPrefixCallbackOp   &block_prefix_callback_op)      ///< [in-out] <b>[<em>warp</em><sub>0</sub> only]</b> Call-back functor for specifying a block-wide prefix to be applied to all inputs.
     {
         // Reduce consecutive thread items in registers
         T thread_partial = ThreadReduce(input, scan_op);
 
         // Exclusive threadblock-scan
-        ExclusiveScan(thread_partial, thread_partial, identity, scan_op, block_aggregate, block_prefix_op);
+        ExclusiveScan(thread_partial, thread_partial, identity, scan_op, block_aggregate, block_prefix_callback_op);
 
         // Exclusive scan in registers with prefix
         ThreadScanExclusive(input, output, scan_op, thread_partial);
@@ -1194,9 +1255,9 @@ public:
 
 
     /**
-     * \brief Computes an exclusive block-wide prefix scan using the specified binary \p scan_op functor.  Each thread contributes one input element.  the call-back functor \p block_prefix_op is invoked by the first warp in the block, and the value returned by <em>lane</em><sub>0</sub> in that warp is used as the "seed" value that logically prefixes the threadblock's scan inputs.  Also provides every thread with the block-wide \p block_aggregate of all inputs.
+     * \brief Computes an exclusive block-wide prefix scan using the specified binary \p scan_op functor.  Each thread contributes one input element.  the call-back functor \p block_prefix_callback_op is invoked by the first warp in the block, and the value returned by <em>lane</em><sub>0</sub> in that warp is used as the "seed" value that logically prefixes the threadblock's scan inputs.  Also provides every thread with the block-wide \p block_aggregate of all inputs.
      *
-     * The \p block_prefix_op functor must implement a member function <tt>T operator()(T block_aggregate)</tt>.
+     * The \p block_prefix_callback_op functor must implement a member function <tt>T operator()(T block_aggregate)</tt>.
      * The functor's input parameter \p block_aggregate is the same value also returned by the scan operation.
      * The functor will be invoked by the first warp of threads in the block, however only the return value from
      * <em>lane</em><sub>0</sub> is applied as the block-wide prefix.  Can be stateful.
@@ -1208,19 +1269,19 @@ public:
      * \smemreuse
      *
      * \tparam ScanOp               <b>[inferred]</b> Binary scan operator type having member <tt>T operator()(const T &a, const T &b)</tt>
-     * \tparam BlockPrefixOp        <b>[inferred]</b> Call-back functor type having member <tt>T operator()(T block_aggregate)</tt>
+     * \tparam BlockPrefixCallbackOp        <b>[inferred]</b> Call-back functor type having member <tt>T operator()(T block_aggregate)</tt>
      */
     template <
         typename ScanOp,
-        typename BlockPrefixOp>
+        typename BlockPrefixCallbackOp>
     __device__ __forceinline__ void ExclusiveScan(
-        T               input,                          ///< [in] Calling thread's input item
-        T               &output,                        ///< [out] Calling thread's output item (may be aliased to \p input)
-        ScanOp          scan_op,                        ///< [in] Binary scan operator
-        T               &block_aggregate,               ///< [out] block-wide aggregate reduction of input items (exclusive of the \p block_prefix_op value)
-        BlockPrefixOp   &block_prefix_op)               ///< [in-out] <b>[<em>warp</em><sub>0</sub> only]</b> Call-back functor for specifying a block-wide prefix to be applied to all inputs.
+        T                       input,                          ///< [in] Calling thread's input item
+        T                       &output,                        ///< [out] Calling thread's output item (may be aliased to \p input)
+        ScanOp                  scan_op,                        ///< [in] Binary scan operator
+        T                       &block_aggregate,               ///< [out] block-wide aggregate reduction of input items (exclusive of the \p block_prefix_callback_op value)
+        BlockPrefixCallbackOp   &block_prefix_callback_op)      ///< [in-out] <b>[<em>warp</em><sub>0</sub> only]</b> Call-back functor for specifying a block-wide prefix to be applied to all inputs.
     {
-        InternalBlockScan(temp_storage, linear_tid).ExclusiveScan(input, output, scan_op, block_aggregate, block_prefix_op);
+        InternalBlockScan(temp_storage, linear_tid).ExclusiveScan(input, output, scan_op, block_aggregate, block_prefix_callback_op);
     }
 
 
@@ -1295,9 +1356,9 @@ public:
 
 
     /**
-     * \brief Computes an exclusive block-wide prefix scan using the specified binary \p scan_op functor.  Each thread contributes an array of consecutive input elements.  the call-back functor \p block_prefix_op is invoked by the first warp in the block, and the value returned by <em>lane</em><sub>0</sub> in that warp is used as the "seed" value that logically prefixes the threadblock's scan inputs.  Also provides every thread with the block-wide \p block_aggregate of all inputs.
+     * \brief Computes an exclusive block-wide prefix scan using the specified binary \p scan_op functor.  Each thread contributes an array of consecutive input elements.  the call-back functor \p block_prefix_callback_op is invoked by the first warp in the block, and the value returned by <em>lane</em><sub>0</sub> in that warp is used as the "seed" value that logically prefixes the threadblock's scan inputs.  Also provides every thread with the block-wide \p block_aggregate of all inputs.
      *
-     * The \p block_prefix_op functor must implement a member function <tt>T operator()(T block_aggregate)</tt>.
+     * The \p block_prefix_callback_op functor must implement a member function <tt>T operator()(T block_aggregate)</tt>.
      * The functor's input parameter \p block_aggregate is the same value also returned by the scan operation.
      * The functor will be invoked by the first warp of threads in the block, however only the return value from
      * <em>lane</em><sub>0</sub> is applied as the block-wide prefix.  Can be stateful.
@@ -1310,24 +1371,24 @@ public:
      *
      * \tparam ITEMS_PER_THREAD     <b>[inferred]</b> The number of consecutive items partitioned onto each thread.
      * \tparam ScanOp               <b>[inferred]</b> Binary scan operator type having member <tt>T operator()(const T &a, const T &b)</tt>
-     * \tparam BlockPrefixOp        <b>[inferred]</b> Call-back functor type having member <tt>T operator()(T block_aggregate)</tt>
+     * \tparam BlockPrefixCallbackOp        <b>[inferred]</b> Call-back functor type having member <tt>T operator()(T block_aggregate)</tt>
      */
     template <
         int             ITEMS_PER_THREAD,
         typename        ScanOp,
-        typename        BlockPrefixOp>
+        typename        BlockPrefixCallbackOp>
     __device__ __forceinline__ void ExclusiveScan(
-        T               (&input)[ITEMS_PER_THREAD],   ///< [in] Calling thread's input items
-        T               (&output)[ITEMS_PER_THREAD],  ///< [out] Calling thread's output items (may be aliased to \p input)
-        ScanOp          scan_op,                      ///< [in] Binary scan operator
-        T               &block_aggregate,             ///< [out] block-wide aggregate reduction of input items (exclusive of the \p block_prefix_op value)
-        BlockPrefixOp   &block_prefix_op)             ///< [in-out] <b>[<em>warp</em><sub>0</sub> only]</b> Call-back functor for specifying a block-wide prefix to be applied to all inputs.
+        T                       (&input)[ITEMS_PER_THREAD],   ///< [in] Calling thread's input items
+        T                       (&output)[ITEMS_PER_THREAD],  ///< [out] Calling thread's output items (may be aliased to \p input)
+        ScanOp                  scan_op,                      ///< [in] Binary scan operator
+        T                       &block_aggregate,             ///< [out] block-wide aggregate reduction of input items (exclusive of the \p block_prefix_callback_op value)
+        BlockPrefixCallbackOp   &block_prefix_callback_op)    ///< [in-out] <b>[<em>warp</em><sub>0</sub> only]</b> Call-back functor for specifying a block-wide prefix to be applied to all inputs.
     {
         // Reduce consecutive thread items in registers
         T thread_partial = ThreadReduce(input, scan_op);
 
         // Exclusive threadblock-scan
-        ExclusiveScan(thread_partial, thread_partial, scan_op, block_aggregate, block_prefix_op);
+        ExclusiveScan(thread_partial, thread_partial, scan_op, block_aggregate, block_prefix_callback_op);
 
         // Exclusive scan in registers with prefix
         ThreadScanExclusive(input, output, scan_op, thread_partial);
@@ -1434,9 +1495,9 @@ public:
 
 
     /**
-     * \brief Computes an inclusive block-wide prefix scan using addition (+) as the scan operator.  Each thread contributes one input element.  Instead of using 0 as the block-wide prefix, the call-back functor \p block_prefix_op is invoked by the first warp in the block, and the value returned by <em>lane</em><sub>0</sub> in that warp is used as the "seed" value that logically prefixes the threadblock's scan inputs.  Also provides every thread with the block-wide \p block_aggregate of all inputs.
+     * \brief Computes an inclusive block-wide prefix scan using addition (+) as the scan operator.  Each thread contributes one input element.  Instead of using 0 as the block-wide prefix, the call-back functor \p block_prefix_callback_op is invoked by the first warp in the block, and the value returned by <em>lane</em><sub>0</sub> in that warp is used as the "seed" value that logically prefixes the threadblock's scan inputs.  Also provides every thread with the block-wide \p block_aggregate of all inputs.
      *
-     * The \p block_prefix_op functor must implement a member function <tt>T operator()(T block_aggregate)</tt>.
+     * The \p block_prefix_callback_op functor must implement a member function <tt>T operator()(T block_aggregate)</tt>.
      * The functor's input parameter \p block_aggregate is the same value also returned by the scan operation.
      * The functor will be invoked by the first warp of threads in the block, however only the return value from
      * <em>lane</em><sub>0</sub> is applied as the block-wide prefix.  Can be stateful.
@@ -1455,13 +1516,13 @@ public:
      *
      * // A stateful callback functor that maintains a running prefix to be applied
      * // during consecutive scan operations.
-     * struct BlockPrefixOp
+     * struct BlockPrefixCallbackOp
      * {
      *     // Running prefix
      *     int running_total;
      *
      *     // Constructor
-     *     __device__ BlockPrefixOp(int running_total) : running_total(running_total) {}
+     *     __device__ BlockPrefixCallbackOp(int running_total) : running_total(running_total) {}
      *
      *     // Callback operator to be entered by the first warp of threads in the block.
      *     // Thread-0 is responsible for returning a value for seeding the block-wide scan.
@@ -1482,7 +1543,7 @@ public:
      *     __shared__ typename BlockScan::TempStorage temp_storage;
      *
      *     // Initialize running total
-     *     BlockPrefixOp prefix_op(0);
+     *     BlockPrefixCallbackOp prefix_op(0);
      *
      *     // Have the block iterate over segments of items
      *     for (int block_offset = 0; block_offset < num_items; block_offset += 128)
@@ -1506,16 +1567,16 @@ public:
      * The output for the second segment will be <tt>129, 130, ..., 256</tt>.  Furthermore,
      * the value \p 128 will be stored in \p block_aggregate for all threads after each scan.
      *
-     * \tparam BlockPrefixOp          <b>[inferred]</b> Call-back functor type having member <tt>T operator()(T block_aggregate)</tt>
+     * \tparam BlockPrefixCallbackOp          <b>[inferred]</b> Call-back functor type having member <tt>T operator()(T block_aggregate)</tt>
      */
-    template <typename BlockPrefixOp>
+    template <typename BlockPrefixCallbackOp>
     __device__ __forceinline__ void InclusiveSum(
-        T               input,                          ///< [in] Calling thread's input item
-        T               &output,                        ///< [out] Calling thread's output item (may be aliased to \p input)
-        T               &block_aggregate,               ///< [out] block-wide aggregate reduction of input items (exclusive of the \p block_prefix_op value)
-        BlockPrefixOp   &block_prefix_op)               ///< [in-out] <b>[<em>warp</em><sub>0</sub> only]</b> Call-back functor for specifying a block-wide prefix to be applied to all inputs.
+        T                       input,                          ///< [in] Calling thread's input item
+        T                       &output,                        ///< [out] Calling thread's output item (may be aliased to \p input)
+        T                       &block_aggregate,               ///< [out] block-wide aggregate reduction of input items (exclusive of the \p block_prefix_callback_op value)
+        BlockPrefixCallbackOp   &block_prefix_callback_op)      ///< [in-out] <b>[<em>warp</em><sub>0</sub> only]</b> Call-back functor for specifying a block-wide prefix to be applied to all inputs.
     {
-        InternalBlockScan(temp_storage, linear_tid).InclusiveSum(input, output, block_aggregate, block_prefix_op);
+        InternalBlockScan(temp_storage, linear_tid).InclusiveSum(input, output, block_aggregate, block_prefix_callback_op);
     }
 
 
@@ -1653,9 +1714,9 @@ public:
 
 
     /**
-     * \brief Computes an inclusive block-wide prefix scan using addition (+) as the scan operator.  Each thread contributes an array of consecutive input elements.  Instead of using 0 as the block-wide prefix, the call-back functor \p block_prefix_op is invoked by the first warp in the block, and the value returned by <em>lane</em><sub>0</sub> in that warp is used as the "seed" value that logically prefixes the threadblock's scan inputs.  Also provides every thread with the block-wide \p block_aggregate of all inputs.
+     * \brief Computes an inclusive block-wide prefix scan using addition (+) as the scan operator.  Each thread contributes an array of consecutive input elements.  Instead of using 0 as the block-wide prefix, the call-back functor \p block_prefix_callback_op is invoked by the first warp in the block, and the value returned by <em>lane</em><sub>0</sub> in that warp is used as the "seed" value that logically prefixes the threadblock's scan inputs.  Also provides every thread with the block-wide \p block_aggregate of all inputs.
      *
-     * The \p block_prefix_op functor must implement a member function <tt>T operator()(T block_aggregate)</tt>.
+     * The \p block_prefix_callback_op functor must implement a member function <tt>T operator()(T block_aggregate)</tt>.
      * The functor's input parameter \p block_aggregate is the same value also returned by the scan operation.
      * The functor will be invoked by the first warp of threads in the block, however only the return value from
      * <em>lane</em><sub>0</sub> is applied as the block-wide prefix.  Can be stateful.
@@ -1675,13 +1736,13 @@ public:
      *
      * // A stateful callback functor that maintains a running prefix to be applied
      * // during consecutive scan operations.
-     * struct BlockPrefixOp
+     * struct BlockPrefixCallbackOp
      * {
      *     // Running prefix
      *     int running_total;
      *
      *     // Constructor
-     *     __device__ BlockPrefixOp(int running_total) : running_total(running_total) {}
+     *     __device__ BlockPrefixCallbackOp(int running_total) : running_total(running_total) {}
      *
      *     // Callback operator to be entered by the first warp of threads in the block.
      *     // Thread-0 is responsible for returning a value for seeding the block-wide scan.
@@ -1708,7 +1769,7 @@ public:
      *     } temp_storage;
      *
      *     // Initialize running total
-     *     BlockPrefixOp prefix_op(0);
+     *     BlockPrefixCallbackOp prefix_op(0);
      *
      *     // Have the block iterate over segments of items
      *     for (int block_offset = 0; block_offset < num_items; block_offset += 128 * 4)
@@ -1736,20 +1797,20 @@ public:
      * the value \p 512 will be stored in \p block_aggregate for all threads after each scan.
      *
      * \tparam ITEMS_PER_THREAD     <b>[inferred]</b> The number of consecutive items partitioned onto each thread.
-     * \tparam BlockPrefixOp        <b>[inferred]</b> Call-back functor type having member <tt>T operator()(T block_aggregate)</tt>
+     * \tparam BlockPrefixCallbackOp        <b>[inferred]</b> Call-back functor type having member <tt>T operator()(T block_aggregate)</tt>
      */
     template <
         int ITEMS_PER_THREAD,
-        typename BlockPrefixOp>
+        typename BlockPrefixCallbackOp>
     __device__ __forceinline__ void InclusiveSum(
-        T               (&input)[ITEMS_PER_THREAD],     ///< [in] Calling thread's input items
-        T               (&output)[ITEMS_PER_THREAD],    ///< [out] Calling thread's output items (may be aliased to \p input)
-        T               &block_aggregate,               ///< [out] block-wide aggregate reduction of input items (exclusive of the \p block_prefix_op value)
-        BlockPrefixOp   &block_prefix_op)               ///< [in-out] <b>[<em>warp</em><sub>0</sub> only]</b> Call-back functor for specifying a block-wide prefix to be applied to all inputs.
+        T                       (&input)[ITEMS_PER_THREAD],     ///< [in] Calling thread's input items
+        T                       (&output)[ITEMS_PER_THREAD],    ///< [out] Calling thread's output items (may be aliased to \p input)
+        T                       &block_aggregate,               ///< [out] block-wide aggregate reduction of input items (exclusive of the \p block_prefix_callback_op value)
+        BlockPrefixCallbackOp   &block_prefix_callback_op)      ///< [in-out] <b>[<em>warp</em><sub>0</sub> only]</b> Call-back functor for specifying a block-wide prefix to be applied to all inputs.
     {
         if (ITEMS_PER_THREAD == 1)
         {
-            InclusiveSum(input[0], output[0], block_aggregate, block_prefix_op);
+            InclusiveSum(input[0], output[0], block_aggregate, block_prefix_callback_op);
         }
         else
         {
@@ -1758,7 +1819,7 @@ public:
             T thread_partial = ThreadReduce(input, scan_op);
 
             // Exclusive threadblock-scan
-            ExclusiveSum(thread_partial, thread_partial, block_aggregate, block_prefix_op);
+            ExclusiveSum(thread_partial, thread_partial, block_aggregate, block_prefix_callback_op);
 
             // Inclusive scan in registers with prefix
             ThreadScanInclusive(input, output, scan_op, thread_partial);
@@ -1872,9 +1933,9 @@ public:
 
 
     /**
-     * \brief Computes an inclusive block-wide prefix scan using the specified binary \p scan_op functor.  Each thread contributes one input element.  the call-back functor \p block_prefix_op is invoked by the first warp in the block, and the value returned by <em>lane</em><sub>0</sub> in that warp is used as the "seed" value that logically prefixes the threadblock's scan inputs.  Also provides every thread with the block-wide \p block_aggregate of all inputs.
+     * \brief Computes an inclusive block-wide prefix scan using the specified binary \p scan_op functor.  Each thread contributes one input element.  the call-back functor \p block_prefix_callback_op is invoked by the first warp in the block, and the value returned by <em>lane</em><sub>0</sub> in that warp is used as the "seed" value that logically prefixes the threadblock's scan inputs.  Also provides every thread with the block-wide \p block_aggregate of all inputs.
      *
-     * The \p block_prefix_op functor must implement a member function <tt>T operator()(T block_aggregate)</tt>.
+     * The \p block_prefix_callback_op functor must implement a member function <tt>T operator()(T block_aggregate)</tt>.
      * The functor's input parameter \p block_aggregate is the same value also returned by the scan operation.
      * The functor will be invoked by the first warp of threads in the block, however only the return value from
      * <em>lane</em><sub>0</sub> is applied as the block-wide prefix.  Can be stateful.
@@ -1895,13 +1956,13 @@ public:
      *
      * // A stateful callback functor that maintains a running prefix to be applied
      * // during consecutive scan operations.
-     * struct BlockPrefixOp
+     * struct BlockPrefixCallbackOp
      * {
      *     // Running prefix
      *     int running_total;
      *
      *     // Constructor
-     *     __device__ BlockPrefixOp(int running_total) : running_total(running_total) {}
+     *     __device__ BlockPrefixCallbackOp(int running_total) : running_total(running_total) {}
      *
      *     // Callback operator to be entered by the first warp of threads in the block.
      *     // Thread-0 is responsible for returning a value for seeding the block-wide scan.
@@ -1922,7 +1983,7 @@ public:
      *     __shared__ typename BlockScan::TempStorage temp_storage;
      *
      *     // Initialize running total
-     *     BlockPrefixOp prefix_op(INT_MIN);
+     *     BlockPrefixCallbackOp prefix_op(INT_MIN);
      *
      *     // Have the block iterate over segments of items
      *     for (int block_offset = 0; block_offset < num_items; block_offset += 128)
@@ -1948,19 +2009,19 @@ public:
      * scan, etc.
      *
      * \tparam ScanOp               <b>[inferred]</b> Binary scan operator type having member <tt>T operator()(const T &a, const T &b)</tt>
-     * \tparam BlockPrefixOp        <b>[inferred]</b> Call-back functor type having member <tt>T operator()(T block_aggregate)</tt>
+     * \tparam BlockPrefixCallbackOp        <b>[inferred]</b> Call-back functor type having member <tt>T operator()(T block_aggregate)</tt>
      */
     template <
         typename ScanOp,
-        typename BlockPrefixOp>
+        typename BlockPrefixCallbackOp>
     __device__ __forceinline__ void InclusiveScan(
-        T               input,                          ///< [in] Calling thread's input item
-        T               &output,                        ///< [out] Calling thread's output item (may be aliased to \p input)
-        ScanOp          scan_op,                        ///< [in] Binary scan operator
-        T               &block_aggregate,               ///< [out] block-wide aggregate reduction of input items (exclusive of the \p block_prefix_op value)
-        BlockPrefixOp   &block_prefix_op)               ///< [in-out] <b>[<em>warp</em><sub>0</sub> only]</b> Call-back functor for specifying a block-wide prefix to be applied to all inputs.
+        T                       input,                          ///< [in] Calling thread's input item
+        T                       &output,                        ///< [out] Calling thread's output item (may be aliased to \p input)
+        ScanOp                  scan_op,                        ///< [in] Binary scan operator
+        T                       &block_aggregate,               ///< [out] block-wide aggregate reduction of input items (exclusive of the \p block_prefix_callback_op value)
+        BlockPrefixCallbackOp   &block_prefix_callback_op)      ///< [in-out] <b>[<em>warp</em><sub>0</sub> only]</b> Call-back functor for specifying a block-wide prefix to be applied to all inputs.
     {
-        InternalBlockScan(temp_storage, linear_tid).InclusiveScan(input, output, scan_op, block_aggregate, block_prefix_op);
+        InternalBlockScan(temp_storage, linear_tid).InclusiveScan(input, output, scan_op, block_aggregate, block_prefix_callback_op);
     }
 
 
@@ -2107,9 +2168,9 @@ public:
 
 
     /**
-     * \brief Computes an inclusive block-wide prefix scan using the specified binary \p scan_op functor.  Each thread contributes an array of consecutive input elements.  the call-back functor \p block_prefix_op is invoked by the first warp in the block, and the value returned by <em>lane</em><sub>0</sub> in that warp is used as the "seed" value that logically prefixes the threadblock's scan inputs.  Also provides every thread with the block-wide \p block_aggregate of all inputs.
+     * \brief Computes an inclusive block-wide prefix scan using the specified binary \p scan_op functor.  Each thread contributes an array of consecutive input elements.  the call-back functor \p block_prefix_callback_op is invoked by the first warp in the block, and the value returned by <em>lane</em><sub>0</sub> in that warp is used as the "seed" value that logically prefixes the threadblock's scan inputs.  Also provides every thread with the block-wide \p block_aggregate of all inputs.
      *
-     * The \p block_prefix_op functor must implement a member function <tt>T operator()(T block_aggregate)</tt>.
+     * The \p block_prefix_callback_op functor must implement a member function <tt>T operator()(T block_aggregate)</tt>.
      * The functor's input parameter \p block_aggregate is the same value also returned by the scan operation.
      * The functor will be invoked by the first warp of threads in the block, however only the return value from
      * <em>lane</em><sub>0</sub> is applied as the block-wide prefix.  Can be stateful.
@@ -2130,13 +2191,13 @@ public:
      *
      * // A stateful callback functor that maintains a running prefix to be applied
      * // during consecutive scan operations.
-     * struct BlockPrefixOp
+     * struct BlockPrefixCallbackOp
      * {
      *     // Running prefix
      *     int running_total;
      *
      *     // Constructor
-     *     __device__ BlockPrefixOp(int running_total) : running_total(running_total) {}
+     *     __device__ BlockPrefixCallbackOp(int running_total) : running_total(running_total) {}
      *
      *     // Callback operator to be entered by the first warp of threads in the block.
      *     // Thread-0 is responsible for returning a value for seeding the block-wide scan.
@@ -2163,7 +2224,7 @@ public:
      *     } temp_storage;
      *
      *     // Initialize running total
-     *     BlockPrefixOp prefix_op(0);
+     *     BlockPrefixCallbackOp prefix_op(0);
      *
      *     // Have the block iterate over segments of items
      *     for (int block_offset = 0; block_offset < num_items; block_offset += 128 * 4)
@@ -2193,22 +2254,22 @@ public:
      *
      * \tparam ITEMS_PER_THREAD     <b>[inferred]</b> The number of consecutive items partitioned onto each thread.
      * \tparam ScanOp               <b>[inferred]</b> Binary scan operator type having member <tt>T operator()(const T &a, const T &b)</tt>
-     * \tparam BlockPrefixOp        <b>[inferred]</b> Call-back functor type having member <tt>T operator()(T block_aggregate)</tt>
+     * \tparam BlockPrefixCallbackOp        <b>[inferred]</b> Call-back functor type having member <tt>T operator()(T block_aggregate)</tt>
      */
     template <
         int             ITEMS_PER_THREAD,
         typename        ScanOp,
-        typename        BlockPrefixOp>
+        typename        BlockPrefixCallbackOp>
     __device__ __forceinline__ void InclusiveScan(
-        T               (&input)[ITEMS_PER_THREAD],     ///< [in] Calling thread's input items
-        T               (&output)[ITEMS_PER_THREAD],    ///< [out] Calling thread's output items (may be aliased to \p input)
-        ScanOp          scan_op,                        ///< [in] Binary scan operator
-        T               &block_aggregate,               ///< [out] block-wide aggregate reduction of input items (exclusive of the \p block_prefix_op value)
-        BlockPrefixOp   &block_prefix_op)               ///< [in-out] <b>[<em>warp</em><sub>0</sub> only]</b> Call-back functor for specifying a block-wide prefix to be applied to all inputs.
+        T                       (&input)[ITEMS_PER_THREAD],     ///< [in] Calling thread's input items
+        T                       (&output)[ITEMS_PER_THREAD],    ///< [out] Calling thread's output items (may be aliased to \p input)
+        ScanOp                  scan_op,                        ///< [in] Binary scan operator
+        T                       &block_aggregate,               ///< [out] block-wide aggregate reduction of input items (exclusive of the \p block_prefix_callback_op value)
+        BlockPrefixCallbackOp   &block_prefix_callback_op)      ///< [in-out] <b>[<em>warp</em><sub>0</sub> only]</b> Call-back functor for specifying a block-wide prefix to be applied to all inputs.
     {
         if (ITEMS_PER_THREAD == 1)
         {
-            InclusiveScan(input[0], output[0], scan_op, block_aggregate, block_prefix_op);
+            InclusiveScan(input[0], output[0], scan_op, block_aggregate, block_prefix_callback_op);
         }
         else
         {
@@ -2216,7 +2277,7 @@ public:
             T thread_partial = ThreadReduce(input, scan_op);
 
             // Exclusive threadblock-scan
-            ExclusiveScan(thread_partial, thread_partial, scan_op, block_aggregate, block_prefix_op);
+            ExclusiveScan(thread_partial, thread_partial, scan_op, block_aggregate, block_prefix_callback_op);
 
             // Inclusive scan in registers with prefix
             ThreadScanInclusive(input, output, scan_op, thread_partial);

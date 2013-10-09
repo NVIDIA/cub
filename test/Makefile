@@ -185,6 +185,23 @@ rwildcard=$(foreach d,$(wildcard $1*),$(call rwildcard,$d/,$2) $(filter $(subst 
 DEPS =	./Makefile \
 		./test_util.h \
 		$(call rwildcard,../cub/,*.cuh)
+		
+ALL = 	link \
+	 	test_iterator \
+	 	test_allocator \
+	 	test_grid_barrier \
+	 	test_block_reduce \
+	 	test_warp_scan \
+	 	test_warp_reduce \
+	 	test_block_scan \
+	 	test_block_load_store \
+	 	test_block_radix_sort \
+	 	test_block_histogram \
+	 	test_device_reduce \
+	 	test_device_histogram \
+	 	test_device_scan \
+	 	test_device_radix_sort
+		
 
 
 #-------------------------------------------------------------------------------
@@ -204,16 +221,23 @@ clean :
 
 
 #-------------------------------------------------------------------------------
+# make all
+#-------------------------------------------------------------------------------
+
+all : $(ALL)
+
+
+#-------------------------------------------------------------------------------
 # make link
 #-------------------------------------------------------------------------------
 
-link: bin/link
+link : bin/link.exe
 
 bin/link : link_a.cu link_b.cu link_main.cpp $(DEPS)
 	mkdir -p bin
 	$(NVCC) $(CPU_ARCH) $(INC) $(DEFINES) $(SM_TARGETS) link_a.cu -c -o bin/link_a.obj
 	$(NVCC) $(CPU_ARCH) $(INC) $(DEFINES) $(SM_TARGETS) link_b.cu -c -o bin/link_b.obj
-	$(CC) link_main.cpp bin/link_a.obj bin/link_b.obj $(CUDART) -o bin/link 
+	$(CC) link_main.cpp bin/link_a.obj bin/link_b.obj $(CUDART) -o bin/link.exe 
 
 #-------------------------------------------------------------------------------
 # make test_iterator 

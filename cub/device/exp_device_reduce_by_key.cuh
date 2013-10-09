@@ -75,7 +75,7 @@ __launch_bounds__ (int(BlockSweepScanPolicy::BLOCK_THREADS))
 __global__ void MultiBlockScanKernel(
     InputIterator             d_in,           ///< Input data
     OutputIterator            d_out,          ///< Output data
-    DeviceScanTileDescriptor<T> *d_tile_status, ///< Global list of tile status
+    LookbackTileDescriptor<T> *d_tile_status, ///< Global list of tile status
     ReductionOp                 reduction_op,   ///< Binary scan operator
     Identity                    identity,       ///< Identity element
     SizeT                       num_items,      ///< Total number of scan items for the entire problem
@@ -314,7 +314,7 @@ struct DeviceReduceByKey
             void* allocations[2];
             size_t allocation_sizes[2] =
             {
-                (num_tiles + TILE_STATUS_PADDING) * sizeof(DeviceScanTileDescriptor<T>),        // bytes needed for tile status descriptors
+                (num_tiles + TILE_STATUS_PADDING) * sizeof(LookbackTileDescriptor<T>),        // bytes needed for tile status descriptors
                 GridQueue<int>::AllocationSize()                                            // bytes needed for grid queue descriptor
             };
 
@@ -326,7 +326,7 @@ struct DeviceReduceByKey
                 return cudaSuccess;
 
             // Global list of tile status
-            DeviceScanTileDescriptor<T> *d_tile_status = (DeviceScanTileDescriptor<T>*) allocations[0];
+            LookbackTileDescriptor<T> *d_tile_status = (LookbackTileDescriptor<T>*) allocations[0];
 
             // Grid queue descriptor
             GridQueue<int> queue(allocations[1]);

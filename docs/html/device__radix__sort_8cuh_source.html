@@ -241,7 +241,7 @@ var searchBox = new SearchBox("searchBox", "search",false,'Search');
 <div class="line"><a name="l00152"></a><span class="lineno">  152</span>&#160;</div>
 <div class="line"><a name="l00153"></a><span class="lineno">  153</span>&#160;    <span class="comment">// Process full input tiles</span></div>
 <div class="line"><a name="l00154"></a><span class="lineno">  154</span>&#160;    <span class="keywordtype">int</span> block_offset = 0;</div>
-<div class="line"><a name="l00155"></a><span class="lineno">  155</span>&#160;    RunningBlockPrefixOp&lt;SizeT&gt; prefix_op;</div>
+<div class="line"><a name="l00155"></a><span class="lineno">  155</span>&#160;    RunningBlockPrefixCallbackOp&lt;SizeT&gt; prefix_op;</div>
 <div class="line"><a name="l00156"></a><span class="lineno">  156</span>&#160;    prefix_op.running_total = 0;</div>
 <div class="line"><a name="l00157"></a><span class="lineno">  157</span>&#160;    <span class="keywordflow">while</span> (block_offset &lt; num_counts)</div>
 <div class="line"><a name="l00158"></a><span class="lineno">  158</span>&#160;    {</div>

@@ -170,7 +170,7 @@ struct ReduceByKeyOp
  * Stateful block-wide prefix operator for BlockScan
  */
 template <typename PartialProduct>
-struct BlockPrefixOp
+struct BlockPrefixCallbackOp
 {
     // Running block-wide prefix
     PartialProduct running_prefix;
@@ -179,7 +179,7 @@ struct BlockPrefixOp
      * Returns the block-wide running_prefix in thread-0
      */
     __device__ __forceinline__ PartialProduct operator()(
-        const PartialProduct &block_aggregate)              ///< The aggregate sum of the local prefix sum inputs
+        const PartialProduct &block_aggregate)              ///< The aggregate sum of the BlockScan inputs
     {
         ReduceByKeyOp scan_op;
 
@@ -274,7 +274,7 @@ struct PersistentBlockSpmv
     //---------------------------------------------------------------------
 
     TempStorage                     &temp_storage;
-    BlockPrefixOp<PartialProduct>   prefix_op;
+    BlockPrefixCallbackOp<PartialProduct>   prefix_op;
     VertexId                        *d_rows;
     VertexId                        *d_columns;
     Value                           *d_values;
@@ -522,7 +522,7 @@ struct FinalizeSpmvBlock
     //---------------------------------------------------------------------
 
     TempStorage                     &temp_storage;
-    BlockPrefixOp<PartialProduct>   prefix_op;
+    BlockPrefixCallbackOp<PartialProduct>   prefix_op;
     Value                           *d_result;
     PartialProduct                  *d_block_partials;
     int                             num_partials;

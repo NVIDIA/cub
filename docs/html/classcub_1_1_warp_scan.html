@@ -211,8 +211,8 @@ __device__ __forceinline__&#160;</td><td class="memItemRight" valign="bottom"><a
 <tr class="memitem:a601da756b6729894ec8a52080d920cd4"><td class="memItemLeft" align="right" valign="top">__device__ __forceinline__ void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classcub_1_1_warp_scan.html#a601da756b6729894ec8a52080d920cd4">InclusiveSum</a> (T input, T &amp;output, T &amp;warp_aggregate)</td></tr>
 <tr class="memdesc:a601da756b6729894ec8a52080d920cd4"><td class="mdescLeft">&#160;</td><td class="mdescRight">Computes an inclusive prefix sum in each logical warp. Also provides every thread with the warp-wide <code>warp_aggregate</code> of all inputs.  <a href="#a601da756b6729894ec8a52080d920cd4">More...</a><br/></td></tr>
 <tr class="separator:a601da756b6729894ec8a52080d920cd4"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:a906d0d6381b3af1ad105ec69547350f3"><td class="memTemplParams" colspan="2">template&lt;typename WarpPrefixOp &gt; </td></tr>
-<tr class="memitem:a906d0d6381b3af1ad105ec69547350f3"><td class="memTemplItemLeft" align="right" valign="top">__device__ __forceinline__ void&#160;</td><td class="memTemplItemRight" valign="bottom"><a class="el" href="classcub_1_1_warp_scan.html#a906d0d6381b3af1ad105ec69547350f3">InclusiveSum</a> (T input, T &amp;output, T &amp;warp_aggregate, WarpPrefixOp &amp;warp_prefix_op)</td></tr>
+<tr class="memitem:a906d0d6381b3af1ad105ec69547350f3"><td class="memTemplParams" colspan="2">template&lt;typename WarpPrefixCallbackOp &gt; </td></tr>
+<tr class="memitem:a906d0d6381b3af1ad105ec69547350f3"><td class="memTemplItemLeft" align="right" valign="top">__device__ __forceinline__ void&#160;</td><td class="memTemplItemRight" valign="bottom"><a class="el" href="classcub_1_1_warp_scan.html#a906d0d6381b3af1ad105ec69547350f3">InclusiveSum</a> (T input, T &amp;output, T &amp;warp_aggregate, WarpPrefixCallbackOp &amp;warp_prefix_op)</td></tr>
 <tr class="memdesc:a906d0d6381b3af1ad105ec69547350f3"><td class="mdescLeft">&#160;</td><td class="mdescRight">Computes an inclusive prefix sum in each logical warp. Instead of using 0 as the warp-wide prefix, the call-back functor <code>warp_prefix_op</code> is invoked to provide the "seed" value that logically prefixes the warp's scan inputs. Also provides every thread with the warp-wide <code>warp_aggregate</code> of all inputs.  <a href="#a906d0d6381b3af1ad105ec69547350f3">More...</a><br/></td></tr>
 <tr class="separator:a906d0d6381b3af1ad105ec69547350f3"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr><td colspan="2"><div class="groupHeader">Exclusive prefix sums</div></td></tr>
@@ -222,8 +222,8 @@ __device__ __forceinline__&#160;</td><td class="memItemRight" valign="bottom"><a
 <tr class="memitem:ab68084364e2235b53998861731b267f8"><td class="memItemLeft" align="right" valign="top">__device__ __forceinline__ void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classcub_1_1_warp_scan.html#ab68084364e2235b53998861731b267f8">ExclusiveSum</a> (T input, T &amp;output, T &amp;warp_aggregate)</td></tr>
 <tr class="memdesc:ab68084364e2235b53998861731b267f8"><td class="mdescLeft">&#160;</td><td class="mdescRight">Computes an exclusive prefix sum in each logical warp. Also provides every thread with the warp-wide <code>warp_aggregate</code> of all inputs.  <a href="#ab68084364e2235b53998861731b267f8">More...</a><br/></td></tr>
 <tr class="separator:ab68084364e2235b53998861731b267f8"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:a283236673ad2e54579f6b5ee97eac193"><td class="memTemplParams" colspan="2">template&lt;typename WarpPrefixOp &gt; </td></tr>
-<tr class="memitem:a283236673ad2e54579f6b5ee97eac193"><td class="memTemplItemLeft" align="right" valign="top">__device__ __forceinline__ void&#160;</td><td class="memTemplItemRight" valign="bottom"><a class="el" href="classcub_1_1_warp_scan.html#a283236673ad2e54579f6b5ee97eac193">ExclusiveSum</a> (T input, T &amp;output, T &amp;warp_aggregate, WarpPrefixOp &amp;warp_prefix_op)</td></tr>
+<tr class="memitem:a283236673ad2e54579f6b5ee97eac193"><td class="memTemplParams" colspan="2">template&lt;typename WarpPrefixCallbackOp &gt; </td></tr>
+<tr class="memitem:a283236673ad2e54579f6b5ee97eac193"><td class="memTemplItemLeft" align="right" valign="top">__device__ __forceinline__ void&#160;</td><td class="memTemplItemRight" valign="bottom"><a class="el" href="classcub_1_1_warp_scan.html#a283236673ad2e54579f6b5ee97eac193">ExclusiveSum</a> (T input, T &amp;output, T &amp;warp_aggregate, WarpPrefixCallbackOp &amp;warp_prefix_op)</td></tr>
 <tr class="memdesc:a283236673ad2e54579f6b5ee97eac193"><td class="mdescLeft">&#160;</td><td class="mdescRight">Computes an exclusive prefix sum in each logical warp. Instead of using 0 as the warp-wide prefix, the call-back functor <code>warp_prefix_op</code> is invoked to provide the "seed" value that logically prefixes the warp's scan inputs. Also provides every thread with the warp-wide <code>warp_aggregate</code> of all inputs.  <a href="#a283236673ad2e54579f6b5ee97eac193">More...</a><br/></td></tr>
 <tr class="separator:a283236673ad2e54579f6b5ee97eac193"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr><td colspan="2"><div class="groupHeader">Inclusive prefix scans</div></td></tr>
@@ -235,8 +235,8 @@ __device__ __forceinline__&#160;</td><td class="memItemRight" valign="bottom"><a
 <tr class="memitem:a6a2ac5f642393ccfc698aa515e192a22"><td class="memTemplItemLeft" align="right" valign="top">__device__ __forceinline__ void&#160;</td><td class="memTemplItemRight" valign="bottom"><a class="el" href="classcub_1_1_warp_scan.html#a6a2ac5f642393ccfc698aa515e192a22">InclusiveScan</a> (T input, T &amp;output, ScanOp scan_op, T &amp;warp_aggregate)</td></tr>
 <tr class="memdesc:a6a2ac5f642393ccfc698aa515e192a22"><td class="mdescLeft">&#160;</td><td class="mdescRight">Computes an inclusive prefix sum using the specified binary scan functor in each logical warp. Also provides every thread with the warp-wide <code>warp_aggregate</code> of all inputs.  <a href="#a6a2ac5f642393ccfc698aa515e192a22">More...</a><br/></td></tr>
 <tr class="separator:a6a2ac5f642393ccfc698aa515e192a22"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:adf74795dbe02947facd24657bc519c40"><td class="memTemplParams" colspan="2">template&lt;typename ScanOp , typename WarpPrefixOp &gt; </td></tr>
-<tr class="memitem:adf74795dbe02947facd24657bc519c40"><td class="memTemplItemLeft" align="right" valign="top">__device__ __forceinline__ void&#160;</td><td class="memTemplItemRight" valign="bottom"><a class="el" href="classcub_1_1_warp_scan.html#adf74795dbe02947facd24657bc519c40">InclusiveScan</a> (T input, T &amp;output, ScanOp scan_op, T &amp;warp_aggregate, WarpPrefixOp &amp;warp_prefix_op)</td></tr>
+<tr class="memitem:adf74795dbe02947facd24657bc519c40"><td class="memTemplParams" colspan="2">template&lt;typename ScanOp , typename WarpPrefixCallbackOp &gt; </td></tr>
+<tr class="memitem:adf74795dbe02947facd24657bc519c40"><td class="memTemplItemLeft" align="right" valign="top">__device__ __forceinline__ void&#160;</td><td class="memTemplItemRight" valign="bottom"><a class="el" href="classcub_1_1_warp_scan.html#adf74795dbe02947facd24657bc519c40">InclusiveScan</a> (T input, T &amp;output, ScanOp scan_op, T &amp;warp_aggregate, WarpPrefixCallbackOp &amp;warp_prefix_op)</td></tr>
 <tr class="memdesc:adf74795dbe02947facd24657bc519c40"><td class="mdescLeft">&#160;</td><td class="mdescRight">Computes an inclusive prefix sum using the specified binary scan functor in each logical warp. The call-back functor <code>warp_prefix_op</code> is invoked to provide the "seed" value that logically prefixes the warp's scan inputs. Also provides every thread with the warp-wide <code>warp_aggregate</code> of all inputs.  <a href="#adf74795dbe02947facd24657bc519c40">More...</a><br/></td></tr>
 <tr class="separator:adf74795dbe02947facd24657bc519c40"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr><td colspan="2"><div class="groupHeader">Exclusive prefix scans</div></td></tr>
@@ -248,8 +248,8 @@ __device__ __forceinline__&#160;</td><td class="memItemRight" valign="bottom"><a
 <tr class="memitem:a09d36c6cf146b69c1cf91d4781b96374"><td class="memTemplItemLeft" align="right" valign="top">__device__ __forceinline__ void&#160;</td><td class="memTemplItemRight" valign="bottom"><a class="el" href="classcub_1_1_warp_scan.html#a09d36c6cf146b69c1cf91d4781b96374">ExclusiveScan</a> (T input, T &amp;output, T identity, ScanOp scan_op, T &amp;warp_aggregate)</td></tr>
 <tr class="memdesc:a09d36c6cf146b69c1cf91d4781b96374"><td class="mdescLeft">&#160;</td><td class="mdescRight">Computes an exclusive prefix scan using the specified binary scan functor in each logical warp. Also provides every thread with the warp-wide <code>warp_aggregate</code> of all inputs.  <a href="#a09d36c6cf146b69c1cf91d4781b96374">More...</a><br/></td></tr>
 <tr class="separator:a09d36c6cf146b69c1cf91d4781b96374"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:ada12695322d9e1f5354fcae9d0910113"><td class="memTemplParams" colspan="2">template&lt;typename ScanOp , typename WarpPrefixOp &gt; </td></tr>
-<tr class="memitem:ada12695322d9e1f5354fcae9d0910113"><td class="memTemplItemLeft" align="right" valign="top">__device__ __forceinline__ void&#160;</td><td class="memTemplItemRight" valign="bottom"><a class="el" href="classcub_1_1_warp_scan.html#ada12695322d9e1f5354fcae9d0910113">ExclusiveScan</a> (T input, T &amp;output, T identity, ScanOp scan_op, T &amp;warp_aggregate, WarpPrefixOp &amp;warp_prefix_op)</td></tr>
+<tr class="memitem:ada12695322d9e1f5354fcae9d0910113"><td class="memTemplParams" colspan="2">template&lt;typename ScanOp , typename WarpPrefixCallbackOp &gt; </td></tr>
+<tr class="memitem:ada12695322d9e1f5354fcae9d0910113"><td class="memTemplItemLeft" align="right" valign="top">__device__ __forceinline__ void&#160;</td><td class="memTemplItemRight" valign="bottom"><a class="el" href="classcub_1_1_warp_scan.html#ada12695322d9e1f5354fcae9d0910113">ExclusiveScan</a> (T input, T &amp;output, T identity, ScanOp scan_op, T &amp;warp_aggregate, WarpPrefixCallbackOp &amp;warp_prefix_op)</td></tr>
 <tr class="memdesc:ada12695322d9e1f5354fcae9d0910113"><td class="mdescLeft">&#160;</td><td class="mdescRight">Computes an exclusive prefix scan using the specified binary scan functor in each logical warp. The call-back functor <code>warp_prefix_op</code> is invoked to provide the "seed" value that logically prefixes the warp's scan inputs. Also provides every thread with the warp-wide <code>warp_aggregate</code> of all inputs.  <a href="#ada12695322d9e1f5354fcae9d0910113">More...</a><br/></td></tr>
 <tr class="separator:ada12695322d9e1f5354fcae9d0910113"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr><td colspan="2"><div class="groupHeader">Identityless exclusive prefix scans</div></td></tr>
@@ -261,8 +261,8 @@ __device__ __forceinline__&#160;</td><td class="memItemRight" valign="bottom"><a
 <tr class="memitem:af51aef1f68a2ca876f7515b6b3213d72"><td class="memTemplItemLeft" align="right" valign="top">__device__ __forceinline__ void&#160;</td><td class="memTemplItemRight" valign="bottom"><a class="el" href="classcub_1_1_warp_scan.html#af51aef1f68a2ca876f7515b6b3213d72">ExclusiveScan</a> (T input, T &amp;output, ScanOp scan_op, T &amp;warp_aggregate)</td></tr>
 <tr class="memdesc:af51aef1f68a2ca876f7515b6b3213d72"><td class="mdescLeft">&#160;</td><td class="mdescRight">Computes an exclusive prefix scan using the specified binary scan functor in each logical warp. Because no identity value is supplied, the <code>output</code> computed for <em>warp-lane</em><sub>0</sub> is undefined. Also provides every thread with the warp-wide <code>warp_aggregate</code> of all inputs.  <a href="#af51aef1f68a2ca876f7515b6b3213d72">More...</a><br/></td></tr>
 <tr class="separator:af51aef1f68a2ca876f7515b6b3213d72"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:a024d74c48e45b489843053097b0638d1"><td class="memTemplParams" colspan="2">template&lt;typename ScanOp , typename WarpPrefixOp &gt; </td></tr>
-<tr class="memitem:a024d74c48e45b489843053097b0638d1"><td class="memTemplItemLeft" align="right" valign="top">__device__ __forceinline__ void&#160;</td><td class="memTemplItemRight" valign="bottom"><a class="el" href="classcub_1_1_warp_scan.html#a024d74c48e45b489843053097b0638d1">ExclusiveScan</a> (T input, T &amp;output, ScanOp scan_op, T &amp;warp_aggregate, WarpPrefixOp &amp;warp_prefix_op)</td></tr>
+<tr class="memitem:a024d74c48e45b489843053097b0638d1"><td class="memTemplParams" colspan="2">template&lt;typename ScanOp , typename WarpPrefixCallbackOp &gt; </td></tr>
+<tr class="memitem:a024d74c48e45b489843053097b0638d1"><td class="memTemplItemLeft" align="right" valign="top">__device__ __forceinline__ void&#160;</td><td class="memTemplItemRight" valign="bottom"><a class="el" href="classcub_1_1_warp_scan.html#a024d74c48e45b489843053097b0638d1">ExclusiveScan</a> (T input, T &amp;output, ScanOp scan_op, T &amp;warp_aggregate, WarpPrefixCallbackOp &amp;warp_prefix_op)</td></tr>
 <tr class="memdesc:a024d74c48e45b489843053097b0638d1"><td class="mdescLeft">&#160;</td><td class="mdescRight">Computes an exclusive prefix scan using the specified binary scan functor in each logical warp. The <code>warp_prefix_op</code> value from thread-thread-lane<sub>0</sub> is applied to all scan outputs. Also computes the warp-wide <code>warp_aggregate</code> of all inputs for thread-thread-lane<sub>0</sub>.  <a href="#a024d74c48e45b489843053097b0638d1">More...</a><br/></td></tr>
 <tr class="separator:a024d74c48e45b489843053097b0638d1"><td class="memSeparator" colspan="2">&#160;</td></tr>
 </table>
@@ -596,7 +596,7 @@ template&lt;typename ScanOp &gt; </div>
 <div class="memtemplate">
 template&lt;typename T , int LOGICAL_WARPS = 1, int LOGICAL_WARP_THREADS = CUB_PTX_WARP_THREADS&gt; </div>
 <div class="memtemplate">
-template&lt;typename ScanOp , typename WarpPrefixOp &gt; </div>
+template&lt;typename ScanOp , typename WarpPrefixCallbackOp &gt; </div>
 <table class="mlabels">
   <tr>
   <td class="mlabels-left">
@@ -634,7 +634,7 @@ template&lt;typename ScanOp , typename WarpPrefixOp &gt; </div>
         <tr>
           <td class="paramkey"></td>
           <td></td>
-          <td class="paramtype">WarpPrefixOp &amp;&#160;</td>
+          <td class="paramtype">WarpPrefixCallbackOp &amp;&#160;</td>
           <td class="paramname"><em>warp_prefix_op</em>&#160;</td>
         </tr>
         <tr>
@@ -659,13 +659,13 @@ template&lt;typename ScanOp , typename WarpPrefixOp &gt; </div>
 <div class="line"></div>
 <div class="line"><span class="comment">// A stateful callback functor that maintains a running prefix to be applied</span></div>
 <div class="line"><span class="comment">// during consecutive scan operations.</span></div>
-<div class="line"><span class="keyword">struct </span>WarpPrefixOp</div>
+<div class="line"><span class="keyword">struct </span>WarpPrefixCallbackOp</div>
 <div class="line">{</div>
 <div class="line">    <span class="comment">// Running prefix</span></div>
 <div class="line">    <span class="keywordtype">int</span> running_total;</div>
 <div class="line"></div>
 <div class="line">    <span class="comment">// Constructor</span></div>
-<div class="line">    __device__ WarpPrefixOp(<span class="keywordtype">int</span> running_total) : running_total(running_total) {}</div>
+<div class="line">    __device__ WarpPrefixCallbackOp(<span class="keywordtype">int</span> running_total) : running_total(running_total) {}</div>
 <div class="line"></div>
 <div class="line">    <span class="comment">// Callback operator to be entered by the entire warp. Lane-0 is responsible</span></div>
 <div class="line">    <span class="comment">// for returning a value for seeding the warp-wide scan.</span></div>
@@ -686,7 +686,7 @@ template&lt;typename ScanOp , typename WarpPrefixOp &gt; </div>
 <div class="line">    __shared__ <span class="keyword">typename</span> WarpScan::TempStorage temp_storage;</div>
 <div class="line"></div>
 <div class="line">    <span class="comment">// Initialize running total</span></div>
-<div class="line">    WarpPrefixOp prefix_op(INT_MIN);</div>
+<div class="line">    WarpPrefixCallbackOp prefix_op(INT_MIN);</div>
 <div class="line"></div>
 <div class="line">    <span class="comment">// Have the warp iterate over segments of items</span></div>
 <div class="line">    <span class="keywordflow">for</span> (<span class="keywordtype">int</span> block_offset = 0; block_offset &lt; num_items; block_offset += 32)</div>
@@ -707,7 +707,7 @@ template&lt;typename ScanOp , typename WarpPrefixOp &gt; </div>
 <dl class="tparams"><dt>Template Parameters</dt><dd>
   <table class="tparams">
     <tr><td class="paramname">ScanOp</td><td><b>[inferred]</b> Binary scan operator type having member <code>T operator()(const T &amp;a, const T &amp;b)</code> </td></tr>
-    <tr><td class="paramname">WarpPrefixOp</td><td><b>[inferred]</b> Call-back functor type having member <code>T operator()(T warp_aggregate)</code> </td></tr>
+    <tr><td class="paramname">WarpPrefixCallbackOp</td><td><b>[inferred]</b> Call-back functor type having member <code>T operator()(T warp_aggregate)</code> </td></tr>
   </table>
   </dd>
 </dl>
@@ -904,7 +904,7 @@ template&lt;typename ScanOp &gt; </div>
 <div class="memtemplate">
 template&lt;typename T , int LOGICAL_WARPS = 1, int LOGICAL_WARP_THREADS = CUB_PTX_WARP_THREADS&gt; </div>
 <div class="memtemplate">
-template&lt;typename ScanOp , typename WarpPrefixOp &gt; </div>
+template&lt;typename ScanOp , typename WarpPrefixCallbackOp &gt; </div>
 <table class="mlabels">
   <tr>
   <td class="mlabels-left">
@@ -936,7 +936,7 @@ template&lt;typename ScanOp , typename WarpPrefixOp &gt; </div>
         <tr>
           <td class="paramkey"></td>
           <td></td>
-          <td class="paramtype">WarpPrefixOp &amp;&#160;</td>
+          <td class="paramtype">WarpPrefixCallbackOp &amp;&#160;</td>
           <td class="paramname"><em>warp_prefix_op</em>&#160;</td>
         </tr>
         <tr>
@@ -961,13 +961,13 @@ template&lt;typename ScanOp , typename WarpPrefixOp &gt; </div>
 <div class="line"></div>
 <div class="line"><span class="comment">// A stateful callback functor that maintains a running prefix to be applied</span></div>
 <div class="line"><span class="comment">// during consecutive scan operations.</span></div>
-<div class="line"><span class="keyword">struct </span>WarpPrefixOp</div>
+<div class="line"><span class="keyword">struct </span>WarpPrefixCallbackOp</div>
 <div class="line">{</div>
 <div class="line">    <span class="comment">// Running prefix</span></div>
 <div class="line">    <span class="keywordtype">int</span> running_total;</div>
 <div class="line"></div>
 <div class="line">    <span class="comment">// Constructor</span></div>
-<div class="line">    __device__ WarpPrefixOp(<span class="keywordtype">int</span> running_total) : running_total(running_total) {}</div>
+<div class="line">    __device__ WarpPrefixCallbackOp(<span class="keywordtype">int</span> running_total) : running_total(running_total) {}</div>
 <div class="line"></div>
 <div class="line">    <span class="comment">// Callback operator to be entered by the entire warp. Lane-0 is responsible</span></div>
 <div class="line">    <span class="comment">// for returning a value for seeding the warp-wide scan.</span></div>
@@ -988,7 +988,7 @@ template&lt;typename ScanOp , typename WarpPrefixOp &gt; </div>
 <div class="line">    __shared__ <span class="keyword">typename</span> WarpScan::TempStorage temp_storage;</div>
 <div class="line"></div>
 <div class="line">    <span class="comment">// Initialize running total</span></div>
-<div class="line">    WarpPrefixOp prefix_op(INT_MIN);</div>
+<div class="line">    WarpPrefixCallbackOp prefix_op(INT_MIN);</div>
 <div class="line"></div>
 <div class="line">    <span class="comment">// Have the warp iterate over segments of items</span></div>
 <div class="line">    <span class="keywordflow">for</span> (<span class="keywordtype">int</span> block_offset = 0; block_offset &lt; num_items; block_offset += 32)</div>
@@ -1009,7 +1009,7 @@ template&lt;typename ScanOp , typename WarpPrefixOp &gt; </div>
 <dl class="tparams"><dt>Template Parameters</dt><dd>
   <table class="tparams">
     <tr><td class="paramname">ScanOp</td><td><b>[inferred]</b> Binary scan operator type having member <code>T operator()(const T &amp;a, const T &amp;b)</code> </td></tr>
-    <tr><td class="paramname">WarpPrefixOp</td><td><b>[inferred]</b> Call-back functor type having member <code>T operator()(T warp_aggregate)</code> </td></tr>
+    <tr><td class="paramname">WarpPrefixCallbackOp</td><td><b>[inferred]</b> Call-back functor type having member <code>T operator()(T warp_aggregate)</code> </td></tr>
   </table>
   </dd>
 </dl>
@@ -1176,7 +1176,7 @@ template&lt;typename T , int LOGICAL_WARPS = 1, int LOGICAL_WARP_THREADS = CUB_P
 <div class="memtemplate">
 template&lt;typename T , int LOGICAL_WARPS = 1, int LOGICAL_WARP_THREADS = CUB_PTX_WARP_THREADS&gt; </div>
 <div class="memtemplate">
-template&lt;typename WarpPrefixOp &gt; </div>
+template&lt;typename WarpPrefixCallbackOp &gt; </div>
 <table class="mlabels">
   <tr>
   <td class="mlabels-left">
@@ -1202,7 +1202,7 @@ template&lt;typename WarpPrefixOp &gt; </div>
         <tr>
           <td class="paramkey"></td>
           <td></td>
-          <td class="paramtype">WarpPrefixOp &amp;&#160;</td>
+          <td class="paramtype">WarpPrefixCallbackOp &amp;&#160;</td>
           <td class="paramname"><em>warp_prefix_op</em>&#160;</td>
         </tr>
         <tr>
@@ -1227,13 +1227,13 @@ template&lt;typename WarpPrefixOp &gt; </div>
 <div class="line"></div>
 <div class="line"><span class="comment">// A stateful callback functor that maintains a running prefix to be applied</span></div>
 <div class="line"><span class="comment">// during consecutive scan operations.</span></div>
-<div class="line"><span class="keyword">struct </span>WarpPrefixOp</div>
+<div class="line"><span class="keyword">struct </span>WarpPrefixCallbackOp</div>
 <div class="line">{</div>
 <div class="line">    <span class="comment">// Running prefix</span></div>
 <div class="line">    <span class="keywordtype">int</span> running_total;</div>
 <div class="line"></div>
 <div class="line">    <span class="comment">// Constructor</span></div>
-<div class="line">    __device__ WarpPrefixOp(<span class="keywordtype">int</span> running_total) : running_total(running_total) {}</div>
+<div class="line">    __device__ WarpPrefixCallbackOp(<span class="keywordtype">int</span> running_total) : running_total(running_total) {}</div>
 <div class="line"></div>
 <div class="line">    <span class="comment">// Callback operator to be entered by the entire warp. Lane-0 is responsible</span></div>
 <div class="line">    <span class="comment">// for returning a value for seeding the warp-wide scan.</span></div>
@@ -1254,7 +1254,7 @@ template&lt;typename WarpPrefixOp &gt; </div>
 <div class="line">    __shared__ <span class="keyword">typename</span> WarpScan::TempStorage temp_storage;</div>
 <div class="line"></div>
 <div class="line">    <span class="comment">// Initialize running total</span></div>
-<div class="line">    WarpPrefixOp prefix_op(0);</div>
+<div class="line">    WarpPrefixCallbackOp prefix_op(0);</div>
 <div class="line"></div>
 <div class="line">    <span class="comment">// Have the warp iterate over segments of items</span></div>
 <div class="line">    <span class="keywordflow">for</span> (<span class="keywordtype">int</span> block_offset = 0; block_offset &lt; num_items; block_offset += 32)</div>
@@ -1274,7 +1274,7 @@ template&lt;typename WarpPrefixOp &gt; </div>
 <dl class="section user"><dt></dt><dd>Suppose the input <code>d_data</code> is <code>1, 1, 1, 1, 1, 1, 1, 1, ...</code>. The corresponding output for the first segment will be <code>0, 1, 2, ..., 31</code>. The output for the second segment will be <code>32, 33, 34, ..., 63</code>. Furthermore, the value <code>32</code> will be stored in <code>warp_aggregate</code> for all threads after each scan.</dd></dl>
 <dl class="tparams"><dt>Template Parameters</dt><dd>
   <table class="tparams">
-    <tr><td class="paramname">WarpPrefixOp</td><td><b>[inferred]</b> Call-back functor type having member <code>T operator()(T warp_aggregate)</code> </td></tr>
+    <tr><td class="paramname">WarpPrefixCallbackOp</td><td><b>[inferred]</b> Call-back functor type having member <code>T operator()(T warp_aggregate)</code> </td></tr>
   </table>
   </dd>
 </dl>
@@ -1471,7 +1471,7 @@ template&lt;typename ScanOp &gt; </div>
 <div class="memtemplate">
 template&lt;typename T , int LOGICAL_WARPS = 1, int LOGICAL_WARP_THREADS = CUB_PTX_WARP_THREADS&gt; </div>
 <div class="memtemplate">
-template&lt;typename ScanOp , typename WarpPrefixOp &gt; </div>
+template&lt;typename ScanOp , typename WarpPrefixCallbackOp &gt; </div>
 <table class="mlabels">
   <tr>
   <td class="mlabels-left">
@@ -1503,7 +1503,7 @@ template&lt;typename ScanOp , typename WarpPrefixOp &gt; </div>
         <tr>
           <td class="paramkey"></td>
           <td></td>
-          <td class="paramtype">WarpPrefixOp &amp;&#160;</td>
+          <td class="paramtype">WarpPrefixCallbackOp &amp;&#160;</td>
           <td class="paramname"><em>warp_prefix_op</em>&#160;</td>
         </tr>
         <tr>
@@ -1528,13 +1528,13 @@ template&lt;typename ScanOp , typename WarpPrefixOp &gt; </div>
 <div class="line"></div>
 <div class="line"><span class="comment">// A stateful callback functor that maintains a running prefix to be applied</span></div>
 <div class="line"><span class="comment">// during consecutive scan operations.</span></div>
-<div class="line"><span class="keyword">struct </span>WarpPrefixOp</div>
+<div class="line"><span class="keyword">struct </span>WarpPrefixCallbackOp</div>
 <div class="line">{</div>
 <div class="line">    <span class="comment">// Running prefix</span></div>
 <div class="line">    <span class="keywordtype">int</span> running_total;</div>
 <div class="line"></div>
 <div class="line">    <span class="comment">// Constructor</span></div>
-<div class="line">    __device__ WarpPrefixOp(<span class="keywordtype">int</span> running_total) : running_total(running_total) {}</div>
+<div class="line">    __device__ WarpPrefixCallbackOp(<span class="keywordtype">int</span> running_total) : running_total(running_total) {}</div>
 <div class="line"></div>
 <div class="line">    <span class="comment">// Callback operator to be entered by the entire warp. Lane-0 is responsible</span></div>
 <div class="line">    <span class="comment">// for returning a value for seeding the warp-wide scan.</span></div>
@@ -1555,7 +1555,7 @@ template&lt;typename ScanOp , typename WarpPrefixOp &gt; </div>
 <div class="line">    __shared__ <span class="keyword">typename</span> WarpScan::TempStorage temp_storage;</div>
 <div class="line"></div>
 <div class="line">    <span class="comment">// Initialize running total</span></div>
-<div class="line">    WarpPrefixOp prefix_op(0);</div>
+<div class="line">    WarpPrefixCallbackOp prefix_op(0);</div>
 <div class="line"></div>
 <div class="line">    <span class="comment">// Have the warp iterate over segments of items</span></div>
 <div class="line">    <span class="keywordflow">for</span> (<span class="keywordtype">int</span> block_offset = 0; block_offset &lt; num_items; block_offset += 32)</div>
@@ -1576,7 +1576,7 @@ template&lt;typename ScanOp , typename WarpPrefixOp &gt; </div>
 <dl class="tparams"><dt>Template Parameters</dt><dd>
   <table class="tparams">
     <tr><td class="paramname">ScanOp</td><td><b>[inferred]</b> Binary scan operator type having member <code>T operator()(const T &amp;a, const T &amp;b)</code> </td></tr>
-    <tr><td class="paramname">WarpPrefixOp</td><td><b>[inferred]</b> Call-back functor type having member <code>T operator()(T warp_aggregate)</code> </td></tr>
+    <tr><td class="paramname">WarpPrefixCallbackOp</td><td><b>[inferred]</b> Call-back functor type having member <code>T operator()(T warp_aggregate)</code> </td></tr>
   </table>
   </dd>
 </dl>
@@ -1742,7 +1742,7 @@ template&lt;typename T , int LOGICAL_WARPS = 1, int LOGICAL_WARP_THREADS = CUB_P
 <div class="memtemplate">
 template&lt;typename T , int LOGICAL_WARPS = 1, int LOGICAL_WARP_THREADS = CUB_PTX_WARP_THREADS&gt; </div>
 <div class="memtemplate">
-template&lt;typename WarpPrefixOp &gt; </div>
+template&lt;typename WarpPrefixCallbackOp &gt; </div>
 <table class="mlabels">
   <tr>
   <td class="mlabels-left">
@@ -1768,7 +1768,7 @@ template&lt;typename WarpPrefixOp &gt; </div>
         <tr>
           <td class="paramkey"></td>
           <td></td>
-          <td class="paramtype">WarpPrefixOp &amp;&#160;</td>
+          <td class="paramtype">WarpPrefixCallbackOp &amp;&#160;</td>
           <td class="paramname"><em>warp_prefix_op</em>&#160;</td>
         </tr>
         <tr>
@@ -1793,13 +1793,13 @@ template&lt;typename WarpPrefixOp &gt; </div>
 <div class="line"></div>
 <div class="line"><span class="comment">// A stateful callback functor that maintains a running prefix to be applied</span></div>
 <div class="line"><span class="comment">// during consecutive scan operations.</span></div>
-<div class="line"><span class="keyword">struct </span>WarpPrefixOp</div>
+<div class="line"><span class="keyword">struct </span>WarpPrefixCallbackOp</div>
 <div class="line">{</div>
 <div class="line">    <span class="comment">// Running prefix</span></div>
 <div class="line">    <span class="keywordtype">int</span> running_total;</div>
 <div class="line"></div>
 <div class="line">    <span class="comment">// Constructor</span></div>
-<div class="line">    __device__ WarpPrefixOp(<span class="keywordtype">int</span> running_total) : running_total(running_total) {}</div>
+<div class="line">    __device__ WarpPrefixCallbackOp(<span class="keywordtype">int</span> running_total) : running_total(running_total) {}</div>
 <div class="line"></div>
 <div class="line">    <span class="comment">// Callback operator to be entered by the entire warp. Lane-0 is responsible</span></div>
 <div class="line">    <span class="comment">// for returning a value for seeding the warp-wide scan.</span></div>
@@ -1820,7 +1820,7 @@ template&lt;typename WarpPrefixOp &gt; </div>
 <div class="line">    __shared__ <span class="keyword">typename</span> WarpScan::TempStorage temp_storage;</div>
 <div class="line"></div>
 <div class="line">    <span class="comment">// Initialize running total</span></div>
-<div class="line">    WarpPrefixOp prefix_op(0);</div>
+<div class="line">    WarpPrefixCallbackOp prefix_op(0);</div>
 <div class="line"></div>
 <div class="line">    <span class="comment">// Have the warp iterate over segments of items</span></div>
 <div class="line">    <span class="keywordflow">for</span> (<span class="keywordtype">int</span> block_offset = 0; block_offset &lt; num_items; block_offset += 32)</div>
@@ -1840,7 +1840,7 @@ template&lt;typename WarpPrefixOp &gt; </div>
 <dl class="section user"><dt></dt><dd>Suppose the input <code>d_data</code> is <code>1, 1, 1, 1, 1, 1, 1, 1, ...</code>. The corresponding output for the first segment will be <code>1, 2, 3, ..., 32</code>. The output for the second segment will be <code>33, 34, 35, ..., 64</code>. Furthermore, the value <code>32</code> will be stored in <code>warp_aggregate</code> for all threads after each scan.</dd></dl>
 <dl class="tparams"><dt>Template Parameters</dt><dd>
   <table class="tparams">
-    <tr><td class="paramname">WarpPrefixOp</td><td><b>[inferred]</b> Call-back functor type having member <code>T operator()(T warp_aggregate)</code> </td></tr>
+    <tr><td class="paramname">WarpPrefixCallbackOp</td><td><b>[inferred]</b> Call-back functor type having member <code>T operator()(T warp_aggregate)</code> </td></tr>
   </table>
   </dd>
 </dl>
