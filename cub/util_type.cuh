@@ -119,8 +119,14 @@ struct Equals <A, A>
 struct NullType
 {
 #ifndef DOXYGEN_SHOULD_SKIP_THIS    // Do not document
+
     template <typename T>
     __host__ __device__ __forceinline__ NullType& operator =(const T& b) { return *this; }
+
+    __host__ __device__ __forceinline__ bool operator ==(const NullType& b) { return true; }
+
+    __host__ __device__ __forceinline__ bool operator !=(const NullType& b) { return false; }
+
 #endif // DOXYGEN_SHOULD_SKIP_THIS
 };
 

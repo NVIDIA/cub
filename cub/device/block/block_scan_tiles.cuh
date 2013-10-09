@@ -123,33 +123,45 @@ struct BlockScanTiles
         TILE_ITEMS          = BLOCK_THREADS * ITEMS_PER_THREAD,
     };
 
-    // Block load type
+    // Parameterized BlockLoad type
     typedef BlockLoad<
-        WrappedInputIterator,
-        BlockScanTilesPolicy::BLOCK_THREADS,
-        BlockScanTilesPolicy::ITEMS_PER_THREAD,
-        BlockScanTilesPolicy::LOAD_ALGORITHM,
-        BlockScanTilesPolicy::LOAD_WARP_TIME_SLICING> BlockLoadT;
+            WrappedInputIterator,
+            BlockScanTilesPolicy::BLOCK_THREADS,
+            BlockScanTilesPolicy::ITEMS_PER_THREAD,
+            BlockScanTilesPolicy::LOAD_ALGORITHM,
+            BlockScanTilesPolicy::LOAD_WARP_TIME_SLICING>
+        BlockLoadT;
 
-    // Block store type
+    // Parameterized BlockStore type
     typedef BlockStore<
-        OutputIterator,
-        BlockScanTilesPolicy::BLOCK_THREADS,
-        BlockScanTilesPolicy::ITEMS_PER_THREAD,
-        BlockScanTilesPolicy::STORE_ALGORITHM,
-        BlockScanTilesPolicy::STORE_WARP_TIME_SLICING> BlockStoreT;
+            OutputIterator,
+            BlockScanTilesPolicy::BLOCK_THREADS,
+            BlockScanTilesPolicy::ITEMS_PER_THREAD,
+            BlockScanTilesPolicy::STORE_ALGORITHM,
+            BlockScanTilesPolicy::STORE_WARP_TIME_SLICING>
+        BlockStoreT;
 
     // Tile status descriptor type
-    typedef DeviceScanTileDescriptor<T> TileDescriptor;
+    typedef LookbackTileDescriptor<T> TileDescriptor;
 
-    // Block scan type
+    // Parameterized BlockScan type
     typedef BlockScan<
-        T,
-        BlockScanTilesPolicy::BLOCK_THREADS,
-        BlockScanTilesPolicy::SCAN_ALGORITHM> BlockScanT;
+            T,
+            BlockScanTilesPolicy::BLOCK_THREADS,
+            BlockScanTilesPolicy::SCAN_ALGORITHM>
+        BlockScanT;
 
-    // Callback type for obtaining inter-tile prefix during block scan
-    typedef DeviceScanBlockPrefixOp<T, ScanOp> PrefixOp;
+    // Callback type for obtaining tile prefix during block scan
+    typedef LookbackBlockPrefixCallbackOp<
+            T,
+            ScanOp>
+        LookbackPrefixCallbackOp;
+
+    // Stateful BlockScan prefix callback type for managing a running total while scanning consecutive tiles
+    typedef RunningBlockPrefixCallbackOp<
+            T,
+            ScanOp>
+        RunningPrefixCallbackOp;
 
     // Shared memory type for this threadblock
     struct _TempStorage
@@ -160,7 +172,7 @@ struct BlockScanTiles
             typename BlockStoreT::TempStorage           store;      // Smem needed for tile storing
             struct
             {
-                typename PrefixOp::TempStorage          prefix;     // Smem needed for cooperative prefix callback
+                typename LookbackPrefixCallbackOp::TempStorage          prefix;     // Smem needed for cooperative prefix callback
                 typename BlockScanT::TempStorage        scan;       // Smem needed for tile scanning
             };
         };
@@ -298,7 +310,7 @@ struct BlockScanTiles
     //---------------------------------------------------------------------
 
     /**
-     * Process a tile of input (domino scan)
+     * Process a tile of input (dynamic domino scan)
      */
     template <bool FULL_TILE>
     __device__ __forceinline__ void ConsumeTile(
@@ -330,7 +342,7 @@ struct BlockScanTiles
         }
         else
         {
-            PrefixOp prefix_op(d_tile_status, temp_storage.prefix, scan_op, tile_idx);
+            LookbackPrefixCallbackOp prefix_op(d_tile_status, temp_storage.prefix, scan_op, tile_idx);
             ScanBlock(items, scan_op, identity, block_aggregate, prefix_op);
         }
 
@@ -345,12 +357,12 @@ struct BlockScanTiles
 
 
     /**
-     * Dequeue and scan tiles of items as part of a domino scan
+     * Dequeue and scan tiles of items as part of a dynamic domino scan
      */
     __device__ __forceinline__ void ConsumeTiles(
-        int                   num_items,                ///< Total number of input items
-        GridQueue<int>        queue,                    ///< Queue descriptor for assigning tiles of work to thread blocks
-        TileDescriptor   *d_tile_status)     ///< Global list of tile status
+        int                     num_items,          ///< Total number of input items
+        GridQueue<int>          queue,              ///< Queue descriptor for assigning tiles of work to thread blocks
+        TileDescriptor          *d_tile_status)     ///< Global list of tile status
     {
 #if CUB_PTX_VERSION < 200
 
@@ -407,12 +419,12 @@ struct BlockScanTiles
      * Process a tile of input
      */
     template <
-        bool FULL_TILE,
-        bool FIRST_TILE>
+        bool                FULL_TILE,
+        bool                FIRST_TILE>
     __device__ __forceinline__ void ConsumeTile(
-        SizeT                   block_offset,               ///< Tile offset
-        RunningBlockPrefixOp<T> &prefix_op,                 ///< Running prefix operator
-        int                     valid_items = TILE_ITEMS)   ///< Number of valid items in the tile
+        SizeT                       block_offset,               ///< Tile offset
+        RunningPrefixCallbackOp     &prefix_op,                 ///< Running prefix operator
+        int                         valid_items = TILE_ITEMS)   ///< Number of valid items in the tile
     {
         // Load items
         T items[ITEMS_PER_THREAD];
@@ -453,7 +465,7 @@ struct BlockScanTiles
         SizeT   block_offset,                       ///< [in] Threadblock begin offset (inclusive)
         SizeT   block_end)                          ///< [in] Threadblock end offset (exclusive)
     {
-        RunningBlockPrefixOp<T> prefix_op;
+        RunningBlockPrefixCallbackOp<T, ScanOp> prefix_op(scan_op);
 
         if (block_offset + TILE_ITEMS <= block_end)
         {
@@ -492,8 +504,7 @@ struct BlockScanTiles
         SizeT   block_end,                          ///< [in] Threadblock end offset (exclusive)
         T       prefix)                             ///< [in] The prefix to apply to the scan segment
     {
-        RunningBlockPrefixOp<T> prefix_op;
-        prefix_op.running_total = prefix;
+        RunningBlockPrefixCallbackOp<T, ScanOp> prefix_op(prefix, scan_op);
 
         // Consume full tiles of input
         while (block_offset + TILE_ITEMS <= block_end)

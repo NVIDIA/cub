@@ -50,6 +50,8 @@ using namespace cub;
 // Globals, constants and typedefs
 //---------------------------------------------------------------------
 
+const int MAX_SMEM_BYTES = 1024 * 48;
+
 bool                    g_verbose = false;
 CachingDeviceAllocator  g_allocator(true);
 
@@ -63,21 +65,21 @@ CachingDeviceAllocator  g_allocator(true);
  * BlockRadixSort key-value pair kernel
  */
 template <
-    int                     BLOCK_THREADS,
-    int                     ITEMS_PER_THREAD,
-    int                     RADIX_BITS,
-    bool                    MEMOIZE_OUTER_SCAN,
-    BlockScanAlgorithm      INNER_SCAN_ALGORITHM,
-    cudaSharedMemConfig     SMEM_CONFIG,
-    typename                Key,
-    typename                Value>
+    int                 BLOCK_THREADS,
+    int                 ITEMS_PER_THREAD,
+    int                 RADIX_BITS,
+    bool                MEMOIZE_OUTER_SCAN,
+    BlockScanAlgorithm  INNER_SCAN_ALGORITHM,
+    cudaSharedMemConfig SMEM_CONFIG,
+    typename            Key,
+    typename            Value>
 __launch_bounds__ (BLOCK_THREADS, 1)
 __global__ void Kernel(
     Key                 *d_keys,
     Value               *d_values,
-    int                     begin_bit,
-    int                     end_bit,
-    clock_t                 *d_elapsed)
+    int                 begin_bit,
+    int                 end_bit,
+    clock_t             *d_elapsed)
 {
     enum
     {
@@ -127,20 +129,20 @@ __global__ void Kernel(
  * BlockRadixSort keys-only kernel
  */
 template <
-    int                     BLOCK_THREADS,
-    int                     ITEMS_PER_THREAD,
-    int                     RADIX_BITS,
-    bool                    MEMOIZE_OUTER_SCAN,
-    BlockScanAlgorithm      INNER_SCAN_ALGORITHM,
-    cudaSharedMemConfig     SMEM_CONFIG,
-    typename                Key>
+    int                 BLOCK_THREADS,
+    int                 ITEMS_PER_THREAD,
+    int                 RADIX_BITS,
+    bool                MEMOIZE_OUTER_SCAN,
+    BlockScanAlgorithm  INNER_SCAN_ALGORITHM,
+    cudaSharedMemConfig SMEM_CONFIG,
+    typename            Key>
 __launch_bounds__ (BLOCK_THREADS, 1)
 __global__ void Kernel(
     Key                 *d_keys,
-    NullType                *d_values,
-    int                     begin_bit,
-    int                     end_bit,
-    clock_t                 *d_elapsed)
+    NullType            *d_values,
+    int                 begin_bit,
+    int                 end_bit,
+    clock_t             *d_elapsed)
 {
     enum
     {
@@ -187,6 +189,112 @@ __global__ void Kernel(
 // Host testing subroutines
 //---------------------------------------------------------------------
 
+
+/**
+ * Simple key-value pairing
+ */
+template <
+    typename Key,
+    typename Value,
+    bool IS_FLOAT = (Traits<Key>::CATEGORY == FLOATING_POINT)>
+struct Pair
+{
+    Key     key;
+    Value   value;
+
+    bool operator<(const Pair &b) const
+    {
+        return (key < b.key);
+    }
+};
+
+/**
+ * Simple key-value pairing (specialized for floating point types)
+ */
+template <typename Key, typename Value>
+struct Pair<Key, Value, true>
+{
+    Key     key;
+    Value   value;
+
+    bool operator<(const Pair &b) const
+    {
+        if (key < b.key)
+            return true;
+
+        if (key > b.key)
+            return false;
+
+        // Key in unsigned bits
+        typedef typename Traits<Key>::UnsignedBits UnsignedBits;
+
+        // Return true if key is negative zero and b.key is positive zero
+        UnsignedBits key_bits   = *reinterpret_cast<UnsignedBits*>(const_cast<Key*>(&key));
+        UnsignedBits b_key_bits = *reinterpret_cast<UnsignedBits*>(const_cast<Key*>(&b.key));
+        UnsignedBits HIGH_BIT   = Traits<Key>::HIGH_BIT;
+
+        return ((key_bits & HIGH_BIT) != 0) && ((b_key_bits & HIGH_BIT) == 0);
+    }
+};
+
+
+/**
+ * Initialize key-value sorting problem.
+ */
+template <typename Key, typename Value>
+void Initialize(
+    GenMode         gen_mode,
+    Key             *h_keys,
+    Value           *h_values,
+    Key             *h_reference_keys,
+    Value           *h_reference_values,
+    int             num_items,
+    int             entropy_reduction,
+    int             begin_bit,
+    int             end_bit)
+{
+    Pair<Key, Value> *h_pairs = new Pair<Key, Value>[num_items];
+
+    for (int i = 0; i < num_items; ++i)
+    {
+        if (gen_mode == RANDOM) {
+            RandomBits(h_keys[i], entropy_reduction);
+        } else if (gen_mode == UNIFORM) {
+            h_keys[i] = 1;
+        } else {
+            h_keys[i] = i;
+        }
+
+        RandomBits(h_values[i]);
+
+        // Mask off unwanted portions
+        int num_bits = end_bit - begin_bit;
+        if ((begin_bit > 0) || (end_bit < sizeof(Key) * 8))
+        {
+            unsigned long long base = 0;
+            memcpy(&base, &h_keys[i], sizeof(Key));
+            base &= ((1ull << num_bits) - 1) << begin_bit;
+            memcpy(&h_keys[i], &base, sizeof(Key));
+        }
+
+        h_pairs[i].key    = h_keys[i];
+        h_pairs[i].value  = h_values[i];
+    }
+
+    std::stable_sort(h_pairs, h_pairs + num_items);
+
+    for (int i = 0; i < num_items; ++i)
+    {
+        h_reference_keys[i]     = h_pairs[i].key;
+        h_reference_values[i]   = h_pairs[i].value;
+    }
+
+    delete[] h_pairs;
+}
+
+
+
+
 /**
  * Drive BlockRadixSort kernel
  */
@@ -200,6 +308,7 @@ template <
     typename                Key,
     typename                Value>
 void TestDriver(
+    GenMode                 gen_mode,
     int                     entropy_reduction,
     int                     begin_bit,
     int                     end_bit)
@@ -211,25 +320,24 @@ void TestDriver(
     };
 
     // Allocate host arrays
-    Key     *h_keys             = (Key*) malloc(TILE_SIZE * sizeof(Key));
-    Key     *h_reference_keys   = (Key*) malloc(TILE_SIZE * sizeof(Key));
-    Value   *h_values           = (Value*) malloc(TILE_SIZE * sizeof(Value));
+    Key     *h_keys             = new Key[TILE_SIZE];
+    Key     *h_reference_keys   = new Key[TILE_SIZE];
+    Value   *h_values           = new Value[TILE_SIZE];
+    Value   *h_reference_values = new Value[TILE_SIZE];
 
     // Allocate device arrays
     Key     *d_keys     = NULL;
     Value   *d_values   = NULL;
-    clock_t     *d_elapsed = NULL;
+    clock_t *d_elapsed = NULL;
     CubDebugExit(g_allocator.DeviceAllocate((void**)&d_keys, sizeof(Key) * TILE_SIZE));
     CubDebugExit(g_allocator.DeviceAllocate((void**)&d_values, sizeof(Value) * TILE_SIZE));
     CubDebugExit(g_allocator.DeviceAllocate((void**)&d_elapsed, sizeof(clock_t)));
 
-    // Initialize problem on host and device
-    for (int i = 0; i < TILE_SIZE; ++i)
-    {
-        RandomBits(h_keys[i], entropy_reduction, begin_bit, end_bit);
-        h_reference_keys[i] = h_keys[i];
-        h_values[i] = i;
-    }
+    // Initialize problem and solution on host
+    Initialize(gen_mode, h_keys, h_values, h_reference_keys, h_reference_values,
+        TILE_SIZE, entropy_reduction, begin_bit, end_bit);
+
+    // Copy problem to device
     CubDebugExit(cudaMemcpy(d_keys, h_keys, sizeof(Key) * TILE_SIZE, cudaMemcpyHostToDevice));
     CubDebugExit(cudaMemcpy(d_values, h_values, sizeof(Value) * TILE_SIZE, cudaMemcpyHostToDevice));
 
@@ -237,6 +345,7 @@ void TestDriver(
         "BLOCK_THREADS(%d) "
         "ITEMS_PER_THREAD(%d) "
         "RADIX_BITS(%d) "
+        "MEMOIZE_OUTER_SCAN(%d) "
         "INNER_SCAN_ALGORITHM(%d) "
         "SMEM_CONFIG(%d) "
         "sizeof(Key)(%d) "
@@ -257,11 +366,7 @@ void TestDriver(
             begin_bit,
             end_bit);
 
-    // Compute reference solution
-    printf("\tComputing reference solution on CPU..."); fflush(stdout);
-    std::sort(h_reference_keys, h_reference_keys + TILE_SIZE);
-    printf(" Done.\n"); fflush(stdout);
-
+    // Set shared memory config
     cudaDeviceSetSharedMemConfig(SMEM_CONFIG);
 
     // Run kernel
@@ -277,28 +382,11 @@ void TestDriver(
     printf("%s\n", compare ? "FAIL" : "PASS");
     AssertEquals(0, compare);
 
-    // Check value results (which aren't valid for 8-bit values and tile size >= 256 because they can't fully index into the starting array)
-    if (!KEYS_ONLY && ((sizeof(Value) > 1) || (TILE_SIZE < 256)))
+    // Check value results
+    if (!KEYS_ONLY)
     {
-        CubDebugExit(cudaMemcpy(h_values, d_values, sizeof(Value) * TILE_SIZE, cudaMemcpyDeviceToHost));
-
         printf("\tValues: ");
-        if (g_verbose)
-        {
-            DisplayResults(h_values, TILE_SIZE);
-            printf("\n");
-        }
-
-        for (int i = 0; i < TILE_SIZE; ++i)
-        {
-            int value = reinterpret_cast<int&>(h_values[i]);
-            if (h_keys[value] != h_reference_keys[i])
-            {
-                std::cout << "Incorrect: [" << i << "]: " << h_keys[value] << " != " << h_reference_keys[i] << "\n\n";
-                compare = 1;
-                break;
-            }
-        }
+        int compare = CompareDeviceResults(h_reference_values, d_values, TILE_SIZE, g_verbose, g_verbose);
         printf("%s\n", compare ? "FAIL" : "PASS");
         AssertEquals(0, compare);
     }
@@ -309,9 +397,10 @@ void TestDriver(
     printf("\n");
 
     // Cleanup
-    if (h_keys)             free(h_keys);
-    if (h_reference_keys)   free(h_reference_keys);
-    if (h_values)           free(h_values);
+    if (h_keys)             delete[] h_keys;
+    if (h_reference_keys)   delete[] h_reference_keys;
+    if (h_values)           delete[] h_values;
+    if (h_reference_values) delete[] h_reference_values;
     if (d_keys)             CubDebugExit(g_allocator.DeviceFree(d_keys));
     if (d_values)           CubDebugExit(g_allocator.DeviceFree(d_values));
     if (d_elapsed)          CubDebugExit(g_allocator.DeviceFree(d_elapsed));
@@ -319,7 +408,7 @@ void TestDriver(
 
 
 /**
- * Test driver (valid tile size < 48KB)
+ * Test driver (valid tile size <= MAX_SMEM_BYTES)
  */
 template <
     int                     BLOCK_THREADS,
@@ -331,24 +420,30 @@ template <
     typename                Key,
     typename                Value,
     typename                BlockRadixSortT = BlockRadixSort<Key, BLOCK_THREADS, ITEMS_PER_THREAD, Value, RADIX_BITS, MEMOIZE_OUTER_SCAN, INNER_SCAN_ALGORITHM, SMEM_CONFIG>,
-    bool                    VALID = (sizeof(typename BlockRadixSortT::TempStorage) <= (1024 * 48))>
+    bool                    VALID = (sizeof(typename BlockRadixSortT::TempStorage) <= MAX_SMEM_BYTES)>
 struct Valid
 {
     static void Test()
     {
-        // Iterate entropy_reduction
-        for (int entropy_reduction = 0; entropy_reduction <= 9; entropy_reduction += 3)
+        // Iterate begin_bit
+        for (int begin_bit = 0; begin_bit <= 1; begin_bit++)
         {
-            // Iterate begin_bit
-            for (int begin_bit = 0; begin_bit <= 1; begin_bit++)
+            // Iterate end bit
+            for (int end_bit = begin_bit + 1; end_bit <= sizeof(Key) * 8; end_bit = end_bit * 2 + begin_bit)
             {
-                // Iterate end bit
-                for (int end_bit = begin_bit + 1; end_bit <= sizeof(Key) * 8; end_bit = end_bit * 2 + begin_bit)
+                // Uniform key distribution
+                TestDriver<BLOCK_THREADS, ITEMS_PER_THREAD, RADIX_BITS, MEMOIZE_OUTER_SCAN, INNER_SCAN_ALGORITHM, SMEM_CONFIG, Key, Value>(
+                    UNIFORM, 0, begin_bit, end_bit);
+
+                // Sequential key distribution
+                TestDriver<BLOCK_THREADS, ITEMS_PER_THREAD, RADIX_BITS, MEMOIZE_OUTER_SCAN, INNER_SCAN_ALGORITHM, SMEM_CONFIG, Key, Value>(
+                    SEQ_INC, 0, begin_bit, end_bit);
+
+                // Iterate random with entropy_reduction
+                for (int entropy_reduction = 0; entropy_reduction <= 9; entropy_reduction += 3)
                 {
                     TestDriver<BLOCK_THREADS, ITEMS_PER_THREAD, RADIX_BITS, MEMOIZE_OUTER_SCAN, INNER_SCAN_ALGORITHM, SMEM_CONFIG, Key, Value>(
-                        entropy_reduction,
-                        begin_bit,
-                        end_bit);
+                        RANDOM, entropy_reduction, begin_bit, end_bit);
                 }
             }
         }
@@ -389,8 +484,9 @@ template <
     typename                Key>
 void Test()
 {
-    Valid<BLOCK_THREADS, ITEMS_PER_THREAD, RADIX_BITS, MEMOIZE_OUTER_SCAN, INNER_SCAN_ALGORITHM, SMEM_CONFIG, Key, NullType>::Test();         // Keys-only
-    Valid<BLOCK_THREADS, ITEMS_PER_THREAD, RADIX_BITS, MEMOIZE_OUTER_SCAN, INNER_SCAN_ALGORITHM, SMEM_CONFIG, Key, Key>::Test();         // Keys-only
+    Valid<BLOCK_THREADS, ITEMS_PER_THREAD, RADIX_BITS, MEMOIZE_OUTER_SCAN, INNER_SCAN_ALGORITHM, SMEM_CONFIG, Key, NullType>::Test();   // Keys-only
+    Valid<BLOCK_THREADS, ITEMS_PER_THREAD, RADIX_BITS, MEMOIZE_OUTER_SCAN, INNER_SCAN_ALGORITHM, SMEM_CONFIG, Key, Key>::Test();        // With values
+    Valid<BLOCK_THREADS, ITEMS_PER_THREAD, RADIX_BITS, MEMOIZE_OUTER_SCAN, INNER_SCAN_ALGORITHM, SMEM_CONFIG, Key, TestFoo>::Test();    // With large values
 }
 
 
@@ -519,7 +615,7 @@ int main(int argc, char** argv)
 
     // Quick test
     typedef unsigned int T;
-    TestDriver<64, 2, 5, true, BLOCK_SCAN_WARP_SCANS, cudaSharedMemBankSizeFourByte, T, NullType>(0, 0, sizeof(T) * 8);
+    TestDriver<64, 2, 5, true, BLOCK_SCAN_WARP_SCANS, cudaSharedMemBankSizeFourByte, T, NullType>(RANDOM, 0, 0, sizeof(T) * 8);
 
     // Test threads
     Test<32>();

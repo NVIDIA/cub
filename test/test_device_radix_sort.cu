@@ -239,11 +239,14 @@ cudaError_t Dispatch(
 /**
  * Simple key-value pairing
  */
-template <typename Key, typename Value>
+template <
+    typename Key,
+    typename Value,
+    bool IS_FLOAT = (Traits<Key>::CATEGORY == FLOATING_POINT)>
 struct Pair
 {
     Key     key;
-    Value   index;
+    Value   value;
 
     bool operator<(const Pair &b) const
     {
@@ -251,32 +254,91 @@ struct Pair
     }
 };
 
+/**
+ * Simple key-value pairing (specialized for floating point types)
+ */
+template <typename Key, typename Value>
+struct Pair<Key, Value, true>
+{
+    Key     key;
+    Value   value;
+
+    bool operator<(const Pair &b) const
+    {
+        if (key < b.key)
+            return true;
+
+        if (key > b.key)
+            return false;
+
+        // Key in unsigned bits
+        typedef typename Traits<Key>::UnsignedBits UnsignedBits;
+
+        // Return true if key is negative zero and b.key is positive zero
+        UnsignedBits key_bits   = *reinterpret_cast<UnsignedBits*>(const_cast<Key*>(&key));
+        UnsignedBits b_key_bits = *reinterpret_cast<UnsignedBits*>(const_cast<Key*>(&b.key));
+        UnsignedBits HIGH_BIT   = Traits<Key>::HIGH_BIT;
+
+        return ((key_bits & HIGH_BIT) != 0) && ((b_key_bits & HIGH_BIT) == 0);
+    }
+};
+
 
 /**
- * Initialize key-value sorting problem
+ * Initialize key-value sorting problem.
  */
-template <typename Key>
+template <typename Key, typename Value>
 void Initialize(
     GenMode         gen_mode,
     Key             *h_keys,
-    Pair<Key, int>  *h_pairs,
-    int             num_items)
+    Value           *h_values,
+    Key             *h_reference_keys,
+    Value           *h_reference_values,
+    int             num_items,
+    int             entropy_reduction,
+    int             begin_bit,
+    int             end_bit)
 {
+    Pair<Key, Value> *h_pairs = new Pair<Key, Value>[num_items];
+
     for (int i = 0; i < num_items; ++i)
     {
         if (gen_mode == RANDOM) {
-            RandomBits(h_keys[i], 0, 0, g_bits);
+            RandomBits(h_keys[i], entropy_reduction);
         } else if (gen_mode == UNIFORM) {
-            h_keys[i] = 2;
+            h_keys[i] = 1;
         } else {
             h_keys[i] = i;
         }
 
+        if (h_values != NULL)
+            RandomBits(h_values[i]);
+
+        // Mask off unwanted portions
+        int num_bits = end_bit - begin_bit;
+        if ((begin_bit > 0) || (end_bit < sizeof(Key) * 8))
+        {
+            unsigned long long base = 0;
+            memcpy(&base, &h_keys[i], sizeof(Key));
+            base &= ((1ull << num_bits) - 1) << begin_bit;
+            memcpy(&h_keys[i], &base, sizeof(Key));
+        }
+
         h_pairs[i].key    = h_keys[i];
-        h_pairs[i].index  = i;
+        h_pairs[i].value  = h_values[i];
     }
 
     std::stable_sort(h_pairs, h_pairs + num_items);
+
+    for (int i = 0; i < num_items; ++i)
+    {
+        h_reference_keys[i]     = h_pairs[i].key;
+
+        if (h_reference_values != NULL)
+            h_reference_values[i]   = h_pairs[i].value;
+    }
+
+    delete[] h_pairs;
 }
 
 
@@ -292,6 +354,7 @@ template <
 void Test(
     int             num_items,
     GenMode         gen_mode,
+    int             entropy_reduction,
     int             begin_bit,
     int             end_bit,
     char*           type_string)
@@ -306,36 +369,23 @@ void Test(
             num_items, type_string, (int) sizeof(Key),
             (gen_mode == RANDOM) ? "RANDOM" : (gen_mode == SEQ_INC) ? "SEQUENTIAL" : "HOMOGENOUS");
     else
-        printf("%s keys-value cub::DeviceRadixSort %d items, %s %d-byte keys + %d-byte values, gen-mode %s\n",
+        printf("%s key-value cub::DeviceRadixSort %d items, %s %d-byte keys + %d-byte values, gen-mode %s\n",
             (BACKEND == CDP) ? "CDP CUB" : (BACKEND == THRUST) ? "Thrust" : "CUB",
             num_items, type_string, (int) sizeof(Key), (int) sizeof(Value),
             (gen_mode == RANDOM) ? "RANDOM" : (gen_mode == SEQ_INC) ? "SEQUENTIAL" : "HOMOGENOUS");
     fflush(stdout);
 
     // Allocate host arrays
-    Key             *h_keys     = new Key[num_items];
-    Pair<Key, int>  *h_pairs    = new Pair<Key, int>[num_items];
-
-    // Initialize problem
-    Initialize(gen_mode, h_keys, h_pairs, num_items);
-
-    // Update sorted keys and values
-    Key     *h_sorted_keys      = new Key[num_items];
+    Key     *h_keys             = new Key[num_items];
+    Key     *h_reference_keys   = new Key[num_items];
     Value   *h_values           = (KEYS_ONLY) ? NULL : new Value[num_items];
-    Value   *h_sorted_values    = (KEYS_ONLY) ? NULL : new Value[num_items];
+    Value   *h_reference_values = (KEYS_ONLY) ? NULL : new Value[num_items];
 
-    for (int i = 0; i < num_items; ++i)
-    {
-        h_sorted_keys[i] = h_pairs[i].key;
-        if (!KEYS_ONLY)
-            h_values[i] = i;
-    }
+    // Initialize problem and solution on host
+    Initialize(gen_mode, h_keys, h_values, h_reference_keys, h_reference_values,
+        num_items, entropy_reduction, begin_bit, end_bit);
 
-    if (!KEYS_ONLY)
-        for (int i = 0; i < num_items; ++i)
-            h_sorted_values[i] = h_values[h_pairs[i].index];
-
-    delete[] h_pairs;
+    printf("check\n"); fflush(stdout);
 
     // Allocate device arrays
     DoubleBuffer<Key>   d_keys;
@@ -373,11 +423,11 @@ void Test(
     CubDebugExit(Dispatch(Int2Type<BACKEND>(), d_selector, d_temp_storage_bytes, d_cdp_error, d_temp_storage, temp_storage_bytes, d_keys, d_values, num_items, begin_bit, end_bit, 0, true));
 
     // Check for correctness (and display results, if specified)
-    int compare = CompareDeviceResults(h_sorted_keys, d_keys.Current(), num_items, true, g_verbose);
+    int compare = CompareDeviceResults(h_reference_keys, d_keys.Current(), num_items, true, g_verbose);
     printf("\t Compare keys (selector %d): %s ", d_keys.selector, compare ? "FAIL" : "PASS");
     if (!KEYS_ONLY)
     {
-        int values_compare = CompareDeviceResults(h_sorted_values, d_values.Current(), num_items, true, g_verbose);
+        int values_compare = CompareDeviceResults(h_reference_values, d_values.Current(), num_items, true, g_verbose);
         compare |= values_compare;
         printf("\t Compare values (selector %d): %s ", d_values.selector, values_compare ? "FAIL" : "PASS");
     }
@@ -421,9 +471,9 @@ void Test(
 
     // Cleanup
     if (h_keys) delete[] h_keys;
-    if (h_sorted_keys) delete[] h_sorted_keys;
+    if (h_reference_keys) delete[] h_reference_keys;
     if (h_values) delete[] h_values;
-    if (h_sorted_values) delete[] h_sorted_values;
+    if (h_reference_values) delete[] h_reference_values;
 
     if (d_keys.d_buffers[0]) CubDebugExit(g_allocator.DeviceFree(d_keys.d_buffers[0]));
     if (d_keys.d_buffers[1]) CubDebugExit(g_allocator.DeviceFree(d_keys.d_buffers[1]));
@@ -452,9 +502,13 @@ void Test(
     int             end_bit,
     char*           type_string)
 {
-    Test<BACKEND, Key, Value>(num_items, RANDOM, begin_bit, end_bit, type_string);
-    Test<BACKEND, Key, Value>(num_items, UNIFORM, begin_bit, end_bit, type_string);
-    Test<BACKEND, Key, Value>(num_items, SEQ_INC, begin_bit, end_bit, type_string);
+    for (int entropy_reduction = 0; entropy_reduction <= 9; entropy_reduction += 3)
+    {
+        Test<BACKEND, Key, Value>(num_items, RANDOM, entropy_reduction, begin_bit, end_bit, type_string);
+    }
+
+    Test<BACKEND, Key, Value>(num_items, UNIFORM, 0, begin_bit, end_bit, type_string);
+    Test<BACKEND, Key, Value>(num_items, SEQ_INC, 0, begin_bit, end_bit, type_string);
 }
 
 /**
@@ -517,6 +571,7 @@ void TestItems(
     char*           type_string)
 {
     TestItems<Key, NullType>(num_items, begin_bit, end_bit, type_string);
+    TestItems<Key, Key>(num_items, begin_bit, end_bit, type_string);
     TestItems<Key, unsigned int>(num_items, begin_bit, end_bit, type_string);
     TestItems<Key, unsigned long long>(num_items, begin_bit, end_bit, type_string);
     TestItems<Key, TestFoo>(num_items, begin_bit, end_bit, type_string);
@@ -567,11 +622,11 @@ int main(int argc, char** argv)
     {
         if (num_items < 0) num_items = 32000000;
 
-        Test<CUB, unsigned int, NullType> (num_items, RANDOM, 0, g_bits, CUB_TYPE_STRING(unsigned int));
-        Test<THRUST, unsigned int, NullType> (num_items, RANDOM, 0, g_bits, CUB_TYPE_STRING(unsigned int));
+        Test<CUB, unsigned int, NullType> (num_items, RANDOM, 0, 0, g_bits, CUB_TYPE_STRING(unsigned int));
+        Test<THRUST, unsigned int, NullType> (num_items, RANDOM, 0, 0, g_bits, CUB_TYPE_STRING(unsigned int));
 
-        Test<CUB, unsigned int, unsigned int> (num_items, RANDOM, 0, g_bits, CUB_TYPE_STRING(unsigned int));
-        Test<THRUST, unsigned int, unsigned int> (num_items, RANDOM, 0, g_bits, CUB_TYPE_STRING(unsigned int));
+        Test<CUB, unsigned int, unsigned int> (num_items, RANDOM, 0, 0, g_bits, CUB_TYPE_STRING(unsigned int));
+        Test<THRUST, unsigned int, unsigned int> (num_items, RANDOM, 0, 0, g_bits, CUB_TYPE_STRING(unsigned int));
     }
     else
     {
@@ -594,7 +649,6 @@ int main(int argc, char** argv)
 
         TestItems<float>                (num_items, 0, g_bits, CUB_TYPE_STRING(float));
         TestItems<double>               (num_items, 0, g_bits, CUB_TYPE_STRING(double));
-
     }
 
     return 0;

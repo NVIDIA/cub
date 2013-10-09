@@ -66,10 +66,10 @@ template <
     typename SizeT>                                 ///< Integer type used for global array indexing
 __global__ void ScanInitKernel(
     GridQueue<SizeT>            grid_queue,         ///< [in] Descriptor for performing dynamic mapping of input tiles to thread blocks
-    DeviceScanTileDescriptor<T> *d_tile_status,     ///< [out] Tile status words
+    LookbackTileDescriptor<T> *d_tile_status,     ///< [out] Tile status words
     int                         num_tiles)          ///< [in] Number of tiles
 {
-    typedef DeviceScanTileDescriptor<T> DeviceScanTileDescriptorT;
+    typedef LookbackTileDescriptor<T> LookbackTileDescriptorT;
 
     enum
     {
@@ -84,13 +84,13 @@ __global__ void ScanInitKernel(
     if (tile_offset < num_tiles)
     {
         // Not-yet-set
-        d_tile_status[TILE_STATUS_PADDING + tile_offset].status = SCAN_TILE_INVALID;
+        d_tile_status[TILE_STATUS_PADDING + tile_offset].status = LOOKBACK_TILE_INVALID;
     }
 
     if ((blockIdx.x == 0) && (threadIdx.x < TILE_STATUS_PADDING))
     {
         // Padding
-        d_tile_status[threadIdx.x].status = SCAN_TILE_OOB;
+        d_tile_status[threadIdx.x].status = LOOKBACK_TILE_OOB;
     }
 }
 
@@ -110,7 +110,7 @@ __launch_bounds__ (int(BlockScanTilesPolicy::BLOCK_THREADS))
 __global__ void ScanTilesKernel(
     InputIterator             d_in,           ///< Input data
     OutputIterator            d_out,          ///< Output data
-    DeviceScanTileDescriptor<T> *d_tile_status, ///< Global list of tile status
+    LookbackTileDescriptor<T> *d_tile_status, ///< Global list of tile status
     ScanOp                      scan_op,        ///< Binary scan operator
     Identity                    identity,       ///< Identity element
     SizeT                       num_items,      ///< Total number of scan items for the entire problem
@@ -168,7 +168,7 @@ struct DeviceScanDispatch
     typedef typename std::iterator_traits<InputIterator>::value_type T;
 
     // Tile status descriptor type
-    typedef DeviceScanTileDescriptor<T> DeviceScanTileDescriptorT;
+    typedef LookbackTileDescriptor<T> LookbackTileDescriptorT;
 
 
     /******************************************************************************
@@ -404,7 +404,7 @@ struct DeviceScanDispatch
             void* allocations[2];
             size_t allocation_sizes[2] =
             {
-                (num_tiles + TILE_STATUS_PADDING) * sizeof(DeviceScanTileDescriptorT),  // bytes needed for tile status descriptors
+                (num_tiles + TILE_STATUS_PADDING) * sizeof(LookbackTileDescriptorT),  // bytes needed for tile status descriptors
                 GridQueue<int>::AllocationSize()                                        // bytes needed for grid queue descriptor
             };
 
@@ -417,7 +417,7 @@ struct DeviceScanDispatch
             }
 
             // Alias the allocation for the global list of tile status
-            DeviceScanTileDescriptorT *d_tile_status = (DeviceScanTileDescriptorT*) allocations[0];
+            LookbackTileDescriptorT *d_tile_status = (LookbackTileDescriptorT*) allocations[0];
 
             // Alias the allocation for the grid queue descriptor
             GridQueue<int> queue(allocations[1]);

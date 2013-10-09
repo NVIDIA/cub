@@ -315,18 +315,18 @@ void RandomBits(
         // Generate random byte_buff
         for (int j = 0; j < NUM_BYTES; j++)
         {
-            unsigned char byte = 0xff;
-
             int current_bit = j * 8;
 
-            byte <<= CUB_MAX(0, begin_bit - current_bit);
-            byte >>= CUB_MAX(0, (current_bit + 8) - end_bit);
+            unsigned char byte = 0xff;
+            byte &= 0xff << CUB_MAX(0, begin_bit - current_bit);
+            byte &= 0xff >> CUB_MAX(0, (current_bit + 8) - end_bit);
 
             for (int i = 0; i <= entropy_reduction; i++)
             {
                 // Grab some of the higher bits from rand (better entropy, supposedly)
                 byte &= (rand() >> 7);
             }
+
             byte_buff[j] = byte;
         }
 

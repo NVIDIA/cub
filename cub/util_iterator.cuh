@@ -50,7 +50,7 @@ namespace cub {
 
 
 /******************************************************************************
- * Texture references
+ * Static file-scope Tesla/Fermi-style texture references
  *****************************************************************************/
 
 #ifndef DOXYGEN_SHOULD_SKIP_THIS    // Do not document
@@ -766,14 +766,14 @@ public:
  * to elements are to be pulled through texture cache.  Works with any \p ValueType.
  *
  * \par Usage Considerations
- * - The \p UNIQUE_ID template parameter is used to name the underlying texture
+ * - The \p UNIQUE_ID template parameter is used to statically name the underlying texture
  *   reference.  For a given data type \p T and \p UNIQUE_ID, only one TexRefInputIterator
  *   instance can be bound at any given time (per host thread, per compilation .o unit)
  * - With regard to nested/dynamic parallelism, TexRefInputIterator iterators may only be
  *   created by the host thread and used by a top-level kernel (i.e. the one which is launched
  *   from the host).
  *
- * \p UNIQUE_ID template parameter is used to name the underlying texture
+ * \p UNIQUE_ID template parameter is used to statically name the underlying texture
  *   reference.  For a given \p UNIQUE_ID, only one TexRefInputIterator instance can be
  *   bound at any given time (per host thread, per compilation .o unit)
  *
@@ -790,7 +790,7 @@ class TexRefInputIterator
 public:
 
     // Required iterator traits
-    typedef TexRefInputIterator                    self_type;              ///< My own type
+    typedef TexRefInputIterator                 self_type;              ///< My own type
     typedef difference_type                     difference_type;        ///< Type to express the result of subtracting one iterator from another
     typedef T                                   value_type;             ///< The type of the element the iterator can point to
     typedef T*                                  pointer;                ///< The type of a pointer to an element the iterator can point to
