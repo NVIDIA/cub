@@ -35,8 +35,6 @@
 
 #include <stdio.h>
 
-#include <stdio.h>
-
 #include <cub/grid/grid_barrier.cuh>
 
 #include "test_util.h"
@@ -101,22 +99,30 @@ int main(int argc, char** argv)
     // Initialize device
     CubDebugExit(args.DeviceInit());
 
-    // Initialize CUDA device properties
-    Device cuda_props;
-    CubDebugExit(cuda_props.Init());
+    // Get device ordinal
+    int device_ordinal;
+    CubDebugExit(cudaGetDevice(&device_ordinal));
+
+    // Get device SM version
+    int sm_version;
+    CubDebugExit(SmVersion(sm_version, device_ordinal));
+
+    // Get SM count
+    int sm_count;
+    CubDebugExit(cudaDeviceGetAttribute(&sm_count, cudaDevAttrMultiProcessorCount, device_ordinal));
 
     // Compute grid size and occupancy
     int occupancy = CUB_MIN(
-        (cuda_props.max_sm_threads / block_size),
-        cuda_props.max_sm_blocks);
+        (CUB_MAX_SM_THREADS(sm_version) / block_size),
+        CUB_MAX_SM_BLOCKS(sm_version));
 
     if (grid_size == -1)
     {
-        grid_size = occupancy * cuda_props.sm_count;
+        grid_size = occupancy * sm_count;
     }
     else
     {
-        occupancy = grid_size / cuda_props.sm_count;
+        occupancy = grid_size / sm_count;
     }
 
     printf("Initializing software global barrier for Kernel<<<%d,%d>>> with %d occupancy\n",

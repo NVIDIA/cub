@@ -28,7 +28,7 @@
 
 /**
  * \file
- * Utility types for device-wide scan
+ * Utility types for device-wide scan and similar primitives
  */
 
 #pragma once
@@ -47,21 +47,89 @@ CUB_NS_PREFIX
 namespace cub {
 
 
+/******************************************************************************
+ * Callback operator types for supplying BlockScan prefixes
+ ******************************************************************************/
+
+/**
+ * Stateful callback operator type for supplying BlockScan prefixes.
+ * Maintains a running prefix that can be applied to consecutive
+ * BlockScan operations.
+ */
+template <
+    typename T,                 ///< BlockScan value type
+    typename ScanOp>            ///< Wrapped scan operator type
+struct RunningBlockPrefixCallbackOp
+{
+    ScanOp  op;                 ///< Wrapped scan operator
+    T       running_total;      ///< Running block-wide prefix
+
+    /// Constructor
+    __device__ __forceinline__ RunningBlockPrefixCallbackOp(ScanOp op)
+    :
+        op(op)
+    {}
+
+    /// Constructor
+    __device__ __forceinline__ RunningBlockPrefixCallbackOp(
+        T starting_prefix,
+        ScanOp op)
+    :
+        op(op),
+        running_total(starting_prefix)
+    {}
+
+    /**
+     * Prefix callback operator.  Returns the block-wide running_total in thread-0.
+     */
+    __device__ __forceinline__ T operator()(
+        const T &block_aggregate)              ///< The aggregate sum of the BlockScan inputs
+    {
+        T retval = running_total;
+        running_total = op(running_total, block_aggregate);
+        return retval;
+    }
+};
+
 
 
 /******************************************************************************
- * Bookkeeping types for single-pass scan with dynamic lookback
+ * Scan data types
+ ******************************************************************************/
+
+/**
+ * Scan data type for two-way partitioning
+ */
+template <typename SizeT>
+struct DevicePartitionScanTuple
+{
+    SizeT   first_count;
+    SizeT   second_count;
+
+    __device__ __host__ __forceinline__ DevicePartitionScanTuple operator+(
+        const DevicePartitionScanTuple &other)
+    {
+        DevicePartitionScanTuple retval;
+        retval.first_count = first_count + other.first_count;
+        retval.second_count = second_count + other.second_count;
+        return retval;
+    }
+};
+
+
+/******************************************************************************
+ * Bookkeeping types for single-pass device-wide scan with dynamic lookback
  ******************************************************************************/
 
 /**
  * Enumerations of tile status
  */
-enum DeviceScanTileStatus
+enum LookbackTileStatus
 {
-    SCAN_TILE_OOB,          // Out-of-bounds (e.g., padding)
-    SCAN_TILE_INVALID,      // Not yet processed
-    SCAN_TILE_PARTIAL,      // Tile aggregate is available
-    SCAN_TILE_PREFIX,       // Inclusive tile prefix is available
+    LOOKBACK_TILE_OOB,          // Out-of-bounds (e.g., padding)
+    LOOKBACK_TILE_INVALID,      // Not yet processed
+    LOOKBACK_TILE_PARTIAL,      // Tile aggregate is available
+    LOOKBACK_TILE_PREFIX,       // Inclusive tile prefix is available
 };
 
 
@@ -74,7 +142,7 @@ enum DeviceScanTileStatus
 template <
     typename    T,
     bool        SINGLE_WORD = (PowerOfTwo<sizeof(T)>::VALUE && (sizeof(T) <= 8))>
-struct DeviceScanTileDescriptor
+struct LookbackTileDescriptor
 {
     // Status word type
     typedef typename If<(sizeof(T) == 8),
@@ -97,40 +165,40 @@ struct DeviceScanTileDescriptor
     T           value;
     StatusWord  status;
 
-    static __device__ __forceinline__ void SetPrefix(DeviceScanTileDescriptor *ptr, T prefix)
+    static __device__ __forceinline__ void SetPrefix(LookbackTileDescriptor *ptr, T prefix)
     {
-        DeviceScanTileDescriptor tile_descriptor;
-        tile_descriptor.status = SCAN_TILE_PREFIX;
+        LookbackTileDescriptor tile_descriptor;
+        tile_descriptor.status = LOOKBACK_TILE_PREFIX;
         tile_descriptor.value = prefix;
 
         VectorWord alias;
-        *reinterpret_cast<DeviceScanTileDescriptor*>(&alias) = tile_descriptor;
+        *reinterpret_cast<LookbackTileDescriptor*>(&alias) = tile_descriptor;
         ThreadStore<STORE_CG>(reinterpret_cast<VectorWord*>(ptr), alias);
     }
 
-    static __device__ __forceinline__ void SetPartial(DeviceScanTileDescriptor *ptr, T partial)
+    static __device__ __forceinline__ void SetPartial(LookbackTileDescriptor *ptr, T partial)
     {
-        DeviceScanTileDescriptor tile_descriptor;
-        tile_descriptor.status = SCAN_TILE_PARTIAL;
+        LookbackTileDescriptor tile_descriptor;
+        tile_descriptor.status = LOOKBACK_TILE_PARTIAL;
         tile_descriptor.value = partial;
 
         VectorWord alias;
-        *reinterpret_cast<DeviceScanTileDescriptor*>(&alias) = tile_descriptor;
+        *reinterpret_cast<LookbackTileDescriptor*>(&alias) = tile_descriptor;
         ThreadStore<STORE_CG>(reinterpret_cast<VectorWord*>(ptr), alias);
     }
 
     static __device__ __forceinline__ void WaitForValid(
-        DeviceScanTileDescriptor    *ptr,
+        LookbackTileDescriptor    *ptr,
         int                     &status,
         T                       &value)
     {
-        DeviceScanTileDescriptor tile_descriptor;
+        LookbackTileDescriptor tile_descriptor;
         while (true)
         {
             VectorWord alias = ThreadLoad<LOAD_CG>(reinterpret_cast<VectorWord*>(ptr));
 
-            tile_descriptor = *reinterpret_cast<DeviceScanTileDescriptor*>(&alias);
-            if (tile_descriptor.status != SCAN_TILE_INVALID) break;
+            tile_descriptor = *reinterpret_cast<LookbackTileDescriptor*>(&alias);
+            if (tile_descriptor.status != LOOKBACK_TILE_INVALID) break;
 
             __threadfence_block();
         }
@@ -149,7 +217,7 @@ struct DeviceScanTileDescriptor
  * the same machine word.
  */
 template <typename T>
-struct DeviceScanTileDescriptor<T, false>
+struct LookbackTileDescriptor<T, false>
 {
     T       prefix_value;
     T       partial_value;
@@ -161,37 +229,37 @@ struct DeviceScanTileDescriptor<T, false>
         Uninitialized<T>        padding;
     };
 
-    static __device__ __forceinline__ void SetPrefix(DeviceScanTileDescriptor *ptr, T prefix)
+    static __device__ __forceinline__ void SetPrefix(LookbackTileDescriptor *ptr, T prefix)
     {
         ThreadStore<STORE_CG>(&ptr->prefix_value, prefix);
         __threadfence_block();
 //        __threadfence();        // __threadfence_block seems sufficient on current architectures to prevent reordeing
-        ThreadStore<STORE_CG>(&ptr->status, (int) SCAN_TILE_PREFIX);
+        ThreadStore<STORE_CG>(&ptr->status, (int) LOOKBACK_TILE_PREFIX);
 
     }
 
-    static __device__ __forceinline__ void SetPartial(DeviceScanTileDescriptor *ptr, T partial)
+    static __device__ __forceinline__ void SetPartial(LookbackTileDescriptor *ptr, T partial)
     {
         ThreadStore<STORE_CG>(&ptr->partial_value, partial);
         __threadfence_block();
 //        __threadfence();        // __threadfence_block seems sufficient on current architectures to prevent reordeing
-        ThreadStore<STORE_CG>(&ptr->status, (int) SCAN_TILE_PARTIAL);
+        ThreadStore<STORE_CG>(&ptr->status, (int) LOOKBACK_TILE_PARTIAL);
     }
 
     static __device__ __forceinline__ void WaitForValid(
-        DeviceScanTileDescriptor    *ptr,
+        LookbackTileDescriptor    *ptr,
         int                         &status,
         T                           &value)
     {
         while (true)
         {
             status = ThreadLoad<LOAD_CG>(&ptr->status);
-            if (status != SCAN_TILE_INVALID) break;
+            if (status != LOOKBACK_TILE_INVALID) break;
 
             __threadfence_block();
         }
 
-        value = (status == SCAN_TILE_PARTIAL) ?
+        value = (status == LOOKBACK_TILE_PARTIAL) ?
             ThreadLoad<LOAD_CG>(&ptr->partial_value) :
             ThreadLoad<LOAD_CG>(&ptr->prefix_value);
     }
@@ -206,7 +274,7 @@ struct DeviceScanTileDescriptor<T, false>
 template <
     typename T,
     typename ScanOp>
-struct DeviceScanBlockPrefixOp
+struct LookbackBlockPrefixCallbackOp
 {
     // Parameterized warp reduce
     typedef WarpReduce<T>                       WarpReduceT;
@@ -218,10 +286,10 @@ struct DeviceScanBlockPrefixOp
     typedef Uninitialized<_TempStorage>         TempStorage;
 
     // Tile status descriptor type
-    typedef DeviceScanTileDescriptor<T>         DeviceScanTileDescriptorT;
+    typedef LookbackTileDescriptor<T>         LookbackTileDescriptorT;
 
     // Fields
-    DeviceScanTileDescriptorT   *d_tile_status;     ///< Pointer to array of tile status
+    LookbackTileDescriptorT   *d_tile_status;     ///< Pointer to array of tile status
     _TempStorage                &temp_storage;      ///< Reference to a warp-reduction instance
     ScanOp                      scan_op;            ///< Binary scan operator
     int                         tile_idx;           ///< The current tile index
@@ -229,8 +297,8 @@ struct DeviceScanBlockPrefixOp
 
     // Constructor
     __device__ __forceinline__
-    DeviceScanBlockPrefixOp(
-        DeviceScanTileDescriptorT   *d_tile_status,
+    LookbackBlockPrefixCallbackOp(
+        LookbackTileDescriptorT   *d_tile_status,
         TempStorage                 &temp_storage,
         ScanOp                      scan_op,
         int                         tile_idx) :
@@ -248,10 +316,10 @@ struct DeviceScanBlockPrefixOp
         T                           &window_aggregate)
     {
         T value;
-        DeviceScanTileDescriptorT::WaitForValid(d_tile_status + predecessor_idx, predecessor_status, value);
+        LookbackTileDescriptorT::WaitForValid(d_tile_status + predecessor_idx, predecessor_status, value);
 
         // Perform a segmented reduction to get the prefix for the current window
-        int flag = (predecessor_status != SCAN_TILE_PARTIAL);
+        int flag = (predecessor_status != LOOKBACK_TILE_PARTIAL);
         window_aggregate = WarpReduceT(temp_storage).TailSegmentedReduce(value, flag, scan_op);
     }
 
@@ -263,7 +331,7 @@ struct DeviceScanBlockPrefixOp
         // Update our status with our tile-aggregate
         if (threadIdx.x == 0)
         {
-            DeviceScanTileDescriptorT::SetPartial(d_tile_status + tile_idx, block_aggregate);
+            LookbackTileDescriptorT::SetPartial(d_tile_status + tile_idx, block_aggregate);
         }
 
         // Wait for the window of predecessor tiles to become valid
@@ -276,7 +344,7 @@ struct DeviceScanBlockPrefixOp
         T exclusive_prefix = window_aggregate;
 
         // Keep sliding the window back until we come across a tile whose inclusive prefix is known
-        while (WarpAll(predecessor_status != SCAN_TILE_PREFIX))
+        while (WarpAll(predecessor_status != LOOKBACK_TILE_PREFIX))
         {
             predecessor_idx -= CUB_PTX_WARP_THREADS;
 
@@ -289,7 +357,7 @@ struct DeviceScanBlockPrefixOp
         if (threadIdx.x == 0)
         {
             inclusive_prefix = scan_op(exclusive_prefix, block_aggregate);
-            DeviceScanTileDescriptorT::SetPrefix(
+            LookbackTileDescriptorT::SetPrefix(
                 d_tile_status + tile_idx,
                 inclusive_prefix);
         }
@@ -298,52 +366,6 @@ struct DeviceScanBlockPrefixOp
         return exclusive_prefix;
     }
 };
-
-
-/**
- * Stateful block-scan prefix functor.  Maintains a running prefix
- * that can be applied to consecutive block scan operations.
- */
-template <typename T>
-struct RunningBlockPrefixOp
-{
-    // Running prefix
-    T running_total;
-
-    // Callback operator.
-    __device__ T operator()(T block_aggregate)
-    {
-        T old_prefix = running_total;
-        running_total += block_aggregate;
-        return old_prefix;
-    }
-};
-
-
-
-/******************************************************************************
- * Various scan data types and corresponding scan operators
- ******************************************************************************/
-
-/**
- * Scan data type for two-way partitioning
- */
-template <typename SizeT>
-struct DevicePartitionScanTuple
-{
-    SizeT   first_count;
-    SizeT   second_count;
-
-    __device__ __host__ __forceinline__ DevicePartitionScanTuple operator+(
-        const DevicePartitionScanTuple &other)
-    {
-        DevicePartitionScanTuple retval;
-        retval.first_count = first_count + other.first_count;
-        retval.second_count = second_count + other.second_count;
-        return retval;
-    }
-};
-
 
 
 }               // CUB namespace

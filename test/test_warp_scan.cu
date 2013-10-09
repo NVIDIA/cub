@@ -71,13 +71,13 @@ enum TestMode
 template <
     typename T,
     typename ScanOp>
-struct WarpPrefixOp
+struct WarpPrefixCallbackOp
 {
     T       prefix;
     ScanOp  scan_op;
 
     __device__ __forceinline__
-    WarpPrefixOp(T prefix, ScanOp scan_op) : prefix(prefix), scan_op(scan_op) {}
+    WarpPrefixCallbackOp(T prefix, ScanOp scan_op) : prefix(prefix), scan_op(scan_op) {}
 
     __device__ __forceinline__
     T operator()(T block_aggregate)
@@ -101,14 +101,14 @@ struct DeviceTest
     template <
         TestMode TEST_MODE,
         typename WarpScan,
-        typename PrefixOp>
+        typename PrefixCallbackOp>
     static __device__ __forceinline__ void Test(
         typename WarpScan::TempStorage  &temp_storage,
         T                               &data,
         IdentityT                       &identity,
         ScanOp                          &scan_op,
         T                               &aggregate,
-        PrefixOp                        &prefix_op)
+        PrefixCallbackOp                        &prefix_op)
     {
         if (TEST_MODE == BASIC)
         {
@@ -140,14 +140,14 @@ struct DeviceTest<T, Sum, IdentityT>
     template <
         TestMode TEST_MODE,
         typename WarpScan,
-        typename PrefixOp>
+        typename PrefixCallbackOp>
     static __device__ __forceinline__ void Test(
         typename WarpScan::TempStorage  &temp_storage,
         T                               &data,
         T                               &identity,
         Sum                          &scan_op,
         T                               &aggregate,
-        PrefixOp                        &prefix_op)
+        PrefixCallbackOp                        &prefix_op)
     {
         if (TEST_MODE == BASIC)
         {
@@ -179,14 +179,14 @@ struct DeviceTest<T, ScanOp, NullType>
     template <
         TestMode TEST_MODE,
         typename WarpScan,
-        typename PrefixOp>
+        typename PrefixCallbackOp>
     static __device__ __forceinline__ void Test(
         typename WarpScan::TempStorage  &temp_storage,
         T                               &data,
         NullType                        &identity,
         ScanOp                          &scan_op,
         T                               &aggregate,
-        PrefixOp                        &prefix_op)
+        PrefixCallbackOp                        &prefix_op)
     {
         if (TEST_MODE == BASIC)
         {
@@ -216,14 +216,14 @@ struct DeviceTest<T, Sum, NullType>
     template <
         TestMode TEST_MODE,
         typename WarpScan,
-        typename PrefixOp>
+        typename PrefixCallbackOp>
     static __device__ __forceinline__ void Test(
         typename WarpScan::TempStorage  &temp_storage,
         T                               &data,
         NullType                        &identity,
         Sum                          &scan_op,
         T                               &aggregate,
-        PrefixOp                        &prefix_op)
+        PrefixCallbackOp                        &prefix_op)
     {
         if (TEST_MODE == BASIC)
         {
@@ -276,7 +276,7 @@ __global__ void WarpScanKernel(
     clock_t start = clock();
 
     T aggregate;
-    WarpPrefixOp<T, ScanOp> prefix_op(prefix, scan_op);
+    WarpPrefixCallbackOp<T, ScanOp> prefix_op(prefix, scan_op);
 
     // Test scan
     DeviceTest<T, ScanOp, IdentityT>::template Test<TEST_MODE, WarpScan>(

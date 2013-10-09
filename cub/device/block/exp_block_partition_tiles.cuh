@@ -136,10 +136,10 @@ struct BlockPartitionTiles
     typedef DevicePartitionScanTuple<SizeT> ScanTuple;
 
     // Tile status descriptor type
-    typedef DeviceScanTileDescriptor<ScanTuple> TileDescriptor;
+    typedef LookbackTileDescriptor<ScanTuple> TileDescriptor;
 
     // Callback type for obtaining inter-tile prefix during block scan
-    typedef DeviceScanBlockPrefixOp<ScanTuple, cub::Sum> PrefixOp;
+    typedef LookbackBlockPrefixCallbackOp<ScanTuple, cub::Sum> PrefixCallbackOp;
 
     // Block scan type
     typedef BlockScan<
@@ -155,7 +155,7 @@ struct BlockPartitionTiles
             typename BlockLoadT::TempStorage            load;       // Smem needed for tile loading
             struct
             {
-                typename PrefixOp::TempStorage          prefix;     // Smem needed for cooperative prefix callback
+                typename PrefixCallbackOp::TempStorage          prefix;     // Smem needed for cooperative prefix callback
                 typename BlockScanT::TempStorage        scan;       // Smem needed for tile scanning
             };
         };
@@ -267,7 +267,7 @@ struct BlockPartitionTiles
 
 
     /**
-     * Process a tile of input (domino scan)
+     * Process a tile of input (dynamic domino scan)
      */
     template <bool FULL_TILE>
     __device__ __forceinline__ void ConsumeTile(
@@ -319,7 +319,7 @@ struct BlockPartitionTiles
         }
         else
         {
-            PrefixOp prefix_op(d_tile_status, temp_storage.prefix, cub::Sum, tile_idx);
+            PrefixCallbackOp prefix_op(d_tile_status, temp_storage.prefix, cub::Sum, tile_idx);
             BlockScanT(temp_storage.scan).ExclusiveSum(items, items, block_aggregate, prefix_op);
         }
 
@@ -331,7 +331,7 @@ struct BlockPartitionTiles
 
 
     /**
-     * Dequeue and scan tiles of items as part of a domino scan
+     * Dequeue and scan tiles of items as part of a dynamic domino scan
      */
     __device__ __forceinline__ void ConsumeTiles(
         int                         num_items,          ///< Total number of input items

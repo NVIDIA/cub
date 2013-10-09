@@ -175,13 +175,13 @@ struct BlockReduceByKeyiles
     typedef ReduceByKeyuple<Value, SizeT>                      ScanTuple;
 
     // Tile status descriptor type
-    typedef DeviceScanTileDescriptor<ScanTuple>                 DeviceScanTileDescriptorT;
+    typedef LookbackTileDescriptor<ScanTuple>                 LookbackTileDescriptorT;
 
     // Block scan functor type
     typedef ReduceByKeyScanOp<ReductionOp>                      ScanOp;
 
     // Block scan prefix callback type
-    typedef DeviceScanBlockPrefixOp<ScanTuple, ScanOp>          PrefixCallback;
+    typedef LookbackBlockPrefixCallbackOp<ScanTuple, ScanOp>          PrefixCallback;
 
     // Block scan type
     typedef BlockScan<
@@ -221,7 +221,7 @@ struct BlockReduceByKeyiles
     KeyOutputIterator         d_keys_out;         ///< Key output data
     ValueInputIterator        d_values_in;        ///< Value input data
     ValueOutputIterator       d_values_out;       ///< Value output data
-    DeviceScanTileDescriptorT         *d_tile_status;     ///< Global list of tile status
+    LookbackTileDescriptorT         *d_tile_status;     ///< Global list of tile status
     ScanOp                      scan_op;            ///< Binary scan operator
     int                         num_tiles;          ///< Total number of input tiles for the entire problem
     SizeT                       num_items;          ///< Total number of scan items for the entire problem
@@ -239,7 +239,7 @@ struct BlockReduceByKeyiles
         KeyOutputIterator         d_keys_out,         ///< Key output data
         ValueInputIterator        d_values_in,        ///< Value input data
         ValueOutputIterator       d_values_out,       ///< Value output data
-        DeviceScanTileDescriptorT       *d_tile_status,     ///< Global list of tile status
+        LookbackTileDescriptorT       *d_tile_status,     ///< Global list of tile status
         ReductionOp                 reduction_op,       ///< Binary scan operator
         int                         num_tiles,          ///< Total number of input tiles for the entire problem
         SizeT                       num_items)          ///< Total number of scan items for the entire problem
@@ -319,7 +319,7 @@ struct BlockReduceByKeyiles
 
             // Update tile status
             if (threadIdx.x == 0)
-                DeviceScanTileDescriptorT::SetPrefix(d_tile_status, block_aggregate);
+                LookbackTileDescriptorT::SetPrefix(d_tile_status, block_aggregate);
         }
         else
         {
