@@ -264,7 +264,6 @@ struct BlockSegmentedReduceTiles
         // Thread block initialization
         if (threadIdx.x < 2)
         {
-            // Select whether to search for starting/ending diagonal
             int diagonal = (threadIdx.x == 0) ?
                 block_diagonal :        // First thread searches for start indices
                 next_block_diagonal;    // Second thread searches for end indices
@@ -312,7 +311,7 @@ struct BlockSegmentedReduceTiles
         // Have the thread block iterate over the region
         while (block_diagonal < next_block_diagonal)
         {
-            // Read block's ending indices
+            // Read block's ending indices (the compiler may hoist this out)
             SizeT next_block_id             = temp_storage.block_segment_idx[1];
             SizeT next_block_value_idx      = temp_storage.block_value_idx[1];
 
