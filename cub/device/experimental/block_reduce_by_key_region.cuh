@@ -35,10 +35,10 @@
 
 #include <iterator>
 
-#include "scan_tiles_types.cuh"
-#include "../../block/block_load.cuh"
-#include "../../block/block_discontinuity.cuh"
-#include "../../block/block_scan.cuh"
+#include "scan_region_types.cuh"
+#include "../../region/block_load.cuh"
+#include "../../region/block_discontinuity.cuh"
+#include "../../region/block_scan.cuh"
 #include "../../util_namespace.cuh"
 
 /// Optional outer namespace(s)
@@ -53,11 +53,11 @@ namespace cub {
  ******************************************************************************/
 
 /// Scan tuple data type for reduce-value-by-key
-template <typename Value, typename SizeT>
+template <typename Value, typename Offset>
 struct ReduceByKeyuple
 {
     Value   value;      // Initially set as value, contains segment aggregate after prefix scan
-    SizeT   flag;       // Initially set as a tail flag, contains scatter offset after prefix scan
+    Offset   flag;       // Initially set as a tail flag, contains scatter offset after prefix scan
 };
 
 
@@ -92,14 +92,14 @@ struct ReduceByKeyScanOp
  ******************************************************************************/
 
 /**
- * Tuning policy for BlockReduceByKeyiles
+ * Parameterizable tuning policy type for BlockReduceByKeyiles
  */
 template <
     int                         _BLOCK_THREADS,
     int                         _ITEMS_PER_THREAD,
     BlockLoadAlgorithm          _LOAD_ALGORITHM,
     bool                        _LOAD_WARP_TIME_SLICING,
-    PtxLoadModifier             _LOAD_MODIFIER,
+    CacheLoadModifier           _LOAD_MODIFIER,
     BlockScanAlgorithm          _SCAN_ALGORITHM>
 struct BlockReduceByKeyilesPolicy
 {
@@ -111,7 +111,7 @@ struct BlockReduceByKeyilesPolicy
     };
 
     static const BlockLoadAlgorithm     LOAD_ALGORITHM      = _LOAD_ALGORITHM;
-    static const PtxLoadModifier        LOAD_MODIFIER       = _LOAD_MODIFIER;
+    static const CacheLoadModifier      LOAD_MODIFIER       = _LOAD_MODIFIER;
     static const BlockScanAlgorithm     SCAN_ALGORITHM      = _SCAN_ALGORITHM;
 };
 
@@ -130,7 +130,7 @@ template <
     typename ValueInputIterator,          ///< Random-access input iterator type for values
     typename ValueOutputIterator,         ///< Random-access output iterator type for values
     typename ReductionOp,                   ///< Reduction functor type
-    typename SizeT>                         ///< Offset integer type
+    typename Offset>                         ///< Signed integer type for global offsets
 struct BlockReduceByKeyiles
 {
     //---------------------------------------------------------------------
@@ -172,7 +172,7 @@ struct BlockReduceByKeyiles
     typedef BlockDiscontinuity<Key, BLOCK_THREADS>              BlockDiscontinuityKeys;
 
     // Scan tuple type
-    typedef ReduceByKeyuple<Value, SizeT>                      ScanTuple;
+    typedef ReduceByKeyuple<Value, Offset>                      ScanTuple;
 
     // Tile status descriptor type
     typedef LookbackTileDescriptor<ScanTuple>                 LookbackTileDescriptorT;
@@ -204,7 +204,7 @@ struct BlockReduceByKeyiles
         };
 
         typename BlockDiscontinuityKeys::TempStorage    flagging;       // Smem needed for tile scanning
-        SizeT                                           tile_idx;       // Shared tile index
+        Offset                                           tile_idx;       // Shared tile index
     };
 
     /// Alias wrapper allowing storage to be unioned
@@ -224,7 +224,7 @@ struct BlockReduceByKeyiles
     LookbackTileDescriptorT         *d_tile_status;     ///< Global list of tile status
     ScanOp                      scan_op;            ///< Binary scan operator
     int                         num_tiles;          ///< Total number of input tiles for the entire problem
-    SizeT                       num_items;          ///< Total number of scan items for the entire problem
+    Offset                       num_items;          ///< Total number of scan items for the entire problem
 
 
     //---------------------------------------------------------------------
@@ -242,7 +242,7 @@ struct BlockReduceByKeyiles
         LookbackTileDescriptorT       *d_tile_status,     ///< Global list of tile status
         ReductionOp                 reduction_op,       ///< Binary scan operator
         int                         num_tiles,          ///< Total number of input tiles for the entire problem
-        SizeT                       num_items)          ///< Total number of scan items for the entire problem
+        Offset                       num_items)          ///< Total number of scan items for the entire problem
     :
         temp_storage(temp_storage.Alias()),
         d_keys_in(d_keys_in),
@@ -262,7 +262,7 @@ struct BlockReduceByKeyiles
     template <bool FULL_TILE>
     __device__ __forceinline__ void ConsumeTile(
         int     tile_idx,                   ///< Tile index
-        SizeT   block_offset,               ///< Tile offset
+        Offset   block_offset,               ///< Tile offset
         int     valid_items = TILE_ITEMS)   ///< Number of valid items in the tile
     {
         Key         keys[ITEMS_PER_THREAD];
@@ -355,13 +355,13 @@ struct BlockReduceByKeyiles
     /**
      * Dequeue and scan tiles of elements
      */
-    __device__ __forceinline__ void ProcessTiles(GridQueue<int> queue)          ///< Queue descriptor for assigning tiles of work to thread blocks
+    __device__ __forceinline__ void ProcessRegion(GridQueue<int> queue)          ///< Queue descriptor for assigning tiles of work to thread blocks
     {
         // We give each thread block at least one tile of input
         int tile_idx = blockIdx.x;
 
         // Consume full tiles of input
-        SizeT block_offset = SizeT(TILE_ITEMS) * tile_idx;
+        Offset block_offset = Offset(TILE_ITEMS) * tile_idx;
         while (block_offset + TILE_ITEMS <= num_items)
         {
             ConsumeTile<true>(tile_idx, block_offset);
@@ -379,7 +379,7 @@ struct BlockReduceByKeyiles
 
             tile_idx = temp_storage.tile_idx;
 #endif
-            block_offset = SizeT(TILE_ITEMS) * tile_idx;
+            block_offset = Offset(TILE_ITEMS) * tile_idx;
         }
 
         // Consume a partially-full tile

@@ -37,7 +37,7 @@
 #include <stdio.h>
 #include <iterator>
 
-#include "block/block_reduce_by_key_tiles.cuh"
+#include "region/block_reduce_by_key_region.cuh"
 #include "device_scan.cuh"
 #include "../thread/thread_operators.cuh"
 #include "../grid/grid_queue.cuh"
@@ -64,13 +64,13 @@ namespace cub {
  * Reduce-by-key kernel entry point (multi-block)
  */
 template <
-    typename    BlockReduceByKeyilesPolicy,    ///< Tuning policy for cub::BlockReduceByKeyiles abstraction
+    typename    BlockReduceByKeyilesPolicy,    ///< Parameterizable tuning policy type for cub::BlockReduceByKeyiles abstraction
     typename    InputIterator,                ///< Random-access iterator type for input (may be a simple pointer type)
     typename    OutputIterator,               ///< Random-access iterator type for output (may be a simple pointer type)
     typename    T,                              ///< The scan data type
     typename    ReductionOp,                    ///< Binary scan operator type having member <tt>T operator()(const T &a, const T &b)</tt>
     typename    Identity,                       ///< Identity value type (cub::NullType for inclusive scans)
-    typename    SizeT>                          ///< Integer type used for global array indexing
+    typename    Offset>                          ///< Signed integer type for global offsets
 __launch_bounds__ (int(BlockSweepScanPolicy::BLOCK_THREADS))
 __global__ void MultiBlockScanKernel(
     InputIterator             d_in,           ///< Input data
@@ -78,7 +78,7 @@ __global__ void MultiBlockScanKernel(
     LookbackTileDescriptor<T> *d_tile_status, ///< Global list of tile status
     ReductionOp                 reduction_op,   ///< Binary scan operator
     Identity                    identity,       ///< Identity element
-    SizeT                       num_items,      ///< Total number of scan items for the entire problem
+    Offset                       num_items,      ///< Total number of scan items for the entire problem
     GridQueue<int>              queue)          ///< Drain queue descriptor for dynamically mapping tile data onto thread blocks
 {
     enum
@@ -93,13 +93,13 @@ __global__ void MultiBlockScanKernel(
         OutputIterator,
         ReductionOp,
         Identity,
-        SizeT> BlockSweepScanT;
+        Offset> BlockSweepScanT;
 
     // Shared memory for BlockSweepScan
     __shared__ typename BlockSweepScanT::TempStorage temp_storage;
 
     // Process tiles
-    BlockSweepScanT(temp_storage, d_in, d_out, reduction_op, identity).ConsumeTiles(
+    BlockSweepScanT(temp_storage, d_in, d_out, reduction_op, identity).ConsumeRegion(
         num_items,
         queue,
         d_tile_status + TILE_STATUS_PADDING);
@@ -178,41 +178,41 @@ struct DeviceReduceByKey
     /// Specializations of tuned policy types for different PTX architectures
     template <
         typename    T,
-        typename    SizeT,
+        typename    Offset,
         int         ARCH>
     struct TunedPolicies;
 
     /// SM35 tune
-    template <typename T, typename SizeT>
-    struct TunedPolicies<T, SizeT, 350>
+    template <typename T, typename Offset>
+    struct TunedPolicies<T, Offset, 350>
     {
         typedef BlockSweepScanPolicy<128, 16,  BLOCK_LOAD_DIRECT, false, LOAD_LDG, BLOCK_STORE_WARP_TRANSPOSE, true, BLOCK_SCAN_RAKING_MEMOIZE> MultiBlockPolicy;
     };
 
     /// SM30 tune
-    template <typename T, typename SizeT>
-    struct TunedPolicies<T, SizeT, 300>
+    template <typename T, typename Offset>
+    struct TunedPolicies<T, Offset, 300>
     {
         typedef BlockSweepScanPolicy<256, 9,  BLOCK_LOAD_WARP_TRANSPOSE, false, LOAD_DEFAULT, BLOCK_STORE_WARP_TRANSPOSE, false, BLOCK_SCAN_RAKING_MEMOIZE> MultiBlockPolicy;
     };
 
     /// SM20 tune
-    template <typename T, typename SizeT>
-    struct TunedPolicies<T, SizeT, 200>
+    template <typename T, typename Offset>
+    struct TunedPolicies<T, Offset, 200>
     {
         typedef BlockSweepScanPolicy<128, 15,  BLOCK_LOAD_WARP_TRANSPOSE, false, LOAD_DEFAULT, BLOCK_STORE_WARP_TRANSPOSE, false, BLOCK_SCAN_RAKING_MEMOIZE> MultiBlockPolicy;
     };
 
     /// SM10 tune
-    template <typename T, typename SizeT>
-    struct TunedPolicies<T, SizeT, 100>
+    template <typename T, typename Offset>
+    struct TunedPolicies<T, Offset, 100>
     {
         typedef BlockSweepScanPolicy<128, 7,  BLOCK_LOAD_TRANSPOSE, false, LOAD_DEFAULT, BLOCK_STORE_TRANSPOSE, false, BLOCK_SCAN_RAKING> MultiBlockPolicy;
     };
 
 
-    /// Tuning policy for the PTX architecture that DeviceReduceByKey operations will get dispatched to
-    template <typename T, typename SizeT>
+    /// Parameterizable tuning policy type for the PTX architecture that DeviceReduceByKey operations will get dispatched to
+    template <typename T, typename Offset>
     struct PtxDefaultPolicies
     {
         static const int PTX_TUNE_ARCH =   (CUB_PTX_VERSION >= 350) ?
@@ -224,7 +224,7 @@ struct DeviceReduceByKey
                                                         100;
 
         // Tuned policy set for the current PTX compiler pass
-        typedef TunedPolicies<T, SizeT, PTX_TUNE_ARCH> PtxTunedPolicies;
+        typedef TunedPolicies<T, Offset, PTX_TUNE_ARCH> PtxTunedPolicies;
 
         // MultiBlockPolicy that opaquely derives from the specialization corresponding to the current PTX compiler pass
         struct MultiBlockPolicy : PtxTunedPolicies::MultiBlockPolicy {};
@@ -236,22 +236,22 @@ struct DeviceReduceByKey
         {
             if (ptx_version >= 350)
             {
-                typedef TunedPolicies<T, SizeT, 350> TunedPolicies;
+                typedef TunedPolicies<T, Offset, 350> TunedPolicies;
                 multi_block_dispatch_params.Init<typename TunedPolicies::MultiBlockPolicy>();
             }
             else if (ptx_version >= 300)
             {
-                typedef TunedPolicies<T, SizeT, 300> TunedPolicies;
+                typedef TunedPolicies<T, Offset, 300> TunedPolicies;
                 multi_block_dispatch_params.Init<typename TunedPolicies::MultiBlockPolicy>();
             }
             else if (ptx_version >= 200)
             {
-                typedef TunedPolicies<T, SizeT, 200> TunedPolicies;
+                typedef TunedPolicies<T, Offset, 200> TunedPolicies;
                 multi_block_dispatch_params.Init<typename TunedPolicies::MultiBlockPolicy>();
             }
             else
             {
-                typedef TunedPolicies<T, SizeT, 100> TunedPolicies;
+                typedef TunedPolicies<T, Offset, 100> TunedPolicies;
                 multi_block_dispatch_params.Init<typename TunedPolicies::MultiBlockPolicy>();
             }
         }
@@ -272,7 +272,7 @@ struct DeviceReduceByKey
         typename                    OutputIterator,               ///< Random-access iterator type for output (may be a simple pointer type)
         typename                    ReductionOp,                         ///< Binary scan operator type having member <tt>T operator()(const T &a, const T &b)</tt>
         typename                    Identity,                       ///< Identity value type (cub::NullType for inclusive scans)
-        typename                    SizeT>                          ///< Integer type used for global array indexing
+        typename                    Offset>                          ///< Signed integer type for global offsets
     __host__ __device__ __forceinline__
     static cudaError_t Dispatch(
         void                        *d_temp_storage,                ///< [in] %Device allocation of temporary storage.  When NULL, the required allocation size is returned in \p temp_storage_bytes and no work is done.
@@ -284,7 +284,7 @@ struct DeviceReduceByKey
         OutputIterator            d_out,                          ///< [in] Iterator pointing to scan output
         ReductionOp                      reduction_op,                        ///< [in] Binary scan operator
         Identity                    identity,                       ///< [in] Identity element
-        SizeT                       num_items,                      ///< [in] Total number of items to scan
+        Offset                       num_items,                      ///< [in] Total number of items to scan
         cudaStream_t                stream              = 0,        ///< [in] <b>[optional]</b> CUDA stream to launch kernels within.  Default is stream<sub>0</sub>.
         bool                        debug_synchronous  = false)     ///< [in] <b>[optional]</b> Whether or not to synchronize the stream after every kernel launch to check for errors.  Also causes launch configurations to be printed to the console.  Default is \p false.
     {
@@ -420,7 +420,7 @@ struct DeviceReduceByKey
         typename                    OutputIterator,               ///< Random-access iterator type for output (may be a simple pointer type)
         typename                    ReductionOp,                         ///< Binary scan operator type having member <tt>T operator()(const T &a, const T &b)</tt>
         typename                    Identity,                       ///< Identity value type (cub::NullType for inclusive scans)
-        typename                    SizeT>                          ///< Integer type used for global array indexing
+        typename                    Offset>                          ///< Signed integer type for global offsets
     __host__ __device__ __forceinline__
     static cudaError_t Dispatch(
         void                        *d_temp_storage,                ///< [in] %Device allocation of temporary storage.  When NULL, the required allocation size is returned in \p temp_storage_bytes and no work is done.
@@ -429,7 +429,7 @@ struct DeviceReduceByKey
         OutputIterator            d_out,                          ///< [in] Iterator pointing to scan output
         ReductionOp                      reduction_op,                        ///< [in] Binary scan operator
         Identity                    identity,                       ///< [in] Identity element
-        SizeT                       num_items,                      ///< [in] Total number of items to scan
+        Offset                       num_items,                      ///< [in] Total number of items to scan
         cudaStream_t                stream              = 0,        ///< [in] <b>[optional]</b> CUDA stream to launch kernels within.  Default is stream<sub>0</sub>.
         bool                        debug_synchronous  = false)     ///< [in] <b>[optional]</b> Whether or not to synchronize the stream after every kernel launch to check for errors.  Also causes launch configurations to be printed to the console.  Default is \p false.
     {
@@ -437,7 +437,7 @@ struct DeviceReduceByKey
         typedef typename std::iterator_traits<InputIterator>::value_type T;
 
         // Tuning polices for the PTX architecture that will get dispatched to
-        typedef PtxDefaultPolicies<T, SizeT> PtxDefaultPolicies;
+        typedef PtxDefaultPolicies<T, Offset> PtxDefaultPolicies;
         typedef typename PtxDefaultPolicies::MultiBlockPolicy MultiBlockPolicy;
 
         cudaError error = cudaSuccess;
@@ -459,8 +459,8 @@ struct DeviceReduceByKey
             Dispatch(
                 d_temp_storage,
                 temp_storage_bytes,
-                InitScanKernel<T, SizeT>,
-                MultiBlockScanKernel<MultiBlockPolicy, InputIterator, OutputIterator, T, ReductionOp, Identity, SizeT>,
+                InitScanKernel<T, Offset>,
+                MultiBlockScanKernel<MultiBlockPolicy, InputIterator, OutputIterator, T, ReductionOp, Identity, Offset>,
                 multi_block_dispatch_params,
                 d_in,
                 d_out,

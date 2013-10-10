@@ -100,11 +100,11 @@ struct RunningBlockPrefixCallbackOp
 /**
  * Scan data type for two-way partitioning
  */
-template <typename SizeT>
+template <typename Offset>          ///< Signed integer type for global offsets
 struct DevicePartitionScanTuple
 {
-    SizeT   first_count;
-    SizeT   second_count;
+    Offset   first_count;
+    Offset   second_count;
 
     __device__ __host__ __forceinline__ DevicePartitionScanTuple operator+(
         const DevicePartitionScanTuple &other)
@@ -144,58 +144,49 @@ template <
     bool        SINGLE_WORD = (PowerOfTwo<sizeof(T)>::VALUE && (sizeof(T) <= 8))>
 struct LookbackTileDescriptor
 {
-    // Status word type
-    typedef typename If<(sizeof(T) == 8),
-        long long,
-        typename If<(sizeof(T) == 4),
-            int,
-            typename If<(sizeof(T) == 2),
-                short,
-                char>::Type>::Type>::Type StatusWord;
+    // Unit status word type
+    typedef typename UnitWord<T>::VolatileWord StatusWord;
 
-    // Vector word type
-    typedef typename If<(sizeof(T) == 8),
-        longlong2,
-        typename If<(sizeof(T) == 4),
-            int2,
-            typename If<(sizeof(T) == 2),
-                int,
-                short>::Type>::Type>::Type VectorWord;
+    // Unit device word type for aliasing this descriptor
+    typedef typename UnitWord<T>::DeviceWord DeviceWord;
 
-    T           value;
-    StatusWord  status;
+    T           value;      // Value of this tile
+    StatusWord  status;     // Status of this tile
 
+    // Update the referenced tile descriptor with a valid inclusive prefix
     static __device__ __forceinline__ void SetPrefix(LookbackTileDescriptor *ptr, T prefix)
     {
         LookbackTileDescriptor tile_descriptor;
         tile_descriptor.status = LOOKBACK_TILE_PREFIX;
         tile_descriptor.value = prefix;
 
-        VectorWord alias;
+        DeviceWord alias;
         *reinterpret_cast<LookbackTileDescriptor*>(&alias) = tile_descriptor;
-        ThreadStore<STORE_CG>(reinterpret_cast<VectorWord*>(ptr), alias);
+        ThreadStore<STORE_CG>(reinterpret_cast<DeviceWord*>(ptr), alias);
     }
 
-    static __device__ __forceinline__ void SetPartial(LookbackTileDescriptor *ptr, T partial)
+    // Update the referenced tile descriptor with a valid aggregate
+    static __device__ __forceinline__ void SetPartial(LookbackTileDescriptor *ptr, T aggregate)
     {
         LookbackTileDescriptor tile_descriptor;
         tile_descriptor.status = LOOKBACK_TILE_PARTIAL;
-        tile_descriptor.value = partial;
+        tile_descriptor.value = aggregate;
 
-        VectorWord alias;
+        DeviceWord alias;
         *reinterpret_cast<LookbackTileDescriptor*>(&alias) = tile_descriptor;
-        ThreadStore<STORE_CG>(reinterpret_cast<VectorWord*>(ptr), alias);
+        ThreadStore<STORE_CG>(reinterpret_cast<DeviceWord*>(ptr), alias);
     }
 
+    // Wait for the referenced tile descriptor to become not-invalid
     static __device__ __forceinline__ void WaitForValid(
-        LookbackTileDescriptor    *ptr,
+        LookbackTileDescriptor  *ptr,
         int                     &status,
         T                       &value)
     {
         LookbackTileDescriptor tile_descriptor;
         while (true)
         {
-            VectorWord alias = ThreadLoad<LOAD_CG>(reinterpret_cast<VectorWord*>(ptr));
+            DeviceWord alias = ThreadLoad<LOAD_CG>(reinterpret_cast<DeviceWord*>(ptr));
 
             tile_descriptor = *reinterpret_cast<LookbackTileDescriptor*>(&alias);
             if (tile_descriptor.status != LOOKBACK_TILE_INVALID) break;
@@ -219,16 +210,17 @@ struct LookbackTileDescriptor
 template <typename T>
 struct LookbackTileDescriptor<T, false>
 {
-    T       prefix_value;
-    T       partial_value;
+    T       partial_value;      // Aggregate value of this tile
+    T       prefix_value;       // Inclusive prefix value of this tile
 
     /// Workaround for the fact that win32 doesn't guarantee 16B alignment 16B values of T
     union
     {
-        int                     status;
-        Uninitialized<T>        padding;
+        int                     status;     // Status of this tile
+        Uninitialized<T>        padding;    // Padding
     };
 
+    // Update the referenced tile descriptor with a valid inclusive prefix
     static __device__ __forceinline__ void SetPrefix(LookbackTileDescriptor *ptr, T prefix)
     {
         ThreadStore<STORE_CG>(&ptr->prefix_value, prefix);
@@ -238,16 +230,18 @@ struct LookbackTileDescriptor<T, false>
 
     }
 
-    static __device__ __forceinline__ void SetPartial(LookbackTileDescriptor *ptr, T partial)
+    // Update the referenced tile descriptor with a valid aggregate
+    static __device__ __forceinline__ void SetPartial(LookbackTileDescriptor *ptr, T aggregate)
     {
-        ThreadStore<STORE_CG>(&ptr->partial_value, partial);
+        ThreadStore<STORE_CG>(&ptr->partial_value, aggregate);
         __threadfence_block();
 //        __threadfence();        // __threadfence_block seems sufficient on current architectures to prevent reordeing
         ThreadStore<STORE_CG>(&ptr->status, (int) LOOKBACK_TILE_PARTIAL);
     }
 
+    // Wait for the referenced tile descriptor to become not-invalid
     static __device__ __forceinline__ void WaitForValid(
-        LookbackTileDescriptor    *ptr,
+        LookbackTileDescriptor      *ptr,
         int                         &status,
         T                           &value)
     {
@@ -286,10 +280,10 @@ struct LookbackBlockPrefixCallbackOp
     typedef Uninitialized<_TempStorage>         TempStorage;
 
     // Tile status descriptor type
-    typedef LookbackTileDescriptor<T>         LookbackTileDescriptorT;
+    typedef LookbackTileDescriptor<T>           LookbackTileDescriptorT;
 
     // Fields
-    LookbackTileDescriptorT   *d_tile_status;     ///< Pointer to array of tile status
+    LookbackTileDescriptorT     *d_tile_status;     ///< Pointer to array of tile status
     _TempStorage                &temp_storage;      ///< Reference to a warp-reduction instance
     ScanOp                      scan_op;            ///< Binary scan operator
     int                         tile_idx;           ///< The current tile index
@@ -298,7 +292,7 @@ struct LookbackBlockPrefixCallbackOp
     // Constructor
     __device__ __forceinline__
     LookbackBlockPrefixCallbackOp(
-        LookbackTileDescriptorT   *d_tile_status,
+        LookbackTileDescriptorT     *d_tile_status,
         TempStorage                 &temp_storage,
         ScanOp                      scan_op,
         int                         tile_idx) :
@@ -308,12 +302,12 @@ struct LookbackBlockPrefixCallbackOp
             tile_idx(tile_idx) {}
 
 
-    // Block until all predecessors within the specified window have non-invalid status
+    // Block until all predecessors within the warp-wide window have non-invalid status
     __device__ __forceinline__
     void ProcessWindow(
-        int                         predecessor_idx,
-        int                         &predecessor_status,
-        T                           &window_aggregate)
+        int predecessor_idx,        ///< Preceding tile index to inspect
+        int &predecessor_status,    ///< [out] Preceding tile status
+        T   &window_aggregate)      ///< [out] Relevant partial reduction from this window of preceding tiles
     {
         T value;
         LookbackTileDescriptorT::WaitForValid(d_tile_status + predecessor_idx, predecessor_status, value);
@@ -324,7 +318,7 @@ struct LookbackBlockPrefixCallbackOp
     }
 
 
-    // Prefix functor (called by the first warp)
+    // BlockScan prefix callback functor (called by the first warp)
     __device__ __forceinline__
     T operator()(T block_aggregate)
     {
@@ -334,7 +328,7 @@ struct LookbackBlockPrefixCallbackOp
             LookbackTileDescriptorT::SetPartial(d_tile_status + tile_idx, block_aggregate);
         }
 
-        // Wait for the window of predecessor tiles to become valid
+        // Wait for the warp-wide window of predecessor tiles to become valid
         int predecessor_idx = tile_idx - threadIdx.x - 1;
         int predecessor_status;
         T window_aggregate;

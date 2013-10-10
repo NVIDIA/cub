@@ -28,7 +28,7 @@
 
 /**
  * \file
- * cub::BlockPartitionTiles implements a stateful abstraction of CUDA thread blocks for participating in device-wide list partitioning.
+ * cub::BlockPartitionRegion implements a stateful abstraction of CUDA thread blocks for participating in device-wide list partitioning.
  */
 
 #pragma once
@@ -36,9 +36,9 @@
 #include <iterator>
 
 #include "device_scan_types.cuh"
-#include "../../block/block_load.cuh"
-#include "../../block/block_store.cuh"
-#include "../../block/block_scan.cuh"
+#include "../../region/block_load.cuh"
+#include "../../region/block_store.cuh"
+#include "../../region/block_scan.cuh"
 #include "../../grid/grid_queue.cuh"
 #include "../../util_namespace.cuh"
 
@@ -54,19 +54,19 @@ namespace cub {
  ******************************************************************************/
 
 /**
- * Tuning policy for BlockPartitionTiles
+ * Parameterizable tuning policy type for BlockPartitionRegion
  */
 template <
     int                         _BLOCK_THREADS,
     int                         _ITEMS_PER_THREAD,
     BlockLoadAlgorithm          _LOAD_ALGORITHM,
     bool                        _LOAD_WARP_TIME_SLICING,
-    PtxLoadModifier             _LOAD_MODIFIER,
+    CacheLoadModifier           _LOAD_MODIFIER,
     BlockStoreAlgorithm         _STORE_ALGORITHM,
     bool                        _STORE_WARP_TIME_SLICING,
     BlockScanAlgorithm          _SCAN_ALGORITHM,
     bool                        _BACKFILL_SECOND_PARTITION>
-struct BlockPartitionTilesPolicy
+struct BlockPartitionRegionPolicy
 {
     enum
     {
@@ -78,7 +78,7 @@ struct BlockPartitionTilesPolicy
     };
 
     static const BlockLoadAlgorithm     LOAD_ALGORITHM      = _LOAD_ALGORITHM;
-    static const PtxLoadModifier        LOAD_MODIFIER       = _LOAD_MODIFIER;
+    static const CacheLoadModifier      LOAD_MODIFIER       = _LOAD_MODIFIER;
     static const BlockStoreAlgorithm    STORE_ALGORITHM     = _STORE_ALGORITHM;
     static const BlockScanAlgorithm     SCAN_ALGORITHM      = _SCAN_ALGORITHM;
 };
@@ -92,18 +92,18 @@ struct BlockPartitionTilesPolicy
  ******************************************************************************/
 
 /**
- * \brief BlockPartitionTiles implements a stateful abstraction of CUDA thread blocks for participating in device-wide list partitioning.
+ * \brief BlockPartitionRegion implements a stateful abstraction of CUDA thread blocks for participating in device-wide list partitioning.
  *
  * Implements a single-pass "domino" strategy with variable predecessor look-back.
  */
 template <
-    typename BlockPartitionTilesPolicy,     ///< Tuning policy
+    typename BlockPartitionRegionPolicy,     ///< Tuning policy
     typename InputIterator,               ///< Input iterator type
     typename FirstOutputIterator,         ///< Output iterator type for first partition
     typename SecondOutputIterator,        ///< Output iterator type for second partition
     typename SelectOp,                      ///< Unary partition selection functor type specifying whether an input item goes into the first partition
-    typename SizeT>                         ///< Offset integer type
-struct BlockPartitionTiles
+    typename Offset>                         ///< Signed integer type for global offsets
+struct BlockPartitionRegion
 {
     //---------------------------------------------------------------------
     // Types and constants
@@ -115,25 +115,25 @@ struct BlockPartitionTiles
     // Constants
     enum
     {
-        BLOCK_THREADS               = BlockPartitionTilesPolicy::BLOCK_THREADS,
-        ITEMS_PER_THREAD            = BlockPartitionTilesPolicy::ITEMS_PER_THREAD,
+        BLOCK_THREADS               = BlockPartitionRegionPolicy::BLOCK_THREADS,
+        ITEMS_PER_THREAD            = BlockPartitionRegionPolicy::ITEMS_PER_THREAD,
         TILE_ITEMS                  = BLOCK_THREADS * ITEMS_PER_THREAD,
 
-        BACKFILL_SECOND_PARTITION   = BlockPartitionTilesPolicy::BACKFILL_SECOND_PARTITION,
+        BACKFILL_SECOND_PARTITION   = BlockPartitionRegionPolicy::BACKFILL_SECOND_PARTITION,
         COMPACT_ONLY                = Int2Type<Equals<SecondOutputIterator, NullType>::VALUE,
     };
 
     // Block load type
     typedef BlockLoad<
         InputIterator,
-        BlockPartitionTilesPolicy::BLOCK_THREADS,
-        BlockPartitionTilesPolicy::ITEMS_PER_THREAD,
-        BlockPartitionTilesPolicy::LOAD_ALGORITHM,
-        BlockPartitionTilesPolicy::LOAD_MODIFIER,
-        BlockPartitionTilesPolicy::LOAD_WARP_TIME_SLICING> BlockLoadT;
+        BlockPartitionRegionPolicy::BLOCK_THREADS,
+        BlockPartitionRegionPolicy::ITEMS_PER_THREAD,
+        BlockPartitionRegionPolicy::LOAD_ALGORITHM,
+        BlockPartitionRegionPolicy::LOAD_MODIFIER,
+        BlockPartitionRegionPolicy::LOAD_WARP_TIME_SLICING> BlockLoadT;
 
     // Scan data type
-    typedef DevicePartitionScanTuple<SizeT> ScanTuple;
+    typedef DevicePartitionScanTuple<Offset> ScanTuple;
 
     // Tile status descriptor type
     typedef LookbackTileDescriptor<ScanTuple> TileDescriptor;
@@ -144,8 +144,8 @@ struct BlockPartitionTiles
     // Block scan type
     typedef BlockScan<
         ScanTuple,
-        BlockPartitionTilesPolicy::BLOCK_THREADS,
-        BlockPartitionTilesPolicy::SCAN_ALGORITHM> BlockScanT;
+        BlockPartitionRegionPolicy::BLOCK_THREADS,
+        BlockPartitionRegionPolicy::SCAN_ALGORITHM> BlockScanT;
 
     // Shared memory type for this threadblock
     struct _TempStorage
@@ -160,7 +160,7 @@ struct BlockPartitionTiles
             };
         };
 
-        SizeT                                           tile_idx;   // Shared tile index
+        Offset                                           tile_idx;   // Shared tile index
     };
 
     // Alias wrapper allowing storage to be unioned
@@ -185,7 +185,7 @@ struct BlockPartitionTiles
 
     // Constructor
     __device__ __forceinline__
-    BlockPartitionTiles(
+    BlockPartitionRegion(
         TempStorage                 &temp_storage,      ///< Reference to temp_storage
         InputIterator             d_in,               ///< Input data
         FirstOutputIterator       d_out_a,            ///< First partition output data
@@ -271,9 +271,9 @@ struct BlockPartitionTiles
      */
     template <bool FULL_TILE>
     __device__ __forceinline__ void ConsumeTile(
-        SizeT                       num_items,          ///< Total number of input items
+        Offset                       num_items,          ///< Total number of input items
         int                         tile_idx,           ///< Tile index
-        SizeT                       block_offset,       ///< Tile offset
+        Offset                       block_offset,       ///< Tile offset
         TileDescriptor              *d_tile_status)     ///< Global list of tile status
     {
         int valid_items = num_items - block_offset;
@@ -333,7 +333,7 @@ struct BlockPartitionTiles
     /**
      * Dequeue and scan tiles of items as part of a dynamic domino scan
      */
-    __device__ __forceinline__ void ConsumeTiles(
+    __device__ __forceinline__ void ConsumeRegion(
         int                         num_items,          ///< Total number of input items
         GridQueue<int>              queue,              ///< Queue descriptor for assigning tiles of work to thread blocks
         TileDescriptor              *d_tile_status)     ///< Global list of tile status
@@ -342,7 +342,7 @@ struct BlockPartitionTiles
 
         // No concurrent kernels allowed and blocks are launched in increasing order, so just assign one tile per block (up to 65K blocks)
         int     tile_idx        = blockIdx.x;
-        SizeT   block_offset    = SizeT(TILE_ITEMS) * tile_idx;
+        Offset   block_offset    = Offset(TILE_ITEMS) * tile_idx;
 
         if (block_offset + TILE_ITEMS <= num_items)
             ConsumeTile<true>(num_items, tile_idx, block_offset, d_tile_status);
@@ -358,7 +358,7 @@ struct BlockPartitionTiles
         __syncthreads();
 
         int tile_idx = temp_storage.tile_idx;
-        SizeT block_offset = SizeT(TILE_ITEMS) * tile_idx;
+        Offset block_offset = Offset(TILE_ITEMS) * tile_idx;
 
         while (block_offset + TILE_ITEMS <= num_items)
         {
@@ -372,7 +372,7 @@ struct BlockPartitionTiles
             __syncthreads();
 
             tile_idx = temp_storage.tile_idx;
-            block_offset = SizeT(TILE_ITEMS) * tile_idx;
+            block_offset = Offset(TILE_ITEMS) * tile_idx;
         }
 
         // Consume a partially-full tile

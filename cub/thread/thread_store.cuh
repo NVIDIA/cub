@@ -56,9 +56,9 @@ namespace cub {
 //-----------------------------------------------------------------------------
 
 /**
- * \brief Enumeration of PTX cache-modifiers for memory store operations.
+ * \brief Enumeration of cache modifiers for memory store operations.
  */
-enum PtxStoreModifier
+enum CacheStoreModifier
 {
     STORE_DEFAULT,              ///< Default (no modifier)
     STORE_WB,                   ///< Cache write-back all coherent levels
@@ -75,7 +75,7 @@ enum PtxStoreModifier
  */
 
 /**
- * \brief Thread utility for writing memory using cub::PtxStoreModifier cache modifiers.
+ * \brief Thread utility for writing memory using cub::CacheStoreModifier cache modifiers.
  *
  * Cache modifiers will only be effected for built-in types (i.e., C++
  * primitives and CUDA vector-types).
@@ -109,7 +109,7 @@ enum PtxStoreModifier
  *
  */
 template <
-    PtxStoreModifier MODIFIER,
+    CacheStoreModifier MODIFIER,
     typename OutputIterator,
     typename T>
 __device__ __forceinline__ void ThreadStore(OutputIterator itr, T val);
@@ -122,7 +122,7 @@ __device__ __forceinline__ void ThreadStore(OutputIterator itr, T val);
 
 
 /// Helper structure for templated store iteration (inductive case)
-template <PtxStoreModifier MODIFIER, int COUNT, int MAX>
+template <CacheStoreModifier MODIFIER, int COUNT, int MAX>
 struct IterateThreadStore
 {
     template <typename T>
@@ -134,7 +134,7 @@ struct IterateThreadStore
 };
 
 /// Helper structure for templated store iteration (termination case)
-template <PtxStoreModifier MODIFIER, int MAX>
+template <CacheStoreModifier MODIFIER, int MAX>
 struct IterateThreadStore<MODIFIER, MAX, MAX>
 {
     template <typename T>
@@ -143,7 +143,7 @@ struct IterateThreadStore<MODIFIER, MAX, MAX>
 
 
 /**
- * Define a int4 (16B) ThreadStore specialization for the given PTX load modifier
+ * Define a int4 (16B) ThreadStore specialization for the given Cache load modifier
  */
 #define CUB_STORE_16(cub_modifier, ptx_modifier)                                            \
     template<>                                                                              \
@@ -167,7 +167,7 @@ struct IterateThreadStore<MODIFIER, MAX, MAX>
 
 
 /**
- * Define a int2 (8B) ThreadStore specialization for the given PTX load modifier
+ * Define a int2 (8B) ThreadStore specialization for the given Cache load modifier
  */
 #define CUB_STORE_8(cub_modifier, ptx_modifier)                                             \
     template<>                                                                              \
@@ -197,7 +197,7 @@ struct IterateThreadStore<MODIFIER, MAX, MAX>
     }
 
 /**
- * Define a int (4B) ThreadStore specialization for the given PTX load modifier
+ * Define a int (4B) ThreadStore specialization for the given Cache load modifier
  */
 #define CUB_STORE_4(cub_modifier, ptx_modifier)                                             \
     template<>                                                                              \
@@ -210,7 +210,7 @@ struct IterateThreadStore<MODIFIER, MAX, MAX>
 
 
 /**
- * Define a short (2B) ThreadStore specialization for the given PTX load modifier
+ * Define a short (2B) ThreadStore specialization for the given Cache load modifier
  */
 #define CUB_STORE_2(cub_modifier, ptx_modifier)                                             \
     template<>                                                                              \
@@ -223,7 +223,7 @@ struct IterateThreadStore<MODIFIER, MAX, MAX>
 
 
 /**
- * Define a char (1B) ThreadStore specialization for the given PTX load modifier
+ * Define a char (1B) ThreadStore specialization for the given Cache load modifier
  */
 #define CUB_STORE_1(cub_modifier, ptx_modifier)                                             \
     template<>                                                                              \
@@ -240,7 +240,7 @@ struct IterateThreadStore<MODIFIER, MAX, MAX>
     }
 
 /**
- * Define powers-of-two ThreadStore specializations for the given PTX load modifier
+ * Define powers-of-two ThreadStore specializations for the given Cache load modifier
  */
 #define CUB_STORE_ALL(cub_modifier, ptx_modifier)                                           \
     CUB_STORE_16(cub_modifier, ptx_modifier)                                                \
@@ -251,7 +251,7 @@ struct IterateThreadStore<MODIFIER, MAX, MAX>
 
 
 /**
- * Define ThreadStore specializations for the various PTX load modifiers
+ * Define ThreadStore specializations for the various Cache load modifiers
  */
 #if CUB_PTX_VERSION >= 200
     CUB_STORE_ALL(STORE_WB, ca)
@@ -389,7 +389,7 @@ __device__ __forceinline__ void ThreadStore(
     *reinterpret_cast<T*>(words) = val;
 
     // Memcopy words to aliased destination
-    IterateThreadStore<PtxStoreModifier(MODIFIER), 0, DEVICE_MULTIPLE>::Store(
+    IterateThreadStore<CacheStoreModifier(MODIFIER), 0, DEVICE_MULTIPLE>::Store(
         reinterpret_cast<DeviceWord*>(ptr),
         words);
 
@@ -400,7 +400,7 @@ __device__ __forceinline__ void ThreadStore(
 /**
  * ThreadStore definition for generic modifiers
  */
-template <PtxStoreModifier MODIFIER, typename OutputIterator, typename T>
+template <CacheStoreModifier MODIFIER, typename OutputIterator, typename T>
 __device__ __forceinline__ void ThreadStore(OutputIterator itr, T val)
 {
     ThreadStore(

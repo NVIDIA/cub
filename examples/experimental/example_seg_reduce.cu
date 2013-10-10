@@ -69,24 +69,24 @@ CachingDeviceAllocator  g_allocator;
 template <
     typename    IteratorA,
     typename    IteratorB,
-    typename    SizeT>
+    typename    Offset>
 __device__ __forceinline__ void MergePathSearch(
-    SizeT       diagonal,
+    Offset      diagonal,
     IteratorA   a,
-    SizeT       a_begin,
-    SizeT       a_end,
-    SizeT       &a_offset,
+    Offset      a_begin,
+    Offset      a_end,
+    Offset      &a_offset,
     IteratorB   b,
-    SizeT       b_begin,
-    SizeT       b_end,
-    SizeT       &b_offset)
+    Offset      b_begin,
+    Offset      b_end,
+    Offset      &b_offset)
 {
-    SizeT split_min = CUB_MAX(diagonal - b_end, a_begin);
-    SizeT split_max = CUB_MIN(diagonal, a_end);
+    Offset split_min = CUB_MAX(diagonal - b_end, a_begin);
+    Offset split_max = CUB_MIN(diagonal, a_end);
 
     while (split_min < split_max)
     {
-        SizeT split_pivot = (split_min + split_max) >> 1;
+        Offset split_pivot = (split_min + split_max) >> 1;
         if (a[split_pivot] <= b[diagonal - split_pivot - 1])
         {
             // Move candidate split range up A, down B
@@ -104,6 +104,39 @@ __device__ __forceinline__ void MergePathSearch(
 }
 
 
+/******************************************************************************
+ * Tuning policy types
+ ******************************************************************************/
+
+/**
+ * Parameterizable tuning policy type for BlockSegmentedReduceRegion
+ */
+template <
+    int                     _BLOCK_THREADS,             ///< Threads per thread block
+    int                     _ITEMS_PER_THREAD,          ///< Items per thread (per tile of input)
+    bool                    _USE_SMEM_SEGMENT_CACHE,    ///< Whether or not to cache incoming segment offsets in shared memory before reducing each tile
+    CacheStoreModifier      _SEGMENT_LOAD_MODIFIER,     ///< Cache load modifier for reading segment offsets
+    bool                    _USE_SMEM_VALUE_CACHE,      ///< Whether or not to cache incoming values in shared memory before reducing each tile
+    CacheStoreModifier      _VALUE_LOAD_MODIFIER,       ///< Cache load modifier for reading values
+    BlockReduceAlgorithm    _BLOCK_REDUCE_ALGORITHM,    ///< The BlockReduce algorithm to use
+    BlockScanAlgorithm      _BLOCK_SCAN_ALGORITHM,      ///< The BlockScan algorithm to use
+    GridMappingStrategy     _GRID_MAPPING>              ///< How to map tiles of input onto thread blocks
+struct BlockSegmentedReduceRegionPolicy
+{
+    enum
+    {
+        BLOCK_THREADS           = _BLOCK_THREADS,               ///< Threads per thread block
+        ITEMS_PER_THREAD        = _ITEMS_PER_THREAD,            ///< Items per thread (per tile of input)
+        USE_SMEM_SEGMENT_CACHE  = _USE_SMEM_SEGMENT_CACHE,      ///< Whether or not to cache incoming segment offsets in shared memory before reducing each tile
+        USE_SMEM_VALUE_CACHE    = _USE_SMEM_VALUE_CACHE,        ///< Whether or not to cache incoming upcoming values in shared memory before reducing each tile
+    };
+
+    static const BlockReduceAlgorithm   BLOCK_REDUCE_ALGORITHM  = _BLOCK_REDUCE_ALGORITHM;  ///< The BlockReduce algorithm to use
+    static const BlockScanAlgorithm     BLOCK_SCAN_ALGORITHM    = _BLOCK_SCAN_ALGORITHM;    ///< The BlockScan algorithm to use
+    static const CacheLoadModifier      SEGMENT_LOAD_MODIFIER   = _SEGMENT_LOAD_MODIFIER;   ///< Cache load modifier for reading segment offsets
+    static const CacheLoadModifier      VALUE_LOAD_MODIFIER     = _VALUE_LOAD_MODIFIER;     ///< Cache load modifier for reading values
+};
+
 
 /******************************************************************************
  * Persistent thread block types
@@ -113,17 +146,12 @@ __device__ __forceinline__ void MergePathSearch(
  * \brief BlockSegmentedReduceTiles implements a stateful abstraction of CUDA thread blocks for participating in device-wide segmented reduction.
  */
 template <
-    int                     BLOCK_THREADS,
-    int                     ITEMS_PER_THREAD,
-    bool                    CACHE_SEGMENT_OFFSETS,
-    bool                    CACHE_ITEMS,
-    BlockReduceAlgorithm    REDUCE_ALGORITHM,
-    BlockScanAlgorithm      SCAN_ALGORITHM,
-    typename                ValueIterator,
-    typename                SegmentOffsetIterator,
-    typename                OutputIterator,
-    typename                ReductionOp>
-struct BlockSegmentedReduceTiles
+    typename BlockSegmentedReduceRegionPolicy,  ///< Parameterized BlockReduceTilesPolicy tuning policy
+    typename ValueIterator,                     ///< Random-access input iterator type for reading values
+    typename SegmentOffsetIterator,             ///< Random-access input iterator type for reading segment end-offsets
+    typename OutputIterator,                    ///< Random-access output iterator type for writing segment reductions
+    typename ReductionOp>                       ///< Binary reduction operator type having member <tt>T operator()(const T &a, const T &b)</tt>
+struct BlockSegmentedReduceRegion
 {
     //---------------------------------------------------------------------
     // Types and constants
@@ -132,24 +160,25 @@ struct BlockSegmentedReduceTiles
     // Constants
     enum
     {
-        /// Number of work items to be processed per tile
-        TILE_ITEMS = BLOCK_THREADS * ITEMS_PER_THREAD,
+        BLOCK_THREADS       = BlockSegmentedReduceRegionPolicy::BLOCK_THREADS,
+        ITEMS_PER_THREAD    = BlockSegmentedReduceRegionPolicy::ITEMS_PER_THREAD,
+        TILE_ITEMS          = BLOCK_THREADS * ITEMS_PER_THREAD,                     /// Number of work items to be processed per tile
     };
 
-    // Offset type
-    typedef typename std::iterator_traits<SegmentOffsetIterator>::value_type SizeT;
+    // Signed integer type for global offsets
+    typedef typename std::iterator_traits<SegmentOffsetIterator>::value_type Offset;
 
     // Value type
     typedef typename std::iterator_traits<ValueIterator>::value_type Value;
 
     // Counting iterator type
-    typedef CountingInputIterator<SizeT, SizeT> CountingIterator;
+    typedef CountingInputIterator<Offset, Offset> CountingIterator;
 
     // Tail flag type for marking segment discontinuities
     typedef int TailFlag;
 
     // BlockScan data type of (segment-id, value) tuples for reduction-by-segment
-    typedef KeyValuePair<SizeT, Value> KeyValuePair;
+    typedef KeyValuePair<Offset, Value> KeyValuePair;
 
     // BlockScan scan operator for reduction-by-segment
     typedef ReduceByKeyOp<ReductionOp> ScanOp;
@@ -164,14 +193,14 @@ struct BlockSegmentedReduceTiles
     typedef BlockReduce<
             Value,
             BLOCK_THREADS,
-            REDUCE_ALGORITHM>
+            BlockSegmentedReduceRegionPolicy::REDUCE_ALGORITHM>
         BlockReduce;
 
     // Parameterized BlockScan type for block-wide reduce-value-by-key
     typedef BlockScan<
             KeyValuePair,
             BLOCK_THREADS,
-            SCAN_ALGORITHM>
+            BlockSegmentedReduceRegionPolicy::SCAN_ALGORITHM>
         BlockScan;
 
     // Shared memory type for this threadblock
@@ -187,11 +216,11 @@ struct BlockSegmentedReduceTiles
 
             struct
             {
-                SizeT block_segment_idx[2];     // The starting and ending indices of segment offsets for the threadblock's region
-                SizeT block_value_idx[2];       // The starting and ending indices of values for the threadblock's region
+                Offset block_segment_idx[2];     // The starting and ending indices of segment offsets for the threadblock's region
+                Offset block_value_idx[2];       // The starting and ending indices of values for the threadblock's region
 
                 // Smem needed for communicating start/end indices between threads for a given work tile
-                SizeT thread_segment_idx[BLOCK_THREADS + 1];
+                Offset thread_segment_idx[BLOCK_THREADS + 1];
                 Value thread_value_idx[BLOCK_THREADS + 1];
             };
         };
@@ -210,8 +239,8 @@ struct BlockSegmentedReduceTiles
     //---------------------------------------------------------------------
 
     _TempStorage            &temp_storage;          ///< Reference to temporary storage
-    SizeT                   num_values;             ///< Total number of values to reduce
-    SizeT                   num_segments;           ///< Number of segments to reduce
+    Offset                  num_values;             ///< Total number of values to reduce
+    Offset                  num_segments;           ///< Number of segments to reduce
     ValueIterator           d_values;               ///< Input pointer to an array of \p num_values values
     CountingIterator        d_value_offsets;        ///< Input pointer to an array of \p num_values value-offsets
     SegmentOffsetIterator   d_segment_end_offsets;  ///< Input pointer to an array of \p num_segments segment end-offsets
@@ -230,10 +259,10 @@ struct BlockSegmentedReduceTiles
      * Constructor
      */
     __device__ __forceinline__
-    BlockSegmentedReduceTiles(
+    BlockSegmentedReduceRegion(
         TempStorage             &temp_storage,          ///< Reference to temporary storage
-        SizeT                   num_values,             ///< Number of values to reduce
-        SizeT                   num_segments,           ///< Number of segments to reduce
+        Offset                  num_values,             ///< Number of values to reduce
+        Offset                  num_segments,           ///< Number of segments to reduce
         ValueIterator           d_values,               ///< Input pointer to an array of \p num_values values
         SegmentOffsetIterator   d_segment_end_offsets,  ///< Input pointer to an array of \p num_segments segment end-offsets
         OutputIterator          d_output,               ///< Output pointer to an array of \p num_segments segment totals
@@ -258,8 +287,8 @@ struct BlockSegmentedReduceTiles
      * Process the specified region of the MergePath decision path
      */
     __device__ __forceinline__ void ProcessRegion(
-        SizeT block_diagonal,
-        SizeT next_block_diagonal)
+        Offset block_diagonal,
+        Offset next_block_diagonal)
     {
         // Thread block initialization
         if (threadIdx.x < 2)
@@ -269,8 +298,8 @@ struct BlockSegmentedReduceTiles
                 next_block_diagonal;    // Second thread searches for end indices
 
             // Search for block starting and ending indices
-            SizeT block_segment_idx;
-            SizeT block_value_idx;
+            Offset block_segment_idx;
+            Offset block_value_idx;
 
             MergePathSearch(
                 diagonal,               // Diagonal
@@ -302,27 +331,27 @@ struct BlockSegmentedReduceTiles
         __syncthreads();
 
         // Read block's starting indices
-        SizeT block_segment_idx             = temp_storage.block_segment_idx[0];
-        SizeT block_value_idx               = temp_storage.block_value_idx[0];
+        Offset block_segment_idx             = temp_storage.block_segment_idx[0];
+        Offset block_value_idx               = temp_storage.block_value_idx[0];
 
         // Remember the first segment index
-        SizeT first_segment_idx = block_segment_idx;
+        Offset first_segment_idx = block_segment_idx;
 
         // Have the thread block iterate over the region
         while (block_diagonal < next_block_diagonal)
         {
             // Read block's ending indices (the compiler may hoist this out)
-            SizeT next_block_id             = temp_storage.block_segment_idx[1];
-            SizeT next_block_value_idx      = temp_storage.block_value_idx[1];
+            Offset next_block_id             = temp_storage.block_segment_idx[1];
+            Offset next_block_value_idx      = temp_storage.block_value_idx[1];
 
             // Clamp the per-thread search range to within one work-tile of block's current indices
-            SizeT next_tile_block_idx = CUB_MIN(next_block_id,          block_segment_idx + TILE_ITEMS);
-            SizeT next_tile_value_idx = CUB_MIN(next_block_value_idx,   block_value_idx + TILE_ITEMS);
+            Offset next_tile_block_idx = CUB_MIN(next_block_id,          block_segment_idx + TILE_ITEMS);
+            Offset next_tile_value_idx = CUB_MIN(next_block_value_idx,   block_value_idx + TILE_ITEMS);
 
             // Have each thread search for its segment and value end-indices
-            SizeT next_thread_diagonal = block_diagonal + ((threadIdx.x + 1) * ITEMS_PER_THREAD);
-            SizeT next_thread_segment_idx;
-            SizeT next_thread_value_idx;
+            Offset next_thread_diagonal = block_diagonal + ((threadIdx.x + 1) * ITEMS_PER_THREAD);
+            Offset next_thread_segment_idx;
+            Offset next_thread_value_idx;
 
             MergePathSearch(
                 next_thread_diagonal,           // Next thread diagonal
@@ -343,8 +372,8 @@ struct BlockSegmentedReduceTiles
             __syncthreads();
 
             // Get thread begin-indices
-            SizeT thread_segment_idx    = temp_storage.thread_segment_idx[threadIdx.x];
-            SizeT thread_value_idx      = temp_storage.thread_value_idx[threadIdx.x];
+            Offset thread_segment_idx    = temp_storage.thread_segment_idx[threadIdx.x];
+            Offset thread_value_idx      = temp_storage.thread_value_idx[threadIdx.x];
 
             // Check if first segment end-offset is in range
             bool valid_segment = (thread_segment_idx < next_thread_segment_idx);
@@ -353,12 +382,12 @@ struct BlockSegmentedReduceTiles
             bool valid_value = (thread_value_idx < next_thread_value_idx);
 
             // Load first segment end-offset
-            SizeT segment_end_offset = (valid_segment) ?
+            Offset segment_end_offset = (valid_segment) ?
                 d_segment_end_offsets[thread_segment_idx] :
                 num_values;                                                     // Out of range (the last segment end-offset is one-past the last value offset)
 
             // Load first value offset
-            SizeT value_offset = (valid_value) ?
+            Offset value_offset = (valid_value) ?
                 d_value_offsets[thread_value_idx] :
                 num_values;                                                     // Out of range (one-past the last value offset)
 
@@ -429,7 +458,7 @@ struct BlockSegmentedReduceTiles
             {
                 if (tail_flags[ITEM])
                 {
-                    SizeT segment_idx     = partial_reductions[ITEM].key;
+                    Offset segment_idx     = partial_reductions[ITEM].key;
                     Value value           = partial_reductions[ITEM].value;
 
                     // Write value reduction to corresponding segment id
@@ -462,12 +491,12 @@ template <
     int                 ITEMS_PER_THREAD,
     BlockLoadAlgorithm  LOAD_ALGORITHM,
     bool                LOAD_WARP_TIME_SLICING,
-    PtxLoadModifier     LOAD_MODIFIER,
+    CacheStoreModifier  LOAD_MODIFIER,
     BlockScanAlgorithm  SCAN_ALGORITHM,
     typename            KeyValuePair,   ///< Partial reduction type
     typename            OutputIterator,     ///< Random-access output iterator pointing to an array of segment totals
     typename            ReductionOp,
-    typename            SizeT>
+    typename            Offset>
 struct BlockReducePartialsBySegment
 {
     //---------------------------------------------------------------------
@@ -484,7 +513,7 @@ struct BlockReducePartialsBySegment
     typedef int TailFlag;
 
     // Input iterator wrapper type for loading KeyValuePair elements through cache
-    typedef CacheModifiedInputIterator<LOAD_MODIFIER, KeyValuePair, SizeT> WrappedInputIterator;
+    typedef CacheModifiedInputIterator<LOAD_MODIFIER, KeyValuePair, Offset> WrappedInputIterator;
 
     // Value type
     typedef typename std::iterator_traits<OutputIterator>::value_type Value;
@@ -510,7 +539,7 @@ struct BlockReducePartialsBySegment
 
     // Parameterized BlockDiscontinuity type for identifying key discontinuities
     typedef BlockDiscontinuity<
-            SizeT,
+            Offset,
             BLOCK_THREADS>
         BlockDiscontinuity;
 
@@ -586,7 +615,7 @@ struct BlockReducePartialsBySegment
         int block_offset,
         int guarded_items = 0)
     {
-        SizeT               rows[ITEMS_PER_THREAD];
+        Offset               rows[ITEMS_PER_THREAD];
         KeyValuePair    partial_sums[ITEMS_PER_THREAD];
         TailFlag            tail_flags[ITEMS_PER_THREAD];
 
@@ -691,20 +720,20 @@ struct BlockReducePartialsBySegment
 template <
     int                             BLOCK_THREADS,
     int                             ITEMS_PER_THREAD,
-    typename                        SizeT,
+    typename                        Offset,
     typename                        Value>
 __launch_bounds__ (BLOCK_THREADS)
 __global__ void CooKernel(
     GridEvenShare<int>              even_share,
-    KeyValuePair<SizeT, Value> *d_block_partials,
-    SizeT                        *d_rows,
-    SizeT                        *d_columns,
+    KeyValuePair<Offset, Value> *d_block_partials,
+    Offset                        *d_rows,
+    Offset                        *d_columns,
     Value                           *d_values,
     Value                           *d_vector,
     Value                           *d_result)
 {
     // Specialize SpMV threadblock abstraction type
-    typedef BlockSegmentedReduceTiles<BLOCK_THREADS, ITEMS_PER_THREAD, SizeT, Value> BlockSegmentedReduceTiles;
+    typedef BlockSegmentedReduceTiles<BLOCK_THREADS, ITEMS_PER_THREAD, Offset, Value> BlockSegmentedReduceTiles;
 
     // Shared memory allocation
     __shared__ typename BlockSegmentedReduceTiles::TempStorage temp_storage;
@@ -732,16 +761,16 @@ __global__ void CooKernel(
 template <
     int                             BLOCK_THREADS,
     int                             ITEMS_PER_THREAD,
-    typename                        SizeT,
+    typename                        Offset,
     typename                        Value>
 __launch_bounds__ (BLOCK_THREADS,  1)
 __global__ void CooFinalizeKernel(
-    KeyValuePair<SizeT, Value> *d_block_partials,
+    KeyValuePair<Offset, Value> *d_block_partials,
     int                             num_partials,
     Value                           *d_result)
 {
     // Specialize "fix-up" threadblock abstraction type
-    typedef BlockSegmentedReducePartials<BLOCK_THREADS, ITEMS_PER_THREAD, SizeT, Value> BlockSegmentedReducePartials;
+    typedef BlockSegmentedReducePartials<BLOCK_THREADS, ITEMS_PER_THREAD, Offset, Value> BlockSegmentedReducePartials;
 
     // Shared memory allocation
     __shared__ typename BlockSegmentedReducePartials::TempStorage temp_storage;
@@ -769,20 +798,20 @@ template <
     int                         COO_SUBSCRIPTION_FACTOR,
     int                         FINALIZE_BLOCK_THREADS,
     int                         FINALIZE_ITEMS_PER_THREAD,
-    typename                    SizeT,
+    typename                    Offset,
     typename                    Value>
 void TestDevice(
-    CooGraph<SizeT, Value>&  coo_graph,
+    CooGraph<Offset, Value>&  coo_graph,
     Value*                      h_vector,
     Value*                      h_reference)
 {
-    typedef KeyValuePair<SizeT, Value> KeyValuePair;
+    typedef KeyValuePair<Offset, Value> KeyValuePair;
 
     const int COO_TILE_SIZE = COO_BLOCK_THREADS * COO_ITEMS_PER_THREAD;
 
     // SOA device storage
-    SizeT        *d_rows;             // SOA graph segment coordinates
-    SizeT        *d_columns;          // SOA graph col coordinates
+    Offset        *d_rows;             // SOA graph segment coordinates
+    Offset        *d_columns;          // SOA graph col coordinates
     Value           *d_values;           // SOA graph values
     Value           *d_vector;           // Vector multiplicand
     Value           *d_result;           // Output segment
@@ -790,8 +819,8 @@ void TestDevice(
 
     // Create SOA version of coo_graph on host
     int             num_edges   = coo_graph.coo_tuples.size();
-    SizeT        *h_rows     = new SizeT[num_edges];
-    SizeT        *h_columns  = new SizeT[num_edges];
+    Offset        *h_rows     = new Offset[num_edges];
+    Offset        *h_columns  = new Offset[num_edges];
     Value           *h_values   = new Value[num_edges];
     for (int i = 0; i < num_edges; i++)
     {
@@ -808,7 +837,7 @@ void TestDevice(
     int coo_sm_occupancy;
     CubDebugExit(device_props.MaxSmOccupancy(
         coo_sm_occupancy,
-        CooKernel<COO_BLOCK_THREADS, COO_ITEMS_PER_THREAD, SizeT, Value>,
+        CooKernel<COO_BLOCK_THREADS, COO_ITEMS_PER_THREAD, Offset, Value>,
         COO_BLOCK_THREADS));
     int max_coo_grid_size   = device_props.sm_count * coo_sm_occupancy * COO_SUBSCRIPTION_FACTOR;
 
@@ -818,16 +847,16 @@ void TestDevice(
     int num_partials   = coo_grid_size * 2;
 
     // Allocate COO device arrays
-    CubDebugExit(g_allocator.DeviceAllocate((void**)&d_rows,            sizeof(SizeT) * num_edges));
-    CubDebugExit(g_allocator.DeviceAllocate((void**)&d_columns,         sizeof(SizeT) * num_edges));
+    CubDebugExit(g_allocator.DeviceAllocate((void**)&d_rows,            sizeof(Offset) * num_edges));
+    CubDebugExit(g_allocator.DeviceAllocate((void**)&d_columns,         sizeof(Offset) * num_edges));
     CubDebugExit(g_allocator.DeviceAllocate((void**)&d_values,          sizeof(Value) * num_edges));
     CubDebugExit(g_allocator.DeviceAllocate((void**)&d_vector,          sizeof(Value) * coo_graph.col_dim));
     CubDebugExit(g_allocator.DeviceAllocate((void**)&d_result,          sizeof(Value) * coo_graph.row_dim));
     CubDebugExit(g_allocator.DeviceAllocate((void**)&d_block_partials,  sizeof(KeyValuePair) * num_partials));
 
     // Copy host arrays to device
-    CubDebugExit(cudaMemcpy(d_rows,     h_rows,     sizeof(SizeT) * num_edges,       cudaMemcpyHostToDevice));
-    CubDebugExit(cudaMemcpy(d_columns,  h_columns,  sizeof(SizeT) * num_edges,       cudaMemcpyHostToDevice));
+    CubDebugExit(cudaMemcpy(d_rows,     h_rows,     sizeof(Offset) * num_edges,       cudaMemcpyHostToDevice));
+    CubDebugExit(cudaMemcpy(d_columns,  h_columns,  sizeof(Offset) * num_edges,       cudaMemcpyHostToDevice));
     CubDebugExit(cudaMemcpy(d_values,   h_values,   sizeof(Value) * num_edges,          cudaMemcpyHostToDevice));
     CubDebugExit(cudaMemcpy(d_vector,   h_vector,   sizeof(Value) * coo_graph.col_dim,  cudaMemcpyHostToDevice));
 
@@ -888,7 +917,7 @@ void TestDevice(
     if (g_iterations > 0)
     {
         float avg_elapsed = elapsed_millis / g_iterations;
-        int total_bytes = ((sizeof(SizeT) + sizeof(SizeT)) * 2 * num_edges) + (sizeof(Value) * coo_graph.row_dim);
+        int total_bytes = ((sizeof(Offset) + sizeof(Offset)) * 2 * num_edges) + (sizeof(Value) * coo_graph.row_dim);
         printf("%d iterations, average elapsed (%.3f ms), utilized bandwidth (%.3f GB/s), GFLOPS(%.3f)\n",
             g_iterations,
             avg_elapsed,
@@ -918,18 +947,18 @@ void TestDevice(
 /**
  * Compute reference answer on CPU
  */
-template <typename SizeT, typename Value>
+template <typename Offset, typename Value>
 void ComputeReference(
-    CooGraph<SizeT, Value>&  coo_graph,
+    CooGraph<Offset, Value>&  coo_graph,
     Value*                      h_vector,
     Value*                      h_reference)
 {
-    for (SizeT i = 0; i < coo_graph.row_dim; i++)
+    for (Offset i = 0; i < coo_graph.row_dim; i++)
     {
         h_reference[i] = 0.0;
     }
 
-    for (SizeT i = 0; i < coo_graph.coo_tuples.size(); i++)
+    for (Offset i = 0; i < coo_graph.coo_tuples.size(); i++)
     {
         h_reference[coo_graph.coo_tuples[i].segment] +=
             coo_graph.coo_tuples[i].val *
@@ -956,7 +985,7 @@ void AssignVectorValues(Value *vector, int col_dim)
  */
 int main(int argc, char** argv)
 {
-    typedef int         SizeT;      // uint32s as segment IDs
+    typedef int         Offset;      // uint32s as segment IDs
     typedef double      Value;      // double-precision floating point values
 
 
@@ -988,17 +1017,17 @@ int main(int argc, char** argv)
 
     CpuTimer timer;
     timer.Start();
-    CooGraph<SizeT, Value> coo_graph;
+    CooGraph<Offset, Value> coo_graph;
     if (type == string("grid2d"))
     {
-        SizeT width;
+        Offset width;
         args.GetCmdLineArgument("width", width);
         bool self_loops = !args.CheckCmdLineFlag("no-self-loops");
         printf("Generating %s grid2d width(%d)... ", (self_loops) ? "5-pt" : "4-pt", width); fflush(stdout);
         if (coo_graph.InitGrid2d(width, self_loops)) exit(1);
     } else if (type == string("grid3d"))
     {
-        SizeT width;
+        Offset width;
         args.GetCmdLineArgument("width", width);
         bool self_loops = !args.CheckCmdLineFlag("no-self-loops");
         printf("Generating %s grid3d width(%d)... ", (self_loops) ? "7-pt" : "6-pt", width); fflush(stdout);
@@ -1006,7 +1035,7 @@ int main(int argc, char** argv)
     }
     else if (type == string("wheel"))
     {
-        SizeT spokes;
+        Offset spokes;
         args.GetCmdLineArgument("spokes", spokes);
         printf("Generating wheel spokes(%d)... ", spokes); fflush(stdout);
         if (coo_graph.InitWheel(spokes)) exit(1);

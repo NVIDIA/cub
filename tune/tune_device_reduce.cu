@@ -119,7 +119,7 @@ T Reduce(
  */
 template <
     typename T,
-    typename SizeT,
+    typename Offset,
     typename ReductionOp>
 struct Schmoo
 {
@@ -136,7 +136,7 @@ struct Schmoo
 
         float                               avg_throughput;
         float                               best_avg_throughput;
-        SizeT                               best_size;
+        Offset                               best_size;
         float                               hmean_speedup;
 
 
@@ -166,11 +166,11 @@ struct Schmoo
 
 
     /// Multi-block reduction kernel type and dispatch tuple type
-    typedef void (*MultiBlockDeviceReduceKernelPtr)(T*, T*, SizeT, GridEvenShare<SizeT>, GridQueue<SizeT>, ReductionOp);
+    typedef void (*MultiBlockDeviceReduceKernelPtr)(T*, T*, Offset, GridEvenShare<Offset>, GridQueue<Offset>, ReductionOp);
     typedef DispatchTuple<MultiBlockDeviceReduceKernelPtr> MultiDispatchTuple;
 
     /// Single-block reduction kernel type and dispatch tuple type
-    typedef void (*SingleBlockDeviceReduceKernelPtr)(T*, T*, SizeT, ReductionOp);
+    typedef void (*SingleBlockDeviceReduceKernelPtr)(T*, T*, Offset, ReductionOp);
     typedef DispatchTuple<SingleBlockDeviceReduceKernelPtr> SingleDispatchTuple;
 
 
@@ -195,7 +195,7 @@ struct Schmoo
     {
         enum
         {
-            BYTES = sizeof(typename BlockReduceTiles<TilesReducePolicy, T*, SizeT, ReductionOp>::TempStorage),
+            BYTES = sizeof(typename BlockReduceTiles<TilesReducePolicy, T*, Offset, ReductionOp>::TempStorage),
             IS_OK = ((BYTES < ArchProps<TUNE_ARCH>::SMEM_BYTES) &&
                      (TilesReducePolicy::ITEMS_PER_THREAD % TilesReducePolicy::VECTOR_LOAD_LENGTH == 0))
         };
@@ -218,7 +218,7 @@ struct Schmoo
         {
             MultiDispatchTuple tuple;
             tuple.params.template Init<TilesReducePolicy>(subscription_factor);
-            tuple.kernel_ptr = ReducePrivatizedKernel<TilesReducePolicy, T*, T*, SizeT, ReductionOp>;
+            tuple.kernel_ptr = ReducePrivatizedKernel<TilesReducePolicy, T*, T*, Offset, ReductionOp>;
             multi_kernels.push_back(tuple);
         }
 
@@ -229,7 +229,7 @@ struct Schmoo
         {
             SingleDispatchTuple tuple;
             tuple.params.template Init<TilesReducePolicy>();
-            tuple.kernel_ptr = ReduceSingleKernel<TilesReducePolicy, T*, T*, SizeT, ReductionOp>;
+            tuple.kernel_ptr = ReduceSingleKernel<TilesReducePolicy, T*, T*, Offset, ReductionOp>;
             single_kernels.push_back(tuple);
         }
     };
@@ -254,7 +254,7 @@ struct Schmoo
         int                     ITEMS_PER_THREAD,
         int                     VECTOR_LOAD_LENGTH,
         BlockReduceAlgorithm    BLOCK_ALGORITHM,
-        PtxLoadModifier         LOAD_MODIFIER>
+        CacheStoreModifier      LOAD_MODIFIER>
     void Enumerate()
     {
         // Multi-block kernels
@@ -365,7 +365,7 @@ struct Schmoo
         T*                      d_in,
         T*                      d_out,
         T*                      h_reference,
-        SizeT                   num_items,
+        Offset                   num_items,
         ReductionOp             reduction_op)
     {
         // Clear output
@@ -379,7 +379,7 @@ struct Schmoo
             temp_storage_bytes,
             multi_dispatch.kernel_ptr,
             single_dispatch.kernel_ptr,
-            FillAndResetDrainKernel<SizeT>,
+            FillAndResetDrainKernel<Offset>,
             multi_dispatch.params,
             single_dispatch.params,
             d_in,
@@ -394,7 +394,7 @@ struct Schmoo
             temp_storage_bytes,
             multi_dispatch.kernel_ptr,
             single_dispatch.kernel_ptr,
-            FillAndResetDrainKernel<SizeT>,
+            FillAndResetDrainKernel<Offset>,
             multi_dispatch.params,
             single_dispatch.params,
             d_in,
@@ -421,7 +421,7 @@ struct Schmoo
                 temp_storage_bytes,
                 multi_dispatch.kernel_ptr,
                 single_dispatch.kernel_ptr,
-                FillAndResetDrainKernel<SizeT>,
+                FillAndResetDrainKernel<Offset>,
                 multi_dispatch.params,
                 single_dispatch.params,
                 d_in,
@@ -481,10 +481,10 @@ struct Schmoo
         ReductionOp             reduction_op)
     {
         // Simple single kernel tuple for use with multi kernel sweep
-        typedef typename DeviceReduce::TunedPolicies<T, SizeT, TUNE_ARCH>::SinglePolicy SimpleSinglePolicy;
+        typedef typename DeviceReduce::TunedPolicies<T, Offset, TUNE_ARCH>::SinglePolicy SimpleSinglePolicy;
         SingleDispatchTuple simple_single_tuple;
         simple_single_tuple.params.template Init<SimpleSinglePolicy>();
-        simple_single_tuple.kernel_ptr = ReduceSingleKernel<SimpleSinglePolicy, T*, T*, SizeT, ReductionOp>;
+        simple_single_tuple.kernel_ptr = ReduceSingleKernel<SimpleSinglePolicy, T*, T*, Offset, ReductionOp>;
 
         double max_exponent      = log2(double(g_max_items));
         double min_exponent      = log2(double(simple_single_tuple.params.tile_size));
@@ -725,11 +725,11 @@ int main(int argc, char** argv)
     typedef unsigned int T;
 #endif
 
-    typedef unsigned int SizeT;
+    typedef unsigned int Offset;
     Sum reduction_op;
 
     // Enumerate kernels
-    Schmoo<T, SizeT, Sum > schmoo;
+    Schmoo<T, Offset, Sum > schmoo;
     schmoo.Enumerate();
 
     // Allocate host arrays

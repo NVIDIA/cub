@@ -61,7 +61,7 @@ CachingDeviceAllocator  g_allocator(true);
 /**
  * Dispatch to exclusive scan entrypoint
  */
-template <typename InputIterator, typename OutputIterator, typename ScanOp, typename Identity, typename SizeT>
+template <typename InputIterator, typename OutputIterator, typename ScanOp, typename Identity, typename Offset>
 __host__ __device__ __forceinline__
 cudaError_t Dispatch(
     Int2Type<false>     use_cdp,
@@ -75,7 +75,7 @@ cudaError_t Dispatch(
     OutputIterator    d_out,
     ScanOp              scan_op,
     Identity            identity,
-    SizeT               num_items,
+    Offset               num_items,
     cudaStream_t        stream,
     bool                debug_synchronous)
 {
@@ -91,7 +91,7 @@ cudaError_t Dispatch(
 /**
  * Dispatch to exclusive sum entrypoint
  */
-template <typename InputIterator, typename OutputIterator, typename T, typename Identity, typename SizeT>
+template <typename InputIterator, typename OutputIterator, typename T, typename Identity, typename Offset>
 __host__ __device__ __forceinline__
 cudaError_t Dispatch(
     Int2Type<false>     use_cdp,
@@ -105,7 +105,7 @@ cudaError_t Dispatch(
     OutputIterator    d_out,
     Sum                 scan_op,
     Identity            identity,
-    SizeT               num_items,
+    Offset               num_items,
     cudaStream_t        stream,
     bool                debug_synchronous)
 {
@@ -121,7 +121,7 @@ cudaError_t Dispatch(
 /**
  * Dispatch to inclusive scan entrypoint
  */
-template <typename InputIterator, typename OutputIterator, typename ScanOp, typename SizeT>
+template <typename InputIterator, typename OutputIterator, typename ScanOp, typename Offset>
 __host__ __device__ __forceinline__
 cudaError_t Dispatch(
     Int2Type<false>     use_cdp,
@@ -135,7 +135,7 @@ cudaError_t Dispatch(
     OutputIterator    d_out,
     ScanOp              scan_op,
     NullType            identity,
-    SizeT               num_items,
+    Offset               num_items,
     cudaStream_t        stream,
     bool                debug_synchronous)
 {
@@ -151,7 +151,7 @@ cudaError_t Dispatch(
 /**
  * Dispatch to inclusive sum entrypoint
  */
-template <typename InputIterator, typename OutputIterator, typename T, typename SizeT>
+template <typename InputIterator, typename OutputIterator, typename T, typename Offset>
 __host__ __device__ __forceinline__
 cudaError_t Dispatch(
     Int2Type<false>     use_cdp,
@@ -165,7 +165,7 @@ cudaError_t Dispatch(
     OutputIterator    d_out,
     Sum                 scan_op,
     NullType            identity,
-    SizeT               num_items,
+    Offset               num_items,
     cudaStream_t        stream,
     bool                debug_synchronous)
 {
@@ -185,7 +185,7 @@ cudaError_t Dispatch(
 /**
  * Simple wrapper kernel to invoke DeviceScan
  */
-template <typename InputIterator, typename OutputIterator, typename ScanOp, typename Identity, typename SizeT>
+template <typename InputIterator, typename OutputIterator, typename ScanOp, typename Identity, typename Offset>
 __global__ void CnpDispatchKernel(
     int                 timing_iterations,
     size_t              *d_temp_storage_bytes,
@@ -197,7 +197,7 @@ __global__ void CnpDispatchKernel(
     OutputIterator    d_out,
     ScanOp              scan_op,
     Identity            identity,
-    SizeT               num_items,
+    Offset               num_items,
     bool                debug_synchronous)
 {
 #ifndef CUB_CDP
@@ -212,7 +212,7 @@ __global__ void CnpDispatchKernel(
 /**
  * Dispatch to CDP kernel
  */
-template <typename InputIterator, typename OutputIterator, typename ScanOp, typename Identity, typename SizeT>
+template <typename InputIterator, typename OutputIterator, typename ScanOp, typename Identity, typename Offset>
 cudaError_t Dispatch(
     Int2Type<true>      use_cdp,
     int                 timing_iterations,
@@ -225,7 +225,7 @@ cudaError_t Dispatch(
     OutputIterator    d_out,
     ScanOp              scan_op,
     Identity            identity,
-    SizeT               num_items,
+    Offset               num_items,
     cudaStream_t        stream,
     bool                debug_synchronous)
 {
