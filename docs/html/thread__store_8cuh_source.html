@@ -144,7 +144,7 @@ var searchBox = new SearchBox("searchBox", "search",false,'Search');
 <div class="line"><a name="l00055"></a><span class="lineno">   55</span>&#160;<span class="comment">// Tags and constants</span></div>
 <div class="line"><a name="l00056"></a><span class="lineno">   56</span>&#160;<span class="comment">//-----------------------------------------------------------------------------</span></div>
 <div class="line"><a name="l00057"></a><span class="lineno">   57</span>&#160;</div>
-<div class="line"><a name="l00061"></a><span class="lineno"><a class="code" href="group___io_module.html#gae9c7d6a6af7104f528509182ac9c9da2">   61</a></span>&#160;<span class="keyword">enum</span> <a class="code" href="group___io_module.html#gae9c7d6a6af7104f528509182ac9c9da2" title="Enumeration of PTX cache-modifiers for memory store operations. ">PtxStoreModifier</a></div>
+<div class="line"><a name="l00061"></a><span class="lineno"><a class="code" href="group___io_module.html#gae9c7d6a6af7104f528509182ac9c9da2">   61</a></span>&#160;<span class="keyword">enum</span> <a class="code" href="group___io_module.html#gae9c7d6a6af7104f528509182ac9c9da2" title="Enumeration of PTX cache-modifiers for memory store operations. ">CacheStoreModifier</a></div>
 <div class="line"><a name="l00062"></a><span class="lineno">   62</span>&#160;{</div>
 <div class="line"><a name="l00063"></a><span class="lineno"><a class="code" href="group___io_module.html#ggae9c7d6a6af7104f528509182ac9c9da2a434aa4b3efc8e0c0ce4f1a00cdad26bd">   63</a></span>&#160;    <a class="code" href="group___io_module.html#ggae9c7d6a6af7104f528509182ac9c9da2a434aa4b3efc8e0c0ce4f1a00cdad26bd" title="Default (no modifier) ">STORE_DEFAULT</a>,              </div>
 <div class="line"><a name="l00064"></a><span class="lineno"><a class="code" href="group___io_module.html#ggae9c7d6a6af7104f528509182ac9c9da2afd29f1e82f0a9dc8258fb7977b0a8237">   64</a></span>&#160;    <a class="code" href="group___io_module.html#ggae9c7d6a6af7104f528509182ac9c9da2afd29f1e82f0a9dc8258fb7977b0a8237" title="Cache write-back all coherent levels. ">STORE_WB</a>,                   </div>
@@ -156,10 +156,10 @@ var searchBox = new SearchBox("searchBox", "search",false,'Search');
 <div class="line"><a name="l00070"></a><span class="lineno">   70</span>&#160;</div>
 <div class="line"><a name="l00071"></a><span class="lineno">   71</span>&#160;</div>
 <div class="line"><a name="l00111"></a><span class="lineno">  111</span>&#160;<span class="keyword">template</span> &lt;</div>
-<div class="line"><a name="l00112"></a><span class="lineno">  112</span>&#160;    <a class="code" href="group___io_module.html#gae9c7d6a6af7104f528509182ac9c9da2" title="Enumeration of PTX cache-modifiers for memory store operations. ">PtxStoreModifier</a> MODIFIER,</div>
+<div class="line"><a name="l00112"></a><span class="lineno">  112</span>&#160;    <a class="code" href="group___io_module.html#gae9c7d6a6af7104f528509182ac9c9da2" title="Enumeration of PTX cache-modifiers for memory store operations. ">CacheStoreModifier</a> MODIFIER,</div>
 <div class="line"><a name="l00113"></a><span class="lineno">  113</span>&#160;    <span class="keyword">typename</span> OutputIterator,</div>
 <div class="line"><a name="l00114"></a><span class="lineno">  114</span>&#160;    <span class="keyword">typename</span> T&gt;</div>
-<div class="line"><a name="l00115"></a><span class="lineno">  115</span>&#160;__device__ __forceinline__ <span class="keywordtype">void</span> <a class="code" href="group___io_module.html#ga870b5b156d3d0a65a8c551884b18a2d6" title="Thread utility for writing memory using cub::PtxStoreModifier cache modifiers. ">ThreadStore</a>(OutputIterator itr, T val);</div>
+<div class="line"><a name="l00115"></a><span class="lineno">  115</span>&#160;__device__ __forceinline__ <span class="keywordtype">void</span> <a class="code" href="group___io_module.html#ga870b5b156d3d0a65a8c551884b18a2d6" title="Thread utility for writing memory using cub::CacheStoreModifier cache modifiers. ">ThreadStore</a>(OutputIterator itr, T val);</div>
 <div class="line"><a name="l00116"></a><span class="lineno">  116</span>&#160;</div>
 <div class="line"><a name="l00117"></a><span class="lineno">  117</span>&#160;</div>
 <div class="line"><a name="l00119"></a><span class="lineno">  119</span>&#160;</div>
@@ -269,7 +269,7 @@ var searchBox = new SearchBox("searchBox", "search",false,'Search');
 <div class="line"><a name="l00244"></a><span class="lineno">  244</span>&#160;<span class="preprocessor"></span></div>
 <div class="line"><a name="l00245"></a><span class="lineno">  245</span>&#160;</div>
 <div class="line"><a name="l00246"></a><span class="lineno">  246</span>&#160;</div>
-<div class="line"><a name="l00248"></a><span class="lineno">  248</span>&#160;<span class="keyword">template</span> &lt;PtxStoreModifier MODIFIER, <span class="keywordtype">int</span> COUNT, <span class="keywordtype">int</span> MAX&gt;</div>
+<div class="line"><a name="l00248"></a><span class="lineno">  248</span>&#160;<span class="keyword">template</span> &lt;CacheStoreModifier MODIFIER, <span class="keywordtype">int</span> COUNT, <span class="keywordtype">int</span> MAX&gt;</div>
 <div class="line"><a name="l00249"></a><span class="lineno">  249</span>&#160;<span class="keyword">struct </span>IterateThreadStore</div>
 <div class="line"><a name="l00250"></a><span class="lineno">  250</span>&#160;{</div>
 <div class="line"><a name="l00251"></a><span class="lineno">  251</span>&#160;    <span class="keyword">template</span> &lt;<span class="keyword">typename</span> T&gt;</div>
@@ -280,7 +280,7 @@ var searchBox = new SearchBox("searchBox", "search",false,'Search');
 <div class="line"><a name="l00256"></a><span class="lineno">  256</span>&#160;    }</div>
 <div class="line"><a name="l00257"></a><span class="lineno">  257</span>&#160;};</div>
 <div class="line"><a name="l00258"></a><span class="lineno">  258</span>&#160;</div>
-<div class="line"><a name="l00260"></a><span class="lineno">  260</span>&#160;<span class="keyword">template</span> &lt;PtxStoreModifier MODIFIER, <span class="keywordtype">int</span> MAX&gt;</div>
+<div class="line"><a name="l00260"></a><span class="lineno">  260</span>&#160;<span class="keyword">template</span> &lt;CacheStoreModifier MODIFIER, <span class="keywordtype">int</span> MAX&gt;</div>
 <div class="line"><a name="l00261"></a><span class="lineno">  261</span>&#160;<span class="keyword">struct </span>IterateThreadStore&lt;MODIFIER, MAX, MAX&gt;</div>
 <div class="line"><a name="l00262"></a><span class="lineno">  262</span>&#160;{</div>
 <div class="line"><a name="l00263"></a><span class="lineno">  263</span>&#160;    <span class="keyword">template</span> &lt;<span class="keyword">typename</span> T&gt;</div>
@@ -291,7 +291,7 @@ var searchBox = new SearchBox("searchBox", "search",false,'Search');
 <div class="line"><a name="l00268"></a><span class="lineno">  268</span>&#160;</div>
 <div class="line"><a name="l00269"></a><span class="lineno">  269</span>&#160;</div>
 <div class="line"><a name="l00273"></a><span class="lineno">  273</span>&#160;<span class="keyword">template</span> &lt;<span class="keyword">typename</span> OutputIterator, <span class="keyword">typename</span> T&gt;</div>
-<div class="line"><a name="l00274"></a><span class="lineno">  274</span>&#160;__device__ __forceinline__ <span class="keywordtype">void</span> <a class="code" href="group___io_module.html#ga870b5b156d3d0a65a8c551884b18a2d6" title="Thread utility for writing memory using cub::PtxStoreModifier cache modifiers. ">ThreadStore</a>(</div>
+<div class="line"><a name="l00274"></a><span class="lineno">  274</span>&#160;__device__ __forceinline__ <span class="keywordtype">void</span> <a class="code" href="group___io_module.html#ga870b5b156d3d0a65a8c551884b18a2d6" title="Thread utility for writing memory using cub::CacheStoreModifier cache modifiers. ">ThreadStore</a>(</div>
 <div class="line"><a name="l00275"></a><span class="lineno">  275</span>&#160;    OutputIterator            itr,</div>
 <div class="line"><a name="l00276"></a><span class="lineno">  276</span>&#160;    T                           val,</div>
 <div class="line"><a name="l00277"></a><span class="lineno">  277</span>&#160;    Int2Type&lt;STORE_DEFAULT&gt;     modifier,</div>
@@ -302,7 +302,7 @@ var searchBox = new SearchBox("searchBox", "search",false,'Search');
 <div class="line"><a name="l00282"></a><span class="lineno">  282</span>&#160;</div>
 <div class="line"><a name="l00283"></a><span class="lineno">  283</span>&#160;</div>
 <div class="line"><a name="l00287"></a><span class="lineno">  287</span>&#160;<span class="keyword">template</span> &lt;<span class="keyword">typename</span> T&gt;</div>
-<div class="line"><a name="l00288"></a><span class="lineno">  288</span>&#160;__device__ __forceinline__ <span class="keywordtype">void</span> <a class="code" href="group___io_module.html#ga870b5b156d3d0a65a8c551884b18a2d6" title="Thread utility for writing memory using cub::PtxStoreModifier cache modifiers. ">ThreadStore</a>(</div>
+<div class="line"><a name="l00288"></a><span class="lineno">  288</span>&#160;__device__ __forceinline__ <span class="keywordtype">void</span> <a class="code" href="group___io_module.html#ga870b5b156d3d0a65a8c551884b18a2d6" title="Thread utility for writing memory using cub::CacheStoreModifier cache modifiers. ">ThreadStore</a>(</div>
 <div class="line"><a name="l00289"></a><span class="lineno">  289</span>&#160;    T                           *ptr,</div>
 <div class="line"><a name="l00290"></a><span class="lineno">  290</span>&#160;    T                           val,</div>
 <div class="line"><a name="l00291"></a><span class="lineno">  291</span>&#160;    Int2Type&lt;STORE_DEFAULT&gt;     modifier,</div>
@@ -343,7 +343,7 @@ var searchBox = new SearchBox("searchBox", "search",false,'Search');
 <div class="line"><a name="l00332"></a><span class="lineno">  332</span>&#160;</div>
 <div class="line"><a name="l00333"></a><span class="lineno">  333</span>&#160;</div>
 <div class="line"><a name="l00337"></a><span class="lineno">  337</span>&#160;<span class="keyword">template</span> &lt;<span class="keyword">typename</span> T&gt;</div>
-<div class="line"><a name="l00338"></a><span class="lineno">  338</span>&#160;__device__ __forceinline__ <span class="keywordtype">void</span> <a class="code" href="group___io_module.html#ga870b5b156d3d0a65a8c551884b18a2d6" title="Thread utility for writing memory using cub::PtxStoreModifier cache modifiers. ">ThreadStore</a>(</div>
+<div class="line"><a name="l00338"></a><span class="lineno">  338</span>&#160;__device__ __forceinline__ <span class="keywordtype">void</span> <a class="code" href="group___io_module.html#ga870b5b156d3d0a65a8c551884b18a2d6" title="Thread utility for writing memory using cub::CacheStoreModifier cache modifiers. ">ThreadStore</a>(</div>
 <div class="line"><a name="l00339"></a><span class="lineno">  339</span>&#160;    T                           *ptr,</div>
 <div class="line"><a name="l00340"></a><span class="lineno">  340</span>&#160;    T                           val,</div>
 <div class="line"><a name="l00341"></a><span class="lineno">  341</span>&#160;    Int2Type&lt;STORE_VOLATILE&gt;    modifier,</div>
@@ -356,7 +356,7 @@ var searchBox = new SearchBox("searchBox", "search",false,'Search');
 <div class="line"><a name="l00348"></a><span class="lineno">  348</span>&#160;<span class="preprocessor">#if (CUB_PTX_VERSION &lt;= 350)</span></div>
 <div class="line"><a name="l00349"></a><span class="lineno">  349</span>&#160;<span class="preprocessor"></span></div>
 <div class="line"><a name="l00353"></a><span class="lineno">  353</span>&#160;<span class="keyword">template</span> &lt;<span class="keyword">typename</span> T&gt;</div>
-<div class="line"><a name="l00354"></a><span class="lineno">  354</span>&#160;__device__ __forceinline__ <span class="keywordtype">void</span> <a class="code" href="group___io_module.html#ga870b5b156d3d0a65a8c551884b18a2d6" title="Thread utility for writing memory using cub::PtxStoreModifier cache modifiers. ">ThreadStore</a>(</div>
+<div class="line"><a name="l00354"></a><span class="lineno">  354</span>&#160;__device__ __forceinline__ <span class="keywordtype">void</span> <a class="code" href="group___io_module.html#ga870b5b156d3d0a65a8c551884b18a2d6" title="Thread utility for writing memory using cub::CacheStoreModifier cache modifiers. ">ThreadStore</a>(</div>
 <div class="line"><a name="l00355"></a><span class="lineno">  355</span>&#160;    T                           *ptr,</div>
 <div class="line"><a name="l00356"></a><span class="lineno">  356</span>&#160;    T                           val,</div>
 <div class="line"><a name="l00357"></a><span class="lineno">  357</span>&#160;    Int2Type&lt;STORE_CG&gt;          modifier,</div>
@@ -369,7 +369,7 @@ var searchBox = new SearchBox("searchBox", "search",false,'Search');
 <div class="line"><a name="l00364"></a><span class="lineno">  364</span>&#160;<span class="preprocessor"></span></div>
 <div class="line"><a name="l00365"></a><span class="lineno">  365</span>&#160;</div>
 <div class="line"><a name="l00369"></a><span class="lineno">  369</span>&#160;<span class="keyword">template</span> &lt;<span class="keyword">typename</span> T, <span class="keywordtype">int</span> MODIFIER&gt;</div>
-<div class="line"><a name="l00370"></a><span class="lineno">  370</span>&#160;__device__ __forceinline__ <span class="keywordtype">void</span> <a class="code" href="group___io_module.html#ga870b5b156d3d0a65a8c551884b18a2d6" title="Thread utility for writing memory using cub::PtxStoreModifier cache modifiers. ">ThreadStore</a>(</div>
+<div class="line"><a name="l00370"></a><span class="lineno">  370</span>&#160;__device__ __forceinline__ <span class="keywordtype">void</span> <a class="code" href="group___io_module.html#ga870b5b156d3d0a65a8c551884b18a2d6" title="Thread utility for writing memory using cub::CacheStoreModifier cache modifiers. ">ThreadStore</a>(</div>
 <div class="line"><a name="l00371"></a><span class="lineno">  371</span>&#160;    T                           *ptr,</div>
 <div class="line"><a name="l00372"></a><span class="lineno">  372</span>&#160;    T                           val,</div>
 <div class="line"><a name="l00373"></a><span class="lineno">  373</span>&#160;    Int2Type&lt;MODIFIER&gt;          modifier,</div>
@@ -383,16 +383,16 @@ var searchBox = new SearchBox("searchBox", "search",false,'Search');
 <div class="line"><a name="l00381"></a><span class="lineno">  381</span>&#160;    *<span class="keyword">reinterpret_cast&lt;</span>T*<span class="keyword">&gt;</span>(words.buf) = val;</div>
 <div class="line"><a name="l00382"></a><span class="lineno">  382</span>&#160;</div>
 <div class="line"><a name="l00383"></a><span class="lineno">  383</span>&#160;    <span class="comment">// Memcopy words to aliased destination</span></div>
-<div class="line"><a name="l00384"></a><span class="lineno">  384</span>&#160;    IterateThreadStore&lt;PtxStoreModifier(MODIFIER), 0, NUM_WORDS&gt;::Store(</div>
+<div class="line"><a name="l00384"></a><span class="lineno">  384</span>&#160;    IterateThreadStore&lt;CacheStoreModifier(MODIFIER), 0, NUM_WORDS&gt;::Store(</div>
 <div class="line"><a name="l00385"></a><span class="lineno">  385</span>&#160;        <span class="keyword">reinterpret_cast&lt;</span>DeviceWord*<span class="keyword">&gt;</span>(ptr),</div>
 <div class="line"><a name="l00386"></a><span class="lineno">  386</span>&#160;        words.buf);</div>
 <div class="line"><a name="l00387"></a><span class="lineno">  387</span>&#160;}</div>
 <div class="line"><a name="l00388"></a><span class="lineno">  388</span>&#160;</div>
 <div class="line"><a name="l00389"></a><span class="lineno">  389</span>&#160;</div>
-<div class="line"><a name="l00393"></a><span class="lineno">  393</span>&#160;<span class="keyword">template</span> &lt;PtxStoreModifier MODIFIER, <span class="keyword">typename</span> OutputIterator, <span class="keyword">typename</span> T&gt;</div>
-<div class="line"><a name="l00394"></a><span class="lineno">  394</span>&#160;__device__ __forceinline__ <span class="keywordtype">void</span> <a class="code" href="group___io_module.html#ga870b5b156d3d0a65a8c551884b18a2d6" title="Thread utility for writing memory using cub::PtxStoreModifier cache modifiers. ">ThreadStore</a>(OutputIterator itr, T val)</div>
+<div class="line"><a name="l00393"></a><span class="lineno">  393</span>&#160;<span class="keyword">template</span> &lt;CacheStoreModifier MODIFIER, <span class="keyword">typename</span> OutputIterator, <span class="keyword">typename</span> T&gt;</div>
+<div class="line"><a name="l00394"></a><span class="lineno">  394</span>&#160;__device__ __forceinline__ <span class="keywordtype">void</span> <a class="code" href="group___io_module.html#ga870b5b156d3d0a65a8c551884b18a2d6" title="Thread utility for writing memory using cub::CacheStoreModifier cache modifiers. ">ThreadStore</a>(OutputIterator itr, T val)</div>
 <div class="line"><a name="l00395"></a><span class="lineno">  395</span>&#160;{</div>
-<div class="line"><a name="l00396"></a><span class="lineno">  396</span>&#160;    <a class="code" href="group___io_module.html#ga870b5b156d3d0a65a8c551884b18a2d6" title="Thread utility for writing memory using cub::PtxStoreModifier cache modifiers. ">ThreadStore</a>(</div>
+<div class="line"><a name="l00396"></a><span class="lineno">  396</span>&#160;    <a class="code" href="group___io_module.html#ga870b5b156d3d0a65a8c551884b18a2d6" title="Thread utility for writing memory using cub::CacheStoreModifier cache modifiers. ">ThreadStore</a>(</div>
 <div class="line"><a name="l00397"></a><span class="lineno">  397</span>&#160;        itr,</div>
 <div class="line"><a name="l00398"></a><span class="lineno">  398</span>&#160;        val,</div>
 <div class="line"><a name="l00399"></a><span class="lineno">  399</span>&#160;        Int2Type&lt;MODIFIER&gt;(),</div>

@@ -37,7 +37,7 @@
 #include <stdio.h>
 #include <iterator>
 
-#include "block/block_histo_tiles.cuh"
+#include "region/block_histo_region.cuh"
 #include "../grid/grid_even_share.cuh"
 #include "../grid/grid_queue.cuh"
 #include "../util_debug.cuh"
@@ -58,18 +58,18 @@ namespace cub {
  *****************************************************************************/
 
 /**
- * Initialization kernel entry point (multi-block).  Prepares queue descriptors zeroes global counters.
+ * Initialization kernel entry point (multi-block).  Prepares queue descriptors and zeroes global counters.
  */
 template <
     int                                             BINS,                   ///< Number of histogram bins per channel
     int                                             ACTIVE_CHANNELS,        ///< Number of channels actively being histogrammed
-    typename                                        SizeT,                  ///< Integer type used for global array indexing
-    typename                                        HistoCounter>           ///< Integral type for counting sample occurrences per histogram bin
+    typename                                        Offset,                 ///< Signed integer type for global offsets
+    typename                                        HistoCounter>           ///< Integer type for counting sample occurrences per histogram bin
 __launch_bounds__ (BINS, 1)
 __global__ void HistoInitKernel(
-    GridQueue<SizeT>                                grid_queue,             ///< [in] Drain queue descriptor for dynamically mapping tile data onto thread blocks
+    GridQueue<Offset>                               grid_queue,             ///< [in] Drain queue descriptor for dynamically mapping tile data onto thread blocks
     ArrayWrapper<HistoCounter*, ACTIVE_CHANNELS>    d_out_histograms,       ///< [out] Histogram counter data having logical dimensions <tt>HistoCounter[ACTIVE_CHANNELS][BINS]</tt>
-    SizeT                                           num_samples)            ///< [in] Total number of samples \p d_samples for all channels
+    Offset                                          num_samples)            ///< [in] Total number of samples \p d_samples for all channels
 {
     d_out_histograms.array[blockIdx.x][threadIdx.x] = 0;
     if (threadIdx.x == 0) grid_queue.FillAndResetDrain(num_samples);
@@ -80,41 +80,41 @@ __global__ void HistoInitKernel(
  * Histogram tiles kernel entry point (multi-block).  Computes privatized histograms, one per thread block.
  */
 template <
-    typename                                        BlockHistogramTilesPolicy,   ///< Tuning policy for cub::BlockHistogramTiles abstraction
+    typename                                        BlockHistogramRegionPolicy, ///< Parameterized BlockHistogramRegionPolicy tuning policy type
     int                                             BINS,                       ///< Number of histogram bins per channel
     int                                             CHANNELS,                   ///< Number of channels interleaved in the input data (may be greater than the number of channels being actively histogrammed)
     int                                             ACTIVE_CHANNELS,            ///< Number of channels actively being histogrammed
-    typename                                        InputIterator,            ///< The input iterator type (may be a simple pointer type).  Must have a value type that is assignable to <tt>unsigned char</tt>
-    typename                                        HistoCounter,               ///< Integral type for counting sample occurrences per histogram bin
-    typename                                        SizeT>                      ///< Integer type used for global array indexing
-__launch_bounds__ (int(BlockHistogramTilesPolicy::BLOCK_THREADS), BlockHistogramTilesPolicy::SM_OCCUPANCY)
-__global__ void HistoTilesKernel(
-    InputIterator                                 d_samples,                  ///< [in] Array of sample data. The samples from different channels are assumed to be interleaved (e.g., an array of 32b pixels where each pixel consists of four RGBA 8b samples).
+    typename                                        InputIterator,              ///< The input iterator type (may be a simple pointer type).  Must have a value type that is assignable to <tt>unsigned char</tt>
+    typename                                        HistoCounter,               ///< Integer type for counting sample occurrences per histogram bin
+    typename                                        Offset>                     ///< Signed integer type for global offsets
+__launch_bounds__ (int(BlockHistogramRegionPolicy::BLOCK_THREADS), BlockHistogramRegionPolicy::SM_OCCUPANCY)
+__global__ void HistoRegionKernel(
+    InputIterator                                   d_samples,                  ///< [in] Array of sample data. The samples from different channels are assumed to be interleaved (e.g., an array of 32b pixels where each pixel consists of four RGBA 8b samples).
     ArrayWrapper<HistoCounter*, ACTIVE_CHANNELS>    d_out_histograms,           ///< [out] Histogram counter data having logical dimensions <tt>HistoCounter[ACTIVE_CHANNELS][gridDim.x][BINS]</tt>
-    SizeT                                           num_samples,                ///< [in] Total number of samples \p d_samples for all channels
-    GridEvenShare<SizeT>                            even_share,                 ///< [in] Even-share descriptor for mapping an equal number of tiles onto each thread block
-    GridQueue<SizeT>                                queue)                      ///< [in] Drain queue descriptor for dynamically mapping tile data onto thread blocks
+    Offset                                          num_samples,                ///< [in] Total number of samples \p d_samples for all channels
+    GridEvenShare<Offset>                           even_share,                 ///< [in] Even-share descriptor for mapping an equal number of tiles onto each thread block
+    GridQueue<Offset>                               queue)                      ///< [in] Drain queue descriptor for dynamically mapping tile data onto thread blocks
 {
     // Constants
     enum
     {
-        BLOCK_THREADS       = BlockHistogramTilesPolicy::BLOCK_THREADS,
-        ITEMS_PER_THREAD    = BlockHistogramTilesPolicy::ITEMS_PER_THREAD,
+        BLOCK_THREADS       = BlockHistogramRegionPolicy::BLOCK_THREADS,
+        ITEMS_PER_THREAD    = BlockHistogramRegionPolicy::ITEMS_PER_THREAD,
         TILE_SIZE           = BLOCK_THREADS * ITEMS_PER_THREAD,
     };
 
     // Thread block type for compositing input tiles
-    typedef BlockHistogramTiles<BlockHistogramTilesPolicy, BINS, CHANNELS, ACTIVE_CHANNELS, InputIterator, HistoCounter, SizeT> BlockHistogramTilesT;
+    typedef BlockHistogramRegion<BlockHistogramRegionPolicy, BINS, CHANNELS, ACTIVE_CHANNELS, InputIterator, HistoCounter, Offset> BlockHistogramRegionT;
 
-    // Shared memory for BlockHistogramTiles
-    __shared__ typename BlockHistogramTilesT::TempStorage temp_storage;
+    // Shared memory for BlockHistogramRegion
+    __shared__ typename BlockHistogramRegionT::TempStorage temp_storage;
 
     // Consume input tiles
-    BlockHistogramTilesT(temp_storage, d_samples, d_out_histograms.array).ConsumeTiles(
+    BlockHistogramRegionT(temp_storage, d_samples, d_out_histograms.array).ConsumeRegion(
         num_samples,
         even_share,
         queue,
-        Int2Type<BlockHistogramTilesPolicy::GRID_MAPPING>());
+        Int2Type<BlockHistogramRegionPolicy::GRID_MAPPING>());
 }
 
 
@@ -124,7 +124,7 @@ __global__ void HistoTilesKernel(
 template <
     int                                             BINS,                   ///< Number of histogram bins per channel
     int                                             ACTIVE_CHANNELS,        ///< Number of channels actively being histogrammed
-    typename                                        HistoCounter>           ///< Integral type for counting sample occurrences per histogram bin
+    typename                                        HistoCounter>           ///< Integer type for counting sample occurrences per histogram bin
 __launch_bounds__ (BINS, 1)
 __global__ void HistoAggregateKernel(
     HistoCounter*                                   d_block_histograms,     ///< [in] Histogram counter data having logical dimensions <tt>HistoCounter[ACTIVE_CHANNELS][num_threadblocks][BINS]</tt>
@@ -162,13 +162,13 @@ __global__ void HistoAggregateKernel(
  * Utility class for dispatching the appropriately-tuned kernels for DeviceHistogram
  */
 template <
-    BlockHistogramTilesAlgorithm    HISTO_ALGORITHM,
+    DeviceHistogramAlgorithm        HISTO_ALGORITHM,            ///< Cooperative histogram algorithm to use
     int                             BINS,                       ///< Number of histogram bins per channel
     int                             CHANNELS,                   ///< Number of channels interleaved in the input data (may be greater than the number of channels being actively histogrammed)
     int                             ACTIVE_CHANNELS,            ///< Number of channels actively being histogrammed
-    typename                        InputIterator,            ///< The input iterator type (may be a simple pointer type).  Must have a value type that is assignable to <tt>unsigned char</tt>
-    typename                        HistoCounter,               ///< Integral type for counting sample occurrences per histogram bin
-    typename                        SizeT>
+    typename                        InputIterator,              ///< The input iterator type (may be a simple pointer type).  Must have a value type that is assignable to <tt>unsigned char</tt>
+    typename                        HistoCounter,               ///< Integer type for counting sample occurrences per histogram bin
+    typename                        Offset>                     ///< Signed integer type for global offsets
 struct DeviceHistogramDispatch
 {
     /******************************************************************************
@@ -178,49 +178,45 @@ struct DeviceHistogramDispatch
     /// SM35
     struct Policy350
     {
-        typedef BlockHistogramTilesPolicy<
-                (HISTO_ALGORITHM == HISTO_TILES_SORT) ? 128 : 256,
-                (HISTO_ALGORITHM == HISTO_TILES_SORT) ? 12 : (30 / ACTIVE_CHANNELS),
+        typedef BlockHistogramRegionPolicy<
+                (HISTO_ALGORITHM == DEVICE_HISTO_SORT) ? 128 : 256,
+                (HISTO_ALGORITHM == DEVICE_HISTO_SORT) ? 12 : (30 / ACTIVE_CHANNELS),
                 HISTO_ALGORITHM,
-                (HISTO_ALGORITHM == HISTO_TILES_SORT) ? GRID_MAPPING_DYNAMIC : GRID_MAPPING_EVEN_SHARE,
-                (HISTO_ALGORITHM == HISTO_TILES_SORT) ? 8 : 1>
-            HistogramTilesPolicy;
+                (HISTO_ALGORITHM == DEVICE_HISTO_SORT) ? GRID_MAPPING_DYNAMIC : GRID_MAPPING_EVEN_SHARE>
+            HistogramRegionPolicy;
     };
 
     /// SM30
     struct Policy300
     {
-        typedef BlockHistogramTilesPolicy<
+        typedef BlockHistogramRegionPolicy<
                 128,
-                (HISTO_ALGORITHM == HISTO_TILES_SORT) ? 20 : (22 / ACTIVE_CHANNELS),
+                (HISTO_ALGORITHM == DEVICE_HISTO_SORT) ? 20 : (22 / ACTIVE_CHANNELS),
                 HISTO_ALGORITHM,
-                (HISTO_ALGORITHM == HISTO_TILES_SORT) ? GRID_MAPPING_DYNAMIC : GRID_MAPPING_EVEN_SHARE,
-                1>
-            HistogramTilesPolicy;
+                (HISTO_ALGORITHM == DEVICE_HISTO_SORT) ? GRID_MAPPING_DYNAMIC : GRID_MAPPING_EVEN_SHARE>
+            HistogramRegionPolicy;
     };
 
     /// SM20
     struct Policy200
     {
-        typedef BlockHistogramTilesPolicy<
+        typedef BlockHistogramRegionPolicy<
                 128,
-                (HISTO_ALGORITHM == HISTO_TILES_SORT) ? 21 : (23 / ACTIVE_CHANNELS),
+                (HISTO_ALGORITHM == DEVICE_HISTO_SORT) ? 21 : (23 / ACTIVE_CHANNELS),
                 HISTO_ALGORITHM,
-                GRID_MAPPING_DYNAMIC,
-                1>
-            HistogramTilesPolicy;
+                GRID_MAPPING_DYNAMIC>
+            HistogramRegionPolicy;
     };
 
     /// SM10
     struct Policy100
     {
-        typedef BlockHistogramTilesPolicy<
+        typedef BlockHistogramRegionPolicy<
                 128,
                 7,
-                HISTO_TILES_SORT,        // (use sort regardless because atomics are perf-useless)
-                GRID_MAPPING_EVEN_SHARE,
-                1>
-            HistogramTilesPolicy;
+                DEVICE_HISTO_SORT,        // (use sort regardless because atomics are perf-useless)
+                GRID_MAPPING_EVEN_SHARE>
+            HistogramRegionPolicy;
     };
 
 
@@ -243,7 +239,7 @@ struct DeviceHistogramDispatch
 #endif
 
     // "Opaque" policies (whose parameterizations aren't reflected in the type signature)
-    struct PtxHistogramTilesPolicy : PtxPolicy::HistogramTilesPolicy {};
+    struct PtxHistogramRegionPolicy : PtxPolicy::HistogramRegionPolicy {};
 
 
     /******************************************************************************
@@ -257,31 +253,31 @@ struct DeviceHistogramDispatch
     __host__ __device__ __forceinline__
     static void InitDispatchConfigs(
         int                     ptx_version,
-        KernelDispatchConfig    &histogram_tiles_config)
+        KernelDispatchConfig    &histogram_region_config)
     {
     #ifdef __CUDA_ARCH__
 
         // We're on the device, so initialize the dispatch configurations with the PtxDefaultPolicies directly
-        histogram_tiles_config.Init<PtxHistogramTilesPolicy>();
+        histogram_region_config.Init<PtxHistogramRegionPolicy>();
 
     #else
 
         // We're on the host, so lookup and initialize the dispatch configurations with the policies that match the device's PTX version
         if (ptx_version >= 350)
         {
-            histogram_tiles_config.template Init<typename Policy350::HistogramTilesPolicy>();
+            histogram_region_config.template Init<typename Policy350::HistogramRegionPolicy>();
         }
         else if (ptx_version >= 300)
         {
-            histogram_tiles_config.template Init<typename Policy300::HistogramTilesPolicy>();
+            histogram_region_config.template Init<typename Policy300::HistogramRegionPolicy>();
         }
         else if (ptx_version >= 200)
         {
-            histogram_tiles_config.template Init<typename Policy200::HistogramTilesPolicy>();
+            histogram_region_config.template Init<typename Policy200::HistogramRegionPolicy>();
         }
         else
         {
-            histogram_tiles_config.template Init<typename Policy100::HistogramTilesPolicy>();
+            histogram_region_config.template Init<typename Policy100::HistogramRegionPolicy>();
         }
 
     #endif
@@ -295,7 +291,7 @@ struct DeviceHistogramDispatch
     {
         int                             block_threads;
         int                             items_per_thread;
-        BlockHistogramTilesAlgorithm    block_algorithm;
+        DeviceHistogramAlgorithm        block_algorithm;
         GridMappingStrategy             grid_mapping;
 
         template <typename BlockPolicy>
@@ -327,22 +323,22 @@ struct DeviceHistogramDispatch
      */
     template <
         typename                    InitHistoKernelPtr,                 ///< Function type of cub::HistoInitKernel
-        typename                    HistogramTilesKernelPtr,            ///< Function type of cub::HistoTilesKernel
+        typename                    HistogramRegionKernelPtr,           ///< Function type of cub::HistoRegionKernel
         typename                    AggregateHistoKernelPtr>            ///< Function type of cub::HistoAggregateKernel
     __host__ __device__ __forceinline__
     static cudaError_t Dispatch(
         void                        *d_temp_storage,                    ///< [in] %Device allocation of temporary storage.  When NULL, the required allocation size is returned in \p temp_storage_bytes and no work is done.
         size_t                      &temp_storage_bytes,                ///< [in,out] Size in bytes of \p d_temp_storage allocation.
-        InputIterator             d_samples,                          ///< [in] Input samples to histogram
+        InputIterator               d_samples,                          ///< [in] Input samples to histogram
         HistoCounter                *d_histograms[ACTIVE_CHANNELS],     ///< [out] Array of channel histograms, each having BINS counters of integral type \p HistoCounter.
-        SizeT                       num_samples,                        ///< [in] Number of samples to process
+        Offset                      num_samples,                        ///< [in] Number of samples to process
         cudaStream_t                stream,                             ///< [in] CUDA stream to launch kernels within.  Default is stream<sub>0</sub>.
-        bool                        debug_synchronous,                 ///< [in] Whether or not to synchronize the stream after every kernel launch to check for errors.  Default is \p false.
+        bool                        debug_synchronous,                  ///< [in] Whether or not to synchronize the stream after every kernel launch to check for errors.  Default is \p false.
         int                         sm_version,                         ///< [in] SM version of target device to use when computing SM occupancy
         InitHistoKernelPtr          init_kernel,                        ///< [in] Kernel function pointer to parameterization of cub::HistoInitKernel
-        HistogramTilesKernelPtr     histogram_tiles_kernel,             ///< [in] Kernel function pointer to parameterization of cub::HistoTilesKernel
+        HistogramRegionKernelPtr    histogram_region_kernel,            ///< [in] Kernel function pointer to parameterization of cub::HistoRegionKernel
         AggregateHistoKernelPtr     aggregate_kernel,                   ///< [in] Kernel function pointer to parameterization of cub::HistoAggregateKernel
-        KernelDispatchConfig        histogram_tiles_config)             ///< [in] Dispatch parameters that match the policy that \p histogram_tiles_kernel was compiled for
+        KernelDispatchConfig        histogram_region_config)            ///< [in] Dispatch parameters that match the policy that \p histogram_region_kernel was compiled for
     {
     #ifndef CUB_RUNTIME_ENABLED
 
@@ -362,45 +358,45 @@ struct DeviceHistogramDispatch
             int sm_count;
             if (CubDebug(error = cudaDeviceGetAttribute (&sm_count, cudaDevAttrMultiProcessorCount, device_ordinal))) break;
 
-            // Get SM occupancy for histogram_tiles_kernel
-            int histogram_tiles_sm_occupancy;
+            // Get SM occupancy for histogram_region_kernel
+            int histogram_region_sm_occupancy;
             if (CubDebug(error = MaxSmOccupancy(
-                histogram_tiles_sm_occupancy,
+                histogram_region_sm_occupancy,
                 sm_version,
-                histogram_tiles_kernel,
-                histogram_tiles_config.block_threads))) break;
+                histogram_region_kernel,
+                histogram_region_config.block_threads))) break;
 
-            // Get device occupancy for histogram_tiles_kernel
-            int histogram_tiles_occupancy = histogram_tiles_sm_occupancy * sm_count;
+            // Get device occupancy for histogram_region_kernel
+            int histogram_region_occupancy = histogram_region_sm_occupancy * sm_count;
 
-            // Get tile size for histogram_tiles_kernel
-            int channel_tile_size = histogram_tiles_config.block_threads * histogram_tiles_config.items_per_thread;
+            // Get tile size for histogram_region_kernel
+            int channel_tile_size = histogram_region_config.block_threads * histogram_region_config.items_per_thread;
             int tile_size = channel_tile_size * CHANNELS;
 
             // Even-share work distribution
-            int subscription_factor = histogram_tiles_sm_occupancy;     // Amount of CTAs to oversubscribe the device beyond actively-resident (heuristic)
-            GridEvenShare<SizeT> even_share(
+            int subscription_factor = histogram_region_sm_occupancy;     // Amount of CTAs to oversubscribe the device beyond actively-resident (heuristic)
+            GridEvenShare<Offset> even_share(
                 num_samples,
-                histogram_tiles_occupancy * subscription_factor,
+                histogram_region_occupancy * subscription_factor,
                 tile_size);
 
-            // Get grid size for histogram_tiles_kernel
-            int histogram_tiles_grid_size;
-            switch (histogram_tiles_config.grid_mapping)
+            // Get grid size for histogram_region_kernel
+            int histogram_region_grid_size;
+            switch (histogram_region_config.grid_mapping)
             {
             case GRID_MAPPING_EVEN_SHARE:
 
                 // Work is distributed evenly
-                histogram_tiles_grid_size = even_share.grid_size;
+                histogram_region_grid_size = even_share.grid_size;
                 break;
 
             case GRID_MAPPING_DYNAMIC:
 
                 // Work is distributed dynamically
                 int num_tiles               = (num_samples + tile_size - 1) / tile_size;
-                histogram_tiles_grid_size   = (num_tiles < histogram_tiles_occupancy) ?
+                histogram_region_grid_size   = (num_tiles < histogram_region_occupancy) ?
                     num_tiles :                     // Not enough to fill the device with threadblocks
-                    histogram_tiles_occupancy;      // Fill the device with threadblocks
+                    histogram_region_occupancy;      // Fill the device with threadblocks
                 break;
             };
 
@@ -408,7 +404,7 @@ struct DeviceHistogramDispatch
             void* allocations[2];
             size_t allocation_sizes[2] =
             {
-                ACTIVE_CHANNELS * histogram_tiles_grid_size * sizeof(HistoCounter) * BINS,      // bytes needed for privatized histograms
+                ACTIVE_CHANNELS * histogram_region_grid_size * sizeof(HistoCounter) * BINS,      // bytes needed for privatized histograms
                 GridQueue<int>::AllocationSize()                                                // bytes needed for grid queue descriptor
             };
 
@@ -424,7 +420,7 @@ struct DeviceHistogramDispatch
             HistoCounter *d_block_histograms = (HistoCounter*) allocations[0];
 
             // Alias the allocation for the grid queue descriptor
-            GridQueue<SizeT> queue(allocations[1]);
+            GridQueue<Offset> queue(allocations[1]);
 
             // Setup array wrapper for histogram channel output (because we can't pass static arrays as kernel parameters)
             ArrayWrapper<HistoCounter*, ACTIVE_CHANNELS> d_histo_wrapper;
@@ -434,7 +430,7 @@ struct DeviceHistogramDispatch
             // Setup array wrapper for temporary histogram channel output (because we can't pass static arrays as kernel parameters)
             ArrayWrapper<HistoCounter*, ACTIVE_CHANNELS> d_temp_histo_wrapper;
             for (int CHANNEL = 0; CHANNEL < ACTIVE_CHANNELS; ++CHANNEL)
-                d_temp_histo_wrapper.array[CHANNEL] = d_block_histograms + (CHANNEL * histogram_tiles_grid_size * BINS);
+                d_temp_histo_wrapper.array[CHANNEL] = d_block_histograms + (CHANNEL * histogram_region_grid_size * BINS);
 
             // Log init_kernel configuration
             if (debug_synchronous) CubLog("Invoking init_kernel<<<%d, %d, 0, %lld>>>()\n", ACTIVE_CHANNELS, BINS, (long long) stream);
@@ -446,14 +442,14 @@ struct DeviceHistogramDispatch
             if (debug_synchronous && (CubDebug(error = SyncStream(stream)))) break;
 
             // Whether we need privatized histograms (i.e., non-global atomics and multi-block)
-            bool privatized_temporaries = (histogram_tiles_grid_size > 1) && (histogram_tiles_config.block_algorithm != HISTO_TILES_GLOBAL_ATOMIC);
+            bool privatized_temporaries = (histogram_region_grid_size > 1) && (histogram_region_config.block_algorithm != DEVICE_HISTO_GLOBAL_ATOMIC);
 
-            // Log histogram_tiles_kernel configuration
-            if (debug_synchronous) CubLog("Invoking histogram_tiles_kernel<<<%d, %d, 0, %lld>>>(), %d items per thread, %d SM occupancy\n",
-                histogram_tiles_grid_size, histogram_tiles_config.block_threads, (long long) stream, histogram_tiles_config.items_per_thread, histogram_tiles_sm_occupancy);
+            // Log histogram_region_kernel configuration
+            if (debug_synchronous) CubLog("Invoking histogram_region_kernel<<<%d, %d, 0, %lld>>>(), %d items per thread, %d SM occupancy\n",
+                histogram_region_grid_size, histogram_region_config.block_threads, (long long) stream, histogram_region_config.items_per_thread, histogram_region_sm_occupancy);
 
-            // Invoke histogram_tiles_kernel
-            histogram_tiles_kernel<<<histogram_tiles_grid_size, histogram_tiles_config.block_threads, 0, stream>>>(
+            // Invoke histogram_region_kernel
+            histogram_region_kernel<<<histogram_region_grid_size, histogram_region_config.block_threads, 0, stream>>>(
                 d_samples,
                 (privatized_temporaries) ?
                     d_temp_histo_wrapper :
@@ -476,7 +472,7 @@ struct DeviceHistogramDispatch
                 aggregate_kernel<<<ACTIVE_CHANNELS, BINS, 0, stream>>>(
                     d_block_histograms,
                     d_histo_wrapper,
-                    histogram_tiles_grid_size);
+                    histogram_region_grid_size);
 
                 // Sync the stream if specified
                 if (debug_synchronous && (CubDebug(error = SyncStream(stream)))) break;
@@ -497,7 +493,7 @@ struct DeviceHistogramDispatch
     static cudaError_t Dispatch(
         void                *d_temp_storage,                    ///< [in] %Device allocation of temporary storage.  When NULL, the required allocation size is returned in \p temp_storage_bytes and no work is done.
         size_t              &temp_storage_bytes,                ///< [in,out] Size in bytes of \p d_temp_storage allocation.
-        InputIterator     d_samples,                          ///< [in] Input samples to histogram
+        InputIterator       d_samples,                          ///< [in] Input samples to histogram
         HistoCounter        *d_histograms[ACTIVE_CHANNELS],     ///< [out] Array of channel histograms, each having BINS counters of integral type \p HistoCounter.
         int                 num_samples,                        ///< [in] Number of samples to process
         cudaStream_t        stream,                             ///< [in] <b>[optional]</b> CUDA stream to launch kernels within.  Default is stream<sub>0</sub>.
@@ -515,8 +511,8 @@ struct DeviceHistogramDispatch
     #endif
 
             // Get kernel dispatch configurations
-            KernelDispatchConfig histogram_tiles_config;
-            InitDispatchConfigs(ptx_version, histogram_tiles_config);
+            KernelDispatchConfig histogram_region_config;
+            InitDispatchConfigs(ptx_version, histogram_region_config);
 
             // Dispatch
             if (CubDebug(error = Dispatch(
@@ -528,10 +524,10 @@ struct DeviceHistogramDispatch
                 stream,
                 debug_synchronous,
                 ptx_version,            // Use PTX version instead of SM version because, as a statically known quantity, this improves device-side launch dramatically but at the risk of imprecise occupancy calculation for mismatches
-                HistoInitKernel<BINS, ACTIVE_CHANNELS, SizeT, HistoCounter>,
-                HistoTilesKernel<PtxHistogramTilesPolicy, BINS, CHANNELS, ACTIVE_CHANNELS, InputIterator, HistoCounter, SizeT>,
+                HistoInitKernel<BINS, ACTIVE_CHANNELS, Offset, HistoCounter>,
+                HistoRegionKernel<PtxHistogramRegionPolicy, BINS, CHANNELS, ACTIVE_CHANNELS, InputIterator, HistoCounter, Offset>,
                 HistoAggregateKernel<BINS, ACTIVE_CHANNELS, HistoCounter>,
-                histogram_tiles_config))) break;
+                histogram_region_config))) break;
         }
         while (0);
 
@@ -620,8 +616,8 @@ struct DeviceHistogram
      * \endcode
      *
      * \tparam BINS                 Number of histogram bins per channel
-     * \tparam InputIterator      <b>[inferred]</b> Random-access iterator type for input (may be a simple pointer type)  Must have a value type that can be cast as an integer in the range [0..BINS-1]
-     * \tparam HistoCounter         <b>[inferred]</b> Integral type for counting sample occurrences per histogram bin
+     * \tparam InputIterator        <b>[inferred]</b> Random-access iterator type for input (may be a simple pointer type)  Must have an an InputIterator::value_type that, when cast as an integer, falls in the range [0..BINS-1]
+     * \tparam HistoCounter         <b>[inferred]</b> Integer type for counting sample occurrences per histogram bin
      */
     template <
         int                 BINS,
@@ -631,15 +627,34 @@ struct DeviceHistogram
     static cudaError_t SingleChannelSorting(
         void                *d_temp_storage,                    ///< [in] %Device allocation of temporary storage.  When NULL, the required allocation size is returned in \p temp_storage_bytes and no work is done.
         size_t              &temp_storage_bytes,                ///< [in,out] Size in bytes of \p d_temp_storage allocation.
-        InputIterator     d_samples,                          ///< [in] Input samples
+        InputIterator       d_samples,                          ///< [in] Input samples
         HistoCounter*       d_histogram,                        ///< [out] Array of BINS counters of integral type \p HistoCounter.
         int                 num_samples,                        ///< [in] Number of samples to process
         cudaStream_t        stream              = 0,            ///< [in] <b>[optional]</b> CUDA stream to launch kernels within.  Default is stream<sub>0</sub>.
-        bool                debug_synchronous  = false)         ///< [in] <b>[optional]</b> Whether or not to synchronize the stream after every kernel launch to check for errors.  Also causes launch configurations to be printed to the console.  Default is \p false.
+        bool                debug_synchronous   = false)        ///< [in] <b>[optional]</b> Whether or not to synchronize the stream after every kernel launch to check for errors.  May cause significant slowdown.  Default is \p false.
     {
-        typedef int SizeT;
-        return DeviceHistogramDispatch<HISTO_TILES_SORT, BINS, 1, 1, InputIterator, HistoCounter, SizeT>::Dispatch(
-            d_temp_storage, temp_storage_bytes, d_samples, &d_histogram, num_samples, stream, debug_synchronous);
+        // Signed integer type for global offsets
+        typedef int Offset;
+
+        // Dispatch type
+        typedef DeviceHistogramDispatch<
+                DEVICE_HISTO_SORT,
+                BINS,
+                1,
+                1,
+                InputIterator,
+                HistoCounter,
+                Offset>
+            DeviceHistogramDispatch;
+
+        return DeviceHistogramDispatch::Dispatch(
+            d_temp_storage,
+            temp_storage_bytes,
+            d_samples,
+            &d_histogram,
+            num_samples,
+            stream,
+            debug_synchronous);
     }
 
 
@@ -691,8 +706,8 @@ struct DeviceHistogram
      * \endcode
      *
      * \tparam BINS                 Number of histogram bins per channel
-     * \tparam InputIterator      <b>[inferred]</b> Random-access iterator type for input (may be a simple pointer type)  Must have a value type that can be cast as an integer in the range [0..BINS-1]
-     * \tparam HistoCounter         <b>[inferred]</b> Integral type for counting sample occurrences per histogram bin
+     * \tparam InputIterator      <b>[inferred]</b> Random-access iterator type for input (may be a simple pointer type)  Must have an an InputIterator::value_type that, when cast as an integer, falls in the range [0..BINS-1]
+     * \tparam HistoCounter         <b>[inferred]</b> Integer type for counting sample occurrences per histogram bin
      */
     template <
         int                 BINS,
@@ -702,15 +717,34 @@ struct DeviceHistogram
     static cudaError_t SingleChannelSharedAtomic(
         void                *d_temp_storage,                    ///< [in] %Device allocation of temporary storage.  When NULL, the required allocation size is returned in \p temp_storage_bytes and no work is done.
         size_t              &temp_storage_bytes,                ///< [in,out] Size in bytes of \p d_temp_storage allocation.
-        InputIterator     d_samples,                          ///< [in] Input samples
+        InputIterator       d_samples,                          ///< [in] Input samples
         HistoCounter*       d_histogram,                        ///< [out] Array of BINS counters of integral type \p HistoCounter.
         int                 num_samples,                        ///< [in] Number of samples to process
         cudaStream_t        stream              = 0,            ///< [in] <b>[optional]</b> CUDA stream to launch kernels within.  Default is stream<sub>0</sub>.
-        bool                debug_synchronous  = false)        ///< [in] <b>[optional]</b> Whether or not to synchronize the stream after every kernel launch to check for errors.  May cause significant slowdown.  Default is \p false.
+        bool                debug_synchronous   = false)        ///< [in] <b>[optional]</b> Whether or not to synchronize the stream after every kernel launch to check for errors.  May cause significant slowdown.  Default is \p false.
     {
-        typedef int SizeT;
-        return DeviceHistogramDispatch<HISTO_TILES_SHARED_ATOMIC, BINS, 1, 1, InputIterator, HistoCounter, SizeT>::Dispatch(
-            d_temp_storage, temp_storage_bytes, d_samples, &d_histogram, num_samples, stream, debug_synchronous);
+        // Signed integer type for global offsets
+        typedef int Offset;
+
+        // Dispatch type
+        typedef DeviceHistogramDispatch<
+                DEVICE_HISTO_SHARED_ATOMIC,
+                BINS,
+                1,
+                1,
+                InputIterator,
+                HistoCounter,
+                Offset>
+            DeviceHistogramDispatch;
+
+        return DeviceHistogramDispatch::Dispatch(
+            d_temp_storage,
+            temp_storage_bytes,
+            d_samples,
+            &d_histogram,
+            num_samples,
+            stream,
+            debug_synchronous);
     }
 
 
@@ -761,8 +795,8 @@ struct DeviceHistogram
      * \endcode
      *
      * \tparam BINS                 Number of histogram bins per channel
-     * \tparam InputIterator      <b>[inferred]</b> Random-access iterator type for input (may be a simple pointer type)  Must have a value type that can be cast as an integer in the range [0..BINS-1]
-     * \tparam HistoCounter         <b>[inferred]</b> Integral type for counting sample occurrences per histogram bin
+     * \tparam InputIterator        <b>[inferred]</b> Random-access iterator type for input (may be a simple pointer type)  Must have an an InputIterator::value_type that, when cast as an integer, falls in the range [0..BINS-1]
+     * \tparam HistoCounter         <b>[inferred]</b> Integer type for counting sample occurrences per histogram bin
      */
     template <
         int                 BINS,
@@ -772,15 +806,34 @@ struct DeviceHistogram
     static cudaError_t SingleChannelGlobalAtomic(
         void                *d_temp_storage,                    ///< [in] %Device allocation of temporary storage.  When NULL, the required allocation size is returned in \p temp_storage_bytes and no work is done.
         size_t              &temp_storage_bytes,                ///< [in,out] Size in bytes of \p d_temp_storage allocation.
-        InputIterator     d_samples,                          ///< [in] Input samples
+        InputIterator       d_samples,                          ///< [in] Input samples
         HistoCounter*       d_histogram,                        ///< [out] Array of BINS counters of integral type \p HistoCounter.
         int                 num_samples,                        ///< [in] Number of samples to process
         cudaStream_t        stream              = 0,            ///< [in] <b>[optional]</b> CUDA stream to launch kernels within.  Default is stream<sub>0</sub>.
-        bool                debug_synchronous  = false)        ///< [in] <b>[optional]</b> Whether or not to synchronize the stream after every kernel launch to check for errors.  May cause significant slowdown.  Default is \p false.
+        bool                debug_synchronous   = false)        ///< [in] <b>[optional]</b> Whether or not to synchronize the stream after every kernel launch to check for errors.  May cause significant slowdown.  Default is \p false.
     {
-        typedef int SizeT;
-        return DeviceHistogramDispatch<HISTO_TILES_GLOBAL_ATOMIC, BINS, 1, 1, InputIterator, HistoCounter, SizeT>::Dispatch(
-            d_temp_storage, temp_storage_bytes, d_samples, &d_histogram, num_samples, stream, debug_synchronous);
+        // Signed integer type for global offsets
+        typedef int Offset;
+
+        // Dispatch type
+        typedef DeviceHistogramDispatch<
+                DEVICE_HISTO_GLOBAL_ATOMIC,
+                BINS,
+                1,
+                1,
+                InputIterator,
+                HistoCounter,
+                Offset>
+            DeviceHistogramDispatch;
+
+        return DeviceHistogramDispatch::Dispatch(
+            d_temp_storage,
+            temp_storage_bytes,
+            d_samples,
+            &d_histogram,
+            num_samples,
+            stream,
+            debug_synchronous);
     }
 
 
@@ -844,8 +897,8 @@ struct DeviceHistogram
      * \tparam BINS                 Number of histogram bins per channel
      * \tparam CHANNELS             Number of channels interleaved in the input data (may be greater than the number of channels being actively histogrammed)
      * \tparam ACTIVE_CHANNELS      <b>[inferred]</b> Number of channels actively being histogrammed
-     * \tparam InputIterator      <b>[inferred]</b> Random-access iterator type for input (may be a simple pointer type)  Must have a value type that can be cast as an integer in the range [0..BINS-1]
-     * \tparam HistoCounter         <b>[inferred]</b> Integral type for counting sample occurrences per histogram bin
+     * \tparam InputIterator        <b>[inferred]</b> Random-access iterator type for input (may be a simple pointer type)  Must have an an InputIterator::value_type that, when cast as an integer, falls in the range [0..BINS-1]
+     * \tparam HistoCounter         <b>[inferred]</b> Integer type for counting sample occurrences per histogram bin
      */
     template <
         int                 BINS,
@@ -857,15 +910,33 @@ struct DeviceHistogram
     static cudaError_t MultiChannelSorting(
         void                *d_temp_storage,                    ///< [in] %Device allocation of temporary storage.  When NULL, the required allocation size is returned in \p temp_storage_bytes and no work is done.
         size_t              &temp_storage_bytes,                ///< [in,out] Size in bytes of \p d_temp_storage allocation.
-        InputIterator     d_samples,                          ///< [in] Input samples. The samples from different channels are assumed to be interleaved (e.g., an array of 32b pixels where each pixel consists of four RGBA 8b samples).
+        InputIterator       d_samples,                          ///< [in] Input samples. The samples from different channels are assumed to be interleaved (e.g., an array of 32b pixels where each pixel consists of four RGBA 8b samples).
         HistoCounter        *d_histograms[ACTIVE_CHANNELS],     ///< [out] Array of channel histogram counter arrays, each having BINS counters of integral type \p HistoCounter.
         int                 num_samples,                        ///< [in] Total number of samples to process in all channels, including non-active channels
         cudaStream_t        stream              = 0,            ///< [in] <b>[optional]</b> CUDA stream to launch kernels within.  Default is stream<sub>0</sub>.
-        bool                debug_synchronous  = false)        ///< [in] <b>[optional]</b> Whether or not to synchronize the stream after every kernel launch to check for errors.  May cause significant slowdown.  Default is \p false.
+        bool                debug_synchronous   = false)        ///< [in] <b>[optional]</b> Whether or not to synchronize the stream after every kernel launch to check for errors.  May cause significant slowdown.  Default is \p false.
     {
-        typedef int SizeT;
-        return DeviceHistogramDispatch<HISTO_TILES_SORT, BINS, CHANNELS, ACTIVE_CHANNELS, InputIterator, HistoCounter, SizeT>::Dispatch(
-            d_temp_storage, temp_storage_bytes, d_samples, d_histograms, num_samples, stream, debug_synchronous);
+        // Signed integer type for global offsets
+        typedef int Offset;
+
+        // Dispatch type
+        typedef DeviceHistogramDispatch<
+            DEVICE_HISTO_SORT,
+            BINS,
+            CHANNELS,
+            ACTIVE_CHANNELS,
+            InputIterator,
+            HistoCounter,
+            Offset> DeviceHistogramDispatch;
+
+        return DeviceHistogramDispatch::Dispatch(
+            d_temp_storage,
+            temp_storage_bytes,
+            d_samples,
+            d_histograms,
+            num_samples,
+            stream,
+            debug_synchronous);
     }
 
 
@@ -922,8 +993,8 @@ struct DeviceHistogram
      * \tparam BINS                 Number of histogram bins per channel
      * \tparam CHANNELS             Number of channels interleaved in the input data (may be greater than the number of channels being actively histogrammed)
      * \tparam ACTIVE_CHANNELS      <b>[inferred]</b> Number of channels actively being histogrammed
-     * \tparam InputIterator      <b>[inferred]</b> Random-access iterator type for input (may be a simple pointer type)  Must have a value type that can be cast as an integer in the range [0..BINS-1]
-     * \tparam HistoCounter         <b>[inferred]</b> Integral type for counting sample occurrences per histogram bin
+     * \tparam InputIterator        <b>[inferred]</b> Random-access iterator type for input (may be a simple pointer type)  Must have an an InputIterator::value_type that, when cast as an integer, falls in the range [0..BINS-1]
+     * \tparam HistoCounter         <b>[inferred]</b> Integer type for counting sample occurrences per histogram bin
      */
     template <
         int                 BINS,
@@ -935,15 +1006,26 @@ struct DeviceHistogram
     static cudaError_t MultiChannelSharedAtomic(
         void                *d_temp_storage,                    ///< [in] %Device allocation of temporary storage.  When NULL, the required allocation size is returned in \p temp_storage_bytes and no work is done.
         size_t              &temp_storage_bytes,                ///< [in,out] Size in bytes of \p d_temp_storage allocation.
-        InputIterator     d_samples,                          ///< [in] Input samples. The samples from different channels are assumed to be interleaved (e.g., an array of 32b pixels where each pixel consists of four RGBA 8b samples).
+        InputIterator       d_samples,                          ///< [in] Input samples. The samples from different channels are assumed to be interleaved (e.g., an array of 32b pixels where each pixel consists of four RGBA 8b samples).
         HistoCounter        *d_histograms[ACTIVE_CHANNELS],     ///< [out] Array of channel histogram counter arrays, each having BINS counters of integral type \p HistoCounter.
         int                 num_samples,                        ///< [in] Total number of samples to process in all channels, including non-active channels
         cudaStream_t        stream              = 0,            ///< [in] <b>[optional]</b> CUDA stream to launch kernels within.  Default is stream<sub>0</sub>.
-        bool                debug_synchronous  = false)        ///< [in] <b>[optional]</b> Whether or not to synchronize the stream after every kernel launch to check for errors.  May cause significant slowdown.  Default is \p false.
+        bool                debug_synchronous   = false)        ///< [in] <b>[optional]</b> Whether or not to synchronize the stream after every kernel launch to check for errors.  May cause significant slowdown.  Default is \p false.
     {
-        typedef int SizeT;
+        // Signed integer type for global offsets
+        typedef int Offset;
 
-        return DeviceHistogramDispatch<HISTO_TILES_SHARED_ATOMIC, BINS, CHANNELS, ACTIVE_CHANNELS, InputIterator, HistoCounter, SizeT>::Dispatch(
+        // Dispatch type
+        typedef DeviceHistogramDispatch<
+            DEVICE_HISTO_SHARED_ATOMIC,
+            BINS,
+            CHANNELS,
+            ACTIVE_CHANNELS,
+            InputIterator,
+            HistoCounter,
+            Offset> DeviceHistogramDispatch;
+
+        DeviceHistogramDispatch::Dispatch(
             d_temp_storage,
             temp_storage_bytes,
             d_samples,
@@ -1008,8 +1090,8 @@ struct DeviceHistogram
      * \tparam BINS                 Number of histogram bins per channel
      * \tparam CHANNELS             Number of channels interleaved in the input data (may be greater than the number of channels being actively histogrammed)
      * \tparam ACTIVE_CHANNELS      <b>[inferred]</b> Number of channels actively being histogrammed
-     * \tparam InputIterator      <b>[inferred]</b> Random-access iterator type for input (may be a simple pointer type)  Must have a value type that can be cast as an integer in the range [0..BINS-1]
-     * \tparam HistoCounter         <b>[inferred]</b> Integral type for counting sample occurrences per histogram bin
+     * \tparam InputIterator        <b>[inferred]</b> Random-access iterator type for input (may be a simple pointer type)  Must have an an InputIterator::value_type that, when cast as an integer, falls in the range [0..BINS-1]
+     * \tparam HistoCounter         <b>[inferred]</b> Integer type for counting sample occurrences per histogram bin
      */
     template <
         int                 BINS,
@@ -1021,15 +1103,34 @@ struct DeviceHistogram
     static cudaError_t MultiChannelGlobalAtomic(
         void                *d_temp_storage,                    ///< [in] %Device allocation of temporary storage.  When NULL, the required allocation size is returned in \p temp_storage_bytes and no work is done.
         size_t              &temp_storage_bytes,                ///< [in,out] Size in bytes of \p d_temp_storage allocation.
-        InputIterator     d_samples,                          ///< [in] Input samples. The samples from different channels are assumed to be interleaved (e.g., an array of 32b pixels where each pixel consists of four RGBA 8b samples).
+        InputIterator       d_samples,                          ///< [in] Input samples. The samples from different channels are assumed to be interleaved (e.g., an array of 32b pixels where each pixel consists of four RGBA 8b samples).
         HistoCounter        *d_histograms[ACTIVE_CHANNELS],     ///< [out] Array of channel histogram counter arrays, each having BINS counters of integral type \p HistoCounter.
         int                 num_samples,                        ///< [in] Total number of samples to process in all channels, including non-active channels
         cudaStream_t        stream              = 0,            ///< [in] <b>[optional]</b> CUDA stream to launch kernels within.  Default is stream<sub>0</sub>.
-        bool                debug_synchronous  = false)        ///< [in] <b>[optional]</b> Whether or not to synchronize the stream after every kernel launch to check for errors.  May cause significant slowdown.  Default is \p false.
+        bool                debug_synchronous   = false)        ///< [in] <b>[optional]</b> Whether or not to synchronize the stream after every kernel launch to check for errors.  May cause significant slowdown.  Default is \p false.
     {
-        typedef int SizeT;
-        return DeviceHistogramDispatch<HISTO_TILES_GLOBAL_ATOMIC, BINS, CHANNELS, ACTIVE_CHANNELS, InputIterator, HistoCounter, SizeT>::Dispatch(
-            d_temp_storage, temp_storage_bytes, d_samples, d_histograms, num_samples, stream, debug_synchronous);
+        // Signed integer type for global offsets
+        typedef int Offset;
+
+        // Dispatch type
+        typedef DeviceHistogramDispatch<
+                DEVICE_HISTO_GLOBAL_ATOMIC,
+                BINS,
+                CHANNELS,
+                ACTIVE_CHANNELS,
+                InputIterator,
+                HistoCounter,
+                Offset>
+            DeviceHistogramDispatch;
+
+        return DeviceHistogramDispatch::Dispatch(
+            d_temp_storage,
+            temp_storage_bytes,
+            d_samples,
+            d_histograms,
+            num_samples,
+            stream,
+            debug_synchronous);
     }
 
     //@}  end member group

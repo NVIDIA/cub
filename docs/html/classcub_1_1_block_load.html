@@ -109,7 +109,7 @@ var searchBox = new SearchBox("searchBox", "search",false,'Search');
     int BLOCK_THREADS, 
     int ITEMS_PER_THREAD, 
     BlockLoadAlgorithm ALGORITHM = BLOCK_LOAD_DIRECT, 
-    PtxLoadModifier MODIFIER = LOAD_DEFAULT, 
+    CacheLoadModifier MODIFIER = LOAD_DEFAULT, 
     bool WARP_TIME_SLICING = false&gt;<br/>
 class cub::BlockLoad&lt; InputIterator, BLOCK_THREADS, ITEMS_PER_THREAD, ALGORITHM, MODIFIER, WARP_TIME_SLICING &gt;</h3>
 
@@ -132,7 +132,7 @@ class cub::BlockLoad&lt; InputIterator, BLOCK_THREADS, ITEMS_PER_THREAD, ALGORIT
     <tr><td class="paramname">BLOCK_THREADS</td><td>The thread block size in threads. </td></tr>
     <tr><td class="paramname">ITEMS_PER_THREAD</td><td>The number of consecutive items partitioned onto each thread. </td></tr>
     <tr><td class="paramname">ALGORITHM</td><td><b>[optional]</b> <a class="el" href="namespacecub.html#a9d7e37497fdd99864c57adecda710401" title="cub::BlockLoadAlgorithm enumerates alternative algorithms for cub::BlockLoad to read a linear segment...">cub::BlockLoadAlgorithm</a> tuning policy. default: <a class="el" href="namespacecub.html#a9d7e37497fdd99864c57adecda710401a2d4d8900d7e697e9dac4062e97d3d835">cub::BLOCK_LOAD_DIRECT</a>. </td></tr>
-    <tr><td class="paramname">MODIFIER</td><td><b>[optional]</b> <a class="el" href="group___io_module.html#ga023420f30fec7d4b187fc98f4fd2a55d" title="Enumeration of PTX cache-modifiers for memory load operations. ">cub::PtxLoadModifier</a> cache modifier. default: <a class="el" href="group___io_module.html#gga023420f30fec7d4b187fc98f4fd2a55daee682a9988eceaefd9a53a7ef92fe6e2" title="Default (no modifier) ">cub::LOAD_DEFAULT</a>. </td></tr>
+    <tr><td class="paramname">MODIFIER</td><td><b>[optional]</b> <a class="el" href="group___io_module.html#ga023420f30fec7d4b187fc98f4fd2a55d" title="Enumeration of PTX cache-modifiers for memory load operations. ">cub::CacheLoadModifier</a> cache modifier. default: <a class="el" href="group___io_module.html#gga023420f30fec7d4b187fc98f4fd2a55daee682a9988eceaefd9a53a7ef92fe6e2" title="Default (no modifier) ">cub::LOAD_DEFAULT</a>. </td></tr>
     <tr><td class="paramname">WARP_TIME_SLICING</td><td><b>[optional]</b> For transposition-based <a class="el" href="namespacecub.html#a9d7e37497fdd99864c57adecda710401" title="cub::BlockLoadAlgorithm enumerates alternative algorithms for cub::BlockLoad to read a linear segment...">cub::BlockLoadAlgorithm</a> parameterizations that utilize shared memory: When <code>true</code>, only use enough shared memory for a single warp's worth of data, time-slicing the block-wide exchange over multiple synchronized rounds (default: false)</td></tr>
   </table>
   </dd>
@@ -195,7 +195,7 @@ __device__ __forceinline__&#160;</td><td class="memItemRight" valign="bottom"><a
 <div class="memitem">
 <div class="memproto">
 <div class="memtemplate">
-template&lt;typename InputIterator , int BLOCK_THREADS, int ITEMS_PER_THREAD, BlockLoadAlgorithm ALGORITHM = BLOCK_LOAD_DIRECT, PtxLoadModifier MODIFIER = LOAD_DEFAULT, bool WARP_TIME_SLICING = false&gt; </div>
+template&lt;typename InputIterator , int BLOCK_THREADS, int ITEMS_PER_THREAD, BlockLoadAlgorithm ALGORITHM = BLOCK_LOAD_DIRECT, CacheLoadModifier MODIFIER = LOAD_DEFAULT, bool WARP_TIME_SLICING = false&gt; </div>
 <table class="mlabels">
   <tr>
   <td class="mlabels-left">
@@ -231,7 +231,7 @@ template&lt;typename InputIterator , int BLOCK_THREADS, int ITEMS_PER_THREAD, Bl
 <div class="memitem">
 <div class="memproto">
 <div class="memtemplate">
-template&lt;typename InputIterator , int BLOCK_THREADS, int ITEMS_PER_THREAD, BlockLoadAlgorithm ALGORITHM = BLOCK_LOAD_DIRECT, PtxLoadModifier MODIFIER = LOAD_DEFAULT, bool WARP_TIME_SLICING = false&gt; </div>
+template&lt;typename InputIterator , int BLOCK_THREADS, int ITEMS_PER_THREAD, BlockLoadAlgorithm ALGORITHM = BLOCK_LOAD_DIRECT, CacheLoadModifier MODIFIER = LOAD_DEFAULT, bool WARP_TIME_SLICING = false&gt; </div>
 <table class="mlabels">
   <tr>
   <td class="mlabels-left">
@@ -267,7 +267,7 @@ template&lt;typename InputIterator , int BLOCK_THREADS, int ITEMS_PER_THREAD, Bl
 <div class="memitem">
 <div class="memproto">
 <div class="memtemplate">
-template&lt;typename InputIterator , int BLOCK_THREADS, int ITEMS_PER_THREAD, BlockLoadAlgorithm ALGORITHM = BLOCK_LOAD_DIRECT, PtxLoadModifier MODIFIER = LOAD_DEFAULT, bool WARP_TIME_SLICING = false&gt; </div>
+template&lt;typename InputIterator , int BLOCK_THREADS, int ITEMS_PER_THREAD, BlockLoadAlgorithm ALGORITHM = BLOCK_LOAD_DIRECT, CacheLoadModifier MODIFIER = LOAD_DEFAULT, bool WARP_TIME_SLICING = false&gt; </div>
 <table class="mlabels">
   <tr>
   <td class="mlabels-left">
@@ -315,7 +315,7 @@ template&lt;typename InputIterator , int BLOCK_THREADS, int ITEMS_PER_THREAD, Bl
 <div class="memitem">
 <div class="memproto">
 <div class="memtemplate">
-template&lt;typename InputIterator , int BLOCK_THREADS, int ITEMS_PER_THREAD, BlockLoadAlgorithm ALGORITHM = BLOCK_LOAD_DIRECT, PtxLoadModifier MODIFIER = LOAD_DEFAULT, bool WARP_TIME_SLICING = false&gt; </div>
+template&lt;typename InputIterator , int BLOCK_THREADS, int ITEMS_PER_THREAD, BlockLoadAlgorithm ALGORITHM = BLOCK_LOAD_DIRECT, CacheLoadModifier MODIFIER = LOAD_DEFAULT, bool WARP_TIME_SLICING = false&gt; </div>
 <table class="mlabels">
   <tr>
   <td class="mlabels-left">
@@ -379,7 +379,7 @@ template&lt;typename InputIterator , int BLOCK_THREADS, int ITEMS_PER_THREAD, Bl
 <div class="memitem">
 <div class="memproto">
 <div class="memtemplate">
-template&lt;typename InputIterator , int BLOCK_THREADS, int ITEMS_PER_THREAD, BlockLoadAlgorithm ALGORITHM = BLOCK_LOAD_DIRECT, PtxLoadModifier MODIFIER = LOAD_DEFAULT, bool WARP_TIME_SLICING = false&gt; </div>
+template&lt;typename InputIterator , int BLOCK_THREADS, int ITEMS_PER_THREAD, BlockLoadAlgorithm ALGORITHM = BLOCK_LOAD_DIRECT, CacheLoadModifier MODIFIER = LOAD_DEFAULT, bool WARP_TIME_SLICING = false&gt; </div>
 <table class="mlabels">
   <tr>
   <td class="mlabels-left">
@@ -450,7 +450,7 @@ template&lt;typename InputIterator , int BLOCK_THREADS, int ITEMS_PER_THREAD, Bl
 <div class="memitem">
 <div class="memproto">
 <div class="memtemplate">
-template&lt;typename InputIterator , int BLOCK_THREADS, int ITEMS_PER_THREAD, BlockLoadAlgorithm ALGORITHM = BLOCK_LOAD_DIRECT, PtxLoadModifier MODIFIER = LOAD_DEFAULT, bool WARP_TIME_SLICING = false&gt; </div>
+template&lt;typename InputIterator , int BLOCK_THREADS, int ITEMS_PER_THREAD, BlockLoadAlgorithm ALGORITHM = BLOCK_LOAD_DIRECT, CacheLoadModifier MODIFIER = LOAD_DEFAULT, bool WARP_TIME_SLICING = false&gt; </div>
 <table class="mlabels">
   <tr>
   <td class="mlabels-left">

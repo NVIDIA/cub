@@ -57,9 +57,9 @@ namespace cub {
 //-----------------------------------------------------------------------------
 
 /**
- * \brief Enumeration of PTX cache-modifiers for memory load operations.
+ * \brief Enumeration of cache modifiers for memory load operations.
  */
-enum PtxLoadModifier
+enum CacheLoadModifier
 {
     LOAD_DEFAULT,       ///< Default (no modifier)
     LOAD_CA,            ///< Cache at all levels
@@ -77,7 +77,7 @@ enum PtxLoadModifier
  */
 
 /**
- * \brief Thread utility for reading memory using cub::PtxLoadModifier cache modifiers.
+ * \brief Thread utility for reading memory using cub::CacheLoadModifier cache modifiers.
  *
  * Cache modifiers will only be effected for built-in types (i.e., C++
  * primitives and CUDA vector-types).
@@ -107,7 +107,7 @@ enum PtxLoadModifier
  *
  */
 template <
-    PtxLoadModifier MODIFIER,
+    CacheLoadModifier MODIFIER,
     typename InputIterator>
 __device__ __forceinline__ typename std::iterator_traits<InputIterator>::value_type ThreadLoad(InputIterator itr);
 
@@ -119,7 +119,7 @@ __device__ __forceinline__ typename std::iterator_traits<InputIterator>::value_t
 
 
 /// Helper structure for templated load iteration (inductive case)
-template <PtxLoadModifier MODIFIER, int COUNT, int MAX>
+template <CacheLoadModifier MODIFIER, int COUNT, int MAX>
 struct IterateThreadLoad
 {
     template <typename T>
@@ -131,7 +131,7 @@ struct IterateThreadLoad
 };
 
 /// Helper structure for templated load iteration (termination case)
-template <PtxLoadModifier MODIFIER, int MAX>
+template <CacheLoadModifier MODIFIER, int MAX>
 struct IterateThreadLoad<MODIFIER, MAX, MAX>
 {
     template <typename T>
@@ -140,7 +140,7 @@ struct IterateThreadLoad<MODIFIER, MAX, MAX>
 
 
 /**
- * Define a int4 (16B) ThreadLoad specialization for the given PTX load modifier
+ * Define a int4 (16B) ThreadLoad specialization for the given Cache load modifier
  */
 #define CUB_LOAD_16(cub_modifier, ptx_modifier)                                             \
     template<>                                                                              \
@@ -167,7 +167,7 @@ struct IterateThreadLoad<MODIFIER, MAX, MAX>
     }
 
 /**
- * Define a int2 (8B) ThreadLoad specialization for the given PTX load modifier
+ * Define a int2 (8B) ThreadLoad specialization for the given Cache load modifier
  */
 #define CUB_LOAD_8(cub_modifier, ptx_modifier)                                              \
     template<>                                                                              \
@@ -203,7 +203,7 @@ struct IterateThreadLoad<MODIFIER, MAX, MAX>
     }
 
 /**
- * Define a int (4B) ThreadLoad specialization for the given PTX load modifier
+ * Define a int (4B) ThreadLoad specialization for the given Cache load modifier
  */
 #define CUB_LOAD_4(cub_modifier, ptx_modifier)                                              \
     template<>                                                                              \
@@ -218,7 +218,7 @@ struct IterateThreadLoad<MODIFIER, MAX, MAX>
 
 
 /**
- * Define a short (2B) ThreadLoad specialization for the given PTX load modifier
+ * Define a short (2B) ThreadLoad specialization for the given Cache load modifier
  */
 #define CUB_LOAD_2(cub_modifier, ptx_modifier)                                              \
     template<>                                                                              \
@@ -233,7 +233,7 @@ struct IterateThreadLoad<MODIFIER, MAX, MAX>
 
 
 /**
- * Define a char (1B) ThreadLoad specialization for the given PTX load modifier
+ * Define a char (1B) ThreadLoad specialization for the given Cache load modifier
  */
 #define CUB_LOAD_1(cub_modifier, ptx_modifier)                                              \
     template<>                                                                              \
@@ -253,7 +253,7 @@ struct IterateThreadLoad<MODIFIER, MAX, MAX>
 
 
 /**
- * Define powers-of-two ThreadLoad specializations for the given PTX load modifier
+ * Define powers-of-two ThreadLoad specializations for the given Cache load modifier
  */
 #define CUB_LOAD_ALL(cub_modifier, ptx_modifier)                                            \
     CUB_LOAD_16(cub_modifier, ptx_modifier)                                                 \
@@ -264,7 +264,7 @@ struct IterateThreadLoad<MODIFIER, MAX, MAX>
 
 
 /**
- * Define powers-of-two ThreadLoad specializations for the various PTX load modifiers
+ * Define powers-of-two ThreadLoad specializations for the various Cache load modifiers
  */
 #if CUB_PTX_VERSION >= 200
     CUB_LOAD_ALL(LOAD_CA, ca)
@@ -421,7 +421,7 @@ __device__ __forceinline__ T ThreadLoad(
     // Memcopy from aliased source into array of uninitialized words
     DeviceWord words[DEVICE_MULTIPLE];
 
-    IterateThreadLoad<PtxLoadModifier(MODIFIER), 0, DEVICE_MULTIPLE>::Load(
+    IterateThreadLoad<CacheLoadModifier(MODIFIER), 0, DEVICE_MULTIPLE>::Load(
         reinterpret_cast<DeviceWord*>(ptr),
         words);
 
@@ -436,7 +436,7 @@ __device__ __forceinline__ T ThreadLoad(
  * ThreadLoad definition for generic modifiers
  */
 template <
-    PtxLoadModifier MODIFIER,
+    CacheLoadModifier MODIFIER,
     typename InputIterator>
 __device__ __forceinline__ typename std::iterator_traits<InputIterator>::value_type ThreadLoad(InputIterator itr)
 {

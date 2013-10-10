@@ -109,7 +109,7 @@ var searchBox = new SearchBox("searchBox", "search",false,'Search');
     int BLOCK_THREADS, 
     int ITEMS_PER_THREAD, 
     BlockStoreAlgorithm ALGORITHM = BLOCK_STORE_DIRECT, 
-    PtxStoreModifier MODIFIER = STORE_DEFAULT, 
+    CacheStoreModifier MODIFIER = STORE_DEFAULT, 
     bool WARP_TIME_SLICING = false&gt;<br/>
 class cub::BlockStore&lt; OutputIterator, BLOCK_THREADS, ITEMS_PER_THREAD, ALGORITHM, MODIFIER, WARP_TIME_SLICING &gt;</h3>
 
@@ -132,7 +132,7 @@ class cub::BlockStore&lt; OutputIterator, BLOCK_THREADS, ITEMS_PER_THREAD, ALGOR
     <tr><td class="paramname">BLOCK_THREADS</td><td>The thread block size in threads. </td></tr>
     <tr><td class="paramname">ITEMS_PER_THREAD</td><td>The number of consecutive items partitioned onto each thread. </td></tr>
     <tr><td class="paramname">ALGORITHM</td><td><b>[optional]</b> <a class="el" href="namespacecub.html#a839b145451e9eec3d44172e3c3619700" title="cub::BlockStoreAlgorithm enumerates alternative algorithms for cub::BlockStore to write a blocked arr...">cub::BlockStoreAlgorithm</a> tuning policy enumeration. default: <a class="el" href="namespacecub.html#a839b145451e9eec3d44172e3c3619700a9b8dcc7b6b06bcfc24af4f499523b880">cub::BLOCK_STORE_DIRECT</a>. </td></tr>
-    <tr><td class="paramname">MODIFIER</td><td><b>[optional]</b> <a class="el" href="group___io_module.html#gae9c7d6a6af7104f528509182ac9c9da2" title="Enumeration of PTX cache-modifiers for memory store operations. ">cub::PtxStoreModifier</a> cache modifier. default: <a class="el" href="group___io_module.html#ggae9c7d6a6af7104f528509182ac9c9da2a434aa4b3efc8e0c0ce4f1a00cdad26bd" title="Default (no modifier) ">cub::STORE_DEFAULT</a>. </td></tr>
+    <tr><td class="paramname">MODIFIER</td><td><b>[optional]</b> <a class="el" href="group___io_module.html#gae9c7d6a6af7104f528509182ac9c9da2" title="Enumeration of PTX cache-modifiers for memory store operations. ">cub::CacheStoreModifier</a> cache modifier. default: <a class="el" href="group___io_module.html#ggae9c7d6a6af7104f528509182ac9c9da2a434aa4b3efc8e0c0ce4f1a00cdad26bd" title="Default (no modifier) ">cub::STORE_DEFAULT</a>. </td></tr>
     <tr><td class="paramname">WARP_TIME_SLICING</td><td><b>[optional]</b> For transposition-based <a class="el" href="namespacecub.html#a839b145451e9eec3d44172e3c3619700" title="cub::BlockStoreAlgorithm enumerates alternative algorithms for cub::BlockStore to write a blocked arr...">cub::BlockStoreAlgorithm</a> parameterizations that utilize shared memory: When <code>true</code>, only use enough shared memory for a single warp's worth of data, time-slicing the block-wide exchange over multiple synchronized rounds (default: false)</td></tr>
   </table>
   </dd>
@@ -196,7 +196,7 @@ __device__ __forceinline__&#160;</td><td class="memItemRight" valign="bottom"><a
 <div class="memitem">
 <div class="memproto">
 <div class="memtemplate">
-template&lt;typename OutputIterator , int BLOCK_THREADS, int ITEMS_PER_THREAD, BlockStoreAlgorithm ALGORITHM = BLOCK_STORE_DIRECT, PtxStoreModifier MODIFIER = STORE_DEFAULT, bool WARP_TIME_SLICING = false&gt; </div>
+template&lt;typename OutputIterator , int BLOCK_THREADS, int ITEMS_PER_THREAD, BlockStoreAlgorithm ALGORITHM = BLOCK_STORE_DIRECT, CacheStoreModifier MODIFIER = STORE_DEFAULT, bool WARP_TIME_SLICING = false&gt; </div>
 <table class="mlabels">
   <tr>
   <td class="mlabels-left">
@@ -232,7 +232,7 @@ template&lt;typename OutputIterator , int BLOCK_THREADS, int ITEMS_PER_THREAD, B
 <div class="memitem">
 <div class="memproto">
 <div class="memtemplate">
-template&lt;typename OutputIterator , int BLOCK_THREADS, int ITEMS_PER_THREAD, BlockStoreAlgorithm ALGORITHM = BLOCK_STORE_DIRECT, PtxStoreModifier MODIFIER = STORE_DEFAULT, bool WARP_TIME_SLICING = false&gt; </div>
+template&lt;typename OutputIterator , int BLOCK_THREADS, int ITEMS_PER_THREAD, BlockStoreAlgorithm ALGORITHM = BLOCK_STORE_DIRECT, CacheStoreModifier MODIFIER = STORE_DEFAULT, bool WARP_TIME_SLICING = false&gt; </div>
 <table class="mlabels">
   <tr>
   <td class="mlabels-left">
@@ -268,7 +268,7 @@ template&lt;typename OutputIterator , int BLOCK_THREADS, int ITEMS_PER_THREAD, B
 <div class="memitem">
 <div class="memproto">
 <div class="memtemplate">
-template&lt;typename OutputIterator , int BLOCK_THREADS, int ITEMS_PER_THREAD, BlockStoreAlgorithm ALGORITHM = BLOCK_STORE_DIRECT, PtxStoreModifier MODIFIER = STORE_DEFAULT, bool WARP_TIME_SLICING = false&gt; </div>
+template&lt;typename OutputIterator , int BLOCK_THREADS, int ITEMS_PER_THREAD, BlockStoreAlgorithm ALGORITHM = BLOCK_STORE_DIRECT, CacheStoreModifier MODIFIER = STORE_DEFAULT, bool WARP_TIME_SLICING = false&gt; </div>
 <table class="mlabels">
   <tr>
   <td class="mlabels-left">
@@ -316,7 +316,7 @@ template&lt;typename OutputIterator , int BLOCK_THREADS, int ITEMS_PER_THREAD, B
 <div class="memitem">
 <div class="memproto">
 <div class="memtemplate">
-template&lt;typename OutputIterator , int BLOCK_THREADS, int ITEMS_PER_THREAD, BlockStoreAlgorithm ALGORITHM = BLOCK_STORE_DIRECT, PtxStoreModifier MODIFIER = STORE_DEFAULT, bool WARP_TIME_SLICING = false&gt; </div>
+template&lt;typename OutputIterator , int BLOCK_THREADS, int ITEMS_PER_THREAD, BlockStoreAlgorithm ALGORITHM = BLOCK_STORE_DIRECT, CacheStoreModifier MODIFIER = STORE_DEFAULT, bool WARP_TIME_SLICING = false&gt; </div>
 <table class="mlabels">
   <tr>
   <td class="mlabels-left">
@@ -384,7 +384,7 @@ template&lt;typename OutputIterator , int BLOCK_THREADS, int ITEMS_PER_THREAD, B
 <div class="memitem">
 <div class="memproto">
 <div class="memtemplate">
-template&lt;typename OutputIterator , int BLOCK_THREADS, int ITEMS_PER_THREAD, BlockStoreAlgorithm ALGORITHM = BLOCK_STORE_DIRECT, PtxStoreModifier MODIFIER = STORE_DEFAULT, bool WARP_TIME_SLICING = false&gt; </div>
+template&lt;typename OutputIterator , int BLOCK_THREADS, int ITEMS_PER_THREAD, BlockStoreAlgorithm ALGORITHM = BLOCK_STORE_DIRECT, CacheStoreModifier MODIFIER = STORE_DEFAULT, bool WARP_TIME_SLICING = false&gt; </div>
 <table class="mlabels">
   <tr>
   <td class="mlabels-left">

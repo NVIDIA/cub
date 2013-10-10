@@ -237,20 +237,20 @@ var searchBox = new SearchBox("searchBox", "search",false,'Search');
 <div class="line"><a name="l00165"></a><span class="lineno">  165</span>&#160;        <span class="keywordflow">return</span> val;</div>
 <div class="line"><a name="l00166"></a><span class="lineno">  166</span>&#160;    }</div>
 <div class="line"><a name="l00167"></a><span class="lineno">  167</span>&#160;</div>
-<div class="line"><a name="l00168"></a><span class="lineno">  168</span>&#160;    <span class="keyword">template</span> &lt;<span class="keyword">typename</span> SizeT&gt;</div>
-<div class="line"><a name="l00169"></a><span class="lineno">  169</span>&#160;    __host__ __device__ __forceinline__ self_type operator+(SizeT n)</div>
+<div class="line"><a name="l00168"></a><span class="lineno">  168</span>&#160;    <span class="keyword">template</span> &lt;<span class="keyword">typename</span> Offset&gt;</div>
+<div class="line"><a name="l00169"></a><span class="lineno">  169</span>&#160;    __host__ __device__ __forceinline__ self_type operator+(Offset n)</div>
 <div class="line"><a name="l00170"></a><span class="lineno">  170</span>&#160;    {</div>
 <div class="line"><a name="l00171"></a><span class="lineno">  171</span>&#160;        <span class="keywordflow">return</span> <a class="code" href="classcub_1_1_constant_iterator_r_a.html#aa2e8da63f412840cadb94578a0f36348" title="Constructor. ">ConstantInputIterator</a>(val);</div>
 <div class="line"><a name="l00172"></a><span class="lineno">  172</span>&#160;    }</div>
 <div class="line"><a name="l00173"></a><span class="lineno">  173</span>&#160;</div>
-<div class="line"><a name="l00174"></a><span class="lineno">  174</span>&#160;    <span class="keyword">template</span> &lt;<span class="keyword">typename</span> SizeT&gt;</div>
-<div class="line"><a name="l00175"></a><span class="lineno">  175</span>&#160;    __host__ __device__ __forceinline__ self_type operator-(SizeT n)</div>
+<div class="line"><a name="l00174"></a><span class="lineno">  174</span>&#160;    <span class="keyword">template</span> &lt;<span class="keyword">typename</span> Offset&gt;</div>
+<div class="line"><a name="l00175"></a><span class="lineno">  175</span>&#160;    __host__ __device__ __forceinline__ self_type operator-(Offset n)</div>
 <div class="line"><a name="l00176"></a><span class="lineno">  176</span>&#160;    {</div>
 <div class="line"><a name="l00177"></a><span class="lineno">  177</span>&#160;        <span class="keywordflow">return</span> <a class="code" href="classcub_1_1_constant_iterator_r_a.html#aa2e8da63f412840cadb94578a0f36348" title="Constructor. ">ConstantInputIterator</a>(val);</div>
 <div class="line"><a name="l00178"></a><span class="lineno">  178</span>&#160;    }</div>
 <div class="line"><a name="l00179"></a><span class="lineno">  179</span>&#160;</div>
-<div class="line"><a name="l00180"></a><span class="lineno">  180</span>&#160;    <span class="keyword">template</span> &lt;<span class="keyword">typename</span> SizeT&gt;</div>
-<div class="line"><a name="l00181"></a><span class="lineno">  181</span>&#160;    __host__ __device__ __forceinline__ reference operator[](SizeT n)</div>
+<div class="line"><a name="l00180"></a><span class="lineno">  180</span>&#160;    <span class="keyword">template</span> &lt;<span class="keyword">typename</span> Offset&gt;</div>
+<div class="line"><a name="l00181"></a><span class="lineno">  181</span>&#160;    __host__ __device__ __forceinline__ reference operator[](Offset n)</div>
 <div class="line"><a name="l00182"></a><span class="lineno">  182</span>&#160;    {</div>
 <div class="line"><a name="l00183"></a><span class="lineno">  183</span>&#160;        <span class="keywordflow">return</span> <a class="code" href="classcub_1_1_constant_iterator_r_a.html#aa2e8da63f412840cadb94578a0f36348" title="Constructor. ">ConstantInputIterator</a>(val);</div>
 <div class="line"><a name="l00184"></a><span class="lineno">  184</span>&#160;    }</div>
@@ -323,22 +323,22 @@ var searchBox = new SearchBox("searchBox", "search",false,'Search');
 <div class="line"><a name="l00269"></a><span class="lineno">  269</span>&#160;        <span class="keywordflow">return</span> conversion_op(*ptr);</div>
 <div class="line"><a name="l00270"></a><span class="lineno">  270</span>&#160;    }</div>
 <div class="line"><a name="l00271"></a><span class="lineno">  271</span>&#160;</div>
-<div class="line"><a name="l00272"></a><span class="lineno">  272</span>&#160;    <span class="keyword">template</span> &lt;<span class="keyword">typename</span> SizeT&gt;</div>
-<div class="line"><a name="l00273"></a><span class="lineno">  273</span>&#160;    __host__ __device__ __forceinline__ self_type operator+(SizeT n)</div>
+<div class="line"><a name="l00272"></a><span class="lineno">  272</span>&#160;    <span class="keyword">template</span> &lt;<span class="keyword">typename</span> Offset&gt;</div>
+<div class="line"><a name="l00273"></a><span class="lineno">  273</span>&#160;    __host__ __device__ __forceinline__ self_type operator+(Offset n)</div>
 <div class="line"><a name="l00274"></a><span class="lineno">  274</span>&#160;    {</div>
 <div class="line"><a name="l00275"></a><span class="lineno">  275</span>&#160;        <a class="code" href="classcub_1_1_transform_iterator_r_a.html#abac05c9208f609ac1b2f1b94241cdcec" title="Constructor. ">TransformInputIterator</a> retval(ptr + n, conversion_op);</div>
 <div class="line"><a name="l00276"></a><span class="lineno">  276</span>&#160;        <span class="keywordflow">return</span> retval;</div>
 <div class="line"><a name="l00277"></a><span class="lineno">  277</span>&#160;    }</div>
 <div class="line"><a name="l00278"></a><span class="lineno">  278</span>&#160;</div>
-<div class="line"><a name="l00279"></a><span class="lineno">  279</span>&#160;    <span class="keyword">template</span> &lt;<span class="keyword">typename</span> SizeT&gt;</div>
-<div class="line"><a name="l00280"></a><span class="lineno">  280</span>&#160;    __host__ __device__ __forceinline__ self_type operator-(SizeT n)</div>
+<div class="line"><a name="l00279"></a><span class="lineno">  279</span>&#160;    <span class="keyword">template</span> &lt;<span class="keyword">typename</span> Offset&gt;</div>
+<div class="line"><a name="l00280"></a><span class="lineno">  280</span>&#160;    __host__ __device__ __forceinline__ self_type operator-(Offset n)</div>
 <div class="line"><a name="l00281"></a><span class="lineno">  281</span>&#160;    {</div>
 <div class="line"><a name="l00282"></a><span class="lineno">  282</span>&#160;        <a class="code" href="classcub_1_1_transform_iterator_r_a.html#abac05c9208f609ac1b2f1b94241cdcec" title="Constructor. ">TransformInputIterator</a> retval(ptr - n, conversion_op);</div>
 <div class="line"><a name="l00283"></a><span class="lineno">  283</span>&#160;        <span class="keywordflow">return</span> retval;</div>
 <div class="line"><a name="l00284"></a><span class="lineno">  284</span>&#160;    }</div>
 <div class="line"><a name="l00285"></a><span class="lineno">  285</span>&#160;</div>
-<div class="line"><a name="l00286"></a><span class="lineno">  286</span>&#160;    <span class="keyword">template</span> &lt;<span class="keyword">typename</span> SizeT&gt;</div>
-<div class="line"><a name="l00287"></a><span class="lineno">  287</span>&#160;    __host__ __device__ __forceinline__ reference operator[](SizeT n)</div>
+<div class="line"><a name="l00286"></a><span class="lineno">  286</span>&#160;    <span class="keyword">template</span> &lt;<span class="keyword">typename</span> Offset&gt;</div>
+<div class="line"><a name="l00287"></a><span class="lineno">  287</span>&#160;    __host__ __device__ __forceinline__ reference operator[](Offset n)</div>
 <div class="line"><a name="l00288"></a><span class="lineno">  288</span>&#160;    {</div>
 <div class="line"><a name="l00289"></a><span class="lineno">  289</span>&#160;        <span class="keywordflow">return</span> conversion_op(ptr[n]);</div>
 <div class="line"><a name="l00290"></a><span class="lineno">  290</span>&#160;    }</div>
@@ -477,8 +477,8 @@ var searchBox = new SearchBox("searchBox", "search",false,'Search');
 <div class="line"><a name="l00445"></a><span class="lineno">  445</span>&#160;<span class="preprocessor">#endif</span></div>
 <div class="line"><a name="l00446"></a><span class="lineno">  446</span>&#160;<span class="preprocessor"></span>    }</div>
 <div class="line"><a name="l00447"></a><span class="lineno">  447</span>&#160;</div>
-<div class="line"><a name="l00448"></a><span class="lineno">  448</span>&#160;    <span class="keyword">template</span> &lt;<span class="keyword">typename</span> SizeT&gt;</div>
-<div class="line"><a name="l00449"></a><span class="lineno">  449</span>&#160;    __host__ __device__ __forceinline__ self_type operator+(SizeT n)</div>
+<div class="line"><a name="l00448"></a><span class="lineno">  448</span>&#160;    <span class="keyword">template</span> &lt;<span class="keyword">typename</span> Offset&gt;</div>
+<div class="line"><a name="l00449"></a><span class="lineno">  449</span>&#160;    __host__ __device__ __forceinline__ self_type operator+(Offset n)</div>
 <div class="line"><a name="l00450"></a><span class="lineno">  450</span>&#160;    {</div>
 <div class="line"><a name="l00451"></a><span class="lineno">  451</span>&#160;        <a class="code" href="classcub_1_1_tex_iterator_r_a.html#a1b8f21c2753cee33dd90944e4027fa36" title="Constructor. ">TexInputIterator</a> retval;</div>
 <div class="line"><a name="l00452"></a><span class="lineno">  452</span>&#160;        retval.ptr = ptr + n;</div>
@@ -486,8 +486,8 @@ var searchBox = new SearchBox("searchBox", "search",false,'Search');
 <div class="line"><a name="l00454"></a><span class="lineno">  454</span>&#160;        <span class="keywordflow">return</span> retval;</div>
 <div class="line"><a name="l00455"></a><span class="lineno">  455</span>&#160;    }</div>
 <div class="line"><a name="l00456"></a><span class="lineno">  456</span>&#160;</div>
-<div class="line"><a name="l00457"></a><span class="lineno">  457</span>&#160;    <span class="keyword">template</span> &lt;<span class="keyword">typename</span> SizeT&gt;</div>
-<div class="line"><a name="l00458"></a><span class="lineno">  458</span>&#160;    __host__ __device__ __forceinline__ self_type operator-(SizeT n)</div>
+<div class="line"><a name="l00457"></a><span class="lineno">  457</span>&#160;    <span class="keyword">template</span> &lt;<span class="keyword">typename</span> Offset&gt;</div>
+<div class="line"><a name="l00458"></a><span class="lineno">  458</span>&#160;    __host__ __device__ __forceinline__ self_type operator-(Offset n)</div>
 <div class="line"><a name="l00459"></a><span class="lineno">  459</span>&#160;    {</div>
 <div class="line"><a name="l00460"></a><span class="lineno">  460</span>&#160;        <a class="code" href="classcub_1_1_tex_iterator_r_a.html#a1b8f21c2753cee33dd90944e4027fa36" title="Constructor. ">TexInputIterator</a> retval;</div>
 <div class="line"><a name="l00461"></a><span class="lineno">  461</span>&#160;        retval.ptr = ptr - n;</div>
@@ -495,8 +495,8 @@ var searchBox = new SearchBox("searchBox", "search",false,'Search');
 <div class="line"><a name="l00463"></a><span class="lineno">  463</span>&#160;        <span class="keywordflow">return</span> retval;</div>
 <div class="line"><a name="l00464"></a><span class="lineno">  464</span>&#160;    }</div>
 <div class="line"><a name="l00465"></a><span class="lineno">  465</span>&#160;</div>
-<div class="line"><a name="l00466"></a><span class="lineno">  466</span>&#160;    <span class="keyword">template</span> &lt;<span class="keyword">typename</span> SizeT&gt;</div>
-<div class="line"><a name="l00467"></a><span class="lineno">  467</span>&#160;    __host__ __device__ __forceinline__ reference operator[](SizeT n)</div>
+<div class="line"><a name="l00466"></a><span class="lineno">  466</span>&#160;    <span class="keyword">template</span> &lt;<span class="keyword">typename</span> Offset&gt;</div>
+<div class="line"><a name="l00467"></a><span class="lineno">  467</span>&#160;    __host__ __device__ __forceinline__ reference operator[](Offset n)</div>
 <div class="line"><a name="l00468"></a><span class="lineno">  468</span>&#160;    {</div>
 <div class="line"><a name="l00469"></a><span class="lineno">  469</span>&#160;<span class="preprocessor">#if (CUB_PTX_VERSION == 0)</span></div>
 <div class="line"><a name="l00470"></a><span class="lineno">  470</span>&#160;<span class="preprocessor"></span>        <span class="comment">// Simply dereference the pointer on the host</span></div>
@@ -656,8 +656,8 @@ var searchBox = new SearchBox("searchBox", "search",false,'Search');
 <div class="line"><a name="l00648"></a><span class="lineno">  648</span>&#160;<span class="preprocessor">#endif</span></div>
 <div class="line"><a name="l00649"></a><span class="lineno">  649</span>&#160;<span class="preprocessor"></span>    }</div>
 <div class="line"><a name="l00650"></a><span class="lineno">  650</span>&#160;</div>
-<div class="line"><a name="l00651"></a><span class="lineno">  651</span>&#160;    <span class="keyword">template</span> &lt;<span class="keyword">typename</span> SizeT&gt;</div>
-<div class="line"><a name="l00652"></a><span class="lineno">  652</span>&#160;    __host__ __device__ __forceinline__ self_type operator+(SizeT n)</div>
+<div class="line"><a name="l00651"></a><span class="lineno">  651</span>&#160;    <span class="keyword">template</span> &lt;<span class="keyword">typename</span> Offset&gt;</div>
+<div class="line"><a name="l00652"></a><span class="lineno">  652</span>&#160;    __host__ __device__ __forceinline__ self_type operator+(Offset n)</div>
 <div class="line"><a name="l00653"></a><span class="lineno">  653</span>&#160;    {</div>
 <div class="line"><a name="l00654"></a><span class="lineno">  654</span>&#160;        <a class="code" href="classcub_1_1_tex_transform_iterator_r_a.html#a825dd0bd64a07e8f31f646fc220edffa" title="Constructor. ">TexTransformInputIterator</a> retval(conversion_op);</div>
 <div class="line"><a name="l00655"></a><span class="lineno">  655</span>&#160;        retval.ptr = ptr + n;</div>
@@ -665,8 +665,8 @@ var searchBox = new SearchBox("searchBox", "search",false,'Search');
 <div class="line"><a name="l00657"></a><span class="lineno">  657</span>&#160;        <span class="keywordflow">return</span> retval;</div>
 <div class="line"><a name="l00658"></a><span class="lineno">  658</span>&#160;    }</div>
 <div class="line"><a name="l00659"></a><span class="lineno">  659</span>&#160;</div>
-<div class="line"><a name="l00660"></a><span class="lineno">  660</span>&#160;    <span class="keyword">template</span> &lt;<span class="keyword">typename</span> SizeT&gt;</div>
-<div class="line"><a name="l00661"></a><span class="lineno">  661</span>&#160;    __host__ __device__ __forceinline__ self_type operator-(SizeT n)</div>
+<div class="line"><a name="l00660"></a><span class="lineno">  660</span>&#160;    <span class="keyword">template</span> &lt;<span class="keyword">typename</span> Offset&gt;</div>
+<div class="line"><a name="l00661"></a><span class="lineno">  661</span>&#160;    __host__ __device__ __forceinline__ self_type operator-(Offset n)</div>
 <div class="line"><a name="l00662"></a><span class="lineno">  662</span>&#160;    {</div>
 <div class="line"><a name="l00663"></a><span class="lineno">  663</span>&#160;        <a class="code" href="classcub_1_1_tex_transform_iterator_r_a.html#a825dd0bd64a07e8f31f646fc220edffa" title="Constructor. ">TexTransformInputIterator</a> retval(conversion_op);</div>
 <div class="line"><a name="l00664"></a><span class="lineno">  664</span>&#160;        retval.ptr = ptr - n;</div>
@@ -674,8 +674,8 @@ var searchBox = new SearchBox("searchBox", "search",false,'Search');
 <div class="line"><a name="l00666"></a><span class="lineno">  666</span>&#160;        <span class="keywordflow">return</span> retval;</div>
 <div class="line"><a name="l00667"></a><span class="lineno">  667</span>&#160;    }</div>
 <div class="line"><a name="l00668"></a><span class="lineno">  668</span>&#160;</div>
-<div class="line"><a name="l00669"></a><span class="lineno">  669</span>&#160;    <span class="keyword">template</span> &lt;<span class="keyword">typename</span> SizeT&gt;</div>
-<div class="line"><a name="l00670"></a><span class="lineno">  670</span>&#160;    __host__ __device__ __forceinline__ reference operator[](SizeT n)</div>
+<div class="line"><a name="l00669"></a><span class="lineno">  669</span>&#160;    <span class="keyword">template</span> &lt;<span class="keyword">typename</span> Offset&gt;</div>
+<div class="line"><a name="l00670"></a><span class="lineno">  670</span>&#160;    __host__ __device__ __forceinline__ reference operator[](Offset n)</div>
 <div class="line"><a name="l00671"></a><span class="lineno">  671</span>&#160;    {</div>
 <div class="line"><a name="l00672"></a><span class="lineno">  672</span>&#160;<span class="preprocessor">#if (CUB_PTX_VERSION == 0)</span></div>
 <div class="line"><a name="l00673"></a><span class="lineno">  673</span>&#160;<span class="preprocessor"></span>        <span class="comment">// Simply dereference the pointer on the host</span></div>
