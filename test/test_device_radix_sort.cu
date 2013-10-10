@@ -41,6 +41,7 @@
 
 #include <thrust/device_ptr.h>
 #include <thrust/sort.h>
+#include <thrust/reverse.h>
 
 #include "test_util.h"
 
@@ -70,11 +71,12 @@ enum Backend
 //---------------------------------------------------------------------
 
 /**
- * Dispatch to CUB sorting entrypoint
+ * Dispatch to CUB sorting entrypoint (specialized for ascending)
  */
 template <typename Key, typename Value>
 __host__ __device__ __forceinline__
 cudaError_t Dispatch(
+    Int2Type<false>     is_descending,
     Int2Type<CUB>       dispatch_to,
     int                 *d_selector,
     size_t              *d_temp_storage_bytes,
@@ -95,10 +97,37 @@ cudaError_t Dispatch(
 
 
 /**
+ * Dispatch to CUB sorting entrypoint (specialized for descending)
+ */
+template <typename Key, typename Value>
+__host__ __device__ __forceinline__
+cudaError_t Dispatch(
+    Int2Type<true>      is_descending,
+    Int2Type<CUB>       dispatch_to,
+    int                 *d_selector,
+    size_t              *d_temp_storage_bytes,
+    cudaError_t         *d_cdp_error,
+
+    void                *d_temp_storage,
+    size_t              &temp_storage_bytes,
+    DoubleBuffer<Key>   &d_keys,
+    DoubleBuffer<Value> &d_values,
+    int                 num_items,
+    int                 begin_bit,
+    int                 end_bit,
+    cudaStream_t        stream,
+    bool                debug_synchronous)
+{
+    return DeviceRadixSort::SortPairsDescending(d_temp_storage, temp_storage_bytes, d_keys, d_values, num_items, begin_bit, end_bit, stream, debug_synchronous);
+}
+
+
+/**
  * Dispatch keys-only to Thrust sorting entrypoint
  */
-template <typename Key>
+template <int DESCENDING, typename Key>
 cudaError_t Dispatch(
+    Int2Type<DESCENDING>    is_descending,
     Int2Type<THRUST>        dispatch_to,
     int                     *d_selector,
     size_t                  *d_temp_storage_bytes,
@@ -119,8 +148,11 @@ cudaError_t Dispatch(
     }
     else
     {
-        thrust::device_ptr<Key>     d_keys_wrapper(d_keys.Current());
+        thrust::device_ptr<Key> d_keys_wrapper(d_keys.Current());
+
+        if (DESCENDING) thrust::reverse(d_keys_wrapper, d_keys_wrapper + num_items);
         thrust::sort(d_keys_wrapper, d_keys_wrapper + num_items);
+        if (DESCENDING) thrust::reverse(d_keys_wrapper, d_keys_wrapper + num_items);
     }
 
     return cudaSuccess;
@@ -130,21 +162,22 @@ cudaError_t Dispatch(
 /**
  * Dispatch key-value pairs to Thrust sorting entrypoint
  */
-template <typename Key, typename Value>
+template <int DESCENDING, typename Key, typename Value>
 cudaError_t Dispatch(
-    Int2Type<THRUST>    dispatch_to,
-    int                 *d_selector,
-    size_t              *d_temp_storage_bytes,
-    cudaError_t         *d_cdp_error,
-    void                *d_temp_storage,
-    size_t              &temp_storage_bytes,
-    DoubleBuffer<Key>   &d_keys,
-    DoubleBuffer<Value> &d_values,
-    int                 num_items,
-    int                 begin_bit,
-    int                 end_bit,
-    cudaStream_t        stream,
-    bool                debug_synchronous)
+    Int2Type<DESCENDING>    is_descending,
+    Int2Type<THRUST>        dispatch_to,
+    int                     *d_selector,
+    size_t                  *d_temp_storage_bytes,
+    cudaError_t             *d_cdp_error,
+    void                    *d_temp_storage,
+    size_t                  &temp_storage_bytes,
+    DoubleBuffer<Key>       &d_keys,
+    DoubleBuffer<Value>     &d_values,
+    int                     num_items,
+    int                     begin_bit,
+    int                     end_bit,
+    cudaStream_t            stream,
+    bool                    debug_synchronous)
 {
     if (d_temp_storage == 0)
     {
@@ -154,7 +187,18 @@ cudaError_t Dispatch(
     {
         thrust::device_ptr<Key>     d_keys_wrapper(d_keys.Current());
         thrust::device_ptr<Value>   d_values_wrapper(d_values.Current());
+
+        if (DESCENDING) {
+            thrust::reverse(d_keys_wrapper, d_keys_wrapper + num_items);
+            thrust::reverse(d_values_wrapper, d_values_wrapper + num_items);
+        }
+
         thrust::sort_by_key(d_keys_wrapper, d_keys_wrapper + num_items, d_values_wrapper);
+
+        if (DESCENDING) {
+            thrust::reverse(d_keys_wrapper, d_keys_wrapper + num_items);
+            thrust::reverse(d_values_wrapper, d_values_wrapper + num_items);
+        }
     }
 
     return cudaSuccess;
@@ -168,25 +212,26 @@ cudaError_t Dispatch(
 /**
  * Simple wrapper kernel to invoke DeviceRadixSort
  */
-template <typename Key, typename Value>
+template <int DESCENDING, typename Key, typename Value>
 __global__ void CnpDispatchKernel(
-    int                 *d_selector,
-    size_t              *d_temp_storage_bytes,
-    cudaError_t         *d_cdp_error,
+    Int2Type<DESCENDING>    is_descending,
+    int                     *d_selector,
+    size_t                  *d_temp_storage_bytes,
+    cudaError_t             *d_cdp_error,
 
-    void                *d_temp_storage,
-    size_t              temp_storage_bytes,
-    DoubleBuffer<Key>   d_keys,
-    DoubleBuffer<Value> d_values,
-    int                 num_items,
-    int                 begin_bit,
-    int                 end_bit,
-    bool                debug_synchronous)
+    void                    *d_temp_storage,
+    size_t                  temp_storage_bytes,
+    DoubleBuffer<Key>       d_keys,
+    DoubleBuffer<Value>     d_values,
+    int                     num_items,
+    int                     begin_bit,
+    int                     end_bit,
+    bool                    debug_synchronous)
 {
 #ifndef CUB_CDP
     *d_cdp_error = cudaErrorNotSupported;
 #else
-    *d_cdp_error            = Dispatch(Int2Type<CUB>(), d_selector, d_temp_storage_bytes, d_cdp_error, d_temp_storage, temp_storage_bytes, d_keys, d_values, num_items, begin_bit, end_bit, 0, debug_synchronous);
+    *d_cdp_error            = Dispatch(is_descending, Int2Type<CUB>(), d_selector, d_temp_storage_bytes, d_cdp_error, d_temp_storage, temp_storage_bytes, d_keys, d_values, num_items, begin_bit, end_bit, 0, debug_synchronous);
     *d_temp_storage_bytes   = temp_storage_bytes;
     *d_selector             = d_keys.selector;
 #endif
@@ -196,25 +241,26 @@ __global__ void CnpDispatchKernel(
 /**
  * Dispatch to CDP kernel
  */
-template <typename Key, typename Value>
+template <bool DESCENDING, typename Key, typename Value>
 cudaError_t Dispatch(
-    Int2Type<CDP>       dispatch_to,
-    int                 *d_selector,
-    size_t              *d_temp_storage_bytes,
-    cudaError_t         *d_cdp_error,
+    Int2Type<DESCENDING>    is_descending,
+    Int2Type<CDP>           dispatch_to,
+    int                     *d_selector,
+    size_t                  *d_temp_storage_bytes,
+    cudaError_t             *d_cdp_error,
 
-    void                *d_temp_storage,
-    size_t              &temp_storage_bytes,
-    DoubleBuffer<Key>   &d_keys,
-    DoubleBuffer<Value> &d_values,
-    int                 num_items,
-    int                 begin_bit,
-    int                 end_bit,
-    cudaStream_t        stream,
-    bool                debug_synchronous)
+    void                    *d_temp_storage,
+    size_t                  &temp_storage_bytes,
+    DoubleBuffer<Key>       &d_keys,
+    DoubleBuffer<Value>     &d_values,
+    int                     num_items,
+    int                     begin_bit,
+    int                     end_bit,
+    cudaStream_t            stream,
+    bool                    debug_synchronous)
 {
     // Invoke kernel to invoke device-side dispatch
-    CnpDispatchKernel<<<1,1>>>(d_selector, d_temp_storage_bytes, d_cdp_error, d_temp_storage, temp_storage_bytes, d_keys, d_values, num_items, begin_bit, end_bit, debug_synchronous);
+    CnpDispatchKernel<<<1,1>>>(is_descending, d_selector, d_temp_storage_bytes, d_cdp_error, d_temp_storage, temp_storage_bytes, d_keys, d_values, num_items, begin_bit, end_bit, debug_synchronous);
 
     // Copy out selector
     CubDebugExit(cudaMemcpy(&d_keys.selector, d_selector, sizeof(int) * 1, cudaMemcpyDeviceToHost));
@@ -287,7 +333,7 @@ struct Pair<Key, Value, true>
 /**
  * Initialize key-value sorting problem.
  */
-template <typename Key, typename Value>
+template <bool DESCENDING, typename Key, typename Value>
 void Initialize(
     GenMode         gen_mode,
     Key             *h_keys,
@@ -328,7 +374,9 @@ void Initialize(
         h_pairs[i].value  = h_values[i];
     }
 
+    if (DESCENDING) std::reverse(h_pairs, h_pairs + num_items);
     std::stable_sort(h_pairs, h_pairs + num_items);
+    if (DESCENDING) std::reverse(h_pairs, h_pairs + num_items);
 
     for (int i = 0; i < num_items; ++i)
     {
@@ -350,7 +398,8 @@ void Initialize(
 template <
     Backend         BACKEND,
     typename        Key,
-    typename        Value>
+    typename        Value,
+    bool            DESCENDING>
 void Test(
     int             num_items,
     GenMode         gen_mode,
@@ -363,16 +412,12 @@ void Test(
 
     if (end_bit < 0) end_bit = sizeof(Key) * 8;
 
-    if (KEYS_ONLY)
-        printf("%s keys-only cub::DeviceRadixSort %d items, %s %d-byte keys, gen-mode %s\n",
-            (BACKEND == CDP) ? "CDP CUB" : (BACKEND == THRUST) ? "Thrust" : "CUB",
-            num_items, type_string, (int) sizeof(Key),
-            (gen_mode == RANDOM) ? "RANDOM" : (gen_mode == SEQ_INC) ? "SEQUENTIAL" : "HOMOGENOUS");
-    else
-        printf("%s key-value cub::DeviceRadixSort %d items, %s %d-byte keys + %d-byte values, gen-mode %s\n",
-            (BACKEND == CDP) ? "CDP CUB" : (BACKEND == THRUST) ? "Thrust" : "CUB",
-            num_items, type_string, (int) sizeof(Key), (int) sizeof(Value),
-            (gen_mode == RANDOM) ? "RANDOM" : (gen_mode == SEQ_INC) ? "SEQUENTIAL" : "HOMOGENOUS");
+    printf("%s %s cub::DeviceRadixSort %d items, %s %d-byte keys, gen-mode %s, descending %d\n",
+        (BACKEND == CDP) ? "CDP CUB" : (BACKEND == THRUST) ? "Thrust" : "CUB",
+        (KEYS_ONLY) ? "keys-only" : "key-value",
+        num_items, type_string, (int) sizeof(Key),
+        (gen_mode == RANDOM) ? "RANDOM" : (gen_mode == SEQ_INC) ? "SEQUENTIAL" : "HOMOGENOUS",
+        DESCENDING);
     fflush(stdout);
 
     // Allocate host arrays
@@ -382,10 +427,16 @@ void Test(
     Value   *h_reference_values = (KEYS_ONLY) ? NULL : new Value[num_items];
 
     // Initialize problem and solution on host
-    Initialize(gen_mode, h_keys, h_values, h_reference_keys, h_reference_values,
-        num_items, entropy_reduction, begin_bit, end_bit);
-
-    printf("check\n"); fflush(stdout);
+    Initialize<DESCENDING>(
+        gen_mode,
+        h_keys,
+        h_values,
+        h_reference_keys,
+        h_reference_values,
+        num_items,
+        entropy_reduction,
+        begin_bit,
+        end_bit);
 
     // Allocate device arrays
     DoubleBuffer<Key>   d_keys;
@@ -407,7 +458,7 @@ void Test(
     // Allocate temporary storage
     size_t  temp_storage_bytes  = 0;
     void    *d_temp_storage     = NULL;
-    CubDebugExit(Dispatch(Int2Type<BACKEND>(), d_selector, d_temp_storage_bytes, d_cdp_error, d_temp_storage, temp_storage_bytes, d_keys, d_values, num_items, begin_bit, end_bit, 0, true));
+    CubDebugExit(Dispatch(Int2Type<DESCENDING>(), Int2Type<BACKEND>(), d_selector, d_temp_storage_bytes, d_cdp_error, d_temp_storage, temp_storage_bytes, d_keys, d_values, num_items, begin_bit, end_bit, 0, true));
     CubDebugExit(g_allocator.DeviceAllocate(&d_temp_storage, temp_storage_bytes));
 
     // Initialize/clear device arrays
@@ -420,7 +471,7 @@ void Test(
     }
 
     // Run warmup/correctness iteration
-    CubDebugExit(Dispatch(Int2Type<BACKEND>(), d_selector, d_temp_storage_bytes, d_cdp_error, d_temp_storage, temp_storage_bytes, d_keys, d_values, num_items, begin_bit, end_bit, 0, true));
+    CubDebugExit(Dispatch(Int2Type<DESCENDING>(), Int2Type<BACKEND>(), d_selector, d_temp_storage_bytes, d_cdp_error, d_temp_storage, temp_storage_bytes, d_keys, d_values, num_items, begin_bit, end_bit, 0, true));
 
     // Check for correctness (and display results, if specified)
     int compare = CompareDeviceResults(h_reference_keys, d_keys.Current(), num_items, true, g_verbose);
@@ -451,7 +502,7 @@ void Test(
         }
 
         gpu_timer.Start();
-        CubDebugExit(Dispatch(Int2Type<BACKEND>(), d_selector, d_temp_storage_bytes, d_cdp_error, d_temp_storage, temp_storage_bytes, d_keys, d_values, num_items, begin_bit, end_bit, 0, false));
+        CubDebugExit(Dispatch(Int2Type<DESCENDING>(), Int2Type<BACKEND>(), d_selector, d_temp_storage_bytes, d_cdp_error, d_temp_storage, temp_storage_bytes, d_keys, d_values, num_items, begin_bit, end_bit, 0, false));
         gpu_timer.Stop();
         elapsed_millis += gpu_timer.ElapsedMillis();
     }
@@ -488,6 +539,24 @@ void Test(
     AssertEquals(0, compare);
 }
 
+/**
+ * Test ascending/descending
+ */
+template <
+    Backend         BACKEND,
+    typename        Key,
+    typename        Value>
+void Test(
+    int             num_items,
+    GenMode         gen_mode,
+    int             entropy_reduction,
+    int             begin_bit,
+    int             end_bit,
+    char*           type_string)
+{
+    Test<BACKEND, Key, Value, false>(num_items, gen_mode, entropy_reduction, begin_bit, end_bit, type_string);
+    Test<BACKEND, Key, Value, true>(num_items, gen_mode, entropy_reduction, begin_bit, end_bit, type_string);
+}
 
 /**
  * Test problem generation
@@ -618,15 +687,19 @@ int main(int argc, char** argv)
     CubDebugExit(args.DeviceInit());
     printf("\n");
 
+    Test<CUB, unsigned int, NullType, true> (num_items, SEQ_INC, 0, 0, g_bits, CUB_TYPE_STRING(unsigned int));
+
+
+/*
     if (quick)
     {
         if (num_items < 0) num_items = 32000000;
 
-        Test<CUB, unsigned int, NullType> (num_items, RANDOM, 0, 0, g_bits, CUB_TYPE_STRING(unsigned int));
-        Test<THRUST, unsigned int, NullType> (num_items, RANDOM, 0, 0, g_bits, CUB_TYPE_STRING(unsigned int));
+        Test<CUB, unsigned int, NullType, false> (num_items, RANDOM, 0, 0, g_bits, CUB_TYPE_STRING(unsigned int));
+        Test<THRUST, unsigned int, NullType, false> (num_items, RANDOM, 0, 0, g_bits, CUB_TYPE_STRING(unsigned int));
 
-        Test<CUB, unsigned int, unsigned int> (num_items, RANDOM, 0, 0, g_bits, CUB_TYPE_STRING(unsigned int));
-        Test<THRUST, unsigned int, unsigned int> (num_items, RANDOM, 0, 0, g_bits, CUB_TYPE_STRING(unsigned int));
+        Test<CUB, unsigned int, unsigned int, false> (num_items, RANDOM, 0, 0, g_bits, CUB_TYPE_STRING(unsigned int));
+        Test<THRUST, unsigned int, unsigned int, false> (num_items, RANDOM, 0, 0, g_bits, CUB_TYPE_STRING(unsigned int));
     }
     else
     {
@@ -650,7 +723,7 @@ int main(int argc, char** argv)
         TestItems<float>                (num_items, 0, g_bits, CUB_TYPE_STRING(float));
         TestItems<double>               (num_items, 0, g_bits, CUB_TYPE_STRING(double));
     }
-
+*/
     return 0;
 }
 

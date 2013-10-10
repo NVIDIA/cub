@@ -261,8 +261,8 @@ template&lt;int BINS, int CHANNELS, int ACTIVE_CHANNELS, typename InputIterator 
     <tr><td class="paramname">BINS</td><td>Number of histogram bins per channel </td></tr>
     <tr><td class="paramname">CHANNELS</td><td>Number of channels interleaved in the input data (may be greater than the number of channels being actively histogrammed) </td></tr>
     <tr><td class="paramname">ACTIVE_CHANNELS</td><td><b>[inferred]</b> Number of channels actively being histogrammed </td></tr>
-    <tr><td class="paramname">InputIterator</td><td><b>[inferred]</b> Random-access iterator type for input (may be a simple pointer type) Must have a value type that can be cast as an integer in the range [0..BINS-1] </td></tr>
-    <tr><td class="paramname">HistoCounter</td><td><b>[inferred]</b> Integral type for counting sample occurrences per histogram bin </td></tr>
+    <tr><td class="paramname">InputIterator</td><td><b>[inferred]</b> Random-access iterator type for input (may be a simple pointer type) Must have an an InputIterator::value_type that, when cast as an integer, falls in the range [0..BINS-1] </td></tr>
+    <tr><td class="paramname">HistoCounter</td><td><b>[inferred]</b> Integer type for counting sample occurrences per histogram bin </td></tr>
   </table>
   </dd>
 </dl>
@@ -387,8 +387,8 @@ template&lt;int BINS, int CHANNELS, int ACTIVE_CHANNELS, typename InputIterator 
     <tr><td class="paramname">BINS</td><td>Number of histogram bins per channel </td></tr>
     <tr><td class="paramname">CHANNELS</td><td>Number of channels interleaved in the input data (may be greater than the number of channels being actively histogrammed) </td></tr>
     <tr><td class="paramname">ACTIVE_CHANNELS</td><td><b>[inferred]</b> Number of channels actively being histogrammed </td></tr>
-    <tr><td class="paramname">InputIterator</td><td><b>[inferred]</b> Random-access iterator type for input (may be a simple pointer type) Must have a value type that can be cast as an integer in the range [0..BINS-1] </td></tr>
-    <tr><td class="paramname">HistoCounter</td><td><b>[inferred]</b> Integral type for counting sample occurrences per histogram bin </td></tr>
+    <tr><td class="paramname">InputIterator</td><td><b>[inferred]</b> Random-access iterator type for input (may be a simple pointer type) Must have an an InputIterator::value_type that, when cast as an integer, falls in the range [0..BINS-1] </td></tr>
+    <tr><td class="paramname">HistoCounter</td><td><b>[inferred]</b> Integer type for counting sample occurrences per histogram bin </td></tr>
   </table>
   </dd>
 </dl>
@@ -513,8 +513,8 @@ template&lt;int BINS, int CHANNELS, int ACTIVE_CHANNELS, typename InputIterator 
     <tr><td class="paramname">BINS</td><td>Number of histogram bins per channel </td></tr>
     <tr><td class="paramname">CHANNELS</td><td>Number of channels interleaved in the input data (may be greater than the number of channels being actively histogrammed) </td></tr>
     <tr><td class="paramname">ACTIVE_CHANNELS</td><td><b>[inferred]</b> Number of channels actively being histogrammed </td></tr>
-    <tr><td class="paramname">InputIterator</td><td><b>[inferred]</b> Random-access iterator type for input (may be a simple pointer type) Must have a value type that can be cast as an integer in the range [0..BINS-1] </td></tr>
-    <tr><td class="paramname">HistoCounter</td><td><b>[inferred]</b> Integral type for counting sample occurrences per histogram bin </td></tr>
+    <tr><td class="paramname">InputIterator</td><td><b>[inferred]</b> Random-access iterator type for input (may be a simple pointer type) Must have an an InputIterator::value_type that, when cast as an integer, falls in the range [0..BINS-1] </td></tr>
+    <tr><td class="paramname">HistoCounter</td><td><b>[inferred]</b> Integer type for counting sample occurrences per histogram bin </td></tr>
   </table>
   </dd>
 </dl>
@@ -635,8 +635,8 @@ template&lt;int BINS, typename InputIterator , typename HistoCounter &gt; </div>
 <dl class="tparams"><dt>Template Parameters</dt><dd>
   <table class="tparams">
     <tr><td class="paramname">BINS</td><td>Number of histogram bins per channel </td></tr>
-    <tr><td class="paramname">InputIterator</td><td><b>[inferred]</b> Random-access iterator type for input (may be a simple pointer type) Must have a value type that can be cast as an integer in the range [0..BINS-1] </td></tr>
-    <tr><td class="paramname">HistoCounter</td><td><b>[inferred]</b> Integral type for counting sample occurrences per histogram bin </td></tr>
+    <tr><td class="paramname">InputIterator</td><td><b>[inferred]</b> Random-access iterator type for input (may be a simple pointer type) Must have an an InputIterator::value_type that, when cast as an integer, falls in the range [0..BINS-1] </td></tr>
+    <tr><td class="paramname">HistoCounter</td><td><b>[inferred]</b> Integer type for counting sample occurrences per histogram bin </td></tr>
   </table>
   </dd>
 </dl>
@@ -757,8 +757,8 @@ template&lt;int BINS, typename InputIterator , typename HistoCounter &gt; </div>
 <dl class="tparams"><dt>Template Parameters</dt><dd>
   <table class="tparams">
     <tr><td class="paramname">BINS</td><td>Number of histogram bins per channel </td></tr>
-    <tr><td class="paramname">InputIterator</td><td><b>[inferred]</b> Random-access iterator type for input (may be a simple pointer type) Must have a value type that can be cast as an integer in the range [0..BINS-1] </td></tr>
-    <tr><td class="paramname">HistoCounter</td><td><b>[inferred]</b> Integral type for counting sample occurrences per histogram bin </td></tr>
+    <tr><td class="paramname">InputIterator</td><td><b>[inferred]</b> Random-access iterator type for input (may be a simple pointer type) Must have an an InputIterator::value_type that, when cast as an integer, falls in the range [0..BINS-1] </td></tr>
+    <tr><td class="paramname">HistoCounter</td><td><b>[inferred]</b> Integer type for counting sample occurrences per histogram bin </td></tr>
   </table>
   </dd>
 </dl>
@@ -879,8 +879,8 @@ template&lt;int BINS, typename InputIterator , typename HistoCounter &gt; </div>
 <dl class="tparams"><dt>Template Parameters</dt><dd>
   <table class="tparams">
     <tr><td class="paramname">BINS</td><td>Number of histogram bins per channel </td></tr>
-    <tr><td class="paramname">InputIterator</td><td><b>[inferred]</b> Random-access iterator type for input (may be a simple pointer type) Must have a value type that can be cast as an integer in the range [0..BINS-1] </td></tr>
-    <tr><td class="paramname">HistoCounter</td><td><b>[inferred]</b> Integral type for counting sample occurrences per histogram bin </td></tr>
+    <tr><td class="paramname">InputIterator</td><td><b>[inferred]</b> Random-access iterator type for input (may be a simple pointer type) Must have an an InputIterator::value_type that, when cast as an integer, falls in the range [0..BINS-1] </td></tr>
+    <tr><td class="paramname">HistoCounter</td><td><b>[inferred]</b> Integer type for counting sample occurrences per histogram bin </td></tr>
   </table>
   </dd>
 </dl>

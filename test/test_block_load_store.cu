@@ -305,8 +305,8 @@ template <
     int                 ITEMS_PER_THREAD,
     BlockLoadAlgorithm  LOAD_ALGORITHM,
     BlockStoreAlgorithm STORE_ALGORITHM,
-    PtxLoadModifier     LOAD_MODIFIER,
-    PtxStoreModifier    STORE_MODIFIER,
+    CacheLoadModifier   LOAD_MODIFIER,
+    CacheStoreModifier  STORE_MODIFIER,
     int                 WARP_TIME_SLICING>
 void TestIterator(
     int                 grid_size,

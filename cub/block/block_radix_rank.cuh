@@ -55,7 +55,8 @@ namespace cub {
  * Blah...
  *
  * \tparam BLOCK_THREADS        The thread block size in threads
- * \tparam RADIX_BITS           <b>[optional]</b> The number of radix bits per digit place (default: 5 bits)
+ * \tparam RADIX_BITS           The number of radix bits per digit place
+ * \tparam DESCENDING           Whether or not the sorted-order is high-to-low
  * \tparam MEMOIZE_OUTER_SCAN   <b>[optional]</b> Whether or not to buffer outer raking scan partials to incur fewer shared memory reads at the expense of higher register pressure (default: true for architectures SM35 and newer, false otherwise).  See BlockScanAlgorithm::BLOCK_SCAN_RAKING_MEMOIZE for more details.
  * \tparam INNER_SCAN_ALGORITHM <b>[optional]</b> The cub::BlockScanAlgorithm algorithm to use (default: cub::BLOCK_SCAN_WARP_SCANS)
  * \tparam SMEM_CONFIG          <b>[optional]</b> Shared memory bank mode (default: \p cudaSharedMemBankSizeFourByte)
@@ -87,6 +88,7 @@ namespace cub {
 template <
     int                     BLOCK_THREADS,
     int                     RADIX_BITS,
+    bool                    DESCENDING,
     bool                    MEMOIZE_OUTER_SCAN      = (CUB_PTX_VERSION >= 350) ? true : false,
     BlockScanAlgorithm      INNER_SCAN_ALGORITHM    = BLOCK_SCAN_WARP_SCANS,
     cudaSharedMemConfig     SMEM_CONFIG             = cudaSharedMemBankSizeFourByte>
@@ -188,14 +190,20 @@ private:
             DigitCounter*   (&digit_counters)[KEYS_PER_THREAD],     // Counter smem offset (out parameter)
             int             current_bit)                            // The least-significant bit position of the current digit to extract
         {
-            // Add in sub-counter offset
+            // Get sub-counter
             UnsignedBits sub_counter = BFE(keys[COUNT], current_bit + LOG_COUNTER_LANES, LOG_PACKING_RATIO);
 
-            // Add in row offset
-            UnsignedBits row_offset = BFE(keys[COUNT], current_bit, LOG_COUNTER_LANES);
+            // Get counter lane
+            UnsignedBits counter_lane = BFE(keys[COUNT], current_bit, LOG_COUNTER_LANES);
+
+            if (DESCENDING)
+            {
+                sub_counter = PACKING_RATIO - 1 - sub_counter;
+                counter_lane = COUNTER_LANES - 1 - counter_lane;
+            }
 
             // Pointer to smem digit counter
-            digit_counters[COUNT] = &cta.temp_storage.digit_counters[row_offset][cta.linear_tid][sub_counter];
+            digit_counters[COUNT] = &cta.temp_storage.digit_counters[counter_lane][cta.linear_tid][sub_counter];
 
             // Load thread-exclusive prefix
             thread_prefixes[COUNT] = *digit_counters[COUNT];
@@ -468,6 +476,8 @@ public:
             int counter_lane = (linear_tid & (COUNTER_LANES - 1));
             int sub_counter = linear_tid >> (LOG_COUNTER_LANES);
             inclusive_digit_prefix = temp_storage.digit_counters[counter_lane + 1][0][sub_counter];
+
+            CubLog("Inclusive digit prefix %d\n", inclusive_digit_prefix);
         }
     }
 };

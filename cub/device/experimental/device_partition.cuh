@@ -38,7 +38,7 @@
 #include <iterator>
 
 #include "device_scan.cuh"
-#include "block/block_partition_tiles.cuh"
+#include "region/block_partition_region.cuh"
 #include "../grid/grid_queue.cuh"
 #include "../util_debug.cuh"
 #include "../util_device.cuh"
@@ -62,21 +62,21 @@ namespace cub {
  * Scan kernel entry point (multi-block)
  */
 template <
-    typename    BlockPartitionTilesPolicy,           ///< Tuning policy for cub::BlockPartitionTiles abstraction
+    typename    BlockPartitionRegionPolicy,           ///< Parameterizable tuning policy type for cub::BlockPartitionRegion abstraction
     typename    InputIterator,                ///< Random-access iterator type for input (may be a simple pointer type)
     typename    OutputIterator,               ///< Random-access iterator type for output (may be a simple pointer type)
     typename    T,                              ///< The scan data type
     typename    ScanOp,                         ///< Binary scan operator type having member <tt>T operator()(const T &a, const T &b)</tt>
     typename    Identity,                       ///< Identity value type (cub::NullType for inclusive scans)
-    typename    SizeT>                          ///< Integer type used for global array indexing
-__launch_bounds__ (int(BlockPartitionTilesPolicy::BLOCK_THREADS))
+    typename    Offset>                          ///< Signed integer type for global offsets
+__launch_bounds__ (int(BlockPartitionRegionPolicy::BLOCK_THREADS))
 __global__ void ScanKernel(
     InputIterator             d_in,           ///< Input data
     OutputIterator            d_out,          ///< Output data
     DevicePartitionTileDescriptor<T>       *d_tile_status, ///< Global list of tile status
     ScanOp                      scan_op,        ///< Binary scan operator
     Identity                    identity,       ///< Identity element
-    SizeT                       num_items,      ///< Total number of scan items for the entire problem
+    Offset                       num_items,      ///< Total number of scan items for the entire problem
     GridQueue<int>              queue)          ///< Drain queue descriptor for dynamically mapping tile data onto thread blocks
 {
     enum
@@ -85,19 +85,19 @@ __global__ void ScanKernel(
     };
 
     // Thread block type for scanning input tiles
-    typedef BlockPartitionTiles<
-        BlockPartitionTilesPolicy,
+    typedef BlockPartitionRegion<
+        BlockPartitionRegionPolicy,
         InputIterator,
         OutputIterator,
         ScanOp,
         Identity,
-        SizeT> BlockPartitionTilesT;
+        Offset> BlockPartitionRegionT;
 
-    // Shared memory for BlockPartitionTiles
-    __shared__ typename BlockPartitionTilesT::TempStorage temp_storage;
+    // Shared memory for BlockPartitionRegion
+    __shared__ typename BlockPartitionRegionT::TempStorage temp_storage;
 
     // Process tiles
-    BlockPartitionTilesT(temp_storage, d_in, d_out, scan_op, identity).ConsumeTiles(
+    BlockPartitionRegionT(temp_storage, d_in, d_out, scan_op, identity).ConsumeRegion(
         num_items,
         queue,
         d_tile_status + TILE_STATUS_PADDING);
@@ -141,7 +141,7 @@ struct DevicePartition
      * Constants and typedefs
      ******************************************************************************/
 
-    /// Generic structure for encapsulating dispatch properties.  Mirrors the constants within BlockPartitionTilesPolicy.
+    /// Generic structure for encapsulating dispatch properties.  Mirrors the constants within BlockPartitionRegionPolicy.
     struct KernelDispachParams
     {
         // Policy fields
@@ -154,15 +154,15 @@ struct DevicePartition
         // Other misc
         int                     tile_size;
 
-        template <typename BlockPartitionTilesPolicy>
+        template <typename BlockPartitionRegionPolicy>
         __host__ __device__ __forceinline__
         void Init()
         {
-            block_threads               = BlockPartitionTilesPolicy::BLOCK_THREADS;
-            items_per_thread            = BlockPartitionTilesPolicy::ITEMS_PER_THREAD;
-            load_policy                 = BlockPartitionTilesPolicy::LOAD_ALGORITHM;
-            store_policy                = BlockPartitionTilesPolicy::STORE_ALGORITHM;
-            scan_algorithm              = BlockPartitionTilesPolicy::SCAN_ALGORITHM;
+            block_threads               = BlockPartitionRegionPolicy::BLOCK_THREADS;
+            items_per_thread            = BlockPartitionRegionPolicy::ITEMS_PER_THREAD;
+            load_policy                 = BlockPartitionRegionPolicy::LOAD_ALGORITHM;
+            store_policy                = BlockPartitionRegionPolicy::STORE_ALGORITHM;
+            scan_algorithm              = BlockPartitionRegionPolicy::SCAN_ALGORITHM;
 
             tile_size                   = block_threads * items_per_thread;
         }
@@ -189,13 +189,13 @@ struct DevicePartition
     /// Specializations of tuned policy types for different PTX architectures
     template <
         typename    T,
-        typename    SizeT,
+        typename    Offset,
         int         ARCH>
     struct TunedPolicies;
 
     /// SM35 tune
-    template <typename T, typename SizeT>
-    struct TunedPolicies<T, SizeT, 350>
+    template <typename T, typename Offset>
+    struct TunedPolicies<T, Offset, 350>
     {
         enum {
             NOMINAL_4B_ITEMS_PER_THREAD = 16,
@@ -203,24 +203,24 @@ struct DevicePartition
         };
 
         // ScanPolicy: GTX Titan: 29.1B items/s (232.4 GB/s) @ 48M 32-bit T
-        typedef BlockPartitionTilesPolicy<128, ITEMS_PER_THREAD,  BLOCK_LOAD_DIRECT, false, LOAD_LDG, BLOCK_STORE_WARP_TRANSPOSE, true, BLOCK_SCAN_RAKING_MEMOIZE> ScanPolicy;
+        typedef BlockPartitionRegionPolicy<128, ITEMS_PER_THREAD,  BLOCK_LOAD_DIRECT, false, LOAD_LDG, BLOCK_STORE_WARP_TRANSPOSE, true, BLOCK_SCAN_RAKING_MEMOIZE> ScanPolicy;
     };
 
     /// SM30 tune
-    template <typename T, typename SizeT>
-    struct TunedPolicies<T, SizeT, 300>
+    template <typename T, typename Offset>
+    struct TunedPolicies<T, Offset, 300>
     {
         enum {
             NOMINAL_4B_ITEMS_PER_THREAD = 9,
             ITEMS_PER_THREAD            = CUB_MIN(NOMINAL_4B_ITEMS_PER_THREAD, CUB_MAX(1, (NOMINAL_4B_ITEMS_PER_THREAD * 4 / sizeof(T)))),
         };
 
-        typedef BlockPartitionTilesPolicy<256, ITEMS_PER_THREAD,  BLOCK_LOAD_WARP_TRANSPOSE, false, LOAD_DEFAULT, BLOCK_STORE_WARP_TRANSPOSE, false, BLOCK_SCAN_RAKING_MEMOIZE> ScanPolicy;
+        typedef BlockPartitionRegionPolicy<256, ITEMS_PER_THREAD,  BLOCK_LOAD_WARP_TRANSPOSE, false, LOAD_DEFAULT, BLOCK_STORE_WARP_TRANSPOSE, false, BLOCK_SCAN_RAKING_MEMOIZE> ScanPolicy;
     };
 
     /// SM20 tune
-    template <typename T, typename SizeT>
-    struct TunedPolicies<T, SizeT, 200>
+    template <typename T, typename Offset>
+    struct TunedPolicies<T, Offset, 200>
     {
         enum {
             NOMINAL_4B_ITEMS_PER_THREAD = 15,
@@ -228,23 +228,23 @@ struct DevicePartition
         };
 
         // ScanPolicy: GTX 580: 20.3B items/s (162.3 GB/s) @ 48M 32-bit T
-        typedef BlockPartitionTilesPolicy<128, ITEMS_PER_THREAD, BLOCK_LOAD_WARP_TRANSPOSE, false, LOAD_DEFAULT, BLOCK_STORE_WARP_TRANSPOSE, false, BLOCK_SCAN_RAKING_MEMOIZE> ScanPolicy;
+        typedef BlockPartitionRegionPolicy<128, ITEMS_PER_THREAD, BLOCK_LOAD_WARP_TRANSPOSE, false, LOAD_DEFAULT, BLOCK_STORE_WARP_TRANSPOSE, false, BLOCK_SCAN_RAKING_MEMOIZE> ScanPolicy;
     };
 
     /// SM10 tune
-    template <typename T, typename SizeT>
-    struct TunedPolicies<T, SizeT, 100>
+    template <typename T, typename Offset>
+    struct TunedPolicies<T, Offset, 100>
     {
         enum {
             NOMINAL_4B_ITEMS_PER_THREAD = 7,
             ITEMS_PER_THREAD            = CUB_MIN(NOMINAL_4B_ITEMS_PER_THREAD, CUB_MAX(1, (NOMINAL_4B_ITEMS_PER_THREAD * 4 / sizeof(T)))),
         };
-        typedef BlockPartitionTilesPolicy<128, ITEMS_PER_THREAD, BLOCK_LOAD_TRANSPOSE, false, LOAD_DEFAULT, BLOCK_STORE_TRANSPOSE, false, BLOCK_SCAN_RAKING> ScanPolicy;
+        typedef BlockPartitionRegionPolicy<128, ITEMS_PER_THREAD, BLOCK_LOAD_TRANSPOSE, false, LOAD_DEFAULT, BLOCK_STORE_TRANSPOSE, false, BLOCK_SCAN_RAKING> ScanPolicy;
     };
 
 
-    /// Tuning policy for the PTX architecture that DevicePartition operations will get dispatched to
-    template <typename T, typename SizeT>
+    /// Parameterizable tuning policy type for the PTX architecture that DevicePartition operations will get dispatched to
+    template <typename T, typename Offset>
     struct PtxDefaultPolicies
     {
         static const int PTX_TUNE_ARCH =   (CUB_PTX_VERSION >= 350) ?
@@ -256,7 +256,7 @@ struct DevicePartition
                                                         100;
 
         // Tuned policy set for the current PTX compiler pass
-        typedef TunedPolicies<T, SizeT, PTX_TUNE_ARCH> PtxTunedPolicies;
+        typedef TunedPolicies<T, Offset, PTX_TUNE_ARCH> PtxTunedPolicies;
 
         // ScanPolicy that opaquely derives from the specialization corresponding to the current PTX compiler pass
         struct ScanPolicy : PtxTunedPolicies::ScanPolicy {};
@@ -268,22 +268,22 @@ struct DevicePartition
         {
             if (ptx_version >= 350)
             {
-                typedef TunedPolicies<T, SizeT, 350> TunedPolicies;
+                typedef TunedPolicies<T, Offset, 350> TunedPolicies;
                 scan_dispatch_params.Init<typename TunedPolicies::ScanPolicy>();
             }
             else if (ptx_version >= 300)
             {
-                typedef TunedPolicies<T, SizeT, 300> TunedPolicies;
+                typedef TunedPolicies<T, Offset, 300> TunedPolicies;
                 scan_dispatch_params.Init<typename TunedPolicies::ScanPolicy>();
             }
             else if (ptx_version >= 200)
             {
-                typedef TunedPolicies<T, SizeT, 200> TunedPolicies;
+                typedef TunedPolicies<T, Offset, 200> TunedPolicies;
                 scan_dispatch_params.Init<typename TunedPolicies::ScanPolicy>();
             }
             else
             {
-                typedef TunedPolicies<T, SizeT, 100> TunedPolicies;
+                typedef TunedPolicies<T, Offset, 100> TunedPolicies;
                 scan_dispatch_params.Init<typename TunedPolicies::ScanPolicy>();
             }
         }
@@ -304,7 +304,7 @@ struct DevicePartition
         typename                    OutputIterator,               ///< Random-access iterator type for output (may be a simple pointer type)
         typename                    ScanOp,                         ///< Binary scan operator type having member <tt>T operator()(const T &a, const T &b)</tt>
         typename                    Identity,                       ///< Identity value type (cub::NullType for inclusive scans)
-        typename                    SizeT>                          ///< Integer type used for global array indexing
+        typename                    Offset>                          ///< Signed integer type for global offsets
     __host__ __device__ __forceinline__
     static cudaError_t Dispatch(
         int                         ptx_version,                    ///< [in] PTX version
@@ -317,7 +317,7 @@ struct DevicePartition
         OutputIterator            d_out,                          ///< [in] Iterator pointing to scan output
         ScanOp                      scan_op,                        ///< [in] Binary scan operator
         Identity                    identity,                       ///< [in] Identity element
-        SizeT                       num_items,                      ///< [in] Total number of items to scan
+        Offset                       num_items,                      ///< [in] Total number of items to scan
         cudaStream_t                stream              = 0,        ///< [in] <b>[optional]</b> CUDA stream to launch kernels within.  Default is stream<sub>0</sub>.
         bool                        debug_synchronous  = false)     ///< [in] <b>[optional]</b> Whether or not to synchronize the stream after every kernel launch to check for errors.  Also causes launch configurations to be printed to the console.  Default is \p false.
     {
@@ -459,7 +459,7 @@ struct DevicePartition
         typename                    OutputIterator,               ///< Random-access iterator type for output (may be a simple pointer type)
         typename                    ScanOp,                         ///< Binary scan operator type having member <tt>T operator()(const T &a, const T &b)</tt>
         typename                    Identity,                       ///< Identity value type (cub::NullType for inclusive scans)
-        typename                    SizeT>                          ///< Integer type used for global array indexing
+        typename                    Offset>                          ///< Signed integer type for global offsets
     __host__ __device__ __forceinline__
     static cudaError_t Dispatch(
         void                        *d_temp_storage,                ///< [in] %Device allocation of temporary storage.  When NULL, the required allocation size is returned in \p temp_storage_bytes and no work is done.
@@ -468,7 +468,7 @@ struct DevicePartition
         OutputIterator            d_out,                          ///< [in] Iterator pointing to scan output
         ScanOp                      scan_op,                        ///< [in] Binary scan operator
         Identity                    identity,                       ///< [in] Identity element
-        SizeT                       num_items,                      ///< [in] Total number of items to scan
+        Offset                       num_items,                      ///< [in] Total number of items to scan
         cudaStream_t                stream              = 0,        ///< [in] <b>[optional]</b> CUDA stream to launch kernels within.  Default is stream<sub>0</sub>.
         bool                        debug_synchronous  = false)     ///< [in] <b>[optional]</b> Whether or not to synchronize the stream after every kernel launch to check for errors.  Also causes launch configurations to be printed to the console.  Default is \p false.
     {
@@ -476,7 +476,7 @@ struct DevicePartition
         typedef typename std::iterator_traits<InputIterator>::value_type T;
 
         // Tuning polices
-        typedef PtxDefaultPolicies<T, SizeT>                    PtxDefaultPolicies;     // Wrapper of default kernel policies
+        typedef PtxDefaultPolicies<T, Offset>                    PtxDefaultPolicies;     // Wrapper of default kernel policies
         typedef typename PtxDefaultPolicies::ScanPolicy   ScanPolicy;       // Scan kernel policy
 
         cudaError error = cudaSuccess;
@@ -500,8 +500,8 @@ struct DevicePartition
                 ptx_version,
                 d_temp_storage,
                 temp_storage_bytes,
-                ScanInitKernel<T, SizeT>,
-                ScanKernel<ScanPolicy, InputIterator, OutputIterator, T, ScanOp, Identity, SizeT>,
+                ScanInitKernel<T, Offset>,
+                ScanKernel<ScanPolicy, InputIterator, OutputIterator, T, ScanOp, Identity, Offset>,
                 scan_dispatch_params,
                 d_in,
                 d_out,

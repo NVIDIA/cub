@@ -28,7 +28,7 @@
 
 /**
  * \file
- * The cub::BlockScan class provides [<em>collective</em>](index.html#sec0) methods for computing a parallel prefix sum/scan of items partitioned across a CUDA thread block.
+ * The cub::BlockSegmentedReduce class provides [<em>collective</em>](index.html#sec0) methods for computing a parallel segmented reduction of items partitioned across a CUDA thread block.
  */
 
 #pragma once
@@ -48,7 +48,7 @@ namespace cub {
 
 
 /******************************************************************************
- * Scan utility types
+ * Utility types
  ******************************************************************************/
 
 #ifndef DOXYGEN_SHOULD_SKIP_THIS    // Do not document
@@ -107,97 +107,31 @@ struct ReduceByKeyOp
 
 
 
-/******************************************************************************
- * Algorithmic variants
- ******************************************************************************/
-
-/**
- * \brief BlockScanAlgorithm enumerates alternative algorithms for cub::BlockScan to compute a parallel prefix scan across a CUDA thread block.
- */
-enum BlockScanAlgorithm
-{
-
-    /**
-     * \par Overview
-     * An efficient "raking reduce-then-scan" prefix scan algorithm.  Execution is comprised of five phases:
-     * -# Upsweep sequential reduction in registers (if threads contribute more than one input each).  Each thread then places the partial reduction of its item(s) into shared memory.
-     * -# Upsweep sequential reduction in shared memory.  Threads within a single warp rake across segments of shared partial reductions.
-     * -# A warp-synchronous Kogge-Stone style exclusive scan within the raking warp.
-     * -# Downsweep sequential exclusive scan in shared memory.  Threads within a single warp rake across segments of shared partial reductions, seeded with the warp-scan output.
-     * -# Downsweep sequential scan in registers (if threads contribute more than one input), seeded with the raking scan output.
-     *
-     * \par
-     * \image html block_scan_raking.png
-     * <div class="centercaption">\p BLOCK_SCAN_RAKING data flow for a hypothetical 16-thread threadblock and 4-thread raking warp.</div>
-     *
-     * \par Performance Considerations
-     * - Although this variant may suffer longer turnaround latencies when the
-     *   GPU is under-occupied, it can often provide higher overall throughput
-     *   across the GPU when suitably occupied.
-     */
-    BLOCK_SCAN_RAKING,
-
-
-    /**
-     * \par Overview
-     * Similar to cub::BLOCK_SCAN_RAKING, but with fewer shared memory reads at
-     * the expense of higher register pressure.  Raking threads preserve their
-     * "upsweep" segment of values in registers while performing warp-synchronous
-     * scan, allowing the "downsweep" not to re-read them from shared memory.
-     */
-    BLOCK_SCAN_RAKING_MEMOIZE,
-
-
-    /**
-     * \par Overview
-     * A quick "tiled warpscans" prefix scan algorithm.  Execution is comprised of four phases:
-     * -# Upsweep sequential reduction in registers (if threads contribute more than one input each).  Each thread then places the partial reduction of its item(s) into shared memory.
-     * -# Compute a shallow, but inefficient warp-synchronous Kogge-Stone style scan within each warp.
-     * -# A propagation phase where the warp scan outputs in each warp are updated with the aggregate from each preceding warp.
-     * -# Downsweep sequential scan in registers (if threads contribute more than one input), seeded with the raking scan output.
-     *
-     * \par
-     * \image html block_scan_warpscans.png
-     * <div class="centercaption">\p BLOCK_SCAN_WARP_SCANS data flow for a hypothetical 16-thread threadblock and 4-thread raking warp.</div>
-     *
-     * \par Performance Considerations
-     * - Although this variant may suffer lower overall throughput across the
-     *   GPU because due to a heavy reliance on inefficient warpscans, it can
-     *   often provide lower turnaround latencies when the GPU is under-occupied.
-     */
-    BLOCK_SCAN_WARP_SCANS,
-};
-
 
 /******************************************************************************
  * Block scan
  ******************************************************************************/
 
 /**
- * \brief The BlockScan class provides [<em>collective</em>](index.html#sec0) methods for computing a parallel prefix sum/scan of items partitioned across a CUDA thread block. ![](block_scan_logo.png)
+ * \brief The BlockSegmentedReduce class provides [<em>collective</em>](index.html#sec0) methods for computing a parallel segmented reduction of items partitioned across a CUDA thread block. ![](block_scan_logo.png)
  * \ingroup BlockModule
  *
  * \par Overview
- * Given a list of input elements and a binary reduction operator, a [<em>prefix scan</em>](http://en.wikipedia.org/wiki/Prefix_sum)
- * produces an output list where each element is computed to be the reduction
- * of the elements occurring earlier in the input list.  <em>Prefix sum</em>
- * connotes a prefix scan with the addition operator. The term \em inclusive indicates
- * that the <em>i</em><sup>th</sup> output reduction incorporates the <em>i</em><sup>th</sup> input.
- * The term \em exclusive indicates the <em>i</em><sup>th</sup> input is not incorporated into
- * the <em>i</em><sup>th</sup> output reduction.
+ * Given a list of input elements comprised of contiguous segments and a binary
+ * reduction operator, a segmented reduction computes a reduction aggregate
+ * for each segment.
  *
  * \par
- * Optionally, BlockScan can be specialized by algorithm to accommodate different workload profiles:
- *   -# <b>cub::BLOCK_SCAN_RAKING</b>.  An efficient (high throughput) "raking reduce-then-scan" prefix scan algorithm. [More...](\ref cub::BlockScanAlgorithm)
- *   -# <b>cub::BLOCK_SCAN_RAKING_MEMOIZE</b>.  Similar to cub::BLOCK_SCAN_RAKING, but having higher throughput at the expense of additional register pressure for intermediate storage. [More...](\ref cub::BlockScanAlgorithm)
- *   -# <b>cub::BLOCK_SCAN_WARP_SCANS</b>.  A quick (low latency) "tiled warpscans" prefix scan algorithm. [More...](\ref cub::BlockScanAlgorithm)
+ * BlockSegmentedReduce supports the following alternatives for defining segments:
+ *   -# <b>Reduce-value-by-key</b>.  A corresponding list of keys is specified such
+ *      that segments are comprised of consecutive values whose corresponding keys are equal
  *
  * \tparam T                Data type being scanned
  * \tparam BLOCK_THREADS    The thread block size in threads
- * \tparam ALGORITHM        <b>[optional]</b> cub::BlockScanAlgorithm enumerator specifying the underlying algorithm to use (default: cub::BLOCK_SCAN_RAKING)
+ * \tparam SCAN_ALGORITHM   <b>[optional]</b> cub::BlockSegmentedReduceAlgorithm enumerator specifying the underlying algorithm to use (default: cub::BLOCK_SCAN_RAKING)
  *
  * \par A Simple Example
- * \blockcollective{BlockScan}
+ * \blockcollective{BlockSegmentedReduce}
  * \par
  * The code snippet below illustrates an exclusive prefix sum of 512 integer items that
  * are partitioned in a [<em>blocked arrangement</em>](index.html#sec5sec4) across 128 threads
@@ -208,18 +142,18 @@ enum BlockScanAlgorithm
  *
  * __global__ void ExampleKernel(...)
  * {
- *     // Specialize BlockScan for 128 threads on type int
- *     typedef cub::BlockScan<int, 128> BlockScan;
+ *     // Specialize BlockSegmentedReduce for 128 threads on type int
+ *     typedef cub::BlockSegmentedReduce<int, 128> BlockSegmentedReduce;
  *
- *     // Allocate shared memory for BlockScan
- *     __shared__ typename BlockScan::TempStorage temp_storage;
+ *     // Allocate shared memory for BlockSegmentedReduce
+ *     __shared__ typename BlockSegmentedReduce::TempStorage temp_storage;
  *
  *     // Obtain a segment of consecutive items that are blocked across threads
  *     int thread_data[4];
  *     ...
  *
  *     // Collectively compute the block-wide exclusive prefix sum
- *     BlockScan(temp_storage).ExclusiveSum(thread_data, thread_data);
+ *     BlockSegmentedReduce(temp_storage).ExclusiveSum(thread_data, thread_data);
  *
  * \endcode
  * \par
@@ -238,14 +172,14 @@ enum BlockScanAlgorithm
  *   - Prefix sum variants (<b><em>vs.</em></b> generic scan)
  *   - Exclusive variants (<b><em>vs.</em></b> inclusive)
  *   - \p BLOCK_THREADS is a multiple of the architecture's warp size
- * - See cub::BlockScanAlgorithm for performance details regarding algorithmic alternatives
+ * - See cub::BlockSegmentedReduceAlgorithm for performance details regarding algorithmic alternatives
  *
  */
 template <
     typename            T,
     int                 BLOCK_THREADS,
-    BlockScanAlgorithm  ALGORITHM = BLOCK_SCAN_RAKING>
-class BlockScan
+    BlockSegmentedReduceAlgorithm  ALGORITHM = BLOCK_SCAN_RAKING>
+class BlockSegmentedReduce
 {
 private:
 
@@ -259,19 +193,19 @@ private:
      * cannot be used with threadblock sizes not a multiple of the
      * architectural warp size.
      */
-    static const BlockScanAlgorithm SAFE_ALGORITHM =
+    static const BlockSegmentedReduceAlgorithm SAFE_ALGORITHM =
         ((ALGORITHM == BLOCK_SCAN_WARP_SCANS) && (BLOCK_THREADS % CUB_PTX_WARP_THREADS != 0)) ?
             BLOCK_SCAN_RAKING :
             ALGORITHM;
 
     /// Internal specialization.
     typedef typename If<(SAFE_ALGORITHM == BLOCK_SCAN_WARP_SCANS),
-        BlockScanWarpScans<T, BLOCK_THREADS>,
-        BlockScanRaking<T, BLOCK_THREADS, (SAFE_ALGORITHM == BLOCK_SCAN_RAKING_MEMOIZE)> >::Type InternalBlockScan;
+        BlockSegmentedReduceWarpScans<T, BLOCK_THREADS>,
+        BlockSegmentedReduceRaking<T, BLOCK_THREADS, (SAFE_ALGORITHM == BLOCK_SCAN_RAKING_MEMOIZE)> >::Type InternalBlockSegmentedReduce;
 
 
-    /// Shared memory storage layout type for BlockScan
-    typedef typename InternalBlockScan::TempStorage _TempStorage;
+    /// Shared memory storage layout type for BlockSegmentedReduce
+    typedef typename InternalBlockSegmentedReduce::TempStorage _TempStorage;
 
 
     /******************************************************************************
@@ -299,7 +233,7 @@ private:
 
 public:
 
-    /// \smemstorage{BlockScan}
+    /// \smemstorage{BlockSegmentedReduce}
     struct TempStorage : Uninitialized<_TempStorage> {};
 
 
@@ -311,7 +245,7 @@ public:
     /**
      * \brief Collective constructor for 1D thread blocks using a private static allocation of shared memory as temporary storage.  Threads are identified using <tt>threadIdx.x</tt>.
      */
-    __device__ __forceinline__ BlockScan()
+    __device__ __forceinline__ BlockSegmentedReduce()
     :
         temp_storage(PrivateStorage()),
         linear_tid(threadIdx.x)
@@ -321,7 +255,7 @@ public:
     /**
      * \brief Collective constructor for 1D thread blocks using the specified memory allocation as temporary storage.  Threads are identified using <tt>threadIdx.x</tt>.
      */
-    __device__ __forceinline__ BlockScan(
+    __device__ __forceinline__ BlockSegmentedReduce(
         TempStorage &temp_storage)             ///< [in] Reference to memory allocation having layout type TempStorage
     :
         temp_storage(temp_storage.Alias()),
@@ -332,7 +266,7 @@ public:
     /**
      * \brief Collective constructor using a private static allocation of shared memory as temporary storage.  Each thread is identified using the supplied linear thread identifier
      */
-    __device__ __forceinline__ BlockScan(
+    __device__ __forceinline__ BlockSegmentedReduce(
         int linear_tid)                        ///< [in] A suitable 1D thread-identifier for the calling thread (e.g., <tt>(threadIdx.y * blockDim.x) + linear_tid</tt> for 2D thread blocks)
     :
         temp_storage(PrivateStorage()),
@@ -343,7 +277,7 @@ public:
     /**
      * \brief Collective constructor using the specified memory allocation as temporary storage.  Each thread is identified using the supplied linear thread identifier.
      */
-    __device__ __forceinline__ BlockScan(
+    __device__ __forceinline__ BlockSegmentedReduce(
         TempStorage &temp_storage,             ///< [in] Reference to memory allocation having layout type TempStorage
         int linear_tid)                        ///< [in] <b>[optional]</b> A suitable 1D thread-identifier for the calling thread (e.g., <tt>(threadIdx.y * blockDim.x) + linear_tid</tt> for 2D thread blocks)
     :
@@ -375,18 +309,18 @@ public:
      *
      * __global__ void ExampleKernel(...)
      * {
-     *     // Specialize BlockScan for 128 threads on type int
-     *     typedef cub::BlockScan<int, 128> BlockScan;
+     *     // Specialize BlockSegmentedReduce for 128 threads on type int
+     *     typedef cub::BlockSegmentedReduce<int, 128> BlockSegmentedReduce;
      *
-     *     // Allocate shared memory for BlockScan
-     *     __shared__ typename BlockScan::TempStorage temp_storage;
+     *     // Allocate shared memory for BlockSegmentedReduce
+     *     __shared__ typename BlockSegmentedReduce::TempStorage temp_storage;
      *
      *     // Obtain input item for each thread
      *     int thread_data;
      *     ...
      *
      *     // Collectively compute the block-wide exclusive prefix sum
-     *     BlockScan(temp_storage).ExclusiveSum(thread_data, thread_data);
+     *     BlockSegmentedReduce(temp_storage).ExclusiveSum(thread_data, thread_data);
      *
      * \endcode
      * \par
@@ -399,7 +333,7 @@ public:
         T               &output)                        ///< [out] Calling thread's output item (may be aliased to \p input)
     {
         T block_aggregate;
-        InternalBlockScan(temp_storage, linear_tid).ExclusiveSum(input, output, block_aggregate);
+        InternalBlockSegmentedReduce(temp_storage, linear_tid).ExclusiveSum(input, output, block_aggregate);
     }
 
 
@@ -418,11 +352,11 @@ public:
      *
      * __global__ void ExampleKernel(...)
      * {
-     *     // Specialize BlockScan for 128 threads on type int
-     *     typedef cub::BlockScan<int, 128> BlockScan;
+     *     // Specialize BlockSegmentedReduce for 128 threads on type int
+     *     typedef cub::BlockSegmentedReduce<int, 128> BlockSegmentedReduce;
      *
-     *     // Allocate shared memory for BlockScan
-     *     __shared__ typename BlockScan::TempStorage temp_storage;
+     *     // Allocate shared memory for BlockSegmentedReduce
+     *     __shared__ typename BlockSegmentedReduce::TempStorage temp_storage;
      *
      *     // Obtain input item for each thread
      *     int thread_data;
@@ -430,7 +364,7 @@ public:
      *
      *     // Collectively compute the block-wide exclusive prefix sum
      *     int block_aggregate;
-     *     BlockScan(temp_storage).ExclusiveSum(thread_data, thread_data, block_aggregate);
+     *     BlockSegmentedReduce(temp_storage).ExclusiveSum(thread_data, thread_data, block_aggregate);
      *
      * \endcode
      * \par
@@ -444,7 +378,7 @@ public:
         T               &output,                        ///< [out] Calling thread's output item (may be aliased to \p input)
         T               &block_aggregate)               ///< [out] block-wide aggregate reduction of input items
     {
-        InternalBlockScan(temp_storage, linear_tid).ExclusiveSum(input, output, block_aggregate);
+        InternalBlockSegmentedReduce(temp_storage, linear_tid).ExclusiveSum(input, output, block_aggregate);
     }
 
 
@@ -490,11 +424,11 @@ public:
      *
      * __global__ void ExampleKernel(int *d_data, int num_items, ...)
      * {
-     *     // Specialize BlockScan for 128 threads
-     *     typedef cub::BlockScan<int, 128> BlockScan;
+     *     // Specialize BlockSegmentedReduce for 128 threads
+     *     typedef cub::BlockSegmentedReduce<int, 128> BlockSegmentedReduce;
      *
-     *     // Allocate shared memory for BlockScan
-     *     __shared__ typename BlockScan::TempStorage temp_storage;
+     *     // Allocate shared memory for BlockSegmentedReduce
+     *     __shared__ typename BlockSegmentedReduce::TempStorage temp_storage;
      *
      *     // Initialize running total
      *     BlockPrefixCallbackOp prefix_op(0);
@@ -507,7 +441,7 @@ public:
      *
      *         // Collectively compute the block-wide exclusive prefix sum
      *         int block_aggregate;
-     *         BlockScan(temp_storage).ExclusiveSum(
+     *         BlockSegmentedReduce(temp_storage).ExclusiveSum(
      *             thread_data, thread_data, block_aggregate, prefix_op);
      *         __syncthreads();
      *
@@ -530,7 +464,7 @@ public:
         T                       &block_aggregate,               ///< [out] block-wide aggregate reduction of input items (exclusive of the \p block_prefix_callback_op value)
         BlockPrefixCallbackOp   &block_prefix_callback_op)      ///< [in-out] <b>[<em>warp</em><sub>0</sub> only]</b> Call-back functor for specifying a block-wide prefix to be applied to all inputs.
     {
-        InternalBlockScan(temp_storage, linear_tid).ExclusiveSum(input, output, block_aggregate, block_prefix_callback_op);
+        InternalBlockSegmentedReduce(temp_storage, linear_tid).ExclusiveSum(input, output, block_aggregate, block_prefix_callback_op);
     }
 
 
@@ -557,18 +491,18 @@ public:
      *
      * __global__ void ExampleKernel(...)
      * {
-     *     // Specialize BlockScan for 128 threads on type int
-     *     typedef cub::BlockScan<int, 128> BlockScan;
+     *     // Specialize BlockSegmentedReduce for 128 threads on type int
+     *     typedef cub::BlockSegmentedReduce<int, 128> BlockSegmentedReduce;
      *
-     *     // Allocate shared memory for BlockScan
-     *     __shared__ typename BlockScan::TempStorage temp_storage;
+     *     // Allocate shared memory for BlockSegmentedReduce
+     *     __shared__ typename BlockSegmentedReduce::TempStorage temp_storage;
      *
      *     // Obtain a segment of consecutive items that are blocked across threads
      *     int thread_data[4];
      *     ...
      *
      *     // Collectively compute the block-wide exclusive prefix sum
-     *     BlockScan(temp_storage).ExclusiveSum(thread_data, thread_data);
+     *     BlockSegmentedReduce(temp_storage).ExclusiveSum(thread_data, thread_data);
      *
      * \endcode
      * \par
@@ -610,11 +544,11 @@ public:
      *
      * __global__ void ExampleKernel(...)
      * {
-     *     // Specialize BlockScan for 128 threads on type int
-     *     typedef cub::BlockScan<int, 128> BlockScan;
+     *     // Specialize BlockSegmentedReduce for 128 threads on type int
+     *     typedef cub::BlockSegmentedReduce<int, 128> BlockSegmentedReduce;
      *
-     *     // Allocate shared memory for BlockScan
-     *     __shared__ typename BlockScan::TempStorage temp_storage;
+     *     // Allocate shared memory for BlockSegmentedReduce
+     *     __shared__ typename BlockSegmentedReduce::TempStorage temp_storage;
      *
      *     // Obtain a segment of consecutive items that are blocked across threads
      *     int thread_data[4];
@@ -622,7 +556,7 @@ public:
      *
      *     // Collectively compute the block-wide exclusive prefix sum
      *     int block_aggregate;
-     *     BlockScan(temp_storage).ExclusiveSum(thread_data, thread_data, block_aggregate);
+     *     BlockSegmentedReduce(temp_storage).ExclusiveSum(thread_data, thread_data, block_aggregate);
      *
      * \endcode
      * \par
@@ -693,15 +627,15 @@ public:
      *
      * __global__ void ExampleKernel(int *d_data, int num_items, ...)
      * {
-     *     // Specialize BlockLoad, BlockStore, and BlockScan for 128 threads, 4 ints per thread
+     *     // Specialize BlockLoad, BlockStore, and BlockSegmentedReduce for 128 threads, 4 ints per thread
      *     typedef cub::BlockLoad<int*, 128, 4, BLOCK_LOAD_TRANSPOSE>   BlockLoad;
      *     typedef cub::BlockStore<int*, 128, 4, BLOCK_STORE_TRANSPOSE> BlockStore;
-     *     typedef cub::BlockScan<int, 128>                             BlockScan;
+     *     typedef cub::BlockSegmentedReduce<int, 128>                             BlockSegmentedReduce;
      *
-     *     // Allocate aliased shared memory for BlockLoad, BlockStore, and BlockScan
+     *     // Allocate aliased shared memory for BlockLoad, BlockStore, and BlockSegmentedReduce
      *     __shared__ union {
      *         typename BlockLoad::TempStorage     load;
-     *         typename BlockScan::TempStorage     scan;
+     *         typename BlockSegmentedReduce::TempStorage     scan;
      *         typename BlockStore::TempStorage    store;
      *     } temp_storage;
      *
@@ -718,7 +652,7 @@ public:
      *
      *         // Collectively compute the block-wide exclusive prefix sum
      *         int block_aggregate;
-     *         BlockScan(temp_storage.scan).ExclusiveSum(
+     *         BlockSegmentedReduce(temp_storage.scan).ExclusiveSum(
      *             thread_data, thread_data, block_aggregate, prefix_op);
      *         __syncthreads();
      *
@@ -782,18 +716,18 @@ public:
      *
      * __global__ void ExampleKernel(...)
      * {
-     *     // Specialize BlockScan for 128 threads on type int
-     *     typedef cub::BlockScan<int, 128> BlockScan;
+     *     // Specialize BlockSegmentedReduce for 128 threads on type int
+     *     typedef cub::BlockSegmentedReduce<int, 128> BlockSegmentedReduce;
      *
-     *     // Allocate shared memory for BlockScan
-     *     __shared__ typename BlockScan::TempStorage temp_storage;
+     *     // Allocate shared memory for BlockSegmentedReduce
+     *     __shared__ typename BlockSegmentedReduce::TempStorage temp_storage;
      *
      *     // Obtain input item for each thread
      *     int thread_data;
      *     ...
      *
      *     // Collectively compute the block-wide exclusive prefix max scan
-     *     BlockScan(temp_storage).ExclusiveScan(thread_data, thread_data, INT_MIN, cub::Max());
+     *     BlockSegmentedReduce(temp_storage).ExclusiveScan(thread_data, thread_data, INT_MIN, cub::Max());
      *
      * \endcode
      * \par
@@ -810,7 +744,7 @@ public:
         ScanOp          scan_op)                        ///< [in] Binary scan operator
     {
         T block_aggregate;
-        InternalBlockScan(temp_storage, linear_tid).ExclusiveScan(input, output, identity, scan_op, block_aggregate);
+        InternalBlockSegmentedReduce(temp_storage, linear_tid).ExclusiveScan(input, output, identity, scan_op, block_aggregate);
     }
 
 
@@ -831,11 +765,11 @@ public:
      *
      * __global__ void ExampleKernel(...)
      * {
-     *     // Specialize BlockScan for 128 threads on type int
-     *     typedef cub::BlockScan<int, 128> BlockScan;
+     *     // Specialize BlockSegmentedReduce for 128 threads on type int
+     *     typedef cub::BlockSegmentedReduce<int, 128> BlockSegmentedReduce;
      *
-     *     // Allocate shared memory for BlockScan
-     *     __shared__ typename BlockScan::TempStorage temp_storage;
+     *     // Allocate shared memory for BlockSegmentedReduce
+     *     __shared__ typename BlockSegmentedReduce::TempStorage temp_storage;
      *
      *     // Obtain input item for each thread
      *     int thread_data;
@@ -843,7 +777,7 @@ public:
      *
      *     // Collectively compute the block-wide exclusive prefix max scan
      *     int block_aggregate;
-     *     BlockScan(temp_storage).ExclusiveScan(thread_data, thread_data, INT_MIN, cub::Max(), block_aggregate);
+     *     BlockSegmentedReduce(temp_storage).ExclusiveScan(thread_data, thread_data, INT_MIN, cub::Max(), block_aggregate);
      *
      * \endcode
      * \par
@@ -861,7 +795,7 @@ public:
         ScanOp          scan_op,            ///< [in] Binary scan operator
         T               &block_aggregate)   ///< [out] block-wide aggregate reduction of input items
     {
-        InternalBlockScan(temp_storage, linear_tid).ExclusiveScan(input, output, identity, scan_op, block_aggregate);
+        InternalBlockSegmentedReduce(temp_storage, linear_tid).ExclusiveScan(input, output, identity, scan_op, block_aggregate);
     }
 
 
@@ -909,11 +843,11 @@ public:
      *
      * __global__ void ExampleKernel(int *d_data, int num_items, ...)
      * {
-     *     // Specialize BlockScan for 128 threads
-     *     typedef cub::BlockScan<int, 128> BlockScan;
+     *     // Specialize BlockSegmentedReduce for 128 threads
+     *     typedef cub::BlockSegmentedReduce<int, 128> BlockSegmentedReduce;
      *
-     *     // Allocate shared memory for BlockScan
-     *     __shared__ typename BlockScan::TempStorage temp_storage;
+     *     // Allocate shared memory for BlockSegmentedReduce
+     *     __shared__ typename BlockSegmentedReduce::TempStorage temp_storage;
      *
      *     // Initialize running total
      *     BlockPrefixCallbackOp prefix_op(INT_MIN);
@@ -926,7 +860,7 @@ public:
      *
      *         // Collectively compute the block-wide exclusive prefix max scan
      *         int block_aggregate;
-     *         BlockScan(temp_storage).ExclusiveScan(
+     *         BlockSegmentedReduce(temp_storage).ExclusiveScan(
      *             thread_data, thread_data, INT_MIN, cub::Max(), block_aggregate, prefix_op);
      *         __syncthreads();
      *
@@ -955,7 +889,7 @@ public:
         T                       &block_aggregate,               ///< [out] block-wide aggregate reduction of input items (exclusive of the \p block_prefix_callback_op value)
         BlockPrefixCallbackOp   &block_prefix_callback_op)      ///< [in-out] <b>[<em>warp</em><sub>0</sub> only]</b> Call-back functor for specifying a block-wide prefix to be applied to all inputs.
     {
-        InternalBlockScan(temp_storage, linear_tid).ExclusiveScan(input, output, identity, scan_op, block_aggregate, block_prefix_callback_op);
+        InternalBlockSegmentedReduce(temp_storage, linear_tid).ExclusiveScan(input, output, identity, scan_op, block_aggregate, block_prefix_callback_op);
     }
 
 
@@ -984,18 +918,18 @@ public:
      *
      * __global__ void ExampleKernel(...)
      * {
-     *     // Specialize BlockScan for 128 threads on type int
-     *     typedef cub::BlockScan<int, 128> BlockScan;
+     *     // Specialize BlockSegmentedReduce for 128 threads on type int
+     *     typedef cub::BlockSegmentedReduce<int, 128> BlockSegmentedReduce;
      *
-     *     // Allocate shared memory for BlockScan
-     *     __shared__ typename BlockScan::TempStorage temp_storage;
+     *     // Allocate shared memory for BlockSegmentedReduce
+     *     __shared__ typename BlockSegmentedReduce::TempStorage temp_storage;
      *
      *     // Obtain a segment of consecutive items that are blocked across threads
      *     int thread_data[4];
      *     ...
      *
      *     // Collectively compute the block-wide exclusive prefix max scan
-     *     BlockScan(temp_storage).ExclusiveScan(thread_data, thread_data, INT_MIN, cub::Max());
+     *     BlockSegmentedReduce(temp_storage).ExclusiveScan(thread_data, thread_data, INT_MIN, cub::Max());
      *
      * \endcode
      * \par
@@ -1045,11 +979,11 @@ public:
      *
      * __global__ void ExampleKernel(...)
      * {
-     *     // Specialize BlockScan for 128 threads on type int
-     *     typedef cub::BlockScan<int, 128> BlockScan;
+     *     // Specialize BlockSegmentedReduce for 128 threads on type int
+     *     typedef cub::BlockSegmentedReduce<int, 128> BlockSegmentedReduce;
      *
-     *     // Allocate shared memory for BlockScan
-     *     __shared__ typename BlockScan::TempStorage temp_storage;
+     *     // Allocate shared memory for BlockSegmentedReduce
+     *     __shared__ typename BlockSegmentedReduce::TempStorage temp_storage;
      *
      *     // Obtain a segment of consecutive items that are blocked across threads
      *     int thread_data[4];
@@ -1057,7 +991,7 @@ public:
      *
      *     // Collectively compute the block-wide exclusive prefix max scan
      *     int block_aggregate;
-     *     BlockScan(temp_storage).ExclusiveScan(thread_data, thread_data, INT_MIN, cub::Max(), block_aggregate);
+     *     BlockSegmentedReduce(temp_storage).ExclusiveScan(thread_data, thread_data, INT_MIN, cub::Max(), block_aggregate);
      *
      * \endcode
      * \par
@@ -1133,15 +1067,15 @@ public:
      *
      * __global__ void ExampleKernel(int *d_data, int num_items, ...)
      * {
-     *     // Specialize BlockLoad, BlockStore, and BlockScan for 128 threads, 4 ints per thread
+     *     // Specialize BlockLoad, BlockStore, and BlockSegmentedReduce for 128 threads, 4 ints per thread
      *     typedef cub::BlockLoad<int*, 128, 4, BLOCK_LOAD_TRANSPOSE>   BlockLoad;
      *     typedef cub::BlockStore<int*, 128, 4, BLOCK_STORE_TRANSPOSE> BlockStore;
-     *     typedef cub::BlockScan<int, 128>                             BlockScan;
+     *     typedef cub::BlockSegmentedReduce<int, 128>                             BlockSegmentedReduce;
      *
-     *     // Allocate aliased shared memory for BlockLoad, BlockStore, and BlockScan
+     *     // Allocate aliased shared memory for BlockLoad, BlockStore, and BlockSegmentedReduce
      *     __shared__ union {
      *         typename BlockLoad::TempStorage     load;
-     *         typename BlockScan::TempStorage     scan;
+     *         typename BlockSegmentedReduce::TempStorage     scan;
      *         typename BlockStore::TempStorage    store;
      *     } temp_storage;
      *
@@ -1158,7 +1092,7 @@ public:
      *
      *         // Collectively compute the block-wide exclusive prefix max scan
      *         int block_aggregate;
-     *         BlockScan(temp_storage.scan).ExclusiveScan(
+     *         BlockSegmentedReduce(temp_storage.scan).ExclusiveScan(
      *             thread_data, thread_data, INT_MIN, cub::Max(), block_aggregate, prefix_op);
      *         __syncthreads();
      *
@@ -1229,7 +1163,7 @@ public:
         ScanOp          scan_op)                        ///< [in] Binary scan operator
     {
         T block_aggregate;
-        InternalBlockScan(temp_storage, linear_tid).ExclusiveScan(input, output, scan_op, block_aggregate);
+        InternalBlockSegmentedReduce(temp_storage, linear_tid).ExclusiveScan(input, output, scan_op, block_aggregate);
     }
 
 
@@ -1251,7 +1185,7 @@ public:
         ScanOp          scan_op,                        ///< [in] Binary scan operator
         T               &block_aggregate)               ///< [out] block-wide aggregate reduction of input items
     {
-        InternalBlockScan(temp_storage, linear_tid).ExclusiveScan(input, output, scan_op, block_aggregate);
+        InternalBlockSegmentedReduce(temp_storage, linear_tid).ExclusiveScan(input, output, scan_op, block_aggregate);
     }
 
 
@@ -1282,7 +1216,7 @@ public:
         T                       &block_aggregate,               ///< [out] block-wide aggregate reduction of input items (exclusive of the \p block_prefix_callback_op value)
         BlockPrefixCallbackOp   &block_prefix_callback_op)      ///< [in-out] <b>[<em>warp</em><sub>0</sub> only]</b> Call-back functor for specifying a block-wide prefix to be applied to all inputs.
     {
-        InternalBlockScan(temp_storage, linear_tid).ExclusiveScan(input, output, scan_op, block_aggregate, block_prefix_callback_op);
+        InternalBlockSegmentedReduce(temp_storage, linear_tid).ExclusiveScan(input, output, scan_op, block_aggregate, block_prefix_callback_op);
     }
 
 
@@ -1421,18 +1355,18 @@ public:
      *
      * __global__ void ExampleKernel(...)
      * {
-     *     // Specialize BlockScan for 128 threads on type int
-     *     typedef cub::BlockScan<int, 128> BlockScan;
+     *     // Specialize BlockSegmentedReduce for 128 threads on type int
+     *     typedef cub::BlockSegmentedReduce<int, 128> BlockSegmentedReduce;
      *
-     *     // Allocate shared memory for BlockScan
-     *     __shared__ typename BlockScan::TempStorage temp_storage;
+     *     // Allocate shared memory for BlockSegmentedReduce
+     *     __shared__ typename BlockSegmentedReduce::TempStorage temp_storage;
      *
      *     // Obtain input item for each thread
      *     int thread_data;
      *     ...
      *
      *     // Collectively compute the block-wide inclusive prefix sum
-     *     BlockScan(temp_storage).InclusiveSum(thread_data, thread_data);
+     *     BlockSegmentedReduce(temp_storage).InclusiveSum(thread_data, thread_data);
      *
      * \endcode
      * \par
@@ -1445,7 +1379,7 @@ public:
         T               &output)                        ///< [out] Calling thread's output item (may be aliased to \p input)
     {
         T block_aggregate;
-        InternalBlockScan(temp_storage, linear_tid).InclusiveSum(input, output, block_aggregate);
+        InternalBlockSegmentedReduce(temp_storage, linear_tid).InclusiveSum(input, output, block_aggregate);
     }
 
 
@@ -1464,11 +1398,11 @@ public:
      *
      * __global__ void ExampleKernel(...)
      * {
-     *     // Specialize BlockScan for 128 threads on type int
-     *     typedef cub::BlockScan<int, 128> BlockScan;
+     *     // Specialize BlockSegmentedReduce for 128 threads on type int
+     *     typedef cub::BlockSegmentedReduce<int, 128> BlockSegmentedReduce;
      *
-     *     // Allocate shared memory for BlockScan
-     *     __shared__ typename BlockScan::TempStorage temp_storage;
+     *     // Allocate shared memory for BlockSegmentedReduce
+     *     __shared__ typename BlockSegmentedReduce::TempStorage temp_storage;
      *
      *     // Obtain input item for each thread
      *     int thread_data;
@@ -1476,7 +1410,7 @@ public:
      *
      *     // Collectively compute the block-wide inclusive prefix sum
      *     int block_aggregate;
-     *     BlockScan(temp_storage).InclusiveSum(thread_data, thread_data, block_aggregate);
+     *     BlockSegmentedReduce(temp_storage).InclusiveSum(thread_data, thread_data, block_aggregate);
      *
      * \endcode
      * \par
@@ -1490,7 +1424,7 @@ public:
         T               &output,                        ///< [out] Calling thread's output item (may be aliased to \p input)
         T               &block_aggregate)               ///< [out] block-wide aggregate reduction of input items
     {
-        InternalBlockScan(temp_storage, linear_tid).InclusiveSum(input, output, block_aggregate);
+        InternalBlockSegmentedReduce(temp_storage, linear_tid).InclusiveSum(input, output, block_aggregate);
     }
 
 
@@ -1537,11 +1471,11 @@ public:
      *
      * __global__ void ExampleKernel(int *d_data, int num_items, ...)
      * {
-     *     // Specialize BlockScan for 128 threads
-     *     typedef cub::BlockScan<int, 128> BlockScan;
+     *     // Specialize BlockSegmentedReduce for 128 threads
+     *     typedef cub::BlockSegmentedReduce<int, 128> BlockSegmentedReduce;
      *
-     *     // Allocate shared memory for BlockScan
-     *     __shared__ typename BlockScan::TempStorage temp_storage;
+     *     // Allocate shared memory for BlockSegmentedReduce
+     *     __shared__ typename BlockSegmentedReduce::TempStorage temp_storage;
      *
      *     // Initialize running total
      *     BlockPrefixCallbackOp prefix_op(0);
@@ -1554,7 +1488,7 @@ public:
      *
      *         // Collectively compute the block-wide inclusive prefix sum
      *         int block_aggregate;
-     *         BlockScan(temp_storage).InclusiveSum(
+     *         BlockSegmentedReduce(temp_storage).InclusiveSum(
      *             thread_data, thread_data, block_aggregate, prefix_op);
      *         __syncthreads();
      *
@@ -1577,7 +1511,7 @@ public:
         T                       &block_aggregate,               ///< [out] block-wide aggregate reduction of input items (exclusive of the \p block_prefix_callback_op value)
         BlockPrefixCallbackOp   &block_prefix_callback_op)      ///< [in-out] <b>[<em>warp</em><sub>0</sub> only]</b> Call-back functor for specifying a block-wide prefix to be applied to all inputs.
     {
-        InternalBlockScan(temp_storage, linear_tid).InclusiveSum(input, output, block_aggregate, block_prefix_callback_op);
+        InternalBlockSegmentedReduce(temp_storage, linear_tid).InclusiveSum(input, output, block_aggregate, block_prefix_callback_op);
     }
 
 
@@ -1604,18 +1538,18 @@ public:
      *
      * __global__ void ExampleKernel(...)
      * {
-     *     // Specialize BlockScan for 128 threads on type int
-     *     typedef cub::BlockScan<int, 128> BlockScan;
+     *     // Specialize BlockSegmentedReduce for 128 threads on type int
+     *     typedef cub::BlockSegmentedReduce<int, 128> BlockSegmentedReduce;
      *
-     *     // Allocate shared memory for BlockScan
-     *     __shared__ typename BlockScan::TempStorage temp_storage;
+     *     // Allocate shared memory for BlockSegmentedReduce
+     *     __shared__ typename BlockSegmentedReduce::TempStorage temp_storage;
      *
      *     // Obtain a segment of consecutive items that are blocked across threads
      *     int thread_data[4];
      *     ...
      *
      *     // Collectively compute the block-wide inclusive prefix sum
-     *     BlockScan(temp_storage).InclusiveSum(thread_data, thread_data);
+     *     BlockSegmentedReduce(temp_storage).InclusiveSum(thread_data, thread_data);
      *
      * \endcode
      * \par
@@ -1664,11 +1598,11 @@ public:
      *
      * __global__ void ExampleKernel(...)
      * {
-     *     // Specialize BlockScan for 128 threads on type int
-     *     typedef cub::BlockScan<int, 128> BlockScan;
+     *     // Specialize BlockSegmentedReduce for 128 threads on type int
+     *     typedef cub::BlockSegmentedReduce<int, 128> BlockSegmentedReduce;
      *
-     *     // Allocate shared memory for BlockScan
-     *     __shared__ typename BlockScan::TempStorage temp_storage;
+     *     // Allocate shared memory for BlockSegmentedReduce
+     *     __shared__ typename BlockSegmentedReduce::TempStorage temp_storage;
      *
      *     // Obtain a segment of consecutive items that are blocked across threads
      *     int thread_data[4];
@@ -1676,7 +1610,7 @@ public:
      *
      *     // Collectively compute the block-wide inclusive prefix sum
      *     int block_aggregate;
-     *     BlockScan(temp_storage).InclusiveSum(thread_data, thread_data, block_aggregate);
+     *     BlockSegmentedReduce(temp_storage).InclusiveSum(thread_data, thread_data, block_aggregate);
      *
      * \endcode
      * \par
@@ -1757,15 +1691,15 @@ public:
      *
      * __global__ void ExampleKernel(int *d_data, int num_items, ...)
      * {
-     *     // Specialize BlockLoad, BlockStore, and BlockScan for 128 threads, 4 ints per thread
+     *     // Specialize BlockLoad, BlockStore, and BlockSegmentedReduce for 128 threads, 4 ints per thread
      *     typedef cub::BlockLoad<int*, 128, 4, BLOCK_LOAD_TRANSPOSE>   BlockLoad;
      *     typedef cub::BlockStore<int*, 128, 4, BLOCK_STORE_TRANSPOSE> BlockStore;
-     *     typedef cub::BlockScan<int, 128>                             BlockScan;
+     *     typedef cub::BlockSegmentedReduce<int, 128>                             BlockSegmentedReduce;
      *
-     *     // Allocate aliased shared memory for BlockLoad, BlockStore, and BlockScan
+     *     // Allocate aliased shared memory for BlockLoad, BlockStore, and BlockSegmentedReduce
      *     __shared__ union {
      *         typename BlockLoad::TempStorage     load;
-     *         typename BlockScan::TempStorage     scan;
+     *         typename BlockSegmentedReduce::TempStorage     scan;
      *         typename BlockStore::TempStorage    store;
      *     } temp_storage;
      *
@@ -1782,7 +1716,7 @@ public:
      *
      *         // Collectively compute the block-wide inclusive prefix sum
      *         int block_aggregate;
-     *         BlockScan(temp_storage.scan).IncluisveSum(
+     *         BlockSegmentedReduce(temp_storage.scan).IncluisveSum(
      *             thread_data, thread_data, block_aggregate, prefix_op);
      *         __syncthreads();
      *
@@ -1852,18 +1786,18 @@ public:
      *
      * __global__ void ExampleKernel(...)
      * {
-     *     // Specialize BlockScan for 128 threads on type int
-     *     typedef cub::BlockScan<int, 128> BlockScan;
+     *     // Specialize BlockSegmentedReduce for 128 threads on type int
+     *     typedef cub::BlockSegmentedReduce<int, 128> BlockSegmentedReduce;
      *
-     *     // Allocate shared memory for BlockScan
-     *     __shared__ typename BlockScan::TempStorage temp_storage;
+     *     // Allocate shared memory for BlockSegmentedReduce
+     *     __shared__ typename BlockSegmentedReduce::TempStorage temp_storage;
      *
      *     // Obtain input item for each thread
      *     int thread_data;
      *     ...
      *
      *     // Collectively compute the block-wide inclusive prefix max scan
-     *     BlockScan(temp_storage).InclusiveScan(thread_data, thread_data, cub::Max());
+     *     BlockSegmentedReduce(temp_storage).InclusiveScan(thread_data, thread_data, cub::Max());
      *
      * \endcode
      * \par
@@ -1900,11 +1834,11 @@ public:
      *
      * __global__ void ExampleKernel(...)
      * {
-     *     // Specialize BlockScan for 128 threads on type int
-     *     typedef cub::BlockScan<int, 128> BlockScan;
+     *     // Specialize BlockSegmentedReduce for 128 threads on type int
+     *     typedef cub::BlockSegmentedReduce<int, 128> BlockSegmentedReduce;
      *
-     *     // Allocate shared memory for BlockScan
-     *     __shared__ typename BlockScan::TempStorage temp_storage;
+     *     // Allocate shared memory for BlockSegmentedReduce
+     *     __shared__ typename BlockSegmentedReduce::TempStorage temp_storage;
      *
      *     // Obtain input item for each thread
      *     int thread_data;
@@ -1912,7 +1846,7 @@ public:
      *
      *     // Collectively compute the block-wide inclusive prefix max scan
      *     int block_aggregate;
-     *     BlockScan(temp_storage).InclusiveScan(thread_data, thread_data, cub::Max(), block_aggregate);
+     *     BlockSegmentedReduce(temp_storage).InclusiveScan(thread_data, thread_data, cub::Max(), block_aggregate);
      *
      * \endcode
      * \par
@@ -1929,7 +1863,7 @@ public:
         ScanOp          scan_op,                        ///< [in] Binary scan operator
         T               &block_aggregate)               ///< [out] block-wide aggregate reduction of input items
     {
-        InternalBlockScan(temp_storage, linear_tid).InclusiveScan(input, output, scan_op, block_aggregate);
+        InternalBlockSegmentedReduce(temp_storage, linear_tid).InclusiveScan(input, output, scan_op, block_aggregate);
     }
 
 
@@ -1977,11 +1911,11 @@ public:
      *
      * __global__ void ExampleKernel(int *d_data, int num_items, ...)
      * {
-     *     // Specialize BlockScan for 128 threads
-     *     typedef cub::BlockScan<int, 128> BlockScan;
+     *     // Specialize BlockSegmentedReduce for 128 threads
+     *     typedef cub::BlockSegmentedReduce<int, 128> BlockSegmentedReduce;
      *
-     *     // Allocate shared memory for BlockScan
-     *     __shared__ typename BlockScan::TempStorage temp_storage;
+     *     // Allocate shared memory for BlockSegmentedReduce
+     *     __shared__ typename BlockSegmentedReduce::TempStorage temp_storage;
      *
      *     // Initialize running total
      *     BlockPrefixCallbackOp prefix_op(INT_MIN);
@@ -1994,7 +1928,7 @@ public:
      *
      *         // Collectively compute the block-wide inclusive prefix max scan
      *         int block_aggregate;
-     *         BlockScan(temp_storage).InclusiveScan(
+     *         BlockSegmentedReduce(temp_storage).InclusiveScan(
      *             thread_data, thread_data, cub::Max(), block_aggregate, prefix_op);
      *         __syncthreads();
      *
@@ -2022,7 +1956,7 @@ public:
         T                       &block_aggregate,               ///< [out] block-wide aggregate reduction of input items (exclusive of the \p block_prefix_callback_op value)
         BlockPrefixCallbackOp   &block_prefix_callback_op)      ///< [in-out] <b>[<em>warp</em><sub>0</sub> only]</b> Call-back functor for specifying a block-wide prefix to be applied to all inputs.
     {
-        InternalBlockScan(temp_storage, linear_tid).InclusiveScan(input, output, scan_op, block_aggregate, block_prefix_callback_op);
+        InternalBlockSegmentedReduce(temp_storage, linear_tid).InclusiveScan(input, output, scan_op, block_aggregate, block_prefix_callback_op);
     }
 
 
@@ -2051,18 +1985,18 @@ public:
      *
      * __global__ void ExampleKernel(...)
      * {
-     *     // Specialize BlockScan for 128 threads on type int
-     *     typedef cub::BlockScan<int, 128> BlockScan;
+     *     // Specialize BlockSegmentedReduce for 128 threads on type int
+     *     typedef cub::BlockSegmentedReduce<int, 128> BlockSegmentedReduce;
      *
-     *     // Allocate shared memory for BlockScan
-     *     __shared__ typename BlockScan::TempStorage temp_storage;
+     *     // Allocate shared memory for BlockSegmentedReduce
+     *     __shared__ typename BlockSegmentedReduce::TempStorage temp_storage;
      *
      *     // Obtain a segment of consecutive items that are blocked across threads
      *     int thread_data[4];
      *     ...
      *
      *     // Collectively compute the block-wide inclusive prefix max scan
-     *     BlockScan(temp_storage).InclusiveScan(thread_data, thread_data, cub::Max());
+     *     BlockSegmentedReduce(temp_storage).InclusiveScan(thread_data, thread_data, cub::Max());
      *
      * \endcode
      * \par
@@ -2116,11 +2050,11 @@ public:
      *
      * __global__ void ExampleKernel(...)
      * {
-     *     // Specialize BlockScan for 128 threads on type int
-     *     typedef cub::BlockScan<int, 128> BlockScan;
+     *     // Specialize BlockSegmentedReduce for 128 threads on type int
+     *     typedef cub::BlockSegmentedReduce<int, 128> BlockSegmentedReduce;
      *
-     *     // Allocate shared memory for BlockScan
-     *     __shared__ typename BlockScan::TempStorage temp_storage;
+     *     // Allocate shared memory for BlockSegmentedReduce
+     *     __shared__ typename BlockSegmentedReduce::TempStorage temp_storage;
      *
      *     // Obtain a segment of consecutive items that are blocked across threads
      *     int thread_data[4];
@@ -2128,7 +2062,7 @@ public:
      *
      *     // Collectively compute the block-wide inclusive prefix max scan
      *     int block_aggregate;
-     *     BlockScan(temp_storage).InclusiveScan(thread_data, thread_data, cub::Max(), block_aggregate);
+     *     BlockSegmentedReduce(temp_storage).InclusiveScan(thread_data, thread_data, cub::Max(), block_aggregate);
      *
      * \endcode
      * \par
@@ -2212,15 +2146,15 @@ public:
      *
      * __global__ void ExampleKernel(int *d_data, int num_items, ...)
      * {
-     *     // Specialize BlockLoad, BlockStore, and BlockScan for 128 threads, 4 ints per thread
+     *     // Specialize BlockLoad, BlockStore, and BlockSegmentedReduce for 128 threads, 4 ints per thread
      *     typedef cub::BlockLoad<int*, 128, 4, BLOCK_LOAD_TRANSPOSE>   BlockLoad;
      *     typedef cub::BlockStore<int*, 128, 4, BLOCK_STORE_TRANSPOSE> BlockStore;
-     *     typedef cub::BlockScan<int, 128>                             BlockScan;
+     *     typedef cub::BlockSegmentedReduce<int, 128>                             BlockSegmentedReduce;
      *
-     *     // Allocate aliased shared memory for BlockLoad, BlockStore, and BlockScan
+     *     // Allocate aliased shared memory for BlockLoad, BlockStore, and BlockSegmentedReduce
      *     __shared__ union {
      *         typename BlockLoad::TempStorage     load;
-     *         typename BlockScan::TempStorage     scan;
+     *         typename BlockSegmentedReduce::TempStorage     scan;
      *         typename BlockStore::TempStorage    store;
      *     } temp_storage;
      *
@@ -2237,7 +2171,7 @@ public:
      *
      *         // Collectively compute the block-wide inclusive prefix max scan
      *         int block_aggregate;
-     *         BlockScan(temp_storage.scan).InclusiveScan(
+     *         BlockSegmentedReduce(temp_storage.scan).InclusiveScan(
      *             thread_data, thread_data, cub::Max(), block_aggregate, prefix_op);
      *         __syncthreads();
      *

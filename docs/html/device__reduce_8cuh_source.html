@@ -161,22 +161,22 @@ var searchBox = new SearchBox("searchBox", "search",false,'Search');
 <div class="line"><a name="l00069"></a><span class="lineno">   69</span>&#160;    <span class="keyword">typename</span>                BlockReduceTilesPolicy, </div>
 <div class="line"><a name="l00070"></a><span class="lineno">   70</span>&#160;    <span class="keyword">typename</span>                InputIterator,        </div>
 <div class="line"><a name="l00071"></a><span class="lineno">   71</span>&#160;    <span class="keyword">typename</span>                OutputIterator,       </div>
-<div class="line"><a name="l00072"></a><span class="lineno">   72</span>&#160;    <span class="keyword">typename</span>                SizeT,                  </div>
+<div class="line"><a name="l00072"></a><span class="lineno">   72</span>&#160;    <span class="keyword">typename</span>                Offset,                  </div>
 <div class="line"><a name="l00073"></a><span class="lineno">   73</span>&#160;    <span class="keyword">typename</span>                ReductionOp&gt;            </div>
 <div class="line"><a name="l00074"></a><span class="lineno">   74</span>&#160;__launch_bounds__ (<span class="keywordtype">int</span>(BlockReduceTilesPolicy::BLOCK_THREADS), 1)</div>
 <div class="line"><a name="l00075"></a><span class="lineno">   75</span>&#160;__global__ <span class="keywordtype">void</span> ReducePrivatizedKernel(</div>
 <div class="line"><a name="l00076"></a><span class="lineno">   76</span>&#160;    InputIterator         d_in,                   </div>
 <div class="line"><a name="l00077"></a><span class="lineno">   77</span>&#160;    OutputIterator        d_out,                  </div>
-<div class="line"><a name="l00078"></a><span class="lineno">   78</span>&#160;    SizeT                   num_items,              </div>
-<div class="line"><a name="l00079"></a><span class="lineno">   79</span>&#160;    GridEvenShare&lt;SizeT&gt;    even_share,             </div>
-<div class="line"><a name="l00080"></a><span class="lineno">   80</span>&#160;    GridQueue&lt;SizeT&gt;        queue,                  </div>
+<div class="line"><a name="l00078"></a><span class="lineno">   78</span>&#160;    Offset                   num_items,              </div>
+<div class="line"><a name="l00079"></a><span class="lineno">   79</span>&#160;    GridEvenShare&lt;Offset&gt;    even_share,             </div>
+<div class="line"><a name="l00080"></a><span class="lineno">   80</span>&#160;    GridQueue&lt;Offset&gt;        queue,                  </div>
 <div class="line"><a name="l00081"></a><span class="lineno">   81</span>&#160;    ReductionOp             reduction_op)           </div>
 <div class="line"><a name="l00082"></a><span class="lineno">   82</span>&#160;{</div>
 <div class="line"><a name="l00083"></a><span class="lineno">   83</span>&#160;    <span class="comment">// Data type</span></div>
 <div class="line"><a name="l00084"></a><span class="lineno">   84</span>&#160;    <span class="keyword">typedef</span> <span class="keyword">typename</span> std::iterator_traits&lt;InputIterator&gt;::value_type T;</div>
 <div class="line"><a name="l00085"></a><span class="lineno">   85</span>&#160;</div>
 <div class="line"><a name="l00086"></a><span class="lineno">   86</span>&#160;    <span class="comment">// Thread block type for reducing input tiles</span></div>
-<div class="line"><a name="l00087"></a><span class="lineno">   87</span>&#160;    <span class="keyword">typedef</span> BlockReduceTiles&lt;BlockReduceTilesPolicy, InputIterator, SizeT, ReductionOp&gt; BlockReduceTilesT;</div>
+<div class="line"><a name="l00087"></a><span class="lineno">   87</span>&#160;    <span class="keyword">typedef</span> BlockReduceTiles&lt;BlockReduceTilesPolicy, InputIterator, Offset, ReductionOp&gt; BlockReduceTilesT;</div>
 <div class="line"><a name="l00088"></a><span class="lineno">   88</span>&#160;</div>
 <div class="line"><a name="l00089"></a><span class="lineno">   89</span>&#160;    <span class="comment">// Block-wide aggregate</span></div>
 <div class="line"><a name="l00090"></a><span class="lineno">   90</span>&#160;    T block_aggregate;</div>
@@ -204,20 +204,20 @@ var searchBox = new SearchBox("searchBox", "search",false,'Search');
 <div class="line"><a name="l00115"></a><span class="lineno">  115</span>&#160;    <span class="keyword">typename</span>                BlockReduceTilesPolicy,  </div>
 <div class="line"><a name="l00116"></a><span class="lineno">  116</span>&#160;    <span class="keyword">typename</span>                InputIterator,        </div>
 <div class="line"><a name="l00117"></a><span class="lineno">  117</span>&#160;    <span class="keyword">typename</span>                OutputIterator,       </div>
-<div class="line"><a name="l00118"></a><span class="lineno">  118</span>&#160;    <span class="keyword">typename</span>                SizeT,                  </div>
+<div class="line"><a name="l00118"></a><span class="lineno">  118</span>&#160;    <span class="keyword">typename</span>                Offset,                  </div>
 <div class="line"><a name="l00119"></a><span class="lineno">  119</span>&#160;    <span class="keyword">typename</span>                ReductionOp&gt;            </div>
 <div class="line"><a name="l00120"></a><span class="lineno">  120</span>&#160;__launch_bounds__ (<span class="keywordtype">int</span>(BlockReduceTilesPolicy::BLOCK_THREADS), 1)</div>
 <div class="line"><a name="l00121"></a><span class="lineno">  121</span>&#160;__global__ <span class="keywordtype">void</span> ReduceSingleKernel(</div>
 <div class="line"><a name="l00122"></a><span class="lineno">  122</span>&#160;    InputIterator         d_in,                   </div>
 <div class="line"><a name="l00123"></a><span class="lineno">  123</span>&#160;    OutputIterator        d_out,                  </div>
-<div class="line"><a name="l00124"></a><span class="lineno">  124</span>&#160;    SizeT                   num_items,              </div>
+<div class="line"><a name="l00124"></a><span class="lineno">  124</span>&#160;    Offset                   num_items,              </div>
 <div class="line"><a name="l00125"></a><span class="lineno">  125</span>&#160;    ReductionOp             reduction_op)           </div>
 <div class="line"><a name="l00126"></a><span class="lineno">  126</span>&#160;{</div>
 <div class="line"><a name="l00127"></a><span class="lineno">  127</span>&#160;    <span class="comment">// Data type</span></div>
 <div class="line"><a name="l00128"></a><span class="lineno">  128</span>&#160;    <span class="keyword">typedef</span> <span class="keyword">typename</span> std::iterator_traits&lt;InputIterator&gt;::value_type T;</div>
 <div class="line"><a name="l00129"></a><span class="lineno">  129</span>&#160;</div>
 <div class="line"><a name="l00130"></a><span class="lineno">  130</span>&#160;    <span class="comment">// Thread block type for reducing input tiles</span></div>
-<div class="line"><a name="l00131"></a><span class="lineno">  131</span>&#160;    <span class="keyword">typedef</span> BlockReduceTiles&lt;BlockReduceTilesPolicy, InputIterator, SizeT, ReductionOp&gt; BlockReduceTilesT;</div>
+<div class="line"><a name="l00131"></a><span class="lineno">  131</span>&#160;    <span class="keyword">typedef</span> BlockReduceTiles&lt;BlockReduceTilesPolicy, InputIterator, Offset, ReductionOp&gt; BlockReduceTilesT;</div>
 <div class="line"><a name="l00132"></a><span class="lineno">  132</span>&#160;</div>
 <div class="line"><a name="l00133"></a><span class="lineno">  133</span>&#160;    <span class="comment">// Block-wide aggregate</span></div>
 <div class="line"><a name="l00134"></a><span class="lineno">  134</span>&#160;    T block_aggregate;</div>
@@ -227,8 +227,8 @@ var searchBox = new SearchBox("searchBox", "search",false,'Search');
 <div class="line"><a name="l00138"></a><span class="lineno">  138</span>&#160;</div>
 <div class="line"><a name="l00139"></a><span class="lineno">  139</span>&#160;    <span class="comment">// Consume input tiles</span></div>
 <div class="line"><a name="l00140"></a><span class="lineno">  140</span>&#160;    BlockReduceTilesT(temp_storage, d_in, reduction_op).ConsumeTiles(</div>
-<div class="line"><a name="l00141"></a><span class="lineno">  141</span>&#160;        SizeT(0),</div>
-<div class="line"><a name="l00142"></a><span class="lineno">  142</span>&#160;        SizeT(num_items),</div>
+<div class="line"><a name="l00141"></a><span class="lineno">  141</span>&#160;        Offset(0),</div>
+<div class="line"><a name="l00142"></a><span class="lineno">  142</span>&#160;        Offset(num_items),</div>
 <div class="line"><a name="l00143"></a><span class="lineno">  143</span>&#160;        block_aggregate);</div>
 <div class="line"><a name="l00144"></a><span class="lineno">  144</span>&#160;</div>
 <div class="line"><a name="l00145"></a><span class="lineno">  145</span>&#160;    <span class="comment">// Output result</span></div>
@@ -260,7 +260,7 @@ var searchBox = new SearchBox("searchBox", "search",false,'Search');
 <div class="line"><a name="l00188"></a><span class="lineno">  188</span>&#160;        <span class="keywordtype">int</span>                     items_per_thread;</div>
 <div class="line"><a name="l00189"></a><span class="lineno">  189</span>&#160;        <span class="keywordtype">int</span>                     vector_load_length;</div>
 <div class="line"><a name="l00190"></a><span class="lineno">  190</span>&#160;        <a class="code" href="namespacecub.html#add0251c713859b8974806079e498d10a">BlockReduceAlgorithm</a>    block_algorithm;</div>
-<div class="line"><a name="l00191"></a><span class="lineno">  191</span>&#160;        <a class="code" href="group___io_module.html#ga023420f30fec7d4b187fc98f4fd2a55d" title="Enumeration of PTX cache-modifiers for memory load operations. ">PtxLoadModifier</a>         load_modifier;</div>
+<div class="line"><a name="l00191"></a><span class="lineno">  191</span>&#160;        <a class="code" href="group___io_module.html#ga023420f30fec7d4b187fc98f4fd2a55d" title="Enumeration of PTX cache-modifiers for memory load operations. ">CacheLoadModifier</a>         load_modifier;</div>
 <div class="line"><a name="l00192"></a><span class="lineno">  192</span>&#160;        GridMappingStrategy     grid_mapping;</div>
 <div class="line"><a name="l00193"></a><span class="lineno">  193</span>&#160;        <span class="keywordtype">int</span>                     subscription_factor;</div>
 <div class="line"><a name="l00194"></a><span class="lineno">  194</span>&#160;        <span class="keywordtype">int</span>                     tile_size;</div>
@@ -301,12 +301,12 @@ var searchBox = new SearchBox("searchBox", "search",false,'Search');
 <div class="line"><a name="l00229"></a><span class="lineno">  229</span>&#160;</div>
 <div class="line"><a name="l00231"></a><span class="lineno">  231</span>&#160;    <span class="keyword">template</span> &lt;</div>
 <div class="line"><a name="l00232"></a><span class="lineno">  232</span>&#160;        <span class="keyword">typename</span>    T,</div>
-<div class="line"><a name="l00233"></a><span class="lineno">  233</span>&#160;        <span class="keyword">typename</span>    SizeT,</div>
+<div class="line"><a name="l00233"></a><span class="lineno">  233</span>&#160;        <span class="keyword">typename</span>    Offset,</div>
 <div class="line"><a name="l00234"></a><span class="lineno">  234</span>&#160;        <span class="keywordtype">int</span>         ARCH&gt;</div>
 <div class="line"><a name="l00235"></a><span class="lineno">  235</span>&#160;    <span class="keyword">struct </span>TunedPolicies;</div>
 <div class="line"><a name="l00236"></a><span class="lineno">  236</span>&#160;</div>
-<div class="line"><a name="l00238"></a><span class="lineno">  238</span>&#160;    <span class="keyword">template</span> &lt;<span class="keyword">typename</span> T, <span class="keyword">typename</span> SizeT&gt;</div>
-<div class="line"><a name="l00239"></a><span class="lineno">  239</span>&#160;    <span class="keyword">struct </span>TunedPolicies&lt;T, SizeT, 350&gt;</div>
+<div class="line"><a name="l00238"></a><span class="lineno">  238</span>&#160;    <span class="keyword">template</span> &lt;<span class="keyword">typename</span> T, <span class="keyword">typename</span> Offset&gt;</div>
+<div class="line"><a name="l00239"></a><span class="lineno">  239</span>&#160;    <span class="keyword">struct </span>TunedPolicies&lt;T, Offset, 350&gt;</div>
 <div class="line"><a name="l00240"></a><span class="lineno">  240</span>&#160;    {</div>
 <div class="line"><a name="l00241"></a><span class="lineno">  241</span>&#160;        <span class="comment">// PrivatizedPolicy (1B): GTX Titan: 206.0 GB/s @ 192M 1B items</span></div>
 <div class="line"><a name="l00242"></a><span class="lineno">  242</span>&#160;        <span class="keyword">typedef</span> BlockReduceTilesPolicy&lt;128, 12,  1, BLOCK_REDUCE_RAKING, LOAD_LDG, GRID_MAPPING_DYNAMIC&gt;                PrivatizedPolicy1B;</div>
@@ -326,8 +326,8 @@ var searchBox = new SearchBox("searchBox", "search",false,'Search');
 <div class="line"><a name="l00256"></a><span class="lineno">  256</span>&#160;</div>
 <div class="line"><a name="l00257"></a><span class="lineno">  257</span>&#160;    };</div>
 <div class="line"><a name="l00258"></a><span class="lineno">  258</span>&#160;</div>
-<div class="line"><a name="l00260"></a><span class="lineno">  260</span>&#160;    <span class="keyword">template</span> &lt;<span class="keyword">typename</span> T, <span class="keyword">typename</span> SizeT&gt;</div>
-<div class="line"><a name="l00261"></a><span class="lineno">  261</span>&#160;    <span class="keyword">struct </span>TunedPolicies&lt;T, SizeT, 300&gt;</div>
+<div class="line"><a name="l00260"></a><span class="lineno">  260</span>&#160;    <span class="keyword">template</span> &lt;<span class="keyword">typename</span> T, <span class="keyword">typename</span> Offset&gt;</div>
+<div class="line"><a name="l00261"></a><span class="lineno">  261</span>&#160;    <span class="keyword">struct </span>TunedPolicies&lt;T, Offset, 300&gt;</div>
 <div class="line"><a name="l00262"></a><span class="lineno">  262</span>&#160;    {</div>
 <div class="line"><a name="l00263"></a><span class="lineno">  263</span>&#160;        <span class="comment">// PrivatizedPolicy: GTX670: 154.0 @ 48M 32-bit T</span></div>
 <div class="line"><a name="l00264"></a><span class="lineno">  264</span>&#160;        <span class="keyword">typedef</span> BlockReduceTilesPolicy&lt;256, 2,  1, BLOCK_REDUCE_WARP_REDUCTIONS,  LOAD_DEFAULT, GRID_MAPPING_EVEN_SHARE&gt;    PrivatizedPolicy;</div>
@@ -338,8 +338,8 @@ var searchBox = new SearchBox("searchBox", "search",false,'Search');
 <div class="line"><a name="l00269"></a><span class="lineno">  269</span>&#160;        <span class="keyword">enum</span> { SUBSCRIPTION_FACTOR = 1 };</div>
 <div class="line"><a name="l00270"></a><span class="lineno">  270</span>&#160;    };</div>
 <div class="line"><a name="l00271"></a><span class="lineno">  271</span>&#160;</div>
-<div class="line"><a name="l00273"></a><span class="lineno">  273</span>&#160;    <span class="keyword">template</span> &lt;<span class="keyword">typename</span> T, <span class="keyword">typename</span> SizeT&gt;</div>
-<div class="line"><a name="l00274"></a><span class="lineno">  274</span>&#160;    <span class="keyword">struct </span>TunedPolicies&lt;T, SizeT, 200&gt;</div>
+<div class="line"><a name="l00273"></a><span class="lineno">  273</span>&#160;    <span class="keyword">template</span> &lt;<span class="keyword">typename</span> T, <span class="keyword">typename</span> Offset&gt;</div>
+<div class="line"><a name="l00274"></a><span class="lineno">  274</span>&#160;    <span class="keyword">struct </span>TunedPolicies&lt;T, Offset, 200&gt;</div>
 <div class="line"><a name="l00275"></a><span class="lineno">  275</span>&#160;    {</div>
 <div class="line"><a name="l00276"></a><span class="lineno">  276</span>&#160;        <span class="comment">// PrivatizedPolicy (1B): GTX 580: 158.1 GB/s @ 192M 1B items</span></div>
 <div class="line"><a name="l00277"></a><span class="lineno">  277</span>&#160;        <span class="keyword">typedef</span> BlockReduceTilesPolicy&lt;192, 24,  4, BLOCK_REDUCE_RAKING, LOAD_DEFAULT, GRID_MAPPING_EVEN_SHARE&gt;            PrivatizedPolicy1B;</div>
@@ -358,8 +358,8 @@ var searchBox = new SearchBox("searchBox", "search",false,'Search');
 <div class="line"><a name="l00290"></a><span class="lineno">  290</span>&#160;        <span class="keyword">enum</span> { SUBSCRIPTION_FACTOR = 2 };</div>
 <div class="line"><a name="l00291"></a><span class="lineno">  291</span>&#160;    };</div>
 <div class="line"><a name="l00292"></a><span class="lineno">  292</span>&#160;</div>
-<div class="line"><a name="l00294"></a><span class="lineno">  294</span>&#160;    <span class="keyword">template</span> &lt;<span class="keyword">typename</span> T, <span class="keyword">typename</span> SizeT&gt;</div>
-<div class="line"><a name="l00295"></a><span class="lineno">  295</span>&#160;    <span class="keyword">struct </span>TunedPolicies&lt;T, SizeT, 130&gt;</div>
+<div class="line"><a name="l00294"></a><span class="lineno">  294</span>&#160;    <span class="keyword">template</span> &lt;<span class="keyword">typename</span> T, <span class="keyword">typename</span> Offset&gt;</div>
+<div class="line"><a name="l00295"></a><span class="lineno">  295</span>&#160;    <span class="keyword">struct </span>TunedPolicies&lt;T, Offset, 130&gt;</div>
 <div class="line"><a name="l00296"></a><span class="lineno">  296</span>&#160;    {</div>
 <div class="line"><a name="l00297"></a><span class="lineno">  297</span>&#160;        <span class="comment">// PrivatizedPolicy</span></div>
 <div class="line"><a name="l00298"></a><span class="lineno">  298</span>&#160;        <span class="keyword">typedef</span> BlockReduceTilesPolicy&lt;128, 8,  2,  BLOCK_REDUCE_RAKING, LOAD_DEFAULT, GRID_MAPPING_EVEN_SHARE&gt;            PrivatizedPolicy;</div>
@@ -370,8 +370,8 @@ var searchBox = new SearchBox("searchBox", "search",false,'Search');
 <div class="line"><a name="l00303"></a><span class="lineno">  303</span>&#160;        <span class="keyword">enum</span> { SUBSCRIPTION_FACTOR = 1 };</div>
 <div class="line"><a name="l00304"></a><span class="lineno">  304</span>&#160;    };</div>
 <div class="line"><a name="l00305"></a><span class="lineno">  305</span>&#160;</div>
-<div class="line"><a name="l00307"></a><span class="lineno">  307</span>&#160;    <span class="keyword">template</span> &lt;<span class="keyword">typename</span> T, <span class="keyword">typename</span> SizeT&gt;</div>
-<div class="line"><a name="l00308"></a><span class="lineno">  308</span>&#160;    <span class="keyword">struct </span>TunedPolicies&lt;T, SizeT, 100&gt;</div>
+<div class="line"><a name="l00307"></a><span class="lineno">  307</span>&#160;    <span class="keyword">template</span> &lt;<span class="keyword">typename</span> T, <span class="keyword">typename</span> Offset&gt;</div>
+<div class="line"><a name="l00308"></a><span class="lineno">  308</span>&#160;    <span class="keyword">struct </span>TunedPolicies&lt;T, Offset, 100&gt;</div>
 <div class="line"><a name="l00309"></a><span class="lineno">  309</span>&#160;    {</div>
 <div class="line"><a name="l00310"></a><span class="lineno">  310</span>&#160;        <span class="comment">// PrivatizedPolicy</span></div>
 <div class="line"><a name="l00311"></a><span class="lineno">  311</span>&#160;        <span class="keyword">typedef</span> BlockReduceTilesPolicy&lt;128, 8,  2,  BLOCK_REDUCE_RAKING, LOAD_DEFAULT, GRID_MAPPING_EVEN_SHARE&gt;            PrivatizedPolicy;</div>
@@ -388,7 +388,7 @@ var searchBox = new SearchBox("searchBox", "search",false,'Search');
 <div class="line"><a name="l00322"></a><span class="lineno">  322</span>&#160;<span class="comment">     * Default policy initializer</span></div>
 <div class="line"><a name="l00323"></a><span class="lineno">  323</span>&#160;<span class="comment">     ******************************************************************************/</span></div>
 <div class="line"><a name="l00324"></a><span class="lineno">  324</span>&#160;</div>
-<div class="line"><a name="l00326"></a><span class="lineno">  326</span>&#160;    <span class="keyword">template</span> &lt;<span class="keyword">typename</span> T, <span class="keyword">typename</span> SizeT&gt;</div>
+<div class="line"><a name="l00326"></a><span class="lineno">  326</span>&#160;    <span class="keyword">template</span> &lt;<span class="keyword">typename</span> T, <span class="keyword">typename</span> Offset&gt;</div>
 <div class="line"><a name="l00327"></a><span class="lineno">  327</span>&#160;    <span class="keyword">struct </span>PtxDefaultPolicies</div>
 <div class="line"><a name="l00328"></a><span class="lineno">  328</span>&#160;    {</div>
 <div class="line"><a name="l00329"></a><span class="lineno">  329</span>&#160;        <span class="keyword">static</span> <span class="keyword">const</span> <span class="keywordtype">int</span> PTX_TUNE_ARCH =   (<a class="code" href="group___util_module.html#ga76769ce380739b38e0bd00f57e0dbe4f" title="CUB_PTX_VERSION reflects the PTX version targeted by the active compiler pass (or zero during the host p...">CUB_PTX_VERSION</a> &gt;= 350) ?</div>
@@ -402,7 +402,7 @@ var searchBox = new SearchBox("searchBox", "search",false,'Search');
 <div class="line"><a name="l00337"></a><span class="lineno">  337</span>&#160;                                                            100;</div>
 <div class="line"><a name="l00338"></a><span class="lineno">  338</span>&#160;</div>
 <div class="line"><a name="l00339"></a><span class="lineno">  339</span>&#160;        <span class="comment">// Tuned policy set for the current PTX compiler pass</span></div>
-<div class="line"><a name="l00340"></a><span class="lineno">  340</span>&#160;        <span class="keyword">typedef</span> TunedPolicies&lt;T, SizeT, PTX_TUNE_ARCH&gt; PtxTunedPolicies;</div>
+<div class="line"><a name="l00340"></a><span class="lineno">  340</span>&#160;        <span class="keyword">typedef</span> TunedPolicies&lt;T, Offset, PTX_TUNE_ARCH&gt; PtxTunedPolicies;</div>
 <div class="line"><a name="l00341"></a><span class="lineno">  341</span>&#160;</div>
 <div class="line"><a name="l00342"></a><span class="lineno">  342</span>&#160;        <span class="comment">// Subscription factor for the current PTX compiler pass</span></div>
 <div class="line"><a name="l00343"></a><span class="lineno">  343</span>&#160;        <span class="keyword">static</span> <span class="keyword">const</span> <span class="keywordtype">int</span> SUBSCRIPTION_FACTOR = PtxTunedPolicies::SUBSCRIPTION_FACTOR;</div>
@@ -421,31 +421,31 @@ var searchBox = new SearchBox("searchBox", "search",false,'Search');
 <div class="line"><a name="l00359"></a><span class="lineno">  359</span>&#160;        {</div>
 <div class="line"><a name="l00360"></a><span class="lineno">  360</span>&#160;            <span class="keywordflow">if</span> (ptx_version &gt;= 350)</div>
 <div class="line"><a name="l00361"></a><span class="lineno">  361</span>&#160;            {</div>
-<div class="line"><a name="l00362"></a><span class="lineno">  362</span>&#160;                <span class="keyword">typedef</span> TunedPolicies&lt;T, SizeT, 350&gt; TunedPolicies;</div>
+<div class="line"><a name="l00362"></a><span class="lineno">  362</span>&#160;                <span class="keyword">typedef</span> TunedPolicies&lt;T, Offset, 350&gt; TunedPolicies;</div>
 <div class="line"><a name="l00363"></a><span class="lineno">  363</span>&#160;                privatized_dispatch_params.Init&lt;<span class="keyword">typename</span> TunedPolicies::PrivatizedPolicy&gt;(TunedPolicies::SUBSCRIPTION_FACTOR);</div>
 <div class="line"><a name="l00364"></a><span class="lineno">  364</span>&#160;                single_dispatch_params.Init&lt;<span class="keyword">typename</span> TunedPolicies::SinglePolicy &gt;();</div>
 <div class="line"><a name="l00365"></a><span class="lineno">  365</span>&#160;            }</div>
 <div class="line"><a name="l00366"></a><span class="lineno">  366</span>&#160;            <span class="keywordflow">else</span> <span class="keywordflow">if</span> (ptx_version &gt;= 300)</div>
 <div class="line"><a name="l00367"></a><span class="lineno">  367</span>&#160;            {</div>
-<div class="line"><a name="l00368"></a><span class="lineno">  368</span>&#160;                <span class="keyword">typedef</span> TunedPolicies&lt;T, SizeT, 300&gt; TunedPolicies;</div>
+<div class="line"><a name="l00368"></a><span class="lineno">  368</span>&#160;                <span class="keyword">typedef</span> TunedPolicies&lt;T, Offset, 300&gt; TunedPolicies;</div>
 <div class="line"><a name="l00369"></a><span class="lineno">  369</span>&#160;                privatized_dispatch_params.Init&lt;<span class="keyword">typename</span> TunedPolicies::PrivatizedPolicy&gt;(TunedPolicies::SUBSCRIPTION_FACTOR);</div>
 <div class="line"><a name="l00370"></a><span class="lineno">  370</span>&#160;                single_dispatch_params.Init&lt;<span class="keyword">typename</span> TunedPolicies::SinglePolicy &gt;();</div>
 <div class="line"><a name="l00371"></a><span class="lineno">  371</span>&#160;            }</div>
 <div class="line"><a name="l00372"></a><span class="lineno">  372</span>&#160;            <span class="keywordflow">else</span> <span class="keywordflow">if</span> (ptx_version &gt;= 200)</div>
 <div class="line"><a name="l00373"></a><span class="lineno">  373</span>&#160;            {</div>
-<div class="line"><a name="l00374"></a><span class="lineno">  374</span>&#160;                <span class="keyword">typedef</span> TunedPolicies&lt;T, SizeT, 200&gt; TunedPolicies;</div>
+<div class="line"><a name="l00374"></a><span class="lineno">  374</span>&#160;                <span class="keyword">typedef</span> TunedPolicies&lt;T, Offset, 200&gt; TunedPolicies;</div>
 <div class="line"><a name="l00375"></a><span class="lineno">  375</span>&#160;                privatized_dispatch_params.Init&lt;<span class="keyword">typename</span> TunedPolicies::PrivatizedPolicy&gt;(TunedPolicies::SUBSCRIPTION_FACTOR);</div>
 <div class="line"><a name="l00376"></a><span class="lineno">  376</span>&#160;                single_dispatch_params.Init&lt;<span class="keyword">typename</span> TunedPolicies::SinglePolicy &gt;();</div>
 <div class="line"><a name="l00377"></a><span class="lineno">  377</span>&#160;            }</div>
 <div class="line"><a name="l00378"></a><span class="lineno">  378</span>&#160;            <span class="keywordflow">else</span> <span class="keywordflow">if</span> (ptx_version &gt;= 130)</div>
 <div class="line"><a name="l00379"></a><span class="lineno">  379</span>&#160;            {</div>
-<div class="line"><a name="l00380"></a><span class="lineno">  380</span>&#160;                <span class="keyword">typedef</span> TunedPolicies&lt;T, SizeT, 130&gt; TunedPolicies;</div>
+<div class="line"><a name="l00380"></a><span class="lineno">  380</span>&#160;                <span class="keyword">typedef</span> TunedPolicies&lt;T, Offset, 130&gt; TunedPolicies;</div>
 <div class="line"><a name="l00381"></a><span class="lineno">  381</span>&#160;                privatized_dispatch_params.Init&lt;<span class="keyword">typename</span> TunedPolicies::PrivatizedPolicy&gt;(TunedPolicies::SUBSCRIPTION_FACTOR);</div>
 <div class="line"><a name="l00382"></a><span class="lineno">  382</span>&#160;                single_dispatch_params.Init&lt;<span class="keyword">typename</span> TunedPolicies::SinglePolicy &gt;();</div>
 <div class="line"><a name="l00383"></a><span class="lineno">  383</span>&#160;            }</div>
 <div class="line"><a name="l00384"></a><span class="lineno">  384</span>&#160;            <span class="keywordflow">else</span></div>
 <div class="line"><a name="l00385"></a><span class="lineno">  385</span>&#160;            {</div>
-<div class="line"><a name="l00386"></a><span class="lineno">  386</span>&#160;                <span class="keyword">typedef</span> TunedPolicies&lt;T, SizeT, 100&gt; TunedPolicies;</div>
+<div class="line"><a name="l00386"></a><span class="lineno">  386</span>&#160;                <span class="keyword">typedef</span> TunedPolicies&lt;T, Offset, 100&gt; TunedPolicies;</div>
 <div class="line"><a name="l00387"></a><span class="lineno">  387</span>&#160;                privatized_dispatch_params.Init&lt;<span class="keyword">typename</span> TunedPolicies::PrivatizedPolicy&gt;(TunedPolicies::SUBSCRIPTION_FACTOR);</div>
 <div class="line"><a name="l00388"></a><span class="lineno">  388</span>&#160;                single_dispatch_params.Init&lt;<span class="keyword">typename</span> TunedPolicies::SinglePolicy &gt;();</div>
 <div class="line"><a name="l00389"></a><span class="lineno">  389</span>&#160;            }</div>
@@ -464,7 +464,7 @@ var searchBox = new SearchBox("searchBox", "search",false,'Search');
 <div class="line"><a name="l00405"></a><span class="lineno">  405</span>&#160;        <span class="keyword">typename</span>                    ResetDrainKernelPtr,                </div>
 <div class="line"><a name="l00406"></a><span class="lineno">  406</span>&#160;        <span class="keyword">typename</span>                    InputIterator,                    </div>
 <div class="line"><a name="l00407"></a><span class="lineno">  407</span>&#160;        <span class="keyword">typename</span>                    OutputIterator,                   </div>
-<div class="line"><a name="l00408"></a><span class="lineno">  408</span>&#160;        <span class="keyword">typename</span>                    SizeT,                              </div>
+<div class="line"><a name="l00408"></a><span class="lineno">  408</span>&#160;        <span class="keyword">typename</span>                    Offset,                              </div>
 <div class="line"><a name="l00409"></a><span class="lineno">  409</span>&#160;        <span class="keyword">typename</span>                    ReductionOp&gt;                        </div>
 <div class="line"><a name="l00410"></a><span class="lineno">  410</span>&#160;    __host__ __device__ __forceinline__</div>
 <div class="line"><a name="l00411"></a><span class="lineno">  411</span>&#160;    <span class="keyword">static</span> cudaError_t Dispatch(</div>
@@ -477,7 +477,7 @@ var searchBox = new SearchBox("searchBox", "search",false,'Search');
 <div class="line"><a name="l00418"></a><span class="lineno">  418</span>&#160;        KernelDispachParams         &amp;single_dispatch_params,            </div>
 <div class="line"><a name="l00419"></a><span class="lineno">  419</span>&#160;        InputIterator             d_in,                               </div>
 <div class="line"><a name="l00420"></a><span class="lineno">  420</span>&#160;        OutputIterator            d_out,                              </div>
-<div class="line"><a name="l00421"></a><span class="lineno">  421</span>&#160;        SizeT                       num_items,                          </div>
+<div class="line"><a name="l00421"></a><span class="lineno">  421</span>&#160;        Offset                       num_items,                          </div>
 <div class="line"><a name="l00422"></a><span class="lineno">  422</span>&#160;        ReductionOp                 reduction_op,                       </div>
 <div class="line"><a name="l00423"></a><span class="lineno">  423</span>&#160;        cudaStream_t                stream              = 0,            </div>
 <div class="line"><a name="l00424"></a><span class="lineno">  424</span>&#160;        <span class="keywordtype">bool</span>                        debug_synchronous  = <span class="keyword">false</span>)        </div>
@@ -555,7 +555,7 @@ var searchBox = new SearchBox("searchBox", "search",false,'Search');
 <div class="line"><a name="l00496"></a><span class="lineno">  496</span>&#160;                <span class="keywordtype">int</span> privatized_occupancy = privatized_sm_occupancy * sm_count;</div>
 <div class="line"><a name="l00497"></a><span class="lineno">  497</span>&#160;</div>
 <div class="line"><a name="l00498"></a><span class="lineno">  498</span>&#160;                <span class="comment">// Even-share work distribution</span></div>
-<div class="line"><a name="l00499"></a><span class="lineno">  499</span>&#160;                GridEvenShare&lt;SizeT&gt; even_share;</div>
+<div class="line"><a name="l00499"></a><span class="lineno">  499</span>&#160;                GridEvenShare&lt;Offset&gt; even_share;</div>
 <div class="line"><a name="l00500"></a><span class="lineno">  500</span>&#160;</div>
 <div class="line"><a name="l00501"></a><span class="lineno">  501</span>&#160;                <span class="comment">// Get grid size for privatized_kernel</span></div>
 <div class="line"><a name="l00502"></a><span class="lineno">  502</span>&#160;                <span class="keywordtype">int</span> privatized_grid_size;</div>
@@ -600,7 +600,7 @@ var searchBox = new SearchBox("searchBox", "search",false,'Search');
 <div class="line"><a name="l00541"></a><span class="lineno">  541</span>&#160;                T *d_block_reductions = (T*) allocations[0];</div>
 <div class="line"><a name="l00542"></a><span class="lineno">  542</span>&#160;</div>
 <div class="line"><a name="l00543"></a><span class="lineno">  543</span>&#160;                <span class="comment">// Grid queue descriptor</span></div>
-<div class="line"><a name="l00544"></a><span class="lineno">  544</span>&#160;                GridQueue&lt;SizeT&gt; queue(allocations[1]);</div>
+<div class="line"><a name="l00544"></a><span class="lineno">  544</span>&#160;                GridQueue&lt;Offset&gt; queue(allocations[1]);</div>
 <div class="line"><a name="l00545"></a><span class="lineno">  545</span>&#160;</div>
 <div class="line"><a name="l00546"></a><span class="lineno">  546</span>&#160;                <span class="comment">// Prepare the dynamic queue descriptor if necessary</span></div>
 <div class="line"><a name="l00547"></a><span class="lineno">  547</span>&#160;                <span class="keywordflow">if</span> (privatized_dispatch_params.grid_mapping == GRID_MAPPING_DYNAMIC)</div>
@@ -677,13 +677,13 @@ var searchBox = new SearchBox("searchBox", "search",false,'Search');
 <div class="line"><a name="l00659"></a><span class="lineno">  659</span>&#160;        <span class="keywordtype">bool</span>                        debug_synchronous  = <span class="keyword">false</span>)        </div>
 <div class="line"><a name="l00660"></a><span class="lineno">  660</span>&#160;    {</div>
 <div class="line"><a name="l00661"></a><span class="lineno">  661</span>&#160;        <span class="comment">// Type used for array indexing</span></div>
-<div class="line"><a name="l00662"></a><span class="lineno">  662</span>&#160;        <span class="keyword">typedef</span> <span class="keywordtype">int</span> SizeT;</div>
+<div class="line"><a name="l00662"></a><span class="lineno">  662</span>&#160;        <span class="keyword">typedef</span> <span class="keywordtype">int</span> Offset;</div>
 <div class="line"><a name="l00663"></a><span class="lineno">  663</span>&#160;</div>
 <div class="line"><a name="l00664"></a><span class="lineno">  664</span>&#160;        <span class="comment">// Data type of input iterator</span></div>
 <div class="line"><a name="l00665"></a><span class="lineno">  665</span>&#160;        <span class="keyword">typedef</span> <span class="keyword">typename</span> std::iterator_traits&lt;InputIterator&gt;::value_type T;</div>
 <div class="line"><a name="l00666"></a><span class="lineno">  666</span>&#160;</div>
 <div class="line"><a name="l00667"></a><span class="lineno">  667</span>&#160;        <span class="comment">// Tuning polices</span></div>
-<div class="line"><a name="l00668"></a><span class="lineno">  668</span>&#160;        <span class="keyword">typedef</span> PtxDefaultPolicies&lt;T, SizeT&gt;                    PtxDefaultPolicies;     <span class="comment">// Wrapper of default kernel policies</span></div>
+<div class="line"><a name="l00668"></a><span class="lineno">  668</span>&#160;        <span class="keyword">typedef</span> PtxDefaultPolicies&lt;T, Offset&gt;                    PtxDefaultPolicies;     <span class="comment">// Wrapper of default kernel policies</span></div>
 <div class="line"><a name="l00669"></a><span class="lineno">  669</span>&#160;        <span class="keyword">typedef</span> <span class="keyword">typename</span> PtxDefaultPolicies::PrivatizedPolicy   PrivatizedPolicy;       <span class="comment">// Multi-block kernel policy</span></div>
 <div class="line"><a name="l00670"></a><span class="lineno">  670</span>&#160;        <span class="keyword">typedef</span> <span class="keyword">typename</span> PtxDefaultPolicies::SinglePolicy       SinglePolicy;           <span class="comment">// Single-block kernel policy</span></div>
 <div class="line"><a name="l00671"></a><span class="lineno">  671</span>&#160;</div>
@@ -709,9 +709,9 @@ var searchBox = new SearchBox("searchBox", "search",false,'Search');
 <div class="line"><a name="l00691"></a><span class="lineno">  691</span>&#160;            <span class="keywordflow">if</span> (<a class="code" href="group___util_module.html#ga84c3a4c178bf6593e0fad2b763606236" title="Debug macro. ">CubDebug</a>(error = Dispatch(</div>
 <div class="line"><a name="l00692"></a><span class="lineno">  692</span>&#160;                d_temp_storage,</div>
 <div class="line"><a name="l00693"></a><span class="lineno">  693</span>&#160;                temp_storage_bytes,</div>
-<div class="line"><a name="l00694"></a><span class="lineno">  694</span>&#160;                ReducePrivatizedKernel&lt;PrivatizedPolicy, InputIterator, T*, SizeT, ReductionOp&gt;,</div>
-<div class="line"><a name="l00695"></a><span class="lineno">  695</span>&#160;                ReduceSingleKernel&lt;SinglePolicy, T*, OutputIterator, SizeT, ReductionOp&gt;,</div>
-<div class="line"><a name="l00696"></a><span class="lineno">  696</span>&#160;                ResetDrainKernel&lt;SizeT&gt;,</div>
+<div class="line"><a name="l00694"></a><span class="lineno">  694</span>&#160;                ReducePrivatizedKernel&lt;PrivatizedPolicy, InputIterator, T*, Offset, ReductionOp&gt;,</div>
+<div class="line"><a name="l00695"></a><span class="lineno">  695</span>&#160;                ReduceSingleKernel&lt;SinglePolicy, T*, OutputIterator, Offset, ReductionOp&gt;,</div>
+<div class="line"><a name="l00696"></a><span class="lineno">  696</span>&#160;                ResetDrainKernel&lt;Offset&gt;,</div>
 <div class="line"><a name="l00697"></a><span class="lineno">  697</span>&#160;                privatized_dispatch_params,</div>
 <div class="line"><a name="l00698"></a><span class="lineno">  698</span>&#160;                single_dispatch_params,</div>
 <div class="line"><a name="l00699"></a><span class="lineno">  699</span>&#160;                d_in,</div>

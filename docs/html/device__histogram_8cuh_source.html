@@ -156,13 +156,13 @@ var searchBox = new SearchBox("searchBox", "search",false,'Search');
 <div class="line"><a name="l00064"></a><span class="lineno">   64</span>&#160;<span class="keyword">template</span> &lt;</div>
 <div class="line"><a name="l00065"></a><span class="lineno">   65</span>&#160;    <span class="keywordtype">int</span>                                             BINS,                   </div>
 <div class="line"><a name="l00066"></a><span class="lineno">   66</span>&#160;    <span class="keywordtype">int</span>                                             ACTIVE_CHANNELS,        </div>
-<div class="line"><a name="l00067"></a><span class="lineno">   67</span>&#160;    <span class="keyword">typename</span>                                        SizeT,                  </div>
+<div class="line"><a name="l00067"></a><span class="lineno">   67</span>&#160;    <span class="keyword">typename</span>                                        Offset,                  </div>
 <div class="line"><a name="l00068"></a><span class="lineno">   68</span>&#160;    <span class="keyword">typename</span>                                        HistoCounter&gt;           </div>
 <div class="line"><a name="l00069"></a><span class="lineno">   69</span>&#160;__launch_bounds__ (BINS, 1)</div>
 <div class="line"><a name="l00070"></a><span class="lineno">   70</span>&#160;__global__ <span class="keywordtype">void</span> InitHistoKernel(</div>
-<div class="line"><a name="l00071"></a><span class="lineno">   71</span>&#160;    GridQueue&lt;SizeT&gt;                                grid_queue,             </div>
+<div class="line"><a name="l00071"></a><span class="lineno">   71</span>&#160;    GridQueue&lt;Offset&gt;                                grid_queue,             </div>
 <div class="line"><a name="l00072"></a><span class="lineno">   72</span>&#160;    ArrayWrapper&lt;HistoCounter*, ACTIVE_CHANNELS&gt;    d_out_histograms,       </div>
-<div class="line"><a name="l00073"></a><span class="lineno">   73</span>&#160;    SizeT                                           num_samples)            </div>
+<div class="line"><a name="l00073"></a><span class="lineno">   73</span>&#160;    Offset                                           num_samples)            </div>
 <div class="line"><a name="l00074"></a><span class="lineno">   74</span>&#160;{</div>
 <div class="line"><a name="l00075"></a><span class="lineno">   75</span>&#160;    d_out_histograms.array[blockIdx.x][threadIdx.x] = 0;</div>
 <div class="line"><a name="l00076"></a><span class="lineno">   76</span>&#160;    <span class="keywordflow">if</span> (threadIdx.x == 0) grid_queue.ResetDrain(num_samples);</div>
@@ -176,14 +176,14 @@ var searchBox = new SearchBox("searchBox", "search",false,'Search');
 <div class="line"><a name="l00087"></a><span class="lineno">   87</span>&#160;    <span class="keywordtype">int</span>                                             ACTIVE_CHANNELS,            </div>
 <div class="line"><a name="l00088"></a><span class="lineno">   88</span>&#160;    <span class="keyword">typename</span>                                        InputIterator,            </div>
 <div class="line"><a name="l00089"></a><span class="lineno">   89</span>&#160;    <span class="keyword">typename</span>                                        HistoCounter,               </div>
-<div class="line"><a name="l00090"></a><span class="lineno">   90</span>&#160;    <span class="keyword">typename</span>                                        SizeT&gt;                      </div>
+<div class="line"><a name="l00090"></a><span class="lineno">   90</span>&#160;    <span class="keyword">typename</span>                                        Offset&gt;                      </div>
 <div class="line"><a name="l00091"></a><span class="lineno">   91</span>&#160;__launch_bounds__ (<span class="keywordtype">int</span>(BlockHistogramTilesPolicy::BLOCK_THREADS), BlockHistogramTilesPolicy::SM_OCCUPANCY)</div>
 <div class="line"><a name="l00092"></a><span class="lineno">   92</span>&#160;__global__ <span class="keywordtype">void</span> MultiBlockHistogramKernel(</div>
 <div class="line"><a name="l00093"></a><span class="lineno">   93</span>&#160;    InputIterator                                 d_samples,                  </div>
 <div class="line"><a name="l00094"></a><span class="lineno">   94</span>&#160;    ArrayWrapper&lt;HistoCounter*, ACTIVE_CHANNELS&gt;    d_out_histograms,           </div>
-<div class="line"><a name="l00095"></a><span class="lineno">   95</span>&#160;    SizeT                                           num_samples,                </div>
-<div class="line"><a name="l00096"></a><span class="lineno">   96</span>&#160;    GridEvenShare&lt;SizeT&gt;                            even_share,                 </div>
-<div class="line"><a name="l00097"></a><span class="lineno">   97</span>&#160;    GridQueue&lt;SizeT&gt;                                queue)                      </div>
+<div class="line"><a name="l00095"></a><span class="lineno">   95</span>&#160;    Offset                                           num_samples,                </div>
+<div class="line"><a name="l00096"></a><span class="lineno">   96</span>&#160;    GridEvenShare&lt;Offset&gt;                            even_share,                 </div>
+<div class="line"><a name="l00097"></a><span class="lineno">   97</span>&#160;    GridQueue&lt;Offset&gt;                                queue)                      </div>
 <div class="line"><a name="l00098"></a><span class="lineno">   98</span>&#160;{</div>
 <div class="line"><a name="l00099"></a><span class="lineno">   99</span>&#160;    <span class="comment">// Constants</span></div>
 <div class="line"><a name="l00100"></a><span class="lineno">  100</span>&#160;    <span class="keyword">enum</span></div>
@@ -194,7 +194,7 @@ var searchBox = new SearchBox("searchBox", "search",false,'Search');
 <div class="line"><a name="l00105"></a><span class="lineno">  105</span>&#160;    };</div>
 <div class="line"><a name="l00106"></a><span class="lineno">  106</span>&#160;</div>
 <div class="line"><a name="l00107"></a><span class="lineno">  107</span>&#160;    <span class="comment">// Thread block type for compositing input tiles</span></div>
-<div class="line"><a name="l00108"></a><span class="lineno">  108</span>&#160;    <span class="keyword">typedef</span> BlockHistogramTiles&lt;BlockHistogramTilesPolicy, BINS, CHANNELS, ACTIVE_CHANNELS, InputIterator, HistoCounter, SizeT&gt; BlockHistogramTilesT;</div>
+<div class="line"><a name="l00108"></a><span class="lineno">  108</span>&#160;    <span class="keyword">typedef</span> BlockHistogramTiles&lt;BlockHistogramTilesPolicy, BINS, CHANNELS, ACTIVE_CHANNELS, InputIterator, HistoCounter, Offset&gt; BlockHistogramTilesT;</div>
 <div class="line"><a name="l00109"></a><span class="lineno">  109</span>&#160;</div>
 <div class="line"><a name="l00110"></a><span class="lineno">  110</span>&#160;    <span class="comment">// Shared memory for BlockHistogramTiles</span></div>
 <div class="line"><a name="l00111"></a><span class="lineno">  111</span>&#160;    __shared__ <span class="keyword">typename</span> BlockHistogramTilesT::TempStorage temp_storage;</div>
@@ -414,7 +414,7 @@ var searchBox = new SearchBox("searchBox", "search",false,'Search');
 <div class="line"><a name="l00357"></a><span class="lineno">  357</span>&#160;        <span class="keyword">typename</span>                    AggregateHistoKernelPtr,            </div>
 <div class="line"><a name="l00358"></a><span class="lineno">  358</span>&#160;        <span class="keyword">typename</span>                    InputIterator,                    </div>
 <div class="line"><a name="l00359"></a><span class="lineno">  359</span>&#160;        <span class="keyword">typename</span>                    HistoCounter,                       </div>
-<div class="line"><a name="l00360"></a><span class="lineno">  360</span>&#160;        <span class="keyword">typename</span>                    SizeT&gt;                              </div>
+<div class="line"><a name="l00360"></a><span class="lineno">  360</span>&#160;        <span class="keyword">typename</span>                    Offset&gt;                              </div>
 <div class="line"><a name="l00361"></a><span class="lineno">  361</span>&#160;    __host__ __device__ __forceinline__</div>
 <div class="line"><a name="l00362"></a><span class="lineno">  362</span>&#160;    <span class="keyword">static</span> cudaError_t Dispatch(</div>
 <div class="line"><a name="l00363"></a><span class="lineno">  363</span>&#160;        <span class="keywordtype">void</span>                        *d_temp_storage,                    </div>
@@ -425,7 +425,7 @@ var searchBox = new SearchBox("searchBox", "search",false,'Search');
 <div class="line"><a name="l00368"></a><span class="lineno">  368</span>&#160;        KernelDispachParams         &amp;multi_block_dispatch_params,       </div>
 <div class="line"><a name="l00369"></a><span class="lineno">  369</span>&#160;        InputIterator             d_samples,                          </div>
 <div class="line"><a name="l00370"></a><span class="lineno">  370</span>&#160;        HistoCounter                *d_histograms[ACTIVE_CHANNELS],     </div>
-<div class="line"><a name="l00371"></a><span class="lineno">  371</span>&#160;        SizeT                       num_samples,                        </div>
+<div class="line"><a name="l00371"></a><span class="lineno">  371</span>&#160;        Offset                       num_samples,                        </div>
 <div class="line"><a name="l00372"></a><span class="lineno">  372</span>&#160;        cudaStream_t                stream              = 0,            </div>
 <div class="line"><a name="l00373"></a><span class="lineno">  373</span>&#160;        <span class="keywordtype">bool</span>                        debug_synchronous  = <span class="keyword">false</span>)        </div>
 <div class="line"><a name="l00374"></a><span class="lineno">  374</span>&#160;    {</div>
@@ -467,7 +467,7 @@ var searchBox = new SearchBox("searchBox", "search",false,'Search');
 <div class="line"><a name="l00410"></a><span class="lineno">  410</span>&#160;            <span class="keywordtype">int</span> multi_block_occupancy = multi_block_sm_occupancy * sm_count;</div>
 <div class="line"><a name="l00411"></a><span class="lineno">  411</span>&#160;</div>
 <div class="line"><a name="l00412"></a><span class="lineno">  412</span>&#160;            <span class="comment">// Even-share work distribution</span></div>
-<div class="line"><a name="l00413"></a><span class="lineno">  413</span>&#160;            GridEvenShare&lt;SizeT&gt; even_share;</div>
+<div class="line"><a name="l00413"></a><span class="lineno">  413</span>&#160;            GridEvenShare&lt;Offset&gt; even_share;</div>
 <div class="line"><a name="l00414"></a><span class="lineno">  414</span>&#160;</div>
 <div class="line"><a name="l00415"></a><span class="lineno">  415</span>&#160;            <span class="comment">// Get tile size for multi_block_kernel</span></div>
 <div class="line"><a name="l00416"></a><span class="lineno">  416</span>&#160;            <span class="keywordtype">int</span> multi_block_tile_size = multi_block_dispatch_params.channel_tile_size * CHANNELS;</div>
@@ -514,7 +514,7 @@ var searchBox = new SearchBox("searchBox", "search",false,'Search');
 <div class="line"><a name="l00457"></a><span class="lineno">  457</span>&#160;            HistoCounter *d_block_histograms = (HistoCounter*) allocations[0];</div>
 <div class="line"><a name="l00458"></a><span class="lineno">  458</span>&#160;</div>
 <div class="line"><a name="l00459"></a><span class="lineno">  459</span>&#160;            <span class="comment">// Grid queue descriptor</span></div>
-<div class="line"><a name="l00460"></a><span class="lineno">  460</span>&#160;            GridQueue&lt;SizeT&gt; queue(allocations[1]);</div>
+<div class="line"><a name="l00460"></a><span class="lineno">  460</span>&#160;            GridQueue&lt;Offset&gt; queue(allocations[1]);</div>
 <div class="line"><a name="l00461"></a><span class="lineno">  461</span>&#160;</div>
 <div class="line"><a name="l00462"></a><span class="lineno">  462</span>&#160;            <span class="comment">// Setup array wrapper for histogram channel output (because we can&#39;t pass static arrays as kernel parameters)</span></div>
 <div class="line"><a name="l00463"></a><span class="lineno">  463</span>&#160;            <a class="code" href="structcub_1_1_array_wrapper.html" title="A wrapper for passing simple static arrays as kernel parameters. ">ArrayWrapper&lt;HistoCounter*, ACTIVE_CHANNELS&gt;</a> d_histo_wrapper;</div>
@@ -597,7 +597,7 @@ var searchBox = new SearchBox("searchBox", "search",false,'Search');
 <div class="line"><a name="l00549"></a><span class="lineno">  549</span>&#160;        <span class="keywordtype">bool</span>                debug_synchronous  = <span class="keyword">false</span>)        </div>
 <div class="line"><a name="l00550"></a><span class="lineno">  550</span>&#160;    {</div>
 <div class="line"><a name="l00551"></a><span class="lineno">  551</span>&#160;        <span class="comment">// Type used for array indexing</span></div>
-<div class="line"><a name="l00552"></a><span class="lineno">  552</span>&#160;        <span class="keyword">typedef</span> <span class="keywordtype">int</span> SizeT;</div>
+<div class="line"><a name="l00552"></a><span class="lineno">  552</span>&#160;        <span class="keyword">typedef</span> <span class="keywordtype">int</span> Offset;</div>
 <div class="line"><a name="l00553"></a><span class="lineno">  553</span>&#160;</div>
 <div class="line"><a name="l00554"></a><span class="lineno">  554</span>&#160;        <span class="comment">// Tuning polices for the PTX architecture that will get dispatched to</span></div>
 <div class="line"><a name="l00555"></a><span class="lineno">  555</span>&#160;        <span class="keyword">typedef</span> PtxDefaultPolicies&lt;CHANNELS, ACTIVE_CHANNELS, GRID_ALGORITHM&gt; PtxDefaultPolicies;</div>
@@ -626,8 +626,8 @@ var searchBox = new SearchBox("searchBox", "search",false,'Search');
 <div class="line"><a name="l00578"></a><span class="lineno">  578</span>&#160;            Dispatch&lt;BINS, CHANNELS, ACTIVE_CHANNELS&gt;(</div>
 <div class="line"><a name="l00579"></a><span class="lineno">  579</span>&#160;                d_temp_storage,</div>
 <div class="line"><a name="l00580"></a><span class="lineno">  580</span>&#160;                temp_storage_bytes,</div>
-<div class="line"><a name="l00581"></a><span class="lineno">  581</span>&#160;                InitHistoKernel&lt;BINS, ACTIVE_CHANNELS, SizeT, HistoCounter&gt;,</div>
-<div class="line"><a name="l00582"></a><span class="lineno">  582</span>&#160;                MultiBlockHistogramKernel&lt;MultiBlockPolicy, BINS, CHANNELS, ACTIVE_CHANNELS, InputIterator, HistoCounter, SizeT&gt;,</div>
+<div class="line"><a name="l00581"></a><span class="lineno">  581</span>&#160;                InitHistoKernel&lt;BINS, ACTIVE_CHANNELS, Offset, HistoCounter&gt;,</div>
+<div class="line"><a name="l00582"></a><span class="lineno">  582</span>&#160;                MultiBlockHistogramKernel&lt;MultiBlockPolicy, BINS, CHANNELS, ACTIVE_CHANNELS, InputIterator, HistoCounter, Offset&gt;,</div>
 <div class="line"><a name="l00583"></a><span class="lineno">  583</span>&#160;                AggregateHistoKernel&lt;BINS, ACTIVE_CHANNELS, HistoCounter&gt;,</div>
 <div class="line"><a name="l00584"></a><span class="lineno">  584</span>&#160;                multi_block_dispatch_params,</div>
 <div class="line"><a name="l00585"></a><span class="lineno">  585</span>&#160;                d_samples,</div>

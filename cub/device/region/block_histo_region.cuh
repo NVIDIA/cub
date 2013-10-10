@@ -28,16 +28,16 @@
 
 /**
  * \file
- * cub::BlockHistogramTiles implements a stateful abstraction of CUDA thread blocks for histogramming multiple tiles as part of device-wide histogram.
+ * cub::BlockHistogramRegion implements a stateful abstraction of CUDA thread blocks for histogramming multiple tiles as part of device-wide histogram.
  */
 
 #pragma once
 
 #include <iterator>
 
-#include "specializations/block_histo_tiles_gatomic.cuh"
-#include "specializations/block_histo_tiles_satomic.cuh"
-#include "specializations/block_histo_tiles_sort.cuh"
+#include "specializations/block_histo_region_gatomic.cuh"
+#include "specializations/block_histo_region_satomic.cuh"
+#include "specializations/block_histo_region_sort.cuh"
 #include "../../util_type.cuh"
 #include "../../grid/grid_mapping.cuh"
 #include "../../grid/grid_even_share.cuh"
@@ -57,9 +57,9 @@ namespace cub {
 
 
 /**
- * \brief BlockHistogramTilesAlgorithm enumerates alternative algorithms for BlockHistogramTiles.
+ * \brief DeviceHistogramAlgorithm enumerates alternative algorithms for BlockHistogramRegion.
  */
-enum BlockHistogramTilesAlgorithm
+enum DeviceHistogramAlgorithm
 {
 
     /**
@@ -76,7 +76,7 @@ enum BlockHistogramTilesAlgorithm
      * number of bins (e.g., thousands) may adversely affect occupancy and
      * performance (or even the ability to launch).
      */
-    HISTO_TILES_SORT,
+    DEVICE_HISTO_SORT,
 
 
     /**
@@ -97,7 +97,7 @@ enum BlockHistogramTilesAlgorithm
      * number of bins (e.g., thousands) may adversely affect occupancy and
      * performance (or even the ability to launch).
      */
-    HISTO_TILES_SHARED_ATOMIC,
+    DEVICE_HISTO_SHARED_ATOMIC,
 
 
     /**
@@ -114,7 +114,7 @@ enum BlockHistogramTilesAlgorithm
      * Performance is not significantly impacted when computing histograms having large
      * numbers of bins (e.g., thousands).
      */
-    HISTO_TILES_GLOBAL_ATOMIC,
+    DEVICE_HISTO_GLOBAL_ATOMIC,
 
 };
 
@@ -124,25 +124,23 @@ enum BlockHistogramTilesAlgorithm
  ******************************************************************************/
 
 /**
- * Tuning policy for BlockHistogramTiles
+ * Parameterizable tuning policy type for BlockHistogramRegion
  */
 template <
-    int                             _BLOCK_THREADS,
-    int                             _ITEMS_PER_THREAD,
-    BlockHistogramTilesAlgorithm    _HISTO_ALGORITHM,
-    GridMappingStrategy             _GRID_MAPPING,
-    int                             _SM_OCCUPANCY>
-struct BlockHistogramTilesPolicy
+    int                             _BLOCK_THREADS,         ///< Threads per thread block
+    int                             _ITEMS_PER_THREAD,      ///< Items per thread (per tile of input)
+    DeviceHistogramAlgorithm        _HISTO_ALGORITHM,       ///< Cooperative histogram algorithm to use
+    GridMappingStrategy             _GRID_MAPPING>          ///< How to map tiles of input onto thread blocks
+struct BlockHistogramRegionPolicy
 {
     enum
     {
-        BLOCK_THREADS       = _BLOCK_THREADS,
-        ITEMS_PER_THREAD    = _ITEMS_PER_THREAD,
-        SM_OCCUPANCY        = _SM_OCCUPANCY,
+        BLOCK_THREADS       = _BLOCK_THREADS,               ///< Threads per thread block
+        ITEMS_PER_THREAD    = _ITEMS_PER_THREAD,            ///< Items per thread (per tile of input)
     };
 
-    static const BlockHistogramTilesAlgorithm   HISTO_ALGORITHM     = _HISTO_ALGORITHM;
-    static const GridMappingStrategy            GRID_MAPPING        = _GRID_MAPPING;
+    static const DeviceHistogramAlgorithm   HISTO_ALGORITHM     = _HISTO_ALGORITHM;     ///< Cooperative histogram algorithm to use
+    static const GridMappingStrategy        GRID_MAPPING        = _GRID_MAPPING;        ///< How to map tiles of input onto thread blocks
 };
 
 
@@ -156,33 +154,33 @@ struct BlockHistogramTilesPolicy
  * Implements a stateful abstraction of CUDA thread blocks for histogramming multiple tiles as part of device-wide histogram using global atomics
  */
 template <
-    typename    BlockHistogramTilesPolicy,          ///< Tuning policy
+    typename    BlockHistogramRegionPolicy,     ///< Parameterized BlockHistogramRegionPolicy tuning policy type
     int         BINS,                           ///< Number of histogram bins per channel
     int         CHANNELS,                       ///< Number of channels interleaved in the input data (may be greater than the number of active channels being histogrammed)
     int         ACTIVE_CHANNELS,                ///< Number of channels actively being histogrammed
-    typename    InputIterator,                ///< The input iterator type (may be a simple pointer type).  Must have a value type that can be cast as an integer in the range [0..BINS-1]
-    typename    HistoCounter,                   ///< Integral type for counting sample occurrences per histogram bin
-    typename    SizeT>                          ///< Integer type for offsets
-struct BlockHistogramTiles
+    typename    InputIterator,                  ///< Random-access input iterator type for reading samples.  Must have an an InputIterator::value_type that, when cast as an integer, falls in the range [0..BINS-1]
+    typename    HistoCounter,                   ///< Integer type for counting sample occurrences per histogram bin
+    typename    Offset>                         ///< Signed integer type for global offsets
+struct BlockHistogramRegion
 {
     //---------------------------------------------------------------------
     // Types and constants
     //---------------------------------------------------------------------
 
     // Histogram grid algorithm
-    static const BlockHistogramTilesAlgorithm HISTO_ALGORITHM = BlockHistogramTilesPolicy::HISTO_ALGORITHM;
+    static const DeviceHistogramAlgorithm HISTO_ALGORITHM = BlockHistogramRegionPolicy::HISTO_ALGORITHM;
 
     // Alternative internal implementation types
-    typedef BlockHistogramTilesSort<            BlockHistogramTilesPolicy, BINS, CHANNELS, ACTIVE_CHANNELS, InputIterator, HistoCounter, SizeT>   BlockHistogramTilesSortT;
-    typedef BlockHistogramTilesSharedAtomic<    BlockHistogramTilesPolicy, BINS, CHANNELS, ACTIVE_CHANNELS, InputIterator, HistoCounter, SizeT>   BlockHistogramTilesSharedAtomicT;
-    typedef BlockHistogramTilesGlobalAtomic<    BlockHistogramTilesPolicy, BINS, CHANNELS, ACTIVE_CHANNELS, InputIterator, HistoCounter, SizeT>   BlockHistogramTilesGlobalAtomicT;
+    typedef BlockHistogramRegionSort<            BlockHistogramRegionPolicy, BINS, CHANNELS, ACTIVE_CHANNELS, InputIterator, HistoCounter, Offset>   BlockHistogramRegionSortT;
+    typedef BlockHistogramRegionSharedAtomic<    BlockHistogramRegionPolicy, BINS, CHANNELS, ACTIVE_CHANNELS, InputIterator, HistoCounter, Offset>   BlockHistogramRegionSharedAtomicT;
+    typedef BlockHistogramRegionGlobalAtomic<    BlockHistogramRegionPolicy, BINS, CHANNELS, ACTIVE_CHANNELS, InputIterator, HistoCounter, Offset>   BlockHistogramRegionGlobalAtomicT;
 
     // Internal block sweep histogram type
-    typedef typename If<(HISTO_ALGORITHM == HISTO_TILES_SORT),
-        BlockHistogramTilesSortT,
-        typename If<(HISTO_ALGORITHM == HISTO_TILES_SHARED_ATOMIC),
-            BlockHistogramTilesSharedAtomicT,
-            BlockHistogramTilesGlobalAtomicT>::Type>::Type InternalBlockDelegate;
+    typedef typename If<(HISTO_ALGORITHM == DEVICE_HISTO_SORT),
+        BlockHistogramRegionSortT,
+        typename If<(HISTO_ALGORITHM == DEVICE_HISTO_SHARED_ATOMIC),
+            BlockHistogramRegionSharedAtomicT,
+            BlockHistogramRegionGlobalAtomicT>::Type>::Type InternalBlockDelegate;
 
     enum
     {
@@ -208,7 +206,7 @@ struct BlockHistogramTiles
     /**
      * Constructor
      */
-    __device__ __forceinline__ BlockHistogramTiles(
+    __device__ __forceinline__ BlockHistogramRegion(
         TempStorage         &temp_storage,                                  ///< Reference to temp_storage
         InputIterator     d_in,                                           ///< Input data to reduce
         HistoCounter*       (&d_out_histograms)[ACTIVE_CHANNELS])           ///< Reference to output histograms
@@ -220,9 +218,9 @@ struct BlockHistogramTiles
     /**
      * \brief Reduce a consecutive segment of input tiles
      */
-    __device__ __forceinline__ void ConsumeTiles(
-        SizeT   block_offset,                       ///< [in] Threadblock begin offset (inclusive)
-        SizeT   block_end)                          ///< [in] Threadblock end offset (exclusive)
+    __device__ __forceinline__ void ConsumeRegion(
+        Offset   block_offset,                       ///< [in] Threadblock begin offset (inclusive)
+        Offset   block_end)                          ///< [in] Threadblock end offset (exclusive)
     {
         // Consume subsequent full tiles of input
         while (block_offset + TILE_ITEMS <= block_end)
@@ -246,30 +244,30 @@ struct BlockHistogramTiles
     /**
      * Reduce a consecutive segment of input tiles
      */
-    __device__ __forceinline__ void ConsumeTiles(
-        SizeT                               num_items,          ///< [in] Total number of global input items
-        GridEvenShare<SizeT>                &even_share,        ///< [in] GridEvenShare descriptor
-        GridQueue<SizeT>                    &queue,             ///< [in,out] GridQueue descriptor
+    __device__ __forceinline__ void ConsumeRegion(
+        Offset                              num_items,          ///< [in] Total number of global input items
+        GridEvenShare<Offset>               &even_share,        ///< [in] GridEvenShare descriptor
+        GridQueue<Offset>                   &queue,             ///< [in,out] GridQueue descriptor
         Int2Type<GRID_MAPPING_EVEN_SHARE>   is_even_share)      ///< [in] Marker type indicating this is an even-share mapping
     {
         even_share.BlockInit();
-        ConsumeTiles(even_share.block_offset, even_share.block_end);
+        ConsumeRegion(even_share.block_offset, even_share.block_end);
     }
 
 
     /**
      * Dequeue and reduce tiles of items as part of a inter-block scan
      */
-    __device__ __forceinline__ void ConsumeTiles(
+    __device__ __forceinline__ void ConsumeRegion(
         int                 num_items,          ///< Total number of input items
-        GridQueue<SizeT>    queue)              ///< Queue descriptor for assigning tiles of work to thread blocks
+        GridQueue<Offset>   queue)              ///< Queue descriptor for assigning tiles of work to thread blocks
     {
         // Shared block offset
-        __shared__ SizeT shared_block_offset;
+        __shared__ Offset shared_block_offset;
 
         // We give each thread block at least one tile of input.
-        SizeT block_offset      = blockIdx.x * TILE_ITEMS;
-        SizeT even_share_base   = gridDim.x * TILE_ITEMS;
+        Offset block_offset      = blockIdx.x * TILE_ITEMS;
+        Offset even_share_base   = gridDim.x * TILE_ITEMS;
 
         // Process full tiles of input
         while (block_offset + TILE_ITEMS <= num_items)
@@ -302,13 +300,13 @@ struct BlockHistogramTiles
     /**
      * Dequeue and reduce tiles of items as part of a inter-block scan
      */
-    __device__ __forceinline__ void ConsumeTiles(
-        SizeT                               num_items,          ///< [in] Total number of global input items
-        GridEvenShare<SizeT>                &even_share,        ///< [in] GridEvenShare descriptor
-        GridQueue<SizeT>                    &queue,             ///< [in,out] GridQueue descriptor
-        Int2Type<GRID_MAPPING_DYNAMIC>      is_dynamic)         ///< [in] Marker type indicating this is a dynamic mapping
+    __device__ __forceinline__ void ConsumeRegion(
+        Offset                          num_items,          ///< [in] Total number of global input items
+        GridEvenShare<Offset>           &even_share,        ///< [in] GridEvenShare descriptor
+        GridQueue<Offset>               &queue,             ///< [in,out] GridQueue descriptor
+        Int2Type<GRID_MAPPING_DYNAMIC>  is_dynamic)         ///< [in] Marker type indicating this is a dynamic mapping
     {
-        ConsumeTiles(num_items, queue);
+        ConsumeRegion(num_items, queue);
     }
 
 

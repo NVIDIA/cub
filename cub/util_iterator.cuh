@@ -385,12 +385,12 @@ public:
  * device pointer of type <tt>ValueType*</tt>. \p ValueType references are
  * made by reading \p ValueType values through loads modified by \p MODIFIER.
  *
- * \tparam PtxLoadModifier      The cub::PtxLoadModifier to use when accessing data
+ * \tparam CacheLoadModifier    The cub::CacheLoadModifier to use when accessing data
  * \tparam ValueType            The value type of this iterator
  * \tparam difference_type      The difference type of this iterator (Default: \p ptrdiff_t)
  */
 template <
-    PtxLoadModifier     MODIFIER,
+    CacheLoadModifier   MODIFIER,
     typename            ValueType,
     typename            difference_type = ptrdiff_t>
 class CacheModifiedInputIterator
@@ -508,12 +508,12 @@ public:
  * \par Usage Considerations
  * - Can only be dereferenced within device code
  *
- * \tparam PtxStoreModifier     The cub::PtxStoreModifier to use when accessing data
+ * \tparam CacheStoreModifier     The cub::CacheStoreModifier to use when accessing data
  * \tparam ValueType            The value type of this iterator
  * \tparam difference_type      The difference type of this iterator (Default: \p ptrdiff_t)
  */
 template <
-    PtxStoreModifier    MODIFIER,
+    CacheStoreModifier  MODIFIER,
     typename            ValueType,
     typename            difference_type = ptrdiff_t>
 class CacheModifiedOutputIterator
@@ -664,7 +664,7 @@ public:
 
 private:
 
-    ConversionOp    conversion_op;
+    ConversionOp  conversion_op;
     InputIterator input_itr;
 
 public:

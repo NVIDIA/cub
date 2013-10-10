@@ -158,24 +158,24 @@ var searchBox = new SearchBox("searchBox", "search",false,'Search');
 <div class="line"><a name="l00066"></a><span class="lineno">   66</span>&#160;<span class="keyword">template</span> &lt;</div>
 <div class="line"><a name="l00067"></a><span class="lineno">   67</span>&#160;    <span class="keyword">typename</span>                BlockRadixSortUpsweepTilesPolicy, </div>
 <div class="line"><a name="l00068"></a><span class="lineno">   68</span>&#160;    <span class="keyword">typename</span>                Key,                            </div>
-<div class="line"><a name="l00069"></a><span class="lineno">   69</span>&#160;    <span class="keyword">typename</span>                SizeT&gt;                          </div>
+<div class="line"><a name="l00069"></a><span class="lineno">   69</span>&#160;    <span class="keyword">typename</span>                Offset&gt;                          </div>
 <div class="line"><a name="l00070"></a><span class="lineno">   70</span>&#160;__launch_bounds__ (<span class="keywordtype">int</span>(BlockRadixSortUpsweepTilesPolicy::BLOCK_THREADS), 1)</div>
 <div class="line"><a name="l00071"></a><span class="lineno">   71</span>&#160;__global__ <span class="keywordtype">void</span> RadixSortUpsweepKernel(</div>
 <div class="line"><a name="l00072"></a><span class="lineno">   72</span>&#160;    Key                     *d_keys,                        </div>
-<div class="line"><a name="l00073"></a><span class="lineno">   73</span>&#160;    SizeT                   *d_spine,                       </div>
-<div class="line"><a name="l00074"></a><span class="lineno">   74</span>&#160;    SizeT                   num_items,                      </div>
+<div class="line"><a name="l00073"></a><span class="lineno">   73</span>&#160;    Offset                   *d_spine,                       </div>
+<div class="line"><a name="l00074"></a><span class="lineno">   74</span>&#160;    Offset                   num_items,                      </div>
 <div class="line"><a name="l00075"></a><span class="lineno">   75</span>&#160;    <span class="keywordtype">int</span>                     current_bit,                    </div>
 <div class="line"><a name="l00076"></a><span class="lineno">   76</span>&#160;    <span class="keywordtype">bool</span>                    use_primary_bit_granularity,    </div>
 <div class="line"><a name="l00077"></a><span class="lineno">   77</span>&#160;    <span class="keywordtype">bool</span>                    first_pass,                     </div>
-<div class="line"><a name="l00078"></a><span class="lineno">   78</span>&#160;    GridEvenShare&lt;SizeT&gt;    even_share)                     </div>
+<div class="line"><a name="l00078"></a><span class="lineno">   78</span>&#160;    GridEvenShare&lt;Offset&gt;    even_share)                     </div>
 <div class="line"><a name="l00079"></a><span class="lineno">   79</span>&#160;{</div>
 <div class="line"><a name="l00080"></a><span class="lineno">   80</span>&#160;</div>
 <div class="line"><a name="l00081"></a><span class="lineno">   81</span>&#160;    <span class="comment">// Alternate policy for when fewer bits remain</span></div>
 <div class="line"><a name="l00082"></a><span class="lineno">   82</span>&#160;    <span class="keyword">typedef</span> <span class="keyword">typename</span> BlockRadixSortUpsweepTilesPolicy::AltPolicy AltPolicy;</div>
 <div class="line"><a name="l00083"></a><span class="lineno">   83</span>&#160;</div>
 <div class="line"><a name="l00084"></a><span class="lineno">   84</span>&#160;    <span class="comment">// Parameterize two versions of BlockRadixSortUpsweepTiles type for the current configuration</span></div>
-<div class="line"><a name="l00085"></a><span class="lineno">   85</span>&#160;    <span class="keyword">typedef</span> BlockRadixSortUpsweepTiles&lt;BlockRadixSortUpsweepTilesPolicy, Key, SizeT&gt;    BlockRadixSortUpsweepTilesT;          <span class="comment">// Primary</span></div>
-<div class="line"><a name="l00086"></a><span class="lineno">   86</span>&#160;    <span class="keyword">typedef</span> BlockRadixSortUpsweepTiles&lt;AltPolicy, Key, SizeT&gt;                           AltBlockRadixSortUpsweepTilesT;       <span class="comment">// Alternate (smaller bit granularity)</span></div>
+<div class="line"><a name="l00085"></a><span class="lineno">   85</span>&#160;    <span class="keyword">typedef</span> BlockRadixSortUpsweepTiles&lt;BlockRadixSortUpsweepTilesPolicy, Key, Offset&gt;    BlockRadixSortUpsweepTilesT;          <span class="comment">// Primary</span></div>
+<div class="line"><a name="l00086"></a><span class="lineno">   86</span>&#160;    <span class="keyword">typedef</span> BlockRadixSortUpsweepTiles&lt;AltPolicy, Key, Offset&gt;                           AltBlockRadixSortUpsweepTilesT;       <span class="comment">// Alternate (smaller bit granularity)</span></div>
 <div class="line"><a name="l00087"></a><span class="lineno">   87</span>&#160;</div>
 <div class="line"><a name="l00088"></a><span class="lineno">   88</span>&#160;    <span class="comment">// Shared memory storage</span></div>
 <div class="line"><a name="l00089"></a><span class="lineno">   89</span>&#160;    __shared__ <span class="keyword">union</span></div>
@@ -191,7 +191,7 @@ var searchBox = new SearchBox("searchBox", "search",false,'Search');
 <div class="line"><a name="l00099"></a><span class="lineno">   99</span>&#160;    <span class="keywordflow">if</span> (use_primary_bit_granularity)</div>
 <div class="line"><a name="l00100"></a><span class="lineno">  100</span>&#160;    {</div>
 <div class="line"><a name="l00101"></a><span class="lineno">  101</span>&#160;        <span class="comment">// Primary granularity</span></div>
-<div class="line"><a name="l00102"></a><span class="lineno">  102</span>&#160;        SizeT bin_count;</div>
+<div class="line"><a name="l00102"></a><span class="lineno">  102</span>&#160;        Offset bin_count;</div>
 <div class="line"><a name="l00103"></a><span class="lineno">  103</span>&#160;        BlockRadixSortUpsweepTilesT(temp_storage.pass_storage, d_keys, current_bit).ProcessTiles(</div>
 <div class="line"><a name="l00104"></a><span class="lineno">  104</span>&#160;            even_share.block_offset,</div>
 <div class="line"><a name="l00105"></a><span class="lineno">  105</span>&#160;            even_share.block_end,</div>
@@ -207,7 +207,7 @@ var searchBox = new SearchBox("searchBox", "search",false,'Search');
 <div class="line"><a name="l00115"></a><span class="lineno">  115</span>&#160;    {</div>
 <div class="line"><a name="l00116"></a><span class="lineno">  116</span>&#160;        <span class="comment">// Alternate granularity</span></div>
 <div class="line"><a name="l00117"></a><span class="lineno">  117</span>&#160;        <span class="comment">// Process input tiles (each of the first RADIX_DIGITS threads will compute a count for that digit)</span></div>
-<div class="line"><a name="l00118"></a><span class="lineno">  118</span>&#160;        SizeT bin_count;</div>
+<div class="line"><a name="l00118"></a><span class="lineno">  118</span>&#160;        Offset bin_count;</div>
 <div class="line"><a name="l00119"></a><span class="lineno">  119</span>&#160;        AltBlockRadixSortUpsweepTilesT(temp_storage.alt_pass_storage, d_keys, current_bit).ProcessTiles(</div>
 <div class="line"><a name="l00120"></a><span class="lineno">  120</span>&#160;            even_share.block_offset,</div>
 <div class="line"><a name="l00121"></a><span class="lineno">  121</span>&#160;            even_share.block_end,</div>
@@ -224,24 +224,24 @@ var searchBox = new SearchBox("searchBox", "search",false,'Search');
 <div class="line"><a name="l00132"></a><span class="lineno">  132</span>&#160;</div>
 <div class="line"><a name="l00136"></a><span class="lineno">  136</span>&#160;<span class="keyword">template</span> &lt;</div>
 <div class="line"><a name="l00137"></a><span class="lineno">  137</span>&#160;    <span class="keyword">typename</span>    BlockScanTilesPolicy,   </div>
-<div class="line"><a name="l00138"></a><span class="lineno">  138</span>&#160;    <span class="keyword">typename</span>    SizeT&gt;                  </div>
+<div class="line"><a name="l00138"></a><span class="lineno">  138</span>&#160;    <span class="keyword">typename</span>    Offset&gt;                  </div>
 <div class="line"><a name="l00139"></a><span class="lineno">  139</span>&#160;__launch_bounds__ (<span class="keywordtype">int</span>(BlockScanTilesPolicy::BLOCK_THREADS), 1)</div>
 <div class="line"><a name="l00140"></a><span class="lineno">  140</span>&#160;__global__ <span class="keywordtype">void</span> RadixSortScanKernel(</div>
-<div class="line"><a name="l00141"></a><span class="lineno">  141</span>&#160;    SizeT       *d_spine,               </div>
+<div class="line"><a name="l00141"></a><span class="lineno">  141</span>&#160;    Offset       *d_spine,               </div>
 <div class="line"><a name="l00142"></a><span class="lineno">  142</span>&#160;    <span class="keywordtype">int</span>         num_counts)             </div>
 <div class="line"><a name="l00143"></a><span class="lineno">  143</span>&#160;{</div>
 <div class="line"><a name="l00144"></a><span class="lineno">  144</span>&#160;    <span class="comment">// Parameterize the BlockScanTiles type for the current configuration</span></div>
-<div class="line"><a name="l00145"></a><span class="lineno">  145</span>&#160;    <span class="keyword">typedef</span> BlockScanTiles&lt;BlockScanTilesPolicy, SizeT*, SizeT*, cub::Sum, SizeT, SizeT&gt; BlockScanTilesT;</div>
+<div class="line"><a name="l00145"></a><span class="lineno">  145</span>&#160;    <span class="keyword">typedef</span> BlockScanTiles&lt;BlockScanTilesPolicy, Offset*, Offset*, cub::Sum, Offset, Offset&gt; BlockScanTilesT;</div>
 <div class="line"><a name="l00146"></a><span class="lineno">  146</span>&#160;</div>
 <div class="line"><a name="l00147"></a><span class="lineno">  147</span>&#160;    <span class="comment">// Shared memory storage</span></div>
 <div class="line"><a name="l00148"></a><span class="lineno">  148</span>&#160;    __shared__ <span class="keyword">typename</span> BlockScanTilesT::TempStorage temp_storage;</div>
 <div class="line"><a name="l00149"></a><span class="lineno">  149</span>&#160;</div>
 <div class="line"><a name="l00150"></a><span class="lineno">  150</span>&#160;    <span class="comment">// Block scan instance</span></div>
-<div class="line"><a name="l00151"></a><span class="lineno">  151</span>&#160;    BlockScanTilesT block_scan(temp_storage, d_spine, d_spine, <a class="code" href="structcub_1_1_sum.html" title="Default sum functor. ">cub::Sum</a>(), SizeT(0)) ;</div>
+<div class="line"><a name="l00151"></a><span class="lineno">  151</span>&#160;    BlockScanTilesT block_scan(temp_storage, d_spine, d_spine, <a class="code" href="structcub_1_1_sum.html" title="Default sum functor. ">cub::Sum</a>(), Offset(0)) ;</div>
 <div class="line"><a name="l00152"></a><span class="lineno">  152</span>&#160;</div>
 <div class="line"><a name="l00153"></a><span class="lineno">  153</span>&#160;    <span class="comment">// Process full input tiles</span></div>
 <div class="line"><a name="l00154"></a><span class="lineno">  154</span>&#160;    <span class="keywordtype">int</span> block_offset = 0;</div>
-<div class="line"><a name="l00155"></a><span class="lineno">  155</span>&#160;    RunningBlockPrefixCallbackOp&lt;SizeT&gt; prefix_op;</div>
+<div class="line"><a name="l00155"></a><span class="lineno">  155</span>&#160;    RunningBlockPrefixCallbackOp&lt;Offset&gt; prefix_op;</div>
 <div class="line"><a name="l00156"></a><span class="lineno">  156</span>&#160;    prefix_op.running_total = 0;</div>
 <div class="line"><a name="l00157"></a><span class="lineno">  157</span>&#160;    <span class="keywordflow">while</span> (block_offset &lt; num_counts)</div>
 <div class="line"><a name="l00158"></a><span class="lineno">  158</span>&#160;    {</div>
@@ -255,28 +255,28 @@ var searchBox = new SearchBox("searchBox", "search",false,'Search');
 <div class="line"><a name="l00169"></a><span class="lineno">  169</span>&#160;    <span class="keyword">typename</span>                BlockRadixSortDownsweepTilesPolicy,   </div>
 <div class="line"><a name="l00170"></a><span class="lineno">  170</span>&#160;    <span class="keyword">typename</span>                Key,                                </div>
 <div class="line"><a name="l00171"></a><span class="lineno">  171</span>&#160;    <span class="keyword">typename</span>                Value,                              </div>
-<div class="line"><a name="l00172"></a><span class="lineno">  172</span>&#160;    <span class="keyword">typename</span>                SizeT&gt;                              </div>
+<div class="line"><a name="l00172"></a><span class="lineno">  172</span>&#160;    <span class="keyword">typename</span>                Offset&gt;                              </div>
 <div class="line"><a name="l00173"></a><span class="lineno">  173</span>&#160;__launch_bounds__ (<span class="keywordtype">int</span>(BlockRadixSortDownsweepTilesPolicy::BLOCK_THREADS))</div>
 <div class="line"><a name="l00174"></a><span class="lineno">  174</span>&#160;__global__ <span class="keywordtype">void</span> RadixSortDownsweepKernel(</div>
 <div class="line"><a name="l00175"></a><span class="lineno">  175</span>&#160;    Key                     *d_keys_in,                     </div>
 <div class="line"><a name="l00176"></a><span class="lineno">  176</span>&#160;    Key                     *d_keys_out,                    </div>
 <div class="line"><a name="l00177"></a><span class="lineno">  177</span>&#160;    Value                   *d_values_in,                   </div>
 <div class="line"><a name="l00178"></a><span class="lineno">  178</span>&#160;    Value                   *d_values_out,                  </div>
-<div class="line"><a name="l00179"></a><span class="lineno">  179</span>&#160;    SizeT                   *d_spine,                       </div>
-<div class="line"><a name="l00180"></a><span class="lineno">  180</span>&#160;    SizeT                   num_items,                      </div>
+<div class="line"><a name="l00179"></a><span class="lineno">  179</span>&#160;    Offset                   *d_spine,                       </div>
+<div class="line"><a name="l00180"></a><span class="lineno">  180</span>&#160;    Offset                   num_items,                      </div>
 <div class="line"><a name="l00181"></a><span class="lineno">  181</span>&#160;    <span class="keywordtype">int</span>                     current_bit,                    </div>
 <div class="line"><a name="l00182"></a><span class="lineno">  182</span>&#160;    <span class="keywordtype">bool</span>                    use_primary_bit_granularity,    </div>
 <div class="line"><a name="l00183"></a><span class="lineno">  183</span>&#160;    <span class="keywordtype">bool</span>                    first_pass,                     </div>
 <div class="line"><a name="l00184"></a><span class="lineno">  184</span>&#160;    <span class="keywordtype">bool</span>                    last_pass,                      </div>
-<div class="line"><a name="l00185"></a><span class="lineno">  185</span>&#160;    GridEvenShare&lt;SizeT&gt;    even_share)                     </div>
+<div class="line"><a name="l00185"></a><span class="lineno">  185</span>&#160;    GridEvenShare&lt;Offset&gt;    even_share)                     </div>
 <div class="line"><a name="l00186"></a><span class="lineno">  186</span>&#160;{</div>
 <div class="line"><a name="l00187"></a><span class="lineno">  187</span>&#160;</div>
 <div class="line"><a name="l00188"></a><span class="lineno">  188</span>&#160;    <span class="comment">// Alternate policy for when fewer bits remain</span></div>
 <div class="line"><a name="l00189"></a><span class="lineno">  189</span>&#160;    <span class="keyword">typedef</span> <span class="keyword">typename</span> BlockRadixSortDownsweepTilesPolicy::AltPolicy AltPolicy;</div>
 <div class="line"><a name="l00190"></a><span class="lineno">  190</span>&#160;</div>
 <div class="line"><a name="l00191"></a><span class="lineno">  191</span>&#160;    <span class="comment">// Parameterize two versions of BlockRadixSortDownsweepTiles type for the current configuration</span></div>
-<div class="line"><a name="l00192"></a><span class="lineno">  192</span>&#160;    <span class="keyword">typedef</span> BlockRadixSortDownsweepTiles&lt;BlockRadixSortDownsweepTilesPolicy, Key, Value, SizeT&gt;     BlockRadixSortDownsweepTilesT;</div>
-<div class="line"><a name="l00193"></a><span class="lineno">  193</span>&#160;    <span class="keyword">typedef</span> BlockRadixSortDownsweepTiles&lt;AltPolicy, Key, Value, SizeT&gt;                            AltBlockRadixSortDownsweepTilesT;</div>
+<div class="line"><a name="l00192"></a><span class="lineno">  192</span>&#160;    <span class="keyword">typedef</span> BlockRadixSortDownsweepTiles&lt;BlockRadixSortDownsweepTilesPolicy, Key, Value, Offset&gt;     BlockRadixSortDownsweepTilesT;</div>
+<div class="line"><a name="l00193"></a><span class="lineno">  193</span>&#160;    <span class="keyword">typedef</span> BlockRadixSortDownsweepTiles&lt;AltPolicy, Key, Value, Offset&gt;                            AltBlockRadixSortDownsweepTilesT;</div>
 <div class="line"><a name="l00194"></a><span class="lineno">  194</span>&#160;</div>
 <div class="line"><a name="l00195"></a><span class="lineno">  195</span>&#160;    <span class="comment">// Shared memory storage</span></div>
 <div class="line"><a name="l00196"></a><span class="lineno">  196</span>&#160;    __shared__ <span class="keyword">union</span></div>
@@ -381,11 +381,11 @@ var searchBox = new SearchBox("searchBox", "search",false,'Search');
 <div class="line"><a name="l00324"></a><span class="lineno">  324</span>&#160;<span class="comment">     * Tuning policies</span></div>
 <div class="line"><a name="l00325"></a><span class="lineno">  325</span>&#160;<span class="comment">     ******************************************************************************/</span></div>
 <div class="line"><a name="l00326"></a><span class="lineno">  326</span>&#160;</div>
-<div class="line"><a name="l00328"></a><span class="lineno">  328</span>&#160;    <span class="keyword">template</span> &lt;<span class="keyword">typename</span> Key, <span class="keyword">typename</span> Value, <span class="keyword">typename</span> SizeT, <span class="keywordtype">int</span> ARCH&gt;</div>
+<div class="line"><a name="l00328"></a><span class="lineno">  328</span>&#160;    <span class="keyword">template</span> &lt;<span class="keyword">typename</span> Key, <span class="keyword">typename</span> Value, <span class="keyword">typename</span> Offset, <span class="keywordtype">int</span> ARCH&gt;</div>
 <div class="line"><a name="l00329"></a><span class="lineno">  329</span>&#160;    <span class="keyword">struct </span>TunedPolicies;</div>
 <div class="line"><a name="l00330"></a><span class="lineno">  330</span>&#160;</div>
-<div class="line"><a name="l00332"></a><span class="lineno">  332</span>&#160;    <span class="keyword">template</span> &lt;<span class="keyword">typename</span> Key, <span class="keyword">typename</span> Value, <span class="keyword">typename</span> SizeT&gt;</div>
-<div class="line"><a name="l00333"></a><span class="lineno">  333</span>&#160;    <span class="keyword">struct </span>TunedPolicies&lt;Key, Value, SizeT, 350&gt;</div>
+<div class="line"><a name="l00332"></a><span class="lineno">  332</span>&#160;    <span class="keyword">template</span> &lt;<span class="keyword">typename</span> Key, <span class="keyword">typename</span> Value, <span class="keyword">typename</span> Offset&gt;</div>
+<div class="line"><a name="l00333"></a><span class="lineno">  333</span>&#160;    <span class="keyword">struct </span>TunedPolicies&lt;Key, Value, Offset, 350&gt;</div>
 <div class="line"><a name="l00334"></a><span class="lineno">  334</span>&#160;    {</div>
 <div class="line"><a name="l00335"></a><span class="lineno">  335</span>&#160;        <span class="keyword">enum</span> {</div>
 <div class="line"><a name="l00336"></a><span class="lineno">  336</span>&#160;            KEYS_ONLY       = (<a class="code" href="structcub_1_1_equals.html" title="Type equality test. ">Equals&lt;Value, NullType&gt;::VALUE</a>),</div>
@@ -419,8 +419,8 @@ var searchBox = new SearchBox("searchBox", "search",false,'Search');
 <div class="line"><a name="l00364"></a><span class="lineno">  364</span>&#160;    };</div>
 <div class="line"><a name="l00365"></a><span class="lineno">  365</span>&#160;</div>
 <div class="line"><a name="l00366"></a><span class="lineno">  366</span>&#160;</div>
-<div class="line"><a name="l00368"></a><span class="lineno">  368</span>&#160;    <span class="keyword">template</span> &lt;<span class="keyword">typename</span> Key, <span class="keyword">typename</span> Value, <span class="keyword">typename</span> SizeT&gt;</div>
-<div class="line"><a name="l00369"></a><span class="lineno">  369</span>&#160;    <span class="keyword">struct </span>TunedPolicies&lt;Key, Value, SizeT, 200&gt;</div>
+<div class="line"><a name="l00368"></a><span class="lineno">  368</span>&#160;    <span class="keyword">template</span> &lt;<span class="keyword">typename</span> Key, <span class="keyword">typename</span> Value, <span class="keyword">typename</span> Offset&gt;</div>
+<div class="line"><a name="l00369"></a><span class="lineno">  369</span>&#160;    <span class="keyword">struct </span>TunedPolicies&lt;Key, Value, Offset, 200&gt;</div>
 <div class="line"><a name="l00370"></a><span class="lineno">  370</span>&#160;    {</div>
 <div class="line"><a name="l00371"></a><span class="lineno">  371</span>&#160;        <span class="keyword">enum</span> {</div>
 <div class="line"><a name="l00372"></a><span class="lineno">  372</span>&#160;            KEYS_ONLY       = (<a class="code" href="structcub_1_1_equals.html" title="Type equality test. ">Equals&lt;Value, NullType&gt;::VALUE</a>),</div>
@@ -445,8 +445,8 @@ var searchBox = new SearchBox("searchBox", "search",false,'Search');
 <div class="line"><a name="l00391"></a><span class="lineno">  391</span>&#160;    };</div>
 <div class="line"><a name="l00392"></a><span class="lineno">  392</span>&#160;</div>
 <div class="line"><a name="l00393"></a><span class="lineno">  393</span>&#160;</div>
-<div class="line"><a name="l00395"></a><span class="lineno">  395</span>&#160;    <span class="keyword">template</span> &lt;<span class="keyword">typename</span> Key, <span class="keyword">typename</span> Value, <span class="keyword">typename</span> SizeT&gt;</div>
-<div class="line"><a name="l00396"></a><span class="lineno">  396</span>&#160;    <span class="keyword">struct </span>TunedPolicies&lt;Key, Value, SizeT, 100&gt;</div>
+<div class="line"><a name="l00395"></a><span class="lineno">  395</span>&#160;    <span class="keyword">template</span> &lt;<span class="keyword">typename</span> Key, <span class="keyword">typename</span> Value, <span class="keyword">typename</span> Offset&gt;</div>
+<div class="line"><a name="l00396"></a><span class="lineno">  396</span>&#160;    <span class="keyword">struct </span>TunedPolicies&lt;Key, Value, Offset, 100&gt;</div>
 <div class="line"><a name="l00397"></a><span class="lineno">  397</span>&#160;    {</div>
 <div class="line"><a name="l00398"></a><span class="lineno">  398</span>&#160;        <span class="keyword">enum</span> {</div>
 <div class="line"><a name="l00399"></a><span class="lineno">  399</span>&#160;            RADIX_BITS = 4,</div>
@@ -470,7 +470,7 @@ var searchBox = new SearchBox("searchBox", "search",false,'Search');
 <div class="line"><a name="l00417"></a><span class="lineno">  417</span>&#160;<span class="comment">     * Default policy initializer</span></div>
 <div class="line"><a name="l00418"></a><span class="lineno">  418</span>&#160;<span class="comment">     ******************************************************************************/</span></div>
 <div class="line"><a name="l00419"></a><span class="lineno">  419</span>&#160;</div>
-<div class="line"><a name="l00421"></a><span class="lineno">  421</span>&#160;    <span class="keyword">template</span> &lt;<span class="keyword">typename</span> Key, <span class="keyword">typename</span> Value, <span class="keyword">typename</span> SizeT&gt;</div>
+<div class="line"><a name="l00421"></a><span class="lineno">  421</span>&#160;    <span class="keyword">template</span> &lt;<span class="keyword">typename</span> Key, <span class="keyword">typename</span> Value, <span class="keyword">typename</span> Offset&gt;</div>
 <div class="line"><a name="l00422"></a><span class="lineno">  422</span>&#160;    <span class="keyword">struct </span>PtxDefaultPolicies</div>
 <div class="line"><a name="l00423"></a><span class="lineno">  423</span>&#160;    {</div>
 <div class="line"><a name="l00424"></a><span class="lineno">  424</span>&#160;</div>
@@ -481,7 +481,7 @@ var searchBox = new SearchBox("searchBox", "search",false,'Search');
 <div class="line"><a name="l00429"></a><span class="lineno">  429</span>&#160;                                                    100;</div>
 <div class="line"><a name="l00430"></a><span class="lineno">  430</span>&#160;</div>
 <div class="line"><a name="l00431"></a><span class="lineno">  431</span>&#160;        <span class="comment">// Tuned policy set for the current PTX compiler pass</span></div>
-<div class="line"><a name="l00432"></a><span class="lineno">  432</span>&#160;        <span class="keyword">typedef</span> TunedPolicies&lt;Key, Value, SizeT, PTX_TUNE_ARCH&gt; PtxTunedPolicies;</div>
+<div class="line"><a name="l00432"></a><span class="lineno">  432</span>&#160;        <span class="keyword">typedef</span> TunedPolicies&lt;Key, Value, Offset, PTX_TUNE_ARCH&gt; PtxTunedPolicies;</div>
 <div class="line"><a name="l00433"></a><span class="lineno">  433</span>&#160;</div>
 <div class="line"><a name="l00434"></a><span class="lineno">  434</span>&#160;        <span class="comment">// UpsweepPolicy that opaquely derives from the specialization corresponding to the current PTX compiler pass</span></div>
 <div class="line"><a name="l00435"></a><span class="lineno">  435</span>&#160;        <span class="keyword">struct </span>UpsweepPolicy : PtxTunedPolicies::UpsweepPolicy {};</div>
@@ -504,21 +504,21 @@ var searchBox = new SearchBox("searchBox", "search",false,'Search');
 <div class="line"><a name="l00455"></a><span class="lineno">  455</span>&#160;        {</div>
 <div class="line"><a name="l00456"></a><span class="lineno">  456</span>&#160;            <span class="keywordflow">if</span> (ptx_version &gt;= 350)</div>
 <div class="line"><a name="l00457"></a><span class="lineno">  457</span>&#160;            {</div>
-<div class="line"><a name="l00458"></a><span class="lineno">  458</span>&#160;                <span class="keyword">typedef</span> TunedPolicies&lt;Key, Value, SizeT, 350&gt; TunedPolicies;</div>
+<div class="line"><a name="l00458"></a><span class="lineno">  458</span>&#160;                <span class="keyword">typedef</span> TunedPolicies&lt;Key, Value, Offset, 350&gt; TunedPolicies;</div>
 <div class="line"><a name="l00459"></a><span class="lineno">  459</span>&#160;                upsweep_dispatch_params.InitUpsweepPolicy&lt;<span class="keyword">typename</span> TunedPolicies::UpsweepPolicy&gt;(TunedPolicies::SUBSCRIPTION_FACTOR);</div>
 <div class="line"><a name="l00460"></a><span class="lineno">  460</span>&#160;                scan_dispatch_params.InitScanPolicy&lt;<span class="keyword">typename</span> TunedPolicies::ScanPolicy&gt;();</div>
 <div class="line"><a name="l00461"></a><span class="lineno">  461</span>&#160;                downsweep_dispatch_params.InitDownsweepPolicy&lt;<span class="keyword">typename</span> TunedPolicies::DownsweepPolicy&gt;(TunedPolicies::SUBSCRIPTION_FACTOR);</div>
 <div class="line"><a name="l00462"></a><span class="lineno">  462</span>&#160;            }</div>
 <div class="line"><a name="l00463"></a><span class="lineno">  463</span>&#160;            <span class="keywordflow">else</span> <span class="keywordflow">if</span> (ptx_version &gt;= 200)</div>
 <div class="line"><a name="l00464"></a><span class="lineno">  464</span>&#160;            {</div>
-<div class="line"><a name="l00465"></a><span class="lineno">  465</span>&#160;                <span class="keyword">typedef</span> TunedPolicies&lt;Key, Value, SizeT, 200&gt; TunedPolicies;</div>
+<div class="line"><a name="l00465"></a><span class="lineno">  465</span>&#160;                <span class="keyword">typedef</span> TunedPolicies&lt;Key, Value, Offset, 200&gt; TunedPolicies;</div>
 <div class="line"><a name="l00466"></a><span class="lineno">  466</span>&#160;                upsweep_dispatch_params.InitUpsweepPolicy&lt;<span class="keyword">typename</span> TunedPolicies::UpsweepPolicy&gt;(TunedPolicies::SUBSCRIPTION_FACTOR);</div>
 <div class="line"><a name="l00467"></a><span class="lineno">  467</span>&#160;                scan_dispatch_params.InitScanPolicy&lt;<span class="keyword">typename</span> TunedPolicies::ScanPolicy&gt;();</div>
 <div class="line"><a name="l00468"></a><span class="lineno">  468</span>&#160;                downsweep_dispatch_params.InitDownsweepPolicy&lt;<span class="keyword">typename</span> TunedPolicies::DownsweepPolicy&gt;(TunedPolicies::SUBSCRIPTION_FACTOR);</div>
 <div class="line"><a name="l00469"></a><span class="lineno">  469</span>&#160;            }</div>
 <div class="line"><a name="l00470"></a><span class="lineno">  470</span>&#160;            <span class="keywordflow">else</span></div>
 <div class="line"><a name="l00471"></a><span class="lineno">  471</span>&#160;            {</div>
-<div class="line"><a name="l00472"></a><span class="lineno">  472</span>&#160;                <span class="keyword">typedef</span> TunedPolicies&lt;Key, Value, SizeT, 100&gt; TunedPolicies;</div>
+<div class="line"><a name="l00472"></a><span class="lineno">  472</span>&#160;                <span class="keyword">typedef</span> TunedPolicies&lt;Key, Value, Offset, 100&gt; TunedPolicies;</div>
 <div class="line"><a name="l00473"></a><span class="lineno">  473</span>&#160;                upsweep_dispatch_params.InitUpsweepPolicy&lt;<span class="keyword">typename</span> TunedPolicies::UpsweepPolicy&gt;(TunedPolicies::SUBSCRIPTION_FACTOR);</div>
 <div class="line"><a name="l00474"></a><span class="lineno">  474</span>&#160;                scan_dispatch_params.InitScanPolicy&lt;<span class="keyword">typename</span> TunedPolicies::ScanPolicy&gt;();</div>
 <div class="line"><a name="l00475"></a><span class="lineno">  475</span>&#160;                downsweep_dispatch_params.InitDownsweepPolicy&lt;<span class="keyword">typename</span> TunedPolicies::DownsweepPolicy&gt;(TunedPolicies::SUBSCRIPTION_FACTOR);</div>
@@ -538,7 +538,7 @@ var searchBox = new SearchBox("searchBox", "search",false,'Search');
 <div class="line"><a name="l00492"></a><span class="lineno">  492</span>&#160;        <span class="keyword">typename</span>            DownsweepKernelPtr,                     </div>
 <div class="line"><a name="l00493"></a><span class="lineno">  493</span>&#160;        <span class="keyword">typename</span>            Key,                                    </div>
 <div class="line"><a name="l00494"></a><span class="lineno">  494</span>&#160;        <span class="keyword">typename</span>            Value,                                  </div>
-<div class="line"><a name="l00495"></a><span class="lineno">  495</span>&#160;        <span class="keyword">typename</span>            SizeT&gt;                                  </div>
+<div class="line"><a name="l00495"></a><span class="lineno">  495</span>&#160;        <span class="keyword">typename</span>            Offset&gt;                                  </div>
 <div class="line"><a name="l00496"></a><span class="lineno">  496</span>&#160;    __host__ __device__ __forceinline__</div>
 <div class="line"><a name="l00497"></a><span class="lineno">  497</span>&#160;    <span class="keyword">static</span> cudaError_t Dispatch(</div>
 <div class="line"><a name="l00498"></a><span class="lineno">  498</span>&#160;        <span class="keywordtype">void</span>                *d_temp_storage,                        </div>
@@ -551,7 +551,7 @@ var searchBox = new SearchBox("searchBox", "search",false,'Search');
 <div class="line"><a name="l00505"></a><span class="lineno">  505</span>&#160;        KernelDispachParams &amp;downsweep_dispatch_params,             </div>
 <div class="line"><a name="l00506"></a><span class="lineno">  506</span>&#160;        <a class="code" href="structcub_1_1_double_buffer.html" title="Double-buffer storage wrapper for multi-pass stream transformations that require more than one storag...">DoubleBuffer&lt;Key&gt;</a>   &amp;d_keys,                                </div>
 <div class="line"><a name="l00507"></a><span class="lineno">  507</span>&#160;        <a class="code" href="structcub_1_1_double_buffer.html" title="Double-buffer storage wrapper for multi-pass stream transformations that require more than one storag...">DoubleBuffer&lt;Value&gt;</a> &amp;d_values,                              </div>
-<div class="line"><a name="l00508"></a><span class="lineno">  508</span>&#160;        SizeT               num_items,                              </div>
+<div class="line"><a name="l00508"></a><span class="lineno">  508</span>&#160;        Offset               num_items,                              </div>
 <div class="line"><a name="l00509"></a><span class="lineno">  509</span>&#160;        <span class="keywordtype">int</span>                 begin_bit           = 0,                </div>
 <div class="line"><a name="l00510"></a><span class="lineno">  510</span>&#160;        <span class="keywordtype">int</span>                 end_bit             = <span class="keyword">sizeof</span>(Key) * 8,  </div>
 <div class="line"><a name="l00511"></a><span class="lineno">  511</span>&#160;        cudaStream_t        stream              = 0,                </div>
@@ -600,7 +600,7 @@ var searchBox = new SearchBox("searchBox", "search",false,'Search');
 <div class="line"><a name="l00554"></a><span class="lineno">  554</span>&#160;            <span class="keywordtype">int</span> downsweep_occupancy = downsweep_sm_occupancy * sm_count;</div>
 <div class="line"><a name="l00555"></a><span class="lineno">  555</span>&#160;</div>
 <div class="line"><a name="l00556"></a><span class="lineno">  556</span>&#160;            <span class="comment">// Get even-share work distribution descriptor</span></div>
-<div class="line"><a name="l00557"></a><span class="lineno">  557</span>&#160;            GridEvenShare&lt;SizeT&gt; even_share;</div>
+<div class="line"><a name="l00557"></a><span class="lineno">  557</span>&#160;            GridEvenShare&lt;Offset&gt; even_share;</div>
 <div class="line"><a name="l00558"></a><span class="lineno">  558</span>&#160;            <span class="keywordtype">int</span> max_downsweep_grid_size = downsweep_occupancy * downsweep_dispatch_params.subscription_factor;</div>
 <div class="line"><a name="l00559"></a><span class="lineno">  559</span>&#160;            <span class="keywordtype">int</span> downsweep_grid_size;</div>
 <div class="line"><a name="l00560"></a><span class="lineno">  560</span>&#160;            even_share.GridInit(num_items, max_downsweep_grid_size, downsweep_dispatch_params.tile_size);</div>
@@ -621,7 +621,7 @@ var searchBox = new SearchBox("searchBox", "search",false,'Search');
 <div class="line"><a name="l00575"></a><span class="lineno">  575</span>&#160;            <span class="keywordtype">void</span>* allocations[1];</div>
 <div class="line"><a name="l00576"></a><span class="lineno">  576</span>&#160;            <span class="keywordtype">size_t</span> allocation_sizes[1] =</div>
 <div class="line"><a name="l00577"></a><span class="lineno">  577</span>&#160;            {</div>
-<div class="line"><a name="l00578"></a><span class="lineno">  578</span>&#160;                spine_size * <span class="keyword">sizeof</span>(SizeT),    <span class="comment">// bytes needed for privatized block digit histograms</span></div>
+<div class="line"><a name="l00578"></a><span class="lineno">  578</span>&#160;                spine_size * <span class="keyword">sizeof</span>(Offset),    <span class="comment">// bytes needed for privatized block digit histograms</span></div>
 <div class="line"><a name="l00579"></a><span class="lineno">  579</span>&#160;            };</div>
 <div class="line"><a name="l00580"></a><span class="lineno">  580</span>&#160;</div>
 <div class="line"><a name="l00581"></a><span class="lineno">  581</span>&#160;            <span class="comment">// Alias temporaries (or set the necessary size of the storage allocation)</span></div>
@@ -632,7 +632,7 @@ var searchBox = new SearchBox("searchBox", "search",false,'Search');
 <div class="line"><a name="l00586"></a><span class="lineno">  586</span>&#160;                <span class="keywordflow">return</span> cudaSuccess;</div>
 <div class="line"><a name="l00587"></a><span class="lineno">  587</span>&#160;</div>
 <div class="line"><a name="l00588"></a><span class="lineno">  588</span>&#160;            <span class="comment">// Privatized per-block digit histograms</span></div>
-<div class="line"><a name="l00589"></a><span class="lineno">  589</span>&#160;            SizeT *d_spine = (SizeT*) allocations[0];</div>
+<div class="line"><a name="l00589"></a><span class="lineno">  589</span>&#160;            Offset *d_spine = (Offset*) allocations[0];</div>
 <div class="line"><a name="l00590"></a><span class="lineno">  590</span>&#160;</div>
 <div class="line"><a name="l00591"></a><span class="lineno">  591</span>&#160;<span class="preprocessor">#ifndef __CUDA_ARCH__</span></div>
 <div class="line"><a name="l00592"></a><span class="lineno">  592</span>&#160;<span class="preprocessor"></span>            <span class="comment">// Get current smem bank configuration</span></div>
@@ -769,10 +769,10 @@ var searchBox = new SearchBox("searchBox", "search",false,'Search');
 <div class="line"><a name="l00768"></a><span class="lineno">  768</span>&#160;        <span class="keywordtype">bool</span>                debug_synchronous  = <span class="keyword">false</span>)            </div>
 <div class="line"><a name="l00769"></a><span class="lineno">  769</span>&#160;    {</div>
 <div class="line"><a name="l00770"></a><span class="lineno">  770</span>&#160;        <span class="comment">// Type used for array indexing</span></div>
-<div class="line"><a name="l00771"></a><span class="lineno">  771</span>&#160;        <span class="keyword">typedef</span> <span class="keywordtype">int</span> SizeT;</div>
+<div class="line"><a name="l00771"></a><span class="lineno">  771</span>&#160;        <span class="keyword">typedef</span> <span class="keywordtype">int</span> Offset;</div>
 <div class="line"><a name="l00772"></a><span class="lineno">  772</span>&#160;</div>
 <div class="line"><a name="l00773"></a><span class="lineno">  773</span>&#160;        <span class="comment">// Tuning polices</span></div>
-<div class="line"><a name="l00774"></a><span class="lineno">  774</span>&#160;        <span class="keyword">typedef</span> PtxDefaultPolicies&lt;Key, Value, SizeT&gt;           PtxDefaultPolicies; <span class="comment">// Wrapper of default kernel policies</span></div>
+<div class="line"><a name="l00774"></a><span class="lineno">  774</span>&#160;        <span class="keyword">typedef</span> PtxDefaultPolicies&lt;Key, Value, Offset&gt;           PtxDefaultPolicies; <span class="comment">// Wrapper of default kernel policies</span></div>
 <div class="line"><a name="l00775"></a><span class="lineno">  775</span>&#160;        <span class="keyword">typedef</span> <span class="keyword">typename</span> PtxDefaultPolicies::UpsweepPolicy      UpsweepPolicy;      <span class="comment">// Upsweep kernel policy</span></div>
 <div class="line"><a name="l00776"></a><span class="lineno">  776</span>&#160;        <span class="keyword">typedef</span> <span class="keyword">typename</span> PtxDefaultPolicies::ScanPolicy         ScanPolicy;         <span class="comment">// Scan kernel policy</span></div>
 <div class="line"><a name="l00777"></a><span class="lineno">  777</span>&#160;        <span class="keyword">typedef</span> <span class="keyword">typename</span> PtxDefaultPolicies::DownsweepPolicy    DownsweepPolicy;    <span class="comment">// Downsweep kernel policy</span></div>
@@ -804,9 +804,9 @@ var searchBox = new SearchBox("searchBox", "search",false,'Search');
 <div class="line"><a name="l00803"></a><span class="lineno">  803</span>&#160;            <span class="keywordflow">if</span> (<a class="code" href="group___util_module.html#ga84c3a4c178bf6593e0fad2b763606236" title="Debug macro. ">CubDebug</a>(error = Dispatch(</div>
 <div class="line"><a name="l00804"></a><span class="lineno">  804</span>&#160;                d_temp_storage,</div>
 <div class="line"><a name="l00805"></a><span class="lineno">  805</span>&#160;                temp_storage_bytes,</div>
-<div class="line"><a name="l00806"></a><span class="lineno">  806</span>&#160;                RadixSortUpsweepKernel&lt;UpsweepPolicy, Key, SizeT&gt;,</div>
-<div class="line"><a name="l00807"></a><span class="lineno">  807</span>&#160;                RadixSortScanKernel&lt;ScanPolicy, SizeT&gt;,</div>
-<div class="line"><a name="l00808"></a><span class="lineno">  808</span>&#160;                RadixSortDownsweepKernel&lt;DownsweepPolicy, Key, Value, SizeT&gt;,</div>
+<div class="line"><a name="l00806"></a><span class="lineno">  806</span>&#160;                RadixSortUpsweepKernel&lt;UpsweepPolicy, Key, Offset&gt;,</div>
+<div class="line"><a name="l00807"></a><span class="lineno">  807</span>&#160;                RadixSortScanKernel&lt;ScanPolicy, Offset&gt;,</div>
+<div class="line"><a name="l00808"></a><span class="lineno">  808</span>&#160;                RadixSortDownsweepKernel&lt;DownsweepPolicy, Key, Value, Offset&gt;,</div>
 <div class="line"><a name="l00809"></a><span class="lineno">  809</span>&#160;                upsweep_dispatch_params,</div>
 <div class="line"><a name="l00810"></a><span class="lineno">  810</span>&#160;                scan_dispatch_params,</div>
 <div class="line"><a name="l00811"></a><span class="lineno">  811</span>&#160;                downsweep_dispatch_params,</div>

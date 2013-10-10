@@ -731,7 +731,7 @@ struct TestBar
 /* todo: uncomment once Fermi codegen bug is fixed
 
 /// Load (simply defer to loading individual items)
-template <cub::PtxLoadModifier MODIFIER>
+template <cub::CacheLoadModifier MODIFIER>
 __device__ __forceinline__ TestBar ThreadLoad(TestBar *ptr)
 {
     TestBar retval;
@@ -741,7 +741,7 @@ __device__ __forceinline__ TestBar ThreadLoad(TestBar *ptr)
 }
 
  /// Store (simply defer to storing individual items)
-template <cub::PtxLoadModifier MODIFIER>
+template <cub::CacheLoadModifier MODIFIER>
 __device__ __forceinline__ void ThreadStore(
     TestBar *ptr,
     TestBar val)
@@ -788,10 +788,10 @@ __host__ __device__ __forceinline__ void InitValue(GenMode gen_mode, TestBar &va
 /**
  * Compares the equivalence of two arrays
  */
-template <typename S, typename T, typename SizeT>
-int CompareResults(T* computed, S* reference, SizeT len, bool verbose = true)
+template <typename S, typename T, typename Offset>
+int CompareResults(T* computed, S* reference, Offset len, bool verbose = true)
 {
-    for (SizeT i = 0; i < len; i++)
+    for (Offset i = 0; i < len; i++)
     {
         if (computed[i] != reference[i])
         {
@@ -808,11 +808,11 @@ int CompareResults(T* computed, S* reference, SizeT len, bool verbose = true)
 /**
  * Compares the equivalence of two arrays
  */
-template <typename SizeT>
-int CompareResults(float* computed, float* reference, SizeT len, bool verbose = true)
+template <typename Offset>
+int CompareResults(float* computed, float* reference, Offset len, bool verbose = true)
 {
     int retval = 0;
-    for (SizeT i = 0; i < len; i++)
+    for (Offset i = 0; i < len; i++)
     {
         float difference = std::abs(computed[i]-reference[i]);
         float fraction = difference / std::abs(reference[i]);
@@ -834,8 +834,8 @@ int CompareResults(float* computed, float* reference, SizeT len, bool verbose = 
 /**
  * Compares the equivalence of two arrays
  */
-template <typename SizeT>
-int CompareResults(cub::NullType* computed, cub::NullType* reference, SizeT len, bool verbose = true)
+template <typename Offset>
+int CompareResults(cub::NullType* computed, cub::NullType* reference, Offset len, bool verbose = true)
 {
     printf("CORRECT\n");
     return 0;
@@ -844,11 +844,11 @@ int CompareResults(cub::NullType* computed, cub::NullType* reference, SizeT len,
 /**
  * Compares the equivalence of two arrays
  */
-template <typename SizeT>
-int CompareResults(double* computed, double* reference, SizeT len, bool verbose = true)
+template <typename Offset>
+int CompareResults(double* computed, double* reference, Offset len, bool verbose = true)
 {
     int retval = 0;
-    for (SizeT i = 0; i < len; i++)
+    for (Offset i = 0; i < len; i++)
     {
         double difference = std::abs(computed[i]-reference[i]);
         double fraction = difference / std::abs(reference[i]);
