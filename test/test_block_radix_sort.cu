@@ -61,8 +61,90 @@ CachingDeviceAllocator  g_allocator(true);
 //---------------------------------------------------------------------
 
 
+/// Specialized descending, blocked -> blocked
+template <int BLOCK_THREADS, typename BlockRadixSort, int ITEMS_PER_THREAD, typename Key, typename Value>
+__device__ __forceinline__ void TestBlockSort(
+    BlockRadixSort::TempStorage &temp_storage,
+    Key                         (&keys)[ITEMS_PER_THREAD],
+    Value                       (&values)[ITEMS_PER_THREAD],
+    Key                         *d_keys,
+    Value                       *d_values,
+    int                         begin_bit,
+    int                         end_bit,
+    clock_t                     &stop,
+    Int2Type<true>              is_descending,
+    Int2Type<true>              is_blocked_output)
+{
+    BlockRadixSort(temp_storage).SortDescending(keys, values, begin_bit, end_bit);
+    stop = clock();
+    StoreBlocked(threadIdx.x, d_keys, keys);
+    StoreBlocked(threadIdx.x, d_values, values);
+}
+
+/// Specialized descending, blocked -> striped
+template <int BLOCK_THREADS, typename BlockRadixSort, int ITEMS_PER_THREAD, typename Key, typename Value>
+__device__ __forceinline__ void TestBlockSort(
+    BlockRadixSort::TempStorage &temp_storage,
+    Key                         (&keys)[ITEMS_PER_THREAD],
+    Value                       (&values)[ITEMS_PER_THREAD],
+    Key                         *d_keys,
+    Value                       *d_values,
+    int                         begin_bit,
+    int                         end_bit,
+    clock_t                     &stop,
+    Int2Type<true>              is_descending,
+    Int2Type<false>             is_blocked_output)
+{
+    BlockRadixSort(temp_storage).SortDescendingBlockedToStriped(keys, values, begin_bit, end_bit);
+    stop = clock();
+    StoreStriped<BLOCK_THREADS>(threadIdx.x, d_keys, keys);
+    StoreStriped<BLOCK_THREADS>(threadIdx.x, d_values, values);
+}
+
+/// Specialized ascending, blocked -> blocked
+template <int BLOCK_THREADS, typename BlockRadixSort, int ITEMS_PER_THREAD, typename Key, typename Value>
+__device__ __forceinline__ void TestBlockSort(
+    BlockRadixSort::TempStorage &temp_storage,
+    Key                         (&keys)[ITEMS_PER_THREAD],
+    Value                       (&values)[ITEMS_PER_THREAD],
+    Key                         *d_keys,
+    Value                       *d_values,
+    int                         begin_bit,
+    int                         end_bit,
+    clock_t                     &stop,
+    Int2Type<false>             is_descending,
+    Int2Type<true>              is_blocked_output)
+{
+    BlockRadixSort(temp_storage).Sort(keys, values, begin_bit, end_bit);
+    stop = clock();
+    StoreBlocked(threadIdx.x, d_keys, keys);
+    StoreBlocked(threadIdx.x, d_values, values);
+}
+
+/// Specialized ascending, blocked -> striped
+template <int BLOCK_THREADS, typename BlockRadixSort, int ITEMS_PER_THREAD, typename Key, typename Value>
+__device__ __forceinline__ void TestBlockSort(
+    BlockRadixSort::TempStorage &temp_storage,
+    Key                         (&keys)[ITEMS_PER_THREAD],
+    Value                       (&values)[ITEMS_PER_THREAD],
+    Key                         *d_keys,
+    Value                       *d_values,
+    int                         begin_bit,
+    int                         end_bit,
+    clock_t                     &stop,
+    Int2Type<false>             is_descending,
+    Int2Type<false>             is_blocked_output)
+{
+    BlockRadixSort(temp_storage).SortBlockedToStriped(keys, values, begin_bit, end_bit);
+    stop = clock();
+    StoreStriped<BLOCK_THREADS>(threadIdx.x, d_keys, keys);
+    StoreStriped<BLOCK_THREADS>(threadIdx.x, d_values, values);
+}
+
+
+
 /**
- * BlockRadixSort key-value pair kernel
+ * BlockRadixSort kernel
  */
 template <
     int                 BLOCK_THREADS,
@@ -71,118 +153,52 @@ template <
     bool                MEMOIZE_OUTER_SCAN,
     BlockScanAlgorithm  INNER_SCAN_ALGORITHM,
     cudaSharedMemConfig SMEM_CONFIG,
+    int                 DESCENDING,
+    int                 BLOCKED_OUTPUT,
     typename            Key,
     typename            Value>
 __launch_bounds__ (BLOCK_THREADS, 1)
 __global__ void Kernel(
-    Key                 *d_keys,
-    Value               *d_values,
-    int                 begin_bit,
-    int                 end_bit,
-    clock_t             *d_elapsed)
+    Key                         *d_keys,
+    Value                       *d_values,
+    int                         begin_bit,
+    int                         end_bit,
+    clock_t                     *d_elapsed)
 {
-    enum
-    {
-        TILE_SIZE = BLOCK_THREADS * ITEMS_PER_THREAD,
-    };
-
     // Threadblock load/store abstraction types
     typedef BlockRadixSort<
-        Key,
-        BLOCK_THREADS,
-        ITEMS_PER_THREAD,
-        Value,
-        RADIX_BITS,
-        MEMOIZE_OUTER_SCAN,
-        INNER_SCAN_ALGORITHM,
-        SMEM_CONFIG> BlockRadixSort;
+            Key,
+            BLOCK_THREADS,
+            ITEMS_PER_THREAD,
+            Value,
+            RADIX_BITS,
+            MEMOIZE_OUTER_SCAN,
+            INNER_SCAN_ALGORITHM,
+            SMEM_CONFIG>
+        BlockRadixSortT;
 
     // Allocate temp storage in shared memory
-    __shared__ typename BlockRadixSort::TempStorage temp_storage;
+    __shared__ typename BlockRadixSortT::TempStorage temp_storage;
 
-    // Keys per thread
-    Key keys[ITEMS_PER_THREAD];
-    Value values[ITEMS_PER_THREAD];
+    // Items per thread
+    Key     keys[ITEMS_PER_THREAD];
+    Value   values[ITEMS_PER_THREAD];
 
     LoadBlocked(threadIdx.x, d_keys, keys);
     LoadBlocked(threadIdx.x, d_values, values);
 
     // Start cycle timer
+    clock_t stop;
     clock_t start = clock();
 
-    // Test keys-value sorting (in striped arrangement)
-    BlockRadixSort(temp_storage).SortBlockedToStriped(keys, values, begin_bit, end_bit);
-
-    // Stop cycle timer
-    clock_t stop = clock();
-
-    StoreStriped<BLOCK_THREADS>(threadIdx.x, d_keys, keys);
-    StoreStriped<BLOCK_THREADS>(threadIdx.x, d_values, values);
+    TestBlockSort<BLOCK_THREADS, BlockRadixSortT>(
+        temp_storage, keys, values, d_keys, d_values, begin_bit, end_bit, stop, Int2Type<DESCENDING>(), Int2Type<BLOCKED_OUTPUT>());
 
     // Store time
     if (threadIdx.x == 0)
         *d_elapsed = (start > stop) ? start - stop : stop - start;
 }
 
-
-/**
- * BlockRadixSort keys-only kernel
- */
-template <
-    int                 BLOCK_THREADS,
-    int                 ITEMS_PER_THREAD,
-    int                 RADIX_BITS,
-    bool                MEMOIZE_OUTER_SCAN,
-    BlockScanAlgorithm  INNER_SCAN_ALGORITHM,
-    cudaSharedMemConfig SMEM_CONFIG,
-    typename            Key>
-__launch_bounds__ (BLOCK_THREADS, 1)
-__global__ void Kernel(
-    Key                 *d_keys,
-    NullType            *d_values,
-    int                 begin_bit,
-    int                 end_bit,
-    clock_t             *d_elapsed)
-{
-    enum
-    {
-        TILE_SIZE = BLOCK_THREADS * ITEMS_PER_THREAD,
-    };
-
-    // Threadblock load/store abstraction types
-    typedef BlockRadixSort<
-        Key,
-        BLOCK_THREADS,
-        ITEMS_PER_THREAD,
-        NullType,
-        RADIX_BITS,
-        MEMOIZE_OUTER_SCAN,
-        INNER_SCAN_ALGORITHM,
-        SMEM_CONFIG> BlockRadixSort;
-
-    // Allocate temp storage in shared memory
-    __shared__ typename BlockRadixSort::TempStorage temp_storage;
-
-    // Keys per thread
-    Key keys[ITEMS_PER_THREAD];
-
-    LoadBlocked(threadIdx.x, d_keys, keys);
-
-    // Start cycle timer
-    clock_t start = clock();
-
-    // Test keys-only sorting (in striped arrangement)
-    BlockRadixSort(temp_storage).SortBlockedToStriped(keys, begin_bit, end_bit);
-
-    // Stop cycle timer
-    clock_t stop = clock();
-
-    StoreStriped<BLOCK_THREADS>(threadIdx.x, d_keys, keys);
-
-    // Store time
-    if (threadIdx.x == 0)
-        *d_elapsed = (start > stop) ? start - stop : stop - start;
-}
 
 
 //---------------------------------------------------------------------
@@ -241,7 +257,7 @@ struct Pair<Key, Value, true>
 /**
  * Initialize key-value sorting problem.
  */
-template <typename Key, typename Value>
+template <bool DESCENDING, typename Key, typename Value>
 void Initialize(
     GenMode         gen_mode,
     Key             *h_keys,
@@ -281,7 +297,9 @@ void Initialize(
         h_pairs[i].value  = h_values[i];
     }
 
+    if (DESCENDING) std::reverse(h_pairs, h_pairs + num_items);
     std::stable_sort(h_pairs, h_pairs + num_items);
+    if (DESCENDING) std::reverse(h_pairs, h_pairs + num_items);
 
     for (int i = 0; i < num_items; ++i)
     {
@@ -296,7 +314,7 @@ void Initialize(
 
 
 /**
- * Drive BlockRadixSort kernel
+ * Test BlockRadixSort kernel
  */
 template <
     int                     BLOCK_THREADS,
@@ -305,6 +323,8 @@ template <
     bool                    MEMOIZE_OUTER_SCAN,
     BlockScanAlgorithm      INNER_SCAN_ALGORITHM,
     cudaSharedMemConfig     SMEM_CONFIG,
+    bool                    DESCENDING,
+    bool                    BLOCKED_OUTPUT,
     typename                Key,
     typename                Value>
 void TestDriver(
@@ -328,13 +348,13 @@ void TestDriver(
     // Allocate device arrays
     Key     *d_keys     = NULL;
     Value   *d_values   = NULL;
-    clock_t *d_elapsed = NULL;
+    clock_t *d_elapsed  = NULL;
     CubDebugExit(g_allocator.DeviceAllocate((void**)&d_keys, sizeof(Key) * TILE_SIZE));
     CubDebugExit(g_allocator.DeviceAllocate((void**)&d_values, sizeof(Value) * TILE_SIZE));
     CubDebugExit(g_allocator.DeviceAllocate((void**)&d_elapsed, sizeof(clock_t)));
 
     // Initialize problem and solution on host
-    Initialize(gen_mode, h_keys, h_values, h_reference_keys, h_reference_values,
+    Initialize<DESCENDING>(gen_mode, h_keys, h_values, h_reference_keys, h_reference_values,
         TILE_SIZE, entropy_reduction, begin_bit, end_bit);
 
     // Copy problem to device
@@ -348,6 +368,8 @@ void TestDriver(
         "MEMOIZE_OUTER_SCAN(%d) "
         "INNER_SCAN_ALGORITHM(%d) "
         "SMEM_CONFIG(%d) "
+        "DESCENDING(%d) "
+        "BLOCKED_OUTPUT(%d) "
         "sizeof(Key)(%d) "
         "sizeof(Value)(%d) "
         "entropy_reduction(%d) "
@@ -360,6 +382,8 @@ void TestDriver(
             MEMOIZE_OUTER_SCAN,
             INNER_SCAN_ALGORITHM,
             SMEM_CONFIG,
+            DESCENDING,
+            BLOCKED_OUTPUT,
             (int) sizeof(Key),
             (int) sizeof(Value),
             entropy_reduction,
@@ -370,7 +394,7 @@ void TestDriver(
     cudaDeviceSetSharedMemConfig(SMEM_CONFIG);
 
     // Run kernel
-    Kernel<BLOCK_THREADS, ITEMS_PER_THREAD, RADIX_BITS, MEMOIZE_OUTER_SCAN, INNER_SCAN_ALGORITHM, SMEM_CONFIG><<<1, BLOCK_THREADS>>>(
+    Kernel<BLOCK_THREADS, ITEMS_PER_THREAD, RADIX_BITS, MEMOIZE_OUTER_SCAN, INNER_SCAN_ALGORITHM, SMEM_CONFIG, DESCENDING, BLOCKED_OUTPUT><<<1, BLOCK_THREADS>>>(
         d_keys, d_values, begin_bit, end_bit, d_elapsed);
 
     // Flush kernel output / errors
@@ -417,6 +441,8 @@ template <
     bool                    MEMOIZE_OUTER_SCAN,
     BlockScanAlgorithm      INNER_SCAN_ALGORITHM,
     cudaSharedMemConfig     SMEM_CONFIG,
+    bool                    DESCENDING,
+    bool                    BLOCKED_OUTPUT,
     typename                Key,
     typename                Value,
     typename                BlockRadixSortT = BlockRadixSort<Key, BLOCK_THREADS, ITEMS_PER_THREAD, Value, RADIX_BITS, MEMOIZE_OUTER_SCAN, INNER_SCAN_ALGORITHM, SMEM_CONFIG>,
@@ -432,17 +458,17 @@ struct Valid
             for (int end_bit = begin_bit + 1; end_bit <= sizeof(Key) * 8; end_bit = end_bit * 2 + begin_bit)
             {
                 // Uniform key distribution
-                TestDriver<BLOCK_THREADS, ITEMS_PER_THREAD, RADIX_BITS, MEMOIZE_OUTER_SCAN, INNER_SCAN_ALGORITHM, SMEM_CONFIG, Key, Value>(
+                TestDriver<BLOCK_THREADS, ITEMS_PER_THREAD, RADIX_BITS, MEMOIZE_OUTER_SCAN, INNER_SCAN_ALGORITHM, SMEM_CONFIG, DESCENDING, BLOCKED_OUTPUT, Key, Value>(
                     UNIFORM, 0, begin_bit, end_bit);
 
                 // Sequential key distribution
-                TestDriver<BLOCK_THREADS, ITEMS_PER_THREAD, RADIX_BITS, MEMOIZE_OUTER_SCAN, INNER_SCAN_ALGORITHM, SMEM_CONFIG, Key, Value>(
+                TestDriver<BLOCK_THREADS, ITEMS_PER_THREAD, RADIX_BITS, MEMOIZE_OUTER_SCAN, INNER_SCAN_ALGORITHM, SMEM_CONFIG, DESCENDING, BLOCKED_OUTPUT, Key, Value>(
                     SEQ_INC, 0, begin_bit, end_bit);
 
                 // Iterate random with entropy_reduction
                 for (int entropy_reduction = 0; entropy_reduction <= 9; entropy_reduction += 3)
                 {
-                    TestDriver<BLOCK_THREADS, ITEMS_PER_THREAD, RADIX_BITS, MEMOIZE_OUTER_SCAN, INNER_SCAN_ALGORITHM, SMEM_CONFIG, Key, Value>(
+                    TestDriver<BLOCK_THREADS, ITEMS_PER_THREAD, RADIX_BITS, MEMOIZE_OUTER_SCAN, INNER_SCAN_ALGORITHM, SMEM_CONFIG, DESCENDING, BLOCKED_OUTPUT, Key, Value>(
                         RANDOM, entropy_reduction, begin_bit, end_bit);
                 }
             }
@@ -461,14 +487,37 @@ template <
     bool                    MEMOIZE_OUTER_SCAN,
     BlockScanAlgorithm      INNER_SCAN_ALGORITHM,
     cudaSharedMemConfig     SMEM_CONFIG,
+    bool                    DESCENDING,
+    bool                    BLOCKED_OUTPUT,
     typename                Key,
     typename                Value,
     typename                BlockRadixSortT>
-struct Valid<BLOCK_THREADS, ITEMS_PER_THREAD, RADIX_BITS, MEMOIZE_OUTER_SCAN, INNER_SCAN_ALGORITHM, SMEM_CONFIG, Key, Value, BlockRadixSortT, false>
+struct Valid<BLOCK_THREADS, ITEMS_PER_THREAD, RADIX_BITS, MEMOIZE_OUTER_SCAN, INNER_SCAN_ALGORITHM, SMEM_CONFIG, DESCENDING, BLOCKED_OUTPUT, Key, Value, BlockRadixSortT, false>
 {
     // Do nothing
     static void Test() {}
 };
+
+
+/**
+ * Test ascending/descending and to-blocked/to-striped
+ */
+template <
+    int                     BLOCK_THREADS,
+    int                     ITEMS_PER_THREAD,
+    int                     RADIX_BITS,
+    bool                    MEMOIZE_OUTER_SCAN,
+    BlockScanAlgorithm      INNER_SCAN_ALGORITHM,
+    cudaSharedMemConfig     SMEM_CONFIG,
+    typename                Key,
+    typename                Value>
+void Test()
+{
+    Valid<BLOCK_THREADS, ITEMS_PER_THREAD, RADIX_BITS, MEMOIZE_OUTER_SCAN, INNER_SCAN_ALGORITHM, SMEM_CONFIG, true, true, Key, Value>::Test();
+    Valid<BLOCK_THREADS, ITEMS_PER_THREAD, RADIX_BITS, MEMOIZE_OUTER_SCAN, INNER_SCAN_ALGORITHM, SMEM_CONFIG, true, false, Key, Value>::Test();
+    Valid<BLOCK_THREADS, ITEMS_PER_THREAD, RADIX_BITS, MEMOIZE_OUTER_SCAN, INNER_SCAN_ALGORITHM, SMEM_CONFIG, false, true, Key, Value>::Test();
+    Valid<BLOCK_THREADS, ITEMS_PER_THREAD, RADIX_BITS, MEMOIZE_OUTER_SCAN, INNER_SCAN_ALGORITHM, SMEM_CONFIG, false, false, Key, Value>::Test();
+}
 
 
 /**
@@ -484,9 +533,9 @@ template <
     typename                Key>
 void Test()
 {
-    Valid<BLOCK_THREADS, ITEMS_PER_THREAD, RADIX_BITS, MEMOIZE_OUTER_SCAN, INNER_SCAN_ALGORITHM, SMEM_CONFIG, Key, NullType>::Test();   // Keys-only
-    Valid<BLOCK_THREADS, ITEMS_PER_THREAD, RADIX_BITS, MEMOIZE_OUTER_SCAN, INNER_SCAN_ALGORITHM, SMEM_CONFIG, Key, Key>::Test();        // With values
-    Valid<BLOCK_THREADS, ITEMS_PER_THREAD, RADIX_BITS, MEMOIZE_OUTER_SCAN, INNER_SCAN_ALGORITHM, SMEM_CONFIG, Key, TestFoo>::Test();    // With large values
+    Test<BLOCK_THREADS, ITEMS_PER_THREAD, RADIX_BITS, MEMOIZE_OUTER_SCAN, INNER_SCAN_ALGORITHM, SMEM_CONFIG, Key, NullType>();   // Keys-only
+    Test<BLOCK_THREADS, ITEMS_PER_THREAD, RADIX_BITS, MEMOIZE_OUTER_SCAN, INNER_SCAN_ALGORITHM, SMEM_CONFIG, Key, Key>();        // With values
+    Test<BLOCK_THREADS, ITEMS_PER_THREAD, RADIX_BITS, MEMOIZE_OUTER_SCAN, INNER_SCAN_ALGORITHM, SMEM_CONFIG, Key, TestFoo>();    // With large values
 }
 
 
@@ -509,9 +558,9 @@ void Test()
     Test<BLOCK_THREADS, ITEMS_PER_THREAD, RADIX_BITS, MEMOIZE_OUTER_SCAN, INNER_SCAN_ALGORITHM, SMEM_CONFIG, unsigned long long>();
 
     Test<BLOCK_THREADS, ITEMS_PER_THREAD, RADIX_BITS, MEMOIZE_OUTER_SCAN, INNER_SCAN_ALGORITHM, SMEM_CONFIG, char>();
-    Test<BLOCK_THREADS, ITEMS_PER_THREAD, RADIX_BITS, MEMOIZE_OUTER_SCAN, INNER_SCAN_ALGORITHM, SMEM_CONFIG, short>();
+//    Test<BLOCK_THREADS, ITEMS_PER_THREAD, RADIX_BITS, MEMOIZE_OUTER_SCAN, INNER_SCAN_ALGORITHM, SMEM_CONFIG, short>();        // unnecessary
     Test<BLOCK_THREADS, ITEMS_PER_THREAD, RADIX_BITS, MEMOIZE_OUTER_SCAN, INNER_SCAN_ALGORITHM, SMEM_CONFIG, int>();
-    Test<BLOCK_THREADS, ITEMS_PER_THREAD, RADIX_BITS, MEMOIZE_OUTER_SCAN, INNER_SCAN_ALGORITHM, SMEM_CONFIG, long>();
+//    Test<BLOCK_THREADS, ITEMS_PER_THREAD, RADIX_BITS, MEMOIZE_OUTER_SCAN, INNER_SCAN_ALGORITHM, SMEM_CONFIG, long>();         // unnecessary
     Test<BLOCK_THREADS, ITEMS_PER_THREAD, RADIX_BITS, MEMOIZE_OUTER_SCAN, INNER_SCAN_ALGORITHM, SMEM_CONFIG, long long>();
 
     Test<BLOCK_THREADS, ITEMS_PER_THREAD, RADIX_BITS, MEMOIZE_OUTER_SCAN, INNER_SCAN_ALGORITHM, SMEM_CONFIG, float>();
@@ -615,7 +664,7 @@ int main(int argc, char** argv)
 
     // Quick test
     typedef unsigned int T;
-    TestDriver<64, 2, 5, true, BLOCK_SCAN_WARP_SCANS, cudaSharedMemBankSizeFourByte, T, NullType>(RANDOM, 0, 0, sizeof(T) * 8);
+    TestDriver<64, 2, 5, true, BLOCK_SCAN_WARP_SCANS, cudaSharedMemBankSizeFourByte, false, false, T, NullType>(RANDOM, 0, 0, sizeof(T) * 8);
 
     // Test threads
     Test<32>();

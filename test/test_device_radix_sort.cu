@@ -412,10 +412,11 @@ void Test(
 
     if (end_bit < 0) end_bit = sizeof(Key) * 8;
 
-    printf("%s %s cub::DeviceRadixSort %d items, %s %d-byte keys, gen-mode %s, descending %d\n",
+    printf("%s %s cub::DeviceRadixSort %d items, %s %d-byte keys %d-byte values, gen-mode %s, descending %d\n",
         (BACKEND == CDP) ? "CDP CUB" : (BACKEND == THRUST) ? "Thrust" : "CUB",
         (KEYS_ONLY) ? "keys-only" : "key-value",
-        num_items, type_string, (int) sizeof(Key),
+        num_items, type_string,
+        (int) sizeof(Key), (KEYS_ONLY) ? 0 : (int) sizeof(Value),
         (gen_mode == RANDOM) ? "RANDOM" : (gen_mode == SEQ_INC) ? "SEQUENTIAL" : "HOMOGENOUS",
         DESCENDING);
     fflush(stdout);
@@ -618,9 +619,7 @@ void TestItems(
         Test<Key, Value>(32, begin_bit, end_bit, type_string);
         Test<Key, Value>(3200, begin_bit, end_bit, type_string);
         Test<Key, Value>(320000, begin_bit, end_bit, type_string);
-
-        if ((sizeof(void*) > 4) || (sizeof(Value) <= 8))
-            Test<Key, Value>(32000000, begin_bit, end_bit, type_string);
+        Test<Key, Value>(12000000, begin_bit, end_bit, type_string);
     }
     else
     {
@@ -657,6 +656,7 @@ void TestItems(
 int main(int argc, char** argv)
 {
     int num_items = -1;
+    int entropy_reduction = 0;
 
     // Initialize command line
     CommandLineArgs args(argc, argv);
@@ -666,6 +666,7 @@ int main(int argc, char** argv)
     args.GetCmdLineArgument("i", g_timing_iterations);
     args.GetCmdLineArgument("repeat", g_repeat);
     args.GetCmdLineArgument("bits", g_bits);
+    args.GetCmdLineArgument("entropy", entropy_reduction);
 
     // Print usage
     if (args.CheckCmdLineFlag("help"))
@@ -675,10 +676,10 @@ int main(int argc, char** argv)
             "[--n=<input items> "
             "[--i=<timing iterations> "
             "[--device=<device-id>] "
-            "[--repeat=<times to repeat tests>]"
+            "[--repeat=<repetitions of entire test suite>]"
             "[--quick]"
             "[--v] "
-            "[--cdp]"
+            "[--entropy=<entropy-reduction factor (default 0)>]"
             "\n", argv[0]);
         exit(0);
     }
@@ -687,19 +688,17 @@ int main(int argc, char** argv)
     CubDebugExit(args.DeviceInit());
     printf("\n");
 
-    Test<CUB, unsigned int, NullType, true> (num_items, SEQ_INC, 0, 0, g_bits, CUB_TYPE_STRING(unsigned int));
-
-
-/*
     if (quick)
     {
         if (num_items < 0) num_items = 32000000;
 
-        Test<CUB, unsigned int, NullType, false> (num_items, RANDOM, 0, 0, g_bits, CUB_TYPE_STRING(unsigned int));
-        Test<THRUST, unsigned int, NullType, false> (num_items, RANDOM, 0, 0, g_bits, CUB_TYPE_STRING(unsigned int));
+        // Compare CUB and thrust on 32b keys-only
+        Test<CUB, unsigned int, NullType, false> (num_items, RANDOM, entropy_reduction, 0, g_bits, CUB_TYPE_STRING(unsigned int));
+        Test<THRUST, unsigned int, NullType, false> (num_items, RANDOM, entropy_reduction, 0, g_bits, CUB_TYPE_STRING(unsigned int));
 
-        Test<CUB, unsigned int, unsigned int, false> (num_items, RANDOM, 0, 0, g_bits, CUB_TYPE_STRING(unsigned int));
-        Test<THRUST, unsigned int, unsigned int, false> (num_items, RANDOM, 0, 0, g_bits, CUB_TYPE_STRING(unsigned int));
+        // Compare CUB and thrust on 32b key-value pairs
+        Test<CUB, unsigned int, unsigned int, false> (num_items, RANDOM, entropy_reduction, 0, g_bits, CUB_TYPE_STRING(unsigned int));
+        Test<THRUST, unsigned int, unsigned int, false> (num_items, RANDOM, entropy_reduction, 0, g_bits, CUB_TYPE_STRING(unsigned int));
     }
     else
     {
@@ -723,7 +722,7 @@ int main(int argc, char** argv)
         TestItems<float>                (num_items, 0, g_bits, CUB_TYPE_STRING(float));
         TestItems<double>               (num_items, 0, g_bits, CUB_TYPE_STRING(double));
     }
-*/
+
     return 0;
 }
 
