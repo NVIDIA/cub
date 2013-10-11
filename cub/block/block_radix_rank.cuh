@@ -471,13 +471,15 @@ public:
         // Get the inclusive and exclusive digit totals corresponding to the calling thread.
         if ((BLOCK_THREADS == RADIX_DIGITS) || (linear_tid < RADIX_DIGITS))
         {
+            int bin_idx = (DESCENDING) ?
+                RADIX_DIGITS - linear_tid - 1 :
+                linear_tid;
+
             // Obtain ex/inclusive digit counts.  (Unfortunately these all reside in the
             // first counter column, resulting in unavoidable bank conflicts.)
-            int counter_lane = (linear_tid & (COUNTER_LANES - 1));
-            int sub_counter = linear_tid >> (LOG_COUNTER_LANES);
+            int counter_lane = (bin_idx & (COUNTER_LANES - 1));
+            int sub_counter = bin_idx >> (LOG_COUNTER_LANES);
             inclusive_digit_prefix = temp_storage.digit_counters[counter_lane + 1][0][sub_counter];
-
-            CubLog("Inclusive digit prefix %d\n", inclusive_digit_prefix);
         }
     }
 };
