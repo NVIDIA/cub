@@ -552,7 +552,7 @@ enum BlockLoadAlgorithm
  * \tparam BLOCK_THREADS        The thread block size in threads.
  * \tparam ITEMS_PER_THREAD     The number of consecutive items partitioned onto each thread.
  * \tparam ALGORITHM            <b>[optional]</b> cub::BlockLoadAlgorithm tuning policy.  default: cub::BLOCK_LOAD_DIRECT.
- * \tparam WARP_TIME_SLICING    <b>[optional]</b> For transposition-based cub::BlockLoadAlgorithm parameterizations that utilize shared memory: When \p true, only use enough shared memory for a single warp's worth of data, time-slicing the block-wide exchange over multiple synchronized rounds (default: false)
+ * \tparam WARP_TIME_SLICING    <b>[optional]</b> Whether or not only one warp's worth of shared memory should be allocated and time-sliced among block-warps during any load-related data transpositions (versus each warp having its own storage). (default: false)
  *
  * \par A Simple Example
  * \blockcollective{BlockLoad}

@@ -65,7 +65,7 @@ template <
     typename T,                                     ///< Scan value type
     typename Offset>                                ///< Signed integer type for global offsets
 __global__ void ScanInitKernel(
-    GridQueue<Offset>            grid_queue,        ///< [in] Descriptor for performing dynamic mapping of input tiles to thread blocks
+    GridQueue<Offset>           grid_queue,         ///< [in] Descriptor for performing dynamic mapping of input tiles to thread blocks
     LookbackTileDescriptor<T>   *d_tile_status,     ///< [out] Tile status words
     int                         num_tiles)          ///< [in] Number of tiles
 {
@@ -376,14 +376,14 @@ struct DeviceScanDispatch
         OutputIterator              d_out,                          ///< [in] Iterator pointing to scan output
         ScanOp                      scan_op,                        ///< [in] Binary scan operator
         Identity                    identity,                       ///< [in] Identity element
-        Offset                       num_items,                      ///< [in] Total number of items to scan
+        Offset                      num_items,                      ///< [in] Total number of items to scan
         cudaStream_t                stream,                         ///< [in] <b>[optional]</b> CUDA stream to launch kernels within.  Default is stream<sub>0</sub>.
         bool                        debug_synchronous,              ///< [in] <b>[optional]</b> Whether or not to synchronize the stream after every kernel launch to check for errors.  Also causes launch configurations to be printed to the console.  Default is \p false.
         int                         ptx_version,                    ///< [in] PTX version of dispatch kernels
         int                         sm_version,                     ///< [in] SM version of target device to use when computing SM occupancy
         ScanInitKernelPtr           init_kernel,                    ///< [in] Kernel function pointer to parameterization of cub::ScanInitKernel
-        ScanRegionKernelPtr          scan_region_kernel,              ///< [in] Kernel function pointer to parameterization of cub::ScanRegionKernelPtr
-        KernelDispatchConfig        scan_region_config)              ///< [in] Dispatch parameters that match the policy that \p scan_region_kernel was compiled for
+        ScanRegionKernelPtr         scan_region_kernel,             ///< [in] Kernel function pointer to parameterization of cub::ScanRegionKernelPtr
+        KernelDispatchConfig        scan_region_config)             ///< [in] Dispatch parameters that match the policy that \p scan_region_kernel was compiled for
     {
 
 #ifndef CUB_RUNTIME_ENABLED
@@ -491,15 +491,15 @@ struct DeviceScanDispatch
      */
     __host__ __device__ __forceinline__
     static cudaError_t Dispatch(
-        void                        *d_temp_storage,                ///< [in] %Device allocation of temporary storage.  When NULL, the required allocation size is returned in \p temp_storage_bytes and no work is done.
-        size_t                      &temp_storage_bytes,            ///< [in,out] Size in bytes of \p d_temp_storage allocation.
-        InputIterator             d_in,                           ///< [in] Iterator pointing to scan input
-        OutputIterator            d_out,                          ///< [in] Iterator pointing to scan output
-        ScanOp                      scan_op,                        ///< [in] Binary scan operator
-        Identity                    identity,                       ///< [in] Identity element
-        Offset                       num_items,                      ///< [in] Total number of items to scan
-        cudaStream_t                stream,                         ///< [in] <b>[optional]</b> CUDA stream to launch kernels within.  Default is stream<sub>0</sub>.
-        bool                        debug_synchronous)              ///< [in] <b>[optional]</b> Whether or not to synchronize the stream after every kernel launch to check for errors.  Also causes launch configurations to be printed to the console.  Default is \p false.
+        void            *d_temp_storage,                ///< [in] %Device allocation of temporary storage.  When NULL, the required allocation size is returned in \p temp_storage_bytes and no work is done.
+        size_t          &temp_storage_bytes,            ///< [in,out] Size in bytes of \p d_temp_storage allocation.
+        InputIterator   d_in,                           ///< [in] Iterator pointing to scan input
+        OutputIterator  d_out,                          ///< [in] Iterator pointing to scan output
+        ScanOp          scan_op,                        ///< [in] Binary scan operator
+        Identity        identity,                       ///< [in] Identity element
+        Offset          num_items,                      ///< [in] Total number of items to scan
+        cudaStream_t    stream,                         ///< [in] <b>[optional]</b> CUDA stream to launch kernels within.  Default is stream<sub>0</sub>.
+        bool            debug_synchronous)              ///< [in] <b>[optional]</b> Whether or not to synchronize the stream after every kernel launch to check for errors.  Also causes launch configurations to be printed to the console.  Default is \p false.
     {
         cudaError error = cudaSuccess;
         do

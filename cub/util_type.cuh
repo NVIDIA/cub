@@ -258,6 +258,28 @@ struct UnitWord
  ******************************************************************************/
 
 /**
+ * An key identifier paired with a corresponding value reduction
+ */
+template <typename Key, typename Value>
+struct KeyValuePair
+{
+    Key     key;            ///< Key identifier
+    Value   value;          ///< Reduction value
+};
+
+
+/**
+ * An key identifier paired with a corresponding value reduction (specialized for int-double pairings)
+ */
+template <>
+struct KeyValuePair<int, double>
+{
+    long long   key;        ///< Key identifier
+    double      value;      ///< Reduction value
+};
+
+
+/**
  * \brief A storage-backing wrapper that allows types with non-trivial constructors to be aliased in unions
  */
 template <typename T>

@@ -65,7 +65,7 @@ namespace cub {
  *
  * \tparam T                    <b>[inferred]</b> The data type to store.
  * \tparam ITEMS_PER_THREAD     <b>[inferred]</b> The number of consecutive items partitioned onto each thread.
- * \tparam OutputIterator     <b>[inferred]</b> The random-access iterator type for output (may be a simple pointer type).
+ * \tparam OutputIterator       <b>[inferred]</b> The random-access iterator type for output (may be a simple pointer type).
  */
 template <
     typename            T,
@@ -73,7 +73,7 @@ template <
     typename            OutputIterator>
 __device__ __forceinline__ void StoreBlocked(
     int                 linear_tid,                 ///< [in] A suitable 1D thread-identifier for the calling thread (e.g., <tt>(threadIdx.y * blockDim.x) + linear_tid</tt> for 2D thread blocks)
-    OutputIterator    block_itr,                  ///< [in] The thread block's base output iterator for storing to
+    OutputIterator      block_itr,                  ///< [in] The thread block's base output iterator for storing to
     T                   (&items)[ITEMS_PER_THREAD]) ///< [in] Data to store
 {
     // Store directly in thread-blocked order
@@ -92,7 +92,7 @@ __device__ __forceinline__ void StoreBlocked(
  *
  * \tparam T                    <b>[inferred]</b> The data type to store.
  * \tparam ITEMS_PER_THREAD     <b>[inferred]</b> The number of consecutive items partitioned onto each thread.
- * \tparam OutputIterator     <b>[inferred]</b> The random-access iterator type for output (may be a simple pointer type).
+ * \tparam OutputIterator       <b>[inferred]</b> The random-access iterator type for output (may be a simple pointer type).
  */
 template <
     typename            T,
@@ -100,7 +100,7 @@ template <
     typename            OutputIterator>
 __device__ __forceinline__ void StoreBlocked(
     int                 linear_tid,                 ///< [in] A suitable 1D thread-identifier for the calling thread (e.g., <tt>(threadIdx.y * blockDim.x) + linear_tid</tt> for 2D thread blocks)
-    OutputIterator    block_itr,                  ///< [in] The thread block's base output iterator for storing to
+    OutputIterator      block_itr,                  ///< [in] The thread block's base output iterator for storing to
     T                   (&items)[ITEMS_PER_THREAD], ///< [in] Data to store
     int                 valid_items)                ///< [in] Number of valid items to write
 {
@@ -132,7 +132,7 @@ __device__ __forceinline__ void StoreBlocked(
  * \tparam BLOCK_THREADS        The thread block size in threads
  * \tparam T                    <b>[inferred]</b> The data type to store.
  * \tparam ITEMS_PER_THREAD     <b>[inferred]</b> The number of consecutive items partitioned onto each thread.
- * \tparam OutputIterator     <b>[inferred]</b> The random-access iterator type for output (may be a simple pointer type).
+ * \tparam OutputIterator       <b>[inferred]</b> The random-access iterator type for output (may be a simple pointer type).
  */
 template <
     int                 BLOCK_THREADS,
@@ -141,7 +141,7 @@ template <
     typename            OutputIterator>
 __device__ __forceinline__ void StoreStriped(
     int                 linear_tid,                 ///< [in] A suitable 1D thread-identifier for the calling thread (e.g., <tt>(threadIdx.y * blockDim.x) + linear_tid</tt> for 2D thread blocks)
-    OutputIterator    block_itr,                  ///< [in] The thread block's base output iterator for storing to
+    OutputIterator      block_itr,                  ///< [in] The thread block's base output iterator for storing to
     T                   (&items)[ITEMS_PER_THREAD]) ///< [in] Data to store
 {
     // Store directly in striped order
@@ -161,7 +161,7 @@ __device__ __forceinline__ void StoreStriped(
  * \tparam BLOCK_THREADS        The thread block size in threads
  * \tparam T                    <b>[inferred]</b> The data type to store.
  * \tparam ITEMS_PER_THREAD     <b>[inferred]</b> The number of consecutive items partitioned onto each thread.
- * \tparam OutputIterator     <b>[inferred]</b> The random-access iterator type for output (may be a simple pointer type).
+ * \tparam OutputIterator       <b>[inferred]</b> The random-access iterator type for output (may be a simple pointer type).
  */
 template <
     int                 BLOCK_THREADS,
@@ -170,7 +170,7 @@ template <
     typename            OutputIterator>
 __device__ __forceinline__ void StoreStriped(
     int                 linear_tid,                 ///< [in] A suitable 1D thread-identifier for the calling thread (e.g., <tt>(threadIdx.y * blockDim.x) + linear_tid</tt> for 2D thread blocks)
-    OutputIterator    block_itr,                  ///< [in] The thread block's base output iterator for storing to
+    OutputIterator      block_itr,                  ///< [in] The thread block's base output iterator for storing to
     T                   (&items)[ITEMS_PER_THREAD], ///< [in] Data to store
     int                 valid_items)                ///< [in] Number of valid items to write
 {
@@ -204,7 +204,7 @@ __device__ __forceinline__ void StoreStriped(
  *
  * \tparam T                    <b>[inferred]</b> The data type to store.
  * \tparam ITEMS_PER_THREAD     <b>[inferred]</b> The number of consecutive items partitioned onto each thread.
- * \tparam OutputIterator     <b>[inferred]</b> The random-access iterator type for output (may be a simple pointer type).
+ * \tparam OutputIterator       <b>[inferred]</b> The random-access iterator type for output (may be a simple pointer type).
  */
 template <
     typename            T,
@@ -212,7 +212,7 @@ template <
     typename            OutputIterator>
 __device__ __forceinline__ void StoreWarpStriped(
     int                 linear_tid,                 ///< [in] A suitable 1D thread-identifier for the calling thread (e.g., <tt>(threadIdx.y * blockDim.x) + linear_tid</tt> for 2D thread blocks)
-    OutputIterator    block_itr,                  ///< [in] The thread block's base output iterator for storing to
+    OutputIterator      block_itr,                  ///< [in] The thread block's base output iterator for storing to
     T                   (&items)[ITEMS_PER_THREAD]) ///< [out] Data to load
 {
     int tid         = linear_tid & (CUB_PTX_WARP_THREADS - 1);
@@ -238,7 +238,7 @@ __device__ __forceinline__ void StoreWarpStriped(
  *
  * \tparam T                    <b>[inferred]</b> The data type to store.
  * \tparam ITEMS_PER_THREAD     <b>[inferred]</b> The number of consecutive items partitioned onto each thread.
- * \tparam OutputIterator     <b>[inferred]</b> The random-access iterator type for output (may be a simple pointer type).
+ * \tparam OutputIterator       <b>[inferred]</b> The random-access iterator type for output (may be a simple pointer type).
  */
 template <
     typename            T,
@@ -246,7 +246,7 @@ template <
     typename            OutputIterator>
 __device__ __forceinline__ void StoreWarpStriped(
     int                 linear_tid,                 ///< [in] A suitable 1D thread-identifier for the calling thread (e.g., <tt>(threadIdx.y * blockDim.x) + linear_tid</tt> for 2D thread blocks)
-    OutputIterator    block_itr,                  ///< [in] The thread block's base output iterator for storing to
+    OutputIterator      block_itr,                  ///< [in] The thread block's base output iterator for storing to
     T                   (&items)[ITEMS_PER_THREAD], ///< [in] Data to store
     int                 valid_items)                ///< [in] Number of valid items to write
 {
@@ -455,7 +455,7 @@ enum BlockStoreAlgorithm
  * \tparam BLOCK_THREADS        The thread block size in threads.
  * \tparam ITEMS_PER_THREAD     The number of consecutive items partitioned onto each thread.
  * \tparam ALGORITHM            <b>[optional]</b> cub::BlockStoreAlgorithm tuning policy enumeration.  default: cub::BLOCK_STORE_DIRECT.
- * \tparam WARP_TIME_SLICING    <b>[optional]</b> For transposition-based cub::BlockStoreAlgorithm parameterizations that utilize shared memory: When \p true, only use enough shared memory for a single warp's worth of data, time-slicing the block-wide exchange over multiple synchronized rounds (default: false)
+ * \tparam WARP_TIME_SLICING    <b>[optional]</b> Whether or not only one warp's worth of shared memory should be allocated and time-sliced among block-warps during any load-related data transpositions (versus each warp having its own storage). (default: false)
  *
  * \par A Simple Example
  * \blockcollective{BlockStore}
