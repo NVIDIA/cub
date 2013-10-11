@@ -60,26 +60,26 @@ namespace cub {
 template <
     int                         _BLOCK_THREADS,                 ///< Threads per thread block
     int                         _ITEMS_PER_THREAD,              ///< Items per thread (per tile of input)
-    BlockLoadAlgorithm          _LOAD_ALGORITHM,
-    bool                        _LOAD_WARP_TIME_SLICING,
-    CacheLoadModifier           _LOAD_MODIFIER,
-    BlockStoreAlgorithm         _STORE_ALGORITHM,
-    bool                        _STORE_WARP_TIME_SLICING,
-    BlockScanAlgorithm          _SCAN_ALGORITHM>
+    BlockLoadAlgorithm          _LOAD_ALGORITHM,                ///< The BlockLoad algorithm to use
+    bool                        _LOAD_WARP_TIME_SLICING,        ///< Whether or not only one warp's worth of shared memory should be allocated and time-sliced among block-warps during any load-related data transpositions (versus each warp having its own storage)
+    CacheLoadModifier           _LOAD_MODIFIER,                 ///< Cache load modifier for reading input elements
+    BlockStoreAlgorithm         _STORE_ALGORITHM,               ///< The BlockStore algorithm to use
+    bool                        _STORE_WARP_TIME_SLICING,       ///< Whether or not only one warp's worth of shared memory should be allocated and time-sliced among block-warps during any store-related data transpositions (versus each warp having its own storage)
+    BlockScanAlgorithm          _SCAN_ALGORITHM>                ///< The BlockScan algorithm to use
 struct BlockScanRegionPolicy
 {
     enum
     {
         BLOCK_THREADS           = _BLOCK_THREADS,               ///< Threads per thread block
         ITEMS_PER_THREAD        = _ITEMS_PER_THREAD,            ///< Items per thread (per tile of input)
-        LOAD_WARP_TIME_SLICING  = _LOAD_WARP_TIME_SLICING,
-        STORE_WARP_TIME_SLICING = _STORE_WARP_TIME_SLICING,
+        LOAD_WARP_TIME_SLICING  = _LOAD_WARP_TIME_SLICING,      ///< Whether or not only one warp's worth of shared memory should be allocated and time-sliced among block-warps during any load-related data transpositions (versus each warp having its own storage)
+        STORE_WARP_TIME_SLICING = _STORE_WARP_TIME_SLICING,     ///< Whether or not only one warp's worth of shared memory should be allocated and time-sliced among block-warps during any store-related data transpositions (versus each warp having its own storage)
     };
 
-    static const BlockLoadAlgorithm     LOAD_ALGORITHM      = _LOAD_ALGORITHM;
-    static const CacheLoadModifier      LOAD_MODIFIER       = _LOAD_MODIFIER;
-    static const BlockStoreAlgorithm    STORE_ALGORITHM     = _STORE_ALGORITHM;
-    static const BlockScanAlgorithm     SCAN_ALGORITHM      = _SCAN_ALGORITHM;
+    static const BlockLoadAlgorithm     LOAD_ALGORITHM          = _LOAD_ALGORITHM;          ///< The BlockLoad algorithm to use
+    static const CacheLoadModifier      LOAD_MODIFIER           = _LOAD_MODIFIER;           ///< Cache load modifier for reading input elements
+    static const BlockStoreAlgorithm    STORE_ALGORITHM         = _STORE_ALGORITHM;         ///< The BlockStore algorithm to use
+    static const BlockScanAlgorithm     SCAN_ALGORITHM    = _SCAN_ALGORITHM;    ///< The BlockScan algorithm to use
 };
 
 
