@@ -54,28 +54,6 @@ namespace cub {
 #ifndef DOXYGEN_SHOULD_SKIP_THIS    // Do not document
 
 /**
- * An key identifier paired with a corresponding value reduction
- */
-template <typename Key, typename Value>
-struct KeyValuePair
-{
-    Key     key;            ///< Key identifier
-    Value   value;          ///< Reduction value
-};
-
-
-/**
- * An key identifier paired with a corresponding value reduction (specialized for int-double pairings)
- */
-template <>
-struct KeyValuePair<int, double>
-{
-    long long   key;        ///< Key identifier
-    double      value;      ///< Reduction value
-};
-
-
-/**
  * Reduce-value-by-ID scan operator
  */
 template <typename ReductionOp>     ///< Wrapped reduction operator type
