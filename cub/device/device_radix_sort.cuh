@@ -108,8 +108,6 @@ __global__ void RadixSortUpsweepKernel(
         // Write out digit counts (striped)
         if (threadIdx.x < BlockRadixSortUpsweepRegionT::RADIX_DIGITS)
         {
-            CubLog("stored bin_count %d\n", bin_count);
-
             int bin_idx = (DESCENDING) ?
                 BlockRadixSortUpsweepRegionT::RADIX_DIGITS - threadIdx.x - 1 :
                 threadIdx.x;
@@ -130,8 +128,6 @@ __global__ void RadixSortUpsweepKernel(
         // Write out digit counts (striped)
         if (threadIdx.x < AltBlockRadixSortUpsweepRegionT::RADIX_DIGITS)
         {
-            CubLog("stored bin_count %d\n", bin_count);
-
             int bin_idx = (DESCENDING) ?
                 AltBlockRadixSortUpsweepRegionT::RADIX_DIGITS - threadIdx.x - 1 :
                 threadIdx.x;

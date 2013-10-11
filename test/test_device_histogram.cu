@@ -595,7 +595,7 @@ int main(int argc, char** argv)
             "[--n=<total input samples across all channels> "
             "[--i=<timing iterations> "
             "[--device=<device-id>] "
-            "[--repeat=<times to repeat tests>]"
+            "[--repeat=<repetitions of entire test suite>]"
             "[--quick]"
             "[--v] "
             "[--cdp]"

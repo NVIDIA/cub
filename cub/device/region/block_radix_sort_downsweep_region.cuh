@@ -539,16 +539,34 @@ struct BlockRadixSortDownsweepRegion
             int exclusive_digit_prefix;
 
             // Get exclusive digit prefix from inclusive prefix
+            if (DESCENDING)
+            {
+                // Get the prefix from the next thread (higher bins come first)
 #if CUB_PTX_VERSION >= 300
-            exclusive_digit_prefix = ShuffleUp(inclusive_digit_prefix, 1);
-            if (threadIdx.x == 0)
-                exclusive_digit_prefix = 0;
+                exclusive_digit_prefix = ShuffleDown(inclusive_digit_prefix, 1);
+                if (threadIdx.x == RADIX_DIGITS - 1)
+                    exclusive_digit_prefix = 0;
 #else
-            volatile int* exchange = reinterpret_cast<int *>(temp_storage.relative_bin_offsets);
-            exchange[threadIdx.x] = 0;
-            exchange[threadIdx.x + 1] = inclusive_digit_prefix;
-            exclusive_digit_prefix = exchange[threadIdx.x];
+                volatile int* exchange = reinterpret_cast<int *>(temp_storage.relative_bin_offsets);
+                exchange[threadIdx.x + 1] = 0;
+                exchange[threadIdx.x] = inclusive_digit_prefix;
+                exclusive_digit_prefix = exchange[threadIdx.x + 1];
 #endif
+            }
+            else
+            {
+                // Get the prefix from the previous thread (lower bins come first)
+#if CUB_PTX_VERSION >= 300
+                exclusive_digit_prefix = ShuffleUp(inclusive_digit_prefix, 1);
+                if (threadIdx.x == 0)
+                    exclusive_digit_prefix = 0;
+#else
+                volatile int* exchange = reinterpret_cast<int *>(temp_storage.relative_bin_offsets);
+                exchange[threadIdx.x] = 0;
+                exchange[threadIdx.x + 1] = inclusive_digit_prefix;
+                exclusive_digit_prefix = exchange[threadIdx.x];
+#endif
+            }
 
             bin_offset -= exclusive_digit_prefix;
             temp_storage.relative_bin_offsets[threadIdx.x] = bin_offset;
@@ -677,8 +695,6 @@ struct BlockRadixSortDownsweepRegion
 
             // Load my block's bin offset for my bin
             bin_offset = d_spine[(gridDim.x * bin_idx) + blockIdx.x];
-
-            CubLog("loaded bin_offset %d\n", bin_offset);
         }
 
         __syncthreads();

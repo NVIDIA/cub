@@ -702,7 +702,7 @@ int main(int argc, char** argv)
     {
         printf("%s "
             "[--device=<device-id>] "
-            "[--repeat=<times to repeat tests>]"
+            "[--repeat=<repetitions of entire test suite>]"
             "[--quick]"
             "[--v] "
             "\n", argv[0]);
