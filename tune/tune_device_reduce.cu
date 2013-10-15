@@ -254,7 +254,7 @@ struct Schmoo
         int                     ITEMS_PER_THREAD,
         int                     VECTOR_LOAD_LENGTH,
         BlockReduceAlgorithm    BLOCK_ALGORITHM,
-        CacheStoreModifier      LOAD_MODIFIER>
+        CacheLoadModifier      LOAD_MODIFIER>
     void Enumerate()
     {
         // Multi-block kernels

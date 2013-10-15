@@ -260,9 +260,12 @@ struct UnitWord
 /**
  * An key identifier paired with a corresponding value reduction
  */
-template <typename Key, typename Value>
+template <typename _Key, typename _Value>
 struct KeyValuePair
 {
+    typedef _Key        Key;
+    typedef _Value      Value;
+
     Key     key;            ///< Key identifier
     Value   value;          ///< Reduction value
 };
@@ -274,8 +277,11 @@ struct KeyValuePair
 template <>
 struct KeyValuePair<int, double>
 {
-    long long   key;        ///< Key identifier
-    double      value;      ///< Reduction value
+    typedef int         Key;
+    typedef double      Value;
+
+    Key     key;            ///< Key identifier
+    Value   value;          ///< Reduction value
 };
 
 
