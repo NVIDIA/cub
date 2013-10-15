@@ -63,7 +63,7 @@ namespace cub {
  *****************************************************************************/
 
 /**
- * Reduce tiles kernel entry point (multi-block).  Computes privatized reductions, one per thread block.
+ * Reduce region kernel entry point (multi-block).  Computes privatized reductions, one per thread block.
  */
 template <
     typename                BlockReduceRegionPolicy,    ///< Parameterized BlockReduceRegionPolicy tuning policy type
@@ -347,14 +347,67 @@ struct DeviceReduceDispatch
 #endif
 
     // "Opaque" policies (whose parameterizations aren't reflected in the type signature)
-    struct ReduceRegionPolicy   : PtxPolicy::ReduceRegionPolicy {};
-    struct SingleTilePolicy     : PtxPolicy::SingleTilePolicy {};
+    struct PtxReduceRegionPolicy   : PtxPolicy::ReduceRegionPolicy {};
+    struct PtxSingleTilePolicy     : PtxPolicy::SingleTilePolicy {};
+
+
+    /******************************************************************************
+     * Utilities
+     ******************************************************************************/
+
+    /**
+     * Initialize kernel dispatch configurations with the policies corresponding to the PTX assembly we will use
+     */
+    template <typename KernelConfig>
+    __host__ __device__ __forceinline__
+    static void InitConfigs(
+        int             ptx_version,
+        KernelConfig    &reduce_region_config,
+        KernelConfig    &single_tile_config)
+    {
+    #ifdef __CUDA_ARCH__
+
+        // We're on the device, so initialize the kernel dispatch configurations with the current PTX policy
+        reduce_region_config.Init<PtxReduceRegionPolicy>();
+        single_tile_config.Init<PtxSingleTilePolicy>();
+
+    #else
+
+        // We're on the host, so lookup and initialize the kernel dispatch configurations with the policies that match the device's PTX version
+        if (ptx_version >= 350)
+        {
+            reduce_region_config.template    Init<typename Policy350::ReduceRegionPolicy>();
+            single_tile_config.template     Init<typename Policy350::SingleTilePolicy>();
+        }
+        else if (ptx_version >= 300)
+        {
+            reduce_region_config.template    Init<typename Policy300::ReduceRegionPolicy>();
+            single_tile_config.template     Init<typename Policy300::SingleTilePolicy>();
+        }
+        else if (ptx_version >= 200)
+        {
+            reduce_region_config.template    Init<typename Policy200::ReduceRegionPolicy>();
+            single_tile_config.template     Init<typename Policy200::SingleTilePolicy>();
+        }
+        else if (ptx_version >= 130)
+        {
+            reduce_region_config.template    Init<typename Policy130::ReduceRegionPolicy>();
+            single_tile_config.template     Init<typename Policy130::SingleTilePolicy>();
+        }
+        else
+        {
+            reduce_region_config.template    Init<typename Policy100::ReduceRegionPolicy>();
+            single_tile_config.template     Init<typename Policy100::SingleTilePolicy>();
+        }
+
+    #endif
+    }
 
 
     /**
-     * Kernel dispatch configuration
+     * Kernel kernel dispatch configuration
      */
-    struct KernelDispatchConfig
+    struct KernelConfig
     {
         int                     block_threads;
         int                     items_per_thread;
@@ -388,60 +441,6 @@ struct DeviceReduceDispatch
         }
     };
 
-
-    /******************************************************************************
-     * Utilities
-     ******************************************************************************/
-
-    /**
-     * Initialize dispatch configurations with the policies corresponding to the PTX assembly we will use
-     */
-    template <typename KernelDispatchConfig>
-    __host__ __device__ __forceinline__
-    static void InitDispatchConfigs(
-        int                     ptx_version,
-        KernelDispatchConfig    &reduce_region_config,
-        KernelDispatchConfig    &single_tile_config)
-    {
-    #ifdef __CUDA_ARCH__
-
-        // We're on the device, so initialize the dispatch configurations with the PtxDefaultPolicies directly
-        reduce_region_config.Init<ReduceRegionPolicy>();
-        single_tile_config.Init<SingleTilePolicy>();
-
-    #else
-
-        // We're on the host, so lookup and initialize the dispatch configurations with the policies that match the device's PTX version
-        if (ptx_version >= 350)
-        {
-            reduce_region_config.template    Init<typename Policy350::ReduceRegionPolicy>();
-            single_tile_config.template     Init<typename Policy350::SingleTilePolicy>();
-        }
-        else if (ptx_version >= 300)
-        {
-            reduce_region_config.template    Init<typename Policy300::ReduceRegionPolicy>();
-            single_tile_config.template     Init<typename Policy300::SingleTilePolicy>();
-        }
-        else if (ptx_version >= 200)
-        {
-            reduce_region_config.template    Init<typename Policy200::ReduceRegionPolicy>();
-            single_tile_config.template     Init<typename Policy200::SingleTilePolicy>();
-        }
-        else if (ptx_version >= 130)
-        {
-            reduce_region_config.template    Init<typename Policy130::ReduceRegionPolicy>();
-            single_tile_config.template     Init<typename Policy130::SingleTilePolicy>();
-        }
-        else
-        {
-            reduce_region_config.template    Init<typename Policy100::ReduceRegionPolicy>();
-            single_tile_config.template     Init<typename Policy100::SingleTilePolicy>();
-        }
-
-    #endif
-    }
-
-
     /******************************************************************************
      * Dispatch entrypoints
      ******************************************************************************/
@@ -473,8 +472,8 @@ struct DeviceReduceDispatch
         ReduceRegionKernelPtr       reduce_region_kernel,               ///< [in] Kernel function pointer to parameterization of cub::ReduceRegionKernel
         AggregateTileKernelPtr      aggregate_kernel,                   ///< [in] Kernel function pointer to parameterization of cub::SingleTileKernel for consuming partial reductions (T*)
         SingleTileKernelPtr         single_kernel,                      ///< [in] Kernel function pointer to parameterization of cub::SingleTileKernel for consuming input (InputIterator)
-        KernelDispatchConfig        &reduce_region_config,              ///< [in] Dispatch parameters that match the policy that \p reduce_region_kernel_ptr was compiled for
-        KernelDispatchConfig        &single_tile_config)                ///< [in] Dispatch parameters that match the policy that \p single_kernel was compiled for
+        KernelConfig                &reduce_region_config,              ///< [in] Dispatch parameters that match the policy that \p reduce_region_kernel_ptr was compiled for
+        KernelConfig                &single_tile_config)                ///< [in] Dispatch parameters that match the policy that \p single_kernel was compiled for
     {
 #ifndef CUB_RUNTIME_ENABLED
 
@@ -666,10 +665,10 @@ struct DeviceReduceDispatch
             ptx_version = CUB_PTX_VERSION;
     #endif
 
-            // Get kernel dispatch configurations
-            KernelDispatchConfig reduce_region_config;
-            KernelDispatchConfig single_tile_config;
-            InitDispatchConfigs(ptx_version, reduce_region_config, single_tile_config);
+            // Get kernel kernel dispatch configurations
+            KernelConfig reduce_region_config;
+            KernelConfig single_tile_config;
+            InitConfigs(ptx_version, reduce_region_config, single_tile_config);
 
             // Dispatch
             if (CubDebug(error = Dispatch(
@@ -683,9 +682,9 @@ struct DeviceReduceDispatch
                 debug_synchronous,
                 ptx_version,            // Use PTX version instead of SM version because, as a statically known quantity, this improves device-side launch dramatically but at the risk of imprecise occupancy calculation for mismatches
                 FillAndResetDrainKernel<Offset>,
-                ReduceRegionKernel<ReduceRegionPolicy, InputIterator, T*, Offset, ReductionOp>,
-                SingleTileKernel<SingleTilePolicy, T*, OutputIterator, Offset, ReductionOp>,
-                SingleTileKernel<SingleTilePolicy, InputIterator, OutputIterator, Offset, ReductionOp>,
+                ReduceRegionKernel<PtxReduceRegionPolicy, InputIterator, T*, Offset, ReductionOp>,
+                SingleTileKernel<PtxSingleTilePolicy, T*, OutputIterator, Offset, ReductionOp>,
+                SingleTileKernel<PtxSingleTilePolicy, InputIterator, OutputIterator, Offset, ReductionOp>,
                 reduce_region_config,
                 single_tile_config))) break;
         }

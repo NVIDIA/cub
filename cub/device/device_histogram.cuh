@@ -178,45 +178,49 @@ struct DeviceHistogramDispatch
     /// SM35
     struct Policy350
     {
+        // HistoRegionPolicy
         typedef BlockHistogramRegionPolicy<
                 (HISTO_ALGORITHM == DEVICE_HISTO_SORT) ? 128 : 256,
                 (HISTO_ALGORITHM == DEVICE_HISTO_SORT) ? 12 : (30 / ACTIVE_CHANNELS),
                 HISTO_ALGORITHM,
                 (HISTO_ALGORITHM == DEVICE_HISTO_SORT) ? GRID_MAPPING_DYNAMIC : GRID_MAPPING_EVEN_SHARE>
-            HistogramRegionPolicy;
+            HistoRegionPolicy;
     };
 
     /// SM30
     struct Policy300
     {
+        // HistoRegionPolicy
         typedef BlockHistogramRegionPolicy<
                 128,
                 (HISTO_ALGORITHM == DEVICE_HISTO_SORT) ? 20 : (22 / ACTIVE_CHANNELS),
                 HISTO_ALGORITHM,
                 (HISTO_ALGORITHM == DEVICE_HISTO_SORT) ? GRID_MAPPING_DYNAMIC : GRID_MAPPING_EVEN_SHARE>
-            HistogramRegionPolicy;
+            HistoRegionPolicy;
     };
 
     /// SM20
     struct Policy200
     {
+        // HistoRegionPolicy
         typedef BlockHistogramRegionPolicy<
                 128,
                 (HISTO_ALGORITHM == DEVICE_HISTO_SORT) ? 21 : (23 / ACTIVE_CHANNELS),
                 HISTO_ALGORITHM,
                 GRID_MAPPING_DYNAMIC>
-            HistogramRegionPolicy;
+            HistoRegionPolicy;
     };
 
     /// SM10
     struct Policy100
     {
+        // HistoRegionPolicy
         typedef BlockHistogramRegionPolicy<
                 128,
                 7,
                 DEVICE_HISTO_SORT,        // (use sort regardless because atomics are perf-useless)
                 GRID_MAPPING_EVEN_SHARE>
-            HistogramRegionPolicy;
+            HistoRegionPolicy;
     };
 
 
@@ -239,7 +243,7 @@ struct DeviceHistogramDispatch
 #endif
 
     // "Opaque" policies (whose parameterizations aren't reflected in the type signature)
-    struct PtxHistogramRegionPolicy : PtxPolicy::HistogramRegionPolicy {};
+    struct PtxHistoRegionPolicy : PtxPolicy::HistoRegionPolicy {};
 
 
     /******************************************************************************
@@ -247,37 +251,37 @@ struct DeviceHistogramDispatch
      ******************************************************************************/
 
     /**
-     * Initialize dispatch configurations with the policies corresponding to the PTX assembly we will use
+     * Initialize kernel dispatch configurations with the policies corresponding to the PTX assembly we will use
      */
-    template <typename KernelDispatchConfig>
+    template <typename KernelConfig>
     __host__ __device__ __forceinline__
-    static void InitDispatchConfigs(
-        int                     ptx_version,
-        KernelDispatchConfig    &histogram_region_config)
+    static void InitConfigs(
+        int             ptx_version,
+        KernelConfig    &histo_region_config)
     {
     #ifdef __CUDA_ARCH__
 
-        // We're on the device, so initialize the dispatch configurations with the PtxDefaultPolicies directly
-        histogram_region_config.Init<PtxHistogramRegionPolicy>();
+        // We're on the device, so initialize the kernel dispatch configurations with the current PTX policy
+        histo_region_config.Init<PtxHistoRegionPolicy>();
 
     #else
 
-        // We're on the host, so lookup and initialize the dispatch configurations with the policies that match the device's PTX version
+        // We're on the host, so lookup and initialize the kernel dispatch configurations with the policies that match the device's PTX version
         if (ptx_version >= 350)
         {
-            histogram_region_config.template Init<typename Policy350::HistogramRegionPolicy>();
+            histo_region_config.template Init<typename Policy350::HistoRegionPolicy>();
         }
         else if (ptx_version >= 300)
         {
-            histogram_region_config.template Init<typename Policy300::HistogramRegionPolicy>();
+            histo_region_config.template Init<typename Policy300::HistoRegionPolicy>();
         }
         else if (ptx_version >= 200)
         {
-            histogram_region_config.template Init<typename Policy200::HistogramRegionPolicy>();
+            histo_region_config.template Init<typename Policy200::HistoRegionPolicy>();
         }
         else
         {
-            histogram_region_config.template Init<typename Policy100::HistogramRegionPolicy>();
+            histo_region_config.template Init<typename Policy100::HistoRegionPolicy>();
         }
 
     #endif
@@ -285,9 +289,9 @@ struct DeviceHistogramDispatch
 
 
     /**
-     * Kernel dispatch configuration
+     * Kernel kernel dispatch configuration
      */
-    struct KernelDispatchConfig
+    struct KernelConfig
     {
         int                             block_threads;
         int                             items_per_thread;
@@ -323,7 +327,7 @@ struct DeviceHistogramDispatch
      */
     template <
         typename                    InitHistoKernelPtr,                 ///< Function type of cub::HistoInitKernel
-        typename                    HistogramRegionKernelPtr,           ///< Function type of cub::HistoRegionKernel
+        typename                    HistoRegionKernelPtr,               ///< Function type of cub::HistoRegionKernel
         typename                    AggregateHistoKernelPtr>            ///< Function type of cub::HistoAggregateKernel
     __host__ __device__ __forceinline__
     static cudaError_t Dispatch(
@@ -336,9 +340,9 @@ struct DeviceHistogramDispatch
         bool                        debug_synchronous,                  ///< [in] Whether or not to synchronize the stream after every kernel launch to check for errors.  Default is \p false.
         int                         sm_version,                         ///< [in] SM version of target device to use when computing SM occupancy
         InitHistoKernelPtr          init_kernel,                        ///< [in] Kernel function pointer to parameterization of cub::HistoInitKernel
-        HistogramRegionKernelPtr    histogram_region_kernel,            ///< [in] Kernel function pointer to parameterization of cub::HistoRegionKernel
+        HistoRegionKernelPtr        histo_region_kernel,                ///< [in] Kernel function pointer to parameterization of cub::HistoRegionKernel
         AggregateHistoKernelPtr     aggregate_kernel,                   ///< [in] Kernel function pointer to parameterization of cub::HistoAggregateKernel
-        KernelDispatchConfig        histogram_region_config)            ///< [in] Dispatch parameters that match the policy that \p histogram_region_kernel was compiled for
+        KernelConfig           histo_region_config)                ///< [in] Dispatch parameters that match the policy that \p histo_region_kernel was compiled for
     {
     #ifndef CUB_RUNTIME_ENABLED
 
@@ -358,45 +362,45 @@ struct DeviceHistogramDispatch
             int sm_count;
             if (CubDebug(error = cudaDeviceGetAttribute (&sm_count, cudaDevAttrMultiProcessorCount, device_ordinal))) break;
 
-            // Get SM occupancy for histogram_region_kernel
-            int histogram_region_sm_occupancy;
+            // Get SM occupancy for histo_region_kernel
+            int histo_region_sm_occupancy;
             if (CubDebug(error = MaxSmOccupancy(
-                histogram_region_sm_occupancy,
+                histo_region_sm_occupancy,
                 sm_version,
-                histogram_region_kernel,
-                histogram_region_config.block_threads))) break;
+                histo_region_kernel,
+                histo_region_config.block_threads))) break;
 
-            // Get device occupancy for histogram_region_kernel
-            int histogram_region_occupancy = histogram_region_sm_occupancy * sm_count;
+            // Get device occupancy for histo_region_kernel
+            int histo_region_occupancy = histo_region_sm_occupancy * sm_count;
 
-            // Get tile size for histogram_region_kernel
-            int channel_tile_size = histogram_region_config.block_threads * histogram_region_config.items_per_thread;
+            // Get tile size for histo_region_kernel
+            int channel_tile_size = histo_region_config.block_threads * histo_region_config.items_per_thread;
             int tile_size = channel_tile_size * CHANNELS;
 
             // Even-share work distribution
-            int subscription_factor = histogram_region_sm_occupancy;     // Amount of CTAs to oversubscribe the device beyond actively-resident (heuristic)
+            int subscription_factor = histo_region_sm_occupancy;     // Amount of CTAs to oversubscribe the device beyond actively-resident (heuristic)
             GridEvenShare<Offset> even_share(
                 num_samples,
-                histogram_region_occupancy * subscription_factor,
+                histo_region_occupancy * subscription_factor,
                 tile_size);
 
-            // Get grid size for histogram_region_kernel
-            int histogram_region_grid_size;
-            switch (histogram_region_config.grid_mapping)
+            // Get grid size for histo_region_kernel
+            int histo_region_grid_size;
+            switch (histo_region_config.grid_mapping)
             {
             case GRID_MAPPING_EVEN_SHARE:
 
                 // Work is distributed evenly
-                histogram_region_grid_size = even_share.grid_size;
+                histo_region_grid_size = even_share.grid_size;
                 break;
 
             case GRID_MAPPING_DYNAMIC:
 
                 // Work is distributed dynamically
                 int num_tiles               = (num_samples + tile_size - 1) / tile_size;
-                histogram_region_grid_size   = (num_tiles < histogram_region_occupancy) ?
+                histo_region_grid_size   = (num_tiles < histo_region_occupancy) ?
                     num_tiles :                     // Not enough to fill the device with threadblocks
-                    histogram_region_occupancy;      // Fill the device with threadblocks
+                    histo_region_occupancy;      // Fill the device with threadblocks
                 break;
             };
 
@@ -404,7 +408,7 @@ struct DeviceHistogramDispatch
             void* allocations[2];
             size_t allocation_sizes[2] =
             {
-                ACTIVE_CHANNELS * histogram_region_grid_size * sizeof(HistoCounter) * BINS,      // bytes needed for privatized histograms
+                ACTIVE_CHANNELS * histo_region_grid_size * sizeof(HistoCounter) * BINS,      // bytes needed for privatized histograms
                 GridQueue<int>::AllocationSize()                                                // bytes needed for grid queue descriptor
             };
 
@@ -430,7 +434,7 @@ struct DeviceHistogramDispatch
             // Setup array wrapper for temporary histogram channel output (because we can't pass static arrays as kernel parameters)
             ArrayWrapper<HistoCounter*, ACTIVE_CHANNELS> d_temp_histo_wrapper;
             for (int CHANNEL = 0; CHANNEL < ACTIVE_CHANNELS; ++CHANNEL)
-                d_temp_histo_wrapper.array[CHANNEL] = d_block_histograms + (CHANNEL * histogram_region_grid_size * BINS);
+                d_temp_histo_wrapper.array[CHANNEL] = d_block_histograms + (CHANNEL * histo_region_grid_size * BINS);
 
             // Log init_kernel configuration
             if (debug_synchronous) CubLog("Invoking init_kernel<<<%d, %d, 0, %lld>>>()\n", ACTIVE_CHANNELS, BINS, (long long) stream);
@@ -442,14 +446,14 @@ struct DeviceHistogramDispatch
             if (debug_synchronous && (CubDebug(error = SyncStream(stream)))) break;
 
             // Whether we need privatized histograms (i.e., non-global atomics and multi-block)
-            bool privatized_temporaries = (histogram_region_grid_size > 1) && (histogram_region_config.block_algorithm != DEVICE_HISTO_GLOBAL_ATOMIC);
+            bool privatized_temporaries = (histo_region_grid_size > 1) && (histo_region_config.block_algorithm != DEVICE_HISTO_GLOBAL_ATOMIC);
 
-            // Log histogram_region_kernel configuration
-            if (debug_synchronous) CubLog("Invoking histogram_region_kernel<<<%d, %d, 0, %lld>>>(), %d items per thread, %d SM occupancy\n",
-                histogram_region_grid_size, histogram_region_config.block_threads, (long long) stream, histogram_region_config.items_per_thread, histogram_region_sm_occupancy);
+            // Log histo_region_kernel configuration
+            if (debug_synchronous) CubLog("Invoking histo_region_kernel<<<%d, %d, 0, %lld>>>(), %d items per thread, %d SM occupancy\n",
+                histo_region_grid_size, histo_region_config.block_threads, (long long) stream, histo_region_config.items_per_thread, histo_region_sm_occupancy);
 
-            // Invoke histogram_region_kernel
-            histogram_region_kernel<<<histogram_region_grid_size, histogram_region_config.block_threads, 0, stream>>>(
+            // Invoke histo_region_kernel
+            histo_region_kernel<<<histo_region_grid_size, histo_region_config.block_threads, 0, stream>>>(
                 d_samples,
                 (privatized_temporaries) ?
                     d_temp_histo_wrapper :
@@ -472,7 +476,7 @@ struct DeviceHistogramDispatch
                 aggregate_kernel<<<ACTIVE_CHANNELS, BINS, 0, stream>>>(
                     d_block_histograms,
                     d_histo_wrapper,
-                    histogram_region_grid_size);
+                    histo_region_grid_size);
 
                 // Sync the stream if specified
                 if (debug_synchronous && (CubDebug(error = SyncStream(stream)))) break;
@@ -510,9 +514,9 @@ struct DeviceHistogramDispatch
             ptx_version = CUB_PTX_VERSION;
     #endif
 
-            // Get kernel dispatch configurations
-            KernelDispatchConfig histogram_region_config;
-            InitDispatchConfigs(ptx_version, histogram_region_config);
+            // Get kernel kernel dispatch configurations
+            KernelConfig histo_region_config;
+            InitConfigs(ptx_version, histo_region_config);
 
             // Dispatch
             if (CubDebug(error = Dispatch(
@@ -525,9 +529,9 @@ struct DeviceHistogramDispatch
                 debug_synchronous,
                 ptx_version,            // Use PTX version instead of SM version because, as a statically known quantity, this improves device-side launch dramatically but at the risk of imprecise occupancy calculation for mismatches
                 HistoInitKernel<BINS, ACTIVE_CHANNELS, Offset, HistoCounter>,
-                HistoRegionKernel<PtxHistogramRegionPolicy, BINS, CHANNELS, ACTIVE_CHANNELS, InputIterator, HistoCounter, Offset>,
+                HistoRegionKernel<PtxHistoRegionPolicy, BINS, CHANNELS, ACTIVE_CHANNELS, InputIterator, HistoCounter, Offset>,
                 HistoAggregateKernel<BINS, ACTIVE_CHANNELS, HistoCounter>,
-                histogram_region_config))) break;
+                histo_region_config))) break;
         }
         while (0);
 

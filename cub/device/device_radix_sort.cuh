@@ -405,16 +405,16 @@ struct DeviceRadixSortDispatch
      ******************************************************************************/
 
     /**
-     * Initialize dispatch configurations with the policies corresponding to the PTX assembly we will use
+     * Initialize kernel dispatch configurations with the policies corresponding to the PTX assembly we will use
      */
     template <
         typename Policy,
-        typename KernelDispatchConfig>
+        typename KernelConfig>
     __host__ __device__ __forceinline__
-    static void InitDispatchConfigs(
-        KernelDispatchConfig    &upsweep_config,
-        KernelDispatchConfig    &scan_config,
-        KernelDispatchConfig    &downsweep_config)
+    static void InitConfigs(
+        KernelConfig    &upsweep_config,
+        KernelConfig    &scan_config,
+        KernelConfig    &downsweep_config)
     {
         upsweep_config.template     InitUpsweepPolicy<typename Policy::UpsweepPolicy>();
         scan_config.template        InitScanPolicy<typename Policy::ScanPolicy>();
@@ -423,45 +423,45 @@ struct DeviceRadixSortDispatch
 
 
     /**
-     * Initialize dispatch configurations with the policies corresponding to the PTX assembly we will use
+     * Initialize kernel dispatch configurations with the policies corresponding to the PTX assembly we will use
      */
-    template <typename KernelDispatchConfig>
+    template <typename KernelConfig>
     __host__ __device__ __forceinline__
-    static void InitDispatchConfigs(
+    static void InitConfigs(
         int                     ptx_version,
-        KernelDispatchConfig    &upsweep_config,
-        KernelDispatchConfig    &scan_config,
-        KernelDispatchConfig    &downsweep_config)
+        KernelConfig    &upsweep_config,
+        KernelConfig    &scan_config,
+        KernelConfig    &downsweep_config)
     {
     #ifdef __CUDA_ARCH__
 
-        // We're on the device, so initialize the dispatch configurations with the PtxDefaultPolicies directly
+        // We're on the device, so initialize the kernel dispatch configurations with the current PTX policy
         upsweep_config.InitUpsweepPolicy<PtxUpsweepPolicy>();
         scan_config.InitScanPolicy<PtxScanPolicy>();
         downsweep_config.InitDownsweepPolicy<PtxDownsweepPolicy>();
 
     #else
 
-        // We're on the host, so lookup and initialize the dispatch configurations with the policies that match the device's PTX version
+        // We're on the host, so lookup and initialize the kernel dispatch configurations with the policies that match the device's PTX version
         if (ptx_version >= 350)
         {
-            InitDispatchConfigs<Policy350>(upsweep_config, scan_config, downsweep_config);
+            InitConfigs<Policy350>(upsweep_config, scan_config, downsweep_config);
         }
         else if (ptx_version >= 300)
         {
-            InitDispatchConfigs<Policy300>(upsweep_config, scan_config, downsweep_config);
+            InitConfigs<Policy300>(upsweep_config, scan_config, downsweep_config);
         }
         else if (ptx_version >= 200)
         {
-            InitDispatchConfigs<Policy200>(upsweep_config, scan_config, downsweep_config);
+            InitConfigs<Policy200>(upsweep_config, scan_config, downsweep_config);
         }
         else if (ptx_version >= 130)
         {
-            InitDispatchConfigs<Policy130>(upsweep_config, scan_config, downsweep_config);
+            InitConfigs<Policy130>(upsweep_config, scan_config, downsweep_config);
         }
         else
         {
-            InitDispatchConfigs<Policy100>(upsweep_config, scan_config, downsweep_config);
+            InitConfigs<Policy100>(upsweep_config, scan_config, downsweep_config);
         }
 
     #endif
@@ -470,9 +470,9 @@ struct DeviceRadixSortDispatch
 
 
     /**
-     * Kernel dispatch configurations
+     * Kernel kernel dispatch configurations
      */
-    struct KernelDispatchConfig
+    struct KernelConfig
     {
         int                     block_threads;
         int                     items_per_thread;
@@ -539,9 +539,9 @@ struct DeviceRadixSortDispatch
         UpsweepKernelPtr        upsweep_kernel,                 ///< [in] Kernel function pointer to parameterization of cub::RadixSortUpsweepKernel
         SpineKernelPtr          scan_kernel,                    ///< [in] Kernel function pointer to parameterization of cub::SpineScanKernel
         DownsweepKernelPtr      downsweep_kernel,               ///< [in] Kernel function pointer to parameterization of cub::RadixSortUpsweepKernel
-        KernelDispatchConfig    &upsweep_config,                ///< [in] Dispatch parameters that match the policy that \p upsweep_kernel was compiled for
-        KernelDispatchConfig    &scan_config,                   ///< [in] Dispatch parameters that match the policy that \p scan_kernel was compiled for
-        KernelDispatchConfig    &downsweep_config)              ///< [in] Dispatch parameters that match the policy that \p downsweep_kernel was compiled for
+        KernelConfig    &upsweep_config,                ///< [in] Dispatch parameters that match the policy that \p upsweep_kernel was compiled for
+        KernelConfig    &scan_config,                   ///< [in] Dispatch parameters that match the policy that \p scan_kernel was compiled for
+        KernelConfig    &downsweep_config)              ///< [in] Dispatch parameters that match the policy that \p downsweep_kernel was compiled for
     {
 #ifndef CUB_RUNTIME_ENABLED
 
@@ -753,11 +753,11 @@ struct DeviceRadixSortDispatch
             ptx_version = CUB_PTX_VERSION;
     #endif
 
-            // Get kernel dispatch configurations
-            KernelDispatchConfig    upsweep_config;
-            KernelDispatchConfig    scan_config;
-            KernelDispatchConfig    downsweep_config;
-            InitDispatchConfigs(ptx_version, upsweep_config, scan_config, downsweep_config);
+            // Get kernel kernel dispatch configurations
+            KernelConfig    upsweep_config;
+            KernelConfig    scan_config;
+            KernelConfig    downsweep_config;
+            InitConfigs(ptx_version, upsweep_config, scan_config, downsweep_config);
 
             // Dispatch
             if (CubDebug(error = Dispatch(
