@@ -285,22 +285,22 @@ struct DeviceScanDispatch
      ******************************************************************************/
 
     /**
-     * Initialize dispatch configurations with the policies corresponding to the PTX assembly we will use
+     * Initialize kernel dispatch configurations with the policies corresponding to the PTX assembly we will use
      */
-    template <typename KernelDispatchConfig>
+    template <typename KernelConfig>
     __host__ __device__ __forceinline__
-    static void InitDispatchConfigs(
-        int                     ptx_version,
-        KernelDispatchConfig    &scan_region_config)
+    static void InitConfigs(
+        int             ptx_version,
+        KernelConfig    &scan_region_config)
     {
     #ifdef __CUDA_ARCH__
 
-        // We're on the device, so initialize the dispatch configurations with the PtxDefaultPolicies directly
+        // We're on the device, so initialize the kernel dispatch configurations with the current PTX policy
         scan_region_config.Init<PtxScanRegionPolicy>();
 
     #else
 
-        // We're on the host, so lookup and initialize the dispatch configurations with the policies that match the device's PTX version
+        // We're on the host, so lookup and initialize the kernel dispatch configurations with the policies that match the device's PTX version
         if (ptx_version >= 350)
         {
             scan_region_config.template Init<typename Policy350::ScanRegionPolicy>();
@@ -323,9 +323,9 @@ struct DeviceScanDispatch
 
 
     /**
-     * Kernel dispatch configuration.  Mirrors the constants within BlockScanRegionPolicy.
+     * Kernel kernel dispatch configuration.  Mirrors the constants within BlockScanRegionPolicy.
      */
-    struct KernelDispatchConfig
+    struct KernelConfig
     {
         int                     block_threads;
         int                     items_per_thread;
@@ -383,7 +383,7 @@ struct DeviceScanDispatch
         int                         sm_version,                     ///< [in] SM version of target device to use when computing SM occupancy
         ScanInitKernelPtr           init_kernel,                    ///< [in] Kernel function pointer to parameterization of cub::ScanInitKernel
         ScanRegionKernelPtr         scan_region_kernel,             ///< [in] Kernel function pointer to parameterization of cub::ScanRegionKernelPtr
-        KernelDispatchConfig        scan_region_config)             ///< [in] Dispatch parameters that match the policy that \p scan_region_kernel was compiled for
+        KernelConfig                scan_region_config)             ///< [in] Dispatch parameters that match the policy that \p scan_region_kernel was compiled for
     {
 
 #ifndef CUB_RUNTIME_ENABLED
@@ -512,9 +512,9 @@ struct DeviceScanDispatch
             ptx_version = CUB_PTX_VERSION;
     #endif
 
-            // Get kernel dispatch configurations
-            KernelDispatchConfig scan_region_config;
-            InitDispatchConfigs(ptx_version, scan_region_config);
+            // Get kernel kernel dispatch configurations
+            KernelConfig scan_region_config;
+            InitConfigs(ptx_version, scan_region_config);
 
             // Dispatch
             if (CubDebug(error = Dispatch(
