@@ -418,16 +418,31 @@ struct BlockSegReduceRegion
                 // There are no values in this tile (only empty segments).  Write
                 // out a tile of identity values to output.
 
-                // Initialize a tile of empty segment identity values
-                Value reductions[ITEMS_PER_THREAD];
+                Value segment_reductions[ITEMS_PER_THREAD];
 
+                if (threadIdx.x == 0)
+                {
+                    // The first segment gets the running segment total
+                    segment_reductions[0] = prefix_op.running_prefix.value;
+
+                    // Update the running prefix
+                    prefix_op.running_prefix.value = identity;
+                    prefix_op.runnign_prefix.key = next_tile_segment_idx;
+                }
+                else
+                {
+                    // Remainder of segments in this tile get identity
+                    segment_reductions[0] = identity;
+                }
+
+                // Remainder of segments in this tile get identity
                 #pragma unroll
-                for (int ITEM = 0; ITEM < ITEMS_PER_THREAD; ++ITEM)
-                    reductions[ITEM] = identity;
+                for (int ITEM = 1; ITEM < ITEMS_PER_THREAD; ++ITEM)
+                    segment_reductions[ITEM] = identity;
 
-                // Store values for empty segments
+                // Store reductions
                 Offset num_segments = next_tile_segment_idx - block_segment_idx;
-                StoreStriped<BLOCK_THREADS>(threadIdx.x, d_output + block_segment_idx, reductions, num_segments);
+                StoreStriped<BLOCK_THREADS>(threadIdx.x, d_output + block_segment_idx, segment_reductions, num_segments);
 
                 // Advance the block's indices in preparation for the next tile
                 block_segment_idx = next_tile_segment_idx;
@@ -950,14 +965,19 @@ template <
     typename ValueIterator,                     ///< Random-access input iterator type for reading values
     typename SegmentOffsetIterator,             ///< Random-access input iterator type for reading segment end-offsets
     typename OutputIterator,                    ///< Random-access output iterator type for writing segment reductions
-    typename ReductionOp>                       ///< Binary reduction operator type having member <tt>T operator()(const T &a, const T &b)</tt>
+    typename ReductionOp,                       ///< Binary reduction operator type having member <tt>T operator()(const T &a, const T &b)</tt>
+    typename Offset>                            ///< Signed integer type for global offsets
 struct DeviceSegReduceDispatch
 {
-    // Signed integer type for global offsets
-    typedef typename std::iterator_traits<SegmentOffsetIterator>::value_type Offset;
+    // Segment offset type
+    typedef typename std::iterator_traits<SegmentOffsetIterator>::value_type SegmentOffset;
 
     // Value type
     typedef typename std::iterator_traits<ValueIterator>::value_type Value;
+
+    // Reduce-by-key data type tuple (segment-ID, value)
+    typedef KeyValuePair<Offset, Value> KeyValuePair;
+
 
 
     /******************************************************************************
@@ -1056,45 +1076,45 @@ struct DeviceSegReduceDispatch
         typename SegReduceByKeyKernelConfig>
     __host__ __device__ __forceinline__
     static void InitConfigs(
-        int                   ptx_version,
-        SegReduceKernelConfig       &seg_reduce_config,
-        SegReduceByKeyKernelConfig  &seg_reduce_by_key_config)
+        int                         ptx_version,
+        SegReduceKernelConfig       &seg_reduce_region_config,
+        SegReduceByKeyKernelConfig  &seg_reduce_region_by_key_config)
     {
     #ifdef __CUDA_ARCH__
 
         // We're on the device, so initialize the kernel dispatch configurations with the current PTX policy
-        seg_reduce_config.Init<PtxSegReduceRegionPolicy>();
-        seg_reduce_by_key_config.Init<PtxSegReduceRegionByKeyPolicy>();
+        seg_reduce_region_config.Init<PtxSegReduceRegionPolicy>();
+        seg_reduce_region_by_key_config.Init<PtxSegReduceRegionByKeyPolicy>();
 
     #else
 
         // We're on the host, so lookup and initialize the kernel dispatch configurations with the policies that match the device's PTX version
         if (ptx_version >= 350)
         {
-            seg_reduce_config.template          Init<typename Policy350::SegReduceRegionPolicy>();
-            seg_reduce_by_key_config.template   Init<typename Policy350::SegReduceRegionByKeyPolicy>();
+            seg_reduce_region_config.template          Init<typename Policy350::SegReduceRegionPolicy>();
+            seg_reduce_region_by_key_config.template   Init<typename Policy350::SegReduceRegionByKeyPolicy>();
         }
 /*
         else if (ptx_version >= 300)
         {
-            seg_reduce_config.template          Init<typename Policy300::SegReduceRegionPolicy>();
-            seg_reduce_by_key_config.template   Init<typename Policy300::SegReduceRegionByKeyPolicy>();
+            seg_reduce_region_config.template          Init<typename Policy300::SegReduceRegionPolicy>();
+            seg_reduce_region_by_key_config.template   Init<typename Policy300::SegReduceRegionByKeyPolicy>();
         }
         else if (ptx_version >= 200)
         {
-            seg_reduce_config.template          Init<typename Policy200::SegReduceRegionPolicy>();
-            seg_reduce_by_key_config.template   Init<typename Policy200::SegReduceRegionByKeyPolicy>();
+            seg_reduce_region_config.template          Init<typename Policy200::SegReduceRegionPolicy>();
+            seg_reduce_region_by_key_config.template   Init<typename Policy200::SegReduceRegionByKeyPolicy>();
         }
         else if (ptx_version >= 130)
         {
-            seg_reduce_config.template          Init<typename Policy130::SegReduceRegionPolicy>();
-            seg_reduce_by_key_config.template   Init<typename Policy130::SegReduceRegionByKeyPolicy>();
+            seg_reduce_region_config.template          Init<typename Policy130::SegReduceRegionPolicy>();
+            seg_reduce_region_by_key_config.template   Init<typename Policy130::SegReduceRegionByKeyPolicy>();
         }
 */
         else
         {
-            seg_reduce_config.template          Init<typename Policy100::SegReduceRegionPolicy>();
-            seg_reduce_by_key_config.template   Init<typename Policy100::SegReduceRegionByKeyPolicy>();
+            seg_reduce_region_config.template          Init<typename Policy100::SegReduceRegionPolicy>();
+            seg_reduce_region_by_key_config.template   Init<typename Policy100::SegReduceRegionByKeyPolicy>();
         }
 
     #endif
@@ -1175,15 +1195,15 @@ struct DeviceSegReduceDispatch
         OutputIterator                  d_output,                               ///< [out] A sequence of \p num_segments segment totals
         Offset                          num_values,                             ///< [in] Total number of values to reduce
         Offset                          num_segments,                           ///< [in] Number of segments being reduced
-        Offset                          identity,                               ///< [in] Identity value (for zero-length segments)
+        Value                           identity,                               ///< [in] Identity value (for zero-length segments)
         ReductionOp                     reduction_op,                           ///< [in] Reduction operator
         cudaStream_t                    stream,                                 ///< [in] <b>[optional]</b> CUDA stream to launch kernels within.  Default is stream<sub>0</sub>.
         bool                            debug_synchronous,                      ///< [in] <b>[optional]</b> Whether or not to synchronize the stream after every kernel launch to check for errors.  Also causes launch configurations to be printed to the console.  Default is \p false.
         int                             sm_version,                             ///< [in] SM version of target device to use when computing SM occupancy
-        SegReduceRegionKernelPtr        seg_reduce_region_kernel_ptr,           ///< [in] Kernel function pointer to parameterization of cub::SegReduceRegionKernel
-        SegReduceRegionByKeyKernelPtr   seg_reduce_region_by_key_kernel_ptr,    ///< [in] Kernel function pointer to parameterization of cub::SegReduceRegionByKeyKernel
-        SegReduceKernelConfig                 &seg_reduce_config,                     ///< [in] Dispatch parameters that match the policy that \p seg_reduce_region_kernel_ptr was compiled for
-        SegReduceByKeyKernelConfig            &single_tile_config)                    ///< [in] Dispatch parameters that match the policy that \p seg_reduce_region_by_key_kernel_ptr was compiled for
+        SegReduceRegionKernelPtr        seg_reduce_region_kernel,               ///< [in] Kernel function pointer to parameterization of cub::SegReduceRegionKernel
+        SegReduceRegionByKeyKernelPtr   seg_reduce_region_by_key_kernel,        ///< [in] Kernel function pointer to parameterization of cub::SegReduceRegionByKeyKernel
+        SegReduceKernelConfig           &seg_reduce_region_config,              ///< [in] Dispatch parameters that match the policy that \p seg_reduce_region_kernel was compiled for
+        SegReduceByKeyKernelConfig      &seg_reduce_region_by_key_config)       ///< [in] Dispatch parameters that match the policy that \p seg_reduce_region_by_key_kernel was compiled for
     {
 #ifndef CUB_RUNTIME_ENABLED
 
@@ -1199,6 +1219,9 @@ struct DeviceSegReduceDispatch
             // to reduce regions by block, and (2) a single-block reduce-by-key kernel
             // to "fix up" segments spanning more than one region.
 
+            // Tile size of seg_reduce_region_kernel
+            int tile_size = seg_reduce_region_config.block_threads * seg_reduce_region_config.items_per_thread;
+
             // Get device ordinal
             int device_ordinal;
             if (CubDebug(error = cudaGetDevice(&device_ordinal))) break;
@@ -1207,6 +1230,85 @@ struct DeviceSegReduceDispatch
             int sm_count;
             if (CubDebug(error = cudaDeviceGetAttribute (&sm_count, cudaDevAttrMultiProcessorCount, device_ordinal))) break;
 
+            // Get SM occupancy for histogram_region_kernel
+            int seg_reduce_region_sm_occupancy;
+            if (CubDebug(error = MaxSmOccupancy(
+                seg_reduce_region_sm_occupancy,
+                sm_version,
+                seg_reduce_region_kernel,
+                seg_reduce_region_config.block_threads))) break;
+
+            // Get device occupancy for histogram_region_kernel
+            int seg_reduce_region_occupancy = seg_reduce_region_sm_occupancy * sm_count;
+
+            // Even-share work distribution
+            int num_diagonals = num_values + num_segments;                  // Total number of work items
+            int subscription_factor = seg_reduce_region_sm_occupancy;       // Amount of CTAs to oversubscribe the device beyond actively-resident (heuristic)
+            GridEvenShare<Offset> even_share(
+                num_diagonals,
+                seg_reduce_region_occupancy * subscription_factor,
+                tile_size);
+
+            // Get grid size for seg_reduce_region_kernel
+            int seg_reduce_region_grid_size = even_share.grid_size;
+
+            // Number of "fix-up" reduce-by-key tuples (2 per thread block)
+            int num_tuple_partials = seg_reduce_region_grid_size * 2;
+
+            // Temporary storage allocation requirements
+            void* allocations[1];
+            size_t allocation_sizes[1] =
+            {
+                num_tuple_partials * sizeof(KeyValuePair),     // bytes needed for "fix-up" reduce-by-key tuples
+            };
+
+            // Alias the temporary allocations from the single storage blob (or set the necessary size of the blob)
+            if (CubDebug(error = AliasTemporaries(d_temp_storage, temp_storage_bytes, allocations, allocation_sizes))) break;
+            if (d_temp_storage == NULL)
+            {
+                // Return if the caller is simply requesting the size of the storage allocation
+                return cudaSuccess;
+            }
+
+            // Alias the allocation for "fix-up" tuples
+            KeyValuePair *d_tuple_partials = (KeyValuePair*) allocations[0];
+
+            // Log seg_reduce_region_kernel configuration
+            if (debug_synchronous) CubLog("Invoking seg_reduce_region_kernel<<<%d, %d, 0, %lld>>>(), %d items per thread, %d SM occupancy\n",
+                seg_reduce_region_grid_size, seg_reduce_region_config.block_threads, (long long) stream, seg_reduce_region_config.items_per_thread, seg_reduce_region_sm_occupancy);
+
+            // Array of segment end-offsets
+            SegmentOffsetIterator d_segment_end_offsets = d_segment_offsets + 1;
+
+            // Invoke seg_reduce_region_kernel
+            seg_reduce_region_kernel<<<seg_reduce_region_grid_size, seg_reduce_region_config.block_threads, 0, stream>>>(
+                d_segment_end_offsets,
+                d_values,
+                d_output,
+                d_tuple_partials,
+                num_values,
+                num_segments,
+                identity,
+                reduction_op,
+                even_share);
+
+            // Sync the stream if specified
+            if (debug_synchronous && (CubDebug(error = SyncStream(stream)))) break;
+
+            // Log seg_reduce_region_by_key_kernel configuration
+            if (debug_synchronous) CubLog("Invoking seg_reduce_region_by_key_kernel<<<%d, %d, 0, %lld>>>(), %d items per thread\n",
+                1, seg_reduce_region_by_key_config.block_threads, (long long) stream, seg_reduce_region_by_key_config.items_per_thread);
+
+            // Invoke seg_reduce_region_by_key_kernel
+            seg_reduce_region_by_key_kernel<<<1, seg_reduce_region_by_key_config.block_threads, 0, stream>>>(
+                d_tuple_partials,
+                d_output,
+                num_tuple_partials,
+                identity,
+                reduction_op);
+
+            // Sync the stream if specified
+            if (debug_synchronous && (CubDebug(error = SyncStream(stream)))) break;
         }
 
         while (0);
@@ -1215,7 +1317,6 @@ struct DeviceSegReduceDispatch
 
 #endif // CUB_RUNTIME_ENABLED
     }
-
 
 
     /**
@@ -1230,14 +1331,11 @@ struct DeviceSegReduceDispatch
         OutputIterator                  d_output,                               ///< [out] A sequence of \p num_segments segment totals
         Offset                          num_values,                             ///< [in] Total number of values to reduce
         Offset                          num_segments,                           ///< [in] Number of segments being reduced
-        Offset                          identity,                               ///< [in] Identity value (for zero-length segments)
+        Value                           identity,                               ///< [in] Identity value (for zero-length segments)
         ReductionOp                     reduction_op,                           ///< [in] Reduction operator
         cudaStream_t                    stream,                                 ///< [in] <b>[optional]</b> CUDA stream to launch kernels within.  Default is stream<sub>0</sub>.
         bool                            debug_synchronous)                      ///< [in] <b>[optional]</b> Whether or not to synchronize the stream after every kernel launch to check for errors.  Also causes launch configurations to be printed to the console.  Default is \p false.
     {
-        // Reduce-by-key data type tuple (segment-ID, value)
-        typedef KeyValuePair<Offset, Value> KeyValuePair;
-
         cudaError error = cudaSuccess;
         do
         {
@@ -1250,9 +1348,10 @@ struct DeviceSegReduceDispatch
     #endif
 
             // Get kernel kernel dispatch configurations
-            SegReduceKernelConfig         seg_reduce_config;
-            SegReduceByKeyKernelConfig    seg_reduce_by_key_config;
-            InitConfigs(ptx_version, seg_reduce_config, seg_reduce_by_key_config);
+            SegReduceKernelConfig seg_reduce_region_config;
+            SegReduceByKeyKernelConfig seg_reduce_region_by_key_config;
+
+            InitConfigs(ptx_version, seg_reduce_region_config, seg_reduce_region_by_key_config);
 
             // Dispatch
             if (CubDebug(error = Dispatch(
@@ -1270,8 +1369,8 @@ struct DeviceSegReduceDispatch
                 ptx_version,            // Use PTX version instead of SM version because, as a statically known quantity, this improves device-side launch dramatically but at the risk of imprecise occupancy calculation for mismatches
                 SegReduceRegionKernel<PtxSegReduceRegionPolicy, SegmentOffsetIterator, ValueIterator, OutputIterator, ReductionOp, Offset, Value>,
                 SegReduceRegionByKeyKernel<PtxSegReduceRegionByKeyPolicy, KeyValuePair*, OutputIterator, ReductionOp, Value>,
-                seg_reduce_config,
-                seg_reduce_by_key_config))) break;
+                seg_reduce_region_config,
+                seg_reduce_region_by_key_config))) break;
         }
         while (0);
 
@@ -1279,6 +1378,181 @@ struct DeviceSegReduceDispatch
 
     }
 };
+
+
+
+
+/******************************************************************************
+ * DeviceSegReduce
+ *****************************************************************************/
+
+/**
+ * \brief DeviceSegReduce provides operations for computing a device-wide, parallel segmented reduction across data items residing within global memory.
+ * \ingroup DeviceModule
+ *
+ * \par Overview
+ * A <a href="http://en.wikipedia.org/wiki/Reduce_(higher-order_function)"><em>reduction</em></a> (or <em>fold</em>)
+ * uses a binary combining operator to compute a single aggregate from a list of input elements.
+ *
+ * \par Usage Considerations
+ * \cdp_class{DeviceReduce}
+ *
+ */
+struct DeviceReduce
+{
+    /**
+     * \brief Computes a device-wide segmented reduction using the specified binary \p reduction_op functor.
+     *
+     * \par
+     * Does not support non-commutative reduction operators.
+     *
+     * \devicestorage
+     *
+     * \cdp
+     *
+     * \iterator
+     *
+     * \tparam ValueIterator            <b>[inferred]</b> Random-access input iterator type for reading values
+     * \tparam SegmentOffsetIterator    <b>[inferred]</b> Random-access input iterator type for reading segment end-offsets
+     * \tparam OutputIterator           <b>[inferred]</b> Random-access output iterator type for writing segment reductions
+     * \tparam Value                    <b>[inferred]</b> Value type
+     * \tparam ReductionOp              <b>[inferred]</b> Binary reduction operator type having member <tt>T operator()(const T &a, const T &b)</tt>
+     */
+    template <
+        typename                ValueIterator,
+        typename                SegmentOffsetIterator,
+        typename                OutputIterator,
+        typename                Value,
+        typename                ReductionOp>
+    __host__ __device__ __forceinline__
+    static cudaError_t Reduce(
+        void                    *d_temp_storage,                        ///< [in] %Device allocation of temporary storage.  When NULL, the required allocation size is returned in \p temp_storage_bytes and no work is done.
+        size_t                  &temp_storage_bytes,                    ///< [in,out] Size in bytes of \p d_temp_storage allocation.
+        ValueIterator           d_values,                               ///< [in] A sequence of \p num_values data to reduce
+        SegmentOffsetIterator   d_segment_offsets,                      ///< [in] A sequence of (\p num_segments + 1) segment offsets
+        OutputIterator          d_output,                               ///< [out] A sequence of \p num_segments segment totals
+        int                     num_values,                             ///< [in] Total number of values to reduce
+        int                     num_segments,                           ///< [in] Number of segments being reduced
+        Value                   identity,                               ///< [in] Identity value (for zero-length segments)
+        ReductionOp             reduction_op,                           ///< [in] Reduction operator
+        cudaStream_t            stream              = 0,                ///< [in] <b>[optional]</b> CUDA stream to launch kernels within.  Default is stream<sub>0</sub>.
+        bool                    debug_synchronous   = false)            ///< [in] <b>[optional]</b> Whether or not to synchronize the stream after every kernel launch to check for errors.  Also causes launch configurations to be printed to the console.  Default is \p false.
+    {
+        // Signed integer type for global offsets
+        typedef int Offset;
+
+        typedef DeviceSegReduceDispatch<
+                ValueIterator,
+                SegmentOffsetIterator,
+                OutputIterator,
+                ReductionOp,
+                Offset>
+            DeviceSegReduceDispatch;
+
+        return DeviceSegReduceDispatch::Dispatch(
+            d_temp_storage,
+            temp_storage_bytes,
+            d_values,
+            d_segment_offsets,
+            d_output,
+            num_values,
+            num_segments,
+            identity,
+            reduction_op,
+            stream,
+            debug_synchronous);
+    }
+
+
+    /**
+     * \brief Computes a device-wide segmented sum using the addition ('+') operator.
+     *
+     * \par
+     * Does not support non-commutative summation.
+     *
+     * \devicestorage
+     *
+     * \cdp
+     *
+     * \iterator
+     *
+     * \tparam ValueIterator            <b>[inferred]</b> Random-access input iterator type for reading values
+     * \tparam SegmentOffsetIterator    <b>[inferred]</b> Random-access input iterator type for reading segment end-offsets
+     * \tparam OutputIterator           <b>[inferred]</b> Random-access output iterator type for writing segment reductions
+     */
+    template <
+        typename                ValueIterator,
+        typename                SegmentOffsetIterator,
+        typename                OutputIterator>
+    __host__ __device__ __forceinline__
+    static cudaError_t Sum(
+        void                    *d_temp_storage,                        ///< [in] %Device allocation of temporary storage.  When NULL, the required allocation size is returned in \p temp_storage_bytes and no work is done.
+        size_t                  &temp_storage_bytes,                    ///< [in,out] Size in bytes of \p d_temp_storage allocation.
+        ValueIterator           d_values,                               ///< [in] A sequence of \p num_values data to reduce
+        SegmentOffsetIterator   d_segment_offsets,                      ///< [in] A sequence of (\p num_segments + 1) segment offsets
+        OutputIterator          d_output,                               ///< [out] A sequence of \p num_segments segment totals
+        int                     num_values,                             ///< [in] Total number of values to reduce
+        int                     num_segments,                           ///< [in] Number of segments being reduced
+        cudaStream_t            stream              = 0,                ///< [in] <b>[optional]</b> CUDA stream to launch kernels within.  Default is stream<sub>0</sub>.
+        bool                    debug_synchronous   = false)            ///< [in] <b>[optional]</b> Whether or not to synchronize the stream after every kernel launch to check for errors.  Also causes launch configurations to be printed to the console.  Default is \p false.
+    {
+        // Signed integer type for global offsets
+        typedef int Offset;
+
+        // Value type
+        typedef typename std::iterator_traits<ValueIterator>::value_type Value;
+
+        Value identity = Value();
+        Sum reduction_op;
+
+        typedef DeviceSegReduceDispatch<
+                ValueIterator,
+                SegmentOffsetIterator,
+                OutputIterator,
+                cub::Sum,
+                Offset>
+            DeviceSegReduceDispatch;
+
+        return DeviceSegReduceDispatch::Dispatch(
+            d_temp_storage,
+            temp_storage_bytes,
+            d_values,
+            d_segment_offsets,
+            d_output,
+            num_values,
+            num_segments,
+            identity,
+            reduction_op,
+            stream,
+            debug_synchronous);
+    }
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 /**
