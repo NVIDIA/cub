@@ -528,7 +528,7 @@ struct DeviceReduceDispatch
                 int sm_count;
                 if (CubDebug(error = cudaDeviceGetAttribute (&sm_count, cudaDevAttrMultiProcessorCount, device_ordinal))) break;
 
-                // Get SM occupancy for histogram_region_kernel
+                // Get SM occupancy for reduce_region_kernel
                 int reduce_region_sm_occupancy;
                 if (CubDebug(error = MaxSmOccupancy(
                     reduce_region_sm_occupancy,
@@ -536,7 +536,7 @@ struct DeviceReduceDispatch
                     reduce_region_kernel,
                     reduce_region_config.block_threads))) break;
 
-                // Get device occupancy for histogram_region_kernel
+                // Get device occupancy for reduce_region_kernel
                 int reduce_region_occupancy = reduce_region_sm_occupancy * sm_count;
 
                 // Even-share work distribution
@@ -775,7 +775,7 @@ struct DeviceReduce
         int                         num_items,                          ///< [in] Number of items to reduce
         ReductionOp                 reduction_op,                       ///< [in] Binary reduction operator
         cudaStream_t                stream              = 0,            ///< [in] <b>[optional]</b> CUDA stream to launch kernels within.  Default is stream<sub>0</sub>.
-        bool                        debug_synchronous  = false)         ///< [in] <b>[optional]</b> Whether or not to synchronize the stream after every kernel launch to check for errors.  Also causes launch configurations to be printed to the console.  Default is \p false.
+        bool                        debug_synchronous   = false)        ///< [in] <b>[optional]</b> Whether or not to synchronize the stream after every kernel launch to check for errors.  Also causes launch configurations to be printed to the console.  Default is \p false.
     {
         // Signed integer type for global offsets
         typedef int Offset;
@@ -788,7 +788,7 @@ struct DeviceReduce
                 ReductionOp>
             DeviceReduceDispatch;
 
-        DeviceReduceDispatch::Dispatch(
+        return DeviceReduceDispatch::Dispatch(
             d_temp_storage,
             temp_storage_bytes,
             d_in,
@@ -804,7 +804,7 @@ struct DeviceReduce
      * \brief Computes a device-wide sum using the addition ('+') operator.
      *
      * \par
-     * Does not support non-commutative reduction operators.
+     * Does not support non-commutative summation.
      *
      * \devicestorage
      *
@@ -851,7 +851,7 @@ struct DeviceReduce
         OutputIterator              d_out,                              ///< [out] Output location for result
         int                         num_items,                          ///< [in] Number of items to reduce
         cudaStream_t                stream              = 0,            ///< [in] <b>[optional]</b> CUDA stream to launch kernels within.  Default is stream<sub>0</sub>.
-        bool                        debug_synchronous  = false)         ///< [in] <b>[optional]</b> Whether or not to synchronize the stream after every kernel launch to check for errors.  Also causes launch configurations to be printed to the console.  Default is \p false.
+        bool                        debug_synchronous   = false)        ///< [in] <b>[optional]</b> Whether or not to synchronize the stream after every kernel launch to check for errors.  Also causes launch configurations to be printed to the console.  Default is \p false.
     {
         // Signed integer type for global offsets
         typedef int Offset;
@@ -864,7 +864,7 @@ struct DeviceReduce
                 cub::Sum>
             DeviceReduceDispatch;
 
-        DeviceReduceDispatch::Dispatch(
+        return DeviceReduceDispatch::Dispatch(
             d_temp_storage,
             temp_storage_bytes,
             d_in,

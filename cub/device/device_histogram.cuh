@@ -342,7 +342,7 @@ struct DeviceHistogramDispatch
         InitHistoKernelPtr          init_kernel,                        ///< [in] Kernel function pointer to parameterization of cub::HistoInitKernel
         HistoRegionKernelPtr        histo_region_kernel,                ///< [in] Kernel function pointer to parameterization of cub::HistoRegionKernel
         AggregateHistoKernelPtr     aggregate_kernel,                   ///< [in] Kernel function pointer to parameterization of cub::HistoAggregateKernel
-        KernelConfig           histo_region_config)                ///< [in] Dispatch parameters that match the policy that \p histo_region_kernel was compiled for
+        KernelConfig                histo_region_config)                ///< [in] Dispatch parameters that match the policy that \p histo_region_kernel was compiled for
     {
     #ifndef CUB_RUNTIME_ENABLED
 
@@ -1029,7 +1029,7 @@ struct DeviceHistogram
             HistoCounter,
             Offset> DeviceHistogramDispatch;
 
-        DeviceHistogramDispatch::Dispatch(
+        return DeviceHistogramDispatch::Dispatch(
             d_temp_storage,
             temp_storage_bytes,
             d_samples,
