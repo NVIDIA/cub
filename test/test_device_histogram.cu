@@ -67,9 +67,9 @@ CachingDeviceAllocator  g_allocator(true);
 template <int BINS, int CHANNELS, int ACTIVE_CHANNELS, typename InputIterator, typename HistoCounter>
 __host__ __device__ __forceinline__
 cudaError_t Dispatch(
-    Int2Type<HISTO_TILES_SORT> algorithm,
+    Int2Type<DEVICE_HISTO_SORT> algorithm,
     Int2Type<false>     use_cdp,
-    int                 timing_iterations,
+    int                 timing_timing_iterations,
     size_t              *d_temp_storage_bytes,
     cudaError_t         *d_cdp_error,
 
@@ -82,7 +82,7 @@ cudaError_t Dispatch(
     bool                debug_synchronous)
 {
     cudaError_t error = cudaSuccess;
-    for (int i = 0; i < timing_iterations; ++i)
+    for (int i = 0; i < timing_timing_iterations; ++i)
     {
         error = DeviceHistogram::MultiChannelSorting<BINS, CHANNELS, ACTIVE_CHANNELS>(d_temp_storage, temp_storage_bytes, d_sample_itr, d_histograms, num_samples, stream, debug_synchronous);
     }
@@ -98,9 +98,9 @@ cudaError_t Dispatch(
 template <int BINS, int CHANNELS, int ACTIVE_CHANNELS, typename InputIterator, typename HistoCounter>
 __host__ __device__ __forceinline__
 cudaError_t Dispatch(
-    Int2Type<HISTO_TILES_SHARED_ATOMIC> algorithm,
+    Int2Type<DEVICE_HISTO_SHARED_ATOMIC> algorithm,
     Int2Type<false>     use_cdp,
-    int                 timing_iterations,
+    int                 timing_timing_iterations,
     size_t              *d_temp_storage_bytes,
     cudaError_t         *d_cdp_error,
 
@@ -113,7 +113,7 @@ cudaError_t Dispatch(
     bool                debug_synchronous)
 {
     cudaError_t error = cudaSuccess;
-    for (int i = 0; i < timing_iterations; ++i)
+    for (int i = 0; i < timing_timing_iterations; ++i)
     {
         error = DeviceHistogram::MultiChannelSharedAtomic<BINS, CHANNELS, ACTIVE_CHANNELS>(d_temp_storage, temp_storage_bytes, d_sample_itr, d_histograms, num_samples, stream, debug_synchronous);
     }
@@ -127,9 +127,9 @@ cudaError_t Dispatch(
 template <int BINS, int CHANNELS, int ACTIVE_CHANNELS, typename InputIterator, typename HistoCounter>
 __host__ __device__ __forceinline__
 cudaError_t Dispatch(
-    Int2Type<HISTO_TILES_GLOBAL_ATOMIC> algorithm,
+    Int2Type<DEVICE_HISTO_GLOBAL_ATOMIC> algorithm,
     Int2Type<false>     use_cdp,
-    int                 timing_iterations,
+    int                 timing_timing_iterations,
     size_t              *d_temp_storage_bytes,
     cudaError_t         *d_cdp_error,
 
@@ -142,7 +142,7 @@ cudaError_t Dispatch(
     bool                debug_synchronous)
 {
     cudaError_t error = cudaSuccess;
-    for (int i = 0; i < timing_iterations; ++i)
+    for (int i = 0; i < timing_timing_iterations; ++i)
     {
         error = DeviceHistogram::MultiChannelGlobalAtomic<BINS, CHANNELS, ACTIVE_CHANNELS>(d_temp_storage, temp_storage_bytes, d_sample_itr, d_histograms, num_samples, stream, debug_synchronous);
     }
@@ -160,7 +160,7 @@ cudaError_t Dispatch(
 template <int BINS, int CHANNELS, int ACTIVE_CHANNELS, typename InputIterator, typename HistoCounter, int ALGORITHM>
 __global__ void CnpDispatchKernel(
     Int2Type<ALGORITHM> algorithm,
-    int                 timing_iterations,
+    int                 timing_timing_iterations,
     size_t              *d_temp_storage_bytes,
     cudaError_t         *d_cdp_error,
 
@@ -174,7 +174,7 @@ __global__ void CnpDispatchKernel(
 #ifndef CUB_CDP
     *d_cdp_error = cudaErrorNotSupported;
 #else
-    *d_cdp_error = Dispatch<BINS, CHANNELS, ACTIVE_CHANNELS>(algorithm, Int2Type<false>(), timing_iterations, d_temp_storage_bytes, d_cdp_error, d_temp_storage, temp_storage_bytes, d_sample_itr, d_out_histograms.array, num_samples, 0, debug_synchronous);
+    *d_cdp_error = Dispatch<BINS, CHANNELS, ACTIVE_CHANNELS>(algorithm, Int2Type<false>(), timing_timing_iterations, d_temp_storage_bytes, d_cdp_error, d_temp_storage, temp_storage_bytes, d_sample_itr, d_out_histograms.array, num_samples, 0, debug_synchronous);
     *d_temp_storage_bytes = temp_storage_bytes;
 #endif
 }
@@ -187,7 +187,7 @@ template <int BINS, int CHANNELS, int ACTIVE_CHANNELS, typename InputIterator, t
 cudaError_t Dispatch(
     Int2Type<ALGORITHM> algorithm,
     Int2Type<true>      use_cdp,
-    int                 timing_iterations,
+    int                 timing_timing_iterations,
     size_t              *d_temp_storage_bytes,
     cudaError_t         *d_cdp_error,
 
@@ -205,7 +205,7 @@ cudaError_t Dispatch(
         d_histo_wrapper.array[CHANNEL] = d_histograms[CHANNEL];
 
     // Invoke kernel to invoke device-side dispatch
-    CnpDispatchKernel<BINS, CHANNELS, ACTIVE_CHANNELS, InputIterator, HistoCounter, ALGORITHM><<<1,1>>>(algorithm, timing_iterations, d_temp_storage_bytes, d_cdp_error, d_temp_storage, temp_storage_bytes, d_sample_itr, d_histo_wrapper, num_samples, debug_synchronous);
+    CnpDispatchKernel<BINS, CHANNELS, ACTIVE_CHANNELS, InputIterator, HistoCounter, ALGORITHM><<<1,1>>>(algorithm, timing_timing_iterations, d_temp_storage_bytes, d_cdp_error, d_temp_storage, temp_storage_bytes, d_sample_itr, d_histo_wrapper, num_samples, debug_synchronous);
 
     // Copy out temp_storage_bytes
     CubDebugExit(cudaMemcpy(&temp_storage_bytes, d_temp_storage_bytes, sizeof(size_t) * 1, cudaMemcpyDeviceToHost));
@@ -348,7 +348,7 @@ void Test(
 
     printf("%s cub::DeviceHistogram %s %d %s samples (%dB), %d bins, %d channels, %d active channels, gen-mode %s\n",
         (CDP) ? "CDP device invoked" : "Host-invoked",
-        (ALGORITHM == HISTO_TILES_SHARED_ATOMIC) ? "satomic" : (ALGORITHM == HISTO_TILES_GLOBAL_ATOMIC) ? "gatomic" : "sort",
+        (ALGORITHM == DEVICE_HISTO_SHARED_ATOMIC) ? "satomic" : (ALGORITHM == DEVICE_HISTO_GLOBAL_ATOMIC) ? "gatomic" : "sort",
         num_samples,
         type_string,
         (int) sizeof(SampleT),
@@ -495,9 +495,9 @@ void Test(
     int             num_samples,
     char*           type_string)
 {
-    TestCnp<BINS, CHANNELS, ACTIVE_CHANNELS, SampleT, IteratorValue, HistoCounterT>(Int2Type<HISTO_TILES_SORT>(),          gen_mode, bin_op, num_samples * CHANNELS, type_string);
-    TestCnp<BINS, CHANNELS, ACTIVE_CHANNELS, SampleT, IteratorValue, HistoCounterT>(Int2Type<HISTO_TILES_SHARED_ATOMIC>(), gen_mode, bin_op, num_samples * CHANNELS, type_string);
-    TestCnp<BINS, CHANNELS, ACTIVE_CHANNELS, SampleT, IteratorValue, HistoCounterT>(Int2Type<HISTO_TILES_GLOBAL_ATOMIC>(), gen_mode, bin_op, num_samples * CHANNELS, type_string);
+    TestCnp<BINS, CHANNELS, ACTIVE_CHANNELS, SampleT, IteratorValue, HistoCounterT>(Int2Type<DEVICE_HISTO_SORT>(),          gen_mode, bin_op, num_samples * CHANNELS, type_string);
+    TestCnp<BINS, CHANNELS, ACTIVE_CHANNELS, SampleT, IteratorValue, HistoCounterT>(Int2Type<DEVICE_HISTO_SHARED_ATOMIC>(), gen_mode, bin_op, num_samples * CHANNELS, type_string);
+    TestCnp<BINS, CHANNELS, ACTIVE_CHANNELS, SampleT, IteratorValue, HistoCounterT>(Int2Type<DEVICE_HISTO_GLOBAL_ATOMIC>(), gen_mode, bin_op, num_samples * CHANNELS, type_string);
 }
 
 
@@ -612,25 +612,25 @@ int main(int argc, char** argv)
         if (num_samples < 0) num_samples = 32000000;
 
         printf("SINGLE CHANNEL:\n\n");
-        TestCnp<256, 1, 1, unsigned char, unsigned char, int>(Int2Type<HISTO_TILES_SORT>(),          RANDOM,  Cast<unsigned char>(), num_samples, CUB_TYPE_STRING(unsigned char));
-        TestCnp<256, 1, 1, unsigned char, unsigned char, int>(Int2Type<HISTO_TILES_SORT>(),          UNIFORM, Cast<unsigned char>(), num_samples, CUB_TYPE_STRING(unsigned char));
+        TestCnp<256, 1, 1, unsigned char, unsigned char, int>(Int2Type<DEVICE_HISTO_SORT>(),          RANDOM,  Cast<unsigned char>(), num_samples, CUB_TYPE_STRING(unsigned char));
+        TestCnp<256, 1, 1, unsigned char, unsigned char, int>(Int2Type<DEVICE_HISTO_SORT>(),          UNIFORM, Cast<unsigned char>(), num_samples, CUB_TYPE_STRING(unsigned char));
         printf("\n");
-        TestCnp<256, 1, 1, unsigned char, unsigned char, int>(Int2Type<HISTO_TILES_SHARED_ATOMIC>(), RANDOM,  Cast<unsigned char>(), num_samples, CUB_TYPE_STRING(unsigned char));
-        TestCnp<256, 1, 1, unsigned char, unsigned char, int>(Int2Type<HISTO_TILES_SHARED_ATOMIC>(), UNIFORM, Cast<unsigned char>(), num_samples, CUB_TYPE_STRING(unsigned char));
+        TestCnp<256, 1, 1, unsigned char, unsigned char, int>(Int2Type<DEVICE_HISTO_SHARED_ATOMIC>(), RANDOM,  Cast<unsigned char>(), num_samples, CUB_TYPE_STRING(unsigned char));
+        TestCnp<256, 1, 1, unsigned char, unsigned char, int>(Int2Type<DEVICE_HISTO_SHARED_ATOMIC>(), UNIFORM, Cast<unsigned char>(), num_samples, CUB_TYPE_STRING(unsigned char));
         printf("\n");
-        TestCnp<256, 1, 1, unsigned char, unsigned char, int>(Int2Type<HISTO_TILES_GLOBAL_ATOMIC>(), RANDOM,  Cast<unsigned char>(), num_samples, CUB_TYPE_STRING(unsigned char));
-        TestCnp<256, 1, 1, unsigned char, unsigned char, int>(Int2Type<HISTO_TILES_GLOBAL_ATOMIC>(), UNIFORM, Cast<unsigned char>(), num_samples, CUB_TYPE_STRING(unsigned char));
+        TestCnp<256, 1, 1, unsigned char, unsigned char, int>(Int2Type<DEVICE_HISTO_GLOBAL_ATOMIC>(), RANDOM,  Cast<unsigned char>(), num_samples, CUB_TYPE_STRING(unsigned char));
+        TestCnp<256, 1, 1, unsigned char, unsigned char, int>(Int2Type<DEVICE_HISTO_GLOBAL_ATOMIC>(), UNIFORM, Cast<unsigned char>(), num_samples, CUB_TYPE_STRING(unsigned char));
         printf("\n");
 
         printf("3/4 CHANNEL (RGB/RGBA):\n\n");
-        TestCnp<256, 4, 3, unsigned char, unsigned char, int>(Int2Type<HISTO_TILES_SORT>(),          RANDOM,  Cast<unsigned char>(), num_samples * 4, CUB_TYPE_STRING(unsigned char));
-        TestCnp<256, 4, 3, unsigned char, unsigned char, int>(Int2Type<HISTO_TILES_SORT>(),          UNIFORM, Cast<unsigned char>(), num_samples * 4, CUB_TYPE_STRING(unsigned char));
+        TestCnp<256, 4, 3, unsigned char, unsigned char, int>(Int2Type<DEVICE_HISTO_SORT>(),          RANDOM,  Cast<unsigned char>(), num_samples * 4, CUB_TYPE_STRING(unsigned char));
+        TestCnp<256, 4, 3, unsigned char, unsigned char, int>(Int2Type<DEVICE_HISTO_SORT>(),          UNIFORM, Cast<unsigned char>(), num_samples * 4, CUB_TYPE_STRING(unsigned char));
         printf("\n");
-        TestCnp<256, 4, 3, unsigned char, unsigned char, int>(Int2Type<HISTO_TILES_SHARED_ATOMIC>(), RANDOM,  Cast<unsigned char>(), num_samples * 4, CUB_TYPE_STRING(unsigned char));
-        TestCnp<256, 4, 3, unsigned char, unsigned char, int>(Int2Type<HISTO_TILES_SHARED_ATOMIC>(), UNIFORM, Cast<unsigned char>(), num_samples * 4, CUB_TYPE_STRING(unsigned char));
+        TestCnp<256, 4, 3, unsigned char, unsigned char, int>(Int2Type<DEVICE_HISTO_SHARED_ATOMIC>(), RANDOM,  Cast<unsigned char>(), num_samples * 4, CUB_TYPE_STRING(unsigned char));
+        TestCnp<256, 4, 3, unsigned char, unsigned char, int>(Int2Type<DEVICE_HISTO_SHARED_ATOMIC>(), UNIFORM, Cast<unsigned char>(), num_samples * 4, CUB_TYPE_STRING(unsigned char));
         printf("\n");
-        TestCnp<256, 4, 3, unsigned char, unsigned char, int>(Int2Type<HISTO_TILES_GLOBAL_ATOMIC>(), RANDOM,  Cast<unsigned char>(), num_samples * 4, CUB_TYPE_STRING(unsigned char));
-        TestCnp<256, 4, 3, unsigned char, unsigned char, int>(Int2Type<HISTO_TILES_GLOBAL_ATOMIC>(), UNIFORM, Cast<unsigned char>(), num_samples * 4, CUB_TYPE_STRING(unsigned char));
+        TestCnp<256, 4, 3, unsigned char, unsigned char, int>(Int2Type<DEVICE_HISTO_GLOBAL_ATOMIC>(), RANDOM,  Cast<unsigned char>(), num_samples * 4, CUB_TYPE_STRING(unsigned char));
+        TestCnp<256, 4, 3, unsigned char, unsigned char, int>(Int2Type<DEVICE_HISTO_GLOBAL_ATOMIC>(), UNIFORM, Cast<unsigned char>(), num_samples * 4, CUB_TYPE_STRING(unsigned char));
         printf("\n");
     }
     else

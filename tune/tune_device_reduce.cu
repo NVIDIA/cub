@@ -64,7 +64,7 @@ using namespace std;
 
 int     g_max_items         = 48 * 1024 * 1024;
 int     g_samples           = 100;
-int     g_iterations        = 2;
+int     g_timing_iterations        = 2;
 bool    g_verbose           = false;
 bool    g_single            = false;
 bool    g_verify            = true;
@@ -412,7 +412,7 @@ struct Schmoo
         // Performance
         GpuTimer gpu_timer;
         float elapsed_millis = 0.0;
-        for (int i = 0; i < g_iterations; i++)
+        for (int i = 0; i < g_timing_iterations; i++)
         {
             gpu_timer.Start();
 
@@ -436,7 +436,7 @@ struct Schmoo
         // Mooch
         CubDebugExit(cudaDeviceSynchronize());
 
-        float avg_elapsed = elapsed_millis / g_iterations;
+        float avg_elapsed = elapsed_millis / g_timing_iterations;
         float avg_throughput = float(num_items) / avg_elapsed / 1000.0 / 1000.0;
         float avg_bandwidth = avg_throughput * sizeof(T);
 
@@ -689,7 +689,7 @@ int main(int argc, char** argv)
     CommandLineArgs args(argc, argv);
     args.GetCmdLineArgument("n", g_max_items);
     args.GetCmdLineArgument("s", g_samples);
-    args.GetCmdLineArgument("i", g_iterations);
+    args.GetCmdLineArgument("i", g_timing_iterations);
     g_verbose = args.CheckCmdLineFlag("v");
     g_single = args.CheckCmdLineFlag("single");
     g_verify = !args.CheckCmdLineFlag("noverify");

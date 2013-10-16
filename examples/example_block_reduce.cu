@@ -50,7 +50,7 @@ using namespace cub;
 bool g_verbose = false;
 
 /// Timing iterations
-int g_iterations = 100;
+int g_timing_iterations = 100;
 
 /// Default grid size
 int g_grid_size = 1;
@@ -172,7 +172,7 @@ void Test()
     cudaMemcpy(d_in, h_in, sizeof(int) * TILE_SIZE, cudaMemcpyHostToDevice);
 
     printf("BlockReduce %d items (%d timing iterations, %d blocks, %d threads, %d items per thread, %d SM occupancy):\n",
-        TILE_SIZE, g_iterations, g_grid_size, BLOCK_THREADS, ITEMS_PER_THREAD, max_sm_occupancy);
+        TILE_SIZE, g_timing_iterations, g_grid_size, BLOCK_THREADS, ITEMS_PER_THREAD, max_sm_occupancy);
 
     // Run aggregate/prefix kernel
     BlockSumKernel<BLOCK_THREADS, ITEMS_PER_THREAD, ALGORITHM><<<g_grid_size, BLOCK_THREADS>>>(
@@ -191,7 +191,7 @@ void Test()
     float       elapsed_millis          = 0.0;
     clock_t     elapsed_clocks          = 0;
 
-    for (int i = 0; i < g_iterations; ++i)
+    for (int i = 0; i < g_timing_iterations; ++i)
     {
         // Copy problem to device
         cudaMemcpy(d_in, h_in, sizeof(int) * TILE_SIZE, cudaMemcpyHostToDevice);
@@ -218,9 +218,9 @@ void Test()
     CubDebugExit(cudaDeviceSynchronize());
 
     // Display timing results
-    float avg_millis            = elapsed_millis / g_iterations;
+    float avg_millis            = elapsed_millis / g_timing_iterations;
     float avg_items_per_sec     = float(TILE_SIZE * g_grid_size) / avg_millis / 1000.0;
-    float avg_clocks            = float(elapsed_clocks) / g_iterations;
+    float avg_clocks            = float(elapsed_clocks) / g_timing_iterations;
     float avg_clocks_per_item   = avg_clocks / TILE_SIZE;
 
     printf("\tAverage BlockReduce::Sum clocks: %.3f\n", avg_clocks);
@@ -245,7 +245,7 @@ int main(int argc, char** argv)
     // Initialize command line
     CommandLineArgs args(argc, argv);
     g_verbose = args.CheckCmdLineFlag("v");
-    args.GetCmdLineArgument("i", g_iterations);
+    args.GetCmdLineArgument("i", g_timing_iterations);
     args.GetCmdLineArgument("grid-size", g_grid_size);
 
     // Print usage

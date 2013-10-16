@@ -35,16 +35,15 @@
 
 
 // Block
-#include "region/block_histogram.cuh"
-#include "region/block_discontinuity.cuh"
-#include "region/block_exchange.cuh"
-#include "region/block_load.cuh"
-#include "region/block_radix_rank.cuh"
-#include "region/block_radix_sort.cuh"
-#include "region/block_reduce.cuh"
-#include "region/block_scan.cuh"
-#include "region/block_store.cuh"
-#include "region/block_tridiagonal_solve.cuh"
+#include "block/block_histogram.cuh"
+#include "block/block_discontinuity.cuh"
+#include "block/block_exchange.cuh"
+#include "block/block_load.cuh"
+#include "block/block_radix_rank.cuh"
+#include "block/block_radix_sort.cuh"
+#include "block/block_reduce.cuh"
+#include "block/block_scan.cuh"
+#include "block/block_store.cuh"
 
 // Device
 #include "device/device_histogram.cuh"
