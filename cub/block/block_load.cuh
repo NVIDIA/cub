@@ -246,7 +246,7 @@ __device__ __forceinline__ void LoadStriped(
         items[ITEM] = oob_default;
     }
 
-    LoadStriped(linear_tid, block_itr, items, valid_items);
+    LoadStriped<BLOCK_THREADS>(linear_tid, block_itr, items, valid_items);
 }
 
 
