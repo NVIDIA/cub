@@ -57,7 +57,7 @@ typedef int         VertexId;   // uint32s as vertex ids
 typedef double      Value;      // double-precision floating point values
 
 bool                    g_verbose       = false;
-int                     g_iterations    = 1;
+int                     g_timing_iterations    = 1;
 CachingDeviceAllocator  g_allocator;
 
 
@@ -837,7 +837,7 @@ void TestDevice(
     // Run kernel (always run one iteration without timing)
     GpuTimer gpu_timer;
     float elapsed_millis = 0.0;
-    for (int i = 0; i <= g_iterations; i++)
+    for (int i = 0; i <= g_timing_iterations; i++)
     {
         gpu_timer.Start();
 
@@ -874,12 +874,12 @@ void TestDevice(
     fflush(stdout);
 
     // Display timing
-    if (g_iterations > 0)
+    if (g_timing_iterations > 0)
     {
-        float avg_elapsed = elapsed_millis / g_iterations;
+        float avg_elapsed = elapsed_millis / g_timing_iterations;
         int total_bytes = ((sizeof(VertexId) + sizeof(VertexId)) * 2 * num_edges) + (sizeof(Value) * coo_graph.row_dim);
         printf("%d iterations, average elapsed (%.3f ms), utilized bandwidth (%.3f GB/s), GFLOPS(%.3f)\n",
-            g_iterations,
+            g_timing_iterations,
             avg_elapsed,
             total_bytes / avg_elapsed / 1000.0 / 1000.0,
             num_edges * 2 / avg_elapsed / 1000.0 / 1000.0);
@@ -948,7 +948,7 @@ int main(int argc, char** argv)
     // Initialize command line
     CommandLineArgs args(argc, argv);
     g_verbose = args.CheckCmdLineFlag("v");
-    args.GetCmdLineArgument("i", g_iterations);
+    args.GetCmdLineArgument("i", g_timing_iterations);
 
     // Print usage
     if (args.CheckCmdLineFlag("help"))

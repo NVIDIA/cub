@@ -46,70 +46,8 @@ CUB_NS_PREFIX
 namespace cub {
 
 
-
 /******************************************************************************
- * Utility types
- ******************************************************************************/
-
-#ifndef DOXYGEN_SHOULD_SKIP_THIS    // Do not document
-
-/**
- * An key identifier paired with a corresponding value reduction
- */
-template <typename Key, typename Value>
-struct KeyValuePair
-{
-    Key     key;            ///< Key identifier
-    Value   value;          ///< Reduction value
-};
-
-
-/**
- * An key identifier paired with a corresponding value reduction (specialized for int-double pairings)
- */
-template <>
-struct KeyValuePair<int, double>
-{
-    long long   key;        ///< Key identifier
-    double      value;      ///< Reduction value
-};
-
-
-/**
- * Reduce-value-by-ID scan operator
- */
-template <typename ReductionOp>     ///< Wrapped reduction operator type
-struct ReduceByKeyOp
-{
-    ReductionOp op;                 ///< Wrapped reduction operator
-
-    /// Constructor
-    ReduceByKeyOp(ReductionOp op) : op(op) {}
-
-    /// Scan operator
-    template <typename KeyValuePair>
-    __device__ __forceinline__ KeyValuePair operator()(
-        const KeyValuePair &first,
-        const KeyValuePair &second)
-    {
-        KeyValuePair retval;
-
-        retval.value = (second.key != first.key) ?
-                second.value :                      // The second value is for a different ID, return only that value
-                op(first.value, second.value);      // The values are for the same ID so reduce them
-
-        retval.key = second.key;
-        return retval;
-    }
-};
-
-#endif // DOXYGEN_SHOULD_SKIP_THIS
-
-
-
-
-/******************************************************************************
- * Block scan
+ * Block segmented reduce
  ******************************************************************************/
 
 /**
@@ -178,7 +116,7 @@ struct ReduceByKeyOp
 template <
     typename            T,
     int                 BLOCK_THREADS,
-    BlockSegmentedReduceAlgorithm  ALGORITHM = BLOCK_SCAN_RAKING>
+    BlockScanAlgorithm  ALGORITHM = BLOCK_SCAN_RAKING>
 class BlockSegmentedReduce
 {
 private:
@@ -193,7 +131,7 @@ private:
      * cannot be used with threadblock sizes not a multiple of the
      * architectural warp size.
      */
-    static const BlockSegmentedReduceAlgorithm SAFE_ALGORITHM =
+    static const BlockScanAlgorithm SAFE_ALGORITHM =
         ((ALGORITHM == BLOCK_SCAN_WARP_SCANS) && (BLOCK_THREADS % CUB_PTX_WARP_THREADS != 0)) ?
             BLOCK_SCAN_RAKING :
             ALGORITHM;

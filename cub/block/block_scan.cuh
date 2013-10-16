@@ -62,7 +62,7 @@ struct ReduceByKeyOp
     ReductionOp op;                 ///< Wrapped reduction operator
 
     /// Constructor
-    ReduceByKeyOp(ReductionOp op) : op(op) {}
+    __device__ __forceinline__ ReduceByKeyOp(ReductionOp op) : op(op) {}
 
     /// Scan operator
     template <typename KeyValuePair>
