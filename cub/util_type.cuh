@@ -281,6 +281,7 @@ struct KeyValuePair<int, double>
     typedef double      Value;
 
     Key     key;            ///< Key identifier
+    Key     pad;
     Value   value;          ///< Reduction value
 };
 

@@ -26,6 +26,8 @@
  *
  ******************************************************************************/
 
+// Incorrect: ./bin/test_device_seg_reduce_sm350_nvvm_5.5_abi_nocdp_i386 --i=0 --n=2000000 --ss=500 --v
+
 /******************************************************************************
  * An implementation of segmented reduction using a load-balanced parallelization
  * strategy based on the MergePath decision path.
@@ -67,10 +69,11 @@ CachingDeviceAllocator  g_allocator(true);
  * location (diagonal) along the merge decision path
  */
 template <
+    int         BLOCK_THREADS,
     typename    IteratorA,
     typename    IteratorB,
     typename    Offset>
-__device__ __forceinline__ void MergePathSearch(
+__device__ __forceinline__ void ParallelMergePathSearch(
     Offset      diagonal,
     IteratorA   a,
     Offset      a_begin,
@@ -81,26 +84,28 @@ __device__ __forceinline__ void MergePathSearch(
     Offset      b_end,
     Offset      &b_offset)
 {
-    Offset split_min = CUB_MAX(diagonal - b_end, a_begin);
-    Offset split_max = CUB_MIN(diagonal, a_end);
+    Offset a_split_min = CUB_MAX(diagonal - b_end, a_begin);
+    Offset a_split_max = CUB_MIN(diagonal, a_end);
 
-    while (split_min < split_max)
+    while (a_split_min < a_split_max)
     {
-        Offset split_pivot = (split_min + split_max) >> 1;
-        if (a[split_pivot] <= b[diagonal - split_pivot - 1])
-        {
-            // Move candidate split range up A, down B
-            split_min = split_pivot + 1;
-        }
-        else
-        {
-            // Move candidate split range up B, down A
-            split_max = split_pivot;
-        }
+        Offset a_distance       = a_split_max - a_split_min;
+        Offset a_slice          = (a_distance + BLOCK_THREADS - 1) >> Log2<BLOCK_THREADS>::VALUE;
+        Offset a_split_pivot    = CUB_MIN(a_split_min + (threadIdx.x * a_slice), a_end - 1);
+
+        int move_up = (a[a_split_pivot] <= b[diagonal - a_split_pivot - 1]);
+
+        int num_up = __syncthreads_count(move_up);
+/*
+        CubLog("a_split_min(%d), a_split_max(%d) a_distance(%d), a_slice(%d), a_split_pivot(%d), move_up(%d), num_up(%d), a_begin(%d), a_end(%d)\n",
+            a_split_min, a_split_max, a_distance, a_slice, a_split_pivot, move_up, num_up, a_begin, a_end);
+*/
+        a_split_max = CUB_MIN(num_up * a_slice, a_end);
+        a_split_min = CUB_MAX(a_split_max - a_slice, a_begin) + 1;
     }
 
-    a_offset = CUB_MIN(split_min, a_end);
-    b_offset = CUB_MIN(diagonal - split_min, b_end);
+    a_offset = CUB_MIN(a_split_min, a_end);
+    b_offset = CUB_MIN(diagonal - a_split_min, b_end);
 }
 
 /**
@@ -111,7 +116,7 @@ template <
     typename    IteratorA,
     typename    IteratorB,
     typename    Offset>
-__device__ __forceinline__ void MergePathSearch2(
+__device__ __forceinline__ void MergePathSearch(
     Offset      diagonal,
     IteratorA   a,
     Offset      a_begin,
@@ -396,15 +401,10 @@ struct BlockSegReduceRegion
             // Read block's ending indices (hoist?)
             Offset next_block_segment_idx   = temp_storage.block_segment_idx[1];
             Offset next_block_value_idx     = temp_storage.block_value_idx[1];
-/*
-            if (threadIdx.x == 0) CubLog("block diagonal %d next diagonal %d, segment idx [%d: %d], value idx [%d : %d]\n",
-                block_diagonal,
-                next_block_diagonal,
-                block_segment_idx,
-                next_block_segment_idx,
-                block_value_idx,
-                next_block_value_idx);
-*/
+
+//            if (threadIdx.x == 0) CubLog("block diagonal %d next diagonal %d, segment idx [%d: %d], value idx [%d : %d]\n",
+//                block_diagonal, next_block_diagonal, block_segment_idx, next_block_segment_idx, block_value_idx, next_block_value_idx);
+
             // Clamp the per-thread search range to within one work-tile of block's current indices
             Offset next_tile_segment_idx    = CUB_MIN(next_block_segment_idx,   block_segment_idx + TILE_ITEMS);
             Offset next_tile_value_idx      = CUB_MIN(next_block_value_idx,     block_value_idx + TILE_ITEMS);
@@ -414,7 +414,7 @@ struct BlockSegReduceRegion
             Offset next_thread_segment_idx;
             Offset next_thread_value_idx;
 
-            MergePathSearch2(
+            MergePathSearch(
                 next_thread_diagonal,           // Next thread diagonal
                 d_segment_end_offsets,          // A (segment end-offsets)
                 block_segment_idx,              // Start index into A
@@ -506,11 +506,10 @@ struct BlockSegReduceRegion
                 Offset thread_value_idx = (threadIdx.x == 0) ?
                     block_value_idx :                               // First thread starts at the block's start
                     temp_storage.thread_value_idx[threadIdx.x];     // Other threads start at their predecessor's end
-/*
-                CubLog("\t thread segment idx %d:%d, value idx %d:%d\n",
-                    thread_segment_idx, next_thread_segment_idx,
-                    thread_value_idx, next_thread_value_idx);
-*/
+
+//                CubLog("\t thread segment idx %d:%d, value idx %d:%d\n",
+//                    thread_segment_idx, next_thread_segment_idx, thread_value_idx, next_thread_value_idx);
+
                 // Barrier for smem reuse
                 __syncthreads();
 
@@ -573,11 +572,10 @@ struct BlockSegReduceRegion
                     }
                 }
 
-/*
-                CubLog("Tuples %s<%d,%.1f>, %s<%d,%.1f>\n",
-                    tail_flags[0] ? "*" : "", partial_reductions[0].key, partial_reductions[0].value,
-                    tail_flags[1] ? "*" : "", partial_reductions[1].key, partial_reductions[1].value);
-*/
+//                CubLog("Tuples %s<%d,%.1f>, %s<%d,%.1f>\n",
+//                    tail_flags[0] ? "*" : "", partial_reductions[0].key, partial_reductions[0].value,
+//                    tail_flags[1] ? "*" : "", partial_reductions[1].key, partial_reductions[1].value);
+
                 // Use prefix scan to reduce values by segment-id.  The segment-reductions end up in items flagged as segment-tails.
                 KeyValuePair block_aggregate;
                 BlockScan(temp_storage.scan).InclusiveScan(
@@ -587,11 +585,10 @@ struct BlockSegReduceRegion
                     block_aggregate,                // Block-wide total (unused)
                     prefix_op);                     // Prefix operator for seeding the block-wide scan with the running total
 
-/*
-                CubLog("\t\t Scanned tuples %s<%d,%.1f>, %s<%d,%.1f>\n",
-                    tail_flags[0] ? "*" : "", partial_reductions[0].key, partial_reductions[0].value,
-                    tail_flags[1] ? "*" : "", partial_reductions[1].key, partial_reductions[1].value);
-*/
+//                CubLog("\t\t Scanned tuples %s<%d,%.1f>, %s<%d,%.1f>\n",
+//                    tail_flags[0] ? "*" : "", partial_reductions[0].key, partial_reductions[0].value,
+//                    tail_flags[1] ? "*" : "", partial_reductions[1].key, partial_reductions[1].value);
+
                 // The first segment index for this region (hoist?)
                 Offset first_segment_idx = temp_storage.block_segment_idx[0];
 
@@ -606,6 +603,9 @@ struct BlockSegReduceRegion
 
                         // Write value reduction to corresponding segment id
                         d_output[segment_idx] = value;
+
+                        if (partial_reductions[ITEM].key == 22)
+                            CubLog("Basic scatter for 22: %.2f\n", value);
 
                         // Save off the first value product that this thread block will scatter
                         if (segment_idx == first_segment_idx)
@@ -634,6 +634,7 @@ struct BlockSegReduceRegion
             first_tuple = temp_storage.first_tuple;
             last_tuple = prefix_op.running_total;
         }
+
     }
 
 
@@ -882,6 +883,9 @@ struct BlockSegReduceRegionByKey
         {
             if (head_flags[ITEM])
             {
+                if (partial_reductions[ITEM].key == 22)
+                    CubLog("Fixup for 22: %.2f\n", partial_reductions[ITEM].value);
+
                 d_output[partial_reductions[ITEM].key] = partial_reductions[ITEM].value;
             }
         }
@@ -1003,6 +1007,12 @@ __global__ void SegReduceRegionKernel(
                 first_tuple.value = identity;
             }
 
+            if (first_tuple.key == 22)
+                CubLog("first_tuple scatter for 22: %.2f\n", first_tuple.value);
+            if (last_tuple.key == 22)
+                CubLog("last_tuple scatter for 22: %.2f\n", last_tuple.value);
+
+
             // Write the first and last partial products from this thread block so
             // that they can be subsequently "fixed up" in the next kernel.
             d_tuple_partials[blockIdx.x * 2]          = first_tuple;
@@ -1094,14 +1104,14 @@ struct DeviceSegReduceDispatch
     {
         // ReduceRegionPolicy
         typedef BlockSegReduceRegionPolicy<
-                128,                            ///< Threads per thread block
-                2, //12,                             ///< Items per thread (per tile of input)
+                64,                            ///< Threads per thread block
+                14,                             ///< Items per thread (per tile of input)
                 false,                          ///< Whether or not to cache incoming segment offsets in shared memory before reducing each tile
                 false,                          ///< Whether or not to cache incoming values in shared memory before reducing each tile
                 LOAD_LDG,                       ///< Cache load modifier for reading segment offsets
                 LOAD_LDG,                       ///< Cache load modifier for reading values
                 BLOCK_REDUCE_RAKING,            ///< The BlockReduce algorithm to use
-                BLOCK_SCAN_RAKING_MEMOIZE>      ///< The BlockScan algorithm to use
+                BLOCK_SCAN_WARP_SCANS>               ///< The BlockScan algorithm to use
             SegReduceRegionPolicy;
 
         // ReduceRegionByKeyPolicy
