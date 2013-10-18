@@ -26,8 +26,6 @@
  *
  ******************************************************************************/
 
-// Incorrect: ./bin/test_device_seg_reduce_sm350_nvvm_5.5_abi_nocdp_i386 --i=0 --n=2000000 --ss=500 --v
-
 /******************************************************************************
  * An implementation of segmented reduction using a load-balanced parallelization
  * strategy based on the MergePath decision path.
@@ -457,9 +455,7 @@ struct BlockSegReduceRegion
 
                 if (threadIdx.x == 0)
                 {
-                    prefix_op.running_total = scan_op(
-                        prefix_op.running_total,
-                        tile_aggregate);
+                    prefix_op.running_total = scan_op(prefix_op.running_total, tile_aggregate);
                 }
             }
 /*            else if (block_value_idx == next_tile_value_idx)
@@ -572,10 +568,6 @@ struct BlockSegReduceRegion
                     }
                 }
 
-//                CubLog("Tuples %s<%d,%.1f>, %s<%d,%.1f>\n",
-//                    tail_flags[0] ? "*" : "", partial_reductions[0].key, partial_reductions[0].value,
-//                    tail_flags[1] ? "*" : "", partial_reductions[1].key, partial_reductions[1].value);
-
                 // Use prefix scan to reduce values by segment-id.  The segment-reductions end up in items flagged as segment-tails.
                 KeyValuePair block_aggregate;
                 BlockScan(temp_storage.scan).InclusiveScan(
@@ -603,9 +595,6 @@ struct BlockSegReduceRegion
 
                         // Write value reduction to corresponding segment id
                         d_output[segment_idx] = value;
-
-                        if (partial_reductions[ITEM].key == 22)
-                            CubLog("Basic scatter for 22: %.2f\n", value);
 
                         // Save off the first value product that this thread block will scatter
                         if (segment_idx == first_segment_idx)
@@ -883,9 +872,6 @@ struct BlockSegReduceRegionByKey
         {
             if (head_flags[ITEM])
             {
-                if (partial_reductions[ITEM].key == 22)
-                    CubLog("Fixup for 22: %.2f\n", partial_reductions[ITEM].value);
-
                 d_output[partial_reductions[ITEM].key] = partial_reductions[ITEM].value;
             }
         }
@@ -1006,12 +992,6 @@ __global__ void SegReduceRegionKernel(
             {
                 first_tuple.value = identity;
             }
-
-            if (first_tuple.key == 22)
-                CubLog("first_tuple scatter for 22: %.2f\n", first_tuple.value);
-            if (last_tuple.key == 22)
-                CubLog("last_tuple scatter for 22: %.2f\n", last_tuple.value);
-
 
             // Write the first and last partial products from this thread block so
             // that they can be subsequently "fixed up" in the next kernel.
@@ -1802,7 +1782,7 @@ void Test(
     CubDebugExit(DeviceSegReduce::Sum(d_temp_storage, temp_storage_bytes, d_values, d_segment_offsets, d_output, num_values, num_segments, 0, true));
 
     // Check for correctness (and display results, if specified)
-    int compare = CompareDeviceResults(h_reference, d_output, num_segments, g_verbose, g_verbose);
+    int compare = CompareDeviceResults(h_reference, d_output, num_segments, true, g_verbose);
     printf("\t%s", compare ? "FAIL" : "PASS");
 
     // Flush any stdout/stderr

@@ -162,7 +162,11 @@ struct BlockScanWarpScans
         // Compute and share threadblock prefix
         if (warp_id == 0)
         {
-            temp_storage.block_prefix = block_prefix_callback_op(block_aggregate);
+            T block_prefix = block_prefix_callback_op(block_aggregate);
+            if (lane_id == 0)
+            {
+                temp_storage.block_prefix = block_prefix;
+            }
         }
 
         __syncthreads();
@@ -204,7 +208,11 @@ struct BlockScanWarpScans
         // Compute and share threadblock prefix
         if (warp_id == 0)
         {
-            temp_storage.block_prefix = block_prefix_callback_op(block_aggregate);
+            T block_prefix = block_prefix_callback_op(block_aggregate);
+            if (lane_id == 0)
+            {
+                temp_storage.block_prefix = block_prefix;
+            }
         }
 
         __syncthreads();
@@ -243,7 +251,11 @@ struct BlockScanWarpScans
         // Compute and share threadblock prefix
         if (warp_id == 0)
         {
-            temp_storage.block_prefix = block_prefix_callback_op(block_aggregate);
+            T block_prefix = block_prefix_callback_op(block_aggregate);
+            if (lane_id == 0)
+            {
+                temp_storage.block_prefix = block_prefix;
+            }
         }
 
         __syncthreads();
@@ -287,7 +299,11 @@ struct BlockScanWarpScans
         // Compute and share threadblock prefix
         if (warp_id == 0)
         {
-            temp_storage.block_prefix = block_prefix_callback_op(block_aggregate);
+            T block_prefix = block_prefix_callback_op(block_aggregate);
+            if (lane_id == 0)
+            {
+                temp_storage.block_prefix = block_prefix;
+            }
         }
 
         __syncthreads();
@@ -324,7 +340,11 @@ struct BlockScanWarpScans
         // Compute and share threadblock prefix
         if (warp_id == 0)
         {
-            temp_storage.block_prefix = block_prefix_callback_op(block_aggregate);
+            T block_prefix = block_prefix_callback_op(block_aggregate);
+            if (lane_id == 0)
+            {
+                temp_storage.block_prefix = block_prefix;
+            }
         }
 
         __syncthreads();
