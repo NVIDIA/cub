@@ -118,29 +118,39 @@ struct GridEvenShare
     }
 
 
+
     /**
-     * \brief Initializes the threadblock-specific details (e.g., to be called by each threadblock after startup)
+     * \brief Initializes ranges for the specified partition index
      */
-    __device__ __forceinline__ void BlockInit()
+    __device__ __forceinline__ void Init(int partition_id)
     {
-        if (blockIdx.x < big_blocks)
+        if (partition_id < big_blocks)
         {
             // This threadblock gets a big share of grains (grains_per_block + 1)
-            block_offset = (blockIdx.x * big_share);
+            block_offset = (partition_id * big_share);
             block_end = block_offset + big_share;
         }
-        else if (blockIdx.x < total_grains)
+        else if (partition_id < total_grains)
         {
             // This threadblock gets a normal share of grains (grains_per_block)
-            block_offset = normal_base_offset + (blockIdx.x * normal_share);
+            block_offset = normal_base_offset + (partition_id * normal_share);
             block_end = block_offset + normal_share;
         }
 
         // Last threadblock
-        if (blockIdx.x == grid_size - 1)
+        if (partition_id >= grid_size - 1)
         {
             block_end = num_items;
         }
+    }
+
+
+    /**
+     * \brief Initializes ranges for the current thread block (e.g., to be called by each threadblock after startup)
+     */
+    __device__ __forceinline__ void BlockInit()
+    {
+        Init(blockIdx.x);
     }
 
 

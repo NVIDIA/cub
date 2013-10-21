@@ -266,25 +266,31 @@ struct KeyValuePair
     typedef _Key        Key;
     typedef _Value      Value;
 
-    Key     key;            ///< Key identifier
     Value   value;          ///< Reduction value
+    Key     key;            ///< Key identifier
 };
 
+/*
+template <>
+struct KeyValuePair<int, long long>
+{
+    typedef int         Key;
+    typedef long long   Value;
 
-/**
- * An key identifier paired with a corresponding value reduction (specialized for int-double pairings)
- */
+    Value       value;          ///< Reduction value
+    long long   key;            ///< Key identifier
+};
+
 template <>
 struct KeyValuePair<int, double>
 {
     typedef int         Key;
     typedef double      Value;
 
-    Key     key;            ///< Key identifier
-    Key     pad;
-    Value   value;          ///< Reduction value
+    Value       value;          ///< Reduction value
+    long long   key;            ///< Key identifier
 };
-
+*/
 
 /**
  * \brief A storage-backing wrapper that allows types with non-trivial constructors to be aliased in unions
