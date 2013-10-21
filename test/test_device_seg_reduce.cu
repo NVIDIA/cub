@@ -274,7 +274,7 @@ struct BlockSegReduceRegion
             {
                 // Smem needed for communicating start/end indices between threads for a given work tile
                 Offset thread_segment_idx[BLOCK_THREADS + 1];
-                Value thread_value_idx[BLOCK_THREADS + 1];
+                Offset thread_value_idx[BLOCK_THREADS + 1];
             };
         };
 
@@ -299,6 +299,8 @@ struct BlockSegReduceRegion
     WrappedValueIterator            d_values;               ///< A sequence of \p num_values data to reduce
     OutputIterator                  d_output;               ///< A sequence of \p num_segments segment totals
     CountingIterator                d_value_offsets;        ///< A sequence of \p num_values value-offsets
+    Offset                          *d_block_segment_idx;
+    Offset                          *d_block_value_idx;
     Offset                          num_values;             ///< Total number of values to reduce
     Offset                          num_segments;           ///< Number of segments being reduced
     Value                           identity;               ///< Identity value (for zero-length segments)
@@ -320,6 +322,8 @@ struct BlockSegReduceRegion
         SegmentOffsetIterator   d_segment_end_offsets,  ///< A sequence of \p num_segments segment end-offsets
         ValueIterator           d_values,               ///< A sequence of \p num_values values
         OutputIterator          d_output,               ///< A sequence of \p num_segments segment totals
+        Offset                  *d_block_segment_idx,
+        Offset                  *d_block_value_idx,
         Offset                  num_values,             ///< Number of values to reduce
         Offset                  num_segments,           ///< Number of segments being reduced
         Value                   identity,               ///< Identity value (for zero-length segments)
@@ -330,6 +334,8 @@ struct BlockSegReduceRegion
         d_values(d_values),
         d_value_offsets(0),
         d_output(d_output),
+        d_block_segment_idx(d_block_segment_idx),
+        d_block_value_idx(d_block_value_idx),
         num_values(num_values),
         num_segments(num_segments),
         identity(identity),
@@ -337,6 +343,187 @@ struct BlockSegReduceRegion
         scan_op(reduction_op),
         prefix_op(scan_op)
     {}
+
+
+    /**
+     * Fast-path single-segment tile reduction.  Perform a
+     * simple block-wide reduction and accumulate the result into
+     * the running total.
+     */
+    __device__ __forceinline__ void SingleSegmentTile(
+        Offset next_tile_value_idx,
+        Offset block_value_idx,
+        Offset block_segment_idx)
+    {
+        // Load a tile's worth of values (using identity for out-of-bounds items)
+        Value values[ITEMS_PER_THREAD];
+        Offset num_values = next_tile_value_idx - block_value_idx;
+        LoadStriped<BLOCK_THREADS>(threadIdx.x, d_values + block_value_idx, values, num_values, identity);
+
+        // Barrier for smem reuse
+        __syncthreads();
+
+        // Reduce the tile of values and update the running total in thread-0
+        KeyValuePair tile_aggregate;
+        tile_aggregate.key = block_segment_idx;
+        tile_aggregate.value = BlockReduce(temp_storage.reduce).Reduce(values, reduction_op);
+
+        if (threadIdx.x == 0)
+        {
+            prefix_op.running_total = scan_op(prefix_op.running_total, tile_aggregate);
+        }
+    }
+
+    /**
+     * Fast-path empty-segment tile reduction.  Write out a tile of identity
+     * values to output.
+     */
+    __device__ __forceinline__ void EmptySegmentsTile(
+        Offset next_tile_segment_idx,
+        Offset block_segment_idx)
+    {
+        Value segment_reductions[ITEMS_PER_THREAD];
+
+        if (threadIdx.x == 0)
+        {
+            // The first segment gets the running segment total
+            segment_reductions[0] = prefix_op.running_total.value;
+
+            // Update the running prefix
+            prefix_op.running_total.value = identity;
+            prefix_op.running_total.key = next_tile_segment_idx;
+        }
+        else
+        {
+            // Remainder of segments in this tile get identity
+            segment_reductions[0] = identity;
+        }
+
+        // Remainder of segments in this tile get identity
+        #pragma unroll
+        for (int ITEM = 1; ITEM < ITEMS_PER_THREAD; ++ITEM)
+            segment_reductions[ITEM] = identity;
+
+        // Store reductions
+        Offset num_segments = next_tile_segment_idx - block_segment_idx;
+        StoreStriped<BLOCK_THREADS>(threadIdx.x, d_output + block_segment_idx, segment_reductions, num_segments);
+    }
+
+
+    /**
+     * Multi-segment tile reduction.
+     */
+    __device__ __forceinline__ void MultiSegmentTile(
+        Offset block_segment_idx,
+        Offset block_value_idx,
+        Offset next_thread_segment_idx,
+        Offset next_thread_value_idx)
+    {
+        // Get thread begin-index for segments
+        Offset thread_segment_idx = (threadIdx.x == 0) ?
+            block_segment_idx :                             // First thread starts at the block's start
+            temp_storage.thread_segment_idx[threadIdx.x];   // Other threads start at their predecessor's end
+
+        // Get thread begin-index for values
+        Offset thread_value_idx = (threadIdx.x == 0) ?
+            block_value_idx :                               // First thread starts at the block's start
+            temp_storage.thread_value_idx[threadIdx.x];     // Other threads start at their predecessor's end
+
+        // Barrier for smem reuse
+        __syncthreads();
+
+        // Check if first segment end-offset is in range
+        bool valid_segment = (thread_segment_idx < next_thread_segment_idx);
+
+        // Check if first value offset is in range
+        bool valid_value = (thread_value_idx < next_thread_value_idx);
+
+        // Load first segment end-offset
+        Offset segment_end_offset = (valid_segment) ?
+            d_segment_end_offsets[thread_segment_idx] :
+            num_values;                                                     // Out of range (the last segment end-offset is one-past the last value offset)
+
+        // Load first value offset
+        Offset value_offset = (valid_value) ?
+            d_value_offsets[thread_value_idx] :
+            num_values;                                                     // Out of range (one-past the last value offset)
+
+        // Assemble segment-demarcating tail flags and partial reduction tuples
+        TailFlag        tail_flags[ITEMS_PER_THREAD];
+        KeyValuePair    partial_reductions[ITEMS_PER_THREAD];
+
+        #pragma unroll
+        for (int ITEM = 0; ITEM < ITEMS_PER_THREAD; ++ITEM)
+        {
+            // Default tuple and flag values
+            partial_reductions[ITEM].key    = thread_segment_idx;
+            partial_reductions[ITEM].value  = identity;
+            tail_flags[ITEM]                = 0;
+
+            // Whether or not we slide (a) right along the segment path or (b) down the value path
+            if (valid_segment && (!valid_value || (segment_end_offset <= value_offset)))
+            {
+                // Consume this segment index
+
+                // Set tail flag noting the end of the segment
+                tail_flags[ITEM] = 1;
+
+                // Increment segment index
+                thread_segment_idx++;
+
+                // Read next segment end-offset (if valid)
+                if ((valid_segment = (thread_segment_idx < next_thread_segment_idx)))
+                    segment_end_offset = d_segment_end_offsets[thread_segment_idx];
+            }
+            else if (valid_value)
+            {
+                // Consume this value index
+
+                // Update the tuple's value with the value at this index.
+                partial_reductions[ITEM].value = d_values[thread_value_idx];
+
+                // Increment value index
+                thread_value_idx++;
+
+                // Read next value offset (if valid)
+                if ((valid_value = (thread_value_idx < next_thread_value_idx)))
+                    value_offset = d_value_offsets[thread_value_idx];
+            }
+        }
+
+        // Use prefix scan to reduce values by segment-id.  The segment-reductions end up in items flagged as segment-tails.
+        KeyValuePair block_aggregate;
+        BlockScan(temp_storage.scan).InclusiveScan(
+            partial_reductions,             // Scan input
+            partial_reductions,             // Scan output
+            scan_op,                        // Scan operator
+            block_aggregate,                // Block-wide total (unused)
+            prefix_op);                     // Prefix operator for seeding the block-wide scan with the running total
+
+        // The first segment index for this region (hoist?)
+        Offset first_segment_idx = temp_storage.block_segment_idx[0];
+
+        // Scatter an accumulated reduction if it is the head of a valid segment
+        #pragma unroll
+        for (int ITEM = 0; ITEM < ITEMS_PER_THREAD; ITEM++)
+        {
+            if (tail_flags[ITEM])
+            {
+                Offset  segment_idx = partial_reductions[ITEM].key;
+                Value   value       = partial_reductions[ITEM].value;
+
+                // Write value reduction to corresponding segment id
+                d_output[segment_idx] = value;
+
+                // Save off the first value product that this thread block will scatter
+                if (segment_idx == first_segment_idx)
+                {
+                    temp_storage.first_tuple.value = value;
+                }
+            }
+        }
+    }
+
 
 
     /**
@@ -351,24 +538,9 @@ struct BlockSegReduceRegion
         // Thread block initialization
         if (threadIdx.x < 2)
         {
-            Offset diagonal = (threadIdx.x == 0) ?
-                block_diagonal :        // First thread searches for start indices
-                next_block_diagonal;    // Second thread searches for end indices
-
             // Search for block starting and ending indices
-            Offset block_segment_idx;
-            Offset block_value_idx;
-
-            MergePathSearch(
-                diagonal,               // Diagonal
-                d_segment_end_offsets,  // A (segment end-offsets)
-                0,                      // Start index into A
-                num_segments,           // End index into A
-                block_segment_idx,      // [out] Block index into A
-                d_value_offsets,        // B (value offsets)
-                0,                      // Start index into B
-                num_values,             // End index into B
-                block_value_idx);       // [out] Block index into B
+            Offset block_segment_idx = d_block_segment_idx[blockIdx.x + threadIdx.x];
+            Offset block_value_idx = d_block_value_idx[blockIdx.x + threadIdx.x];
 
             // Share block starting and ending indices
             temp_storage.block_segment_idx[threadIdx.x] = block_segment_idx;
@@ -396,12 +568,11 @@ struct BlockSegReduceRegion
         #pragma unroll 1
         while (block_diagonal < next_block_diagonal)
         {
+            __syncthreads();
+
             // Read block's ending indices (hoist?)
             Offset next_block_segment_idx   = temp_storage.block_segment_idx[1];
             Offset next_block_value_idx     = temp_storage.block_value_idx[1];
-
-//            if (threadIdx.x == 0) CubLog("block diagonal %d next diagonal %d, segment idx [%d: %d], value idx [%d : %d]\n",
-//                block_diagonal, next_block_diagonal, block_segment_idx, next_block_segment_idx, block_value_idx, next_block_value_idx);
 
             // Clamp the per-thread search range to within one work-tile of block's current indices
             Offset next_tile_segment_idx    = CUB_MIN(next_block_segment_idx,   block_segment_idx + TILE_ITEMS);
@@ -439,179 +610,25 @@ struct BlockSegReduceRegion
                 // There are no segment end-offsets in this tile.  Perform a
                 // simple block-wide reduction and accumulate the result into
                 // the running total.
-
-                // Load a tile's worth of values (using identity for out-of-bounds items)
-                Value values[ITEMS_PER_THREAD];
-                Offset num_values = next_tile_value_idx - block_value_idx;
-                LoadStriped<BLOCK_THREADS>(threadIdx.x, d_values + block_value_idx, values, num_values, identity);
-
-                // Barrier for smem reuse
-                __syncthreads();
-
-                // Reduce the tile of values and update the running total in thread-0
-                KeyValuePair tile_aggregate;
-                tile_aggregate.key = block_segment_idx;
-                tile_aggregate.value = BlockReduce(temp_storage.reduce).Reduce(values, reduction_op);
-
-                if (threadIdx.x == 0)
-                {
-                    prefix_op.running_total = scan_op(prefix_op.running_total, tile_aggregate);
-                }
+                SingleSegmentTile(next_tile_value_idx, block_value_idx, block_segment_idx);
             }
-/*            else if (block_value_idx == next_tile_value_idx)
-            {
-                // There are no values in this tile (only empty segments).  Write
-                // out a tile of identity values to output.
-
-                Value segment_reductions[ITEMS_PER_THREAD];
-
-                if (threadIdx.x == 0)
-                {
-                    // The first segment gets the running segment total
-                    segment_reductions[0] = prefix_op.running_total.value;
-
-                    // Update the running prefix
-                    prefix_op.running_total.value = identity;
-                    prefix_op.running_total.key = next_tile_segment_idx;
-                }
-                else
-                {
-                    // Remainder of segments in this tile get identity
-                    segment_reductions[0] = identity;
-                }
-
-                // Remainder of segments in this tile get identity
-                #pragma unroll
-                for (int ITEM = 1; ITEM < ITEMS_PER_THREAD; ++ITEM)
-                    segment_reductions[ITEM] = identity;
-
-                // Store reductions
-                Offset num_segments = next_tile_segment_idx - block_segment_idx;
-                StoreStriped<BLOCK_THREADS>(threadIdx.x, d_output + block_segment_idx, segment_reductions, num_segments);
-            }
-*/            else
+//          else if (block_value_idx == next_tile_value_idx)
+//            {
+//                // There are no values in this tile (only empty segments).
+//                EmptySegmentsTile(next_tile_segment_idx, block_segment_idx);
+//            }
+            else
             {
                 // Merge the tile's segment and value indices
-
-                // Get thread begin-index for segments
-                Offset thread_segment_idx = (threadIdx.x == 0) ?
-                    block_segment_idx :                             // First thread starts at the block's start
-                    temp_storage.thread_segment_idx[threadIdx.x];   // Other threads start at their predecessor's end
-
-                // Get thread begin-index for values
-                Offset thread_value_idx = (threadIdx.x == 0) ?
-                    block_value_idx :                               // First thread starts at the block's start
-                    temp_storage.thread_value_idx[threadIdx.x];     // Other threads start at their predecessor's end
-
-//                CubLog("\t thread segment idx %d:%d, value idx %d:%d\n",
-//                    thread_segment_idx, next_thread_segment_idx, thread_value_idx, next_thread_value_idx);
-
-                // Barrier for smem reuse
-                __syncthreads();
-
-                // Check if first segment end-offset is in range
-                bool valid_segment = (thread_segment_idx < next_thread_segment_idx);
-
-                // Check if first value offset is in range
-                bool valid_value = (thread_value_idx < next_thread_value_idx);
-
-                // Load first segment end-offset
-                Offset segment_end_offset = (valid_segment) ?
-                    d_segment_end_offsets[thread_segment_idx] :
-                    num_values;                                                     // Out of range (the last segment end-offset is one-past the last value offset)
-
-                // Load first value offset
-                Offset value_offset = (valid_value) ?
-                    d_value_offsets[thread_value_idx] :
-                    num_values;                                                     // Out of range (one-past the last value offset)
-
-                // Assemble segment-demarcating tail flags and partial reduction tuples
-                TailFlag        tail_flags[ITEMS_PER_THREAD];
-                KeyValuePair    partial_reductions[ITEMS_PER_THREAD];
-
-                #pragma unroll
-                for (int ITEM = 0; ITEM < ITEMS_PER_THREAD; ++ITEM)
-                {
-                    // Default tuple and flag values
-                    partial_reductions[ITEM].key    = thread_segment_idx;
-                    partial_reductions[ITEM].value  = identity;
-                    tail_flags[ITEM]                = 0;
-
-                    // Whether or not we slide (a) right along the segment path or (b) down the value path
-                    if (valid_segment && (!valid_value || (segment_end_offset <= value_offset)))
-                    {
-                        // Consume this segment index
-
-                        // Set tail flag noting the end of the segment
-                        tail_flags[ITEM] = 1;
-
-                        // Increment segment index
-                        thread_segment_idx++;
-
-                        // Read next segment end-offset (if valid)
-                        if ((valid_segment = (thread_segment_idx < next_thread_segment_idx)))
-                            segment_end_offset = d_segment_end_offsets[thread_segment_idx];
-                    }
-                    else if (valid_value)
-                    {
-                        // Consume this value index
-
-                        // Update the tuple's value with the value at this index.
-                        partial_reductions[ITEM].value = d_values[thread_value_idx];
-
-                        // Increment value index
-                        thread_value_idx++;
-
-                        // Read next value offset (if valid)
-                        if ((valid_value = (thread_value_idx < next_thread_value_idx)))
-                            value_offset = d_value_offsets[thread_value_idx];
-                    }
-                }
-
-                // Use prefix scan to reduce values by segment-id.  The segment-reductions end up in items flagged as segment-tails.
-                KeyValuePair block_aggregate;
-                BlockScan(temp_storage.scan).InclusiveScan(
-                    partial_reductions,             // Scan input
-                    partial_reductions,             // Scan output
-                    scan_op,                        // Scan operator
-                    block_aggregate,                // Block-wide total (unused)
-                    prefix_op);                     // Prefix operator for seeding the block-wide scan with the running total
-
-//                CubLog("\t\t Scanned tuples %s<%d,%.1f>, %s<%d,%.1f>\n",
-//                    tail_flags[0] ? "*" : "", partial_reductions[0].key, partial_reductions[0].value,
-//                    tail_flags[1] ? "*" : "", partial_reductions[1].key, partial_reductions[1].value);
-
-                // The first segment index for this region (hoist?)
-                Offset first_segment_idx = temp_storage.block_segment_idx[0];
-
-                // Scatter an accumulated reduction if it is the head of a valid segment
-                #pragma unroll
-                for (int ITEM = 0; ITEM < ITEMS_PER_THREAD; ITEM++)
-                {
-                    if (tail_flags[ITEM])
-                    {
-                        Offset  segment_idx = partial_reductions[ITEM].key;
-                        Value   value       = partial_reductions[ITEM].value;
-
-                        // Write value reduction to corresponding segment id
-                        d_output[segment_idx] = value;
-
-                        // Save off the first value product that this thread block will scatter
-                        if (segment_idx == first_segment_idx)
-                        {
-                            temp_storage.first_tuple.value = value;
-                        }
-                    }
-                }
+                MultiSegmentTile(block_segment_idx, block_value_idx, next_thread_segment_idx, next_thread_value_idx);
             }
-
-
-            // Advance to the next region in the decision path
-            block_diagonal += TILE_ITEMS;
 
             // Advance the block's indices in preparation for the next tile
             block_segment_idx   = next_tile_segment_idx;
             block_value_idx     = next_tile_value_idx;
+
+            // Advance to the next region in the decision path
+            block_diagonal += TILE_ITEMS;
 
             // Barrier for smem reuse
             __syncthreads();
@@ -861,11 +878,7 @@ struct BlockSegReduceRegionByKey
             scan_op,                        // Scan operator
             block_aggregate,                // Block-wide total (unused)
             prefix_op);                     // Prefix operator for seeding the block-wide scan with the running total
-/*
-        CubLog("Scanned tuples %s<%d,%.1f>, %s<%d,%.1f>\n",
-            head_flags[0] ? "*" : "", partial_reductions[0].key, partial_reductions[0].value,
-            head_flags[1] ? "*" : "", partial_reductions[1].key, partial_reductions[1].value);
-*/
+
         // Scatter an accumulated reduction if it is the head of a valid segment
         #pragma unroll
         for (int ITEM = 0; ITEM < ITEMS_PER_THREAD; ITEM++)
@@ -919,6 +932,60 @@ struct BlockSegReduceRegionByKey
  * Kernel entrypoints
  ******************************************************************************/
 
+/**
+ * Segmented reduce region kernel entry point (multi-block).
+ */
+
+template <
+    typename SegmentOffsetIterator,             ///< Random-access input iterator type for reading segment end-offsets
+    typename Offset>                            ///< Signed integer type for global offsets
+__global__ void SegReducePartitionKernel(
+    SegmentOffsetIterator       d_segment_end_offsets,  ///< [in] A sequence of \p num_segments segment end-offsets
+    Offset                      *d_block_segment_idx,
+    Offset                      *d_block_value_idx,
+    int                         num_partition_samples,
+    Offset                      num_values,             ///< [in] Number of values to reduce
+    Offset                      num_segments,           ///< [in] Number of segments being reduced
+    GridEvenShare<Offset>       even_share)             ///< [in] Even-share descriptor for mapping an equal number of tiles onto each thread block
+{
+    // Segment offset type
+    typedef typename std::iterator_traits<SegmentOffsetIterator>::value_type SegmentOffset;
+
+    // Counting iterator type
+    typedef CountingInputIterator<SegmentOffset, Offset> CountingIterator;
+
+    // Cache-modified iterator for segment end-offsets
+    CacheModifiedInputIterator<LOAD_LDG, SegmentOffset, Offset> d_cmod_segment_end_offsets(d_segment_end_offsets);
+
+    // Counting iterator for value offsets
+    CountingIterator d_value_offsets(0);
+
+    // Initialize even-share to tell us where to start and stop our tile-processing
+    int partition_id = (blockDim.x * blockIdx.x) + threadIdx.x;
+    even_share.Init(partition_id);
+
+    // Search for block starting and ending indices
+    Offset block_segment_idx;
+    Offset block_value_idx;
+
+    MergePathSearch(
+        even_share.block_offset,        // Diagonal
+        d_cmod_segment_end_offsets,     // A (segment end-offsets)
+        0,                              // Start index into A
+        num_segments,                   // End index into A
+        block_segment_idx,              // [out] Block index into A
+        d_value_offsets,                // B (value offsets)
+        0,                              // Start index into B
+        num_values,                     // End index into B
+        block_value_idx);               // [out] Block index into B
+
+    // Write output
+    if (partition_id < num_partition_samples)
+    {
+        d_block_segment_idx[partition_id]   = block_segment_idx;
+        d_block_value_idx[partition_id]     = block_value_idx;
+    }
+}
 
 
 /**
@@ -938,6 +1005,8 @@ __global__ void SegReduceRegionKernel(
     ValueIterator               d_values,               ///< [in] A sequence of \p num_values values
     OutputIterator              d_output,               ///< [out] A sequence of \p num_segments segment totals
     KeyValuePair<Offset, Value> *d_tuple_partials,      ///< [out] A sequence of (gridDim.x * 2) partial reduction tuples
+    Offset                      *d_block_segment_idx,
+    Offset                      *d_block_value_idx,
     Offset                      num_values,             ///< [in] Number of values to reduce
     Offset                      num_segments,           ///< [in] Number of segments being reduced
     Value                       identity,               ///< [in] Identity value (for zero-length segments)
@@ -968,6 +1037,8 @@ __global__ void SegReduceRegionKernel(
         d_segment_end_offsets,
         d_values,
         d_output,
+        d_block_segment_idx,
+        d_block_value_idx,
         num_values,
         num_segments,
         identity,
@@ -1084,14 +1155,14 @@ struct DeviceSegReduceDispatch
     {
         // ReduceRegionPolicy
         typedef BlockSegReduceRegionPolicy<
-                64,                            ///< Threads per thread block
-                14,                             ///< Items per thread (per tile of input)
+                128,                            ///< Threads per thread block
+                10,                             ///< Items per thread (per tile of input)
                 false,                          ///< Whether or not to cache incoming segment offsets in shared memory before reducing each tile
                 false,                          ///< Whether or not to cache incoming values in shared memory before reducing each tile
                 LOAD_LDG,                       ///< Cache load modifier for reading segment offsets
                 LOAD_LDG,                       ///< Cache load modifier for reading values
                 BLOCK_REDUCE_RAKING,            ///< The BlockReduce algorithm to use
-                BLOCK_SCAN_WARP_SCANS>               ///< The BlockScan algorithm to use
+                BLOCK_SCAN_WARP_SCANS>          ///< The BlockScan algorithm to use
             SegReduceRegionPolicy;
 
         // ReduceRegionByKeyPolicy
@@ -1279,6 +1350,7 @@ struct DeviceSegReduceDispatch
      * Internal dispatch routine for computing a device-wide segmented reduction.
      */
     template <
+        typename                        SegReducePartitionKernelPtr,
         typename                        SegReduceRegionKernelPtr,               ///< Function type of cub::SegReduceRegionKernel
         typename                        SegReduceRegionByKeyKernelPtr>          ///< Function type of cub::SegReduceRegionByKeyKernel
     __host__ __device__ __forceinline__
@@ -1295,6 +1367,7 @@ struct DeviceSegReduceDispatch
         cudaStream_t                    stream,                                 ///< [in] <b>[optional]</b> CUDA stream to launch kernels within.  Default is stream<sub>0</sub>.
         bool                            debug_synchronous,                      ///< [in] <b>[optional]</b> Whether or not to synchronize the stream after every kernel launch to check for errors.  Also causes launch configurations to be printed to the console.  Default is \p false.
         int                             sm_version,                             ///< [in] SM version of target device to use when computing SM occupancy
+        SegReducePartitionKernelPtr     seg_reduce_partition_kernel,            ///< [in] Kernel function pointer to parameterization of cub::SegReduceRegionKernel
         SegReduceRegionKernelPtr        seg_reduce_region_kernel,               ///< [in] Kernel function pointer to parameterization of cub::SegReduceRegionKernel
         SegReduceRegionByKeyKernelPtr   seg_reduce_region_by_key_kernel,        ///< [in] Kernel function pointer to parameterization of cub::SegReduceRegionByKeyKernel
         SegReduceKernelConfig           &seg_reduce_region_config,              ///< [in] Dispatch parameters that match the policy that \p seg_reduce_region_kernel was compiled for
@@ -1339,9 +1412,10 @@ struct DeviceSegReduceDispatch
             // Even-share work distribution
             int num_diagonals = num_values + num_segments;                  // Total number of work items
             int subscription_factor = seg_reduce_region_sm_occupancy;       // Amount of CTAs to oversubscribe the device beyond actively-resident (heuristic)
+            int max_grid_size = seg_reduce_region_occupancy * subscription_factor;
             GridEvenShare<Offset> even_share(
                 num_diagonals,
-                seg_reduce_region_occupancy * subscription_factor,
+                max_grid_size,
                 tile_size);
 
             // Get grid size for seg_reduce_region_kernel
@@ -1349,12 +1423,15 @@ struct DeviceSegReduceDispatch
 
             // Number of "fix-up" reduce-by-key tuples (2 per thread block)
             int num_tuple_partials = seg_reduce_region_grid_size * 2;
+            int num_partition_samples = seg_reduce_region_grid_size + 1;
 
             // Temporary storage allocation requirements
-            void* allocations[1];
-            size_t allocation_sizes[1] =
+            void* allocations[3];
+            size_t allocation_sizes[3] =
             {
-                num_tuple_partials * sizeof(KeyValuePair),     // bytes needed for "fix-up" reduce-by-key tuples
+                num_tuple_partials * sizeof(KeyValuePair),      // bytes needed for "fix-up" reduce-by-key tuples
+                num_partition_samples * sizeof(Offset),   // bytes needed block segment indices
+                num_partition_samples * sizeof(Offset)    // bytes needed block value indices
             };
 
             // Alias the temporary allocations from the single storage blob (or set the necessary size of the blob)
@@ -1365,15 +1442,39 @@ struct DeviceSegReduceDispatch
                 return cudaSuccess;
             }
 
-            // Alias the allocation for "fix-up" tuples
-            KeyValuePair *d_tuple_partials = (KeyValuePair*) allocations[0];
+            // Alias the allocations
+            KeyValuePair *d_tuple_partials  = (KeyValuePair*) allocations[0];        // "fix-up" tuples
+            Offset *d_block_segment_idx     = (Offset *) allocations[1];
+            Offset *d_block_value_idx       = (Offset *) allocations[2];
+
+
+            // Array of segment end-offsets
+            SegmentOffsetIterator d_segment_end_offsets = d_segment_offsets + 1;
+
+            // Grid launch params for seg_reduce_partition_kernel
+            int partition_block_size = 32;
+            int partition_grid_size = (num_partition_samples + partition_block_size - 1) / partition_block_size;
+
+            // Log seg_reduce_partition_kernel configuration
+            if (debug_synchronous) CubLog("Invoking seg_reduce_partition_kernel<<<%d, %d, 0, %lld>>>()\n",
+                partition_grid_size, partition_block_size, (long long) stream);
+
+            // Invoke seg_reduce_partition_kernel
+            seg_reduce_partition_kernel<<<partition_grid_size, partition_block_size, 0, stream>>>(
+                d_segment_end_offsets,  ///< [in] A sequence of \p num_segments segment end-offsets
+                d_block_segment_idx,
+                d_block_value_idx,
+                num_partition_samples,
+                num_values,             ///< [in] Number of values to reduce
+                num_segments,           ///< [in] Number of segments being reduced
+                even_share);            ///< [in] Even-share descriptor for mapping an equal number of tiles onto each thread block
+
+            // Mooch
+            if (CubDebug(error = cudaDeviceSetSharedMemConfig(cudaSharedMemBankSizeEightByte))) break;
 
             // Log seg_reduce_region_kernel configuration
             if (debug_synchronous) CubLog("Invoking seg_reduce_region_kernel<<<%d, %d, 0, %lld>>>(), %d items per thread, %d SM occupancy\n",
                 seg_reduce_region_grid_size, seg_reduce_region_config.block_threads, (long long) stream, seg_reduce_region_config.items_per_thread, seg_reduce_region_sm_occupancy);
-
-            // Array of segment end-offsets
-            SegmentOffsetIterator d_segment_end_offsets = d_segment_offsets + 1;
 
             // Invoke seg_reduce_region_kernel
             seg_reduce_region_kernel<<<seg_reduce_region_grid_size, seg_reduce_region_config.block_threads, 0, stream>>>(
@@ -1381,6 +1482,8 @@ struct DeviceSegReduceDispatch
                 d_values,
                 d_output,
                 d_tuple_partials,
+                d_block_segment_idx,
+                d_block_value_idx,
                 num_values,
                 num_segments,
                 identity,
@@ -1467,6 +1570,7 @@ struct DeviceSegReduceDispatch
                 stream,
                 debug_synchronous,
                 ptx_version,            // Use PTX version instead of SM version because, as a statically known quantity, this improves device-side launch dramatically but at the risk of imprecise occupancy calculation for mismatches
+                SegReducePartitionKernel<SegmentOffsetIterator, Offset>,
                 SegReduceRegionKernel<PtxSegReduceRegionPolicy, SegmentOffsetIterator, ValueIterator, OutputIterator, ReductionOp, Offset, Value>,
                 SegReduceRegionByKeyKernel<PtxSegReduceRegionByKeyPolicy, KeyValuePair*, OutputIterator, ReductionOp, Offset, Value>,
                 seg_reduce_region_config,
@@ -1852,7 +1956,7 @@ int main(int argc, char** argv)
     // Initialize device
     CubDebugExit(args.DeviceInit());
 
-    Test<false>((int) num_values, avg_segment_size, Sum(), (double) 0, CUB_TYPE_STRING(double));
+    Test<false>((int) num_values, avg_segment_size, Sum(), (long long) 0, CUB_TYPE_STRING(long long));
 
     return 0;
 }
