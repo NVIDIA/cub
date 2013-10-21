@@ -81,6 +81,39 @@ struct ReduceByKeyOp
     }
 };
 
+
+
+/**
+ * Segmented scan operator
+ */
+template <typename ReductionOp>     ///< Wrapped reduction operator type
+struct SegmentedOp
+{
+    ReductionOp op;                 ///< Wrapped reduction operator
+
+    /// Constructor
+    __device__ __forceinline__ SegmentedOp(ReductionOp op) : op(op) {}
+
+    /// Scan operator
+    template <typename KeyValuePair>
+    __device__ __forceinline__ KeyValuePair operator()(
+        const KeyValuePair &first,
+        const KeyValuePair &second)
+    {
+        if (second.key) {
+            KeyValuePair retval;
+            retval.value = second.value;
+            retval.key = first.key + second.key;
+            return retval;
+        } else {
+            KeyValuePair retval;
+            retval.value = op(first.value, second.value);
+            retval.key = first.key + second.key;
+            return ;
+        }
+    }
+};
+
 #endif // DOXYGEN_SHOULD_SKIP_THIS
 
 

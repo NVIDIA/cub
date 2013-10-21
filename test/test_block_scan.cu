@@ -84,7 +84,8 @@ struct BlockPrefixCallbackOp
     __device__ __forceinline__
     T operator()(T block_aggregate)
     {
-        T retval = prefix;
+        // For testing purposes
+        T retval = (threadIdx.x == 0) ? prefix  : T();
         prefix = scan_op(prefix, block_aggregate);
         return retval;
     }
