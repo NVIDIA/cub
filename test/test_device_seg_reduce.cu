@@ -207,6 +207,12 @@ struct BlockSegReduceRegion
         BLOCK_THREADS       = BlockSegReduceRegionPolicy::BLOCK_THREADS,
         ITEMS_PER_THREAD    = BlockSegReduceRegionPolicy::ITEMS_PER_THREAD,
         TILE_ITEMS          = BLOCK_THREADS * ITEMS_PER_THREAD,                     /// Number of work items to be processed per tile
+
+        USE_SMEM_SEGMENT_CACHE  = BlockSegReduceRegionPolicy::USE_SMEM_SEGMENT_CACHE,      ///< Whether or not to cache incoming segment offsets in shared memory before reducing each tile
+        USE_SMEM_VALUE_CACHE    = BlockSegReduceRegionPolicy::USE_SMEM_VALUE_CACHE,        ///< Whether or not to cache incoming upcoming values in shared memory before reducing each tile
+
+        SMEM_SEGMENT_CACHE_ITEMS    = USE_SMEM_SEGMENT_CACHE ? TILE_ITEMS : 1,
+        SMEM_VALUE_CACHE_ITEMS      = USE_SMEM_VALUE_CACHE ? TILE_ITEMS : 1,
     };
 
     // Segment offset type
@@ -270,11 +276,17 @@ struct BlockSegReduceRegion
             // Smem needed for BlockReduce
             typename BlockReduce::TempStorage   reduce;
 
+            // Smem needed for caching segment end-offsets
+            SegmentOffset cached_segment_end_offsets[SMEM_SEGMENT_CACHE_ITEMS];
+
+            // Smem needed for caching values
+            Value cached_values[SMEM_VALUE_CACHE_ITEMS];
+
             struct
             {
                 // Smem needed for communicating start/end indices between threads for a given work tile
-                volatile Offset thread_segment_idx[BLOCK_THREADS + 1];
-                volatile Offset thread_value_idx[BLOCK_THREADS + 1];
+                Offset thread_segment_idx[BLOCK_THREADS + 1];
+                Offset thread_value_idx[BLOCK_THREADS + 1];
             };
         };
 
@@ -355,10 +367,11 @@ struct BlockSegReduceRegion
         Offset block_value_idx,
         Offset block_segment_idx)
     {
+        Offset tile_values = next_tile_value_idx - block_value_idx;
+
         // Load a tile's worth of values (using identity for out-of-bounds items)
         Value values[ITEMS_PER_THREAD];
-        Offset num_values = next_tile_value_idx - block_value_idx;
-        LoadStriped<BLOCK_THREADS>(threadIdx.x, d_values + block_value_idx, values, num_values, identity);
+        LoadStriped<BLOCK_THREADS>(threadIdx.x, d_values + block_value_idx, values, tile_values, identity);
 
         // Barrier for smem reuse
         __syncthreads();
@@ -413,11 +426,13 @@ struct BlockSegReduceRegion
     /**
      * Multi-segment tile reduction.
      */
+    template <bool FULL_TILE>
     __device__ __forceinline__ void MultiSegmentTile(
         Offset block_segment_idx,
         Offset block_value_idx,
         Offset next_thread_segment_idx,
-        Offset next_thread_value_idx)
+        Offset next_thread_value_idx,
+        Offset next_tile_value_idx)
     {
         // Get thread begin-index for segments
         Offset thread_segment_idx = (threadIdx.x == 0) ?
@@ -430,10 +445,10 @@ struct BlockSegReduceRegion
             temp_storage.thread_value_idx[threadIdx.x];     // Other threads start at their predecessor's end
 
         // Check if first segment end-offset is in range
-        bool valid_segment = (thread_segment_idx < next_thread_segment_idx);
+        bool valid_segment = FULL_TILE || (thread_segment_idx < next_thread_segment_idx);
 
         // Check if first value offset is in range
-        bool valid_value = (thread_value_idx < next_thread_value_idx);
+        bool valid_value = FULL_TILE || (thread_value_idx < next_thread_value_idx);
 
         // Load first segment end-offset
         Offset segment_end_offset = (valid_segment) ?
@@ -463,8 +478,10 @@ struct BlockSegReduceRegion
                 segment_ids[ITEM] = thread_segment_idx;
                 thread_segment_idx++;
 
+                valid_segment = FULL_TILE || (thread_segment_idx < next_thread_segment_idx);
+
                 // Read next segment end-offset (if valid)
-                if ((valid_segment = (thread_segment_idx < next_thread_segment_idx)))
+                if (valid_segment)
                     segment_end_offset = d_segment_end_offsets[thread_segment_idx];
             }
             else if (valid_value)
@@ -473,20 +490,45 @@ struct BlockSegReduceRegion
                 value_offsets[ITEM] = thread_value_idx;
                 thread_value_idx++;
 
-                // Read next value offset (if valid)
-                valid_value = (thread_value_idx < next_thread_value_idx);
+                valid_value = FULL_TILE || (thread_value_idx < next_thread_value_idx);
             }
         }
 
         // Load values
         Value values[ITEMS_PER_THREAD];
 
-        #pragma unroll
-        for (int ITEM = 0; ITEM < ITEMS_PER_THREAD; ++ITEM)
+        if (USE_SMEM_VALUE_CACHE)
         {
-            values[ITEM] = (value_offsets[ITEM] == -1) ?
-                identity :
-                d_values[value_offsets[ITEM]];
+            __syncthreads();
+
+            Offset tile_values = next_tile_value_idx - block_value_idx;
+
+            // Load a tile's worth of values (using identity for out-of-bounds items)
+            LoadStriped<BLOCK_THREADS>(threadIdx.x, d_values + block_value_idx, values, tile_values, identity);
+
+            // Store to shared
+            StoreStriped<BLOCK_THREADS>(threadIdx.x, temp_storage.cached_values, values, tile_values);
+
+            // Barrier for smem reuse
+            __syncthreads();
+
+            #pragma unroll
+            for (int ITEM = 0; ITEM < ITEMS_PER_THREAD; ++ITEM)
+            {
+                values[ITEM] = (value_offsets[ITEM] == -1) ?
+                    identity :
+                    temp_storage.cached_values[value_offsets[ITEM] - block_value_idx];
+            }
+        }
+        else
+        {
+            #pragma unroll
+            for (int ITEM = 0; ITEM < ITEMS_PER_THREAD; ++ITEM)
+            {
+                values[ITEM] = (value_offsets[ITEM] == -1) ?
+                    identity :
+                    d_values[value_offsets[ITEM]];
+            }
         }
 
         // Reduce within thread segments
@@ -507,6 +549,7 @@ struct BlockSegReduceRegion
 
             pairs[1].value = reduction_op(pairs[1].value, values[ITEM]);
         }
+/*
 
         // Barrier for smem reuse
         __syncthreads();
@@ -519,7 +562,7 @@ struct BlockSegReduceRegion
             scan_op,                        // Scan operator
             block_aggregate,                // Block-wide total (unused)
             prefix_op);                     // Prefix operator for seeding the block-wide scan with the running total
-
+*/
 
 /*
         // Check if first segment end-offset is in range
@@ -667,21 +710,56 @@ struct BlockSegReduceRegion
             Offset next_tile_segment_idx    = CUB_MIN(next_block_segment_idx,   block_segment_idx + TILE_ITEMS);
             Offset next_tile_value_idx      = CUB_MIN(next_block_value_idx,     block_value_idx + TILE_ITEMS);
 
-            // Have each thread search for the end-indices of its subranges within the segment and value inputs
-            Offset next_thread_diagonal = block_diagonal + ((threadIdx.x + 1) * ITEMS_PER_THREAD);
             Offset next_thread_segment_idx;
             Offset next_thread_value_idx;
+            if (USE_SMEM_SEGMENT_CACHE)
+            {
+                Offset tile_segments    = next_block_segment_idx - block_segment_idx;
+                Offset tile_values      = next_tile_value_idx - block_value_idx;
 
-            MergePathSearch(
-                next_thread_diagonal,           // Next thread diagonal
-                d_segment_end_offsets,          // A (segment end-offsets)
-                block_segment_idx,              // Start index into A
-                next_tile_segment_idx,          // End index into A
-                next_thread_segment_idx,        // [out] Thread index into A
-                d_value_offsets,                // B (value offsets)
-                block_value_idx,                // Start index into B
-                next_tile_value_idx,            // End index into B
-                next_thread_value_idx);         // [out] Thread index into B
+                // Load global
+                SegmentOffset segment_offsets[ITEMS_PER_THREAD];
+                LoadStriped<BLOCK_THREADS>(threadIdx.x, d_segment_end_offsets + block_segment_idx, segment_offsets, tile_segments, num_values);
+
+                // Store to shared
+                StoreStriped<BLOCK_THREADS>(threadIdx.x, temp_storage.cached_segment_end_offsets, segment_offsets, tile_segments);
+
+                __syncthreads();
+
+                Offset next_thread_diagonal = ((threadIdx.x + 1) * ITEMS_PER_THREAD);
+
+                MergePathSearch(
+                    next_thread_diagonal,                       // Next thread diagonal
+                    temp_storage.cached_segment_end_offsets,    // A (segment end-offsets)
+                    0,                                          // Start index into A
+                    tile_segments,                              // End index into A
+                    next_thread_segment_idx,                    // [out] Thread index into A
+                    d_value_offsets + block_value_idx,          // B (value offsets)
+                    0,                                          // Start index into B
+                    tile_values,                                // End index into B
+                    next_thread_value_idx);                     // [out] Thread index into B
+
+                next_thread_segment_idx += block_segment_idx;
+                next_thread_value_idx += block_value_idx;
+
+                __syncthreads();
+            }
+            else
+            {
+                // Have each thread search for the end-indices of its subranges within the segment and value inputs
+                Offset next_thread_diagonal = block_diagonal + ((threadIdx.x + 1) * ITEMS_PER_THREAD);
+
+                MergePathSearch(
+                    next_thread_diagonal,           // Next thread diagonal
+                    d_segment_end_offsets,          // A (segment end-offsets)
+                    block_segment_idx,              // Start index into A
+                    next_tile_segment_idx,          // End index into A
+                    next_thread_segment_idx,        // [out] Thread index into A
+                    d_value_offsets,                // B (value offsets)
+                    block_value_idx,                // Start index into B
+                    next_tile_value_idx,            // End index into B
+                    next_thread_value_idx);         // [out] Thread index into B
+            }
 
             // Share thread end-indices
             temp_storage.thread_segment_idx[threadIdx.x + 1]   = next_thread_segment_idx;
@@ -707,9 +785,15 @@ struct BlockSegReduceRegion
 //                EmptySegmentsTile(next_tile_segment_idx, block_segment_idx);
 //            }
 //            else
+            if ((next_tile_segment_idx < num_segments) && (next_tile_value_idx < num_values))
             {
                 // Merge the tile's segment and value indices
-                MultiSegmentTile(block_segment_idx, block_value_idx, next_thread_segment_idx, next_thread_value_idx);
+                MultiSegmentTile<true>(block_segment_idx, block_value_idx, next_thread_segment_idx, next_thread_value_idx, next_tile_value_idx);
+            }
+            else
+            {
+                // Merge the tile's segment and value indices
+                MultiSegmentTile<false>(block_segment_idx, block_value_idx, next_thread_segment_idx, next_thread_value_idx, next_tile_value_idx);
             }
 
             // Advance the block's indices in preparation for the next tile
@@ -1245,10 +1329,10 @@ struct DeviceSegReduceDispatch
         // ReduceRegionPolicy
         typedef BlockSegReduceRegionPolicy<
                 128,                            ///< Threads per thread block
-                8,                              ///< Items per thread (per tile of input)
-                false,                          ///< Whether or not to cache incoming segment offsets in shared memory before reducing each tile
+                6,                              ///< Items per thread (per tile of input)
+                true,                           ///< Whether or not to cache incoming segment offsets in shared memory before reducing each tile
                 false,                          ///< Whether or not to cache incoming values in shared memory before reducing each tile
-                LOAD_LDG,                       ///< Cache load modifier for reading segment offsets
+                LOAD_DEFAULT,                   ///< Cache load modifier for reading segment offsets
                 LOAD_LDG,                       ///< Cache load modifier for reading values
                 BLOCK_REDUCE_RAKING,            ///< The BlockReduce algorithm to use
                 BLOCK_SCAN_WARP_SCANS>          ///< The BlockScan algorithm to use
