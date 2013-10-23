@@ -124,6 +124,9 @@ struct GridEvenShare
      */
     __device__ __forceinline__ void Init(int partition_id)
     {
+        block_offset = num_items;
+        block_end = num_items;
+
         if (partition_id < big_blocks)
         {
             // This threadblock gets a big share of grains (grains_per_block + 1)
@@ -135,12 +138,6 @@ struct GridEvenShare
             // This threadblock gets a normal share of grains (grains_per_block)
             block_offset = normal_base_offset + (partition_id * normal_share);
             block_end = block_offset + normal_share;
-        }
-
-        // Last threadblock
-        if (partition_id >= grid_size - 1)
-        {
-            block_end = num_items;
         }
     }
 
