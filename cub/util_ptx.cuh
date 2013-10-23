@@ -361,7 +361,7 @@ __device__ __forceinline__ int WarpAny(int cond)
 template <typename T>
 __device__ __forceinline__ T ShuffleUp(
     T               input,              ///< [in] The value to broadcast
-    int             src_offset)         ///< [in] The down-offset of the peer to read from
+    int             src_offset)         ///< [in] The relative down-offset of the peer to read from
 {
     enum
     {
@@ -393,7 +393,7 @@ __device__ __forceinline__ T ShuffleUp(
 template <typename T>
 __device__ __forceinline__ T ShuffleDown(
     T               input,              ///< [in] The value to broadcast
-    int             src_offset)         ///< [in] The up-offset of the peer to read from
+    int             src_offset)         ///< [in] The relative up-offset of the peer to read from
 {
     enum
     {

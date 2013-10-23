@@ -44,6 +44,7 @@
 #include "block/block_reduce.cuh"
 #include "block/block_scan.cuh"
 #include "block/block_store.cuh"
+#include "block/block_shift.cuh"
 
 // Device
 #include "device/device_histogram.cuh"
