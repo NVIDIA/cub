@@ -270,7 +270,7 @@ struct KeyValuePair
     Key     key;            ///< Key identifier
 };
 
-/*
+
 template <>
 struct KeyValuePair<int, long long>
 {
@@ -280,7 +280,7 @@ struct KeyValuePair<int, long long>
     Value       value;          ///< Reduction value
     long long   key;            ///< Key identifier
 };
-*/
+
 /*
 template <>
 struct KeyValuePair<int, double>
