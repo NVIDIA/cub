@@ -295,7 +295,7 @@ struct BlockSegReduceRegion
                 typename BlockShift::TempStorage shift;
 
                 // Smem needed for caching segment end-offsets
-                SegmentOffset cached_segment_end_offsets[SMEM_SEGMENT_CACHE_ITEMS];
+                SegmentOffset cached_segment_end_offsets[SMEM_SEGMENT_CACHE_ITEMS + 1];
             };
 
             // Smem needed for caching values
@@ -440,6 +440,10 @@ struct BlockSegReduceRegion
         IndexPair next_thread_idx,
         IndexPair next_tile_idx)
     {
+        IndexPair local_thread_idx;
+        local_thread_idx.a_idx = thread_idx.a_idx - block_idx.a_idx;
+        local_thread_idx.b_idx = thread_idx.b_idx - block_idx.b_idx;
+
         // Check if first segment end-offset is in range
         bool valid_segment = FULL_TILE || (thread_idx.a_idx < next_thread_idx.a_idx);
 
@@ -448,16 +452,17 @@ struct BlockSegReduceRegion
 
         // Load first segment end-offset
         Offset segment_end_offset = (valid_segment) ?
-            d_segment_end_offsets[thread_idx.a_idx] :
+            (USE_SMEM_SEGMENT_CACHE)?
+                temp_storage.cached_segment_end_offsets[local_thread_idx.a_idx] :
+                d_segment_end_offsets[thread_idx.a_idx] :
             -1;
 
         Offset  segment_ids[ITEMS_PER_THREAD];
         Offset  value_offsets[ITEMS_PER_THREAD];
 
-        KeyValuePair pairs[2];
-        pairs[0].key    = thread_idx.a_idx;
-        pairs[0].value  = identity;
-        pairs[1]        = pairs[0];
+        KeyValuePair first_partial;
+        first_partial.key    = thread_idx.a_idx;
+        first_partial.value  = identity;
 
         // Get segment IDs and gather-offsets for values
         #pragma unroll
@@ -472,18 +477,25 @@ struct BlockSegReduceRegion
                 // Consume this segment index
                 segment_ids[ITEM] = thread_idx.a_idx;
                 thread_idx.a_idx++;
+                local_thread_idx.a_idx++;
 
                 valid_segment = FULL_TILE || (thread_idx.a_idx < next_thread_idx.a_idx);
 
                 // Read next segment end-offset (if valid)
                 if (valid_segment)
-                    segment_end_offset = d_segment_end_offsets[thread_idx.a_idx];
+                {
+                    if (USE_SMEM_SEGMENT_CACHE)
+                        segment_end_offset = temp_storage.cached_segment_end_offsets[local_thread_idx.a_idx];
+                    else
+                        segment_end_offset = d_segment_end_offsets[thread_idx.a_idx];
+                }
             }
             else if (valid_value)
             {
                 // Consume this value index
                 value_offsets[ITEM] = thread_idx.b_idx;
                 thread_idx.b_idx++;
+                local_thread_idx.b_idx++;
 
                 valid_value = FULL_TILE || (thread_idx.b_idx < next_thread_idx.b_idx);
             }
@@ -494,6 +506,7 @@ struct BlockSegReduceRegion
 
         if (USE_SMEM_VALUE_CACHE)
         {
+            // Barrier for smem reuse
             __syncthreads();
 
             Offset tile_values = next_tile_idx.b_idx - block_idx.b_idx;
@@ -527,22 +540,26 @@ struct BlockSegReduceRegion
         }
 
         // Reduce within thread segments
+        KeyValuePair running_total = first_partial;
+
         #pragma unroll
         for (int ITEM = 0; ITEM < ITEMS_PER_THREAD; ++ITEM)
         {
             if (segment_ids[ITEM] != -1)
             {
                 // Consume this segment index
-                d_output[segment_ids[ITEM]] = pairs[1].value;
+                d_output[segment_ids[ITEM]] = running_total.value;
 
-                if (pairs[0].key == segment_ids[ITEM])
-                    pairs[0].value = pairs[1].value;
+//                CubLog("Updating segment %d with value %lld\n", segment_ids[ITEM], running_total.value)
 
-                pairs[1].key    = segment_ids[ITEM];
-                pairs[1].value  = identity;
+                if (first_partial.key == segment_ids[ITEM])
+                    first_partial.value = running_total.value;
+
+                running_total.key    = segment_ids[ITEM];
+                running_total.value  = identity;
             }
 
-            pairs[1].value = reduction_op(pairs[1].value, values[ITEM]);
+            running_total.value = reduction_op(running_total.value, values[ITEM]);
         }
 /*
 
@@ -668,7 +685,16 @@ struct BlockSegReduceRegion
         if (threadIdx.x < 2)
         {
             // Retrieve block starting and ending indices
-            IndexPair block_idx = d_block_idx[blockIdx.x + threadIdx.x];
+            IndexPair block_idx = {0, 0};
+            if (gridDim.x > 1)
+            {
+                block_idx = d_block_idx[blockIdx.x + threadIdx.x];
+            }
+            else if (threadIdx.x > 0)
+            {
+                block_idx.a_idx = num_segments;
+                block_idx.b_idx = num_values;
+            }
 
             // Share block starting and ending indices
             temp_storage.block_region_idx[threadIdx.x] = block_idx;
@@ -707,34 +733,26 @@ struct BlockSegReduceRegion
             if (USE_SMEM_SEGMENT_CACHE)
             {
                 // Search in smem cache
-
-                Offset tile_segments    = next_tile_idx.a_idx - block_idx.a_idx;
-                Offset tile_values      = next_tile_idx.b_idx - block_idx.b_idx;
+                Offset num_segments = next_tile_idx.a_idx - block_idx.a_idx;
 
                 // Load global
                 SegmentOffset segment_offsets[ITEMS_PER_THREAD];
-                LoadStriped<BLOCK_THREADS>(threadIdx.x, d_segment_end_offsets + block_idx.a_idx, segment_offsets, tile_segments, num_values);
+                LoadStriped<BLOCK_THREADS>(threadIdx.x, d_segment_end_offsets + block_idx.a_idx, segment_offsets, num_segments, num_values);
 
                 // Store to shared
-                StoreStriped<BLOCK_THREADS>(threadIdx.x, temp_storage.cached_segment_end_offsets, segment_offsets, tile_segments);
+                StoreStriped<BLOCK_THREADS>(threadIdx.x, temp_storage.cached_segment_end_offsets, segment_offsets);
 
                 __syncthreads();
 
-                Offset next_thread_diagonal = ((threadIdx.x + 1) * ITEMS_PER_THREAD);
-
-                IndexPair start_idx = {0, 0};
-                IndexPair end_idx   = {tile_segments, tile_values};
+                Offset next_thread_diagonal = block_diagonal + ((threadIdx.x + 1) * ITEMS_PER_THREAD);
 
                 MergePathSearch(
                     next_thread_diagonal,                       // Next thread diagonal
-                    temp_storage.cached_segment_end_offsets,    // A (segment end-offsets)
-                    d_value_offsets + block_idx.b_idx,          // B (value offsets)
-                    start_idx,                                  // Start indices into A and B
-                    end_idx,                                    // End indices into A and B
+                    temp_storage.cached_segment_end_offsets - block_idx.a_idx,                      // A (segment end-offsets)
+                    d_value_offsets,                            // B (value offsets)
+                    block_idx,                                  // Start indices into A and B
+                    next_tile_idx,                              // End indices into A and B
                     next_thread_idx);                           // [out] diagonal intersection indices into A and B
-
-                next_thread_idx.a_idx += block_idx.a_idx;
-                next_thread_idx.b_idx += block_idx.b_idx;
             }
             else
             {
@@ -761,17 +779,17 @@ struct BlockSegReduceRegion
                 next_tile_idx);     // [out] Suffix item shifted out by the <em>thread</em><sub><tt>BLOCK_THREADS-1</tt></sub> to be provided to all threads
 
 //            if (block_idx.a_idx == next_tile_idx.a_idx)
-            {
-                // There are no segment end-offsets in this tile.  Perform a
-                // simple block-wide reduction and accumulate the result into
-                // the running total.
-//                SingleSegmentTile(next_tile_idx.b_idx, block_idx.b_idx, block_idx.a_idx);
-            }
+//            {
+//                // There are no segment end-offsets in this tile.  Perform a
+//                // simple block-wide reduction and accumulate the result into
+//                // the running total.
+//                SingleSegmentTile(next_tile_idx, block_idx);
+//            }
 //          else if (block_idx.b_idx == next_tile_idx.b_idx)
-            {
+//            {
 //                // There are no values in this tile (only empty segments).
 //                EmptySegmentsTile(next_tile_idx.a_idx, block_idx.a_idx);
-            }
+//            }
 //            else
             if ((next_tile_idx.a_idx < num_segments) && (next_tile_idx.b_idx < num_values))
             {
@@ -1139,7 +1157,7 @@ __global__ void SegReducePartitionKernel(
     // Write output
     if (partition_id < num_partition_samples)
     {
-        d_block_idx[partition_id]   = block_idx;
+        d_block_idx[partition_id] = block_idx;
     }
 }
 
@@ -1608,25 +1626,32 @@ struct DeviceSegReduceDispatch
             int partition_block_size = 32;
             int partition_grid_size = (num_partition_samples + partition_block_size - 1) / partition_block_size;
 
-            // Log seg_reduce_partition_kernel configuration
-            if (debug_synchronous) CubLog("Invoking seg_reduce_partition_kernel<<<%d, %d, 0, %lld>>>()\n",
-                partition_grid_size, partition_block_size, (long long) stream);
+            // Partition work among multiple thread blocks if necessary
+            if (seg_reduce_region_grid_size > 1)
+            {
+                // Log seg_reduce_partition_kernel configuration
+                if (debug_synchronous) CubLog("Invoking seg_reduce_partition_kernel<<<%d, %d, 0, %lld>>>()\n",
+                    partition_grid_size, partition_block_size, (long long) stream);
 
-            // Invoke seg_reduce_partition_kernel
-            seg_reduce_partition_kernel<<<partition_grid_size, partition_block_size, 0, stream>>>(
-                d_segment_end_offsets,  ///< [in] A sequence of \p num_segments segment end-offsets
-                d_block_idx,
-                num_partition_samples,
-                num_values,             ///< [in] Number of values to reduce
-                num_segments,           ///< [in] Number of segments being reduced
-                even_share);            ///< [in] Even-share descriptor for mapping an equal number of tiles onto each thread block
+                // Invoke seg_reduce_partition_kernel
+                seg_reduce_partition_kernel<<<partition_grid_size, partition_block_size, 0, stream>>>(
+                    d_segment_end_offsets,  ///< [in] A sequence of \p num_segments segment end-offsets
+                    d_block_idx,
+                    num_partition_samples,
+                    num_values,             ///< [in] Number of values to reduce
+                    num_segments,           ///< [in] Number of segments being reduced
+                    even_share);            ///< [in] Even-share descriptor for mapping an equal number of tiles onto each thread block
 
-            // Mooch
-            if (CubDebug(error = cudaDeviceSetSharedMemConfig(cudaSharedMemBankSizeEightByte))) break;
+                // Sync the stream if specified
+                if (debug_synchronous && (CubDebug(error = SyncStream(stream)))) break;
+            }
 
             // Log seg_reduce_region_kernel configuration
             if (debug_synchronous) CubLog("Invoking seg_reduce_region_kernel<<<%d, %d, 0, %lld>>>(), %d items per thread, %d SM occupancy\n",
                 seg_reduce_region_grid_size, seg_reduce_region_config.block_threads, (long long) stream, seg_reduce_region_config.items_per_thread, seg_reduce_region_sm_occupancy);
+
+            // Mooch
+            if (CubDebug(error = cudaDeviceSetSharedMemConfig(cudaSharedMemBankSizeEightByte))) break;
 
             // Invoke seg_reduce_region_kernel
             seg_reduce_region_kernel<<<seg_reduce_region_grid_size, seg_reduce_region_config.block_threads, 0, stream>>>(
