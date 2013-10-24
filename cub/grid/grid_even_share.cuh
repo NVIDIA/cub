@@ -70,23 +70,23 @@ namespace cub {
 template <typename Offset>
 struct GridEvenShare
 {
-    Offset   total_grains;
-    int     big_blocks;
-    Offset   big_share;
-    Offset   normal_share;
-    Offset   normal_base_offset;
+    Offset      total_grains;
+    int         big_blocks;
+    Offset      big_share;
+    Offset      normal_share;
+    Offset      normal_base_offset;
 
     /// Total number of input items
-    Offset   num_items;
+    Offset      num_items;
 
     /// Grid size in threadblocks
-    int     grid_size;
+    int         grid_size;
 
     /// Offset into input marking the beginning of the owning thread block's segment of input tiles
-    Offset   block_offset;
+    Offset      block_offset;
 
     /// Offset into input of marking the end (one-past) of the owning thread block's segment of input tiles
-    Offset   block_end;
+    Offset      block_end;
 
     /**
      * \brief Default constructor.  Zero-initializes block-specific fields.
@@ -101,16 +101,16 @@ struct GridEvenShare
      * \brief Constructor.  Initializes the grid-specific members \p num_items and \p grid_size. To be called prior prior to kernel launch)
      */
     __host__ __device__ __forceinline__ GridEvenShare(
-        Offset   num_items,                  ///< Total number of input items
+        Offset   num_items,                 ///< Total number of input items
         int     max_grid_size,              ///< Maximum grid size allowable (actual grid size may be less if not warranted by the the number of input items)
         int     schedule_granularity)       ///< Granularity by which the input can be parcelled into and distributed among threablocks.  Usually the thread block's native tile size (or a multiple thereof.
     {
         this->num_items             = num_items;
-        this->block_offset          = 0;
-        this->block_end             = 0;
+        this->block_offset          = num_items;
+        this->block_end             = num_items;
         this->total_grains          = (num_items + schedule_granularity - 1) / schedule_granularity;
         this->grid_size             = CUB_MIN(total_grains, max_grid_size);
-        Offset grains_per_block      = total_grains / grid_size;
+        Offset grains_per_block     = total_grains / grid_size;
         this->big_blocks            = total_grains - (grains_per_block * grid_size);        // leftover grains go to big blocks
         this->normal_share          = grains_per_block * schedule_granularity;
         this->normal_base_offset    = big_blocks * schedule_granularity;
@@ -124,9 +124,6 @@ struct GridEvenShare
      */
     __device__ __forceinline__ void Init(int partition_id)
     {
-        block_offset = num_items;
-        block_end = num_items;
-
         if (partition_id < big_blocks)
         {
             // This threadblock gets a big share of grains (grains_per_block + 1)
@@ -137,7 +134,7 @@ struct GridEvenShare
         {
             // This threadblock gets a normal share of grains (grains_per_block)
             block_offset = normal_base_offset + (partition_id * normal_share);
-            block_end = block_offset + normal_share;
+            block_end = CUB_MIN(num_items, block_offset + normal_share);
         }
     }
 

@@ -237,6 +237,26 @@ struct DeviceScanDispatch
             ScanRegionPolicy;
     };
 
+    /// SM13
+    struct Policy130
+    {
+        enum {
+            NOMINAL_4B_ITEMS_PER_THREAD = 19,
+            ITEMS_PER_THREAD            = CUB_MIN(NOMINAL_4B_ITEMS_PER_THREAD, CUB_MAX(1, (NOMINAL_4B_ITEMS_PER_THREAD * 4 / sizeof(T)))),
+        };
+
+        typedef BlockScanRegionPolicy<
+                64,
+                ITEMS_PER_THREAD,
+                BLOCK_LOAD_WARP_TRANSPOSE,
+                true,
+                LOAD_DEFAULT,
+                BLOCK_STORE_WARP_TRANSPOSE,
+                true,
+                BLOCK_SCAN_RAKING_MEMOIZE>
+            ScanRegionPolicy;
+    };
+
     /// SM10
     struct Policy100
     {
@@ -270,6 +290,9 @@ struct DeviceScanDispatch
 
 #elif (CUB_PTX_VERSION >= 200)
     typedef Policy200 PtxPolicy;
+
+#elif (CUB_PTX_VERSION >= 130)
+    typedef Policy130 PtxPolicy;
 
 #else
     typedef Policy100 PtxPolicy;
@@ -312,6 +335,10 @@ struct DeviceScanDispatch
         else if (ptx_version >= 200)
         {
             scan_region_config.template Init<typename Policy200::ScanRegionPolicy>();
+        }
+        else if (ptx_version >= 130)
+        {
+            scan_region_config.template Init<typename Policy130::ScanRegionPolicy>();
         }
         else
         {
