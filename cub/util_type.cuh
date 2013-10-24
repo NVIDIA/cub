@@ -293,6 +293,30 @@ struct KeyValuePair<int, double>
 };
 */
 
+
+
+
+template <typename T>
+__host__ __device__ __forceinline__ T ZeroInitialize()
+{
+#if defined(__CUDA_ARCH__) && (__CUDA_ARCH__ <= 130)
+
+    typedef typename UnitWord<T>::VolatileWord VolatileWord;   // Word type for memcopying
+    const int VOLATILE_MULTIPLE = UnitWord<T>::VOLATILE_MULTIPLE;
+    VolatileWord words[VOLATILE_MULTIPLE];
+    #pragma unroll
+    for (int i = 0; i < VOLATILE_MULTIPLE; ++i)
+        words[i] = 0;
+    return *reinterpret_cast<T*>(words);
+
+#else
+
+    return T();
+
+#endif
+}
+
+
 /**
  * \brief A storage-backing wrapper that allows types with non-trivial constructors to be aliased in unions
  */

@@ -458,7 +458,7 @@ private:
     __device__ __forceinline__ void ExclusiveSum(T input, T &output, Int2Type<false> is_primitive)
     {
         // Delegate to regular scan for non-primitive types (because we won't be able to use subtraction)
-        T identity = T();
+        T identity = ZeroInitialize<T>();
         ExclusiveScan(input, output, identity, Sum());
     }
 
@@ -475,7 +475,7 @@ private:
     __device__ __forceinline__ void ExclusiveSum(T input, T &output, T &warp_aggregate, Int2Type<false> is_primitive)
     {
         // Delegate to regular scan for non-primitive types (because we won't be able to use subtraction)
-        T identity = T();
+        T identity = ZeroInitialize<T>();
         ExclusiveScan(input, output, identity, Sum(), warp_aggregate);
     }
 
@@ -494,7 +494,7 @@ private:
     __device__ __forceinline__ void ExclusiveSum(T input, T &output, T &warp_aggregate, WarpPrefixCallbackOp &warp_prefix_op, Int2Type<false> is_primitive)
     {
         // Delegate to regular scan for non-primitive types (because we won't be able to use subtraction)
-        T identity = T();
+        T identity = ZeroInitialize<T>();
         ExclusiveScan(input, output, identity, Sum(), warp_aggregate, warp_prefix_op);
     }
 
