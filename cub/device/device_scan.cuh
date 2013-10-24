@@ -246,6 +246,22 @@ struct DeviceScanDispatch
         };
 
         typedef BlockScanRegionPolicy<
+                128,
+                ITEMS_PER_THREAD,
+                BLOCK_LOAD_WARP_TRANSPOSE,
+                true,
+                LOAD_DEFAULT,
+                BLOCK_STORE_WARP_TRANSPOSE,
+                true,
+                BLOCK_SCAN_RAKING>
+            ScanRegionPolicy;
+/* mooch
+        enum {
+            NOMINAL_4B_ITEMS_PER_THREAD = 19,
+            ITEMS_PER_THREAD            = CUB_MIN(NOMINAL_4B_ITEMS_PER_THREAD, CUB_MAX(1, (NOMINAL_4B_ITEMS_PER_THREAD * 4 / sizeof(T)))),
+        };
+
+        typedef BlockScanRegionPolicy<
                 64,
                 ITEMS_PER_THREAD,
                 BLOCK_LOAD_WARP_TRANSPOSE,
@@ -255,6 +271,7 @@ struct DeviceScanDispatch
                 true,
                 BLOCK_SCAN_RAKING_MEMOIZE>
             ScanRegionPolicy;
+*/
     };
 
     /// SM10
@@ -482,11 +499,20 @@ struct DeviceScanDispatch
             int scan_region_occupancy = scan_region_sm_occupancy * sm_count;
 
             // Get grid size for scanning tiles
-            int scan_grid_size = (ptx_version < 200) ?
-                scan_grid_size = num_tiles:     // We don't have atomics (or don't have fast ones), so just assign one block per tile (limited to 65K tiles)
-                (num_tiles < scan_region_occupancy) ?
-                    num_tiles :                 // Not enough to fill the device with threadblocks
-                    scan_region_occupancy;       // Fill the device with threadblocks
+            int scan_grid_size;
+            if (ptx_version < 200)
+            {
+                // We don't have atomics (or don't have fast ones), so just assign one block per tile (limited to 65K tiles)
+                scan_grid_size = num_tiles;
+                if (scan_grid_size >= (64 * 1024))
+                    return cudaErrorInvalidConfiguration;
+            }
+            else
+            {
+                scan_grid_size = (num_tiles < scan_region_occupancy) ?
+                    num_tiles :                     // Not enough to fill the device with threadblocks
+                    scan_region_occupancy;          // Fill the device with threadblocks
+            }
 
             // Log scan_region_kernel configuration
             if (debug_synchronous) CubLog("Invoking scan_region_kernel<<<%d, %d, 0, %lld>>>(), %d items per thread, %d SM occupancy\n",
