@@ -357,6 +357,16 @@ int CoutCast(signed char val) { return val; }
  * Test value initialization utilities
  ******************************************************************************/
 
+
+// Dispatch types
+enum Backend
+{
+    CUB,
+    THRUST,
+    CDP,
+};
+
+
 /**
  * Test problem generation options
  */
