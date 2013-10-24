@@ -58,14 +58,6 @@ int                     g_repeat            = 0;
 int                     g_bits              = -1;
 CachingDeviceAllocator  g_allocator(true);
 
-// Dispatch types
-enum Backend
-{
-    CUB,
-    THRUST,
-    CDP,
-};
-
 //---------------------------------------------------------------------
 // Dispatch to different DeviceRadixSort entrypoints
 //---------------------------------------------------------------------
