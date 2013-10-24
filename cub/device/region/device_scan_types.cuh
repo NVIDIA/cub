@@ -38,6 +38,7 @@
 #include "../../thread/thread_load.cuh"
 #include "../../thread/thread_store.cuh"
 #include "../../warp/warp_reduce.cuh"
+#include "../../util_arch.cuh"
 #include "../../util_namespace.cuh"
 
 /// Optional outer namespace(s)
@@ -142,28 +143,10 @@ enum LookbackTileStatus
 template <
     typename    T,
     bool        SINGLE_WORD = (PowerOfTwo<sizeof(T)>::VALUE && (sizeof(T) <= 8))>
-struct LookbackTileDescriptor
+struct CUB_ALIGN(sizeof(T) * 2) LookbackTileDescriptor
 {
-    // Status word type
-    typedef typename If<(sizeof(T) == 8),
-        long long,
-        typename If<(sizeof(T) == 4),
-            int,
-            typename If<(sizeof(T) == 2),
-                short,
-                char>::Type>::Type>::Type StatusWord;
-
-    // Vector word type
-    typedef typename If<(sizeof(T) == 8),
-        longlong2,
-        typename If<(sizeof(T) == 4),
-            int2,
-            typename If<(sizeof(T) == 2),
-                int,
-                short>::Type>::Type>::Type VectorWord;
-
-    T           value;      // Value of this tile
-    StatusWord  status;     // Status of this tile
+    typename UnitWord<T>::VolatileWord  status;     // Status of this tile
+    T                                   value;      // Value of this tile
 
     // Update the referenced tile descriptor with a valid inclusive prefix
     static __device__ __forceinline__ void SetPrefix(LookbackTileDescriptor *ptr, T prefix)
@@ -172,9 +155,7 @@ struct LookbackTileDescriptor
         tile_descriptor.status = LOOKBACK_TILE_PREFIX;
         tile_descriptor.value = prefix;
 
-        VectorWord alias;
-        *reinterpret_cast<LookbackTileDescriptor*>(&alias) = tile_descriptor;
-        ThreadStore<STORE_CG>(reinterpret_cast<VectorWord*>(ptr), alias);
+        *ptr = tile_descriptor;
     }
 
     // Update the referenced tile descriptor with a valid aggregate
@@ -184,9 +165,7 @@ struct LookbackTileDescriptor
         tile_descriptor.status = LOOKBACK_TILE_PARTIAL;
         tile_descriptor.value = aggregate;
 
-        VectorWord alias;
-        *reinterpret_cast<LookbackTileDescriptor*>(&alias) = tile_descriptor;
-        ThreadStore<STORE_CG>(reinterpret_cast<VectorWord*>(ptr), alias);
+        *ptr = tile_descriptor;
     }
 
     // Wait for the referenced tile descriptor to become not-invalid
@@ -195,19 +174,17 @@ struct LookbackTileDescriptor
         int                     &status,
         T                       &value)
     {
-        LookbackTileDescriptor tile_descriptor;
         while (true)
         {
-            VectorWord alias = ThreadLoad<LOAD_CG>(reinterpret_cast<VectorWord*>(ptr));
-
-            tile_descriptor = *reinterpret_cast<LookbackTileDescriptor*>(&alias);
-            if (tile_descriptor.status != LOOKBACK_TILE_INVALID) break;
-
+            LookbackTileDescriptor tile_descriptor = ThreadLoad<LOAD_CG>(ptr);
             __threadfence_block();
+            if (tile_descriptor.status != LOOKBACK_TILE_INVALID)
+            {
+                status = tile_descriptor.status;
+                value = tile_descriptor.value;
+                break;
+            }
         }
-
-        status = tile_descriptor.status;
-        value = tile_descriptor.value;
     }
 
 };
@@ -222,15 +199,14 @@ struct LookbackTileDescriptor
 template <typename T>
 struct LookbackTileDescriptor<T, false>
 {
-    T       partial_value;      // Aggregate value of this tile
-    T       prefix_value;       // Inclusive prefix value of this tile
+    struct CUB_ALIGN(sizeof(T) * 2)
+    {
+        T       partial_value;      // Aggregate value of this tile
+        T       prefix_value;       // Inclusive prefix value of this tile
+    };
 
     /// Workaround for the fact that win32 doesn't guarantee 16B alignment 16B values of T
-    union
-    {
-        int                     status;     // Status of this tile
-        Uninitialized<T>        padding;    // Padding
-    };
+    int         status;     // Status of this tile
 
     // Update the referenced tile descriptor with a valid inclusive prefix
     static __device__ __forceinline__ void SetPrefix(LookbackTileDescriptor *ptr, T prefix)
