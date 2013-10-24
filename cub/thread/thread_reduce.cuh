@@ -58,7 +58,7 @@ namespace cub {
  * \tparam LENGTH     Length of input array
  * \tparam T          <b>[inferred]</b> The data type to be reduced.
  * \tparam ScanOp     <b>[inferred]</b> Binary reduction operator type having member <tt>T operator()(const T &a, const T &b)</tt>
- * /
+ */
 template <
     int         LENGTH,
     typename    T,
@@ -76,7 +76,7 @@ __device__ __forceinline__ T ThreadReduce(
 
     return prefix;
 }
-*/
+
 
 /**
  * \brief Perform a sequential reduction over \p LENGTH elements of the \p input array.  The aggregate is returned.
@@ -84,7 +84,7 @@ __device__ __forceinline__ T ThreadReduce(
  * \tparam LENGTH     Length of input array
  * \tparam T          <b>[inferred]</b> The data type to be reduced.
  * \tparam ScanOp     <b>[inferred]</b> Binary reduction operator type having member <tt>T operator()(const T &a, const T &b)</tt>
- * /
+ */
 template <
     int         LENGTH,
     typename    T,
@@ -96,7 +96,7 @@ __device__ __forceinline__ T ThreadReduce(
     T prefix = input[0];
     return ThreadReduce<LENGTH - 1>(input + 1, reduction_op, prefix);
 }
-*/
+
 
 /**
  * \brief Perform a sequential reduction over the statically-sized \p input array, seeded with the specified \p prefix.  The aggregate is returned.
@@ -114,13 +114,7 @@ __device__ __forceinline__ T ThreadReduce(
     ReductionOp reduction_op,           ///< [in] Binary reduction operator
     T           prefix)                 ///< [in] Prefix to seed reduction with
 {
-    #pragma unroll
-    for (int i = 0; i < LENGTH; ++i)
-    {
-        prefix = reduction_op(prefix, input[i]);
-    }
-
-    return prefix;
+    return ThreadReduce<LENGTH>(input, reduction_op, prefix);
 }
 
 
@@ -139,15 +133,7 @@ __device__ __forceinline__ T ThreadReduce(
     T           (&input)[LENGTH],       ///< [in] Input array
     ReductionOp reduction_op)           ///< [in] Binary reduction operator
 {
-    T prefix = input[0];
-
-    #pragma unroll
-    for (int i = 1; i < LENGTH; ++i)
-    {
-        prefix = reduction_op(prefix, input[i]);
-    }
-
-    return prefix;
+    return ThreadReduce<LENGTH>((T*) input, reduction_op);
 }
 
 
