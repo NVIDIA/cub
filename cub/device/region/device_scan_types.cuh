@@ -144,11 +144,23 @@ template <
     bool        SINGLE_WORD = (PowerOfTwo<sizeof(T)>::VALUE && (sizeof(T) <= 8))>
 struct LookbackTileDescriptor
 {
-    // Unit status word type
-    typedef typename UnitWord<T>::VolatileWord StatusWord;
+    // Status word type
+    typedef typename If<(sizeof(T) == 8),
+        long long,
+        typename If<(sizeof(T) == 4),
+            int,
+            typename If<(sizeof(T) == 2),
+                short,
+                char>::Type>::Type>::Type StatusWord;
 
-    // Unit device word type for aliasing this descriptor
-    typedef typename UnitWord<T>::DeviceWord DeviceWord;
+    // Vector word type
+    typedef typename If<(sizeof(T) == 8),
+        longlong2,
+        typename If<(sizeof(T) == 4),
+            int2,
+            typename If<(sizeof(T) == 2),
+                int,
+                short>::Type>::Type>::Type VectorWord;
 
     T           value;      // Value of this tile
     StatusWord  status;     // Status of this tile
@@ -160,9 +172,9 @@ struct LookbackTileDescriptor
         tile_descriptor.status = LOOKBACK_TILE_PREFIX;
         tile_descriptor.value = prefix;
 
-        DeviceWord alias;
+        VectorWord alias;
         *reinterpret_cast<LookbackTileDescriptor*>(&alias) = tile_descriptor;
-        ThreadStore<STORE_CG>(reinterpret_cast<DeviceWord*>(ptr), alias);
+        ThreadStore<STORE_CG>(reinterpret_cast<VectorWord*>(ptr), alias);
     }
 
     // Update the referenced tile descriptor with a valid aggregate
@@ -172,9 +184,9 @@ struct LookbackTileDescriptor
         tile_descriptor.status = LOOKBACK_TILE_PARTIAL;
         tile_descriptor.value = aggregate;
 
-        DeviceWord alias;
+        VectorWord alias;
         *reinterpret_cast<LookbackTileDescriptor*>(&alias) = tile_descriptor;
-        ThreadStore<STORE_CG>(reinterpret_cast<DeviceWord*>(ptr), alias);
+        ThreadStore<STORE_CG>(reinterpret_cast<VectorWord*>(ptr), alias);
     }
 
     // Wait for the referenced tile descriptor to become not-invalid
@@ -186,7 +198,7 @@ struct LookbackTileDescriptor
         LookbackTileDescriptor tile_descriptor;
         while (true)
         {
-            DeviceWord alias = ThreadLoad<LOAD_CG>(reinterpret_cast<DeviceWord*>(ptr));
+            VectorWord alias = ThreadLoad<LOAD_CG>(reinterpret_cast<VectorWord*>(ptr));
 
             tile_descriptor = *reinterpret_cast<LookbackTileDescriptor*>(&alias);
             if (tile_descriptor.status != LOOKBACK_TILE_INVALID) break;

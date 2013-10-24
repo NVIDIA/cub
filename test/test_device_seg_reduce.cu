@@ -469,7 +469,7 @@ struct BlockSegReduceRegion
         for (int ITEM = 0; ITEM < ITEMS_PER_THREAD; ++ITEM)
         {
             segment_ids[ITEM]   = -1;
-            value_offsets[ITEM] = thread_idx.b_idx;
+            value_offsets[ITEM] = -1;
 
             // Whether or not we slide (a) right along the segment path or (b) down the value path
             if (valid_segment && (!valid_value || (segment_end_offset <= thread_idx.b_idx)))
@@ -493,6 +493,7 @@ struct BlockSegReduceRegion
             else if (valid_value)
             {
                 // Consume this value index
+                value_offsets[ITEM] = thread_idx.b_idx;
                 thread_idx.b_idx++;
                 local_thread_idx.b_idx++;
 
@@ -502,6 +503,7 @@ struct BlockSegReduceRegion
 
         // Load values
         Value values[ITEMS_PER_THREAD];
+
         if (USE_SMEM_VALUE_CACHE)
         {
             // Barrier for smem reuse
@@ -521,7 +523,9 @@ struct BlockSegReduceRegion
             #pragma unroll
             for (int ITEM = 0; ITEM < ITEMS_PER_THREAD; ++ITEM)
             {
-                values[ITEM] = temp_storage.cached_values[value_offsets[ITEM] - block_idx.b_idx];
+                values[ITEM] = (value_offsets[ITEM] == -1) ?
+                    identity :
+                    temp_storage.cached_values[value_offsets[ITEM] - block_idx.b_idx];
             }
         }
         else
@@ -529,7 +533,9 @@ struct BlockSegReduceRegion
             #pragma unroll
             for (int ITEM = 0; ITEM < ITEMS_PER_THREAD; ++ITEM)
             {
-                values[ITEM] = d_values[value_offsets[ITEM]];
+                values[ITEM] = (value_offsets[ITEM] == -1) ?
+                    identity :
+                    d_values[value_offsets[ITEM]];
             }
         }
 
@@ -552,18 +558,13 @@ struct BlockSegReduceRegion
                 running_total.key    = segment_ids[ITEM];
                 running_total.value  = identity;
             }
-            else
-            {
-                running_total.value = reduction_op(running_total.value, values[ITEM]);
-            }
+
+            running_total.value = reduction_op(running_total.value, values[ITEM]);
         }
 /*
+
         // Barrier for smem reuse
         __syncthreads();
-
-        KeyValuePair pairs[2];
-        pairs[0] = first_partial;
-        pairs[1] = running_total;
 
         // Use prefix scan to reduce values by segment-id.  The segment-reductions end up in items flagged as segment-tails.
         KeyValuePair block_aggregate;
@@ -777,19 +778,19 @@ struct BlockSegReduceRegion
                 block_idx,          // Prefix item to be provided to <em>thread</em><sub>0</sub>
                 next_tile_idx);     // [out] Suffix item shifted out by the <em>thread</em><sub><tt>BLOCK_THREADS-1</tt></sub> to be provided to all threads
 
-            if (block_idx.a_idx == next_tile_idx.a_idx)
-            {
-                // There are no segment end-offsets in this tile.  Perform a
-                // simple block-wide reduction and accumulate the result into
-                // the running total.
-                SingleSegmentTile(next_tile_idx, block_idx);
-            }
+//            if (block_idx.a_idx == next_tile_idx.a_idx)
+//            {
+//                // There are no segment end-offsets in this tile.  Perform a
+//                // simple block-wide reduction and accumulate the result into
+//                // the running total.
+//                SingleSegmentTile(next_tile_idx, block_idx);
+//            }
 //          else if (block_idx.b_idx == next_tile_idx.b_idx)
 //            {
 //                // There are no values in this tile (only empty segments).
 //                EmptySegmentsTile(next_tile_idx.a_idx, block_idx.a_idx);
 //            }
-            else
+//            else
             if ((next_tile_idx.a_idx < num_segments) && (next_tile_idx.b_idx < num_values))
             {
                 // Merge the tile's segment and value indices (full tile)
@@ -2132,7 +2133,7 @@ int main(int argc, char** argv)
     // Initialize device
     CubDebugExit(args.DeviceInit());
 
-    Test<false>((int) num_values, avg_segment_size, Sum(), (double) 0, CUB_TYPE_STRING(double));
+    Test<false>((int) num_values, avg_segment_size, Sum(), (long long) 0, CUB_TYPE_STRING(long long));
 
     return 0;
 }
