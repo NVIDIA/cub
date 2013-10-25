@@ -67,11 +67,13 @@ struct IteratorTexRef
     struct TexId
     {
         // Largest texture word we can use in device
+        typedef typename UnitWord<T>::DeviceWord DeviceWord;
         typedef typename UnitWord<T>::TextureWord TextureWord;
 
         // Number of texture words per T
         enum {
-            TEXTURE_MULTIPLE = UnitWord<T>::TEXTURE_MULTIPLE
+            DEVICE_MULTIPLE = sizeof(T) / sizeof(DeviceWord),
+            TEXTURE_MULTIPLE = sizeof(T) / sizeof(TextureWord)
         };
 
         // Texture reference type
@@ -83,6 +85,11 @@ struct IteratorTexRef
         /// Bind texture
         static cudaError_t BindTexture(void *d_in)
         {
+            printf("binding texture element of size %d to %d words of size %d\n",
+                sizeof(T),
+                TEXTURE_MULTIPLE,
+                sizeof(TextureWord));
+
             if (d_in)
             {
                 cudaChannelFormatDesc tex_desc = cudaCreateChannelDesc<TextureWord>();
@@ -102,19 +109,16 @@ struct IteratorTexRef
         template <typename Distance>
         static __device__ __forceinline__ T Fetch(Distance offset)
         {
-            // Move array of uninitialized words, then alias and assign to return value
-            TextureWord words[TEXTURE_MULTIPLE];;
+            DeviceWord temp[DEVICE_MULTIPLE];
+            TextureWord *words = reinterpret_cast<TextureWord*>(temp);
 
             #pragma unroll
             for (int i = 0; i < TEXTURE_MULTIPLE; ++i)
             {
-                words[i] = tex1Dfetch(
-                    ref,
-                    (offset * TEXTURE_MULTIPLE) + i);
+                words[i] = tex1Dfetch(ref, (offset * TEXTURE_MULTIPLE) + i);
             }
 
-            // Load from words
-            return *reinterpret_cast<T*>(words);
+            return reinterpret_cast<T&>(temp);
         }
     };
 };
@@ -799,8 +803,8 @@ public:
 
 private:
 
-    T*      ptr;
-    size_t  tex_offset;
+    T*              ptr;
+    difference_type tex_offset;
 
     // Texture reference wrapper (old Tesla/Fermi-style textures)
     typedef typename IteratorTexRef<T>::template TexId<UNIQUE_ID> TexId;
@@ -963,7 +967,7 @@ private:
 private:
 
     T*                  ptr;
-    size_t              tex_offset;
+    difference_type     tex_offset;
     cudaTextureObject_t tex_obj;
 
 public:

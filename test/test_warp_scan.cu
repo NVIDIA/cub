@@ -514,7 +514,13 @@ void Test(GenMode gen_mode)
     Test<LOGICAL_WARP_THREADS>(gen_mode, Sum(), (unsigned char) 0, (unsigned char) 99, CUB_TYPE_STRING(Sum<unsigned char>));
     Test<LOGICAL_WARP_THREADS>(gen_mode, Sum(), (unsigned short) 0, (unsigned short) 99, CUB_TYPE_STRING(Sum<unsigned short>));
     Test<LOGICAL_WARP_THREADS>(gen_mode, Sum(), (unsigned int) 0, (unsigned int) 99, CUB_TYPE_STRING(Sum<unsigned int>));
+    Test<LOGICAL_WARP_THREADS>(gen_mode, Sum(), (unsigned long) 0, (unsigned long) 99, CUB_TYPE_STRING(Sum<unsigned long>));
     Test<LOGICAL_WARP_THREADS>(gen_mode, Sum(), (unsigned long long) 0, (unsigned long long) 99, CUB_TYPE_STRING(Sum<unsigned long long>));
+    if (gen_mode != RANDOM) {
+        // Only test numerically stable inputs
+        Test<LOGICAL_WARP_THREADS>(gen_mode, Sum(), (float) 0, (float) 99, CUB_TYPE_STRING(Sum<float>));
+        Test<LOGICAL_WARP_THREADS>(gen_mode, Sum(), (double) 0, (double) 99, CUB_TYPE_STRING(Sum<double>));
+    }
 
     // primitive (alternative scan op)
     Test<LOGICAL_WARP_THREADS>(gen_mode, Max(), (unsigned char) 0, (unsigned char) 99, CUB_TYPE_STRING(Max<unsigned char>));
@@ -526,13 +532,25 @@ void Test(GenMode gen_mode)
     Test<LOGICAL_WARP_THREADS>(gen_mode, Sum(), make_uchar2(0, 0), make_uchar2(17, 21), CUB_TYPE_STRING(Sum<uchar2>));
     Test<LOGICAL_WARP_THREADS>(gen_mode, Sum(), make_ushort2(0, 0), make_ushort2(17, 21), CUB_TYPE_STRING(Sum<ushort2>));
     Test<LOGICAL_WARP_THREADS>(gen_mode, Sum(), make_uint2(0, 0), make_uint2(17, 21), CUB_TYPE_STRING(Sum<uint2>));
+    Test<LOGICAL_WARP_THREADS>(gen_mode, Sum(), make_ulong2(0, 0), make_ulong2(17, 21), CUB_TYPE_STRING(Sum<ulong2>));
     Test<LOGICAL_WARP_THREADS>(gen_mode, Sum(), make_ulonglong2(0, 0), make_ulonglong2(17, 21), CUB_TYPE_STRING(Sum<ulonglong2>));
+    if (gen_mode != RANDOM) {
+        // Only test numerically stable inputs
+        Test<LOGICAL_WARP_THREADS>(gen_mode, Sum(), make_float2(0, 0), make_float2(17, 21), CUB_TYPE_STRING(Sum<float2>));
+        Test<LOGICAL_WARP_THREADS>(gen_mode, Sum(), make_double2(0, 0), make_double2(17, 21), CUB_TYPE_STRING(Sum<double2>));
+    }
 
     // vec-4
     Test<LOGICAL_WARP_THREADS>(gen_mode, Sum(), make_uchar4(0, 0, 0, 0), make_uchar4(17, 21, 32, 85), CUB_TYPE_STRING(Sum<uchar4>));
     Test<LOGICAL_WARP_THREADS>(gen_mode, Sum(), make_ushort4(0, 0, 0, 0), make_ushort4(17, 21, 32, 85), CUB_TYPE_STRING(Sum<ushort4>));
     Test<LOGICAL_WARP_THREADS>(gen_mode, Sum(), make_uint4(0, 0, 0, 0), make_uint4(17, 21, 32, 85), CUB_TYPE_STRING(Sum<uint4>));
+    Test<LOGICAL_WARP_THREADS>(gen_mode, Sum(), make_ulong4(0, 0, 0, 0), make_ulong4(17, 21, 32, 85), CUB_TYPE_STRING(Sum<ulong4>));
     Test<LOGICAL_WARP_THREADS>(gen_mode, Sum(), make_ulonglong4(0, 0, 0, 0), make_ulonglong4(17, 21, 32, 85), CUB_TYPE_STRING(Sum<ulonglong4>));
+    if (gen_mode != RANDOM) {
+        // Only test numerically stable inputs
+        Test<LOGICAL_WARP_THREADS>(gen_mode, Sum(), make_float4(0, 0, 0, 0), make_float4(17, 21, 32, 85), CUB_TYPE_STRING(Sum<float2>));
+        Test<LOGICAL_WARP_THREADS>(gen_mode, Sum(), make_double4(0, 0, 0, 0), make_double4(17, 21, 32, 85), CUB_TYPE_STRING(Sum<double2>));
+    }
 
     // complex
     Test<LOGICAL_WARP_THREADS>(gen_mode, Sum(), TestFoo::MakeTestFoo(0, 0, 0, 0), TestFoo::MakeTestFoo(17, 21, 32, 85), CUB_TYPE_STRING(Sum<TestFoo>));
@@ -577,6 +595,8 @@ int main(int argc, char** argv)
 
     // Initialize device
     CubDebugExit(args.DeviceInit());
+
+    // Quick exclusive test
 
     if (quick)
     {
