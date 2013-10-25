@@ -316,7 +316,7 @@ __device__ __forceinline__ void ThreadStoreVolatile(
 {
     typedef typename UnitWord<T>::VolatileWord VolatileWord;   // Word type for memcopying
 
-    const int VOLATILE_MULTIPLE = UnitWord<T>::VOLATILE_MULTIPLE;
+    const int VOLATILE_MULTIPLE = sizeof(T) / sizeof(VolatileWord);
 
     // Store into array of uninitialized words
     VolatileWord words[VOLATILE_MULTIPLE];
@@ -381,7 +381,7 @@ __device__ __forceinline__ void ThreadStore(
 
     typedef typename UnitWord<T>::DeviceWord DeviceWord;   // Word type for memcopying
 
-    const int DEVICE_MULTIPLE = UnitWord<T>::DEVICE_MULTIPLE;
+    const int DEVICE_MULTIPLE = sizeof(T) / sizeof(DeviceWord);
 
     // Store into array of uninitialized words
     DeviceWord words[DEVICE_MULTIPLE];
