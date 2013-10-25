@@ -200,8 +200,9 @@ ALL = 	link \
 	 	test_device_reduce \
 	 	test_device_histogram \
 	 	test_device_scan \
-	 	test_device_radix_sort \
-	 	test_device_seg_reduce
+	 	test_device_radix_sort
+	 	
+#	 	test_device_seg_reduce
 		
 
 
@@ -227,18 +228,24 @@ clean :
 
 all : $(ALL)
 
+#-------------------------------------------------------------------------------
+# make run
+#-------------------------------------------------------------------------------
+
+run : 
+	for i in $(ALL); do ./bin/$${i}_$(SUFFIX) --device=$(device) || exit 1; done
 
 #-------------------------------------------------------------------------------
 # make link
 #-------------------------------------------------------------------------------
 
-link : bin/link.exe
+link : bin/link_$(SUFFIX)
 
-bin/link : link_a.cu link_b.cu link_main.cpp $(DEPS)
+bin/link_$(SUFFIX) : link_a.cu link_b.cu link_main.cpp $(DEPS)
 	mkdir -p bin
 	$(NVCC) $(CPU_ARCH) $(INC) $(DEFINES) $(SM_TARGETS) link_a.cu -c -o bin/link_a.obj
 	$(NVCC) $(CPU_ARCH) $(INC) $(DEFINES) $(SM_TARGETS) link_b.cu -c -o bin/link_b.obj
-	$(CC) link_main.cpp bin/link_a.obj bin/link_b.obj $(CUDART) -o bin/link.exe 
+	$(NVCC) $(CPU_ARCH) $(INC) $(DEFINES) $(SM_TARGETS) link_main.cpp bin/link_a.obj bin/link_b.obj $(CUDART) -o bin/link_$(SUFFIX)
 
 #-------------------------------------------------------------------------------
 # make test_iterator 

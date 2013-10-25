@@ -236,17 +236,35 @@ struct UnitWord
         typename If<IsMultiple<int2>::IS_MULTIPLE,
             int2,
             ShuffleWord>::Type>::Type           TextureWord;
+};
 
-    typedef int4 Baz;
 
-    enum
-    {
-        BYTE_MULTIPLE       = sizeof(T),
-        SHUFFLE_MULTIPLE    = sizeof(T) / sizeof(ShuffleWord),
-        VOLATILE_MULTIPLE   = sizeof(T) / sizeof(VolatileWord),
-        DEVICE_MULTIPLE     = sizeof(T) / sizeof(DeviceWord),
-        TEXTURE_MULTIPLE    = sizeof(T) / sizeof(TextureWord),
-    };
+// float2 specialization (for SM10-SM13)
+template <>
+struct UnitWord <float2>
+{
+    typedef int         ShuffleWord;
+#if defined(__CUDA_ARCH__) && (__CUDA_ARCH__ <= 130)
+    typedef float       VolatileWord;
+#else
+    typedef long long   VolatileWord;
+#endif
+    typedef long long   DeviceWord;
+    typedef float2      TextureWord;
+};
+
+// float4 specialization (for SM10-SM13)
+template <>
+struct UnitWord <float4>
+{
+    typedef int         ShuffleWord;
+#if defined(__CUDA_ARCH__) && (__CUDA_ARCH__ <= 130)
+    typedef float       VolatileWord;
+#else
+    typedef long long   VolatileWord;
+#endif
+    typedef longlong2   DeviceWord;
+    typedef float4      TextureWord;
 };
 
 
@@ -301,11 +319,11 @@ __host__ __device__ __forceinline__ T ZeroInitialize()
 {
 #if defined(__CUDA_ARCH__) && (__CUDA_ARCH__ <= 130)
 
-    typedef typename UnitWord<T>::VolatileWord VolatileWord;   // Word type for memcopying
-    const int VOLATILE_MULTIPLE = UnitWord<T>::VOLATILE_MULTIPLE;
-    VolatileWord words[VOLATILE_MULTIPLE];
+    typedef typename UnitWord<T>::ShuffleWord ShuffleWord;
+    const int MULTIPLE = sizeof(T) / sizeof(ShuffleWord);
+    ShuffleWord words[MULTIPLE];
     #pragma unroll
-    for (int i = 0; i < VOLATILE_MULTIPLE; ++i)
+    for (int i = 0; i < MULTIPLE; ++i)
         words[i] = 0;
     return *reinterpret_cast<T*>(words);
 
