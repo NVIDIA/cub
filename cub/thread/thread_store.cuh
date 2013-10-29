@@ -316,6 +316,13 @@ __device__ __forceinline__ void ThreadStoreVolatilePtr(
     T                           val,
     Int2Type<false>             is_primitive)
 {
+#if CUB_PTX_VERSION <= 130
+
+    *ptr = val;
+    __threadfence_block();
+
+#else
+
     typedef typename UnitWord<T>::VolatileWord VolatileWord;   // Word type for memcopying
 
     const int VOLATILE_MULTIPLE = sizeof(T) / sizeof(VolatileWord);
@@ -326,6 +333,9 @@ __device__ __forceinline__ void ThreadStoreVolatilePtr(
     #pragma unroll
     for (int i = 0; i < VOLATILE_MULTIPLE; ++i)
         reinterpret_cast<volatile VolatileWord*>(ptr)[i] = words[i];
+
+#endif  // CUB_PTX_VERSION <= 130
+
 }
 
 

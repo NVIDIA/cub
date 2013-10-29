@@ -510,6 +510,15 @@ void Test(
 template <int LOGICAL_WARP_THREADS>
 void Test(GenMode gen_mode)
 {
+    // Get device ordinal
+    int device_ordinal;
+    CubDebugExit(cudaGetDevice(&device_ordinal));
+
+    // Get device SM version
+    int sm_version;
+    CubDebugExit(SmVersion(sm_version, device_ordinal));
+
+
     // primitive
     Test<LOGICAL_WARP_THREADS>(gen_mode, Sum(), (unsigned char) 0, (unsigned char) 99, CUB_TYPE_STRING(Sum<unsigned char>));
     Test<LOGICAL_WARP_THREADS>(gen_mode, Sum(), (unsigned short) 0, (unsigned short) 99, CUB_TYPE_STRING(Sum<unsigned short>));
@@ -519,7 +528,8 @@ void Test(GenMode gen_mode)
     if (gen_mode != RANDOM) {
         // Only test numerically stable inputs
         Test<LOGICAL_WARP_THREADS>(gen_mode, Sum(), (float) 0, (float) 99, CUB_TYPE_STRING(Sum<float>));
-        Test<LOGICAL_WARP_THREADS>(gen_mode, Sum(), (double) 0, (double) 99, CUB_TYPE_STRING(Sum<double>));
+        if (sm_version > 130)
+            Test<LOGICAL_WARP_THREADS>(gen_mode, Sum(), (double) 0, (double) 99, CUB_TYPE_STRING(Sum<double>));
     }
 
     // primitive (alternative scan op)
@@ -537,7 +547,8 @@ void Test(GenMode gen_mode)
     if (gen_mode != RANDOM) {
         // Only test numerically stable inputs
         Test<LOGICAL_WARP_THREADS>(gen_mode, Sum(), make_float2(0, 0), make_float2(17, 21), CUB_TYPE_STRING(Sum<float2>));
-        Test<LOGICAL_WARP_THREADS>(gen_mode, Sum(), make_double2(0, 0), make_double2(17, 21), CUB_TYPE_STRING(Sum<double2>));
+        if (sm_version > 130)
+            Test<LOGICAL_WARP_THREADS>(gen_mode, Sum(), make_double2(0, 0), make_double2(17, 21), CUB_TYPE_STRING(Sum<double2>));
     }
 
     // vec-4
@@ -549,7 +560,8 @@ void Test(GenMode gen_mode)
     if (gen_mode != RANDOM) {
         // Only test numerically stable inputs
         Test<LOGICAL_WARP_THREADS>(gen_mode, Sum(), make_float4(0, 0, 0, 0), make_float4(17, 21, 32, 85), CUB_TYPE_STRING(Sum<float2>));
-        Test<LOGICAL_WARP_THREADS>(gen_mode, Sum(), make_double4(0, 0, 0, 0), make_double4(17, 21, 32, 85), CUB_TYPE_STRING(Sum<double2>));
+        if (sm_version > 130)
+            Test<LOGICAL_WARP_THREADS>(gen_mode, Sum(), make_double4(0, 0, 0, 0), make_double4(17, 21, 32, 85), CUB_TYPE_STRING(Sum<double2>));
     }
 
     // complex
