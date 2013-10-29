@@ -681,7 +681,7 @@ template <int BLOCK_THREADS>
 void Test()
 {
     Test<BLOCK_THREADS, 1>();
-    Test<BLOCK_THREADS, 2>();
+    Test<BLOCK_THREADS, 2>();       // Remove on Windows because Open64 compiler can't handle the number of test cases
     Test<BLOCK_THREADS, 9>();
 }
 

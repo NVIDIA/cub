@@ -793,18 +793,26 @@ int main(int argc, char** argv)
     // Initialize device
     CubDebugExit(args.DeviceInit());
     printf("\n");
-/*
+
+    // Get device ordinal
+    int device_ordinal;
+    CubDebugExit(cudaGetDevice(&device_ordinal));
+
+    // Get device SM version
+    int sm_version;
+    CubDebugExit(SmVersion(sm_version, device_ordinal));
+
     if (quick)
     {
         // Quick test
         if (num_items < 0) num_items = 32000000;
 
-        TestPointer<CUB, char>(        num_items * 4, UNIFORM, Sum(), char(0), CUB_TYPE_STRING(char));
-        TestPointer<THRUST, char>(     num_items * 4, UNIFORM, Sum(), char(0), CUB_TYPE_STRING(char));
+        TestPointer<CUB, char>(        num_items * ((sm_version <= 130) ? 1 : 4), UNIFORM, Sum(), char(0), CUB_TYPE_STRING(char));
+        TestPointer<THRUST, char>(     num_items * ((sm_version <= 130) ? 1 : 4), UNIFORM, Sum(), char(0), CUB_TYPE_STRING(char));
 
         printf("----------------------------\n");
-        TestPointer<CUB, short>(       num_items * 2, UNIFORM, Sum(), short(0), CUB_TYPE_STRING(short));
-        TestPointer<THRUST, short>(    num_items * 2, UNIFORM, Sum(), short(0), CUB_TYPE_STRING(short));
+        TestPointer<CUB, short>(       num_items * ((sm_version <= 130) ? 1 : 2), UNIFORM, Sum(), short(0), CUB_TYPE_STRING(short));
+        TestPointer<THRUST, short>(    num_items * ((sm_version <= 130) ? 1 : 2), UNIFORM, Sum(), short(0), CUB_TYPE_STRING(short));
 
         printf("----------------------------\n");
         TestPointer<CUB, int>(         num_items    , UNIFORM, Sum(), (int) (0), CUB_TYPE_STRING(int));
@@ -819,13 +827,10 @@ int main(int argc, char** argv)
         TestPointer<THRUST, TestFoo>(  num_items / 4, UNIFORM, Sum(), TestFoo(), CUB_TYPE_STRING(TestFoo));
     }
     else
-*/    {
+    {
         // Repeat test sequence
         for (int i = 0; i <= g_repeat; ++i)
         {
-            printf("%d/%d --------------------\n", i, g_repeat);
-            Test<uchar4>(num_items, CUB_TYPE_STRING(uchar4));
-/*
             // Test different input types
             Test<unsigned char>(num_items, CUB_TYPE_STRING(unsigned char));
             Test<unsigned short>(num_items, CUB_TYPE_STRING(unsigned short));
@@ -844,7 +849,6 @@ int main(int argc, char** argv)
 
             Test<TestFoo>(num_items, CUB_TYPE_STRING(TestFoo));
             Test<TestBar>(num_items, CUB_TYPE_STRING(TestBar));
-*/
         }
     }
 
