@@ -190,15 +190,18 @@ struct LookbackTileDescriptor
         T                       &value)
     {
         LookbackTileDescriptor tile_descriptor;
-        while (true)
+        tile_descriptor.status = LOOKBACK_TILE_INVALID;
+        bool invalid = true;
+        do
         {
-            TxnWord alias = ThreadLoad<LOAD_CG>(reinterpret_cast<TxnWord*>(ptr));
-
-            tile_descriptor = reinterpret_cast<LookbackTileDescriptor&>(alias);
-            if (tile_descriptor.status != LOOKBACK_TILE_INVALID) break;
-
-            __threadfence_block();
-        }
+            if (invalid)
+            {
+                TxnWord alias = ThreadLoad<LOAD_CG>(reinterpret_cast<TxnWord*>(ptr));
+                tile_descriptor = reinterpret_cast<LookbackTileDescriptor&>(alias);
+                invalid = tile_descriptor.status == LOOKBACK_TILE_INVALID;
+                __threadfence_block();
+            }
+        } while (WarpAny(invalid));
 
         status = tile_descriptor.status;
         value = tile_descriptor.value;
@@ -248,7 +251,7 @@ struct LookbackTileDescriptor<T, false>
         while (true)
         {
             status = ThreadLoad<LOAD_CG>(&ptr->status);
-            if (status != LOOKBACK_TILE_INVALID) break;
+            if (WarpAll(status != LOOKBACK_TILE_INVALID)) break;
 
             __threadfence_block();
         }

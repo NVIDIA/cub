@@ -246,22 +246,6 @@ struct DeviceScanDispatch
         };
 
         typedef BlockScanRegionPolicy<
-                128,
-                ITEMS_PER_THREAD,
-                BLOCK_LOAD_WARP_TRANSPOSE,
-                true,
-                LOAD_DEFAULT,
-                BLOCK_STORE_WARP_TRANSPOSE,
-                true,
-                BLOCK_SCAN_RAKING>
-            ScanRegionPolicy;
-/* mooch
-        enum {
-            NOMINAL_4B_ITEMS_PER_THREAD = 19,
-            ITEMS_PER_THREAD            = CUB_MIN(NOMINAL_4B_ITEMS_PER_THREAD, CUB_MAX(1, (NOMINAL_4B_ITEMS_PER_THREAD * 4 / sizeof(T)))),
-        };
-
-        typedef BlockScanRegionPolicy<
                 64,
                 ITEMS_PER_THREAD,
                 BLOCK_LOAD_WARP_TRANSPOSE,
@@ -271,7 +255,6 @@ struct DeviceScanDispatch
                 true,
                 BLOCK_SCAN_RAKING_MEMOIZE>
             ScanRegionPolicy;
-*/
     };
 
     /// SM10
