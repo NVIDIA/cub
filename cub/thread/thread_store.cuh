@@ -257,9 +257,11 @@ struct IterateThreadStore<MODIFIER, MAX, MAX>
     CUB_STORE_ALL(STORE_WB, ca)
     CUB_STORE_ALL(STORE_CG, cg)
     CUB_STORE_ALL(STORE_CS, cs)
-    CUB_STORE_ALL(STORE_WT, cv)
+    CUB_STORE_ALL(STORE_WT, wt)
 #else
-    // STORE_WT on SM10-13 uses "volatile.global" to ensure writes to last level
+    CUB_STORE_ALL(STORE_WB, global)
+    CUB_STORE_ALL(STORE_CG, global)
+    CUB_STORE_ALL(STORE_CS, global)
     CUB_STORE_ALL(STORE_WT, volatile.global)
 #endif
 
@@ -269,7 +271,7 @@ struct IterateThreadStore<MODIFIER, MAX, MAX>
  */
 template <typename OutputIterator, typename T>
 __device__ __forceinline__ void ThreadStore(
-    OutputIterator            itr,
+    OutputIterator              itr,
     T                           val,
     Int2Type<STORE_DEFAULT>     modifier,
     Int2Type<false>             is_pointer)
@@ -296,7 +298,7 @@ __device__ __forceinline__ void ThreadStore(
  * ThreadStore definition for STORE_VOLATILE modifier on primitive pointer types
  */
 template <typename T>
-__device__ __forceinline__ void ThreadStoreVolatile(
+__device__ __forceinline__ void ThreadStoreVolatilePtr(
     T                           *ptr,
     T                           val,
     Int2Type<true>              is_primitive)
@@ -309,7 +311,7 @@ __device__ __forceinline__ void ThreadStoreVolatile(
  * ThreadStore definition for STORE_VOLATILE modifier on non-primitive pointer types
  */
 template <typename T>
-__device__ __forceinline__ void ThreadStoreVolatile(
+__device__ __forceinline__ void ThreadStoreVolatilePtr(
     T                           *ptr,
     T                           val,
     Int2Type<false>             is_primitive)
@@ -318,11 +320,9 @@ __device__ __forceinline__ void ThreadStoreVolatile(
 
     const int VOLATILE_MULTIPLE = sizeof(T) / sizeof(VolatileWord);
 
-    // Store into array of uninitialized words
     VolatileWord words[VOLATILE_MULTIPLE];
     *reinterpret_cast<T*>(words) = val;
 
-    // Memcopy words to aliased destination
     #pragma unroll
     for (int i = 0; i < VOLATILE_MULTIPLE; ++i)
         reinterpret_cast<volatile VolatileWord*>(ptr)[i] = words[i];
@@ -339,27 +339,8 @@ __device__ __forceinline__ void ThreadStore(
     Int2Type<STORE_VOLATILE>    modifier,
     Int2Type<true>              is_pointer)
 {
-    ThreadStoreVolatile(ptr, val, Int2Type<Traits<T>::PRIMITIVE>());
+    ThreadStoreVolatilePtr(ptr, val, Int2Type<Traits<T>::PRIMITIVE>());
 }
-
-
-#if (CUB_PTX_VERSION <= 130)
-
-    /**
-     * ThreadStore definition for STORE_CG modifier on pointer types (SM13 and earlier)
-     */
-    template <typename T>
-    __device__ __forceinline__ void ThreadStore(
-        T                           *ptr,
-        T                           val,
-        Int2Type<STORE_CG>          modifier,
-        Int2Type<true>              is_pointer)
-    {
-        // Use STORE_VOLATILE to ensure write through when this PTX is JIT'd to run on newer architectures with L1
-        ThreadStore<STORE_VOLATILE>(ptr, val);
-    }
-
-#endif  // (CUB_PTX_VERSION <= 350)
 
 
 /**
@@ -372,28 +353,17 @@ __device__ __forceinline__ void ThreadStore(
     Int2Type<MODIFIER>          modifier,
     Int2Type<true>              is_pointer)
 {
-#if (CUB_PTX_VERSION <= 130)
-
-    // Cache modifiers are unavailable.  Use STORE_DEFAULT.
-    return ThreadLoad<STORE_DEFAULT>(ptr);
-
-#else
-
     typedef typename UnitWord<T>::DeviceWord DeviceWord;   // Word type for memcopying
 
     const int DEVICE_MULTIPLE = sizeof(T) / sizeof(DeviceWord);
 
-    // Store into array of uninitialized words
     DeviceWord words[DEVICE_MULTIPLE];
 
     *reinterpret_cast<T*>(words) = val;
 
-    // Memcopy words to aliased destination
     IterateThreadStore<CacheStoreModifier(MODIFIER), 0, DEVICE_MULTIPLE>::Store(
         reinterpret_cast<DeviceWord*>(ptr),
         words);
-
-#endif  // (CUB_PTX_VERSION <= 130)
 }
 
 

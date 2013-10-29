@@ -272,11 +272,17 @@ struct IterateThreadLoad<MODIFIER, MAX, MAX>
     CUB_LOAD_ALL(LOAD_CS, cs)
     CUB_LOAD_ALL(LOAD_CV, cv)
 #else
-    // LOAD_CV on SM10-13 uses "volatile.global" to ensure reads from last level
+    CUB_LOAD_ALL(LOAD_CA, global)
+    // Use volatile to ensure coherent reads when this PTX is JIT'd to run on newer architectures with L1
+    CUB_LOAD_ALL(LOAD_CG, volatile.global)
+    CUB_LOAD_ALL(LOAD_CS, global)
     CUB_LOAD_ALL(LOAD_CV, volatile.global)
 #endif
+
 #if CUB_PTX_VERSION >= 350
     CUB_LOAD_ALL(LOAD_LDG, global.nc)
+#else
+    CUB_LOAD_ALL(LOAD_LDG, global)
 #endif
 
 
@@ -285,7 +291,7 @@ struct IterateThreadLoad<MODIFIER, MAX, MAX>
  */
 template <typename InputIterator>
 __device__ __forceinline__ typename std::iterator_traits<InputIterator>::value_type ThreadLoad(
-    InputIterator         itr,
+    InputIterator           itr,
     Int2Type<LOAD_DEFAULT>  modifier,
     Int2Type<false>         is_pointer)
 {
@@ -310,7 +316,7 @@ __device__ __forceinline__ T ThreadLoad(
  * ThreadLoad definition for LOAD_VOLATILE modifier on primitive pointer types
  */
 template <typename T>
-__device__ __forceinline__ T ThreadLoadVolatile(
+__device__ __forceinline__ T ThreadLoadVolatilePointer(
     T                       *ptr,
     Int2Type<true>          is_primitive)
 {
@@ -328,23 +334,31 @@ __device__ __forceinline__ T ThreadLoadVolatile(
  * ThreadLoad definition for LOAD_VOLATILE modifier on non-primitive pointer types
  */
 template <typename T>
-__device__ __forceinline__ T ThreadLoadVolatile(
+__device__ __forceinline__ T ThreadLoadVolatilePointer(
     T                       *ptr,
     Int2Type<false>          is_primitive)
 {
+#if CUB_PTX_VERSION <= 130
+
+    T retval = *ptr;
+    __threadfence_block();
+    return retval;
+
+#else
+
     typedef typename UnitWord<T>::VolatileWord VolatileWord;   // Word type for memcopying
 
     const int VOLATILE_MULTIPLE = sizeof(T) / sizeof(VolatileWord);
 
-    // Memcopy from aliased source into array of uninitialized words
     VolatileWord words[VOLATILE_MULTIPLE];
 
     #pragma unroll
     for (int i = 0; i < VOLATILE_MULTIPLE; ++i)
         words[i] = reinterpret_cast<volatile VolatileWord*>(ptr)[i];
 
-    // Load from words
     return *reinterpret_cast<T*>(words);
+
+#endif  // CUB_PTX_VERSION <= 130
 }
 
 
@@ -358,44 +372,8 @@ __device__ __forceinline__ T ThreadLoad(
     Int2Type<true>          is_pointer)
 {
     // Apply tags for partial-specialization
-    return ThreadLoadVolatile(ptr, Int2Type<Traits<T>::PRIMITIVE>());
+    return ThreadLoadVolatilePointer(ptr, Int2Type<Traits<T>::PRIMITIVE>());
 }
-
-
-#if (CUB_PTX_VERSION <= 130)
-
-    /**
-     * ThreadLoad definition for LOAD_CG modifier on pointer types (SM13 and earlier)
-     */
-    template <typename T>
-    __device__ __forceinline__ T ThreadLoad(
-        T                       *ptr,
-        Int2Type<LOAD_CG>       modifier,
-        Int2Type<true>          is_pointer)
-    {
-        // Use LOAD_CV to ensure coherent reads when this PTX is JIT'd to run on newer architectures with L1
-        return ThreadLoad<LOAD_CV>(ptr);
-    }
-
-#endif  // (CUB_PTX_VERSION <= 130)
-
-
-#if (CUB_PTX_VERSION <= 200)
-
-    /**
-     * ThreadLoad definition for LOAD_LDG modifier on pointer types (SM20 and earlier)
-     */
-    template <typename T>
-    __device__ __forceinline__ T ThreadLoad(
-        T                       *ptr,
-        Int2Type<LOAD_LDG>       modifier,
-        Int2Type<true>          is_pointer)
-    {
-        // LOAD_LDG is unavailable.  Use LOAD_DEFAULT.
-        return ThreadLoad<LOAD_DEFAULT>(ptr);
-    }
-
-#endif  // (CUB_PTX_VERSION <= 130)
 
 
 /**
@@ -407,28 +385,17 @@ __device__ __forceinline__ T ThreadLoad(
     Int2Type<MODIFIER>      modifier,
     Int2Type<true>          is_pointer)
 {
-#if (CUB_PTX_VERSION <= 130)
-
-    // Cache modifiers are unavailable.  Use LOAD_DEFAULT.
-    return ThreadLoad<LOAD_DEFAULT>(ptr);
-
-#else
-
     typedef typename UnitWord<T>::DeviceWord DeviceWord;
 
     const int DEVICE_MULTIPLE = sizeof(T) / sizeof(DeviceWord);
 
-    // Memcopy from aliased source into array of uninitialized words
     DeviceWord words[DEVICE_MULTIPLE];
 
     IterateThreadLoad<CacheLoadModifier(MODIFIER), 0, DEVICE_MULTIPLE>::Load(
         reinterpret_cast<DeviceWord*>(ptr),
         words);
 
-    // Load from words
     return *reinterpret_cast<T*>(words);
-
-#endif  // (CUB_PTX_VERSION <= 130)
 }
 
 
