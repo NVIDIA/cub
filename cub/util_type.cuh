@@ -276,7 +276,27 @@ struct UnitWord <float4>
  ******************************************************************************/
 
 /**
- * An key identifier paired with a corresponding value reduction
+ * An item value paired with a corresponding offset
+ */
+template <typename _T, typename _Offset>
+struct ItemOffsetPair
+{
+    typedef _T        T;
+    typedef _Offset   Offset;
+
+    T       value;      ///< Item value
+    Offset  offset;     ///< Offset
+
+    // Inequality operator
+    __host__ __device__ __forceinline__ bool operator !=(const ItemOffsetPair &b)
+    {
+        return (value != b.value) || (offset != b.offset);
+    }
+};
+
+
+/**
+ * A key identifier paired with a corresponding value
  */
 template <typename _Key, typename _Value>
 struct KeyValuePair
@@ -284,8 +304,15 @@ struct KeyValuePair
     typedef _Key        Key;
     typedef _Value      Value;
 
-    Value   value;          ///< Reduction value
+    Value   value;          ///< Value
     Key     key;            ///< Key identifier
+
+    // Inequality operator
+    __host__ __device__ __forceinline__ bool operator !=(const KeyValuePair &b)
+    {
+        return (value != b.value) || (key != b.key);
+    }
+
 };
 
 
@@ -295,7 +322,7 @@ struct KeyValuePair<int, long long>
     typedef int         Key;
     typedef long long   Value;
 
-    Value       value;          ///< Reduction value
+    Value       value;          ///< Value
     long long   key;            ///< Key identifier
 };
 
@@ -306,7 +333,7 @@ struct KeyValuePair<int, double>
     typedef int         Key;
     typedef double      Value;
 
-    Value       value;          ///< Reduction value
+    Value       value;          ///< Value
     long long   key;            ///< Key identifier
 };
 */

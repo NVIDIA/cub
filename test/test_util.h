@@ -353,6 +353,8 @@ int CoutCast(unsigned char val) { return val; }
 int CoutCast(signed char val) { return val; }
 
 
+
+
 /******************************************************************************
  * Test value initialization utilities
  ******************************************************************************/
@@ -402,6 +404,32 @@ __host__ __device__ __forceinline__ void InitValue(GenMode gen_mode, T &value, i
 
 
 /******************************************************************************
+ * Comparison and ostream operators
+ ******************************************************************************/
+
+
+/**
+ * ItemOffsetPair ostream operator
+ */
+template <typename T, typename Offset>
+std::ostream& operator<<(std::ostream& os, const cub::ItemOffsetPair<T, Offset> &val)
+{
+    os << '(' << val.value<< ',' << val.offset << ')';
+    return os;
+}
+
+/**
+ * KeyValuePair ostream operator
+ */
+template <typename Key, typename Value>
+std::ostream& operator<<(std::ostream& os, const cub::KeyValuePair<Key, Value> &val)
+{
+    os << '(' << val.key << ',' << val.value << ')';
+    return os;
+}
+
+
+/******************************************************************************
  * Comparison and ostream operators for CUDA vector types
  ******************************************************************************/
 
@@ -435,6 +463,13 @@ __host__ __device__ __forceinline__ void InitValue(GenMode gen_mode, T &value, i
         const T &b)                                         \
     {                                                       \
         return (a.x > b.x);                                 \
+    }                                                       \
+    /* Min */                                               \
+    __host__ __device__ __forceinline__ bool operator<(     \
+        const T &a,                                         \
+        const T &b)                                         \
+    {                                                       \
+        return (a.x < b.x);                                 \
     }                                                       \
     /* Summation */                                         \
     __host__ __device__ __forceinline__ T operator+(        \
@@ -479,6 +514,13 @@ __host__ __device__ __forceinline__ void InitValue(GenMode gen_mode, T &value, i
         const T &b)                                         \
     {                                                       \
         return (a.x > b.x);                                 \
+    }                                                       \
+    /* Min */                                               \
+    __host__ __device__ __forceinline__ bool operator<(     \
+        const T &a,                                         \
+        const T &b)                                         \
+    {                                                       \
+        return (a.x < b.x);                                 \
     }                                                       \
     /* Summation */                                         \
     __host__ __device__ __forceinline__ T operator+(        \
@@ -529,6 +571,13 @@ __host__ __device__ __forceinline__ void InitValue(GenMode gen_mode, T &value, i
         const T &b)                                         \
     {                                                       \
         return (a.x > b.x);                                 \
+    }                                                       \
+    /* Min */                                               \
+    __host__ __device__ __forceinline__ bool operator<(     \
+        const T &a,                                         \
+        const T &b)                                         \
+    {                                                       \
+        return (a.x < b.x);                                 \
     }                                                       \
     /* Summation */                                         \
     __host__ __device__ __forceinline__ T operator+(        \
@@ -581,7 +630,14 @@ __host__ __device__ __forceinline__ void InitValue(GenMode gen_mode, T &value, i
         const T &a,                                         \
         const T &b)                                         \
     {                                                       \
-    	return (a.x > b.x);                                 \
+        return (a.x > b.x);                                 \
+    }                                                       \
+    /* Min */                                               \
+    __host__ __device__ __forceinline__ bool operator<(     \
+        const T &a,                                         \
+        const T &b)                                         \
+    {                                                       \
+    	return (a.x < b.x);                                 \
     }                                                       \
     /* Summation */                                         \
     __host__ __device__ __forceinline__ T operator+(        \
@@ -660,21 +716,24 @@ struct TestFoo
     }
 
     // Inequality operator
-    __host__ __device__ __forceinline__ bool operator !=(const TestFoo &b)
+    __host__ __device__ __forceinline__ bool operator !=(const TestFoo &b) const
     {
         return (x != b.x) || (y != b.y) || (z != b.z) || (w != b.w);
     }
+
+    // Less than operator
+    __host__ __device__ __forceinline__ bool operator <(const TestFoo &b) const
+    {
+        return (x < b.x);
+    }
+
+    // Greater than operator
+    __host__ __device__ __forceinline__ bool operator >(const TestFoo &b) const
+    {
+        return (x > b.x);
+    }
+
 };
-
-
-/**
- * TestFoo max operator
- */
-bool __host__ __device__ __forceinline__ operator>(const TestFoo& first, const TestFoo& second)
-{
-    return (first.x > second.x);
-}
-
 
 /**
  * TestFoo ostream operator
@@ -732,10 +791,23 @@ struct TestBar
     }
 
     // Inequality operator
-    __host__ __device__ __forceinline__ bool operator !=(const TestBar &b)
+    __host__ __device__ __forceinline__ bool operator !=(const TestBar &b) const
     {
         return (x != b.x) || (y != b.y);
     }
+
+    // Less than operator
+    __host__ __device__ __forceinline__ bool operator <(const TestBar &b) const
+    {
+        return (x < b.x);
+    }
+
+    // Greater than operator
+    __host__ __device__ __forceinline__ bool operator >(const TestBar &b) const
+    {
+        return (x > b.x);
+    }
+
 };
 
 /* todo: uncomment once Fermi codegen bug is fixed
@@ -762,14 +834,6 @@ __device__ __forceinline__ void ThreadStore(
 }
 
 */
-
-/**
- * TestBar max operator
- */
-bool __host__ __device__ __forceinline__ operator>(const TestBar& first, const TestBar& second)
-{
-    return (first.x > second.x);
-}
 
 /**
  * TestBar ostream operator
