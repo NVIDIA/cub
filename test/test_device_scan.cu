@@ -428,6 +428,13 @@ void Initialize(
     {
         InitValue(gen_mode, h_in[i], i);
     }
+
+    if (g_verbose)
+    {
+        printf("Input:\n");
+        DisplayResults(h_in, num_items);
+        printf("\n\n");
+    }
 }
 
 /**

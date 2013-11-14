@@ -337,6 +337,8 @@ void Initialize(
     int             begin_bit,
     int             end_bit)
 {
+    const bool KEYS_ONLY = Equals<Value, NullType>::VALUE;
+
     Pair<Key, Value> *h_pairs = new Pair<Key, Value>[num_items];
 
     for (int i = 0; i < num_items; ++i)
@@ -365,6 +367,20 @@ void Initialize(
         h_pairs[i].key    = h_keys[i];
         h_pairs[i].value  = h_values[i];
     }
+
+    if (g_verbose)
+    {
+        printf("Input keys:\n");
+        DisplayResults(h_keys, num_items);
+        printf("\n\n");
+        if (!KEYS_ONLY)
+        {
+            printf("Input values:\n");
+            DisplayResults(h_values, num_items);
+            printf("\n\n");
+        }
+    }
+
 
     if (DESCENDING) std::reverse(h_pairs, h_pairs + num_items);
     std::stable_sort(h_pairs, h_pairs + num_items);

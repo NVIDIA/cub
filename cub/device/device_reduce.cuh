@@ -43,6 +43,7 @@
 #include "../grid/grid_queue.cuh"
 #include "../util_debug.cuh"
 #include "../util_device.cuh"
+#include "../util_iterator.cuh"
 #include "../util_namespace.cuh"
 
 /// Optional outer namespace(s)
@@ -187,10 +188,15 @@ struct DeviceReduceDispatch
                 GRID_MAPPING_DYNAMIC>               ///< How to map tiles of input onto thread blocks
             ReduceRegionPolicy1B;
 
+        enum {
+            NOMINAL_4B_ITEMS_PER_THREAD = 20,
+            ITEMS_PER_THREAD            = CUB_MIN(NOMINAL_4B_ITEMS_PER_THREAD, CUB_MAX(1, (NOMINAL_4B_ITEMS_PER_THREAD * 4 / sizeof(T)))),
+        };
+
         // ReduceRegionPolicy4B (GTX Titan: 254.2 GB/s @ 48M 4B items)
         typedef BlockReduceRegionPolicy<
                 512,                                ///< Threads per thread block
-                20,                                 ///< Items per thread per tile of input
+                ITEMS_PER_THREAD,                   ///< Items per thread per tile of input
                 1,                                  ///< Number of items per vectorized load
                 BLOCK_REDUCE_RAKING,                ///< Cooperative block-wide reduction algorithm to use
                 LOAD_DEFAULT,                       ///< Cache load modifier
@@ -198,9 +204,9 @@ struct DeviceReduceDispatch
             ReduceRegionPolicy4B;
 
         // ReduceRegionPolicy
-        typedef typename If<(sizeof(T) < 4),
-            ReduceRegionPolicy1B,
-            ReduceRegionPolicy4B>::Type ReduceRegionPolicy;
+        typedef typename If<(sizeof(T) >= 4),
+            ReduceRegionPolicy4B,
+            ReduceRegionPolicy1B>::Type ReduceRegionPolicy;
 
         // SingleTilePolicy
         typedef BlockReduceRegionPolicy<
@@ -734,33 +740,41 @@ struct DeviceReduce
      * \iterator
      *
      * \par
-     * The code snippet below illustrates the max reduction of a device vector of \p int items.
+     * The code snippet below illustrates a custom max reduction of a device vector of \p int items.
      * \par
      * \code
      * #include <cub/cub.cuh>
-     * ...
      *
-     * // Declare and initialize device pointers for input and output
-     * int *d_reduce_input, *d_aggregate;
+     * // Custom max functor
+     * struct MyMax
+     * {
+     *     __host__ __device__ __forceinline__ int operator()(const int &a, const int &b)
+     *     {
+     *         return (b < a) ? b : a;
+     *     }
+     * };
+     *
+     * // Declare and initialize device pointers for input array and output aggregate
+     * int *d_input;
+     * int *d_aggregate;
      * int num_items = ...
-     * ...
      *
-     * // Determine temporary device storage requirements for reduction
+     * // Determine temporary device storage requirements
      * void *d_temp_storage = NULL;
      * size_t temp_storage_bytes = 0;
-     * cub::DeviceReduce::Reduce(d_temp_storage, temp_storage_bytes, d_reduce_input, d_aggregate, num_items, cub::Max());
+     * cub::DeviceReduce::Reduce(d_temp_storage, temp_storage_bytes, d_input, d_aggregate, num_items, MyMax());
      *
-     * // Allocate temporary storage for reduction
+     * // Allocate temporary storage
      * cudaMalloc(&d_temp_storage, temp_storage_bytes);
      *
-     * // Run reduction (max)
-     * cub::DeviceReduce::Reduce(d_temp_storage, temp_storage_bytes, d_reduce_input, d_aggregate, num_items, cub::Max());
+     * // Run reduction
+     * cub::DeviceReduce::Reduce(d_temp_storage, temp_storage_bytes, d_input, d_aggregate, num_items, MyMax());
      *
      * \endcode
      *
      * \tparam InputIterator      <b>[inferred]</b> Random-access iterator type for input (may be a simple pointer type)
      * \tparam OutputIterator     <b>[inferred]</b> Random-access iterator type for output (may be a simple pointer type)
-     * \tparam ReductionOp          <b>[inferred]</b> Binary reduction operator type having member <tt>T operator()(const T &a, const T &b)</tt>
+     * \tparam ReductionOp        <b>[inferred]</b> Binary reduction operator type having member <tt>T operator()(const T &a, const T &b)</tt>
      */
     template <
         typename                    InputIterator,
@@ -781,12 +795,7 @@ struct DeviceReduce
         typedef int Offset;
 
         // Dispatch type
-        typedef DeviceReduceDispatch<
-                InputIterator,
-                OutputIterator,
-                Offset,
-                ReductionOp>
-            DeviceReduceDispatch;
+        typedef DeviceReduceDispatch<InputIterator, OutputIterator, Offset, ReductionOp> DeviceReduceDispatch;
 
         return DeviceReduceDispatch::Dispatch(
             d_temp_storage,
@@ -817,23 +826,22 @@ struct DeviceReduce
      * \par
      * \code
      * #include <cub/cub.cuh>
-     * ...
      *
-     * // Declare and initialize device pointers for input and output
-     * int *d_reduce_input, *d_aggregate;
+     * // Declare and initialize device pointers for input array and output sum
+     * int *d_input;
+     * int *d_sum;
      * int num_items = ...
-     * ...
      *
-     * // Determine temporary device storage requirements for summation
+     * // Determine temporary device storage requirements
      * void *d_temp_storage = NULL;
      * size_t temp_storage_bytes = 0;
-     * cub::DeviceReduce::Sum(d_temp_storage, temp_storage_bytes, d_reduce_input, d_aggregate, num_items);
+     * cub::DeviceReduce::Sum(d_temp_storage, temp_storage_bytes, d_input, d_sum, num_items);
      *
-     * // Allocate temporary storage for summation
+     * // Allocate temporary storage
      * cudaMalloc(&d_temp_storage, temp_storage_bytes);
      *
-     * // Run reduction summation
-     * cub::DeviceReduce::Sum(d_temp_storage, temp_storage_bytes, d_reduce_input, d_aggregate, num_items);
+     * // Run sum-reduction
+     * cub::DeviceReduce::Sum(d_temp_storage, temp_storage_bytes, d_input, d_sum, num_items);
      *
      * \endcode
      *
@@ -857,12 +865,7 @@ struct DeviceReduce
         typedef int Offset;
 
         // Dispatch type
-        typedef DeviceReduceDispatch<
-                InputIterator,
-                OutputIterator,
-                Offset,
-                cub::Sum>
-            DeviceReduceDispatch;
+        typedef DeviceReduceDispatch<InputIterator, OutputIterator, Offset, cub::Sum> DeviceReduceDispatch;
 
         return DeviceReduceDispatch::Dispatch(
             d_temp_storage,
@@ -875,6 +878,304 @@ struct DeviceReduce
             debug_synchronous);
     }
 
+
+    /**
+     * \brief Finds the first device-wide minimum using the less-than ('<') operator.
+     *
+     * \par
+     * Does not support non-commutative minumums.
+     *
+     * \devicestorage
+     *
+     * \cdp
+     *
+     * \iterator
+     *
+     * \par
+     * The code snippet below illustrates the min-reduction of a device vector of \p int items.
+     * \par
+     * \code
+     * #include <cub/cub.cuh>
+     *
+     * // Declare and initialize device pointers for input array and output minimum
+     * int *d_input;
+     * int *d_min;
+     * int num_items = ...
+     *
+     * // Determine temporary device storage requirements
+     * void *d_temp_storage = NULL;
+     * size_t temp_storage_bytes = 0;
+     * cub::DeviceReduce::Min(d_temp_storage, temp_storage_bytes, d_input, d_min, num_items);
+     *
+     * // Allocate temporary storage
+     * cudaMalloc(&d_temp_storage, temp_storage_bytes);
+     *
+     * // Run min-reduction
+     * cub::DeviceReduce::Min(d_temp_storage, temp_storage_bytes, d_input, d_min, num_items);
+     *
+     * \endcode
+     *
+     * \tparam InputIterator      <b>[inferred]</b> Random-access iterator type for input (may be a simple pointer type)
+     * \tparam OutputIterator     <b>[inferred]</b> Random-access iterator type for output (may be a simple pointer type)
+     */
+    template <
+        typename                    InputIterator,
+        typename                    OutputIterator>
+    __host__ __device__ __forceinline__
+    static cudaError_t Min(
+        void                        *d_temp_storage,                    ///< [in] %Device allocation of temporary storage.  When NULL, the required allocation size is returned in \p temp_storage_bytes and no work is done.
+        size_t                      &temp_storage_bytes,                ///< [in,out] Size in bytes of \p d_temp_storage allocation.
+        InputIterator               d_in,                               ///< [in] Input data to reduce
+        OutputIterator              d_out,                              ///< [out] Output location for result
+        int                         num_items,                          ///< [in] Number of items to reduce
+        cudaStream_t                stream              = 0,            ///< [in] <b>[optional]</b> CUDA stream to launch kernels within.  Default is stream<sub>0</sub>.
+        bool                        debug_synchronous   = false)        ///< [in] <b>[optional]</b> Whether or not to synchronize the stream after every kernel launch to check for errors.  Also causes launch configurations to be printed to the console.  Default is \p false.
+    {
+        // Signed integer type for global offsets
+        typedef int Offset;
+
+        // Dispatch type
+        typedef DeviceReduceDispatch<InputIterator, OutputIterator, Offset, cub::Min> DeviceReduceDispatch;
+
+        return DeviceReduceDispatch::Dispatch(
+            d_temp_storage,
+            temp_storage_bytes,
+            d_in,
+            d_out,
+            num_items,
+            cub::Min(),
+            stream,
+            debug_synchronous);
+    }
+
+
+    /**
+     * \brief Finds the first device-wide minimum using the less-than ('<') operator, also returning the index of that item
+     *
+     * \par
+     * Assuming the input \p d_in has value type \p T, the output \p d_out must have value type
+     * <tt>ItemOffsetPair<T, int></tt>.  The minimum value is returned in <tt>d_out.value</tt> and its
+     * location in the input array is returned in <tt>d_out.offset</tt>.
+     *
+     * \par
+     * Does not support non-commutative minumums.
+     *
+     * \devicestorage
+     *
+     * \cdp
+     *
+     * \iterator
+     *
+     * \par
+     * The code snippet below illustrates the argmin-reduction of a device vector of \p int items.
+     * \par
+     * \code
+     * #include <cub/cub.cuh>
+     *
+     * // Declare and initialize device pointers for input array and output argmin
+     * int *d_input;
+     * ItemOffsetPair<int, int> *d_argmin;
+     * int num_items = ...
+     *
+     * // Determine temporary device storage requirements
+     * void *d_temp_storage = NULL;
+     * size_t temp_storage_bytes = 0;
+     * cub::DeviceReduce::ArgMin(d_temp_storage, temp_storage_bytes, d_input, d_argmin, num_items);
+     *
+     * // Allocate temporary storage
+     * cudaMalloc(&d_temp_storage, temp_storage_bytes);
+     *
+     * // Run argmin-reduction
+     * cub::DeviceReduce::ArgMin(d_temp_storage, temp_storage_bytes, d_input, d_argmin, num_items);
+     *
+     * \endcode
+     *
+     * \tparam InputIterator      <b>[inferred]</b> Random-access iterator type for input having some value type \p T (may be a simple pointer type)
+     * \tparam OutputIterator     <b>[inferred]</b> Random-access iterator type for output having value type <tt>ItemOffsetPair<T, int></tt> (may be a simple pointer type)
+     */
+    template <
+        typename                    InputIterator,
+        typename                    OutputIterator>
+    __host__ __device__ __forceinline__
+    static cudaError_t ArgMin(
+        void                        *d_temp_storage,                    ///< [in] %Device allocation of temporary storage.  When NULL, the required allocation size is returned in \p temp_storage_bytes and no work is done.
+        size_t                      &temp_storage_bytes,                ///< [in,out] Size in bytes of \p d_temp_storage allocation.
+        InputIterator               d_in,                               ///< [in] Input data to reduce
+        OutputIterator              d_out,                              ///< [out] Output location for result
+        int                         num_items,                          ///< [in] Number of items to reduce
+        cudaStream_t                stream              = 0,            ///< [in] <b>[optional]</b> CUDA stream to launch kernels within.  Default is stream<sub>0</sub>.
+        bool                        debug_synchronous   = false)        ///< [in] <b>[optional]</b> Whether or not to synchronize the stream after every kernel launch to check for errors.  Also causes launch configurations to be printed to the console.  Default is \p false.
+    {
+        // Signed integer type for global offsets
+        typedef int Offset;
+
+        // Wrapped input iterator
+        typedef ArgIndexInputIterator<InputIterator, int> ArgIndexInputIterator;
+        ArgIndexInputIterator d_argmin_in(d_in, 0);
+
+        // Dispatch type
+        typedef DeviceReduceDispatch<ArgIndexInputIterator, OutputIterator, Offset, cub::ArgMin> DeviceReduceDispatch;
+
+        return DeviceReduceDispatch::Dispatch(
+            d_temp_storage,
+            temp_storage_bytes,
+            d_argmin_in,
+            d_out,
+            num_items,
+            cub::ArgMin(),
+            stream,
+            debug_synchronous);
+    }
+
+
+    /**
+     * \brief Computes a device-wide maximum using the greater-than ('>') operator.
+     *
+     * \par
+     * Does not support non-commutative maximums.
+     *
+     * \devicestorage
+     *
+     * \cdp
+     *
+     * \iterator
+     *
+     * \par
+     * The code snippet below illustrates the max-reduction of a device vector of \p int items.
+     * \par
+     * \code
+     * #include <cub/cub.cuh>
+     * ...
+     *
+     * // Declare and initialize device pointers for input array and output maximum
+     * int *d_input;
+     * int *d_max;
+     * int num_items = ...
+     *
+     * // Determine temporary device storage requirements
+     * void *d_temp_storage = NULL;
+     * size_t temp_storage_bytes = 0;
+     * cub::DeviceReduce::Max(d_temp_storage, temp_storage_bytes, d_input, d_max, num_items);
+     *
+     * // Allocate temporary storage
+     * cudaMalloc(&d_temp_storage, temp_storage_bytes);
+     *
+     * // Run max-reduction
+     * cub::DeviceReduce::Max(d_temp_storage, temp_storage_bytes, d_input, d_max, num_items);
+     *
+     * \endcode
+     *
+     * \tparam InputIterator      <b>[inferred]</b> Random-access iterator type for input (may be a simple pointer type)
+     * \tparam OutputIterator     <b>[inferred]</b> Random-access iterator type for output (may be a simple pointer type)
+     */
+    template <
+        typename                    InputIterator,
+        typename                    OutputIterator>
+    __host__ __device__ __forceinline__
+    static cudaError_t Max(
+        void                        *d_temp_storage,                    ///< [in] %Device allocation of temporary storage.  When NULL, the required allocation size is returned in \p temp_storage_bytes and no work is done.
+        size_t                      &temp_storage_bytes,                ///< [in,out] Size in bytes of \p d_temp_storage allocation.
+        InputIterator               d_in,                               ///< [in] Input data to reduce
+        OutputIterator              d_out,                              ///< [out] Output location for result
+        int                         num_items,                          ///< [in] Number of items to reduce
+        cudaStream_t                stream              = 0,            ///< [in] <b>[optional]</b> CUDA stream to launch kernels within.  Default is stream<sub>0</sub>.
+        bool                        debug_synchronous   = false)        ///< [in] <b>[optional]</b> Whether or not to synchronize the stream after every kernel launch to check for errors.  Also causes launch configurations to be printed to the console.  Default is \p false.
+    {
+        // Signed integer type for global offsets
+        typedef int Offset;
+
+        // Dispatch type
+        typedef DeviceReduceDispatch<InputIterator, OutputIterator, Offset, cub::Max> DeviceReduceDispatch;
+
+        return DeviceReduceDispatch::Dispatch(
+            d_temp_storage,
+            temp_storage_bytes,
+            d_in,
+            d_out,
+            num_items,
+            cub::Max(),
+            stream,
+            debug_synchronous);
+    }
+
+
+    /**
+     * \brief Finds the first device-wide maximum using the greater-than ('>') operator, also returning the index of that item
+     *
+     * \par
+     * Assuming the input \p d_in has value type \p T, the output \p d_out must have value type
+     * <tt>ItemOffsetPair<T, int></tt>.  The maximum value is returned in <tt>d_out.value</tt> and its
+     * location in the input array is returned in <tt>d_out.offset</tt>.
+     *
+     * \par
+     * Does not support non-commutative maximums.
+     *
+     * \devicestorage
+     *
+     * \cdp
+     *
+     * \iterator
+     *
+     * \par
+     * The code snippet below illustrates the argmax-reduction of a device vector of \p int items.
+     * \par
+     * \code
+     * #include <cub/cub.cuh>
+     *
+     * // Declare and initialize device pointers for input array and output argmax
+     * int *d_input;
+     * ItemOffsetPair<int, int> *d_argmax;
+     * int num_items = ...
+     *
+     * // Determine temporary device storage requirements
+     * void *d_temp_storage = NULL;
+     * size_t temp_storage_bytes = 0;
+     * cub::DeviceReduce::ArgMax(d_temp_storage, temp_storage_bytes, d_input, d_argmax, num_items);
+     *
+     * // Allocate temporary storage
+     * cudaMalloc(&d_temp_storage, temp_storage_bytes);
+     *
+     * // Run argmax-reduction
+     * cub::DeviceReduce::ArgMax(d_temp_storage, temp_storage_bytes, d_input, d_argmax, num_items);
+     *
+     * \endcode
+     *
+     * \tparam InputIterator      <b>[inferred]</b> Random-access iterator type for input having some value type \p T (may be a simple pointer type)
+     * \tparam OutputIterator     <b>[inferred]</b> Random-access iterator type for output having value type <tt>ItemOffsetPair<T, int></tt> (may be a simple pointer type)
+     */
+    template <
+        typename                    InputIterator,
+        typename                    OutputIterator>
+    __host__ __device__ __forceinline__
+    static cudaError_t ArgMax(
+        void                        *d_temp_storage,                    ///< [in] %Device allocation of temporary storage.  When NULL, the required allocation size is returned in \p temp_storage_bytes and no work is done.
+        size_t                      &temp_storage_bytes,                ///< [in,out] Size in bytes of \p d_temp_storage allocation.
+        InputIterator               d_in,                               ///< [in] Input data to reduce
+        OutputIterator              d_out,                              ///< [out] Output location for result
+        int                         num_items,                          ///< [in] Number of items to reduce
+        cudaStream_t                stream              = 0,            ///< [in] <b>[optional]</b> CUDA stream to launch kernels within.  Default is stream<sub>0</sub>.
+        bool                        debug_synchronous   = false)        ///< [in] <b>[optional]</b> Whether or not to synchronize the stream after every kernel launch to check for errors.  Also causes launch configurations to be printed to the console.  Default is \p false.
+    {
+        // Signed integer type for global offsets
+        typedef int Offset;
+
+        // Wrapped input iterator
+        typedef ArgIndexInputIterator<InputIterator, int> ArgIndexInputIterator;
+        ArgIndexInputIterator d_argmax_in(d_in, 0);
+
+        // Dispatch type
+        typedef DeviceReduceDispatch<ArgIndexInputIterator, OutputIterator, Offset, cub::ArgMax> DeviceReduceDispatch;
+
+        return DeviceReduceDispatch::Dispatch(
+            d_temp_storage,
+            temp_storage_bytes,
+            d_argmax_in,
+            d_out,
+            num_items,
+            cub::ArgMax(),
+            stream,
+            debug_synchronous);
+    }
 
 };
 

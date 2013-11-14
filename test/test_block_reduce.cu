@@ -460,8 +460,12 @@ void Test(
     TestFullTile<ALGORITHM, BLOCK_THREADS, T>(SEQ_INC, reduction_op, type_string);
     TestPartialTile<ALGORITHM, BLOCK_THREADS, T>(SEQ_INC, reduction_op, type_string);
 
-    TestFullTile<ALGORITHM, BLOCK_THREADS, T>(RANDOM, reduction_op, type_string);
-    TestPartialTile<ALGORITHM, BLOCK_THREADS, T>(RANDOM, reduction_op, type_string);
+    if (Traits<T>::CATEGORY != FLOATING_POINT)
+    {
+        // Don't test randomly-generated floats b/c of stability
+        TestFullTile<ALGORITHM, BLOCK_THREADS, T>(RANDOM, reduction_op, type_string);
+        TestPartialTile<ALGORITHM, BLOCK_THREADS, T>(RANDOM, reduction_op, type_string);
+    }
 }
 
 
@@ -494,8 +498,9 @@ void Test(
     Test<7, T>(reduction_op, type_string);
     Test<32, T>(reduction_op, type_string);
     Test<63, T>(reduction_op, type_string);
-    Test<65, T>(reduction_op, type_string);
+    Test<97, T>(reduction_op, type_string);
     Test<128, T>(reduction_op, type_string);
+    Test<238, T>(reduction_op, type_string);
 }
 
 
@@ -552,6 +557,7 @@ int main(int argc, char** argv)
             Test<short>(CUB_TYPE_STRING(short));
             Test<int>(CUB_TYPE_STRING(int));
             Test<long long>(CUB_TYPE_STRING(long long));
+            Test<double>(CUB_TYPE_STRING(double));
 
             // vector types
             Test<char2>(CUB_TYPE_STRING(char2));
