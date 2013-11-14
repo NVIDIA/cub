@@ -109,6 +109,21 @@ struct Max
 
 
 /**
+ * \brief Arg max functor (keeps the value and offset of the first item strictly bigger than all other items)
+ */
+struct ArgMax
+{
+    template <typename T, typename Offset>
+    __host__ __device__ __forceinline__ ItemOffsetPair<T, Offset> operator()(
+        const ItemOffsetPair<T, Offset> &a,
+        const ItemOffsetPair<T, Offset> &b)
+    {
+        return (b.value > a.value) ? b : a;
+    }
+};
+
+
+/**
  * \brief Default min functor
  */
 struct Min
@@ -118,6 +133,21 @@ struct Min
     __host__ __device__ __forceinline__ T operator()(const T &a, const T &b)
     {
         return CUB_MIN(a, b);
+    }
+};
+
+
+/**
+ * \brief Arg min functor (keeps the value and offset of the first item strictly smaller than all other items)
+ */
+struct ArgMin
+{
+    template <typename T, typename Offset>
+    __host__ __device__ __forceinline__ ItemOffsetPair<T, Offset> operator()(
+        const ItemOffsetPair<T, Offset> &a,
+        const ItemOffsetPair<T, Offset> &b)
+    {
+        return (b.value < a.value) ? b : a;
     }
 };
 
