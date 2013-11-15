@@ -53,14 +53,14 @@ namespace cub {
 /******************************************************************************
  * Vector type inference utilities.  For example:
  *
- * typename VectorHelper<unsigned int, 2>::Type    // Aliases uint2
+ * typename CubVector<unsigned int, 2>::Type    // Aliases uint2
  *
  ******************************************************************************/
 
 /**
- * \brief Exposes a member typedef \p Type that names the corresponding CUDA vector type if one exists.  Otherwise \p Type refers to the VectorHelper structure itself, which will wrap the corresponding \p x, \p y, etc. vector fields.
+ * \brief Exposes a member typedef \p Type that names the corresponding CUDA vector type if one exists.  Otherwise \p Type refers to the CubVector structure itself, which will wrap the corresponding \p x, \p y, etc. vector fields.
  */
-template <typename T, int vec_elements> struct VectorHelper;
+template <typename T, int vec_elements> struct CubVector;
 
 #ifndef DOXYGEN_SHOULD_SKIP_THIS    // Do not document
 
@@ -75,60 +75,138 @@ enum
  * Generic vector-1 type
  */
 template <typename T>
-struct VectorHelper<T, 1>
+struct CubVector<T, 1>
 {
     T x;
 
-    typedef VectorHelper<T, 1> Type;
+    typedef T BaseType;
+    typedef CubVector<T, 1> Type;
 };
 
 /**
  * Generic vector-2 type
  */
 template <typename T>
-struct VectorHelper<T, 2>
+struct CubVector<T, 2>
 {
     T x;
     T y;
 
-    typedef VectorHelper<T, 2> Type;
+    typedef T BaseType;
+    typedef CubVector<T, 2> Type;
 };
 
 /**
  * Generic vector-3 type
  */
 template <typename T>
-struct VectorHelper<T, 3>
+struct CubVector<T, 3>
 {
     T x;
     T y;
     T z;
 
-    typedef VectorHelper<T, 3> Type;
+    typedef T BaseType;
+    typedef CubVector<T, 3> Type;
 };
 
 /**
  * Generic vector-4 type
  */
 template <typename T>
-struct VectorHelper<T, 4>
+struct CubVector<T, 4>
 {
     T x;
     T y;
     T z;
     T w;
 
-    typedef VectorHelper<T, 4> Type;
+    typedef T BaseType;
+    typedef CubVector<T, 4> Type;
 };
 
 /**
  * Macro for expanding partially-specialized built-in vector types
  */
-#define CUB_DEFINE_VECTOR_TYPE(base_type,short_type)                                                            \
-  template<> struct VectorHelper<base_type, 1> { typedef short_type##1 Type; };         \
-  template<> struct VectorHelper<base_type, 2> { typedef short_type##2 Type; };         \
-  template<> struct VectorHelper<base_type, 3> { typedef short_type##3 Type; };         \
-  template<> struct VectorHelper<base_type, 4> { typedef short_type##4 Type; };
+#define CUB_DEFINE_VECTOR_TYPE(base_type,short_type)                                                    \
+                                                                                                        \
+    template<> struct CubVector<base_type, 1> : short_type##1                                           \
+    {                                                                                                   \
+      typedef base_type       BaseType;                                                                 \
+      typedef short_type##1   Type;                                                                     \
+      __host__ __device__ __forceinline__ CubVector operator+(const CubVector &other) const {           \
+    	  CubVector retval;                                                                             \
+          retval.x = x + other.x;                                                                       \
+          return retval;                                                                                \
+      }                                                                                                 \
+      __host__ __device__ __forceinline__ CubVector operator-(const CubVector &other) const {           \
+          CubVector retval;                                                                             \
+          retval.x = x - other.x;                                                                       \
+          return retval;                                                                                \
+      }                                                                                                 \
+    };                                                                                                  \
+                                                                                                        \
+    template<> struct CubVector<base_type, 2> : short_type##2                                           \
+    {                                                                                                   \
+    	typedef base_type       BaseType;                                                               \
+    	typedef short_type##2   Type;                                                                   \
+    	__host__ __device__ __forceinline__ CubVector operator+(const CubVector &other) const {         \
+    		CubVector retval;                                                                           \
+    		retval.x = x + other.x;                                                                     \
+            retval.y = y + other.y;                                                                     \
+    		return retval;                                                                              \
+    	}                                                                                               \
+    	__host__ __device__ __forceinline__ CubVector operator-(const CubVector &other) const {         \
+    		CubVector retval;                                                                           \
+    		retval.x = x - other.x;                                                                     \
+            retval.y = y - other.y;                                                                     \
+    		return retval;                                                                              \
+    	}                                                                                               \
+    };                                                                                                  \
+                                                                                                        \
+    template<> struct CubVector<base_type, 3> : short_type##3                                           \
+    {                                                                                                   \
+    	typedef base_type       BaseType;                                                               \
+    	typedef short_type##3   Type;                                                                   \
+    	__host__ __device__ __forceinline__ CubVector operator+(const CubVector &other) const {         \
+    		CubVector retval;                                                                           \
+    		retval.x = x + other.x;                                                                     \
+    		retval.y = y + other.y;                                                                     \
+            retval.z = z + other.z;                                                                     \
+    		return retval;                                                                              \
+    	}                                                                                               \
+    	__host__ __device__ __forceinline__ CubVector operator-(const CubVector &other) const {         \
+    		CubVector retval;                                                                           \
+    		retval.x = x - other.x;                                                                     \
+    		retval.y = y - other.y;                                                                     \
+            retval.z = z - other.z;                                                                     \
+    		return retval;                                                                              \
+    	}                                                                                               \
+    };                                                                                                  \
+                                                                                                        \
+    template<> struct CubVector<base_type, 4> : short_type##4                                           \
+    {                                                                                                   \
+        typedef base_type       BaseType;                                                               \
+        typedef short_type##4   Type;                                                                   \
+        __host__ __device__ __forceinline__ CubVector operator+(const CubVector &other) const {         \
+            CubVector retval;                                                                           \
+            retval.x = x + other.x;                                                                     \
+            retval.y = y + other.y;                                                                     \
+            retval.z = z + other.z;                                                                     \
+            retval.w = w + other.w;                                                                     \
+            return retval;                                                                              \
+        }                                                                                               \
+        __host__ __device__ __forceinline__ CubVector operator-(const CubVector &other) const {         \
+            CubVector retval;                                                                           \
+            retval.x = x - other.x;                                                                     \
+            retval.y = y - other.y;                                                                     \
+            retval.z = z - other.z;                                                                     \
+            retval.w = w - other.w;                                                                     \
+            return retval;                                                                              \
+        }                                                                                               \
+    };
+
+
 
 // Expand CUDA vector types for built-in primitives
 CUB_DEFINE_VECTOR_TYPE(char,               char)

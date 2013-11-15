@@ -395,7 +395,7 @@ var searchBox = new SearchBox("searchBox", "search",false,'Search');
 <div class="line"><a name="l00438"></a><span class="lineno">  438</span>&#160;    };</div>
 <div class="line"><a name="l00439"></a><span class="lineno">  439</span>&#160;</div>
 <div class="line"><a name="l00440"></a><span class="lineno">  440</span>&#160;    <span class="comment">// Vector type</span></div>
-<div class="line"><a name="l00441"></a><span class="lineno">  441</span>&#160;    <span class="keyword">typedef</span> <span class="keyword">typename</span> VectorHelper&lt;T, VEC_SIZE&gt;::Type Vector;</div>
+<div class="line"><a name="l00441"></a><span class="lineno">  441</span>&#160;    <span class="keyword">typedef</span> <span class="keyword">typename</span> CubVector&lt;T, VEC_SIZE&gt;::Type Vector;</div>
 <div class="line"><a name="l00442"></a><span class="lineno">  442</span>&#160;</div>
 <div class="line"><a name="l00443"></a><span class="lineno">  443</span>&#160;    <span class="comment">// Alias local data (use raw_items array here which should get optimized away to prevent conservative PTXAS lmem spilling)</span></div>
 <div class="line"><a name="l00444"></a><span class="lineno">  444</span>&#160;    T raw_items[ITEMS_PER_THREAD];</div>
