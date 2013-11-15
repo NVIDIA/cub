@@ -539,7 +539,7 @@ void TestPointer(
 {
     printf("\n\nPointer %s cub::DeviceReduce::%s %d items, %s %d-byte elements, gen-mode %s\n",
         (BACKEND == CDP) ? "CDP CUB" : (BACKEND == THRUST) ? "Thrust" : "CUB",
-        (Equals<ReductionOp, Sum>::VALUE) ? "Sum" : "Reduce",
+        (Equals<ReductionOp, Sum>::VALUE) ? "Sum" : (Equals<ReductionOp, Min>::VALUE) ? "Min" : "Max",
         num_items, type_string, (int) sizeof(T),
         (gen_mode == RANDOM) ? "RANDOM" : (gen_mode == SEQ_INC) ? "SEQUENTIAL" : "HOMOGENOUS");
     fflush(stdout);
@@ -682,7 +682,7 @@ void TestIterator(
 {
     printf("\n\nIterator %s cub::DeviceReduce::%s %d items, %s %d-byte elements\n",
         (BACKEND == CDP) ? "CDP CUB" : (BACKEND == THRUST) ? "Thrust" : "CUB",
-        (Equals<ReductionOp, Sum>::VALUE) ? "Sum" : "Reduce",
+        (Equals<ReductionOp, Sum>::VALUE) ? "Sum" : (Equals<ReductionOp, Min>::VALUE) ? "Min" : "Max",
         num_items, type_string, (int) sizeof(T));
     fflush(stdout);
 
@@ -893,7 +893,6 @@ int main(int argc, char** argv)
     // Initialize device
     CubDebugExit(args.DeviceInit());
     printf("\n");
-
 
     if (quick)
     {

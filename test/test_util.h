@@ -452,6 +452,13 @@ std::ostream& operator<<(std::ostream& os, const cub::KeyValuePair<Key, Value> &
     {                                                       \
         return (a.x != b.x);                                \
     }                                                       \
+    /* Equality */                                          \
+    __host__ __device__ __forceinline__ bool operator==(    \
+        const T &a,                                         \
+        const T &b)                                         \
+    {                                                       \
+        return (a.x == b.x);                                \
+    }                                                       \
     /* Test initialization */                               \
     __host__ __device__ __forceinline__ void InitValue(GenMode gen_mode, T &value, int index = 0)   \
     {                                                       \
@@ -499,8 +506,16 @@ std::ostream& operator<<(std::ostream& os, const cub::KeyValuePair<Key, Value> &
         const T &a,                                         \
         const T &b)                                         \
     {                                                       \
-        return (a.x != b.x) &&                              \
+        return (a.x != b.x) ||                              \
             (a.y != b.y);                                   \
+    }                                                       \
+    /* Equality */                                          \
+    __host__ __device__ __forceinline__ bool operator==(    \
+        const T &a,                                         \
+        const T &b)                                         \
+    {                                                       \
+        return (a.x == b.x) &&                              \
+            (a.y == b.y);                                   \
     }                                                       \
     /* Test initialization */                               \
     __host__ __device__ __forceinline__ void InitValue(GenMode gen_mode, T &value, int index = 0)   \
@@ -513,14 +528,16 @@ std::ostream& operator<<(std::ostream& os, const cub::KeyValuePair<Key, Value> &
         const T &a,                                         \
         const T &b)                                         \
     {                                                       \
-        return (a.x > b.x);                                 \
+        if (a.x > b.x) return true; else if (b.x > a.x) return false;   \
+        return a.y > b.y;                                               \
     }                                                       \
     /* Min */                                               \
     __host__ __device__ __forceinline__ bool operator<(     \
         const T &a,                                         \
         const T &b)                                         \
     {                                                       \
-        return (a.x < b.x);                                 \
+        if (a.x < b.x) return true; else if (b.x < a.x) return false;   \
+        return a.y < b.y;                                               \
     }                                                       \
     /* Summation */                                         \
     __host__ __device__ __forceinline__ T operator+(        \
@@ -554,9 +571,18 @@ std::ostream& operator<<(std::ostream& os, const cub::KeyValuePair<Key, Value> &
         const T &a,                                         \
         const T &b)                                         \
     {                                                       \
-        return (a.x != b.x) &&                              \
-            (a.y != b.y) &&                                 \
+        return (a.x != b.x) ||                              \
+            (a.y != b.y) ||                                 \
             (a.z != b.z);                                   \
+    }                                                       \
+    /* Equality */                                          \
+    __host__ __device__ __forceinline__ bool operator==(    \
+        const T &a,                                         \
+        const T &b)                                         \
+    {                                                       \
+        return (a.x == b.x) &&                              \
+            (a.y == b.y) &&                                 \
+            (a.z == b.z);                                   \
     }                                                       \
     /* Test initialization */                               \
     __host__ __device__ __forceinline__ void InitValue(GenMode gen_mode, T &value, int index = 0)   \
@@ -570,14 +596,18 @@ std::ostream& operator<<(std::ostream& os, const cub::KeyValuePair<Key, Value> &
         const T &a,                                         \
         const T &b)                                         \
     {                                                       \
-        return (a.x > b.x);                                 \
+        if (a.x > b.x) return true; else if (b.x > a.x) return false;   \
+        if (a.y > b.y) return true; else if (b.y > a.y) return false;   \
+        return a.z > b.z;                                               \
     }                                                       \
     /* Min */                                               \
     __host__ __device__ __forceinline__ bool operator<(     \
         const T &a,                                         \
         const T &b)                                         \
     {                                                       \
-        return (a.x < b.x);                                 \
+        if (a.x < b.x) return true; else if (b.x < a.x) return false;   \
+        if (a.y < b.y) return true; else if (b.y < a.y) return false;   \
+        return a.z < b.z;                                               \
     }                                                       \
     /* Summation */                                         \
     __host__ __device__ __forceinline__ T operator+(        \
@@ -612,10 +642,20 @@ std::ostream& operator<<(std::ostream& os, const cub::KeyValuePair<Key, Value> &
         const T &a,                                         \
         const T &b)                                         \
     {                                                       \
-        return (a.x != b.x) &&                              \
-            (a.y != b.y) &&                                 \
-            (a.z != b.z) &&                                 \
+        return (a.x != b.x) ||                              \
+            (a.y != b.y) ||                                 \
+            (a.z != b.z) ||                                 \
             (a.w != b.w);                                   \
+    }                                                       \
+    /* Equality */                                          \
+    __host__ __device__ __forceinline__ bool operator==(    \
+        const T &a,                                         \
+        const T &b)                                         \
+    {                                                       \
+        return (a.x == b.x) &&                              \
+            (a.y == b.y) &&                                 \
+            (a.z == b.z) &&                                 \
+            (a.w == b.w);                                   \
     }                                                       \
     /* Test initialization */                               \
     __host__ __device__ __forceinline__ void InitValue(GenMode gen_mode, T &value, int index = 0)   \
@@ -630,14 +670,20 @@ std::ostream& operator<<(std::ostream& os, const cub::KeyValuePair<Key, Value> &
         const T &a,                                         \
         const T &b)                                         \
     {                                                       \
-        return (a.x > b.x);                                 \
+        if (a.x > b.x) return true; else if (b.x > a.x) return false;   \
+        if (a.y > b.y) return true; else if (b.y > a.y) return false;   \
+        if (a.z > b.z) return true; else if (b.z > a.z) return false;   \
+        return a.w > b.w;                                               \
     }                                                       \
     /* Min */                                               \
     __host__ __device__ __forceinline__ bool operator<(     \
         const T &a,                                         \
         const T &b)                                         \
     {                                                       \
-    	return (a.x < b.x);                                 \
+        if (a.x < b.x) return true; else if (b.x < a.x) return false;   \
+        if (a.y < b.y) return true; else if (b.y < a.y) return false;   \
+        if (a.z < b.z) return true; else if (b.z < a.z) return false;   \
+        return a.w < b.w;                                               \
     }                                                       \
     /* Summation */                                         \
     __host__ __device__ __forceinline__ T operator+(        \
@@ -721,16 +767,28 @@ struct TestFoo
         return (x != b.x) || (y != b.y) || (z != b.z) || (w != b.w);
     }
 
+    // Equality operator
+    __host__ __device__ __forceinline__ bool operator ==(const TestFoo &b) const
+    {
+        return (x == b.x) && (y == b.y) && (z == b.z) && (w == b.w);
+    }
+
     // Less than operator
     __host__ __device__ __forceinline__ bool operator <(const TestFoo &b) const
     {
-        return (x < b.x);
+        if (x < b.x) return true; else if (b.x < x) return false;
+        if (y < b.y) return true; else if (b.y < y) return false;
+        if (z < b.z) return true; else if (b.z < z) return false;
+        return w < b.w;
     }
 
     // Greater than operator
     __host__ __device__ __forceinline__ bool operator >(const TestFoo &b) const
     {
-        return (x > b.x);
+        if (x > b.x) return true; else if (b.x > x) return false;
+        if (y > b.y) return true; else if (b.y > y) return false;
+        if (z > b.z) return true; else if (b.z > z) return false;
+        return w > b.w;
     }
 
 };
@@ -796,16 +854,24 @@ struct TestBar
         return (x != b.x) || (y != b.y);
     }
 
+    // Equality operator
+    __host__ __device__ __forceinline__ bool operator ==(const TestBar &b) const
+    {
+        return (x == b.x) && (y == b.y);
+    }
+
     // Less than operator
     __host__ __device__ __forceinline__ bool operator <(const TestBar &b) const
     {
-        return (x < b.x);
+        if (x < b.x) return true; else if (b.x < x) return false;
+        return y < b.y;
     }
 
     // Greater than operator
     __host__ __device__ __forceinline__ bool operator >(const TestBar &b) const
     {
-        return (x > b.x);
+        if (x > b.x) return true; else if (b.x > x) return false;
+        return y > b.y;
     }
 
 };
