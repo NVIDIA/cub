@@ -109,7 +109,7 @@ struct Max
 
 
 /**
- * \brief Arg max functor (keeps the value and offset of the first item strictly bigger than all other items)
+ * \brief Arg max functor (keeps the value and offset of the first occurrence of the l item)
  */
 struct ArgMax
 {
@@ -118,6 +118,9 @@ struct ArgMax
         const ItemOffsetPair<T, Offset> &a,
         const ItemOffsetPair<T, Offset> &b)
     {
+        if (a.value == b.value)
+            return (b.offset < a.offset) ? b : a;
+
         return (b.value > a.value) ? b : a;
     }
 };
@@ -138,7 +141,7 @@ struct Min
 
 
 /**
- * \brief Arg min functor (keeps the value and offset of the first item strictly smaller than all other items)
+ * \brief Arg min functor (keeps the value and offset of the first occurrence of the smallest item)
  */
 struct ArgMin
 {
@@ -147,6 +150,9 @@ struct ArgMin
         const ItemOffsetPair<T, Offset> &a,
         const ItemOffsetPair<T, Offset> &b)
     {
+        if (a.value == b.value)
+            return (b.offset < a.offset) ? b : a;
+
         return (b.value < a.value) ? b : a;
     }
 };

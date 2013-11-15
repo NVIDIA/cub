@@ -407,7 +407,7 @@ __device__ __forceinline__ void LoadBlockedVectorized(
     };
 
     // Vector type
-    typedef typename VectorHelper<T, VEC_SIZE>::Type Vector;
+    typedef typename CubVector<T, VEC_SIZE>::Type Vector;
 
     // Vector items
     Vector vec_items[VECTORS_PER_THREAD];

@@ -89,8 +89,6 @@ struct BlockScanRegionPolicy
 
 /**
  * \brief BlockScanRegion implements a stateful abstraction of CUDA thread blocks for participating in device-wide prefix scan.
- *
- * Implements a single-pass "domino" strategy with variable predecessor look-back.
  */
 template <
     typename BlockScanRegionPolicy,     ///< Parameterized BlockScanRegionPolicy tuning policy type
@@ -306,7 +304,7 @@ struct BlockScanRegion
 
 
     //---------------------------------------------------------------------
-    // Domino scan
+    // Cooperatively scan a device-wide sequence of tiles with other CTAs
     //---------------------------------------------------------------------
 
     /**
@@ -412,7 +410,7 @@ struct BlockScanRegion
 
 
     //---------------------------------------------------------------------
-    // Even-share scan
+    // Scan an sequence of consecutive tiles (independent of other thread blocks)
     //---------------------------------------------------------------------
 
     /**

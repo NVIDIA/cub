@@ -58,12 +58,12 @@ namespace cub {
 /**
  * Select maximum(a, b)
  */
-#define CUB_MAX(a, b) (((a) > (b)) ? (a) : (b))
+#define CUB_MAX(a, b) (((b) > (a)) ? (b) : (a))
 
 /**
  * Select minimum(a, b)
  */
-#define CUB_MIN(a, b) (((a) < (b)) ? (a) : (b))
+#define CUB_MIN(a, b) (((b) < (a)) ? (b) : (a))
 
 /**
  * Quotient of x/y rounded down to nearest integer

@@ -29,7 +29,7 @@
 
 /**
  * \file
- * cub::DeviceScan provides operations for computing a device-wide, parallel prefix scan across data items residing within global memory.
+ * cub::DevicePartition provides operations for computing device-wide, parallel partitionings of data items residing within global memory.
  */
 
 #pragma once
@@ -37,11 +37,12 @@
 #include <stdio.h>
 #include <iterator>
 
-#include "region/block_scan_region.cuh"
+#include "region/block_partition_region.cuh"
 #include "../thread/thread_operators.cuh"
 #include "../grid/grid_queue.cuh"
 #include "../util_debug.cuh"
 #include "../util_device.cuh"
+#include "../util_vector.cuh"
 #include "../util_namespace.cuh"
 
 /// Optional outer namespace(s)
@@ -59,62 +60,23 @@ namespace cub {
 
 
 /**
- * Initialization kernel for tile status initialization (multi-block)
+ * Partition kernel entry point (multi-block)
  */
 template <
-    typename T,                                     ///< Scan value type
-    typename Offset>                                ///< Signed integer type for global offsets
-__global__ void ScanInitKernel(
-    GridQueue<Offset>           grid_queue,         ///< [in] Descriptor for performing dynamic mapping of input tiles to thread blocks
-    LookbackTileDescriptor<T>   *d_tile_status,     ///< [out] Tile status words
-    int                         num_tiles)          ///< [in] Number of tiles
-{
-    typedef LookbackTileDescriptor<T> LookbackTileDescriptorT;
-
-    enum
-    {
-        TILE_STATUS_PADDING = CUB_PTX_WARP_THREADS,
-    };
-
-    // Reset queue descriptor
-    if ((blockIdx.x == 0) && (threadIdx.x == 0)) grid_queue.FillAndResetDrain(num_tiles);
-
-    // Initialize tile status
-    int tile_offset = (blockIdx.x * blockDim.x) + threadIdx.x;
-    if (tile_offset < num_tiles)
-    {
-        // Not-yet-set
-        d_tile_status[TILE_STATUS_PADDING + tile_offset].status = LOOKBACK_TILE_INVALID;
-    }
-
-    if ((blockIdx.x == 0) && (threadIdx.x < TILE_STATUS_PADDING))
-    {
-        // Padding
-        d_tile_status[threadIdx.x].status = LOOKBACK_TILE_OOB;
-    }
-}
-
-
-/**
- * Scan kernel entry point (multi-block)
- */
-template <
-    typename    BlockScanRegionPolicy,          ///< Parameterized BlockScanRegionPolicy tuning policy type
+    typename    BlockPartitionRegionPolicy,     ///< Parameterized BlockPartitionRegionPolicy tuning policy type
     typename    InputIterator,                  ///< Random-access iterator type for input (may be a simple pointer type)
     typename    OutputIterator,                 ///< Random-access iterator type for output (may be a simple pointer type)
-    typename    T,                              ///< The scan data type
-    typename    ScanOp,                         ///< Binary scan operator type having member <tt>T operator()(const T &a, const T &b)</tt>
-    typename    Identity,                       ///< Identity value type (cub::NullType for inclusive scans)
-    typename    Offset>                         ///< Signed integer type for global offsets
-__launch_bounds__ (int(BlockScanRegionPolicy::BLOCK_THREADS))
-__global__ void ScanRegionKernel(
-    InputIterator               d_in,           ///< Input data
-    OutputIterator              d_out,          ///< Output data
-    LookbackTileDescriptor<T>   *d_tile_status, ///< Global list of tile status
-    ScanOp                      scan_op,        ///< Binary scan operator
-    Identity                    identity,       ///< Identity element
-    Offset                      num_items,      ///< Total number of scan items for the entire problem
-    GridQueue<int>              queue)          ///< Drain queue descriptor for dynamically mapping tile data onto thread blocks
+    typename    SelectOp,                       ///< Selection operator type
+    typename    Offset,                         ///< Signed integer type for global offsets
+    typename    OffsetTuple>                    ///< Signed integer tuple type for global offsets
+__launch_bounds__ (int(BlockPartitionRegionPolicy::BLOCK_THREADS))
+__global__ void PartitionRegionKernel(
+    InputIterator                       d_in,           ///< Input data
+    OutputIterator                      d_out,          ///< Output data
+    LookbackTileDescriptor<OffsetTuple> *d_tile_status, ///< Global list of tile status
+    SelectOp                            select_op,      ///< Selection operator
+    Offset                              num_items,      ///< Total number of scan items for the entire problem
+    GridQueue<int>                      queue)          ///< Drain queue descriptor for dynamically mapping tile data onto thread blocks
 {
     enum
     {
@@ -122,19 +84,18 @@ __global__ void ScanRegionKernel(
     };
 
     // Thread block type for scanning input tiles
-    typedef BlockScanRegion<
-        BlockScanRegionPolicy,
+    typedef BlockPartitionRegion<
+        BlockPartitionRegionPolicy,
         InputIterator,
         OutputIterator,
-        ScanOp,
-        Identity,
-        Offset> BlockScanRegionT;
+        SelectOp,
+        OffsetTuple> BlockPartitionRegionT;
 
-    // Shared memory for BlockScanRegion
-    __shared__ typename BlockScanRegionT::TempStorage temp_storage;
+    // Shared memory for BlockPartitionRegion
+    __shared__ typename BlockPartitionRegionT::TempStorage temp_storage;
 
     // Process tiles
-    BlockScanRegionT(temp_storage, d_in, d_out, scan_op, identity).ConsumeRegion(
+    BlockPartitionRegionT(temp_storage, d_in, d_out, select_op, num_items).ConsumeRegion(
         num_items,
         queue,
         d_tile_status + TILE_STATUS_PADDING);
@@ -153,10 +114,9 @@ __global__ void ScanRegionKernel(
 template <
     typename InputIterator,      ///< Random-access iterator type for input (may be a simple pointer type)
     typename OutputIterator,     ///< Random-access iterator type for output (may be a simple pointer type)
-    typename ScanOp,             ///< Binary scan operator type having member <tt>T operator()(const T &a, const T &b)</tt>
-    typename Identity,           ///< Identity value type (cub::NullType for inclusive scans)
-    typename Offset>             ///< Signed integer type for global offsets
-struct DeviceScanDispatch
+    typename SelectOp,           ///< Selection operator type
+    typename OffsetTuple>        ///< Signed integer tuple type for global offsets
+struct DevicePartitionDispatch
 {
     enum
     {
@@ -164,11 +124,14 @@ struct DeviceScanDispatch
         INIT_KERNEL_THREADS     = 128
     };
 
-    // Data type
+    // Data type of input iterator
     typedef typename std::iterator_traits<InputIterator>::value_type T;
 
+    // Signed integer type for global offsets
+    typedef typename OffsetTuple::BaseType Offset;
+
     // Tile status descriptor type
-    typedef LookbackTileDescriptor<T> LookbackTileDescriptorT;
+    typedef LookbackTileDescriptor<OffsetTuple> LookbackTileDescriptorT;
 
 
     /******************************************************************************
@@ -183,17 +146,15 @@ struct DeviceScanDispatch
             ITEMS_PER_THREAD            = CUB_MIN(NOMINAL_4B_ITEMS_PER_THREAD, CUB_MAX(1, (NOMINAL_4B_ITEMS_PER_THREAD * 4 / sizeof(T)))),
         };
 
-        // GTX Titan: 29.1B items/s (232.4 GB/s) @ 48M 32-bit T
-        typedef BlockScanRegionPolicy<
+        typedef BlockPartitionRegionPolicy<
                 128,
                 ITEMS_PER_THREAD,
                 BLOCK_LOAD_DIRECT,
                 false,
                 LOAD_LDG,
-                BLOCK_STORE_WARP_TRANSPOSE,
-                true,
+                false,
                 BLOCK_SCAN_RAKING_MEMOIZE>
-            ScanRegionPolicy;
+            PartitionRegionPolicy;
     };
 
     /// SM30
@@ -204,16 +165,15 @@ struct DeviceScanDispatch
             ITEMS_PER_THREAD            = CUB_MIN(NOMINAL_4B_ITEMS_PER_THREAD, CUB_MAX(1, (NOMINAL_4B_ITEMS_PER_THREAD * 4 / sizeof(T)))),
         };
 
-        typedef BlockScanRegionPolicy<
+        typedef BlockPartitionRegionPolicy<
                 256,
                 ITEMS_PER_THREAD,
                 BLOCK_LOAD_WARP_TRANSPOSE,
                 false,
                 LOAD_DEFAULT,
-                BLOCK_STORE_WARP_TRANSPOSE,
                 false,
                 BLOCK_SCAN_RAKING_MEMOIZE>
-            ScanRegionPolicy;
+            PartitionRegionPolicy;
     };
 
     /// SM20
@@ -224,17 +184,15 @@ struct DeviceScanDispatch
             ITEMS_PER_THREAD            = CUB_MIN(NOMINAL_4B_ITEMS_PER_THREAD, CUB_MAX(1, (NOMINAL_4B_ITEMS_PER_THREAD * 4 / sizeof(T)))),
         };
 
-        // GTX 580: 20.3B items/s (162.3 GB/s) @ 48M 32-bit T
-        typedef BlockScanRegionPolicy<
+        typedef BlockPartitionRegionPolicy<
                 128,
                 ITEMS_PER_THREAD,
                 BLOCK_LOAD_WARP_TRANSPOSE,
                 false,
                 LOAD_DEFAULT,
-                BLOCK_STORE_WARP_TRANSPOSE,
                 false,
                 BLOCK_SCAN_RAKING_MEMOIZE>
-            ScanRegionPolicy;
+            PartitionRegionPolicy;
     };
 
     /// SM13
@@ -245,16 +203,15 @@ struct DeviceScanDispatch
             ITEMS_PER_THREAD            = CUB_MIN(NOMINAL_4B_ITEMS_PER_THREAD, CUB_MAX(1, (NOMINAL_4B_ITEMS_PER_THREAD * 4 / sizeof(T)))),
         };
 
-        typedef BlockScanRegionPolicy<
+        typedef BlockPartitionRegionPolicy<
                 64,
                 ITEMS_PER_THREAD,
                 BLOCK_LOAD_WARP_TRANSPOSE,
                 true,
                 LOAD_DEFAULT,
-                BLOCK_STORE_WARP_TRANSPOSE,
-                true,
+                false,
                 BLOCK_SCAN_RAKING_MEMOIZE>
-            ScanRegionPolicy;
+            PartitionRegionPolicy;
     };
 
     /// SM10
@@ -265,16 +222,15 @@ struct DeviceScanDispatch
             ITEMS_PER_THREAD            = CUB_MIN(NOMINAL_4B_ITEMS_PER_THREAD, CUB_MAX(1, (NOMINAL_4B_ITEMS_PER_THREAD * 4 / sizeof(T)))),
         };
 
-        typedef BlockScanRegionPolicy<
+        typedef BlockPartitionRegionPolicy<
                 128,
                 ITEMS_PER_THREAD,
                 BLOCK_LOAD_WARP_TRANSPOSE,
                 true,
                 LOAD_DEFAULT,
-                BLOCK_STORE_WARP_TRANSPOSE,
-                true,
+                false,
                 BLOCK_SCAN_RAKING>
-            ScanRegionPolicy;
+            PartitionRegionPolicy;
     };
 
 
@@ -300,7 +256,7 @@ struct DeviceScanDispatch
 #endif
 
     // "Opaque" policies (whose parameterizations aren't reflected in the type signature)
-    struct PtxScanRegionPolicy : PtxPolicy::ScanRegionPolicy {};
+    struct PtxPartitionRegionPolicy : PtxPolicy::PartitionRegionPolicy {};
 
 
     /******************************************************************************
@@ -314,35 +270,35 @@ struct DeviceScanDispatch
     __host__ __device__ __forceinline__
     static void InitConfigs(
         int             ptx_version,
-        KernelConfig    &scan_region_config)
+        KernelConfig    &partition_region_config)
     {
     #ifdef __CUDA_ARCH__
 
         // We're on the device, so initialize the kernel dispatch configurations with the current PTX policy
-        scan_region_config.Init<PtxScanRegionPolicy>();
+        partition_region_config.Init<PtxPartitionRegionPolicy>();
 
     #else
 
         // We're on the host, so lookup and initialize the kernel dispatch configurations with the policies that match the device's PTX version
         if (ptx_version >= 350)
         {
-            scan_region_config.template Init<typename Policy350::ScanRegionPolicy>();
+            partition_region_config.template Init<typename Policy350::PartitionRegionPolicy>();
         }
         else if (ptx_version >= 300)
         {
-            scan_region_config.template Init<typename Policy300::ScanRegionPolicy>();
+            partition_region_config.template Init<typename Policy300::PartitionRegionPolicy>();
         }
         else if (ptx_version >= 200)
         {
-            scan_region_config.template Init<typename Policy200::ScanRegionPolicy>();
+            partition_region_config.template Init<typename Policy200::PartitionRegionPolicy>();
         }
         else if (ptx_version >= 130)
         {
-            scan_region_config.template Init<typename Policy130::ScanRegionPolicy>();
+            partition_region_config.template Init<typename Policy130::PartitionRegionPolicy>();
         }
         else
         {
-            scan_region_config.template Init<typename Policy100::ScanRegionPolicy>();
+            partition_region_config.template Init<typename Policy100::PartitionRegionPolicy>();
         }
 
     #endif
@@ -350,25 +306,25 @@ struct DeviceScanDispatch
 
 
     /**
-     * Kernel kernel dispatch configuration.  Mirrors the constants within BlockScanRegionPolicy.
+     * Kernel kernel dispatch configuration.  Mirrors the constants within BlockPartitionRegionPolicy.
      */
     struct KernelConfig
     {
         int                     block_threads;
         int                     items_per_thread;
         BlockLoadAlgorithm      load_policy;
-        BlockStoreAlgorithm     store_policy;
-        BlockScanAlgorithm      scan_algorithm;
+        bool                    two_phase_scatter;
+        BlockScanAlgorithm      partition_algorithm;
 
-        template <typename BlockScanRegionPolicy>
+        template <typename BlockPartitionRegionPolicy>
         __host__ __device__ __forceinline__
         void Init()
         {
-            block_threads               = BlockScanRegionPolicy::BLOCK_THREADS;
-            items_per_thread            = BlockScanRegionPolicy::ITEMS_PER_THREAD;
-            load_policy                 = BlockScanRegionPolicy::LOAD_ALGORITHM;
-            store_policy                = BlockScanRegionPolicy::STORE_ALGORITHM;
-            scan_algorithm              = BlockScanRegionPolicy::SCAN_ALGORITHM;
+            block_threads               = BlockPartitionRegionPolicy::BLOCK_THREADS;
+            items_per_thread            = BlockPartitionRegionPolicy::ITEMS_PER_THREAD;
+            load_policy                 = BlockPartitionRegionPolicy::LOAD_ALGORITHM;
+            two_phase_scatter           = BlockPartitionRegionPolicy::TWO_PHASE_SCATTER;
+            partition_algorithm              = BlockPartitionRegionPolicy::SCAN_ALGORITHM;
         }
 
         __host__ __device__ __forceinline__
@@ -378,8 +334,8 @@ struct DeviceScanDispatch
                 block_threads,
                 items_per_thread,
                 load_policy,
-                store_policy,
-                scan_algorithm);
+                two_phase_scatter,
+                partition_algorithm);
         }
     };
 
@@ -394,23 +350,22 @@ struct DeviceScanDispatch
      */
     template <
         typename                    ScanInitKernelPtr,              ///< Function type of cub::ScanInitKernel
-        typename                    ScanRegionKernelPtr>             ///< Function type of cub::ScanRegionKernelPtr
+        typename                    PartitionRegionKernelPtr>             ///< Function type of cub::PartitionRegionKernelPtr
     __host__ __device__ __forceinline__
     static cudaError_t Dispatch(
         void                        *d_temp_storage,                ///< [in] %Device allocation of temporary storage.  When NULL, the required allocation size is returned in \p temp_storage_bytes and no work is done.
         size_t                      &temp_storage_bytes,            ///< [in,out] Size in bytes of \p d_temp_storage allocation.
         InputIterator               d_in,                           ///< [in] Iterator pointing to scan input
         OutputIterator              d_out,                          ///< [in] Iterator pointing to scan output
-        ScanOp                      scan_op,                        ///< [in] Binary scan operator
-        Identity                    identity,                       ///< [in] Identity element
+        SelectOp                    select_op,                      ///< [in] Selection operator
         Offset                      num_items,                      ///< [in] Total number of items to scan
         cudaStream_t                stream,                         ///< [in] <b>[optional]</b> CUDA stream to launch kernels within.  Default is stream<sub>0</sub>.
         bool                        debug_synchronous,              ///< [in] <b>[optional]</b> Whether or not to synchronize the stream after every kernel launch to check for errors.  Also causes launch configurations to be printed to the console.  Default is \p false.
         int                         ptx_version,                    ///< [in] PTX version of dispatch kernels
         int                         sm_version,                     ///< [in] SM version of target device to use when computing SM occupancy
         ScanInitKernelPtr           init_kernel,                    ///< [in] Kernel function pointer to parameterization of cub::ScanInitKernel
-        ScanRegionKernelPtr         scan_region_kernel,             ///< [in] Kernel function pointer to parameterization of cub::ScanRegionKernelPtr
-        KernelConfig                scan_region_config)             ///< [in] Dispatch parameters that match the policy that \p scan_region_kernel was compiled for
+        PartitionRegionKernelPtr    partition_region_kernel,             ///< [in] Kernel function pointer to parameterization of cub::PartitionRegionKernelPtr
+        KernelConfig                partition_region_config)             ///< [in] Dispatch parameters that match the policy that \p partition_region_kernel was compiled for
     {
 
 #ifndef CUB_RUNTIME_ENABLED
@@ -424,7 +379,7 @@ struct DeviceScanDispatch
         do
         {
             // Number of input tiles
-            int tile_size = scan_region_config.block_threads * scan_region_config.items_per_thread;
+            int tile_size = partition_region_config.block_threads * partition_region_config.items_per_thread;
             int num_tiles = (num_items + tile_size - 1) / tile_size;
 
             // Temporary storage allocation requirements
@@ -470,43 +425,43 @@ struct DeviceScanDispatch
             // Sync the stream if specified
             if (debug_synchronous && (CubDebug(error = SyncStream(stream)))) break;
 
-            // Get SM occupancy for scan_region_kernel
-            int scan_region_sm_occupancy;
+            // Get SM occupancy for partition_region_kernel
+            int partition_region_sm_occupancy;
             if (CubDebug(error = MaxSmOccupancy(
-                scan_region_sm_occupancy,            // out
+                partition_region_sm_occupancy,            // out
                 sm_version,
-                scan_region_kernel,
-                scan_region_config.block_threads))) break;
+                partition_region_kernel,
+                partition_region_config.block_threads))) break;
 
-            // Get device occupancy for scan_region_kernel
-            int scan_region_occupancy = scan_region_sm_occupancy * sm_count;
+            // Get device occupancy for partition_region_kernel
+            int partition_region_occupancy = partition_region_sm_occupancy * sm_count;
 
             // Get grid size for scanning tiles
-            int scan_grid_size;
+            int partition_grid_size;
             if (ptx_version < 200)
             {
                 // We don't have atomics (or don't have fast ones), so just assign one block per tile (limited to 65K tiles)
-                scan_grid_size = num_tiles;
-                if (scan_grid_size >= (64 * 1024))
+                partition_grid_size = num_tiles;
+                if (partition_grid_size >= (64 * 1024))
                     return cudaErrorInvalidConfiguration;
             }
             else
             {
-                scan_grid_size = (num_tiles < scan_region_occupancy) ?
+                partition_grid_size = (num_tiles < partition_region_occupancy) ?
                     num_tiles :                     // Not enough to fill the device with threadblocks
-                    scan_region_occupancy;          // Fill the device with threadblocks
+                    partition_region_occupancy;          // Fill the device with threadblocks
             }
 
-            // Log scan_region_kernel configuration
-            if (debug_synchronous) CubLog("Invoking scan_region_kernel<<<%d, %d, 0, %lld>>>(), %d items per thread, %d SM occupancy\n",
-                scan_grid_size, scan_region_config.block_threads, (long long) stream, scan_region_config.items_per_thread, scan_region_sm_occupancy);
+            // Log partition_region_kernel configuration
+            if (debug_synchronous) CubLog("Invoking partition_region_kernel<<<%d, %d, 0, %lld>>>(), %d items per thread, %d SM occupancy\n",
+                partition_grid_size, partition_region_config.block_threads, (long long) stream, partition_region_config.items_per_thread, partition_region_sm_occupancy);
 
-            // Invoke scan_region_kernel
-            scan_region_kernel<<<scan_grid_size, scan_region_config.block_threads, 0, stream>>>(
+            // Invoke partition_region_kernel
+            partition_region_kernel<<<partition_grid_size, partition_region_config.block_threads, 0, stream>>>(
                 d_in,
                 d_out,
                 d_tile_status,
-                scan_op,
+                select_op,
                 identity,
                 num_items,
                 queue);
@@ -531,7 +486,7 @@ struct DeviceScanDispatch
         size_t          &temp_storage_bytes,            ///< [in,out] Size in bytes of \p d_temp_storage allocation.
         InputIterator   d_in,                           ///< [in] Iterator pointing to scan input
         OutputIterator  d_out,                          ///< [in] Iterator pointing to scan output
-        ScanOp          scan_op,                        ///< [in] Binary scan operator
+        SelectOp          select_op,                        ///< [in] Binary scan operator
         Identity        identity,                       ///< [in] Identity element
         Offset          num_items,                      ///< [in] Total number of items to scan
         cudaStream_t    stream,                         ///< [in] <b>[optional]</b> CUDA stream to launch kernels within.  Default is stream<sub>0</sub>.
@@ -549,8 +504,8 @@ struct DeviceScanDispatch
     #endif
 
             // Get kernel kernel dispatch configurations
-            KernelConfig scan_region_config;
-            InitConfigs(ptx_version, scan_region_config);
+            KernelConfig partition_region_config;
+            InitConfigs(ptx_version, partition_region_config);
 
             // Dispatch
             if (CubDebug(error = Dispatch(
@@ -558,7 +513,7 @@ struct DeviceScanDispatch
                 temp_storage_bytes,
                 d_in,
                 d_out,
-                scan_op,
+                select_op,
                 identity,
                 num_items,
                 stream,
@@ -566,8 +521,8 @@ struct DeviceScanDispatch
                 ptx_version,
                 ptx_version,            // Use PTX version instead of SM version because, as a statically known quantity, this improves device-side launch dramatically but at the risk of imprecise occupancy calculation for mismatches
                 ScanInitKernel<T, Offset>,
-                ScanRegionKernel<PtxScanRegionPolicy, InputIterator, OutputIterator, T, ScanOp, Identity, Offset>,
-                scan_region_config))) break;
+                PartitionRegionKernel<PtxPartitionRegionPolicy, InputIterator, OutputIterator, T, SelectOp, Identity, Offset>,
+                partition_region_config))) break;
         }
         while (0);
 
@@ -582,11 +537,11 @@ struct DeviceScanDispatch
 
 
 /******************************************************************************
- * DeviceScan
+ * DevicePartition
  *****************************************************************************/
 
 /**
- * \brief DeviceScan provides operations for computing a device-wide, parallel prefix scan across data items residing within global memory. ![](device_scan.png)
+ * \brief DevicePartition provides operations for computing a device-wide, parallel prefix scan across data items residing within global memory. ![](device_scan.png)
  * \ingroup DeviceModule
  *
  * \par Overview
@@ -599,173 +554,15 @@ struct DeviceScanDispatch
  * the <em>i</em><sup>th</sup> output reduction.
  *
  * \par Usage Considerations
- * \cdp_class{DeviceScan}
+ * \cdp_class{DevicePartition}
  *
  * \par Performance
  *
- * \image html scan_perf.png
+ * \image html partition_perf.png
  *
  */
-struct DeviceScan
+struct DevicePartition
 {
-    /******************************************************************//**
-     * \name Exclusive scans
-     *********************************************************************/
-    //@{
-
-    /**
-     * \brief Computes a device-wide exclusive prefix sum.
-     *
-     * \devicestorage
-     *
-     * \cdp
-     *
-     * \iterator
-     *
-     * \par
-     * The code snippet below illustrates the exclusive prefix sum of a device vector of \p int items.
-     * \par
-     * \code
-     * #include <cub/cub.cuh>
-     * ...
-     *
-     * // Declare and initialize device pointers for input and output
-     * int *d_scan_input, *d_scan_output;
-     * int num_items = ...
-     *
-     * ...
-     *
-     * // Determine temporary device storage requirements for exclusive prefix sum
-     * void *d_temp_storage = NULL;
-     * size_t temp_storage_bytes = 0;
-     * cub::DeviceScan::ExclusiveSum(d_temp_storage, temp_storage_bytes, d_scan_input, d_scan_output, num_items);
-     *
-     * // Allocate temporary storage for exclusive prefix sum
-     * cudaMalloc(&d_temp_storage, temp_storage_bytes);
-     *
-     * // Run exclusive prefix sum
-     * cub::DeviceScan::ExclusiveSum(d_temp_storage, temp_storage_bytes, d_scan_input, d_scan_output, num_items);
-     *
-     * \endcode
-     *
-     * \tparam InputIterator      <b>[inferred]</b> Random-access iterator type for input (may be a simple pointer type)
-     * \tparam OutputIterator     <b>[inferred]</b> Random-access iterator type for output (may be a simple pointer type)
-     */
-    template <
-        typename        InputIterator,
-        typename        OutputIterator>
-    __host__ __device__ __forceinline__
-    static cudaError_t ExclusiveSum(
-        void            *d_temp_storage,                    ///< [in] %Device allocation of temporary storage.  When NULL, the required allocation size is returned in \p temp_storage_bytes and no work is done.
-        size_t          &temp_storage_bytes,                ///< [in,out] Size in bytes of \p d_temp_storage allocation.
-        InputIterator   d_in,                               ///< [in] Iterator pointing to scan input
-        OutputIterator  d_out,                              ///< [in] Iterator pointing to scan output
-        int             num_items,                          ///< [in] Total number of items to scan
-        cudaStream_t    stream              = 0,            ///< [in] <b>[optional]</b> CUDA stream to launch kernels within.  Default is stream<sub>0</sub>.
-        bool            debug_synchronous   = false)        ///< [in] <b>[optional]</b> Whether or not to synchronize the stream after every kernel launch to check for errors.  May cause significant slowdown.  Default is \p false.
-    {
-        // Signed integer type for global offsets
-        typedef int Offset;
-
-        // Scan data type
-        typedef typename std::iterator_traits<InputIterator>::value_type T;
-
-        return DeviceScanDispatch<InputIterator, OutputIterator, Sum, T, Offset>::Dispatch(
-            d_temp_storage,
-            temp_storage_bytes,
-            d_in,
-            d_out,
-            Sum(),
-            T(),
-            num_items,
-            stream,
-            debug_synchronous);
-    }
-
-
-    /**
-     * \brief Computes a device-wide exclusive prefix scan using the specified binary \p scan_op functor.
-     *
-     * \par
-     * Supports non-commutative scan operators.
-     *
-     * \devicestorage
-     *
-     * \cdp
-     *
-     * \iterator
-     *
-     * \par
-     * The code snippet below illustrates the exclusive prefix scan of a device vector of \p int items.
-     * \par
-     * \code
-     * #include <cub/cub.cuh>
-     * ...
-     *
-     * // Declare and initialize device pointers for input and output
-     * int *d_scan_input, *d_scan_output;
-     * int num_items = ...
-     *
-     * ...
-     *
-     * // Determine temporary device storage requirements for exclusive prefix scan
-     * void *d_temp_storage = NULL;
-     * size_t temp_storage_bytes = 0;
-     * cub::DeviceScan::ExclusiveScan(d_temp_storage, temp_storage_bytes, d_scan_input, d_scan_output, cub::Max(), (int) MIN_INT, num_items);
-     *
-     * // Allocate temporary storage for exclusive prefix scan
-     * cudaMalloc(&d_temp_storage, temp_storage_bytes);
-     *
-     * // Run exclusive prefix scan (max)
-     * cub::DeviceScan::ExclusiveScan(d_temp_storage, temp_storage_bytes, d_scan_input, d_scan_output, cub::Max(), (int) MIN_INT, num_items);
-     *
-     * \endcode
-     *
-     * \tparam InputIterator    <b>[inferred]</b> Random-access iterator type for input (may be a simple pointer type)
-     * \tparam OutputIterator   <b>[inferred]</b> Random-access iterator type for output (may be a simple pointer type)
-     * \tparam ScanOp           <b>[inferred]</b> Binary scan operator type having member <tt>T operator()(const T &a, const T &b)</tt>
-     * \tparam Identity         <b>[inferred]</b> Type of the \p identity value used Binary scan operator type having member <tt>T operator()(const T &a, const T &b)</tt>
-     */
-    template <
-        typename        InputIterator,
-        typename        OutputIterator,
-        typename        ScanOp,
-        typename        Identity>
-    __host__ __device__ __forceinline__
-    static cudaError_t ExclusiveScan(
-        void            *d_temp_storage,                    ///< [in] %Device allocation of temporary storage.  When NULL, the required allocation size is returned in \p temp_storage_bytes and no work is done.
-        size_t          &temp_storage_bytes,                ///< [in,out] Size in bytes of \p d_temp_storage allocation.
-        InputIterator   d_in,                               ///< [in] Iterator pointing to scan input
-        OutputIterator  d_out,                              ///< [in] Iterator pointing to scan output
-        ScanOp          scan_op,                            ///< [in] Binary scan operator
-        Identity        identity,                           ///< [in] Identity element
-        int             num_items,                          ///< [in] Total number of items to scan
-        cudaStream_t    stream              = 0,            ///< [in] <b>[optional]</b> CUDA stream to launch kernels within.  Default is stream<sub>0</sub>.
-        bool            debug_synchronous   = false)        ///< [in] <b>[optional]</b> Whether or not to synchronize the stream after every kernel launch to check for errors.  May cause significant slowdown.  Default is \p false.
-    {
-        // Signed integer type for global offsets
-        typedef int Offset;
-
-        return DeviceScanDispatch<InputIterator, OutputIterator, ScanOp, Identity, Offset>::Dispatch(
-            d_temp_storage,
-            temp_storage_bytes,
-            d_in,
-            d_out,
-            scan_op,
-            identity,
-            num_items,
-            stream,
-            debug_synchronous);
-    }
-
-
-    //@}  end member group
-    /******************************************************************//**
-     * \name Inclusive scans
-     *********************************************************************/
-    //@{
-
-
     /**
      * \brief Computes a device-wide inclusive prefix sum.
      *
@@ -774,31 +571,6 @@ struct DeviceScan
      * \cdp
      *
      * \iterator
-     *
-     * \par
-     * The code snippet below illustrates the inclusive prefix sum of a device vector of \p int items.
-     * \par
-     * \code
-     * #include <cub/cub.cuh>
-     * ...
-     *
-     * // Declare and initialize device pointers for input and output
-     * int *d_scan_input, *d_scan_output;
-     * int num_items = ...
-     * ...
-     *
-     * // Determine temporary device storage requirements for inclusive prefix sum
-     * void *d_temp_storage = NULL;
-     * size_t temp_storage_bytes = 0;
-     * cub::DeviceScan::InclusiveSum(d_temp_storage, temp_storage_bytes, d_scan_input, d_scan_output, num_items);
-     *
-     * // Allocate temporary storage for inclusive prefix sum
-     * cudaMalloc(&d_temp_storage, temp_storage_bytes);
-     *
-     * // Run inclusive prefix sum
-     * cub::DeviceScan::InclusiveSum(d_temp_storage, temp_storage_bytes, d_scan_input, d_scan_output, num_items);
-     *
-     * \endcode
      *
      * \tparam InputIterator      <b>[inferred]</b> Random-access iterator type for input (may be a simple pointer type)
      * \tparam OutputIterator     <b>[inferred]</b> Random-access iterator type for output (may be a simple pointer type)
@@ -819,7 +591,7 @@ struct DeviceScan
         // Signed integer type for global offsets
         typedef int Offset;
 
-        return DeviceScanDispatch<InputIterator, OutputIterator, Sum, NullType, Offset>::Dispatch(
+        return DevicePartitionDispatch<InputIterator, OutputIterator, Sum, NullType, Offset>::Dispatch(
             d_temp_storage,
             temp_storage_bytes,
             d_in,
@@ -833,7 +605,7 @@ struct DeviceScan
 
 
     /**
-     * \brief Computes a device-wide inclusive prefix scan using the specified binary \p scan_op functor.
+     * \brief Computes a device-wide inclusive prefix scan using the specified binary \p select_op functor.
      *
      * \par
      * Supports non-commutative scan operators.
@@ -844,46 +616,21 @@ struct DeviceScan
      *
      * \iterator
      *
-     * \par
-     * The code snippet below illustrates the inclusive prefix scan of a device vector of \p int items.
-     * \par
-     * \code
-     * #include <cub/cub.cuh>
-     * ...
-     *
-     * // Declare and initialize device pointers for input and output
-     * int *d_scan_input, *d_scan_output;
-     * int num_items = ...
-     * ...
-     *
-     * // Determine temporary device storage requirements for inclusive prefix scan
-     * void *d_temp_storage = NULL;
-     * size_t temp_storage_bytes = 0;
-     * cub::DeviceScan::InclusiveScan(d_temp_storage, temp_storage_bytes, d_scan_input, d_scan_output, cub::Max(), num_items);
-     *
-     * // Allocate temporary storage for inclusive prefix scan
-     * cudaMalloc(&d_temp_storage, temp_storage_bytes);
-     *
-     * // Run inclusive prefix scan (max)
-     * cub::DeviceScan::InclusiveScan(d_temp_storage, temp_storage_bytes, d_scan_input, d_scan_output, cub::Max(), num_items);
-     *
-     * \endcode
-     *
      * \tparam InputIterator    <b>[inferred]</b> Random-access iterator type for input (may be a simple pointer type)
      * \tparam OutputIterator   <b>[inferred]</b> Random-access iterator type for output (may be a simple pointer type)
-     * \tparam ScanOp           <b>[inferred]</b> Binary scan operator type having member <tt>T operator()(const T &a, const T &b)</tt>
+     * \tparam SelectOp         <b>[inferred]</b> Selection operator type having member <tt>bool operator()(const T &a)</tt>
      */
     template <
         typename        InputIterator,
         typename        OutputIterator,
-        typename        ScanOp>
+        typename        SelectOp>
     __host__ __device__ __forceinline__
     static cudaError_t InclusiveScan(
         void            *d_temp_storage,                    ///< [in] %Device allocation of temporary storage.  When NULL, the required allocation size is returned in \p temp_storage_bytes and no work is done.
         size_t          &temp_storage_bytes,                ///< [in,out] Size in bytes of \p d_temp_storage allocation.
         InputIterator   d_in,                               ///< [in] Iterator pointing to scan input
         OutputIterator  d_out,                              ///< [in] Iterator pointing to scan output
-        ScanOp          scan_op,                            ///< [in] Binary scan operator
+        SelectOp        select_op,                        ///< [in] Binary scan operator
         int             num_items,                          ///< [in] Total number of items to scan
         cudaStream_t    stream             = 0,             ///< [in] <b>[optional]</b> CUDA stream to launch kernels within.  Default is stream<sub>0</sub>.
         bool            debug_synchronous  = false)         ///< [in] <b>[optional]</b> Whether or not to synchronize the stream after every kernel launch to check for errors.  May cause significant slowdown.  Default is \p false.
@@ -891,19 +638,17 @@ struct DeviceScan
         // Signed integer type for global offsets
         typedef int Offset;
 
-        return DeviceScanDispatch<InputIterator, OutputIterator, ScanOp, NullType, Offset>::Dispatch(
+        return DevicePartitionDispatch<InputIterator, OutputIterator, SelectOp, NullType, Offset>::Dispatch(
             d_temp_storage,
             temp_storage_bytes,
             d_in,
             d_out,
-            scan_op,
+            select_op,
             NullType(),
             num_items,
             stream,
             debug_synchronous);
     }
-
-    //@}  end member group
 
 };
 

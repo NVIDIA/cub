@@ -109,7 +109,7 @@ struct BlockReduceRegion
     typedef typename std::iterator_traits<InputIterator>::value_type T;
 
     // Helper type for vectorizing loads of T
-    typedef VectorHelper<T, BlockReduceRegionPolicy::VECTOR_LOAD_LENGTH> VecHelper;
+    typedef CubVector<T, BlockReduceRegionPolicy::VECTOR_LOAD_LENGTH> VecHelper;
 
     // Vector of T
     typedef typename VecHelper::Type VectorT;

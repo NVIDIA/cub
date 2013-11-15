@@ -908,6 +908,44 @@ public:
         ScatterToStriped(items, ranks, Int2Type<WARP_TIME_SLICING>());
     }
 
+
+    /**
+     * \brief Exchanges valid data items annotated by rank into <em>striped</em> arrangement.
+     *
+     * \smemreuse
+     *
+     * \tparam ValidFlag                            <b>[inferred]</b> Flag type denoting which items are valid
+     */
+    template <typename ValidFlag>
+    __device__ __forceinline__ void ScatterToStriped(
+        T               items[ITEMS_PER_THREAD],    ///< [in-out] Items to exchange
+        int             ranks[ITEMS_PER_THREAD],    ///< [in] Corresponding scatter ranks
+        ValidFlag       is_valid[ITEMS_PER_THREAD], ///< [in] Corresponding flag denoting item validity
+        int             valid_items)                  ///< [in] Number of valid items held by all threads
+    {
+        #pragma unroll
+        for (int ITEM = 0; ITEM < ITEMS_PER_THREAD; ITEM++)
+        {
+            int item_offset = ranks[ITEM];
+            if (INSERT_PADDING) item_offset = SHR_ADD(item_offset, LOG_SMEM_BANKS, item_offset);
+            if (is_valid[ITEM])
+                temp_storage[item_offset] = items[ITEM];
+        }
+
+        __syncthreads();
+
+        #pragma unroll
+        for (int ITEM = 0; ITEM < ITEMS_PER_THREAD; ITEM++)
+        {
+            int item_offset = int(ITEM * BLOCK_THREADS) + linear_tid;
+            if (item_offset < valid_items)
+            {
+                if (INSERT_PADDING) item_offset = SHR_ADD(item_offset, LOG_SMEM_BANKS, item_offset);
+                items[ITEM] = temp_storage[item_offset];
+            }
+        }
+    }
+
     //@}  end member group
 
 

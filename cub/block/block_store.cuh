@@ -312,7 +312,7 @@ __device__ __forceinline__ void StoreBlockedVectorized(
     };
 
     // Vector type
-    typedef typename VectorHelper<T, VEC_SIZE>::Type Vector;
+    typedef typename CubVector<T, VEC_SIZE>::Type Vector;
 
     // Alias global pointer
     Vector *block_ptr_vectors = reinterpret_cast<Vector *>(block_ptr);

@@ -292,6 +292,7 @@ struct LookbackBlockPrefixCallbackOp
     _TempStorage                &temp_storage;      ///< Reference to a warp-reduction instance
     ScanOp                      scan_op;            ///< Binary scan operator
     int                         tile_idx;           ///< The current tile index
+    T                           exclusive_prefix;   ///< Exclusive prefix for the tile
     T                           inclusive_prefix;   ///< Inclusive prefix for the tile
 
     // Constructor
@@ -340,7 +341,7 @@ struct LookbackBlockPrefixCallbackOp
         ProcessWindow(predecessor_idx, predecessor_status, window_aggregate);
 
         // The exclusive tile prefix starts out as the current window aggregate
-        T exclusive_prefix = window_aggregate;
+        exclusive_prefix = window_aggregate;
 
         // Keep sliding the window back until we come across a tile whose inclusive prefix is known
         while (WarpAll(predecessor_status != LOOKBACK_TILE_PREFIX))
