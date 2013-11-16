@@ -28,7 +28,7 @@
 
 /**
  * \file
- * cub::BlockHistogramRegion implements a stateful abstraction of CUDA thread blocks for histogramming multiple tiles as part of device-wide histogram.
+ * cub::BlockHistogramRegion implements a stateful abstraction of CUDA thread blocks for participating in device-wide selection across a region of tiles.
  */
 
 #pragma once
@@ -149,9 +149,8 @@ struct BlockHistogramRegionPolicy
  * Thread block abstractions
  ******************************************************************************/
 
-
 /**
- * Implements a stateful abstraction of CUDA thread blocks for histogramming multiple tiles as part of device-wide histogram using global atomics
+ * \brief BlockHistogramRegion implements a stateful abstraction of CUDA thread blocks for participating in device-wide selection across a region of tiles.
  */
 template <
     typename    BlockHistogramRegionPolicy,     ///< Parameterized BlockHistogramRegionPolicy tuning policy type

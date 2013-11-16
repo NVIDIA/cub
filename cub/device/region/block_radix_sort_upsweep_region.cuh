@@ -28,7 +28,7 @@
 
 /**
  * \file
- * BlockRadixSortUpsweepRegion implements a stateful abstraction of CUDA thread blocks for participating in device-wide radix sort upsweep.
+ * BlockRadixSortUpsweepRegion implements a stateful abstraction of CUDA thread blocks for participating in device-wide radix sort upsweep across a region of tiles.
  */
 
 #pragma once
@@ -83,9 +83,7 @@ struct BlockRadixSortUpsweepRegionPolicy
  ******************************************************************************/
 
 /**
- * \brief BlockRadixSortUpsweepRegion implements a stateful abstraction of CUDA thread blocks for participating in device-wide radix sort upsweep.
- *
- * Computes radix digit histograms over a range of input tiles.
+ * \brief BlockRadixSortUpsweepRegion implements a stateful abstraction of CUDA thread blocks for participating in device-wide radix sort upsweep across a region of tiles.
  */
 template <
     typename BlockRadixSortUpsweepRegionPolicy,     ///< Parameterized BlockRadixSortUpsweepRegionPolicy tuning policy type

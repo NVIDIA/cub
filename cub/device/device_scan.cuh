@@ -29,7 +29,7 @@
 
 /**
  * \file
- * cub::DeviceScan provides operations for computing a device-wide, parallel prefix scan across data items residing within global memory.
+ * cub::DeviceScan provides device-wide, parallel operations for computing a prefix scan across data items residing within global memory.
  */
 
 #pragma once
@@ -69,7 +69,7 @@ __global__ void ScanInitKernel(
     LookbackTileDescriptor<T>   *d_tile_status,     ///< [out] Tile status words
     int                         num_tiles)          ///< [in] Number of tiles
 {
-    typedef LookbackTileDescriptor<T> LookbackTileDescriptorT;
+    typedef LookbackTileDescriptor<T> TileDescriptor;
 
     enum
     {
@@ -168,7 +168,7 @@ struct DeviceScanDispatch
     typedef typename std::iterator_traits<InputIterator>::value_type T;
 
     // Tile status descriptor type
-    typedef LookbackTileDescriptor<T> LookbackTileDescriptorT;
+    typedef LookbackTileDescriptor<T> TileDescriptor;
 
 
     /******************************************************************************
@@ -431,7 +431,7 @@ struct DeviceScanDispatch
             void* allocations[2];
             size_t allocation_sizes[2] =
             {
-                (num_tiles + TILE_STATUS_PADDING) * sizeof(LookbackTileDescriptorT),  // bytes needed for tile status descriptors
+                (num_tiles + TILE_STATUS_PADDING) * sizeof(TileDescriptor),  // bytes needed for tile status descriptors
                 GridQueue<int>::AllocationSize()                                        // bytes needed for grid queue descriptor
             };
 
@@ -444,7 +444,7 @@ struct DeviceScanDispatch
             }
 
             // Alias the allocation for the global list of tile status
-            LookbackTileDescriptorT *d_tile_status = (LookbackTileDescriptorT*) allocations[0];
+            TileDescriptor *d_tile_status = (TileDescriptor*) allocations[0];
 
             // Alias the allocation for the grid queue descriptor
             GridQueue<int> queue(allocations[1]);
@@ -586,7 +586,7 @@ struct DeviceScanDispatch
  *****************************************************************************/
 
 /**
- * \brief DeviceScan provides operations for computing a device-wide, parallel prefix scan across data items residing within global memory. ![](device_scan.png)
+ * \brief DeviceScan provides device-wide, parallel operations for computing a prefix scan across data items residing within global memory. ![](device_scan.png)
  * \ingroup DeviceModule
  *
  * \par Overview

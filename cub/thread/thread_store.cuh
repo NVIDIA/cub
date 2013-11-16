@@ -122,23 +122,34 @@ __device__ __forceinline__ void ThreadStore(OutputIterator itr, T val);
 
 
 /// Helper structure for templated store iteration (inductive case)
-template <CacheStoreModifier MODIFIER, int COUNT, int MAX>
+template <int COUNT, int MAX>
 struct IterateThreadStore
 {
-    template <typename T>
+    template <CacheStoreModifier MODIFIER, typename T>
     static __device__ __forceinline__ void Store(T *ptr, T *vals)
     {
         ThreadStore<MODIFIER>(ptr + COUNT, vals[COUNT]);
-        IterateThreadStore<MODIFIER, COUNT + 1, MAX>::Store(ptr, vals);
+        IterateThreadStore<COUNT + 1, MAX>::template Store<MODIFIER>(ptr, vals);
     }
+
+    template <typename OutputIterator, typename T>
+    static __device__ __forceinline__ void Dereference(OutputIterator ptr, T *vals)
+    {
+        ptr[COUNT] = vals[COUNT];
+        IterateThreadStore<COUNT + 1, MAX>::Dereference(ptr, vals);
+    }
+
 };
 
 /// Helper structure for templated store iteration (termination case)
-template <CacheStoreModifier MODIFIER, int MAX>
-struct IterateThreadStore<MODIFIER, MAX, MAX>
+template <int MAX>
+struct IterateThreadStore<MAX, MAX>
 {
-    template <typename T>
+    template <CacheStoreModifier MODIFIER, typename T>
     static __device__ __forceinline__ void Store(T *ptr, T *vals) {}
+
+    template <typename OutputIterator, typename T>
+    static __device__ __forceinline__ void Dereference(OutputIterator ptr, T *vals) {}
 };
 
 
@@ -147,7 +158,7 @@ struct IterateThreadStore<MODIFIER, MAX, MAX>
  */
 #define CUB_STORE_16(cub_modifier, ptx_modifier)                                            \
     template<>                                                                              \
-    __device__ __forceinline__ void ThreadStore<cub_modifier, int4*, int4>(int4* ptr, int4 val)              \
+    __device__ __forceinline__ void ThreadStore<cub_modifier, int4*, int4>(int4* ptr, int4 val)                         \
     {                                                                                       \
         asm volatile ("st."#ptx_modifier".v4.s32 [%0], {%1, %2, %3, %4};" : :               \
             _CUB_ASM_PTR_(ptr),                                                             \
@@ -157,7 +168,7 @@ struct IterateThreadStore<MODIFIER, MAX, MAX>
             "r"(val.w));                                                                    \
     }                                                                                       \
     template<>                                                                              \
-    __device__ __forceinline__ void ThreadStore<cub_modifier, longlong2*, longlong2>(longlong2* ptr, longlong2 val)              \
+    __device__ __forceinline__ void ThreadStore<cub_modifier, longlong2*, longlong2>(longlong2* ptr, longlong2 val)     \
     {                                                                                       \
         asm volatile ("st."#ptx_modifier".v2.s64 [%0], {%1, %2};" : :                       \
             _CUB_ASM_PTR_(ptr),                                                             \
@@ -171,7 +182,7 @@ struct IterateThreadStore<MODIFIER, MAX, MAX>
  */
 #define CUB_STORE_8(cub_modifier, ptx_modifier)                                             \
     template<>                                                                              \
-    __device__ __forceinline__ void ThreadStore<cub_modifier, short4*, short4>(short4* ptr, short4 val)              \
+    __device__ __forceinline__ void ThreadStore<cub_modifier, short4*, short4>(short4* ptr, short4 val)                 \
     {                                                                                       \
         asm volatile ("st."#ptx_modifier".v4.s16 [%0], {%1, %2, %3, %4};" : :               \
             _CUB_ASM_PTR_(ptr),                                                             \
@@ -181,7 +192,7 @@ struct IterateThreadStore<MODIFIER, MAX, MAX>
             "h"(val.w));                                                                    \
     }                                                                                       \
     template<>                                                                              \
-    __device__ __forceinline__ void ThreadStore<cub_modifier, int2*, int2>(int2* ptr, int2 val)              \
+    __device__ __forceinline__ void ThreadStore<cub_modifier, int2*, int2>(int2* ptr, int2 val)                         \
     {                                                                                       \
         asm volatile ("st."#ptx_modifier".v2.s32 [%0], {%1, %2};" : :                       \
             _CUB_ASM_PTR_(ptr),                                                             \
@@ -189,7 +200,7 @@ struct IterateThreadStore<MODIFIER, MAX, MAX>
             "r"(val.y));                                                                    \
     }                                                                                       \
     template<>                                                                              \
-    __device__ __forceinline__ void ThreadStore<cub_modifier, long long*, long long>(long long* ptr, long long val)                 \
+    __device__ __forceinline__ void ThreadStore<cub_modifier, long long*, long long>(long long* ptr, long long val)     \
     {                                                                                       \
         asm volatile ("st."#ptx_modifier".s64 [%0], %1;" : :                                \
             _CUB_ASM_PTR_(ptr),                                                             \
@@ -201,7 +212,7 @@ struct IterateThreadStore<MODIFIER, MAX, MAX>
  */
 #define CUB_STORE_4(cub_modifier, ptx_modifier)                                             \
     template<>                                                                              \
-    __device__ __forceinline__ void ThreadStore<cub_modifier, int*, int>(int* ptr, int val)                 \
+    __device__ __forceinline__ void ThreadStore<cub_modifier, int*, int>(int* ptr, int val)                             \
     {                                                                                       \
         asm volatile ("st."#ptx_modifier".s32 [%0], %1;" : :                                \
             _CUB_ASM_PTR_(ptr),                                                             \
@@ -214,7 +225,7 @@ struct IterateThreadStore<MODIFIER, MAX, MAX>
  */
 #define CUB_STORE_2(cub_modifier, ptx_modifier)                                             \
     template<>                                                                              \
-    __device__ __forceinline__ void ThreadStore<cub_modifier, short*, short>(short* ptr, short val)           \
+    __device__ __forceinline__ void ThreadStore<cub_modifier, short*, short>(short* ptr, short val)                     \
     {                                                                                       \
         asm volatile ("st."#ptx_modifier".s16 [%0], %1;" : :                                \
             _CUB_ASM_PTR_(ptr),                                                             \
@@ -227,7 +238,7 @@ struct IterateThreadStore<MODIFIER, MAX, MAX>
  */
 #define CUB_STORE_1(cub_modifier, ptx_modifier)                                             \
     template<>                                                                              \
-    __device__ __forceinline__ void ThreadStore<cub_modifier, char*, char>(char* ptr, char val)              \
+    __device__ __forceinline__ void ThreadStore<cub_modifier, char*, char>(char* ptr, char val)                         \
     {                                                                                       \
         asm volatile (                                                                      \
         "{"                                                                                 \
@@ -330,9 +341,9 @@ __device__ __forceinline__ void ThreadStoreVolatilePtr(
     VolatileWord words[VOLATILE_MULTIPLE];
     *reinterpret_cast<T*>(words) = val;
 
-    #pragma unroll
-    for (int i = 0; i < VOLATILE_MULTIPLE; ++i)
-        reinterpret_cast<volatile VolatileWord*>(ptr)[i] = words[i];
+    IterateThreadStore<0, VOLATILE_MULTIPLE>::template Dereference(
+        reinterpret_cast<volatile VolatileWord*>(ptr),
+        words);
 
 #endif  // CUB_PTX_VERSION <= 130
 
@@ -371,7 +382,7 @@ __device__ __forceinline__ void ThreadStore(
 
     *reinterpret_cast<T*>(words) = val;
 
-    IterateThreadStore<CacheStoreModifier(MODIFIER), 0, DEVICE_MULTIPLE>::Store(
+    IterateThreadStore<0, DEVICE_MULTIPLE>::template Store<CacheStoreModifier(MODIFIER)>(
         reinterpret_cast<DeviceWord*>(ptr),
         words);
 }

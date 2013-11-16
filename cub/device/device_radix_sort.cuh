@@ -29,7 +29,7 @@
 
 /**
  * \file
- * cub::DeviceRadixSort provides operations for computing a device-wide, parallel reduction across data items residing within global memory.
+ * cub::DeviceRadixSort provides device-wide, parallel operations for computing a radix sort across data items residing within global memory.
  */
 
 #pragma once
@@ -795,7 +795,7 @@ struct DeviceRadixSortDispatch
  *****************************************************************************/
 
 /**
- * \brief DeviceRadixSort provides operations for computing a device-wide, parallel radix sort across data items residing within global memory. ![](sorting_logo.png)
+ * \brief DeviceRadixSort provides device-wide, parallel operations for computing a radix sort across data items residing within global memory. ![](sorting_logo.png)
  * \ingroup DeviceModule
  *
  * \par Overview
