@@ -28,7 +28,7 @@
 
 /**
  * \file
- * cub::BlockScanRegion implements a stateful abstraction of CUDA thread blocks for participating in device-wide prefix scan.
+ * cub::BlockScanRegion implements a stateful abstraction of CUDA thread blocks for participating in device-wide prefix scan across a region of tiles.
  */
 
 #pragma once
@@ -88,7 +88,7 @@ struct BlockScanRegionPolicy
  ******************************************************************************/
 
 /**
- * \brief BlockScanRegion implements a stateful abstraction of CUDA thread blocks for participating in device-wide prefix scan.
+ * \brief BlockScanRegion implements a stateful abstraction of CUDA thread blocks for participating in device-wide prefix scan across a region of tiles.
  */
 template <
     typename BlockScanRegionPolicy,     ///< Parameterized BlockScanRegionPolicy tuning policy type
@@ -334,12 +334,13 @@ struct BlockScanRegion
             // Scan first tile
             ScanBlock(items, scan_op, identity, block_aggregate);
 
-            // Update tile status if this tile is full (i.e., there may be successor tiles)
+            // Update tile status if there may be successor tiles (i.e., this tile is full)
             if (FULL_TILE && (threadIdx.x == 0))
                 TileDescriptor::SetPrefix(d_tile_status, block_aggregate);
         }
         else
         {
+            // Scan non-first tile
             LookbackPrefixCallbackOp prefix_op(d_tile_status, temp_storage.prefix, scan_op, tile_idx);
             ScanBlock(items, scan_op, identity, block_aggregate, prefix_op);
         }
@@ -366,7 +367,7 @@ struct BlockScanRegion
 
         // No concurrent kernels allowed and blocks are launched in increasing order, so just assign one tile per block (up to 65K blocks)
         int     tile_idx        = blockIdx.x;
-        Offset   block_offset    = Offset(TILE_ITEMS) * tile_idx;
+        Offset  block_offset    = Offset(TILE_ITEMS) * tile_idx;
 
         if (block_offset + TILE_ITEMS <= num_items)
             ConsumeTile<true>(num_items, tile_idx, block_offset, d_tile_status);

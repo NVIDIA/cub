@@ -28,7 +28,7 @@
 
 /**
  * \file
- * cub::BlockReduceRegion implements a stateful abstraction of CUDA thread blocks for participating in device-wide reduction.
+ * cub::BlockReduceRegion implements a stateful abstraction of CUDA thread blocks for participating in device-wide reduction across a region of tiles.
  */
 
 #pragma once
@@ -87,7 +87,7 @@ struct BlockReduceRegionPolicy
  ******************************************************************************/
 
 /**
- * \brief BlockReduceRegion implements a stateful abstraction of CUDA thread blocks for participating in device-wide reduction.
+ * \brief BlockReduceRegion implements a stateful abstraction of CUDA thread blocks for participating in device-wide reduction across a region of tiles.
  *
  * Each thread reduces only the values it loads. If \p FIRST_TILE, this
  * partial reduction is stored into \p thread_aggregate.  Otherwise it is
@@ -108,11 +108,8 @@ struct BlockReduceRegion
     // The value type of the input iterator
     typedef typename std::iterator_traits<InputIterator>::value_type T;
 
-    // Helper type for vectorizing loads of T
-    typedef CubVector<T, BlockReduceRegionPolicy::VECTOR_LOAD_LENGTH> VecHelper;
-
-    // Vector of T
-    typedef typename VecHelper::Type VectorT;
+    // Vector type of T for data movement
+    typedef typename CubVector<T, BlockReduceRegionPolicy::VECTOR_LOAD_LENGTH>::Type VectorT;
 
     // Input iterator wrapper type
     typedef typename If<IsPointer<InputIterator>::VALUE,

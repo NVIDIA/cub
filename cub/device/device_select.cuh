@@ -29,7 +29,7 @@
 
 /**
  * \file
- * cub::DevicePartition provides operations for computing device-wide, parallel partitionings of data items residing within global memory.
+ * cub::DeviceSelect provides device-wide, parallel operations for constructing subsets from data items residing within global memory.
  */
 
 #pragma once
@@ -37,7 +37,8 @@
 #include <stdio.h>
 #include <iterator>
 
-#include "region/block_partition_region.cuh"
+#include "device_scan.cuh"
+#include "region/block_select_region.cuh"
 #include "../thread/thread_operators.cuh"
 #include "../grid/grid_queue.cuh"
 #include "../util_debug.cuh"
@@ -60,18 +61,20 @@ namespace cub {
 
 
 /**
- * Partition kernel entry point (multi-block)
+ * Select kernel entry point (multi-block)
  */
 template <
-    typename    BlockPartitionRegionPolicy,     ///< Parameterized BlockPartitionRegionPolicy tuning policy type
+    typename    BlockSelectRegionPolicy,        ///< Parameterized BlockSelectRegionPolicy tuning policy type
     typename    InputIterator,                  ///< Random-access iterator type for input (may be a simple pointer type)
+    typename    FlagIterator,                   ///< Random-access input iterator type for selection flags (possibly NullType* if SelectOp functor is used)
     typename    OutputIterator,                 ///< Random-access iterator type for output (may be a simple pointer type)
-    typename    SelectOp,                       ///< Selection operator type
+    typename    SelectOp,                       ///< Selection operator type (possibly NullType if flags are used)
     typename    Offset,                         ///< Signed integer type for global offsets
-    typename    OffsetTuple>                    ///< Signed integer tuple type for global offsets
-__launch_bounds__ (int(BlockPartitionRegionPolicy::BLOCK_THREADS))
-__global__ void PartitionRegionKernel(
+    typename    OffsetTuple>                    ///< Signed integer tuple type for global scatter offsets (selections and rejections)
+__launch_bounds__ (int(BlockSelectRegionPolicy::BLOCK_THREADS))
+__global__ void SelectRegionKernel(
     InputIterator                       d_in,           ///< Input data
+    FlagIterator                        d_flags,        ///< Input flags
     OutputIterator                      d_out,          ///< Output data
     LookbackTileDescriptor<OffsetTuple> *d_tile_status, ///< Global list of tile status
     SelectOp                            select_op,      ///< Selection operator
@@ -83,19 +86,20 @@ __global__ void PartitionRegionKernel(
         TILE_STATUS_PADDING = CUB_PTX_WARP_THREADS,
     };
 
-    // Thread block type for scanning input tiles
-    typedef BlockPartitionRegion<
-        BlockPartitionRegionPolicy,
+    // Thread block type for selecting data from input tiles
+    typedef BlockSelectRegion<
+        BlockSelectRegionPolicy,
         InputIterator,
+        FlagIterator,
         OutputIterator,
         SelectOp,
-        OffsetTuple> BlockPartitionRegionT;
+        OffsetTuple> BlockSelectRegionT;
 
-    // Shared memory for BlockPartitionRegion
-    __shared__ typename BlockPartitionRegionT::TempStorage temp_storage;
+    // Shared memory for BlockSelectRegion
+    __shared__ typename BlockSelectRegionT::TempStorage temp_storage;
 
     // Process tiles
-    BlockPartitionRegionT(temp_storage, d_in, d_out, select_op, num_items).ConsumeRegion(
+    BlockSelectRegionT(temp_storage, d_in, d_out, select_op, num_items).ConsumeRegion(
         num_items,
         queue,
         d_tile_status + TILE_STATUS_PADDING);
@@ -112,11 +116,12 @@ __global__ void PartitionRegionKernel(
  * Internal dispatch routine
  */
 template <
-    typename InputIterator,      ///< Random-access iterator type for input (may be a simple pointer type)
-    typename OutputIterator,     ///< Random-access iterator type for output (may be a simple pointer type)
-    typename SelectOp,           ///< Selection operator type
-    typename OffsetTuple>        ///< Signed integer tuple type for global offsets
-struct DevicePartitionDispatch
+    typename    InputIterator,                  ///< Random-access iterator type for input (may be a simple pointer type)
+    typename    OutputIterator,                 ///< Random-access iterator type for output (may be a simple pointer type)
+    typename    FlagIterator,                   ///< Random-access input iterator type for selection flags (possibly NullType* if SelectOp functor is used)
+    typename    SelectOp,                       ///< Selection operator type (possibly NullType if flags are used)
+    typename    OffsetTuple>                    ///< Signed integer tuple type for global scatter offsets (selections and rejections)
+struct DeviceSelectDispatch
 {
     enum
     {
@@ -127,11 +132,14 @@ struct DevicePartitionDispatch
     // Data type of input iterator
     typedef typename std::iterator_traits<InputIterator>::value_type T;
 
+    // Data type of flag iterator
+    typedef typename std::iterator_traits<FlagIterator>::value_type Flag;
+
     // Signed integer type for global offsets
     typedef typename OffsetTuple::BaseType Offset;
 
     // Tile status descriptor type
-    typedef LookbackTileDescriptor<OffsetTuple> LookbackTileDescriptorT;
+    typedef LookbackTileDescriptor<OffsetTuple> TileDescriptor;
 
 
     /******************************************************************************
@@ -142,11 +150,11 @@ struct DevicePartitionDispatch
     struct Policy350
     {
         enum {
-            NOMINAL_4B_ITEMS_PER_THREAD = 16,
+            NOMINAL_4B_ITEMS_PER_THREAD = 8,
             ITEMS_PER_THREAD            = CUB_MIN(NOMINAL_4B_ITEMS_PER_THREAD, CUB_MAX(1, (NOMINAL_4B_ITEMS_PER_THREAD * 4 / sizeof(T)))),
         };
 
-        typedef BlockPartitionRegionPolicy<
+        typedef BlockSelectRegionPolicy<
                 128,
                 ITEMS_PER_THREAD,
                 BLOCK_LOAD_DIRECT,
@@ -154,18 +162,18 @@ struct DevicePartitionDispatch
                 LOAD_LDG,
                 false,
                 BLOCK_SCAN_RAKING_MEMOIZE>
-            PartitionRegionPolicy;
+            SelectRegionPolicy;
     };
 
     /// SM30
     struct Policy300
     {
         enum {
-            NOMINAL_4B_ITEMS_PER_THREAD = 9,
+            NOMINAL_4B_ITEMS_PER_THREAD = 5,
             ITEMS_PER_THREAD            = CUB_MIN(NOMINAL_4B_ITEMS_PER_THREAD, CUB_MAX(1, (NOMINAL_4B_ITEMS_PER_THREAD * 4 / sizeof(T)))),
         };
 
-        typedef BlockPartitionRegionPolicy<
+        typedef BlockSelectRegionPolicy<
                 256,
                 ITEMS_PER_THREAD,
                 BLOCK_LOAD_WARP_TRANSPOSE,
@@ -173,18 +181,18 @@ struct DevicePartitionDispatch
                 LOAD_DEFAULT,
                 false,
                 BLOCK_SCAN_RAKING_MEMOIZE>
-            PartitionRegionPolicy;
+            SelectRegionPolicy;
     };
 
     /// SM20
     struct Policy200
     {
         enum {
-            NOMINAL_4B_ITEMS_PER_THREAD = 15,
+            NOMINAL_4B_ITEMS_PER_THREAD = 9,
             ITEMS_PER_THREAD            = CUB_MIN(NOMINAL_4B_ITEMS_PER_THREAD, CUB_MAX(1, (NOMINAL_4B_ITEMS_PER_THREAD * 4 / sizeof(T)))),
         };
 
-        typedef BlockPartitionRegionPolicy<
+        typedef BlockSelectRegionPolicy<
                 128,
                 ITEMS_PER_THREAD,
                 BLOCK_LOAD_WARP_TRANSPOSE,
@@ -192,18 +200,18 @@ struct DevicePartitionDispatch
                 LOAD_DEFAULT,
                 false,
                 BLOCK_SCAN_RAKING_MEMOIZE>
-            PartitionRegionPolicy;
+            SelectRegionPolicy;
     };
 
     /// SM13
     struct Policy130
     {
         enum {
-            NOMINAL_4B_ITEMS_PER_THREAD = 19,
+            NOMINAL_4B_ITEMS_PER_THREAD = 9,
             ITEMS_PER_THREAD            = CUB_MIN(NOMINAL_4B_ITEMS_PER_THREAD, CUB_MAX(1, (NOMINAL_4B_ITEMS_PER_THREAD * 4 / sizeof(T)))),
         };
 
-        typedef BlockPartitionRegionPolicy<
+        typedef BlockSelectRegionPolicy<
                 64,
                 ITEMS_PER_THREAD,
                 BLOCK_LOAD_WARP_TRANSPOSE,
@@ -211,18 +219,18 @@ struct DevicePartitionDispatch
                 LOAD_DEFAULT,
                 false,
                 BLOCK_SCAN_RAKING_MEMOIZE>
-            PartitionRegionPolicy;
+            SelectRegionPolicy;
     };
 
     /// SM10
     struct Policy100
     {
         enum {
-            NOMINAL_4B_ITEMS_PER_THREAD = 19,
+            NOMINAL_4B_ITEMS_PER_THREAD = 7,
             ITEMS_PER_THREAD            = CUB_MIN(NOMINAL_4B_ITEMS_PER_THREAD, CUB_MAX(1, (NOMINAL_4B_ITEMS_PER_THREAD * 4 / sizeof(T)))),
         };
 
-        typedef BlockPartitionRegionPolicy<
+        typedef BlockSelectRegionPolicy<
                 128,
                 ITEMS_PER_THREAD,
                 BLOCK_LOAD_WARP_TRANSPOSE,
@@ -230,7 +238,7 @@ struct DevicePartitionDispatch
                 LOAD_DEFAULT,
                 false,
                 BLOCK_SCAN_RAKING>
-            PartitionRegionPolicy;
+            SelectRegionPolicy;
     };
 
 
@@ -256,7 +264,7 @@ struct DevicePartitionDispatch
 #endif
 
     // "Opaque" policies (whose parameterizations aren't reflected in the type signature)
-    struct PtxPartitionRegionPolicy : PtxPolicy::PartitionRegionPolicy {};
+    struct PtxSelectRegionPolicy : PtxPolicy::SelectRegionPolicy {};
 
 
     /******************************************************************************
@@ -270,35 +278,35 @@ struct DevicePartitionDispatch
     __host__ __device__ __forceinline__
     static void InitConfigs(
         int             ptx_version,
-        KernelConfig    &partition_region_config)
+        KernelConfig    &select_region_config)
     {
     #ifdef __CUDA_ARCH__
 
         // We're on the device, so initialize the kernel dispatch configurations with the current PTX policy
-        partition_region_config.Init<PtxPartitionRegionPolicy>();
+        select_region_config.Init<PtxSelectRegionPolicy>();
 
     #else
 
         // We're on the host, so lookup and initialize the kernel dispatch configurations with the policies that match the device's PTX version
         if (ptx_version >= 350)
         {
-            partition_region_config.template Init<typename Policy350::PartitionRegionPolicy>();
+            select_region_config.template Init<typename Policy350::SelectRegionPolicy>();
         }
         else if (ptx_version >= 300)
         {
-            partition_region_config.template Init<typename Policy300::PartitionRegionPolicy>();
+            select_region_config.template Init<typename Policy300::SelectRegionPolicy>();
         }
         else if (ptx_version >= 200)
         {
-            partition_region_config.template Init<typename Policy200::PartitionRegionPolicy>();
+            select_region_config.template Init<typename Policy200::SelectRegionPolicy>();
         }
         else if (ptx_version >= 130)
         {
-            partition_region_config.template Init<typename Policy130::PartitionRegionPolicy>();
+            select_region_config.template Init<typename Policy130::SelectRegionPolicy>();
         }
         else
         {
-            partition_region_config.template Init<typename Policy100::PartitionRegionPolicy>();
+            select_region_config.template Init<typename Policy100::SelectRegionPolicy>();
         }
 
     #endif
@@ -306,7 +314,7 @@ struct DevicePartitionDispatch
 
 
     /**
-     * Kernel kernel dispatch configuration.  Mirrors the constants within BlockPartitionRegionPolicy.
+     * Kernel kernel dispatch configuration.  Mirrors the constants within BlockSelectRegionPolicy.
      */
     struct KernelConfig
     {
@@ -314,17 +322,17 @@ struct DevicePartitionDispatch
         int                     items_per_thread;
         BlockLoadAlgorithm      load_policy;
         bool                    two_phase_scatter;
-        BlockScanAlgorithm      partition_algorithm;
+        BlockScanAlgorithm      scan_algorithm;
 
-        template <typename BlockPartitionRegionPolicy>
+        template <typename BlockSelectRegionPolicy>
         __host__ __device__ __forceinline__
         void Init()
         {
-            block_threads               = BlockPartitionRegionPolicy::BLOCK_THREADS;
-            items_per_thread            = BlockPartitionRegionPolicy::ITEMS_PER_THREAD;
-            load_policy                 = BlockPartitionRegionPolicy::LOAD_ALGORITHM;
-            two_phase_scatter           = BlockPartitionRegionPolicy::TWO_PHASE_SCATTER;
-            partition_algorithm              = BlockPartitionRegionPolicy::SCAN_ALGORITHM;
+            block_threads               = BlockSelectRegionPolicy::BLOCK_THREADS;
+            items_per_thread            = BlockSelectRegionPolicy::ITEMS_PER_THREAD;
+            load_policy                 = BlockSelectRegionPolicy::LOAD_ALGORITHM;
+            two_phase_scatter           = BlockSelectRegionPolicy::TWO_PHASE_SCATTER;
+            scan_algorithm              = BlockSelectRegionPolicy::SCAN_ALGORITHM;
         }
 
         __host__ __device__ __forceinline__
@@ -335,7 +343,7 @@ struct DevicePartitionDispatch
                 items_per_thread,
                 load_policy,
                 two_phase_scatter,
-                partition_algorithm);
+                scan_algorithm);
         }
     };
 
@@ -350,22 +358,23 @@ struct DevicePartitionDispatch
      */
     template <
         typename                    ScanInitKernelPtr,              ///< Function type of cub::ScanInitKernel
-        typename                    PartitionRegionKernelPtr>             ///< Function type of cub::PartitionRegionKernelPtr
+        typename                    SelectRegionKernelPtr>          ///< Function type of cub::SelectRegionKernelPtr
     __host__ __device__ __forceinline__
     static cudaError_t Dispatch(
         void                        *d_temp_storage,                ///< [in] %Device allocation of temporary storage.  When NULL, the required allocation size is returned in \p temp_storage_bytes and no work is done.
         size_t                      &temp_storage_bytes,            ///< [in,out] Size in bytes of \p d_temp_storage allocation.
-        InputIterator               d_in,                           ///< [in] Iterator pointing to scan input
-        OutputIterator              d_out,                          ///< [in] Iterator pointing to scan output
+        InputIterator               d_in,                           ///< [in] Iterator pointing to selection input
+        FlagIterator                d_flags,                     ///< [in] Iterator pointing to flags input
+        OutputIterator              d_out,                          ///< [in] Iterator pointing to selection output
         SelectOp                    select_op,                      ///< [in] Selection operator
-        Offset                      num_items,                      ///< [in] Total number of items to scan
+        Offset                      num_items,                      ///< [in] Total number of items to select from
         cudaStream_t                stream,                         ///< [in] <b>[optional]</b> CUDA stream to launch kernels within.  Default is stream<sub>0</sub>.
         bool                        debug_synchronous,              ///< [in] <b>[optional]</b> Whether or not to synchronize the stream after every kernel launch to check for errors.  Also causes launch configurations to be printed to the console.  Default is \p false.
         int                         ptx_version,                    ///< [in] PTX version of dispatch kernels
         int                         sm_version,                     ///< [in] SM version of target device to use when computing SM occupancy
         ScanInitKernelPtr           init_kernel,                    ///< [in] Kernel function pointer to parameterization of cub::ScanInitKernel
-        PartitionRegionKernelPtr    partition_region_kernel,             ///< [in] Kernel function pointer to parameterization of cub::PartitionRegionKernelPtr
-        KernelConfig                partition_region_config)             ///< [in] Dispatch parameters that match the policy that \p partition_region_kernel was compiled for
+        SelectRegionKernelPtr       select_region_kernel,           ///< [in] Kernel function pointer to parameterization of cub::SelectRegionKernelPtr
+        KernelConfig                select_region_config)           ///< [in] Dispatch parameters that match the policy that \p select_region_kernel was compiled for
     {
 
 #ifndef CUB_RUNTIME_ENABLED
@@ -379,14 +388,14 @@ struct DevicePartitionDispatch
         do
         {
             // Number of input tiles
-            int tile_size = partition_region_config.block_threads * partition_region_config.items_per_thread;
+            int tile_size = select_region_config.block_threads * select_region_config.items_per_thread;
             int num_tiles = (num_items + tile_size - 1) / tile_size;
 
             // Temporary storage allocation requirements
             void* allocations[2];
             size_t allocation_sizes[2] =
             {
-                (num_tiles + TILE_STATUS_PADDING) * sizeof(LookbackTileDescriptorT),  // bytes needed for tile status descriptors
+                (num_tiles + TILE_STATUS_PADDING) * sizeof(TileDescriptor),  // bytes needed for tile status descriptors
                 GridQueue<int>::AllocationSize()                                        // bytes needed for grid queue descriptor
             };
 
@@ -399,7 +408,7 @@ struct DevicePartitionDispatch
             }
 
             // Alias the allocation for the global list of tile status
-            LookbackTileDescriptorT *d_tile_status = (LookbackTileDescriptorT*) allocations[0];
+            TileDescriptor *d_tile_status = (TileDescriptor*) allocations[0];
 
             // Alias the allocation for the grid queue descriptor
             GridQueue<int> queue(allocations[1]);
@@ -425,44 +434,44 @@ struct DevicePartitionDispatch
             // Sync the stream if specified
             if (debug_synchronous && (CubDebug(error = SyncStream(stream)))) break;
 
-            // Get SM occupancy for partition_region_kernel
-            int partition_region_sm_occupancy;
+            // Get SM occupancy for select_region_kernel
+            int select_region_sm_occupancy;
             if (CubDebug(error = MaxSmOccupancy(
-                partition_region_sm_occupancy,            // out
+                select_region_sm_occupancy,            // out
                 sm_version,
-                partition_region_kernel,
-                partition_region_config.block_threads))) break;
+                select_region_kernel,
+                select_region_config.block_threads))) break;
 
-            // Get device occupancy for partition_region_kernel
-            int partition_region_occupancy = partition_region_sm_occupancy * sm_count;
+            // Get device occupancy for select_region_kernel
+            int select_region_occupancy = select_region_sm_occupancy * sm_count;
 
             // Get grid size for scanning tiles
-            int partition_grid_size;
+            int select_grid_size;
             if (ptx_version < 200)
             {
                 // We don't have atomics (or don't have fast ones), so just assign one block per tile (limited to 65K tiles)
-                partition_grid_size = num_tiles;
-                if (partition_grid_size >= (64 * 1024))
+                select_grid_size = num_tiles;
+                if (select_grid_size >= (64 * 1024))
                     return cudaErrorInvalidConfiguration;
             }
             else
             {
-                partition_grid_size = (num_tiles < partition_region_occupancy) ?
+                select_grid_size = (num_tiles < select_region_occupancy) ?
                     num_tiles :                     // Not enough to fill the device with threadblocks
-                    partition_region_occupancy;          // Fill the device with threadblocks
+                    select_region_occupancy;          // Fill the device with threadblocks
             }
 
-            // Log partition_region_kernel configuration
-            if (debug_synchronous) CubLog("Invoking partition_region_kernel<<<%d, %d, 0, %lld>>>(), %d items per thread, %d SM occupancy\n",
-                partition_grid_size, partition_region_config.block_threads, (long long) stream, partition_region_config.items_per_thread, partition_region_sm_occupancy);
+            // Log select_region_kernel configuration
+            if (debug_synchronous) CubLog("Invoking select_region_kernel<<<%d, %d, 0, %lld>>>(), %d items per thread, %d SM occupancy\n",
+                select_grid_size, select_region_config.block_threads, (long long) stream, select_region_config.items_per_thread, select_region_sm_occupancy);
 
-            // Invoke partition_region_kernel
-            partition_region_kernel<<<partition_grid_size, partition_region_config.block_threads, 0, stream>>>(
+            // Invoke select_region_kernel
+            select_region_kernel<<<select_grid_size, select_region_config.block_threads, 0, stream>>>(
                 d_in,
+                d_flags,
                 d_out,
                 d_tile_status,
                 select_op,
-                identity,
                 num_items,
                 queue);
 
@@ -484,11 +493,11 @@ struct DevicePartitionDispatch
     static cudaError_t Dispatch(
         void            *d_temp_storage,                ///< [in] %Device allocation of temporary storage.  When NULL, the required allocation size is returned in \p temp_storage_bytes and no work is done.
         size_t          &temp_storage_bytes,            ///< [in,out] Size in bytes of \p d_temp_storage allocation.
-        InputIterator   d_in,                           ///< [in] Iterator pointing to scan input
-        OutputIterator  d_out,                          ///< [in] Iterator pointing to scan output
-        SelectOp          select_op,                        ///< [in] Binary scan operator
-        Identity        identity,                       ///< [in] Identity element
-        Offset          num_items,                      ///< [in] Total number of items to scan
+        InputIterator   d_in,                           ///< [in] Iterator pointing to selection input
+        FlagIterator    d_flags,                        ///< [in] Iterator pointing to flags input
+        OutputIterator  d_out,                          ///< [in] Iterator pointing to selection output
+        SelectOp        select_op,                      ///< [in] Selection operator
+        Offset          num_items,                      ///< [in] Total number of items to select from
         cudaStream_t    stream,                         ///< [in] <b>[optional]</b> CUDA stream to launch kernels within.  Default is stream<sub>0</sub>.
         bool            debug_synchronous)              ///< [in] <b>[optional]</b> Whether or not to synchronize the stream after every kernel launch to check for errors.  Also causes launch configurations to be printed to the console.  Default is \p false.
     {
@@ -504,25 +513,25 @@ struct DevicePartitionDispatch
     #endif
 
             // Get kernel kernel dispatch configurations
-            KernelConfig partition_region_config;
-            InitConfigs(ptx_version, partition_region_config);
+            KernelConfig select_region_config;
+            InitConfigs(ptx_version, select_region_config);
 
             // Dispatch
             if (CubDebug(error = Dispatch(
                 d_temp_storage,
                 temp_storage_bytes,
                 d_in,
+                d_flags,
                 d_out,
                 select_op,
-                identity,
                 num_items,
                 stream,
                 debug_synchronous,
                 ptx_version,
                 ptx_version,            // Use PTX version instead of SM version because, as a statically known quantity, this improves device-side launch dramatically but at the risk of imprecise occupancy calculation for mismatches
                 ScanInitKernel<T, Offset>,
-                PartitionRegionKernel<PtxPartitionRegionPolicy, InputIterator, OutputIterator, T, SelectOp, Identity, Offset>,
-                partition_region_config))) break;
+                SelectRegionKernel<PtxSelectRegionPolicy, InputIterator, FlagIterator, OutputIterator, SelectOp, Offset, OffsetTuple>,
+                select_region_config))) break;
         }
         while (0);
 
@@ -537,11 +546,11 @@ struct DevicePartitionDispatch
 
 
 /******************************************************************************
- * DevicePartition
+ * DeviceSelect
  *****************************************************************************/
 
 /**
- * \brief DevicePartition provides operations for computing a device-wide, parallel prefix scan across data items residing within global memory. ![](device_scan.png)
+ * \brief DeviceSelect provides device-wide, parallel operations for constructing subsets from lists of data items residing within global memory. ![](device_select.png)
  * \ingroup DeviceModule
  *
  * \par Overview
@@ -554,14 +563,14 @@ struct DevicePartitionDispatch
  * the <em>i</em><sup>th</sup> output reduction.
  *
  * \par Usage Considerations
- * \cdp_class{DevicePartition}
+ * \cdp_class{DeviceSelect}
  *
  * \par Performance
  *
- * \image html partition_perf.png
+ * \image html select_perf.png
  *
  */
-struct DevicePartition
+struct DeviceSelect
 {
     /**
      * \brief Computes a device-wide inclusive prefix sum.
@@ -584,14 +593,14 @@ struct DevicePartition
         size_t              &temp_storage_bytes,                ///< [in,out] Size in bytes of \p d_temp_storage allocation.
         InputIterator       d_in,                               ///< [in] Iterator pointing to scan input
         OutputIterator      d_out,                              ///< [in] Iterator pointing to scan output
-        int                 num_items,                          ///< [in] Total number of items to scan
+        int                 num_items,                          ///< [in] Total number of items to select from
         cudaStream_t        stream             = 0,             ///< [in] <b>[optional]</b> CUDA stream to launch kernels within.  Default is stream<sub>0</sub>.
         bool                debug_synchronous  = false)         ///< [in] <b>[optional]</b> Whether or not to synchronize the stream after every kernel launch to check for errors.  May cause significant slowdown.  Default is \p false.
     {
         // Signed integer type for global offsets
         typedef int Offset;
 
-        return DevicePartitionDispatch<InputIterator, OutputIterator, Sum, NullType, Offset>::Dispatch(
+        return DeviceSelectDispatch<InputIterator, OutputIterator, Sum, NullType, Offset>::Dispatch(
             d_temp_storage,
             temp_storage_bytes,
             d_in,
@@ -631,14 +640,14 @@ struct DevicePartition
         InputIterator   d_in,                               ///< [in] Iterator pointing to scan input
         OutputIterator  d_out,                              ///< [in] Iterator pointing to scan output
         SelectOp        select_op,                        ///< [in] Binary scan operator
-        int             num_items,                          ///< [in] Total number of items to scan
+        int             num_items,                          ///< [in] Total number of items to select from
         cudaStream_t    stream             = 0,             ///< [in] <b>[optional]</b> CUDA stream to launch kernels within.  Default is stream<sub>0</sub>.
         bool            debug_synchronous  = false)         ///< [in] <b>[optional]</b> Whether or not to synchronize the stream after every kernel launch to check for errors.  May cause significant slowdown.  Default is \p false.
     {
         // Signed integer type for global offsets
         typedef int Offset;
 
-        return DevicePartitionDispatch<InputIterator, OutputIterator, SelectOp, NullType, Offset>::Dispatch(
+        return DeviceSelectDispatch<InputIterator, OutputIterator, SelectOp, NullType, Offset>::Dispatch(
             d_temp_storage,
             temp_storage_bytes,
             d_in,

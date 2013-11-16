@@ -119,23 +119,34 @@ __device__ __forceinline__ typename std::iterator_traits<InputIterator>::value_t
 
 
 /// Helper structure for templated load iteration (inductive case)
-template <CacheLoadModifier MODIFIER, int COUNT, int MAX>
+template <int COUNT, int MAX>
 struct IterateThreadLoad
 {
-    template <typename T>
+    template <CacheLoadModifier MODIFIER, typename T>
     static __device__ __forceinline__ void Load(T *ptr, T *vals)
     {
         vals[COUNT] = ThreadLoad<MODIFIER>(ptr + COUNT);
-        IterateThreadLoad<MODIFIER, COUNT + 1, MAX>::Load(ptr, vals);
+        IterateThreadLoad<COUNT + 1, MAX>::template Load<MODIFIER>(ptr, vals);
+    }
+
+    template <typename InputIterator, typename T>
+    static __device__ __forceinline__ void Dereference(InputIterator ptr, T *vals)
+    {
+        vals[COUNT] = ptr[COUNT];
+        IterateThreadLoad<COUNT + 1, MAX>::Dereference(ptr, vals);
     }
 };
 
+
 /// Helper structure for templated load iteration (termination case)
-template <CacheLoadModifier MODIFIER, int MAX>
-struct IterateThreadLoad<MODIFIER, MAX, MAX>
+template <int MAX>
+struct IterateThreadLoad<MAX, MAX>
 {
-    template <typename T>
+    template <CacheLoadModifier MODIFIER, typename T>
     static __device__ __forceinline__ void Load(T *ptr, T *vals) {}
+
+    template <typename InputIterator, typename T>
+    static __device__ __forceinline__ void Dereference(InputIterator ptr, T *vals) {}
 };
 
 
@@ -338,6 +349,7 @@ __device__ __forceinline__ T ThreadLoadVolatilePointer(
     T                       *ptr,
     Int2Type<false>          is_primitive)
 {
+
 #if CUB_PTX_VERSION <= 130
 
     T retval = *ptr;
@@ -352,9 +364,9 @@ __device__ __forceinline__ T ThreadLoadVolatilePointer(
 
     VolatileWord words[VOLATILE_MULTIPLE];
 
-    #pragma unroll
-    for (int i = 0; i < VOLATILE_MULTIPLE; ++i)
-        words[i] = reinterpret_cast<volatile VolatileWord*>(ptr)[i];
+    IterateThreadLoad<0, VOLATILE_MULTIPLE>::Dereference(
+        reinterpret_cast<volatile VolatileWord*>(ptr),
+        words);
 
     return *reinterpret_cast<T*>(words);
 
@@ -391,7 +403,7 @@ __device__ __forceinline__ T ThreadLoad(
 
     DeviceWord words[DEVICE_MULTIPLE];
 
-    IterateThreadLoad<CacheLoadModifier(MODIFIER), 0, DEVICE_MULTIPLE>::Load(
+    IterateThreadLoad<0, DEVICE_MULTIPLE>::template Load<CacheLoadModifier(MODIFIER)>(
         reinterpret_cast<DeviceWord*>(ptr),
         words);
 

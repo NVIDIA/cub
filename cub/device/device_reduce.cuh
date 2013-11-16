@@ -29,7 +29,7 @@
 
 /**
  * \file
- * cub::DeviceReduce provides operations for computing a device-wide, parallel reduction across data items residing within global memory.
+ * cub::DeviceReduce provides device-wide, parallel operations for computing a reduction across data items residing within global memory.
  */
 
 #pragma once
@@ -710,7 +710,7 @@ struct DeviceReduceDispatch
  *****************************************************************************/
 
 /**
- * \brief DeviceReduce provides operations for computing a device-wide, parallel reduction across data items residing within global memory. ![](reduce_logo.png)
+ * \brief DeviceReduce provides device-wide, parallel operations for computing a reduction across data items residing within global memory. ![](reduce_logo.png)
  * \ingroup DeviceModule
  *
  * \par Overview

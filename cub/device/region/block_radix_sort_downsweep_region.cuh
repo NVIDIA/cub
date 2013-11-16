@@ -28,7 +28,7 @@
 
 /**
  * \file
- * BlockRadixSortDownsweepRegion implements a stateful abstraction of CUDA thread blocks for participating in device-wide radix sort downsweep.
+ * BlockRadixSortDownsweepRegion implements a stateful abstraction of CUDA thread blocks for participating in device-wide radix sort downsweep across a region of tiles.
  */
 
 
@@ -115,8 +115,7 @@ struct BlockRadixSortDownsweepRegionPolicy
  ******************************************************************************/
 
 /**
- * CTA-wide "downsweep" abstraction for distributing keys from
- * a range of input tiles.
+ * \brief BlockRadixSortDownsweepRegion implements a stateful abstraction of CUDA thread blocks for participating in device-wide radix sort downsweep across a region of tiles.
  */
 template <
     typename BlockRadixSortDownsweepRegionPolicy,       ///< Parameterized BlockRadixSortDownsweepRegionPolicy tuning policy type
