@@ -398,7 +398,7 @@ struct DeviceScanDispatch
     __host__ __device__ __forceinline__
     static cudaError_t Dispatch(
         void                        *d_temp_storage,                ///< [in] %Device allocation of temporary storage.  When NULL, the required allocation size is returned in \p temp_storage_bytes and no work is done.
-        size_t                      &temp_storage_bytes,            ///< [in,out] Size in bytes of \p d_temp_storage allocation.
+        size_t                      &temp_storage_bytes,            ///< [in,out] Size in bytes of \p d_temp_storage allocation
         InputIterator               d_in,                           ///< [in] Iterator pointing to scan input
         OutputIterator              d_out,                          ///< [in] Iterator pointing to scan output
         ScanOp                      scan_op,                        ///< [in] Binary scan operator
@@ -528,7 +528,7 @@ struct DeviceScanDispatch
     __host__ __device__ __forceinline__
     static cudaError_t Dispatch(
         void            *d_temp_storage,                ///< [in] %Device allocation of temporary storage.  When NULL, the required allocation size is returned in \p temp_storage_bytes and no work is done.
-        size_t          &temp_storage_bytes,            ///< [in,out] Size in bytes of \p d_temp_storage allocation.
+        size_t          &temp_storage_bytes,            ///< [in,out] Size in bytes of \p d_temp_storage allocation
         InputIterator   d_in,                           ///< [in] Iterator pointing to scan input
         OutputIterator  d_out,                          ///< [in] Iterator pointing to scan output
         ScanOp          scan_op,                        ///< [in] Binary scan operator
@@ -657,7 +657,7 @@ struct DeviceScan
     __host__ __device__
     static cudaError_t ExclusiveSum(
         void            *d_temp_storage,                    ///< [in] %Device allocation of temporary storage.  When NULL, the required allocation size is returned in \p temp_storage_bytes and no work is done.
-        size_t          &temp_storage_bytes,                ///< [in,out] Size in bytes of \p d_temp_storage allocation.
+        size_t          &temp_storage_bytes,                ///< [in,out] Size in bytes of \p d_temp_storage allocation
         InputIterator   d_in,                               ///< [in] Iterator pointing to scan input
         OutputIterator  d_out,                              ///< [in] Iterator pointing to scan output
         int             num_items,                          ///< [in] Total number of items to scan
@@ -734,7 +734,7 @@ struct DeviceScan
     __host__ __device__
     static cudaError_t ExclusiveScan(
         void            *d_temp_storage,                    ///< [in] %Device allocation of temporary storage.  When NULL, the required allocation size is returned in \p temp_storage_bytes and no work is done.
-        size_t          &temp_storage_bytes,                ///< [in,out] Size in bytes of \p d_temp_storage allocation.
+        size_t          &temp_storage_bytes,                ///< [in,out] Size in bytes of \p d_temp_storage allocation
         InputIterator   d_in,                               ///< [in] Iterator pointing to scan input
         OutputIterator  d_out,                              ///< [in] Iterator pointing to scan output
         ScanOp          scan_op,                            ///< [in] Binary scan operator
@@ -809,7 +809,7 @@ struct DeviceScan
     __host__ __device__
     static cudaError_t InclusiveSum(
         void                *d_temp_storage,                    ///< [in] %Device allocation of temporary storage.  When NULL, the required allocation size is returned in \p temp_storage_bytes and no work is done.
-        size_t              &temp_storage_bytes,                ///< [in,out] Size in bytes of \p d_temp_storage allocation.
+        size_t              &temp_storage_bytes,                ///< [in,out] Size in bytes of \p d_temp_storage allocation
         InputIterator       d_in,                               ///< [in] Iterator pointing to scan input
         OutputIterator      d_out,                              ///< [in] Iterator pointing to scan output
         int                 num_items,                          ///< [in] Total number of items to scan
@@ -880,7 +880,7 @@ struct DeviceScan
     __host__ __device__
     static cudaError_t InclusiveScan(
         void            *d_temp_storage,                    ///< [in] %Device allocation of temporary storage.  When NULL, the required allocation size is returned in \p temp_storage_bytes and no work is done.
-        size_t          &temp_storage_bytes,                ///< [in,out] Size in bytes of \p d_temp_storage allocation.
+        size_t          &temp_storage_bytes,                ///< [in,out] Size in bytes of \p d_temp_storage allocation
         InputIterator   d_in,                               ///< [in] Iterator pointing to scan input
         OutputIterator  d_out,                              ///< [in] Iterator pointing to scan output
         ScanOp          scan_op,                            ///< [in] Binary scan operator

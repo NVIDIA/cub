@@ -397,7 +397,7 @@ struct DeviceRadixSortDispatch
         typename ScanKernelPtr,            ///< Function type of cub::SpineScanKernel
         typename DownsweepKernelPtr>        ///< Function type of cub::RadixSortUpsweepKernel
     __host__ __device__ __forceinline__
-    static cudaError_t InitConfigs2(
+    static cudaError_t InitConfigs(
         int                     sm_version,
         int                     sm_count,
         KernelConfig            &upsweep_config,
@@ -454,6 +454,7 @@ struct DeviceRadixSortDispatch
         // We're on the device, so initialize the kernel dispatch configurations with the current PTX policy
         cudaError_t error;
         do {
+
             if (CubDebug(error = upsweep_config.InitUpsweepPolicy<PtxUpsweepPolicy>(         sm_version, sm_count, upsweep_kernel))) break;
             if (CubDebug(error = upsweep_config.InitUpsweepPolicy<PtxAltUpsweepPolicy>(      sm_version, sm_count, alt_upsweep_kernel))) break;
             if (CubDebug(error = scan_config.InitScanPolicy<PtxScanPolicy>(                  sm_version, sm_count, scan_kernel))) break;
@@ -467,24 +468,29 @@ struct DeviceRadixSortDispatch
     #else
 
         // We're on the host, so lookup and initialize the kernel dispatch configurations with the policies that match the device's PTX version
+        cudaError_t error;
         if (ptx_version >= 350)
         {
-            return InitConfigs2<Policy350>(sm_version, sm_count, upsweep_config, alt_upsweep_config, scan_config, downsweep_config, alt_downsweep_config, upsweep_kernel, alt_upsweep_kernel, scan_kernel, downsweep_kernel, alt_downsweep_kernel);
+            error = InitConfigs<Policy350>(sm_version, sm_count, upsweep_config, alt_upsweep_config, scan_config, downsweep_config, alt_downsweep_config, upsweep_kernel, alt_upsweep_kernel, scan_kernel, downsweep_kernel, alt_downsweep_kernel);
         }
         else if (ptx_version >= 300)
         {
-            return InitConfigs2<Policy300>(sm_version, sm_count, upsweep_config, alt_upsweep_config, scan_config, downsweep_config, alt_downsweep_config, upsweep_kernel, alt_upsweep_kernel, scan_kernel, downsweep_kernel, alt_downsweep_kernel);
+            error = InitConfigs<Policy300>(sm_version, sm_count, upsweep_config, alt_upsweep_config, scan_config, downsweep_config, alt_downsweep_config, upsweep_kernel, alt_upsweep_kernel, scan_kernel, downsweep_kernel, alt_downsweep_kernel);
         }
         else if (ptx_version >= 200)
         {
-            return InitConfigs2<Policy200>(sm_version, sm_count, upsweep_config, alt_upsweep_config, scan_config, downsweep_config, alt_downsweep_config, upsweep_kernel, alt_upsweep_kernel, scan_kernel, downsweep_kernel, alt_downsweep_kernel);
+            error = InitConfigs<Policy200>(sm_version, sm_count, upsweep_config, alt_upsweep_config, scan_config, downsweep_config, alt_downsweep_config, upsweep_kernel, alt_upsweep_kernel, scan_kernel, downsweep_kernel, alt_downsweep_kernel);
         }
         else if (ptx_version >= 130)
         {
-            return InitConfigs2<Policy130>(sm_version, sm_count, upsweep_config, alt_upsweep_config, scan_config, downsweep_config, alt_downsweep_config, upsweep_kernel, alt_upsweep_kernel, scan_kernel, downsweep_kernel, alt_downsweep_kernel);
+            error = InitConfigs<Policy130>(sm_version, sm_count, upsweep_config, alt_upsweep_config, scan_config, downsweep_config, alt_downsweep_config, upsweep_kernel, alt_upsweep_kernel, scan_kernel, downsweep_kernel, alt_downsweep_kernel);
+        }
+        else
+        {
+            error = InitConfigs<Policy100>(sm_version, sm_count, upsweep_config, alt_upsweep_config, scan_config, downsweep_config, alt_downsweep_config, upsweep_kernel, alt_upsweep_kernel, scan_kernel, downsweep_kernel, alt_downsweep_kernel);
         }
 
-        return InitConfigs2<Policy100>(sm_version, sm_count, upsweep_config, alt_upsweep_config, scan_config, downsweep_config, alt_downsweep_config, upsweep_kernel, alt_upsweep_kernel, scan_kernel, downsweep_kernel, alt_downsweep_kernel);
+        return error;
 
     #endif
     }
@@ -562,7 +568,7 @@ struct DeviceRadixSortDispatch
     __host__ __device__ __forceinline__
     static cudaError_t AllocateTemporaries(
         void                    *d_temp_storage,                ///< [in] %Device allocation of temporary storage.  When NULL, the required allocation size is returned in \p temp_storage_bytes and no work is done.
-        size_t                  &temp_storage_bytes,            ///< [in,out] Size in bytes of \p d_temp_storage allocation.
+        size_t                  &temp_storage_bytes,            ///< [in,out] Size in bytes of \p d_temp_storage allocation
         Offset*                 &d_spine,                       ///< [out] Digit count histograms per thread block
         KernelConfig            &scan_config,                   ///< [in] Dispatch parameters that match the policy that \p scan_kernel was compiled for
         KernelConfig            &downsweep_config)              ///< [in] Dispatch parameters that match the policy that \p downsweep_kernel was compiled for
@@ -751,7 +757,7 @@ struct DeviceRadixSortDispatch
     __host__ __device__ __forceinline__
     static cudaError_t Dispatch(
         void                    *d_temp_storage,                ///< [in] %Device allocation of temporary storage.  When NULL, the required allocation size is returned in \p temp_storage_bytes and no work is done.
-        size_t                  &temp_storage_bytes,            ///< [in,out] Size in bytes of \p d_temp_storage allocation.
+        size_t                  &temp_storage_bytes,            ///< [in,out] Size in bytes of \p d_temp_storage allocation
         DoubleBuffer<Key>       &d_keys,                        ///< [in,out] Double-buffer whose current buffer contains the unsorted input keys and, upon return, is updated to point to the sorted output keys
         DoubleBuffer<Value>     &d_values,                      ///< [in,out] Double-buffer whose current buffer contains the unsorted input values and, upon return, is updated to point to the sorted output values
         Offset                  num_items,                      ///< [in] Number of items to reduce
@@ -773,6 +779,7 @@ struct DeviceRadixSortDispatch
 #else
 
         cudaError error = cudaSuccess;
+
         do
         {
             // Get PTX version
@@ -801,9 +808,9 @@ struct DeviceRadixSortDispatch
             KernelConfig downsweep_config;
             KernelConfig alt_downsweep_config;
 
-            InitConfigs(ptx_version, sm_version, sm_count,
+            if (CubDebug(error = InitConfigs(ptx_version, sm_version, sm_count,
                 upsweep_config, alt_upsweep_config, scan_config, downsweep_config, alt_downsweep_config,
-                upsweep_kernel, alt_upsweep_kernel, scan_kernel, downsweep_kernel, alt_downsweep_kernel);
+                upsweep_kernel, alt_upsweep_kernel, scan_kernel, downsweep_kernel, alt_downsweep_kernel))) break;
 
             // Get spine sizes (conservative)
             int spine_size      = (downsweep_config.max_grid_size * (1 << downsweep_config.radix_bits)) + scan_config.tile_size;
@@ -886,7 +893,7 @@ struct DeviceRadixSortDispatch
     __host__ __device__ __forceinline__
     static cudaError_t Dispatch(
         void                    *d_temp_storage,                ///< [in] %Device allocation of temporary storage.  When NULL, the required allocation size is returned in \p temp_storage_bytes and no work is done.
-        size_t                  &temp_storage_bytes,            ///< [in,out] Size in bytes of \p d_temp_storage allocation.
+        size_t                  &temp_storage_bytes,            ///< [in,out] Size in bytes of \p d_temp_storage allocation
         DoubleBuffer<Key>       &d_keys,                        ///< [in,out] Double-buffer whose current buffer contains the unsorted input keys and, upon return, is updated to point to the sorted output keys
         DoubleBuffer<Value>     &d_values,                      ///< [in,out] Double-buffer whose current buffer contains the unsorted input values and, upon return, is updated to point to the sorted output values
         Offset                  num_items,                      ///< [in] Number of items to reduce
@@ -1004,7 +1011,7 @@ struct DeviceRadixSort
     __host__ __device__
     static cudaError_t SortPairs(
         void                *d_temp_storage,                        ///< [in] %Device allocation of temporary storage.  When NULL, the required allocation size is returned in \p temp_storage_bytes and no work is done.
-        size_t              &temp_storage_bytes,                    ///< [in,out] Size in bytes of \p d_temp_storage allocation.
+        size_t              &temp_storage_bytes,                    ///< [in,out] Size in bytes of \p d_temp_storage allocation
         DoubleBuffer<Key>   &d_keys,                                ///< [in,out] Double-buffer of keys whose current buffer contains the unsorted input keys and, upon return, is updated to point to the sorted output keys
         DoubleBuffer<Value> &d_values,                              ///< [in,out] Double-buffer of values whose current buffer contains the unsorted input values and, upon return, is updated to point to the sorted output values
         int                 num_items,                              ///< [in] Number of items to reduce
@@ -1080,7 +1087,7 @@ struct DeviceRadixSort
     __host__ __device__
     static cudaError_t SortPairsDescending(
         void                *d_temp_storage,                        ///< [in] %Device allocation of temporary storage.  When NULL, the required allocation size is returned in \p temp_storage_bytes and no work is done.
-        size_t              &temp_storage_bytes,                    ///< [in,out] Size in bytes of \p d_temp_storage allocation.
+        size_t              &temp_storage_bytes,                    ///< [in,out] Size in bytes of \p d_temp_storage allocation
         DoubleBuffer<Key>   &d_keys,                                ///< [in,out] Double-buffer of keys whose current buffer contains the unsorted input keys and, upon return, is updated to point to the sorted output keys
         DoubleBuffer<Value> &d_values,                              ///< [in,out] Double-buffer of values whose current buffer contains the unsorted input values and, upon return, is updated to point to the sorted output values
         int                 num_items,                              ///< [in] Number of items to reduce
@@ -1151,7 +1158,7 @@ struct DeviceRadixSort
     __host__ __device__
     static cudaError_t SortKeys(
         void                *d_temp_storage,                        ///< [in] %Device allocation of temporary storage.  When NULL, the required allocation size is returned in \p temp_storage_bytes and no work is done.
-        size_t              &temp_storage_bytes,                    ///< [in,out] Size in bytes of \p d_temp_storage allocation.
+        size_t              &temp_storage_bytes,                    ///< [in,out] Size in bytes of \p d_temp_storage allocation
         DoubleBuffer<Key>   &d_keys,                                ///< [in,out] Double-buffer of keys whose current buffer contains the unsorted input keys and, upon return, is updated to point to the sorted output keys
         int                 num_items,                              ///< [in] Number of items to reduce
         int                 begin_bit           = 0,                ///< [in] <b>[optional]</b> The first (least-significant) bit index needed for key comparison
@@ -1220,7 +1227,7 @@ struct DeviceRadixSort
     __host__ __device__
     static cudaError_t SortKeysDescending(
         void                *d_temp_storage,                        ///< [in] %Device allocation of temporary storage.  When NULL, the required allocation size is returned in \p temp_storage_bytes and no work is done.
-        size_t              &temp_storage_bytes,                    ///< [in,out] Size in bytes of \p d_temp_storage allocation.
+        size_t              &temp_storage_bytes,                    ///< [in,out] Size in bytes of \p d_temp_storage allocation
         DoubleBuffer<Key>   &d_keys,                                ///< [in,out] Double-buffer of keys whose current buffer contains the unsorted input keys and, upon return, is updated to point to the sorted output keys
         int                 num_items,                              ///< [in] Number of items to reduce
         int                 begin_bit           = 0,                ///< [in] <b>[optional]</b> The first (least-significant) bit index needed for key comparison
