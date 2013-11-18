@@ -309,7 +309,7 @@ struct DevicePartition
     static cudaError_t Dispatch(
         int                         ptx_version,                    ///< [in] PTX version
         void                        *d_temp_storage,                ///< [in] %Device allocation of temporary storage.  When NULL, the required allocation size is returned in \p temp_storage_bytes and no work is done.
-        size_t                      &temp_storage_bytes,            ///< [in,out] Size in bytes of \p d_temp_storage allocation.
+        size_t                      &temp_storage_bytes,            ///< [in,out] Size in bytes of \p d_temp_storage allocation
         ScanInitKernelPtr           init_kernel,                    ///< [in] Kernel function pointer to parameterization of cub::ScanInitKernel
         ScanKernelPtr               scan_kernel,                    ///< [in] Kernel function pointer to parameterization of cub::ScanKernel
         KernelDispachParams         &scan_dispatch_params,          ///< [in] Dispatch parameters that match the policy that \p scan_kernel was compiled for
@@ -463,7 +463,7 @@ struct DevicePartition
     __host__ __device__ __forceinline__
     static cudaError_t Dispatch(
         void                        *d_temp_storage,                ///< [in] %Device allocation of temporary storage.  When NULL, the required allocation size is returned in \p temp_storage_bytes and no work is done.
-        size_t                      &temp_storage_bytes,            ///< [in,out] Size in bytes of \p d_temp_storage allocation.
+        size_t                      &temp_storage_bytes,            ///< [in,out] Size in bytes of \p d_temp_storage allocation
         InputIterator             d_in,                           ///< [in] Iterator pointing to scan input
         OutputIterator            d_out,                          ///< [in] Iterator pointing to scan output
         ScanOp                      scan_op,                        ///< [in] Binary scan operator
@@ -570,7 +570,7 @@ struct DevicePartition
     __host__ __device__ __forceinline__
     static cudaError_t ExclusiveSum(
         void                *d_temp_storage,                    ///< [in] %Device allocation of temporary storage.  When NULL, the required allocation size is returned in \p temp_storage_bytes and no work is done.
-        size_t              &temp_storage_bytes,                ///< [in,out] Size in bytes of \p d_temp_storage allocation.
+        size_t              &temp_storage_bytes,                ///< [in,out] Size in bytes of \p d_temp_storage allocation
         InputIterator       d_in,                               ///< [in] Iterator pointing to scan input
         OutputIterator      d_out,                              ///< [in] Iterator pointing to scan output
         int                 num_items,                          ///< [in] Total number of items to scan

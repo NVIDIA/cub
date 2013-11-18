@@ -332,7 +332,7 @@ struct DeviceHistogramDispatch
     __host__ __device__ __forceinline__
     static cudaError_t Dispatch(
         void                        *d_temp_storage,                    ///< [in] %Device allocation of temporary storage.  When NULL, the required allocation size is returned in \p temp_storage_bytes and no work is done.
-        size_t                      &temp_storage_bytes,                ///< [in,out] Size in bytes of \p d_temp_storage allocation.
+        size_t                      &temp_storage_bytes,                ///< [in,out] Size in bytes of \p d_temp_storage allocation
         InputIterator               d_samples,                          ///< [in] Input samples to histogram
         HistoCounter                *d_histograms[ACTIVE_CHANNELS],     ///< [out] Array of channel histograms, each having BINS counters of integral type \p HistoCounter.
         Offset                      num_samples,                        ///< [in] Number of samples to process
@@ -496,7 +496,7 @@ struct DeviceHistogramDispatch
     __host__ __device__ __forceinline__
     static cudaError_t Dispatch(
         void                *d_temp_storage,                    ///< [in] %Device allocation of temporary storage.  When NULL, the required allocation size is returned in \p temp_storage_bytes and no work is done.
-        size_t              &temp_storage_bytes,                ///< [in,out] Size in bytes of \p d_temp_storage allocation.
+        size_t              &temp_storage_bytes,                ///< [in,out] Size in bytes of \p d_temp_storage allocation
         InputIterator       d_samples,                          ///< [in] Input samples to histogram
         HistoCounter        *d_histograms[ACTIVE_CHANNELS],     ///< [out] Array of channel histograms, each having BINS counters of integral type \p HistoCounter.
         int                 num_samples,                        ///< [in] Number of samples to process
@@ -630,7 +630,7 @@ struct DeviceHistogram
     __host__ __device__
     static cudaError_t SingleChannelSorting(
         void                *d_temp_storage,                    ///< [in] %Device allocation of temporary storage.  When NULL, the required allocation size is returned in \p temp_storage_bytes and no work is done.
-        size_t              &temp_storage_bytes,                ///< [in,out] Size in bytes of \p d_temp_storage allocation.
+        size_t              &temp_storage_bytes,                ///< [in,out] Size in bytes of \p d_temp_storage allocation
         InputIterator       d_samples,                          ///< [in] Input samples
         HistoCounter*       d_histogram,                        ///< [out] Array of BINS counters of integral type \p HistoCounter.
         int                 num_samples,                        ///< [in] Number of samples to process
@@ -720,7 +720,7 @@ struct DeviceHistogram
     __host__ __device__
     static cudaError_t SingleChannelSharedAtomic(
         void                *d_temp_storage,                    ///< [in] %Device allocation of temporary storage.  When NULL, the required allocation size is returned in \p temp_storage_bytes and no work is done.
-        size_t              &temp_storage_bytes,                ///< [in,out] Size in bytes of \p d_temp_storage allocation.
+        size_t              &temp_storage_bytes,                ///< [in,out] Size in bytes of \p d_temp_storage allocation
         InputIterator       d_samples,                          ///< [in] Input samples
         HistoCounter*       d_histogram,                        ///< [out] Array of BINS counters of integral type \p HistoCounter.
         int                 num_samples,                        ///< [in] Number of samples to process
@@ -809,7 +809,7 @@ struct DeviceHistogram
     __host__ __device__
     static cudaError_t SingleChannelGlobalAtomic(
         void                *d_temp_storage,                    ///< [in] %Device allocation of temporary storage.  When NULL, the required allocation size is returned in \p temp_storage_bytes and no work is done.
-        size_t              &temp_storage_bytes,                ///< [in,out] Size in bytes of \p d_temp_storage allocation.
+        size_t              &temp_storage_bytes,                ///< [in,out] Size in bytes of \p d_temp_storage allocation
         InputIterator       d_samples,                          ///< [in] Input samples
         HistoCounter*       d_histogram,                        ///< [out] Array of BINS counters of integral type \p HistoCounter.
         int                 num_samples,                        ///< [in] Number of samples to process
@@ -913,7 +913,7 @@ struct DeviceHistogram
     __host__ __device__
     static cudaError_t MultiChannelSorting(
         void                *d_temp_storage,                    ///< [in] %Device allocation of temporary storage.  When NULL, the required allocation size is returned in \p temp_storage_bytes and no work is done.
-        size_t              &temp_storage_bytes,                ///< [in,out] Size in bytes of \p d_temp_storage allocation.
+        size_t              &temp_storage_bytes,                ///< [in,out] Size in bytes of \p d_temp_storage allocation
         InputIterator       d_samples,                          ///< [in] Input samples. The samples from different channels are assumed to be interleaved (e.g., an array of 32b pixels where each pixel consists of four RGBA 8b samples).
         HistoCounter        *d_histograms[ACTIVE_CHANNELS],     ///< [out] Array of channel histogram counter arrays, each having BINS counters of integral type \p HistoCounter.
         int                 num_samples,                        ///< [in] Total number of samples to process in all channels, including non-active channels
@@ -1009,7 +1009,7 @@ struct DeviceHistogram
     __host__ __device__
     static cudaError_t MultiChannelSharedAtomic(
         void                *d_temp_storage,                    ///< [in] %Device allocation of temporary storage.  When NULL, the required allocation size is returned in \p temp_storage_bytes and no work is done.
-        size_t              &temp_storage_bytes,                ///< [in,out] Size in bytes of \p d_temp_storage allocation.
+        size_t              &temp_storage_bytes,                ///< [in,out] Size in bytes of \p d_temp_storage allocation
         InputIterator       d_samples,                          ///< [in] Input samples. The samples from different channels are assumed to be interleaved (e.g., an array of 32b pixels where each pixel consists of four RGBA 8b samples).
         HistoCounter        *d_histograms[ACTIVE_CHANNELS],     ///< [out] Array of channel histogram counter arrays, each having BINS counters of integral type \p HistoCounter.
         int                 num_samples,                        ///< [in] Total number of samples to process in all channels, including non-active channels
@@ -1106,7 +1106,7 @@ struct DeviceHistogram
     __host__ __device__
     static cudaError_t MultiChannelGlobalAtomic(
         void                *d_temp_storage,                    ///< [in] %Device allocation of temporary storage.  When NULL, the required allocation size is returned in \p temp_storage_bytes and no work is done.
-        size_t              &temp_storage_bytes,                ///< [in,out] Size in bytes of \p d_temp_storage allocation.
+        size_t              &temp_storage_bytes,                ///< [in,out] Size in bytes of \p d_temp_storage allocation
         InputIterator       d_samples,                          ///< [in] Input samples. The samples from different channels are assumed to be interleaved (e.g., an array of 32b pixels where each pixel consists of four RGBA 8b samples).
         HistoCounter        *d_histograms[ACTIVE_CHANNELS],     ///< [out] Array of channel histogram counter arrays, each having BINS counters of integral type \p HistoCounter.
         int                 num_samples,                        ///< [in] Total number of samples to process in all channels, including non-active channels

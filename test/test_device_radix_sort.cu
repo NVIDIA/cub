@@ -134,6 +134,7 @@ cudaError_t Dispatch(
     cudaStream_t            stream,
     bool                    debug_synchronous)
 {
+
     if (d_temp_storage == 0)
     {
         temp_storage_bytes = 1;
@@ -171,6 +172,7 @@ cudaError_t Dispatch(
     cudaStream_t            stream,
     bool                    debug_synchronous)
 {
+
     if (d_temp_storage == 0)
     {
         temp_storage_bytes = 1;
@@ -420,13 +422,13 @@ void Test(
 
     if (end_bit < 0) end_bit = sizeof(Key) * 8;
 
-    printf("%s %s cub::DeviceRadixSort %d items, %s %d-byte keys %d-byte values, gen-mode %s, descending %d\n",
+    printf("%s %s cub::DeviceRadixSort %d items, %s %d-byte keys %d-byte values, gen-mode %s, descending %d, entropy_reduction %d, begin_bit %d, end_bit %d\n",
         (BACKEND == CDP) ? "CDP CUB" : (BACKEND == THRUST) ? "Thrust" : "CUB",
         (KEYS_ONLY) ? "keys-only" : "key-value",
         num_items, type_string,
         (int) sizeof(Key), (KEYS_ONLY) ? 0 : (int) sizeof(Value),
         (gen_mode == RANDOM) ? "RANDOM" : (gen_mode == SEQ_INC) ? "SEQUENTIAL" : "HOMOGENOUS",
-        DESCENDING);
+        DESCENDING, entropy_reduction, begin_bit, end_bit);
     fflush(stdout);
 
     // Allocate host arrays
@@ -694,7 +696,6 @@ int main(int argc, char** argv)
 
     // Initialize device
     CubDebugExit(args.DeviceInit());
-    printf("\n");
 
     if (quick)
     {
@@ -710,25 +711,27 @@ int main(int argc, char** argv)
     }
     else
     {
+        for (int i = 0; i <= g_repeat; ++i)
+        {
+            TestItems<char>                 (num_items, 0, g_bits, CUB_TYPE_STRING(char));
+            TestItems<signed char>          (num_items, 0, g_bits, CUB_TYPE_STRING(signed char));
+            TestItems<unsigned char>        (num_items, 0, g_bits, CUB_TYPE_STRING(unsigned char));
 
-        TestItems<char>                 (num_items, 0, g_bits, CUB_TYPE_STRING(char));
-        TestItems<signed char>          (num_items, 0, g_bits, CUB_TYPE_STRING(signed char));
-        TestItems<unsigned char>        (num_items, 0, g_bits, CUB_TYPE_STRING(unsigned char));
+            TestItems<short>                (num_items, 0, g_bits, CUB_TYPE_STRING(short));
+            TestItems<unsigned short>       (num_items, 0, g_bits, CUB_TYPE_STRING(unsigned short));
 
-        TestItems<short>                (num_items, 0, g_bits, CUB_TYPE_STRING(short));
-        TestItems<unsigned short>       (num_items, 0, g_bits, CUB_TYPE_STRING(unsigned short));
+            TestItems<int>                  (num_items, 0, g_bits, CUB_TYPE_STRING(int));
+            TestItems<unsigned int>         (num_items, 0, g_bits, CUB_TYPE_STRING(unsigned int));
 
-        TestItems<int>                  (num_items, 0, g_bits, CUB_TYPE_STRING(int));
-        TestItems<unsigned int>         (num_items, 0, g_bits, CUB_TYPE_STRING(unsigned int));
+            TestItems<long>                 (num_items, 0, g_bits, CUB_TYPE_STRING(long));
+            TestItems<unsigned long>        (num_items, 0, g_bits, CUB_TYPE_STRING(unsigned long));
 
-        TestItems<long>                 (num_items, 0, g_bits, CUB_TYPE_STRING(long));
-        TestItems<unsigned long>        (num_items, 0, g_bits, CUB_TYPE_STRING(unsigned long));
+            TestItems<long long>            (num_items, 0, g_bits, CUB_TYPE_STRING(long long));
+            TestItems<unsigned long long>   (num_items, 0, g_bits, CUB_TYPE_STRING(unsigned long long));
 
-        TestItems<long long>            (num_items, 0, g_bits, CUB_TYPE_STRING(long long));
-        TestItems<unsigned long long>   (num_items, 0, g_bits, CUB_TYPE_STRING(unsigned long long));
-
-        TestItems<float>                (num_items, 0, g_bits, CUB_TYPE_STRING(float));
-        TestItems<double>               (num_items, 0, g_bits, CUB_TYPE_STRING(double));
+            TestItems<float>                (num_items, 0, g_bits, CUB_TYPE_STRING(float));
+            TestItems<double>               (num_items, 0, g_bits, CUB_TYPE_STRING(double));
+        }
     }
 
     return 0;
