@@ -68,13 +68,6 @@ struct BlockRadixSortUpsweepRegionPolicy
     };
 
     static const CacheLoadModifier LOAD_MODIFIER = _LOAD_MODIFIER;      ///< Cache load modifier for reading keys
-
-    /// Alternate policy for (RADIX_BITS - 1) bits
-    typedef BlockRadixSortUpsweepRegionPolicy<
-        BLOCK_THREADS,
-        ITEMS_PER_THREAD,
-        LOAD_MODIFIER,
-        CUB_MAX(1, RADIX_BITS - 1)> AltPolicy;
 };
 
 

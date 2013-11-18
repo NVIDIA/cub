@@ -39,6 +39,8 @@
 #include "../../block/block_load.cuh"
 #include "../../block/block_store.cuh"
 #include "../../block/block_scan.cuh"
+#include "../../block/block_exchange.cuh"
+#include "../../block/block_discontinuity.cuh"
 #include "../../grid/grid_queue.cuh"
 #include "../../util_iterator.cuh"
 #include "../../util_namespace.cuh"
@@ -89,14 +91,19 @@ struct BlockSelectRegionPolicy
 
 /**
  * \brief BlockSelectRegion implements a stateful abstraction of CUDA thread blocks for participating in device-wide selection across a region of tiles
+ *
+ * Performs functor-based selection if SelectOp functor type != NullType
+ * Otherwise performs flag-based selection if FlagIterator's value type != NullType
+ * Otherwise performs discontinuity selection (keep unique)
  */
 template <
-    typename BlockSelectRegionPolicy,       ///< Parameterized BlockSelectRegionPolicy tuning policy type
-    typename InputIterator,                 ///< Random-access input iterator type
-    typename FlagIterator,                  ///< Random-access input iterator type for selection flags (possibly NullType* if SelectOp functor is used)
-    typename OutputIterator,                ///< Random-access output iterator type
-    typename SelectOp,                      ///< Selection operator type (possibly NullType if flags are used)
-    typename OffsetTuple>                   ///< Signed integer tuple type for global scatter offsets (selections and rejections)
+    typename    BlockSelectRegionPolicy,        ///< Parameterized BlockSelectRegionPolicy tuning policy type
+    typename    InputIterator,                  ///< Random-access input iterator type for selection items
+    typename    FlagIterator,                   ///< Random-access input iterator type for selection flags (NullType* if a selection functor or discontinuity flagging is to be used for selection)
+    typename    OutputIterator,                 ///< Random-access input iterator type for selected items
+    typename    NumSelectedIterator,            ///< Output iterator type for recording number of items selected
+    typename    SelectOp,                       ///< Selection operator type (NullType if selection flags or discontinuity flagging is to be used for selection)
+    typename    OffsetTuple>                    ///< Signed integer tuple type for global scatter offsets (selections and rejections)
 struct BlockSelectRegion
 {
     //---------------------------------------------------------------------
@@ -127,14 +134,24 @@ struct BlockSelectRegion
     // Constants
     enum
     {
+        USE_SELECT_OP,
+        USE_SELECT_FLAGS,
+        USE_DISCONTINUITY,
+
         BLOCK_THREADS       = BlockSelectRegionPolicy::BLOCK_THREADS,
         ITEMS_PER_THREAD    = BlockSelectRegionPolicy::ITEMS_PER_THREAD,
         TWO_PHASE_SCATTER   = BlockSelectRegionPolicy::TWO_PHASE_SCATTER,
         TILE_ITEMS          = BLOCK_THREADS * ITEMS_PER_THREAD,
         KEEP_REJECTS        = sizeof(OffsetTuple) > sizeof(Offset),                 // Whether or not we push rejected items to the back of the output
+
+        SELECT_METHOD       = (Equals<SelectOp, NullType>::NEGATE) ?
+                                USE_SELECT_OP :
+                                (Equals<SelectOp, NullType>::NEGATE) ?
+                                    USE_SELECT_FLAGS :
+                                    USE_DISCONTINUITY
     };
 
-    // Parameterized BlockLoad type for inputs
+    // Parameterized BlockLoad type for input items
     typedef BlockLoad<
             WrappedInputIterator,
             BlockSelectRegionPolicy::BLOCK_THREADS,
@@ -152,12 +169,15 @@ struct BlockSelectRegion
             BlockSelectRegionPolicy::LOAD_WARP_TIME_SLICING>
         BlockLoadFlags;
 
-    // Parameterized BlockExchange type
+    // Parameterized BlockExchange type for input items
     typedef BlockExchange<
             T,
             BLOCK_THREADS,
             ITEMS_PER_THREAD>
         BlockExchangeT;
+
+    // Parameterized BlockDiscontinuity type for input items
+    typedef BlockDiscontinuity<T, BLOCK_THREADS> BlockDiscontinuityT;
 
     // Tile status descriptor type
     typedef LookbackTileDescriptor<OffsetTuple> TileDescriptor;
@@ -197,6 +217,9 @@ struct BlockSelectRegion
 
             // Smem needed for flag loading
             typename BlockLoadFlags::TempStorage load_flags;
+
+            // Smem needed for discontinuity detection
+            typename BlockDiscontinuityT::TempStorage discontinuity;
 
             // Smem needed for two-phase scatter
             typename If<TWO_PHASE_SCATTER, typename BlockExchangeT::TempStorage, NullType>::Type exchange;
@@ -251,14 +274,14 @@ struct BlockSelectRegion
     /**
      * Initialize selection allocations (specialized for selection operator and for discarding rejected items)
      */
-    template <bool FULL_TILE, typename _SelectOp>
+    template <bool FIRST_TILE, bool FULL_TILE>
     __device__ __forceinline__ void InitializeAllocations(
-        Offset          block_offset,
-        int             valid_items,
-        T               items[ITEMS_PER_THREAD],
-        OffsetTuple     allocations[ITEMS_PER_THREAD],
-        _SelectOp       select_op,
-        Int2Type<true>  keep_rejects)
+        Offset                  block_offset,
+        int                     valid_items,
+        T                       items[ITEMS_PER_THREAD],
+        OffsetTuple             allocations[ITEMS_PER_THREAD],
+        Int2Type<false>         keep_rejects,
+        Int2Type<USE_SELECT_OP> select_method)
     {
         #pragma unroll
         for (int ITEM = 0; ITEM < ITEMS_PER_THREAD; ++ITEM)
@@ -270,41 +293,18 @@ struct BlockSelectRegion
         }
     }
 
-
-    /**
-     * Initialize selection allocations (specialized for selection operator and for partitioning rejected items after selected items)
-     */
-    template <bool FULL_TILE, typename _SelectOp>
-    __device__ __forceinline__ void InitializeAllocations(
-        Offset          block_offset,
-        int             valid_items,
-        T               items[ITEMS_PER_THREAD],
-        OffsetTuple     allocations[ITEMS_PER_THREAD],
-        _SelectOp       select_op,
-        Int2Type<false> keep_rejects)
-    {
-        #pragma unroll
-        for (int ITEM = 0; ITEM < ITEMS_PER_THREAD; ++ITEM)
-        {
-            if (FULL_TILE || ((threadIdx.x * ITEMS_PER_THREAD) + ITEM < valid_items))
-            {
-                allocations[ITEM].x = select_op(items[ITEM]);
-                allocations[ITEM].y = !allocations[ITEM].x;
-            }
-        }
-    }
 
     /**
      * Initialize selection allocations (specialized for valid flags and for discarding rejected items)
      */
-    template <bool FULL_TILE>
+    template <bool FIRST_TILE, bool FULL_TILE>
     __device__ __forceinline__ void InitializeAllocations(
-        Offset          block_offset,
-        int             valid_items,
-        T               items[ITEMS_PER_THREAD],
-        OffsetTuple     allocations[ITEMS_PER_THREAD],
-        NullType        select_op,
-        Int2Type<true>  keep_rejects)
+        Offset                      block_offset,
+        int                         valid_items,
+        T                           items[ITEMS_PER_THREAD],
+        OffsetTuple                 allocations[ITEMS_PER_THREAD],
+        Int2Type<false>             keep_rejects,
+        Int2Type<USE_SELECT_FLAGS>  select_method)
     {
         __syncthreads();
 
@@ -326,24 +326,35 @@ struct BlockSelectRegion
 
 
     /**
-     * Initialize selection allocations (specialized for valid flags and for partitioning rejected items after selected items)
+     * Initialize selection allocations (specialized for discontinuity detection and for discarding rejected items)
      */
-    template <bool FULL_TILE, typename _SelectOp>
+    template <bool FIRST_TILE, bool FULL_TILE>
     __device__ __forceinline__ void InitializeAllocations(
-        Offset          block_offset,
-        int             valid_items,
-        T               items[ITEMS_PER_THREAD],
-        OffsetTuple     allocations[ITEMS_PER_THREAD],
-        NullType        select_op,
-        Int2Type<false> keep_rejects)
+        Offset                      block_offset,
+        int                         valid_items,
+        T                           items[ITEMS_PER_THREAD],
+        OffsetTuple                 allocations[ITEMS_PER_THREAD],
+        Int2Type<false>              keep_rejects,
+        Int2Type<USE_DISCONTINUITY> select_method)
     {
         __syncthreads();
 
-        Flag flags[ITEMS_PER_THREAD];
-        if (FULL_TILE)
-            BlockLoadFlags(temp_storage.load_flags).Load(d_in + block_offset, flags);
+        int flags[ITEMS_PER_THREAD];
+
+        if (FIRST_TILE)
+        {
+            // First tile always flags the first item
+            DiscontinuityT(temp_storage.discontinuity).FlagHeads(flags, items, Inequality());
+        }
         else
-            BlockLoadFlags(temp_storage.load_flags).Load(d_in + block_offset, flags, valid_items);
+        {
+            // Subsequent tiles require the last item from the previous tile
+            T tile_predecessor_item;
+            if (threadIdx.x == 0)
+                tile_predecessor_item = d_in[block_offset - 1];
+
+            DiscontinuityT(temp_storage.discontinuity).FlagHeads(flags, items, Inequality(), tile_predecessor_item);
+        }
 
         #pragma unroll
         for (int ITEM = 0; ITEM < ITEMS_PER_THREAD; ++ITEM)
@@ -351,6 +362,38 @@ struct BlockSelectRegion
             if (FULL_TILE || ((threadIdx.x * ITEMS_PER_THREAD) + ITEM < valid_items))
             {
                 allocations[ITEM].x = flags[ITEM];
+            }
+        }
+    }
+
+
+    /**
+     * Initialize selection allocations (for partitioning rejected items after selected items)
+     */
+    template <bool FIRST_TILE, bool FULL_TILE, int _SELECT_METHOD>
+    __device__ __forceinline__ void InitializeAllocations(
+        Offset                      block_offset,
+        int                         valid_items,
+        T                           items[ITEMS_PER_THREAD],
+        OffsetTuple                 allocations[ITEMS_PER_THREAD],
+        Int2Type<true>              keep_rejects,
+        Int2Type<_SELECT_METHOD>    select_method)
+    {
+        // Initialize allocations for selected items
+        InitializeAllocations<FIRST_TILE, FULL_TILE>(
+            block_offset,
+            valid_items,
+            items,
+            allocations,
+            Int2Type<false>,
+            select_method);
+
+        // Initialize allocations for rejected items
+        #pragma unroll
+        for (int ITEM = 0; ITEM < ITEMS_PER_THREAD; ++ITEM)
+        {
+            if (FULL_TILE || ((threadIdx.x * ITEMS_PER_THREAD) + ITEM < valid_items))
+            {
                 allocations[ITEM].y = !allocations[ITEM].x;
             }
         }
@@ -368,7 +411,7 @@ struct BlockSelectRegion
         T               items[ITEMS_PER_THREAD],
         OffsetTuple     allocations[ITEMS_PER_THREAD],
         OffsetTuple     allocation_offsets[ITEMS_PER_THREAD],
-        OffsetTuple     tile_offset,
+        OffsetTuple     tile_exclusive_prefix,
         OffsetTuple     valid_items,
         Int2Type<false> keep_rejects,
         Int2Type<false> two_phase_scatter)
@@ -386,44 +429,13 @@ struct BlockSelectRegion
 
 
     /**
-     * Scatter data items to select offsets (specialized for two-phase scattering and for discarding rejected items)
-     */
-    __device__ __forceinline__ void Scatter(
-        T               items[ITEMS_PER_THREAD],
-        OffsetTuple     allocations[ITEMS_PER_THREAD],
-        OffsetTuple     allocation_offsets[ITEMS_PER_THREAD],
-        OffsetTuple     tile_offset,
-        OffsetTuple     valid_items,
-        Int2Type<false> keep_rejects,
-        Int2Type<true>  two_phase_scatter)
-    {
-        Offset local_ranks[ITEMS_PER_THREAD];
-        Offset is_valid[ITEMS_PER_THREAD];
-
-        #pragma unroll
-        for (int ITEM = 0; ITEM < ITEMS_PER_THREAD; ++ITEM)
-        {
-            local_ranks[ITEM]   = allocation_offsets[ITEM].x - tile_offset.x;
-            is_valid[ITEM]      = allocations[ITEM].x;
-        }
-
-        __syncthreads();
-
-        BlockExchangeT(temp_storage.exchange).ScatterToStriped(items, local_ranks, is_valid, valid_items.x);
-
-        // Selected items are placed front-to-back
-        StoreStriped<BLOCK_THREADS>(threadIdx.x, d_out + tile_offset.x, items, valid_items.x);
-    }
-
-
-    /**
      * Scatter data items to select offsets (specialized for direct scattering and for partitioning rejected items after selected items)
      */
     __device__ __forceinline__ void Scatter(
         T               items[ITEMS_PER_THREAD],
         OffsetTuple     allocations[ITEMS_PER_THREAD],
         OffsetTuple     allocation_offsets[ITEMS_PER_THREAD],
-        OffsetTuple     tile_offset,
+        OffsetTuple     tile_exclusive_prefix,
         OffsetTuple     valid_items,
         Int2Type<true>  keep_rejects,
         Int2Type<false> two_phase_scatter)
@@ -447,13 +459,44 @@ struct BlockSelectRegion
 
 
     /**
+     * Scatter data items to select offsets (specialized for two-phase scattering and for discarding rejected items)
+     */
+    __device__ __forceinline__ void Scatter(
+        T               items[ITEMS_PER_THREAD],
+        OffsetTuple     allocations[ITEMS_PER_THREAD],
+        OffsetTuple     allocation_offsets[ITEMS_PER_THREAD],
+        OffsetTuple     tile_exclusive_prefix,
+        OffsetTuple     valid_items,
+        Int2Type<false> keep_rejects,
+        Int2Type<true>  two_phase_scatter)
+    {
+        Offset local_ranks[ITEMS_PER_THREAD];
+        Offset is_valid[ITEMS_PER_THREAD];
+
+        #pragma unroll
+        for (int ITEM = 0; ITEM < ITEMS_PER_THREAD; ++ITEM)
+        {
+            local_ranks[ITEM]   = allocation_offsets[ITEM].x - tile_exclusive_prefix.x;
+            is_valid[ITEM]      = allocations[ITEM].x;
+        }
+
+        __syncthreads();
+
+        BlockExchangeT(temp_storage.exchange).ScatterToStriped(items, local_ranks, is_valid, valid_items.x);
+
+        // Selected items are placed front-to-back
+        StoreStriped<BLOCK_THREADS>(threadIdx.x, d_out + tile_exclusive_prefix.x, items, valid_items.x);
+    }
+
+
+    /**
      * Scatter data items to select offsets (specialized for two-phase scattering and for partitioning rejected items after selected items)
      */
     __device__ __forceinline__ void Scatter(
         T               items[ITEMS_PER_THREAD],
         OffsetTuple     allocations[ITEMS_PER_THREAD],
         OffsetTuple     allocation_offsets[ITEMS_PER_THREAD],
-        OffsetTuple     tile_offset,
+        OffsetTuple     tile_exclusive_prefix,
         OffsetTuple     valid_items,
         Int2Type<true>  keep_rejects,
         Int2Type<true>  two_phase_scatter)
@@ -464,12 +507,12 @@ struct BlockSelectRegion
         #pragma unroll
         for (int ITEM = 0; ITEM < ITEMS_PER_THREAD; ++ITEM)
         {
-            local_ranks[ITEM]   = allocation_offsets[ITEM].x - tile_offset.x;
+            local_ranks[ITEM]   = allocation_offsets[ITEM].x - tile_exclusive_prefix.x;
             is_valid[ITEM]      = allocations[ITEM].x;
 
             if (allocations[ITEM].y)
             {
-                local_ranks[ITEM]   = allocation_offsets[ITEM].y - tile_offset.y + valid_items.x;
+                local_ranks[ITEM]   = allocation_offsets[ITEM].y - tile_exclusive_prefix.y + valid_items.x;
                 is_valid[ITEM]      = 1;
             }
         }
@@ -487,7 +530,7 @@ struct BlockSelectRegion
             if (item_offset < valid_items.x)
             {
                 // Scatter selected items front-to-back
-                d_out[tile_offset.x + item_offset] = items[ITEM];
+                d_out[tile_exclusive_prefix.x + item_offset] = items[ITEM];
             }
             else
             {
@@ -495,7 +538,7 @@ struct BlockSelectRegion
                 if (item_offset < valid_items.y)
                 {
                     // Scatter rejected items back-to-front
-                    d_out[num_items - (tile_offset.y + item_offset)] = items[ITEM];
+                    d_out[num_items - (tile_exclusive_prefix.y + item_offset)] = items[ITEM];
                 }
             }
         }
@@ -510,7 +553,7 @@ struct BlockSelectRegion
      * Process a tile of input (dynamic domino scan)
      */
     template <bool FULL_TILE>
-    __device__ __forceinline__ void ConsumeTile(
+    __device__ __forceinline__ OffsetTuple ConsumeTile(
         Offset                      num_items,          ///< Total number of input items
         int                         tile_idx,           ///< Tile index
         Offset                      block_offset,       ///< Tile offset
@@ -526,27 +569,34 @@ struct BlockSelectRegion
         else
             BlockLoadT(temp_storage.load_items).Load(d_in + block_offset, items, valid_items);
 
-        __syncthreads();
-
-        // Initialize output allocations
+        // Zero-initialize output allocations
         OffsetTuple allocations[ITEMS_PER_THREAD];
         #pragma unroll
         for (int ITEM = 0; ITEM < ITEMS_PER_THREAD; ++ITEM)
         {
-            // Zero-initialize
             allocations[ITEM] = OffsetTuple();
         }
-        InitializeAllocations<FULL_TILE>(block_offset, valid_items, items, allocations, select_op, Int2Type<KEEP_REJECTS>());
 
         // Compute allocation offsets
         OffsetTuple allocation_offsets[ITEMS_PER_THREAD];       // Allocation offsets
-        OffsetTuple tile_offset;                                // The tile prefixes for selected (and rejected) items
+        OffsetTuple tile_exclusive_prefix;                                // The tile prefixes for selected (and rejected) items
         OffsetTuple block_aggregate;                            // Total number of items selected (and rejected)
         if (tile_idx == 0)
         {
-            // Scan first tile
+            // Initialize selected/rejected output allocations for first tile
+            InitializeAllocations<true, FULL_TILE>(
+                block_offset,
+                valid_items,
+                items,
+                allocations,
+                Int2Type<KEEP_REJECTS>(),
+                Int2Type<SELECT_METHOD>());
+
+            __syncthreads();
+
+            // Scan allocations
             BlockScanAllocations(temp_storage.scan).ExclusiveSum(allocations, allocation_offsets, block_aggregate);
-            tile_offset = OffsetTuple();        // Zeros
+            tile_exclusive_prefix = OffsetTuple();        // Zeros
 
             // Update tile status if there may be successor tiles (i.e., this tile is full)
             if (FULL_TILE && (threadIdx.x == 0))
@@ -554,33 +604,47 @@ struct BlockSelectRegion
         }
         else
         {
-            // Scan non-first tile
+            // Initialize selected/rejected output allocations for non-first tile
+            InitializeAllocations<false, FULL_TILE>(
+                block_offset,
+                valid_items,
+                items,
+                allocations,
+                Int2Type<KEEP_REJECTS>(),
+                Int2Type<SELECT_METHOD>());
+
+            __syncthreads();
+
+            // Scan allocations
             LookbackPrefixCallbackOp prefix_op(d_tile_status, temp_storage.prefix, Sum(), tile_idx);
             BlockScan(temp_storage.scan).ExclusiveSum(allocations, allocation_offsets, block_aggregate, prefix_op);
-            tile_offset = prefix_op.exclusive_prefix;
+            tile_exclusive_prefix = prefix_op.exclusive_prefix;
         }
-
-        __syncthreads();
 
         // Store selected items
         Scatter(
             items,
             allocations,
             allocation_offsets,
-            tile_offset,
+            tile_exclusive_prefix,
             block_aggregate,
             Int2Type<KEEP_REJECTS>(),
             Int2Type<TWO_PHASE_SCATTER>());
+
+        // Return inclusive prefix
+        return tile_exclusive_prefix + block_aggregate;
     }
 
 
     /**
      * Dequeue and scan tiles of items as part of a dynamic domino scan
      */
+    template <typename NumSelectedIterator>         ///< Output iterator type having Offset value type
     __device__ __forceinline__ void ConsumeRegion(
-        int                     num_items,          ///< Total number of input items
+        int                     num_tiles,          ///< Total number of input tiles
         GridQueue<int>          queue,              ///< Queue descriptor for assigning tiles of work to thread blocks
-        TileDescriptor          *d_tile_status)     ///< Global list of tile status
+        TileDescriptor          *d_tile_status,     ///< Global list of tile status
+        NumSelectedIterator     d_num_selected)     ///< Output total number selected
     {
 #if CUB_PTX_VERSION < 200
 
@@ -588,10 +652,12 @@ struct BlockSelectRegion
         int     tile_idx        = blockIdx.x;
         Offset  block_offset    = Offset(TILE_ITEMS) * tile_idx;
 
+        OffsetTuple total_selected;
+
         if (block_offset + TILE_ITEMS <= num_items)
-            ConsumeTile<true>(num_items, tile_idx, block_offset, d_tile_status);
+            total_selected = ConsumeTile<true>(num_items, tile_idx, block_offset, d_tile_status);
         else if (block_offset < num_items)
-            ConsumeTile<false>(num_items, tile_idx, block_offset, d_tile_status);
+            total_selected = ConsumeTile<false>(num_items, tile_idx, block_offset, d_tile_status);
 
 #else
 
@@ -607,7 +673,7 @@ struct BlockSelectRegion
         while (block_offset + TILE_ITEMS <= num_items)
         {
             // Consume full tile
-            ConsumeTile<true>(num_items, tile_idx, block_offset, d_tile_status);
+            total_selected = ConsumeTile<true>(num_items, tile_idx, block_offset, d_tile_status);
 
             // Get next tile
             if (threadIdx.x == 0)
@@ -622,10 +688,15 @@ struct BlockSelectRegion
         // Consume a partially-full tile
         if (block_offset < num_items)
         {
-            ConsumeTile<false>(num_items, tile_idx, block_offset, d_tile_status);
+            total_selected = ConsumeTile<false>(num_items, tile_idx, block_offset, d_tile_status);
         }
 #endif
 
+        // The thread block processing the last tile must output the total number of items selected
+        if ((threadIdx.x == 0) && (tile_idx == num_tiles - 1))
+        {
+            *d_num_selected = total_selected.x;
+        }
     }
 
 };

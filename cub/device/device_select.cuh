@@ -62,24 +62,31 @@ namespace cub {
 
 /**
  * Select kernel entry point (multi-block)
+ *
+ * Performs functor-based selection if SelectOp functor type != NullType
+ * Otherwise performs flag-based selection if FlagIterator's value type != NullType
+ * Otherwise performs discontinuity selection (keep unique)
  */
 template <
     typename    BlockSelectRegionPolicy,        ///< Parameterized BlockSelectRegionPolicy tuning policy type
-    typename    InputIterator,                  ///< Random-access iterator type for input (may be a simple pointer type)
-    typename    FlagIterator,                   ///< Random-access input iterator type for selection flags (possibly NullType* if SelectOp functor is used)
-    typename    OutputIterator,                 ///< Random-access iterator type for output (may be a simple pointer type)
-    typename    SelectOp,                       ///< Selection operator type (possibly NullType if flags are used)
+    typename    InputIterator,                  ///< Random-access input iterator type for selection items
+    typename    FlagIterator,                   ///< Random-access input iterator type for selection flags (NullType* if a selection functor or discontinuity flagging is to be used for selection)
+    typename    OutputIterator,                 ///< Random-access input iterator type for selected items
+    typename    NumSelectedIterator,            ///< Output iterator type for recording number of items selected
+    typename    SelectOp,                       ///< Selection operator type (NullType if selection flags or discontinuity flagging is to be used for selection)
     typename    Offset,                         ///< Signed integer type for global offsets
     typename    OffsetTuple>                    ///< Signed integer tuple type for global scatter offsets (selections and rejections)
 __launch_bounds__ (int(BlockSelectRegionPolicy::BLOCK_THREADS))
 __global__ void SelectRegionKernel(
-    InputIterator                       d_in,           ///< Input data
-    FlagIterator                        d_flags,        ///< Input flags
-    OutputIterator                      d_out,          ///< Output data
-    LookbackTileDescriptor<OffsetTuple> *d_tile_status, ///< Global list of tile status
-    SelectOp                            select_op,      ///< Selection operator
-    Offset                              num_items,      ///< Total number of scan items for the entire problem
-    GridQueue<int>                      queue)          ///< Drain queue descriptor for dynamically mapping tile data onto thread blocks
+    InputIterator                       d_in,               ///< [in] Input iterator pointing to data items
+    FlagIterator                        d_flags,            ///< [in] Input iterator pointing to selection flags
+    OutputIterator                      d_out,              ///< [in] Output iterator pointing to selected items
+    NumSelectedIterator                 d_num_selected,     ///< [in] Output iterator pointing to total number selected
+    LookbackTileDescriptor<OffsetTuple> *d_tile_status,     ///< [in] Global list of tile status
+    SelectOp                            select_op,          ///< [in] Selection operator
+    Offset                              num_items,          ///< [in] Total number of items to select from
+    int                                 num_tiles,          ///< [in] Total number of tiles for the entire problem
+    GridQueue<int>                      queue)              ///< [in] Drain queue descriptor for dynamically mapping tile data onto thread blocks
 {
     enum
     {
@@ -92,6 +99,7 @@ __global__ void SelectRegionKernel(
         InputIterator,
         FlagIterator,
         OutputIterator,
+        NumSelectedIterator,
         SelectOp,
         OffsetTuple> BlockSelectRegionT;
 
@@ -99,10 +107,11 @@ __global__ void SelectRegionKernel(
     __shared__ typename BlockSelectRegionT::TempStorage temp_storage;
 
     // Process tiles
-    BlockSelectRegionT(temp_storage, d_in, d_out, select_op, num_items).ConsumeRegion(
-        num_items,
+    BlockSelectRegionT(temp_storage, d_in, d_flags, d_out, select_op, num_items).ConsumeRegion(
+        num_tiles,
         queue,
-        d_tile_status + TILE_STATUS_PADDING);
+        d_tile_status + TILE_STATUS_PADDING,
+        d_num_selected);
 }
 
 
@@ -116,13 +125,18 @@ __global__ void SelectRegionKernel(
  * Internal dispatch routine
  */
 template <
-    typename    InputIterator,                  ///< Random-access iterator type for input (may be a simple pointer type)
-    typename    OutputIterator,                 ///< Random-access iterator type for output (may be a simple pointer type)
-    typename    FlagIterator,                   ///< Random-access input iterator type for selection flags (possibly NullType* if SelectOp functor is used)
-    typename    SelectOp,                       ///< Selection operator type (possibly NullType if flags are used)
+    typename    InputIterator,                  ///< Random-access input iterator type for selection items
+    typename    FlagIterator,                   ///< Random-access input iterator type for selection flags (NullType* if a selection functor or discontinuity flagging is to be used for selection)
+    typename    OutputIterator,                 ///< Random-access input iterator type for selected items
+    typename    NumSelectedIterator,            ///< Output iterator type for recording number of items selected
+    typename    SelectOp,                       ///< Selection operator type (NullType if selection flags or discontinuity flagging is to be used for selection)
     typename    OffsetTuple>                    ///< Signed integer tuple type for global scatter offsets (selections and rejections)
 struct DeviceSelectDispatch
 {
+    /******************************************************************************
+     * Types and constants
+     ******************************************************************************/
+
     enum
     {
         TILE_STATUS_PADDING     = 32,
@@ -363,13 +377,14 @@ struct DeviceSelectDispatch
     static cudaError_t Dispatch(
         void                        *d_temp_storage,                ///< [in] %Device allocation of temporary storage.  When NULL, the required allocation size is returned in \p temp_storage_bytes and no work is done.
         size_t                      &temp_storage_bytes,            ///< [in,out] Size in bytes of \p d_temp_storage allocation.
-        InputIterator               d_in,                           ///< [in] Iterator pointing to selection input
-        FlagIterator                d_flags,                     ///< [in] Iterator pointing to flags input
-        OutputIterator              d_out,                          ///< [in] Iterator pointing to selection output
+        InputIterator               d_in,                           ///< [in] Input iterator pointing to data items
+        FlagIterator                d_flags,                        ///< [in] Input iterator pointing to selection flags
+        OutputIterator              d_out,                          ///< [in] Output iterator pointing to selected items
+        NumSelectedIterator         d_num_selected,                 ///< [in] Output iterator pointing to total number selected
         SelectOp                    select_op,                      ///< [in] Selection operator
         Offset                      num_items,                      ///< [in] Total number of items to select from
-        cudaStream_t                stream,                         ///< [in] <b>[optional]</b> CUDA stream to launch kernels within.  Default is stream<sub>0</sub>.
-        bool                        debug_synchronous,              ///< [in] <b>[optional]</b> Whether or not to synchronize the stream after every kernel launch to check for errors.  Also causes launch configurations to be printed to the console.  Default is \p false.
+        cudaStream_t                stream,                         ///< [in] CUDA stream to launch kernels within.  Default is stream<sub>0</sub>.
+        bool                        debug_synchronous,              ///< [in] Whether or not to synchronize the stream after every kernel launch to check for errors.  Also causes launch configurations to be printed to the console.  Default is \p false.
         int                         ptx_version,                    ///< [in] PTX version of dispatch kernels
         int                         sm_version,                     ///< [in] SM version of target device to use when computing SM occupancy
         ScanInitKernelPtr           init_kernel,                    ///< [in] Kernel function pointer to parameterization of cub::ScanInitKernel
@@ -457,8 +472,8 @@ struct DeviceSelectDispatch
             else
             {
                 select_grid_size = (num_tiles < select_region_occupancy) ?
-                    num_tiles :                     // Not enough to fill the device with threadblocks
-                    select_region_occupancy;          // Fill the device with threadblocks
+                    num_tiles :                         // Not enough to fill the device with threadblocks
+                    select_region_occupancy;            // Fill the device with threadblocks
             }
 
             // Log select_region_kernel configuration
@@ -470,9 +485,11 @@ struct DeviceSelectDispatch
                 d_in,
                 d_flags,
                 d_out,
+                d_num_selected,
                 d_tile_status,
                 select_op,
                 num_items,
+                num_tiles,
                 queue);
 
             // Sync the stream if specified
@@ -491,15 +508,16 @@ struct DeviceSelectDispatch
      */
     __host__ __device__ __forceinline__
     static cudaError_t Dispatch(
-        void            *d_temp_storage,                ///< [in] %Device allocation of temporary storage.  When NULL, the required allocation size is returned in \p temp_storage_bytes and no work is done.
-        size_t          &temp_storage_bytes,            ///< [in,out] Size in bytes of \p d_temp_storage allocation.
-        InputIterator   d_in,                           ///< [in] Iterator pointing to selection input
-        FlagIterator    d_flags,                        ///< [in] Iterator pointing to flags input
-        OutputIterator  d_out,                          ///< [in] Iterator pointing to selection output
-        SelectOp        select_op,                      ///< [in] Selection operator
-        Offset          num_items,                      ///< [in] Total number of items to select from
-        cudaStream_t    stream,                         ///< [in] <b>[optional]</b> CUDA stream to launch kernels within.  Default is stream<sub>0</sub>.
-        bool            debug_synchronous)              ///< [in] <b>[optional]</b> Whether or not to synchronize the stream after every kernel launch to check for errors.  Also causes launch configurations to be printed to the console.  Default is \p false.
+        void                        *d_temp_storage,                ///< [in] %Device allocation of temporary storage.  When NULL, the required allocation size is returned in \p temp_storage_bytes and no work is done.
+        size_t                      &temp_storage_bytes,            ///< [in,out] Size in bytes of \p d_temp_storage allocation.
+        InputIterator               d_in,                           ///< [in] Input iterator pointing to data items
+        FlagIterator                d_flags,                        ///< [in] Input iterator pointing to selection flags
+        OutputIterator              d_out,                          ///< [in] Output iterator pointing to selected items
+        NumSelectedIterator         d_num_selected,                 ///< [in] Output iterator pointing to total number selected
+        SelectOp                    select_op,                      ///< [in] Selection operator
+        Offset                      num_items,                      ///< [in] Total number of items to select from
+        cudaStream_t                stream,                         ///< [in] <b>[optional]</b> CUDA stream to launch kernels within.  Default is stream<sub>0</sub>.
+        bool                        debug_synchronous)              ///< [in] <b>[optional]</b> Whether or not to synchronize the stream after every kernel launch to check for errors.  Also causes launch configurations to be printed to the console.  Default is \p false.
     {
         cudaError error = cudaSuccess;
         do
@@ -523,6 +541,7 @@ struct DeviceSelectDispatch
                 d_in,
                 d_flags,
                 d_out,
+                d_num_selected,
                 select_op,
                 num_items,
                 stream,
@@ -530,7 +549,7 @@ struct DeviceSelectDispatch
                 ptx_version,
                 ptx_version,            // Use PTX version instead of SM version because, as a statically known quantity, this improves device-side launch dramatically but at the risk of imprecise occupancy calculation for mismatches
                 ScanInitKernel<T, Offset>,
-                SelectRegionKernel<PtxSelectRegionPolicy, InputIterator, FlagIterator, OutputIterator, SelectOp, Offset, OffsetTuple>,
+                SelectRegionKernel<PtxSelectRegionPolicy, InputIterator, FlagIterator, OutputIterator, NumSelectedIterator, SelectOp, Offset, OffsetTuple>,
                 select_region_config))) break;
         }
         while (0);
@@ -550,17 +569,12 @@ struct DeviceSelectDispatch
  *****************************************************************************/
 
 /**
- * \brief DeviceSelect provides device-wide, parallel operations for constructing subsets from lists of data items residing within global memory. ![](device_select.png)
+ * \brief DeviceSelect provides device-wide, parallel operations for selecting items from sequences of data items residing within global memory. ![](device_select.png)
  * \ingroup DeviceModule
  *
  * \par Overview
- * Given a list of input elements and a binary reduction operator, a [<em>prefix scan</em>](http://en.wikipedia.org/wiki/Prefix_sum)
- * produces an output list where each element is computed to be the reduction
- * of the elements occurring earlier in the input list.  <em>Prefix sum</em>
- * connotes a prefix scan with the addition operator. The term \em inclusive indicates
- * that the <em>i</em><sup>th</sup> output reduction incorporates the <em>i</em><sup>th</sup> input.
- * The term \em exclusive indicates the <em>i</em><sup>th</sup> input is not incorporated into
- * the <em>i</em><sup>th</sup> output reduction.
+ * These operations apply a selection criterion to selectively copy
+ * items from a specified input sequence to a corresponding output sequence.
  *
  * \par Usage Considerations
  * \cdp_class{DeviceSelect}

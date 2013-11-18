@@ -94,19 +94,6 @@ struct BlockRadixSortDownsweepRegionPolicy
     static const BlockScanAlgorithm         INNER_SCAN_ALGORITHM    = _INNER_SCAN_ALGORITHM;    ///< The BlockScan algorithm algorithm to use
     static const RadixSortScatterAlgorithm  SCATTER_ALGORITHM       = _SCATTER_ALGORITHM;       ///< The scattering strategy to use
     static const cudaSharedMemConfig        SMEM_CONFIG             = _SMEM_CONFIG;             ///< Shared memory bank mode
-
-    /// Alternate policy for (RADIX_BITS - 1) bits
-    typedef BlockRadixSortDownsweepRegionPolicy<
-        BLOCK_THREADS,
-        ITEMS_PER_THREAD,
-        LOAD_ALGORITHM,
-        LOAD_MODIFIER,
-        EXCHANGE_TIME_SLICING,
-        MEMOIZE_OUTER_SCAN,
-        INNER_SCAN_ALGORITHM,
-        SCATTER_ALGORITHM,
-        SMEM_CONFIG,
-        CUB_MAX(1, RADIX_BITS - 1)> AltPolicy;
 };
 
 

@@ -1768,7 +1768,7 @@ struct DeviceSegReduceDispatch
  *****************************************************************************/
 
 /**
- * \brief DeviceSegReduce provides operations for computing a device-wide, parallel segmented reduction across data items residing within global memory.
+ * \brief DeviceSegReduce provides operations for computing a device-wide, parallel segmented reduction across a sequence of data items residing within global memory.
  * \ingroup DeviceModule
  *
  * \par Overview

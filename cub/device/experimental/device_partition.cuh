@@ -113,7 +113,7 @@ __global__ void ScanKernel(
  *****************************************************************************/
 
 /**
- * \brief DevicePartition provides operations for computing a device-wide, parallel prefix scan across data items residing within global memory. ![](device_scan.png)
+ * \brief DevicePartition provides operations for computing a device-wide, parallel prefix scan across a sequence of data items residing within global memory. ![](device_scan.png)
  * \ingroup DeviceModule
  *
  * \par Overview
