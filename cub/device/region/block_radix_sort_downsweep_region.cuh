@@ -205,7 +205,7 @@ struct BlockRadixSortDownsweepRegion
      */
     struct _TempStorage
     {
-        Offset   relative_bin_offsets[RADIX_DIGITS + 1];
+        Offset  relative_bin_offsets[RADIX_DIGITS + 1];
         bool    short_circuit;
 
         union
@@ -440,6 +440,8 @@ struct BlockRadixSortDownsweepRegion
         Offset      block_offset,
         Offset      valid_items)
     {
+        __syncthreads();
+
         BlockLoadValues loader(temp_storage.load_values);
         LoadItems(
             loader,
@@ -463,10 +465,10 @@ struct BlockRadixSortDownsweepRegion
     template <bool FULL_TILE>
     __device__ __forceinline__ void GatherScatterValues(
         NullType    (&values)[ITEMS_PER_THREAD],
-        Offset       (&relative_bin_offsets)[ITEMS_PER_THREAD],
+        Offset      (&relative_bin_offsets)[ITEMS_PER_THREAD],
         int         (&ranks)[ITEMS_PER_THREAD],
-        Offset       block_offset,
-        Offset       valid_items)
+        Offset      block_offset,
+        Offset      valid_items)
     {}
 
 
@@ -483,8 +485,6 @@ struct BlockRadixSortDownsweepRegion
         UnsignedBits    twiddled_keys[ITEMS_PER_THREAD];            // Twiddled keys
         int             ranks[ITEMS_PER_THREAD];                    // For each key, the local rank within the CTA
         Offset          relative_bin_offsets[ITEMS_PER_THREAD];     // For each key, the global scatter base offset of the corresponding digit
-
-        if (LOAD_ALGORITHM != BLOCK_LOAD_DIRECT) __syncthreads();
 
         // Assign max-key to all keys
         #pragma unroll
@@ -711,6 +711,8 @@ struct BlockRadixSortDownsweepRegion
             {
                 ProcessTile<true>(block_offset);
                 block_offset += TILE_ITEMS;
+
+                __syncthreads();
             }
 
             // Clean up last partial tile with guarded-I/O
