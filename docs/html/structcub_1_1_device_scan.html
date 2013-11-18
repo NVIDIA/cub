@@ -103,14 +103,14 @@ var searchBox = new SearchBox("searchBox", "search",false,'Search');
 </div><!--header-->
 <div class="contents">
 <a name="details" id="details"></a><h2 class="groupheader">Detailed description</h2>
-<div class="textblock"><p><a class="el" href="structcub_1_1_device_scan.html" title="DeviceScan provides operations for computing a device-wide, parallel prefix scan across data items re...">DeviceScan</a> provides operations for computing a device-wide, parallel prefix scan across data items residing within global memory. </p>
+<div class="textblock"><p><a class="el" href="structcub_1_1_device_scan.html" title="DeviceScan provides operations for computing a device-wide, parallel prefix scan across a sequence of data items re...">DeviceScan</a> provides operations for computing a device-wide, parallel prefix scan across a sequence of data items residing within global memory. </p>
 <div class="image">
 <img src="device_scan.png" alt="device_scan.png"/>
 <div class="caption">
 .</div></div>
  <dl class="section user"><dt>Overview</dt><dd>Given a list of input elements and a binary reduction operator, a <a href="http://en.wikipedia.org/wiki/Prefix_sum"><em>prefix scan</em></a> produces an output list where each element is computed to be the reduction of the elements occurring earlier in the input list. <em>Prefix sum</em> connotes a prefix scan with the addition operator. The term <em>inclusive</em> indicates that the <em>i</em><sup>th</sup> output reduction incorporates the <em>i</em><sup>th</sup> input. The term <em>exclusive</em> indicates the <em>i</em><sup>th</sup> input is not incorporated into the <em>i</em><sup>th</sup> output reduction.</dd></dl>
 <dl class="section user"><dt>Usage Considerations</dt><dd><ul>
-<li><em>Dynamic parallelism</em>. <a class="el" href="structcub_1_1_device_scan.html" title="DeviceScan provides operations for computing a device-wide, parallel prefix scan across data items re...">DeviceScan</a> methods can be called within kernel code on devices in which CUDA dynamic parallelism is supported. When calling these methods from kernel code, be sure to define the <code>CUB_CDP</code> macro in your compiler's macro definitions.</li>
+<li><em>Dynamic parallelism</em>. <a class="el" href="structcub_1_1_device_scan.html" title="DeviceScan provides operations for computing a device-wide, parallel prefix scan across a sequence of data items re...">DeviceScan</a> methods can be called within kernel code on devices in which CUDA dynamic parallelism is supported. When calling these methods from kernel code, be sure to define the <code>CUB_CDP</code> macro in your compiler's macro definitions.</li>
 </ul>
 </dd></dl>
 <dl class="section user"><dt>Performance</dt><dd></dd></dl>

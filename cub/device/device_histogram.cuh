@@ -29,7 +29,7 @@
 
 /**
  * \file
- * cub::DeviceHistogram provides device-wide parallel operations for constructing histogram(s) from samples data residing within global memory.
+ * cub::DeviceHistogram provides device-wide parallel operations for constructing histogram(s) from a sequence of samples data residing within global memory.
  */
 
 #pragma once
@@ -549,7 +549,7 @@ struct DeviceHistogramDispatch
  *****************************************************************************/
 
 /**
- * \brief DeviceHistogram provides device-wide parallel operations for constructing histogram(s) from samples data residing within global memory. ![](histogram_logo.png)
+ * \brief DeviceHistogram provides device-wide parallel operations for constructing histogram(s) from a sequence of samples data residing within global memory. ![](histogram_logo.png)
  * \ingroup DeviceModule
  *
  * \par Overview
@@ -627,7 +627,7 @@ struct DeviceHistogram
         int                 BINS,
         typename            InputIterator,
         typename            HistoCounter>
-    __host__ __device__ __forceinline__
+    __host__ __device__
     static cudaError_t SingleChannelSorting(
         void                *d_temp_storage,                    ///< [in] %Device allocation of temporary storage.  When NULL, the required allocation size is returned in \p temp_storage_bytes and no work is done.
         size_t              &temp_storage_bytes,                ///< [in,out] Size in bytes of \p d_temp_storage allocation.
@@ -717,7 +717,7 @@ struct DeviceHistogram
         int                 BINS,
         typename            InputIterator,
         typename            HistoCounter>
-    __host__ __device__ __forceinline__
+    __host__ __device__
     static cudaError_t SingleChannelSharedAtomic(
         void                *d_temp_storage,                    ///< [in] %Device allocation of temporary storage.  When NULL, the required allocation size is returned in \p temp_storage_bytes and no work is done.
         size_t              &temp_storage_bytes,                ///< [in,out] Size in bytes of \p d_temp_storage allocation.
@@ -806,7 +806,7 @@ struct DeviceHistogram
         int                 BINS,
         typename            InputIterator,
         typename            HistoCounter>
-    __host__ __device__ __forceinline__
+    __host__ __device__
     static cudaError_t SingleChannelGlobalAtomic(
         void                *d_temp_storage,                    ///< [in] %Device allocation of temporary storage.  When NULL, the required allocation size is returned in \p temp_storage_bytes and no work is done.
         size_t              &temp_storage_bytes,                ///< [in,out] Size in bytes of \p d_temp_storage allocation.
@@ -910,7 +910,7 @@ struct DeviceHistogram
         int                 ACTIVE_CHANNELS,
         typename            InputIterator,
         typename            HistoCounter>
-    __host__ __device__ __forceinline__
+    __host__ __device__
     static cudaError_t MultiChannelSorting(
         void                *d_temp_storage,                    ///< [in] %Device allocation of temporary storage.  When NULL, the required allocation size is returned in \p temp_storage_bytes and no work is done.
         size_t              &temp_storage_bytes,                ///< [in,out] Size in bytes of \p d_temp_storage allocation.
@@ -1006,7 +1006,7 @@ struct DeviceHistogram
         int                 ACTIVE_CHANNELS,
         typename            InputIterator,
         typename            HistoCounter>
-    __host__ __device__ __forceinline__
+    __host__ __device__
     static cudaError_t MultiChannelSharedAtomic(
         void                *d_temp_storage,                    ///< [in] %Device allocation of temporary storage.  When NULL, the required allocation size is returned in \p temp_storage_bytes and no work is done.
         size_t              &temp_storage_bytes,                ///< [in,out] Size in bytes of \p d_temp_storage allocation.
@@ -1103,7 +1103,7 @@ struct DeviceHistogram
         int                 ACTIVE_CHANNELS,
         typename            InputIterator,
         typename            HistoCounter>
-    __host__ __device__ __forceinline__
+    __host__ __device__
     static cudaError_t MultiChannelGlobalAtomic(
         void                *d_temp_storage,                    ///< [in] %Device allocation of temporary storage.  When NULL, the required allocation size is returned in \p temp_storage_bytes and no work is done.
         size_t              &temp_storage_bytes,                ///< [in,out] Size in bytes of \p d_temp_storage allocation.
