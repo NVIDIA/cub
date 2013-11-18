@@ -276,7 +276,7 @@ struct DeviceReduceByKey
     __host__ __device__ __forceinline__
     static cudaError_t Dispatch(
         void                        *d_temp_storage,                ///< [in] %Device allocation of temporary storage.  When NULL, the required allocation size is returned in \p temp_storage_bytes and no work is done.
-        size_t                      &temp_storage_bytes,            ///< [in,out] Size in bytes of \p d_temp_storage allocation.
+        size_t                      &temp_storage_bytes,            ///< [in,out] Size in bytes of \p d_temp_storage allocation
         InitScanKernelPtr           init_kernel,                    ///< [in] Kernel function pointer to parameterization of cub::InitScanKernel
         MultiBlockScanKernelPtr     multi_block_kernel,             ///< [in] Kernel function pointer to parameterization of cub::MultiBlockScanKernel
         KernelDispachParams         &multi_block_dispatch_params,   ///< [in] Dispatch parameters that match the policy that \p multi_block_kernel was compiled for
@@ -424,7 +424,7 @@ struct DeviceReduceByKey
     __host__ __device__ __forceinline__
     static cudaError_t Dispatch(
         void                        *d_temp_storage,                ///< [in] %Device allocation of temporary storage.  When NULL, the required allocation size is returned in \p temp_storage_bytes and no work is done.
-        size_t                      &temp_storage_bytes,            ///< [in,out] Size in bytes of \p d_temp_storage allocation.
+        size_t                      &temp_storage_bytes,            ///< [in,out] Size in bytes of \p d_temp_storage allocation
         InputIterator             d_in,                           ///< [in] Iterator pointing to scan input
         OutputIterator            d_out,                          ///< [in] Iterator pointing to scan output
         ReductionOp                      reduction_op,                        ///< [in] Binary scan operator
@@ -507,7 +507,7 @@ struct DeviceReduceByKey
     __host__ __device__ __forceinline__
     static cudaError_t ReduceValues(
         void                    *d_temp_storage,                ///< [in] %Device allocation of temporary storage.  When NULL, the required allocation size is returned in \p temp_storage_bytes and no work is done.
-        size_t                  &temp_storage_bytes,            ///< [in,out] Size in bytes of \p d_temp_storage allocation.
+        size_t                  &temp_storage_bytes,            ///< [in,out] Size in bytes of \p d_temp_storage allocation
         KeyInputIterator      d_keys_in,                      ///< [in] Key input data
         KeyOutputIterator     d_keys_out,                     ///< [out] Key output data (compacted)
         ValueInputIterator    d_values_in,                    ///< [in] Value input data
@@ -542,7 +542,7 @@ struct DeviceReduceByKey
     __host__ __device__ __forceinline__
     static cudaError_t SumValues(
         void                    *d_temp_storage,                ///< [in] %Device allocation of temporary storage.  When NULL, the required allocation size is returned in \p temp_storage_bytes and no work is done.
-        size_t                  &temp_storage_bytes,            ///< [in,out] Size in bytes of \p d_temp_storage allocation.
+        size_t                  &temp_storage_bytes,            ///< [in,out] Size in bytes of \p d_temp_storage allocation
         KeyInputIterator      d_keys_in,                      ///< [in] Key input data
         KeyOutputIterator     d_keys_out,                     ///< [in] Key output data (compacted)
         ValueInputIterator    d_values_in,                    ///< [in] Value input data
@@ -573,7 +573,7 @@ struct DeviceReduceByKey
     __host__ __device__ __forceinline__
     static cudaError_t RunLengths(
         void                    *d_temp_storage,                ///< [in] %Device allocation of temporary storage.  When NULL, the required allocation size is returned in \p temp_storage_bytes and no work is done.
-        size_t                  &temp_storage_bytes,            ///< [in,out] Size in bytes of \p d_temp_storage allocation.
+        size_t                  &temp_storage_bytes,            ///< [in,out] Size in bytes of \p d_temp_storage allocation
         KeyInputIterator      d_keys_in,                      ///< [in] Key input data
         KeyOutputIterator     d_keys_out,                     ///< [in] Key output data (compacted)
         CountOutputIterator   d_counts_out,                   ///< [in] Run-length counts output data (compacted)
@@ -608,7 +608,7 @@ struct DeviceReduceByKey
     __host__ __device__ __forceinline__
     static cudaError_t Unique(
         void                    *d_temp_storage,                ///< [in] %Device allocation of temporary storage.  When NULL, the required allocation size is returned in \p temp_storage_bytes and no work is done.
-        size_t                  &temp_storage_bytes,            ///< [in,out] Size in bytes of \p d_temp_storage allocation.
+        size_t                  &temp_storage_bytes,            ///< [in,out] Size in bytes of \p d_temp_storage allocation
         KeyInputIterator      d_keys_in,                      ///< [in] Key input data
         KeyOutputIterator     d_keys_out,                     ///< [out] Key output data (compacted)
         ValueInputIterator    d_values_in,                    ///< [in] Value input data
