@@ -29,7 +29,7 @@
 
 /**
  * \file
- * cub::DeviceScan provides device-wide, parallel operations for computing a prefix scan across data items residing within global memory.
+ * cub::DeviceScan provides device-wide, parallel operations for computing a prefix scan across a sequence of data items residing within global memory.
  */
 
 #pragma once
@@ -394,7 +394,7 @@ struct DeviceScanDispatch
      */
     template <
         typename                    ScanInitKernelPtr,              ///< Function type of cub::ScanInitKernel
-        typename                    ScanRegionKernelPtr>             ///< Function type of cub::ScanRegionKernelPtr
+        typename                    ScanRegionKernelPtr>            ///< Function type of cub::ScanRegionKernelPtr
     __host__ __device__ __forceinline__
     static cudaError_t Dispatch(
         void                        *d_temp_storage,                ///< [in] %Device allocation of temporary storage.  When NULL, the required allocation size is returned in \p temp_storage_bytes and no work is done.
@@ -586,13 +586,13 @@ struct DeviceScanDispatch
  *****************************************************************************/
 
 /**
- * \brief DeviceScan provides device-wide, parallel operations for computing a prefix scan across data items residing within global memory. ![](device_scan.png)
+ * \brief DeviceScan provides device-wide, parallel operations for computing a prefix scan across a sequence of data items residing within global memory. ![](device_scan.png)
  * \ingroup DeviceModule
  *
  * \par Overview
- * Given a list of input elements and a binary reduction operator, a [<em>prefix scan</em>](http://en.wikipedia.org/wiki/Prefix_sum)
- * produces an output list where each element is computed to be the reduction
- * of the elements occurring earlier in the input list.  <em>Prefix sum</em>
+ * Given a sequence of input elements and a binary reduction operator, a [<em>prefix scan</em>](http://en.wikipedia.org/wiki/Prefix_sum)
+ * produces an output sequence where each element is computed to be the reduction
+ * of the elements occurring earlier in the input sequence.  <em>Prefix sum</em>
  * connotes a prefix scan with the addition operator. The term \em inclusive indicates
  * that the <em>i</em><sup>th</sup> output reduction incorporates the <em>i</em><sup>th</sup> input.
  * The term \em exclusive indicates the <em>i</em><sup>th</sup> input is not incorporated into
@@ -654,7 +654,7 @@ struct DeviceScan
     template <
         typename        InputIterator,
         typename        OutputIterator>
-    __host__ __device__ __forceinline__
+    __host__ __device__
     static cudaError_t ExclusiveSum(
         void            *d_temp_storage,                    ///< [in] %Device allocation of temporary storage.  When NULL, the required allocation size is returned in \p temp_storage_bytes and no work is done.
         size_t          &temp_storage_bytes,                ///< [in,out] Size in bytes of \p d_temp_storage allocation.
@@ -731,7 +731,7 @@ struct DeviceScan
         typename        OutputIterator,
         typename        ScanOp,
         typename        Identity>
-    __host__ __device__ __forceinline__
+    __host__ __device__
     static cudaError_t ExclusiveScan(
         void            *d_temp_storage,                    ///< [in] %Device allocation of temporary storage.  When NULL, the required allocation size is returned in \p temp_storage_bytes and no work is done.
         size_t          &temp_storage_bytes,                ///< [in,out] Size in bytes of \p d_temp_storage allocation.
@@ -806,7 +806,7 @@ struct DeviceScan
     template <
         typename            InputIterator,
         typename            OutputIterator>
-    __host__ __device__ __forceinline__
+    __host__ __device__
     static cudaError_t InclusiveSum(
         void                *d_temp_storage,                    ///< [in] %Device allocation of temporary storage.  When NULL, the required allocation size is returned in \p temp_storage_bytes and no work is done.
         size_t              &temp_storage_bytes,                ///< [in,out] Size in bytes of \p d_temp_storage allocation.
@@ -877,7 +877,7 @@ struct DeviceScan
         typename        InputIterator,
         typename        OutputIterator,
         typename        ScanOp>
-    __host__ __device__ __forceinline__
+    __host__ __device__
     static cudaError_t InclusiveScan(
         void            *d_temp_storage,                    ///< [in] %Device allocation of temporary storage.  When NULL, the required allocation size is returned in \p temp_storage_bytes and no work is done.
         size_t          &temp_storage_bytes,                ///< [in,out] Size in bytes of \p d_temp_storage allocation.

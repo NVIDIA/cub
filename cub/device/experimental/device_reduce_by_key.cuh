@@ -29,7 +29,7 @@
 
 /**
  * \file
- * cub::DeviceReduceByKey provides operations for computing a device-wide, parallel prefix scan across data items residing within global memory.
+ * cub::DeviceReduceByKey provides operations for computing a device-wide, parallel prefix scan across a sequence of data items residing within global memory.
  */
 
 #pragma once
@@ -120,7 +120,7 @@ __global__ void MultiBlockScanKernel(
  */
 
 /**
- * \brief DeviceReduceByKey provides operations for computing a device-wide, parallel prefix scan across data items residing within global memory. ![](scan_logo.png)
+ * \brief DeviceReduceByKey provides operations for computing a device-wide, parallel prefix scan across a sequence of data items residing within global memory. ![](scan_logo.png)
  */
 struct DeviceReduceByKey
 {
