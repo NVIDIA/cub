@@ -77,8 +77,8 @@ __device__ __forceinline__ void TestBlockSort(
 {
     BlockRadixSort(temp_storage).SortDescending(keys, values, begin_bit, end_bit);
     stop = clock();
-    StoreBlocked(threadIdx.x, d_keys, keys);
-    StoreBlocked(threadIdx.x, d_values, values);
+    StoreDirectBlocked(threadIdx.x, d_keys, keys);
+    StoreDirectBlocked(threadIdx.x, d_values, values);
 }
 
 /// Specialized descending, blocked -> striped
@@ -97,8 +97,8 @@ __device__ __forceinline__ void TestBlockSort(
 {
     BlockRadixSort(temp_storage).SortDescendingBlockedToStriped(keys, values, begin_bit, end_bit);
     stop = clock();
-    StoreStriped<BLOCK_THREADS>(threadIdx.x, d_keys, keys);
-    StoreStriped<BLOCK_THREADS>(threadIdx.x, d_values, values);
+    StoreDirectStriped<BLOCK_THREADS>(threadIdx.x, d_keys, keys);
+    StoreDirectStriped<BLOCK_THREADS>(threadIdx.x, d_values, values);
 }
 
 /// Specialized ascending, blocked -> blocked
@@ -117,8 +117,8 @@ __device__ __forceinline__ void TestBlockSort(
 {
     BlockRadixSort(temp_storage).Sort(keys, values, begin_bit, end_bit);
     stop = clock();
-    StoreBlocked(threadIdx.x, d_keys, keys);
-    StoreBlocked(threadIdx.x, d_values, values);
+    StoreDirectBlocked(threadIdx.x, d_keys, keys);
+    StoreDirectBlocked(threadIdx.x, d_values, values);
 }
 
 /// Specialized ascending, blocked -> striped
@@ -137,8 +137,8 @@ __device__ __forceinline__ void TestBlockSort(
 {
     BlockRadixSort(temp_storage).SortBlockedToStriped(keys, values, begin_bit, end_bit);
     stop = clock();
-    StoreStriped<BLOCK_THREADS>(threadIdx.x, d_keys, keys);
-    StoreStriped<BLOCK_THREADS>(threadIdx.x, d_values, values);
+    StoreDirectStriped<BLOCK_THREADS>(threadIdx.x, d_keys, keys);
+    StoreDirectStriped<BLOCK_THREADS>(threadIdx.x, d_values, values);
 }
 
 
@@ -184,8 +184,8 @@ __global__ void Kernel(
     Key     keys[ITEMS_PER_THREAD];
     Value   values[ITEMS_PER_THREAD];
 
-    LoadBlocked(threadIdx.x, d_keys, keys);
-    LoadBlocked(threadIdx.x, d_values, values);
+    LoadDirectBlocked(threadIdx.x, d_keys, keys);
+    LoadDirectBlocked(threadIdx.x, d_values, values);
 
     // Start cycle timer
     clock_t stop;

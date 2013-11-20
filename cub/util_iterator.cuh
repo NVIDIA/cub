@@ -140,7 +140,7 @@ typename IteratorTexRef<TextureWord>::TexId<UNIQUE_ID>::TexRef IteratorTexRef<Te
 
 
 /**
- * \addtogroup UtilModule
+ * \addtogroup UtilIterator
  * @{
  */
 
@@ -150,7 +150,7 @@ typename IteratorTexRef<TextureWord>::TexId<UNIQUE_ID>::TexRef IteratorTexRef<Te
  *****************************************************************************/
 
 /**
- * \brief A random-access input iterator for loading a range of constant values
+ * \brief A random-access input generator for dereferencing a sequence of homogeneous values
  *
  * \par Overview
  * Read references to a ConstantInputIterator iterator always return the supplied constant
@@ -264,7 +264,7 @@ public:
 
 
 /**
- * \brief A random-access input iterator for loading a range of sequential integer values.
+ * \brief A random-access input generator for dereferencing a sequence of incrementing integer values.
  *
  * \par Overview
  * After initializing a CountingInputIterator to a certain integer \p base, read references
@@ -382,7 +382,7 @@ public:
 
 
 /**
- * \brief A random-access input iterator for loading array elements through a PTX cache modifier.
+ * \brief A random-access input wrapper for dereferencing array values using a PTX cache modifier.
  *
  * \par Overview
  * CacheModifiedInputIterator is a random-access input iterator that wraps a native
@@ -502,7 +502,7 @@ public:
 
 
 /**
- * \brief A random-access output iterator for storing array elements through a PTX cache modifier.
+ * \brief A random-access output wrapper for storing array values using a PTX cache-modifier.
  *
  * \par Overview
  * CacheModifiedOutputIterator is a random-access output iterator that wraps a native
@@ -637,7 +637,7 @@ public:
 
 
 /**
- * \brief A random-access input iterator pairing dereferenced values from a wrapped input iterator with their offset indices.
+ * \brief A random-access input wrapper for pairing dereferenced values with their corresponding indices (forming \p ItemOffsetPair tuples).
  *
  * \par Overview
  * ArgIndexInputIterator wraps a random access input iterator \p itr of type \p InputIterator.
@@ -652,10 +652,13 @@ template <
     typename    difference_type = ptrdiff_t>
 class ArgIndexInputIterator
 {
-public:
+private:
 
     // Data type of input iterator
     typedef typename std::iterator_traits<InputIterator>::value_type T;
+
+public:
+
 
     // Required iterator traits
     typedef ArgIndexInputIterator               self_type;              ///< My own type
@@ -764,7 +767,7 @@ public:
 
 
 /**
- * \brief A random-access input iterator for applying a transformation operator to another random-access input iterator.
+ * \brief A random-access input wrapper for transforming dereferenced values.
  *
  * \par Overview
  * TransformInputIterator wraps a unary conversion functor of type \p ConversionOp and a random-access
@@ -891,7 +894,7 @@ public:
 
 
 /**
- * \brief A random-access input iterator for loading primitive array elements through texture cache.  Uses older Tesla/Fermi-style texture references.
+ * \brief A random-access input wrapper for dereferencing array values through texture cache.  Uses older Tesla/Fermi-style texture references.
  *
  * \par Overview
  * TexRefInputIterator wraps a native device pointer of type <tt>ValueType*</tt>. References
@@ -1054,7 +1057,7 @@ public:
 
 
 /**
- * \brief A random-access input iterator for loading primitive array elements through texture cache.  Uses newer Kepler-style texture objects.
+ * \brief A random-access input wrapper for dereferencing array values through texture cache.  Uses newer Kepler-style texture objects.
  *
  * \par Overview
  * TexObjInputIterator wraps a native device pointer of type <tt>ValueType*</tt>. References
@@ -1240,7 +1243,7 @@ public:
 
 
 
-/** @} */       // end group UtilModule
+/** @} */       // end group UtilIterator
 
 }               // CUB namespace
 CUB_NS_POSTFIX  // Optional outer namespace(s)

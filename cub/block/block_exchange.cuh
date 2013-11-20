@@ -86,7 +86,7 @@ namespace cub {
  *
  *     // Load a tile of data striped across threads
  *     int thread_data[4];
- *     cub::LoadStriped<128>(threadIdx.x, d_data, thread_data);
+ *     cub::LoadDirectStriped<128>(threadIdx.x, d_data, thread_data);
  *
  *     // Collectively exchange data into a blocked arrangement across threads
  *     BlockExchange(temp_storage).StripedToBlocked(thread_data);
@@ -724,7 +724,7 @@ public:
      *
      *     // Load a tile of ordered data into a striped arrangement across block threads
      *     int thread_data[4];
-     *     cub::LoadStriped<128>(threadIdx.x, d_data, thread_data);
+     *     cub::LoadDirectStriped<128>(threadIdx.x, d_data, thread_data);
      *
      *     // Collectively exchange data into a blocked arrangement across threads
      *     BlockExchange(temp_storage).StripedToBlocked(thread_data);
@@ -770,7 +770,7 @@ public:
      *     BlockExchange(temp_storage).BlockedToStriped(thread_data);
      *
      *     // Store data striped across block threads into an ordered tile
-     *     cub::StoreStriped<STORE_DEFAULT, 128>(threadIdx.x, d_data, thread_data);
+     *     cub::StoreDirectStriped<STORE_DEFAULT, 128>(threadIdx.x, d_data, thread_data);
      *
      * \endcode
      * \par
@@ -857,7 +857,7 @@ public:
      *     BlockExchange(temp_storage).BlockedToWarpStriped(thread_data);
      *
      *     // Store data striped across warp threads into an ordered tile
-     *     cub::StoreStriped<STORE_DEFAULT, 128>(threadIdx.x, d_data, thread_data);
+     *     cub::StoreDirectStriped<STORE_DEFAULT, 128>(threadIdx.x, d_data, thread_data);
      *
      * \endcode
      * \par

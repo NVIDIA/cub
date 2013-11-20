@@ -339,7 +339,7 @@ __global__ void BlockScanKernel(
 
     // Per-thread tile data
     T data[ITEMS_PER_THREAD];
-    LoadBlocked(threadIdx.x, d_in, data);
+    LoadDirectBlocked(threadIdx.x, d_in, data);
 
     // Start cycle timer
     clock_t start = clock();
@@ -353,7 +353,7 @@ __global__ void BlockScanKernel(
     clock_t stop = clock();
 
     // Store output
-    StoreBlocked(threadIdx.x, d_out, data);
+    StoreDirectBlocked(threadIdx.x, d_out, data);
 
     // Store aggregate
     d_aggregate[threadIdx.x] = aggregate;

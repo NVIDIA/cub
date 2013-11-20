@@ -205,7 +205,7 @@ ALIASES                += warpcollective{1}="Every thread in the warp uses the \
 ALIASES                += devicestorage="This operation requires an allocation of temporary device storage.  When \p d_temp_storage is NULL, no work is done and the required allocation size is returned in \p temp_storage_bytes."
 ALIASES                += cdp_class{1}=" - <em>Dynamic parallelism</em>.  \1 methods can be called within kernel code on devices in which CUDA dynamic parallelism is supported.  When calling these methods from kernel code, be sure to define the \p CUB_CDP macro in your compiler's macro definitions."
 ALIASES                += cdp="When calling this method from kernel code, be sure to define the \p CUB_CDP macro in your compiler's macro definitions."
-ALIASES                += iterator="Random-access input/output iterators can be used instead of naked device pointers (e.g., a zip-iterator for fusing multiple inputs)."
+ALIASES                += iterator="(may be a simple pointer type)"
 ALIASES                += blocked="Assumes a [<em>blocked arrangement</em>](index.html#sec5sec4) of elements across threads, where thread<sub><em>i</em></sub> owns the <em>i</em><sup>th</sup> segment of consecutively ranked items."
 ALIASES                += striped="Assumes a [<em>striped arrangement</em>](index.html#sec5sec4) of elements across threads, where the items owned by each thread have a ranked distance of \p BLOCK_THREADS between them."
 ALIASES                += warpstriped="Assumes a <em>warp-striped arrangement</em> of elements across threads, where each warp owns a segment of (\p WARP_THREADS * \p ITEMS_PER_THREAD) consecutively ranked items, and the items owned by each thread have a ranked distance of \p WARP_THREADS between them."
@@ -467,14 +467,14 @@ INLINE_INFO            = YES
 # alphabetically by member name. If set to NO the members will appear in
 # declaration order.
 
-SORT_MEMBER_DOCS       = YES
+SORT_MEMBER_DOCS       = NO
 
 # If the SORT_BRIEF_DOCS tag is set to YES then doxygen will sort the
 # brief documentation of file, namespace and class members alphabetically
 # by member name. If set to NO (the default) the members will appear in
 # declaration order.
 
-SORT_BRIEF_DOCS        = YES
+SORT_BRIEF_DOCS        = NO
 
 # If the SORT_MEMBERS_CTORS_1ST tag is set to YES then doxygen
 # will sort the (brief and detailed) documentation of class members so that
@@ -685,6 +685,7 @@ INPUT                  += ../cub/device/device_histogram.cuh
 INPUT                  += ../cub/device/device_radix_sort.cuh 
 INPUT                  += ../cub/device/device_reduce.cuh 
 INPUT                  += ../cub/device/device_scan.cuh 
+INPUT                  += ../cub/device/device_select.cuh 
 # INPUT                  += ../cub/grid/grid_even_share.cuh 
 # INPUT                  += ../cub/grid/grid_mapping.cuh 
 # INPUT                  += ../cub/grid/grid_queue.cuh 

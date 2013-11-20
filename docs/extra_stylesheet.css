@@ -223,10 +223,9 @@ dt {
 		border-left: 1px solid #999;
 		border-right: 1px solid #999;
 		background-image: none;
-		background-color: #FAFAFA;
+		background-color: #FFF;
 		text-shadow: none;
-		box-shadow: 3px 3px 30px rgba(0, 0, 0, 0.1);
-		-webkit-box-shadow: 3px 3px 30px rgba(0, 0, 0, 0.1);
+		box-shadow: 3px 3px 30px rgba(0, 0, 0, 0.05);
 }
 
 div.memdoc {
@@ -235,8 +234,8 @@ div.memdoc {
 		border-left: 1px solid #999;
 		border-right: 1px solid #999;
 		background-image: none;
-		color: #555;
-		box-shadow: 3px 3px 30px rgba(0, 0, 0, 0.1);
+		background-color: #FCFCFC;
+		box-shadow: 3px 3px 30px rgba(0, 0, 0, 0.05);
 }
 
 div.memdoc p {

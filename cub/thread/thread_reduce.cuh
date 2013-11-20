@@ -43,7 +43,7 @@ CUB_NS_PREFIX
 namespace cub {
 
 /**
- * \addtogroup ThreadModule
+ * \addtogroup UtilModule
  * @{
  */
 
@@ -139,7 +139,7 @@ __device__ __forceinline__ T ThreadReduce(
 
 //@}  end member group
 
-/** @} */       // end group ThreadModule
+/** @} */       // end group UtilModule
 
 }               // CUB namespace
 CUB_NS_POSTFIX  // Optional outer namespace(s)

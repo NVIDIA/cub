@@ -100,8 +100,8 @@ __global__ void ScanInitKernel(
  */
 template <
     typename    BlockScanRegionPolicy,          ///< Parameterized BlockScanRegionPolicy tuning policy type
-    typename    InputIterator,                  ///< Random-access iterator type for input (may be a simple pointer type)
-    typename    OutputIterator,                 ///< Random-access iterator type for output (may be a simple pointer type)
+    typename    InputIterator,                  ///< Random-access iterator type for input \iterator
+    typename    OutputIterator,                 ///< Random-access iterator type for output \iterator
     typename    T,                              ///< The scan data type
     typename    ScanOp,                         ///< Binary scan operator type having member <tt>T operator()(const T &a, const T &b)</tt>
     typename    Identity,                       ///< Identity value type (cub::NullType for inclusive scans)
@@ -151,8 +151,8 @@ __global__ void ScanRegionKernel(
  * Internal dispatch routine
  */
 template <
-    typename InputIterator,      ///< Random-access iterator type for input (may be a simple pointer type)
-    typename OutputIterator,     ///< Random-access iterator type for output (may be a simple pointer type)
+    typename InputIterator,      ///< Random-access iterator type for input \iterator
+    typename OutputIterator,     ///< Random-access iterator type for output \iterator
     typename ScanOp,             ///< Binary scan operator type having member <tt>T operator()(const T &a, const T &b)</tt>
     typename Identity,           ///< Identity value type (cub::NullType for inclusive scans)
     typename Offset>             ///< Signed integer type for global offsets
@@ -616,40 +616,40 @@ struct DeviceScan
     /**
      * \brief Computes a device-wide exclusive prefix sum.
      *
-     * \devicestorage
-     *
-     * \cdp
-     *
-     * \iterator
+     * \par
+     * - Supports non-commutative sum operators.
+     * - \devicestorage
+     * - \cdp
      *
      * \par
-     * The code snippet below illustrates the exclusive prefix sum of a device vector of \p int items.
+     * The code snippet below illustrates the exclusive prefix sum of an \p int device vector.
      * \par
      * \code
      * #include <cub/cub.cuh>
+     *
+     * // Declare, allocate, and initialize device pointers for input and output
+     * int  num_items;      // e.g., 7
+     * int  *d_in;          // e.g., [8, 6, 7, 5, 3, 0, 9]
+     * int  *d_out;         // e.g., [ ,  ,  ,  ,  ,  ,  ]
      * ...
      *
-     * // Declare and initialize device pointers for input and output
-     * int *d_scan_input, *d_scan_output;
-     * int num_items = ...
+     * // Determine temporary device storage requirements
+     * void     *d_temp_storage = NULL;
+     * size_t   temp_storage_bytes = 0;
+     * cub::DeviceScan::ExclusiveSum(d_temp_storage, temp_storage_bytes, d_in, d_out, num_items);
      *
-     * ...
-     *
-     * // Determine temporary device storage requirements for exclusive prefix sum
-     * void *d_temp_storage = NULL;
-     * size_t temp_storage_bytes = 0;
-     * cub::DeviceScan::ExclusiveSum(d_temp_storage, temp_storage_bytes, d_scan_input, d_scan_output, num_items);
-     *
-     * // Allocate temporary storage for exclusive prefix sum
+     * // Allocate temporary storage
      * cudaMalloc(&d_temp_storage, temp_storage_bytes);
      *
      * // Run exclusive prefix sum
-     * cub::DeviceScan::ExclusiveSum(d_temp_storage, temp_storage_bytes, d_scan_input, d_scan_output, num_items);
+     * cub::DeviceScan::ExclusiveSum(d_temp_storage, temp_storage_bytes, d_in, d_out, num_items);
+     *
+     * // d_out s<-- [0, 8, 14, 21, 26, 29, 29]
      *
      * \endcode
      *
-     * \tparam InputIterator      <b>[inferred]</b> Random-access iterator type for input (may be a simple pointer type)
-     * \tparam OutputIterator     <b>[inferred]</b> Random-access iterator type for output (may be a simple pointer type)
+     * \tparam InputIterator      <b>[inferred]</b> Random-access iterator type for input \iterator
+     * \tparam OutputIterator     <b>[inferred]</b> Random-access iterator type for output \iterator
      */
     template <
         typename        InputIterator,
@@ -687,42 +687,50 @@ struct DeviceScan
      * \brief Computes a device-wide exclusive prefix scan using the specified binary \p scan_op functor.
      *
      * \par
-     * Supports non-commutative scan operators.
-     *
-     * \devicestorage
-     *
-     * \cdp
-     *
-     * \iterator
+     * - Supports non-commutative scan operators.
+     * - \devicestorage
+     * - \cdp
      *
      * \par
-     * The code snippet below illustrates the exclusive prefix scan of a device vector of \p int items.
+     * The code snippet below illustrates the exclusive prefix min-scan of an \p int device vector
      * \par
      * \code
      * #include <cub/cub.cuh>
-     * ...
      *
-     * // Declare and initialize device pointers for input and output
-     * int *d_scan_input, *d_scan_output;
-     * int num_items = ...
+     * // MyMin functor
+     * struct MyMin
+     * {
+     *     template <typename T>
+     *     __host__ __device__ __forceinline__
+     *     T operator()(const T &a, const T &b) const {
+     *         return (b < a) ? b : a;
+     *     }
+     * };
      *
+     * // Declare, allocate, and initialize device pointers for input and output
+     * int      num_items;      // e.g., 7
+     * int      *d_in;          // e.g., [8, 6, 7, 5, 3, 0, 9]
+     * int      *d_out;         // e.g., [ ,  ,  ,  ,  ,  ,  ]
+     * MyMin    min_op
      * ...
      *
      * // Determine temporary device storage requirements for exclusive prefix scan
-     * void *d_temp_storage = NULL;
-     * size_t temp_storage_bytes = 0;
-     * cub::DeviceScan::ExclusiveScan(d_temp_storage, temp_storage_bytes, d_scan_input, d_scan_output, cub::Max(), (int) MIN_INT, num_items);
+     * void     *d_temp_storage = NULL;
+     * size_t   temp_storage_bytes = 0;
+     * cub::DeviceScan::ExclusiveScan(d_temp_storage, temp_storage_bytes, d_in, d_out, min_op, (int) MAX_INT, num_items);
      *
      * // Allocate temporary storage for exclusive prefix scan
      * cudaMalloc(&d_temp_storage, temp_storage_bytes);
      *
-     * // Run exclusive prefix scan (max)
-     * cub::DeviceScan::ExclusiveScan(d_temp_storage, temp_storage_bytes, d_scan_input, d_scan_output, cub::Max(), (int) MIN_INT, num_items);
+     * // Run exclusive prefix min-scan
+     * cub::DeviceScan::ExclusiveScan(d_temp_storage, temp_storage_bytes, d_in, d_out, min_op, (int) MAX_INT, num_items);
+     *
+     * // d_out <-- [2147483647, 8, 6, 6, 5, 3, 0]
      *
      * \endcode
      *
-     * \tparam InputIterator    <b>[inferred]</b> Random-access iterator type for input (may be a simple pointer type)
-     * \tparam OutputIterator   <b>[inferred]</b> Random-access iterator type for output (may be a simple pointer type)
+     * \tparam InputIterator    <b>[inferred]</b> Random-access iterator type for input \iterator
+     * \tparam OutputIterator   <b>[inferred]</b> Random-access iterator type for output \iterator
      * \tparam ScanOp           <b>[inferred]</b> Binary scan operator type having member <tt>T operator()(const T &a, const T &b)</tt>
      * \tparam Identity         <b>[inferred]</b> Type of the \p identity value used Binary scan operator type having member <tt>T operator()(const T &a, const T &b)</tt>
      */
@@ -769,39 +777,40 @@ struct DeviceScan
     /**
      * \brief Computes a device-wide inclusive prefix sum.
      *
-     * \devicestorage
-     *
-     * \cdp
-     *
-     * \iterator
+     * \par
+     * - Supports non-commutative sum operators.
+     * - \devicestorage
+     * - \cdp
      *
      * \par
-     * The code snippet below illustrates the inclusive prefix sum of a device vector of \p int items.
+     * The code snippet below illustrates the inclusive prefix sum of an \p int device vector.
      * \par
      * \code
      * #include <cub/cub.cuh>
-     * ...
      *
-     * // Declare and initialize device pointers for input and output
-     * int *d_scan_input, *d_scan_output;
-     * int num_items = ...
+     * // Declare, allocate, and initialize device pointers for input and output
+     * int  num_items;      // e.g., 7
+     * int  *d_in;          // e.g., [8, 6, 7, 5, 3, 0, 9]
+     * int  *d_out;         // e.g., [ ,  ,  ,  ,  ,  ,  ]
      * ...
      *
      * // Determine temporary device storage requirements for inclusive prefix sum
-     * void *d_temp_storage = NULL;
-     * size_t temp_storage_bytes = 0;
-     * cub::DeviceScan::InclusiveSum(d_temp_storage, temp_storage_bytes, d_scan_input, d_scan_output, num_items);
+     * void     *d_temp_storage = NULL;
+     * size_t   temp_storage_bytes = 0;
+     * cub::DeviceScan::InclusiveSum(d_temp_storage, temp_storage_bytes, d_in, d_out, num_items);
      *
      * // Allocate temporary storage for inclusive prefix sum
      * cudaMalloc(&d_temp_storage, temp_storage_bytes);
      *
      * // Run inclusive prefix sum
-     * cub::DeviceScan::InclusiveSum(d_temp_storage, temp_storage_bytes, d_scan_input, d_scan_output, num_items);
+     * cub::DeviceScan::InclusiveSum(d_temp_storage, temp_storage_bytes, d_in, d_out, num_items);
+     *
+     * // d_out <-- [8, 14, 21, 26, 29, 29, 38]
      *
      * \endcode
      *
-     * \tparam InputIterator      <b>[inferred]</b> Random-access iterator type for input (may be a simple pointer type)
-     * \tparam OutputIterator     <b>[inferred]</b> Random-access iterator type for output (may be a simple pointer type)
+     * \tparam InputIterator      <b>[inferred]</b> Random-access iterator type for input \iterator
+     * \tparam OutputIterator     <b>[inferred]</b> Random-access iterator type for output \iterator
      */
     template <
         typename            InputIterator,
@@ -836,41 +845,50 @@ struct DeviceScan
      * \brief Computes a device-wide inclusive prefix scan using the specified binary \p scan_op functor.
      *
      * \par
-     * Supports non-commutative scan operators.
-     *
-     * \devicestorage
-     *
-     * \cdp
-     *
-     * \iterator
+     * - Supports non-commutative scan operators.
+     * - \devicestorage
+     * - \cdp
      *
      * \par
-     * The code snippet below illustrates the inclusive prefix scan of a device vector of \p int items.
+     * The code snippet below illustrates the inclusive prefix min-scan of an \p int device vector.
      * \par
      * \code
      * #include <cub/cub.cuh>
-     * ...
      *
-     * // Declare and initialize device pointers for input and output
-     * int *d_scan_input, *d_scan_output;
-     * int num_items = ...
+     * // MyMin functor
+     * struct MyMin
+     * {
+     *     template <typename T>
+     *     __host__ __device__ __forceinline__
+     *     T operator()(const T &a, const T &b) const {
+     *         return (b < a) ? b : a;
+     *     }
+     * };
+     *
+     * // Declare, allocate, and initialize device pointers for input and output
+     * int      num_items;      // e.g., 7
+     * int      *d_in;          // e.g., [8, 6, 7, 5, 3, 0, 9]
+     * int      *d_out;         // e.g., [ ,  ,  ,  ,  ,  ,  ]
+     * MyMin    min_op;
      * ...
      *
      * // Determine temporary device storage requirements for inclusive prefix scan
      * void *d_temp_storage = NULL;
      * size_t temp_storage_bytes = 0;
-     * cub::DeviceScan::InclusiveScan(d_temp_storage, temp_storage_bytes, d_scan_input, d_scan_output, cub::Max(), num_items);
+     * cub::DeviceScan::InclusiveScan(d_temp_storage, temp_storage_bytes, d_in, d_out, min_op, num_items);
      *
      * // Allocate temporary storage for inclusive prefix scan
      * cudaMalloc(&d_temp_storage, temp_storage_bytes);
      *
-     * // Run inclusive prefix scan (max)
-     * cub::DeviceScan::InclusiveScan(d_temp_storage, temp_storage_bytes, d_scan_input, d_scan_output, cub::Max(), num_items);
+     * // Run inclusive prefix min-scan
+     * cub::DeviceScan::InclusiveScan(d_temp_storage, temp_storage_bytes, d_in, d_out, min_op, num_items);
+     *
+     * // d_out <-- [8, 6, 6, 5, 3, 0, 0]
      *
      * \endcode
      *
-     * \tparam InputIterator    <b>[inferred]</b> Random-access iterator type for input (may be a simple pointer type)
-     * \tparam OutputIterator   <b>[inferred]</b> Random-access iterator type for output (may be a simple pointer type)
+     * \tparam InputIterator    <b>[inferred]</b> Random-access iterator type for input \iterator
+     * \tparam OutputIterator   <b>[inferred]</b> Random-access iterator type for output \iterator
      * \tparam ScanOp           <b>[inferred]</b> Binary scan operator type having member <tt>T operator()(const T &a, const T &b)</tt>
      */
     template <

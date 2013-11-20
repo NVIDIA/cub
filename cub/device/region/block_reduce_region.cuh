@@ -210,7 +210,7 @@ struct BlockReduceRegion
         T items[ITEMS_PER_THREAD];
 
         // Load items in striped fashion
-        LoadStriped<BLOCK_THREADS>(threadIdx.x, d_wrapped_in + block_offset, items);
+        LoadDirectStriped<BLOCK_THREADS>(threadIdx.x, d_wrapped_in + block_offset, items);
 
         // Reduce items within each thread stripe
         return ThreadReduce(items, reduction_op);

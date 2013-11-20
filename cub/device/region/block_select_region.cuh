@@ -485,7 +485,7 @@ struct BlockSelectRegion
         BlockExchangeT(temp_storage.exchange).ScatterToStriped(items, local_ranks, is_valid, valid_items.x);
 
         // Selected items are placed front-to-back
-        StoreStriped<BLOCK_THREADS>(threadIdx.x, d_out + tile_exclusive_prefix.x, items, valid_items.x);
+        StoreDirectStriped<BLOCK_THREADS>(threadIdx.x, d_out + tile_exclusive_prefix.x, items, valid_items.x);
     }
 
 

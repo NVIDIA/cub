@@ -72,7 +72,7 @@ enum CacheLoadModifier
 
 
 /**
- * \name Simple I/O
+ * \name Cache-modified thread I/O
  * @{
  */
 

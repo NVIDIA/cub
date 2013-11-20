@@ -43,7 +43,7 @@ CUB_NS_PREFIX
 namespace cub {
 
 /**
- * \addtogroup ThreadModule
+ * \addtogroup UtilModule
  * @{
  */
 
@@ -224,7 +224,7 @@ __device__ __forceinline__ T ThreadScanInclusive(
 
 //@}  end member group
 
-/** @} */       // end group ThreadModule
+/** @} */       // end group UtilModule
 
 
 }               // CUB namespace

@@ -587,9 +587,9 @@ struct BlockRadixSortDownsweepRegion
         {
             T items[ITEMS_PER_THREAD];
 
-            LoadStriped<BLOCK_THREADS>(threadIdx.x, d_in + block_offset, items);
+            LoadDirectStriped<BLOCK_THREADS>(threadIdx.x, d_in + block_offset, items);
             __syncthreads();
-            StoreStriped<BLOCK_THREADS>(threadIdx.x, d_out + block_offset, items);
+            StoreDirectStriped<BLOCK_THREADS>(threadIdx.x, d_out + block_offset, items);
 
             block_offset += TILE_ITEMS;
         }
@@ -601,9 +601,9 @@ struct BlockRadixSortDownsweepRegion
 
             T items[ITEMS_PER_THREAD];
 
-            LoadStriped<BLOCK_THREADS>(threadIdx.x, d_in + block_offset, items, valid_items);
+            LoadDirectStriped<BLOCK_THREADS>(threadIdx.x, d_in + block_offset, items, valid_items);
             __syncthreads();
-            StoreStriped<BLOCK_THREADS>(threadIdx.x, d_out + block_offset, items, valid_items);
+            StoreDirectStriped<BLOCK_THREADS>(threadIdx.x, d_out + block_offset, items, valid_items);
         }
     }
 

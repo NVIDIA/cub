@@ -569,7 +569,7 @@ struct DeviceSelectDispatch
  *****************************************************************************/
 
 /**
- * \brief DeviceSelect provides device-wide, parallel operations for selecting items from sequences of data items residing within global memory. ![](device_select.png)
+ * \brief DeviceSelect provides device-wide, parallel operations for selecting items from sequences of data items residing within global memory. ![](select_logo.png)
  * \ingroup DeviceModule
  *
  * \par Overview
@@ -581,24 +581,52 @@ struct DeviceSelectDispatch
  *
  * \par Performance
  *
- * \image html select_perf.png
- *
  */
 struct DeviceSelect
 {
     /**
-     * \brief Uses the sequence of validity flags \p d_flags as a criterion for selectively copying the corresponding items from \p d_in into \p d_out.  The total number of items selected is written to \p d_num_selected.
+     * \brief Uses the \p d_flags sequence to selectively copy the corresponding items from \p d_in into \p d_out.  The total number of items selected is written to \p d_num_selected. ![](select_flags_logo.png)
      *
-     * \devicestorage
+     * \par
+     * - The value type of \p d_flags must be castable to \p bool (e.g., \p bool, \p char, \p int, etc.).
+     * - The selected items are compacted into \p d_out and maintain their original relative ordering.
+     * - \devicestorage
+     * - \cdp
+
+     * \par
+     * The code snippet below illustrates the compaction of items selected from an \p int device vector.
+     * \par
+     * \code
+     * #include <cub/cub.cuh>
      *
-     * \cdp
+     * // Declare, allocate, and initialize device pointers for input, flags, and output
+     * int  num_items;          // e.g., 8
+     * int  *d_in;              // e.g., [1, 2, 3, 4, 5, 6, 7, 8]
+     * char *d_flags;           // e.g., [1, 0, 0, 1, 0, 1, 1, 0]
+     * int  *d_out;             // e.g., [ ,  ,  ,  ,  ,  ,  ,  ]
+     * int  *d_num_selected;    // e.g., [ ]
+     * ...
      *
-     * \iterator
+     * // Determine temporary device storage requirements
+     * void     *d_temp_storage = NULL;
+     * size_t   temp_storage_bytes = 0;
+     * cub::DeviceSelect::CopyIf(d_temp_storage, temp_storage_bytes, d_in, d_flags, d_out, d_num_selected, num_items);
      *
-     * \tparam InputIterator        <b>[inferred]</b> Random-access input iterator type for selection items (may be a simple pointer type)
-     * \tparam FlagIterator         <b>[inferred]</b> Random-access input iterator type for selection flags (may be a simple pointer type)
-     * \tparam OutputIterator       <b>[inferred]</b> Random-access output iterator type for selected items (may be a simple pointer type)
-     * \tparam NumSelectedIterator  <b>[inferred]</b> Output iterator type for recording number of items selected (may be a simple pointer type)
+     * // Allocate temporary storage
+     * cudaMalloc(&d_temp_storage, temp_storage_bytes);
+     *
+     * // Run selection
+     * cub::DeviceSelect::CopyIf(d_temp_storage, temp_storage_bytes, d_in, d_flags, d_out, d_num_selected, num_items);
+     *
+     * // d_out             <-- [1, 4, 6, 7]
+     * // d_num_selected    <-- [4]
+     *
+     * \endcode
+     *
+     * \tparam InputIterator        <b>[inferred]</b> Random-access input iterator type for selection items \iterator
+     * \tparam FlagIterator         <b>[inferred]</b> Random-access input iterator type for selection flags \iterator
+     * \tparam OutputIterator       <b>[inferred]</b> Random-access output iterator type for selected items \iterator
+     * \tparam NumSelectedIterator  <b>[inferred]</b> Output iterator type for recording number of items selected \iterator
      */
     template <
         typename                    InputIterator,
@@ -641,17 +669,17 @@ struct DeviceSelect
 
 
     /**
-     * \brief Uses the \p select_op operator as a criterion for selectively copying items from \p d_in into \p d_out.  The total number of items selected is written to \p d_num_selected.
+     * \brief Uses the \p select_op functor to selectively copy items from \p d_in into \p d_out.  The total number of items selected is written to \p d_num_selected. ![](select_logo.png)
      *
-     * \devicestorage
+     * \par
+     * - The selected items are compacted into \p d_out and maintain their original relative ordering.
+     * - \devicestorage
+     * - \cdp
+
      *
-     * \cdp
-     *
-     * \iterator
-     *
-     * \tparam InputIterator        <b>[inferred]</b> Random-access input iterator type for selection items (may be a simple pointer type)
-     * \tparam OutputIterator       <b>[inferred]</b> Random-access output iterator type for selected items (may be a simple pointer type)
-     * \tparam NumSelectedIterator  <b>[inferred]</b> Output iterator type for recording number of items selected (may be a simple pointer type)
+     * \tparam InputIterator        <b>[inferred]</b> Random-access input iterator type for selection items \iterator
+     * \tparam OutputIterator       <b>[inferred]</b> Random-access output iterator type for selected items \iterator
+     * \tparam NumSelectedIterator  <b>[inferred]</b> Output iterator type for recording number of items selected \iterator
      * \tparam SelectOp             <b>[inferred]</b> Selection operator type having member <tt>bool operator()(const T &a)</tt>
      */
     template <
@@ -695,17 +723,17 @@ struct DeviceSelect
 
 
     /**
-     * \brief Given an input sequence \p d_in having groups of consecutive equal-valued keys, only the first key from each group is selectively copied to \p d_out.  The total number of items selected is written to \p d_num_selected.
+     * \brief Given an input sequence \p d_in having groups of consecutive equal-valued keys, only the first key from each group is selectively copied to \p d_out.  The total number of items selected is written to \p d_num_selected. ![](unique_logo.png)
      *
-     * \devicestorage
+     * \par
+     * - The selected items are compacted into \p d_out and maintain their original relative ordering.
+     * - \devicestorage
+     * - \cdp
+
      *
-     * \cdp
-     *
-     * \iterator
-     *
-     * \tparam InputIterator        <b>[inferred]</b> Random-access input iterator type for selection items (may be a simple pointer type)
-     * \tparam OutputIterator       <b>[inferred]</b> Random-access output iterator type for selected items (may be a simple pointer type)
-     * \tparam NumSelectedIterator  <b>[inferred]</b> Output iterator type for recording number of items selected (may be a simple pointer type)
+     * \tparam InputIterator        <b>[inferred]</b> Random-access input iterator type for selection items \iterator
+     * \tparam OutputIterator       <b>[inferred]</b> Random-access output iterator type for selected items \iterator
+     * \tparam NumSelectedIterator  <b>[inferred]</b> Output iterator type for recording number of items selected \iterator
      */
     template <
         typename                    InputIterator,
