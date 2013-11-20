@@ -77,7 +77,6 @@ struct If<false, ThenType, ElseType>
 
 #endif // DOXYGEN_SHOULD_SKIP_THIS
 
-
 /******************************************************************************
  * Conditional types
  ******************************************************************************/
@@ -141,11 +140,12 @@ struct Int2Type
 };
 
 
+#ifndef DOXYGEN_SHOULD_SKIP_THIS    // Do not document
+
+
 /******************************************************************************
  * Size and alignment
  ******************************************************************************/
-
-#ifndef DOXYGEN_SHOULD_SKIP_THIS    // Do not document
 
 /// Structure alignment
 template <typename T>
@@ -267,7 +267,6 @@ struct UnitWord <float4>
     typedef float4      TextureWord;
 };
 
-
 #endif // DOXYGEN_SHOULD_SKIP_THIS
 
 
@@ -276,18 +275,18 @@ struct UnitWord <float4>
  ******************************************************************************/
 
 /**
- * An item value paired with a corresponding offset
+ * \brief An item value paired with a corresponding offset
  */
 template <typename _T, typename _Offset>
 struct ItemOffsetPair
 {
-    typedef _T        T;
-    typedef _Offset   Offset;
+    typedef _T        T;        ///< Item data type
+    typedef _Offset   Offset;   ///< Integer offset data type
 
     T       value;      ///< Item value
     Offset  offset;     ///< Offset
 
-    // Inequality operator
+    /// Inequality operator
     __host__ __device__ __forceinline__ bool operator !=(const ItemOffsetPair &b)
     {
         return (value != b.value) || (offset != b.offset);
@@ -296,18 +295,18 @@ struct ItemOffsetPair
 
 
 /**
- * A key identifier paired with a corresponding value
+ * \brief A key identifier paired with a corresponding value
  */
 template <typename _Key, typename _Value>
 struct KeyValuePair
 {
-    typedef _Key        Key;
-    typedef _Value      Value;
+    typedef _Key        Key;        ///< Key data type
+    typedef _Value      Value;      ///< Value data type
 
-    Value   value;          ///< Value
+    Value   value;          ///< Value data
     Key     key;            ///< Key identifier
 
-    // Inequality operator
+    /// Inequality operator
     __host__ __device__ __forceinline__ bool operator !=(const KeyValuePair &b)
     {
         return (value != b.value) || (key != b.key);
@@ -315,7 +314,9 @@ struct KeyValuePair
 
 };
 
+#ifndef DOXYGEN_SHOULD_SKIP_THIS    // Do not document
 
+/*
 template <>
 struct KeyValuePair<int, long long>
 {
@@ -326,7 +327,7 @@ struct KeyValuePair<int, long long>
     long long   key;            ///< Key identifier
 };
 
-/*
+
 template <>
 struct KeyValuePair<int, double>
 {
@@ -337,7 +338,6 @@ struct KeyValuePair<int, double>
     long long   key;            ///< Key identifier
 };
 */
-
 
 
 
@@ -361,6 +361,7 @@ __host__ __device__ __forceinline__ T ZeroInitialize()
 #endif
 }
 
+#endif // DOXYGEN_SHOULD_SKIP_THIS
 
 /**
  * \brief A storage-backing wrapper that allows types with non-trivial constructors to be aliased in unions
@@ -386,6 +387,8 @@ struct Uninitialized
     }
 };
 
+#ifndef DOXYGEN_SHOULD_SKIP_THIS    // Do not document
+
 
 /**
  * \brief A wrapper for passing simple static arrays as kernel parameters
@@ -397,6 +400,7 @@ struct ArrayWrapper
     T array[COUNT];
 };
 
+#endif // DOXYGEN_SHOULD_SKIP_THIS
 
 /**
  * \brief Double-buffer storage wrapper for multi-pass stream transformations that require more than one storage array for streaming intermediate results back and forth.
@@ -478,11 +482,12 @@ struct PowerOfTwo
 };
 
 
+#ifndef DOXYGEN_SHOULD_SKIP_THIS    // Do not document
+
 
 /******************************************************************************
  * Pointer vs. iterator detection
  ******************************************************************************/
-
 
 /**
  * \brief Pointer vs. iterator
@@ -655,7 +660,7 @@ public:
     static const bool HAS_PARAM = sizeof(Test<BinaryOp>(NULL)) == sizeof(char);
 };
 
-
+#endif // DOXYGEN_SHOULD_SKIP_THIS
 
 /******************************************************************************
  * Simple type traits utilities.

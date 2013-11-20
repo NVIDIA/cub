@@ -65,8 +65,8 @@ namespace cub {
  */
 template <
     typename    BlockReduceByKeyilesPolicy,    ///< Parameterizable tuning policy type for cub::BlockReduceByKeyiles abstraction
-    typename    InputIterator,                ///< Random-access iterator type for input (may be a simple pointer type)
-    typename    OutputIterator,               ///< Random-access iterator type for output (may be a simple pointer type)
+    typename    InputIterator,                ///< Random-access iterator type for input \iterator
+    typename    OutputIterator,               ///< Random-access iterator type for output \iterator
     typename    T,                              ///< The scan data type
     typename    ReductionOp,                    ///< Binary scan operator type having member <tt>T operator()(const T &a, const T &b)</tt>
     typename    Identity,                       ///< Identity value type (cub::NullType for inclusive scans)
@@ -268,8 +268,8 @@ struct DeviceReduceByKey
     template <
         typename                    InitScanKernelPtr,              ///< Function type of cub::InitScanKernel
         typename                    MultiBlockScanKernelPtr,        ///< Function type of cub::MultiBlockScanKernel
-        typename                    InputIterator,                ///< Random-access iterator type for input (may be a simple pointer type)
-        typename                    OutputIterator,               ///< Random-access iterator type for output (may be a simple pointer type)
+        typename                    InputIterator,                ///< Random-access iterator type for input \iterator
+        typename                    OutputIterator,               ///< Random-access iterator type for output \iterator
         typename                    ReductionOp,                         ///< Binary scan operator type having member <tt>T operator()(const T &a, const T &b)</tt>
         typename                    Identity,                       ///< Identity value type (cub::NullType for inclusive scans)
         typename                    Offset>                          ///< Signed integer type for global offsets
@@ -416,8 +416,8 @@ struct DeviceReduceByKey
      * Internal scan dispatch routine for using default tuning policies
      */
     template <
-        typename                    InputIterator,                ///< Random-access iterator type for input (may be a simple pointer type)
-        typename                    OutputIterator,               ///< Random-access iterator type for output (may be a simple pointer type)
+        typename                    InputIterator,                ///< Random-access iterator type for input \iterator
+        typename                    OutputIterator,               ///< Random-access iterator type for output \iterator
         typename                    ReductionOp,                         ///< Binary scan operator type having member <tt>T operator()(const T &a, const T &b)</tt>
         typename                    Identity,                       ///< Identity value type (cub::NullType for inclusive scans)
         typename                    Offset>                          ///< Signed integer type for global offsets
@@ -492,10 +492,10 @@ struct DeviceReduceByKey
      *
      * \devicestorage
      *
-     * \tparam KeyInputIterator       <b>[inferred]</b> Random-access input iterator type for keys input (may be a simple pointer type)
-     * \tparam KeyOutputIterator      <b>[inferred]</b> Random-access output iterator type for keys output (may be a simple pointer type)
-     * \tparam ValueInputIterator     <b>[inferred]</b> Random-access input iterator type for values input (may be a simple pointer type)
-     * \tparam ValueOutputIterator    <b>[inferred]</b> Random-access output iterator type for values output (may be a simple pointer type)
+     * \tparam KeyInputIterator       <b>[inferred]</b> Random-access input iterator type for keys input \iterator
+     * \tparam KeyOutputIterator      <b>[inferred]</b> Random-access output iterator type for keys output \iterator
+     * \tparam ValueInputIterator     <b>[inferred]</b> Random-access input iterator type for values input \iterator
+     * \tparam ValueOutputIterator    <b>[inferred]</b> Random-access output iterator type for values output \iterator
      * \tparam ReductionOp              <b>[inferred]</b> Binary reduction operator type having member <tt>T operator()(const T &a, const T &b)</tt>, where \p T is the value type of \p ValueInputIterator
      */
     template <
@@ -528,10 +528,10 @@ struct DeviceReduceByKey
      *
      * \devicestorage
      *
-     * \tparam KeyInputIterator       <b>[inferred]</b> Random-access input iterator type for keys input (may be a simple pointer type)
-     * \tparam KeyOutputIterator      <b>[inferred]</b> Random-access output iterator type for keys output (may be a simple pointer type)
-     * \tparam ValueInputIterator     <b>[inferred]</b> Random-access input iterator type for values input (may be a simple pointer type)
-     * \tparam ValueOutputIterator    <b>[inferred]</b> Random-access output iterator type for values output (may be a simple pointer type)
+     * \tparam KeyInputIterator       <b>[inferred]</b> Random-access input iterator type for keys input \iterator
+     * \tparam KeyOutputIterator      <b>[inferred]</b> Random-access output iterator type for keys output \iterator
+     * \tparam ValueInputIterator     <b>[inferred]</b> Random-access input iterator type for values input \iterator
+     * \tparam ValueOutputIterator    <b>[inferred]</b> Random-access output iterator type for values output \iterator
      * \tparam ReductionOp              <b>[inferred]</b> Binary reduction operator type having member <tt>T operator()(const T &a, const T &b)</tt>, where \p T is the value type of \p ValueInputIterator
      */
     template <
@@ -562,9 +562,9 @@ struct DeviceReduceByKey
      *
      * \devicestorage
      *
-     * \tparam KeyInputIterator       <b>[inferred]</b> Random-access input iterator type for keys input (may be a simple pointer type)
-     * \tparam KeyOutputIterator      <b>[inferred]</b> Random-access output iterator type for keys output (may be a simple pointer type)
-     * \tparam CountOutputIterator    <b>[inferred]</b> Random-access output iterator type for output of key-counts whose value type must be convertible to an integer type (may be a simple pointer type)
+     * \tparam KeyInputIterator       <b>[inferred]</b> Random-access input iterator type for keys input \iterator
+     * \tparam KeyOutputIterator      <b>[inferred]</b> Random-access output iterator type for keys output \iterator
+     * \tparam CountOutputIterator    <b>[inferred]</b> Random-access output iterator type for output of key-counts whose value type must be convertible to an integer type \iterator
      */
     template <
         typename                KeyInputIterator,
@@ -593,10 +593,10 @@ struct DeviceReduceByKey
      *
      * \devicestorage
      *
-     * \tparam KeyInputIterator       <b>[inferred]</b> Random-access input iterator type for keys input (may be a simple pointer type)
-     * \tparam KeyOutputIterator      <b>[inferred]</b> Random-access output iterator type for keys output (may be a simple pointer type)
-     * \tparam ValueInputIterator     <b>[inferred]</b> Random-access input iterator type for values input (may be a simple pointer type)
-     * \tparam ValueOutputIterator    <b>[inferred]</b> Random-access output iterator type for values output (may be a simple pointer type)
+     * \tparam KeyInputIterator       <b>[inferred]</b> Random-access input iterator type for keys input \iterator
+     * \tparam KeyOutputIterator      <b>[inferred]</b> Random-access output iterator type for keys output \iterator
+     * \tparam ValueInputIterator     <b>[inferred]</b> Random-access input iterator type for values input \iterator
+     * \tparam ValueOutputIterator    <b>[inferred]</b> Random-access output iterator type for values output \iterator
      * \tparam ReductionOp              <b>[inferred]</b> Binary reduction operator type having member <tt>T operator()(const T &a, const T &b)</tt>, where \p T is the value type of \p ValueInputIterator
      */
     template <

@@ -30,13 +30,12 @@
 
 /**
 
-\defgroup DeviceModule Device-wide
-\defgroup BlockModule Block-wide
-\defgroup WarpModule Warp-wide
-\defgroup ThreadModule Thread
-\defgroup IoModule Kernel I/O
-\defgroup GridModule Grid utilities
-\defgroup UtilModule Generic CUB utilities
+\defgroup DeviceModule 	Device-wide collective primitives
+\defgroup BlockModule 	Block-wide collective primitives
+\defgroup WarpModule 	Warp-wide collective primitives
+\defgroup IoModule 		Direct thread and block I/O
+\defgroup UtilIterator 	Fancy iterators and access wrappers
+\defgroup UtilModule 	Generic CUB utilities
 
 \mainpage
 
@@ -66,15 +65,15 @@
 CUB provides state-of-the-art, reusable software components for every layer 
 of the CUDA programming model:
 - [<b><em>Device-wide primitives</em></b>] (group___device_module.html) 
-  - Sort, prefix scan, reduction, histogram, etc.  
+  - Cooperative sort, prefix scan, reduction, histogram, etc.  
   - Compatible with CUDA dynamic parallelism
 - [<b><em>Block-wide "collective" primitives</em></b>] (group___block_module.html)
-  - I/O, sort, prefix scan, reduction, histogram, etc.  
+  - Cooperative I/O, sort, prefix scan, reduction, histogram, etc.  
   - Compatible with arbitrary thread block sizes and types 
 - [<b><em>Warp-wide "collective" primitives</em></b>] (group___warp_module.html)
-  - Warp-wide prefix scan, reduction, etc.
+  - Cooperative warp-wide prefix scan, reduction, etc.
   - Safe and architecture-specific
-- [<b><em>Thread and resource utilities</em></b>](group___thread_module.html)
+- [<b><em>Special I/O, device, and storage utilities</em></b>](modules.html)
   - PTX intrinsics, device reflection, texture-caching iterators, caching memory allocators, etc. 
 
 \subsection sec1sec1 1.1 Collective Primitives 

@@ -964,14 +964,12 @@ struct DeviceRadixSort
      * \brief Sorts key-value pairs into ascending order.
      *
      * \par
-     * The sorting operation requires a pair of key buffers and a pair of value
-     * buffers.  Each pair is wrapped in a DoubleBuffer structure whose member
-     * DoubleBuffer::Current() references the active buffer.  The currently-active
-     * buffer may be changed by the sorting operation.
-     *
-     * \devicestorage
-     *
-     * \cdp
+     * - The sorting operation requires a pair of key buffers and a pair of value
+     *   buffers.  Each pair is wrapped in a DoubleBuffer structure whose member
+     *   DoubleBuffer::Current() references the active buffer.  The currently-active
+     *   buffer may be changed by the sorting operation.
+     * - \devicestorage
+     * - \cdp
      *
      * \par
      * The code snippet below illustrates the sorting of a device vector of \p int keys
@@ -979,26 +977,32 @@ struct DeviceRadixSort
      * \par
      * \code
      * #include <cub/cub.cuh>
+     *
+     * // Declare, allocate, and initialize device pointers for sorting data
+     * int  num_items;          // e.g., 7
+     * int  *d_key_buf;         // e.g., [8, 6, 7, 5, 3, 0, 9]
+     * int  *d_key_alt_buf;     // e.g., [        ...        ]
+     * int  *d_value_buf;       // e.g., [0, 1, 2, 3, 4, 5, 6]
+     * int  *d_value_alt_buf;   // e.g., [        ...        ]
      * ...
      *
-     * // Create a set of DoubleBuffers to wrap pairs of device pointers for
-     * // sorting data (keys, values, and equivalently-sized alternate buffers)
-     * int num_items = ...
+     * // Create a set of DoubleBuffers to wrap pairs of device pointers
      * cub::DoubleBuffer<int> d_keys(d_key_buf, d_key_alt_buf);
      * cub::DoubleBuffer<int> d_values(d_value_buf, d_value_alt_buf);
      *
-     * // Determine temporary device storage requirements for sorting operation
-     * void *d_temp_storage = NULL;
-     * size_t temp_storage_bytes = 0;
-     * cub::DeviceRadixSort::SortKeys(d_temp_storage, temp_storage_bytes, d_keys, num_items);
+     * // Determine temporary device storage requirements
+     * void     *d_temp_storage = NULL;
+     * size_t   temp_storage_bytes = 0;
+     * cub::DeviceRadixSort::SortPairs(d_temp_storage, temp_storage_bytes, d_keys, num_items);
      *
-     * // Allocate temporary storage for sorting operation
+     * // Allocate temporary storage
      * cudaMalloc(&d_temp_storage, temp_storage_bytes);
      *
      * // Run sorting operation
-     * cub::DeviceRadixSort::SortKeys(d_temp_storage, temp_storage_bytes, d_keys, num_items);
+     * cub::DeviceRadixSort::SortPairs(d_temp_storage, temp_storage_bytes, d_keys, num_items);
      *
-     * // Sorted keys and values are referenced by d_keys.Current() and d_values.Current()
+     * // d_keys.Current()      <-- [0, 3, 5, 6, 7, 8, 9]
+     * // d_values.Current()    <-- [5, 4, 3, 1, 2, 0, 6]
      *
      * \endcode
      *
@@ -1040,14 +1044,12 @@ struct DeviceRadixSort
      * \brief Sorts key-value pairs into descending order.
      *
      * \par
-     * The sorting operation requires a pair of key buffers and a pair of value
-     * buffers.  Each pair is wrapped in a DoubleBuffer structure whose member
-     * DoubleBuffer::Current() references the active buffer.  The currently-active
-     * buffer may be changed by the sorting operation.
-     *
-     * \devicestorage
-     *
-     * \cdp
+     * - The sorting operation requires a pair of key buffers and a pair of value
+     *   buffers.  Each pair is wrapped in a DoubleBuffer structure whose member
+     *   DoubleBuffer::Current() references the active buffer.  The currently-active
+     *   buffer may be changed by the sorting operation.
+     * - \devicestorage
+     * - \cdp
      *
      * \par
      * The code snippet below illustrates the sorting of a device vector of \p int keys
@@ -1055,26 +1057,32 @@ struct DeviceRadixSort
      * \par
      * \code
      * #include <cub/cub.cuh>
+     *
+     * // Declare, allocate, and initialize device pointers for sorting data
+     * int  num_items;          // e.g., 7
+     * int  *d_key_buf;         // e.g., [8, 6, 7, 5, 3, 0, 9]
+     * int  *d_key_alt_buf;     // e.g., [        ...        ]
+     * int  *d_value_buf;       // e.g., [0, 1, 2, 3, 4, 5, 6]
+     * int  *d_value_alt_buf;   // e.g., [        ...        ]
      * ...
      *
-     * // Create a set of DoubleBuffers to wrap pairs of device pointers for
-     * // sorting data (keys, values, and equivalently-sized alternate buffers)
-     * int num_items = ...
+     * // Create a set of DoubleBuffers to wrap pairs of device pointers
      * cub::DoubleBuffer<int> d_keys(d_key_buf, d_key_alt_buf);
      * cub::DoubleBuffer<int> d_values(d_value_buf, d_value_alt_buf);
      *
-     * // Determine temporary device storage requirements for sorting operation
-     * void *d_temp_storage = NULL;
-     * size_t temp_storage_bytes = 0;
-     * cub::DeviceRadixSort::SortKeys(d_temp_storage, temp_storage_bytes, d_keys, num_items);
+     * // Determine temporary device storage requirements
+     * void     *d_temp_storage = NULL;
+     * size_t   temp_storage_bytes = 0;
+     * cub::DeviceRadixSort::SortPairsDescending(d_temp_storage, temp_storage_bytes, d_keys, num_items);
      *
-     * // Allocate temporary storage for sorting operation
+     * // Allocate temporary storage
      * cudaMalloc(&d_temp_storage, temp_storage_bytes);
      *
      * // Run sorting operation
-     * cub::DeviceRadixSort::SortKeys(d_temp_storage, temp_storage_bytes, d_keys, num_items);
+     * cub::DeviceRadixSort::SortPairsDescending(d_temp_storage, temp_storage_bytes, d_keys, num_items);
      *
-     * // Sorted keys and values are referenced by d_keys.Current() and d_values.Current()
+     * // d_keys.Current()      <-- [9, 8, 7, 6, 5, 3, 0]
+     * // d_values.Current()    <-- [6, 0, 2, 1, 3, 4, 5]
      *
      * \endcode
      *
@@ -1116,39 +1124,40 @@ struct DeviceRadixSort
      * \brief Sorts keys into ascending order
      *
      * \par
-     * The sorting operation requires a pair of key buffers.  The pair is
-     * wrapped in a DoubleBuffer structure whose member DoubleBuffer::Current()
-     * references the active buffer.  The currently-active buffer may be changed
-     * by the sorting operation.
-     *
-     * \devicestorage
-     *
-     * \cdp
+     * - The sorting operation requires a pair of key buffers.  The pair is
+     *   wrapped in a DoubleBuffer structure whose member DoubleBuffer::Current()
+     *   references the active buffer.  The currently-active buffer may be changed
+     *   by the sorting operation.
+     * - \devicestorage
+     * - \cdp
      *
      * \par
      * The code snippet below illustrates the sorting of a device vector of \p int keys.
      * \par
      * \code
      * #include <cub/cub.cuh>
+     *
+     * // Declare, allocate, and initialize device pointers for sorting data
+     * int  num_items;          // e.g., 7
+     * int  *d_key_buf;         // e.g., [8, 6, 7, 5, 3, 0, 9]
+     * int  *d_key_alt_buf;     // e.g., [        ...        ]
      * ...
      *
-     * // Create a set of DoubleBuffers to wrap pairs of device pointers for
-     * // sorting data (keys and equivalently-sized alternate buffer)
-     * int num_items = ...
+     * // Create a DoubleBuffer to wrap the pair of device pointers
      * cub::DoubleBuffer<int> d_keys(d_key_buf, d_key_alt_buf);
      *
-     * // Determine temporary device storage requirements for sorting operation
-     * void *d_temp_storage = NULL;
-     * size_t temp_storage_bytes = 0;
+     * // Determine temporary device storage requirements
+     * void     *d_temp_storage = NULL;
+     * size_t   temp_storage_bytes = 0;
      * cub::DeviceRadixSort::SortKeys(d_temp_storage, temp_storage_bytes, d_keys, num_items);
      *
-     * // Allocate temporary storage for sorting operation
+     * // Allocate temporary storage
      * cudaMalloc(&d_temp_storage, temp_storage_bytes);
      *
      * // Run sorting operation
      * cub::DeviceRadixSort::SortKeys(d_temp_storage, temp_storage_bytes, d_keys, num_items);
      *
-     * // Sorted keys are referenced by d_keys.Current()
+     * // d_keys.Current()      <-- [0, 3, 5, 6, 7, 8, 9]
      *
      * \endcode
      *
@@ -1185,39 +1194,40 @@ struct DeviceRadixSort
      * \brief Sorts keys into ascending order
      *
      * \par
-     * The sorting operation requires a pair of key buffers.  The pair is
-     * wrapped in a DoubleBuffer structure whose member DoubleBuffer::Current()
-     * references the active buffer.  The currently-active buffer may be changed
-     * by the sorting operation.
-     *
-     * \devicestorage
-     *
-     * \cdp
+     * - The sorting operation requires a pair of key buffers.  The pair is
+     *   wrapped in a DoubleBuffer structure whose member DoubleBuffer::Current()
+     *   references the active buffer.  The currently-active buffer may be changed
+     *   by the sorting operation.
+     * - \devicestorage
+     * - \cdp
      *
      * \par
      * The code snippet below illustrates the sorting of a device vector of \p int keys.
      * \par
      * \code
      * #include <cub/cub.cuh>
+     *
+     * // Declare, allocate, and initialize device pointers for sorting data
+     * int  num_items;          // e.g., 7
+     * int  *d_key_buf;         // e.g., [8, 6, 7, 5, 3, 0, 9]
+     * int  *d_key_alt_buf;     // e.g., [        ...        ]
      * ...
      *
-     * // Create a set of DoubleBuffers to wrap pairs of device pointers for
-     * // sorting data (keys and equivalently-sized alternate buffer)
-     * int num_items = ...
+     * // Create a DoubleBuffer to wrap the pair of device pointers
      * cub::DoubleBuffer<int> d_keys(d_key_buf, d_key_alt_buf);
      *
-     * // Determine temporary device storage requirements for sorting operation
-     * void *d_temp_storage = NULL;
-     * size_t temp_storage_bytes = 0;
-     * cub::DeviceRadixSort::SortKeys(d_temp_storage, temp_storage_bytes, d_keys, num_items);
+     * // Determine temporary device storage requirements
+     * void     *d_temp_storage = NULL;
+     * size_t   temp_storage_bytes = 0;
+     * cub::DeviceRadixSort::SortKeysDescending(d_temp_storage, temp_storage_bytes, d_keys, num_items);
      *
-     * // Allocate temporary storage for sorting operation
+     * // Allocate temporary storage
      * cudaMalloc(&d_temp_storage, temp_storage_bytes);
      *
      * // Run sorting operation
-     * cub::DeviceRadixSort::SortKeys(d_temp_storage, temp_storage_bytes, d_keys, num_items);
+     * cub::DeviceRadixSort::SortKeysDescending(d_temp_storage, temp_storage_bytes, d_keys, num_items);
      *
-     * // Sorted keys are referenced by d_keys.Current()
+     * // d_keys.Current()      <-- [9, 8, 7, 6, 5, 3, 0]
      *
      * \endcode
      *

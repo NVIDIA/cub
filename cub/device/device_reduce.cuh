@@ -68,8 +68,8 @@ namespace cub {
  */
 template <
     typename                BlockReduceRegionPolicy,    ///< Parameterized BlockReduceRegionPolicy tuning policy type
-    typename                InputIterator,              ///< Random-access iterator type for input (may be a simple pointer type)
-    typename                OutputIterator,             ///< Random-access iterator type for output (may be a simple pointer type)
+    typename                InputIterator,              ///< Random-access iterator type for input \iterator
+    typename                OutputIterator,             ///< Random-access iterator type for output \iterator
     typename                Offset,                     ///< Signed integer type for global offsets
     typename                ReductionOp>                ///< Binary reduction operator type having member <tt>T operator()(const T &a, const T &b)</tt>
 __launch_bounds__ (int(BlockReduceRegionPolicy::BLOCK_THREADS), 1)
@@ -114,8 +114,8 @@ __global__ void ReduceRegionKernel(
  */
 template <
     typename                BlockReduceRegionPolicy,    ///< Parameterized BlockReduceRegionPolicy tuning policy type
-    typename                InputIterator,              ///< Random-access iterator type for input (may be a simple pointer type)
-    typename                OutputIterator,             ///< Random-access iterator type for output (may be a simple pointer type)
+    typename                InputIterator,              ///< Random-access iterator type for input \iterator
+    typename                OutputIterator,             ///< Random-access iterator type for output \iterator
     typename                Offset,                     ///< Signed integer type for global offsets
     typename                ReductionOp>                ///< Binary reduction operator type having member <tt>T operator()(const T &a, const T &b)</tt>
 __launch_bounds__ (int(BlockReduceRegionPolicy::BLOCK_THREADS), 1)
@@ -161,8 +161,8 @@ __global__ void SingleTileKernel(
  * Utility class for dispatching the appropriately-tuned kernels for DeviceReduce
  */
 template <
-    typename InputIterator,     ///< Random-access iterator type for input (may be a simple pointer type)
-    typename OutputIterator,    ///< Random-access iterator type for output (may be a simple pointer type)
+    typename InputIterator,     ///< Random-access iterator type for input \iterator
+    typename OutputIterator,    ///< Random-access iterator type for output \iterator
     typename Offset,            ///< Signed integer type for global offsets
     typename ReductionOp>       ///< Binary reduction operator type having member <tt>T operator()(const T &a, const T &b)</tt>
 struct DeviceReduceDispatch
@@ -731,49 +731,50 @@ struct DeviceReduce
      * \brief Computes a device-wide reduction using the specified binary \p reduction_op functor.
      *
      * \par
-     * Does not support non-commutative reduction operators.
-     *
-     * \devicestorage
-     *
-     * \cdp
-     *
-     * \iterator
+     * - Does not support non-commutative reduction operators.
+     * - \devicestorage
+     * - \cdp
      *
      * \par
-     * The code snippet below illustrates a custom max reduction of a device vector of \p int items.
+     * The code snippet below illustrates a custom min reduction of a device vector of \p int items.
      * \par
      * \code
      * #include <cub/cub.cuh>
      *
-     * // Custom max functor
-     * struct MyMax
+     * // MyMin functor
+     * struct MyMin
      * {
-     *     __host__ __device__ __forceinline__ int operator()(const int &a, const int &b)
-     *     {
+     *     template <typename T>
+     *     __host__ __device__ __forceinline__
+     *     T operator()(const T &a, const T &b) const {
      *         return (b < a) ? b : a;
      *     }
      * };
      *
-     * // Declare and initialize device pointers for input array and output aggregate
-     * int *d_input;
-     * int *d_aggregate;
-     * int num_items = ...
+     * // Declare, allocate, and initialize device pointers for input and output
+     * int      num_items;      // e.g., 7
+     * int      *d_in;          // e.g., [8, 6, 7, 5, 3, 0, 9]
+     * int      *d_out;         // e.g., [ ]
+     * MyMin    min_op;
+     * ...
      *
      * // Determine temporary device storage requirements
-     * void *d_temp_storage = NULL;
-     * size_t temp_storage_bytes = 0;
-     * cub::DeviceReduce::Reduce(d_temp_storage, temp_storage_bytes, d_input, d_aggregate, num_items, MyMax());
+     * void     *d_temp_storage = NULL;
+     * size_t   temp_storage_bytes = 0;
+     * cub::DeviceReduce::Reduce(d_temp_storage, temp_storage_bytes, d_in, d_out, num_items, min_op);
      *
      * // Allocate temporary storage
      * cudaMalloc(&d_temp_storage, temp_storage_bytes);
      *
      * // Run reduction
-     * cub::DeviceReduce::Reduce(d_temp_storage, temp_storage_bytes, d_input, d_aggregate, num_items, MyMax());
+     * cub::DeviceReduce::Reduce(d_temp_storage, temp_storage_bytes, d_in, d_out, num_items, min_op);
+     *
+     * // d_out <-- [0]
      *
      * \endcode
      *
-     * \tparam InputIterator      <b>[inferred]</b> Random-access iterator type for input (may be a simple pointer type)
-     * \tparam OutputIterator     <b>[inferred]</b> Random-access iterator type for output (may be a simple pointer type)
+     * \tparam InputIterator      <b>[inferred]</b> Random-access iterator type for input \iterator
+     * \tparam OutputIterator     <b>[inferred]</b> Random-access iterator type for output \iterator
      * \tparam ReductionOp        <b>[inferred]</b> Binary reduction operator type having member <tt>T operator()(const T &a, const T &b)</tt>
      */
     template <
@@ -813,13 +814,9 @@ struct DeviceReduce
      * \brief Computes a device-wide sum using the addition ('+') operator.
      *
      * \par
-     * Does not support non-commutative summation.
-     *
-     * \devicestorage
-     *
-     * \cdp
-     *
-     * \iterator
+     * - Does not support non-commutative reduction operators.
+     * - \devicestorage
+     * - \cdp
      *
      * \par
      * The code snippet below illustrates the sum reduction of a device vector of \p int items.
@@ -827,26 +824,29 @@ struct DeviceReduce
      * \code
      * #include <cub/cub.cuh>
      *
-     * // Declare and initialize device pointers for input array and output sum
-     * int *d_input;
-     * int *d_sum;
-     * int num_items = ...
+     * // Declare, allocate, and initialize device pointers for input and output
+     * int  num_items;      // e.g., 7
+     * int  *d_in;          // e.g., [8, 6, 7, 5, 3, 0, 9]
+     * int  *d_out;         // e.g., [ ]
+     * ...
      *
      * // Determine temporary device storage requirements
-     * void *d_temp_storage = NULL;
-     * size_t temp_storage_bytes = 0;
-     * cub::DeviceReduce::Sum(d_temp_storage, temp_storage_bytes, d_input, d_sum, num_items);
+     * void     *d_temp_storage = NULL;
+     * size_t   temp_storage_bytes = 0;
+     * cub::DeviceReduce::Sum(d_temp_storage, temp_storage_bytes, d_in, d_sum, num_items);
      *
      * // Allocate temporary storage
      * cudaMalloc(&d_temp_storage, temp_storage_bytes);
      *
      * // Run sum-reduction
-     * cub::DeviceReduce::Sum(d_temp_storage, temp_storage_bytes, d_input, d_sum, num_items);
+     * cub::DeviceReduce::Sum(d_temp_storage, temp_storage_bytes, d_in, d_sum, num_items);
+     *
+     * // d_out <-- [38]
      *
      * \endcode
      *
-     * \tparam InputIterator      <b>[inferred]</b> Random-access iterator type for input (may be a simple pointer type)
-     * \tparam OutputIterator     <b>[inferred]</b> Random-access iterator type for output (may be a simple pointer type)
+     * \tparam InputIterator      <b>[inferred]</b> Random-access iterator type for input \iterator
+     * \tparam OutputIterator     <b>[inferred]</b> Random-access iterator type for output \iterator
      */
     template <
         typename                    InputIterator,
@@ -880,16 +880,12 @@ struct DeviceReduce
 
 
     /**
-     * \brief Finds the first device-wide minimum using the less-than ('<') operator.
+     * \brief Computes a device-wide minimum using the less-than ('<') operator.
      *
      * \par
-     * Does not support non-commutative minumums.
-     *
-     * \devicestorage
-     *
-     * \cdp
-     *
-     * \iterator
+     * - Does not support non-commutative minimum operators.
+     * - \devicestorage
+     * - \cdp
      *
      * \par
      * The code snippet below illustrates the min-reduction of a device vector of \p int items.
@@ -897,26 +893,29 @@ struct DeviceReduce
      * \code
      * #include <cub/cub.cuh>
      *
-     * // Declare and initialize device pointers for input array and output minimum
-     * int *d_input;
-     * int *d_min;
-     * int num_items = ...
+     * // Declare, allocate, and initialize device pointers for input and output
+     * int  num_items;      // e.g., 7
+     * int  *d_in;          // e.g., [8, 6, 7, 5, 3, 0, 9]
+     * int  *d_out;         // e.g., [ ]
+     * ...
      *
      * // Determine temporary device storage requirements
-     * void *d_temp_storage = NULL;
-     * size_t temp_storage_bytes = 0;
-     * cub::DeviceReduce::Min(d_temp_storage, temp_storage_bytes, d_input, d_min, num_items);
+     * void     *d_temp_storage = NULL;
+     * size_t   temp_storage_bytes = 0;
+     * cub::DeviceReduce::Min(d_temp_storage, temp_storage_bytes, d_in, d_min, num_items);
      *
      * // Allocate temporary storage
      * cudaMalloc(&d_temp_storage, temp_storage_bytes);
      *
      * // Run min-reduction
-     * cub::DeviceReduce::Min(d_temp_storage, temp_storage_bytes, d_input, d_min, num_items);
+     * cub::DeviceReduce::Min(d_temp_storage, temp_storage_bytes, d_in, d_min, num_items);
+     *
+     * // d_out <-- [0]
      *
      * \endcode
      *
-     * \tparam InputIterator      <b>[inferred]</b> Random-access iterator type for input (may be a simple pointer type)
-     * \tparam OutputIterator     <b>[inferred]</b> Random-access iterator type for output (may be a simple pointer type)
+     * \tparam InputIterator      <b>[inferred]</b> Random-access iterator type for input \iterator
+     * \tparam OutputIterator     <b>[inferred]</b> Random-access iterator type for output \iterator
      */
     template <
         typename                    InputIterator,
@@ -950,7 +949,7 @@ struct DeviceReduce
 
 
     /**
-     * \brief Finds the first device-wide minimum using the less-than ('<') operator, also returning the index of that item
+     * \brief Finds the first device-wide minimum using the less-than ('<') operator, also returning the index of that item.
      *
      * \par
      * Assuming the input \p d_in has value type \p T, the output \p d_out must have value type
@@ -958,13 +957,9 @@ struct DeviceReduce
      * location in the input array is returned in <tt>d_out.offset</tt>.
      *
      * \par
-     * Does not support non-commutative minumums.
-     *
-     * \devicestorage
-     *
-     * \cdp
-     *
-     * \iterator
+     * - Does not support non-commutative minimum operators.
+     * - \devicestorage
+     * - \cdp
      *
      * \par
      * The code snippet below illustrates the argmin-reduction of a device vector of \p int items.
@@ -972,26 +967,30 @@ struct DeviceReduce
      * \code
      * #include <cub/cub.cuh>
      *
-     * // Declare and initialize device pointers for input array and output argmin
-     * int *d_input;
-     * ItemOffsetPair<int, int> *d_argmin;
-     * int num_items = ...
+     * // Declare, allocate, and initialize device pointers for input and output
+     * int                      num_items;      // e.g., 7
+     * int                      *d_in;          // e.g., [8, 6, 7, 5, 3, 0, 9]
+     * int                      *d_out;         // e.g., [ ]
+     * ItemOffsetPair<int, int> *d_argmin;      // e.g., [{ , }]
+     * ...
      *
      * // Determine temporary device storage requirements
-     * void *d_temp_storage = NULL;
-     * size_t temp_storage_bytes = 0;
-     * cub::DeviceReduce::ArgMin(d_temp_storage, temp_storage_bytes, d_input, d_argmin, num_items);
+     * void     *d_temp_storage = NULL;
+     * size_t   temp_storage_bytes = 0;
+     * cub::DeviceReduce::ArgMin(d_temp_storage, temp_storage_bytes, d_in, d_argmin, num_items);
      *
      * // Allocate temporary storage
      * cudaMalloc(&d_temp_storage, temp_storage_bytes);
      *
      * // Run argmin-reduction
-     * cub::DeviceReduce::ArgMin(d_temp_storage, temp_storage_bytes, d_input, d_argmin, num_items);
+     * cub::DeviceReduce::ArgMin(d_temp_storage, temp_storage_bytes, d_in, d_argmin, num_items);
+     *
+     * // d_out <-- [{0, 5}]
      *
      * \endcode
      *
-     * \tparam InputIterator      <b>[inferred]</b> Random-access iterator type for input having some value type \p T (may be a simple pointer type)
-     * \tparam OutputIterator     <b>[inferred]</b> Random-access iterator type for output having value type <tt>ItemOffsetPair<T, int></tt> (may be a simple pointer type)
+     * \tparam InputIterator      <b>[inferred]</b> Random-access iterator type for input having some value type \p T \iterator
+     * \tparam OutputIterator     <b>[inferred]</b> Random-access iterator type for output having value type <tt>ItemOffsetPair<T, int></tt> \iterator
      */
     template <
         typename                    InputIterator,
@@ -1032,41 +1031,39 @@ struct DeviceReduce
      * \brief Computes a device-wide maximum using the greater-than ('>') operator.
      *
      * \par
-     * Does not support non-commutative maximums.
-     *
-     * \devicestorage
-     *
-     * \cdp
-     *
-     * \iterator
+     * - Does not support non-commutative maximum operators.
+     * - \devicestorage
+     * - \cdp
      *
      * \par
      * The code snippet below illustrates the max-reduction of a device vector of \p int items.
      * \par
      * \code
      * #include <cub/cub.cuh>
+     *
+     * // Declare, allocate, and initialize device pointers for input and output
+     * int  num_items;      // e.g., 7
+     * int  *d_in;          // e.g., [8, 6, 7, 5, 3, 0, 9]
+     * int  *d_out;         // e.g., [ ]
      * ...
      *
-     * // Declare and initialize device pointers for input array and output maximum
-     * int *d_input;
-     * int *d_max;
-     * int num_items = ...
-     *
      * // Determine temporary device storage requirements
-     * void *d_temp_storage = NULL;
-     * size_t temp_storage_bytes = 0;
-     * cub::DeviceReduce::Max(d_temp_storage, temp_storage_bytes, d_input, d_max, num_items);
+     * void     *d_temp_storage = NULL;
+     * size_t   temp_storage_bytes = 0;
+     * cub::DeviceReduce::Max(d_temp_storage, temp_storage_bytes, d_in, d_max, num_items);
      *
      * // Allocate temporary storage
      * cudaMalloc(&d_temp_storage, temp_storage_bytes);
      *
      * // Run max-reduction
-     * cub::DeviceReduce::Max(d_temp_storage, temp_storage_bytes, d_input, d_max, num_items);
+     * cub::DeviceReduce::Max(d_temp_storage, temp_storage_bytes, d_in, d_max, num_items);
+     *
+     * // d_out <-- [9]
      *
      * \endcode
      *
-     * \tparam InputIterator      <b>[inferred]</b> Random-access iterator type for input (may be a simple pointer type)
-     * \tparam OutputIterator     <b>[inferred]</b> Random-access iterator type for output (may be a simple pointer type)
+     * \tparam InputIterator      <b>[inferred]</b> Random-access iterator type for input \iterator
+     * \tparam OutputIterator     <b>[inferred]</b> Random-access iterator type for output \iterator
      */
     template <
         typename                    InputIterator,
@@ -1108,13 +1105,9 @@ struct DeviceReduce
      * location in the input array is returned in <tt>d_out.offset</tt>.
      *
      * \par
-     * Does not support non-commutative maximums.
-     *
-     * \devicestorage
-     *
-     * \cdp
-     *
-     * \iterator
+     * - Does not support non-commutative maximum operators.
+     * - \devicestorage
+     * - \cdp
      *
      * \par
      * The code snippet below illustrates the argmax-reduction of a device vector of \p int items.
@@ -1122,26 +1115,30 @@ struct DeviceReduce
      * \code
      * #include <cub/cub.cuh>
      *
-     * // Declare and initialize device pointers for input array and output argmax
-     * int *d_input;
-     * ItemOffsetPair<int, int> *d_argmax;
-     * int num_items = ...
+     * // Declare, allocate, and initialize device pointers for input and output
+     * int                      num_items;      // e.g., 7
+     * int                      *d_in;          // e.g., [8, 6, 7, 5, 3, 0, 9]
+     * int                      *d_out;         // e.g., [ ]
+     * ItemOffsetPair<int, int> *d_argmin;      // e.g., [{ , }]
+     * ...
      *
      * // Determine temporary device storage requirements
-     * void *d_temp_storage = NULL;
-     * size_t temp_storage_bytes = 0;
-     * cub::DeviceReduce::ArgMax(d_temp_storage, temp_storage_bytes, d_input, d_argmax, num_items);
+     * void     *d_temp_storage = NULL;
+     * size_t   temp_storage_bytes = 0;
+     * cub::DeviceReduce::ArgMax(d_temp_storage, temp_storage_bytes, d_in, d_argmax, num_items);
      *
      * // Allocate temporary storage
      * cudaMalloc(&d_temp_storage, temp_storage_bytes);
      *
      * // Run argmax-reduction
-     * cub::DeviceReduce::ArgMax(d_temp_storage, temp_storage_bytes, d_input, d_argmax, num_items);
+     * cub::DeviceReduce::ArgMax(d_temp_storage, temp_storage_bytes, d_in, d_argmax, num_items);
+     *
+     * // d_out <-- [{9, 6}]
      *
      * \endcode
      *
-     * \tparam InputIterator      <b>[inferred]</b> Random-access iterator type for input having some value type \p T (may be a simple pointer type)
-     * \tparam OutputIterator     <b>[inferred]</b> Random-access iterator type for output having value type <tt>ItemOffsetPair<T, int></tt> (may be a simple pointer type)
+     * \tparam InputIterator      <b>[inferred]</b> Random-access iterator type for input having some value type \p T \iterator
+     * \tparam OutputIterator     <b>[inferred]</b> Random-access iterator type for output having value type <tt>ItemOffsetPair<T, int></tt> \iterator
      */
     template <
         typename                    InputIterator,

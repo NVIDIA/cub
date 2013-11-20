@@ -351,17 +351,17 @@ struct PersistentBlockSpmv
         if (FULL_TILE)
         {
             // Unguarded loads
-            LoadWarpStriped<LOAD_DEFAULT>(threadIdx.x, d_columns + block_offset, columns);
-            LoadWarpStriped<LOAD_DEFAULT>(threadIdx.x, d_values + block_offset, values);
-            LoadWarpStriped<LOAD_DEFAULT>(threadIdx.x, d_rows + block_offset, rows);
+            LoadDirectWarpStriped<LOAD_DEFAULT>(threadIdx.x, d_columns + block_offset, columns);
+            LoadDirectWarpStriped<LOAD_DEFAULT>(threadIdx.x, d_values + block_offset, values);
+            LoadDirectWarpStriped<LOAD_DEFAULT>(threadIdx.x, d_rows + block_offset, rows);
         }
         else
         {
             // This is a partial-tile (e.g., the last tile of input).  Extend the coordinates of the last
             // vertex for out-of-bound items, but zero-valued
-            LoadWarpStriped<LOAD_DEFAULT>(threadIdx.x, d_columns + block_offset, columns, guarded_items, VertexId(0));
-            LoadWarpStriped<LOAD_DEFAULT>(threadIdx.x, d_values + block_offset, values, guarded_items, Value(0));
-            LoadWarpStriped<LOAD_DEFAULT>(threadIdx.x, d_rows + block_offset, rows, guarded_items, temp_storage.last_block_row);
+            LoadDirectWarpStriped<LOAD_DEFAULT>(threadIdx.x, d_columns + block_offset, columns, guarded_items, VertexId(0));
+            LoadDirectWarpStriped<LOAD_DEFAULT>(threadIdx.x, d_values + block_offset, values, guarded_items, Value(0));
+            LoadDirectWarpStriped<LOAD_DEFAULT>(threadIdx.x, d_rows + block_offset, rows, guarded_items, temp_storage.last_block_row);
         }
 
         // Load the referenced values from x and compute the dot product partials sums
@@ -581,9 +581,9 @@ struct FinalizeSpmvBlock
         {
             // Full tile
 #if CUB_PTX_VERSION >= 350
-            LoadBlocked<LOAD_LDG>(threadIdx.x, d_block_partials + block_offset, partial_sums);
+            LoadDirectBlocked<LOAD_LDG>(threadIdx.x, d_block_partials + block_offset, partial_sums);
 #else
-            LoadBlocked(threadIdx.x, d_block_partials + block_offset, partial_sums);
+            LoadDirectBlocked(threadIdx.x, d_block_partials + block_offset, partial_sums);
 #endif
         }
         else
@@ -594,9 +594,9 @@ struct FinalizeSpmvBlock
             default_sum.partial = Value(0);
 
 #if CUB_PTX_VERSION >= 350
-            LoadBlocked<LOAD_LDG>(threadIdx.x, d_block_partials + block_offset, partial_sums, guarded_items, default_sum);
+            LoadDirectBlocked<LOAD_LDG>(threadIdx.x, d_block_partials + block_offset, partial_sums, guarded_items, default_sum);
 #else
-            LoadBlocked(threadIdx.x, d_block_partials + block_offset, partial_sums, guarded_items, default_sum);
+            LoadDirectBlocked(threadIdx.x, d_block_partials + block_offset, partial_sums, guarded_items, default_sum);
 #endif
         }
 

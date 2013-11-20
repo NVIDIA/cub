@@ -54,7 +54,7 @@ template <
     int         BINS,                           ///< Number of histogram bins per channel
     int         CHANNELS,                       ///< Number of channels interleaved in the input data (may be greater than the number of active channels being histogrammed)
     int         ACTIVE_CHANNELS,                ///< Number of channels actively being histogrammed
-    typename    InputIterator,                ///< The input iterator type (may be a simple pointer type).  Must have an an InputIterator::value_type that, when cast as an integer, falls in the range [0..BINS-1]
+    typename    InputIterator,                ///< The input iterator type \iterator.  Must have an an InputIterator::value_type that, when cast as an integer, falls in the range [0..BINS-1]
     typename    HistoCounter,                   ///< Integer type for counting sample occurrences per histogram bin
     typename    Offset>                          ///< Signed integer type for global offsets
 struct BlockHistogramRegionSort

@@ -84,7 +84,7 @@ template <
     int                                             BINS,                       ///< Number of histogram bins per channel
     int                                             CHANNELS,                   ///< Number of channels interleaved in the input data (may be greater than the number of channels being actively histogrammed)
     int                                             ACTIVE_CHANNELS,            ///< Number of channels actively being histogrammed
-    typename                                        InputIterator,              ///< The input iterator type (may be a simple pointer type).  Must have a value type that is assignable to <tt>unsigned char</tt>
+    typename                                        InputIterator,              ///< The input iterator type \iterator.  Must have a value type that is assignable to <tt>unsigned char</tt>
     typename                                        HistoCounter,               ///< Integer type for counting sample occurrences per histogram bin
     typename                                        Offset>                     ///< Signed integer type for global offsets
 __launch_bounds__ (int(BlockHistogramRegionPolicy::BLOCK_THREADS), BlockHistogramRegionPolicy::SM_OCCUPANCY)
@@ -166,7 +166,7 @@ template <
     int                             BINS,                       ///< Number of histogram bins per channel
     int                             CHANNELS,                   ///< Number of channels interleaved in the input data (may be greater than the number of channels being actively histogrammed)
     int                             ACTIVE_CHANNELS,            ///< Number of channels actively being histogrammed
-    typename                        InputIterator,              ///< The input iterator type (may be a simple pointer type).  Must have a value type that is assignable to <tt>unsigned char</tt>
+    typename                        InputIterator,              ///< The input iterator type \iterator.  Must have a value type that is assignable to <tt>unsigned char</tt>
     typename                        HistoCounter,               ///< Integer type for counting sample occurrences per histogram bin
     typename                        Offset>                     ///< Signed integer type for global offsets
 struct DeviceHistogramDispatch
@@ -573,54 +573,53 @@ struct DeviceHistogram
 
 
     /**
-     * \brief Computes a device-wide histogram.  Uses fast block-sorting to compute the histogram. Delivers consistent throughput regardless of sample diversity, but occupancy may be limited by histogram bin count.
-     *
-     * However, because histograms are privatized in shared memory, a large
-     * number of bins (e.g., thousands) may adversely affect occupancy and
-     * performance (or even the ability to launch).
-     *
-     * \devicestorage
-     *
-     * \cdp
-     *
-     * \iterator
+     * \brief Computes a device-wide histogram using fast block-wide sorting.
      *
      * \par
-     * The code snippet below illustrates the computation of a 256-bin histogram of
+     * - The total number of samples across all channels (\p num_samples) must be a whole multiple of \p CHANNELS.
+     * - Delivers consistent throughput regardless of sample diversity
+     * - Histograms having a large number of bins (e.g., thousands) may adversely affect shared memory occupancy and performance (or even the ability to launch).
+     * - Performance is often improved when referencing input samples through a texture-caching iterator (e.g., cub::TexObjInputIterator).
+     * - \devicestorage
+     * - \cdp
+     *
+     * \par
+     * The code snippet below illustrates the computation of a 8-bin histogram of
      * single-channel <tt>unsigned char</tt> samples.
      * \par
      * \code
      * #include <cub/cub.cuh>
-     * ...
      *
-     * // Declare and initialize device pointers for input samples and 256-bin output histogram
-     * unsigned char *d_samples;
-     * unsigned int *d_histogram;
-     * int num_items = ...
+     * // Declare, allocate, and initialize device pointers for input and histogram
+     * int              num_samples;    // e.g., 12
+     * unsigned char    *d_samples;     // e.g., [2, 6, 7, 5, 3, 0, 2, 1, 7, 0, 6, 2]
+     * unsigned int     *d_histogram;   // e.g., [ ,  ,  ,  ,  ,  ,  ,  ]
      * ...
      *
      * // Wrap d_samples device pointer in a random-access texture iterator
-     * cub::TexInputIterator<unsigned int> d_samples_tex_itr;
-     * d_samples_tex_itr.BindTexture(d_samples, num_items * sizeof(unsigned char));
+     * cub::TexObjInputIterator<unsigned char> d_samples_tex_itr;
+     * d_samples_tex_itr.BindTexture(d_samples, num_samples * sizeof(unsigned char));
      *
-     * // Determine temporary device storage requirements for histogram computation
+     * // Determine temporary device storage requirements
      * void *d_temp_storage = NULL;
      * size_t temp_storage_bytes = 0;
-     * cub::DeviceHistogram::SingleChannelSorting<256>(d_temp_storage, temp_storage_bytes, d_samples_tex_itr, d_histogram, num_items);
+     * cub::DeviceHistogram::SingleChannelSorting<8>(d_temp_storage, temp_storage_bytes, d_samples_tex_itr, d_histogram, num_samples);
      *
-     * // Allocate temporary storage for histogram computation
+     * // Allocate temporary storage
      * cudaMalloc(&d_temp_storage, temp_storage_bytes);
      *
      * // Compute histogram
-     * cub::DeviceHistogram::SingleChannelSorting<256>(d_temp_storage, temp_storage_bytes, d_samples_tex_itr, d_histogram, num_items);
+     * cub::DeviceHistogram::SingleChannelSorting<8>(d_temp_storage, temp_storage_bytes, d_samples_tex_itr, d_histogram, num_samples);
      *
      * // Unbind texture iterator
      * d_samples_tex_itr.UnbindTexture();
      *
+     * // d_histogram   <-- [2, 1, 3, 1, 0, 1, 2, 2]
+     *
      * \endcode
      *
      * \tparam BINS                 Number of histogram bins per channel
-     * \tparam InputIterator        <b>[inferred]</b> Random-access iterator type for input (may be a simple pointer type)  Must have an an InputIterator::value_type that, when cast as an integer, falls in the range [0..BINS-1]
+     * \tparam InputIterator        <b>[inferred]</b> Random-access iterator type for input \iterator  Must have an an InputIterator::value_type that, when cast as an integer, falls in the range [0..BINS-1]
      * \tparam HistoCounter         <b>[inferred]</b> Integer type for counting sample occurrences per histogram bin
      */
     template <
@@ -663,54 +662,52 @@ struct DeviceHistogram
 
 
     /**
-     * \brief Computes a device-wide histogram.  Uses shared-memory atomic read-modify-write operations to compute the histogram.  Input samples having lower diversity can cause performance to be degraded, and occupancy may be limited by histogram bin count.
-     *
-     * However, because histograms are privatized in shared memory, a large
-     * number of bins (e.g., thousands) may adversely affect occupancy and
-     * performance (or even the ability to launch).
-     *
-     * \devicestorage
-     *
-     * \cdp
-     *
-     * \iterator
+     * \brief Computes a device-wide histogram using shared-memory atomic read-modify-write operations.
      *
      * \par
-     * The code snippet below illustrates the computation of a 256-bin histogram of
+     * - Input samples having lower diversity can cause performance to be degraded due to serializations from bin-collisions.
+     * - Histograms having a large number of bins (e.g., thousands) may adversely affect shared memory occupancy and performance (or even the ability to launch).
+     * - Performance is often improved when referencing input samples through a texture-caching iterator (e.g., cub::TexObjInputIterator).
+     * - \devicestorage
+     * - \cdp
+     *
+     * \par
+     * The code snippet below illustrates the computation of a 8-bin histogram of
      * single-channel <tt>unsigned char</tt> samples.
      * \par
      * \code
      * #include <cub/cub.cuh>
-     * ...
      *
-     * // Declare and initialize device pointers for input samples and 256-bin output histogram
-     * unsigned char *d_samples;
-     * unsigned int *d_histogram;
-     * int num_items = ...
+     * // Declare, allocate, and initialize device pointers for input and histogram
+     * int              num_samples;    // e.g., 12
+     * unsigned char    *d_samples;     // e.g., [2, 6, 7, 5, 3, 0, 2, 1, 7, 0, 6, 2]
+     * unsigned int     *d_histogram;   // e.g., [ ,  ,  ,  ,  ,  ,  ,  ]
      * ...
      *
      * // Wrap d_samples device pointer in a random-access texture iterator
-     * cub::TexInputIterator<unsigned int> d_samples_tex_itr;
-     * d_samples_tex_itr.BindTexture(d_samples, num_items * sizeof(unsigned char));
+     * cub::TexObjInputIterator<unsigned char> d_samples_tex_itr;
+     * d_samples_tex_itr.BindTexture(d_samples, num_samples * sizeof(unsigned char));
      *
-     * // Determine temporary device storage requirements for histogram computation
-     * void *d_temp_storage = NULL;
-     * size_t temp_storage_bytes = 0;
-     * cub::DeviceHistogram::SingleChannelSorting<256>(d_temp_storage, temp_storage_bytes, d_samples_tex_itr, d_histogram, num_items);
+     * // Determine temporary device storage requirements
+     * void     *d_temp_storage = NULL;
+     * size_t   temp_storage_bytes = 0;
+     * cub::DeviceHistogram::SingleChannelSorting<8>(d_temp_storage, temp_storage_bytes, d_samples_tex_itr, d_histogram, num_samples);
      *
-     * // Allocate temporary storage for histogram computation
+     * // Allocate temporary storage
      * cudaMalloc(&d_temp_storage, temp_storage_bytes);
      *
      * // Compute histogram
-     * cub::DeviceHistogram::SingleChannelSharedAtomic<256>(d_temp_storage, temp_storage_bytes, d_samples_tex_itr, d_histogram, num_items);
+     * cub::DeviceHistogram::SingleChannelSharedAtomic<8>(d_temp_storage, temp_storage_bytes, d_samples_tex_itr, d_histogram, num_samples);
      *
      * // Unbind texture iterator
      * d_samples_tex_itr.UnbindTexture();
      *
+     * // d_histogram   <-- [2, 1, 3, 1, 0, 1, 2, 2]
+     *
      * \endcode
      *
      * \tparam BINS                 Number of histogram bins per channel
-     * \tparam InputIterator      <b>[inferred]</b> Random-access iterator type for input (may be a simple pointer type)  Must have an an InputIterator::value_type that, when cast as an integer, falls in the range [0..BINS-1]
+     * \tparam InputIterator        <b>[inferred]</b> Random-access iterator type for input \iterator  Must have an an InputIterator::value_type that, when cast as an integer, falls in the range [0..BINS-1]
      * \tparam HistoCounter         <b>[inferred]</b> Integer type for counting sample occurrences per histogram bin
      */
     template <
@@ -753,53 +750,52 @@ struct DeviceHistogram
 
 
     /**
-     * \brief Computes a device-wide histogram.  Uses global-memory atomic read-modify-write operations to compute the histogram.  Input samples having lower diversity can cause performance to be degraded.
-     *
-     * Performance is not significantly impacted when computing histograms having large
-     * numbers of bins (e.g., thousands).
-     *
-     * \devicestorage
-     *
-     * \cdp
-     *
-     * \iterator
+     * \brief Computes a device-wide histogram using global-memory atomic read-modify-write operations.
      *
      * \par
-     * The code snippet below illustrates the computation of a 256-bin histogram of
+     * - Input samples having lower diversity can cause performance to be degraded due to serializations from bin-collisions.
+     * - Performance is not significantly impacted when computing histograms having large numbers of bins (e.g., thousands).
+     * - Performance is often improved when referencing input samples through a texture-caching iterator (e.g., cub::TexObjInputIterator).
+     * - \devicestorage
+     * - \cdp
+     *
+     * \par
+     * The code snippet below illustrates the computation of a 8-bin histogram of
      * single-channel <tt>unsigned char</tt> samples.
      * \par
      * \code
      * #include <cub/cub.cuh>
-     * ...
      *
-     * // Declare and initialize device pointers for input samples and 256-bin output histogram
-     * unsigned char *d_samples;
-     * unsigned int *d_histogram;
-     * int num_items = ...
+     * // Declare, allocate, and initialize device pointers for input and histogram
+     * int              num_samples;    // e.g., 12
+     * unsigned char    *d_samples;     // e.g., [2, 6, 7, 5, 3, 0, 2, 1, 7, 0, 6, 2]
+     * unsigned int     *d_histogram;   // e.g., [ ,  ,  ,  ,  ,  ,  ,  ]
      * ...
      *
      * // Wrap d_samples device pointer in a random-access texture iterator
-     * cub::TexInputIterator<unsigned int> d_samples_tex_itr;
-     * d_samples_tex_itr.BindTexture(d_samples, num_items * sizeof(unsigned char));
+     * cub::TexObjInputIterator<unsigned char> d_samples_tex_itr;
+     * d_samples_tex_itr.BindTexture(d_samples, num_samples * sizeof(unsigned char));
      *
-     * // Determine temporary device storage requirements for histogram computation
-     * void *d_temp_storage = NULL;
-     * size_t temp_storage_bytes = 0;
-     * cub::DeviceHistogram::SingleChannelSorting<256>(d_temp_storage, temp_storage_bytes, d_samples_tex_itr, d_histogram, num_items);
+     * // Determine temporary device storage requirements
+     * void     *d_temp_storage = NULL;
+     * size_t   temp_storage_bytes = 0;
+     * cub::DeviceHistogram::SingleChannelSorting<8>(d_temp_storage, temp_storage_bytes, d_samples_tex_itr, d_histogram, num_samples);
      *
-     * // Allocate temporary storage for histogram computation
+     * // Allocate temporary storage
      * cudaMalloc(&d_temp_storage, temp_storage_bytes);
      *
      * // Compute histogram
-     * cub::DeviceHistogram::SingleChannelGlobalAtomic<256>(d_temp_storage, temp_storage_bytes, d_samples_tex_itr, d_histogram, num_items);
+     * cub::DeviceHistogram::SingleChannelGlobalAtomic<8>(d_temp_storage, temp_storage_bytes, d_samples_tex_itr, d_histogram, num_samples);
      *
      * // Unbind texture iterator
      * d_samples_tex_itr.UnbindTexture();
      *
+     * // d_histogram   <-- [2, 1, 3, 1, 0, 1, 2, 2]
+     *
      * \endcode
      *
      * \tparam BINS                 Number of histogram bins per channel
-     * \tparam InputIterator        <b>[inferred]</b> Random-access iterator type for input (may be a simple pointer type)  Must have an an InputIterator::value_type that, when cast as an integer, falls in the range [0..BINS-1]
+     * \tparam InputIterator        <b>[inferred]</b> Random-access iterator type for input \iterator  Must have an an InputIterator::value_type that, when cast as an integer, falls in the range [0..BINS-1]
      * \tparam HistoCounter         <b>[inferred]</b> Integer type for counting sample occurrences per histogram bin
      */
     template <
@@ -849,59 +845,62 @@ struct DeviceHistogram
 
 
     /**
-     * \brief Computes a device-wide histogram from multi-channel data.  Uses fast block-sorting to compute the histogram.  Delivers consistent throughput regardless of sample diversity, but occupancy may be limited by histogram bin count.
+     * \brief Computes a device-wide histogram from multi-channel data using fast block-sorting.
      *
-     * However, because histograms are privatized in shared memory, a large
-     * number of bins (e.g., thousands) may adversely affect occupancy and
-     * performance (or even the ability to launch).
-     *
-     * The total number of samples across all channels (\p num_samples) must be a whole multiple of \p CHANNELS.
-     *
-     * \devicestorage
-     *
-     * \cdp
-     *
-     * \iterator
+     * \par
+     * - The total number of samples across all channels (\p num_samples) must be a whole multiple of \p CHANNELS.
+     * - Delivers consistent throughput regardless of sample diversity
+     * - Histograms having a large number of bins (e.g., thousands) may adversely affect shared memory occupancy and performance (or even the ability to launch).
+     * - Performance is often improved when referencing input samples through a texture-caching iterator (e.g., cub::TexObjInputIterator).
+     * - \devicestorage
+     * - \cdp
      *
      * \par
      * The code snippet below illustrates the computation of three 256-bin histograms from
-     * interleaved quad-channel <tt>unsigned char</tt> samples (e.g., RGB histograms from RGBA samples).
+     * an input sequence of quad-channel (interleaved) <tt>unsigned char</tt> samples.
+     * (E.g., RGB histograms from RGBA pixel samples.)
+     *
      * \par
      * \code
      * #include <cub/cub.cuh>
-     * ...
      *
-     * // Declare and initialize device pointers for input samples and
-     * // three 256-bin output histograms
-     * unsigned char *d_samples;
-     * unsigned int *d_histograms[3];
-     * int num_items = ...
+     * // Declare, allocate, and initialize device pointers for input and histograms
+     * int           num_samples;     // e.g., 20 (five pixels with four channels each)
+     * unsigned char *d_samples;      // e.g., [(2, 6, 7, 5), (3, 0, 2, 1), (7, 0, 6, 2),
+     *                                //        (0, 6, 7, 5), (3, 0, 2, 6)]
+     * unsigned int  *d_histogram[3]; // e.g., [ [ ,  ,  ,  ,  ,  ,  ,  ];
+     *                                //         [ ,  ,  ,  ,  ,  ,  ,  ];
+     *                                //         [ ,  ,  ,  ,  ,  ,  ,  ] ]
      * ...
      *
      * // Wrap d_samples device pointer in a random-access texture iterator
-     * cub::TexInputIterator<unsigned int> d_samples_tex_itr;
-     * d_samples_tex_itr.BindTexture(d_samples, num_items * sizeof(unsigned char));
+     * cub::TexObjInputIterator<unsigned char> d_samples_tex_itr;
+     * d_samples_tex_itr.BindTexture(d_samples, num_samples * sizeof(unsigned char));
      *
-     * // Determine temporary device storage requirements for histogram computation
-     * void *d_temp_storage = NULL;
-     * size_t temp_storage_bytes = 0;
-     * cub::DeviceHistogram::MultiChannelSorting<256>(d_temp_storage, temp_storage_bytes, d_samples_tex_itr, d_histograms, num_items);
+     * // Determine temporary device storage requirements
+     * void     *d_temp_storage = NULL;
+     * size_t   temp_storage_bytes = 0;
+     * cub::DeviceHistogram::MultiChannelSorting<8, 4, 3>(d_temp_storage, temp_storage_bytes, d_samples_tex_itr, d_histograms, num_samples);
      *
-     * // Allocate temporary storage for histogram computation
+     * // Allocate temporary storage
      * cudaMalloc(&d_temp_storage, temp_storage_bytes);
      *
      * // Compute histograms
-     * cub::DeviceHistogram::MultiChannelSorting<256>(d_temp_storage, temp_storage_bytes, d_samples_tex_itr, d_histograms, num_items);
+     * cub::DeviceHistogram::MultiChannelSorting<8, 4, 3>(d_temp_storage, temp_storage_bytes, d_samples_tex_itr, d_histograms, num_samples);
      *
      * // Unbind texture iterator
      * d_samples_tex_itr.UnbindTexture();
+     *
+     * // d_histogram   <-- [ [1, 0, 1, 2, 0, 0, 0, 1];
+     * //                     [0, 3, 0, 0, 0, 0, 2, 0];
+     * //                     [0, 0, 2, 0, 0, 0, 1, 2] ]
      *
      * \endcode
      *
      * \tparam BINS                 Number of histogram bins per channel
      * \tparam CHANNELS             Number of channels interleaved in the input data (may be greater than the number of channels being actively histogrammed)
      * \tparam ACTIVE_CHANNELS      <b>[inferred]</b> Number of channels actively being histogrammed
-     * \tparam InputIterator        <b>[inferred]</b> Random-access iterator type for input (may be a simple pointer type)  Must have an an InputIterator::value_type that, when cast as an integer, falls in the range [0..BINS-1]
+     * \tparam InputIterator        <b>[inferred]</b> Random-access iterator type for input \iterator  Must have an an InputIterator::value_type that, when cast as an integer, falls in the range [0..BINS-1]
      * \tparam HistoCounter         <b>[inferred]</b> Integer type for counting sample occurrences per histogram bin
      */
     template <
@@ -945,59 +944,61 @@ struct DeviceHistogram
 
 
     /**
-     * \brief Computes a device-wide histogram from multi-channel data.  Uses shared-memory atomic read-modify-write operations to compute the histogram.  Input samples having lower diversity can cause performance to be degraded, and occupancy may be limited by histogram bin count.
+     * \brief Computes a device-wide histogram from multi-channel data using shared-memory atomic read-modify-write operations.
      *
-     * However, because histograms are privatized in shared memory, a large
-     * number of bins (e.g., thousands) may adversely affect occupancy and
-     * performance (or even the ability to launch).
-     *
-     * The total number of samples across all channels (\p num_samples) must be a whole multiple of \p CHANNELS.
-     *
-     * \devicestorage
-     *
-     * \cdp
-     *
-     * \iterator
+     * \par
+     * - The total number of samples across all channels (\p num_samples) must be a whole multiple of \p CHANNELS.
+     * - Input samples having lower diversity can cause performance to be degraded due to serializations from bin-collisions.
+     * - Histograms having a large number of bins (e.g., thousands) may adversely affect shared memory occupancy and performance (or even the ability to launch).
+     * - Performance is often improved when referencing input samples through a texture-caching iterator (e.g., cub::TexObjInputIterator).
+     * - \devicestorage
+     * - \cdp
      *
      * \par
      * The code snippet below illustrates the computation of three 256-bin histograms from
-     * interleaved quad-channel <tt>unsigned char</tt> samples (e.g., RGB histograms from RGBA samples).
+     * an input sequence of quad-channel (interleaved) <tt>unsigned char</tt> samples.
+     * (E.g., RGB histograms from RGBA pixel samples.)
      * \par
      * \code
      * #include <cub/cub.cuh>
-     * ...
      *
-     * // Declare and initialize device pointers for input samples and
-     * // three 256-bin output histograms
-     * unsigned char *d_samples;
-     * unsigned int *d_histograms[3];
-     * int num_items = ...
+     * // Declare, allocate, and initialize device pointers for input and histograms
+     * int           num_samples;     // e.g., 20 (five pixels with four channels each)
+     * unsigned char *d_samples;      // e.g., [(2, 6, 7, 5), (3, 0, 2, 1), (7, 0, 6, 2),
+     *                                //        (0, 6, 7, 5), (3, 0, 2, 6)]
+     * unsigned int  *d_histogram[3]; // e.g., [ [ ,  ,  ,  ,  ,  ,  ,  ];
+     *                                //         [ ,  ,  ,  ,  ,  ,  ,  ];
+     *                                //         [ ,  ,  ,  ,  ,  ,  ,  ] ]
      * ...
      *
      * // Wrap d_samples device pointer in a random-access texture iterator
-     * cub::TexInputIterator<unsigned int> d_samples_tex_itr;
-     * d_samples_tex_itr.BindTexture(d_samples, num_items * sizeof(unsigned char));
+     * cub::TexObjInputIterator<unsigned char> d_samples_tex_itr;
+     * d_samples_tex_itr.BindTexture(d_samples, num_samples * sizeof(unsigned char));
      *
-     * // Determine temporary device storage requirements for histogram computation
+     * // Determine temporary device storage requirements
      * void *d_temp_storage = NULL;
      * size_t temp_storage_bytes = 0;
-     * cub::DeviceHistogram::MultiChannelSharedAtomic<256>(d_temp_storage, temp_storage_bytes, d_samples_tex_itr, d_histograms, num_items);
+     * cub::DeviceHistogram::MultiChannelSharedAtomic<8, 4, 3>(d_temp_storage, temp_storage_bytes, d_samples_tex_itr, d_histograms, num_samples);
      *
-     * // Allocate temporary storage for histogram computation
+     * // Allocate temporary storage
      * cudaMalloc(&d_temp_storage, temp_storage_bytes);
      *
      * // Compute histograms
-     * cub::DeviceHistogram::MultiChannelSharedAtomic<256>(d_temp_storage, temp_storage_bytes, d_samples_tex_itr, d_histograms, num_items);
+     * cub::DeviceHistogram::MultiChannelSharedAtomic<8, 4, 3>(d_temp_storage, temp_storage_bytes, d_samples_tex_itr, d_histograms, num_samples);
      *
      * // Unbind texture iterator
      * d_samples_tex_itr.UnbindTexture();
+     *
+     * // d_histogram   <-- [ [1, 0, 1, 2, 0, 0, 0, 1];
+     * //                     [0, 3, 0, 0, 0, 0, 2, 0];
+     * //                     [0, 0, 2, 0, 0, 0, 1, 2] ]
      *
      * \endcode
      *
      * \tparam BINS                 Number of histogram bins per channel
      * \tparam CHANNELS             Number of channels interleaved in the input data (may be greater than the number of channels being actively histogrammed)
      * \tparam ACTIVE_CHANNELS      <b>[inferred]</b> Number of channels actively being histogrammed
-     * \tparam InputIterator        <b>[inferred]</b> Random-access iterator type for input (may be a simple pointer type)  Must have an an InputIterator::value_type that, when cast as an integer, falls in the range [0..BINS-1]
+     * \tparam InputIterator        <b>[inferred]</b> Random-access iterator type for input \iterator  Must have an an InputIterator::value_type that, when cast as an integer, falls in the range [0..BINS-1]
      * \tparam HistoCounter         <b>[inferred]</b> Integer type for counting sample occurrences per histogram bin
      */
     template <
@@ -1041,60 +1042,62 @@ struct DeviceHistogram
 
 
     /**
-     * \brief Computes a device-wide histogram from multi-channel data.  Uses global-memory atomic read-modify-write operations to compute the histogram.  Input samples having lower diversity can cause performance to be degraded.
+     * \brief Computes a device-wide histogram from multi-channel data using global-memory atomic read-modify-write operations.
      *
-     * Performance is not significantly impacted when computing histograms having large
-     * numbers of bins (e.g., thousands).
-     *
-     * The total number of samples across all channels (\p num_samples) must be a whole multiple of \p CHANNELS.
-     *
-     * \devicestorage
-     *
-     * \cdp
-     *
-     * \iterator
-     *
-     * Performance is often improved when referencing input samples through a texture-caching iterator, e.g., cub::TexInputIterator or cub::TexTransformInputIterator.
+     * \par
+     * - The total number of samples across all channels (\p num_samples) must be a whole multiple of \p CHANNELS.
+     * - Input samples having lower diversity can cause performance to be degraded due to serializations from bin-collisions.
+     * - Performance is not significantly impacted when computing histograms having large numbers of bins (e.g., thousands).
+     * - Performance is often improved when referencing input samples through a texture-caching iterator (e.g., cub::TexObjInputIterator).
+     * - \devicestorage
+     * - \cdp
      *
      * \par
      * The code snippet below illustrates the computation of three 256-bin histograms from
-     * interleaved quad-channel <tt>unsigned char</tt> samples (e.g., RGB histograms from RGBA samples).
+     * an input sequence of quad-channel (interleaved) <tt>unsigned char</tt> samples.
+     * (E.g., RGB histograms from RGBA pixel samples.)
+     *
      * \par
      * \code
      * #include <cub/cub.cuh>
-     * ...
      *
-     * // Declare and initialize device pointers for input samples and
-     * // three 256-bin output histograms
-     * unsigned char *d_samples;
-     * unsigned int *d_histograms[3];
-     * int num_items = ...
+     * // Declare, allocate, and initialize device pointers for input and histograms
+     * int           num_samples;     // e.g., 20 (five pixels with four channels each)
+     * unsigned char *d_samples;      // e.g., [(2, 6, 7, 5), (3, 0, 2, 1), (7, 0, 6, 2),
+     *                                //        (0, 6, 7, 5), (3, 0, 2, 6)]
+     * unsigned int  *d_histogram[3]; // e.g., [ [ ,  ,  ,  ,  ,  ,  ,  ];
+     *                                //         [ ,  ,  ,  ,  ,  ,  ,  ];
+     *                                //         [ ,  ,  ,  ,  ,  ,  ,  ] ]
      * ...
      *
      * // Wrap d_samples device pointer in a random-access texture iterator
-     * cub::TexInputIterator<unsigned int> d_samples_tex_itr;
-     * d_samples_tex_itr.BindTexture(d_samples, num_items * sizeof(unsigned char));
+     * cub::TexObjInputIterator<unsigned char> d_samples_tex_itr;
+     * d_samples_tex_itr.BindTexture(d_samples, num_samples * sizeof(unsigned char));
      *
-     * // Determine temporary device storage requirements for histogram computation
-     * void *d_temp_storage = NULL;
-     * size_t temp_storage_bytes = 0;
-     * cub::DeviceHistogram::MultiChannelGlobalAtomic<256>(d_temp_storage, temp_storage_bytes, d_samples_tex_itr, d_histograms, num_items);
+     * // Determine temporary device storage requirements
+     * void     *d_temp_storage = NULL;
+     * size_t   temp_storage_bytes = 0;
+     * cub::DeviceHistogram::MultiChannelGlobalAtomic<8, 4, 3>(d_temp_storage, temp_storage_bytes, d_samples_tex_itr, d_histograms, num_samples);
      *
-     * // Allocate temporary storage for histogram computation
+     * // Allocate temporary storage
      * cudaMalloc(&d_temp_storage, temp_storage_bytes);
      *
      * // Compute histograms
-     * cub::DeviceHistogram::MultiChannelGlobalAtomic<256>(d_temp_storage, temp_storage_bytes, d_samples_tex_itr, d_histograms, num_items);
+     * cub::DeviceHistogram::MultiChannelGlobalAtomic<8, 4, 3>(d_temp_storage, temp_storage_bytes, d_samples_tex_itr, d_histograms, num_samples);
      *
      * // Unbind texture iterator
      * d_samples_tex_itr.UnbindTexture();
+     *
+     * // d_histogram   <-- [ [1, 0, 1, 2, 0, 0, 0, 1];
+     * //                     [0, 3, 0, 0, 0, 0, 2, 0];
+     * //                     [0, 0, 2, 0, 0, 0, 1, 2] ]
      *
      * \endcode
      *
      * \tparam BINS                 Number of histogram bins per channel
      * \tparam CHANNELS             Number of channels interleaved in the input data (may be greater than the number of channels being actively histogrammed)
      * \tparam ACTIVE_CHANNELS      <b>[inferred]</b> Number of channels actively being histogrammed
-     * \tparam InputIterator        <b>[inferred]</b> Random-access iterator type for input (may be a simple pointer type)  Must have an an InputIterator::value_type that, when cast as an integer, falls in the range [0..BINS-1]
+     * \tparam InputIterator        <b>[inferred]</b> Random-access iterator type for input \iterator  Must have an an InputIterator::value_type that, when cast as an integer, falls in the range [0..BINS-1]
      * \tparam HistoCounter         <b>[inferred]</b> Integer type for counting sample occurrences per histogram bin
      */
     template <

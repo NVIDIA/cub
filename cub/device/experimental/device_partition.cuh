@@ -63,8 +63,8 @@ namespace cub {
  */
 template <
     typename    BlockPartitionRegionPolicy,           ///< Parameterizable tuning policy type for cub::BlockPartitionRegion abstraction
-    typename    InputIterator,                ///< Random-access iterator type for input (may be a simple pointer type)
-    typename    OutputIterator,               ///< Random-access iterator type for output (may be a simple pointer type)
+    typename    InputIterator,                ///< Random-access iterator type for input \iterator
+    typename    OutputIterator,               ///< Random-access iterator type for output \iterator
     typename    T,                              ///< The scan data type
     typename    ScanOp,                         ///< Binary scan operator type having member <tt>T operator()(const T &a, const T &b)</tt>
     typename    Identity,                       ///< Identity value type (cub::NullType for inclusive scans)
@@ -300,8 +300,8 @@ struct DevicePartition
     template <
         typename                    ScanInitKernelPtr,              ///< Function type of cub::ScanInitKernel
         typename                    ScanKernelPtr,                  ///< Function type of cub::ScanKernel
-        typename                    InputIterator,                ///< Random-access iterator type for input (may be a simple pointer type)
-        typename                    OutputIterator,               ///< Random-access iterator type for output (may be a simple pointer type)
+        typename                    InputIterator,                ///< Random-access iterator type for input \iterator
+        typename                    OutputIterator,               ///< Random-access iterator type for output \iterator
         typename                    ScanOp,                         ///< Binary scan operator type having member <tt>T operator()(const T &a, const T &b)</tt>
         typename                    Identity,                       ///< Identity value type (cub::NullType for inclusive scans)
         typename                    Offset>                          ///< Signed integer type for global offsets
@@ -455,8 +455,8 @@ struct DevicePartition
      * Internal scan dispatch routine for using default tuning policies
      */
     template <
-        typename                    InputIterator,                ///< Random-access iterator type for input (may be a simple pointer type)
-        typename                    OutputIterator,               ///< Random-access iterator type for output (may be a simple pointer type)
+        typename                    InputIterator,                ///< Random-access iterator type for input \iterator
+        typename                    OutputIterator,               ///< Random-access iterator type for output \iterator
         typename                    ScanOp,                         ///< Binary scan operator type having member <tt>T operator()(const T &a, const T &b)</tt>
         typename                    Identity,                       ///< Identity value type (cub::NullType for inclusive scans)
         typename                    Offset>                          ///< Signed integer type for global offsets
@@ -542,7 +542,7 @@ struct DevicePartition
      * #include <cub/cub.cuh>
      * ...
      *
-     * // Declare and initialize device pointers for input and output
+     * // Declare, allocate, and initialize device pointers for input and output
      * int *d_scan_input, *d_scan_output;
      * int num_items = ...
      *
@@ -561,8 +561,8 @@ struct DevicePartition
      *
      * \endcode
      *
-     * \tparam InputIterator      <b>[inferred]</b> Random-access iterator type for input (may be a simple pointer type)
-     * \tparam OutputIterator     <b>[inferred]</b> Random-access iterator type for output (may be a simple pointer type)
+     * \tparam InputIterator      <b>[inferred]</b> Random-access iterator type for input \iterator
+     * \tparam OutputIterator     <b>[inferred]</b> Random-access iterator type for output \iterator
      */
     template <
         typename            InputIterator,

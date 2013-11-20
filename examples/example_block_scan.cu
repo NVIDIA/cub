@@ -85,7 +85,7 @@ __global__ void BlockPrefixSumKernel(
 
     // Per-thread tile data
     int data[ITEMS_PER_THREAD];
-    LoadBlockedVectorized<LOAD_DEFAULT>(threadIdx.x, d_in, data);
+    LoadDirectBlockedVectorized<LOAD_DEFAULT>(threadIdx.x, d_in, data);
 
     // Start cycle timer
     clock_t start = clock();
@@ -98,7 +98,7 @@ __global__ void BlockPrefixSumKernel(
     clock_t stop = clock();
 
     // Store output
-    StoreBlockedVectorized<STORE_DEFAULT>(threadIdx.x, d_out, data);
+    StoreDirectBlockedVectorized<STORE_DEFAULT>(threadIdx.x, d_out, data);
 
     // Store aggregate and elapsed clocks
     if (threadIdx.x == 0)
