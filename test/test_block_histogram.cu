@@ -83,7 +83,7 @@ __global__ void BlockHistogramKernel(
 
     // Per-thread tile data
     T data[ITEMS_PER_THREAD];
-    LoadStriped<BLOCK_THREADS>(threadIdx.x, d_samples, data);
+    LoadDirectStriped<BLOCK_THREADS>(threadIdx.x, d_samples, data);
 
     // Test histo (writing directly to histogram buffer in global)
     BlockHistogram(temp_storage).Histogram(data, d_histogram);

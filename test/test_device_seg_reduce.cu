@@ -378,7 +378,7 @@ struct BlockSegReduceRegion
 
         // Load a tile's worth of values (using identity for out-of-bounds items)
         Value values[ITEMS_PER_THREAD];
-        LoadStriped<BLOCK_THREADS>(threadIdx.x, d_values + block_idx.b_idx, values, tile_values, identity);
+        LoadDirectStriped<BLOCK_THREADS>(threadIdx.x, d_values + block_idx.b_idx, values, tile_values, identity);
 
         // Barrier for smem reuse
         __syncthreads();
@@ -426,7 +426,7 @@ struct BlockSegReduceRegion
 
         // Store reductions
         Offset tile_segments = next_tile_idx.a_idx - block_idx.a_idx;
-        StoreStriped<BLOCK_THREADS>(threadIdx.x, d_output + block_idx.a_idx, segment_reductions, tile_segments);
+        StoreDirectStriped<BLOCK_THREADS>(threadIdx.x, d_output + block_idx.a_idx, segment_reductions, tile_segments);
     }
 
 
@@ -512,10 +512,10 @@ struct BlockSegReduceRegion
             Offset tile_values = next_tile_idx.b_idx - block_idx.b_idx;
 
             // Load a tile's worth of values (using identity for out-of-bounds items)
-            LoadStriped<BLOCK_THREADS>(threadIdx.x, d_values + block_idx.b_idx, values, tile_values, identity);
+            LoadDirectStriped<BLOCK_THREADS>(threadIdx.x, d_values + block_idx.b_idx, values, tile_values, identity);
 
             // Store to shared
-            StoreStriped<BLOCK_THREADS>(threadIdx.x, temp_storage.cached_values, values, tile_values);
+            StoreDirectStriped<BLOCK_THREADS>(threadIdx.x, temp_storage.cached_values, values, tile_values);
 
             // Barrier for smem reuse
             __syncthreads();
@@ -737,10 +737,10 @@ struct BlockSegReduceRegion
 
                 // Load global
                 SegmentOffset segment_offsets[ITEMS_PER_THREAD];
-                LoadStriped<BLOCK_THREADS>(threadIdx.x, d_segment_end_offsets + block_idx.a_idx, segment_offsets, num_segments, num_values);
+                LoadDirectStriped<BLOCK_THREADS>(threadIdx.x, d_segment_end_offsets + block_idx.a_idx, segment_offsets, num_segments, num_values);
 
                 // Store to shared
-                StoreStriped<BLOCK_THREADS>(threadIdx.x, temp_storage.cached_segment_end_offsets, segment_offsets);
+                StoreDirectStriped<BLOCK_THREADS>(threadIdx.x, temp_storage.cached_segment_end_offsets, segment_offsets);
 
                 __syncthreads();
 

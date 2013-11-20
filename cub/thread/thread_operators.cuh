@@ -49,7 +49,7 @@ namespace cub {
 
 
 /**
- * \addtogroup ThreadModule
+ * \addtogroup UtilModule
  * @{
  */
 
@@ -114,6 +114,7 @@ struct Max
  */
 struct ArgMax
 {
+    /// Boolean max operator, preferring the item having the smaller offset in case of ties
     template <typename T, typename Offset>
     __host__ __device__ __forceinline__ ItemOffsetPair<T, Offset> operator()(
         const ItemOffsetPair<T, Offset> &a,
@@ -146,6 +147,7 @@ struct Min
  */
 struct ArgMin
 {
+    /// Boolean min operator, preferring the item having the smaller offset in case of ties
     template <typename T, typename Offset>
     __host__ __device__ __forceinline__ ItemOffsetPair<T, Offset> operator()(
         const ItemOffsetPair<T, Offset> &a,
@@ -175,7 +177,7 @@ struct Cast
 
 
 
-/** @} */       // end group ThreadModule
+/** @} */       // end group UtilModule
 
 
 }               // CUB namespace

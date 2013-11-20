@@ -100,9 +100,9 @@ __global__ void BlockSortKernel(
 
     // Load items in blocked fashion
 #if CUB_PTX_VERSION >= 350
-    LoadBlocked<LOAD_LDG>(threadIdx.x, d_in + block_offset, items);
+    LoadDirectBlocked<LOAD_LDG>(threadIdx.x, d_in + block_offset, items);
 #else
-    LoadBlockedVectorized<LOAD_DEFAULT>(threadIdx.x, d_in + block_offset, items);
+    LoadDirectBlockedVectorized<LOAD_DEFAULT>(threadIdx.x, d_in + block_offset, items);
 #endif
 
     // Start cycle timer
@@ -115,7 +115,7 @@ __global__ void BlockSortKernel(
     clock_t stop = clock();
 
     // Store output in striped fashion
-    StoreStriped<BLOCK_THREADS>(threadIdx.x, d_out + block_offset, items);
+    StoreDirectStriped<BLOCK_THREADS>(threadIdx.x, d_out + block_offset, items);
 
     // Store elapsed clocks
     if (threadIdx.x == 0)

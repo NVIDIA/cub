@@ -350,7 +350,7 @@ struct BlockRadixSortUpsweepRegion
         // Tile of keys
         UnsignedBits keys[KEYS_PER_THREAD];
 
-        LoadStriped<BLOCK_THREADS>(threadIdx.x, d_keys_in + block_offset, keys);
+        LoadDirectStriped<BLOCK_THREADS>(threadIdx.x, d_keys_in + block_offset, keys);
 
         // Prevent hoisting
 //        __threadfence_block();

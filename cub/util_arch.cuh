@@ -145,6 +145,7 @@ namespace cub {
                 (16 * 1024) :                           \
                 (8 * 1024))))
 
+#ifndef DOXYGEN_SHOULD_SKIP_THIS    // Do not document
 
 #define CUB_PTX_LOG_WARP_THREADS    CUB_LOG_WARP_THREADS(CUB_PTX_VERSION)
 #define CUB_PTX_WARP_THREADS        (1 << CUB_PTX_LOG_WARP_THREADS)
@@ -161,7 +162,7 @@ namespace cub {
 #define CUB_PTX_MAX_BLOCK_THREADS   CUB_MAX_BLOCK_THREADS(CUB_PTX_VERSION)
 #define CUB_PTX_MAX_SM_REGISTERS    CUB_MAX_SM_REGISTERS(CUB_PTX_VERSION)
 
-
+#endif  // Do not document
 
 
 /** @} */       // end group UtilModule
