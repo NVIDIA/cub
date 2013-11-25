@@ -548,7 +548,7 @@ struct DeviceSelectDispatch
                 debug_synchronous,
                 ptx_version,
                 ptx_version,            // Use PTX version instead of SM version because, as a statically known quantity, this improves device-side launch dramatically but at the risk of imprecise occupancy calculation for mismatches
-                ScanInitKernel<T, Offset>,
+                ScanInitKernel<OffsetTuple, Offset>,
                 SelectRegionKernel<PtxSelectRegionPolicy, InputIterator, FlagIterator, OutputIterator, NumSelectedIterator, SelectOp, Offset, OffsetTuple>,
                 select_region_config))) break;
         }
@@ -654,7 +654,7 @@ struct DeviceSelect
         // Offset tuple type
         typedef CubVector<Offset, 1> OffsetTuple;
 
-        return DeviceSelectDispatch<InputIterator, FlagIterator, NumSelectedIterator, OutputIterator, SelectOp, OffsetTuple>::Dispatch(
+        return DeviceSelectDispatch<InputIterator, FlagIterator, OutputIterator, NumSelectedIterator, SelectOp, OffsetTuple>::Dispatch(
             d_temp_storage,
             temp_storage_bytes,
             d_in,
@@ -703,12 +703,12 @@ struct DeviceSelect
         typedef int Offset;
 
         // Flag iterator type
-        typedef NullType FlagIterator;
+        typedef NullType* FlagIterator;
 
         // Offset tuple type
         typedef CubVector<Offset, 1> OffsetTuple;
 
-        return DeviceSelectDispatch<InputIterator, FlagIterator, NumSelectedIterator, OutputIterator, SelectOp, OffsetTuple>::Dispatch(
+        return DeviceSelectDispatch<InputIterator, FlagIterator, OutputIterator, NumSelectedIterator, SelectOp, OffsetTuple>::Dispatch(
             d_temp_storage,
             temp_storage_bytes,
             d_in,
@@ -754,7 +754,7 @@ struct DeviceSelect
         typedef int Offset;
 
         // Flag iterator type
-        typedef NullType FlagIterator;
+        typedef NullType* FlagIterator;
 
         // Selection operator
         typedef NullType SelectOp;
@@ -762,7 +762,7 @@ struct DeviceSelect
         // Offset tuple type
         typedef CubVector<Offset, 1> OffsetTuple;
 
-        return DeviceSelectDispatch<InputIterator, FlagIterator, NumSelectedIterator, OutputIterator, SelectOp, OffsetTuple>::Dispatch(
+        return DeviceSelectDispatch<InputIterator, FlagIterator, OutputIterator, NumSelectedIterator, SelectOp, OffsetTuple>::Dispatch(
             d_temp_storage,
             temp_storage_bytes,
             d_in,

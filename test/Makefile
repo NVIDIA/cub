@@ -401,13 +401,26 @@ bin/test_device_radix_sort_$(SUFFIX) : test_device_radix_sort.cu $(DEPS)
 
 
 #-------------------------------------------------------------------------------
-# make test_device_seg_reduce
+# make test_device_select_unique
 #-------------------------------------------------------------------------------
 
-test_device_seg_reduce: bin/test_device_seg_reduce_$(SUFFIX)
+test_device_select_unique: bin/test_device_select_unique_$(SUFFIX)
 
-bin/test_device_seg_reduce_$(SUFFIX) : test_device_seg_reduce.cu $(DEPS)
+bin/test_device_select_unique_$(SUFFIX) : test_device_select_unique.cu $(DEPS)
 	mkdir -p bin
-	$(NVCC) $(DEFINES) $(SM_TARGETS) -o bin/test_device_seg_reduce_$(SUFFIX) test_device_seg_reduce.cu $(NVCCFLAGS) $(CPU_ARCH) $(INC) $(LIBS) -O3
+	$(NVCC) $(DEFINES) $(SM_TARGETS) -o bin/test_device_select_unique_$(SUFFIX) test_device_select_unique.cu $(NVCCFLAGS) $(CPU_ARCH) $(INC) $(LIBS) -O3
+
+
+
+
+#-------------------------------------------------------------------------------
+# make test_device_seg_reduce
+#-------------------------------------------------------------------------------
+#
+#test_device_seg_reduce: bin/test_device_seg_reduce_$(SUFFIX)
+#
+#bin/test_device_seg_reduce_$(SUFFIX) : test_device_seg_reduce.cu $(DEPS)
+#	mkdir -p bin
+#	$(NVCC) $(DEFINES) $(SM_TARGETS) -o bin/test_device_seg_reduce_$(SUFFIX) test_device_seg_reduce.cu $(NVCCFLAGS) $(CPU_ARCH) $(INC) $(LIBS) -O3
 
 
