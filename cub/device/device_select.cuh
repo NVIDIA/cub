@@ -74,6 +74,7 @@ template <
     typename    OutputIterator,                 ///< Random-access output iterator type for selected items
     typename    NumSelectedIterator,            ///< Output iterator type for recording number of items selected
     typename    SelectOp,                       ///< Selection operator type (NullType if selection flags or discontinuity flagging is to be used for selection)
+    typename    EqualityOp,                     ///< Equality operator type (NullType if selection functor or selection flags is to be used for selection)
     typename    Offset,                         ///< Signed integer type for global offsets
     typename    OffsetTuple>                    ///< Signed integer tuple type for global scatter offsets (selections and rejections)
 __launch_bounds__ (int(BlockSelectRegionPolicy::BLOCK_THREADS))
@@ -84,6 +85,7 @@ __global__ void SelectRegionKernel(
     NumSelectedIterator                 d_num_selected,     ///< [in] Output iterator pointing to total number selected
     LookbackTileDescriptor<OffsetTuple> *d_tile_status,     ///< [in] Global list of tile status
     SelectOp                            select_op,          ///< [in] Selection operator
+    EqualityOp                          equality_op,        ///< [in] Equality operator
     Offset                              num_items,          ///< [in] Total number of items to select from
     int                                 num_tiles,          ///< [in] Total number of tiles for the entire problem
     GridQueue<int>                      queue)              ///< [in] Drain queue descriptor for dynamically mapping tile data onto thread blocks
@@ -101,13 +103,14 @@ __global__ void SelectRegionKernel(
         OutputIterator,
         NumSelectedIterator,
         SelectOp,
+        EqualityOp,
         OffsetTuple> BlockSelectRegionT;
 
     // Shared memory for BlockSelectRegion
     __shared__ typename BlockSelectRegionT::TempStorage temp_storage;
 
     // Process tiles
-    BlockSelectRegionT(temp_storage, d_in, d_flags, d_out, select_op, num_items).ConsumeRegion(
+    BlockSelectRegionT(temp_storage, d_in, d_flags, d_out, select_op, equality_op, num_items).ConsumeRegion(
         num_tiles,
         queue,
         d_tile_status + TILE_STATUS_PADDING,
@@ -130,6 +133,7 @@ template <
     typename    OutputIterator,                 ///< Random-access output iterator type for selected items
     typename    NumSelectedIterator,            ///< Output iterator type for recording number of items selected
     typename    SelectOp,                       ///< Selection operator type (NullType if selection flags or discontinuity flagging is to be used for selection)
+    typename    EqualityOp,                     ///< Equality operator type (NullType if selection functor or selection flags is to be used for selection)
     typename    OffsetTuple>                    ///< Signed integer tuple type for global scatter offsets (selections and rejections)
 struct DeviceSelectDispatch
 {
@@ -164,7 +168,7 @@ struct DeviceSelectDispatch
     struct Policy350
     {
         enum {
-            NOMINAL_4B_ITEMS_PER_THREAD = 8,
+            NOMINAL_4B_ITEMS_PER_THREAD = 16,
             ITEMS_PER_THREAD            = CUB_MIN(NOMINAL_4B_ITEMS_PER_THREAD, CUB_MAX(1, (NOMINAL_4B_ITEMS_PER_THREAD * 4 / sizeof(T)))),
         };
 
@@ -175,7 +179,7 @@ struct DeviceSelectDispatch
                 false,
                 LOAD_LDG,
                 false,
-                BLOCK_SCAN_RAKING_MEMOIZE>
+                BLOCK_SCAN_WARP_SCANS>
             SelectRegionPolicy;
     };
 
@@ -202,7 +206,7 @@ struct DeviceSelectDispatch
     struct Policy200
     {
         enum {
-            NOMINAL_4B_ITEMS_PER_THREAD = 9,
+            NOMINAL_4B_ITEMS_PER_THREAD = 23,
             ITEMS_PER_THREAD            = CUB_MIN(NOMINAL_4B_ITEMS_PER_THREAD, CUB_MAX(1, (NOMINAL_4B_ITEMS_PER_THREAD * 4 / sizeof(T)))),
         };
 
@@ -212,8 +216,8 @@ struct DeviceSelectDispatch
                 BLOCK_LOAD_WARP_TRANSPOSE,
                 false,
                 LOAD_DEFAULT,
-                false,
-                BLOCK_SCAN_RAKING_MEMOIZE>
+                true,
+                BLOCK_SCAN_WARP_SCANS>
             SelectRegionPolicy;
     };
 
@@ -382,6 +386,7 @@ struct DeviceSelectDispatch
         OutputIterator              d_out,                          ///< [in] Output iterator pointing to selected items
         NumSelectedIterator         d_num_selected,                 ///< [in] Output iterator pointing to total number selected
         SelectOp                    select_op,                      ///< [in] Selection operator
+        EqualityOp                  equality_op,                    ///< [in] Equality operator
         Offset                      num_items,                      ///< [in] Total number of items to select from
         cudaStream_t                stream,                         ///< [in] CUDA stream to launch kernels within.  Default is stream<sub>0</sub>.
         bool                        debug_synchronous,              ///< [in] Whether or not to synchronize the stream after every kernel launch to check for errors.  Also causes launch configurations to be printed to the console.  Default is \p false.
@@ -488,6 +493,7 @@ struct DeviceSelectDispatch
                 d_num_selected,
                 d_tile_status,
                 select_op,
+                equality_op,
                 num_items,
                 num_tiles,
                 queue);
@@ -515,6 +521,7 @@ struct DeviceSelectDispatch
         OutputIterator              d_out,                          ///< [in] Output iterator pointing to selected items
         NumSelectedIterator         d_num_selected,                 ///< [in] Output iterator pointing to total number selected
         SelectOp                    select_op,                      ///< [in] Selection operator
+        EqualityOp                  equality_op,                    ///< [in] Equality operator
         Offset                      num_items,                      ///< [in] Total number of items to select from
         cudaStream_t                stream,                         ///< [in] <b>[optional]</b> CUDA stream to launch kernels within.  Default is stream<sub>0</sub>.
         bool                        debug_synchronous)              ///< [in] <b>[optional]</b> Whether or not to synchronize the stream after every kernel launch to check for errors.  Also causes launch configurations to be printed to the console.  Default is \p false.
@@ -543,13 +550,14 @@ struct DeviceSelectDispatch
                 d_out,
                 d_num_selected,
                 select_op,
+                equality_op,
                 num_items,
                 stream,
                 debug_synchronous,
                 ptx_version,
                 ptx_version,            // Use PTX version instead of SM version because, as a statically known quantity, this improves device-side launch dramatically but at the risk of imprecise occupancy calculation for mismatches
                 ScanInitKernel<OffsetTuple, Offset>,
-                SelectRegionKernel<PtxSelectRegionPolicy, InputIterator, FlagIterator, OutputIterator, NumSelectedIterator, SelectOp, Offset, OffsetTuple>,
+                SelectRegionKernel<PtxSelectRegionPolicy, InputIterator, FlagIterator, OutputIterator, NumSelectedIterator, SelectOp, EqualityOp, Offset, OffsetTuple>,
                 select_region_config))) break;
         }
         while (0);
@@ -645,16 +653,12 @@ struct DeviceSelect
         cudaStream_t                stream             = 0,         ///< [in] <b>[optional]</b> CUDA stream to launch kernels within.  Default is stream<sub>0</sub>.
         bool                        debug_synchronous  = false)     ///< [in] <b>[optional]</b> Whether or not to synchronize the stream after every kernel launch to check for errors.  May cause significant slowdown.  Default is \p false.
     {
-        // Signed integer type for global offsets
-        typedef int Offset;
+        typedef int                     Offset;         // Signed integer type for global offsets
+        typedef CubVector<Offset, 1>    OffsetTuple;    // Offset tuple type
+        typedef NullType                SelectOp;       // Selection op (not used)
+        typedef NullType                EqualityOp;     // Equality operator (not used)
 
-        // Selection operator
-        typedef NullType SelectOp;
-
-        // Offset tuple type
-        typedef CubVector<Offset, 1> OffsetTuple;
-
-        return DeviceSelectDispatch<InputIterator, FlagIterator, OutputIterator, NumSelectedIterator, SelectOp, OffsetTuple>::Dispatch(
+        return DeviceSelectDispatch<InputIterator, FlagIterator, OutputIterator, NumSelectedIterator, SelectOp, EqualityOp, OffsetTuple>::Dispatch(
             d_temp_storage,
             temp_storage_bytes,
             d_in,
@@ -662,6 +666,7 @@ struct DeviceSelect
             d_out,
             d_num_selected,
             SelectOp(),
+            EqualityOp(),
             num_items,
             stream,
             debug_synchronous);
@@ -699,16 +704,12 @@ struct DeviceSelect
         cudaStream_t                stream             = 0,         ///< [in] <b>[optional]</b> CUDA stream to launch kernels within.  Default is stream<sub>0</sub>.
         bool                        debug_synchronous  = false)     ///< [in] <b>[optional]</b> Whether or not to synchronize the stream after every kernel launch to check for errors.  May cause significant slowdown.  Default is \p false.
     {
-        // Signed integer type for global offsets
-        typedef int Offset;
+        typedef int                     Offset;         // Signed integer type for global offsets
+        typedef CubVector<Offset, 1>    OffsetTuple;    // Offset tuple type
+        typedef NullType*               FlagIterator;   // Flag iterator type (not used)
+        typedef NullType                EqualityOp;     // Equality operator (not used)
 
-        // Flag iterator type
-        typedef NullType* FlagIterator;
-
-        // Offset tuple type
-        typedef CubVector<Offset, 1> OffsetTuple;
-
-        return DeviceSelectDispatch<InputIterator, FlagIterator, OutputIterator, NumSelectedIterator, SelectOp, OffsetTuple>::Dispatch(
+        return DeviceSelectDispatch<InputIterator, FlagIterator, OutputIterator, NumSelectedIterator, SelectOp, EqualityOp, OffsetTuple>::Dispatch(
             d_temp_storage,
             temp_storage_bytes,
             d_in,
@@ -716,6 +717,7 @@ struct DeviceSelect
             d_out,
             d_num_selected,
             select_op,
+            EqualityOp(),
             num_items,
             stream,
             debug_synchronous);
@@ -726,6 +728,7 @@ struct DeviceSelect
      * \brief Given an input sequence \p d_in having groups of consecutive equal-valued keys, only the first key from each group is selectively copied to \p d_out.  The total number of items selected is written to \p d_num_selected. ![](unique_logo.png)
      *
      * \par
+     * - The <tt>==</tt> equality operator is used to determine equal-valued keys
      * - The selected items are compacted into \p d_out and maintain their original relative ordering.
      * - \devicestorage
      * - \cdp
@@ -750,19 +753,13 @@ struct DeviceSelect
         cudaStream_t                stream             = 0,         ///< [in] <b>[optional]</b> CUDA stream to launch kernels within.  Default is stream<sub>0</sub>.
         bool                        debug_synchronous  = false)     ///< [in] <b>[optional]</b> Whether or not to synchronize the stream after every kernel launch to check for errors.  May cause significant slowdown.  Default is \p false.
     {
-        // Signed integer type for global offsets
-        typedef int Offset;
+        typedef int                     Offset;         // Signed integer type for global offsets
+        typedef CubVector<Offset, 1>    OffsetTuple;    // Offset tuple type
+        typedef NullType*               FlagIterator;   // Flag iterator type (not used)
+        typedef NullType                SelectOp;       // Selection op (not used)
+        typedef Equality                EqualityOp;     // Default == operator
 
-        // Flag iterator type
-        typedef NullType* FlagIterator;
-
-        // Selection operator
-        typedef NullType SelectOp;
-
-        // Offset tuple type
-        typedef CubVector<Offset, 1> OffsetTuple;
-
-        return DeviceSelectDispatch<InputIterator, FlagIterator, OutputIterator, NumSelectedIterator, SelectOp, OffsetTuple>::Dispatch(
+        return DeviceSelectDispatch<InputIterator, FlagIterator, OutputIterator, NumSelectedIterator, SelectOp, EqualityOp, OffsetTuple>::Dispatch(
             d_temp_storage,
             temp_storage_bytes,
             d_in,
@@ -770,6 +767,7 @@ struct DeviceSelect
             d_out,
             d_num_selected,
             SelectOp(),
+            EqualityOp(),
             num_items,
             stream,
             debug_synchronous);

@@ -82,6 +82,26 @@ struct Inequality
 
 
 /**
+ * \brief Inequality functor (wraps equality functor)
+ */
+template <typename EqualityOp>
+struct Inequality2
+{
+    EqualityOp op;
+
+    __host__ __device__ __forceinline__
+    Inequality2(EqualityOp op) : op(op) {}
+
+    /// Boolean inequality operator, returns <tt>(a != b)</tt>
+    template <typename T>
+    __host__ __device__ __forceinline__ bool operator()(const T &a, const T &b)
+    {
+        return !op(a, b);
+    }
+};
+
+
+/**
  * \brief Default sum functor
  */
 struct Sum
