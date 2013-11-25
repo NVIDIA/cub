@@ -144,9 +144,9 @@ struct BlockSelectRegion
         TILE_ITEMS          = BLOCK_THREADS * ITEMS_PER_THREAD,
         KEEP_REJECTS        = sizeof(OffsetTuple) > sizeof(Offset),                 // Whether or not we push rejected items to the back of the output
 
-        SELECT_METHOD       = (Equals<SelectOp, NullType>::NEGATE) ?
+        SELECT_METHOD       = (!Equals<SelectOp, NullType>::VALUE) ?
                                 USE_SELECT_OP :
-                                (Equals<SelectOp, NullType>::NEGATE) ?
+                                (!Equals<Flag, NullType>::VALUE) ?
                                     USE_SELECT_FLAGS :
                                     USE_DISCONTINUITY
     };
@@ -276,12 +276,12 @@ struct BlockSelectRegion
      */
     template <bool FIRST_TILE, bool FULL_TILE>
     __device__ __forceinline__ void InitializeAllocations(
-        Offset                  block_offset,
-        int                     valid_items,
-        T                       items[ITEMS_PER_THREAD],
-        OffsetTuple             allocations[ITEMS_PER_THREAD],
-        Int2Type<false>         keep_rejects,
-        Int2Type<USE_SELECT_OP> select_method)
+        Offset                      block_offset,
+        int                         valid_items,
+        T                           (&items)[ITEMS_PER_THREAD],
+        OffsetTuple                 (&allocations)[ITEMS_PER_THREAD],
+        Int2Type<false>             keep_rejects,
+        Int2Type<USE_SELECT_OP>     select_method)
     {
         #pragma unroll
         for (int ITEM = 0; ITEM < ITEMS_PER_THREAD; ++ITEM)
@@ -301,8 +301,8 @@ struct BlockSelectRegion
     __device__ __forceinline__ void InitializeAllocations(
         Offset                      block_offset,
         int                         valid_items,
-        T                           items[ITEMS_PER_THREAD],
-        OffsetTuple                 allocations[ITEMS_PER_THREAD],
+        T                           (&items)[ITEMS_PER_THREAD],
+        OffsetTuple                 (&allocations)[ITEMS_PER_THREAD],
         Int2Type<false>             keep_rejects,
         Int2Type<USE_SELECT_FLAGS>  select_method)
     {
@@ -332,9 +332,9 @@ struct BlockSelectRegion
     __device__ __forceinline__ void InitializeAllocations(
         Offset                      block_offset,
         int                         valid_items,
-        T                           items[ITEMS_PER_THREAD],
-        OffsetTuple                 allocations[ITEMS_PER_THREAD],
-        Int2Type<false>              keep_rejects,
+        T                           (&items)[ITEMS_PER_THREAD],
+        OffsetTuple                 (&allocations)[ITEMS_PER_THREAD],
+        Int2Type<false>             keep_rejects,
         Int2Type<USE_DISCONTINUITY> select_method)
     {
         __syncthreads();
@@ -344,7 +344,7 @@ struct BlockSelectRegion
         if (FIRST_TILE)
         {
             // First tile always flags the first item
-            DiscontinuityT(temp_storage.discontinuity).FlagHeads(flags, items, Inequality());
+            BlockDiscontinuityT(temp_storage.discontinuity).FlagHeads(flags, items, Inequality());
         }
         else
         {
@@ -353,7 +353,7 @@ struct BlockSelectRegion
             if (threadIdx.x == 0)
                 tile_predecessor_item = d_in[block_offset - 1];
 
-            DiscontinuityT(temp_storage.discontinuity).FlagHeads(flags, items, Inequality(), tile_predecessor_item);
+            BlockDiscontinuityT(temp_storage.discontinuity).FlagHeads(flags, items, Inequality(), tile_predecessor_item);
         }
 
         #pragma unroll
@@ -374,8 +374,8 @@ struct BlockSelectRegion
     __device__ __forceinline__ void InitializeAllocations(
         Offset                      block_offset,
         int                         valid_items,
-        T                           items[ITEMS_PER_THREAD],
-        OffsetTuple                 allocations[ITEMS_PER_THREAD],
+        T                           (&items)[ITEMS_PER_THREAD],
+        OffsetTuple                 (&allocations)[ITEMS_PER_THREAD],
         Int2Type<true>              keep_rejects,
         Int2Type<_SELECT_METHOD>    select_method)
     {
@@ -385,7 +385,7 @@ struct BlockSelectRegion
             valid_items,
             items,
             allocations,
-            Int2Type<false>,
+            Int2Type<false>(),
             select_method);
 
         // Initialize allocations for rejected items
@@ -408,7 +408,7 @@ struct BlockSelectRegion
      * Scatter data items to select offsets (specialized for direct scattering and for discarding rejected items)
      */
     __device__ __forceinline__ void Scatter(
-        T               items[ITEMS_PER_THREAD],
+        T               (&items)[ITEMS_PER_THREAD],
         OffsetTuple     allocations[ITEMS_PER_THREAD],
         OffsetTuple     allocation_offsets[ITEMS_PER_THREAD],
         OffsetTuple     tile_exclusive_prefix,
@@ -432,7 +432,7 @@ struct BlockSelectRegion
      * Scatter data items to select offsets (specialized for direct scattering and for partitioning rejected items after selected items)
      */
     __device__ __forceinline__ void Scatter(
-        T               items[ITEMS_PER_THREAD],
+        T               (&items)[ITEMS_PER_THREAD],
         OffsetTuple     allocations[ITEMS_PER_THREAD],
         OffsetTuple     allocation_offsets[ITEMS_PER_THREAD],
         OffsetTuple     tile_exclusive_prefix,
@@ -462,7 +462,7 @@ struct BlockSelectRegion
      * Scatter data items to select offsets (specialized for two-phase scattering and for discarding rejected items)
      */
     __device__ __forceinline__ void Scatter(
-        T               items[ITEMS_PER_THREAD],
+        T               (&items)[ITEMS_PER_THREAD],
         OffsetTuple     allocations[ITEMS_PER_THREAD],
         OffsetTuple     allocation_offsets[ITEMS_PER_THREAD],
         OffsetTuple     tile_exclusive_prefix,
@@ -493,7 +493,7 @@ struct BlockSelectRegion
      * Scatter data items to select offsets (specialized for two-phase scattering and for partitioning rejected items after selected items)
      */
     __device__ __forceinline__ void Scatter(
-        T               items[ITEMS_PER_THREAD],
+        T               (&items)[ITEMS_PER_THREAD],
         OffsetTuple     allocations[ITEMS_PER_THREAD],
         OffsetTuple     allocation_offsets[ITEMS_PER_THREAD],
         OffsetTuple     tile_exclusive_prefix,
@@ -617,7 +617,8 @@ struct BlockSelectRegion
 
             // Scan allocations
             LookbackPrefixCallbackOp prefix_op(d_tile_status, temp_storage.prefix, Sum(), tile_idx);
-            BlockScan(temp_storage.scan).ExclusiveSum(allocations, allocation_offsets, block_aggregate, prefix_op);
+
+            BlockScanAllocations(temp_storage.scan).ExclusiveSum(allocations, allocation_offsets, block_aggregate, prefix_op);
             tile_exclusive_prefix = prefix_op.exclusive_prefix;
         }
 
@@ -646,13 +647,14 @@ struct BlockSelectRegion
         TileDescriptor          *d_tile_status,     ///< Global list of tile status
         NumSelectedIterator     d_num_selected)     ///< Output total number selected
     {
+        OffsetTuple total_selected;
+
 #if CUB_PTX_VERSION < 200
 
         // No concurrent kernels allowed and blocks are launched in increasing order, so just assign one tile per block (up to 65K blocks)
         int     tile_idx        = blockIdx.x;
         Offset  block_offset    = Offset(TILE_ITEMS) * tile_idx;
 
-        OffsetTuple total_selected;
 
         if (block_offset + TILE_ITEMS <= num_items)
             total_selected = ConsumeTile<true>(num_items, tile_idx, block_offset, d_tile_status);

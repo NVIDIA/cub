@@ -51,6 +51,7 @@
 #include "device/device_radix_sort.cuh"
 #include "device/device_reduce.cuh"
 #include "device/device_scan.cuh"
+#include "device/device_select.cuh"
 
 // Grid
 //#include "grid/grid_barrier.cuh"
