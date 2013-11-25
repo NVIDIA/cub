@@ -45,6 +45,8 @@
 #include "../../util_iterator.cuh"
 #include "../../util_namespace.cuh"
 
+#include "../../util_debug.cuh"
+
 /// Optional outer namespace(s)
 CUB_NS_PREFIX
 
@@ -103,6 +105,7 @@ template <
     typename    OutputIterator,                 ///< Random-access input iterator type for selected items
     typename    NumSelectedIterator,            ///< Output iterator type for recording number of items selected
     typename    SelectOp,                       ///< Selection operator type (NullType if selection flags or discontinuity flagging is to be used for selection)
+    typename    EqualityOp,                     ///< Equality operator type (NullType if selection functor or selection flags is to be used for selection)
     typename    OffsetTuple>                    ///< Signed integer tuple type for global scatter offsets (selections and rejections)
 struct BlockSelectRegion
 {
@@ -225,7 +228,8 @@ struct BlockSelectRegion
             typename If<TWO_PHASE_SCATTER, typename BlockExchangeT::TempStorage, NullType>::Type exchange;
         };
 
-        Offset tile_idx;   // Shared tile index
+        Offset      tile_idx;               // Shared tile index
+        OffsetTuple tile_exclusive_prefix;  // Exclusive tile prefix
     };
 
     // Alias wrapper allowing storage to be unioned
@@ -241,6 +245,7 @@ struct BlockSelectRegion
     WrappedFlagIterator         d_flags;            ///< Input flags
     OutputIterator              d_out;              ///< Output data
     SelectOp                    select_op;          ///< Selection operator
+    EqualityOp                  equality_op;        ///< Equality operator
     Offset                      num_items;          ///< Total number of input items
 
 
@@ -256,6 +261,7 @@ struct BlockSelectRegion
         FlagIterator                d_flags,            ///< Input flags
         OutputIterator              d_out,              ///< Output data
         SelectOp                    select_op,          ///< Selection operator
+        EqualityOp                  equality_op,        ///< Equality operator
         Offset                      num_items)          ///< Total number of input items
     :
         temp_storage(temp_storage.Alias()),
@@ -263,6 +269,7 @@ struct BlockSelectRegion
         d_flags(d_flags),
         d_out(d_out),
         select_op(select_op),
+        equality_op(equality_op),
         num_items(num_items)
     {}
 
@@ -341,10 +348,12 @@ struct BlockSelectRegion
 
         int flags[ITEMS_PER_THREAD];
 
+        Inequality2<EqualityOp> inequality_op(equality_op);
+
         if (FIRST_TILE)
         {
             // First tile always flags the first item
-            BlockDiscontinuityT(temp_storage.discontinuity).FlagHeads(flags, items, Inequality());
+            BlockDiscontinuityT(temp_storage.discontinuity).FlagHeads(flags, items, inequality_op);
         }
         else
         {
@@ -353,7 +362,7 @@ struct BlockSelectRegion
             if (threadIdx.x == 0)
                 tile_predecessor_item = d_in[block_offset - 1];
 
-            BlockDiscontinuityT(temp_storage.discontinuity).FlagHeads(flags, items, Inequality(), tile_predecessor_item);
+            BlockDiscontinuityT(temp_storage.discontinuity).FlagHeads(flags, items, inequality_op, tile_predecessor_item);
         }
 
         #pragma unroll
@@ -470,6 +479,17 @@ struct BlockSelectRegion
         Int2Type<false> keep_rejects,
         Int2Type<true>  two_phase_scatter)
     {
+        // Share exclusive tile prefix
+        if (threadIdx.x == 0)
+        {
+            temp_storage.tile_exclusive_prefix = tile_exclusive_prefix;
+        }
+
+        __syncthreads();
+
+        // Load exclusive tile prefix in all threads
+        tile_exclusive_prefix = temp_storage.tile_exclusive_prefix;
+
         Offset local_ranks[ITEMS_PER_THREAD];
         Offset is_valid[ITEMS_PER_THREAD];
 
@@ -479,8 +499,6 @@ struct BlockSelectRegion
             local_ranks[ITEM]   = allocation_offsets[ITEM].x - tile_exclusive_prefix.x;
             is_valid[ITEM]      = allocations[ITEM].x;
         }
-
-        __syncthreads();
 
         BlockExchangeT(temp_storage.exchange).ScatterToStriped(items, local_ranks, is_valid, valid_items.x);
 
@@ -574,12 +592,12 @@ struct BlockSelectRegion
         #pragma unroll
         for (int ITEM = 0; ITEM < ITEMS_PER_THREAD; ++ITEM)
         {
-            allocations[ITEM] = OffsetTuple();
+            allocations[ITEM] = ZeroInitialize<OffsetTuple>();
         }
 
         // Compute allocation offsets
         OffsetTuple allocation_offsets[ITEMS_PER_THREAD];       // Allocation offsets
-        OffsetTuple tile_exclusive_prefix;                                // The tile prefixes for selected (and rejected) items
+        OffsetTuple tile_exclusive_prefix;                      // The tile prefixes for selected (and rejected) items
         OffsetTuple block_aggregate;                            // Total number of items selected (and rejected)
         if (tile_idx == 0)
         {
@@ -596,7 +614,7 @@ struct BlockSelectRegion
 
             // Scan allocations
             BlockScanAllocations(temp_storage.scan).ExclusiveSum(allocations, allocation_offsets, block_aggregate);
-            tile_exclusive_prefix = OffsetTuple();        // Zeros
+            tile_exclusive_prefix = ZeroInitialize<OffsetTuple>();        // Zeros
 
             // Update tile status if there may be successor tiles (i.e., this tile is full)
             if (FULL_TILE && (threadIdx.x == 0))

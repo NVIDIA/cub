@@ -151,21 +151,21 @@ cudaError_t Dispatch(
 /**
  * Simple wrapper kernel to invoke DeviceSelect
  */
-template <int SELECT_METHOD, typename InputIterator, typename OutputIterator, typename NumSelectedIterator, typename Offset>
+template <typename InputIterator, typename OutputIterator, typename NumSelectedIterator, typename Offset>
 __global__ void CnpDispatchKernel(
-    Int2Type<SELECT_METHOD>     select_method,
     int                         timing_timing_iterations,
     size_t                      *d_temp_storage_bytes,
     cudaError_t                 *d_cdp_error,
 
     void                        *d_temp_storage,
-    size_t                      &temp_storage_bytes,
+    size_t                      temp_storage_bytes,
     InputIterator               d_in,
     OutputIterator              d_out,
     NumSelectedIterator         d_num_selected,
     Offset                      num_items,
     bool                        debug_synchronous)
 {
+
 #ifndef CUB_CDP
     *d_cdp_error = cudaErrorNotSupported;
 #else
@@ -179,7 +179,7 @@ __global__ void CnpDispatchKernel(
 /**
  * Dispatch to CDP kernel
  */
-template <int SELECT_METHOD, typename InputIterator, typename OutputIterator, typename NumSelectedIterator, typename Offset>
+template <typename InputIterator, typename OutputIterator, typename NumSelectedIterator, typename Offset>
 cudaError_t Dispatch(
     Int2Type<CDP>               dispatch_to,
     int                         timing_timing_iterations,
@@ -533,7 +533,9 @@ void Test(
  */
 int main(int argc, char** argv)
 {
-    int num_items = -1;
+    int num_items           = -1;
+    int entropy_reduction   = 0;
+    int maxseg              = 1000;
 
     // Initialize command line
     CommandLineArgs args(argc, argv);
@@ -542,6 +544,8 @@ int main(int argc, char** argv)
     args.GetCmdLineArgument("n", num_items);
     args.GetCmdLineArgument("i", g_timing_iterations);
     args.GetCmdLineArgument("repeat", g_repeat);
+    args.GetCmdLineArgument("maxseg", maxseg);
+    args.GetCmdLineArgument("entropy", entropy_reduction);
 
     // Print usage
     if (args.CheckCmdLineFlag("help"))
@@ -550,6 +554,8 @@ int main(int argc, char** argv)
             "[--n=<input items> "
             "[--i=<timing iterations> "
             "[--device=<device-id>] "
+            "[--maxseg=<max segment length>]"
+            "[--entropy=<segment length bit entropy reduction rounds>]"
             "[--repeat=<repetitions of entire test suite>]"
             "[--quick]"
             "[--v] "
@@ -575,31 +581,30 @@ int main(int argc, char** argv)
         // Quick test
         if (num_items < 0) num_items = 32000000;
 
-        TestPointer<CUB, char>(        num_items * ((sm_version <= 130) ? 1 : 4), 0, 1000, CUB_TYPE_STRING(char));
-        TestPointer<THRUST, char>(     num_items * ((sm_version <= 130) ? 1 : 4), 0, 1000, CUB_TYPE_STRING(char));
+        TestPointer<CUB, char>(        num_items * ((sm_version <= 130) ? 1 : 4), entropy_reduction, maxseg, CUB_TYPE_STRING(char));
+        TestPointer<THRUST, char>(     num_items * ((sm_version <= 130) ? 1 : 4), entropy_reduction, maxseg, CUB_TYPE_STRING(char));
 
         printf("----------------------------\n");
-        TestPointer<CUB, short>(       num_items * ((sm_version <= 130) ? 1 : 2), 0, 1000, CUB_TYPE_STRING(short));
-        TestPointer<THRUST, short>(    num_items * ((sm_version <= 130) ? 1 : 2), 0, 1000, CUB_TYPE_STRING(short));
+        TestPointer<CUB, short>(       num_items * ((sm_version <= 130) ? 1 : 2), entropy_reduction, maxseg, CUB_TYPE_STRING(short));
+        TestPointer<THRUST, short>(    num_items * ((sm_version <= 130) ? 1 : 2), entropy_reduction, maxseg, CUB_TYPE_STRING(short));
 
         printf("----------------------------\n");
-        TestPointer<CUB, int>(         num_items,                                 0, 1000, CUB_TYPE_STRING(int));
-        TestPointer<THRUST, int>(      num_items,                                 0, 1000, CUB_TYPE_STRING(int));
+        TestPointer<CUB, int>(         num_items,                                 entropy_reduction, maxseg, CUB_TYPE_STRING(int));
+        TestPointer<THRUST, int>(      num_items,                                 entropy_reduction, maxseg, CUB_TYPE_STRING(int));
 
         printf("----------------------------\n");
-        TestPointer<CUB, long long>(   num_items / 2,                             0, 1000, CUB_TYPE_STRING(long long));
-        TestPointer<THRUST, long long>(num_items / 2,                             0, 1000, CUB_TYPE_STRING(long long));
+        TestPointer<CUB, long long>(   num_items / 2,                             entropy_reduction, maxseg, CUB_TYPE_STRING(long long));
+        TestPointer<THRUST, long long>(num_items / 2,                             entropy_reduction, maxseg, CUB_TYPE_STRING(long long));
 
         printf("----------------------------\n");
-        TestPointer<CUB, TestFoo>(     num_items / 4,                             0, 1000, CUB_TYPE_STRING(TestFoo));
-        TestPointer<THRUST, TestFoo>(  num_items / 4,                             0, 1000, CUB_TYPE_STRING(TestFoo));
+        TestPointer<CUB, TestFoo>(     num_items / 4,                             entropy_reduction, maxseg, CUB_TYPE_STRING(TestFoo));
+        TestPointer<THRUST, TestFoo>(  num_items / 4,                             entropy_reduction, maxseg, CUB_TYPE_STRING(TestFoo));
     }
     else
     {
         // Repeat test sequence
         for (int i = 0; i <= g_repeat; ++i)
         {
-
             // Test different input types
             Test<unsigned char>(num_items, CUB_TYPE_STRING(unsigned char));
             Test<unsigned short>(num_items, CUB_TYPE_STRING(unsigned short));
