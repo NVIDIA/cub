@@ -370,13 +370,13 @@ public:
         __syncthreads();
 
         // Set flag for first item
-        int predecessor = (linear_tid == 0) ?
+        T predecessor_item = (linear_tid == 0) ?
             tile_predecessor_item :              // First thread
             temp_storage[linear_tid - 1];
 
         head_flags[0] = ApplyOp<FlagOp>::Flag(
             flag_op,
-            predecessor,
+            predecessor_item,
             input[0],
             linear_tid * ITEMS_PER_THREAD);
 
@@ -556,7 +556,7 @@ public:
         __syncthreads();
 
         // Set flag for last item
-        int successor_item = (linear_tid == BLOCK_THREADS - 1) ?
+        T successor_item = (linear_tid == BLOCK_THREADS - 1) ?
             tile_successor_item :              // Last thread
             temp_storage[linear_tid + 1];
 
