@@ -145,6 +145,13 @@ namespace cub {
                 (16 * 1024) :                           \
                 (8 * 1024))))
 
+/// Oversubscription factor
+#define CUB_SUBSCRIPTION_FACTOR(arch)                   \
+    ((arch >= 300) ?                                    \
+        (5) :                                           \
+        (3))
+
+
 #ifndef DOXYGEN_SHOULD_SKIP_THIS    // Do not document
 
 #define CUB_PTX_LOG_WARP_THREADS    CUB_LOG_WARP_THREADS(CUB_PTX_VERSION)

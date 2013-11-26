@@ -209,8 +209,8 @@ struct DeviceRadixSortDispatch
         typedef typename If<KEYS_ONLY, UpsweepPolicyKeys, UpsweepPolicyPairs>::Type UpsweepPolicy;
 
         // Alternate UpsweepPolicy for (RADIX_BITS-1)-bit passes
-        typedef BlockRadixSortUpsweepRegionPolicy <128, 15, LOAD_LDG, RADIX_BITS - 1> AltUpsweepPolicyKeys;
-        typedef BlockRadixSortUpsweepRegionPolicy <256, 13, LOAD_LDG, RADIX_BITS - 1> AltUpsweepPolicyPairs;
+        typedef BlockRadixSortUpsweepRegionPolicy <64,     CUB_MAX(1, 22 / SCALE_FACTOR), LOAD_LDG, RADIX_BITS - 1> AltUpsweepPolicyKeys;
+        typedef BlockRadixSortUpsweepRegionPolicy <128,    CUB_MAX(1, 15 / SCALE_FACTOR), LOAD_LDG, RADIX_BITS - 1> AltUpsweepPolicyPairs;
         typedef typename If<KEYS_ONLY, AltUpsweepPolicyKeys, AltUpsweepPolicyPairs>::Type AltUpsweepPolicy;
 
         // ScanPolicy
@@ -222,8 +222,8 @@ struct DeviceRadixSortDispatch
         typedef typename If<KEYS_ONLY, DownsweepPolicyKeys, DownsweepPolicyPairs>::Type DownsweepPolicy;
 
         // Alternate DownsweepPolicy for (RADIX_BITS-1)-bit passes
-        typedef BlockRadixSortDownsweepRegionPolicy <128, 15, BLOCK_LOAD_DIRECT, LOAD_LDG, false, true, BLOCK_SCAN_WARP_SCANS, RADIX_SORT_SCATTER_TWO_PHASE, cudaSharedMemBankSizeEightByte, RADIX_BITS - 1> AltDownsweepPolicyKeys;
-        typedef BlockRadixSortDownsweepRegionPolicy <256, 13, BLOCK_LOAD_DIRECT, LOAD_LDG, false, true, BLOCK_SCAN_WARP_SCANS, RADIX_SORT_SCATTER_TWO_PHASE, cudaSharedMemBankSizeEightByte, RADIX_BITS - 1> AltDownsweepPolicyPairs;
+        typedef BlockRadixSortDownsweepRegionPolicy <128,  CUB_MAX(1, 11 / SCALE_FACTOR), BLOCK_LOAD_DIRECT, LOAD_LDG, false, true, BLOCK_SCAN_WARP_SCANS, RADIX_SORT_SCATTER_TWO_PHASE, cudaSharedMemBankSizeEightByte, RADIX_BITS - 1> AltDownsweepPolicyKeys;
+        typedef BlockRadixSortDownsweepRegionPolicy <128,  CUB_MAX(1, 15 / SCALE_FACTOR), BLOCK_LOAD_DIRECT, LOAD_LDG, false, true, BLOCK_SCAN_WARP_SCANS, RADIX_SORT_SCATTER_TWO_PHASE, cudaSharedMemBankSizeEightByte, RADIX_BITS - 1> AltDownsweepPolicyPairs;
         typedef typename If<KEYS_ONLY, AltDownsweepPolicyKeys, AltDownsweepPolicyPairs>::Type AltDownsweepPolicy;
     };
 
@@ -521,7 +521,7 @@ struct DeviceRadixSortDispatch
             smem_config                 = cudaSharedMemBankSizeFourByte;
             tile_size                   = block_threads * items_per_thread;
             cudaError_t retval          = MaxSmOccupancy(sm_occupancy, sm_version, upsweep_kernel, block_threads);
-            subscription_factor         = sm_occupancy;
+            subscription_factor         = CUB_SUBSCRIPTION_FACTOR(sm_version);
             max_grid_size               = (sm_occupancy * sm_count) * subscription_factor;
 
             return retval;
@@ -553,7 +553,7 @@ struct DeviceRadixSortDispatch
             smem_config                 = DownsweepPolicy::SMEM_CONFIG;
             tile_size                   = block_threads * items_per_thread;
             cudaError_t retval          = MaxSmOccupancy(sm_occupancy, sm_version, downsweep_kernel, block_threads);
-            subscription_factor         = sm_occupancy;
+            subscription_factor         = CUB_SUBSCRIPTION_FACTOR(sm_version);
             max_grid_size               = (sm_occupancy * sm_count) * subscription_factor;
 
             return retval;

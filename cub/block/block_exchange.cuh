@@ -918,10 +918,10 @@ public:
      */
     template <typename ValidFlag>
     __device__ __forceinline__ void ScatterToStriped(
-        T               items[ITEMS_PER_THREAD],    ///< [in-out] Items to exchange
-        int             ranks[ITEMS_PER_THREAD],    ///< [in] Corresponding scatter ranks
-        ValidFlag       is_valid[ITEMS_PER_THREAD], ///< [in] Corresponding flag denoting item validity
-        int             valid_items)                  ///< [in] Number of valid items held by all threads
+        T               items[ITEMS_PER_THREAD],        ///< [in-out] Items to exchange
+        int             ranks[ITEMS_PER_THREAD],        ///< [in] Corresponding scatter ranks
+        ValidFlag       is_valid[ITEMS_PER_THREAD],     ///< [in] Corresponding flag denoting item validity
+        int             valid_items)                    ///< [in] Number of valid items held by all threads
     {
         #pragma unroll
         for (int ITEM = 0; ITEM < ITEMS_PER_THREAD; ITEM++)
