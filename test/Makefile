@@ -411,6 +411,15 @@ bin/test_device_select_unique_$(SUFFIX) : test_device_select_unique.cu $(DEPS)
 	$(NVCC) $(DEFINES) $(SM_TARGETS) -o bin/test_device_select_unique_$(SUFFIX) test_device_select_unique.cu $(NVCCFLAGS) $(CPU_ARCH) $(INC) $(LIBS) -O3
 
 
+#-------------------------------------------------------------------------------
+# make test_device_select_flagged
+#-------------------------------------------------------------------------------
+
+test_device_select_flagged: bin/test_device_select_flagged_$(SUFFIX)
+
+bin/test_device_select_flagged_$(SUFFIX) : test_device_select_flagged.cu $(DEPS)
+	mkdir -p bin
+	$(NVCC) $(DEFINES) $(SM_TARGETS) -o bin/test_device_select_flagged_$(SUFFIX) test_device_select_flagged.cu $(NVCCFLAGS) $(CPU_ARCH) $(INC) $(LIBS) -O3
 
 
 #-------------------------------------------------------------------------------

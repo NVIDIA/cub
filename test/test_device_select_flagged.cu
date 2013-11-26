@@ -27,7 +27,7 @@
  ******************************************************************************/
 
 /******************************************************************************
- * Test of DeviceSelect::CopyUnique utilities
+ * Test of DeviceSelect::CopyFlagged utilities
  ******************************************************************************/
 
 // Ensure printing of CUDA runtime errors to console
@@ -39,7 +39,7 @@
 #include <cub/device/device_select.cuh>
 
 #include <thrust/device_ptr.h>
-#include <thrust/unique.h>
+#include <thrust/copy.h>
 
 #include "test_util.h"
 
@@ -65,7 +65,7 @@ CachingDeviceAllocator  g_allocator(true);
 /**
  * Dispatch to unique entrypoint
  */
-template <typename InputIterator, typename OutputIterator, typename NumSelectedIterator, typename Offset>
+template <typename InputIterator, typename FlagIterator, typename OutputIterator, typename NumSelectedIterator, typename Offset>
 __host__ __device__ __forceinline__
 cudaError_t Dispatch(
     Int2Type<CUB>               dispatch_to,
@@ -76,6 +76,7 @@ cudaError_t Dispatch(
     void                        *d_temp_storage,
     size_t                      &temp_storage_bytes,
     InputIterator               d_in,
+    FlagIterator                d_flags,
     OutputIterator              d_out,
     NumSelectedIterator         d_num_selected,
     Offset                      num_items,
@@ -85,7 +86,7 @@ cudaError_t Dispatch(
     cudaError_t error = cudaSuccess;
     for (int i = 0; i < timing_timing_iterations; ++i)
     {
-        error = DeviceSelect::CopyUnique(d_temp_storage, temp_storage_bytes, d_in, d_out, d_num_selected, num_items, stream, debug_synchronous);
+        error = DeviceSelect::CopyFlagged(d_temp_storage, temp_storage_bytes, d_in, d_flags, d_out, d_num_selected, num_items, stream, debug_synchronous);
     }
     return error;
 }
@@ -95,11 +96,10 @@ cudaError_t Dispatch(
 // Dispatch to different Thrust entrypoints
 //---------------------------------------------------------------------
 
-
 /**
  * Dispatch to unique entrypoint
  */
-template <typename InputIterator, typename OutputIterator, typename NumSelectedIterator, typename Offset>
+template <typename InputIterator, typename FlagIterator, typename OutputIterator, typename NumSelectedIterator, typename Offset>
 __host__ __forceinline__
 cudaError_t Dispatch(
     Int2Type<THRUST>            dispatch_to,
@@ -110,13 +110,16 @@ cudaError_t Dispatch(
     void                        *d_temp_storage,
     size_t                      &temp_storage_bytes,
     InputIterator               d_in,
+    FlagIterator                d_flags,
     OutputIterator              d_out,
     NumSelectedIterator         d_num_selected,
     Offset                      num_items,
     cudaStream_t                stream,
     bool                        debug_synchronous)
 {
-    typedef typename std::iterator_traits<InputIterator>::value_type T;
+    typedef typename std::iterator_traits<InputIterator>::value_type    T;
+    typedef typename std::iterator_traits<FlagIterator>::value_type     Flag;
+
 
     if (d_temp_storage == 0)
     {
@@ -124,17 +127,19 @@ cudaError_t Dispatch(
     }
     else
     {
-        thrust::device_ptr<T> d_out_wrapper_end;
-        thrust::device_ptr<T> d_in_wrapper(d_in);
-        thrust::device_ptr<T> d_out_wrapper(d_out);
+        thrust::device_ptr<T>       d_out_wrapper_end;
+
+        thrust::device_ptr<T>       d_in_wrapper(d_in);
+        thrust::device_ptr<T>       d_out_wrapper(d_out);
+        thrust::device_ptr<Flag>    d_flags_wrapper(d_flags);
+
         for (int i = 0; i < timing_timing_iterations; ++i)
         {
-            d_out_wrapper_end = thrust::unique_copy(d_in_wrapper, d_in_wrapper + num_items, d_out_wrapper);
+            d_out_wrapper_end = thrust::copy_if(d_in_wrapper, d_in_wrapper + num_items, d_flags_wrapper, d_out_wrapper, Cast<bool>());
         }
 
         Offset num_selected = d_out_wrapper_end - d_out_wrapper;
         CubDebugExit(cudaMemcpy(d_num_selected, &num_selected, sizeof(Offset), cudaMemcpyHostToDevice));
-
     }
 
     return cudaSuccess;
@@ -149,7 +154,7 @@ cudaError_t Dispatch(
 /**
  * Simple wrapper kernel to invoke DeviceSelect
  */
-template <typename InputIterator, typename OutputIterator, typename NumSelectedIterator, typename Offset>
+template <typename InputIterator, typename FlagIterator, typename OutputIterator, typename NumSelectedIterator, typename Offset>
 __global__ void CnpDispatchKernel(
     int                         timing_timing_iterations,
     size_t                      *d_temp_storage_bytes,
@@ -158,6 +163,7 @@ __global__ void CnpDispatchKernel(
     void                        *d_temp_storage,
     size_t                      temp_storage_bytes,
     InputIterator               d_in,
+    FlagIterator                d_flags,
     OutputIterator              d_out,
     NumSelectedIterator         d_num_selected,
     Offset                      num_items,
@@ -168,7 +174,7 @@ __global__ void CnpDispatchKernel(
     *d_cdp_error = cudaErrorNotSupported;
 #else
     *d_cdp_error = Dispatch(Int2Type<CUB>(), timing_timing_iterations, d_temp_storage_bytes, d_cdp_error,
-        d_temp_storage, temp_storage_bytes, d_in, d_out, d_num_selected, num_items, 0, debug_synchronous);
+        d_temp_storage, temp_storage_bytes, d_in, d_flags, d_out, d_num_selected, num_items, 0, debug_synchronous);
     *d_temp_storage_bytes = temp_storage_bytes;
 #endif
 }
@@ -177,7 +183,7 @@ __global__ void CnpDispatchKernel(
 /**
  * Dispatch to CDP kernel
  */
-template <typename InputIterator, typename OutputIterator, typename NumSelectedIterator, typename Offset>
+template <typename InputIterator, typename FlagIterator, typename OutputIterator, typename NumSelectedIterator, typename Offset>
 cudaError_t Dispatch(
     Int2Type<CDP>               dispatch_to,
     int                         timing_timing_iterations,
@@ -187,6 +193,7 @@ cudaError_t Dispatch(
     void                        *d_temp_storage,
     size_t                      &temp_storage_bytes,
     InputIterator               d_in,
+    FlagIterator                d_flags,
     OutputIterator              d_out,
     NumSelectedIterator         d_num_selected,
     Offset                      num_items,
@@ -195,7 +202,7 @@ cudaError_t Dispatch(
 {
     // Invoke kernel to invoke device-side dispatch
     CnpDispatchKernel<<<1,1>>>(timing_timing_iterations, d_temp_storage_bytes, d_cdp_error,
-        d_temp_storage, temp_storage_bytes, d_in, d_out, d_num_selected, num_items, debug_synchronous);
+        d_temp_storage, temp_storage_bytes, d_in, d_flags, d_out, d_num_selected, num_items, debug_synchronous);
 
     // Copy out temp_storage_bytes
     CubDebugExit(cudaMemcpy(&temp_storage_bytes, d_temp_storage_bytes, sizeof(size_t) * 1, cudaMemcpyDeviceToHost));
@@ -216,10 +223,11 @@ cudaError_t Dispatch(
 /**
  * Initialize problem
  */
-template <typename T>
+template <typename T, typename Flag>
 void Initialize(
     int         entropy_reduction,
     T           *h_in,
+    Flag        *h_flags,
     int         num_items,
     int         max_segment)
 {
@@ -230,7 +238,6 @@ void Initialize(
     while (i < num_items)
     {
         // Select number of repeating occurrences
-
         unsigned short repeat;
         RandomBits(repeat, entropy_reduction);
         repeat = (unsigned short) ((float(repeat) * (float(max_segment) / float(max_short))));
@@ -239,10 +246,12 @@ void Initialize(
         int j = i;
         while (j < CUB_MIN(i + repeat, num_items))
         {
+            h_flags[j] = 0;
             InitValue(SEQ_INC, h_in[j], key);
             j++;
         }
 
+        h_flags[i] = 1;
         i = j;
         key++;
     }
@@ -251,6 +260,8 @@ void Initialize(
     {
         printf("Input:\n");
         DisplayResults(h_in, num_items);
+        printf("Flags:\n");
+        DisplayResults(h_flags, num_items);
         printf("\n\n");
     }
 }
@@ -261,22 +272,18 @@ void Initialize(
  */
 template <
     typename        InputIterator,
+    typename        FlagIterator,
     typename        T>
 int Solve(
     InputIterator   h_in,
+    FlagIterator    h_flags,
     T               *h_reference,
     int             num_items)
 {
     int num_selected = 0;
-    if (num_items > 0)
+    for (int i = 0; i < num_items; ++i)
     {
-        h_reference[num_selected] = h_in[0];
-        num_selected++;
-    }
-
-    for (int i = 1; i < num_items; ++i)
-    {
-        if (h_in[i] != h_in[i - 1])
+        if (h_flags[i])
         {
             h_reference[num_selected] = h_in[i];
             num_selected++;
@@ -294,14 +301,18 @@ int Solve(
 template <
     Backend             BACKEND,
     typename            DeviceInputIterator,
+    typename            DeviceFlagIterator,
     typename            T>
 void Test(
     DeviceInputIterator d_in,
+    DeviceFlagIterator  d_flags,
     T                   *h_reference,
     int                 num_selected,
     int                 num_items,
     char*               type_string)
 {
+    typedef typename std::iterator_traits<DeviceFlagIterator>::value_type Flag;
+
     // Allocate device output array and num selected
     T       *d_out            = NULL;
     int     *d_num_selected   = NULL;
@@ -317,7 +328,7 @@ void Test(
     // Allocate temporary storage
     void            *d_temp_storage = NULL;
     size_t          temp_storage_bytes = 0;
-    CubDebugExit(Dispatch(Int2Type<BACKEND>(), 1, d_temp_storage_bytes, d_cdp_error, d_temp_storage, temp_storage_bytes, d_in, d_out, d_num_selected, num_items, 0, true));
+    CubDebugExit(Dispatch(Int2Type<BACKEND>(), 1, d_temp_storage_bytes, d_cdp_error, d_temp_storage, temp_storage_bytes, d_in, d_flags, d_out, d_num_selected, num_items, 0, true));
     CubDebugExit(g_allocator.DeviceAllocate(&d_temp_storage, temp_storage_bytes));
 
     // Clear device output array
@@ -325,7 +336,7 @@ void Test(
     CubDebugExit(cudaMemset(d_num_selected, 0, sizeof(int)));
 
     // Run warmup/correctness iteration
-    CubDebugExit(Dispatch(Int2Type<BACKEND>(), 1, d_temp_storage_bytes, d_cdp_error, d_temp_storage, temp_storage_bytes, d_in, d_out, d_num_selected, num_items, 0, true));
+    CubDebugExit(Dispatch(Int2Type<BACKEND>(), 1, d_temp_storage_bytes, d_cdp_error, d_temp_storage, temp_storage_bytes, d_in, d_flags, d_out, d_num_selected, num_items, 0, true));
 
     // Check for correctness (and display results, if specified)
     int compare = CompareDeviceResults(h_reference, d_out, num_selected, true, g_verbose);
@@ -338,7 +349,7 @@ void Test(
     // Performance
     GpuTimer gpu_timer;
     gpu_timer.Start();
-    CubDebugExit(Dispatch(Int2Type<BACKEND>(), g_timing_iterations, d_temp_storage_bytes, d_cdp_error, d_temp_storage, temp_storage_bytes, d_in, d_out, d_num_selected, num_items, 0, false));
+    CubDebugExit(Dispatch(Int2Type<BACKEND>(), g_timing_iterations, d_temp_storage_bytes, d_cdp_error, d_temp_storage, temp_storage_bytes, d_in, d_flags, d_out, d_num_selected, num_items, 0, false));
     gpu_timer.Stop();
     float elapsed_millis = gpu_timer.ElapsedMillis();
 
@@ -347,7 +358,7 @@ void Test(
     {
         float avg_millis = elapsed_millis / g_timing_iterations;
         float grate = float(num_items) / avg_millis / 1000.0 / 1000.0;
-        float gbandwidth = float((num_items + num_selected) * sizeof(T)) / avg_millis / 1000.0 / 1000.0;
+        float gbandwidth = float(((num_items + num_selected) * sizeof(T)) + (num_items * sizeof(Flag))) / avg_millis / 1000.0 / 1000.0;
         printf(", %.3f avg ms, %.3f billion items/s, %.3f logical GB/s", avg_millis, grate, gbandwidth);
     }
     printf("\n\n");
@@ -380,15 +391,18 @@ void TestPointer(
     int             max_segment,
     char*           type_string)
 {
+    typedef char Flag;
+
     // Allocate host arrays
-    T*  h_in        = new T[num_items];
-    T*  h_reference = new T[num_items];
+    T       *h_in        = new T[num_items];
+    T       *h_reference = new T[num_items];
+    Flag    *h_flags     = new Flag[num_items];
 
     // Initialize problem and solution
-    Initialize(entropy_reduction, h_in, num_items, max_segment);
-    int num_selected = Solve(h_in, h_reference, num_items);
+    Initialize(entropy_reduction, h_in, h_flags, num_items, max_segment);
+    int num_selected = Solve(h_in, h_flags, h_reference, num_items);
 
-    printf("\nPointer %s cub::DeviceSelect::CopyUnique %d items, %d selected (avg run length %d), %s %d-byte elements, entropy_reduction %d\n",
+    printf("\nPointer %s cub::DeviceSelect::CopyFlagged %d items, %d selected (avg run length %d), %s %d-byte elements, entropy_reduction %d\n",
         (BACKEND == CDP) ? "CDP CUB" : (BACKEND == THRUST) ? "Thrust" : "CUB",
         num_items, num_selected, num_items / num_selected,
         type_string,
@@ -397,19 +411,24 @@ void TestPointer(
     fflush(stdout);
 
     // Allocate problem device arrays
-    T *d_in = NULL;
+    T       *d_in = NULL;
+    Flag    *d_flags = NULL;
+
     CubDebugExit(g_allocator.DeviceAllocate((void**)&d_in, sizeof(T) * num_items));
+    CubDebugExit(g_allocator.DeviceAllocate((void**)&d_flags, sizeof(Flag) * num_items));
 
     // Initialize device input
     CubDebugExit(cudaMemcpy(d_in, h_in, sizeof(T) * num_items, cudaMemcpyHostToDevice));
+    CubDebugExit(cudaMemcpy(d_flags, h_flags, sizeof(Flag) * num_items, cudaMemcpyHostToDevice));
 
     // Run Test
-    Test<BACKEND>(d_in, h_reference, num_selected, num_items, type_string);
+    Test<BACKEND>(d_in, d_flags, h_reference, num_selected, num_items, type_string);
 
     // Cleanup
     if (h_in) delete[] h_in;
     if (h_reference) delete[] h_reference;
     if (d_in) CubDebugExit(g_allocator.DeviceFree(d_in));
+    if (d_flags) CubDebugExit(g_allocator.DeviceFree(d_flags));
 }
 
 
@@ -424,16 +443,19 @@ void TestIterator(
     char*           type_string,
     Int2Type<true>  is_number)
 {
+    typedef char Flag;
+
     // Use a counting iterator as the input
     CountingInputIterator<T, int> h_in(0);
+    ConstantInputIterator<Flag, int> h_flags(1);
 
     // Allocate host arrays
     T*  h_reference = new T[num_items];
 
     // Initialize problem and solution
-    int num_selected = Solve(h_in, h_reference, num_items);
+    int num_selected = Solve(h_in, h_flags, h_reference, num_items);
 
-    printf("\nIterator %s cub::DeviceSelect::CopyUnique %d items, %d selected (avg run length %d), %s %d-byte elements\n",
+    printf("\nIterator %s cub::DeviceSelect::CopyFlagged %d items, %d selected (avg run length %d), %s %d-byte elements\n",
         (BACKEND == CDP) ? "CDP CUB" : (BACKEND == THRUST) ? "Thrust" : "CUB",
         num_items, num_selected, num_items / num_selected,
         type_string,
@@ -441,7 +463,7 @@ void TestIterator(
     fflush(stdout);
 
     // Run Test
-    Test<BACKEND>(h_in, h_reference, num_selected, num_items, type_string);
+    Test<BACKEND>(h_in, h_flags, h_reference, num_selected, num_items, type_string);
 
     // Cleanup
     if (h_reference) delete[] h_reference;
