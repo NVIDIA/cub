@@ -329,7 +329,10 @@ void Test(
 
     // Check for correctness (and display results, if specified)
     int compare = CompareDeviceResults(h_reference, d_out, num_selected, true, g_verbose);
-    printf("\t%s", compare ? "FAIL" : "PASS");
+    printf("\t Data %s ", compare ? "FAIL" : "PASS");
+
+    compare = compare | CompareDeviceResults(&num_selected, d_num_selected, 1, true, g_verbose);
+    printf("\t Count %s ", compare ? "FAIL" : "PASS");
 
     // Flush any stdout/stderr
     fflush(stdout);

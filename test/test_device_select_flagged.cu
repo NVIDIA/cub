@@ -37,9 +37,12 @@
 
 #include <cub/util_allocator.cuh>
 #include <cub/device/device_select.cuh>
+#include <cub/device/device_partition.cuh>
 
 #include <thrust/device_ptr.h>
 #include <thrust/copy.h>
+#include <thrust/partition.h>
+#include <thrust/iterator/reverse_iterator.h>
 
 #include "test_util.h"
 
@@ -63,12 +66,13 @@ CachingDeviceAllocator  g_allocator(true);
 
 
 /**
- * Dispatch to unique entrypoint
+ * Dispatch to select flagged entrypoint
  */
 template <typename InputIterator, typename FlagIterator, typename OutputIterator, typename NumSelectedIterator, typename Offset>
 __host__ __device__ __forceinline__
 cudaError_t Dispatch(
     Int2Type<CUB>               dispatch_to,
+    Int2Type<false>             partition,
     int                         timing_timing_iterations,
     size_t                      *d_temp_storage_bytes,
     cudaError_t                 *d_cdp_error,
@@ -92,17 +96,50 @@ cudaError_t Dispatch(
 }
 
 
+/**
+ * Dispatch to partition flagged entrypoint
+ */
+template <typename InputIterator, typename FlagIterator, typename OutputIterator, typename NumSelectedIterator, typename Offset>
+__host__ __device__ __forceinline__
+cudaError_t Dispatch(
+    Int2Type<CUB>               dispatch_to,
+    Int2Type<true>              partition,
+    int                         timing_timing_iterations,
+    size_t                      *d_temp_storage_bytes,
+    cudaError_t                 *d_cdp_error,
+
+    void                        *d_temp_storage,
+    size_t                      &temp_storage_bytes,
+    InputIterator               d_in,
+    FlagIterator                d_flags,
+    OutputIterator              d_out,
+    NumSelectedIterator         d_num_selected,
+    Offset                      num_items,
+    cudaStream_t                stream,
+    bool                        debug_synchronous)
+{
+    cudaError_t error = cudaSuccess;
+    for (int i = 0; i < timing_timing_iterations; ++i)
+    {
+        error = DevicePartition::Flagged(d_temp_storage, temp_storage_bytes, d_in, d_flags, d_out, d_num_selected, num_items, stream, debug_synchronous);
+    }
+    return error;
+}
+
+
+
 //---------------------------------------------------------------------
 // Dispatch to different Thrust entrypoints
 //---------------------------------------------------------------------
 
 /**
- * Dispatch to unique entrypoint
+ * Dispatch to select flagged entrypoint
  */
 template <typename InputIterator, typename FlagIterator, typename OutputIterator, typename NumSelectedIterator, typename Offset>
 __host__ __forceinline__
 cudaError_t Dispatch(
     Int2Type<THRUST>            dispatch_to,
+    Int2Type<false>             partition,
     int                         timing_timing_iterations,
     size_t                      *d_temp_storage_bytes,
     cudaError_t                 *d_cdp_error,
@@ -146,6 +183,66 @@ cudaError_t Dispatch(
 }
 
 
+/**
+ * Dispatch to partition entrypoint
+ */
+template <typename InputIterator, typename FlagIterator, typename OutputIterator, typename NumSelectedIterator, typename Offset>
+__host__ __forceinline__
+cudaError_t Dispatch(
+    Int2Type<THRUST>            dispatch_to,
+    Int2Type<true>              partition,
+    int                         timing_timing_iterations,
+    size_t                      *d_temp_storage_bytes,
+    cudaError_t                 *d_cdp_error,
+
+    void                        *d_temp_storage,
+    size_t                      &temp_storage_bytes,
+    InputIterator               d_in,
+    FlagIterator                d_flags,
+    OutputIterator              d_out,
+    NumSelectedIterator         d_num_selected,
+    Offset                      num_items,
+    cudaStream_t                stream,
+    bool                        debug_synchronous)
+{
+    typedef typename std::iterator_traits<InputIterator>::value_type    T;
+    typedef typename std::iterator_traits<FlagIterator>::value_type     Flag;
+
+    typedef thrust::reverse_iterator<thrust::device_ptr<T> > ReverseOutputIterator;
+
+    if (d_temp_storage == 0)
+    {
+        temp_storage_bytes = 1;
+    }
+    else
+    {
+        thrust::pair<thrust::device_ptr<T>, ReverseOutputIterator> d_out_wrapper_end;
+
+        thrust::device_ptr<T>       d_in_wrapper(d_in);
+        thrust::device_ptr<T>       d_out_wrapper(d_out);
+        thrust::device_ptr<Flag>    d_flags_wrapper(d_flags);
+
+        ReverseOutputIterator d_out_unselected(d_out_wrapper + num_items);
+
+        for (int i = 0; i < timing_timing_iterations; ++i)
+        {
+            d_out_wrapper_end = thrust::partition_copy(
+                d_in_wrapper,
+                d_in_wrapper + num_items,
+                d_flags_wrapper,
+                d_out_wrapper,
+                d_out_unselected,
+                Cast<bool>());
+        }
+
+        Offset num_selected = d_out_wrapper_end.first - d_out_wrapper;
+        CubDebugExit(cudaMemcpy(d_num_selected, &num_selected, sizeof(Offset), cudaMemcpyHostToDevice));
+    }
+
+    return cudaSuccess;
+}
+
+
 
 //---------------------------------------------------------------------
 // CUDA Nested Parallelism Test Kernel
@@ -154,8 +251,9 @@ cudaError_t Dispatch(
 /**
  * Simple wrapper kernel to invoke DeviceSelect
  */
-template <typename InputIterator, typename FlagIterator, typename OutputIterator, typename NumSelectedIterator, typename Offset>
+template <typename InputIterator, typename FlagIterator, typename OutputIterator, typename NumSelectedIterator, typename Offset, bool PARTITION>
 __global__ void CnpDispatchKernel(
+    Int2Type<PARTITION>         partition,
     int                         timing_timing_iterations,
     size_t                      *d_temp_storage_bytes,
     cudaError_t                 *d_cdp_error,
@@ -173,7 +271,7 @@ __global__ void CnpDispatchKernel(
 #ifndef CUB_CDP
     *d_cdp_error = cudaErrorNotSupported;
 #else
-    *d_cdp_error = Dispatch(Int2Type<CUB>(), timing_timing_iterations, d_temp_storage_bytes, d_cdp_error,
+    *d_cdp_error = Dispatch(Int2Type<CUB>(), partition, timing_timing_iterations, d_temp_storage_bytes, d_cdp_error,
         d_temp_storage, temp_storage_bytes, d_in, d_flags, d_out, d_num_selected, num_items, 0, debug_synchronous);
     *d_temp_storage_bytes = temp_storage_bytes;
 #endif
@@ -183,9 +281,10 @@ __global__ void CnpDispatchKernel(
 /**
  * Dispatch to CDP kernel
  */
-template <typename InputIterator, typename FlagIterator, typename OutputIterator, typename NumSelectedIterator, typename Offset>
+template <typename InputIterator, typename FlagIterator, typename OutputIterator, typename NumSelectedIterator, typename Offset, bool PARTITION>
 cudaError_t Dispatch(
     Int2Type<CDP>               dispatch_to,
+    Int2Type<PARTITION>         partition,
     int                         timing_timing_iterations,
     size_t                      *d_temp_storage_bytes,
     cudaError_t                 *d_cdp_error,
@@ -201,7 +300,7 @@ cudaError_t Dispatch(
     bool                        debug_synchronous)
 {
     // Invoke kernel to invoke device-side dispatch
-    CnpDispatchKernel<<<1,1>>>(timing_timing_iterations, d_temp_storage_bytes, d_cdp_error,
+    CnpDispatchKernel<<<1,1>>>(partition, timing_timing_iterations, d_temp_storage_bytes, d_cdp_error,
         d_temp_storage, temp_storage_bytes, d_in, d_flags, d_out, d_num_selected, num_items, debug_synchronous);
 
     // Copy out temp_storage_bytes
@@ -288,6 +387,10 @@ int Solve(
             h_reference[num_selected] = h_in[i];
             num_selected++;
         }
+        else
+        {
+            h_reference[num_items - (i - num_selected) - 1] = h_in[i];
+        }
     }
 
     return num_selected;
@@ -300,6 +403,7 @@ int Solve(
  */
 template <
     Backend             BACKEND,
+    bool                PARTITION,
     typename            DeviceInputIterator,
     typename            DeviceFlagIterator,
     typename            T>
@@ -328,7 +432,8 @@ void Test(
     // Allocate temporary storage
     void            *d_temp_storage = NULL;
     size_t          temp_storage_bytes = 0;
-    CubDebugExit(Dispatch(Int2Type<BACKEND>(), 1, d_temp_storage_bytes, d_cdp_error, d_temp_storage, temp_storage_bytes, d_in, d_flags, d_out, d_num_selected, num_items, 0, true));
+    CubDebugExit(Dispatch(Int2Type<BACKEND>(), Int2Type<PARTITION>(), 1, d_temp_storage_bytes, d_cdp_error,
+        d_temp_storage, temp_storage_bytes, d_in, d_flags, d_out, d_num_selected, num_items, 0, true));
     CubDebugExit(g_allocator.DeviceAllocate(&d_temp_storage, temp_storage_bytes));
 
     // Clear device output array
@@ -336,11 +441,17 @@ void Test(
     CubDebugExit(cudaMemset(d_num_selected, 0, sizeof(int)));
 
     // Run warmup/correctness iteration
-    CubDebugExit(Dispatch(Int2Type<BACKEND>(), 1, d_temp_storage_bytes, d_cdp_error, d_temp_storage, temp_storage_bytes, d_in, d_flags, d_out, d_num_selected, num_items, 0, true));
+    CubDebugExit(Dispatch(Int2Type<BACKEND>(), Int2Type<PARTITION>(), 1, d_temp_storage_bytes, d_cdp_error,
+        d_temp_storage, temp_storage_bytes, d_in, d_flags, d_out, d_num_selected, num_items, 0, true));
 
     // Check for correctness (and display results, if specified)
-    int compare = CompareDeviceResults(h_reference, d_out, num_selected, true, g_verbose);
-    printf("\t%s", compare ? "FAIL" : "PASS");
+    int compare = (PARTITION) ?
+        CompareDeviceResults(h_reference, d_out, num_items, true, g_verbose) :
+        CompareDeviceResults(h_reference, d_out, num_selected, true, g_verbose);
+    printf("\t Data %s ", compare ? "FAIL" : "PASS");
+
+    compare = compare | CompareDeviceResults(&num_selected, d_num_selected, 1, true, g_verbose);
+    printf("\t Count %s ", compare ? "FAIL" : "PASS");
 
     // Flush any stdout/stderr
     fflush(stdout);
@@ -349,7 +460,8 @@ void Test(
     // Performance
     GpuTimer gpu_timer;
     gpu_timer.Start();
-    CubDebugExit(Dispatch(Int2Type<BACKEND>(), g_timing_iterations, d_temp_storage_bytes, d_cdp_error, d_temp_storage, temp_storage_bytes, d_in, d_flags, d_out, d_num_selected, num_items, 0, false));
+    CubDebugExit(Dispatch(Int2Type<BACKEND>(), Int2Type<PARTITION>(), g_timing_iterations, d_temp_storage_bytes, d_cdp_error,
+        d_temp_storage, temp_storage_bytes, d_in, d_flags, d_out, d_num_selected, num_items, 0, false));
     gpu_timer.Stop();
     float elapsed_millis = gpu_timer.ElapsedMillis();
 
@@ -384,6 +496,7 @@ void Test(
  */
 template <
     Backend         BACKEND,
+    bool            PARTITION,
     typename        T>
 void TestPointer(
     int             num_items,
@@ -402,7 +515,8 @@ void TestPointer(
     Initialize(entropy_reduction, h_in, h_flags, num_items, max_segment);
     int num_selected = Solve(h_in, h_flags, h_reference, num_items);
 
-    printf("\nPointer %s cub::DeviceSelect::Flagged %d items, %d selected (avg run length %d), %s %d-byte elements, entropy_reduction %d\n",
+    printf("\nPointer %s cub::%s::Flagged %d items, %d selected (avg run length %d), %s %d-byte elements, entropy_reduction %d\n",
+        (PARTITION) ? "DevicePartition" : "DeviceSelect",
         (BACKEND == CDP) ? "CDP CUB" : (BACKEND == THRUST) ? "Thrust" : "CUB",
         num_items, num_selected, num_items / num_selected,
         type_string,
@@ -422,7 +536,7 @@ void TestPointer(
     CubDebugExit(cudaMemcpy(d_flags, h_flags, sizeof(Flag) * num_items, cudaMemcpyHostToDevice));
 
     // Run Test
-    Test<BACKEND>(d_in, d_flags, h_reference, num_selected, num_items, type_string);
+    Test<BACKEND, PARTITION>(d_in, d_flags, h_reference, num_selected, num_items, type_string);
 
     // Cleanup
     if (h_in) delete[] h_in;
@@ -437,6 +551,7 @@ void TestPointer(
  */
 template <
     Backend         BACKEND,
+    bool            PARTITION,
     typename        T>
 void TestIterator(
     int             num_items,
@@ -463,7 +578,7 @@ void TestIterator(
     fflush(stdout);
 
     // Run Test
-    Test<BACKEND>(h_in, h_flags, h_reference, num_selected, num_items, type_string);
+    Test<BACKEND, PARTITION>(h_in, h_flags, h_reference, num_selected, num_items, type_string);
 
     // Cleanup
     if (h_reference) delete[] h_reference;
@@ -475,6 +590,7 @@ void TestIterator(
  */
 template <
     Backend         BACKEND,
+    bool            PARTITION,
     typename        T>
 void TestIterator(
     int             num_items,
@@ -488,6 +604,7 @@ void TestIterator(
  */
 template <
     Backend         BACKEND,
+    bool            PARTITION,
     typename        T>
 void Test(
     int             num_items,
@@ -495,13 +612,28 @@ void Test(
 {
     for (int max_segment = 1; max_segment < CUB_MIN(num_items, (unsigned short) -1); max_segment *= 11)
     {
-        TestPointer<BACKEND, T>(num_items, 0, max_segment, type_string);
-        TestPointer<BACKEND, T>(num_items, 2, max_segment, type_string);
-        TestPointer<BACKEND, T>(num_items, 7, max_segment, type_string);
+        TestPointer<BACKEND, PARTITION, T>(num_items, 0, max_segment, type_string);
+        TestPointer<BACKEND, PARTITION, T>(num_items, 2, max_segment, type_string);
+        TestPointer<BACKEND, PARTITION, T>(num_items, 7, max_segment, type_string);
     }
 
-    TestIterator<BACKEND, T>(num_items, type_string, Int2Type<Traits<T>::CATEGORY != NOT_A_NUMBER>());
+    TestIterator<BACKEND, PARTITION, T>(num_items, type_string, Int2Type<Traits<T>::CATEGORY != NOT_A_NUMBER>());
 
+}
+
+
+/**
+ * Test select vs. partition
+ */
+template <
+    Backend         BACKEND,
+    typename        T>
+void TestMethod(
+    int             num_items,
+    char*           type_string)
+{
+    Test<BACKEND, false, T>(num_items, type_string);
+    Test<BACKEND, true, T>(num_items, type_string);
 }
 
 
@@ -514,9 +646,9 @@ void TestOp(
     int             num_items,
     char*           type_string)
 {
-    Test<CUB, T>(num_items, type_string);
+    TestMethod<CUB, T>(num_items, type_string);
 #ifdef CUB_CDP
-    Test<CDP, T>(num_items, type_string);
+    TestMethod<CDP, T>(num_items, type_string);
 #endif
 }
 
@@ -574,12 +706,12 @@ int main(int argc, char** argv)
             "[--n=<input items> "
             "[--i=<timing iterations> "
             "[--device=<device-id>] "
-            "[--maxseg=<max segment length>]"
-            "[--entropy=<segment length bit entropy reduction rounds>]"
-            "[--repeat=<repetitions of entire test suite>]"
-            "[--quick]"
+            "[--maxseg=<max segment length>] "
+            "[--entropy=<segment length bit entropy reduction rounds>] "
+            "[--repeat=<repetitions of entire test suite>] "
+            "[--quick] "
             "[--v] "
-            "[--cdp]"
+            "[--cdp] "
             "\n", argv[0]);
         exit(0);
     }
@@ -601,24 +733,51 @@ int main(int argc, char** argv)
         // Quick test
         if (num_items < 0) num_items = 32000000;
 
-        TestPointer<CUB, char>(        num_items * ((sm_version <= 130) ? 1 : 4), entropy_reduction, maxseg, CUB_TYPE_STRING(char));
-        TestPointer<THRUST, char>(     num_items * ((sm_version <= 130) ? 1 : 4), entropy_reduction, maxseg, CUB_TYPE_STRING(char));
+        printf("----------------------------\n");
+        printf("SELECT\n");
+        printf("----------------------------\n");
+
+        TestPointer<CUB, false, char>(        num_items * ((sm_version <= 130) ? 1 : 4), entropy_reduction, maxseg, CUB_TYPE_STRING(char));
+        TestPointer<THRUST, false, char>(     num_items * ((sm_version <= 130) ? 1 : 4), entropy_reduction, maxseg, CUB_TYPE_STRING(char));
 
         printf("----------------------------\n");
-        TestPointer<CUB, short>(       num_items * ((sm_version <= 130) ? 1 : 2), entropy_reduction, maxseg, CUB_TYPE_STRING(short));
-        TestPointer<THRUST, short>(    num_items * ((sm_version <= 130) ? 1 : 2), entropy_reduction, maxseg, CUB_TYPE_STRING(short));
+        TestPointer<CUB, false, short>(       num_items * ((sm_version <= 130) ? 1 : 2), entropy_reduction, maxseg, CUB_TYPE_STRING(short));
+        TestPointer<THRUST, false, short>(    num_items * ((sm_version <= 130) ? 1 : 2), entropy_reduction, maxseg, CUB_TYPE_STRING(short));
 
         printf("----------------------------\n");
-        TestPointer<CUB, int>(         num_items,                                 entropy_reduction, maxseg, CUB_TYPE_STRING(int));
-        TestPointer<THRUST, int>(      num_items,                                 entropy_reduction, maxseg, CUB_TYPE_STRING(int));
+        TestPointer<CUB, false, int>(         num_items,                                 entropy_reduction, maxseg, CUB_TYPE_STRING(int));
+        TestPointer<THRUST, false, int>(      num_items,                                 entropy_reduction, maxseg, CUB_TYPE_STRING(int));
 
         printf("----------------------------\n");
-        TestPointer<CUB, long long>(   num_items / 2,                             entropy_reduction, maxseg, CUB_TYPE_STRING(long long));
-        TestPointer<THRUST, long long>(num_items / 2,                             entropy_reduction, maxseg, CUB_TYPE_STRING(long long));
+        TestPointer<CUB, false, long long>(   num_items / 2,                             entropy_reduction, maxseg, CUB_TYPE_STRING(long long));
+        TestPointer<THRUST, false, long long>(num_items / 2,                             entropy_reduction, maxseg, CUB_TYPE_STRING(long long));
 
         printf("----------------------------\n");
-        TestPointer<CUB, TestFoo>(     num_items / 4,                             entropy_reduction, maxseg, CUB_TYPE_STRING(TestFoo));
-        TestPointer<THRUST, TestFoo>(  num_items / 4,                             entropy_reduction, maxseg, CUB_TYPE_STRING(TestFoo));
+        TestPointer<CUB, false, TestFoo>(     num_items / 4,                             entropy_reduction, maxseg, CUB_TYPE_STRING(TestFoo));
+        TestPointer<THRUST, false, TestFoo>(  num_items / 4,                             entropy_reduction, maxseg, CUB_TYPE_STRING(TestFoo));
+
+        printf("----------------------------\n");
+        printf("PARTITION\n");
+        printf("----------------------------\n");
+
+        TestPointer<CUB, true, char>(        num_items * ((sm_version <= 130) ? 1 : 4), entropy_reduction, maxseg, CUB_TYPE_STRING(char));
+        TestPointer<THRUST, true, char>(     num_items * ((sm_version <= 130) ? 1 : 4), entropy_reduction, maxseg, CUB_TYPE_STRING(char));
+
+        printf("----------------------------\n");
+        TestPointer<CUB, true, short>(       num_items * ((sm_version <= 130) ? 1 : 2), entropy_reduction, maxseg, CUB_TYPE_STRING(short));
+        TestPointer<THRUST, true, short>(    num_items * ((sm_version <= 130) ? 1 : 2), entropy_reduction, maxseg, CUB_TYPE_STRING(short));
+
+        printf("----------------------------\n");
+        TestPointer<CUB, true, int>(         num_items,                                 entropy_reduction, maxseg, CUB_TYPE_STRING(int));
+        TestPointer<THRUST, true, int>(      num_items,                                 entropy_reduction, maxseg, CUB_TYPE_STRING(int));
+
+        printf("----------------------------\n");
+        TestPointer<CUB, true, long long>(   num_items / 2,                             entropy_reduction, maxseg, CUB_TYPE_STRING(long long));
+        TestPointer<THRUST, true, long long>(num_items / 2,                             entropy_reduction, maxseg, CUB_TYPE_STRING(long long));
+
+        printf("----------------------------\n");
+        TestPointer<CUB, true, TestFoo>(     num_items / 4,                             entropy_reduction, maxseg, CUB_TYPE_STRING(TestFoo));
+        TestPointer<THRUST, true, TestFoo>(  num_items / 4,                             entropy_reduction, maxseg, CUB_TYPE_STRING(TestFoo));
     }
     else
     {
