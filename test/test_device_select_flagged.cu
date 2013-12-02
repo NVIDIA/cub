@@ -27,7 +27,7 @@
  ******************************************************************************/
 
 /******************************************************************************
- * Test of DeviceSelect::CopyFlagged utilities
+ * Test of DeviceSelect::Flagged utilities
  ******************************************************************************/
 
 // Ensure printing of CUDA runtime errors to console
@@ -86,7 +86,7 @@ cudaError_t Dispatch(
     cudaError_t error = cudaSuccess;
     for (int i = 0; i < timing_timing_iterations; ++i)
     {
-        error = DeviceSelect::CopyFlagged(d_temp_storage, temp_storage_bytes, d_in, d_flags, d_out, d_num_selected, num_items, stream, debug_synchronous);
+        error = DeviceSelect::Flagged(d_temp_storage, temp_storage_bytes, d_in, d_flags, d_out, d_num_selected, num_items, stream, debug_synchronous);
     }
     return error;
 }
@@ -402,7 +402,7 @@ void TestPointer(
     Initialize(entropy_reduction, h_in, h_flags, num_items, max_segment);
     int num_selected = Solve(h_in, h_flags, h_reference, num_items);
 
-    printf("\nPointer %s cub::DeviceSelect::CopyFlagged %d items, %d selected (avg run length %d), %s %d-byte elements, entropy_reduction %d\n",
+    printf("\nPointer %s cub::DeviceSelect::Flagged %d items, %d selected (avg run length %d), %s %d-byte elements, entropy_reduction %d\n",
         (BACKEND == CDP) ? "CDP CUB" : (BACKEND == THRUST) ? "Thrust" : "CUB",
         num_items, num_selected, num_items / num_selected,
         type_string,
@@ -455,7 +455,7 @@ void TestIterator(
     // Initialize problem and solution
     int num_selected = Solve(h_in, h_flags, h_reference, num_items);
 
-    printf("\nIterator %s cub::DeviceSelect::CopyFlagged %d items, %d selected (avg run length %d), %s %d-byte elements\n",
+    printf("\nIterator %s cub::DeviceSelect::Flagged %d items, %d selected (avg run length %d), %s %d-byte elements\n",
         (BACKEND == CDP) ? "CDP CUB" : (BACKEND == THRUST) ? "Thrust" : "CUB",
         num_items, num_selected, num_items / num_selected,
         type_string,

@@ -412,7 +412,14 @@ td.memSeparator {
 td.mdescLeft, td.mdescRight {
 		padding-top: 10px;
 		padding-bottom: 20px;
+}
+
+td.mdescLeft{
 		color: #555;
+}
+
+td.mdescRight {
+		color: darkGoldenrod;
 }
 
 td.memname, td.paramtype, div.memtemplate {
