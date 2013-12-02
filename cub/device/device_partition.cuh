@@ -134,7 +134,7 @@ struct DevicePartition
         typedef NullType                SelectOp;       // Selection op (not used)
         typedef NullType                EqualityOp;     // Equality operator (not used)
 
-        return DeviceSelectDispatch<InputIterator, FlagIterator, OutputIterator, NumSelectedIterator, SelectOp, EqualityOp, Offset, false>::Dispatch(
+        return DeviceSelectDispatch<InputIterator, FlagIterator, OutputIterator, NumSelectedIterator, SelectOp, EqualityOp, Offset, true>::Dispatch(
             d_temp_storage,
             temp_storage_bytes,
             d_in,
@@ -225,7 +225,7 @@ struct DevicePartition
         typedef NullType*               FlagIterator;   // Flag iterator type (not used)
         typedef NullType                EqualityOp;     // Equality operator (not used)
 
-        return DeviceSelectDispatch<InputIterator, FlagIterator, OutputIterator, NumSelectedIterator, SelectOp, EqualityOp, Offset, false>::Dispatch(
+        return DeviceSelectDispatch<InputIterator, FlagIterator, OutputIterator, NumSelectedIterator, SelectOp, EqualityOp, Offset, true>::Dispatch(
             d_temp_storage,
             temp_storage_bytes,
             d_in,

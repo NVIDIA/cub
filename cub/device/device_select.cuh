@@ -194,7 +194,7 @@ struct DeviceSelectDispatch
                 BLOCK_LOAD_WARP_TRANSPOSE,
                 false,
                 LOAD_DEFAULT,
-                false,
+                true,
                 BLOCK_SCAN_RAKING_MEMOIZE>
             SelectRegionPolicy;
     };
@@ -232,7 +232,7 @@ struct DeviceSelectDispatch
                 BLOCK_LOAD_WARP_TRANSPOSE,
                 true,
                 LOAD_DEFAULT,
-                false,
+                true,
                 BLOCK_SCAN_RAKING_MEMOIZE>
             SelectRegionPolicy;
     };
@@ -251,7 +251,7 @@ struct DeviceSelectDispatch
                 BLOCK_LOAD_WARP_TRANSPOSE,
                 true,
                 LOAD_DEFAULT,
-                false,
+                true,
                 BLOCK_SCAN_RAKING>
             SelectRegionPolicy;
     };

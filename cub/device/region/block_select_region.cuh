@@ -127,7 +127,7 @@ struct BlockSelectRegion
     // Flag iterator wrapper type
     typedef typename If<IsPointer<FlagIterator>::VALUE,
             CacheModifiedInputIterator<BlockSelectRegionPolicy::LOAD_MODIFIER, Flag, Offset>,   // Wrap the native input pointer with CacheModifiedInputIterator
-            FlagIterator>::Type                                                                // Directly use the supplied input iterator type
+            FlagIterator>::Type                                                                 // Directly use the supplied input iterator type
         WrappedFlagIterator;
 
     // Constants
@@ -139,7 +139,7 @@ struct BlockSelectRegion
 
         BLOCK_THREADS       = BlockSelectRegionPolicy::BLOCK_THREADS,
         ITEMS_PER_THREAD    = BlockSelectRegionPolicy::ITEMS_PER_THREAD,
-        TWO_PHASE_SCATTER   = BlockSelectRegionPolicy::TWO_PHASE_SCATTER,
+        TWO_PHASE_SCATTER   = (BlockSelectRegionPolicy::TWO_PHASE_SCATTER) && (ITEMS_PER_THREAD > 1),
         TILE_ITEMS          = BLOCK_THREADS * ITEMS_PER_THREAD,
 
         SELECT_METHOD       = (!Equals<SelectOp, NullType>::VALUE) ?
@@ -432,7 +432,7 @@ struct BlockSelectRegion
                 Offset reject_idx = global_idx - allocation_offsets[ITEM];
 
                 // Rejected items are placed back-to-front
-                d_out[num_items - reject_idx] = items[ITEM];
+                d_out[num_items - reject_idx - 1] = items[ITEM];
             }
         }
     }
@@ -511,6 +511,17 @@ struct BlockSelectRegion
         Int2Type<true>  keep_rejects,
         Int2Type<true>  two_phase_scatter)
     {
+        // Share exclusive tile prefix
+        if (threadIdx.x == 0)
+        {
+            temp_storage.tile_exclusive_prefix = tile_exclusive_prefix;
+        }
+
+        __syncthreads();
+
+        // Load exclusive tile prefix in all threads
+        tile_exclusive_prefix = temp_storage.tile_exclusive_prefix;
+
         int     local_ranks[ITEMS_PER_THREAD];
         bool    is_valid[ITEMS_PER_THREAD];
 
@@ -539,8 +550,6 @@ struct BlockSelectRegion
             }
         }
 
-        __syncthreads();
-
         // Coalesce selected and rejected items in shared memory, gathering in striped arrangements
         BlockExchangeT(temp_storage.exchange).ScatterToStriped(items, local_ranks, is_valid, valid_items);
 
@@ -557,7 +566,7 @@ struct BlockSelectRegion
             else if (local_idx < valid_items)
             {
                 // Scatter rejected items back-to-front
-                d_out[num_items - (tile_rejected_exclusive_prefix + local_idx - tile_num_selected)] = items[ITEM];
+                d_out[num_items - (tile_rejected_exclusive_prefix + (local_idx - tile_num_selected)) - 1] = items[ITEM];
             }
         }
     }
@@ -665,19 +674,23 @@ struct BlockSelectRegion
         TileDescriptor          *d_tile_status,     ///< Global list of tile status
         NumSelectedIterator     d_num_selected)     ///< Output total number selected
     {
-        Offset total_selected;
-
 #if CUB_PTX_VERSION < 200
 
-        // No concurrent kernels allowed and blocks are launched in increasing order, so just assign one tile per block (up to 65K blocks)
+        // No concurrent kernels are allowed, and blocks are launched in increasing order, so just assign one tile per block (up to 65K blocks)
         int     tile_idx        = blockIdx.x;
         Offset  block_offset    = Offset(TILE_ITEMS) * tile_idx;
-
+        Offset  total_selected;
 
         if (block_offset + TILE_ITEMS <= num_items)
             total_selected = ConsumeTile<true>(num_items, tile_idx, block_offset, d_tile_status);
         else if (block_offset < num_items)
             total_selected = ConsumeTile<false>(num_items, tile_idx, block_offset, d_tile_status);
+
+        // Output the total number of items selected
+        if ((tile_idx == num_tiles - 1) && (threadIdx.x == 0))
+        {
+            *d_num_selected = total_selected;
+        }
 
 #else
 
@@ -688,12 +701,13 @@ struct BlockSelectRegion
         __syncthreads();
 
         int tile_idx = temp_storage.tile_idx;
-        Offset block_offset = Offset(TILE_ITEMS) * tile_idx;
 
-        while (block_offset + TILE_ITEMS <= num_items)
+        while (tile_idx < num_tiles - 1)
         {
+            Offset block_offset = Offset(TILE_ITEMS) * tile_idx;
+
             // Consume full tile
-            total_selected = ConsumeTile<true>(num_items, tile_idx, block_offset, d_tile_status);
+            ConsumeTile<true>(num_items, tile_idx, block_offset, d_tile_status);
 
             // Get next tile
             if (threadIdx.x == 0)
@@ -702,21 +716,21 @@ struct BlockSelectRegion
             __syncthreads();
 
             tile_idx = temp_storage.tile_idx;
-            block_offset = Offset(TILE_ITEMS) * tile_idx;
         }
 
-        // Consume a partially-full tile
-        if (block_offset < num_items)
+        // Consume the last tile and output the total number of items selected
+        if (tile_idx == num_tiles - 1)
         {
-            total_selected = ConsumeTile<false>(num_items, tile_idx, block_offset, d_tile_status);
+            Offset block_offset     = Offset(TILE_ITEMS) * tile_idx;
+            Offset total_selected   = ConsumeTile<false>(num_items, tile_idx, block_offset, d_tile_status);
+
+            if (threadIdx.x == 0)
+            {
+                *d_num_selected = total_selected;
+            }
         }
+
 #endif
-
-        // The thread block processing the last tile must output the total number of items selected
-        if ((threadIdx.x == 0) && (tile_idx == num_tiles - 1))
-        {
-            *d_num_selected = total_selected;
-        }
     }
 
 };
