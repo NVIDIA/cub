@@ -29,7 +29,7 @@
 
 /**
  * \file
- * cub::DeviceSelect provides device-wide, parallel operations for constructing subsets from data items residing within global memory.
+ * cub::DeviceSelect provides device-wide, parallel operations for selecting items from sequences of data items residing within global memory.
  */
 
 #pragma once
@@ -41,9 +41,7 @@
 #include "region/block_select_region.cuh"
 #include "../thread/thread_operators.cuh"
 #include "../grid/grid_queue.cuh"
-#include "../util_debug.cuh"
 #include "../util_device.cuh"
-#include "../util_vector.cuh"
 #include "../util_namespace.cuh"
 
 /// Optional outer namespace(s)
@@ -596,10 +594,10 @@ struct DeviceSelect
      *
      * \par
      * - The value type of \p d_flags must be castable to \p bool (e.g., \p bool, \p char, \p int, etc.).
-     * - The selected items are compacted into \p d_out and maintain their original relative ordering.
+     * - Copies of the selected items are compacted into \p d_out and maintain their original relative ordering.
      * - \devicestorage
      * - \cdp
-
+     *
      * \par
      * The code snippet below illustrates the compaction of items selected from an \p int device vector.
      * \par
@@ -617,13 +615,13 @@ struct DeviceSelect
      * // Determine temporary device storage requirements
      * void     *d_temp_storage = NULL;
      * size_t   temp_storage_bytes = 0;
-     * cub::DeviceSelect::CopyIf(d_temp_storage, temp_storage_bytes, d_in, d_flags, d_out, d_num_selected, num_items);
+     * cub::DeviceSelect::Flagged(d_temp_storage, temp_storage_bytes, d_in, d_flags, d_out, d_num_selected, num_items);
      *
      * // Allocate temporary storage
      * cudaMalloc(&d_temp_storage, temp_storage_bytes);
      *
      * // Run selection
-     * cub::DeviceSelect::CopyIf(d_temp_storage, temp_storage_bytes, d_in, d_flags, d_out, d_num_selected, num_items);
+     * cub::DeviceSelect::Flagged(d_temp_storage, temp_storage_bytes, d_in, d_flags, d_out, d_num_selected, num_items);
      *
      * // d_out             <-- [1, 4, 6, 7]
      * // d_num_selected    <-- [4]
@@ -641,7 +639,7 @@ struct DeviceSelect
         typename                    OutputIterator,
         typename                    NumSelectedIterator>
     __host__ __device__ __forceinline__
-    static cudaError_t CopyFlagged(
+    static cudaError_t Flagged(
         void                        *d_temp_storage,                ///< [in] %Device allocation of temporary storage.  When NULL, the required allocation size is returned in \p temp_storage_bytes and no work is done.
         size_t                      &temp_storage_bytes,            ///< [in,out] Size in bytes of \p d_temp_storage allocation
         InputIterator               d_in,                           ///< [in] Input iterator pointing to data items
@@ -675,10 +673,49 @@ struct DeviceSelect
      * \brief Uses the \p select_op functor to selectively copy items from \p d_in into \p d_out.  The total number of items selected is written to \p d_num_selected. ![](select_logo.png)
      *
      * \par
-     * - The selected items are compacted into \p d_out and maintain their original relative ordering.
+     * - Copies of the selected items are compacted into \p d_out and maintain their original relative ordering.
      * - \devicestorage
      * - \cdp
-
+     *
+     * \par
+     * The code snippet below illustrates the compaction of items selected from an \p int device vector.
+     * \par
+     * \code
+     * #include <cub/cub.cuh>
+     *
+     * // Functor for selecting values that are multiples of three
+     * struct IsTriple
+     * {
+     *     template <typename T>
+     *     __host__ __device__ __forceinline__
+     *     T operator()(const T &a) const {
+     *         return (a % 3 == 0);
+     *     }
+     * };
+     *
+     * // Declare, allocate, and initialize device pointers for input and output
+     * int      num_items;          // e.g., 8
+     * int      *d_in;              // e.g., [0, 2, 3, 9, 5, 2, 81, 8]
+     * int      *d_out;             // e.g., [ ,  ,  ,  ,  ,  ,  ,  ]
+     * int      *d_num_selected;    // e.g., [ ]
+     * IsTriple select_op;
+     * ...
+     *
+     * // Determine temporary device storage requirements
+     * void     *d_temp_storage = NULL;
+     * size_t   temp_storage_bytes = 0;
+     * cub::DeviceSelect::If(d_temp_storage, temp_storage_bytes, d_in, d_out, d_num_selected, num_items, select_op);
+     *
+     * // Allocate temporary storage
+     * cudaMalloc(&d_temp_storage, temp_storage_bytes);
+     *
+     * // Run selection
+     * cub::DeviceSelect::If(d_temp_storage, temp_storage_bytes, d_in, d_out, d_num_selected, num_items, select_op);
+     *
+     * // d_out             <-- [0, 3, 9, 81]
+     * // d_num_selected    <-- [4]
+     *
+     * \endcode
      *
      * \tparam InputIterator        <b>[inferred]</b> Random-access input iterator type for selection items \iterator
      * \tparam OutputIterator       <b>[inferred]</b> Random-access output iterator type for selected items \iterator
@@ -691,7 +728,7 @@ struct DeviceSelect
         typename                    NumSelectedIterator,
         typename                    SelectOp>
     __host__ __device__ __forceinline__
-    static cudaError_t CopyIf(
+    static cudaError_t If(
         void                        *d_temp_storage,                ///< [in] %Device allocation of temporary storage.  When NULL, the required allocation size is returned in \p temp_storage_bytes and no work is done.
         size_t                      &temp_storage_bytes,            ///< [in,out] Size in bytes of \p d_temp_storage allocation
         InputIterator               d_in,                           ///< [in] Input iterator pointing to data items
@@ -722,14 +759,53 @@ struct DeviceSelect
 
 
     /**
-     * \brief Given an input sequence \p d_in having groups of consecutive equal-valued keys, only the first key from each group is selectively copied to \p d_out.  The total number of items selected is written to \p d_num_selected. ![](unique_logo.png)
+     * \brief Given an input sequence \p d_in having runs of consecutive equal-valued keys, only the first key from each run is selectively copied to \p d_out.  The total number of items selected is written to \p d_num_selected. ![](unique_logo.png)
      *
      * \par
      * - The <tt>==</tt> equality operator is used to determine equal-valued keys
-     * - The selected items are compacted into \p d_out and maintain their original relative ordering.
+     * - Copies of the selected items are compacted into \p d_out and maintain their original relative ordering.
      * - \devicestorage
      * - \cdp
-
+     *
+     * \par
+     * The code snippet below illustrates the compaction of items selected from an \p int device vector.
+     * \par
+     * \code
+     * #include <cub/cub.cuh>
+     *
+     * // Functor for selecting values that are multiples of three
+     * struct IsTriple
+     * {
+     *     template <typename T>
+     *     __host__ __device__ __forceinline__
+     *     T operator()(const T &a) const {
+     *         return (a % 3 == 0);
+     *     }
+     * };
+     *
+     * // Declare, allocate, and initialize device pointers for input and output
+     * int      num_items;          // e.g., 8
+     * int      *d_in;              // e.g., [0, 2, 2, 9, 5, 5, 5, 8]
+     * int      *d_out;             // e.g., [ ,  ,  ,  ,  ,  ,  ,  ]
+     * int      *d_num_selected;    // e.g., [ ]
+     * IsTriple select_op;
+     * ...
+     *
+     * // Determine temporary device storage requirements
+     * void     *d_temp_storage = NULL;
+     * size_t   temp_storage_bytes = 0;
+     * cub::DeviceSelect::Unique(d_temp_storage, temp_storage_bytes, d_in, d_out, d_num_selected, num_items);
+     *
+     * // Allocate temporary storage
+     * cudaMalloc(&d_temp_storage, temp_storage_bytes);
+     *
+     * // Run selection
+     * cub::DeviceSelect::Unique(d_temp_storage, temp_storage_bytes, d_in, d_out, d_num_selected, num_items);
+     *
+     * // d_out             <-- [0, 2, 9, 5, 8]
+     * // d_num_selected    <-- [5]
+     *
+     * \endcode
      *
      * \tparam InputIterator        <b>[inferred]</b> Random-access input iterator type for selection items \iterator
      * \tparam OutputIterator       <b>[inferred]</b> Random-access output iterator type for selected items \iterator
@@ -740,7 +816,7 @@ struct DeviceSelect
         typename                    OutputIterator,
         typename                    NumSelectedIterator>
     __host__ __device__ __forceinline__
-    static cudaError_t CopyUnique(
+    static cudaError_t Unique(
         void                        *d_temp_storage,                ///< [in] %Device allocation of temporary storage.  When NULL, the required allocation size is returned in \p temp_storage_bytes and no work is done.
         size_t                      &temp_storage_bytes,            ///< [in,out] Size in bytes of \p d_temp_storage allocation
         InputIterator               d_in,                           ///< [in] Input iterator pointing to data items

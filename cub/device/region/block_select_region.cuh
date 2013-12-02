@@ -344,7 +344,7 @@ struct BlockSelectRegion
 
         int flags[ITEMS_PER_THREAD];
 
-        Inequality2<EqualityOp> inequality_op(equality_op);
+        InequalityWrapper<EqualityOp> inequality_op(equality_op);
 
         if (FIRST_TILE)
         {
