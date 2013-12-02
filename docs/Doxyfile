@@ -682,6 +682,7 @@ INPUT                  += ../cub/block/block_reduce.cuh
 INPUT                  += ../cub/block/block_scan.cuh 
 INPUT                  += ../cub/block/block_store.cuh 
 INPUT                  += ../cub/device/device_histogram.cuh 
+INPUT                  += ../cub/device/device_partition.cuh 
 INPUT                  += ../cub/device/device_radix_sort.cuh 
 INPUT                  += ../cub/device/device_reduce.cuh 
 INPUT                  += ../cub/device/device_scan.cuh 

@@ -85,12 +85,14 @@ struct Inequality
  * \brief Inequality functor (wraps equality functor)
  */
 template <typename EqualityOp>
-struct Inequality2
+struct InequalityWrapper
 {
+    /// Wrapped equality operator
     EqualityOp op;
 
+    /// Constructor
     __host__ __device__ __forceinline__
-    Inequality2(EqualityOp op) : op(op) {}
+    InequalityWrapper(EqualityOp op) : op(op) {}
 
     /// Boolean inequality operator, returns <tt>(a != b)</tt>
     template <typename T>
