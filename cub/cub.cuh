@@ -48,6 +48,7 @@
 
 // Device
 #include "device/device_histogram.cuh"
+#include "device/device_partition.cuh"
 #include "device/device_radix_sort.cuh"
 #include "device/device_reduce.cuh"
 #include "device/device_scan.cuh"
