@@ -808,7 +808,7 @@ int main(int argc, char** argv)
     // Get device SM version
     int sm_version;
     CubDebugExit(SmVersion(sm_version, device_ordinal));
-
+/*
     if (quick)
     {
         // Quick test
@@ -834,10 +834,11 @@ int main(int argc, char** argv)
         TestPointer<THRUST, TestBar>(  num_items / 4, UNIFORM, Sum(), TestBar(), CUB_TYPE_STRING(TestBar));
     }
     else
-    {
+*/    {
         // Repeat test sequence
         for (int i = 0; i <= g_repeat; ++i)
         {
+/*
             // Test different input types
             Test<unsigned char>(num_items, CUB_TYPE_STRING(unsigned char));
             Test<unsigned short>(num_items, CUB_TYPE_STRING(unsigned short));
@@ -855,6 +856,7 @@ int main(int argc, char** argv)
             Test<ulonglong4>(num_items, CUB_TYPE_STRING(ulonglong4));
 
             Test<TestFoo>(num_items, CUB_TYPE_STRING(TestFoo));
+*/
             Test<TestBar>(num_items, CUB_TYPE_STRING(TestBar));
         }
     }
