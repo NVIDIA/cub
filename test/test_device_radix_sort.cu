@@ -627,9 +627,9 @@ void TestItems(
     {
         Test<Key, Value>(1, begin_bit, end_bit, type_string);
         Test<Key, Value>(32, begin_bit, end_bit, type_string);
-        Test<Key, Value>(3200, begin_bit, end_bit, type_string);
-        Test<Key, Value>(320000, begin_bit, end_bit, type_string);
-        Test<Key, Value>(12000000, begin_bit, end_bit, type_string);
+        Test<Key, Value>(3203, begin_bit, end_bit, type_string);
+        Test<Key, Value>(320003, begin_bit, end_bit, type_string);
+        Test<Key, Value>(9000003, begin_bit, end_bit, type_string);
     }
     else
     {

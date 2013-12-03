@@ -116,9 +116,9 @@ else
     NVCCFLAGS += -Xcompiler -ffloat-store
     CC = g++
 ifneq ($(force64), 1)
-    CUDART = "$(shell dirname $(NVCC))/../lib/lib/libcudart_static.a"
+    CUDART = "$(shell dirname $(NVCC))/../lib/libcudart_static.a"
 else
-    CUDART = "$(shell dirname $(NVCC))/../lib/lib64/libcudart_static.a"
+    CUDART = "$(shell dirname $(NVCC))/../lib64/libcudart_static.a"
 endif
 endif
 
