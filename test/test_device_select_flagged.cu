@@ -27,7 +27,7 @@
  ******************************************************************************/
 
 /******************************************************************************
- * Test of DeviceSelect::Flagged utilities
+ * Test of DeviceSelect::Flagged and DevicePartition::Flagged utilities
  ******************************************************************************/
 
 // Ensure printing of CUDA runtime errors to console
@@ -518,7 +518,7 @@ void TestPointer(
     printf("\nPointer %s cub::%s::Flagged %d items, %d selected (avg run length %d), %s %d-byte elements, entropy_reduction %d\n",
         (PARTITION) ? "DevicePartition" : "DeviceSelect",
         (BACKEND == CDP) ? "CDP CUB" : (BACKEND == THRUST) ? "Thrust" : "CUB",
-        num_items, num_selected, num_items / num_selected,
+        num_items, num_selected, (num_selected > 0) ? num_items / num_selected : 0,
         type_string,
         (int) sizeof(T),
         entropy_reduction);
@@ -572,7 +572,7 @@ void TestIterator(
 
     printf("\nIterator %s cub::DeviceSelect::Flagged %d items, %d selected (avg run length %d), %s %d-byte elements\n",
         (BACKEND == CDP) ? "CDP CUB" : (BACKEND == THRUST) ? "Thrust" : "CUB",
-        num_items, num_selected, num_items / num_selected,
+        num_items, num_selected, (num_selected > 0) ? num_items / num_selected : 0,
         type_string,
         (int) sizeof(T));
     fflush(stdout);
