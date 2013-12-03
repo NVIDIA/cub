@@ -101,7 +101,6 @@ template <
     typename    InputIterator,                  ///< Random-access input iterator type for selection items
     typename    FlagIterator,                   ///< Random-access input iterator type for selection flags (NullType* if a selection functor or discontinuity flagging is to be used for selection)
     typename    OutputIterator,                 ///< Random-access input iterator type for selected items
-    typename    NumSelectedIterator,            ///< Output iterator type for recording number of items selected
     typename    SelectOp,                       ///< Selection operator type (NullType if selection flags or discontinuity flagging is to be used for selection)
     typename    EqualityOp,                     ///< Equality operator type (NullType if selection functor or selection flags is to be used for selection)
     typename    Offset,                         ///< Signed integer tuple type for global scatter offsets (selections and rejections)
@@ -667,7 +666,7 @@ struct BlockSelectRegion
     /**
      * Dequeue and scan tiles of items as part of a dynamic domino scan
      */
-    template <typename NumSelectedIterator>         ///< Output iterator type having Offset value type
+    template <typename NumSelectedIterator>         ///< Output iterator type for recording number of items selected
     __device__ __forceinline__ void ConsumeRegion(
         int                     num_tiles,          ///< Total number of input tiles
         GridQueue<int>          queue,              ///< Queue descriptor for assigning tiles of work to thread blocks
