@@ -831,6 +831,10 @@ struct TestBar
     {}
 
     // Constructor
+    __host__ __device__ __forceinline__ TestBar(int b) : x(b), y(b)
+    {}
+
+    // Constructor
     __host__ __device__ __forceinline__ TestBar(long long x, int y) : x(x), y(y)
     {}
 

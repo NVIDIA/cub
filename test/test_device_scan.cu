@@ -830,8 +830,8 @@ int main(int argc, char** argv)
         TestPointer<THRUST, long long>(num_items / 2, UNIFORM, Sum(), (long long) (0), CUB_TYPE_STRING(long long));
 
         printf("----------------------------\n");
-        TestPointer<CUB, TestFoo>(     num_items / 4, UNIFORM, Sum(), TestFoo(), CUB_TYPE_STRING(TestFoo));
-        TestPointer<THRUST, TestFoo>(  num_items / 4, UNIFORM, Sum(), TestFoo(), CUB_TYPE_STRING(TestFoo));
+        TestPointer<CUB, TestBar>(     num_items / 4, UNIFORM, Sum(), TestBar(), CUB_TYPE_STRING(TestBar));
+        TestPointer<THRUST, TestBar>(  num_items / 4, UNIFORM, Sum(), TestBar(), CUB_TYPE_STRING(TestBar));
     }
     else
     {
