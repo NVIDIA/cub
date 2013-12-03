@@ -912,11 +912,11 @@ struct DeviceRadixSortDispatch
             end_bit,
             stream,
             debug_synchronous,
-            RadixSortUpsweepKernel<typename PtxUpsweepPolicy, DESCENDING, Key, Offset>,
-            RadixSortUpsweepKernel<typename PtxAltUpsweepPolicy, DESCENDING, Key, Offset>,
+            RadixSortUpsweepKernel<PtxUpsweepPolicy, DESCENDING, Key, Offset>,
+            RadixSortUpsweepKernel<PtxAltUpsweepPolicy, DESCENDING, Key, Offset>,
             RadixSortScanKernel<PtxScanPolicy, Offset>,
-            RadixSortDownsweepKernel<typename PtxDownsweepPolicy, DESCENDING, Key, Value, Offset>,
-            RadixSortDownsweepKernel<typename PtxAltDownsweepPolicy, DESCENDING, Key, Value, Offset>);
+            RadixSortDownsweepKernel<PtxDownsweepPolicy, DESCENDING, Key, Value, Offset>,
+            RadixSortDownsweepKernel<PtxAltDownsweepPolicy, DESCENDING, Key, Value, Offset>);
     }
 
 };
