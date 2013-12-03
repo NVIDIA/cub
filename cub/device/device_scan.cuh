@@ -319,7 +319,7 @@ struct DeviceScanDispatch
     #ifdef __CUDA_ARCH__
 
         // We're on the device, so initialize the kernel dispatch configurations with the current PTX policy
-        scan_region_config.Init<PtxScanRegionPolicy>();
+        scan_region_config.template Init<PtxScanRegionPolicy>();
 
     #else
 
