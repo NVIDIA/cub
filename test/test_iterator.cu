@@ -111,12 +111,12 @@ __global__ void Kernel(
  * Run iterator test on device
  */
 template <
-    typename    InputIterator,
-    typename    T,
-    int         TEST_VALUES>
+    typename        InputIterator,
+    typename        T,
+    int             TEST_VALUES>
 void Test(
-    InputIterator     d_in,
-    T                   (&h_reference)[TEST_VALUES])
+    InputIterator   d_in,
+    T               (&h_reference)[TEST_VALUES])
 {
     // Allocate device arrays
     T                   *d_out = NULL;
@@ -158,7 +158,7 @@ void Test(
 template <typename T>
 void TestConstant(T base, char *type_string)
 {
-    printf("\nTesting constant iterator on type %s (base: %d)\n", type_string, base); fflush(stdout);
+    printf("\nTesting constant iterator on type %s (base: %d)\n", type_string, int(base)); fflush(stdout);
 
     T h_reference[8] = {base, base, base, base, base, base, base, base};
 
@@ -172,7 +172,7 @@ void TestConstant(T base, char *type_string)
 template <typename T>
 void TestCounting(T base, char *type_string)
 {
-    printf("\nTesting counting iterator on type %s (base: %d) \n", type_string, base); fflush(stdout);
+    printf("\nTesting counting iterator on type %s (base: %d) \n", type_string, int(base)); fflush(stdout);
 
     // Initialize reference data
     T h_reference[8];
