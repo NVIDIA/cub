@@ -153,8 +153,27 @@ typename IteratorTexRef<TextureWord>::TexId<UNIQUE_ID>::TexRef IteratorTexRef<Te
  * \brief A random-access input generator for dereferencing a sequence of homogeneous values
  *
  * \par Overview
- * Read references to a ConstantInputIterator iterator always return the supplied constant
- * of type \p ValueType.
+ * - Read references to a ConstantInputIterator iterator always return the supplied constant
+ *   of type \p ValueType.
+ * - Can be used with any data type.
+ * - Can be constructed, manipulated, dereferenced, and exchanged within and between host and device
+ *   functions.
+ *
+ * \par Example
+ * The code snippet below illustrates the use of \p ConstantInputIterator to
+ * dereference a sequence of homogeneous doubles.
+ * \par
+ * \code
+ * #include <cub/cub.cuh>
+ *
+ * cub::ConstantInputIterator<double> itr(5.0);
+ *
+ * printf("%f\n", itr[0]);      // 5.0
+ * printf("%f\n", itr[1]);      // 5.0
+ * printf("%f\n", itr[2]);      // 5.0
+ * printf("%f\n", itr[50]);     // 5.0
+ *
+ * \endcode
  *
  * \tparam ValueType            The value type of this iterator
  * \tparam difference_type      The difference type of this iterator (Default: \p ptrdiff_t)
@@ -267,8 +286,26 @@ public:
  * \brief A random-access input generator for dereferencing a sequence of incrementing integer values.
  *
  * \par Overview
- * After initializing a CountingInputIterator to a certain integer \p base, read references
- * at \p offset will return the value \p base + \p offset.
+ * - After initializing a CountingInputIterator to a certain integer \p base, read references
+ *   at \p offset will return the value \p base + \p offset.
+ * - Can be constructed, manipulated, dereferenced, and exchanged within and between host and device
+ *   functions.
+ *
+ * \par Example
+ * The code snippet below illustrates the use of \p CountingInputIterator to
+ * dereference a sequence of incrementing integers.
+ * \par
+ * \code
+ * #include <cub/cub.cuh>
+ *
+ * cub::CountingInputIterator<int> itr(5);
+ *
+ * printf("%d\n", itr[0]);      // 5
+ * printf("%d\n", itr[1]);      // 6
+ * printf("%d\n", itr[2]);      // 7
+ * printf("%d\n", itr[50]);     // 55
+ *
+ * \endcode
  *
  * \tparam ValueType            The value type of this iterator
  * \tparam difference_type      The difference type of this iterator (Default: \p ptrdiff_t)
@@ -382,12 +419,37 @@ public:
 
 
 /**
- * \brief A random-access input wrapper for dereferencing array values using a PTX cache modifier.
+ * \brief A random-access input wrapper for dereferencing array values using a PTX cache load modifier.
  *
  * \par Overview
- * CacheModifiedInputIterator is a random-access input iterator that wraps a native
- * device pointer of type <tt>ValueType*</tt>. \p ValueType references are
- * made by reading \p ValueType values through loads modified by \p MODIFIER.
+ * - CacheModifiedInputIterator is a random-access input iterator that wraps a native
+ *   device pointer of type <tt>ValueType*</tt>. \p ValueType references are
+ *   made by reading \p ValueType values through loads modified by \p MODIFIER.
+ * - Can be used to load any data type from memory using PTX cache load modifiers (e.g., "LOAD_LDG",
+ *   "LOAD_CG", "LOAD_CA", "LOAD_CS", "LOAD_CV", etc.).
+ * - Can be constructed, manipulated, and exchanged within and between host and device
+ *   functions, but can only be dereferenced within device functions.
+ *
+ * \par Example
+ * The code snippet below illustrates the use of \p CacheModifiedInputIterator to
+ * dereference a device array of double using the "ldg" PTX load modifier
+ * (i.e., load values through texture cache).
+ * \par
+ * \code
+ * #include <cub/cub.cuh>
+ *
+ * // Declare, allocate, and initialize a device array
+ * double *d_in;            // e.g., [8.0, 6.0, 7.0, 5.0, 3.0, 0.0, 9.0]
+ *
+ * // Create an iterator wrapper
+ * cub::CacheModifiedInputIterator<cub::LOAD_LDG, double> itr(d_in);
+ *
+ * // Within device code:
+ * printf("%f\n", itr[0]);  // 8.0
+ * printf("%f\n", itr[1]);  // 6.0
+ * printf("%f\n", itr[6]);  // 9.0
+ *
+ * \endcode
  *
  * \tparam CacheLoadModifier    The cub::CacheLoadModifier to use when accessing data
  * \tparam ValueType            The value type of this iterator
@@ -505,9 +567,34 @@ public:
  * \brief A random-access output wrapper for storing array values using a PTX cache-modifier.
  *
  * \par Overview
- * CacheModifiedOutputIterator is a random-access output iterator that wraps a native
- * device pointer of type <tt>ValueType*</tt>. \p ValueType references are
- * made by writing \p ValueType values through stores modified by \p MODIFIER.
+ * - CacheModifiedOutputIterator is a random-access output iterator that wraps a native
+ *   device pointer of type <tt>ValueType*</tt>. \p ValueType references are
+ *   made by writing \p ValueType values through stores modified by \p MODIFIER.
+ * - Can be used to store any data type to memory using PTX cache store modifiers (e.g., "STORE_WB",
+ *   "STORE_CG", "STORE_CS", "STORE_WT", etc.).
+ * - Can be constructed, manipulated, and exchanged within and between host and device
+ *   functions, but can only be dereferenced within device functions.
+ *
+ * \par Example
+ * The code snippet below illustrates the use of \p CacheModifiedOutputIterator to
+ * dereference a device array of doubles using the "wt" PTX load modifier
+ * (i.e., write-through to system memory).
+ * \par
+ * \code
+ * #include <cub/cub.cuh>
+ *
+ * // Declare, allocate, and initialize a device array
+ * double *d_out;              // e.g., [, , , , , , ]
+ *
+ * // Create an iterator wrapper
+ * cub::CacheModifiedOutputIterator<cub::STORE_WT, double> itr(d_out);
+ *
+ * // Within device code:
+ * itr[0]  = 8.0;
+ * itr[1]  = 66.0;
+ * itr[55] = 24.0;
+ *
+ * \endcode
  *
  * \par Usage Considerations
  * - Can only be dereferenced within device code
@@ -640,9 +727,41 @@ public:
  * \brief A random-access input wrapper for pairing dereferenced values with their corresponding indices (forming \p ItemOffsetPair tuples).
  *
  * \par Overview
- * ArgIndexInputIterator wraps a random access input iterator \p itr of type \p InputIterator.
- * Dereferencing an ArgIndexInputIterator at offset \p i produces a \p ItemOffsetPair value whose
- * \p offset field is \p i and whose \p item field is <tt>itr[i]</tt>.
+ * - ArgIndexInputIterator wraps a random access input iterator \p itr of type \p InputIterator.
+ *   Dereferencing an ArgIndexInputIterator at offset \p i produces a \p ItemOffsetPair value whose
+ *   \p offset field is \p i and whose \p item field is <tt>itr[i]</tt>.
+ * - Can be used with any data type.
+ * - Can be constructed, manipulated, and exchanged within and between host and device
+ *   functions.  Wrapped host memory can only be dereferenced on the host, and wrapped
+ *   device memory can only be dereferenced on the device.
+ *
+ * \par Example
+ * The code snippet below illustrates the use of \p ArgIndexInputIterator to
+ * dereference an array of doubles
+ * \par
+ * \code
+ * #include <cub/cub.cuh>
+ *
+ * // Declare, allocate, and initialize a device array
+ * double *d_in;         // e.g., [8.0, 6.0, 7.0, 5.0, 3.0, 0.0, 9.0]
+ *
+ * // Create an iterator wrapper
+ * cub::ArgIndexInputIterator<double> itr(d_in);
+ *
+ * // Within device code:
+ * typedef typename cub::ArgIndexInputIterator<double>::value_type Tuple;
+ * Tuple item_offset_pair.offset = *itr;
+ * printf("%f @ %d\n",
+ *  item_offset_pair.value,
+ *  item_offset_pair.offset);   // 8.0 @ 0
+ *
+ * itr = itr + 6;
+ * item_offset_pair.offset = *itr;
+ * printf("%f @ %d\n",
+ *  item_offset_pair.value,
+ *  item_offset_pair.offset);   // 9.0 @ 6
+ *
+ * \endcode
  *
  * \tparam InputIterator        The type of the wrapped input iterator
  * \tparam difference_type      The difference type of this iterator (Default: \p ptrdiff_t)
@@ -770,9 +889,43 @@ public:
  * \brief A random-access input wrapper for transforming dereferenced values.
  *
  * \par Overview
- * TransformInputIterator wraps a unary conversion functor of type \p ConversionOp and a random-access
- * input iterator of type <tt>InputIterator</tt>, using the former to produce
- * references of type \p ValueType from the latter.
+ * - TransformInputIterator wraps a unary conversion functor of type \p
+ *   ConversionOp and a random-access input iterator of type <tt>InputIterator</tt>,
+ *   using the former to produce references of type \p ValueType from the latter.
+ * - Can be used with any data type.
+ * - Can be constructed, manipulated, and exchanged within and between host and device
+ *   functions.  Wrapped host memory can only be dereferenced on the host, and wrapped
+ *   device memory can only be dereferenced on the device.
+ *
+ * \par Example
+ * The code snippet below illustrates the use of \p TransformInputIterator to
+ * dereference an array of integers, tripling the values and converting them to doubles.
+ * \par
+ * \code
+ * #include <cub/cub.cuh>
+ *
+ * // Functor for tripling integer values and converting to doubles
+ * struct TripleDoubler
+ * {
+ *     __host__ __device__ __forceinline__
+ *     double operator()(const int &a) const {
+ *         return double(a * 2);
+ *     }
+ * };
+ *
+ * // Declare, allocate, and initialize a device array
+ * int *d_in;                   // e.g., [8, 6, 7, 5, 3, 0, 9]
+ * TripleDoubler conversion_op;
+ *
+ * // Create an iterator wrapper
+ * cub::TransformInputIterator<double, TripleDoubler, int*> itr(d_in, conversion_op);
+ *
+ * // Within device code:
+ * printf("%f\n", itr[0]);  // 24.0
+ * printf("%f\n", itr[1]);  // 18.0
+ * printf("%f\n", itr[6]);  // 27.0
+ *
+ * \endcode
  *
  * \tparam ValueType            The value type of this iterator
  * \tparam ConversionOp         Unary functor type for mapping objects of type \p InputType to type \p ValueType.  Must have member <tt>ValueType operator()(const InputType &datum)</tt>.
@@ -897,20 +1050,45 @@ public:
  * \brief A random-access input wrapper for dereferencing array values through texture cache.  Uses older Tesla/Fermi-style texture references.
  *
  * \par Overview
- * TexRefInputIterator wraps a native device pointer of type <tt>ValueType*</tt>. References
- * to elements are to be pulled through texture cache.  Works with any \p ValueType.
- *
- * \par Usage Considerations
+ * - TexRefInputIterator wraps a native device pointer of type <tt>ValueType*</tt>. References
+ *   to elements are to be loaded through texture cache.
+ * - Can be used to load any data type from memory through texture cache.
+ * - Can be manipulated and exchanged within and between host and device
+ *   functions, can only be constructed within host functions, and can only be
+ *   dereferenced within device functions.
  * - The \p UNIQUE_ID template parameter is used to statically name the underlying texture
- *   reference.  For a given data type \p T and \p UNIQUE_ID, only one TexRefInputIterator
- *   instance can be bound at any given time (per host thread, per compilation .o unit)
+ *   reference.  Only one TexRefInputIterator instance can be bound at any given time for a
+ *   specific combination of (1) data type \p T, (2) \p UNIQUE_ID, (3) host
+ *   thread, and (4) compilation .o unit.
  * - With regard to nested/dynamic parallelism, TexRefInputIterator iterators may only be
  *   created by the host thread and used by a top-level kernel (i.e. the one which is launched
  *   from the host).
  *
- * \p UNIQUE_ID template parameter is used to statically name the underlying texture
- *   reference.  For a given \p UNIQUE_ID, only one TexRefInputIterator instance can be
- *   bound at any given time (per host thread, per compilation .o unit)
+ * \par Example
+ * The code snippet below illustrates the use of \p TexRefInputIterator to
+ * dereference a device array of doubles through texture cache.
+ * \par
+ * \code
+ * #include <cub/cub.cuh>
+ *
+ * // Declare, allocate, and initialize a device array
+ * int num_items;   // e.g., 7
+ * double *d_in;    // e.g., [8.0, 6.0, 7.0, 5.0, 3.0, 0.0, 9.0]
+ *
+ * // Create an iterator wrapper
+ * cub::TexRefInputIterator<double, __LINE__> itr;
+ * itr.BindTexture(d_in, sizeof(double) * num_items);
+ * ...
+ *
+ * // Within device code:
+ * printf("%f\n", itr[0]);      // 8.0
+ * printf("%f\n", itr[1]);      // 6.0
+ * printf("%f\n", itr[6]);      // 9.0
+ *
+ * ...
+ * itr.UnbindTexture();
+ *
+ * \endcode
  *
  * \tparam T                    The value type of this iterator
  * \tparam UNIQUE_ID            A globally-unique identifier (within the compilation unit) to name the underlying texture reference
@@ -1060,12 +1238,40 @@ public:
  * \brief A random-access input wrapper for dereferencing array values through texture cache.  Uses newer Kepler-style texture objects.
  *
  * \par Overview
- * TexObjInputIterator wraps a native device pointer of type <tt>ValueType*</tt>. References
- * to elements are to be pulled through texture cache.  Works with any \p ValueType.
- *
- * \par Usage Considerations
+ * - TexObjInputIterator wraps a native device pointer of type <tt>ValueType*</tt>. References
+ *   to elements are to be loaded through texture cache.
+ * - Can be used to load any data type from memory through texture cache.
+ * - Can be manipulated and exchanged within and between host and device
+ *   functions, can only be constructed within host functions, and can only be
+ *   dereferenced within device functions.
  * - With regard to nested/dynamic parallelism, TexObjInputIterator iterators may only be
  *   created by the host thread, but can be used by any descendant kernel.
+ *
+ * \par Example
+ * The code snippet below illustrates the use of \p TexRefInputIterator to
+ * dereference a device array of doubles through texture cache.
+ * \par
+ * \code
+ * #include <cub/cub.cuh>
+ *
+ * // Declare, allocate, and initialize a device array
+ * int num_items;   // e.g., 7
+ * double *d_in;    // e.g., [8.0, 6.0, 7.0, 5.0, 3.0, 0.0, 9.0]
+ *
+ * // Create an iterator wrapper
+ * cub::TexObjInputIterator<double> itr;
+ * itr.BindTexture(d_in, sizeof(double) * num_items);
+ * ...
+ *
+ * // Within device code:
+ * printf("%f\n", itr[0]);      // 8.0
+ * printf("%f\n", itr[1]);      // 6.0
+ * printf("%f\n", itr[6]);      // 9.0
+ *
+ * ...
+ * itr.UnbindTexture();
+ *
+ * \endcode
  *
  * \tparam T                    The value type of this iterator
  * \tparam difference_type      The difference type of this iterator (Default: \p ptrdiff_t)
