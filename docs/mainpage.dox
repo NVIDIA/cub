@@ -124,18 +124,17 @@ will collectively load, sort, and store its own segment of 2048 integer keys:
 \code
 #include <cub/cub.cuh>
 
-// Block-sorting CUDA kernel
+// Block-sorting CUDA kernel (128 threads owning 16 integer items each)
 __global__ void BlockSortKernel(int *d_in, int *d_out)
 {
     using namespace cub;
 
-    // Specialize BlockRadixSort, BlockLoad, and BlockStore for 128 threads 
-    // owning 16 integer items each
+    // Specialize BlockRadixSort, BlockLoad, and BlockStore collective types
     typedef BlockRadixSort<int, 128, 16>                     BlockRadixSort;
     typedef BlockLoad<int*, 128, 16, BLOCK_LOAD_TRANSPOSE>   BlockLoad;
     typedef BlockStore<int*, 128, 16, BLOCK_STORE_TRANSPOSE> BlockStore;
 
-    // Allocate shared memory
+    // Allocate shared memory for collectives
     __shared__ union {
         typename BlockRadixSort::TempStorage  sort;
         typename BlockLoad::TempStorage       load; 

@@ -374,8 +374,8 @@ struct DeviceReduceDispatch
     #ifdef __CUDA_ARCH__
 
         // We're on the device, so initialize the kernel dispatch configurations with the current PTX policy
-        reduce_region_config.Init<PtxReduceRegionPolicy>();
-        single_tile_config.Init<PtxSingleTilePolicy>();
+        reduce_region_config.template Init<PtxReduceRegionPolicy>();
+        single_tile_config.template Init<PtxSingleTilePolicy>();
 
     #else
 
