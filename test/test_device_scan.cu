@@ -94,7 +94,7 @@ cudaError_t Dispatch(
 /**
  * Dispatch to exclusive sum entrypoint
  */
-template <typename InputIterator, typename OutputIterator, typename T, typename Identity, typename Offset>
+template <typename InputIterator, typename OutputIterator, typename Identity, typename Offset>
 __host__ __device__ __forceinline__
 cudaError_t Dispatch(
     Int2Type<CUB>       dispatch_to,
@@ -154,7 +154,7 @@ cudaError_t Dispatch(
 /**
  * Dispatch to inclusive sum entrypoint
  */
-template <typename InputIterator, typename OutputIterator, typename T, typename Offset>
+template <typename InputIterator, typename OutputIterator, typename Offset>
 __host__ __device__ __forceinline__
 cudaError_t Dispatch(
     Int2Type<CUB>       dispatch_to,
@@ -227,7 +227,7 @@ cudaError_t Dispatch(
 /**
  * Dispatch to exclusive sum entrypoint
  */
-template <typename InputIterator, typename OutputIterator, typename T, typename Identity, typename Offset>
+template <typename InputIterator, typename OutputIterator, typename Identity, typename Offset>
 cudaError_t Dispatch(
     Int2Type<THRUST>    dispatch_to,
     int                 timing_timing_iterations,
@@ -307,7 +307,7 @@ cudaError_t Dispatch(
 /**
  * Dispatch to inclusive sum entrypoint
  */
-template <typename InputIterator, typename OutputIterator, typename T, typename Offset>
+template <typename InputIterator, typename OutputIterator, typename Offset>
 cudaError_t Dispatch(
     Int2Type<THRUST>    dispatch_to,
     int                 timing_timing_iterations,

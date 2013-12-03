@@ -99,7 +99,6 @@ __global__ void SelectRegionKernel(
         InputIterator,
         FlagIterator,
         OutputIterator,
-        NumSelectedIterator,
         SelectOp,
         EqualityOp,
         Offset,
@@ -298,7 +297,7 @@ struct DeviceSelectDispatch
     #ifdef __CUDA_ARCH__
 
         // We're on the device, so initialize the kernel dispatch configurations with the current PTX policy
-        select_region_config.Init<PtxSelectRegionPolicy>();
+        select_region_config.template Init<PtxSelectRegionPolicy>();
 
     #else
 

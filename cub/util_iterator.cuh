@@ -124,9 +124,10 @@ struct IteratorTexRef
 };
 
 // Texture reference definitions
-template <typename  TextureWord>
+template <typename  T>
 template <int       UNIQUE_ID>
-typename IteratorTexRef<TextureWord>::TexId<UNIQUE_ID>::TexRef IteratorTexRef<TextureWord>::TexId<UNIQUE_ID>::ref = 0;
+typename IteratorTexRef<T>::template TexId<UNIQUE_ID>::TexRef IteratorTexRef<T>::template TexId<UNIQUE_ID>::ref = 0;
+
 
 } // Anonymous namespace
 
@@ -176,18 +177,18 @@ typename IteratorTexRef<TextureWord>::TexId<UNIQUE_ID>::TexRef IteratorTexRef<Te
  * \endcode
  *
  * \tparam ValueType            The value type of this iterator
- * \tparam difference_type      The difference type of this iterator (Default: \p ptrdiff_t)
+ * \tparam Offset               The difference type of this iterator (Default: \p ptrdiff_t)
  */
 template <
     typename ValueType,
-    typename difference_type = ptrdiff_t>
+    typename Offset = ptrdiff_t>
 class ConstantInputIterator
 {
 public:
 
     // Required iterator traits
     typedef ConstantInputIterator               self_type;              ///< My own type
-    typedef difference_type                     difference_type;        ///< Type to express the result of subtracting one iterator from another
+    typedef Offset                              difference_type;        ///< Type to express the result of subtracting one iterator from another
     typedef ValueType                           value_type;             ///< The type of the element the iterator can point to
     typedef ValueType*                          pointer;                ///< The type of a pointer to an element the iterator can point to
     typedef ValueType                           reference;              ///< The type of a reference to an element the iterator can point to
@@ -308,18 +309,18 @@ public:
  * \endcode
  *
  * \tparam ValueType            The value type of this iterator
- * \tparam difference_type      The difference type of this iterator (Default: \p ptrdiff_t)
+ * \tparam Offset               The difference type of this iterator (Default: \p ptrdiff_t)
  */
 template <
     typename ValueType,
-    typename difference_type = ptrdiff_t>
+    typename Offset = ptrdiff_t>
 class CountingInputIterator
 {
 public:
 
     // Required iterator traits
     typedef CountingInputIterator               self_type;              ///< My own type
-    typedef difference_type                     difference_type;        ///< Type to express the result of subtracting one iterator from another
+    typedef Offset                              difference_type;        ///< Type to express the result of subtracting one iterator from another
     typedef ValueType                           value_type;             ///< The type of the element the iterator can point to
     typedef ValueType*                          pointer;                ///< The type of a pointer to an element the iterator can point to
     typedef ValueType                           reference;              ///< The type of a reference to an element the iterator can point to
@@ -453,19 +454,19 @@ public:
  *
  * \tparam CacheLoadModifier    The cub::CacheLoadModifier to use when accessing data
  * \tparam ValueType            The value type of this iterator
- * \tparam difference_type      The difference type of this iterator (Default: \p ptrdiff_t)
+ * \tparam Offset               The difference type of this iterator (Default: \p ptrdiff_t)
  */
 template <
     CacheLoadModifier   MODIFIER,
     typename            ValueType,
-    typename            difference_type = ptrdiff_t>
+    typename            Offset = ptrdiff_t>
 class CacheModifiedInputIterator
 {
 public:
 
     // Required iterator traits
     typedef CacheModifiedInputIterator          self_type;              ///< My own type
-    typedef difference_type                     difference_type;        ///< Type to express the result of subtracting one iterator from another
+    typedef Offset                              difference_type;        ///< Type to express the result of subtracting one iterator from another
     typedef ValueType                           value_type;             ///< The type of the element the iterator can point to
     typedef ValueType*                          pointer;                ///< The type of a pointer to an element the iterator can point to
     typedef ValueType                           reference;              ///< The type of a reference to an element the iterator can point to
@@ -601,12 +602,12 @@ public:
  *
  * \tparam CacheStoreModifier     The cub::CacheStoreModifier to use when accessing data
  * \tparam ValueType            The value type of this iterator
- * \tparam difference_type      The difference type of this iterator (Default: \p ptrdiff_t)
+ * \tparam Offset               The difference type of this iterator (Default: \p ptrdiff_t)
  */
 template <
     CacheStoreModifier  MODIFIER,
     typename            ValueType,
-    typename            difference_type = ptrdiff_t>
+    typename            Offset = ptrdiff_t>
 class CacheModifiedOutputIterator
 {
 private:
@@ -631,7 +632,7 @@ public:
 
     // Required iterator traits
     typedef CacheModifiedOutputIterator         self_type;              ///< My own type
-    typedef difference_type                     difference_type;        ///< Type to express the result of subtracting one iterator from another
+    typedef Offset                              difference_type;        ///< Type to express the result of subtracting one iterator from another
     typedef ValueType                           value_type;             ///< The type of the element the iterator can point to
     typedef ValueType*                          pointer;                ///< The type of a pointer to an element the iterator can point to
     typedef Reference                           reference;              ///< The type of a reference to an element the iterator can point to
@@ -764,11 +765,11 @@ public:
  * \endcode
  *
  * \tparam InputIterator        The type of the wrapped input iterator
- * \tparam difference_type      The difference type of this iterator (Default: \p ptrdiff_t)
+ * \tparam Offset               The difference type of this iterator (Default: \p ptrdiff_t)
  */
 template <
     typename    InputIterator,
-    typename    difference_type = ptrdiff_t>
+    typename    Offset = ptrdiff_t>
 class ArgIndexInputIterator
 {
 private:
@@ -781,7 +782,7 @@ public:
 
     // Required iterator traits
     typedef ArgIndexInputIterator               self_type;              ///< My own type
-    typedef difference_type                     difference_type;        ///< Type to express the result of subtracting one iterator from another
+    typedef Offset                              difference_type;        ///< Type to express the result of subtracting one iterator from another
     typedef ItemOffsetPair<T, difference_type>  value_type;             ///< The type of the element the iterator can point to
     typedef value_type*                         pointer;                ///< The type of a pointer to an element the iterator can point to
     typedef value_type                          reference;              ///< The type of a reference to an element the iterator can point to
@@ -930,21 +931,21 @@ public:
  * \tparam ValueType            The value type of this iterator
  * \tparam ConversionOp         Unary functor type for mapping objects of type \p InputType to type \p ValueType.  Must have member <tt>ValueType operator()(const InputType &datum)</tt>.
  * \tparam InputIterator        The type of the wrapped input iterator
- * \tparam difference_type      The difference type of this iterator (Default: \p ptrdiff_t)
+ * \tparam Offset               The difference type of this iterator (Default: \p ptrdiff_t)
  *
  */
 template <
     typename ValueType,
     typename ConversionOp,
     typename InputIterator,
-    typename difference_type = ptrdiff_t>
+    typename Offset = ptrdiff_t>
 class TransformInputIterator
 {
 public:
 
     // Required iterator traits
     typedef TransformInputIterator              self_type;              ///< My own type
-    typedef difference_type                     difference_type;        ///< Type to express the result of subtracting one iterator from another
+    typedef Offset                              difference_type;        ///< Type to express the result of subtracting one iterator from another
     typedef ValueType                           value_type;             ///< The type of the element the iterator can point to
     typedef ValueType*                          pointer;                ///< The type of a pointer to an element the iterator can point to
     typedef ValueType                           reference;              ///< The type of a reference to an element the iterator can point to
@@ -1092,19 +1093,19 @@ public:
  *
  * \tparam T                    The value type of this iterator
  * \tparam UNIQUE_ID            A globally-unique identifier (within the compilation unit) to name the underlying texture reference
- * \tparam difference_type      The difference type of this iterator (Default: \p ptrdiff_t)
+ * \tparam Offset               The difference type of this iterator (Default: \p ptrdiff_t)
  */
 template <
     typename    T,
     int         UNIQUE_ID,
-    typename    difference_type = ptrdiff_t>
+    typename    Offset = ptrdiff_t>
 class TexRefInputIterator
 {
 public:
 
     // Required iterator traits
     typedef TexRefInputIterator                 self_type;              ///< My own type
-    typedef difference_type                     difference_type;        ///< Type to express the result of subtracting one iterator from another
+    typedef Offset                              difference_type;        ///< Type to express the result of subtracting one iterator from another
     typedef T                                   value_type;             ///< The type of the element the iterator can point to
     typedef T*                                  pointer;                ///< The type of a pointer to an element the iterator can point to
     typedef T                                   reference;              ///< The type of a reference to an element the iterator can point to
@@ -1274,18 +1275,18 @@ public:
  * \endcode
  *
  * \tparam T                    The value type of this iterator
- * \tparam difference_type      The difference type of this iterator (Default: \p ptrdiff_t)
+ * \tparam Offset               The difference type of this iterator (Default: \p ptrdiff_t)
  */
 template <
     typename    T,
-    typename    difference_type = ptrdiff_t>
+    typename    Offset = ptrdiff_t>
 class TexObjInputIterator
 {
 public:
 
     // Required iterator traits
     typedef TexObjInputIterator                 self_type;              ///< My own type
-    typedef difference_type                     difference_type;        ///< Type to express the result of subtracting one iterator from another
+    typedef Offset                              difference_type;        ///< Type to express the result of subtracting one iterator from another
     typedef T                                   value_type;             ///< The type of the element the iterator can point to
     typedef T*                                  pointer;                ///< The type of a pointer to an element the iterator can point to
     typedef T                                   reference;              ///< The type of a reference to an element the iterator can point to
