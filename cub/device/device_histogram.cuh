@@ -262,7 +262,7 @@ struct DeviceHistogramDispatch
     #ifdef __CUDA_ARCH__
 
         // We're on the device, so initialize the kernel dispatch configurations with the current PTX policy
-        histo_region_config.Init<PtxHistoRegionPolicy>();
+        histo_region_config.template Init<PtxHistoRegionPolicy>();
 
     #else
 

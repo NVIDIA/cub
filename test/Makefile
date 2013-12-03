@@ -200,7 +200,10 @@ ALL = 	link \
 	 	test_device_reduce \
 	 	test_device_histogram \
 	 	test_device_scan \
-	 	test_device_radix_sort
+	 	test_device_radix_sort \
+	 	test_device_select_unique \
+		test_device_select_flagged \
+		test_device_select_if
 	 	
 #	 	test_device_seg_reduce
 		
