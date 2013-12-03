@@ -170,7 +170,7 @@ struct DevicePartition
      * {
      *     template <typename T>
      *     __host__ __device__ __forceinline__
-     *     T operator()(const T &a) const {
+     *     bool operator()(const T &a) const {
      *         return (a % 3 == 0);
      *     }
      * };

@@ -455,7 +455,7 @@ struct BlockSelectRegion
     {
         if ((tile_num_selected >> Log2<BLOCK_THREADS>::VALUE) == 0)
         {
-            // One phase scatter
+            // Average number of selected items per thread is less than one, so just do a one-phase scatter
             Scatter<FULL_TILE>(
                 tile_idx,
                 items,
