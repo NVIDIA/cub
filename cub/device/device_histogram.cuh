@@ -87,7 +87,7 @@ template <
     typename                                        InputIterator,              ///< The input iterator type \iterator.  Must have a value type that is assignable to <tt>unsigned char</tt>
     typename                                        HistoCounter,               ///< Integer type for counting sample occurrences per histogram bin
     typename                                        Offset>                     ///< Signed integer type for global offsets
-__launch_bounds__ (int(BlockHistogramRegionPolicy::BLOCK_THREADS), BlockHistogramRegionPolicy::SM_OCCUPANCY)
+__launch_bounds__ (int(BlockHistogramRegionPolicy::BLOCK_THREADS))
 __global__ void HistoRegionKernel(
     InputIterator                                   d_samples,                  ///< [in] Array of sample data. The samples from different channels are assumed to be interleaved (e.g., an array of 32b pixels where each pixel consists of four RGBA 8b samples).
     ArrayWrapper<HistoCounter*, ACTIVE_CHANNELS>    d_out_histograms,           ///< [out] Histogram counter data having logical dimensions <tt>HistoCounter[ACTIVE_CHANNELS][gridDim.x][BINS]</tt>
