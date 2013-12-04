@@ -181,10 +181,6 @@ struct BlockRadixSortUpsweepRegion
     template <int COUNT, int MAX>
     struct Iterate
     {
-        enum {
-            HALF = (MAX / 2),
-        };
-
         // BucketKeys
         static __device__ __forceinline__ void BucketKeys(
             BlockRadixSortUpsweepRegion     &cta,
@@ -195,14 +191,6 @@ struct BlockRadixSortUpsweepRegion
             // Next
             Iterate<COUNT + 1, MAX>::BucketKeys(cta, keys);
         }
-
-        // ProcessRegion
-        static __device__ __forceinline__ void ProcessRegion(BlockRadixSortUpsweepRegion &cta, Offset block_offset)
-        {
-            // Next
-            Iterate<1, HALF>::ProcessRegion(cta, block_offset);
-            Iterate<1, MAX - HALF>::ProcessRegion(cta, block_offset + (HALF * TILE_ITEMS));
-        }
     };
 
     // Terminate
@@ -211,12 +199,6 @@ struct BlockRadixSortUpsweepRegion
     {
         // BucketKeys
         static __device__ __forceinline__ void BucketKeys(BlockRadixSortUpsweepRegion &cta, UnsignedBits keys[KEYS_PER_THREAD]) {}
-
-        // ProcessRegion
-        static __device__ __forceinline__ void ProcessRegion(BlockRadixSortUpsweepRegion &cta, Offset block_offset)
-        {
-            cta.ProcessFullTile(block_offset);
-        }
     };
 
 
@@ -413,8 +395,11 @@ struct BlockRadixSortUpsweepRegion
         // Unroll batches of full tiles
         while (block_offset + UNROLLED_ELEMENTS <= block_end)
         {
-            Iterate<0, UNROLL_COUNT>::ProcessRegion(*this, block_offset);
-            block_offset += UNROLLED_ELEMENTS;
+            for (int i = 0; i < UNROLL_COUNT; ++i)
+            {
+                ProcessFullTile(block_offset);
+                block_offset += TILE_ITEMS;
+            }
 
             __syncthreads();
 

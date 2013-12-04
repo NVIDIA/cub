@@ -102,23 +102,7 @@ struct WarpScanShfl
         T               input,              ///< [in] The value to broadcast
         int             src_lane)           ///< [in] Which warp lane is to do the broadcasting
     {
-        typedef typename UnitWord<T>::ShuffleWord ShuffleWord;
-
-        const int       WORDS           = (sizeof(T) + sizeof(ShuffleWord) - 1) / sizeof(ShuffleWord);
-        T               output;
-        ShuffleWord     *output_alias   = reinterpret_cast<ShuffleWord *>(&output);
-        ShuffleWord     *input_alias    = reinterpret_cast<ShuffleWord *>(&input);
-
-        #pragma unroll
-        for (int WORD = 0; WORD < WORDS; ++WORD)
-        {
-            unsigned int shuffle_word = input_alias[WORD];
-            asm("shfl.idx.b32 %0, %1, %2, %3;"
-                : "=r"(shuffle_word) : "r"(shuffle_word), "r"(src_lane), "r"(LOGICAL_WARP_THREADS - 1));
-            output_alias[WORD] = (ShuffleWord) shuffle_word;
-        }
-
-        return output;
+        return ShuffleBroadcast(input, src_lane);
     }
 
 

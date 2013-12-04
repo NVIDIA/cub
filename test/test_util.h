@@ -300,9 +300,9 @@ void RandomBits(
     int begin_bit = 0,
     int end_bit = sizeof(K) * 8)
 {
-    const int NUM_SHORTS = (sizeof(K) + sizeof(unsigned short) - 1) / sizeof(unsigned short);
+    const int NUM_BYTES = sizeof(K);
 
-    unsigned short short_buff[NUM_SHORTS];
+    unsigned char byte_buff[NUM_BYTES];
 
     if (entropy_reduction == -1)
     {
@@ -312,24 +312,25 @@ void RandomBits(
 
     if (end_bit < 0) end_bit = sizeof(K) * 8;
     do {
-        // Generate random short_buff
-        for (int j = 0; j < NUM_SHORTS; j++)
+        // Generate random byte_buff
+        for (int j = 0; j < NUM_BYTES; j++)
         {
-            int current_bit = j * 16;
+            int current_bit = j * 8;
 
-            unsigned short word = 0xffff;
-            word &= 0xffff << CUB_MAX(0, begin_bit - current_bit);
-            word &= 0xffff >> CUB_MAX(0, (current_bit + 16) - end_bit);
+            unsigned char byte = 0xff;
+            byte &= 0xff << CUB_MAX(0, begin_bit - current_bit);
+            byte &= 0xff >> CUB_MAX(0, (current_bit + 8) - end_bit);
 
             for (int i = 0; i <= entropy_reduction; i++)
             {
-                word &= rand();
+                // Grab some of the higher bits from rand (better entropy, supposedly)
+                byte &= (rand() >> 5);
             }
 
-            short_buff[j] = word;
+            byte_buff[j] = byte;
         }
 
-        memcpy(&key, short_buff, sizeof(K));
+        memcpy(&key, byte_buff, sizeof(K));
 
     } while (key != key);        // avoids NaNs when generating random floating point numbers
 }

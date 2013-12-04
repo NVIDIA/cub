@@ -85,11 +85,6 @@ struct IteratorTexRef
         /// Bind texture
         static cudaError_t BindTexture(void *d_in)
         {
-            printf("binding texture element of size %d to %d words of size %d\n",
-                sizeof(T),
-                TEXTURE_MULTIPLE,
-                sizeof(TextureWord));
-
             if (d_in)
             {
                 cudaChannelFormatDesc tex_desc = cudaCreateChannelDesc<TextureWord>();
