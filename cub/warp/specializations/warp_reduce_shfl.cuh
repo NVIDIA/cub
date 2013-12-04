@@ -244,13 +244,7 @@ struct WarpReduceShfl
         int             folded_items_per_warp,  ///< [in] Total number of valid items folded into each logical warp
         ReductionOp     reduction_op)           ///< [in] Binary reduction operator
     {
-        typedef typename UnitWord<T>::ShuffleWord ShuffleWord;
-
-        const int       WORDS           = (sizeof(T) + sizeof(ShuffleWord) - 1) / sizeof(ShuffleWord);
-        T               output          = input;
-        T               temp;
-        ShuffleWord     *temp_alias     = reinterpret_cast<ShuffleWord *>(&temp);
-        ShuffleWord     *output_alias   = reinterpret_cast<ShuffleWord *>(&output);
+        T output = input;
 
         // Iterate scan steps
         #pragma unroll
@@ -259,15 +253,7 @@ struct WarpReduceShfl
             // Grab addend from peer
             const int OFFSET = 1 << STEP;
 
-            #pragma unroll
-            for (int WORD = 0; WORD < WORDS; ++WORD)
-            {
-                unsigned int shuffle_word = output_alias[WORD];
-                asm(
-                    "  shfl.down.b32 %0, %1, %2, %3;"
-                    : "=r"(shuffle_word) : "r"(shuffle_word), "r"(OFFSET), "r"(SHFL_C));
-                temp_alias[WORD] = (ShuffleWord) shuffle_word;
-            }
+            T temp = ShuffleDown(output, OFFSET);
 
             // Perform reduction op if from a valid peer
             if (FULL_WARPS)
@@ -296,14 +282,7 @@ struct WarpReduceShfl
         Flag            flag,               ///< [in] Whether or not the current lane is a segment head/tail
         ReductionOp     reduction_op)       ///< [in] Binary reduction operator
     {
-        typedef typename UnitWord<T>::ShuffleWord ShuffleWord;
-
         T output = input;
-
-        const int       WORDS           = (sizeof(T) + sizeof(ShuffleWord) - 1) / sizeof(ShuffleWord);
-        T               temp;
-        ShuffleWord     *temp_alias     = reinterpret_cast<ShuffleWord *>(&temp);
-        ShuffleWord     *output_alias   = reinterpret_cast<ShuffleWord *>(&output);
 
         // Get the start flags for each thread in the warp.
         int warp_flags = __ballot(flag);
@@ -329,20 +308,10 @@ struct WarpReduceShfl
         #pragma unroll
         for (int STEP = 0; STEP < STEPS; STEP++)
         {
+            // Grab addend from peer
             const int OFFSET = 1 << STEP;
 
-            // Grab addend from peer
-            #pragma unroll
-            for (int WORD = 0; WORD < WORDS; ++WORD)
-            {
-                unsigned int shuffle_word = output_alias[WORD];
-
-                asm(
-                    "  shfl.down.b32 %0, %1, %2, %3;"
-                    : "=r"(shuffle_word) : "r"(shuffle_word), "r"(OFFSET), "r"(SHFL_C));
-                temp_alias[WORD] = (ShuffleWord) shuffle_word;
-
-            }
+            T temp = ShuffleDown(output, OFFSET);
 
             // Perform reduction op if valid
             if (OFFSET < next_flag - lane_id)
