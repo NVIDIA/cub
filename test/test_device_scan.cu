@@ -717,12 +717,13 @@ void Test(
 template <
     typename        T,
     typename        ScanOp>
-void Test(
+void TestVariant(
     int             num_items,
     ScanOp          scan_op,
+    T               identity,
     char*           type_string)
 {
-    Test<T>(num_items, scan_op, T(), type_string);          // exclusive
+    Test<T>(num_items, scan_op, identity, type_string);     // exclusive
     Test<T>(num_items, scan_op, NullType(), type_string);   // inclusive
 }
 
@@ -733,10 +734,11 @@ void Test(
 template <typename T>
 void TestOp(
     int             num_items,
+    T               max_identity,
     char*           type_string)
 {
-    Test<T>(num_items, Sum(), type_string);
-    Test<T>(num_items, Max(), type_string);
+    TestVariant(num_items, Sum(), T(), type_string);
+    TestVariant(num_items, Max(), max_identity, type_string);
 }
 
 
@@ -744,20 +746,21 @@ void TestOp(
  * Test different input sizes
  */
 template <typename T>
-void Test(
+void TestSize(
     int             num_items,
+    T               max_identity,
     char*           type_string)
 {
     if (num_items < 0)
     {
-        TestOp<T>(1,        type_string);
-        TestOp<T>(100,      type_string);
-        TestOp<T>(10000,    type_string);
-        TestOp<T>(1000000,  type_string);
+        TestOp(1,        max_identity, type_string);
+        TestOp(100,      max_identity, type_string);
+        TestOp(10000,    max_identity, type_string);
+        TestOp(1000000,  max_identity, type_string);
     }
     else
     {
-        TestOp<T>(num_items, type_string);
+        TestOp(num_items, max_identity, type_string);
     }
 }
 
@@ -808,7 +811,7 @@ int main(int argc, char** argv)
     // Get device SM version
     int sm_version;
     CubDebugExit(SmVersion(sm_version, device_ordinal));
-/*
+
     if (quick)
     {
         // Quick test
@@ -834,30 +837,33 @@ int main(int argc, char** argv)
         TestPointer<THRUST, TestBar>(  num_items / 4, UNIFORM, Sum(), TestBar(), CUB_TYPE_STRING(TestBar));
     }
     else
-*/    {
+    {
         // Repeat test sequence
         for (int i = 0; i <= g_repeat; ++i)
         {
-/*
+
             // Test different input types
-            Test<unsigned char>(num_items, CUB_TYPE_STRING(unsigned char));
-            Test<unsigned short>(num_items, CUB_TYPE_STRING(unsigned short));
-            Test<unsigned int>(num_items, CUB_TYPE_STRING(unsigned int));
-            Test<unsigned long long>(num_items, CUB_TYPE_STRING(unsigned long long));
+            TestSize<unsigned char>(num_items, 0, CUB_TYPE_STRING(unsigned char));
+            TestSize<unsigned short>(num_items, 0, CUB_TYPE_STRING(unsigned short));
+            TestSize<unsigned int>(num_items, 0, CUB_TYPE_STRING(unsigned int));
+            TestSize<unsigned long long>(num_items, 0, CUB_TYPE_STRING(unsigned long long));
 
-            Test<uchar2>(num_items, CUB_TYPE_STRING(uchar2));
-            Test<ushort2>(num_items, CUB_TYPE_STRING(ushort2));
-            Test<uint2>(num_items, CUB_TYPE_STRING(uint2));
-            Test<ulonglong2>(num_items, CUB_TYPE_STRING(ulonglong2));
+            TestSize<uchar2>(num_items, make_uchar2(0, 0), CUB_TYPE_STRING(uchar2));
+            TestSize<ushort2>(num_items, make_ushort2(0, 0), CUB_TYPE_STRING(ushort2));
+            TestSize<uint2>(num_items, make_uint2(0, 0), CUB_TYPE_STRING(uint2));
+            TestSize<ulonglong2>(num_items, make_ulonglong2(0, 0), CUB_TYPE_STRING(ulonglong2));
 
-            Test<uchar4>(num_items, CUB_TYPE_STRING(uchar4));
-            Test<ushort4>(num_items, CUB_TYPE_STRING(ushort4));
-            Test<uint4>(num_items, CUB_TYPE_STRING(uint4));
-            Test<ulonglong4>(num_items, CUB_TYPE_STRING(ulonglong4));
+            TestSize<uchar4>(num_items, make_uchar4(0, 0, 0, 0), CUB_TYPE_STRING(uchar4));
+            TestSize<ushort4>(num_items, make_ushort4(0, 0, 0, 0), CUB_TYPE_STRING(ushort4));
+            TestSize<uint4>(num_items, make_uint4(0, 0, 0, 0), CUB_TYPE_STRING(uint4));
+            TestSize<ulonglong4>(num_items, make_ulonglong4(0, 0, 0, 0), CUB_TYPE_STRING(ulonglong4));
 
-            Test<TestFoo>(num_items, CUB_TYPE_STRING(TestFoo));
-*/
-            Test<TestBar>(num_items, CUB_TYPE_STRING(TestBar));
+            TestSize<TestFoo>(num_items, TestFoo::MakeTestFoo(
+                1ll << 63, 
+                1 << 31, 
+                short(1 << 15), 
+                char(1 << 7)), CUB_TYPE_STRING(TestFoo));
+            TestSize<TestBar>(num_items, TestBar(1ll << 63, 1 << 31), CUB_TYPE_STRING(TestBar));
         }
     }
 
