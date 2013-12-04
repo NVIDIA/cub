@@ -35,7 +35,6 @@
 
 #include <stdio.h>
 #include <limits>
-#include <string>
 
 #include <cub/util_allocator.cuh>
 #include <cub/device/device_histogram.cuh>
@@ -62,7 +61,7 @@ CachingDeviceAllocator  g_allocator(true);
 //---------------------------------------------------------------------
 
 /**
- * Dispatch to shared atomic entrypoint
+ * Dispatch to shared sorting entrypoint
  */
 template <int BINS, int CHANNELS, int ACTIVE_CHANNELS, typename InputIterator, typename HistoCounter>
 __host__ __device__ __forceinline__

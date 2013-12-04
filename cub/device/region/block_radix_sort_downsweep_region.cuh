@@ -280,6 +280,7 @@ struct BlockRadixSortDownsweepRegion
         T       *d_out,
         Offset  valid_items)
     {
+        #pragma unroll
         for (int ITEM = 0; ITEM < ITEMS_PER_THREAD; ++ITEM)
         {
             // Scatter if not out-of-bounds
@@ -335,6 +336,8 @@ struct BlockRadixSortDownsweepRegion
 
         // Compute striped local ranks
         int local_ranks[ITEMS_PER_THREAD];
+
+        #pragma unroll
         for (int ITEM = 0; ITEM < ITEMS_PER_THREAD; ++ITEM)
         {
             local_ranks[ITEM] = threadIdx.x + (ITEM * BLOCK_THREADS);
@@ -384,6 +387,8 @@ struct BlockRadixSortDownsweepRegion
 
         // Compute striped local ranks
         int local_ranks[ITEMS_PER_THREAD];
+
+        #pragma unroll
         for (int ITEM = 0; ITEM < ITEMS_PER_THREAD; ++ITEM)
         {
             local_ranks[ITEM] = threadIdx.x + (ITEM * BLOCK_THREADS);
