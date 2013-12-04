@@ -833,11 +833,12 @@ struct DeviceRadixSortDispatch
 
             // Run radix sorting passes
             int num_bits = end_bit - begin_bit;
+            int remaining_bits = num_bits % downsweep_config.radix_bits;
 
-            if (num_bits % downsweep_config.radix_bits != 0)
+            if (remaining_bits != 0)
             {
                 // Run passes of alternate configuration
-                int max_alt_passes  = downsweep_config.radix_bits - (num_bits % downsweep_config.radix_bits);
+                int max_alt_passes  = downsweep_config.radix_bits - remaining_bits;
                 int alt_end_bit     = CUB_MIN(end_bit, begin_bit + (max_alt_passes * alt_downsweep_config.radix_bits));
 
                 if (CubDebug(error = Dispatch(
@@ -1175,9 +1176,13 @@ struct DeviceRadixSort
         cudaStream_t        stream              = 0,                ///< [in] <b>[optional]</b> CUDA stream to launch kernels within.  Default is stream<sub>0</sub>.
         bool                debug_synchronous   = false)            ///< [in] <b>[optional]</b> Whether or not to synchronize the stream after every kernel launch to check for errors.  Also causes launch configurations to be printed to the console.  Default is \p false.
     {
+        // Signed integer type for global offsets
+        typedef int Offset;
+
+        // Null value type
         DoubleBuffer<NullType> d_values;
 
-        return SortPairs(
+        return DeviceRadixSortDispatch<false, Key, NullType, Offset>::Dispatch(
             d_temp_storage,
             temp_storage_bytes,
             d_keys,
@@ -1245,9 +1250,13 @@ struct DeviceRadixSort
         cudaStream_t        stream              = 0,                ///< [in] <b>[optional]</b> CUDA stream to launch kernels within.  Default is stream<sub>0</sub>.
         bool                debug_synchronous   = false)            ///< [in] <b>[optional]</b> Whether or not to synchronize the stream after every kernel launch to check for errors.  Also causes launch configurations to be printed to the console.  Default is \p false.
     {
+        // Signed integer type for global offsets
+        typedef int Offset;
+
+        // Null value type
         DoubleBuffer<NullType> d_values;
 
-        return SortPairsDescending(
+        return DeviceRadixSortDispatch<true, Key, NullType, Offset>::Dispatch(
             d_temp_storage,
             temp_storage_bytes,
             d_keys,
