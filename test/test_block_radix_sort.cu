@@ -64,7 +64,7 @@ CachingDeviceAllocator  g_allocator(true);
 /// Specialized descending, blocked -> blocked
 template <int BLOCK_THREADS, typename BlockRadixSort, int ITEMS_PER_THREAD, typename Key, typename Value>
 __device__ __forceinline__ void TestBlockSort(
-    BlockRadixSort::TempStorage &temp_storage,
+    typename BlockRadixSort::TempStorage &temp_storage,
     Key                         (&keys)[ITEMS_PER_THREAD],
     Value                       (&values)[ITEMS_PER_THREAD],
     Key                         *d_keys,
@@ -84,7 +84,7 @@ __device__ __forceinline__ void TestBlockSort(
 /// Specialized descending, blocked -> striped
 template <int BLOCK_THREADS, typename BlockRadixSort, int ITEMS_PER_THREAD, typename Key, typename Value>
 __device__ __forceinline__ void TestBlockSort(
-    BlockRadixSort::TempStorage &temp_storage,
+    typename BlockRadixSort::TempStorage &temp_storage,
     Key                         (&keys)[ITEMS_PER_THREAD],
     Value                       (&values)[ITEMS_PER_THREAD],
     Key                         *d_keys,
@@ -104,7 +104,7 @@ __device__ __forceinline__ void TestBlockSort(
 /// Specialized ascending, blocked -> blocked
 template <int BLOCK_THREADS, typename BlockRadixSort, int ITEMS_PER_THREAD, typename Key, typename Value>
 __device__ __forceinline__ void TestBlockSort(
-    BlockRadixSort::TempStorage &temp_storage,
+    typename BlockRadixSort::TempStorage &temp_storage,
     Key                         (&keys)[ITEMS_PER_THREAD],
     Value                       (&values)[ITEMS_PER_THREAD],
     Key                         *d_keys,
@@ -124,7 +124,7 @@ __device__ __forceinline__ void TestBlockSort(
 /// Specialized ascending, blocked -> striped
 template <int BLOCK_THREADS, typename BlockRadixSort, int ITEMS_PER_THREAD, typename Key, typename Value>
 __device__ __forceinline__ void TestBlockSort(
-    BlockRadixSort::TempStorage &temp_storage,
+    typename BlockRadixSort::TempStorage &temp_storage,
     Key                         (&keys)[ITEMS_PER_THREAD],
     Value                       (&values)[ITEMS_PER_THREAD],
     Key                         *d_keys,
