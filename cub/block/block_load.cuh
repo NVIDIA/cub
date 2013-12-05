@@ -48,19 +48,19 @@ CUB_NS_PREFIX
 namespace cub {
 
 /**
- * \addtogroup IoModule
+ * \addtogroup UtilIo
  * @{
  */
 
 
 /******************************************************************//**
- * \name Blocked I/O
+ * \name Blocked arrangement I/O (direct)
  *********************************************************************/
 //@{
 
 
 /**
- * \brief Load a linear segment of items into a blocked arrangement across the thread block using the specified cache modifier.
+ * \brief Load a linear segment of items into a blocked arrangement across the thread block.
  *
  * \blocked
  *
@@ -87,7 +87,7 @@ __device__ __forceinline__ void LoadDirectBlocked(
 
 
 /**
- * \brief Load a linear segment of items into a blocked arrangement across the thread block using the specified cache modifier, guarded by range.
+ * \brief Load a linear segment of items into a blocked arrangement across the thread block, guarded by range.
  *
  * \blocked
  *
@@ -119,7 +119,7 @@ __device__ __forceinline__ void LoadDirectBlocked(
 
 
 /**
- * \brief Load a linear segment of items into a blocked arrangement across the thread block using the specified cache modifier, guarded by range, with a fall-back assignment of out-of-bound elements..
+ * \brief Load a linear segment of items into a blocked arrangement across the thread block, guarded by range, with a fall-back assignment of out-of-bound elements..
  *
  * \blocked
  *
@@ -148,231 +148,8 @@ __device__ __forceinline__ void LoadDirectBlocked(
 }
 
 
-
-//@}  end member group
-/******************************************************************//**
- * \name Striped I/O
- *********************************************************************/
-//@{
-
-
 /**
- * \brief Load a linear segment of items into a striped arrangement across the thread block using the specified cache modifier.
- *
- * \striped
- *
- * \tparam BLOCK_THREADS        The thread block size in threads
- * \tparam T                    <b>[inferred]</b> The data type to load.
- * \tparam ITEMS_PER_THREAD     <b>[inferred]</b> The number of consecutive items partitioned onto each thread.
- * \tparam InputIterator        <b>[inferred]</b> The random-access iterator type for input \iterator.
- */
-template <
-    int             BLOCK_THREADS,
-    typename        T,
-    int             ITEMS_PER_THREAD,
-    typename        InputIterator>
-__device__ __forceinline__ void LoadDirectStriped(
-    int             linear_tid,                 ///< [in] A suitable 1D thread-identifier for the calling thread (e.g., <tt>(threadIdx.y * blockDim.x) + linear_tid</tt> for 2D thread blocks)
-    InputIterator   block_itr,                  ///< [in] The thread block's base input iterator for loading from
-    T               (&items)[ITEMS_PER_THREAD]) ///< [out] Data to load
-{
-    #pragma unroll
-    for (int ITEM = 0; ITEM < ITEMS_PER_THREAD; ITEM++)
-    {
-        items[ITEM] = block_itr[(ITEM * BLOCK_THREADS) + linear_tid];
-    }
-}
-
-
-/**
- * \brief Load a linear segment of items into a striped arrangement across the thread block using the specified cache modifier, guarded by range
- *
- * \striped
- *
- * \tparam BLOCK_THREADS        The thread block size in threads
- * \tparam T                    <b>[inferred]</b> The data type to load.
- * \tparam ITEMS_PER_THREAD     <b>[inferred]</b> The number of consecutive items partitioned onto each thread.
- * \tparam InputIterator        <b>[inferred]</b> The random-access iterator type for input \iterator.
- */
-template <
-    int             BLOCK_THREADS,
-    typename        T,
-    int             ITEMS_PER_THREAD,
-    typename        InputIterator>
-__device__ __forceinline__ void LoadDirectStriped(
-    int             linear_tid,                 ///< [in] A suitable 1D thread-identifier for the calling thread (e.g., <tt>(threadIdx.y * blockDim.x) + linear_tid</tt> for 2D thread blocks)
-    InputIterator   block_itr,                  ///< [in] The thread block's base input iterator for loading from
-    T               (&items)[ITEMS_PER_THREAD], ///< [out] Data to load
-    int             valid_items)                ///< [in] Number of valid items to load
-{
-    int bounds = valid_items - linear_tid;
-
-    #pragma unroll
-    for (int ITEM = 0; ITEM < ITEMS_PER_THREAD; ITEM++)
-    {
-        if (ITEM * BLOCK_THREADS < bounds)
-        {
-            items[ITEM] = block_itr[linear_tid + (ITEM * BLOCK_THREADS)];
-        }
-    }
-}
-
-
-/**
- * \brief Load a linear segment of items into a striped arrangement across the thread block using the specified cache modifier, guarded by range, with a fall-back assignment of out-of-bound elements.
- *
- * \striped
- *
- * \tparam BLOCK_THREADS        The thread block size in threads
- * \tparam T                    <b>[inferred]</b> The data type to load.
- * \tparam ITEMS_PER_THREAD     <b>[inferred]</b> The number of consecutive items partitioned onto each thread.
- * \tparam InputIterator        <b>[inferred]</b> The random-access iterator type for input \iterator.
- */
-template <
-    int             BLOCK_THREADS,
-    typename        T,
-    int             ITEMS_PER_THREAD,
-    typename        InputIterator>
-__device__ __forceinline__ void LoadDirectStriped(
-    int             linear_tid,                 ///< [in] A suitable 1D thread-identifier for the calling thread (e.g., <tt>(threadIdx.y * blockDim.x) + linear_tid</tt> for 2D thread blocks)
-    InputIterator   block_itr,                  ///< [in] The thread block's base input iterator for loading from
-    T               (&items)[ITEMS_PER_THREAD], ///< [out] Data to load
-    int             valid_items,                ///< [in] Number of valid items to load
-    T               oob_default)                ///< [in] Default value to assign out-of-bound items
-{
-    #pragma unroll
-    for (int ITEM = 0; ITEM < ITEMS_PER_THREAD; ITEM++)
-    {
-        items[ITEM] = oob_default;
-    }
-
-    LoadDirectStriped<BLOCK_THREADS>(linear_tid, block_itr, items, valid_items);
-}
-
-
-
-//@}  end member group
-/******************************************************************//**
- * \name Warp-striped I/O
- *********************************************************************/
-//@{
-
-
-/**
- * \brief Load a linear segment of items into a warp-striped arrangement across the thread block using the specified cache modifier.
- *
- * \warpstriped
- *
- * \par Usage Considerations
- * The number of threads in the thread block must be a multiple of the architecture's warp size.
- *
- * \tparam T                    <b>[inferred]</b> The data type to load.
- * \tparam ITEMS_PER_THREAD     <b>[inferred]</b> The number of consecutive items partitioned onto each thread.
- * \tparam InputIterator        <b>[inferred]</b> The random-access iterator type for input \iterator.
- */
-template <
-    typename        T,
-    int             ITEMS_PER_THREAD,
-    typename        InputIterator>
-__device__ __forceinline__ void LoadDirectWarpStriped(
-    int             linear_tid,                 ///< [in] A suitable 1D thread-identifier for the calling thread (e.g., <tt>(threadIdx.y * blockDim.x) + linear_tid</tt> for 2D thread blocks)
-    InputIterator   block_itr,                  ///< [in] The thread block's base input iterator for loading from
-    T               (&items)[ITEMS_PER_THREAD]) ///< [out] Data to load
-{
-    int tid         = linear_tid & (CUB_PTX_WARP_THREADS - 1);
-    int wid         = linear_tid >> CUB_PTX_LOG_WARP_THREADS;
-    int warp_offset = wid * CUB_PTX_WARP_THREADS * ITEMS_PER_THREAD;
-
-    // Load directly in warp-striped order
-    #pragma unroll
-    for (int ITEM = 0; ITEM < ITEMS_PER_THREAD; ITEM++)
-    {
-        items[ITEM] = block_itr[warp_offset + tid + (ITEM * CUB_PTX_WARP_THREADS)];
-    }
-}
-
-
-/**
- * \brief Load a linear segment of items into a warp-striped arrangement across the thread block using the specified cache modifier, guarded by range
- *
- * \warpstriped
- *
- * \par Usage Considerations
- * The number of threads in the thread block must be a multiple of the architecture's warp size.
- *
- * \tparam T                    <b>[inferred]</b> The data type to load.
- * \tparam ITEMS_PER_THREAD     <b>[inferred]</b> The number of consecutive items partitioned onto each thread.
- * \tparam InputIterator        <b>[inferred]</b> The random-access iterator type for input \iterator.
- */
-template <
-    typename        T,
-    int             ITEMS_PER_THREAD,
-    typename        InputIterator>
-__device__ __forceinline__ void LoadDirectWarpStriped(
-    int             linear_tid,                 ///< [in] A suitable 1D thread-identifier for the calling thread (e.g., <tt>(threadIdx.y * blockDim.x) + linear_tid</tt> for 2D thread blocks)
-    InputIterator   block_itr,                  ///< [in] The thread block's base input iterator for loading from
-    T               (&items)[ITEMS_PER_THREAD], ///< [out] Data to load
-    int             valid_items)                ///< [in] Number of valid items to load
-{
-    int tid                 = linear_tid & (CUB_PTX_WARP_THREADS - 1);
-    int wid                 = linear_tid >> CUB_PTX_LOG_WARP_THREADS;
-    int warp_offset         = wid * CUB_PTX_WARP_THREADS * ITEMS_PER_THREAD;
-    int bounds              = valid_items - warp_offset - tid;
-
-    // Load directly in warp-striped order
-    #pragma unroll
-    for (int ITEM = 0; ITEM < ITEMS_PER_THREAD; ITEM++)
-    {
-        if ((ITEM * CUB_PTX_WARP_THREADS) < bounds)
-        {
-            items[ITEM] = block_itr[warp_offset + tid + (ITEM * CUB_PTX_WARP_THREADS)];
-        }
-    }
-}
-
-
-/**
- * \brief Load a linear segment of items into a warp-striped arrangement across the thread block using the specified cache modifier, guarded by range, with a fall-back assignment of out-of-bound elements.
- *
- * \warpstriped
- *
- * \par Usage Considerations
- * The number of threads in the thread block must be a multiple of the architecture's warp size.
- *
- * \tparam T                    <b>[inferred]</b> The data type to load.
- * \tparam ITEMS_PER_THREAD     <b>[inferred]</b> The number of consecutive items partitioned onto each thread.
- * \tparam InputIterator        <b>[inferred]</b> The random-access iterator type for input \iterator.
- */
-template <
-    typename        T,
-    int             ITEMS_PER_THREAD,
-    typename        InputIterator>
-__device__ __forceinline__ void LoadDirectWarpStriped(
-    int             linear_tid,                 ///< [in] A suitable 1D thread-identifier for the calling thread (e.g., <tt>(threadIdx.y * blockDim.x) + linear_tid</tt> for 2D thread blocks)
-    InputIterator   block_itr,                  ///< [in] The thread block's base input iterator for loading from
-    T               (&items)[ITEMS_PER_THREAD], ///< [out] Data to load
-    int             valid_items,               ///< [in] Number of valid items to load
-    T               oob_default)                ///< [in] Default value to assign out-of-bound items
-{
-    #pragma unroll
-    for (int ITEM = 0; ITEM < ITEMS_PER_THREAD; ITEM++)
-    {
-        items[ITEM] = oob_default;
-    }
-
-    LoadDirectWarpStriped(linear_tid, block_itr, items, valid_items);
-}
-
-
-
-//@}  end member group
-/******************************************************************//**
- * \name Blocked, vectorized I/O
- *********************************************************************/
-//@{
-
-/**
- * \brief Load a linear segment of items into a blocked arrangement across the thread block using the specified cache modifier.
+ * \brief Load a linear segment of items into a blocked arrangement across the thread block.
  *
  * \blocked
  *
@@ -431,9 +208,225 @@ __device__ __forceinline__ void LoadDirectBlockedVectorized(
 }
 
 
+
+//@}  end member group
+/******************************************************************//**
+ * \name Striped arrangement I/O (direct)
+ *********************************************************************/
+//@{
+
+
+/**
+ * \brief Load a linear segment of items into a striped arrangement across the thread block.
+ *
+ * \striped
+ *
+ * \tparam BLOCK_THREADS        The thread block size in threads
+ * \tparam T                    <b>[inferred]</b> The data type to load.
+ * \tparam ITEMS_PER_THREAD     <b>[inferred]</b> The number of consecutive items partitioned onto each thread.
+ * \tparam InputIterator        <b>[inferred]</b> The random-access iterator type for input \iterator.
+ */
+template <
+    int             BLOCK_THREADS,
+    typename        T,
+    int             ITEMS_PER_THREAD,
+    typename        InputIterator>
+__device__ __forceinline__ void LoadDirectStriped(
+    int             linear_tid,                 ///< [in] A suitable 1D thread-identifier for the calling thread (e.g., <tt>(threadIdx.y * blockDim.x) + linear_tid</tt> for 2D thread blocks)
+    InputIterator   block_itr,                  ///< [in] The thread block's base input iterator for loading from
+    T               (&items)[ITEMS_PER_THREAD]) ///< [out] Data to load
+{
+    #pragma unroll
+    for (int ITEM = 0; ITEM < ITEMS_PER_THREAD; ITEM++)
+    {
+        items[ITEM] = block_itr[(ITEM * BLOCK_THREADS) + linear_tid];
+    }
+}
+
+
+/**
+ * \brief Load a linear segment of items into a striped arrangement across the thread block, guarded by range
+ *
+ * \striped
+ *
+ * \tparam BLOCK_THREADS        The thread block size in threads
+ * \tparam T                    <b>[inferred]</b> The data type to load.
+ * \tparam ITEMS_PER_THREAD     <b>[inferred]</b> The number of consecutive items partitioned onto each thread.
+ * \tparam InputIterator        <b>[inferred]</b> The random-access iterator type for input \iterator.
+ */
+template <
+    int             BLOCK_THREADS,
+    typename        T,
+    int             ITEMS_PER_THREAD,
+    typename        InputIterator>
+__device__ __forceinline__ void LoadDirectStriped(
+    int             linear_tid,                 ///< [in] A suitable 1D thread-identifier for the calling thread (e.g., <tt>(threadIdx.y * blockDim.x) + linear_tid</tt> for 2D thread blocks)
+    InputIterator   block_itr,                  ///< [in] The thread block's base input iterator for loading from
+    T               (&items)[ITEMS_PER_THREAD], ///< [out] Data to load
+    int             valid_items)                ///< [in] Number of valid items to load
+{
+    int bounds = valid_items - linear_tid;
+
+    #pragma unroll
+    for (int ITEM = 0; ITEM < ITEMS_PER_THREAD; ITEM++)
+    {
+        if (ITEM * BLOCK_THREADS < bounds)
+        {
+            items[ITEM] = block_itr[linear_tid + (ITEM * BLOCK_THREADS)];
+        }
+    }
+}
+
+
+/**
+ * \brief Load a linear segment of items into a striped arrangement across the thread block, guarded by range, with a fall-back assignment of out-of-bound elements.
+ *
+ * \striped
+ *
+ * \tparam BLOCK_THREADS        The thread block size in threads
+ * \tparam T                    <b>[inferred]</b> The data type to load.
+ * \tparam ITEMS_PER_THREAD     <b>[inferred]</b> The number of consecutive items partitioned onto each thread.
+ * \tparam InputIterator        <b>[inferred]</b> The random-access iterator type for input \iterator.
+ */
+template <
+    int             BLOCK_THREADS,
+    typename        T,
+    int             ITEMS_PER_THREAD,
+    typename        InputIterator>
+__device__ __forceinline__ void LoadDirectStriped(
+    int             linear_tid,                 ///< [in] A suitable 1D thread-identifier for the calling thread (e.g., <tt>(threadIdx.y * blockDim.x) + linear_tid</tt> for 2D thread blocks)
+    InputIterator   block_itr,                  ///< [in] The thread block's base input iterator for loading from
+    T               (&items)[ITEMS_PER_THREAD], ///< [out] Data to load
+    int             valid_items,                ///< [in] Number of valid items to load
+    T               oob_default)                ///< [in] Default value to assign out-of-bound items
+{
+    #pragma unroll
+    for (int ITEM = 0; ITEM < ITEMS_PER_THREAD; ITEM++)
+    {
+        items[ITEM] = oob_default;
+    }
+
+    LoadDirectStriped<BLOCK_THREADS>(linear_tid, block_itr, items, valid_items);
+}
+
+
+
+//@}  end member group
+/******************************************************************//**
+ * \name Warp-striped arrangement I/O (direct)
+ *********************************************************************/
+//@{
+
+
+/**
+ * \brief Load a linear segment of items into a warp-striped arrangement across the thread block.
+ *
+ * \warpstriped
+ *
+ * \par Usage Considerations
+ * The number of threads in the thread block must be a multiple of the architecture's warp size.
+ *
+ * \tparam T                    <b>[inferred]</b> The data type to load.
+ * \tparam ITEMS_PER_THREAD     <b>[inferred]</b> The number of consecutive items partitioned onto each thread.
+ * \tparam InputIterator        <b>[inferred]</b> The random-access iterator type for input \iterator.
+ */
+template <
+    typename        T,
+    int             ITEMS_PER_THREAD,
+    typename        InputIterator>
+__device__ __forceinline__ void LoadDirectWarpStriped(
+    int             linear_tid,                 ///< [in] A suitable 1D thread-identifier for the calling thread (e.g., <tt>(threadIdx.y * blockDim.x) + linear_tid</tt> for 2D thread blocks)
+    InputIterator   block_itr,                  ///< [in] The thread block's base input iterator for loading from
+    T               (&items)[ITEMS_PER_THREAD]) ///< [out] Data to load
+{
+    int tid         = linear_tid & (CUB_PTX_WARP_THREADS - 1);
+    int wid         = linear_tid >> CUB_PTX_LOG_WARP_THREADS;
+    int warp_offset = wid * CUB_PTX_WARP_THREADS * ITEMS_PER_THREAD;
+
+    // Load directly in warp-striped order
+    #pragma unroll
+    for (int ITEM = 0; ITEM < ITEMS_PER_THREAD; ITEM++)
+    {
+        items[ITEM] = block_itr[warp_offset + tid + (ITEM * CUB_PTX_WARP_THREADS)];
+    }
+}
+
+
+/**
+ * \brief Load a linear segment of items into a warp-striped arrangement across the thread block, guarded by range
+ *
+ * \warpstriped
+ *
+ * \par Usage Considerations
+ * The number of threads in the thread block must be a multiple of the architecture's warp size.
+ *
+ * \tparam T                    <b>[inferred]</b> The data type to load.
+ * \tparam ITEMS_PER_THREAD     <b>[inferred]</b> The number of consecutive items partitioned onto each thread.
+ * \tparam InputIterator        <b>[inferred]</b> The random-access iterator type for input \iterator.
+ */
+template <
+    typename        T,
+    int             ITEMS_PER_THREAD,
+    typename        InputIterator>
+__device__ __forceinline__ void LoadDirectWarpStriped(
+    int             linear_tid,                 ///< [in] A suitable 1D thread-identifier for the calling thread (e.g., <tt>(threadIdx.y * blockDim.x) + linear_tid</tt> for 2D thread blocks)
+    InputIterator   block_itr,                  ///< [in] The thread block's base input iterator for loading from
+    T               (&items)[ITEMS_PER_THREAD], ///< [out] Data to load
+    int             valid_items)                ///< [in] Number of valid items to load
+{
+    int tid                 = linear_tid & (CUB_PTX_WARP_THREADS - 1);
+    int wid                 = linear_tid >> CUB_PTX_LOG_WARP_THREADS;
+    int warp_offset         = wid * CUB_PTX_WARP_THREADS * ITEMS_PER_THREAD;
+    int bounds              = valid_items - warp_offset - tid;
+
+    // Load directly in warp-striped order
+    #pragma unroll
+    for (int ITEM = 0; ITEM < ITEMS_PER_THREAD; ITEM++)
+    {
+        if ((ITEM * CUB_PTX_WARP_THREADS) < bounds)
+        {
+            items[ITEM] = block_itr[warp_offset + tid + (ITEM * CUB_PTX_WARP_THREADS)];
+        }
+    }
+}
+
+
+/**
+ * \brief Load a linear segment of items into a warp-striped arrangement across the thread block, guarded by range, with a fall-back assignment of out-of-bound elements.
+ *
+ * \warpstriped
+ *
+ * \par Usage Considerations
+ * The number of threads in the thread block must be a multiple of the architecture's warp size.
+ *
+ * \tparam T                    <b>[inferred]</b> The data type to load.
+ * \tparam ITEMS_PER_THREAD     <b>[inferred]</b> The number of consecutive items partitioned onto each thread.
+ * \tparam InputIterator        <b>[inferred]</b> The random-access iterator type for input \iterator.
+ */
+template <
+    typename        T,
+    int             ITEMS_PER_THREAD,
+    typename        InputIterator>
+__device__ __forceinline__ void LoadDirectWarpStriped(
+    int             linear_tid,                 ///< [in] A suitable 1D thread-identifier for the calling thread (e.g., <tt>(threadIdx.y * blockDim.x) + linear_tid</tt> for 2D thread blocks)
+    InputIterator   block_itr,                  ///< [in] The thread block's base input iterator for loading from
+    T               (&items)[ITEMS_PER_THREAD], ///< [out] Data to load
+    int             valid_items,               ///< [in] Number of valid items to load
+    T               oob_default)                ///< [in] Default value to assign out-of-bound items
+{
+    #pragma unroll
+    for (int ITEM = 0; ITEM < ITEMS_PER_THREAD; ITEM++)
+    {
+        items[ITEM] = oob_default;
+    }
+
+    LoadDirectWarpStriped(linear_tid, block_itr, items, valid_items);
+}
+
+
 //@}  end member group
 
-/** @} */       // end group IoModule
+/** @} */       // end group UtilIo
 
 
 
@@ -528,6 +521,7 @@ enum BlockLoadAlgorithm
 /**
  * \brief The BlockLoad class provides [<em>collective</em>](index.html#sec0) data movement methods for loading a linear segment of items from memory into a [<em>blocked arrangement</em>](index.html#sec5sec4) across a CUDA thread block.  ![](block_load_logo.png)
  * \ingroup BlockModule
+ * \ingroup UtilIo
  *
  * \par Overview
  * The BlockLoad class provides a single data movement abstraction that can be specialized

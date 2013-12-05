@@ -30,11 +30,11 @@ div.contents {
 }
 
 div.contents p:first-of-type {
-		color: #555;
+		color: #807e59;
 }
 
 div.textblock p:first-of-type {
-		color: #555;
+		color: #807e59;
 }
 
 div.header {
@@ -239,7 +239,6 @@ div.memdoc {
 }
 
 div.memdoc p {
-		line-height: normal;
 		margin-left: 40px;
 }
 
@@ -291,7 +290,7 @@ dl.section.user a:visited b {
 
 dl.section.user dd {
 		margin-right: 40px;
-		color: #555;
+		color: #807e59;
 }
 
 /******************************************************************************
@@ -415,7 +414,7 @@ td.mdescLeft, td.mdescRight {
 }
 
 td.mdescLeft{
-		color: #555;
+		color: #807e59;
 }
 
 td.mdescRight {

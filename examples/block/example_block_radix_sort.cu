@@ -46,7 +46,7 @@
 
 #include <cub/cub.cuh>
 
-#include "../test/test_util.h"
+#include "../../test/test_util.h"
 
 using namespace cub;
 
@@ -80,17 +80,24 @@ template <
     int         ITEMS_PER_THREAD>
 __launch_bounds__ (BLOCK_THREADS)
 __global__ void BlockSortKernel(
-    Key     *d_in,          // Tile of input
-    Key     *d_out,         // Tile of output
+    Key         *d_in,          // Tile of input
+    Key         *d_out,         // Tile of output
     clock_t     *d_elapsed)     // Elapsed cycle count of block scan
 {
     enum { TILE_SIZE = BLOCK_THREADS * ITEMS_PER_THREAD };
+
+    // Specialize BlockLoad type for our thread block (uses warp-striped loads for coalescing, then transposes in shared memory to a blocked arrangement)
+    typedef BlockLoad<Key*, BLOCK_THREADS, ITEMS_PER_THREAD, BLOCK_LOAD_WARP_TRANSPOSE> BlockLoadT;
 
     // Specialize BlockRadixSort type for our thread block
     typedef BlockRadixSort<Key, BLOCK_THREADS, ITEMS_PER_THREAD> BlockRadixSortT;
 
     // Shared memory
-    __shared__ typename BlockRadixSortT::TempStorage temp_storage;
+    __shared__ union
+    {
+        typename BlockLoadT::TempStorage        load;
+        typename BlockRadixSortT::TempStorage   sort;
+    } temp_storage;
 
     // Per-thread tile items
     Key items[ITEMS_PER_THREAD];
@@ -98,18 +105,17 @@ __global__ void BlockSortKernel(
     // Our current block's offset
     int block_offset = blockIdx.x * TILE_SIZE;
 
-    // Load items in blocked fashion
-#if CUB_PTX_VERSION >= 350
-    LoadDirectBlocked<LOAD_LDG>(threadIdx.x, d_in + block_offset, items);
-#else
-    LoadDirectBlockedVectorized<LOAD_DEFAULT>(threadIdx.x, d_in + block_offset, items);
-#endif
+    // Load items into a blocked arrangement
+    BlockLoadT(temp_storage.load).Load(d_in + block_offset, items);
+
+    // Barrier for smem reuse
+    __syncthreads();
 
     // Start cycle timer
     clock_t start = clock();
 
     // Sort keys
-    BlockRadixSortT(temp_storage).SortBlockedToStriped(items);
+    BlockRadixSortT(temp_storage.sort).SortBlockedToStriped(items);
 
     // Stop cycle timer
     clock_t stop = clock();
@@ -166,7 +172,7 @@ template <
     typename    Key,
     int         BLOCK_THREADS,
     int         ITEMS_PER_THREAD>
-void Test()
+void Test(int sm_version)
 {
     const int TILE_SIZE = BLOCK_THREADS * ITEMS_PER_THREAD;
 
@@ -195,11 +201,9 @@ void Test()
         printf("\n\n");
     }
 
-    // CUDA device props
-    Device device;
+    // Kernel props
     int max_sm_occupancy;
-    CubDebugExit(device.Init());
-    CubDebugExit(device.MaxSmOccupancy(max_sm_occupancy, BlockSortKernel<Key, BLOCK_THREADS, ITEMS_PER_THREAD>, BLOCK_THREADS));
+    CubDebugExit(MaxSmOccupancy(max_sm_occupancy, sm_version, BlockSortKernel<Key, BLOCK_THREADS, ITEMS_PER_THREAD>, BLOCK_THREADS));
 
     // Copy problem to device
     CubDebugExit(cudaMemcpy(d_in, h_in, sizeof(Key) * TILE_SIZE * g_grid_size, cudaMemcpyHostToDevice));
@@ -301,17 +305,25 @@ int main(int argc, char** argv)
     CubDebugExit(args.DeviceInit());
     fflush(stdout);
 
+    // Get device ordinal
+    int device_ordinal;
+    CubDebugExit(cudaGetDevice(&device_ordinal));
+
+    // Get device SM version
+    int sm_version;
+    CubDebugExit(SmVersion(sm_version, device_ordinal));
+
     // Run tests
     printf("\nuint32:\n"); fflush(stdout);
-    Test<unsigned int, 128, 21>();
+    Test<unsigned int, 128, 13>(sm_version);
     printf("\n"); fflush(stdout);
 
     printf("\nfp32:\n"); fflush(stdout);
-    Test<float, 128, 21>();
+    Test<float, 128, 13>(sm_version);
     printf("\n"); fflush(stdout);
 
     printf("\nuint8:\n"); fflush(stdout);
-    Test<unsigned char, 128, 21>();
+    Test<unsigned char, 128, 13>(sm_version);
     printf("\n"); fflush(stdout);
 
     return 0;

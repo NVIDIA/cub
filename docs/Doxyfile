@@ -664,8 +664,9 @@ INPUT                  += ../cub/util_allocator.cuh
 INPUT                  += ../cub/util_arch.cuh 
 INPUT                  += ../cub/util_debug.cuh 
 INPUT                  += ../cub/util_device.cuh 
-INPUT                  += ../cub/util_type.cuh 
 INPUT                  += ../cub/util_iterator.cuh 
+INPUT                  += ../cub/util_ptx.cuh 
+INPUT                  += ../cub/util_type.cuh 
 INPUT                  += ../cub/thread/thread_load.cuh  
 INPUT                  += ../cub/thread/thread_operators.cuh 
 INPUT                  += ../cub/thread/thread_reduce.cuh  
@@ -966,6 +967,7 @@ HTML_EXTRA_FILES       += images/generic_abstraction.png
 HTML_EXTRA_FILES       += images/simt_abstraction.png 
 HTML_EXTRA_FILES       += images/kernel_abstraction.png 
 HTML_EXTRA_FILES       += images/devfun_abstraction.png
+HTML_EXTRA_FILES       += images/nested_composition.png
 
 # The HTML_COLORSTYLE_HUE tag controls the color of the HTML output.
 # Doxygen will adjust the colors in the style sheet and background images

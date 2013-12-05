@@ -88,7 +88,7 @@ namespace cub {
  *
  * \endcode
  * \par
- * Suppose the set of input \p thread_data across the block of threads is <tt>0, 1, 2, 3, ..., 127</tt>.
+ * Suppose the set of input \p thread_data across the block of threads is <tt>{0, 1, 2, 3, ..., 127}</tt>.
  * The corresponding output \p aggregate in threads 0, 32, 64, and 96 will \p 496, \p 1520,
  * \p 2544, and \p 3568, respectively (and is undefined in other threads).
  *
@@ -119,7 +119,7 @@ namespace cub {
  *
  * \endcode
  * \par
- * Suppose the set of input \p thread_data across the warp of threads is <tt>0, 1, 2, 3, ..., 31</tt>.
+ * Suppose the set of input \p thread_data across the warp of threads is <tt>{0, 1, 2, 3, ..., 31}</tt>.
  * The corresponding output \p aggregate in thread0 will be \p 496 (and is undefined in other threads).
  *
  * \par Usage and Performance Considerations
@@ -301,7 +301,7 @@ public:
      *
      * \endcode
      * \par
-     * Suppose the set of input \p thread_data across the block of threads is <tt>0, 1, 2, 3, ..., 127</tt>.
+     * Suppose the set of input \p thread_data across the block of threads is <tt>{0, 1, 2, 3, ..., 127}</tt>.
      * The corresponding output \p aggregate in threads 0, 32, 64, and 96 will \p 496, \p 1520,
      * \p 2544, and \p 3568, respectively (and is undefined in other threads).
      *
@@ -344,7 +344,7 @@ public:
      *
      * \endcode
      * \par
-     * Suppose the input \p d_data is <tt>0, 1, 2, 3, 4, ...</tt> and \p valid_items
+     * Suppose the input \p d_data is <tt>{0, 1, 2, 3, 4, ...</tt> and \p valid_items
      * is \p 4.  The corresponding output \p aggregate in thread0 is \p 6 (and is
      * undefined in other threads).
      *
@@ -395,7 +395,7 @@ public:
      * \endcode
      * \par
      * Suppose the set of input \p thread_data and \p head_flag across the block of threads
-     * is <tt>0, 1, 2, 3, ..., 31</tt> and is <tt>1, 0, 0, 0, 1, 0, 0, 0, ..., 1, 0, 0, 0</tt>,
+     * is <tt>{0, 1, 2, 3, ..., 31</tt> and is <tt>{1, 0, 0, 0, 1, 0, 0, 0, ..., 1, 0, 0, 0</tt>,
      * respectively.  The corresponding output \p aggregate in threads 0, 4, 8, etc. will be
      * \p 6, \p 22, \p 38, etc. (and is undefined in other threads).
      *
@@ -442,7 +442,7 @@ public:
      * \endcode
      * \par
      * Suppose the set of input \p thread_data and \p tail_flag across the block of threads
-     * is <tt>0, 1, 2, 3, ..., 31</tt> and is <tt>0, 0, 0, 1, 0, 0, 0, 1, ..., 0, 0, 0, 1</tt>,
+     * is <tt>{0, 1, 2, 3, ..., 31</tt> and is <tt>{0, 0, 0, 1, 0, 0, 0, 1, ..., 0, 0, 0, 1</tt>,
      * respectively.  The corresponding output \p aggregate in threads 0, 4, 8, etc. will be
      * \p 6, \p 22, \p 38, etc. (and is undefined in other threads).
      *
@@ -495,7 +495,7 @@ public:
      *
      * \endcode
      * \par
-     * Suppose the set of input \p thread_data across the block of threads is <tt>0, 1, 2, 3, ..., 127</tt>.
+     * Suppose the set of input \p thread_data across the block of threads is <tt>{0, 1, 2, 3, ..., 127}</tt>.
      * The corresponding output \p aggregate in threads 0, 32, 64, and 96 will \p 31, \p 63,
      * \p 95, and \p 127, respectively  (and is undefined in other threads).
      *
@@ -543,7 +543,7 @@ public:
      *
      * \endcode
      * \par
-     * Suppose the input \p d_data is <tt>0, 1, 2, 3, 4, ...</tt> and \p valid_items
+     * Suppose the input \p d_data is <tt>{0, 1, 2, 3, 4, ...</tt> and \p valid_items
      * is \p 4.  The corresponding output \p aggregate in thread0 is \p 3 (and is
      * undefined in other threads).
      *
@@ -599,7 +599,7 @@ public:
      * \endcode
      * \par
      * Suppose the set of input \p thread_data and \p head_flag across the block of threads
-     * is <tt>0, 1, 2, 3, ..., 31</tt> and is <tt>1, 0, 0, 0, 1, 0, 0, 0, ..., 1, 0, 0, 0</tt>,
+     * is <tt>{0, 1, 2, 3, ..., 31</tt> and is <tt>{1, 0, 0, 0, 1, 0, 0, 0, ..., 1, 0, 0, 0</tt>,
      * respectively.  The corresponding output \p aggregate in threads 0, 4, 8, etc. will be
      * \p 3, \p 7, \p 11, etc. (and is undefined in other threads).
      *
@@ -649,7 +649,7 @@ public:
      * \endcode
      * \par
      * Suppose the set of input \p thread_data and \p tail_flag across the block of threads
-     * is <tt>0, 1, 2, 3, ..., 31</tt> and is <tt>0, 0, 0, 1, 0, 0, 0, 1, ..., 0, 0, 0, 1</tt>,
+     * is <tt>{0, 1, 2, 3, ..., 31</tt> and is <tt>{0, 0, 0, 1, 0, 0, 0, 1, ..., 0, 0, 0, 1</tt>,
      * respectively.  The corresponding output \p aggregate in threads 0, 4, 8, etc. will be
      * \p 3, \p 7, \p 11, etc. (and is undefined in other threads).
      *
