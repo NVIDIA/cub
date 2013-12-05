@@ -218,18 +218,17 @@ public:
     /**
      * \brief Sets head flags indicating discontinuities between items partitioned across the thread block, for which the first item has no reference and is always flagged.
      *
-     * The flag <tt>head_flags<sub><em>i</em></sub></tt> is set for item
-     * <tt>input<sub><em>i</em></sub></tt> when
-     * <tt>flag_op(</tt><em>previous-item</em><tt>, input<sub><em>i</em></sub>)</tt>
-     * returns \p true (where <em>previous-item</em> is either the preceding item
-     * in the same thread or the last item in the previous thread).
-     * Furthermore, <tt>head_flags<sub><em>i</em></sub></tt> is always set for
-     * <tt>input><sub>0</sub></tt> in <em>thread</em><sub>0</sub>.
+     * \par
+     * - The flag <tt>head_flags<sub><em>i</em></sub></tt> is set for item
+     *   <tt>input<sub><em>i</em></sub></tt> when
+     *   <tt>flag_op(</tt><em>previous-item</em><tt>, input<sub><em>i</em></sub>)</tt>
+     *   returns \p true (where <em>previous-item</em> is either the preceding item
+     *   in the same thread or the last item in the previous thread).
+     * - For <em>thread</em><sub>0</sub>, item <tt>input<sub>0</sub></tt> is always flagged.
+     * - \blocked
+     * - \smemreuse
      *
-     * \blocked
-     *
-     * \smemreuse
-     *
+     * \par
      * The code snippet below illustrates the head-flagging of 512 integer items that
      * are partitioned in a [<em>blocked arrangement</em>](index.html#sec5sec4) across 128 threads
      * where each thread owns 4 consecutive items.
@@ -303,18 +302,18 @@ public:
     /**
      * \brief Sets head flags indicating discontinuities between items partitioned across the thread block.
      *
-     * The flag <tt>head_flags<sub><em>i</em></sub></tt> is set for item
-     * <tt>input<sub><em>i</em></sub></tt> when
-     * <tt>flag_op(</tt><em>previous-item</em><tt>, input<sub><em>i</em></sub>)</tt>
-     * returns \p true (where <em>previous-item</em> is either the preceding item
-     * in the same thread or the last item in the previous thread).
-     * For <em>thread</em><sub>0</sub>, item <tt>input<sub>0</sub></tt> is compared
-     * against \p tile_predecessor_item.
+     * \par
+     * - The flag <tt>head_flags<sub><em>i</em></sub></tt> is set for item
+     *   <tt>input<sub><em>i</em></sub></tt> when
+     *   <tt>flag_op(</tt><em>previous-item</em><tt>, input<sub><em>i</em></sub>)</tt>
+     *   returns \p true (where <em>previous-item</em> is either the preceding item
+     *   in the same thread or the last item in the previous thread).
+     * - For <em>thread</em><sub>0</sub>, item <tt>input<sub>0</sub></tt> is compared
+     *   against \p tile_predecessor_item.
+     * - \blocked
+     * - \smemreuse
      *
-     * \blocked
-     *
-     * \smemreuse
-     *
+     * \par
      * The code snippet below illustrates the head-flagging of 512 integer items that
      * are partitioned in a [<em>blocked arrangement</em>](index.html#sec5sec4) across 128 threads
      * where each thread owns 4 consecutive items.
@@ -403,18 +402,18 @@ public:
     /**
      * \brief Sets tail flags indicating discontinuities between items partitioned across the thread block, for which the last item has no reference and is always flagged.
      *
-     * The flag <tt>tail_flags<sub><em>i</em></sub></tt> is set for item
-     * <tt>input<sub><em>i</em></sub></tt> when
-     * <tt>flag_op(input<sub><em>i</em></sub>, </tt><em>next-item</em><tt>)</tt>
-     * returns \p true (where <em>next-item</em> is either the next item
-     * in the same thread or the first item in the next thread).
-     * Furthermore, <tt>tail_flags<sub>ITEMS_PER_THREAD-1</sub></tt> is always
-     * set for <em>thread</em><sub><tt>BLOCK_THREADS</tt>-1</sub>.
+     * \par
+     * - The flag <tt>tail_flags<sub><em>i</em></sub></tt> is set for item
+     *   <tt>input<sub><em>i</em></sub></tt> when
+     *   <tt>flag_op(input<sub><em>i</em></sub>, </tt><em>next-item</em><tt>)</tt>
+     *   returns \p true (where <em>next-item</em> is either the next item
+     *   in the same thread or the first item in the next thread).
+     * - For <em>thread</em><sub><em>BLOCK_THREADS</em>-1</sub>, item
+     *   <tt>input</tt><sub><em>ITEMS_PER_THREAD</em>-1</sub> is always flagged.
+     * - \blocked
+     * - \smemreuse
      *
-     * \blocked
-     *
-     * \smemreuse
-     *
+     * \par
      * The code snippet below illustrates the tail-flagging of 512 integer items that
      * are partitioned in a [<em>blocked arrangement</em>](index.html#sec5sec4) across 128 threads
      * where each thread owns 4 consecutive items.
@@ -488,19 +487,19 @@ public:
     /**
      * \brief Sets tail flags indicating discontinuities between items partitioned across the thread block.
      *
-     * The flag <tt>tail_flags<sub><em>i</em></sub></tt> is set for item
-     * <tt>input<sub><em>i</em></sub></tt> when
-     * <tt>flag_op(input<sub><em>i</em></sub>, </tt><em>next-item</em><tt>)</tt>
-     * returns \p true (where <em>next-item</em> is either the next item
-     * in the same thread or the first item in the next thread).
-     * For <em>thread</em><sub><em>BLOCK_THREADS</em>-1</sub>, item
-     * <tt>input</tt><sub><em>ITEMS_PER_THREAD</em>-1</sub> is compared
-     * against \p tile_predecessor_item.
+     * \par
+     * - The flag <tt>tail_flags<sub><em>i</em></sub></tt> is set for item
+     *   <tt>input<sub><em>i</em></sub></tt> when
+     *   <tt>flag_op(input<sub><em>i</em></sub>, </tt><em>next-item</em><tt>)</tt>
+     *   returns \p true (where <em>next-item</em> is either the next item
+     *   in the same thread or the first item in the next thread).
+     * - For <em>thread</em><sub><em>BLOCK_THREADS</em>-1</sub>, item
+     *   <tt>input</tt><sub><em>ITEMS_PER_THREAD</em>-1</sub> is compared
+     *   against \p tile_predecessor_item.
+     * - \blocked
+     * - \smemreuse
      *
-     * \blocked
-     *
-     * \smemreuse
-     *
+     * \par
      * The code snippet below illustrates the tail-flagging of 512 integer items that
      * are partitioned in a [<em>blocked arrangement</em>](index.html#sec5sec4) across 128 threads
      * where each thread owns 4 consecutive items.
