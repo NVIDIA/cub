@@ -478,10 +478,10 @@ std::ostream& operator<<(std::ostream& os, const cub::KeyValuePair<Key, Value> &
     {                                                       \
         return (a.x < b.x);                                 \
     }                                                       \
-    /* Summation */                                         \
+    /* Summation (non-reference addends for VS2003 -O3 warpscan workaround */                                         \
     __host__ __device__ __forceinline__ T operator+(        \
-        const T &a,                                         \
-        const T &b)                                         \
+        T a,                                         \
+        T b)                                         \
     {                                                       \
         T retval = {a.x + b.x};                             \
         return retval;                                      \
@@ -539,10 +539,10 @@ std::ostream& operator<<(std::ostream& os, const cub::KeyValuePair<Key, Value> &
         if (a.x < b.x) return true; else if (b.x < a.x) return false;   \
         return a.y < b.y;                                               \
     }                                                       \
-    /* Summation */                                         \
+    /* Summation (non-reference addends for VS2003 -O3 warpscan workaround */                                         \
     __host__ __device__ __forceinline__ T operator+(        \
-        const T &a,                                         \
-        const T &b)                                         \
+        T a,                                         \
+        T b)                                         \
     {                                                       \
         T retval = {                                        \
             a.x + b.x,                                      \
@@ -609,10 +609,10 @@ std::ostream& operator<<(std::ostream& os, const cub::KeyValuePair<Key, Value> &
         if (a.y < b.y) return true; else if (b.y < a.y) return false;   \
         return a.z < b.z;                                               \
     }                                                       \
-    /* Summation */                                         \
+    /* Summation (non-reference addends for VS2003 -O3 warpscan workaround */                                         \
     __host__ __device__ __forceinline__ T operator+(        \
-        const T &a,                                         \
-        const T &b)                                         \
+        T a,                                         \
+        T b)                                         \
     {                                                       \
         T retval = {                                        \
             a.x + b.x,                                      \
@@ -685,10 +685,10 @@ std::ostream& operator<<(std::ostream& os, const cub::KeyValuePair<Key, Value> &
         if (a.z < b.z) return true; else if (b.z < a.z) return false;   \
         return a.w < b.w;                                               \
     }                                                       \
-    /* Summation */                                         \
+    /* Summation (non-reference addends for VS2003 -O3 warpscan workaround */                                         \
     __host__ __device__ __forceinline__ T operator+(        \
-        const T &a,                                         \
-        const T &b)                                         \
+        T a,                                         \
+        T b)                                         \
     {                                                       \
         T retval = {                                        \
             a.x + b.x,                                      \
