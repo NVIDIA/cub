@@ -802,8 +802,11 @@ public:
     /**
      * \brief Store items into a linear segment of memory.
      *
-     * \blocked
+     * \par
+     * - \blocked
+     * - \smemreuse
      *
+     * \par
      * The code snippet below illustrates the storing of a "blocked" arrangement
      * of 512 integers across 128 threads (where each thread owns 4 consecutive items)
      * into a linear segment of memory.  The store is specialized for \p BLOCK_STORE_WARP_TRANSPOSE,
@@ -846,8 +849,11 @@ public:
     /**
      * \brief Store items into a linear segment of memory, guarded by range.
      *
-     * \blocked
+     * \par
+     * - \blocked
+     * - \smemreuse
      *
+     * \par
      * The code snippet below illustrates the guarded storing of a "blocked" arrangement
      * of 512 integers across 128 threads (where each thread owns 4 consecutive items)
      * into a linear segment of memory.  The store is specialized for \p BLOCK_STORE_WARP_TRANSPOSE,
