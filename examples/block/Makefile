@@ -25,7 +25,7 @@
 # * SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 # *
 #******************************************************************************/
- 
+
 #-------------------------------------------------------------------------------
 #
 # Makefile usage
@@ -103,15 +103,27 @@ ifeq (WIN_NT, $(findstring WIN_NT, $(OSUPPER)))
     NVCCFLAGS += -Xcompiler /fp:strict
     # Help the compiler/linker work with huge numbers of kernels on Windows
 	NVCCFLAGS += -Xcompiler /bigobj -Xcompiler /Zm500
+	CC = cl
+ifneq ($(force64), 1)
+	CUDART_CYG = "$(shell dirname $(NVCC))/../lib/Win32/cudart.lib"
+else
+	CUDART_CYG = "$(shell dirname $(NVCC))/../lib/x64/cudart.lib"
+endif
+	CUDART = "$(shell cygpath -w $(CUDART_CYG))"
 else
     # For g++
     # Disable excess x86 floating point precision that can lead to results being labeled incorrectly
     NVCCFLAGS += -Xcompiler -ffloat-store
+    CC = g++
+ifneq ($(force64), 1)
+    CUDART = "$(shell dirname $(NVCC))/../lib/libcudart_static.a"
+else
+    CUDART = "$(shell dirname $(NVCC))/../lib64/libcudart_static.a"
+endif
 endif
 
 # 32/64-bit (32-bit device pointers by default) 
 ifneq ($(force64), 1)
-	# 
 	CPU_ARCH = -m32
 	CPU_ARCH_SUFFIX = i386
 else
@@ -154,13 +166,14 @@ SUFFIX = sm$(SM_ARCH)_$(PTX_SUFFIX)_$(NVCC_VERSION)_$(ABI_SUFFIX)_$(CDP_SUFFIX)_
 # Includes
 #-------------------------------------------------------------------------------
 
-INC += -I. -I.. 
+INC += -I. -I../.. 
+
 
 #-------------------------------------------------------------------------------
 # Libs
 #-------------------------------------------------------------------------------
 
-LIBS += -lcudart 
+LIBS += -lcudart
 
 
 #-------------------------------------------------------------------------------
@@ -170,8 +183,13 @@ LIBS += -lcudart
 rwildcard=$(foreach d,$(wildcard $1*),$(call rwildcard,$d/,$2) $(filter $(subst *,%,$2),$d))
 
 DEPS =	./Makefile \
-		./../test/test_util.h \
-		$(call rwildcard,../cub/,*.cuh)
+		../../test/test_util.h \
+		$(call rwildcard,../../cub/,*.cuh)
+		
+ALL = 	example_block_radix_sort \
+	 	example_block_reduce \
+	 	example_block_scan
+		
 
 
 #-------------------------------------------------------------------------------
@@ -181,7 +199,6 @@ DEPS =	./Makefile \
 default:
 
 
-
 #-------------------------------------------------------------------------------
 # make clean
 #-------------------------------------------------------------------------------
@@ -189,6 +206,21 @@ default:
 clean :
 	rm -f bin/*$(CPU_ARCH_SUFFIX)* 
 	rm -f *.i* *.cubin *.cu.c *.cudafe* *.fatbin.c *.ptx *.hash *.cu.cpp *.o
+
+
+#-------------------------------------------------------------------------------
+# make all
+#-------------------------------------------------------------------------------
+
+all : $(ALL)
+
+#-------------------------------------------------------------------------------
+# make run
+#-------------------------------------------------------------------------------
+
+run : 
+	for i in $(ALL); do ./bin/$${i}_$(SUFFIX) --device=$(device) || exit 1; done
+
 
 
 
@@ -224,15 +256,3 @@ bin/example_block_radix_sort_$(SUFFIX) : example_block_radix_sort.cu $(DEPS)
 	mkdir -p bin
 	$(NVCC) $(DEFINES) $(SM_TARGETS) -o bin/example_block_radix_sort_$(SUFFIX) example_block_radix_sort.cu $(NVCCFLAGS) $(CPU_ARCH) $(INC) $(LIBS) -O3
 	
-	
-#-------------------------------------------------------------------------------
-# make example_coo_spmv
-#-------------------------------------------------------------------------------
-
-example_coo_spmv: bin/example_coo_spmv_$(SUFFIX)
-
-bin/example_coo_spmv_$(SUFFIX) : example_coo_spmv.cu $(DEPS)
-	mkdir -p bin
-	$(NVCC) $(DEFINES) $(SM_TARGETS) -o bin/example_coo_spmv_$(SUFFIX) example_coo_spmv.cu $(NVCCFLAGS) $(CPU_ARCH) $(INC) $(LIBS) -O3
-
-

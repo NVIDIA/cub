@@ -46,7 +46,7 @@ CUB_NS_PREFIX
 namespace cub {
 
 /**
- * \addtogroup IoModule
+ * \addtogroup UtilIo
  * @{
  */
 
@@ -70,18 +70,14 @@ enum CacheStoreModifier
 
 
 /**
- * \name Cache-modified thread I/O
+ * \name Thread I/O (cache modified)
  * @{
  */
 
 /**
- * \brief Thread utility for writing memory using cub::CacheStoreModifier cache modifiers.
+ * \brief Thread utility for writing memory using cub::CacheStoreModifier cache modifiers.  Can be used to store any data type.
  *
- * Cache modifiers will only be effected for built-in types (i.e., C++
- * primitives and CUDA vector-types).
- *
- * For example:
- * \par
+ * \par Example
  * \code
  * #include <cub/cub.cuh>
  *
@@ -100,18 +96,21 @@ enum CacheStoreModifier
  * double4 val;
  * cub::ThreadStore<cub::STORE_WT>(d_out + threadIdx.x, val);
  *
- * // 96-bit store using default cache modifier (ignoring STORE_CS)
+ * // 96-bit store using cache-streaming cache modifier
  * struct TestFoo { bool a; short b; };
  * TestFoo *d_struct;
  * TestFoo val;
  * cub::ThreadStore<cub::STORE_CS>(d_out + threadIdx.x, val);
  * \endcode
  *
+ * \tparam MODIFIER             <b>[inferred]</b> CacheStoreModifier enumeration
+ * \tparam InputIterator        <b>[inferred]</b> Output iterator type \iterator
+ * \tparam T                    <b>[inferred]</b> Data type of output value
  */
 template <
-    CacheStoreModifier MODIFIER,
-    typename OutputIterator,
-    typename T>
+    CacheStoreModifier  MODIFIER,
+    typename            OutputIterator,
+    typename            T>
 __device__ __forceinline__ void ThreadStore(OutputIterator itr, T val);
 
 
@@ -406,7 +405,7 @@ __device__ __forceinline__ void ThreadStore(OutputIterator itr, T val)
 #endif // DOXYGEN_SHOULD_SKIP_THIS
 
 
-/** @} */       // end group IoModule
+/** @} */       // end group UtilIo
 
 
 }               // CUB namespace

@@ -235,9 +235,9 @@ enum BlockScanAlgorithm
  * \endcode
  * \par
  * Suppose the set of input \p thread_data across the block of threads is
- * <tt>{ [1,1,1,1], [1,1,1,1], ..., [1,1,1,1] }</tt>.
+ * <tt>{[1,1,1,1], [1,1,1,1], ..., [1,1,1,1]}</tt>.
  * The corresponding output \p thread_data in those threads will be
- * <tt>{ [0,1,2,3], [4,5,6,7], ..., [508,509,510,511] }</tt>.
+ * <tt>{[0,1,2,3], [4,5,6,7], ..., [508,509,510,511]}</tt>.
  *
  * \par Performance Considerations
  * - Uses special instructions when applicable (e.g., warp \p SHFL)
@@ -374,10 +374,11 @@ public:
     /**
      * \brief Computes an exclusive block-wide prefix scan using addition (+) as the scan operator.  Each thread contributes one input element.
      *
-     * \blocked
+     * \par
+     * - \blocked
+     * - \smemreuse
      *
-     * \smemreuse
-     *
+     * \par
      * The code snippet below illustrates an exclusive prefix sum of 128 integer items that
      * are partitioned across 128 threads.
      * \par
@@ -417,10 +418,11 @@ public:
     /**
      * \brief Computes an exclusive block-wide prefix scan using addition (+) as the scan operator.  Each thread contributes one input element.  Also provides every thread with the block-wide \p block_aggregate of all inputs.
      *
-     * \blocked
+     * \par
+     * - \blocked
+     * - \smemreuse
      *
-     * \smemreuse
-     *
+     * \par
      * The code snippet below illustrates an exclusive prefix sum of 128 integer items that
      * are partitioned across 128 threads.
      * \par
@@ -462,15 +464,15 @@ public:
     /**
      * \brief Computes an exclusive block-wide prefix scan using addition (+) as the scan operator.  Each thread contributes one input element.  Instead of using 0 as the block-wide prefix, the call-back functor \p block_prefix_callback_op is invoked by the first warp in the block, and the value returned by <em>lane</em><sub>0</sub> in that warp is used as the "seed" value that logically prefixes the threadblock's scan inputs.  Also provides every thread with the block-wide \p block_aggregate of all inputs.
      *
-     * The \p block_prefix_callback_op functor must implement a member function <tt>T operator()(T block_aggregate)</tt>.
-     * The functor's input parameter \p block_aggregate is the same value also returned by the scan operation.
-     * The functor will be invoked by the first warp of threads in the block, however only the return value from
-     * <em>lane</em><sub>0</sub> is applied as the block-wide prefix.  Can be stateful.
+     * \par
+     * - The \p block_prefix_callback_op functor must implement a member function <tt>T operator()(T block_aggregate)</tt>.
+     *   The functor's input parameter \p block_aggregate is the same value also returned by the scan operation.
+     *   The functor will be invoked by the first warp of threads in the block, however only the return value from
+     *   <em>lane</em><sub>0</sub> is applied as the block-wide prefix.  Can be stateful.
+     * - \blocked
+     * - \smemreuse
      *
-     * \blocked
-     *
-     * \smemreuse
-     *
+     * \par
      * The code snippet below illustrates a single thread block that progressively
      * computes an exclusive prefix sum over multiple "tiles" of input using a
      * prefix functor to maintain a running total between block-wide scans.  Each tile consists
@@ -555,10 +557,11 @@ public:
     /**
      * \brief Computes an exclusive block-wide prefix scan using addition (+) as the scan operator.  Each thread contributes an array of consecutive input elements.
      *
-     * \blocked
+     * \par
+     * - \blocked
+     * - \smemreuse
      *
-     * \smemreuse
-     *
+     * \par
      * The code snippet below illustrates an exclusive prefix sum of 512 integer items that
      * are partitioned in a [<em>blocked arrangement</em>](index.html#sec5sec4) across 128 threads
      * where each thread owns 4 consecutive items.
@@ -608,10 +611,11 @@ public:
     /**
      * \brief Computes an exclusive block-wide prefix scan using addition (+) as the scan operator.  Each thread contributes an array of consecutive input elements.  Also provides every thread with the block-wide \p block_aggregate of all inputs.
      *
-     * \blocked
+     * \par
+     * - \blocked
+     * - \smemreuse
      *
-     * \smemreuse
-     *
+     * \par
      * The code snippet below illustrates an exclusive prefix sum of 512 integer items that
      * are partitioned in a [<em>blocked arrangement</em>](index.html#sec5sec4) across 128 threads
      * where each thread owns 4 consecutive items.
@@ -664,15 +668,15 @@ public:
     /**
      * \brief Computes an exclusive block-wide prefix scan using addition (+) as the scan operator.  Each thread contributes an array of consecutive input elements.  Instead of using 0 as the block-wide prefix, the call-back functor \p block_prefix_callback_op is invoked by the first warp in the block, and the value returned by <em>lane</em><sub>0</sub> in that warp is used as the "seed" value that logically prefixes the threadblock's scan inputs.  Also provides every thread with the block-wide \p block_aggregate of all inputs.
      *
-     * The \p block_prefix_callback_op functor must implement a member function <tt>T operator()(T block_aggregate)</tt>.
-     * The functor's input parameter \p block_aggregate is the same value also returned by the scan operation.
-     * The functor will be invoked by the first warp of threads in the block, however only the return value from
-     * <em>lane</em><sub>0</sub> is applied as the block-wide prefix.  Can be stateful.
+     * \par
+     * - The \p block_prefix_callback_op functor must implement a member function <tt>T operator()(T block_aggregate)</tt>.
+     *   The functor's input parameter \p block_aggregate is the same value also returned by the scan operation.
+     *   The functor will be invoked by the first warp of threads in the block, however only the return value from
+     *   <em>lane</em><sub>0</sub> is applied as the block-wide prefix.  Can be stateful.
+     * - \blocked
+     * - \smemreuse
      *
-     * \blocked
-     *
-     * \smemreuse
-     *
+     * \par
      * The code snippet below illustrates a single thread block that progressively
      * computes an exclusive prefix sum over multiple "tiles" of input using a
      * prefix functor to maintain a running total between block-wide scans.  Each tile consists
@@ -779,12 +783,12 @@ public:
     /**
      * \brief Computes an exclusive block-wide prefix scan using the specified binary \p scan_op functor.  Each thread contributes one input element.
      *
-     * Supports non-commutative scan operators.
+     * \par
+     * - Supports non-commutative scan operators.
+     * - \blocked
+     * - \smemreuse
      *
-     * \blocked
-     *
-     * \smemreuse
-     *
+     * \par
      * The code snippet below illustrates an exclusive prefix max scan of 128 integer items that
      * are partitioned across 128 threads.
      * \par
@@ -828,12 +832,12 @@ public:
     /**
      * \brief Computes an exclusive block-wide prefix scan using the specified binary \p scan_op functor.  Each thread contributes one input element.  Also provides every thread with the block-wide \p block_aggregate of all inputs.
      *
-     * Supports non-commutative scan operators.
+     * \par
+     * - Supports non-commutative scan operators.
+     * - \blocked
+     * - \smemreuse
      *
-     * \blocked
-     *
-     * \smemreuse
-     *
+     * \par
      * The code snippet below illustrates an exclusive prefix max scan of 128 integer items that
      * are partitioned across 128 threads.
      * \par
@@ -879,17 +883,16 @@ public:
     /**
      * \brief Computes an exclusive block-wide prefix scan using the specified binary \p scan_op functor.  Each thread contributes one input element.  the call-back functor \p block_prefix_callback_op is invoked by the first warp in the block, and the value returned by <em>lane</em><sub>0</sub> in that warp is used as the "seed" value that logically prefixes the threadblock's scan inputs.  Also provides every thread with the block-wide \p block_aggregate of all inputs.
      *
-     * The \p block_prefix_callback_op functor must implement a member function <tt>T operator()(T block_aggregate)</tt>.
-     * The functor's input parameter \p block_aggregate is the same value also returned by the scan operation.
-     * The functor will be invoked by the first warp of threads in the block, however only the return value from
-     * <em>lane</em><sub>0</sub> is applied as the block-wide prefix.  Can be stateful.
+     * \par
+     * - The \p block_prefix_callback_op functor must implement a member function <tt>T operator()(T block_aggregate)</tt>.
+     *   The functor's input parameter \p block_aggregate is the same value also returned by the scan operation.
+     *   The functor will be invoked by the first warp of threads in the block, however only the return value from
+     *   <em>lane</em><sub>0</sub> is applied as the block-wide prefix.  Can be stateful.
+     * - Supports non-commutative scan operators.
+     * - \blocked
+     * - \smemreuse
      *
-     * Supports non-commutative scan operators.
-     *
-     * \blocked
-     *
-     * \smemreuse
-     *
+     * \par
      * The code snippet below illustrates a single thread block that progressively
      * computes an exclusive prefix max scan over multiple "tiles" of input using a
      * prefix functor to maintain a running total between block-wide scans.  Each tile consists
@@ -980,12 +983,12 @@ public:
     /**
      * \brief Computes an exclusive block-wide prefix scan using the specified binary \p scan_op functor.  Each thread contributes an array of consecutive input elements.
      *
-     * Supports non-commutative scan operators.
+     * \par
+     * - Supports non-commutative scan operators.
+     * - \blocked
+     * - \smemreuse
      *
-     * \blocked
-     *
-     * \smemreuse
-     *
+     * \par
      * The code snippet below illustrates an exclusive prefix max scan of 512 integer items that
      * are partitioned in a [<em>blocked arrangement</em>](index.html#sec5sec4) across 128 threads
      * where each thread owns 4 consecutive items.
@@ -1041,12 +1044,12 @@ public:
     /**
      * \brief Computes an exclusive block-wide prefix scan using the specified binary \p scan_op functor.  Each thread contributes an array of consecutive input elements.  Also provides every thread with the block-wide \p block_aggregate of all inputs.
      *
-     * Supports non-commutative scan operators.
+     * \par
+     * - Supports non-commutative scan operators.
+     * - \blocked
+     * - \smemreuse
      *
-     * \blocked
-     *
-     * \smemreuse
-     *
+     * \par
      * The code snippet below illustrates an exclusive prefix max scan of 512 integer items that
      * are partitioned in a [<em>blocked arrangement</em>](index.html#sec5sec4) across 128 threads
      * where each thread owns 4 consecutive items.
@@ -1103,17 +1106,16 @@ public:
     /**
      * \brief Computes an exclusive block-wide prefix scan using the specified binary \p scan_op functor.  Each thread contributes an array of consecutive input elements.  the call-back functor \p block_prefix_callback_op is invoked by the first warp in the block, and the value returned by <em>lane</em><sub>0</sub> in that warp is used as the "seed" value that logically prefixes the threadblock's scan inputs.  Also provides every thread with the block-wide \p block_aggregate of all inputs.
      *
-     * The \p block_prefix_callback_op functor must implement a member function <tt>T operator()(T block_aggregate)</tt>.
-     * The functor's input parameter \p block_aggregate is the same value also returned by the scan operation.
-     * The functor will be invoked by the first warp of threads in the block, however only the return value from
-     * <em>lane</em><sub>0</sub> is applied as the block-wide prefix.  Can be stateful.
+     * \par
+     * - The \p block_prefix_callback_op functor must implement a member function <tt>T operator()(T block_aggregate)</tt>.
+     *   The functor's input parameter \p block_aggregate is the same value also returned by the scan operation.
+     *   The functor will be invoked by the first warp of threads in the block, however only the return value from
+     *   <em>lane</em><sub>0</sub> is applied as the block-wide prefix.  Can be stateful.
+     * - Supports non-commutative scan operators.
+     * - \blocked
+     * - \smemreuse
      *
-     * Supports non-commutative scan operators.
-     *
-     * \blocked
-     *
-     * \smemreuse
-     *
+     * \par
      * The code snippet below illustrates a single thread block that progressively
      * computes an exclusive prefix max scan over multiple "tiles" of input using a
      * prefix functor to maintain a running total between block-wide scans.  Each tile consists
@@ -1420,10 +1422,11 @@ public:
     /**
      * \brief Computes an inclusive block-wide prefix scan using addition (+) as the scan operator.  Each thread contributes one input element.
      *
-     * \blocked
+     * \par
+     * - \blocked
+     * - \smemreuse
      *
-     * \smemreuse
-     *
+     * \par
      * The code snippet below illustrates an inclusive prefix sum of 128 integer items that
      * are partitioned across 128 threads.
      * \par
@@ -1463,10 +1466,11 @@ public:
     /**
      * \brief Computes an inclusive block-wide prefix scan using addition (+) as the scan operator.  Each thread contributes one input element.  Also provides every thread with the block-wide \p block_aggregate of all inputs.
      *
-     * \blocked
+     * \par
+     * - \blocked
+     * - \smemreuse
      *
-     * \smemreuse
-     *
+     * \par
      * The code snippet below illustrates an inclusive prefix sum of 128 integer items that
      * are partitioned across 128 threads.
      * \par
@@ -1509,15 +1513,15 @@ public:
     /**
      * \brief Computes an inclusive block-wide prefix scan using addition (+) as the scan operator.  Each thread contributes one input element.  Instead of using 0 as the block-wide prefix, the call-back functor \p block_prefix_callback_op is invoked by the first warp in the block, and the value returned by <em>lane</em><sub>0</sub> in that warp is used as the "seed" value that logically prefixes the threadblock's scan inputs.  Also provides every thread with the block-wide \p block_aggregate of all inputs.
      *
-     * The \p block_prefix_callback_op functor must implement a member function <tt>T operator()(T block_aggregate)</tt>.
-     * The functor's input parameter \p block_aggregate is the same value also returned by the scan operation.
-     * The functor will be invoked by the first warp of threads in the block, however only the return value from
-     * <em>lane</em><sub>0</sub> is applied as the block-wide prefix.  Can be stateful.
+     * \par
+     * - The \p block_prefix_callback_op functor must implement a member function <tt>T operator()(T block_aggregate)</tt>.
+     *   The functor's input parameter \p block_aggregate is the same value also returned by the scan operation.
+     *   The functor will be invoked by the first warp of threads in the block, however only the return value from
+     *   <em>lane</em><sub>0</sub> is applied as the block-wide prefix.  Can be stateful.
+     * - \blocked
+     * - \smemreuse
      *
-     * \blocked
-     *
-     * \smemreuse
-     *
+     * \par
      * The code snippet below illustrates a single thread block that progressively
      * computes an inclusive prefix sum over multiple "tiles" of input using a
      * prefix functor to maintain a running total between block-wide scans.  Each tile consists
@@ -1602,10 +1606,11 @@ public:
     /**
      * \brief Computes an inclusive block-wide prefix scan using addition (+) as the scan operator.  Each thread contributes an array of consecutive input elements.
      *
-     * \blocked
+     * \par
+     * - \blocked
+     * - \smemreuse
      *
-     * \smemreuse
-     *
+     * \par
      * The code snippet below illustrates an inclusive prefix sum of 512 integer items that
      * are partitioned in a [<em>blocked arrangement</em>](index.html#sec5sec4) across 128 threads
      * where each thread owns 4 consecutive items.
@@ -1662,10 +1667,11 @@ public:
     /**
      * \brief Computes an inclusive block-wide prefix scan using addition (+) as the scan operator.  Each thread contributes an array of consecutive input elements.  Also provides every thread with the block-wide \p block_aggregate of all inputs.
      *
-     * \blocked
+     * \par
+     * - \blocked
+     * - \smemreuse
      *
-     * \smemreuse
-     *
+     * \par
      * The code snippet below illustrates an inclusive prefix sum of 512 integer items that
      * are partitioned in a [<em>blocked arrangement</em>](index.html#sec5sec4) across 128 threads
      * where each thread owns 4 consecutive items.
@@ -1728,15 +1734,15 @@ public:
     /**
      * \brief Computes an inclusive block-wide prefix scan using addition (+) as the scan operator.  Each thread contributes an array of consecutive input elements.  Instead of using 0 as the block-wide prefix, the call-back functor \p block_prefix_callback_op is invoked by the first warp in the block, and the value returned by <em>lane</em><sub>0</sub> in that warp is used as the "seed" value that logically prefixes the threadblock's scan inputs.  Also provides every thread with the block-wide \p block_aggregate of all inputs.
      *
-     * The \p block_prefix_callback_op functor must implement a member function <tt>T operator()(T block_aggregate)</tt>.
-     * The functor's input parameter \p block_aggregate is the same value also returned by the scan operation.
-     * The functor will be invoked by the first warp of threads in the block, however only the return value from
-     * <em>lane</em><sub>0</sub> is applied as the block-wide prefix.  Can be stateful.
+     * \par
+     * - The \p block_prefix_callback_op functor must implement a member function <tt>T operator()(T block_aggregate)</tt>.
+     *   The functor's input parameter \p block_aggregate is the same value also returned by the scan operation.
+     *   The functor will be invoked by the first warp of threads in the block, however only the return value from
+     *   <em>lane</em><sub>0</sub> is applied as the block-wide prefix.  Can be stateful.
+     * - \blocked
+     * - \smemreuse
      *
-     * \blocked
-     *
-     * \smemreuse
-     *
+     * \par
      * The code snippet below illustrates a single thread block that progressively
      * computes an inclusive prefix sum over multiple "tiles" of input using a
      * prefix functor to maintain a running total between block-wide scans.  Each tile consists
@@ -1849,12 +1855,12 @@ public:
     /**
      * \brief Computes an inclusive block-wide prefix scan using the specified binary \p scan_op functor.  Each thread contributes one input element.
      *
-     * Supports non-commutative scan operators.
+     * \par
+     * - Supports non-commutative scan operators.
+     * - \blocked
+     * - \smemreuse
      *
-     * \blocked
-     *
-     * \smemreuse
-     *
+     * \par
      * The code snippet below illustrates an inclusive prefix max scan of 128 integer items that
      * are partitioned across 128 threads.
      * \par
@@ -1897,12 +1903,12 @@ public:
     /**
      * \brief Computes an inclusive block-wide prefix scan using the specified binary \p scan_op functor.  Each thread contributes one input element.  Also provides every thread with the block-wide \p block_aggregate of all inputs.
      *
-     * Supports non-commutative scan operators.
+     * \par
+     * - Supports non-commutative scan operators.
+     * - \blocked
+     * - \smemreuse
      *
-     * \blocked
-     *
-     * \smemreuse
-     *
+     * \par
      * The code snippet below illustrates an inclusive prefix max scan of 128 integer items that
      * are partitioned across 128 threads.
      * \par
@@ -1947,17 +1953,16 @@ public:
     /**
      * \brief Computes an inclusive block-wide prefix scan using the specified binary \p scan_op functor.  Each thread contributes one input element.  the call-back functor \p block_prefix_callback_op is invoked by the first warp in the block, and the value returned by <em>lane</em><sub>0</sub> in that warp is used as the "seed" value that logically prefixes the threadblock's scan inputs.  Also provides every thread with the block-wide \p block_aggregate of all inputs.
      *
-     * The \p block_prefix_callback_op functor must implement a member function <tt>T operator()(T block_aggregate)</tt>.
-     * The functor's input parameter \p block_aggregate is the same value also returned by the scan operation.
-     * The functor will be invoked by the first warp of threads in the block, however only the return value from
-     * <em>lane</em><sub>0</sub> is applied as the block-wide prefix.  Can be stateful.
+     * \par
+     * - The \p block_prefix_callback_op functor must implement a member function <tt>T operator()(T block_aggregate)</tt>.
+     *   The functor's input parameter \p block_aggregate is the same value also returned by the scan operation.
+     *   The functor will be invoked by the first warp of threads in the block, however only the return value from
+     *   <em>lane</em><sub>0</sub> is applied as the block-wide prefix.  Can be stateful.
+     * - Supports non-commutative scan operators.
+     * - \blocked
+     * - \smemreuse
      *
-     * Supports non-commutative scan operators.
-     *
-     * \blocked
-     *
-     * \smemreuse
-     *
+     * \par
      * The code snippet below illustrates a single thread block that progressively
      * computes an inclusive prefix max scan over multiple "tiles" of input using a
      * prefix functor to maintain a running total between block-wide scans.  Each tile consists
@@ -2047,12 +2052,12 @@ public:
     /**
      * \brief Computes an inclusive block-wide prefix scan using the specified binary \p scan_op functor.  Each thread contributes an array of consecutive input elements.
      *
-     * Supports non-commutative scan operators.
+     * \par
+     * - Supports non-commutative scan operators.
+     * - \blocked
+     * - \smemreuse
      *
-     * \blocked
-     *
-     * \smemreuse
-     *
+     * \par
      * The code snippet below illustrates an inclusive prefix max scan of 512 integer items that
      * are partitioned in a [<em>blocked arrangement</em>](index.html#sec5sec4) across 128 threads
      * where each thread owns 4 consecutive items.
@@ -2112,12 +2117,12 @@ public:
     /**
      * \brief Computes an inclusive block-wide prefix scan using the specified binary \p scan_op functor.  Each thread contributes an array of consecutive input elements.  Also provides every thread with the block-wide \p block_aggregate of all inputs.
      *
-     * Supports non-commutative scan operators.
+     * \par
+     * - Supports non-commutative scan operators.
+     * - \blocked
+     * - \smemreuse
      *
-     * \blocked
-     *
-     * \smemreuse
-     *
+     * \par
      * The code snippet below illustrates an inclusive prefix max scan of 512 integer items that
      * are partitioned in a [<em>blocked arrangement</em>](index.html#sec5sec4) across 128 threads
      * where each thread owns 4 consecutive items.
@@ -2182,17 +2187,16 @@ public:
     /**
      * \brief Computes an inclusive block-wide prefix scan using the specified binary \p scan_op functor.  Each thread contributes an array of consecutive input elements.  the call-back functor \p block_prefix_callback_op is invoked by the first warp in the block, and the value returned by <em>lane</em><sub>0</sub> in that warp is used as the "seed" value that logically prefixes the threadblock's scan inputs.  Also provides every thread with the block-wide \p block_aggregate of all inputs.
      *
-     * The \p block_prefix_callback_op functor must implement a member function <tt>T operator()(T block_aggregate)</tt>.
-     * The functor's input parameter \p block_aggregate is the same value also returned by the scan operation.
-     * The functor will be invoked by the first warp of threads in the block, however only the return value from
-     * <em>lane</em><sub>0</sub> is applied as the block-wide prefix.  Can be stateful.
+     * \par
+     * - The \p block_prefix_callback_op functor must implement a member function <tt>T operator()(T block_aggregate)</tt>.
+     *   The functor's input parameter \p block_aggregate is the same value also returned by the scan operation.
+     *   The functor will be invoked by the first warp of threads in the block, however only the return value from
+     *   <em>lane</em><sub>0</sub> is applied as the block-wide prefix.  Can be stateful.
+     * - Supports non-commutative scan operators.
+     * - \blocked
+     * - \smemreuse
      *
-     * Supports non-commutative scan operators.
-     *
-     * \blocked
-     *
-     * \smemreuse
-     *
+     * \par
      * The code snippet below illustrates a single thread block that progressively
      * computes an inclusive prefix max scan over multiple "tiles" of input using a
      * prefix functor to maintain a running total between block-wide scans.  Each tile consists

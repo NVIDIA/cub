@@ -48,7 +48,7 @@ CUB_NS_PREFIX
 namespace cub {
 
 /**
- * \addtogroup IoModule
+ * \addtogroup UtilIo
  * @{
  */
 
@@ -72,18 +72,14 @@ enum CacheLoadModifier
 
 
 /**
- * \name Cache-modified thread I/O
+ * \name Thread I/O (cache modified)
  * @{
  */
 
 /**
- * \brief Thread utility for reading memory using cub::CacheLoadModifier cache modifiers.
+ * \brief Thread utility for reading memory using cub::CacheLoadModifier cache modifiers.  Can be used to load any data type.
  *
- * Cache modifiers will only be effected for built-in types (i.e., C++
- * primitives and CUDA vector-types).
- *
- * For example:
- * \par
+ * \par Example
  * \code
  * #include <cub/cub.cuh>
  *
@@ -99,12 +95,14 @@ enum CacheLoadModifier
  * double4 *d_in;
  * double4 val = cub::ThreadLoad<cub::LOAD_CV>(d_in + threadIdx.x);
  *
- * // 96-bit load using default cache modifier (ignoring LOAD_CS)
+ * // 96-bit load using cache-streaming modifier
  * struct TestFoo { bool a; short b; };
  * TestFoo *d_struct;
  * TestFoo val = cub::ThreadLoad<cub::LOAD_CS>(d_in + threadIdx.x);
  * \endcode
  *
+ * \tparam MODIFIER             <b>[inferred]</b> CacheLoadModifier enumeration
+ * \tparam InputIterator        <b>[inferred]</b> Input iterator type \iterator
  */
 template <
     CacheLoadModifier MODIFIER,
@@ -431,7 +429,7 @@ __device__ __forceinline__ typename std::iterator_traits<InputIterator>::value_t
 #endif // DOXYGEN_SHOULD_SKIP_THIS
 
 
-/** @} */       // end group IoModule
+/** @} */       // end group UtilIo
 
 
 }               // CUB namespace
