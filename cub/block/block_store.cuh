@@ -48,18 +48,18 @@ CUB_NS_PREFIX
 namespace cub {
 
 /**
- * \addtogroup IoModule
+ * \addtogroup UtilIo
  * @{
  */
 
 
 /******************************************************************//**
- * \name Blocked I/O
+ * \name Blocked arrangement I/O (direct)
  *********************************************************************/
 //@{
 
 /**
- * \brief Store a blocked arrangement of items across a thread block into a linear segment of items using the specified cache modifier.
+ * \brief Store a blocked arrangement of items across a thread block into a linear segment of items.
  *
  * \blocked
  *
@@ -86,7 +86,7 @@ __device__ __forceinline__ void StoreDirectBlocked(
 
 
 /**
- * \brief Store a blocked arrangement of items across a thread block into a linear segment of items using the specified cache modifier, guarded by range
+ * \brief Store a blocked arrangement of items across a thread block into a linear segment of items, guarded by range
  *
  * \blocked
  *
@@ -116,165 +116,8 @@ __device__ __forceinline__ void StoreDirectBlocked(
 }
 
 
-
-//@}  end member group
-/******************************************************************//**
- * \name Striped I/O
- *********************************************************************/
-//@{
-
-
 /**
- * \brief Store a striped arrangement of data across the thread block into a linear segment of items using the specified cache modifier.
- *
- * \striped
- *
- * \tparam BLOCK_THREADS        The thread block size in threads
- * \tparam T                    <b>[inferred]</b> The data type to store.
- * \tparam ITEMS_PER_THREAD     <b>[inferred]</b> The number of consecutive items partitioned onto each thread.
- * \tparam OutputIterator       <b>[inferred]</b> The random-access iterator type for output \iterator.
- */
-template <
-    int                 BLOCK_THREADS,
-    typename            T,
-    int                 ITEMS_PER_THREAD,
-    typename            OutputIterator>
-__device__ __forceinline__ void StoreDirectStriped(
-    int                 linear_tid,                 ///< [in] A suitable 1D thread-identifier for the calling thread (e.g., <tt>(threadIdx.y * blockDim.x) + linear_tid</tt> for 2D thread blocks)
-    OutputIterator      block_itr,                  ///< [in] The thread block's base output iterator for storing to
-    T                   (&items)[ITEMS_PER_THREAD]) ///< [in] Data to store
-{
-    // Store directly in striped order
-    #pragma unroll
-    for (int ITEM = 0; ITEM < ITEMS_PER_THREAD; ITEM++)
-    {
-        block_itr[(ITEM * BLOCK_THREADS) + linear_tid] = items[ITEM];
-    }
-}
-
-
-/**
- * \brief Store a striped arrangement of data across the thread block into a linear segment of items using the specified cache modifier, guarded by range
- *
- * \striped
- *
- * \tparam BLOCK_THREADS        The thread block size in threads
- * \tparam T                    <b>[inferred]</b> The data type to store.
- * \tparam ITEMS_PER_THREAD     <b>[inferred]</b> The number of consecutive items partitioned onto each thread.
- * \tparam OutputIterator       <b>[inferred]</b> The random-access iterator type for output \iterator.
- */
-template <
-    int                 BLOCK_THREADS,
-    typename            T,
-    int                 ITEMS_PER_THREAD,
-    typename            OutputIterator>
-__device__ __forceinline__ void StoreDirectStriped(
-    int                 linear_tid,                 ///< [in] A suitable 1D thread-identifier for the calling thread (e.g., <tt>(threadIdx.y * blockDim.x) + linear_tid</tt> for 2D thread blocks)
-    OutputIterator      block_itr,                  ///< [in] The thread block's base output iterator for storing to
-    T                   (&items)[ITEMS_PER_THREAD], ///< [in] Data to store
-    int                 valid_items)                ///< [in] Number of valid items to write
-{
-    // Store directly in striped order
-    #pragma unroll
-    for (int ITEM = 0; ITEM < ITEMS_PER_THREAD; ITEM++)
-    {
-        if ((ITEM * BLOCK_THREADS) + linear_tid < valid_items)
-        {
-            block_itr[(ITEM * BLOCK_THREADS) + linear_tid] = items[ITEM];
-        }
-    }
-}
-
-
-
-//@}  end member group
-/******************************************************************//**
- * \name Warp-striped I/O
- *********************************************************************/
-//@{
-
-
-/**
- * \brief Store a warp-striped arrangement of data across the thread block into a linear segment of items using the specified cache modifier.
- *
- * \warpstriped
- *
- * \par Usage Considerations
- * The number of threads in the thread block must be a multiple of the architecture's warp size.
- *
- * \tparam T                    <b>[inferred]</b> The data type to store.
- * \tparam ITEMS_PER_THREAD     <b>[inferred]</b> The number of consecutive items partitioned onto each thread.
- * \tparam OutputIterator       <b>[inferred]</b> The random-access iterator type for output \iterator.
- */
-template <
-    typename            T,
-    int                 ITEMS_PER_THREAD,
-    typename            OutputIterator>
-__device__ __forceinline__ void StoreDirectWarpStriped(
-    int                 linear_tid,                 ///< [in] A suitable 1D thread-identifier for the calling thread (e.g., <tt>(threadIdx.y * blockDim.x) + linear_tid</tt> for 2D thread blocks)
-    OutputIterator      block_itr,                  ///< [in] The thread block's base output iterator for storing to
-    T                   (&items)[ITEMS_PER_THREAD]) ///< [out] Data to load
-{
-    int tid         = linear_tid & (CUB_PTX_WARP_THREADS - 1);
-    int wid         = linear_tid >> CUB_PTX_LOG_WARP_THREADS;
-    int warp_offset = wid * CUB_PTX_WARP_THREADS * ITEMS_PER_THREAD;
-
-    // Store directly in warp-striped order
-    #pragma unroll
-    for (int ITEM = 0; ITEM < ITEMS_PER_THREAD; ITEM++)
-    {
-        block_itr[warp_offset + tid + (ITEM * CUB_PTX_WARP_THREADS)] = items[ITEM];
-    }
-}
-
-
-/**
- * \brief Store a warp-striped arrangement of data across the thread block into a linear segment of items using the specified cache modifier, guarded by range
- *
- * \warpstriped
- *
- * \par Usage Considerations
- * The number of threads in the thread block must be a multiple of the architecture's warp size.
- *
- * \tparam T                    <b>[inferred]</b> The data type to store.
- * \tparam ITEMS_PER_THREAD     <b>[inferred]</b> The number of consecutive items partitioned onto each thread.
- * \tparam OutputIterator       <b>[inferred]</b> The random-access iterator type for output \iterator.
- */
-template <
-    typename            T,
-    int                 ITEMS_PER_THREAD,
-    typename            OutputIterator>
-__device__ __forceinline__ void StoreDirectWarpStriped(
-    int                 linear_tid,                 ///< [in] A suitable 1D thread-identifier for the calling thread (e.g., <tt>(threadIdx.y * blockDim.x) + linear_tid</tt> for 2D thread blocks)
-    OutputIterator      block_itr,                  ///< [in] The thread block's base output iterator for storing to
-    T                   (&items)[ITEMS_PER_THREAD], ///< [in] Data to store
-    int                 valid_items)                ///< [in] Number of valid items to write
-{
-    int tid         = linear_tid & (CUB_PTX_WARP_THREADS - 1);
-    int wid         = linear_tid >> CUB_PTX_LOG_WARP_THREADS;
-    int warp_offset = wid * CUB_PTX_WARP_THREADS * ITEMS_PER_THREAD;
-
-    // Store directly in warp-striped order
-    #pragma unroll
-    for (int ITEM = 0; ITEM < ITEMS_PER_THREAD; ITEM++)
-    {
-        if (warp_offset + tid + (ITEM * CUB_PTX_WARP_THREADS) < valid_items)
-        {
-            block_itr[warp_offset + tid + (ITEM * CUB_PTX_WARP_THREADS)] = items[ITEM];
-        }
-    }
-}
-
-
-
-//@}  end member group
-/******************************************************************//**
- * \name Blocked, vectorized I/O
- *********************************************************************/
-//@{
-
-/**
- * \brief Store a blocked arrangement of items across a thread block into a linear segment of items using the specified cache modifier.
+ * \brief Store a blocked arrangement of items across a thread block into a linear segment of items.
  *
  * \blocked
  *
@@ -333,10 +176,160 @@ __device__ __forceinline__ void StoreDirectBlockedVectorized(
 }
 
 
+
+//@}  end member group
+/******************************************************************//**
+ * \name Striped arrangement I/O (direct)
+ *********************************************************************/
+//@{
+
+
+/**
+ * \brief Store a striped arrangement of data across the thread block into a linear segment of items.
+ *
+ * \striped
+ *
+ * \tparam BLOCK_THREADS        The thread block size in threads
+ * \tparam T                    <b>[inferred]</b> The data type to store.
+ * \tparam ITEMS_PER_THREAD     <b>[inferred]</b> The number of consecutive items partitioned onto each thread.
+ * \tparam OutputIterator       <b>[inferred]</b> The random-access iterator type for output \iterator.
+ */
+template <
+    int                 BLOCK_THREADS,
+    typename            T,
+    int                 ITEMS_PER_THREAD,
+    typename            OutputIterator>
+__device__ __forceinline__ void StoreDirectStriped(
+    int                 linear_tid,                 ///< [in] A suitable 1D thread-identifier for the calling thread (e.g., <tt>(threadIdx.y * blockDim.x) + linear_tid</tt> for 2D thread blocks)
+    OutputIterator      block_itr,                  ///< [in] The thread block's base output iterator for storing to
+    T                   (&items)[ITEMS_PER_THREAD]) ///< [in] Data to store
+{
+    // Store directly in striped order
+    #pragma unroll
+    for (int ITEM = 0; ITEM < ITEMS_PER_THREAD; ITEM++)
+    {
+        block_itr[(ITEM * BLOCK_THREADS) + linear_tid] = items[ITEM];
+    }
+}
+
+
+/**
+ * \brief Store a striped arrangement of data across the thread block into a linear segment of items, guarded by range
+ *
+ * \striped
+ *
+ * \tparam BLOCK_THREADS        The thread block size in threads
+ * \tparam T                    <b>[inferred]</b> The data type to store.
+ * \tparam ITEMS_PER_THREAD     <b>[inferred]</b> The number of consecutive items partitioned onto each thread.
+ * \tparam OutputIterator       <b>[inferred]</b> The random-access iterator type for output \iterator.
+ */
+template <
+    int                 BLOCK_THREADS,
+    typename            T,
+    int                 ITEMS_PER_THREAD,
+    typename            OutputIterator>
+__device__ __forceinline__ void StoreDirectStriped(
+    int                 linear_tid,                 ///< [in] A suitable 1D thread-identifier for the calling thread (e.g., <tt>(threadIdx.y * blockDim.x) + linear_tid</tt> for 2D thread blocks)
+    OutputIterator      block_itr,                  ///< [in] The thread block's base output iterator for storing to
+    T                   (&items)[ITEMS_PER_THREAD], ///< [in] Data to store
+    int                 valid_items)                ///< [in] Number of valid items to write
+{
+    // Store directly in striped order
+    #pragma unroll
+    for (int ITEM = 0; ITEM < ITEMS_PER_THREAD; ITEM++)
+    {
+        if ((ITEM * BLOCK_THREADS) + linear_tid < valid_items)
+        {
+            block_itr[(ITEM * BLOCK_THREADS) + linear_tid] = items[ITEM];
+        }
+    }
+}
+
+
+
+//@}  end member group
+/******************************************************************//**
+ * \name Warp-striped arrangement I/O (direct)
+ *********************************************************************/
+//@{
+
+
+/**
+ * \brief Store a warp-striped arrangement of data across the thread block into a linear segment of items.
+ *
+ * \warpstriped
+ *
+ * \par Usage Considerations
+ * The number of threads in the thread block must be a multiple of the architecture's warp size.
+ *
+ * \tparam T                    <b>[inferred]</b> The data type to store.
+ * \tparam ITEMS_PER_THREAD     <b>[inferred]</b> The number of consecutive items partitioned onto each thread.
+ * \tparam OutputIterator       <b>[inferred]</b> The random-access iterator type for output \iterator.
+ */
+template <
+    typename            T,
+    int                 ITEMS_PER_THREAD,
+    typename            OutputIterator>
+__device__ __forceinline__ void StoreDirectWarpStriped(
+    int                 linear_tid,                 ///< [in] A suitable 1D thread-identifier for the calling thread (e.g., <tt>(threadIdx.y * blockDim.x) + linear_tid</tt> for 2D thread blocks)
+    OutputIterator      block_itr,                  ///< [in] The thread block's base output iterator for storing to
+    T                   (&items)[ITEMS_PER_THREAD]) ///< [out] Data to load
+{
+    int tid         = linear_tid & (CUB_PTX_WARP_THREADS - 1);
+    int wid         = linear_tid >> CUB_PTX_LOG_WARP_THREADS;
+    int warp_offset = wid * CUB_PTX_WARP_THREADS * ITEMS_PER_THREAD;
+
+    // Store directly in warp-striped order
+    #pragma unroll
+    for (int ITEM = 0; ITEM < ITEMS_PER_THREAD; ITEM++)
+    {
+        block_itr[warp_offset + tid + (ITEM * CUB_PTX_WARP_THREADS)] = items[ITEM];
+    }
+}
+
+
+/**
+ * \brief Store a warp-striped arrangement of data across the thread block into a linear segment of items, guarded by range
+ *
+ * \warpstriped
+ *
+ * \par Usage Considerations
+ * The number of threads in the thread block must be a multiple of the architecture's warp size.
+ *
+ * \tparam T                    <b>[inferred]</b> The data type to store.
+ * \tparam ITEMS_PER_THREAD     <b>[inferred]</b> The number of consecutive items partitioned onto each thread.
+ * \tparam OutputIterator       <b>[inferred]</b> The random-access iterator type for output \iterator.
+ */
+template <
+    typename            T,
+    int                 ITEMS_PER_THREAD,
+    typename            OutputIterator>
+__device__ __forceinline__ void StoreDirectWarpStriped(
+    int                 linear_tid,                 ///< [in] A suitable 1D thread-identifier for the calling thread (e.g., <tt>(threadIdx.y * blockDim.x) + linear_tid</tt> for 2D thread blocks)
+    OutputIterator      block_itr,                  ///< [in] The thread block's base output iterator for storing to
+    T                   (&items)[ITEMS_PER_THREAD], ///< [in] Data to store
+    int                 valid_items)                ///< [in] Number of valid items to write
+{
+    int tid         = linear_tid & (CUB_PTX_WARP_THREADS - 1);
+    int wid         = linear_tid >> CUB_PTX_LOG_WARP_THREADS;
+    int warp_offset = wid * CUB_PTX_WARP_THREADS * ITEMS_PER_THREAD;
+
+    // Store directly in warp-striped order
+    #pragma unroll
+    for (int ITEM = 0; ITEM < ITEMS_PER_THREAD; ITEM++)
+    {
+        if (warp_offset + tid + (ITEM * CUB_PTX_WARP_THREADS) < valid_items)
+        {
+            block_itr[warp_offset + tid + (ITEM * CUB_PTX_WARP_THREADS)] = items[ITEM];
+        }
+    }
+}
+
+
 //@}  end member group
 
 
-/** @} */       // end group IoModule
+/** @} */       // end group UtilIo
 
 
 //-----------------------------------------------------------------------------
@@ -423,15 +416,10 @@ enum BlockStoreAlgorithm
 };
 
 
-
-/**
- * \addtogroup BlockModule
- * @{
- */
-
-
 /**
  * \brief The BlockStore class provides [<em>collective</em>](index.html#sec0) data movement methods for writing a [<em>blocked arrangement</em>](index.html#sec5sec4) of items partitioned across a CUDA thread block to a linear segment of memory.  ![](block_store_logo.png)
+ * \ingroup BlockModule
+ * \ingroup UtilIo
  *
  * \par Overview
  * The BlockStore class provides a single data movement abstraction that can be specialized
@@ -849,7 +837,7 @@ public:
      *
      */
     __device__ __forceinline__ void Store(
-        OutputIterator    block_itr,                  ///< [in] The thread block's base output iterator for storing to
+        OutputIterator      block_itr,                  ///< [in] The thread block's base output iterator for storing to
         T                   (&items)[ITEMS_PER_THREAD]) ///< [in] Data to store
     {
         InternalStore(temp_storage, linear_tid).Store(block_itr, items);
@@ -894,7 +882,7 @@ public:
      *
      */
     __device__ __forceinline__ void Store(
-        OutputIterator    block_itr,                  ///< [in] The thread block's base output iterator for storing to
+        OutputIterator      block_itr,                  ///< [in] The thread block's base output iterator for storing to
         T                   (&items)[ITEMS_PER_THREAD], ///< [in] Data to store
         int                 valid_items)                ///< [in] Number of valid items to write
     {
@@ -902,7 +890,6 @@ public:
     }
 };
 
-/** @} */       // end group BlockModule
 
 }               // CUB namespace
 CUB_NS_POSTFIX  // Optional outer namespace(s)

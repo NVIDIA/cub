@@ -92,9 +92,9 @@ namespace cub {
  *
  * \endcode
  * \par
- * Suppose the set of input \p thread_data across the block of threads is <tt>1, 1, 1, 1, ...</tt>.
+ * Suppose the set of input \p thread_data across the block of threads is <tt>{1, 1, 1, 1, ...}</tt>.
  * The corresponding output \p thread_data in each of the four warps of threads will be
- * <tt>0, 1, 2, 3, ..., 31</tt>.
+ * <tt>0, 1, 2, 3, ..., 31}</tt>.
  *
  * \par
  * The code snippet below illustrates a single warp prefix sum within a block of
@@ -123,8 +123,8 @@ namespace cub {
  *
  * \endcode
  * \par
- * Suppose the set of input \p thread_data across the warp of threads is <tt>1, 1, 1, 1, ...</tt>.
- * The corresponding output \p thread_data will be <tt>0, 1, 2, 3, ..., 31</tt>.
+ * Suppose the set of input \p thread_data across the warp of threads is <tt>{1, 1, 1, 1, ...}</tt>.
+ * The corresponding output \p thread_data will be <tt>{0, 1, 2, 3, ..., 31}</tt>.
  *
  * \par Usage and Performance Considerations
  * - Supports "logical" warps smaller than the physical warp size (e.g., a logical warp of 8 threads)
@@ -293,9 +293,9 @@ public:
      *
      * \endcode
      * \par
-     * Suppose the set of input \p thread_data across the block of threads is <tt>1, 1, 1, 1, ...</tt>.
+     * Suppose the set of input \p thread_data across the block of threads is <tt>{1, 1, 1, 1, ...}</tt>.
      * The corresponding output \p thread_data in each of the four warps of threads will be
-     * <tt>1, 2, 3, ..., 32</tt>.
+     * <tt>1, 2, 3, ..., 32}</tt>.
      */
     __device__ __forceinline__ void InclusiveSum(
         T               input,              ///< [in] Calling thread's input item.
@@ -335,9 +335,9 @@ public:
      *
      * \endcode
      * \par
-     * Suppose the set of input \p thread_data across the block of threads is <tt>1, 1, 1, 1, ...</tt>.
+     * Suppose the set of input \p thread_data across the block of threads is <tt>{1, 1, 1, 1, ...}</tt>.
      * The corresponding output \p thread_data in each of the four warps of threads will be
-     * <tt>1, 2, 3, ..., 32</tt>.  Furthermore, \p warp_aggregate for all threads in all warps will be \p 32.
+     * <tt>1, 2, 3, ..., 32}</tt>.  Furthermore, \p warp_aggregate for all threads in all warps will be \p 32.
      */
     __device__ __forceinline__ void InclusiveSum(
         T               input,              ///< [in] Calling thread's input item.
@@ -415,9 +415,9 @@ public:
      *     }
      * \endcode
      * \par
-     * Suppose the input \p d_data is <tt>1, 1, 1, 1, 1, 1, 1, 1, ...</tt>.
-     * The corresponding output for the first segment will be <tt>1, 2, 3, ..., 32</tt>.
-     * The output for the second segment will be <tt>33, 34, 35, ..., 64</tt>.  Furthermore,
+     * Suppose the input \p d_data is <tt>{1, 1, 1, 1, 1, 1, 1, 1, ...}</tt>.
+     * The corresponding output for the first segment will be <tt>{1, 2, 3, ..., 32}</tt>.
+     * The output for the second segment will be <tt>{33, 34, 35, ..., 64}</tt>.  Furthermore,
      * the value \p 32 will be stored in \p warp_aggregate for all threads after each scan.
      *
      * \tparam WarpPrefixCallbackOp                 <b>[inferred]</b> Call-back functor type having member <tt>T operator()(T warp_aggregate)</tt>
@@ -539,9 +539,9 @@ public:
      *
      * \endcode
      * \par
-     * Suppose the set of input \p thread_data across the block of threads is <tt>1, 1, 1, 1, ...</tt>.
+     * Suppose the set of input \p thread_data across the block of threads is <tt>{1, 1, 1, 1, ...}</tt>.
      * The corresponding output \p thread_data in each of the four warps of threads will be
-     * <tt>0, 1, 2, ..., 31</tt>.
+     * <tt>0, 1, 2, ..., 31}</tt>.
      *
      */
     __device__ __forceinline__ void ExclusiveSum(
@@ -585,9 +585,9 @@ public:
      *
      * \endcode
      * \par
-     * Suppose the set of input \p thread_data across the block of threads is <tt>1, 1, 1, 1, ...</tt>.
+     * Suppose the set of input \p thread_data across the block of threads is <tt>{1, 1, 1, 1, ...}</tt>.
      * The corresponding output \p thread_data in each of the four warps of threads will be
-     * <tt>0, 1, 2, ..., 31</tt>.  Furthermore, \p warp_aggregate for all threads in all warps will be \p 32.
+     * <tt>0, 1, 2, ..., 31}</tt>.  Furthermore, \p warp_aggregate for all threads in all warps will be \p 32.
      */
     __device__ __forceinline__ void ExclusiveSum(
         T               input,              ///< [in] Calling thread's input item.
@@ -668,9 +668,9 @@ public:
      *     }
      * \endcode
      * \par
-     * Suppose the input \p d_data is <tt>1, 1, 1, 1, 1, 1, 1, 1, ...</tt>.
-     * The corresponding output for the first segment will be <tt>0, 1, 2, ..., 31</tt>.
-     * The output for the second segment will be <tt>32, 33, 34, ..., 63</tt>.  Furthermore,
+     * Suppose the input \p d_data is <tt>{1, 1, 1, 1, 1, 1, 1, 1, ...}</tt>.
+     * The corresponding output for the first segment will be <tt>{0, 1, 2, ..., 31}</tt>.
+     * The output for the second segment will be <tt>{32, 33, 34, ..., 63}</tt>.  Furthermore,
      * the value \p 32 will be stored in \p warp_aggregate for all threads after each scan.
      *
      * \tparam WarpPrefixCallbackOp                 <b>[inferred]</b> Call-back functor type having member <tt>T operator()(T warp_aggregate)</tt>
@@ -721,7 +721,7 @@ public:
      *
      * \endcode
      * \par
-     * Suppose the set of input \p thread_data across the block of threads is <tt>0, -1, 2, -3, ..., 126, -127</tt>.
+     * Suppose the set of input \p thread_data across the block of threads is <tt>{0, -1, 2, -3, ..., 126, -127}</tt>.
      * The corresponding output \p thread_data in the first warp would be
      * <tt>0, 0, 2, 2, ..., 30, 30</tt>, the output for the second warp would be <tt>32, 32, 34, 34, ..., 62, 62</tt>, etc.
      *
@@ -768,7 +768,7 @@ public:
      *
      * \endcode
      * \par
-     * Suppose the set of input \p thread_data across the block of threads is <tt>0, -1, 2, -3, ..., 126, -127</tt>.
+     * Suppose the set of input \p thread_data across the block of threads is <tt>{0, -1, 2, -3, ..., 126, -127}</tt>.
      * The corresponding output \p thread_data in the first warp would be
      * <tt>0, 0, 2, 2, ..., 30, 30</tt>, the output for the second warp would be <tt>32, 32, 34, 34, ..., 62, 62</tt>, etc.
      * Furthermore, \p warp_aggregate would be assigned \p 30 for threads in the first warp, \p 62 for threads
@@ -854,9 +854,9 @@ public:
      *     }
      * \endcode
      * \par
-     * Suppose the input \p d_data is <tt>0, -1, 2, -3, 4, -5, ...</tt>.
-     * The corresponding output for the first segment will be <tt>0, 0, 2, 2, ..., 30, 30</tt>.
-     * The output for the second segment will be <tt>32, 32, 34, 34, ..., 62, 62</tt>.  Furthermore,
+     * Suppose the input \p d_data is <tt>{0, -1, 2, -3, 4, -5, ...}</tt>.
+     * The corresponding output for the first segment will be <tt>{0, 0, 2, 2, ..., 30, 30}</tt>.
+     * The output for the second segment will be <tt>{32, 32, 34, 34, ..., 62, 62}</tt>.  Furthermore,
      * \p block_aggregate will be assigned \p 30 in all threads after the first scan, assigned \p 62 after the second
      * scan, etc.
      *
@@ -921,7 +921,7 @@ public:
      *
      * \endcode
      * \par
-     * Suppose the set of input \p thread_data across the block of threads is <tt>0, -1, 2, -3, ..., 126, -127</tt>.
+     * Suppose the set of input \p thread_data across the block of threads is <tt>{0, -1, 2, -3, ..., 126, -127}</tt>.
      * The corresponding output \p thread_data in the first warp would be
      * <tt>INT_MIN, 0, 0, 2, ..., 28, 30</tt>, the output for the second warp would be <tt>30, 32, 32, 34, ..., 60, 62</tt>, etc.
      *
@@ -967,7 +967,7 @@ public:
      *
      * \endcode
      * \par
-     * Suppose the set of input \p thread_data across the block of threads is <tt>0, -1, 2, -3, ..., 126, -127</tt>.
+     * Suppose the set of input \p thread_data across the block of threads is <tt>{0, -1, 2, -3, ..., 126, -127}</tt>.
      * The corresponding output \p thread_data in the first warp would be
      * <tt>INT_MIN, 0, 0, 2, ..., 28, 30</tt>, the output for the second warp would be <tt>30, 32, 32, 34, ..., 60, 62</tt>, etc.
      * Furthermore, \p warp_aggregate would be assigned \p 30 for threads in the first warp, \p 62 for threads
@@ -1054,9 +1054,9 @@ public:
      *     }
      * \endcode
      * \par
-     * Suppose the input \p d_data is <tt>0, -1, 2, -3, 4, -5, ...</tt>.
-     * The corresponding output for the first segment will be <tt>INT_MIN, 0, 0, 2, ..., 28, 30</tt>.
-     * The output for the second segment will be <tt>30, 32, 32, 34, ..., 60, 62</tt>.  Furthermore,
+     * Suppose the input \p d_data is <tt>{0, -1, 2, -3, 4, -5, ...}</tt>.
+     * The corresponding output for the first segment will be <tt>{INT_MIN, 0, 0, 2, ..., 28, 30}</tt>.
+     * The output for the second segment will be <tt>{30, 32, 32, 34, ..., 60, 62}</tt>.  Furthermore,
      * \p block_aggregate will be assigned \p 30 in all threads after the first scan, assigned \p 62 after the second
      * scan, etc.
      *
@@ -1124,7 +1124,7 @@ public:
      *
      * \endcode
      * \par
-     * Suppose the set of input \p thread_data across the block of threads is <tt>0, -1, 2, -3, ..., 126, -127</tt>.
+     * Suppose the set of input \p thread_data across the block of threads is <tt>{0, -1, 2, -3, ..., 126, -127}</tt>.
      * The corresponding output \p thread_data in the first warp would be
      * <tt>?, 0, 0, 2, ..., 28, 30</tt>, the output for the second warp would be <tt>?, 32, 32, 34, ..., 60, 62</tt>, etc.
      * (The output \p thread_data in each warp lane0 is undefined.)
@@ -1170,7 +1170,7 @@ public:
      *
      * \endcode
      * \par
-     * Suppose the set of input \p thread_data across the block of threads is <tt>0, -1, 2, -3, ..., 126, -127</tt>.
+     * Suppose the set of input \p thread_data across the block of threads is <tt>{0, -1, 2, -3, ..., 126, -127}</tt>.
      * The corresponding output \p thread_data in the first warp would be
      * <tt>?, 0, 0, 2, ..., 28, 30</tt>, the output for the second warp would be <tt>?, 32, 32, 34, ..., 60, 62</tt>, etc.
      * (The output \p thread_data in each warp lane0 is undefined.)  Furthermore, \p warp_aggregate would be assigned \p 30 for threads in the first warp, \p 62 for threads
@@ -1192,7 +1192,7 @@ public:
     /**
      * \brief Computes an exclusive prefix scan using the specified binary scan functor in each logical warp.  The \p warp_prefix_op value from thread-thread-lane<sub>0</sub> is applied to all scan outputs.  Also computes the warp-wide \p warp_aggregate of all inputs for thread-thread-lane<sub>0</sub>.
      *
-     * The \p warp_prefix_op functor must implement a member function <tt>T operator()(T warp_aggregate)</tt>.
+     * The \p warp_prefix_op functor must implement a member function <tt>T operator()(T warp_aggregate)}</tt>.
      * The functor's input parameter \p warp_aggregate is the same value also returned by the scan operation.
      * The functor will be invoked by the entire warp of threads, however only the return value from
      * <em>lane</em><sub>0</sub> is applied as the threadblock-wide prefix.  Can be stateful.
@@ -1256,9 +1256,9 @@ public:
      *     }
      * \endcode
      * \par
-     * Suppose the input \p d_data is <tt>0, -1, 2, -3, 4, -5, ...</tt>.
-     * The corresponding output for the first segment will be <tt>INT_MIN, 0, 0, 2, ..., 28, 30</tt>.
-     * The output for the second segment will be <tt>30, 32, 32, 34, ..., 60, 62</tt>.  Furthermore,
+     * Suppose the input \p d_data is <tt>{0, -1, 2, -3, 4, -5, ...}</tt>.
+     * The corresponding output for the first segment will be <tt>{INT_MIN, 0, 0, 2, ..., 28, 30}</tt>.
+     * The output for the second segment will be <tt>{30, 32, 32, 34, ..., 60, 62}</tt>.  Furthermore,
      * \p block_aggregate will be assigned \p 30 in all threads after the first scan, assigned \p 62 after the second
      * scan, etc.
      *

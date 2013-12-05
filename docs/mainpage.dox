@@ -30,12 +30,16 @@
 
 /**
 
-\defgroup DeviceModule 	Device-wide collective primitives
+\defgroup DeviceModule 	Device-wide primitives
 \defgroup BlockModule 	Block-wide collective primitives
 \defgroup WarpModule 	Warp-wide collective primitives
-\defgroup IoModule 		Direct thread and block I/O
-\defgroup UtilIterator 	Fancy iterators and access wrappers
-\defgroup UtilModule 	Generic CUB utilities
+\defgroup UtilModule 	CUB utilities
+	\defgroup UtilIterator 	Fancy iterators
+		\ingroup UtilModule
+	\defgroup UtilIo 		Thread and thread block I/O
+		\ingroup UtilModule
+	\defgroup UtilPtx 		Wrappers for low-level PTX intrinsics
+		\ingroup UtilModule
 
 \mainpage
 
@@ -211,7 +215,7 @@ library and software abstraction layer, CUB provides:
 -# <b><em>Simplicity of composition</em></b>. CUB primitives can be simply sequenced 
    and nested in kernel code.  For example, cub::BlockRadixSort is constructed from 
    cub::BlockExchange and cub::BlockRadixRank. The latter is composed of cub::BlockScan 
-   which incorporates cub::WarpScan. 
+   which incorporates cub::WarpScan. \image html nested_composition.png
 -# <b><em>High performance</em></b>. CUB simplifies high performance kernel 
    development by taking care to implement the state-of-the-art in parallel algorithms.  
    Expert code should be reused rather than reimplemented. 
