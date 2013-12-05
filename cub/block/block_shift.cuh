@@ -188,7 +188,8 @@ public:
     /**
      * \brief Each thread obtains the \p input provided by its predecessor.  The first thread receives \p block_prefix.
      *
-     * \smemreuse
+     * \par
+     * - \smemreuse
      */
     __device__ __forceinline__ void Up(
         T input,            ///< [in] Input item
@@ -223,7 +224,8 @@ public:
     /**
      * \brief Each thread receives the \p input provided by its predecessor.  The first thread receives \p block_prefix.  All threads receive the \p input provided by <em>thread</em><sub><tt>BLOCK_THREADS-1</tt></sub>.
      *
-     * \smemreuse
+     * \par
+     * - \smemreuse
      */
     __device__ __forceinline__ void Up(
         T input,            ///< [in] Input item
@@ -262,7 +264,8 @@ public:
     /**
      * \brief Each thread obtains the \p input provided by its successor.  The last thread receives \p block_suffix.
      *
-     * \smemreuse
+     * \par
+     * - \smemreuse
      */
     __device__ __forceinline__ void Down(
         T input,            ///< [in] Input item
@@ -297,7 +300,8 @@ public:
     /**
      * \brief Each thread obtains the \p input provided by its successor.  The last thread receives \p block_suffix.  All threads receive the \p input provided by <em>thread</em><sub>0</sub>.
      *
-     * \smemreuse
+     * \par
+     * - \smemreuse
      */
     __device__ __forceinline__ void Down(
         T input,            ///< [in] Input item

@@ -262,6 +262,7 @@ public:
     /**
      * \brief Initialize the shared histogram counters to zero.
      *
+     * \par
      * The code snippet below illustrates a the initialization and update of a
      * histogram of 512 integer samples that are partitioned across 128 threads
      * where each thread owns 4 samples.
@@ -316,8 +317,10 @@ public:
     /**
      * \brief Constructs a block-wide histogram in shared/global memory.  Each thread contributes an array of input elements.
      *
-     * \smemreuse
+     * \par
+     * - \smemreuse
      *
+     * \par
      * The code snippet below illustrates a 256-bin histogram of 512 integer samples that
      * are partitioned across 128 threads where each thread owns 4 samples.
      * \par
@@ -366,8 +369,10 @@ public:
     /**
      * \brief Updates an existing block-wide histogram in shared/global memory.  Each thread composites an array of input elements.
      *
-     * \smemreuse
+     * \par
+     * - \smemreuse
      *
+     * \par
      * The code snippet below illustrates a the initialization and update of a
      * histogram of 512 integer samples that are partitioned across 128 threads
      * where each thread owns 4 samples.

@@ -951,8 +951,11 @@ public:
     /**
      * \brief Load a linear segment of items from memory.
      *
-     * \blocked
+     * \par
+     * - \blocked
+     * - \smemreuse
      *
+     * \par
      * The code snippet below illustrates the loading of a linear
      * segment of 512 integers into a "blocked" arrangement across 128 threads where each
      * thread owns 4 consecutive items.  The load is specialized for \p BLOCK_LOAD_WARP_TRANSPOSE,
@@ -992,8 +995,11 @@ public:
     /**
      * \brief Load a linear segment of items from memory, guarded by range.
      *
-     * \blocked
+     * \par
+     * - \blocked
+     * - \smemreuse
      *
+     * \par
      * The code snippet below illustrates the guarded loading of a linear
      * segment of 512 integers into a "blocked" arrangement across 128 threads where each
      * thread owns 4 consecutive items.  The load is specialized for \p BLOCK_LOAD_WARP_TRANSPOSE,
@@ -1035,8 +1041,11 @@ public:
     /**
      * \brief Load a linear segment of items from memory, guarded by range, with a fall-back assignment of out-of-bound elements
      *
-     * \blocked
+     * \par
+     * - \blocked
+     * - \smemreuse
      *
+     * \par
      * The code snippet below illustrates the guarded loading of a linear
      * segment of 512 integers into a "blocked" arrangement across 128 threads where each
      * thread owns 4 consecutive items.  The load is specialized for \p BLOCK_LOAD_WARP_TRANSPOSE,
