@@ -275,12 +275,12 @@ public:
     /**
      * \brief Computes a block-wide reduction for thread<sub>0</sub> using the specified binary reduction functor.  Each thread contributes one input element.
      *
-     * The return value is undefined in threads other than thread<sub>0</sub>.
+     * \par
+     * - The return value is undefined in threads other than thread<sub>0</sub>.
+     * - Supports non-commutative reduction operators.
+     * - \smemreuse
      *
-     * Supports non-commutative reduction operators.
-     *
-     * \smemreuse
-     *
+     * \par
      * The code snippet below illustrates a max reduction of 128 integer items that
      * are partitioned across 128 threads.
      * \par
@@ -318,14 +318,13 @@ public:
     /**
      * \brief Computes a block-wide reduction for thread<sub>0</sub> using the specified binary reduction functor.  Each thread contributes an array of consecutive input elements.
      *
-     * The return value is undefined in threads other than thread<sub>0</sub>.
+     * \par
+     * - The return value is undefined in threads other than thread<sub>0</sub>.
+     * - Supports non-commutative reduction operators.
+     * - \blocked
+     * - \smemreuse
      *
-     * Supports non-commutative reduction operators.
-     *
-     * \blocked
-     *
-     * \smemreuse
-     *
+     * \par
      * The code snippet below illustrates a max reduction of 512 integer items that
      * are partitioned in a [<em>blocked arrangement</em>](index.html#sec5sec4) across 128 threads
      * where each thread owns 4 consecutive items.
@@ -369,14 +368,13 @@ public:
     /**
      * \brief Computes a block-wide reduction for thread<sub>0</sub> using the specified binary reduction functor.  The first \p num_valid threads each contribute one input element.
      *
-     * The return value is undefined in threads other than thread<sub>0</sub>.
+     * \par
+     * - The return value is undefined in threads other than thread<sub>0</sub>.
+     * - Supports non-commutative reduction operators.
+     * - \blocked
+     * - \smemreuse
      *
-     * Supports non-commutative reduction operators.
-     *
-     * \blocked
-     *
-     * \smemreuse
-     *
+     * \par
      * The code snippet below illustrates a max reduction of a partially-full tile of integer items that
      * are partitioned across 128 threads.
      * \par
@@ -430,10 +428,11 @@ public:
     /**
      * \brief Computes a block-wide reduction for thread<sub>0</sub> using addition (+) as the reduction operator.  Each thread contributes one input element.
      *
-     * The return value is undefined in threads other than thread<sub>0</sub>.
+     * \par
+     * - The return value is undefined in threads other than thread<sub>0</sub>.
+     * - \smemreuse
      *
-     * \smemreuse
-     *
+     * \par
      * The code snippet below illustrates a sum reduction of 128 integer items that
      * are partitioned across 128 threads.
      * \par
@@ -467,10 +466,11 @@ public:
     /**
      * \brief Computes a block-wide reduction for thread<sub>0</sub> using addition (+) as the reduction operator.  Each thread contributes an array of consecutive input elements.
      *
-     * The return value is undefined in threads other than thread<sub>0</sub>.
+     * \par
+     * - The return value is undefined in threads other than thread<sub>0</sub>.
+     * - \smemreuse
      *
-     * \smemreuse
-     *
+     * \par
      * The code snippet below illustrates a sum reduction of 512 integer items that
      * are partitioned in a [<em>blocked arrangement</em>](index.html#sec5sec4) across 128 threads
      * where each thread owns 4 consecutive items.
@@ -510,10 +510,11 @@ public:
     /**
      * \brief Computes a block-wide reduction for thread<sub>0</sub> using addition (+) as the reduction operator.  The first \p num_valid threads each contribute one input element.
      *
-     * The return value is undefined in threads other than thread<sub>0</sub>.
+     * \par
+     * - The return value is undefined in threads other than thread<sub>0</sub>.
+     * - \smemreuse
      *
-     * \smemreuse
-     *
+     * \par
      * The code snippet below illustrates a sum reduction of a partially-full tile of integer items that
      * are partitioned across 128 threads.
      * \par
