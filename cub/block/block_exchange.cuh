@@ -706,8 +706,10 @@ public:
     /**
      * \brief Transposes data items from <em>striped</em> arrangement to <em>blocked</em> arrangement.
      *
-     * \smemreuse
+     * \par
+     * - \smemreuse
      *
+     * \par
      * The code snippet below illustrates the conversion from a "striped" to a "blocked" arrangement
      * of 512 integer items partitioned across 128 threads where each thread owns 4 items.
      * \par
@@ -746,8 +748,10 @@ public:
     /**
      * \brief Transposes data items from <em>blocked</em> arrangement to <em>striped</em> arrangement.
      *
-     * \smemreuse
+     * \par
+     * - \smemreuse
      *
+     * \par
      * The code snippet below illustrates the conversion from a "blocked" to a "striped" arrangement
      * of 512 integer items partitioned across 128 threads where each thread owns 4 items.
      * \par
@@ -791,8 +795,10 @@ public:
     /**
      * \brief Transposes data items from <em>warp-striped</em> arrangement to <em>blocked</em> arrangement.
      *
-     * \smemreuse
+     * \par
+     * - \smemreuse
      *
+     * \par
      * The code snippet below illustrates the conversion from a "warp-striped" to a "blocked" arrangement
      * of 512 integer items partitioned across 128 threads where each thread owns 4 items.
      * \par
@@ -833,8 +839,10 @@ public:
     /**
      * \brief Transposes data items from <em>blocked</em> arrangement to <em>warp-striped</em> arrangement.
      *
-     * \smemreuse
+     * \par
+     * - \smemreuse
      *
+     * \par
      * The code snippet below illustrates the conversion from a "blocked" to a "warp-striped" arrangement
      * of 512 integer items partitioned across 128 threads where each thread owns 4 items.
      * \par
@@ -886,7 +894,8 @@ public:
     /**
      * \brief Exchanges data items annotated by rank into <em>blocked</em> arrangement.
      *
-     * \smemreuse
+     * \par
+     * - \smemreuse
      */
     __device__ __forceinline__ void ScatterToBlocked(
         T               items[ITEMS_PER_THREAD],    ///< [in-out] Items to exchange
@@ -899,7 +908,8 @@ public:
     /**
      * \brief Exchanges data items annotated by rank into <em>striped</em> arrangement.
      *
-     * \smemreuse
+     * \par
+     * - \smemreuse
      */
     __device__ __forceinline__ void ScatterToStriped(
         T               items[ITEMS_PER_THREAD],    ///< [in-out] Items to exchange
@@ -912,7 +922,8 @@ public:
     /**
      * \brief Exchanges valid data items annotated by rank into <em>striped</em> arrangement.
      *
-     * \smemreuse
+     * \par
+     * - \smemreuse
      *
      * \tparam ValidFlag                            <b>[inferred]</b> Flag type denoting which items are valid
      */
