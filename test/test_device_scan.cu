@@ -838,10 +838,10 @@ int main(int argc, char** argv)
     }
     else
     {
+
         // Repeat test sequence
         for (int i = 0; i <= g_repeat; ++i)
         {
-
             // Test different input types
             TestSize<unsigned char>(num_items, 0, CUB_TYPE_STRING(unsigned char));
             TestSize<unsigned short>(num_items, 0, CUB_TYPE_STRING(unsigned short));
@@ -858,13 +858,10 @@ int main(int argc, char** argv)
             TestSize<uint4>(num_items, make_uint4(0, 0, 0, 0), CUB_TYPE_STRING(uint4));
             TestSize<ulonglong4>(num_items, make_ulonglong4(0, 0, 0, 0), CUB_TYPE_STRING(ulonglong4));
 
-            TestSize<TestFoo>(num_items, TestFoo::MakeTestFoo(
-                1ll << 63, 
-                1 << 31, 
-                short(1 << 15), 
-                char(1 << 7)), CUB_TYPE_STRING(TestFoo));
+            TestSize<TestFoo>(num_items, TestFoo::MakeTestFoo(1ll << 63, 1 << 31, short(1 << 15), char(1 << 7)), CUB_TYPE_STRING(TestFoo));
             TestSize<TestBar>(num_items, TestBar(1ll << 63, 1 << 31), CUB_TYPE_STRING(TestBar));
         }
+
     }
 
     return 0;

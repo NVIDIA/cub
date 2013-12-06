@@ -107,6 +107,34 @@ struct BlockReduceRaking
     {}
 
 
+    template <bool FULL_TILE, typename ReductionOp, int ITERATION>
+    __device__ __forceinline__ T RakingReduction(
+        ReductionOp                 reduction_op,       ///< [in] Binary scan operator
+        T                           *raking_segment,
+        T                           partial,            ///< [in] <b>[<em>lane</em><sub>0</sub>s only]</b> Warp-wide aggregate reduction of input items
+        int                         num_valid,          ///< [in] Number of valid elements (may be less than BLOCK_THREADS)
+        Int2Type<ITERATION>         iteration)
+    {
+        // Update partial if addend is in range
+        if ((FULL_TILE && RAKING_UNGUARDED) || ((linear_tid * SEGMENT_LENGTH) + ITERATION < num_valid))
+        {
+            partial = reduction_op(partial, raking_segment[ITERATION]);
+        }
+        return RakingReduction<FULL_TILE>(reduction_op, raking_segment, partial, num_valid, Int2Type<ITERATION + 1>());
+    }
+
+    template <bool FULL_TILE, typename ReductionOp>
+    __device__ __forceinline__ T RakingReduction(
+        ReductionOp                 reduction_op,       ///< [in] Binary scan operator
+        T                           *raking_segment,
+        T                           partial,            ///< [in] <b>[<em>lane</em><sub>0</sub>s only]</b> Warp-wide aggregate reduction of input items
+        int                         num_valid,          ///< [in] Number of valid elements (may be less than BLOCK_THREADS)
+        Int2Type<SEGMENT_LENGTH>    iteration)
+    {
+        return partial;
+    }
+
+
     /// Computes a threadblock-wide reduction using addition (+) as the reduction operator. The first num_valid threads each contribute one reduction partial.  The return value is only valid for thread<sub>0</sub>.
     template <bool FULL_TILE>
     __device__ __forceinline__ T Sum(
@@ -136,15 +164,7 @@ struct BlockReduceRaking
                 T *raking_segment = BlockRakingLayout::RakingPtr(temp_storage.raking_grid, linear_tid);
                 partial = raking_segment[0];
 
-                #pragma unroll
-                for (int ITEM = 1; ITEM < SEGMENT_LENGTH; ITEM++)
-                {
-                    // Update partial if addend is in range
-                    if ((FULL_TILE && RAKING_UNGUARDED) || ((linear_tid * SEGMENT_LENGTH) + ITEM < num_valid))
-                    {
-                        partial = reduction_op(partial, raking_segment[ITEM]);
-                    }
-                }
+                partial = RakingReduction<FULL_TILE>(reduction_op, raking_segment, partial, num_valid, Int2Type<1>());
 
                 partial = WarpReduce(temp_storage.warp_storage, 0, linear_tid).template Sum<FULL_TILE && RAKING_UNGUARDED, SEGMENT_LENGTH>(
                     partial,
@@ -187,15 +207,7 @@ struct BlockReduceRaking
                 T *raking_segment = BlockRakingLayout::RakingPtr(temp_storage.raking_grid, linear_tid);
                 partial = raking_segment[0];
 
-                #pragma unroll
-                for (int ITEM = 1; ITEM < SEGMENT_LENGTH; ITEM++)
-                {
-                    // Update partial if addend is in range
-                    if ((FULL_TILE && RAKING_UNGUARDED) || ((linear_tid * SEGMENT_LENGTH) + ITEM < num_valid))
-                    {
-                        partial = reduction_op(partial, raking_segment[ITEM]);
-                    }
-                }
+                partial = RakingReduction<FULL_TILE>(reduction_op, raking_segment, partial, num_valid, Int2Type<1>());
 
                 partial = WarpReduce(temp_storage.warp_storage, 0, linear_tid).template Reduce<FULL_TILE && RAKING_UNGUARDED, SEGMENT_LENGTH>(
                     partial,

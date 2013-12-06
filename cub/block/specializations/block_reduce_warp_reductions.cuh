@@ -105,6 +105,31 @@ struct BlockReduceWarpReductions
     {}
 
 
+    template <bool FULL_TILE, typename ReductionOp, int SUCCESSOR_WARP>
+    __device__ __forceinline__ T ApplyWarpAggregates(
+        ReductionOp                 reduction_op,       ///< [in] Binary scan operator
+        T                           warp_aggregate,     ///< [in] <b>[<em>lane</em><sub>0</sub>s only]</b> Warp-wide aggregate reduction of input items
+        int                         num_valid,          ///< [in] Number of valid elements (may be less than BLOCK_THREADS)
+        Int2Type<SUCCESSOR_WARP>    successor_warp)
+    {
+        if (FULL_TILE || (SUCCESSOR_WARP * LOGICAL_WARP_SIZE < num_valid))
+        {
+            warp_aggregate = reduction_op(warp_aggregate, temp_storage.warp_aggregates[SUCCESSOR_WARP]);
+        }
+        return ApplyWarpAggregates<FULL_TILE>(reduction_op, warp_aggregate, num_valid, Int2Type<SUCCESSOR_WARP + 1>());
+    }
+
+    template <bool FULL_TILE, typename ReductionOp>
+    __device__ __forceinline__ T ApplyWarpAggregates(
+        ReductionOp         reduction_op,       ///< [in] Binary scan operator
+        T                   warp_aggregate,     ///< [in] <b>[<em>lane</em><sub>0</sub>s only]</b> Warp-wide aggregate reduction of input items
+        int                 num_valid,          ///< [in] Number of valid elements (may be less than BLOCK_THREADS)
+        Int2Type<WARPS>     successor_warp)
+    {
+        return warp_aggregate;
+    }
+
+
     /// Returns block-wide aggregate in <em>thread</em><sub>0</sub>.
     template <
         bool                FULL_TILE,
@@ -125,14 +150,7 @@ struct BlockReduceWarpReductions
         // Update total aggregate in warp 0, lane 0
         if (linear_tid == 0)
         {
-            #pragma unroll
-            for (int SUCCESSOR_WARP = 1; SUCCESSOR_WARP < WARPS; SUCCESSOR_WARP++)
-            {
-                if (FULL_TILE || (SUCCESSOR_WARP * LOGICAL_WARP_SIZE < num_valid))
-                {
-                    warp_aggregate = reduction_op(warp_aggregate, temp_storage.warp_aggregates[SUCCESSOR_WARP]);
-                }
-            }
+            warp_aggregate = ApplyWarpAggregates<FULL_TILE>(reduction_op, warp_aggregate, num_valid, Int2Type<1>());
         }
 
         return warp_aggregate;
