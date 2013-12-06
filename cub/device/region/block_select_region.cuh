@@ -42,7 +42,7 @@
 #include "../../block/block_exchange.cuh"
 #include "../../block/block_discontinuity.cuh"
 #include "../../grid/grid_queue.cuh"
-#include "../../util_iterator.cuh"
+#include "../../iterator/cache_modified_input_iterator.cuh"
 #include "../../util_namespace.cuh"
 
 /// Optional outer namespace(s)
