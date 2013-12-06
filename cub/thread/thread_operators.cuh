@@ -60,7 +60,7 @@ struct Equality
 {
     /// Boolean equality operator, returns <tt>(a == b)</tt>
     template <typename T>
-    __host__ __device__ __forceinline__ bool operator()(const T &a, const T &b)
+    __host__ __device__ __forceinline__ bool operator()(const T &a, const T &b) const
     {
         return a == b;
     }
@@ -74,7 +74,7 @@ struct Inequality
 {
     /// Boolean inequality operator, returns <tt>(a != b)</tt>
     template <typename T>
-    __host__ __device__ __forceinline__ bool operator()(const T &a, const T &b)
+    __host__ __device__ __forceinline__ bool operator()(const T &a, const T &b) const
     {
         return a != b;
     }
@@ -96,7 +96,7 @@ struct InequalityWrapper
 
     /// Boolean inequality operator, returns <tt>(a != b)</tt>
     template <typename T>
-    __host__ __device__ __forceinline__ bool operator()(const T &a, const T &b)
+    __host__ __device__ __forceinline__ bool operator()(const T &a, const T &b) const
     {
         return !op(a, b);
     }
@@ -110,7 +110,7 @@ struct Sum
 {
     /// Boolean sum operator, returns <tt>a + b</tt>
     template <typename T>
-    __host__ __device__ __forceinline__ T operator()(const T &a, const T &b)
+    __host__ __device__ __forceinline__ T operator()(const T &a, const T &b) const
     {
         return a + b;
     }
@@ -124,7 +124,7 @@ struct Max
 {
     /// Boolean max operator, returns <tt>(a > b) ? a : b</tt>
     template <typename T>
-    __host__ __device__ __forceinline__ T operator()(const T &a, const T &b)
+    __host__ __device__ __forceinline__ T operator()(const T &a, const T &b) const
     {
         return CUB_MAX(a, b);
     }
@@ -140,7 +140,7 @@ struct ArgMax
     template <typename T, typename Offset>
     __host__ __device__ __forceinline__ ItemOffsetPair<T, Offset> operator()(
         const ItemOffsetPair<T, Offset> &a,
-        const ItemOffsetPair<T, Offset> &b)
+        const ItemOffsetPair<T, Offset> &b) const
     {
         if (a.value == b.value)
             return (b.offset < a.offset) ? b : a;
@@ -157,7 +157,7 @@ struct Min
 {
     /// Boolean min operator, returns <tt>(a < b) ? a : b</tt>
     template <typename T>
-    __host__ __device__ __forceinline__ T operator()(const T &a, const T &b)
+    __host__ __device__ __forceinline__ T operator()(const T &a, const T &b) const
     {
         return CUB_MIN(a, b);
     }
@@ -173,7 +173,7 @@ struct ArgMin
     template <typename T, typename Offset>
     __host__ __device__ __forceinline__ ItemOffsetPair<T, Offset> operator()(
         const ItemOffsetPair<T, Offset> &a,
-        const ItemOffsetPair<T, Offset> &b)
+        const ItemOffsetPair<T, Offset> &b) const
     {
         if (a.value == b.value)
             return (b.offset < a.offset) ? b : a;
@@ -191,7 +191,7 @@ struct Cast
 {
     /// Boolean max operator, returns <tt>(a > b) ? a : b</tt>
     template <typename A>
-    __host__ __device__ __forceinline__ B operator()(const A &a)
+    __host__ __device__ __forceinline__ B operator()(const A &a) const
     {
         return (B) a;
     }
