@@ -37,7 +37,7 @@
 
 #include <cub/util_allocator.cuh>
 #include <cub/device/device_reduce.cuh>
-#include <cub/util_iterator.cuh>
+#include <cub/iterator/constant_input_iterator.cuh>
 
 #include <thrust/device_ptr.h>
 #include <thrust/reduce.h>

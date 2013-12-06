@@ -595,7 +595,7 @@ void Test(
 
 
 /**
- * Run battery of tests for different primitive variants
+ * Run tests for different primitive variants
  */
 template <
     int         BLOCK_THREADS,
@@ -622,7 +622,7 @@ void Test(
 
 
 /**
- * Run battery of tests for different data types and scan ops
+ * Run tests for different data types and scan ops
  */
 template <
     int BLOCK_THREADS,
@@ -663,7 +663,7 @@ void Test(GenMode gen_mode)
 
 
 /**
- * Run battery of tests for different problem generation options
+ * Run tests for different problem generation options
  */
 template <int BLOCK_THREADS, int ITEMS_PER_THREAD>
 void Test()
@@ -675,13 +675,19 @@ void Test()
 
 
 /**
- * Run battery of tests for different items per thread
+ * Run tests for different items per thread
  */
 template <int BLOCK_THREADS>
 void Test()
 {
     Test<BLOCK_THREADS, 1>();
-    Test<BLOCK_THREADS, 2>();       // Remove on Windows because Open64 compiler can't handle the number of test cases
+
+#if defined(SM100) || defined(SM110) || defined(SM130)
+    // Open64 compiler can't handle the number of test cases
+#else
+    Test<BLOCK_THREADS, 2>();
+#endif
+
     Test<BLOCK_THREADS, 9>();
 }
 
@@ -727,7 +733,7 @@ int main(int argc, char** argv)
         // Repeat test sequence
         for (int i = 0; i <= g_repeat; ++i)
         {
-            // Run battery of tests for different threadblock sizes
+            // Run tests for different threadblock sizes
             Test<17>();
             Test<32>();
             Test<62>();

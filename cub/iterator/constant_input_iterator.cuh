@@ -42,6 +42,7 @@
 #include "../util_namespace.cuh"
 
 #include <thrust/iterator/iterator_facade.h>
+#include <thrust/iterator/iterator_traits.h>
 
 /// Optional outer namespace(s)
 CUB_NS_PREFIX
@@ -148,7 +149,7 @@ public:
 
     /// Addition
     template <typename Distance>
-    __host__ __device__ __forceinline__ self_type operator+(Distance n)
+    __host__ __device__ __forceinline__ self_type operator+(Distance n) const
     {
         self_type retval(val, offset + n);
         return retval;
@@ -164,7 +165,7 @@ public:
 
     /// Subtraction
     template <typename Distance>
-    __host__ __device__ __forceinline__ self_type operator-(Distance n)
+    __host__ __device__ __forceinline__ self_type operator-(Distance n) const
     {
         self_type retval(val, offset - n);
         return retval;
@@ -179,14 +180,14 @@ public:
     }
 
     /// Distance
-    __host__ __device__ __forceinline__ difference_type operator-(self_type other)
+    __host__ __device__ __forceinline__ difference_type operator-(self_type other) const
     {
         return offset - other.offset;
     }
 
     /// Array subscript
     template <typename Distance>
-    __host__ __device__ __forceinline__ reference operator[](Distance n)
+    __host__ __device__ __forceinline__ reference operator[](Distance n) const
     {
         return val;
     }

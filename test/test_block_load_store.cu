@@ -383,7 +383,7 @@ void TestPointerAccess(
     float           fraction_valid)
 {
     TestNative<T, BLOCK_THREADS, ITEMS_PER_THREAD, LOAD_ALGORITHM, STORE_ALGORITHM, WARP_TIME_SLICING>(grid_size, fraction_valid);
-    TestIterator<T, BLOCK_THREADS, ITEMS_PER_THREAD, LOAD_ALGORITHM, STORE_ALGORITHM, LOAD_CG, STORE_CG, WARP_TIME_SLICING>(grid_size, fraction_valid);
+    TestIterator<T, BLOCK_THREADS, ITEMS_PER_THREAD, LOAD_ALGORITHM, STORE_ALGORITHM, LOAD_DEFAULT, STORE_DEFAULT, WARP_TIME_SLICING>(grid_size, fraction_valid);
 }
 
 
@@ -498,7 +498,7 @@ int main(int argc, char** argv)
 
     // Simple test
     TestNative<int, 64, 2, BLOCK_LOAD_WARP_TRANSPOSE, BLOCK_STORE_WARP_TRANSPOSE, true>(1, 0.8);
-    TestIterator<int, 64, 2, BLOCK_LOAD_WARP_TRANSPOSE, BLOCK_STORE_WARP_TRANSPOSE, LOAD_CG, STORE_CG, true>(1, 0.8);
+    TestIterator<int, 64, 2, BLOCK_LOAD_WARP_TRANSPOSE, BLOCK_STORE_WARP_TRANSPOSE, LOAD_DEFAULT, STORE_DEFAULT, true>(1, 0.8);
 
     // Evaluate different data types
     TestThreads<char>(2, 0.8);
