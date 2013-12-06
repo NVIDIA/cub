@@ -38,7 +38,9 @@
 
 #include <cub/util_allocator.cuh>
 #include <cub/device/device_histogram.cuh>
-#include <cub/util_iterator.cuh>
+#include <cub/iterator/tex_ref_input_iterator.cuh>
+#include <cub/iterator/tex_obj_input_iterator.cuh>
+#include <cub/iterator/transform_input_iterator.cuh>
 
 #include "test_util.h"
 

@@ -52,6 +52,35 @@ namespace cub {
  * @{
  */
 
+
+template <
+    int         LENGTH,
+    typename    T,
+    typename    ReductionOp>
+__device__ __forceinline__ T ThreadReduce(
+    T*                  input,                  ///< [in] Input array
+    ReductionOp         reduction_op,           ///< [in] Binary reduction operator
+    T                   prefix,                 ///< [in] Prefix to seed reduction with
+    Int2Type<LENGTH>    length)
+{
+    prefix = reduction_op(prefix, input[0]);
+
+    return ThreadReduce(input + 1, reduction_op, prefix, Int2Type<LENGTH - 1>());
+}
+
+template <
+    typename    T,
+    typename    ReductionOp>
+__device__ __forceinline__ T ThreadReduce(
+    T*                  input,                  ///< [in] Input array
+    ReductionOp         reduction_op,           ///< [in] Binary reduction operator
+    T                   prefix,                 ///< [in] Prefix to seed reduction with
+    Int2Type<0>         length)
+{
+    return prefix;
+}
+
+
 /**
  * \brief Perform a sequential reduction over \p LENGTH elements of the \p input array, seeded with the specified \p prefix.  The aggregate is returned.
  *
@@ -68,13 +97,7 @@ __device__ __forceinline__ T ThreadReduce(
     ReductionOp reduction_op,           ///< [in] Binary reduction operator
     T           prefix)                 ///< [in] Prefix to seed reduction with
 {
-    #pragma unroll
-    for (int i = 0; i < LENGTH; ++i)
-    {
-        prefix = reduction_op(prefix, input[i]);
-    }
-
-    return prefix;
+    return ThreadReduce(input, reduction_op, prefix, Int2Type<LENGTH>());
 }
 
 

@@ -107,6 +107,35 @@ struct BlockScanRaking
         linear_tid(linear_tid)
     {}
 
+    /// Templated reduction
+    template <int ITERATION, typename ScanOp>
+    __device__ __forceinline__ T GuardedReduce(
+        T*                  raking_ptr,         ///< [in] Input array
+        ScanOp              scan_op,            ///< [in] Binary reduction operator
+        T                   raking_partial,     ///< [in] Prefix to seed reduction with
+        Int2Type<ITERATION> iteration)
+    {
+        if ((BlockRakingLayout::UNGUARDED) || (((linear_tid * SEGMENT_LENGTH) + ITERATION) < BLOCK_THREADS))
+        {
+            raking_partial = scan_op(raking_partial, raking_ptr[ITERATION]);
+        }
+
+        return GuardedReduce(raking_ptr, scan_op, raking_partial, Int2Type<ITERATION + 1>());
+    }
+
+
+    /// Templated reduction (base case)
+    template <typename ScanOp>
+    __device__ __forceinline__ T GuardedReduce(
+        T*                          raking_ptr,        ///< [in] Input array
+        ScanOp                      scan_op,           ///< [in] Binary reduction operator
+        T                           raking_partial,    ///< [in] Prefix to seed reduction with
+        Int2Type<SEGMENT_LENGTH>    iteration)
+    {
+        return raking_partial;
+    }
+
+
     /// Performs upsweep raking reduction, returning the aggregate
     template <typename ScanOp>
     __device__ __forceinline__ T Upsweep(
@@ -132,16 +161,7 @@ struct BlockScanRaking
 
         T raking_partial = raking_ptr[0];
 
-        #pragma unroll
-        for (int i = 1; i < SEGMENT_LENGTH; i++)
-        {
-            if ((BlockRakingLayout::UNGUARDED) || (((linear_tid * SEGMENT_LENGTH) + i) < BLOCK_THREADS))
-            {
-                raking_partial = scan_op(raking_partial, raking_ptr[i]);
-            }
-        }
-
-        return raking_partial;
+        return GuardedReduce(raking_ptr, scan_op, raking_partial, Int2Type<1>());
     }
 
 

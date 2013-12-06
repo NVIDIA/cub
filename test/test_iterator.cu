@@ -38,7 +38,18 @@
 
 #include <cub/util_type.cuh>
 #include <cub/util_allocator.cuh>
-#include <cub/util_iterator.cuh>
+
+#include <cub/iterator/arg_index_input_iterator.cuh>
+#include <cub/iterator/cache_modified_input_iterator.cuh>
+#include <cub/iterator/cache_modified_output_iterator.cuh>
+#include <cub/iterator/constant_input_iterator.cuh>
+#include <cub/iterator/counting_input_iterator.cuh>
+#include <cub/iterator/tex_obj_input_iterator.cuh>
+#include <cub/iterator/tex_ref_input_iterator.cuh>
+#include <cub/iterator/transform_input_iterator.cuh>
+
+#include <thrust/device_ptr.h>
+#include <thrust/copy.h>
 
 #include "test_util.h"
 
@@ -56,11 +67,20 @@ template <typename T>
 struct TransformOp
 {
     // Increment transform
-    __host__ __device__ __forceinline__ T operator()(const T input)
+    __host__ __device__ __forceinline__ T operator()(T input) const
     {
         T addend;
         InitValue(SEQ_INC, addend, 1);
         return input + addend;
+    }
+};
+
+struct SelectOp
+{
+    template <typename T>
+    __host__ __device__ __forceinline__ bool operator()(T input)
+    {
+        return true;;
     }
 };
 
@@ -77,13 +97,13 @@ template <
     typename T>
 __global__ void Kernel(
     InputIterator     d_in,
-    T                   *d_out,
+    T                 *d_out,
     InputIterator     *d_itrs)
 {
     d_out[0] = *d_in;               // Value at offset 0
     d_out[1] = d_in[100];           // Value at offset 100
     d_out[2] = *(d_in + 1000);      // Value at offset 1000
-    d_out[3] = *(d_in + 10000);   // Value at offset 10000
+    d_out[3] = *(d_in + 10000);     // Value at offset 10000
 
     d_in++;
     d_out[4] = d_in[0];             // Value at offset 1
@@ -119,10 +139,10 @@ void Test(
     T               (&h_reference)[TEST_VALUES])
 {
     // Allocate device arrays
-    T                   *d_out = NULL;
-    InputIterator     *d_itrs = NULL;
-    CubDebugExit(g_allocator.DeviceAllocate((void**)&d_out, sizeof(T) * TEST_VALUES));
-    CubDebugExit(g_allocator.DeviceAllocate((void**)&d_itrs, sizeof(InputIterator) * 2));
+    T                 *d_out    = NULL;
+    InputIterator     *d_itrs   = NULL;
+    CubDebugExit(g_allocator.DeviceAllocate((void**)&d_out,     sizeof(T) * TEST_VALUES));
+    CubDebugExit(g_allocator.DeviceAllocate((void**)&d_itrs,    sizeof(InputIterator) * 2));
 
     int compare;
 
@@ -160,9 +180,36 @@ void TestConstant(T base, char *type_string)
 {
     printf("\nTesting constant iterator on type %s (base: %d)\n", type_string, int(base)); fflush(stdout);
 
-    T h_reference[8] = {base, base, base, base, base, base, base, base};
+    //
+    // Test iterator manipulation in kernel
+    //
 
-    Test(ConstantInputIterator<T>(base), h_reference);
+    T h_reference[8] = {base, base, base, base, base, base, base, base};
+    ConstantInputIterator<T> d_itr(base);
+    Test(d_itr, h_reference);
+
+    //
+    // Test with thrust::copy_if()
+    //
+
+    int copy_items  = 100;
+    T   *h_copy     = new T[copy_items];
+    T   *d_copy     = NULL;
+
+    for (int i = 0; i < copy_items; ++i)
+        h_copy[i] = d_itr[i];
+
+    CubDebugExit(g_allocator.DeviceAllocate((void**)&d_copy, sizeof(T) * copy_items));
+    thrust::device_ptr<T> d_copy_wrapper(d_copy);
+
+    thrust::copy_if(d_itr, d_itr + copy_items, d_copy_wrapper, SelectOp());
+
+    int compare = CompareDeviceResults(h_copy, d_copy, copy_items, g_verbose, g_verbose);
+    printf("\tthrust::copy_if(): %s\n", (compare) ? "FAIL" : "PASS");
+    AssertEquals(0, compare);
+
+    if (h_copy) delete[] h_copy;
+    if (d_copy) CubDebugExit(g_allocator.DeviceFree(d_copy));
 }
 
 
@@ -173,6 +220,10 @@ template <typename T>
 void TestCounting(T base, char *type_string)
 {
     printf("\nTesting counting iterator on type %s (base: %d) \n", type_string, int(base)); fflush(stdout);
+
+    //
+    // Test iterator manipulation in kernel
+    //
 
     // Initialize reference data
     T h_reference[8];
@@ -185,7 +236,32 @@ void TestCounting(T base, char *type_string)
     h_reference[6] = base + 11;         // Value at offset 11
     h_reference[7] = base + 0;          // Value at offset 0;
 
-    Test(CountingInputIterator<T>(base), h_reference);
+    CountingInputIterator<T> d_itr(base);
+    Test(d_itr, h_reference);
+
+    //
+    // Test with thrust::copy_if()
+    //
+
+    unsigned int max_items  = (unsigned int) ((1ull << ((sizeof(T) * 8) - 1)) - 1);
+    int copy_items          = CUB_MIN(max_items - base, 100);     // potential issue with differencing overflows when T is a smaller type than can handle the offset
+    T   *h_copy             = new T[copy_items];
+    T   *d_copy             = NULL;
+
+    for (int i = 0; i < copy_items; ++i)
+        h_copy[i] = d_itr[i];
+
+    CubDebugExit(g_allocator.DeviceAllocate((void**)&d_copy, sizeof(T) * copy_items));
+    thrust::device_ptr<T> d_copy_wrapper(d_copy);
+    thrust::copy_if(d_itr, d_itr + copy_items, d_copy_wrapper, SelectOp());
+
+    int compare = CompareDeviceResults(h_copy, d_copy, copy_items, g_verbose, g_verbose);
+    printf("\tthrust::copy_if(): %s\n", (compare) ? "FAIL" : "PASS");
+    AssertEquals(0, compare);
+
+    if (h_copy) delete[] h_copy;
+    if (d_copy) CubDebugExit(g_allocator.DeviceFree(d_copy));
+
 }
 
 
@@ -196,6 +272,10 @@ template <typename T>
 void TestModified(char *type_string)
 {
     printf("\nTesting cache-modified iterator on type %s\n", type_string); fflush(stdout);
+
+    //
+    // Test iterator manipulation in kernel
+    //
 
     const unsigned int TEST_VALUES = 11000;
 
@@ -229,7 +309,24 @@ void TestModified(char *type_string)
     Test(CacheModifiedInputIterator<LOAD_LDG, T>(d_data), h_reference);
     Test(CacheModifiedInputIterator<LOAD_VOLATILE, T>(d_data), h_reference);
 
+    //
+    // Test with thrust::copy_if()
+    //
+
+    T *d_copy = NULL;
+    CubDebugExit(g_allocator.DeviceAllocate((void**)&d_copy, sizeof(T) * TEST_VALUES));
+
+    CacheModifiedInputIterator<LOAD_CG, T> d_in_itr(d_data);
+    CacheModifiedOutputIterator<STORE_CG, T> d_out_itr(d_copy);
+
+    thrust::copy_if(d_in_itr, d_in_itr + TEST_VALUES, d_out_itr, SelectOp());
+
+    int compare = CompareDeviceResults(h_data, d_copy, TEST_VALUES, g_verbose, g_verbose);
+    printf("\tthrust::copy_if(): %s\n", (compare) ? "FAIL" : "PASS");
+    AssertEquals(0, compare);
+
     // Cleanup
+    if (d_copy) CubDebugExit(g_allocator.DeviceFree(d_copy));
     if (h_data) delete[] h_data;
     if (d_data) CubDebugExit(g_allocator.DeviceFree(d_data));
 }
@@ -242,6 +339,10 @@ template <typename T>
 void TestTransform(char *type_string)
 {
     printf("\nTesting transform iterator on type %s\n", type_string); fflush(stdout);
+
+    //
+    // Test iterator manipulation in kernel
+    //
 
     const unsigned int TEST_VALUES = 11000;
 
@@ -269,11 +370,32 @@ void TestTransform(char *type_string)
     h_reference[6] = op(h_data[11]);         // Value at offset 11
     h_reference[7] = op(h_data[0]);          // Value at offset 0;
 
-    Test(TransformInputIterator<T, TransformOp<T>, T*>(d_data, op), h_reference);
+    TransformInputIterator<T, TransformOp<T>, T*> d_itr(d_data, op);
+    Test(d_itr, h_reference);
+
+    //
+    // Test with thrust::copy_if()
+    //
+
+    T *h_copy = new T[TEST_VALUES];
+    for (int i = 0; i < TEST_VALUES; ++i)
+        h_copy[i] = op(h_data[i]);
+
+    T *d_copy = NULL;
+    CubDebugExit(g_allocator.DeviceAllocate((void**)&d_copy, sizeof(T) * TEST_VALUES));
+    thrust::device_ptr<T> d_copy_wrapper(d_copy);
+
+    thrust::copy_if(d_itr, d_itr + TEST_VALUES, d_copy_wrapper, SelectOp());
+
+    int compare = CompareDeviceResults(h_copy, d_copy, TEST_VALUES, g_verbose, g_verbose);
+    printf("\tthrust::copy_if(): %s\n", (compare) ? "FAIL" : "PASS");
+    AssertEquals(0, compare);
 
     // Cleanup
     if (h_data) delete[] h_data;
+    if (h_copy) delete[] h_copy;
     if (d_data) CubDebugExit(g_allocator.DeviceFree(d_data));
+    if (d_copy) CubDebugExit(g_allocator.DeviceFree(d_copy));
 }
 
 
@@ -284,6 +406,10 @@ template <typename T>
 void TestTexture(char *type_string)
 {
     printf("\nTesting texture iterator on type %s\n", type_string); fflush(stdout);
+
+    //
+    // Test iterator manipulation in kernel
+    //
 
     const unsigned int TEST_VALUES          = 11000;
     const unsigned int DUMMY_OFFSET         = 500;
@@ -325,10 +451,6 @@ void TestTexture(char *type_string)
 
     Test(d_ref_itr, h_reference);
 
-    // Cleanup
-    CubDebugExit(d_ref_itr.UnbindTexture());
-    CubDebugExit(d_ref_itr2.UnbindTexture());
-
 #ifdef CUB_CDP
 
     // Create and bind obj-based test iterator
@@ -337,14 +459,44 @@ void TestTexture(char *type_string)
 
     Test(d_obj_itr, h_reference);
 
-    // Cleanup
-    CubDebugExit(d_obj_itr.UnbindTexture());
+#endif
+
+    //
+    // Test with thrust::copy_if()
+    //
+
+    T *d_copy = NULL;
+    CubDebugExit(g_allocator.DeviceAllocate((void**)&d_copy, sizeof(T) * TEST_VALUES));
+    thrust::device_ptr<T> d_copy_wrapper(d_copy);
+
+    CubDebugExit(cudaMemset(d_copy, 0, sizeof(T) * TEST_VALUES));
+    thrust::copy_if(d_ref_itr, d_ref_itr + TEST_VALUES, d_copy_wrapper, SelectOp());
+
+    int compare = CompareDeviceResults(h_data, d_copy, TEST_VALUES, g_verbose, g_verbose);
+    printf("\tthrust::copy_if(): %s\n", (compare) ? "FAIL" : "PASS");
+    AssertEquals(0, compare);
+
+#ifdef CUB_CDP
+
+    CubDebugExit(cudaMemset(d_copy, 0, sizeof(T) * TEST_VALUES));
+    thrust::copy_if(d_obj_itr, d_obj_itr + TEST_VALUES, d_copy_wrapper, SelectOp());
+
+    compare = CompareDeviceResults(h_data, d_copy, TEST_VALUES, g_verbose, g_verbose);
+    printf("\tthrust::copy_if(): %s\n", (compare) ? "FAIL" : "PASS");
+    AssertEquals(0, compare);
 
 #endif
 
-
     // Cleanup
+    CubDebugExit(d_ref_itr.UnbindTexture());
+    CubDebugExit(d_ref_itr2.UnbindTexture());
+
+#ifdef CUB_CDP
+    CubDebugExit(d_obj_itr.UnbindTexture());
+#endif
+
     if (h_data) delete[] h_data;
+    if (d_copy) CubDebugExit(g_allocator.DeviceFree(d_copy));
     if (d_data) CubDebugExit(g_allocator.DeviceFree(d_data));
     if (d_dummy) CubDebugExit(g_allocator.DeviceFree(d_dummy));
 }
@@ -357,6 +509,10 @@ template <typename T>
 void TestTexTransform(char *type_string)
 {
     printf("\nTesting tex-transform iterator on type %s\n", type_string); fflush(stdout);
+
+    //
+    // Test iterator manipulation in kernel
+    //
 
     const unsigned int TEST_VALUES = 11000;
 
@@ -395,10 +551,31 @@ void TestTexTransform(char *type_string)
 
     Test(xform_itr, h_reference);
 
+
+    //
+    // Test with thrust::copy_if()
+    //
+
+    T *h_copy = new T[TEST_VALUES];
+    for (int i = 0; i < TEST_VALUES; ++i)
+        h_copy[i] = op(h_data[i]);
+
+    T *d_copy = NULL;
+    CubDebugExit(g_allocator.DeviceAllocate((void**)&d_copy, sizeof(T) * TEST_VALUES));
+    thrust::device_ptr<T> d_copy_wrapper(d_copy);
+
+    thrust::copy_if(xform_itr, xform_itr + TEST_VALUES, d_copy_wrapper, SelectOp());
+
+    int compare = CompareDeviceResults(h_copy, d_copy, TEST_VALUES, g_verbose, g_verbose);
+    printf("\tthrust::copy_if(): %s\n", (compare) ? "FAIL" : "PASS");
+    AssertEquals(0, compare);
+
     // Cleanup
     CubDebugExit(d_tex_itr.UnbindTexture());
     if (h_data) delete[] h_data;
+    if (h_copy) delete[] h_copy;
     if (d_data) CubDebugExit(g_allocator.DeviceFree(d_data));
+    if (d_copy) CubDebugExit(g_allocator.DeviceFree(d_copy));
 }
 
 
@@ -409,10 +586,12 @@ void TestTexTransform(char *type_string)
 template <typename T>
 void TestInteger(Int2Type<false> is_integer, char *type_string)
 {
+
     TestModified<T>(type_string);
     TestTransform<T>(type_string);
     TestTexture<T>(type_string);
     TestTexTransform<T>(type_string);
+
 }
 
 /**
@@ -469,6 +648,7 @@ int main(int argc, char** argv)
     // Evaluate different data types
     Test<char>(CUB_TYPE_STRING(char));
     Test<short>(CUB_TYPE_STRING(short));
+    Test<int>(CUB_TYPE_STRING(int));
     Test<long>(CUB_TYPE_STRING(long));
     Test<long long>(CUB_TYPE_STRING(long long));
     Test<float>(CUB_TYPE_STRING(float));

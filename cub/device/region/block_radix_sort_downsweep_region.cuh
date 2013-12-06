@@ -40,7 +40,7 @@
 #include "../../block/block_radix_rank.cuh"
 #include "../../block/block_exchange.cuh"
 #include "../../util_type.cuh"
-#include "../../util_iterator.cuh"
+#include "../../iterator/cache_modified_input_iterator.cuh"
 #include "../../util_namespace.cuh"
 
 /// Optional outer namespace(s)
