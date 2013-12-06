@@ -229,7 +229,7 @@ cudaError_t Dispatch(
 template <typename T, int BINS>
 struct FloatScaleOp
 {
-    __host__ __device__ __forceinline__ T operator()(float datum)
+    __host__ __device__ __forceinline__ T operator()(float datum) const
     {
         float datum_scale = datum * float(BINS - 1);
         return (T) datum_scale;
