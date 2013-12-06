@@ -41,6 +41,7 @@
 #include "../thread/thread_operators.cuh"
 #include "../grid/grid_even_share.cuh"
 #include "../grid/grid_queue.cuh"
+#include "../iterator/arg_index_input_iterator.cuh"
 #include "../util_debug.cuh"
 #include "../util_device.cuh"
 #include "../util_namespace.cuh"
