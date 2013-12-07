@@ -246,10 +246,11 @@ struct UnitWord <float2>
     typedef int         ShuffleWord;
 #if defined(__CUDA_ARCH__) && (__CUDA_ARCH__ <= 130)
     typedef float       VolatileWord;
+    typedef int2        DeviceWord;
 #else
     typedef long long   VolatileWord;
-#endif
     typedef long long   DeviceWord;
+#endif
     typedef float2      TextureWord;
 };
 
@@ -260,10 +261,11 @@ struct UnitWord <float4>
     typedef int         ShuffleWord;
 #if defined(__CUDA_ARCH__) && (__CUDA_ARCH__ <= 130)
     typedef float       VolatileWord;
+    typedef int4        DeviceWord;
 #else
     typedef long long   VolatileWord;
-#endif
     typedef longlong2   DeviceWord;
+#endif
     typedef float4      TextureWord;
 };
 
