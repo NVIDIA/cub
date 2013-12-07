@@ -186,6 +186,8 @@ __host__ __device__ __forceinline__ cudaError_t SmVersion(int &sm_version, int d
 }
 
 
+#ifndef DOXYGEN_SHOULD_SKIP_THIS    // Do not document
+
 /**
  * Synchronize the stream if specified
  */
@@ -201,17 +203,14 @@ static cudaError_t SyncStream(cudaStream_t stream)
 }
 
 
-
-
-
 /**
- * Computes maximum SM occupancy in thread blocks for the given kernel
+ * \brief Computes maximum SM occupancy in thread blocks for the given kernel function pointer \p kernel_ptr.
  */
 template <typename KernelPtr>
 __host__ __device__ __forceinline__
 cudaError_t MaxSmOccupancy(
     int                 &max_sm_occupancy,          ///< [out] maximum number of thread blocks that can reside on a single SM
-    int                 sm_version,                    ///< [in] The SM architecture to run on
+    int                 sm_version,                 ///< [in] The SM architecture to run on
     KernelPtr           kernel_ptr,                 ///< [in] Kernel pointer for which to compute SM occupancy
     int                 block_threads)              ///< [in] Number of threads per thread block
 {
@@ -295,6 +294,66 @@ cudaError_t MaxSmOccupancy(
 #endif
 }
 
+#endif  // Do not document
+
+
+/**
+ * \brief Computes maximum SM occupancy in thread blocks for executing the given kernel function pointer \p kernel_ptr on the current device with \p block_threads per thread block.
+ *
+ * \par
+ * The code snippet below illustrates the use of the MaxSmOccupancy function.
+ * \par
+ * \code
+ * #include <cub/cub.cuh>
+ *
+ * template <typename T>
+ * __global__ void ExampleKernel()
+ * {
+ *     // Allocate shared memory for BlockScan
+ *     __shared__ volatile T buffer[4096];
+ *
+ *        ...
+ * }
+ *
+ *     ...
+ *
+ * // Determine SM occupancy for ExampleKernel specialized for unsigned char
+ * int max_sm_occupancy;
+ * MaxSmOccupancy(max_sm_occupancy, ExampleKernel<unsigned char>, 64);
+ *
+ * // max_sm_occupancy  <-- 4 on SM10
+ * // max_sm_occupancy  <-- 8 on SM20
+ * // max_sm_occupancy  <-- 12 on SM35
+ *
+ * \endcode
+ *
+ */
+template <typename KernelPtr>
+__host__ __device__ __forceinline__
+cudaError_t MaxSmOccupancy(
+    int                 &max_sm_occupancy,          ///< [out] maximum number of thread blocks that can reside on a single SM
+    KernelPtr           kernel_ptr,                 ///< [in] Kernel pointer for which to compute SM occupancy
+    int                 block_threads)              ///< [in] Number of threads per thread block
+{
+    cudaError_t error = cudaSuccess;
+    do
+    {
+        // Get device ordinal
+        int device_ordinal;
+        if (CubDebug(error = cudaGetDevice(&device_ordinal))) break;
+
+        // Get device SM version
+        int sm_version;
+        if (CubDebug(error = SmVersion(sm_version, device_ordinal))) break;
+
+        // Get SM occupancy
+        if (CubDebug(error = MaxSmOccupancy(max_sm_occupancy, kernel_ptr, block_threads))) break;
+
+    } while (0);
+
+    return error;
+
+}
 
 
 /** @} */       // end group UtilModule

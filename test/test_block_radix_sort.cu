@@ -50,8 +50,6 @@ using namespace cub;
 // Globals, constants and typedefs
 //---------------------------------------------------------------------
 
-const int MAX_SMEM_BYTES = 1024 * 48;
-
 bool                    g_verbose = false;
 CachingDeviceAllocator  g_allocator(true);
 
@@ -444,37 +442,32 @@ template <
     bool                    DESCENDING,
     bool                    BLOCKED_OUTPUT,
     typename                Key,
-    typename                Value,
-    typename                BlockRadixSortT = BlockRadixSort<Key, BLOCK_THREADS, ITEMS_PER_THREAD, Value, RADIX_BITS, MEMOIZE_OUTER_SCAN, INNER_SCAN_ALGORITHM, SMEM_CONFIG>,
-    bool                    VALID = (sizeof(typename BlockRadixSortT::TempStorage) <= MAX_SMEM_BYTES)>
-struct Valid
+    typename                Value>
+void TestValid(Int2Type<true> fits_smem_capacity)
 {
-    static void Test()
+    // Iterate begin_bit
+    for (int begin_bit = 0; begin_bit <= 1; begin_bit++)
     {
-        // Iterate begin_bit
-        for (int begin_bit = 0; begin_bit <= 1; begin_bit++)
+        // Iterate end bit
+        for (int end_bit = begin_bit + 1; end_bit <= sizeof(Key) * 8; end_bit = end_bit * 2 + begin_bit)
         {
-            // Iterate end bit
-            for (int end_bit = begin_bit + 1; end_bit <= sizeof(Key) * 8; end_bit = end_bit * 2 + begin_bit)
+            // Uniform key distribution
+            TestDriver<BLOCK_THREADS, ITEMS_PER_THREAD, RADIX_BITS, MEMOIZE_OUTER_SCAN, INNER_SCAN_ALGORITHM, SMEM_CONFIG, DESCENDING, BLOCKED_OUTPUT, Key, Value>(
+                UNIFORM, 0, begin_bit, end_bit);
+
+            // Sequential key distribution
+            TestDriver<BLOCK_THREADS, ITEMS_PER_THREAD, RADIX_BITS, MEMOIZE_OUTER_SCAN, INNER_SCAN_ALGORITHM, SMEM_CONFIG, DESCENDING, BLOCKED_OUTPUT, Key, Value>(
+                SEQ_INC, 0, begin_bit, end_bit);
+
+            // Iterate random with entropy_reduction
+            for (int entropy_reduction = 0; entropy_reduction <= 9; entropy_reduction += 3)
             {
-                // Uniform key distribution
                 TestDriver<BLOCK_THREADS, ITEMS_PER_THREAD, RADIX_BITS, MEMOIZE_OUTER_SCAN, INNER_SCAN_ALGORITHM, SMEM_CONFIG, DESCENDING, BLOCKED_OUTPUT, Key, Value>(
-                    UNIFORM, 0, begin_bit, end_bit);
-
-                // Sequential key distribution
-                TestDriver<BLOCK_THREADS, ITEMS_PER_THREAD, RADIX_BITS, MEMOIZE_OUTER_SCAN, INNER_SCAN_ALGORITHM, SMEM_CONFIG, DESCENDING, BLOCKED_OUTPUT, Key, Value>(
-                    SEQ_INC, 0, begin_bit, end_bit);
-
-                // Iterate random with entropy_reduction
-                for (int entropy_reduction = 0; entropy_reduction <= 9; entropy_reduction += 3)
-                {
-                    TestDriver<BLOCK_THREADS, ITEMS_PER_THREAD, RADIX_BITS, MEMOIZE_OUTER_SCAN, INNER_SCAN_ALGORITHM, SMEM_CONFIG, DESCENDING, BLOCKED_OUTPUT, Key, Value>(
-                        RANDOM, entropy_reduction, begin_bit, end_bit);
-                }
+                    RANDOM, entropy_reduction, begin_bit, end_bit);
             }
         }
     }
-};
+}
 
 
 /**
@@ -490,13 +483,9 @@ template <
     bool                    DESCENDING,
     bool                    BLOCKED_OUTPUT,
     typename                Key,
-    typename                Value,
-    typename                BlockRadixSortT>
-struct Valid<BLOCK_THREADS, ITEMS_PER_THREAD, RADIX_BITS, MEMOIZE_OUTER_SCAN, INNER_SCAN_ALGORITHM, SMEM_CONFIG, DESCENDING, BLOCKED_OUTPUT, Key, Value, BlockRadixSortT, false>
-{
-    // Do nothing
-    static void Test() {}
-};
+    typename                Value>
+void TestValid(Int2Type<false> fits_smem_capacity)
+{}
 
 
 /**
@@ -513,10 +502,20 @@ template <
     typename                Value>
 void Test()
 {
-    Valid<BLOCK_THREADS, ITEMS_PER_THREAD, RADIX_BITS, MEMOIZE_OUTER_SCAN, INNER_SCAN_ALGORITHM, SMEM_CONFIG, true, true, Key, Value>::Test();
-    Valid<BLOCK_THREADS, ITEMS_PER_THREAD, RADIX_BITS, MEMOIZE_OUTER_SCAN, INNER_SCAN_ALGORITHM, SMEM_CONFIG, true, false, Key, Value>::Test();
-    Valid<BLOCK_THREADS, ITEMS_PER_THREAD, RADIX_BITS, MEMOIZE_OUTER_SCAN, INNER_SCAN_ALGORITHM, SMEM_CONFIG, false, true, Key, Value>::Test();
-    Valid<BLOCK_THREADS, ITEMS_PER_THREAD, RADIX_BITS, MEMOIZE_OUTER_SCAN, INNER_SCAN_ALGORITHM, SMEM_CONFIG, false, false, Key, Value>::Test();
+    typedef BlockRadixSort<Key, BLOCK_THREADS, ITEMS_PER_THREAD, Value, RADIX_BITS, MEMOIZE_OUTER_SCAN, INNER_SCAN_ALGORITHM, SMEM_CONFIG> BlockRadixSortT;
+
+#if defined(SM100) || defined(SM110) || defined(SM130)
+    Int2Type<sizeof(typename BlockRadixSortT::TempStorage) <= CUB_SMEM_BYTES(100)> fits_smem_capacity;
+#else
+    Int2Type<(sizeof(typename BlockRadixSortT::TempStorage) <= CUB_SMEM_BYTES(200))> fits_smem_capacity;
+#endif
+
+    TestValid<BLOCK_THREADS, ITEMS_PER_THREAD, RADIX_BITS, MEMOIZE_OUTER_SCAN, INNER_SCAN_ALGORITHM, SMEM_CONFIG, true, false, Key, Value>(fits_smem_capacity);
+    TestValid<BLOCK_THREADS, ITEMS_PER_THREAD, RADIX_BITS, MEMOIZE_OUTER_SCAN, INNER_SCAN_ALGORITHM, SMEM_CONFIG, false, true, Key, Value>(fits_smem_capacity);
+
+    // Not necessary
+//    TestValid<BLOCK_THREADS, ITEMS_PER_THREAD, RADIX_BITS, MEMOIZE_OUTER_SCAN, INNER_SCAN_ALGORITHM, SMEM_CONFIG, false, false, Key, Value>(fits_smem_capacity);
+//    TestValid<BLOCK_THREADS, ITEMS_PER_THREAD, RADIX_BITS, MEMOIZE_OUTER_SCAN, INNER_SCAN_ALGORITHM, SMEM_CONFIG, true, true, Key, Value>(fits_smem_capacity);
 }
 
 
@@ -582,7 +581,10 @@ template <
 void Test()
 {
     Test<BLOCK_THREADS, ITEMS_PER_THREAD, RADIX_BITS, MEMOIZE_OUTER_SCAN, INNER_SCAN_ALGORITHM, cudaSharedMemBankSizeFourByte>();
+#if defined(SM100) || defined(SM110) || defined(SM130) || defined(SM200)
+#else
     Test<BLOCK_THREADS, ITEMS_PER_THREAD, RADIX_BITS, MEMOIZE_OUTER_SCAN, INNER_SCAN_ALGORITHM, cudaSharedMemBankSizeEightByte>();
+#endif
 }
 
 
@@ -636,7 +638,11 @@ template <int BLOCK_THREADS>
 void Test()
 {
     Test<BLOCK_THREADS, 1>();
-//    Test<BLOCK_THREADS, 8>();     // unnecessary
+#if defined(SM100) || defined(SM110) || defined(SM130)
+    // Open64 compiler can't handle the number of test cases
+#else
+    Test<BLOCK_THREADS, 4>();
+#endif
     Test<BLOCK_THREADS, 11>();
 }
 
@@ -672,9 +678,12 @@ int main(int argc, char** argv)
 
     // Test threads
     Test<32>();
-//    Test<64>();                   // unnecessary
-//    Test<96>();                   // unnecessary
-    Test<224>();
+#if defined(SM100) || defined(SM110) || defined(SM130)
+    // Open64 compiler can't handle the number of test cases
+#else
+    Test<64>();
+#endif
+    Test<160>();
 
     return 0;
 }
