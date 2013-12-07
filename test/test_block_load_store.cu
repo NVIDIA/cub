@@ -60,7 +60,7 @@ CachingDeviceAllocator  g_allocator(true);
 
 
 /**
- * Test load/store kernel (unguarded)
+ * Test load/store kernel.
  */
 template <
     int                 BLOCK_THREADS,
@@ -73,63 +73,9 @@ template <
 __launch_bounds__ (BLOCK_THREADS, 1)
 __global__ void Kernel(
     InputIterator     d_in,
-    OutputIterator    d_out_unguarded)
-{
-    enum
-    {
-        TILE_SIZE = BLOCK_THREADS * ITEMS_PER_THREAD
-    };
-
-    // Data type of input/output iterators
-    typedef typename std::iterator_traits<InputIterator>::value_type T;
-
-    // Threadblock load/store abstraction types
-    typedef BlockLoad<InputIterator, BLOCK_THREADS, ITEMS_PER_THREAD, LOAD_ALGORITHM, WARP_TIME_SLICING> BlockLoad;
-    typedef BlockStore<OutputIterator, BLOCK_THREADS, ITEMS_PER_THREAD, STORE_ALGORITHM, WARP_TIME_SLICING> BlockStore;
-
-    // Shared memory type for this threadblock
-    union TempStorage
-    {
-        typename BlockLoad::TempStorage     load;
-        typename BlockStore::TempStorage    store;
-    };
-
-    // Allocate temp storage in shared memory
-    __shared__ TempStorage temp_storage;
-
-    // Threadblock work bounds
-    int block_offset = blockIdx.x * TILE_SIZE;
-
-    // Tile of items
-    T data[ITEMS_PER_THREAD];
-
-    // Load data
-    BlockLoad(temp_storage.load).Load(d_in + block_offset, data);
-
-    __syncthreads();
-
-    // Store data
-    BlockStore(temp_storage.store).Store(d_out_unguarded + block_offset, data);
-
-}
-
-
-/**
- * Test load/store kernel.
- */
-template <
-    int                 BLOCK_THREADS,
-    int                 ITEMS_PER_THREAD,
-    BlockLoadAlgorithm  LOAD_ALGORITHM,
-    BlockStoreAlgorithm STORE_ALGORITHM,
-    int                 WARP_TIME_SLICING,
-    typename            InputIterator,
-    typename            OutputIterator>
-__launch_bounds__ (BLOCK_THREADS, 1)
-__global__ void KernelGuarded(
-    InputIterator     d_in,
+    OutputIterator    d_out_unguarded,
     OutputIterator    d_out_guarded,
-    int                 num_items)
+    int               num_items)
 {
     enum
     {
@@ -161,6 +107,23 @@ __global__ void KernelGuarded(
     T data[ITEMS_PER_THREAD];
 
     // Load data
+    BlockLoad(temp_storage.load).Load(d_in + block_offset, data);
+
+    __syncthreads();
+
+    // Store data
+    BlockStore(temp_storage.store).Store(d_out_unguarded + block_offset, data);
+
+    __syncthreads();
+
+    // reset data
+    #pragma unroll
+    for (int ITEM = 0; ITEM < ITEMS_PER_THREAD; ++ITEM)
+        data[ITEM] = ZeroInitialize<T>();
+
+    __syncthreads();
+
+    // Load data
     BlockLoad(temp_storage.load).Load(d_in + block_offset, data, guarded_elements);
 
     __syncthreads();
@@ -189,9 +152,9 @@ template <
     typename            OutputIterator>
 void TestKernel(
     T                   *h_in,
-    InputIterator     d_in,
-    OutputIterator    d_out_unguarded_itr,
-    OutputIterator    d_out_guarded_itr,
+    InputIterator       d_in,
+    OutputIterator      d_out_unguarded_itr,
+    OutputIterator      d_out_guarded_itr,
     T                   *d_out_unguarded_ptr,
     T                   *d_out_guarded_ptr,
     int                 grid_size,
@@ -201,23 +164,11 @@ void TestKernel(
 
     int unguarded_elements = grid_size * BLOCK_THREADS * ITEMS_PER_THREAD;
 
-    // Run unguarded kernel
+    // Run kernel
     Kernel<BLOCK_THREADS, ITEMS_PER_THREAD, LOAD_ALGORITHM, STORE_ALGORITHM, WARP_TIME_SLICING>
         <<<grid_size, BLOCK_THREADS>>>(
             d_in,
-            d_out_unguarded_itr);
-
-    CubDebugExit(cudaDeviceSynchronize());
-
-    // Check results
-    compare = CompareDeviceResults(h_in, d_out_unguarded_ptr, unguarded_elements, g_verbose, g_verbose);
-    printf("\tUnguarded: %s\n", (compare) ? "FAIL" : "PASS");
-    AssertEquals(0, compare);
-
-    // Run guarded kernel
-    KernelGuarded<BLOCK_THREADS, ITEMS_PER_THREAD, LOAD_ALGORITHM, STORE_ALGORITHM, WARP_TIME_SLICING>
-        <<<grid_size, BLOCK_THREADS>>>(
-            d_in,
+            d_out_unguarded_itr,
             d_out_guarded_itr,
             guarded_elements);
 
@@ -226,6 +177,11 @@ void TestKernel(
     // Check results
     compare = CompareDeviceResults(h_in, d_out_guarded_ptr, guarded_elements, g_verbose, g_verbose);
     printf("\tGuarded: %s\n", (compare) ? "FAIL" : "PASS");
+    AssertEquals(0, compare);
+
+    // Check results
+    compare = CompareDeviceResults(h_in, d_out_unguarded_ptr, unguarded_elements, g_verbose, g_verbose);
+    printf("\tUnguarded: %s\n", (compare) ? "FAIL" : "PASS");
     AssertEquals(0, compare);
 }
 
@@ -416,7 +372,8 @@ template <
 void TestStrategy(
     int             grid_size,
     float           fraction_valid,
-    Int2Type<false> is_warp_multiple)
+    Int2Type<false> is_warp_multiple,
+    Int2Type<true>  fits_smem_capacity)
 {
     TestPointerAccess<T, BLOCK_THREADS, ITEMS_PER_THREAD, BLOCK_LOAD_DIRECT, BLOCK_STORE_DIRECT, false>(grid_size, fraction_valid);
     TestPointerAccess<T, BLOCK_THREADS, ITEMS_PER_THREAD, BLOCK_LOAD_VECTORIZE, BLOCK_STORE_VECTORIZE, false>(grid_size, fraction_valid);
@@ -434,10 +391,50 @@ template <
 void TestStrategy(
     int             grid_size,
     float           fraction_valid,
-    Int2Type<true>  is_warp_multiple)
+    Int2Type<true>  is_warp_multiple,
+    Int2Type<true>  fits_smem_capacity)
 {
-    TestStrategy<T, BLOCK_THREADS, ITEMS_PER_THREAD>(grid_size, fraction_valid, Int2Type<false>());
+    TestStrategy<T, BLOCK_THREADS, ITEMS_PER_THREAD>(grid_size, fraction_valid, Int2Type<false>(), fits_smem_capacity);
     TestSlicedStrategy<T, BLOCK_THREADS, ITEMS_PER_THREAD, BLOCK_LOAD_WARP_TRANSPOSE, BLOCK_STORE_WARP_TRANSPOSE>(grid_size, fraction_valid);
+}
+
+
+/**
+ * Evaluate different load/store strategies (specialized for block sizes that will not fit the SM)
+ */
+template <
+    typename        T,
+    int             BLOCK_THREADS,
+    int             ITEMS_PER_THREAD,
+    bool            IS_WARP_MULTIPLE>
+void TestStrategy(
+    int                         grid_size,
+    float                       fraction_valid,
+    Int2Type<IS_WARP_MULTIPLE>  is_warp_multiple,
+    Int2Type<false>             fits_smem_capacity)
+{}
+
+
+/**
+ * Evaluate different load/store strategies (specialized for block sizes that are a multiple of 32)
+ */
+template <
+    typename        T,
+    int             BLOCK_THREADS,
+    int             ITEMS_PER_THREAD,
+    bool            IS_WARP_MULTIPLE>
+void TestIfFits(
+    int                         grid_size,
+    float                       fraction_valid,
+    Int2Type<IS_WARP_MULTIPLE>  is_warp_multiple)
+{
+#if defined(SM100) || defined(SM110) || defined(SM130)
+    Int2Type<(sizeof(T) * BLOCK_THREADS * ITEMS_PER_THREAD <= CUB_SMEM_BYTES(100))> fits_smem_capacity;
+#else
+    Int2Type<true> fits_smem_capacity;
+#endif
+
+    TestStrategy<T, BLOCK_THREADS, ITEMS_PER_THREAD>(grid_size, fraction_valid, is_warp_multiple, fits_smem_capacity);
 }
 
 
@@ -451,10 +448,12 @@ void TestItemsPerThread(
     int grid_size,
     float fraction_valid)
 {
-    TestStrategy<T, BLOCK_THREADS, 1>(grid_size, fraction_valid, Int2Type<BLOCK_THREADS % 32 == 0>());
-    TestStrategy<T, BLOCK_THREADS, 3>(grid_size, fraction_valid, Int2Type<BLOCK_THREADS % 32 == 0>());
-    TestStrategy<T, BLOCK_THREADS, 4>(grid_size, fraction_valid, Int2Type<BLOCK_THREADS % 32 == 0>());
-    TestStrategy<T, BLOCK_THREADS, 17>(grid_size, fraction_valid, Int2Type<BLOCK_THREADS % 32 == 0>());
+    Int2Type<BLOCK_THREADS % 32 == 0> is_warp_multiple;
+
+    TestIfFits<T, BLOCK_THREADS, 1>(grid_size, fraction_valid, is_warp_multiple);
+    TestIfFits<T, BLOCK_THREADS, 3>(grid_size, fraction_valid, is_warp_multiple);
+    TestIfFits<T, BLOCK_THREADS, 4>(grid_size, fraction_valid, is_warp_multiple);
+    TestIfFits<T, BLOCK_THREADS, 17>(grid_size, fraction_valid, is_warp_multiple);
 }
 
 
@@ -497,6 +496,7 @@ int main(int argc, char** argv)
     CubDebugExit(args.DeviceInit());
 
     // Simple test
+
     TestNative<int, 64, 2, BLOCK_LOAD_WARP_TRANSPOSE, BLOCK_STORE_WARP_TRANSPOSE, true>(1, 0.8);
     TestIterator<int, 64, 2, BLOCK_LOAD_WARP_TRANSPOSE, BLOCK_STORE_WARP_TRANSPOSE, LOAD_DEFAULT, STORE_DEFAULT, true>(1, 0.8);
 
