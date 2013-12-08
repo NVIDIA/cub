@@ -495,8 +495,11 @@ int main(int argc, char** argv)
     // Initialize device
     CubDebugExit(args.DeviceInit());
 
-    // Simple test
+    // Get ptx version
+    int ptx_version;
+    CubDebugExit(PtxVersion(ptx_version));
 
+    // Simple tests
     TestNative<int, 64, 2, BLOCK_LOAD_WARP_TRANSPOSE, BLOCK_STORE_WARP_TRANSPOSE, true>(1, 0.8);
     TestIterator<int, 64, 2, BLOCK_LOAD_WARP_TRANSPOSE, BLOCK_STORE_WARP_TRANSPOSE, LOAD_DEFAULT, STORE_DEFAULT, true>(1, 0.8);
 
@@ -505,7 +508,8 @@ int main(int argc, char** argv)
     TestThreads<int>(2, 0.8);
     TestThreads<long>(2, 0.8);
     TestThreads<long2>(2, 0.8);
-    TestThreads<double2>(2, 0.8);
+    if (ptx_version > 100)                          // Don't check doubles on PTX100 because they're down-converted
+        TestThreads<double2>(2, 0.8);
     TestThreads<TestFoo>(2, 0.8);
     TestThreads<TestBar>(2, 0.8);
 
