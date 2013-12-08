@@ -215,58 +215,58 @@ struct UnitWord
 
     /// Biggest shuffle word that T is a whole multiple of and is not larger than the alignment of T
     typedef typename If<IsMultiple<int>::IS_MULTIPLE,
-        int,
+        unsigned int,
         typename If<IsMultiple<short>::IS_MULTIPLE,
-            short,
-            char>::Type>::Type                  ShuffleWord;
+            unsigned short,
+            unsigned char>::Type>::Type                  ShuffleWord;
 
     /// Biggest volatile word that T is a whole multiple of and is not larger than the alignment of T
     typedef typename If<IsMultiple<long long>::IS_MULTIPLE,
-        long long,
+        unsigned long long,
         ShuffleWord>::Type                      VolatileWord;
 
     /// Biggest memory-access word that T is a whole multiple of and is not larger than the alignment of T
     typedef typename If<IsMultiple<longlong2>::IS_MULTIPLE,
-        longlong2,
+        ulonglong2,
         VolatileWord>::Type                     DeviceWord;
 
     /// Biggest texture reference word that T is a whole multiple of and is not larger than the alignment of T
     typedef typename If<IsMultiple<int4>::IS_MULTIPLE,
-        int4,
+        uint4,
         typename If<IsMultiple<int2>::IS_MULTIPLE,
-            int2,
+            uint2,
             ShuffleWord>::Type>::Type           TextureWord;
 };
 
 
-// float2 specialization (for SM10-SM13)
+// float2 specialization workaround (for SM10-SM13)
 template <>
 struct UnitWord <float2>
 {
     typedef int         ShuffleWord;
 #if defined(__CUDA_ARCH__) && (__CUDA_ARCH__ <= 130)
     typedef float       VolatileWord;
-    typedef int2        DeviceWord;
+    typedef uint2       DeviceWord;
 #else
-    typedef long long   VolatileWord;
-    typedef long long   DeviceWord;
+    typedef unsigned long long   VolatileWord;
+    typedef unsigned long long   DeviceWord;
 #endif
     typedef float2      TextureWord;
 };
 
-// float4 specialization (for SM10-SM13)
+// float4 specialization workaround (for SM10-SM13)
 template <>
 struct UnitWord <float4>
 {
     typedef int         ShuffleWord;
 #if defined(__CUDA_ARCH__) && (__CUDA_ARCH__ <= 130)
-    typedef float       VolatileWord;
-    typedef int4        DeviceWord;
+    typedef float               VolatileWord;
+    typedef uint4               DeviceWord;
 #else
-    typedef long long   VolatileWord;
-    typedef longlong2   DeviceWord;
+    typedef unsigned long long  VolatileWord;
+    typedef ulonglong2          DeviceWord;
 #endif
-    typedef float4      TextureWord;
+    typedef float4              TextureWord;
 };
 
 #endif // DOXYGEN_SHOULD_SKIP_THIS
