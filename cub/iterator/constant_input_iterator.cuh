@@ -38,7 +38,7 @@
 
 #include "../thread/thread_load.cuh"
 #include "../thread/thread_store.cuh"
-#include "../util_device.cuh"
+#include "../util_vector.cuh"
 #include "../util_namespace.cuh"
 
 #include <thrust/iterator/iterator_facade.h>
@@ -112,8 +112,9 @@ public:
 
 private:
 
-    ValueType   val;
-    Offset      offset;
+    ValueType               val;
+    Offset                  offset;
+    CubVector<Offset, 3>    pad;        // Workaround for win32 parameter-passing bug (ulonglong2 argmin DeviceReduce)
 
 public:
 
