@@ -246,7 +246,7 @@ struct IterateThreadStore<MAX, MAX>
         "   st."#ptx_modifier".u8 [%0], datum;"                                             \
         "}" : :                                                                             \
             _CUB_ASM_PTR_(ptr),                                                             \
-            "h"(unsigned short(val)));                                                               \
+            "h"((unsigned short) val));                                                               \
     }
 
 /**
