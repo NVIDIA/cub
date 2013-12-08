@@ -541,6 +541,10 @@ int main(int argc, char** argv)
     // Initialize device
     CubDebugExit(args.DeviceInit());
 
+    // Get ptx version
+    int ptx_version;
+    CubDebugExit(PtxVersion(ptx_version));
+
     if (quick)
     {
         // Quick test
@@ -557,7 +561,8 @@ int main(int argc, char** argv)
             Test<short>(CUB_TYPE_STRING(short));
             Test<int>(CUB_TYPE_STRING(int));
             Test<long long>(CUB_TYPE_STRING(long long));
-            Test<double>(CUB_TYPE_STRING(double));
+            if (ptx_version > 100)                          // Don't check doubles on PTX100 because they're down-converted
+                Test<double>(CUB_TYPE_STRING(double));
 
             // vector types
             Test<char2>(CUB_TYPE_STRING(char2));
