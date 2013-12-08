@@ -656,8 +656,8 @@ int main(int argc, char** argv)
     Test<long>(CUB_TYPE_STRING(long));
     Test<long long>(CUB_TYPE_STRING(long long));
     Test<float>(CUB_TYPE_STRING(float));
-    if (ptx_version > 100)
-        Test<double>(CUB_TYPE_STRING(double));      // Don't check doubles on PTX100 because they're down-converted
+    if (ptx_version > 100)                          // Don't check doubles on PTX100 because they're down-converted
+        Test<double>(CUB_TYPE_STRING(double));
 
     Test<char2>(CUB_TYPE_STRING(char2));
     Test<short2>(CUB_TYPE_STRING(short2));
@@ -665,8 +665,8 @@ int main(int argc, char** argv)
     Test<long2>(CUB_TYPE_STRING(long2));
     Test<longlong2>(CUB_TYPE_STRING(longlong2));
     Test<float2>(CUB_TYPE_STRING(float2));
-    if (ptx_version > 100)
-        Test<double2>(CUB_TYPE_STRING(double2));    // Don't check doubles on PTX100 because they're down-converted
+    if (ptx_version > 100)                          // Don't check doubles on PTX100 because they're down-converted
+        Test<double2>(CUB_TYPE_STRING(double2));
 
     Test<char3>(CUB_TYPE_STRING(char3));
     Test<short3>(CUB_TYPE_STRING(short3));
@@ -674,8 +674,8 @@ int main(int argc, char** argv)
     Test<long3>(CUB_TYPE_STRING(long3));
     Test<longlong3>(CUB_TYPE_STRING(longlong3));
     Test<float3>(CUB_TYPE_STRING(float3));
-    if (ptx_version > 100)
-        Test<double3>(CUB_TYPE_STRING(double3));    // Don't check doubles on PTX100 because they're down-converted
+    if (ptx_version > 100)                          // Don't check doubles on PTX100 because they're down-converted
+        Test<double3>(CUB_TYPE_STRING(double3));
 
     Test<char4>(CUB_TYPE_STRING(char4));
     Test<short4>(CUB_TYPE_STRING(short4));
@@ -683,8 +683,8 @@ int main(int argc, char** argv)
     Test<long4>(CUB_TYPE_STRING(long4));
     Test<longlong4>(CUB_TYPE_STRING(longlong4));
     Test<float4>(CUB_TYPE_STRING(float4));
-    if (ptx_version > 100)
-        Test<double4>(CUB_TYPE_STRING(double4));    // Don't check doubles on PTX100 because they're down-converted
+    if (ptx_version > 100)                          // Don't check doubles on PTX100 because they're down-converted
+        Test<double4>(CUB_TYPE_STRING(double4));
 
     Test<TestFoo>(CUB_TYPE_STRING(TestFoo));
     Test<TestBar>(CUB_TYPE_STRING(TestBar));
