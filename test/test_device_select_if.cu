@@ -258,9 +258,9 @@ cudaError_t Dispatch(
 /**
  * Simple wrapper kernel to invoke DeviceSelect
  */
-template <typename InputIterator, typename SelectOp, typename OutputIterator, typename NumSelectedIterator, typename Offset, bool PARTITION>
+template <typename InputIterator, typename SelectOp, typename OutputIterator, typename NumSelectedIterator, typename Offset, typename PartitionTag>
 __global__ void CnpDispatchKernel(
-    Int2Type<PARTITION>         partition,
+    PartitionTag                partition,
     int                         timing_timing_iterations,
     size_t                      *d_temp_storage_bytes,
     cudaError_t                 *d_cdp_error,
@@ -288,10 +288,10 @@ __global__ void CnpDispatchKernel(
 /**
  * Dispatch to CDP kernel
  */
-template <typename InputIterator, typename SelectOp, typename OutputIterator, typename NumSelectedIterator, typename Offset, bool PARTITION>
+template <typename InputIterator, typename SelectOp, typename OutputIterator, typename NumSelectedIterator, typename Offset, typename PartitionTag>
 cudaError_t Dispatch(
     Int2Type<CDP>               dispatch_to,
-    Int2Type<PARTITION>         partition,
+    PartitionTag                partition,
     int                         timing_timing_iterations,
     size_t                      *d_temp_storage_bytes,
     cudaError_t                 *d_cdp_error,
