@@ -235,7 +235,7 @@ __global__ void CnpDispatchKernel(
 /**
  * Dispatch to CDP kernel
  */
-template <bool DESCENDING, typename Key, typename Value>
+template <int DESCENDING, typename Key, typename Value>
 cudaError_t Dispatch(
     Int2Type<DESCENDING>    is_descending,
     Int2Type<CDP>           dispatch_to,
@@ -327,7 +327,7 @@ struct Pair<Key, Value, true>
 /**
  * Initialize key-value sorting problem.
  */
-template <bool DESCENDING, typename Key, typename Value>
+template <int DESCENDING, typename Key, typename Value>
 void Initialize(
     GenMode         gen_mode,
     Key             *h_keys,
