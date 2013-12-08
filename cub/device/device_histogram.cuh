@@ -218,7 +218,7 @@ struct DeviceHistogramDispatch
         typedef BlockHistogramRegionPolicy<
                 128,
                 7,
-                DEVICE_HISTO_SORT,        // (use sort regardless because atomics are perf-useless)
+                DEVICE_HISTO_SORT,        // (use sort regardless because g-atomics are unsupported and s-atomics are perf-useless)
                 GRID_MAPPING_EVEN_SHARE>
             HistoRegionPolicy;
     };
