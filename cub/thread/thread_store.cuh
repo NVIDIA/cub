@@ -153,13 +153,13 @@ struct IterateThreadStore<MAX, MAX>
 
 
 /**
- * Define a int4 (16B) ThreadStore specialization for the given Cache load modifier
+ * Define a uint4 (16B) ThreadStore specialization for the given Cache load modifier
  */
 #define CUB_STORE_16(cub_modifier, ptx_modifier)                                            \
     template<>                                                                              \
-    __device__ __forceinline__ void ThreadStore<cub_modifier, int4*, int4>(int4* ptr, int4 val)                         \
+    __device__ __forceinline__ void ThreadStore<cub_modifier, uint4*, uint4>(uint4* ptr, uint4 val)                         \
     {                                                                                       \
-        asm volatile ("st."#ptx_modifier".v4.s32 [%0], {%1, %2, %3, %4};" : :               \
+        asm volatile ("st."#ptx_modifier".v4.u32 [%0], {%1, %2, %3, %4};" : :               \
             _CUB_ASM_PTR_(ptr),                                                             \
             "r"(val.x),                                                                     \
             "r"(val.y),                                                                     \
@@ -167,9 +167,9 @@ struct IterateThreadStore<MAX, MAX>
             "r"(val.w));                                                                    \
     }                                                                                       \
     template<>                                                                              \
-    __device__ __forceinline__ void ThreadStore<cub_modifier, longlong2*, longlong2>(longlong2* ptr, longlong2 val)     \
+    __device__ __forceinline__ void ThreadStore<cub_modifier, ulonglong2*, ulonglong2>(ulonglong2* ptr, ulonglong2 val)     \
     {                                                                                       \
-        asm volatile ("st."#ptx_modifier".v2.s64 [%0], {%1, %2};" : :                       \
+        asm volatile ("st."#ptx_modifier".v2.u64 [%0], {%1, %2};" : :                       \
             _CUB_ASM_PTR_(ptr),                                                             \
             "l"(val.x),                                                                     \
             "l"(val.y));                                                                    \
@@ -177,13 +177,13 @@ struct IterateThreadStore<MAX, MAX>
 
 
 /**
- * Define a int2 (8B) ThreadStore specialization for the given Cache load modifier
+ * Define a uint2 (8B) ThreadStore specialization for the given Cache load modifier
  */
 #define CUB_STORE_8(cub_modifier, ptx_modifier)                                             \
     template<>                                                                              \
-    __device__ __forceinline__ void ThreadStore<cub_modifier, short4*, short4>(short4* ptr, short4 val)                 \
+    __device__ __forceinline__ void ThreadStore<cub_modifier, ushort4*, ushort4>(ushort4* ptr, ushort4 val)                 \
     {                                                                                       \
-        asm volatile ("st."#ptx_modifier".v4.s16 [%0], {%1, %2, %3, %4};" : :               \
+        asm volatile ("st."#ptx_modifier".v4.u16 [%0], {%1, %2, %3, %4};" : :               \
             _CUB_ASM_PTR_(ptr),                                                             \
             "h"(val.x),                                                                     \
             "h"(val.y),                                                                     \
@@ -191,62 +191,62 @@ struct IterateThreadStore<MAX, MAX>
             "h"(val.w));                                                                    \
     }                                                                                       \
     template<>                                                                              \
-    __device__ __forceinline__ void ThreadStore<cub_modifier, int2*, int2>(int2* ptr, int2 val)                         \
+    __device__ __forceinline__ void ThreadStore<cub_modifier, uint2*, uint2>(uint2* ptr, uint2 val)                         \
     {                                                                                       \
-        asm volatile ("st."#ptx_modifier".v2.s32 [%0], {%1, %2};" : :                       \
+        asm volatile ("st."#ptx_modifier".v2.u32 [%0], {%1, %2};" : :                       \
             _CUB_ASM_PTR_(ptr),                                                             \
             "r"(val.x),                                                                     \
             "r"(val.y));                                                                    \
     }                                                                                       \
     template<>                                                                              \
-    __device__ __forceinline__ void ThreadStore<cub_modifier, long long*, long long>(long long* ptr, long long val)     \
+    __device__ __forceinline__ void ThreadStore<cub_modifier, unsigned long long*, unsigned long long>(unsigned long long* ptr, unsigned long long val)     \
     {                                                                                       \
-        asm volatile ("st."#ptx_modifier".s64 [%0], %1;" : :                                \
+        asm volatile ("st."#ptx_modifier".u64 [%0], %1;" : :                                \
             _CUB_ASM_PTR_(ptr),                                                             \
             "l"(val));                                                                      \
     }
 
 /**
- * Define a int (4B) ThreadStore specialization for the given Cache load modifier
+ * Define a unsigned int (4B) ThreadStore specialization for the given Cache load modifier
  */
 #define CUB_STORE_4(cub_modifier, ptx_modifier)                                             \
     template<>                                                                              \
-    __device__ __forceinline__ void ThreadStore<cub_modifier, int*, int>(int* ptr, int val)                             \
+    __device__ __forceinline__ void ThreadStore<cub_modifier, unsigned int*, unsigned int>(unsigned int* ptr, unsigned int val)                             \
     {                                                                                       \
-        asm volatile ("st."#ptx_modifier".s32 [%0], %1;" : :                                \
+        asm volatile ("st."#ptx_modifier".u32 [%0], %1;" : :                                \
             _CUB_ASM_PTR_(ptr),                                                             \
             "r"(val));                                                                      \
     }
 
 
 /**
- * Define a short (2B) ThreadStore specialization for the given Cache load modifier
+ * Define a unsigned short (2B) ThreadStore specialization for the given Cache load modifier
  */
 #define CUB_STORE_2(cub_modifier, ptx_modifier)                                             \
     template<>                                                                              \
-    __device__ __forceinline__ void ThreadStore<cub_modifier, short*, short>(short* ptr, short val)                     \
+    __device__ __forceinline__ void ThreadStore<cub_modifier, unsigned short*, unsigned short>(unsigned short* ptr, unsigned short val)                     \
     {                                                                                       \
-        asm volatile ("st."#ptx_modifier".s16 [%0], %1;" : :                                \
+        asm volatile ("st."#ptx_modifier".u16 [%0], %1;" : :                                \
             _CUB_ASM_PTR_(ptr),                                                             \
             "h"(val));                                                                      \
     }
 
 
 /**
- * Define a char (1B) ThreadStore specialization for the given Cache load modifier
+ * Define a unsigned char (1B) ThreadStore specialization for the given Cache load modifier
  */
 #define CUB_STORE_1(cub_modifier, ptx_modifier)                                             \
     template<>                                                                              \
-    __device__ __forceinline__ void ThreadStore<cub_modifier, char*, char>(char* ptr, char val)                         \
+    __device__ __forceinline__ void ThreadStore<cub_modifier, unsigned char*, unsigned char>(unsigned char* ptr, unsigned char val)                         \
     {                                                                                       \
         asm volatile (                                                                      \
         "{"                                                                                 \
-        "   .reg .s8 datum;"                                                                \
-        "   cvt.s8.s16 datum, %1;"                                                          \
-        "   st."#ptx_modifier".s8 [%0], datum;"                                             \
+        "   .reg .u8 datum;"                                                                \
+        "   cvt.u8.u16 datum, %1;"                                                          \
+        "   st."#ptx_modifier".u8 [%0], datum;"                                             \
         "}" : :                                                                             \
             _CUB_ASM_PTR_(ptr),                                                             \
-            "h"(short(val)));                                                               \
+            "h"(unsigned short(val)));                                                               \
     }
 
 /**
