@@ -406,7 +406,7 @@ template <
     typename        T,
     int             BLOCK_THREADS,
     int             ITEMS_PER_THREAD,
-    bool            IS_WARP_MULTIPLE>
+    int             IS_WARP_MULTIPLE>
 void TestStrategy(
     int                         grid_size,
     float                       fraction_valid,
@@ -422,7 +422,7 @@ template <
     typename        T,
     int             BLOCK_THREADS,
     int             ITEMS_PER_THREAD,
-    bool            IS_WARP_MULTIPLE>
+    int             IS_WARP_MULTIPLE>
 void TestIfFits(
     int                         grid_size,
     float                       fraction_valid,
