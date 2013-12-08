@@ -455,11 +455,11 @@ struct DeviceRadixSortDispatch
         cudaError_t error;
         do {
 
-            if (CubDebug(error = upsweep_config.template InitUpsweepPolicy<PtxUpsweepPolicy>(         sm_version, sm_count, upsweep_kernel))) break;
-            if (CubDebug(error = upsweep_config.template InitUpsweepPolicy<PtxAltUpsweepPolicy>(      sm_version, sm_count, alt_upsweep_kernel))) break;
-            if (CubDebug(error = scan_config.template InitScanPolicy<PtxScanPolicy>(                  sm_version, sm_count, scan_kernel))) break;
-            if (CubDebug(error = downsweep_config.template InitDownsweepPolicy<PtxDownsweepPolicy>(   sm_version, sm_count, downsweep_kernel))) break;
-            if (CubDebug(error = downsweep_config.template InitDownsweepPolicy<PtxAltDownsweepPolicy>(sm_version, sm_count, alt_downsweep_kernel))) break;
+            if (CubDebug(error = upsweep_config.template InitUpsweepPolicy<PtxUpsweepPolicy>(               sm_version, sm_count, upsweep_kernel))) break;
+            if (CubDebug(error = alt_upsweep_config.template InitUpsweepPolicy<PtxAltUpsweepPolicy>(        sm_version, sm_count, alt_upsweep_kernel))) break;
+            if (CubDebug(error = scan_config.template InitScanPolicy<PtxScanPolicy>(                        sm_version, sm_count, scan_kernel))) break;
+            if (CubDebug(error = downsweep_config.template InitDownsweepPolicy<PtxDownsweepPolicy>(         sm_version, sm_count, downsweep_kernel))) break;
+            if (CubDebug(error = alt_downsweep_config.template InitDownsweepPolicy<PtxAltDownsweepPolicy>(  sm_version, sm_count, alt_downsweep_kernel))) break;
 
         } while (0);
 
