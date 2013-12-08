@@ -191,17 +191,41 @@ struct LookbackTileDescriptor
     {
         LookbackTileDescriptor tile_descriptor;
         tile_descriptor.status = LOOKBACK_TILE_INVALID;
+
+#if CUB_PTX_VERSION == 100
+
+        // Use shared memory to determine when all threads have valid status
+        __shared__ volatile int done;
+
+        do
+        {
+            if (threadIdx.x == 0) done = 1;
+
+            TxnWord alias = ThreadLoad<LOAD_CG>(reinterpret_cast<TxnWord*>(ptr));
+            __threadfence_block();
+
+            tile_descriptor = reinterpret_cast<LookbackTileDescriptor&>(alias);
+            if (tile_descriptor.status == LOOKBACK_TILE_INVALID)
+                done = 0;
+
+        } while (done == 0);
+
+#else
+
+        // Use warp-any to determine when all threads have valid status
         bool invalid = true;
         do
         {
             if (invalid)
             {
                 TxnWord alias = ThreadLoad<LOAD_CG>(reinterpret_cast<TxnWord*>(ptr));
+                __threadfence_block();
+
                 tile_descriptor = reinterpret_cast<LookbackTileDescriptor&>(alias);
                 invalid = tile_descriptor.status == LOOKBACK_TILE_INVALID;
-                __threadfence_block();
             }
-        } while (WarpAny(invalid));
+        } while (__any(invalid));
+#endif
 
         status = tile_descriptor.status;
         value = tile_descriptor.value;
