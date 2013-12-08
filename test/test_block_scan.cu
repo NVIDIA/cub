@@ -362,6 +362,10 @@ __global__ void BlockScanKernel(
     if (threadIdx.x == 0)
     {
         d_out[TILE_SIZE] = prefix_op.prefix;
+    }
+    else
+    {
+        // In a separate conditional as a workaround for SM10 Win32 bug where we write the wrong prefix
         *d_elapsed = (start > stop) ? start - stop : stop - start;
     }
 }
@@ -478,6 +482,7 @@ void Test(
         identity,
         p_prefix);
 
+    // Test reference aggregate is returned in all threads
     for (int i = 0; i < BLOCK_THREADS; ++i)
     {
         h_aggregate[i] = aggregate;
@@ -501,10 +506,10 @@ void Test(
     T       *d_out = NULL;
     T       *d_aggregate = NULL;
     clock_t *d_elapsed = NULL;
+    CubDebugExit(g_allocator.DeviceAllocate((void**)&d_elapsed, sizeof(unsigned long long)));
     CubDebugExit(g_allocator.DeviceAllocate((void**)&d_in, sizeof(T) * TILE_SIZE));
-    CubDebugExit(g_allocator.DeviceAllocate((void**)&d_out, sizeof(T) * (TILE_SIZE + 1)));
+    CubDebugExit(g_allocator.DeviceAllocate((void**)&d_out, sizeof(T) * (TILE_SIZE + 2)));
     CubDebugExit(g_allocator.DeviceAllocate((void**)&d_aggregate, sizeof(T) * BLOCK_THREADS));
-    CubDebugExit(g_allocator.DeviceAllocate((void**)&d_elapsed, sizeof(clock_t)));
     CubDebugExit(cudaMemcpy(d_in, h_in, sizeof(T) * TILE_SIZE, cudaMemcpyHostToDevice));
     CubDebugExit(cudaMemset(d_out, 0, sizeof(T) * (TILE_SIZE + 1)));
     CubDebugExit(cudaMemset(d_aggregate, 0, sizeof(T) * BLOCK_THREADS));
