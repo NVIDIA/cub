@@ -407,7 +407,6 @@ struct DeviceScanDispatch
         cudaStream_t                stream,                         ///< [in] <b>[optional]</b> CUDA stream to launch kernels within.  Default is stream<sub>0</sub>.
         bool                        debug_synchronous,              ///< [in] <b>[optional]</b> Whether or not to synchronize the stream after every kernel launch to check for errors.  Also causes launch configurations to be printed to the console.  Default is \p false.
         int                         ptx_version,                    ///< [in] PTX version of dispatch kernels
-        int                         sm_version,                     ///< [in] SM version of target device to use when computing SM occupancy
         ScanInitKernelPtr           init_kernel,                    ///< [in] Kernel function pointer to parameterization of cub::ScanInitKernel
         ScanRegionKernelPtr         scan_region_kernel,             ///< [in] Kernel function pointer to parameterization of cub::ScanRegionKernelPtr
         KernelConfig                scan_region_config)             ///< [in] Dispatch parameters that match the policy that \p scan_region_kernel was compiled for
@@ -419,10 +418,21 @@ struct DeviceScanDispatch
         return CubDebug(cudaErrorNotSupported);
 
 #else
-
         cudaError error = cudaSuccess;
         do
         {
+            // Get device ordinal
+            int device_ordinal;
+            if (CubDebug(error = cudaGetDevice(&device_ordinal))) break;
+
+            // Get device SM version
+            int sm_version;
+            if (CubDebug(error = SmVersion(sm_version, device_ordinal))) break;
+
+            // Get SM count
+            int sm_count;
+            if (CubDebug(error = cudaDeviceGetAttribute (&sm_count, cudaDevAttrMultiProcessorCount, device_ordinal))) break;
+
             // Number of input tiles
             int tile_size = scan_region_config.block_threads * scan_region_config.items_per_thread;
             int num_tiles = (num_items + tile_size - 1) / tile_size;
@@ -432,7 +442,7 @@ struct DeviceScanDispatch
             size_t allocation_sizes[2] =
             {
                 (num_tiles + TILE_STATUS_PADDING) * sizeof(TileDescriptor),  // bytes needed for tile status descriptors
-                GridQueue<int>::AllocationSize()                                        // bytes needed for grid queue descriptor
+                GridQueue<int>::AllocationSize()                             // bytes needed for grid queue descriptor
             };
 
             // Alias the temporary allocations from the single storage blob (or set the necessary size of the blob)
@@ -448,14 +458,6 @@ struct DeviceScanDispatch
 
             // Alias the allocation for the grid queue descriptor
             GridQueue<int> queue(allocations[1]);
-
-            // Get device ordinal
-            int device_ordinal;
-            if (CubDebug(error = cudaGetDevice(&device_ordinal))) break;
-
-            // Get SM count
-            int sm_count;
-            if (CubDebug(error = cudaDeviceGetAttribute (&sm_count, cudaDevAttrMultiProcessorCount, device_ordinal))) break;
 
             // Log init_kernel configuration
             int init_grid_size = (num_tiles + INIT_KERNEL_THREADS - 1) / INIT_KERNEL_THREADS;
@@ -564,7 +566,6 @@ struct DeviceScanDispatch
                 stream,
                 debug_synchronous,
                 ptx_version,
-                ptx_version,            // Use PTX version instead of SM version because, as a statically known quantity, this improves device-side launch dramatically but at the risk of imprecise occupancy calculation for mismatches
                 ScanInitKernel<T, Offset>,
                 ScanRegionKernel<PtxScanRegionPolicy, InputIterator, OutputIterator, T, ScanOp, Identity, Offset>,
                 scan_region_config))) break;

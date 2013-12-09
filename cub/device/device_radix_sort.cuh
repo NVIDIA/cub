@@ -794,12 +794,13 @@ struct DeviceRadixSortDispatch
             int device_ordinal;
             if (CubDebug(error = cudaGetDevice(&device_ordinal))) break;
 
+            // Get device SM version
+            int sm_version;
+            if (CubDebug(error = SmVersion(sm_version, device_ordinal))) break;
+
             // Get SM count
             int sm_count;
-            if (CubDebug(error = cudaDeviceGetAttribute(&sm_count, cudaDevAttrMultiProcessorCount, device_ordinal))) break;
-
-            // Get SM version
-            int sm_version = ptx_version;            // Use PTX version instead of SM version because, as a statically known quantity, this improves device-side launch dramatically but at the risk of imprecise occupancy calculation for mismatches
+            if (CubDebug(error = cudaDeviceGetAttribute (&sm_count, cudaDevAttrMultiProcessorCount, device_ordinal))) break;
 
             // Get kernel kernel dispatch configurations
             KernelConfig upsweep_config;
