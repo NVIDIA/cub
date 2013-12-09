@@ -224,6 +224,8 @@ int main(int argc, char** argv)
     if (d_in) CubDebugExit(g_allocator.DeviceFree(d_in));
     if (d_flags) CubDebugExit(g_allocator.DeviceFree(d_flags));
 
+    printf("\n\n");
+
     return 0;
 }
 
