@@ -338,7 +338,6 @@ struct DeviceHistogramDispatch
         Offset                      num_samples,                        ///< [in] Number of samples to process
         cudaStream_t                stream,                             ///< [in] CUDA stream to launch kernels within.  Default is stream<sub>0</sub>.
         bool                        debug_synchronous,                  ///< [in] Whether or not to synchronize the stream after every kernel launch to check for errors.  Default is \p false.
-        int                         sm_version,                         ///< [in] SM version of target device to use when computing SM occupancy
         InitHistoKernelPtr          init_kernel,                        ///< [in] Kernel function pointer to parameterization of cub::HistoInitKernel
         HistoRegionKernelPtr        histo_region_kernel,                ///< [in] Kernel function pointer to parameterization of cub::HistoRegionKernel
         AggregateHistoKernelPtr     aggregate_kernel,                   ///< [in] Kernel function pointer to parameterization of cub::HistoAggregateKernel
@@ -357,6 +356,10 @@ struct DeviceHistogramDispatch
             // Get device ordinal
             int device_ordinal;
             if (CubDebug(error = cudaGetDevice(&device_ordinal))) break;
+
+            // Get device SM version
+            int sm_version;
+            if (CubDebug(error = SmVersion(sm_version, device_ordinal))) break;
 
             // Get SM count
             int sm_count;
@@ -527,7 +530,6 @@ struct DeviceHistogramDispatch
                 num_samples,
                 stream,
                 debug_synchronous,
-                ptx_version,            // Use PTX version instead of SM version because, as a statically known quantity, this improves device-side launch dramatically but at the risk of imprecise occupancy calculation for mismatches
                 HistoInitKernel<BINS, ACTIVE_CHANNELS, Offset, HistoCounter>,
                 HistoRegionKernel<PtxHistoRegionPolicy, BINS, CHANNELS, ACTIVE_CHANNELS, InputIterator, HistoCounter, Offset>,
                 HistoAggregateKernel<BINS, ACTIVE_CHANNELS, HistoCounter>,
