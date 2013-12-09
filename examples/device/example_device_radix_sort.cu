@@ -32,7 +32,7 @@
  * Sorts an array of float keys paired with a corresponding array of int values.
  *
  * To compile using the command line:
- *   nvcc -gencode=arch=compute_XX,code=\"sm_XX,compute_XX\" example_device_radix_sort.cu -Xcompiler /fp:strict -I../.. -lcudart -O3
+ *   nvcc -arch=sm_XX example_device_radix_sort.cu -I../.. -lcudart -O3
  *
  ******************************************************************************/
 

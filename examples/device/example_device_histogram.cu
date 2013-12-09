@@ -33,7 +33,7 @@
  * 8b RGBA samples) using an algorithm based upon shared-memory atomic instructions.
  *
  * To compile using the command line:
- *   nvcc -gencode=arch=compute_XX,code=\"sm_XX,compute_XX\" example_device_histogram.cu -Xcompiler /fp:strict -I../.. -lcudart -O3
+ *   nvcc -arch=sm_XX example_device_histogram.cu -I../.. -lcudart -O3
  *
  ******************************************************************************/
 
@@ -44,7 +44,7 @@
 #include <limits>
 
 #include <cub/util_allocator.cuh>
-#include <cub/util_iterator.cuh>
+#include <cub/iterator/tex_ref_input_iterator.cuh>
 #include <cub/device/device_histogram.cuh>
 
 #include "../../test/test_util.h"
