@@ -31,7 +31,7 @@
  *
  * Example compilation string:
  *
- * nvcc example_block_scan_sum.cu -gencode=arch=compute_20,code=\"sm_20,compute_20\" -o example_block_scan_sum
+ * nvcc example_block_scan_sum.cu -arch=sm_20 -o example_block_scan_sum
  *
  ******************************************************************************/
 

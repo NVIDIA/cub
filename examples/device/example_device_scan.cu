@@ -32,7 +32,7 @@
  * Computes an exclusive sum of float keys.
  *
  * To compile using the command line:
- *   nvcc -gencode=arch=compute_XX,code=\"sm_XX,compute_XX\" example_device_scan.cu -Xcompiler /fp:strict -I../.. -lcudart -O3
+ *   nvcc -arch=sm_XX example_device_scan.cu -I../.. -lcudart -O3
  *
  ******************************************************************************/
 

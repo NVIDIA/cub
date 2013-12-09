@@ -33,7 +33,7 @@
  * of int keys.
  *
  * To compile using the command line:
- *   nvcc -gencode=arch=compute_XX,code=\"sm_XX,compute_XX\" example_device_select_unique.cu -Xcompiler /fp:strict -I../.. -lcudart -O3
+ *   nvcc -arch=sm_XX example_device_select_unique.cu -I../.. -lcudart -O3
  *
  ******************************************************************************/
 
@@ -64,7 +64,7 @@ CachingDeviceAllocator  g_allocator(true);  // Caching allocator for device memo
 
 
 /**
- * Initialize problem
+ * Initialize problem, setting runs of random length chosen from [1..max_segment]
  */
 void Initialize(
     int     *h_in,
@@ -140,12 +140,11 @@ int Solve(
 int main(int argc, char** argv)
 {
     int num_items           = 150;
-    int max_segment              = 40;       // Maximum segment length
+    int max_segment         = 40;       // Maximum segment length
 
     // Initialize command line
     CommandLineArgs args(argc, argv);
     g_verbose = args.CheckCmdLineFlag("v");
-    bool quick = args.CheckCmdLineFlag("quick");
     args.GetCmdLineArgument("n", num_items);
     args.GetCmdLineArgument("maxseg", max_segment);
 
