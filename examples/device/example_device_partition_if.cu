@@ -27,13 +27,13 @@
  ******************************************************************************/
 
 /******************************************************************************
- * Simple example of DevicePartition::Flagged().
+ * Simple example of DevicePartition::If().
  *
- * Partition flagged items from from a sequence of int keys using a
- * corresponding sequence of unsigned char flags.
+ * Partitions items from from a sequence of int keys using a
+ * section functor (greater-than)
  *
  * To compile using the command line:
- *   nvcc -arch=sm_XX example_device_partition_flagged.cu -I../.. -lcudart -O3
+ *   nvcc -arch=sm_XX example_device_select_if.cu -I../.. -lcudart -O3
  *
  ******************************************************************************/
 
@@ -58,28 +58,39 @@ bool                    g_verbose = false;  // Whether to display input/output t
 CachingDeviceAllocator  g_allocator(true);  // Caching allocator for device memory
 
 
+/// Selection functor type
+struct GreaterThan
+{
+    int compare;
+
+    __host__ __device__ __forceinline__
+    GreaterThan(int compare) : compare(compare) {}
+
+    __host__ __device__ __forceinline__
+    bool operator()(const int &a) const {
+        return (a > compare);
+    }
+};
+
+
 //---------------------------------------------------------------------
 // Test generation
 //---------------------------------------------------------------------
 
-
 /**
- * Initialize problem, setting flags at distances of random length
- * chosen from [1..max_segment]
+ * Initialize problem, setting runs of random length chosen from [1..max_segment]
  */
 void Initialize(
-    int             *h_in,
-    unsigned char   *h_flags,
-    int             num_items,
-    int             max_segment)
+    int     *h_in,
+    int     num_items,
+    int     max_segment)
 {
-    unsigned short max_short = (unsigned short) -1;
-
     int key = 0;
     int i = 0;
     while (i < num_items)
     {
-        // Select number of repeating occurrences
+        // Randomly select number of repeating occurrences uniformly from [1..max_segment]
+        unsigned short max_short = (unsigned short) -1;
         unsigned short repeat;
         RandomBits(repeat);
         repeat = (unsigned short) ((float(repeat) * (float(max_segment) / float(max_short))));
@@ -88,12 +99,10 @@ void Initialize(
         int j = i;
         while (j < CUB_MIN(i + repeat, num_items))
         {
-            h_flags[j] = 0;
             h_in[j] = key;
             j++;
         }
 
-        h_flags[i] = 1;
         i = j;
         key++;
     }
@@ -102,8 +111,6 @@ void Initialize(
     {
         printf("Input:\n");
         DisplayResults(h_in, num_items);
-        printf("Flags:\n");
-        DisplayResults(h_flags, num_items);
         printf("\n\n");
     }
 }
@@ -112,16 +119,17 @@ void Initialize(
 /**
  * Solve unique problem
  */
+template <typename SelectOp>
 int Solve(
     int             *h_in,
-    unsigned char   *h_flags,
+    SelectOp        select_op,
     int             *h_reference,
     int             num_items)
 {
     int num_selected = 0;
     for (int i = 0; i < num_items; ++i)
     {
-        if (h_flags[i])
+        if (select_op(h_in[i]))
         {
             h_reference[num_selected] = h_in[i];
             num_selected++;
@@ -160,7 +168,7 @@ int main(int argc, char** argv)
         printf("%s "
             "[--n=<input items> "
             "[--device=<device-id>] "
-            "[--maxseg=<max segment length>] "
+            "[--maxseg=<max segment length>]"
             "[--v] "
             "\n", argv[0]);
         exit(0);
@@ -170,28 +178,32 @@ int main(int argc, char** argv)
     CubDebugExit(args.DeviceInit());
 
     // Allocate host arrays
-    int             *h_in        = new int[num_items];
-    int             *h_reference = new int[num_items];
-    unsigned char   *h_flags     = new unsigned char[num_items];
+    int *h_in        = new int[num_items];
+    int *h_reference = new int[num_items];
+
+    // DevicePartition a pivot index
+    unsigned int pivot_index;
+    unsigned int max_int = (unsigned int) -1;
+    RandomBits(pivot_index);
+    pivot_index = (unsigned int) ((float(pivot_index) * (float(num_items - 1) / float(max_int))));
+    printf("Pivot idx: %d\n", pivot_index); fflush(stdout);
 
     // Initialize problem and solution
-    Initialize(h_in, h_flags, num_items, max_segment);
-    int num_selected = Solve(h_in, h_flags, h_reference, num_items);
+    Initialize(h_in, num_items, max_segment);
+    GreaterThan select_op(h_in[pivot_index]);
 
-    printf("cub::DevicePartition::Flagged %d items, %d selected (avg distance %d), %d-byte elements\n",
+    int num_selected = Solve(h_in, select_op, h_reference, num_items);
+
+    printf("cub::DevicePartition::If %d items, %d selected (avg run length %d), %d-byte elements\n",
         num_items, num_selected, (num_selected > 0) ? num_items / num_selected : 0, (int) sizeof(int));
     fflush(stdout);
 
     // Allocate problem device arrays
-    int             *d_in = NULL;
-    unsigned char   *d_flags = NULL;
-
+    int *d_in = NULL;
     CubDebugExit(g_allocator.DeviceAllocate((void**)&d_in, sizeof(int) * num_items));
-    CubDebugExit(g_allocator.DeviceAllocate((void**)&d_flags, sizeof(unsigned char) * num_items));
 
     // Initialize device input
     CubDebugExit(cudaMemcpy(d_in, h_in, sizeof(int) * num_items, cudaMemcpyHostToDevice));
-    CubDebugExit(cudaMemcpy(d_flags, h_flags, sizeof(unsigned char) * num_items, cudaMemcpyHostToDevice));
 
     // Allocate device output array and num selected
     int     *d_out            = NULL;
@@ -202,27 +214,26 @@ int main(int argc, char** argv)
     // Allocate temporary storage
     void            *d_temp_storage = NULL;
     size_t          temp_storage_bytes = 0;
-    CubDebugExit(DevicePartition::Flagged(d_temp_storage, temp_storage_bytes, d_in, d_flags, d_out, d_num_selected, num_items));
+    CubDebugExit(DevicePartition::If(d_temp_storage, temp_storage_bytes, d_in, d_out, d_num_selected, num_items, select_op));
     CubDebugExit(g_allocator.DeviceAllocate(&d_temp_storage, temp_storage_bytes));
 
     // Run
-    CubDebugExit(DevicePartition::Flagged(d_temp_storage, temp_storage_bytes, d_in, d_flags, d_out, d_num_selected, num_items));
+    CubDebugExit(DevicePartition::If(d_temp_storage, temp_storage_bytes, d_in, d_out, d_num_selected, num_items, select_op));
 
     // Check for correctness (and display results, if specified)
     int compare = CompareDeviceResults(h_reference, d_out, num_items, true, g_verbose);
     printf("\t Data %s ", compare ? "FAIL" : "PASS");
-    compare |= CompareDeviceResults(&num_selected, d_num_selected, 1, true, g_verbose);
+    compare = compare | CompareDeviceResults(&num_selected, d_num_selected, 1, true, g_verbose);
     printf("\t Count %s ", compare ? "FAIL" : "PASS");
     AssertEquals(0, compare);
 
     // Cleanup
     if (h_in) delete[] h_in;
     if (h_reference) delete[] h_reference;
+    if (d_in) CubDebugExit(g_allocator.DeviceFree(d_in));
     if (d_out) CubDebugExit(g_allocator.DeviceFree(d_out));
     if (d_num_selected) CubDebugExit(g_allocator.DeviceFree(d_num_selected));
     if (d_temp_storage) CubDebugExit(g_allocator.DeviceFree(d_temp_storage));
-    if (d_in) CubDebugExit(g_allocator.DeviceFree(d_in));
-    if (d_flags) CubDebugExit(g_allocator.DeviceFree(d_flags));
 
     printf("\n\n");
 

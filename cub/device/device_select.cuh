@@ -202,7 +202,7 @@ struct DeviceSelectDispatch
     struct Policy200
     {
         enum {
-            NOMINAL_4B_ITEMS_PER_THREAD = 23,
+            NOMINAL_4B_ITEMS_PER_THREAD = (KEEP_REJECTS) ? 7 : 17,
             ITEMS_PER_THREAD            = CUB_MIN(NOMINAL_4B_ITEMS_PER_THREAD, CUB_MAX(1, (NOMINAL_4B_ITEMS_PER_THREAD * 4 / sizeof(T)))),
         };
 

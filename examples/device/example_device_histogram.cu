@@ -214,6 +214,8 @@ int main(int argc, char** argv)
     if (d_histograms_linear) CubDebugExit(g_allocator.DeviceFree(d_histograms_linear));
     if (d_temp_storage) CubDebugExit(g_allocator.DeviceFree(d_temp_storage));
 
+    printf("\n\n");
+
     return 0;
 }
 

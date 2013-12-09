@@ -194,6 +194,7 @@ DEPS =	./Makefile \
 		
 ALL = 	example_device_histogram \
 		example_device_partition_flagged \
+		example_device_partition_if \
 	 	example_device_radix_sort \
 		example_device_reduce \
 	 	example_device_scan \
@@ -264,6 +265,16 @@ example_device_partition_flagged: bin/example_device_partition_flagged_$(SUFFIX)
 bin/example_device_partition_flagged_$(SUFFIX) : example_device_partition_flagged.cu $(DEPS)
 	mkdir -p bin
 	$(NVCC) $(DEFINES) $(SM_TARGETS) -o bin/example_device_partition_flagged_$(SUFFIX) example_device_partition_flagged.cu $(NVCCFLAGS) $(CPU_ARCH) $(INC) $(LIBS) -O3
+
+#-------------------------------------------------------------------------------
+# make example_device_partition_if
+#-------------------------------------------------------------------------------
+
+example_device_partition_if: bin/example_device_partition_if_$(SUFFIX)
+
+bin/example_device_partition_if_$(SUFFIX) : example_device_partition_if.cu $(DEPS)
+	mkdir -p bin
+	$(NVCC) $(DEFINES) $(SM_TARGETS) -o bin/example_device_partition_if_$(SUFFIX) example_device_partition_if.cu $(NVCCFLAGS) $(CPU_ARCH) $(INC) $(LIBS) -O3
 
 #-------------------------------------------------------------------------------
 # make example_device_scan
