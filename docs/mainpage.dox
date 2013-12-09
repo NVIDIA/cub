@@ -30,10 +30,15 @@
 
 /**
 
-\defgroup DeviceModule 	Device-wide primitives
-\defgroup BlockModule 	Block-wide collective primitives
-\defgroup WarpModule 	Warp-wide collective primitives
-\defgroup UtilModule 	CUB utilities
+\defgroup PrimitiveModule 	Primitives
+	\defgroup DeviceModule 	Device-wide
+		\ingroup PrimitiveModule
+	\defgroup BlockModule 	Block-wide (collective)
+		\ingroup PrimitiveModule
+	\defgroup WarpModule 	Warp-wide (collective)
+		\ingroup PrimitiveModule
+
+\defgroup UtilModule 	Utilities
 	\defgroup UtilIterator 	Fancy iterators
 		\ingroup UtilModule
 	\defgroup UtilIo 		Thread and thread block I/O

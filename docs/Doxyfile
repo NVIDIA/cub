@@ -199,6 +199,8 @@ ALIASES                = smemreuse="A subsequent <tt>__syncthreads()</tt> thread
 ALIASES                += smemreuse{1}="After any operation, a subsequent <tt>__syncthreads()</tt> barrier is required if the collective's \1 is to be reused or repurposed"
 ALIASES                += smemstorage{1}="The operations exposed by \1 require a temporary memory allocation of this nested type for thread communication.  This opaque storage can be allocated directly using the <tt>__shared__</tt> keyword.  Alternatively, it can be aliased to externally allocated memory (shared or global) or <tt>union</tt>'d with other storage allocation types to facilitate memory reuse."
 
+ALIASES                += granularity="Efficiency is increased with increased granularity <tt>ITEMS_PER_THREAD</tt>.  Performance is also typically increased until the additional register pressure or shared memory allocation size causes SM occupancy to fall too low.  Consider variants of cub::BlockLoad for efficiently gathering a [<em>blocked arrangement</em>](index.html#sec5sec4) of elements across threads."    
+
 ALIASES                += blockcollective{1}="Every thread in the block uses the \1 class by first specializing the \1 type, then instantiating an instance with parameters for communication, and finally invoking collective member functions."
 ALIASES                += warpcollective{1}="Every thread in the warp uses the \1 class by first specializing the \1 type, then instantiating an instance with parameters for communication, and finally invoking collective member functions."
 

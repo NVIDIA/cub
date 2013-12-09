@@ -48,13 +48,13 @@ namespace cub {
  * \brief The BlockShift class provides [<em>collective</em>](index.html#sec0) methods for shifting data partitioned across a CUDA thread block. ![](transpose_logo.png)
  * \ingroup BlockModule
  *
+ * \tparam T                    The data type to be exchanged.
+ * \tparam BLOCK_THREADS        The thread block size in threads.
+ *
  * \par Overview
  * It is commonplace for blocks of threads to rearrange data items between
  * threads.  The BlockShift abstraction allows threads to efficiently shift items
  * either (a) up to their successor or (b) down to their predecessor.
- *
- * \tparam T                    The data type to be exchanged.
- * \tparam BLOCK_THREADS        The thread block size in threads.
  *
  */
 template <
