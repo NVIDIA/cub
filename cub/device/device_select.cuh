@@ -540,10 +540,6 @@ struct DeviceSelectDispatch
             KernelConfig select_region_config;
             InitConfigs(ptx_version, select_region_config);
 
-            // Get device ordinal
-            int device_ordinal;
-            if (CubDebug(error = cudaGetDevice(&device_ordinal))) break;
-
             // Dispatch
             if (CubDebug(error = Dispatch(
                 d_temp_storage,
