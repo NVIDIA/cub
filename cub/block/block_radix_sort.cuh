@@ -50,23 +50,6 @@ namespace cub {
  * \brief The cub::BlockRadixSort class provides [<em>collective</em>](index.html#sec0) methods for sorting items partitioned across a CUDA thread block using a radix sorting method.  ![](sorting_logo.png)
  * \ingroup BlockModule
  *
- * \par Overview
- * The [<em>radix sorting method</em>](http://en.wikipedia.org/wiki/Radix_sort) arranges
- * items into ascending order.  It relies upon a positional representation for
- * keys, i.e., each key is comprised of an ordered sequence of symbols (e.g., digits,
- * characters, etc.) specified from least-significant to most-significant.  For a
- * given input sequence of keys and a set of rules specifying a total ordering
- * of the symbolic alphabet, the radix sorting method produces a lexicographic
- * ordering of those keys.
- *
- * \par
- * BlockRadixSort can sort all of the built-in C++ numeric primitive types, e.g.:
- * <tt>unsigned char</tt>, \p int, \p double, etc.  Within each key, the implementation treats fixed-length
- * bit-sequences of \p RADIX_BITS as radix digit places.  Although the direct radix sorting
- * method can only be applied to unsigned integral types, BlockRadixSort
- * is able to sort signed and floating-point types via simple bit-wise transformations
- * that ensure lexicographic key ordering.
- *
  * \tparam Key                  Key type
  * \tparam BLOCK_THREADS        The thread block size in threads
  * \tparam ITEMS_PER_THREAD     The number of items per thread
@@ -75,6 +58,24 @@ namespace cub {
  * \tparam MEMOIZE_OUTER_SCAN   <b>[optional]</b> Whether or not to buffer outer raking scan partials to incur fewer shared memory reads at the expense of higher register pressure (default: true for architectures SM35 and newer, false otherwise).
  * \tparam INNER_SCAN_ALGORITHM <b>[optional]</b> The cub::BlockScanAlgorithm algorithm to use (default: cub::BLOCK_SCAN_WARP_SCANS)
  * \tparam SMEM_CONFIG          <b>[optional]</b> Shared memory bank mode (default: \p cudaSharedMemBankSizeFourByte)
+ *
+ * \par Overview
+ * - The [<em>radix sorting method</em>](http://en.wikipedia.org/wiki/Radix_sort) arranges
+ *   items into ascending order.  It relies upon a positional representation for
+ *   keys, i.e., each key is comprised of an ordered sequence of symbols (e.g., digits,
+ *   characters, etc.) specified from least-significant to most-significant.  For a
+ *   given input sequence of keys and a set of rules specifying a total ordering
+ *   of the symbolic alphabet, the radix sorting method produces a lexicographic
+ *   ordering of those keys.
+ * - BlockRadixSort can sort all of the built-in C++ numeric primitive types, e.g.:
+ *   <tt>unsigned char</tt>, \p int, \p double, etc.  Within each key, the implementation treats fixed-length
+ *   bit-sequences of \p RADIX_BITS as radix digit places.  Although the direct radix sorting
+ *   method can only be applied to unsigned integral types, BlockRadixSort
+ *   is able to sort signed and floating-point types via simple bit-wise transformations
+ *   that ensure lexicographic key ordering.
+ *
+ * \par Performance Considerations
+ * - \granularity
  *
  * \par A Simple Example
  * \blockcollective{BlockRadixSort}
@@ -435,6 +436,7 @@ public:
      * \brief Performs an ascending block-wide radix sort over a [<em>blocked arrangement</em>](index.html#sec5sec4) of keys.
      *
      * \par
+     * - \granularity
      * - \smemreuse
      *
      * \par
@@ -487,6 +489,7 @@ public:
      *   with a temporary value array that enumerates the key indices.  The reordered indices
      *   can then be used as a gather-vector for exchanging other associated tile data through
      *   shared memory.
+     * - \granularity
      * - \smemreuse
      *
      * \par
@@ -534,6 +537,7 @@ public:
      * \brief Performs a descending block-wide radix sort over a [<em>blocked arrangement</em>](index.html#sec5sec4) of keys.
      *
      * \par
+     * - \granularity
      * - \smemreuse
      *
      * \par
@@ -586,6 +590,7 @@ public:
      *   with a temporary value array that enumerates the key indices.  The reordered indices
      *   can then be used as a gather-vector for exchanging other associated tile data through
      *   shared memory.
+     * - \granularity
      * - \smemreuse
      *
      * \par
@@ -641,6 +646,7 @@ public:
      * \brief Performs an ascending radix sort across a [<em>blocked arrangement</em>](index.html#sec5sec4) of keys, leaving them in a [<em>striped arrangement</em>](index.html#sec5sec4).
      *
      * \par
+     * - \granularity
      * - \smemreuse
      *
      * \par
@@ -694,6 +700,7 @@ public:
      *   with a temporary value array that enumerates the key indices.  The reordered indices
      *   can then be used as a gather-vector for exchanging other associated tile data through
      *  shared memory.
+     * - \granularity
      * - \smemreuse
      *
      * \par
@@ -742,6 +749,7 @@ public:
      * \brief Performs a descending radix sort across a [<em>blocked arrangement</em>](index.html#sec5sec4) of keys, leaving them in a [<em>striped arrangement</em>](index.html#sec5sec4).
      *
      * \par
+     * - \granularity
      * - \smemreuse
      *
      * \par
@@ -795,6 +803,7 @@ public:
      *   with a temporary value array that enumerates the key indices.  The reordered indices
      *   can then be used as a gather-vector for exchanging other associated tile data through
      *   shared memory.
+     * - \granularity
      * - \smemreuse
      *
      * \par

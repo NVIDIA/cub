@@ -523,13 +523,17 @@ enum BlockLoadAlgorithm
  * \ingroup BlockModule
  * \ingroup UtilIo
  *
- * \par Overview
- * The BlockLoad class provides a single data movement abstraction that can be specialized
- * to implement different cub::BlockLoadAlgorithm strategies.  This facilitates different
- * performance policies for different architectures, data types, granularity sizes, etc.
+ * \tparam InputIterator      The input iterator type \iterator.
+ * \tparam BLOCK_THREADS        The thread block size in threads.
+ * \tparam ITEMS_PER_THREAD     The number of consecutive items partitioned onto each thread.
+ * \tparam ALGORITHM            <b>[optional]</b> cub::BlockLoadAlgorithm tuning policy.  default: cub::BLOCK_LOAD_DIRECT.
+ * \tparam WARP_TIME_SLICING    <b>[optional]</b> Whether or not only one warp's worth of shared memory should be allocated and time-sliced among block-warps during any load-related data transpositions (versus each warp having its own storage). (default: false)
  *
- * \par
- * Optionally, BlockLoad can be specialized by different data movement strategies:
+ * \par Overview
+ * - The BlockLoad class provides a single data movement abstraction that can be specialized
+ *   to implement different cub::BlockLoadAlgorithm strategies.  This facilitates different
+ *   performance policies for different architectures, data types, granularity sizes, etc.
+ * - BlockLoad can be optionally specialized by different data movement strategies:
  *   -# <b>cub::BLOCK_LOAD_DIRECT</b>.  A [<em>blocked arrangement</em>](index.html#sec5sec4)
  *      of data is read directly from memory.  [More...](\ref cub::BlockLoadAlgorithm)
  *   -# <b>cub::BLOCK_LOAD_VECTORIZE</b>.  A [<em>blocked arrangement</em>](index.html#sec5sec4)
@@ -541,12 +545,6 @@ enum BlockLoadAlgorithm
  *   -# <b>cub::BLOCK_LOAD_WARP_TRANSPOSE</b>.  A [<em>warp-striped arrangement</em>](index.html#sec5sec4)
  *      of data is read directly from memory and is then locally transposed into a
  *      [<em>blocked arrangement</em>](index.html#sec5sec4).  [More...](\ref cub::BlockLoadAlgorithm)
- *
- * \tparam InputIterator      The input iterator type \iterator.
- * \tparam BLOCK_THREADS        The thread block size in threads.
- * \tparam ITEMS_PER_THREAD     The number of consecutive items partitioned onto each thread.
- * \tparam ALGORITHM            <b>[optional]</b> cub::BlockLoadAlgorithm tuning policy.  default: cub::BLOCK_LOAD_DIRECT.
- * \tparam WARP_TIME_SLICING    <b>[optional]</b> Whether or not only one warp's worth of shared memory should be allocated and time-sliced among block-warps during any load-related data transpositions (versus each warp having its own storage). (default: false)
  *
  * \par A Simple Example
  * \blockcollective{BlockLoad}

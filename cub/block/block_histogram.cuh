@@ -91,20 +91,21 @@ enum BlockHistogramAlgorithm
  * \brief The BlockHistogram class provides [<em>collective</em>](index.html#sec0) methods for constructing block-wide histograms from data samples partitioned across a CUDA thread block. ![](histogram_logo.png)
  * \ingroup BlockModule
  *
- * \par Overview
- * A <a href="http://en.wikipedia.org/wiki/Histogram"><em>histogram</em></a>
- * counts the number of observations that fall into each of the disjoint categories (known as <em>bins</em>).
- *
- * \par
- * Optionally, BlockHistogram can be specialized to use different algorithms:
- *   -# <b>cub::BLOCK_HISTO_SORT</b>.  Sorting followed by differentiation. [More...](\ref cub::BlockHistogramAlgorithm)
- *   -# <b>cub::BLOCK_HISTO_ATOMIC</b>.  Use atomic addition to update byte counts directly. [More...](\ref cub::BlockHistogramAlgorithm)
- *
  * \tparam T                    The sample type being histogrammed (must be castable to an integer bin identifier)
  * \tparam BLOCK_THREADS        The thread block size in threads
  * \tparam ITEMS_PER_THREAD     The number of items per thread
  * \tparam BINS                 The number bins within the histogram
  * \tparam ALGORITHM            <b>[optional]</b> cub::BlockHistogramAlgorithm enumerator specifying the underlying algorithm to use (default: cub::BLOCK_HISTO_SORT)
+ *
+ * \par Overview
+ * - A <a href="http://en.wikipedia.org/wiki/Histogram"><em>histogram</em></a>
+ *   counts the number of observations that fall into each of the disjoint categories (known as <em>bins</em>).
+ * - BlockHistogram can be optionally specialized to use different algorithms:
+ *   -# <b>cub::BLOCK_HISTO_SORT</b>.  Sorting followed by differentiation. [More...](\ref cub::BlockHistogramAlgorithm)
+ *   -# <b>cub::BLOCK_HISTO_ATOMIC</b>.  Use atomic addition to update byte counts directly. [More...](\ref cub::BlockHistogramAlgorithm)
+ *
+ * \par Performance Considerations
+ * - \granularity
  *
  * \par A Simple Example
  * \blockcollective{BlockHistogram}
@@ -318,6 +319,7 @@ public:
      * \brief Constructs a block-wide histogram in shared/global memory.  Each thread contributes an array of input elements.
      *
      * \par
+     * - \granularity
      * - \smemreuse
      *
      * \par
@@ -370,6 +372,7 @@ public:
      * \brief Updates an existing block-wide histogram in shared/global memory.  Each thread composites an array of input elements.
      *
      * \par
+     * - \granularity
      * - \smemreuse
      *
      * \par
