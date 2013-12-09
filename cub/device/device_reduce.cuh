@@ -222,10 +222,15 @@ struct DeviceReduceDispatch
     /// SM30
     struct Policy300
     {
+        enum {
+            NOMINAL_4B_ITEMS_PER_THREAD = 2,
+            ITEMS_PER_THREAD            = CUB_MIN(NOMINAL_4B_ITEMS_PER_THREAD, CUB_MAX(1, (NOMINAL_4B_ITEMS_PER_THREAD * 4 / sizeof(T)))),
+        };
+
         // ReduceRegionPolicy (GTX670: 154.0 @ 48M 4B items)
         typedef BlockReduceRegionPolicy<
                 256,                                ///< Threads per thread block
-                2,                                  ///< Items per thread per tile of input
+                ITEMS_PER_THREAD,                   ///< Items per thread per tile of input
                 1,                                  ///< Number of items per vectorized load
                 BLOCK_REDUCE_WARP_REDUCTIONS,       ///< Cooperative block-wide reduction algorithm to use
                 LOAD_DEFAULT,                       ///< Cache load modifier
@@ -256,10 +261,15 @@ struct DeviceReduceDispatch
                 GRID_MAPPING_EVEN_SHARE>            ///< How to map tiles of input onto thread blocks
             ReduceRegionPolicy1B;
 
+        enum {
+            NOMINAL_4B_ITEMS_PER_THREAD = 8,
+            ITEMS_PER_THREAD            = CUB_MIN(NOMINAL_4B_ITEMS_PER_THREAD, CUB_MAX(1, (NOMINAL_4B_ITEMS_PER_THREAD * 4 / sizeof(T)))),
+        };
+
         // ReduceRegionPolicy4B (GTX 580: 178.9 GB/s @ 48M 4B items)
         typedef BlockReduceRegionPolicy<
                 128,                                ///< Threads per thread block
-                8,                                  ///< Items per thread per tile of input
+                ITEMS_PER_THREAD,                   ///< Items per thread per tile of input
                 4,                                  ///< Number of items per vectorized load
                 BLOCK_REDUCE_RAKING,                ///< Cooperative block-wide reduction algorithm to use
                 LOAD_DEFAULT,                       ///< Cache load modifier
@@ -285,10 +295,15 @@ struct DeviceReduceDispatch
     /// SM13
     struct Policy130
     {
+        enum {
+            NOMINAL_4B_ITEMS_PER_THREAD = 8,
+            ITEMS_PER_THREAD            = CUB_MIN(NOMINAL_4B_ITEMS_PER_THREAD, CUB_MAX(1, (NOMINAL_4B_ITEMS_PER_THREAD * 4 / sizeof(T)))),
+        };
+
         // ReduceRegionPolicy
         typedef BlockReduceRegionPolicy<
                 128,                                ///< Threads per thread block
-                8,                                  ///< Items per thread per tile of input
+                ITEMS_PER_THREAD,                   ///< Items per thread per tile of input
                 2,                                  ///< Number of items per vectorized load
                 BLOCK_REDUCE_RAKING,                ///< Cooperative block-wide reduction algorithm to use
                 LOAD_DEFAULT,                       ///< Cache load modifier
@@ -309,10 +324,15 @@ struct DeviceReduceDispatch
     /// SM10
     struct Policy100
     {
+        enum {
+            NOMINAL_4B_ITEMS_PER_THREAD = 8,
+            ITEMS_PER_THREAD            = CUB_MIN(NOMINAL_4B_ITEMS_PER_THREAD, CUB_MAX(1, (NOMINAL_4B_ITEMS_PER_THREAD * 4 / sizeof(T)))),
+        };
+
         // ReduceRegionPolicy
         typedef BlockReduceRegionPolicy<
                 128,                                ///< Threads per thread block
-                8,                                  ///< Items per thread per tile of input
+                ITEMS_PER_THREAD,                   ///< Items per thread per tile of input
                 2,                                  ///< Number of items per vectorized load
                 BLOCK_REDUCE_RAKING,                ///< Cooperative block-wide reduction algorithm to use
                 LOAD_DEFAULT,                       ///< Cache load modifier
@@ -473,7 +493,6 @@ struct DeviceReduceDispatch
         ReductionOp                 reduction_op,                       ///< [in] Binary reduction operator
         cudaStream_t                stream,                             ///< [in] <b>[optional]</b> CUDA stream to launch kernels within.  Default is stream<sub>0</sub>.
         bool                        debug_synchronous,                  ///< [in] <b>[optional]</b> Whether or not to synchronize the stream after every kernel launch to check for errors.  Also causes launch configurations to be printed to the console.  Default is \p false.
-        int                         sm_version,                         ///< [in] SM version of target device to use when computing SM occupancy
         FillAndResetDrainKernelPtr  prepare_drain_kernel,               ///< [in] Kernel function pointer to parameterization of cub::FillAndResetDrainKernel
         ReduceRegionKernelPtr       reduce_region_kernel,               ///< [in] Kernel function pointer to parameterization of cub::ReduceRegionKernel
         AggregateTileKernelPtr      aggregate_kernel,                   ///< [in] Kernel function pointer to parameterization of cub::SingleTileKernel for consuming partial reductions (T*)
@@ -487,10 +506,21 @@ struct DeviceReduceDispatch
         return CubDebug(cudaErrorNotSupported );
 
 #else
-
         cudaError error = cudaSuccess;
         do
         {
+            // Get device ordinal
+            int device_ordinal;
+            if (CubDebug(error = cudaGetDevice(&device_ordinal))) break;
+
+            // Get device SM version
+            int sm_version;
+            if (CubDebug(error = SmVersion(sm_version, device_ordinal))) break;
+
+            // Get SM count
+            int sm_count;
+            if (CubDebug(error = cudaDeviceGetAttribute (&sm_count, cudaDevAttrMultiProcessorCount, device_ordinal))) break;
+
             // Tile size of reduce_region_kernel
             int tile_size = reduce_region_config.block_threads * reduce_region_config.items_per_thread;
 
@@ -525,14 +555,6 @@ struct DeviceReduceDispatch
                 // Dispatch two kernels: (1) a multi-block kernel to compute
                 // privatized per-block reductions, and (2) a single-block
                 // to reduce those partial reductions
-
-                // Get device ordinal
-                int device_ordinal;
-                if (CubDebug(error = cudaGetDevice(&device_ordinal))) break;
-
-                // Get SM count
-                int sm_count;
-                if (CubDebug(error = cudaDeviceGetAttribute (&sm_count, cudaDevAttrMultiProcessorCount, device_ordinal))) break;
 
                 // Get SM occupancy for reduce_region_kernel
                 int reduce_region_sm_occupancy;
@@ -686,7 +708,6 @@ struct DeviceReduceDispatch
                 reduction_op,
                 stream,
                 debug_synchronous,
-                ptx_version,            // Use PTX version instead of SM version because, as a statically known quantity, this improves device-side launch dramatically but at the risk of imprecise occupancy calculation for mismatches
                 FillAndResetDrainKernel<Offset>,
                 ReduceRegionKernel<PtxReduceRegionPolicy, InputIterator, T*, Offset, ReductionOp>,
                 SingleTileKernel<PtxSingleTilePolicy, T*, OutputIterator, Offset, ReductionOp>,

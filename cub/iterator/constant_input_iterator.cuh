@@ -112,9 +112,11 @@ public:
 
 private:
 
-    ValueType               val;
-    Offset                  offset;
-    CubVector<Offset, 3>    pad;        // Workaround for win32 parameter-passing bug (ulonglong2 argmin DeviceReduce)
+    ValueType   val;
+    Offset      offset;
+#ifdef _WIN32
+    Offset      pad[CUB_MAX(1, (16 / sizeof(Offset) - 1))];        // Workaround for win32 parameter-passing bug (ulonglong2 argmin DeviceReduce)
+#endif
 
 public:
 
