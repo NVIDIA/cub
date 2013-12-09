@@ -212,6 +212,8 @@ int main(int argc, char** argv)
     if (d_num_selected) CubDebugExit(g_allocator.DeviceFree(d_num_selected));
     if (d_temp_storage) CubDebugExit(g_allocator.DeviceFree(d_temp_storage));
 
+    printf("\n\n");
+
     return 0;
 }
 

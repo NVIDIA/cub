@@ -29,7 +29,7 @@
 /******************************************************************************
  * Simple example of DeviceSelect::If().
  *
- * Selects flagged items from from a sequence of int keys using a
+ * Selects items from from a sequence of int keys using a
  * section functor (greater-than)
  *
  * To compile using the command line:
@@ -194,7 +194,7 @@ int main(int argc, char** argv)
 
     int num_selected = Solve(h_in, select_op, h_reference, num_items);
 
-    printf("cub::Select::If %d items, %d selected (avg run length %d), %d-byte elements\n",
+    printf("cub::DeviceSelect::If %d items, %d selected (avg run length %d), %d-byte elements\n",
         num_items, num_selected, (num_selected > 0) ? num_items / num_selected : 0, (int) sizeof(int));
     fflush(stdout);
 
@@ -235,8 +235,8 @@ int main(int argc, char** argv)
     if (d_num_selected) CubDebugExit(g_allocator.DeviceFree(d_num_selected));
     if (d_temp_storage) CubDebugExit(g_allocator.DeviceFree(d_temp_storage));
 
+    printf("\n\n");
+
     return 0;
 }
-
-
 
