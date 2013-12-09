@@ -36,9 +36,11 @@
 #include <stdio.h>
 #include <iostream>
 
-#include <cub/cub.cuh>
+#include <cub/block/block_load.cuh>
+#include <cub/block/block_store.cuh>
+#include <cub/block/block_reduce.cuh>
 
-#include "../test/test_util.h"
+#include "../../test/test_util.h"
 
 using namespace cub;
 
@@ -91,9 +93,6 @@ __global__ void BlockSumKernel(
 
     // Stop cycle timer
     clock_t stop = clock();
-
-    // Store output
-    StoreDirectBlockedVectorized<STORE_DEFAULT>(threadIdx.x, d_out, data);
 
     // Store aggregate and elapsed clocks
     if (threadIdx.x == 0)
@@ -162,16 +161,15 @@ void Test()
         printf("\n\n");
     }
 
-    // CUDA device props
-    Device device;
+    // Kernel props
     int max_sm_occupancy;
-    CubDebugExit(device.Init());
-    CubDebugExit(device.MaxSmOccupancy(max_sm_occupancy, BlockSumKernel<BLOCK_THREADS, ITEMS_PER_THREAD, ALGORITHM>, BLOCK_THREADS));
+    CubDebugExit(MaxSmOccupancy(max_sm_occupancy, BlockSumKernel<BLOCK_THREADS, ITEMS_PER_THREAD, ALGORITHM>, BLOCK_THREADS));
 
     // Copy problem to device
     cudaMemcpy(d_in, h_in, sizeof(int) * TILE_SIZE, cudaMemcpyHostToDevice);
 
-    printf("BlockReduce %d items (%d timing iterations, %d blocks, %d threads, %d items per thread, %d SM occupancy):\n",
+    printf("BlockReduce algorithm %s on %d items (%d timing iterations, %d blocks, %d threads, %d items per thread, %d SM occupancy):\n",
+        (ALGORITHM == BLOCK_REDUCE_RAKING) ? "BLOCK_REDUCE_RAKING" : "BLOCK_REDUCE_WARP_REDUCTIONS",
         TILE_SIZE, g_timing_iterations, g_grid_size, BLOCK_THREADS, ITEMS_PER_THREAD, max_sm_occupancy);
 
     // Run aggregate/prefix kernel
@@ -263,9 +261,6 @@ int main(int argc, char** argv)
     // Initialize device
     CubDebugExit(args.DeviceInit());
 
-
-/** Add tests here **/
-
     // Run tests
     Test<1024, 1, BLOCK_REDUCE_RAKING>();
     Test<512, 2, BLOCK_REDUCE_RAKING>();
@@ -275,7 +270,15 @@ int main(int argc, char** argv)
     Test<32, 32, BLOCK_REDUCE_RAKING>();
     Test<16, 64, BLOCK_REDUCE_RAKING>();
 
-/****/
+    printf("-------------\n");
+
+    Test<1024, 1, BLOCK_REDUCE_WARP_REDUCTIONS>();
+    Test<512, 2, BLOCK_REDUCE_WARP_REDUCTIONS>();
+    Test<256, 4, BLOCK_REDUCE_WARP_REDUCTIONS>();
+    Test<128, 8, BLOCK_REDUCE_WARP_REDUCTIONS>();
+    Test<64, 16, BLOCK_REDUCE_WARP_REDUCTIONS>();
+    Test<32, 32, BLOCK_REDUCE_WARP_REDUCTIONS>();
+    Test<16, 64, BLOCK_REDUCE_WARP_REDUCTIONS>();
 
     return 0;
 }
