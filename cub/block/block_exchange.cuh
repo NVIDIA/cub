@@ -48,24 +48,22 @@ namespace cub {
  * \brief The BlockExchange class provides [<em>collective</em>](index.html#sec0) methods for rearranging data partitioned across a CUDA thread block. ![](transpose_logo.png)
  * \ingroup BlockModule
  *
- * \par Overview
- * It is commonplace for blocks of threads to rearrange data items between
- * threads.  For example, the global memory subsystem prefers access patterns
- * where data items are "striped" across threads (where consecutive threads access consecutive items),
- * yet most block-wide operations prefer a "blocked" partitioning of items across threads
- * (where consecutive items belong to a single thread).
- *
- * \par
- * BlockExchange supports the following types of data exchanges:
- * - Transposing between [<em>blocked</em>](index.html#sec5sec4) and [<em>striped</em>](index.html#sec5sec4) arrangements
- * - Transposing between [<em>blocked</em>](index.html#sec5sec4) and [<em>warp-striped</em>](index.html#sec5sec4) arrangements
- * - Scattering ranked items to a [<em>blocked arrangement</em>](index.html#sec5sec4)
- * - Scattering ranked items to a [<em>striped arrangement</em>](index.html#sec5sec4)
- *
  * \tparam T                    The data type to be exchanged.
  * \tparam BLOCK_THREADS        The thread block size in threads.
  * \tparam ITEMS_PER_THREAD     The number of items partitioned onto each thread.
  * \tparam WARP_TIME_SLICING    <b>[optional]</b> When \p true, only use enough shared memory for a single warp's worth of tile data, time-slicing the block-wide exchange over multiple synchronized rounds.  Yields a smaller memory footprint at the expense of decreased parallelism.  (Default: false)
+ *
+ * \par Overview
+ * - It is commonplace for blocks of threads to rearrange data items between
+ *   threads.  For example, the global memory subsystem prefers access patterns
+ *   where data items are "striped" across threads (where consecutive threads access consecutive items),
+ *   yet most block-wide operations prefer a "blocked" partitioning of items across threads
+ *   (where consecutive items belong to a single thread).
+ * - BlockExchange supports the following types of data exchanges:
+ *   - Transposing between [<em>blocked</em>](index.html#sec5sec4) and [<em>striped</em>](index.html#sec5sec4) arrangements
+ *   - Transposing between [<em>blocked</em>](index.html#sec5sec4) and [<em>warp-striped</em>](index.html#sec5sec4) arrangements
+ *   - Scattering ranked items to a [<em>blocked arrangement</em>](index.html#sec5sec4)
+ *   - Scattering ranked items to a [<em>striped arrangement</em>](index.html#sec5sec4)
  *
  * \par A Simple Example
  * \blockcollective{BlockExchange}

@@ -188,24 +188,35 @@ enum BlockScanAlgorithm
  * \brief The BlockScan class provides [<em>collective</em>](index.html#sec0) methods for computing a parallel prefix sum/scan of items partitioned across a CUDA thread block. ![](block_scan_logo.png)
  * \ingroup BlockModule
  *
- * \par Overview
- * Given a list of input elements and a binary reduction operator, a [<em>prefix scan</em>](http://en.wikipedia.org/wiki/Prefix_sum)
- * produces an output list where each element is computed to be the reduction
- * of the elements occurring earlier in the input list.  <em>Prefix sum</em>
- * connotes a prefix scan with the addition operator. The term \em inclusive indicates
- * that the <em>i</em><sup>th</sup> output reduction incorporates the <em>i</em><sup>th</sup> input.
- * The term \em exclusive indicates the <em>i</em><sup>th</sup> input is not incorporated into
- * the <em>i</em><sup>th</sup> output reduction.
+ * \tparam T                Data type being scanned
+ * \tparam BLOCK_THREADS    The thread block size in threads
+ * \tparam ALGORITHM        <b>[optional]</b> cub::BlockScanAlgorithm enumerator specifying the underlying algorithm to use (default: cub::BLOCK_SCAN_RAKING)
  *
- * \par
- * Optionally, BlockScan can be specialized by algorithm to accommodate different workload profiles:
+ * \par Overview
+ * - Given a list of input elements and a binary reduction operator, a [<em>prefix scan</em>](http://en.wikipedia.org/wiki/Prefix_sum)
+ *   produces an output list where each element is computed to be the reduction
+ *   of the elements occurring earlier in the input list.  <em>Prefix sum</em>
+ *   connotes a prefix scan with the addition operator. The term \em inclusive indicates
+ *   that the <em>i</em><sup>th</sup> output reduction incorporates the <em>i</em><sup>th</sup> input.
+ *   The term \em exclusive indicates the <em>i</em><sup>th</sup> input is not incorporated into
+ *   the <em>i</em><sup>th</sup> output reduction.
+ * - BlockScan can be optionally specialized by algorithm to accommodate different workload profiles:
  *   -# <b>cub::BLOCK_SCAN_RAKING</b>.  An efficient (high throughput) "raking reduce-then-scan" prefix scan algorithm. [More...](\ref cub::BlockScanAlgorithm)
  *   -# <b>cub::BLOCK_SCAN_RAKING_MEMOIZE</b>.  Similar to cub::BLOCK_SCAN_RAKING, but having higher throughput at the expense of additional register pressure for intermediate storage. [More...](\ref cub::BlockScanAlgorithm)
  *   -# <b>cub::BLOCK_SCAN_WARP_SCANS</b>.  A quick (low latency) "tiled warpscans" prefix scan algorithm. [More...](\ref cub::BlockScanAlgorithm)
  *
- * \tparam T                Data type being scanned
- * \tparam BLOCK_THREADS    The thread block size in threads
- * \tparam ALGORITHM        <b>[optional]</b> cub::BlockScanAlgorithm enumerator specifying the underlying algorithm to use (default: cub::BLOCK_SCAN_RAKING)
+ * \par Performance Considerations
+ * - \granularity
+ * - Uses special instructions when applicable (e.g., warp \p SHFL)
+ * - Uses synchronization-free communication between warp lanes when applicable
+ * - Uses only one or two block-wide synchronization barriers (depending on
+ *   algorithm selection)
+ * - Zero bank conflicts for most types
+ * - Computation is slightly more efficient (i.e., having lower instruction overhead) for:
+ *   - Prefix sum variants (<b><em>vs.</em></b> generic scan)
+ *   - Exclusive variants (<b><em>vs.</em></b> inclusive)
+ *   - \p BLOCK_THREADS is a multiple of the architecture's warp size
+ * - See cub::BlockScanAlgorithm for performance details regarding algorithmic alternatives
  *
  * \par A Simple Example
  * \blockcollective{BlockScan}
@@ -238,18 +249,6 @@ enum BlockScanAlgorithm
  * <tt>{[1,1,1,1], [1,1,1,1], ..., [1,1,1,1]}</tt>.
  * The corresponding output \p thread_data in those threads will be
  * <tt>{[0,1,2,3], [4,5,6,7], ..., [508,509,510,511]}</tt>.
- *
- * \par Performance Considerations
- * - Uses special instructions when applicable (e.g., warp \p SHFL)
- * - Uses synchronization-free communication between warp lanes when applicable
- * - Uses only one or two block-wide synchronization barriers (depending on
- *   algorithm selection)
- * - Zero bank conflicts for most types
- * - Computation is slightly more efficient (i.e., having lower instruction overhead) for:
- *   - Prefix sum variants (<b><em>vs.</em></b> generic scan)
- *   - Exclusive variants (<b><em>vs.</em></b> inclusive)
- *   - \p BLOCK_THREADS is a multiple of the architecture's warp size
- * - See cub::BlockScanAlgorithm for performance details regarding algorithmic alternatives
  *
  */
 template <
@@ -559,6 +558,7 @@ public:
      *
      * \par
      * - \blocked
+     * - \granularity
      * - \smemreuse
      *
      * \par
@@ -613,6 +613,7 @@ public:
      *
      * \par
      * - \blocked
+     * - \granularity
      * - \smemreuse
      *
      * \par
@@ -674,6 +675,7 @@ public:
      *   The functor will be invoked by the first warp of threads in the block, however only the return value from
      *   <em>lane</em><sub>0</sub> is applied as the block-wide prefix.  Can be stateful.
      * - \blocked
+     * - \granularity
      * - \smemreuse
      *
      * \par
@@ -986,6 +988,7 @@ public:
      * \par
      * - Supports non-commutative scan operators.
      * - \blocked
+     * - \granularity
      * - \smemreuse
      *
      * \par
@@ -1047,6 +1050,7 @@ public:
      * \par
      * - Supports non-commutative scan operators.
      * - \blocked
+     * - \granularity
      * - \smemreuse
      *
      * \par
@@ -1113,6 +1117,7 @@ public:
      *   <em>lane</em><sub>0</sub> is applied as the block-wide prefix.  Can be stateful.
      * - Supports non-commutative scan operators.
      * - \blocked
+     * - \granularity
      * - \smemreuse
      *
      * \par
@@ -1227,11 +1232,10 @@ public:
     /**
      * \brief Computes an exclusive block-wide prefix scan using the specified binary \p scan_op functor.  Each thread contributes one input element.  With no identity value, the output computed for <em>thread</em><sub>0</sub> is undefined.
      *
-     * Supports non-commutative scan operators.
-     *
-     * \blocked
-     *
-     * \smemreuse
+     * \par
+     * - Supports non-commutative scan operators.
+     * - \blocked
+     * - \smemreuse
      *
      * \tparam ScanOp               <b>[inferred]</b> Binary scan operator type having member <tt>T operator()(const T &a, const T &b)</tt>
      */
@@ -1249,11 +1253,10 @@ public:
     /**
      * \brief Computes an exclusive block-wide prefix scan using the specified binary \p scan_op functor.  Each thread contributes one input element.  Also provides every thread with the block-wide \p block_aggregate of all inputs.  With no identity value, the output computed for <em>thread</em><sub>0</sub> is undefined.
      *
-     * Supports non-commutative scan operators.
-     *
-     * \blocked
-     *
-     * \smemreuse
+     * \par
+     * - Supports non-commutative scan operators.
+     * - \blocked
+     * - \smemreuse
      *
      * \tparam ScanOp   <b>[inferred]</b> Binary scan operator type having member <tt>T operator()(const T &a, const T &b)</tt>
      */
@@ -1276,11 +1279,10 @@ public:
      * The functor will be invoked by the first warp of threads in the block, however only the return value from
      * <em>lane</em><sub>0</sub> is applied as the block-wide prefix.  Can be stateful.
      *
-     * Supports non-commutative scan operators.
-     *
-     * \blocked
-     *
-     * \smemreuse
+     * \par
+     * - Supports non-commutative scan operators.
+     * - \blocked
+     * - \smemreuse
      *
      * \tparam ScanOp               <b>[inferred]</b> Binary scan operator type having member <tt>T operator()(const T &a, const T &b)</tt>
      * \tparam BlockPrefixCallbackOp        <b>[inferred]</b> Call-back functor type having member <tt>T operator()(T block_aggregate)</tt>
@@ -1309,11 +1311,11 @@ public:
     /**
      * \brief Computes an exclusive block-wide prefix scan using the specified binary \p scan_op functor.  Each thread contributes an array of consecutive input elements.  With no identity value, the output computed for <em>thread</em><sub>0</sub> is undefined.
      *
-     * Supports non-commutative scan operators.
-     *
-     * \blocked
-     *
-     * \smemreuse
+     * \par
+     * - Supports non-commutative scan operators.
+     * - \blocked
+     * - \granularity
+     * - \smemreuse
      *
      * \tparam ITEMS_PER_THREAD     <b>[inferred]</b> The number of consecutive items partitioned onto each thread.
      * \tparam ScanOp               <b>[inferred]</b> Binary scan operator type having member <tt>T operator()(const T &a, const T &b)</tt>
@@ -1340,11 +1342,11 @@ public:
     /**
      * \brief Computes an exclusive block-wide prefix scan using the specified binary \p scan_op functor.  Each thread contributes an array of consecutive input elements.  Also provides every thread with the block-wide \p block_aggregate of all inputs.  With no identity value, the output computed for <em>thread</em><sub>0</sub> is undefined.
      *
-     * Supports non-commutative scan operators.
-     *
-     * \blocked
-     *
-     * \smemreuse
+     * \par
+     * - Supports non-commutative scan operators.
+     * - \blocked
+     * - \granularity
+     * - \smemreuse
      *
      * \tparam ITEMS_PER_THREAD     <b>[inferred]</b> The number of consecutive items partitioned onto each thread.
      * \tparam ScanOp               <b>[inferred]</b> Binary scan operator type having member <tt>T operator()(const T &a, const T &b)</tt>
@@ -1377,11 +1379,11 @@ public:
      * The functor will be invoked by the first warp of threads in the block, however only the return value from
      * <em>lane</em><sub>0</sub> is applied as the block-wide prefix.  Can be stateful.
      *
-     * Supports non-commutative scan operators.
-     *
-     * \blocked
-     *
-     * \smemreuse
+     * \par
+     * - Supports non-commutative scan operators.
+     * - \blocked
+     * - \granularity
+     * - \smemreuse
      *
      * \tparam ITEMS_PER_THREAD     <b>[inferred]</b> The number of consecutive items partitioned onto each thread.
      * \tparam ScanOp               <b>[inferred]</b> Binary scan operator type having member <tt>T operator()(const T &a, const T &b)</tt>
@@ -1608,6 +1610,7 @@ public:
      *
      * \par
      * - \blocked
+     * - \granularity
      * - \smemreuse
      *
      * \par
@@ -1669,6 +1672,7 @@ public:
      *
      * \par
      * - \blocked
+     * - \granularity
      * - \smemreuse
      *
      * \par
@@ -1740,6 +1744,7 @@ public:
      *   The functor will be invoked by the first warp of threads in the block, however only the return value from
      *   <em>lane</em><sub>0</sub> is applied as the block-wide prefix.  Can be stateful.
      * - \blocked
+     * - \granularity
      * - \smemreuse
      *
      * \par
@@ -2055,6 +2060,7 @@ public:
      * \par
      * - Supports non-commutative scan operators.
      * - \blocked
+     * - \granularity
      * - \smemreuse
      *
      * \par
@@ -2120,6 +2126,7 @@ public:
      * \par
      * - Supports non-commutative scan operators.
      * - \blocked
+     * - \granularity
      * - \smemreuse
      *
      * \par
@@ -2194,6 +2201,7 @@ public:
      *   <em>lane</em><sub>0</sub> is applied as the block-wide prefix.  Can be stateful.
      * - Supports non-commutative scan operators.
      * - \blocked
+     * - \granularity
      * - \smemreuse
      *
      * \par

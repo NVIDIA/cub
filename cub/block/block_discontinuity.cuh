@@ -46,13 +46,16 @@ namespace cub {
  * \brief The BlockDiscontinuity class provides [<em>collective</em>](index.html#sec0) methods for flagging discontinuities within an ordered set of items partitioned across a CUDA thread block. ![](discont_logo.png)
  * \ingroup BlockModule
  *
- * \par Overview
- * A set of "head flags" (or "tail flags") is often used to indicate corresponding items
- * that differ from their predecessors (or successors).  For example, head flags are convenient
- * for demarcating disjoint data segments as part of a segmented scan or reduction.
- *
  * \tparam T                    The data type to be flagged.
  * \tparam BLOCK_THREADS        The thread block size in threads.
+ *
+ * \par Overview
+ * - A set of "head flags" (or "tail flags") is often used to indicate corresponding items
+ *   that differ from their predecessors (or successors).  For example, head flags are convenient
+ *   for demarcating disjoint data segments as part of a segmented scan or reduction.
+ *
+ * \par Performance Considerations
+ * - \granularity
  *
  * \par A Simple Example
  * \blockcollective{BlockDiscontinuity}
@@ -226,6 +229,7 @@ public:
      *   in the same thread or the last item in the previous thread).
      * - For <em>thread</em><sub>0</sub>, item <tt>input<sub>0</sub></tt> is always flagged.
      * - \blocked
+     * - \granularity
      * - \smemreuse
      *
      * \par
@@ -311,6 +315,7 @@ public:
      * - For <em>thread</em><sub>0</sub>, item <tt>input<sub>0</sub></tt> is compared
      *   against \p tile_predecessor_item.
      * - \blocked
+     * - \granularity
      * - \smemreuse
      *
      * \par
@@ -411,6 +416,7 @@ public:
      * - For <em>thread</em><sub><em>BLOCK_THREADS</em>-1</sub>, item
      *   <tt>input</tt><sub><em>ITEMS_PER_THREAD</em>-1</sub> is always flagged.
      * - \blocked
+     * - \granularity
      * - \smemreuse
      *
      * \par
@@ -497,6 +503,7 @@ public:
      *   <tt>input</tt><sub><em>ITEMS_PER_THREAD</em>-1</sub> is compared
      *   against \p tile_predecessor_item.
      * - \blocked
+     * - \granularity
      * - \smemreuse
      *
      * \par

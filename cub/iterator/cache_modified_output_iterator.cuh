@@ -136,7 +136,7 @@ public:
         thrust::random_access_traversal_tag,
         value_type,
         reference
-      >::type iterator_category;
+      >::type iterator_category;                                        ///< The iterator category
 
 //    typedef std::random_access_iterator_tag     iterator_category;      ///< The iterator category
 

@@ -115,20 +115,19 @@ enum BlockReduceAlgorithm
  * \brief The BlockReduce class provides [<em>collective</em>](index.html#sec0) methods for computing a parallel reduction of items partitioned across a CUDA thread block. ![](reduce_logo.png)
  * \ingroup BlockModule
  *
- * \par Overview
- * A <a href="http://en.wikipedia.org/wiki/Reduce_(higher-order_function)"><em>reduction</em></a> (or <em>fold</em>)
- * uses a binary combining operator to compute a single aggregate from a list of input elements.
- *
- * \par
- * Optionally, BlockReduce can be specialized by algorithm to accommodate different latency/throughput workload profiles:
- *   -# <b>cub::BLOCK_REDUCE_RAKING</b>.  An efficient "raking" reduction algorithm. [More...](\ref cub::BlockReduceAlgorithm)
- *   -# <b>cub::BLOCK_REDUCE_WARP_REDUCTIONS</b>.  A quick "tiled warp-reductions" reduction algorithm. [More...](\ref cub::BlockReduceAlgorithm)
- *
  * \tparam T                Data type being reduced
  * \tparam BLOCK_THREADS    The thread block size in threads
  * \tparam ALGORITHM        <b>[optional]</b> cub::BlockReduceAlgorithm enumerator specifying the underlying algorithm to use (default: cub::BLOCK_REDUCE_RAKING)
  *
+ * \par Overview
+ * - A <a href="http://en.wikipedia.org/wiki/Reduce_(higher-order_function)"><em>reduction</em></a> (or <em>fold</em>)
+ *   uses a binary combining operator to compute a single aggregate from a list of input elements.
+ * - BlockReduce can be optionally specialized by algorithm to accommodate different latency/throughput workload profiles:
+ *   -# <b>cub::BLOCK_REDUCE_RAKING</b>.  An efficient "raking" reduction algorithm. [More...](\ref cub::BlockReduceAlgorithm)
+ *   -# <b>cub::BLOCK_REDUCE_WARP_REDUCTIONS</b>.  A quick "tiled warp-reductions" reduction algorithm. [More...](\ref cub::BlockReduceAlgorithm)
+ *
  * \par Performance Considerations
+ * - \granularity
  * - Very efficient (only one synchronization barrier).
  * - Zero bank conflicts for most types.
  * - Computation is slightly more efficient (i.e., having lower instruction overhead) for:
@@ -322,6 +321,7 @@ public:
      * - The return value is undefined in threads other than thread<sub>0</sub>.
      * - Supports non-commutative reduction operators.
      * - \blocked
+     * - \granularity
      * - \smemreuse
      *
      * \par
@@ -468,6 +468,7 @@ public:
      *
      * \par
      * - The return value is undefined in threads other than thread<sub>0</sub>.
+     * - \granularity
      * - \smemreuse
      *
      * \par

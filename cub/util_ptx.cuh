@@ -340,9 +340,17 @@ __device__ __forceinline__ unsigned int LaneMaskGe()
     return ret;
 }
 
+/** @} */       // end group UtilPtx
+
+
+
 
 /**
- * \brief Shuffle-up for any data type.  Each <em>warp-lane<sub>i</sub></em> obtains the value \p input contributed by <em>warp-lane</em><sub><em>i</em>-<tt>src_offset</tt></sub>.  For thread lanes \e i < src_offset, the thread's own \p input is returned to the thread.  For SM3.0 or later.
+ * \brief Shuffle-up for any data type.  Each <em>warp-lane<sub>i</sub></em> obtains the value \p input contributed by <em>warp-lane</em><sub><em>i</em>-<tt>src_offset</tt></sub>.  For thread lanes \e i < src_offset, the thread's own \p input is returned to the thread. ![](shfl_up_logo.png)
+ * \ingroup WarpModule
+ *
+ * \par
+ * - Available only for SM3.0 or newer
  *
  * \par
  * The code snippet below illustrates each thread obtaining a \p double value from the
@@ -397,7 +405,11 @@ __device__ __forceinline__ T ShuffleUp(
 
 
 /**
- * \brief Shuffle-down for any data type.  Each <em>warp-lane<sub>i</sub></em> obtains the value \p input contributed by <em>warp-lane</em><sub><em>i</em>+<tt>src_offset</tt></sub>.  For thread lanes \e i >= WARP_THREADS, the thread's own \p input is returned to the thread.  For SM3.0 or later.
+ * \brief Shuffle-down for any data type.  Each <em>warp-lane<sub>i</sub></em> obtains the value \p input contributed by <em>warp-lane</em><sub><em>i</em>+<tt>src_offset</tt></sub>.  For thread lanes \e i >= WARP_THREADS, the thread's own \p input is returned to the thread.  ![](shfl_down_logo.png)
+ * \ingroup WarpModule
+ *
+ * \par
+ * - Available only for SM3.0 or newer
  *
  * \par
  * The code snippet below illustrates each thread obtaining a \p double value from the
@@ -453,7 +465,11 @@ __device__ __forceinline__ T ShuffleDown(
 #ifndef DOXYGEN_SHOULD_SKIP_THIS    // Do not document
 
 /**
- * \brief Shuffle-broadcast for any data type.  Each <em>warp-lane<sub>i</sub></em> obtains the value \p input contributed by <em>warp-lane</em><sub><tt>src_lane</tt></sub>.  For \p src_lane < 0 or \p src_lane >= WARP_THREADS, then the thread's own \p input is returned to the thread.  For SM3.0 or later.
+ * \brief Shuffle-broadcast for any data type.  Each <em>warp-lane<sub>i</sub></em> obtains the value \p input contributed by <em>warp-lane</em><sub><tt>src_lane</tt></sub>.  For \p src_lane < 0 or \p src_lane >= WARP_THREADS, then the thread's own \p input is returned to the thread.  ![](shfl_broadcast_logo.png)
+ * \ingroup WarpModule
+ *
+ * \par
+ * - Available only for SM3.0 or newer
  */
 template <typename T>
 __device__ __forceinline__ T ShuffleBroadcast(
@@ -484,10 +500,17 @@ __device__ __forceinline__ T ShuffleBroadcast(
 
 
  /**
- * \brief Shuffle-broadcast for any data type.  Each <em>warp-lane<sub>i</sub></em> obtains the value \p input contributed by <em>warp-lane</em><sub><tt>src_lane</tt></sub>.  For \p src_lane < 0 or \p src_lane >= WARP_THREADS, then the thread's own \p input is returned to the thread.  For SM3.0 or later.
+ * \brief Shuffle-broadcast for any data type.  Each <em>warp-lane<sub>i</sub></em> obtains the value \p input contributed by <em>warp-lane</em><sub><tt>src_lane</tt></sub>.  For \p src_lane < 0 or \p src_lane >= WARP_THREADS, then the thread's own \p input is returned to the thread. ![](shfl_broadcast_logo.png)
+ * \ingroup WarpModule
+ *
+ * \par
+ * - Available only for SM3.0 or newer
  *
  * \par
  * The code snippet below illustrates each thread obtaining a \p double value from <em>warp-lane</em><sub>0</sub>.
+ *
+ * Blah
+ *
  * \par
  * \code
  * #include <cub/cub.cuh>
@@ -516,7 +539,6 @@ __device__ __forceinline__ T ShuffleBroadcast(
 
 
 
-/** @} */       // end group UtilPtx
 
 
 /**
