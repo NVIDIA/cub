@@ -291,7 +291,7 @@ cudaError_t MaxSmOccupancy(
 
     return error;
 
-#endif
+#endif  // CUB_RUNTIME_ENABLED
 }
 
 #endif  // Do not document
@@ -335,6 +335,13 @@ cudaError_t MaxSmOccupancy(
     KernelPtr           kernel_ptr,                 ///< [in] Kernel pointer for which to compute SM occupancy
     int                 block_threads)              ///< [in] Number of threads per thread block
 {
+#ifndef CUB_RUNTIME_ENABLED
+
+    // CUDA API calls not supported from this device
+    return CubDebug(cudaErrorInvalidConfiguration);
+
+#else
+
     cudaError_t error = cudaSuccess;
     do
     {
@@ -347,11 +354,13 @@ cudaError_t MaxSmOccupancy(
         if (CubDebug(error = SmVersion(sm_version, device_ordinal))) break;
 
         // Get SM occupancy
-        if (CubDebug(error = MaxSmOccupancy(max_sm_occupancy, kernel_ptr, block_threads))) break;
+        if (CubDebug(error = MaxSmOccupancy(max_sm_occupancy, sm_version, kernel_ptr, block_threads))) break;
 
     } while (0);
 
     return error;
+
+#endif  // CUB_RUNTIME_ENABLED
 
 }
 

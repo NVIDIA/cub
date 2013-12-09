@@ -32,19 +32,21 @@
 
 // Ensure printing of CUDA runtime errors to console (define before including cub.h)
 #define CUB_STDERR
-
+/*
 #if defined(_WIN32) || defined(_WIN64)
     #include <windows.h>
     #undef small            // Windows is terrible for polluting macro namespace
 #else
     #include <sys/resource.h>
 #endif
-
+*/
 #include <stdio.h>
 #include <iostream>
 #include <algorithm>
 
-#include <cub/cub.cuh>
+#include <cub/block/block_load.cuh>
+#include <cub/block/block_store.cuh>
+#include <cub/block/block_radix_sort.cuh>
 
 #include "../../test/test_util.h"
 
@@ -172,7 +174,7 @@ template <
     typename    Key,
     int         BLOCK_THREADS,
     int         ITEMS_PER_THREAD>
-void Test(int sm_version)
+void Test()
 {
     const int TILE_SIZE = BLOCK_THREADS * ITEMS_PER_THREAD;
 
@@ -203,7 +205,7 @@ void Test(int sm_version)
 
     // Kernel props
     int max_sm_occupancy;
-    CubDebugExit(MaxSmOccupancy(max_sm_occupancy, sm_version, BlockSortKernel<Key, BLOCK_THREADS, ITEMS_PER_THREAD>, BLOCK_THREADS));
+    CubDebugExit(MaxSmOccupancy(max_sm_occupancy, BlockSortKernel<Key, BLOCK_THREADS, ITEMS_PER_THREAD>, BLOCK_THREADS));
 
     // Copy problem to device
     CubDebugExit(cudaMemcpy(d_in, h_in, sizeof(Key) * TILE_SIZE * g_grid_size, cudaMemcpyHostToDevice));
@@ -305,25 +307,17 @@ int main(int argc, char** argv)
     CubDebugExit(args.DeviceInit());
     fflush(stdout);
 
-    // Get device ordinal
-    int device_ordinal;
-    CubDebugExit(cudaGetDevice(&device_ordinal));
-
-    // Get device SM version
-    int sm_version;
-    CubDebugExit(SmVersion(sm_version, device_ordinal));
-
     // Run tests
     printf("\nuint32:\n"); fflush(stdout);
-    Test<unsigned int, 128, 13>(sm_version);
+    Test<unsigned int, 128, 13>();
     printf("\n"); fflush(stdout);
 
     printf("\nfp32:\n"); fflush(stdout);
-    Test<float, 128, 13>(sm_version);
+    Test<float, 128, 13>();
     printf("\n"); fflush(stdout);
 
     printf("\nuint8:\n"); fflush(stdout);
-    Test<unsigned char, 128, 13>(sm_version);
+    Test<unsigned char, 128, 13>();
     printf("\n"); fflush(stdout);
 
     return 0;
