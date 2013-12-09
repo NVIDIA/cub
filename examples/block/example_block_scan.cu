@@ -41,9 +41,11 @@
 #include <stdio.h>
 #include <iostream>
 
-#include <cub/cub.cuh>
+#include <cub/block/block_load.cuh>
+#include <cub/block/block_store.cuh>
+#include <cub/block/block_scan.cuh>
 
-#include "../test/test_util.h"
+#include "../../test/test_util.h"
 
 using namespace cub;
 
@@ -70,35 +72,55 @@ int g_grid_size = 1;
  * Simple kernel for performing a block-wide exclusive prefix sum over integers
  */
 template <
-    int         BLOCK_THREADS,
-    int         ITEMS_PER_THREAD>
+    int                     BLOCK_THREADS,
+    int                     ITEMS_PER_THREAD,
+    BlockScanAlgorithm      ALGORITHM>
 __global__ void BlockPrefixSumKernel(
     int         *d_in,          // Tile of input
     int         *d_out,         // Tile of output
     clock_t     *d_elapsed)     // Elapsed cycle count of block scan
 {
+    // Specialize BlockLoad type for our thread block (uses warp-striped loads for coalescing, then transposes in shared memory to a blocked arrangement)
+    typedef BlockLoad<int*, BLOCK_THREADS, ITEMS_PER_THREAD, BLOCK_LOAD_WARP_TRANSPOSE> BlockLoadT;
+
+    // Specialize BlockStore type for our thread block (uses warp-striped loads for coalescing, then transposes in shared memory to a blocked arrangement)
+    typedef BlockStore<int*, BLOCK_THREADS, ITEMS_PER_THREAD, BLOCK_STORE_WARP_TRANSPOSE> BlockStoreT;
+
     // Specialize BlockScan type for our thread block
-    typedef BlockScan<int, BLOCK_THREADS> BlockScanT;
+    typedef BlockScan<int, BLOCK_THREADS, ALGORITHM> BlockScanT;
 
     // Shared memory
-    __shared__ typename BlockScanT::TempStorage temp_storage;
+    __shared__ union
+    {
+        typename BlockLoadT::TempStorage    load;
+        typename BlockStoreT::TempStorage   store;
+        typename BlockScanT::TempStorage    scan;
+    } temp_storage;
 
     // Per-thread tile data
     int data[ITEMS_PER_THREAD];
-    LoadDirectBlockedVectorized<LOAD_DEFAULT>(threadIdx.x, d_in, data);
+
+    // Load items into a blocked arrangement
+    BlockLoadT(temp_storage.load).Load(d_in, data);
+
+    // Barrier for smem reuse
+    __syncthreads();
 
     // Start cycle timer
     clock_t start = clock();
 
     // Compute exclusive prefix sum
     int aggregate;
-    BlockScanT(temp_storage).ExclusiveSum(data, data, aggregate);
+    BlockScanT(temp_storage.scan).ExclusiveSum(data, data, aggregate);
 
     // Stop cycle timer
     clock_t stop = clock();
 
-    // Store output
-    StoreDirectBlockedVectorized<STORE_DEFAULT>(threadIdx.x, d_out, data);
+    // Barrier for smem reuse
+    __syncthreads();
+
+    // Store items from a blocked arrangement
+    BlockStoreT(temp_storage.store).Store(d_out, data);
 
     // Store aggregate and elapsed clocks
     if (threadIdx.x == 0)
@@ -141,8 +163,9 @@ int Initialize(
  * Test thread block scan
  */
 template <
-    int BLOCK_THREADS,
-    int ITEMS_PER_THREAD>
+    int                 BLOCK_THREADS,
+    int                 ITEMS_PER_THREAD,
+    BlockScanAlgorithm  ALGORITHM>
 void Test()
 {
     const int TILE_SIZE = BLOCK_THREADS * ITEMS_PER_THREAD;
@@ -172,20 +195,19 @@ void Test()
         printf("\n\n");
     }
 
-    // CUDA device props
-    Device device;
+    // Kernel props
     int max_sm_occupancy;
-    CubDebugExit(device.Init());
-    CubDebugExit(device.MaxSmOccupancy(max_sm_occupancy, BlockPrefixSumKernel<BLOCK_THREADS, ITEMS_PER_THREAD>, BLOCK_THREADS));
+    CubDebugExit(MaxSmOccupancy(max_sm_occupancy, BlockPrefixSumKernel<BLOCK_THREADS, ITEMS_PER_THREAD, ALGORITHM>, BLOCK_THREADS));
 
     // Copy problem to device
     cudaMemcpy(d_in, h_in, sizeof(int) * TILE_SIZE, cudaMemcpyHostToDevice);
 
-    printf("BlockScan %d items (%d timing iterations, %d blocks, %d threads, %d items per thread, %d SM occupancy):\n",
+    printf("BlockScan algorithm %s on %d items (%d timing iterations, %d blocks, %d threads, %d items per thread, %d SM occupancy):\n",
+        (ALGORITHM == BLOCK_SCAN_RAKING) ? "BLOCK_SCAN_RAKING" : (ALGORITHM == BLOCK_SCAN_RAKING_MEMOIZE) ? "BLOCK_SCAN_RAKING_MEMOIZE" : "BLOCK_SCAN_WARP_SCANS",
         TILE_SIZE, g_timing_iterations, g_grid_size, BLOCK_THREADS, ITEMS_PER_THREAD, max_sm_occupancy);
 
     // Run aggregate/prefix kernel
-    BlockPrefixSumKernel<BLOCK_THREADS, ITEMS_PER_THREAD><<<g_grid_size, BLOCK_THREADS>>>(
+    BlockPrefixSumKernel<BLOCK_THREADS, ITEMS_PER_THREAD, ALGORITHM><<<g_grid_size, BLOCK_THREADS>>>(
         d_in,
         d_out,
         d_elapsed);
@@ -215,7 +237,7 @@ void Test()
         timer.Start();
 
         // Run aggregate/prefix kernel
-        BlockPrefixSumKernel<BLOCK_THREADS, ITEMS_PER_THREAD><<<g_grid_size, BLOCK_THREADS>>>(
+        BlockPrefixSumKernel<BLOCK_THREADS, ITEMS_PER_THREAD, ALGORITHM><<<g_grid_size, BLOCK_THREADS>>>(
             d_in,
             d_out,
             d_elapsed);
@@ -280,19 +302,32 @@ int main(int argc, char** argv)
     // Initialize device
     CubDebugExit(args.DeviceInit());
 
-
-/** Add tests here **/
-
     // Run tests
-    Test<1024, 1>();
-    Test<512, 2>();
-    Test<256, 4>();
-    Test<128, 8>();
-    Test<64, 16>();
-    Test<32, 32>();
-    Test<16, 64>();
+    Test<1024, 1, BLOCK_SCAN_RAKING>();
+    Test<512, 2, BLOCK_SCAN_RAKING>();
+    Test<256, 4, BLOCK_SCAN_RAKING>();
+    Test<128, 8, BLOCK_SCAN_RAKING>();
+    Test<64, 16, BLOCK_SCAN_RAKING>();
+    Test<32, 32, BLOCK_SCAN_RAKING>();
 
-/****/
+    printf("-------------\n");
+
+    Test<1024, 1, BLOCK_SCAN_RAKING_MEMOIZE>();
+    Test<512, 2, BLOCK_SCAN_RAKING_MEMOIZE>();
+    Test<256, 4, BLOCK_SCAN_RAKING_MEMOIZE>();
+    Test<128, 8, BLOCK_SCAN_RAKING_MEMOIZE>();
+    Test<64, 16, BLOCK_SCAN_RAKING_MEMOIZE>();
+    Test<32, 32, BLOCK_SCAN_RAKING_MEMOIZE>();
+
+    printf("-------------\n");
+
+    Test<1024, 1, BLOCK_SCAN_WARP_SCANS>();
+    Test<512, 2, BLOCK_SCAN_WARP_SCANS>();
+    Test<256, 4, BLOCK_SCAN_WARP_SCANS>();
+    Test<128, 8, BLOCK_SCAN_WARP_SCANS>();
+    Test<64, 16, BLOCK_SCAN_WARP_SCANS>();
+    Test<32, 32, BLOCK_SCAN_WARP_SCANS>();
+
 
     return 0;
 }
