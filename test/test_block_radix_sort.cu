@@ -550,6 +550,10 @@ template <
     cudaSharedMemConfig     SMEM_CONFIG>
 void Test()
 {
+    // Get ptx version
+    int ptx_version;
+    CubDebugExit(PtxVersion(ptx_version));
+
     // Keep compiled test cases reasonable by testing the unsigned types with no values (because we will test associated values with signed integer types)
     Test<BLOCK_THREADS, ITEMS_PER_THREAD, RADIX_BITS, MEMOIZE_OUTER_SCAN, INNER_SCAN_ALGORITHM, SMEM_CONFIG, unsigned char,         NullType>();
     Test<BLOCK_THREADS, ITEMS_PER_THREAD, RADIX_BITS, MEMOIZE_OUTER_SCAN, INNER_SCAN_ALGORITHM, SMEM_CONFIG, unsigned short,        NullType>();
@@ -565,7 +569,9 @@ void Test()
 
     // Keep compiled test cases reasonable by testing the floating point types with no values (because we will test associated values with signed integer types)
     Test<BLOCK_THREADS, ITEMS_PER_THREAD, RADIX_BITS, MEMOIZE_OUTER_SCAN, INNER_SCAN_ALGORITHM, SMEM_CONFIG, float,    NullType>();
-    Test<BLOCK_THREADS, ITEMS_PER_THREAD, RADIX_BITS, MEMOIZE_OUTER_SCAN, INNER_SCAN_ALGORITHM, SMEM_CONFIG, double,    NullType>();
+
+    if (ptx_version > 100)                          // Don't check doubles on PTX100 because they're down-converted
+        Test<BLOCK_THREADS, ITEMS_PER_THREAD, RADIX_BITS, MEMOIZE_OUTER_SCAN, INNER_SCAN_ALGORITHM, SMEM_CONFIG, double,    NullType>();
 }
 
 

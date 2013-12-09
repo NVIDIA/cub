@@ -697,6 +697,10 @@ int main(int argc, char** argv)
     // Initialize device
     CubDebugExit(args.DeviceInit());
 
+    // Get ptx version
+    int ptx_version;
+    CubDebugExit(PtxVersion(ptx_version));
+
     if (quick)
     {
         if (num_items < 0) num_items = 32000000;
@@ -730,7 +734,9 @@ int main(int argc, char** argv)
             TestItems<unsigned long long>   (num_items, 0, g_bits, CUB_TYPE_STRING(unsigned long long));
 
             TestItems<float>                (num_items, 0, g_bits, CUB_TYPE_STRING(float));
-            TestItems<double>               (num_items, 0, g_bits, CUB_TYPE_STRING(double));
+
+            if (ptx_version > 100)                          // Don't check doubles on PTX100 because they're down-converted
+                TestItems<double>               (num_items, 0, g_bits, CUB_TYPE_STRING(double));
         }
     }
 
