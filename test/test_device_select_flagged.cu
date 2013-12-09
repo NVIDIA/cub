@@ -517,7 +517,7 @@ void TestPointer(
     Initialize(entropy_reduction, h_in, h_flags, num_items, max_segment);
     int num_selected = Solve(h_in, h_flags, h_reference, num_items);
 
-    printf("\nPointer %s cub::%s::Flagged %d items, %d selected (avg run length %d), %s %d-byte elements, entropy_reduction %d\n",
+    printf("\nPointer %s cub::%s::Flagged %d items, %d selected (avg distance %d), %s %d-byte elements, entropy_reduction %d\n",
         (PARTITION) ? "DevicePartition" : "DeviceSelect",
         (BACKEND == CDP) ? "CDP CUB" : (BACKEND == THRUST) ? "Thrust" : "CUB",
         num_items, num_selected, (num_selected > 0) ? num_items / num_selected : 0,
@@ -572,7 +572,7 @@ void TestIterator(
     // Initialize problem and solution
     int num_selected = Solve(h_in, h_flags, h_reference, num_items);
 
-    printf("\nIterator %s cub::DeviceSelect::Flagged %d items, %d selected (avg run length %d), %s %d-byte elements\n",
+    printf("\nIterator %s cub::DeviceSelect::Flagged %d items, %d selected (avg distance %d), %s %d-byte elements\n",
         (BACKEND == CDP) ? "CDP CUB" : (BACKEND == THRUST) ? "Thrust" : "CUB",
         num_items, num_selected, (num_selected > 0) ? num_items / num_selected : 0,
         type_string,

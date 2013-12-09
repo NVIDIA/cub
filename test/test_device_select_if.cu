@@ -514,7 +514,7 @@ void TestPointer(
     GreaterThan<T> select_op(h_in[pivot_idx]);
     int num_selected = Solve(h_in, select_op, h_reference, num_items);
 
-    printf("\nPointer %s cub::%s::If %d items, %d selected (avg run length %d), %s %d-byte elements, entropy_reduction %d\n",
+    printf("\nPointer %s cub::%s::If %d items, %d selected (avg distance %d), %s %d-byte elements, entropy_reduction %d\n",
         (PARTITION) ? "DevicePartition" : "DeviceSelect",
         (BACKEND == CDP) ? "CDP CUB" : (BACKEND == THRUST) ? "Thrust" : "CUB",
         num_items, num_selected, (num_selected > 0) ? num_items / num_selected : 0,
@@ -588,7 +588,7 @@ void TestIterator(
     GreaterThan<T> select_op(h_in[pivot_idx]);
     int num_selected = Solve(h_in, select_op, h_reference, num_items);
 
-    printf("\nIterator %s cub::DeviceSelect::If %d items, %d selected (avg run length %d), %s %d-byte elements\n",
+    printf("\nIterator %s cub::DeviceSelect::If %d items, %d selected (avg distance %d), %s %d-byte elements\n",
         (BACKEND == CDP) ? "CDP CUB" : (BACKEND == THRUST) ? "Thrust" : "CUB",
         num_items, num_selected, (num_selected > 0) ? num_items / num_selected : 0,
         type_string,
