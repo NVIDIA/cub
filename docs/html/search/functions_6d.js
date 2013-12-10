@@ -1,7 +1,9 @@
 var searchData=
 [
-  ['maxsmoccupancy',['MaxSmOccupancy',['../classcub_1_1_device.html#a618bbf36a5737a9b1533ff65834e88e8',1,'cub::Device']]],
-  ['multichannelglobalatomic',['MultiChannelGlobalAtomic',['../structcub_1_1_device_histogram.html#a0e6bee2938ad70ab128ed1a1c5f6d083',1,'cub::DeviceHistogram']]],
-  ['multichannelsharedatomic',['MultiChannelSharedAtomic',['../structcub_1_1_device_histogram.html#a9744fa6ed9761986c6c13afdcb20909d',1,'cub::DeviceHistogram']]],
-  ['multichannelsorting',['MultiChannelSorting',['../structcub_1_1_device_histogram.html#a7f9a00987e98b828823f062d563aaa8c',1,'cub::DeviceHistogram']]]
+  ['max',['Max',['../structcub_1_1_device_reduce.html#a335a77d51f436c8840b50f53cab137a5',1,'cub::DeviceReduce']]],
+  ['maxsmoccupancy',['MaxSmOccupancy',['../group___util_mgmt.html#ga364b8a84e613c62761d58afb351a258b',1,'cub']]],
+  ['min',['Min',['../structcub_1_1_device_reduce.html#adada0367d1c362e753ebf1af1045e854',1,'cub::DeviceReduce']]],
+  ['multichannelglobalatomic',['MultiChannelGlobalAtomic',['../structcub_1_1_device_histogram.html#a68bc1ee2969f3baf474014ac74789806',1,'cub::DeviceHistogram']]],
+  ['multichannelsharedatomic',['MultiChannelSharedAtomic',['../structcub_1_1_device_histogram.html#a4060f0707d219b7ee36e6dfa7121052b',1,'cub::DeviceHistogram']]],
+  ['multichannelsorting',['MultiChannelSorting',['../structcub_1_1_device_histogram.html#a9278e6481bf016625a0e2159e59850f6',1,'cub::DeviceHistogram']]]
 ];

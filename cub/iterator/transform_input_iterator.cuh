@@ -73,7 +73,7 @@ namespace cub {
  * dereference an array of integers, tripling the values and converting them to doubles.
  * \par
  * \code
- * #include <cub/cub.cuh>
+ * #include <cub/cub.cuh>   // or equivalently <cub/iterator/transform_input_iterator.cuh>
  *
  * // Functor for tripling integer values and converting to doubles
  * struct TripleDoubler

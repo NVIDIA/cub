@@ -114,7 +114,7 @@ enum BlockHistogramAlgorithm
  * are partitioned across 128 threads where each thread owns 4 samples.
  * \par
  * \code
- * #include <cub/cub.cuh>
+ * #include <cub/cub.cuh>   // or equivalently <cub/block/block_histogram.cuh>
  *
  * __global__ void ExampleKernel(...)
  * {
@@ -269,7 +269,7 @@ public:
      * where each thread owns 4 samples.
      * \par
      * \code
-     * #include <cub/cub.cuh>
+     * #include <cub/cub.cuh>   // or equivalently <cub/block/block_histogram.cuh>
      *
      * __global__ void ExampleKernel(...)
      * {
@@ -327,7 +327,7 @@ public:
      * are partitioned across 128 threads where each thread owns 4 samples.
      * \par
      * \code
-     * #include <cub/cub.cuh>
+     * #include <cub/cub.cuh>   // or equivalently <cub/block/block_histogram.cuh>
      *
      * __global__ void ExampleKernel(...)
      * {
@@ -381,7 +381,7 @@ public:
      * where each thread owns 4 samples.
      * \par
      * \code
-     * #include <cub/cub.cuh>
+     * #include <cub/cub.cuh>   // or equivalently <cub/block/block_histogram.cuh>
      *
      * __global__ void ExampleKernel(...)
      * {

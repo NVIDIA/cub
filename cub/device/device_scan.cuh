@@ -626,7 +626,7 @@ struct DeviceScan
      * The code snippet below illustrates the exclusive prefix sum of an \p int device vector.
      * \par
      * \code
-     * #include <cub/cub.cuh>
+     * #include <cub/cub.cuh>   // or equivalently <cub/device/device_scan.cuh>
      *
      * // Declare, allocate, and initialize device pointers for input and output
      * int  num_items;      // e.g., 7
@@ -696,7 +696,7 @@ struct DeviceScan
      * The code snippet below illustrates the exclusive prefix min-scan of an \p int device vector
      * \par
      * \code
-     * #include <cub/cub.cuh>
+     * #include <cub/cub.cuh>   // or equivalently <cub/device/device_scan.cuh>
      *
      * // MyMin functor
      * struct MyMin
@@ -787,7 +787,7 @@ struct DeviceScan
      * The code snippet below illustrates the inclusive prefix sum of an \p int device vector.
      * \par
      * \code
-     * #include <cub/cub.cuh>
+     * #include <cub/cub.cuh>   // or equivalently <cub/device/device_scan.cuh>
      *
      * // Declare, allocate, and initialize device pointers for input and output
      * int  num_items;      // e.g., 7
@@ -854,7 +854,7 @@ struct DeviceScan
      * The code snippet below illustrates the inclusive prefix min-scan of an \p int device vector.
      * \par
      * \code
-     * #include <cub/cub.cuh>
+     * #include <cub/cub.cuh>   // or equivalently <cub/device/device_scan.cuh>
      *
      * // MyMin functor
      * struct MyMin
