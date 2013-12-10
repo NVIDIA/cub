@@ -52,6 +52,7 @@ var searchBox = new SearchBox("searchBox", "search",false,'Search');
       <li><a href="index.html"><span>Main&#160;Page</span></a></li>
       <li><a href="modules.html"><span>Modules</span></a></li>
       <li><a href="annotated.html"><span>Classes</span></a></li>
+      <li><a href="examples.html"><span>Examples</span></a></li>
       <li>
         <div id="MSearchBox" class="MSearchBoxInactive">
         <span class="left">
@@ -81,7 +82,7 @@ var searchBox = new SearchBox("searchBox", "search",false,'Search');
      onmouseover="return searchBox.OnSearchSelectShow()"
      onmouseout="return searchBox.OnSearchSelectHide()"
      onkeydown="return searchBox.OnSearchSelectKey(event)">
-<a class="SelectItem" href="javascript:void(0)" onclick="searchBox.OnSelectItem(0)"><span class="SelectionMark">&#160;</span>All</a><a class="SelectItem" href="javascript:void(0)" onclick="searchBox.OnSelectItem(1)"><span class="SelectionMark">&#160;</span>Classes</a><a class="SelectItem" href="javascript:void(0)" onclick="searchBox.OnSelectItem(2)"><span class="SelectionMark">&#160;</span>Namespaces</a><a class="SelectItem" href="javascript:void(0)" onclick="searchBox.OnSelectItem(3)"><span class="SelectionMark">&#160;</span>Files</a><a class="SelectItem" href="javascript:void(0)" onclick="searchBox.OnSelectItem(4)"><span class="SelectionMark">&#160;</span>Functions</a><a class="SelectItem" href="javascript:void(0)" onclick="searchBox.OnSelectItem(5)"><span class="SelectionMark">&#160;</span>Variables</a><a class="SelectItem" href="javascript:void(0)" onclick="searchBox.OnSelectItem(6)"><span class="SelectionMark">&#160;</span>Typedefs</a><a class="SelectItem" href="javascript:void(0)" onclick="searchBox.OnSelectItem(7)"><span class="SelectionMark">&#160;</span>Enumerations</a><a class="SelectItem" href="javascript:void(0)" onclick="searchBox.OnSelectItem(8)"><span class="SelectionMark">&#160;</span>Enumerator</a><a class="SelectItem" href="javascript:void(0)" onclick="searchBox.OnSelectItem(9)"><span class="SelectionMark">&#160;</span>Groups</a></div>
+<a class="SelectItem" href="javascript:void(0)" onclick="searchBox.OnSelectItem(0)"><span class="SelectionMark">&#160;</span>All</a><a class="SelectItem" href="javascript:void(0)" onclick="searchBox.OnSelectItem(1)"><span class="SelectionMark">&#160;</span>Classes</a><a class="SelectItem" href="javascript:void(0)" onclick="searchBox.OnSelectItem(2)"><span class="SelectionMark">&#160;</span>Namespaces</a><a class="SelectItem" href="javascript:void(0)" onclick="searchBox.OnSelectItem(3)"><span class="SelectionMark">&#160;</span>Files</a><a class="SelectItem" href="javascript:void(0)" onclick="searchBox.OnSelectItem(4)"><span class="SelectionMark">&#160;</span>Functions</a><a class="SelectItem" href="javascript:void(0)" onclick="searchBox.OnSelectItem(5)"><span class="SelectionMark">&#160;</span>Variables</a><a class="SelectItem" href="javascript:void(0)" onclick="searchBox.OnSelectItem(6)"><span class="SelectionMark">&#160;</span>Typedefs</a><a class="SelectItem" href="javascript:void(0)" onclick="searchBox.OnSelectItem(7)"><span class="SelectionMark">&#160;</span>Enumerations</a><a class="SelectItem" href="javascript:void(0)" onclick="searchBox.OnSelectItem(8)"><span class="SelectionMark">&#160;</span>Enumerator</a><a class="SelectItem" href="javascript:void(0)" onclick="searchBox.OnSelectItem(9)"><span class="SelectionMark">&#160;</span>Friends</a><a class="SelectItem" href="javascript:void(0)" onclick="searchBox.OnSelectItem(10)"><span class="SelectionMark">&#160;</span>Groups</a></div>
 
 <!-- iframe showing the search results (closed by default) -->
 <div id="MSearchResultsWindow">
@@ -97,7 +98,6 @@ var searchBox = new SearchBox("searchBox", "search",false,'Search');
 </div><!-- top -->
 <div class="header">
   <div class="summary">
-<a href="#nested-classes">Classes</a> &#124;
 <a href="#namespaces">Namespaces</a> &#124;
 <a href="#define-members">Macros</a>  </div>
   <div class="headertitle">
@@ -108,15 +108,6 @@ var searchBox = new SearchBox("searchBox", "search",false,'Search');
 </div>
 <p><a href="util__arch_8cuh_source.html">Go to the source code of this file.</a></p>
 <table class="memberdecls">
-<tr class="heading"><td colspan="2"><h2 class="groupheader"><a name="nested-classes"></a>
-Classes</h2></td></tr>
-<tr class="memitem:"><td class="memItemLeft" align="right" valign="top">struct &#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="structcub_1_1_arch_props.html">cub::ArchProps&lt; SM_ARCH &gt;</a></td></tr>
-<tr class="memdesc:"><td class="mdescLeft">&#160;</td><td class="mdescRight">Structure for statically reporting CUDA device properties, parameterized by SM architecture.  <a href="structcub_1_1_arch_props.html#details">More...</a><br/></td></tr>
-<tr class="separator:"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:"><td class="memItemLeft" align="right" valign="top">struct &#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="structcub_1_1_ptx_arch_props.html">cub::PtxArchProps</a></td></tr>
-<tr class="memdesc:"><td class="mdescLeft">&#160;</td><td class="mdescRight">The architectural properties for the PTX version targeted by the active compiler pass.  <a href="structcub_1_1_ptx_arch_props.html#details">More...</a><br/></td></tr>
-<tr class="separator:"><td class="memSeparator" colspan="2">&#160;</td></tr>
-</table><table class="memberdecls">
 <tr class="heading"><td colspan="2"><h2 class="groupheader"><a name="namespaces"></a>
 Namespaces</h2></td></tr>
 <tr class="memitem:namespacecub"><td class="memItemLeft" align="right" valign="top">&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="namespacecub.html">cub</a></td></tr>
@@ -125,18 +116,55 @@ Namespaces</h2></td></tr>
 </table><table class="memberdecls">
 <tr class="heading"><td colspan="2"><h2 class="groupheader"><a name="define-members"></a>
 Macros</h2></td></tr>
-<tr class="memitem:ga756ebe2b0566abfdfcd3c13fe7d1e9c6"><td class="memItemLeft" align="right" valign="top"><a class="anchor" id="ga756ebe2b0566abfdfcd3c13fe7d1e9c6"></a>
-#define&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="group___util_module.html#ga756ebe2b0566abfdfcd3c13fe7d1e9c6">CUB_DESTRUCTOR</a>&#160;&#160;&#160;__host__ __device__</td></tr>
-<tr class="memdesc:ga756ebe2b0566abfdfcd3c13fe7d1e9c6"><td class="mdescLeft">&#160;</td><td class="mdescRight">Execution space for destructors. <br/></td></tr>
-<tr class="separator:ga756ebe2b0566abfdfcd3c13fe7d1e9c6"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:ga76769ce380739b38e0bd00f57e0dbe4f"><td class="memItemLeft" align="right" valign="top"><a class="anchor" id="ga76769ce380739b38e0bd00f57e0dbe4f"></a>
-#define&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="group___util_module.html#ga76769ce380739b38e0bd00f57e0dbe4f">CUB_PTX_ARCH</a>&#160;&#160;&#160;0</td></tr>
-<tr class="memdesc:ga76769ce380739b38e0bd00f57e0dbe4f"><td class="mdescLeft">&#160;</td><td class="mdescRight">CUB_PTX_ARCH reflects the PTX version targeted by the active compiler pass (or zero during the host pass). <br/></td></tr>
-<tr class="separator:ga76769ce380739b38e0bd00f57e0dbe4f"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:ga00b94cd7a57a714629dd6e75edce6742"><td class="memItemLeft" align="right" valign="top"><a class="anchor" id="ga00b94cd7a57a714629dd6e75edce6742"></a>
+#define&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="group___util_mgmt.html#ga00b94cd7a57a714629dd6e75edce6742">CUB_PTX_VERSION</a>&#160;&#160;&#160;0</td></tr>
+<tr class="memdesc:ga00b94cd7a57a714629dd6e75edce6742"><td class="mdescLeft">&#160;</td><td class="mdescRight">CUB_PTX_VERSION reflects the PTX version targeted by the active compiler pass (or zero during the host pass). <br/></td></tr>
+<tr class="separator:ga00b94cd7a57a714629dd6e75edce6742"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:gac029dc29df3c1871ab3b8a38f50904a6"><td class="memItemLeft" align="right" valign="top"><a class="anchor" id="gac029dc29df3c1871ab3b8a38f50904a6"></a>
-#define&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="group___util_module.html#gac029dc29df3c1871ab3b8a38f50904a6">CUB_RUNTIME_ENABLED</a></td></tr>
+#define&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="group___util_mgmt.html#gac029dc29df3c1871ab3b8a38f50904a6">CUB_RUNTIME_ENABLED</a></td></tr>
 <tr class="memdesc:gac029dc29df3c1871ab3b8a38f50904a6"><td class="mdescLeft">&#160;</td><td class="mdescRight">Whether or not the source targeted by the active compiler pass is allowed to invoke device kernels or methods from the CUDA runtime API. <br/></td></tr>
 <tr class="separator:gac029dc29df3c1871ab3b8a38f50904a6"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:ga07eedb9de4a50680067c2d51eb438f69"><td class="memItemLeft" align="right" valign="top"><a class="anchor" id="ga07eedb9de4a50680067c2d51eb438f69"></a>
+#define&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="group___util_mgmt.html#ga07eedb9de4a50680067c2d51eb438f69">CUB_LOG_WARP_THREADS</a>(arch)&#160;&#160;&#160;(5)</td></tr>
+<tr class="memdesc:ga07eedb9de4a50680067c2d51eb438f69"><td class="mdescLeft">&#160;</td><td class="mdescRight">Number of threads per warp. <br/></td></tr>
+<tr class="separator:ga07eedb9de4a50680067c2d51eb438f69"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:ga2863430ef147807280c593c89658a52c"><td class="memItemLeft" align="right" valign="top">#define&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="group___util_mgmt.html#ga2863430ef147807280c593c89658a52c">CUB_LOG_SMEM_BANKS</a>(arch)</td></tr>
+<tr class="memdesc:ga2863430ef147807280c593c89658a52c"><td class="mdescLeft">&#160;</td><td class="mdescRight">Number of smem banks.  <a href="group___util_mgmt.html#ga2863430ef147807280c593c89658a52c">More...</a><br/></td></tr>
+<tr class="separator:ga2863430ef147807280c593c89658a52c"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:ga1440ee581ba633337b5583b980a9e3df"><td class="memItemLeft" align="right" valign="top"><a class="anchor" id="ga1440ee581ba633337b5583b980a9e3df"></a>
+#define&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="group___util_mgmt.html#ga1440ee581ba633337b5583b980a9e3df">CUB_SMEM_BANK_BYTES</a>(arch)&#160;&#160;&#160;(4)</td></tr>
+<tr class="memdesc:ga1440ee581ba633337b5583b980a9e3df"><td class="mdescLeft">&#160;</td><td class="mdescRight">Number of bytes per smem bank. <br/></td></tr>
+<tr class="separator:ga1440ee581ba633337b5583b980a9e3df"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:ga8962f32faf85d32365340280e8b33661"><td class="memItemLeft" align="right" valign="top">#define&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="group___util_mgmt.html#ga8962f32faf85d32365340280e8b33661">CUB_SMEM_BYTES</a>(arch)</td></tr>
+<tr class="memdesc:ga8962f32faf85d32365340280e8b33661"><td class="mdescLeft">&#160;</td><td class="mdescRight">Number of smem bytes provisioned per SM.  <a href="group___util_mgmt.html#ga8962f32faf85d32365340280e8b33661">More...</a><br/></td></tr>
+<tr class="separator:ga8962f32faf85d32365340280e8b33661"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:ga5218fd60b87aadef5bb43d91d89b1765"><td class="memItemLeft" align="right" valign="top">#define&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="group___util_mgmt.html#ga5218fd60b87aadef5bb43d91d89b1765">CUB_SMEM_ALLOC_UNIT</a>(arch)</td></tr>
+<tr class="memdesc:ga5218fd60b87aadef5bb43d91d89b1765"><td class="mdescLeft">&#160;</td><td class="mdescRight">Smem allocation size in bytes.  <a href="group___util_mgmt.html#ga5218fd60b87aadef5bb43d91d89b1765">More...</a><br/></td></tr>
+<tr class="separator:ga5218fd60b87aadef5bb43d91d89b1765"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:gabcb256a9b251c898c831b107c43429c6"><td class="memItemLeft" align="right" valign="top">#define&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="group___util_mgmt.html#gabcb256a9b251c898c831b107c43429c6">CUB_REGS_BY_BLOCK</a>(arch)</td></tr>
+<tr class="memdesc:gabcb256a9b251c898c831b107c43429c6"><td class="mdescLeft">&#160;</td><td class="mdescRight">Whether or not the architecture allocates registers by block (or by warp)  <a href="group___util_mgmt.html#gabcb256a9b251c898c831b107c43429c6">More...</a><br/></td></tr>
+<tr class="separator:gabcb256a9b251c898c831b107c43429c6"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:ga9f27b77f4bd7aaf2582508f285e7eecc"><td class="memItemLeft" align="right" valign="top">#define&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="group___util_mgmt.html#ga9f27b77f4bd7aaf2582508f285e7eecc">CUB_REG_ALLOC_UNIT</a>(arch)</td></tr>
+<tr class="memdesc:ga9f27b77f4bd7aaf2582508f285e7eecc"><td class="mdescLeft">&#160;</td><td class="mdescRight">Number of registers allocated at a time per block (or by warp)  <a href="group___util_mgmt.html#ga9f27b77f4bd7aaf2582508f285e7eecc">More...</a><br/></td></tr>
+<tr class="separator:ga9f27b77f4bd7aaf2582508f285e7eecc"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:ga018e98172a5a141bde7a6e92fa7521fb"><td class="memItemLeft" align="right" valign="top">#define&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="group___util_mgmt.html#ga018e98172a5a141bde7a6e92fa7521fb">CUB_WARP_ALLOC_UNIT</a>(arch)</td></tr>
+<tr class="memdesc:ga018e98172a5a141bde7a6e92fa7521fb"><td class="mdescLeft">&#160;</td><td class="mdescRight">Granularity of warps for which registers are allocated.  <a href="group___util_mgmt.html#ga018e98172a5a141bde7a6e92fa7521fb">More...</a><br/></td></tr>
+<tr class="separator:ga018e98172a5a141bde7a6e92fa7521fb"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:gab2f2f31cddcdd898f6f9435b50cad875"><td class="memItemLeft" align="right" valign="top">#define&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="group___util_mgmt.html#gab2f2f31cddcdd898f6f9435b50cad875">CUB_MAX_SM_THREADS</a>(arch)</td></tr>
+<tr class="memdesc:gab2f2f31cddcdd898f6f9435b50cad875"><td class="mdescLeft">&#160;</td><td class="mdescRight">Maximum number of threads per SM.  <a href="group___util_mgmt.html#gab2f2f31cddcdd898f6f9435b50cad875">More...</a><br/></td></tr>
+<tr class="separator:gab2f2f31cddcdd898f6f9435b50cad875"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:gaf2d79f9a39b860bf58ff161c175c7b06"><td class="memItemLeft" align="right" valign="top">#define&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="group___util_mgmt.html#gaf2d79f9a39b860bf58ff161c175c7b06">CUB_MAX_SM_BLOCKS</a>(arch)</td></tr>
+<tr class="memdesc:gaf2d79f9a39b860bf58ff161c175c7b06"><td class="mdescLeft">&#160;</td><td class="mdescRight">Maximum number of thread blocks per SM.  <a href="group___util_mgmt.html#gaf2d79f9a39b860bf58ff161c175c7b06">More...</a><br/></td></tr>
+<tr class="separator:gaf2d79f9a39b860bf58ff161c175c7b06"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:ga2cb09fd146e620ab9e397ed2c07ea243"><td class="memItemLeft" align="right" valign="top">#define&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="group___util_mgmt.html#ga2cb09fd146e620ab9e397ed2c07ea243">CUB_MAX_BLOCK_THREADS</a>(arch)</td></tr>
+<tr class="memdesc:ga2cb09fd146e620ab9e397ed2c07ea243"><td class="mdescLeft">&#160;</td><td class="mdescRight">Maximum number of threads per thread block.  <a href="group___util_mgmt.html#ga2cb09fd146e620ab9e397ed2c07ea243">More...</a><br/></td></tr>
+<tr class="separator:ga2cb09fd146e620ab9e397ed2c07ea243"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:ga872d007d76c4078ba79ff71f8f2ac497"><td class="memItemLeft" align="right" valign="top">#define&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="group___util_mgmt.html#ga872d007d76c4078ba79ff71f8f2ac497">CUB_MAX_SM_REGISTERS</a>(arch)</td></tr>
+<tr class="memdesc:ga872d007d76c4078ba79ff71f8f2ac497"><td class="mdescLeft">&#160;</td><td class="mdescRight">Maximum number of registers per SM.  <a href="group___util_mgmt.html#ga872d007d76c4078ba79ff71f8f2ac497">More...</a><br/></td></tr>
+<tr class="separator:ga872d007d76c4078ba79ff71f8f2ac497"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:ga19f6f7bdeb494c95cdb95f0f73955258"><td class="memItemLeft" align="right" valign="top">#define&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="group___util_mgmt.html#ga19f6f7bdeb494c95cdb95f0f73955258">CUB_SUBSCRIPTION_FACTOR</a>(arch)</td></tr>
+<tr class="memdesc:ga19f6f7bdeb494c95cdb95f0f73955258"><td class="mdescLeft">&#160;</td><td class="mdescRight">Oversubscription factor.  <a href="group___util_mgmt.html#ga19f6f7bdeb494c95cdb95f0f73955258">More...</a><br/></td></tr>
+<tr class="separator:ga19f6f7bdeb494c95cdb95f0f73955258"><td class="memSeparator" colspan="2">&#160;</td></tr>
 </table>
 <a name="details" id="details"></a><h2 class="groupheader">Detailed Description</h2>
 <div class="textblock"><p>Static architectural properties by SM version. </p>
@@ -146,7 +174,7 @@ Macros</h2></td></tr>
 <!-- HTML footer for doxygen 1.8.3.1-->
 <!-- start footer part -->
 <hr class="footer"/><address class="footer"><small>
-Generated on Fri Aug 23 2013 17:31:10 for CUB by &#160;<a href="http://www.doxygen.org/index.html">
+Generated on Tue Dec 10 2013 05:04:22 for CUB by &#160;<a href="http://www.doxygen.org/index.html">
 <img class="footer" src="doxygen.png" alt="doxygen"/>
 </a> 1.8.4
 <br>

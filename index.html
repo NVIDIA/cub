@@ -52,6 +52,7 @@ var searchBox = new SearchBox("searchBox", "search",false,'Search');
       <li class="current"><a href="index.html"><span>Main&#160;Page</span></a></li>
       <li><a href="modules.html"><span>Modules</span></a></li>
       <li><a href="annotated.html"><span>Classes</span></a></li>
+      <li><a href="examples.html"><span>Examples</span></a></li>
       <li>
         <div id="MSearchBox" class="MSearchBoxInactive">
         <span class="left">
@@ -76,7 +77,7 @@ var searchBox = new SearchBox("searchBox", "search",false,'Search');
      onmouseover="return searchBox.OnSearchSelectShow()"
      onmouseout="return searchBox.OnSearchSelectHide()"
      onkeydown="return searchBox.OnSearchSelectKey(event)">
-<a class="SelectItem" href="javascript:void(0)" onclick="searchBox.OnSelectItem(0)"><span class="SelectionMark">&#160;</span>All</a><a class="SelectItem" href="javascript:void(0)" onclick="searchBox.OnSelectItem(1)"><span class="SelectionMark">&#160;</span>Classes</a><a class="SelectItem" href="javascript:void(0)" onclick="searchBox.OnSelectItem(2)"><span class="SelectionMark">&#160;</span>Namespaces</a><a class="SelectItem" href="javascript:void(0)" onclick="searchBox.OnSelectItem(3)"><span class="SelectionMark">&#160;</span>Files</a><a class="SelectItem" href="javascript:void(0)" onclick="searchBox.OnSelectItem(4)"><span class="SelectionMark">&#160;</span>Functions</a><a class="SelectItem" href="javascript:void(0)" onclick="searchBox.OnSelectItem(5)"><span class="SelectionMark">&#160;</span>Variables</a><a class="SelectItem" href="javascript:void(0)" onclick="searchBox.OnSelectItem(6)"><span class="SelectionMark">&#160;</span>Typedefs</a><a class="SelectItem" href="javascript:void(0)" onclick="searchBox.OnSelectItem(7)"><span class="SelectionMark">&#160;</span>Enumerations</a><a class="SelectItem" href="javascript:void(0)" onclick="searchBox.OnSelectItem(8)"><span class="SelectionMark">&#160;</span>Enumerator</a><a class="SelectItem" href="javascript:void(0)" onclick="searchBox.OnSelectItem(9)"><span class="SelectionMark">&#160;</span>Groups</a></div>
+<a class="SelectItem" href="javascript:void(0)" onclick="searchBox.OnSelectItem(0)"><span class="SelectionMark">&#160;</span>All</a><a class="SelectItem" href="javascript:void(0)" onclick="searchBox.OnSelectItem(1)"><span class="SelectionMark">&#160;</span>Classes</a><a class="SelectItem" href="javascript:void(0)" onclick="searchBox.OnSelectItem(2)"><span class="SelectionMark">&#160;</span>Namespaces</a><a class="SelectItem" href="javascript:void(0)" onclick="searchBox.OnSelectItem(3)"><span class="SelectionMark">&#160;</span>Files</a><a class="SelectItem" href="javascript:void(0)" onclick="searchBox.OnSelectItem(4)"><span class="SelectionMark">&#160;</span>Functions</a><a class="SelectItem" href="javascript:void(0)" onclick="searchBox.OnSelectItem(5)"><span class="SelectionMark">&#160;</span>Variables</a><a class="SelectItem" href="javascript:void(0)" onclick="searchBox.OnSelectItem(6)"><span class="SelectionMark">&#160;</span>Typedefs</a><a class="SelectItem" href="javascript:void(0)" onclick="searchBox.OnSelectItem(7)"><span class="SelectionMark">&#160;</span>Enumerations</a><a class="SelectItem" href="javascript:void(0)" onclick="searchBox.OnSelectItem(8)"><span class="SelectionMark">&#160;</span>Enumerator</a><a class="SelectItem" href="javascript:void(0)" onclick="searchBox.OnSelectItem(9)"><span class="SelectionMark">&#160;</span>Friends</a><a class="SelectItem" href="javascript:void(0)" onclick="searchBox.OnSelectItem(10)"><span class="SelectionMark">&#160;</span>Groups</a></div>
 
 <!-- iframe showing the search results (closed by default) -->
 <div id="MSearchResultsWindow">
@@ -120,31 +121,37 @@ var searchBox = new SearchBox("searchBox", "search",false,'Search');
 <br>
 <a href="http://groups.google.com/group/cub-users"><img src="groups-icon.png" style="position:relative; bottom:-10px; border:0px;"/></a>
 &nbsp;&nbsp;
-<a href="http://groups.google.com/group/cub-users"><em>Join the cub-users discussion forum</em></a>
+<a href="http://groups.google.com/group/cub-users"><em>The cub-users discussion forum</em></a>
 <br>
 <a href="download_cub.html"><img src="download-icon.png" style="position:relative; bottom:-10px; border:0px;"/></a>
 &nbsp;&nbsp;
-<a href="download_cub.html"><em>Download CUB v1.0.2 (August 23, 2013)</em></a>
+<a href="download_cub.html"><em>Download CUB v1.1.0 (Dec 10, 2013)</em></a>
 <h1><a class="anchor" id="sec1"></a>
 (1) What is CUB?</h1>
 <dl class="section user"><dt></dt><dd>CUB provides state-of-the-art, reusable software components for every layer of the CUDA programming model:<ul>
-<li><a href="group___device_module.html"><b><em>Device-wide primitives</em></b></a><ul>
-<li>Sort, prefix scan, reduction, histogram, etc.</li>
+<li><b><em>Primitives</em></b><ul>
+<li><a href="group___device_module.html"><b><em>Device-wide</em></b></a><ul>
+<li>Parallel sort, prefix scan, reduction, histogram, etc.</li>
 <li>Compatible with CUDA dynamic parallelism</li>
 </ul>
 </li>
-<li><a href="group___block_module.html"><b><em>Block-wide "collective" primitives</em></b></a><ul>
-<li>I/O, sort, prefix scan, reduction, histogram, etc.</li>
+<li><a href="group___block_module.html"><b><em>Block-wide "collective"</em></b></a><ul>
+<li>Cooperative I/O, sort, prefix scan, reduction, histogram, etc.</li>
 <li>Compatible with arbitrary thread block sizes and types</li>
 </ul>
 </li>
-<li><a href="group___warp_module.html"><b><em>Warp-wide "collective" primitives</em></b></a><ul>
-<li>Warp-wide prefix scan, reduction, etc.</li>
+<li><a href="group___warp_module.html"><b><em>Warp-wide "collective"</em></b></a><ul>
+<li>Cooperative warp-wide prefix scan, reduction, etc.</li>
 <li>Safe and architecture-specific</li>
 </ul>
 </li>
-<li><a href="group___thread_module.html"><b><em>Thread and resource utilities</em></b></a><ul>
-<li>PTX intrinsics, device reflection, texture-caching iterators, caching memory allocators, etc.</li>
+</ul>
+</li>
+<li><b><em>Utilities</em></b><ul>
+<li><a href="group___util_iterator.html"><b><em>Fancy iterators</em></b></a></li>
+<li><a href="group___util_io.html"><b><em>Thread and thread block I/O</em></b></a></li>
+<li><a href="group___util_ptx.html"><b><em>PTX intrinsics</em></b></a></li>
+<li><a href="group___util_mgmt.html"><b><em>Device, kernel, and storage management</em></b></a></li>
 </ul>
 </li>
 </ul>
@@ -176,18 +183,17 @@ var searchBox = new SearchBox("searchBox", "search",false,'Search');
 <dl class="section user"><dt></dt><dd>The following code snippet presents a CUDA kernel in which each block of 128 threads will collectively load, sort, and store its own segment of 2048 integer keys:</dd></dl>
 <dl class="section user"><dt></dt><dd><div class="fragment"><div class="line"><span class="preprocessor">#include &lt;<a class="code" href="cub_8cuh.html">cub/cub.cuh</a>&gt;</span></div>
 <div class="line"></div>
-<div class="line"><span class="comment">// Block-sorting CUDA kernel</span></div>
+<div class="line"><span class="comment">// Block-sorting CUDA kernel (128 threads owning 16 integer items each)</span></div>
 <div class="line">__global__ <span class="keywordtype">void</span> BlockSortKernel(<span class="keywordtype">int</span> *d_in, <span class="keywordtype">int</span> *d_out)</div>
 <div class="line">{</div>
 <div class="line">    <span class="keyword">using namespace </span>cub;</div>
 <div class="line"></div>
-<div class="line">    <span class="comment">// Specialize BlockRadixSort, BlockLoad, and BlockStore for 128 threads </span></div>
-<div class="line">    <span class="comment">// owning 16 integer items each</span></div>
-<div class="line">    <span class="keyword">typedef</span> <a class="code" href="classcub_1_1_block_radix_sort.html" title="The cub::BlockRadixSort class provides collective methods for sorting items partitioned across a CUDA...">BlockRadixSort&lt;int, 128, 16&gt;</a>                     BlockRadixSort;</div>
+<div class="line">    <span class="comment">// Specialize BlockRadixSort, BlockLoad, and BlockStore collective types</span></div>
+<div class="line">    <span class="keyword">typedef</span> <a class="code" href="classcub_1_1_block_radix_sort.html" title="The BlockRadixSort class provides collective methods for sorting items partitioned across a CUDA thre...">BlockRadixSort&lt;int, 128, 16&gt;</a>                     BlockRadixSort;</div>
 <div class="line">    <span class="keyword">typedef</span> <a class="code" href="classcub_1_1_block_load.html" title="The BlockLoad class provides collective data movement methods for loading a linear segment of items f...">BlockLoad&lt;int*, 128, 16, BLOCK_LOAD_TRANSPOSE&gt;</a>   BlockLoad;</div>
 <div class="line">    <span class="keyword">typedef</span> <a class="code" href="classcub_1_1_block_store.html" title="The BlockStore class provides collective data movement methods for writing a blocked arrangement of i...">BlockStore&lt;int*, 128, 16, BLOCK_STORE_TRANSPOSE&gt;</a> BlockStore;</div>
 <div class="line"></div>
-<div class="line">    <span class="comment">// Allocate shared memory</span></div>
+<div class="line">    <span class="comment">// Allocate shared memory for collectives</span></div>
 <div class="line">    __shared__ <span class="keyword">union </span>{</div>
 <div class="line">        <span class="keyword">typename</span> <a class="code" href="structcub_1_1_block_radix_sort_1_1_temp_storage.html" title="The operations exposed by BlockScan require a temporary memory allocation of this nested type for thr...">BlockRadixSort::TempStorage</a>  sort;</div>
 <div class="line">        <span class="keyword">typename</span> <a class="code" href="structcub_1_1_block_load_1_1_temp_storage.html" title="The operations exposed by BlockLoad require a temporary memory allocation of this nested type for thr...">BlockLoad::TempStorage</a>       load; </div>
@@ -209,7 +215,7 @@ var searchBox = new SearchBox("searchBox", "search",false,'Search');
 <div class="line">    BlockStore(temp_storage.store).Store(d_out + block_offset, thread_keys);</div>
 <div class="line">}</div>
 </div><!-- fragment --></dd></dl>
-<dl class="section user"><dt></dt><dd>Each thread block uses <a class="el" href="classcub_1_1_block_radix_sort.html" title="The cub::BlockRadixSort class provides collective methods for sorting items partitioned across a CUDA...">cub::BlockRadixSort</a> to collectively sort its own input segment. The class is specialized by the data type being sorted, by the number of threads per block, by the number of keys per thread, and implicitly by the targeted compilation architecture.</dd></dl>
+<dl class="section user"><dt></dt><dd>Each thread block uses <a class="el" href="classcub_1_1_block_radix_sort.html" title="The BlockRadixSort class provides collective methods for sorting items partitioned across a CUDA thre...">cub::BlockRadixSort</a> to collectively sort its own input segment. The class is specialized by the data type being sorted, by the number of threads per block, by the number of keys per thread, and implicitly by the targeted compilation architecture.</dd></dl>
 <dl class="section user"><dt></dt><dd>The <a class="el" href="classcub_1_1_block_load.html" title="The BlockLoad class provides collective data movement methods for loading a linear segment of items f...">cub::BlockLoad</a> and <a class="el" href="classcub_1_1_block_store.html" title="The BlockStore class provides collective data movement methods for writing a blocked arrangement of i...">cub::BlockStore</a> classes are similarly specialized. Furthermore, to provide coalesced accesses to device memory, these primitives are configured to access memory using a striped access pattern (where consecutive threads simultaneously access consecutive items) and then <em>transpose</em> the keys into a <a href="index.html#sec5sec4"><em>blocked arrangement</em></a> of elements across threads.</dd></dl>
 <dl class="section user"><dt></dt><dd>Once specialized, these classes expose opaque <code>TempStorage</code> member types. The thread block uses these storage types to statically allocate the union of shared memory needed by the thread block. (Alternatively these storage types could be aliased to global memory allocations).</dd></dl>
 <h1><a class="anchor" id="sec3"></a>
@@ -220,7 +226,10 @@ var searchBox = new SearchBox("searchBox", "search",false,'Search');
 (4) Why do you need CUB?</h1>
 <dl class="section user"><dt></dt><dd>Constructing, tuning, and maintaining kernel code is perhaps the most challenging, time-consuming aspect of CUDA programming. CUDA kernel software is where the complexity of parallelism is expressed. Programmers must reason about deadlock, livelock, synchronization, race conditions, shared memory layout, plurality of state, granularity, throughput, latency, memory bottlenecks, etc.</dd></dl>
 <dl class="section user"><dt></dt><dd>However, with the exception of CUB, there are few (if any) software libraries of reusable kernel primitives. In the CUDA ecosystem, CUB is unique in this regard. As a <a href="http://docs.nvidia.com/cuda/cuda-c-programming-guide/index.html#hardware-implementation">SIMT</a> library and software abstraction layer, CUB provides:<ol type="1">
-<li><b><em>Simplicity of composition</em></b>. CUB primitives can be simply sequenced and nested in kernel code. For example, <a class="el" href="classcub_1_1_block_radix_sort.html" title="The cub::BlockRadixSort class provides collective methods for sorting items partitioned across a CUDA...">cub::BlockRadixSort</a> is constructed from <a class="el" href="classcub_1_1_block_exchange.html" title="The BlockExchange class provides collective methods for rearranging data partitioned across a CUDA th...">cub::BlockExchange</a> and cub::BlockRadixRank. The latter is composed of <a class="el" href="classcub_1_1_block_scan.html" title="The BlockScan class provides collective methods for computing a parallel prefix sum/scan of items par...">cub::BlockScan</a> which incorporates <a class="el" href="classcub_1_1_warp_scan.html" title="The WarpScan class provides collective methods for computing a parallel prefix scan of items partitio...">cub::WarpScan</a>.</li>
+<li><b><em>Simplicity of composition</em></b>. CUB primitives can be simply sequenced and nested in kernel code. For example, <a class="el" href="classcub_1_1_block_radix_sort.html" title="The BlockRadixSort class provides collective methods for sorting items partitioned across a CUDA thre...">cub::BlockRadixSort</a> is constructed from <a class="el" href="classcub_1_1_block_exchange.html" title="The BlockExchange class provides collective methods for rearranging data partitioned across a CUDA th...">cub::BlockExchange</a> and cub::BlockRadixRank. The latter is composed of <a class="el" href="classcub_1_1_block_scan.html" title="The BlockScan class provides collective methods for computing a parallel prefix sum/scan of items par...">cub::BlockScan</a> which incorporates <a class="el" href="classcub_1_1_warp_scan.html" title="The WarpScan class provides collective methods for computing a parallel prefix scan of items partitio...">cub::WarpScan</a>.<div class="image">
+<img src="nested_composition.png" alt="nested_composition.png"/>
+</div>
+</li>
 <li><b><em>High performance</em></b>. CUB simplifies high performance kernel development by taking care to implement the state-of-the-art in parallel algorithms. Expert code should be reused rather than reimplemented.</li>
 <li><b><em>Performance portability</em></b>. CUB primitives are specialized to match the diversity of NVIDIA hardware, continuously evolving to accommodate new features and instructions. For example, CUB reductions and prefix scans employ warp-shuffle on Kepler GPUs. Code should be recompiled rather than hand-ported.</li>
 <li><b><em>Simplicity of performance tuning</em></b>:<ul>
@@ -286,7 +295,7 @@ var searchBox = new SearchBox("searchBox", "search",false,'Search');
 <img src="tile.png" alt="tile.png"/>
 </div>
  <div class="centercaption">Segment of eight ordered data items</div></dd></dl>
-<dl class="section user"><dt></dt><dd>When the tile size equals the thread block size, the mapping of data onto threads is straightforward (one datum per thread). However, there are often performance advantages for processing more than one datum per thread. For these scenarios, CUB primitives will specify which of the following partitioning alternatives they accommodate:</dd></dl>
+<dl class="section user"><dt></dt><dd>When the tile size equals the thread block size, the mapping of data onto threads is straightforward (one datum per thread). However, there are often performance advantages for processing more than one datum per thread. Increased granularity corresponds to decreased communication overhead. For these scenarios, CUB primitives will specify which of the following partitioning alternatives they accommodate:</dd></dl>
 <table  border="0px" cellpadding="0px" cellspacing="0px">
 <tr>
 <td><dl class="section user"><dt></dt><dd><ul>
@@ -322,51 +331,80 @@ var searchBox = new SearchBox("searchBox", "search",false,'Search');
 (6) Recent News</h1>
 <dl class="section user"><dt></dt><dd><table class="doxtable">
 <tr>
+<td style="white-space: nowrap; vertical-align:text-top;">12/10/2013<br/>
+ <a href="https://github.com/NVlabs/cub/archive/1.1.0.zip"><b>CUB v1.1.0</b></a> </td><td style="vertical-align:text-top;"><ul>
+<li><b>New features</b>:<ul>
+<li>Added <a class="el" href="classcub_1_1_tex_obj_input_iterator.html" title="A random-access input wrapper for dereferencing array values through texture cache. Uses newer Kepler-style texture objects. ">cub::TexObjInputIterator</a>, <a class="el" href="classcub_1_1_tex_ref_input_iterator.html" title="A random-access input wrapper for dereferencing array values through texture cache. Uses older Tesla/Fermi-style texture references. ">cub::TexRefInputIterator</a>, <a class="el" href="classcub_1_1_cache_modified_input_iterator.html" title="A random-access input wrapper for dereferencing array values using a PTX cache load modifier...">cub::CacheModifiedInputIterator</a>, and <a class="el" href="classcub_1_1_cache_modified_output_iterator.html" title="A random-access output wrapper for storing array values using a PTX cache-modifier. ">cub::CacheModifiedOutputIterator</a> types for loading &amp; storing arbitrary data types through the cache hierarchy. Compatible with Thrust API.</li>
+<li>Added descending sorting to <a class="el" href="structcub_1_1_device_radix_sort.html" title="DeviceRadixSort provides device-wide, parallel operations for computing a radix sort across a sequenc...">cub::DeviceRadixSort</a> and <a class="el" href="classcub_1_1_block_radix_sort.html" title="The BlockRadixSort class provides collective methods for sorting items partitioned across a CUDA thre...">cub::BlockRadixSort</a></li>
+<li>Added min, max, arg-min, and arg-max to <a class="el" href="structcub_1_1_device_reduce.html" title="DeviceReduce provides device-wide, parallel operations for computing a reduction across a sequence of...">cub::DeviceReduce</a></li>
+<li>Added <a class="el" href="structcub_1_1_device_select.html" title="DeviceSelect provides device-wide, parallel operations for selecting items from sequences of data ite...">cub::DeviceSelect</a> (select-unique, select-if, and select-flagged)</li>
+<li>Added <a class="el" href="structcub_1_1_device_partition.html" title="DevicePartition provides device-wide, parallel operations for partitioning sequences of data items re...">cub::DevicePartition</a> (partition-if, partition-flagged)</li>
+<li>Added generic <a class="el" href="group___warp_module.html#ga749c208dab03e3dc4ce1fa2e608a42aa" title="Shuffle-up for any data type. Each warp-lanei obtains the value input contributed by warp-lanei-src_o...">cub::ShuffleUp()</a>, <a class="el" href="group___warp_module.html#ga13869cffbcc535abf4b883f5a367cc4b" title="Shuffle-down for any data type. Each warp-lanei obtains the value input contributed by warp-lanei+src...">cub::ShuffleDown()</a>, and <a class="el" href="group___warp_module.html#ga70c8abccb5e0f361a953b88c92dc0986" title="Shuffle-broadcast for any data type. Each warp-lanei obtains the value input contributed by warp-lane...">cub::ShuffleBroadcast()</a> for warp-wide communication of arbitrary data types (SM3x+)</li>
+<li>Added <a class="el" href="group___util_mgmt.html#ga364b8a84e613c62761d58afb351a258b" title="Computes maximum SM occupancy in thread blocks for executing the given kernel function pointer kernel...">cub::MaxSmOccupancy()</a> for accurately determining SM occupancy for any given kernel function pointer</li>
+</ul>
+</li>
+<li><b>Performance</b>:<ul>
+<li>Improved <a class="el" href="structcub_1_1_device_scan.html" title="DeviceScan provides device-wide, parallel operations for computing a prefix scan across a sequence of...">cub::DeviceScan</a> and <a class="el" href="structcub_1_1_device_radix_sort.html" title="DeviceRadixSort provides device-wide, parallel operations for computing a radix sort across a sequenc...">cub::DeviceRadixSort</a> performance for older architectures (SM10-SM30)</li>
+</ul>
+</li>
+<li><b>Interface changes</b>:<ul>
+<li>Refactored block-wide I/O collectives (including <a class="el" href="classcub_1_1_block_load.html" title="The BlockLoad class provides collective data movement methods for loading a linear segment of items f...">cub::BlockLoad</a> and <a class="el" href="classcub_1_1_block_store.html" title="The BlockStore class provides collective data movement methods for writing a blocked arrangement of i...">cub::BlockStore</a>), removing cache-modifiers from their interfaces. The <a class="el" href="classcub_1_1_cache_modified_input_iterator.html" title="A random-access input wrapper for dereferencing array values using a PTX cache load modifier...">cub::CacheModifiedInputIterator</a> and <a class="el" href="classcub_1_1_cache_modified_output_iterator.html" title="A random-access output wrapper for storing array values using a PTX cache-modifier. ">cub::CacheModifiedOutputIterator</a> pointer wrappers should now be used with <a class="el" href="classcub_1_1_block_load.html" title="The BlockLoad class provides collective data movement methods for loading a linear segment of items f...">cub::BlockLoad</a> and <a class="el" href="classcub_1_1_block_store.html" title="The BlockStore class provides collective data movement methods for writing a blocked arrangement of i...">cub::BlockStore</a> to effect that behavior.</li>
+<li>Rename device-wide "stream_synchronous" param to "debug_synchronous" to avoid confusion about usage</li>
+</ul>
+</li>
+<li><b>Documentation and testing</b>:<ul>
+<li>Added simple examples of device-wide methods</li>
+<li>Improved doxygen documentation and example snippets</li>
+<li>Improved test coverege to include up to 21,000 kernel variants and 851,000 unit tests (per architecture, per platform)</li>
+</ul>
+</li>
+<li><b>Bug fixes</b>:<ul>
+<li>CDP (device-callable) versions of device-wide methods now report the same temporary storage allocation size requirement as their host-callable counterparts</li>
+<li>Misc. bug fixes for <a class="el" href="structcub_1_1_device_radix_sort.html" title="DeviceRadixSort provides device-wide, parallel operations for computing a radix sort across a sequenc...">cub::DeviceRadixSort</a>, <a class="el" href="structcub_1_1_device_scan.html" title="DeviceScan provides device-wide, parallel operations for computing a prefix scan across a sequence of...">cub::DeviceScan</a>, <a class="el" href="structcub_1_1_device_reduce.html" title="DeviceReduce provides device-wide, parallel operations for computing a reduction across a sequence of...">cub::DeviceReduce</a>, <a class="el" href="classcub_1_1_block_scan.html" title="The BlockScan class provides collective methods for computing a parallel prefix sum/scan of items par...">cub::BlockScan</a>, <a class="el" href="classcub_1_1_block_reduce.html" title="The BlockReduce class provides collective methods for computing a parallel reduction of items partiti...">cub::BlockReduce</a>, <a class="el" href="classcub_1_1_block_discontinuity.html" title="The BlockDiscontinuity class provides collective methods for flagging discontinuities within an order...">cub::BlockDiscontinuity</a>, and <a class="el" href="classcub_1_1_warp_reduce.html" title="The WarpReduce class provides collective methods for computing a parallel reduction of items partitio...">cub::WarpReduce</a>. See the <a href="CHANGE_LOG.TXT">change-log</a> for further details </li>
+</ul>
+</li>
+</ul>
+<p class="endtd"></p>
+</td></tr>
+<tr>
 <td style="white-space: nowrap; vertical-align:text-top;">08/23/2013<br/>
- <a href="https://github.com/NVlabs/cub/archive/1.0.2.zip">CUB v1.0.2 (update)</a> </td><td style="vertical-align:text-top;"><ul>
-<li>Cleaned up unnecessary and/or missing include statements from .cuh files. You can now safely include specific .cuh files (instead of the umbrella <a class="el" href="cub_8cuh.html">cub/cub.cuh</a>)</li>
-<li>Documentation corrections</li>
-<li>Minor bugfixes for <a class="el" href="classcub_1_1_block_histogram.html" title="The BlockHistogram class provides collective methods for constructing block-wide histograms from data...">cub::BlockHistogram</a></li>
-<li>See the <a href="https://github.com/NVlabs/cub/blob/master/CHANGE_LOG.TXT">change-log</a> for further details. </li>
+ <a href="https://github.com/NVlabs/cub/archive/1.0.2.zip"><b>CUB v1.0.2</b></a> </td><td style="vertical-align:text-top;"><ul>
+<li>Improvements for documentation and compilation speed</li>
+<li>Misc. bug fixes</li>
+<li>See the <a href="CHANGE_LOG.TXT">change-log</a> for further details </li>
 </ul>
 <p class="endtd"></p>
 </td></tr>
 <tr>
 <td style="white-space: nowrap; vertical-align:text-top;">08/08/2013<br/>
- <a href="https://github.com/NVlabs/cub/archive/1.0.1.zip">CUB v1.0.1 (primary)</a> </td><td style="vertical-align:text-top;"><p class="starttd">This release focuses on (1) new and updated primitives, (2) extensive API documentation, and (3) aggressive regression testing. Notable additions inlcude:</p>
-<ul>
-<li><a class="el" href="structcub_1_1_device_radix_sort.html" title="DeviceRadixSort provides operations for computing a device-wide, parallel radix sort across data item...">cub::DeviceRadixSort</a>. This implementation is an overhaul of our previous efforts in the B40C and MGPU projects. It is constructed from tunable CUB block-level primitives and is up to 1.7x faster than Thrust v1.7 on GTX Titan (up to 2.15 billion 32b keys/s)</li>
-<li><a class="el" href="structcub_1_1_device_scan.html" title="DeviceScan provides operations for computing a device-wide, parallel prefix scan across data items re...">cub::DeviceScan</a>. This implementation is a new 1-pass decomposition featuring <em>"adaptive look-back"</em> for mitigating the latencies of otherwise serial dependences between thread blocks. It is up to 3.2x faster than Thrust v1.7 on GTX Titan (up to 28.9 billion 32b items/s)</li>
+ <a href="https://github.com/NVlabs/cub/archive/1.0.1.zip"><b>CUB v1.0.1</b></a> </td><td style="vertical-align:text-top;"><ul>
+<li>New API for block-wide and warp-wide collective operations</li>
+<li>New <a class="el" href="structcub_1_1_device_radix_sort.html" title="DeviceRadixSort provides device-wide, parallel operations for computing a radix sort across a sequenc...">cub::DeviceRadixSort</a> and <a class="el" href="structcub_1_1_device_scan.html" title="DeviceScan provides device-wide, parallel operations for computing a prefix scan across a sequence of...">cub::DeviceScan</a> implementations</li>
+<li>Performance improvements for block-wide and warp-wide collectives on SM3x (Kepler) architectures</li>
+<li>See the <a href="CHANGE_LOG.TXT">change-log</a> for further details </li>
 </ul>
-<p>This release also contains significant updates to CUB's suite of block-wide and warp-wide primitives, including:</p>
-<ul>
-<li>Improved support for the Kepler instruction set (e.g., <code>SHFL</code> is used for warp-wide exchanges of all types, including those larger than 32b)</li>
-<li>An updated interface design for collective primitives (specialize::construct::invoke) that avoids a combinatorial product of library entry-points</li>
-</ul>
-<p>See the <a href="https://github.com/NVlabs/cub/blob/master/CHANGE_LOG.TXT">change-log</a> for further details. </p>
 <p class="endtd"></p>
 </td></tr>
 <tr>
 <td style="white-space: nowrap; vertical-align:text-top;">05/07/2013<br/>
- <a href="https://github.com/NVlabs/cub/archive/0.9.4.zip">CUB v0.9.4 (update)</a> </td><td style="vertical-align:text-top;"><ul>
-<li>Compilation fixes for several primitives on older architectures.</li>
-<li>Introduced several new device-wide and block-wide primitives, including 256-bin histogram.</li>
-<li>Misc. cosmetic and bug fixes.</li>
-<li>See the <a href="https://github.com/NVlabs/cub/blob/master/CHANGE_LOG.TXT">change-log</a> for further details. </li>
+ <a href="https://github.com/NVlabs/cub/archive/0.9.4.zip"><b>CUB v0.9.4</b></a> </td><td style="vertical-align:text-top;"><ul>
+<li>Misc. compilation fixes for SM1.x (Tesla) architectures.</li>
+<li>New <a class="el" href="structcub_1_1_device_histogram.html" title="DeviceHistogram provides device-wide parallel operations for constructing histogram(s) from a sequenc...">cub::DeviceHistogram</a> and <a class="el" href="classcub_1_1_block_histogram.html" title="The BlockHistogram class provides collective methods for constructing block-wide histograms from data...">cub::BlockHistogram</a> implementations</li>
+<li>See the <a href="CHANGE_LOG.TXT">change-log</a> for further details </li>
 </ul>
 <p class="endtd"></p>
 </td></tr>
 <tr>
 <td style="white-space: nowrap; vertical-align:text-top;">04/04/2013<br/>
- <a href="https://github.com/NVlabs/cub/archive/0.9.2.zip">CUB v0.9.2 (update)</a> </td><td style="vertical-align:text-top;"><ul>
+ <a href="https://github.com/NVlabs/cub/archive/0.9.2.zip"><b>CUB v0.9.2</b></a> </td><td style="vertical-align:text-top;"><ul>
 <li>Minor cosmetic, feature, and compilation updates.</li>
-<li>See the <a href="https://github.com/NVlabs/cub/blob/master/CHANGE_LOG.TXT">change-log</a> for further details. </li>
+<li>See the <a href="CHANGE_LOG.TXT">change-log</a> for further details </li>
 </ul>
 <p class="endtd"></p>
 </td></tr>
 <tr>
 <td style="white-space: nowrap; vertical-align:text-top;">03/07/2013<br/>
- <a href="https://github.com/NVlabs/cub/archive/0.9.zip">CUB v0.9 (preview)</a> </td><td style="vertical-align:text-top;"><ul>
+ <a href="https://github.com/NVlabs/cub/archive/0.9.zip"><b>CUB v0.9</b></a> </td><td style="vertical-align:text-top;"><ul>
 <li>CUB is the first durable, high-performance library of cooperative threadblock, warp, and thread primitives for CUDA kernel programming.  </li>
 </ul>
 </td></tr>
@@ -407,7 +445,7 @@ var searchBox = new SearchBox("searchBox", "search",false,'Search');
 <!-- HTML footer for doxygen 1.8.3.1-->
 <!-- start footer part -->
 <hr class="footer"/><address class="footer"><small>
-Generated on Fri Aug 23 2013 17:31:13 for CUB by &#160;<a href="http://www.doxygen.org/index.html">
+Generated on Tue Dec 10 2013 05:04:24 for CUB by &#160;<a href="http://www.doxygen.org/index.html">
 <img class="footer" src="doxygen.png" alt="doxygen"/>
 </a> 1.8.4
 <br>

@@ -52,6 +52,7 @@ var searchBox = new SearchBox("searchBox", "search",false,'Search');
       <li><a href="index.html"><span>Main&#160;Page</span></a></li>
       <li><a href="modules.html"><span>Modules</span></a></li>
       <li><a href="annotated.html"><span>Classes</span></a></li>
+      <li><a href="examples.html"><span>Examples</span></a></li>
       <li>
         <div id="MSearchBox" class="MSearchBoxInactive">
         <span class="left">
@@ -81,7 +82,7 @@ var searchBox = new SearchBox("searchBox", "search",false,'Search');
      onmouseover="return searchBox.OnSearchSelectShow()"
      onmouseout="return searchBox.OnSearchSelectHide()"
      onkeydown="return searchBox.OnSearchSelectKey(event)">
-<a class="SelectItem" href="javascript:void(0)" onclick="searchBox.OnSelectItem(0)"><span class="SelectionMark">&#160;</span>All</a><a class="SelectItem" href="javascript:void(0)" onclick="searchBox.OnSelectItem(1)"><span class="SelectionMark">&#160;</span>Classes</a><a class="SelectItem" href="javascript:void(0)" onclick="searchBox.OnSelectItem(2)"><span class="SelectionMark">&#160;</span>Namespaces</a><a class="SelectItem" href="javascript:void(0)" onclick="searchBox.OnSelectItem(3)"><span class="SelectionMark">&#160;</span>Files</a><a class="SelectItem" href="javascript:void(0)" onclick="searchBox.OnSelectItem(4)"><span class="SelectionMark">&#160;</span>Functions</a><a class="SelectItem" href="javascript:void(0)" onclick="searchBox.OnSelectItem(5)"><span class="SelectionMark">&#160;</span>Variables</a><a class="SelectItem" href="javascript:void(0)" onclick="searchBox.OnSelectItem(6)"><span class="SelectionMark">&#160;</span>Typedefs</a><a class="SelectItem" href="javascript:void(0)" onclick="searchBox.OnSelectItem(7)"><span class="SelectionMark">&#160;</span>Enumerations</a><a class="SelectItem" href="javascript:void(0)" onclick="searchBox.OnSelectItem(8)"><span class="SelectionMark">&#160;</span>Enumerator</a><a class="SelectItem" href="javascript:void(0)" onclick="searchBox.OnSelectItem(9)"><span class="SelectionMark">&#160;</span>Groups</a></div>
+<a class="SelectItem" href="javascript:void(0)" onclick="searchBox.OnSelectItem(0)"><span class="SelectionMark">&#160;</span>All</a><a class="SelectItem" href="javascript:void(0)" onclick="searchBox.OnSelectItem(1)"><span class="SelectionMark">&#160;</span>Classes</a><a class="SelectItem" href="javascript:void(0)" onclick="searchBox.OnSelectItem(2)"><span class="SelectionMark">&#160;</span>Namespaces</a><a class="SelectItem" href="javascript:void(0)" onclick="searchBox.OnSelectItem(3)"><span class="SelectionMark">&#160;</span>Files</a><a class="SelectItem" href="javascript:void(0)" onclick="searchBox.OnSelectItem(4)"><span class="SelectionMark">&#160;</span>Functions</a><a class="SelectItem" href="javascript:void(0)" onclick="searchBox.OnSelectItem(5)"><span class="SelectionMark">&#160;</span>Variables</a><a class="SelectItem" href="javascript:void(0)" onclick="searchBox.OnSelectItem(6)"><span class="SelectionMark">&#160;</span>Typedefs</a><a class="SelectItem" href="javascript:void(0)" onclick="searchBox.OnSelectItem(7)"><span class="SelectionMark">&#160;</span>Enumerations</a><a class="SelectItem" href="javascript:void(0)" onclick="searchBox.OnSelectItem(8)"><span class="SelectionMark">&#160;</span>Enumerator</a><a class="SelectItem" href="javascript:void(0)" onclick="searchBox.OnSelectItem(9)"><span class="SelectionMark">&#160;</span>Friends</a><a class="SelectItem" href="javascript:void(0)" onclick="searchBox.OnSelectItem(10)"><span class="SelectionMark">&#160;</span>Groups</a></div>
 
 <!-- iframe showing the search results (closed by default) -->
 <div id="MSearchResultsWindow">
@@ -177,7 +178,7 @@ var searchBox = new SearchBox("searchBox", "search",false,'Search');
 <div class="line"><a name="l00093"></a><span class="lineno">   93</span>&#160;    <span class="comment">// Check if enough storage provided</span></div>
 <div class="line"><a name="l00094"></a><span class="lineno">   94</span>&#160;    <span class="keywordflow">if</span> (temp_storage_bytes &lt; bytes_needed)</div>
 <div class="line"><a name="l00095"></a><span class="lineno">   95</span>&#160;    {</div>
-<div class="line"><a name="l00096"></a><span class="lineno">   96</span>&#160;        <span class="keywordflow">return</span> <a class="code" href="group___util_module.html#ga84c3a4c178bf6593e0fad2b763606236" title="Debug macro. ">CubDebug</a>(cudaErrorMemoryAllocation);</div>
+<div class="line"><a name="l00096"></a><span class="lineno">   96</span>&#160;        <span class="keywordflow">return</span> <a class="code" href="group___util_mgmt.html#ga84c3a4c178bf6593e0fad2b763606236" title="Debug macro. ">CubDebug</a>(cudaErrorInvalidValue);</div>
 <div class="line"><a name="l00097"></a><span class="lineno">   97</span>&#160;    }</div>
 <div class="line"><a name="l00098"></a><span class="lineno">   98</span>&#160;</div>
 <div class="line"><a name="l00099"></a><span class="lineno">   99</span>&#160;    <span class="comment">// Alias</span></div>
@@ -195,252 +196,223 @@ var searchBox = new SearchBox("searchBox", "search",false,'Search');
 <div class="line"><a name="l00111"></a><span class="lineno">  111</span>&#160;<span class="preprocessor"></span></div>
 <div class="line"><a name="l00112"></a><span class="lineno">  112</span>&#160;</div>
 <div class="line"><a name="l00113"></a><span class="lineno">  113</span>&#160;</div>
-<div class="line"><a name="l00117"></a><span class="lineno"><a class="code" href="group___util_module.html#gac3d86a53650d110862fe8a84fce61c2e">  117</a></span>&#160;__host__ __device__ __forceinline__ cudaError_t <a class="code" href="group___util_module.html#gac3d86a53650d110862fe8a84fce61c2e" title="Retrieves the PTX version (major * 100 + minor * 10) ">PtxVersion</a>(<span class="keywordtype">int</span> &amp;ptx_version)</div>
+<div class="line"><a name="l00117"></a><span class="lineno"><a class="code" href="group___util_mgmt.html#gac3d86a53650d110862fe8a84fce61c2e">  117</a></span>&#160;__host__ __device__ __forceinline__ cudaError_t <a class="code" href="group___util_mgmt.html#gac3d86a53650d110862fe8a84fce61c2e" title="Retrieves the PTX version that will be used on the current device (major * 100 + minor * 10) ...">PtxVersion</a>(<span class="keywordtype">int</span> &amp;ptx_version)</div>
 <div class="line"><a name="l00118"></a><span class="lineno">  118</span>&#160;{</div>
-<div class="line"><a name="l00119"></a><span class="lineno">  119</span>&#160;<span class="preprocessor">#ifndef CUB_RUNTIME_ENABLED</span></div>
-<div class="line"><a name="l00120"></a><span class="lineno">  120</span>&#160;<span class="preprocessor"></span></div>
-<div class="line"><a name="l00121"></a><span class="lineno">  121</span>&#160;    <span class="comment">// CUDA API calls not supported from this device</span></div>
-<div class="line"><a name="l00122"></a><span class="lineno">  122</span>&#160;    <span class="keywordflow">return</span> cudaErrorInvalidConfiguration;</div>
+<div class="line"><a name="l00119"></a><span class="lineno">  119</span>&#160;    <span class="keyword">struct </span>Dummy</div>
+<div class="line"><a name="l00120"></a><span class="lineno">  120</span>&#160;    {</div>
+<div class="line"><a name="l00122"></a><span class="lineno">  122</span>&#160;        <span class="keyword">typedef</span> void (*EmptyKernelPtr)();</div>
 <div class="line"><a name="l00123"></a><span class="lineno">  123</span>&#160;</div>
-<div class="line"><a name="l00124"></a><span class="lineno">  124</span>&#160;<span class="preprocessor">#else</span></div>
-<div class="line"><a name="l00125"></a><span class="lineno">  125</span>&#160;<span class="preprocessor"></span></div>
-<div class="line"><a name="l00126"></a><span class="lineno">  126</span>&#160;    cudaError_t error = cudaSuccess;</div>
-<div class="line"><a name="l00127"></a><span class="lineno">  127</span>&#160;    <span class="keywordflow">do</span></div>
-<div class="line"><a name="l00128"></a><span class="lineno">  128</span>&#160;    {</div>
-<div class="line"><a name="l00129"></a><span class="lineno">  129</span>&#160;        cudaFuncAttributes empty_kernel_attrs;</div>
-<div class="line"><a name="l00130"></a><span class="lineno">  130</span>&#160;        <span class="keywordflow">if</span> (<a class="code" href="group___util_module.html#ga84c3a4c178bf6593e0fad2b763606236" title="Debug macro. ">CubDebug</a>(error = cudaFuncGetAttributes(&amp;empty_kernel_attrs, EmptyKernel&lt;void&gt;))) <span class="keywordflow">break</span>;</div>
-<div class="line"><a name="l00131"></a><span class="lineno">  131</span>&#160;        ptx_version = empty_kernel_attrs.ptxVersion * 10;</div>
-<div class="line"><a name="l00132"></a><span class="lineno">  132</span>&#160;    }</div>
-<div class="line"><a name="l00133"></a><span class="lineno">  133</span>&#160;    <span class="keywordflow">while</span> (0);</div>
-<div class="line"><a name="l00134"></a><span class="lineno">  134</span>&#160;</div>
-<div class="line"><a name="l00135"></a><span class="lineno">  135</span>&#160;    <span class="keywordflow">return</span> error;</div>
-<div class="line"><a name="l00136"></a><span class="lineno">  136</span>&#160;</div>
-<div class="line"><a name="l00137"></a><span class="lineno">  137</span>&#160;<span class="preprocessor">#endif</span></div>
-<div class="line"><a name="l00138"></a><span class="lineno">  138</span>&#160;<span class="preprocessor"></span>}</div>
-<div class="line"><a name="l00139"></a><span class="lineno">  139</span>&#160;</div>
-<div class="line"><a name="l00140"></a><span class="lineno">  140</span>&#160;</div>
-<div class="line"><a name="l00144"></a><span class="lineno">  144</span>&#160;__host__ __device__ __forceinline__</div>
-<div class="line"><a name="l00145"></a><span class="lineno">  145</span>&#160;<span class="keyword">static</span> cudaError_t SyncStream(cudaStream_t stream)</div>
-<div class="line"><a name="l00146"></a><span class="lineno">  146</span>&#160;{</div>
-<div class="line"><a name="l00147"></a><span class="lineno">  147</span>&#160;<span class="preprocessor">#ifndef __CUDA_ARCH__</span></div>
-<div class="line"><a name="l00148"></a><span class="lineno">  148</span>&#160;<span class="preprocessor"></span>    <span class="keywordflow">return</span> cudaStreamSynchronize(stream);</div>
-<div class="line"><a name="l00149"></a><span class="lineno">  149</span>&#160;<span class="preprocessor">#else</span></div>
-<div class="line"><a name="l00150"></a><span class="lineno">  150</span>&#160;<span class="preprocessor"></span>    <span class="comment">// Device can&#39;t yet sync on a specific stream</span></div>
-<div class="line"><a name="l00151"></a><span class="lineno">  151</span>&#160;    <span class="keywordflow">return</span> cudaDeviceSynchronize();</div>
-<div class="line"><a name="l00152"></a><span class="lineno">  152</span>&#160;<span class="preprocessor">#endif</span></div>
-<div class="line"><a name="l00153"></a><span class="lineno">  153</span>&#160;<span class="preprocessor"></span>}</div>
-<div class="line"><a name="l00154"></a><span class="lineno">  154</span>&#160;</div>
+<div class="line"><a name="l00125"></a><span class="lineno">  125</span>&#160;        __host__ __device__ __forceinline__</div>
+<div class="line"><a name="l00126"></a><span class="lineno">  126</span>&#160;        EmptyKernelPtr Empty()</div>
+<div class="line"><a name="l00127"></a><span class="lineno">  127</span>&#160;        {</div>
+<div class="line"><a name="l00128"></a><span class="lineno">  128</span>&#160;            <span class="keywordflow">return</span> EmptyKernel&lt;void&gt;;</div>
+<div class="line"><a name="l00129"></a><span class="lineno">  129</span>&#160;        }</div>
+<div class="line"><a name="l00130"></a><span class="lineno">  130</span>&#160;    };</div>
+<div class="line"><a name="l00131"></a><span class="lineno">  131</span>&#160;</div>
+<div class="line"><a name="l00132"></a><span class="lineno">  132</span>&#160;</div>
+<div class="line"><a name="l00133"></a><span class="lineno">  133</span>&#160;<span class="preprocessor">#ifndef CUB_RUNTIME_ENABLED</span></div>
+<div class="line"><a name="l00134"></a><span class="lineno">  134</span>&#160;<span class="preprocessor"></span></div>
+<div class="line"><a name="l00135"></a><span class="lineno">  135</span>&#160;    <span class="comment">// CUDA API calls not supported from this device</span></div>
+<div class="line"><a name="l00136"></a><span class="lineno">  136</span>&#160;    <span class="keywordflow">return</span> cudaErrorInvalidConfiguration;</div>
+<div class="line"><a name="l00137"></a><span class="lineno">  137</span>&#160;</div>
+<div class="line"><a name="l00138"></a><span class="lineno">  138</span>&#160;<span class="preprocessor">#elif defined(__CUDA_ARCH__)</span></div>
+<div class="line"><a name="l00139"></a><span class="lineno">  139</span>&#160;<span class="preprocessor"></span></div>
+<div class="line"><a name="l00140"></a><span class="lineno">  140</span>&#160;    ptx_version = <a class="code" href="group___util_mgmt.html#ga00b94cd7a57a714629dd6e75edce6742" title="CUB_PTX_VERSION reflects the PTX version targeted by the active compiler pass (or zero during the hos...">CUB_PTX_VERSION</a>;</div>
+<div class="line"><a name="l00141"></a><span class="lineno">  141</span>&#160;    <span class="keywordflow">return</span> cudaSuccess;</div>
+<div class="line"><a name="l00142"></a><span class="lineno">  142</span>&#160;</div>
+<div class="line"><a name="l00143"></a><span class="lineno">  143</span>&#160;<span class="preprocessor">#else</span></div>
+<div class="line"><a name="l00144"></a><span class="lineno">  144</span>&#160;<span class="preprocessor"></span></div>
+<div class="line"><a name="l00145"></a><span class="lineno">  145</span>&#160;    cudaError_t error = cudaSuccess;</div>
+<div class="line"><a name="l00146"></a><span class="lineno">  146</span>&#160;    <span class="keywordflow">do</span></div>
+<div class="line"><a name="l00147"></a><span class="lineno">  147</span>&#160;    {</div>
+<div class="line"><a name="l00148"></a><span class="lineno">  148</span>&#160;        cudaFuncAttributes empty_kernel_attrs;</div>
+<div class="line"><a name="l00149"></a><span class="lineno">  149</span>&#160;        <span class="keywordflow">if</span> (<a class="code" href="group___util_mgmt.html#ga84c3a4c178bf6593e0fad2b763606236" title="Debug macro. ">CubDebug</a>(error = cudaFuncGetAttributes(&amp;empty_kernel_attrs, EmptyKernel&lt;void&gt;))) <span class="keywordflow">break</span>;</div>
+<div class="line"><a name="l00150"></a><span class="lineno">  150</span>&#160;        ptx_version = empty_kernel_attrs.ptxVersion * 10;</div>
+<div class="line"><a name="l00151"></a><span class="lineno">  151</span>&#160;    }</div>
+<div class="line"><a name="l00152"></a><span class="lineno">  152</span>&#160;    <span class="keywordflow">while</span> (0);</div>
+<div class="line"><a name="l00153"></a><span class="lineno">  153</span>&#160;</div>
+<div class="line"><a name="l00154"></a><span class="lineno">  154</span>&#160;    <span class="keywordflow">return</span> error;</div>
 <div class="line"><a name="l00155"></a><span class="lineno">  155</span>&#160;</div>
-<div class="line"><a name="l00156"></a><span class="lineno">  156</span>&#160;</div>
-<div class="line"><a name="l00160"></a><span class="lineno"><a class="code" href="classcub_1_1_device.html">  160</a></span>&#160;<span class="keyword">class </span><a class="code" href="classcub_1_1_device.html" title="Properties of a given CUDA device and the corresponding PTX bundle. ">Device</a></div>
-<div class="line"><a name="l00161"></a><span class="lineno">  161</span>&#160;{</div>
-<div class="line"><a name="l00162"></a><span class="lineno">  162</span>&#160;<span class="keyword">private</span>:</div>
-<div class="line"><a name="l00163"></a><span class="lineno">  163</span>&#160;</div>
-<div class="line"><a name="l00165"></a><span class="lineno">  165</span>&#160;    <span class="keyword">typedef</span> void (*EmptyKernelPtr)();</div>
-<div class="line"><a name="l00166"></a><span class="lineno">  166</span>&#160;</div>
-<div class="line"><a name="l00168"></a><span class="lineno">  168</span>&#160;    __host__ __device__ __forceinline__</div>
-<div class="line"><a name="l00169"></a><span class="lineno">  169</span>&#160;    EmptyKernelPtr Empty()</div>
-<div class="line"><a name="l00170"></a><span class="lineno">  170</span>&#160;    {</div>
-<div class="line"><a name="l00171"></a><span class="lineno">  171</span>&#160;        <span class="keywordflow">return</span> EmptyKernel&lt;void&gt;;</div>
-<div class="line"><a name="l00172"></a><span class="lineno">  172</span>&#160;    }</div>
-<div class="line"><a name="l00173"></a><span class="lineno">  173</span>&#160;</div>
-<div class="line"><a name="l00174"></a><span class="lineno">  174</span>&#160;<span class="keyword">public</span>:</div>
-<div class="line"><a name="l00175"></a><span class="lineno">  175</span>&#160;</div>
-<div class="line"><a name="l00176"></a><span class="lineno">  176</span>&#160;    <span class="comment">// Version information</span></div>
-<div class="line"><a name="l00177"></a><span class="lineno"><a class="code" href="classcub_1_1_device.html#ac9b36b3b0edb207aeee60110fbee6406">  177</a></span>&#160;    <span class="keywordtype">int</span>     <a class="code" href="classcub_1_1_device.html#ac9b36b3b0edb207aeee60110fbee6406" title="SM version of target device (SM version X.YZ in XYZ integer form) ">sm_version</a>;             </div>
-<div class="line"><a name="l00178"></a><span class="lineno"><a class="code" href="classcub_1_1_device.html#a416909debdeaa9116d7087ed55ed870f">  178</a></span>&#160;    <span class="keywordtype">int</span>     <a class="code" href="classcub_1_1_device.html#a416909debdeaa9116d7087ed55ed870f" title="Bundled PTX version for target device (PTX version X.YZ in XYZ integer form) ">ptx_version</a>;            </div>
-<div class="line"><a name="l00179"></a><span class="lineno">  179</span>&#160;</div>
-<div class="line"><a name="l00180"></a><span class="lineno">  180</span>&#160;    <span class="comment">// Target device properties</span></div>
-<div class="line"><a name="l00181"></a><span class="lineno"><a class="code" href="classcub_1_1_device.html#a68885a90ea0badcffc2a3511b0b4fd5c">  181</a></span>&#160;    <span class="keywordtype">int</span>     <a class="code" href="classcub_1_1_device.html#a68885a90ea0badcffc2a3511b0b4fd5c" title="Number of SMs. ">sm_count</a>;               </div>
-<div class="line"><a name="l00182"></a><span class="lineno"><a class="code" href="classcub_1_1_device.html#a4498c242e597f67a4a752426ae262049">  182</a></span>&#160;    <span class="keywordtype">int</span>     <a class="code" href="classcub_1_1_device.html#a4498c242e597f67a4a752426ae262049" title="Number of threads per warp. ">warp_threads</a>;           </div>
-<div class="line"><a name="l00183"></a><span class="lineno"><a class="code" href="classcub_1_1_device.html#a909d34dd31bdb6f754a603e8eb2b10ab">  183</a></span>&#160;    <span class="keywordtype">int</span>     <a class="code" href="classcub_1_1_device.html#a909d34dd31bdb6f754a603e8eb2b10ab" title="Number of bytes per SM bank. ">smem_bank_bytes</a>;        </div>
-<div class="line"><a name="l00184"></a><span class="lineno"><a class="code" href="classcub_1_1_device.html#a2e835add85abdf0eb640c551abec2a0b">  184</a></span>&#160;    <span class="keywordtype">int</span>     <a class="code" href="classcub_1_1_device.html#a2e835add85abdf0eb640c551abec2a0b" title="Number of smem banks. ">smem_banks</a>;             </div>
-<div class="line"><a name="l00185"></a><span class="lineno"><a class="code" href="classcub_1_1_device.html#a838c9a2e207c38ef24e79a40bccdd1ac">  185</a></span>&#160;    <span class="keywordtype">int</span>     <a class="code" href="classcub_1_1_device.html#a838c9a2e207c38ef24e79a40bccdd1ac" title="Smem bytes per SM. ">smem_bytes</a>;             </div>
-<div class="line"><a name="l00186"></a><span class="lineno"><a class="code" href="classcub_1_1_device.html#aca17efd166d916008f0fc378adc00b1f">  186</a></span>&#160;    <span class="keywordtype">int</span>     <a class="code" href="classcub_1_1_device.html#aca17efd166d916008f0fc378adc00b1f" title="Smem segment size. ">smem_alloc_unit</a>;        </div>
-<div class="line"><a name="l00187"></a><span class="lineno"><a class="code" href="classcub_1_1_device.html#a721a479d183aaa1846c69de998f84ffc">  187</a></span>&#160;    <span class="keywordtype">bool</span>    <a class="code" href="classcub_1_1_device.html#a721a479d183aaa1846c69de998f84ffc" title="Whether registers are allocated by threadblock (or by warp) ">regs_by_block</a>;          </div>
-<div class="line"><a name="l00188"></a><span class="lineno"><a class="code" href="classcub_1_1_device.html#aa432ab8fdb1d1117b29811422c83a187">  188</a></span>&#160;    <span class="keywordtype">int</span>     <a class="code" href="classcub_1_1_device.html#aa432ab8fdb1d1117b29811422c83a187" title="Granularity of register allocation within the SM. ">reg_alloc_unit</a>;         </div>
-<div class="line"><a name="l00189"></a><span class="lineno"><a class="code" href="classcub_1_1_device.html#ac5f8afb6f319b0dbd689f3f1188fc20b">  189</a></span>&#160;    <span class="keywordtype">int</span>     <a class="code" href="classcub_1_1_device.html#ac5f8afb6f319b0dbd689f3f1188fc20b" title="Granularity of warp allocation within the SM. ">warp_alloc_unit</a>;        </div>
-<div class="line"><a name="l00190"></a><span class="lineno"><a class="code" href="classcub_1_1_device.html#a963c497e442ac283b2655faa578614d3">  190</a></span>&#160;    <span class="keywordtype">int</span>     <a class="code" href="classcub_1_1_device.html#a963c497e442ac283b2655faa578614d3" title="Maximum number of threads per SM. ">max_sm_threads</a>;         </div>
-<div class="line"><a name="l00191"></a><span class="lineno"><a class="code" href="classcub_1_1_device.html#ac614bed852b56bf8c616803aa8601caf">  191</a></span>&#160;    <span class="keywordtype">int</span>     <a class="code" href="classcub_1_1_device.html#ac614bed852b56bf8c616803aa8601caf" title="Maximum number of threadblocks per SM. ">max_sm_blocks</a>;          </div>
-<div class="line"><a name="l00192"></a><span class="lineno"><a class="code" href="classcub_1_1_device.html#ab55f58e3252d369ee50d34b190df2277">  192</a></span>&#160;    <span class="keywordtype">int</span>     <a class="code" href="classcub_1_1_device.html#ab55f58e3252d369ee50d34b190df2277" title="Maximum number of threads per threadblock. ">max_block_threads</a>;      </div>
-<div class="line"><a name="l00193"></a><span class="lineno"><a class="code" href="classcub_1_1_device.html#af321be8fe9aecd0942d04739f7520c61">  193</a></span>&#160;    <span class="keywordtype">int</span>     <a class="code" href="classcub_1_1_device.html#af321be8fe9aecd0942d04739f7520c61" title="Maximum number of registers per SM. ">max_sm_registers</a>;       </div>
-<div class="line"><a name="l00194"></a><span class="lineno"><a class="code" href="classcub_1_1_device.html#a5ee84e74af9939896bb81b48d4843d17">  194</a></span>&#160;    <span class="keywordtype">int</span>     <a class="code" href="classcub_1_1_device.html#a5ee84e74af9939896bb81b48d4843d17" title="Maximum number of warps per SM. ">max_sm_warps</a>;           </div>
-<div class="line"><a name="l00195"></a><span class="lineno">  195</span>&#160;</div>
-<div class="line"><a name="l00199"></a><span class="lineno">  199</span>&#160;    <span class="keyword">template</span> &lt;<span class="keyword">typename</span> ArchProps&gt;</div>
-<div class="line"><a name="l00200"></a><span class="lineno"><a class="code" href="classcub_1_1_device.html#a3c986a6aa2d3b69fe8a7ab14c85a6477">  200</a></span>&#160;    __host__ __device__ __forceinline__ <span class="keywordtype">void</span> <a class="code" href="classcub_1_1_device.html#a3c986a6aa2d3b69fe8a7ab14c85a6477">Callback</a>()</div>
-<div class="line"><a name="l00201"></a><span class="lineno">  201</span>&#160;    {</div>
-<div class="line"><a name="l00202"></a><span class="lineno">  202</span>&#160;        <a class="code" href="classcub_1_1_device.html#a4498c242e597f67a4a752426ae262049" title="Number of threads per warp. ">warp_threads</a>        = <a class="code" href="structcub_1_1_arch_props.html#a378def3dee75e77eb135efcf6f0ca063ac5a2eb5b9e3b50dd43ad67c1ff020d9c" title="Log of the number of threads per warp. ">ArchProps::WARP_THREADS</a>;</div>
-<div class="line"><a name="l00203"></a><span class="lineno">  203</span>&#160;        <a class="code" href="classcub_1_1_device.html#a909d34dd31bdb6f754a603e8eb2b10ab" title="Number of bytes per SM bank. ">smem_bank_bytes</a>     = <a class="code" href="structcub_1_1_arch_props.html#a378def3dee75e77eb135efcf6f0ca063ab56aa4deb8408a51e7cc139c2c1e14f5" title="The number of smem banks. ">ArchProps::SMEM_BANK_BYTES</a>;</div>
-<div class="line"><a name="l00204"></a><span class="lineno">  204</span>&#160;        <a class="code" href="classcub_1_1_device.html#a2e835add85abdf0eb640c551abec2a0b" title="Number of smem banks. ">smem_banks</a>          = <a class="code" href="structcub_1_1_arch_props.html#a378def3dee75e77eb135efcf6f0ca063a55ab5a77ae95f67255bbec10cd3993e1" title="Log of the number of smem banks. ">ArchProps::SMEM_BANKS</a>;</div>
-<div class="line"><a name="l00205"></a><span class="lineno">  205</span>&#160;        <a class="code" href="classcub_1_1_device.html#a838c9a2e207c38ef24e79a40bccdd1ac" title="Smem bytes per SM. ">smem_bytes</a>          = <a class="code" href="structcub_1_1_arch_props.html#a378def3dee75e77eb135efcf6f0ca063a993d6ee811a054da1a8579132c6301a1" title="Size of smem bank words. ">ArchProps::SMEM_BYTES</a>;</div>
-<div class="line"><a name="l00206"></a><span class="lineno">  206</span>&#160;        <a class="code" href="classcub_1_1_device.html#aca17efd166d916008f0fc378adc00b1f" title="Smem segment size. ">smem_alloc_unit</a>     = <a class="code" href="structcub_1_1_arch_props.html#a378def3dee75e77eb135efcf6f0ca063af554a252a393bce18200236640959bab" title="Maximum SM shared memory. ">ArchProps::SMEM_ALLOC_UNIT</a>;</div>
-<div class="line"><a name="l00207"></a><span class="lineno">  207</span>&#160;        <a class="code" href="classcub_1_1_device.html#a721a479d183aaa1846c69de998f84ffc" title="Whether registers are allocated by threadblock (or by warp) ">regs_by_block</a>       = <a class="code" href="structcub_1_1_arch_props.html#a378def3dee75e77eb135efcf6f0ca063addc3e62803e3ed6d8ec351faa7a2c45d" title="Smem allocation size in bytes. ">ArchProps::REGS_BY_BLOCK</a>;</div>
-<div class="line"><a name="l00208"></a><span class="lineno">  208</span>&#160;        <a class="code" href="classcub_1_1_device.html#aa432ab8fdb1d1117b29811422c83a187" title="Granularity of register allocation within the SM. ">reg_alloc_unit</a>      = <a class="code" href="structcub_1_1_arch_props.html#a378def3dee75e77eb135efcf6f0ca063a5f6934930aa379cd70b7c8e19bcff4bc" title="Whether or not the architecture allocates registers by block (or by warp) ">ArchProps::REG_ALLOC_UNIT</a>;</div>
-<div class="line"><a name="l00209"></a><span class="lineno">  209</span>&#160;        <a class="code" href="classcub_1_1_device.html#ac5f8afb6f319b0dbd689f3f1188fc20b" title="Granularity of warp allocation within the SM. ">warp_alloc_unit</a>     = <a class="code" href="structcub_1_1_arch_props.html#a378def3dee75e77eb135efcf6f0ca063a25bc7bb8dac71df0b7962776e0ed9cde" title="Number of registers allocated at a time per block (or by warp) ">ArchProps::WARP_ALLOC_UNIT</a>;</div>
-<div class="line"><a name="l00210"></a><span class="lineno">  210</span>&#160;        <a class="code" href="classcub_1_1_device.html#a963c497e442ac283b2655faa578614d3" title="Maximum number of threads per SM. ">max_sm_threads</a>      = <a class="code" href="structcub_1_1_arch_props.html#a378def3dee75e77eb135efcf6f0ca063a3aa3c3db5dc28ef11961f6867fee7101" title="Granularity of warps for which registers are allocated. ">ArchProps::MAX_SM_THREADS</a>;</div>
-<div class="line"><a name="l00211"></a><span class="lineno">  211</span>&#160;        <a class="code" href="classcub_1_1_device.html#ac614bed852b56bf8c616803aa8601caf" title="Maximum number of threadblocks per SM. ">max_sm_blocks</a>       = <a class="code" href="structcub_1_1_arch_props.html#a378def3dee75e77eb135efcf6f0ca063abdc229ee36991bb6055f3bd42fc59387" title="Maximum number of threads per SM. ">ArchProps::MAX_SM_THREADBLOCKS</a>;</div>
-<div class="line"><a name="l00212"></a><span class="lineno">  212</span>&#160;        <a class="code" href="classcub_1_1_device.html#ab55f58e3252d369ee50d34b190df2277" title="Maximum number of threads per threadblock. ">max_block_threads</a>   = <a class="code" href="structcub_1_1_arch_props.html#a378def3dee75e77eb135efcf6f0ca063a9079f42fbfb80e59ef7affc574bf6001" title="Maximum number of thread blocks per SM. ">ArchProps::MAX_BLOCK_THREADS</a>;</div>
-<div class="line"><a name="l00213"></a><span class="lineno">  213</span>&#160;        <a class="code" href="classcub_1_1_device.html#af321be8fe9aecd0942d04739f7520c61" title="Maximum number of registers per SM. ">max_sm_registers</a>    = <a class="code" href="structcub_1_1_arch_props.html#a378def3dee75e77eb135efcf6f0ca063a90062d88d6a9abcfdfd4c29111a5ac3e" title="Maximum number of thread per thread block. ">ArchProps::MAX_SM_REGISTERS</a>;</div>
-<div class="line"><a name="l00214"></a><span class="lineno">  214</span>&#160;        <a class="code" href="classcub_1_1_device.html#a5ee84e74af9939896bb81b48d4843d17" title="Maximum number of warps per SM. ">max_sm_warps</a>        = <a class="code" href="classcub_1_1_device.html#a963c497e442ac283b2655faa578614d3" title="Maximum number of threads per SM. ">max_sm_threads</a> / <a class="code" href="classcub_1_1_device.html#a4498c242e597f67a4a752426ae262049" title="Number of threads per warp. ">warp_threads</a>;</div>
-<div class="line"><a name="l00215"></a><span class="lineno">  215</span>&#160;    }</div>
-<div class="line"><a name="l00216"></a><span class="lineno">  216</span>&#160;</div>
-<div class="line"><a name="l00217"></a><span class="lineno">  217</span>&#160;</div>
-<div class="line"><a name="l00218"></a><span class="lineno">  218</span>&#160;<span class="keyword">public</span>:</div>
-<div class="line"><a name="l00219"></a><span class="lineno">  219</span>&#160;</div>
-<div class="line"><a name="l00223"></a><span class="lineno">  223</span>&#160;    __host__ __device__ __forceinline__</div>
-<div class="line"><a name="l00224"></a><span class="lineno"><a class="code" href="classcub_1_1_device.html#a4c1aecec381d2dce80120362feb2d0ca">  224</a></span>&#160;    cudaError_t <a class="code" href="classcub_1_1_device.html#a4c1aecec381d2dce80120362feb2d0ca">Init</a>(<span class="keywordtype">int</span> device_ordinal)</div>
-<div class="line"><a name="l00225"></a><span class="lineno">  225</span>&#160;    {</div>
-<div class="line"><a name="l00226"></a><span class="lineno">  226</span>&#160;<span class="preprocessor">    #ifndef CUB_RUNTIME_ENABLED</span></div>
-<div class="line"><a name="l00227"></a><span class="lineno">  227</span>&#160;<span class="preprocessor"></span></div>
-<div class="line"><a name="l00228"></a><span class="lineno">  228</span>&#160;        <span class="comment">// CUDA API calls not supported from this device</span></div>
-<div class="line"><a name="l00229"></a><span class="lineno">  229</span>&#160;        <span class="keywordflow">return</span> <a class="code" href="group___util_module.html#ga84c3a4c178bf6593e0fad2b763606236" title="Debug macro. ">CubDebug</a>(cudaErrorInvalidConfiguration);</div>
-<div class="line"><a name="l00230"></a><span class="lineno">  230</span>&#160;</div>
-<div class="line"><a name="l00231"></a><span class="lineno">  231</span>&#160;<span class="preprocessor">    #else</span></div>
-<div class="line"><a name="l00232"></a><span class="lineno">  232</span>&#160;<span class="preprocessor"></span></div>
-<div class="line"><a name="l00233"></a><span class="lineno">  233</span>&#160;        cudaError_t error = cudaSuccess;</div>
-<div class="line"><a name="l00234"></a><span class="lineno">  234</span>&#160;        <span class="keywordflow">do</span></div>
-<div class="line"><a name="l00235"></a><span class="lineno">  235</span>&#160;        {</div>
-<div class="line"><a name="l00236"></a><span class="lineno">  236</span>&#160;            <span class="comment">// Fill in SM version</span></div>
-<div class="line"><a name="l00237"></a><span class="lineno">  237</span>&#160;            <span class="keywordtype">int</span> major, minor;</div>
-<div class="line"><a name="l00238"></a><span class="lineno">  238</span>&#160;            <span class="keywordflow">if</span> (<a class="code" href="group___util_module.html#ga84c3a4c178bf6593e0fad2b763606236" title="Debug macro. ">CubDebug</a>(error = cudaDeviceGetAttribute(&amp;major, cudaDevAttrComputeCapabilityMajor, device_ordinal))) <span class="keywordflow">break</span>;</div>
-<div class="line"><a name="l00239"></a><span class="lineno">  239</span>&#160;            <span class="keywordflow">if</span> (<a class="code" href="group___util_module.html#ga84c3a4c178bf6593e0fad2b763606236" title="Debug macro. ">CubDebug</a>(error = cudaDeviceGetAttribute(&amp;minor, cudaDevAttrComputeCapabilityMinor, device_ordinal))) <span class="keywordflow">break</span>;</div>
-<div class="line"><a name="l00240"></a><span class="lineno">  240</span>&#160;            <a class="code" href="classcub_1_1_device.html#ac9b36b3b0edb207aeee60110fbee6406" title="SM version of target device (SM version X.YZ in XYZ integer form) ">sm_version</a> = major * 100 + minor * 10;</div>
-<div class="line"><a name="l00241"></a><span class="lineno">  241</span>&#160;</div>
-<div class="line"><a name="l00242"></a><span class="lineno">  242</span>&#160;            <span class="comment">// Fill in static SM properties</span></div>
-<div class="line"><a name="l00243"></a><span class="lineno">  243</span>&#160;            <span class="comment">// Initialize our device properties via callback from static device properties</span></div>
-<div class="line"><a name="l00244"></a><span class="lineno">  244</span>&#160;            <a class="code" href="structcub_1_1_arch_props.html" title="Structure for statically reporting CUDA device properties, parameterized by SM architecture. ">ArchProps&lt;100&gt;::Callback</a>(*<span class="keyword">this</span>, <a class="code" href="classcub_1_1_device.html#ac9b36b3b0edb207aeee60110fbee6406" title="SM version of target device (SM version X.YZ in XYZ integer form) ">sm_version</a>);</div>
-<div class="line"><a name="l00245"></a><span class="lineno">  245</span>&#160;</div>
-<div class="line"><a name="l00246"></a><span class="lineno">  246</span>&#160;            <span class="comment">// Fill in SM count</span></div>
-<div class="line"><a name="l00247"></a><span class="lineno">  247</span>&#160;            <span class="keywordflow">if</span> (<a class="code" href="group___util_module.html#ga84c3a4c178bf6593e0fad2b763606236" title="Debug macro. ">CubDebug</a>(error = cudaDeviceGetAttribute (&amp;<a class="code" href="classcub_1_1_device.html#a68885a90ea0badcffc2a3511b0b4fd5c" title="Number of SMs. ">sm_count</a>, cudaDevAttrMultiProcessorCount, device_ordinal))) <span class="keywordflow">break</span>;</div>
+<div class="line"><a name="l00156"></a><span class="lineno">  156</span>&#160;<span class="preprocessor">#endif</span></div>
+<div class="line"><a name="l00157"></a><span class="lineno">  157</span>&#160;<span class="preprocessor"></span>}</div>
+<div class="line"><a name="l00158"></a><span class="lineno">  158</span>&#160;</div>
+<div class="line"><a name="l00159"></a><span class="lineno">  159</span>&#160;</div>
+<div class="line"><a name="l00163"></a><span class="lineno"><a class="code" href="group___util_mgmt.html#ga1ec5fed5face2bf098cee3ce7096364a">  163</a></span>&#160;__host__ __device__ __forceinline__ cudaError_t <a class="code" href="group___util_mgmt.html#ga1ec5fed5face2bf098cee3ce7096364a" title="Retrieves the SM version (major * 100 + minor * 10) ">SmVersion</a>(<span class="keywordtype">int</span> &amp;sm_version, <span class="keywordtype">int</span> device_ordinal)</div>
+<div class="line"><a name="l00164"></a><span class="lineno">  164</span>&#160;{</div>
+<div class="line"><a name="l00165"></a><span class="lineno">  165</span>&#160;<span class="preprocessor">#ifndef CUB_RUNTIME_ENABLED</span></div>
+<div class="line"><a name="l00166"></a><span class="lineno">  166</span>&#160;<span class="preprocessor"></span></div>
+<div class="line"><a name="l00167"></a><span class="lineno">  167</span>&#160;    <span class="comment">// CUDA API calls not supported from this device</span></div>
+<div class="line"><a name="l00168"></a><span class="lineno">  168</span>&#160;    <span class="keywordflow">return</span> cudaErrorInvalidConfiguration;</div>
+<div class="line"><a name="l00169"></a><span class="lineno">  169</span>&#160;</div>
+<div class="line"><a name="l00170"></a><span class="lineno">  170</span>&#160;<span class="preprocessor">#else</span></div>
+<div class="line"><a name="l00171"></a><span class="lineno">  171</span>&#160;<span class="preprocessor"></span></div>
+<div class="line"><a name="l00172"></a><span class="lineno">  172</span>&#160;    cudaError_t error = cudaSuccess;</div>
+<div class="line"><a name="l00173"></a><span class="lineno">  173</span>&#160;    <span class="keywordflow">do</span></div>
+<div class="line"><a name="l00174"></a><span class="lineno">  174</span>&#160;    {</div>
+<div class="line"><a name="l00175"></a><span class="lineno">  175</span>&#160;        <span class="comment">// Fill in SM version</span></div>
+<div class="line"><a name="l00176"></a><span class="lineno">  176</span>&#160;        <span class="keywordtype">int</span> major, minor;</div>
+<div class="line"><a name="l00177"></a><span class="lineno">  177</span>&#160;        <span class="keywordflow">if</span> (<a class="code" href="group___util_mgmt.html#ga84c3a4c178bf6593e0fad2b763606236" title="Debug macro. ">CubDebug</a>(error = cudaDeviceGetAttribute(&amp;major, cudaDevAttrComputeCapabilityMajor, device_ordinal))) <span class="keywordflow">break</span>;</div>
+<div class="line"><a name="l00178"></a><span class="lineno">  178</span>&#160;        <span class="keywordflow">if</span> (<a class="code" href="group___util_mgmt.html#ga84c3a4c178bf6593e0fad2b763606236" title="Debug macro. ">CubDebug</a>(error = cudaDeviceGetAttribute(&amp;minor, cudaDevAttrComputeCapabilityMinor, device_ordinal))) <span class="keywordflow">break</span>;</div>
+<div class="line"><a name="l00179"></a><span class="lineno">  179</span>&#160;        sm_version = major * 100 + minor * 10;</div>
+<div class="line"><a name="l00180"></a><span class="lineno">  180</span>&#160;    }</div>
+<div class="line"><a name="l00181"></a><span class="lineno">  181</span>&#160;    <span class="keywordflow">while</span> (0);</div>
+<div class="line"><a name="l00182"></a><span class="lineno">  182</span>&#160;</div>
+<div class="line"><a name="l00183"></a><span class="lineno">  183</span>&#160;    <span class="keywordflow">return</span> error;</div>
+<div class="line"><a name="l00184"></a><span class="lineno">  184</span>&#160;</div>
+<div class="line"><a name="l00185"></a><span class="lineno">  185</span>&#160;<span class="preprocessor">#endif</span></div>
+<div class="line"><a name="l00186"></a><span class="lineno">  186</span>&#160;<span class="preprocessor"></span>}</div>
+<div class="line"><a name="l00187"></a><span class="lineno">  187</span>&#160;</div>
+<div class="line"><a name="l00188"></a><span class="lineno">  188</span>&#160;</div>
+<div class="line"><a name="l00189"></a><span class="lineno">  189</span>&#160;<span class="preprocessor">#ifndef DOXYGEN_SHOULD_SKIP_THIS    // Do not document</span></div>
+<div class="line"><a name="l00190"></a><span class="lineno">  190</span>&#160;<span class="preprocessor"></span></div>
+<div class="line"><a name="l00194"></a><span class="lineno">  194</span>&#160;__host__ __device__ __forceinline__</div>
+<div class="line"><a name="l00195"></a><span class="lineno">  195</span>&#160;<span class="keyword">static</span> cudaError_t SyncStream(cudaStream_t stream)</div>
+<div class="line"><a name="l00196"></a><span class="lineno">  196</span>&#160;{</div>
+<div class="line"><a name="l00197"></a><span class="lineno">  197</span>&#160;<span class="preprocessor">#ifndef __CUDA_ARCH__</span></div>
+<div class="line"><a name="l00198"></a><span class="lineno">  198</span>&#160;<span class="preprocessor"></span>    <span class="keywordflow">return</span> cudaStreamSynchronize(stream);</div>
+<div class="line"><a name="l00199"></a><span class="lineno">  199</span>&#160;<span class="preprocessor">#else</span></div>
+<div class="line"><a name="l00200"></a><span class="lineno">  200</span>&#160;<span class="preprocessor"></span>    <span class="comment">// Device can&#39;t yet sync on a specific stream</span></div>
+<div class="line"><a name="l00201"></a><span class="lineno">  201</span>&#160;    <span class="keywordflow">return</span> cudaDeviceSynchronize();</div>
+<div class="line"><a name="l00202"></a><span class="lineno">  202</span>&#160;<span class="preprocessor">#endif</span></div>
+<div class="line"><a name="l00203"></a><span class="lineno">  203</span>&#160;<span class="preprocessor"></span>}</div>
+<div class="line"><a name="l00204"></a><span class="lineno">  204</span>&#160;</div>
+<div class="line"><a name="l00205"></a><span class="lineno">  205</span>&#160;</div>
+<div class="line"><a name="l00209"></a><span class="lineno">  209</span>&#160;<span class="keyword">template</span> &lt;<span class="keyword">typename</span> KernelPtr&gt;</div>
+<div class="line"><a name="l00210"></a><span class="lineno">  210</span>&#160;__host__ __device__ __forceinline__</div>
+<div class="line"><a name="l00211"></a><span class="lineno">  211</span>&#160;cudaError_t <a class="code" href="group___util_mgmt.html#ga364b8a84e613c62761d58afb351a258b" title="Computes maximum SM occupancy in thread blocks for executing the given kernel function pointer kernel...">MaxSmOccupancy</a>(</div>
+<div class="line"><a name="l00212"></a><span class="lineno">  212</span>&#160;    <span class="keywordtype">int</span>                 &amp;max_sm_occupancy,          </div>
+<div class="line"><a name="l00213"></a><span class="lineno">  213</span>&#160;    <span class="keywordtype">int</span>                 sm_version,                 </div>
+<div class="line"><a name="l00214"></a><span class="lineno">  214</span>&#160;    KernelPtr           kernel_ptr,                 </div>
+<div class="line"><a name="l00215"></a><span class="lineno">  215</span>&#160;    <span class="keywordtype">int</span>                 block_threads)              </div>
+<div class="line"><a name="l00216"></a><span class="lineno">  216</span>&#160;{</div>
+<div class="line"><a name="l00217"></a><span class="lineno">  217</span>&#160;<span class="preprocessor">#ifndef CUB_RUNTIME_ENABLED</span></div>
+<div class="line"><a name="l00218"></a><span class="lineno">  218</span>&#160;<span class="preprocessor"></span></div>
+<div class="line"><a name="l00219"></a><span class="lineno">  219</span>&#160;    <span class="comment">// CUDA API calls not supported from this device</span></div>
+<div class="line"><a name="l00220"></a><span class="lineno">  220</span>&#160;    <span class="keywordflow">return</span> <a class="code" href="group___util_mgmt.html#ga84c3a4c178bf6593e0fad2b763606236" title="Debug macro. ">CubDebug</a>(cudaErrorInvalidConfiguration);</div>
+<div class="line"><a name="l00221"></a><span class="lineno">  221</span>&#160;</div>
+<div class="line"><a name="l00222"></a><span class="lineno">  222</span>&#160;<span class="preprocessor">#else</span></div>
+<div class="line"><a name="l00223"></a><span class="lineno">  223</span>&#160;<span class="preprocessor"></span></div>
+<div class="line"><a name="l00224"></a><span class="lineno">  224</span>&#160;    cudaError_t error = cudaSuccess;</div>
+<div class="line"><a name="l00225"></a><span class="lineno">  225</span>&#160;    <span class="keywordflow">do</span></div>
+<div class="line"><a name="l00226"></a><span class="lineno">  226</span>&#160;    {</div>
+<div class="line"><a name="l00227"></a><span class="lineno">  227</span>&#160;        <span class="keywordtype">int</span> warp_threads        = 1 &lt;&lt; <a class="code" href="group___util_mgmt.html#ga07eedb9de4a50680067c2d51eb438f69" title="Number of threads per warp. ">CUB_LOG_WARP_THREADS</a>(sm_version);</div>
+<div class="line"><a name="l00228"></a><span class="lineno">  228</span>&#160;        <span class="keywordtype">int</span> max_sm_blocks       = <a class="code" href="group___util_mgmt.html#gaf2d79f9a39b860bf58ff161c175c7b06" title="Maximum number of thread blocks per SM. ">CUB_MAX_SM_BLOCKS</a>(sm_version);</div>
+<div class="line"><a name="l00229"></a><span class="lineno">  229</span>&#160;        <span class="keywordtype">int</span> max_sm_warps        = <a class="code" href="group___util_mgmt.html#gab2f2f31cddcdd898f6f9435b50cad875" title="Maximum number of threads per SM. ">CUB_MAX_SM_THREADS</a>(sm_version) / warp_threads;</div>
+<div class="line"><a name="l00230"></a><span class="lineno">  230</span>&#160;        <span class="keywordtype">int</span> regs_by_block       = <a class="code" href="group___util_mgmt.html#gabcb256a9b251c898c831b107c43429c6" title="Whether or not the architecture allocates registers by block (or by warp) ">CUB_REGS_BY_BLOCK</a>(sm_version);</div>
+<div class="line"><a name="l00231"></a><span class="lineno">  231</span>&#160;        <span class="keywordtype">int</span> max_sm_registers    = <a class="code" href="group___util_mgmt.html#ga872d007d76c4078ba79ff71f8f2ac497" title="Maximum number of registers per SM. ">CUB_MAX_SM_REGISTERS</a>(sm_version);</div>
+<div class="line"><a name="l00232"></a><span class="lineno">  232</span>&#160;        <span class="keywordtype">int</span> warp_alloc_unit     = <a class="code" href="group___util_mgmt.html#ga018e98172a5a141bde7a6e92fa7521fb" title="Granularity of warps for which registers are allocated. ">CUB_WARP_ALLOC_UNIT</a>(sm_version);</div>
+<div class="line"><a name="l00233"></a><span class="lineno">  233</span>&#160;        <span class="keywordtype">int</span> smem_alloc_unit     = <a class="code" href="group___util_mgmt.html#ga5218fd60b87aadef5bb43d91d89b1765" title="Smem allocation size in bytes. ">CUB_SMEM_ALLOC_UNIT</a>(sm_version);</div>
+<div class="line"><a name="l00234"></a><span class="lineno">  234</span>&#160;        <span class="keywordtype">int</span> reg_alloc_unit      = <a class="code" href="group___util_mgmt.html#ga9f27b77f4bd7aaf2582508f285e7eecc" title="Number of registers allocated at a time per block (or by warp) ">CUB_REG_ALLOC_UNIT</a>(sm_version);</div>
+<div class="line"><a name="l00235"></a><span class="lineno">  235</span>&#160;        <span class="keywordtype">int</span> smem_bytes          = <a class="code" href="group___util_mgmt.html#ga8962f32faf85d32365340280e8b33661" title="Number of smem bytes provisioned per SM. ">CUB_SMEM_BYTES</a>(sm_version);</div>
+<div class="line"><a name="l00236"></a><span class="lineno">  236</span>&#160;</div>
+<div class="line"><a name="l00237"></a><span class="lineno">  237</span>&#160;        <span class="comment">// Get kernel attributes</span></div>
+<div class="line"><a name="l00238"></a><span class="lineno">  238</span>&#160;        cudaFuncAttributes kernel_attrs;</div>
+<div class="line"><a name="l00239"></a><span class="lineno">  239</span>&#160;        <span class="keywordflow">if</span> (<a class="code" href="group___util_mgmt.html#ga84c3a4c178bf6593e0fad2b763606236" title="Debug macro. ">CubDebug</a>(error = cudaFuncGetAttributes(&amp;kernel_attrs, kernel_ptr))) <span class="keywordflow">break</span>;</div>
+<div class="line"><a name="l00240"></a><span class="lineno">  240</span>&#160;</div>
+<div class="line"><a name="l00241"></a><span class="lineno">  241</span>&#160;        <span class="comment">// Number of warps per threadblock</span></div>
+<div class="line"><a name="l00242"></a><span class="lineno">  242</span>&#160;        <span class="keywordtype">int</span> block_warps = (block_threads +  warp_threads - 1) / warp_threads;</div>
+<div class="line"><a name="l00243"></a><span class="lineno">  243</span>&#160;</div>
+<div class="line"><a name="l00244"></a><span class="lineno">  244</span>&#160;        <span class="comment">// Max warp occupancy</span></div>
+<div class="line"><a name="l00245"></a><span class="lineno">  245</span>&#160;        <span class="keywordtype">int</span> max_warp_occupancy = (block_warps &gt; 0) ?</div>
+<div class="line"><a name="l00246"></a><span class="lineno">  246</span>&#160;            max_sm_warps / block_warps :</div>
+<div class="line"><a name="l00247"></a><span class="lineno">  247</span>&#160;            max_sm_blocks;</div>
 <div class="line"><a name="l00248"></a><span class="lineno">  248</span>&#160;</div>
-<div class="line"><a name="l00249"></a><span class="lineno">  249</span>&#160;            <span class="comment">// Fill in PTX version</span></div>
-<div class="line"><a name="l00250"></a><span class="lineno">  250</span>&#160;<span class="preprocessor">        #if CUB_PTX_ARCH &gt; 0</span></div>
-<div class="line"><a name="l00251"></a><span class="lineno">  251</span>&#160;<span class="preprocessor"></span>            <a class="code" href="classcub_1_1_device.html#a416909debdeaa9116d7087ed55ed870f" title="Bundled PTX version for target device (PTX version X.YZ in XYZ integer form) ">ptx_version</a> = <a class="code" href="group___util_module.html#ga76769ce380739b38e0bd00f57e0dbe4f" title="CUB_PTX_ARCH reflects the PTX version targeted by the active compiler pass (or zero during the host p...">CUB_PTX_ARCH</a>;</div>
-<div class="line"><a name="l00252"></a><span class="lineno">  252</span>&#160;<span class="preprocessor">        #else</span></div>
-<div class="line"><a name="l00253"></a><span class="lineno">  253</span>&#160;<span class="preprocessor"></span>            <span class="keywordflow">if</span> (<a class="code" href="group___util_module.html#ga84c3a4c178bf6593e0fad2b763606236" title="Debug macro. ">CubDebug</a>(error = <a class="code" href="group___util_module.html#gac3d86a53650d110862fe8a84fce61c2e" title="Retrieves the PTX version (major * 100 + minor * 10) ">PtxVersion</a>(<a class="code" href="classcub_1_1_device.html#a416909debdeaa9116d7087ed55ed870f" title="Bundled PTX version for target device (PTX version X.YZ in XYZ integer form) ">ptx_version</a>))) <span class="keywordflow">break</span>;</div>
-<div class="line"><a name="l00254"></a><span class="lineno">  254</span>&#160;<span class="preprocessor">        #endif</span></div>
-<div class="line"><a name="l00255"></a><span class="lineno">  255</span>&#160;<span class="preprocessor"></span></div>
-<div class="line"><a name="l00256"></a><span class="lineno">  256</span>&#160;        }</div>
-<div class="line"><a name="l00257"></a><span class="lineno">  257</span>&#160;        <span class="keywordflow">while</span> (0);</div>
-<div class="line"><a name="l00258"></a><span class="lineno">  258</span>&#160;</div>
-<div class="line"><a name="l00259"></a><span class="lineno">  259</span>&#160;        <span class="keywordflow">return</span> error;</div>
-<div class="line"><a name="l00260"></a><span class="lineno">  260</span>&#160;</div>
-<div class="line"><a name="l00261"></a><span class="lineno">  261</span>&#160;<span class="preprocessor">    #endif</span></div>
-<div class="line"><a name="l00262"></a><span class="lineno">  262</span>&#160;<span class="preprocessor"></span>    }</div>
-<div class="line"><a name="l00263"></a><span class="lineno">  263</span>&#160;</div>
-<div class="line"><a name="l00264"></a><span class="lineno">  264</span>&#160;</div>
-<div class="line"><a name="l00268"></a><span class="lineno">  268</span>&#160;    __host__ __device__ __forceinline__</div>
-<div class="line"><a name="l00269"></a><span class="lineno"><a class="code" href="classcub_1_1_device.html#af5217a10a5c9d26ce226e257665a45ce">  269</a></span>&#160;    cudaError_t <a class="code" href="classcub_1_1_device.html#af5217a10a5c9d26ce226e257665a45ce">Init</a>()</div>
-<div class="line"><a name="l00270"></a><span class="lineno">  270</span>&#160;    {</div>
-<div class="line"><a name="l00271"></a><span class="lineno">  271</span>&#160;<span class="preprocessor">    #ifndef CUB_RUNTIME_ENABLED</span></div>
-<div class="line"><a name="l00272"></a><span class="lineno">  272</span>&#160;<span class="preprocessor"></span></div>
-<div class="line"><a name="l00273"></a><span class="lineno">  273</span>&#160;        <span class="comment">// CUDA API calls not supported from this device</span></div>
-<div class="line"><a name="l00274"></a><span class="lineno">  274</span>&#160;        <span class="keywordflow">return</span> <a class="code" href="group___util_module.html#ga84c3a4c178bf6593e0fad2b763606236" title="Debug macro. ">CubDebug</a>(cudaErrorInvalidConfiguration);</div>
-<div class="line"><a name="l00275"></a><span class="lineno">  275</span>&#160;</div>
-<div class="line"><a name="l00276"></a><span class="lineno">  276</span>&#160;<span class="preprocessor">    #else</span></div>
-<div class="line"><a name="l00277"></a><span class="lineno">  277</span>&#160;<span class="preprocessor"></span></div>
-<div class="line"><a name="l00278"></a><span class="lineno">  278</span>&#160;        cudaError_t error = cudaSuccess;</div>
-<div class="line"><a name="l00279"></a><span class="lineno">  279</span>&#160;        <span class="keywordflow">do</span></div>
-<div class="line"><a name="l00280"></a><span class="lineno">  280</span>&#160;        {</div>
-<div class="line"><a name="l00281"></a><span class="lineno">  281</span>&#160;            <span class="keywordtype">int</span> device_ordinal;</div>
-<div class="line"><a name="l00282"></a><span class="lineno">  282</span>&#160;            <span class="keywordflow">if</span> ((error = <a class="code" href="group___util_module.html#ga84c3a4c178bf6593e0fad2b763606236" title="Debug macro. ">CubDebug</a>(cudaGetDevice(&amp;device_ordinal)))) <span class="keywordflow">break</span>;</div>
-<div class="line"><a name="l00283"></a><span class="lineno">  283</span>&#160;            <span class="keywordflow">if</span> ((error = <a class="code" href="classcub_1_1_device.html#af5217a10a5c9d26ce226e257665a45ce">Init</a>(device_ordinal))) <span class="keywordflow">break</span>;</div>
-<div class="line"><a name="l00284"></a><span class="lineno">  284</span>&#160;        }</div>
-<div class="line"><a name="l00285"></a><span class="lineno">  285</span>&#160;        <span class="keywordflow">while</span> (0);</div>
-<div class="line"><a name="l00286"></a><span class="lineno">  286</span>&#160;        <span class="keywordflow">return</span> error;</div>
+<div class="line"><a name="l00249"></a><span class="lineno">  249</span>&#160;        <span class="comment">// Maximum register occupancy</span></div>
+<div class="line"><a name="l00250"></a><span class="lineno">  250</span>&#160;        <span class="keywordtype">int</span> max_reg_occupancy;</div>
+<div class="line"><a name="l00251"></a><span class="lineno">  251</span>&#160;        <span class="keywordflow">if</span> ((block_threads == 0) || (kernel_attrs.numRegs == 0))</div>
+<div class="line"><a name="l00252"></a><span class="lineno">  252</span>&#160;        {</div>
+<div class="line"><a name="l00253"></a><span class="lineno">  253</span>&#160;            <span class="comment">// Prevent divide-by-zero</span></div>
+<div class="line"><a name="l00254"></a><span class="lineno">  254</span>&#160;            max_reg_occupancy = max_sm_blocks;</div>
+<div class="line"><a name="l00255"></a><span class="lineno">  255</span>&#160;        }</div>
+<div class="line"><a name="l00256"></a><span class="lineno">  256</span>&#160;        <span class="keywordflow">else</span> <span class="keywordflow">if</span> (regs_by_block)</div>
+<div class="line"><a name="l00257"></a><span class="lineno">  257</span>&#160;        {</div>
+<div class="line"><a name="l00258"></a><span class="lineno">  258</span>&#160;            <span class="comment">// Allocates registers by threadblock</span></div>
+<div class="line"><a name="l00259"></a><span class="lineno">  259</span>&#160;            <span class="keywordtype">int</span> block_regs = CUB_ROUND_UP_NEAREST(kernel_attrs.numRegs * warp_threads * block_warps, reg_alloc_unit);</div>
+<div class="line"><a name="l00260"></a><span class="lineno">  260</span>&#160;            max_reg_occupancy = max_sm_registers / block_regs;</div>
+<div class="line"><a name="l00261"></a><span class="lineno">  261</span>&#160;        }</div>
+<div class="line"><a name="l00262"></a><span class="lineno">  262</span>&#160;        <span class="keywordflow">else</span></div>
+<div class="line"><a name="l00263"></a><span class="lineno">  263</span>&#160;        {</div>
+<div class="line"><a name="l00264"></a><span class="lineno">  264</span>&#160;            <span class="comment">// Allocates registers by warp</span></div>
+<div class="line"><a name="l00265"></a><span class="lineno">  265</span>&#160;            <span class="keywordtype">int</span> sm_sides                = warp_alloc_unit;</div>
+<div class="line"><a name="l00266"></a><span class="lineno">  266</span>&#160;            <span class="keywordtype">int</span> sm_registers_per_side   = max_sm_registers / sm_sides;</div>
+<div class="line"><a name="l00267"></a><span class="lineno">  267</span>&#160;            <span class="keywordtype">int</span> regs_per_warp           = CUB_ROUND_UP_NEAREST(kernel_attrs.numRegs * warp_threads, reg_alloc_unit);</div>
+<div class="line"><a name="l00268"></a><span class="lineno">  268</span>&#160;            <span class="keywordtype">int</span> warps_per_side          = sm_registers_per_side / regs_per_warp;</div>
+<div class="line"><a name="l00269"></a><span class="lineno">  269</span>&#160;            <span class="keywordtype">int</span> warps                   = warps_per_side * sm_sides;</div>
+<div class="line"><a name="l00270"></a><span class="lineno">  270</span>&#160;            max_reg_occupancy           = warps / block_warps;</div>
+<div class="line"><a name="l00271"></a><span class="lineno">  271</span>&#160;        }</div>
+<div class="line"><a name="l00272"></a><span class="lineno">  272</span>&#160;</div>
+<div class="line"><a name="l00273"></a><span class="lineno">  273</span>&#160;        <span class="comment">// Shared memory per threadblock</span></div>
+<div class="line"><a name="l00274"></a><span class="lineno">  274</span>&#160;        <span class="keywordtype">int</span> block_allocated_smem = CUB_ROUND_UP_NEAREST(</div>
+<div class="line"><a name="l00275"></a><span class="lineno">  275</span>&#160;            kernel_attrs.sharedSizeBytes,</div>
+<div class="line"><a name="l00276"></a><span class="lineno">  276</span>&#160;            smem_alloc_unit);</div>
+<div class="line"><a name="l00277"></a><span class="lineno">  277</span>&#160;</div>
+<div class="line"><a name="l00278"></a><span class="lineno">  278</span>&#160;        <span class="comment">// Max shared memory occupancy</span></div>
+<div class="line"><a name="l00279"></a><span class="lineno">  279</span>&#160;        <span class="keywordtype">int</span> max_smem_occupancy = (block_allocated_smem &gt; 0) ?</div>
+<div class="line"><a name="l00280"></a><span class="lineno">  280</span>&#160;            (smem_bytes / block_allocated_smem) :</div>
+<div class="line"><a name="l00281"></a><span class="lineno">  281</span>&#160;            max_sm_blocks;</div>
+<div class="line"><a name="l00282"></a><span class="lineno">  282</span>&#160;</div>
+<div class="line"><a name="l00283"></a><span class="lineno">  283</span>&#160;        <span class="comment">// Max occupancy</span></div>
+<div class="line"><a name="l00284"></a><span class="lineno">  284</span>&#160;        max_sm_occupancy = CUB_MIN(</div>
+<div class="line"><a name="l00285"></a><span class="lineno">  285</span>&#160;            CUB_MIN(max_sm_blocks, max_warp_occupancy),</div>
+<div class="line"><a name="l00286"></a><span class="lineno">  286</span>&#160;            CUB_MIN(max_smem_occupancy, max_reg_occupancy));</div>
 <div class="line"><a name="l00287"></a><span class="lineno">  287</span>&#160;</div>
-<div class="line"><a name="l00288"></a><span class="lineno">  288</span>&#160;<span class="preprocessor">    #endif</span></div>
-<div class="line"><a name="l00289"></a><span class="lineno">  289</span>&#160;<span class="preprocessor"></span>    }</div>
-<div class="line"><a name="l00290"></a><span class="lineno">  290</span>&#160;</div>
+<div class="line"><a name="l00288"></a><span class="lineno">  288</span>&#160;<span class="comment">//            printf(&quot;max_smem_occupancy(%d), max_warp_occupancy(%d), max_reg_occupancy(%d) \n&quot;, max_smem_occupancy, max_warp_occupancy, max_reg_occupancy);</span></div>
+<div class="line"><a name="l00289"></a><span class="lineno">  289</span>&#160;</div>
+<div class="line"><a name="l00290"></a><span class="lineno">  290</span>&#160;    } <span class="keywordflow">while</span> (0);</div>
 <div class="line"><a name="l00291"></a><span class="lineno">  291</span>&#160;</div>
-<div class="line"><a name="l00295"></a><span class="lineno">  295</span>&#160;    <span class="keyword">template</span> &lt;<span class="keyword">typename</span> KernelPtr&gt;</div>
-<div class="line"><a name="l00296"></a><span class="lineno">  296</span>&#160;    __host__ __device__ __forceinline__</div>
-<div class="line"><a name="l00297"></a><span class="lineno"><a class="code" href="classcub_1_1_device.html#a618bbf36a5737a9b1533ff65834e88e8">  297</a></span>&#160;    cudaError_t <a class="code" href="classcub_1_1_device.html#a618bbf36a5737a9b1533ff65834e88e8">MaxSmOccupancy</a>(</div>
-<div class="line"><a name="l00298"></a><span class="lineno">  298</span>&#160;        <span class="keywordtype">int</span>                 &amp;max_sm_occupancy,          </div>
-<div class="line"><a name="l00299"></a><span class="lineno">  299</span>&#160;        KernelPtr           kernel_ptr,                 </div>
-<div class="line"><a name="l00300"></a><span class="lineno">  300</span>&#160;        <span class="keywordtype">int</span>                 block_threads)              </div>
-<div class="line"><a name="l00301"></a><span class="lineno">  301</span>&#160;    {</div>
-<div class="line"><a name="l00302"></a><span class="lineno">  302</span>&#160;<span class="preprocessor">    #ifndef CUB_RUNTIME_ENABLED</span></div>
-<div class="line"><a name="l00303"></a><span class="lineno">  303</span>&#160;<span class="preprocessor"></span></div>
-<div class="line"><a name="l00304"></a><span class="lineno">  304</span>&#160;        <span class="comment">// CUDA API calls not supported from this device</span></div>
-<div class="line"><a name="l00305"></a><span class="lineno">  305</span>&#160;        <span class="keywordflow">return</span> <a class="code" href="group___util_module.html#ga84c3a4c178bf6593e0fad2b763606236" title="Debug macro. ">CubDebug</a>(cudaErrorInvalidConfiguration);</div>
-<div class="line"><a name="l00306"></a><span class="lineno">  306</span>&#160;</div>
-<div class="line"><a name="l00307"></a><span class="lineno">  307</span>&#160;<span class="preprocessor">    #else</span></div>
-<div class="line"><a name="l00308"></a><span class="lineno">  308</span>&#160;<span class="preprocessor"></span></div>
-<div class="line"><a name="l00309"></a><span class="lineno">  309</span>&#160;        cudaError_t error = cudaSuccess;</div>
-<div class="line"><a name="l00310"></a><span class="lineno">  310</span>&#160;        <span class="keywordflow">do</span></div>
-<div class="line"><a name="l00311"></a><span class="lineno">  311</span>&#160;        {</div>
-<div class="line"><a name="l00312"></a><span class="lineno">  312</span>&#160;            <span class="comment">// Get kernel attributes</span></div>
-<div class="line"><a name="l00313"></a><span class="lineno">  313</span>&#160;            cudaFuncAttributes kernel_attrs;</div>
-<div class="line"><a name="l00314"></a><span class="lineno">  314</span>&#160;            <span class="keywordflow">if</span> (<a class="code" href="group___util_module.html#ga84c3a4c178bf6593e0fad2b763606236" title="Debug macro. ">CubDebug</a>(error = cudaFuncGetAttributes(&amp;kernel_attrs, kernel_ptr))) <span class="keywordflow">break</span>;</div>
-<div class="line"><a name="l00315"></a><span class="lineno">  315</span>&#160;</div>
-<div class="line"><a name="l00316"></a><span class="lineno">  316</span>&#160;            <span class="comment">// Number of warps per threadblock</span></div>
-<div class="line"><a name="l00317"></a><span class="lineno">  317</span>&#160;            <span class="keywordtype">int</span> block_warps = (block_threads +  <a class="code" href="classcub_1_1_device.html#a4498c242e597f67a4a752426ae262049" title="Number of threads per warp. ">warp_threads</a> - 1) / <a class="code" href="classcub_1_1_device.html#a4498c242e597f67a4a752426ae262049" title="Number of threads per warp. ">warp_threads</a>;</div>
-<div class="line"><a name="l00318"></a><span class="lineno">  318</span>&#160;</div>
-<div class="line"><a name="l00319"></a><span class="lineno">  319</span>&#160;            <span class="comment">// Max warp occupancy</span></div>
-<div class="line"><a name="l00320"></a><span class="lineno">  320</span>&#160;            <span class="keywordtype">int</span> max_warp_occupancy = (block_warps &gt; 0) ?</div>
-<div class="line"><a name="l00321"></a><span class="lineno">  321</span>&#160;                <a class="code" href="classcub_1_1_device.html#a5ee84e74af9939896bb81b48d4843d17" title="Maximum number of warps per SM. ">max_sm_warps</a> / block_warps :</div>
-<div class="line"><a name="l00322"></a><span class="lineno">  322</span>&#160;                <a class="code" href="classcub_1_1_device.html#ac614bed852b56bf8c616803aa8601caf" title="Maximum number of threadblocks per SM. ">max_sm_blocks</a>;</div>
-<div class="line"><a name="l00323"></a><span class="lineno">  323</span>&#160;</div>
-<div class="line"><a name="l00324"></a><span class="lineno">  324</span>&#160;            <span class="comment">// Maximum register occupancy</span></div>
-<div class="line"><a name="l00325"></a><span class="lineno">  325</span>&#160;            <span class="keywordtype">int</span> max_reg_occupancy;</div>
-<div class="line"><a name="l00326"></a><span class="lineno">  326</span>&#160;            <span class="keywordflow">if</span> ((block_threads == 0) || (kernel_attrs.numRegs == 0))</div>
-<div class="line"><a name="l00327"></a><span class="lineno">  327</span>&#160;            {</div>
-<div class="line"><a name="l00328"></a><span class="lineno">  328</span>&#160;                <span class="comment">// Prevent divide-by-zero</span></div>
-<div class="line"><a name="l00329"></a><span class="lineno">  329</span>&#160;                max_reg_occupancy = <a class="code" href="classcub_1_1_device.html#ac614bed852b56bf8c616803aa8601caf" title="Maximum number of threadblocks per SM. ">max_sm_blocks</a>;</div>
-<div class="line"><a name="l00330"></a><span class="lineno">  330</span>&#160;            }</div>
-<div class="line"><a name="l00331"></a><span class="lineno">  331</span>&#160;            <span class="keywordflow">else</span> <span class="keywordflow">if</span> (<a class="code" href="classcub_1_1_device.html#a721a479d183aaa1846c69de998f84ffc" title="Whether registers are allocated by threadblock (or by warp) ">regs_by_block</a>)</div>
-<div class="line"><a name="l00332"></a><span class="lineno">  332</span>&#160;            {</div>
-<div class="line"><a name="l00333"></a><span class="lineno">  333</span>&#160;                <span class="comment">// Allocates registers by threadblock</span></div>
-<div class="line"><a name="l00334"></a><span class="lineno">  334</span>&#160;                <span class="keywordtype">int</span> block_regs = CUB_ROUND_UP_NEAREST(kernel_attrs.numRegs * <a class="code" href="classcub_1_1_device.html#a4498c242e597f67a4a752426ae262049" title="Number of threads per warp. ">warp_threads</a> * block_warps, <a class="code" href="classcub_1_1_device.html#aa432ab8fdb1d1117b29811422c83a187" title="Granularity of register allocation within the SM. ">reg_alloc_unit</a>);</div>
-<div class="line"><a name="l00335"></a><span class="lineno">  335</span>&#160;                max_reg_occupancy = <a class="code" href="classcub_1_1_device.html#af321be8fe9aecd0942d04739f7520c61" title="Maximum number of registers per SM. ">max_sm_registers</a> / block_regs;</div>
-<div class="line"><a name="l00336"></a><span class="lineno">  336</span>&#160;            }</div>
-<div class="line"><a name="l00337"></a><span class="lineno">  337</span>&#160;            <span class="keywordflow">else</span></div>
-<div class="line"><a name="l00338"></a><span class="lineno">  338</span>&#160;            {</div>
-<div class="line"><a name="l00339"></a><span class="lineno">  339</span>&#160;                <span class="comment">// Allocates registers by warp</span></div>
-<div class="line"><a name="l00340"></a><span class="lineno">  340</span>&#160;                <span class="keywordtype">int</span> sm_sides                = <a class="code" href="classcub_1_1_device.html#ac5f8afb6f319b0dbd689f3f1188fc20b" title="Granularity of warp allocation within the SM. ">warp_alloc_unit</a>;</div>
-<div class="line"><a name="l00341"></a><span class="lineno">  341</span>&#160;                <span class="keywordtype">int</span> sm_registers_per_side   = <a class="code" href="classcub_1_1_device.html#af321be8fe9aecd0942d04739f7520c61" title="Maximum number of registers per SM. ">max_sm_registers</a> / sm_sides;</div>
-<div class="line"><a name="l00342"></a><span class="lineno">  342</span>&#160;                <span class="keywordtype">int</span> regs_per_warp           = CUB_ROUND_UP_NEAREST(kernel_attrs.numRegs * <a class="code" href="classcub_1_1_device.html#a4498c242e597f67a4a752426ae262049" title="Number of threads per warp. ">warp_threads</a>, <a class="code" href="classcub_1_1_device.html#aa432ab8fdb1d1117b29811422c83a187" title="Granularity of register allocation within the SM. ">reg_alloc_unit</a>);</div>
-<div class="line"><a name="l00343"></a><span class="lineno">  343</span>&#160;                <span class="keywordtype">int</span> warps_per_side          = sm_registers_per_side / regs_per_warp;</div>
-<div class="line"><a name="l00344"></a><span class="lineno">  344</span>&#160;                <span class="keywordtype">int</span> warps                   = warps_per_side * sm_sides;</div>
-<div class="line"><a name="l00345"></a><span class="lineno">  345</span>&#160;                max_reg_occupancy           = warps / block_warps;</div>
-<div class="line"><a name="l00346"></a><span class="lineno">  346</span>&#160;            }</div>
-<div class="line"><a name="l00347"></a><span class="lineno">  347</span>&#160;</div>
-<div class="line"><a name="l00348"></a><span class="lineno">  348</span>&#160;            <span class="comment">// Shared memory per threadblock</span></div>
-<div class="line"><a name="l00349"></a><span class="lineno">  349</span>&#160;            <span class="keywordtype">int</span> block_allocated_smem = CUB_ROUND_UP_NEAREST(</div>
-<div class="line"><a name="l00350"></a><span class="lineno">  350</span>&#160;                kernel_attrs.sharedSizeBytes,</div>
-<div class="line"><a name="l00351"></a><span class="lineno">  351</span>&#160;                <a class="code" href="classcub_1_1_device.html#aca17efd166d916008f0fc378adc00b1f" title="Smem segment size. ">smem_alloc_unit</a>);</div>
-<div class="line"><a name="l00352"></a><span class="lineno">  352</span>&#160;</div>
-<div class="line"><a name="l00353"></a><span class="lineno">  353</span>&#160;            <span class="comment">// Max shared memory occupancy</span></div>
-<div class="line"><a name="l00354"></a><span class="lineno">  354</span>&#160;            <span class="keywordtype">int</span> max_smem_occupancy = (block_allocated_smem &gt; 0) ?</div>
-<div class="line"><a name="l00355"></a><span class="lineno">  355</span>&#160;                (<a class="code" href="classcub_1_1_device.html#a838c9a2e207c38ef24e79a40bccdd1ac" title="Smem bytes per SM. ">smem_bytes</a> / block_allocated_smem) :</div>
-<div class="line"><a name="l00356"></a><span class="lineno">  356</span>&#160;                <a class="code" href="classcub_1_1_device.html#ac614bed852b56bf8c616803aa8601caf" title="Maximum number of threadblocks per SM. ">max_sm_blocks</a>;</div>
-<div class="line"><a name="l00357"></a><span class="lineno">  357</span>&#160;</div>
-<div class="line"><a name="l00358"></a><span class="lineno">  358</span>&#160;            <span class="comment">// Max occupancy</span></div>
-<div class="line"><a name="l00359"></a><span class="lineno">  359</span>&#160;            max_sm_occupancy = CUB_MIN(</div>
-<div class="line"><a name="l00360"></a><span class="lineno">  360</span>&#160;                CUB_MIN(<a class="code" href="classcub_1_1_device.html#ac614bed852b56bf8c616803aa8601caf" title="Maximum number of threadblocks per SM. ">max_sm_blocks</a>, max_warp_occupancy),</div>
-<div class="line"><a name="l00361"></a><span class="lineno">  361</span>&#160;                CUB_MIN(max_smem_occupancy, max_reg_occupancy));</div>
+<div class="line"><a name="l00292"></a><span class="lineno">  292</span>&#160;    <span class="keywordflow">return</span> error;</div>
+<div class="line"><a name="l00293"></a><span class="lineno">  293</span>&#160;</div>
+<div class="line"><a name="l00294"></a><span class="lineno">  294</span>&#160;<span class="preprocessor">#endif  // CUB_RUNTIME_ENABLED</span></div>
+<div class="line"><a name="l00295"></a><span class="lineno">  295</span>&#160;<span class="preprocessor"></span>}</div>
+<div class="line"><a name="l00296"></a><span class="lineno">  296</span>&#160;</div>
+<div class="line"><a name="l00297"></a><span class="lineno">  297</span>&#160;<span class="preprocessor">#endif  // Do not document</span></div>
+<div class="line"><a name="l00298"></a><span class="lineno">  298</span>&#160;<span class="preprocessor"></span></div>
+<div class="line"><a name="l00299"></a><span class="lineno">  299</span>&#160;</div>
+<div class="line"><a name="l00331"></a><span class="lineno">  331</span>&#160;<span class="keyword">template</span> &lt;<span class="keyword">typename</span> KernelPtr&gt;</div>
+<div class="line"><a name="l00332"></a><span class="lineno">  332</span>&#160;__host__ __device__ __forceinline__</div>
+<div class="line"><a name="l00333"></a><span class="lineno"><a class="code" href="group___util_mgmt.html#ga364b8a84e613c62761d58afb351a258b">  333</a></span>&#160;cudaError_t <a class="code" href="group___util_mgmt.html#ga364b8a84e613c62761d58afb351a258b" title="Computes maximum SM occupancy in thread blocks for executing the given kernel function pointer kernel...">MaxSmOccupancy</a>(</div>
+<div class="line"><a name="l00334"></a><span class="lineno">  334</span>&#160;    <span class="keywordtype">int</span>                 &amp;max_sm_occupancy,          </div>
+<div class="line"><a name="l00335"></a><span class="lineno">  335</span>&#160;    KernelPtr           kernel_ptr,                 </div>
+<div class="line"><a name="l00336"></a><span class="lineno">  336</span>&#160;    <span class="keywordtype">int</span>                 block_threads)              </div>
+<div class="line"><a name="l00337"></a><span class="lineno">  337</span>&#160;{</div>
+<div class="line"><a name="l00338"></a><span class="lineno">  338</span>&#160;<span class="preprocessor">#ifndef CUB_RUNTIME_ENABLED</span></div>
+<div class="line"><a name="l00339"></a><span class="lineno">  339</span>&#160;<span class="preprocessor"></span></div>
+<div class="line"><a name="l00340"></a><span class="lineno">  340</span>&#160;    <span class="comment">// CUDA API calls not supported from this device</span></div>
+<div class="line"><a name="l00341"></a><span class="lineno">  341</span>&#160;    <span class="keywordflow">return</span> <a class="code" href="group___util_mgmt.html#ga84c3a4c178bf6593e0fad2b763606236" title="Debug macro. ">CubDebug</a>(cudaErrorInvalidConfiguration);</div>
+<div class="line"><a name="l00342"></a><span class="lineno">  342</span>&#160;</div>
+<div class="line"><a name="l00343"></a><span class="lineno">  343</span>&#160;<span class="preprocessor">#else</span></div>
+<div class="line"><a name="l00344"></a><span class="lineno">  344</span>&#160;<span class="preprocessor"></span></div>
+<div class="line"><a name="l00345"></a><span class="lineno">  345</span>&#160;    cudaError_t error = cudaSuccess;</div>
+<div class="line"><a name="l00346"></a><span class="lineno">  346</span>&#160;    <span class="keywordflow">do</span></div>
+<div class="line"><a name="l00347"></a><span class="lineno">  347</span>&#160;    {</div>
+<div class="line"><a name="l00348"></a><span class="lineno">  348</span>&#160;        <span class="comment">// Get device ordinal</span></div>
+<div class="line"><a name="l00349"></a><span class="lineno">  349</span>&#160;        <span class="keywordtype">int</span> device_ordinal;</div>
+<div class="line"><a name="l00350"></a><span class="lineno">  350</span>&#160;        <span class="keywordflow">if</span> (<a class="code" href="group___util_mgmt.html#ga84c3a4c178bf6593e0fad2b763606236" title="Debug macro. ">CubDebug</a>(error = cudaGetDevice(&amp;device_ordinal))) <span class="keywordflow">break</span>;</div>
+<div class="line"><a name="l00351"></a><span class="lineno">  351</span>&#160;</div>
+<div class="line"><a name="l00352"></a><span class="lineno">  352</span>&#160;        <span class="comment">// Get device SM version</span></div>
+<div class="line"><a name="l00353"></a><span class="lineno">  353</span>&#160;        <span class="keywordtype">int</span> sm_version;</div>
+<div class="line"><a name="l00354"></a><span class="lineno">  354</span>&#160;        <span class="keywordflow">if</span> (<a class="code" href="group___util_mgmt.html#ga84c3a4c178bf6593e0fad2b763606236" title="Debug macro. ">CubDebug</a>(error = <a class="code" href="group___util_mgmt.html#ga1ec5fed5face2bf098cee3ce7096364a" title="Retrieves the SM version (major * 100 + minor * 10) ">SmVersion</a>(sm_version, device_ordinal))) <span class="keywordflow">break</span>;</div>
+<div class="line"><a name="l00355"></a><span class="lineno">  355</span>&#160;</div>
+<div class="line"><a name="l00356"></a><span class="lineno">  356</span>&#160;        <span class="comment">// Get SM occupancy</span></div>
+<div class="line"><a name="l00357"></a><span class="lineno">  357</span>&#160;        <span class="keywordflow">if</span> (<a class="code" href="group___util_mgmt.html#ga84c3a4c178bf6593e0fad2b763606236" title="Debug macro. ">CubDebug</a>(error = <a class="code" href="group___util_mgmt.html#ga364b8a84e613c62761d58afb351a258b" title="Computes maximum SM occupancy in thread blocks for executing the given kernel function pointer kernel...">MaxSmOccupancy</a>(max_sm_occupancy, sm_version, kernel_ptr, block_threads))) <span class="keywordflow">break</span>;</div>
+<div class="line"><a name="l00358"></a><span class="lineno">  358</span>&#160;</div>
+<div class="line"><a name="l00359"></a><span class="lineno">  359</span>&#160;    } <span class="keywordflow">while</span> (0);</div>
+<div class="line"><a name="l00360"></a><span class="lineno">  360</span>&#160;</div>
+<div class="line"><a name="l00361"></a><span class="lineno">  361</span>&#160;    <span class="keywordflow">return</span> error;</div>
 <div class="line"><a name="l00362"></a><span class="lineno">  362</span>&#160;</div>
-<div class="line"><a name="l00363"></a><span class="lineno">  363</span>&#160;<span class="comment">//            printf(&quot;max_smem_occupancy(%d), max_warp_occupancy(%d), max_reg_occupancy(%d)&quot;, max_smem_occupancy, max_warp_occupancy, max_reg_occupancy);</span></div>
-<div class="line"><a name="l00364"></a><span class="lineno">  364</span>&#160;</div>
-<div class="line"><a name="l00365"></a><span class="lineno">  365</span>&#160;        } <span class="keywordflow">while</span> (0);</div>
+<div class="line"><a name="l00363"></a><span class="lineno">  363</span>&#160;<span class="preprocessor">#endif  // CUB_RUNTIME_ENABLED</span></div>
+<div class="line"><a name="l00364"></a><span class="lineno">  364</span>&#160;<span class="preprocessor"></span></div>
+<div class="line"><a name="l00365"></a><span class="lineno">  365</span>&#160;}</div>
 <div class="line"><a name="l00366"></a><span class="lineno">  366</span>&#160;</div>
-<div class="line"><a name="l00367"></a><span class="lineno">  367</span>&#160;        <span class="keywordflow">return</span> error;</div>
-<div class="line"><a name="l00368"></a><span class="lineno">  368</span>&#160;</div>
-<div class="line"><a name="l00369"></a><span class="lineno">  369</span>&#160;<span class="preprocessor">    #endif</span></div>
-<div class="line"><a name="l00370"></a><span class="lineno">  370</span>&#160;<span class="preprocessor"></span>    }</div>
-<div class="line"><a name="l00371"></a><span class="lineno">  371</span>&#160;</div>
-<div class="line"><a name="l00372"></a><span class="lineno">  372</span>&#160;};</div>
-<div class="line"><a name="l00373"></a><span class="lineno">  373</span>&#160;</div>
-<div class="line"><a name="l00374"></a><span class="lineno">  374</span>&#160;       <span class="comment">// end group UtilModule</span></div>
-<div class="line"><a name="l00376"></a><span class="lineno">  376</span>&#160;</div>
-<div class="line"><a name="l00377"></a><span class="lineno">  377</span>&#160;}               <span class="comment">// CUB namespace</span></div>
-<div class="line"><a name="l00378"></a><span class="lineno">  378</span>&#160;CUB_NS_POSTFIX  <span class="comment">// Optional outer namespace(s)</span></div>
+<div class="line"><a name="l00367"></a><span class="lineno">  367</span>&#160;       <span class="comment">// end group UtilMgmt</span></div>
+<div class="line"><a name="l00369"></a><span class="lineno">  369</span>&#160;</div>
+<div class="line"><a name="l00370"></a><span class="lineno">  370</span>&#160;}               <span class="comment">// CUB namespace</span></div>
+<div class="line"><a name="l00371"></a><span class="lineno">  371</span>&#160;CUB_NS_POSTFIX  <span class="comment">// Optional outer namespace(s)</span></div>
 </div><!-- fragment --></div><!-- contents -->
 <!-- HTML footer for doxygen 1.8.3.1-->
 <!-- start footer part -->
 <hr class="footer"/><address class="footer"><small>
-Generated on Fri Aug 23 2013 17:31:10 for CUB by &#160;<a href="http://www.doxygen.org/index.html">
+Generated on Tue Dec 10 2013 05:04:21 for CUB by &#160;<a href="http://www.doxygen.org/index.html">
 <img class="footer" src="doxygen.png" alt="doxygen"/>
 </a> 1.8.4
 <br>

@@ -52,6 +52,7 @@ var searchBox = new SearchBox("searchBox", "search",false,'Search');
       <li><a href="index.html"><span>Main&#160;Page</span></a></li>
       <li><a href="modules.html"><span>Modules</span></a></li>
       <li class="current"><a href="annotated.html"><span>Classes</span></a></li>
+      <li><a href="examples.html"><span>Examples</span></a></li>
       <li>
         <div id="MSearchBox" class="MSearchBoxInactive">
         <span class="left">
@@ -81,7 +82,7 @@ var searchBox = new SearchBox("searchBox", "search",false,'Search');
      onmouseover="return searchBox.OnSearchSelectShow()"
      onmouseout="return searchBox.OnSearchSelectHide()"
      onkeydown="return searchBox.OnSearchSelectKey(event)">
-<a class="SelectItem" href="javascript:void(0)" onclick="searchBox.OnSelectItem(0)"><span class="SelectionMark">&#160;</span>All</a><a class="SelectItem" href="javascript:void(0)" onclick="searchBox.OnSelectItem(1)"><span class="SelectionMark">&#160;</span>Classes</a><a class="SelectItem" href="javascript:void(0)" onclick="searchBox.OnSelectItem(2)"><span class="SelectionMark">&#160;</span>Namespaces</a><a class="SelectItem" href="javascript:void(0)" onclick="searchBox.OnSelectItem(3)"><span class="SelectionMark">&#160;</span>Files</a><a class="SelectItem" href="javascript:void(0)" onclick="searchBox.OnSelectItem(4)"><span class="SelectionMark">&#160;</span>Functions</a><a class="SelectItem" href="javascript:void(0)" onclick="searchBox.OnSelectItem(5)"><span class="SelectionMark">&#160;</span>Variables</a><a class="SelectItem" href="javascript:void(0)" onclick="searchBox.OnSelectItem(6)"><span class="SelectionMark">&#160;</span>Typedefs</a><a class="SelectItem" href="javascript:void(0)" onclick="searchBox.OnSelectItem(7)"><span class="SelectionMark">&#160;</span>Enumerations</a><a class="SelectItem" href="javascript:void(0)" onclick="searchBox.OnSelectItem(8)"><span class="SelectionMark">&#160;</span>Enumerator</a><a class="SelectItem" href="javascript:void(0)" onclick="searchBox.OnSelectItem(9)"><span class="SelectionMark">&#160;</span>Groups</a></div>
+<a class="SelectItem" href="javascript:void(0)" onclick="searchBox.OnSelectItem(0)"><span class="SelectionMark">&#160;</span>All</a><a class="SelectItem" href="javascript:void(0)" onclick="searchBox.OnSelectItem(1)"><span class="SelectionMark">&#160;</span>Classes</a><a class="SelectItem" href="javascript:void(0)" onclick="searchBox.OnSelectItem(2)"><span class="SelectionMark">&#160;</span>Namespaces</a><a class="SelectItem" href="javascript:void(0)" onclick="searchBox.OnSelectItem(3)"><span class="SelectionMark">&#160;</span>Files</a><a class="SelectItem" href="javascript:void(0)" onclick="searchBox.OnSelectItem(4)"><span class="SelectionMark">&#160;</span>Functions</a><a class="SelectItem" href="javascript:void(0)" onclick="searchBox.OnSelectItem(5)"><span class="SelectionMark">&#160;</span>Variables</a><a class="SelectItem" href="javascript:void(0)" onclick="searchBox.OnSelectItem(6)"><span class="SelectionMark">&#160;</span>Typedefs</a><a class="SelectItem" href="javascript:void(0)" onclick="searchBox.OnSelectItem(7)"><span class="SelectionMark">&#160;</span>Enumerations</a><a class="SelectItem" href="javascript:void(0)" onclick="searchBox.OnSelectItem(8)"><span class="SelectionMark">&#160;</span>Enumerator</a><a class="SelectItem" href="javascript:void(0)" onclick="searchBox.OnSelectItem(9)"><span class="SelectionMark">&#160;</span>Friends</a><a class="SelectItem" href="javascript:void(0)" onclick="searchBox.OnSelectItem(10)"><span class="SelectionMark">&#160;</span>Groups</a></div>
 
 <!-- iframe showing the search results (closed by default) -->
 <div id="MSearchResultsWindow">
@@ -100,7 +101,7 @@ var searchBox = new SearchBox("searchBox", "search",false,'Search');
 <a href="#nested-classes">Classes</a> &#124;
 <a href="classcub_1_1_block_discontinuity-members.html">List of all members</a>  </div>
   <div class="headertitle">
-<div class="title">cub::BlockDiscontinuity&lt; T, BLOCK_THREADS &gt; Class Template Reference<div class="ingroups"><a class="el" href="group___block_module.html">Block-wide</a></div></div>  </div>
+<div class="title">cub::BlockDiscontinuity&lt; T, BLOCK_THREADS &gt; Class Template Reference<div class="ingroups"><a class="el" href="group___block_module.html">Block-wide (collective)</a></div></div>  </div>
 </div><!--header-->
 <div class="contents">
 <a name="details" id="details"></a><h2 class="groupheader">Detailed description</h2>
@@ -114,17 +115,24 @@ class cub::BlockDiscontinuity&lt; T, BLOCK_THREADS &gt;</h3>
 <img src="discont_logo.png" alt="discont_logo.png"/>
 <div class="caption">
 .</div></div>
- <dl class="section user"><dt>Overview</dt><dd>A set of "head flags" (or "tail flags") is often used to indicate corresponding items that differ from their predecessors (or successors). For example, head flags are convenient for demarcating disjoint data segments as part of a segmented scan or reduction.</dd></dl>
-<dl class="tparams"><dt>Template Parameters</dt><dd>
+ <dl class="tparams"><dt>Template Parameters</dt><dd>
   <table class="tparams">
     <tr><td class="paramname">T</td><td>The data type to be flagged. </td></tr>
     <tr><td class="paramname">BLOCK_THREADS</td><td>The thread block size in threads.</td></tr>
   </table>
   </dd>
 </dl>
+<dl class="section user"><dt>Overview</dt><dd><ul>
+<li>A set of "head flags" (or "tail flags") is often used to indicate corresponding items that differ from their predecessors (or successors). For example, head flags are convenient for demarcating disjoint data segments as part of a segmented scan or reduction.</li>
+</ul>
+</dd></dl>
+<dl class="section user"><dt>Performance Considerations</dt><dd><ul>
+<li>Efficiency is increased with increased granularity <code>ITEMS_PER_THREAD</code>. Performance is also typically increased until the additional register pressure or shared memory allocation size causes SM occupancy to fall too low. Consider variants of <a class="el" href="classcub_1_1_block_load.html" title="The BlockLoad class provides collective data movement methods for loading a linear segment of items f...">cub::BlockLoad</a> for efficiently gathering a <a href="index.html#sec5sec4"><em>blocked arrangement</em></a> of elements across threads.</li>
+</ul>
+</dd></dl>
 <dl class="section user"><dt>A Simple Example</dt><dd>Every thread in the block uses the <a class="el" href="classcub_1_1_block_discontinuity.html" title="The BlockDiscontinuity class provides collective methods for flagging discontinuities within an order...">BlockDiscontinuity</a> class by first specializing the <a class="el" href="classcub_1_1_block_discontinuity.html" title="The BlockDiscontinuity class provides collective methods for flagging discontinuities within an order...">BlockDiscontinuity</a> type, then instantiating an instance with parameters for communication, and finally invoking collective member functions. </dd></dl>
 <dl class="section user"><dt></dt><dd>The code snippet below illustrates the head flagging of 512 integer items that are partitioned in a <a href="index.html#sec5sec4"><em>blocked arrangement</em></a> across 128 threads where each thread owns 4 consecutive items. </dd></dl>
-<dl class="section user"><dt></dt><dd><div class="fragment"><div class="line"><span class="preprocessor">#include &lt;<a class="code" href="cub_8cuh.html">cub/cub.cuh</a>&gt;</span></div>
+<dl class="section user"><dt></dt><dd><div class="fragment"><div class="line"><span class="preprocessor">#include &lt;<a class="code" href="cub_8cuh.html">cub/cub.cuh</a>&gt;</span>   <span class="comment">// or equivalently &lt;cub/block/block_discontinuity.cuh&gt;</span></div>
 <div class="line"></div>
 <div class="line">__global__ <span class="keywordtype">void</span> ExampleKernel(...)</div>
 <div class="line">{</div>
@@ -148,7 +156,7 @@ class cub::BlockDiscontinuity&lt; T, BLOCK_THREADS &gt;</h3>
 </ul>
 </dd></dl>
 
-<p>Definition at line <a class="el" href="block__discontinuity_8cuh_source.html#l00097">97</a> of file <a class="el" href="block__discontinuity_8cuh_source.html">block_discontinuity.cuh</a>.</p>
+<p>Definition at line <a class="el" href="block__discontinuity_8cuh_source.html#l00100">100</a> of file <a class="el" href="block__discontinuity_8cuh_source.html">block_discontinuity.cuh</a>.</p>
 </div><table class="memberdecls">
 <tr class="heading"><td colspan="2"><h2 class="groupheader"><a name="nested-classes"></a>
 Classes</h2></td></tr>
@@ -224,7 +232,7 @@ template&lt;typename T , int BLOCK_THREADS&gt; </div>
   </dd>
 </dl>
 
-<p>Definition at line <a class="el" href="block__discontinuity_8cuh_source.html#l00179">179</a> of file <a class="el" href="block__discontinuity_8cuh_source.html">block_discontinuity.cuh</a>.</p>
+<p>Definition at line <a class="el" href="block__discontinuity_8cuh_source.html#l00182">182</a> of file <a class="el" href="block__discontinuity_8cuh_source.html">block_discontinuity.cuh</a>.</p>
 
 </div>
 </div>
@@ -260,7 +268,7 @@ template&lt;typename T , int BLOCK_THREADS&gt; </div>
   </dd>
 </dl>
 
-<p>Definition at line <a class="el" href="block__discontinuity_8cuh_source.html#l00190">190</a> of file <a class="el" href="block__discontinuity_8cuh_source.html">block_discontinuity.cuh</a>.</p>
+<p>Definition at line <a class="el" href="block__discontinuity_8cuh_source.html#l00193">193</a> of file <a class="el" href="block__discontinuity_8cuh_source.html">block_discontinuity.cuh</a>.</p>
 
 </div>
 </div>
@@ -307,7 +315,7 @@ template&lt;typename T , int BLOCK_THREADS&gt; </div>
   </dd>
 </dl>
 
-<p>Definition at line <a class="el" href="block__discontinuity_8cuh_source.html#l00201">201</a> of file <a class="el" href="block__discontinuity_8cuh_source.html">block_discontinuity.cuh</a>.</p>
+<p>Definition at line <a class="el" href="block__discontinuity_8cuh_source.html#l00204">204</a> of file <a class="el" href="block__discontinuity_8cuh_source.html">block_discontinuity.cuh</a>.</p>
 
 </div>
 </div>
@@ -355,11 +363,16 @@ template&lt;int ITEMS_PER_THREAD, typename FlagT , typename FlagOp &gt; </div>
 </div><div class="memdoc">
 
 <p>Sets head flags indicating discontinuities between items partitioned across the thread block, for which the first item has no reference and is always flagged. </p>
-<p>The flag <code>head_flags<sub><em>i</em></sub></code> is set for item <code>input<sub><em>i</em></sub></code> when <code>flag_op(</code><em>previous-item</em><code>, input<sub><em>i</em></sub>)</code> returns <code>true</code> (where <em>previous-item</em> is either the preceding item in the same thread or the last item in the previous thread). Furthermore, <code>head_flags<sub><em>i</em></sub></code> is always set for <code>input&gt;<sub>0</sub></code> in <em>thread</em><sub>0</sub>.</p>
-<p>Assumes a <a href="index.html#sec5sec4"><em>blocked arrangement</em></a> of elements across threads, where thread<sub><em>i</em></sub> owns the <em>i</em><sup>th</sup> segment of consecutively ranked items.</p>
-<p>A subsequent <code>__syncthreads()</code> threadblock barrier should be invoked after calling this method if the collective's temporary storage (e.g., <code>temp_storage</code>) is to be reused or repurposed.</p>
-<p>The code snippet below illustrates the head-flagging of 512 integer items that are partitioned in a <a href="index.html#sec5sec4"><em>blocked arrangement</em></a> across 128 threads where each thread owns 4 consecutive items. </p>
-<dl class="section user"><dt></dt><dd><div class="fragment"><div class="line"><span class="preprocessor">#include &lt;<a class="code" href="cub_8cuh.html">cub/cub.cuh</a>&gt;</span></div>
+<dl class="section user"><dt></dt><dd><ul>
+<li>The flag <code>head_flags<sub><em>i</em></sub></code> is set for item <code>input<sub><em>i</em></sub></code> when <code>flag_op(</code><em>previous-item</em><code>, input<sub><em>i</em></sub>)</code> returns <code>true</code> (where <em>previous-item</em> is either the preceding item in the same thread or the last item in the previous thread).</li>
+<li>For <em>thread</em><sub>0</sub>, item <code>input<sub>0</sub></code> is always flagged.</li>
+<li>Assumes a <a href="index.html#sec5sec4"><em>blocked arrangement</em></a> of elements across threads, where thread<sub><em>i</em></sub> owns the <em>i</em><sup>th</sup> segment of consecutively ranked items.</li>
+<li>Efficiency is increased with increased granularity <code>ITEMS_PER_THREAD</code>. Performance is also typically increased until the additional register pressure or shared memory allocation size causes SM occupancy to fall too low. Consider variants of <a class="el" href="classcub_1_1_block_load.html" title="The BlockLoad class provides collective data movement methods for loading a linear segment of items f...">cub::BlockLoad</a> for efficiently gathering a <a href="index.html#sec5sec4"><em>blocked arrangement</em></a> of elements across threads.</li>
+<li>A subsequent <code>__syncthreads()</code> threadblock barrier should be invoked after calling this method if the collective's temporary storage (e.g., <code>temp_storage</code>) is to be reused or repurposed.</li>
+</ul>
+</dd></dl>
+<dl class="section user"><dt></dt><dd>The code snippet below illustrates the head-flagging of 512 integer items that are partitioned in a <a href="index.html#sec5sec4"><em>blocked arrangement</em></a> across 128 threads where each thread owns 4 consecutive items. </dd></dl>
+<dl class="section user"><dt></dt><dd><div class="fragment"><div class="line"><span class="preprocessor">#include &lt;<a class="code" href="cub_8cuh.html">cub/cub.cuh</a>&gt;</span>   <span class="comment">// or equivalently &lt;cub/block/block_discontinuity.cuh&gt;</span></div>
 <div class="line"></div>
 <div class="line">__global__ <span class="keywordtype">void</span> ExampleKernel(...)</div>
 <div class="line">{</div>
@@ -395,7 +408,7 @@ template&lt;int ITEMS_PER_THREAD, typename FlagT , typename FlagOp &gt; </div>
   </dd>
 </dl>
 
-<p>Definition at line <a class="el" href="block__discontinuity_8cuh_source.html#l00271">271</a> of file <a class="el" href="block__discontinuity_8cuh_source.html">block_discontinuity.cuh</a>.</p>
+<p>Definition at line <a class="el" href="block__discontinuity_8cuh_source.html#l00274">274</a> of file <a class="el" href="block__discontinuity_8cuh_source.html">block_discontinuity.cuh</a>.</p>
 
 </div>
 </div>
@@ -448,11 +461,16 @@ template&lt;int ITEMS_PER_THREAD, typename FlagT , typename FlagOp &gt; </div>
 </div><div class="memdoc">
 
 <p>Sets head flags indicating discontinuities between items partitioned across the thread block. </p>
-<p>The flag <code>head_flags<sub><em>i</em></sub></code> is set for item <code>input<sub><em>i</em></sub></code> when <code>flag_op(</code><em>previous-item</em><code>, input<sub><em>i</em></sub>)</code> returns <code>true</code> (where <em>previous-item</em> is either the preceding item in the same thread or the last item in the previous thread). For <em>thread</em><sub>0</sub>, item <code>input<sub>0</sub></code> is compared against <code>tile_predecessor_item</code>.</p>
-<p>Assumes a <a href="index.html#sec5sec4"><em>blocked arrangement</em></a> of elements across threads, where thread<sub><em>i</em></sub> owns the <em>i</em><sup>th</sup> segment of consecutively ranked items.</p>
-<p>A subsequent <code>__syncthreads()</code> threadblock barrier should be invoked after calling this method if the collective's temporary storage (e.g., <code>temp_storage</code>) is to be reused or repurposed.</p>
-<p>The code snippet below illustrates the head-flagging of 512 integer items that are partitioned in a <a href="index.html#sec5sec4"><em>blocked arrangement</em></a> across 128 threads where each thread owns 4 consecutive items. </p>
-<dl class="section user"><dt></dt><dd><div class="fragment"><div class="line"><span class="preprocessor">#include &lt;<a class="code" href="cub_8cuh.html">cub/cub.cuh</a>&gt;</span></div>
+<dl class="section user"><dt></dt><dd><ul>
+<li>The flag <code>head_flags<sub><em>i</em></sub></code> is set for item <code>input<sub><em>i</em></sub></code> when <code>flag_op(</code><em>previous-item</em><code>, input<sub><em>i</em></sub>)</code> returns <code>true</code> (where <em>previous-item</em> is either the preceding item in the same thread or the last item in the previous thread).</li>
+<li>For <em>thread</em><sub>0</sub>, item <code>input<sub>0</sub></code> is compared against <code>tile_predecessor_item</code>.</li>
+<li>Assumes a <a href="index.html#sec5sec4"><em>blocked arrangement</em></a> of elements across threads, where thread<sub><em>i</em></sub> owns the <em>i</em><sup>th</sup> segment of consecutively ranked items.</li>
+<li>Efficiency is increased with increased granularity <code>ITEMS_PER_THREAD</code>. Performance is also typically increased until the additional register pressure or shared memory allocation size causes SM occupancy to fall too low. Consider variants of <a class="el" href="classcub_1_1_block_load.html" title="The BlockLoad class provides collective data movement methods for loading a linear segment of items f...">cub::BlockLoad</a> for efficiently gathering a <a href="index.html#sec5sec4"><em>blocked arrangement</em></a> of elements across threads.</li>
+<li>A subsequent <code>__syncthreads()</code> threadblock barrier should be invoked after calling this method if the collective's temporary storage (e.g., <code>temp_storage</code>) is to be reused or repurposed.</li>
+</ul>
+</dd></dl>
+<dl class="section user"><dt></dt><dd>The code snippet below illustrates the head-flagging of 512 integer items that are partitioned in a <a href="index.html#sec5sec4"><em>blocked arrangement</em></a> across 128 threads where each thread owns 4 consecutive items. </dd></dl>
+<dl class="section user"><dt></dt><dd><div class="fragment"><div class="line"><span class="preprocessor">#include &lt;<a class="code" href="cub_8cuh.html">cub/cub.cuh</a>&gt;</span>   <span class="comment">// or equivalently &lt;cub/block/block_discontinuity.cuh&gt;</span></div>
 <div class="line"></div>
 <div class="line">__global__ <span class="keywordtype">void</span> ExampleKernel(...)</div>
 <div class="line">{</div>
@@ -494,7 +512,7 @@ template&lt;int ITEMS_PER_THREAD, typename FlagT , typename FlagOp &gt; </div>
   </dd>
 </dl>
 
-<p>Definition at line <a class="el" href="block__discontinuity_8cuh_source.html#l00361">361</a> of file <a class="el" href="block__discontinuity_8cuh_source.html">block_discontinuity.cuh</a>.</p>
+<p>Definition at line <a class="el" href="block__discontinuity_8cuh_source.html#l00365">365</a> of file <a class="el" href="block__discontinuity_8cuh_source.html">block_discontinuity.cuh</a>.</p>
 
 </div>
 </div>
@@ -541,11 +559,16 @@ template&lt;int ITEMS_PER_THREAD, typename FlagT , typename FlagOp &gt; </div>
 </div><div class="memdoc">
 
 <p>Sets tail flags indicating discontinuities between items partitioned across the thread block, for which the last item has no reference and is always flagged. </p>
-<p>The flag <code>tail_flags<sub><em>i</em></sub></code> is set for item <code>input<sub><em>i</em></sub></code> when <code>flag_op(input<sub><em>i</em></sub>, </code><em>next-item</em><code>)</code> returns <code>true</code> (where <em>next-item</em> is either the next item in the same thread or the first item in the next thread). Furthermore, <code>tail_flags<sub>ITEMS_PER_THREAD-1</sub></code> is always set for <em>thread</em><sub><code>BLOCK_THREADS</code>-1</sub>.</p>
-<p>Assumes a <a href="index.html#sec5sec4"><em>blocked arrangement</em></a> of elements across threads, where thread<sub><em>i</em></sub> owns the <em>i</em><sup>th</sup> segment of consecutively ranked items.</p>
-<p>A subsequent <code>__syncthreads()</code> threadblock barrier should be invoked after calling this method if the collective's temporary storage (e.g., <code>temp_storage</code>) is to be reused or repurposed.</p>
-<p>The code snippet below illustrates the tail-flagging of 512 integer items that are partitioned in a <a href="index.html#sec5sec4"><em>blocked arrangement</em></a> across 128 threads where each thread owns 4 consecutive items. </p>
-<dl class="section user"><dt></dt><dd><div class="fragment"><div class="line"><span class="preprocessor">#include &lt;<a class="code" href="cub_8cuh.html">cub/cub.cuh</a>&gt;</span></div>
+<dl class="section user"><dt></dt><dd><ul>
+<li>The flag <code>tail_flags<sub><em>i</em></sub></code> is set for item <code>input<sub><em>i</em></sub></code> when <code>flag_op(input<sub><em>i</em></sub>, </code><em>next-item</em><code>)</code> returns <code>true</code> (where <em>next-item</em> is either the next item in the same thread or the first item in the next thread).</li>
+<li>For <em>thread</em><sub><em>BLOCK_THREADS</em>-1</sub>, item <code>input</code><sub><em>ITEMS_PER_THREAD</em>-1</sub> is always flagged.</li>
+<li>Assumes a <a href="index.html#sec5sec4"><em>blocked arrangement</em></a> of elements across threads, where thread<sub><em>i</em></sub> owns the <em>i</em><sup>th</sup> segment of consecutively ranked items.</li>
+<li>Efficiency is increased with increased granularity <code>ITEMS_PER_THREAD</code>. Performance is also typically increased until the additional register pressure or shared memory allocation size causes SM occupancy to fall too low. Consider variants of <a class="el" href="classcub_1_1_block_load.html" title="The BlockLoad class provides collective data movement methods for loading a linear segment of items f...">cub::BlockLoad</a> for efficiently gathering a <a href="index.html#sec5sec4"><em>blocked arrangement</em></a> of elements across threads.</li>
+<li>A subsequent <code>__syncthreads()</code> threadblock barrier should be invoked after calling this method if the collective's temporary storage (e.g., <code>temp_storage</code>) is to be reused or repurposed.</li>
+</ul>
+</dd></dl>
+<dl class="section user"><dt></dt><dd>The code snippet below illustrates the tail-flagging of 512 integer items that are partitioned in a <a href="index.html#sec5sec4"><em>blocked arrangement</em></a> across 128 threads where each thread owns 4 consecutive items. </dd></dl>
+<dl class="section user"><dt></dt><dd><div class="fragment"><div class="line"><span class="preprocessor">#include &lt;<a class="code" href="cub_8cuh.html">cub/cub.cuh</a>&gt;</span>   <span class="comment">// or equivalently &lt;cub/block/block_discontinuity.cuh&gt;</span></div>
 <div class="line"></div>
 <div class="line">__global__ <span class="keywordtype">void</span> ExampleKernel(...)</div>
 <div class="line">{</div>
@@ -581,7 +604,7 @@ template&lt;int ITEMS_PER_THREAD, typename FlagT , typename FlagOp &gt; </div>
   </dd>
 </dl>
 
-<p>Definition at line <a class="el" href="block__discontinuity_8cuh_source.html#l00456">456</a> of file <a class="el" href="block__discontinuity_8cuh_source.html">block_discontinuity.cuh</a>.</p>
+<p>Definition at line <a class="el" href="block__discontinuity_8cuh_source.html#l00461">461</a> of file <a class="el" href="block__discontinuity_8cuh_source.html">block_discontinuity.cuh</a>.</p>
 
 </div>
 </div>
@@ -634,11 +657,16 @@ template&lt;int ITEMS_PER_THREAD, typename FlagT , typename FlagOp &gt; </div>
 </div><div class="memdoc">
 
 <p>Sets tail flags indicating discontinuities between items partitioned across the thread block. </p>
-<p>The flag <code>tail_flags<sub><em>i</em></sub></code> is set for item <code>input<sub><em>i</em></sub></code> when <code>flag_op(input<sub><em>i</em></sub>, </code><em>next-item</em><code>)</code> returns <code>true</code> (where <em>next-item</em> is either the next item in the same thread or the first item in the next thread). For <em>thread</em><sub><em>BLOCK_THREADS</em>-1</sub>, item <code>input</code><sub><em>ITEMS_PER_THREAD</em>-1</sub> is compared against <code>tile_predecessor_item</code>.</p>
-<p>Assumes a <a href="index.html#sec5sec4"><em>blocked arrangement</em></a> of elements across threads, where thread<sub><em>i</em></sub> owns the <em>i</em><sup>th</sup> segment of consecutively ranked items.</p>
-<p>A subsequent <code>__syncthreads()</code> threadblock barrier should be invoked after calling this method if the collective's temporary storage (e.g., <code>temp_storage</code>) is to be reused or repurposed.</p>
-<p>The code snippet below illustrates the tail-flagging of 512 integer items that are partitioned in a <a href="index.html#sec5sec4"><em>blocked arrangement</em></a> across 128 threads where each thread owns 4 consecutive items. </p>
-<dl class="section user"><dt></dt><dd><div class="fragment"><div class="line"><span class="preprocessor">#include &lt;<a class="code" href="cub_8cuh.html">cub/cub.cuh</a>&gt;</span></div>
+<dl class="section user"><dt></dt><dd><ul>
+<li>The flag <code>tail_flags<sub><em>i</em></sub></code> is set for item <code>input<sub><em>i</em></sub></code> when <code>flag_op(input<sub><em>i</em></sub>, </code><em>next-item</em><code>)</code> returns <code>true</code> (where <em>next-item</em> is either the next item in the same thread or the first item in the next thread).</li>
+<li>For <em>thread</em><sub><em>BLOCK_THREADS</em>-1</sub>, item <code>input</code><sub><em>ITEMS_PER_THREAD</em>-1</sub> is compared against <code>tile_predecessor_item</code>.</li>
+<li>Assumes a <a href="index.html#sec5sec4"><em>blocked arrangement</em></a> of elements across threads, where thread<sub><em>i</em></sub> owns the <em>i</em><sup>th</sup> segment of consecutively ranked items.</li>
+<li>Efficiency is increased with increased granularity <code>ITEMS_PER_THREAD</code>. Performance is also typically increased until the additional register pressure or shared memory allocation size causes SM occupancy to fall too low. Consider variants of <a class="el" href="classcub_1_1_block_load.html" title="The BlockLoad class provides collective data movement methods for loading a linear segment of items f...">cub::BlockLoad</a> for efficiently gathering a <a href="index.html#sec5sec4"><em>blocked arrangement</em></a> of elements across threads.</li>
+<li>A subsequent <code>__syncthreads()</code> threadblock barrier should be invoked after calling this method if the collective's temporary storage (e.g., <code>temp_storage</code>) is to be reused or repurposed.</li>
+</ul>
+</dd></dl>
+<dl class="section user"><dt></dt><dd>The code snippet below illustrates the tail-flagging of 512 integer items that are partitioned in a <a href="index.html#sec5sec4"><em>blocked arrangement</em></a> across 128 threads where each thread owns 4 consecutive items. </dd></dl>
+<dl class="section user"><dt></dt><dd><div class="fragment"><div class="line"><span class="preprocessor">#include &lt;<a class="code" href="cub_8cuh.html">cub/cub.cuh</a>&gt;</span>   <span class="comment">// or equivalently &lt;cub/block/block_discontinuity.cuh&gt;</span></div>
 <div class="line"></div>
 <div class="line">__global__ <span class="keywordtype">void</span> ExampleKernel(...)</div>
 <div class="line">{</div>
@@ -680,7 +708,7 @@ template&lt;int ITEMS_PER_THREAD, typename FlagT , typename FlagOp &gt; </div>
   </dd>
 </dl>
 
-<p>Definition at line <a class="el" href="block__discontinuity_8cuh_source.html#l00547">547</a> of file <a class="el" href="block__discontinuity_8cuh_source.html">block_discontinuity.cuh</a>.</p>
+<p>Definition at line <a class="el" href="block__discontinuity_8cuh_source.html#l00553">553</a> of file <a class="el" href="block__discontinuity_8cuh_source.html">block_discontinuity.cuh</a>.</p>
 
 </div>
 </div>
@@ -691,7 +719,7 @@ template&lt;int ITEMS_PER_THREAD, typename FlagT , typename FlagOp &gt; </div>
 <!-- HTML footer for doxygen 1.8.3.1-->
 <!-- start footer part -->
 <hr class="footer"/><address class="footer"><small>
-Generated on Fri Aug 23 2013 17:31:11 for CUB by &#160;<a href="http://www.doxygen.org/index.html">
+Generated on Tue Dec 10 2013 05:04:23 for CUB by &#160;<a href="http://www.doxygen.org/index.html">
 <img class="footer" src="doxygen.png" alt="doxygen"/>
 </a> 1.8.4
 <br>

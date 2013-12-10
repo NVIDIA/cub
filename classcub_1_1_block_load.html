@@ -5,7 +5,7 @@
 <meta http-equiv="Content-Type" content="text/xhtml;charset=UTF-8"/>
 <meta http-equiv="X-UA-Compatible" content="IE=9"/>
 <meta name="generator" content="Doxygen 1.8.4"/>
-<title>CUB: cub::BlockLoad&lt; InputIteratorRA, BLOCK_THREADS, ITEMS_PER_THREAD, ALGORITHM, MODIFIER, WARP_TIME_SLICING &gt; Class Template Reference</title>
+<title>CUB: cub::BlockLoad&lt; InputIterator, BLOCK_THREADS, ITEMS_PER_THREAD, ALGORITHM, WARP_TIME_SLICING &gt; Class Template Reference</title>
 <link href="tabs.css" rel="stylesheet" type="text/css"/>
 <script type="text/javascript" src="jquery.js"></script>
 <script type="text/javascript" src="dynsections.js"></script>
@@ -52,6 +52,7 @@ var searchBox = new SearchBox("searchBox", "search",false,'Search');
       <li><a href="index.html"><span>Main&#160;Page</span></a></li>
       <li><a href="modules.html"><span>Modules</span></a></li>
       <li class="current"><a href="annotated.html"><span>Classes</span></a></li>
+      <li><a href="examples.html"><span>Examples</span></a></li>
       <li>
         <div id="MSearchBox" class="MSearchBoxInactive">
         <span class="left">
@@ -81,7 +82,7 @@ var searchBox = new SearchBox("searchBox", "search",false,'Search');
      onmouseover="return searchBox.OnSearchSelectShow()"
      onmouseout="return searchBox.OnSearchSelectHide()"
      onkeydown="return searchBox.OnSearchSelectKey(event)">
-<a class="SelectItem" href="javascript:void(0)" onclick="searchBox.OnSelectItem(0)"><span class="SelectionMark">&#160;</span>All</a><a class="SelectItem" href="javascript:void(0)" onclick="searchBox.OnSelectItem(1)"><span class="SelectionMark">&#160;</span>Classes</a><a class="SelectItem" href="javascript:void(0)" onclick="searchBox.OnSelectItem(2)"><span class="SelectionMark">&#160;</span>Namespaces</a><a class="SelectItem" href="javascript:void(0)" onclick="searchBox.OnSelectItem(3)"><span class="SelectionMark">&#160;</span>Files</a><a class="SelectItem" href="javascript:void(0)" onclick="searchBox.OnSelectItem(4)"><span class="SelectionMark">&#160;</span>Functions</a><a class="SelectItem" href="javascript:void(0)" onclick="searchBox.OnSelectItem(5)"><span class="SelectionMark">&#160;</span>Variables</a><a class="SelectItem" href="javascript:void(0)" onclick="searchBox.OnSelectItem(6)"><span class="SelectionMark">&#160;</span>Typedefs</a><a class="SelectItem" href="javascript:void(0)" onclick="searchBox.OnSelectItem(7)"><span class="SelectionMark">&#160;</span>Enumerations</a><a class="SelectItem" href="javascript:void(0)" onclick="searchBox.OnSelectItem(8)"><span class="SelectionMark">&#160;</span>Enumerator</a><a class="SelectItem" href="javascript:void(0)" onclick="searchBox.OnSelectItem(9)"><span class="SelectionMark">&#160;</span>Groups</a></div>
+<a class="SelectItem" href="javascript:void(0)" onclick="searchBox.OnSelectItem(0)"><span class="SelectionMark">&#160;</span>All</a><a class="SelectItem" href="javascript:void(0)" onclick="searchBox.OnSelectItem(1)"><span class="SelectionMark">&#160;</span>Classes</a><a class="SelectItem" href="javascript:void(0)" onclick="searchBox.OnSelectItem(2)"><span class="SelectionMark">&#160;</span>Namespaces</a><a class="SelectItem" href="javascript:void(0)" onclick="searchBox.OnSelectItem(3)"><span class="SelectionMark">&#160;</span>Files</a><a class="SelectItem" href="javascript:void(0)" onclick="searchBox.OnSelectItem(4)"><span class="SelectionMark">&#160;</span>Functions</a><a class="SelectItem" href="javascript:void(0)" onclick="searchBox.OnSelectItem(5)"><span class="SelectionMark">&#160;</span>Variables</a><a class="SelectItem" href="javascript:void(0)" onclick="searchBox.OnSelectItem(6)"><span class="SelectionMark">&#160;</span>Typedefs</a><a class="SelectItem" href="javascript:void(0)" onclick="searchBox.OnSelectItem(7)"><span class="SelectionMark">&#160;</span>Enumerations</a><a class="SelectItem" href="javascript:void(0)" onclick="searchBox.OnSelectItem(8)"><span class="SelectionMark">&#160;</span>Enumerator</a><a class="SelectItem" href="javascript:void(0)" onclick="searchBox.OnSelectItem(9)"><span class="SelectionMark">&#160;</span>Friends</a><a class="SelectItem" href="javascript:void(0)" onclick="searchBox.OnSelectItem(10)"><span class="SelectionMark">&#160;</span>Groups</a></div>
 
 <!-- iframe showing the search results (closed by default) -->
 <div id="MSearchResultsWindow">
@@ -100,62 +101,64 @@ var searchBox = new SearchBox("searchBox", "search",false,'Search');
 <a href="#nested-classes">Classes</a> &#124;
 <a href="classcub_1_1_block_load-members.html">List of all members</a>  </div>
   <div class="headertitle">
-<div class="title">cub::BlockLoad&lt; InputIteratorRA, BLOCK_THREADS, ITEMS_PER_THREAD, ALGORITHM, MODIFIER, WARP_TIME_SLICING &gt; Class Template Reference<div class="ingroups"><a class="el" href="group___block_module.html">Block-wide</a></div></div>  </div>
+<div class="title">cub::BlockLoad&lt; InputIterator, BLOCK_THREADS, ITEMS_PER_THREAD, ALGORITHM, WARP_TIME_SLICING &gt; Class Template Reference<div class="ingroups"><a class="el" href="group___block_module.html">Block-wide (collective)</a> &#124; <a class="el" href="group___util_io.html">Thread and thread block I/O</a></div></div>  </div>
 </div><!--header-->
 <div class="contents">
 <a name="details" id="details"></a><h2 class="groupheader">Detailed description</h2>
 <div class="textblock"><h3>template&lt;
-    typename InputIteratorRA, 
+    typename InputIterator, 
     int BLOCK_THREADS, 
     int ITEMS_PER_THREAD, 
     BlockLoadAlgorithm ALGORITHM = BLOCK_LOAD_DIRECT, 
-    PtxLoadModifier MODIFIER = LOAD_DEFAULT, 
     bool WARP_TIME_SLICING = false&gt;<br/>
-class cub::BlockLoad&lt; InputIteratorRA, BLOCK_THREADS, ITEMS_PER_THREAD, ALGORITHM, MODIFIER, WARP_TIME_SLICING &gt;</h3>
+class cub::BlockLoad&lt; InputIterator, BLOCK_THREADS, ITEMS_PER_THREAD, ALGORITHM, WARP_TIME_SLICING &gt;</h3>
 
 <p>The <a class="el" href="classcub_1_1_block_load.html" title="The BlockLoad class provides collective data movement methods for loading a linear segment of items f...">BlockLoad</a> class provides <a href="index.html#sec0"><em>collective</em></a> data movement methods for loading a linear segment of items from memory into a <a href="index.html#sec5sec4"><em>blocked arrangement</em></a> across a CUDA thread block. </p>
 <div class="image">
 <img src="block_load_logo.png" alt="block_load_logo.png"/>
 <div class="caption">
 .</div></div>
- <dl class="section user"><dt>Overview</dt><dd>The <a class="el" href="classcub_1_1_block_load.html" title="The BlockLoad class provides collective data movement methods for loading a linear segment of items f...">BlockLoad</a> class provides a single data movement abstraction that can be specialized to implement different <a class="el" href="namespacecub.html#a9d7e37497fdd99864c57adecda710401" title="cub::BlockLoadAlgorithm enumerates alternative algorithms for cub::BlockLoad to read a linear segment...">cub::BlockLoadAlgorithm</a> strategies. This facilitates different performance policies for different architectures, data types, granularity sizes, etc.</dd></dl>
-<dl class="section user"><dt></dt><dd>Optionally, <a class="el" href="classcub_1_1_block_load.html" title="The BlockLoad class provides collective data movement methods for loading a linear segment of items f...">BlockLoad</a> can be specialized by different data movement strategies:<ol type="1">
+ <dl class="tparams"><dt>Template Parameters</dt><dd>
+  <table class="tparams">
+    <tr><td class="paramname">InputIterator</td><td>The input iterator type (may be a simple pointer type). </td></tr>
+    <tr><td class="paramname">BLOCK_THREADS</td><td>The thread block size in threads. </td></tr>
+    <tr><td class="paramname">ITEMS_PER_THREAD</td><td>The number of consecutive items partitioned onto each thread. </td></tr>
+    <tr><td class="paramname">ALGORITHM</td><td><b>[optional]</b> <a class="el" href="namespacecub.html#a9d7e37497fdd99864c57adecda710401" title="cub::BlockLoadAlgorithm enumerates alternative algorithms for cub::BlockLoad to read a linear segment...">cub::BlockLoadAlgorithm</a> tuning policy. default: <a class="el" href="namespacecub.html#a9d7e37497fdd99864c57adecda710401a2d4d8900d7e697e9dac4062e97d3d835">cub::BLOCK_LOAD_DIRECT</a>. </td></tr>
+    <tr><td class="paramname">WARP_TIME_SLICING</td><td><b>[optional]</b> Whether or not only one warp's worth of shared memory should be allocated and time-sliced among block-warps during any load-related data transpositions (versus each warp having its own storage). (default: false)</td></tr>
+  </table>
+  </dd>
+</dl>
+<dl class="section user"><dt>Overview</dt><dd><ul>
+<li>The <a class="el" href="classcub_1_1_block_load.html" title="The BlockLoad class provides collective data movement methods for loading a linear segment of items f...">BlockLoad</a> class provides a single data movement abstraction that can be specialized to implement different <a class="el" href="namespacecub.html#a9d7e37497fdd99864c57adecda710401" title="cub::BlockLoadAlgorithm enumerates alternative algorithms for cub::BlockLoad to read a linear segment...">cub::BlockLoadAlgorithm</a> strategies. This facilitates different performance policies for different architectures, data types, granularity sizes, etc.</li>
+<li><a class="el" href="classcub_1_1_block_load.html" title="The BlockLoad class provides collective data movement methods for loading a linear segment of items f...">BlockLoad</a> can be optionally specialized by different data movement strategies:<ol type="1">
 <li><b><a class="el" href="namespacecub.html#a9d7e37497fdd99864c57adecda710401a2d4d8900d7e697e9dac4062e97d3d835">cub::BLOCK_LOAD_DIRECT</a></b>. A <a href="index.html#sec5sec4"><em>blocked arrangement</em></a> of data is read directly from memory. <a class="el" href="namespacecub.html#a9d7e37497fdd99864c57adecda710401">More...</a></li>
 <li><b><a class="el" href="namespacecub.html#a9d7e37497fdd99864c57adecda710401a826be9d4df1c44c0e5c00a9c9c136965">cub::BLOCK_LOAD_VECTORIZE</a></b>. A <a href="index.html#sec5sec4"><em>blocked arrangement</em></a> of data is read directly from memory using CUDA's built-in vectorized loads as a coalescing optimization. <a class="el" href="namespacecub.html#a9d7e37497fdd99864c57adecda710401">More...</a></li>
 <li><b><a class="el" href="namespacecub.html#a9d7e37497fdd99864c57adecda710401acd94f285472e8f7c883a7407f6f4efc4">cub::BLOCK_LOAD_TRANSPOSE</a></b>. A <a href="index.html#sec5sec4"><em>striped arrangement</em></a> of data is read directly from memory and is then locally transposed into a <a href="index.html#sec5sec4"><em>blocked arrangement</em></a>. <a class="el" href="namespacecub.html#a9d7e37497fdd99864c57adecda710401">More...</a></li>
 <li><b><a class="el" href="namespacecub.html#a9d7e37497fdd99864c57adecda710401aba21066c09e6c6ebcf08c7e86216eb1f">cub::BLOCK_LOAD_WARP_TRANSPOSE</a></b>. A <a href="index.html#sec5sec4"><em>warp-striped arrangement</em></a> of data is read directly from memory and is then locally transposed into a <a href="index.html#sec5sec4"><em>blocked arrangement</em></a>. <a class="el" href="namespacecub.html#a9d7e37497fdd99864c57adecda710401">More...</a></li>
 </ol>
+</li>
+</ul>
 </dd></dl>
-<dl class="tparams"><dt>Template Parameters</dt><dd>
-  <table class="tparams">
-    <tr><td class="paramname">InputIteratorRA</td><td>The input iterator type (may be a simple pointer type). </td></tr>
-    <tr><td class="paramname">BLOCK_THREADS</td><td>The thread block size in threads. </td></tr>
-    <tr><td class="paramname">ITEMS_PER_THREAD</td><td>The number of consecutive items partitioned onto each thread. </td></tr>
-    <tr><td class="paramname">ALGORITHM</td><td><b>[optional]</b> <a class="el" href="namespacecub.html#a9d7e37497fdd99864c57adecda710401" title="cub::BlockLoadAlgorithm enumerates alternative algorithms for cub::BlockLoad to read a linear segment...">cub::BlockLoadAlgorithm</a> tuning policy. default: <a class="el" href="namespacecub.html#a9d7e37497fdd99864c57adecda710401a2d4d8900d7e697e9dac4062e97d3d835">cub::BLOCK_LOAD_DIRECT</a>. </td></tr>
-    <tr><td class="paramname">MODIFIER</td><td><b>[optional]</b> <a class="el" href="group___io_module.html#ga023420f30fec7d4b187fc98f4fd2a55d" title="Enumeration of PTX cache-modifiers for memory load operations. ">cub::PtxLoadModifier</a> cache modifier. default: <a class="el" href="group___io_module.html#gga023420f30fec7d4b187fc98f4fd2a55daee682a9988eceaefd9a53a7ef92fe6e2" title="Default (no modifier) ">cub::LOAD_DEFAULT</a>. </td></tr>
-    <tr><td class="paramname">WARP_TIME_SLICING</td><td><b>[optional]</b> For transposition-based <a class="el" href="namespacecub.html#a9d7e37497fdd99864c57adecda710401" title="cub::BlockLoadAlgorithm enumerates alternative algorithms for cub::BlockLoad to read a linear segment...">cub::BlockLoadAlgorithm</a> parameterizations that utilize shared memory: When <code>true</code>, only use enough shared memory for a single warp's worth of data, time-slicing the block-wide exchange over multiple synchronized rounds (default: false)</td></tr>
-  </table>
-  </dd>
-</dl>
 <dl class="section user"><dt>A Simple Example</dt><dd>Every thread in the block uses the <a class="el" href="classcub_1_1_block_load.html" title="The BlockLoad class provides collective data movement methods for loading a linear segment of items f...">BlockLoad</a> class by first specializing the <a class="el" href="classcub_1_1_block_load.html" title="The BlockLoad class provides collective data movement methods for loading a linear segment of items f...">BlockLoad</a> type, then instantiating an instance with parameters for communication, and finally invoking collective member functions. </dd></dl>
 <dl class="section user"><dt></dt><dd>The code snippet below illustrates the loading of a linear segment of 512 integers into a "blocked" arrangement across 128 threads where each thread owns 4 consecutive items. The load is specialized for <code>BLOCK_LOAD_WARP_TRANSPOSE</code>, meaning memory references are efficiently coalesced using a warp-striped access pattern (after which items are locally reordered among threads). </dd></dl>
-<dl class="section user"><dt></dt><dd><div class="fragment"><div class="line"><span class="preprocessor">#include &lt;<a class="code" href="cub_8cuh.html">cub/cub.cuh</a>&gt;</span></div>
+<dl class="section user"><dt></dt><dd><div class="fragment"><div class="line"><span class="preprocessor">#include &lt;<a class="code" href="cub_8cuh.html">cub/cub.cuh</a>&gt;</span>   <span class="comment">// or equivalently &lt;cub/block/block_load.cuh&gt;</span></div>
 <div class="line"></div>
 <div class="line">__global__ <span class="keywordtype">void</span> ExampleKernel(<span class="keywordtype">int</span> *d_data, ...)</div>
 <div class="line">{</div>
 <div class="line">    <span class="comment">// Specialize BlockLoad for 128 threads owning 4 integer items each</span></div>
-<div class="line">    <span class="keyword">typedef</span> <a class="code" href="classcub_1_1_block_load.html" title="The BlockLoad class provides collective data movement methods for loading a linear segment of items f...">cub::BlockLoad&lt;int*, 128, 4, BLOCK_LOAD_WARP_TRANSPOSE&gt;</a> <a class="code" href="classcub_1_1_block_load.html#a5d282946b5009f81cb8eb030f0c88db3" title="Collective constructor for 1D thread blocks using a private static allocation of shared memory as tem...">BlockLoad</a>;</div>
+<div class="line">    <span class="keyword">typedef</span> <a class="code" href="classcub_1_1_block_load.html" title="The BlockLoad class provides collective data movement methods for loading a linear segment of items f...">cub::BlockLoad&lt;int*, 128, 4, BLOCK_LOAD_WARP_TRANSPOSE&gt;</a> <a class="code" href="classcub_1_1_block_load.html#a41188e0b500fa9ad83a21ef757fb1bbe" title="Collective constructor for 1D thread blocks using a private static allocation of shared memory as tem...">BlockLoad</a>;</div>
 <div class="line"></div>
 <div class="line">    <span class="comment">// Allocate shared memory for BlockLoad</span></div>
 <div class="line">    __shared__ <span class="keyword">typename</span> BlockLoad::TempStorage temp_storage;</div>
 <div class="line"></div>
 <div class="line">    <span class="comment">// Load a segment of consecutive items that are blocked across threads</span></div>
 <div class="line">    <span class="keywordtype">int</span> thread_data[4];</div>
-<div class="line">    <a class="code" href="classcub_1_1_block_load.html#a5d282946b5009f81cb8eb030f0c88db3" title="Collective constructor for 1D thread blocks using a private static allocation of shared memory as tem...">BlockLoad</a>(temp_storage).Load(d_data, thread_data);</div>
+<div class="line">    <a class="code" href="classcub_1_1_block_load.html#a41188e0b500fa9ad83a21ef757fb1bbe" title="Collective constructor for 1D thread blocks using a private static allocation of shared memory as tem...">BlockLoad</a>(temp_storage).Load(d_data, thread_data);</div>
 </div><!-- fragment --> </dd></dl>
 <dl class="section user"><dt></dt><dd>Suppose the input <code>d_data</code> is <code>0, 1, 2, 3, 4, 5, ...</code>. The set of <code>thread_data</code> across the block of threads in those threads will be <code>{ [0,1,2,3], [4,5,6,7], ..., [508,509,510,511] }</code>. </dd></dl>
-
-<p>Definition at line <a class="el" href="block__load_8cuh_source.html#l00623">623</a> of file <a class="el" href="block__load_8cuh_source.html">block_load.cuh</a>.</p>
+<dl><dt><b>Examples: </b></dt><dd><a class="el" href="example_block_radix_sort_8cu-example.html#_a0">example_block_radix_sort.cu</a>, and <a class="el" href="example_block_scan_8cu-example.html#_a0">example_block_scan.cu</a>.</dd>
+</dl>
+<p>Definition at line <a class="el" href="block__load_8cuh_source.html#l00586">586</a> of file <a class="el" href="block__load_8cuh_source.html">block_load.cuh</a>.</p>
 </div><table class="memberdecls">
 <tr class="heading"><td colspan="2"><h2 class="groupheader"><a name="nested-classes"></a>
 Classes</h2></td></tr>
@@ -166,42 +169,42 @@ Classes</h2></td></tr>
 <tr class="heading"><td colspan="2"><h2 class="groupheader"><a name="pub-methods"></a>
 Public Methods</h2></td></tr>
 <tr><td colspan="2"><div class="groupHeader">Collective constructors</div></td></tr>
-<tr class="memitem:a5d282946b5009f81cb8eb030f0c88db3"><td class="memItemLeft" align="right" valign="top"><a class="anchor" id="a5d282946b5009f81cb8eb030f0c88db3"></a>
-__device__ __forceinline__&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classcub_1_1_block_load.html#a5d282946b5009f81cb8eb030f0c88db3">BlockLoad</a> ()</td></tr>
-<tr class="memdesc:a5d282946b5009f81cb8eb030f0c88db3"><td class="mdescLeft">&#160;</td><td class="mdescRight">Collective constructor for 1D thread blocks using a private static allocation of shared memory as temporary storage. Threads are identified using <code>threadIdx.x</code>. <br/></td></tr>
-<tr class="separator:a5d282946b5009f81cb8eb030f0c88db3"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:a6375b8826e555da16d39ab15343f05a5"><td class="memItemLeft" align="right" valign="top">__device__ __forceinline__&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classcub_1_1_block_load.html#a6375b8826e555da16d39ab15343f05a5">BlockLoad</a> (<a class="el" href="structcub_1_1_block_load_1_1_temp_storage.html">TempStorage</a> &amp;temp_storage)</td></tr>
-<tr class="memdesc:a6375b8826e555da16d39ab15343f05a5"><td class="mdescLeft">&#160;</td><td class="mdescRight">Collective constructor for 1D thread blocks using the specified memory allocation as temporary storage. Threads are identified using <code>threadIdx.x</code>.  <a href="#a6375b8826e555da16d39ab15343f05a5">More...</a><br/></td></tr>
-<tr class="separator:a6375b8826e555da16d39ab15343f05a5"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:ac14a9dd87b2ca252a4fb319f2d616d71"><td class="memItemLeft" align="right" valign="top">__device__ __forceinline__&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classcub_1_1_block_load.html#ac14a9dd87b2ca252a4fb319f2d616d71">BlockLoad</a> (int linear_tid)</td></tr>
-<tr class="memdesc:ac14a9dd87b2ca252a4fb319f2d616d71"><td class="mdescLeft">&#160;</td><td class="mdescRight">Collective constructor using a private static allocation of shared memory as temporary storage. Each thread is identified using the supplied linear thread identifier.  <a href="#ac14a9dd87b2ca252a4fb319f2d616d71">More...</a><br/></td></tr>
-<tr class="separator:ac14a9dd87b2ca252a4fb319f2d616d71"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:a05b5615fbcb8453d663248700e3b17c3"><td class="memItemLeft" align="right" valign="top">__device__ __forceinline__&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classcub_1_1_block_load.html#a05b5615fbcb8453d663248700e3b17c3">BlockLoad</a> (<a class="el" href="structcub_1_1_block_load_1_1_temp_storage.html">TempStorage</a> &amp;temp_storage, int linear_tid)</td></tr>
-<tr class="memdesc:a05b5615fbcb8453d663248700e3b17c3"><td class="mdescLeft">&#160;</td><td class="mdescRight">Collective constructor using the specified memory allocation as temporary storage. Each thread is identified using the supplied linear thread identifier.  <a href="#a05b5615fbcb8453d663248700e3b17c3">More...</a><br/></td></tr>
-<tr class="separator:a05b5615fbcb8453d663248700e3b17c3"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a41188e0b500fa9ad83a21ef757fb1bbe"><td class="memItemLeft" align="right" valign="top"><a class="anchor" id="a41188e0b500fa9ad83a21ef757fb1bbe"></a>
+__device__ __forceinline__&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classcub_1_1_block_load.html#a41188e0b500fa9ad83a21ef757fb1bbe">BlockLoad</a> ()</td></tr>
+<tr class="memdesc:a41188e0b500fa9ad83a21ef757fb1bbe"><td class="mdescLeft">&#160;</td><td class="mdescRight">Collective constructor for 1D thread blocks using a private static allocation of shared memory as temporary storage. Threads are identified using <code>threadIdx.x</code>. <br/></td></tr>
+<tr class="separator:a41188e0b500fa9ad83a21ef757fb1bbe"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a2972fee4c2b86ece5ba83f06c0beff3b"><td class="memItemLeft" align="right" valign="top">__device__ __forceinline__&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classcub_1_1_block_load.html#a2972fee4c2b86ece5ba83f06c0beff3b">BlockLoad</a> (<a class="el" href="structcub_1_1_block_load_1_1_temp_storage.html">TempStorage</a> &amp;temp_storage)</td></tr>
+<tr class="memdesc:a2972fee4c2b86ece5ba83f06c0beff3b"><td class="mdescLeft">&#160;</td><td class="mdescRight">Collective constructor for 1D thread blocks using the specified memory allocation as temporary storage. Threads are identified using <code>threadIdx.x</code>.  <a href="#a2972fee4c2b86ece5ba83f06c0beff3b">More...</a><br/></td></tr>
+<tr class="separator:a2972fee4c2b86ece5ba83f06c0beff3b"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:aded8095e893f12cf66e07ad895646146"><td class="memItemLeft" align="right" valign="top">__device__ __forceinline__&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classcub_1_1_block_load.html#aded8095e893f12cf66e07ad895646146">BlockLoad</a> (int linear_tid)</td></tr>
+<tr class="memdesc:aded8095e893f12cf66e07ad895646146"><td class="mdescLeft">&#160;</td><td class="mdescRight">Collective constructor using a private static allocation of shared memory as temporary storage. Each thread is identified using the supplied linear thread identifier.  <a href="#aded8095e893f12cf66e07ad895646146">More...</a><br/></td></tr>
+<tr class="separator:aded8095e893f12cf66e07ad895646146"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a1a12ec07a2933a89ee775bfcf35741d3"><td class="memItemLeft" align="right" valign="top">__device__ __forceinline__&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classcub_1_1_block_load.html#a1a12ec07a2933a89ee775bfcf35741d3">BlockLoad</a> (<a class="el" href="structcub_1_1_block_load_1_1_temp_storage.html">TempStorage</a> &amp;temp_storage, int linear_tid)</td></tr>
+<tr class="memdesc:a1a12ec07a2933a89ee775bfcf35741d3"><td class="mdescLeft">&#160;</td><td class="mdescRight">Collective constructor using the specified memory allocation as temporary storage. Each thread is identified using the supplied linear thread identifier.  <a href="#a1a12ec07a2933a89ee775bfcf35741d3">More...</a><br/></td></tr>
+<tr class="separator:a1a12ec07a2933a89ee775bfcf35741d3"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr><td colspan="2"><div class="groupHeader">Data movement</div></td></tr>
-<tr class="memitem:aa49d3ea3d7a6fcb5c2c4f376ece3a65f"><td class="memItemLeft" align="right" valign="top">__device__ __forceinline__ void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classcub_1_1_block_load.html#aa49d3ea3d7a6fcb5c2c4f376ece3a65f">Load</a> (InputIteratorRA block_itr, T(&amp;items)[ITEMS_PER_THREAD])</td></tr>
-<tr class="memdesc:aa49d3ea3d7a6fcb5c2c4f376ece3a65f"><td class="mdescLeft">&#160;</td><td class="mdescRight">Load a linear segment of items from memory.  <a href="#aa49d3ea3d7a6fcb5c2c4f376ece3a65f">More...</a><br/></td></tr>
-<tr class="separator:aa49d3ea3d7a6fcb5c2c4f376ece3a65f"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:aaf62f01f6d19f89ca6987ecece66df19"><td class="memItemLeft" align="right" valign="top">__device__ __forceinline__ void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classcub_1_1_block_load.html#aaf62f01f6d19f89ca6987ecece66df19">Load</a> (InputIteratorRA block_itr, T(&amp;items)[ITEMS_PER_THREAD], int valid_items)</td></tr>
-<tr class="memdesc:aaf62f01f6d19f89ca6987ecece66df19"><td class="mdescLeft">&#160;</td><td class="mdescRight">Load a linear segment of items from memory, guarded by range.  <a href="#aaf62f01f6d19f89ca6987ecece66df19">More...</a><br/></td></tr>
-<tr class="separator:aaf62f01f6d19f89ca6987ecece66df19"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:a0e90a159401f709597d4b43939613901"><td class="memItemLeft" align="right" valign="top">__device__ __forceinline__ void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classcub_1_1_block_load.html#a0e90a159401f709597d4b43939613901">Load</a> (InputIteratorRA block_itr, T(&amp;items)[ITEMS_PER_THREAD], int valid_items, T oob_default)</td></tr>
-<tr class="memdesc:a0e90a159401f709597d4b43939613901"><td class="mdescLeft">&#160;</td><td class="mdescRight">Load a linear segment of items from memory, guarded by range, with a fall-back assignment of out-of-bound elements.  <a href="#a0e90a159401f709597d4b43939613901">More...</a><br/></td></tr>
-<tr class="separator:a0e90a159401f709597d4b43939613901"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a77aa45b91985d72e64e38da89374cac5"><td class="memItemLeft" align="right" valign="top">__device__ __forceinline__ void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classcub_1_1_block_load.html#a77aa45b91985d72e64e38da89374cac5">Load</a> (InputIterator block_itr, T(&amp;items)[ITEMS_PER_THREAD])</td></tr>
+<tr class="memdesc:a77aa45b91985d72e64e38da89374cac5"><td class="mdescLeft">&#160;</td><td class="mdescRight">Load a linear segment of items from memory.  <a href="#a77aa45b91985d72e64e38da89374cac5">More...</a><br/></td></tr>
+<tr class="separator:a77aa45b91985d72e64e38da89374cac5"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a5d18d71bba406cb9e8365de8f2dbcf5d"><td class="memItemLeft" align="right" valign="top">__device__ __forceinline__ void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classcub_1_1_block_load.html#a5d18d71bba406cb9e8365de8f2dbcf5d">Load</a> (InputIterator block_itr, T(&amp;items)[ITEMS_PER_THREAD], int valid_items)</td></tr>
+<tr class="memdesc:a5d18d71bba406cb9e8365de8f2dbcf5d"><td class="mdescLeft">&#160;</td><td class="mdescRight">Load a linear segment of items from memory, guarded by range.  <a href="#a5d18d71bba406cb9e8365de8f2dbcf5d">More...</a><br/></td></tr>
+<tr class="separator:a5d18d71bba406cb9e8365de8f2dbcf5d"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:ae27132fcf3d3449421a167a313c382a2"><td class="memItemLeft" align="right" valign="top">__device__ __forceinline__ void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classcub_1_1_block_load.html#ae27132fcf3d3449421a167a313c382a2">Load</a> (InputIterator block_itr, T(&amp;items)[ITEMS_PER_THREAD], int valid_items, T oob_default)</td></tr>
+<tr class="memdesc:ae27132fcf3d3449421a167a313c382a2"><td class="mdescLeft">&#160;</td><td class="mdescRight">Load a linear segment of items from memory, guarded by range, with a fall-back assignment of out-of-bound elements.  <a href="#ae27132fcf3d3449421a167a313c382a2">More...</a><br/></td></tr>
+<tr class="separator:ae27132fcf3d3449421a167a313c382a2"><td class="memSeparator" colspan="2">&#160;</td></tr>
 </table>
 <h2 class="groupheader">Constructor &amp; Destructor Documentation</h2>
-<a class="anchor" id="a6375b8826e555da16d39ab15343f05a5"></a>
+<a class="anchor" id="a2972fee4c2b86ece5ba83f06c0beff3b"></a>
 <div class="memitem">
 <div class="memproto">
 <div class="memtemplate">
-template&lt;typename InputIteratorRA , int BLOCK_THREADS, int ITEMS_PER_THREAD, BlockLoadAlgorithm ALGORITHM = BLOCK_LOAD_DIRECT, PtxLoadModifier MODIFIER = LOAD_DEFAULT, bool WARP_TIME_SLICING = false&gt; </div>
+template&lt;typename InputIterator , int BLOCK_THREADS, int ITEMS_PER_THREAD, BlockLoadAlgorithm ALGORITHM = BLOCK_LOAD_DIRECT, bool WARP_TIME_SLICING = false&gt; </div>
 <table class="mlabels">
   <tr>
   <td class="mlabels-left">
       <table class="memname">
         <tr>
-          <td class="memname">__device__ __forceinline__ <a class="el" href="classcub_1_1_block_load.html">cub::BlockLoad</a>&lt; InputIteratorRA, BLOCK_THREADS, ITEMS_PER_THREAD, ALGORITHM, MODIFIER, WARP_TIME_SLICING &gt;::<a class="el" href="classcub_1_1_block_load.html">BlockLoad</a> </td>
+          <td class="memname">__device__ __forceinline__ <a class="el" href="classcub_1_1_block_load.html">cub::BlockLoad</a>&lt; InputIterator, BLOCK_THREADS, ITEMS_PER_THREAD, ALGORITHM, WARP_TIME_SLICING &gt;::<a class="el" href="classcub_1_1_block_load.html">BlockLoad</a> </td>
           <td>(</td>
           <td class="paramtype"><a class="el" href="structcub_1_1_block_load_1_1_temp_storage.html">TempStorage</a> &amp;&#160;</td>
           <td class="paramname"><em>temp_storage</em>)</td><td></td>
@@ -223,21 +226,21 @@ template&lt;typename InputIteratorRA , int BLOCK_THREADS, int ITEMS_PER_THREAD, 
   </dd>
 </dl>
 
-<p>Definition at line <a class="el" href="block__load_8cuh_source.html#l00947">947</a> of file <a class="el" href="block__load_8cuh_source.html">block_load.cuh</a>.</p>
+<p>Definition at line <a class="el" href="block__load_8cuh_source.html#l00910">910</a> of file <a class="el" href="block__load_8cuh_source.html">block_load.cuh</a>.</p>
 
 </div>
 </div>
-<a class="anchor" id="ac14a9dd87b2ca252a4fb319f2d616d71"></a>
+<a class="anchor" id="aded8095e893f12cf66e07ad895646146"></a>
 <div class="memitem">
 <div class="memproto">
 <div class="memtemplate">
-template&lt;typename InputIteratorRA , int BLOCK_THREADS, int ITEMS_PER_THREAD, BlockLoadAlgorithm ALGORITHM = BLOCK_LOAD_DIRECT, PtxLoadModifier MODIFIER = LOAD_DEFAULT, bool WARP_TIME_SLICING = false&gt; </div>
+template&lt;typename InputIterator , int BLOCK_THREADS, int ITEMS_PER_THREAD, BlockLoadAlgorithm ALGORITHM = BLOCK_LOAD_DIRECT, bool WARP_TIME_SLICING = false&gt; </div>
 <table class="mlabels">
   <tr>
   <td class="mlabels-left">
       <table class="memname">
         <tr>
-          <td class="memname">__device__ __forceinline__ <a class="el" href="classcub_1_1_block_load.html">cub::BlockLoad</a>&lt; InputIteratorRA, BLOCK_THREADS, ITEMS_PER_THREAD, ALGORITHM, MODIFIER, WARP_TIME_SLICING &gt;::<a class="el" href="classcub_1_1_block_load.html">BlockLoad</a> </td>
+          <td class="memname">__device__ __forceinline__ <a class="el" href="classcub_1_1_block_load.html">cub::BlockLoad</a>&lt; InputIterator, BLOCK_THREADS, ITEMS_PER_THREAD, ALGORITHM, WARP_TIME_SLICING &gt;::<a class="el" href="classcub_1_1_block_load.html">BlockLoad</a> </td>
           <td>(</td>
           <td class="paramtype">int&#160;</td>
           <td class="paramname"><em>linear_tid</em>)</td><td></td>
@@ -259,21 +262,21 @@ template&lt;typename InputIteratorRA , int BLOCK_THREADS, int ITEMS_PER_THREAD, 
   </dd>
 </dl>
 
-<p>Definition at line <a class="el" href="block__load_8cuh_source.html#l00958">958</a> of file <a class="el" href="block__load_8cuh_source.html">block_load.cuh</a>.</p>
+<p>Definition at line <a class="el" href="block__load_8cuh_source.html#l00921">921</a> of file <a class="el" href="block__load_8cuh_source.html">block_load.cuh</a>.</p>
 
 </div>
 </div>
-<a class="anchor" id="a05b5615fbcb8453d663248700e3b17c3"></a>
+<a class="anchor" id="a1a12ec07a2933a89ee775bfcf35741d3"></a>
 <div class="memitem">
 <div class="memproto">
 <div class="memtemplate">
-template&lt;typename InputIteratorRA , int BLOCK_THREADS, int ITEMS_PER_THREAD, BlockLoadAlgorithm ALGORITHM = BLOCK_LOAD_DIRECT, PtxLoadModifier MODIFIER = LOAD_DEFAULT, bool WARP_TIME_SLICING = false&gt; </div>
+template&lt;typename InputIterator , int BLOCK_THREADS, int ITEMS_PER_THREAD, BlockLoadAlgorithm ALGORITHM = BLOCK_LOAD_DIRECT, bool WARP_TIME_SLICING = false&gt; </div>
 <table class="mlabels">
   <tr>
   <td class="mlabels-left">
       <table class="memname">
         <tr>
-          <td class="memname">__device__ __forceinline__ <a class="el" href="classcub_1_1_block_load.html">cub::BlockLoad</a>&lt; InputIteratorRA, BLOCK_THREADS, ITEMS_PER_THREAD, ALGORITHM, MODIFIER, WARP_TIME_SLICING &gt;::<a class="el" href="classcub_1_1_block_load.html">BlockLoad</a> </td>
+          <td class="memname">__device__ __forceinline__ <a class="el" href="classcub_1_1_block_load.html">cub::BlockLoad</a>&lt; InputIterator, BLOCK_THREADS, ITEMS_PER_THREAD, ALGORITHM, WARP_TIME_SLICING &gt;::<a class="el" href="classcub_1_1_block_load.html">BlockLoad</a> </td>
           <td>(</td>
           <td class="paramtype"><a class="el" href="structcub_1_1_block_load_1_1_temp_storage.html">TempStorage</a> &amp;&#160;</td>
           <td class="paramname"><em>temp_storage</em>, </td>
@@ -306,24 +309,24 @@ template&lt;typename InputIteratorRA , int BLOCK_THREADS, int ITEMS_PER_THREAD, 
   </dd>
 </dl>
 
-<p>Definition at line <a class="el" href="block__load_8cuh_source.html#l00969">969</a> of file <a class="el" href="block__load_8cuh_source.html">block_load.cuh</a>.</p>
+<p>Definition at line <a class="el" href="block__load_8cuh_source.html#l00932">932</a> of file <a class="el" href="block__load_8cuh_source.html">block_load.cuh</a>.</p>
 
 </div>
 </div>
 <h2 class="groupheader">Member Function Documentation</h2>
-<a class="anchor" id="aa49d3ea3d7a6fcb5c2c4f376ece3a65f"></a>
+<a class="anchor" id="a77aa45b91985d72e64e38da89374cac5"></a>
 <div class="memitem">
 <div class="memproto">
 <div class="memtemplate">
-template&lt;typename InputIteratorRA , int BLOCK_THREADS, int ITEMS_PER_THREAD, BlockLoadAlgorithm ALGORITHM = BLOCK_LOAD_DIRECT, PtxLoadModifier MODIFIER = LOAD_DEFAULT, bool WARP_TIME_SLICING = false&gt; </div>
+template&lt;typename InputIterator , int BLOCK_THREADS, int ITEMS_PER_THREAD, BlockLoadAlgorithm ALGORITHM = BLOCK_LOAD_DIRECT, bool WARP_TIME_SLICING = false&gt; </div>
 <table class="mlabels">
   <tr>
   <td class="mlabels-left">
       <table class="memname">
         <tr>
-          <td class="memname">__device__ __forceinline__ void <a class="el" href="classcub_1_1_block_load.html">cub::BlockLoad</a>&lt; InputIteratorRA, BLOCK_THREADS, ITEMS_PER_THREAD, ALGORITHM, MODIFIER, WARP_TIME_SLICING &gt;::Load </td>
+          <td class="memname">__device__ __forceinline__ void <a class="el" href="classcub_1_1_block_load.html">cub::BlockLoad</a>&lt; InputIterator, BLOCK_THREADS, ITEMS_PER_THREAD, ALGORITHM, WARP_TIME_SLICING &gt;::Load </td>
           <td>(</td>
-          <td class="paramtype">InputIteratorRA&#160;</td>
+          <td class="paramtype">InputIterator&#160;</td>
           <td class="paramname"><em>block_itr</em>, </td>
         </tr>
         <tr>
@@ -346,21 +349,25 @@ template&lt;typename InputIteratorRA , int BLOCK_THREADS, int ITEMS_PER_THREAD, 
 </div><div class="memdoc">
 
 <p>Load a linear segment of items from memory. </p>
-<p>Assumes a <a href="index.html#sec5sec4"><em>blocked arrangement</em></a> of elements across threads, where thread<sub><em>i</em></sub> owns the <em>i</em><sup>th</sup> segment of consecutively ranked items.</p>
-<p>The code snippet below illustrates the loading of a linear segment of 512 integers into a "blocked" arrangement across 128 threads where each thread owns 4 consecutive items. The load is specialized for <code>BLOCK_LOAD_WARP_TRANSPOSE</code>, meaning memory references are efficiently coalesced using a warp-striped access pattern (after which items are locally reordered among threads). </p>
-<dl class="section user"><dt></dt><dd><div class="fragment"><div class="line"><span class="preprocessor">#include &lt;<a class="code" href="cub_8cuh.html">cub/cub.cuh</a>&gt;</span></div>
+<dl class="section user"><dt></dt><dd><ul>
+<li>Assumes a <a href="index.html#sec5sec4"><em>blocked arrangement</em></a> of elements across threads, where thread<sub><em>i</em></sub> owns the <em>i</em><sup>th</sup> segment of consecutively ranked items.</li>
+<li>A subsequent <code>__syncthreads()</code> threadblock barrier should be invoked after calling this method if the collective's temporary storage (e.g., <code>temp_storage</code>) is to be reused or repurposed.</li>
+</ul>
+</dd></dl>
+<dl class="section user"><dt></dt><dd>The code snippet below illustrates the loading of a linear segment of 512 integers into a "blocked" arrangement across 128 threads where each thread owns 4 consecutive items. The load is specialized for <code>BLOCK_LOAD_WARP_TRANSPOSE</code>, meaning memory references are efficiently coalesced using a warp-striped access pattern (after which items are locally reordered among threads). </dd></dl>
+<dl class="section user"><dt></dt><dd><div class="fragment"><div class="line"><span class="preprocessor">#include &lt;<a class="code" href="cub_8cuh.html">cub/cub.cuh</a>&gt;</span>   <span class="comment">// or equivalently &lt;cub/block/block_load.cuh&gt;</span></div>
 <div class="line"></div>
 <div class="line">__global__ <span class="keywordtype">void</span> ExampleKernel(<span class="keywordtype">int</span> *d_data, ...)</div>
 <div class="line">{</div>
 <div class="line">    <span class="comment">// Specialize BlockLoad for 128 threads owning 4 integer items each</span></div>
-<div class="line">    <span class="keyword">typedef</span> <a class="code" href="classcub_1_1_block_load.html" title="The BlockLoad class provides collective data movement methods for loading a linear segment of items f...">cub::BlockLoad&lt;int*, 128, 4, BLOCK_LOAD_WARP_TRANSPOSE&gt;</a> <a class="code" href="classcub_1_1_block_load.html#a5d282946b5009f81cb8eb030f0c88db3" title="Collective constructor for 1D thread blocks using a private static allocation of shared memory as tem...">BlockLoad</a>;</div>
+<div class="line">    <span class="keyword">typedef</span> <a class="code" href="classcub_1_1_block_load.html" title="The BlockLoad class provides collective data movement methods for loading a linear segment of items f...">cub::BlockLoad&lt;int*, 128, 4, BLOCK_LOAD_WARP_TRANSPOSE&gt;</a> <a class="code" href="classcub_1_1_block_load.html#a41188e0b500fa9ad83a21ef757fb1bbe" title="Collective constructor for 1D thread blocks using a private static allocation of shared memory as tem...">BlockLoad</a>;</div>
 <div class="line"></div>
 <div class="line">    <span class="comment">// Allocate shared memory for BlockLoad</span></div>
 <div class="line">    __shared__ <span class="keyword">typename</span> BlockLoad::TempStorage temp_storage;</div>
 <div class="line"></div>
 <div class="line">    <span class="comment">// Load a segment of consecutive items that are blocked across threads</span></div>
 <div class="line">    <span class="keywordtype">int</span> thread_data[4];</div>
-<div class="line">    <a class="code" href="classcub_1_1_block_load.html#a5d282946b5009f81cb8eb030f0c88db3" title="Collective constructor for 1D thread blocks using a private static allocation of shared memory as tem...">BlockLoad</a>(temp_storage).Load(d_data, thread_data);</div>
+<div class="line">    <a class="code" href="classcub_1_1_block_load.html#a41188e0b500fa9ad83a21ef757fb1bbe" title="Collective constructor for 1D thread blocks using a private static allocation of shared memory as tem...">BlockLoad</a>(temp_storage).Load(d_data, thread_data);</div>
 </div><!-- fragment --> </dd></dl>
 <dl class="section user"><dt></dt><dd>Suppose the input <code>d_data</code> is <code>0, 1, 2, 3, 4, 5, ...</code>. The set of <code>thread_data</code> across the block of threads in those threads will be <code>{ [0,1,2,3], [4,5,6,7], ..., [508,509,510,511] }</code>. </dd></dl>
 <dl class="params"><dt>Parameters</dt><dd>
@@ -371,23 +378,23 @@ template&lt;typename InputIteratorRA , int BLOCK_THREADS, int ITEMS_PER_THREAD, 
   </dd>
 </dl>
 
-<p>Definition at line <a class="el" href="block__load_8cuh_source.html#l01019">1019</a> of file <a class="el" href="block__load_8cuh_source.html">block_load.cuh</a>.</p>
+<p>Definition at line <a class="el" href="block__load_8cuh_source.html#l00985">985</a> of file <a class="el" href="block__load_8cuh_source.html">block_load.cuh</a>.</p>
 
 </div>
 </div>
-<a class="anchor" id="aaf62f01f6d19f89ca6987ecece66df19"></a>
+<a class="anchor" id="a5d18d71bba406cb9e8365de8f2dbcf5d"></a>
 <div class="memitem">
 <div class="memproto">
 <div class="memtemplate">
-template&lt;typename InputIteratorRA , int BLOCK_THREADS, int ITEMS_PER_THREAD, BlockLoadAlgorithm ALGORITHM = BLOCK_LOAD_DIRECT, PtxLoadModifier MODIFIER = LOAD_DEFAULT, bool WARP_TIME_SLICING = false&gt; </div>
+template&lt;typename InputIterator , int BLOCK_THREADS, int ITEMS_PER_THREAD, BlockLoadAlgorithm ALGORITHM = BLOCK_LOAD_DIRECT, bool WARP_TIME_SLICING = false&gt; </div>
 <table class="mlabels">
   <tr>
   <td class="mlabels-left">
       <table class="memname">
         <tr>
-          <td class="memname">__device__ __forceinline__ void <a class="el" href="classcub_1_1_block_load.html">cub::BlockLoad</a>&lt; InputIteratorRA, BLOCK_THREADS, ITEMS_PER_THREAD, ALGORITHM, MODIFIER, WARP_TIME_SLICING &gt;::Load </td>
+          <td class="memname">__device__ __forceinline__ void <a class="el" href="classcub_1_1_block_load.html">cub::BlockLoad</a>&lt; InputIterator, BLOCK_THREADS, ITEMS_PER_THREAD, ALGORITHM, WARP_TIME_SLICING &gt;::Load </td>
           <td>(</td>
-          <td class="paramtype">InputIteratorRA&#160;</td>
+          <td class="paramtype">InputIterator&#160;</td>
           <td class="paramname"><em>block_itr</em>, </td>
         </tr>
         <tr>
@@ -416,21 +423,25 @@ template&lt;typename InputIteratorRA , int BLOCK_THREADS, int ITEMS_PER_THREAD, 
 </div><div class="memdoc">
 
 <p>Load a linear segment of items from memory, guarded by range. </p>
-<p>Assumes a <a href="index.html#sec5sec4"><em>blocked arrangement</em></a> of elements across threads, where thread<sub><em>i</em></sub> owns the <em>i</em><sup>th</sup> segment of consecutively ranked items.</p>
-<p>The code snippet below illustrates the guarded loading of a linear segment of 512 integers into a "blocked" arrangement across 128 threads where each thread owns 4 consecutive items. The load is specialized for <code>BLOCK_LOAD_WARP_TRANSPOSE</code>, meaning memory references are efficiently coalesced using a warp-striped access pattern (after which items are locally reordered among threads). </p>
-<dl class="section user"><dt></dt><dd><div class="fragment"><div class="line"><span class="preprocessor">#include &lt;<a class="code" href="cub_8cuh.html">cub/cub.cuh</a>&gt;</span></div>
+<dl class="section user"><dt></dt><dd><ul>
+<li>Assumes a <a href="index.html#sec5sec4"><em>blocked arrangement</em></a> of elements across threads, where thread<sub><em>i</em></sub> owns the <em>i</em><sup>th</sup> segment of consecutively ranked items.</li>
+<li>A subsequent <code>__syncthreads()</code> threadblock barrier should be invoked after calling this method if the collective's temporary storage (e.g., <code>temp_storage</code>) is to be reused or repurposed.</li>
+</ul>
+</dd></dl>
+<dl class="section user"><dt></dt><dd>The code snippet below illustrates the guarded loading of a linear segment of 512 integers into a "blocked" arrangement across 128 threads where each thread owns 4 consecutive items. The load is specialized for <code>BLOCK_LOAD_WARP_TRANSPOSE</code>, meaning memory references are efficiently coalesced using a warp-striped access pattern (after which items are locally reordered among threads). </dd></dl>
+<dl class="section user"><dt></dt><dd><div class="fragment"><div class="line"><span class="preprocessor">#include &lt;<a class="code" href="cub_8cuh.html">cub/cub.cuh</a>&gt;</span>   <span class="comment">// or equivalently &lt;cub/block/block_load.cuh&gt;</span></div>
 <div class="line"></div>
 <div class="line">__global__ <span class="keywordtype">void</span> ExampleKernel(<span class="keywordtype">int</span> *d_data, <span class="keywordtype">int</span> valid_items, ...)</div>
 <div class="line">{</div>
 <div class="line">    <span class="comment">// Specialize BlockLoad for 128 threads owning 4 integer items each</span></div>
-<div class="line">    <span class="keyword">typedef</span> <a class="code" href="classcub_1_1_block_load.html" title="The BlockLoad class provides collective data movement methods for loading a linear segment of items f...">cub::BlockLoad&lt;int*, 128, 4, BLOCK_LOAD_WARP_TRANSPOSE&gt;</a> <a class="code" href="classcub_1_1_block_load.html#a5d282946b5009f81cb8eb030f0c88db3" title="Collective constructor for 1D thread blocks using a private static allocation of shared memory as tem...">BlockLoad</a>;</div>
+<div class="line">    <span class="keyword">typedef</span> <a class="code" href="classcub_1_1_block_load.html" title="The BlockLoad class provides collective data movement methods for loading a linear segment of items f...">cub::BlockLoad&lt;int*, 128, 4, BLOCK_LOAD_WARP_TRANSPOSE&gt;</a> <a class="code" href="classcub_1_1_block_load.html#a41188e0b500fa9ad83a21ef757fb1bbe" title="Collective constructor for 1D thread blocks using a private static allocation of shared memory as tem...">BlockLoad</a>;</div>
 <div class="line"></div>
 <div class="line">    <span class="comment">// Allocate shared memory for BlockLoad</span></div>
 <div class="line">    __shared__ <span class="keyword">typename</span> BlockLoad::TempStorage temp_storage;</div>
 <div class="line"></div>
 <div class="line">    <span class="comment">// Load a segment of consecutive items that are blocked across threads</span></div>
 <div class="line">    <span class="keywordtype">int</span> thread_data[4];</div>
-<div class="line">    <a class="code" href="classcub_1_1_block_load.html#a5d282946b5009f81cb8eb030f0c88db3" title="Collective constructor for 1D thread blocks using a private static allocation of shared memory as tem...">BlockLoad</a>(temp_storage).Load(d_data, thread_data, valid_items);</div>
+<div class="line">    <a class="code" href="classcub_1_1_block_load.html#a41188e0b500fa9ad83a21ef757fb1bbe" title="Collective constructor for 1D thread blocks using a private static allocation of shared memory as tem...">BlockLoad</a>(temp_storage).Load(d_data, thread_data, valid_items);</div>
 </div><!-- fragment --> </dd></dl>
 <dl class="section user"><dt></dt><dd>Suppose the input <code>d_data</code> is <code>0, 1, 2, 3, 4, 5, 6...</code> and <code>valid_items</code> is <code>5</code>. The set of <code>thread_data</code> across the block of threads in those threads will be <code>{ [0,1,2,3], [4,?,?,?], ..., [?,?,?,?] }</code>, with only the first two threads being unmasked to load portions of valid data (and other items remaining unassigned). </dd></dl>
 <dl class="params"><dt>Parameters</dt><dd>
@@ -442,23 +453,23 @@ template&lt;typename InputIteratorRA , int BLOCK_THREADS, int ITEMS_PER_THREAD, 
   </dd>
 </dl>
 
-<p>Definition at line <a class="el" href="block__load_8cuh_source.html#l01061">1061</a> of file <a class="el" href="block__load_8cuh_source.html">block_load.cuh</a>.</p>
+<p>Definition at line <a class="el" href="block__load_8cuh_source.html#l01030">1030</a> of file <a class="el" href="block__load_8cuh_source.html">block_load.cuh</a>.</p>
 
 </div>
 </div>
-<a class="anchor" id="a0e90a159401f709597d4b43939613901"></a>
+<a class="anchor" id="ae27132fcf3d3449421a167a313c382a2"></a>
 <div class="memitem">
 <div class="memproto">
 <div class="memtemplate">
-template&lt;typename InputIteratorRA , int BLOCK_THREADS, int ITEMS_PER_THREAD, BlockLoadAlgorithm ALGORITHM = BLOCK_LOAD_DIRECT, PtxLoadModifier MODIFIER = LOAD_DEFAULT, bool WARP_TIME_SLICING = false&gt; </div>
+template&lt;typename InputIterator , int BLOCK_THREADS, int ITEMS_PER_THREAD, BlockLoadAlgorithm ALGORITHM = BLOCK_LOAD_DIRECT, bool WARP_TIME_SLICING = false&gt; </div>
 <table class="mlabels">
   <tr>
   <td class="mlabels-left">
       <table class="memname">
         <tr>
-          <td class="memname">__device__ __forceinline__ void <a class="el" href="classcub_1_1_block_load.html">cub::BlockLoad</a>&lt; InputIteratorRA, BLOCK_THREADS, ITEMS_PER_THREAD, ALGORITHM, MODIFIER, WARP_TIME_SLICING &gt;::Load </td>
+          <td class="memname">__device__ __forceinline__ void <a class="el" href="classcub_1_1_block_load.html">cub::BlockLoad</a>&lt; InputIterator, BLOCK_THREADS, ITEMS_PER_THREAD, ALGORITHM, WARP_TIME_SLICING &gt;::Load </td>
           <td>(</td>
-          <td class="paramtype">InputIteratorRA&#160;</td>
+          <td class="paramtype">InputIterator&#160;</td>
           <td class="paramname"><em>block_itr</em>, </td>
         </tr>
         <tr>
@@ -493,21 +504,25 @@ template&lt;typename InputIteratorRA , int BLOCK_THREADS, int ITEMS_PER_THREAD, 
 </div><div class="memdoc">
 
 <p>Load a linear segment of items from memory, guarded by range, with a fall-back assignment of out-of-bound elements. </p>
-<p>Assumes a <a href="index.html#sec5sec4"><em>blocked arrangement</em></a> of elements across threads, where thread<sub><em>i</em></sub> owns the <em>i</em><sup>th</sup> segment of consecutively ranked items.</p>
-<p>The code snippet below illustrates the guarded loading of a linear segment of 512 integers into a "blocked" arrangement across 128 threads where each thread owns 4 consecutive items. The load is specialized for <code>BLOCK_LOAD_WARP_TRANSPOSE</code>, meaning memory references are efficiently coalesced using a warp-striped access pattern (after which items are locally reordered among threads). </p>
-<dl class="section user"><dt></dt><dd><div class="fragment"><div class="line"><span class="preprocessor">#include &lt;<a class="code" href="cub_8cuh.html">cub/cub.cuh</a>&gt;</span></div>
+<dl class="section user"><dt></dt><dd><ul>
+<li>Assumes a <a href="index.html#sec5sec4"><em>blocked arrangement</em></a> of elements across threads, where thread<sub><em>i</em></sub> owns the <em>i</em><sup>th</sup> segment of consecutively ranked items.</li>
+<li>A subsequent <code>__syncthreads()</code> threadblock barrier should be invoked after calling this method if the collective's temporary storage (e.g., <code>temp_storage</code>) is to be reused or repurposed.</li>
+</ul>
+</dd></dl>
+<dl class="section user"><dt></dt><dd>The code snippet below illustrates the guarded loading of a linear segment of 512 integers into a "blocked" arrangement across 128 threads where each thread owns 4 consecutive items. The load is specialized for <code>BLOCK_LOAD_WARP_TRANSPOSE</code>, meaning memory references are efficiently coalesced using a warp-striped access pattern (after which items are locally reordered among threads). </dd></dl>
+<dl class="section user"><dt></dt><dd><div class="fragment"><div class="line"><span class="preprocessor">#include &lt;<a class="code" href="cub_8cuh.html">cub/cub.cuh</a>&gt;</span>   <span class="comment">// or equivalently &lt;cub/block/block_load.cuh&gt;</span></div>
 <div class="line"></div>
 <div class="line">__global__ <span class="keywordtype">void</span> ExampleKernel(<span class="keywordtype">int</span> *d_data, <span class="keywordtype">int</span> valid_items, ...)</div>
 <div class="line">{</div>
 <div class="line">    <span class="comment">// Specialize BlockLoad for 128 threads owning 4 integer items each</span></div>
-<div class="line">    <span class="keyword">typedef</span> <a class="code" href="classcub_1_1_block_load.html" title="The BlockLoad class provides collective data movement methods for loading a linear segment of items f...">cub::BlockLoad&lt;int*, 128, 4, BLOCK_LOAD_WARP_TRANSPOSE&gt;</a> <a class="code" href="classcub_1_1_block_load.html#a5d282946b5009f81cb8eb030f0c88db3" title="Collective constructor for 1D thread blocks using a private static allocation of shared memory as tem...">BlockLoad</a>;</div>
+<div class="line">    <span class="keyword">typedef</span> <a class="code" href="classcub_1_1_block_load.html" title="The BlockLoad class provides collective data movement methods for loading a linear segment of items f...">cub::BlockLoad&lt;int*, 128, 4, BLOCK_LOAD_WARP_TRANSPOSE&gt;</a> <a class="code" href="classcub_1_1_block_load.html#a41188e0b500fa9ad83a21ef757fb1bbe" title="Collective constructor for 1D thread blocks using a private static allocation of shared memory as tem...">BlockLoad</a>;</div>
 <div class="line"></div>
 <div class="line">    <span class="comment">// Allocate shared memory for BlockLoad</span></div>
 <div class="line">    __shared__ <span class="keyword">typename</span> BlockLoad::TempStorage temp_storage;</div>
 <div class="line"></div>
 <div class="line">    <span class="comment">// Load a segment of consecutive items that are blocked across threads</span></div>
 <div class="line">    <span class="keywordtype">int</span> thread_data[4];</div>
-<div class="line">    <a class="code" href="classcub_1_1_block_load.html#a5d282946b5009f81cb8eb030f0c88db3" title="Collective constructor for 1D thread blocks using a private static allocation of shared memory as tem...">BlockLoad</a>(temp_storage).Load(d_data, thread_data, valid_items, -1);</div>
+<div class="line">    <a class="code" href="classcub_1_1_block_load.html#a41188e0b500fa9ad83a21ef757fb1bbe" title="Collective constructor for 1D thread blocks using a private static allocation of shared memory as tem...">BlockLoad</a>(temp_storage).Load(d_data, thread_data, valid_items, -1);</div>
 </div><!-- fragment --> </dd></dl>
 <dl class="section user"><dt></dt><dd>Suppose the input <code>d_data</code> is <code>0, 1, 2, 3, 4, 5, 6...</code>, <code>valid_items</code> is <code>5</code>, and the out-of-bounds default is <code>-1</code>. The set of <code>thread_data</code> across the block of threads in those threads will be <code>{ [0,1,2,3], [4,-1,-1,-1], ..., [-1,-1,-1,-1] }</code>, with only the first two threads being unmasked to load portions of valid data (and other items are assigned <code>-1</code>) </dd></dl>
 <dl class="params"><dt>Parameters</dt><dd>
@@ -520,7 +535,7 @@ template&lt;typename InputIteratorRA , int BLOCK_THREADS, int ITEMS_PER_THREAD, 
   </dd>
 </dl>
 
-<p>Definition at line <a class="el" href="block__load_8cuh_source.html#l01105">1105</a> of file <a class="el" href="block__load_8cuh_source.html">block_load.cuh</a>.</p>
+<p>Definition at line <a class="el" href="block__load_8cuh_source.html#l01077">1077</a> of file <a class="el" href="block__load_8cuh_source.html">block_load.cuh</a>.</p>
 
 </div>
 </div>
@@ -531,7 +546,7 @@ template&lt;typename InputIteratorRA , int BLOCK_THREADS, int ITEMS_PER_THREAD, 
 <!-- HTML footer for doxygen 1.8.3.1-->
 <!-- start footer part -->
 <hr class="footer"/><address class="footer"><small>
-Generated on Fri Aug 23 2013 17:31:11 for CUB by &#160;<a href="http://www.doxygen.org/index.html">
+Generated on Tue Dec 10 2013 05:04:23 for CUB by &#160;<a href="http://www.doxygen.org/index.html">
 <img class="footer" src="doxygen.png" alt="doxygen"/>
 </a> 1.8.4
 <br>

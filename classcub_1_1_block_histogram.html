@@ -52,6 +52,7 @@ var searchBox = new SearchBox("searchBox", "search",false,'Search');
       <li><a href="index.html"><span>Main&#160;Page</span></a></li>
       <li><a href="modules.html"><span>Modules</span></a></li>
       <li class="current"><a href="annotated.html"><span>Classes</span></a></li>
+      <li><a href="examples.html"><span>Examples</span></a></li>
       <li>
         <div id="MSearchBox" class="MSearchBoxInactive">
         <span class="left">
@@ -81,7 +82,7 @@ var searchBox = new SearchBox("searchBox", "search",false,'Search');
      onmouseover="return searchBox.OnSearchSelectShow()"
      onmouseout="return searchBox.OnSearchSelectHide()"
      onkeydown="return searchBox.OnSearchSelectKey(event)">
-<a class="SelectItem" href="javascript:void(0)" onclick="searchBox.OnSelectItem(0)"><span class="SelectionMark">&#160;</span>All</a><a class="SelectItem" href="javascript:void(0)" onclick="searchBox.OnSelectItem(1)"><span class="SelectionMark">&#160;</span>Classes</a><a class="SelectItem" href="javascript:void(0)" onclick="searchBox.OnSelectItem(2)"><span class="SelectionMark">&#160;</span>Namespaces</a><a class="SelectItem" href="javascript:void(0)" onclick="searchBox.OnSelectItem(3)"><span class="SelectionMark">&#160;</span>Files</a><a class="SelectItem" href="javascript:void(0)" onclick="searchBox.OnSelectItem(4)"><span class="SelectionMark">&#160;</span>Functions</a><a class="SelectItem" href="javascript:void(0)" onclick="searchBox.OnSelectItem(5)"><span class="SelectionMark">&#160;</span>Variables</a><a class="SelectItem" href="javascript:void(0)" onclick="searchBox.OnSelectItem(6)"><span class="SelectionMark">&#160;</span>Typedefs</a><a class="SelectItem" href="javascript:void(0)" onclick="searchBox.OnSelectItem(7)"><span class="SelectionMark">&#160;</span>Enumerations</a><a class="SelectItem" href="javascript:void(0)" onclick="searchBox.OnSelectItem(8)"><span class="SelectionMark">&#160;</span>Enumerator</a><a class="SelectItem" href="javascript:void(0)" onclick="searchBox.OnSelectItem(9)"><span class="SelectionMark">&#160;</span>Groups</a></div>
+<a class="SelectItem" href="javascript:void(0)" onclick="searchBox.OnSelectItem(0)"><span class="SelectionMark">&#160;</span>All</a><a class="SelectItem" href="javascript:void(0)" onclick="searchBox.OnSelectItem(1)"><span class="SelectionMark">&#160;</span>Classes</a><a class="SelectItem" href="javascript:void(0)" onclick="searchBox.OnSelectItem(2)"><span class="SelectionMark">&#160;</span>Namespaces</a><a class="SelectItem" href="javascript:void(0)" onclick="searchBox.OnSelectItem(3)"><span class="SelectionMark">&#160;</span>Files</a><a class="SelectItem" href="javascript:void(0)" onclick="searchBox.OnSelectItem(4)"><span class="SelectionMark">&#160;</span>Functions</a><a class="SelectItem" href="javascript:void(0)" onclick="searchBox.OnSelectItem(5)"><span class="SelectionMark">&#160;</span>Variables</a><a class="SelectItem" href="javascript:void(0)" onclick="searchBox.OnSelectItem(6)"><span class="SelectionMark">&#160;</span>Typedefs</a><a class="SelectItem" href="javascript:void(0)" onclick="searchBox.OnSelectItem(7)"><span class="SelectionMark">&#160;</span>Enumerations</a><a class="SelectItem" href="javascript:void(0)" onclick="searchBox.OnSelectItem(8)"><span class="SelectionMark">&#160;</span>Enumerator</a><a class="SelectItem" href="javascript:void(0)" onclick="searchBox.OnSelectItem(9)"><span class="SelectionMark">&#160;</span>Friends</a><a class="SelectItem" href="javascript:void(0)" onclick="searchBox.OnSelectItem(10)"><span class="SelectionMark">&#160;</span>Groups</a></div>
 
 <!-- iframe showing the search results (closed by default) -->
 <div id="MSearchResultsWindow">
@@ -100,7 +101,7 @@ var searchBox = new SearchBox("searchBox", "search",false,'Search');
 <a href="#nested-classes">Classes</a> &#124;
 <a href="classcub_1_1_block_histogram-members.html">List of all members</a>  </div>
   <div class="headertitle">
-<div class="title">cub::BlockHistogram&lt; T, BLOCK_THREADS, ITEMS_PER_THREAD, BINS, ALGORITHM &gt; Class Template Reference<div class="ingroups"><a class="el" href="group___block_module.html">Block-wide</a></div></div>  </div>
+<div class="title">cub::BlockHistogram&lt; T, BLOCK_THREADS, ITEMS_PER_THREAD, BINS, ALGORITHM &gt; Class Template Reference<div class="ingroups"><a class="el" href="group___block_module.html">Block-wide (collective)</a></div></div>  </div>
 </div><!--header-->
 <div class="contents">
 <a name="details" id="details"></a><h2 class="groupheader">Detailed description</h2>
@@ -117,13 +118,7 @@ class cub::BlockHistogram&lt; T, BLOCK_THREADS, ITEMS_PER_THREAD, BINS, ALGORITH
 <img src="histogram_logo.png" alt="histogram_logo.png"/>
 <div class="caption">
 .</div></div>
- <dl class="section user"><dt>Overview</dt><dd>A <a href="http://en.wikipedia.org/wiki/Histogram"><em>histogram</em></a> counts the number of observations that fall into each of the disjoint categories (known as <em>bins</em>).</dd></dl>
-<dl class="section user"><dt></dt><dd>Optionally, <a class="el" href="classcub_1_1_block_histogram.html" title="The BlockHistogram class provides collective methods for constructing block-wide histograms from data...">BlockHistogram</a> can be specialized to use different algorithms:<ol type="1">
-<li><b><a class="el" href="namespacecub.html#a845ca81ef9b346ef7429a35d4fdc80d2ac14962247ae5693de2de53a8db40ca54">cub::BLOCK_HISTO_SORT</a></b>. Sorting followed by differentiation. <a class="el" href="namespacecub.html#a845ca81ef9b346ef7429a35d4fdc80d2">More...</a></li>
-<li><b><a class="el" href="namespacecub.html#a845ca81ef9b346ef7429a35d4fdc80d2abfc89fce43fcda396d18a4b2801025aa">cub::BLOCK_HISTO_ATOMIC</a></b>. Use atomic addition to update byte counts directly. <a class="el" href="namespacecub.html#a845ca81ef9b346ef7429a35d4fdc80d2">More...</a></li>
-</ol>
-</dd></dl>
-<dl class="tparams"><dt>Template Parameters</dt><dd>
+ <dl class="tparams"><dt>Template Parameters</dt><dd>
   <table class="tparams">
     <tr><td class="paramname">T</td><td>The sample type being histogrammed (must be castable to an integer bin identifier) </td></tr>
     <tr><td class="paramname">BLOCK_THREADS</td><td>The thread block size in threads </td></tr>
@@ -133,9 +128,22 @@ class cub::BlockHistogram&lt; T, BLOCK_THREADS, ITEMS_PER_THREAD, BINS, ALGORITH
   </table>
   </dd>
 </dl>
+<dl class="section user"><dt>Overview</dt><dd><ul>
+<li>A <a href="http://en.wikipedia.org/wiki/Histogram"><em>histogram</em></a> counts the number of observations that fall into each of the disjoint categories (known as <em>bins</em>).</li>
+<li><a class="el" href="classcub_1_1_block_histogram.html" title="The BlockHistogram class provides collective methods for constructing block-wide histograms from data...">BlockHistogram</a> can be optionally specialized to use different algorithms:<ol type="1">
+<li><b><a class="el" href="namespacecub.html#a845ca81ef9b346ef7429a35d4fdc80d2ac14962247ae5693de2de53a8db40ca54">cub::BLOCK_HISTO_SORT</a></b>. Sorting followed by differentiation. <a class="el" href="namespacecub.html#a845ca81ef9b346ef7429a35d4fdc80d2">More...</a></li>
+<li><b><a class="el" href="namespacecub.html#a845ca81ef9b346ef7429a35d4fdc80d2abfc89fce43fcda396d18a4b2801025aa">cub::BLOCK_HISTO_ATOMIC</a></b>. Use atomic addition to update byte counts directly. <a class="el" href="namespacecub.html#a845ca81ef9b346ef7429a35d4fdc80d2">More...</a></li>
+</ol>
+</li>
+</ul>
+</dd></dl>
+<dl class="section user"><dt>Performance Considerations</dt><dd><ul>
+<li>Efficiency is increased with increased granularity <code>ITEMS_PER_THREAD</code>. Performance is also typically increased until the additional register pressure or shared memory allocation size causes SM occupancy to fall too low. Consider variants of <a class="el" href="classcub_1_1_block_load.html" title="The BlockLoad class provides collective data movement methods for loading a linear segment of items f...">cub::BlockLoad</a> for efficiently gathering a <a href="index.html#sec5sec4"><em>blocked arrangement</em></a> of elements across threads.</li>
+</ul>
+</dd></dl>
 <dl class="section user"><dt>A Simple Example</dt><dd>Every thread in the block uses the <a class="el" href="classcub_1_1_block_histogram.html" title="The BlockHistogram class provides collective methods for constructing block-wide histograms from data...">BlockHistogram</a> class by first specializing the <a class="el" href="classcub_1_1_block_histogram.html" title="The BlockHistogram class provides collective methods for constructing block-wide histograms from data...">BlockHistogram</a> type, then instantiating an instance with parameters for communication, and finally invoking collective member functions. </dd></dl>
 <dl class="section user"><dt></dt><dd>The code snippet below illustrates a 256-bin histogram of 512 integer samples that are partitioned across 128 threads where each thread owns 4 samples. </dd></dl>
-<dl class="section user"><dt></dt><dd><div class="fragment"><div class="line"><span class="preprocessor">#include &lt;<a class="code" href="cub_8cuh.html">cub/cub.cuh</a>&gt;</span></div>
+<dl class="section user"><dt></dt><dd><div class="fragment"><div class="line"><span class="preprocessor">#include &lt;<a class="code" href="cub_8cuh.html">cub/cub.cuh</a>&gt;</span>   <span class="comment">// or equivalently &lt;cub/block/block_histogram.cuh&gt;</span></div>
 <div class="line"></div>
 <div class="line">__global__ <span class="keywordtype">void</span> ExampleKernel(...)</div>
 <div class="line">{</div>
@@ -161,7 +169,7 @@ class cub::BlockHistogram&lt; T, BLOCK_THREADS, ITEMS_PER_THREAD, BINS, ALGORITH
 </ul>
 </dd></dl>
 
-<p>Definition at line <a class="el" href="block__histogram_8cuh_source.html#l00149">149</a> of file <a class="el" href="block__histogram_8cuh_source.html">block_histogram.cuh</a>.</p>
+<p>Definition at line <a class="el" href="block__histogram_8cuh_source.html#l00150">150</a> of file <a class="el" href="block__histogram_8cuh_source.html">block_histogram.cuh</a>.</p>
 </div><table class="memberdecls">
 <tr class="heading"><td colspan="2"><h2 class="groupheader"><a name="nested-classes"></a>
 Classes</h2></td></tr>
@@ -232,7 +240,7 @@ template&lt;typename T , int BLOCK_THREADS, int ITEMS_PER_THREAD, int BINS, Bloc
   </dd>
 </dl>
 
-<p>Definition at line <a class="el" href="block__histogram_8cuh_source.html#l00224">224</a> of file <a class="el" href="block__histogram_8cuh_source.html">block_histogram.cuh</a>.</p>
+<p>Definition at line <a class="el" href="block__histogram_8cuh_source.html#l00225">225</a> of file <a class="el" href="block__histogram_8cuh_source.html">block_histogram.cuh</a>.</p>
 
 </div>
 </div>
@@ -268,7 +276,7 @@ template&lt;typename T , int BLOCK_THREADS, int ITEMS_PER_THREAD, int BINS, Bloc
   </dd>
 </dl>
 
-<p>Definition at line <a class="el" href="block__histogram_8cuh_source.html#l00235">235</a> of file <a class="el" href="block__histogram_8cuh_source.html">block_histogram.cuh</a>.</p>
+<p>Definition at line <a class="el" href="block__histogram_8cuh_source.html#l00236">236</a> of file <a class="el" href="block__histogram_8cuh_source.html">block_histogram.cuh</a>.</p>
 
 </div>
 </div>
@@ -315,12 +323,12 @@ template&lt;typename T , int BLOCK_THREADS, int ITEMS_PER_THREAD, int BINS, Bloc
   </dd>
 </dl>
 
-<p>Definition at line <a class="el" href="block__histogram_8cuh_source.html#l00246">246</a> of file <a class="el" href="block__histogram_8cuh_source.html">block_histogram.cuh</a>.</p>
+<p>Definition at line <a class="el" href="block__histogram_8cuh_source.html#l00247">247</a> of file <a class="el" href="block__histogram_8cuh_source.html">block_histogram.cuh</a>.</p>
 
 </div>
 </div>
 <h2 class="groupheader">Member Function Documentation</h2>
-<a class="anchor" id="a86aca800e8a8e886b5d328e7aa3c5582"></a>
+<a class="anchor" id="a3cae3cfe2ca8388fb2e3a18c0822db3a"></a>
 <div class="memitem">
 <div class="memproto">
 <div class="memtemplate">
@@ -332,21 +340,11 @@ template&lt;typename HistoCounter &gt; </div>
   <td class="mlabels-left">
       <table class="memname">
         <tr>
-          <td class="memname">__device__ __forceinline__ void <a class="el" href="classcub_1_1_block_histogram.html">cub::BlockHistogram</a>&lt; T, BLOCK_THREADS, ITEMS_PER_THREAD, BINS, ALGORITHM &gt;::Composite </td>
+          <td class="memname">__device__ __forceinline__ void <a class="el" href="classcub_1_1_block_histogram.html">cub::BlockHistogram</a>&lt; T, BLOCK_THREADS, ITEMS_PER_THREAD, BINS, ALGORITHM &gt;::InitHistogram </td>
           <td>(</td>
-          <td class="paramtype">T(&amp;)&#160;</td>
-          <td class="paramname"><em>items</em>[ITEMS_PER_THREAD], </td>
-        </tr>
-        <tr>
-          <td class="paramkey"></td>
-          <td></td>
           <td class="paramtype">HistoCounter&#160;</td>
-          <td class="paramname"><em>histogram</em>[BINS]&#160;</td>
-        </tr>
-        <tr>
+          <td class="paramname"><em>histogram</em>[BINS])</td><td></td>
           <td></td>
-          <td>)</td>
-          <td></td><td></td>
         </tr>
       </table>
   </td>
@@ -356,10 +354,9 @@ template&lt;typename HistoCounter &gt; </div>
 </table>
 </div><div class="memdoc">
 
-<p>Updates an existing block-wide histogram in shared/global memory. Each thread composites an array of input elements. </p>
-<p>A subsequent <code>__syncthreads()</code> threadblock barrier should be invoked after calling this method if the collective's temporary storage (e.g., <code>temp_storage</code>) is to be reused or repurposed.</p>
-<p>The code snippet below illustrates a the initialization and update of a histogram of 512 integer samples that are partitioned across 128 threads where each thread owns 4 samples. </p>
-<dl class="section user"><dt></dt><dd><div class="fragment"><div class="line"><span class="preprocessor">#include &lt;<a class="code" href="cub_8cuh.html">cub/cub.cuh</a>&gt;</span></div>
+<p>Initialize the shared histogram counters to zero. </p>
+<dl class="section user"><dt></dt><dd>The code snippet below illustrates a the initialization and update of a histogram of 512 integer samples that are partitioned across 128 threads where each thread owns 4 samples. </dd></dl>
+<dl class="section user"><dt></dt><dd><div class="fragment"><div class="line"><span class="preprocessor">#include &lt;<a class="code" href="cub_8cuh.html">cub/cub.cuh</a>&gt;</span>   <span class="comment">// or equivalently &lt;cub/block/block_histogram.cuh&gt;</span></div>
 <div class="line"></div>
 <div class="line">__global__ <span class="keywordtype">void</span> ExampleKernel(...)</div>
 <div class="line">{</div>
@@ -388,15 +385,8 @@ template&lt;typename HistoCounter &gt; </div>
   </table>
   </dd>
 </dl>
-<dl class="params"><dt>Parameters</dt><dd>
-  <table class="params">
-    <tr><td class="paramdir">[in]</td><td class="paramname">items</td><td>Calling thread's input values to histogram </td></tr>
-    <tr><td class="paramdir">[out]</td><td class="paramname">histogram</td><td>Reference to shared/global memory histogram </td></tr>
-  </table>
-  </dd>
-</dl>
 
-<p>Definition at line <a class="el" href="block__histogram_8cuh_source.html#l00403">403</a> of file <a class="el" href="block__histogram_8cuh_source.html">block_histogram.cuh</a>.</p>
+<p>Definition at line <a class="el" href="block__histogram_8cuh_source.html#l00300">300</a> of file <a class="el" href="block__histogram_8cuh_source.html">block_histogram.cuh</a>.</p>
 
 </div>
 </div>
@@ -437,9 +427,13 @@ template&lt;typename HistoCounter &gt; </div>
 </div><div class="memdoc">
 
 <p>Constructs a block-wide histogram in shared/global memory. Each thread contributes an array of input elements. </p>
-<p>A subsequent <code>__syncthreads()</code> threadblock barrier should be invoked after calling this method if the collective's temporary storage (e.g., <code>temp_storage</code>) is to be reused or repurposed.</p>
-<p>The code snippet below illustrates a 256-bin histogram of 512 integer samples that are partitioned across 128 threads where each thread owns 4 samples. </p>
-<dl class="section user"><dt></dt><dd><div class="fragment"><div class="line"><span class="preprocessor">#include &lt;<a class="code" href="cub_8cuh.html">cub/cub.cuh</a>&gt;</span></div>
+<dl class="section user"><dt></dt><dd><ul>
+<li>Efficiency is increased with increased granularity <code>ITEMS_PER_THREAD</code>. Performance is also typically increased until the additional register pressure or shared memory allocation size causes SM occupancy to fall too low. Consider variants of <a class="el" href="classcub_1_1_block_load.html" title="The BlockLoad class provides collective data movement methods for loading a linear segment of items f...">cub::BlockLoad</a> for efficiently gathering a <a href="index.html#sec5sec4"><em>blocked arrangement</em></a> of elements across threads.</li>
+<li>A subsequent <code>__syncthreads()</code> threadblock barrier should be invoked after calling this method if the collective's temporary storage (e.g., <code>temp_storage</code>) is to be reused or repurposed.</li>
+</ul>
+</dd></dl>
+<dl class="section user"><dt></dt><dd>The code snippet below illustrates a 256-bin histogram of 512 integer samples that are partitioned across 128 threads where each thread owns 4 samples. </dd></dl>
+<dl class="section user"><dt></dt><dd><div class="fragment"><div class="line"><span class="preprocessor">#include &lt;<a class="code" href="cub_8cuh.html">cub/cub.cuh</a>&gt;</span>   <span class="comment">// or equivalently &lt;cub/block/block_histogram.cuh&gt;</span></div>
 <div class="line"></div>
 <div class="line">__global__ <span class="keywordtype">void</span> ExampleKernel(...)</div>
 <div class="line">{</div>
@@ -473,11 +467,11 @@ template&lt;typename HistoCounter &gt; </div>
   </dd>
 </dl>
 
-<p>Definition at line <a class="el" href="block__histogram_8cuh_source.html#l00351">351</a> of file <a class="el" href="block__histogram_8cuh_source.html">block_histogram.cuh</a>.</p>
+<p>Definition at line <a class="el" href="block__histogram_8cuh_source.html#l00356">356</a> of file <a class="el" href="block__histogram_8cuh_source.html">block_histogram.cuh</a>.</p>
 
 </div>
 </div>
-<a class="anchor" id="a3cae3cfe2ca8388fb2e3a18c0822db3a"></a>
+<a class="anchor" id="a86aca800e8a8e886b5d328e7aa3c5582"></a>
 <div class="memitem">
 <div class="memproto">
 <div class="memtemplate">
@@ -489,11 +483,21 @@ template&lt;typename HistoCounter &gt; </div>
   <td class="mlabels-left">
       <table class="memname">
         <tr>
-          <td class="memname">__device__ __forceinline__ void <a class="el" href="classcub_1_1_block_histogram.html">cub::BlockHistogram</a>&lt; T, BLOCK_THREADS, ITEMS_PER_THREAD, BINS, ALGORITHM &gt;::InitHistogram </td>
+          <td class="memname">__device__ __forceinline__ void <a class="el" href="classcub_1_1_block_histogram.html">cub::BlockHistogram</a>&lt; T, BLOCK_THREADS, ITEMS_PER_THREAD, BINS, ALGORITHM &gt;::Composite </td>
           <td>(</td>
-          <td class="paramtype">HistoCounter&#160;</td>
-          <td class="paramname"><em>histogram</em>[BINS])</td><td></td>
+          <td class="paramtype">T(&amp;)&#160;</td>
+          <td class="paramname"><em>items</em>[ITEMS_PER_THREAD], </td>
+        </tr>
+        <tr>
+          <td class="paramkey"></td>
           <td></td>
+          <td class="paramtype">HistoCounter&#160;</td>
+          <td class="paramname"><em>histogram</em>[BINS]&#160;</td>
+        </tr>
+        <tr>
+          <td></td>
+          <td>)</td>
+          <td></td><td></td>
         </tr>
       </table>
   </td>
@@ -503,9 +507,14 @@ template&lt;typename HistoCounter &gt; </div>
 </table>
 </div><div class="memdoc">
 
-<p>Initialize the shared histogram counters to zero. </p>
-<p>The code snippet below illustrates a the initialization and update of a histogram of 512 integer samples that are partitioned across 128 threads where each thread owns 4 samples. </p>
-<dl class="section user"><dt></dt><dd><div class="fragment"><div class="line"><span class="preprocessor">#include &lt;<a class="code" href="cub_8cuh.html">cub/cub.cuh</a>&gt;</span></div>
+<p>Updates an existing block-wide histogram in shared/global memory. Each thread composites an array of input elements. </p>
+<dl class="section user"><dt></dt><dd><ul>
+<li>Efficiency is increased with increased granularity <code>ITEMS_PER_THREAD</code>. Performance is also typically increased until the additional register pressure or shared memory allocation size causes SM occupancy to fall too low. Consider variants of <a class="el" href="classcub_1_1_block_load.html" title="The BlockLoad class provides collective data movement methods for loading a linear segment of items f...">cub::BlockLoad</a> for efficiently gathering a <a href="index.html#sec5sec4"><em>blocked arrangement</em></a> of elements across threads.</li>
+<li>A subsequent <code>__syncthreads()</code> threadblock barrier should be invoked after calling this method if the collective's temporary storage (e.g., <code>temp_storage</code>) is to be reused or repurposed.</li>
+</ul>
+</dd></dl>
+<dl class="section user"><dt></dt><dd>The code snippet below illustrates a the initialization and update of a histogram of 512 integer samples that are partitioned across 128 threads where each thread owns 4 samples. </dd></dl>
+<dl class="section user"><dt></dt><dd><div class="fragment"><div class="line"><span class="preprocessor">#include &lt;<a class="code" href="cub_8cuh.html">cub/cub.cuh</a>&gt;</span>   <span class="comment">// or equivalently &lt;cub/block/block_histogram.cuh&gt;</span></div>
 <div class="line"></div>
 <div class="line">__global__ <span class="keywordtype">void</span> ExampleKernel(...)</div>
 <div class="line">{</div>
@@ -534,8 +543,15 @@ template&lt;typename HistoCounter &gt; </div>
   </table>
   </dd>
 </dl>
+<dl class="params"><dt>Parameters</dt><dd>
+  <table class="params">
+    <tr><td class="paramdir">[in]</td><td class="paramname">items</td><td>Calling thread's input values to histogram </td></tr>
+    <tr><td class="paramdir">[out]</td><td class="paramname">histogram</td><td>Reference to shared/global memory histogram </td></tr>
+  </table>
+  </dd>
+</dl>
 
-<p>Definition at line <a class="el" href="block__histogram_8cuh_source.html#l00298">298</a> of file <a class="el" href="block__histogram_8cuh_source.html">block_histogram.cuh</a>.</p>
+<p>Definition at line <a class="el" href="block__histogram_8cuh_source.html#l00413">413</a> of file <a class="el" href="block__histogram_8cuh_source.html">block_histogram.cuh</a>.</p>
 
 </div>
 </div>
@@ -546,7 +562,7 @@ template&lt;typename HistoCounter &gt; </div>
 <!-- HTML footer for doxygen 1.8.3.1-->
 <!-- start footer part -->
 <hr class="footer"/><address class="footer"><small>
-Generated on Fri Aug 23 2013 17:31:11 for CUB by &#160;<a href="http://www.doxygen.org/index.html">
+Generated on Tue Dec 10 2013 05:04:23 for CUB by &#160;<a href="http://www.doxygen.org/index.html">
 <img class="footer" src="doxygen.png" alt="doxygen"/>
 </a> 1.8.4
 <br>
