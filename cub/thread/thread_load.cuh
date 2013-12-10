@@ -81,7 +81,7 @@ enum CacheLoadModifier
  *
  * \par Example
  * \code
- * #include <cub/cub.cuh>
+ * #include <cub/cub.cuh>   // or equivalently <cub/thread/thread_load.cuh>
  *
  * // 32-bit load using cache-global modifier:
  * int *d_in;

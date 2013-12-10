@@ -79,7 +79,7 @@ enum CacheStoreModifier
  *
  * \par Example
  * \code
- * #include <cub/cub.cuh>
+ * #include <cub/cub.cuh>   // or equivalently <cub/thread/thread_store.cuh>
  *
  * // 32-bit store using cache-global modifier:
  * int *d_out;

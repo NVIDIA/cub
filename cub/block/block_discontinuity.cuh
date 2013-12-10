@@ -65,7 +65,7 @@ namespace cub {
  * where each thread owns 4 consecutive items.
  * \par
  * \code
- * #include <cub/cub.cuh>
+ * #include <cub/cub.cuh>   // or equivalently <cub/block/block_discontinuity.cuh>
  *
  * __global__ void ExampleKernel(...)
  * {
@@ -238,7 +238,7 @@ public:
      * where each thread owns 4 consecutive items.
      * \par
      * \code
-     * #include <cub/cub.cuh>
+     * #include <cub/cub.cuh>   // or equivalently <cub/block/block_discontinuity.cuh>
      *
      * __global__ void ExampleKernel(...)
      * {
@@ -324,7 +324,7 @@ public:
      * where each thread owns 4 consecutive items.
      * \par
      * \code
-     * #include <cub/cub.cuh>
+     * #include <cub/cub.cuh>   // or equivalently <cub/block/block_discontinuity.cuh>
      *
      * __global__ void ExampleKernel(...)
      * {
@@ -425,7 +425,7 @@ public:
      * where each thread owns 4 consecutive items.
      * \par
      * \code
-     * #include <cub/cub.cuh>
+     * #include <cub/cub.cuh>   // or equivalently <cub/block/block_discontinuity.cuh>
      *
      * __global__ void ExampleKernel(...)
      * {
@@ -512,7 +512,7 @@ public:
      * where each thread owns 4 consecutive items.
      * \par
      * \code
-     * #include <cub/cub.cuh>
+     * #include <cub/cub.cuh>   // or equivalently <cub/block/block_discontinuity.cuh>
      *
      * __global__ void ExampleKernel(...)
      * {

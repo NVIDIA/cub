@@ -415,11 +415,13 @@ and striped arrangements.
 [<b>CUB v1.1.0</b>](https://github.com/NVlabs/cub/archive/1.1.0.zip)
 </td><td style="vertical-align:text-top;">
 - <b>New features</b>:
-  - Added cub::TexObjInputIterator, cub::TexRefInputIterator, cub::CacheModifiedInputIterator, and cub::CacheModifiedOutputIterator types for loading & storing arbitrary types through the cache hierarchy.  Compatible with Thrust API. 
+  - Added cub::TexObjInputIterator, cub::TexRefInputIterator, cub::CacheModifiedInputIterator, and cub::CacheModifiedOutputIterator types for loading & storing arbitrary data types through the cache hierarchy.  Compatible with Thrust API. 
   - Added descending sorting to cub::DeviceRadixSort and cub::BlockRadixSort
   - Added min, max, arg-min, and arg-max to cub::DeviceReduce
   - Added cub::DeviceSelect (select-unique, select-if, and select-flagged)
   - Added cub::DevicePartition (partition-if, partition-flagged)
+  - Added generic cub::ShuffleUp(), cub::ShuffleDown(), and cub::ShuffleBroadcast() for warp-wide communication of arbitrary data types (SM3x+)
+  - Added cub::MaxSmOccupancy() for accurately determining SM occupancy for any given kernel function pointer
 - <b>Performance</b>:
   - Improved cub::DeviceScan and cub::DeviceRadixSort performance for older architectures (SM10-SM30)
 - <b>Interface changes</b>:

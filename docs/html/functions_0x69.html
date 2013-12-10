@@ -52,6 +52,7 @@ var searchBox = new SearchBox("searchBox", "search",false,'Search');
       <li><a href="index.html"><span>Main&#160;Page</span></a></li>
       <li><a href="modules.html"><span>Modules</span></a></li>
       <li class="current"><a href="annotated.html"><span>Classes</span></a></li>
+      <li><a href="examples.html"><span>Examples</span></a></li>
       <li>
         <div id="MSearchBox" class="MSearchBoxInactive">
         <span class="left">
@@ -82,7 +83,7 @@ var searchBox = new SearchBox("searchBox", "search",false,'Search');
       <li><a href="functions_func.html"><span>Functions</span></a></li>
       <li><a href="functions_vars.html"><span>Variables</span></a></li>
       <li><a href="functions_type.html"><span>Typedefs</span></a></li>
-      <li><a href="functions_eval.html"><span>Enumerator</span></a></li>
+      <li><a href="functions_rela.html"><span>Related&#160;Functions</span></a></li>
     </ul>
   </div>
   <div id="navrow4" class="tabs3">
@@ -95,6 +96,7 @@ var searchBox = new SearchBox("searchBox", "search",false,'Search');
       <li><a href="functions_0x66.html#index_f"><span>f</span></a></li>
       <li><a href="functions_0x68.html#index_h"><span>h</span></a></li>
       <li class="current"><a href="functions_0x69.html#index_i"><span>i</span></a></li>
+      <li><a href="functions_0x6b.html#index_k"><span>k</span></a></li>
       <li><a href="functions_0x6c.html#index_l"><span>l</span></a></li>
       <li><a href="functions_0x6d.html#index_m"><span>m</span></a></li>
       <li><a href="functions_0x6f.html#index_o"><span>o</span></a></li>
@@ -103,6 +105,7 @@ var searchBox = new SearchBox("searchBox", "search",false,'Search');
       <li><a href="functions_0x73.html#index_s"><span>s</span></a></li>
       <li><a href="functions_0x74.html#index_t"><span>t</span></a></li>
       <li><a href="functions_0x75.html#index_u"><span>u</span></a></li>
+      <li><a href="functions_0x76.html#index_v"><span>v</span></a></li>
       <li><a href="functions_0x77.html#index_w"><span>w</span></a></li>
       <li><a href="functions_0x7e.html#index_0x7e"><span>~</span></a></li>
     </ul>
@@ -113,7 +116,7 @@ var searchBox = new SearchBox("searchBox", "search",false,'Search');
      onmouseover="return searchBox.OnSearchSelectShow()"
      onmouseout="return searchBox.OnSearchSelectHide()"
      onkeydown="return searchBox.OnSearchSelectKey(event)">
-<a class="SelectItem" href="javascript:void(0)" onclick="searchBox.OnSelectItem(0)"><span class="SelectionMark">&#160;</span>All</a><a class="SelectItem" href="javascript:void(0)" onclick="searchBox.OnSelectItem(1)"><span class="SelectionMark">&#160;</span>Classes</a><a class="SelectItem" href="javascript:void(0)" onclick="searchBox.OnSelectItem(2)"><span class="SelectionMark">&#160;</span>Namespaces</a><a class="SelectItem" href="javascript:void(0)" onclick="searchBox.OnSelectItem(3)"><span class="SelectionMark">&#160;</span>Files</a><a class="SelectItem" href="javascript:void(0)" onclick="searchBox.OnSelectItem(4)"><span class="SelectionMark">&#160;</span>Functions</a><a class="SelectItem" href="javascript:void(0)" onclick="searchBox.OnSelectItem(5)"><span class="SelectionMark">&#160;</span>Variables</a><a class="SelectItem" href="javascript:void(0)" onclick="searchBox.OnSelectItem(6)"><span class="SelectionMark">&#160;</span>Typedefs</a><a class="SelectItem" href="javascript:void(0)" onclick="searchBox.OnSelectItem(7)"><span class="SelectionMark">&#160;</span>Enumerations</a><a class="SelectItem" href="javascript:void(0)" onclick="searchBox.OnSelectItem(8)"><span class="SelectionMark">&#160;</span>Enumerator</a><a class="SelectItem" href="javascript:void(0)" onclick="searchBox.OnSelectItem(9)"><span class="SelectionMark">&#160;</span>Groups</a></div>
+<a class="SelectItem" href="javascript:void(0)" onclick="searchBox.OnSelectItem(0)"><span class="SelectionMark">&#160;</span>All</a><a class="SelectItem" href="javascript:void(0)" onclick="searchBox.OnSelectItem(1)"><span class="SelectionMark">&#160;</span>Classes</a><a class="SelectItem" href="javascript:void(0)" onclick="searchBox.OnSelectItem(2)"><span class="SelectionMark">&#160;</span>Namespaces</a><a class="SelectItem" href="javascript:void(0)" onclick="searchBox.OnSelectItem(3)"><span class="SelectionMark">&#160;</span>Files</a><a class="SelectItem" href="javascript:void(0)" onclick="searchBox.OnSelectItem(4)"><span class="SelectionMark">&#160;</span>Functions</a><a class="SelectItem" href="javascript:void(0)" onclick="searchBox.OnSelectItem(5)"><span class="SelectionMark">&#160;</span>Variables</a><a class="SelectItem" href="javascript:void(0)" onclick="searchBox.OnSelectItem(6)"><span class="SelectionMark">&#160;</span>Typedefs</a><a class="SelectItem" href="javascript:void(0)" onclick="searchBox.OnSelectItem(7)"><span class="SelectionMark">&#160;</span>Enumerations</a><a class="SelectItem" href="javascript:void(0)" onclick="searchBox.OnSelectItem(8)"><span class="SelectionMark">&#160;</span>Enumerator</a><a class="SelectItem" href="javascript:void(0)" onclick="searchBox.OnSelectItem(9)"><span class="SelectionMark">&#160;</span>Friends</a><a class="SelectItem" href="javascript:void(0)" onclick="searchBox.OnSelectItem(10)"><span class="SelectionMark">&#160;</span>Groups</a></div>
 
 <!-- iframe showing the search results (closed by default) -->
 <div id="MSearchResultsWindow">
@@ -126,33 +129,49 @@ var searchBox = new SearchBox("searchBox", "search",false,'Search');
 <div class="textblock">Here is a list of all documented class members with links to the class documentation for each member:</div>
 
 <h3><a class="anchor" id="index_i"></a>- i -</h3><ul>
+<li>If()
+: <a class="el" href="structcub_1_1_device_partition.html#ae7943e3b007a6edd517d82675af832c0">cub::DevicePartition</a>
+, <a class="el" href="structcub_1_1_device_select.html#a1fc0a6991fdf34a417856349a146de29">cub::DeviceSelect</a>
+</li>
 <li>InclusiveScan()
-: <a class="el" href="classcub_1_1_block_scan.html#afb56064490291f37a712bcc3064ccbab">cub::BlockScan&lt; T, BLOCK_THREADS, ALGORITHM &gt;</a>
+: <a class="el" href="classcub_1_1_block_scan.html#a60d6f1fb7780e25c4a1442128113270b">cub::BlockScan&lt; T, BLOCK_THREADS, ALGORITHM &gt;</a>
+, <a class="el" href="structcub_1_1_device_scan.html#a1d4862639493a13bdfd419c7fffd4a08">cub::DeviceScan</a>
+, <a class="el" href="classcub_1_1_block_scan.html#a5d286d4defdd0350a87b8f9e0615782c">cub::BlockScan&lt; T, BLOCK_THREADS, ALGORITHM &gt;</a>
 , <a class="el" href="classcub_1_1_warp_scan.html#aafd14f3920c493b104a3a6a0cc6a39d2">cub::WarpScan&lt; T, LOGICAL_WARPS, LOGICAL_WARP_THREADS &gt;</a>
+, <a class="el" href="classcub_1_1_block_scan.html#afb56064490291f37a712bcc3064ccbab">cub::BlockScan&lt; T, BLOCK_THREADS, ALGORITHM &gt;</a>
+, <a class="el" href="classcub_1_1_warp_scan.html#a5df0a73e817f462fedfd00e5f332f5ab">cub::WarpScan&lt; T, LOGICAL_WARPS, LOGICAL_WARP_THREADS &gt;</a>
 , <a class="el" href="classcub_1_1_block_scan.html#a2885c51314333f4b98dacefcd7c918fc">cub::BlockScan&lt; T, BLOCK_THREADS, ALGORITHM &gt;</a>
-, <a class="el" href="classcub_1_1_warp_scan.html#adf74795dbe02947facd24657bc519c40">cub::WarpScan&lt; T, LOGICAL_WARPS, LOGICAL_WARP_THREADS &gt;</a>
-, <a class="el" href="classcub_1_1_block_scan.html#a7e1622b40fe73bdb6550f4dca2ae290a">cub::BlockScan&lt; T, BLOCK_THREADS, ALGORITHM &gt;</a>
-, <a class="el" href="structcub_1_1_device_scan.html#a2f6de564140e06b391ad0d987142762f">cub::DeviceScan</a>
 </li>
 <li>InclusiveSum()
-: <a class="el" href="classcub_1_1_block_scan.html#ae1a4a4dfbec4ec029dd6a8cce8b6c0a1">cub::BlockScan&lt; T, BLOCK_THREADS, ALGORITHM &gt;</a>
-, <a class="el" href="structcub_1_1_device_scan.html#a7c8471b7508fca37dfd3198b9111911a">cub::DeviceScan</a>
+: <a class="el" href="classcub_1_1_block_scan.html#a88ffea45e2a8b5e3abb6e4c4777e66ef">cub::BlockScan&lt; T, BLOCK_THREADS, ALGORITHM &gt;</a>
+, <a class="el" href="structcub_1_1_device_scan.html#aca0d91db140b65d6693dc9eaed6478de">cub::DeviceScan</a>
+, <a class="el" href="classcub_1_1_warp_scan.html#a64d246eb963f9a18d964e17a6f73fc27">cub::WarpScan&lt; T, LOGICAL_WARPS, LOGICAL_WARP_THREADS &gt;</a>
+, <a class="el" href="classcub_1_1_block_scan.html#ac9dd47ade3a68e8b91a574360cbf13f6">cub::BlockScan&lt; T, BLOCK_THREADS, ALGORITHM &gt;</a>
+, <a class="el" href="classcub_1_1_warp_scan.html#ab00383b21233cd2edb4f28fe63f95418">cub::WarpScan&lt; T, LOGICAL_WARPS, LOGICAL_WARP_THREADS &gt;</a>
 , <a class="el" href="classcub_1_1_block_scan.html#a570505ebdc51e2e47373fcb87e9a7d62">cub::BlockScan&lt; T, BLOCK_THREADS, ALGORITHM &gt;</a>
-, <a class="el" href="classcub_1_1_warp_scan.html#a906d0d6381b3af1ad105ec69547350f3">cub::WarpScan&lt; T, LOGICAL_WARPS, LOGICAL_WARP_THREADS &gt;</a>
-, <a class="el" href="classcub_1_1_block_scan.html#a88ffea45e2a8b5e3abb6e4c4777e66ef">cub::BlockScan&lt; T, BLOCK_THREADS, ALGORITHM &gt;</a>
 </li>
-<li>Init()
-: <a class="el" href="classcub_1_1_device.html#a4c1aecec381d2dce80120362feb2d0ca">cub::Device</a>
+<li>InequalityWrapper()
+: <a class="el" href="structcub_1_1_inequality_wrapper.html#a933c170bd76eef23017c5ff6ea010f49">cub::InequalityWrapper&lt; EqualityOp &gt;</a>
 </li>
 <li>InitHistogram()
 : <a class="el" href="classcub_1_1_block_histogram.html#a3cae3cfe2ca8388fb2e3a18c0822db3a">cub::BlockHistogram&lt; T, BLOCK_THREADS, ITEMS_PER_THREAD, BINS, ALGORITHM &gt;</a>
+</li>
+<li>iterator_category
+: <a class="el" href="classcub_1_1_counting_input_iterator.html#ae33580a6909bcd47c982ca1d54e3f5cd">cub::CountingInputIterator&lt; ValueType, Offset &gt;</a>
+, <a class="el" href="classcub_1_1_cache_modified_input_iterator.html#a1ca84d5b1325b4721f235a4c580c024a">cub::CacheModifiedInputIterator&lt; MODIFIER, ValueType, Offset &gt;</a>
+, <a class="el" href="classcub_1_1_arg_index_input_iterator.html#a30d0c8fbb5ddacf352455db48608bf81">cub::ArgIndexInputIterator&lt; InputIterator, Offset &gt;</a>
+, <a class="el" href="classcub_1_1_constant_input_iterator.html#ac2bfe13c9b34a0034b12119166b7d097">cub::ConstantInputIterator&lt; ValueType, Offset &gt;</a>
+, <a class="el" href="classcub_1_1_transform_input_iterator.html#ad5b3dd39f6d50df29fdb41ef8a5adb79">cub::TransformInputIterator&lt; ValueType, ConversionOp, InputIterator, Offset &gt;</a>
+, <a class="el" href="classcub_1_1_cache_modified_output_iterator.html#aceb9ad256320e44b6366c75aa5352cb6">cub::CacheModifiedOutputIterator&lt; MODIFIER, ValueType, Offset &gt;</a>
+, <a class="el" href="classcub_1_1_tex_ref_input_iterator.html#a7785fea6fd7748ad89fd498e58667b63">cub::TexRefInputIterator&lt; T, UNIQUE_ID, Offset &gt;</a>
+, <a class="el" href="classcub_1_1_tex_obj_input_iterator.html#a5d0ce330f81eb996b6aea0a09958fd9d">cub::TexObjInputIterator&lt; T, Offset &gt;</a>
 </li>
 </ul>
 </div><!-- contents -->
 <!-- HTML footer for doxygen 1.8.3.1-->
 <!-- start footer part -->
 <hr class="footer"/><address class="footer"><small>
-Generated on Fri Aug 23 2013 17:31:14 for CUB by &#160;<a href="http://www.doxygen.org/index.html">
+Generated on Tue Dec 10 2013 02:42:41 for CUB by &#160;<a href="http://www.doxygen.org/index.html">
 <img class="footer" src="doxygen.png" alt="doxygen"/>
 </a> 1.8.4
 <br>

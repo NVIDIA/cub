@@ -52,6 +52,7 @@ var searchBox = new SearchBox("searchBox", "search",false,'Search');
       <li><a href="index.html"><span>Main&#160;Page</span></a></li>
       <li><a href="modules.html"><span>Modules</span></a></li>
       <li class="current"><a href="annotated.html"><span>Classes</span></a></li>
+      <li><a href="examples.html"><span>Examples</span></a></li>
       <li>
         <div id="MSearchBox" class="MSearchBoxInactive">
         <span class="left">
@@ -81,7 +82,7 @@ var searchBox = new SearchBox("searchBox", "search",false,'Search');
      onmouseover="return searchBox.OnSearchSelectShow()"
      onmouseout="return searchBox.OnSearchSelectHide()"
      onkeydown="return searchBox.OnSearchSelectKey(event)">
-<a class="SelectItem" href="javascript:void(0)" onclick="searchBox.OnSelectItem(0)"><span class="SelectionMark">&#160;</span>All</a><a class="SelectItem" href="javascript:void(0)" onclick="searchBox.OnSelectItem(1)"><span class="SelectionMark">&#160;</span>Classes</a><a class="SelectItem" href="javascript:void(0)" onclick="searchBox.OnSelectItem(2)"><span class="SelectionMark">&#160;</span>Namespaces</a><a class="SelectItem" href="javascript:void(0)" onclick="searchBox.OnSelectItem(3)"><span class="SelectionMark">&#160;</span>Files</a><a class="SelectItem" href="javascript:void(0)" onclick="searchBox.OnSelectItem(4)"><span class="SelectionMark">&#160;</span>Functions</a><a class="SelectItem" href="javascript:void(0)" onclick="searchBox.OnSelectItem(5)"><span class="SelectionMark">&#160;</span>Variables</a><a class="SelectItem" href="javascript:void(0)" onclick="searchBox.OnSelectItem(6)"><span class="SelectionMark">&#160;</span>Typedefs</a><a class="SelectItem" href="javascript:void(0)" onclick="searchBox.OnSelectItem(7)"><span class="SelectionMark">&#160;</span>Enumerations</a><a class="SelectItem" href="javascript:void(0)" onclick="searchBox.OnSelectItem(8)"><span class="SelectionMark">&#160;</span>Enumerator</a><a class="SelectItem" href="javascript:void(0)" onclick="searchBox.OnSelectItem(9)"><span class="SelectionMark">&#160;</span>Groups</a></div>
+<a class="SelectItem" href="javascript:void(0)" onclick="searchBox.OnSelectItem(0)"><span class="SelectionMark">&#160;</span>All</a><a class="SelectItem" href="javascript:void(0)" onclick="searchBox.OnSelectItem(1)"><span class="SelectionMark">&#160;</span>Classes</a><a class="SelectItem" href="javascript:void(0)" onclick="searchBox.OnSelectItem(2)"><span class="SelectionMark">&#160;</span>Namespaces</a><a class="SelectItem" href="javascript:void(0)" onclick="searchBox.OnSelectItem(3)"><span class="SelectionMark">&#160;</span>Files</a><a class="SelectItem" href="javascript:void(0)" onclick="searchBox.OnSelectItem(4)"><span class="SelectionMark">&#160;</span>Functions</a><a class="SelectItem" href="javascript:void(0)" onclick="searchBox.OnSelectItem(5)"><span class="SelectionMark">&#160;</span>Variables</a><a class="SelectItem" href="javascript:void(0)" onclick="searchBox.OnSelectItem(6)"><span class="SelectionMark">&#160;</span>Typedefs</a><a class="SelectItem" href="javascript:void(0)" onclick="searchBox.OnSelectItem(7)"><span class="SelectionMark">&#160;</span>Enumerations</a><a class="SelectItem" href="javascript:void(0)" onclick="searchBox.OnSelectItem(8)"><span class="SelectionMark">&#160;</span>Enumerator</a><a class="SelectItem" href="javascript:void(0)" onclick="searchBox.OnSelectItem(9)"><span class="SelectionMark">&#160;</span>Friends</a><a class="SelectItem" href="javascript:void(0)" onclick="searchBox.OnSelectItem(10)"><span class="SelectionMark">&#160;</span>Groups</a></div>
 
 <!-- iframe showing the search results (closed by default) -->
 <div id="MSearchResultsWindow">
@@ -100,7 +101,7 @@ var searchBox = new SearchBox("searchBox", "search",false,'Search');
 <a href="#pub-methods">Public Methods</a> &#124;
 <a href="structcub_1_1_caching_device_allocator-members.html">List of all members</a>  </div>
   <div class="headertitle">
-<div class="title">cub::CachingDeviceAllocator Struct Reference<div class="ingroups"><a class="el" href="group___util_module.html">Generic CUB utilities</a></div></div>  </div>
+<div class="title">cub::CachingDeviceAllocator Struct Reference<div class="ingroups"><a class="el" href="group___util_mgmt.html">Device, kernel, and storage management</a></div></div>  </div>
 </div><!--header-->
 <div class="contents">
 <a name="details" id="details"></a><h2 class="groupheader">Detailed description</h2>
@@ -122,7 +123,8 @@ var searchBox = new SearchBox("searchBox", "search",false,'Search');
 </ul>
 </dd></dl>
 <dl class="section user"><dt></dt><dd>which delineates five bin-sizes: 512B, 4KB, 32KB, 256KB, and 2MB and sets a maximum of 6,291,455 cached bytes per device </dd></dl>
-
+<dl><dt><b>Examples: </b></dt><dd><a class="el" href="example_device_histogram_8cu-example.html#_a0">example_device_histogram.cu</a>, <a class="el" href="example_device_partition_flagged_8cu-example.html#_a0">example_device_partition_flagged.cu</a>, <a class="el" href="example_device_partition_if_8cu-example.html#_a0">example_device_partition_if.cu</a>, <a class="el" href="example_device_radix_sort_8cu-example.html#_a0">example_device_radix_sort.cu</a>, <a class="el" href="example_device_reduce_8cu-example.html#_a0">example_device_reduce.cu</a>, <a class="el" href="example_device_scan_8cu-example.html#_a0">example_device_scan.cu</a>, <a class="el" href="example_device_select_flagged_8cu-example.html#_a0">example_device_select_flagged.cu</a>, and <a class="el" href="example_device_select_if_8cu-example.html#_a0">example_device_select_if.cu</a>.</dd>
+</dl>
 <p>Definition at line <a class="el" href="util__allocator_8cuh_source.html#l00099">99</a> of file <a class="el" href="util__allocator_8cuh_source.html">util_allocator.cuh</a>.</p>
 </div><table class="memberdecls">
 <tr class="heading"><td colspan="2"><h2 class="groupheader"><a name="pub-methods"></a>
@@ -133,10 +135,10 @@ Public Methods</h2></td></tr>
 <tr class="memitem:ab08a4c3d066ec2303d07363a25466bff"><td class="memItemLeft" align="right" valign="top">&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="structcub_1_1_caching_device_allocator.html#ab08a4c3d066ec2303d07363a25466bff">CachingDeviceAllocator</a> (bool skip_cleanup=false)</td></tr>
 <tr class="memdesc:ab08a4c3d066ec2303d07363a25466bff"><td class="mdescLeft">&#160;</td><td class="mdescRight">Default constructor.  <a href="#ab08a4c3d066ec2303d07363a25466bff">More...</a><br/></td></tr>
 <tr class="separator:ab08a4c3d066ec2303d07363a25466bff"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:a2a521f7464d3eee98486b4d321fc8cc7"><td class="memItemLeft" align="right" valign="top"><a class="anchor" id="a2a521f7464d3eee98486b4d321fc8cc7"></a>
-virtual&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="structcub_1_1_caching_device_allocator.html#a2a521f7464d3eee98486b4d321fc8cc7">~CachingDeviceAllocator</a> ()</td></tr>
-<tr class="memdesc:a2a521f7464d3eee98486b4d321fc8cc7"><td class="mdescLeft">&#160;</td><td class="mdescRight">Destructor. <br/></td></tr>
-<tr class="separator:a2a521f7464d3eee98486b4d321fc8cc7"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a2216ab13fdeb11ce61f04f69899fff33"><td class="memItemLeft" align="right" valign="top"><a class="anchor" id="a2216ab13fdeb11ce61f04f69899fff33"></a>
+cudaError_t&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="structcub_1_1_caching_device_allocator.html#a2216ab13fdeb11ce61f04f69899fff33">SetMaxCachedBytes</a> (size_t max_cached_bytes)</td></tr>
+<tr class="memdesc:a2216ab13fdeb11ce61f04f69899fff33"><td class="mdescLeft">&#160;</td><td class="mdescRight">Sets the limit on the number bytes this allocator is allowed to cache per device. <br/></td></tr>
+<tr class="separator:a2216ab13fdeb11ce61f04f69899fff33"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:a4a6fd29b17ff15c6a2ee01a25c5e45fb"><td class="memItemLeft" align="right" valign="top"><a class="anchor" id="a4a6fd29b17ff15c6a2ee01a25c5e45fb"></a>
 cudaError_t&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="structcub_1_1_caching_device_allocator.html#a4a6fd29b17ff15c6a2ee01a25c5e45fb">DeviceAllocate</a> (void **d_ptr, size_t bytes, int device)</td></tr>
 <tr class="memdesc:a4a6fd29b17ff15c6a2ee01a25c5e45fb"><td class="mdescLeft">&#160;</td><td class="mdescRight">Provides a suitable allocation of device memory for the given size on the specified device. <br/></td></tr>
@@ -157,10 +159,10 @@ cudaError_t&#160;</td><td class="memItemRight" valign="bottom"><a class="el" hre
 cudaError_t&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="structcub_1_1_caching_device_allocator.html#afbe43fd3a59ba6f4b974a4a66315c86e">FreeAllCached</a> ()</td></tr>
 <tr class="memdesc:afbe43fd3a59ba6f4b974a4a66315c86e"><td class="mdescLeft">&#160;</td><td class="mdescRight">Frees all cached device allocations on all devices. <br/></td></tr>
 <tr class="separator:afbe43fd3a59ba6f4b974a4a66315c86e"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:a2216ab13fdeb11ce61f04f69899fff33"><td class="memItemLeft" align="right" valign="top"><a class="anchor" id="a2216ab13fdeb11ce61f04f69899fff33"></a>
-cudaError_t&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="structcub_1_1_caching_device_allocator.html#a2216ab13fdeb11ce61f04f69899fff33">SetMaxCachedBytes</a> (size_t max_cached_bytes)</td></tr>
-<tr class="memdesc:a2216ab13fdeb11ce61f04f69899fff33"><td class="mdescLeft">&#160;</td><td class="mdescRight">Sets the limit on the number bytes this allocator is allowed to cache per device. <br/></td></tr>
-<tr class="separator:a2216ab13fdeb11ce61f04f69899fff33"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a2a521f7464d3eee98486b4d321fc8cc7"><td class="memItemLeft" align="right" valign="top"><a class="anchor" id="a2a521f7464d3eee98486b4d321fc8cc7"></a>
+virtual&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="structcub_1_1_caching_device_allocator.html#a2a521f7464d3eee98486b4d321fc8cc7">~CachingDeviceAllocator</a> ()</td></tr>
+<tr class="memdesc:a2a521f7464d3eee98486b4d321fc8cc7"><td class="mdescLeft">&#160;</td><td class="mdescRight">Destructor. <br/></td></tr>
+<tr class="separator:a2a521f7464d3eee98486b4d321fc8cc7"><td class="memSeparator" colspan="2">&#160;</td></tr>
 </table>
 <h2 class="groupheader">Constructor &amp; Destructor Documentation</h2>
 <a class="anchor" id="a36b5c020ec501279b2b1275eae578918"></a>
@@ -266,7 +268,7 @@ cudaError_t&#160;</td><td class="memItemRight" valign="bottom"><a class="el" hre
 <!-- HTML footer for doxygen 1.8.3.1-->
 <!-- start footer part -->
 <hr class="footer"/><address class="footer"><small>
-Generated on Fri Aug 23 2013 17:31:12 for CUB by &#160;<a href="http://www.doxygen.org/index.html">
+Generated on Tue Dec 10 2013 02:42:39 for CUB by &#160;<a href="http://www.doxygen.org/index.html">
 <img class="footer" src="doxygen.png" alt="doxygen"/>
 </a> 1.8.4
 <br>

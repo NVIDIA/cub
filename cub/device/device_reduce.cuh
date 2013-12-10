@@ -760,7 +760,7 @@ struct DeviceReduce
      * The code snippet below illustrates a custom min reduction of a device vector of \p int items.
      * \par
      * \code
-     * #include <cub/cub.cuh>
+     * #include <cub/cub.cuh>   // or equivalently <cub/device/device_radix_sort.cuh>
      *
      * // MyMin functor
      * struct MyMin
@@ -843,7 +843,7 @@ struct DeviceReduce
      * The code snippet below illustrates the sum reduction of a device vector of \p int items.
      * \par
      * \code
-     * #include <cub/cub.cuh>
+     * #include <cub/cub.cuh>   // or equivalently <cub/device/device_radix_sort.cuh>
      *
      * // Declare, allocate, and initialize device pointers for input and output
      * int  num_items;      // e.g., 7
@@ -912,7 +912,7 @@ struct DeviceReduce
      * The code snippet below illustrates the min-reduction of a device vector of \p int items.
      * \par
      * \code
-     * #include <cub/cub.cuh>
+     * #include <cub/cub.cuh>   // or equivalently <cub/device/device_radix_sort.cuh>
      *
      * // Declare, allocate, and initialize device pointers for input and output
      * int  num_items;      // e.g., 7
@@ -986,7 +986,7 @@ struct DeviceReduce
      * The code snippet below illustrates the argmin-reduction of a device vector of \p int items.
      * \par
      * \code
-     * #include <cub/cub.cuh>
+     * #include <cub/cub.cuh>   // or equivalently <cub/device/device_radix_sort.cuh>
      *
      * // Declare, allocate, and initialize device pointers for input and output
      * int                      num_items;      // e.g., 7
@@ -1060,7 +1060,7 @@ struct DeviceReduce
      * The code snippet below illustrates the max-reduction of a device vector of \p int items.
      * \par
      * \code
-     * #include <cub/cub.cuh>
+     * #include <cub/cub.cuh>   // or equivalently <cub/device/device_radix_sort.cuh>
      *
      * // Declare, allocate, and initialize device pointers for input and output
      * int  num_items;      // e.g., 7
@@ -1134,7 +1134,7 @@ struct DeviceReduce
      * The code snippet below illustrates the argmax-reduction of a device vector of \p int items.
      * \par
      * \code
-     * #include <cub/cub.cuh>
+     * #include <cub/cub.cuh>   // or equivalently <cub/device/device_reduce.cuh>
      *
      * // Declare, allocate, and initialize device pointers for input and output
      * int                      num_items;      // e.g., 7

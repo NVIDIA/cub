@@ -52,6 +52,7 @@ var searchBox = new SearchBox("searchBox", "search",false,'Search');
       <li><a href="index.html"><span>Main&#160;Page</span></a></li>
       <li><a href="modules.html"><span>Modules</span></a></li>
       <li class="current"><a href="annotated.html"><span>Classes</span></a></li>
+      <li><a href="examples.html"><span>Examples</span></a></li>
       <li>
         <div id="MSearchBox" class="MSearchBoxInactive">
         <span class="left">
@@ -82,7 +83,7 @@ var searchBox = new SearchBox("searchBox", "search",false,'Search');
       <li><a href="functions_func.html"><span>Functions</span></a></li>
       <li class="current"><a href="functions_vars.html"><span>Variables</span></a></li>
       <li><a href="functions_type.html"><span>Typedefs</span></a></li>
-      <li><a href="functions_eval.html"><span>Enumerator</span></a></li>
+      <li><a href="functions_rela.html"><span>Related&#160;Functions</span></a></li>
     </ul>
   </div>
 </div><!-- top -->
@@ -91,7 +92,7 @@ var searchBox = new SearchBox("searchBox", "search",false,'Search');
      onmouseover="return searchBox.OnSearchSelectShow()"
      onmouseout="return searchBox.OnSearchSelectHide()"
      onkeydown="return searchBox.OnSearchSelectKey(event)">
-<a class="SelectItem" href="javascript:void(0)" onclick="searchBox.OnSelectItem(0)"><span class="SelectionMark">&#160;</span>All</a><a class="SelectItem" href="javascript:void(0)" onclick="searchBox.OnSelectItem(1)"><span class="SelectionMark">&#160;</span>Classes</a><a class="SelectItem" href="javascript:void(0)" onclick="searchBox.OnSelectItem(2)"><span class="SelectionMark">&#160;</span>Namespaces</a><a class="SelectItem" href="javascript:void(0)" onclick="searchBox.OnSelectItem(3)"><span class="SelectionMark">&#160;</span>Files</a><a class="SelectItem" href="javascript:void(0)" onclick="searchBox.OnSelectItem(4)"><span class="SelectionMark">&#160;</span>Functions</a><a class="SelectItem" href="javascript:void(0)" onclick="searchBox.OnSelectItem(5)"><span class="SelectionMark">&#160;</span>Variables</a><a class="SelectItem" href="javascript:void(0)" onclick="searchBox.OnSelectItem(6)"><span class="SelectionMark">&#160;</span>Typedefs</a><a class="SelectItem" href="javascript:void(0)" onclick="searchBox.OnSelectItem(7)"><span class="SelectionMark">&#160;</span>Enumerations</a><a class="SelectItem" href="javascript:void(0)" onclick="searchBox.OnSelectItem(8)"><span class="SelectionMark">&#160;</span>Enumerator</a><a class="SelectItem" href="javascript:void(0)" onclick="searchBox.OnSelectItem(9)"><span class="SelectionMark">&#160;</span>Groups</a></div>
+<a class="SelectItem" href="javascript:void(0)" onclick="searchBox.OnSelectItem(0)"><span class="SelectionMark">&#160;</span>All</a><a class="SelectItem" href="javascript:void(0)" onclick="searchBox.OnSelectItem(1)"><span class="SelectionMark">&#160;</span>Classes</a><a class="SelectItem" href="javascript:void(0)" onclick="searchBox.OnSelectItem(2)"><span class="SelectionMark">&#160;</span>Namespaces</a><a class="SelectItem" href="javascript:void(0)" onclick="searchBox.OnSelectItem(3)"><span class="SelectionMark">&#160;</span>Files</a><a class="SelectItem" href="javascript:void(0)" onclick="searchBox.OnSelectItem(4)"><span class="SelectionMark">&#160;</span>Functions</a><a class="SelectItem" href="javascript:void(0)" onclick="searchBox.OnSelectItem(5)"><span class="SelectionMark">&#160;</span>Variables</a><a class="SelectItem" href="javascript:void(0)" onclick="searchBox.OnSelectItem(6)"><span class="SelectionMark">&#160;</span>Typedefs</a><a class="SelectItem" href="javascript:void(0)" onclick="searchBox.OnSelectItem(7)"><span class="SelectionMark">&#160;</span>Enumerations</a><a class="SelectItem" href="javascript:void(0)" onclick="searchBox.OnSelectItem(8)"><span class="SelectionMark">&#160;</span>Enumerator</a><a class="SelectItem" href="javascript:void(0)" onclick="searchBox.OnSelectItem(9)"><span class="SelectionMark">&#160;</span>Friends</a><a class="SelectItem" href="javascript:void(0)" onclick="searchBox.OnSelectItem(10)"><span class="SelectionMark">&#160;</span>Groups</a></div>
 
 <!-- iframe showing the search results (closed by default) -->
 <div id="MSearchResultsWindow">
@@ -102,78 +103,37 @@ var searchBox = new SearchBox("searchBox", "search",false,'Search');
 
 <div class="contents">
 &#160;<ul>
-<li>array
-: <a class="el" href="structcub_1_1_array_wrapper.html#ae665a1b28a83513db861072328de9551">cub::ArrayWrapper&lt; T, COUNT &gt;</a>
-</li>
 <li>CATEGORY
 : <a class="el" href="structcub_1_1_base_traits.html#a25ff6477c84dc3bd5f4b5e70cd600f09">cub::BaseTraits&lt; _CATEGORY, _PRIMITIVE, _NULL_TYPE, _UnsignedBits &gt;</a>
 </li>
 <li>d_buffers
 : <a class="el" href="structcub_1_1_double_buffer.html#a38a2d8a9d5a36e9e4b9132166717a0b4">cub::DoubleBuffer&lt; T &gt;</a>
 </li>
-<li>HAS_PARAM
-: <a class="el" href="structcub_1_1_binary_op_has_idx_param.html#a8eb893aad920fb1153670ff4a5b75f7a">cub::BinaryOpHasIdxParam&lt; T, BinaryOp &gt;</a>
+<li>key
+: <a class="el" href="structcub_1_1_key_value_pair.html#a648308be997ae9c79f47f6006ec7b494">cub::KeyValuePair&lt; _Key, _Value &gt;</a>
 </li>
-<li>max_block_threads
-: <a class="el" href="classcub_1_1_device.html#ab55f58e3252d369ee50d34b190df2277">cub::Device</a>
+<li>offset
+: <a class="el" href="structcub_1_1_item_offset_pair.html#afcfe08263d11c584940b28718bc10173">cub::ItemOffsetPair&lt; _T, _Offset &gt;</a>
 </li>
-<li>max_sm_blocks
-: <a class="el" href="classcub_1_1_device.html#ac614bed852b56bf8c616803aa8601caf">cub::Device</a>
-</li>
-<li>max_sm_registers
-: <a class="el" href="classcub_1_1_device.html#af321be8fe9aecd0942d04739f7520c61">cub::Device</a>
-</li>
-<li>max_sm_threads
-: <a class="el" href="classcub_1_1_device.html#a963c497e442ac283b2655faa578614d3">cub::Device</a>
-</li>
-<li>max_sm_warps
-: <a class="el" href="classcub_1_1_device.html#a5ee84e74af9939896bb81b48d4843d17">cub::Device</a>
-</li>
-<li>ptx_version
-: <a class="el" href="classcub_1_1_device.html#a416909debdeaa9116d7087ed55ed870f">cub::Device</a>
-</li>
-<li>reg_alloc_unit
-: <a class="el" href="classcub_1_1_device.html#aa432ab8fdb1d1117b29811422c83a187">cub::Device</a>
-</li>
-<li>regs_by_block
-: <a class="el" href="classcub_1_1_device.html#a721a479d183aaa1846c69de998f84ffc">cub::Device</a>
+<li>op
+: <a class="el" href="structcub_1_1_inequality_wrapper.html#a4143eec319a0c231f0f5159fba11371d">cub::InequalityWrapper&lt; EqualityOp &gt;</a>
 </li>
 <li>selector
 : <a class="el" href="structcub_1_1_double_buffer.html#a9641172c847169904c4054856d7c26f4">cub::DoubleBuffer&lt; T &gt;</a>
 </li>
-<li>sm_count
-: <a class="el" href="classcub_1_1_device.html#a68885a90ea0badcffc2a3511b0b4fd5c">cub::Device</a>
-</li>
-<li>sm_version
-: <a class="el" href="classcub_1_1_device.html#ac9b36b3b0edb207aeee60110fbee6406">cub::Device</a>
-</li>
-<li>smem_alloc_unit
-: <a class="el" href="classcub_1_1_device.html#aca17efd166d916008f0fc378adc00b1f">cub::Device</a>
-</li>
-<li>smem_bank_bytes
-: <a class="el" href="classcub_1_1_device.html#a909d34dd31bdb6f754a603e8eb2b10ab">cub::Device</a>
-</li>
-<li>smem_banks
-: <a class="el" href="classcub_1_1_device.html#a2e835add85abdf0eb640c551abec2a0b">cub::Device</a>
-</li>
-<li>smem_bytes
-: <a class="el" href="classcub_1_1_device.html#a838c9a2e207c38ef24e79a40bccdd1ac">cub::Device</a>
-</li>
 <li>storage
 : <a class="el" href="structcub_1_1_uninitialized.html#a5fa7311d943222333e8c87497ff8e782">cub::Uninitialized&lt; T &gt;</a>
 </li>
-<li>warp_alloc_unit
-: <a class="el" href="classcub_1_1_device.html#ac5f8afb6f319b0dbd689f3f1188fc20b">cub::Device</a>
-</li>
-<li>warp_threads
-: <a class="el" href="classcub_1_1_device.html#a4498c242e597f67a4a752426ae262049">cub::Device</a>
+<li>value
+: <a class="el" href="structcub_1_1_item_offset_pair.html#a7faea6eea84a2e5bb4250bd78e765685">cub::ItemOffsetPair&lt; _T, _Offset &gt;</a>
+, <a class="el" href="structcub_1_1_key_value_pair.html#a468bef1440a66f45bd9b5193594bf1a4">cub::KeyValuePair&lt; _Key, _Value &gt;</a>
 </li>
 </ul>
 </div><!-- contents -->
 <!-- HTML footer for doxygen 1.8.3.1-->
 <!-- start footer part -->
 <hr class="footer"/><address class="footer"><small>
-Generated on Fri Aug 23 2013 17:31:14 for CUB by &#160;<a href="http://www.doxygen.org/index.html">
+Generated on Tue Dec 10 2013 02:42:41 for CUB by &#160;<a href="http://www.doxygen.org/index.html">
 <img class="footer" src="doxygen.png" alt="doxygen"/>
 </a> 1.8.4
 <br>

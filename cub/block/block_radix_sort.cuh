@@ -85,7 +85,7 @@ namespace cub {
  * where each thread owns 4 consecutive items.
  * \par
  * \code
- * #include <cub/cub.cuh>
+ * #include <cub/cub.cuh>   // or equivalently <cub/block/block_radix_sort.cuh>
  *
  * __global__ void ExampleKernel(...)
  * {
@@ -445,7 +445,7 @@ public:
      * where each thread owns 4 consecutive keys.
      * \par
      * \code
-     * #include <cub/cub.cuh>
+     * #include <cub/cub.cuh>   // or equivalently <cub/block/block_radix_sort.cuh>
      *
      * __global__ void ExampleKernel(...)
      * {
@@ -498,7 +498,7 @@ public:
      * where each thread owns 4 consecutive pairs.
      * \par
      * \code
-     * #include <cub/cub.cuh>
+     * #include <cub/cub.cuh>   // or equivalently <cub/block/block_radix_sort.cuh>
      *
      * __global__ void ExampleKernel(...)
      * {
@@ -546,7 +546,7 @@ public:
      * where each thread owns 4 consecutive keys.
      * \par
      * \code
-     * #include <cub/cub.cuh>
+     * #include <cub/cub.cuh>   // or equivalently <cub/block/block_radix_sort.cuh>
      *
      * __global__ void ExampleKernel(...)
      * {
@@ -599,7 +599,7 @@ public:
      * where each thread owns 4 consecutive pairs.
      * \par
      * \code
-     * #include <cub/cub.cuh>
+     * #include <cub/cub.cuh>   // or equivalently <cub/block/block_radix_sort.cuh>
      *
      * __global__ void ExampleKernel(...)
      * {
@@ -655,7 +655,7 @@ public:
      * where each thread owns 4 consecutive keys.  The final partitioning is striped.
      * \par
      * \code
-     * #include <cub/cub.cuh>
+     * #include <cub/cub.cuh>   // or equivalently <cub/block/block_radix_sort.cuh>
      *
      * __global__ void ExampleKernel(...)
      * {
@@ -709,7 +709,7 @@ public:
      * where each thread owns 4 consecutive pairs.  The final partitioning is striped.
      * \par
      * \code
-     * #include <cub/cub.cuh>
+     * #include <cub/cub.cuh>   // or equivalently <cub/block/block_radix_sort.cuh>
      *
      * __global__ void ExampleKernel(...)
      * {
@@ -758,7 +758,7 @@ public:
      * where each thread owns 4 consecutive keys.  The final partitioning is striped.
      * \par
      * \code
-     * #include <cub/cub.cuh>
+     * #include <cub/cub.cuh>   // or equivalently <cub/block/block_radix_sort.cuh>
      *
      * __global__ void ExampleKernel(...)
      * {
@@ -812,7 +812,7 @@ public:
      * where each thread owns 4 consecutive pairs.  The final partitioning is striped.
      * \par
      * \code
-     * #include <cub/cub.cuh>
+     * #include <cub/cub.cuh>   // or equivalently <cub/block/block_radix_sort.cuh>
      *
      * __global__ void ExampleKernel(...)
      * {

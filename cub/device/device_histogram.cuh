@@ -590,7 +590,7 @@ struct DeviceHistogram
      * single-channel <tt>unsigned char</tt> samples.
      * \par
      * \code
-     * #include <cub/cub.cuh>
+     * #include <cub/cub.cuh>   // or equivalently <cub/device/device_histogram.cuh>
      *
      * // Declare, allocate, and initialize device pointers for input and histogram
      * int              num_samples;    // e.g., 12
@@ -678,7 +678,7 @@ struct DeviceHistogram
      * single-channel <tt>unsigned char</tt> samples.
      * \par
      * \code
-     * #include <cub/cub.cuh>
+     * #include <cub/cub.cuh>   // or equivalently <cub/device/device_histogram.cuh>
      *
      * // Declare, allocate, and initialize device pointers for input and histogram
      * int              num_samples;    // e.g., 12
@@ -766,7 +766,7 @@ struct DeviceHistogram
      * single-channel <tt>unsigned char</tt> samples.
      * \par
      * \code
-     * #include <cub/cub.cuh>
+     * #include <cub/cub.cuh>   // or equivalently <cub/device/device_histogram.cuh>
      *
      * // Declare, allocate, and initialize device pointers for input and histogram
      * int              num_samples;    // e.g., 12
@@ -864,7 +864,7 @@ struct DeviceHistogram
      *
      * \par
      * \code
-     * #include <cub/cub.cuh>
+     * #include <cub/cub.cuh>   // or equivalently <cub/device/device_histogram.cuh>
      *
      * // Declare, allocate, and initialize device pointers for input and histograms
      * int           num_samples;     // e.g., 20 (five pixels with four channels each)
@@ -962,7 +962,7 @@ struct DeviceHistogram
      * (E.g., RGB histograms from RGBA pixel samples.)
      * \par
      * \code
-     * #include <cub/cub.cuh>
+     * #include <cub/cub.cuh>   // or equivalently <cub/device/device_histogram.cuh>
      *
      * // Declare, allocate, and initialize device pointers for input and histograms
      * int           num_samples;     // e.g., 20 (five pixels with four channels each)
@@ -1061,7 +1061,7 @@ struct DeviceHistogram
      *
      * \par
      * \code
-     * #include <cub/cub.cuh>
+     * #include <cub/cub.cuh>   // or equivalently <cub/device/device_histogram.cuh>
      *
      * // Declare, allocate, and initialize device pointers for input and histograms
      * int           num_samples;     // e.g., 20 (five pixels with four channels each)

@@ -304,7 +304,7 @@ cudaError_t MaxSmOccupancy(
  * The code snippet below illustrates the use of the MaxSmOccupancy function.
  * \par
  * \code
- * #include <cub/cub.cuh>
+ * #include <cub/cub.cuh>   // or equivalently <cub/util_device.cuh>
  *
  * template <typename T>
  * __global__ void ExampleKernel()

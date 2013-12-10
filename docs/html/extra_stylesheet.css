@@ -30,11 +30,11 @@ div.contents {
 }
 
 div.contents p:first-of-type {
-		color: #555;
+		color: #666666;
 }
 
 div.textblock p:first-of-type {
-		color: #555;
+		color: #666666;
 }
 
 div.header {
@@ -58,7 +58,7 @@ div.header {
 
 #MSearchBox {
         margin-top: 6px;
-        margin-left: 420px;
+        margin-left: 330px;
 		right: auto;
 }
 
@@ -219,29 +219,29 @@ dt {
 
 .memproto, dl.reflist dt {
 		padding-top: 20px;
-		border-top: 1px solid #999;
-		border-left: 1px solid #999;
-		border-right: 1px solid #999;
+		border-top: 2px solid #888;
+		border-left: 2px solid #888;
+		border-right: 2px solid #888;
+		border-bottom: 1px solid #ECECEC;
 		background-image: none;
-		background-color: #FAFAFA;
+		background-color: #FAFAFB;
 		text-shadow: none;
-		box-shadow: 3px 3px 30px rgba(0, 0, 0, 0.1);
-		-webkit-box-shadow: 3px 3px 30px rgba(0, 0, 0, 0.1);
+		box-shadow: 3px 3px 30px rgba(0, 0, 0, 0.05);
 }
 
 div.memdoc {
 		padding-bottom: 20px;
-		border-bottom: 1px solid #999;
-		border-left: 1px solid #999;
-		border-right: 1px solid #999;
+		border-bottom: 2px solid #888;
+		border-left: 2px solid #888;
+		border-right: 2px solid #888;
 		background-image: none;
-		color: #555;
-		box-shadow: 3px 3px 30px rgba(0, 0, 0, 0.1);
+		background-color: #FFF;
+		box-shadow: 3px 3px 30px rgba(0, 0, 0, 0.05);
 }
 
 div.memdoc p {
-		line-height: normal;
 		margin-left: 40px;
+		color: #666666;
 }
 
 div.memdoc dt {
@@ -292,7 +292,7 @@ dl.section.user a:visited b {
 
 dl.section.user dd {
 		margin-right: 40px;
-		color: #555;
+		color: #666666;
 }
 
 /******************************************************************************
@@ -413,7 +413,14 @@ td.memSeparator {
 td.mdescLeft, td.mdescRight {
 		padding-top: 10px;
 		padding-bottom: 20px;
-		color: #555;
+}
+
+td.mdescLeft{
+		color: #666666;
+}
+
+td.mdescRight {
+		color: #666666;
 }
 
 td.memname, td.paramtype, div.memtemplate {

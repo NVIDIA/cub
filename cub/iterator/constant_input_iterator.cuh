@@ -72,7 +72,7 @@ namespace cub {
  * dereference a sequence of homogeneous doubles.
  * \par
  * \code
- * #include <cub/cub.cuh>
+ * #include <cub/cub.cuh>   // or equivalently <cub/iterator/constant_input_iterator.cuh>
  *
  * cub::ConstantInputIterator<double> itr(5.0);
  *

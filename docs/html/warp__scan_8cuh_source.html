@@ -52,6 +52,7 @@ var searchBox = new SearchBox("searchBox", "search",false,'Search');
       <li><a href="index.html"><span>Main&#160;Page</span></a></li>
       <li><a href="modules.html"><span>Modules</span></a></li>
       <li><a href="annotated.html"><span>Classes</span></a></li>
+      <li><a href="examples.html"><span>Examples</span></a></li>
       <li>
         <div id="MSearchBox" class="MSearchBoxInactive">
         <span class="left">
@@ -81,7 +82,7 @@ var searchBox = new SearchBox("searchBox", "search",false,'Search');
      onmouseover="return searchBox.OnSearchSelectShow()"
      onmouseout="return searchBox.OnSearchSelectHide()"
      onkeydown="return searchBox.OnSearchSelectKey(event)">
-<a class="SelectItem" href="javascript:void(0)" onclick="searchBox.OnSelectItem(0)"><span class="SelectionMark">&#160;</span>All</a><a class="SelectItem" href="javascript:void(0)" onclick="searchBox.OnSelectItem(1)"><span class="SelectionMark">&#160;</span>Classes</a><a class="SelectItem" href="javascript:void(0)" onclick="searchBox.OnSelectItem(2)"><span class="SelectionMark">&#160;</span>Namespaces</a><a class="SelectItem" href="javascript:void(0)" onclick="searchBox.OnSelectItem(3)"><span class="SelectionMark">&#160;</span>Files</a><a class="SelectItem" href="javascript:void(0)" onclick="searchBox.OnSelectItem(4)"><span class="SelectionMark">&#160;</span>Functions</a><a class="SelectItem" href="javascript:void(0)" onclick="searchBox.OnSelectItem(5)"><span class="SelectionMark">&#160;</span>Variables</a><a class="SelectItem" href="javascript:void(0)" onclick="searchBox.OnSelectItem(6)"><span class="SelectionMark">&#160;</span>Typedefs</a><a class="SelectItem" href="javascript:void(0)" onclick="searchBox.OnSelectItem(7)"><span class="SelectionMark">&#160;</span>Enumerations</a><a class="SelectItem" href="javascript:void(0)" onclick="searchBox.OnSelectItem(8)"><span class="SelectionMark">&#160;</span>Enumerator</a><a class="SelectItem" href="javascript:void(0)" onclick="searchBox.OnSelectItem(9)"><span class="SelectionMark">&#160;</span>Groups</a></div>
+<a class="SelectItem" href="javascript:void(0)" onclick="searchBox.OnSelectItem(0)"><span class="SelectionMark">&#160;</span>All</a><a class="SelectItem" href="javascript:void(0)" onclick="searchBox.OnSelectItem(1)"><span class="SelectionMark">&#160;</span>Classes</a><a class="SelectItem" href="javascript:void(0)" onclick="searchBox.OnSelectItem(2)"><span class="SelectionMark">&#160;</span>Namespaces</a><a class="SelectItem" href="javascript:void(0)" onclick="searchBox.OnSelectItem(3)"><span class="SelectionMark">&#160;</span>Files</a><a class="SelectItem" href="javascript:void(0)" onclick="searchBox.OnSelectItem(4)"><span class="SelectionMark">&#160;</span>Functions</a><a class="SelectItem" href="javascript:void(0)" onclick="searchBox.OnSelectItem(5)"><span class="SelectionMark">&#160;</span>Variables</a><a class="SelectItem" href="javascript:void(0)" onclick="searchBox.OnSelectItem(6)"><span class="SelectionMark">&#160;</span>Typedefs</a><a class="SelectItem" href="javascript:void(0)" onclick="searchBox.OnSelectItem(7)"><span class="SelectionMark">&#160;</span>Enumerations</a><a class="SelectItem" href="javascript:void(0)" onclick="searchBox.OnSelectItem(8)"><span class="SelectionMark">&#160;</span>Enumerator</a><a class="SelectItem" href="javascript:void(0)" onclick="searchBox.OnSelectItem(9)"><span class="SelectionMark">&#160;</span>Friends</a><a class="SelectItem" href="javascript:void(0)" onclick="searchBox.OnSelectItem(10)"><span class="SelectionMark">&#160;</span>Groups</a></div>
 
 <!-- iframe showing the search results (closed by default) -->
 <div id="MSearchResultsWindow">
@@ -144,13 +145,13 @@ var searchBox = new SearchBox("searchBox", "search",false,'Search');
 <div class="line"><a name="l00141"></a><span class="lineno">  141</span>&#160;<span class="keyword">template</span> &lt;</div>
 <div class="line"><a name="l00142"></a><span class="lineno">  142</span>&#160;    <span class="keyword">typename</span>    T,</div>
 <div class="line"><a name="l00143"></a><span class="lineno">  143</span>&#160;    <span class="keywordtype">int</span>         LOGICAL_WARPS           = 1,</div>
-<div class="line"><a name="l00144"></a><span class="lineno">  144</span>&#160;    <span class="keywordtype">int</span>         LOGICAL_WARP_THREADS    = <a class="code" href="structcub_1_1_arch_props.html#a378def3dee75e77eb135efcf6f0ca063ac5a2eb5b9e3b50dd43ad67c1ff020d9c" title="Log of the number of threads per warp. ">CUB_PTX_WARP_THREADS</a>&gt;</div>
+<div class="line"><a name="l00144"></a><span class="lineno">  144</span>&#160;    <span class="keywordtype">int</span>         LOGICAL_WARP_THREADS    = CUB_PTX_WARP_THREADS&gt;</div>
 <div class="line"><a name="l00145"></a><span class="lineno"><a class="code" href="classcub_1_1_warp_scan.html">  145</a></span>&#160;<span class="keyword">class </span><a class="code" href="classcub_1_1_warp_scan.html" title="The WarpScan class provides collective methods for computing a parallel prefix scan of items partitio...">WarpScan</a></div>
 <div class="line"><a name="l00146"></a><span class="lineno">  146</span>&#160;{</div>
 <div class="line"><a name="l00147"></a><span class="lineno">  147</span>&#160;<span class="keyword">private</span>:</div>
 <div class="line"><a name="l00148"></a><span class="lineno">  148</span>&#160;</div>
 <div class="line"><a name="l00149"></a><span class="lineno">  149</span>&#160;    <span class="comment">/******************************************************************************</span></div>
-<div class="line"><a name="l00150"></a><span class="lineno">  150</span>&#160;<span class="comment">     * Constants and typedefs</span></div>
+<div class="line"><a name="l00150"></a><span class="lineno">  150</span>&#160;<span class="comment">     * Constants and type definitions</span></div>
 <div class="line"><a name="l00151"></a><span class="lineno">  151</span>&#160;<span class="comment">     ******************************************************************************/</span></div>
 <div class="line"><a name="l00152"></a><span class="lineno">  152</span>&#160;</div>
 <div class="line"><a name="l00153"></a><span class="lineno">  153</span>&#160;    <span class="keyword">enum</span></div>
@@ -200,8 +201,8 @@ var searchBox = new SearchBox("searchBox", "search",false,'Search');
 <div class="line"><a name="l00210"></a><span class="lineno">  210</span>&#160;        warp_id((LOGICAL_WARPS == 1) ?</div>
 <div class="line"><a name="l00211"></a><span class="lineno">  211</span>&#160;            0 :</div>
 <div class="line"><a name="l00212"></a><span class="lineno">  212</span>&#160;            threadIdx.x / LOGICAL_WARP_THREADS),</div>
-<div class="line"><a name="l00213"></a><span class="lineno">  213</span>&#160;        lane_id(((LOGICAL_WARPS == 1) || (LOGICAL_WARP_THREADS == <a class="code" href="structcub_1_1_ptx_arch_props.html" title="The architectural properties for the PTX version targeted by the active compiler pass. ">PtxArchProps</a>::WARP_THREADS)) ?</div>
-<div class="line"><a name="l00214"></a><span class="lineno">  214</span>&#160;            LaneId() :</div>
+<div class="line"><a name="l00213"></a><span class="lineno">  213</span>&#160;        lane_id(((LOGICAL_WARPS == 1) || (LOGICAL_WARP_THREADS == CUB_PTX_WARP_THREADS)) ?</div>
+<div class="line"><a name="l00214"></a><span class="lineno">  214</span>&#160;            <a class="code" href="group___util_ptx.html#gabf8633aaa6ac4f9f43a2f897a7939129" title="Returns the warp lane ID of the calling thread. ">LaneId</a>() :</div>
 <div class="line"><a name="l00215"></a><span class="lineno">  215</span>&#160;            threadIdx.x % LOGICAL_WARP_THREADS)</div>
 <div class="line"><a name="l00216"></a><span class="lineno">  216</span>&#160;    {}</div>
 <div class="line"><a name="l00217"></a><span class="lineno">  217</span>&#160;</div>
@@ -213,8 +214,8 @@ var searchBox = new SearchBox("searchBox", "search",false,'Search');
 <div class="line"><a name="l00226"></a><span class="lineno">  226</span>&#160;        warp_id((LOGICAL_WARPS == 1) ?</div>
 <div class="line"><a name="l00227"></a><span class="lineno">  227</span>&#160;            0 :</div>
 <div class="line"><a name="l00228"></a><span class="lineno">  228</span>&#160;            threadIdx.x / LOGICAL_WARP_THREADS),</div>
-<div class="line"><a name="l00229"></a><span class="lineno">  229</span>&#160;        lane_id(((LOGICAL_WARPS == 1) || (LOGICAL_WARP_THREADS == <a class="code" href="structcub_1_1_ptx_arch_props.html" title="The architectural properties for the PTX version targeted by the active compiler pass. ">PtxArchProps</a>::WARP_THREADS)) ?</div>
-<div class="line"><a name="l00230"></a><span class="lineno">  230</span>&#160;            LaneId() :</div>
+<div class="line"><a name="l00229"></a><span class="lineno">  229</span>&#160;        lane_id(((LOGICAL_WARPS == 1) || (LOGICAL_WARP_THREADS == CUB_PTX_WARP_THREADS)) ?</div>
+<div class="line"><a name="l00230"></a><span class="lineno">  230</span>&#160;            <a class="code" href="group___util_ptx.html#gabf8633aaa6ac4f9f43a2f897a7939129" title="Returns the warp lane ID of the calling thread. ">LaneId</a>() :</div>
 <div class="line"><a name="l00231"></a><span class="lineno">  231</span>&#160;            threadIdx.x % LOGICAL_WARP_THREADS)</div>
 <div class="line"><a name="l00232"></a><span class="lineno">  232</span>&#160;    {}</div>
 <div class="line"><a name="l00233"></a><span class="lineno">  233</span>&#160;</div>
@@ -261,10 +262,10 @@ var searchBox = new SearchBox("searchBox", "search",false,'Search');
 <div class="line"><a name="l00349"></a><span class="lineno">  349</span>&#160;</div>
 <div class="line"><a name="l00350"></a><span class="lineno">  350</span>&#160;</div>
 <div class="line"><a name="l00425"></a><span class="lineno">  425</span>&#160;    <span class="keyword">template</span> &lt;<span class="keyword">typename</span> WarpPrefixCallbackOp&gt;</div>
-<div class="line"><a name="l00426"></a><span class="lineno"><a class="code" href="classcub_1_1_warp_scan.html#a906d0d6381b3af1ad105ec69547350f3">  426</a></span>&#160;    __device__ __forceinline__ <span class="keywordtype">void</span> <a class="code" href="classcub_1_1_warp_scan.html#a906d0d6381b3af1ad105ec69547350f3" title="Computes an inclusive prefix sum in each logical warp. Instead of using 0 as the warp-wide prefix...">InclusiveSum</a>(</div>
-<div class="line"><a name="l00427"></a><span class="lineno">  427</span>&#160;        T               input,              </div>
-<div class="line"><a name="l00428"></a><span class="lineno">  428</span>&#160;        T               &amp;output,            </div>
-<div class="line"><a name="l00429"></a><span class="lineno">  429</span>&#160;        T               &amp;warp_aggregate,    </div>
+<div class="line"><a name="l00426"></a><span class="lineno"><a class="code" href="classcub_1_1_warp_scan.html#ab00383b21233cd2edb4f28fe63f95418">  426</a></span>&#160;    __device__ __forceinline__ <span class="keywordtype">void</span> <a class="code" href="classcub_1_1_warp_scan.html#ab00383b21233cd2edb4f28fe63f95418" title="Computes an inclusive prefix sum in each logical warp. Instead of using 0 as the warp-wide prefix...">InclusiveSum</a>(</div>
+<div class="line"><a name="l00427"></a><span class="lineno">  427</span>&#160;        T                       input,              </div>
+<div class="line"><a name="l00428"></a><span class="lineno">  428</span>&#160;        T                       &amp;output,            </div>
+<div class="line"><a name="l00429"></a><span class="lineno">  429</span>&#160;        T                       &amp;warp_aggregate,    </div>
 <div class="line"><a name="l00430"></a><span class="lineno">  430</span>&#160;        WarpPrefixCallbackOp    &amp;warp_prefix_op)    </div>
 <div class="line"><a name="l00431"></a><span class="lineno">  431</span>&#160;    {</div>
 <div class="line"><a name="l00432"></a><span class="lineno">  432</span>&#160;        <span class="comment">// Compute inclusive warp scan</span></div>
@@ -293,7 +294,7 @@ var searchBox = new SearchBox("searchBox", "search",false,'Search');
 <div class="line"><a name="l00458"></a><span class="lineno">  458</span>&#160;    __device__ __forceinline__ <span class="keywordtype">void</span> ExclusiveSum(T input, T &amp;output, Int2Type&lt;false&gt; is_primitive)</div>
 <div class="line"><a name="l00459"></a><span class="lineno">  459</span>&#160;    {</div>
 <div class="line"><a name="l00460"></a><span class="lineno">  460</span>&#160;        <span class="comment">// Delegate to regular scan for non-primitive types (because we won&#39;t be able to use subtraction)</span></div>
-<div class="line"><a name="l00461"></a><span class="lineno">  461</span>&#160;        T identity = T();</div>
+<div class="line"><a name="l00461"></a><span class="lineno">  461</span>&#160;        T identity = ZeroInitialize&lt;T&gt;();</div>
 <div class="line"><a name="l00462"></a><span class="lineno">  462</span>&#160;        <a class="code" href="classcub_1_1_warp_scan.html#aafbc42fcea0a11b83289629554cbe625" title="Computes an exclusive prefix scan using the specified binary scan functor in each logical warp...">ExclusiveScan</a>(input, output, identity, Sum());</div>
 <div class="line"><a name="l00463"></a><span class="lineno">  463</span>&#160;    }</div>
 <div class="line"><a name="l00464"></a><span class="lineno">  464</span>&#160;</div>
@@ -308,7 +309,7 @@ var searchBox = new SearchBox("searchBox", "search",false,'Search');
 <div class="line"><a name="l00475"></a><span class="lineno">  475</span>&#160;    __device__ __forceinline__ <span class="keywordtype">void</span> ExclusiveSum(T input, T &amp;output, T &amp;warp_aggregate, Int2Type&lt;false&gt; is_primitive)</div>
 <div class="line"><a name="l00476"></a><span class="lineno">  476</span>&#160;    {</div>
 <div class="line"><a name="l00477"></a><span class="lineno">  477</span>&#160;        <span class="comment">// Delegate to regular scan for non-primitive types (because we won&#39;t be able to use subtraction)</span></div>
-<div class="line"><a name="l00478"></a><span class="lineno">  478</span>&#160;        T identity = T();</div>
+<div class="line"><a name="l00478"></a><span class="lineno">  478</span>&#160;        T identity = ZeroInitialize&lt;T&gt;();</div>
 <div class="line"><a name="l00479"></a><span class="lineno">  479</span>&#160;        <a class="code" href="classcub_1_1_warp_scan.html#aafbc42fcea0a11b83289629554cbe625" title="Computes an exclusive prefix scan using the specified binary scan functor in each logical warp...">ExclusiveScan</a>(input, output, identity, Sum(), warp_aggregate);</div>
 <div class="line"><a name="l00480"></a><span class="lineno">  480</span>&#160;    }</div>
 <div class="line"><a name="l00481"></a><span class="lineno">  481</span>&#160;</div>
@@ -325,7 +326,7 @@ var searchBox = new SearchBox("searchBox", "search",false,'Search');
 <div class="line"><a name="l00494"></a><span class="lineno">  494</span>&#160;    __device__ __forceinline__ <span class="keywordtype">void</span> ExclusiveSum(T input, T &amp;output, T &amp;warp_aggregate, WarpPrefixCallbackOp &amp;warp_prefix_op, Int2Type&lt;false&gt; is_primitive)</div>
 <div class="line"><a name="l00495"></a><span class="lineno">  495</span>&#160;    {</div>
 <div class="line"><a name="l00496"></a><span class="lineno">  496</span>&#160;        <span class="comment">// Delegate to regular scan for non-primitive types (because we won&#39;t be able to use subtraction)</span></div>
-<div class="line"><a name="l00497"></a><span class="lineno">  497</span>&#160;        T identity = T();</div>
+<div class="line"><a name="l00497"></a><span class="lineno">  497</span>&#160;        T identity = ZeroInitialize&lt;T&gt;();</div>
 <div class="line"><a name="l00498"></a><span class="lineno">  498</span>&#160;        <a class="code" href="classcub_1_1_warp_scan.html#aafbc42fcea0a11b83289629554cbe625" title="Computes an exclusive prefix scan using the specified binary scan functor in each logical warp...">ExclusiveScan</a>(input, output, identity, Sum(), warp_aggregate, warp_prefix_op);</div>
 <div class="line"><a name="l00499"></a><span class="lineno">  499</span>&#160;    }</div>
 <div class="line"><a name="l00500"></a><span class="lineno">  500</span>&#160;</div>
@@ -353,10 +354,10 @@ var searchBox = new SearchBox("searchBox", "search",false,'Search');
 <div class="line"><a name="l00599"></a><span class="lineno">  599</span>&#160;</div>
 <div class="line"><a name="l00600"></a><span class="lineno">  600</span>&#160;</div>
 <div class="line"><a name="l00678"></a><span class="lineno">  678</span>&#160;    <span class="keyword">template</span> &lt;<span class="keyword">typename</span> WarpPrefixCallbackOp&gt;</div>
-<div class="line"><a name="l00679"></a><span class="lineno"><a class="code" href="classcub_1_1_warp_scan.html#a283236673ad2e54579f6b5ee97eac193">  679</a></span>&#160;    __device__ __forceinline__ <span class="keywordtype">void</span> <a class="code" href="classcub_1_1_warp_scan.html#a283236673ad2e54579f6b5ee97eac193" title="Computes an exclusive prefix sum in each logical warp. Instead of using 0 as the warp-wide prefix...">ExclusiveSum</a>(</div>
-<div class="line"><a name="l00680"></a><span class="lineno">  680</span>&#160;        T               input,              </div>
-<div class="line"><a name="l00681"></a><span class="lineno">  681</span>&#160;        T               &amp;output,            </div>
-<div class="line"><a name="l00682"></a><span class="lineno">  682</span>&#160;        T               &amp;warp_aggregate,    </div>
+<div class="line"><a name="l00679"></a><span class="lineno"><a class="code" href="classcub_1_1_warp_scan.html#ae388b1bdc4f9fd3e7dc244d25a6c7b9a">  679</a></span>&#160;    __device__ __forceinline__ <span class="keywordtype">void</span> <a class="code" href="classcub_1_1_warp_scan.html#ae388b1bdc4f9fd3e7dc244d25a6c7b9a" title="Computes an exclusive prefix sum in each logical warp. Instead of using 0 as the warp-wide prefix...">ExclusiveSum</a>(</div>
+<div class="line"><a name="l00680"></a><span class="lineno">  680</span>&#160;        T                       input,              </div>
+<div class="line"><a name="l00681"></a><span class="lineno">  681</span>&#160;        T                       &amp;output,            </div>
+<div class="line"><a name="l00682"></a><span class="lineno">  682</span>&#160;        T                       &amp;warp_aggregate,    </div>
 <div class="line"><a name="l00683"></a><span class="lineno">  683</span>&#160;        WarpPrefixCallbackOp    &amp;warp_prefix_op)    </div>
 <div class="line"><a name="l00684"></a><span class="lineno">  684</span>&#160;    {</div>
 <div class="line"><a name="l00685"></a><span class="lineno">  685</span>&#160;        ExclusiveSum(input, output, warp_aggregate, warp_prefix_op, <a class="code" href="structcub_1_1_int2_type.html" title="Allows for the treatment of an integral constant as a type at compile-time (e.g., to achieve static c...">Int2Type</a>&lt;<a class="code" href="structcub_1_1_traits.html" title="Type traits. ">Traits&lt;T&gt;::PRIMITIVE</a>&gt;());</div>
@@ -389,11 +390,11 @@ var searchBox = new SearchBox("searchBox", "search",false,'Search');
 <div class="line"><a name="l00866"></a><span class="lineno">  866</span>&#160;    <span class="keyword">template</span> &lt;</div>
 <div class="line"><a name="l00867"></a><span class="lineno">  867</span>&#160;        <span class="keyword">typename</span> ScanOp,</div>
 <div class="line"><a name="l00868"></a><span class="lineno">  868</span>&#160;        <span class="keyword">typename</span> WarpPrefixCallbackOp&gt;</div>
-<div class="line"><a name="l00869"></a><span class="lineno"><a class="code" href="classcub_1_1_warp_scan.html#adf74795dbe02947facd24657bc519c40">  869</a></span>&#160;    __device__ __forceinline__ <span class="keywordtype">void</span> <a class="code" href="classcub_1_1_warp_scan.html#adf74795dbe02947facd24657bc519c40" title="Computes an inclusive prefix sum using the specified binary scan functor in each logical warp...">InclusiveScan</a>(</div>
-<div class="line"><a name="l00870"></a><span class="lineno">  870</span>&#160;        T               input,              </div>
-<div class="line"><a name="l00871"></a><span class="lineno">  871</span>&#160;        T               &amp;output,            </div>
-<div class="line"><a name="l00872"></a><span class="lineno">  872</span>&#160;        ScanOp          scan_op,            </div>
-<div class="line"><a name="l00873"></a><span class="lineno">  873</span>&#160;        T               &amp;warp_aggregate,    </div>
+<div class="line"><a name="l00869"></a><span class="lineno"><a class="code" href="classcub_1_1_warp_scan.html#a5df0a73e817f462fedfd00e5f332f5ab">  869</a></span>&#160;    __device__ __forceinline__ <span class="keywordtype">void</span> <a class="code" href="classcub_1_1_warp_scan.html#a5df0a73e817f462fedfd00e5f332f5ab" title="Computes an inclusive prefix sum using the specified binary scan functor in each logical warp...">InclusiveScan</a>(</div>
+<div class="line"><a name="l00870"></a><span class="lineno">  870</span>&#160;        T                       input,              </div>
+<div class="line"><a name="l00871"></a><span class="lineno">  871</span>&#160;        T                       &amp;output,            </div>
+<div class="line"><a name="l00872"></a><span class="lineno">  872</span>&#160;        ScanOp                  scan_op,            </div>
+<div class="line"><a name="l00873"></a><span class="lineno">  873</span>&#160;        T                       &amp;warp_aggregate,    </div>
 <div class="line"><a name="l00874"></a><span class="lineno">  874</span>&#160;        WarpPrefixCallbackOp    &amp;warp_prefix_op)    </div>
 <div class="line"><a name="l00875"></a><span class="lineno">  875</span>&#160;    {</div>
 <div class="line"><a name="l00876"></a><span class="lineno">  876</span>&#160;        <span class="comment">// Compute inclusive warp scan</span></div>
@@ -437,12 +438,12 @@ var searchBox = new SearchBox("searchBox", "search",false,'Search');
 <div class="line"><a name="l01066"></a><span class="lineno"> 1066</span>&#160;    <span class="keyword">template</span> &lt;</div>
 <div class="line"><a name="l01067"></a><span class="lineno"> 1067</span>&#160;        <span class="keyword">typename</span> ScanOp,</div>
 <div class="line"><a name="l01068"></a><span class="lineno"> 1068</span>&#160;        <span class="keyword">typename</span> WarpPrefixCallbackOp&gt;</div>
-<div class="line"><a name="l01069"></a><span class="lineno"><a class="code" href="classcub_1_1_warp_scan.html#ada12695322d9e1f5354fcae9d0910113"> 1069</a></span>&#160;    __device__ __forceinline__ <span class="keywordtype">void</span> <a class="code" href="classcub_1_1_warp_scan.html#ada12695322d9e1f5354fcae9d0910113" title="Computes an exclusive prefix scan using the specified binary scan functor in each logical warp...">ExclusiveScan</a>(</div>
-<div class="line"><a name="l01070"></a><span class="lineno"> 1070</span>&#160;        T               input,              </div>
-<div class="line"><a name="l01071"></a><span class="lineno"> 1071</span>&#160;        T               &amp;output,            </div>
-<div class="line"><a name="l01072"></a><span class="lineno"> 1072</span>&#160;        T               identity,           </div>
-<div class="line"><a name="l01073"></a><span class="lineno"> 1073</span>&#160;        ScanOp          scan_op,            </div>
-<div class="line"><a name="l01074"></a><span class="lineno"> 1074</span>&#160;        T               &amp;warp_aggregate,    </div>
+<div class="line"><a name="l01069"></a><span class="lineno"><a class="code" href="classcub_1_1_warp_scan.html#a400b394352bba2a3251e3faa730c975a"> 1069</a></span>&#160;    __device__ __forceinline__ <span class="keywordtype">void</span> <a class="code" href="classcub_1_1_warp_scan.html#a400b394352bba2a3251e3faa730c975a" title="Computes an exclusive prefix scan using the specified binary scan functor in each logical warp...">ExclusiveScan</a>(</div>
+<div class="line"><a name="l01070"></a><span class="lineno"> 1070</span>&#160;        T                       input,              </div>
+<div class="line"><a name="l01071"></a><span class="lineno"> 1071</span>&#160;        T                       &amp;output,            </div>
+<div class="line"><a name="l01072"></a><span class="lineno"> 1072</span>&#160;        T                       identity,           </div>
+<div class="line"><a name="l01073"></a><span class="lineno"> 1073</span>&#160;        ScanOp                  scan_op,            </div>
+<div class="line"><a name="l01074"></a><span class="lineno"> 1074</span>&#160;        T                       &amp;warp_aggregate,    </div>
 <div class="line"><a name="l01075"></a><span class="lineno"> 1075</span>&#160;        WarpPrefixCallbackOp    &amp;warp_prefix_op)    </div>
 <div class="line"><a name="l01076"></a><span class="lineno"> 1076</span>&#160;    {</div>
 <div class="line"><a name="l01077"></a><span class="lineno"> 1077</span>&#160;        <span class="comment">// Exclusive warp scan</span></div>
@@ -486,11 +487,11 @@ var searchBox = new SearchBox("searchBox", "search",false,'Search');
 <div class="line"><a name="l01268"></a><span class="lineno"> 1268</span>&#160;    <span class="keyword">template</span> &lt;</div>
 <div class="line"><a name="l01269"></a><span class="lineno"> 1269</span>&#160;        <span class="keyword">typename</span> ScanOp,</div>
 <div class="line"><a name="l01270"></a><span class="lineno"> 1270</span>&#160;        <span class="keyword">typename</span> WarpPrefixCallbackOp&gt;</div>
-<div class="line"><a name="l01271"></a><span class="lineno"><a class="code" href="classcub_1_1_warp_scan.html#a024d74c48e45b489843053097b0638d1"> 1271</a></span>&#160;    __device__ __forceinline__ <span class="keywordtype">void</span> <a class="code" href="classcub_1_1_warp_scan.html#a024d74c48e45b489843053097b0638d1" title="Computes an exclusive prefix scan using the specified binary scan functor in each logical warp...">ExclusiveScan</a>(</div>
-<div class="line"><a name="l01272"></a><span class="lineno"> 1272</span>&#160;        T               input,              </div>
-<div class="line"><a name="l01273"></a><span class="lineno"> 1273</span>&#160;        T               &amp;output,            </div>
-<div class="line"><a name="l01274"></a><span class="lineno"> 1274</span>&#160;        ScanOp          scan_op,            </div>
-<div class="line"><a name="l01275"></a><span class="lineno"> 1275</span>&#160;        T               &amp;warp_aggregate,    </div>
+<div class="line"><a name="l01271"></a><span class="lineno"><a class="code" href="classcub_1_1_warp_scan.html#afd8c7d323f6e7b4d08626a347143589d"> 1271</a></span>&#160;    __device__ __forceinline__ <span class="keywordtype">void</span> <a class="code" href="classcub_1_1_warp_scan.html#afd8c7d323f6e7b4d08626a347143589d" title="Computes an exclusive prefix scan using the specified binary scan functor in each logical warp...">ExclusiveScan</a>(</div>
+<div class="line"><a name="l01272"></a><span class="lineno"> 1272</span>&#160;        T                       input,              </div>
+<div class="line"><a name="l01273"></a><span class="lineno"> 1273</span>&#160;        T                       &amp;output,            </div>
+<div class="line"><a name="l01274"></a><span class="lineno"> 1274</span>&#160;        ScanOp                  scan_op,            </div>
+<div class="line"><a name="l01275"></a><span class="lineno"> 1275</span>&#160;        T                       &amp;warp_aggregate,    </div>
 <div class="line"><a name="l01276"></a><span class="lineno"> 1276</span>&#160;        WarpPrefixCallbackOp    &amp;warp_prefix_op)    </div>
 <div class="line"><a name="l01277"></a><span class="lineno"> 1277</span>&#160;    {</div>
 <div class="line"><a name="l01278"></a><span class="lineno"> 1278</span>&#160;        <span class="comment">// Exclusive warp scan</span></div>
@@ -515,7 +516,7 @@ var searchBox = new SearchBox("searchBox", "search",false,'Search');
 <!-- HTML footer for doxygen 1.8.3.1-->
 <!-- start footer part -->
 <hr class="footer"/><address class="footer"><small>
-Generated on Fri Aug 23 2013 17:31:10 for CUB by &#160;<a href="http://www.doxygen.org/index.html">
+Generated on Tue Dec 10 2013 02:42:38 for CUB by &#160;<a href="http://www.doxygen.org/index.html">
 <img class="footer" src="doxygen.png" alt="doxygen"/>
 </a> 1.8.4
 <br>

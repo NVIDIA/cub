@@ -7,6 +7,8 @@
         - Added min, max, arg-min, and arg-max to DeviceReduce
         - Added DeviceSelect (select-unique, select-if, and select-flagged)
         - Added DevicePartition (partition-if, partition-flagged)
+        - Added generic cub::ShuffleUp(), cub::ShuffleDown(), and cub::ShuffleBroadcast() for warp-wide communication of arbitrary data types (SM3x+)
+        - Added cub::MaxSmOccupancy() for accurately determining SM occupancy for any given kernel function pointer
     - Performance
         - Improved DeviceScan and DeviceRadixSort performance for older architectures (SM10-SM30)
     - Interface changes:

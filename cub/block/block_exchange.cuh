@@ -72,7 +72,7 @@ namespace cub {
  * of 512 integer items partitioned across 128 threads where each thread owns 4 items.
  * \par
  * \code
- * #include <cub/cub.cuh>
+ * #include <cub/cub.cuh>   // or equivalently <cub/block/block_exchange.cuh>
  *
  * __global__ void ExampleKernel(int *d_data, ...)
  * {
@@ -712,7 +712,7 @@ public:
      * of 512 integer items partitioned across 128 threads where each thread owns 4 items.
      * \par
      * \code
-     * #include <cub/cub.cuh>
+     * #include <cub/cub.cuh>   // or equivalently <cub/block/block_exchange.cuh>
      *
      * __global__ void ExampleKernel(int *d_data, ...)
      * {
@@ -754,7 +754,7 @@ public:
      * of 512 integer items partitioned across 128 threads where each thread owns 4 items.
      * \par
      * \code
-     * #include <cub/cub.cuh>
+     * #include <cub/cub.cuh>   // or equivalently <cub/block/block_exchange.cuh>
      *
      * __global__ void ExampleKernel(int *d_data, ...)
      * {
@@ -801,7 +801,7 @@ public:
      * of 512 integer items partitioned across 128 threads where each thread owns 4 items.
      * \par
      * \code
-     * #include <cub/cub.cuh>
+     * #include <cub/cub.cuh>   // or equivalently <cub/block/block_exchange.cuh>
      *
      * __global__ void ExampleKernel(int *d_data, ...)
      * {
@@ -845,7 +845,7 @@ public:
      * of 512 integer items partitioned across 128 threads where each thread owns 4 items.
      * \par
      * \code
-     * #include <cub/cub.cuh>
+     * #include <cub/cub.cuh>   // or equivalently <cub/block/block_exchange.cuh>
      *
      * __global__ void ExampleKernel(int *d_data, ...)
      * {
