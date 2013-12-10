@@ -430,7 +430,7 @@ and striped arrangements.
 - <b>Documentation and testing</b>:
   - Added simple examples of device-wide methods
   - Improved doxygen documentation and example snippets
-  - Improved test coverege to include up to 12,000 kernel variants and 220,000 unit tests (per architecture, per platform)
+  - Improved test coverege to include up to 21,000 kernel variants and 851,000 unit tests (per architecture, per platform)
 - <b>Bug fixes</b>: 
   - CDP (device-callable) versions of device-wide methods now report the same temporary storage allocation size requirement as their host-callable counterparts
   - Misc. bug fixes for cub::DeviceRadixSort, cub::DeviceScan, cub::DeviceReduce, cub::BlockScan, cub::BlockReduce, cub::BlockDiscontinuity, and cub::WarpReduce.  See the [change-log](CHANGE_LOG.TXT) for further details
