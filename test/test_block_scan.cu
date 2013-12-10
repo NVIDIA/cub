@@ -350,7 +350,12 @@ __global__ void BlockScanKernel(
     DeviceTest<BlockScan>(temp_storage, data, identity, scan_op, aggregate, prefix_op, Int2Type<TEST_MODE>());
 
     // Stop cycle timer
+#if CUB_PTX_VERSION == 100
+    // Bug: recording stop clock causes mis-write of running prefix value
+    clock_t stop = 0;
+#else
     clock_t stop = clock();
+#endif // CUB_PTX_VERSION == 100
 
     // Store output
     StoreDirectBlocked(threadIdx.x, d_out, data);
@@ -362,10 +367,6 @@ __global__ void BlockScanKernel(
     if (threadIdx.x == 0)
     {
         d_out[TILE_SIZE] = prefix_op.prefix;
-    }
-    else
-    {
-        // In a separate conditional as a workaround for SM10 Win32 bug where we write the wrong prefix
         *d_elapsed = (start > stop) ? start - stop : stop - start;
     }
 }
@@ -634,6 +635,7 @@ template <
     int ITEMS_PER_THREAD>
 void Test(GenMode gen_mode)
 {
+/*
     // primitive
     Test<BLOCK_THREADS, ITEMS_PER_THREAD>(gen_mode, Sum(), (unsigned char) 0, (unsigned char) 99, CUB_TYPE_STRING(Sum<unsigned char>));
     Test<BLOCK_THREADS, ITEMS_PER_THREAD>(gen_mode, Sum(), (unsigned short) 0, (unsigned short) 99, CUB_TYPE_STRING(Sum<unsigned short>));
@@ -660,7 +662,7 @@ void Test(GenMode gen_mode)
     Test<BLOCK_THREADS, ITEMS_PER_THREAD>(gen_mode, Sum(), make_ushort4(0, 0, 0, 0), make_ushort4(17, 21, 32, 85), CUB_TYPE_STRING(Sum<ushort4>));
     Test<BLOCK_THREADS, ITEMS_PER_THREAD>(gen_mode, Sum(), make_uint4(0, 0, 0, 0), make_uint4(17, 21, 32, 85), CUB_TYPE_STRING(Sum<uint4>));
     Test<BLOCK_THREADS, ITEMS_PER_THREAD>(gen_mode, Sum(), make_ulonglong4(0, 0, 0, 0), make_ulonglong4(17, 21, 32, 85), CUB_TYPE_STRING(Sum<ulonglong4>));
-
+*/
     // complex
     Test<BLOCK_THREADS, ITEMS_PER_THREAD>(gen_mode, Sum(), TestFoo::MakeTestFoo(0, 0, 0, 0), TestFoo::MakeTestFoo(17, 21, 32, 85), CUB_TYPE_STRING(Sum<TestFoo>));
     Test<BLOCK_THREADS, ITEMS_PER_THREAD>(gen_mode, Sum(), TestBar(0, 0), TestBar(17, 21), CUB_TYPE_STRING(Sum<TestBar>));
@@ -723,7 +725,7 @@ int main(int argc, char** argv)
 
     // Initialize device
     CubDebugExit(args.DeviceInit());
-
+/*
     if (quick)
     {
         // Quick test
@@ -734,17 +736,19 @@ int main(int argc, char** argv)
         Test<128, 2, PREFIX_AGGREGATE, BLOCK_SCAN_RAKING>(SEQ_INC, Sum(), NullType(), prefix, CUB_TYPE_STRING(Sum<TestFoo>));
     }
     else
-    {
+*/    {
         // Repeat test sequence
         for (int i = 0; i <= g_repeat; ++i)
         {
             // Run tests for different threadblock sizes
             Test<17>();
+/*
             Test<32>();
             Test<62>();
             Test<65>();
 //            Test<96>();             // TODO: file bug for UNREACHABLE error for Test<96, 9, BASIC, BLOCK_SCAN_RAKING>(UNIFORM, Sum(), NullType(), make_ulonglong2(17, 21), CUB_TYPE_STRING(Sum<ulonglong2>));
             Test<128>();
+*/
         }
     }
 
