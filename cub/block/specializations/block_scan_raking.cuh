@@ -117,7 +117,8 @@ struct BlockScanRaking
     {
         if ((BlockRakingLayout::UNGUARDED) || (((linear_tid * SEGMENT_LENGTH) + ITERATION) < BLOCK_THREADS))
         {
-            raking_partial = scan_op(raking_partial, raking_ptr[ITERATION]);
+            T addend = raking_ptr[ITERATION];
+            raking_partial = scan_op(raking_partial, addend);
         }
 
         return GuardedReduce(raking_ptr, scan_op, raking_partial, Int2Type<ITERATION + 1>());
