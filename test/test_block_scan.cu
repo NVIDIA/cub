@@ -725,7 +725,7 @@ int main(int argc, char** argv)
 
     // Initialize device
     CubDebugExit(args.DeviceInit());
-/*
+
     if (quick)
     {
         // Quick test
@@ -736,19 +736,17 @@ int main(int argc, char** argv)
         Test<128, 2, PREFIX_AGGREGATE, BLOCK_SCAN_RAKING>(SEQ_INC, Sum(), NullType(), prefix, CUB_TYPE_STRING(Sum<TestFoo>));
     }
     else
-*/    {
+    {
         // Repeat test sequence
         for (int i = 0; i <= g_repeat; ++i)
         {
             // Run tests for different threadblock sizes
             Test<17>();
-/*
             Test<32>();
             Test<62>();
             Test<65>();
 //            Test<96>();             // TODO: file bug for UNREACHABLE error for Test<96, 9, BASIC, BLOCK_SCAN_RAKING>(UNIFORM, Sum(), NullType(), make_ulonglong2(17, 21), CUB_TYPE_STRING(Sum<ulonglong2>));
             Test<128>();
-*/
         }
     }
 
