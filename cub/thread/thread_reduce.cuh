@@ -63,7 +63,8 @@ __device__ __forceinline__ T ThreadReduce(
     T                   prefix,                 ///< [in] Prefix to seed reduction with
     Int2Type<LENGTH>    length)
 {
-    prefix = reduction_op(prefix, input[0]);
+    T addend = *input;
+    prefix = reduction_op(prefix, addend);
 
     return ThreadReduce(input + 1, reduction_op, prefix, Int2Type<LENGTH - 1>());
 }

@@ -114,7 +114,8 @@ struct BlockReduceWarpReductions
     {
         if (FULL_TILE || (SUCCESSOR_WARP * LOGICAL_WARP_SIZE < num_valid))
         {
-            warp_aggregate = reduction_op(warp_aggregate, temp_storage.warp_aggregates[SUCCESSOR_WARP]);
+            T addend = temp_storage.warp_aggregates[SUCCESSOR_WARP];
+            warp_aggregate = reduction_op(warp_aggregate, addend);
         }
         return ApplyWarpAggregates<FULL_TILE>(reduction_op, warp_aggregate, num_valid, Int2Type<SUCCESSOR_WARP + 1>());
     }
