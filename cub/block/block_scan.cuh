@@ -2313,6 +2313,10 @@ public:
 
 };
 
+/**
+ * \example example_block_scan.cu
+ */
+
 }               // CUB namespace
 CUB_NS_POSTFIX  // Optional outer namespace(s)
 

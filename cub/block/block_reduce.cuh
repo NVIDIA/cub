@@ -560,6 +560,10 @@ public:
     //@}  end member group
 };
 
+/**
+ * \example example_block_reduce.cu
+ */
+
 }               // CUB namespace
 CUB_NS_POSTFIX  // Optional outer namespace(s)
 
