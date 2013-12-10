@@ -219,22 +219,23 @@ dt {
 
 .memproto, dl.reflist dt {
 		padding-top: 20px;
-		border-top: 1px solid #999;
-		border-left: 1px solid #999;
-		border-right: 1px solid #999;
+		border-top: 2px solid #888;
+		border-left: 2px solid #888;
+		border-right: 2px solid #888;
+		border-bottom: 1px solid #ECECEC;
 		background-image: none;
-		background-color: #FFF;
+		background-color: #FAFAFB;
 		text-shadow: none;
 		box-shadow: 3px 3px 30px rgba(0, 0, 0, 0.05);
 }
 
 div.memdoc {
 		padding-bottom: 20px;
-		border-bottom: 1px solid #999;
-		border-left: 1px solid #999;
-		border-right: 1px solid #999;
+		border-bottom: 2px solid #888;
+		border-left: 2px solid #888;
+		border-right: 2px solid #888;
 		background-image: none;
-		background-color: #FCFCFC;
+		background-color: #FFF;
 		box-shadow: 3px 3px 30px rgba(0, 0, 0, 0.05);
 }
 

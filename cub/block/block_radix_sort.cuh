@@ -47,7 +47,7 @@ CUB_NS_PREFIX
 namespace cub {
 
 /**
- * \brief The cub::BlockRadixSort class provides [<em>collective</em>](index.html#sec0) methods for sorting items partitioned across a CUDA thread block using a radix sorting method.  ![](sorting_logo.png)
+ * \brief The BlockRadixSort class provides [<em>collective</em>](index.html#sec0) methods for sorting items partitioned across a CUDA thread block using a radix sorting method.  ![](sorting_logo.png)
  * \ingroup BlockModule
  *
  * \tparam Key                  Key type
