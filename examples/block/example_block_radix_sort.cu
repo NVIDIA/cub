@@ -32,14 +32,7 @@
 
 // Ensure printing of CUDA runtime errors to console (define before including cub.h)
 #define CUB_STDERR
-/*
-#if defined(_WIN32) || defined(_WIN64)
-    #include <windows.h>
-    #undef small            // Windows is terrible for polluting macro namespace
-#else
-    #include <sys/resource.h>
-#endif
-*/
+
 #include <stdio.h>
 #include <iostream>
 #include <algorithm>

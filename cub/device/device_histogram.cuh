@@ -1146,6 +1146,9 @@ struct DeviceHistogram
 
 };
 
+/**
+ * \example example_device_histogram.cu
+ */
 
 }               // CUB namespace
 CUB_NS_POSTFIX  // Optional outer namespace(s)
