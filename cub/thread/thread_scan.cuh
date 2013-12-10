@@ -64,7 +64,8 @@ __device__ __forceinline__ T ThreadScanExclusive(
     ScanOp              scan_op,                ///< [in] Binary scan operator
     Int2Type<LENGTH>    length)
 {
-    inclusive = scan_op(exclusive, input[0]);
+    T addend = *input;
+    inclusive = scan_op(exclusive, addend);
     output[0] = exclusive;
     exclusive = inclusive;
 
@@ -156,7 +157,8 @@ __device__ __forceinline__ T ThreadScanInclusive(
     ScanOp              scan_op,                ///< [in] Binary scan operator
     Int2Type<LENGTH>    length)
 {
-    inclusive = scan_op(inclusive, input[0]);
+    T addend = *input;
+    inclusive = scan_op(inclusive, addend);
     output[0] = inclusive;
 
     return ThreadScanInclusive(inclusive, input + 1, output + 1, scan_op, Int2Type<LENGTH - 1>());

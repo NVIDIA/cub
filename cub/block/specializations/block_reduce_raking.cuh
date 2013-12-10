@@ -118,7 +118,8 @@ struct BlockReduceRaking
         // Update partial if addend is in range
         if ((FULL_TILE && RAKING_UNGUARDED) || ((linear_tid * SEGMENT_LENGTH) + ITERATION < num_valid))
         {
-            partial = reduction_op(partial, raking_segment[ITERATION]);
+            T addend = raking_segment[ITERATION];
+            partial = reduction_op(partial, addend);
         }
         return RakingReduction<FULL_TILE>(reduction_op, raking_segment, partial, num_valid, Int2Type<ITERATION + 1>());
     }
