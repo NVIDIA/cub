@@ -348,7 +348,8 @@ segment of data items for processing.
 When the tile size equals the thread block size, the
 mapping of data onto threads is straightforward (one datum per thread).
 However, there are often performance advantages for processing more
-than one datum per thread.  For these scenarios, CUB primitives
+than one datum per thread.  Increased granularity corresponds to 
+decreased communication overhead.  For these scenarios, CUB primitives
 will specify which of the following partitioning alternatives they 
 accommodate:
 

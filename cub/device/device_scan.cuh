@@ -926,6 +926,9 @@ struct DeviceScan
 
 };
 
+/**
+ * \example example_device_scan.cu
+ */
 
 }               // CUB namespace
 CUB_NS_POSTFIX  // Optional outer namespace(s)

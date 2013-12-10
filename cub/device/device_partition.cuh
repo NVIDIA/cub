@@ -239,10 +239,12 @@ struct DevicePartition
             debug_synchronous);
     }
 
-
-
-
 };
+
+/**
+ * \example example_device_partition_flagged.cu
+ * \example example_device_partition_if.cu
+ */
 
 }               // CUB namespace
 CUB_NS_POSTFIX  // Optional outer namespace(s)
