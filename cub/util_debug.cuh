@@ -48,7 +48,7 @@ namespace cub {
 
 
 /**
- * \addtogroup UtilModule
+ * \addtogroup UtilMgmt
  * @{
  */
 
@@ -109,7 +109,7 @@ __host__ __device__ __forceinline__ cudaError_t Debug(
 
 
 
-/** @} */       // end group UtilModule
+/** @} */       // end group UtilMgmt
 
 }               // CUB namespace
 CUB_NS_POSTFIX  // Optional outer namespace(s)

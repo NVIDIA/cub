@@ -46,7 +46,7 @@ namespace cub {
 
 
 /**
- * \addtogroup UtilModule
+ * \addtogroup UtilMgmt
  * @{
  */
 
@@ -365,7 +365,7 @@ cudaError_t MaxSmOccupancy(
 }
 
 
-/** @} */       // end group UtilModule
+/** @} */       // end group UtilMgmt
 
 }               // CUB namespace
 CUB_NS_POSTFIX  // Optional outer namespace(s)

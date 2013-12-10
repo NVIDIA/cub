@@ -43,8 +43,10 @@
 		\ingroup UtilModule
 	\defgroup UtilIo 		Thread and thread block I/O
 		\ingroup UtilModule
-	\defgroup UtilPtx 		Wrappers for low-level PTX intrinsics
+	\defgroup UtilPtx 		PTX intrinsics
 		\ingroup UtilModule
+    \defgroup UtilMgmt      Device, kernel, and storage management
+        \ingroup UtilModule
 
 \mainpage
 
@@ -65,7 +67,7 @@
 <br>
 <a href="download_cub.html"><img src="download-icon.png" style="position:relative; bottom:-10px; border:0px;"/></a>
 &nbsp;&nbsp;
-<a href="download_cub.html"><em>Download CUB v1.0.2 (August 23, 2013)</em></a>
+<a href="download_cub.html"><em>Download CUB v1.1.0 (Dec 10, 2013)</em></a>
 \endhtmlonly
 
 \section sec1 (1) What is CUB?
@@ -73,17 +75,21 @@
 \par
 CUB provides state-of-the-art, reusable software components for every layer 
 of the CUDA programming model:
-- [<b><em>Device-wide primitives</em></b>] (group___device_module.html) 
-  - Cooperative sort, prefix scan, reduction, histogram, etc.  
-  - Compatible with CUDA dynamic parallelism
-- [<b><em>Block-wide "collective" primitives</em></b>] (group___block_module.html)
-  - Cooperative I/O, sort, prefix scan, reduction, histogram, etc.  
-  - Compatible with arbitrary thread block sizes and types 
-- [<b><em>Warp-wide "collective" primitives</em></b>] (group___warp_module.html)
-  - Cooperative warp-wide prefix scan, reduction, etc.
-  - Safe and architecture-specific
-- [<b><em>Special I/O, device, and storage utilities</em></b>](modules.html)
-  - PTX intrinsics, device reflection, texture-caching iterators, caching memory allocators, etc. 
+- <b><em>Primitives</em></b>
+  - [<b><em>Device-wide</em></b>] (group___device_module.html) 
+    - Parallel sort, prefix scan, reduction, histogram, etc.  
+    - Compatible with CUDA dynamic parallelism
+  - [<b><em>Block-wide "collective"</em></b>] (group___block_module.html)
+    - Cooperative I/O, sort, prefix scan, reduction, histogram, etc.  
+    - Compatible with arbitrary thread block sizes and types 
+  - [<b><em>Warp-wide "collective"</em></b>] (group___warp_module.html)
+    - Cooperative warp-wide prefix scan, reduction, etc.
+    - Safe and architecture-specific
+- <b><em>Utilities</em></b>
+  - [<b><em>Fancy iterators</em></b>] (group___util_iterator.html)
+  - [<b><em>Thread and thread block I/O</em></b>] (group___util_io.html)
+  - [<b><em>PTX intrinsics</em></b>] (group___util_ptx.html)
+  - [<b><em>Device, kernel, and storage management</em></b>] (group___util_mgmt.html)
 
 \subsection sec1sec1 1.1 Collective Primitives 
 \par
@@ -405,62 +411,68 @@ and striped arrangements.
 <table>
  
 <tr><td style="white-space: nowrap; vertical-align:text-top;">
-08/23/2013<br>
-[CUB v1.0.2 (update)](https://github.com/NVlabs/cub/archive/1.0.2.zip)
+12/10/2013<br>
+[<b>CUB v1.1.0</b>](https://github.com/NVlabs/cub/archive/1.1.0.zip)
 </td><td style="vertical-align:text-top;">
-- Cleaned up unnecessary and/or missing include statements from .cuh files.  You 
-  can now safely include specific .cuh files (instead of the umbrella cub/cub.cuh)
-- Documentation corrections
-- Minor bugfixes for cub::BlockHistogram
-- See the [change-log](https://github.com/NVlabs/cub/blob/master/CHANGE_LOG.TXT) for further details.
+- <b>New features</b>:
+  - Added cub::TexObjInputIterator, cub::TexRefInputIterator, cub::CacheModifiedInputIterator, and cub::CacheModifiedOutputIterator types for loading & storing arbitrary types through the cache hierarchy.  Compatible with Thrust API. 
+  - Added descending sorting to cub::DeviceRadixSort and cub::BlockRadixSort
+  - Added min, max, arg-min, and arg-max to cub::DeviceReduce
+  - Added cub::DeviceSelect (select-unique, select-if, and select-flagged)
+  - Added cub::DevicePartition (partition-if, partition-flagged)
+- <b>Performance</b>:
+  - Improved cub::DeviceScan and cub::DeviceRadixSort performance for older architectures (SM10-SM30)
+- <b>Interface changes</b>:
+  - Refactored block-wide I/O collectives (including cub::BlockLoad and cub::BlockStore), removing cache-modifiers from their interfaces.  The cub::CacheModifiedInputIterator and cub::CacheModifiedOutputIterator pointer wrappers should now be used with cub::BlockLoad and cub::BlockStore to effect that behavior.
+  - Rename device-wide "stream_synchronous" param to "debug_synchronous" to avoid confusion about usage
+- <b>Documentation and testing</b>:
+  - Added simple examples of device-wide methods
+  - Improved doxygen documentation and example snippets
+  - Improved test coverege to include up to 12,000 kernel variants and 220,000 unit tests (per architecture, per platform)
+- <b>Bug fixes</b>: 
+  - CDP (device-callable) versions of device-wide methods now report the same temporary storage allocation size requirement as their host-callable counterparts
+  - Misc. bug fixes for cub::DeviceRadixSort, cub::DeviceScan, cub::DeviceReduce, cub::BlockScan, cub::BlockReduce, cub::BlockDiscontinuity, and cub::WarpReduce.  See the [change-log](CHANGE_LOG.TXT) for further details
+</td></tr>
+
+<tr><td style="white-space: nowrap; vertical-align:text-top;">
+08/23/2013<br>
+[<b>CUB v1.0.2</b>](https://github.com/NVlabs/cub/archive/1.0.2.zip)
+</td><td style="vertical-align:text-top;">
+- Improvements for documentation and compilation speed
+- Misc. bug fixes
+- See the [change-log](CHANGE_LOG.TXT) for further details
 </td></tr>
 
 <tr><td style="white-space: nowrap; vertical-align:text-top;">
 08/08/2013<br>
-[CUB v1.0.1 (primary)](https://github.com/NVlabs/cub/archive/1.0.1.zip)
+[<b>CUB v1.0.1</b>](https://github.com/NVlabs/cub/archive/1.0.1.zip)
 </td><td style="vertical-align:text-top;">
-This release focuses on (1) new and updated primitives, (2) extensive API documentation, 
-and (3) aggressive regression testing.  Notable additions inlcude:
-- cub::DeviceRadixSort.  This implementation is an overhaul of our previous 
-  efforts in the B40C and MGPU projects.  It is constructed from tunable CUB 
-  block-level primitives and is up to 1.7x faster than 
-  Thrust v1.7 on GTX Titan (up to 2.15 billion 32b keys/s)
-- cub::DeviceScan.  This implementation is a new 1-pass decomposition featuring 
-  <em>"adaptive look-back"</em> for mitigating the latencies of otherwise serial 
-  dependences between thread blocks.  It is up to 3.2x faster 
-  than Thrust v1.7 on GTX Titan (up to 28.9 billion 32b items/s)
-
-This release also contains significant updates to CUB's suite of block-wide and 
-warp-wide primitives, including:
-- Improved support for the Kepler instruction set (e.g., \p SHFL is used for 
-  warp-wide exchanges of all types, including those larger than 32b)
-- An updated interface design for collective primitives (specialize::construct::invoke) 
-  that avoids a combinatorial product of library entry-points
-  
-See the [change-log](https://github.com/NVlabs/cub/blob/master/CHANGE_LOG.TXT) for further details.
+- New API for block-wide and warp-wide collective operations
+- New cub::DeviceRadixSort and cub::DeviceScan implementations
+- Performance improvements for block-wide and warp-wide collectives on SM3x (Kepler) architectures 
+- See the [change-log](CHANGE_LOG.TXT) for further details
 </td></tr>
 
 <tr><td style="white-space: nowrap; vertical-align:text-top;">
 05/07/2013<br>
-[CUB v0.9.4 (update)](https://github.com/NVlabs/cub/archive/0.9.4.zip)
+[<b>CUB v0.9.4</b>](https://github.com/NVlabs/cub/archive/0.9.4.zip)
 </td><td style="vertical-align:text-top;">
-- Compilation fixes for several primitives on older architectures.  
-- Introduced several new device-wide and block-wide primitives, including 256-bin histogram.  
-- Misc. cosmetic and bug fixes.  
-- See the [change-log](https://github.com/NVlabs/cub/blob/master/CHANGE_LOG.TXT) for further details.
+- Misc. compilation fixes for SM1.x (Tesla) architectures.  
+- New cub::DeviceHistogram and cub::BlockHistogram implementations  
+- See the [change-log](CHANGE_LOG.TXT) for further details
 </td></tr>
 
 <tr><td style="white-space: nowrap; vertical-align:text-top;">
 04/04/2013<br> 
-[CUB v0.9.2 (update)](https://github.com/NVlabs/cub/archive/0.9.2.zip)
+[<b>CUB v0.9.2</b>](https://github.com/NVlabs/cub/archive/0.9.2.zip)
 </td><td style="vertical-align:text-top;">
 - Minor cosmetic, feature, and compilation updates.  
-- See the [change-log](https://github.com/NVlabs/cub/blob/master/CHANGE_LOG.TXT) for further details.
+- See the [change-log](CHANGE_LOG.TXT) for further details
 </td></tr>
 
 <tr><td style="white-space: nowrap; vertical-align:text-top;">
 03/07/2013<br> 
-[CUB v0.9 (preview)](https://github.com/NVlabs/cub/archive/0.9.zip)
+[<b>CUB v0.9</b>](https://github.com/NVlabs/cub/archive/0.9.zip)
 </td><td style="vertical-align:text-top;">
 - CUB is the first durable, high-performance library of cooperative threadblock, warp, and 
   thread primitives for CUDA kernel programming.

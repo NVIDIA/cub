@@ -43,7 +43,7 @@ namespace cub {
 
 
 /**
- * \addtogroup UtilModule
+ * \addtogroup UtilMgmt
  * @{
  */
 
@@ -172,7 +172,7 @@ namespace cub {
 #endif  // Do not document
 
 
-/** @} */       // end group UtilModule
+/** @} */       // end group UtilMgmt
 
 }               // CUB namespace
 CUB_NS_POSTFIX  // Optional outer namespace(s)
