@@ -357,7 +357,7 @@ __device__ __forceinline__ unsigned int LaneMaskGe()
  * predecessor of its predecessor.
  * \par
  * \code
- * #include <cub/cub.cuh>
+ * #include <cub/cub.cuh>   // or equivalently <cub/util_ptx.cuh>
  *
  * __global__ void ExampleKernel(...)
  * {
@@ -416,7 +416,7 @@ __device__ __forceinline__ T ShuffleUp(
  * successor of its successor.
  * \par
  * \code
- * #include <cub/cub.cuh>
+ * #include <cub/cub.cuh>   // or equivalently <cub/util_ptx.cuh>
  *
  * __global__ void ExampleKernel(...)
  * {
@@ -513,7 +513,7 @@ __device__ __forceinline__ T ShuffleBroadcast(
  *
  * \par
  * \code
- * #include <cub/cub.cuh>
+ * #include <cub/cub.cuh>   // or equivalently <cub/util_ptx.cuh>
  *
  * __global__ void ExampleKernel(...)
  * {

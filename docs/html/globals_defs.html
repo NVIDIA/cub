@@ -52,6 +52,7 @@ var searchBox = new SearchBox("searchBox", "search",false,'Search');
       <li><a href="index.html"><span>Main&#160;Page</span></a></li>
       <li><a href="modules.html"><span>Modules</span></a></li>
       <li><a href="annotated.html"><span>Classes</span></a></li>
+      <li><a href="examples.html"><span>Examples</span></a></li>
       <li>
         <div id="MSearchBox" class="MSearchBoxInactive">
         <span class="left">
@@ -88,7 +89,7 @@ var searchBox = new SearchBox("searchBox", "search",false,'Search');
      onmouseover="return searchBox.OnSearchSelectShow()"
      onmouseout="return searchBox.OnSearchSelectHide()"
      onkeydown="return searchBox.OnSearchSelectKey(event)">
-<a class="SelectItem" href="javascript:void(0)" onclick="searchBox.OnSelectItem(0)"><span class="SelectionMark">&#160;</span>All</a><a class="SelectItem" href="javascript:void(0)" onclick="searchBox.OnSelectItem(1)"><span class="SelectionMark">&#160;</span>Classes</a><a class="SelectItem" href="javascript:void(0)" onclick="searchBox.OnSelectItem(2)"><span class="SelectionMark">&#160;</span>Namespaces</a><a class="SelectItem" href="javascript:void(0)" onclick="searchBox.OnSelectItem(3)"><span class="SelectionMark">&#160;</span>Files</a><a class="SelectItem" href="javascript:void(0)" onclick="searchBox.OnSelectItem(4)"><span class="SelectionMark">&#160;</span>Functions</a><a class="SelectItem" href="javascript:void(0)" onclick="searchBox.OnSelectItem(5)"><span class="SelectionMark">&#160;</span>Variables</a><a class="SelectItem" href="javascript:void(0)" onclick="searchBox.OnSelectItem(6)"><span class="SelectionMark">&#160;</span>Typedefs</a><a class="SelectItem" href="javascript:void(0)" onclick="searchBox.OnSelectItem(7)"><span class="SelectionMark">&#160;</span>Enumerations</a><a class="SelectItem" href="javascript:void(0)" onclick="searchBox.OnSelectItem(8)"><span class="SelectionMark">&#160;</span>Enumerator</a><a class="SelectItem" href="javascript:void(0)" onclick="searchBox.OnSelectItem(9)"><span class="SelectionMark">&#160;</span>Groups</a></div>
+<a class="SelectItem" href="javascript:void(0)" onclick="searchBox.OnSelectItem(0)"><span class="SelectionMark">&#160;</span>All</a><a class="SelectItem" href="javascript:void(0)" onclick="searchBox.OnSelectItem(1)"><span class="SelectionMark">&#160;</span>Classes</a><a class="SelectItem" href="javascript:void(0)" onclick="searchBox.OnSelectItem(2)"><span class="SelectionMark">&#160;</span>Namespaces</a><a class="SelectItem" href="javascript:void(0)" onclick="searchBox.OnSelectItem(3)"><span class="SelectionMark">&#160;</span>Files</a><a class="SelectItem" href="javascript:void(0)" onclick="searchBox.OnSelectItem(4)"><span class="SelectionMark">&#160;</span>Functions</a><a class="SelectItem" href="javascript:void(0)" onclick="searchBox.OnSelectItem(5)"><span class="SelectionMark">&#160;</span>Variables</a><a class="SelectItem" href="javascript:void(0)" onclick="searchBox.OnSelectItem(6)"><span class="SelectionMark">&#160;</span>Typedefs</a><a class="SelectItem" href="javascript:void(0)" onclick="searchBox.OnSelectItem(7)"><span class="SelectionMark">&#160;</span>Enumerations</a><a class="SelectItem" href="javascript:void(0)" onclick="searchBox.OnSelectItem(8)"><span class="SelectionMark">&#160;</span>Enumerator</a><a class="SelectItem" href="javascript:void(0)" onclick="searchBox.OnSelectItem(9)"><span class="SelectionMark">&#160;</span>Friends</a><a class="SelectItem" href="javascript:void(0)" onclick="searchBox.OnSelectItem(10)"><span class="SelectionMark">&#160;</span>Groups</a></div>
 
 <!-- iframe showing the search results (closed by default) -->
 <div id="MSearchResultsWindow">
@@ -99,33 +100,66 @@ var searchBox = new SearchBox("searchBox", "search",false,'Search');
 
 <div class="contents">
 &#160;<ul>
-<li>CUB_DEFINE_DETECT_NESTED_TYPE
-: <a class="el" href="group___util_module.html#ga84bf1a8ed872e12577935eb28feca420">util_type.cuh</a>
+<li>CUB_LOG_SMEM_BANKS
+: <a class="el" href="group___util_mgmt.html#ga2863430ef147807280c593c89658a52c">util_arch.cuh</a>
 </li>
-<li>CUB_DESTRUCTOR
-: <a class="el" href="group___util_module.html#ga756ebe2b0566abfdfcd3c13fe7d1e9c6">util_arch.cuh</a>
+<li>CUB_LOG_WARP_THREADS
+: <a class="el" href="group___util_mgmt.html#ga07eedb9de4a50680067c2d51eb438f69">util_arch.cuh</a>
+</li>
+<li>CUB_MAX_BLOCK_THREADS
+: <a class="el" href="group___util_mgmt.html#ga2cb09fd146e620ab9e397ed2c07ea243">util_arch.cuh</a>
+</li>
+<li>CUB_MAX_SM_BLOCKS
+: <a class="el" href="group___util_mgmt.html#gaf2d79f9a39b860bf58ff161c175c7b06">util_arch.cuh</a>
+</li>
+<li>CUB_MAX_SM_REGISTERS
+: <a class="el" href="group___util_mgmt.html#ga872d007d76c4078ba79ff71f8f2ac497">util_arch.cuh</a>
+</li>
+<li>CUB_MAX_SM_THREADS
+: <a class="el" href="group___util_mgmt.html#gab2f2f31cddcdd898f6f9435b50cad875">util_arch.cuh</a>
 </li>
 <li>CUB_PTX_VERSION
-: <a class="el" href="group___util_module.html#ga76769ce380739b38e0bd00f57e0dbe4f">util_arch.cuh</a>
+: <a class="el" href="group___util_mgmt.html#ga00b94cd7a57a714629dd6e75edce6742">util_arch.cuh</a>
+</li>
+<li>CUB_REG_ALLOC_UNIT
+: <a class="el" href="group___util_mgmt.html#ga9f27b77f4bd7aaf2582508f285e7eecc">util_arch.cuh</a>
+</li>
+<li>CUB_REGS_BY_BLOCK
+: <a class="el" href="group___util_mgmt.html#gabcb256a9b251c898c831b107c43429c6">util_arch.cuh</a>
 </li>
 <li>CUB_RUNTIME_ENABLED
-: <a class="el" href="group___util_module.html#gac029dc29df3c1871ab3b8a38f50904a6">util_arch.cuh</a>
+: <a class="el" href="group___util_mgmt.html#gac029dc29df3c1871ab3b8a38f50904a6">util_arch.cuh</a>
+</li>
+<li>CUB_SMEM_ALLOC_UNIT
+: <a class="el" href="group___util_mgmt.html#ga5218fd60b87aadef5bb43d91d89b1765">util_arch.cuh</a>
+</li>
+<li>CUB_SMEM_BANK_BYTES
+: <a class="el" href="group___util_mgmt.html#ga1440ee581ba633337b5583b980a9e3df">util_arch.cuh</a>
+</li>
+<li>CUB_SMEM_BYTES
+: <a class="el" href="group___util_mgmt.html#ga8962f32faf85d32365340280e8b33661">util_arch.cuh</a>
+</li>
+<li>CUB_SUBSCRIPTION_FACTOR
+: <a class="el" href="group___util_mgmt.html#ga19f6f7bdeb494c95cdb95f0f73955258">util_arch.cuh</a>
+</li>
+<li>CUB_WARP_ALLOC_UNIT
+: <a class="el" href="group___util_mgmt.html#ga018e98172a5a141bde7a6e92fa7521fb">util_arch.cuh</a>
 </li>
 <li>CubDebug
-: <a class="el" href="group___util_module.html#ga84c3a4c178bf6593e0fad2b763606236">util_debug.cuh</a>
+: <a class="el" href="group___util_mgmt.html#ga84c3a4c178bf6593e0fad2b763606236">util_debug.cuh</a>
 </li>
 <li>CubDebugExit
-: <a class="el" href="group___util_module.html#ga26211db894893b3cec946e4e537536f8">util_debug.cuh</a>
+: <a class="el" href="group___util_mgmt.html#ga26211db894893b3cec946e4e537536f8">util_debug.cuh</a>
 </li>
 <li>CubLog
-: <a class="el" href="group___util_module.html#ga6788287a780dc10c443aa1ab5ae9f0db">util_debug.cuh</a>
+: <a class="el" href="group___util_mgmt.html#ga6788287a780dc10c443aa1ab5ae9f0db">util_debug.cuh</a>
 </li>
 </ul>
 </div><!-- contents -->
 <!-- HTML footer for doxygen 1.8.3.1-->
 <!-- start footer part -->
 <hr class="footer"/><address class="footer"><small>
-Generated on Fri Aug 23 2013 17:31:14 for CUB by &#160;<a href="http://www.doxygen.org/index.html">
+Generated on Tue Dec 10 2013 02:42:41 for CUB by &#160;<a href="http://www.doxygen.org/index.html">
 <img class="footer" src="doxygen.png" alt="doxygen"/>
 </a> 1.8.4
 <br>

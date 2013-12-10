@@ -75,7 +75,7 @@ namespace cub {
  * (i.e., write-through to system memory).
  * \par
  * \code
- * #include <cub/cub.cuh>
+ * #include <cub/cub.cuh>   // or equivalently <cub/iterator/cache_modified_output_iterator.cuh>
  *
  * // Declare, allocate, and initialize a device array
  * double *d_out;              // e.g., [, , , , , , ]

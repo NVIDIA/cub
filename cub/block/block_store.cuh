@@ -454,7 +454,7 @@ enum BlockStoreAlgorithm
  * efficiently coalesced using a warp-striped access pattern.
  * \par
  * \code
- * #include <cub/cub.cuh>
+ * #include <cub/cub.cuh>   // or equivalently <cub/block/block_store.cuh>
  *
  * __global__ void ExampleKernel(int *d_data, ...)
  * {
@@ -813,7 +813,7 @@ public:
      * efficiently coalesced using a warp-striped access pattern.
      * \par
      * \code
-     * #include <cub/cub.cuh>
+     * #include <cub/cub.cuh>   // or equivalently <cub/block/block_store.cuh>
      *
      * __global__ void ExampleKernel(int *d_data, ...)
      * {
@@ -860,7 +860,7 @@ public:
      * efficiently coalesced using a warp-striped access pattern.
      * \par
      * \code
-     * #include <cub/cub.cuh>
+     * #include <cub/cub.cuh>   // or equivalently <cub/block/block_store.cuh>
      *
      * __global__ void ExampleKernel(int *d_data, int valid_items, ...)
      * {

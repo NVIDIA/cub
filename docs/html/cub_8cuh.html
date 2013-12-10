@@ -52,6 +52,7 @@ var searchBox = new SearchBox("searchBox", "search",false,'Search');
       <li><a href="index.html"><span>Main&#160;Page</span></a></li>
       <li><a href="modules.html"><span>Modules</span></a></li>
       <li><a href="annotated.html"><span>Classes</span></a></li>
+      <li><a href="examples.html"><span>Examples</span></a></li>
       <li>
         <div id="MSearchBox" class="MSearchBoxInactive">
         <span class="left">
@@ -81,7 +82,7 @@ var searchBox = new SearchBox("searchBox", "search",false,'Search');
      onmouseover="return searchBox.OnSearchSelectShow()"
      onmouseout="return searchBox.OnSearchSelectHide()"
      onkeydown="return searchBox.OnSearchSelectKey(event)">
-<a class="SelectItem" href="javascript:void(0)" onclick="searchBox.OnSelectItem(0)"><span class="SelectionMark">&#160;</span>All</a><a class="SelectItem" href="javascript:void(0)" onclick="searchBox.OnSelectItem(1)"><span class="SelectionMark">&#160;</span>Classes</a><a class="SelectItem" href="javascript:void(0)" onclick="searchBox.OnSelectItem(2)"><span class="SelectionMark">&#160;</span>Namespaces</a><a class="SelectItem" href="javascript:void(0)" onclick="searchBox.OnSelectItem(3)"><span class="SelectionMark">&#160;</span>Files</a><a class="SelectItem" href="javascript:void(0)" onclick="searchBox.OnSelectItem(4)"><span class="SelectionMark">&#160;</span>Functions</a><a class="SelectItem" href="javascript:void(0)" onclick="searchBox.OnSelectItem(5)"><span class="SelectionMark">&#160;</span>Variables</a><a class="SelectItem" href="javascript:void(0)" onclick="searchBox.OnSelectItem(6)"><span class="SelectionMark">&#160;</span>Typedefs</a><a class="SelectItem" href="javascript:void(0)" onclick="searchBox.OnSelectItem(7)"><span class="SelectionMark">&#160;</span>Enumerations</a><a class="SelectItem" href="javascript:void(0)" onclick="searchBox.OnSelectItem(8)"><span class="SelectionMark">&#160;</span>Enumerator</a><a class="SelectItem" href="javascript:void(0)" onclick="searchBox.OnSelectItem(9)"><span class="SelectionMark">&#160;</span>Groups</a></div>
+<a class="SelectItem" href="javascript:void(0)" onclick="searchBox.OnSelectItem(0)"><span class="SelectionMark">&#160;</span>All</a><a class="SelectItem" href="javascript:void(0)" onclick="searchBox.OnSelectItem(1)"><span class="SelectionMark">&#160;</span>Classes</a><a class="SelectItem" href="javascript:void(0)" onclick="searchBox.OnSelectItem(2)"><span class="SelectionMark">&#160;</span>Namespaces</a><a class="SelectItem" href="javascript:void(0)" onclick="searchBox.OnSelectItem(3)"><span class="SelectionMark">&#160;</span>Files</a><a class="SelectItem" href="javascript:void(0)" onclick="searchBox.OnSelectItem(4)"><span class="SelectionMark">&#160;</span>Functions</a><a class="SelectItem" href="javascript:void(0)" onclick="searchBox.OnSelectItem(5)"><span class="SelectionMark">&#160;</span>Variables</a><a class="SelectItem" href="javascript:void(0)" onclick="searchBox.OnSelectItem(6)"><span class="SelectionMark">&#160;</span>Typedefs</a><a class="SelectItem" href="javascript:void(0)" onclick="searchBox.OnSelectItem(7)"><span class="SelectionMark">&#160;</span>Enumerations</a><a class="SelectItem" href="javascript:void(0)" onclick="searchBox.OnSelectItem(8)"><span class="SelectionMark">&#160;</span>Enumerator</a><a class="SelectItem" href="javascript:void(0)" onclick="searchBox.OnSelectItem(9)"><span class="SelectionMark">&#160;</span>Friends</a><a class="SelectItem" href="javascript:void(0)" onclick="searchBox.OnSelectItem(10)"><span class="SelectionMark">&#160;</span>Groups</a></div>
 
 <!-- iframe showing the search results (closed by default) -->
 <div id="MSearchResultsWindow">
@@ -106,19 +107,29 @@ var searchBox = new SearchBox("searchBox", "search",false,'Search');
 <code>#include &quot;block/block_radix_rank.cuh&quot;</code><br/>
 <code>#include &quot;<a class="el" href="block__reduce_8cuh_source.html">block/block_reduce.cuh</a>&quot;</code><br/>
 <code>#include &quot;<a class="el" href="block__store_8cuh_source.html">block/block_store.cuh</a>&quot;</code><br/>
+<code>#include &quot;block/block_shift.cuh&quot;</code><br/>
 <code>#include &quot;<a class="el" href="device__histogram_8cuh_source.html">device/device_histogram.cuh</a>&quot;</code><br/>
+<code>#include &quot;<a class="el" href="device__partition_8cuh_source.html">device/device_partition.cuh</a>&quot;</code><br/>
 <code>#include &quot;<a class="el" href="device__radix__sort_8cuh_source.html">device/device_radix_sort.cuh</a>&quot;</code><br/>
 <code>#include &quot;<a class="el" href="device__reduce_8cuh_source.html">device/device_reduce.cuh</a>&quot;</code><br/>
 <code>#include &quot;<a class="el" href="device__scan_8cuh_source.html">device/device_scan.cuh</a>&quot;</code><br/>
+<code>#include &quot;<a class="el" href="device__select_8cuh_source.html">device/device_select.cuh</a>&quot;</code><br/>
 <code>#include &quot;grid/grid_even_share.cuh&quot;</code><br/>
 <code>#include &quot;grid/grid_mapping.cuh&quot;</code><br/>
 <code>#include &quot;grid/grid_queue.cuh&quot;</code><br/>
 <code>#include &quot;host/spinlock.cuh&quot;</code><br/>
+<code>#include &quot;thread/thread_reduce.cuh&quot;</code><br/>
+<code>#include &quot;thread/thread_scan.cuh&quot;</code><br/>
+<code>#include &quot;<a class="el" href="arg__index__input__iterator_8cuh_source.html">iterator/arg_index_input_iterator.cuh</a>&quot;</code><br/>
+<code>#include &quot;<a class="el" href="cache__modified__output__iterator_8cuh_source.html">iterator/cache_modified_output_iterator.cuh</a>&quot;</code><br/>
+<code>#include &quot;<a class="el" href="constant__input__iterator_8cuh_source.html">iterator/constant_input_iterator.cuh</a>&quot;</code><br/>
+<code>#include &quot;<a class="el" href="counting__input__iterator_8cuh_source.html">iterator/counting_input_iterator.cuh</a>&quot;</code><br/>
+<code>#include &quot;<a class="el" href="tex__obj__input__iterator_8cuh_source.html">iterator/tex_obj_input_iterator.cuh</a>&quot;</code><br/>
+<code>#include &quot;<a class="el" href="tex__ref__input__iterator_8cuh_source.html">iterator/tex_ref_input_iterator.cuh</a>&quot;</code><br/>
+<code>#include &quot;<a class="el" href="transform__input__iterator_8cuh_source.html">iterator/transform_input_iterator.cuh</a>&quot;</code><br/>
 <code>#include &quot;util_allocator.cuh&quot;</code><br/>
 <code>#include &quot;<a class="el" href="util__device_8cuh_source.html">util_device.cuh</a>&quot;</code><br/>
 <code>#include &quot;util_macro.cuh&quot;</code><br/>
-<code>#include &quot;util_ptx.cuh&quot;</code><br/>
-<code>#include &quot;<a class="el" href="util__iterator_8cuh_source.html">util_iterator.cuh</a>&quot;</code><br/>
 <code>#include &quot;util_vector.cuh&quot;</code><br/>
 </div>
 <p><a href="cub_8cuh_source.html">Go to the source code of this file.</a></p>
@@ -130,7 +141,7 @@ var searchBox = new SearchBox("searchBox", "search",false,'Search');
 <!-- HTML footer for doxygen 1.8.3.1-->
 <!-- start footer part -->
 <hr class="footer"/><address class="footer"><small>
-Generated on Fri Aug 23 2013 17:31:10 for CUB by &#160;<a href="http://www.doxygen.org/index.html">
+Generated on Tue Dec 10 2013 02:42:38 for CUB by &#160;<a href="http://www.doxygen.org/index.html">
 <img class="footer" src="doxygen.png" alt="doxygen"/>
 </a> 1.8.4
 <br>

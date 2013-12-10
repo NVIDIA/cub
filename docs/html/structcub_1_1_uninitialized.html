@@ -52,6 +52,7 @@ var searchBox = new SearchBox("searchBox", "search",false,'Search');
       <li><a href="index.html"><span>Main&#160;Page</span></a></li>
       <li><a href="modules.html"><span>Modules</span></a></li>
       <li class="current"><a href="annotated.html"><span>Classes</span></a></li>
+      <li><a href="examples.html"><span>Examples</span></a></li>
       <li>
         <div id="MSearchBox" class="MSearchBoxInactive">
         <span class="left">
@@ -81,7 +82,7 @@ var searchBox = new SearchBox("searchBox", "search",false,'Search');
      onmouseover="return searchBox.OnSearchSelectShow()"
      onmouseout="return searchBox.OnSearchSelectHide()"
      onkeydown="return searchBox.OnSearchSelectKey(event)">
-<a class="SelectItem" href="javascript:void(0)" onclick="searchBox.OnSelectItem(0)"><span class="SelectionMark">&#160;</span>All</a><a class="SelectItem" href="javascript:void(0)" onclick="searchBox.OnSelectItem(1)"><span class="SelectionMark">&#160;</span>Classes</a><a class="SelectItem" href="javascript:void(0)" onclick="searchBox.OnSelectItem(2)"><span class="SelectionMark">&#160;</span>Namespaces</a><a class="SelectItem" href="javascript:void(0)" onclick="searchBox.OnSelectItem(3)"><span class="SelectionMark">&#160;</span>Files</a><a class="SelectItem" href="javascript:void(0)" onclick="searchBox.OnSelectItem(4)"><span class="SelectionMark">&#160;</span>Functions</a><a class="SelectItem" href="javascript:void(0)" onclick="searchBox.OnSelectItem(5)"><span class="SelectionMark">&#160;</span>Variables</a><a class="SelectItem" href="javascript:void(0)" onclick="searchBox.OnSelectItem(6)"><span class="SelectionMark">&#160;</span>Typedefs</a><a class="SelectItem" href="javascript:void(0)" onclick="searchBox.OnSelectItem(7)"><span class="SelectionMark">&#160;</span>Enumerations</a><a class="SelectItem" href="javascript:void(0)" onclick="searchBox.OnSelectItem(8)"><span class="SelectionMark">&#160;</span>Enumerator</a><a class="SelectItem" href="javascript:void(0)" onclick="searchBox.OnSelectItem(9)"><span class="SelectionMark">&#160;</span>Groups</a></div>
+<a class="SelectItem" href="javascript:void(0)" onclick="searchBox.OnSelectItem(0)"><span class="SelectionMark">&#160;</span>All</a><a class="SelectItem" href="javascript:void(0)" onclick="searchBox.OnSelectItem(1)"><span class="SelectionMark">&#160;</span>Classes</a><a class="SelectItem" href="javascript:void(0)" onclick="searchBox.OnSelectItem(2)"><span class="SelectionMark">&#160;</span>Namespaces</a><a class="SelectItem" href="javascript:void(0)" onclick="searchBox.OnSelectItem(3)"><span class="SelectionMark">&#160;</span>Files</a><a class="SelectItem" href="javascript:void(0)" onclick="searchBox.OnSelectItem(4)"><span class="SelectionMark">&#160;</span>Functions</a><a class="SelectItem" href="javascript:void(0)" onclick="searchBox.OnSelectItem(5)"><span class="SelectionMark">&#160;</span>Variables</a><a class="SelectItem" href="javascript:void(0)" onclick="searchBox.OnSelectItem(6)"><span class="SelectionMark">&#160;</span>Typedefs</a><a class="SelectItem" href="javascript:void(0)" onclick="searchBox.OnSelectItem(7)"><span class="SelectionMark">&#160;</span>Enumerations</a><a class="SelectItem" href="javascript:void(0)" onclick="searchBox.OnSelectItem(8)"><span class="SelectionMark">&#160;</span>Enumerator</a><a class="SelectItem" href="javascript:void(0)" onclick="searchBox.OnSelectItem(9)"><span class="SelectionMark">&#160;</span>Friends</a><a class="SelectItem" href="javascript:void(0)" onclick="searchBox.OnSelectItem(10)"><span class="SelectionMark">&#160;</span>Groups</a></div>
 
 <!-- iframe showing the search results (closed by default) -->
 <div id="MSearchResultsWindow">
@@ -102,7 +103,7 @@ var searchBox = new SearchBox("searchBox", "search",false,'Search');
 <a href="#pub-attribs">Public Members</a> &#124;
 <a href="structcub_1_1_uninitialized-members.html">List of all members</a>  </div>
   <div class="headertitle">
-<div class="title">cub::Uninitialized&lt; T &gt; Struct Template Reference<div class="ingroups"><a class="el" href="group___util_module.html">Generic CUB utilities</a></div></div>  </div>
+<div class="title">cub::Uninitialized&lt; T &gt; Struct Template Reference<div class="ingroups"><a class="el" href="group___util_module.html">Utilities</a></div></div>  </div>
 </div><!--header-->
 <div class="contents">
 <a name="details" id="details"></a><h2 class="groupheader">Detailed description</h2>
@@ -112,18 +113,17 @@ struct cub::Uninitialized&lt; T &gt;</h3>
 
 <p>A storage-backing wrapper that allows types with non-trivial constructors to be aliased in unions. </p>
 
-<p>Definition at line <a class="el" href="util__type_8cuh_source.html#l00217">217</a> of file <a class="el" href="util__type_8cuh_source.html">util_type.cuh</a>.</p>
+<p>Definition at line <a class="el" href="util__type_8cuh_source.html#l00372">372</a> of file <a class="el" href="util__type_8cuh_source.html">util_type.cuh</a>.</p>
 </div><table class="memberdecls">
 <tr class="heading"><td colspan="2"><h2 class="groupheader"><a name="pub-types"></a>
 Public Types</h2></td></tr>
-<tr class="memitem:ae2946fbdef2b6503be298d3c230116e6"><td class="memItemLeft" align="right" valign="top">enum &#160;</td><td class="memItemRight" valign="bottom">{ <b>WORDS</b> = sizeof(T) / sizeof(DeviceWord)
+<tr class="memitem:a152b1045d5ee735bc26916aa052de786"><td class="memItemLeft" align="right" valign="top">enum &#160;</td><td class="memItemRight" valign="bottom">{ <b>WORDS</b> = sizeof(T) / sizeof(DeviceWord)
  }</td></tr>
-<tr class="separator:ae2946fbdef2b6503be298d3c230116e6"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:ab100c102e4368f8c9038f8a2e80d3fc9"><td class="memItemLeft" align="right" valign="top"><a class="anchor" id="ab100c102e4368f8c9038f8a2e80d3fc9"></a>
-typedef UnitWord&lt; T &gt;<br class="typebreak"/>
-::<a class="el" href="structcub_1_1_uninitialized.html#ab100c102e4368f8c9038f8a2e80d3fc9">DeviceWord</a>&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="structcub_1_1_uninitialized.html#ab100c102e4368f8c9038f8a2e80d3fc9">DeviceWord</a></td></tr>
-<tr class="memdesc:ab100c102e4368f8c9038f8a2e80d3fc9"><td class="mdescLeft">&#160;</td><td class="mdescRight">Biggest memory-access word that T is a whole multiple of and is not larger than the alignment of T. <br/></td></tr>
-<tr class="separator:ab100c102e4368f8c9038f8a2e80d3fc9"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="separator:a152b1045d5ee735bc26916aa052de786"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a848f6233dbde22d8a42c022d3f0aa6f6"><td class="memItemLeft" align="right" valign="top"><a class="anchor" id="a848f6233dbde22d8a42c022d3f0aa6f6"></a>
+typedef UnitWord&lt; T &gt;::<a class="el" href="structcub_1_1_uninitialized.html#a848f6233dbde22d8a42c022d3f0aa6f6">DeviceWord</a>&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="structcub_1_1_uninitialized.html#a848f6233dbde22d8a42c022d3f0aa6f6">DeviceWord</a></td></tr>
+<tr class="memdesc:a848f6233dbde22d8a42c022d3f0aa6f6"><td class="mdescLeft">&#160;</td><td class="mdescRight">Biggest memory-access word that T is a whole multiple of and is not larger than the alignment of T. <br/></td></tr>
+<tr class="separator:a848f6233dbde22d8a42c022d3f0aa6f6"><td class="memSeparator" colspan="2">&#160;</td></tr>
 </table><table class="memberdecls">
 <tr class="heading"><td colspan="2"><h2 class="groupheader"><a name="pub-methods"></a>
 Public Methods</h2></td></tr>
@@ -136,7 +136,7 @@ __forceinline__ T &amp;&#160;</td><td class="memItemRight" valign="bottom"><a cl
 <tr class="heading"><td colspan="2"><h2 class="groupheader"><a name="pub-attribs"></a>
 Public Members</h2></td></tr>
 <tr class="memitem:a5fa7311d943222333e8c87497ff8e782"><td class="memItemLeft" align="right" valign="top"><a class="anchor" id="a5fa7311d943222333e8c87497ff8e782"></a>
-<a class="el" href="structcub_1_1_uninitialized.html#ab100c102e4368f8c9038f8a2e80d3fc9">DeviceWord</a>&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="structcub_1_1_uninitialized.html#a5fa7311d943222333e8c87497ff8e782">storage</a> [WORDS]</td></tr>
+<a class="el" href="structcub_1_1_uninitialized.html#a848f6233dbde22d8a42c022d3f0aa6f6">DeviceWord</a>&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="structcub_1_1_uninitialized.html#a5fa7311d943222333e8c87497ff8e782">storage</a> [WORDS]</td></tr>
 <tr class="memdesc:a5fa7311d943222333e8c87497ff8e782"><td class="mdescLeft">&#160;</td><td class="mdescRight">Backing storage. <br/></td></tr>
 <tr class="separator:a5fa7311d943222333e8c87497ff8e782"><td class="memSeparator" colspan="2">&#160;</td></tr>
 </table>
@@ -147,7 +147,7 @@ Public Members</h2></td></tr>
 <!-- HTML footer for doxygen 1.8.3.1-->
 <!-- start footer part -->
 <hr class="footer"/><address class="footer"><small>
-Generated on Fri Aug 23 2013 17:31:13 for CUB by &#160;<a href="http://www.doxygen.org/index.html">
+Generated on Tue Dec 10 2013 02:42:39 for CUB by &#160;<a href="http://www.doxygen.org/index.html">
 <img class="footer" src="doxygen.png" alt="doxygen"/>
 </a> 1.8.4
 <br>

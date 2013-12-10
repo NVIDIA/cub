@@ -226,7 +226,7 @@ enum BlockScanAlgorithm
  * where each thread owns 4 consecutive items.
  * \par
  * \code
- * #include <cub/cub.cuh>
+ * #include <cub/cub.cuh>   // or equivalently <cub/block/block_scan.cuh>
  *
  * __global__ void ExampleKernel(...)
  * {
@@ -382,7 +382,7 @@ public:
      * are partitioned across 128 threads.
      * \par
      * \code
-     * #include <cub/cub.cuh>
+     * #include <cub/cub.cuh>   // or equivalently <cub/block/block_scan.cuh>
      *
      * __global__ void ExampleKernel(...)
      * {
@@ -426,7 +426,7 @@ public:
      * are partitioned across 128 threads.
      * \par
      * \code
-     * #include <cub/cub.cuh>
+     * #include <cub/cub.cuh>   // or equivalently <cub/block/block_scan.cuh>
      *
      * __global__ void ExampleKernel(...)
      * {
@@ -478,7 +478,7 @@ public:
      * of 128 integer items that are partitioned across 128 threads.
      * \par
      * \code
-     * #include <cub/cub.cuh>
+     * #include <cub/cub.cuh>   // or equivalently <cub/block/block_scan.cuh>
      *
      * // A stateful callback functor that maintains a running prefix to be applied
      * // during consecutive scan operations.
@@ -567,7 +567,7 @@ public:
      * where each thread owns 4 consecutive items.
      * \par
      * \code
-     * #include <cub/cub.cuh>
+     * #include <cub/cub.cuh>   // or equivalently <cub/block/block_scan.cuh>
      *
      * __global__ void ExampleKernel(...)
      * {
@@ -622,7 +622,7 @@ public:
      * where each thread owns 4 consecutive items.
      * \par
      * \code
-     * #include <cub/cub.cuh>
+     * #include <cub/cub.cuh>   // or equivalently <cub/block/block_scan.cuh>
      *
      * __global__ void ExampleKernel(...)
      * {
@@ -686,7 +686,7 @@ public:
      * across 128 threads where each thread owns 4 consecutive items.
      * \par
      * \code
-     * #include <cub/cub.cuh>
+     * #include <cub/cub.cuh>   // or equivalently <cub/block/block_scan.cuh>
      *
      * // A stateful callback functor that maintains a running prefix to be applied
      * // during consecutive scan operations.
@@ -795,7 +795,7 @@ public:
      * are partitioned across 128 threads.
      * \par
      * \code
-     * #include <cub/cub.cuh>
+     * #include <cub/cub.cuh>   // or equivalently <cub/block/block_scan.cuh>
      *
      * __global__ void ExampleKernel(...)
      * {
@@ -844,7 +844,7 @@ public:
      * are partitioned across 128 threads.
      * \par
      * \code
-     * #include <cub/cub.cuh>
+     * #include <cub/cub.cuh>   // or equivalently <cub/block/block_scan.cuh>
      *
      * __global__ void ExampleKernel(...)
      * {
@@ -901,7 +901,7 @@ public:
      * of 128 integer items that are partitioned across 128 threads.
      * \par
      * \code
-     * #include <cub/cub.cuh>
+     * #include <cub/cub.cuh>   // or equivalently <cub/block/block_scan.cuh>
      *
      * // A stateful callback functor that maintains a running prefix to be applied
      * // during consecutive scan operations.
@@ -997,7 +997,7 @@ public:
      * where each thread owns 4 consecutive items.
      * \par
      * \code
-     * #include <cub/cub.cuh>
+     * #include <cub/cub.cuh>   // or equivalently <cub/block/block_scan.cuh>
      *
      * __global__ void ExampleKernel(...)
      * {
@@ -1059,7 +1059,7 @@ public:
      * where each thread owns 4 consecutive items.
      * \par
      * \code
-     * #include <cub/cub.cuh>
+     * #include <cub/cub.cuh>   // or equivalently <cub/block/block_scan.cuh>
      *
      * __global__ void ExampleKernel(...)
      * {
@@ -1127,7 +1127,7 @@ public:
      * of 128 integer items that are partitioned across 128 threads.
      * \par
      * \code
-     * #include <cub/cub.cuh>
+     * #include <cub/cub.cuh>   // or equivalently <cub/block/block_scan.cuh>
      *
      * // A stateful callback functor that maintains a running prefix to be applied
      * // during consecutive scan operations.
@@ -1433,7 +1433,7 @@ public:
      * are partitioned across 128 threads.
      * \par
      * \code
-     * #include <cub/cub.cuh>
+     * #include <cub/cub.cuh>   // or equivalently <cub/block/block_scan.cuh>
      *
      * __global__ void ExampleKernel(...)
      * {
@@ -1477,7 +1477,7 @@ public:
      * are partitioned across 128 threads.
      * \par
      * \code
-     * #include <cub/cub.cuh>
+     * #include <cub/cub.cuh>   // or equivalently <cub/block/block_scan.cuh>
      *
      * __global__ void ExampleKernel(...)
      * {
@@ -1530,7 +1530,7 @@ public:
      * of 128 integer items that are partitioned across 128 threads.
      * \par
      * \code
-     * #include <cub/cub.cuh>
+     * #include <cub/cub.cuh>   // or equivalently <cub/block/block_scan.cuh>
      *
      * // A stateful callback functor that maintains a running prefix to be applied
      * // during consecutive scan operations.
@@ -1619,7 +1619,7 @@ public:
      * where each thread owns 4 consecutive items.
      * \par
      * \code
-     * #include <cub/cub.cuh>
+     * #include <cub/cub.cuh>   // or equivalently <cub/block/block_scan.cuh>
      *
      * __global__ void ExampleKernel(...)
      * {
@@ -1681,7 +1681,7 @@ public:
      * where each thread owns 4 consecutive items.
      * \par
      * \code
-     * #include <cub/cub.cuh>
+     * #include <cub/cub.cuh>   // or equivalently <cub/block/block_scan.cuh>
      *
      * __global__ void ExampleKernel(...)
      * {
@@ -1755,7 +1755,7 @@ public:
      * across 128 threads where each thread owns 4 consecutive items.
      * \par
      * \code
-     * #include <cub/cub.cuh>
+     * #include <cub/cub.cuh>   // or equivalently <cub/block/block_scan.cuh>
      *
      * // A stateful callback functor that maintains a running prefix to be applied
      * // during consecutive scan operations.
@@ -1870,7 +1870,7 @@ public:
      * are partitioned across 128 threads.
      * \par
      * \code
-     * #include <cub/cub.cuh>
+     * #include <cub/cub.cuh>   // or equivalently <cub/block/block_scan.cuh>
      *
      * __global__ void ExampleKernel(...)
      * {
@@ -1918,7 +1918,7 @@ public:
      * are partitioned across 128 threads.
      * \par
      * \code
-     * #include <cub/cub.cuh>
+     * #include <cub/cub.cuh>   // or equivalently <cub/block/block_scan.cuh>
      *
      * __global__ void ExampleKernel(...)
      * {
@@ -1974,7 +1974,7 @@ public:
      * of 128 integer items that are partitioned across 128 threads.
      * \par
      * \code
-     * #include <cub/cub.cuh>
+     * #include <cub/cub.cuh>   // or equivalently <cub/block/block_scan.cuh>
      *
      * // A stateful callback functor that maintains a running prefix to be applied
      * // during consecutive scan operations.
@@ -2069,7 +2069,7 @@ public:
      * where each thread owns 4 consecutive items.
      * \par
      * \code
-     * #include <cub/cub.cuh>
+     * #include <cub/cub.cuh>   // or equivalently <cub/block/block_scan.cuh>
      *
      * __global__ void ExampleKernel(...)
      * {
@@ -2135,7 +2135,7 @@ public:
      * where each thread owns 4 consecutive items.
      * \par
      * \code
-     * #include <cub/cub.cuh>
+     * #include <cub/cub.cuh>   // or equivalently <cub/block/block_scan.cuh>
      *
      * __global__ void ExampleKernel(...)
      * {
@@ -2211,7 +2211,7 @@ public:
      * of 128 integer items that are partitioned across 128 threads.
      * \par
      * \code
-     * #include <cub/cub.cuh>
+     * #include <cub/cub.cuh>   // or equivalently <cub/block/block_scan.cuh>
      *
      * // A stateful callback functor that maintains a running prefix to be applied
      * // during consecutive scan operations.

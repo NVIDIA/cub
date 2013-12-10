@@ -52,6 +52,7 @@ var searchBox = new SearchBox("searchBox", "search",false,'Search');
       <li><a href="index.html"><span>Main&#160;Page</span></a></li>
       <li><a href="modules.html"><span>Modules</span></a></li>
       <li class="current"><a href="annotated.html"><span>Classes</span></a></li>
+      <li><a href="examples.html"><span>Examples</span></a></li>
       <li>
         <div id="MSearchBox" class="MSearchBoxInactive">
         <span class="left">
@@ -81,7 +82,7 @@ var searchBox = new SearchBox("searchBox", "search",false,'Search');
      onmouseover="return searchBox.OnSearchSelectShow()"
      onmouseout="return searchBox.OnSearchSelectHide()"
      onkeydown="return searchBox.OnSearchSelectKey(event)">
-<a class="SelectItem" href="javascript:void(0)" onclick="searchBox.OnSelectItem(0)"><span class="SelectionMark">&#160;</span>All</a><a class="SelectItem" href="javascript:void(0)" onclick="searchBox.OnSelectItem(1)"><span class="SelectionMark">&#160;</span>Classes</a><a class="SelectItem" href="javascript:void(0)" onclick="searchBox.OnSelectItem(2)"><span class="SelectionMark">&#160;</span>Namespaces</a><a class="SelectItem" href="javascript:void(0)" onclick="searchBox.OnSelectItem(3)"><span class="SelectionMark">&#160;</span>Files</a><a class="SelectItem" href="javascript:void(0)" onclick="searchBox.OnSelectItem(4)"><span class="SelectionMark">&#160;</span>Functions</a><a class="SelectItem" href="javascript:void(0)" onclick="searchBox.OnSelectItem(5)"><span class="SelectionMark">&#160;</span>Variables</a><a class="SelectItem" href="javascript:void(0)" onclick="searchBox.OnSelectItem(6)"><span class="SelectionMark">&#160;</span>Typedefs</a><a class="SelectItem" href="javascript:void(0)" onclick="searchBox.OnSelectItem(7)"><span class="SelectionMark">&#160;</span>Enumerations</a><a class="SelectItem" href="javascript:void(0)" onclick="searchBox.OnSelectItem(8)"><span class="SelectionMark">&#160;</span>Enumerator</a><a class="SelectItem" href="javascript:void(0)" onclick="searchBox.OnSelectItem(9)"><span class="SelectionMark">&#160;</span>Groups</a></div>
+<a class="SelectItem" href="javascript:void(0)" onclick="searchBox.OnSelectItem(0)"><span class="SelectionMark">&#160;</span>All</a><a class="SelectItem" href="javascript:void(0)" onclick="searchBox.OnSelectItem(1)"><span class="SelectionMark">&#160;</span>Classes</a><a class="SelectItem" href="javascript:void(0)" onclick="searchBox.OnSelectItem(2)"><span class="SelectionMark">&#160;</span>Namespaces</a><a class="SelectItem" href="javascript:void(0)" onclick="searchBox.OnSelectItem(3)"><span class="SelectionMark">&#160;</span>Files</a><a class="SelectItem" href="javascript:void(0)" onclick="searchBox.OnSelectItem(4)"><span class="SelectionMark">&#160;</span>Functions</a><a class="SelectItem" href="javascript:void(0)" onclick="searchBox.OnSelectItem(5)"><span class="SelectionMark">&#160;</span>Variables</a><a class="SelectItem" href="javascript:void(0)" onclick="searchBox.OnSelectItem(6)"><span class="SelectionMark">&#160;</span>Typedefs</a><a class="SelectItem" href="javascript:void(0)" onclick="searchBox.OnSelectItem(7)"><span class="SelectionMark">&#160;</span>Enumerations</a><a class="SelectItem" href="javascript:void(0)" onclick="searchBox.OnSelectItem(8)"><span class="SelectionMark">&#160;</span>Enumerator</a><a class="SelectItem" href="javascript:void(0)" onclick="searchBox.OnSelectItem(9)"><span class="SelectionMark">&#160;</span>Friends</a><a class="SelectItem" href="javascript:void(0)" onclick="searchBox.OnSelectItem(10)"><span class="SelectionMark">&#160;</span>Groups</a></div>
 
 <!-- iframe showing the search results (closed by default) -->
 <div id="MSearchResultsWindow">
@@ -104,15 +105,15 @@ var searchBox = new SearchBox("searchBox", "search",false,'Search');
 </div><!--header-->
 <div class="contents">
 <a name="details" id="details"></a><h2 class="groupheader">Detailed description</h2>
-<div class="textblock"><p><a class="el" href="structcub_1_1_device_radix_sort.html" title="DeviceRadixSort provides operations for computing a device-wide, parallel radix sort across data item...">DeviceRadixSort</a> provides operations for computing a device-wide, parallel radix sort across a sequence of data items residing within global memory. </p>
+<div class="textblock"><p><a class="el" href="structcub_1_1_device_radix_sort.html" title="DeviceRadixSort provides device-wide, parallel operations for computing a radix sort across a sequenc...">DeviceRadixSort</a> provides device-wide, parallel operations for computing a radix sort across a sequence of data items residing within global memory. </p>
 <div class="image">
 <img src="sorting_logo.png" alt="sorting_logo.png"/>
 <div class="caption">
 .</div></div>
  <dl class="section user"><dt>Overview</dt><dd>The <a href="http://en.wikipedia.org/wiki/Radix_sort"><em>radix sorting method</em></a> arranges items into ascending order. It relies upon a positional representation for keys, i.e., each key is comprised of an ordered sequence of symbols (e.g., digits, characters, etc.) specified from least-significant to most-significant. For a given input sequence of keys and a set of rules specifying a total ordering of the symbolic alphabet, the radix sorting method produces a lexicographic ordering of those keys.</dd></dl>
-<dl class="section user"><dt></dt><dd><a class="el" href="structcub_1_1_device_radix_sort.html" title="DeviceRadixSort provides operations for computing a device-wide, parallel radix sort across data item...">DeviceRadixSort</a> can sort all of the built-in C++ numeric primitive types, e.g.: <code>unsigned char</code>, <code>int</code>, <code>double</code>, etc. Although the direct radix sorting method can only be applied to unsigned integral types, <a class="el" href="classcub_1_1_block_radix_sort.html" title="The cub::BlockRadixSort class provides collective methods for sorting items partitioned across a CUDA...">BlockRadixSort</a> is able to sort signed and floating-point types via simple bit-wise transformations that ensure lexicographic key ordering.</dd></dl>
+<dl class="section user"><dt></dt><dd><a class="el" href="structcub_1_1_device_radix_sort.html" title="DeviceRadixSort provides device-wide, parallel operations for computing a radix sort across a sequenc...">DeviceRadixSort</a> can sort all of the built-in C++ numeric primitive types, e.g.: <code>unsigned char</code>, <code>int</code>, <code>double</code>, etc. Although the direct radix sorting method can only be applied to unsigned integral types, <a class="el" href="classcub_1_1_block_radix_sort.html" title="The BlockRadixSort class provides collective methods for sorting items partitioned across a CUDA thre...">BlockRadixSort</a> is able to sort signed and floating-point types via simple bit-wise transformations that ensure lexicographic key ordering.</dd></dl>
 <dl class="section user"><dt>Usage Considerations</dt><dd><ul>
-<li><em>Dynamic parallelism</em>. <a class="el" href="structcub_1_1_device_radix_sort.html" title="DeviceRadixSort provides operations for computing a device-wide, parallel radix sort across data item...">DeviceRadixSort</a> methods can be called within kernel code on devices in which CUDA dynamic parallelism is supported. When calling these methods from kernel code, be sure to define the <code>CUB_CDP</code> macro in your compiler's macro definitions.</li>
+<li><em>Dynamic parallelism</em>. <a class="el" href="structcub_1_1_device_radix_sort.html" title="DeviceRadixSort provides device-wide, parallel operations for computing a radix sort across a sequenc...">DeviceRadixSort</a> methods can be called within kernel code on devices in which CUDA dynamic parallelism is supported. When calling these methods from kernel code, be sure to define the <code>CUB_CDP</code> macro in your compiler's macro definitions.</li>
 </ul>
 </dd></dl>
 <dl class="section user"><dt>Performance</dt><dd></dd></dl>
@@ -120,143 +121,33 @@ var searchBox = new SearchBox("searchBox", "search",false,'Search');
 <img src="lsd_sort_perf.png" alt="lsd_sort_perf.png"/>
 </div>
  
-<p>Definition at line <a class="el" href="device__radix__sort_8cuh_source.html#l00261">261</a> of file <a class="el" href="device__radix__sort_8cuh_source.html">device_radix_sort.cuh</a>.</p>
+<p>Definition at line <a class="el" href="device__radix__sort_8cuh_source.html#l00963">963</a> of file <a class="el" href="device__radix__sort_8cuh_source.html">device_radix_sort.cuh</a>.</p>
 </div><table class="memberdecls">
 <tr class="heading"><td colspan="2"><h2 class="groupheader"><a name="pub-static-methods"></a>
 Static Public Methods</h2></td></tr>
-<tr class="memitem:aafc81e527c3fe142b482ed59835fd0d3"><td class="memTemplParams" colspan="2">template&lt;typename Key &gt; </td></tr>
-<tr class="memitem:aafc81e527c3fe142b482ed59835fd0d3"><td class="memTemplItemLeft" align="right" valign="top">__host__ __device__ static <br class="typebreak"/>
-__forceinline__ cudaError_t&#160;</td><td class="memTemplItemRight" valign="bottom"><a class="el" href="structcub_1_1_device_radix_sort.html#aafc81e527c3fe142b482ed59835fd0d3">SortKeys</a> (void *d_temp_storage, size_t &amp;temp_storage_bytes, <a class="el" href="structcub_1_1_double_buffer.html">DoubleBuffer</a>&lt; Key &gt; &amp;d_keys, int num_items, int begin_bit=0, int end_bit=sizeof(Key)*8, cudaStream_t stream=0, bool debug_synchronous=false)</td></tr>
-<tr class="memdesc:aafc81e527c3fe142b482ed59835fd0d3"><td class="mdescLeft">&#160;</td><td class="mdescRight">Sorts keys.  <a href="#aafc81e527c3fe142b482ed59835fd0d3">More...</a><br/></td></tr>
-<tr class="separator:aafc81e527c3fe142b482ed59835fd0d3"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:ad42b50b38c4296c371572efdedd49fed"><td class="memTemplParams" colspan="2">template&lt;typename Key , typename Value &gt; </td></tr>
-<tr class="memitem:ad42b50b38c4296c371572efdedd49fed"><td class="memTemplItemLeft" align="right" valign="top">__host__ __device__ static <br class="typebreak"/>
-__forceinline__ cudaError_t&#160;</td><td class="memTemplItemRight" valign="bottom"><a class="el" href="structcub_1_1_device_radix_sort.html#ad42b50b38c4296c371572efdedd49fed">SortPairs</a> (void *d_temp_storage, size_t &amp;temp_storage_bytes, <a class="el" href="structcub_1_1_double_buffer.html">DoubleBuffer</a>&lt; Key &gt; &amp;d_keys, <a class="el" href="structcub_1_1_double_buffer.html">DoubleBuffer</a>&lt; Value &gt; &amp;d_values, int num_items, int begin_bit=0, int end_bit=sizeof(Key)*8, cudaStream_t stream=0, bool debug_synchronous=false)</td></tr>
-<tr class="memdesc:ad42b50b38c4296c371572efdedd49fed"><td class="mdescLeft">&#160;</td><td class="mdescRight">Sorts key-value pairs.  <a href="#ad42b50b38c4296c371572efdedd49fed">More...</a><br/></td></tr>
-<tr class="separator:ad42b50b38c4296c371572efdedd49fed"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a2d26085e7f610f5578b6010d963b3811"><td class="memTemplParams" colspan="2">template&lt;typename Key , typename Value &gt; </td></tr>
+<tr class="memitem:a2d26085e7f610f5578b6010d963b3811"><td class="memTemplItemLeft" align="right" valign="top">__host__ static __device__ <br class="typebreak"/>
+cudaError_t&#160;</td><td class="memTemplItemRight" valign="bottom"><a class="el" href="structcub_1_1_device_radix_sort.html#a2d26085e7f610f5578b6010d963b3811">SortPairs</a> (void *d_temp_storage, size_t &amp;temp_storage_bytes, <a class="el" href="structcub_1_1_double_buffer.html">DoubleBuffer</a>&lt; Key &gt; &amp;d_keys, <a class="el" href="structcub_1_1_double_buffer.html">DoubleBuffer</a>&lt; Value &gt; &amp;d_values, int num_items, int begin_bit=0, int end_bit=sizeof(Key)*8, cudaStream_t stream=0, bool debug_synchronous=false)</td></tr>
+<tr class="memdesc:a2d26085e7f610f5578b6010d963b3811"><td class="mdescLeft">&#160;</td><td class="mdescRight">Sorts key-value pairs into ascending order.  <a href="#a2d26085e7f610f5578b6010d963b3811">More...</a><br/></td></tr>
+<tr class="separator:a2d26085e7f610f5578b6010d963b3811"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a6f142b93acb14890c78b31f71409c381"><td class="memTemplParams" colspan="2">template&lt;typename Key , typename Value &gt; </td></tr>
+<tr class="memitem:a6f142b93acb14890c78b31f71409c381"><td class="memTemplItemLeft" align="right" valign="top">__host__ static __device__ <br class="typebreak"/>
+cudaError_t&#160;</td><td class="memTemplItemRight" valign="bottom"><a class="el" href="structcub_1_1_device_radix_sort.html#a6f142b93acb14890c78b31f71409c381">SortPairsDescending</a> (void *d_temp_storage, size_t &amp;temp_storage_bytes, <a class="el" href="structcub_1_1_double_buffer.html">DoubleBuffer</a>&lt; Key &gt; &amp;d_keys, <a class="el" href="structcub_1_1_double_buffer.html">DoubleBuffer</a>&lt; Value &gt; &amp;d_values, int num_items, int begin_bit=0, int end_bit=sizeof(Key)*8, cudaStream_t stream=0, bool debug_synchronous=false)</td></tr>
+<tr class="memdesc:a6f142b93acb14890c78b31f71409c381"><td class="mdescLeft">&#160;</td><td class="mdescRight">Sorts key-value pairs into descending order.  <a href="#a6f142b93acb14890c78b31f71409c381">More...</a><br/></td></tr>
+<tr class="separator:a6f142b93acb14890c78b31f71409c381"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:ac102ba33badbc0ed7d9eaeb2b9417d07"><td class="memTemplParams" colspan="2">template&lt;typename Key &gt; </td></tr>
+<tr class="memitem:ac102ba33badbc0ed7d9eaeb2b9417d07"><td class="memTemplItemLeft" align="right" valign="top">__host__ static __device__ <br class="typebreak"/>
+cudaError_t&#160;</td><td class="memTemplItemRight" valign="bottom"><a class="el" href="structcub_1_1_device_radix_sort.html#ac102ba33badbc0ed7d9eaeb2b9417d07">SortKeys</a> (void *d_temp_storage, size_t &amp;temp_storage_bytes, <a class="el" href="structcub_1_1_double_buffer.html">DoubleBuffer</a>&lt; Key &gt; &amp;d_keys, int num_items, int begin_bit=0, int end_bit=sizeof(Key)*8, cudaStream_t stream=0, bool debug_synchronous=false)</td></tr>
+<tr class="memdesc:ac102ba33badbc0ed7d9eaeb2b9417d07"><td class="mdescLeft">&#160;</td><td class="mdescRight">Sorts keys into ascending order.  <a href="#ac102ba33badbc0ed7d9eaeb2b9417d07">More...</a><br/></td></tr>
+<tr class="separator:ac102ba33badbc0ed7d9eaeb2b9417d07"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:abe6e85b55b679a8f648ef27d1e97f869"><td class="memTemplParams" colspan="2">template&lt;typename Key &gt; </td></tr>
+<tr class="memitem:abe6e85b55b679a8f648ef27d1e97f869"><td class="memTemplItemLeft" align="right" valign="top">__host__ static __device__ <br class="typebreak"/>
+cudaError_t&#160;</td><td class="memTemplItemRight" valign="bottom"><a class="el" href="structcub_1_1_device_radix_sort.html#abe6e85b55b679a8f648ef27d1e97f869">SortKeysDescending</a> (void *d_temp_storage, size_t &amp;temp_storage_bytes, <a class="el" href="structcub_1_1_double_buffer.html">DoubleBuffer</a>&lt; Key &gt; &amp;d_keys, int num_items, int begin_bit=0, int end_bit=sizeof(Key)*8, cudaStream_t stream=0, bool debug_synchronous=false)</td></tr>
+<tr class="memdesc:abe6e85b55b679a8f648ef27d1e97f869"><td class="mdescLeft">&#160;</td><td class="mdescRight">Sorts keys into ascending order.  <a href="#abe6e85b55b679a8f648ef27d1e97f869">More...</a><br/></td></tr>
+<tr class="separator:abe6e85b55b679a8f648ef27d1e97f869"><td class="memSeparator" colspan="2">&#160;</td></tr>
 </table>
 <h2 class="groupheader">Member Function Documentation</h2>
-<a class="anchor" id="aafc81e527c3fe142b482ed59835fd0d3"></a>
-<div class="memitem">
-<div class="memproto">
-<div class="memtemplate">
-template&lt;typename Key &gt; </div>
-<table class="mlabels">
-  <tr>
-  <td class="mlabels-left">
-      <table class="memname">
-        <tr>
-          <td class="memname">__host__ __device__ static __forceinline__ cudaError_t cub::DeviceRadixSort::SortKeys </td>
-          <td>(</td>
-          <td class="paramtype">void *&#160;</td>
-          <td class="paramname"><em>d_temp_storage</em>, </td>
-        </tr>
-        <tr>
-          <td class="paramkey"></td>
-          <td></td>
-          <td class="paramtype">size_t &amp;&#160;</td>
-          <td class="paramname"><em>temp_storage_bytes</em>, </td>
-        </tr>
-        <tr>
-          <td class="paramkey"></td>
-          <td></td>
-          <td class="paramtype"><a class="el" href="structcub_1_1_double_buffer.html">DoubleBuffer</a>&lt; Key &gt; &amp;&#160;</td>
-          <td class="paramname"><em>d_keys</em>, </td>
-        </tr>
-        <tr>
-          <td class="paramkey"></td>
-          <td></td>
-          <td class="paramtype">int&#160;</td>
-          <td class="paramname"><em>num_items</em>, </td>
-        </tr>
-        <tr>
-          <td class="paramkey"></td>
-          <td></td>
-          <td class="paramtype">int&#160;</td>
-          <td class="paramname"><em>begin_bit</em> = <code>0</code>, </td>
-        </tr>
-        <tr>
-          <td class="paramkey"></td>
-          <td></td>
-          <td class="paramtype">int&#160;</td>
-          <td class="paramname"><em>end_bit</em> = <code>sizeof(Key)&#160;*&#160;8</code>, </td>
-        </tr>
-        <tr>
-          <td class="paramkey"></td>
-          <td></td>
-          <td class="paramtype">cudaStream_t&#160;</td>
-          <td class="paramname"><em>stream</em> = <code>0</code>, </td>
-        </tr>
-        <tr>
-          <td class="paramkey"></td>
-          <td></td>
-          <td class="paramtype">bool&#160;</td>
-          <td class="paramname"><em>debug_synchronous</em> = <code>false</code>&#160;</td>
-        </tr>
-        <tr>
-          <td></td>
-          <td>)</td>
-          <td></td><td></td>
-        </tr>
-      </table>
-  </td>
-  <td class="mlabels-right">
-<span class="mlabels"><span class="mlabel">inline</span><span class="mlabel">static</span></span>  </td>
-  </tr>
-</table>
-</div><div class="memdoc">
-
-<p>Sorts keys. </p>
-<dl class="section user"><dt></dt><dd>The sorting operation requires a pair of key buffers. The pair is wrapped in a <a class="el" href="structcub_1_1_double_buffer.html" title="Double-buffer storage wrapper for multi-pass stream transformations that require more than one storag...">DoubleBuffer</a> structure whose member <a class="el" href="structcub_1_1_double_buffer.html#a861d3dff1a70d5e5926057a44d9b8724" title="Return pointer to the currently valid buffer. ">DoubleBuffer::Current()</a> references the active buffer. The currently-active buffer may be changed by the sorting operation.</dd></dl>
-<p>This operation requires an allocation of temporary device storage. When <code>d_temp_storage</code> is NULL, no work is done and the required allocation size is returned in <code>temp_storage_bytes</code>.</p>
-<p>When calling this method from kernel code, be sure to define the <code>CUB_CDP</code> macro in your compiler's macro definitions.</p>
-<dl class="section user"><dt></dt><dd>The code snippet below illustrates the sorting of a device vector of <code>int</code> keys. </dd></dl>
-<dl class="section user"><dt></dt><dd><div class="fragment"><div class="line"><span class="preprocessor">#include &lt;<a class="code" href="cub_8cuh.html">cub/cub.cuh</a>&gt;</span></div>
-<div class="line">...</div>
-<div class="line"></div>
-<div class="line"><span class="comment">// Create a set of DoubleBuffers to wrap pairs of device pointers for</span></div>
-<div class="line"><span class="comment">// sorting data (keys and equivalently-sized alternate buffer)</span></div>
-<div class="line">int num_items = ...</div>
-<div class="line">cub::DoubleBuffer&lt;<span class="keywordtype">int</span>&gt; d_keys(d_key_buf, d_key_alt_buf);</div>
-<div class="line"></div>
-<div class="line"><span class="comment">// Determine temporary device storage requirements for sorting operation</span></div>
-<div class="line"><span class="keywordtype">void</span> *d_temp_storage = NULL;</div>
-<div class="line"><span class="keywordtype">size_t</span> temp_storage_bytes = 0;</div>
-<div class="line"><a class="code" href="structcub_1_1_device_radix_sort.html#aafc81e527c3fe142b482ed59835fd0d3" title="Sorts keys. ">cub::DeviceRadixSort::SortKeys</a>(d_temp_storage, temp_storage_bytes, d_keys, num_items);</div>
-<div class="line"></div>
-<div class="line"><span class="comment">// Allocate temporary storage for sorting operation</span></div>
-<div class="line">cudaMalloc(&amp;d_temp_storage, temp_storage_bytes);</div>
-<div class="line"></div>
-<div class="line"><span class="comment">// Run sorting operation</span></div>
-<div class="line"><a class="code" href="structcub_1_1_device_radix_sort.html#aafc81e527c3fe142b482ed59835fd0d3" title="Sorts keys. ">cub::DeviceRadixSort::SortKeys</a>(d_temp_storage, temp_storage_bytes, d_keys, num_items);</div>
-<div class="line"></div>
-<div class="line"><span class="comment">// Sorted keys are referenced by d_keys.Current()</span></div>
-</div><!-- fragment --></dd></dl>
-<dl class="tparams"><dt>Template Parameters</dt><dd>
-  <table class="tparams">
-    <tr><td class="paramname">Key</td><td><b>[inferred]</b> Key type </td></tr>
-  </table>
-  </dd>
-</dl>
-<dl class="params"><dt>Parameters</dt><dd>
-  <table class="params">
-    <tr><td class="paramdir">[in]</td><td class="paramname">d_temp_storage</td><td>Device allocation of temporary storage. When NULL, the required allocation size is returned in <code>temp_storage_bytes</code> and no work is done. </td></tr>
-    <tr><td class="paramdir">[in,out]</td><td class="paramname">temp_storage_bytes</td><td>Size in bytes of <code>d_temp_storage</code> allocation. </td></tr>
-    <tr><td class="paramdir">[in,out]</td><td class="paramname">d_keys</td><td>Double-buffer of keys whose current buffer contains the unsorted input keys and, upon return, is updated to point to the sorted output keys </td></tr>
-    <tr><td class="paramdir">[in]</td><td class="paramname">num_items</td><td>Number of items to reduce </td></tr>
-    <tr><td class="paramdir">[in]</td><td class="paramname">begin_bit</td><td><b>[optional]</b> The first (least-significant) bit index needed for key comparison </td></tr>
-    <tr><td class="paramdir">[in]</td><td class="paramname">end_bit</td><td><b>[optional]</b> The past-the-end (most-significant) bit index needed for key comparison </td></tr>
-    <tr><td class="paramdir">[in]</td><td class="paramname">stream</td><td><b>[optional]</b> CUDA stream to launch kernels within. Default is stream<sub>0</sub>. </td></tr>
-    <tr><td class="paramdir">[in]</td><td class="paramname">debug_synchronous</td><td><b>[optional]</b> Whether or not to synchronize the stream after every kernel launch to check for errors. Default is <code>false</code>. </td></tr>
-  </table>
-  </dd>
-</dl>
-
-<p>Definition at line <a class="el" href="device__radix__sort_8cuh_source.html#l00870">870</a> of file <a class="el" href="device__radix__sort_8cuh_source.html">device_radix_sort.cuh</a>.</p>
-
-</div>
-</div>
-<a class="anchor" id="ad42b50b38c4296c371572efdedd49fed"></a>
+<a class="anchor" id="a2d26085e7f610f5578b6010d963b3811"></a>
 <div class="memitem">
 <div class="memproto">
 <div class="memtemplate">
@@ -266,7 +157,7 @@ template&lt;typename Key , typename Value &gt; </div>
   <td class="mlabels-left">
       <table class="memname">
         <tr>
-          <td class="memname">__host__ __device__ static __forceinline__ cudaError_t cub::DeviceRadixSort::SortPairs </td>
+          <td class="memname">__host__ static __device__ cudaError_t cub::DeviceRadixSort::SortPairs </td>
           <td>(</td>
           <td class="paramtype">void *&#160;</td>
           <td class="paramname"><em>d_temp_storage</em>, </td>
@@ -332,32 +223,41 @@ template&lt;typename Key , typename Value &gt; </div>
 </table>
 </div><div class="memdoc">
 
-<p>Sorts key-value pairs. </p>
-<dl class="section user"><dt></dt><dd>The sorting operation requires a pair of key buffers and a pair of value buffers. Each pair is wrapped in a <a class="el" href="structcub_1_1_double_buffer.html" title="Double-buffer storage wrapper for multi-pass stream transformations that require more than one storag...">DoubleBuffer</a> structure whose member <a class="el" href="structcub_1_1_double_buffer.html#a861d3dff1a70d5e5926057a44d9b8724" title="Return pointer to the currently valid buffer. ">DoubleBuffer::Current()</a> references the active buffer. The currently-active buffer may be changed by the sorting operation.</dd></dl>
-<p>This operation requires an allocation of temporary device storage. When <code>d_temp_storage</code> is NULL, no work is done and the required allocation size is returned in <code>temp_storage_bytes</code>.</p>
-<p>When calling this method from kernel code, be sure to define the <code>CUB_CDP</code> macro in your compiler's macro definitions.</p>
+<p>Sorts key-value pairs into ascending order. </p>
+<dl class="section user"><dt></dt><dd><ul>
+<li>The sorting operation requires a pair of key buffers and a pair of value buffers. Each pair is wrapped in a <a class="el" href="structcub_1_1_double_buffer.html" title="Double-buffer storage wrapper for multi-pass stream transformations that require more than one storag...">DoubleBuffer</a> structure whose member <a class="el" href="structcub_1_1_double_buffer.html#a861d3dff1a70d5e5926057a44d9b8724" title="Return pointer to the currently valid buffer. ">DoubleBuffer::Current()</a> references the active buffer. The currently-active buffer may be changed by the sorting operation.</li>
+<li>This operation requires an allocation of temporary device storage. When <code>d_temp_storage</code> is NULL, no work is done and the required allocation size is returned in <code>temp_storage_bytes</code>.</li>
+<li>When calling this method from kernel code, be sure to define the <code>CUB_CDP</code> macro in your compiler's macro definitions.</li>
+</ul>
+</dd></dl>
 <dl class="section user"><dt></dt><dd>The code snippet below illustrates the sorting of a device vector of <code>int</code> keys with associated vector of <code>int</code> values. </dd></dl>
-<dl class="section user"><dt></dt><dd><div class="fragment"><div class="line"><span class="preprocessor">#include &lt;<a class="code" href="cub_8cuh.html">cub/cub.cuh</a>&gt;</span></div>
+<dl class="section user"><dt></dt><dd><div class="fragment"><div class="line"><span class="preprocessor">#include &lt;<a class="code" href="cub_8cuh.html">cub/cub.cuh</a>&gt;</span>   <span class="comment">// or equivalently &lt;cub/device/device_radix_sort.cuh&gt;</span></div>
+<div class="line"></div>
+<div class="line"><span class="comment">// Declare, allocate, and initialize device pointers for sorting data</span></div>
+<div class="line"><span class="keywordtype">int</span>  num_items;          <span class="comment">// e.g., 7</span></div>
+<div class="line"><span class="keywordtype">int</span>  *d_key_buf;         <span class="comment">// e.g., [8, 6, 7, 5, 3, 0, 9]</span></div>
+<div class="line"><span class="keywordtype">int</span>  *d_key_alt_buf;     <span class="comment">// e.g., [        ...        ]</span></div>
+<div class="line"><span class="keywordtype">int</span>  *d_value_buf;       <span class="comment">// e.g., [0, 1, 2, 3, 4, 5, 6]</span></div>
+<div class="line"><span class="keywordtype">int</span>  *d_value_alt_buf;   <span class="comment">// e.g., [        ...        ]</span></div>
 <div class="line">...</div>
 <div class="line"></div>
-<div class="line"><span class="comment">// Create a set of DoubleBuffers to wrap pairs of device pointers for</span></div>
-<div class="line"><span class="comment">// sorting data (keys, values, and equivalently-sized alternate buffers)</span></div>
-<div class="line">int num_items = ...</div>
+<div class="line"><span class="comment">// Create a set of DoubleBuffers to wrap pairs of device pointers</span></div>
 <div class="line">cub::DoubleBuffer&lt;<span class="keywordtype">int</span>&gt; d_keys(d_key_buf, d_key_alt_buf);</div>
 <div class="line"><a class="code" href="structcub_1_1_double_buffer.html" title="Double-buffer storage wrapper for multi-pass stream transformations that require more than one storag...">cub::DoubleBuffer&lt;int&gt;</a> d_values(d_value_buf, d_value_alt_buf);</div>
 <div class="line"></div>
-<div class="line"><span class="comment">// Determine temporary device storage requirements for sorting operation</span></div>
-<div class="line"><span class="keywordtype">void</span> *d_temp_storage = NULL;</div>
-<div class="line"><span class="keywordtype">size_t</span> temp_storage_bytes = 0;</div>
-<div class="line"><a class="code" href="structcub_1_1_device_radix_sort.html#aafc81e527c3fe142b482ed59835fd0d3" title="Sorts keys. ">cub::DeviceRadixSort::SortKeys</a>(d_temp_storage, temp_storage_bytes, d_keys, num_items);</div>
+<div class="line"><span class="comment">// Determine temporary device storage requirements</span></div>
+<div class="line"><span class="keywordtype">void</span>     *d_temp_storage = NULL;</div>
+<div class="line"><span class="keywordtype">size_t</span>   temp_storage_bytes = 0;</div>
+<div class="line"><a class="code" href="structcub_1_1_device_radix_sort.html#a2d26085e7f610f5578b6010d963b3811" title="Sorts key-value pairs into ascending order. ">cub::DeviceRadixSort::SortPairs</a>(d_temp_storage, temp_storage_bytes, d_keys, num_items);</div>
 <div class="line"></div>
-<div class="line"><span class="comment">// Allocate temporary storage for sorting operation</span></div>
+<div class="line"><span class="comment">// Allocate temporary storage</span></div>
 <div class="line">cudaMalloc(&amp;d_temp_storage, temp_storage_bytes);</div>
 <div class="line"></div>
 <div class="line"><span class="comment">// Run sorting operation</span></div>
-<div class="line"><a class="code" href="structcub_1_1_device_radix_sort.html#aafc81e527c3fe142b482ed59835fd0d3" title="Sorts keys. ">cub::DeviceRadixSort::SortKeys</a>(d_temp_storage, temp_storage_bytes, d_keys, num_items);</div>
+<div class="line"><a class="code" href="structcub_1_1_device_radix_sort.html#a2d26085e7f610f5578b6010d963b3811" title="Sorts key-value pairs into ascending order. ">cub::DeviceRadixSort::SortPairs</a>(d_temp_storage, temp_storage_bytes, d_keys, num_items);</div>
 <div class="line"></div>
-<div class="line"><span class="comment">// Sorted keys and values are referenced by d_keys.Current() and d_values.Current()</span></div>
+<div class="line"><span class="comment">// d_keys.Current()      &lt;-- [0, 3, 5, 6, 7, 8, 9]</span></div>
+<div class="line"><span class="comment">// d_values.Current()    &lt;-- [5, 4, 3, 1, 2, 0, 6]</span></div>
 </div><!-- fragment --></dd></dl>
 <dl class="tparams"><dt>Template Parameters</dt><dd>
   <table class="tparams">
@@ -369,19 +269,410 @@ template&lt;typename Key , typename Value &gt; </div>
 <dl class="params"><dt>Parameters</dt><dd>
   <table class="params">
     <tr><td class="paramdir">[in]</td><td class="paramname">d_temp_storage</td><td>Device allocation of temporary storage. When NULL, the required allocation size is returned in <code>temp_storage_bytes</code> and no work is done. </td></tr>
-    <tr><td class="paramdir">[in,out]</td><td class="paramname">temp_storage_bytes</td><td>Size in bytes of <code>d_temp_storage</code> allocation. </td></tr>
+    <tr><td class="paramdir">[in,out]</td><td class="paramname">temp_storage_bytes</td><td>Size in bytes of <code>d_temp_storage</code> allocation </td></tr>
     <tr><td class="paramdir">[in,out]</td><td class="paramname">d_keys</td><td>Double-buffer of keys whose current buffer contains the unsorted input keys and, upon return, is updated to point to the sorted output keys </td></tr>
     <tr><td class="paramdir">[in,out]</td><td class="paramname">d_values</td><td>Double-buffer of values whose current buffer contains the unsorted input values and, upon return, is updated to point to the sorted output values </td></tr>
     <tr><td class="paramdir">[in]</td><td class="paramname">num_items</td><td>Number of items to reduce </td></tr>
     <tr><td class="paramdir">[in]</td><td class="paramname">begin_bit</td><td><b>[optional]</b> The first (least-significant) bit index needed for key comparison </td></tr>
     <tr><td class="paramdir">[in]</td><td class="paramname">end_bit</td><td><b>[optional]</b> The past-the-end (most-significant) bit index needed for key comparison </td></tr>
     <tr><td class="paramdir">[in]</td><td class="paramname">stream</td><td><b>[optional]</b> CUDA stream to launch kernels within. Default is stream<sub>0</sub>. </td></tr>
-    <tr><td class="paramdir">[in]</td><td class="paramname">debug_synchronous</td><td><b>[optional]</b> Whether or not to synchronize the stream after every kernel launch to check for errors. Default is <code>false</code>. </td></tr>
+    <tr><td class="paramdir">[in]</td><td class="paramname">debug_synchronous</td><td><b>[optional]</b> Whether or not to synchronize the stream after every kernel launch to check for errors. Also causes launch configurations to be printed to the console. Default is <code>false</code>. </td></tr>
+  </table>
+  </dd>
+</dl>
+<dl><dt><b>Examples: </b></dt><dd><a class="el" href="example_device_radix_sort_8cu-example.html#a5">example_device_radix_sort.cu</a>.</dd>
+</dl>
+<p>Definition at line <a class="el" href="device__radix__sort_8cuh_source.html#l01018">1018</a> of file <a class="el" href="device__radix__sort_8cuh_source.html">device_radix_sort.cuh</a>.</p>
+
+</div>
+</div>
+<a class="anchor" id="a6f142b93acb14890c78b31f71409c381"></a>
+<div class="memitem">
+<div class="memproto">
+<div class="memtemplate">
+template&lt;typename Key , typename Value &gt; </div>
+<table class="mlabels">
+  <tr>
+  <td class="mlabels-left">
+      <table class="memname">
+        <tr>
+          <td class="memname">__host__ static __device__ cudaError_t cub::DeviceRadixSort::SortPairsDescending </td>
+          <td>(</td>
+          <td class="paramtype">void *&#160;</td>
+          <td class="paramname"><em>d_temp_storage</em>, </td>
+        </tr>
+        <tr>
+          <td class="paramkey"></td>
+          <td></td>
+          <td class="paramtype">size_t &amp;&#160;</td>
+          <td class="paramname"><em>temp_storage_bytes</em>, </td>
+        </tr>
+        <tr>
+          <td class="paramkey"></td>
+          <td></td>
+          <td class="paramtype"><a class="el" href="structcub_1_1_double_buffer.html">DoubleBuffer</a>&lt; Key &gt; &amp;&#160;</td>
+          <td class="paramname"><em>d_keys</em>, </td>
+        </tr>
+        <tr>
+          <td class="paramkey"></td>
+          <td></td>
+          <td class="paramtype"><a class="el" href="structcub_1_1_double_buffer.html">DoubleBuffer</a>&lt; Value &gt; &amp;&#160;</td>
+          <td class="paramname"><em>d_values</em>, </td>
+        </tr>
+        <tr>
+          <td class="paramkey"></td>
+          <td></td>
+          <td class="paramtype">int&#160;</td>
+          <td class="paramname"><em>num_items</em>, </td>
+        </tr>
+        <tr>
+          <td class="paramkey"></td>
+          <td></td>
+          <td class="paramtype">int&#160;</td>
+          <td class="paramname"><em>begin_bit</em> = <code>0</code>, </td>
+        </tr>
+        <tr>
+          <td class="paramkey"></td>
+          <td></td>
+          <td class="paramtype">int&#160;</td>
+          <td class="paramname"><em>end_bit</em> = <code>sizeof(Key)&#160;*&#160;8</code>, </td>
+        </tr>
+        <tr>
+          <td class="paramkey"></td>
+          <td></td>
+          <td class="paramtype">cudaStream_t&#160;</td>
+          <td class="paramname"><em>stream</em> = <code>0</code>, </td>
+        </tr>
+        <tr>
+          <td class="paramkey"></td>
+          <td></td>
+          <td class="paramtype">bool&#160;</td>
+          <td class="paramname"><em>debug_synchronous</em> = <code>false</code>&#160;</td>
+        </tr>
+        <tr>
+          <td></td>
+          <td>)</td>
+          <td></td><td></td>
+        </tr>
+      </table>
+  </td>
+  <td class="mlabels-right">
+<span class="mlabels"><span class="mlabel">inline</span><span class="mlabel">static</span></span>  </td>
+  </tr>
+</table>
+</div><div class="memdoc">
+
+<p>Sorts key-value pairs into descending order. </p>
+<dl class="section user"><dt></dt><dd><ul>
+<li>The sorting operation requires a pair of key buffers and a pair of value buffers. Each pair is wrapped in a <a class="el" href="structcub_1_1_double_buffer.html" title="Double-buffer storage wrapper for multi-pass stream transformations that require more than one storag...">DoubleBuffer</a> structure whose member <a class="el" href="structcub_1_1_double_buffer.html#a861d3dff1a70d5e5926057a44d9b8724" title="Return pointer to the currently valid buffer. ">DoubleBuffer::Current()</a> references the active buffer. The currently-active buffer may be changed by the sorting operation.</li>
+<li>This operation requires an allocation of temporary device storage. When <code>d_temp_storage</code> is NULL, no work is done and the required allocation size is returned in <code>temp_storage_bytes</code>.</li>
+<li>When calling this method from kernel code, be sure to define the <code>CUB_CDP</code> macro in your compiler's macro definitions.</li>
+</ul>
+</dd></dl>
+<dl class="section user"><dt></dt><dd>The code snippet below illustrates the sorting of a device vector of <code>int</code> keys with associated vector of <code>int</code> values. </dd></dl>
+<dl class="section user"><dt></dt><dd><div class="fragment"><div class="line"><span class="preprocessor">#include &lt;<a class="code" href="cub_8cuh.html">cub/cub.cuh</a>&gt;</span>   <span class="comment">// or equivalently &lt;cub/device/device_radix_sort.cuh&gt;</span></div>
+<div class="line"></div>
+<div class="line"><span class="comment">// Declare, allocate, and initialize device pointers for sorting data</span></div>
+<div class="line"><span class="keywordtype">int</span>  num_items;          <span class="comment">// e.g., 7</span></div>
+<div class="line"><span class="keywordtype">int</span>  *d_key_buf;         <span class="comment">// e.g., [8, 6, 7, 5, 3, 0, 9]</span></div>
+<div class="line"><span class="keywordtype">int</span>  *d_key_alt_buf;     <span class="comment">// e.g., [        ...        ]</span></div>
+<div class="line"><span class="keywordtype">int</span>  *d_value_buf;       <span class="comment">// e.g., [0, 1, 2, 3, 4, 5, 6]</span></div>
+<div class="line"><span class="keywordtype">int</span>  *d_value_alt_buf;   <span class="comment">// e.g., [        ...        ]</span></div>
+<div class="line">...</div>
+<div class="line"></div>
+<div class="line"><span class="comment">// Create a set of DoubleBuffers to wrap pairs of device pointers</span></div>
+<div class="line">cub::DoubleBuffer&lt;<span class="keywordtype">int</span>&gt; d_keys(d_key_buf, d_key_alt_buf);</div>
+<div class="line"><a class="code" href="structcub_1_1_double_buffer.html" title="Double-buffer storage wrapper for multi-pass stream transformations that require more than one storag...">cub::DoubleBuffer&lt;int&gt;</a> d_values(d_value_buf, d_value_alt_buf);</div>
+<div class="line"></div>
+<div class="line"><span class="comment">// Determine temporary device storage requirements</span></div>
+<div class="line"><span class="keywordtype">void</span>     *d_temp_storage = NULL;</div>
+<div class="line"><span class="keywordtype">size_t</span>   temp_storage_bytes = 0;</div>
+<div class="line"><a class="code" href="structcub_1_1_device_radix_sort.html#a6f142b93acb14890c78b31f71409c381" title="Sorts key-value pairs into descending order. ">cub::DeviceRadixSort::SortPairsDescending</a>(d_temp_storage, temp_storage_bytes, d_keys, num_items);</div>
+<div class="line"></div>
+<div class="line"><span class="comment">// Allocate temporary storage</span></div>
+<div class="line">cudaMalloc(&amp;d_temp_storage, temp_storage_bytes);</div>
+<div class="line"></div>
+<div class="line"><span class="comment">// Run sorting operation</span></div>
+<div class="line"><a class="code" href="structcub_1_1_device_radix_sort.html#a6f142b93acb14890c78b31f71409c381" title="Sorts key-value pairs into descending order. ">cub::DeviceRadixSort::SortPairsDescending</a>(d_temp_storage, temp_storage_bytes, d_keys, num_items);</div>
+<div class="line"></div>
+<div class="line"><span class="comment">// d_keys.Current()      &lt;-- [9, 8, 7, 6, 5, 3, 0]</span></div>
+<div class="line"><span class="comment">// d_values.Current()    &lt;-- [6, 0, 2, 1, 3, 4, 5]</span></div>
+</div><!-- fragment --></dd></dl>
+<dl class="tparams"><dt>Template Parameters</dt><dd>
+  <table class="tparams">
+    <tr><td class="paramname">Key</td><td><b>[inferred]</b> Key type </td></tr>
+    <tr><td class="paramname">Value</td><td><b>[inferred]</b> Value type </td></tr>
+  </table>
+  </dd>
+</dl>
+<dl class="params"><dt>Parameters</dt><dd>
+  <table class="params">
+    <tr><td class="paramdir">[in]</td><td class="paramname">d_temp_storage</td><td>Device allocation of temporary storage. When NULL, the required allocation size is returned in <code>temp_storage_bytes</code> and no work is done. </td></tr>
+    <tr><td class="paramdir">[in,out]</td><td class="paramname">temp_storage_bytes</td><td>Size in bytes of <code>d_temp_storage</code> allocation </td></tr>
+    <tr><td class="paramdir">[in,out]</td><td class="paramname">d_keys</td><td>Double-buffer of keys whose current buffer contains the unsorted input keys and, upon return, is updated to point to the sorted output keys </td></tr>
+    <tr><td class="paramdir">[in,out]</td><td class="paramname">d_values</td><td>Double-buffer of values whose current buffer contains the unsorted input values and, upon return, is updated to point to the sorted output values </td></tr>
+    <tr><td class="paramdir">[in]</td><td class="paramname">num_items</td><td>Number of items to reduce </td></tr>
+    <tr><td class="paramdir">[in]</td><td class="paramname">begin_bit</td><td><b>[optional]</b> The first (least-significant) bit index needed for key comparison </td></tr>
+    <tr><td class="paramdir">[in]</td><td class="paramname">end_bit</td><td><b>[optional]</b> The past-the-end (most-significant) bit index needed for key comparison </td></tr>
+    <tr><td class="paramdir">[in]</td><td class="paramname">stream</td><td><b>[optional]</b> CUDA stream to launch kernels within. Default is stream<sub>0</sub>. </td></tr>
+    <tr><td class="paramdir">[in]</td><td class="paramname">debug_synchronous</td><td><b>[optional]</b> Whether or not to synchronize the stream after every kernel launch to check for errors. Also causes launch configurations to be printed to the console. Default is <code>false</code>. </td></tr>
   </table>
   </dd>
 </dl>
 
-<p>Definition at line <a class="el" href="device__radix__sort_8cuh_source.html#l00759">759</a> of file <a class="el" href="device__radix__sort_8cuh_source.html">device_radix_sort.cuh</a>.</p>
+<p>Definition at line <a class="el" href="device__radix__sort_8cuh_source.html#l01098">1098</a> of file <a class="el" href="device__radix__sort_8cuh_source.html">device_radix_sort.cuh</a>.</p>
+
+</div>
+</div>
+<a class="anchor" id="ac102ba33badbc0ed7d9eaeb2b9417d07"></a>
+<div class="memitem">
+<div class="memproto">
+<div class="memtemplate">
+template&lt;typename Key &gt; </div>
+<table class="mlabels">
+  <tr>
+  <td class="mlabels-left">
+      <table class="memname">
+        <tr>
+          <td class="memname">__host__ static __device__ cudaError_t cub::DeviceRadixSort::SortKeys </td>
+          <td>(</td>
+          <td class="paramtype">void *&#160;</td>
+          <td class="paramname"><em>d_temp_storage</em>, </td>
+        </tr>
+        <tr>
+          <td class="paramkey"></td>
+          <td></td>
+          <td class="paramtype">size_t &amp;&#160;</td>
+          <td class="paramname"><em>temp_storage_bytes</em>, </td>
+        </tr>
+        <tr>
+          <td class="paramkey"></td>
+          <td></td>
+          <td class="paramtype"><a class="el" href="structcub_1_1_double_buffer.html">DoubleBuffer</a>&lt; Key &gt; &amp;&#160;</td>
+          <td class="paramname"><em>d_keys</em>, </td>
+        </tr>
+        <tr>
+          <td class="paramkey"></td>
+          <td></td>
+          <td class="paramtype">int&#160;</td>
+          <td class="paramname"><em>num_items</em>, </td>
+        </tr>
+        <tr>
+          <td class="paramkey"></td>
+          <td></td>
+          <td class="paramtype">int&#160;</td>
+          <td class="paramname"><em>begin_bit</em> = <code>0</code>, </td>
+        </tr>
+        <tr>
+          <td class="paramkey"></td>
+          <td></td>
+          <td class="paramtype">int&#160;</td>
+          <td class="paramname"><em>end_bit</em> = <code>sizeof(Key)&#160;*&#160;8</code>, </td>
+        </tr>
+        <tr>
+          <td class="paramkey"></td>
+          <td></td>
+          <td class="paramtype">cudaStream_t&#160;</td>
+          <td class="paramname"><em>stream</em> = <code>0</code>, </td>
+        </tr>
+        <tr>
+          <td class="paramkey"></td>
+          <td></td>
+          <td class="paramtype">bool&#160;</td>
+          <td class="paramname"><em>debug_synchronous</em> = <code>false</code>&#160;</td>
+        </tr>
+        <tr>
+          <td></td>
+          <td>)</td>
+          <td></td><td></td>
+        </tr>
+      </table>
+  </td>
+  <td class="mlabels-right">
+<span class="mlabels"><span class="mlabel">inline</span><span class="mlabel">static</span></span>  </td>
+  </tr>
+</table>
+</div><div class="memdoc">
+
+<p>Sorts keys into ascending order. </p>
+<dl class="section user"><dt></dt><dd><ul>
+<li>The sorting operation requires a pair of key buffers. The pair is wrapped in a <a class="el" href="structcub_1_1_double_buffer.html" title="Double-buffer storage wrapper for multi-pass stream transformations that require more than one storag...">DoubleBuffer</a> structure whose member <a class="el" href="structcub_1_1_double_buffer.html#a861d3dff1a70d5e5926057a44d9b8724" title="Return pointer to the currently valid buffer. ">DoubleBuffer::Current()</a> references the active buffer. The currently-active buffer may be changed by the sorting operation.</li>
+<li>This operation requires an allocation of temporary device storage. When <code>d_temp_storage</code> is NULL, no work is done and the required allocation size is returned in <code>temp_storage_bytes</code>.</li>
+<li>When calling this method from kernel code, be sure to define the <code>CUB_CDP</code> macro in your compiler's macro definitions.</li>
+</ul>
+</dd></dl>
+<dl class="section user"><dt></dt><dd>The code snippet below illustrates the sorting of a device vector of <code>int</code> keys. </dd></dl>
+<dl class="section user"><dt></dt><dd><div class="fragment"><div class="line"><span class="preprocessor">#include &lt;<a class="code" href="cub_8cuh.html">cub/cub.cuh</a>&gt;</span>   <span class="comment">// or equivalently &lt;cub/device/device_radix_sort.cuh&gt;</span></div>
+<div class="line"></div>
+<div class="line"><span class="comment">// Declare, allocate, and initialize device pointers for sorting data</span></div>
+<div class="line"><span class="keywordtype">int</span>  num_items;          <span class="comment">// e.g., 7</span></div>
+<div class="line"><span class="keywordtype">int</span>  *d_key_buf;         <span class="comment">// e.g., [8, 6, 7, 5, 3, 0, 9]</span></div>
+<div class="line"><span class="keywordtype">int</span>  *d_key_alt_buf;     <span class="comment">// e.g., [        ...        ]</span></div>
+<div class="line">...</div>
+<div class="line"></div>
+<div class="line"><span class="comment">// Create a DoubleBuffer to wrap the pair of device pointers</span></div>
+<div class="line">cub::DoubleBuffer&lt;<span class="keywordtype">int</span>&gt; d_keys(d_key_buf, d_key_alt_buf);</div>
+<div class="line"></div>
+<div class="line"><span class="comment">// Determine temporary device storage requirements</span></div>
+<div class="line"><span class="keywordtype">void</span>     *d_temp_storage = NULL;</div>
+<div class="line"><span class="keywordtype">size_t</span>   temp_storage_bytes = 0;</div>
+<div class="line"><a class="code" href="structcub_1_1_device_radix_sort.html#ac102ba33badbc0ed7d9eaeb2b9417d07" title="Sorts keys into ascending order. ">cub::DeviceRadixSort::SortKeys</a>(d_temp_storage, temp_storage_bytes, d_keys, num_items);</div>
+<div class="line"></div>
+<div class="line"><span class="comment">// Allocate temporary storage</span></div>
+<div class="line">cudaMalloc(&amp;d_temp_storage, temp_storage_bytes);</div>
+<div class="line"></div>
+<div class="line"><span class="comment">// Run sorting operation</span></div>
+<div class="line"><a class="code" href="structcub_1_1_device_radix_sort.html#ac102ba33badbc0ed7d9eaeb2b9417d07" title="Sorts keys into ascending order. ">cub::DeviceRadixSort::SortKeys</a>(d_temp_storage, temp_storage_bytes, d_keys, num_items);</div>
+<div class="line"></div>
+<div class="line"><span class="comment">// d_keys.Current()      &lt;-- [0, 3, 5, 6, 7, 8, 9]</span></div>
+</div><!-- fragment --></dd></dl>
+<dl class="tparams"><dt>Template Parameters</dt><dd>
+  <table class="tparams">
+    <tr><td class="paramname">Key</td><td><b>[inferred]</b> Key type </td></tr>
+  </table>
+  </dd>
+</dl>
+<dl class="params"><dt>Parameters</dt><dd>
+  <table class="params">
+    <tr><td class="paramdir">[in]</td><td class="paramname">d_temp_storage</td><td>Device allocation of temporary storage. When NULL, the required allocation size is returned in <code>temp_storage_bytes</code> and no work is done. </td></tr>
+    <tr><td class="paramdir">[in,out]</td><td class="paramname">temp_storage_bytes</td><td>Size in bytes of <code>d_temp_storage</code> allocation </td></tr>
+    <tr><td class="paramdir">[in,out]</td><td class="paramname">d_keys</td><td>Double-buffer of keys whose current buffer contains the unsorted input keys and, upon return, is updated to point to the sorted output keys </td></tr>
+    <tr><td class="paramdir">[in]</td><td class="paramname">num_items</td><td>Number of items to reduce </td></tr>
+    <tr><td class="paramdir">[in]</td><td class="paramname">begin_bit</td><td><b>[optional]</b> The first (least-significant) bit index needed for key comparison </td></tr>
+    <tr><td class="paramdir">[in]</td><td class="paramname">end_bit</td><td><b>[optional]</b> The past-the-end (most-significant) bit index needed for key comparison </td></tr>
+    <tr><td class="paramdir">[in]</td><td class="paramname">stream</td><td><b>[optional]</b> CUDA stream to launch kernels within. Default is stream<sub>0</sub>. </td></tr>
+    <tr><td class="paramdir">[in]</td><td class="paramname">debug_synchronous</td><td><b>[optional]</b> Whether or not to synchronize the stream after every kernel launch to check for errors. Also causes launch configurations to be printed to the console. Default is <code>false</code>. </td></tr>
+  </table>
+  </dd>
+</dl>
+
+<p>Definition at line <a class="el" href="device__radix__sort_8cuh_source.html#l01170">1170</a> of file <a class="el" href="device__radix__sort_8cuh_source.html">device_radix_sort.cuh</a>.</p>
+
+</div>
+</div>
+<a class="anchor" id="abe6e85b55b679a8f648ef27d1e97f869"></a>
+<div class="memitem">
+<div class="memproto">
+<div class="memtemplate">
+template&lt;typename Key &gt; </div>
+<table class="mlabels">
+  <tr>
+  <td class="mlabels-left">
+      <table class="memname">
+        <tr>
+          <td class="memname">__host__ static __device__ cudaError_t cub::DeviceRadixSort::SortKeysDescending </td>
+          <td>(</td>
+          <td class="paramtype">void *&#160;</td>
+          <td class="paramname"><em>d_temp_storage</em>, </td>
+        </tr>
+        <tr>
+          <td class="paramkey"></td>
+          <td></td>
+          <td class="paramtype">size_t &amp;&#160;</td>
+          <td class="paramname"><em>temp_storage_bytes</em>, </td>
+        </tr>
+        <tr>
+          <td class="paramkey"></td>
+          <td></td>
+          <td class="paramtype"><a class="el" href="structcub_1_1_double_buffer.html">DoubleBuffer</a>&lt; Key &gt; &amp;&#160;</td>
+          <td class="paramname"><em>d_keys</em>, </td>
+        </tr>
+        <tr>
+          <td class="paramkey"></td>
+          <td></td>
+          <td class="paramtype">int&#160;</td>
+          <td class="paramname"><em>num_items</em>, </td>
+        </tr>
+        <tr>
+          <td class="paramkey"></td>
+          <td></td>
+          <td class="paramtype">int&#160;</td>
+          <td class="paramname"><em>begin_bit</em> = <code>0</code>, </td>
+        </tr>
+        <tr>
+          <td class="paramkey"></td>
+          <td></td>
+          <td class="paramtype">int&#160;</td>
+          <td class="paramname"><em>end_bit</em> = <code>sizeof(Key)&#160;*&#160;8</code>, </td>
+        </tr>
+        <tr>
+          <td class="paramkey"></td>
+          <td></td>
+          <td class="paramtype">cudaStream_t&#160;</td>
+          <td class="paramname"><em>stream</em> = <code>0</code>, </td>
+        </tr>
+        <tr>
+          <td class="paramkey"></td>
+          <td></td>
+          <td class="paramtype">bool&#160;</td>
+          <td class="paramname"><em>debug_synchronous</em> = <code>false</code>&#160;</td>
+        </tr>
+        <tr>
+          <td></td>
+          <td>)</td>
+          <td></td><td></td>
+        </tr>
+      </table>
+  </td>
+  <td class="mlabels-right">
+<span class="mlabels"><span class="mlabel">inline</span><span class="mlabel">static</span></span>  </td>
+  </tr>
+</table>
+</div><div class="memdoc">
+
+<p>Sorts keys into ascending order. </p>
+<dl class="section user"><dt></dt><dd><ul>
+<li>The sorting operation requires a pair of key buffers. The pair is wrapped in a <a class="el" href="structcub_1_1_double_buffer.html" title="Double-buffer storage wrapper for multi-pass stream transformations that require more than one storag...">DoubleBuffer</a> structure whose member <a class="el" href="structcub_1_1_double_buffer.html#a861d3dff1a70d5e5926057a44d9b8724" title="Return pointer to the currently valid buffer. ">DoubleBuffer::Current()</a> references the active buffer. The currently-active buffer may be changed by the sorting operation.</li>
+<li>This operation requires an allocation of temporary device storage. When <code>d_temp_storage</code> is NULL, no work is done and the required allocation size is returned in <code>temp_storage_bytes</code>.</li>
+<li>When calling this method from kernel code, be sure to define the <code>CUB_CDP</code> macro in your compiler's macro definitions.</li>
+</ul>
+</dd></dl>
+<dl class="section user"><dt></dt><dd>The code snippet below illustrates the sorting of a device vector of <code>int</code> keys. </dd></dl>
+<dl class="section user"><dt></dt><dd><div class="fragment"><div class="line"><span class="preprocessor">#include &lt;<a class="code" href="cub_8cuh.html">cub/cub.cuh</a>&gt;</span>   <span class="comment">// or equivalently &lt;cub/device/device_radix_sort.cuh&gt;</span></div>
+<div class="line"></div>
+<div class="line"><span class="comment">// Declare, allocate, and initialize device pointers for sorting data</span></div>
+<div class="line"><span class="keywordtype">int</span>  num_items;          <span class="comment">// e.g., 7</span></div>
+<div class="line"><span class="keywordtype">int</span>  *d_key_buf;         <span class="comment">// e.g., [8, 6, 7, 5, 3, 0, 9]</span></div>
+<div class="line"><span class="keywordtype">int</span>  *d_key_alt_buf;     <span class="comment">// e.g., [        ...        ]</span></div>
+<div class="line">...</div>
+<div class="line"></div>
+<div class="line"><span class="comment">// Create a DoubleBuffer to wrap the pair of device pointers</span></div>
+<div class="line">cub::DoubleBuffer&lt;<span class="keywordtype">int</span>&gt; d_keys(d_key_buf, d_key_alt_buf);</div>
+<div class="line"></div>
+<div class="line"><span class="comment">// Determine temporary device storage requirements</span></div>
+<div class="line"><span class="keywordtype">void</span>     *d_temp_storage = NULL;</div>
+<div class="line"><span class="keywordtype">size_t</span>   temp_storage_bytes = 0;</div>
+<div class="line"><a class="code" href="structcub_1_1_device_radix_sort.html#abe6e85b55b679a8f648ef27d1e97f869" title="Sorts keys into ascending order. ">cub::DeviceRadixSort::SortKeysDescending</a>(d_temp_storage, temp_storage_bytes, d_keys, num_items);</div>
+<div class="line"></div>
+<div class="line"><span class="comment">// Allocate temporary storage</span></div>
+<div class="line">cudaMalloc(&amp;d_temp_storage, temp_storage_bytes);</div>
+<div class="line"></div>
+<div class="line"><span class="comment">// Run sorting operation</span></div>
+<div class="line"><a class="code" href="structcub_1_1_device_radix_sort.html#abe6e85b55b679a8f648ef27d1e97f869" title="Sorts keys into ascending order. ">cub::DeviceRadixSort::SortKeysDescending</a>(d_temp_storage, temp_storage_bytes, d_keys, num_items);</div>
+<div class="line"></div>
+<div class="line"><span class="comment">// d_keys.Current()      &lt;-- [9, 8, 7, 6, 5, 3, 0]</span></div>
+</div><!-- fragment --></dd></dl>
+<dl class="tparams"><dt>Template Parameters</dt><dd>
+  <table class="tparams">
+    <tr><td class="paramname">Key</td><td><b>[inferred]</b> Key type </td></tr>
+  </table>
+  </dd>
+</dl>
+<dl class="params"><dt>Parameters</dt><dd>
+  <table class="params">
+    <tr><td class="paramdir">[in]</td><td class="paramname">d_temp_storage</td><td>Device allocation of temporary storage. When NULL, the required allocation size is returned in <code>temp_storage_bytes</code> and no work is done. </td></tr>
+    <tr><td class="paramdir">[in,out]</td><td class="paramname">temp_storage_bytes</td><td>Size in bytes of <code>d_temp_storage</code> allocation </td></tr>
+    <tr><td class="paramdir">[in,out]</td><td class="paramname">d_keys</td><td>Double-buffer of keys whose current buffer contains the unsorted input keys and, upon return, is updated to point to the sorted output keys </td></tr>
+    <tr><td class="paramdir">[in]</td><td class="paramname">num_items</td><td>Number of items to reduce </td></tr>
+    <tr><td class="paramdir">[in]</td><td class="paramname">begin_bit</td><td><b>[optional]</b> The first (least-significant) bit index needed for key comparison </td></tr>
+    <tr><td class="paramdir">[in]</td><td class="paramname">end_bit</td><td><b>[optional]</b> The past-the-end (most-significant) bit index needed for key comparison </td></tr>
+    <tr><td class="paramdir">[in]</td><td class="paramname">stream</td><td><b>[optional]</b> CUDA stream to launch kernels within. Default is stream<sub>0</sub>. </td></tr>
+    <tr><td class="paramdir">[in]</td><td class="paramname">debug_synchronous</td><td><b>[optional]</b> Whether or not to synchronize the stream after every kernel launch to check for errors. Also causes launch configurations to be printed to the console. Default is <code>false</code>. </td></tr>
+  </table>
+  </dd>
+</dl>
+
+<p>Definition at line <a class="el" href="device__radix__sort_8cuh_source.html#l01244">1244</a> of file <a class="el" href="device__radix__sort_8cuh_source.html">device_radix_sort.cuh</a>.</p>
 
 </div>
 </div>
@@ -392,7 +683,7 @@ template&lt;typename Key , typename Value &gt; </div>
 <!-- HTML footer for doxygen 1.8.3.1-->
 <!-- start footer part -->
 <hr class="footer"/><address class="footer"><small>
-Generated on Fri Aug 23 2013 17:31:12 for CUB by &#160;<a href="http://www.doxygen.org/index.html">
+Generated on Tue Dec 10 2013 02:42:40 for CUB by &#160;<a href="http://www.doxygen.org/index.html">
 <img class="footer" src="doxygen.png" alt="doxygen"/>
 </a> 1.8.4
 <br>

@@ -52,6 +52,7 @@ var searchBox = new SearchBox("searchBox", "search",false,'Search');
       <li><a href="index.html"><span>Main&#160;Page</span></a></li>
       <li><a href="modules.html"><span>Modules</span></a></li>
       <li class="current"><a href="annotated.html"><span>Classes</span></a></li>
+      <li><a href="examples.html"><span>Examples</span></a></li>
       <li>
         <div id="MSearchBox" class="MSearchBoxInactive">
         <span class="left">
@@ -82,7 +83,7 @@ var searchBox = new SearchBox("searchBox", "search",false,'Search');
       <li><a href="functions_func.html"><span>Functions</span></a></li>
       <li><a href="functions_vars.html"><span>Variables</span></a></li>
       <li><a href="functions_type.html"><span>Typedefs</span></a></li>
-      <li><a href="functions_eval.html"><span>Enumerator</span></a></li>
+      <li><a href="functions_rela.html"><span>Related&#160;Functions</span></a></li>
     </ul>
   </div>
   <div id="navrow4" class="tabs3">
@@ -95,6 +96,7 @@ var searchBox = new SearchBox("searchBox", "search",false,'Search');
       <li><a href="functions_0x66.html#index_f"><span>f</span></a></li>
       <li><a href="functions_0x68.html#index_h"><span>h</span></a></li>
       <li><a href="functions_0x69.html#index_i"><span>i</span></a></li>
+      <li><a href="functions_0x6b.html#index_k"><span>k</span></a></li>
       <li><a href="functions_0x6c.html#index_l"><span>l</span></a></li>
       <li><a href="functions_0x6d.html#index_m"><span>m</span></a></li>
       <li><a href="functions_0x6f.html#index_o"><span>o</span></a></li>
@@ -103,6 +105,7 @@ var searchBox = new SearchBox("searchBox", "search",false,'Search');
       <li><a href="functions_0x73.html#index_s"><span>s</span></a></li>
       <li><a href="functions_0x74.html#index_t"><span>t</span></a></li>
       <li class="current"><a href="functions_0x75.html#index_u"><span>u</span></a></li>
+      <li><a href="functions_0x76.html#index_v"><span>v</span></a></li>
       <li><a href="functions_0x77.html#index_w"><span>w</span></a></li>
       <li><a href="functions_0x7e.html#index_0x7e"><span>~</span></a></li>
     </ul>
@@ -113,7 +116,7 @@ var searchBox = new SearchBox("searchBox", "search",false,'Search');
      onmouseover="return searchBox.OnSearchSelectShow()"
      onmouseout="return searchBox.OnSearchSelectHide()"
      onkeydown="return searchBox.OnSearchSelectKey(event)">
-<a class="SelectItem" href="javascript:void(0)" onclick="searchBox.OnSelectItem(0)"><span class="SelectionMark">&#160;</span>All</a><a class="SelectItem" href="javascript:void(0)" onclick="searchBox.OnSelectItem(1)"><span class="SelectionMark">&#160;</span>Classes</a><a class="SelectItem" href="javascript:void(0)" onclick="searchBox.OnSelectItem(2)"><span class="SelectionMark">&#160;</span>Namespaces</a><a class="SelectItem" href="javascript:void(0)" onclick="searchBox.OnSelectItem(3)"><span class="SelectionMark">&#160;</span>Files</a><a class="SelectItem" href="javascript:void(0)" onclick="searchBox.OnSelectItem(4)"><span class="SelectionMark">&#160;</span>Functions</a><a class="SelectItem" href="javascript:void(0)" onclick="searchBox.OnSelectItem(5)"><span class="SelectionMark">&#160;</span>Variables</a><a class="SelectItem" href="javascript:void(0)" onclick="searchBox.OnSelectItem(6)"><span class="SelectionMark">&#160;</span>Typedefs</a><a class="SelectItem" href="javascript:void(0)" onclick="searchBox.OnSelectItem(7)"><span class="SelectionMark">&#160;</span>Enumerations</a><a class="SelectItem" href="javascript:void(0)" onclick="searchBox.OnSelectItem(8)"><span class="SelectionMark">&#160;</span>Enumerator</a><a class="SelectItem" href="javascript:void(0)" onclick="searchBox.OnSelectItem(9)"><span class="SelectionMark">&#160;</span>Groups</a></div>
+<a class="SelectItem" href="javascript:void(0)" onclick="searchBox.OnSelectItem(0)"><span class="SelectionMark">&#160;</span>All</a><a class="SelectItem" href="javascript:void(0)" onclick="searchBox.OnSelectItem(1)"><span class="SelectionMark">&#160;</span>Classes</a><a class="SelectItem" href="javascript:void(0)" onclick="searchBox.OnSelectItem(2)"><span class="SelectionMark">&#160;</span>Namespaces</a><a class="SelectItem" href="javascript:void(0)" onclick="searchBox.OnSelectItem(3)"><span class="SelectionMark">&#160;</span>Files</a><a class="SelectItem" href="javascript:void(0)" onclick="searchBox.OnSelectItem(4)"><span class="SelectionMark">&#160;</span>Functions</a><a class="SelectItem" href="javascript:void(0)" onclick="searchBox.OnSelectItem(5)"><span class="SelectionMark">&#160;</span>Variables</a><a class="SelectItem" href="javascript:void(0)" onclick="searchBox.OnSelectItem(6)"><span class="SelectionMark">&#160;</span>Typedefs</a><a class="SelectItem" href="javascript:void(0)" onclick="searchBox.OnSelectItem(7)"><span class="SelectionMark">&#160;</span>Enumerations</a><a class="SelectItem" href="javascript:void(0)" onclick="searchBox.OnSelectItem(8)"><span class="SelectionMark">&#160;</span>Enumerator</a><a class="SelectItem" href="javascript:void(0)" onclick="searchBox.OnSelectItem(9)"><span class="SelectionMark">&#160;</span>Friends</a><a class="SelectItem" href="javascript:void(0)" onclick="searchBox.OnSelectItem(10)"><span class="SelectionMark">&#160;</span>Groups</a></div>
 
 <!-- iframe showing the search results (closed by default) -->
 <div id="MSearchResultsWindow">
@@ -127,15 +130,18 @@ var searchBox = new SearchBox("searchBox", "search",false,'Search');
 
 <h3><a class="anchor" id="index_u"></a>- u -</h3><ul>
 <li>UnbindTexture()
-: <a class="el" href="classcub_1_1_tex_iterator_r_a.html#abfc8c42e2da2beffb05ac81ec89ed8b9">cub::TexInputIterator&lt; T &gt;</a>
-, <a class="el" href="classcub_1_1_tex_transform_iterator_r_a.html#abd030991795b9c9ca31f4293486d206a">cub::TexTransformInputIterator&lt; OutputType, ConversionOp, InputType &gt;</a>
+: <a class="el" href="classcub_1_1_tex_obj_input_iterator.html#ad915fda943cade6bb75919bebbb2668b">cub::TexObjInputIterator&lt; T, Offset &gt;</a>
+, <a class="el" href="classcub_1_1_tex_ref_input_iterator.html#aae8811cd17853d1591fe366e018d7c18">cub::TexRefInputIterator&lt; T, UNIQUE_ID, Offset &gt;</a>
+</li>
+<li>Unique()
+: <a class="el" href="structcub_1_1_device_select.html#ae635fc4f38a07a1c1dd90c177e993312">cub::DeviceSelect</a>
 </li>
 </ul>
 </div><!-- contents -->
 <!-- HTML footer for doxygen 1.8.3.1-->
 <!-- start footer part -->
 <hr class="footer"/><address class="footer"><small>
-Generated on Fri Aug 23 2013 17:31:14 for CUB by &#160;<a href="http://www.doxygen.org/index.html">
+Generated on Tue Dec 10 2013 02:42:41 for CUB by &#160;<a href="http://www.doxygen.org/index.html">
 <img class="footer" src="doxygen.png" alt="doxygen"/>
 </a> 1.8.4
 <br>

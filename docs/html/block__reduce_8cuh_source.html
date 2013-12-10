@@ -52,6 +52,7 @@ var searchBox = new SearchBox("searchBox", "search",false,'Search');
       <li><a href="index.html"><span>Main&#160;Page</span></a></li>
       <li><a href="modules.html"><span>Modules</span></a></li>
       <li><a href="annotated.html"><span>Classes</span></a></li>
+      <li><a href="examples.html"><span>Examples</span></a></li>
       <li>
         <div id="MSearchBox" class="MSearchBoxInactive">
         <span class="left">
@@ -81,7 +82,7 @@ var searchBox = new SearchBox("searchBox", "search",false,'Search');
      onmouseover="return searchBox.OnSearchSelectShow()"
      onmouseout="return searchBox.OnSearchSelectHide()"
      onkeydown="return searchBox.OnSearchSelectKey(event)">
-<a class="SelectItem" href="javascript:void(0)" onclick="searchBox.OnSelectItem(0)"><span class="SelectionMark">&#160;</span>All</a><a class="SelectItem" href="javascript:void(0)" onclick="searchBox.OnSelectItem(1)"><span class="SelectionMark">&#160;</span>Classes</a><a class="SelectItem" href="javascript:void(0)" onclick="searchBox.OnSelectItem(2)"><span class="SelectionMark">&#160;</span>Namespaces</a><a class="SelectItem" href="javascript:void(0)" onclick="searchBox.OnSelectItem(3)"><span class="SelectionMark">&#160;</span>Files</a><a class="SelectItem" href="javascript:void(0)" onclick="searchBox.OnSelectItem(4)"><span class="SelectionMark">&#160;</span>Functions</a><a class="SelectItem" href="javascript:void(0)" onclick="searchBox.OnSelectItem(5)"><span class="SelectionMark">&#160;</span>Variables</a><a class="SelectItem" href="javascript:void(0)" onclick="searchBox.OnSelectItem(6)"><span class="SelectionMark">&#160;</span>Typedefs</a><a class="SelectItem" href="javascript:void(0)" onclick="searchBox.OnSelectItem(7)"><span class="SelectionMark">&#160;</span>Enumerations</a><a class="SelectItem" href="javascript:void(0)" onclick="searchBox.OnSelectItem(8)"><span class="SelectionMark">&#160;</span>Enumerator</a><a class="SelectItem" href="javascript:void(0)" onclick="searchBox.OnSelectItem(9)"><span class="SelectionMark">&#160;</span>Groups</a></div>
+<a class="SelectItem" href="javascript:void(0)" onclick="searchBox.OnSelectItem(0)"><span class="SelectionMark">&#160;</span>All</a><a class="SelectItem" href="javascript:void(0)" onclick="searchBox.OnSelectItem(1)"><span class="SelectionMark">&#160;</span>Classes</a><a class="SelectItem" href="javascript:void(0)" onclick="searchBox.OnSelectItem(2)"><span class="SelectionMark">&#160;</span>Namespaces</a><a class="SelectItem" href="javascript:void(0)" onclick="searchBox.OnSelectItem(3)"><span class="SelectionMark">&#160;</span>Files</a><a class="SelectItem" href="javascript:void(0)" onclick="searchBox.OnSelectItem(4)"><span class="SelectionMark">&#160;</span>Functions</a><a class="SelectItem" href="javascript:void(0)" onclick="searchBox.OnSelectItem(5)"><span class="SelectionMark">&#160;</span>Variables</a><a class="SelectItem" href="javascript:void(0)" onclick="searchBox.OnSelectItem(6)"><span class="SelectionMark">&#160;</span>Typedefs</a><a class="SelectItem" href="javascript:void(0)" onclick="searchBox.OnSelectItem(7)"><span class="SelectionMark">&#160;</span>Enumerations</a><a class="SelectItem" href="javascript:void(0)" onclick="searchBox.OnSelectItem(8)"><span class="SelectionMark">&#160;</span>Enumerator</a><a class="SelectItem" href="javascript:void(0)" onclick="searchBox.OnSelectItem(9)"><span class="SelectionMark">&#160;</span>Friends</a><a class="SelectItem" href="javascript:void(0)" onclick="searchBox.OnSelectItem(10)"><span class="SelectionMark">&#160;</span>Groups</a></div>
 
 <!-- iframe showing the search results (closed by default) -->
 <div id="MSearchResultsWindow">
@@ -160,173 +161,173 @@ var searchBox = new SearchBox("searchBox", "search",false,'Search');
 <div class="line"><a name="l00111"></a><span class="lineno">  111</span>&#160;<span class="comment"> * Block reduce</span></div>
 <div class="line"><a name="l00112"></a><span class="lineno">  112</span>&#160;<span class="comment"> ******************************************************************************/</span></div>
 <div class="line"><a name="l00113"></a><span class="lineno">  113</span>&#160;</div>
-<div class="line"><a name="l00168"></a><span class="lineno">  168</span>&#160;<span class="keyword">template</span> &lt;</div>
-<div class="line"><a name="l00169"></a><span class="lineno">  169</span>&#160;    <span class="keyword">typename</span>                T,</div>
-<div class="line"><a name="l00170"></a><span class="lineno">  170</span>&#160;    <span class="keywordtype">int</span>                     BLOCK_THREADS,</div>
-<div class="line"><a name="l00171"></a><span class="lineno">  171</span>&#160;    <a class="code" href="namespacecub.html#add0251c713859b8974806079e498d10a">BlockReduceAlgorithm</a>    ALGORITHM = <a class="code" href="namespacecub.html#add0251c713859b8974806079e498d10aab32651e17a8a42207e74b7ed8d1aa4d2">BLOCK_REDUCE_RAKING</a>&gt;</div>
-<div class="line"><a name="l00172"></a><span class="lineno"><a class="code" href="classcub_1_1_block_reduce.html">  172</a></span>&#160;<span class="keyword">class </span><a class="code" href="classcub_1_1_block_reduce.html" title="The BlockReduce class provides collective methods for computing a parallel reduction of items partiti...">BlockReduce</a></div>
-<div class="line"><a name="l00173"></a><span class="lineno">  173</span>&#160;{</div>
-<div class="line"><a name="l00174"></a><span class="lineno">  174</span>&#160;<span class="keyword">private</span>:</div>
-<div class="line"><a name="l00175"></a><span class="lineno">  175</span>&#160;</div>
-<div class="line"><a name="l00176"></a><span class="lineno">  176</span>&#160;    <span class="comment">/******************************************************************************</span></div>
-<div class="line"><a name="l00177"></a><span class="lineno">  177</span>&#160;<span class="comment">     * Constants and typedefs</span></div>
-<div class="line"><a name="l00178"></a><span class="lineno">  178</span>&#160;<span class="comment">     ******************************************************************************/</span></div>
-<div class="line"><a name="l00179"></a><span class="lineno">  179</span>&#160;</div>
-<div class="line"><a name="l00181"></a><span class="lineno">  181</span>&#160;    <span class="keyword">typedef</span> <span class="keyword">typename</span> <a class="code" href="structcub_1_1_if.html" title="Type selection (IF ? ThenType : ElseType) ">If</a>&lt;(ALGORITHM == <a class="code" href="namespacecub.html#add0251c713859b8974806079e498d10aa993903176f938273fa1ff5d4daa808e5">BLOCK_REDUCE_WARP_REDUCTIONS</a>),</div>
-<div class="line"><a name="l00182"></a><span class="lineno">  182</span>&#160;        BlockReduceWarpReductions&lt;T, BLOCK_THREADS&gt;,</div>
-<div class="line"><a name="l00183"></a><span class="lineno">  183</span>&#160;        BlockReduceRaking&lt;T, BLOCK_THREADS&gt; &gt;::Type InternalBlockReduce;</div>
-<div class="line"><a name="l00184"></a><span class="lineno">  184</span>&#160;</div>
-<div class="line"><a name="l00186"></a><span class="lineno">  186</span>&#160;    <span class="keyword">typedef</span> <span class="keyword">typename</span> InternalBlockReduce::TempStorage _TempStorage;</div>
+<div class="line"><a name="l00167"></a><span class="lineno">  167</span>&#160;<span class="keyword">template</span> &lt;</div>
+<div class="line"><a name="l00168"></a><span class="lineno">  168</span>&#160;    <span class="keyword">typename</span>                T,</div>
+<div class="line"><a name="l00169"></a><span class="lineno">  169</span>&#160;    <span class="keywordtype">int</span>                     BLOCK_THREADS,</div>
+<div class="line"><a name="l00170"></a><span class="lineno">  170</span>&#160;    <a class="code" href="namespacecub.html#add0251c713859b8974806079e498d10a">BlockReduceAlgorithm</a>    ALGORITHM = <a class="code" href="namespacecub.html#add0251c713859b8974806079e498d10aab32651e17a8a42207e74b7ed8d1aa4d2">BLOCK_REDUCE_RAKING</a>&gt;</div>
+<div class="line"><a name="l00171"></a><span class="lineno"><a class="code" href="classcub_1_1_block_reduce.html">  171</a></span>&#160;<span class="keyword">class </span><a class="code" href="classcub_1_1_block_reduce.html" title="The BlockReduce class provides collective methods for computing a parallel reduction of items partiti...">BlockReduce</a></div>
+<div class="line"><a name="l00172"></a><span class="lineno">  172</span>&#160;{</div>
+<div class="line"><a name="l00173"></a><span class="lineno">  173</span>&#160;<span class="keyword">private</span>:</div>
+<div class="line"><a name="l00174"></a><span class="lineno">  174</span>&#160;</div>
+<div class="line"><a name="l00175"></a><span class="lineno">  175</span>&#160;    <span class="comment">/******************************************************************************</span></div>
+<div class="line"><a name="l00176"></a><span class="lineno">  176</span>&#160;<span class="comment">     * Constants and type definitions</span></div>
+<div class="line"><a name="l00177"></a><span class="lineno">  177</span>&#160;<span class="comment">     ******************************************************************************/</span></div>
+<div class="line"><a name="l00178"></a><span class="lineno">  178</span>&#160;</div>
+<div class="line"><a name="l00180"></a><span class="lineno">  180</span>&#160;    <span class="keyword">typedef</span> <span class="keyword">typename</span> <a class="code" href="structcub_1_1_if.html" title="Type selection (IF ? ThenType : ElseType) ">If</a>&lt;(ALGORITHM == <a class="code" href="namespacecub.html#add0251c713859b8974806079e498d10aa993903176f938273fa1ff5d4daa808e5">BLOCK_REDUCE_WARP_REDUCTIONS</a>),</div>
+<div class="line"><a name="l00181"></a><span class="lineno">  181</span>&#160;        BlockReduceWarpReductions&lt;T, BLOCK_THREADS&gt;,</div>
+<div class="line"><a name="l00182"></a><span class="lineno">  182</span>&#160;        BlockReduceRaking&lt;T, BLOCK_THREADS&gt; &gt;::Type InternalBlockReduce;</div>
+<div class="line"><a name="l00183"></a><span class="lineno">  183</span>&#160;</div>
+<div class="line"><a name="l00185"></a><span class="lineno">  185</span>&#160;    <span class="keyword">typedef</span> <span class="keyword">typename</span> InternalBlockReduce::TempStorage _TempStorage;</div>
+<div class="line"><a name="l00186"></a><span class="lineno">  186</span>&#160;</div>
 <div class="line"><a name="l00187"></a><span class="lineno">  187</span>&#160;</div>
-<div class="line"><a name="l00188"></a><span class="lineno">  188</span>&#160;</div>
-<div class="line"><a name="l00189"></a><span class="lineno">  189</span>&#160;    <span class="comment">/******************************************************************************</span></div>
-<div class="line"><a name="l00190"></a><span class="lineno">  190</span>&#160;<span class="comment">     * Utility methods</span></div>
-<div class="line"><a name="l00191"></a><span class="lineno">  191</span>&#160;<span class="comment">     ******************************************************************************/</span></div>
-<div class="line"><a name="l00192"></a><span class="lineno">  192</span>&#160;</div>
-<div class="line"><a name="l00194"></a><span class="lineno">  194</span>&#160;    __device__ __forceinline__ _TempStorage&amp; PrivateStorage()</div>
-<div class="line"><a name="l00195"></a><span class="lineno">  195</span>&#160;    {</div>
-<div class="line"><a name="l00196"></a><span class="lineno">  196</span>&#160;        __shared__ _TempStorage private_storage;</div>
-<div class="line"><a name="l00197"></a><span class="lineno">  197</span>&#160;        <span class="keywordflow">return</span> private_storage;</div>
-<div class="line"><a name="l00198"></a><span class="lineno">  198</span>&#160;    }</div>
+<div class="line"><a name="l00188"></a><span class="lineno">  188</span>&#160;    <span class="comment">/******************************************************************************</span></div>
+<div class="line"><a name="l00189"></a><span class="lineno">  189</span>&#160;<span class="comment">     * Utility methods</span></div>
+<div class="line"><a name="l00190"></a><span class="lineno">  190</span>&#160;<span class="comment">     ******************************************************************************/</span></div>
+<div class="line"><a name="l00191"></a><span class="lineno">  191</span>&#160;</div>
+<div class="line"><a name="l00193"></a><span class="lineno">  193</span>&#160;    __device__ __forceinline__ _TempStorage&amp; PrivateStorage()</div>
+<div class="line"><a name="l00194"></a><span class="lineno">  194</span>&#160;    {</div>
+<div class="line"><a name="l00195"></a><span class="lineno">  195</span>&#160;        __shared__ _TempStorage private_storage;</div>
+<div class="line"><a name="l00196"></a><span class="lineno">  196</span>&#160;        <span class="keywordflow">return</span> private_storage;</div>
+<div class="line"><a name="l00197"></a><span class="lineno">  197</span>&#160;    }</div>
+<div class="line"><a name="l00198"></a><span class="lineno">  198</span>&#160;</div>
 <div class="line"><a name="l00199"></a><span class="lineno">  199</span>&#160;</div>
-<div class="line"><a name="l00200"></a><span class="lineno">  200</span>&#160;</div>
-<div class="line"><a name="l00201"></a><span class="lineno">  201</span>&#160;    <span class="comment">/******************************************************************************</span></div>
-<div class="line"><a name="l00202"></a><span class="lineno">  202</span>&#160;<span class="comment">     * Thread fields</span></div>
-<div class="line"><a name="l00203"></a><span class="lineno">  203</span>&#160;<span class="comment">     ******************************************************************************/</span></div>
-<div class="line"><a name="l00204"></a><span class="lineno">  204</span>&#160;</div>
-<div class="line"><a name="l00206"></a><span class="lineno">  206</span>&#160;    _TempStorage &amp;temp_storage;</div>
-<div class="line"><a name="l00207"></a><span class="lineno">  207</span>&#160;</div>
-<div class="line"><a name="l00209"></a><span class="lineno">  209</span>&#160;    <span class="keywordtype">int</span> linear_tid;</div>
+<div class="line"><a name="l00200"></a><span class="lineno">  200</span>&#160;    <span class="comment">/******************************************************************************</span></div>
+<div class="line"><a name="l00201"></a><span class="lineno">  201</span>&#160;<span class="comment">     * Thread fields</span></div>
+<div class="line"><a name="l00202"></a><span class="lineno">  202</span>&#160;<span class="comment">     ******************************************************************************/</span></div>
+<div class="line"><a name="l00203"></a><span class="lineno">  203</span>&#160;</div>
+<div class="line"><a name="l00205"></a><span class="lineno">  205</span>&#160;    _TempStorage &amp;temp_storage;</div>
+<div class="line"><a name="l00206"></a><span class="lineno">  206</span>&#160;</div>
+<div class="line"><a name="l00208"></a><span class="lineno">  208</span>&#160;    <span class="keywordtype">int</span> linear_tid;</div>
+<div class="line"><a name="l00209"></a><span class="lineno">  209</span>&#160;</div>
 <div class="line"><a name="l00210"></a><span class="lineno">  210</span>&#160;</div>
-<div class="line"><a name="l00211"></a><span class="lineno">  211</span>&#160;</div>
-<div class="line"><a name="l00212"></a><span class="lineno">  212</span>&#160;<span class="keyword">public</span>:</div>
-<div class="line"><a name="l00213"></a><span class="lineno">  213</span>&#160;</div>
-<div class="line"><a name="l00215"></a><span class="lineno"><a class="code" href="structcub_1_1_block_reduce_1_1_temp_storage.html">  215</a></span>&#160;    <span class="keyword">struct </span><a class="code" href="structcub_1_1_block_reduce_1_1_temp_storage.html" title="The operations exposed by BlockReduce require a temporary memory allocation of this nested type for t...">TempStorage</a> : <a class="code" href="structcub_1_1_uninitialized.html" title="A storage-backing wrapper that allows types with non-trivial constructors to be aliased in unions...">Uninitialized</a>&lt;_TempStorage&gt; {};</div>
+<div class="line"><a name="l00211"></a><span class="lineno">  211</span>&#160;<span class="keyword">public</span>:</div>
+<div class="line"><a name="l00212"></a><span class="lineno">  212</span>&#160;</div>
+<div class="line"><a name="l00214"></a><span class="lineno"><a class="code" href="structcub_1_1_block_reduce_1_1_temp_storage.html">  214</a></span>&#160;    <span class="keyword">struct </span><a class="code" href="structcub_1_1_block_reduce_1_1_temp_storage.html" title="The operations exposed by BlockReduce require a temporary memory allocation of this nested type for t...">TempStorage</a> : <a class="code" href="structcub_1_1_uninitialized.html" title="A storage-backing wrapper that allows types with non-trivial constructors to be aliased in unions...">Uninitialized</a>&lt;_TempStorage&gt; {};</div>
+<div class="line"><a name="l00215"></a><span class="lineno">  215</span>&#160;</div>
 <div class="line"><a name="l00216"></a><span class="lineno">  216</span>&#160;</div>
-<div class="line"><a name="l00217"></a><span class="lineno">  217</span>&#160;</div>
-<div class="line"><a name="l00218"></a><span class="lineno">  218</span>&#160;    <span class="comment">/******************************************************************/</span></div>
-<div class="line"><a name="l00222"></a><span class="lineno">  222</span>&#160;</div>
-<div class="line"><a name="l00226"></a><span class="lineno"><a class="code" href="classcub_1_1_block_reduce.html#a3d1fab4feec5bcca9c058c98dcc2e169">  226</a></span>&#160;    __device__ __forceinline__ <a class="code" href="classcub_1_1_block_reduce.html#a3d1fab4feec5bcca9c058c98dcc2e169" title="Collective constructor for 1D thread blocks using a private static allocation of shared memory as tem...">BlockReduce</a>()</div>
-<div class="line"><a name="l00227"></a><span class="lineno">  227</span>&#160;    :</div>
-<div class="line"><a name="l00228"></a><span class="lineno">  228</span>&#160;        temp_storage(PrivateStorage()),</div>
-<div class="line"><a name="l00229"></a><span class="lineno">  229</span>&#160;        linear_tid(threadIdx.x)</div>
-<div class="line"><a name="l00230"></a><span class="lineno">  230</span>&#160;    {}</div>
+<div class="line"><a name="l00217"></a><span class="lineno">  217</span>&#160;    <span class="comment">/******************************************************************/</span></div>
+<div class="line"><a name="l00221"></a><span class="lineno">  221</span>&#160;</div>
+<div class="line"><a name="l00225"></a><span class="lineno"><a class="code" href="classcub_1_1_block_reduce.html#a3d1fab4feec5bcca9c058c98dcc2e169">  225</a></span>&#160;    __device__ __forceinline__ <a class="code" href="classcub_1_1_block_reduce.html#a3d1fab4feec5bcca9c058c98dcc2e169" title="Collective constructor for 1D thread blocks using a private static allocation of shared memory as tem...">BlockReduce</a>()</div>
+<div class="line"><a name="l00226"></a><span class="lineno">  226</span>&#160;    :</div>
+<div class="line"><a name="l00227"></a><span class="lineno">  227</span>&#160;        temp_storage(PrivateStorage()),</div>
+<div class="line"><a name="l00228"></a><span class="lineno">  228</span>&#160;        linear_tid(threadIdx.x)</div>
+<div class="line"><a name="l00229"></a><span class="lineno">  229</span>&#160;    {}</div>
+<div class="line"><a name="l00230"></a><span class="lineno">  230</span>&#160;</div>
 <div class="line"><a name="l00231"></a><span class="lineno">  231</span>&#160;</div>
-<div class="line"><a name="l00232"></a><span class="lineno">  232</span>&#160;</div>
-<div class="line"><a name="l00236"></a><span class="lineno"><a class="code" href="classcub_1_1_block_reduce.html#a9687391e0384a76271c9b25410f5d377">  236</a></span>&#160;    __device__ __forceinline__ <a class="code" href="classcub_1_1_block_reduce.html#a9687391e0384a76271c9b25410f5d377" title="Collective constructor for 1D thread blocks using the specified memory allocation as temporary storag...">BlockReduce</a>(</div>
-<div class="line"><a name="l00237"></a><span class="lineno">  237</span>&#160;        <a class="code" href="structcub_1_1_block_reduce_1_1_temp_storage.html" title="The operations exposed by BlockReduce require a temporary memory allocation of this nested type for t...">TempStorage</a> &amp;temp_storage)             </div>
-<div class="line"><a name="l00238"></a><span class="lineno">  238</span>&#160;    :</div>
-<div class="line"><a name="l00239"></a><span class="lineno">  239</span>&#160;        temp_storage(temp_storage.Alias()),</div>
-<div class="line"><a name="l00240"></a><span class="lineno">  240</span>&#160;        linear_tid(threadIdx.x)</div>
-<div class="line"><a name="l00241"></a><span class="lineno">  241</span>&#160;    {}</div>
+<div class="line"><a name="l00235"></a><span class="lineno"><a class="code" href="classcub_1_1_block_reduce.html#a9687391e0384a76271c9b25410f5d377">  235</a></span>&#160;    __device__ __forceinline__ <a class="code" href="classcub_1_1_block_reduce.html#a9687391e0384a76271c9b25410f5d377" title="Collective constructor for 1D thread blocks using the specified memory allocation as temporary storag...">BlockReduce</a>(</div>
+<div class="line"><a name="l00236"></a><span class="lineno">  236</span>&#160;        <a class="code" href="structcub_1_1_block_reduce_1_1_temp_storage.html" title="The operations exposed by BlockReduce require a temporary memory allocation of this nested type for t...">TempStorage</a> &amp;temp_storage)             </div>
+<div class="line"><a name="l00237"></a><span class="lineno">  237</span>&#160;    :</div>
+<div class="line"><a name="l00238"></a><span class="lineno">  238</span>&#160;        temp_storage(temp_storage.Alias()),</div>
+<div class="line"><a name="l00239"></a><span class="lineno">  239</span>&#160;        linear_tid(threadIdx.x)</div>
+<div class="line"><a name="l00240"></a><span class="lineno">  240</span>&#160;    {}</div>
+<div class="line"><a name="l00241"></a><span class="lineno">  241</span>&#160;</div>
 <div class="line"><a name="l00242"></a><span class="lineno">  242</span>&#160;</div>
-<div class="line"><a name="l00243"></a><span class="lineno">  243</span>&#160;</div>
-<div class="line"><a name="l00247"></a><span class="lineno"><a class="code" href="classcub_1_1_block_reduce.html#a126757e3d17a046190ed6e4383d8f615">  247</a></span>&#160;    __device__ __forceinline__ <a class="code" href="classcub_1_1_block_reduce.html#a126757e3d17a046190ed6e4383d8f615" title="Collective constructor using a private static allocation of shared memory as temporary storage...">BlockReduce</a>(</div>
-<div class="line"><a name="l00248"></a><span class="lineno">  248</span>&#160;        <span class="keywordtype">int</span> linear_tid)                        </div>
-<div class="line"><a name="l00249"></a><span class="lineno">  249</span>&#160;    :</div>
-<div class="line"><a name="l00250"></a><span class="lineno">  250</span>&#160;        temp_storage(PrivateStorage()),</div>
-<div class="line"><a name="l00251"></a><span class="lineno">  251</span>&#160;        linear_tid(linear_tid)</div>
-<div class="line"><a name="l00252"></a><span class="lineno">  252</span>&#160;    {}</div>
+<div class="line"><a name="l00246"></a><span class="lineno"><a class="code" href="classcub_1_1_block_reduce.html#a126757e3d17a046190ed6e4383d8f615">  246</a></span>&#160;    __device__ __forceinline__ <a class="code" href="classcub_1_1_block_reduce.html#a126757e3d17a046190ed6e4383d8f615" title="Collective constructor using a private static allocation of shared memory as temporary storage...">BlockReduce</a>(</div>
+<div class="line"><a name="l00247"></a><span class="lineno">  247</span>&#160;        <span class="keywordtype">int</span> linear_tid)                        </div>
+<div class="line"><a name="l00248"></a><span class="lineno">  248</span>&#160;    :</div>
+<div class="line"><a name="l00249"></a><span class="lineno">  249</span>&#160;        temp_storage(PrivateStorage()),</div>
+<div class="line"><a name="l00250"></a><span class="lineno">  250</span>&#160;        linear_tid(linear_tid)</div>
+<div class="line"><a name="l00251"></a><span class="lineno">  251</span>&#160;    {}</div>
+<div class="line"><a name="l00252"></a><span class="lineno">  252</span>&#160;</div>
 <div class="line"><a name="l00253"></a><span class="lineno">  253</span>&#160;</div>
-<div class="line"><a name="l00254"></a><span class="lineno">  254</span>&#160;</div>
-<div class="line"><a name="l00258"></a><span class="lineno"><a class="code" href="classcub_1_1_block_reduce.html#a1def8cd84b121828acbdf41a307efa46">  258</a></span>&#160;    __device__ __forceinline__ <a class="code" href="classcub_1_1_block_reduce.html#a1def8cd84b121828acbdf41a307efa46" title="Collective constructor using the specified memory allocation as temporary storage. Each thread is identified using the supplied linear thread identifier. ">BlockReduce</a>(</div>
-<div class="line"><a name="l00259"></a><span class="lineno">  259</span>&#160;        <a class="code" href="structcub_1_1_block_reduce_1_1_temp_storage.html" title="The operations exposed by BlockReduce require a temporary memory allocation of this nested type for t...">TempStorage</a> &amp;temp_storage,             </div>
-<div class="line"><a name="l00260"></a><span class="lineno">  260</span>&#160;        <span class="keywordtype">int</span> linear_tid)                        </div>
-<div class="line"><a name="l00261"></a><span class="lineno">  261</span>&#160;    :</div>
-<div class="line"><a name="l00262"></a><span class="lineno">  262</span>&#160;        temp_storage(temp_storage.Alias()),</div>
-<div class="line"><a name="l00263"></a><span class="lineno">  263</span>&#160;        linear_tid(linear_tid)</div>
-<div class="line"><a name="l00264"></a><span class="lineno">  264</span>&#160;    {}</div>
+<div class="line"><a name="l00257"></a><span class="lineno"><a class="code" href="classcub_1_1_block_reduce.html#a1def8cd84b121828acbdf41a307efa46">  257</a></span>&#160;    __device__ __forceinline__ <a class="code" href="classcub_1_1_block_reduce.html#a1def8cd84b121828acbdf41a307efa46" title="Collective constructor using the specified memory allocation as temporary storage. Each thread is identified using the supplied linear thread identifier. ">BlockReduce</a>(</div>
+<div class="line"><a name="l00258"></a><span class="lineno">  258</span>&#160;        <a class="code" href="structcub_1_1_block_reduce_1_1_temp_storage.html" title="The operations exposed by BlockReduce require a temporary memory allocation of this nested type for t...">TempStorage</a> &amp;temp_storage,             </div>
+<div class="line"><a name="l00259"></a><span class="lineno">  259</span>&#160;        <span class="keywordtype">int</span> linear_tid)                        </div>
+<div class="line"><a name="l00260"></a><span class="lineno">  260</span>&#160;    :</div>
+<div class="line"><a name="l00261"></a><span class="lineno">  261</span>&#160;        temp_storage(temp_storage.Alias()),</div>
+<div class="line"><a name="l00262"></a><span class="lineno">  262</span>&#160;        linear_tid(linear_tid)</div>
+<div class="line"><a name="l00263"></a><span class="lineno">  263</span>&#160;    {}</div>
+<div class="line"><a name="l00264"></a><span class="lineno">  264</span>&#160;</div>
 <div class="line"><a name="l00265"></a><span class="lineno">  265</span>&#160;</div>
 <div class="line"><a name="l00266"></a><span class="lineno">  266</span>&#160;</div>
-<div class="line"><a name="l00267"></a><span class="lineno">  267</span>&#160;</div>
-<div class="line"><a name="l00269"></a><span class="lineno">  269</span>&#160;    <span class="comment">/******************************************************************/</span></div>
+<div class="line"><a name="l00268"></a><span class="lineno">  268</span>&#160;    <span class="comment">/******************************************************************/</span></div>
+<div class="line"><a name="l00272"></a><span class="lineno">  272</span>&#160;</div>
 <div class="line"><a name="l00273"></a><span class="lineno">  273</span>&#160;</div>
-<div class="line"><a name="l00274"></a><span class="lineno">  274</span>&#160;</div>
-<div class="line"><a name="l00309"></a><span class="lineno">  309</span>&#160;    <span class="keyword">template</span> &lt;<span class="keyword">typename</span> ReductionOp&gt;</div>
-<div class="line"><a name="l00310"></a><span class="lineno"><a class="code" href="classcub_1_1_block_reduce.html#a77dac72eafb56f394762b8d3b937de79">  310</a></span>&#160;    __device__ __forceinline__ T <a class="code" href="classcub_1_1_block_reduce.html#a77dac72eafb56f394762b8d3b937de79" title="Computes a block-wide reduction for thread0 using the specified binary reduction functor. Each thread contributes one input element. ">Reduce</a>(</div>
-<div class="line"><a name="l00311"></a><span class="lineno">  311</span>&#160;        T               input,                      </div>
-<div class="line"><a name="l00312"></a><span class="lineno">  312</span>&#160;        ReductionOp     reduction_op)               </div>
-<div class="line"><a name="l00313"></a><span class="lineno">  313</span>&#160;    {</div>
-<div class="line"><a name="l00314"></a><span class="lineno">  314</span>&#160;        <span class="keywordflow">return</span> InternalBlockReduce(temp_storage, linear_tid).template Reduce&lt;true&gt;(input, BLOCK_THREADS, reduction_op);</div>
-<div class="line"><a name="l00315"></a><span class="lineno">  315</span>&#160;    }</div>
+<div class="line"><a name="l00308"></a><span class="lineno">  308</span>&#160;    <span class="keyword">template</span> &lt;<span class="keyword">typename</span> ReductionOp&gt;</div>
+<div class="line"><a name="l00309"></a><span class="lineno"><a class="code" href="classcub_1_1_block_reduce.html#a77dac72eafb56f394762b8d3b937de79">  309</a></span>&#160;    __device__ __forceinline__ T <a class="code" href="classcub_1_1_block_reduce.html#a77dac72eafb56f394762b8d3b937de79" title="Computes a block-wide reduction for thread0 using the specified binary reduction functor. Each thread contributes one input element. ">Reduce</a>(</div>
+<div class="line"><a name="l00310"></a><span class="lineno">  310</span>&#160;        T               input,                      </div>
+<div class="line"><a name="l00311"></a><span class="lineno">  311</span>&#160;        ReductionOp     reduction_op)               </div>
+<div class="line"><a name="l00312"></a><span class="lineno">  312</span>&#160;    {</div>
+<div class="line"><a name="l00313"></a><span class="lineno">  313</span>&#160;        <span class="keywordflow">return</span> InternalBlockReduce(temp_storage, linear_tid).template Reduce&lt;true&gt;(input, BLOCK_THREADS, reduction_op);</div>
+<div class="line"><a name="l00314"></a><span class="lineno">  314</span>&#160;    }</div>
+<div class="line"><a name="l00315"></a><span class="lineno">  315</span>&#160;</div>
 <div class="line"><a name="l00316"></a><span class="lineno">  316</span>&#160;</div>
-<div class="line"><a name="l00317"></a><span class="lineno">  317</span>&#160;</div>
-<div class="line"><a name="l00356"></a><span class="lineno">  356</span>&#160;    <span class="keyword">template</span> &lt;</div>
-<div class="line"><a name="l00357"></a><span class="lineno">  357</span>&#160;        <span class="keywordtype">int</span> ITEMS_PER_THREAD,</div>
-<div class="line"><a name="l00358"></a><span class="lineno">  358</span>&#160;        <span class="keyword">typename</span> ReductionOp&gt;</div>
-<div class="line"><a name="l00359"></a><span class="lineno"><a class="code" href="classcub_1_1_block_reduce.html#a40ea5f85fa38ac1ac9ec98db9b085ed0">  359</a></span>&#160;    __device__ __forceinline__ T <a class="code" href="classcub_1_1_block_reduce.html#a40ea5f85fa38ac1ac9ec98db9b085ed0" title="Computes a block-wide reduction for thread0 using the specified binary reduction functor. Each thread contributes an array of consecutive input elements. ">Reduce</a>(</div>
-<div class="line"><a name="l00360"></a><span class="lineno">  360</span>&#160;        T               (&amp;inputs)[ITEMS_PER_THREAD],    </div>
-<div class="line"><a name="l00361"></a><span class="lineno">  361</span>&#160;        ReductionOp     reduction_op)                   </div>
-<div class="line"><a name="l00362"></a><span class="lineno">  362</span>&#160;    {</div>
-<div class="line"><a name="l00363"></a><span class="lineno">  363</span>&#160;        <span class="comment">// Reduce partials</span></div>
-<div class="line"><a name="l00364"></a><span class="lineno">  364</span>&#160;        T partial = <a class="code" href="group___thread_module.html#ga48320d1f549b7931ae1f72040f9e42dc" title="Perform a sequential reduction over LENGTH elements of the input array, seeded with the specified pre...">ThreadReduce</a>(inputs, reduction_op);</div>
-<div class="line"><a name="l00365"></a><span class="lineno">  365</span>&#160;        <span class="keywordflow">return</span> <a class="code" href="classcub_1_1_block_reduce.html#a77dac72eafb56f394762b8d3b937de79" title="Computes a block-wide reduction for thread0 using the specified binary reduction functor. Each thread contributes one input element. ">Reduce</a>(partial, reduction_op);</div>
-<div class="line"><a name="l00366"></a><span class="lineno">  366</span>&#160;    }</div>
+<div class="line"><a name="l00355"></a><span class="lineno">  355</span>&#160;    <span class="keyword">template</span> &lt;</div>
+<div class="line"><a name="l00356"></a><span class="lineno">  356</span>&#160;        <span class="keywordtype">int</span> ITEMS_PER_THREAD,</div>
+<div class="line"><a name="l00357"></a><span class="lineno">  357</span>&#160;        <span class="keyword">typename</span> ReductionOp&gt;</div>
+<div class="line"><a name="l00358"></a><span class="lineno"><a class="code" href="classcub_1_1_block_reduce.html#a40ea5f85fa38ac1ac9ec98db9b085ed0">  358</a></span>&#160;    __device__ __forceinline__ T <a class="code" href="classcub_1_1_block_reduce.html#a40ea5f85fa38ac1ac9ec98db9b085ed0" title="Computes a block-wide reduction for thread0 using the specified binary reduction functor. Each thread contributes an array of consecutive input elements. ">Reduce</a>(</div>
+<div class="line"><a name="l00359"></a><span class="lineno">  359</span>&#160;        T               (&amp;inputs)[ITEMS_PER_THREAD],    </div>
+<div class="line"><a name="l00360"></a><span class="lineno">  360</span>&#160;        ReductionOp     reduction_op)                   </div>
+<div class="line"><a name="l00361"></a><span class="lineno">  361</span>&#160;    {</div>
+<div class="line"><a name="l00362"></a><span class="lineno">  362</span>&#160;        <span class="comment">// Reduce partials</span></div>
+<div class="line"><a name="l00363"></a><span class="lineno">  363</span>&#160;        T partial = ThreadReduce(inputs, reduction_op);</div>
+<div class="line"><a name="l00364"></a><span class="lineno">  364</span>&#160;        <span class="keywordflow">return</span> <a class="code" href="classcub_1_1_block_reduce.html#a77dac72eafb56f394762b8d3b937de79" title="Computes a block-wide reduction for thread0 using the specified binary reduction functor. Each thread contributes one input element. ">Reduce</a>(partial, reduction_op);</div>
+<div class="line"><a name="l00365"></a><span class="lineno">  365</span>&#160;    }</div>
+<div class="line"><a name="l00366"></a><span class="lineno">  366</span>&#160;</div>
 <div class="line"><a name="l00367"></a><span class="lineno">  367</span>&#160;</div>
-<div class="line"><a name="l00368"></a><span class="lineno">  368</span>&#160;</div>
-<div class="line"><a name="l00405"></a><span class="lineno">  405</span>&#160;    <span class="keyword">template</span> &lt;<span class="keyword">typename</span> ReductionOp&gt;</div>
-<div class="line"><a name="l00406"></a><span class="lineno"><a class="code" href="classcub_1_1_block_reduce.html#a0c9d086cb37f41a74d1a4c02fae741c4">  406</a></span>&#160;    __device__ __forceinline__ T <a class="code" href="classcub_1_1_block_reduce.html#a0c9d086cb37f41a74d1a4c02fae741c4" title="Computes a block-wide reduction for thread0 using the specified binary reduction functor. The first num_valid threads each contribute one input element. ">Reduce</a>(</div>
-<div class="line"><a name="l00407"></a><span class="lineno">  407</span>&#160;        T                   input,                  </div>
-<div class="line"><a name="l00408"></a><span class="lineno">  408</span>&#160;        ReductionOp         reduction_op,           </div>
-<div class="line"><a name="l00409"></a><span class="lineno">  409</span>&#160;        <span class="keywordtype">int</span>                 num_valid)              </div>
-<div class="line"><a name="l00410"></a><span class="lineno">  410</span>&#160;    {</div>
-<div class="line"><a name="l00411"></a><span class="lineno">  411</span>&#160;        <span class="comment">// Determine if we scan skip bounds checking</span></div>
-<div class="line"><a name="l00412"></a><span class="lineno">  412</span>&#160;        <span class="keywordflow">if</span> (num_valid &gt;= BLOCK_THREADS)</div>
-<div class="line"><a name="l00413"></a><span class="lineno">  413</span>&#160;        {</div>
-<div class="line"><a name="l00414"></a><span class="lineno">  414</span>&#160;            <span class="keywordflow">return</span> InternalBlockReduce(temp_storage, linear_tid).template Reduce&lt;true&gt;(input, num_valid, reduction_op);</div>
-<div class="line"><a name="l00415"></a><span class="lineno">  415</span>&#160;        }</div>
-<div class="line"><a name="l00416"></a><span class="lineno">  416</span>&#160;        <span class="keywordflow">else</span></div>
-<div class="line"><a name="l00417"></a><span class="lineno">  417</span>&#160;        {</div>
-<div class="line"><a name="l00418"></a><span class="lineno">  418</span>&#160;            <span class="keywordflow">return</span> InternalBlockReduce(temp_storage, linear_tid).template Reduce&lt;false&gt;(input, num_valid, reduction_op);</div>
-<div class="line"><a name="l00419"></a><span class="lineno">  419</span>&#160;        }</div>
-<div class="line"><a name="l00420"></a><span class="lineno">  420</span>&#160;    }</div>
-<div class="line"><a name="l00421"></a><span class="lineno">  421</span>&#160;</div>
-<div class="line"><a name="l00422"></a><span class="lineno">  422</span>&#160;</div>
-<div class="line"><a name="l00424"></a><span class="lineno">  424</span>&#160;    <span class="comment">/******************************************************************/</span></div>
-<div class="line"><a name="l00428"></a><span class="lineno">  428</span>&#160;</div>
-<div class="line"><a name="l00429"></a><span class="lineno">  429</span>&#160;</div>
-<div class="line"><a name="l00461"></a><span class="lineno"><a class="code" href="classcub_1_1_block_reduce.html#a7565f00c47dc7dfb286668bea15dad05">  461</a></span>&#160;    __device__ __forceinline__ T <a class="code" href="classcub_1_1_block_reduce.html#a7565f00c47dc7dfb286668bea15dad05" title="Computes a block-wide reduction for thread0 using addition (+) as the reduction operator. Each thread contributes one input element. ">Sum</a>(</div>
-<div class="line"><a name="l00462"></a><span class="lineno">  462</span>&#160;        T   input)                      </div>
-<div class="line"><a name="l00463"></a><span class="lineno">  463</span>&#160;    {</div>
-<div class="line"><a name="l00464"></a><span class="lineno">  464</span>&#160;        <span class="keywordflow">return</span> InternalBlockReduce(temp_storage, linear_tid).template <a class="code" href="structcub_1_1_sum.html" title="Default sum functor. ">Sum&lt;true&gt;</a>(input, BLOCK_THREADS);</div>
-<div class="line"><a name="l00465"></a><span class="lineno">  465</span>&#160;    }</div>
-<div class="line"><a name="l00466"></a><span class="lineno">  466</span>&#160;</div>
-<div class="line"><a name="l00500"></a><span class="lineno">  500</span>&#160;    <span class="keyword">template</span> &lt;<span class="keywordtype">int</span> ITEMS_PER_THREAD&gt;</div>
-<div class="line"><a name="l00501"></a><span class="lineno"><a class="code" href="classcub_1_1_block_reduce.html#a2611610d09bb8daca91e414a77c1e937">  501</a></span>&#160;    __device__ __forceinline__ T <a class="code" href="classcub_1_1_block_reduce.html#a2611610d09bb8daca91e414a77c1e937" title="Computes a block-wide reduction for thread0 using addition (+) as the reduction operator. Each thread contributes an array of consecutive input elements. ">Sum</a>(</div>
-<div class="line"><a name="l00502"></a><span class="lineno">  502</span>&#160;        T   (&amp;inputs)[ITEMS_PER_THREAD])    </div>
-<div class="line"><a name="l00503"></a><span class="lineno">  503</span>&#160;    {</div>
-<div class="line"><a name="l00504"></a><span class="lineno">  504</span>&#160;        <span class="comment">// Reduce partials</span></div>
-<div class="line"><a name="l00505"></a><span class="lineno">  505</span>&#160;        T partial = <a class="code" href="group___thread_module.html#ga48320d1f549b7931ae1f72040f9e42dc" title="Perform a sequential reduction over LENGTH elements of the input array, seeded with the specified pre...">ThreadReduce</a>(inputs, <a class="code" href="structcub_1_1_sum.html" title="Default sum functor. ">cub::Sum</a>());</div>
-<div class="line"><a name="l00506"></a><span class="lineno">  506</span>&#160;        <span class="keywordflow">return</span> <a class="code" href="classcub_1_1_block_reduce.html#a7565f00c47dc7dfb286668bea15dad05" title="Computes a block-wide reduction for thread0 using addition (+) as the reduction operator. Each thread contributes one input element. ">Sum</a>(partial);</div>
-<div class="line"><a name="l00507"></a><span class="lineno">  507</span>&#160;    }</div>
-<div class="line"><a name="l00508"></a><span class="lineno">  508</span>&#160;</div>
+<div class="line"><a name="l00403"></a><span class="lineno">  403</span>&#160;    <span class="keyword">template</span> &lt;<span class="keyword">typename</span> ReductionOp&gt;</div>
+<div class="line"><a name="l00404"></a><span class="lineno"><a class="code" href="classcub_1_1_block_reduce.html#a0c9d086cb37f41a74d1a4c02fae741c4">  404</a></span>&#160;    __device__ __forceinline__ T <a class="code" href="classcub_1_1_block_reduce.html#a0c9d086cb37f41a74d1a4c02fae741c4" title="Computes a block-wide reduction for thread0 using the specified binary reduction functor. The first num_valid threads each contribute one input element. ">Reduce</a>(</div>
+<div class="line"><a name="l00405"></a><span class="lineno">  405</span>&#160;        T                   input,                  </div>
+<div class="line"><a name="l00406"></a><span class="lineno">  406</span>&#160;        ReductionOp         reduction_op,           </div>
+<div class="line"><a name="l00407"></a><span class="lineno">  407</span>&#160;        <span class="keywordtype">int</span>                 num_valid)              </div>
+<div class="line"><a name="l00408"></a><span class="lineno">  408</span>&#160;    {</div>
+<div class="line"><a name="l00409"></a><span class="lineno">  409</span>&#160;        <span class="comment">// Determine if we scan skip bounds checking</span></div>
+<div class="line"><a name="l00410"></a><span class="lineno">  410</span>&#160;        <span class="keywordflow">if</span> (num_valid &gt;= BLOCK_THREADS)</div>
+<div class="line"><a name="l00411"></a><span class="lineno">  411</span>&#160;        {</div>
+<div class="line"><a name="l00412"></a><span class="lineno">  412</span>&#160;            <span class="keywordflow">return</span> InternalBlockReduce(temp_storage, linear_tid).template Reduce&lt;true&gt;(input, num_valid, reduction_op);</div>
+<div class="line"><a name="l00413"></a><span class="lineno">  413</span>&#160;        }</div>
+<div class="line"><a name="l00414"></a><span class="lineno">  414</span>&#160;        <span class="keywordflow">else</span></div>
+<div class="line"><a name="l00415"></a><span class="lineno">  415</span>&#160;        {</div>
+<div class="line"><a name="l00416"></a><span class="lineno">  416</span>&#160;            <span class="keywordflow">return</span> InternalBlockReduce(temp_storage, linear_tid).template Reduce&lt;false&gt;(input, num_valid, reduction_op);</div>
+<div class="line"><a name="l00417"></a><span class="lineno">  417</span>&#160;        }</div>
+<div class="line"><a name="l00418"></a><span class="lineno">  418</span>&#160;    }</div>
+<div class="line"><a name="l00419"></a><span class="lineno">  419</span>&#160;</div>
+<div class="line"><a name="l00420"></a><span class="lineno">  420</span>&#160;</div>
+<div class="line"><a name="l00422"></a><span class="lineno">  422</span>&#160;    <span class="comment">/******************************************************************/</span></div>
+<div class="line"><a name="l00426"></a><span class="lineno">  426</span>&#160;</div>
+<div class="line"><a name="l00427"></a><span class="lineno">  427</span>&#160;</div>
+<div class="line"><a name="l00460"></a><span class="lineno"><a class="code" href="classcub_1_1_block_reduce.html#a7565f00c47dc7dfb286668bea15dad05">  460</a></span>&#160;    __device__ __forceinline__ T <a class="code" href="classcub_1_1_block_reduce.html#a7565f00c47dc7dfb286668bea15dad05" title="Computes a block-wide reduction for thread0 using addition (+) as the reduction operator. Each thread contributes one input element. ">Sum</a>(</div>
+<div class="line"><a name="l00461"></a><span class="lineno">  461</span>&#160;        T   input)                      </div>
+<div class="line"><a name="l00462"></a><span class="lineno">  462</span>&#160;    {</div>
+<div class="line"><a name="l00463"></a><span class="lineno">  463</span>&#160;        <span class="keywordflow">return</span> InternalBlockReduce(temp_storage, linear_tid).template <a class="code" href="structcub_1_1_sum.html" title="Default sum functor. ">Sum&lt;true&gt;</a>(input, BLOCK_THREADS);</div>
+<div class="line"><a name="l00464"></a><span class="lineno">  464</span>&#160;    }</div>
+<div class="line"><a name="l00465"></a><span class="lineno">  465</span>&#160;</div>
+<div class="line"><a name="l00501"></a><span class="lineno">  501</span>&#160;    <span class="keyword">template</span> &lt;<span class="keywordtype">int</span> ITEMS_PER_THREAD&gt;</div>
+<div class="line"><a name="l00502"></a><span class="lineno"><a class="code" href="classcub_1_1_block_reduce.html#a2611610d09bb8daca91e414a77c1e937">  502</a></span>&#160;    __device__ __forceinline__ T <a class="code" href="classcub_1_1_block_reduce.html#a2611610d09bb8daca91e414a77c1e937" title="Computes a block-wide reduction for thread0 using addition (+) as the reduction operator. Each thread contributes an array of consecutive input elements. ">Sum</a>(</div>
+<div class="line"><a name="l00503"></a><span class="lineno">  503</span>&#160;        T   (&amp;inputs)[ITEMS_PER_THREAD])    </div>
+<div class="line"><a name="l00504"></a><span class="lineno">  504</span>&#160;    {</div>
+<div class="line"><a name="l00505"></a><span class="lineno">  505</span>&#160;        <span class="comment">// Reduce partials</span></div>
+<div class="line"><a name="l00506"></a><span class="lineno">  506</span>&#160;        T partial = ThreadReduce(inputs, <a class="code" href="structcub_1_1_sum.html" title="Default sum functor. ">cub::Sum</a>());</div>
+<div class="line"><a name="l00507"></a><span class="lineno">  507</span>&#160;        <span class="keywordflow">return</span> <a class="code" href="classcub_1_1_block_reduce.html#a7565f00c47dc7dfb286668bea15dad05" title="Computes a block-wide reduction for thread0 using addition (+) as the reduction operator. Each thread contributes one input element. ">Sum</a>(partial);</div>
+<div class="line"><a name="l00508"></a><span class="lineno">  508</span>&#160;    }</div>
 <div class="line"><a name="l00509"></a><span class="lineno">  509</span>&#160;</div>
-<div class="line"><a name="l00542"></a><span class="lineno"><a class="code" href="classcub_1_1_block_reduce.html#aa52adf836e96dee812f456283cac13f7">  542</a></span>&#160;    __device__ __forceinline__ T <a class="code" href="classcub_1_1_block_reduce.html#aa52adf836e96dee812f456283cac13f7" title="Computes a block-wide reduction for thread0 using addition (+) as the reduction operator. The first num_valid threads each contribute one input element. ">Sum</a>(</div>
-<div class="line"><a name="l00543"></a><span class="lineno">  543</span>&#160;        T   input,                  </div>
-<div class="line"><a name="l00544"></a><span class="lineno">  544</span>&#160;        <span class="keywordtype">int</span> num_valid)              </div>
-<div class="line"><a name="l00545"></a><span class="lineno">  545</span>&#160;    {</div>
-<div class="line"><a name="l00546"></a><span class="lineno">  546</span>&#160;        <span class="comment">// Determine if we scan skip bounds checking</span></div>
-<div class="line"><a name="l00547"></a><span class="lineno">  547</span>&#160;        <span class="keywordflow">if</span> (num_valid &gt;= BLOCK_THREADS)</div>
-<div class="line"><a name="l00548"></a><span class="lineno">  548</span>&#160;        {</div>
-<div class="line"><a name="l00549"></a><span class="lineno">  549</span>&#160;            <span class="keywordflow">return</span> InternalBlockReduce(temp_storage, linear_tid).template <a class="code" href="structcub_1_1_sum.html" title="Default sum functor. ">Sum&lt;true&gt;</a>(input, num_valid);</div>
-<div class="line"><a name="l00550"></a><span class="lineno">  550</span>&#160;        }</div>
-<div class="line"><a name="l00551"></a><span class="lineno">  551</span>&#160;        <span class="keywordflow">else</span></div>
-<div class="line"><a name="l00552"></a><span class="lineno">  552</span>&#160;        {</div>
-<div class="line"><a name="l00553"></a><span class="lineno">  553</span>&#160;            <span class="keywordflow">return</span> InternalBlockReduce(temp_storage, linear_tid).template <a class="code" href="structcub_1_1_sum.html" title="Default sum functor. ">Sum&lt;false&gt;</a>(input, num_valid);</div>
-<div class="line"><a name="l00554"></a><span class="lineno">  554</span>&#160;        }</div>
-<div class="line"><a name="l00555"></a><span class="lineno">  555</span>&#160;    }</div>
-<div class="line"><a name="l00556"></a><span class="lineno">  556</span>&#160;</div>
-<div class="line"><a name="l00557"></a><span class="lineno">  557</span>&#160;</div>
-<div class="line"><a name="l00559"></a><span class="lineno">  559</span>&#160;};</div>
-<div class="line"><a name="l00560"></a><span class="lineno">  560</span>&#160;</div>
-<div class="line"><a name="l00561"></a><span class="lineno">  561</span>&#160;}               <span class="comment">// CUB namespace</span></div>
-<div class="line"><a name="l00562"></a><span class="lineno">  562</span>&#160;CUB_NS_POSTFIX  <span class="comment">// Optional outer namespace(s)</span></div>
-<div class="line"><a name="l00563"></a><span class="lineno">  563</span>&#160;</div>
+<div class="line"><a name="l00510"></a><span class="lineno">  510</span>&#160;</div>
+<div class="line"><a name="l00544"></a><span class="lineno"><a class="code" href="classcub_1_1_block_reduce.html#aa52adf836e96dee812f456283cac13f7">  544</a></span>&#160;    __device__ __forceinline__ T <a class="code" href="classcub_1_1_block_reduce.html#aa52adf836e96dee812f456283cac13f7" title="Computes a block-wide reduction for thread0 using addition (+) as the reduction operator. The first num_valid threads each contribute one input element. ">Sum</a>(</div>
+<div class="line"><a name="l00545"></a><span class="lineno">  545</span>&#160;        T   input,                  </div>
+<div class="line"><a name="l00546"></a><span class="lineno">  546</span>&#160;        <span class="keywordtype">int</span> num_valid)              </div>
+<div class="line"><a name="l00547"></a><span class="lineno">  547</span>&#160;    {</div>
+<div class="line"><a name="l00548"></a><span class="lineno">  548</span>&#160;        <span class="comment">// Determine if we scan skip bounds checking</span></div>
+<div class="line"><a name="l00549"></a><span class="lineno">  549</span>&#160;        <span class="keywordflow">if</span> (num_valid &gt;= BLOCK_THREADS)</div>
+<div class="line"><a name="l00550"></a><span class="lineno">  550</span>&#160;        {</div>
+<div class="line"><a name="l00551"></a><span class="lineno">  551</span>&#160;            <span class="keywordflow">return</span> InternalBlockReduce(temp_storage, linear_tid).template <a class="code" href="structcub_1_1_sum.html" title="Default sum functor. ">Sum&lt;true&gt;</a>(input, num_valid);</div>
+<div class="line"><a name="l00552"></a><span class="lineno">  552</span>&#160;        }</div>
+<div class="line"><a name="l00553"></a><span class="lineno">  553</span>&#160;        <span class="keywordflow">else</span></div>
+<div class="line"><a name="l00554"></a><span class="lineno">  554</span>&#160;        {</div>
+<div class="line"><a name="l00555"></a><span class="lineno">  555</span>&#160;            <span class="keywordflow">return</span> InternalBlockReduce(temp_storage, linear_tid).template <a class="code" href="structcub_1_1_sum.html" title="Default sum functor. ">Sum&lt;false&gt;</a>(input, num_valid);</div>
+<div class="line"><a name="l00556"></a><span class="lineno">  556</span>&#160;        }</div>
+<div class="line"><a name="l00557"></a><span class="lineno">  557</span>&#160;    }</div>
+<div class="line"><a name="l00558"></a><span class="lineno">  558</span>&#160;</div>
+<div class="line"><a name="l00559"></a><span class="lineno">  559</span>&#160;</div>
+<div class="line"><a name="l00561"></a><span class="lineno">  561</span>&#160;};</div>
+<div class="line"><a name="l00562"></a><span class="lineno">  562</span>&#160;</div>
+<div class="line"><a name="l00567"></a><span class="lineno">  567</span>&#160;}               <span class="comment">// CUB namespace</span></div>
+<div class="line"><a name="l00568"></a><span class="lineno">  568</span>&#160;CUB_NS_POSTFIX  <span class="comment">// Optional outer namespace(s)</span></div>
+<div class="line"><a name="l00569"></a><span class="lineno">  569</span>&#160;</div>
 </div><!-- fragment --></div><!-- contents -->
 <!-- HTML footer for doxygen 1.8.3.1-->
 <!-- start footer part -->
 <hr class="footer"/><address class="footer"><small>
-Generated on Fri Aug 23 2013 17:31:09 for CUB by &#160;<a href="http://www.doxygen.org/index.html">
+Generated on Tue Dec 10 2013 02:42:37 for CUB by &#160;<a href="http://www.doxygen.org/index.html">
 <img class="footer" src="doxygen.png" alt="doxygen"/>
 </a> 1.8.4
 <br>

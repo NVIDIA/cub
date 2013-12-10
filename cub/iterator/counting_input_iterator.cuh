@@ -69,7 +69,7 @@ namespace cub {
  * dereference a sequence of incrementing integers.
  * \par
  * \code
- * #include <cub/cub.cuh>
+ * #include <cub/cub.cuh>   // or equivalently <cub/iterator/counting_input_iterator.cuh>
  *
  * cub::CountingInputIterator<int> itr(5);
  *

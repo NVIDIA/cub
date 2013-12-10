@@ -1,6 +1,6 @@
 var searchData=
 [
-  ['archprops',['ArchProps',['../structcub_1_1_arch_props.html',1,'cub']]],
-  ['archprops_3c_20cub_5fptx_5farch_20_3e',['ArchProps&lt; CUB_PTX_VERSION &gt;',['../structcub_1_1_arch_props.html',1,'cub']]],
-  ['arraywrapper',['ArrayWrapper',['../structcub_1_1_array_wrapper.html',1,'cub']]]
+  ['argindexinputiterator',['ArgIndexInputIterator',['../classcub_1_1_arg_index_input_iterator.html',1,'cub']]],
+  ['argmax',['ArgMax',['../structcub_1_1_arg_max.html',1,'cub']]],
+  ['argmin',['ArgMin',['../structcub_1_1_arg_min.html',1,'cub']]]
 ];

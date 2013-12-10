@@ -1,20 +1,25 @@
 var searchData=
 [
   ['d_5fbuffers',['d_buffers',['../structcub_1_1_double_buffer.html#a38a2d8a9d5a36e9e4b9132166717a0b4',1,'cub::DoubleBuffer']]],
-  ['debug',['Debug',['../group___util_module.html#ga5a175d2a88f63f7f1ab30e8b4f2cfa95',1,'cub']]],
-  ['device',['Device',['../classcub_1_1_device.html',1,'cub']]],
+  ['debug',['Debug',['../group___util_mgmt.html#ga5a175d2a88f63f7f1ab30e8b4f2cfa95',1,'cub']]],
   ['device_5fhistogram_2ecuh',['device_histogram.cuh',['../device__histogram_8cuh.html',1,'']]],
+  ['device_5fpartition_2ecuh',['device_partition.cuh',['../device__partition_8cuh.html',1,'']]],
   ['device_5fradix_5fsort_2ecuh',['device_radix_sort.cuh',['../device__radix__sort_8cuh.html',1,'']]],
   ['device_5freduce_2ecuh',['device_reduce.cuh',['../device__reduce_8cuh.html',1,'']]],
   ['device_5fscan_2ecuh',['device_scan.cuh',['../device__scan_8cuh.html',1,'']]],
+  ['device_5fselect_2ecuh',['device_select.cuh',['../device__select_8cuh.html',1,'']]],
   ['deviceallocate',['DeviceAllocate',['../structcub_1_1_caching_device_allocator.html#a4a6fd29b17ff15c6a2ee01a25c5e45fb',1,'cub::CachingDeviceAllocator::DeviceAllocate(void **d_ptr, size_t bytes, int device)'],['../structcub_1_1_caching_device_allocator.html#a7d8a199c902d88ed14f0433bdf94318c',1,'cub::CachingDeviceAllocator::DeviceAllocate(void **d_ptr, size_t bytes)']]],
   ['devicefree',['DeviceFree',['../structcub_1_1_caching_device_allocator.html#aafd80ae2cdadb883fe1da0c8a549228c',1,'cub::CachingDeviceAllocator::DeviceFree(void *d_ptr, int device)'],['../structcub_1_1_caching_device_allocator.html#adbf65c59172b140420636e150325deeb',1,'cub::CachingDeviceAllocator::DeviceFree(void *d_ptr)']]],
   ['devicehistogram',['DeviceHistogram',['../structcub_1_1_device_histogram.html',1,'cub']]],
   ['device_2dwide',['Device-wide',['../group___device_module.html',1,'']]],
+  ['devicepartition',['DevicePartition',['../structcub_1_1_device_partition.html',1,'cub']]],
   ['deviceradixsort',['DeviceRadixSort',['../structcub_1_1_device_radix_sort.html',1,'cub']]],
   ['devicereduce',['DeviceReduce',['../structcub_1_1_device_reduce.html',1,'cub']]],
   ['devicescan',['DeviceScan',['../structcub_1_1_device_scan.html',1,'cub']]],
-  ['deviceword',['DeviceWord',['../structcub_1_1_uninitialized.html#ab100c102e4368f8c9038f8a2e80d3fc9',1,'cub::Uninitialized']]],
+  ['deviceselect',['DeviceSelect',['../structcub_1_1_device_select.html',1,'cub']]],
+  ['deviceword',['DeviceWord',['../structcub_1_1_uninitialized.html#a848f6233dbde22d8a42c022d3f0aa6f6',1,'cub::Uninitialized']]],
+  ['difference_5ftype',['difference_type',['../classcub_1_1_arg_index_input_iterator.html#a915851ba6f97e8c08ad546d4b679606a',1,'cub::ArgIndexInputIterator::difference_type()'],['../classcub_1_1_cache_modified_input_iterator.html#a40d3ce9ea9c0e1160717fa46ad2f9417',1,'cub::CacheModifiedInputIterator::difference_type()'],['../classcub_1_1_cache_modified_output_iterator.html#a813a58433ce2343051ae7fae14424bbc',1,'cub::CacheModifiedOutputIterator::difference_type()'],['../classcub_1_1_constant_input_iterator.html#aafb182fefd49e4525f8d4046c9c355f5',1,'cub::ConstantInputIterator::difference_type()'],['../classcub_1_1_counting_input_iterator.html#af12cc27b1b8fdfbdaacb64008f9671ca',1,'cub::CountingInputIterator::difference_type()'],['../classcub_1_1_tex_obj_input_iterator.html#a26c2e7cec885cb83a199a92e17b51f13',1,'cub::TexObjInputIterator::difference_type()'],['../classcub_1_1_tex_ref_input_iterator.html#aa3b77636ad17c957fddd808e8bc42d76',1,'cub::TexRefInputIterator::difference_type()'],['../classcub_1_1_transform_input_iterator.html#ab0f791ec860a947602536c71e7f4b650',1,'cub::TransformInputIterator::difference_type()']]],
+  ['doublebuffer',['DoubleBuffer',['../structcub_1_1_double_buffer.html#a8d51dcd30484a1f186e056eb7ab09979',1,'cub::DoubleBuffer::DoubleBuffer()'],['../structcub_1_1_double_buffer.html#a100c51f0e1aefdff4cdfe6480c89f59e',1,'cub::DoubleBuffer::DoubleBuffer(T *d_current, T *d_alternate)']]],
   ['doublebuffer',['DoubleBuffer',['../structcub_1_1_double_buffer.html',1,'cub']]],
-  ['doublebuffer',['DoubleBuffer',['../structcub_1_1_double_buffer.html#a8d51dcd30484a1f186e056eb7ab09979',1,'cub::DoubleBuffer::DoubleBuffer()'],['../structcub_1_1_double_buffer.html#a100c51f0e1aefdff4cdfe6480c89f59e',1,'cub::DoubleBuffer::DoubleBuffer(T *d_current, T *d_alternate)']]]
+  ['device_2c_20kernel_2c_20and_20storage_20management',['Device, kernel, and storage management',['../group___util_mgmt.html',1,'']]]
 ];

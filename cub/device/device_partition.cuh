@@ -82,7 +82,7 @@ struct DevicePartition
      * The code snippet below illustrates the compaction of items selected from an \p int device vector.
      * \par
      * \code
-     * #include <cub/cub.cuh>
+     * #include <cub/cub.cuh>   // or equivalently <cub/device/device_partition.cuh>
      *
      * // Declare, allocate, and initialize device pointers for input, flags, and output
      * int  num_items;          // e.g., 8
@@ -163,7 +163,7 @@ struct DevicePartition
      * The code snippet below illustrates the compaction of items selected from an \p int device vector.
      * \par
      * \code
-     * #include <cub/cub.cuh>
+     * #include <cub/cub.cuh>   // or equivalently <cub/device/device_partition.cuh>
      *
      * // Functor for selecting values that are multiples of three
      * struct IsTriple
