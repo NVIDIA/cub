@@ -53,7 +53,7 @@ namespace cub {
 
 
 /**
- * \addtogroup UtilModule
+ * \addtogroup UtilMgmt
  * @{
  */
 
@@ -655,7 +655,7 @@ struct CachingDeviceAllocator
 
 
 
-/** @} */       // end group UtilModule
+/** @} */       // end group UtilMgmt
 
 }               // CUB namespace
 CUB_NS_POSTFIX  // Optional outer namespace(s)

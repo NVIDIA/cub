@@ -1,5 +1,33 @@
 //-----------------------------------------------------------------------------
 
+1.1.0    12/10/2013
+    - New features:
+        - Added TexObjInputIterator, TexRefInputIterator, CacheModifiedInputIterator, and CacheModifiedOutputIterator types for loading & storing arbitrary types through the cache hierarchy.  Compatible with Thrust API. 
+        - Added descending sorting to DeviceRadixSort and BlockRadixSort
+        - Added min, max, arg-min, and arg-max to DeviceReduce
+        - Added DeviceSelect (select-unique, select-if, and select-flagged)
+        - Added DevicePartition (partition-if, partition-flagged)
+    - Performance
+        - Improved DeviceScan and DeviceRadixSort performance for older architectures (SM10-SM30)
+    - Interface changes:
+        - Refactored block-wide I/O (BlockLoad and BlockStore), removing cache-modifiers from their interfaces.  The CacheModifiedInputIterator and CacheModifiedOutputIterator should now be used with BlockLoad and BlockStore to effect that behavior.
+        - Rename device-wide "stream_synchronous" param to "debug_synchronous" to avoid confusion about usage
+    - Documentation and testing:
+        - Added simple examples of device-wide methods
+        - Improved doxygen documentation and example snippets
+        - Improved test coverege to include up to 12,000 kernel variants and 220,000 unit tests (per architecture, per platform)
+    - Bug fixes 
+        - Fixed misc DeviceScan, BlockScan, DeviceReduce, and BlockReduce bugs when operating on non-primitive types for older architectures SM10-SM13
+        - Fixed DeviceScan / WarpReduction bug: SHFL-based segmented reduction producting incorrect results for multi-word types (size > 4B) on Linux 
+        - Fixed BlockScan bug: For warpscan-based scans, not all threads in the first warp were entering the prefix callback functor
+        - Fixed DeviceRadixSort bug: race condition with key-value pairs for pre-SM35 architectures
+        - Fixed DeviceRadixSort bug: incorrect bitfield-extract behavior with long keys on 64bit Linux
+        - Fixed BlockDiscontinuity bug: complation error in for types other than int32/uint32
+        - CDP (device-callable) versions of device-wide methods now report the same temporary storage allocation size requirement as their host-callable counterparts
+     
+
+//-----------------------------------------------------------------------------
+
 1.0.2    08/23/2013
     - Corrections to code snippet examples for BlockLoad, BlockStore, and BlockDiscontinuity
     - Cleaned up unnecessary/missing header includes.  You can now safely #inlude a specific .cuh (instead of cub.cuh)

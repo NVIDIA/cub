@@ -71,27 +71,27 @@ else
 endif
 
 ifeq (350, $(findstring 350, $(SM_ARCH)))
-    SM_TARGETS += -arch=sm_35 
+    SM_TARGETS += -gencode=arch=compute_35,code=\"sm_35,compute_35\" 
     SM_DEF += -DSM350
 endif
 ifeq (300, $(findstring 300, $(SM_ARCH)))
-    SM_TARGETS += -arch=sm_30
+    SM_TARGETS += -gencode=arch=compute_30,code=\"sm_30,compute_30\"
     SM_DEF += -DSM300
 endif
 ifeq (200, $(findstring 200, $(SM_ARCH)))
-    SM_TARGETS += -arch=sm_20
+    SM_TARGETS += -gencode=arch=compute_20,code=\"sm_20,compute_20\"
     SM_DEF += -DSM200
 endif
 ifeq (130, $(findstring 130, $(SM_ARCH)))
-    SM_TARGETS += -arch=sm_13
+    SM_TARGETS += -gencode=arch=compute_13,code=\"sm_13,compute_13\" 
     SM_DEF += -DSM130
 endif
 ifeq (110, $(findstring 110, $(SM_ARCH)))
-    SM_TARGETS += -arch=sm_11 
+    SM_TARGETS += -gencode=arch=compute_11,code=\"sm_11,compute_11\" 
     SM_DEF += -DSM110
 endif
 ifeq (100, $(findstring 100, $(SM_ARCH)))
-    SM_TARGETS += -arch=sm_10 
+    SM_TARGETS += -gencode=arch=compute_10,code=\"sm_10,compute_10\" 
     SM_DEF += -DSM100
 endif
 
