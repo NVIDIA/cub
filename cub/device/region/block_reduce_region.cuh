@@ -122,11 +122,11 @@ struct BlockReduceRegion
     {
         BLOCK_THREADS       = BlockReduceRegionPolicy::BLOCK_THREADS,
         ITEMS_PER_THREAD    = BlockReduceRegionPolicy::ITEMS_PER_THREAD,
-        VECTOR_LOAD_LENGTH  = BlockReduceRegionPolicy::VECTOR_LOAD_LENGTH,
+        VECTOR_LOAD_LENGTH  = CUB_MIN(ITEMS_PER_THREAD, BlockReduceRegionPolicy::VECTOR_LOAD_LENGTH),
         TILE_ITEMS          = BLOCK_THREADS * ITEMS_PER_THREAD,
 
         // Can vectorize according to the policy if the input iterator is a native pointer to a primitive type
-        CAN_VECTORIZE       = (BlockReduceRegionPolicy::VECTOR_LOAD_LENGTH > 1) &&
+        CAN_VECTORIZE       = (VECTOR_LOAD_LENGTH > 1) &&
                                 (IsPointer<InputIterator>::VALUE) &&
                                 Traits<T>::PRIMITIVE,
 
@@ -225,12 +225,19 @@ struct BlockReduceRegion
         _Offset             block_offset,            ///< The offset the tile to consume
         Int2Type<true>      can_vectorize)           ///< Whether or not we can vectorize loads
     {
-        if (is_aligned)
+        if (!is_aligned)
+        {
+            // Not aligned
+            return ConsumeFullTile(block_offset, Int2Type<false>());
+        }
+        else
         {
             // Alias items as an array of VectorT and load it in striped fashion
             enum { WORDS =  ITEMS_PER_THREAD / VECTOR_LOAD_LENGTH };
 
-            VectorT vec_items[WORDS];
+            T items[ITEMS_PER_THREAD];
+
+            VectorT *vec_items = reinterpret_cast<VectorT*>(items);
 
             // Vector input iterator wrapper type
             CacheModifiedInputIterator<BlockReduceRegionPolicy::LOAD_MODIFIER, VectorT, Offset> d_vec_in(
@@ -241,14 +248,7 @@ struct BlockReduceRegion
                 vec_items[i] = d_vec_in[BLOCK_THREADS * i];
 
             // Reduce items within each thread stripe
-            return ThreadReduce<ITEMS_PER_THREAD>(
-                reinterpret_cast<T*>(vec_items),
-                reduction_op);
-        }
-        else
-        {
-            // Not aligned
-            return ConsumeFullTile(block_offset, Int2Type<false>());
+            return ThreadReduce(items, reduction_op);
         }
     }
 
