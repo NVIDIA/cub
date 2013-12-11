@@ -113,7 +113,7 @@ var searchBox = new SearchBox("searchBox", "search",false,'Search');
     bool WARP_TIME_SLICING = false&gt;<br/>
 class cub::BlockStore&lt; OutputIterator, BLOCK_THREADS, ITEMS_PER_THREAD, ALGORITHM, WARP_TIME_SLICING &gt;</h3>
 
-<p>The <a class="el" href="classcub_1_1_block_store.html" title="The BlockStore class provides collective data movement methods for writing a blocked arrangement of i...">BlockStore</a> class provides <a href="index.html#sec0"><em>collective</em></a> data movement methods for writing a <a href="index.html#sec5sec4"><em>blocked arrangement</em></a> of items partitioned across a CUDA thread block to a linear segment of memory. </p>
+<p>The <a class="el" href="classcub_1_1_block_store.html" title="The BlockStore class provides collective data movement methods for writing a blocked arrangement of i...">BlockStore</a> class provides <a href="index.html#sec0"><em>collective</em></a> data movement methods for writing a <a href="index.html#sec4sec3"><em>blocked arrangement</em></a> of items partitioned across a CUDA thread block to a linear segment of memory. </p>
 <div class="image">
 <img src="block_store_logo.png" alt="block_store_logo.png"/>
 <div class="caption">
@@ -131,10 +131,10 @@ class cub::BlockStore&lt; OutputIterator, BLOCK_THREADS, ITEMS_PER_THREAD, ALGOR
 <dl class="section user"><dt>Overview</dt><dd><ul>
 <li>The <a class="el" href="classcub_1_1_block_store.html" title="The BlockStore class provides collective data movement methods for writing a blocked arrangement of i...">BlockStore</a> class provides a single data movement abstraction that can be specialized to implement different <a class="el" href="namespacecub.html#a839b145451e9eec3d44172e3c3619700" title="cub::BlockStoreAlgorithm enumerates alternative algorithms for cub::BlockStore to write a blocked arr...">cub::BlockStoreAlgorithm</a> strategies. This facilitates different performance policies for different architectures, data types, granularity sizes, etc.</li>
 <li><a class="el" href="classcub_1_1_block_store.html" title="The BlockStore class provides collective data movement methods for writing a blocked arrangement of i...">BlockStore</a> can be optionally specialized by different data movement strategies:<ol type="1">
-<li><b><a class="el" href="namespacecub.html#a839b145451e9eec3d44172e3c3619700a9b8dcc7b6b06bcfc24af4f499523b880">cub::BLOCK_STORE_DIRECT</a></b>. A <a href="index.html#sec5sec4"><em>blocked arrangement</em></a> of data is written directly to memory. <a class="el" href="namespacecub.html#a839b145451e9eec3d44172e3c3619700">More...</a></li>
-<li><b><a class="el" href="namespacecub.html#a839b145451e9eec3d44172e3c3619700a0ccd625a7f2f3649155cbd5a27adfb41">cub::BLOCK_STORE_VECTORIZE</a></b>. A <a href="index.html#sec5sec4"><em>blocked arrangement</em></a> of data is written directly to memory using CUDA's built-in vectorized stores as a coalescing optimization. <a class="el" href="namespacecub.html#a839b145451e9eec3d44172e3c3619700">More...</a></li>
-<li><b><a class="el" href="namespacecub.html#a839b145451e9eec3d44172e3c3619700ab0bbe20613466c3cedfcfea33a97d69c">cub::BLOCK_STORE_TRANSPOSE</a></b>. A <a href="index.html#sec5sec4"><em>blocked arrangement</em></a> is locally transposed into a <a href="index.html#sec5sec4"><em>striped arrangement</em></a> which is then written to memory. <a class="el" href="namespacecub.html#a839b145451e9eec3d44172e3c3619700">More...</a></li>
-<li><b><a class="el" href="namespacecub.html#a839b145451e9eec3d44172e3c3619700a9178e3be2332f84a66761cee4ee6f3e3">cub::BLOCK_STORE_WARP_TRANSPOSE</a></b>. A <a href="index.html#sec5sec4"><em>blocked arrangement</em></a> is locally transposed into a <a href="index.html#sec5sec4"><em>warp-striped arrangement</em></a> which is then written to memory. <a class="el" href="namespacecub.html#a839b145451e9eec3d44172e3c3619700">More...</a></li>
+<li><b><a class="el" href="namespacecub.html#a839b145451e9eec3d44172e3c3619700a9b8dcc7b6b06bcfc24af4f499523b880">cub::BLOCK_STORE_DIRECT</a></b>. A <a href="index.html#sec4sec3"><em>blocked arrangement</em></a> of data is written directly to memory. <a class="el" href="namespacecub.html#a839b145451e9eec3d44172e3c3619700">More...</a></li>
+<li><b><a class="el" href="namespacecub.html#a839b145451e9eec3d44172e3c3619700a0ccd625a7f2f3649155cbd5a27adfb41">cub::BLOCK_STORE_VECTORIZE</a></b>. A <a href="index.html#sec4sec3"><em>blocked arrangement</em></a> of data is written directly to memory using CUDA's built-in vectorized stores as a coalescing optimization. <a class="el" href="namespacecub.html#a839b145451e9eec3d44172e3c3619700">More...</a></li>
+<li><b><a class="el" href="namespacecub.html#a839b145451e9eec3d44172e3c3619700ab0bbe20613466c3cedfcfea33a97d69c">cub::BLOCK_STORE_TRANSPOSE</a></b>. A <a href="index.html#sec4sec3"><em>blocked arrangement</em></a> is locally transposed into a <a href="index.html#sec4sec3"><em>striped arrangement</em></a> which is then written to memory. <a class="el" href="namespacecub.html#a839b145451e9eec3d44172e3c3619700">More...</a></li>
+<li><b><a class="el" href="namespacecub.html#a839b145451e9eec3d44172e3c3619700a9178e3be2332f84a66761cee4ee6f3e3">cub::BLOCK_STORE_WARP_TRANSPOSE</a></b>. A <a href="index.html#sec4sec3"><em>blocked arrangement</em></a> is locally transposed into a <a href="index.html#sec4sec3"><em>warp-striped arrangement</em></a> which is then written to memory. <a class="el" href="namespacecub.html#a839b145451e9eec3d44172e3c3619700">More...</a></li>
 </ol>
 </li>
 </ul>
@@ -351,7 +351,7 @@ template&lt;typename OutputIterator , int BLOCK_THREADS, int ITEMS_PER_THREAD, B
 
 <p>Store items into a linear segment of memory. </p>
 <dl class="section user"><dt></dt><dd><ul>
-<li>Assumes a <a href="index.html#sec5sec4"><em>blocked arrangement</em></a> of elements across threads, where thread<sub><em>i</em></sub> owns the <em>i</em><sup>th</sup> segment of consecutively ranked items.</li>
+<li>Assumes a <a href="index.html#sec4sec3"><em>blocked arrangement</em></a> of elements across threads, where thread<sub><em>i</em></sub> owns the <em>i</em><sup>th</sup> segment of consecutively ranked items.</li>
 <li>A subsequent <code>__syncthreads()</code> threadblock barrier should be invoked after calling this method if the collective's temporary storage (e.g., <code>temp_storage</code>) is to be reused or repurposed.</li>
 </ul>
 </dd></dl>
@@ -429,7 +429,7 @@ template&lt;typename OutputIterator , int BLOCK_THREADS, int ITEMS_PER_THREAD, B
 
 <p>Store items into a linear segment of memory, guarded by range. </p>
 <dl class="section user"><dt></dt><dd><ul>
-<li>Assumes a <a href="index.html#sec5sec4"><em>blocked arrangement</em></a> of elements across threads, where thread<sub><em>i</em></sub> owns the <em>i</em><sup>th</sup> segment of consecutively ranked items.</li>
+<li>Assumes a <a href="index.html#sec4sec3"><em>blocked arrangement</em></a> of elements across threads, where thread<sub><em>i</em></sub> owns the <em>i</em><sup>th</sup> segment of consecutively ranked items.</li>
 <li>A subsequent <code>__syncthreads()</code> threadblock barrier should be invoked after calling this method if the collective's temporary storage (e.g., <code>temp_storage</code>) is to be reused or repurposed.</li>
 </ul>
 </dd></dl>
@@ -473,7 +473,7 @@ template&lt;typename OutputIterator , int BLOCK_THREADS, int ITEMS_PER_THREAD, B
 <!-- HTML footer for doxygen 1.8.3.1-->
 <!-- start footer part -->
 <hr class="footer"/><address class="footer"><small>
-Generated on Tue Dec 10 2013 05:04:23 for CUB by &#160;<a href="http://www.doxygen.org/index.html">
+Generated on Wed Dec 11 2013 07:19:22 for CUB by &#160;<a href="http://www.doxygen.org/index.html">
 <img class="footer" src="doxygen.png" alt="doxygen"/>
 </a> 1.8.4
 <br>
