@@ -113,7 +113,7 @@ var searchBox = new SearchBox("searchBox", "search",false,'Search');
     bool WARP_TIME_SLICING = false&gt;<br/>
 class cub::BlockLoad&lt; InputIterator, BLOCK_THREADS, ITEMS_PER_THREAD, ALGORITHM, WARP_TIME_SLICING &gt;</h3>
 
-<p>The <a class="el" href="classcub_1_1_block_load.html" title="The BlockLoad class provides collective data movement methods for loading a linear segment of items f...">BlockLoad</a> class provides <a href="index.html#sec0"><em>collective</em></a> data movement methods for loading a linear segment of items from memory into a <a href="index.html#sec5sec4"><em>blocked arrangement</em></a> across a CUDA thread block. </p>
+<p>The <a class="el" href="classcub_1_1_block_load.html" title="The BlockLoad class provides collective data movement methods for loading a linear segment of items f...">BlockLoad</a> class provides <a href="index.html#sec0"><em>collective</em></a> data movement methods for loading a linear segment of items from memory into a <a href="index.html#sec4sec3"><em>blocked arrangement</em></a> across a CUDA thread block. </p>
 <div class="image">
 <img src="block_load_logo.png" alt="block_load_logo.png"/>
 <div class="caption">
@@ -131,10 +131,10 @@ class cub::BlockLoad&lt; InputIterator, BLOCK_THREADS, ITEMS_PER_THREAD, ALGORIT
 <dl class="section user"><dt>Overview</dt><dd><ul>
 <li>The <a class="el" href="classcub_1_1_block_load.html" title="The BlockLoad class provides collective data movement methods for loading a linear segment of items f...">BlockLoad</a> class provides a single data movement abstraction that can be specialized to implement different <a class="el" href="namespacecub.html#a9d7e37497fdd99864c57adecda710401" title="cub::BlockLoadAlgorithm enumerates alternative algorithms for cub::BlockLoad to read a linear segment...">cub::BlockLoadAlgorithm</a> strategies. This facilitates different performance policies for different architectures, data types, granularity sizes, etc.</li>
 <li><a class="el" href="classcub_1_1_block_load.html" title="The BlockLoad class provides collective data movement methods for loading a linear segment of items f...">BlockLoad</a> can be optionally specialized by different data movement strategies:<ol type="1">
-<li><b><a class="el" href="namespacecub.html#a9d7e37497fdd99864c57adecda710401a2d4d8900d7e697e9dac4062e97d3d835">cub::BLOCK_LOAD_DIRECT</a></b>. A <a href="index.html#sec5sec4"><em>blocked arrangement</em></a> of data is read directly from memory. <a class="el" href="namespacecub.html#a9d7e37497fdd99864c57adecda710401">More...</a></li>
-<li><b><a class="el" href="namespacecub.html#a9d7e37497fdd99864c57adecda710401a826be9d4df1c44c0e5c00a9c9c136965">cub::BLOCK_LOAD_VECTORIZE</a></b>. A <a href="index.html#sec5sec4"><em>blocked arrangement</em></a> of data is read directly from memory using CUDA's built-in vectorized loads as a coalescing optimization. <a class="el" href="namespacecub.html#a9d7e37497fdd99864c57adecda710401">More...</a></li>
-<li><b><a class="el" href="namespacecub.html#a9d7e37497fdd99864c57adecda710401acd94f285472e8f7c883a7407f6f4efc4">cub::BLOCK_LOAD_TRANSPOSE</a></b>. A <a href="index.html#sec5sec4"><em>striped arrangement</em></a> of data is read directly from memory and is then locally transposed into a <a href="index.html#sec5sec4"><em>blocked arrangement</em></a>. <a class="el" href="namespacecub.html#a9d7e37497fdd99864c57adecda710401">More...</a></li>
-<li><b><a class="el" href="namespacecub.html#a9d7e37497fdd99864c57adecda710401aba21066c09e6c6ebcf08c7e86216eb1f">cub::BLOCK_LOAD_WARP_TRANSPOSE</a></b>. A <a href="index.html#sec5sec4"><em>warp-striped arrangement</em></a> of data is read directly from memory and is then locally transposed into a <a href="index.html#sec5sec4"><em>blocked arrangement</em></a>. <a class="el" href="namespacecub.html#a9d7e37497fdd99864c57adecda710401">More...</a></li>
+<li><b><a class="el" href="namespacecub.html#a9d7e37497fdd99864c57adecda710401a2d4d8900d7e697e9dac4062e97d3d835">cub::BLOCK_LOAD_DIRECT</a></b>. A <a href="index.html#sec4sec3"><em>blocked arrangement</em></a> of data is read directly from memory. <a class="el" href="namespacecub.html#a9d7e37497fdd99864c57adecda710401">More...</a></li>
+<li><b><a class="el" href="namespacecub.html#a9d7e37497fdd99864c57adecda710401a826be9d4df1c44c0e5c00a9c9c136965">cub::BLOCK_LOAD_VECTORIZE</a></b>. A <a href="index.html#sec4sec3"><em>blocked arrangement</em></a> of data is read directly from memory using CUDA's built-in vectorized loads as a coalescing optimization. <a class="el" href="namespacecub.html#a9d7e37497fdd99864c57adecda710401">More...</a></li>
+<li><b><a class="el" href="namespacecub.html#a9d7e37497fdd99864c57adecda710401acd94f285472e8f7c883a7407f6f4efc4">cub::BLOCK_LOAD_TRANSPOSE</a></b>. A <a href="index.html#sec4sec3"><em>striped arrangement</em></a> of data is read directly from memory and is then locally transposed into a <a href="index.html#sec4sec3"><em>blocked arrangement</em></a>. <a class="el" href="namespacecub.html#a9d7e37497fdd99864c57adecda710401">More...</a></li>
+<li><b><a class="el" href="namespacecub.html#a9d7e37497fdd99864c57adecda710401aba21066c09e6c6ebcf08c7e86216eb1f">cub::BLOCK_LOAD_WARP_TRANSPOSE</a></b>. A <a href="index.html#sec4sec3"><em>warp-striped arrangement</em></a> of data is read directly from memory and is then locally transposed into a <a href="index.html#sec4sec3"><em>blocked arrangement</em></a>. <a class="el" href="namespacecub.html#a9d7e37497fdd99864c57adecda710401">More...</a></li>
 </ol>
 </li>
 </ul>
@@ -350,7 +350,7 @@ template&lt;typename InputIterator , int BLOCK_THREADS, int ITEMS_PER_THREAD, Bl
 
 <p>Load a linear segment of items from memory. </p>
 <dl class="section user"><dt></dt><dd><ul>
-<li>Assumes a <a href="index.html#sec5sec4"><em>blocked arrangement</em></a> of elements across threads, where thread<sub><em>i</em></sub> owns the <em>i</em><sup>th</sup> segment of consecutively ranked items.</li>
+<li>Assumes a <a href="index.html#sec4sec3"><em>blocked arrangement</em></a> of elements across threads, where thread<sub><em>i</em></sub> owns the <em>i</em><sup>th</sup> segment of consecutively ranked items.</li>
 <li>A subsequent <code>__syncthreads()</code> threadblock barrier should be invoked after calling this method if the collective's temporary storage (e.g., <code>temp_storage</code>) is to be reused or repurposed.</li>
 </ul>
 </dd></dl>
@@ -424,7 +424,7 @@ template&lt;typename InputIterator , int BLOCK_THREADS, int ITEMS_PER_THREAD, Bl
 
 <p>Load a linear segment of items from memory, guarded by range. </p>
 <dl class="section user"><dt></dt><dd><ul>
-<li>Assumes a <a href="index.html#sec5sec4"><em>blocked arrangement</em></a> of elements across threads, where thread<sub><em>i</em></sub> owns the <em>i</em><sup>th</sup> segment of consecutively ranked items.</li>
+<li>Assumes a <a href="index.html#sec4sec3"><em>blocked arrangement</em></a> of elements across threads, where thread<sub><em>i</em></sub> owns the <em>i</em><sup>th</sup> segment of consecutively ranked items.</li>
 <li>A subsequent <code>__syncthreads()</code> threadblock barrier should be invoked after calling this method if the collective's temporary storage (e.g., <code>temp_storage</code>) is to be reused or repurposed.</li>
 </ul>
 </dd></dl>
@@ -505,7 +505,7 @@ template&lt;typename InputIterator , int BLOCK_THREADS, int ITEMS_PER_THREAD, Bl
 
 <p>Load a linear segment of items from memory, guarded by range, with a fall-back assignment of out-of-bound elements. </p>
 <dl class="section user"><dt></dt><dd><ul>
-<li>Assumes a <a href="index.html#sec5sec4"><em>blocked arrangement</em></a> of elements across threads, where thread<sub><em>i</em></sub> owns the <em>i</em><sup>th</sup> segment of consecutively ranked items.</li>
+<li>Assumes a <a href="index.html#sec4sec3"><em>blocked arrangement</em></a> of elements across threads, where thread<sub><em>i</em></sub> owns the <em>i</em><sup>th</sup> segment of consecutively ranked items.</li>
 <li>A subsequent <code>__syncthreads()</code> threadblock barrier should be invoked after calling this method if the collective's temporary storage (e.g., <code>temp_storage</code>) is to be reused or repurposed.</li>
 </ul>
 </dd></dl>
@@ -546,7 +546,7 @@ template&lt;typename InputIterator , int BLOCK_THREADS, int ITEMS_PER_THREAD, Bl
 <!-- HTML footer for doxygen 1.8.3.1-->
 <!-- start footer part -->
 <hr class="footer"/><address class="footer"><small>
-Generated on Tue Dec 10 2013 04:41:08 for CUB by &#160;<a href="http://www.doxygen.org/index.html">
+Generated on Wed Dec 11 2013 07:19:21 for CUB by &#160;<a href="http://www.doxygen.org/index.html">
 <img class="footer" src="doxygen.png" alt="doxygen"/>
 </a> 1.8.4
 <br>

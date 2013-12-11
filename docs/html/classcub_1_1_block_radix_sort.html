@@ -140,11 +140,11 @@ class cub::BlockRadixSort&lt; Key, BLOCK_THREADS, ITEMS_PER_THREAD, Value, RADIX
 </ul>
 </dd></dl>
 <dl class="section user"><dt>Performance Considerations</dt><dd><ul>
-<li>Efficiency is increased with increased granularity <code>ITEMS_PER_THREAD</code>. Performance is also typically increased until the additional register pressure or shared memory allocation size causes SM occupancy to fall too low. Consider variants of <a class="el" href="classcub_1_1_block_load.html" title="The BlockLoad class provides collective data movement methods for loading a linear segment of items f...">cub::BlockLoad</a> for efficiently gathering a <a href="index.html#sec5sec4"><em>blocked arrangement</em></a> of elements across threads.</li>
+<li>Efficiency is increased with increased granularity <code>ITEMS_PER_THREAD</code>. Performance is also typically increased until the additional register pressure or shared memory allocation size causes SM occupancy to fall too low. Consider variants of <a class="el" href="classcub_1_1_block_load.html" title="The BlockLoad class provides collective data movement methods for loading a linear segment of items f...">cub::BlockLoad</a> for efficiently gathering a <a href="index.html#sec4sec3"><em>blocked arrangement</em></a> of elements across threads.</li>
 </ul>
 </dd></dl>
 <dl class="section user"><dt>A Simple Example</dt><dd>Every thread in the block uses the <a class="el" href="classcub_1_1_block_radix_sort.html" title="The BlockRadixSort class provides collective methods for sorting items partitioned across a CUDA thre...">BlockRadixSort</a> class by first specializing the <a class="el" href="classcub_1_1_block_radix_sort.html" title="The BlockRadixSort class provides collective methods for sorting items partitioned across a CUDA thre...">BlockRadixSort</a> type, then instantiating an instance with parameters for communication, and finally invoking collective member functions. </dd></dl>
-<dl class="section user"><dt></dt><dd>The code snippet below illustrates a sort of 512 integer keys that are partitioned in a <a href="index.html#sec5sec4"><em>blocked arrangement</em></a> across 128 threads where each thread owns 4 consecutive items. </dd></dl>
+<dl class="section user"><dt></dt><dd>The code snippet below illustrates a sort of 512 integer keys that are partitioned in a <a href="index.html#sec4sec3"><em>blocked arrangement</em></a> across 128 threads where each thread owns 4 consecutive items. </dd></dl>
 <dl class="section user"><dt></dt><dd><div class="fragment"><div class="line"><span class="preprocessor">#include &lt;<a class="code" href="cub_8cuh.html">cub/cub.cuh</a>&gt;</span>   <span class="comment">// or equivalently &lt;cub/block/block_radix_sort.cuh&gt;</span></div>
 <div class="line"></div>
 <div class="line">__global__ <span class="keywordtype">void</span> ExampleKernel(...)</div>
@@ -193,29 +193,29 @@ __device__ __forceinline__&#160;</td><td class="memItemRight" valign="bottom"><a
 <tr class="separator:a34b8e018887026786b02e8ac6556bd3a"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr><td colspan="2"><div class="groupHeader">Sorting (blocked arrangements)</div></td></tr>
 <tr class="memitem:ad04651e04e555350bd250c4681a97644"><td class="memItemLeft" align="right" valign="top">__device__ __forceinline__ void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classcub_1_1_block_radix_sort.html#ad04651e04e555350bd250c4681a97644">Sort</a> (Key(&amp;keys)[ITEMS_PER_THREAD], int begin_bit=0, int end_bit=sizeof(Key)*8)</td></tr>
-<tr class="memdesc:ad04651e04e555350bd250c4681a97644"><td class="mdescLeft">&#160;</td><td class="mdescRight">Performs an ascending block-wide radix sort over a <a href="index.html#sec5sec4"><em>blocked arrangement</em></a> of keys.  <a href="#ad04651e04e555350bd250c4681a97644">More...</a><br/></td></tr>
+<tr class="memdesc:ad04651e04e555350bd250c4681a97644"><td class="mdescLeft">&#160;</td><td class="mdescRight">Performs an ascending block-wide radix sort over a <a href="index.html#sec4sec3"><em>blocked arrangement</em></a> of keys.  <a href="#ad04651e04e555350bd250c4681a97644">More...</a><br/></td></tr>
 <tr class="separator:ad04651e04e555350bd250c4681a97644"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:aac3d9424388b0cb6da360624e627b61e"><td class="memItemLeft" align="right" valign="top">__device__ __forceinline__ void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classcub_1_1_block_radix_sort.html#aac3d9424388b0cb6da360624e627b61e">Sort</a> (Key(&amp;keys)[ITEMS_PER_THREAD], Value(&amp;values)[ITEMS_PER_THREAD], int begin_bit=0, int end_bit=sizeof(Key)*8)</td></tr>
-<tr class="memdesc:aac3d9424388b0cb6da360624e627b61e"><td class="mdescLeft">&#160;</td><td class="mdescRight">Performs an ascending block-wide radix sort across a <a href="index.html#sec5sec4"><em>blocked arrangement</em></a> of keys and values.  <a href="#aac3d9424388b0cb6da360624e627b61e">More...</a><br/></td></tr>
+<tr class="memdesc:aac3d9424388b0cb6da360624e627b61e"><td class="mdescLeft">&#160;</td><td class="mdescRight">Performs an ascending block-wide radix sort across a <a href="index.html#sec4sec3"><em>blocked arrangement</em></a> of keys and values.  <a href="#aac3d9424388b0cb6da360624e627b61e">More...</a><br/></td></tr>
 <tr class="separator:aac3d9424388b0cb6da360624e627b61e"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:ae1398d2e68fd263bb38605be824af818"><td class="memItemLeft" align="right" valign="top">__device__ __forceinline__ void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classcub_1_1_block_radix_sort.html#ae1398d2e68fd263bb38605be824af818">SortDescending</a> (Key(&amp;keys)[ITEMS_PER_THREAD], int begin_bit=0, int end_bit=sizeof(Key)*8)</td></tr>
-<tr class="memdesc:ae1398d2e68fd263bb38605be824af818"><td class="mdescLeft">&#160;</td><td class="mdescRight">Performs a descending block-wide radix sort over a <a href="index.html#sec5sec4"><em>blocked arrangement</em></a> of keys.  <a href="#ae1398d2e68fd263bb38605be824af818">More...</a><br/></td></tr>
+<tr class="memdesc:ae1398d2e68fd263bb38605be824af818"><td class="mdescLeft">&#160;</td><td class="mdescRight">Performs a descending block-wide radix sort over a <a href="index.html#sec4sec3"><em>blocked arrangement</em></a> of keys.  <a href="#ae1398d2e68fd263bb38605be824af818">More...</a><br/></td></tr>
 <tr class="separator:ae1398d2e68fd263bb38605be824af818"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:a2a8d768f3c009dd4e957f52b1f5d08c1"><td class="memItemLeft" align="right" valign="top">__device__ __forceinline__ void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classcub_1_1_block_radix_sort.html#a2a8d768f3c009dd4e957f52b1f5d08c1">SortDescending</a> (Key(&amp;keys)[ITEMS_PER_THREAD], Value(&amp;values)[ITEMS_PER_THREAD], int begin_bit=0, int end_bit=sizeof(Key)*8)</td></tr>
-<tr class="memdesc:a2a8d768f3c009dd4e957f52b1f5d08c1"><td class="mdescLeft">&#160;</td><td class="mdescRight">Performs a descending block-wide radix sort across a <a href="index.html#sec5sec4"><em>blocked arrangement</em></a> of keys and values.  <a href="#a2a8d768f3c009dd4e957f52b1f5d08c1">More...</a><br/></td></tr>
+<tr class="memdesc:a2a8d768f3c009dd4e957f52b1f5d08c1"><td class="mdescLeft">&#160;</td><td class="mdescRight">Performs a descending block-wide radix sort across a <a href="index.html#sec4sec3"><em>blocked arrangement</em></a> of keys and values.  <a href="#a2a8d768f3c009dd4e957f52b1f5d08c1">More...</a><br/></td></tr>
 <tr class="separator:a2a8d768f3c009dd4e957f52b1f5d08c1"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr><td colspan="2"><div class="groupHeader">Sorting (blocked arrangement -&gt; striped arrangement)</div></td></tr>
 <tr class="memitem:a4be0c8d355a7fc75f8b405a776d884d3"><td class="memItemLeft" align="right" valign="top">__device__ __forceinline__ void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classcub_1_1_block_radix_sort.html#a4be0c8d355a7fc75f8b405a776d884d3">SortBlockedToStriped</a> (Key(&amp;keys)[ITEMS_PER_THREAD], int begin_bit=0, int end_bit=sizeof(Key)*8)</td></tr>
-<tr class="memdesc:a4be0c8d355a7fc75f8b405a776d884d3"><td class="mdescLeft">&#160;</td><td class="mdescRight">Performs an ascending radix sort across a <a href="index.html#sec5sec4"><em>blocked arrangement</em></a> of keys, leaving them in a <a href="index.html#sec5sec4"><em>striped arrangement</em></a>.  <a href="#a4be0c8d355a7fc75f8b405a776d884d3">More...</a><br/></td></tr>
+<tr class="memdesc:a4be0c8d355a7fc75f8b405a776d884d3"><td class="mdescLeft">&#160;</td><td class="mdescRight">Performs an ascending radix sort across a <a href="index.html#sec4sec3"><em>blocked arrangement</em></a> of keys, leaving them in a <a href="index.html#sec4sec3"><em>striped arrangement</em></a>.  <a href="#a4be0c8d355a7fc75f8b405a776d884d3">More...</a><br/></td></tr>
 <tr class="separator:a4be0c8d355a7fc75f8b405a776d884d3"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:a9f707b1592f7354db0fba76a42afbc84"><td class="memItemLeft" align="right" valign="top">__device__ __forceinline__ void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classcub_1_1_block_radix_sort.html#a9f707b1592f7354db0fba76a42afbc84">SortBlockedToStriped</a> (Key(&amp;keys)[ITEMS_PER_THREAD], Value(&amp;values)[ITEMS_PER_THREAD], int begin_bit=0, int end_bit=sizeof(Key)*8)</td></tr>
-<tr class="memdesc:a9f707b1592f7354db0fba76a42afbc84"><td class="mdescLeft">&#160;</td><td class="mdescRight">Performs an ascending radix sort across a <a href="index.html#sec5sec4"><em>blocked arrangement</em></a> of keys and values, leaving them in a <a href="index.html#sec5sec4"><em>striped arrangement</em></a>.  <a href="#a9f707b1592f7354db0fba76a42afbc84">More...</a><br/></td></tr>
+<tr class="memdesc:a9f707b1592f7354db0fba76a42afbc84"><td class="mdescLeft">&#160;</td><td class="mdescRight">Performs an ascending radix sort across a <a href="index.html#sec4sec3"><em>blocked arrangement</em></a> of keys and values, leaving them in a <a href="index.html#sec4sec3"><em>striped arrangement</em></a>.  <a href="#a9f707b1592f7354db0fba76a42afbc84">More...</a><br/></td></tr>
 <tr class="separator:a9f707b1592f7354db0fba76a42afbc84"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:afcef7ab16bbc28445c673efe0b02cc37"><td class="memItemLeft" align="right" valign="top">__device__ __forceinline__ void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classcub_1_1_block_radix_sort.html#afcef7ab16bbc28445c673efe0b02cc37">SortDescendingBlockedToStriped</a> (Key(&amp;keys)[ITEMS_PER_THREAD], int begin_bit=0, int end_bit=sizeof(Key)*8)</td></tr>
-<tr class="memdesc:afcef7ab16bbc28445c673efe0b02cc37"><td class="mdescLeft">&#160;</td><td class="mdescRight">Performs a descending radix sort across a <a href="index.html#sec5sec4"><em>blocked arrangement</em></a> of keys, leaving them in a <a href="index.html#sec5sec4"><em>striped arrangement</em></a>.  <a href="#afcef7ab16bbc28445c673efe0b02cc37">More...</a><br/></td></tr>
+<tr class="memdesc:afcef7ab16bbc28445c673efe0b02cc37"><td class="mdescLeft">&#160;</td><td class="mdescRight">Performs a descending radix sort across a <a href="index.html#sec4sec3"><em>blocked arrangement</em></a> of keys, leaving them in a <a href="index.html#sec4sec3"><em>striped arrangement</em></a>.  <a href="#afcef7ab16bbc28445c673efe0b02cc37">More...</a><br/></td></tr>
 <tr class="separator:afcef7ab16bbc28445c673efe0b02cc37"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:aa25b6670e66c17445d8fa4ea8f9c2536"><td class="memItemLeft" align="right" valign="top">__device__ __forceinline__ void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classcub_1_1_block_radix_sort.html#aa25b6670e66c17445d8fa4ea8f9c2536">SortDescendingBlockedToStriped</a> (Key(&amp;keys)[ITEMS_PER_THREAD], Value(&amp;values)[ITEMS_PER_THREAD], int begin_bit=0, int end_bit=sizeof(Key)*8)</td></tr>
-<tr class="memdesc:aa25b6670e66c17445d8fa4ea8f9c2536"><td class="mdescLeft">&#160;</td><td class="mdescRight">Performs a descending radix sort across a <a href="index.html#sec5sec4"><em>blocked arrangement</em></a> of keys and values, leaving them in a <a href="index.html#sec5sec4"><em>striped arrangement</em></a>.  <a href="#aa25b6670e66c17445d8fa4ea8f9c2536">More...</a><br/></td></tr>
+<tr class="memdesc:aa25b6670e66c17445d8fa4ea8f9c2536"><td class="mdescLeft">&#160;</td><td class="mdescRight">Performs a descending radix sort across a <a href="index.html#sec4sec3"><em>blocked arrangement</em></a> of keys and values, leaving them in a <a href="index.html#sec4sec3"><em>striped arrangement</em></a>.  <a href="#aa25b6670e66c17445d8fa4ea8f9c2536">More...</a><br/></td></tr>
 <tr class="separator:aa25b6670e66c17445d8fa4ea8f9c2536"><td class="memSeparator" colspan="2">&#160;</td></tr>
 </table>
 <h2 class="groupheader">Constructor &amp; Destructor Documentation</h2>
@@ -379,13 +379,13 @@ template&lt;typename Key , int BLOCK_THREADS, int ITEMS_PER_THREAD, typename Val
 </table>
 </div><div class="memdoc">
 
-<p>Performs an ascending block-wide radix sort over a <a href="index.html#sec5sec4"><em>blocked arrangement</em></a> of keys. </p>
+<p>Performs an ascending block-wide radix sort over a <a href="index.html#sec4sec3"><em>blocked arrangement</em></a> of keys. </p>
 <dl class="section user"><dt></dt><dd><ul>
-<li>Efficiency is increased with increased granularity <code>ITEMS_PER_THREAD</code>. Performance is also typically increased until the additional register pressure or shared memory allocation size causes SM occupancy to fall too low. Consider variants of <a class="el" href="classcub_1_1_block_load.html" title="The BlockLoad class provides collective data movement methods for loading a linear segment of items f...">cub::BlockLoad</a> for efficiently gathering a <a href="index.html#sec5sec4"><em>blocked arrangement</em></a> of elements across threads.</li>
+<li>Efficiency is increased with increased granularity <code>ITEMS_PER_THREAD</code>. Performance is also typically increased until the additional register pressure or shared memory allocation size causes SM occupancy to fall too low. Consider variants of <a class="el" href="classcub_1_1_block_load.html" title="The BlockLoad class provides collective data movement methods for loading a linear segment of items f...">cub::BlockLoad</a> for efficiently gathering a <a href="index.html#sec4sec3"><em>blocked arrangement</em></a> of elements across threads.</li>
 <li>A subsequent <code>__syncthreads()</code> threadblock barrier should be invoked after calling this method if the collective's temporary storage (e.g., <code>temp_storage</code>) is to be reused or repurposed.</li>
 </ul>
 </dd></dl>
-<dl class="section user"><dt></dt><dd>The code snippet below illustrates a sort of 512 integer keys that are partitioned in a <a href="index.html#sec5sec4"><em>blocked arrangement</em></a> across 128 threads where each thread owns 4 consecutive keys. </dd></dl>
+<dl class="section user"><dt></dt><dd>The code snippet below illustrates a sort of 512 integer keys that are partitioned in a <a href="index.html#sec4sec3"><em>blocked arrangement</em></a> across 128 threads where each thread owns 4 consecutive keys. </dd></dl>
 <dl class="section user"><dt></dt><dd><div class="fragment"><div class="line"><span class="preprocessor">#include &lt;<a class="code" href="cub_8cuh.html">cub/cub.cuh</a>&gt;</span>   <span class="comment">// or equivalently &lt;cub/block/block_radix_sort.cuh&gt;</span></div>
 <div class="line"></div>
 <div class="line">__global__ <span class="keywordtype">void</span> ExampleKernel(...)</div>
@@ -463,14 +463,14 @@ template&lt;typename Key , int BLOCK_THREADS, int ITEMS_PER_THREAD, typename Val
 </table>
 </div><div class="memdoc">
 
-<p>Performs an ascending block-wide radix sort across a <a href="index.html#sec5sec4"><em>blocked arrangement</em></a> of keys and values. </p>
+<p>Performs an ascending block-wide radix sort across a <a href="index.html#sec4sec3"><em>blocked arrangement</em></a> of keys and values. </p>
 <dl class="section user"><dt></dt><dd><ul>
 <li><a class="el" href="classcub_1_1_block_radix_sort.html" title="The BlockRadixSort class provides collective methods for sorting items partitioned across a CUDA thre...">BlockRadixSort</a> can only accommodate one associated tile of values. To "truck along" more than one tile of values, simply perform a key-value sort of the keys paired with a temporary value array that enumerates the key indices. The reordered indices can then be used as a gather-vector for exchanging other associated tile data through shared memory.</li>
-<li>Efficiency is increased with increased granularity <code>ITEMS_PER_THREAD</code>. Performance is also typically increased until the additional register pressure or shared memory allocation size causes SM occupancy to fall too low. Consider variants of <a class="el" href="classcub_1_1_block_load.html" title="The BlockLoad class provides collective data movement methods for loading a linear segment of items f...">cub::BlockLoad</a> for efficiently gathering a <a href="index.html#sec5sec4"><em>blocked arrangement</em></a> of elements across threads.</li>
+<li>Efficiency is increased with increased granularity <code>ITEMS_PER_THREAD</code>. Performance is also typically increased until the additional register pressure or shared memory allocation size causes SM occupancy to fall too low. Consider variants of <a class="el" href="classcub_1_1_block_load.html" title="The BlockLoad class provides collective data movement methods for loading a linear segment of items f...">cub::BlockLoad</a> for efficiently gathering a <a href="index.html#sec4sec3"><em>blocked arrangement</em></a> of elements across threads.</li>
 <li>A subsequent <code>__syncthreads()</code> threadblock barrier should be invoked after calling this method if the collective's temporary storage (e.g., <code>temp_storage</code>) is to be reused or repurposed.</li>
 </ul>
 </dd></dl>
-<dl class="section user"><dt></dt><dd>The code snippet below illustrates a sort of 512 integer keys and values that are partitioned in a <a href="index.html#sec5sec4"><em>blocked arrangement</em></a> across 128 threads where each thread owns 4 consecutive pairs. </dd></dl>
+<dl class="section user"><dt></dt><dd>The code snippet below illustrates a sort of 512 integer keys and values that are partitioned in a <a href="index.html#sec4sec3"><em>blocked arrangement</em></a> across 128 threads where each thread owns 4 consecutive pairs. </dd></dl>
 <dl class="section user"><dt></dt><dd><div class="fragment"><div class="line"><span class="preprocessor">#include &lt;<a class="code" href="cub_8cuh.html">cub/cub.cuh</a>&gt;</span>   <span class="comment">// or equivalently &lt;cub/block/block_radix_sort.cuh&gt;</span></div>
 <div class="line"></div>
 <div class="line">__global__ <span class="keywordtype">void</span> ExampleKernel(...)</div>
@@ -544,13 +544,13 @@ template&lt;typename Key , int BLOCK_THREADS, int ITEMS_PER_THREAD, typename Val
 </table>
 </div><div class="memdoc">
 
-<p>Performs a descending block-wide radix sort over a <a href="index.html#sec5sec4"><em>blocked arrangement</em></a> of keys. </p>
+<p>Performs a descending block-wide radix sort over a <a href="index.html#sec4sec3"><em>blocked arrangement</em></a> of keys. </p>
 <dl class="section user"><dt></dt><dd><ul>
-<li>Efficiency is increased with increased granularity <code>ITEMS_PER_THREAD</code>. Performance is also typically increased until the additional register pressure or shared memory allocation size causes SM occupancy to fall too low. Consider variants of <a class="el" href="classcub_1_1_block_load.html" title="The BlockLoad class provides collective data movement methods for loading a linear segment of items f...">cub::BlockLoad</a> for efficiently gathering a <a href="index.html#sec5sec4"><em>blocked arrangement</em></a> of elements across threads.</li>
+<li>Efficiency is increased with increased granularity <code>ITEMS_PER_THREAD</code>. Performance is also typically increased until the additional register pressure or shared memory allocation size causes SM occupancy to fall too low. Consider variants of <a class="el" href="classcub_1_1_block_load.html" title="The BlockLoad class provides collective data movement methods for loading a linear segment of items f...">cub::BlockLoad</a> for efficiently gathering a <a href="index.html#sec4sec3"><em>blocked arrangement</em></a> of elements across threads.</li>
 <li>A subsequent <code>__syncthreads()</code> threadblock barrier should be invoked after calling this method if the collective's temporary storage (e.g., <code>temp_storage</code>) is to be reused or repurposed.</li>
 </ul>
 </dd></dl>
-<dl class="section user"><dt></dt><dd>The code snippet below illustrates a sort of 512 integer keys that are partitioned in a <a href="index.html#sec5sec4"><em>blocked arrangement</em></a> across 128 threads where each thread owns 4 consecutive keys. </dd></dl>
+<dl class="section user"><dt></dt><dd>The code snippet below illustrates a sort of 512 integer keys that are partitioned in a <a href="index.html#sec4sec3"><em>blocked arrangement</em></a> across 128 threads where each thread owns 4 consecutive keys. </dd></dl>
 <dl class="section user"><dt></dt><dd><div class="fragment"><div class="line"><span class="preprocessor">#include &lt;<a class="code" href="cub_8cuh.html">cub/cub.cuh</a>&gt;</span>   <span class="comment">// or equivalently &lt;cub/block/block_radix_sort.cuh&gt;</span></div>
 <div class="line"></div>
 <div class="line">__global__ <span class="keywordtype">void</span> ExampleKernel(...)</div>
@@ -628,14 +628,14 @@ template&lt;typename Key , int BLOCK_THREADS, int ITEMS_PER_THREAD, typename Val
 </table>
 </div><div class="memdoc">
 
-<p>Performs a descending block-wide radix sort across a <a href="index.html#sec5sec4"><em>blocked arrangement</em></a> of keys and values. </p>
+<p>Performs a descending block-wide radix sort across a <a href="index.html#sec4sec3"><em>blocked arrangement</em></a> of keys and values. </p>
 <dl class="section user"><dt></dt><dd><ul>
 <li><a class="el" href="classcub_1_1_block_radix_sort.html" title="The BlockRadixSort class provides collective methods for sorting items partitioned across a CUDA thre...">BlockRadixSort</a> can only accommodate one associated tile of values. To "truck along" more than one tile of values, simply perform a key-value sort of the keys paired with a temporary value array that enumerates the key indices. The reordered indices can then be used as a gather-vector for exchanging other associated tile data through shared memory.</li>
-<li>Efficiency is increased with increased granularity <code>ITEMS_PER_THREAD</code>. Performance is also typically increased until the additional register pressure or shared memory allocation size causes SM occupancy to fall too low. Consider variants of <a class="el" href="classcub_1_1_block_load.html" title="The BlockLoad class provides collective data movement methods for loading a linear segment of items f...">cub::BlockLoad</a> for efficiently gathering a <a href="index.html#sec5sec4"><em>blocked arrangement</em></a> of elements across threads.</li>
+<li>Efficiency is increased with increased granularity <code>ITEMS_PER_THREAD</code>. Performance is also typically increased until the additional register pressure or shared memory allocation size causes SM occupancy to fall too low. Consider variants of <a class="el" href="classcub_1_1_block_load.html" title="The BlockLoad class provides collective data movement methods for loading a linear segment of items f...">cub::BlockLoad</a> for efficiently gathering a <a href="index.html#sec4sec3"><em>blocked arrangement</em></a> of elements across threads.</li>
 <li>A subsequent <code>__syncthreads()</code> threadblock barrier should be invoked after calling this method if the collective's temporary storage (e.g., <code>temp_storage</code>) is to be reused or repurposed.</li>
 </ul>
 </dd></dl>
-<dl class="section user"><dt></dt><dd>The code snippet below illustrates a sort of 512 integer keys and values that are partitioned in a <a href="index.html#sec5sec4"><em>blocked arrangement</em></a> across 128 threads where each thread owns 4 consecutive pairs. </dd></dl>
+<dl class="section user"><dt></dt><dd>The code snippet below illustrates a sort of 512 integer keys and values that are partitioned in a <a href="index.html#sec4sec3"><em>blocked arrangement</em></a> across 128 threads where each thread owns 4 consecutive pairs. </dd></dl>
 <dl class="section user"><dt></dt><dd><div class="fragment"><div class="line"><span class="preprocessor">#include &lt;<a class="code" href="cub_8cuh.html">cub/cub.cuh</a>&gt;</span>   <span class="comment">// or equivalently &lt;cub/block/block_radix_sort.cuh&gt;</span></div>
 <div class="line"></div>
 <div class="line">__global__ <span class="keywordtype">void</span> ExampleKernel(...)</div>
@@ -709,13 +709,13 @@ template&lt;typename Key , int BLOCK_THREADS, int ITEMS_PER_THREAD, typename Val
 </table>
 </div><div class="memdoc">
 
-<p>Performs an ascending radix sort across a <a href="index.html#sec5sec4"><em>blocked arrangement</em></a> of keys, leaving them in a <a href="index.html#sec5sec4"><em>striped arrangement</em></a>. </p>
+<p>Performs an ascending radix sort across a <a href="index.html#sec4sec3"><em>blocked arrangement</em></a> of keys, leaving them in a <a href="index.html#sec4sec3"><em>striped arrangement</em></a>. </p>
 <dl class="section user"><dt></dt><dd><ul>
-<li>Efficiency is increased with increased granularity <code>ITEMS_PER_THREAD</code>. Performance is also typically increased until the additional register pressure or shared memory allocation size causes SM occupancy to fall too low. Consider variants of <a class="el" href="classcub_1_1_block_load.html" title="The BlockLoad class provides collective data movement methods for loading a linear segment of items f...">cub::BlockLoad</a> for efficiently gathering a <a href="index.html#sec5sec4"><em>blocked arrangement</em></a> of elements across threads.</li>
+<li>Efficiency is increased with increased granularity <code>ITEMS_PER_THREAD</code>. Performance is also typically increased until the additional register pressure or shared memory allocation size causes SM occupancy to fall too low. Consider variants of <a class="el" href="classcub_1_1_block_load.html" title="The BlockLoad class provides collective data movement methods for loading a linear segment of items f...">cub::BlockLoad</a> for efficiently gathering a <a href="index.html#sec4sec3"><em>blocked arrangement</em></a> of elements across threads.</li>
 <li>A subsequent <code>__syncthreads()</code> threadblock barrier should be invoked after calling this method if the collective's temporary storage (e.g., <code>temp_storage</code>) is to be reused or repurposed.</li>
 </ul>
 </dd></dl>
-<dl class="section user"><dt></dt><dd>The code snippet below illustrates a sort of 512 integer keys that are initially partitioned in a <a href="index.html#sec5sec4"><em>blocked arrangement</em></a> across 128 threads where each thread owns 4 consecutive keys. The final partitioning is striped. </dd></dl>
+<dl class="section user"><dt></dt><dd>The code snippet below illustrates a sort of 512 integer keys that are initially partitioned in a <a href="index.html#sec4sec3"><em>blocked arrangement</em></a> across 128 threads where each thread owns 4 consecutive keys. The final partitioning is striped. </dd></dl>
 <dl class="section user"><dt></dt><dd><div class="fragment"><div class="line"><span class="preprocessor">#include &lt;<a class="code" href="cub_8cuh.html">cub/cub.cuh</a>&gt;</span>   <span class="comment">// or equivalently &lt;cub/block/block_radix_sort.cuh&gt;</span></div>
 <div class="line"></div>
 <div class="line">__global__ <span class="keywordtype">void</span> ExampleKernel(...)</div>
@@ -793,14 +793,14 @@ template&lt;typename Key , int BLOCK_THREADS, int ITEMS_PER_THREAD, typename Val
 </table>
 </div><div class="memdoc">
 
-<p>Performs an ascending radix sort across a <a href="index.html#sec5sec4"><em>blocked arrangement</em></a> of keys and values, leaving them in a <a href="index.html#sec5sec4"><em>striped arrangement</em></a>. </p>
+<p>Performs an ascending radix sort across a <a href="index.html#sec4sec3"><em>blocked arrangement</em></a> of keys and values, leaving them in a <a href="index.html#sec4sec3"><em>striped arrangement</em></a>. </p>
 <dl class="section user"><dt></dt><dd><ul>
 <li><a class="el" href="classcub_1_1_block_radix_sort.html" title="The BlockRadixSort class provides collective methods for sorting items partitioned across a CUDA thre...">BlockRadixSort</a> can only accommodate one associated tile of values. To "truck along" more than one tile of values, simply perform a key-value sort of the keys paired with a temporary value array that enumerates the key indices. The reordered indices can then be used as a gather-vector for exchanging other associated tile data through shared memory.</li>
-<li>Efficiency is increased with increased granularity <code>ITEMS_PER_THREAD</code>. Performance is also typically increased until the additional register pressure or shared memory allocation size causes SM occupancy to fall too low. Consider variants of <a class="el" href="classcub_1_1_block_load.html" title="The BlockLoad class provides collective data movement methods for loading a linear segment of items f...">cub::BlockLoad</a> for efficiently gathering a <a href="index.html#sec5sec4"><em>blocked arrangement</em></a> of elements across threads.</li>
+<li>Efficiency is increased with increased granularity <code>ITEMS_PER_THREAD</code>. Performance is also typically increased until the additional register pressure or shared memory allocation size causes SM occupancy to fall too low. Consider variants of <a class="el" href="classcub_1_1_block_load.html" title="The BlockLoad class provides collective data movement methods for loading a linear segment of items f...">cub::BlockLoad</a> for efficiently gathering a <a href="index.html#sec4sec3"><em>blocked arrangement</em></a> of elements across threads.</li>
 <li>A subsequent <code>__syncthreads()</code> threadblock barrier should be invoked after calling this method if the collective's temporary storage (e.g., <code>temp_storage</code>) is to be reused or repurposed.</li>
 </ul>
 </dd></dl>
-<dl class="section user"><dt></dt><dd>The code snippet below illustrates a sort of 512 integer keys and values that are initially partitioned in a <a href="index.html#sec5sec4"><em>blocked arrangement</em></a> across 128 threads where each thread owns 4 consecutive pairs. The final partitioning is striped. </dd></dl>
+<dl class="section user"><dt></dt><dd>The code snippet below illustrates a sort of 512 integer keys and values that are initially partitioned in a <a href="index.html#sec4sec3"><em>blocked arrangement</em></a> across 128 threads where each thread owns 4 consecutive pairs. The final partitioning is striped. </dd></dl>
 <dl class="section user"><dt></dt><dd><div class="fragment"><div class="line"><span class="preprocessor">#include &lt;<a class="code" href="cub_8cuh.html">cub/cub.cuh</a>&gt;</span>   <span class="comment">// or equivalently &lt;cub/block/block_radix_sort.cuh&gt;</span></div>
 <div class="line"></div>
 <div class="line">__global__ <span class="keywordtype">void</span> ExampleKernel(...)</div>
@@ -874,13 +874,13 @@ template&lt;typename Key , int BLOCK_THREADS, int ITEMS_PER_THREAD, typename Val
 </table>
 </div><div class="memdoc">
 
-<p>Performs a descending radix sort across a <a href="index.html#sec5sec4"><em>blocked arrangement</em></a> of keys, leaving them in a <a href="index.html#sec5sec4"><em>striped arrangement</em></a>. </p>
+<p>Performs a descending radix sort across a <a href="index.html#sec4sec3"><em>blocked arrangement</em></a> of keys, leaving them in a <a href="index.html#sec4sec3"><em>striped arrangement</em></a>. </p>
 <dl class="section user"><dt></dt><dd><ul>
-<li>Efficiency is increased with increased granularity <code>ITEMS_PER_THREAD</code>. Performance is also typically increased until the additional register pressure or shared memory allocation size causes SM occupancy to fall too low. Consider variants of <a class="el" href="classcub_1_1_block_load.html" title="The BlockLoad class provides collective data movement methods for loading a linear segment of items f...">cub::BlockLoad</a> for efficiently gathering a <a href="index.html#sec5sec4"><em>blocked arrangement</em></a> of elements across threads.</li>
+<li>Efficiency is increased with increased granularity <code>ITEMS_PER_THREAD</code>. Performance is also typically increased until the additional register pressure or shared memory allocation size causes SM occupancy to fall too low. Consider variants of <a class="el" href="classcub_1_1_block_load.html" title="The BlockLoad class provides collective data movement methods for loading a linear segment of items f...">cub::BlockLoad</a> for efficiently gathering a <a href="index.html#sec4sec3"><em>blocked arrangement</em></a> of elements across threads.</li>
 <li>A subsequent <code>__syncthreads()</code> threadblock barrier should be invoked after calling this method if the collective's temporary storage (e.g., <code>temp_storage</code>) is to be reused or repurposed.</li>
 </ul>
 </dd></dl>
-<dl class="section user"><dt></dt><dd>The code snippet below illustrates a sort of 512 integer keys that are initially partitioned in a <a href="index.html#sec5sec4"><em>blocked arrangement</em></a> across 128 threads where each thread owns 4 consecutive keys. The final partitioning is striped. </dd></dl>
+<dl class="section user"><dt></dt><dd>The code snippet below illustrates a sort of 512 integer keys that are initially partitioned in a <a href="index.html#sec4sec3"><em>blocked arrangement</em></a> across 128 threads where each thread owns 4 consecutive keys. The final partitioning is striped. </dd></dl>
 <dl class="section user"><dt></dt><dd><div class="fragment"><div class="line"><span class="preprocessor">#include &lt;<a class="code" href="cub_8cuh.html">cub/cub.cuh</a>&gt;</span>   <span class="comment">// or equivalently &lt;cub/block/block_radix_sort.cuh&gt;</span></div>
 <div class="line"></div>
 <div class="line">__global__ <span class="keywordtype">void</span> ExampleKernel(...)</div>
@@ -958,14 +958,14 @@ template&lt;typename Key , int BLOCK_THREADS, int ITEMS_PER_THREAD, typename Val
 </table>
 </div><div class="memdoc">
 
-<p>Performs a descending radix sort across a <a href="index.html#sec5sec4"><em>blocked arrangement</em></a> of keys and values, leaving them in a <a href="index.html#sec5sec4"><em>striped arrangement</em></a>. </p>
+<p>Performs a descending radix sort across a <a href="index.html#sec4sec3"><em>blocked arrangement</em></a> of keys and values, leaving them in a <a href="index.html#sec4sec3"><em>striped arrangement</em></a>. </p>
 <dl class="section user"><dt></dt><dd><ul>
 <li><a class="el" href="classcub_1_1_block_radix_sort.html" title="The BlockRadixSort class provides collective methods for sorting items partitioned across a CUDA thre...">BlockRadixSort</a> can only accommodate one associated tile of values. To "truck along" more than one tile of values, simply perform a key-value sort of the keys paired with a temporary value array that enumerates the key indices. The reordered indices can then be used as a gather-vector for exchanging other associated tile data through shared memory.</li>
-<li>Efficiency is increased with increased granularity <code>ITEMS_PER_THREAD</code>. Performance is also typically increased until the additional register pressure or shared memory allocation size causes SM occupancy to fall too low. Consider variants of <a class="el" href="classcub_1_1_block_load.html" title="The BlockLoad class provides collective data movement methods for loading a linear segment of items f...">cub::BlockLoad</a> for efficiently gathering a <a href="index.html#sec5sec4"><em>blocked arrangement</em></a> of elements across threads.</li>
+<li>Efficiency is increased with increased granularity <code>ITEMS_PER_THREAD</code>. Performance is also typically increased until the additional register pressure or shared memory allocation size causes SM occupancy to fall too low. Consider variants of <a class="el" href="classcub_1_1_block_load.html" title="The BlockLoad class provides collective data movement methods for loading a linear segment of items f...">cub::BlockLoad</a> for efficiently gathering a <a href="index.html#sec4sec3"><em>blocked arrangement</em></a> of elements across threads.</li>
 <li>A subsequent <code>__syncthreads()</code> threadblock barrier should be invoked after calling this method if the collective's temporary storage (e.g., <code>temp_storage</code>) is to be reused or repurposed.</li>
 </ul>
 </dd></dl>
-<dl class="section user"><dt></dt><dd>The code snippet below illustrates a sort of 512 integer keys and values that are initially partitioned in a <a href="index.html#sec5sec4"><em>blocked arrangement</em></a> across 128 threads where each thread owns 4 consecutive pairs. The final partitioning is striped. </dd></dl>
+<dl class="section user"><dt></dt><dd>The code snippet below illustrates a sort of 512 integer keys and values that are initially partitioned in a <a href="index.html#sec4sec3"><em>blocked arrangement</em></a> across 128 threads where each thread owns 4 consecutive pairs. The final partitioning is striped. </dd></dl>
 <dl class="section user"><dt></dt><dd><div class="fragment"><div class="line"><span class="preprocessor">#include &lt;<a class="code" href="cub_8cuh.html">cub/cub.cuh</a>&gt;</span>   <span class="comment">// or equivalently &lt;cub/block/block_radix_sort.cuh&gt;</span></div>
 <div class="line"></div>
 <div class="line">__global__ <span class="keywordtype">void</span> ExampleKernel(...)</div>
@@ -1006,7 +1006,7 @@ template&lt;typename Key , int BLOCK_THREADS, int ITEMS_PER_THREAD, typename Val
 <!-- HTML footer for doxygen 1.8.3.1-->
 <!-- start footer part -->
 <hr class="footer"/><address class="footer"><small>
-Generated on Tue Dec 10 2013 04:41:09 for CUB by &#160;<a href="http://www.doxygen.org/index.html">
+Generated on Wed Dec 11 2013 07:19:21 for CUB by &#160;<a href="http://www.doxygen.org/index.html">
 <img class="footer" src="doxygen.png" alt="doxygen"/>
 </a> 1.8.4
 <br>

@@ -178,11 +178,11 @@ struct DeviceReduceDispatch
     /// SM35
     struct Policy350
     {
-        // ReduceRegionPolicy1B (GTX Titan: 206.0 GB/s @ 192M 1B items)
+        // ReduceRegionPolicy1B (GTX Titan: 228.7 GB/s @ 192M 1B items)
         typedef BlockReduceRegionPolicy<
                 128,                                ///< Threads per thread block
-                12,                                 ///< Items per thread per tile of input
-                1,                                  ///< Number of items per vectorized load
+                24,                                 ///< Items per thread per tile of input
+                4,                                  ///< Number of items per vectorized load
                 BLOCK_REDUCE_RAKING,                ///< Cooperative block-wide reduction algorithm to use
                 LOAD_LDG,                           ///< Cache load modifier
                 GRID_MAPPING_DYNAMIC>               ///< How to map tiles of input onto thread blocks
@@ -193,14 +193,14 @@ struct DeviceReduceDispatch
             ITEMS_PER_THREAD            = CUB_MIN(NOMINAL_4B_ITEMS_PER_THREAD, CUB_MAX(1, (NOMINAL_4B_ITEMS_PER_THREAD * 4 / sizeof(T)))),
         };
 
-        // ReduceRegionPolicy4B (GTX Titan: 254.2 GB/s @ 48M 4B items)
+        // ReduceRegionPolicy4B (GTX Titan: 255.1 GB/s @ 48M 4B items)
         typedef BlockReduceRegionPolicy<
-                512,                                ///< Threads per thread block
+                256,                                ///< Threads per thread block
                 ITEMS_PER_THREAD,                   ///< Items per thread per tile of input
-                1,                                  ///< Number of items per vectorized load
+                2,                                  ///< Number of items per vectorized load
                 BLOCK_REDUCE_RAKING,                ///< Cooperative block-wide reduction algorithm to use
-                LOAD_DEFAULT,                       ///< Cache load modifier
-                GRID_MAPPING_EVEN_SHARE>            ///< How to map tiles of input onto thread blocks
+                LOAD_LDG,                       ///< Cache load modifier
+                GRID_MAPPING_DYNAMIC>            ///< How to map tiles of input onto thread blocks
             ReduceRegionPolicy4B;
 
         // ReduceRegionPolicy

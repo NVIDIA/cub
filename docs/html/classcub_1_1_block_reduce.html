@@ -134,9 +134,9 @@ class cub::BlockReduce&lt; T, BLOCK_THREADS, ALGORITHM &gt;</h3>
 </ul>
 </dd></dl>
 <dl class="section user"><dt>Performance Considerations</dt><dd><ul>
-<li>Efficiency is increased with increased granularity <code>ITEMS_PER_THREAD</code>. Performance is also typically increased until the additional register pressure or shared memory allocation size causes SM occupancy to fall too low. Consider variants of <a class="el" href="classcub_1_1_block_load.html" title="The BlockLoad class provides collective data movement methods for loading a linear segment of items f...">cub::BlockLoad</a> for efficiently gathering a <a href="index.html#sec5sec4"><em>blocked arrangement</em></a> of elements across threads.</li>
+<li>Efficiency is increased with increased granularity <code>ITEMS_PER_THREAD</code>. Performance is also typically increased until the additional register pressure or shared memory allocation size causes SM occupancy to fall too low. Consider variants of <a class="el" href="classcub_1_1_block_load.html" title="The BlockLoad class provides collective data movement methods for loading a linear segment of items f...">cub::BlockLoad</a> for efficiently gathering a <a href="index.html#sec4sec3"><em>blocked arrangement</em></a> of elements across threads.</li>
 <li>Very efficient (only one synchronization barrier).</li>
-<li>Zero bank conflicts for most types.</li>
+<li>Incurs zero bank conflicts for most types</li>
 <li>Computation is slightly more efficient (i.e., having lower instruction overhead) for:<ul>
 <li>Summation (<b><em>vs.</em></b> generic reduction)</li>
 <li><code>BLOCK_THREADS</code> is a multiple of the architecture's warp size</li>
@@ -147,7 +147,7 @@ class cub::BlockReduce&lt; T, BLOCK_THREADS, ALGORITHM &gt;</h3>
 </ul>
 </dd></dl>
 <dl class="section user"><dt>A Simple Example</dt><dd>Every thread in the block uses the <a class="el" href="classcub_1_1_block_reduce.html" title="The BlockReduce class provides collective methods for computing a parallel reduction of items partiti...">BlockReduce</a> class by first specializing the <a class="el" href="classcub_1_1_block_reduce.html" title="The BlockReduce class provides collective methods for computing a parallel reduction of items partiti...">BlockReduce</a> type, then instantiating an instance with parameters for communication, and finally invoking collective member functions. </dd></dl>
-<dl class="section user"><dt></dt><dd>The code snippet below illustrates a sum reduction of 512 integer items that are partitioned in a <a href="index.html#sec5sec4"><em>blocked arrangement</em></a> across 128 threads where each thread owns 4 consecutive items. </dd></dl>
+<dl class="section user"><dt></dt><dd>The code snippet below illustrates a sum reduction of 512 integer items that are partitioned in a <a href="index.html#sec4sec3"><em>blocked arrangement</em></a> across 128 threads where each thread owns 4 consecutive items. </dd></dl>
 <dl class="section user"><dt></dt><dd><div class="fragment"><div class="line"><span class="preprocessor">#include &lt;<a class="code" href="cub_8cuh.html">cub/cub.cuh</a>&gt;</span>   <span class="comment">// or equivalently &lt;cub/block/block_reduce.cuh&gt;</span></div>
 <div class="line"></div>
 <div class="line">__global__ <span class="keywordtype">void</span> ExampleKernel(...)</div>
@@ -456,12 +456,12 @@ template&lt;int ITEMS_PER_THREAD, typename ReductionOp &gt; </div>
 <dl class="section user"><dt></dt><dd><ul>
 <li>The return value is undefined in threads other than thread<sub>0</sub>.</li>
 <li>Supports non-commutative reduction operators.</li>
-<li>Assumes a <a href="index.html#sec5sec4"><em>blocked arrangement</em></a> of elements across threads, where thread<sub><em>i</em></sub> owns the <em>i</em><sup>th</sup> segment of consecutively ranked items.</li>
-<li>Efficiency is increased with increased granularity <code>ITEMS_PER_THREAD</code>. Performance is also typically increased until the additional register pressure or shared memory allocation size causes SM occupancy to fall too low. Consider variants of <a class="el" href="classcub_1_1_block_load.html" title="The BlockLoad class provides collective data movement methods for loading a linear segment of items f...">cub::BlockLoad</a> for efficiently gathering a <a href="index.html#sec5sec4"><em>blocked arrangement</em></a> of elements across threads.</li>
+<li>Assumes a <a href="index.html#sec4sec3"><em>blocked arrangement</em></a> of elements across threads, where thread<sub><em>i</em></sub> owns the <em>i</em><sup>th</sup> segment of consecutively ranked items.</li>
+<li>Efficiency is increased with increased granularity <code>ITEMS_PER_THREAD</code>. Performance is also typically increased until the additional register pressure or shared memory allocation size causes SM occupancy to fall too low. Consider variants of <a class="el" href="classcub_1_1_block_load.html" title="The BlockLoad class provides collective data movement methods for loading a linear segment of items f...">cub::BlockLoad</a> for efficiently gathering a <a href="index.html#sec4sec3"><em>blocked arrangement</em></a> of elements across threads.</li>
 <li>A subsequent <code>__syncthreads()</code> threadblock barrier should be invoked after calling this method if the collective's temporary storage (e.g., <code>temp_storage</code>) is to be reused or repurposed.</li>
 </ul>
 </dd></dl>
-<dl class="section user"><dt></dt><dd>The code snippet below illustrates a max reduction of 512 integer items that are partitioned in a <a href="index.html#sec5sec4"><em>blocked arrangement</em></a> across 128 threads where each thread owns 4 consecutive items. </dd></dl>
+<dl class="section user"><dt></dt><dd>The code snippet below illustrates a max reduction of 512 integer items that are partitioned in a <a href="index.html#sec4sec3"><em>blocked arrangement</em></a> across 128 threads where each thread owns 4 consecutive items. </dd></dl>
 <dl class="section user"><dt></dt><dd><div class="fragment"><div class="line"><span class="preprocessor">#include &lt;<a class="code" href="cub_8cuh.html">cub/cub.cuh</a>&gt;</span>   <span class="comment">// or equivalently &lt;cub/block/block_reduce.cuh&gt;</span></div>
 <div class="line"></div>
 <div class="line">__global__ <span class="keywordtype">void</span> ExampleKernel(...)</div>
@@ -544,7 +544,7 @@ template&lt;typename ReductionOp &gt; </div>
 <dl class="section user"><dt></dt><dd><ul>
 <li>The return value is undefined in threads other than thread<sub>0</sub>.</li>
 <li>Supports non-commutative reduction operators.</li>
-<li>Assumes a <a href="index.html#sec5sec4"><em>blocked arrangement</em></a> of elements across threads, where thread<sub><em>i</em></sub> owns the <em>i</em><sup>th</sup> segment of consecutively ranked items.</li>
+<li>Assumes a <a href="index.html#sec4sec3"><em>blocked arrangement</em></a> of elements across threads, where thread<sub><em>i</em></sub> owns the <em>i</em><sup>th</sup> segment of consecutively ranked items.</li>
 <li>A subsequent <code>__syncthreads()</code> threadblock barrier should be invoked after calling this method if the collective's temporary storage (e.g., <code>temp_storage</code>) is to be reused or repurposed.</li>
 </ul>
 </dd></dl>
@@ -673,11 +673,11 @@ template&lt;int ITEMS_PER_THREAD&gt; </div>
 <p>Computes a block-wide reduction for thread<sub>0</sub> using addition (+) as the reduction operator. Each thread contributes an array of consecutive input elements. </p>
 <dl class="section user"><dt></dt><dd><ul>
 <li>The return value is undefined in threads other than thread<sub>0</sub>.</li>
-<li>Efficiency is increased with increased granularity <code>ITEMS_PER_THREAD</code>. Performance is also typically increased until the additional register pressure or shared memory allocation size causes SM occupancy to fall too low. Consider variants of <a class="el" href="classcub_1_1_block_load.html" title="The BlockLoad class provides collective data movement methods for loading a linear segment of items f...">cub::BlockLoad</a> for efficiently gathering a <a href="index.html#sec5sec4"><em>blocked arrangement</em></a> of elements across threads.</li>
+<li>Efficiency is increased with increased granularity <code>ITEMS_PER_THREAD</code>. Performance is also typically increased until the additional register pressure or shared memory allocation size causes SM occupancy to fall too low. Consider variants of <a class="el" href="classcub_1_1_block_load.html" title="The BlockLoad class provides collective data movement methods for loading a linear segment of items f...">cub::BlockLoad</a> for efficiently gathering a <a href="index.html#sec4sec3"><em>blocked arrangement</em></a> of elements across threads.</li>
 <li>A subsequent <code>__syncthreads()</code> threadblock barrier should be invoked after calling this method if the collective's temporary storage (e.g., <code>temp_storage</code>) is to be reused or repurposed.</li>
 </ul>
 </dd></dl>
-<dl class="section user"><dt></dt><dd>The code snippet below illustrates a sum reduction of 512 integer items that are partitioned in a <a href="index.html#sec5sec4"><em>blocked arrangement</em></a> across 128 threads where each thread owns 4 consecutive items. </dd></dl>
+<dl class="section user"><dt></dt><dd>The code snippet below illustrates a sum reduction of 512 integer items that are partitioned in a <a href="index.html#sec4sec3"><em>blocked arrangement</em></a> across 128 threads where each thread owns 4 consecutive items. </dd></dl>
 <dl class="section user"><dt></dt><dd><div class="fragment"><div class="line"><span class="preprocessor">#include &lt;<a class="code" href="cub_8cuh.html">cub/cub.cuh</a>&gt;</span>   <span class="comment">// or equivalently &lt;cub/block/block_reduce.cuh&gt;</span></div>
 <div class="line"></div>
 <div class="line">__global__ <span class="keywordtype">void</span> ExampleKernel(...)</div>
@@ -790,7 +790,7 @@ template&lt;typename T , int BLOCK_THREADS, BlockReduceAlgorithm ALGORITHM = BLO
 <!-- HTML footer for doxygen 1.8.3.1-->
 <!-- start footer part -->
 <hr class="footer"/><address class="footer"><small>
-Generated on Tue Dec 10 2013 04:41:09 for CUB by &#160;<a href="http://www.doxygen.org/index.html">
+Generated on Wed Dec 11 2013 07:19:21 for CUB by &#160;<a href="http://www.doxygen.org/index.html">
 <img class="footer" src="doxygen.png" alt="doxygen"/>
 </a> 1.8.4
 <br>
