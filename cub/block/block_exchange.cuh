@@ -60,10 +60,10 @@ namespace cub {
  *   yet most block-wide operations prefer a "blocked" partitioning of items across threads
  *   (where consecutive items belong to a single thread).
  * - BlockExchange supports the following types of data exchanges:
- *   - Transposing between [<em>blocked</em>](index.html#sec5sec4) and [<em>striped</em>](index.html#sec5sec4) arrangements
- *   - Transposing between [<em>blocked</em>](index.html#sec5sec4) and [<em>warp-striped</em>](index.html#sec5sec4) arrangements
- *   - Scattering ranked items to a [<em>blocked arrangement</em>](index.html#sec5sec4)
- *   - Scattering ranked items to a [<em>striped arrangement</em>](index.html#sec5sec4)
+ *   - Transposing between [<em>blocked</em>](index.html#sec4sec3) and [<em>striped</em>](index.html#sec4sec3) arrangements
+ *   - Transposing between [<em>blocked</em>](index.html#sec4sec3) and [<em>warp-striped</em>](index.html#sec4sec3) arrangements
+ *   - Scattering ranked items to a [<em>blocked arrangement</em>](index.html#sec4sec3)
+ *   - Scattering ranked items to a [<em>striped arrangement</em>](index.html#sec4sec3)
  *
  * \par A Simple Example
  * \blockcollective{BlockExchange}
