@@ -851,6 +851,7 @@ struct DeviceSelect
 /**
  * \example example_device_select_flagged.cu
  * \example example_device_select_if.cu
+ * \example example_device_select_unique.cu
  */
 
 }               // CUB namespace

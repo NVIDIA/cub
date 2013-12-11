@@ -211,7 +211,7 @@ enum BlockScanAlgorithm
  * - Uses synchronization-free communication between warp lanes when applicable
  * - Uses only one or two block-wide synchronization barriers (depending on
  *   algorithm selection)
- * - Zero bank conflicts for most types
+ * - Incurs zero bank conflicts for most types
  * - Computation is slightly more efficient (i.e., having lower instruction overhead) for:
  *   - Prefix sum variants (<b><em>vs.</em></b> generic scan)
  *   - Exclusive variants (<b><em>vs.</em></b> inclusive)
@@ -222,7 +222,7 @@ enum BlockScanAlgorithm
  * \blockcollective{BlockScan}
  * \par
  * The code snippet below illustrates an exclusive prefix sum of 512 integer items that
- * are partitioned in a [<em>blocked arrangement</em>](index.html#sec5sec4) across 128 threads
+ * are partitioned in a [<em>blocked arrangement</em>](index.html#sec4sec3) across 128 threads
  * where each thread owns 4 consecutive items.
  * \par
  * \code
@@ -563,7 +563,7 @@ public:
      *
      * \par
      * The code snippet below illustrates an exclusive prefix sum of 512 integer items that
-     * are partitioned in a [<em>blocked arrangement</em>](index.html#sec5sec4) across 128 threads
+     * are partitioned in a [<em>blocked arrangement</em>](index.html#sec4sec3) across 128 threads
      * where each thread owns 4 consecutive items.
      * \par
      * \code
@@ -618,7 +618,7 @@ public:
      *
      * \par
      * The code snippet below illustrates an exclusive prefix sum of 512 integer items that
-     * are partitioned in a [<em>blocked arrangement</em>](index.html#sec5sec4) across 128 threads
+     * are partitioned in a [<em>blocked arrangement</em>](index.html#sec4sec3) across 128 threads
      * where each thread owns 4 consecutive items.
      * \par
      * \code
@@ -682,7 +682,7 @@ public:
      * The code snippet below illustrates a single thread block that progressively
      * computes an exclusive prefix sum over multiple "tiles" of input using a
      * prefix functor to maintain a running total between block-wide scans.  Each tile consists
-     * of 512 integer items that are partitioned in a [<em>blocked arrangement</em>](index.html#sec5sec4)
+     * of 512 integer items that are partitioned in a [<em>blocked arrangement</em>](index.html#sec4sec3)
      * across 128 threads where each thread owns 4 consecutive items.
      * \par
      * \code
@@ -993,7 +993,7 @@ public:
      *
      * \par
      * The code snippet below illustrates an exclusive prefix max scan of 512 integer items that
-     * are partitioned in a [<em>blocked arrangement</em>](index.html#sec5sec4) across 128 threads
+     * are partitioned in a [<em>blocked arrangement</em>](index.html#sec4sec3) across 128 threads
      * where each thread owns 4 consecutive items.
      * \par
      * \code
@@ -1055,7 +1055,7 @@ public:
      *
      * \par
      * The code snippet below illustrates an exclusive prefix max scan of 512 integer items that
-     * are partitioned in a [<em>blocked arrangement</em>](index.html#sec5sec4) across 128 threads
+     * are partitioned in a [<em>blocked arrangement</em>](index.html#sec4sec3) across 128 threads
      * where each thread owns 4 consecutive items.
      * \par
      * \code
@@ -1615,7 +1615,7 @@ public:
      *
      * \par
      * The code snippet below illustrates an inclusive prefix sum of 512 integer items that
-     * are partitioned in a [<em>blocked arrangement</em>](index.html#sec5sec4) across 128 threads
+     * are partitioned in a [<em>blocked arrangement</em>](index.html#sec4sec3) across 128 threads
      * where each thread owns 4 consecutive items.
      * \par
      * \code
@@ -1677,7 +1677,7 @@ public:
      *
      * \par
      * The code snippet below illustrates an inclusive prefix sum of 512 integer items that
-     * are partitioned in a [<em>blocked arrangement</em>](index.html#sec5sec4) across 128 threads
+     * are partitioned in a [<em>blocked arrangement</em>](index.html#sec4sec3) across 128 threads
      * where each thread owns 4 consecutive items.
      * \par
      * \code
@@ -1751,7 +1751,7 @@ public:
      * The code snippet below illustrates a single thread block that progressively
      * computes an inclusive prefix sum over multiple "tiles" of input using a
      * prefix functor to maintain a running total between block-wide scans.  Each tile consists
-     * of 512 integer items that are partitioned in a [<em>blocked arrangement</em>](index.html#sec5sec4)
+     * of 512 integer items that are partitioned in a [<em>blocked arrangement</em>](index.html#sec4sec3)
      * across 128 threads where each thread owns 4 consecutive items.
      * \par
      * \code
@@ -2065,7 +2065,7 @@ public:
      *
      * \par
      * The code snippet below illustrates an inclusive prefix max scan of 512 integer items that
-     * are partitioned in a [<em>blocked arrangement</em>](index.html#sec5sec4) across 128 threads
+     * are partitioned in a [<em>blocked arrangement</em>](index.html#sec4sec3) across 128 threads
      * where each thread owns 4 consecutive items.
      * \par
      * \code
@@ -2131,7 +2131,7 @@ public:
      *
      * \par
      * The code snippet below illustrates an inclusive prefix max scan of 512 integer items that
-     * are partitioned in a [<em>blocked arrangement</em>](index.html#sec5sec4) across 128 threads
+     * are partitioned in a [<em>blocked arrangement</em>](index.html#sec4sec3) across 128 threads
      * where each thread owns 4 consecutive items.
      * \par
      * \code

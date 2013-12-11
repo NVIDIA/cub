@@ -54,18 +54,29 @@ namespace cub {
 /**
  * \brief The WarpScan class provides [<em>collective</em>](index.html#sec0) methods for computing a parallel prefix scan of items partitioned across CUDA warp threads.  ![](warp_scan_logo.png)
  *
- * \par Overview
- * Given a list of input elements and a binary reduction operator, a [<em>prefix scan</em>](http://en.wikipedia.org/wiki/Prefix_sum)
- * produces an output list where each element is computed to be the reduction
- * of the elements occurring earlier in the input list.  <em>Prefix sum</em>
- * connotes a prefix scan with the addition operator. The term \em inclusive indicates
- * that the <em>i</em><sup>th</sup> output reduction incorporates the <em>i</em><sup>th</sup> input.
- * The term \em exclusive indicates the <em>i</em><sup>th</sup> input is not incorporated into
- * the <em>i</em><sup>th</sup> output reduction.
- *
  * \tparam T                        The scan input/output element type
  * \tparam LOGICAL_WARPS            <b>[optional]</b> The number of "logical" warps performing concurrent warp scans. Default is 1.
  * \tparam LOGICAL_WARP_THREADS     <b>[optional]</b> The number of threads per "logical" warp (may be less than the number of hardware warp threads).  Default is the warp size associated with the CUDA Compute Capability targeted by the compiler (e.g., 32 threads for SM20).
+ *
+ * \par Overview
+ * - Given a list of input elements and a binary reduction operator, a [<em>prefix scan</em>](http://en.wikipedia.org/wiki/Prefix_sum)
+ *   produces an output list where each element is computed to be the reduction
+ *   of the elements occurring earlier in the input list.  <em>Prefix sum</em>
+ *   connotes a prefix scan with the addition operator. The term \em inclusive indicates
+ *   that the <em>i</em><sup>th</sup> output reduction incorporates the <em>i</em><sup>th</sup> input.
+ *   The term \em exclusive indicates the <em>i</em><sup>th</sup> input is not incorporated into
+ *   the <em>i</em><sup>th</sup> output reduction.
+ * - Supports "logical" warps smaller than the physical warp size (e.g., a logical warp of 8 threads)
+ * - The number of entrant threads must be an multiple of \p LOGICAL_WARP_THREADS
+ *
+ * \par Performance Considerations
+ * - Warp scans are concurrent if more than one warp is participating
+ * - Uses special instructions when applicable (e.g., warp \p SHFL)
+ * - Uses synchronization-free communication between warp lanes when applicable
+ * - Incurs zero bank conflicts for most types
+ * - Computation is slightly more efficient (i.e., having lower instruction overhead) for:
+ *     - Summation (<b><em>vs.</em></b> generic scan)
+ *     - The architecture's warp size is a whole multiple of \p LOGICAL_WARP_THREADS
  *
  * \par Simple Examples
  * \warpcollective{WarpScan}
@@ -125,17 +136,6 @@ namespace cub {
  * \par
  * Suppose the set of input \p thread_data across the warp of threads is <tt>{1, 1, 1, 1, ...}</tt>.
  * The corresponding output \p thread_data will be <tt>{0, 1, 2, 3, ..., 31}</tt>.
- *
- * \par Usage and Performance Considerations
- * - Supports "logical" warps smaller than the physical warp size (e.g., a logical warp of 8 threads)
- * - The number of entrant threads must be an multiple of \p LOGICAL_WARP_THREADS
- * - Warp scans are concurrent if more than one warp is participating
- * - Uses special instructions when applicable (e.g., warp \p SHFL)
- * - Uses synchronization-free communication between warp lanes when applicable
- * - Zero bank conflicts for most types.
- * - Computation is slightly more efficient (i.e., having lower instruction overhead) for:
- *     - Summation (<b><em>vs.</em></b> generic scan)
- *     - The architecture's warp size is a whole multiple of \p LOGICAL_WARP_THREADS
  *
  */
 template <
