@@ -1,6 +1,6 @@
 //-----------------------------------------------------------------------------
 
-1.1.0    12/10/2013
+1.1.1    12/11/2013
     - New features:
         - Added TexObjInputIterator, TexRefInputIterator, CacheModifiedInputIterator, and CacheModifiedOutputIterator types for loading & storing arbitrary types through the cache hierarchy.  Compatible with Thrust API. 
         - Added descending sorting to DeviceRadixSort and BlockRadixSort

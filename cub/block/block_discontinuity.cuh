@@ -61,7 +61,7 @@ namespace cub {
  * \blockcollective{BlockDiscontinuity}
  * \par
  * The code snippet below illustrates the head flagging of 512 integer items that
- * are partitioned in a [<em>blocked arrangement</em>](index.html#sec5sec4) across 128 threads
+ * are partitioned in a [<em>blocked arrangement</em>](index.html#sec4sec3) across 128 threads
  * where each thread owns 4 consecutive items.
  * \par
  * \code
@@ -91,7 +91,7 @@ namespace cub {
  * <tt>{ [1,0,1,0], [0,0,0,0], [1,1,0,0], [0,1,0,0], ... }</tt>.
  *
  * \par Performance Considerations
- * - Zero bank conflicts for most types.
+ * - Incurs zero bank conflicts for most types
  *
  */
 template <
@@ -234,7 +234,7 @@ public:
      *
      * \par
      * The code snippet below illustrates the head-flagging of 512 integer items that
-     * are partitioned in a [<em>blocked arrangement</em>](index.html#sec5sec4) across 128 threads
+     * are partitioned in a [<em>blocked arrangement</em>](index.html#sec4sec3) across 128 threads
      * where each thread owns 4 consecutive items.
      * \par
      * \code
@@ -320,7 +320,7 @@ public:
      *
      * \par
      * The code snippet below illustrates the head-flagging of 512 integer items that
-     * are partitioned in a [<em>blocked arrangement</em>](index.html#sec5sec4) across 128 threads
+     * are partitioned in a [<em>blocked arrangement</em>](index.html#sec4sec3) across 128 threads
      * where each thread owns 4 consecutive items.
      * \par
      * \code
@@ -421,7 +421,7 @@ public:
      *
      * \par
      * The code snippet below illustrates the tail-flagging of 512 integer items that
-     * are partitioned in a [<em>blocked arrangement</em>](index.html#sec5sec4) across 128 threads
+     * are partitioned in a [<em>blocked arrangement</em>](index.html#sec4sec3) across 128 threads
      * where each thread owns 4 consecutive items.
      * \par
      * \code
@@ -508,7 +508,7 @@ public:
      *
      * \par
      * The code snippet below illustrates the tail-flagging of 512 integer items that
-     * are partitioned in a [<em>blocked arrangement</em>](index.html#sec5sec4) across 128 threads
+     * are partitioned in a [<em>blocked arrangement</em>](index.html#sec4sec3) across 128 threads
      * where each thread owns 4 consecutive items.
      * \par
      * \code

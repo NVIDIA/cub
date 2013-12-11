@@ -55,13 +55,24 @@ namespace cub {
 /**
  * \brief The WarpReduce class provides [<em>collective</em>](index.html#sec0) methods for computing a parallel reduction of items partitioned across CUDA warp threads. ![](warp_reduce_logo.png)
  *
- * \par Overview
- * A <a href="http://en.wikipedia.org/wiki/Reduce_(higher-order_function)"><em>reduction</em></a> (or <em>fold</em>)
- * uses a binary combining operator to compute a single aggregate from a list of input elements.
- *
  * \tparam T                        The reduction input/output element type
  * \tparam LOGICAL_WARPS            <b>[optional]</b> The number of entrant "logical" warps performing concurrent warp reductions.  Default is 1.
  * \tparam LOGICAL_WARP_THREADS     <b>[optional]</b> The number of threads per "logical" warp (may be less than the number of hardware warp threads).  Default is the warp size of the targeted CUDA compute-capability (e.g., 32 threads for SM20).
+ *
+ * \par Overview
+ * - A <a href="http://en.wikipedia.org/wiki/Reduce_(higher-order_function)"><em>reduction</em></a> (or <em>fold</em>)
+ *   uses a binary combining operator to compute a single aggregate from a list of input elements.
+ * - Supports "logical" warps smaller than the physical warp size (e.g., logical warps of 8 threads)
+ * - The number of entrant threads must be an multiple of \p LOGICAL_WARP_THREADS
+ *
+ * \par Performance Considerations
+ * - Warp reductions are concurrent if more than one logical warp is participating
+ * - Uses special instructions when applicable (e.g., warp \p SHFL instructions)
+ * - Uses synchronization-free communication between warp lanes when applicable
+ * - Incurs zero bank conflicts for most types
+ * - Computation is slightly more efficient (i.e., having lower instruction overhead) for:
+ *     - Summation (<b><em>vs.</em></b> generic reduction)
+ *     - The architecture's warp size is a whole multiple of \p LOGICAL_WARP_THREADS
  *
  * \par Simple Examples
  * \warpcollective{WarpReduce}
@@ -121,17 +132,6 @@ namespace cub {
  * \par
  * Suppose the set of input \p thread_data across the warp of threads is <tt>{0, 1, 2, 3, ..., 31}</tt>.
  * The corresponding output \p aggregate in thread0 will be \p 496 (and is undefined in other threads).
- *
- * \par Usage and Performance Considerations
- * - Supports "logical" warps smaller than the physical warp size (e.g., logical warps of 8 threads)
- * - The number of entrant threads must be an multiple of \p LOGICAL_WARP_THREADS
- * - Warp reductions are concurrent if more than one logical warp is participating
- * - Uses special instructions when applicable (e.g., warp \p SHFL instructions)
- * - Uses synchronization-free communication between warp lanes when applicable
- * - Zero bank conflicts for most types
- * - Computation is slightly more efficient (i.e., having lower instruction overhead) for:
- *     - Summation (<b><em>vs.</em></b> generic reduction)
- *     - The architecture's warp size is a whole multiple of \p LOGICAL_WARP_THREADS
  *
  */
 template <

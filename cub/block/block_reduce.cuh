@@ -129,7 +129,7 @@ enum BlockReduceAlgorithm
  * \par Performance Considerations
  * - \granularity
  * - Very efficient (only one synchronization barrier).
- * - Zero bank conflicts for most types.
+ * - Incurs zero bank conflicts for most types
  * - Computation is slightly more efficient (i.e., having lower instruction overhead) for:
  *   - Summation (<b><em>vs.</em></b> generic reduction)
  *   - \p BLOCK_THREADS is a multiple of the architecture's warp size
@@ -140,7 +140,7 @@ enum BlockReduceAlgorithm
  * \blockcollective{BlockReduce}
  * \par
  * The code snippet below illustrates a sum reduction of 512 integer items that
- * are partitioned in a [<em>blocked arrangement</em>](index.html#sec5sec4) across 128 threads
+ * are partitioned in a [<em>blocked arrangement</em>](index.html#sec4sec3) across 128 threads
  * where each thread owns 4 consecutive items.
  * \par
  * \code
@@ -326,7 +326,7 @@ public:
      *
      * \par
      * The code snippet below illustrates a max reduction of 512 integer items that
-     * are partitioned in a [<em>blocked arrangement</em>](index.html#sec5sec4) across 128 threads
+     * are partitioned in a [<em>blocked arrangement</em>](index.html#sec4sec3) across 128 threads
      * where each thread owns 4 consecutive items.
      * \par
      * \code
@@ -473,7 +473,7 @@ public:
      *
      * \par
      * The code snippet below illustrates a sum reduction of 512 integer items that
-     * are partitioned in a [<em>blocked arrangement</em>](index.html#sec5sec4) across 128 threads
+     * are partitioned in a [<em>blocked arrangement</em>](index.html#sec4sec3) across 128 threads
      * where each thread owns 4 consecutive items.
      * \par
      * \code
