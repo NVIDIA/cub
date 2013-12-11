@@ -135,11 +135,11 @@ class cub::BlockScan&lt; T, BLOCK_THREADS, ALGORITHM &gt;</h3>
 </ul>
 </dd></dl>
 <dl class="section user"><dt>Performance Considerations</dt><dd><ul>
-<li>Efficiency is increased with increased granularity <code>ITEMS_PER_THREAD</code>. Performance is also typically increased until the additional register pressure or shared memory allocation size causes SM occupancy to fall too low. Consider variants of <a class="el" href="classcub_1_1_block_load.html" title="The BlockLoad class provides collective data movement methods for loading a linear segment of items f...">cub::BlockLoad</a> for efficiently gathering a <a href="index.html#sec5sec4"><em>blocked arrangement</em></a> of elements across threads.</li>
+<li>Efficiency is increased with increased granularity <code>ITEMS_PER_THREAD</code>. Performance is also typically increased until the additional register pressure or shared memory allocation size causes SM occupancy to fall too low. Consider variants of <a class="el" href="classcub_1_1_block_load.html" title="The BlockLoad class provides collective data movement methods for loading a linear segment of items f...">cub::BlockLoad</a> for efficiently gathering a <a href="index.html#sec4sec3"><em>blocked arrangement</em></a> of elements across threads.</li>
 <li>Uses special instructions when applicable (e.g., warp <code>SHFL</code>)</li>
 <li>Uses synchronization-free communication between warp lanes when applicable</li>
 <li>Uses only one or two block-wide synchronization barriers (depending on algorithm selection)</li>
-<li>Zero bank conflicts for most types</li>
+<li>Incurs zero bank conflicts for most types</li>
 <li>Computation is slightly more efficient (i.e., having lower instruction overhead) for:<ul>
 <li>Prefix sum variants (<b><em>vs.</em></b> generic scan)</li>
 <li>Exclusive variants (<b><em>vs.</em></b> inclusive)</li>
@@ -150,7 +150,7 @@ class cub::BlockScan&lt; T, BLOCK_THREADS, ALGORITHM &gt;</h3>
 </ul>
 </dd></dl>
 <dl class="section user"><dt>A Simple Example</dt><dd>Every thread in the block uses the <a class="el" href="classcub_1_1_block_scan.html" title="The BlockScan class provides collective methods for computing a parallel prefix sum/scan of items par...">BlockScan</a> class by first specializing the <a class="el" href="classcub_1_1_block_scan.html" title="The BlockScan class provides collective methods for computing a parallel prefix sum/scan of items par...">BlockScan</a> type, then instantiating an instance with parameters for communication, and finally invoking collective member functions. </dd></dl>
-<dl class="section user"><dt></dt><dd>The code snippet below illustrates an exclusive prefix sum of 512 integer items that are partitioned in a <a href="index.html#sec5sec4"><em>blocked arrangement</em></a> across 128 threads where each thread owns 4 consecutive items. </dd></dl>
+<dl class="section user"><dt></dt><dd>The code snippet below illustrates an exclusive prefix sum of 512 integer items that are partitioned in a <a href="index.html#sec4sec3"><em>blocked arrangement</em></a> across 128 threads where each thread owns 4 consecutive items. </dd></dl>
 <dl class="section user"><dt></dt><dd><div class="fragment"><div class="line"><span class="preprocessor">#include &lt;<a class="code" href="cub_8cuh.html">cub/cub.cuh</a>&gt;</span>   <span class="comment">// or equivalently &lt;cub/block/block_scan.cuh&gt;</span></div>
 <div class="line"></div>
 <div class="line">__global__ <span class="keywordtype">void</span> ExampleKernel(...)</div>
@@ -453,7 +453,7 @@ template&lt;typename T , int BLOCK_THREADS, BlockScanAlgorithm ALGORITHM = BLOCK
 
 <p>Computes an exclusive block-wide prefix scan using addition (+) as the scan operator. Each thread contributes one input element. </p>
 <dl class="section user"><dt></dt><dd><ul>
-<li>Assumes a <a href="index.html#sec5sec4"><em>blocked arrangement</em></a> of elements across threads, where thread<sub><em>i</em></sub> owns the <em>i</em><sup>th</sup> segment of consecutively ranked items.</li>
+<li>Assumes a <a href="index.html#sec4sec3"><em>blocked arrangement</em></a> of elements across threads, where thread<sub><em>i</em></sub> owns the <em>i</em><sup>th</sup> segment of consecutively ranked items.</li>
 <li>A subsequent <code>__syncthreads()</code> threadblock barrier should be invoked after calling this method if the collective's temporary storage (e.g., <code>temp_storage</code>) is to be reused or repurposed.</li>
 </ul>
 </dd></dl>
@@ -530,7 +530,7 @@ template&lt;typename T , int BLOCK_THREADS, BlockScanAlgorithm ALGORITHM = BLOCK
 
 <p>Computes an exclusive block-wide prefix scan using addition (+) as the scan operator. Each thread contributes one input element. Also provides every thread with the block-wide <code>block_aggregate</code> of all inputs. </p>
 <dl class="section user"><dt></dt><dd><ul>
-<li>Assumes a <a href="index.html#sec5sec4"><em>blocked arrangement</em></a> of elements across threads, where thread<sub><em>i</em></sub> owns the <em>i</em><sup>th</sup> segment of consecutively ranked items.</li>
+<li>Assumes a <a href="index.html#sec4sec3"><em>blocked arrangement</em></a> of elements across threads, where thread<sub><em>i</em></sub> owns the <em>i</em><sup>th</sup> segment of consecutively ranked items.</li>
 <li>A subsequent <code>__syncthreads()</code> threadblock barrier should be invoked after calling this method if the collective's temporary storage (e.g., <code>temp_storage</code>) is to be reused or repurposed.</li>
 </ul>
 </dd></dl>
@@ -618,7 +618,7 @@ template&lt;typename BlockPrefixCallbackOp &gt; </div>
 <p>Computes an exclusive block-wide prefix scan using addition (+) as the scan operator. Each thread contributes one input element. Instead of using 0 as the block-wide prefix, the call-back functor <code>block_prefix_callback_op</code> is invoked by the first warp in the block, and the value returned by <em>lane</em><sub>0</sub> in that warp is used as the "seed" value that logically prefixes the threadblock's scan inputs. Also provides every thread with the block-wide <code>block_aggregate</code> of all inputs. </p>
 <dl class="section user"><dt></dt><dd><ul>
 <li>The <code>block_prefix_callback_op</code> functor must implement a member function <code>T operator()(T block_aggregate)</code>. The functor's input parameter <code>block_aggregate</code> is the same value also returned by the scan operation. The functor will be invoked by the first warp of threads in the block, however only the return value from <em>lane</em><sub>0</sub> is applied as the block-wide prefix. Can be stateful.</li>
-<li>Assumes a <a href="index.html#sec5sec4"><em>blocked arrangement</em></a> of elements across threads, where thread<sub><em>i</em></sub> owns the <em>i</em><sup>th</sup> segment of consecutively ranked items.</li>
+<li>Assumes a <a href="index.html#sec4sec3"><em>blocked arrangement</em></a> of elements across threads, where thread<sub><em>i</em></sub> owns the <em>i</em><sup>th</sup> segment of consecutively ranked items.</li>
 <li>A subsequent <code>__syncthreads()</code> threadblock barrier should be invoked after calling this method if the collective's temporary storage (e.g., <code>temp_storage</code>) is to be reused or repurposed.</li>
 </ul>
 </dd></dl>
@@ -731,12 +731,12 @@ template&lt;int ITEMS_PER_THREAD&gt; </div>
 
 <p>Computes an exclusive block-wide prefix scan using addition (+) as the scan operator. Each thread contributes an array of consecutive input elements. </p>
 <dl class="section user"><dt></dt><dd><ul>
-<li>Assumes a <a href="index.html#sec5sec4"><em>blocked arrangement</em></a> of elements across threads, where thread<sub><em>i</em></sub> owns the <em>i</em><sup>th</sup> segment of consecutively ranked items.</li>
-<li>Efficiency is increased with increased granularity <code>ITEMS_PER_THREAD</code>. Performance is also typically increased until the additional register pressure or shared memory allocation size causes SM occupancy to fall too low. Consider variants of <a class="el" href="classcub_1_1_block_load.html" title="The BlockLoad class provides collective data movement methods for loading a linear segment of items f...">cub::BlockLoad</a> for efficiently gathering a <a href="index.html#sec5sec4"><em>blocked arrangement</em></a> of elements across threads.</li>
+<li>Assumes a <a href="index.html#sec4sec3"><em>blocked arrangement</em></a> of elements across threads, where thread<sub><em>i</em></sub> owns the <em>i</em><sup>th</sup> segment of consecutively ranked items.</li>
+<li>Efficiency is increased with increased granularity <code>ITEMS_PER_THREAD</code>. Performance is also typically increased until the additional register pressure or shared memory allocation size causes SM occupancy to fall too low. Consider variants of <a class="el" href="classcub_1_1_block_load.html" title="The BlockLoad class provides collective data movement methods for loading a linear segment of items f...">cub::BlockLoad</a> for efficiently gathering a <a href="index.html#sec4sec3"><em>blocked arrangement</em></a> of elements across threads.</li>
 <li>A subsequent <code>__syncthreads()</code> threadblock barrier should be invoked after calling this method if the collective's temporary storage (e.g., <code>temp_storage</code>) is to be reused or repurposed.</li>
 </ul>
 </dd></dl>
-<dl class="section user"><dt></dt><dd>The code snippet below illustrates an exclusive prefix sum of 512 integer items that are partitioned in a <a href="index.html#sec5sec4"><em>blocked arrangement</em></a> across 128 threads where each thread owns 4 consecutive items. </dd></dl>
+<dl class="section user"><dt></dt><dd>The code snippet below illustrates an exclusive prefix sum of 512 integer items that are partitioned in a <a href="index.html#sec4sec3"><em>blocked arrangement</em></a> across 128 threads where each thread owns 4 consecutive items. </dd></dl>
 <dl class="section user"><dt></dt><dd><div class="fragment"><div class="line"><span class="preprocessor">#include &lt;<a class="code" href="cub_8cuh.html">cub/cub.cuh</a>&gt;</span>   <span class="comment">// or equivalently &lt;cub/block/block_scan.cuh&gt;</span></div>
 <div class="line"></div>
 <div class="line">__global__ <span class="keywordtype">void</span> ExampleKernel(...)</div>
@@ -817,12 +817,12 @@ template&lt;int ITEMS_PER_THREAD&gt; </div>
 
 <p>Computes an exclusive block-wide prefix scan using addition (+) as the scan operator. Each thread contributes an array of consecutive input elements. Also provides every thread with the block-wide <code>block_aggregate</code> of all inputs. </p>
 <dl class="section user"><dt></dt><dd><ul>
-<li>Assumes a <a href="index.html#sec5sec4"><em>blocked arrangement</em></a> of elements across threads, where thread<sub><em>i</em></sub> owns the <em>i</em><sup>th</sup> segment of consecutively ranked items.</li>
-<li>Efficiency is increased with increased granularity <code>ITEMS_PER_THREAD</code>. Performance is also typically increased until the additional register pressure or shared memory allocation size causes SM occupancy to fall too low. Consider variants of <a class="el" href="classcub_1_1_block_load.html" title="The BlockLoad class provides collective data movement methods for loading a linear segment of items f...">cub::BlockLoad</a> for efficiently gathering a <a href="index.html#sec5sec4"><em>blocked arrangement</em></a> of elements across threads.</li>
+<li>Assumes a <a href="index.html#sec4sec3"><em>blocked arrangement</em></a> of elements across threads, where thread<sub><em>i</em></sub> owns the <em>i</em><sup>th</sup> segment of consecutively ranked items.</li>
+<li>Efficiency is increased with increased granularity <code>ITEMS_PER_THREAD</code>. Performance is also typically increased until the additional register pressure or shared memory allocation size causes SM occupancy to fall too low. Consider variants of <a class="el" href="classcub_1_1_block_load.html" title="The BlockLoad class provides collective data movement methods for loading a linear segment of items f...">cub::BlockLoad</a> for efficiently gathering a <a href="index.html#sec4sec3"><em>blocked arrangement</em></a> of elements across threads.</li>
 <li>A subsequent <code>__syncthreads()</code> threadblock barrier should be invoked after calling this method if the collective's temporary storage (e.g., <code>temp_storage</code>) is to be reused or repurposed.</li>
 </ul>
 </dd></dl>
-<dl class="section user"><dt></dt><dd>The code snippet below illustrates an exclusive prefix sum of 512 integer items that are partitioned in a <a href="index.html#sec5sec4"><em>blocked arrangement</em></a> across 128 threads where each thread owns 4 consecutive items. </dd></dl>
+<dl class="section user"><dt></dt><dd>The code snippet below illustrates an exclusive prefix sum of 512 integer items that are partitioned in a <a href="index.html#sec4sec3"><em>blocked arrangement</em></a> across 128 threads where each thread owns 4 consecutive items. </dd></dl>
 <dl class="section user"><dt></dt><dd><div class="fragment"><div class="line"><span class="preprocessor">#include &lt;<a class="code" href="cub_8cuh.html">cub/cub.cuh</a>&gt;</span>   <span class="comment">// or equivalently &lt;cub/block/block_scan.cuh&gt;</span></div>
 <div class="line"></div>
 <div class="line">__global__ <span class="keywordtype">void</span> ExampleKernel(...)</div>
@@ -912,12 +912,12 @@ template&lt;int ITEMS_PER_THREAD, typename BlockPrefixCallbackOp &gt; </div>
 <p>Computes an exclusive block-wide prefix scan using addition (+) as the scan operator. Each thread contributes an array of consecutive input elements. Instead of using 0 as the block-wide prefix, the call-back functor <code>block_prefix_callback_op</code> is invoked by the first warp in the block, and the value returned by <em>lane</em><sub>0</sub> in that warp is used as the "seed" value that logically prefixes the threadblock's scan inputs. Also provides every thread with the block-wide <code>block_aggregate</code> of all inputs. </p>
 <dl class="section user"><dt></dt><dd><ul>
 <li>The <code>block_prefix_callback_op</code> functor must implement a member function <code>T operator()(T block_aggregate)</code>. The functor's input parameter <code>block_aggregate</code> is the same value also returned by the scan operation. The functor will be invoked by the first warp of threads in the block, however only the return value from <em>lane</em><sub>0</sub> is applied as the block-wide prefix. Can be stateful.</li>
-<li>Assumes a <a href="index.html#sec5sec4"><em>blocked arrangement</em></a> of elements across threads, where thread<sub><em>i</em></sub> owns the <em>i</em><sup>th</sup> segment of consecutively ranked items.</li>
-<li>Efficiency is increased with increased granularity <code>ITEMS_PER_THREAD</code>. Performance is also typically increased until the additional register pressure or shared memory allocation size causes SM occupancy to fall too low. Consider variants of <a class="el" href="classcub_1_1_block_load.html" title="The BlockLoad class provides collective data movement methods for loading a linear segment of items f...">cub::BlockLoad</a> for efficiently gathering a <a href="index.html#sec5sec4"><em>blocked arrangement</em></a> of elements across threads.</li>
+<li>Assumes a <a href="index.html#sec4sec3"><em>blocked arrangement</em></a> of elements across threads, where thread<sub><em>i</em></sub> owns the <em>i</em><sup>th</sup> segment of consecutively ranked items.</li>
+<li>Efficiency is increased with increased granularity <code>ITEMS_PER_THREAD</code>. Performance is also typically increased until the additional register pressure or shared memory allocation size causes SM occupancy to fall too low. Consider variants of <a class="el" href="classcub_1_1_block_load.html" title="The BlockLoad class provides collective data movement methods for loading a linear segment of items f...">cub::BlockLoad</a> for efficiently gathering a <a href="index.html#sec4sec3"><em>blocked arrangement</em></a> of elements across threads.</li>
 <li>A subsequent <code>__syncthreads()</code> threadblock barrier should be invoked after calling this method if the collective's temporary storage (e.g., <code>temp_storage</code>) is to be reused or repurposed.</li>
 </ul>
 </dd></dl>
-<dl class="section user"><dt></dt><dd>The code snippet below illustrates a single thread block that progressively computes an exclusive prefix sum over multiple "tiles" of input using a prefix functor to maintain a running total between block-wide scans. Each tile consists of 512 integer items that are partitioned in a <a href="index.html#sec5sec4"><em>blocked arrangement</em></a> across 128 threads where each thread owns 4 consecutive items. </dd></dl>
+<dl class="section user"><dt></dt><dd>The code snippet below illustrates a single thread block that progressively computes an exclusive prefix sum over multiple "tiles" of input using a prefix functor to maintain a running total between block-wide scans. Each tile consists of 512 integer items that are partitioned in a <a href="index.html#sec4sec3"><em>blocked arrangement</em></a> across 128 threads where each thread owns 4 consecutive items. </dd></dl>
 <dl class="section user"><dt></dt><dd><div class="fragment"><div class="line"><span class="preprocessor">#include &lt;<a class="code" href="cub_8cuh.html">cub/cub.cuh</a>&gt;</span>   <span class="comment">// or equivalently &lt;cub/block/block_scan.cuh&gt;</span></div>
 <div class="line"></div>
 <div class="line"><span class="comment">// A stateful callback functor that maintains a running prefix to be applied</span></div>
@@ -1049,7 +1049,7 @@ template&lt;typename ScanOp &gt; </div>
 <p>Computes an exclusive block-wide prefix scan using the specified binary <code>scan_op</code> functor. Each thread contributes one input element. </p>
 <dl class="section user"><dt></dt><dd><ul>
 <li>Supports non-commutative scan operators.</li>
-<li>Assumes a <a href="index.html#sec5sec4"><em>blocked arrangement</em></a> of elements across threads, where thread<sub><em>i</em></sub> owns the <em>i</em><sup>th</sup> segment of consecutively ranked items.</li>
+<li>Assumes a <a href="index.html#sec4sec3"><em>blocked arrangement</em></a> of elements across threads, where thread<sub><em>i</em></sub> owns the <em>i</em><sup>th</sup> segment of consecutively ranked items.</li>
 <li>A subsequent <code>__syncthreads()</code> threadblock barrier should be invoked after calling this method if the collective's temporary storage (e.g., <code>temp_storage</code>) is to be reused or repurposed.</li>
 </ul>
 </dd></dl>
@@ -1149,7 +1149,7 @@ template&lt;typename ScanOp &gt; </div>
 <p>Computes an exclusive block-wide prefix scan using the specified binary <code>scan_op</code> functor. Each thread contributes one input element. Also provides every thread with the block-wide <code>block_aggregate</code> of all inputs. </p>
 <dl class="section user"><dt></dt><dd><ul>
 <li>Supports non-commutative scan operators.</li>
-<li>Assumes a <a href="index.html#sec5sec4"><em>blocked arrangement</em></a> of elements across threads, where thread<sub><em>i</em></sub> owns the <em>i</em><sup>th</sup> segment of consecutively ranked items.</li>
+<li>Assumes a <a href="index.html#sec4sec3"><em>blocked arrangement</em></a> of elements across threads, where thread<sub><em>i</em></sub> owns the <em>i</em><sup>th</sup> segment of consecutively ranked items.</li>
 <li>A subsequent <code>__syncthreads()</code> threadblock barrier should be invoked after calling this method if the collective's temporary storage (e.g., <code>temp_storage</code>) is to be reused or repurposed.</li>
 </ul>
 </dd></dl>
@@ -1258,7 +1258,7 @@ template&lt;typename ScanOp , typename BlockPrefixCallbackOp &gt; </div>
 <dl class="section user"><dt></dt><dd><ul>
 <li>The <code>block_prefix_callback_op</code> functor must implement a member function <code>T operator()(T block_aggregate)</code>. The functor's input parameter <code>block_aggregate</code> is the same value also returned by the scan operation. The functor will be invoked by the first warp of threads in the block, however only the return value from <em>lane</em><sub>0</sub> is applied as the block-wide prefix. Can be stateful.</li>
 <li>Supports non-commutative scan operators.</li>
-<li>Assumes a <a href="index.html#sec5sec4"><em>blocked arrangement</em></a> of elements across threads, where thread<sub><em>i</em></sub> owns the <em>i</em><sup>th</sup> segment of consecutively ranked items.</li>
+<li>Assumes a <a href="index.html#sec4sec3"><em>blocked arrangement</em></a> of elements across threads, where thread<sub><em>i</em></sub> owns the <em>i</em><sup>th</sup> segment of consecutively ranked items.</li>
 <li>A subsequent <code>__syncthreads()</code> threadblock barrier should be invoked after calling this method if the collective's temporary storage (e.g., <code>temp_storage</code>) is to be reused or repurposed.</li>
 </ul>
 </dd></dl>
@@ -1387,12 +1387,12 @@ template&lt;int ITEMS_PER_THREAD, typename ScanOp &gt; </div>
 <p>Computes an exclusive block-wide prefix scan using the specified binary <code>scan_op</code> functor. Each thread contributes an array of consecutive input elements. </p>
 <dl class="section user"><dt></dt><dd><ul>
 <li>Supports non-commutative scan operators.</li>
-<li>Assumes a <a href="index.html#sec5sec4"><em>blocked arrangement</em></a> of elements across threads, where thread<sub><em>i</em></sub> owns the <em>i</em><sup>th</sup> segment of consecutively ranked items.</li>
-<li>Efficiency is increased with increased granularity <code>ITEMS_PER_THREAD</code>. Performance is also typically increased until the additional register pressure or shared memory allocation size causes SM occupancy to fall too low. Consider variants of <a class="el" href="classcub_1_1_block_load.html" title="The BlockLoad class provides collective data movement methods for loading a linear segment of items f...">cub::BlockLoad</a> for efficiently gathering a <a href="index.html#sec5sec4"><em>blocked arrangement</em></a> of elements across threads.</li>
+<li>Assumes a <a href="index.html#sec4sec3"><em>blocked arrangement</em></a> of elements across threads, where thread<sub><em>i</em></sub> owns the <em>i</em><sup>th</sup> segment of consecutively ranked items.</li>
+<li>Efficiency is increased with increased granularity <code>ITEMS_PER_THREAD</code>. Performance is also typically increased until the additional register pressure or shared memory allocation size causes SM occupancy to fall too low. Consider variants of <a class="el" href="classcub_1_1_block_load.html" title="The BlockLoad class provides collective data movement methods for loading a linear segment of items f...">cub::BlockLoad</a> for efficiently gathering a <a href="index.html#sec4sec3"><em>blocked arrangement</em></a> of elements across threads.</li>
 <li>A subsequent <code>__syncthreads()</code> threadblock barrier should be invoked after calling this method if the collective's temporary storage (e.g., <code>temp_storage</code>) is to be reused or repurposed.</li>
 </ul>
 </dd></dl>
-<dl class="section user"><dt></dt><dd>The code snippet below illustrates an exclusive prefix max scan of 512 integer items that are partitioned in a <a href="index.html#sec5sec4"><em>blocked arrangement</em></a> across 128 threads where each thread owns 4 consecutive items. </dd></dl>
+<dl class="section user"><dt></dt><dd>The code snippet below illustrates an exclusive prefix max scan of 512 integer items that are partitioned in a <a href="index.html#sec4sec3"><em>blocked arrangement</em></a> across 128 threads where each thread owns 4 consecutive items. </dd></dl>
 <dl class="section user"><dt></dt><dd><div class="fragment"><div class="line"><span class="preprocessor">#include &lt;<a class="code" href="cub_8cuh.html">cub/cub.cuh</a>&gt;</span>   <span class="comment">// or equivalently &lt;cub/block/block_scan.cuh&gt;</span></div>
 <div class="line"></div>
 <div class="line">__global__ <span class="keywordtype">void</span> ExampleKernel(...)</div>
@@ -1489,12 +1489,12 @@ template&lt;int ITEMS_PER_THREAD, typename ScanOp &gt; </div>
 <p>Computes an exclusive block-wide prefix scan using the specified binary <code>scan_op</code> functor. Each thread contributes an array of consecutive input elements. Also provides every thread with the block-wide <code>block_aggregate</code> of all inputs. </p>
 <dl class="section user"><dt></dt><dd><ul>
 <li>Supports non-commutative scan operators.</li>
-<li>Assumes a <a href="index.html#sec5sec4"><em>blocked arrangement</em></a> of elements across threads, where thread<sub><em>i</em></sub> owns the <em>i</em><sup>th</sup> segment of consecutively ranked items.</li>
-<li>Efficiency is increased with increased granularity <code>ITEMS_PER_THREAD</code>. Performance is also typically increased until the additional register pressure or shared memory allocation size causes SM occupancy to fall too low. Consider variants of <a class="el" href="classcub_1_1_block_load.html" title="The BlockLoad class provides collective data movement methods for loading a linear segment of items f...">cub::BlockLoad</a> for efficiently gathering a <a href="index.html#sec5sec4"><em>blocked arrangement</em></a> of elements across threads.</li>
+<li>Assumes a <a href="index.html#sec4sec3"><em>blocked arrangement</em></a> of elements across threads, where thread<sub><em>i</em></sub> owns the <em>i</em><sup>th</sup> segment of consecutively ranked items.</li>
+<li>Efficiency is increased with increased granularity <code>ITEMS_PER_THREAD</code>. Performance is also typically increased until the additional register pressure or shared memory allocation size causes SM occupancy to fall too low. Consider variants of <a class="el" href="classcub_1_1_block_load.html" title="The BlockLoad class provides collective data movement methods for loading a linear segment of items f...">cub::BlockLoad</a> for efficiently gathering a <a href="index.html#sec4sec3"><em>blocked arrangement</em></a> of elements across threads.</li>
 <li>A subsequent <code>__syncthreads()</code> threadblock barrier should be invoked after calling this method if the collective's temporary storage (e.g., <code>temp_storage</code>) is to be reused or repurposed.</li>
 </ul>
 </dd></dl>
-<dl class="section user"><dt></dt><dd>The code snippet below illustrates an exclusive prefix max scan of 512 integer items that are partitioned in a <a href="index.html#sec5sec4"><em>blocked arrangement</em></a> across 128 threads where each thread owns 4 consecutive items. </dd></dl>
+<dl class="section user"><dt></dt><dd>The code snippet below illustrates an exclusive prefix max scan of 512 integer items that are partitioned in a <a href="index.html#sec4sec3"><em>blocked arrangement</em></a> across 128 threads where each thread owns 4 consecutive items. </dd></dl>
 <dl class="section user"><dt></dt><dd><div class="fragment"><div class="line"><span class="preprocessor">#include &lt;<a class="code" href="cub_8cuh.html">cub/cub.cuh</a>&gt;</span>   <span class="comment">// or equivalently &lt;cub/block/block_scan.cuh&gt;</span></div>
 <div class="line"></div>
 <div class="line">__global__ <span class="keywordtype">void</span> ExampleKernel(...)</div>
@@ -1600,8 +1600,8 @@ template&lt;int ITEMS_PER_THREAD, typename ScanOp , typename BlockPrefixCallback
 <dl class="section user"><dt></dt><dd><ul>
 <li>The <code>block_prefix_callback_op</code> functor must implement a member function <code>T operator()(T block_aggregate)</code>. The functor's input parameter <code>block_aggregate</code> is the same value also returned by the scan operation. The functor will be invoked by the first warp of threads in the block, however only the return value from <em>lane</em><sub>0</sub> is applied as the block-wide prefix. Can be stateful.</li>
 <li>Supports non-commutative scan operators.</li>
-<li>Assumes a <a href="index.html#sec5sec4"><em>blocked arrangement</em></a> of elements across threads, where thread<sub><em>i</em></sub> owns the <em>i</em><sup>th</sup> segment of consecutively ranked items.</li>
-<li>Efficiency is increased with increased granularity <code>ITEMS_PER_THREAD</code>. Performance is also typically increased until the additional register pressure or shared memory allocation size causes SM occupancy to fall too low. Consider variants of <a class="el" href="classcub_1_1_block_load.html" title="The BlockLoad class provides collective data movement methods for loading a linear segment of items f...">cub::BlockLoad</a> for efficiently gathering a <a href="index.html#sec5sec4"><em>blocked arrangement</em></a> of elements across threads.</li>
+<li>Assumes a <a href="index.html#sec4sec3"><em>blocked arrangement</em></a> of elements across threads, where thread<sub><em>i</em></sub> owns the <em>i</em><sup>th</sup> segment of consecutively ranked items.</li>
+<li>Efficiency is increased with increased granularity <code>ITEMS_PER_THREAD</code>. Performance is also typically increased until the additional register pressure or shared memory allocation size causes SM occupancy to fall too low. Consider variants of <a class="el" href="classcub_1_1_block_load.html" title="The BlockLoad class provides collective data movement methods for loading a linear segment of items f...">cub::BlockLoad</a> for efficiently gathering a <a href="index.html#sec4sec3"><em>blocked arrangement</em></a> of elements across threads.</li>
 <li>A subsequent <code>__syncthreads()</code> threadblock barrier should be invoked after calling this method if the collective's temporary storage (e.g., <code>temp_storage</code>) is to be reused or repurposed.</li>
 </ul>
 </dd></dl>
@@ -1725,7 +1725,7 @@ template&lt;typename T , int BLOCK_THREADS, BlockScanAlgorithm ALGORITHM = BLOCK
 
 <p>Computes an inclusive block-wide prefix scan using addition (+) as the scan operator. Each thread contributes one input element. </p>
 <dl class="section user"><dt></dt><dd><ul>
-<li>Assumes a <a href="index.html#sec5sec4"><em>blocked arrangement</em></a> of elements across threads, where thread<sub><em>i</em></sub> owns the <em>i</em><sup>th</sup> segment of consecutively ranked items.</li>
+<li>Assumes a <a href="index.html#sec4sec3"><em>blocked arrangement</em></a> of elements across threads, where thread<sub><em>i</em></sub> owns the <em>i</em><sup>th</sup> segment of consecutively ranked items.</li>
 <li>A subsequent <code>__syncthreads()</code> threadblock barrier should be invoked after calling this method if the collective's temporary storage (e.g., <code>temp_storage</code>) is to be reused or repurposed.</li>
 </ul>
 </dd></dl>
@@ -1802,7 +1802,7 @@ template&lt;typename T , int BLOCK_THREADS, BlockScanAlgorithm ALGORITHM = BLOCK
 
 <p>Computes an inclusive block-wide prefix scan using addition (+) as the scan operator. Each thread contributes one input element. Also provides every thread with the block-wide <code>block_aggregate</code> of all inputs. </p>
 <dl class="section user"><dt></dt><dd><ul>
-<li>Assumes a <a href="index.html#sec5sec4"><em>blocked arrangement</em></a> of elements across threads, where thread<sub><em>i</em></sub> owns the <em>i</em><sup>th</sup> segment of consecutively ranked items.</li>
+<li>Assumes a <a href="index.html#sec4sec3"><em>blocked arrangement</em></a> of elements across threads, where thread<sub><em>i</em></sub> owns the <em>i</em><sup>th</sup> segment of consecutively ranked items.</li>
 <li>A subsequent <code>__syncthreads()</code> threadblock barrier should be invoked after calling this method if the collective's temporary storage (e.g., <code>temp_storage</code>) is to be reused or repurposed.</li>
 </ul>
 </dd></dl>
@@ -1890,7 +1890,7 @@ template&lt;typename BlockPrefixCallbackOp &gt; </div>
 <p>Computes an inclusive block-wide prefix scan using addition (+) as the scan operator. Each thread contributes one input element. Instead of using 0 as the block-wide prefix, the call-back functor <code>block_prefix_callback_op</code> is invoked by the first warp in the block, and the value returned by <em>lane</em><sub>0</sub> in that warp is used as the "seed" value that logically prefixes the threadblock's scan inputs. Also provides every thread with the block-wide <code>block_aggregate</code> of all inputs. </p>
 <dl class="section user"><dt></dt><dd><ul>
 <li>The <code>block_prefix_callback_op</code> functor must implement a member function <code>T operator()(T block_aggregate)</code>. The functor's input parameter <code>block_aggregate</code> is the same value also returned by the scan operation. The functor will be invoked by the first warp of threads in the block, however only the return value from <em>lane</em><sub>0</sub> is applied as the block-wide prefix. Can be stateful.</li>
-<li>Assumes a <a href="index.html#sec5sec4"><em>blocked arrangement</em></a> of elements across threads, where thread<sub><em>i</em></sub> owns the <em>i</em><sup>th</sup> segment of consecutively ranked items.</li>
+<li>Assumes a <a href="index.html#sec4sec3"><em>blocked arrangement</em></a> of elements across threads, where thread<sub><em>i</em></sub> owns the <em>i</em><sup>th</sup> segment of consecutively ranked items.</li>
 <li>A subsequent <code>__syncthreads()</code> threadblock barrier should be invoked after calling this method if the collective's temporary storage (e.g., <code>temp_storage</code>) is to be reused or repurposed.</li>
 </ul>
 </dd></dl>
@@ -2003,12 +2003,12 @@ template&lt;int ITEMS_PER_THREAD&gt; </div>
 
 <p>Computes an inclusive block-wide prefix scan using addition (+) as the scan operator. Each thread contributes an array of consecutive input elements. </p>
 <dl class="section user"><dt></dt><dd><ul>
-<li>Assumes a <a href="index.html#sec5sec4"><em>blocked arrangement</em></a> of elements across threads, where thread<sub><em>i</em></sub> owns the <em>i</em><sup>th</sup> segment of consecutively ranked items.</li>
-<li>Efficiency is increased with increased granularity <code>ITEMS_PER_THREAD</code>. Performance is also typically increased until the additional register pressure or shared memory allocation size causes SM occupancy to fall too low. Consider variants of <a class="el" href="classcub_1_1_block_load.html" title="The BlockLoad class provides collective data movement methods for loading a linear segment of items f...">cub::BlockLoad</a> for efficiently gathering a <a href="index.html#sec5sec4"><em>blocked arrangement</em></a> of elements across threads.</li>
+<li>Assumes a <a href="index.html#sec4sec3"><em>blocked arrangement</em></a> of elements across threads, where thread<sub><em>i</em></sub> owns the <em>i</em><sup>th</sup> segment of consecutively ranked items.</li>
+<li>Efficiency is increased with increased granularity <code>ITEMS_PER_THREAD</code>. Performance is also typically increased until the additional register pressure or shared memory allocation size causes SM occupancy to fall too low. Consider variants of <a class="el" href="classcub_1_1_block_load.html" title="The BlockLoad class provides collective data movement methods for loading a linear segment of items f...">cub::BlockLoad</a> for efficiently gathering a <a href="index.html#sec4sec3"><em>blocked arrangement</em></a> of elements across threads.</li>
 <li>A subsequent <code>__syncthreads()</code> threadblock barrier should be invoked after calling this method if the collective's temporary storage (e.g., <code>temp_storage</code>) is to be reused or repurposed.</li>
 </ul>
 </dd></dl>
-<dl class="section user"><dt></dt><dd>The code snippet below illustrates an inclusive prefix sum of 512 integer items that are partitioned in a <a href="index.html#sec5sec4"><em>blocked arrangement</em></a> across 128 threads where each thread owns 4 consecutive items. </dd></dl>
+<dl class="section user"><dt></dt><dd>The code snippet below illustrates an inclusive prefix sum of 512 integer items that are partitioned in a <a href="index.html#sec4sec3"><em>blocked arrangement</em></a> across 128 threads where each thread owns 4 consecutive items. </dd></dl>
 <dl class="section user"><dt></dt><dd><div class="fragment"><div class="line"><span class="preprocessor">#include &lt;<a class="code" href="cub_8cuh.html">cub/cub.cuh</a>&gt;</span>   <span class="comment">// or equivalently &lt;cub/block/block_scan.cuh&gt;</span></div>
 <div class="line"></div>
 <div class="line">__global__ <span class="keywordtype">void</span> ExampleKernel(...)</div>
@@ -2089,12 +2089,12 @@ template&lt;int ITEMS_PER_THREAD&gt; </div>
 
 <p>Computes an inclusive block-wide prefix scan using addition (+) as the scan operator. Each thread contributes an array of consecutive input elements. Also provides every thread with the block-wide <code>block_aggregate</code> of all inputs. </p>
 <dl class="section user"><dt></dt><dd><ul>
-<li>Assumes a <a href="index.html#sec5sec4"><em>blocked arrangement</em></a> of elements across threads, where thread<sub><em>i</em></sub> owns the <em>i</em><sup>th</sup> segment of consecutively ranked items.</li>
-<li>Efficiency is increased with increased granularity <code>ITEMS_PER_THREAD</code>. Performance is also typically increased until the additional register pressure or shared memory allocation size causes SM occupancy to fall too low. Consider variants of <a class="el" href="classcub_1_1_block_load.html" title="The BlockLoad class provides collective data movement methods for loading a linear segment of items f...">cub::BlockLoad</a> for efficiently gathering a <a href="index.html#sec5sec4"><em>blocked arrangement</em></a> of elements across threads.</li>
+<li>Assumes a <a href="index.html#sec4sec3"><em>blocked arrangement</em></a> of elements across threads, where thread<sub><em>i</em></sub> owns the <em>i</em><sup>th</sup> segment of consecutively ranked items.</li>
+<li>Efficiency is increased with increased granularity <code>ITEMS_PER_THREAD</code>. Performance is also typically increased until the additional register pressure or shared memory allocation size causes SM occupancy to fall too low. Consider variants of <a class="el" href="classcub_1_1_block_load.html" title="The BlockLoad class provides collective data movement methods for loading a linear segment of items f...">cub::BlockLoad</a> for efficiently gathering a <a href="index.html#sec4sec3"><em>blocked arrangement</em></a> of elements across threads.</li>
 <li>A subsequent <code>__syncthreads()</code> threadblock barrier should be invoked after calling this method if the collective's temporary storage (e.g., <code>temp_storage</code>) is to be reused or repurposed.</li>
 </ul>
 </dd></dl>
-<dl class="section user"><dt></dt><dd>The code snippet below illustrates an inclusive prefix sum of 512 integer items that are partitioned in a <a href="index.html#sec5sec4"><em>blocked arrangement</em></a> across 128 threads where each thread owns 4 consecutive items. </dd></dl>
+<dl class="section user"><dt></dt><dd>The code snippet below illustrates an inclusive prefix sum of 512 integer items that are partitioned in a <a href="index.html#sec4sec3"><em>blocked arrangement</em></a> across 128 threads where each thread owns 4 consecutive items. </dd></dl>
 <dl class="section user"><dt></dt><dd><div class="fragment"><div class="line"><span class="preprocessor">#include &lt;<a class="code" href="cub_8cuh.html">cub/cub.cuh</a>&gt;</span>   <span class="comment">// or equivalently &lt;cub/block/block_scan.cuh&gt;</span></div>
 <div class="line"></div>
 <div class="line">__global__ <span class="keywordtype">void</span> ExampleKernel(...)</div>
@@ -2185,12 +2185,12 @@ template&lt;int ITEMS_PER_THREAD, typename BlockPrefixCallbackOp &gt; </div>
 <p>Computes an inclusive block-wide prefix scan using addition (+) as the scan operator. Each thread contributes an array of consecutive input elements. Instead of using 0 as the block-wide prefix, the call-back functor <code>block_prefix_callback_op</code> is invoked by the first warp in the block, and the value returned by <em>lane</em><sub>0</sub> in that warp is used as the "seed" value that logically prefixes the threadblock's scan inputs. Also provides every thread with the block-wide <code>block_aggregate</code> of all inputs. </p>
 <dl class="section user"><dt></dt><dd><ul>
 <li>The <code>block_prefix_callback_op</code> functor must implement a member function <code>T operator()(T block_aggregate)</code>. The functor's input parameter <code>block_aggregate</code> is the same value also returned by the scan operation. The functor will be invoked by the first warp of threads in the block, however only the return value from <em>lane</em><sub>0</sub> is applied as the block-wide prefix. Can be stateful.</li>
-<li>Assumes a <a href="index.html#sec5sec4"><em>blocked arrangement</em></a> of elements across threads, where thread<sub><em>i</em></sub> owns the <em>i</em><sup>th</sup> segment of consecutively ranked items.</li>
-<li>Efficiency is increased with increased granularity <code>ITEMS_PER_THREAD</code>. Performance is also typically increased until the additional register pressure or shared memory allocation size causes SM occupancy to fall too low. Consider variants of <a class="el" href="classcub_1_1_block_load.html" title="The BlockLoad class provides collective data movement methods for loading a linear segment of items f...">cub::BlockLoad</a> for efficiently gathering a <a href="index.html#sec5sec4"><em>blocked arrangement</em></a> of elements across threads.</li>
+<li>Assumes a <a href="index.html#sec4sec3"><em>blocked arrangement</em></a> of elements across threads, where thread<sub><em>i</em></sub> owns the <em>i</em><sup>th</sup> segment of consecutively ranked items.</li>
+<li>Efficiency is increased with increased granularity <code>ITEMS_PER_THREAD</code>. Performance is also typically increased until the additional register pressure or shared memory allocation size causes SM occupancy to fall too low. Consider variants of <a class="el" href="classcub_1_1_block_load.html" title="The BlockLoad class provides collective data movement methods for loading a linear segment of items f...">cub::BlockLoad</a> for efficiently gathering a <a href="index.html#sec4sec3"><em>blocked arrangement</em></a> of elements across threads.</li>
 <li>A subsequent <code>__syncthreads()</code> threadblock barrier should be invoked after calling this method if the collective's temporary storage (e.g., <code>temp_storage</code>) is to be reused or repurposed.</li>
 </ul>
 </dd></dl>
-<dl class="section user"><dt></dt><dd>The code snippet below illustrates a single thread block that progressively computes an inclusive prefix sum over multiple "tiles" of input using a prefix functor to maintain a running total between block-wide scans. Each tile consists of 512 integer items that are partitioned in a <a href="index.html#sec5sec4"><em>blocked arrangement</em></a> across 128 threads where each thread owns 4 consecutive items. </dd></dl>
+<dl class="section user"><dt></dt><dd>The code snippet below illustrates a single thread block that progressively computes an inclusive prefix sum over multiple "tiles" of input using a prefix functor to maintain a running total between block-wide scans. Each tile consists of 512 integer items that are partitioned in a <a href="index.html#sec4sec3"><em>blocked arrangement</em></a> across 128 threads where each thread owns 4 consecutive items. </dd></dl>
 <dl class="section user"><dt></dt><dd><div class="fragment"><div class="line"><span class="preprocessor">#include &lt;<a class="code" href="cub_8cuh.html">cub/cub.cuh</a>&gt;</span>   <span class="comment">// or equivalently &lt;cub/block/block_scan.cuh&gt;</span></div>
 <div class="line"></div>
 <div class="line"><span class="comment">// A stateful callback functor that maintains a running prefix to be applied</span></div>
@@ -2316,7 +2316,7 @@ template&lt;typename ScanOp &gt; </div>
 <p>Computes an inclusive block-wide prefix scan using the specified binary <code>scan_op</code> functor. Each thread contributes one input element. </p>
 <dl class="section user"><dt></dt><dd><ul>
 <li>Supports non-commutative scan operators.</li>
-<li>Assumes a <a href="index.html#sec5sec4"><em>blocked arrangement</em></a> of elements across threads, where thread<sub><em>i</em></sub> owns the <em>i</em><sup>th</sup> segment of consecutively ranked items.</li>
+<li>Assumes a <a href="index.html#sec4sec3"><em>blocked arrangement</em></a> of elements across threads, where thread<sub><em>i</em></sub> owns the <em>i</em><sup>th</sup> segment of consecutively ranked items.</li>
 <li>A subsequent <code>__syncthreads()</code> threadblock barrier should be invoked after calling this method if the collective's temporary storage (e.g., <code>temp_storage</code>) is to be reused or repurposed.</li>
 </ul>
 </dd></dl>
@@ -2409,7 +2409,7 @@ template&lt;typename ScanOp &gt; </div>
 <p>Computes an inclusive block-wide prefix scan using the specified binary <code>scan_op</code> functor. Each thread contributes one input element. Also provides every thread with the block-wide <code>block_aggregate</code> of all inputs. </p>
 <dl class="section user"><dt></dt><dd><ul>
 <li>Supports non-commutative scan operators.</li>
-<li>Assumes a <a href="index.html#sec5sec4"><em>blocked arrangement</em></a> of elements across threads, where thread<sub><em>i</em></sub> owns the <em>i</em><sup>th</sup> segment of consecutively ranked items.</li>
+<li>Assumes a <a href="index.html#sec4sec3"><em>blocked arrangement</em></a> of elements across threads, where thread<sub><em>i</em></sub> owns the <em>i</em><sup>th</sup> segment of consecutively ranked items.</li>
 <li>A subsequent <code>__syncthreads()</code> threadblock barrier should be invoked after calling this method if the collective's temporary storage (e.g., <code>temp_storage</code>) is to be reused or repurposed.</li>
 </ul>
 </dd></dl>
@@ -2511,7 +2511,7 @@ template&lt;typename ScanOp , typename BlockPrefixCallbackOp &gt; </div>
 <dl class="section user"><dt></dt><dd><ul>
 <li>The <code>block_prefix_callback_op</code> functor must implement a member function <code>T operator()(T block_aggregate)</code>. The functor's input parameter <code>block_aggregate</code> is the same value also returned by the scan operation. The functor will be invoked by the first warp of threads in the block, however only the return value from <em>lane</em><sub>0</sub> is applied as the block-wide prefix. Can be stateful.</li>
 <li>Supports non-commutative scan operators.</li>
-<li>Assumes a <a href="index.html#sec5sec4"><em>blocked arrangement</em></a> of elements across threads, where thread<sub><em>i</em></sub> owns the <em>i</em><sup>th</sup> segment of consecutively ranked items.</li>
+<li>Assumes a <a href="index.html#sec4sec3"><em>blocked arrangement</em></a> of elements across threads, where thread<sub><em>i</em></sub> owns the <em>i</em><sup>th</sup> segment of consecutively ranked items.</li>
 <li>A subsequent <code>__syncthreads()</code> threadblock barrier should be invoked after calling this method if the collective's temporary storage (e.g., <code>temp_storage</code>) is to be reused or repurposed.</li>
 </ul>
 </dd></dl>
@@ -2633,12 +2633,12 @@ template&lt;int ITEMS_PER_THREAD, typename ScanOp &gt; </div>
 <p>Computes an inclusive block-wide prefix scan using the specified binary <code>scan_op</code> functor. Each thread contributes an array of consecutive input elements. </p>
 <dl class="section user"><dt></dt><dd><ul>
 <li>Supports non-commutative scan operators.</li>
-<li>Assumes a <a href="index.html#sec5sec4"><em>blocked arrangement</em></a> of elements across threads, where thread<sub><em>i</em></sub> owns the <em>i</em><sup>th</sup> segment of consecutively ranked items.</li>
-<li>Efficiency is increased with increased granularity <code>ITEMS_PER_THREAD</code>. Performance is also typically increased until the additional register pressure or shared memory allocation size causes SM occupancy to fall too low. Consider variants of <a class="el" href="classcub_1_1_block_load.html" title="The BlockLoad class provides collective data movement methods for loading a linear segment of items f...">cub::BlockLoad</a> for efficiently gathering a <a href="index.html#sec5sec4"><em>blocked arrangement</em></a> of elements across threads.</li>
+<li>Assumes a <a href="index.html#sec4sec3"><em>blocked arrangement</em></a> of elements across threads, where thread<sub><em>i</em></sub> owns the <em>i</em><sup>th</sup> segment of consecutively ranked items.</li>
+<li>Efficiency is increased with increased granularity <code>ITEMS_PER_THREAD</code>. Performance is also typically increased until the additional register pressure or shared memory allocation size causes SM occupancy to fall too low. Consider variants of <a class="el" href="classcub_1_1_block_load.html" title="The BlockLoad class provides collective data movement methods for loading a linear segment of items f...">cub::BlockLoad</a> for efficiently gathering a <a href="index.html#sec4sec3"><em>blocked arrangement</em></a> of elements across threads.</li>
 <li>A subsequent <code>__syncthreads()</code> threadblock barrier should be invoked after calling this method if the collective's temporary storage (e.g., <code>temp_storage</code>) is to be reused or repurposed.</li>
 </ul>
 </dd></dl>
-<dl class="section user"><dt></dt><dd>The code snippet below illustrates an inclusive prefix max scan of 512 integer items that are partitioned in a <a href="index.html#sec5sec4"><em>blocked arrangement</em></a> across 128 threads where each thread owns 4 consecutive items. </dd></dl>
+<dl class="section user"><dt></dt><dd>The code snippet below illustrates an inclusive prefix max scan of 512 integer items that are partitioned in a <a href="index.html#sec4sec3"><em>blocked arrangement</em></a> across 128 threads where each thread owns 4 consecutive items. </dd></dl>
 <dl class="section user"><dt></dt><dd><div class="fragment"><div class="line"><span class="preprocessor">#include &lt;<a class="code" href="cub_8cuh.html">cub/cub.cuh</a>&gt;</span>   <span class="comment">// or equivalently &lt;cub/block/block_scan.cuh&gt;</span></div>
 <div class="line"></div>
 <div class="line">__global__ <span class="keywordtype">void</span> ExampleKernel(...)</div>
@@ -2728,12 +2728,12 @@ template&lt;int ITEMS_PER_THREAD, typename ScanOp &gt; </div>
 <p>Computes an inclusive block-wide prefix scan using the specified binary <code>scan_op</code> functor. Each thread contributes an array of consecutive input elements. Also provides every thread with the block-wide <code>block_aggregate</code> of all inputs. </p>
 <dl class="section user"><dt></dt><dd><ul>
 <li>Supports non-commutative scan operators.</li>
-<li>Assumes a <a href="index.html#sec5sec4"><em>blocked arrangement</em></a> of elements across threads, where thread<sub><em>i</em></sub> owns the <em>i</em><sup>th</sup> segment of consecutively ranked items.</li>
-<li>Efficiency is increased with increased granularity <code>ITEMS_PER_THREAD</code>. Performance is also typically increased until the additional register pressure or shared memory allocation size causes SM occupancy to fall too low. Consider variants of <a class="el" href="classcub_1_1_block_load.html" title="The BlockLoad class provides collective data movement methods for loading a linear segment of items f...">cub::BlockLoad</a> for efficiently gathering a <a href="index.html#sec5sec4"><em>blocked arrangement</em></a> of elements across threads.</li>
+<li>Assumes a <a href="index.html#sec4sec3"><em>blocked arrangement</em></a> of elements across threads, where thread<sub><em>i</em></sub> owns the <em>i</em><sup>th</sup> segment of consecutively ranked items.</li>
+<li>Efficiency is increased with increased granularity <code>ITEMS_PER_THREAD</code>. Performance is also typically increased until the additional register pressure or shared memory allocation size causes SM occupancy to fall too low. Consider variants of <a class="el" href="classcub_1_1_block_load.html" title="The BlockLoad class provides collective data movement methods for loading a linear segment of items f...">cub::BlockLoad</a> for efficiently gathering a <a href="index.html#sec4sec3"><em>blocked arrangement</em></a> of elements across threads.</li>
 <li>A subsequent <code>__syncthreads()</code> threadblock barrier should be invoked after calling this method if the collective's temporary storage (e.g., <code>temp_storage</code>) is to be reused or repurposed.</li>
 </ul>
 </dd></dl>
-<dl class="section user"><dt></dt><dd>The code snippet below illustrates an inclusive prefix max scan of 512 integer items that are partitioned in a <a href="index.html#sec5sec4"><em>blocked arrangement</em></a> across 128 threads where each thread owns 4 consecutive items. </dd></dl>
+<dl class="section user"><dt></dt><dd>The code snippet below illustrates an inclusive prefix max scan of 512 integer items that are partitioned in a <a href="index.html#sec4sec3"><em>blocked arrangement</em></a> across 128 threads where each thread owns 4 consecutive items. </dd></dl>
 <dl class="section user"><dt></dt><dd><div class="fragment"><div class="line"><span class="preprocessor">#include &lt;<a class="code" href="cub_8cuh.html">cub/cub.cuh</a>&gt;</span>   <span class="comment">// or equivalently &lt;cub/block/block_scan.cuh&gt;</span></div>
 <div class="line"></div>
 <div class="line">__global__ <span class="keywordtype">void</span> ExampleKernel(...)</div>
@@ -2832,8 +2832,8 @@ template&lt;int ITEMS_PER_THREAD, typename ScanOp , typename BlockPrefixCallback
 <dl class="section user"><dt></dt><dd><ul>
 <li>The <code>block_prefix_callback_op</code> functor must implement a member function <code>T operator()(T block_aggregate)</code>. The functor's input parameter <code>block_aggregate</code> is the same value also returned by the scan operation. The functor will be invoked by the first warp of threads in the block, however only the return value from <em>lane</em><sub>0</sub> is applied as the block-wide prefix. Can be stateful.</li>
 <li>Supports non-commutative scan operators.</li>
-<li>Assumes a <a href="index.html#sec5sec4"><em>blocked arrangement</em></a> of elements across threads, where thread<sub><em>i</em></sub> owns the <em>i</em><sup>th</sup> segment of consecutively ranked items.</li>
-<li>Efficiency is increased with increased granularity <code>ITEMS_PER_THREAD</code>. Performance is also typically increased until the additional register pressure or shared memory allocation size causes SM occupancy to fall too low. Consider variants of <a class="el" href="classcub_1_1_block_load.html" title="The BlockLoad class provides collective data movement methods for loading a linear segment of items f...">cub::BlockLoad</a> for efficiently gathering a <a href="index.html#sec5sec4"><em>blocked arrangement</em></a> of elements across threads.</li>
+<li>Assumes a <a href="index.html#sec4sec3"><em>blocked arrangement</em></a> of elements across threads, where thread<sub><em>i</em></sub> owns the <em>i</em><sup>th</sup> segment of consecutively ranked items.</li>
+<li>Efficiency is increased with increased granularity <code>ITEMS_PER_THREAD</code>. Performance is also typically increased until the additional register pressure or shared memory allocation size causes SM occupancy to fall too low. Consider variants of <a class="el" href="classcub_1_1_block_load.html" title="The BlockLoad class provides collective data movement methods for loading a linear segment of items f...">cub::BlockLoad</a> for efficiently gathering a <a href="index.html#sec4sec3"><em>blocked arrangement</em></a> of elements across threads.</li>
 <li>A subsequent <code>__syncthreads()</code> threadblock barrier should be invoked after calling this method if the collective's temporary storage (e.g., <code>temp_storage</code>) is to be reused or repurposed.</li>
 </ul>
 </dd></dl>
@@ -2927,7 +2927,7 @@ template&lt;int ITEMS_PER_THREAD, typename ScanOp , typename BlockPrefixCallback
 <!-- HTML footer for doxygen 1.8.3.1-->
 <!-- start footer part -->
 <hr class="footer"/><address class="footer"><small>
-Generated on Tue Dec 10 2013 04:41:09 for CUB by &#160;<a href="http://www.doxygen.org/index.html">
+Generated on Wed Dec 11 2013 07:19:21 for CUB by &#160;<a href="http://www.doxygen.org/index.html">
 <img class="footer" src="doxygen.png" alt="doxygen"/>
 </a> 1.8.4
 <br>

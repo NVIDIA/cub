@@ -116,8 +116,7 @@ class cub::WarpScan&lt; T, LOGICAL_WARPS, LOGICAL_WARP_THREADS &gt;</h3>
 <img src="warp_scan_logo.png" alt="warp_scan_logo.png"/>
 <div class="caption">
 .</div></div>
- <dl class="section user"><dt>Overview</dt><dd>Given a list of input elements and a binary reduction operator, a <a href="http://en.wikipedia.org/wiki/Prefix_sum"><em>prefix scan</em></a> produces an output list where each element is computed to be the reduction of the elements occurring earlier in the input list. <em>Prefix sum</em> connotes a prefix scan with the addition operator. The term <em>inclusive</em> indicates that the <em>i</em><sup>th</sup> output reduction incorporates the <em>i</em><sup>th</sup> input. The term <em>exclusive</em> indicates the <em>i</em><sup>th</sup> input is not incorporated into the <em>i</em><sup>th</sup> output reduction.</dd></dl>
-<dl class="tparams"><dt>Template Parameters</dt><dd>
+ <dl class="tparams"><dt>Template Parameters</dt><dd>
   <table class="tparams">
     <tr><td class="paramname">T</td><td>The scan input/output element type </td></tr>
     <tr><td class="paramname">LOGICAL_WARPS</td><td><b>[optional]</b> The number of "logical" warps performing concurrent warp scans. Default is 1. </td></tr>
@@ -125,6 +124,24 @@ class cub::WarpScan&lt; T, LOGICAL_WARPS, LOGICAL_WARP_THREADS &gt;</h3>
   </table>
   </dd>
 </dl>
+<dl class="section user"><dt>Overview</dt><dd><ul>
+<li>Given a list of input elements and a binary reduction operator, a <a href="http://en.wikipedia.org/wiki/Prefix_sum"><em>prefix scan</em></a> produces an output list where each element is computed to be the reduction of the elements occurring earlier in the input list. <em>Prefix sum</em> connotes a prefix scan with the addition operator. The term <em>inclusive</em> indicates that the <em>i</em><sup>th</sup> output reduction incorporates the <em>i</em><sup>th</sup> input. The term <em>exclusive</em> indicates the <em>i</em><sup>th</sup> input is not incorporated into the <em>i</em><sup>th</sup> output reduction.</li>
+<li>Supports "logical" warps smaller than the physical warp size (e.g., a logical warp of 8 threads)</li>
+<li>The number of entrant threads must be an multiple of <code>LOGICAL_WARP_THREADS</code> </li>
+</ul>
+</dd></dl>
+<dl class="section user"><dt>Performance Considerations</dt><dd><ul>
+<li>Warp scans are concurrent if more than one warp is participating</li>
+<li>Uses special instructions when applicable (e.g., warp <code>SHFL</code>)</li>
+<li>Uses synchronization-free communication between warp lanes when applicable</li>
+<li>Incurs zero bank conflicts for most types</li>
+<li>Computation is slightly more efficient (i.e., having lower instruction overhead) for:<ul>
+<li>Summation (<b><em>vs.</em></b> generic scan)</li>
+<li>The architecture's warp size is a whole multiple of <code>LOGICAL_WARP_THREADS</code> </li>
+</ul>
+</li>
+</ul>
+</dd></dl>
 <dl class="section user"><dt>Simple Examples</dt><dd>Every thread in the warp uses the <a class="el" href="classcub_1_1_warp_scan.html" title="The WarpScan class provides collective methods for computing a parallel prefix scan of items partitio...">WarpScan</a> class by first specializing the <a class="el" href="classcub_1_1_warp_scan.html" title="The WarpScan class provides collective methods for computing a parallel prefix scan of items partitio...">WarpScan</a> type, then instantiating an instance with parameters for communication, and finally invoking collective member functions. </dd></dl>
 <dl class="section user"><dt></dt><dd>The code snippet below illustrates four concurrent warp prefix sums within a block of 128 threads (one per each of the 32-thread warps). </dd></dl>
 <dl class="section user"><dt></dt><dd><div class="fragment"><div class="line"><span class="preprocessor">#include &lt;<a class="code" href="cub_8cuh.html">cub/cub.cuh</a>&gt;</span></div>
@@ -165,21 +182,7 @@ class cub::WarpScan&lt; T, LOGICAL_WARPS, LOGICAL_WARP_THREADS &gt;</h3>
 <div class="line">        <span class="comment">// Compute warp-wide prefix sums</span></div>
 <div class="line">        <a class="code" href="classcub_1_1_warp_scan.html#a27ca414b95f92f2b52701cda45273b05" title="Collective constructor for 1D thread blocks using a private static allocation of shared memory as tem...">WarpScan</a>(temp_storage).ExclusiveSum(thread_data, thread_data);</div>
 </div><!-- fragment --> </dd></dl>
-<dl class="section user"><dt></dt><dd>Suppose the set of input <code>thread_data</code> across the warp of threads is <code>{1, 1, 1, 1, ...}</code>. The corresponding output <code>thread_data</code> will be <code>{0, 1, 2, 3, ..., 31}</code>.</dd></dl>
-<dl class="section user"><dt>Usage and Performance Considerations</dt><dd><ul>
-<li>Supports "logical" warps smaller than the physical warp size (e.g., a logical warp of 8 threads)</li>
-<li>The number of entrant threads must be an multiple of <code>LOGICAL_WARP_THREADS</code> </li>
-<li>Warp scans are concurrent if more than one warp is participating</li>
-<li>Uses special instructions when applicable (e.g., warp <code>SHFL</code>)</li>
-<li>Uses synchronization-free communication between warp lanes when applicable</li>
-<li>Zero bank conflicts for most types.</li>
-<li>Computation is slightly more efficient (i.e., having lower instruction overhead) for:<ul>
-<li>Summation (<b><em>vs.</em></b> generic scan)</li>
-<li>The architecture's warp size is a whole multiple of <code>LOGICAL_WARP_THREADS</code> </li>
-</ul>
-</li>
-</ul>
-</dd></dl>
+<dl class="section user"><dt></dt><dd>Suppose the set of input <code>thread_data</code> across the warp of threads is <code>{1, 1, 1, 1, ...}</code>. The corresponding output <code>thread_data</code> will be <code>{0, 1, 2, 3, ..., 31}</code>. </dd></dl>
 
 <p>Definition at line <a class="el" href="warp__scan_8cuh_source.html#l00145">145</a> of file <a class="el" href="warp__scan_8cuh_source.html">warp_scan.cuh</a>.</p>
 </div><table class="memberdecls">
@@ -1866,7 +1869,7 @@ template&lt;typename ScanOp , typename WarpPrefixCallbackOp &gt; </div>
 <!-- HTML footer for doxygen 1.8.3.1-->
 <!-- start footer part -->
 <hr class="footer"/><address class="footer"><small>
-Generated on Tue Dec 10 2013 04:41:10 for CUB by &#160;<a href="http://www.doxygen.org/index.html">
+Generated on Wed Dec 11 2013 07:19:22 for CUB by &#160;<a href="http://www.doxygen.org/index.html">
 <img class="footer" src="doxygen.png" alt="doxygen"/>
 </a> 1.8.4
 <br>

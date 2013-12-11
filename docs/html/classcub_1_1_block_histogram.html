@@ -138,7 +138,7 @@ class cub::BlockHistogram&lt; T, BLOCK_THREADS, ITEMS_PER_THREAD, BINS, ALGORITH
 </ul>
 </dd></dl>
 <dl class="section user"><dt>Performance Considerations</dt><dd><ul>
-<li>Efficiency is increased with increased granularity <code>ITEMS_PER_THREAD</code>. Performance is also typically increased until the additional register pressure or shared memory allocation size causes SM occupancy to fall too low. Consider variants of <a class="el" href="classcub_1_1_block_load.html" title="The BlockLoad class provides collective data movement methods for loading a linear segment of items f...">cub::BlockLoad</a> for efficiently gathering a <a href="index.html#sec5sec4"><em>blocked arrangement</em></a> of elements across threads.</li>
+<li>Efficiency is increased with increased granularity <code>ITEMS_PER_THREAD</code>. Performance is also typically increased until the additional register pressure or shared memory allocation size causes SM occupancy to fall too low. Consider variants of <a class="el" href="classcub_1_1_block_load.html" title="The BlockLoad class provides collective data movement methods for loading a linear segment of items f...">cub::BlockLoad</a> for efficiently gathering a <a href="index.html#sec4sec3"><em>blocked arrangement</em></a> of elements across threads.</li>
 </ul>
 </dd></dl>
 <dl class="section user"><dt>A Simple Example</dt><dd>Every thread in the block uses the <a class="el" href="classcub_1_1_block_histogram.html" title="The BlockHistogram class provides collective methods for constructing block-wide histograms from data...">BlockHistogram</a> class by first specializing the <a class="el" href="classcub_1_1_block_histogram.html" title="The BlockHistogram class provides collective methods for constructing block-wide histograms from data...">BlockHistogram</a> type, then instantiating an instance with parameters for communication, and finally invoking collective member functions. </dd></dl>
@@ -428,7 +428,7 @@ template&lt;typename HistoCounter &gt; </div>
 
 <p>Constructs a block-wide histogram in shared/global memory. Each thread contributes an array of input elements. </p>
 <dl class="section user"><dt></dt><dd><ul>
-<li>Efficiency is increased with increased granularity <code>ITEMS_PER_THREAD</code>. Performance is also typically increased until the additional register pressure or shared memory allocation size causes SM occupancy to fall too low. Consider variants of <a class="el" href="classcub_1_1_block_load.html" title="The BlockLoad class provides collective data movement methods for loading a linear segment of items f...">cub::BlockLoad</a> for efficiently gathering a <a href="index.html#sec5sec4"><em>blocked arrangement</em></a> of elements across threads.</li>
+<li>Efficiency is increased with increased granularity <code>ITEMS_PER_THREAD</code>. Performance is also typically increased until the additional register pressure or shared memory allocation size causes SM occupancy to fall too low. Consider variants of <a class="el" href="classcub_1_1_block_load.html" title="The BlockLoad class provides collective data movement methods for loading a linear segment of items f...">cub::BlockLoad</a> for efficiently gathering a <a href="index.html#sec4sec3"><em>blocked arrangement</em></a> of elements across threads.</li>
 <li>A subsequent <code>__syncthreads()</code> threadblock barrier should be invoked after calling this method if the collective's temporary storage (e.g., <code>temp_storage</code>) is to be reused or repurposed.</li>
 </ul>
 </dd></dl>
@@ -509,7 +509,7 @@ template&lt;typename HistoCounter &gt; </div>
 
 <p>Updates an existing block-wide histogram in shared/global memory. Each thread composites an array of input elements. </p>
 <dl class="section user"><dt></dt><dd><ul>
-<li>Efficiency is increased with increased granularity <code>ITEMS_PER_THREAD</code>. Performance is also typically increased until the additional register pressure or shared memory allocation size causes SM occupancy to fall too low. Consider variants of <a class="el" href="classcub_1_1_block_load.html" title="The BlockLoad class provides collective data movement methods for loading a linear segment of items f...">cub::BlockLoad</a> for efficiently gathering a <a href="index.html#sec5sec4"><em>blocked arrangement</em></a> of elements across threads.</li>
+<li>Efficiency is increased with increased granularity <code>ITEMS_PER_THREAD</code>. Performance is also typically increased until the additional register pressure or shared memory allocation size causes SM occupancy to fall too low. Consider variants of <a class="el" href="classcub_1_1_block_load.html" title="The BlockLoad class provides collective data movement methods for loading a linear segment of items f...">cub::BlockLoad</a> for efficiently gathering a <a href="index.html#sec4sec3"><em>blocked arrangement</em></a> of elements across threads.</li>
 <li>A subsequent <code>__syncthreads()</code> threadblock barrier should be invoked after calling this method if the collective's temporary storage (e.g., <code>temp_storage</code>) is to be reused or repurposed.</li>
 </ul>
 </dd></dl>
@@ -562,7 +562,7 @@ template&lt;typename HistoCounter &gt; </div>
 <!-- HTML footer for doxygen 1.8.3.1-->
 <!-- start footer part -->
 <hr class="footer"/><address class="footer"><small>
-Generated on Tue Dec 10 2013 04:41:08 for CUB by &#160;<a href="http://www.doxygen.org/index.html">
+Generated on Wed Dec 11 2013 07:19:21 for CUB by &#160;<a href="http://www.doxygen.org/index.html">
 <img class="footer" src="doxygen.png" alt="doxygen"/>
 </a> 1.8.4
 <br>

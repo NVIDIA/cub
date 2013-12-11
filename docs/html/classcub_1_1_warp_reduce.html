@@ -116,8 +116,7 @@ class cub::WarpReduce&lt; T, LOGICAL_WARPS, LOGICAL_WARP_THREADS &gt;</h3>
 <img src="warp_reduce_logo.png" alt="warp_reduce_logo.png"/>
 <div class="caption">
 .</div></div>
- <dl class="section user"><dt>Overview</dt><dd>A <a href="http://en.wikipedia.org/wiki/Reduce_(higher-order_function)"><em>reduction</em></a> (or <em>fold</em>) uses a binary combining operator to compute a single aggregate from a list of input elements.</dd></dl>
-<dl class="tparams"><dt>Template Parameters</dt><dd>
+ <dl class="tparams"><dt>Template Parameters</dt><dd>
   <table class="tparams">
     <tr><td class="paramname">T</td><td>The reduction input/output element type </td></tr>
     <tr><td class="paramname">LOGICAL_WARPS</td><td><b>[optional]</b> The number of entrant "logical" warps performing concurrent warp reductions. Default is 1. </td></tr>
@@ -125,6 +124,24 @@ class cub::WarpReduce&lt; T, LOGICAL_WARPS, LOGICAL_WARP_THREADS &gt;</h3>
   </table>
   </dd>
 </dl>
+<dl class="section user"><dt>Overview</dt><dd><ul>
+<li>A <a href="http://en.wikipedia.org/wiki/Reduce_(higher-order_function)"><em>reduction</em></a> (or <em>fold</em>) uses a binary combining operator to compute a single aggregate from a list of input elements.</li>
+<li>Supports "logical" warps smaller than the physical warp size (e.g., logical warps of 8 threads)</li>
+<li>The number of entrant threads must be an multiple of <code>LOGICAL_WARP_THREADS</code> </li>
+</ul>
+</dd></dl>
+<dl class="section user"><dt>Performance Considerations</dt><dd><ul>
+<li>Warp reductions are concurrent if more than one logical warp is participating</li>
+<li>Uses special instructions when applicable (e.g., warp <code>SHFL</code> instructions)</li>
+<li>Uses synchronization-free communication between warp lanes when applicable</li>
+<li>Incurs zero bank conflicts for most types</li>
+<li>Computation is slightly more efficient (i.e., having lower instruction overhead) for:<ul>
+<li>Summation (<b><em>vs.</em></b> generic reduction)</li>
+<li>The architecture's warp size is a whole multiple of <code>LOGICAL_WARP_THREADS</code> </li>
+</ul>
+</li>
+</ul>
+</dd></dl>
 <dl class="section user"><dt>Simple Examples</dt><dd>Every thread in the warp uses the <a class="el" href="classcub_1_1_warp_reduce.html" title="The WarpReduce class provides collective methods for computing a parallel reduction of items partitio...">WarpReduce</a> class by first specializing the <a class="el" href="classcub_1_1_warp_reduce.html" title="The WarpReduce class provides collective methods for computing a parallel reduction of items partitio...">WarpReduce</a> type, then instantiating an instance with parameters for communication, and finally invoking collective member functions. </dd></dl>
 <dl class="section user"><dt></dt><dd>The code snippet below illustrates four concurrent warp sum reductions within a block of 128 threads (one per each of the 32-thread warps). </dd></dl>
 <dl class="section user"><dt></dt><dd><div class="fragment"><div class="line"><span class="preprocessor">#include &lt;<a class="code" href="cub_8cuh.html">cub/cub.cuh</a>&gt;</span></div>
@@ -165,21 +182,7 @@ class cub::WarpReduce&lt; T, LOGICAL_WARPS, LOGICAL_WARP_THREADS &gt;</h3>
 <div class="line">        <span class="comment">// Return the warp-wide sum to lane0</span></div>
 <div class="line">        <span class="keywordtype">int</span> aggregate = <a class="code" href="classcub_1_1_warp_reduce.html#aed6c8ead3a4c2fa56ae1d5851fb36848" title="Collective constructor for 1D thread blocks using a private static allocation of shared memory as tem...">WarpReduce</a>(temp_storage).Sum(thread_data);</div>
 </div><!-- fragment --> </dd></dl>
-<dl class="section user"><dt></dt><dd>Suppose the set of input <code>thread_data</code> across the warp of threads is <code>{0, 1, 2, 3, ..., 31}</code>. The corresponding output <code>aggregate</code> in thread0 will be <code>496</code> (and is undefined in other threads).</dd></dl>
-<dl class="section user"><dt>Usage and Performance Considerations</dt><dd><ul>
-<li>Supports "logical" warps smaller than the physical warp size (e.g., logical warps of 8 threads)</li>
-<li>The number of entrant threads must be an multiple of <code>LOGICAL_WARP_THREADS</code> </li>
-<li>Warp reductions are concurrent if more than one logical warp is participating</li>
-<li>Uses special instructions when applicable (e.g., warp <code>SHFL</code> instructions)</li>
-<li>Uses synchronization-free communication between warp lanes when applicable</li>
-<li>Zero bank conflicts for most types</li>
-<li>Computation is slightly more efficient (i.e., having lower instruction overhead) for:<ul>
-<li>Summation (<b><em>vs.</em></b> generic reduction)</li>
-<li>The architecture's warp size is a whole multiple of <code>LOGICAL_WARP_THREADS</code> </li>
-</ul>
-</li>
-</ul>
-</dd></dl>
+<dl class="section user"><dt></dt><dd>Suppose the set of input <code>thread_data</code> across the warp of threads is <code>{0, 1, 2, 3, ..., 31}</code>. The corresponding output <code>aggregate</code> in thread0 will be <code>496</code> (and is undefined in other threads). </dd></dl>
 
 <p>Definition at line <a class="el" href="warp__reduce_8cuh_source.html#l00141">141</a> of file <a class="el" href="warp__reduce_8cuh_source.html">warp_reduce.cuh</a>.</p>
 </div><table class="memberdecls">
@@ -991,7 +994,7 @@ template&lt;typename ReductionOp , typename Flag &gt; </div>
 <!-- HTML footer for doxygen 1.8.3.1-->
 <!-- start footer part -->
 <hr class="footer"/><address class="footer"><small>
-Generated on Tue Dec 10 2013 04:41:10 for CUB by &#160;<a href="http://www.doxygen.org/index.html">
+Generated on Wed Dec 11 2013 07:19:22 for CUB by &#160;<a href="http://www.doxygen.org/index.html">
 <img class="footer" src="doxygen.png" alt="doxygen"/>
 </a> 1.8.4
 <br>

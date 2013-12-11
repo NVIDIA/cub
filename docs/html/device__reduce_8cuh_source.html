@@ -264,11 +264,11 @@ var searchBox = new SearchBox("searchBox", "search",false,'Search');
 <div class="line"><a name="l00177"></a><span class="lineno">  177</span>&#160;</div>
 <div class="line"><a name="l00179"></a><span class="lineno">  179</span>&#160;    <span class="keyword">struct </span>Policy350</div>
 <div class="line"><a name="l00180"></a><span class="lineno">  180</span>&#160;    {</div>
-<div class="line"><a name="l00181"></a><span class="lineno">  181</span>&#160;        <span class="comment">// ReduceRegionPolicy1B (GTX Titan: 206.0 GB/s @ 192M 1B items)</span></div>
+<div class="line"><a name="l00181"></a><span class="lineno">  181</span>&#160;        <span class="comment">// ReduceRegionPolicy1B (GTX Titan: 228.7 GB/s @ 192M 1B items)</span></div>
 <div class="line"><a name="l00182"></a><span class="lineno">  182</span>&#160;        <span class="keyword">typedef</span> BlockReduceRegionPolicy&lt;</div>
 <div class="line"><a name="l00183"></a><span class="lineno">  183</span>&#160;                128,                                </div>
-<div class="line"><a name="l00184"></a><span class="lineno">  184</span>&#160;                12,                                 </div>
-<div class="line"><a name="l00185"></a><span class="lineno">  185</span>&#160;                1,                                  </div>
+<div class="line"><a name="l00184"></a><span class="lineno">  184</span>&#160;                24,                                 </div>
+<div class="line"><a name="l00185"></a><span class="lineno">  185</span>&#160;                4,                                  </div>
 <div class="line"><a name="l00186"></a><span class="lineno">  186</span>&#160;                <a class="code" href="namespacecub.html#add0251c713859b8974806079e498d10aab32651e17a8a42207e74b7ed8d1aa4d2">BLOCK_REDUCE_RAKING</a>,                </div>
 <div class="line"><a name="l00187"></a><span class="lineno">  187</span>&#160;                <a class="code" href="group___util_io.html#ggac5f2805ad56fdd0f2860a5421d76d9b9a0217758d7be24e5fd450d1d49aec36b8" title="Cache as texture. ">LOAD_LDG</a>,                           </div>
 <div class="line"><a name="l00188"></a><span class="lineno">  188</span>&#160;                GRID_MAPPING_DYNAMIC&gt;               </div>
@@ -279,14 +279,14 @@ var searchBox = new SearchBox("searchBox", "search",false,'Search');
 <div class="line"><a name="l00193"></a><span class="lineno">  193</span>&#160;            ITEMS_PER_THREAD            = CUB_MIN(NOMINAL_4B_ITEMS_PER_THREAD, CUB_MAX(1, (NOMINAL_4B_ITEMS_PER_THREAD * 4 / <span class="keyword">sizeof</span>(T)))),</div>
 <div class="line"><a name="l00194"></a><span class="lineno">  194</span>&#160;        };</div>
 <div class="line"><a name="l00195"></a><span class="lineno">  195</span>&#160;</div>
-<div class="line"><a name="l00196"></a><span class="lineno">  196</span>&#160;        <span class="comment">// ReduceRegionPolicy4B (GTX Titan: 254.2 GB/s @ 48M 4B items)</span></div>
+<div class="line"><a name="l00196"></a><span class="lineno">  196</span>&#160;        <span class="comment">// ReduceRegionPolicy4B (GTX Titan: 255.1 GB/s @ 48M 4B items)</span></div>
 <div class="line"><a name="l00197"></a><span class="lineno">  197</span>&#160;        <span class="keyword">typedef</span> BlockReduceRegionPolicy&lt;</div>
-<div class="line"><a name="l00198"></a><span class="lineno">  198</span>&#160;                512,                                </div>
+<div class="line"><a name="l00198"></a><span class="lineno">  198</span>&#160;                256,                                </div>
 <div class="line"><a name="l00199"></a><span class="lineno">  199</span>&#160;                ITEMS_PER_THREAD,                   </div>
-<div class="line"><a name="l00200"></a><span class="lineno">  200</span>&#160;                1,                                  </div>
+<div class="line"><a name="l00200"></a><span class="lineno">  200</span>&#160;                2,                                  </div>
 <div class="line"><a name="l00201"></a><span class="lineno">  201</span>&#160;                <a class="code" href="namespacecub.html#add0251c713859b8974806079e498d10aab32651e17a8a42207e74b7ed8d1aa4d2">BLOCK_REDUCE_RAKING</a>,                </div>
-<div class="line"><a name="l00202"></a><span class="lineno">  202</span>&#160;                <a class="code" href="group___util_io.html#ggac5f2805ad56fdd0f2860a5421d76d9b9aee682a9988eceaefd9a53a7ef92fe6e2" title="Default (no modifier) ">LOAD_DEFAULT</a>,                       </div>
-<div class="line"><a name="l00203"></a><span class="lineno">  203</span>&#160;                GRID_MAPPING_EVEN_SHARE&gt;            </div>
+<div class="line"><a name="l00202"></a><span class="lineno">  202</span>&#160;                <a class="code" href="group___util_io.html#ggac5f2805ad56fdd0f2860a5421d76d9b9a0217758d7be24e5fd450d1d49aec36b8" title="Cache as texture. ">LOAD_LDG</a>,                       </div>
+<div class="line"><a name="l00203"></a><span class="lineno">  203</span>&#160;                GRID_MAPPING_DYNAMIC&gt;            </div>
 <div class="line"><a name="l00204"></a><span class="lineno">  204</span>&#160;            ReduceRegionPolicy4B;</div>
 <div class="line"><a name="l00205"></a><span class="lineno">  205</span>&#160;</div>
 <div class="line"><a name="l00206"></a><span class="lineno">  206</span>&#160;        <span class="comment">// ReduceRegionPolicy</span></div>
@@ -1003,7 +1003,7 @@ var searchBox = new SearchBox("searchBox", "search",false,'Search');
 <!-- HTML footer for doxygen 1.8.3.1-->
 <!-- start footer part -->
 <hr class="footer"/><address class="footer"><small>
-Generated on Tue Dec 10 2013 04:41:07 for CUB by &#160;<a href="http://www.doxygen.org/index.html">
+Generated on Wed Dec 11 2013 07:19:19 for CUB by &#160;<a href="http://www.doxygen.org/index.html">
 <img class="footer" src="doxygen.png" alt="doxygen"/>
 </a> 1.8.4
 <br>
