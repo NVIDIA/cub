@@ -29,7 +29,7 @@
 /******************************************************************************
  * Simple example of DeviceReduce::Sum().
  *
- * Sums an array of float keys.
+ * Sums an array of int keys.
  *
  * To compile using the command line:
  *   nvcc -arch=sm_XX example_device_reduce.cu -I../.. -lcudart -O3
@@ -65,7 +65,7 @@ CachingDeviceAllocator  g_allocator(true);  // Caching allocator for device memo
  * Initialize problem
  */
 void Initialize(
-    float   *h_in,
+    int   *h_in,
     int     num_items)
 {
     for (int i = 0; i < num_items; ++i)
@@ -84,8 +84,8 @@ void Initialize(
  * Compute solution
  */
 void Solve(
-    float           *h_in,
-    float           &h_reference,
+    int           *h_in,
+    int           &h_reference,
     int             num_items)
 {
     for (int i = 0; i < num_items; ++i)
@@ -129,27 +129,27 @@ int main(int argc, char** argv)
     CubDebugExit(args.DeviceInit());
 
     printf("cub::DeviceReduce::Sum() %d items (%d-byte elements)\n",
-        num_items, (int) sizeof(float));
+        num_items, (int) sizeof(int));
     fflush(stdout);
 
     // Allocate host arrays
-    float* h_in = new float[num_items];
-    float  h_reference;
+    int* h_in = new int[num_items];
+    int  h_reference;
 
     // Initialize problem and solution
     Initialize(h_in, num_items);
     Solve(h_in, h_reference, num_items);
 
     // Allocate problem device arrays
-    float *d_in = NULL;
-    CubDebugExit(g_allocator.DeviceAllocate((void**)&d_in, sizeof(float) * num_items));
+    int *d_in = NULL;
+    CubDebugExit(g_allocator.DeviceAllocate((void**)&d_in, sizeof(int) * num_items));
 
     // Initialize device input
-    CubDebugExit(cudaMemcpy(d_in, h_in, sizeof(float) * num_items, cudaMemcpyHostToDevice));
+    CubDebugExit(cudaMemcpy(d_in, h_in, sizeof(int) * num_items, cudaMemcpyHostToDevice));
 
     // Allocate device output array
-    float *d_out = NULL;
-    CubDebugExit(g_allocator.DeviceAllocate((void**)&d_out, sizeof(float) * 1));
+    int *d_out = NULL;
+    CubDebugExit(g_allocator.DeviceAllocate((void**)&d_out, sizeof(int) * 1));
 
     // Request and allocate temporary storage
     void            *d_temp_storage = NULL;

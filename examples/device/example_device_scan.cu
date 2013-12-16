@@ -29,7 +29,7 @@
 /******************************************************************************
  * Simple example of DeviceScan::ExclusiveSum().
  *
- * Computes an exclusive sum of float keys.
+ * Computes an exclusive sum of int keys.
  *
  * To compile using the command line:
  *   nvcc -arch=sm_XX example_device_scan.cu -I../.. -lcudart -O3
@@ -66,7 +66,7 @@ CachingDeviceAllocator  g_allocator(true);  // Caching allocator for device memo
  * Initialize problem
  */
 void Initialize(
-    float        *h_in,
+    int        *h_in,
     int          num_items)
 {
     for (int i = 0; i < num_items; ++i)
@@ -83,13 +83,13 @@ void Initialize(
 /**
  * Solve exclusive-scan problem
  */
-float Solve(
-    float           *h_in,
-    float           *h_reference,
+int Solve(
+    int           *h_in,
+    int           *h_reference,
     int             num_items)
 {
-    float inclusive = 0.0;
-    float aggregate = 0.0;
+    int inclusive = 0.0;
+    int aggregate = 0.0;
 
     for (int i = 0; i < num_items; ++i)
     {
@@ -134,27 +134,27 @@ int main(int argc, char** argv)
     CubDebugExit(args.DeviceInit());
 
     printf("cub::DeviceScan::ExclusiveSum %d items (%d-byte elements)\n",
-        num_items, (int) sizeof(float));
+        num_items, (int) sizeof(int));
     fflush(stdout);
 
     // Allocate host arrays
-    float*  h_in = new float[num_items];
-    float*  h_reference = new float[num_items];
+    int*  h_in = new int[num_items];
+    int*  h_reference = new int[num_items];
 
     // Initialize problem and solution
     Initialize(h_in, num_items);
     Solve(h_in, h_reference, num_items);
 
     // Allocate problem device arrays
-    float *d_in = NULL;
-    CubDebugExit(g_allocator.DeviceAllocate((void**)&d_in, sizeof(float) * num_items));
+    int *d_in = NULL;
+    CubDebugExit(g_allocator.DeviceAllocate((void**)&d_in, sizeof(int) * num_items));
 
     // Initialize device input
-    CubDebugExit(cudaMemcpy(d_in, h_in, sizeof(float) * num_items, cudaMemcpyHostToDevice));
+    CubDebugExit(cudaMemcpy(d_in, h_in, sizeof(int) * num_items, cudaMemcpyHostToDevice));
 
     // Allocate device output array
-    float *d_out = NULL;
-    CubDebugExit(g_allocator.DeviceAllocate((void**)&d_out,         sizeof(float) * num_items));
+    int *d_out = NULL;
+    CubDebugExit(g_allocator.DeviceAllocate((void**)&d_out, sizeof(int) * num_items));
 
     // Allocate temporary storage
     void            *d_temp_storage = NULL;
