@@ -586,12 +586,10 @@ void TestTexTransform(char *type_string)
 template <typename T>
 void TestInteger(Int2Type<false> is_integer, char *type_string)
 {
-
     TestModified<T>(type_string);
     TestTransform<T>(type_string);
     TestTexture<T>(type_string);
     TestTexTransform<T>(type_string);
-
 }
 
 /**
@@ -651,6 +649,7 @@ int main(int argc, char** argv)
 
     // Evaluate different data types
     Test<char>(CUB_TYPE_STRING(char));
+/*
     Test<short>(CUB_TYPE_STRING(short));
     Test<int>(CUB_TYPE_STRING(int));
     Test<long>(CUB_TYPE_STRING(long));
@@ -658,7 +657,8 @@ int main(int argc, char** argv)
     Test<float>(CUB_TYPE_STRING(float));
     if (ptx_version > 100)                          // Don't check doubles on PTX100 because they're down-converted
         Test<double>(CUB_TYPE_STRING(double));
-
+*/
+/*
     Test<char2>(CUB_TYPE_STRING(char2));
     Test<short2>(CUB_TYPE_STRING(short2));
     Test<int2>(CUB_TYPE_STRING(int2));
@@ -688,7 +688,7 @@ int main(int argc, char** argv)
 
     Test<TestFoo>(CUB_TYPE_STRING(TestFoo));
     Test<TestBar>(CUB_TYPE_STRING(TestBar));
-
+*/
     printf("\nTest complete\n"); fflush(stdout);
 
     return 0;

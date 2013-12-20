@@ -101,7 +101,11 @@ public:
     typedef ValueType                           reference;              ///< The type of a reference to an element the iterator can point to
 
     // Use Thrust's iterator categories so we can use these iterators in thrust methods
+#if (CUDA_VERSION > 5000)
     typedef typename thrust::detail::iterator_facade_category<
+#else
+    typedef typename thrust::experimental::detail::iterator_facade_category<
+#endif
         thrust::any_system_tag,
         thrust::random_access_traversal_tag,
         value_type,
