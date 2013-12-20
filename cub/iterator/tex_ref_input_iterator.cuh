@@ -205,12 +205,21 @@ public:
     typedef T                                   reference;              ///< The type of a reference to an element the iterator can point to
 
     // Use Thrust's iterator categories so we can use these iterators in thrust methods
+#if (CUDA_VERSION > 5000)
     typedef typename thrust::detail::iterator_facade_category<
-        thrust::device_system_tag,
+        thrust::any_system_tag,
         thrust::random_access_traversal_tag,
         value_type,
         reference
       >::type iterator_category;                                        ///< The iterator category
+#else
+    typedef typename thrust::experimental::detail::iterator_facade_category<
+        thrust::any_system_tag,
+        thrust::random_access_traversal_tag,
+        value_type,
+        reference
+      >::type iterator_category;                                        ///< The iterator category
+#endif
 
 //    typedef std::random_access_iterator_tag     iterator_category;      ///< The iterator category
 
