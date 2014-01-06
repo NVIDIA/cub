@@ -188,6 +188,8 @@ void TestConstant(T base, char *type_string)
     ConstantInputIterator<T> d_itr(base);
     Test(d_itr, h_reference);
 
+#if (THRUST_VERSION >= 100700)  // Thrust 1.7 or newer
+
     //
     // Test with thrust::copy_if()
     //
@@ -210,6 +212,8 @@ void TestConstant(T base, char *type_string)
 
     if (h_copy) delete[] h_copy;
     if (d_copy) CubDebugExit(g_allocator.DeviceFree(d_copy));
+
+#endif // THRUST_VERSION
 }
 
 
@@ -239,6 +243,8 @@ void TestCounting(T base, char *type_string)
     CountingInputIterator<T> d_itr(base);
     Test(d_itr, h_reference);
 
+#if (THRUST_VERSION >= 100700)  // Thrust 1.7 or newer
+
     //
     // Test with thrust::copy_if()
     //
@@ -262,6 +268,7 @@ void TestCounting(T base, char *type_string)
     if (h_copy) delete[] h_copy;
     if (d_copy) CubDebugExit(g_allocator.DeviceFree(d_copy));
 
+#endif // THRUST_VERSION
 }
 
 
@@ -309,6 +316,8 @@ void TestModified(char *type_string)
     Test(CacheModifiedInputIterator<LOAD_LDG, T>(d_data), h_reference);
     Test(CacheModifiedInputIterator<LOAD_VOLATILE, T>(d_data), h_reference);
 
+#if (THRUST_VERSION >= 100700)  // Thrust 1.7 or newer
+
     //
     // Test with thrust::copy_if()
     //
@@ -327,6 +336,9 @@ void TestModified(char *type_string)
 
     // Cleanup
     if (d_copy) CubDebugExit(g_allocator.DeviceFree(d_copy));
+
+#endif // THRUST_VERSION
+
     if (h_data) delete[] h_data;
     if (d_data) CubDebugExit(g_allocator.DeviceFree(d_data));
 }
@@ -373,6 +385,8 @@ void TestTransform(char *type_string)
     TransformInputIterator<T, TransformOp<T>, T*> d_itr(d_data, op);
     Test(d_itr, h_reference);
 
+#if (THRUST_VERSION >= 100700)  // Thrust 1.7 or newer
+
     //
     // Test with thrust::copy_if()
     //
@@ -392,20 +406,103 @@ void TestTransform(char *type_string)
     AssertEquals(0, compare);
 
     // Cleanup
-    if (h_data) delete[] h_data;
     if (h_copy) delete[] h_copy;
-    if (d_data) CubDebugExit(g_allocator.DeviceFree(d_data));
     if (d_copy) CubDebugExit(g_allocator.DeviceFree(d_copy));
+
+#endif // THRUST_VERSION
+
+    if (h_data) delete[] h_data;
+    if (d_data) CubDebugExit(g_allocator.DeviceFree(d_data));
 }
 
 
 /**
- * Test texture iterator
+ * Test tex-obj texture iterator
  */
 template <typename T>
-void TestTexture(char *type_string)
+void TestTexObj(char *type_string)
 {
-    printf("\nTesting texture iterator on type %s\n", type_string); fflush(stdout);
+    printf("\nTesting tex-obj iterator on type %s\n", type_string); fflush(stdout);
+
+    //
+    // Test iterator manipulation in kernel
+    //
+
+    const unsigned int TEST_VALUES          = 11000;
+    const unsigned int DUMMY_OFFSET         = 500;
+    const unsigned int DUMMY_TEST_VALUES    = TEST_VALUES - DUMMY_OFFSET;
+
+    T *h_data = new T[TEST_VALUES];
+    for (int i = 0; i < TEST_VALUES; ++i)
+    {
+        RandomBits(h_data[i]);
+    }
+
+    // Allocate device arrays
+    T *d_data   = NULL;
+    T *d_dummy  = NULL;
+    CubDebugExit(g_allocator.DeviceAllocate((void**)&d_data, sizeof(T) * TEST_VALUES));
+    CubDebugExit(cudaMemcpy(d_data, h_data, sizeof(T) * TEST_VALUES, cudaMemcpyHostToDevice));
+
+    CubDebugExit(g_allocator.DeviceAllocate((void**)&d_dummy, sizeof(T) * DUMMY_TEST_VALUES));
+    CubDebugExit(cudaMemcpy(d_dummy, h_data + DUMMY_OFFSET, sizeof(T) * DUMMY_TEST_VALUES, cudaMemcpyHostToDevice));
+
+    // Initialize reference data
+    T h_reference[8];
+    h_reference[0] = h_data[0];          // Value at offset 0
+    h_reference[1] = h_data[100];        // Value at offset 100
+    h_reference[2] = h_data[1000];       // Value at offset 1000
+    h_reference[3] = h_data[10000];      // Value at offset 10000
+    h_reference[4] = h_data[1];          // Value at offset 1
+    h_reference[5] = h_data[21];         // Value at offset 21
+    h_reference[6] = h_data[11];         // Value at offset 11
+    h_reference[7] = h_data[0];          // Value at offset 0;
+
+    // Create and bind obj-based test iterator
+    TexObjInputIterator<T> d_obj_itr;
+    CubDebugExit(d_obj_itr.BindTexture(d_data, sizeof(T) * TEST_VALUES));
+
+    Test(d_obj_itr, h_reference);
+
+#if (THRUST_VERSION >= 100700)  // Thrust 1.7 or newer
+
+    //
+    // Test with thrust::copy_if()
+    //
+
+    T *d_copy = NULL;
+    CubDebugExit(g_allocator.DeviceAllocate((void**)&d_copy, sizeof(T) * TEST_VALUES));
+    thrust::device_ptr<T> d_copy_wrapper(d_copy);
+
+    CubDebugExit(cudaMemset(d_copy, 0, sizeof(T) * TEST_VALUES));
+    thrust::copy_if(d_obj_itr, d_obj_itr + TEST_VALUES, d_copy_wrapper, SelectOp());
+
+    int compare = CompareDeviceResults(h_data, d_copy, TEST_VALUES, g_verbose, g_verbose);
+    printf("\tthrust::copy_if(): %s\n", (compare) ? "FAIL" : "PASS");
+    AssertEquals(0, compare);
+
+    // Cleanup
+    CubDebugExit(d_obj_itr.UnbindTexture());
+
+    if (d_copy) CubDebugExit(g_allocator.DeviceFree(d_copy));
+
+#endif  // THRUST_VERSION
+
+    if (h_data) delete[] h_data;
+    if (d_data) CubDebugExit(g_allocator.DeviceFree(d_data));
+    if (d_dummy) CubDebugExit(g_allocator.DeviceFree(d_dummy));
+}
+
+
+#if CUDA_VERSION >= 5050
+
+/**
+ * Test tex-ref texture iterator
+ */
+template <typename T>
+void TestTexRef(char *type_string)
+{
+    printf("\nTesting tex-ref iterator on type %s\n", type_string); fflush(stdout);
 
     //
     // Test iterator manipulation in kernel
@@ -451,15 +548,7 @@ void TestTexture(char *type_string)
 
     Test(d_ref_itr, h_reference);
 
-#ifdef CUB_CDP
-
-    // Create and bind obj-based test iterator
-    TexObjInputIterator<T> d_obj_itr;
-    CubDebugExit(d_obj_itr.BindTexture(d_data, sizeof(T) * TEST_VALUES));
-
-    Test(d_obj_itr, h_reference);
-
-#endif
+#if (THRUST_VERSION >= 100700)  // Thrust 1.7 or newer
 
     //
     // Test with thrust::copy_if()
@@ -476,27 +565,14 @@ void TestTexture(char *type_string)
     printf("\tthrust::copy_if(): %s\n", (compare) ? "FAIL" : "PASS");
     AssertEquals(0, compare);
 
-#ifdef CUB_CDP
+    if (d_copy) CubDebugExit(g_allocator.DeviceFree(d_copy));
 
-    CubDebugExit(cudaMemset(d_copy, 0, sizeof(T) * TEST_VALUES));
-    thrust::copy_if(d_obj_itr, d_obj_itr + TEST_VALUES, d_copy_wrapper, SelectOp());
+#endif  // THRUST_VERSION
 
-    compare = CompareDeviceResults(h_data, d_copy, TEST_VALUES, g_verbose, g_verbose);
-    printf("\tthrust::copy_if(): %s\n", (compare) ? "FAIL" : "PASS");
-    AssertEquals(0, compare);
-
-#endif
-
-    // Cleanup
     CubDebugExit(d_ref_itr.UnbindTexture());
     CubDebugExit(d_ref_itr2.UnbindTexture());
 
-#ifdef CUB_CDP
-    CubDebugExit(d_obj_itr.UnbindTexture());
-#endif
-
     if (h_data) delete[] h_data;
-    if (d_copy) CubDebugExit(g_allocator.DeviceFree(d_copy));
     if (d_data) CubDebugExit(g_allocator.DeviceFree(d_data));
     if (d_dummy) CubDebugExit(g_allocator.DeviceFree(d_dummy));
 }
@@ -551,6 +627,7 @@ void TestTexTransform(char *type_string)
 
     Test(xform_itr, h_reference);
 
+#if (THRUST_VERSION >= 100700)  // Thrust 1.7 or newer
 
     //
     // Test with thrust::copy_if()
@@ -571,12 +648,18 @@ void TestTexTransform(char *type_string)
     AssertEquals(0, compare);
 
     // Cleanup
+    if (h_copy) delete[] h_copy;
+    if (d_copy) CubDebugExit(g_allocator.DeviceFree(d_copy));
+
+#endif  // THRUST_VERSION
+
     CubDebugExit(d_tex_itr.UnbindTexture());
     if (h_data) delete[] h_data;
-    if (h_copy) delete[] h_copy;
     if (d_data) CubDebugExit(g_allocator.DeviceFree(d_data));
-    if (d_copy) CubDebugExit(g_allocator.DeviceFree(d_copy));
 }
+
+#endif  // CUDA_VERSION
+
 
 
 
@@ -588,8 +671,17 @@ void TestInteger(Int2Type<false> is_integer, char *type_string)
 {
     TestModified<T>(type_string);
     TestTransform<T>(type_string);
-    TestTexture<T>(type_string);
+
+#if CUB_CDP
+    // Test tex-obj iterators if CUDA dynamic parallelism enabled
+    TestTexObj<T>(type_string);
+#endif  // CUB_CDP
+
+#if CUDA_VERSION >= 5050
+    // Test tex-ref iterators for CUDA 5.5
+    TestTexRef<T>(type_string);
     TestTexTransform<T>(type_string);
+#endif  // CUDA_VERSION
 }
 
 /**
@@ -649,7 +741,6 @@ int main(int argc, char** argv)
 
     // Evaluate different data types
     Test<char>(CUB_TYPE_STRING(char));
-/*
     Test<short>(CUB_TYPE_STRING(short));
     Test<int>(CUB_TYPE_STRING(int));
     Test<long>(CUB_TYPE_STRING(long));
@@ -657,8 +748,7 @@ int main(int argc, char** argv)
     Test<float>(CUB_TYPE_STRING(float));
     if (ptx_version > 100)                          // Don't check doubles on PTX100 because they're down-converted
         Test<double>(CUB_TYPE_STRING(double));
-*/
-/*
+
     Test<char2>(CUB_TYPE_STRING(char2));
     Test<short2>(CUB_TYPE_STRING(short2));
     Test<int2>(CUB_TYPE_STRING(int2));
@@ -688,7 +778,7 @@ int main(int argc, char** argv)
 
     Test<TestFoo>(CUB_TYPE_STRING(TestFoo));
     Test<TestBar>(CUB_TYPE_STRING(TestBar));
-*/
+
     printf("\nTest complete\n"); fflush(stdout);
 
     return 0;
