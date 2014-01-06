@@ -41,8 +41,12 @@
 #include "../util_device.cuh"
 #include "../util_namespace.cuh"
 
-#include <thrust/iterator/iterator_facade.h>
-#include <thrust/iterator/iterator_traits.h>
+#if (THRUST_VERSION >= 100700)
+    // This iterator is compatible with Thrust API 1.7 and newer
+    #include <thrust/iterator/iterator_facade.h>
+    #include <thrust/iterator/iterator_traits.h>
+#endif // THRUST_VERSION
+
 
 /// Optional outer namespace(s)
 CUB_NS_PREFIX
@@ -68,6 +72,7 @@ namespace cub {
  *   "STORE_CG", "STORE_CS", "STORE_WT", etc.).
  * - Can be constructed, manipulated, and exchanged within and between host and device
  *   functions, but can only be dereferenced within device functions.
+ * - Compatible with Thrust API v1.7 or newer.
  *
  * \par Example
  * The code snippet below illustrates the use of \p CacheModifiedOutputIterator to
@@ -130,19 +135,17 @@ public:
     typedef ValueType*                          pointer;                ///< The type of a pointer to an element the iterator can point to
     typedef Reference                           reference;              ///< The type of a reference to an element the iterator can point to
 
-    // Use Thrust's iterator categories so we can use these iterators in thrust methods
-#if (CUDA_VERSION > 5000)
+#if (THRUST_VERSION >= 100700)
+    // Use Thrust's iterator categories so we can use these iterators in Thrust 1.7 (or newer) methods
     typedef typename thrust::detail::iterator_facade_category<
-#else
-    typedef typename thrust::experimental::detail::iterator_facade_category<
-#endif
         thrust::device_system_tag,
         thrust::random_access_traversal_tag,
         value_type,
         reference
       >::type iterator_category;                                        ///< The iterator category
-
-//    typedef std::random_access_iterator_tag     iterator_category;      ///< The iterator category
+#else
+    typedef std::random_access_iterator_tag     iterator_category;      ///< The iterator category
+#endif  // THRUST_VERSION
 
 private:
 
