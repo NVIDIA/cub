@@ -179,11 +179,11 @@ struct DeviceScanDispatch
     struct Policy350
     {
         enum {
-            NOMINAL_4B_ITEMS_PER_THREAD = 16,
+            NOMINAL_4B_ITEMS_PER_THREAD = 12,
             ITEMS_PER_THREAD            = CUB_MIN(NOMINAL_4B_ITEMS_PER_THREAD, CUB_MAX(1, (NOMINAL_4B_ITEMS_PER_THREAD * 4 / sizeof(T)))),
         };
 
-        // GTX Titan: 29.1B items/s (232.4 GB/s) @ 48M 32-bit T
+        // GTX Titan: 29.5B items/s (232.4 GB/s) @ 48M 32-bit T
         typedef BlockScanRegionPolicy<
                 128,
                 ITEMS_PER_THREAD,
