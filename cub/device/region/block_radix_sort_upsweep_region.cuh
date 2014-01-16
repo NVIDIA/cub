@@ -146,7 +146,7 @@ struct BlockRadixSortUpsweepRegion
         {
             DigitCounter    digit_counters[COUNTER_LANES][BLOCK_THREADS][PACKING_RATIO];
             PackedCounter   packed_counters[COUNTER_LANES][BLOCK_THREADS];
-            Offset           digit_partials[RADIX_DIGITS][WARP_THREADS + 1];
+            Offset          digit_partials[RADIX_DIGITS][WARP_THREADS + 1];
         };
     };
 

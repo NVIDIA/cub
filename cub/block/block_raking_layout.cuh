@@ -72,32 +72,33 @@ struct BlockRakingLayout
     enum
     {
         /// The total number of elements that need to be cooperatively reduced
-        SHARED_ELEMENTS =
-            BLOCK_THREADS * BLOCK_STRIPS,
+        SHARED_ELEMENTS = BLOCK_THREADS * BLOCK_STRIPS,
 
         /// Maximum number of warp-synchronous raking threads
-        MAX_RAKING_THREADS =
-            CUB_MIN(BLOCK_THREADS, CUB_PTX_WARP_THREADS),
+        MAX_RAKING_THREADS = CUB_MIN(BLOCK_THREADS, CUB_PTX_WARP_THREADS),
 
         /// Number of raking elements per warp-synchronous raking thread (rounded up)
-        SEGMENT_LENGTH =
-            (SHARED_ELEMENTS + MAX_RAKING_THREADS - 1) / MAX_RAKING_THREADS,
+        SEGMENT_LENGTH = (SHARED_ELEMENTS + MAX_RAKING_THREADS - 1) / MAX_RAKING_THREADS,
 
         /// Never use a raking thread that will have no valid data (e.g., when BLOCK_THREADS is 62 and SEGMENT_LENGTH is 2, we should only use 31 raking threads)
-        RAKING_THREADS =
-            (SHARED_ELEMENTS + SEGMENT_LENGTH - 1) / SEGMENT_LENGTH,
+        RAKING_THREADS = (SHARED_ELEMENTS + SEGMENT_LENGTH - 1) / SEGMENT_LENGTH,
 
-        /// Pad each segment length with one element if it evenly divides the number of banks
-        SEGMENT_PADDING =
-            (CUB_PTX_SMEM_BANKS % SEGMENT_LENGTH == 0) ? 1 : 0,
+        /// Whether we will have bank conflicts
+        HAS_CONFLICTS = (CUB_PTX_SMEM_BANKS % SEGMENT_LENGTH == 0),
+
+        /// Degree of bank conflicts (e.g., 4-way)
+        CONFLICT_DEGREE = (HAS_CONFLICTS) ?
+            (MAX_RAKING_THREADS / (CUB_PTX_SMEM_BANKS / SEGMENT_LENGTH)) :
+            0,
+
+        /// Pad each segment length with one element if degree of bank conflicts is greater than 4-way (heuristic)
+        SEGMENT_PADDING = (CONFLICT_DEGREE <= CUB_PTX_PREFER_CONFLICT_OVER_PADDING) ? 0 : 1,
 
         /// Total number of elements in the raking grid
-        GRID_ELEMENTS =
-            RAKING_THREADS * (SEGMENT_LENGTH + SEGMENT_PADDING),
+        GRID_ELEMENTS = RAKING_THREADS * (SEGMENT_LENGTH + SEGMENT_PADDING),
 
         /// Whether or not we need bounds checking during raking (the number of reduction elements is not a multiple of the warp size)
-        UNGUARDED =
-            (SHARED_ELEMENTS % RAKING_THREADS == 0),
+        UNGUARDED = (SHARED_ELEMENTS % RAKING_THREADS == 0),
     };
 
 
