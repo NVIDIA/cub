@@ -608,25 +608,24 @@ int main(int argc, char** argv)
     // Initialize device
     CubDebugExit(args.DeviceInit());
 
-    // Quick exclusive test
+#ifdef QUICK_TEST
 
-    if (quick)
+    // Compile/run quick tests
+    Test<32, BASIC>(UNIFORM, Sum(), (int) 0, (int) 99, CUB_TYPE_STRING(Sum<int>));
+
+#else
+
+    // Compile/run thorough tests
+    for (int i = 0; i <= g_repeat; ++i)
     {
-        // Quick exclusive test
-        Test<32, BASIC>(UNIFORM, Sum(), (int) 0, (int) 99, CUB_TYPE_STRING(Sum<int>));
+        // Test logical warp sizes
+        Test<32>();
+        Test<16>();
+        Test<9>();
+        Test<7>();
     }
-    else
-    {
-        // Repeat test sequence
-        for (int i = 0; i <= g_repeat; ++i)
-        {
-            // Test logical warp sizes
-            Test<32>();
-            Test<16>();
-            Test<9>();
-            Test<7>();
-        }
-    }
+
+#endif
 
     return 0;
 }

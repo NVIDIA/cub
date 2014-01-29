@@ -701,44 +701,47 @@ int main(int argc, char** argv)
     int ptx_version;
     CubDebugExit(PtxVersion(ptx_version));
 
-    if (quick)
+#ifdef QUICK_TEST
+
+    // Compile/run quick tests
+    if (num_items < 0) num_items = 32000000;
+
+    // Compare CUB and thrust on 32b keys-only
+    Test<CUB, unsigned int, NullType, false> (num_items, RANDOM, entropy_reduction, 0, g_bits, CUB_TYPE_STRING(unsigned int));
+    Test<THRUST, unsigned int, NullType, false> (num_items, RANDOM, entropy_reduction, 0, g_bits, CUB_TYPE_STRING(unsigned int));
+
+    // Compare CUB and thrust on 32b key-value pairs
+    Test<CUB, unsigned int, unsigned int, false> (num_items, RANDOM, entropy_reduction, 0, g_bits, CUB_TYPE_STRING(unsigned int));
+    Test<THRUST, unsigned int, unsigned int, false> (num_items, RANDOM, entropy_reduction, 0, g_bits, CUB_TYPE_STRING(unsigned int));
+
+#else
+
+    // Compile/run thorough tests
+    for (int i = 0; i <= g_repeat; ++i)
     {
-        if (num_items < 0) num_items = 32000000;
+        TestItems<char>                 (num_items, 0, g_bits, CUB_TYPE_STRING(char));
+        TestItems<signed char>          (num_items, 0, g_bits, CUB_TYPE_STRING(signed char));
+        TestItems<unsigned char>        (num_items, 0, g_bits, CUB_TYPE_STRING(unsigned char));
 
-        // Compare CUB and thrust on 32b keys-only
-        Test<CUB, unsigned int, NullType, false> (num_items, RANDOM, entropy_reduction, 0, g_bits, CUB_TYPE_STRING(unsigned int));
-        Test<THRUST, unsigned int, NullType, false> (num_items, RANDOM, entropy_reduction, 0, g_bits, CUB_TYPE_STRING(unsigned int));
+        TestItems<short>                (num_items, 0, g_bits, CUB_TYPE_STRING(short));
+        TestItems<unsigned short>       (num_items, 0, g_bits, CUB_TYPE_STRING(unsigned short));
 
-        // Compare CUB and thrust on 32b key-value pairs
-        Test<CUB, unsigned int, unsigned int, false> (num_items, RANDOM, entropy_reduction, 0, g_bits, CUB_TYPE_STRING(unsigned int));
-        Test<THRUST, unsigned int, unsigned int, false> (num_items, RANDOM, entropy_reduction, 0, g_bits, CUB_TYPE_STRING(unsigned int));
+        TestItems<int>                  (num_items, 0, g_bits, CUB_TYPE_STRING(int));
+        TestItems<unsigned int>         (num_items, 0, g_bits, CUB_TYPE_STRING(unsigned int));
+
+        TestItems<long>                 (num_items, 0, g_bits, CUB_TYPE_STRING(long));
+        TestItems<unsigned long>        (num_items, 0, g_bits, CUB_TYPE_STRING(unsigned long));
+
+        TestItems<long long>            (num_items, 0, g_bits, CUB_TYPE_STRING(long long));
+        TestItems<unsigned long long>   (num_items, 0, g_bits, CUB_TYPE_STRING(unsigned long long));
+
+        TestItems<float>                (num_items, 0, g_bits, CUB_TYPE_STRING(float));
+
+        if (ptx_version > 100)                          // Don't check doubles on PTX100 because they're down-converted
+            TestItems<double>               (num_items, 0, g_bits, CUB_TYPE_STRING(double));
     }
-    else
-    {
-        for (int i = 0; i <= g_repeat; ++i)
-        {
-            TestItems<char>                 (num_items, 0, g_bits, CUB_TYPE_STRING(char));
-            TestItems<signed char>          (num_items, 0, g_bits, CUB_TYPE_STRING(signed char));
-            TestItems<unsigned char>        (num_items, 0, g_bits, CUB_TYPE_STRING(unsigned char));
 
-            TestItems<short>                (num_items, 0, g_bits, CUB_TYPE_STRING(short));
-            TestItems<unsigned short>       (num_items, 0, g_bits, CUB_TYPE_STRING(unsigned short));
-
-            TestItems<int>                  (num_items, 0, g_bits, CUB_TYPE_STRING(int));
-            TestItems<unsigned int>         (num_items, 0, g_bits, CUB_TYPE_STRING(unsigned int));
-
-            TestItems<long>                 (num_items, 0, g_bits, CUB_TYPE_STRING(long));
-            TestItems<unsigned long>        (num_items, 0, g_bits, CUB_TYPE_STRING(unsigned long));
-
-            TestItems<long long>            (num_items, 0, g_bits, CUB_TYPE_STRING(long long));
-            TestItems<unsigned long long>   (num_items, 0, g_bits, CUB_TYPE_STRING(unsigned long long));
-
-            TestItems<float>                (num_items, 0, g_bits, CUB_TYPE_STRING(float));
-
-            if (ptx_version > 100)                          // Don't check doubles on PTX100 because they're down-converted
-                TestItems<double>               (num_items, 0, g_bits, CUB_TYPE_STRING(double));
-        }
-    }
+#endif
 
     return 0;
 }

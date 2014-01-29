@@ -724,24 +724,25 @@ int main(int argc, char** argv)
     // Initialize device
     CubDebugExit(args.DeviceInit());
 
-    if (quick)
+#ifdef QUICK_TEST
+
+    // Compile/run quick tests
+    TestReduce<1, 32, int>(UNIFORM, Sum(), CUB_TYPE_STRING(int), 32);
+    TestSegmentedReduce<1, 32, int>(UNIFORM, 1, Sum(), CUB_TYPE_STRING(int));
+
+#else
+
+    // Compile/run thorough tests
+    for (int i = 0; i <= g_repeat; ++i)
     {
-        // Quick exclusive test
-        TestReduce<1, 32, int>(UNIFORM, Sum(), CUB_TYPE_STRING(int), 32);
-        TestSegmentedReduce<1, 32, int>(UNIFORM, 1, Sum(), CUB_TYPE_STRING(int));
+        // Test logical warp sizes
+        Test<32>();
+        Test<16>();
+        Test<9>();
+        Test<7>();
     }
-    else
-    {
-        // Repeat test sequence
-        for (int i = 0; i <= g_repeat; ++i)
-        {
-            // Test logical warp sizes
-            Test<32>();
-            Test<16>();
-            Test<9>();
-            Test<7>();
-        }
-    }
+
+#endif
 
     return 0;
 }
