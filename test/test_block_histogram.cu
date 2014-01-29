@@ -286,22 +286,23 @@ int main(int argc, char** argv)
     // Initialize device
     CubDebugExit(args.DeviceInit());
 
-    if (quick)
+#ifdef QUICK_TEST
+
+    // Compile/run quick tests
+    Test<unsigned char, 256, 128, 4, BLOCK_HISTO_SORT>(RANDOM, "unsigned char");
+    Test<unsigned char, 256, 128, 4, BLOCK_HISTO_ATOMIC>(RANDOM, "unsigned char");
+
+#else
+
+    // Compile/run thorough tests
+    for (int i = 0; i <= g_repeat; ++i)
     {
-        // Quick test
-        Test<unsigned char, 256, 128, 4, BLOCK_HISTO_SORT>(RANDOM, "unsigned char");
-        Test<unsigned char, 256, 128, 4, BLOCK_HISTO_ATOMIC>(RANDOM, "unsigned char");
+        Test<unsigned char, 32>("unsigned char");
+        Test<unsigned char, 256>("unsigned char");
+        Test<unsigned short, 1024>("unsigned short");
     }
-    else
-    {
-        // Repeat test sequence
-        for (int i = 0; i <= g_repeat; ++i)
-        {
-            Test<unsigned char, 32>("unsigned char");
-            Test<unsigned char, 256>("unsigned char");
-            Test<unsigned short, 1024>("unsigned short");
-        }
-    }
+
+#endif
 
     return 0;
 }

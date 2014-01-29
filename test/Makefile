@@ -30,7 +30,7 @@
 #
 # Makefile usage
 #
-# make <target> [sm=<XXX,...>] [cdp=<0|1>] [force64=<0|1>] [abi=<0|1>] [open64=<0|1>] [verbose=<0|1>] [keep=<0|1>]
+# make <target> [sm=<XXX,...>] [cdp=<0|1>] [force64=<0|1>] [abi=<0|1>] [open64=<0|1>] [verbose=<0|1>] [keep=<0|1>] [quicktest=<0|1>]
 #
 #-------------------------------------------------------------------------------
  
@@ -128,6 +128,14 @@ else
 endif
 endif
 
+# Compile/run quick/thorough test 
+ifeq ($(quicktest), 1)
+	NVCCFLAGS += -DQUICK_TEST
+	TEST_SUFFIX = quick
+else 
+	TEST_SUFFIX = thorough
+endif
+
 # 32/64-bit (32-bit device pointers by default) 
 ifneq ($(force64), 1)
 	CPU_ARCH = -m32
@@ -164,7 +172,7 @@ ifeq ($(keep), 1)
 endif
 
 # Suffix to append to each binary
-SUFFIX = sm$(SM_ARCH)_$(PTX_SUFFIX)_$(NVCC_VERSION)_$(ABI_SUFFIX)_$(CDP_SUFFIX)_$(CPU_ARCH_SUFFIX)
+SUFFIX = sm$(SM_ARCH)_$(PTX_SUFFIX)_$(NVCC_VERSION)_$(ABI_SUFFIX)_$(CDP_SUFFIX)_$(TEST_SUFFIX)_$(CPU_ARCH_SUFFIX)
 
 
 

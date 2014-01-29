@@ -755,43 +755,43 @@ int main(int argc, char** argv)
     int sm_version;
     CubDebugExit(SmVersion(sm_version, device_ordinal));
 
-    if (quick)
+#ifdef QUICK_TEST
+
+    // Compile/run quick tests
+    if (num_items < 0) num_items = 32000000;
+
+    ComparePointer<char>(       num_items * ((sm_version <= 130) ? 1 : 4),  entropy_reduction, max_segment, CUB_TYPE_STRING(char));
+    ComparePointer<short>(      num_items * ((sm_version <= 130) ? 1 : 2),  entropy_reduction, max_segment, CUB_TYPE_STRING(short));
+    ComparePointer<int>(        num_items,                                  entropy_reduction, max_segment, CUB_TYPE_STRING(int));
+    ComparePointer<long long>(  num_items / 2,                              entropy_reduction, max_segment, CUB_TYPE_STRING(long long));
+    ComparePointer<TestFoo>(    num_items / 4,                              entropy_reduction, max_segment, CUB_TYPE_STRING(TestFoo));
+
+#else
+
+    // Compile/run thorough tests
+    for (int i = 0; i <= g_repeat; ++i)
     {
-        // Quick test
-        if (num_items < 0) num_items = 32000000;
+        // Test different input types
+        Test<unsigned char>(num_items, CUB_TYPE_STRING(unsigned char));
+        Test<unsigned short>(num_items, CUB_TYPE_STRING(unsigned short));
+        Test<unsigned int>(num_items, CUB_TYPE_STRING(unsigned int));
+        Test<unsigned long long>(num_items, CUB_TYPE_STRING(unsigned long long));
 
-        ComparePointer<char>(       num_items * ((sm_version <= 130) ? 1 : 4),  entropy_reduction, max_segment, CUB_TYPE_STRING(char));
-        ComparePointer<short>(      num_items * ((sm_version <= 130) ? 1 : 2),  entropy_reduction, max_segment, CUB_TYPE_STRING(short));
-        ComparePointer<int>(        num_items,                                  entropy_reduction, max_segment, CUB_TYPE_STRING(int));
-        ComparePointer<long long>(  num_items / 2,                              entropy_reduction, max_segment, CUB_TYPE_STRING(long long));
-        ComparePointer<TestFoo>(    num_items / 4,                              entropy_reduction, max_segment, CUB_TYPE_STRING(TestFoo));
+        Test<uchar2>(num_items, CUB_TYPE_STRING(uchar2));
+        Test<ushort2>(num_items, CUB_TYPE_STRING(ushort2));
+        Test<uint2>(num_items, CUB_TYPE_STRING(uint2));
+        Test<ulonglong2>(num_items, CUB_TYPE_STRING(ulonglong2));
 
+        Test<uchar4>(num_items, CUB_TYPE_STRING(uchar4));
+        Test<ushort4>(num_items, CUB_TYPE_STRING(ushort4));
+        Test<uint4>(num_items, CUB_TYPE_STRING(uint4));
+        Test<ulonglong4>(num_items, CUB_TYPE_STRING(ulonglong4));
+
+        Test<TestFoo>(num_items, CUB_TYPE_STRING(TestFoo));
+        Test<TestBar>(num_items, CUB_TYPE_STRING(TestBar));
     }
-    else
-    {
-        // Repeat test sequence
-        for (int i = 0; i <= g_repeat; ++i)
-        {
-            // Test different input types
-            Test<unsigned char>(num_items, CUB_TYPE_STRING(unsigned char));
-            Test<unsigned short>(num_items, CUB_TYPE_STRING(unsigned short));
-            Test<unsigned int>(num_items, CUB_TYPE_STRING(unsigned int));
-            Test<unsigned long long>(num_items, CUB_TYPE_STRING(unsigned long long));
 
-            Test<uchar2>(num_items, CUB_TYPE_STRING(uchar2));
-            Test<ushort2>(num_items, CUB_TYPE_STRING(ushort2));
-            Test<uint2>(num_items, CUB_TYPE_STRING(uint2));
-            Test<ulonglong2>(num_items, CUB_TYPE_STRING(ulonglong2));
-
-            Test<uchar4>(num_items, CUB_TYPE_STRING(uchar4));
-            Test<ushort4>(num_items, CUB_TYPE_STRING(ushort4));
-            Test<uint4>(num_items, CUB_TYPE_STRING(uint4));
-            Test<ulonglong4>(num_items, CUB_TYPE_STRING(ulonglong4));
-
-            Test<TestFoo>(num_items, CUB_TYPE_STRING(TestFoo));
-            Test<TestBar>(num_items, CUB_TYPE_STRING(TestBar));
-        }
-    }
+#endif
 
     return 0;
 }

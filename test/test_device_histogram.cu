@@ -607,51 +607,52 @@ int main(int argc, char** argv)
     // Initialize device
     CubDebugExit(args.DeviceInit());
 
-    if (quick)
+#ifdef QUICK_TEST
+
+    // Compile/run quick tests
+    if (num_samples < 0) num_samples = 32000000;
+
+    printf("SINGLE CHANNEL:\n\n");
+    TestCnp<256, 1, 1, unsigned char, unsigned char, int>(Int2Type<DEVICE_HISTO_SORT>(),          RANDOM,  Cast<unsigned char>(), num_samples, CUB_TYPE_STRING(unsigned char));
+    TestCnp<256, 1, 1, unsigned char, unsigned char, int>(Int2Type<DEVICE_HISTO_SORT>(),          UNIFORM, Cast<unsigned char>(), num_samples, CUB_TYPE_STRING(unsigned char));
+    printf("\n");
+    TestCnp<256, 1, 1, unsigned char, unsigned char, int>(Int2Type<DEVICE_HISTO_SHARED_ATOMIC>(), RANDOM,  Cast<unsigned char>(), num_samples, CUB_TYPE_STRING(unsigned char));
+    TestCnp<256, 1, 1, unsigned char, unsigned char, int>(Int2Type<DEVICE_HISTO_SHARED_ATOMIC>(), UNIFORM, Cast<unsigned char>(), num_samples, CUB_TYPE_STRING(unsigned char));
+    printf("\n");
+    TestCnp<256, 1, 1, unsigned char, unsigned char, int>(Int2Type<DEVICE_HISTO_GLOBAL_ATOMIC>(), RANDOM,  Cast<unsigned char>(), num_samples, CUB_TYPE_STRING(unsigned char));
+    TestCnp<256, 1, 1, unsigned char, unsigned char, int>(Int2Type<DEVICE_HISTO_GLOBAL_ATOMIC>(), UNIFORM, Cast<unsigned char>(), num_samples, CUB_TYPE_STRING(unsigned char));
+    printf("\n");
+
+    printf("3/4 CHANNEL (RGB/RGBA):\n\n");
+    TestCnp<256, 4, 3, unsigned char, unsigned char, int>(Int2Type<DEVICE_HISTO_SORT>(),          RANDOM,  Cast<unsigned char>(), num_samples * 4, CUB_TYPE_STRING(unsigned char));
+    TestCnp<256, 4, 3, unsigned char, unsigned char, int>(Int2Type<DEVICE_HISTO_SORT>(),          UNIFORM, Cast<unsigned char>(), num_samples * 4, CUB_TYPE_STRING(unsigned char));
+    printf("\n");
+    TestCnp<256, 4, 3, unsigned char, unsigned char, int>(Int2Type<DEVICE_HISTO_SHARED_ATOMIC>(), RANDOM,  Cast<unsigned char>(), num_samples * 4, CUB_TYPE_STRING(unsigned char));
+    TestCnp<256, 4, 3, unsigned char, unsigned char, int>(Int2Type<DEVICE_HISTO_SHARED_ATOMIC>(), UNIFORM, Cast<unsigned char>(), num_samples * 4, CUB_TYPE_STRING(unsigned char));
+    printf("\n");
+    TestCnp<256, 4, 3, unsigned char, unsigned char, int>(Int2Type<DEVICE_HISTO_GLOBAL_ATOMIC>(), RANDOM,  Cast<unsigned char>(), num_samples * 4, CUB_TYPE_STRING(unsigned char));
+    TestCnp<256, 4, 3, unsigned char, unsigned char, int>(Int2Type<DEVICE_HISTO_GLOBAL_ATOMIC>(), UNIFORM, Cast<unsigned char>(), num_samples * 4, CUB_TYPE_STRING(unsigned char));
+    printf("\n");
+
+#else
+
+    // Compile/run thorough tests
+    for (int i = 0; i <= g_repeat; ++i)
     {
-        // Quick test
-        if (num_samples < 0) num_samples = 32000000;
+        // 256-bin tests
+        Test<256, unsigned char,    unsigned char, int>(Cast<unsigned char>(),              num_samples, CUB_TYPE_STRING(unsigned char));
+        Test<256, unsigned short,   unsigned char, int>(Cast<unsigned char>(),              num_samples, CUB_TYPE_STRING(unsigned short));
+        Test<256, unsigned int,     unsigned char, int>(Cast<unsigned char>(),              num_samples, CUB_TYPE_STRING(unsigned int));
+        Test<256, float,            unsigned char, int>(FloatScaleOp<unsigned char, 256>(), num_samples, CUB_TYPE_STRING(float));
 
-        printf("SINGLE CHANNEL:\n\n");
-        TestCnp<256, 1, 1, unsigned char, unsigned char, int>(Int2Type<DEVICE_HISTO_SORT>(),          RANDOM,  Cast<unsigned char>(), num_samples, CUB_TYPE_STRING(unsigned char));
-        TestCnp<256, 1, 1, unsigned char, unsigned char, int>(Int2Type<DEVICE_HISTO_SORT>(),          UNIFORM, Cast<unsigned char>(), num_samples, CUB_TYPE_STRING(unsigned char));
-        printf("\n");
-        TestCnp<256, 1, 1, unsigned char, unsigned char, int>(Int2Type<DEVICE_HISTO_SHARED_ATOMIC>(), RANDOM,  Cast<unsigned char>(), num_samples, CUB_TYPE_STRING(unsigned char));
-        TestCnp<256, 1, 1, unsigned char, unsigned char, int>(Int2Type<DEVICE_HISTO_SHARED_ATOMIC>(), UNIFORM, Cast<unsigned char>(), num_samples, CUB_TYPE_STRING(unsigned char));
-        printf("\n");
-        TestCnp<256, 1, 1, unsigned char, unsigned char, int>(Int2Type<DEVICE_HISTO_GLOBAL_ATOMIC>(), RANDOM,  Cast<unsigned char>(), num_samples, CUB_TYPE_STRING(unsigned char));
-        TestCnp<256, 1, 1, unsigned char, unsigned char, int>(Int2Type<DEVICE_HISTO_GLOBAL_ATOMIC>(), UNIFORM, Cast<unsigned char>(), num_samples, CUB_TYPE_STRING(unsigned char));
-        printf("\n");
-
-        printf("3/4 CHANNEL (RGB/RGBA):\n\n");
-        TestCnp<256, 4, 3, unsigned char, unsigned char, int>(Int2Type<DEVICE_HISTO_SORT>(),          RANDOM,  Cast<unsigned char>(), num_samples * 4, CUB_TYPE_STRING(unsigned char));
-        TestCnp<256, 4, 3, unsigned char, unsigned char, int>(Int2Type<DEVICE_HISTO_SORT>(),          UNIFORM, Cast<unsigned char>(), num_samples * 4, CUB_TYPE_STRING(unsigned char));
-        printf("\n");
-        TestCnp<256, 4, 3, unsigned char, unsigned char, int>(Int2Type<DEVICE_HISTO_SHARED_ATOMIC>(), RANDOM,  Cast<unsigned char>(), num_samples * 4, CUB_TYPE_STRING(unsigned char));
-        TestCnp<256, 4, 3, unsigned char, unsigned char, int>(Int2Type<DEVICE_HISTO_SHARED_ATOMIC>(), UNIFORM, Cast<unsigned char>(), num_samples * 4, CUB_TYPE_STRING(unsigned char));
-        printf("\n");
-        TestCnp<256, 4, 3, unsigned char, unsigned char, int>(Int2Type<DEVICE_HISTO_GLOBAL_ATOMIC>(), RANDOM,  Cast<unsigned char>(), num_samples * 4, CUB_TYPE_STRING(unsigned char));
-        TestCnp<256, 4, 3, unsigned char, unsigned char, int>(Int2Type<DEVICE_HISTO_GLOBAL_ATOMIC>(), UNIFORM, Cast<unsigned char>(), num_samples * 4, CUB_TYPE_STRING(unsigned char));
-        printf("\n");
+        // 512-bin tests
+        Test<512, unsigned char,    unsigned short, int>(Cast<unsigned short>(),              num_samples, CUB_TYPE_STRING(unsigned char));
+        Test<512, unsigned short,   unsigned short, int>(Cast<unsigned short>(),              num_samples, CUB_TYPE_STRING(unsigned short));
+        Test<512, unsigned int,     unsigned short, int>(Cast<unsigned short>(),              num_samples, CUB_TYPE_STRING(unsigned int));
+        Test<512, float,            unsigned short, int>(FloatScaleOp<unsigned short, 512>(), num_samples, CUB_TYPE_STRING(float));
     }
-    else
-    {
-        // Repeat test sequence
-        for (int i = 0; i <= g_repeat; ++i)
-        {
-            // 256-bin tests
-            Test<256, unsigned char,    unsigned char, int>(Cast<unsigned char>(),              num_samples, CUB_TYPE_STRING(unsigned char));
-            Test<256, unsigned short,   unsigned char, int>(Cast<unsigned char>(),              num_samples, CUB_TYPE_STRING(unsigned short));
-            Test<256, unsigned int,     unsigned char, int>(Cast<unsigned char>(),              num_samples, CUB_TYPE_STRING(unsigned int));
-            Test<256, float,            unsigned char, int>(FloatScaleOp<unsigned char, 256>(), num_samples, CUB_TYPE_STRING(float));
 
-            // 512-bin tests
-            Test<512, unsigned char,    unsigned short, int>(Cast<unsigned short>(),              num_samples, CUB_TYPE_STRING(unsigned char));
-            Test<512, unsigned short,   unsigned short, int>(Cast<unsigned short>(),              num_samples, CUB_TYPE_STRING(unsigned short));
-            Test<512, unsigned int,     unsigned short, int>(Cast<unsigned short>(),              num_samples, CUB_TYPE_STRING(unsigned int));
-            Test<512, float,            unsigned short, int>(FloatScaleOp<unsigned short, 512>(), num_samples, CUB_TYPE_STRING(float));
-        }
-    }
+#endif
 
     return 0;
 }
