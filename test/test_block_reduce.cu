@@ -523,7 +523,6 @@ int main(int argc, char** argv)
     // Initialize command line
     CommandLineArgs args(argc, argv);
     g_verbose = args.CheckCmdLineFlag("v");
-    bool quick = args.CheckCmdLineFlag("quick");
     args.GetCmdLineArgument("repeat", g_repeat);
 
     // Print usage
@@ -532,7 +531,6 @@ int main(int argc, char** argv)
         printf("%s "
             "[--device=<device-id>] "
             "[--repeat=<repetitions of entire test suite>]"
-            "[--quick]"
             "[--v] "
             "\n", argv[0]);
         exit(0);

@@ -172,7 +172,6 @@ struct DeviceSelectDispatch
                 128,
                 ITEMS_PER_THREAD,
                 BLOCK_LOAD_DIRECT,
-                false,
                 LOAD_LDG,
                 true,
                 BLOCK_SCAN_WARP_SCANS>
@@ -191,7 +190,6 @@ struct DeviceSelectDispatch
                 256,
                 ITEMS_PER_THREAD,
                 BLOCK_LOAD_WARP_TRANSPOSE,
-                false,
                 LOAD_DEFAULT,
                 true,
                 BLOCK_SCAN_RAKING_MEMOIZE>
@@ -210,7 +208,6 @@ struct DeviceSelectDispatch
                 128,
                 ITEMS_PER_THREAD,
                 BLOCK_LOAD_WARP_TRANSPOSE,
-                false,
                 LOAD_DEFAULT,
                 true,
                 BLOCK_SCAN_WARP_SCANS>
@@ -229,7 +226,6 @@ struct DeviceSelectDispatch
                 64,
                 ITEMS_PER_THREAD,
                 BLOCK_LOAD_WARP_TRANSPOSE,
-                true,
                 LOAD_DEFAULT,
                 true,
                 BLOCK_SCAN_RAKING_MEMOIZE>
@@ -248,7 +244,6 @@ struct DeviceSelectDispatch
                 128,
                 ITEMS_PER_THREAD,
                 BLOCK_LOAD_WARP_TRANSPOSE,
-                true,
                 LOAD_DEFAULT,
                 true,
                 BLOCK_SCAN_RAKING>
