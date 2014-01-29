@@ -894,50 +894,51 @@ int main(int argc, char** argv)
     CubDebugExit(args.DeviceInit());
     printf("\n");
 
-    if (quick)
+#ifdef QUICK_TEST
+
+    // Compile/run quick tests
+    if (num_items < 0) num_items = 32000000;
+
+    TestPointer<CUB, char>(         num_items * 4, UNIFORM, Sum(), CUB_TYPE_STRING(char));
+    TestPointer<THRUST, char>(      num_items * 4, UNIFORM, Sum(), CUB_TYPE_STRING(char));
+
+    printf("\n----------------------------\n");
+    TestPointer<CUB, short>(        num_items * 2, UNIFORM, Sum(), CUB_TYPE_STRING(short));
+    TestPointer<THRUST, short>(     num_items * 2, UNIFORM, Sum(), CUB_TYPE_STRING(short));
+
+    printf("\n----------------------------\n");
+    TestPointer<CUB, int>(          num_items,     UNIFORM, Sum(), CUB_TYPE_STRING(int));
+    TestPointer<THRUST, int>(       num_items,     UNIFORM, Sum(), CUB_TYPE_STRING(int));
+
+    printf("\n----------------------------\n");
+    TestPointer<CUB, long long>(    num_items / 2, UNIFORM, Sum(), CUB_TYPE_STRING(long long));
+    TestPointer<THRUST, long long>( num_items / 2, UNIFORM, Sum(), CUB_TYPE_STRING(long long));
+
+    printf("\n----------------------------\n");
+    TestPointer<CUB, TestFoo>(      num_items / 4, UNIFORM, Max(), CUB_TYPE_STRING(TestFoo));
+    TestPointer<THRUST, TestFoo>(   num_items / 4, UNIFORM, Max(), CUB_TYPE_STRING(TestFoo));
+
+#else
+
+    // Compile/run thorough tests
+    for (int i = 0; i <= g_repeat; ++i)
     {
-        // Quick tests
-        if (num_items < 0) num_items = 32000000;
+        // Test different input types
+        Test<unsigned char>(num_items, CUB_TYPE_STRING(unsigned char));
+        Test<unsigned short>(num_items, CUB_TYPE_STRING(unsigned short));
+        Test<unsigned int>(num_items, CUB_TYPE_STRING(unsigned int));
+        Test<unsigned long long>(num_items, CUB_TYPE_STRING(unsigned long long));
 
-        TestPointer<CUB, char>(         num_items * 4, UNIFORM, Sum(), CUB_TYPE_STRING(char));
-        TestPointer<THRUST, char>(      num_items * 4, UNIFORM, Sum(), CUB_TYPE_STRING(char));
+        Test<uchar2>(num_items, CUB_TYPE_STRING(uchar2));
+        Test<uint2>(num_items, CUB_TYPE_STRING(uint2));
+        Test<ulonglong2>(num_items, CUB_TYPE_STRING(ulonglong2));
+        Test<ulonglong4>(num_items, CUB_TYPE_STRING(ulonglong4));
 
-        printf("\n----------------------------\n");
-        TestPointer<CUB, short>(        num_items * 2, UNIFORM, Sum(), CUB_TYPE_STRING(short));
-        TestPointer<THRUST, short>(     num_items * 2, UNIFORM, Sum(), CUB_TYPE_STRING(short));
-
-        printf("\n----------------------------\n");
-        TestPointer<CUB, int>(          num_items,     UNIFORM, Sum(), CUB_TYPE_STRING(int));
-        TestPointer<THRUST, int>(       num_items,     UNIFORM, Sum(), CUB_TYPE_STRING(int));
-
-        printf("\n----------------------------\n");
-        TestPointer<CUB, long long>(    num_items / 2, UNIFORM, Sum(), CUB_TYPE_STRING(long long));
-        TestPointer<THRUST, long long>( num_items / 2, UNIFORM, Sum(), CUB_TYPE_STRING(long long));
-
-        printf("\n----------------------------\n");
-        TestPointer<CUB, TestFoo>(      num_items / 4, UNIFORM, Max(), CUB_TYPE_STRING(TestFoo));
-        TestPointer<THRUST, TestFoo>(   num_items / 4, UNIFORM, Max(), CUB_TYPE_STRING(TestFoo));
+        Test<TestFoo>(num_items, CUB_TYPE_STRING(TestFoo));
+        Test<TestBar>(num_items, CUB_TYPE_STRING(TestBar));
     }
-    else
-    {
-        // Repeat test sequence
-        for (int i = 0; i <= g_repeat; ++i)
-        {
-            // Test different input types
-            Test<unsigned char>(num_items, CUB_TYPE_STRING(unsigned char));
-            Test<unsigned short>(num_items, CUB_TYPE_STRING(unsigned short));
-            Test<unsigned int>(num_items, CUB_TYPE_STRING(unsigned int));
-            Test<unsigned long long>(num_items, CUB_TYPE_STRING(unsigned long long));
 
-            Test<uchar2>(num_items, CUB_TYPE_STRING(uchar2));
-            Test<uint2>(num_items, CUB_TYPE_STRING(uint2));
-            Test<ulonglong2>(num_items, CUB_TYPE_STRING(ulonglong2));
-            Test<ulonglong4>(num_items, CUB_TYPE_STRING(ulonglong4));
-
-            Test<TestFoo>(num_items, CUB_TYPE_STRING(TestFoo));
-            Test<TestBar>(num_items, CUB_TYPE_STRING(TestBar));
-        }
-    }
+#endif
 
     return 0;
 }

@@ -545,41 +545,42 @@ int main(int argc, char** argv)
     int ptx_version;
     CubDebugExit(PtxVersion(ptx_version));
 
-    if (quick)
+#ifdef QUICK_TEST
+
+    // Compile/run quick tests
+    typedef int T;
+    TestFullTile<BLOCK_REDUCE_RAKING, 128, 4, T>(UNIFORM, 1, Sum(), CUB_TYPE_STRING(T));
+
+#else
+
+    // Compile/run thorough tests
+    for (int i = 0; i <= g_repeat; ++i)
     {
-        // Quick test
-        typedef int T;
-        TestFullTile<BLOCK_REDUCE_RAKING, 128, 4, T>(UNIFORM, 1, Sum(), CUB_TYPE_STRING(T));
+        // primitives
+        Test<char>(CUB_TYPE_STRING(char));
+        Test<short>(CUB_TYPE_STRING(short));
+        Test<int>(CUB_TYPE_STRING(int));
+        Test<long long>(CUB_TYPE_STRING(long long));
+        if (ptx_version > 100)                          // Don't check doubles on PTX100 because they're down-converted
+            Test<double>(CUB_TYPE_STRING(double));
+
+        // vector types
+        Test<char2>(CUB_TYPE_STRING(char2));
+        Test<short2>(CUB_TYPE_STRING(short2));
+        Test<int2>(CUB_TYPE_STRING(int2));
+        Test<longlong2>(CUB_TYPE_STRING(longlong2));
+
+        Test<char4>(CUB_TYPE_STRING(char4));
+        Test<short4>(CUB_TYPE_STRING(short4));
+        Test<int4>(CUB_TYPE_STRING(int4));
+        Test<longlong4>(CUB_TYPE_STRING(longlong4));
+
+        // Complex types
+        Test<TestFoo>(CUB_TYPE_STRING(TestFoo));
+        Test<TestBar>(CUB_TYPE_STRING(TestBar));
     }
-    else
-    {
-        // Repeat test sequence
-        for (int i = 0; i <= g_repeat; ++i)
-        {
-            // primitives
-            Test<char>(CUB_TYPE_STRING(char));
-            Test<short>(CUB_TYPE_STRING(short));
-            Test<int>(CUB_TYPE_STRING(int));
-            Test<long long>(CUB_TYPE_STRING(long long));
-            if (ptx_version > 100)                          // Don't check doubles on PTX100 because they're down-converted
-                Test<double>(CUB_TYPE_STRING(double));
 
-            // vector types
-            Test<char2>(CUB_TYPE_STRING(char2));
-            Test<short2>(CUB_TYPE_STRING(short2));
-            Test<int2>(CUB_TYPE_STRING(int2));
-            Test<longlong2>(CUB_TYPE_STRING(longlong2));
-
-            Test<char4>(CUB_TYPE_STRING(char4));
-            Test<short4>(CUB_TYPE_STRING(short4));
-            Test<int4>(CUB_TYPE_STRING(int4));
-            Test<longlong4>(CUB_TYPE_STRING(longlong4));
-
-            // Complex types
-            Test<TestFoo>(CUB_TYPE_STRING(TestFoo));
-            Test<TestBar>(CUB_TYPE_STRING(TestBar));
-        }
-    }
+#endif
 
     return 0;
 }

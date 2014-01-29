@@ -726,29 +726,30 @@ int main(int argc, char** argv)
     // Initialize device
     CubDebugExit(args.DeviceInit());
 
-    if (quick)
-    {
-        // Quick test
-        Test<128, 1, AGGREGATE, BLOCK_SCAN_WARP_SCANS>(UNIFORM, Sum(), int(0), int(10), CUB_TYPE_STRING(Sum<int>));
-        Test<128, 4, AGGREGATE, BLOCK_SCAN_RAKING_MEMOIZE>(UNIFORM, Sum(), int(0), int(10), CUB_TYPE_STRING(Sum<int>));
+#ifdef QUICK_TEST
 
-        TestFoo prefix = TestFoo::MakeTestFoo(17, 21, 32, 85);
-        Test<128, 2, PREFIX_AGGREGATE, BLOCK_SCAN_RAKING>(SEQ_INC, Sum(), NullType(), prefix, CUB_TYPE_STRING(Sum<TestFoo>));
-    }
-    else
+    // Compile/run quick tests
+    Test<128, 1, AGGREGATE, BLOCK_SCAN_WARP_SCANS>(UNIFORM, Sum(), int(0), int(10), CUB_TYPE_STRING(Sum<int>));
+    Test<128, 4, AGGREGATE, BLOCK_SCAN_RAKING_MEMOIZE>(UNIFORM, Sum(), int(0), int(10), CUB_TYPE_STRING(Sum<int>));
+
+    TestFoo prefix = TestFoo::MakeTestFoo(17, 21, 32, 85);
+    Test<128, 2, PREFIX_AGGREGATE, BLOCK_SCAN_RAKING>(SEQ_INC, Sum(), NullType(), prefix, CUB_TYPE_STRING(Sum<TestFoo>));
+
+#else
+
+    // Compile/run thorough tests
+    for (int i = 0; i <= g_repeat; ++i)
     {
-        // Repeat test sequence
-        for (int i = 0; i <= g_repeat; ++i)
-        {
-            // Run tests for different threadblock sizes
-            Test<17>();
-            Test<32>();
-            Test<62>();
-            Test<65>();
+        // Run tests for different threadblock sizes
+        Test<17>();
+        Test<32>();
+        Test<62>();
+        Test<65>();
 //            Test<96>();             // TODO: file bug for UNREACHABLE error for Test<96, 9, BASIC, BLOCK_SCAN_RAKING>(UNIFORM, Sum(), NullType(), make_ulonglong2(17, 21), CUB_TYPE_STRING(Sum<ulonglong2>));
-            Test<128>();
-        }
+        Test<128>();
     }
+
+#endif
 
     return 0;
 }

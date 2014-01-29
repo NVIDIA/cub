@@ -813,57 +813,56 @@ int main(int argc, char** argv)
     int sm_version;
     CubDebugExit(SmVersion(sm_version, device_ordinal));
 
-    if (quick)
+#ifdef QUICK_TEST
+
+    // Compile/run quick tests
+    if (num_items < 0) num_items = 32000000;
+
+    TestPointer<CUB, char>(        num_items * ((sm_version <= 130) ? 1 : 4), UNIFORM, Sum(), char(0), CUB_TYPE_STRING(char));
+    TestPointer<THRUST, char>(     num_items * ((sm_version <= 130) ? 1 : 4), UNIFORM, Sum(), char(0), CUB_TYPE_STRING(char));
+
+    printf("----------------------------\n");
+    TestPointer<CUB, short>(       num_items * ((sm_version <= 130) ? 1 : 2), UNIFORM, Sum(), short(0), CUB_TYPE_STRING(short));
+    TestPointer<THRUST, short>(    num_items * ((sm_version <= 130) ? 1 : 2), UNIFORM, Sum(), short(0), CUB_TYPE_STRING(short));
+
+    printf("----------------------------\n");
+    TestPointer<CUB, int>(         num_items    , UNIFORM, Sum(), (int) (0), CUB_TYPE_STRING(int));
+    TestPointer<THRUST, int>(      num_items    , UNIFORM, Sum(), (int) (0), CUB_TYPE_STRING(int));
+
+    printf("----------------------------\n");
+    TestPointer<CUB, long long>(   num_items / 2, UNIFORM, Sum(), (long long) (0), CUB_TYPE_STRING(long long));
+    TestPointer<THRUST, long long>(num_items / 2, UNIFORM, Sum(), (long long) (0), CUB_TYPE_STRING(long long));
+
+    printf("----------------------------\n");
+    TestPointer<CUB, TestBar>(     num_items / 4, UNIFORM, Sum(), TestBar(), CUB_TYPE_STRING(TestBar));
+    TestPointer<THRUST, TestBar>(  num_items / 4, UNIFORM, Sum(), TestBar(), CUB_TYPE_STRING(TestBar));
+
+#else
+
+    // Compile/run thorough tests
+    for (int i = 0; i <= g_repeat; ++i)
     {
-        // Quick test
-        if (num_items < 0) num_items = 32000000;
+        // Test different input types
+        TestSize<unsigned char>(num_items, 0, CUB_TYPE_STRING(unsigned char));
+        TestSize<unsigned short>(num_items, 0, CUB_TYPE_STRING(unsigned short));
+        TestSize<unsigned int>(num_items, 0, CUB_TYPE_STRING(unsigned int));
+        TestSize<unsigned long long>(num_items, 0, CUB_TYPE_STRING(unsigned long long));
 
-        TestPointer<CUB, char>(        num_items * ((sm_version <= 130) ? 1 : 4), UNIFORM, Sum(), char(0), CUB_TYPE_STRING(char));
-        TestPointer<THRUST, char>(     num_items * ((sm_version <= 130) ? 1 : 4), UNIFORM, Sum(), char(0), CUB_TYPE_STRING(char));
+        TestSize<uchar2>(num_items, make_uchar2(0, 0), CUB_TYPE_STRING(uchar2));
+        TestSize<ushort2>(num_items, make_ushort2(0, 0), CUB_TYPE_STRING(ushort2));
+        TestSize<uint2>(num_items, make_uint2(0, 0), CUB_TYPE_STRING(uint2));
+        TestSize<ulonglong2>(num_items, make_ulonglong2(0, 0), CUB_TYPE_STRING(ulonglong2));
 
-        printf("----------------------------\n");
-        TestPointer<CUB, short>(       num_items * ((sm_version <= 130) ? 1 : 2), UNIFORM, Sum(), short(0), CUB_TYPE_STRING(short));
-        TestPointer<THRUST, short>(    num_items * ((sm_version <= 130) ? 1 : 2), UNIFORM, Sum(), short(0), CUB_TYPE_STRING(short));
+        TestSize<uchar4>(num_items, make_uchar4(0, 0, 0, 0), CUB_TYPE_STRING(uchar4));
+        TestSize<ushort4>(num_items, make_ushort4(0, 0, 0, 0), CUB_TYPE_STRING(ushort4));
+        TestSize<uint4>(num_items, make_uint4(0, 0, 0, 0), CUB_TYPE_STRING(uint4));
+        TestSize<ulonglong4>(num_items, make_ulonglong4(0, 0, 0, 0), CUB_TYPE_STRING(ulonglong4));
 
-        printf("----------------------------\n");
-        TestPointer<CUB, int>(         num_items    , UNIFORM, Sum(), (int) (0), CUB_TYPE_STRING(int));
-        TestPointer<THRUST, int>(      num_items    , UNIFORM, Sum(), (int) (0), CUB_TYPE_STRING(int));
-
-        printf("----------------------------\n");
-        TestPointer<CUB, long long>(   num_items / 2, UNIFORM, Sum(), (long long) (0), CUB_TYPE_STRING(long long));
-        TestPointer<THRUST, long long>(num_items / 2, UNIFORM, Sum(), (long long) (0), CUB_TYPE_STRING(long long));
-
-        printf("----------------------------\n");
-        TestPointer<CUB, TestBar>(     num_items / 4, UNIFORM, Sum(), TestBar(), CUB_TYPE_STRING(TestBar));
-        TestPointer<THRUST, TestBar>(  num_items / 4, UNIFORM, Sum(), TestBar(), CUB_TYPE_STRING(TestBar));
+        TestSize<TestFoo>(num_items, TestFoo::MakeTestFoo(1ll << 63, 1 << 31, short(1 << 15), char(1 << 7)), CUB_TYPE_STRING(TestFoo));
+        TestSize<TestBar>(num_items, TestBar(1ll << 63, 1 << 31), CUB_TYPE_STRING(TestBar));
     }
-    else
-    {
 
-        // Repeat test sequence
-        for (int i = 0; i <= g_repeat; ++i)
-        {
-            // Test different input types
-            TestSize<unsigned char>(num_items, 0, CUB_TYPE_STRING(unsigned char));
-            TestSize<unsigned short>(num_items, 0, CUB_TYPE_STRING(unsigned short));
-            TestSize<unsigned int>(num_items, 0, CUB_TYPE_STRING(unsigned int));
-            TestSize<unsigned long long>(num_items, 0, CUB_TYPE_STRING(unsigned long long));
-
-            TestSize<uchar2>(num_items, make_uchar2(0, 0), CUB_TYPE_STRING(uchar2));
-            TestSize<ushort2>(num_items, make_ushort2(0, 0), CUB_TYPE_STRING(ushort2));
-            TestSize<uint2>(num_items, make_uint2(0, 0), CUB_TYPE_STRING(uint2));
-            TestSize<ulonglong2>(num_items, make_ulonglong2(0, 0), CUB_TYPE_STRING(ulonglong2));
-
-            TestSize<uchar4>(num_items, make_uchar4(0, 0, 0, 0), CUB_TYPE_STRING(uchar4));
-            TestSize<ushort4>(num_items, make_ushort4(0, 0, 0, 0), CUB_TYPE_STRING(ushort4));
-            TestSize<uint4>(num_items, make_uint4(0, 0, 0, 0), CUB_TYPE_STRING(uint4));
-            TestSize<ulonglong4>(num_items, make_ulonglong4(0, 0, 0, 0), CUB_TYPE_STRING(ulonglong4));
-
-            TestSize<TestFoo>(num_items, TestFoo::MakeTestFoo(1ll << 63, 1 << 31, short(1 << 15), char(1 << 7)), CUB_TYPE_STRING(TestFoo));
-            TestSize<TestBar>(num_items, TestBar(1ll << 63, 1 << 31), CUB_TYPE_STRING(TestBar));
-        }
-
-    }
+#endif
 
     return 0;
 }
