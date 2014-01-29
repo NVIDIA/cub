@@ -113,17 +113,48 @@ struct BlockReduceByKeyRegion
     // Data type of value iterator
     typedef typename std::iterator_traits<ValueInputIterator>::value_type Value;
 
-    // Key iterator wrapper type
+    // Cache-modified input iterator wrapper type for keys
     typedef typename If<IsPointer<KeyInputIterator>::VALUE,
             CacheModifiedInputIterator<BlockReduceByKeyRegionPolicy::LOAD_MODIFIER, Key, Offset>,   // Wrap the native input pointer with CacheModifiedValueInputIterator
             KeyInputIterator>::Type                                                                 // Directly use the supplied input iterator type
         WrappedKeyInputIterator;
 
-    // Value iterator wrapper type
+    // Cache-modified input iterator wrapper type for values
     typedef typename If<IsPointer<ValueInputIterator>::VALUE,
             CacheModifiedInputIterator<BlockReduceByKeyRegionPolicy::LOAD_MODIFIER, Value, Offset>,  // Wrap the native input pointer with CacheModifiedValueInputIterator
             ValueInputIterator>::Type                                                                // Directly use the supplied input iterator type
         WrappedValueInputIterator;
+
+    // Key-value tuple type
+    typedef KeyValuePair<Key, Value> KeyValuePair;
+
+    // Value-offset tuple type (maps accumulated values to segment index)
+    typedef ItemOffsetPair<Value, Offset> ValueOffsetPair;
+
+    // Reduce-value-by-segment scan operator
+    struct ReduceByKeyOp
+    {
+        ReductionOp op;                 ///< Wrapped reduction operator
+
+        /// Constructor
+        __device__ __forceinline__ ReduceByKeyOp(ReductionOp op) : op(op) {}
+
+        /// Scan operator
+        __device__ __forceinline__ ValueOffsetPair operator()(
+            const ValueOffsetPair &first,       ///< First partial reduction
+            const ValueOffsetPair &second)      ///< Second partial reduction
+        {
+            ValueOffsetPair retval;
+
+            retval.offset = first.offset + second.offset;   // Accumulate number of segment resets from each into the running aggregate
+
+            retval.value = (second.offset) ?
+                    second.value :                          // The second partial reduction spans a segment reset, so it's value aggregate becomes the running aggregate
+                    op(first.value, second.value);          // The second partial reduction does not span a reset, so accumulate both into the running aggregate
+
+            return retval;
+        }
+    };
 
     // Constants
     enum
@@ -152,12 +183,9 @@ struct BlockReduceByKeyRegion
             BlockReduceByKeyRegionPolicy::LOAD_WARP_TIME_SLICING>
         BlockLoadValues;
 
-    // Key-value tuple type
-    typedef KeyValuePair<Key, Value> KeyValuePair;
-
     // Parameterized BlockExchange type for locally compacting items as part of a two-phase scatter
     typedef BlockExchange<
-        KeyValuePair,
+            KeyValuePair,
             BLOCK_THREADS,
             ITEMS_PER_THREAD>
         BlockExchangeT;
@@ -166,7 +194,7 @@ struct BlockReduceByKeyRegion
     typedef BlockDiscontinuity<Key, BLOCK_THREADS> BlockDiscontinuityKeys;
 
     // Tile status descriptor type
-    typedef LookbackTileDescriptor<Offset> TileDescriptor;
+    typedef LookbackTileDescriptor<ValueOffsetPair> TileDescriptor;
 
     // Parameterized BlockScan type
     typedef BlockScan<
@@ -177,15 +205,9 @@ struct BlockReduceByKeyRegion
 
     // Callback type for obtaining tile prefix during block scan
     typedef LookbackBlockPrefixCallbackOp<
-            Offset,
-            Sum>
+            ValueOffsetPair,
+            ReduceByKeyOp>
         LookbackPrefixCallbackOp;
-
-    // Stateful BlockScan prefix callback type for managing a running total while scanning consecutive tiles
-    typedef RunningBlockPrefixCallbackOp<
-            Offset,
-            Sum>
-        RunningPrefixCallbackOp;
 
     // Shared memory type for this threadblock
     struct _TempStorage
@@ -198,16 +220,16 @@ struct BlockReduceByKeyRegion
                 typename BlockScanAllocations::TempStorage      scan;       // Smem needed for tile scanning
             };
 
-            // Smem needed for input loading
+            // Smem needed for loading keys
             typename BlockLoadKeys::TempStorage load_items;
 
-            // Smem needed for flag loading
+            // Smem needed for loading values
             typename BlockLoadValues::TempStorage load_flags;
 
             // Smem needed for discontinuity detection
             typename BlockDiscontinuityKeys::TempStorage discontinuity;
 
-            // Smem needed for two-phase scatter
+            // Smem needed for two-phase scatter (NullType if not needed)
             typename If<TWO_PHASE_SCATTER, typename BlockExchangeT::TempStorage, NullType>::Type exchange;
         };
 
@@ -264,43 +286,30 @@ struct BlockReduceByKeyRegion
 
 
     /**
-     * Initialize selection allocations (specialized for discontinuity detection)
+     * Flag the last key in each run of same-valued keys
      */
-    template <bool LAST_TILE, bool FULL_TILE>
-    __device__ __forceinline__ void InitializeAllocations(
+    template <bool LAST_TILE>
+    __device__ __forceinline__ void InitializeFlags(
         Offset                      block_offset,
-        int                         valid_items,
         Key                         (&keys)[ITEMS_PER_THREAD],
-        Offset                      (&allocations)[ITEMS_PER_THREAD])
+        Offset                      (&flags)[ITEMS_PER_THREAD])
     {
         __syncthreads();
-
-        int flags[ITEMS_PER_THREAD];
 
         InequalityWrapper<EqualityOp> inequality_op(equality_op);
 
         if (LAST_TILE)
         {
-            // Last tile always flags the last item
             BlockDiscontinuityKeys(temp_storage.discontinuity).FlagTails(flags, keys, inequality_op);
         }
         else
         {
-            // Other tiles require the first item from the next tile
+            // Obtain the first key in the next tile to compare with
             Key tile_successor_item;
             if (threadIdx.x == 0)
-                tile_successor_item = d_keys_in[block_offset - 1];
+                tile_successor_item = d_keys_in[block_offset + TILE_ITEMS];
 
             BlockDiscontinuityKeys(temp_storage.discontinuity).FlagTails(flags, keys, inequality_op, tile_successor_item);
-        }
-
-        #pragma unroll
-        for (int ITEM = 0; ITEM < ITEMS_PER_THREAD; ++ITEM)
-        {
-            if (FULL_TILE || ((threadIdx.x * ITEMS_PER_THREAD) + ITEM < valid_items))
-            {
-                allocations[ITEM] = flags[ITEM];
-            }
         }
     }
 
@@ -312,60 +321,36 @@ struct BlockReduceByKeyRegion
     /**
      * Scatter data items to select offsets (specialized for direct scattering and for discarding rejected items)
      */
-    template <bool FULL_TILE>
+    template <bool LAST_TILE>
     __device__ __forceinline__ void Scatter(
         Offset          tile_idx,
-        T               (&items)[ITEMS_PER_THREAD],
-        Offset          allocations[ITEMS_PER_THREAD],
-        Offset          allocation_offsets[ITEMS_PER_THREAD],
+        Key             (&keys)[ITEMS_PER_THREAD],
+        ValueOffsetPair (&values_and_offsets)[ITEMS_PER_THREAD],
+        Offset          flags[ITEMS_PER_THREAD],
         Offset          tile_exclusive_prefix,
-        Offset          tile_num_selected,
-        Offset          valid_items,
-        Int2Type<false> keep_rejects,
+        int             valid_items,
         Int2Type<false> two_phase_scatter)
     {
         #pragma unroll
         for (int ITEM = 0; ITEM < ITEMS_PER_THREAD; ++ITEM)
         {
-            if (allocations[ITEM])
+            int tile_item = (threadIdx.x * ITEMS_PER_THREAD) + ITEM;
+
+            // If full tile or item is in range
+            if ((!LAST_TILE) || (tile_item <= valid_items - 1))
+            {
+                // Set flag if last item of last tile
+                if (LAST_TILE && (tile_item == valid_items - 1))
+                    flags[]
+                flags[ITEM] = select_op(items[ITEM]);
+            }
+
+
+
+            if (flags[ITEM])
             {
                 // Selected items are placed front-to-back
-                d_out[allocation_offsets[ITEM]] = items[ITEM];
-            }
-        }
-    }
-
-
-    /**
-     * Scatter data items to select offsets (specialized for direct scattering and for partitioning rejected items after selected items)
-     */
-    template <bool FULL_TILE>
-    __device__ __forceinline__ void Scatter(
-        Offset          tile_idx,
-        T               (&items)[ITEMS_PER_THREAD],
-        Offset          allocations[ITEMS_PER_THREAD],
-        Offset          allocation_offsets[ITEMS_PER_THREAD],
-        Offset          tile_exclusive_prefix,
-        Offset          tile_num_selected,
-        Offset          valid_items,
-        Int2Type<true>  keep_rejects,
-        Int2Type<false> two_phase_scatter)
-    {
-        #pragma unroll
-        for (int ITEM = 0; ITEM < ITEMS_PER_THREAD; ++ITEM)
-        {
-            if (allocations[ITEM])
-            {
-                // Selected items are placed front-to-back
-                d_out[allocation_offsets[ITEM]] = items[ITEM];
-            }
-            else if (FULL_TILE || ((threadIdx.x * ITEMS_PER_THREAD) + ITEM < valid_items))
-            {
-                Offset global_idx = (tile_idx * TILE_ITEMS) + (threadIdx.x * ITEMS_PER_THREAD) + ITEM;
-                Offset reject_idx = global_idx - allocation_offsets[ITEM];
-
-                // Rejected items are placed back-to-front
-                d_out[num_items - reject_idx - 1] = items[ITEM];
+                d_out[scatter_offsets[ITEM]] = items[ITEM];
             }
         }
     }
@@ -378,8 +363,8 @@ struct BlockReduceByKeyRegion
     __device__ __forceinline__ void Scatter(
         Offset          tile_idx,
         T               (&items)[ITEMS_PER_THREAD],
-        Offset          allocations[ITEMS_PER_THREAD],
-        Offset          allocation_offsets[ITEMS_PER_THREAD],
+        Offset          flags[ITEMS_PER_THREAD],
+        Offset          scatter_offsets[ITEMS_PER_THREAD],
         Offset          tile_exclusive_prefix,
         Offset          tile_num_selected,
         Offset          valid_items,
@@ -392,8 +377,8 @@ struct BlockReduceByKeyRegion
             Scatter<FULL_TILE>(
                 tile_idx,
                 items,
-                allocations,
-                allocation_offsets,
+                flags,
+                scatter_offsets,
                 tile_exclusive_prefix,
                 tile_num_selected,
                 valid_items,
@@ -418,10 +403,10 @@ struct BlockReduceByKeyRegion
             #pragma unroll
             for (int ITEM = 0; ITEM < ITEMS_PER_THREAD; ++ITEM)
             {
-                local_ranks[ITEM] = allocation_offsets[ITEM] - tile_exclusive_prefix;
+                local_ranks[ITEM] = scatter_offsets[ITEM] - tile_exclusive_prefix;
             }
 
-            BlockExchangeT(temp_storage.exchange).ScatterToStriped(items, local_ranks, allocations, tile_num_selected);
+            BlockExchangeT(temp_storage.exchange).ScatterToStriped(items, local_ranks, flags, tile_num_selected);
 
             // Selected items are placed front-to-back
             StoreDirectStriped<BLOCK_THREADS>(threadIdx.x, d_out + tile_exclusive_prefix, items, tile_num_selected);
@@ -429,80 +414,6 @@ struct BlockReduceByKeyRegion
     }
 
 
-    /**
-     * Scatter data items to select offsets (specialized for two-phase scattering and for partitioning rejected items after selected items)
-     */
-    template <bool FULL_TILE>
-    __device__ __forceinline__ void Scatter(
-        Offset          tile_idx,
-        T               (&items)[ITEMS_PER_THREAD],
-        Offset          allocations[ITEMS_PER_THREAD],
-        Offset          allocation_offsets[ITEMS_PER_THREAD],
-        Offset          tile_exclusive_prefix,
-        Offset          tile_num_selected,
-        Offset          valid_items,
-        Int2Type<true>  keep_rejects,
-        Int2Type<true>  two_phase_scatter)
-    {
-        // Share exclusive tile prefix
-        if (threadIdx.x == 0)
-        {
-            temp_storage.tile_exclusive_prefix = tile_exclusive_prefix;
-        }
-
-        __syncthreads();
-
-        // Load exclusive tile prefix in all threads
-        tile_exclusive_prefix = temp_storage.tile_exclusive_prefix;
-
-        int     local_ranks[ITEMS_PER_THREAD];
-        bool    is_valid[ITEMS_PER_THREAD];
-
-        Offset tile_rejected_exclusive_prefix = (tile_idx * TILE_ITEMS) - tile_exclusive_prefix;
-
-        // Determine local scatter offsets
-        #pragma unroll
-        for (int ITEM = 0; ITEM < ITEMS_PER_THREAD; ++ITEM)
-        {
-            is_valid[ITEM] = true;
-            if (allocations[ITEM])
-            {
-                // Selected items
-                local_ranks[ITEM] = allocation_offsets[ITEM] - tile_exclusive_prefix;
-            }
-            else if (FULL_TILE || ((threadIdx.x * ITEMS_PER_THREAD) + ITEM < valid_items))
-            {
-                // Rejected items
-                Offset global_idx = (tile_idx * TILE_ITEMS) + (threadIdx.x * ITEMS_PER_THREAD) + ITEM;
-                Offset reject_idx = global_idx - allocation_offsets[ITEM];
-                local_ranks[ITEM] = (reject_idx - tile_rejected_exclusive_prefix) + tile_num_selected;
-            }
-            else
-            {
-                is_valid[ITEM] = false;
-            }
-        }
-
-        // Coalesce selected and rejected items in shared memory, gathering in striped arrangements
-        BlockExchangeT(temp_storage.exchange).ScatterToStriped(items, local_ranks, is_valid, valid_items);
-
-        // Store in striped order
-        #pragma unroll
-        for (int ITEM = 0; ITEM < ITEMS_PER_THREAD; ITEM++)
-        {
-            Offset local_idx = (ITEM * BLOCK_THREADS) + threadIdx.x;
-            if (local_idx < tile_num_selected)
-            {
-                // Scatter selected items front-to-back
-                d_out[tile_exclusive_prefix + local_idx] = items[ITEM];
-            }
-            else if (local_idx < valid_items)
-            {
-                // Scatter rejected items back-to-front
-                d_out[num_items - (tile_rejected_exclusive_prefix + (local_idx - tile_num_selected)) - 1] = items[ITEM];
-            }
-        }
-    }
 
 
     //---------------------------------------------------------------------
@@ -521,41 +432,42 @@ struct BlockReduceByKeyRegion
     {
         int valid_items = num_items - block_offset;
 
-        // Load items
-        T items[ITEMS_PER_THREAD];
+        // Load keys and values
+        Key keys[ITEMS_PER_THREAD];
+        Key values[ITEMS_PER_THREAD];
 
         if (FULL_TILE)
-            BlockLoadT(temp_storage.load_items).Load(d_in + block_offset, items);
-        else
-            BlockLoadT(temp_storage.load_items).Load(d_in + block_offset, items, valid_items);
-
-        // Zero-initialize output allocations
-        Offset allocations[ITEMS_PER_THREAD];
-        #pragma unroll
-        for (int ITEM = 0; ITEM < ITEMS_PER_THREAD; ++ITEM)
         {
-            allocations[ITEM] = ZeroInitialize<Offset>();
+            BlockLoadT(temp_storage.load_items).Load(d_keys_in + block_offset, keys);
+            BlockLoadT(temp_storage.load_items).Load(d_values_in + block_offset, values);
+        }
+        else
+        {
+            BlockLoadT(temp_storage.load_items).Load(d_keys_in + block_offset, keys, valid_items, d_keys_in[num_items - 1]);        // Repeat last item
+            BlockLoadT(temp_storage.load_items).Load(d_values_in + block_offset, values, valid_items, d_values_in[num_items - 1]);  // Repeat last item
         }
 
-        // Compute allocation offsets
-        Offset allocation_offsets[ITEMS_PER_THREAD];       // Allocation offsets
-        Offset tile_exclusive_prefix;                      // The tile prefixes for selected (and rejected) items
-        Offset tile_num_selected;                            // Total number of items selected (and rejected)
+        // Initialize selections and compute scatter offsets
+        Offset selected[ITEMS_PER_THREAD];                  // Selection flags
+        Offset scatter_offsets[ITEMS_PER_THREAD];           // Scatter offsets
+        Offset tile_num_selected_prefix;                    // Total number of selected items prior to this tile
+        Offset tile_num_selected;                           // Total number of selected items within this tile
+
         if (tile_idx == 0)
         {
-            // Initialize selected/rejected output allocations for first tile
-            InitializeAllocations<true, FULL_TILE>(
+            // Initialize selected/rejected output flags for first tile
+            InitializeFlags<true, FULL_TILE>(
                 block_offset,
                 valid_items,
                 items,
-                allocations,
+                flags,
                 Int2Type<SELECT_METHOD>());
 
             __syncthreads();
 
-            // Scan allocations
-            BlockScanAllocations(temp_storage.scan).ExclusiveSum(allocations, allocation_offsets, tile_num_selected);
-            tile_exclusive_prefix = ZeroInitialize<Offset>();        // Zeros
+            // Scan flags
+            BlockScanAllocations(temp_storage.scan).ExclusiveSum(flags, scatter_offsets, tile_num_selected);
+            tile_exclusive_prefix = 0;
 
             // Update tile status if there may be successor tiles (i.e., this tile is full)
             if (FULL_TILE && (threadIdx.x == 0))
@@ -563,20 +475,20 @@ struct BlockReduceByKeyRegion
         }
         else
         {
-            // Initialize selected/rejected output allocations for non-first tile
-            InitializeAllocations<false, FULL_TILE>(
+            // Initialize selected/rejected output flags for non-first tile
+            InitializeFlags<false, FULL_TILE>(
                 block_offset,
                 valid_items,
                 items,
-                allocations,
+                flags,
                 Int2Type<SELECT_METHOD>());
 
             __syncthreads();
 
-            // Scan allocations
+            // Scan flags
             LookbackPrefixCallbackOp prefix_op(d_tile_status, temp_storage.prefix, Sum(), tile_idx);
 
-            BlockScanAllocations(temp_storage.scan).ExclusiveSum(allocations, allocation_offsets, tile_num_selected, prefix_op);
+            BlockScanAllocations(temp_storage.scan).ExclusiveSum(flags, scatter_offsets, tile_num_selected, prefix_op);
             tile_exclusive_prefix = prefix_op.exclusive_prefix;
         }
 
@@ -584,8 +496,8 @@ struct BlockReduceByKeyRegion
         Scatter<FULL_TILE>(
             tile_idx,
             items,
-            allocations,
-            allocation_offsets,
+            flags,
+            scatter_offsets,
             tile_exclusive_prefix,
             tile_num_selected,
             valid_items,

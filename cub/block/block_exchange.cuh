@@ -142,7 +142,7 @@ private:
      ******************************************************************************/
 
     /// Shared memory storage layout type
-    typedef T _TempStorage[TIME_SLICED_ITEMS + PADDING_ITEMS];
+    typedef T _TempStorage[TIME_SLICED_ITEMS + PADDING_ITEMS + 2];
 
 public:
 
