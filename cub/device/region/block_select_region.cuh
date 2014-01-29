@@ -63,7 +63,6 @@ template <
     int                         _BLOCK_THREADS,                 ///< Threads per thread block
     int                         _ITEMS_PER_THREAD,              ///< Items per thread (per tile of input)
     BlockLoadAlgorithm          _LOAD_ALGORITHM,                ///< The BlockLoad algorithm to use
-    bool                        _LOAD_WARP_TIME_SLICING,        ///< Whether or not only one warp's worth of shared memory should be allocated and time-sliced among block-warps during any load-related data transpositions (versus each warp having its own storage)
     CacheLoadModifier           _LOAD_MODIFIER,                 ///< Cache load modifier for reading input elements
     bool                        _TWO_PHASE_SCATTER,             ///< Whether or not to coalesce output values in shared memory before scattering them to global
     BlockScanAlgorithm          _SCAN_ALGORITHM>                ///< The BlockScan algorithm to use
@@ -73,7 +72,6 @@ struct BlockSelectRegionPolicy
     {
         BLOCK_THREADS           = _BLOCK_THREADS,               ///< Threads per thread block
         ITEMS_PER_THREAD        = _ITEMS_PER_THREAD,            ///< Items per thread (per tile of input)
-        LOAD_WARP_TIME_SLICING  = _LOAD_WARP_TIME_SLICING,      ///< Whether or not only one warp's worth of shared memory should be allocated and time-sliced among block-warps during any load-related data transpositions (versus each warp having its own storage)
         TWO_PHASE_SCATTER       = _TWO_PHASE_SCATTER,           ///< Whether or not to coalesce output values in shared memory before scattering them to global
     };
 
@@ -153,8 +151,7 @@ struct BlockSelectRegion
             WrappedInputIterator,
             BlockSelectRegionPolicy::BLOCK_THREADS,
             BlockSelectRegionPolicy::ITEMS_PER_THREAD,
-            BlockSelectRegionPolicy::LOAD_ALGORITHM,
-            BlockSelectRegionPolicy::LOAD_WARP_TIME_SLICING>
+            BlockSelectRegionPolicy::LOAD_ALGORITHM>
         BlockLoadT;
 
     // Parameterized BlockLoad type for flags
@@ -162,8 +159,7 @@ struct BlockSelectRegion
             WrappedFlagIterator,
             BlockSelectRegionPolicy::BLOCK_THREADS,
             BlockSelectRegionPolicy::ITEMS_PER_THREAD,
-            BlockSelectRegionPolicy::LOAD_ALGORITHM,
-            BlockSelectRegionPolicy::LOAD_WARP_TIME_SLICING>
+            BlockSelectRegionPolicy::LOAD_ALGORITHM>
         BlockLoadFlags;
 
     // Parameterized BlockExchange type for input items
