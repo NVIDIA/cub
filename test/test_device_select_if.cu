@@ -719,7 +719,6 @@ int main(int argc, char** argv)
     // Initialize command line
     CommandLineArgs args(argc, argv);
     g_verbose = args.CheckCmdLineFlag("v");
-    bool quick = args.CheckCmdLineFlag("quick");
     args.GetCmdLineArgument("n", num_items);
     args.GetCmdLineArgument("i", g_timing_iterations);
     args.GetCmdLineArgument("repeat", g_repeat);
@@ -736,7 +735,6 @@ int main(int argc, char** argv)
             "[--maxseg=<max segment length>] "
             "[--entropy=<segment length bit entropy reduction rounds>] "
             "[--repeat=<repetitions of entire test suite>] "
-            "[--quick] "
             "[--v] "
             "[--cdp] "
             "\n", argv[0]);
