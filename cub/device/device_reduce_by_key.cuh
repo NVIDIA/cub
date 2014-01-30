@@ -62,36 +62,36 @@ namespace cub {
  * Reduce-by-key kernel entry point (multi-block)
  */
 template <
-    typename    BlockReduceByKeyRegionPolicy,   ///< Parameterized BlockReduceByKeyRegionPolicy tuning policy type
-    typename    KeyInputIterator,               ///< Random-access input iterator type for keys
-    typename    KeyOutputIterator,              ///< Random-access output iterator type for keys
-    typename    ValueInputIterator,             ///< Random-access input iterator type for values
-    typename    ValueOutputIterator,            ///< Random-access output iterator type for values
-    typename    NumSelectedIterator,            ///< Output iterator type for recording number of items selected
-    typename    EqualityOp,                     ///< Key equality operator type
-    typename    ReductionOp,                    ///< Value reduction operator type
-    typename    Offset,                         ///< Signed integer tuple type for global scatter offsets (selections and rejections)
-    typename    LookbackTileDescriptorT>         ///< Tile descriptor type (cub::LookbackTileDescriptor<ItemOffsetPair<typename std::iterator_traits<ValueInputIterator>::value_type, Offset> >)
+    typename    BlockReduceByKeyRegionPolicy,               ///< Parameterized BlockReduceByKeyRegionPolicy tuning policy type
+    typename    KeyInputIterator,                           ///< Random-access input iterator type for keys
+    typename    KeyOutputIterator,                          ///< Random-access output iterator type for keys
+    typename    ValueInputIterator,                         ///< Random-access input iterator type for values
+    typename    ValueOutputIterator,                        ///< Random-access output iterator type for values
+    typename    NumSegmentsIterator,                        ///< Output iterator type for recording number of segments encountered
+    typename    EqualityOp,                                 ///< Key equality operator type
+    typename    ReductionOp,                                ///< Value reduction operator type
+    typename    Offset,                                     ///< Signed integer type for global offsets
+    typename    LookbackTileDescriptorT>                    ///< Tile descriptor type (i.e., cub::LookbackTileDescriptor<ItemOffsetPair<typename std::iterator_traits<ValueInputIterator>::value_type, Offset> >)
 __launch_bounds__ (int(BlockReduceByKeyRegionPolicy::BLOCK_THREADS))
-__global__ void ReduceByKeyKernel(
-    KeyInputIterator                    d_keys_in,          ///< [in] Iterator pointing to consecutive runs of input keys
-    KeyOutputIterator                   d_keys_out,         ///< [in] Iterator pointing to output keys (one key per run)
-    ValueInputIterator                  d_values_in,        ///< [in] Iterator pointing to consecutive runs of input values
-    ValueOutputIterator                 d_values_out,       ///< [in] Iterator pointing to output value aggregates (one aggregate per run)
-    NumSelectedIterator                 d_num_selected,     ///< [in] Iterator pointing to total number of runs
-    LookbackTileDescriptorT             *d_tile_status,     ///< [in] Global list of tile status
-    EqualityOp                          equality_op,        ///< [in] Key equality operator
-    ReductionOp                         reduction_op,       ///< [in] Value reduction operator
-    Offset                              num_items,          ///< [in] Total number of items to select from
-    int                                 num_tiles,          ///< [in] Total number of tiles for the entire problem
-    GridQueue<int>                      queue)              ///< [in] Drain queue descriptor for dynamically mapping tile data onto thread blocks
+__global__ void ReduceByKeyRegionKernel(
+    KeyInputIterator        d_keys_in,                      ///< [in] Pointer to consecutive runs of input keys
+    KeyOutputIterator       d_keys_out,                     ///< [in] Pointer to output keys (one key per run)
+    ValueInputIterator      d_values_in,                    ///< [in] Pointer to consecutive runs of input values
+    ValueOutputIterator     d_values_out,                   ///< [in] Pointer to output value aggregates (one aggregate per run)
+    NumSegmentsIterator     d_num_segments,                 ///< [in] Pointer to total number of runs
+    LookbackTileDescriptorT *d_tile_status,                 ///< [in] Global list of tile status
+    EqualityOp              equality_op,                    ///< [in] Key equality operator
+    ReductionOp             reduction_op,                   ///< [in] Value reduction operator
+    Offset                  num_items,                      ///< [in] Total number of items to select from
+    int                     num_tiles,                      ///< [in] Total number of tiles for the entire problem
+    GridQueue<int>          queue)                          ///< [in] Drain queue descriptor for dynamically mapping tile data onto thread blocks
 {
     enum
     {
         TILE_STATUS_PADDING = CUB_PTX_WARP_THREADS,
     };
 
-    // Thread block type for selecting data from input tiles
+    // Thread block type for reducing tiles of value segments
     typedef BlockReduceByKeyRegion<
         BlockReduceByKeyRegionPolicy,
         KeyInputIterator,
@@ -110,7 +110,7 @@ __global__ void ReduceByKeyKernel(
         num_tiles,
         queue,
         d_tile_status + TILE_STATUS_PADDING,
-        d_num_selected);
+        d_num_segments);
 }
 
 
@@ -121,17 +121,17 @@ __global__ void ReduceByKeyKernel(
  ******************************************************************************/
 
 /**
- * Internal dispatch routine
+ * Utility class for dispatching the appropriately-tuned kernels for DeviceReduceByKey
  */
 template <
-    typename    KeyInputIterator,                  ///< Random-access input iterator type for selection items
-    typename    ValueInputIterator,                   ///< Random-access input iterator type for selection flags (NullType* if a selection functor or discontinuity flagging is to be used for selection)
-    typename    KeyOutputIterator,                 ///< Random-access output iterator type for selected items
-    typename    NumSelectedIterator,            ///< Output iterator type for recording number of items selected
-    typename    SelectOp,                       ///< Selection operator type (NullType if selection flags or discontinuity flagging is to be used for selection)
-    typename    EqualityOp,                     ///< Equality operator type (NullType if selection functor or selection flags is to be used for selection)
-    typename    Offset,                         ///< Signed integer tuple type for global scatter offsets (selections and rejections)
-    bool        KEEP_REJECTS>                   ///< Whether or not we push rejected items to the back of the output
+    typename    KeyInputIterator,               ///< Random-access input iterator type for keys
+    typename    KeyOutputIterator,              ///< Random-access output iterator type for keys
+    typename    ValueInputIterator,             ///< Random-access input iterator type for values
+    typename    ValueOutputIterator,            ///< Random-access output iterator type for values
+    typename    NumSegmentsIterator,            ///< Output iterator type for recording number of segments encountered
+    typename    EqualityOp,                     ///< Key equality operator type
+    typename    ReductionOp,                    ///< Value reduction operator type
+    typename    Offset>                         ///< Signed integer type for global offsets
 struct DeviceReduceByKeyDispatch
 {
     /******************************************************************************
@@ -144,14 +144,17 @@ struct DeviceReduceByKeyDispatch
         INIT_KERNEL_THREADS     = 128
     };
 
-    // Data type of input iterator
-    typedef typename std::iterator_traits<KeyInputIterator>::value_type T;
+    // Data type of key input iterator
+    typedef typename std::iterator_traits<KeyInputIterator>::value_type Key;
 
-    // Data type of flag iterator
-    typedef typename std::iterator_traits<ValueInputIterator>::value_type Flag;
+    // Data type of value input iterator
+    typedef typename std::iterator_traits<ValueInputIterator>::value_type Value;
+
+    // Value-offset tuple type for scanning (maps accumulated values to segment index)
+    typedef ItemOffsetPair<Value, Offset> ValueOffsetPair;
 
     // Tile status descriptor type
-    typedef LookbackTileDescriptor<Offset> TileDescriptor;
+    typedef LookbackTileDescriptor<ValueOffsetPair> TileDescriptor;
 
 
     /******************************************************************************
@@ -163,7 +166,7 @@ struct DeviceReduceByKeyDispatch
     {
         enum {
             NOMINAL_4B_ITEMS_PER_THREAD = 11,
-            ITEMS_PER_THREAD            = CUB_MIN(NOMINAL_4B_ITEMS_PER_THREAD, CUB_MAX(1, (NOMINAL_4B_ITEMS_PER_THREAD * 4 / sizeof(T)))),
+            ITEMS_PER_THREAD            = CUB_MIN(NOMINAL_4B_ITEMS_PER_THREAD, CUB_MAX(1, (NOMINAL_4B_ITEMS_PER_THREAD * 8 / (sizeof(Key) + sizeof(Value))))),
         };
 
         typedef BlockReduceByKeyRegionPolicy<
@@ -181,7 +184,7 @@ struct DeviceReduceByKeyDispatch
     {
         enum {
             NOMINAL_4B_ITEMS_PER_THREAD = 5,
-            ITEMS_PER_THREAD            = CUB_MIN(NOMINAL_4B_ITEMS_PER_THREAD, CUB_MAX(1, (NOMINAL_4B_ITEMS_PER_THREAD * 4 / sizeof(T)))),
+            ITEMS_PER_THREAD            = CUB_MIN(NOMINAL_4B_ITEMS_PER_THREAD, CUB_MAX(1, (NOMINAL_4B_ITEMS_PER_THREAD * 8 / (sizeof(Key) + sizeof(Value))))),
         };
 
         typedef BlockReduceByKeyRegionPolicy<
@@ -198,8 +201,8 @@ struct DeviceReduceByKeyDispatch
     struct Policy200
     {
         enum {
-            NOMINAL_4B_ITEMS_PER_THREAD = (KEEP_REJECTS) ? 7 : 17,
-            ITEMS_PER_THREAD            = CUB_MIN(NOMINAL_4B_ITEMS_PER_THREAD, CUB_MAX(1, (NOMINAL_4B_ITEMS_PER_THREAD * 4 / sizeof(T)))),
+            NOMINAL_4B_ITEMS_PER_THREAD = 7,
+            ITEMS_PER_THREAD            = CUB_MIN(NOMINAL_4B_ITEMS_PER_THREAD, CUB_MAX(1, (NOMINAL_4B_ITEMS_PER_THREAD * 8 / (sizeof(Key) + sizeof(Value))))),
         };
 
         typedef BlockReduceByKeyRegionPolicy<
@@ -216,8 +219,8 @@ struct DeviceReduceByKeyDispatch
     struct Policy130
     {
         enum {
-            NOMINAL_4B_ITEMS_PER_THREAD = 9,
-            ITEMS_PER_THREAD            = CUB_MIN(NOMINAL_4B_ITEMS_PER_THREAD, CUB_MAX(1, (NOMINAL_4B_ITEMS_PER_THREAD * 4 / sizeof(T)))),
+            NOMINAL_4B_ITEMS_PER_THREAD = 5,
+            ITEMS_PER_THREAD            = CUB_MIN(NOMINAL_4B_ITEMS_PER_THREAD, CUB_MAX(1, (NOMINAL_4B_ITEMS_PER_THREAD * 8 / (sizeof(Key) + sizeof(Value))))),
         };
 
         typedef BlockReduceByKeyRegionPolicy<
@@ -234,8 +237,8 @@ struct DeviceReduceByKeyDispatch
     struct Policy100
     {
         enum {
-            NOMINAL_4B_ITEMS_PER_THREAD = 7,
-            ITEMS_PER_THREAD            = CUB_MIN(NOMINAL_4B_ITEMS_PER_THREAD, CUB_MAX(1, (NOMINAL_4B_ITEMS_PER_THREAD * 4 / sizeof(T)))),
+            NOMINAL_4B_ITEMS_PER_THREAD = 5,
+            ITEMS_PER_THREAD            = CUB_MIN(NOMINAL_4B_ITEMS_PER_THREAD, CUB_MAX(1, (NOMINAL_4B_ITEMS_PER_THREAD * 8 / (sizeof(Key) + sizeof(Value))))),
         };
 
         typedef BlockReduceByKeyRegionPolicy<
@@ -285,35 +288,35 @@ struct DeviceReduceByKeyDispatch
     __host__ __device__ __forceinline__
     static void InitConfigs(
         int             ptx_version,
-        KernelConfig    &select_region_config)
+        KernelConfig    &reduce_by_key_region_config)
     {
     #ifdef __CUDA_ARCH__
 
         // We're on the device, so initialize the kernel dispatch configurations with the current PTX policy
-        select_region_config.template Init<PtxReduceByKeyPolicy>();
+        reduce_by_key_region_config.template Init<PtxReduceByKeyPolicy>();
 
     #else
 
         // We're on the host, so lookup and initialize the kernel dispatch configurations with the policies that match the device's PTX version
         if (ptx_version >= 350)
         {
-            select_region_config.template Init<typename Policy350::ReduceByKeyPolicy>();
+            reduce_by_key_region_config.template Init<typename Policy350::ReduceByKeyPolicy>();
         }
         else if (ptx_version >= 300)
         {
-            select_region_config.template Init<typename Policy300::ReduceByKeyPolicy>();
+            reduce_by_key_region_config.template Init<typename Policy300::ReduceByKeyPolicy>();
         }
         else if (ptx_version >= 200)
         {
-            select_region_config.template Init<typename Policy200::ReduceByKeyPolicy>();
+            reduce_by_key_region_config.template Init<typename Policy200::ReduceByKeyPolicy>();
         }
         else if (ptx_version >= 130)
         {
-            select_region_config.template Init<typename Policy130::ReduceByKeyPolicy>();
+            reduce_by_key_region_config.template Init<typename Policy130::ReduceByKeyPolicy>();
         }
         else
         {
-            select_region_config.template Init<typename Policy100::ReduceByKeyPolicy>();
+            reduce_by_key_region_config.template Init<typename Policy100::ReduceByKeyPolicy>();
         }
 
     #endif
@@ -365,24 +368,25 @@ struct DeviceReduceByKeyDispatch
      */
     template <
         typename                    ScanInitKernelPtr,              ///< Function type of cub::ScanInitKernel
-        typename                    ReduceByKeyKernelPtr>          ///< Function type of cub::ReduceByKeyKernelPtr
+        typename                    ReduceByKeyRegionKernelPtr>     ///< Function type of cub::ReduceByKeyRegionKernelPtr
     __host__ __device__ __forceinline__
     static cudaError_t Dispatch(
-        void                        *d_temp_storage,                ///< [in] %Device allocation of temporary storage.  When NULL, the required allocation size is returned in \p temp_storage_bytes and no work is done.
-        size_t                      &temp_storage_bytes,            ///< [in,out] Size in bytes of \p d_temp_storage allocation
-        KeyInputIterator               d_in,                           ///< [in] Input iterator pointing to data items
-        ValueInputIterator                d_flags,                        ///< [in] Input iterator pointing to selection flags
-        KeyOutputIterator              d_out,                          ///< [in] Output iterator pointing to selected items
-        NumSelectedIterator         d_num_selected,                 ///< [in] Output iterator pointing to total number selected
-        SelectOp                    select_op,                      ///< [in] Selection operator
-        EqualityOp                  equality_op,                    ///< [in] Equality operator
+        void                        *d_temp_storage,                ///< [in] %Device allocation of temporary storage.  When NULL, the required allocation size is written to \p temp_storage_bytes and no work is done.
+        size_t                      &temp_storage_bytes,            ///< [in,out] Reference to size in bytes of \p d_temp_storage allocation
+        KeyInputIterator            d_keys_in,                      ///< [in] Pointer to consecutive runs of input keys
+        KeyOutputIterator           d_keys_out,                     ///< [in] Pointer to output keys (one key per run)
+        ValueInputIterator          d_values_in,                    ///< [in] Pointer to consecutive runs of input values
+        ValueOutputIterator         d_values_out,                   ///< [in] Pointer to output value aggregates (one aggregate per run)
+        NumSegmentsIterator         d_num_segments,                 ///< [in] Pointer to total number of runs
+        EqualityOp                  equality_op,                    ///< [in] Key equality operator
+        ReductionOp                 reduction_op,                   ///< [in] Value reduction operator
         Offset                      num_items,                      ///< [in] Total number of items to select from
         cudaStream_t                stream,                         ///< [in] CUDA stream to launch kernels within.  Default is stream<sub>0</sub>.
         bool                        debug_synchronous,              ///< [in] Whether or not to synchronize the stream after every kernel launch to check for errors.  Also causes launch configurations to be printed to the console.  Default is \p false.
         int                         ptx_version,                    ///< [in] PTX version of dispatch kernels
         ScanInitKernelPtr           init_kernel,                    ///< [in] Kernel function pointer to parameterization of cub::ScanInitKernel
-        ReduceByKeyKernelPtr       select_region_kernel,           ///< [in] Kernel function pointer to parameterization of cub::ReduceByKeyKernelPtr
-        KernelConfig                select_region_config)           ///< [in] Dispatch parameters that match the policy that \p select_region_kernel was compiled for
+        ReduceByKeyRegionKernelPtr  reduce_by_key_region_kernel,    ///< [in] Kernel function pointer to parameterization of cub::ReduceByKeyRegionKernel
+        KernelConfig                reduce_by_key_region_config)    ///< [in] Dispatch parameters that match the policy that \p reduce_by_key_region_kernel was compiled for
     {
 
 #ifndef CUB_RUNTIME_ENABLED
@@ -408,7 +412,7 @@ struct DeviceReduceByKeyDispatch
             if (CubDebug(error = cudaDeviceGetAttribute (&sm_count, cudaDevAttrMultiProcessorCount, device_ordinal))) break;
 
             // Number of input tiles
-            int tile_size = select_region_config.block_threads * select_region_config.items_per_thread;
+            int tile_size = reduce_by_key_region_config.block_threads * reduce_by_key_region_config.items_per_thread;
             int num_tiles = (num_items + tile_size - 1) / tile_size;
 
             // Temporary storage allocation requirements
@@ -446,16 +450,16 @@ struct DeviceReduceByKeyDispatch
             // Sync the stream if specified
             if (debug_synchronous && (CubDebug(error = SyncStream(stream)))) break;
 
-            // Get SM occupancy for select_region_kernel
-            int select_region_sm_occupancy;
+            // Get SM occupancy for reduce_by_key_region_kernel
+            int reduce_by_key_region_sm_occupancy;
             if (CubDebug(error = MaxSmOccupancy(
-                select_region_sm_occupancy,            // out
+                reduce_by_key_region_sm_occupancy,            // out
                 sm_version,
-                select_region_kernel,
-                select_region_config.block_threads))) break;
+                reduce_by_key_region_kernel,
+                reduce_by_key_region_config.block_threads))) break;
 
-            // Get device occupancy for select_region_kernel
-            int select_region_occupancy = select_region_sm_occupancy * sm_count;
+            // Get device occupancy for reduce_by_key_region_kernel
+            int reduce_by_key_region_occupancy = reduce_by_key_region_sm_occupancy * sm_count;
 
             // Get grid size for scanning tiles
             int select_grid_size;
@@ -468,24 +472,25 @@ struct DeviceReduceByKeyDispatch
             }
             else
             {
-                select_grid_size = (num_tiles < select_region_occupancy) ?
+                select_grid_size = (num_tiles < reduce_by_key_region_occupancy) ?
                     num_tiles :                         // Not enough to fill the device with threadblocks
-                    select_region_occupancy;            // Fill the device with threadblocks
+                    reduce_by_key_region_occupancy;     // Fill the device with threadblocks
             }
 
-            // Log select_region_kernel configuration
-            if (debug_synchronous) CubLog("Invoking select_region_kernel<<<%d, %d, 0, %lld>>>(), %d items per thread, %d SM occupancy\n",
-                select_grid_size, select_region_config.block_threads, (long long) stream, select_region_config.items_per_thread, select_region_sm_occupancy);
+            // Log reduce_by_key_region_kernel configuration
+            if (debug_synchronous) CubLog("Invoking reduce_by_key_region_kernel<<<%d, %d, 0, %lld>>>(), %d items per thread, %d SM occupancy\n",
+                select_grid_size, reduce_by_key_region_config.block_threads, (long long) stream, reduce_by_key_region_config.items_per_thread, reduce_by_key_region_sm_occupancy);
 
-            // Invoke select_region_kernel
-            select_region_kernel<<<select_grid_size, select_region_config.block_threads, 0, stream>>>(
-                d_in,
-                d_flags,
-                d_out,
-                d_num_selected,
+            // Invoke reduce_by_key_region_kernel
+            reduce_by_key_region_kernel<<<select_grid_size, reduce_by_key_region_config.block_threads, 0, stream>>>(
+                d_keys_in,
+                d_keys_out,
+                d_values_in,
+                d_values_out,
+                d_num_segments,
                 d_tile_status,
-                select_op,
                 equality_op,
+                reduction_op,
                 num_items,
                 num_tiles,
                 queue);
@@ -506,17 +511,18 @@ struct DeviceReduceByKeyDispatch
      */
     __host__ __device__ __forceinline__
     static cudaError_t Dispatch(
-        void                        *d_temp_storage,                ///< [in] %Device allocation of temporary storage.  When NULL, the required allocation size is returned in \p temp_storage_bytes and no work is done.
-        size_t                      &temp_storage_bytes,            ///< [in,out] Size in bytes of \p d_temp_storage allocation
-        KeyInputIterator               d_in,                           ///< [in] Input iterator pointing to data items
-        ValueInputIterator                d_flags,                        ///< [in] Input iterator pointing to selection flags
-        KeyOutputIterator              d_out,                          ///< [in] Output iterator pointing to selected items
-        NumSelectedIterator         d_num_selected,                 ///< [in] Output iterator pointing to total number selected
-        SelectOp                    select_op,                      ///< [in] Selection operator
-        EqualityOp                  equality_op,                    ///< [in] Equality operator
+        void                        *d_temp_storage,                ///< [in] %Device allocation of temporary storage.  When NULL, the required allocation size is written to \p temp_storage_bytes and no work is done.
+        size_t                      &temp_storage_bytes,            ///< [in,out] Reference to size in bytes of \p d_temp_storage allocation
+        KeyInputIterator            d_keys_in,                      ///< [in] Pointer to consecutive runs of input keys
+        KeyOutputIterator           d_keys_out,                     ///< [in] Pointer to output keys (one key per run)
+        ValueInputIterator          d_values_in,                    ///< [in] Pointer to consecutive runs of input values
+        ValueOutputIterator         d_values_out,                   ///< [in] Pointer to output value aggregates (one aggregate per run)
+        NumSegmentsIterator         d_num_segments,                 ///< [in] Pointer to total number of runs
+        EqualityOp                  equality_op,                    ///< [in] Key equality operator
+        ReductionOp                 reduction_op,                   ///< [in] Value reduction operator
         Offset                      num_items,                      ///< [in] Total number of items to select from
-        cudaStream_t                stream,                         ///< [in] <b>[optional]</b> CUDA stream to launch kernels within.  Default is stream<sub>0</sub>.
-        bool                        debug_synchronous)              ///< [in] <b>[optional]</b> Whether or not to synchronize the stream after every kernel launch to check for errors.  Also causes launch configurations to be printed to the console.  Default is \p false.
+        cudaStream_t                stream,                         ///< [in] CUDA stream to launch kernels within.  Default is stream<sub>0</sub>.
+        bool                        debug_synchronous)              ///< [in] Whether or not to synchronize the stream after every kernel launch to check for errors.  Also causes launch configurations to be printed to the console.  Default is \p false.
     {
         cudaError error = cudaSuccess;
         do
@@ -530,26 +536,27 @@ struct DeviceReduceByKeyDispatch
     #endif
 
             // Get kernel kernel dispatch configurations
-            KernelConfig select_region_config;
-            InitConfigs(ptx_version, select_region_config);
+            KernelConfig reduce_by_key_region_config;
+            InitConfigs(ptx_version, reduce_by_key_region_config);
 
             // Dispatch
             if (CubDebug(error = Dispatch(
                 d_temp_storage,
                 temp_storage_bytes,
-                d_in,
-                d_flags,
-                d_out,
-                d_num_selected,
-                select_op,
+                d_keys_in,
+                d_keys_out,
+                d_values_in,
+                d_values_out,
+                d_num_segments,
                 equality_op,
+                reduction_op,
                 num_items,
                 stream,
                 debug_synchronous,
                 ptx_version,
-                ScanInitKernel<Offset, Offset>,
-                ReduceByKeyKernel<PtxReduceByKeyPolicy, KeyInputIterator, ValueInputIterator, KeyOutputIterator, NumSelectedIterator, SelectOp, EqualityOp, Offset, KEEP_REJECTS>,
-                select_region_config))) break;
+                ScanInitKernel<ValueOffsetPair, Offset>,
+                ReduceByKeyRegionKernel<PtxReduceByKeyPolicy, KeyInputIterator, KeyOutputIterator, ValueInputIterator, ValueOutputIterator, NumSegmentsIterator, EqualityOp, ReductionOp, Offset, TileDescriptor>,
+                reduce_by_key_region_config))) break;
         }
         while (0);
 

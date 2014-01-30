@@ -303,12 +303,12 @@ public:
      *
      * \endcode
      *
-     * \tparam ReductionOp          <b>[inferred]</b> Binary reduction operator type having member <tt>T operator()(const T &a, const T &b)</tt>
+     * \tparam ReductionOp          <b>[inferred]</b> Binary reduction functor (e.g., an instance of cub::Sum, cub::Min, cub::Max, etc.) type having member <tt>T operator()(const T &a, const T &b)</tt>
      */
     template <typename ReductionOp>
     __device__ __forceinline__ T Reduce(
         T               input,                      ///< [in] Calling thread's input
-        ReductionOp     reduction_op)               ///< [in] Binary reduction operator
+        ReductionOp     reduction_op)               ///< [in] Binary reduction functor (e.g., an instance of cub::Sum, cub::Min, cub::Max, etc.)
     {
         return InternalBlockReduce(temp_storage, linear_tid).template Reduce<true>(input, BLOCK_THREADS, reduction_op);
     }
@@ -350,14 +350,14 @@ public:
      * \endcode
      *
      * \tparam ITEMS_PER_THREAD     <b>[inferred]</b> The number of consecutive items partitioned onto each thread.
-     * \tparam ReductionOp          <b>[inferred]</b> Binary reduction operator type having member <tt>T operator()(const T &a, const T &b)</tt>
+     * \tparam ReductionOp          <b>[inferred]</b> Binary reduction functor (e.g., an instance of cub::Sum, cub::Min, cub::Max, etc.) type having member <tt>T operator()(const T &a, const T &b)</tt>
      */
     template <
         int ITEMS_PER_THREAD,
         typename ReductionOp>
     __device__ __forceinline__ T Reduce(
         T               (&inputs)[ITEMS_PER_THREAD],    ///< [in] Calling thread's input segment
-        ReductionOp     reduction_op)                   ///< [in] Binary reduction operator
+        ReductionOp     reduction_op)                   ///< [in] Binary reduction functor (e.g., an instance of cub::Sum, cub::Min, cub::Max, etc.)
     {
         // Reduce partials
         T partial = ThreadReduce(inputs, reduction_op);
@@ -398,12 +398,12 @@ public:
      *
      * \endcode
      *
-     * \tparam ReductionOp          <b>[inferred]</b> Binary reduction operator type having member <tt>T operator()(const T &a, const T &b)</tt>
+     * \tparam ReductionOp          <b>[inferred]</b> Binary reduction functor (e.g., an instance of cub::Sum, cub::Min, cub::Max, etc.) type having member <tt>T operator()(const T &a, const T &b)</tt>
      */
     template <typename ReductionOp>
     __device__ __forceinline__ T Reduce(
         T                   input,                  ///< [in] Calling thread's input
-        ReductionOp         reduction_op,           ///< [in] Binary reduction operator
+        ReductionOp         reduction_op,           ///< [in] Binary reduction functor (e.g., an instance of cub::Sum, cub::Min, cub::Max, etc.)
         int                 num_valid)              ///< [in] Number of threads containing valid elements (may be less than BLOCK_THREADS)
     {
         // Determine if we scan skip bounds checking
