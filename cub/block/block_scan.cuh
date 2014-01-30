@@ -817,14 +817,14 @@ public:
      * Suppose the set of input \p thread_data across the block of threads is <tt>0, -1, 2, -3, ..., 126, -127</tt>.  The
      * corresponding output \p thread_data in those threads will be <tt>INT_MIN, 0, 0, 2, ..., 124, 126</tt>.
      *
-     * \tparam ScanOp               <b>[inferred]</b> Binary scan operator type having member <tt>T operator()(const T &a, const T &b)</tt>
+     * \tparam ScanOp               <b>[inferred]</b> Binary scan functor (e.g., an instance of cub::Sum, cub::Min, cub::Max, etc.) type having member <tt>T operator()(const T &a, const T &b)</tt>
      */
     template <typename ScanOp>
     __device__ __forceinline__ void ExclusiveScan(
         T               input,                          ///< [in] Calling thread's input item
         T               &output,                        ///< [out] Calling thread's output item (may be aliased to \p input)
         T               identity,                       ///< [in] Identity value
-        ScanOp          scan_op)                        ///< [in] Binary scan operator
+        ScanOp          scan_op)                        ///< [in] Binary scan functor (e.g., an instance of cub::Sum, cub::Min, cub::Max, etc.)
     {
         T block_aggregate;
         InternalBlockScan(temp_storage, linear_tid).ExclusiveScan(input, output, identity, scan_op, block_aggregate);
@@ -868,14 +868,14 @@ public:
      * corresponding output \p thread_data in those threads will be <tt>INT_MIN, 0, 0, 2, ..., 124, 126</tt>.
      * Furthermore the value \p 126 will be stored in \p block_aggregate for all threads.
      *
-     * \tparam ScanOp   <b>[inferred]</b> Binary scan operator type having member <tt>T operator()(const T &a, const T &b)</tt>
+     * \tparam ScanOp   <b>[inferred]</b> Binary scan functor (e.g., an instance of cub::Sum, cub::Min, cub::Max, etc.) type having member <tt>T operator()(const T &a, const T &b)</tt>
      */
     template <typename ScanOp>
     __device__ __forceinline__ void ExclusiveScan(
         T               input,              ///< [in] Calling thread's input items
         T               &output,            ///< [out] Calling thread's output items (may be aliased to \p input)
         const T         &identity,          ///< [in] Identity value
-        ScanOp          scan_op,            ///< [in] Binary scan operator
+        ScanOp          scan_op,            ///< [in] Binary scan functor (e.g., an instance of cub::Sum, cub::Min, cub::Max, etc.)
         T               &block_aggregate)   ///< [out] block-wide aggregate reduction of input items
     {
         InternalBlockScan(temp_storage, linear_tid).ExclusiveScan(input, output, identity, scan_op, block_aggregate);
@@ -957,7 +957,7 @@ public:
      * \p block_aggregate will be assigned \p 126 in all threads after the first scan, assigned \p 254 after the second
      * scan, etc.
      *
-     * \tparam ScanOp               <b>[inferred]</b> Binary scan operator type having member <tt>T operator()(const T &a, const T &b)</tt>
+     * \tparam ScanOp               <b>[inferred]</b> Binary scan functor (e.g., an instance of cub::Sum, cub::Min, cub::Max, etc.) type having member <tt>T operator()(const T &a, const T &b)</tt>
      * \tparam BlockPrefixCallbackOp        <b>[inferred]</b> Call-back functor type having member <tt>T operator()(T block_aggregate)</tt>
      */
     template <
@@ -967,7 +967,7 @@ public:
         T                       input,                          ///< [in] Calling thread's input item
         T                       &output,                        ///< [out] Calling thread's output item (may be aliased to \p input)
         T                       identity,                       ///< [in] Identity value
-        ScanOp                  scan_op,                        ///< [in] Binary scan operator
+        ScanOp                  scan_op,                        ///< [in] Binary scan functor (e.g., an instance of cub::Sum, cub::Min, cub::Max, etc.)
         T                       &block_aggregate,               ///< [out] block-wide aggregate reduction of input items (exclusive of the \p block_prefix_callback_op value)
         BlockPrefixCallbackOp   &block_prefix_callback_op)      ///< [in-out] <b>[<em>warp</em><sub>0</sub> only]</b> Call-back functor for specifying a block-wide prefix to be applied to all inputs.
     {
@@ -1022,7 +1022,7 @@ public:
      * <tt>{ [INT_MIN,0,0,2], [2,4,4,6], ..., [506,508,508,510] }</tt>.
      *
      * \tparam ITEMS_PER_THREAD     <b>[inferred]</b> The number of consecutive items partitioned onto each thread.
-     * \tparam ScanOp               <b>[inferred]</b> Binary scan operator type having member <tt>T operator()(const T &a, const T &b)</tt>
+     * \tparam ScanOp               <b>[inferred]</b> Binary scan functor (e.g., an instance of cub::Sum, cub::Min, cub::Max, etc.) type having member <tt>T operator()(const T &a, const T &b)</tt>
      */
     template <
         int             ITEMS_PER_THREAD,
@@ -1031,7 +1031,7 @@ public:
         T                 (&input)[ITEMS_PER_THREAD],   ///< [in] Calling thread's input items
         T                 (&output)[ITEMS_PER_THREAD],  ///< [out] Calling thread's output items (may be aliased to \p input)
         const T           &identity,                    ///< [in] Identity value
-        ScanOp            scan_op)                      ///< [in] Binary scan operator
+        ScanOp            scan_op)                      ///< [in] Binary scan functor (e.g., an instance of cub::Sum, cub::Min, cub::Max, etc.)
     {
         // Reduce consecutive thread items in registers
         T thread_partial = ThreadReduce(input, scan_op);
@@ -1084,7 +1084,7 @@ public:
      * Furthermore the value \p 510 will be stored in \p block_aggregate for all threads.
      *
      * \tparam ITEMS_PER_THREAD     <b>[inferred]</b> The number of consecutive items partitioned onto each thread.
-     * \tparam ScanOp               <b>[inferred]</b> Binary scan operator type having member <tt>T operator()(const T &a, const T &b)</tt>
+     * \tparam ScanOp               <b>[inferred]</b> Binary scan functor (e.g., an instance of cub::Sum, cub::Min, cub::Max, etc.) type having member <tt>T operator()(const T &a, const T &b)</tt>
      */
     template <
         int             ITEMS_PER_THREAD,
@@ -1093,7 +1093,7 @@ public:
         T                 (&input)[ITEMS_PER_THREAD],   ///< [in] Calling thread's input items
         T                 (&output)[ITEMS_PER_THREAD],  ///< [out] Calling thread's output items (may be aliased to \p input)
         const T           &identity,                    ///< [in] Identity value
-        ScanOp            scan_op,                      ///< [in] Binary scan operator
+        ScanOp            scan_op,                      ///< [in] Binary scan functor (e.g., an instance of cub::Sum, cub::Min, cub::Max, etc.)
         T                 &block_aggregate)             ///< [out] block-wide aggregate reduction of input items
     {
         // Reduce consecutive thread items in registers
@@ -1193,7 +1193,7 @@ public:
      * scan, etc.
      *
      * \tparam ITEMS_PER_THREAD     <b>[inferred]</b> The number of consecutive items partitioned onto each thread.
-     * \tparam ScanOp               <b>[inferred]</b> Binary scan operator type having member <tt>T operator()(const T &a, const T &b)</tt>
+     * \tparam ScanOp               <b>[inferred]</b> Binary scan functor (e.g., an instance of cub::Sum, cub::Min, cub::Max, etc.) type having member <tt>T operator()(const T &a, const T &b)</tt>
      * \tparam BlockPrefixCallbackOp        <b>[inferred]</b> Call-back functor type having member <tt>T operator()(T block_aggregate)</tt>
      */
     template <
@@ -1204,7 +1204,7 @@ public:
         T                       (&input)[ITEMS_PER_THREAD],     ///< [in] Calling thread's input items
         T                       (&output)[ITEMS_PER_THREAD],    ///< [out] Calling thread's output items (may be aliased to \p input)
         T                       identity,                       ///< [in] Identity value
-        ScanOp                  scan_op,                        ///< [in] Binary scan operator
+        ScanOp                  scan_op,                        ///< [in] Binary scan functor (e.g., an instance of cub::Sum, cub::Min, cub::Max, etc.)
         T                       &block_aggregate,               ///< [out] block-wide aggregate reduction of input items (exclusive of the \p block_prefix_callback_op value)
         BlockPrefixCallbackOp   &block_prefix_callback_op)      ///< [in-out] <b>[<em>warp</em><sub>0</sub> only]</b> Call-back functor for specifying a block-wide prefix to be applied to all inputs.
     {
@@ -1237,13 +1237,13 @@ public:
      * - \blocked
      * - \smemreuse
      *
-     * \tparam ScanOp               <b>[inferred]</b> Binary scan operator type having member <tt>T operator()(const T &a, const T &b)</tt>
+     * \tparam ScanOp               <b>[inferred]</b> Binary scan functor (e.g., an instance of cub::Sum, cub::Min, cub::Max, etc.) type having member <tt>T operator()(const T &a, const T &b)</tt>
      */
     template <typename ScanOp>
     __device__ __forceinline__ void ExclusiveScan(
         T               input,                          ///< [in] Calling thread's input item
         T               &output,                        ///< [out] Calling thread's output item (may be aliased to \p input)
-        ScanOp          scan_op)                        ///< [in] Binary scan operator
+        ScanOp          scan_op)                        ///< [in] Binary scan functor (e.g., an instance of cub::Sum, cub::Min, cub::Max, etc.)
     {
         T block_aggregate;
         InternalBlockScan(temp_storage, linear_tid).ExclusiveScan(input, output, scan_op, block_aggregate);
@@ -1258,13 +1258,13 @@ public:
      * - \blocked
      * - \smemreuse
      *
-     * \tparam ScanOp   <b>[inferred]</b> Binary scan operator type having member <tt>T operator()(const T &a, const T &b)</tt>
+     * \tparam ScanOp   <b>[inferred]</b> Binary scan functor (e.g., an instance of cub::Sum, cub::Min, cub::Max, etc.) type having member <tt>T operator()(const T &a, const T &b)</tt>
      */
     template <typename ScanOp>
     __device__ __forceinline__ void ExclusiveScan(
         T               input,                          ///< [in] Calling thread's input item
         T               &output,                        ///< [out] Calling thread's output item (may be aliased to \p input)
-        ScanOp          scan_op,                        ///< [in] Binary scan operator
+        ScanOp          scan_op,                        ///< [in] Binary scan functor (e.g., an instance of cub::Sum, cub::Min, cub::Max, etc.)
         T               &block_aggregate)               ///< [out] block-wide aggregate reduction of input items
     {
         InternalBlockScan(temp_storage, linear_tid).ExclusiveScan(input, output, scan_op, block_aggregate);
@@ -1284,7 +1284,7 @@ public:
      * - \blocked
      * - \smemreuse
      *
-     * \tparam ScanOp               <b>[inferred]</b> Binary scan operator type having member <tt>T operator()(const T &a, const T &b)</tt>
+     * \tparam ScanOp               <b>[inferred]</b> Binary scan functor (e.g., an instance of cub::Sum, cub::Min, cub::Max, etc.) type having member <tt>T operator()(const T &a, const T &b)</tt>
      * \tparam BlockPrefixCallbackOp        <b>[inferred]</b> Call-back functor type having member <tt>T operator()(T block_aggregate)</tt>
      */
     template <
@@ -1293,7 +1293,7 @@ public:
     __device__ __forceinline__ void ExclusiveScan(
         T                       input,                          ///< [in] Calling thread's input item
         T                       &output,                        ///< [out] Calling thread's output item (may be aliased to \p input)
-        ScanOp                  scan_op,                        ///< [in] Binary scan operator
+        ScanOp                  scan_op,                        ///< [in] Binary scan functor (e.g., an instance of cub::Sum, cub::Min, cub::Max, etc.)
         T                       &block_aggregate,               ///< [out] block-wide aggregate reduction of input items (exclusive of the \p block_prefix_callback_op value)
         BlockPrefixCallbackOp   &block_prefix_callback_op)      ///< [in-out] <b>[<em>warp</em><sub>0</sub> only]</b> Call-back functor for specifying a block-wide prefix to be applied to all inputs.
     {
@@ -1318,7 +1318,7 @@ public:
      * - \smemreuse
      *
      * \tparam ITEMS_PER_THREAD     <b>[inferred]</b> The number of consecutive items partitioned onto each thread.
-     * \tparam ScanOp               <b>[inferred]</b> Binary scan operator type having member <tt>T operator()(const T &a, const T &b)</tt>
+     * \tparam ScanOp               <b>[inferred]</b> Binary scan functor (e.g., an instance of cub::Sum, cub::Min, cub::Max, etc.) type having member <tt>T operator()(const T &a, const T &b)</tt>
      */
     template <
         int             ITEMS_PER_THREAD,
@@ -1326,7 +1326,7 @@ public:
     __device__ __forceinline__ void ExclusiveScan(
         T                 (&input)[ITEMS_PER_THREAD],   ///< [in] Calling thread's input items
         T                 (&output)[ITEMS_PER_THREAD],  ///< [out] Calling thread's output items (may be aliased to \p input)
-        ScanOp            scan_op)                      ///< [in] Binary scan operator
+        ScanOp            scan_op)                      ///< [in] Binary scan functor (e.g., an instance of cub::Sum, cub::Min, cub::Max, etc.)
     {
         // Reduce consecutive thread items in registers
         T thread_partial = ThreadReduce(input, scan_op);
@@ -1349,7 +1349,7 @@ public:
      * - \smemreuse
      *
      * \tparam ITEMS_PER_THREAD     <b>[inferred]</b> The number of consecutive items partitioned onto each thread.
-     * \tparam ScanOp               <b>[inferred]</b> Binary scan operator type having member <tt>T operator()(const T &a, const T &b)</tt>
+     * \tparam ScanOp               <b>[inferred]</b> Binary scan functor (e.g., an instance of cub::Sum, cub::Min, cub::Max, etc.) type having member <tt>T operator()(const T &a, const T &b)</tt>
      */
     template <
         int             ITEMS_PER_THREAD,
@@ -1357,7 +1357,7 @@ public:
     __device__ __forceinline__ void ExclusiveScan(
         T               (&input)[ITEMS_PER_THREAD],     ///< [in] Calling thread's input items
         T               (&output)[ITEMS_PER_THREAD],    ///< [out] Calling thread's output items (may be aliased to \p input)
-        ScanOp          scan_op,                        ///< [in] Binary scan operator
+        ScanOp          scan_op,                        ///< [in] Binary scan functor (e.g., an instance of cub::Sum, cub::Min, cub::Max, etc.)
         T               &block_aggregate)               ///< [out] block-wide aggregate reduction of input items
     {
         // Reduce consecutive thread items in registers
@@ -1386,7 +1386,7 @@ public:
      * - \smemreuse
      *
      * \tparam ITEMS_PER_THREAD     <b>[inferred]</b> The number of consecutive items partitioned onto each thread.
-     * \tparam ScanOp               <b>[inferred]</b> Binary scan operator type having member <tt>T operator()(const T &a, const T &b)</tt>
+     * \tparam ScanOp               <b>[inferred]</b> Binary scan functor (e.g., an instance of cub::Sum, cub::Min, cub::Max, etc.) type having member <tt>T operator()(const T &a, const T &b)</tt>
      * \tparam BlockPrefixCallbackOp        <b>[inferred]</b> Call-back functor type having member <tt>T operator()(T block_aggregate)</tt>
      */
     template <
@@ -1396,7 +1396,7 @@ public:
     __device__ __forceinline__ void ExclusiveScan(
         T                       (&input)[ITEMS_PER_THREAD],   ///< [in] Calling thread's input items
         T                       (&output)[ITEMS_PER_THREAD],  ///< [out] Calling thread's output items (may be aliased to \p input)
-        ScanOp                  scan_op,                      ///< [in] Binary scan operator
+        ScanOp                  scan_op,                      ///< [in] Binary scan functor (e.g., an instance of cub::Sum, cub::Min, cub::Max, etc.)
         T                       &block_aggregate,             ///< [out] block-wide aggregate reduction of input items (exclusive of the \p block_prefix_callback_op value)
         BlockPrefixCallbackOp   &block_prefix_callback_op)    ///< [in-out] <b>[<em>warp</em><sub>0</sub> only]</b> Call-back functor for specifying a block-wide prefix to be applied to all inputs.
     {
@@ -1708,7 +1708,7 @@ public:
      * Furthermore the value \p 512 will be stored in \p block_aggregate for all threads.
      *
      * \tparam ITEMS_PER_THREAD     <b>[inferred]</b> The number of consecutive items partitioned onto each thread.
-     * \tparam ScanOp               <b>[inferred]</b> Binary scan operator type having member <tt>T operator()(const T &a, const T &b)</tt>
+     * \tparam ScanOp               <b>[inferred]</b> Binary scan functor (e.g., an instance of cub::Sum, cub::Min, cub::Max, etc.) type having member <tt>T operator()(const T &a, const T &b)</tt>
      */
     template <int ITEMS_PER_THREAD>
     __device__ __forceinline__ void InclusiveSum(
@@ -1892,13 +1892,13 @@ public:
      * Suppose the set of input \p thread_data across the block of threads is <tt>0, -1, 2, -3, ..., 126, -127</tt>.  The
      * corresponding output \p thread_data in those threads will be <tt>0, 0, 2, 2, ..., 126, 126</tt>.
      *
-     * \tparam ScanOp               <b>[inferred]</b> Binary scan operator type having member <tt>T operator()(const T &a, const T &b)</tt>
+     * \tparam ScanOp               <b>[inferred]</b> Binary scan functor (e.g., an instance of cub::Sum, cub::Min, cub::Max, etc.) type having member <tt>T operator()(const T &a, const T &b)</tt>
      */
     template <typename ScanOp>
     __device__ __forceinline__ void InclusiveScan(
         T               input,                          ///< [in] Calling thread's input item
         T               &output,                        ///< [out] Calling thread's output item (may be aliased to \p input)
-        ScanOp          scan_op)                        ///< [in] Binary scan operator
+        ScanOp          scan_op)                        ///< [in] Binary scan functor (e.g., an instance of cub::Sum, cub::Min, cub::Max, etc.)
     {
         T block_aggregate;
         InclusiveScan(input, output, scan_op, block_aggregate);
@@ -1942,13 +1942,13 @@ public:
      * corresponding output \p thread_data in those threads will be <tt>0, 0, 2, 2, ..., 126, 126</tt>.
      * Furthermore the value \p 126 will be stored in \p block_aggregate for all threads.
      *
-     * \tparam ScanOp   <b>[inferred]</b> Binary scan operator type having member <tt>T operator()(const T &a, const T &b)</tt>
+     * \tparam ScanOp   <b>[inferred]</b> Binary scan functor (e.g., an instance of cub::Sum, cub::Min, cub::Max, etc.) type having member <tt>T operator()(const T &a, const T &b)</tt>
      */
     template <typename ScanOp>
     __device__ __forceinline__ void InclusiveScan(
         T               input,                          ///< [in] Calling thread's input item
         T               &output,                        ///< [out] Calling thread's output item (may be aliased to \p input)
-        ScanOp          scan_op,                        ///< [in] Binary scan operator
+        ScanOp          scan_op,                        ///< [in] Binary scan functor (e.g., an instance of cub::Sum, cub::Min, cub::Max, etc.)
         T               &block_aggregate)               ///< [out] block-wide aggregate reduction of input items
     {
         InternalBlockScan(temp_storage, linear_tid).InclusiveScan(input, output, scan_op, block_aggregate);
@@ -2030,7 +2030,7 @@ public:
      * \p block_aggregate will be assigned \p 126 in all threads after the first scan, assigned \p 254 after the second
      * scan, etc.
      *
-     * \tparam ScanOp               <b>[inferred]</b> Binary scan operator type having member <tt>T operator()(const T &a, const T &b)</tt>
+     * \tparam ScanOp               <b>[inferred]</b> Binary scan functor (e.g., an instance of cub::Sum, cub::Min, cub::Max, etc.) type having member <tt>T operator()(const T &a, const T &b)</tt>
      * \tparam BlockPrefixCallbackOp        <b>[inferred]</b> Call-back functor type having member <tt>T operator()(T block_aggregate)</tt>
      */
     template <
@@ -2039,7 +2039,7 @@ public:
     __device__ __forceinline__ void InclusiveScan(
         T                       input,                          ///< [in] Calling thread's input item
         T                       &output,                        ///< [out] Calling thread's output item (may be aliased to \p input)
-        ScanOp                  scan_op,                        ///< [in] Binary scan operator
+        ScanOp                  scan_op,                        ///< [in] Binary scan functor (e.g., an instance of cub::Sum, cub::Min, cub::Max, etc.)
         T                       &block_aggregate,               ///< [out] block-wide aggregate reduction of input items (exclusive of the \p block_prefix_callback_op value)
         BlockPrefixCallbackOp   &block_prefix_callback_op)      ///< [in-out] <b>[<em>warp</em><sub>0</sub> only]</b> Call-back functor for specifying a block-wide prefix to be applied to all inputs.
     {
@@ -2092,7 +2092,7 @@ public:
      * corresponding output \p thread_data in those threads will be <tt>{ [0,0,2,2], [4,4,6,6], ..., [508,508,510,510] }</tt>.
      *
      * \tparam ITEMS_PER_THREAD     <b>[inferred]</b> The number of consecutive items partitioned onto each thread.
-     * \tparam ScanOp               <b>[inferred]</b> Binary scan operator type having member <tt>T operator()(const T &a, const T &b)</tt>
+     * \tparam ScanOp               <b>[inferred]</b> Binary scan functor (e.g., an instance of cub::Sum, cub::Min, cub::Max, etc.) type having member <tt>T operator()(const T &a, const T &b)</tt>
      */
     template <
         int             ITEMS_PER_THREAD,
@@ -2100,7 +2100,7 @@ public:
     __device__ __forceinline__ void InclusiveScan(
         T               (&input)[ITEMS_PER_THREAD],     ///< [in] Calling thread's input items
         T               (&output)[ITEMS_PER_THREAD],    ///< [out] Calling thread's output items (may be aliased to \p input)
-        ScanOp          scan_op)                        ///< [in] Binary scan operator
+        ScanOp          scan_op)                        ///< [in] Binary scan functor (e.g., an instance of cub::Sum, cub::Min, cub::Max, etc.)
     {
         if (ITEMS_PER_THREAD == 1)
         {
@@ -2162,7 +2162,7 @@ public:
      * Furthermore the value \p 510 will be stored in \p block_aggregate for all threads.
      *
      * \tparam ITEMS_PER_THREAD     <b>[inferred]</b> The number of consecutive items partitioned onto each thread.
-     * \tparam ScanOp               <b>[inferred]</b> Binary scan operator type having member <tt>T operator()(const T &a, const T &b)</tt>
+     * \tparam ScanOp               <b>[inferred]</b> Binary scan functor (e.g., an instance of cub::Sum, cub::Min, cub::Max, etc.) type having member <tt>T operator()(const T &a, const T &b)</tt>
      */
     template <
         int             ITEMS_PER_THREAD,
@@ -2170,7 +2170,7 @@ public:
     __device__ __forceinline__ void InclusiveScan(
         T               (&input)[ITEMS_PER_THREAD],     ///< [in] Calling thread's input items
         T               (&output)[ITEMS_PER_THREAD],    ///< [out] Calling thread's output items (may be aliased to \p input)
-        ScanOp          scan_op,                        ///< [in] Binary scan operator
+        ScanOp          scan_op,                        ///< [in] Binary scan functor (e.g., an instance of cub::Sum, cub::Min, cub::Max, etc.)
         T               &block_aggregate)               ///< [out] block-wide aggregate reduction of input items
     {
         if (ITEMS_PER_THREAD == 1)
@@ -2277,7 +2277,7 @@ public:
      * scan, etc.
      *
      * \tparam ITEMS_PER_THREAD         <b>[inferred]</b> The number of consecutive items partitioned onto each thread.
-     * \tparam ScanOp                   <b>[inferred]</b> Binary scan operator type having member <tt>T operator()(const T &a, const T &b)</tt>
+     * \tparam ScanOp                   <b>[inferred]</b> Binary scan functor (e.g., an instance of cub::Sum, cub::Min, cub::Max, etc.) type having member <tt>T operator()(const T &a, const T &b)</tt>
      * \tparam BlockPrefixCallbackOp    <b>[inferred]</b> Call-back functor type having member <tt>T operator()(T block_aggregate)</tt>
      */
     template <
@@ -2287,7 +2287,7 @@ public:
     __device__ __forceinline__ void InclusiveScan(
         T                       (&input)[ITEMS_PER_THREAD],     ///< [in] Calling thread's input items
         T                       (&output)[ITEMS_PER_THREAD],    ///< [out] Calling thread's output items (may be aliased to \p input)
-        ScanOp                  scan_op,                        ///< [in] Binary scan operator
+        ScanOp                  scan_op,                        ///< [in] Binary scan functor (e.g., an instance of cub::Sum, cub::Min, cub::Max, etc.)
         T                       &block_aggregate,               ///< [out] block-wide aggregate reduction of input items (exclusive of the \p block_prefix_callback_op value)
         BlockPrefixCallbackOp   &block_prefix_callback_op)      ///< [in-out] <b>[<em>warp</em><sub>0</sub> only]</b> Call-back functor for specifying a block-wide prefix to be applied to all inputs.
     {

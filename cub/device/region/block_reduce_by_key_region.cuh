@@ -98,7 +98,7 @@ template <
     typename    ValueOutputIterator,            ///< Random-access output iterator type for values
     typename    EqualityOp,                     ///< Key equality operator type
     typename    ReductionOp,                    ///< Value reduction operator type
-    typename    Offset>                         ///< Signed integer tuple type for global scatter offsets (selections and rejections)
+    typename    Offset>                         ///< Signed integer type for global offsets
 struct BlockReduceByKeyRegion
 {
     //---------------------------------------------------------------------
@@ -126,7 +126,7 @@ struct BlockReduceByKeyRegion
     // Key-value tuple type
     typedef KeyValuePair<Key, Value> KeyValuePair;
 
-    // Value-offset tuple type (maps accumulated values to segment index)
+    // Value-offset tuple type for scanning (maps accumulated values to segment index)
     typedef ItemOffsetPair<Value, Offset> ValueOffsetPair;
 
     // Reduce-value-by-segment scan operator
@@ -526,12 +526,12 @@ struct BlockReduceByKeyRegion
     /**
      * Dequeue and scan tiles of items as part of a dynamic domino scan
      */
-    template <typename NumSelectedIterator>         ///< Output iterator type for recording number of items selected
+    template <typename NumSegmentsIterator>         ///< Output iterator type for recording number of items selected
     __device__ __forceinline__ void ConsumeRegion(
         int                     num_tiles,          ///< Total number of input tiles
         GridQueue<int>          queue,              ///< Queue descriptor for assigning tiles of work to thread blocks
         TileDescriptor          *d_tile_status,     ///< Global list of tile status
-        NumSelectedIterator     d_num_selected)     ///< Output total number selected
+        NumSegmentsIterator     d_num_segments)     ///< Output pointer for total number of segments identified
     {
 #if CUB_PTX_VERSION < 200
 
@@ -548,7 +548,7 @@ struct BlockReduceByKeyRegion
         // Output the total number of items selected
         if ((tile_idx == num_tiles - 1) && (threadIdx.x == 0))
         {
-            *d_num_selected = total_selected;
+            *d_num_segments = total_selected;
         }
 
 #else
@@ -585,7 +585,7 @@ struct BlockReduceByKeyRegion
 
             if (threadIdx.x == 0)
             {
-                *d_num_selected = total_selected;
+                *d_num_segments = total_selected;
             }
         }
 

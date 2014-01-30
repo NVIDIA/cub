@@ -100,10 +100,10 @@ __global__ void ScanInitKernel(
  */
 template <
     typename    BlockScanRegionPolicy,          ///< Parameterized BlockScanRegionPolicy tuning policy type
-    typename    InputIterator,                  ///< Random-access iterator type for input \iterator
-    typename    OutputIterator,                 ///< Random-access iterator type for output \iterator
+    typename    InputIterator,                  ///< Random-access input iterator type for reading scan input data \iterator
+    typename    OutputIterator,                 ///< Random-access output iterator type for writing scan output data \iterator
     typename    T,                              ///< The scan data type
-    typename    ScanOp,                         ///< Binary scan operator type having member <tt>T operator()(const T &a, const T &b)</tt>
+    typename    ScanOp,                         ///< Binary scan functor type having member <tt>T operator()(const T &a, const T &b)</tt>
     typename    Identity,                       ///< Identity value type (cub::NullType for inclusive scans)
     typename    Offset>                         ///< Signed integer type for global offsets
 __launch_bounds__ (int(BlockScanRegionPolicy::BLOCK_THREADS))
@@ -111,7 +111,7 @@ __global__ void ScanRegionKernel(
     InputIterator               d_in,           ///< Input data
     OutputIterator              d_out,          ///< Output data
     LookbackTileDescriptor<T>   *d_tile_status, ///< Global list of tile status
-    ScanOp                      scan_op,        ///< Binary scan operator
+    ScanOp                      scan_op,        ///< Binary scan functor (e.g., an instance of cub::Sum, cub::Min, cub::Max, etc.)
     Identity                    identity,       ///< Identity element
     Offset                      num_items,      ///< Total number of scan items for the entire problem
     GridQueue<int>              queue)          ///< Drain queue descriptor for dynamically mapping tile data onto thread blocks
@@ -148,12 +148,12 @@ __global__ void ScanRegionKernel(
  ******************************************************************************/
 
 /**
- * Internal dispatch routine
+ * Utility class for dispatching the appropriately-tuned kernels for DeviceScan
  */
 template <
-    typename InputIterator,      ///< Random-access iterator type for input \iterator
-    typename OutputIterator,     ///< Random-access iterator type for output \iterator
-    typename ScanOp,             ///< Binary scan operator type having member <tt>T operator()(const T &a, const T &b)</tt>
+    typename InputIterator,      ///< Random-access input iterator type for reading scan input data \iterator
+    typename OutputIterator,     ///< Random-access output iterator type for writing scan output data \iterator
+    typename ScanOp,             ///< Binary scan functor type having member <tt>T operator()(const T &a, const T &b)</tt>
     typename Identity,           ///< Identity value type (cub::NullType for inclusive scans)
     typename Offset>             ///< Signed integer type for global offsets
 struct DeviceScanDispatch
@@ -397,18 +397,18 @@ struct DeviceScanDispatch
         typename                    ScanRegionKernelPtr>            ///< Function type of cub::ScanRegionKernelPtr
     __host__ __device__ __forceinline__
     static cudaError_t Dispatch(
-        void                        *d_temp_storage,                ///< [in] %Device allocation of temporary storage.  When NULL, the required allocation size is returned in \p temp_storage_bytes and no work is done.
-        size_t                      &temp_storage_bytes,            ///< [in,out] Size in bytes of \p d_temp_storage allocation
-        InputIterator               d_in,                           ///< [in] Iterator pointing to scan input
-        OutputIterator              d_out,                          ///< [in] Iterator pointing to scan output
-        ScanOp                      scan_op,                        ///< [in] Binary scan operator
+        void                        *d_temp_storage,                ///< [in] %Device allocation of temporary storage.  When NULL, the required allocation size is written to \p temp_storage_bytes and no work is done.
+        size_t                      &temp_storage_bytes,            ///< [in,out] Reference to size in bytes of \p d_temp_storage allocation
+        InputIterator               d_in,                           ///< [in] Pointer to the input sequence of data items
+        OutputIterator              d_out,                          ///< [out] Pointer to the output sequence of data items
+        ScanOp                      scan_op,                        ///< [in] Binary scan functor (e.g., an instance of cub::Sum, cub::Min, cub::Max, etc.)
         Identity                    identity,                       ///< [in] Identity element
-        Offset                      num_items,                      ///< [in] Total number of items to scan
-        cudaStream_t                stream,                         ///< [in] <b>[optional]</b> CUDA stream to launch kernels within.  Default is stream<sub>0</sub>.
-        bool                        debug_synchronous,              ///< [in] <b>[optional]</b> Whether or not to synchronize the stream after every kernel launch to check for errors.  Also causes launch configurations to be printed to the console.  Default is \p false.
+        Offset                      num_items,                      ///< [in] Total number of input items (i.e., the length of \p d_in)
+        cudaStream_t                stream,                         ///< [in] CUDA stream to launch kernels within.  Default is stream<sub>0</sub>.
+        bool                        debug_synchronous,              ///< [in] Whether or not to synchronize the stream after every kernel launch to check for errors.  Also causes launch configurations to be printed to the console.  Default is \p false.
         int                         ptx_version,                    ///< [in] PTX version of dispatch kernels
         ScanInitKernelPtr           init_kernel,                    ///< [in] Kernel function pointer to parameterization of cub::ScanInitKernel
-        ScanRegionKernelPtr         scan_region_kernel,             ///< [in] Kernel function pointer to parameterization of cub::ScanRegionKernelPtr
+        ScanRegionKernelPtr         scan_region_kernel,             ///< [in] Kernel function pointer to parameterization of cub::ScanRegionKernel
         KernelConfig                scan_region_config)             ///< [in] Dispatch parameters that match the policy that \p scan_region_kernel was compiled for
     {
 
@@ -529,13 +529,13 @@ struct DeviceScanDispatch
      */
     __host__ __device__ __forceinline__
     static cudaError_t Dispatch(
-        void            *d_temp_storage,                ///< [in] %Device allocation of temporary storage.  When NULL, the required allocation size is returned in \p temp_storage_bytes and no work is done.
-        size_t          &temp_storage_bytes,            ///< [in,out] Size in bytes of \p d_temp_storage allocation
-        InputIterator   d_in,                           ///< [in] Iterator pointing to scan input
-        OutputIterator  d_out,                          ///< [in] Iterator pointing to scan output
-        ScanOp          scan_op,                        ///< [in] Binary scan operator
+        void            *d_temp_storage,                ///< [in] %Device allocation of temporary storage.  When NULL, the required allocation size is written to \p temp_storage_bytes and no work is done.
+        size_t          &temp_storage_bytes,            ///< [in,out] Reference to size in bytes of \p d_temp_storage allocation
+        InputIterator   d_in,                           ///< [in] Pointer to the input sequence of data items
+        OutputIterator  d_out,                          ///< [out] Pointer to the output sequence of data items
+        ScanOp          scan_op,                        ///< [in] Binary scan functor (e.g., an instance of cub::Sum, cub::Min, cub::Max, etc.)
         Identity        identity,                       ///< [in] Identity element
-        Offset          num_items,                      ///< [in] Total number of items to scan
+        Offset          num_items,                      ///< [in] Total number of input items (i.e., the length of \p d_in)
         cudaStream_t    stream,                         ///< [in] <b>[optional]</b> CUDA stream to launch kernels within.  Default is stream<sub>0</sub>.
         bool            debug_synchronous)              ///< [in] <b>[optional]</b> Whether or not to synchronize the stream after every kernel launch to check for errors.  Also causes launch configurations to be printed to the console.  Default is \p false.
     {
@@ -649,19 +649,19 @@ struct DeviceScan
      *
      * \endcode
      *
-     * \tparam InputIterator      <b>[inferred]</b> Random-access iterator type for input \iterator
-     * \tparam OutputIterator     <b>[inferred]</b> Random-access iterator type for output \iterator
+     * \tparam InputIterator      <b>[inferred]</b> Random-access input iterator type for reading scan input data \iterator
+     * \tparam OutputIterator     <b>[inferred]</b> Random-access output iterator type for writing scan output data \iterator
      */
     template <
         typename        InputIterator,
         typename        OutputIterator>
     __host__ __device__
     static cudaError_t ExclusiveSum(
-        void            *d_temp_storage,                    ///< [in] %Device allocation of temporary storage.  When NULL, the required allocation size is returned in \p temp_storage_bytes and no work is done.
-        size_t          &temp_storage_bytes,                ///< [in,out] Size in bytes of \p d_temp_storage allocation
-        InputIterator   d_in,                               ///< [in] Iterator pointing to scan input
-        OutputIterator  d_out,                              ///< [in] Iterator pointing to scan output
-        int             num_items,                          ///< [in] Total number of items to scan
+        void            *d_temp_storage,                    ///< [in] %Device allocation of temporary storage.  When NULL, the required allocation size is written to \p temp_storage_bytes and no work is done.
+        size_t          &temp_storage_bytes,                ///< [in,out] Reference to size in bytes of \p d_temp_storage allocation
+        InputIterator   d_in,                               ///< [in] Pointer to the input sequence of data items
+        OutputIterator  d_out,                              ///< [out] Pointer to the output sequence of data items
+        int             num_items,                          ///< [in] Total number of input items (i.e., the length of \p d_in)
         cudaStream_t    stream              = 0,            ///< [in] <b>[optional]</b> CUDA stream to launch kernels within.  Default is stream<sub>0</sub>.
         bool            debug_synchronous   = false)        ///< [in] <b>[optional]</b> Whether or not to synchronize the stream after every kernel launch to check for errors.  May cause significant slowdown.  Default is \p false.
     {
@@ -698,8 +698,8 @@ struct DeviceScan
      * \code
      * #include <cub/cub.cuh>   // or equivalently <cub/device/device_scan.cuh>
      *
-     * // MyMin functor
-     * struct MyMin
+     * // CustomMin functor
+     * struct CustomMin
      * {
      *     template <typename T>
      *     __host__ __device__ __forceinline__
@@ -709,10 +709,10 @@ struct DeviceScan
      * };
      *
      * // Declare, allocate, and initialize device pointers for input and output
-     * int      num_items;      // e.g., 7
-     * int      *d_in;          // e.g., [8, 6, 7, 5, 3, 0, 9]
-     * int      *d_out;         // e.g., [ ,  ,  ,  ,  ,  ,  ]
-     * MyMin    min_op
+     * int          num_items;      // e.g., 7
+     * int          *d_in;          // e.g., [8, 6, 7, 5, 3, 0, 9]
+     * int          *d_out;         // e.g., [ ,  ,  ,  ,  ,  ,  ]
+     * CustomMin    min_op
      * ...
      *
      * // Determine temporary device storage requirements for exclusive prefix scan
@@ -730,10 +730,10 @@ struct DeviceScan
      *
      * \endcode
      *
-     * \tparam InputIterator    <b>[inferred]</b> Random-access iterator type for input \iterator
-     * \tparam OutputIterator   <b>[inferred]</b> Random-access iterator type for output \iterator
-     * \tparam ScanOp           <b>[inferred]</b> Binary scan operator type having member <tt>T operator()(const T &a, const T &b)</tt>
-     * \tparam Identity         <b>[inferred]</b> Type of the \p identity value used Binary scan operator type having member <tt>T operator()(const T &a, const T &b)</tt>
+     * \tparam InputIterator    <b>[inferred]</b> Random-access input iterator type for reading scan input data \iterator
+     * \tparam OutputIterator   <b>[inferred]</b> Random-access output iterator type for writing scan output data \iterator
+     * \tparam ScanOp           <b>[inferred]</b> Binary scan functor type having member <tt>T operator()(const T &a, const T &b)</tt>
+     * \tparam Identity         <b>[inferred]</b> Type of the \p identity value used Binary scan functor type having member <tt>T operator()(const T &a, const T &b)</tt>
      */
     template <
         typename        InputIterator,
@@ -742,13 +742,13 @@ struct DeviceScan
         typename        Identity>
     __host__ __device__
     static cudaError_t ExclusiveScan(
-        void            *d_temp_storage,                    ///< [in] %Device allocation of temporary storage.  When NULL, the required allocation size is returned in \p temp_storage_bytes and no work is done.
-        size_t          &temp_storage_bytes,                ///< [in,out] Size in bytes of \p d_temp_storage allocation
-        InputIterator   d_in,                               ///< [in] Iterator pointing to scan input
-        OutputIterator  d_out,                              ///< [in] Iterator pointing to scan output
-        ScanOp          scan_op,                            ///< [in] Binary scan operator
+        void            *d_temp_storage,                    ///< [in] %Device allocation of temporary storage.  When NULL, the required allocation size is written to \p temp_storage_bytes and no work is done.
+        size_t          &temp_storage_bytes,                ///< [in,out] Reference to size in bytes of \p d_temp_storage allocation
+        InputIterator   d_in,                               ///< [in] Pointer to the input sequence of data items
+        OutputIterator  d_out,                              ///< [out] Pointer to the output sequence of data items
+        ScanOp          scan_op,                            ///< [in] Binary scan functor (e.g., an instance of cub::Sum, cub::Min, cub::Max, etc.)
         Identity        identity,                           ///< [in] Identity element
-        int             num_items,                          ///< [in] Total number of items to scan
+        int             num_items,                          ///< [in] Total number of input items (i.e., the length of \p d_in)
         cudaStream_t    stream              = 0,            ///< [in] <b>[optional]</b> CUDA stream to launch kernels within.  Default is stream<sub>0</sub>.
         bool            debug_synchronous   = false)        ///< [in] <b>[optional]</b> Whether or not to synchronize the stream after every kernel launch to check for errors.  May cause significant slowdown.  Default is \p false.
     {
@@ -810,19 +810,19 @@ struct DeviceScan
      *
      * \endcode
      *
-     * \tparam InputIterator      <b>[inferred]</b> Random-access iterator type for input \iterator
-     * \tparam OutputIterator     <b>[inferred]</b> Random-access iterator type for output \iterator
+     * \tparam InputIterator      <b>[inferred]</b> Random-access input iterator type for reading scan input data \iterator
+     * \tparam OutputIterator     <b>[inferred]</b> Random-access output iterator type for writing scan output data \iterator
      */
     template <
         typename            InputIterator,
         typename            OutputIterator>
     __host__ __device__
     static cudaError_t InclusiveSum(
-        void                *d_temp_storage,                    ///< [in] %Device allocation of temporary storage.  When NULL, the required allocation size is returned in \p temp_storage_bytes and no work is done.
-        size_t              &temp_storage_bytes,                ///< [in,out] Size in bytes of \p d_temp_storage allocation
-        InputIterator       d_in,                               ///< [in] Iterator pointing to scan input
-        OutputIterator      d_out,                              ///< [in] Iterator pointing to scan output
-        int                 num_items,                          ///< [in] Total number of items to scan
+        void                *d_temp_storage,                    ///< [in] %Device allocation of temporary storage.  When NULL, the required allocation size is written to \p temp_storage_bytes and no work is done.
+        size_t              &temp_storage_bytes,                ///< [in,out] Reference to size in bytes of \p d_temp_storage allocation
+        InputIterator       d_in,                               ///< [in] Pointer to the input sequence of data items
+        OutputIterator      d_out,                              ///< [out] Pointer to the output sequence of data items
+        int                 num_items,                          ///< [in] Total number of input items (i.e., the length of \p d_in)
         cudaStream_t        stream             = 0,             ///< [in] <b>[optional]</b> CUDA stream to launch kernels within.  Default is stream<sub>0</sub>.
         bool                debug_synchronous  = false)         ///< [in] <b>[optional]</b> Whether or not to synchronize the stream after every kernel launch to check for errors.  May cause significant slowdown.  Default is \p false.
     {
@@ -856,8 +856,8 @@ struct DeviceScan
      * \code
      * #include <cub/cub.cuh>   // or equivalently <cub/device/device_scan.cuh>
      *
-     * // MyMin functor
-     * struct MyMin
+     * // CustomMin functor
+     * struct CustomMin
      * {
      *     template <typename T>
      *     __host__ __device__ __forceinline__
@@ -867,10 +867,10 @@ struct DeviceScan
      * };
      *
      * // Declare, allocate, and initialize device pointers for input and output
-     * int      num_items;      // e.g., 7
-     * int      *d_in;          // e.g., [8, 6, 7, 5, 3, 0, 9]
-     * int      *d_out;         // e.g., [ ,  ,  ,  ,  ,  ,  ]
-     * MyMin    min_op;
+     * int          num_items;      // e.g., 7
+     * int          *d_in;          // e.g., [8, 6, 7, 5, 3, 0, 9]
+     * int          *d_out;         // e.g., [ ,  ,  ,  ,  ,  ,  ]
+     * CustomMin    min_op;
      * ...
      *
      * // Determine temporary device storage requirements for inclusive prefix scan
@@ -888,9 +888,9 @@ struct DeviceScan
      *
      * \endcode
      *
-     * \tparam InputIterator    <b>[inferred]</b> Random-access iterator type for input \iterator
-     * \tparam OutputIterator   <b>[inferred]</b> Random-access iterator type for output \iterator
-     * \tparam ScanOp           <b>[inferred]</b> Binary scan operator type having member <tt>T operator()(const T &a, const T &b)</tt>
+     * \tparam InputIterator    <b>[inferred]</b> Random-access input iterator type for reading scan input data \iterator
+     * \tparam OutputIterator   <b>[inferred]</b> Random-access output iterator type for writing scan output data \iterator
+     * \tparam ScanOp           <b>[inferred]</b> Binary scan functor type having member <tt>T operator()(const T &a, const T &b)</tt>
      */
     template <
         typename        InputIterator,
@@ -898,12 +898,12 @@ struct DeviceScan
         typename        ScanOp>
     __host__ __device__
     static cudaError_t InclusiveScan(
-        void            *d_temp_storage,                    ///< [in] %Device allocation of temporary storage.  When NULL, the required allocation size is returned in \p temp_storage_bytes and no work is done.
-        size_t          &temp_storage_bytes,                ///< [in,out] Size in bytes of \p d_temp_storage allocation
-        InputIterator   d_in,                               ///< [in] Iterator pointing to scan input
-        OutputIterator  d_out,                              ///< [in] Iterator pointing to scan output
-        ScanOp          scan_op,                            ///< [in] Binary scan operator
-        int             num_items,                          ///< [in] Total number of items to scan
+        void            *d_temp_storage,                    ///< [in] %Device allocation of temporary storage.  When NULL, the required allocation size is written to \p temp_storage_bytes and no work is done.
+        size_t          &temp_storage_bytes,                ///< [in,out] Reference to size in bytes of \p d_temp_storage allocation
+        InputIterator   d_in,                               ///< [in] Pointer to the input sequence of data items
+        OutputIterator  d_out,                              ///< [out] Pointer to the output sequence of data items
+        ScanOp          scan_op,                            ///< [in] Binary scan functor (e.g., an instance of cub::Sum, cub::Min, cub::Max, etc.)
+        int             num_items,                          ///< [in] Total number of input items (i.e., the length of \p d_in)
         cudaStream_t    stream             = 0,             ///< [in] <b>[optional]</b> CUDA stream to launch kernels within.  Default is stream<sub>0</sub>.
         bool            debug_synchronous  = false)         ///< [in] <b>[optional]</b> Whether or not to synchronize the stream after every kernel launch to check for errors.  May cause significant slowdown.  Default is \p false.
     {
