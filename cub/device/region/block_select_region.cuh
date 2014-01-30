@@ -101,7 +101,7 @@ template <
     typename    OutputIterator,                 ///< Random-access input iterator type for selected items
     typename    SelectOp,                       ///< Selection operator type (NullType if selections or discontinuity flagging is to be used for selection)
     typename    EqualityOp,                     ///< Equality operator type (NullType if selection functor or selections is to be used for selection)
-    typename    Offset,                         ///< Signed integer tuple type for global scatter offsets (selections and rejections)
+    typename    Offset,                         ///< Signed integer type for global offsets
     bool        KEEP_REJECTS>                   ///< Whether or not we push rejected items to the back of the output
 struct BlockSelectRegion
 {

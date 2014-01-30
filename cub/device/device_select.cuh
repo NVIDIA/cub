@@ -67,24 +67,24 @@ namespace cub {
  */
 template <
     typename    BlockSelectRegionPolicy,        ///< Parameterized BlockSelectRegionPolicy tuning policy type
-    typename    InputIterator,                  ///< Random-access input iterator type for selection items
-    typename    FlagIterator,                   ///< Random-access input iterator type for selection flags (NullType* if a selection functor or discontinuity flagging is to be used for selection)
-    typename    OutputIterator,                 ///< Random-access output iterator type for selected items
-    typename    NumSelectedIterator,            ///< Output iterator type for recording number of items selected
+    typename    InputIterator,                  ///< Random-access input iterator type for reading input items
+    typename    FlagIterator,                   ///< Random-access input iterator type for reading selection flags (NullType* if a selection functor or discontinuity flagging is to be used for selection)
+    typename    OutputIterator,                 ///< Random-access output iterator type for writing selected items
+    typename    NumSelectedIterator,            ///< Output iterator type for recording the number of items selected
     typename    SelectOp,                       ///< Selection operator type (NullType if selection flags or discontinuity flagging is to be used for selection)
     typename    EqualityOp,                     ///< Equality operator type (NullType if selection functor or selection flags is to be used for selection)
     typename    Offset,                         ///< Signed integer type for global offsets
     bool        KEEP_REJECTS>                   ///< Whether or not we push rejected items to the back of the output
 __launch_bounds__ (int(BlockSelectRegionPolicy::BLOCK_THREADS))
 __global__ void SelectRegionKernel(
-    InputIterator                       d_in,               ///< [in] Input iterator pointing to data items
-    FlagIterator                        d_flags,            ///< [in] Input iterator pointing to selection flags
-    OutputIterator                      d_out,              ///< [in] Output iterator pointing to selected items
-    NumSelectedIterator                 d_num_selected,     ///< [in] Output iterator pointing to total number selected
+    InputIterator                       d_in,               ///< [in] Pointer to input sequence of data items
+    FlagIterator                        d_flags,            ///< [in] Pointer to the input sequence of selection flags
+    OutputIterator                      d_out,              ///< [in] Pointer to output sequence of selected data items
+    NumSelectedIterator                 d_num_selected,     ///< [in] Pointer to total number of items selected (i.e., length of \p d_out)
     LookbackTileDescriptor<Offset>      *d_tile_status,     ///< [in] Global list of tile status
     SelectOp                            select_op,          ///< [in] Selection operator
     EqualityOp                          equality_op,        ///< [in] Equality operator
-    Offset                              num_items,          ///< [in] Total number of items to select from
+    Offset                              num_items,          ///< [in] Total number of input items (i.e., length of \p d_in)
     int                                 num_tiles,          ///< [in] Total number of tiles for the entire problem
     GridQueue<int>                      queue)              ///< [in] Drain queue descriptor for dynamically mapping tile data onto thread blocks
 {
@@ -123,16 +123,16 @@ __global__ void SelectRegionKernel(
  ******************************************************************************/
 
 /**
- * Internal dispatch routine
+ * Utility class for dispatching the appropriately-tuned kernels for DeviceSelect
  */
 template <
-    typename    InputIterator,                  ///< Random-access input iterator type for selection items
-    typename    FlagIterator,                   ///< Random-access input iterator type for selection flags (NullType* if a selection functor or discontinuity flagging is to be used for selection)
-    typename    OutputIterator,                 ///< Random-access output iterator type for selected items
-    typename    NumSelectedIterator,            ///< Output iterator type for recording number of items selected
+    typename    InputIterator,                  ///< Random-access input iterator type for reading input items
+    typename    FlagIterator,                   ///< Random-access input iterator type for reading selection flags (NullType* if a selection functor or discontinuity flagging is to be used for selection)
+    typename    OutputIterator,                 ///< Random-access output iterator type for writing selected items
+    typename    NumSelectedIterator,            ///< Output iterator type for recording the number of items selected
     typename    SelectOp,                       ///< Selection operator type (NullType if selection flags or discontinuity flagging is to be used for selection)
     typename    EqualityOp,                     ///< Equality operator type (NullType if selection functor or selection flags is to be used for selection)
-    typename    Offset,                         ///< Signed integer tuple type for global scatter offsets (selections and rejections)
+    typename    Offset,                         ///< Signed integer type for global offsets
     bool        KEEP_REJECTS>                   ///< Whether or not we push rejected items to the back of the output
 struct DeviceSelectDispatch
 {
@@ -370,20 +370,20 @@ struct DeviceSelectDispatch
         typename                    SelectRegionKernelPtr>          ///< Function type of cub::SelectRegionKernelPtr
     __host__ __device__ __forceinline__
     static cudaError_t Dispatch(
-        void                        *d_temp_storage,                ///< [in] %Device allocation of temporary storage.  When NULL, the required allocation size is returned in \p temp_storage_bytes and no work is done.
-        size_t                      &temp_storage_bytes,            ///< [in,out] Size in bytes of \p d_temp_storage allocation
-        InputIterator               d_in,                           ///< [in] Input iterator pointing to data items
-        FlagIterator                d_flags,                        ///< [in] Input iterator pointing to selection flags
-        OutputIterator              d_out,                          ///< [in] Output iterator pointing to selected items
-        NumSelectedIterator         d_num_selected,                 ///< [in] Output iterator pointing to total number selected
+        void                        *d_temp_storage,                ///< [in] %Device allocation of temporary storage.  When NULL, the required allocation size is written to \p temp_storage_bytes and no work is done.
+        size_t                      &temp_storage_bytes,            ///< [in,out] Reference to size in bytes of \p d_temp_storage allocation
+        InputIterator               d_in,                           ///< [in] Pointer to input sequence of data items
+        FlagIterator                d_flags,                        ///< [in] Pointer to the input sequence of selection flags
+        OutputIterator              d_out,                          ///< [in] Pointer to output sequence of selected data items
+        NumSelectedIterator         d_num_selected,                 ///< [in] Pointer to total number of items selected (i.e., length of \p d_out)
         SelectOp                    select_op,                      ///< [in] Selection operator
         EqualityOp                  equality_op,                    ///< [in] Equality operator
-        Offset                      num_items,                      ///< [in] Total number of items to select from
+        Offset                      num_items,                      ///< [in] Total number of input items (i.e., length of \p d_in)
         cudaStream_t                stream,                         ///< [in] CUDA stream to launch kernels within.  Default is stream<sub>0</sub>.
         bool                        debug_synchronous,              ///< [in] Whether or not to synchronize the stream after every kernel launch to check for errors.  Also causes launch configurations to be printed to the console.  Default is \p false.
         int                         ptx_version,                    ///< [in] PTX version of dispatch kernels
         ScanInitKernelPtr           init_kernel,                    ///< [in] Kernel function pointer to parameterization of cub::ScanInitKernel
-        SelectRegionKernelPtr       select_region_kernel,           ///< [in] Kernel function pointer to parameterization of cub::SelectRegionKernelPtr
+        SelectRegionKernelPtr       select_region_kernel,           ///< [in] Kernel function pointer to parameterization of cub::SelectRegionKernel
         KernelConfig                select_region_config)           ///< [in] Dispatch parameters that match the policy that \p select_region_kernel was compiled for
     {
 
@@ -508,15 +508,15 @@ struct DeviceSelectDispatch
      */
     __host__ __device__ __forceinline__
     static cudaError_t Dispatch(
-        void                        *d_temp_storage,                ///< [in] %Device allocation of temporary storage.  When NULL, the required allocation size is returned in \p temp_storage_bytes and no work is done.
-        size_t                      &temp_storage_bytes,            ///< [in,out] Size in bytes of \p d_temp_storage allocation
-        InputIterator               d_in,                           ///< [in] Input iterator pointing to data items
-        FlagIterator                d_flags,                        ///< [in] Input iterator pointing to selection flags
-        OutputIterator              d_out,                          ///< [in] Output iterator pointing to selected items
-        NumSelectedIterator         d_num_selected,                 ///< [in] Output iterator pointing to total number selected
+        void                        *d_temp_storage,                ///< [in] %Device allocation of temporary storage.  When NULL, the required allocation size is written to \p temp_storage_bytes and no work is done.
+        size_t                      &temp_storage_bytes,            ///< [in,out] Reference to size in bytes of \p d_temp_storage allocation
+        InputIterator               d_in,                           ///< [in] Pointer to input sequence of data items
+        FlagIterator                d_flags,                        ///< [in] Pointer to the input sequence of selection flags
+        OutputIterator              d_out,                          ///< [in] Pointer to output sequence of selected data items
+        NumSelectedIterator         d_num_selected,                 ///< [in] Pointer to total number of items selected (i.e., length of \p d_out)
         SelectOp                    select_op,                      ///< [in] Selection operator
         EqualityOp                  equality_op,                    ///< [in] Equality operator
-        Offset                      num_items,                      ///< [in] Total number of items to select from
+        Offset                      num_items,                      ///< [in] Total number of input items (i.e., length of \p d_in)
         cudaStream_t                stream,                         ///< [in] <b>[optional]</b> CUDA stream to launch kernels within.  Default is stream<sub>0</sub>.
         bool                        debug_synchronous)              ///< [in] <b>[optional]</b> Whether or not to synchronize the stream after every kernel launch to check for errors.  Also causes launch configurations to be printed to the console.  Default is \p false.
     {
@@ -624,10 +624,10 @@ struct DeviceSelect
      *
      * \endcode
      *
-     * \tparam InputIterator        <b>[inferred]</b> Random-access input iterator type for selection items \iterator
-     * \tparam FlagIterator         <b>[inferred]</b> Random-access input iterator type for selection flags \iterator
-     * \tparam OutputIterator       <b>[inferred]</b> Random-access output iterator type for selected items \iterator
-     * \tparam NumSelectedIterator  <b>[inferred]</b> Output iterator type for recording number of items selected \iterator
+     * \tparam InputIterator        <b>[inferred]</b> Random-access input iterator type for reading input items \iterator
+     * \tparam FlagIterator         <b>[inferred]</b> Random-access input iterator type for reading selection flags \iterator
+     * \tparam OutputIterator       <b>[inferred]</b> Random-access output iterator type for writing selected items \iterator
+     * \tparam NumSelectedIterator  <b>[inferred]</b> Output iterator type for recording the number of items selected \iterator
      */
     template <
         typename                    InputIterator,
@@ -636,13 +636,13 @@ struct DeviceSelect
         typename                    NumSelectedIterator>
     __host__ __device__ __forceinline__
     static cudaError_t Flagged(
-        void                        *d_temp_storage,                ///< [in] %Device allocation of temporary storage.  When NULL, the required allocation size is returned in \p temp_storage_bytes and no work is done.
-        size_t                      &temp_storage_bytes,            ///< [in,out] Size in bytes of \p d_temp_storage allocation
-        InputIterator               d_in,                           ///< [in] Input iterator pointing to data items
-        FlagIterator                d_flags,                        ///< [in] Input iterator pointing to selection flags
-        OutputIterator              d_out,                          ///< [in] Output iterator pointing to selected items
-        NumSelectedIterator         d_num_selected,                 ///< [in] Output iterator pointing to total number selected
-        int                         num_items,                      ///< [in] Total number of items to select from
+        void                        *d_temp_storage,                ///< [in] %Device allocation of temporary storage.  When NULL, the required allocation size is written to \p temp_storage_bytes and no work is done.
+        size_t                      &temp_storage_bytes,            ///< [in,out] Reference to size in bytes of \p d_temp_storage allocation
+        InputIterator               d_in,                           ///< [in] Pointer to the input sequence of data items
+        FlagIterator                d_flags,                        ///< [in] Pointer to the input sequence of selection flags
+        OutputIterator              d_out,                          ///< [out] Pointer to the output sequence of selected data items
+        NumSelectedIterator         d_num_selected,                 ///< [out] Pointer to the output total number of items selected (i.e., length of \p d_out)
+        int                         num_items,                      ///< [in] Total number of input items (i.e., length of \p d_in)
         cudaStream_t                stream             = 0,         ///< [in] <b>[optional]</b> CUDA stream to launch kernels within.  Default is stream<sub>0</sub>.
         bool                        debug_synchronous  = false)     ///< [in] <b>[optional]</b> Whether or not to synchronize the stream after every kernel launch to check for errors.  May cause significant slowdown.  Default is \p false.
     {
@@ -713,9 +713,9 @@ struct DeviceSelect
      *
      * \endcode
      *
-     * \tparam InputIterator        <b>[inferred]</b> Random-access input iterator type for selection items \iterator
-     * \tparam OutputIterator       <b>[inferred]</b> Random-access output iterator type for selected items \iterator
-     * \tparam NumSelectedIterator  <b>[inferred]</b> Output iterator type for recording number of items selected \iterator
+     * \tparam InputIterator        <b>[inferred]</b> Random-access input iterator type for reading input items \iterator
+     * \tparam OutputIterator       <b>[inferred]</b> Random-access output iterator type for writing selected items \iterator
+     * \tparam NumSelectedIterator  <b>[inferred]</b> Output iterator type for recording the number of items selected \iterator
      * \tparam SelectOp             <b>[inferred]</b> Selection operator type having member <tt>bool operator()(const T &a)</tt>
      */
     template <
@@ -725,12 +725,12 @@ struct DeviceSelect
         typename                    SelectOp>
     __host__ __device__ __forceinline__
     static cudaError_t If(
-        void                        *d_temp_storage,                ///< [in] %Device allocation of temporary storage.  When NULL, the required allocation size is returned in \p temp_storage_bytes and no work is done.
-        size_t                      &temp_storage_bytes,            ///< [in,out] Size in bytes of \p d_temp_storage allocation
-        InputIterator               d_in,                           ///< [in] Input iterator pointing to data items
-        OutputIterator              d_out,                          ///< [in] Output iterator pointing to selected items
-        NumSelectedIterator         d_num_selected,                 ///< [in] Output iterator pointing to total number selected
-        int                         num_items,                      ///< [in] Total number of items to select from
+        void                        *d_temp_storage,                ///< [in] %Device allocation of temporary storage.  When NULL, the required allocation size is written to \p temp_storage_bytes and no work is done.
+        size_t                      &temp_storage_bytes,            ///< [in,out] Reference to size in bytes of \p d_temp_storage allocation
+        InputIterator               d_in,                           ///< [in] Pointer to the input sequence of data items
+        OutputIterator              d_out,                          ///< [out] Pointer to the output sequence of selected data items
+        NumSelectedIterator         d_num_selected,                 ///< [out] Pointer to the output total number of items selected (i.e., length of \p d_out)
+        int                         num_items,                      ///< [in] Total number of input items (i.e., length of \p d_in)
         SelectOp                    select_op,                      ///< [in] Unary selection operator
         cudaStream_t                stream             = 0,         ///< [in] <b>[optional]</b> CUDA stream to launch kernels within.  Default is stream<sub>0</sub>.
         bool                        debug_synchronous  = false)     ///< [in] <b>[optional]</b> Whether or not to synchronize the stream after every kernel launch to check for errors.  May cause significant slowdown.  Default is \p false.
@@ -758,7 +758,7 @@ struct DeviceSelect
      * \brief Given an input sequence \p d_in having runs of consecutive equal-valued keys, only the first key from each run is selectively copied to \p d_out.  The total number of items selected is written to \p d_num_selected. ![](unique_logo.png)
      *
      * \par
-     * - The <tt>==</tt> equality operator is used to determine equal-valued keys
+     * - The <tt>==</tt> equality operator is used to determine whether keys are equivalent
      * - Copies of the selected items are compacted into \p d_out and maintain their original relative ordering.
      * - \devicestorage
      * - \cdp
@@ -769,22 +769,11 @@ struct DeviceSelect
      * \code
      * #include <cub/cub.cuh>   // or equivalently <cub/device/device_select.cuh>
      *
-     * // Functor for selecting values that are multiples of three
-     * struct IsTriple
-     * {
-     *     template <typename T>
-     *     __host__ __device__ __forceinline__
-     *     T operator()(const T &a) const {
-     *         return (a % 3 == 0);
-     *     }
-     * };
-     *
      * // Declare, allocate, and initialize device pointers for input and output
      * int      num_items;          // e.g., 8
      * int      *d_in;              // e.g., [0, 2, 2, 9, 5, 5, 5, 8]
      * int      *d_out;             // e.g., [ ,  ,  ,  ,  ,  ,  ,  ]
      * int      *d_num_selected;    // e.g., [ ]
-     * IsTriple select_op;
      * ...
      *
      * // Determine temporary device storage requirements
@@ -803,9 +792,9 @@ struct DeviceSelect
      *
      * \endcode
      *
-     * \tparam InputIterator        <b>[inferred]</b> Random-access input iterator type for selection items \iterator
-     * \tparam OutputIterator       <b>[inferred]</b> Random-access output iterator type for selected items \iterator
-     * \tparam NumSelectedIterator  <b>[inferred]</b> Output iterator type for recording number of items selected \iterator
+     * \tparam InputIterator        <b>[inferred]</b> Random-access input iterator type for reading input items \iterator
+     * \tparam OutputIterator       <b>[inferred]</b> Random-access output iterator type for writing selected items \iterator
+     * \tparam NumSelectedIterator  <b>[inferred]</b> Output iterator type for recording the number of items selected \iterator
      */
     template <
         typename                    InputIterator,
@@ -813,12 +802,12 @@ struct DeviceSelect
         typename                    NumSelectedIterator>
     __host__ __device__ __forceinline__
     static cudaError_t Unique(
-        void                        *d_temp_storage,                ///< [in] %Device allocation of temporary storage.  When NULL, the required allocation size is returned in \p temp_storage_bytes and no work is done.
-        size_t                      &temp_storage_bytes,            ///< [in,out] Size in bytes of \p d_temp_storage allocation
-        InputIterator               d_in,                           ///< [in] Input iterator pointing to data items
-        OutputIterator              d_out,                          ///< [in] Output iterator pointing to selected items
-        NumSelectedIterator         d_num_selected,                 ///< [in] Output iterator pointing to total number selected
-        int                         num_items,                      ///< [in] Total number of items to select from
+        void                        *d_temp_storage,                ///< [in] %Device allocation of temporary storage.  When NULL, the required allocation size is written to \p temp_storage_bytes and no work is done.
+        size_t                      &temp_storage_bytes,            ///< [in,out] Reference to size in bytes of \p d_temp_storage allocation
+        InputIterator               d_in,                           ///< [in] Pointer to the input sequence of data items
+        OutputIterator              d_out,                          ///< [out] Pointer to the output sequence of selected data items
+        NumSelectedIterator         d_num_selected,                 ///< [out] Pointer to the output total number of items selected (i.e., length of \p d_out)
+        int                         num_items,                      ///< [in] Total number of input items (i.e., length of \p d_in)
         cudaStream_t                stream             = 0,         ///< [in] <b>[optional]</b> CUDA stream to launch kernels within.  Default is stream<sub>0</sub>.
         bool                        debug_synchronous  = false)     ///< [in] <b>[optional]</b> Whether or not to synchronize the stream after every kernel launch to check for errors.  May cause significant slowdown.  Default is \p false.
     {

@@ -108,10 +108,10 @@ struct DevicePartition
      *
      * \endcode
      *
-     * \tparam InputIterator        <b>[inferred]</b> Random-access input iterator type for selection items \iterator
-     * \tparam FlagIterator         <b>[inferred]</b> Random-access input iterator type for selection flags \iterator
-     * \tparam OutputIterator       <b>[inferred]</b> Random-access output iterator type for selected items \iterator
-     * \tparam NumSelectedIterator  <b>[inferred]</b> Output iterator type for recording number of items selected \iterator
+     * \tparam InputIterator        <b>[inferred]</b> Random-access input iterator type for reading input items \iterator
+     * \tparam FlagIterator         <b>[inferred]</b> Random-access input iterator type for reading selection flags \iterator
+     * \tparam OutputIterator       <b>[inferred]</b> Random-access output iterator type for writing output items \iterator
+     * \tparam NumSelectedIterator  <b>[inferred]</b> Output iterator type for recording the number of items selected \iterator
      */
     template <
         typename                    InputIterator,
@@ -120,12 +120,12 @@ struct DevicePartition
         typename                    NumSelectedIterator>
     __host__ __device__ __forceinline__
     static cudaError_t Flagged(
-        void                        *d_temp_storage,                ///< [in] %Device allocation of temporary storage.  When NULL, the required allocation size is returned in \p temp_storage_bytes and no work is done.
-        size_t                      &temp_storage_bytes,            ///< [in,out] Size in bytes of \p d_temp_storage allocation
-        InputIterator               d_in,                           ///< [in] Input iterator pointing to data items
-        FlagIterator                d_flags,                        ///< [in] Input iterator pointing to selection flags
-        OutputIterator              d_out,                          ///< [in] Output iterator pointing to selected items
-        NumSelectedIterator         d_num_selected,                 ///< [in] Output iterator pointing to total number selected
+        void                        *d_temp_storage,                ///< [in] %Device allocation of temporary storage.  When NULL, the required allocation size is written to \p temp_storage_bytes and no work is done.
+        size_t                      &temp_storage_bytes,            ///< [in,out] Reference to size in bytes of \p d_temp_storage allocation
+        InputIterator               d_in,                           ///< [in] Pointer to the input sequence of data items
+        FlagIterator                d_flags,                        ///< [in] Pointer to the input sequence of selection flags
+        OutputIterator              d_out,                          ///< [out] Pointer to the output sequence of partitioned data items
+        NumSelectedIterator         d_num_selected,                 ///< [out] Pointer to the output total number of items selected (i.e., the offset of the unselected partition)
         int                         num_items,                      ///< [in] Total number of items to select from
         cudaStream_t                stream             = 0,         ///< [in] <b>[optional]</b> CUDA stream to launch kernels within.  Default is stream<sub>0</sub>.
         bool                        debug_synchronous  = false)     ///< [in] <b>[optional]</b> Whether or not to synchronize the stream after every kernel launch to check for errors.  May cause significant slowdown.  Default is \p false.
@@ -199,10 +199,10 @@ struct DevicePartition
      *
      * \endcode
      *
-     * \tparam InputIterator        <b>[inferred]</b> Random-access input iterator type for selection items \iterator
-     * \tparam OutputIterator       <b>[inferred]</b> Random-access output iterator type for selected items \iterator
-     * \tparam NumSelectedIterator  <b>[inferred]</b> Output iterator type for recording number of items selected \iterator
-     * \tparam SelectOp             <b>[inferred]</b> Selection operator type having member <tt>bool operator()(const T &a)</tt>
+     * \tparam InputIterator        <b>[inferred]</b> Random-access input iterator type for reading input items \iterator
+     * \tparam OutputIterator       <b>[inferred]</b> Random-access output iterator type for writing output items \iterator
+     * \tparam NumSelectedIterator  <b>[inferred]</b> Output iterator type for recording the number of items selected \iterator
+     * \tparam SelectOp             <b>[inferred]</b> Selection functor type having member <tt>bool operator()(const T &a)</tt>
      */
     template <
         typename                    InputIterator,
@@ -211,11 +211,11 @@ struct DevicePartition
         typename                    SelectOp>
     __host__ __device__ __forceinline__
     static cudaError_t If(
-        void                        *d_temp_storage,                ///< [in] %Device allocation of temporary storage.  When NULL, the required allocation size is returned in \p temp_storage_bytes and no work is done.
-        size_t                      &temp_storage_bytes,            ///< [in,out] Size in bytes of \p d_temp_storage allocation
-        InputIterator               d_in,                           ///< [in] Input iterator pointing to data items
-        OutputIterator              d_out,                          ///< [in] Output iterator pointing to selected items
-        NumSelectedIterator         d_num_selected,                 ///< [in] Output iterator pointing to total number selected
+        void                        *d_temp_storage,                ///< [in] %Device allocation of temporary storage.  When NULL, the required allocation size is written to \p temp_storage_bytes and no work is done.
+        size_t                      &temp_storage_bytes,            ///< [in,out] Reference to size in bytes of \p d_temp_storage allocation
+        InputIterator               d_in,                           ///< [in] Pointer to the input sequence of data items
+        OutputIterator              d_out,                          ///< [out] Pointer to the output sequence of partitioned data items
+        NumSelectedIterator         d_num_selected,                 ///< [out] Pointer to the output total number of items selected (i.e., the offset of the unselected partition)
         int                         num_items,                      ///< [in] Total number of items to select from
         SelectOp                    select_op,                      ///< [in] Unary selection operator
         cudaStream_t                stream             = 0,         ///< [in] <b>[optional]</b> CUDA stream to launch kernels within.  Default is stream<sub>0</sub>.

@@ -38,6 +38,7 @@
 #include <iterator>
 
 #include "region/block_reduce_region.cuh"
+#include "device_reduce_by_key.cuh"
 #include "../thread/thread_operators.cuh"
 #include "../grid/grid_even_share.cuh"
 #include "../grid/grid_queue.cuh"
@@ -68,18 +69,18 @@ namespace cub {
  */
 template <
     typename                BlockReduceRegionPolicy,    ///< Parameterized BlockReduceRegionPolicy tuning policy type
-    typename                InputIterator,              ///< Random-access iterator type for input \iterator
-    typename                OutputIterator,             ///< Random-access iterator type for output \iterator
+    typename                InputIterator,              ///< Random-access input iterator type for reading input items \iterator
+    typename                OutputIterator,             ///< Output iterator type for recording the reduced aggregate \iterator
     typename                Offset,                     ///< Signed integer type for global offsets
-    typename                ReductionOp>                ///< Binary reduction operator type having member <tt>T operator()(const T &a, const T &b)</tt>
+    typename                ReductionOp>                ///< Binary reduction functor type having member <tt>T operator()(const T &a, const T &b)</tt>
 __launch_bounds__ (int(BlockReduceRegionPolicy::BLOCK_THREADS), 1)
 __global__ void ReduceRegionKernel(
-    InputIterator           d_in,                       ///< [in] Input data to reduce
-    OutputIterator          d_out,                      ///< [out] Output location for result
+    InputIterator           d_in,                       ///< [in] Pointer to the input sequence of data items
+    OutputIterator          d_out,                      ///< [out] Pointer to the output aggregate
     Offset                  num_items,                  ///< [in] Total number of input data items
     GridEvenShare<Offset>   even_share,                 ///< [in] Even-share descriptor for mapping an equal number of tiles onto each thread block
     GridQueue<Offset>       queue,                      ///< [in] Drain queue descriptor for dynamically mapping tile data onto thread blocks
-    ReductionOp             reduction_op)               ///< [in] Binary reduction operator
+    ReductionOp             reduction_op)               ///< [in] Binary reduction functor (e.g., an instance of cub::Sum, cub::Min, cub::Max, etc.)
 {
     // Data type
     typedef typename std::iterator_traits<InputIterator>::value_type T;
@@ -114,16 +115,16 @@ __global__ void ReduceRegionKernel(
  */
 template <
     typename                BlockReduceRegionPolicy,    ///< Parameterized BlockReduceRegionPolicy tuning policy type
-    typename                InputIterator,              ///< Random-access iterator type for input \iterator
-    typename                OutputIterator,             ///< Random-access iterator type for output \iterator
+    typename                InputIterator,              ///< Random-access input iterator type for reading input items \iterator
+    typename                OutputIterator,             ///< Output iterator type for recording the reduced aggregate \iterator
     typename                Offset,                     ///< Signed integer type for global offsets
-    typename                ReductionOp>                ///< Binary reduction operator type having member <tt>T operator()(const T &a, const T &b)</tt>
+    typename                ReductionOp>                ///< Binary reduction functor type having member <tt>T operator()(const T &a, const T &b)</tt>
 __launch_bounds__ (int(BlockReduceRegionPolicy::BLOCK_THREADS), 1)
 __global__ void SingleTileKernel(
-    InputIterator           d_in,                       ///< [in] Input data to reduce
-    OutputIterator          d_out,                      ///< [out] Output location for result
+    InputIterator           d_in,                       ///< [in] Pointer to the input sequence of data items
+    OutputIterator          d_out,                      ///< [out] Pointer to the output aggregate
     Offset                  num_items,                  ///< [in] Total number of input data items
-    ReductionOp             reduction_op)               ///< [in] Binary reduction operator
+    ReductionOp             reduction_op)               ///< [in] Binary reduction functor (e.g., an instance of cub::Sum, cub::Min, cub::Max, etc.)
 {
     // Data type
     typedef typename std::iterator_traits<InputIterator>::value_type T;
@@ -161,10 +162,10 @@ __global__ void SingleTileKernel(
  * Utility class for dispatching the appropriately-tuned kernels for DeviceReduce
  */
 template <
-    typename InputIterator,     ///< Random-access iterator type for input \iterator
-    typename OutputIterator,    ///< Random-access iterator type for output \iterator
+    typename InputIterator,     ///< Random-access input iterator type for reading input items \iterator
+    typename OutputIterator,    ///< Output iterator type for recording the reduced aggregate \iterator
     typename Offset,            ///< Signed integer type for global offsets
-    typename ReductionOp>       ///< Binary reduction operator type having member <tt>T operator()(const T &a, const T &b)</tt>
+    typename ReductionOp>       ///< Binary reduction functor type having member <tt>T operator()(const T &a, const T &b)</tt>
 struct DeviceReduceDispatch
 {
     // Data type of input iterator
@@ -485,14 +486,14 @@ struct DeviceReduceDispatch
         typename                    FillAndResetDrainKernelPtr>         ///< Function type of cub::FillAndResetDrainKernel
     __host__ __device__ __forceinline__
     static cudaError_t Dispatch(
-        void                        *d_temp_storage,                    ///< [in] %Device allocation of temporary storage.  When NULL, the required allocation size is returned in \p temp_storage_bytes and no work is done.
-        size_t                      &temp_storage_bytes,                ///< [in,out] Size in bytes of \p d_temp_storage allocation
-        InputIterator               d_in,                               ///< [in] Input data to reduce
-        OutputIterator              d_out,                              ///< [out] Output location for result
-        Offset                      num_items,                          ///< [in] Number of items to reduce
-        ReductionOp                 reduction_op,                       ///< [in] Binary reduction operator
-        cudaStream_t                stream,                             ///< [in] <b>[optional]</b> CUDA stream to launch kernels within.  Default is stream<sub>0</sub>.
-        bool                        debug_synchronous,                  ///< [in] <b>[optional]</b> Whether or not to synchronize the stream after every kernel launch to check for errors.  Also causes launch configurations to be printed to the console.  Default is \p false.
+        void                        *d_temp_storage,                    ///< [in] %Device allocation of temporary storage.  When NULL, the required allocation size is written to \p temp_storage_bytes and no work is done.
+        size_t                      &temp_storage_bytes,                ///< [in,out] Reference to size in bytes of \p d_temp_storage allocation
+        InputIterator               d_in,                               ///< [in] Pointer to the input sequence of data items
+        OutputIterator              d_out,                              ///< [out] Pointer to the output aggregate
+        Offset                      num_items,                          ///< [in] Total number of input items (i.e., length of \p d_in)
+        ReductionOp                 reduction_op,                       ///< [in] Binary reduction functor (e.g., an instance of cub::Sum, cub::Min, cub::Max, etc.)
+        cudaStream_t                stream,                             ///< [in] CUDA stream to launch kernels within.  Default is stream<sub>0</sub>.
+        bool                        debug_synchronous,                  ///< [in] Whether or not to synchronize the stream after every kernel launch to check for errors.  Also causes launch configurations to be printed to the console.  Default is \p false.
         FillAndResetDrainKernelPtr  prepare_drain_kernel,               ///< [in] Kernel function pointer to parameterization of cub::FillAndResetDrainKernel
         ReduceRegionKernelPtr       reduce_region_kernel,               ///< [in] Kernel function pointer to parameterization of cub::ReduceRegionKernel
         AggregateTileKernelPtr      aggregate_kernel,                   ///< [in] Kernel function pointer to parameterization of cub::SingleTileKernel for consuming partial reductions (T*)
@@ -673,12 +674,12 @@ struct DeviceReduceDispatch
      */
     __host__ __device__ __forceinline__
     static cudaError_t Dispatch(
-        void                        *d_temp_storage,                    ///< [in] %Device allocation of temporary storage.  When NULL, the required allocation size is returned in \p temp_storage_bytes and no work is done.
-        size_t                      &temp_storage_bytes,                ///< [in,out] Size in bytes of \p d_temp_storage allocation
-        InputIterator               d_in,                               ///< [in] Input data to reduce
-        OutputIterator              d_out,                              ///< [out] Output location for result
-        Offset                      num_items,                          ///< [in] Number of items to reduce
-        ReductionOp                 reduction_op,                       ///< [in] Binary reduction operator
+        void                        *d_temp_storage,                    ///< [in] %Device allocation of temporary storage.  When NULL, the required allocation size is written to \p temp_storage_bytes and no work is done.
+        size_t                      &temp_storage_bytes,                ///< [in,out] Reference to size in bytes of \p d_temp_storage allocation
+        InputIterator               d_in,                               ///< [in] Pointer to the input sequence of data items
+        OutputIterator              d_out,                              ///< [out] Pointer to the output aggregate
+        Offset                      num_items,                          ///< [in] Total number of input items (i.e., length of \p d_in)
+        ReductionOp                 reduction_op,                       ///< [in] Binary reduction functor (e.g., an instance of cub::Sum, cub::Min, cub::Max, etc.)
         cudaStream_t                stream,                             ///< [in] <b>[optional]</b> CUDA stream to launch kernels within.  Default is stream<sub>0</sub>.
         bool                        debug_synchronous)                  ///< [in] <b>[optional]</b> Whether or not to synchronize the stream after every kernel launch to check for errors.  Also causes launch configurations to be printed to the console.  Default is \p false.
     {
@@ -762,8 +763,8 @@ struct DeviceReduce
      * \code
      * #include <cub/cub.cuh>   // or equivalently <cub/device/device_radix_sort.cuh>
      *
-     * // MyMin functor
-     * struct MyMin
+     * // CustomMin functor
+     * struct CustomMin
      * {
      *     template <typename T>
      *     __host__ __device__ __forceinline__
@@ -773,10 +774,10 @@ struct DeviceReduce
      * };
      *
      * // Declare, allocate, and initialize device pointers for input and output
-     * int      num_items;      // e.g., 7
-     * int      *d_in;          // e.g., [8, 6, 7, 5, 3, 0, 9]
-     * int      *d_out;         // e.g., [ ]
-     * MyMin    min_op;
+     * int          num_items;  // e.g., 7
+     * int          *d_in;      // e.g., [8, 6, 7, 5, 3, 0, 9]
+     * int          *d_out;     // e.g., [ ]
+     * CustomMin    min_op;
      * ...
      *
      * // Determine temporary device storage requirements
@@ -794,9 +795,9 @@ struct DeviceReduce
      *
      * \endcode
      *
-     * \tparam InputIterator      <b>[inferred]</b> Random-access iterator type for input \iterator
-     * \tparam OutputIterator     <b>[inferred]</b> Random-access iterator type for output \iterator
-     * \tparam ReductionOp        <b>[inferred]</b> Binary reduction operator type having member <tt>T operator()(const T &a, const T &b)</tt>
+     * \tparam InputIterator      <b>[inferred]</b> Random-access input iterator type for reading input items \iterator
+     * \tparam OutputIterator     <b>[inferred]</b> Output iterator type for recording the reduced aggregate \iterator
+     * \tparam ReductionOp        <b>[inferred]</b> Binary reduction functor type having member <tt>T operator()(const T &a, const T &b)</tt>
      */
     template <
         typename                    InputIterator,
@@ -804,12 +805,12 @@ struct DeviceReduce
         typename                    ReductionOp>
     __host__ __device__
     static cudaError_t Reduce(
-        void                        *d_temp_storage,                    ///< [in] %Device allocation of temporary storage.  When NULL, the required allocation size is returned in \p temp_storage_bytes and no work is done.
-        size_t                      &temp_storage_bytes,                ///< [in,out] Size in bytes of \p d_temp_storage allocation
-        InputIterator               d_in,                               ///< [in] Input data to reduce
-        OutputIterator              d_out,                              ///< [out] Output location for result
-        int                         num_items,                          ///< [in] Number of items to reduce
-        ReductionOp                 reduction_op,                       ///< [in] Binary reduction operator
+        void                        *d_temp_storage,                    ///< [in] %Device allocation of temporary storage.  When NULL, the required allocation size is written to \p temp_storage_bytes and no work is done.
+        size_t                      &temp_storage_bytes,                ///< [in,out] Reference to size in bytes of \p d_temp_storage allocation
+        InputIterator               d_in,                               ///< [in] Pointer to the input sequence of data items
+        OutputIterator              d_out,                              ///< [out] Pointer to the output aggregate
+        int                         num_items,                          ///< [in] Total number of input items (i.e., length of \p d_in)
+        ReductionOp                 reduction_op,                       ///< [in] Binary reduction functor (e.g., an instance of cub::Sum, cub::Min, cub::Max, etc.)
         cudaStream_t                stream              = 0,            ///< [in] <b>[optional]</b> CUDA stream to launch kernels within.  Default is stream<sub>0</sub>.
         bool                        debug_synchronous   = false)        ///< [in] <b>[optional]</b> Whether or not to synchronize the stream after every kernel launch to check for errors.  Also causes launch configurations to be printed to the console.  Default is \p false.
     {
@@ -866,19 +867,19 @@ struct DeviceReduce
      *
      * \endcode
      *
-     * \tparam InputIterator      <b>[inferred]</b> Random-access iterator type for input \iterator
-     * \tparam OutputIterator     <b>[inferred]</b> Random-access iterator type for output \iterator
+     * \tparam InputIterator      <b>[inferred]</b> Random-access input iterator type for reading input items \iterator
+     * \tparam OutputIterator     <b>[inferred]</b> Output iterator type for recording the reduced aggregate \iterator
      */
     template <
         typename                    InputIterator,
         typename                    OutputIterator>
     __host__ __device__
     static cudaError_t Sum(
-        void                        *d_temp_storage,                    ///< [in] %Device allocation of temporary storage.  When NULL, the required allocation size is returned in \p temp_storage_bytes and no work is done.
-        size_t                      &temp_storage_bytes,                ///< [in,out] Size in bytes of \p d_temp_storage allocation
-        InputIterator               d_in,                               ///< [in] Input data to reduce
-        OutputIterator              d_out,                              ///< [out] Output location for result
-        int                         num_items,                          ///< [in] Number of items to reduce
+        void                        *d_temp_storage,                    ///< [in] %Device allocation of temporary storage.  When NULL, the required allocation size is written to \p temp_storage_bytes and no work is done.
+        size_t                      &temp_storage_bytes,                ///< [in,out] Reference to size in bytes of \p d_temp_storage allocation
+        InputIterator               d_in,                               ///< [in] Pointer to the input sequence of data items
+        OutputIterator              d_out,                              ///< [out] Pointer to the output aggregate
+        int                         num_items,                          ///< [in] Total number of input items (i.e., length of \p d_in)
         cudaStream_t                stream              = 0,            ///< [in] <b>[optional]</b> CUDA stream to launch kernels within.  Default is stream<sub>0</sub>.
         bool                        debug_synchronous   = false)        ///< [in] <b>[optional]</b> Whether or not to synchronize the stream after every kernel launch to check for errors.  Also causes launch configurations to be printed to the console.  Default is \p false.
     {
@@ -935,19 +936,19 @@ struct DeviceReduce
      *
      * \endcode
      *
-     * \tparam InputIterator      <b>[inferred]</b> Random-access iterator type for input \iterator
-     * \tparam OutputIterator     <b>[inferred]</b> Random-access iterator type for output \iterator
+     * \tparam InputIterator      <b>[inferred]</b> Random-access input iterator type for reading input items \iterator
+     * \tparam OutputIterator     <b>[inferred]</b> Output iterator type for recording the reduced aggregate \iterator
      */
     template <
         typename                    InputIterator,
         typename                    OutputIterator>
     __host__ __device__
     static cudaError_t Min(
-        void                        *d_temp_storage,                    ///< [in] %Device allocation of temporary storage.  When NULL, the required allocation size is returned in \p temp_storage_bytes and no work is done.
-        size_t                      &temp_storage_bytes,                ///< [in,out] Size in bytes of \p d_temp_storage allocation
-        InputIterator               d_in,                               ///< [in] Input data to reduce
-        OutputIterator              d_out,                              ///< [out] Output location for result
-        int                         num_items,                          ///< [in] Number of items to reduce
+        void                        *d_temp_storage,                    ///< [in] %Device allocation of temporary storage.  When NULL, the required allocation size is written to \p temp_storage_bytes and no work is done.
+        size_t                      &temp_storage_bytes,                ///< [in,out] Reference to size in bytes of \p d_temp_storage allocation
+        InputIterator               d_in,                               ///< [in] Pointer to the input sequence of data items
+        OutputIterator              d_out,                              ///< [out] Pointer to the output aggregate
+        int                         num_items,                          ///< [in] Total number of input items (i.e., length of \p d_in)
         cudaStream_t                stream              = 0,            ///< [in] <b>[optional]</b> CUDA stream to launch kernels within.  Default is stream<sub>0</sub>.
         bool                        debug_synchronous   = false)        ///< [in] <b>[optional]</b> Whether or not to synchronize the stream after every kernel launch to check for errors.  Also causes launch configurations to be printed to the console.  Default is \p false.
     {
@@ -974,8 +975,8 @@ struct DeviceReduce
      *
      * \par
      * Assuming the input \p d_in has value type \p T, the output \p d_out must have value type
-     * <tt>ItemOffsetPair<T, int></tt>.  The minimum value is returned in <tt>d_out.value</tt> and its
-     * location in the input array is returned in <tt>d_out.offset</tt>.
+     * <tt>ItemOffsetPair<T, int></tt>.  The minimum value is written to <tt>d_out.value</tt> and its
+     * location in the input array is written to <tt>d_out.offset</tt>.
      *
      * \par
      * - Does not support non-commutative minimum operators.
@@ -991,8 +992,7 @@ struct DeviceReduce
      * // Declare, allocate, and initialize device pointers for input and output
      * int                      num_items;      // e.g., 7
      * int                      *d_in;          // e.g., [8, 6, 7, 5, 3, 0, 9]
-     * int                      *d_out;         // e.g., [ ]
-     * ItemOffsetPair<int, int> *d_argmin;      // e.g., [{ , }]
+     * ItemOffsetPair<int, int> *d_out;         // e.g., [{ , }]
      * ...
      *
      * // Determine temporary device storage requirements
@@ -1010,19 +1010,19 @@ struct DeviceReduce
      *
      * \endcode
      *
-     * \tparam InputIterator      <b>[inferred]</b> Random-access iterator type for input having some value type \p T \iterator
-     * \tparam OutputIterator     <b>[inferred]</b> Random-access iterator type for output having value type <tt>ItemOffsetPair<T, int></tt> \iterator
+     * \tparam InputIterator      <b>[inferred]</b> Random-access input iterator type for reading input items (of some type \p T) \iterator
+     * \tparam OutputIterator     <b>[inferred]</b> Output iterator type for recording the reduced aggregate (having value type <tt>ItemOffsetPair<T, int></tt>) \iterator
      */
     template <
         typename                    InputIterator,
         typename                    OutputIterator>
     __host__ __device__
     static cudaError_t ArgMin(
-        void                        *d_temp_storage,                    ///< [in] %Device allocation of temporary storage.  When NULL, the required allocation size is returned in \p temp_storage_bytes and no work is done.
-        size_t                      &temp_storage_bytes,                ///< [in,out] Size in bytes of \p d_temp_storage allocation
-        InputIterator               d_in,                               ///< [in] Input data to reduce
-        OutputIterator              d_out,                              ///< [out] Output location for result
-        int                         num_items,                          ///< [in] Number of items to reduce
+        void                        *d_temp_storage,                    ///< [in] %Device allocation of temporary storage.  When NULL, the required allocation size is written to \p temp_storage_bytes and no work is done.
+        size_t                      &temp_storage_bytes,                ///< [in,out] Reference to size in bytes of \p d_temp_storage allocation
+        InputIterator               d_in,                               ///< [in] Pointer to the input sequence of data items
+        OutputIterator              d_out,                              ///< [out] Pointer to the output aggregate
+        int                         num_items,                          ///< [in] Total number of input items (i.e., length of \p d_in)
         cudaStream_t                stream              = 0,            ///< [in] <b>[optional]</b> CUDA stream to launch kernels within.  Default is stream<sub>0</sub>.
         bool                        debug_synchronous   = false)        ///< [in] <b>[optional]</b> Whether or not to synchronize the stream after every kernel launch to check for errors.  Also causes launch configurations to be printed to the console.  Default is \p false.
     {
@@ -1083,19 +1083,19 @@ struct DeviceReduce
      *
      * \endcode
      *
-     * \tparam InputIterator      <b>[inferred]</b> Random-access iterator type for input \iterator
-     * \tparam OutputIterator     <b>[inferred]</b> Random-access iterator type for output \iterator
+     * \tparam InputIterator      <b>[inferred]</b> Random-access input iterator type for reading input items \iterator
+     * \tparam OutputIterator     <b>[inferred]</b> Output iterator type for recording the reduced aggregate \iterator
      */
     template <
         typename                    InputIterator,
         typename                    OutputIterator>
     __host__ __device__
     static cudaError_t Max(
-        void                        *d_temp_storage,                    ///< [in] %Device allocation of temporary storage.  When NULL, the required allocation size is returned in \p temp_storage_bytes and no work is done.
-        size_t                      &temp_storage_bytes,                ///< [in,out] Size in bytes of \p d_temp_storage allocation
-        InputIterator               d_in,                               ///< [in] Input data to reduce
-        OutputIterator              d_out,                              ///< [out] Output location for result
-        int                         num_items,                          ///< [in] Number of items to reduce
+        void                        *d_temp_storage,                    ///< [in] %Device allocation of temporary storage.  When NULL, the required allocation size is written to \p temp_storage_bytes and no work is done.
+        size_t                      &temp_storage_bytes,                ///< [in,out] Reference to size in bytes of \p d_temp_storage allocation
+        InputIterator               d_in,                               ///< [in] Pointer to the input sequence of data items
+        OutputIterator              d_out,                              ///< [out] Pointer to the output aggregate
+        int                         num_items,                          ///< [in] Total number of input items (i.e., length of \p d_in)
         cudaStream_t                stream              = 0,            ///< [in] <b>[optional]</b> CUDA stream to launch kernels within.  Default is stream<sub>0</sub>.
         bool                        debug_synchronous   = false)        ///< [in] <b>[optional]</b> Whether or not to synchronize the stream after every kernel launch to check for errors.  Also causes launch configurations to be printed to the console.  Default is \p false.
     {
@@ -1122,8 +1122,8 @@ struct DeviceReduce
      *
      * \par
      * Assuming the input \p d_in has value type \p T, the output \p d_out must have value type
-     * <tt>ItemOffsetPair<T, int></tt>.  The maximum value is returned in <tt>d_out.value</tt> and its
-     * location in the input array is returned in <tt>d_out.offset</tt>.
+     * <tt>ItemOffsetPair<T, int></tt>.  The maximum value is written to <tt>d_out.value</tt> and its
+     * location in the input array is written to <tt>d_out.offset</tt>.
      *
      * \par
      * - Does not support non-commutative maximum operators.
@@ -1139,8 +1139,7 @@ struct DeviceReduce
      * // Declare, allocate, and initialize device pointers for input and output
      * int                      num_items;      // e.g., 7
      * int                      *d_in;          // e.g., [8, 6, 7, 5, 3, 0, 9]
-     * int                      *d_out;         // e.g., [ ]
-     * ItemOffsetPair<int, int> *d_argmin;      // e.g., [{ , }]
+     * ItemOffsetPair<int, int> *d_out;         // e.g., [{ , }]
      * ...
      *
      * // Determine temporary device storage requirements
@@ -1158,19 +1157,19 @@ struct DeviceReduce
      *
      * \endcode
      *
-     * \tparam InputIterator      <b>[inferred]</b> Random-access iterator type for input having some value type \p T \iterator
-     * \tparam OutputIterator     <b>[inferred]</b> Random-access iterator type for output having value type <tt>ItemOffsetPair<T, int></tt> \iterator
+     * \tparam InputIterator      <b>[inferred]</b> Random-access input iterator type for reading input items (of some type \p T) \iterator
+     * \tparam OutputIterator     <b>[inferred]</b> Output iterator type for recording the reduced aggregate (having value type <tt>ItemOffsetPair<T, int></tt>) \iterator
      */
     template <
         typename                    InputIterator,
         typename                    OutputIterator>
     __host__ __device__
     static cudaError_t ArgMax(
-        void                        *d_temp_storage,                    ///< [in] %Device allocation of temporary storage.  When NULL, the required allocation size is returned in \p temp_storage_bytes and no work is done.
-        size_t                      &temp_storage_bytes,                ///< [in,out] Size in bytes of \p d_temp_storage allocation
-        InputIterator               d_in,                               ///< [in] Input data to reduce
-        OutputIterator              d_out,                              ///< [out] Output location for result
-        int                         num_items,                          ///< [in] Number of items to reduce
+        void                        *d_temp_storage,                    ///< [in] %Device allocation of temporary storage.  When NULL, the required allocation size is written to \p temp_storage_bytes and no work is done.
+        size_t                      &temp_storage_bytes,                ///< [in,out] Reference to size in bytes of \p d_temp_storage allocation
+        InputIterator               d_in,                               ///< [in] Pointer to the input sequence of data items
+        OutputIterator              d_out,                              ///< [out] Pointer to the output aggregate
+        int                         num_items,                          ///< [in] Total number of input items (i.e., length of \p d_in)
         cudaStream_t                stream              = 0,            ///< [in] <b>[optional]</b> CUDA stream to launch kernels within.  Default is stream<sub>0</sub>.
         bool                        debug_synchronous   = false)        ///< [in] <b>[optional]</b> Whether or not to synchronize the stream after every kernel launch to check for errors.  Also causes launch configurations to be printed to the console.  Default is \p false.
     {
@@ -1191,6 +1190,116 @@ struct DeviceReduce
             d_out,
             num_items,
             cub::ArgMax(),
+            stream,
+            debug_synchronous);
+    }
+
+
+    /**
+     * \brief Reduces segments of values, where segments are demarcated by corresponding runs of identical keys.
+     *
+     * \par
+     * This operation computes per-segment reductions of values using the specified
+     * binary \p reduction_op functor. Segments in \p d_values_in are identified
+     * by corresponding runs of same-valued keys in \p d_keys_in. The aggregate for the
+     * <em>i</em><sup>th</sup> segment is written to <tt>d_values_out[<em>i</em>]</tt>, and
+     * one of the corresponding segment keys (unspecified which) is copied to
+     * <tt>d_keys_out[<em>i</em>]</tt>.  The total number of segments discovered is written
+     * to \p d_num_segments.
+     *
+     * \par
+     * - The <tt>==</tt> equality operator is used to determine whether keys are equivalent
+     * - \devicestorage
+     * - \cdp
+     *
+     * \par
+     * The code snippet below illustrates the segmented reduction of \p int values grouped
+     * by runs of associated \p int keys.
+     * \par
+     * \code
+     * #include <cub/cub.cuh>   // or equivalently <cub/device/device_reduce.cuh>
+     *
+     * // CustomMin functor
+     * struct CustomMin
+     * {
+     *     template <typename T>
+     *     __host__ __device__ __forceinline__
+     *     T operator()(const T &a, const T &b) const {
+     *         return (b < a) ? b : a;
+     *     }
+     * };
+     *
+     * // Declare, allocate, and initialize device pointers for input and output
+     * int          num_items;          // e.g., 8
+     * int          *d_keys_in;         // e.g., [0, 2, 2, 9, 5, 5, 5, 8]
+     * int          *d_values_in;       // e.g., [0, 7, 1, 6, 2, 5, 3, 4]
+     * int          *d_keys_out;        // e.g., [ ,  ,  ,  ,  ,  ,  ,  ]
+     * int          *d_values_out;      // e.g., [ ,  ,  ,  ,  ,  ,  ,  ]
+     * int          *d_num_segments;    // e.g., [ ]
+     * CustomMin    reduction_op;
+     * ...
+     *
+     * // Determine temporary device storage requirements
+     * void     *d_temp_storage = NULL;
+     * size_t   temp_storage_bytes = 0;
+     * cub::DeviceSelect::ReduceByKey(d_temp_storage, temp_storage_bytes, d_keys_in, d_keys_out, d_values_in, d_values_out, d_num_segments, reduction_op, num_items);
+     *
+     * // Allocate temporary storage
+     * cudaMalloc(&d_temp_storage, temp_storage_bytes);
+     *
+     * // Run reduce-by-key
+     * cub::DeviceSelect::ReduceByKey(d_temp_storage, temp_storage_bytes, d_keys_in, d_keys_out, d_values_in, d_values_out, d_num_segments, reduction_op, num_items);
+     *
+     * // d_keys_out        <-- [0, 2, 9, 5, 8]
+     * // d_values_out      <-- [0, 1, 6, 2, 4]
+     * // d_num_segments    <-- [5]
+     *
+     * \endcode
+     *
+     * \tparam KeyInputIterator     <b>[inferred]</b> Random-access input iterator type for reading input keys \iterator
+     * \tparam KeyOutputIterator    <b>[inferred]</b> Random-access output iterator type for writing output keys \iterator
+     * \tparam ValueInputIterator   <b>[inferred]</b> Random-access input iterator type for reading input values \iterator
+     * \tparam ValueOutputIterator  <b>[inferred]</b> Random-access output iterator type for writing output values \iterator
+     * \tparam NumSegmentsIterator  <b>[inferred]</b> Output iterator type for recording the number of segments encountered \iterator
+     * \tparam ReductionOp          <b>[inferred]</b> Binary reduction functor type having member <tt>T operator()(const T &a, const T &b)</tt>
+     */
+    template <
+        typename                    KeyInputIterator,
+        typename                    KeyOutputIterator,
+        typename                    ValueInputIterator,
+        typename                    ValueOutputIterator,
+        typename                    NumSegmentsIterator,
+        typename                    ReductionOp>
+    __host__ __device__ __forceinline__
+    static cudaError_t ReduceByKey(
+        void                        *d_temp_storage,                ///< [in] %Device allocation of temporary storage.  When NULL, the required allocation size is written to \p temp_storage_bytes and no work is done.
+        size_t                      &temp_storage_bytes,            ///< [in,out] Reference to size in bytes of \p d_temp_storage allocation
+        KeyInputIterator            d_keys_in,                      ///< [in] Pointer to consecutive runs of input keys
+        KeyOutputIterator           d_keys_out,                     ///< [out] Pointer to output keys (one key per run)
+        ValueInputIterator          d_values_in,                    ///< [in] Pointer to consecutive runs of input values
+        ValueOutputIterator         d_values_out,                   ///< [out] Pointer to output value aggregates (one aggregate per run)
+        NumSegmentsIterator         d_num_segments,                 ///< [out] Pointer to total number of segments
+        ReductionOp                 reduction_op,                   ///< [in] Binary reduction functor (e.g., an instance of cub::Sum, cub::Min, cub::Max, etc.)
+        int                         num_items,                      ///< [in] Total number of associated key+value pairs (i.e., the length of \p d_in_keys and \p d_in_values)
+        cudaStream_t                stream             = 0,         ///< [in] <b>[optional]</b> CUDA stream to launch kernels within.  Default is stream<sub>0</sub>.
+        bool                        debug_synchronous  = false)     ///< [in] <b>[optional]</b> Whether or not to synchronize the stream after every kernel launch to check for errors.  May cause significant slowdown.  Default is \p false.
+    {
+        typedef int                 Offset;         // Signed integer type for global offsets
+        typedef NullType*           FlagIterator;   // Flag iterator type (not used)
+        typedef NullType            SelectOp;       // Selection op (not used)
+        typedef Equality            EqualityOp;     // Default == operator
+
+        return DeviceReduceByKeyDispatch<KeyInputIterator, KeyOutputIterator, ValueInputIterator, ValueOutputIterator, NumSegmentsIterator, EqualityOp, ReductionOp, Offset>::Dispatch(
+            d_temp_storage,
+            temp_storage_bytes,
+            d_keys_in,
+            d_keys_out,
+            d_values_in,
+            d_values_out,
+            d_num_segments,
+            EqualityOp(),
+            reduction_op,
+            num_items,
             stream,
             debug_synchronous);
     }

@@ -58,7 +58,7 @@ CachingDeviceAllocator  g_allocator(true);
 
 
 // Custom max functor
-struct MyMax
+struct CustomMax
 {
     /// Boolean max operator, returns <tt>(a > b) ? a : b</tt>
     template <typename T>
@@ -823,7 +823,7 @@ void TestOp(
     int             num_items,
     char*           type_string)
 {
-    Test<T>(num_items, MyMax(), type_string);
+    Test<T>(num_items, CustomMax(), type_string);
     Test<T>(num_items, Sum(), type_string);
     Test<T>(num_items, Min(), type_string);
     Test<T>(num_items, ArgMin(), type_string);

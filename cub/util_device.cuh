@@ -66,7 +66,7 @@ __global__ void EmptyKernel(void) { }
 template <int ALLOCATIONS>
 __host__ __device__ __forceinline__
 cudaError_t AliasTemporaries(
-    void    *d_temp_storage,                    ///< [in] %Device allocation of temporary storage.  When NULL, the required allocation size is returned in \p temp_storage_bytes and no work is done.
+    void    *d_temp_storage,                    ///< [in] %Device allocation of temporary storage.  When NULL, the required allocation size is written to \p temp_storage_bytes and no work is done.
     size_t  &temp_storage_bytes,                ///< [in,out] Size in bytes of \t d_temp_storage allocation
     void*   (&allocations)[ALLOCATIONS],        ///< [in,out] Pointers to device allocations needed
     size_t  (&allocation_sizes)[ALLOCATIONS])   ///< [in] Sizes in bytes of device allocations needed
