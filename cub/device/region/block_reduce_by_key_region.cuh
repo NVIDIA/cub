@@ -288,50 +288,12 @@ struct BlockReduceByKeyRegion
     //---------------------------------------------------------------------
 
     /**
-     * Flag the last key in each run of same-valued keys
+     * Scatter items to select offsets (specialized for direct scattering)
      */
-    __device__ __forceinline__ void InitializeFlags(
-        bool                        last_tile,
-        Offset                      block_offset,
-        int                         valid_items,
-        Key                         (&keys)[ITEMS_PER_THREAD],
-        Offset                      (&flags)[ITEMS_PER_THREAD])
-    {
-        __syncthreads();
-
-        InequalityWrapper<EqualityOp> inequality_op(equality_op);
-
-        if (last_tile)
-        {
-            // Set flags
-            BlockDiscontinuityKeys(temp_storage.discontinuity).FlagTails(flags, keys, inequality_op);
-
-            // Set the last flag in the tile
-            #pragma unroll
-            for (int ITEM = 0; ITEM < ITEMS_PER_THREAD; ++ITEM)
-            {
-                if (Offset(threadIdx.x * ITEMS_PER_THREAD) + ITEM == valid_items - 1)
-                    flags[ITEM] = 1;
-            }
-        }
-        else
-        {
-            // Obtain the first key in the next tile to compare with
-            Key tile_successor_item;
-            if (threadIdx.x == 0)
-                tile_successor_item = d_keys_in[block_offset + TILE_ITEMS];
-
-            // Set flags
-            BlockDiscontinuityKeys(temp_storage.discontinuity).FlagTails(flags, keys, inequality_op, tile_successor_item);
-        }
-    }
-
-
-    /**
-     * Scatter data items to select offsets (specialized for direct scattering)
-     */
+    template <bool FULL_TILE>
     __device__ __forceinline__ void Scatter(
         Offset          tile_idx,
+        int             valid_items,
         Key             (&keys)[ITEMS_PER_THREAD],
         ValueOffsetPair (&values_and_offsets)[ITEMS_PER_THREAD],
         Offset          flags[ITEMS_PER_THREAD],
@@ -339,13 +301,37 @@ struct BlockReduceByKeyRegion
         Offset          tile_num_selected_prefix,
         Int2Type<false> two_phase_scatter)
     {
+        // Scatter keys
         #pragma unroll
         for (int ITEM = 0; ITEM < ITEMS_PER_THREAD; ++ITEM)
         {
             if (flags[ITEM])
             {
                 d_keys_out[values_and_offsets[ITEM].offset] = keys[ITEM];
-                d_values_out[values_and_offsets[ITEM].offset] = values_and_offsets[ITEM].value;
+            }
+        }
+
+        // Scatter scanned values.  The first tile does not scatter first value, and the
+        // last tile (if partially-full) will scatter the first out-of-bounds value.
+
+        bool is_first_value = (tile_idx == 0) && (threadIdx.x == 0);
+        bool is_oob_value = (!FULL_TILE) && (Offset(threadIdx.x * ITEMS_PER_THREAD) == valid_items);
+
+        // Scatter first value in each thread
+        if (is_oob_value || (flags[0] && (!is_first_value)))
+        {
+            d_values_out[values_and_offsets[0].offset - 1] = values_and_offsets[0].value;
+
+        }
+
+        // Scatter remaining values in each thread
+        #pragma unroll
+        for (int ITEM = 1; ITEM < ITEMS_PER_THREAD; ++ITEM)
+        {
+            bool is_oob_value = (!FULL_TILE) && (Offset(threadIdx.x * ITEMS_PER_THREAD) + ITEM == valid_items);
+            if (is_oob_value || flags[ITEM])
+            {
+                d_values_out[values_and_offsets[ITEM].offset - 1] = values_and_offsets[ITEM].value;
             }
         }
     }
@@ -356,18 +342,20 @@ struct BlockReduceByKeyRegion
      */
     __device__ __forceinline__ void Scatter(
         Offset          tile_idx,
+        int             valid_items,
         Key             (&keys)[ITEMS_PER_THREAD],
         ValueOffsetPair (&values_and_offsets)[ITEMS_PER_THREAD],
         Offset          flags[ITEMS_PER_THREAD],
         Offset          tile_num_selected,
         Offset          tile_num_selected_prefix,
-        Int2Type<true>  two_phase_scatter)
+        Int2Type<false> two_phase_scatter)
     {
         if ((tile_num_selected >> Log2<BLOCK_THREADS>::VALUE) == 0)
         {
             // Average number of selected items per thread is less than one, so just do a one-phase scatter
             Scatter(
                 tile_idx,
+                valid_items,
                 keys,
                 values_and_offsets,
                 flags,
@@ -441,7 +429,7 @@ struct BlockReduceByKeyRegion
         Key keys[ITEMS_PER_THREAD];
         Key values[ITEMS_PER_THREAD];
 
-        if (FULL_TILE)
+        if (tile_idx == 0)
         {
             BlockLoadKeys(temp_storage.load_keys).Load(d_keys_in + block_offset, keys);
 
@@ -462,27 +450,23 @@ struct BlockReduceByKeyRegion
             BlockLoadValues(temp_storage.load_values).Load(d_values_in + block_offset, values, valid_items, oob_value);
         }
 
+        __syncthreads();
+
         Offset          flags[ITEMS_PER_THREAD];                        // Selection flags
         Offset          scatter_offsets[ITEMS_PER_THREAD];              // Scatter offsets
         Offset          tile_num_selected_prefix;                       // Total number of selected items prior to this tile
         Offset          tile_num_selected;                              // Total number of selected items within this tile
         ValueOffsetPair values_and_offsets[ITEMS_PER_THREAD];           // Zipped values and scatter offsets
 
-        // Initialize selection flags
-        bool is_last_tile = (tile_idx == num_tiles - 1);
-
-        InitializeFlags(
-            is_last_tile,
-            block_offset,
-            valid_items,
-            keys,
-            flags);
-
-        __syncthreads();
-
         if (tile_idx == 0)
         {
-            // First tile.  Scan flags
+            // First tile
+
+            // Set head flags.  First tile sets the first flag for the first item
+            BlockDiscontinuityKeys(temp_storage.discontinuity).FlagHeads(
+                flags, keys, InequalityWrapper<EqualityOp>(equality_op));
+
+            // Scan flags
             BlockScanAllocations(temp_storage.scan).ExclusiveSum(flags, scatter_offsets, tile_num_selected);
 
             tile_num_selected_prefix = 0;
@@ -493,7 +477,18 @@ struct BlockReduceByKeyRegion
         }
         else
         {
-            // Subsequent tile.  Scan flags
+            // Not first tile
+
+            // Obtain the first key in the next tile to compare with
+            Key tile_predecessor_item;
+            if (threadIdx.x == 0)
+                tile_predecessor_item = d_keys_in[block_offset + TILE_ITEMS];
+
+            InequalityWrapper<EqualityOp> inequality_op(equality_op);
+            BlockDiscontinuityKeys(temp_storage.discontinuity).FlagHeads(
+                flags, keys, InequalityWrapper<EqualityOp>(equality_op), tile_predecessor_item);
+
+            // Scan flags
             LookbackPrefixCallbackOp prefix_op(d_tile_status, temp_storage.prefix, Sum(), tile_idx);
             BlockScanAllocations(temp_storage.scan).ExclusiveSum(flags, scatter_offsets, tile_num_selected, prefix_op);
 

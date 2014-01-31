@@ -1199,13 +1199,12 @@ struct DeviceReduce
      * \brief Reduces segments of values, where segments are demarcated by corresponding runs of identical keys.
      *
      * \par
-     * This operation computes per-segment reductions of values using the specified
-     * binary \p reduction_op functor. Segments in \p d_values_in are identified
-     * by corresponding runs of same-valued keys in \p d_keys_in. The aggregate for the
-     * <em>i</em><sup>th</sup> segment is written to <tt>d_values_out[<em>i</em>]</tt>, and
-     * one of the corresponding segment keys (unspecified which) is copied to
-     * <tt>d_keys_out[<em>i</em>]</tt>.  The total number of segments discovered is written
-     * to \p d_num_segments.
+     * This operation computes segmented reductions using the specified binary
+     * \p reduction_op functor.  Each "run" of consecutive, identical keys in \p d_keys_in
+     * is used to identify a corresponding segment of values in \p d_values_in. The first key in
+     * the <em>i</em><sup>th</sup> segment is copied to <tt>d_keys_out[<em>i</em>]</tt>, and
+     * the value aggregate for that segment is written to <tt>d_values_out[<em>i</em>]</tt>.
+     * The total number of segments discovered is written to \p d_num_segments.
      *
      * \par
      * - The <tt>==</tt> equality operator is used to determine whether keys are equivalent
