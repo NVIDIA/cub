@@ -215,10 +215,11 @@ ALL = 	link \
 	 	test_device_histogram \
 	 	test_device_scan \
 	 	test_device_radix_sort \
+		test_device_reduce_by_key\	 	
 	 	test_device_select_unique \
 		test_device_select_flagged \
-		test_device_select_if
-	 	
+		test_device_select_if 
+		
 #	 	test_device_seg_reduce
 		
 
@@ -447,6 +448,17 @@ test_device_select_if: bin/test_device_select_if_$(SUFFIX)
 bin/test_device_select_if_$(SUFFIX) : test_device_select_if.cu $(DEPS)
 	mkdir -p bin
 	$(NVCC) $(DEFINES) $(SM_TARGETS) -o bin/test_device_select_if_$(SUFFIX) test_device_select_if.cu $(NVCCFLAGS) $(CPU_ARCH) $(INC) $(LIBS) -O3
+
+#-------------------------------------------------------------------------------
+# make test_device_reduce_by_key
+#-------------------------------------------------------------------------------
+
+test_device_reduce_by_key: bin/test_device_reduce_by_key_$(SUFFIX)
+
+bin/test_device_reduce_by_key_$(SUFFIX) : test_device_reduce_by_key.cu $(DEPS)
+	mkdir -p bin
+	$(NVCC) $(DEFINES) $(SM_TARGETS) -o bin/test_device_reduce_by_key_$(SUFFIX) test_device_reduce_by_key.cu $(NVCCFLAGS) $(CPU_ARCH) $(INC) $(LIBS) -O3
+
 
 
 #-------------------------------------------------------------------------------
