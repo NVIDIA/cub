@@ -184,12 +184,8 @@ struct BlockScanWarpScans
         ScanOp          scan_op,                        ///< [in] Binary scan operator
         T               &block_aggregate)               ///< [out] Threadblock-wide aggregate reduction of input items
     {
-        if (threadIdx.x < 5) CubLog("block scan input (value %d offset %d)\n", input.value, input.offset);
-
         T warp_aggregate;
         WarpScan(temp_storage.warp_scan, warp_id, lane_id).ExclusiveScan(input, output, scan_op, warp_aggregate);
-
-        if (threadIdx.x < 5) CubLog("block scan output (value %d offset %d)\n", output.value, output.offset);
 
         // Update outputs and block_aggregate with warp-wide aggregates
         ApplyWarpAggregates(output, scan_op, warp_aggregate, block_aggregate, (lane_id > 0));
