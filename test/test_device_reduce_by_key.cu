@@ -37,7 +37,7 @@
 
 #include <cub/util_allocator.cuh>
 #include <cub/iterator/counting_input_iterator.cuh>
-#include <cub/device/device_select.cuh>
+#include <cub/device/device_reduce.cuh>
 
 #include <thrust/device_ptr.h>
 #include <thrust/unique.h>
@@ -91,7 +91,7 @@ cudaError_t Dispatch(
     NumSegmentsIterator         d_num_segments,
     EqualityOp                  equality_op,
     ReductionOp                 reduction_op,
-    int                         num_items,
+    Offset                      num_items,
     cudaStream_t                stream,
     bool                        debug_synchronous)
 {
@@ -366,7 +366,7 @@ void Test(
     Value   *d_values_out           = NULL;
     int     *d_num_segments         = NULL;
     CubDebugExit(g_allocator.DeviceAllocate((void**)&d_keys_out, sizeof(Key) * num_items));
-    CubDebugExit(g_allocator.DeviceAllocate((void**)&d_keys_out, sizeof(Value) * num_items));
+    CubDebugExit(g_allocator.DeviceAllocate((void**)&d_values_out, sizeof(Value) * num_items));
     CubDebugExit(g_allocator.DeviceAllocate((void**)&d_num_segments, sizeof(int)));
 
     // Allocate CDP device arrays
@@ -390,14 +390,14 @@ void Test(
     CubDebugExit(Dispatch(Int2Type<BACKEND>(), 1, d_temp_storage_bytes, d_cdp_error, d_temp_storage, temp_storage_bytes, d_keys_in, d_keys_out, d_values_in, d_values_out, d_num_segments, equality_op, reduction_op, num_items, 0, true));
 
     // Check for correctness (and display results, if specified)
-    int compare = CompareDeviceResults(h_keys_reference, d_keys_out, num_segments, true, g_verbose);
-    printf("\t Keys %s ", compare ? "FAIL" : "PASS");
+    int compare1 = CompareDeviceResults(h_keys_reference, d_keys_out, num_segments, true, g_verbose);
+    printf("\t Keys %s ", compare1 ? "FAIL" : "PASS");
 
-    compare |= CompareDeviceResults(h_values_reference, d_values_out, num_segments, true, g_verbose);
-    printf("\t Values %s ", compare ? "FAIL" : "PASS");
+    int compare2 = CompareDeviceResults(h_values_reference, d_values_out, num_segments, true, g_verbose);
+    printf("\t Values %s ", compare2 ? "FAIL" : "PASS");
 
-    compare |= CompareDeviceResults(&num_segments, d_num_segments, 1, true, g_verbose);
-    printf("\t Count %s ", compare ? "FAIL" : "PASS");
+    int compare3 = CompareDeviceResults(&num_segments, d_num_segments, 1, true, g_verbose);
+    printf("\t Count %s ", compare3 ? "FAIL" : "PASS");
 
     // Flush any stdout/stderr
     fflush(stdout);
@@ -434,7 +434,7 @@ void Test(
     if (d_temp_storage) CubDebugExit(g_allocator.DeviceFree(d_temp_storage));
 
     // Correctness asserts
-    AssertEquals(0, compare);
+    AssertEquals(0, compare1 | compare2 | compare3);
 }
 
 
