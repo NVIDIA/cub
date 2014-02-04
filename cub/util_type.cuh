@@ -218,7 +218,7 @@ struct UnitWord
         unsigned int,
         typename If<IsMultiple<short>::IS_MULTIPLE,
             unsigned short,
-            unsigned char>::Type>::Type                  ShuffleWord;
+            unsigned char>::Type>::Type         ShuffleWord;
 
     /// Biggest volatile word that T is a whole multiple of and is not larger than the alignment of T
     typedef typename If<IsMultiple<long long>::IS_MULTIPLE,
