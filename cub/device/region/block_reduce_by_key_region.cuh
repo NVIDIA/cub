@@ -474,14 +474,6 @@ struct BlockReduceByKeyRegion
 
 //            exclusive_segments  = 0;
             running_total       = block_aggregate;
-
-            #pragma unroll
-            for (int ITEM = 0; ITEM < ITEMS_PER_THREAD; ++ITEM)
-            {
-                if (((threadIdx.x * ITEMS_PER_THREAD) + ITEM < num_remaining) && (flags[ITEM]))
-                    CubLog("ITEM %d: (key %d, value %d, flag %d, offset %d\n",
-                        ITEM, keys[ITEM], values_and_segments[ITEM].value, flags[ITEM], values_and_segments[ITEM].offset);
-            }
         }
         else
         {
@@ -582,45 +574,6 @@ struct BlockReduceByKeyRegion
         else if (block_offset < num_items)
             running_total = ConsumeTile<false>(num_items, num_remaining, tile_idx, block_offset, d_tile_status);
 
-#else
-
-        // Work-steal tiles
-
-        // Get first tile index
-        if (threadIdx.x == 0)
-            temp_storage.tile_idx = queue.Drain(1);
-
-        __syncthreads();
-
-        int             tile_idx        = temp_storage.tile_idx;            // Current tile index
-        Offset          block_offset    = Offset(TILE_ITEMS) * tile_idx;    // Global offset for the current tile
-        Offset          num_remaining   = num_items - block_offset;         // Remaining items (including this tile)
-        ValueOffsetPair running_total;
-
-        while (num_remaining >= TILE_ITEMS)
-        {
-            // Consume full tile
-            running_total = ConsumeTile<true>(num_items, num_remaining, tile_idx, block_offset, d_tile_status);
-
-            // Get next tile index
-            if (threadIdx.x == 0)
-                temp_storage.tile_idx = queue.Drain(1);
-
-            __syncthreads();
-
-            tile_idx        = temp_storage.tile_idx;
-            block_offset    = Offset(TILE_ITEMS) * tile_idx;
-            num_remaining   = num_items - block_offset;
-        }
-
-        // Consume partially-full tile
-        if (num_remaining > 0)
-        {
-            running_total = ConsumeTile<false>(num_items, num_remaining, tile_idx, block_offset, d_tile_status);
-        }
-
-#endif
-
         // Output the total number of items selected
         if ((tile_idx == num_tiles - 1) && (threadIdx.x == 0))
         {
@@ -632,6 +585,56 @@ struct BlockReduceByKeyRegion
                 d_values_out[running_total.offset - 1] = running_total.value;
             }
         }
+
+#else
+
+        // Work-steal tiles
+
+        // Get tile index
+        if (threadIdx.x == 0)
+            temp_storage.tile_idx = queue.Drain(1);
+
+        __syncthreads();
+
+        int             tile_idx        = temp_storage.tile_idx;            // Current tile index
+        Offset          block_offset    = Offset(TILE_ITEMS) * tile_idx;    // Global offset for the current tile
+        Offset          num_remaining   = num_items - block_offset;         // Remaining items (including this tile)
+
+        while (num_remaining > TILE_ITEMS)
+        {
+            // Consume full tile
+            ConsumeTile<true>(num_items, num_remaining, tile_idx, block_offset, d_tile_status);
+
+            // Get tile index
+            if (threadIdx.x == 0)
+                temp_storage.tile_idx = queue.Drain(1);
+
+            __syncthreads();
+
+            tile_idx        = temp_storage.tile_idx;
+            block_offset    = Offset(TILE_ITEMS) * tile_idx;
+            num_remaining   = num_items - block_offset;
+        }
+
+        if (num_remaining > 0)
+        {
+            // Consume last tile (treat as partially-full)
+            ValueOffsetPair running_total = ConsumeTile<false>(num_items, num_remaining, tile_idx, block_offset, d_tile_status);
+
+            if ((threadIdx.x == 0))
+            {
+                // Output the total number of items selected
+                *d_num_segments = running_total.offset;
+
+                // If the last tile is a whole tile, the inclusive prefix contains accumulated value reduction for the last segment
+                if (num_remaining == TILE_ITEMS)
+                {
+                    d_values_out[running_total.offset - 1] = running_total.value;
+                }
+            }
+        }
+
+#endif
 
     }
 

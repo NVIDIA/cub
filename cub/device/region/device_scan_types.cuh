@@ -148,7 +148,13 @@ template <
 struct LookbackTileDescriptor
 {
     // Status word type
-    typedef typename UnitWord<T>::VolatileWord StatusWord;
+    typedef typename If<(sizeof(T) == 8),
+        long long,
+        typename If<(sizeof(T) == 4),
+            int,
+            typename If<(sizeof(T) == 2),
+                short,
+                char>::Type>::Type>::Type StatusWord;
 
     // Unit word type
     typedef typename If<(sizeof(T) == 8),
@@ -185,7 +191,7 @@ struct LookbackTileDescriptor
     }
 
     static __device__ __forceinline__ void WaitForValid(
-        LookbackTileDescriptor    *ptr,
+        LookbackTileDescriptor  *ptr,
         int                     &status,
         T                       &value)
     {
@@ -225,6 +231,7 @@ struct LookbackTileDescriptor
                 invalid = tile_descriptor.status == LOOKBACK_TILE_INVALID;
             }
         } while (__any(invalid));
+
 #endif
 
         status = tile_descriptor.status;
@@ -311,6 +318,23 @@ struct LookbackBlockPrefixCallbackOp
     // Tile status descriptor type
     typedef LookbackTileDescriptor<T>           LookbackTileDescriptorT;
 
+    // Scan operator for switching the scan arguments
+    struct SwizzleScanOp
+    {
+        ScanOp scan_op;
+
+        // Constructor
+        __host__ __device__ __forceinline__
+        SwizzleScanOp(ScanOp scan_op) : scan_op(scan_op) {}
+
+        // Switch the scan arguments
+        __host__ __device__ __forceinline__
+        T operator()(const T &a, const T &b)
+        {
+            return scan_op(b, a);
+        }
+    };
+
     // Fields
     LookbackTileDescriptorT     *d_tile_status;     ///< Pointer to array of tile status
     _TempStorage                &temp_storage;      ///< Reference to a warp-reduction instance
@@ -342,9 +366,10 @@ struct LookbackBlockPrefixCallbackOp
         T value;
         LookbackTileDescriptorT::WaitForValid(d_tile_status + predecessor_idx, predecessor_status, value);
 
-        // Perform a segmented reduction to get the prefix for the current window
+        // Perform a segmented reduction to get the prefix for the current window.  Use the swizzled scan
+        // operator because we are now scanning *down* towards thread0.
         int tail_flag = (predecessor_status == LOOKBACK_TILE_PREFIX);
-        window_aggregate = WarpReduceT(temp_storage).TailSegmentedReduce(value, tail_flag, scan_op);
+        window_aggregate = WarpReduceT(temp_storage).TailSegmentedReduce(value, tail_flag, SwizzleScanOp(scan_op));
     }
 
 
@@ -381,9 +406,7 @@ struct LookbackBlockPrefixCallbackOp
         if (threadIdx.x == 0)
         {
             inclusive_prefix = scan_op(exclusive_prefix, block_aggregate);
-            LookbackTileDescriptorT::SetPrefix(
-                d_tile_status + tile_idx,
-                inclusive_prefix);
+            LookbackTileDescriptorT::SetPrefix(d_tile_status + tile_idx, inclusive_prefix);
         }
 
         // Return exclusive_prefix

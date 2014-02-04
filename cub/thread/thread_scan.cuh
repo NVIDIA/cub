@@ -135,7 +135,7 @@ __device__ __forceinline__ T ThreadScanExclusive(
     T           prefix,                 ///< [in] Prefix to seed scan with
     bool        apply_prefix = true)    ///< [in] Whether or not the calling thread should apply its prefix.  (Handy for preventing thread-0 from applying a prefix.)
 {
-    return ThreadScanExclusive<LENGTH>((T*) input, (T*) output, scan_op, prefix);
+    return ThreadScanExclusive<LENGTH>((T*) input, (T*) output, scan_op, prefix, apply_prefix);
 }
 
 
