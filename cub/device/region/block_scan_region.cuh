@@ -313,6 +313,7 @@ struct BlockScanRegion
     template <bool FULL_TILE>
     __device__ __forceinline__ void ConsumeTile(
         Offset                      num_items,          ///< Total number of input items
+        Offset                      num_remaining,
         int                         tile_idx,           ///< Tile index
         Offset                      block_offset,       ///< Tile offset
         TileDescriptor              *d_tile_status)     ///< Global list of tile status
@@ -323,15 +324,15 @@ struct BlockScanRegion
         if (FULL_TILE)
             BlockLoadT(temp_storage.load).Load(d_in + block_offset, items);
         else
-            BlockLoadT(temp_storage.load).Load(d_in + block_offset, items, num_items - block_offset);
+            BlockLoadT(temp_storage.load).Load(d_in + block_offset, items, num_remaining);
 
         __syncthreads();
 
         // Perform tile scan
-        T block_aggregate;
         if (tile_idx == 0)
         {
             // Scan first tile
+            T block_aggregate;
             ScanBlock(items, scan_op, identity, block_aggregate);
 
             // Update tile status if there may be successor tiles (i.e., this tile is full)
@@ -341,6 +342,7 @@ struct BlockScanRegion
         else
         {
             // Scan non-first tile
+            T block_aggregate;
             LookbackPrefixCallbackOp prefix_op(d_tile_status, temp_storage.prefix, scan_op, tile_idx);
             ScanBlock(items, scan_op, identity, block_aggregate, prefix_op);
         }
@@ -351,7 +353,7 @@ struct BlockScanRegion
         if (FULL_TILE)
             BlockStoreT(temp_storage.store).Store(d_out + block_offset, items);
         else
-            BlockStoreT(temp_storage.store).Store(d_out + block_offset, items, num_items - block_offset);
+            BlockStoreT(temp_storage.store).Store(d_out + block_offset, items, num_remaining);
     }
 
 
@@ -368,11 +370,12 @@ struct BlockScanRegion
         // No concurrent kernels allowed and blocks are launched in increasing order, so just assign one tile per block (up to 65K blocks)
         int     tile_idx        = blockIdx.x;
         Offset  block_offset    = Offset(TILE_ITEMS) * tile_idx;
+        Offset  num_remaining   = num_items - block_offset;
 
         if (block_offset + TILE_ITEMS <= num_items)
-            ConsumeTile<true>(num_items, tile_idx, block_offset, d_tile_status);
+            ConsumeTile<true>(num_items, num_remaining, tile_idx, block_offset, d_tile_status);
         else if (block_offset < num_items)
-            ConsumeTile<false>(num_items, tile_idx, block_offset, d_tile_status);
+            ConsumeTile<false>(num_items, num_remaining, tile_idx, block_offset, d_tile_status);
 
 #else
 
@@ -382,13 +385,14 @@ struct BlockScanRegion
 
         __syncthreads();
 
-        int tile_idx = temp_storage.tile_idx;
-        Offset block_offset = Offset(TILE_ITEMS) * tile_idx;
+        int     tile_idx        = temp_storage.tile_idx;
+        Offset  block_offset    = TILE_ITEMS * tile_idx;
+        Offset  num_remaining   = num_items - block_offset;
 
-        while (block_offset + TILE_ITEMS <= num_items)
+        while (num_remaining >= TILE_ITEMS)
         {
             // Consume full tile
-            ConsumeTile<true>(num_items, tile_idx, block_offset, d_tile_status);
+            ConsumeTile<true>(num_items, num_remaining, tile_idx, block_offset, d_tile_status);
 
             // Get next tile
             if (threadIdx.x == 0)
@@ -396,17 +400,18 @@ struct BlockScanRegion
 
             __syncthreads();
 
-            tile_idx = temp_storage.tile_idx;
-            block_offset = Offset(TILE_ITEMS) * tile_idx;
+            tile_idx        = temp_storage.tile_idx;
+            block_offset    = TILE_ITEMS * tile_idx;
+            num_remaining   = num_items - block_offset;
         }
 
         // Consume a partially-full tile
-        if (block_offset < num_items)
+        if (num_remaining > 0)
         {
-            ConsumeTile<false>(num_items, tile_idx, block_offset, d_tile_status);
+            ConsumeTile<false>(num_items, num_remaining, tile_idx, block_offset, d_tile_status);
         }
-#endif
 
+#endif
     }
 
 
@@ -436,14 +441,15 @@ struct BlockScanRegion
         __syncthreads();
 
         // Block scan
-        T block_aggregate;
         if (FIRST_TILE)
         {
+            T block_aggregate;
             ScanBlock(items, scan_op, identity, block_aggregate);
             prefix_op.running_total = block_aggregate;
         }
         else
         {
+            T block_aggregate;
             ScanBlock(items, scan_op, identity, block_aggregate, prefix_op);
         }
 
