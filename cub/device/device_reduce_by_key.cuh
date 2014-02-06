@@ -201,7 +201,7 @@ struct DeviceReduceByKeyDispatch
     struct Policy200
     {
         enum {
-            NOMINAL_4B_ITEMS_PER_THREAD = 7,
+            NOMINAL_4B_ITEMS_PER_THREAD = 11,
             ITEMS_PER_THREAD            = CUB_MIN(NOMINAL_4B_ITEMS_PER_THREAD, CUB_MAX(1, (NOMINAL_4B_ITEMS_PER_THREAD * 8 / (sizeof(Key) + sizeof(Value))))),
         };
 
@@ -211,7 +211,7 @@ struct DeviceReduceByKeyDispatch
                 BLOCK_LOAD_WARP_TRANSPOSE,
                 LOAD_DEFAULT,
                 true,
-                BLOCK_SCAN_WARP_SCANS>
+                BLOCK_SCAN_RAKING_MEMOIZE>
             ReduceByKeyPolicy;
     };
 

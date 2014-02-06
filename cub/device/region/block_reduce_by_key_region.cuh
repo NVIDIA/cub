@@ -155,14 +155,28 @@ struct BlockReduceByKeyRegion
             const ValueOffsetPair &second)      ///< Second partial reduction
         {
             ValueOffsetPair retval;
+            retval.offset = first.offset + second.offset;
 
+            if (second.offset)
+            {
+                retval.value = second.value;
+                return retval;
+            }
+            else
+            {
+                retval.value = op(first.value, second.value);
+                return retval;
+            }
+
+/*
+            ValueOffsetPair retval;
             retval.offset = first.offset + second.offset;   // Accumulate number of segment resets from each into the running aggregate
-
             retval.value = (second.offset) ?
                     second.value :                          // The second partial reduction spans a segment reset, so it's value aggregate becomes the running aggregate
                     op(first.value, second.value);          // The second partial reduction does not span a reset, so accumulate both into the running aggregate
 
             return retval;
+*/
         }
     };
 
@@ -211,24 +225,20 @@ struct BlockReduceByKeyRegion
     // Shared memory type for this threadblock
     struct _TempStorage
     {
+        typename LookbackPrefixCallbackOp::TempStorage  prefix;         // Smem needed for cooperative prefix callback
+        typename BlockScanAllocations::TempStorage      scan;           // Smem needed for tile scanning
+        typename BlockDiscontinuityKeys::TempStorage    discontinuity;  // Smem needed for discontinuity detection
+
         union
         {
-            struct
-            {
-                typename LookbackPrefixCallbackOp::TempStorage  prefix;         // Smem needed for cooperative prefix callback
-                typename BlockScanAllocations::TempStorage      scan;           // Smem needed for tile scanning
-                typename BlockDiscontinuityKeys::TempStorage    discontinuity;  // Smem needed for discontinuity detection
-            };
-
             // Smem needed for loading keys
             typename BlockLoadKeys::TempStorage load_keys;
 
             // Smem needed for loading values
             typename BlockLoadValues::TempStorage load_values;
 
-
             // Smem needed for two-phase scatter (NullType if not needed)
-            typename If<TWO_PHASE_SCATTER, typename BlockExchangeT::TempStorage, NullType>::Type exchange;
+//                    typename If<TWO_PHASE_SCATTER, typename BlockExchangeT::TempStorage, NullType>::Type exchange;
         };
 
         Offset      tile_idx;               // Shared tile index
@@ -346,8 +356,34 @@ struct BlockReduceByKeyRegion
 
 
     //---------------------------------------------------------------------
+    // Zip utility methods
+    //---------------------------------------------------------------------
+
+    template <bool LAST_TILE>
+    __device__ __forceinline__ void ZipValuesAndFlags(
+        Offset          num_remaining,
+        Value           (&values)[ITEMS_PER_THREAD],
+        Offset          (&flags)[ITEMS_PER_THREAD],
+        ValueOffsetPair (&values_and_segments)[ITEMS_PER_THREAD])
+    {
+        // Zip values and flags
+        #pragma unroll
+        for (int ITEM = 0; ITEM < ITEMS_PER_THREAD; ++ITEM)
+        {
+            // Unset flags for out-of-bounds keys
+            if ((LAST_TILE) && (Offset(threadIdx.x * ITEMS_PER_THREAD) + ITEM >= num_remaining))
+                flags[ITEM] = 0;
+
+            values_and_segments[ITEM].value      = values[ITEM];
+            values_and_segments[ITEM].offset     = flags[ITEM];
+        }
+    }
+
+    //---------------------------------------------------------------------
     // Scatter utility methods
     //---------------------------------------------------------------------
+
+
 
     /**
      * Scatter flagged items to output offsets (specialized for direct scattering)
@@ -360,13 +396,13 @@ struct BlockReduceByKeyRegion
      *
      */
     template <
-        bool FULL_TILE>
+        bool LAST_TILE>
     __device__ __forceinline__ void ScatterDirect(
         int             tile_idx,
         Offset          num_remaining,
         Key             (&keys)[ITEMS_PER_THREAD],
         ValueOffsetPair (&values_and_segments)[ITEMS_PER_THREAD],
-        Offset          flags[ITEMS_PER_THREAD],
+        Offset          (&flags)[ITEMS_PER_THREAD],
         Offset          tile_num_flags)
     {
         #pragma unroll
@@ -379,7 +415,7 @@ struct BlockReduceByKeyRegion
             }
 
             bool is_first_flag     = (tile_idx == 0) && (ITEM == 0) && (threadIdx.x == 0);
-            bool is_oob_value      = (!FULL_TILE) && (Offset(threadIdx.x * ITEMS_PER_THREAD) + ITEM == num_remaining);
+            bool is_oob_value      = (LAST_TILE) && (Offset(threadIdx.x * ITEMS_PER_THREAD) + ITEM == num_remaining);
 
             // Scatter value reduction
             if (((flags[ITEM] || is_oob_value)) && (!is_first_flag))
@@ -407,10 +443,11 @@ struct BlockReduceByKeyRegion
         Offset          num_remaining,
         Key             (&keys)[ITEMS_PER_THREAD],
         ValueOffsetPair (&values_and_segments)[ITEMS_PER_THREAD],
-        Offset          flags[ITEMS_PER_THREAD],
+        Offset          (&flags)[ITEMS_PER_THREAD],
         Offset          tile_num_flags,
         Offset          tile_num_flags_prefix)
     {
+/*
         int             local_ranks[ITEMS_PER_THREAD];      // Local scatter ranks
         KeyValuePair    key_value_pairs[ITEMS_PER_THREAD];  // Zipped keys and values
 
@@ -457,6 +494,7 @@ struct BlockReduceByKeyRegion
                 d_values_out[tile_num_flags_prefix + compacted_offset - 1] = key_value_pairs[ITEM].value;
             }
         }
+*/
     }
 
 
@@ -469,7 +507,7 @@ struct BlockReduceByKeyRegion
      * Process a tile of input (dynamic domino scan)
      */
     template <
-        bool                FULL_TILE>
+        bool                LAST_TILE>
     __device__ __forceinline__ ValueOffsetPair ConsumeTile(
         Offset              num_items,          ///< Total number of global input items
         Offset              num_remaining,      ///< Number of global input items remaining (including this tile)
@@ -486,29 +524,31 @@ struct BlockReduceByKeyRegion
         ValueOffsetPair     running_total;                                  // Running count of segments and current value aggregate (including this tile)
         ValueOffsetPair     block_aggregate;                                // Count of segments and current value aggregate (only this tile)
 
+        // Obtain the last key in the previous tile to compare with
+        Key tile_predecessor_key;
+        if ((tile_idx != 0) && (threadIdx.x == 0))
+            tile_predecessor_key = d_keys_in[block_offset - 1];
+
         // Load keys and values
-        if (FULL_TILE)
+        if (LAST_TILE)
         {
-            BlockLoadKeys(temp_storage.load_keys).Load(d_keys_in + block_offset, keys);
+            // Repeat last item for out-of-bounds keys and values
+            BlockLoadKeys(temp_storage.load_keys).Load(d_keys_in + block_offset, keys, num_remaining);
 
-            __syncthreads();
+            if (sizeof(Key) != sizeof(Value))
+                __syncthreads();
 
-            BlockLoadValues(temp_storage.load_values).Load(d_values_in + block_offset, values);
+            BlockLoadValues(temp_storage.load_values).Load(d_values_in + block_offset, values, num_remaining);
         }
         else
         {
-            // Repeat last item for out-of-bounds keys and values
-            Key oob_key = d_keys_in[num_items - 1];
-            Value oob_value = d_values_in[num_items - 1];
+            BlockLoadKeys(temp_storage.load_keys).Load(d_keys_in + block_offset, keys);
 
-            BlockLoadKeys(temp_storage.load_keys).Load(d_keys_in + block_offset, keys, num_remaining, oob_key);
+            if (sizeof(Key) != sizeof(Value))
+                __syncthreads();
 
-            __syncthreads();
-
-            BlockLoadValues(temp_storage.load_values).Load(d_values_in + block_offset, values, num_remaining, oob_value);
+            BlockLoadValues(temp_storage.load_values).Load(d_values_in + block_offset, values);
         }
-
-        __syncthreads();
 
         if (tile_idx == 0)
         {
@@ -518,18 +558,13 @@ struct BlockReduceByKeyRegion
             BlockDiscontinuityKeys(temp_storage.discontinuity).FlagHeads(flags, keys, inequality_op);
 
             // Zip values and flags
-            #pragma unroll
-            for (int ITEM = 0; ITEM < ITEMS_PER_THREAD; ++ITEM)
-            {
-                values_and_segments[ITEM].value      = values[ITEM];
-                values_and_segments[ITEM].offset     = flags[ITEM];
-            }
+            ZipValuesAndFlags<LAST_TILE>(num_remaining, values, flags, values_and_segments);
 
             // Exclusive scan of values and flags
             ScanBlock(values_and_segments, block_aggregate, Int2Type<HAS_IDENTITY>());
 
-            // Update tile status if this is a full tile (because there may be successor tiles)
-            if (FULL_TILE && (threadIdx.x == 0))
+            // Update tile status if this is not the last tile
+            if (!LAST_TILE && (threadIdx.x == 0))
                 TileDescriptor::SetPrefix(d_tile_status, block_aggregate);
 
             // Set offset for first scan output
@@ -537,44 +572,36 @@ struct BlockReduceByKeyRegion
                 values_and_segments[0].offset = 0;
 
 //            exclusive_segments  = 0;
-            running_total       = block_aggregate;
+            running_total = block_aggregate;
         }
         else
         {
             // Not first tile
 
-            // Obtain the last key in the previous tile to compare with
-            Key tile_predecessor_key;
-            if (threadIdx.x == 0)
-                tile_predecessor_key = d_keys_in[block_offset - 1];
-
             // Set head flags
             BlockDiscontinuityKeys(temp_storage.discontinuity).FlagHeads(flags, keys, inequality_op, tile_predecessor_key);
 
             // Zip values and flags
-            #pragma unroll
-            for (int ITEM = 0; ITEM < ITEMS_PER_THREAD; ++ITEM)
-            {
-                values_and_segments[ITEM].value      = values[ITEM];
-                values_and_segments[ITEM].offset     = flags[ITEM];
-            }
+            ZipValuesAndFlags<LAST_TILE>(num_remaining, values, flags, values_and_segments);
 
             // Exclusive scan of values and flags
             LookbackPrefixCallbackOp prefix_op(d_tile_status, temp_storage.prefix, scan_op, tile_idx);
             ScanBlock(values_and_segments, block_aggregate, prefix_op, Int2Type<HAS_IDENTITY>());
 
 //            exclusive_segments  = prefix_op.exclusive_prefix.offset;
-            running_total       = prefix_op.inclusive_prefix;
+            running_total = prefix_op.inclusive_prefix;
+
         }
 
-
-        ScatterDirect<FULL_TILE>(
+        ScatterDirect<LAST_TILE>(
             tile_idx,
             num_remaining,
             keys,
             values_and_segments,
             flags,
             block_aggregate.offset);
+
+
 
 /*
         // Do a one-phase scatter if (a) two-phase is disabled or (b) the average number of selected items per thread is less than one
@@ -631,24 +658,30 @@ struct BlockReduceByKeyRegion
         int             tile_idx        = blockIdx.x;                       // Current tile index
         Offset          block_offset    = Offset(TILE_ITEMS) * tile_idx;    // Global offset for the current tile
         Offset          num_remaining   = num_items - block_offset;         // Remaining items (including this tile)
-        ValueOffsetPair running_total;
 
-        if (num_remaining >= TILE_ITEMS)
-            running_total = ConsumeTile<true>(num_items, num_remaining, tile_idx, block_offset, d_tile_status);
-        else if (block_offset < num_items)
-            running_total = ConsumeTile<false>(num_items, num_remaining, tile_idx, block_offset, d_tile_status);
-
-        // Output the total number of items selected
-        if ((tile_idx == num_tiles - 1) && (threadIdx.x == 0))
+        if (num_remaining > TILE_ITEMS)
         {
-            *d_num_segments = running_total.offset;
+            // Full tile
+            ConsumeTile<false>(num_items, num_remaining, tile_idx, block_offset, d_tile_status);
+        }
+        else if (num_remaining > 0)
+        {
+            // Last tile
+            Offset running_total = ConsumeTile<true>(num_items, num_remaining, tile_idx, block_offset, d_tile_status);
 
-            // If the last tile is a whole tile, the inclusive prefix contains accumulated value reduction for the last segment
-            if (num_remaining == TILE_ITEMS)
+            // Output the total number of items selected
+            if (threadIdx.x == 0)
             {
-                d_values_out[running_total.offset - 1] = running_total.value;
+                *d_num_segments = running_total.offset;
+
+                // If the last tile is a whole tile, the inclusive prefix contains accumulated value reduction for the last segment
+                if (num_remaining == TILE_ITEMS)
+                {
+                    d_values_out[running_total.offset - 1] = running_total.value;
+                }
             }
         }
+
 
 #else
 
@@ -667,7 +700,7 @@ struct BlockReduceByKeyRegion
         while (num_remaining > TILE_ITEMS)
         {
             // Consume full tile
-            ConsumeTile<true>(num_items, num_remaining, tile_idx, block_offset, d_tile_status);
+            ConsumeTile<false>(num_items, num_remaining, tile_idx, block_offset, d_tile_status);
 
             // Get tile index
             if (threadIdx.x == 0)
@@ -683,7 +716,7 @@ struct BlockReduceByKeyRegion
         if (num_remaining > 0)
         {
             // Consume last tile (treat as partially-full)
-            ValueOffsetPair running_total = ConsumeTile<false>(num_items, num_remaining, tile_idx, block_offset, d_tile_status);
+            ValueOffsetPair running_total = ConsumeTile<true>(num_items, num_remaining, tile_idx, block_offset, d_tile_status);
 
             if ((threadIdx.x == 0))
             {

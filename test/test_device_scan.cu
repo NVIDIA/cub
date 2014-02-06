@@ -811,9 +811,6 @@ int main(int argc, char** argv)
     int sm_version;
     CubDebugExit(SmVersion(sm_version, device_ordinal));
 
-    TestPointer<CUB, int>(         num_items    , UNIFORM, Sum(), (int) (0), CUB_TYPE_STRING(int));
-
-    /*
 #ifdef QUICK_TEST
 
     // Compile/run quick tests
@@ -864,7 +861,7 @@ int main(int argc, char** argv)
     }
 
 #endif
-*/
+
     return 0;
 }
 
