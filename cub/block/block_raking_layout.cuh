@@ -93,6 +93,7 @@ struct BlockRakingLayout
 
         /// Pad each segment length with one element if degree of bank conflicts is greater than 4-way (heuristic)
         SEGMENT_PADDING = (CONFLICT_DEGREE <= CUB_PTX_PREFER_CONFLICT_OVER_PADDING) ? 0 : 1,
+//        SEGMENT_PADDING = (HAS_CONFLICTS) ? 1 : 0,
 
         /// Total number of elements in the raking grid
         GRID_ELEMENTS = RAKING_THREADS * (SEGMENT_LENGTH + SEGMENT_PADDING),
