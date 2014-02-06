@@ -105,6 +105,12 @@ struct BlockReduceByKeyRegion
     // Types and constants
     //---------------------------------------------------------------------
 
+    // Data type of key iterator
+    typedef typename std::iterator_traits<KeyInputIterator>::value_type Key;
+
+    // Data type of value iterator
+    typedef typename std::iterator_traits<ValueInputIterator>::value_type Value;
+
     // Constants
     enum
     {
@@ -112,13 +118,10 @@ struct BlockReduceByKeyRegion
         ITEMS_PER_THREAD    = BlockReduceByKeyRegionPolicy::ITEMS_PER_THREAD,
         TWO_PHASE_SCATTER   = (BlockReduceByKeyRegionPolicy::TWO_PHASE_SCATTER) && (ITEMS_PER_THREAD > 1),
         TILE_ITEMS          = BLOCK_THREADS * ITEMS_PER_THREAD,
+
+        // Whether or not the scan operation has a known identity value (true if we're performing addition on a primitive type)
+        HAS_IDENTITY        = (Equals<ReductionOp, cub::Sum>::VALUE) && (Traits<Value>::PRIMITIVE),
     };
-
-    // Data type of key iterator
-    typedef typename std::iterator_traits<KeyInputIterator>::value_type Key;
-
-    // Data type of value iterator
-    typedef typename std::iterator_traits<ValueInputIterator>::value_type Value;
 
     // Cache-modified input iterator wrapper type for keys
     typedef typename If<IsPointer<KeyInputIterator>::VALUE,
@@ -281,7 +284,69 @@ struct BlockReduceByKeyRegion
 
 
     //---------------------------------------------------------------------
-    // Utility methods
+    // Block scan utility methods
+    //---------------------------------------------------------------------
+
+    /**
+     * Scan with identity (first tile)
+     */
+    __device__ __forceinline__
+    void ScanBlock(
+        ValueOffsetPair     (&values_and_segments)[ITEMS_PER_THREAD],
+        ValueOffsetPair     &block_aggregate,
+        Int2Type<true>      has_identity)
+    {
+        ValueOffsetPair identity;
+        identity.value = 0;
+        identity.offset = 0;
+        BlockScanAllocations(temp_storage.scan).ExclusiveScan(values_and_segments, values_and_segments, identity, scan_op, block_aggregate);
+    }
+
+    /**
+     * Scan without identity (first tile).  Without an identity, the first output item is undefined.
+     *
+     */
+    __device__ __forceinline__
+    void ScanBlock(
+        ValueOffsetPair     (&values_and_segments)[ITEMS_PER_THREAD],
+        ValueOffsetPair     &block_aggregate,
+        Int2Type<false>     has_identity)
+    {
+        BlockScanAllocations(temp_storage.scan).ExclusiveScan(values_and_segments, values_and_segments, scan_op, block_aggregate);
+    }
+
+    /**
+     * Scan with identity (subsequent tile)
+     */
+    __device__ __forceinline__
+    void ScanBlock(
+        ValueOffsetPair             (&values_and_segments)[ITEMS_PER_THREAD],
+        ValueOffsetPair             &block_aggregate,
+        LookbackPrefixCallbackOp    &prefix_op,
+        Int2Type<true>              has_identity)
+    {
+        ValueOffsetPair identity;
+        identity.value = 0;
+        identity.offset = 0;
+        BlockScanAllocations(temp_storage.scan).ExclusiveScan(values_and_segments, values_and_segments, identity, scan_op, block_aggregate, prefix_op);
+    }
+
+    /**
+     * Scan without identity (subsequent tile).  Without an identity, the first output item is undefined.
+     */
+    __device__ __forceinline__
+    void ScanBlock(
+        ValueOffsetPair             (&values_and_segments)[ITEMS_PER_THREAD],
+        ValueOffsetPair             &block_aggregate,
+        LookbackPrefixCallbackOp    &prefix_op,
+        Int2Type<false>             has_identity)
+    {
+        BlockScanAllocations(temp_storage.scan).ExclusiveScan(values_and_segments, values_and_segments, scan_op, block_aggregate, prefix_op);
+    }
+
+
+    //---------------------------------------------------------------------
+    // Scatter utility methods
     //---------------------------------------------------------------------
 
     /**
@@ -396,7 +461,6 @@ struct BlockReduceByKeyRegion
 
 
 
-
     //---------------------------------------------------------------------
     // Cooperatively scan a device-wide sequence of tiles with other CTAs
     //---------------------------------------------------------------------
@@ -461,15 +525,15 @@ struct BlockReduceByKeyRegion
                 values_and_segments[ITEM].offset     = flags[ITEM];
             }
 
-            // Identity-less exclusive scan of values and flags (without an identity, the first output item is undefined)
-            BlockScanAllocations(temp_storage.scan).ExclusiveScan(values_and_segments, values_and_segments, scan_op, block_aggregate);
+            // Exclusive scan of values and flags
+            ScanBlock(values_and_segments, block_aggregate, Int2Type<HAS_IDENTITY>());
 
             // Update tile status if this is a full tile (because there may be successor tiles)
             if (FULL_TILE && (threadIdx.x == 0))
                 TileDescriptor::SetPrefix(d_tile_status, block_aggregate);
 
             // Set offset for first scan output
-            if (threadIdx.x == 0)
+            if (!HAS_IDENTITY && (threadIdx.x == 0))
                 values_and_segments[0].offset = 0;
 
 //            exclusive_segments  = 0;
@@ -495,9 +559,9 @@ struct BlockReduceByKeyRegion
                 values_and_segments[ITEM].offset     = flags[ITEM];
             }
 
-            // Identity-less exclusive scan of values and flags
+            // Exclusive scan of values and flags
             LookbackPrefixCallbackOp prefix_op(d_tile_status, temp_storage.prefix, scan_op, tile_idx);
-            BlockScanAllocations(temp_storage.scan).ExclusiveScan(values_and_segments, values_and_segments, scan_op, block_aggregate, prefix_op);
+            ScanBlock(values_and_segments, block_aggregate, prefix_op, Int2Type<HAS_IDENTITY>());
 
 //            exclusive_segments  = prefix_op.exclusive_prefix.offset;
             running_total       = prefix_op.inclusive_prefix;

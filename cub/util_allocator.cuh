@@ -253,7 +253,8 @@ struct CachingDeviceAllocator
         unsigned int bin_growth,    ///< Geometric growth factor for bin-sizes
         unsigned int min_bin,       ///< Minimum bin
         unsigned int max_bin,       ///< Maximum bin
-        size_t max_cached_bytes)    ///< Maximum aggregate cached bytes per device
+        size_t max_cached_bytes,    ///< Maximum aggregate cached bytes per device
+        bool skip_cleanup = false)  ///< Whether or not to skip a call to \p FreeAllCached() when the destructor is called.  (Useful for preventing warnings when the allocator is declared at file/static/global scope: by the time the destructor is called on program exit, the CUDA runtime may have already shut down and freed all allocations.)
     :
     #ifndef __CUDA_ARCH__   // Only define STL container members in host code
             cached_blocks(BlockDescriptor::SizeCompare),
@@ -283,7 +284,9 @@ struct CachingDeviceAllocator
      * which delineates five bin-sizes: 512B, 4KB, 32KB, 256KB, and 2MB and
      * sets a maximum of 6,291,455 cached bytes per device
      */
-    CachingDeviceAllocator(bool skip_cleanup = false) :
+    CachingDeviceAllocator(
+        bool skip_cleanup = false)  ///< Whether or not to skip a call to \p FreeAllCached() when the destructor is called.  (Useful for preventing warnings when the allocator is declared at file/static/global scope: by the time the destructor is called on program exit, the CUDA runtime may have already shut down and freed all allocations.)
+    :
     #ifndef __CUDA_ARCH__   // Only define STL container members in host code
         cached_blocks(BlockDescriptor::SizeCompare),
         live_blocks(BlockDescriptor::PtrCompare),
