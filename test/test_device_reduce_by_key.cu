@@ -40,7 +40,7 @@
 #include <cub/device/device_reduce.cuh>
 
 #include <thrust/device_ptr.h>
-#include <thrust/unique.h>
+#include <thrust/reduce.h>
 
 #include "test_util.h"
 
@@ -119,12 +119,18 @@ cudaError_t Dispatch(
 // Dispatch to different Thrust entrypoints
 //---------------------------------------------------------------------
 
-
 /**
  * Dispatch to unique entrypoint
- * /
-template <typename InputIterator, typename OutputIterator, typename NumSelectedIterator, typename Offset>
-__host__ __forceinline__
+ */
+template <
+    typename                    KeyInputIterator,
+    typename                    KeyOutputIterator,
+    typename                    ValueInputIterator,
+    typename                    ValueOutputIterator,
+    typename                    NumSegmentsIterator,
+    typename                    EqualityOp,
+    typename                    ReductionOp,
+    typename                    Offset>
 cudaError_t Dispatch(
     Int2Type<THRUST>            dispatch_to,
     int                         timing_timing_iterations,
@@ -133,14 +139,19 @@ cudaError_t Dispatch(
 
     void                        *d_temp_storage,
     size_t                      &temp_storage_bytes,
-    InputIterator               d_in,
-    OutputIterator              d_out,
-    NumSelectedIterator         d_num_segments,
+    KeyInputIterator            d_keys_in,
+    KeyOutputIterator           d_keys_out,
+    ValueInputIterator          d_values_in,
+    ValueOutputIterator         d_values_out,
+    NumSegmentsIterator         d_num_segments,
+    EqualityOp                  equality_op,
+    ReductionOp                 reduction_op,
     Offset                      num_items,
     cudaStream_t                stream,
     bool                        debug_synchronous)
 {
-    typedef typename std::iterator_traits<InputIterator>::value_type T;
+    typedef typename std::iterator_traits<KeyInputIterator>::value_type Key;
+    typedef typename std::iterator_traits<ValueInputIterator>::value_type Value;
 
     if (d_temp_storage == 0)
     {
@@ -148,29 +159,39 @@ cudaError_t Dispatch(
     }
     else
     {
-        thrust::device_ptr<T> d_out_wrapper_end;
-        thrust::device_ptr<T> d_in_wrapper(d_in);
-        thrust::device_ptr<T> d_out_wrapper(d_out);
+        thrust::device_ptr<Key> d_keys_in_wrapper(d_keys_in);
+        thrust::device_ptr<Key> d_keys_out_wrapper(d_keys_out);
+
+        thrust::device_ptr<Value> d_values_in_wrapper(d_values_in);
+        thrust::device_ptr<Value> d_values_out_wrapper(d_values_out);
+
+        thrust::pair<thrust::device_ptr<Key>, thrust::device_ptr<Value> > d_out_ends;
+
         for (int i = 0; i < timing_timing_iterations; ++i)
         {
-            d_out_wrapper_end = thrust::unique_copy(d_in_wrapper, d_in_wrapper + num_items, d_out_wrapper);
+            d_out_ends = thrust::reduce_by_key(
+                d_keys_in_wrapper,
+                d_keys_in_wrapper + num_items,
+                d_values_in_wrapper,
+                d_keys_out_wrapper,
+                d_values_out_wrapper);
         }
 
-        Offset num_segments = d_out_wrapper_end - d_out_wrapper;
+        Offset num_segments = d_out_ends.first - d_keys_out_wrapper;
         CubDebugExit(cudaMemcpy(d_num_segments, &num_segments, sizeof(Offset), cudaMemcpyHostToDevice));
 
     }
 
     return cudaSuccess;
-}
 
+}
 
 
 //---------------------------------------------------------------------
 // CUDA Nested Parallelism Test Kernel
 //---------------------------------------------------------------------
 
-/ **
+/**
  * Simple wrapper kernel to invoke DeviceSelect
  * /
 template <typename InputIterator, typename OutputIterator, typename NumSelectedIterator, typename Offset>
@@ -666,6 +687,7 @@ int main(int argc, char** argv)
     CubDebugExit(SmVersion(sm_version, device_ordinal));
 
     TestPointer<CUB, int, int>(num_items, entropy_reduction, maxseg, cub::Sum(), CUB_TYPE_STRING(int), CUB_TYPE_STRING(int));
+//    TestPointer<THRUST, int, int>(num_items, entropy_reduction, maxseg, cub::Sum(), CUB_TYPE_STRING(int), CUB_TYPE_STRING(int));
 
 /*
 #ifdef QUICK_TEST
