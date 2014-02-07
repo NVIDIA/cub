@@ -219,6 +219,7 @@ struct LookbackTileDescriptor
 #else
 
         // Use warp-any to determine when all threads have valid status
+/*
         bool invalid = true;
         do
         {
@@ -231,6 +232,17 @@ struct LookbackTileDescriptor
                 invalid = tile_descriptor.status == LOOKBACK_TILE_INVALID;
             }
         } while (__any(invalid));
+*/
+        TxnWord alias = ThreadLoad<LOAD_CG>(reinterpret_cast<TxnWord*>(ptr));
+        tile_descriptor = reinterpret_cast<LookbackTileDescriptor&>(alias);
+
+        while (__any(tile_descriptor.status == LOOKBACK_TILE_INVALID))
+        {
+            if (tile_descriptor.status == LOOKBACK_TILE_INVALID)
+                alias = ThreadLoad<LOAD_CG>(reinterpret_cast<TxnWord*>(ptr));
+
+            tile_descriptor = reinterpret_cast<LookbackTileDescriptor&>(alias);
+        }
 
 #endif
 
