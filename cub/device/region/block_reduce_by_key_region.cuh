@@ -169,8 +169,6 @@ struct BlockReduceByKeyRegion
             }
 
 /*
-            ValueOffsetPair retval;
-            retval.offset = first.offset + second.offset;   // Accumulate number of segment resets from each into the running aggregate
             retval.value = (second.offset) ?
                     second.value :                          // The second partial reduction spans a segment reset, so it's value aggregate becomes the running aggregate
                     op(first.value, second.value);          // The second partial reduction does not span a reset, so accumulate both into the running aggregate
@@ -516,7 +514,7 @@ struct BlockReduceByKeyRegion
         TileDescriptor      *d_tile_status)     ///< Global list of tile status
     {
         Key                 keys[ITEMS_PER_THREAD];                         // Tile keys
-        Key                 values[ITEMS_PER_THREAD];                       // Tile values
+        Value               values[ITEMS_PER_THREAD];                       // Tile values
         Offset              flags[ITEMS_PER_THREAD];                        // Segment head flags
         ValueOffsetPair     values_and_segments[ITEMS_PER_THREAD];          // Zipped values and segment flags|indices
 
@@ -531,24 +529,18 @@ struct BlockReduceByKeyRegion
 
         // Load keys and values
         if (LAST_TILE)
-        {
-            // Repeat last item for out-of-bounds keys and values
             BlockLoadKeys(temp_storage.load_keys).Load(d_keys_in + block_offset, keys, num_remaining);
-
-            if (sizeof(Key) != sizeof(Value))
-                __syncthreads();
-
-            BlockLoadValues(temp_storage.load_values).Load(d_values_in + block_offset, values, num_remaining);
-        }
         else
-        {
             BlockLoadKeys(temp_storage.load_keys).Load(d_keys_in + block_offset, keys);
 
-            if (sizeof(Key) != sizeof(Value))
-                __syncthreads();
+        if (sizeof(Key) != sizeof(Value))
+            __syncthreads();
 
+        // Load values
+        if (LAST_TILE)
+            BlockLoadValues(temp_storage.load_values).Load(d_values_in + block_offset, values, num_remaining);
+        else
             BlockLoadValues(temp_storage.load_values).Load(d_values_in + block_offset, values);
-        }
 
         if (tile_idx == 0)
         {

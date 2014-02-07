@@ -211,7 +211,7 @@ struct DeviceReduceByKeyDispatch
                 BLOCK_LOAD_WARP_TRANSPOSE,
                 LOAD_DEFAULT,
                 true,
-                BLOCK_SCAN_RAKING_MEMOIZE>
+                BLOCK_SCAN_WARP_SCANS>
             ReduceByKeyPolicy;
     };
 
