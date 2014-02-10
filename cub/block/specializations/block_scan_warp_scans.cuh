@@ -111,20 +111,28 @@ struct BlockScanWarpScans
 
         __syncthreads();
 
-        block_aggregate = temp_storage.warp_aggregates[0];
+        T aggregates[WARPS];
+
+        #pragma unroll
+        for (int WARP = 0; WARP < WARPS; WARP++)
+        {
+            aggregates[WARP] = temp_storage.warp_aggregates[WARP];
+        }
+
+        block_aggregate = aggregates[0];
 
         #pragma unroll
         for (int WARP = 1; WARP < WARPS; WARP++)
         {
             if (warp_id == WARP)
             {
-                partial = (lane_valid) ?
-                    scan_op(block_aggregate, partial) :     // fold it in our valid partial
-                    block_aggregate;                        // replace our invalid partial with the aggregate
+                partial = scan_op(block_aggregate, partial);
             }
 
-            block_aggregate = scan_op(block_aggregate, temp_storage.warp_aggregates[WARP]);
+            block_aggregate = scan_op(block_aggregate, aggregates[WARP]);
         }
+
+        if (!lane_valid) partial = aggregates[0];
     }
 
 

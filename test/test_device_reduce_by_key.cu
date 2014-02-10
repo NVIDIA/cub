@@ -36,7 +36,7 @@
 #include <stdio.h>
 
 #include <cub/util_allocator.cuh>
-#include <cub/iterator/counting_input_iterator.cuh>
+#include <cub/iterator/constant_input_iterator.cuh>
 #include <cub/device/device_reduce.cuh>
 
 #include <thrust/device_ptr.h>
@@ -262,15 +262,12 @@ cudaError_t Dispatch(
  * Initialize problem.  Keys are initialized to segment number
  * and values are initialized to 1
  */
-template <
-    typename Key,
-    typename Value>
+template <typename KeyIterator>
 void Initialize(
-    int         entropy_reduction,
-    Key         *h_keys_in,
-    Value       *h_values_in,
-    int         num_items,
-    int         max_segment)
+    int             entropy_reduction,
+    KeyIterator     h_keys_in,
+    int             num_items,
+    int             max_segment)
 {
     unsigned short max_short = (unsigned short) -1;
 
@@ -289,7 +286,6 @@ void Initialize(
         while (j < CUB_MIN(i + repeat, num_items))
         {
             InitValue(SEQ_INC, h_keys_in[j], segment_id);
-            InitValue(SEQ_INC, h_values_in[j], 1);
             j++;
         }
 
@@ -300,9 +296,6 @@ void Initialize(
     if (g_verbose)
     {
         printf("Input keys:\n");
-        DisplayResults(h_keys_in, num_items);
-        printf("\n\n");
-        printf("Input values:\n");
         DisplayResults(h_keys_in, num_items);
         printf("\n\n");
     }
@@ -482,9 +475,12 @@ void TestPointer(
     Value* h_values_in        = new Value[num_items];
     Value* h_values_reference = new Value[num_items];
 
+    for (int i = 0; i < num_items; ++i)
+        InitValue(SEQ_INC, h_values_in[i], 1);
+
     // Initialize problem and solution
     Equality equality_op;
-    Initialize(entropy_reduction, h_keys_in, h_values_in, num_items, max_segment);
+    Initialize(entropy_reduction, h_keys_in, num_items, max_segment);
     int num_segments = Solve(h_keys_in, h_keys_reference, h_values_in, h_values_reference, equality_op, reduction_op, num_items);
 
     printf("\nPointer %s cub::DeviceReduce::ReduceByKey %d items, %d segments (avg run length %d), {%s,%s} key value pairs, entropy_reduction %d\n",
@@ -519,42 +515,58 @@ void TestPointer(
 
 /**
  * Test DeviceSelect on iterator type
- * /
+ */
 template <
     Backend         BACKEND,
     typename        Key,
-    typename        Value>
+    typename        Value,
+    typename        ReductionOp>
 void TestIterator(
     int             num_items,
+    int             entropy_reduction,
+    int             max_segment,
+    ReductionOp     reduction_op,
     char*           key_type_string,
-    char*           value_type_string,
-    Int2Type<true>  is_number)
+    char*           value_type_string)
 {
-    // Use a counting iterator as the input
-    CountingInputIterator<T, int> h_in(0);
-
     // Allocate host arrays
-    T*  h_reference = new T[num_items];
+    Key* h_keys_in        = new Key[num_items];
+    Key* h_keys_reference = new Key[num_items];
+
+    ConstantInputIterator<Value, int> h_values_in(1);
+    Value* h_values_reference = new Value[num_items];
 
     // Initialize problem and solution
-    int num_segments = Solve(h_in, h_reference, num_items);
+    Equality equality_op;
+    Initialize(entropy_reduction, h_keys_in, num_items, max_segment);
+    int num_segments = Solve(h_keys_in, h_keys_reference, h_values_in, h_values_reference, equality_op, reduction_op, num_items);
 
-    printf("\nIterator %s cub::DeviceReduce::ReduceByKey %d items, %d selected (avg run length %d), %s %d-byte elements\n",
+    printf("\nPointer %s cub::DeviceReduce::ReduceByKey %d items, %d segments (avg run length %d), {%s,%s} key value pairs, entropy_reduction %d\n",
         (BACKEND == CDP) ? "CDP CUB" : (BACKEND == THRUST) ? "Thrust" : "CUB",
         num_items, num_segments, num_items / num_segments,
-        type_string,
-        (int) sizeof(T));
+        key_type_string, value_type_string,
+        entropy_reduction);
     fflush(stdout);
 
+    // Allocate problem device arrays
+    Key     *d_keys_in = NULL;
+    CubDebugExit(g_allocator.DeviceAllocate((void**)&d_keys_in, sizeof(Key) * num_items));
+
+    // Initialize device input
+    CubDebugExit(cudaMemcpy(d_keys_in, h_keys_in, sizeof(Key) * num_items, cudaMemcpyHostToDevice));
+
     // Run Test
-    Test<BACKEND>(h_in, h_reference, num_segments, num_items, key_type_string, value_type_string);
+    Test<BACKEND>(d_keys_in, h_values_in, h_keys_reference, h_values_reference, equality_op, reduction_op, num_segments, num_items, key_type_string, value_type_string);
 
     // Cleanup
-    if (h_reference) delete[] h_reference;
+    if (h_keys_in) delete[] h_keys_in;
+    if (h_keys_reference) delete[] h_keys_reference;
+    if (h_values_reference) delete[] h_values_reference;
+    if (d_keys_in) CubDebugExit(g_allocator.DeviceFree(d_keys_in));
 }
 
 
-/ **
+/* *
  * Test DeviceSelect on iterator type
  * /
 template <
@@ -686,10 +698,21 @@ int main(int argc, char** argv)
     int sm_version;
     CubDebugExit(SmVersion(sm_version, device_ordinal));
 
+    printf("int\n");
+    TestPointer<THRUST, int, int>(num_items, entropy_reduction, maxseg, cub::Sum(), CUB_TYPE_STRING(int), CUB_TYPE_STRING(int));
     TestPointer<CUB, int, int>(num_items, entropy_reduction, maxseg, cub::Sum(), CUB_TYPE_STRING(int), CUB_TYPE_STRING(int));
+
+    printf("RLE");
+    TestIterator<CUB, int, int>(num_items, entropy_reduction, maxseg, cub::Sum(), CUB_TYPE_STRING(int), CUB_TYPE_STRING(int));
+
+    printf("float\n");
+    TestPointer<THRUST, int, float>(num_items, entropy_reduction, maxseg, cub::Sum(), CUB_TYPE_STRING(int), CUB_TYPE_STRING(float));
     TestPointer<CUB, int, float>(num_items, entropy_reduction, maxseg, cub::Sum(), CUB_TYPE_STRING(int), CUB_TYPE_STRING(float));
 
-//    TestPointer<THRUST, int, int>(num_items, entropy_reduction, maxseg, cub::Sum(), CUB_TYPE_STRING(int), CUB_TYPE_STRING(int));
+    printf("double\n");
+    TestPointer<THRUST, int, double>(num_items, entropy_reduction, maxseg, cub::Sum(), CUB_TYPE_STRING(int), CUB_TYPE_STRING(double));
+    TestPointer<CUB, int, double>(num_items, entropy_reduction, maxseg, cub::Sum(), CUB_TYPE_STRING(int), CUB_TYPE_STRING(double));
+
 
 /*
 #ifdef QUICK_TEST
