@@ -38,7 +38,6 @@
 #include "../util_namespace.cuh"
 #include "../util_macro.cuh"
 #include "../util_type.cuh"
-#include "../util_vector.cuh"
 #include "block_exchange.cuh"
 
 /// Optional outer namespace(s)

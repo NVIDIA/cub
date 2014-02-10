@@ -219,20 +219,6 @@ struct LookbackTileDescriptor
 #else
 
         // Use warp-any to determine when all threads have valid status
-/*
-        bool invalid = true;
-        do
-        {
-            if (invalid)
-            {
-                TxnWord alias = ThreadLoad<LOAD_CG>(reinterpret_cast<TxnWord*>(ptr));
-                __threadfence_block();
-
-                tile_descriptor = reinterpret_cast<LookbackTileDescriptor&>(alias);
-                invalid = tile_descriptor.status == LOOKBACK_TILE_INVALID;
-            }
-        } while (__any(invalid));
-*/
         TxnWord alias = ThreadLoad<LOAD_CG>(reinterpret_cast<TxnWord*>(ptr));
         tile_descriptor = reinterpret_cast<LookbackTileDescriptor&>(alias);
 
@@ -321,11 +307,10 @@ struct LookbackBlockPrefixCallbackOp
     // Parameterized warp reduce
     typedef WarpReduce<T>                       WarpReduceT;
 
-    // Storage type
     typedef typename WarpReduceT::TempStorage   _TempStorage;
 
     // Alias wrapper allowing storage to be unioned
-    typedef Uninitialized<_TempStorage>         TempStorage;
+    struct TempStorage : Uninitialized<_TempStorage> {};
 
     // Tile status descriptor type
     typedef LookbackTileDescriptor<T>           LookbackTileDescriptorT;

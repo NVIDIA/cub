@@ -72,7 +72,8 @@ template <
     typename    ReductionOp,                                ///< Value reduction operator type
     typename    Offset,                                     ///< Signed integer type for global offsets
     typename    LookbackTileDescriptorT>                    ///< Tile descriptor type (i.e., cub::LookbackTileDescriptor<ItemOffsetPair<typename std::iterator_traits<ValueInputIterator>::value_type, Offset> >)
-__launch_bounds__ (int(BlockReduceByKeyRegionPolicy::BLOCK_THREADS))
+__launch_bounds__ (int(BlockReduceByKeyRegionPolicy::BLOCK_THREADS), int(BlockReduceByKeyRegionPolicy::MIN_SM_OCCUPANCY))
+//__launch_bounds__ (int(BlockReduceByKeyRegionPolicy::BLOCK_THREADS))
 __global__ void ReduceByKeyRegionKernel(
     KeyInputIterator        d_keys_in,                      ///< [in] Pointer to consecutive runs of input keys
     KeyOutputIterator       d_keys_out,                     ///< [in] Pointer to output keys (one key per run)
@@ -138,17 +139,19 @@ struct DeviceReduceByKeyDispatch
      * Types and constants
      ******************************************************************************/
 
-    enum
-    {
-        TILE_STATUS_PADDING     = 32,
-        INIT_KERNEL_THREADS     = 128
-    };
-
     // Data type of key input iterator
     typedef typename std::iterator_traits<KeyInputIterator>::value_type Key;
 
     // Data type of value input iterator
     typedef typename std::iterator_traits<ValueInputIterator>::value_type Value;
+
+    enum
+    {
+        TILE_STATUS_PADDING     = 32,
+        INIT_KERNEL_THREADS     = 128,
+        MAX_INPUT_BYTES         = CUB_MAX(sizeof(Key), sizeof(Value)),
+        COMBINED_INPUT_BYTES    = sizeof(Key) + sizeof(Value),
+    };
 
     // Value-offset tuple type for scanning (maps accumulated values to segment index)
     typedef ItemOffsetPair<Value, Offset> ValueOffsetPair;
@@ -164,9 +167,21 @@ struct DeviceReduceByKeyDispatch
     /// SM35
     struct Policy350
     {
+/*
         enum {
-            NOMINAL_4B_ITEMS_PER_THREAD = 11,
-            ITEMS_PER_THREAD            = CUB_MIN(NOMINAL_4B_ITEMS_PER_THREAD, CUB_MAX(1, (NOMINAL_4B_ITEMS_PER_THREAD * 8 / (sizeof(Key) + sizeof(Value))))),
+            NOMINAL_4B_ITEMS_PER_THREAD = 13,
+            ITEMS_PER_THREAD            = CUB_MIN(NOMINAL_4B_ITEMS_PER_THREAD, CUB_MAX(1, ((NOMINAL_4B_ITEMS_PER_THREAD * 8) / COMBINED_INPUT_BYTES))),
+            MIN_SM_OCCUPANCY            = 0,
+        };
+
+        typedef BlockReduceByKeyRegionPolicy<
+                96,
+*/
+
+        enum {
+            NOMINAL_4B_ITEMS_PER_THREAD = 8,
+            ITEMS_PER_THREAD            = (MAX_INPUT_BYTES <= 8) ? 8 : CUB_MIN(NOMINAL_4B_ITEMS_PER_THREAD, CUB_MAX(1, ((NOMINAL_4B_ITEMS_PER_THREAD * 8) + COMBINED_INPUT_BYTES - 1) / COMBINED_INPUT_BYTES)),
+            MIN_SM_OCCUPANCY            = 0,
         };
 
         typedef BlockReduceByKeyRegionPolicy<
@@ -175,7 +190,8 @@ struct DeviceReduceByKeyDispatch
                 BLOCK_LOAD_DIRECT,
                 LOAD_LDG,
                 true,
-                BLOCK_SCAN_WARP_SCANS>
+                BLOCK_SCAN_WARP_SCANS,
+                MIN_SM_OCCUPANCY>
             ReduceByKeyPolicy;
     };
 
@@ -184,7 +200,8 @@ struct DeviceReduceByKeyDispatch
     {
         enum {
             NOMINAL_4B_ITEMS_PER_THREAD = 5,
-            ITEMS_PER_THREAD            = CUB_MIN(NOMINAL_4B_ITEMS_PER_THREAD, CUB_MAX(1, (NOMINAL_4B_ITEMS_PER_THREAD * 8 / (sizeof(Key) + sizeof(Value))))),
+            ITEMS_PER_THREAD            = CUB_MIN(NOMINAL_4B_ITEMS_PER_THREAD, CUB_MAX(1, ((NOMINAL_4B_ITEMS_PER_THREAD * 8) + COMBINED_INPUT_BYTES - 1) / COMBINED_INPUT_BYTES)),
+            MIN_SM_OCCUPANCY            = 0,
         };
 
         typedef BlockReduceByKeyRegionPolicy<
@@ -193,7 +210,8 @@ struct DeviceReduceByKeyDispatch
                 BLOCK_LOAD_WARP_TRANSPOSE,
                 LOAD_DEFAULT,
                 true,
-                BLOCK_SCAN_RAKING_MEMOIZE>
+                BLOCK_SCAN_RAKING_MEMOIZE,
+                MIN_SM_OCCUPANCY>
             ReduceByKeyPolicy;
     };
 
@@ -201,8 +219,9 @@ struct DeviceReduceByKeyDispatch
     struct Policy200
     {
         enum {
-            NOMINAL_4B_ITEMS_PER_THREAD = 11,
-            ITEMS_PER_THREAD            = CUB_MIN(NOMINAL_4B_ITEMS_PER_THREAD, CUB_MAX(1, (NOMINAL_4B_ITEMS_PER_THREAD * 8 / (sizeof(Key) + sizeof(Value))))),
+            NOMINAL_4B_ITEMS_PER_THREAD = 13,
+            ITEMS_PER_THREAD            = CUB_MIN(NOMINAL_4B_ITEMS_PER_THREAD, CUB_MAX(1, ((NOMINAL_4B_ITEMS_PER_THREAD * 8) + COMBINED_INPUT_BYTES - 1) / COMBINED_INPUT_BYTES)),
+            MIN_SM_OCCUPANCY            = 0,
         };
 
         typedef BlockReduceByKeyRegionPolicy<
@@ -211,7 +230,8 @@ struct DeviceReduceByKeyDispatch
                 BLOCK_LOAD_WARP_TRANSPOSE,
                 LOAD_DEFAULT,
                 true,
-                BLOCK_SCAN_WARP_SCANS>
+                BLOCK_SCAN_WARP_SCANS,
+                MIN_SM_OCCUPANCY>
             ReduceByKeyPolicy;
     };
 
@@ -220,7 +240,8 @@ struct DeviceReduceByKeyDispatch
     {
         enum {
             NOMINAL_4B_ITEMS_PER_THREAD = 5,
-            ITEMS_PER_THREAD            = CUB_MIN(NOMINAL_4B_ITEMS_PER_THREAD, CUB_MAX(1, (NOMINAL_4B_ITEMS_PER_THREAD * 8 / (sizeof(Key) + sizeof(Value))))),
+            ITEMS_PER_THREAD            = CUB_MIN(NOMINAL_4B_ITEMS_PER_THREAD, CUB_MAX(1, ((NOMINAL_4B_ITEMS_PER_THREAD * 8) + COMBINED_INPUT_BYTES - 1) / COMBINED_INPUT_BYTES)),
+            MIN_SM_OCCUPANCY            = 0,
         };
 
         typedef BlockReduceByKeyRegionPolicy<
@@ -229,7 +250,8 @@ struct DeviceReduceByKeyDispatch
                 BLOCK_LOAD_WARP_TRANSPOSE,
                 LOAD_DEFAULT,
                 true,
-                BLOCK_SCAN_RAKING_MEMOIZE>
+                BLOCK_SCAN_RAKING_MEMOIZE,
+                MIN_SM_OCCUPANCY>
             ReduceByKeyPolicy;
     };
 
@@ -238,7 +260,8 @@ struct DeviceReduceByKeyDispatch
     {
         enum {
             NOMINAL_4B_ITEMS_PER_THREAD = 5,
-            ITEMS_PER_THREAD            = CUB_MIN(NOMINAL_4B_ITEMS_PER_THREAD, CUB_MAX(1, (NOMINAL_4B_ITEMS_PER_THREAD * 8 / (sizeof(Key) + sizeof(Value))))),
+            ITEMS_PER_THREAD            = CUB_MIN(NOMINAL_4B_ITEMS_PER_THREAD, CUB_MAX(1, ((NOMINAL_4B_ITEMS_PER_THREAD * 8) + COMBINED_INPUT_BYTES - 1) / COMBINED_INPUT_BYTES)),
+            MIN_SM_OCCUPANCY            = 0,
         };
 
         typedef BlockReduceByKeyRegionPolicy<
@@ -247,7 +270,8 @@ struct DeviceReduceByKeyDispatch
                 BLOCK_LOAD_WARP_TRANSPOSE,
                 LOAD_DEFAULT,
                 true,
-                BLOCK_SCAN_RAKING>
+                BLOCK_SCAN_RAKING,
+                MIN_SM_OCCUPANCY>
             ReduceByKeyPolicy;
     };
 
@@ -333,6 +357,7 @@ struct DeviceReduceByKeyDispatch
         BlockLoadAlgorithm      load_policy;
         bool                    two_phase_scatter;
         BlockScanAlgorithm      scan_algorithm;
+        cudaSharedMemConfig     smem_config;
 
         template <typename BlockReduceByKeyRegionPolicy>
         __host__ __device__ __forceinline__
@@ -343,6 +368,7 @@ struct DeviceReduceByKeyDispatch
             load_policy                 = BlockReduceByKeyRegionPolicy::LOAD_ALGORITHM;
             two_phase_scatter           = BlockReduceByKeyRegionPolicy::TWO_PHASE_SCATTER;
             scan_algorithm              = BlockReduceByKeyRegionPolicy::SCAN_ALGORITHM;
+            smem_config                 = cudaSharedMemBankSizeEightByte;
         }
 
         __host__ __device__ __forceinline__
@@ -477,6 +503,20 @@ struct DeviceReduceByKeyDispatch
                     reduce_by_key_region_occupancy;     // Fill the device with threadblocks
             }
 
+#ifndef __CUDA_ARCH__
+            // Get current smem bank configuration
+            cudaSharedMemConfig original_smem_config;
+            if (CubDebug(error = cudaDeviceGetSharedMemConfig(&original_smem_config))) break;
+            cudaSharedMemConfig current_smem_config = original_smem_config;
+
+            // Update smem config if necessary
+            if (current_smem_config != reduce_by_key_region_config.smem_config)
+            {
+                if (CubDebug(error = cudaDeviceSetSharedMemConfig(reduce_by_key_region_config.smem_config))) break;
+                current_smem_config = reduce_by_key_region_config.smem_config;
+            }
+#endif
+
             // Log reduce_by_key_region_kernel configuration
             if (debug_synchronous) CubLog("Invoking reduce_by_key_region_kernel<<<%d, %d, 0, %lld>>>(), %d items per thread, %d SM occupancy\n",
                 select_grid_size, reduce_by_key_region_config.block_threads, (long long) stream, reduce_by_key_region_config.items_per_thread, reduce_by_key_region_sm_occupancy);
@@ -497,6 +537,15 @@ struct DeviceReduceByKeyDispatch
 
             // Sync the stream if specified
             if (debug_synchronous && (CubDebug(error = SyncStream(stream)))) break;
+
+#ifndef __CUDA_ARCH__
+            // Reset smem config if necessary
+            if (current_smem_config != original_smem_config)
+            {
+                if (CubDebug(error = cudaDeviceSetSharedMemConfig(original_smem_config))) break;
+            }
+#endif
+
         }
         while (0);
 
