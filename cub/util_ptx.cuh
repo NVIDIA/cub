@@ -473,9 +473,9 @@ __device__ __forceinline__ T ShuffleDown(
  */
 template <typename T>
 __device__ __forceinline__ T ShuffleBroadcast(
-    T               input,                  ///< [in] The value to broadcast
-    int             src_lane,               ///< [in] Which warp lane is to do the broadcasting
-    int             logical_warp_threads)   ///< [in] Number of threads per logical warp
+    T               input,                                          ///< [in] The value to broadcast
+    int             src_lane,                                       ///< [in] Which warp lane is to do the broadcasting
+    int             logical_warp_threads)                           ///< [in] Number of threads per logical warp
 {
     typedef typename UnitWord<T>::ShuffleWord ShuffleWord;
 

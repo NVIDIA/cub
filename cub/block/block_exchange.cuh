@@ -133,7 +133,7 @@ private:
         WARP_TIME_SLICED_ITEMS      = WARP_TIME_SLICED_THREADS * ITEMS_PER_THREAD,
 
         // Insert padding if the number of items per thread is a power of two
-        INSERT_PADDING              = ((ITEMS_PER_THREAD & (ITEMS_PER_THREAD - 1)) == 0),
+        INSERT_PADDING              = 0, //PowerOfTwo<ITEMS_PER_THREAD>::VALUE,
         PADDING_ITEMS               = (INSERT_PADDING) ? (TIME_SLICED_ITEMS >> LOG_SMEM_BANKS) : 0,
     };
 
@@ -142,7 +142,7 @@ private:
      ******************************************************************************/
 
     /// Shared memory storage layout type
-    typedef T _TempStorage[TIME_SLICED_ITEMS + PADDING_ITEMS + 2];
+    typedef T _TempStorage[TIME_SLICED_ITEMS + PADDING_ITEMS];
 
 public:
 
@@ -929,8 +929,7 @@ public:
     __device__ __forceinline__ void ScatterToStriped(
         T               items[ITEMS_PER_THREAD],        ///< [in-out] Items to exchange
         int             ranks[ITEMS_PER_THREAD],        ///< [in] Corresponding scatter ranks
-        ValidFlag       is_valid[ITEMS_PER_THREAD],     ///< [in] Corresponding flag denoting item validity
-        int             valid_items)                    ///< [in] Number of valid items held by all threads
+        ValidFlag       is_valid[ITEMS_PER_THREAD])     ///< [in] Corresponding flag denoting item validity
     {
         #pragma unroll
         for (int ITEM = 0; ITEM < ITEMS_PER_THREAD; ITEM++)
@@ -947,11 +946,8 @@ public:
         for (int ITEM = 0; ITEM < ITEMS_PER_THREAD; ITEM++)
         {
             int item_offset = int(ITEM * BLOCK_THREADS) + linear_tid;
-            if (item_offset < valid_items)
-            {
-                if (INSERT_PADDING) item_offset = SHR_ADD(item_offset, LOG_SMEM_BANKS, item_offset);
-                items[ITEM] = temp_storage[item_offset];
-            }
+            if (INSERT_PADDING) item_offset = SHR_ADD(item_offset, LOG_SMEM_BANKS, item_offset);
+            items[ITEM] = temp_storage[item_offset];
         }
     }
 

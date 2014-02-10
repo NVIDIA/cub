@@ -38,7 +38,6 @@
 
 #include "../thread/thread_load.cuh"
 #include "../thread/thread_store.cuh"
-#include "../util_vector.cuh"
 #include "../util_namespace.cuh"
 
 #if (THRUST_VERSION >= 100700)

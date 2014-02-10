@@ -143,26 +143,17 @@ struct BlockScanRaking
         ScanOp scan_op)
     {
         T *smem_raking_ptr = BlockRakingLayout::RakingPtr(temp_storage.raking_grid, linear_tid);
-        T *raking_ptr;
 
-        if (MEMOIZE)
+        // Read data into registers
+        #pragma unroll
+        for (int i = 0; i < SEGMENT_LENGTH; i++)
         {
-            // Copy data into registers
-            #pragma unroll
-            for (int i = 0; i < SEGMENT_LENGTH; i++)
-            {
-                cached_segment[i] = smem_raking_ptr[i];
-            }
-            raking_ptr = cached_segment;
-        }
-        else
-        {
-            raking_ptr = smem_raking_ptr;
+            cached_segment[i] = smem_raking_ptr[i];
         }
 
-        T raking_partial = raking_ptr[0];
+        T raking_partial = cached_segment[0];
 
-        return GuardedReduce(raking_ptr, scan_op, raking_partial, Int2Type<1>());
+        return GuardedReduce(cached_segment, scan_op, raking_partial, Int2Type<1>());
     }
 
 
@@ -175,20 +166,23 @@ struct BlockScanRaking
     {
         T *smem_raking_ptr = BlockRakingLayout::RakingPtr(temp_storage.raking_grid, linear_tid);
 
-        T *raking_ptr = (MEMOIZE) ?
-            cached_segment :
-            smem_raking_ptr;
-
-        ThreadScanExclusive<SEGMENT_LENGTH>(raking_ptr, raking_ptr, scan_op, raking_partial, apply_prefix);
-
-        if (MEMOIZE)
+        // Read data back into registers
+        if (!MEMOIZE)
         {
-            // Copy data back to smem
             #pragma unroll
             for (int i = 0; i < SEGMENT_LENGTH; i++)
             {
-                smem_raking_ptr[i] = cached_segment[i];
+                cached_segment[i] = smem_raking_ptr[i];
             }
+        }
+
+        ThreadScanExclusive(cached_segment, cached_segment, scan_op, raking_partial, apply_prefix);
+
+        // Write data back to smem
+        #pragma unroll
+        for (int i = 0; i < SEGMENT_LENGTH; i++)
+        {
+            smem_raking_ptr[i] = cached_segment[i];
         }
     }
 
@@ -202,20 +196,23 @@ struct BlockScanRaking
     {
         T *smem_raking_ptr = BlockRakingLayout::RakingPtr(temp_storage.raking_grid, linear_tid);
 
-        T *raking_ptr = (MEMOIZE) ?
-            cached_segment :
-            smem_raking_ptr;
-
-        ThreadScanInclusive<SEGMENT_LENGTH>(raking_ptr, raking_ptr, scan_op, raking_partial, apply_prefix);
-
-        if (MEMOIZE)
+        // Read data back into registers
+        if (!MEMOIZE)
         {
-            // Copy data back to smem
             #pragma unroll
             for (int i = 0; i < SEGMENT_LENGTH; i++)
             {
-                smem_raking_ptr[i] = cached_segment[i];
+                cached_segment[i] = smem_raking_ptr[i];
             }
+        }
+
+        ThreadScanInclusive(cached_segment, cached_segment, scan_op, raking_partial, apply_prefix);
+
+        // Write data back to smem
+        #pragma unroll
+        for (int i = 0; i < SEGMENT_LENGTH; i++)
+        {
+            smem_raking_ptr[i] = cached_segment[i];
         }
     }
 
@@ -229,6 +226,7 @@ struct BlockScanRaking
         ScanOp          scan_op,            ///< [in] Binary scan operator
         T               &block_aggregate)   ///< [out] Threadblock-wide aggregate reduction of input items
     {
+
         if (WARP_SYNCHRONOUS)
         {
             // Short-circuit directly to warp scan

@@ -874,7 +874,7 @@ public:
     __device__ __forceinline__ void ExclusiveScan(
         T               input,              ///< [in] Calling thread's input items
         T               &output,            ///< [out] Calling thread's output items (may be aliased to \p input)
-        const T         &identity,          ///< [in] Identity value
+        T               identity,          ///< [in] Identity value
         ScanOp          scan_op,            ///< [in] Binary scan functor (e.g., an instance of cub::Sum, cub::Min, cub::Max, etc.)
         T               &block_aggregate)   ///< [out] block-wide aggregate reduction of input items
     {
@@ -1030,7 +1030,7 @@ public:
     __device__ __forceinline__ void ExclusiveScan(
         T                 (&input)[ITEMS_PER_THREAD],   ///< [in] Calling thread's input items
         T                 (&output)[ITEMS_PER_THREAD],  ///< [out] Calling thread's output items (may be aliased to \p input)
-        const T           &identity,                    ///< [in] Identity value
+        T                 identity,                    ///< [in] Identity value
         ScanOp            scan_op)                      ///< [in] Binary scan functor (e.g., an instance of cub::Sum, cub::Min, cub::Max, etc.)
     {
         // Reduce consecutive thread items in registers
@@ -1092,7 +1092,7 @@ public:
     __device__ __forceinline__ void ExclusiveScan(
         T                 (&input)[ITEMS_PER_THREAD],   ///< [in] Calling thread's input items
         T                 (&output)[ITEMS_PER_THREAD],  ///< [out] Calling thread's output items (may be aliased to \p input)
-        const T           &identity,                    ///< [in] Identity value
+        T                 identity,                    ///< [in] Identity value
         ScanOp            scan_op,                      ///< [in] Binary scan functor (e.g., an instance of cub::Sum, cub::Min, cub::Max, etc.)
         T                 &block_aggregate)             ///< [out] block-wide aggregate reduction of input items
     {
