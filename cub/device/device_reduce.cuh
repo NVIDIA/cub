@@ -39,6 +39,7 @@
 
 #include "region/block_reduce_region.cuh"
 #include "device_reduce_by_key.cuh"
+#include "../iterator/constant_input_iterator.cuh"
 #include "../thread/thread_operators.cuh"
 #include "../grid/grid_even_share.cuh"
 #include "../grid/grid_queue.cuh"
@@ -1298,6 +1299,106 @@ struct DeviceReduce
             d_num_segments,
             EqualityOp(),
             reduction_op,
+            num_items,
+            stream,
+            debug_synchronous);
+    }
+
+
+    /**
+     * \brief Counts the segment lengths in the sequence \p d_in, where segments are demarcated by runs of identical values.
+     *
+     * \par
+     * This operation computes a run-length encoding of \p d_in, where segments are identified
+     * by "runs" of consecutive, identical values.  The length of the <em>i</em><sup>th</sup> segment
+     * is written to <tt>d_counts_out[<em>i</em>]</tt>.  The unique values are also compacted,
+     * i.e., the first value in the <em>i</em><sup>th</sup> segment is copied to
+     * <tt>d_compacted_out[<em>i</em>]</tt>.  The total number of segments discovered is written
+     * to \p d_num_segments.
+     *
+     * \par
+     * - The <tt>==</tt> equality operator is used to determine whether values are equivalent
+     * - \devicestorage
+     * - \cdp
+     *
+     * \par
+     * The code snippet below illustrates the run-length encoding of a sequence of \p int values.
+     * \par
+     * \code
+     * #include <cub/cub.cuh>   // or equivalently <cub/device/device_reduce.cuh>
+     *
+     * // Declare, allocate, and initialize device pointers for input and output
+     * int          num_items;          // e.g., 8
+     * int          *d_in;              // e.g., [0, 2, 2, 9, 5, 5, 5, 8]
+     * int          *d_compacted_out;   // e.g., [ ,  ,  ,  ,  ,  ,  ,  ]
+     * int          *d_counts_out;      // e.g., [ ,  ,  ,  ,  ,  ,  ,  ]
+     * int          *d_num_segments;    // e.g., [ ]
+     * ...
+     *
+     * // Determine temporary device storage requirements
+     * void     *d_temp_storage = NULL;
+     * size_t   temp_storage_bytes = 0;
+     * cub::DeviceSelect::RunLengthEncode(d_temp_storage, temp_storage_bytes, d_in, d_compacted_out, d_counts_out, d_num_segments, num_items);
+     *
+     * // Allocate temporary storage
+     * cudaMalloc(&d_temp_storage, temp_storage_bytes);
+     *
+     * // Run encoding
+     * cub::DeviceSelect::RunLengthEncode(d_temp_storage, temp_storage_bytes, d_in, d_compacted_out, d_counts_out, d_num_segments, num_items);
+     *
+     * // d_keys_out        <-- [0, 2, 9, 5, 8]
+     * // d_values_out      <-- [1, 2, 1, 3, 1]
+     * // d_num_segments    <-- [5]
+     *
+     * \endcode
+     *
+     * \tparam InputIterator        <b>[inferred]</b> Random-access input iterator type for reading input items \iterator
+     * \tparam OutputIterator       <b>[inferred]</b> Random-access output iterator type for writing compacted output items \iterator
+     * \tparam CountsOutputIterator <b>[inferred]</b> Random-access output iterator type for writing output counts \iterator
+     * \tparam NumSegmentsIterator  <b>[inferred]</b> Output iterator type for recording the number of segments encountered \iterator
+     */
+    template <
+        typename                    InputIterator,
+        typename                    OutputIterator,
+        typename                    CountsOutputIterator,
+        typename                    NumSegmentsIterator>
+    __host__ __device__ __forceinline__
+    static cudaError_t RunLengthEncode(
+        void                        *d_temp_storage,                ///< [in] %Device allocation of temporary storage.  When NULL, the required allocation size is written to \p temp_storage_bytes and no work is done.
+        size_t                      &temp_storage_bytes,            ///< [in,out] Reference to size in bytes of \p d_temp_storage allocation
+        InputIterator               d_in,                           ///< [in] Pointer to consecutive runs of input keys
+        OutputIterator              d_compacted_out,                ///< [out] Pointer to output keys (one key per run)
+        CountsOutputIterator        d_counts_out,                   ///< [out] Pointer to output value aggregates (one aggregate per run)
+        NumSegmentsIterator         d_num_segments,                 ///< [out] Pointer to total number of segments
+        int                         num_items,                      ///< [in] Total number of associated key+value pairs (i.e., the length of \p d_in_keys and \p d_in_values)
+        cudaStream_t                stream             = 0,         ///< [in] <b>[optional]</b> CUDA stream to launch kernels within.  Default is stream<sub>0</sub>.
+        bool                        debug_synchronous  = false)     ///< [in] <b>[optional]</b> Whether or not to synchronize the stream after every kernel launch to check for errors.  May cause significant slowdown.  Default is \p false.
+    {
+        // Data type of value iterator
+        typedef typename std::iterator_traits<CountsOutputIterator>::value_type Value;
+
+        typedef int         Offset;                     // Signed integer type for global offsets
+        typedef NullType*   FlagIterator;               // Flag iterator type (not used)
+        typedef NullType    SelectOp;                   // Selection op (not used)
+        typedef Equality    EqualityOp;                 // Default == operator
+        typedef cub::Sum    ReductionOp;                // Value reduction operator
+
+        // Generator type for providing 1s values for run-length reduction
+        typedef ConstantInputIterator<Value, Offset> CountsInputIterator;
+
+        Value one_val;
+        one_val = 1;
+
+        return DeviceReduceByKeyDispatch<InputIterator, OutputIterator, CountsInputIterator, CountsOutputIterator, NumSegmentsIterator, EqualityOp, ReductionOp, Offset>::Dispatch(
+            d_temp_storage,
+            temp_storage_bytes,
+            d_in,
+            d_compacted_out,
+            CountsInputIterator(one_val),
+            d_counts_out,
+            d_num_segments,
+            EqualityOp(),
+            ReductionOp(),
             num_items,
             stream,
             debug_synchronous);
