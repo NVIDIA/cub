@@ -167,17 +167,6 @@ struct DeviceReduceByKeyDispatch
     /// SM35
     struct Policy350
     {
-/*
-        enum {
-            NOMINAL_4B_ITEMS_PER_THREAD = 13,
-            ITEMS_PER_THREAD            = CUB_MIN(NOMINAL_4B_ITEMS_PER_THREAD, CUB_MAX(1, ((NOMINAL_4B_ITEMS_PER_THREAD * 8) / COMBINED_INPUT_BYTES))),
-            MIN_SM_OCCUPANCY            = 0,
-        };
-
-        typedef BlockReduceByKeyRegionPolicy<
-                96,
-*/
-
         enum {
             NOMINAL_4B_ITEMS_PER_THREAD = 8,
             ITEMS_PER_THREAD            = (MAX_INPUT_BYTES <= 8) ? 8 : CUB_MIN(NOMINAL_4B_ITEMS_PER_THREAD, CUB_MAX(1, ((NOMINAL_4B_ITEMS_PER_THREAD * 8) + COMBINED_INPUT_BYTES - 1) / COMBINED_INPUT_BYTES)),
@@ -199,18 +188,18 @@ struct DeviceReduceByKeyDispatch
     struct Policy300
     {
         enum {
-            NOMINAL_4B_ITEMS_PER_THREAD = 5,
+            NOMINAL_4B_ITEMS_PER_THREAD = 6,
             ITEMS_PER_THREAD            = CUB_MIN(NOMINAL_4B_ITEMS_PER_THREAD, CUB_MAX(1, ((NOMINAL_4B_ITEMS_PER_THREAD * 8) + COMBINED_INPUT_BYTES - 1) / COMBINED_INPUT_BYTES)),
             MIN_SM_OCCUPANCY            = 0,
         };
 
         typedef BlockReduceByKeyRegionPolicy<
-                256,
+                128,
                 ITEMS_PER_THREAD,
                 BLOCK_LOAD_WARP_TRANSPOSE,
                 LOAD_DEFAULT,
                 true,
-                BLOCK_SCAN_RAKING_MEMOIZE,
+                BLOCK_SCAN_WARP_SCANS,
                 MIN_SM_OCCUPANCY>
             ReduceByKeyPolicy;
     };
