@@ -217,8 +217,8 @@ struct BlockReduceByKeyRegion
         TWO_PHASE_SCATTER   = (BlockReduceByKeyRegionPolicy::TWO_PHASE_SCATTER) && (ITEMS_PER_THREAD > 1),
         TILE_ITEMS          = BLOCK_THREADS * ITEMS_PER_THREAD,
 
-        // Whether or not the scan operation has a known identity value (true if we're performing addition on a primitive type)
-        HAS_IDENTITY        = (Equals<ReductionOp, cub::Sum>::VALUE) && (Traits<Value>::PRIMITIVE),
+        // Whether or not the scan operation has a zero-valued identity value (true if we're performing addition on a primitive type)
+        HAS_IDENTITY_ZERO        = (Equals<ReductionOp, cub::Sum>::VALUE) && (Traits<Value>::PRIMITIVE),
 
         // Whether or not to sync after loading data
         SYNC_AFTER_LOAD     = (BlockReduceByKeyRegionPolicy::LOAD_ALGORITHM != BLOCK_LOAD_DIRECT),
@@ -251,34 +251,38 @@ struct BlockReduceByKeyRegion
         /// Constructor
         __device__ __forceinline__ ReduceByKeyOp(ReductionOp op) : op(op) {}
 
-        /// Scan operator
+        /// Scan operator (specialized for sum on primitive types)
         __device__ __forceinline__ ValueOffsetPair operator()(
-            const ValueOffsetPair &first,       ///< First partial reduction
-            const ValueOffsetPair &second)      ///< Second partial reduction
+            const ValueOffsetPair   &first,             ///< First partial reduction
+            const ValueOffsetPair   &second,            ///< Second partial reduction
+            Int2Type<true>          has_identity_zero)  ///< Whether the operation has a zero-valued identity
+        {
+            Value select = (second.offset) ? 0 : first.value;
+
+            ValueOffsetPair retval;
+            retval.offset = first.offset + second.offset;
+            retval.value = op(select, second.value);
+            return retval;
+        }
+
+        /// Scan operator (specialized for reductions without zero-valued identity)
+        __device__ __forceinline__ ValueOffsetPair operator()(
+            const ValueOffsetPair   &first,             ///< First partial reduction
+            const ValueOffsetPair   &second,            ///< Second partial reduction
+            Int2Type<false>         has_identity_zero)  ///< Whether the operation has a zero-valued identity
         {
             ValueOffsetPair retval;
             retval.offset = first.offset + second.offset;
-
-            if (HAS_IDENTITY)
+            if (second.offset)
             {
-                Value select = (second.offset) ? 0 : first.value;
-                retval.value = op(select, second.value);
+                retval.value = second.value;
                 return retval;
             }
             else
             {
-                if (second.offset)
-                {
-                    retval.value = second.value;
-                    return retval;
-                }
-                else
-                {
-                    retval.value = op(first.value, second.value);
-                    return retval;
-                }
+                retval.value = op(first.value, second.value);
+                return retval;
             }
-
 /*
             // Alternate expression below uses more registers, slower
             ValueOffsetPair retval;
@@ -288,6 +292,14 @@ struct BlockReduceByKeyRegion
                     op(first.value, second.value);          // The second partial reduction does not span a reset, so accumulate both into the running aggregate
             return retval;
 */
+        }
+
+        /// Scan operator
+        __device__ __forceinline__ ValueOffsetPair operator()(
+            const ValueOffsetPair &first,       ///< First partial reduction
+            const ValueOffsetPair &second)      ///< Second partial reduction
+        {
+            return (*this)(first, second, Int2Type<HAS_IDENTITY_ZERO>());
         }
     };
 
@@ -719,14 +731,14 @@ struct BlockReduceByKeyRegion
 
             // Exclusive scan of values and flags
             ValueOffsetPair block_aggregate;
-            ScanBlock(values_and_segments, block_aggregate, Int2Type<HAS_IDENTITY>());
+            ScanBlock(values_and_segments, block_aggregate, Int2Type<HAS_IDENTITY_ZERO>());
 
             // Update tile status if this is not the last tile
             if (!LAST_TILE && (threadIdx.x == 0))
                 TileDescriptor::SetPrefix(d_tile_status, block_aggregate);
 
             // Set offset for first scan output
-            if (!HAS_IDENTITY && (threadIdx.x == 0))
+            if (!HAS_IDENTITY_ZERO && (threadIdx.x == 0))
                 values_and_segments[0].offset = 0;
 
             running_total = block_aggregate;
@@ -752,7 +764,7 @@ struct BlockReduceByKeyRegion
             // Exclusive scan of values and flags
             ValueOffsetPair block_aggregate;
             LookbackPrefixCallbackOp prefix_op(d_tile_status, temp_storage.prefix, scan_op, tile_idx);
-            ScanBlock(values_and_segments, block_aggregate, prefix_op, Int2Type<HAS_IDENTITY>());
+            ScanBlock(values_and_segments, block_aggregate, prefix_op, Int2Type<HAS_IDENTITY_ZERO>());
 
             running_total = prefix_op.inclusive_prefix;
 

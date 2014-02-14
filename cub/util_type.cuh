@@ -458,115 +458,6 @@ CUB_DEFINE_VECTOR_TYPE(bool,               uchar)
  ******************************************************************************/
 
 /**
- * \brief An item value paired with a corresponding offset
- */
-template <typename _T, typename _Offset>
-struct ItemOffsetPair
-{
-    typedef _T        T;        ///< Item data type
-    typedef _Offset   Offset;   ///< Integer offset data type
-
-    union
-    {
-        struct
-        {
-            T       value;      ///< Item value
-            Offset  offset;     ///< Offset
-        };
-
-        CubVector<T, 2>         align_by_value;
-        CubVector<Offset, 2>    align_by_offset;
-    };
-
-    /// Inequality operator
-    __host__ __device__ __forceinline__ bool operator !=(const ItemOffsetPair &b)
-    {
-        return (value != b.value) || (offset != b.offset);
-    }
-};
-
-
-/**
- * \brief A key identifier paired with a corresponding value
- */
-template <typename _Key, typename _Value>
-struct KeyValuePair
-{
-    typedef _Key    Key;        ///< Key data type
-    typedef _Value  Value;      ///< Value data type
-
-
-    union
-    {
-        struct
-        {
-            Value   value;      ///< Value data
-            Key     key;        ///< Key identifier
-        };
-
-        CubVector<Key, 2>       align_by_key;
-        CubVector<Value, 2>     align_by_value;
-    };
-
-
-    /// Inequality operator
-    __host__ __device__ __forceinline__ bool operator !=(const KeyValuePair &b)
-    {
-        return (value != b.value) || (key != b.key);
-    }
-
-};
-
-#ifndef DOXYGEN_SHOULD_SKIP_THIS    // Do not document
-
-/*
-template <>
-struct KeyValuePair<int, long long>
-{
-    typedef int         Key;
-    typedef long long   Value;
-
-    Value       value;          ///< Value
-    long long   key;            ///< Key identifier
-};
-
-
-template <>
-struct KeyValuePair<int, double>
-{
-    typedef int         Key;
-    typedef double      Value;
-
-    Value       value;          ///< Value
-    long long   key;            ///< Key identifier
-};
-*/
-
-
-
-template <typename T>
-__host__ __device__ __forceinline__ T ZeroInitialize()
-{
-#if defined(__CUDA_ARCH__) && (__CUDA_ARCH__ <= 130)
-
-    typedef typename UnitWord<T>::ShuffleWord ShuffleWord;
-    const int MULTIPLE = sizeof(T) / sizeof(ShuffleWord);
-    ShuffleWord words[MULTIPLE];
-    #pragma unroll
-    for (int i = 0; i < MULTIPLE; ++i)
-        words[i] = 0;
-    return *reinterpret_cast<T*>(words);
-
-#else
-
-    return T();
-
-#endif
-}
-
-#endif // DOXYGEN_SHOULD_SKIP_THIS
-
-/**
  * \brief A storage-backing wrapper that allows types with non-trivial constructors to be aliased in unions
  */
 template <typename T>
@@ -590,7 +481,78 @@ struct Uninitialized
     }
 };
 
+
+/**
+ * \brief An item value paired with a corresponding offset
+ */
+template <typename _T, typename _Offset>
+struct ItemOffsetPair
+{
+    typedef _T        T;                ///< Item data type
+    typedef _Offset   Offset;           ///< Integer offset data type
+
+    T                           value;      ///< Item value
+
+    union
+    {
+        Offset                  offset;     ///< Offset
+        Uninitialized<T>        align0;     ///< Alignment/padding (for Win32 consistency between host/device)
+        Uninitialized<Offset>   align1;     ///< Alignment/padding (for Win32 consistency between host/device)
+    };
+
+    /// Inequality operator
+    __host__ __device__ __forceinline__ bool operator !=(const ItemOffsetPair &b)
+    {
+        return (value != b.value) || (offset != b.offset);
+    }
+};
+
+
+/**
+ * \brief A key identifier paired with a corresponding value
+ */
+template <typename _Key, typename _Value>
+struct KeyValuePair
+{
+    typedef _Key    Key;                ///< Key data type
+    typedef _Value  Value;              ///< Value data type
+
+    Value                   value;      ///< Item value
+    Key                     key;        ///< Item key
+
+    /// Inequality operator
+    __host__ __device__ __forceinline__ bool operator !=(const KeyValuePair &b)
+    {
+        return (value != b.value) || (key != b.key);
+    }
+
+};
+
 #ifndef DOXYGEN_SHOULD_SKIP_THIS    // Do not document
+
+
+/**
+ * Workaround for inability for SM1.x compiler to properly zero-initialize POD structures when it's supposed to
+ */
+template <typename T>
+__host__ __device__ __forceinline__ T ZeroInitialize()
+{
+#if defined(__CUDA_ARCH__) && (__CUDA_ARCH__ <= 130)
+
+    typedef typename UnitWord<T>::ShuffleWord ShuffleWord;
+    const int MULTIPLE = sizeof(T) / sizeof(ShuffleWord);
+    ShuffleWord words[MULTIPLE];
+    #pragma unroll
+    for (int i = 0; i < MULTIPLE; ++i)
+        words[i] = 0;
+    return *reinterpret_cast<T*>(words);
+
+#else
+
+    return T();
+
+#endif
+}
 
 
 /**
