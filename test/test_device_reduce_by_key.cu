@@ -852,11 +852,6 @@ int main(int argc, char** argv)
     int sm_version;
     CubDebugExit(SmVersion(sm_version, device_ordinal));
 
-    TestPointer<CUB, int, int>(num_items, entropy_reduction, maxseg, cub::Sum(), CUB_TYPE_STRING(int), CUB_TYPE_STRING(int));
-//    TestOp<int, int>(num_items, CUB_TYPE_STRING(int), CUB_TYPE_STRING(int));
-//    TestOp<int, uint4>(num_items, CUB_TYPE_STRING(int), CUB_TYPE_STRING(uint4));
-
-/*
 #ifdef QUICK_TEST
 
     // Compile/run quick tests
@@ -894,8 +889,11 @@ int main(int argc, char** argv)
         TestOp<int, float>(num_items, CUB_TYPE_STRING(int), CUB_TYPE_STRING(float));
         TestOp<int, double>(num_items, CUB_TYPE_STRING(int), CUB_TYPE_STRING(double));
 
+        TestOp<int, uchar2>(num_items, CUB_TYPE_STRING(int), CUB_TYPE_STRING(uchar2));
         TestOp<int, uint2>(num_items, CUB_TYPE_STRING(int), CUB_TYPE_STRING(uint2));
+        TestOp<int, uint3>(num_items, CUB_TYPE_STRING(int), CUB_TYPE_STRING(uint3));
         TestOp<int, uint4>(num_items, CUB_TYPE_STRING(int), CUB_TYPE_STRING(uint4));
+        TestOp<int, ulonglong4>(num_items, CUB_TYPE_STRING(int), CUB_TYPE_STRING(ulonglong4));
 
         TestOp<int, TestFoo>(num_items, CUB_TYPE_STRING(int), CUB_TYPE_STRING(TestFoo));
         TestOp<int, TestBar>(num_items, CUB_TYPE_STRING(int), CUB_TYPE_STRING(TestBar));
@@ -904,11 +902,10 @@ int main(int argc, char** argv)
         TestOp<long long, int>(num_items, CUB_TYPE_STRING(long long), CUB_TYPE_STRING(int));
         TestOp<TestFoo, int>(num_items, CUB_TYPE_STRING(TestFoo), CUB_TYPE_STRING(int));
         TestOp<TestBar, int>(num_items, CUB_TYPE_STRING(TestBar), CUB_TYPE_STRING(int));
-
     }
 
 #endif
-*/
+
     return 0;
 }
 
