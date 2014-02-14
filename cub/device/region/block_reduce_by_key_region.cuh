@@ -43,6 +43,7 @@
 #include "../../block/block_discontinuity.cuh"
 #include "../../grid/grid_queue.cuh"
 #include "../../iterator/cache_modified_input_iterator.cuh"
+#include "../../iterator/constant_input_iterator.cuh"
 #include "../../util_namespace.cuh"
 
 /// Optional outer namespace(s)
@@ -316,7 +317,9 @@ struct BlockReduceByKeyRegion
             WrappedValueInputIterator,
             BlockReduceByKeyRegionPolicy::BLOCK_THREADS,
             BlockReduceByKeyRegionPolicy::ITEMS_PER_THREAD,
-            (IS_RUN_LENGTH_ENCODE) ? BLOCK_LOAD_DIRECT : BlockReduceByKeyRegionPolicy::LOAD_ALGORITHM>
+            (IS_RUN_LENGTH_ENCODE) ?
+                BLOCK_LOAD_DIRECT :
+                (BlockLoadAlgorithm) BlockReduceByKeyRegionPolicy::LOAD_ALGORITHM>
         BlockLoadValues;
 
     // Parameterized BlockExchange type for locally compacting items as part of a two-phase scatter
