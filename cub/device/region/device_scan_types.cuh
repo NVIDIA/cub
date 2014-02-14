@@ -165,8 +165,15 @@ struct LookbackTileDescriptor
                 int,
                 char2>::Type>::Type>::Type TxnWord;
 
-    StatusWord  status;
-    T           value;
+    union
+    {
+        StatusWord                  status;
+        Uninitialized<T>            align0;     ///< Alignment/padding (for Win32 consistency between host/device)
+        Uninitialized<StatusWord>   align1;     ///< Alignment/padding (for Win32 consistency between host/device)
+    };
+
+    T                               value;
+
 
     static __device__ __forceinline__ void SetPrefix(LookbackTileDescriptor *ptr, T prefix)
     {
@@ -243,15 +250,14 @@ struct LookbackTileDescriptor
 template <typename T>
 struct LookbackTileDescriptor<T, false>
 {
-    T       prefix_value;
-    T       partial_value;
-    T       value;
+    T                   prefix_value;
+    T                   partial_value;
 
-    /// Workaround for the fact that win32 doesn't guarantee 16B alignment 16B values of T
     union
     {
-        int                     status;
-        Uninitialized<T>        padding;
+        int                 status;
+        Uninitialized<T>    align4;         ///< Alignment/padding (for Win32 consistency between host/device)
+        Uninitialized<int>  align5;         ///< Alignment/padding (for Win32 consistency between host/device)
     };
 
     static __device__ __forceinline__ void SetPrefix(LookbackTileDescriptor *ptr, T prefix)
