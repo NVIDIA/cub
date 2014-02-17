@@ -149,7 +149,9 @@ namespace cub {
 #define CUB_SUBSCRIPTION_FACTOR(arch)                   \
     ((arch >= 300) ?                                    \
         (5) :                                           \
-        (3))
+        ((arch >= 200) ?                                \
+            (3) :                                       \
+            (10)))
 
 /// Prefer X-way conflict over padding
 #define CUB_PREFER_CONFLICT_OVER_PADDING(arch)          \
