@@ -534,34 +534,42 @@ struct BlockReduceByKeyRegion
      * - If the tile is partially-full, we need to scatter the first out-of-bounds value (which aggregates all valid values in the last segment)
      *
      */
-    template <bool LAST_TILE, bool FIRST_TILE>
+    template <bool LAST_TILE, bool FIRST_TILE, int ITEM>
     __device__ __forceinline__ void ScatterDirect(
-        Offset          num_remaining,
-        Key             (&keys)[ITEMS_PER_THREAD],
-        ValueOffsetPair (&values_and_segments)[ITEMS_PER_THREAD],
-        Offset          (&flags)[ITEMS_PER_THREAD],
-        Offset          tile_num_flags)
+        Offset              num_remaining,
+        Key                 (&keys)[ITEMS_PER_THREAD],
+        ValueOffsetPair     (&values_and_segments)[ITEMS_PER_THREAD],
+        Offset              (&flags)[ITEMS_PER_THREAD],
+        Offset              tile_num_flags,
+        Int2Type<ITEM>      iteration)
     {
-        #pragma unroll
-        for (int ITEM = 0; ITEM < ITEMS_PER_THREAD; ++ITEM)
+        // Scatter key
+        if (flags[ITEM])
         {
-            // Scatter key
-            if (flags[ITEM])
-            {
-                d_keys_out[values_and_segments[ITEM].offset] = keys[ITEM];
-            }
-
-            bool is_first_flag     = FIRST_TILE && (ITEM == 0) && (threadIdx.x == 0);
-            bool is_oob_value      = (LAST_TILE) && (Offset(threadIdx.x * ITEMS_PER_THREAD) + ITEM == num_remaining);
-
-            // Scatter value reduction
-            if (((flags[ITEM] || is_oob_value)) && (!is_first_flag))
-            {
-                d_values_out[values_and_segments[ITEM].offset - 1] = values_and_segments[ITEM].value;
-            }
+            d_keys_out[values_and_segments[ITEM].offset] = keys[ITEM];
         }
+
+        bool is_first_flag     = FIRST_TILE && (ITEM == 0) && (threadIdx.x == 0);
+        bool is_oob_value      = (LAST_TILE) && (Offset(threadIdx.x * ITEMS_PER_THREAD) + ITEM == num_remaining);
+
+        // Scatter value reduction
+        if (((flags[ITEM] || is_oob_value)) && (!is_first_flag))
+        {
+            d_values_out[values_and_segments[ITEM].offset - 1] = values_and_segments[ITEM].value;
+        }
+
+        ScatterDirect<LAST_TILE, FIRST_TILE>(num_remaining, keys, values_and_segments, flags, tile_num_flags, Int2Type<ITEM + 1>());
     }
 
+    template <bool LAST_TILE, bool FIRST_TILE>
+    __device__ __forceinline__ void ScatterDirect(
+        Offset                      num_remaining,
+        Key                         (&keys)[ITEMS_PER_THREAD],
+        ValueOffsetPair             (&values_and_segments)[ITEMS_PER_THREAD],
+        Offset                      (&flags)[ITEMS_PER_THREAD],
+        Offset                      tile_num_flags,
+        Int2Type<ITEMS_PER_THREAD>  iteration)
+    {}
 
     /**
      * Scatter flagged items to output offsets (specialized for two-phase scattering)
@@ -672,7 +680,8 @@ struct BlockReduceByKeyRegion
                 keys,
                 values_and_segments,
                 flags,
-                tile_num_flags);
+                tile_num_flags,
+                Int2Type<0>());
         }
     }
 
@@ -805,7 +814,7 @@ struct BlockReduceByKeyRegion
         else if (num_remaining > 0)
         {
             // Last tile
-            Offset running_total = ConsumeTile<true>(num_items, num_remaining, tile_idx, block_offset, d_tile_status);
+            ValueOffsetPair running_total = ConsumeTile<true>(num_items, num_remaining, tile_idx, block_offset, d_tile_status);
 
             // Output the total number of items selected
             if (threadIdx.x == 0)

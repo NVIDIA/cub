@@ -96,7 +96,8 @@ struct IteratorTexRef
             if (d_in)
             {
                 cudaChannelFormatDesc tex_desc = cudaCreateChannelDesc<TextureWord>();
-                return (CubDebug(cudaBindTexture(NULL, ref, d_in, tex_desc)));
+                ref.channelDesc = tex_desc;
+                return (CubDebug(cudaBindTexture(NULL, ref, d_in)));
             }
 
             return cudaSuccess;
