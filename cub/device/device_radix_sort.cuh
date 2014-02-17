@@ -306,8 +306,8 @@ struct DeviceRadixSortDispatch
         };
 
         // UpsweepPolicy
-        typedef BlockRadixSortUpsweepRegionPolicy <128, CUB_MAX(1, 15 / SCALE_FACTOR), LOAD_DEFAULT, RADIX_BITS> UpsweepPolicyKeys;
-        typedef BlockRadixSortUpsweepRegionPolicy <128, CUB_MAX(1, 15 / SCALE_FACTOR), LOAD_DEFAULT, RADIX_BITS> UpsweepPolicyPairs;
+        typedef BlockRadixSortUpsweepRegionPolicy <128, CUB_MAX(1, 19 / SCALE_FACTOR), LOAD_DEFAULT, RADIX_BITS> UpsweepPolicyKeys;
+        typedef BlockRadixSortUpsweepRegionPolicy <128, CUB_MAX(1, 19 / SCALE_FACTOR), LOAD_DEFAULT, RADIX_BITS> UpsweepPolicyPairs;
         typedef typename If<KEYS_ONLY, UpsweepPolicyKeys, UpsweepPolicyPairs>::Type UpsweepPolicy;
 
         // Alternate UpsweepPolicy for (RADIX_BITS-1)-bit passes
@@ -316,16 +316,16 @@ struct DeviceRadixSortDispatch
         typedef typename If<KEYS_ONLY, AltUpsweepPolicyKeys, AltUpsweepPolicyPairs>::Type AltUpsweepPolicy;
 
         // ScanPolicy
-        typedef BlockScanRegionPolicy <256, 4, BLOCK_LOAD_VECTORIZE, false, LOAD_DEFAULT, BLOCK_STORE_VECTORIZE, false, BLOCK_SCAN_RAKING_MEMOIZE> ScanPolicy;
+        typedef BlockScanRegionPolicy <256, 4, BLOCK_LOAD_VECTORIZE, false, LOAD_DEFAULT, BLOCK_STORE_VECTORIZE, false, BLOCK_SCAN_WARP_SCANS> ScanPolicy;
 
         // DownsweepPolicy
-        typedef BlockRadixSortDownsweepRegionPolicy <64, CUB_MAX(1, 15 / SCALE_FACTOR), BLOCK_LOAD_WARP_TRANSPOSE, LOAD_DEFAULT, false, true, BLOCK_SCAN_WARP_SCANS, RADIX_SORT_SCATTER_TWO_PHASE, cudaSharedMemBankSizeFourByte, RADIX_BITS> DownsweepPolicyKeys;
-        typedef BlockRadixSortDownsweepRegionPolicy <64, CUB_MAX(1, 15 / SCALE_FACTOR), BLOCK_LOAD_WARP_TRANSPOSE, LOAD_DEFAULT, false, true, BLOCK_SCAN_WARP_SCANS, RADIX_SORT_SCATTER_TWO_PHASE, cudaSharedMemBankSizeFourByte, RADIX_BITS> DownsweepPolicyPairs;
+        typedef BlockRadixSortDownsweepRegionPolicy <64, CUB_MAX(1, 19 / SCALE_FACTOR), BLOCK_LOAD_WARP_TRANSPOSE, LOAD_DEFAULT, false, false, BLOCK_SCAN_WARP_SCANS, RADIX_SORT_SCATTER_TWO_PHASE, cudaSharedMemBankSizeFourByte, RADIX_BITS> DownsweepPolicyKeys;
+        typedef BlockRadixSortDownsweepRegionPolicy <64, CUB_MAX(1, 19 / SCALE_FACTOR), BLOCK_LOAD_WARP_TRANSPOSE, LOAD_DEFAULT, false, false, BLOCK_SCAN_WARP_SCANS, RADIX_SORT_SCATTER_TWO_PHASE, cudaSharedMemBankSizeFourByte, RADIX_BITS> DownsweepPolicyPairs;
         typedef typename If<KEYS_ONLY, DownsweepPolicyKeys, DownsweepPolicyPairs>::Type DownsweepPolicy;
 
         // Alternate DownsweepPolicy for (RADIX_BITS-1)-bit passes
-        typedef BlockRadixSortDownsweepRegionPolicy <64, CUB_MAX(1, 15 / SCALE_FACTOR), BLOCK_LOAD_WARP_TRANSPOSE, LOAD_DEFAULT, false, true, BLOCK_SCAN_WARP_SCANS, RADIX_SORT_SCATTER_TWO_PHASE, cudaSharedMemBankSizeFourByte, RADIX_BITS - 1> AltDownsweepPolicyKeys;
-        typedef BlockRadixSortDownsweepRegionPolicy <64, CUB_MAX(1, 15 / SCALE_FACTOR), BLOCK_LOAD_WARP_TRANSPOSE, LOAD_DEFAULT, false, true, BLOCK_SCAN_WARP_SCANS, RADIX_SORT_SCATTER_TWO_PHASE, cudaSharedMemBankSizeFourByte, RADIX_BITS - 1> AltDownsweepPolicyPairs;
+        typedef BlockRadixSortDownsweepRegionPolicy <128, CUB_MAX(1, 15 / SCALE_FACTOR), BLOCK_LOAD_WARP_TRANSPOSE, LOAD_DEFAULT, false, false, BLOCK_SCAN_WARP_SCANS, RADIX_SORT_SCATTER_TWO_PHASE, cudaSharedMemBankSizeFourByte, RADIX_BITS - 1> AltDownsweepPolicyKeys;
+        typedef BlockRadixSortDownsweepRegionPolicy <128, CUB_MAX(1, 15 / SCALE_FACTOR), BLOCK_LOAD_WARP_TRANSPOSE, LOAD_DEFAULT, false, false, BLOCK_SCAN_WARP_SCANS, RADIX_SORT_SCATTER_TWO_PHASE, cudaSharedMemBankSizeFourByte, RADIX_BITS - 1> AltDownsweepPolicyPairs;
         typedef typename If<KEYS_ONLY, AltDownsweepPolicyKeys, AltDownsweepPolicyPairs>::Type AltDownsweepPolicy;
     };
 
@@ -643,7 +643,7 @@ struct DeviceRadixSortDispatch
         do
         {
             // Get even-share work distribution descriptor
-            GridEvenShare<Offset> even_share(num_items, downsweep_config.max_grid_size, downsweep_config.tile_size);
+            GridEvenShare<Offset> even_share(num_items, downsweep_config.max_grid_size, CUB_MAX(downsweep_config.tile_size, upsweep_config.tile_size));
 
 #ifndef __CUDA_ARCH__
             // Get current smem bank configuration
