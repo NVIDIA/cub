@@ -625,6 +625,9 @@ struct BlockReduceByKeyRegion
         {
             values[ITEM] = values_and_segments[ITEM].value;
 
+            if (FIRST_TILE)
+                local_ranks[ITEM]--;
+
             if (LAST_TILE && (Offset(threadIdx.x * ITEMS_PER_THREAD) + ITEM == num_remaining))
                 flags[ITEM] = 1;
         }
@@ -639,12 +642,22 @@ struct BlockReduceByKeyRegion
         BlockExchangeValues(temp_storage.exchange_values).ScatterToStriped(values, local_ranks, flags);
 
         // Number to output
-        Offset exchange_count = (num_remaining >= TILE_ITEMS) ?
-            tile_num_flags :
-            tile_num_flags + 1;
+        Offset exchange_count = tile_num_flags;
+
+        if (LAST_TILE && (num_remaining < TILE_ITEMS))
+            exchange_count++;
+
+        if (FIRST_TILE)
+        {
+            exchange_count--;
+        }
+        else
+        {
+            tile_num_flags_prefix--;
+        }
 
         // Scatter values
-        StoreDirectStriped<BLOCK_THREADS>(threadIdx.x, d_values_out + tile_num_flags_prefix - 1, values, exchange_count);
+        StoreDirectStriped<BLOCK_THREADS>(threadIdx.x, d_values_out + tile_num_flags_prefix, values, exchange_count);
 
         __syncthreads();
     }
