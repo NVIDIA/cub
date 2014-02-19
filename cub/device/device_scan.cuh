@@ -484,24 +484,26 @@ struct DeviceScanDispatch
             int scan_region_occupancy = scan_region_sm_occupancy * sm_count;
 
             // Get grid size for scanning tiles
-            int scan_grid_size;
+            dim3 scan_grid_size;
             if (ptx_version < 200)
             {
-                // We don't have atomics (or don't have fast ones), so just assign one block per tile (limited to 65K tiles)
-                scan_grid_size = num_tiles;
-                if (scan_grid_size >= (64 * 1024))
-                    return cudaErrorInvalidConfiguration;
+                // We don't have atomics (or don't have fast ones), so just assign one block per tile
+                scan_grid_size.z = 1;
+                scan_grid_size.y = (num_tiles + (32 * 1024) - 1) / (32 * 1024);
+                scan_grid_size.x = CUB_MIN(num_tiles, 32 * 1024);
             }
             else
             {
-                scan_grid_size = (num_tiles < scan_region_occupancy) ?
+                scan_grid_size.z = 1;
+                scan_grid_size.y = 1;
+                scan_grid_size.x = (num_tiles < scan_region_occupancy) ?
                     num_tiles :                     // Not enough to fill the device with threadblocks
                     scan_region_occupancy;          // Fill the device with threadblocks
             }
 
             // Log scan_region_kernel configuration
-            if (debug_synchronous) CubLog("Invoking scan_region_kernel<<<%d, %d, 0, %lld>>>(), %d items per thread, %d SM occupancy\n",
-                scan_grid_size, scan_region_config.block_threads, (long long) stream, scan_region_config.items_per_thread, scan_region_sm_occupancy);
+            if (debug_synchronous) CubLog("Invoking scan_region_kernel<<<{%d,%d,%d}, %d, 0, %lld>>>(), %d items per thread, %d SM occupancy\n",
+                scan_grid_size.x, scan_grid_size.y, scan_grid_size.z, scan_region_config.block_threads, (long long) stream, scan_region_config.items_per_thread, scan_region_sm_occupancy);
 
             // Invoke scan_region_kernel
             scan_region_kernel<<<scan_grid_size, scan_region_config.block_threads, 0, stream>>>(
