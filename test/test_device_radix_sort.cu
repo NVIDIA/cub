@@ -332,8 +332,8 @@ void Initialize(
     GenMode         gen_mode,
     Key             *h_keys,
     Value           *h_values,
-    Key             *h_reference_keys,
-    Value           *h_reference_values,
+    Key             **h_reference_keys,
+    Value           **h_reference_values,
     int             num_items,
     int             entropy_reduction,
     int             begin_bit,
@@ -388,12 +388,15 @@ void Initialize(
     std::stable_sort(h_pairs, h_pairs + num_items);
     if (DESCENDING) std::reverse(h_pairs, h_pairs + num_items);
 
+    *h_reference_keys   = new Key[num_items];
+    *h_reference_values = (KEYS_ONLY) ? NULL : new Value[num_items];
+
     for (int i = 0; i < num_items; ++i)
     {
-        h_reference_keys[i]     = h_pairs[i].key;
+        (*h_reference_keys)[i]     = h_pairs[i].key;
 
-        if (h_reference_values != NULL)
-            h_reference_values[i]   = h_pairs[i].value;
+        if ((*h_reference_values) != NULL)
+            (*h_reference_values)[i]   = h_pairs[i].value;
     }
 
     delete[] h_pairs;
@@ -433,17 +436,18 @@ void Test(
 
     // Allocate host arrays
     Key     *h_keys             = new Key[num_items];
-    Key     *h_reference_keys   = new Key[num_items];
     Value   *h_values           = (KEYS_ONLY) ? NULL : new Value[num_items];
-    Value   *h_reference_values = (KEYS_ONLY) ? NULL : new Value[num_items];
+
+    Key     *h_reference_keys;
+    Value   *h_reference_values;
 
     // Initialize problem and solution on host
     Initialize<DESCENDING>(
         gen_mode,
         h_keys,
         h_values,
-        h_reference_keys,
-        h_reference_values,
+        &h_reference_keys,
+        &h_reference_values,
         num_items,
         entropy_reduction,
         begin_bit,
@@ -708,9 +712,18 @@ int main(int argc, char** argv)
     Test<CUB, unsigned int, NullType, false> (num_items, RANDOM, entropy_reduction, 0, g_bits, CUB_TYPE_STRING(unsigned int));
     Test<THRUST, unsigned int, NullType, false> (num_items, RANDOM, entropy_reduction, 0, g_bits, CUB_TYPE_STRING(unsigned int));
 
+    // Compare CUB and thrust on 64b keys-only
+    Test<CUB, unsigned long long, NullType, false> (num_items, RANDOM, entropy_reduction, 0, g_bits, CUB_TYPE_STRING(unsigned long long));
+    Test<THRUST, unsigned long long, NullType, false> (num_items, RANDOM, entropy_reduction, 0, g_bits, CUB_TYPE_STRING(unsigned long long));
+
+
     // Compare CUB and thrust on 32b key-value pairs
     Test<CUB, unsigned int, unsigned int, false> (num_items, RANDOM, entropy_reduction, 0, g_bits, CUB_TYPE_STRING(unsigned int));
     Test<THRUST, unsigned int, unsigned int, false> (num_items, RANDOM, entropy_reduction, 0, g_bits, CUB_TYPE_STRING(unsigned int));
+
+    // Compare CUB and thrust on 64b key-value pairs
+    Test<CUB, unsigned long long, unsigned long long, false> (num_items, RANDOM, entropy_reduction, 0, g_bits, CUB_TYPE_STRING(unsigned long long));
+    Test<THRUST, unsigned long long, unsigned long long, false> (num_items, RANDOM, entropy_reduction, 0, g_bits, CUB_TYPE_STRING(unsigned long long));
 
 #else
 
