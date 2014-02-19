@@ -66,8 +66,7 @@ template <
     BlockLoadAlgorithm          _LOAD_ALGORITHM,                ///< The BlockLoad algorithm to use
     CacheLoadModifier           _LOAD_MODIFIER,                 ///< Cache load modifier for reading input elements
     bool                        _TWO_PHASE_SCATTER,             ///< Whether or not to coalesce output values in shared memory before scattering them to global
-    BlockScanAlgorithm          _SCAN_ALGORITHM,                ///< The BlockScan algorithm to use
-    int                         _MIN_SM_OCCUPANCY>              ///< Desired minimum SM occupancy
+    BlockScanAlgorithm          _SCAN_ALGORITHM>                ///< The BlockScan algorithm to use
 struct BlockReduceByKeyRegionPolicy
 {
     enum
@@ -75,7 +74,6 @@ struct BlockReduceByKeyRegionPolicy
         BLOCK_THREADS           = _BLOCK_THREADS,               ///< Threads per thread block
         ITEMS_PER_THREAD        = _ITEMS_PER_THREAD,            ///< Items per thread (per tile of input)
         TWO_PHASE_SCATTER       = _TWO_PHASE_SCATTER,           ///< Whether or not to coalesce output values in shared memory before scattering them to global
-        MIN_SM_OCCUPANCY        = _MIN_SM_OCCUPANCY,            ///< Desired minimum SM occupancy
     };
 
     static const BlockLoadAlgorithm     LOAD_ALGORITHM          = _LOAD_ALGORITHM;      ///< The BlockLoad algorithm to use
