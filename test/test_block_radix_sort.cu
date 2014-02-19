@@ -502,6 +502,7 @@ template <
     typename                Value>
 void Test()
 {
+    // Check size of smem storage for the target arch to make sure it will fit
     typedef BlockRadixSort<Key, BLOCK_THREADS, ITEMS_PER_THREAD, Value, RADIX_BITS, MEMOIZE_OUTER_SCAN, INNER_SCAN_ALGORITHM, SMEM_CONFIG> BlockRadixSortT;
 
 #if defined(SM100) || defined(SM110) || defined(SM130)
@@ -510,7 +511,10 @@ void Test()
     Int2Type<(sizeof(typename BlockRadixSortT::TempStorage) <= CUB_SMEM_BYTES(200))> fits_smem_capacity;
 #endif
 
+    // Sort-ascending, to-striped
     TestValid<BLOCK_THREADS, ITEMS_PER_THREAD, RADIX_BITS, MEMOIZE_OUTER_SCAN, INNER_SCAN_ALGORITHM, SMEM_CONFIG, true, false, Key, Value>(fits_smem_capacity);
+
+    // Sort-descending, to-blocked
     TestValid<BLOCK_THREADS, ITEMS_PER_THREAD, RADIX_BITS, MEMOIZE_OUTER_SCAN, INNER_SCAN_ALGORITHM, SMEM_CONFIG, false, true, Key, Value>(fits_smem_capacity);
 
     // Not necessary
@@ -520,7 +524,7 @@ void Test()
 
 
 /**
- * Test value type
+ * Test value type and smem config
  */
 template <
     int                     BLOCK_THREADS,
@@ -528,13 +532,37 @@ template <
     int                     RADIX_BITS,
     bool                    MEMOIZE_OUTER_SCAN,
     BlockScanAlgorithm      INNER_SCAN_ALGORITHM,
-    cudaSharedMemConfig     SMEM_CONFIG,
     typename                Key>
-void Test()
+void TestKeys()
 {
-    Test<BLOCK_THREADS, ITEMS_PER_THREAD, RADIX_BITS, MEMOIZE_OUTER_SCAN, INNER_SCAN_ALGORITHM, SMEM_CONFIG, Key, NullType>();   // Keys-only
-    Test<BLOCK_THREADS, ITEMS_PER_THREAD, RADIX_BITS, MEMOIZE_OUTER_SCAN, INNER_SCAN_ALGORITHM, SMEM_CONFIG, Key, Key>();        // With values
-    Test<BLOCK_THREADS, ITEMS_PER_THREAD, RADIX_BITS, MEMOIZE_OUTER_SCAN, INNER_SCAN_ALGORITHM, SMEM_CONFIG, Key, TestFoo>();    // With large values
+#ifdef TEST_KEYS_ONLY
+    // Test keys-only sorting with both smem configs
+    Test<BLOCK_THREADS, ITEMS_PER_THREAD, RADIX_BITS, MEMOIZE_OUTER_SCAN, INNER_SCAN_ALGORITHM, cudaSharedMemBankSizeFourByte, Key, NullType>();    // Keys-only (4-byte smem bank config)
+#if !defined(SM100) && !defined(SM110) && !defined(SM130) && !defined(SM200)
+    Test<BLOCK_THREADS, ITEMS_PER_THREAD, RADIX_BITS, MEMOIZE_OUTER_SCAN, INNER_SCAN_ALGORITHM, cudaSharedMemBankSizeEightByte, Key, NullType>();   // Keys-only (8-byte smem bank config)
+#endif
+#endif // TEST_KEYS_ONLY
+}
+
+
+/**
+ * Test value type and smem config
+ */
+template <
+    int                     BLOCK_THREADS,
+    int                     ITEMS_PER_THREAD,
+    int                     RADIX_BITS,
+    bool                    MEMOIZE_OUTER_SCAN,
+    BlockScanAlgorithm      INNER_SCAN_ALGORITHM,
+    typename                Key>
+void TestKeysAndPairs()
+{
+    TestKeys<BLOCK_THREADS, ITEMS_PER_THREAD, RADIX_BITS, MEMOIZE_OUTER_SCAN, INNER_SCAN_ALGORITHM, Key>();                                         // Keys-only
+#ifndef TEST_KEYS_ONLY
+    Test<BLOCK_THREADS, ITEMS_PER_THREAD, RADIX_BITS, MEMOIZE_OUTER_SCAN, INNER_SCAN_ALGORITHM, cudaSharedMemBankSizeFourByte, Key, char>();        // With small-values
+    Test<BLOCK_THREADS, ITEMS_PER_THREAD, RADIX_BITS, MEMOIZE_OUTER_SCAN, INNER_SCAN_ALGORITHM, cudaSharedMemBankSizeFourByte, Key, Key>();         // With same-values
+    Test<BLOCK_THREADS, ITEMS_PER_THREAD, RADIX_BITS, MEMOIZE_OUTER_SCAN, INNER_SCAN_ALGORITHM, cudaSharedMemBankSizeFourByte, Key, TestFoo>();     // With large values
+#endif  //TEST_KEYS_ONLY
 }
 
 
@@ -546,51 +574,30 @@ template <
     int                     ITEMS_PER_THREAD,
     int                     RADIX_BITS,
     bool                    MEMOIZE_OUTER_SCAN,
-    BlockScanAlgorithm      INNER_SCAN_ALGORITHM,
-    cudaSharedMemConfig     SMEM_CONFIG>
+    BlockScanAlgorithm      INNER_SCAN_ALGORITHM>
 void Test()
 {
     // Get ptx version
     int ptx_version;
     CubDebugExit(PtxVersion(ptx_version));
 
-    // Keep compiled test cases reasonable by testing the unsigned types with no values (because we will test associated values with signed integer types)
-    Test<BLOCK_THREADS, ITEMS_PER_THREAD, RADIX_BITS, MEMOIZE_OUTER_SCAN, INNER_SCAN_ALGORITHM, SMEM_CONFIG, unsigned char,         NullType>();
-    Test<BLOCK_THREADS, ITEMS_PER_THREAD, RADIX_BITS, MEMOIZE_OUTER_SCAN, INNER_SCAN_ALGORITHM, SMEM_CONFIG, unsigned short,        NullType>();
-    Test<BLOCK_THREADS, ITEMS_PER_THREAD, RADIX_BITS, MEMOIZE_OUTER_SCAN, INNER_SCAN_ALGORITHM, SMEM_CONFIG, unsigned int,          NullType>();
-    Test<BLOCK_THREADS, ITEMS_PER_THREAD, RADIX_BITS, MEMOIZE_OUTER_SCAN, INNER_SCAN_ALGORITHM, SMEM_CONFIG, unsigned long,         NullType>();
-    Test<BLOCK_THREADS, ITEMS_PER_THREAD, RADIX_BITS, MEMOIZE_OUTER_SCAN, INNER_SCAN_ALGORITHM, SMEM_CONFIG, unsigned long long,    NullType>();
+    // Test unsigned and fp types with keys only (we will cover value sorting with signed types)
+    TestKeys<BLOCK_THREADS, ITEMS_PER_THREAD, RADIX_BITS, MEMOIZE_OUTER_SCAN, INNER_SCAN_ALGORITHM, unsigned char>();
+    TestKeys<BLOCK_THREADS, ITEMS_PER_THREAD, RADIX_BITS, MEMOIZE_OUTER_SCAN, INNER_SCAN_ALGORITHM, unsigned short>();
+    TestKeys<BLOCK_THREADS, ITEMS_PER_THREAD, RADIX_BITS, MEMOIZE_OUTER_SCAN, INNER_SCAN_ALGORITHM, unsigned int>();
+    TestKeys<BLOCK_THREADS, ITEMS_PER_THREAD, RADIX_BITS, MEMOIZE_OUTER_SCAN, INNER_SCAN_ALGORITHM, unsigned long>();
+    TestKeys<BLOCK_THREADS, ITEMS_PER_THREAD, RADIX_BITS, MEMOIZE_OUTER_SCAN, INNER_SCAN_ALGORITHM, unsigned long long>();
+    TestKeys<BLOCK_THREADS, ITEMS_PER_THREAD, RADIX_BITS, MEMOIZE_OUTER_SCAN, INNER_SCAN_ALGORITHM, float>();
 
-    Test<BLOCK_THREADS, ITEMS_PER_THREAD, RADIX_BITS, MEMOIZE_OUTER_SCAN, INNER_SCAN_ALGORITHM, SMEM_CONFIG, char>();
-    Test<BLOCK_THREADS, ITEMS_PER_THREAD, RADIX_BITS, MEMOIZE_OUTER_SCAN, INNER_SCAN_ALGORITHM, SMEM_CONFIG, short>();
-    Test<BLOCK_THREADS, ITEMS_PER_THREAD, RADIX_BITS, MEMOIZE_OUTER_SCAN, INNER_SCAN_ALGORITHM, SMEM_CONFIG, int>();
-    Test<BLOCK_THREADS, ITEMS_PER_THREAD, RADIX_BITS, MEMOIZE_OUTER_SCAN, INNER_SCAN_ALGORITHM, SMEM_CONFIG, long>();
-    Test<BLOCK_THREADS, ITEMS_PER_THREAD, RADIX_BITS, MEMOIZE_OUTER_SCAN, INNER_SCAN_ALGORITHM, SMEM_CONFIG, long long>();
+    // Don't check doubles on PTX100 because they're down-converted
+    if (ptx_version > 100)
+        TestKeys<BLOCK_THREADS, ITEMS_PER_THREAD, RADIX_BITS, MEMOIZE_OUTER_SCAN, INNER_SCAN_ALGORITHM, double>();
 
-    // Keep compiled test cases reasonable by testing the floating point types with no values (because we will test associated values with signed integer types)
-    Test<BLOCK_THREADS, ITEMS_PER_THREAD, RADIX_BITS, MEMOIZE_OUTER_SCAN, INNER_SCAN_ALGORITHM, SMEM_CONFIG, float,    NullType>();
-
-    if (ptx_version > 100)                          // Don't check doubles on PTX100 because they're down-converted
-        Test<BLOCK_THREADS, ITEMS_PER_THREAD, RADIX_BITS, MEMOIZE_OUTER_SCAN, INNER_SCAN_ALGORITHM, SMEM_CONFIG, double,    NullType>();
-}
-
-
-/**
- * Test smem config
- */
-template <
-    int                     BLOCK_THREADS,
-    int                     ITEMS_PER_THREAD,
-    int                     RADIX_BITS,
-    bool                    MEMOIZE_OUTER_SCAN,
-    BlockScanAlgorithm      INNER_SCAN_ALGORITHM>
-void Test()
-{
-    Test<BLOCK_THREADS, ITEMS_PER_THREAD, RADIX_BITS, MEMOIZE_OUTER_SCAN, INNER_SCAN_ALGORITHM, cudaSharedMemBankSizeFourByte>();
-#if defined(SM100) || defined(SM110) || defined(SM130) || defined(SM200)
-#else
-    Test<BLOCK_THREADS, ITEMS_PER_THREAD, RADIX_BITS, MEMOIZE_OUTER_SCAN, INNER_SCAN_ALGORITHM, cudaSharedMemBankSizeEightByte>();
-#endif
+    TestKeysAndPairs<BLOCK_THREADS, ITEMS_PER_THREAD, RADIX_BITS, MEMOIZE_OUTER_SCAN, INNER_SCAN_ALGORITHM, char>();
+    TestKeysAndPairs<BLOCK_THREADS, ITEMS_PER_THREAD, RADIX_BITS, MEMOIZE_OUTER_SCAN, INNER_SCAN_ALGORITHM, short>();
+    TestKeysAndPairs<BLOCK_THREADS, ITEMS_PER_THREAD, RADIX_BITS, MEMOIZE_OUTER_SCAN, INNER_SCAN_ALGORITHM, int>();
+    TestKeysAndPairs<BLOCK_THREADS, ITEMS_PER_THREAD, RADIX_BITS, MEMOIZE_OUTER_SCAN, INNER_SCAN_ALGORITHM, long>();
+    TestKeysAndPairs<BLOCK_THREADS, ITEMS_PER_THREAD, RADIX_BITS, MEMOIZE_OUTER_SCAN, INNER_SCAN_ALGORITHM, long long>();
 }
 
 
@@ -676,13 +683,17 @@ int main(int argc, char** argv)
     // Initialize device
     CubDebugExit(args.DeviceInit());
 
-    // Quick tests
+#ifdef QUICK_TEST
+
+    // Compile/run quick tests
     typedef unsigned int T;
     TestDriver<64, 17, 4, true, BLOCK_SCAN_WARP_SCANS, cudaSharedMemBankSizeFourByte, false, false, T, NullType>(RANDOM, 0, 0, sizeof(T) * 8);
     TestDriver<96, 8, 4, true, BLOCK_SCAN_WARP_SCANS, cudaSharedMemBankSizeFourByte, false, false, T, NullType>(RANDOM, 0, 0, sizeof(T) * 8);
     TestDriver<128, 2, 4, true, BLOCK_SCAN_WARP_SCANS, cudaSharedMemBankSizeFourByte, false, false, T, NullType>(RANDOM, 0, 0, sizeof(T) * 8);
 
-    // Test threads
+#else
+
+    // Compile/run thorough tests
     Test<32>();
 #if defined(SM100) || defined(SM110) || defined(SM130)
     // Open64 compiler can't handle the number of test cases
@@ -690,6 +701,9 @@ int main(int argc, char** argv)
     Test<64>();
 #endif
     Test<160>();
+
+
+#endif  // QUICK_TEST
 
     return 0;
 }

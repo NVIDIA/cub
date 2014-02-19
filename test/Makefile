@@ -210,6 +210,7 @@ ALL = 	link \
 	 	test_block_scan \
 	 	test_block_load_store \
 	 	test_block_radix_sort \
+	 	test_block_radix_sort_pairs \
 	 	test_block_histogram \
 	 	test_device_reduce \
 	 	test_device_histogram \
@@ -360,8 +361,17 @@ test_block_radix_sort: bin/test_block_radix_sort_$(SUFFIX)
 
 bin/test_block_radix_sort_$(SUFFIX) : test_block_radix_sort.cu $(DEPS)
 	mkdir -p bin
-	$(NVCC) $(DEFINES) $(SM_TARGETS) -o bin/test_block_radix_sort_$(SUFFIX) test_block_radix_sort.cu $(NVCCFLAGS) $(CPU_ARCH) $(INC) $(LIBS) -O3
+	$(NVCC) $(DEFINES) -DTEST_KEYS_ONLY $(SM_TARGETS) -o bin/test_block_radix_sort_$(SUFFIX) test_block_radix_sort.cu $(NVCCFLAGS) $(CPU_ARCH) $(INC) $(LIBS) -O3
 
+#-------------------------------------------------------------------------------
+# make test_block_radix_sort_pairs 
+#-------------------------------------------------------------------------------
+
+test_block_radix_sort_pairs: bin/test_block_radix_sort_pairs_$(SUFFIX)
+
+bin/test_block_radix_sort_pairs_$(SUFFIX) : test_block_radix_sort.cu $(DEPS)
+	mkdir -p bin
+	$(NVCC) $(DEFINES) $(SM_TARGETS) -o bin/test_block_radix_sort_pairs_$(SUFFIX) test_block_radix_sort.cu $(NVCCFLAGS) $(CPU_ARCH) $(INC) $(LIBS) -O3
 
 #-------------------------------------------------------------------------------
 # make test_block_histogram 

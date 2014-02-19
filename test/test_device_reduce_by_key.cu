@@ -844,13 +844,9 @@ int main(int argc, char** argv)
     CubDebugExit(args.DeviceInit());
     printf("\n");
 
-    // Get device ordinal
-    int device_ordinal;
-    CubDebugExit(cudaGetDevice(&device_ordinal));
-
-    // Get device SM version
-    int sm_version;
-    CubDebugExit(SmVersion(sm_version, device_ordinal));
+    // Get ptx version
+    int ptx_version;
+    CubDebugExit(PtxVersion(ptx_version));
 
 #ifdef QUICK_TEST
 
@@ -887,7 +883,8 @@ int main(int argc, char** argv)
         TestOp<int, long>(num_items, CUB_TYPE_STRING(int), CUB_TYPE_STRING(long));
         TestOp<int, long long>(num_items, CUB_TYPE_STRING(int), CUB_TYPE_STRING(long long));
         TestOp<int, float>(num_items, CUB_TYPE_STRING(int), CUB_TYPE_STRING(float));
-        TestOp<int, double>(num_items, CUB_TYPE_STRING(int), CUB_TYPE_STRING(double));
+        if (ptx_version > 100)                          // Don't check doubles on PTX100 because they're down-converted
+            TestOp<int, double>(num_items, CUB_TYPE_STRING(int), CUB_TYPE_STRING(double));
 
         TestOp<int, uchar2>(num_items, CUB_TYPE_STRING(int), CUB_TYPE_STRING(uchar2));
         TestOp<int, uint2>(num_items, CUB_TYPE_STRING(int), CUB_TYPE_STRING(uint2));
