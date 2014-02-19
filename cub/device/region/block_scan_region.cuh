@@ -367,8 +367,8 @@ struct BlockScanRegion
     {
 #if CUB_PTX_VERSION < 200
 
-        // No concurrent kernels allowed and blocks are launched in increasing order, so just assign one tile per block (up to 65K blocks)
-        int     tile_idx        = blockIdx.x;
+        // No concurrent kernels allowed and blocks are launched in increasing order, so just assign one tile per block
+        int     tile_idx        = (blockIdx.y * 32 * 1024) + blockIdx.x;
         Offset  block_offset    = Offset(TILE_ITEMS) * tile_idx;
         Offset  num_remaining   = num_items - block_offset;
 
