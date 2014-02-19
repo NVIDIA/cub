@@ -72,8 +72,7 @@ template <
     typename    ReductionOp,                                ///< Value reduction operator type
     typename    Offset,                                     ///< Signed integer type for global offsets
     typename    LookbackTileDescriptorT>                    ///< Tile descriptor type (i.e., cub::LookbackTileDescriptor<ItemOffsetPair<typename std::iterator_traits<ValueInputIterator>::value_type, Offset> >)
-__launch_bounds__ (int(BlockReduceByKeyRegionPolicy::BLOCK_THREADS), int(BlockReduceByKeyRegionPolicy::MIN_SM_OCCUPANCY))
-//__launch_bounds__ (int(BlockReduceByKeyRegionPolicy::BLOCK_THREADS))
+__launch_bounds__ (int(BlockReduceByKeyRegionPolicy::BLOCK_THREADS))
 __global__ void ReduceByKeyRegionKernel(
     KeyInputIterator        d_keys_in,                      ///< [in] Pointer to consecutive runs of input keys
     KeyOutputIterator       d_keys_out,                     ///< [in] Pointer to output keys (one key per run)
@@ -170,7 +169,6 @@ struct DeviceReduceByKeyDispatch
         enum {
             NOMINAL_4B_ITEMS_PER_THREAD = 8,
             ITEMS_PER_THREAD            = (MAX_INPUT_BYTES <= 8) ? 8 : CUB_MIN(NOMINAL_4B_ITEMS_PER_THREAD, CUB_MAX(1, ((NOMINAL_4B_ITEMS_PER_THREAD * 8) + COMBINED_INPUT_BYTES - 1) / COMBINED_INPUT_BYTES)),
-            MIN_SM_OCCUPANCY            = 0,
         };
 
         typedef BlockReduceByKeyRegionPolicy<
@@ -179,8 +177,7 @@ struct DeviceReduceByKeyDispatch
                 BLOCK_LOAD_DIRECT,
                 LOAD_LDG,
                 true,
-                BLOCK_SCAN_WARP_SCANS,
-                MIN_SM_OCCUPANCY>
+                BLOCK_SCAN_WARP_SCANS>
             ReduceByKeyPolicy;
     };
 
@@ -190,7 +187,6 @@ struct DeviceReduceByKeyDispatch
         enum {
             NOMINAL_4B_ITEMS_PER_THREAD = 6,
             ITEMS_PER_THREAD            = CUB_MIN(NOMINAL_4B_ITEMS_PER_THREAD, CUB_MAX(1, ((NOMINAL_4B_ITEMS_PER_THREAD * 8) + COMBINED_INPUT_BYTES - 1) / COMBINED_INPUT_BYTES)),
-            MIN_SM_OCCUPANCY            = 0,
         };
 
         typedef BlockReduceByKeyRegionPolicy<
@@ -199,8 +195,7 @@ struct DeviceReduceByKeyDispatch
                 BLOCK_LOAD_WARP_TRANSPOSE,
                 LOAD_DEFAULT,
                 true,
-                BLOCK_SCAN_WARP_SCANS,
-                MIN_SM_OCCUPANCY>
+                BLOCK_SCAN_WARP_SCANS>
             ReduceByKeyPolicy;
     };
 
@@ -210,7 +205,6 @@ struct DeviceReduceByKeyDispatch
         enum {
             NOMINAL_4B_ITEMS_PER_THREAD = 13,
             ITEMS_PER_THREAD            = CUB_MIN(NOMINAL_4B_ITEMS_PER_THREAD, CUB_MAX(1, ((NOMINAL_4B_ITEMS_PER_THREAD * 8) + COMBINED_INPUT_BYTES - 1) / COMBINED_INPUT_BYTES)),
-            MIN_SM_OCCUPANCY            = 0,
         };
 
         typedef BlockReduceByKeyRegionPolicy<
@@ -219,8 +213,7 @@ struct DeviceReduceByKeyDispatch
                 BLOCK_LOAD_WARP_TRANSPOSE,
                 LOAD_DEFAULT,
                 true,
-                BLOCK_SCAN_WARP_SCANS,
-                MIN_SM_OCCUPANCY>
+                BLOCK_SCAN_WARP_SCANS>
             ReduceByKeyPolicy;
     };
 
@@ -230,7 +223,6 @@ struct DeviceReduceByKeyDispatch
         enum {
             NOMINAL_4B_ITEMS_PER_THREAD = 5,
             ITEMS_PER_THREAD            = CUB_MIN(NOMINAL_4B_ITEMS_PER_THREAD, CUB_MAX(1, ((NOMINAL_4B_ITEMS_PER_THREAD * 8) + COMBINED_INPUT_BYTES - 1) / COMBINED_INPUT_BYTES)),
-            MIN_SM_OCCUPANCY            = 0,
         };
 
         typedef BlockReduceByKeyRegionPolicy<
@@ -239,8 +231,7 @@ struct DeviceReduceByKeyDispatch
                 BLOCK_LOAD_WARP_TRANSPOSE,
                 LOAD_DEFAULT,
                 true,
-                BLOCK_SCAN_RAKING_MEMOIZE,
-                MIN_SM_OCCUPANCY>
+                BLOCK_SCAN_RAKING_MEMOIZE>
             ReduceByKeyPolicy;
     };
 
@@ -249,18 +240,16 @@ struct DeviceReduceByKeyDispatch
     {
         enum {
             NOMINAL_4B_ITEMS_PER_THREAD = 5,
-            ITEMS_PER_THREAD            = CUB_MIN(NOMINAL_4B_ITEMS_PER_THREAD, CUB_MAX(1, ((NOMINAL_4B_ITEMS_PER_THREAD * 8) + COMBINED_INPUT_BYTES - 1) / COMBINED_INPUT_BYTES)),
-            MIN_SM_OCCUPANCY            = 0,
+            ITEMS_PER_THREAD            = CUB_MIN(NOMINAL_4B_ITEMS_PER_THREAD, CUB_MAX(1, (NOMINAL_4B_ITEMS_PER_THREAD * 8) / COMBINED_INPUT_BYTES)),
         };
 
         typedef BlockReduceByKeyRegionPolicy<
-                128,
+                64,
                 ITEMS_PER_THREAD,
                 BLOCK_LOAD_WARP_TRANSPOSE,
                 LOAD_DEFAULT,
                 true,
-                BLOCK_SCAN_RAKING,
-                MIN_SM_OCCUPANCY>
+                BLOCK_SCAN_RAKING>
             ReduceByKeyPolicy;
     };
 

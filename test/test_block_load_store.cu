@@ -499,11 +499,15 @@ int main(int argc, char** argv)
     int ptx_version;
     CubDebugExit(PtxVersion(ptx_version));
 
-    // Simple tests
+#ifdef QUICK_TEST
+
+    // Compile/run quick tests
     TestNative<int, 64, 2, BLOCK_LOAD_WARP_TRANSPOSE, BLOCK_STORE_WARP_TRANSPOSE, true>(1, 0.8);
     TestIterator<int, 64, 2, BLOCK_LOAD_WARP_TRANSPOSE, BLOCK_STORE_WARP_TRANSPOSE, LOAD_DEFAULT, STORE_DEFAULT, true>(1, 0.8);
 
-    // Evaluate different data types
+#else
+
+    // Compile/run thorough tests
     TestThreads<char>(2, 0.8);
     TestThreads<int>(2, 0.8);
     TestThreads<long>(2, 0.8);
@@ -512,6 +516,8 @@ int main(int argc, char** argv)
         TestThreads<double2>(2, 0.8);
     TestThreads<TestFoo>(2, 0.8);
     TestThreads<TestBar>(2, 0.8);
+
+    #endif
 
     return 0;
 }
