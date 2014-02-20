@@ -48,6 +48,8 @@
 #include <iostream>
 #include <limits>
 
+#include <mersenne.h>
+
 #include <cub/util_debug.cuh>
 #include <cub/util_device.cuh>
 #include <cub/util_type.cuh>
@@ -86,6 +88,10 @@ public:
         values(10)
     {
         using namespace std;
+
+        // Initialize mersenne generator
+        unsigned int mersenne_init[4]=  {0x123, 0x234, 0x345, 0x456};
+        mersenne::init_by_array(mersenne_init, 4);
 
         for (int i = 1; i < argc; i++)
         {
@@ -301,8 +307,10 @@ void RandomBits(
     int end_bit = sizeof(K) * 8)
 {
     const int NUM_BYTES = sizeof(K);
+    const int WORD_BYTES = sizeof(unsigned int);
+    const int NUM_WORDS = (NUM_BYTES + WORD_BYTES - 1) / WORD_BYTES;
 
-    unsigned char byte_buff[NUM_BYTES];
+    unsigned int word_buff[NUM_WORDS];
 
     if (entropy_reduction == -1)
     {
@@ -310,27 +318,29 @@ void RandomBits(
         return;
     }
 
-    if (end_bit < 0) end_bit = sizeof(K) * 8;
-    do {
-        // Generate random byte_buff
-        for (int j = 0; j < NUM_BYTES; j++)
-        {
-            int current_bit = j * 8;
+    if (end_bit < 0)
+        end_bit = sizeof(K) * 8;
 
-            unsigned char byte = 0xff;
-            byte &= 0xff << CUB_MAX(0, begin_bit - current_bit);
-            byte &= 0xff >> CUB_MAX(0, (current_bit + 8) - end_bit);
+    do {
+        // Generate random word_buff
+        for (int j = 0; j < NUM_WORDS; j++)
+        {
+            int current_bit = j * WORD_BYTES * 8;
+
+            unsigned int word = 0xffffffff;
+            word &= 0xffffffff << CUB_MAX(0, begin_bit - current_bit);
+            word &= 0xffffffff >> CUB_MAX(0, (current_bit + (WORD_BYTES * 8)) - end_bit);
 
             for (int i = 0; i <= entropy_reduction; i++)
             {
                 // Grab some of the higher bits from rand (better entropy, supposedly)
-                byte &= (rand() >> 5);
+                word &= mersenne::genrand_int32();
             }
 
-            byte_buff[j] = byte;
+            word_buff[j] = word;
         }
 
-        memcpy(&key, byte_buff, sizeof(K));
+        memcpy(&key, word_buff, sizeof(K));
 
     } while (key != key);        // avoids NaNs when generating random floating point numbers
 }
