@@ -130,7 +130,7 @@ struct LookbackTileDescriptor <ItemOffsetPair<double, int>, false>
         LookbackTileDescriptor tile_descriptor;
         tile_descriptor.status = LOOKBACK_TILE_INVALID;
 
-#if CUB_PTX_VERSION == 100
+#if CUB_PTX_VERSION < 130
 
         // Use shared memory to determine when all threads have valid status
         __shared__ volatile int done;

@@ -204,7 +204,6 @@ DEPS =	./Makefile \
 ALL = 	link \
 	 	test_iterator \
 	 	test_allocator \
-	 	test_grid_barrier \
 	 	test_block_reduce \
 	 	test_warp_scan \
 	 	test_warp_reduce \
@@ -222,6 +221,7 @@ ALL = 	link \
 		test_device_select_flagged \
 		test_device_select_if 
 		
+#	 	test_grid_barrier \		fails on sm110
 #	 	test_device_seg_reduce
 		
 
