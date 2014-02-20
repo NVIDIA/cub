@@ -82,13 +82,9 @@ struct BlockReduceByKeyRegionPolicy
 };
 
 
-
-
-
-
-
 /**
- *
+ * A specialized 64-bit device-wide prefix scan lookback descriptor for use when
+ * computing a reduce-by-key with doubles as values
  */
 template <>
 struct LookbackTileDescriptor <ItemOffsetPair<double, int>, false>
@@ -851,9 +847,9 @@ struct BlockReduceByKeyRegion
 
         __syncthreads();
 
-        int             tile_idx        = temp_storage.tile_idx;            // Current tile index
-        Offset          block_offset    = Offset(TILE_ITEMS) * tile_idx;    // Global offset for the current tile
-        Offset          num_remaining   = num_items - block_offset;         // Remaining items (including this tile)
+        int     tile_idx        = (blockIdx.y * 32 * 1024) + blockIdx.x;
+        Offset  block_offset    = Offset(TILE_ITEMS) * tile_idx;    // Global offset for the current tile
+        Offset  num_remaining   = num_items - block_offset;         // Remaining items (including this tile)
 
         while (num_remaining > TILE_ITEMS)
         {

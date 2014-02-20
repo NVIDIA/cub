@@ -329,11 +329,11 @@ void Test(
     CubDebugExit(Dispatch(Int2Type<BACKEND>(), 1, d_temp_storage_bytes, d_cdp_error, d_temp_storage, temp_storage_bytes, d_in, d_out, d_num_selected, num_items, 0, true));
 
     // Check for correctness (and display results, if specified)
-    int compare = CompareDeviceResults(h_reference, d_out, num_selected, true, g_verbose);
-    printf("\t Data %s ", compare ? "FAIL" : "PASS");
+    int compare1 = CompareDeviceResults(h_reference, d_out, num_selected, true, g_verbose);
+    printf("\t Data %s ", compare1 ? "FAIL" : "PASS");
 
-    compare = compare | CompareDeviceResults(&num_selected, d_num_selected, 1, true, g_verbose);
-    printf("\t Count %s ", compare ? "FAIL" : "PASS");
+    int compare2 = CompareDeviceResults(&num_selected, d_num_selected, 1, true, g_verbose);
+    printf("\t Count %s ", compare2 ? "FAIL" : "PASS");
 
     // Flush any stdout/stderr
     fflush(stdout);
@@ -368,7 +368,7 @@ void Test(
     if (d_temp_storage) CubDebugExit(g_allocator.DeviceFree(d_temp_storage));
 
     // Correctness asserts
-    AssertEquals(0, compare);
+    AssertEquals(0, compare1 | compare2);
 }
 
 

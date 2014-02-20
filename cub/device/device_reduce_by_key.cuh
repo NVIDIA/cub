@@ -466,19 +466,21 @@ struct DeviceReduceByKeyDispatch
             int reduce_by_key_region_occupancy = reduce_by_key_region_sm_occupancy * sm_count;
 
             // Get grid size for scanning tiles
-            int select_grid_size;
+            dim3 reduce_by_key_grid_size;
             if (ptx_version < 200)
             {
-                // We don't have atomics (or don't have fast ones), so just assign one block per tile (limited to 65K tiles)
-                select_grid_size = num_tiles;
-                if (select_grid_size >= (64 * 1024))
-                    return cudaErrorInvalidConfiguration;
+                // We don't have atomics (or don't have fast ones), so just assign one block per tile
+                reduce_by_key_grid_size.z = 1;
+                reduce_by_key_grid_size.y = (num_tiles + (32 * 1024) - 1) / (32 * 1024);
+                reduce_by_key_grid_size.x = CUB_MIN(num_tiles, 32 * 1024);
             }
             else
             {
-                select_grid_size = (num_tiles < reduce_by_key_region_occupancy) ?
-                    num_tiles :                         // Not enough to fill the device with threadblocks
-                    reduce_by_key_region_occupancy;     // Fill the device with threadblocks
+                reduce_by_key_grid_size.z = 1;
+                reduce_by_key_grid_size.y = 1;
+                reduce_by_key_grid_size.x = (num_tiles < reduce_by_key_region_occupancy) ?
+                    num_tiles :                     // Not enough to fill the device with threadblocks
+                    reduce_by_key_region_occupancy;          // Fill the device with threadblocks
             }
 
 #ifndef __CUDA_ARCH__
@@ -496,11 +498,11 @@ struct DeviceReduceByKeyDispatch
 #endif
 
             // Log reduce_by_key_region_kernel configuration
-            if (debug_synchronous) CubLog("Invoking reduce_by_key_region_kernel<<<%d, %d, 0, %lld>>>(), %d items per thread, %d SM occupancy\n",
-                select_grid_size, reduce_by_key_region_config.block_threads, (long long) stream, reduce_by_key_region_config.items_per_thread, reduce_by_key_region_sm_occupancy);
+            if (debug_synchronous) CubLog("Invoking reduce_by_key_region_kernel<<<{%d,%d,%d}, %d, 0, %lld>>>(), %d items per thread, %d SM occupancy\n",
+                reduce_by_key_grid_size.x, reduce_by_key_grid_size.y, reduce_by_key_grid_size.z, reduce_by_key_region_config.block_threads, (long long) stream, reduce_by_key_region_config.items_per_thread, reduce_by_key_region_sm_occupancy);
 
             // Invoke reduce_by_key_region_kernel
-            reduce_by_key_region_kernel<<<select_grid_size, reduce_by_key_region_config.block_threads, 0, stream>>>(
+            reduce_by_key_region_kernel<<<reduce_by_key_grid_size, reduce_by_key_region_config.block_threads, 0, stream>>>(
                 d_keys_in,
                 d_keys_out,
                 d_values_in,
