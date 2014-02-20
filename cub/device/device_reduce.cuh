@@ -334,14 +334,16 @@ struct DeviceReduceDispatch
     {
         enum {
             NOMINAL_4B_ITEMS_PER_THREAD = 8,
+            NOMINAL_4B_VEC_ITEMS        = 2,
             ITEMS_PER_THREAD            = CUB_MIN(NOMINAL_4B_ITEMS_PER_THREAD, CUB_MAX(1, (NOMINAL_4B_ITEMS_PER_THREAD * 4 / sizeof(T)))),
+            VEC_ITEMS                   = CUB_MIN(NOMINAL_4B_VEC_ITEMS, CUB_MAX(1, (NOMINAL_4B_VEC_ITEMS * 4 / sizeof(T)))),
         };
 
         // ReduceRegionPolicy
         typedef BlockReduceRegionPolicy<
                 128,                                ///< Threads per thread block
                 ITEMS_PER_THREAD,                   ///< Items per thread per tile of input
-                2,                                  ///< Number of items per vectorized load
+                VEC_ITEMS,                          ///< Number of items per vectorized load
                 BLOCK_REDUCE_RAKING,                ///< Cooperative block-wide reduction algorithm to use
                 LOAD_DEFAULT,                       ///< Cache load modifier
                 GRID_MAPPING_EVEN_SHARE>            ///< How to map tiles of input onto thread blocks
