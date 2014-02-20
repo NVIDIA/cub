@@ -460,24 +460,26 @@ struct DeviceSelectDispatch
             int select_region_occupancy = select_region_sm_occupancy * sm_count;
 
             // Get grid size for scanning tiles
-            int select_grid_size;
+            dim3 select_grid_size;
             if (ptx_version < 200)
             {
-                // We don't have atomics (or don't have fast ones), so just assign one block per tile (limited to 65K tiles)
-                select_grid_size = num_tiles;
-                if (select_grid_size >= (64 * 1024))
-                    return cudaErrorInvalidConfiguration;
+                // We don't have atomics (or don't have fast ones), so just assign one block per tile
+                select_grid_size.z = 1;
+                select_grid_size.y = (num_tiles + (32 * 1024) - 1) / (32 * 1024);
+                select_grid_size.x = CUB_MIN(num_tiles, 32 * 1024);
             }
             else
             {
-                select_grid_size = (num_tiles < select_region_occupancy) ?
-                    num_tiles :                         // Not enough to fill the device with threadblocks
-                    select_region_occupancy;            // Fill the device with threadblocks
+                select_grid_size.z = 1;
+                select_grid_size.y = 1;
+                select_grid_size.x = (num_tiles < select_region_occupancy) ?
+                    num_tiles :                     // Not enough to fill the device with threadblocks
+                    select_region_occupancy;        // Fill the device with threadblocks
             }
 
             // Log select_region_kernel configuration
-            if (debug_synchronous) CubLog("Invoking select_region_kernel<<<%d, %d, 0, %lld>>>(), %d items per thread, %d SM occupancy\n",
-                select_grid_size, select_region_config.block_threads, (long long) stream, select_region_config.items_per_thread, select_region_sm_occupancy);
+            if (debug_synchronous) CubLog("Invoking select_region_kernel<<<{%d,%d,%d}, %d, 0, %lld>>>(), %d items per thread, %d SM occupancy\n",
+                select_grid_size.x, select_grid_size.y, select_grid_size.z, select_region_config.block_threads, (long long) stream, select_region_config.items_per_thread, select_region_sm_occupancy);
 
             // Invoke select_region_kernel
             select_region_kernel<<<select_grid_size, select_region_config.block_threads, 0, stream>>>(

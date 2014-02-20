@@ -127,6 +127,9 @@ struct BlockSelectRegion
         TWO_PHASE_SCATTER   = (BlockSelectRegionPolicy::TWO_PHASE_SCATTER) && (ITEMS_PER_THREAD > 1),
         TILE_ITEMS          = BLOCK_THREADS * ITEMS_PER_THREAD,
 
+        // Whether or not to sync after loading data
+        SYNC_AFTER_LOAD     = (BlockSelectRegionPolicy::LOAD_ALGORITHM != BLOCK_LOAD_DIRECT),
+
         SELECT_METHOD       = (!Equals<SelectOp, NullType>::VALUE) ?
                                 USE_SELECT_OP :
                                 (!Equals<Flag, NullType>::VALUE) ?
@@ -292,8 +295,6 @@ struct BlockSelectRegion
         Offset                      (&selected)[ITEMS_PER_THREAD],
         Int2Type<USE_SELECT_FLAGS>  select_method)
     {
-        __syncthreads();
-
         Flag flags[ITEMS_PER_THREAD];
 
         if (LAST_TILE)
@@ -306,6 +307,8 @@ struct BlockSelectRegion
         {
             selected[ITEM] = flags[ITEM];
         }
+
+        __syncthreads();
     }
 
 
@@ -320,8 +323,6 @@ struct BlockSelectRegion
         Offset                      (&selected)[ITEMS_PER_THREAD],
         Int2Type<USE_DISCONTINUITY> select_method)
     {
-        __syncthreads();
-
         if (FIRST_TILE)
         {
             // First tile always flags the first item
@@ -563,6 +564,9 @@ struct BlockSelectRegion
         else
             BlockLoadT(temp_storage.load_items).Load(d_in + block_offset, items);
 
+        if (SYNC_AFTER_LOAD)
+            __syncthreads();
+
         if (tile_idx == 0)
         {
             // Initialize selected/rejected output flags for first tile
@@ -602,7 +606,7 @@ struct BlockSelectRegion
         }
 
         // Store selected items
-        Scatter<!LAST_TILE>(
+        Scatter<LAST_TILE>(
             block_offset,
             items,
             selected,
@@ -632,7 +636,7 @@ struct BlockSelectRegion
 
         // No concurrent kernels are allowed, and blocks are launched in increasing order, so just assign one tile per block (up to 65K blocks)
 
-        int     tile_idx        = blockIdx.x;
+        int     tile_idx        = (blockIdx.y * 32 * 1024) + blockIdx.x;
         Offset  block_offset    = Offset(TILE_ITEMS) * tile_idx;
         Offset  num_remaining   = num_items - block_offset;
 

@@ -586,7 +586,7 @@ void Test(
     int             end_bit,
     char*           type_string)
 {
-    for (int entropy_reduction = 0; entropy_reduction <= 9; entropy_reduction += 3)
+    for (int entropy_reduction = 0; entropy_reduction <= 8; entropy_reduction += 4)
     {
         Test<BACKEND, Key, Value>(num_items, RANDOM, entropy_reduction, begin_bit, end_bit, type_string);
     }
