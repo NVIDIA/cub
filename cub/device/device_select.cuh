@@ -66,39 +66,36 @@ namespace cub {
  * Otherwise performs discontinuity selection (keep unique)
  */
 template <
-    typename    BlockSelectRegionPolicy,        ///< Parameterized BlockSelectRegionPolicy tuning policy type
-    typename    InputIterator,                  ///< Random-access input iterator type for reading input items
-    typename    FlagIterator,                   ///< Random-access input iterator type for reading selection flags (NullType* if a selection functor or discontinuity flagging is to be used for selection)
-    typename    OutputIterator,                 ///< Random-access output iterator type for writing selected items
-    typename    NumSelectedIterator,            ///< Output iterator type for recording the number of items selected
-    typename    SelectOp,                       ///< Selection operator type (NullType if selection flags or discontinuity flagging is to be used for selection)
-    typename    EqualityOp,                     ///< Equality operator type (NullType if selection functor or selection flags is to be used for selection)
-    typename    Offset,                         ///< Signed integer type for global offsets
-    bool        KEEP_REJECTS>                   ///< Whether or not we push rejected items to the back of the output
+    typename            BlockSelectRegionPolicy,    ///< Parameterized BlockSelectRegionPolicy tuning policy type
+    typename            InputIterator,              ///< Random-access input iterator type for reading input items
+    typename            FlagIterator,               ///< Random-access input iterator type for reading selection flags (NullType* if a selection functor or discontinuity flagging is to be used for selection)
+    typename            OutputIterator,             ///< Random-access output iterator type for writing selected items
+    typename            TileLookbackStatus,         ///< Tile status interface type
+    typename            NumSelectedIterator,        ///< Output iterator type for recording the number of items selected
+    typename            SelectOp,                   ///< Selection operator type (NullType if selection flags or discontinuity flagging is to be used for selection)
+    typename            EqualityOp,                 ///< Equality operator type (NullType if selection functor or selection flags is to be used for selection)
+    typename            Offset,                     ///< Signed integer type for global offsets
+    bool                KEEP_REJECTS>               ///< Whether or not we push rejected items to the back of the output
 __launch_bounds__ (int(BlockSelectRegionPolicy::BLOCK_THREADS))
 __global__ void SelectRegionKernel(
-    InputIterator                       d_in,               ///< [in] Pointer to input sequence of data items
-    FlagIterator                        d_flags,            ///< [in] Pointer to the input sequence of selection flags
-    OutputIterator                      d_out,              ///< [in] Pointer to output sequence of selected data items
-    NumSelectedIterator                 d_num_selected,     ///< [in] Pointer to total number of items selected (i.e., length of \p d_out)
-    LookbackTileDescriptor<Offset>      *d_tile_status,     ///< [in] Global list of tile status
-    SelectOp                            select_op,          ///< [in] Selection operator
-    EqualityOp                          equality_op,        ///< [in] Equality operator
-    Offset                              num_items,          ///< [in] Total number of input items (i.e., length of \p d_in)
-    int                                 num_tiles,          ///< [in] Total number of tiles for the entire problem
-    GridQueue<int>                      queue)              ///< [in] Drain queue descriptor for dynamically mapping tile data onto thread blocks
+    InputIterator       d_in,                       ///< [in] Pointer to input sequence of data items
+    FlagIterator        d_flags,                    ///< [in] Pointer to the input sequence of selection flags
+    OutputIterator      d_out,                      ///< [in] Pointer to output sequence of selected data items
+    NumSelectedIterator d_num_selected,             ///< [in] Pointer to total number of items selected (i.e., length of \p d_out)
+    TileLookbackStatus  tile_status,                ///< [in] Tile status interface
+    SelectOp            select_op,                  ///< [in] Selection operator
+    EqualityOp          equality_op,                ///< [in] Equality operator
+    Offset              num_items,                  ///< [in] Total number of input items (i.e., length of \p d_in)
+    int                 num_tiles,                  ///< [in] Total number of tiles for the entire problem
+    GridQueue<int>      queue)                      ///< [in] Drain queue descriptor for dynamically mapping tile data onto thread blocks
 {
-    enum
-    {
-        TILE_STATUS_PADDING = CUB_PTX_WARP_THREADS,
-    };
-
     // Thread block type for selecting data from input tiles
     typedef BlockSelectRegion<
         BlockSelectRegionPolicy,
         InputIterator,
         FlagIterator,
         OutputIterator,
+        TileLookbackStatus,
         SelectOp,
         EqualityOp,
         Offset,
@@ -111,7 +108,7 @@ __global__ void SelectRegionKernel(
     BlockSelectRegionT(temp_storage, d_in, d_flags, d_out, select_op, equality_op, num_items).ConsumeRegion(
         num_tiles,
         queue,
-        d_tile_status + TILE_STATUS_PADDING,
+        tile_status,
         d_num_selected);
 }
 
@@ -153,7 +150,7 @@ struct DeviceSelectDispatch
     typedef typename std::iterator_traits<FlagIterator>::value_type Flag;
 
     // Tile status descriptor type
-    typedef LookbackTileDescriptor<Offset> TileDescriptor;
+    typedef TileLookbackStatus<Offset> TileLookbackStatus;
 
 
     /******************************************************************************
@@ -413,15 +410,13 @@ struct DeviceSelectDispatch
             int tile_size = select_region_config.block_threads * select_region_config.items_per_thread;
             int num_tiles = (num_items + tile_size - 1) / tile_size;
 
-            // Temporary storage allocation requirements
-            void* allocations[2];
-            size_t allocation_sizes[2] =
-            {
-                (num_tiles + TILE_STATUS_PADDING) * TileDescriptor::SAFE_ALLOCATION_SIZE,   // bytes needed for tile status descriptors
-                GridQueue<int>::AllocationSize()                                            // bytes needed for grid queue descriptor
-            };
+            // Specify temporary storage allocation requirements
+            size_t  allocation_sizes[2];
+            if (CubDebug(error = TileLookbackStatus::AllocationSize(num_tiles, allocation_sizes[0]))) break;    // bytes needed for tile status descriptors
+            allocation_sizes[1] = GridQueue<int>::AllocationSize();                                             // bytes needed for grid queue descriptor
 
-            // Alias the temporary allocations from the single storage blob (or set the necessary size of the blob)
+            // Compute allocation pointers into the single storage blob (or set the necessary size of the blob)
+            void* allocations[2];
             if (CubDebug(error = AliasTemporaries(d_temp_storage, temp_storage_bytes, allocations, allocation_sizes))) break;
             if (d_temp_storage == NULL)
             {
@@ -429,10 +424,11 @@ struct DeviceSelectDispatch
                 return cudaSuccess;
             }
 
-            // Alias the allocation for the global list of tile status
-            TileDescriptor *d_tile_status = (TileDescriptor*) allocations[0];
+            // Construct the tile status interface
+            TileLookbackStatus tile_status;
+            if (CubDebug(error = tile_status.Init(num_tiles, allocations[0], allocation_sizes[0]))) break;
 
-            // Alias the allocation for the grid queue descriptor
+            // Construct the grid queue descriptor
             GridQueue<int> queue(allocations[1]);
 
             // Log init_kernel configuration
@@ -442,7 +438,7 @@ struct DeviceSelectDispatch
             // Invoke init_kernel to initialize tile descriptors and queue descriptors
             init_kernel<<<init_grid_size, INIT_KERNEL_THREADS, 0, stream>>>(
                 queue,
-                d_tile_status,
+                tile_status,
                 num_tiles);
 
             // Sync the stream if specified
@@ -487,7 +483,7 @@ struct DeviceSelectDispatch
                 d_flags,
                 d_out,
                 d_num_selected,
-                d_tile_status,
+                tile_status,
                 select_op,
                 equality_op,
                 num_items,
@@ -551,8 +547,8 @@ struct DeviceSelectDispatch
                 stream,
                 debug_synchronous,
                 ptx_version,
-                ScanInitKernel<Offset, Offset>,
-                SelectRegionKernel<PtxSelectRegionPolicy, InputIterator, FlagIterator, OutputIterator, NumSelectedIterator, SelectOp, EqualityOp, Offset, KEEP_REJECTS>,
+                ScanInitKernel<Offset, TileLookbackStatus>,
+                SelectRegionKernel<PtxSelectRegionPolicy, InputIterator, FlagIterator, OutputIterator, TileLookbackStatus, NumSelectedIterator, SelectOp, EqualityOp, Offset, KEEP_REJECTS>,
                 select_region_config))) break;
         }
         while (0);
