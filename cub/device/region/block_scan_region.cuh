@@ -368,9 +368,9 @@ struct BlockScanRegion
 #if CUB_PTX_VERSION < 200
 
         // No concurrent kernels allowed and blocks are launched in increasing order, so just assign one tile per block
-        int     tile_idx        = (blockIdx.y * 32 * 1024) + blockIdx.x;
-        Offset  block_offset    = Offset(TILE_ITEMS) * tile_idx;
-        Offset  num_remaining   = num_items - block_offset;
+        int     tile_idx        = (blockIdx.y * 32 * 1024) + blockIdx.x;    // Current tile index
+        Offset  block_offset    = Offset(TILE_ITEMS) * tile_idx;            // Global offset for the current tile
+        Offset  num_remaining   = num_items - block_offset;                 // Remaining items (including this tile)
 
         if (block_offset + TILE_ITEMS <= num_items)
             ConsumeTile<true>(num_items, num_remaining, tile_idx, block_offset, d_tile_status);

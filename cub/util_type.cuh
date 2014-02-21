@@ -491,14 +491,17 @@ struct ItemOffsetPair
     typedef _T        T;                ///< Item data type
     typedef _Offset   Offset;           ///< Integer offset data type
 
-    T                           value;      ///< Item value
-
+#if (CUB_PTX_VERSION == 0)
     union
     {
         Offset                  offset;     ///< Offset
-        Uninitialized<T>        align0;     ///< Alignment/padding (for Win32 consistency between host/device)
-        Uninitialized<Offset>   align1;     ///< Alignment/padding (for Win32 consistency between host/device)
+        UnitWord<T>::DeviceWord align0;     ///< Alignment/padding (for Win32 consistency between host/device)
     };
+#else
+    Offset                      offset;     ///< Offset
+#endif
+
+    T                           value;      ///< Item value
 
     /// Inequality operator
     __host__ __device__ __forceinline__ bool operator !=(const ItemOffsetPair &b)

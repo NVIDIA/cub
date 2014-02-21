@@ -221,17 +221,17 @@ struct DeviceReduceByKeyDispatch
     struct Policy130
     {
         enum {
-            NOMINAL_4B_ITEMS_PER_THREAD = 5,
+            NOMINAL_4B_ITEMS_PER_THREAD = 7,
             ITEMS_PER_THREAD            = CUB_MIN(NOMINAL_4B_ITEMS_PER_THREAD, CUB_MAX(1, ((NOMINAL_4B_ITEMS_PER_THREAD * 8) + COMBINED_INPUT_BYTES - 1) / COMBINED_INPUT_BYTES)),
         };
 
         typedef BlockReduceByKeyRegionPolicy<
-                64,
+                128,
                 ITEMS_PER_THREAD,
                 BLOCK_LOAD_WARP_TRANSPOSE,
                 LOAD_DEFAULT,
                 true,
-                BLOCK_SCAN_RAKING_MEMOIZE>
+                BLOCK_SCAN_WARP_SCANS>
             ReduceByKeyPolicy;
     };
 
@@ -423,8 +423,8 @@ struct DeviceReduceByKeyDispatch
             void* allocations[2];
             size_t allocation_sizes[2] =
             {
-                (num_tiles + TILE_STATUS_PADDING) * sizeof(TileDescriptor),  // bytes needed for tile status descriptors
-                GridQueue<int>::AllocationSize()                                        // bytes needed for grid queue descriptor
+                (num_tiles + TILE_STATUS_PADDING) * TileDescriptor::SAFE_ALLOCATION_SIZE,   // bytes needed for tile status descriptors
+                GridQueue<int>::AllocationSize()                                            // bytes needed for grid queue descriptor
             };
 
             // Alias the temporary allocations from the single storage blob (or set the necessary size of the blob)

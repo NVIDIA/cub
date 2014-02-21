@@ -441,8 +441,8 @@ struct DeviceScanDispatch
             void* allocations[2];
             size_t allocation_sizes[2] =
             {
-                (num_tiles + TILE_STATUS_PADDING) * sizeof(TileDescriptor),  // bytes needed for tile status descriptors
-                GridQueue<int>::AllocationSize()                             // bytes needed for grid queue descriptor
+                (num_tiles + TILE_STATUS_PADDING) * TileDescriptor::SAFE_ALLOCATION_SIZE,   // bytes needed for tile status descriptors
+                GridQueue<int>::AllocationSize()                                            // bytes needed for grid queue descriptor
             };
 
             // Alias the temporary allocations from the single storage blob (or set the necessary size of the blob)

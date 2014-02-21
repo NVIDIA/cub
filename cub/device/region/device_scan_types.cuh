@@ -144,7 +144,7 @@ enum LookbackTileStatus
  */
 template <
     typename    T,
-    bool        SINGLE_WORD = (PowerOfTwo<sizeof(T)>::VALUE && (sizeof(T) <= 8))>
+    bool        SINGLE_WORD = (PowerOfTwo<sizeof(T)>::VALUE && (sizeof(T) <= 8)) && ((CUB_PTX_VERSION > 130))>
 struct LookbackTileDescriptor
 {
     // Status word type
@@ -165,15 +165,13 @@ struct LookbackTileDescriptor
                 int,
                 char2>::Type>::Type>::Type TxnWord;
 
-    union
-    {
-        StatusWord                  status;
-        Uninitialized<T>            align0;     ///< Alignment/padding (for Win32 consistency between host/device)
-        Uninitialized<StatusWord>   align1;     ///< Alignment/padding (for Win32 consistency between host/device)
+    enum {
+        // Safe host allocation size for Win32 consistency between host/device
+        SAFE_ALLOCATION_SIZE = sizeof(TxnWord)
     };
 
-    T                               value;
-
+    StatusWord  status;
+    T           value;
 
     static __device__ __forceinline__ void SetPrefix(LookbackTileDescriptor *ptr, T prefix)
     {
@@ -205,39 +203,17 @@ struct LookbackTileDescriptor
         LookbackTileDescriptor tile_descriptor;
         tile_descriptor.status = LOOKBACK_TILE_INVALID;
 
-#if CUB_PTX_VERSION < 130
-
-        // Use shared memory to determine when all threads have valid status
-        __shared__ volatile int done;
-
-        do
-        {
-            if (threadIdx.x == 0) done = 1;
-
-            TxnWord alias = ThreadLoad<LOAD_CG>(reinterpret_cast<TxnWord*>(ptr));
-            __threadfence_block();
-
-            tile_descriptor = reinterpret_cast<LookbackTileDescriptor&>(alias);
-            if (tile_descriptor.status == LOOKBACK_TILE_INVALID)
-                done = 0;
-
-        } while (done == 0);
-
-#else
-
         // Use warp-any to determine when all threads have valid status
         TxnWord alias = ThreadLoad<LOAD_CG>(reinterpret_cast<TxnWord*>(ptr));
         tile_descriptor = reinterpret_cast<LookbackTileDescriptor&>(alias);
 
-        while (__any(tile_descriptor.status == LOOKBACK_TILE_INVALID))
+        while (WarpAny(tile_descriptor.status == LOOKBACK_TILE_INVALID))
         {
             if (tile_descriptor.status == LOOKBACK_TILE_INVALID)
                 alias = ThreadLoad<LOAD_CG>(reinterpret_cast<TxnWord*>(ptr));
 
             tile_descriptor = reinterpret_cast<LookbackTileDescriptor&>(alias);
         }
-
-#endif
 
         status = tile_descriptor.status;
         value = tile_descriptor.value;
@@ -250,14 +226,22 @@ struct LookbackTileDescriptor
 template <typename T>
 struct LookbackTileDescriptor<T, false>
 {
+    int                 status;
     T                   prefix_value;
+    T                   prefix_value2;
     T                   partial_value;
+    T                   partial_value2;
 
-    union
+    struct AllocationProxy
     {
-        int                 status;
-        Uninitialized<T>    align4;         ///< Alignment/padding (for Win32 consistency between host/device)
-        Uninitialized<int>  align5;         ///< Alignment/padding (for Win32 consistency between host/device)
+        Uninitialized<T> status_bytes;
+        Uninitialized<T> prefix_bytes;
+        Uninitialized<T> partial_bytes;
+    };
+
+    enum {
+        // Safe host allocation size for Win32 consistency between host/device (round size up to nearest power of two)
+        SAFE_ALLOCATION_SIZE = (1 << Log2<sizeof(Uninitialized<AllocationProxy>)>::VALUE)
     };
 
     static __device__ __forceinline__ void SetPrefix(LookbackTileDescriptor *ptr, T prefix)
@@ -278,11 +262,33 @@ struct LookbackTileDescriptor<T, false>
     }
 
     static __device__ __forceinline__ void WaitForValid(
-        LookbackTileDescriptor    *ptr,
+        LookbackTileDescriptor      *ptr,
         int                         &status,
         T                           &value)
     {
+        // Use shared memory to determine when all threads have valid status
+        __shared__ volatile int done;
 
+        do
+        {
+            if (threadIdx.x == 0) done = 1;
+
+            status = ThreadLoad<LOAD_CG>(&ptr->status);
+
+            __threadfence_block();
+
+            if (status == LOOKBACK_TILE_INVALID)
+                done = 0;
+
+        } while (done == 0);
+
+        __threadfence_block();
+
+        value = (status == LOOKBACK_TILE_PARTIAL) ?
+            ThreadLoad<LOAD_CG>(&ptr->partial_value) :
+            ThreadLoad<LOAD_CG>(&ptr->prefix_value);
+
+/*
         while (true)
         {
             status = ThreadLoad<LOAD_CG>(&ptr->status);
@@ -294,7 +300,7 @@ struct LookbackTileDescriptor<T, false>
         value = (status == LOOKBACK_TILE_PARTIAL) ?
             ThreadLoad<LOAD_CG>(&ptr->partial_value) :
             ThreadLoad<LOAD_CG>(&ptr->prefix_value);
-
+*/
     }
 };
 

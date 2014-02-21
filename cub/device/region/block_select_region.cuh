@@ -634,11 +634,10 @@ struct BlockSelectRegion
     {
 #if CUB_PTX_VERSION < 200
 
-        // No concurrent kernels are allowed, and blocks are launched in increasing order, so just assign one tile per block (up to 65K blocks)
-
-        int     tile_idx        = (blockIdx.y * 32 * 1024) + blockIdx.x;
-        Offset  block_offset    = Offset(TILE_ITEMS) * tile_idx;
-        Offset  num_remaining   = num_items - block_offset;
+        // No concurrent kernels allowed and blocks are launched in increasing order, so just assign one tile per block
+        int     tile_idx        = (blockIdx.y * 32 * 1024) + blockIdx.x;    // Current tile index
+        Offset  block_offset    = Offset(TILE_ITEMS) * tile_idx;            // Global offset for the current tile
+        Offset  num_remaining   = num_items - block_offset;                 // Remaining items (including this tile)
 
         if (num_remaining > TILE_ITEMS)
         {
