@@ -94,7 +94,6 @@ template <
     typename BlockScanRegionPolicy,     ///< Parameterized BlockScanRegionPolicy tuning policy type
     typename InputIterator,             ///< Random-access input iterator type
     typename OutputIterator,            ///< Random-access output iterator type
-    typename TileLookbackStatus,        ///< Tile status interface type
     typename ScanOp,                    ///< Scan functor type
     typename Identity,                  ///< Identity element type (cub::NullType for inclusive scan)
     typename Offset>                    ///< Signed integer type for global offsets
@@ -106,6 +105,9 @@ struct BlockScanRegion
 
     // Data type of input iterator
     typedef typename std::iterator_traits<InputIterator>::value_type T;
+
+    // Tile status descriptor interface type
+    typedef TileLookbackStatus<T> TileLookbackStatus;
 
     // Input iterator wrapper type
     typedef typename If<IsPointer<InputIterator>::VALUE,
@@ -150,7 +152,8 @@ struct BlockScanRegion
     // Callback type for obtaining tile prefix during block scan
     typedef LookbackBlockPrefixCallbackOp<
             T,
-            ScanOp>
+            ScanOp,
+            TileLookbackStatus>
         LookbackPrefixCallbackOp;
 
     // Stateful BlockScan prefix callback type for managing a running total while scanning consecutive tiles

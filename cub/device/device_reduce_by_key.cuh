@@ -93,7 +93,6 @@ __global__ void ReduceByKeyRegionKernel(
         KeyOutputIterator,
         ValueInputIterator,
         ValueOutputIterator,
-        TileLookbackStatus,
         EqualityOp,
         ReductionOp,
         Offset> BlockReduceByKeyRegionT;
@@ -152,7 +151,7 @@ struct DeviceReduceByKeyDispatch
     typedef ItemOffsetPair<Value, Offset> ValueOffsetPair;
 
     // Tile status descriptor interface type
-    typedef TileLookbackStatus<ValueOffsetPair> TileLookbackStatus;
+    typedef ReduceByKeyTileLookbackStatus<Value, Offset> TileLookbackStatus;
 
 
     /******************************************************************************

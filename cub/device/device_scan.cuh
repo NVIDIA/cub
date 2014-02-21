@@ -104,7 +104,6 @@ __global__ void ScanRegionKernel(
         BlockScanRegionPolicy,
         InputIterator,
         OutputIterator,
-        TileLookbackStatus,
         ScanOp,
         Identity,
         Offset> BlockScanRegionT;
