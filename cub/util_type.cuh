@@ -270,6 +270,22 @@ struct UnitWord <float4>
     typedef float4              TextureWord;
 };
 
+
+// char2 specialization workaround (for SM10-SM13)
+template <>
+struct UnitWord <char2>
+{
+    typedef unsigned short      ShuffleWord;
+#if defined(__CUDA_ARCH__) && (__CUDA_ARCH__ <= 130)
+    typedef unsigned short      VolatileWord;
+    typedef short               DeviceWord;
+#else
+    typedef unsigned short      VolatileWord;
+    typedef unsigned short      DeviceWord;
+#endif
+    typedef unsigned short      TextureWord;
+};
+
 #endif // DOXYGEN_SHOULD_SKIP_THIS
 
 

@@ -75,11 +75,12 @@ cudaError_t AliasTemporaries(
     const int ALIGN_MASK    = ~(ALIGN_BYTES - 1);
 
     // Compute exclusive prefix sum over allocation requests
+    size_t allocation_offsets[ALLOCATIONS];
     size_t bytes_needed = 0;
     for (int i = 0; i < ALLOCATIONS; ++i)
     {
         size_t allocation_bytes = (allocation_sizes[i] + ALIGN_BYTES - 1) & ALIGN_MASK;
-        allocation_sizes[i] = bytes_needed;
+        allocation_offsets[i] = bytes_needed;
         bytes_needed += allocation_bytes;
     }
 
@@ -99,7 +100,7 @@ cudaError_t AliasTemporaries(
     // Alias
     for (int i = 0; i < ALLOCATIONS; ++i)
     {
-        allocations[i] = static_cast<char*>(d_temp_storage) + allocation_sizes[i];
+        allocations[i] = static_cast<char*>(d_temp_storage) + allocation_offsets[i];
     }
 
     return cudaSuccess;

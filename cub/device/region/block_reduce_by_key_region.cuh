@@ -85,7 +85,7 @@ struct BlockReduceByKeyRegionPolicy
 /**
  * A specialized 64-bit device-wide prefix scan lookback descriptor for use when
  * computing a reduce-by-key with doubles as values
- */
+ * /
 template <>
 struct LookbackTileDescriptor <ItemOffsetPair<double, int>, false>
 {
@@ -106,7 +106,7 @@ struct LookbackTileDescriptor <ItemOffsetPair<double, int>, false>
     static __device__ __forceinline__ void SetPrefix(LookbackTileDescriptor *ptr, T prefix)
     {
         LookbackTileDescriptor tile_descriptor;
-        tile_descriptor.status = LOOKBACK_TILE_PREFIX;
+        tile_descriptor.status = LOOKBACK_TILE_INCLUSIVE;
         tile_descriptor.value = prefix.value;
         tile_descriptor.offset = prefix.offset;
 
@@ -153,7 +153,7 @@ struct LookbackTileDescriptor <ItemOffsetPair<double, int>, false>
     }
 
 };
-
+*/
 
 
 /******************************************************************************
