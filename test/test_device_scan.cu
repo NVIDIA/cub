@@ -842,16 +842,19 @@ int main(int argc, char** argv)
     {
         // Test different input types
         TestSize<unsigned char>(num_items, 0, CUB_TYPE_STRING(unsigned char));
+        TestSize<char>(num_items, 0, CUB_TYPE_STRING(char));
         TestSize<unsigned short>(num_items, 0, CUB_TYPE_STRING(unsigned short));
         TestSize<unsigned int>(num_items, 0, CUB_TYPE_STRING(unsigned int));
         TestSize<unsigned long long>(num_items, 0, CUB_TYPE_STRING(unsigned long long));
 
         TestSize<uchar2>(num_items, make_uchar2(0, 0), CUB_TYPE_STRING(uchar2));
+        TestSize<char2>(num_items, make_char2(0, 0), CUB_TYPE_STRING(char2));
         TestSize<ushort2>(num_items, make_ushort2(0, 0), CUB_TYPE_STRING(ushort2));
         TestSize<uint2>(num_items, make_uint2(0, 0), CUB_TYPE_STRING(uint2));
         TestSize<ulonglong2>(num_items, make_ulonglong2(0, 0), CUB_TYPE_STRING(ulonglong2));
 
         TestSize<uchar4>(num_items, make_uchar4(0, 0, 0, 0), CUB_TYPE_STRING(uchar4));
+        TestSize<char4>(num_items, make_char4(0, 0, 0, 0), CUB_TYPE_STRING(char4));
         TestSize<ushort4>(num_items, make_ushort4(0, 0, 0, 0), CUB_TYPE_STRING(ushort4));
         TestSize<uint4>(num_items, make_uint4(0, 0, 0, 0), CUB_TYPE_STRING(uint4));
         TestSize<ulonglong4>(num_items, make_ulonglong4(0, 0, 0, 0), CUB_TYPE_STRING(ulonglong4));
