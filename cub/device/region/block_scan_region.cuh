@@ -308,21 +308,21 @@ struct BlockScanRegion
     /**
      * Process a tile of input (dynamic domino scan)
      */
-    template <bool FULL_TILE>
+    template <bool LAST_TILE>
     __device__ __forceinline__ void ConsumeTile(
         Offset                      num_items,          ///< Total number of input items
-        Offset                      num_remaining,
+        Offset                      num_remaining,      ///< Total number of items remaining to be processed (including this tile)
         int                         tile_idx,           ///< Tile index
         Offset                      block_offset,       ///< Tile offset
-        TileLookbackStatus          &tile_status)     ///< Global list of tile status
+        TileLookbackStatus          &tile_status)       ///< Global list of tile status
     {
         // Load items
         T items[ITEMS_PER_THREAD];
 
-        if (FULL_TILE)
-            BlockLoadT(temp_storage.load).Load(d_in + block_offset, items);
-        else
+        if (LAST_TILE)
             BlockLoadT(temp_storage.load).Load(d_in + block_offset, items, num_remaining);
+        else
+            BlockLoadT(temp_storage.load).Load(d_in + block_offset, items);
 
         __syncthreads();
 
@@ -334,7 +334,7 @@ struct BlockScanRegion
             ScanBlock(items, scan_op, identity, block_aggregate);
 
             // Update tile status if there may be successor tiles (i.e., this tile is full)
-            if (FULL_TILE && (threadIdx.x == 0))
+            if (!LAST_TILE && (threadIdx.x == 0))
                 tile_status.SetInclusive(0, block_aggregate);
         }
         else
@@ -348,10 +348,10 @@ struct BlockScanRegion
         __syncthreads();
 
         // Store items
-        if (FULL_TILE)
-            BlockStoreT(temp_storage.store).Store(d_out + block_offset, items);
-        else
+        if (LAST_TILE)
             BlockStoreT(temp_storage.store).Store(d_out + block_offset, items, num_remaining);
+        else
+            BlockStoreT(temp_storage.store).Store(d_out + block_offset, items);
     }
 
 
@@ -361,7 +361,7 @@ struct BlockScanRegion
     __device__ __forceinline__ void ConsumeRegion(
         int                     num_items,          ///< Total number of input items
         GridQueue<int>          queue,              ///< Queue descriptor for assigning tiles of work to thread blocks
-        TileLookbackStatus      &tile_status)     ///< Global list of tile status
+        TileLookbackStatus      &tile_status)       ///< Global list of tile status
     {
 #if CUB_PTX_VERSION < 200
 
@@ -371,9 +371,9 @@ struct BlockScanRegion
         Offset  num_remaining   = num_items - block_offset;                 // Remaining items (including this tile)
 
         if (block_offset + TILE_ITEMS <= num_items)
-            ConsumeTile<true>(num_items, num_remaining, tile_idx, block_offset, tile_status);
-        else if (block_offset < num_items)
             ConsumeTile<false>(num_items, num_remaining, tile_idx, block_offset, tile_status);
+        else if (block_offset < num_items)
+            ConsumeTile<true>(num_items, num_remaining, tile_idx, block_offset, tile_status);
 
 #else
 
@@ -390,7 +390,7 @@ struct BlockScanRegion
         while (num_remaining >= TILE_ITEMS)
         {
             // Consume full tile
-            ConsumeTile<true>(num_items, num_remaining, tile_idx, block_offset, tile_status);
+            ConsumeTile<false>(num_items, num_remaining, tile_idx, block_offset, tile_status);
 
             // Get next tile
             if (threadIdx.x == 0)
@@ -403,10 +403,10 @@ struct BlockScanRegion
             num_remaining   = num_items - block_offset;
         }
 
-        // Consume a partially-full tile
+        // Consume the last (and potentially partially-full) tile
         if (num_remaining > 0)
         {
-            ConsumeTile<false>(num_items, num_remaining, tile_idx, block_offset, tile_status);
+            ConsumeTile<true>(num_items, num_remaining, tile_idx, block_offset, tile_status);
         }
 
 #endif
