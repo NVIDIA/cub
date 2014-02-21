@@ -94,6 +94,7 @@ template <
     typename BlockScanRegionPolicy,     ///< Parameterized BlockScanRegionPolicy tuning policy type
     typename InputIterator,             ///< Random-access input iterator type
     typename OutputIterator,            ///< Random-access output iterator type
+    typename TileLookbackStatus,        ///< Tile status interface type
     typename ScanOp,                    ///< Scan functor type
     typename Identity,                  ///< Identity element type (cub::NullType for inclusive scan)
     typename Offset>                    ///< Signed integer type for global offsets
@@ -138,9 +139,6 @@ struct BlockScanRegion
             BlockScanRegionPolicy::STORE_ALGORITHM,
             BlockScanRegionPolicy::STORE_WARP_TIME_SLICING>
         BlockStoreT;
-
-    // Tile status descriptor type
-    typedef LookbackTileDescriptor<T> TileDescriptor;
 
     // Parameterized BlockScan type
     typedef BlockScan<
@@ -316,7 +314,7 @@ struct BlockScanRegion
         Offset                      num_remaining,
         int                         tile_idx,           ///< Tile index
         Offset                      block_offset,       ///< Tile offset
-        TileDescriptor              *d_tile_status)     ///< Global list of tile status
+        TileLookbackStatus          &tile_status)     ///< Global list of tile status
     {
         // Load items
         T items[ITEMS_PER_THREAD];
@@ -337,13 +335,13 @@ struct BlockScanRegion
 
             // Update tile status if there may be successor tiles (i.e., this tile is full)
             if (FULL_TILE && (threadIdx.x == 0))
-                TileDescriptor::SetPrefix(d_tile_status, block_aggregate);
+                tile_status.SetInclusive(0, block_aggregate);
         }
         else
         {
             // Scan non-first tile
             T block_aggregate;
-            LookbackPrefixCallbackOp prefix_op(d_tile_status, temp_storage.prefix, scan_op, tile_idx);
+            LookbackPrefixCallbackOp prefix_op(tile_status, temp_storage.prefix, scan_op, tile_idx);
             ScanBlock(items, scan_op, identity, block_aggregate, prefix_op);
         }
 
@@ -363,7 +361,7 @@ struct BlockScanRegion
     __device__ __forceinline__ void ConsumeRegion(
         int                     num_items,          ///< Total number of input items
         GridQueue<int>          queue,              ///< Queue descriptor for assigning tiles of work to thread blocks
-        TileDescriptor          *d_tile_status)     ///< Global list of tile status
+        TileLookbackStatus      &tile_status)     ///< Global list of tile status
     {
 #if CUB_PTX_VERSION < 200
 
@@ -373,9 +371,9 @@ struct BlockScanRegion
         Offset  num_remaining   = num_items - block_offset;                 // Remaining items (including this tile)
 
         if (block_offset + TILE_ITEMS <= num_items)
-            ConsumeTile<true>(num_items, num_remaining, tile_idx, block_offset, d_tile_status);
+            ConsumeTile<true>(num_items, num_remaining, tile_idx, block_offset, tile_status);
         else if (block_offset < num_items)
-            ConsumeTile<false>(num_items, num_remaining, tile_idx, block_offset, d_tile_status);
+            ConsumeTile<false>(num_items, num_remaining, tile_idx, block_offset, tile_status);
 
 #else
 
@@ -392,7 +390,7 @@ struct BlockScanRegion
         while (num_remaining >= TILE_ITEMS)
         {
             // Consume full tile
-            ConsumeTile<true>(num_items, num_remaining, tile_idx, block_offset, d_tile_status);
+            ConsumeTile<true>(num_items, num_remaining, tile_idx, block_offset, tile_status);
 
             // Get next tile
             if (threadIdx.x == 0)
@@ -408,7 +406,7 @@ struct BlockScanRegion
         // Consume a partially-full tile
         if (num_remaining > 0)
         {
-            ConsumeTile<false>(num_items, num_remaining, tile_idx, block_offset, d_tile_status);
+            ConsumeTile<false>(num_items, num_remaining, tile_idx, block_offset, tile_status);
         }
 
 #endif

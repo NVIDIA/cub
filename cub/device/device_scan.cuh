@@ -62,36 +62,19 @@ namespace cub {
  * Initialization kernel for tile status initialization (multi-block)
  */
 template <
-    typename T,                                     ///< Scan value type
-    typename Offset>                                ///< Signed integer type for global offsets
+    typename            Offset,                 ///< Signed integer type for global offsets
+    typename            TileLookbackStatus>     ///< Tile status interface type
 __global__ void ScanInitKernel(
-    GridQueue<Offset>           grid_queue,         ///< [in] Descriptor for performing dynamic mapping of input tiles to thread blocks
-    LookbackTileDescriptor<T>   *d_tile_status,     ///< [out] Tile status words
-    int                         num_tiles)          ///< [in] Number of tiles
+    GridQueue<Offset>   grid_queue,             ///< [in] Descriptor for performing dynamic mapping of input tiles to thread blocks
+    TileLookbackStatus  tile_status,            ///< [in] Tile status interface
+    int                 num_tiles)              ///< [in] Number of tiles
 {
-    typedef LookbackTileDescriptor<T> TileDescriptor;
-
-    enum
-    {
-        TILE_STATUS_PADDING = CUB_PTX_WARP_THREADS,
-    };
-
     // Reset queue descriptor
-    if ((blockIdx.x == 0) && (threadIdx.x == 0)) grid_queue.FillAndResetDrain(num_tiles);
+    if ((blockIdx.x == 0) && (threadIdx.x == 0))
+        grid_queue.FillAndResetDrain(num_tiles);
 
     // Initialize tile status
-    int tile_offset = (blockIdx.x * blockDim.x) + threadIdx.x;
-    if (tile_offset < num_tiles)
-    {
-        // Not-yet-set
-        d_tile_status[TILE_STATUS_PADDING + tile_offset].status = LOOKBACK_TILE_INVALID;
-    }
-
-    if ((blockIdx.x == 0) && (threadIdx.x < TILE_STATUS_PADDING))
-    {
-        // Padding
-        d_tile_status[threadIdx.x].status = LOOKBACK_TILE_OOB;
-    }
+    tile_status.InitializeStatus(num_tiles);
 }
 
 
@@ -99,22 +82,22 @@ __global__ void ScanInitKernel(
  * Scan kernel entry point (multi-block)
  */
 template <
-    typename    BlockScanRegionPolicy,          ///< Parameterized BlockScanRegionPolicy tuning policy type
-    typename    InputIterator,                  ///< Random-access input iterator type for reading scan input data \iterator
-    typename    OutputIterator,                 ///< Random-access output iterator type for writing scan output data \iterator
-    typename    T,                              ///< The scan data type
-    typename    ScanOp,                         ///< Binary scan functor type having member <tt>T operator()(const T &a, const T &b)</tt>
-    typename    Identity,                       ///< Identity value type (cub::NullType for inclusive scans)
-    typename    Offset>                         ///< Signed integer type for global offsets
+    typename            BlockScanRegionPolicy,      ///< Parameterized BlockScanRegionPolicy tuning policy type
+    typename            InputIterator,              ///< Random-access input iterator type for reading scan input data \iterator
+    typename            OutputIterator,             ///< Random-access output iterator type for writing scan output data \iterator
+    typename            TileLookbackStatus,         ///< Tile status interface type
+    typename            ScanOp,                     ///< Binary scan functor type having member <tt>T operator()(const T &a, const T &b)</tt>
+    typename            Identity,                   ///< Identity value type (cub::NullType for inclusive scans)
+    typename            Offset>                     ///< Signed integer type for global offsets
 __launch_bounds__ (int(BlockScanRegionPolicy::BLOCK_THREADS))
 __global__ void ScanRegionKernel(
-    InputIterator               d_in,           ///< Input data
-    OutputIterator              d_out,          ///< Output data
-    LookbackTileDescriptor<T>   *d_tile_status, ///< Global list of tile status
-    ScanOp                      scan_op,        ///< Binary scan functor (e.g., an instance of cub::Sum, cub::Min, cub::Max, etc.)
-    Identity                    identity,       ///< Identity element
-    Offset                      num_items,      ///< Total number of scan items for the entire problem
-    GridQueue<int>              queue)          ///< Drain queue descriptor for dynamically mapping tile data onto thread blocks
+    InputIterator       d_in,                       ///< Input data
+    OutputIterator      d_out,                      ///< Output data
+    TileLookbackStatus  tile_status,                ///< [in] Tile status interface
+    ScanOp              scan_op,                    ///< Binary scan functor (e.g., an instance of cub::Sum, cub::Min, cub::Max, etc.)
+    Identity            identity,                   ///< Identity element
+    Offset              num_items,                  ///< Total number of scan items for the entire problem
+    GridQueue<int>      queue)                      ///< Drain queue descriptor for dynamically mapping tile data onto thread blocks
 {
     enum
     {
@@ -126,6 +109,7 @@ __global__ void ScanRegionKernel(
         BlockScanRegionPolicy,
         InputIterator,
         OutputIterator,
+        TileLookbackStatus,
         ScanOp,
         Identity,
         Offset> BlockScanRegionT;
@@ -137,7 +121,7 @@ __global__ void ScanRegionKernel(
     BlockScanRegionT(temp_storage, d_in, d_out, scan_op, identity).ConsumeRegion(
         num_items,
         queue,
-        d_tile_status + TILE_STATUS_PADDING);
+        tile_status);
 }
 
 
@@ -168,7 +152,7 @@ struct DeviceScanDispatch
     typedef typename std::iterator_traits<InputIterator>::value_type T;
 
     // Tile status descriptor type
-    typedef LookbackTileDescriptor<T> TileDescriptor;
+    typedef TileLookbackStatus<T> TileLookbackStatus;
 
 
     /******************************************************************************
@@ -241,18 +225,18 @@ struct DeviceScanDispatch
     struct Policy130
     {
         enum {
-            NOMINAL_4B_ITEMS_PER_THREAD = 19,
+            NOMINAL_4B_ITEMS_PER_THREAD = 21,
             ITEMS_PER_THREAD            = CUB_MIN(NOMINAL_4B_ITEMS_PER_THREAD, CUB_MAX(1, (NOMINAL_4B_ITEMS_PER_THREAD * 4 / sizeof(T)))),
         };
 
         typedef BlockScanRegionPolicy<
-                64,
+                96,
                 ITEMS_PER_THREAD,
                 BLOCK_LOAD_WARP_TRANSPOSE,
-                true,
+                false,
                 LOAD_DEFAULT,
                 BLOCK_STORE_WARP_TRANSPOSE,
-                true,
+                false,
                 BLOCK_SCAN_RAKING_MEMOIZE>
             ScanRegionPolicy;
     };
@@ -261,12 +245,12 @@ struct DeviceScanDispatch
     struct Policy100
     {
         enum {
-            NOMINAL_4B_ITEMS_PER_THREAD = 19,
+            NOMINAL_4B_ITEMS_PER_THREAD = 9,
             ITEMS_PER_THREAD            = CUB_MIN(NOMINAL_4B_ITEMS_PER_THREAD, CUB_MAX(1, (NOMINAL_4B_ITEMS_PER_THREAD * 4 / sizeof(T)))),
         };
 
         typedef BlockScanRegionPolicy<
-                128,
+                64,
                 ITEMS_PER_THREAD,
                 BLOCK_LOAD_WARP_TRANSPOSE,
                 true,
@@ -437,15 +421,13 @@ struct DeviceScanDispatch
             int tile_size = scan_region_config.block_threads * scan_region_config.items_per_thread;
             int num_tiles = (num_items + tile_size - 1) / tile_size;
 
-            // Temporary storage allocation requirements
-            void* allocations[2];
-            size_t allocation_sizes[2] =
-            {
-                (num_tiles + TILE_STATUS_PADDING) * TileDescriptor::SAFE_ALLOCATION_SIZE,   // bytes needed for tile status descriptors
-                GridQueue<int>::AllocationSize()                                            // bytes needed for grid queue descriptor
-            };
+            // Specify temporary storage allocation requirements
+            size_t  allocation_sizes[2];
+            if (CubDebug(error = TileLookbackStatus::AllocationSize(num_tiles, allocation_sizes[0]))) break;    // bytes needed for tile status descriptors
+            allocation_sizes[1] = GridQueue<int>::AllocationSize();                                             // bytes needed for grid queue descriptor
 
-            // Alias the temporary allocations from the single storage blob (or set the necessary size of the blob)
+            // Compute allocation pointers into the single storage blob (or set the necessary size of the blob)
+            void* allocations[2];
             if (CubDebug(error = AliasTemporaries(d_temp_storage, temp_storage_bytes, allocations, allocation_sizes))) break;
             if (d_temp_storage == NULL)
             {
@@ -453,10 +435,11 @@ struct DeviceScanDispatch
                 return cudaSuccess;
             }
 
-            // Alias the allocation for the global list of tile status
-            TileDescriptor *d_tile_status = (TileDescriptor*) allocations[0];
+            // Construct the tile status interface
+            TileLookbackStatus tile_status;
+            if (CubDebug(error = tile_status.Init(num_tiles, allocations[0], allocation_sizes[0]))) break;
 
-            // Alias the allocation for the grid queue descriptor
+            // Construct the grid queue descriptor
             GridQueue<int> queue(allocations[1]);
 
             // Log init_kernel configuration
@@ -466,7 +449,7 @@ struct DeviceScanDispatch
             // Invoke init_kernel to initialize tile descriptors and queue descriptors
             init_kernel<<<init_grid_size, INIT_KERNEL_THREADS, 0, stream>>>(
                 queue,
-                d_tile_status,
+                tile_status,
                 num_tiles);
 
             // Sync the stream if specified
@@ -509,7 +492,7 @@ struct DeviceScanDispatch
             scan_region_kernel<<<scan_grid_size, scan_region_config.block_threads, 0, stream>>>(
                 d_in,
                 d_out,
-                d_tile_status,
+                tile_status,
                 scan_op,
                 identity,
                 num_items,
@@ -568,8 +551,8 @@ struct DeviceScanDispatch
                 stream,
                 debug_synchronous,
                 ptx_version,
-                ScanInitKernel<T, Offset>,
-                ScanRegionKernel<PtxScanRegionPolicy, InputIterator, OutputIterator, T, ScanOp, Identity, Offset>,
+                ScanInitKernel<Offset, TileLookbackStatus>,
+                ScanRegionKernel<PtxScanRegionPolicy, InputIterator, OutputIterator, TileLookbackStatus, ScanOp, Identity, Offset>,
                 scan_region_config))) break;
         }
         while (0);
