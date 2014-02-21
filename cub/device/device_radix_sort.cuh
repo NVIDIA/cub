@@ -116,7 +116,7 @@ __global__ void RadixSortScanKernel(
     int         num_counts)                 ///< [in] Total number of bin-counts
 {
     // Parameterize the BlockScanRegion type for the current configuration
-    typedef BlockScanRegion<BlockScanRegionPolicy, Offset*, Offset*, cub::Sum, Offset, Offset> BlockScanRegionT;
+    typedef BlockScanRegion<BlockScanRegionPolicy, Offset*, Offset*, NullType, cub::Sum, Offset, Offset> BlockScanRegionT;
 
     // Shared memory storage
     __shared__ typename BlockScanRegionT::TempStorage temp_storage;
