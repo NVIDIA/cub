@@ -94,6 +94,11 @@ struct LookbackTileDescriptor <ItemOffsetPair<double, int>, false>
     // Unit word type
     typedef longlong2 TxnWord;
 
+    enum {
+        // Safe host allocation size for Win32 consistency between host/device
+        SAFE_ALLOCATION_SIZE = sizeof(TxnWord)
+    };
+
     double value;
     int status;
     int offset;
@@ -130,31 +135,11 @@ struct LookbackTileDescriptor <ItemOffsetPair<double, int>, false>
         LookbackTileDescriptor tile_descriptor;
         tile_descriptor.status = LOOKBACK_TILE_INVALID;
 
-#if CUB_PTX_VERSION < 130
-
-        // Use shared memory to determine when all threads have valid status
-        __shared__ volatile int done;
-
-        do
-        {
-            if (threadIdx.x == 0) done = 1;
-
-            TxnWord alias = ThreadLoad<LOAD_CG>(reinterpret_cast<TxnWord*>(ptr));
-            __threadfence_block();
-
-            tile_descriptor = reinterpret_cast<LookbackTileDescriptor&>(alias);
-            if (tile_descriptor.status == LOOKBACK_TILE_INVALID)
-                done = 0;
-
-        } while (done == 0);
-
-#else
-
         // Use warp-any to determine when all threads have valid status
         TxnWord alias = ThreadLoad<LOAD_CG>(reinterpret_cast<TxnWord*>(ptr));
         tile_descriptor = reinterpret_cast<LookbackTileDescriptor&>(alias);
 
-        while (__any(tile_descriptor.status == LOOKBACK_TILE_INVALID))
+        while (WarpAny(tile_descriptor.status == LOOKBACK_TILE_INVALID))
         {
             if (tile_descriptor.status == LOOKBACK_TILE_INVALID)
                 alias = ThreadLoad<LOAD_CG>(reinterpret_cast<TxnWord*>(ptr));
@@ -162,16 +147,12 @@ struct LookbackTileDescriptor <ItemOffsetPair<double, int>, false>
             tile_descriptor = reinterpret_cast<LookbackTileDescriptor&>(alias);
         }
 
-#endif
-
         status = tile_descriptor.status;
         value.value = tile_descriptor.value;
         value.offset = tile_descriptor.offset;
     }
 
 };
-
-
 
 
 
@@ -807,11 +788,10 @@ struct BlockReduceByKeyRegion
     {
 #if CUB_PTX_VERSION < 200
 
-        // No concurrent kernels are allowed, and blocks are launched in increasing order, so just assign one tile per block (up to 65K blocks)
-
-        int             tile_idx        = blockIdx.x;                       // Current tile index
-        Offset          block_offset    = Offset(TILE_ITEMS) * tile_idx;    // Global offset for the current tile
-        Offset          num_remaining   = num_items - block_offset;         // Remaining items (including this tile)
+        // No concurrent kernels allowed and blocks are launched in increasing order, so just assign one tile per block
+        int     tile_idx        = (blockIdx.y * 32 * 1024) + blockIdx.x;    // Current tile index
+        Offset  block_offset    = Offset(TILE_ITEMS) * tile_idx;            // Global offset for the current tile
+        Offset  num_remaining   = num_items - block_offset;                 // Remaining items (including this tile)
 
         if (num_remaining > TILE_ITEMS)
         {
