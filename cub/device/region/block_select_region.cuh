@@ -99,7 +99,6 @@ template <
     typename    InputIterator,                  ///< Random-access input iterator type for selection items
     typename    FlagIterator,                   ///< Random-access input iterator type for selections (NullType* if a selection functor or discontinuity flagging is to be used for selection)
     typename    OutputIterator,                 ///< Random-access input iterator type for selected items
-    typename    TileLookbackStatus,             ///< Tile status interface type
     typename    SelectOp,                       ///< Selection operator type (NullType if selections or discontinuity flagging is to be used for selection)
     typename    EqualityOp,                     ///< Equality operator type (NullType if selection functor or selections is to be used for selection)
     typename    Offset,                         ///< Signed integer type for global offsets
@@ -115,6 +114,9 @@ struct BlockSelectRegion
 
     // Data type of flag iterator
     typedef typename std::iterator_traits<FlagIterator>::value_type Flag;
+
+    // Tile status descriptor interface type
+    typedef TileLookbackStatus<Offset> TileLookbackStatus;
 
     // Constants
     enum
@@ -186,7 +188,8 @@ struct BlockSelectRegion
     // Callback type for obtaining tile prefix during block scan
     typedef LookbackBlockPrefixCallbackOp<
             Offset,
-            Sum>
+            Sum,
+            TileLookbackStatus>
         LookbackPrefixCallbackOp;
 
     // Shared memory type for this threadblock

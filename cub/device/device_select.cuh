@@ -95,7 +95,6 @@ __global__ void SelectRegionKernel(
         InputIterator,
         FlagIterator,
         OutputIterator,
-        TileLookbackStatus,
         SelectOp,
         EqualityOp,
         Offset,
