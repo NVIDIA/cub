@@ -470,9 +470,10 @@ private:
     /**
      * Exchanges data items annotated by rank into <em>blocked</em> arrangement.  Specialized for no timeslicing.
      */
+    template <typename Offset>
     __device__ __forceinline__ void ScatterToBlocked(
         T               items[ITEMS_PER_THREAD],    ///< [in-out] Items to exchange
-        int             ranks[ITEMS_PER_THREAD],    ///< [in] Corresponding scatter ranks
+        Offset          ranks[ITEMS_PER_THREAD],    ///< [in] Corresponding scatter ranks
         Int2Type<false> time_slicing)
     {
         #pragma unroll
@@ -497,9 +498,10 @@ private:
     /**
      * Exchanges data items annotated by rank into <em>blocked</em> arrangement.  Specialized for warp-timeslicing.
      */
+    template <typename Offset>
     __device__ __forceinline__ void ScatterToBlocked(
         T               items[ITEMS_PER_THREAD],    ///< [in-out] Items to exchange
-        int             ranks[ITEMS_PER_THREAD],    ///< [in] Corresponding scatter ranks
+        Offset          ranks[ITEMS_PER_THREAD],    ///< [in] Corresponding scatter ranks
         Int2Type<true>  time_slicing)
     {
         T temp_items[ITEMS_PER_THREAD];
@@ -548,9 +550,10 @@ private:
     /**
      * Exchanges data items annotated by rank into <em>striped</em> arrangement.  Specialized for no timeslicing.
      */
+    template <typename Offset>
     __device__ __forceinline__ void ScatterToStriped(
         T               items[ITEMS_PER_THREAD],    ///< [in-out] Items to exchange
-        int             ranks[ITEMS_PER_THREAD],    ///< [in] Corresponding scatter ranks
+        Offset          ranks[ITEMS_PER_THREAD],    ///< [in] Corresponding scatter ranks
         Int2Type<false> time_slicing)
     {
         #pragma unroll
@@ -576,9 +579,10 @@ private:
     /**
      * Exchanges data items annotated by rank into <em>striped</em> arrangement.  Specialized for warp-timeslicing.
      */
+    template <typename Offset>
     __device__ __forceinline__ void ScatterToStriped(
         T               items[ITEMS_PER_THREAD],    ///< [in-out] Items to exchange
-        int             ranks[ITEMS_PER_THREAD],    ///< [in] Corresponding scatter ranks
+        Offset          ranks[ITEMS_PER_THREAD],    ///< [in] Corresponding scatter ranks
         Int2Type<true> time_slicing)
     {
         T temp_items[ITEMS_PER_THREAD];
@@ -894,10 +898,13 @@ public:
      *
      * \par
      * - \smemreuse
+     *
+     * \tparam Offset                               <b>[inferred]</b> Signed integer type for local offsets
      */
+    template <typename Offset>
     __device__ __forceinline__ void ScatterToBlocked(
         T               items[ITEMS_PER_THREAD],    ///< [in-out] Items to exchange
-        int             ranks[ITEMS_PER_THREAD])    ///< [in] Corresponding scatter ranks
+        Offset          ranks[ITEMS_PER_THREAD])    ///< [in] Corresponding scatter ranks
     {
         ScatterToBlocked(items, ranks, Int2Type<WARP_TIME_SLICING>());
     }
@@ -908,14 +915,50 @@ public:
      *
      * \par
      * - \smemreuse
+     *
+     * \tparam Offset                               <b>[inferred]</b> Signed integer type for local offsets
      */
+    template <typename Offset>
     __device__ __forceinline__ void ScatterToStriped(
         T               items[ITEMS_PER_THREAD],    ///< [in-out] Items to exchange
-        int             ranks[ITEMS_PER_THREAD])    ///< [in] Corresponding scatter ranks
+        Offset          ranks[ITEMS_PER_THREAD])    ///< [in] Corresponding scatter ranks
     {
         ScatterToStriped(items, ranks, Int2Type<WARP_TIME_SLICING>());
     }
 
+
+    /**
+     * \brief Exchanges data items annotated by rank into <em>striped</em> arrangement.  Items with rank -1 are not exchanged.
+     *
+     * \par
+     * - \smemreuse
+     *
+     * \tparam Offset                               <b>[inferred]</b> Signed integer type for local offsets
+     */
+    template <typename Offset>
+    __device__ __forceinline__ void ScatterToStripedGuarded(
+        T               items[ITEMS_PER_THREAD],        ///< [in-out] Items to exchange
+        Offset          ranks[ITEMS_PER_THREAD])        ///< [in] Corresponding scatter ranks
+    {
+        #pragma unroll
+        for (int ITEM = 0; ITEM < ITEMS_PER_THREAD; ITEM++)
+        {
+            int item_offset = ranks[ITEM];
+            if (INSERT_PADDING) item_offset = SHR_ADD(item_offset, LOG_SMEM_BANKS, item_offset);
+            if (ranks[ITEM] >= 0)
+                temp_storage[item_offset] = items[ITEM];
+        }
+
+        __syncthreads();
+
+        #pragma unroll
+        for (int ITEM = 0; ITEM < ITEMS_PER_THREAD; ITEM++)
+        {
+            int item_offset = int(ITEM * BLOCK_THREADS) + linear_tid;
+            if (INSERT_PADDING) item_offset = SHR_ADD(item_offset, LOG_SMEM_BANKS, item_offset);
+            items[ITEM] = temp_storage[item_offset];
+        }
+    }
 
     /**
      * \brief Exchanges valid data items annotated by rank into <em>striped</em> arrangement.
@@ -923,12 +966,13 @@ public:
      * \par
      * - \smemreuse
      *
+     * \tparam Offset                               <b>[inferred]</b> Signed integer type for local offsets
      * \tparam ValidFlag                            <b>[inferred]</b> Flag type denoting which items are valid
      */
-    template <typename ValidFlag>
+    template <typename Offset, typename ValidFlag>
     __device__ __forceinline__ void ScatterToStriped(
         T               items[ITEMS_PER_THREAD],        ///< [in-out] Items to exchange
-        int             ranks[ITEMS_PER_THREAD],        ///< [in] Corresponding scatter ranks
+        Offset          ranks[ITEMS_PER_THREAD],        ///< [in] Corresponding scatter ranks
         ValidFlag       is_valid[ITEMS_PER_THREAD])     ///< [in] Corresponding flag denoting item validity
     {
         #pragma unroll

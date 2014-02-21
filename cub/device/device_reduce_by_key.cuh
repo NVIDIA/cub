@@ -62,35 +62,30 @@ namespace cub {
  * Reduce-by-key kernel entry point (multi-block)
  */
 template <
-    typename    BlockReduceByKeyRegionPolicy,               ///< Parameterized BlockReduceByKeyRegionPolicy tuning policy type
-    typename    KeyInputIterator,                           ///< Random-access input iterator type for keys
-    typename    KeyOutputIterator,                          ///< Random-access output iterator type for keys
-    typename    ValueInputIterator,                         ///< Random-access input iterator type for values
-    typename    ValueOutputIterator,                        ///< Random-access output iterator type for values
-    typename    NumSegmentsIterator,                        ///< Output iterator type for recording number of segments encountered
-    typename    EqualityOp,                                 ///< Key equality operator type
-    typename    ReductionOp,                                ///< Value reduction operator type
-    typename    Offset,                                     ///< Signed integer type for global offsets
-    typename    LookbackTileDescriptorT>                    ///< Tile descriptor type (i.e., cub::LookbackTileDescriptor<ItemOffsetPair<typename std::iterator_traits<ValueInputIterator>::value_type, Offset> >)
+    typename            BlockReduceByKeyRegionPolicy,   ///< Parameterized BlockReduceByKeyRegionPolicy tuning policy type
+    typename            KeyInputIterator,               ///< Random-access input iterator type for keys
+    typename            KeyOutputIterator,              ///< Random-access output iterator type for keys
+    typename            ValueInputIterator,             ///< Random-access input iterator type for values
+    typename            ValueOutputIterator,            ///< Random-access output iterator type for values
+    typename            NumSegmentsIterator,            ///< Output iterator type for recording number of segments encountered
+    typename            TileLookbackStatus,             ///< Tile status interface type
+    typename            EqualityOp,                     ///< Key equality operator type
+    typename            ReductionOp,                    ///< Value reduction operator type
+    typename            Offset>                         ///< Signed integer type for global offsets
 __launch_bounds__ (int(BlockReduceByKeyRegionPolicy::BLOCK_THREADS))
 __global__ void ReduceByKeyRegionKernel(
-    KeyInputIterator        d_keys_in,                      ///< [in] Pointer to consecutive runs of input keys
-    KeyOutputIterator       d_keys_out,                     ///< [in] Pointer to output keys (one key per run)
-    ValueInputIterator      d_values_in,                    ///< [in] Pointer to consecutive runs of input values
-    ValueOutputIterator     d_values_out,                   ///< [in] Pointer to output value aggregates (one aggregate per run)
-    NumSegmentsIterator     d_num_segments,                 ///< [in] Pointer to total number of runs
-    LookbackTileDescriptorT *d_tile_status,                 ///< [in] Global list of tile status
-    EqualityOp              equality_op,                    ///< [in] Key equality operator
-    ReductionOp             reduction_op,                   ///< [in] Value reduction operator
-    Offset                  num_items,                      ///< [in] Total number of items to select from
-    int                     num_tiles,                      ///< [in] Total number of tiles for the entire problem
-    GridQueue<int>          queue)                          ///< [in] Drain queue descriptor for dynamically mapping tile data onto thread blocks
+    KeyInputIterator    d_keys_in,                      ///< [in] Pointer to consecutive runs of input keys
+    KeyOutputIterator   d_keys_out,                     ///< [in] Pointer to output keys (one key per run)
+    ValueInputIterator  d_values_in,                    ///< [in] Pointer to consecutive runs of input values
+    ValueOutputIterator d_values_out,                   ///< [in] Pointer to output value aggregates (one aggregate per run)
+    NumSegmentsIterator d_num_segments,                 ///< [in] Pointer to total number of runs
+    TileLookbackStatus  tile_status,                    ///< [in] Tile status interface
+    EqualityOp          equality_op,                    ///< [in] Key equality operator
+    ReductionOp         reduction_op,                   ///< [in] Value reduction operator
+    Offset              num_items,                      ///< [in] Total number of items to select from
+    int                 num_tiles,                      ///< [in] Total number of tiles for the entire problem
+    GridQueue<int>      queue)                          ///< [in] Drain queue descriptor for dynamically mapping tile data onto thread blocks
 {
-    enum
-    {
-        TILE_STATUS_PADDING = CUB_PTX_WARP_THREADS,
-    };
-
     // Thread block type for reducing tiles of value segments
     typedef BlockReduceByKeyRegion<
         BlockReduceByKeyRegionPolicy,
@@ -98,6 +93,7 @@ __global__ void ReduceByKeyRegionKernel(
         KeyOutputIterator,
         ValueInputIterator,
         ValueOutputIterator,
+        TileLookbackStatus,
         EqualityOp,
         ReductionOp,
         Offset> BlockReduceByKeyRegionT;
@@ -109,7 +105,7 @@ __global__ void ReduceByKeyRegionKernel(
     BlockReduceByKeyRegionT(temp_storage, d_keys_in, d_keys_out, d_values_in, d_values_out, equality_op, reduction_op, num_items).ConsumeRegion(
         num_tiles,
         queue,
-        d_tile_status + TILE_STATUS_PADDING,
+        tile_status,
         d_num_segments);
 }
 
@@ -155,8 +151,8 @@ struct DeviceReduceByKeyDispatch
     // Value-offset tuple type for scanning (maps accumulated values to segment index)
     typedef ItemOffsetPair<Value, Offset> ValueOffsetPair;
 
-    // Tile status descriptor type
-    typedef LookbackTileDescriptor<ValueOffsetPair> TileDescriptor;
+    // Tile status descriptor interface type
+    typedef TileLookbackStatus<ValueOffsetPair> TileLookbackStatus;
 
 
     /******************************************************************************
@@ -419,15 +415,13 @@ struct DeviceReduceByKeyDispatch
             int tile_size = reduce_by_key_region_config.block_threads * reduce_by_key_region_config.items_per_thread;
             int num_tiles = (num_items + tile_size - 1) / tile_size;
 
-            // Temporary storage allocation requirements
-            void* allocations[2];
-            size_t allocation_sizes[2] =
-            {
-                (num_tiles + TILE_STATUS_PADDING) * TileDescriptor::SAFE_ALLOCATION_SIZE,   // bytes needed for tile status descriptors
-                GridQueue<int>::AllocationSize()                                            // bytes needed for grid queue descriptor
-            };
+            // Specify temporary storage allocation requirements
+            size_t  allocation_sizes[2];
+            if (CubDebug(error = TileLookbackStatus::AllocationSize(num_tiles, allocation_sizes[0]))) break;    // bytes needed for tile status descriptors
+            allocation_sizes[1] = GridQueue<int>::AllocationSize();                                             // bytes needed for grid queue descriptor
 
-            // Alias the temporary allocations from the single storage blob (or set the necessary size of the blob)
+            // Compute allocation pointers into the single storage blob (or set the necessary size of the blob)
+            void* allocations[2];
             if (CubDebug(error = AliasTemporaries(d_temp_storage, temp_storage_bytes, allocations, allocation_sizes))) break;
             if (d_temp_storage == NULL)
             {
@@ -435,10 +429,11 @@ struct DeviceReduceByKeyDispatch
                 return cudaSuccess;
             }
 
-            // Alias the allocation for the global list of tile status
-            TileDescriptor *d_tile_status = (TileDescriptor*) allocations[0];
+            // Construct the tile status interface
+            TileLookbackStatus tile_status;
+            if (CubDebug(error = tile_status.Init(num_tiles, allocations[0], allocation_sizes[0]))) break;
 
-            // Alias the allocation for the grid queue descriptor
+            // Construct the grid queue descriptor
             GridQueue<int> queue(allocations[1]);
 
             // Log init_kernel configuration
@@ -448,7 +443,7 @@ struct DeviceReduceByKeyDispatch
             // Invoke init_kernel to initialize tile descriptors and queue descriptors
             init_kernel<<<init_grid_size, INIT_KERNEL_THREADS, 0, stream>>>(
                 queue,
-                d_tile_status,
+                tile_status,
                 num_tiles);
 
             // Sync the stream if specified
@@ -508,7 +503,7 @@ struct DeviceReduceByKeyDispatch
                 d_values_in,
                 d_values_out,
                 d_num_segments,
-                d_tile_status,
+                tile_status,
                 equality_op,
                 reduction_op,
                 num_items,
@@ -583,8 +578,8 @@ struct DeviceReduceByKeyDispatch
                 stream,
                 debug_synchronous,
                 ptx_version,
-                ScanInitKernel<ValueOffsetPair, Offset>,
-                ReduceByKeyRegionKernel<PtxReduceByKeyPolicy, KeyInputIterator, KeyOutputIterator, ValueInputIterator, ValueOutputIterator, NumSegmentsIterator, EqualityOp, ReductionOp, Offset, TileDescriptor>,
+                ScanInitKernel<Offset, TileLookbackStatus>,
+                ReduceByKeyRegionKernel<PtxReduceByKeyPolicy, KeyInputIterator, KeyOutputIterator, ValueInputIterator, ValueOutputIterator, NumSegmentsIterator, TileLookbackStatus, EqualityOp, ReductionOp, Offset>,
                 reduce_by_key_region_config))) break;
         }
         while (0);

@@ -70,8 +70,8 @@ template <
     typename            InputIterator,              ///< Random-access input iterator type for reading input items
     typename            FlagIterator,               ///< Random-access input iterator type for reading selection flags (NullType* if a selection functor or discontinuity flagging is to be used for selection)
     typename            OutputIterator,             ///< Random-access output iterator type for writing selected items
-    typename            TileLookbackStatus,         ///< Tile status interface type
     typename            NumSelectedIterator,        ///< Output iterator type for recording the number of items selected
+    typename            TileLookbackStatus,         ///< Tile status interface type
     typename            SelectOp,                   ///< Selection operator type (NullType if selection flags or discontinuity flagging is to be used for selection)
     typename            EqualityOp,                 ///< Equality operator type (NullType if selection functor or selection flags is to be used for selection)
     typename            Offset,                     ///< Signed integer type for global offsets
@@ -149,7 +149,7 @@ struct DeviceSelectDispatch
     // Data type of flag iterator
     typedef typename std::iterator_traits<FlagIterator>::value_type Flag;
 
-    // Tile status descriptor type
+    // Tile status descriptor interface type
     typedef TileLookbackStatus<Offset> TileLookbackStatus;
 
 
@@ -222,7 +222,8 @@ struct DeviceSelectDispatch
         typedef BlockSelectRegionPolicy<
                 64,
                 ITEMS_PER_THREAD,
-                BLOCK_LOAD_WARP_TRANSPOSE,
+//                BLOCK_LOAD_WARP_TRANSPOSE,
+                BLOCK_LOAD_DIRECT,
                 LOAD_DEFAULT,
                 true,
                 BLOCK_SCAN_RAKING_MEMOIZE>
@@ -548,7 +549,7 @@ struct DeviceSelectDispatch
                 debug_synchronous,
                 ptx_version,
                 ScanInitKernel<Offset, TileLookbackStatus>,
-                SelectRegionKernel<PtxSelectRegionPolicy, InputIterator, FlagIterator, OutputIterator, TileLookbackStatus, NumSelectedIterator, SelectOp, EqualityOp, Offset, KEEP_REJECTS>,
+                SelectRegionKernel<PtxSelectRegionPolicy, InputIterator, FlagIterator, OutputIterator, NumSelectedIterator, TileLookbackStatus, SelectOp, EqualityOp, Offset, KEEP_REJECTS>,
                 select_region_config))) break;
         }
         while (0);

@@ -146,7 +146,7 @@ struct DeviceScanDispatch
     // Data type
     typedef typename std::iterator_traits<InputIterator>::value_type T;
 
-    // Tile status descriptor type
+    // Tile status descriptor interface type
     typedef TileLookbackStatus<T> TileLookbackStatus;
 
 

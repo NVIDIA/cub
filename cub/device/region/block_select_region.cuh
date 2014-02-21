@@ -419,7 +419,7 @@ struct BlockSelectRegion
         Int2Type<false> keep_rejects,
         Int2Type<true>  two_phase_scatter)
     {
-//        if ((tile_num_selected >> Log2<BLOCK_THREADS>::VALUE) == 0)
+        if ((tile_num_selected >> Log2<BLOCK_THREADS>::VALUE) == 0)
         {
             // Average number of selected items per thread is less than one, so just do a one-phase scatter
             Scatter<LAST_TILE>(
@@ -433,7 +433,7 @@ struct BlockSelectRegion
                 keep_rejects,
                 Int2Type<false>());
         }
-/*        else
+        else
         {
             // Share exclusive tile prefix
             if (threadIdx.x == 0)
@@ -459,7 +459,6 @@ struct BlockSelectRegion
             // Selected items are placed front-to-back
             StoreDirectStriped<BLOCK_THREADS>(threadIdx.x, d_out + tile_num_selected_prefix, items, tile_num_selected);
         }
-*/
     }
 
 
@@ -498,7 +497,7 @@ struct BlockSelectRegion
         #pragma unroll
         for (int ITEM = 0; ITEM < ITEMS_PER_THREAD; ++ITEM)
         {
-            local_ranks[ITEM]   = TILE_ITEMS;
+            local_ranks[ITEM]   = -1;
             Offset global_idx   = block_offset + (threadIdx.x * ITEMS_PER_THREAD) + ITEM;
             Offset reject_idx   = global_idx - scatter_offsets[ITEM];
 
@@ -515,7 +514,10 @@ struct BlockSelectRegion
         }
 
         // Coalesce selected and rejected items in shared memory, gathering in striped arrangements
-        BlockExchangeT(temp_storage.exchange).ScatterToStriped(items, local_ranks);
+        if (LAST_TILE)
+            BlockExchangeT(temp_storage.exchange).ScatterToStripedGuarded(items, local_ranks);
+        else
+            BlockExchangeT(temp_storage.exchange).ScatterToStriped(items, local_ranks);
 
         // Store in striped order
         #pragma unroll
@@ -545,11 +547,11 @@ struct BlockSelectRegion
      */
     template <bool LAST_TILE>
     __device__ __forceinline__ Offset ConsumeTile(
-        Offset                      num_items,          ///< Total number of input items
-        Offset                      num_remaining,      ///< Total number of items remaining to be processed (including this tile)
-        int                         tile_idx,           ///< Tile index
-        Offset                      block_offset,       ///< Tile offset
-        TileLookbackStatus          &tile_status)       ///< Global list of tile status
+        Offset              num_items,          ///< Total number of input items
+        Offset              num_remaining,      ///< Total number of items remaining to be processed (including this tile)
+        int                 tile_idx,           ///< Tile index
+        Offset              block_offset,       ///< Tile offset
+        TileLookbackStatus  &tile_status)       ///< Global list of tile status
     {
         T items[ITEMS_PER_THREAD];
         Offset selected[ITEMS_PER_THREAD];              // Selection flags

@@ -439,8 +439,8 @@ void Test(
     CubDebugExit(g_allocator.DeviceAllocate(&d_temp_storage, temp_storage_bytes));
 
     // Clear device output array
-    CubDebugExit(cudaMemset(d_out, 9, sizeof(T) * num_items));
-    CubDebugExit(cudaMemset(d_num_selected, 9, sizeof(int)));
+    CubDebugExit(cudaMemset(d_out, 0, sizeof(T) * num_items));
+    CubDebugExit(cudaMemset(d_num_selected, 0, sizeof(int)));
 
     // Run warmup/correctness iteration
     CubDebugExit(Dispatch(Int2Type<BACKEND>(), Int2Type<PARTITION>(), 1, d_temp_storage_bytes, d_cdp_error,
@@ -728,9 +728,6 @@ int main(int argc, char** argv)
     int sm_version;
     CubDebugExit(SmVersion(sm_version, device_ordinal));
 
-    TestPointer<CUB, true, TestFoo>(num_items, entropy_reduction, maxseg, CUB_TYPE_STRING(TestFoo));
-
-/*
 #ifdef QUICK_TEST
 
     // Compile/run quick tests
@@ -808,7 +805,7 @@ int main(int argc, char** argv)
     }
 
 #endif
-*/
+
     return 0;
 }
 
