@@ -510,14 +510,14 @@ struct ItemOffsetPair
 #if (CUB_PTX_VERSION == 0)
     union
     {
-        Offset                  offset;     ///< Offset
-        UnitWord<T>::DeviceWord align0;     ///< Alignment/padding (for Win32 consistency between host/device)
+        Offset                              offset;     ///< Offset
+        typename UnitWord<T>::DeviceWord    align0;     ///< Alignment/padding (for Win32 consistency between host/device)
     };
 #else
-    Offset                      offset;     ///< Offset
+    Offset                                  offset;     ///< Offset
 #endif
 
-    T                           value;      ///< Item value
+    T                                       value;      ///< Item value
 
     /// Inequality operator
     __host__ __device__ __forceinline__ bool operator !=(const ItemOffsetPair &b)

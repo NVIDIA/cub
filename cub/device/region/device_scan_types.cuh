@@ -39,6 +39,7 @@
 #include "../../thread/thread_store.cuh"
 #include "../../warp/warp_reduce.cuh"
 #include "../../util_arch.cuh"
+#include "../../util_device.cuh"
 #include "../../util_namespace.cuh"
 
 /// Optional outer namespace(s)
