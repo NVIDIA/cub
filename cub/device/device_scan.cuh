@@ -99,11 +99,6 @@ __global__ void ScanRegionKernel(
     Offset              num_items,                  ///< Total number of scan items for the entire problem
     GridQueue<int>      queue)                      ///< Drain queue descriptor for dynamically mapping tile data onto thread blocks
 {
-    enum
-    {
-        TILE_STATUS_PADDING = CUB_PTX_WARP_THREADS,
-    };
-
     // Thread block type for scanning input tiles
     typedef BlockScanRegion<
         BlockScanRegionPolicy,
