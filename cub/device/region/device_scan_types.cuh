@@ -109,18 +109,22 @@ enum LookbackTileStatus
 };
 
 
-
-
 /**
  * Tile status interface.
- *
- * Specialized for scan status and value types that can be combined into the same
- * machine word that can be read/written coherently in a single access.
  */
 template <
     typename    T,
     bool        SINGLE_WORD = Traits<T>::PRIMITIVE>
-struct TileLookbackStatus
+struct TileLookbackStatus;
+
+
+/**
+ * Tile status interface specialized for scan status and value types
+ * that can be combined into one machine word that can be
+ * read/written coherently in a single access.
+ */
+template <typename T>
+struct TileLookbackStatus<T, true>
 {
     // Status word type
     typedef typename If<(sizeof(T) == 8),
@@ -270,10 +274,8 @@ struct TileLookbackStatus
 
 
 /**
- * Tile status interface.
- *
- * Specialized for scan status and value types that cannot be combined into the same
- * machine word.
+ * Tile status interface specialized for scan status and value types that
+ * cannot be combined into one machine word.
  */
 template <typename T>
 struct TileLookbackStatus<T, false>
@@ -437,7 +439,8 @@ struct TileLookbackStatus<T, false>
  */
 template <
     typename T,
-    typename ScanOp>
+    typename ScanOp,
+    typename TileLookbackStatus>
 struct LookbackBlockPrefixCallbackOp
 {
     // Parameterized warp reduce
@@ -449,11 +452,8 @@ struct LookbackBlockPrefixCallbackOp
     // Alias wrapper allowing temporary storage to be unioned
     struct TempStorage : Uninitialized<_TempStorage> {};
 
-    // Tile status descriptor type
-    typedef TileLookbackStatus<T> TileLookbackStatusT;
-
     // Type of status word
-    typedef typename TileLookbackStatusT::StatusWord StatusWord;
+    typedef typename TileLookbackStatus::StatusWord StatusWord;
 
     // Scan operator for switching the scan arguments
     struct SwizzleScanOp
@@ -473,7 +473,7 @@ struct LookbackBlockPrefixCallbackOp
     };
 
     // Fields
-    TileLookbackStatusT         &tile_status;       ///< Interface to tile status
+    TileLookbackStatus          &tile_status;       ///< Interface to tile status
     _TempStorage                &temp_storage;      ///< Reference to a warp-reduction instance
     ScanOp                      scan_op;            ///< Binary scan operator
     int                         tile_idx;           ///< The current tile index
@@ -483,7 +483,7 @@ struct LookbackBlockPrefixCallbackOp
     // Constructor
     __device__ __forceinline__
     LookbackBlockPrefixCallbackOp(
-        TileLookbackStatusT     &tile_status,
+        TileLookbackStatus      &tile_status,
         TempStorage             &temp_storage,
         ScanOp                  scan_op,
         int                     tile_idx)

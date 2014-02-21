@@ -82,34 +82,98 @@ struct BlockReduceByKeyRegionPolicy
 };
 
 
+/******************************************************************************
+ * Tile status interface types
+ ******************************************************************************/
+
 /**
- * A specialized 64-bit device-wide prefix scan lookback descriptor for use when
- * computing a reduce-by-key with doubles as values
+ * Tile status interface for reduction by key.
+ *
  */
-template <>
-struct TileLookbackStatus <ItemOffsetPair<double, int>, false>
+template <
+    typename    Value,
+    typename    Offset,
+    bool        SINGLE_WORD = (Traits<Value>::PRIMITIVE) && (sizeof(Value) + sizeof(Offset) < 16)>
+struct ReduceByKeyTileLookbackStatus;
+
+
+/**
+ * Tile status interface for reduction by key, specialized for scan status and value types that
+ * cannot be combined into one machine word.
+ */
+template <
+    typename    Value,
+    typename    Offset>
+struct ReduceByKeyTileLookbackStatus<Value, Offset, false> :
+    TileLookbackStatus<ItemOffsetPair<Value, Offset> >
 {
-    typedef ItemOffsetPair<double, int> T;
+    typedef TileLookbackStatus<ItemOffsetPair<Value, Offset> > SuperClass;
 
-    // Unit word type
-    typedef longlong2 TxnWord;
+    /// Constructor
+    __host__ __device__ __forceinline__
+    ReduceByKeyTileLookbackStatus() : SuperClass() {}
+};
 
-    // Status word type
-    typedef int StatusWord;
 
-    // Device word type
-    struct TileDescriptor
-    {
-        double      value;
-        StatusWord  status;
-        int         offset;
-    };
+/**
+ * Tile status interface for reduction by key, specialized for scan status and value types that
+ * can be combined into one machine word that can be read/written coherently in a single access.
+ */
+template <
+    typename Value,
+    typename Offset>
+struct ReduceByKeyTileLookbackStatus<Value, Offset, true>
+{
+    typedef ItemOffsetPair<Value, Offset> ItemOffsetPair;
 
     // Constants
     enum
     {
+        PAIR_SIZE           = sizeof(Value) + sizeof(Offset),
+        TXN_WORD_SIZE       = 1 << Log2<PAIR_SIZE + 1>::VALUE,
+        STATUS_WORD_SIZE    = TXN_WORD_SIZE - PAIR_SIZE,
+
         TILE_STATUS_PADDING = CUB_PTX_WARP_THREADS,
     };
+
+    // Status word type
+    typedef typename If<(STATUS_WORD_SIZE == 8),
+        long long,
+        typename If<(STATUS_WORD_SIZE == 4),
+            int,
+            typename If<(STATUS_WORD_SIZE == 2),
+                short,
+                char>::Type>::Type>::Type StatusWord;
+
+    // Status word type
+    typedef typename If<(TXN_WORD_SIZE == 16),
+        longlong2,
+        typename If<(TXN_WORD_SIZE == 8),
+            long long,
+            int>::Type>::Type TxnWord;
+
+    // Device word type (for when sizeof(Value) == sizeof(Offset))
+    struct TileDescriptorBigStatus
+    {
+        Value       value;
+        Offset      offset;
+        StatusWord  status;
+    };
+
+    // Device word type (for when sizeof(Value) != sizeof(Offset))
+    struct TileDescriptorLittleStatus
+    {
+        Value       value;
+        StatusWord  status;
+        Offset      offset;
+    };
+
+    // Device word type
+    typedef typename If<
+            (sizeof(Value) == sizeof(Offset)),
+            TileDescriptorBigStatus,
+            TileDescriptorLittleStatus>::Type
+        TileDescriptor;
 
 
     // Device storage
@@ -118,7 +182,7 @@ struct TileLookbackStatus <ItemOffsetPair<double, int>, false>
 
     /// Constructor
     __host__ __device__ __forceinline__
-    TileLookbackStatus()
+    ReduceByKeyTileLookbackStatus()
     :
         d_tile_status(NULL)
     {}
@@ -172,7 +236,7 @@ struct TileLookbackStatus <ItemOffsetPair<double, int>, false>
     /**
      * Update the specified tile's inclusive value and corresponding status
      */
-    __device__ __forceinline__ void SetInclusive(int tile_idx, T tile_inclusive)
+    __device__ __forceinline__ void SetInclusive(int tile_idx, ItemOffsetPair tile_inclusive)
     {
         TileDescriptor tile_descriptor;
         tile_descriptor.status = LOOKBACK_TILE_INCLUSIVE;
@@ -188,7 +252,7 @@ struct TileLookbackStatus <ItemOffsetPair<double, int>, false>
     /**
      * Update the specified tile's partial value and corresponding status
      */
-    __device__ __forceinline__ void SetPartial(int tile_idx, T tile_partial)
+    __device__ __forceinline__ void SetPartial(int tile_idx, ItemOffsetPair tile_partial)
     {
         TileDescriptor tile_descriptor;
         tile_descriptor.status = LOOKBACK_TILE_PARTIAL;
@@ -206,7 +270,7 @@ struct TileLookbackStatus <ItemOffsetPair<double, int>, false>
     __device__ __forceinline__ void WaitForValid(
         int             tile_idx,
         StatusWord      &status,
-        T               &value)
+        ItemOffsetPair  &value)
     {
         // Use warp-any to determine when all threads have valid status
         TxnWord alias = ThreadLoad<LOAD_CG>(reinterpret_cast<TxnWord*>(d_tile_status + TILE_STATUS_PADDING + tile_idx));
@@ -239,7 +303,6 @@ template <
     typename    KeyOutputIterator,              ///< Random-access output iterator type for keys
     typename    ValueInputIterator,             ///< Random-access input iterator type for values
     typename    ValueOutputIterator,            ///< Random-access output iterator type for values
-    typename    TileLookbackStatus,             ///< Tile status interface type
     typename    EqualityOp,                     ///< Key equality operator type
     typename    ReductionOp,                    ///< Value reduction operator type
     typename    Offset>                         ///< Signed integer type for global offsets
@@ -254,6 +317,9 @@ struct BlockReduceByKeyRegion
 
     // Data type of value iterator
     typedef typename std::iterator_traits<ValueInputIterator>::value_type Value;
+
+    // Tile status descriptor interface type
+    typedef ReduceByKeyTileLookbackStatus<Value, Offset> TileLookbackStatus;
 
     // Constants
     enum
@@ -395,7 +461,8 @@ struct BlockReduceByKeyRegion
     // Callback type for obtaining tile prefix during block scan
     typedef LookbackBlockPrefixCallbackOp<
             ValueOffsetPair,
-            ReduceByKeyOp>
+            ReduceByKeyOp,
+            TileLookbackStatus>
         LookbackPrefixCallbackOp;
 
     // Shared memory type for this threadblock
