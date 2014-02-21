@@ -85,66 +85,137 @@ struct BlockReduceByKeyRegionPolicy
 /**
  * A specialized 64-bit device-wide prefix scan lookback descriptor for use when
  * computing a reduce-by-key with doubles as values
- * /
+ */
 template <>
-struct LookbackTileDescriptor <ItemOffsetPair<double, int>, false>
+struct TileLookbackStatus <ItemOffsetPair<double, int>, false>
 {
     typedef ItemOffsetPair<double, int> T;
 
     // Unit word type
     typedef longlong2 TxnWord;
 
-    enum {
-        // Safe host allocation size for Win32 consistency between host/device
-        SAFE_ALLOCATION_SIZE = sizeof(TxnWord)
+    // Status word type
+    typedef int StatusWord;
+
+    // Device word type
+    struct TileDescriptor
+    {
+        double      value;
+        StatusWord  status;
+        int         offset;
     };
 
-    double value;
-    int status;
-    int offset;
-
-    static __device__ __forceinline__ void SetPrefix(LookbackTileDescriptor *ptr, T prefix)
+    // Constants
+    enum
     {
-        LookbackTileDescriptor tile_descriptor;
-        tile_descriptor.status = LOOKBACK_TILE_INCLUSIVE;
-        tile_descriptor.value = prefix.value;
-        tile_descriptor.offset = prefix.offset;
+        TILE_STATUS_PADDING = CUB_PTX_WARP_THREADS,
+    };
 
-        TxnWord alias;
-        *reinterpret_cast<LookbackTileDescriptor*>(&alias) = tile_descriptor;
-        ThreadStore<STORE_CG>(reinterpret_cast<TxnWord*>(ptr), alias);
+
+    // Device storage
+    TileDescriptor *d_tile_status;
+
+
+    /// Constructor
+    __host__ __device__ __forceinline__
+    TileLookbackStatus()
+    :
+        d_tile_status(NULL)
+    {}
+
+
+    /// Initializer
+    __host__ __device__ __forceinline__
+    cudaError_t Init(
+        int     num_tiles,                          ///< [in] Number of tiles
+        void    *d_temp_storage,                    ///< [in] %Device allocation of temporary storage.  When NULL, the required allocation size is written to \p temp_storage_bytes and no work is done.
+        size_t  temp_storage_bytes)                 ///< [in] Size in bytes of \t d_temp_storage allocation
+    {
+        d_tile_status = reinterpret_cast<TileDescriptor*>(d_temp_storage);
+        return cudaSuccess;
     }
 
-    static __device__ __forceinline__ void SetPartial(LookbackTileDescriptor *ptr, T partial)
-    {
-        LookbackTileDescriptor tile_descriptor;
-        tile_descriptor.status = LOOKBACK_TILE_PARTIAL;
-        tile_descriptor.value = partial.value;
-        tile_descriptor.offset = partial.offset;
 
-        TxnWord alias;
-        *reinterpret_cast<LookbackTileDescriptor*>(&alias) = tile_descriptor;
-        ThreadStore<STORE_CG>(reinterpret_cast<TxnWord*>(ptr), alias);
+    /**
+     * Compute device memory needed for tile status
+     */
+    __host__ __device__ __forceinline__
+    static cudaError_t AllocationSize(
+        int     num_tiles,                          ///< [in] Number of tiles
+        size_t  &temp_storage_bytes)                ///< [out] Size in bytes of \t d_temp_storage allocation
+    {
+        temp_storage_bytes = (num_tiles + TILE_STATUS_PADDING) * sizeof(TileDescriptor);       // bytes needed for tile status descriptors
+        return cudaSuccess;
     }
 
-    static __device__ __forceinline__ void WaitForValid(
-        LookbackTileDescriptor  *ptr,
-        int                     &status,
-        T                       &value)
+
+    /**
+     * Initialize (from device)
+     */
+    __device__ __forceinline__ void InitializeStatus(int num_tiles)
     {
-        LookbackTileDescriptor tile_descriptor;
-        tile_descriptor.status = LOOKBACK_TILE_INVALID;
-
-        // Use warp-any to determine when all threads have valid status
-        TxnWord alias = ThreadLoad<LOAD_CG>(reinterpret_cast<TxnWord*>(ptr));
-        tile_descriptor = reinterpret_cast<LookbackTileDescriptor&>(alias);
-
-        while (WarpAny(tile_descriptor.status == LOOKBACK_TILE_INVALID))
+        int tile_idx = (blockIdx.x * blockDim.x) + threadIdx.x;
+        if (tile_idx < num_tiles)
         {
-            if (tile_descriptor.status == LOOKBACK_TILE_INVALID)
-                alias = ThreadLoad<LOAD_CG>(reinterpret_cast<TxnWord*>(ptr));
+            // Not-yet-set
+            d_tile_status[TILE_STATUS_PADDING + tile_idx].status = StatusWord(LOOKBACK_TILE_INVALID);
+        }
 
-            tile_descriptor = reinterpret_cast<LookbackTileDescriptor&>(alias);
+        if ((blockIdx.x == 0) && (threadIdx.x < TILE_STATUS_PADDING))
+        {
+            // Padding
+            d_tile_status[threadIdx.x].status = StatusWord(LOOKBACK_TILE_OOB);
+        }
+    }
+
+
+    /**
+     * Update the specified tile's inclusive value and corresponding status
+     */
+    __device__ __forceinline__ void SetInclusive(int tile_idx, T tile_inclusive)
+    {
+        TileDescriptor tile_descriptor;
+        tile_descriptor.status = LOOKBACK_TILE_INCLUSIVE;
+        tile_descriptor.value = tile_inclusive.value;
+        tile_descriptor.offset = tile_inclusive.offset;
+
+        TxnWord alias;
+        *reinterpret_cast<TileDescriptor*>(&alias) = tile_descriptor;
+        ThreadStore<STORE_CG>(reinterpret_cast<TxnWord*>(d_tile_status + TILE_STATUS_PADDING + tile_idx), alias);
+    }
+
+
+    /**
+     * Update the specified tile's partial value and corresponding status
+     */
+    __device__ __forceinline__ void SetPartial(int tile_idx, T tile_partial)
+    {
+        TileDescriptor tile_descriptor;
+        tile_descriptor.status = LOOKBACK_TILE_PARTIAL;
+        tile_descriptor.value = tile_partial.value;
+        tile_descriptor.offset = tile_partial.offset;
+
+        TxnWord alias;
+        *reinterpret_cast<TileDescriptor*>(&alias) = tile_descriptor;
+        ThreadStore<STORE_CG>(reinterpret_cast<TxnWord*>(d_tile_status + TILE_STATUS_PADDING + tile_idx), alias);
+    }
+
+    /**
+     * Wait for the corresponding tile to become non-invalid
+     */
+    __device__ __forceinline__ void WaitForValid(
+        int             tile_idx,
+        StatusWord      &status,
+        T               &value)
+    {
+        // Use warp-any to determine when all threads have valid status
+        TxnWord alias = ThreadLoad<LOAD_CG>(reinterpret_cast<TxnWord*>(d_tile_status + TILE_STATUS_PADDING + tile_idx));
+        TileDescriptor tile_descriptor = reinterpret_cast<TileDescriptor&>(alias);
+
+        while ((tile_descriptor.status == LOOKBACK_TILE_INVALID))
+        {
+            alias = ThreadLoad<LOAD_CG>(reinterpret_cast<TxnWord*>(d_tile_status + TILE_STATUS_PADDING + tile_idx));
+            tile_descriptor = reinterpret_cast<TileDescriptor&>(alias);
         }
 
         status = tile_descriptor.status;
@@ -153,7 +224,6 @@ struct LookbackTileDescriptor <ItemOffsetPair<double, int>, false>
     }
 
 };
-*/
 
 
 /******************************************************************************
@@ -169,6 +239,7 @@ template <
     typename    KeyOutputIterator,              ///< Random-access output iterator type for keys
     typename    ValueInputIterator,             ///< Random-access input iterator type for values
     typename    ValueOutputIterator,            ///< Random-access output iterator type for values
+    typename    TileLookbackStatus,             ///< Tile status interface type
     typename    EqualityOp,                     ///< Key equality operator type
     typename    ReductionOp,                    ///< Value reduction operator type
     typename    Offset>                         ///< Signed integer type for global offsets
@@ -313,9 +384,6 @@ struct BlockReduceByKeyRegion
 
     // Parameterized BlockDiscontinuity type for keys
     typedef BlockDiscontinuity<Key, BLOCK_THREADS> BlockDiscontinuityKeys;
-
-    // Tile status descriptor type
-    typedef LookbackTileDescriptor<ValueOffsetPair> TileDescriptor;
 
     // Parameterized BlockScan type
     typedef BlockScan<
@@ -688,7 +756,7 @@ struct BlockReduceByKeyRegion
         Offset              num_remaining,      ///< Number of global input items remaining (including this tile)
         int                 tile_idx,           ///< Tile index
         Offset              block_offset,       ///< Tile offset
-        TileDescriptor      *d_tile_status)     ///< Global list of tile status
+        TileLookbackStatus  &tile_status)       ///< Global list of tile status
     {
         Key                 keys[ITEMS_PER_THREAD];                         // Tile keys
         Value               values[ITEMS_PER_THREAD];                       // Tile values
@@ -735,7 +803,7 @@ struct BlockReduceByKeyRegion
 
             // Update tile status if this is not the last tile
             if (!LAST_TILE && (threadIdx.x == 0))
-                TileDescriptor::SetPrefix(d_tile_status, block_aggregate);
+                tile_status.SetInclusive(0, block_aggregate);
 
             // Set offset for first scan output
             if (!HAS_IDENTITY_ZERO && (threadIdx.x == 0))
@@ -763,7 +831,7 @@ struct BlockReduceByKeyRegion
 
             // Exclusive scan of values and flags
             ValueOffsetPair block_aggregate;
-            LookbackPrefixCallbackOp prefix_op(d_tile_status, temp_storage.prefix, scan_op, tile_idx);
+            LookbackPrefixCallbackOp prefix_op(tile_status, temp_storage.prefix, scan_op, tile_idx);
             ScanBlock(values_and_segments, block_aggregate, prefix_op, Int2Type<HAS_IDENTITY_ZERO>());
 
             running_total = prefix_op.inclusive_prefix;
@@ -783,7 +851,7 @@ struct BlockReduceByKeyRegion
     __device__ __forceinline__ void ConsumeRegion(
         int                     num_tiles,          ///< Total number of input tiles
         GridQueue<int>          queue,              ///< Queue descriptor for assigning tiles of work to thread blocks
-        TileDescriptor          *d_tile_status,     ///< Global list of tile status
+        TileLookbackStatus      &tile_status,       ///< Global list of tile status
         NumSegmentsIterator     d_num_segments)     ///< Output pointer for total number of segments identified
     {
 #if CUB_PTX_VERSION < 200
@@ -796,12 +864,12 @@ struct BlockReduceByKeyRegion
         if (num_remaining > TILE_ITEMS)
         {
             // Full tile
-            ConsumeTile<false>(num_items, num_remaining, tile_idx, block_offset, d_tile_status);
+            ConsumeTile<false>(num_items, num_remaining, tile_idx, block_offset, tile_status);
         }
         else if (num_remaining > 0)
         {
             // Last tile
-            ValueOffsetPair running_total = ConsumeTile<true>(num_items, num_remaining, tile_idx, block_offset, d_tile_status);
+            ValueOffsetPair running_total = ConsumeTile<true>(num_items, num_remaining, tile_idx, block_offset, tile_status);
 
             // Output the total number of items selected
             if (threadIdx.x == 0)
@@ -834,7 +902,7 @@ struct BlockReduceByKeyRegion
         while (num_remaining > TILE_ITEMS)
         {
             // Consume full tile
-            ConsumeTile<false>(num_items, num_remaining, tile_idx, block_offset, d_tile_status);
+            ConsumeTile<false>(num_items, num_remaining, tile_idx, block_offset, tile_status);
 
             // Get tile index
             if (threadIdx.x == 0)
@@ -850,7 +918,7 @@ struct BlockReduceByKeyRegion
         if (num_remaining > 0)
         {
             // Consume last tile (treat as partially-full)
-            ValueOffsetPair running_total = ConsumeTile<true>(num_items, num_remaining, tile_idx, block_offset, d_tile_status);
+            ValueOffsetPair running_total = ConsumeTile<true>(num_items, num_remaining, tile_idx, block_offset, tile_status);
 
             if ((threadIdx.x == 0))
             {
