@@ -853,13 +853,17 @@ int main(int argc, char** argv)
     // Compile/run quick tests
     if (num_items < 0) num_items = 32000000;
 
-    printf("---- int ---- \n");
-    TestPointer<CUB, int, int>(num_items, entropy_reduction, maxseg, cub::Sum(), CUB_TYPE_STRING(int), CUB_TYPE_STRING(int));
-    TestPointer<THRUST, int, int>(num_items, entropy_reduction, maxseg, cub::Sum(), CUB_TYPE_STRING(int), CUB_TYPE_STRING(int));
-
     printf("---- RLE int ---- \n");
     TestIterator<CUB, int, int>(num_items, entropy_reduction, maxseg, cub::Sum(), CUB_TYPE_STRING(int), CUB_TYPE_STRING(int), Int2Type<Traits<int>::PRIMITIVE>());
     TestIterator<THRUST, int, int>(num_items, entropy_reduction, maxseg, cub::Sum(), CUB_TYPE_STRING(int), CUB_TYPE_STRING(int), Int2Type<Traits<int>::PRIMITIVE>());
+
+    printf("---- RLE long long ---- \n");
+    TestIterator<CUB, long long, int>(num_items, entropy_reduction, maxseg, cub::Sum(), CUB_TYPE_STRING(long long), CUB_TYPE_STRING(int), Int2Type<Traits<int>::PRIMITIVE>());
+    TestIterator<THRUST, long long, int>(num_items, entropy_reduction, maxseg, cub::Sum(), CUB_TYPE_STRING(long long), CUB_TYPE_STRING(int), Int2Type<Traits<int>::PRIMITIVE>());
+
+    printf("---- int ---- \n");
+    TestPointer<CUB, int, int>(num_items, entropy_reduction, maxseg, cub::Sum(), CUB_TYPE_STRING(int), CUB_TYPE_STRING(int));
+    TestPointer<THRUST, int, int>(num_items, entropy_reduction, maxseg, cub::Sum(), CUB_TYPE_STRING(int), CUB_TYPE_STRING(int));
 
     printf("---- float ---- \n");
     TestPointer<CUB, int, float>(num_items, entropy_reduction, maxseg, cub::Sum(), CUB_TYPE_STRING(int), CUB_TYPE_STRING(float));
