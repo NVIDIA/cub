@@ -97,37 +97,6 @@ struct BlockScanWarpScans
     {}
 
 
-    /// Update the calling thread's partial reduction with the warp-wide aggregates from preceding warps.
-    template <typename ScanOp, int ITERATION>
-    __device__ __forceinline__ void ApplyWarpAggregates(
-        T                   &partial,           ///< [out] The calling thread's partial reduction
-        ScanOp              scan_op,            ///< [in] Binary scan operator
-        T                   &block_aggregate,   ///< [out] Threadblock-wide aggregate reduction of input items
-        bool                lane_valid,         ///< [in] Whether or not the partial belonging to the current thread is valid
-        Int2Type<ITERATION> iteration)          ///< [in] Predecessor warp to aggregate from
-    {
-        if (warp_id == ITERATION)
-        {
-            partial = (lane_valid) ?
-                scan_op(block_aggregate, partial) :
-                block_aggregate;
-        }
-
-        block_aggregate = scan_op(block_aggregate, temp_storage.warp_aggregates[ITERATION]);
-
-        ApplyWarpAggregates(partial, scan_op, block_aggregate, lane_valid, Int2Type<ITERATION + 1>());
-    }
-
-    /// Update the calling thread's partial reduction with the warp-wide aggregates from preceding warps.
-    template <typename ScanOp>
-    __device__ __forceinline__ void ApplyWarpAggregates(
-        T                   &partial,           ///< [out] The calling thread's partial reduction
-        ScanOp              scan_op,            ///< [in] Binary scan operator
-        T                   &block_aggregate,   ///< [out] Threadblock-wide aggregate reduction of input items
-        bool                lane_valid,         ///< [in] Whether or not the partial belonging to the current thread is valid
-        Int2Type<WARPS>     iteration)          ///< [in] Predecessor warp to aggregate from
-    {}
-
     /// Update the calling thread's partial reduction with the warp-wide aggregates from preceding warps.  Also returns block-wide aggregate in <em>thread</em><sub>0</sub>.
     template <typename ScanOp>
     __device__ __forceinline__ void ApplyWarpAggregates(
@@ -144,8 +113,19 @@ struct BlockScanWarpScans
 
         block_aggregate = temp_storage.warp_aggregates[0];
 
-        // Use template unrolling to aggregate the warp-wide aggregates from preceding warps
-        ApplyWarpAggregates(partial, scan_op, block_aggregate, lane_valid, Int2Type<1>());
+        #pragma unroll
+        for (int WARP = 1; WARP < WARPS; WARP++)
+        {
+            T inclusive = scan_op(block_aggregate, partial);
+            if (warp_id == WARP)
+            {
+                partial = (lane_valid) ?
+                    inclusive :
+                    block_aggregate;
+            }
+
+            block_aggregate = scan_op(block_aggregate, temp_storage.warp_aggregates[WARP]);
+        }
     }
 
 
