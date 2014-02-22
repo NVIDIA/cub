@@ -265,6 +265,36 @@ struct BlockSelectRegion
     //---------------------------------------------------------------------
 
     /**
+     * Template unrolled selection via selection operator
+     */
+    template <bool FIRST_TILE, bool LAST_TILE, int ITERATION>
+    __device__ __forceinline__ void ApplySelectionOp(
+        Offset                      block_offset,
+        Offset                      num_remaining,
+        T                           (&items)[ITEMS_PER_THREAD],
+        Offset                      (&selected)[ITEMS_PER_THREAD],
+        Int2Type<ITERATION>         iteration)
+    {
+        selected[ITERATION] = 0;
+        if (!LAST_TILE || (Offset(threadIdx.x * ITEMS_PER_THREAD) + ITERATION < num_remaining))
+            selected[ITERATION] = select_op(items[ITERATION]);
+
+        ApplySelectionOp<FIRST_TILE, LAST_TILE>(block_offset, num_remaining, items, selected, Int2Type<ITERATION + 1>());
+    }
+
+    /**
+     * Template unrolled selection via selection operator
+     */
+    template <bool FIRST_TILE, bool LAST_TILE>
+    __device__ __forceinline__ void ApplySelectionOp(
+        Offset                      block_offset,
+        Offset                      num_remaining,
+        T                           (&items)[ITEMS_PER_THREAD],
+        Offset                      (&selected)[ITEMS_PER_THREAD],
+        Int2Type<ITEMS_PER_THREAD>  iteration)
+    {}
+
+    /**
      * Initialize selections (specialized for selection operator)
      */
     template <bool FIRST_TILE, bool LAST_TILE>
@@ -275,13 +305,7 @@ struct BlockSelectRegion
         Offset                      (&selected)[ITEMS_PER_THREAD],
         Int2Type<USE_SELECT_OP>     select_method)
     {
-        #pragma unroll
-        for (int ITEM = 0; ITEM < ITEMS_PER_THREAD; ++ITEM)
-        {
-            selected[ITEM] = 0;
-            if (!LAST_TILE || (Offset(threadIdx.x * ITEMS_PER_THREAD) + ITEM < num_remaining))
-                selected[ITEM] = select_op(items[ITEM]);
-        }
+        ApplySelectionOp<FIRST_TILE, LAST_TILE>(block_offset, num_remaining, items, selected, Int2Type<0>());
     }
 
 
