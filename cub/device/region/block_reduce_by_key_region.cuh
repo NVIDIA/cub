@@ -155,8 +155,8 @@ struct ReduceByKeyTileLookbackStatus<Value, Offset, true>
     // Device word type (for when sizeof(Value) == sizeof(Offset))
     struct TileDescriptorBigStatus
     {
-        Value       value;
         Offset      offset;
+        Value       value;
         StatusWord  status;
     };
 
