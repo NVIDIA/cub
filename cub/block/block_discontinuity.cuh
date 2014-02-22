@@ -143,6 +143,46 @@ private:
         }
     };
 
+    /// Templated unrolling of item comparison (inductive case)
+    template <int ITERATION, int MAX_ITERATIONS>
+    struct Iterate
+    {
+        template <
+            int             ITEMS_PER_THREAD,
+            typename        FlagT,
+            typename        FlagOp>
+        static __device__ __forceinline__ void FlagItems(
+            int                     linear_tid,
+            FlagT                   (&flags)[ITEMS_PER_THREAD],         ///< [out] Calling thread's discontinuity head_flags
+            T                       (&input)[ITEMS_PER_THREAD],         ///< [in] Calling thread's input items
+            FlagOp                  flag_op)                            ///< [in] Binary boolean flag predicate
+        {
+            flags[ITERATION] = ApplyOp<FlagOp>::Flag(
+                flag_op,
+                input[ITERATION - 1],
+                input[ITERATION],
+                (linear_tid * ITEMS_PER_THREAD) + ITERATION);
+
+            Iterate<ITERATION + 1, MAX_ITERATIONS>::FlagItems(linear_tid, flags, input, flag_op);
+        }
+    };
+
+    /// Templated unrolling of item comparison (termination case)
+    template <int MAX_ITERATIONS>
+    struct Iterate<MAX_ITERATIONS, MAX_ITERATIONS>
+    {
+        template <
+            int             ITEMS_PER_THREAD,
+            typename        FlagT,
+            typename        FlagOp>
+        static __device__ __forceinline__ void FlagItems(
+            int                     linear_tid,
+            FlagT                   (&flags)[ITEMS_PER_THREAD],         ///< [out] Calling thread's discontinuity head_flags
+            T                       (&input)[ITEMS_PER_THREAD],         ///< [in] Calling thread's input items
+            FlagOp                  flag_op)                            ///< [in] Binary boolean flag predicate
+        {}
+    };
+
 
     /******************************************************************************
      * Thread fields
@@ -291,15 +331,7 @@ public:
                 linear_tid * ITEMS_PER_THREAD);
 
         // Set head_flags for remaining items
-        #pragma unroll
-        for (int ITEM = 1; ITEM < ITEMS_PER_THREAD; ITEM++)
-        {
-            head_flags[ITEM] = ApplyOp<FlagOp>::Flag(
-                flag_op,
-                input[ITEM - 1],
-                input[ITEM],
-                (linear_tid * ITEMS_PER_THREAD) + ITEM);
-        }
+        Iterate<1, ITEMS_PER_THREAD>::FlagItems(linear_tid, head_flags, input, flag_op);
     }
 
 
@@ -384,16 +416,8 @@ public:
             input[0],
             linear_tid * ITEMS_PER_THREAD);
 
-        // Set flag for remaining items
-        #pragma unroll
-        for (int ITEM = 1; ITEM < ITEMS_PER_THREAD; ITEM++)
-        {
-            head_flags[ITEM] = ApplyOp<FlagOp>::Flag(
-                flag_op,
-                input[ITEM - 1],
-                input[ITEM],
-                (linear_tid * ITEMS_PER_THREAD) + ITEM);
-        }
+        // Set head_flags for remaining items
+        Iterate<1, ITEMS_PER_THREAD>::FlagItems(linear_tid, head_flags, input, flag_op);
     }
 
 
@@ -477,16 +501,8 @@ public:
                 temp_storage[linear_tid + 1],
                 (linear_tid * ITEMS_PER_THREAD) + (ITEMS_PER_THREAD - 1));
 
-        // Set flags for remaining items
-        #pragma unroll
-        for (int ITEM = 0; ITEM < ITEMS_PER_THREAD - 1; ITEM++)
-        {
-            tail_flags[ITEM] = ApplyOp<FlagOp>::Flag(
-                flag_op,
-                input[ITEM],
-                input[ITEM + 1],
-                (linear_tid * ITEMS_PER_THREAD) + ITEM);
-        }
+        // Set tail_flags for remaining items
+        Iterate<0, ITEMS_PER_THREAD - 1>::FlagItems(linear_tid, tail_flags, input, flag_op);
     }
 
 
@@ -572,16 +588,8 @@ public:
             successor_item,
             (linear_tid * ITEMS_PER_THREAD) + (ITEMS_PER_THREAD - 1));
 
-        // Set flags for remaining items
-        #pragma unroll
-        for (int ITEM = 0; ITEM < ITEMS_PER_THREAD - 1; ITEM++)
-        {
-            tail_flags[ITEM] = ApplyOp<FlagOp>::Flag(
-                flag_op,
-                input[ITEM],
-                input[ITEM + 1],
-                (linear_tid * ITEMS_PER_THREAD) + ITEM);
-        }
+        // Set tail_flags for remaining items
+        Iterate<0, ITEMS_PER_THREAD - 1>::FlagItems(linear_tid, tail_flags, input, flag_op);
     }
 
     //@}  end member group
