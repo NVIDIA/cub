@@ -430,7 +430,7 @@ void Test(
         (KEYS_ONLY) ? "keys-only" : "key-value",
         num_items, type_string,
         (int) sizeof(Key), (KEYS_ONLY) ? 0 : (int) sizeof(Value),
-        (gen_mode == RANDOM) ? "RANDOM" : (gen_mode == SEQ_INC) ? "SEQUENTIAL" : "HOMOGENOUS",
+        (gen_mode == RANDOM) ? "RANDOM" : (gen_mode == INTEGER_SEED) ? "SEQUENTIAL" : "HOMOGENOUS",
         DESCENDING, entropy_reduction, begin_bit, end_bit);
     fflush(stdout);
 
@@ -592,7 +592,7 @@ void Test(
     }
 
     Test<BACKEND, Key, Value>(num_items, UNIFORM, 0, begin_bit, end_bit, type_string);
-    Test<BACKEND, Key, Value>(num_items, SEQ_INC, 0, begin_bit, end_bit, type_string);
+    Test<BACKEND, Key, Value>(num_items, INTEGER_SEED, 0, begin_bit, end_bit, type_string);
 }
 
 /**

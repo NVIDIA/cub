@@ -384,9 +384,9 @@ enum Backend
  */
 enum GenMode
 {
-    UNIFORM,            // All 2s
-    SEQ_INC,            // Sequentially incrementing
-    RANDOM,             // Random
+    UNIFORM,            // Assign to '2', regardless of integer seed
+    INTEGER_SEED,       // Assign to integer seed
+    RANDOM,             // Assign to random, regardless of integer seed
 };
 
 /**
@@ -405,7 +405,7 @@ __host__ __device__ __forceinline__ void InitValue(GenMode gen_mode, T &value, i
      case UNIFORM:
         value = 2;
         break;
-    case SEQ_INC:
+    case INTEGER_SEED:
     default:
          value = index;
         break;
