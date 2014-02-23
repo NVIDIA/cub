@@ -219,7 +219,7 @@ void TestNative(
     // Initialize problem on host and device
     for (int i = 0; i < unguarded_elements; ++i)
     {
-        InitValue(SEQ_INC, h_in[i], i);
+        InitValue(INTEGER_SEED, h_in[i], i);
     }
     CubDebugExit(cudaMemcpy(d_in, h_in, sizeof(T) * unguarded_elements, cudaMemcpyHostToDevice));
 
@@ -288,7 +288,7 @@ void TestIterator(
     // Initialize problem on host and device
     for (int i = 0; i < unguarded_elements; ++i)
     {
-        InitValue(SEQ_INC, h_in[i], i);
+        InitValue(INTEGER_SEED, h_in[i], i);
     }
     CubDebugExit(cudaMemcpy(d_in, h_in, sizeof(T) * unguarded_elements, cudaMemcpyHostToDevice));
 

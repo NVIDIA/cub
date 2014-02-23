@@ -324,73 +324,56 @@ cudaError_t Dispatch(
 /**
  * Initialize problem
  */
-template <typename T, typename Flag>
+template <typename T>
 void Initialize(
-    int         entropy_reduction,
     T           *h_in,
-    Flag        *h_flags,
-    int         num_items,
-    int         max_segment)
+    int         num_items)
 {
-    unsigned short max_short = (unsigned short) -1;
-
-    int key = 0;
-    int i = 0;
-    while (i < num_items)
+    for (int i = 0; i < num_items; ++i)
     {
-        // Select number of repeating occurrences
-        unsigned short repeat;
-        RandomBits(repeat, entropy_reduction);
-        repeat = (unsigned short) ((float(repeat) * (float(max_segment) / float(max_short))));
-        repeat = CUB_MAX(1, repeat);
-
-        int j = i;
-        while (j < CUB_MIN(i + repeat, num_items))
-        {
-            h_flags[j] = 0;
-            InitValue(SEQ_INC, h_in[j], key);
-            j++;
-        }
-
-        h_flags[i] = 1;
-        i = j;
-        key++;
+        // Initialize each item to a randomly selected value from [0..126]
+        unsigned int value;
+        RandomBits(value, 0, 0, 7);
+        if (value == 127)
+            value = 126;
+        InitValue(INTEGER_SEED, h_in[i], value);
     }
 
     if (g_verbose)
     {
         printf("Input:\n");
         DisplayResults(h_in, num_items);
-        printf("Flags:\n");
-        DisplayResults(h_flags, num_items);
         printf("\n\n");
     }
 }
 
 
 /**
- * Solve unique problem
+ * Solve selection problem (select if less than compare)
  */
 template <
     typename        InputIterator,
-    typename        FlagIterator,
+    typename        Flag,
     typename        T>
 int Solve(
     InputIterator   h_in,
-    FlagIterator    h_flags,
+    Flag            *h_flags,
     T               *h_reference,
+    T               compare,
     int             num_items)
 {
     int num_selected = 0;
     for (int i = 0; i < num_items; ++i)
     {
-        if (h_flags[i])
+        if (h_in[i] < compare)
         {
+            h_flags[i] = 1;
             h_reference[num_selected] = h_in[i];
             num_selected++;
         }
         else
         {
+            h_flags[i] = 0;
             h_reference[num_items - (i - num_selected) - 1] = h_in[i];
         }
     }
@@ -502,8 +485,7 @@ template <
     typename        T>
 void TestPointer(
     int             num_items,
-    int             entropy_reduction,
-    int             max_segment,
+    float           select_ratio,
     char*           type_string)
 {
     typedef char Flag;
@@ -513,17 +495,25 @@ void TestPointer(
     T       *h_reference = new T[num_items];
     Flag    *h_flags     = new Flag[num_items];
 
-    // Initialize problem and solution
-    Initialize(entropy_reduction, h_in, h_flags, num_items, max_segment);
-    int num_selected = Solve(h_in, h_flags, h_reference, num_items);
+    // Initialize input
+    Initialize(h_in, num_items);
 
-    printf("\nPointer %s cub::%s::Flagged %d items, %d selected (avg distance %d), %s %d-byte elements, entropy_reduction %d\n",
+    // Select a comparison value that is select_ratio through the space of [0,127]
+    T compare;
+    if (select_ratio <= 0.0)
+        InitValue(INTEGER_SEED, compare, 0);        // select none
+    else if (select_ratio >= 1.0)
+        InitValue(INTEGER_SEED, compare, 127);      // select all
+    else
+        InitValue(INTEGER_SEED, compare, int(double(double(127) * select_ratio)));
+
+    // Set flags and solve
+    int num_selected = Solve(h_in, h_flags, h_reference, compare, num_items);
+
+    printf("\nPointer %s cub::%s::Flagged %d items, %d selected (select ratio %f), %s %d-byte elements\n",
         (PARTITION) ? "DevicePartition" : "DeviceSelect",
         (BACKEND == CDP) ? "CDP CUB" : (BACKEND == THRUST) ? "Thrust" : "CUB",
-        num_items, num_selected, (num_selected > 0) ? num_items / num_selected : 0,
-        type_string,
-        (int) sizeof(T),
-        entropy_reduction);
+        num_items, num_selected, select_ratio, type_string, (int) sizeof(T));
     fflush(stdout);
 
     // Allocate problem device arrays
@@ -562,21 +552,21 @@ void TestIterator(
 {
     typedef char Flag;
 
-    // Use a counting iterator as the input
+    // Use a counting iterator as the input and a constant iterator as flags
     CountingInputIterator<T, int> h_in(0);
     ConstantInputIterator<Flag, int> h_flags(1);
 
     // Allocate host arrays
     T*  h_reference = new T[num_items];
 
-    // Initialize problem and solution
-    int num_selected = Solve(h_in, h_flags, h_reference, num_items);
+    // Initialize solution
+    int num_selected = num_items;
+    for (int i = 0; i < num_items; ++i)
+        h_reference[i] = h_in[i];
 
-    printf("\nIterator %s cub::DeviceSelect::Flagged %d items, %d selected (avg distance %d), %s %d-byte elements\n",
+    printf("\nIterator %s cub::DeviceSelect::Flagged %d items, %d selected, %s %d-byte elements\n",
         (BACKEND == CDP) ? "CDP CUB" : (BACKEND == THRUST) ? "Thrust" : "CUB",
-        num_items, num_selected, (num_selected > 0) ? num_items / num_selected : 0,
-        type_string,
-        (int) sizeof(T));
+        num_items, num_selected, type_string, (int) sizeof(T));
     fflush(stdout);
 
     // Run Test
@@ -602,7 +592,7 @@ void TestIterator(
 
 
 /**
- * Test different gen modes
+ * Test different selection ratios
  */
 template <
     Backend         BACKEND,
@@ -612,17 +602,14 @@ void Test(
     int             num_items,
     char*           type_string)
 {
-    for (int max_segment = 1; max_segment < CUB_MIN(num_items, (unsigned short) -1); max_segment *= 11)
+    for (float select_ratio = 0; select_ratio <= 1.0; select_ratio += 0.2)
     {
-        TestPointer<BACKEND, PARTITION, T>(num_items, 0, max_segment, type_string);
-        TestPointer<BACKEND, PARTITION, T>(num_items, 2, max_segment, type_string);
-        TestPointer<BACKEND, PARTITION, T>(num_items, 7, max_segment, type_string);
+        TestPointer<BACKEND, PARTITION, T>(num_items, select_ratio, type_string);
     }
 
+    // Iterator test always keeps all items
     TestIterator<BACKEND, PARTITION, T>(num_items, type_string, Int2Type<Traits<T>::CATEGORY != NOT_A_NUMBER>());
-
 }
-
 
 /**
  * Test select vs. partition
@@ -677,6 +664,24 @@ void Test(
 }
 
 
+/**
+ * Test select/partition on pointer types
+ */
+template <typename T>
+void ComparePointer(
+    int             num_items,
+    float           select_ratio,
+    char*           type_string)
+{
+    printf("-- Select ----------------------------\n");
+    TestPointer<CUB, false, T>(num_items, select_ratio, type_string);
+    TestPointer<THRUST, false, T>(num_items, select_ratio, type_string);
+
+    printf("-- Partition ----------------------------\n");
+    TestPointer<CUB, true, T>(num_items, select_ratio, type_string);
+    TestPointer<THRUST, true, T>(num_items, select_ratio, type_string);
+}
+
 
 //---------------------------------------------------------------------
 // Main
@@ -688,8 +693,7 @@ void Test(
 int main(int argc, char** argv)
 {
     int num_items           = -1;
-    int entropy_reduction   = 0;
-    int maxseg              = 1000;
+    float select_ratio      = 0.5;
 
     // Initialize command line
     CommandLineArgs args(argc, argv);
@@ -697,8 +701,7 @@ int main(int argc, char** argv)
     args.GetCmdLineArgument("n", num_items);
     args.GetCmdLineArgument("i", g_timing_iterations);
     args.GetCmdLineArgument("repeat", g_repeat);
-    args.GetCmdLineArgument("maxseg", maxseg);
-    args.GetCmdLineArgument("entropy", entropy_reduction);
+    args.GetCmdLineArgument("ratio", select_ratio);
 
     // Print usage
     if (args.CheckCmdLineFlag("help"))
@@ -707,8 +710,7 @@ int main(int argc, char** argv)
             "[--n=<input items> "
             "[--i=<timing iterations> "
             "[--device=<device-id>] "
-            "[--maxseg=<max segment length>] "
-            "[--entropy=<segment length bit entropy reduction rounds>] "
+            "[--ratio=<selection ratio, default 0.5>] "
             "[--repeat=<repetitions of entire test suite>] "
             "[--v] "
             "[--cdp] "
@@ -733,51 +735,11 @@ int main(int argc, char** argv)
     // Compile/run quick tests
     if (num_items < 0) num_items = 32000000;
 
-    printf("----------------------------\n");
-    printf("SELECT\n");
-    printf("----------------------------\n");
-
-    TestPointer<CUB, false, char>(        num_items * ((sm_version <= 130) ? 1 : 4), entropy_reduction, maxseg, CUB_TYPE_STRING(char));
-    TestPointer<THRUST, false, char>(     num_items * ((sm_version <= 130) ? 1 : 4), entropy_reduction, maxseg, CUB_TYPE_STRING(char));
-
-    printf("----------------------------\n");
-    TestPointer<CUB, false, short>(       num_items * ((sm_version <= 130) ? 1 : 2), entropy_reduction, maxseg, CUB_TYPE_STRING(short));
-    TestPointer<THRUST, false, short>(    num_items * ((sm_version <= 130) ? 1 : 2), entropy_reduction, maxseg, CUB_TYPE_STRING(short));
-
-    printf("----------------------------\n");
-    TestPointer<CUB, false, int>(         num_items,                                 entropy_reduction, maxseg, CUB_TYPE_STRING(int));
-    TestPointer<THRUST, false, int>(      num_items,                                 entropy_reduction, maxseg, CUB_TYPE_STRING(int));
-
-    printf("----------------------------\n");
-    TestPointer<CUB, false, long long>(   num_items / 2,                             entropy_reduction, maxseg, CUB_TYPE_STRING(long long));
-    TestPointer<THRUST, false, long long>(num_items / 2,                             entropy_reduction, maxseg, CUB_TYPE_STRING(long long));
-
-    printf("----------------------------\n");
-    TestPointer<CUB, false, TestFoo>(     num_items / 4,                             entropy_reduction, maxseg, CUB_TYPE_STRING(TestFoo));
-    TestPointer<THRUST, false, TestFoo>(  num_items / 4,                             entropy_reduction, maxseg, CUB_TYPE_STRING(TestFoo));
-
-    printf("----------------------------\n");
-    printf("PARTITION\n");
-    printf("----------------------------\n");
-
-    TestPointer<CUB, true, char>(        num_items * ((sm_version <= 130) ? 1 : 4), entropy_reduction, maxseg, CUB_TYPE_STRING(char));
-    TestPointer<THRUST, true, char>(     num_items * ((sm_version <= 130) ? 1 : 4), entropy_reduction, maxseg, CUB_TYPE_STRING(char));
-
-    printf("----------------------------\n");
-    TestPointer<CUB, true, short>(       num_items * ((sm_version <= 130) ? 1 : 2), entropy_reduction, maxseg, CUB_TYPE_STRING(short));
-    TestPointer<THRUST, true, short>(    num_items * ((sm_version <= 130) ? 1 : 2), entropy_reduction, maxseg, CUB_TYPE_STRING(short));
-
-    printf("----------------------------\n");
-    TestPointer<CUB, true, int>(         num_items,                                 entropy_reduction, maxseg, CUB_TYPE_STRING(int));
-    TestPointer<THRUST, true, int>(      num_items,                                 entropy_reduction, maxseg, CUB_TYPE_STRING(int));
-
-    printf("----------------------------\n");
-    TestPointer<CUB, true, long long>(   num_items / 2,                             entropy_reduction, maxseg, CUB_TYPE_STRING(long long));
-    TestPointer<THRUST, true, long long>(num_items / 2,                             entropy_reduction, maxseg, CUB_TYPE_STRING(long long));
-
-    printf("----------------------------\n");
-    TestPointer<CUB, true, TestFoo>(     num_items / 4,                             entropy_reduction, maxseg, CUB_TYPE_STRING(TestFoo));
-    TestPointer<THRUST, true, TestFoo>(  num_items / 4,                             entropy_reduction, maxseg, CUB_TYPE_STRING(TestFoo));
+    ComparePointer<char>(       num_items * ((sm_version <= 130) ? 1 : 4),  select_ratio, CUB_TYPE_STRING(char));
+    ComparePointer<short>(      num_items * ((sm_version <= 130) ? 1 : 2),  select_ratio, CUB_TYPE_STRING(short));
+    ComparePointer<int>(        num_items,                                  select_ratio, CUB_TYPE_STRING(int));
+    ComparePointer<long long>(  num_items / 2,                              select_ratio, CUB_TYPE_STRING(long long));
+    ComparePointer<TestFoo>(    num_items / 4,                              select_ratio, CUB_TYPE_STRING(TestFoo));
 
 #else
 

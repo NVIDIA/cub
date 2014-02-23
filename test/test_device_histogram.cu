@@ -429,7 +429,7 @@ void Test(
         BINS,
         CHANNELS,
         ACTIVE_CHANNELS,
-        (gen_mode == RANDOM) ? "RANDOM" : (gen_mode == SEQ_INC) ? "SEQUENTIAL" : "HOMOGENOUS");
+        (gen_mode == RANDOM) ? "RANDOM" : (gen_mode == INTEGER_SEED) ? "SEQUENTIAL" : "HOMOGENOUS");
     fflush(stdout);
 
     // Allocate host arrays

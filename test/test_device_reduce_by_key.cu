@@ -280,7 +280,7 @@ cudaError_t Dispatch(
         thrust::pair<thrust::device_ptr<Key>, thrust::device_ptr<Value> > d_out_ends;
 
         Value one_val;
-        InitValue(SEQ_INC, one_val, 1);
+        InitValue(INTEGER_SEED, one_val, 1);
         thrust::constant_iterator<Value> constant_one(one_val);
 
         for (int i = 0; i < timing_timing_iterations; ++i)
@@ -401,7 +401,7 @@ void Initialize(
         int j = i;
         while (j < CUB_MIN(i + repeat, num_items))
         {
-            InitValue(SEQ_INC, h_keys_in[j], segment_id);
+            InitValue(INTEGER_SEED, h_keys_in[j], segment_id);
             j++;
         }
 
@@ -592,7 +592,7 @@ void TestPointer(
     Value* h_values_reference = new Value[num_items];
 
     for (int i = 0; i < num_items; ++i)
-        InitValue(SEQ_INC, h_values_in[i], 1);
+        InitValue(INTEGER_SEED, h_values_in[i], 1);
 
     // Initialize problem and solution
     Equality equality_op;
@@ -652,7 +652,7 @@ void TestIterator(
     Key* h_keys_reference = new Key[num_items];
 
     Value one_val;
-    InitValue(SEQ_INC, one_val, 1);
+    InitValue(INTEGER_SEED, one_val, 1);
     ConstantInputIterator<Value, int> h_values_in(one_val);
     Value* h_values_reference = new Value[num_items];
 

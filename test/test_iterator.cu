@@ -70,7 +70,7 @@ struct TransformOp
     __host__ __device__ __forceinline__ T operator()(T input) const
     {
         T addend;
-        InitValue(SEQ_INC, addend, 1);
+        InitValue(INTEGER_SEED, addend, 1);
         return input + addend;
     }
 };
@@ -361,7 +361,7 @@ void TestTransform(char *type_string)
     T *h_data = new T[TEST_VALUES];
     for (int i = 0; i < TEST_VALUES; ++i)
     {
-        InitValue(SEQ_INC, h_data[i], i);
+        InitValue(INTEGER_SEED, h_data[i], i);
     }
 
     // Allocate device arrays
@@ -595,7 +595,7 @@ void TestTexTransform(char *type_string)
     T *h_data = new T[TEST_VALUES];
     for (int i = 0; i < TEST_VALUES; ++i)
     {
-        InitValue(SEQ_INC, h_data[i], i);
+        InitValue(INTEGER_SEED, h_data[i], i);
     }
 
     // Allocate device arrays
