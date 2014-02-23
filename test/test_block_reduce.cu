@@ -457,8 +457,8 @@ void Test(
     TestFullTile<ALGORITHM, BLOCK_THREADS, T>(UNIFORM, reduction_op, type_string);
     TestPartialTile<ALGORITHM, BLOCK_THREADS, T>(UNIFORM, reduction_op, type_string);
 
-    TestFullTile<ALGORITHM, BLOCK_THREADS, T>(SEQ_INC, reduction_op, type_string);
-    TestPartialTile<ALGORITHM, BLOCK_THREADS, T>(SEQ_INC, reduction_op, type_string);
+    TestFullTile<ALGORITHM, BLOCK_THREADS, T>(INTEGER_SEED, reduction_op, type_string);
+    TestPartialTile<ALGORITHM, BLOCK_THREADS, T>(INTEGER_SEED, reduction_op, type_string);
 
     if (Traits<T>::CATEGORY != FLOATING_POINT)
     {

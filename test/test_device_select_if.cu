@@ -61,16 +61,16 @@ CachingDeviceAllocator  g_allocator(true);
 
 // Selection functor type
 template <typename T>
-struct GreaterThan
+struct LessThan
 {
     T compare;
 
     __host__ __device__ __forceinline__
-    GreaterThan(T compare) : compare(compare) {}
+    LessThan(T compare) : compare(compare) {}
 
     __host__ __device__ __forceinline__
     bool operator()(const T &a) const {
-        return (a > compare);
+        return (a < compare);
     }
 };
 
@@ -331,32 +331,17 @@ cudaError_t Dispatch(
  */
 template <typename T>
 void Initialize(
-    int         entropy_reduction,
     T           *h_in,
-    int         num_items,
-    int         max_segment)
+    int         num_items)
 {
-    unsigned short max_short = (unsigned short) -1;
-
-    int key = 0;
-    int i = 0;
-    while (i < num_items)
+    for (int i = 0; i < num_items; ++i)
     {
-        // Select number of repeating occurrences
-        unsigned short repeat;
-        RandomBits(repeat, entropy_reduction);
-        repeat = (unsigned short) ((float(repeat) * (float(max_segment) / float(max_short))));
-        repeat = CUB_MAX(1, repeat);
-
-        int j = i;
-        while (j < CUB_MIN(i + repeat, num_items))
-        {
-            InitValue(SEQ_INC, h_in[j], key);
-            j++;
-        }
-
-        i = j;
-        key++;
+        // Initialize each item to a randomly selected value from [0..126]
+        unsigned int value;
+        RandomBits(value, 0, 0, 7);
+        if (value == 127)
+            value = 126;
+        InitValue(INTEGER_SEED, h_in[i], value);
     }
 
     if (g_verbose)
@@ -369,7 +354,7 @@ void Initialize(
 
 
 /**
- * Solve unique problem
+ * Solve selection problem
  */
 template <
     typename        InputIterator,
@@ -500,31 +485,37 @@ template <
     typename        T>
 void TestPointer(
     int             num_items,
-    int             pivot_idx,
-    int             entropy_reduction,
-    int             max_segment,
+    float           select_ratio,
     char*           type_string)
 {
     // Allocate host arrays
     T       *h_in        = new T[num_items];
     T       *h_reference = new T[num_items];
 
-    // Initialize problem and solution
-    Initialize(entropy_reduction, h_in, num_items, max_segment);
-    GreaterThan<T> select_op(h_in[pivot_idx]);
+    // Initialize input
+    Initialize(h_in, num_items);
+
+    // Select a comparison value that is select_ratio through the space of [0,127]
+    T compare;
+    if (select_ratio <= 0.0)
+        InitValue(INTEGER_SEED, compare, 0);        // select none
+    else if (select_ratio >= 1.0)
+        InitValue(INTEGER_SEED, compare, 127);      // select all
+    else
+        InitValue(INTEGER_SEED, compare, int(double(double(127) * select_ratio)));
+
+    LessThan<T> select_op(compare);
     int num_selected = Solve(h_in, select_op, h_reference, num_items);
 
-    printf("\nPointer %s cub::%s::If %d items, %d selected (avg distance %d), %s %d-byte elements, entropy_reduction %d\n",
+    if (g_verbose) std::cout << "\nComparison item: " << compare << "\n";
+    printf("\nPointer %s cub::%s::If %d items, %d selected (select ratio %f), %s %d-byte elements\n",
         (PARTITION) ? "DevicePartition" : "DeviceSelect",
         (BACKEND == CDP) ? "CDP CUB" : (BACKEND == THRUST) ? "Thrust" : "CUB",
-        num_items, num_selected, (num_selected > 0) ? num_items / num_selected : 0,
-        type_string,
-        (int) sizeof(T),
-        entropy_reduction);
+        num_items, num_selected, select_ratio, type_string, (int) sizeof(T));
     fflush(stdout);
 
     // Allocate problem device arrays
-    T       *d_in = NULL;
+    T *d_in = NULL;
 
     CubDebugExit(g_allocator.DeviceAllocate((void**)&d_in, sizeof(T) * num_items));
 
@@ -542,32 +533,6 @@ void TestPointer(
 
 
 /**
- * Test DeviceSelect on pointer type
- */
-template <typename T>
-void ComparePointer(
-    int             num_items,
-    int             entropy_reduction,
-    int             max_segment,
-    char*           type_string)
-{
-    unsigned int pivot_idx;
-    unsigned int max_int = (unsigned int) -1;
-    RandomBits(pivot_idx);
-    pivot_idx = (unsigned int) ((float(pivot_idx) * (float(num_items - 1) / float(max_int))));
-    printf("\nPivot idx: %d\n", pivot_idx); fflush(stdout);
-
-    printf("-- Select ----------------------------\n");
-    TestPointer<CUB, false, T>(num_items, pivot_idx, entropy_reduction, max_segment, type_string);
-    TestPointer<THRUST, false, T>(num_items, pivot_idx, entropy_reduction, max_segment, type_string);
-
-    printf("-- Partition ----------------------------\n");
-    TestPointer<CUB, true, T>(num_items, pivot_idx, entropy_reduction, max_segment, type_string);
-    TestPointer<THRUST, true, T>(num_items, pivot_idx, entropy_reduction, max_segment, type_string);
-}
-
-
-/**
  * Test DeviceSelect on iterator type
  */
 template <
@@ -576,23 +541,32 @@ template <
     typename        T>
 void TestIterator(
     int             num_items,
-    int             pivot_idx,
+    float           select_ratio,
     char*           type_string,
     Int2Type<true>  is_number)
 {
     // Allocate host arrays
     T*  h_reference = new T[num_items];
 
-    // Initialize problem and solution using a counting iterator as the input
+    // Use counting iterator as the input
     CountingInputIterator<T, int> h_in(0);
-    GreaterThan<T> select_op(h_in[pivot_idx]);
+
+    // Select a comparison value that is select_ratio through the space of [0,127]
+    T compare;
+    if (select_ratio <= 0.0)
+        InitValue(INTEGER_SEED, compare, 0);        // select none
+    else if (select_ratio >= 1.0)
+        InitValue(INTEGER_SEED, compare, 127);      // select all
+    else
+        InitValue(INTEGER_SEED, compare, int(double(double(127) * select_ratio)));
+
+    LessThan<T> select_op(compare);
     int num_selected = Solve(h_in, select_op, h_reference, num_items);
 
-    printf("\nIterator %s cub::DeviceSelect::If %d items, %d selected (avg distance %d), %s %d-byte elements\n",
+    if (g_verbose) std::cout << "\nComparison item: " << compare << "\n";
+    printf("\nIterator %s cub::DeviceSelect::If %d items, %d selected (select ratio %f), %s %d-byte elements\n",
         (BACKEND == CDP) ? "CDP CUB" : (BACKEND == THRUST) ? "Thrust" : "CUB",
-        num_items, num_selected, (num_selected > 0) ? num_items / num_selected : 0,
-        type_string,
-        (int) sizeof(T));
+        num_items, num_selected, select_ratio, type_string, (int) sizeof(T));
     fflush(stdout);
 
     // Run Test
@@ -612,14 +586,14 @@ template <
     typename        T>
 void TestIterator(
     int             num_items,
-    int             pivot_idx,
+    float           select_ratio,
     char*           type_string,
     Int2Type<false> is_number)
 {}
 
 
 /**
- * Test different gen modes
+ * Test different selection ratios
  */
 template <
     Backend         BACKEND,
@@ -627,18 +601,13 @@ template <
     typename        T>
 void Test(
     int             num_items,
-    int             pivot_idx,
     char*           type_string)
 {
-    for (int max_segment = 1; max_segment < CUB_MIN(num_items, (unsigned short) -1); max_segment *= 11)
+    for (float select_ratio = 0; select_ratio <= 1.0; select_ratio += 0.2)
     {
-        TestPointer<BACKEND, PARTITION, T>(num_items, pivot_idx, 0, max_segment, type_string);
-        TestPointer<BACKEND, PARTITION, T>(num_items, pivot_idx, 2, max_segment, type_string);
-        TestPointer<BACKEND, PARTITION, T>(num_items, pivot_idx, 7, max_segment, type_string);
+        TestPointer<BACKEND, PARTITION, T>(num_items, select_ratio, type_string);
+        TestIterator<BACKEND, PARTITION, T>(num_items, select_ratio, type_string, Int2Type<Traits<T>::CATEGORY != NOT_A_NUMBER>());
     }
-
-    TestIterator<BACKEND, PARTITION, T>(num_items, pivot_idx, type_string, Int2Type<Traits<T>::CATEGORY != NOT_A_NUMBER>());
-
 }
 
 
@@ -650,11 +619,10 @@ template <
     typename        T>
 void TestMethod(
     int             num_items,
-    int             pivot_idx,
     char*           type_string)
 {
-    Test<BACKEND, false, T>(num_items, pivot_idx, type_string);
-    Test<BACKEND, true, T>(num_items, pivot_idx, type_string);
+    Test<BACKEND, false, T>(num_items, type_string);
+    Test<BACKEND, true, T>(num_items, type_string);
 }
 
 
@@ -667,15 +635,9 @@ void TestOp(
     int             num_items,
     char*           type_string)
 {
-    unsigned int pivot_idx;
-    unsigned int max_int = (unsigned int) -1;
-    RandomBits(pivot_idx);
-    pivot_idx = (unsigned int) ((float(pivot_idx) * (float(num_items - 1) / float(max_int))));
-    printf("Pivot idx: %d\n", pivot_idx); fflush(stdout);
-
-    TestMethod<CUB, T>(num_items, pivot_idx, type_string);
+    TestMethod<CUB, T>(num_items, type_string);
 #ifdef CUB_CDP
-    TestMethod<CDP, T>(num_items, pivot_idx, type_string);
+    TestMethod<CDP, T>(num_items, type_string);
 #endif
 }
 
@@ -701,7 +663,23 @@ void Test(
     }
 }
 
+/**
+ * Test select/partition on pointer types
+ */
+template <typename T>
+void ComparePointer(
+    int             num_items,
+    float           select_ratio,
+    char*           type_string)
+{
+    printf("-- Select ----------------------------\n");
+    TestPointer<CUB, false, T>(num_items, select_ratio, type_string);
+    TestPointer<THRUST, false, T>(num_items, select_ratio, type_string);
 
+    printf("-- Partition ----------------------------\n");
+    TestPointer<CUB, true, T>(num_items, select_ratio, type_string);
+    TestPointer<THRUST, true, T>(num_items, select_ratio, type_string);
+}
 
 //---------------------------------------------------------------------
 // Main
@@ -713,8 +691,7 @@ void Test(
 int main(int argc, char** argv)
 {
     int num_items           = -1;
-    int entropy_reduction   = 0;
-    int max_segment              = 1000;
+    float select_ratio      = 0.5;
 
     // Initialize command line
     CommandLineArgs args(argc, argv);
@@ -722,8 +699,7 @@ int main(int argc, char** argv)
     args.GetCmdLineArgument("n", num_items);
     args.GetCmdLineArgument("i", g_timing_iterations);
     args.GetCmdLineArgument("repeat", g_repeat);
-    args.GetCmdLineArgument("maxseg", max_segment);
-    args.GetCmdLineArgument("entropy", entropy_reduction);
+    args.GetCmdLineArgument("ratio", select_ratio);
 
     // Print usage
     if (args.CheckCmdLineFlag("help"))
@@ -732,8 +708,7 @@ int main(int argc, char** argv)
             "[--n=<input items> "
             "[--i=<timing iterations> "
             "[--device=<device-id>] "
-            "[--maxseg=<max segment length>] "
-            "[--entropy=<segment length bit entropy reduction rounds>] "
+            "[--ratio=<selection ratio, default 0.5>] "
             "[--repeat=<repetitions of entire test suite>] "
             "[--v] "
             "[--cdp] "
@@ -758,11 +733,11 @@ int main(int argc, char** argv)
     // Compile/run quick tests
     if (num_items < 0) num_items = 32000000;
 
-    ComparePointer<char>(       num_items * ((sm_version <= 130) ? 1 : 4),  entropy_reduction, max_segment, CUB_TYPE_STRING(char));
-    ComparePointer<short>(      num_items * ((sm_version <= 130) ? 1 : 2),  entropy_reduction, max_segment, CUB_TYPE_STRING(short));
-    ComparePointer<int>(        num_items,                                  entropy_reduction, max_segment, CUB_TYPE_STRING(int));
-    ComparePointer<long long>(  num_items / 2,                              entropy_reduction, max_segment, CUB_TYPE_STRING(long long));
-    ComparePointer<TestFoo>(    num_items / 4,                              entropy_reduction, max_segment, CUB_TYPE_STRING(TestFoo));
+    ComparePointer<char>(       num_items * ((sm_version <= 130) ? 1 : 4),  select_ratio, CUB_TYPE_STRING(char));
+    ComparePointer<short>(      num_items * ((sm_version <= 130) ? 1 : 2),  select_ratio, CUB_TYPE_STRING(short));
+    ComparePointer<int>(        num_items,                                  select_ratio, CUB_TYPE_STRING(int));
+    ComparePointer<long long>(  num_items / 2,                              select_ratio, CUB_TYPE_STRING(long long));
+    ComparePointer<TestFoo>(    num_items / 4,                              select_ratio, CUB_TYPE_STRING(TestFoo));
 
 #else
 

@@ -147,7 +147,7 @@ void Test(
         (int) sizeof(SampleT),
         BINS,
         BLOCK_THREADS,
-        (gen_mode == RANDOM) ? "RANDOM" : (gen_mode == SEQ_INC) ? "SEQUENTIAL" : "HOMOGENOUS");
+        (gen_mode == RANDOM) ? "RANDOM" : (gen_mode == INTEGER_SEED) ? "SEQUENTIAL" : "HOMOGENOUS");
     fflush(stdout);
 
     // Allocate host arrays
@@ -204,7 +204,7 @@ template <
 void Test(char* type_string)
 {
     Test<SampleT, BINS, BLOCK_THREADS, ITEMS_PER_THREAD, ALGORITHM>(UNIFORM, type_string);
-    Test<SampleT, BINS, BLOCK_THREADS, ITEMS_PER_THREAD, ALGORITHM>(SEQ_INC, type_string);
+    Test<SampleT, BINS, BLOCK_THREADS, ITEMS_PER_THREAD, ALGORITHM>(INTEGER_SEED, type_string);
     Test<SampleT, BINS, BLOCK_THREADS, ITEMS_PER_THREAD, ALGORITHM>(RANDOM, type_string);
 }
 

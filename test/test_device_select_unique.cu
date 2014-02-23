@@ -240,7 +240,7 @@ void Initialize(
         int j = i;
         while (j < CUB_MIN(i + repeat, num_items))
         {
-            InitValue(SEQ_INC, h_in[j], key);
+            InitValue(INTEGER_SEED, h_in[j], key);
             j++;
         }
 

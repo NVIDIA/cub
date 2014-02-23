@@ -457,7 +457,7 @@ void TestValid(Int2Type<true> fits_smem_capacity)
 
             // Sequential key distribution
             TestDriver<BLOCK_THREADS, ITEMS_PER_THREAD, RADIX_BITS, MEMOIZE_OUTER_SCAN, INNER_SCAN_ALGORITHM, SMEM_CONFIG, DESCENDING, BLOCKED_OUTPUT, Key, Value>(
-                SEQ_INC, 0, begin_bit, end_bit);
+                INTEGER_SEED, 0, begin_bit, end_bit);
 
             // Iterate random with entropy_reduction
             for (int entropy_reduction = 0; entropy_reduction <= 9; entropy_reduction += 3)

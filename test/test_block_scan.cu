@@ -676,7 +676,7 @@ template <int BLOCK_THREADS, int ITEMS_PER_THREAD>
 void Test()
 {
     Test<BLOCK_THREADS, ITEMS_PER_THREAD>(UNIFORM);
-    Test<BLOCK_THREADS, ITEMS_PER_THREAD>(SEQ_INC);
+    Test<BLOCK_THREADS, ITEMS_PER_THREAD>(INTEGER_SEED);
     Test<BLOCK_THREADS, ITEMS_PER_THREAD>(RANDOM);
 }
 
@@ -731,7 +731,7 @@ int main(int argc, char** argv)
     Test<128, 4, AGGREGATE, BLOCK_SCAN_RAKING_MEMOIZE>(UNIFORM, Sum(), int(0), int(10), CUB_TYPE_STRING(Sum<int>));
 
     TestFoo prefix = TestFoo::MakeTestFoo(17, 21, 32, 85);
-    Test<128, 2, PREFIX_AGGREGATE, BLOCK_SCAN_RAKING>(SEQ_INC, Sum(), NullType(), prefix, CUB_TYPE_STRING(Sum<TestFoo>));
+    Test<128, 2, PREFIX_AGGREGATE, BLOCK_SCAN_RAKING>(INTEGER_SEED, Sum(), NullType(), prefix, CUB_TYPE_STRING(Sum<TestFoo>));
 
 #else
 

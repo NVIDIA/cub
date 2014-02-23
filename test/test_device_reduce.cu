@@ -541,7 +541,7 @@ void TestPointer(
         (BACKEND == CDP) ? "CDP CUB" : (BACKEND == THRUST) ? "Thrust" : "CUB",
         (Equals<ReductionOp, Sum>::VALUE) ? "Sum" : (Equals<ReductionOp, Min>::VALUE) ? "Min" : "Max",
         num_items, type_string, (int) sizeof(T),
-        (gen_mode == RANDOM) ? "RANDOM" : (gen_mode == SEQ_INC) ? "SEQUENTIAL" : "HOMOGENOUS");
+        (gen_mode == RANDOM) ? "RANDOM" : (gen_mode == INTEGER_SEED) ? "SEQUENTIAL" : "HOMOGENOUS");
     fflush(stdout);
 
     // Allocate host arrays
@@ -583,7 +583,7 @@ void TestPointer(
     printf("\n\nPointer %s cub::DeviceReduce::%s %d items, %s %d-byte elements, gen-mode %s\n",
         (BACKEND == CDP) ? "CDP CUB" : (BACKEND == THRUST) ? "Thrust" : "CUB",
         "ArgMin", num_items, type_string, (int) sizeof(T),
-        (gen_mode == RANDOM) ? "RANDOM" : (gen_mode == SEQ_INC) ? "SEQUENTIAL" : "HOMOGENOUS");
+        (gen_mode == RANDOM) ? "RANDOM" : (gen_mode == INTEGER_SEED) ? "SEQUENTIAL" : "HOMOGENOUS");
     fflush(stdout);
 
     // Allocate host arrays
@@ -633,7 +633,7 @@ void TestPointer(
     printf("\n\nPointer %s cub::DeviceReduce::%s %d items, %s %d-byte elements, gen-mode %s\n",
         (BACKEND == CDP) ? "CDP CUB" : (BACKEND == THRUST) ? "Thrust" : "CUB",
         "ArgMax", num_items, type_string, (int) sizeof(T),
-        (gen_mode == RANDOM) ? "RANDOM" : (gen_mode == SEQ_INC) ? "SEQUENTIAL" : "HOMOGENOUS");
+        (gen_mode == RANDOM) ? "RANDOM" : (gen_mode == INTEGER_SEED) ? "SEQUENTIAL" : "HOMOGENOUS");
     fflush(stdout);
 
     // Allocate host arrays
@@ -789,7 +789,7 @@ void Test(
 {
 
     TestPointer<BACKEND, T>(num_items, UNIFORM, reduction_op, type_string);
-    TestPointer<BACKEND, T>(num_items, SEQ_INC, reduction_op, type_string);
+    TestPointer<BACKEND, T>(num_items, INTEGER_SEED, reduction_op, type_string);
     TestPointer<BACKEND, T>(num_items, RANDOM, reduction_op, type_string);
 
     TestIterator<BACKEND, T>(num_items, reduction_op, type_string);
