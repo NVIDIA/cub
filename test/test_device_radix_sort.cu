@@ -586,7 +586,7 @@ void Test(
     int             end_bit,
     char*           type_string)
 {
-    for (int entropy_reduction = 0; entropy_reduction <= 8; entropy_reduction += 4)
+    for (int entropy_reduction = 0; entropy_reduction <= 6; entropy_reduction += 3)
     {
         Test<BACKEND, Key, Value>(num_items, RANDOM, entropy_reduction, begin_bit, end_bit, type_string);
     }
@@ -627,13 +627,20 @@ void TestItems(
     int             end_bit,
     char*           type_string)
 {
+    // Get ptx version
+    int ptx_version;
+    CubDebugExit(PtxVersion(ptx_version));
+
     if (num_items < 0)
     {
         Test<Key, Value>(1, begin_bit, end_bit, type_string);
         Test<Key, Value>(32, begin_bit, end_bit, type_string);
         Test<Key, Value>(3203, begin_bit, end_bit, type_string);
         Test<Key, Value>(320003, begin_bit, end_bit, type_string);
-        Test<Key, Value>(9000003, begin_bit, end_bit, type_string);
+        if (ptx_version > 100)
+            Test<Key, Value>(9000003, begin_bit, end_bit, type_string);
+        else
+            Test<Key, Value>(5000003, begin_bit, end_bit, type_string);
     }
     else
     {
