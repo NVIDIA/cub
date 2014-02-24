@@ -401,7 +401,7 @@ struct DeviceReduceDispatch
         KernelConfig    &reduce_region_config,
         KernelConfig    &single_tile_config)
     {
-    #ifdef __CUDA_ARCH__
+    #if (CUB_PTX_VERSION > 0)
 
         // We're on the device, so initialize the kernel dispatch configurations with the current PTX policy
         reduce_region_config.template Init<PtxReduceRegionPolicy>();
@@ -697,7 +697,7 @@ struct DeviceReduceDispatch
         {
             // Get PTX version
             int ptx_version;
-    #ifndef __CUDA_ARCH__
+    #if (CUB_PTX_VERSION == 0)
             if (CubDebug(error = PtxVersion(ptx_version))) break;
     #else
             ptx_version = CUB_PTX_VERSION;

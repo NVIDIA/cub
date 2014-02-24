@@ -245,7 +245,7 @@ template <>
 struct UnitWord <float2>
 {
     typedef int         ShuffleWord;
-#if defined(__CUDA_ARCH__) && (__CUDA_ARCH__ <= 130)
+#if (CUB_PTX_VERSION > 0) && (CUB_PTX_VERSION <= 130)
     typedef float       VolatileWord;
     typedef uint2       DeviceWord;
 #else
@@ -260,7 +260,7 @@ template <>
 struct UnitWord <float4>
 {
     typedef int         ShuffleWord;
-#if defined(__CUDA_ARCH__) && (__CUDA_ARCH__ <= 130)
+#if (CUB_PTX_VERSION > 0) && (CUB_PTX_VERSION <= 130)
     typedef float               VolatileWord;
     typedef uint4               DeviceWord;
 #else
@@ -276,7 +276,7 @@ template <>
 struct UnitWord <char2>
 {
     typedef unsigned short      ShuffleWord;
-#if defined(__CUDA_ARCH__) && (__CUDA_ARCH__ <= 130)
+#if (CUB_PTX_VERSION > 0) && (CUB_PTX_VERSION <= 130)
     typedef unsigned short      VolatileWord;
     typedef short               DeviceWord;
 #else
@@ -556,7 +556,7 @@ struct KeyValuePair
 template <typename T>
 __host__ __device__ __forceinline__ T ZeroInitialize()
 {
-#if defined(__CUDA_ARCH__) && (__CUDA_ARCH__ <= 130)
+#if (CUB_PTX_VERSION > 0) && (CUB_PTX_VERSION <= 130)
 
     typedef typename UnitWord<T>::ShuffleWord ShuffleWord;
     const int MULTIPLE = sizeof(T) / sizeof(ShuffleWord);

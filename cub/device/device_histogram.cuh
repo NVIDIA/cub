@@ -259,7 +259,7 @@ struct DeviceHistogramDispatch
         int             ptx_version,
         KernelConfig    &histo_region_config)
     {
-    #ifdef __CUDA_ARCH__
+    #if (CUB_PTX_VERSION > 0)
 
         // We're on the device, so initialize the kernel dispatch configurations with the current PTX policy
         histo_region_config.template Init<PtxHistoRegionPolicy>();
@@ -511,7 +511,7 @@ struct DeviceHistogramDispatch
         {
             // Get PTX version
             int ptx_version;
-    #ifndef __CUDA_ARCH__
+    #if (CUB_PTX_VERSION == 0)
             if (CubDebug(error = PtxVersion(ptx_version))) break;
     #else
             ptx_version = CUB_PTX_VERSION;

@@ -64,7 +64,7 @@ int main(int argc, char** argv)
         exit(0);
     }
 
-#ifndef __CUDA_ARCH__
+#if (CUB_PTX_VERSION == 0)
 
     // Initialize device
     CubDebugExit(args.DeviceInit());

@@ -136,7 +136,7 @@ __host__ __device__ __forceinline__ cudaError_t PtxVersion(int &ptx_version)
     // CUDA API calls not supported from this device
     return cudaErrorInvalidConfiguration;
 
-#elif defined(__CUDA_ARCH__)
+#elif (CUB_PTX_VERSION > 0)
 
     ptx_version = CUB_PTX_VERSION;
     return cudaSuccess;
@@ -195,7 +195,7 @@ __host__ __device__ __forceinline__ cudaError_t SmVersion(int &sm_version, int d
 __host__ __device__ __forceinline__
 static cudaError_t SyncStream(cudaStream_t stream)
 {
-#ifndef __CUDA_ARCH__
+#if (CUB_PTX_VERSION == 0)
     return cudaStreamSynchronize(stream);
 #else
     // Device can't yet sync on a specific stream

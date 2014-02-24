@@ -284,7 +284,7 @@ struct DeviceSelectDispatch
         int             ptx_version,
         KernelConfig    &select_region_config)
     {
-    #ifdef __CUDA_ARCH__
+    #if (CUB_PTX_VERSION > 0)
 
         // We're on the device, so initialize the kernel dispatch configurations with the current PTX policy
         select_region_config.template Init<PtxSelectRegionPolicy>();
@@ -521,7 +521,7 @@ struct DeviceSelectDispatch
         {
             // Get PTX version
             int ptx_version;
-    #ifndef __CUDA_ARCH__
+    #if (CUB_PTX_VERSION == 0)
             if (CubDebug(error = PtxVersion(ptx_version))) break;
     #else
             ptx_version = CUB_PTX_VERSION;
