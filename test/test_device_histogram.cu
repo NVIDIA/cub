@@ -70,7 +70,7 @@ enum
 //---------------------------------------------------------------------
 
 /**
- * Dispatch to shared sorting entrypoint
+ * Dispatch to NPP
  */
 template <int BINS, int CHANNELS, int ACTIVE_CHANNELS, typename InputIterator, typename HistoCounter>
 cudaError_t Dispatch(
@@ -665,7 +665,7 @@ int main(int argc, char** argv)
     if (args.CheckCmdLineFlag("help"))
     {
         printf("%s "
-            "[--n=<total input samples across all channels> "
+            "[--n=<total input pixels> "
             "[--i=<timing iterations> "
             "[--device=<device-id>] "
             "[--repeat=<repetitions of entire test suite>]"
