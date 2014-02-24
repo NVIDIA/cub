@@ -660,10 +660,10 @@ struct BlockSelectRegion
         TileLookbackStatus      &tile_status,       ///< Global list of tile status
         NumSelectedIterator     d_num_selected)     ///< Output total number selected
     {
-#if (CUB_PTX_VERSION <= 130) || (CUB_PTX_VERSION >= 300)
+#if (CUB_PTX_VERSION <= 130)
         // Blocks are launched in increasing order, so just assign one tile per block
 
-        int     tile_idx        = (blockIdx.y * 8 * 1024) + blockIdx.x;    // Current tile index
+        int     tile_idx        = (blockIdx.y * 32 * 1024) + blockIdx.x;    // Current tile index
         Offset  block_offset    = Offset(TILE_ITEMS) * tile_idx;            // Global offset for the current tile
         Offset  num_remaining   = num_items - block_offset;                 // Remaining items (including this tile)
 

@@ -768,6 +768,8 @@ struct BlockReduceByKeyRegion
 
         // Scatter values
         StoreDirectStriped<BLOCK_THREADS>(threadIdx.x, d_values_out + tile_num_flags_prefix, values, exchange_count);
+
+        __syncthreads();
     }
 
 
@@ -919,10 +921,10 @@ struct BlockReduceByKeyRegion
         TileLookbackStatus      &tile_status,       ///< Global list of tile status
         NumSegmentsIterator     d_num_segments)     ///< Output pointer for total number of segments identified
     {
-#if (CUB_PTX_VERSION <= 130) || (CUB_PTX_VERSION >= 300)
+#if (CUB_PTX_VERSION <= 130)
         // Blocks are launched in increasing order, so just assign one tile per block
 
-        int     tile_idx        = (blockIdx.y * 8 * 1024) + blockIdx.x;    // Current tile index
+        int     tile_idx        = (blockIdx.y * 32 * 1024) + blockIdx.x;    // Current tile index
         Offset  block_offset    = Offset(TILE_ITEMS) * tile_idx;            // Global offset for the current tile
         Offset  num_remaining   = num_items - block_offset;                 // Remaining items (including this tile)
 
@@ -968,8 +970,6 @@ struct BlockReduceByKeyRegion
 
             // Consume full tile
             ConsumeTile<false>(num_items, num_remaining, tile_idx, block_offset, tile_status);
-
-            __syncthreads();
 
             // Get tile index
             if (threadIdx.x == 0)
