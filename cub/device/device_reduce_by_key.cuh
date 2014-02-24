@@ -457,10 +457,10 @@ struct DeviceReduceByKeyDispatch
 
             // Get grid size for scanning tiles
             dim3 reduce_by_key_grid_size;
-            if ((ptx_version <= 130) || (ptx_version >= 300))
+            if (ptx_version <= 130)
             {
                 // Blocks are launched in order, so just assign one block per tile
-                int max_dim_x = 8 * 1024;
+                int max_dim_x = 32 * 1024;
                 reduce_by_key_grid_size.z = 1;
                 reduce_by_key_grid_size.y = (num_tiles + max_dim_x - 1) / max_dim_x;
                 reduce_by_key_grid_size.x = CUB_MIN(num_tiles, max_dim_x);
