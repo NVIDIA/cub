@@ -141,7 +141,6 @@ struct DeviceReduceByKeyDispatch
 
     enum
     {
-        TILE_STATUS_PADDING     = 32,
         INIT_KERNEL_THREADS     = 128,
         MAX_INPUT_BYTES         = CUB_MAX(sizeof(Key), sizeof(Value)),
         COMBINED_INPUT_BYTES    = sizeof(Key) + sizeof(Value),
@@ -456,25 +455,25 @@ struct DeviceReduceByKeyDispatch
                 reduce_by_key_region_kernel,
                 reduce_by_key_region_config.block_threads))) break;
 
-            // Get device occupancy for reduce_by_key_region_kernel
-            int reduce_by_key_region_occupancy = reduce_by_key_region_sm_occupancy * sm_count;
-
             // Get grid size for scanning tiles
             dim3 reduce_by_key_grid_size;
-            if (ptx_version < 200)
+            if ((ptx_version <= 130) || (ptx_version >= 300))
             {
-                // We don't have atomics (or don't have fast ones), so just assign one block per tile
+                // Blocks are launched in order, so just assign one block per tile
+                int max_dim_x = 8 * 1024;
                 reduce_by_key_grid_size.z = 1;
-                reduce_by_key_grid_size.y = (num_tiles + (32 * 1024) - 1) / (32 * 1024);
-                reduce_by_key_grid_size.x = CUB_MIN(num_tiles, 32 * 1024);
+                reduce_by_key_grid_size.y = (num_tiles + max_dim_x - 1) / max_dim_x;
+                reduce_by_key_grid_size.x = CUB_MIN(num_tiles, max_dim_x);
             }
             else
             {
+                // Blocks may not be launched in order, so use atomics
+                int reduce_by_key_region_occupancy = reduce_by_key_region_sm_occupancy * sm_count;      // Whole-device occupancy for reduce_by_key_region_kernel
                 reduce_by_key_grid_size.z = 1;
                 reduce_by_key_grid_size.y = 1;
                 reduce_by_key_grid_size.x = (num_tiles < reduce_by_key_region_occupancy) ?
-                    num_tiles :                     // Not enough to fill the device with threadblocks
-                    reduce_by_key_region_occupancy;          // Fill the device with threadblocks
+                    num_tiles :                             // Not enough to fill the device with threadblocks
+                    reduce_by_key_region_occupancy;         // Fill the device with threadblocks
             }
 
 #ifndef __CUDA_ARCH__
