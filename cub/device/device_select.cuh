@@ -231,17 +231,17 @@ struct DeviceSelectDispatch
     struct Policy100
     {
         enum {
-            NOMINAL_4B_ITEMS_PER_THREAD = 7,
+            NOMINAL_4B_ITEMS_PER_THREAD = 9,
             ITEMS_PER_THREAD            = CUB_MIN(NOMINAL_4B_ITEMS_PER_THREAD, CUB_MAX(1, (NOMINAL_4B_ITEMS_PER_THREAD * 4 / sizeof(T)))),
         };
 
         typedef BlockSelectRegionPolicy<
-                128,
+                256,
                 ITEMS_PER_THREAD,
                 BLOCK_LOAD_WARP_TRANSPOSE,
                 LOAD_DEFAULT,
                 true,
-                BLOCK_SCAN_RAKING>
+                BLOCK_SCAN_RAKING_MEMOIZE>
             SelectRegionPolicy;
     };
 
