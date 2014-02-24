@@ -455,7 +455,8 @@ void Test(
     {
         float avg_millis = elapsed_millis / g_timing_iterations;
         float grate = float(num_items) / avg_millis / 1000.0 / 1000.0;
-        float gbandwidth = float((num_items + num_selected) * sizeof(T)) / avg_millis / 1000.0 / 1000.0;
+        int output_items = (PARTITION) ? num_items : num_selected;
+        float gbandwidth = float((num_items + output_items) * sizeof(T)) / avg_millis / 1000.0 / 1000.0;
         printf(", %.3f avg ms, %.3f billion items/s, %.3f logical GB/s", avg_millis, grate, gbandwidth);
     }
     printf("\n\n");

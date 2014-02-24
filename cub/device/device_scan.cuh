@@ -138,7 +138,6 @@ struct DeviceScanDispatch
 {
     enum
     {
-        TILE_STATUS_PADDING     = 32,
         INIT_KERNEL_THREADS     = 128
     };
 
@@ -457,20 +456,20 @@ struct DeviceScanDispatch
                 scan_region_kernel,
                 scan_region_config.block_threads))) break;
 
-            // Get device occupancy for scan_region_kernel
-            int scan_region_occupancy = scan_region_sm_occupancy * sm_count;
-
             // Get grid size for scanning tiles
             dim3 scan_grid_size;
-            if (ptx_version < 200)
+            if ((ptx_version <= 130) || (ptx_version >= 300))
             {
-                // We don't have atomics (or don't have fast ones), so just assign one block per tile
+                // Blocks are launched in order, so just assign one block per tile
+                int max_dim_x = 8 * 1024;
                 scan_grid_size.z = 1;
-                scan_grid_size.y = (num_tiles + (32 * 1024) - 1) / (32 * 1024);
-                scan_grid_size.x = CUB_MIN(num_tiles, 32 * 1024);
+                scan_grid_size.y = (num_tiles + max_dim_x - 1) / max_dim_x;
+                scan_grid_size.x = CUB_MIN(num_tiles, max_dim_x);
             }
             else
             {
+                // Blocks may not be launched in order, so use atomics
+                int scan_region_occupancy = scan_region_sm_occupancy * sm_count;        // Whole-device occupancy for scan_region_kernel
                 scan_grid_size.z = 1;
                 scan_grid_size.y = 1;
                 scan_grid_size.x = (num_tiles < scan_region_occupancy) ?

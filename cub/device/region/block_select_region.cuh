@@ -333,7 +333,8 @@ struct BlockSelectRegion
             selected[ITEM] = flags[ITEM];
         }
 
-        __syncthreads();
+        if (SYNC_AFTER_LOAD)
+            __syncthreads();
     }
 
 
@@ -551,15 +552,13 @@ struct BlockSelectRegion
         for (int ITEM = 0; ITEM < ITEMS_PER_THREAD; ITEM++)
         {
             Offset local_idx = (ITEM * BLOCK_THREADS) + threadIdx.x;
-            if (local_idx < tile_num_selected)
+            Offset scatter_offset = tile_num_selected_prefix + local_idx;
+            if (local_idx >= tile_num_selected)
+                scatter_offset = num_items - (tile_rejected_exclusive_prefix + (local_idx - tile_num_selected)) - 1;
+
+            if (!LAST_TILE || (local_idx < num_remaining))
             {
-                // Scatter selected items front-to-back
-                d_out[tile_num_selected_prefix + local_idx] = items[ITEM];
-            }
-            else if (!LAST_TILE || (local_idx < num_remaining))
-            {
-                // Scatter rejected items back-to-front
-                d_out[num_items - (tile_rejected_exclusive_prefix + (local_idx - tile_num_selected)) - 1] = items[ITEM];
+                d_out[scatter_offset] = items[ITEM];
             }
         }
     }
@@ -661,10 +660,10 @@ struct BlockSelectRegion
         TileLookbackStatus      &tile_status,       ///< Global list of tile status
         NumSelectedIterator     d_num_selected)     ///< Output total number selected
     {
-#if CUB_PTX_VERSION < 200
+#if (CUB_PTX_VERSION <= 130) || (CUB_PTX_VERSION >= 300)
+        // Blocks are launched in increasing order, so just assign one tile per block
 
-        // No concurrent kernels allowed and blocks are launched in increasing order, so just assign one tile per block
-        int     tile_idx        = (blockIdx.y * 32 * 1024) + blockIdx.x;    // Current tile index
+        int     tile_idx        = (blockIdx.y * 8 * 1024) + blockIdx.x;    // Current tile index
         Offset  block_offset    = Offset(TILE_ITEMS) * tile_idx;            // Global offset for the current tile
         Offset  num_remaining   = num_items - block_offset;                 // Remaining items (including this tile)
 
@@ -684,8 +683,7 @@ struct BlockSelectRegion
         }
 
 #else
-
-        // Work-steal tiles
+        // Blocks may not be launched in increasing order, so work-steal tiles
 
         // Get first tile index
         if (threadIdx.x == 0)

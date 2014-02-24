@@ -136,17 +136,16 @@ struct DeviceSelectDispatch
      * Types and constants
      ******************************************************************************/
 
-    enum
-    {
-        TILE_STATUS_PADDING     = 32,
-        INIT_KERNEL_THREADS     = 128
-    };
-
     // Data type of input iterator
     typedef typename std::iterator_traits<InputIterator>::value_type T;
 
     // Data type of flag iterator
     typedef typename std::iterator_traits<FlagIterator>::value_type Flag;
+
+    enum
+    {
+        INIT_KERNEL_THREADS = 128,
+    };
 
     // Tile status descriptor interface type
     typedef TileLookbackStatus<Offset> TileLookbackStatus;
@@ -221,8 +220,7 @@ struct DeviceSelectDispatch
         typedef BlockSelectRegionPolicy<
                 64,
                 ITEMS_PER_THREAD,
-//                BLOCK_LOAD_WARP_TRANSPOSE,
-                BLOCK_LOAD_DIRECT,
+                BLOCK_LOAD_WARP_TRANSPOSE,
                 LOAD_DEFAULT,
                 true,
                 BLOCK_SCAN_RAKING_MEMOIZE>
@@ -452,20 +450,20 @@ struct DeviceSelectDispatch
                 select_region_kernel,
                 select_region_config.block_threads))) break;
 
-            // Get device occupancy for select_region_kernel
-            int select_region_occupancy = select_region_sm_occupancy * sm_count;
-
             // Get grid size for scanning tiles
             dim3 select_grid_size;
-            if (ptx_version < 200)
+            if ((ptx_version <= 130) || (ptx_version >= 300))
             {
-                // We don't have atomics (or don't have fast ones), so just assign one block per tile
+                // Blocks are launched in order, so just assign one block per tile
+                int max_dim_x = 8 * 1024;
                 select_grid_size.z = 1;
-                select_grid_size.y = (num_tiles + (32 * 1024) - 1) / (32 * 1024);
-                select_grid_size.x = CUB_MIN(num_tiles, 32 * 1024);
+                select_grid_size.y = (num_tiles + max_dim_x - 1) / max_dim_x;
+                select_grid_size.x = CUB_MIN(num_tiles, max_dim_x);
             }
             else
             {
+                // Blocks may not be launched in order, so use atomics
+                int select_region_occupancy = select_region_sm_occupancy * sm_count;        // Whole-device occupancy for select_region_kernel
                 select_grid_size.z = 1;
                 select_grid_size.y = 1;
                 select_grid_size.x = (num_tiles < select_region_occupancy) ?
