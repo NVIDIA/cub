@@ -138,14 +138,14 @@ var searchBox = new SearchBox("searchBox", "search",false,'Search');
 <div class="line"><a name="l00042"></a><span class="lineno">   42</span>&#160;<span class="keyword">namespace </span>cub {</div>
 <div class="line"><a name="l00043"></a><span class="lineno">   43</span>&#160;</div>
 <div class="line"><a name="l00044"></a><span class="lineno">   44</span>&#160;</div>
-<div class="line"><a name="l00051"></a><span class="lineno">   51</span>&#160;<span class="preprocessor">#ifndef __CUDA_ARCH__</span></div>
+<div class="line"><a name="l00051"></a><span class="lineno">   51</span>&#160;<span class="preprocessor">#if (CUB_PTX_VERSION == 0)</span></div>
 <div class="line"><a name="l00053"></a><span class="lineno"><a class="code" href="group___util_mgmt.html#ga00b94cd7a57a714629dd6e75edce6742">   53</a></span>&#160;<span class="preprocessor"></span><span class="preprocessor">    #define CUB_PTX_VERSION 0</span></div>
 <div class="line"><a name="l00054"></a><span class="lineno">   54</span>&#160;<span class="preprocessor"></span><span class="preprocessor">#else</span></div>
 <div class="line"><a name="l00055"></a><span class="lineno">   55</span>&#160;<span class="preprocessor"></span><span class="preprocessor">    #define CUB_PTX_VERSION __CUDA_ARCH__</span></div>
 <div class="line"><a name="l00056"></a><span class="lineno">   56</span>&#160;<span class="preprocessor"></span><span class="preprocessor">#endif</span></div>
 <div class="line"><a name="l00057"></a><span class="lineno">   57</span>&#160;<span class="preprocessor"></span></div>
 <div class="line"><a name="l00058"></a><span class="lineno">   58</span>&#160;</div>
-<div class="line"><a name="l00060"></a><span class="lineno">   60</span>&#160;<span class="preprocessor">#if !defined(__CUDA_ARCH__) || defined(CUB_CDP)</span></div>
+<div class="line"><a name="l00060"></a><span class="lineno">   60</span>&#160;<span class="preprocessor">#if (CUB_PTX_VERSION == 0) || defined(CUB_CDP)</span></div>
 <div class="line"><a name="l00061"></a><span class="lineno"><a class="code" href="group___util_mgmt.html#gac029dc29df3c1871ab3b8a38f50904a6">   61</a></span>&#160;<span class="preprocessor"></span><span class="preprocessor">#define CUB_RUNTIME_ENABLED</span></div>
 <div class="line"><a name="l00062"></a><span class="lineno">   62</span>&#160;<span class="preprocessor"></span><span class="preprocessor">#endif</span></div>
 <div class="line"><a name="l00063"></a><span class="lineno">   63</span>&#160;<span class="preprocessor"></span></div>

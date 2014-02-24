@@ -449,7 +449,7 @@ struct DeviceRadixSortDispatch
         DownsweepKernelPtr      downsweep_kernel,
         DownsweepKernelPtr      alt_downsweep_kernel)
     {
-    #ifdef __CUDA_ARCH__
+    #if (CUB_PTX_VERSION > 0)
 
         // We're on the device, so initialize the kernel dispatch configurations with the current PTX policy
         cudaError_t error;
@@ -645,7 +645,7 @@ struct DeviceRadixSortDispatch
             // Get even-share work distribution descriptor
             GridEvenShare<Offset> even_share(num_items, downsweep_config.max_grid_size, CUB_MAX(downsweep_config.tile_size, upsweep_config.tile_size));
 
-#ifndef __CUDA_ARCH__
+#if (CUB_PTX_VERSION == 0)
             // Get current smem bank configuration
             cudaSharedMemConfig original_smem_config;
             if (CubDebug(error = cudaDeviceGetSharedMemConfig(&original_smem_config))) break;
@@ -655,7 +655,7 @@ struct DeviceRadixSortDispatch
             int current_bit = begin_bit;
             while (current_bit < end_bit)
             {
-#ifndef __CUDA_ARCH__
+#if (CUB_PTX_VERSION == 0)
                 // Update smem config if necessary
                 if (current_smem_config != upsweep_config.smem_config)
                 {
@@ -694,7 +694,7 @@ struct DeviceRadixSortDispatch
                 if (debug_synchronous && (CubDebug(error = SyncStream(stream)))) break;
 
 
-#ifndef __CUDA_ARCH__
+#if (CUB_PTX_VERSION == 0)
                 // Update smem config if necessary
                 if (current_smem_config != downsweep_config.smem_config)
                 {
@@ -730,7 +730,7 @@ struct DeviceRadixSortDispatch
                 current_bit += downsweep_config.radix_bits;
             }
 
-#ifndef __CUDA_ARCH__
+#if (CUB_PTX_VERSION == 0)
             // Reset smem config if necessary
             if (current_smem_config != original_smem_config)
             {
@@ -784,7 +784,7 @@ struct DeviceRadixSortDispatch
         {
             // Get PTX version
             int ptx_version;
-    #ifndef __CUDA_ARCH__
+    #if (CUB_PTX_VERSION == 0)
             if (CubDebug(error = PtxVersion(ptx_version))) break;
     #else
             ptx_version = CUB_PTX_VERSION;
