@@ -522,7 +522,7 @@ var searchBox = new SearchBox("searchBox", "search",false,'Search');
 <div class="line"><a name="l00449"></a><span class="lineno">  449</span>&#160;        DownsweepKernelPtr      downsweep_kernel,</div>
 <div class="line"><a name="l00450"></a><span class="lineno">  450</span>&#160;        DownsweepKernelPtr      alt_downsweep_kernel)</div>
 <div class="line"><a name="l00451"></a><span class="lineno">  451</span>&#160;    {</div>
-<div class="line"><a name="l00452"></a><span class="lineno">  452</span>&#160;<span class="preprocessor">    #ifdef __CUDA_ARCH__</span></div>
+<div class="line"><a name="l00452"></a><span class="lineno">  452</span>&#160;<span class="preprocessor">    #if (CUB_PTX_VERSION > 0)</span></div>
 <div class="line"><a name="l00453"></a><span class="lineno">  453</span>&#160;<span class="preprocessor"></span></div>
 <div class="line"><a name="l00454"></a><span class="lineno">  454</span>&#160;        <span class="comment">// We&#39;re on the device, so initialize the kernel dispatch configurations with the current PTX policy</span></div>
 <div class="line"><a name="l00455"></a><span class="lineno">  455</span>&#160;        cudaError_t error;</div>
@@ -711,7 +711,7 @@ var searchBox = new SearchBox("searchBox", "search",false,'Search');
 <div class="line"><a name="l00645"></a><span class="lineno">  645</span>&#160;            <span class="comment">// Get even-share work distribution descriptor</span></div>
 <div class="line"><a name="l00646"></a><span class="lineno">  646</span>&#160;            GridEvenShare&lt;Offset&gt; even_share(num_items, downsweep_config.max_grid_size, downsweep_config.tile_size);</div>
 <div class="line"><a name="l00647"></a><span class="lineno">  647</span>&#160;</div>
-<div class="line"><a name="l00648"></a><span class="lineno">  648</span>&#160;<span class="preprocessor">#ifndef __CUDA_ARCH__</span></div>
+<div class="line"><a name="l00648"></a><span class="lineno">  648</span>&#160;<span class="preprocessor">#if (CUB_PTX_VERSION == 0)</span></div>
 <div class="line"><a name="l00649"></a><span class="lineno">  649</span>&#160;<span class="preprocessor"></span>            <span class="comment">// Get current smem bank configuration</span></div>
 <div class="line"><a name="l00650"></a><span class="lineno">  650</span>&#160;            cudaSharedMemConfig original_smem_config;</div>
 <div class="line"><a name="l00651"></a><span class="lineno">  651</span>&#160;            <span class="keywordflow">if</span> (<a class="code" href="group___util_mgmt.html#ga84c3a4c178bf6593e0fad2b763606236" title="Debug macro. ">CubDebug</a>(error = cudaDeviceGetSharedMemConfig(&amp;original_smem_config))) <span class="keywordflow">break</span>;</div>
@@ -721,7 +721,7 @@ var searchBox = new SearchBox("searchBox", "search",false,'Search');
 <div class="line"><a name="l00655"></a><span class="lineno">  655</span>&#160;            <span class="keywordtype">int</span> current_bit = begin_bit;</div>
 <div class="line"><a name="l00656"></a><span class="lineno">  656</span>&#160;            <span class="keywordflow">while</span> (current_bit &lt; end_bit)</div>
 <div class="line"><a name="l00657"></a><span class="lineno">  657</span>&#160;            {</div>
-<div class="line"><a name="l00658"></a><span class="lineno">  658</span>&#160;<span class="preprocessor">#ifndef __CUDA_ARCH__</span></div>
+<div class="line"><a name="l00658"></a><span class="lineno">  658</span>&#160;<span class="preprocessor">#if (CUB_PTX_VERSION == 0)</span></div>
 <div class="line"><a name="l00659"></a><span class="lineno">  659</span>&#160;<span class="preprocessor"></span>                <span class="comment">// Update smem config if necessary</span></div>
 <div class="line"><a name="l00660"></a><span class="lineno">  660</span>&#160;                <span class="keywordflow">if</span> (current_smem_config != upsweep_config.smem_config)</div>
 <div class="line"><a name="l00661"></a><span class="lineno">  661</span>&#160;                {</div>
@@ -760,7 +760,7 @@ var searchBox = new SearchBox("searchBox", "search",false,'Search');
 <div class="line"><a name="l00694"></a><span class="lineno">  694</span>&#160;                <span class="keywordflow">if</span> (debug_synchronous &amp;&amp; (<a class="code" href="group___util_mgmt.html#ga84c3a4c178bf6593e0fad2b763606236" title="Debug macro. ">CubDebug</a>(error = SyncStream(stream)))) <span class="keywordflow">break</span>;</div>
 <div class="line"><a name="l00695"></a><span class="lineno">  695</span>&#160;</div>
 <div class="line"><a name="l00696"></a><span class="lineno">  696</span>&#160;</div>
-<div class="line"><a name="l00697"></a><span class="lineno">  697</span>&#160;<span class="preprocessor">#ifndef __CUDA_ARCH__</span></div>
+<div class="line"><a name="l00697"></a><span class="lineno">  697</span>&#160;<span class="preprocessor">#if (CUB_PTX_VERSION == 0)</span></div>
 <div class="line"><a name="l00698"></a><span class="lineno">  698</span>&#160;<span class="preprocessor"></span>                <span class="comment">// Update smem config if necessary</span></div>
 <div class="line"><a name="l00699"></a><span class="lineno">  699</span>&#160;                <span class="keywordflow">if</span> (current_smem_config != downsweep_config.smem_config)</div>
 <div class="line"><a name="l00700"></a><span class="lineno">  700</span>&#160;                {</div>
@@ -796,7 +796,7 @@ var searchBox = new SearchBox("searchBox", "search",false,'Search');
 <div class="line"><a name="l00730"></a><span class="lineno">  730</span>&#160;                current_bit += downsweep_config.radix_bits;</div>
 <div class="line"><a name="l00731"></a><span class="lineno">  731</span>&#160;            }</div>
 <div class="line"><a name="l00732"></a><span class="lineno">  732</span>&#160;</div>
-<div class="line"><a name="l00733"></a><span class="lineno">  733</span>&#160;<span class="preprocessor">#ifndef __CUDA_ARCH__</span></div>
+<div class="line"><a name="l00733"></a><span class="lineno">  733</span>&#160;<span class="preprocessor">#if (CUB_PTX_VERSION == 0)</span></div>
 <div class="line"><a name="l00734"></a><span class="lineno">  734</span>&#160;<span class="preprocessor"></span>            <span class="comment">// Reset smem config if necessary</span></div>
 <div class="line"><a name="l00735"></a><span class="lineno">  735</span>&#160;            <span class="keywordflow">if</span> (current_smem_config != original_smem_config)</div>
 <div class="line"><a name="l00736"></a><span class="lineno">  736</span>&#160;            {</div>
@@ -847,7 +847,7 @@ var searchBox = new SearchBox("searchBox", "search",false,'Search');
 <div class="line"><a name="l00784"></a><span class="lineno">  784</span>&#160;        {</div>
 <div class="line"><a name="l00785"></a><span class="lineno">  785</span>&#160;            <span class="comment">// Get PTX version</span></div>
 <div class="line"><a name="l00786"></a><span class="lineno">  786</span>&#160;            <span class="keywordtype">int</span> ptx_version;</div>
-<div class="line"><a name="l00787"></a><span class="lineno">  787</span>&#160;<span class="preprocessor">    #ifndef __CUDA_ARCH__</span></div>
+<div class="line"><a name="l00787"></a><span class="lineno">  787</span>&#160;<span class="preprocessor">    #if (CUB_PTX_VERSION == 0)</span></div>
 <div class="line"><a name="l00788"></a><span class="lineno">  788</span>&#160;<span class="preprocessor"></span>            <span class="keywordflow">if</span> (<a class="code" href="group___util_mgmt.html#ga84c3a4c178bf6593e0fad2b763606236" title="Debug macro. ">CubDebug</a>(error = <a class="code" href="group___util_mgmt.html#gac3d86a53650d110862fe8a84fce61c2e" title="Retrieves the PTX version that will be used on the current device (major * 100 + minor * 10) ...">PtxVersion</a>(ptx_version))) <span class="keywordflow">break</span>;</div>
 <div class="line"><a name="l00789"></a><span class="lineno">  789</span>&#160;<span class="preprocessor">    #else</span></div>
 <div class="line"><a name="l00790"></a><span class="lineno">  790</span>&#160;<span class="preprocessor"></span>            ptx_version = <a class="code" href="group___util_mgmt.html#ga00b94cd7a57a714629dd6e75edce6742" title="CUB_PTX_VERSION reflects the PTX version targeted by the active compiler pass (or zero during the hos...">CUB_PTX_VERSION</a>;</div>

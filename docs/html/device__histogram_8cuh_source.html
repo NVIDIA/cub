@@ -336,7 +336,7 @@ var searchBox = new SearchBox("searchBox", "search",false,'Search');
 <div class="line"><a name="l00259"></a><span class="lineno">  259</span>&#160;        <span class="keywordtype">int</span>             ptx_version,</div>
 <div class="line"><a name="l00260"></a><span class="lineno">  260</span>&#160;        KernelConfig    &amp;histo_region_config)</div>
 <div class="line"><a name="l00261"></a><span class="lineno">  261</span>&#160;    {</div>
-<div class="line"><a name="l00262"></a><span class="lineno">  262</span>&#160;<span class="preprocessor">    #ifdef __CUDA_ARCH__</span></div>
+<div class="line"><a name="l00262"></a><span class="lineno">  262</span>&#160;<span class="preprocessor">    #if (CUB_PTX_VERSION > 0)</span></div>
 <div class="line"><a name="l00263"></a><span class="lineno">  263</span>&#160;<span class="preprocessor"></span></div>
 <div class="line"><a name="l00264"></a><span class="lineno">  264</span>&#160;        <span class="comment">// We&#39;re on the device, so initialize the kernel dispatch configurations with the current PTX policy</span></div>
 <div class="line"><a name="l00265"></a><span class="lineno">  265</span>&#160;        histo_region_config.template Init&lt;PtxHistoRegionPolicy&gt;();</div>
@@ -579,7 +579,7 @@ var searchBox = new SearchBox("searchBox", "search",false,'Search');
 <div class="line"><a name="l00511"></a><span class="lineno">  511</span>&#160;        {</div>
 <div class="line"><a name="l00512"></a><span class="lineno">  512</span>&#160;            <span class="comment">// Get PTX version</span></div>
 <div class="line"><a name="l00513"></a><span class="lineno">  513</span>&#160;            <span class="keywordtype">int</span> ptx_version;</div>
-<div class="line"><a name="l00514"></a><span class="lineno">  514</span>&#160;<span class="preprocessor">    #ifndef __CUDA_ARCH__</span></div>
+<div class="line"><a name="l00514"></a><span class="lineno">  514</span>&#160;<span class="preprocessor">    #if (CUB_PTX_VERSION == 0)</span></div>
 <div class="line"><a name="l00515"></a><span class="lineno">  515</span>&#160;<span class="preprocessor"></span>            <span class="keywordflow">if</span> (<a class="code" href="group___util_mgmt.html#ga84c3a4c178bf6593e0fad2b763606236" title="Debug macro. ">CubDebug</a>(error = <a class="code" href="group___util_mgmt.html#gac3d86a53650d110862fe8a84fce61c2e" title="Retrieves the PTX version that will be used on the current device (major * 100 + minor * 10) ...">PtxVersion</a>(ptx_version))) <span class="keywordflow">break</span>;</div>
 <div class="line"><a name="l00516"></a><span class="lineno">  516</span>&#160;<span class="preprocessor">    #else</span></div>
 <div class="line"><a name="l00517"></a><span class="lineno">  517</span>&#160;<span class="preprocessor"></span>            ptx_version = <a class="code" href="group___util_mgmt.html#ga00b94cd7a57a714629dd6e75edce6742" title="CUB_PTX_VERSION reflects the PTX version targeted by the active compiler pass (or zero during the hos...">CUB_PTX_VERSION</a>;</div>

@@ -286,7 +286,7 @@ struct DeviceReduceByKeyDispatch
         int             ptx_version,
         KernelConfig    &reduce_by_key_region_config)
     {
-    #ifdef __CUDA_ARCH__
+    #if (CUB_PTX_VERSION > 0)
 
         // We're on the device, so initialize the kernel dispatch configurations with the current PTX policy
         reduce_by_key_region_config.template Init<PtxReduceByKeyPolicy>();
@@ -476,7 +476,7 @@ struct DeviceReduceByKeyDispatch
                     reduce_by_key_region_occupancy;         // Fill the device with threadblocks
             }
 
-#ifndef __CUDA_ARCH__
+#if (CUB_PTX_VERSION == 0)
             // Get current smem bank configuration
             cudaSharedMemConfig original_smem_config;
             if (CubDebug(error = cudaDeviceGetSharedMemConfig(&original_smem_config))) break;
@@ -511,7 +511,7 @@ struct DeviceReduceByKeyDispatch
             // Sync the stream if specified
             if (debug_synchronous && (CubDebug(error = SyncStream(stream)))) break;
 
-#ifndef __CUDA_ARCH__
+#if (CUB_PTX_VERSION == 0)
             // Reset smem config if necessary
             if (current_smem_config != original_smem_config)
             {
@@ -551,7 +551,7 @@ struct DeviceReduceByKeyDispatch
         {
             // Get PTX version
             int ptx_version;
-    #ifndef __CUDA_ARCH__
+    #if (CUB_PTX_VERSION == 0)
             if (CubDebug(error = PtxVersion(ptx_version))) break;
     #else
             ptx_version = CUB_PTX_VERSION;

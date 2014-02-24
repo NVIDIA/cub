@@ -397,7 +397,7 @@ __host__ __device__ __forceinline__ void InitValue(GenMode gen_mode, T &value, i
 {
     switch (gen_mode)
     {
-#ifndef __CUDA_ARCH__
+#if (CUB_PTX_VERSION == 0)
     case RANDOM:
          RandomBits(value);
          break;
