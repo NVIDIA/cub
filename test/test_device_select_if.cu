@@ -509,10 +509,10 @@ void TestPointer(
     int num_selected = Solve(h_in, select_op, h_reference, num_items);
 
     if (g_verbose) std::cout << "\nComparison item: " << compare << "\n";
-    printf("\nPointer %s cub::%s::If %d items, %d selected (select ratio %f), %s %d-byte elements\n",
+    printf("\nPointer %s cub::%s::If %d items, %d selected (select ratio %.3f), %s %d-byte elements\n",
         (PARTITION) ? "DevicePartition" : "DeviceSelect",
         (BACKEND == CDP) ? "CDP CUB" : (BACKEND == THRUST) ? "Thrust" : "CUB",
-        num_items, num_selected, select_ratio, type_string, (int) sizeof(T));
+        num_items, num_selected, float(num_selected) / num_items, type_string, (int) sizeof(T));
     fflush(stdout);
 
     // Allocate problem device arrays
@@ -565,9 +565,9 @@ void TestIterator(
     int num_selected = Solve(h_in, select_op, h_reference, num_items);
 
     if (g_verbose) std::cout << "\nComparison item: " << compare << "\n";
-    printf("\nIterator %s cub::DeviceSelect::If %d items, %d selected (select ratio %f), %s %d-byte elements\n",
+    printf("\nIterator %s cub::DeviceSelect::If %d items, %d selected (select ratio %.3f), %s %d-byte elements\n",
         (BACKEND == CDP) ? "CDP CUB" : (BACKEND == THRUST) ? "Thrust" : "CUB",
-        num_items, num_selected, select_ratio, type_string, (int) sizeof(T));
+        num_items, num_selected, float(num_selected) / num_items, type_string, (int) sizeof(T));
     fflush(stdout);
 
     // Run Test

@@ -511,10 +511,10 @@ void TestPointer(
     // Set flags and solve
     int num_selected = Solve(h_in, h_flags, h_reference, compare, num_items);
 
-    printf("\nPointer %s cub::%s::Flagged %d items, %d selected (select ratio %f), %s %d-byte elements\n",
+    printf("\nPointer %s cub::%s::Flagged %d items, %d selected (select ratio %.3f), %s %d-byte elements\n",
         (PARTITION) ? "DevicePartition" : "DeviceSelect",
         (BACKEND == CDP) ? "CDP CUB" : (BACKEND == THRUST) ? "Thrust" : "CUB",
-        num_items, num_selected, select_ratio, type_string, (int) sizeof(T));
+        num_items, num_selected, float(num_selected) / num_items, type_string, (int) sizeof(T));
     fflush(stdout);
 
     // Allocate problem device arrays
