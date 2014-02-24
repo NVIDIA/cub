@@ -250,7 +250,7 @@ struct DeviceScanDispatch
                 LOAD_DEFAULT,
                 BLOCK_STORE_WARP_TRANSPOSE,
                 true,
-                BLOCK_SCAN_RAKING>
+                BLOCK_SCAN_WARP_SCANS>
             ScanRegionPolicy;
     };
 
