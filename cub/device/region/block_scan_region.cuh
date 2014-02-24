@@ -366,10 +366,10 @@ struct BlockScanRegion
         GridQueue<int>          queue,              ///< Queue descriptor for assigning tiles of work to thread blocks
         TileLookbackStatus      &tile_status)       ///< Global list of tile status
     {
-#if CUB_PTX_VERSION < 200
+#if (CUB_PTX_VERSION <= 130) || (CUB_PTX_VERSION >= 300)
+        // Blocks are launched in increasing order, so just assign one tile per block
 
-        // No concurrent kernels allowed and blocks are launched in increasing order, so just assign one tile per block
-        int     tile_idx        = (blockIdx.y * 32 * 1024) + blockIdx.x;    // Current tile index
+        int     tile_idx        = (blockIdx.y * 8 * 1024) + blockIdx.x;    // Current tile index
         Offset  block_offset    = Offset(TILE_ITEMS) * tile_idx;            // Global offset for the current tile
         Offset  num_remaining   = num_items - block_offset;                 // Remaining items (including this tile)
 
@@ -379,8 +379,9 @@ struct BlockScanRegion
             ConsumeTile<true>(num_items, num_remaining, tile_idx, block_offset, tile_status);
 
 #else
+        // Blocks may not be launched in increasing order, so work-steal tiles
 
-        // Get first tile
+        // Get first tile index
         if (threadIdx.x == 0)
             temp_storage.tile_idx = queue.Drain(1);
 

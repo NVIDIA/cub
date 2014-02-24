@@ -768,8 +768,6 @@ struct BlockReduceByKeyRegion
 
         // Scatter values
         StoreDirectStriped<BLOCK_THREADS>(threadIdx.x, d_values_out + tile_num_flags_prefix, values, exchange_count);
-
-        __syncthreads();
     }
 
 
@@ -921,10 +919,10 @@ struct BlockReduceByKeyRegion
         TileLookbackStatus      &tile_status,       ///< Global list of tile status
         NumSegmentsIterator     d_num_segments)     ///< Output pointer for total number of segments identified
     {
-#if CUB_PTX_VERSION < 200
+#if (CUB_PTX_VERSION <= 130) || (CUB_PTX_VERSION >= 300)
+        // Blocks are launched in increasing order, so just assign one tile per block
 
-        // No concurrent kernels allowed and blocks are launched in increasing order, so just assign one tile per block
-        int     tile_idx        = (blockIdx.y * 32 * 1024) + blockIdx.x;    // Current tile index
+        int     tile_idx        = (blockIdx.y * 8 * 1024) + blockIdx.x;    // Current tile index
         Offset  block_offset    = Offset(TILE_ITEMS) * tile_idx;            // Global offset for the current tile
         Offset  num_remaining   = num_items - block_offset;                 // Remaining items (including this tile)
 
@@ -950,26 +948,28 @@ struct BlockReduceByKeyRegion
                 }
             }
         }
-
-
 #else
+        // Blocks may not be launched in increasing order, so work-steal tiles
 
-        // Work-steal tiles
-
-        // Get tile index
+        // Get first tile index
         if (threadIdx.x == 0)
             temp_storage.tile_idx = queue.Drain(1);
 
         __syncthreads();
 
-        int     tile_idx        = (blockIdx.y * 32 * 1024) + blockIdx.x;
+        int     tile_idx        = temp_storage.tile_idx;
         Offset  block_offset    = Offset(TILE_ITEMS) * tile_idx;    // Global offset for the current tile
         Offset  num_remaining   = num_items - block_offset;         // Remaining items (including this tile)
 
         while (num_remaining > TILE_ITEMS)
         {
+            if (SYNC_AFTER_LOAD)
+                __syncthreads();
+
             // Consume full tile
             ConsumeTile<false>(num_items, num_remaining, tile_idx, block_offset, tile_status);
+
+            __syncthreads();
 
             // Get tile index
             if (threadIdx.x == 0)
@@ -999,9 +999,7 @@ struct BlockReduceByKeyRegion
                 }
             }
         }
-
 #endif
-
     }
 
 };
